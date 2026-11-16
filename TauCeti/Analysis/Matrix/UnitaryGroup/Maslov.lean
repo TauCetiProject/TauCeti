@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 public import TauCeti.Topology.Circle.Degree
+import TauCeti.Basic.Real.Sign
 
 /-!
 # The Maslov index of a path of Lagrangian frames
@@ -415,27 +416,17 @@ theorem maslovIndex_eq_sum_sign_of_diagonal_arctan {U V : unitaryGroup n ℂ} (�
     maslovIndex γ = ∑ j, (Real.sign (a j 1) - Real.sign (a j 0)) / 2 := by
   rw [maslovIndex_eq_sum_of_diagonal γ (fun j => Real.continuous_arctan.comp (ha j)) hγ]
   refine Finset.sum_congr rfl fun j _ => ?_
-  -- Since `|arctan a| < π / 2`, the half-integer count of `arctan a` is `sign a / 2`.
-  have key (b : ℝ) : ((⌊Real.arctan b / Real.pi⌋ + ⌈Real.arctan b / Real.pi⌉ : ℤ) : ℝ) / 2 =
-      Real.sign b / 2 := by
-    have hlo : -1 / 2 < Real.arctan b / Real.pi := by
-      rw [lt_div_iff₀ Real.pi_pos]; linarith [Real.neg_pi_div_two_lt_arctan b]
-    have hhi : Real.arctan b / Real.pi < 1 / 2 := by
-      rw [div_lt_iff₀ Real.pi_pos]; linarith [Real.arctan_lt_pi_div_two b]
+  -- Since `|arctan b| < π`, the count `⌊arctan b / π⌋ + ⌈arctan b / π⌉` is
+  -- `sign (arctan b) = sign b`.
+  have key (b : ℝ) : ((⌊Real.arctan b / Real.pi⌋ + ⌈Real.arctan b / Real.pi⌉ : ℤ) : ℝ) =
+      Real.sign b := by
+    rw [Real.floor_add_ceil_div_eq_sign Real.pi_pos (abs_lt.2
+      ⟨by linarith [Real.neg_pi_div_two_lt_arctan b, Real.pi_pos],
+        by linarith [Real.arctan_lt_pi_div_two b, Real.pi_pos]⟩)]
     rcases lt_trichotomy b 0 with hb | rfl | hb
-    · have hneg : Real.arctan b / Real.pi < 0 :=
-        div_neg_of_neg_of_pos (Real.arctan_lt_zero.2 hb) Real.pi_pos
-      rw [(Int.floor_eq_iff (z := -1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        (Int.ceil_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        Real.sign_of_neg hb]
-      norm_num
+    · rw [Real.sign_of_neg hb, Real.sign_of_neg (Real.arctan_lt_zero.2 hb)]
     · simp
-    · have hpos : 0 < Real.arctan b / Real.pi :=
-        div_pos (Real.arctan_pos.2 hb) Real.pi_pos
-      rw [(Int.floor_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        (Int.ceil_eq_iff (z := 1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        Real.sign_of_pos hb]
-      norm_num
+    · rw [Real.sign_of_pos hb, Real.sign_of_pos (Real.arctan_pos.2 hb)]
   simp only [Function.comp_apply]
   rw [key, key]
   ring

@@ -43,6 +43,7 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
   is Hermitian;
 * `Matrix.PosSemidef.rank_sqrt` — the square root of a positive-semidefinite matrix has the same
   rank;
+* `Matrix.transpose_sqrt` — over the reals, the square root is symmetric;
 * `Matrix.PosSemidef.sqrt_mul_transpose_sqrt` — over the reals, the square root times its
   transpose recovers the matrix;
 * `Matrix.PosSemidef.range_toEuclideanLin_sqrt` — its Euclidean linear map has the same range;
@@ -88,11 +89,16 @@ theorem PosSemidef.rank_sqrt {S : Matrix ι ι 𝕜} (hS : S.PosSemidef) :
   rw [Matrix.rank_conjTranspose_mul_self]
 
 open scoped Classical in
+/-- The square root of a real matrix is symmetric. -/
+theorem transpose_sqrt (S : Matrix ι ι ℝ) : (CFC.sqrt S)ᵀ = CFC.sqrt S := by
+  rw [← Matrix.conjTranspose_eq_transpose_of_trivial,
+    (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.eq]
+
+open scoped Classical in
 /-- For a real positive-semidefinite matrix, its square root times its transpose is the matrix. -/
 theorem PosSemidef.sqrt_mul_transpose_sqrt {S : Matrix ι ι ℝ} (hS : S.PosSemidef) :
     CFC.sqrt S * (CFC.sqrt S)ᵀ = S := by
-  rw [← Matrix.conjTranspose_eq_transpose_of_trivial,
-    (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.eq]
+  rw [transpose_sqrt]
   exact CFC.sqrt_mul_sqrt_self S hS.nonneg
 
 omit [Fintype ι] in
@@ -103,11 +109,8 @@ theorem PosSemidef.map_algebraMap [Finite ι] {S : Matrix ι ι ℝ} (hS : S.Pos
   have := Fintype.ofFinite ι
   have h : S.map (algebraMap ℝ 𝕜) =
       ((CFC.sqrt S).map (algebraMap ℝ 𝕜))ᴴ * (CFC.sqrt S).map (algebraMap ℝ 𝕜) := by
-    have hT : (CFC.sqrt S)ᵀ = CFC.sqrt S := by
-      rw [← conjTranspose_eq_transpose_of_trivial,
-        (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.eq]
-    rw [← conjTranspose_map _ fun _ => by simp, conjTranspose_eq_transpose_of_trivial, hT,
-      ← Matrix.map_mul, CFC.sqrt_mul_sqrt_self S hS.nonneg]
+    rw [← conjTranspose_map _ fun _ => by simp, conjTranspose_eq_transpose_of_trivial,
+      transpose_sqrt, ← Matrix.map_mul, CFC.sqrt_mul_sqrt_self S hS.nonneg]
   rw [h]
   exact posSemidef_conjTranspose_mul_self _
 

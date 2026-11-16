@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Matrix.SymplecticGroup.Graph
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
 public import TauCeti.Analysis.Matrix.Polar.Deformation
 public import TauCeti.Analysis.Matrix.Sqrt
+import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
+import TauCeti.Basic.Real.Sign
 
 /-!
 # The Conley–Zehnder index of a path of symplectic matrices
@@ -92,6 +94,10 @@ theorem coe_graphFrameUnit (A : GLSymplectic n ℝ) :
 decomposition of its graph frame. -/
 noncomputable def graphUnitary (A : GLSymplectic n ℝ) : unitaryGroup (n ⊕ n) ℂ :=
   Units.polarUnitary (graphFrameUnit A)
+
+theorem graphUnitary_def (A : GLSymplectic n ℝ) :
+    graphUnitary A = Units.polarUnitary (graphFrameUnit A) :=
+  (rfl)
 
 /-- The graph frame depends continuously on the symplectic matrix, as an invertible matrix. -/
 theorem continuous_graphFrameUnit : Continuous (graphFrameUnit : GLSymplectic n ℝ → _) := by
@@ -206,15 +212,15 @@ theorem coe_normalizedGraphUnitary_of_eq_realify {A : GLSymplectic n ℝ} {U : M
   have h1' : (((1 : GLSymplectic n ℝ) : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)ᵀ *
       ((1 : GLSymplectic n ℝ) : GL (n ⊕ n) ℝ) = 1 := by
     simp
-  have hsq : star ((Real.sqrt 2 : ℂ)⁻¹) * (Real.sqrt 2 : ℂ)⁻¹ = 2⁻¹ := by
-    rw [Complex.star_def, map_inv₀, Complex.conj_ofReal, ← mul_inv, ← Complex.ofReal_mul,
-      Real.mul_self_sqrt zero_le_two]
+  have hsq : (Real.sqrt 2 : ℂ)⁻¹ * (Real.sqrt 2 : ℂ)⁻¹ = 2⁻¹ := by
+    rw [← mul_inv, ← Complex.ofReal_mul, Real.mul_self_sqrt zero_le_two]
     norm_num
   rw [normalizedGraphUnitary_def, Submonoid.coe_mul, Unitary.coe_star,
     graphUnitary_of_transpose_mul_self_eq_one h1', graphUnitary_of_transpose_mul_self_eq_one hA',
-    hA, h1, star_smul, Matrix.smul_mul, Matrix.mul_smul, smul_smul, hsq, graphFrame_realify,
-    graphFrame_realify, star_eq_conjTranspose, fromBlocks_conjTranspose, fromBlocks_multiply]
-  congr 2 <;> simp [sub_eq_add_neg, add_comm, smul_smul]
+    hA, h1, graphFrame_realify, graphFrame_realify]
+  simp only [star_smul, Matrix.smul_mul, Matrix.mul_smul, smul_smul, star_eq_conjTranspose,
+    fromBlocks_conjTranspose, fromBlocks_multiply]
+  congr 2 <;> simp [sub_eq_add_neg, add_comm, smul_smul, hsq]
 
 /-- For the realification of a unitary matrix `U`, the Souriau map of the normalized graph frame
 is `½ [[U + Uᵀ, i (U - Uᵀ)], [i (Uᵀ - U), U + Uᵀ]]`. For symmetric `U` it is `U ⊕ U`. -/
@@ -226,7 +232,7 @@ theorem coe_souriau_normalizedGraphUnitary_of_eq_realify {A : GLSymplectic n ℝ
   rw [coe_souriau, coe_normalizedGraphUnitary_of_eq_realify hU hA, transpose_smul,
     fromBlocks_transpose, Matrix.smul_mul, Matrix.mul_smul, smul_smul, fromBlocks_multiply]
   simp only [transpose_add, transpose_one, transpose_smul, transpose_sub]
-  rw [show (2⁻¹ * 2⁻¹ : ℂ) = 2⁻¹ * 2⁻¹ from rfl, ← smul_smul, fromBlocks_smul (2⁻¹ : ℂ)]
+  rw [← smul_smul, fromBlocks_smul (2⁻¹ : ℂ)]
   congr 1
   congr 1 <;>
   · simp only [Matrix.smul_mul, Matrix.mul_smul, smul_smul, I_mul_I, add_mul, mul_add, sub_mul,
@@ -276,16 +282,6 @@ theorem conleyZehnder_symm {A B : GLSymplectic n ℝ} (γ : Path A B) :
 
 /-! ### Normalization on rotations -/
 
-omit [Fintype n] in
-private theorem diagonal_exp_mem_unitaryGroup {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (φ : ι → ℝ) : diagonal (fun j => Complex.exp (φ j * Complex.I)) ∈ unitaryGroup ι ℂ := by
-  rw [mem_unitaryGroup_iff, star_eq_conjTranspose, diagonal_conjTranspose, diagonal_mul_diagonal,
-    ← diagonal_one]
-  congr 1
-  funext j
-  rw [Pi.star_apply, Complex.star_def, ← Complex.exp_conj, ← Complex.exp_add]
-  simp
-
 /-- **The Conley–Zehnder index of a diagonal unitary path.** Let `γ` be a path of symplectic
 matrices which are the realifications of the diagonal unitary matrices
 `diag (e^{i θ_j t})`, with continuous angles `θ_j`. Then
@@ -302,57 +298,39 @@ theorem conleyZehnder_eq_sum_of_diagonal {A B : GLSymplectic n ℝ} (γ : Path A
   let φ : n ⊕ n → I → ℝ := fun k t => θ (Sum.elim id id k) t / 2
   have hφ : ∀ k, Continuous (φ k) := fun k => (hθ _).div_const 2
   let E : C(I, unitaryGroup (n ⊕ n) ℂ) :=
-    ⟨fun t => ⟨diagonal fun k => Complex.exp (φ k t * Complex.I),
-      diagonal_exp_mem_unitaryGroup fun k => φ k t⟩,
-      Continuous.subtype_mk (continuous_matrix fun i j => by
-        by_cases h : i = j
-        · subst h
-          simp only [diagonal_apply_eq]
-          fun_prop
-        · simpa [diagonal_apply_ne _ h] using continuous_const) _⟩
+    ⟨fun t => TauCeti.unitaryTorusHom (n ⊕ n) fun k => Circle.exp (φ k t),
+      TauCeti.continuous_unitaryTorusHom.comp
+        (continuous_pi fun k => Circle.exp.continuous.comp (hφ k))⟩
   let p : Path (E 0) (E 1) := ⟨E, rfl, rfl⟩
+  have hp : ∀ t, (p t : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
+      diagonal fun k => Complex.exp (φ k t * Complex.I) := fun t => by
+    simp [p, E, TauCeti.coe_unitaryTorusHom, Circle.coe_exp]
   have hsou : ∀ t, souriau ((γ.map continuous_normalizedGraphUnitary) t) = souriau (p t) := by
     intro t
+    have hsq : (fun k => Complex.exp (φ k t * Complex.I) ^ 2) =
+        Sum.elim (fun j => Complex.exp (θ j t * Complex.I))
+          fun j => Complex.exp (θ j t * Complex.I) := by
+      funext k
+      rcases k with j | j <;>
+      · simp only [Sum.elim_inl, Sum.elim_inr, id, φ, ← Complex.exp_nat_mul]
+        congr 1
+        push_cast
+        ring
     apply Subtype.ext
     rw [Path.map_coe, Function.comp_apply,
-      coe_souriau_normalizedGraphUnitary_of_eq_realify (diagonal_exp_mem_unitaryGroup _) (hγ t),
-      diagonal_transpose, sub_self, smul_zero, fromBlocks_smul, smul_zero, ← two_smul ℂ,
-      smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul,
-      coe_souriau_of_coe_eq_diagonal (rfl : (p t : Matrix (n ⊕ n) (n ⊕ n) ℂ) = _),
-      fromBlocks_diagonal]
-    congr 1
-    funext k
-    rcases k with j | j <;>
-    · simp only [Sum.elim_inl, Sum.elim_inr, id, φ, ← Complex.exp_nat_mul]
-      congr 1
-      push_cast
-      ring
+      coe_souriau_normalizedGraphUnitary_of_eq_realify (by
+        simpa [TauCeti.coe_unitaryTorusHom, Circle.coe_exp] using
+          (TauCeti.unitaryTorusHom n fun j => Circle.exp (θ j t)).2) (hγ t),
+      coe_souriau_of_coe_eq_diagonal (hp t), hsq, ← fromBlocks_diagonal]
+    simp only [diagonal_transpose, sub_self, smul_zero, fromBlocks_smul]
+    congr 1 <;> module
   rw [conleyZehnder_def, UnitaryGroup.maslovIndex_eq_of_souriau_eq _ p hsou,
-    UnitaryGroup.maslovIndex_eq_sum_of_diagonal p hφ fun t => rfl, Fintype.sum_sum_type,
+    UnitaryGroup.maslovIndex_eq_sum_of_diagonal p hφ hp, Fintype.sum_sum_type,
     ← Finset.sum_add_distrib]
   congr 1
   refine Finset.sum_congr rfl fun j _ => ?_
   simp only [Sum.elim_inl, Sum.elim_inr, id, φ, div_div, mul_comm (2 : ℝ) Real.pi]
   ring
-
-/-- For `|x| < c`, the sum `⌊x / c⌋ + ⌈x / c⌉` is the sign of `x`. -/
-private theorem floor_add_ceil_div_eq_sign {x c : ℝ} (hc : 0 < c) (hx : |x| < c) :
-    ((⌊x / c⌋ + ⌈x / c⌉ : ℤ) : ℝ) = Real.sign x := by
-  rw [abs_lt] at hx
-  have h1 : -1 < x / c := by rw [lt_div_iff₀ hc]; linarith
-  have h2 : x / c < 1 := by rw [div_lt_iff₀ hc]; linarith
-  rcases lt_trichotomy x 0 with h | rfl | h
-  · have h0 : x / c < 0 := div_neg_of_neg_of_pos h hc
-    rw [(Int.floor_eq_iff (z := -1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      (Int.ceil_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      Real.sign_of_neg h]
-    norm_num
-  · simp
-  · have h0 : 0 < x / c := div_pos h hc
-    rw [(Int.floor_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      (Int.ceil_eq_iff (z := 1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      Real.sign_of_pos h]
-    norm_num
 
 /-- **Normalization.** Rotating the complex coordinates at angular speeds `β_j` with
 `|β_j| < 2π`, the path `t ↦ diag (e^{i β_j t})` of realified unitary matrices has
@@ -370,6 +348,6 @@ theorem conleyZehnder_eq_neg_sum_sign {A B : GLSymplectic n ℝ} (γ : Path A B)
   refine Finset.sum_congr rfl fun j _ => ?_
   simp only [Set.Icc.coe_one, mul_one, Set.Icc.coe_zero, mul_zero, zero_div, Int.floor_zero,
     Int.ceil_zero, add_zero, Int.cast_zero, sub_zero]
-  exact floor_add_ceil_div_eq_sign Real.two_pi_pos (hβ j)
+  exact Real.floor_add_ceil_div_eq_sign Real.two_pi_pos (hβ j)
 
 end TauCeti.GLSymplectic
