@@ -69,15 +69,13 @@ theorem isSolvable_iff (n : Type*) [Fintype n] [DecidableEq n] (R : Type*) [Comm
 projective line `ℙ¹(F)` of cardinality `|F| + 1 ≤ 4`, hence embeds into a solvable symmetric group
 and is solvable. -/
 theorem isSolvable_fin_two_of_natCard_le_three (F : Type*) [Field F] [Finite F]
-    (hF : Nat.card F ≤ 3) :
-    Group.IsSolvable PSL(2, F) := by
+    (hF : Nat.card F ≤ 3) : Group.IsSolvable PSL(2, F) := by
   have hcard : Nat.card (ℙ F (Fin 2 → F)) ≤ 4 := by
-    rw [Projectivization.card_of_finrank_two F (Fin 2 → F) (Module.finrank_fin_fun F)]
-    omega
+    rw [Projectivization.card_of_finrank_two F (Fin 2 → F) (Module.finrank_fin_fun F)]; omega
   have : Group.IsSolvable (Equiv.Perm (ℙ F (Fin 2 → F))) := Equiv.Perm.isSolvable hcard
-  have hinj : Function.Injective (MulAction.toPermHom PSL(2, F) (ℙ F (Fin 2 → F))) :=
+  exact Group.isSolvable_of_isSolvable_injective
+    (f := MulAction.toPermHom PSL(2, F) (ℙ F (Fin 2 → F)))
     fun _ _ h ↦ eq_of_smul_eq_smul fun p ↦ Equiv.ext_iff.mp h p
-  exact Group.isSolvable_of_isSolvable_injective hinj
 
 end TauCeti.Matrix.ProjectiveSpecialLinearGroup
 
@@ -117,8 +115,7 @@ theorem not_isNilpotent_fin_two_of_infinite (F : Type*) [Field F] [Infinite F] :
 
 /-- Over a finite field `F` with at most three elements (`𝔽₂` or `𝔽₃`), `SL₂(F)` is solvable. -/
 theorem isSolvable_fin_two_of_natCard_le_three (F : Type*) [Field F] [Finite F]
-    (hF : Nat.card F ≤ 3) :
-    Group.IsSolvable SL(2, F) :=
+    (hF : Nat.card F ≤ 3) : Group.IsSolvable SL(2, F) :=
   (ProjectiveSpecialLinearGroup.isSolvable_iff (Fin 2) F).mp
     (ProjectiveSpecialLinearGroup.isSolvable_fin_two_of_natCard_le_three F hF)
 
@@ -126,21 +123,16 @@ theorem isSolvable_fin_two_of_natCard_le_three (F : Type*) [Field F] [Finite F]
 `F` is finite and has at most three elements. -/
 theorem isSolvable_fin_two_iff (F : Type*) [Field F] :
     Group.IsSolvable SL(2, F) ↔ Finite F ∧ Nat.card F ≤ 3 := by
-  refine ⟨fun hS ↦ ?_, fun ⟨hFin, hle⟩ ↦ isSolvable_fin_two_of_natCard_le_three F hle⟩
-  have hFin : Finite F := by
-    by_contra hInf
-    have : Infinite F := not_finite_iff_infinite.mp hInf
-    exact not_isSolvable_fin_two_of_infinite F hS
-  refine ⟨hFin, ?_⟩
-  by_contra! hgt
+  refine ⟨fun hS ↦ ?_, fun ⟨_, hle⟩ ↦ isSolvable_fin_two_of_natCard_le_three F hle⟩
+  have hFin : Finite F :=
+    not_infinite_iff_finite.mp fun _ ↦ not_isSolvable_fin_two_of_infinite F hS
+  refine ⟨hFin, by_contra fun hgt ↦ ?_⟩
   classical
   cases nonempty_fintype F
-  have hcard3 : ({0, 1, -1} : Finset F).card ≤ 3 :=
-    (Finset.card_insert_le _ _).trans <|
-      Nat.succ_le_succ ((Finset.card_insert_le _ _).trans (by simp))
+  have hcard3 : ({0, 1, -1} : Finset F).card ≤ 3 := by
+    grw [Finset.card_insert_le, Finset.card_insert_le]; simp
   have hlt : ({0, 1, -1} : Finset F).card < (Finset.univ : Finset F).card := by
-    rw [Finset.card_univ, ← Nat.card_eq_fintype_card]
-    omega
+    rw [Finset.card_univ, ← Nat.card_eq_fintype_card]; omega
   obtain ⟨a, _, ha⟩ := Finset.exists_mem_notMem_of_card_lt_card hlt
   simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at ha
   exact not_isSolvable_fin_two F ⟨a, ha.1, sq_ne_one_iff.mpr ha.2⟩ hS

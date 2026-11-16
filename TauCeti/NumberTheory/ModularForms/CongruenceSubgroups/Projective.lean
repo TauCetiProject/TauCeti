@@ -118,10 +118,8 @@ theorem mem_GammaProjective_mk (N : ℕ) (A : SL(2, ℤ)) :
   · rintro ⟨B, hB, hBA⟩
     obtain ⟨C, hC, rfl⟩ := (QuotientGroup.mk'_eq_mk' (Subgroup.center SL(2, ℤ))).mp hBA
     rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hC with rfl | rfl
-    · left
-      simpa using hB
-    · right
-      simpa using hB
+    · exact Or.inl (by simpa using hB)
+    · exact Or.inr (by simpa using hB)
   · rintro (hA | hA)
     · exact ⟨A, hA, rfl⟩
     · exact ⟨-A, hA, Matrix.ProjectiveSpecialLinearGroup.mk_neg A⟩
@@ -159,23 +157,16 @@ theorem GammaProjective_le_GammaProjective_of_dvd {M N : ℕ} (h : M ∣ N) :
 `Matrix.SignedQuotient (Fin 2) (ZMod N) = SL₂(ℤ/Nℤ) ⧸ {±I}`. -/
 noncomputable def psl2zToSignedQuotient (N : ℕ) :
     PSL(2, ℤ) →* Matrix.SignedQuotient (Fin 2) (ZMod N) :=
-  QuotientGroup.map (Subgroup.center SL(2, ℤ))
-    (Matrix.SpecialLinearGroup.negOneSubgroup (Fin 2) (ZMod N))
-    (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N))) fun g hg ↦ by
-      rw [Subgroup.mem_comap, Matrix.SpecialLinearGroup.mem_negOneSubgroup_iff]
-      rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hg with rfl | rfl
-      · left
-        exact map_one _
-      · right
-        ext i j
-        fin_cases i <;> fin_cases j <;> simp
+  (Matrix.SignedQuotient.map (Int.castRingHom (ZMod N))).comp
+    (Matrix.SignedQuotient.equivPSL ℤ).symm.toMonoidHom
 
 @[simp]
 theorem psl2zToSignedQuotient_mk (N : ℕ) (g : SL(2, ℤ)) :
     psl2zToSignedQuotient N (QuotientGroup.mk g) =
       QuotientGroup.mk (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) g) := by
-  rw [psl2zToSignedQuotient]
-  rfl
+  rw [psl2zToSignedQuotient, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    ← Matrix.SignedQuotient.equivPSL_mk ℤ g, MulEquiv.symm_apply_apply,
+    Matrix.SignedQuotient.map_mk]
 
 /-- By strong approximation for `SL₂(ℤ)`, `psl2zToSignedQuotient N` is surjective at every level. -/
 theorem psl2zToSignedQuotient_surjective (N : ℕ) :
@@ -190,24 +181,12 @@ theorem ker_psl2zToSignedQuotient (N : ℕ) :
   ext x
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
   rw [MonoidHom.mem_ker, psl2zToSignedQuotient_mk, QuotientGroup.eq_one_iff,
-    Matrix.SpecialLinearGroup.mem_negOneSubgroup_iff, GammaProjective_def, Subgroup.mem_map]
-  constructor
-  · rintro (hg | hg)
-    · exact ⟨g, CongruenceSubgroup.Gamma_mem'.mpr hg, rfl⟩
-    · refine ⟨-g, CongruenceSubgroup.Gamma_mem'.mpr ?_,
-        Matrix.ProjectiveSpecialLinearGroup.mk_neg g⟩
-      ext i j
-      have hij := congrArg (fun M : SL(2, ZMod N) ↦ (M : Matrix (Fin 2) (Fin 2) (ZMod N)) i j) hg
-      fin_cases i <;> fin_cases j <;> simpa using neg_eq_iff_eq_neg.mpr hij
-  · rintro ⟨h, hh, hgh⟩
-    obtain ⟨z, hz, rfl⟩ := (QuotientGroup.mk'_eq_mk' (Subgroup.center SL(2, ℤ))).mp hgh
-    rw [map_mul, CongruenceSubgroup.Gamma_mem'.mp hh, one_mul]
-    rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hz with rfl | rfl
-    · left
-      exact map_one _
-    · right
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp
+    Matrix.SpecialLinearGroup.mem_negOneSubgroup_iff, mem_GammaProjective_mk,
+    CongruenceSubgroup.Gamma_mem', CongruenceSubgroup.Gamma_mem']
+  have hneg : Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) (-g) =
+      -Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) g := by
+    ext i j; simp
+  rw [hneg, neg_eq_iff_eq_neg]
 
 /-- **Canonical isomorphism `PSL₂(ℤ) ⧸ GammaProjective N ≃* SL₂(ℤ/Nℤ) ⧸ {±I}`.** -/
 noncomputable def quotientGammaProjectiveEquiv (N : ℕ) :
@@ -219,8 +198,7 @@ noncomputable def quotientGammaProjectiveEquiv (N : ℕ) :
 @[simp]
 theorem quotientGammaProjectiveEquiv_mk (N : ℕ) (x : PSL(2, ℤ)) :
     quotientGammaProjectiveEquiv N (QuotientGroup.mk x) = psl2zToSignedQuotient N x := by
-  rw [quotientGammaProjectiveEquiv]
-  rfl
+  rw [quotientGammaProjectiveEquiv]; rfl
 
 /-- At every level `N : ℕ`, `[PSL₂(ℤ) : GammaProjective N] = |SL₂(ℤ/Nℤ) ⧸ {±I}|`. -/
 theorem GammaProjective_index_eq_card (N : ℕ) :

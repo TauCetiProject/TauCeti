@@ -103,8 +103,7 @@ noncomputable def quotientGammaEquiv (N : ℕ) :
 theorem quotientGammaEquiv_mk (N : ℕ) (γ : SL(2, ℤ)) :
     quotientGammaEquiv N (QuotientGroup.mk γ) =
       Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ := by
-  rw [quotientGammaEquiv]
-  rfl
+  rw [quotientGammaEquiv]; rfl
 
 /-- The upper-right-entry homomorphism `Γ₁(N) →* Multiplicative (ZMod N)` sending `γ` to
 `Multiplicative.ofAdd (γ 0 1 : ZMod N)`. Since matrices in `Γ₁(N)` are congruent to `!![1, *; 0, 1]`
@@ -112,21 +111,18 @@ modulo `N`, matrix multiplication adds their upper-right entries modulo `N`. -/
 def gamma1UpperRightHom (N : ℕ) : Gamma1 N →* Multiplicative (ZMod N) where
   toFun g := Multiplicative.ofAdd (g.1 0 1 : ZMod N)
   map_one' := by simp
-  map_mul' := by
-    rintro ⟨A, hA⟩ ⟨B, hB⟩
+  map_mul' := fun ⟨A, hA⟩ ⟨B, hB⟩ ↦ by
     obtain ⟨hA00, -, -⟩ := (Gamma1_mem N A).mp hA
     obtain ⟨-, hB11, -⟩ := (Gamma1_mem N B).mp hB
-    have h01 := (Matrix.two_mul_expl A.1 B.1).2.1
     rw [← ofAdd_add]
     congr 1
-    simp only [Subgroup.coe_mul, coe_mul, h01, Int.cast_add, Int.cast_mul, hA00, hB11,
-      one_mul, mul_one]
+    simp only [Subgroup.coe_mul, coe_mul, (Matrix.two_mul_expl A.1 B.1).2.1, Int.cast_add,
+      Int.cast_mul, hA00, hB11, one_mul, mul_one]
     exact add_comm _ _
 
 theorem gamma1UpperRightHom_apply (N : ℕ) (g : Gamma1 N) :
     gamma1UpperRightHom N g = Multiplicative.ofAdd (g.1 0 1 : ZMod N) := by
-  rw [gamma1UpperRightHom]
-  rfl
+  rw [gamma1UpperRightHom]; rfl
 
 @[simp]
 theorem toAdd_gamma1UpperRightHom_apply (N : ℕ) (g : Gamma1 N) :
@@ -138,9 +134,8 @@ theorem toAdd_gamma1UpperRightHom_apply (N : ℕ) (g : Gamma1 N) :
 theorem gamma1UpperRightHom_surjective (N : ℕ) :
     Function.Surjective (gamma1UpperRightHom N) := fun x ↦ by
   obtain ⟨z, hz⟩ := ZMod.intCast_surjective (Multiplicative.toAdd x)
-  refine ⟨⟨ModularGroup.T ^ z, T_zpow_mem_Gamma1 N z⟩, ?_⟩
-  apply Multiplicative.toAdd.injective
-  simp [ModularGroup.coe_T_zpow, hz]
+  exact ⟨⟨ModularGroup.T ^ z, T_zpow_mem_Gamma1 N z⟩,
+    Multiplicative.toAdd.injective (by simp [ModularGroup.coe_T_zpow, hz])⟩
 
 /-- Inside `Γ₁(N)`, the kernel of the upper-right entry modulo `N` is `Γ(N)`. -/
 theorem ker_gamma1UpperRightHom (N : ℕ) :
@@ -161,8 +156,7 @@ noncomputable def gamma1QuotientGammaEquiv (N : ℕ) :
 @[simp]
 theorem gamma1QuotientGammaEquiv_mk (N : ℕ) (g : Gamma1 N) :
     gamma1QuotientGammaEquiv N (QuotientGroup.mk g) = gamma1UpperRightHom N g := by
-  rw [gamma1QuotientGammaEquiv]
-  rfl
+  rw [gamma1QuotientGammaEquiv]; rfl
 
 /-- At every level `N : ℕ`, `[Γ₁(N) : Γ(N)] = |ZMod N|` (`= N` for `N ≠ 0`, and `0` at `N = 0`). -/
 theorem Gamma_relIndex_Gamma1 (N : ℕ) :
@@ -209,8 +203,7 @@ theorem index_Gamma_mul_prod_primeFactors_sq (N : ℕ) :
 /-- If `Γ(N) ≤ Δ`, then `[SL₂(ℤ) : Δ] ∣ |SL₂(ℤ/Nℤ)|`. -/
 theorem index_dvd_card_sl_zmod_of_Gamma_le {N : ℕ} {Δ : Subgroup SL(2, ℤ)} (h : Gamma N ≤ Δ) :
     Δ.index ∣ Nat.card SL(2, ZMod N) := by
-  rw [← index_Gamma]
-  exact Subgroup.index_dvd_of_le h
+  rw [← index_Gamma]; exact Subgroup.index_dvd_of_le h
 
 /-- When `Γ(N) ≤ Δ`, the canonical surjective homomorphism `SL₂(ℤ/Nℤ) →* SL₂(ℤ) ⧸ Δ.normalCore`
 obtained by composing `(quotientGammaEquiv N).symm` with the quotient map from `Γ(N)` to
@@ -261,10 +254,10 @@ theorem compositionFactor_quotient_normalCore_of_isCongruenceSubgroup {Δ : Subg
     (hΔ : IsCongruenceSubgroup Δ) {S : Type*} [Group S] [IsSimpleGroup S]
     (hcomm : ¬ IsMulCommutative S)
     (hsec : Subgroup.HasSubnormalSection (SL(2, ℤ) ⧸ Δ.normalCore) S) :
-    ∃ ℓ : ℕ, ℓ.Prime ∧ 5 ≤ ℓ ∧ Nonempty (S ≃* PSL(2, ZMod ℓ)) := by
-  obtain ⟨N, hN, hle⟩ := hΔ
-  obtain ⟨ℓ, hℓ, h5, -, heq⟩ := exists_prime_dvd_and_mulEquiv_of_Gamma_le hN hle hcomm hsec
-  exact ⟨ℓ, hℓ, h5, heq⟩
+    ∃ ℓ : ℕ, ℓ.Prime ∧ 5 ≤ ℓ ∧ Nonempty (S ≃* PSL(2, ZMod ℓ)) :=
+  let ⟨_, hN, hle⟩ := hΔ
+  let ⟨ℓ, hℓ, h5, _, heq⟩ := exists_prime_dvd_and_mulEquiv_of_Gamma_le hN hle hcomm hsec
+  ⟨ℓ, hℓ, h5, heq⟩
 
 /-- **Noncongruence criterion via alternating subnormal sections in `SL₂(ℤ)`:** if
 `SL₂(ℤ) ⧸ Δ.normalCore` admits `alternatingGroup α` (`6 ≤ Nat.card α`) as a subnormal section,
@@ -272,9 +265,8 @@ then `Δ` is not a congruence subgroup. -/
 theorem not_isCongruenceSubgroup_of_hasSubnormalSection_alternatingGroup {Δ : Subgroup SL(2, ℤ)}
     {α : Type*} [Fintype α] [DecidableEq α] (hα : 6 ≤ Nat.card α)
     (hsec : Subgroup.HasSubnormalSection (SL(2, ℤ) ⧸ Δ.normalCore) (alternatingGroup α)) :
-    ¬ IsCongruenceSubgroup Δ := by
-  rintro ⟨N, hN, hle⟩
-  exact Matrix.SpecialLinearGroup.not_hasSubnormalSection_alternatingGroup hN hα
+    ¬ IsCongruenceSubgroup Δ := fun ⟨_, hN, hle⟩ ↦
+  Matrix.SpecialLinearGroup.not_hasSubnormalSection_alternatingGroup hN hα
     (hsec.of_surjective (slZModToQuotientNormalCore_surjective hle))
 
 end CongruenceSubgroup
@@ -367,30 +359,25 @@ theorem compositionFactor_quotient_normalCore_of_isCongruenceSubgroup_liftSL
     {Γ : Subgroup PSL(2, ℤ)} (hΓ : CongruenceSubgroup.IsCongruenceSubgroup Γ.liftSL)
     {S : Type*} [Group S] [IsSimpleGroup S] (hcomm : ¬ IsMulCommutative S)
     (hsec : Subgroup.HasSubnormalSection (PSL(2, ℤ) ⧸ Γ.normalCore) S) :
-    ∃ ℓ : ℕ, ℓ.Prime ∧ 5 ≤ ℓ ∧ Nonempty (S ≃* PSL(2, ZMod ℓ)) := by
-  obtain ⟨N, hN, hle⟩ := hΓ
-  obtain ⟨ℓ, hℓ, h5, -, heq⟩ := exists_prime_dvd_and_mulEquiv_of_Gamma_le_liftSL hN hle hcomm hsec
-  exact ⟨ℓ, hℓ, h5, heq⟩
+    ∃ ℓ : ℕ, ℓ.Prime ∧ 5 ≤ ℓ ∧ Nonempty (S ≃* PSL(2, ZMod ℓ)) :=
+  let ⟨_, hN, hle⟩ := hΓ
+  let ⟨ℓ, hℓ, h5, _, heq⟩ := exists_prime_dvd_and_mulEquiv_of_Gamma_le_liftSL hN hle hcomm hsec
+  ⟨ℓ, hℓ, h5, heq⟩
 
 /-- **Prime-level divisibility criterion:** if `PSL₂(ℤ) ⧸ Γ.normalCore` admits `PSL(2, ZMod ℓ)`
 (`ℓ` prime, `5 ≤ ℓ`) as a subnormal section and `Γ(N) ≤ Γ.liftSL` with `N ≠ 0`, then `ℓ ∣ N`. -/
 theorem dvd_of_hasSubnormalSection_psl_zmod_of_Gamma_le_liftSL {N ℓ : ℕ} (hN : N ≠ 0)
     (hℓ : ℓ.Prime) (h5 : 5 ≤ ℓ) {Γ : Subgroup PSL(2, ℤ)}
     (h : CongruenceSubgroup.Gamma N ≤ Γ.liftSL)
-    (hsec : Subgroup.HasSubnormalSection (PSL(2, ℤ) ⧸ Γ.normalCore) PSL(2, ZMod ℓ)) :
-    ℓ ∣ N := by
+    (hsec : Subgroup.HasSubnormalSection (PSL(2, ℤ) ⧸ Γ.normalCore) PSL(2, ZMod ℓ)) : ℓ ∣ N := by
   have : Fact ℓ.Prime := ⟨hℓ⟩
-  have h4 : 4 ≤ Nat.card (ZMod ℓ) := by
-    rw [Nat.card_zmod]
-    omega
   have : IsSimpleGroup PSL(2, ZMod ℓ) :=
-    Matrix.ProjectiveSpecialLinearGroup.isSimpleGroup_of_four_le_natCard (F := ZMod ℓ) h4
+    Matrix.ProjectiveSpecialLinearGroup.isSimpleGroup_of_four_le_natCard (F := ZMod ℓ)
+      (by rw [Nat.card_zmod]; omega)
   have hnotcomm : ¬ IsMulCommutative PSL(2, ZMod ℓ) := fun _ ↦ by
-    have hsolv : Group.IsSolvable PSL(2, ZMod ℓ) := inferInstance
-    have hle3 := (TauCeti.Matrix.ProjectiveSpecialLinearGroup.isSolvable_fin_two_iff
-      (F := ZMod ℓ)).mp hsolv |>.2
-    rw [Nat.card_zmod] at hle3
-    omega
+    have := (TauCeti.Matrix.ProjectiveSpecialLinearGroup.isSolvable_fin_two_iff (F := ZMod ℓ)).mp
+      inferInstance |>.2
+    rw [Nat.card_zmod] at this; omega
   obtain ⟨q, hq, -, hqN, ⟨e⟩⟩ :=
     exists_prime_dvd_and_mulEquiv_of_Gamma_le_liftSL hN h hnotcomm hsec
   rwa [Matrix.ProjectiveSpecialLinearGroup.eq_of_fin_two_zmod_mulEquiv hℓ hq e]
@@ -403,9 +390,8 @@ congruence subgroup of `SL₂(ℤ)`. -/
 theorem not_isCongruenceSubgroup_liftSL_of_hasSubnormalSection_alternatingGroup
     {Γ : Subgroup PSL(2, ℤ)} {α : Type*} [Fintype α] [DecidableEq α] (hα : 6 ≤ Nat.card α)
     (hsec : Subgroup.HasSubnormalSection (PSL(2, ℤ) ⧸ Γ.normalCore) (alternatingGroup α)) :
-    ¬ CongruenceSubgroup.IsCongruenceSubgroup Γ.liftSL := by
-  rintro ⟨N, hN, hle⟩
-  exact Matrix.SpecialLinearGroup.not_hasSubnormalSection_alternatingGroup hN hα
+    ¬ CongruenceSubgroup.IsCongruenceSubgroup Γ.liftSL := fun ⟨N, hN, hle⟩ ↦
+  Matrix.SpecialLinearGroup.not_hasSubnormalSection_alternatingGroup hN hα
     ((hsec.of_surjective (signedQuotientToQuotientNormalCore_surjective hle)).of_surjective
       (QuotientGroup.mk'_surjective (negOneSubgroup (Fin 2) (ZMod N))))
 
@@ -429,38 +415,32 @@ theorem not_isCongruenceSubgroup_liftSL_of_quotient_normalCore_mulEquiv_perm
     ¬ CongruenceSubgroup.IsCongruenceSubgroup Γ.liftSL := by
   classical
   cases nonempty_fintype α
-  have hsecA : Subgroup.HasSubnormalSection (Equiv.Perm α) (alternatingGroup α) :=
-    (Subgroup.HasSubnormalSection.refl (alternatingGroup α)).of_isSubnormal
-      (inferInstance : (alternatingGroup α).Normal).isSubnormal
-  exact not_isCongruenceSubgroup_liftSL_of_hasSubnormalSection_alternatingGroup hα
-    (hsecA.congr_left e.symm)
+  exact not_isCongruenceSubgroup_liftSL_of_hasSubnormalSection_alternatingGroup hα <|
+    ((Subgroup.HasSubnormalSection.refl (alternatingGroup α)).of_isSubnormal
+      (inferInstance : (alternatingGroup α).Normal).isSubnormal).congr_left e.symm
 
 /-! ### Explicit principal projective indices and arithmetic obstruction checks -/
 
 theorem GammaProjective_index_six : (GammaProjective 6).index = 72 := by
   have h := two_mul_index_map_Gamma (N := 6) (by omega)
-  have h6 : (6 : ℕ) = 2 * 3 := by norm_num
-  rw [← GammaProjective_def, h6, card_zmod_mul_of_coprime (Fin 2) (by decide),
+  rw [← GammaProjective_def, show (6 : ℕ) = 2 * 3 by norm_num,
+    card_zmod_mul_of_coprime (Fin 2) (by decide),
     card_fin_two_zmod_prime Nat.prime_two, card_fin_two_zmod_prime Nat.prime_three] at h
-  norm_num at h
-  omega
+  norm_num at h; omega
 
 theorem GammaProjective_index_eight : (GammaProjective 8).index = 192 := by
   rw [GammaProjective_index_eq_card, Matrix.SignedQuotient.card_fin_two_zmod_eight]
 
 theorem GammaProjective_index_ten : (GammaProjective 10).index = 360 := by
   have h := two_mul_index_map_Gamma (N := 10) (by omega)
-  have h10 : (10 : ℕ) = 2 * 5 := by norm_num
-  rw [← GammaProjective_def, h10, card_zmod_mul_of_coprime (Fin 2) (by decide),
+  rw [← GammaProjective_def, show (10 : ℕ) = 2 * 5 by norm_num,
+    card_zmod_mul_of_coprime (Fin 2) (by decide),
     card_fin_two_zmod_prime Nat.prime_two, card_fin_two_zmod_prime Nat.prime_five] at h
-  norm_num at h
-  omega
+  norm_num at h; omega
 
 theorem GammaProjective_index_eleven : (GammaProjective 11).index = 660 := by
   have h := two_mul_index_map_Gamma (N := 11) (by omega)
-  have h11 : Nat.Prime 11 := by decide
-  rw [← GammaProjective_def, card_fin_two_zmod_prime h11] at h
-  norm_num at h
+  rw [← GammaProjective_def, card_fin_two_zmod_prime (by decide)] at h
   omega
 
 theorem GammaProjective_index_twelve : (GammaProjective 12).index = 576 := by
@@ -469,39 +449,32 @@ theorem GammaProjective_index_twelve : (GammaProjective 12).index = 576 := by
 /-- `7` does not divide `(GammaProjective 6).index = 72`, ruling out `GammaProjective 6` inside any
 index-`7` subgroup. -/
 theorem not_seven_dvd_GammaProjective_index_six : ¬ 7 ∣ (GammaProjective 6).index := by
-  rw [GammaProjective_index_six]
-  omega
+  rw [GammaProjective_index_six]; omega
 
 /-- `7` does not divide `(GammaProjective 10).index = 360`. -/
 theorem not_seven_dvd_GammaProjective_index_ten : ¬ 7 ∣ (GammaProjective 10).index := by
-  rw [GammaProjective_index_ten]
-  omega
+  rw [GammaProjective_index_ten]; omega
 
 /-- `7` does not divide `(GammaProjective 12).index = 576`. -/
 theorem not_seven_dvd_GammaProjective_index_twelve : ¬ 7 ∣ (GammaProjective 12).index := by
-  rw [GammaProjective_index_twelve]
-  omega
+  rw [GammaProjective_index_twelve]; omega
 
 /-- `|PSL₂(𝔽₅)| = 60` divides `(GammaProjective 11).index = 660`, showing that the order
 obstruction alone does not rule out `PSL₂(𝔽₅)` (`≃* A₅`) at level `11`. -/
 theorem card_psl_zmod_five_dvd_GammaProjective_index_eleven :
     Nat.card PSL(2, ZMod 5) ∣ (GammaProjective 11).index := by
-  have h5 : 2 * Nat.card PSL(2, ZMod 5) = 120 :=
-    (Matrix.ProjectiveSpecialLinearGroup.two_mul_card_fin_two_zmod_prime
-      Nat.prime_five (by decide)).trans (by norm_num)
-  have hcard : Nat.card PSL(2, ZMod 5) = 60 := by omega
-  rw [hcard, GammaProjective_index_eleven]
-  norm_num
+  have h5 := Matrix.ProjectiveSpecialLinearGroup.two_mul_card_fin_two_zmod_prime
+    Nat.prime_five (by decide)
+  rw [GammaProjective_index_eleven, show Nat.card PSL(2, ZMod 5) = 60 by omega]
+  decide
 
 /-- **Separation of the composition-factor obstruction from the order obstruction (`N = 11`,
 `ℓ = 5`):** although `|PSL₂(𝔽₅)| = 60 ∣ 660 = (GammaProjective 11).index`, `PSL₂(𝔽₅)` cannot occur
 as a subnormal section of `PSL₂(ℤ) ⧸ Γ.normalCore` whenever `Γ(11) ≤ Γ.liftSL`, since `5 ∤ 11`. -/
 theorem not_hasSubnormalSection_psl_zmod_five_of_Gamma_eleven_le_liftSL
     {Γ : Subgroup PSL(2, ℤ)} (h : CongruenceSubgroup.Gamma 11 ≤ Γ.liftSL) :
-    ¬ Subgroup.HasSubnormalSection (PSL(2, ℤ) ⧸ Γ.normalCore) PSL(2, ZMod 5) := fun hsec ↦ by
-  have hdvd :=
-    dvd_of_hasSubnormalSection_psl_zmod_of_Gamma_le_liftSL (N := 11) (ℓ := 5)
-      (by decide) Nat.prime_five le_rfl h hsec
-  omega
+    ¬ Subgroup.HasSubnormalSection (PSL(2, ℤ) ⧸ Γ.normalCore) PSL(2, ZMod 5) := fun hsec ↦
+  by have := dvd_of_hasSubnormalSection_psl_zmod_of_Gamma_le_liftSL (N := 11) (ℓ := 5)
+      (by decide) Nat.prime_five le_rfl h hsec; omega
 
 end TauCeti.CongruenceSubgroup
