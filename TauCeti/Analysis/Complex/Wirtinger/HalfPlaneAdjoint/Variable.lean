@@ -94,13 +94,15 @@ theorem setIntegral_im_pos_inner_cauchyRiemann_adjoint (hφ : ContDiff ℝ 1 φ)
   have hhc : HasCompactSupport h := hφc.mono fun z hz h0 ↦ hz (by simp [h, h0])
   have hgc : HasCompactSupport g := hφc.mono fun z hz h0 ↦ hz (by simp [g, h0])
   have hh' (z v : ℂ) : fderiv ℝ h z v = ⟪ξ z, fderiv ℝ φ z v⟫_ℝ + ⟪fderiv ℝ ξ z v, φ z⟫_ℝ := by
-    rw [(innerSL ℝ).fderiv_of_tsupport_subset_right (hξ.differentiableOn one_ne_zero) hφd hU hφU]
+    rw [(innerSL ℝ).fderiv_of_tsupport_subset_right (hξ.differentiableOn one_ne_zero)
+      hφd.differentiableOn hU hφU]
     simp only [add_apply, ContinuousLinearMap.precompR_apply, ContinuousLinearMap.precompL_apply,
       ContinuousLinearMap.compL_apply, ContinuousLinearMap.comp_apply]
     exact congrArg₂ (· + ·) (innerSL_apply_apply (𝕜 := ℝ) _ _) (innerSL_apply_apply (𝕜 := ℝ) _ _)
   have hg' (z v : ℂ) : fderiv ℝ g z v =
       ⟪J z (ξ z), fderiv ℝ φ z v⟫_ℝ + ⟪fderiv ℝ (fun z ↦ J z (ξ z)) z v, φ z⟫_ℝ := by
-    rw [(innerSL ℝ).fderiv_of_tsupport_subset_right (hJξ.differentiableOn one_ne_zero) hφd hU hφU]
+    rw [(innerSL ℝ).fderiv_of_tsupport_subset_right (hJξ.differentiableOn one_ne_zero)
+      hφd.differentiableOn hU hφU]
     simp only [add_apply, ContinuousLinearMap.precompR_apply, ContinuousLinearMap.precompL_apply,
       ContinuousLinearMap.compL_apply, ContinuousLinearMap.comp_apply]
     exact congrArg₂ (· + ·) (innerSL_apply_apply (𝕜 := ℝ) _ _) (innerSL_apply_apply (𝕜 := ℝ) _ _)

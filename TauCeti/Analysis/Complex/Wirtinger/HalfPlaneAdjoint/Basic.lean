@@ -99,12 +99,13 @@ theorem setIntegral_im_pos_re_inner_cauchyRiemann (hξ : ContDiff ℝ 1 ξ)
   have hgc : HasCompactSupport g := hξc.mono fun z hz h0 ↦ hz (by simp [g, h0])
   have hh' (z v : ℂ) : fderiv ℝ h z v =
       re ⟪η z, fderiv ℝ ξ z v⟫_ℂ + re ⟪fderiv ℝ η z v, ξ z⟫_ℂ := by
-    rw [reInnerCLM.fderiv_of_tsupport_subset_right (hη.differentiableOn one_ne_zero) hξd hU hξU]
+    rw [reInnerCLM.fderiv_of_tsupport_subset_right (hη.differentiableOn one_ne_zero)
+      hξd.differentiableOn hU hξU]
     simp
   have hg' (z v : ℂ) : fderiv ℝ g z v =
       re ⟪η z, I • fderiv ℝ ξ z v⟫_ℂ + re ⟪fderiv ℝ η z v, I • ξ z⟫_ℂ := by
     rw [reInnerCLM.fderiv_of_tsupport_subset_right (hη.differentiableOn one_ne_zero)
-      (hIξ.differentiable one_ne_zero) hU hIξU]
+      (hIξ.differentiable one_ne_zero).differentiableOn hU hIξU]
     simp [fderiv_fun_const_smul (hξd z)]
   have hpt (z : ℂ) : re ⟪η z, fderiv ℝ ξ z 1 + I • fderiv ℝ ξ z I⟫_ℂ =
       fderiv ℝ h z 1 + fderiv ℝ g z I +

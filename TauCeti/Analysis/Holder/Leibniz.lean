@@ -96,7 +96,7 @@ private theorem holderWith_iteratedFDeriv_bilinear_aux {E A B G : Type u}
           (fun x => L.precompL E (fderiv ℝ f x) (g x)) := by
       funext x
       exact L.fderiv_of_tsupport_subset_right (hf.differentiableOn (by simp))
-        (hg.differentiable (by simp)) hs hgs x
+        (hg.differentiable (by simp)).differentiableOn hs hgs x
     apply holderOnWith_univ.mp
     rw [TauCeti.holderOnWith_iteratedFDeriv_succ_iff, hd,
       iteratedFDeriv_add hRdiff hLdiff]

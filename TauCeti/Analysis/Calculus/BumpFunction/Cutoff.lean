@@ -190,18 +190,19 @@ theorem _root_.ContinuousLinearMap.contDiff_of_tsupport_subset_right {𝕜 A B G
     exact contDiffAt_const.congr_of_eventuallyEq h0
 
 /-- The usual bilinear derivative rule holds globally when the second factor is supported
-inside the open set where the first factor is differentiable. Outside this set all terms vanish. -/
+inside the open set where both factors are differentiable. Outside this set all terms vanish. -/
 theorem _root_.ContinuousLinearMap.fderiv_of_tsupport_subset_right {𝕜 A B G : Type*}
     [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
     [NormedAddCommGroup A] [NormedSpace 𝕜 A] [NormedAddCommGroup B] [NormedSpace 𝕜 B]
     [NormedAddCommGroup G] [NormedSpace 𝕜 G]
     (L : A →L[𝕜] B →L[𝕜] G) {f : E → A} {g : E → B} {s : Set E}
-    (hf : DifferentiableOn 𝕜 f s) (hg : Differentiable 𝕜 g) (hs : IsOpen s)
+    (hf : DifferentiableOn 𝕜 f s) (hg : DifferentiableOn 𝕜 g s) (hs : IsOpen s)
     (hgs : tsupport g ⊆ s) (x : E) :
     fderiv 𝕜 (fun y => L (f y) (g y)) x =
       L.precompR E (f x) (fderiv 𝕜 g x) + L.precompL E (fderiv 𝕜 f x) (g x) := by
   by_cases hx : x ∈ s
-  · exact L.fderiv_of_bilinear ((hf x hx).differentiableAt (hs.mem_nhds hx)) (hg x)
+  · exact L.fderiv_of_bilinear ((hf x hx).differentiableAt (hs.mem_nhds hx))
+      ((hg x hx).differentiableAt (hs.mem_nhds hx))
   · have hnot : x ∉ tsupport g := fun h => hx (hgs h)
     have h0 : (fun y => L (f y) (g y)) =ᶠ[𝓝 x] 0 := by
       filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hnot] with y hy
