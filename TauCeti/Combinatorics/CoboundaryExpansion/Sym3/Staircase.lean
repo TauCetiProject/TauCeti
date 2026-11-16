@@ -17,7 +17,7 @@ On `K_{2t+1}` with vertices numbered `0, 1, …, 2t`, the staircase cochain `Sym
 transposition `t01` on the pairs `p < q` with `p` odd and `q` even and `1` elsewhere. Writing
 `vᵢ = 2i - 1` and `y_j = 2j`, its `t01`-edges join `vᵢ` to `y_j` exactly when `i ≤ j`: this is
 Kozlov's staircase graph of the partition `(t, t - 1, …, 1)` with one isolated vertex `0`
-(`SimpleGraph.staircase 1 t` up to relabelling).
+(Kozlov, Definition 3.2, up to relabelling).
 
 * `Sym3.stair_cost_lower`: every `Sym(3)` gauge costs at least `t (t + 1)`. The parity retraction
   onto `{1, t01}` (`Equiv.Perm.movedNorm_parityRetract_le`) bounds the cost below by twice the
