@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Extension by zero between restricted `Lᵖ` spaces
@@ -38,6 +39,8 @@ against `μ`, hence against every restriction of `μ`.
 * `TauCeti.extendByZeroLpₗᵢ_eq_of_ae_eq` and `TauCeti.coeFn_extendByZeroLpₗᵢ_comp`: the two ways
   an extension is recognised in practice — from a representative that already vanishes off `s`,
   and through pointwise postcomposition by a map fixing `0`.
+* `TauCeti.setIntegral_extendByZeroLpₗᵢ`: integrating against the extension over `t` is
+  integrating against the original function over `s`.
 -/
 
 public section
@@ -164,5 +167,24 @@ theorem coeFn_extendByZeroLpₗᵢ_comp {G : Type*} [NormedAddCommGroup G] [Modu
     ae_restrict_of_ae ((ae_eq_restrict_iff_indicator_ae_eq hs).mp hg')] with x h1 h2 h3
   rw [h1, h3, h2]
   exact congrFun (Set.indicator_comp_of_zero hL) x
+
+/-- **Integrals against an extension by zero only see the original set.** For a pairing `L` with
+`L x 0 = 0`, integrating `x ↦ L x (f₀ x)` over `t`, where `f₀` is the extension of `f` by zero, is
+integrating `x ↦ L x (f x)` over `s`. The pairings met in weak formulations are `L x y = g x * y`
+and `L x y = ⟪G x, y⟫`. -/
+theorem setIntegral_extendByZeroLpₗᵢ {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [Fact (1 ≤ p)] (hs : MeasurableSet s) (hst : s ⊆ t) (L : α → F → E) (hL : ∀ x, L x 0 = 0)
+    (f : Lp F p (μ.restrict s)) :
+    ∫ x in t, L x (extendByZeroLpₗᵢ 𝕜 μ hs hst f x) ∂μ = ∫ x in s, L x (f x) ∂μ := by
+  calc ∫ x in t, L x (extendByZeroLpₗᵢ 𝕜 μ hs hst f x) ∂μ
+      = ∫ x in t, s.indicator (fun x => L x (f x)) x ∂μ := by
+        refine integral_congr_ae ?_
+        filter_upwards [coeFn_extendByZeroLpₗᵢ 𝕜 hs hst f] with x hx
+        rw [hx]
+        by_cases hxs : x ∈ s
+        · rw [indicator_of_mem hxs, indicator_of_mem hxs]
+        · rw [indicator_of_notMem hxs, indicator_of_notMem hxs, hL]
+    _ = ∫ x in s, L x (f x) ∂μ := by
+        rw [integral_indicator hs, Measure.restrict_restrict hs, inter_eq_left.2 hst]
 
 end TauCeti

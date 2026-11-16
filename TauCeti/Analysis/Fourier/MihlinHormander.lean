@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.Fourier.L2Multiplier
 public import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
@@ -58,6 +60,13 @@ The proof first treats symbols with Mihlin constant `1` and then rescales.
 
 The symbol is assumed smooth away from the origin, rather than only `N` times differentiable, so
 that its Littlewood–Paley pieces are Schwartz functions.
+
+On Schwartz functions the theorem reads `‖𝓕⁻ (m • 𝓕 φ)‖_p ≤ C A ‖φ‖_p`
+(`SchwartzMap.exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le`). It extends to
+symbols `b : V → G →L[ℂ] H` with values in operators between finite-dimensional complex normed
+spaces (`TauCeti.exists_eLpNorm_fourierInv_apply_le_of_norm_iteratedFDeriv_le`), such as the
+matrix-valued symbols of pseudodifferential operators on sections of vector bundles: in a basis of
+`G →L[ℂ] H`, the coordinates of `b` are scalar symbols satisfying Mihlin's condition.
 
 ## References
 
@@ -323,6 +332,32 @@ theorem exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le [Nontri
   · simp [← ofReal_norm]
   · exact hC hmc hmcA (c • m') hcm' f
 
+/-- **The Mihlin–Hörmander multiplier theorem on Schwartz functions.** Let `V` be a real inner
+product space of finite dimension `n ≥ 1`, let `2N > n` and `1 < p < ∞`. There is a constant `C`
+such that for every symbol `m` of temperate growth satisfying Mihlin's condition of order `N`
+with constant `A`, the Fourier multiplier `𝓕⁻ (m • 𝓕 φ)` of every Schwartz function `φ` with
+values in a complex Hilbert space satisfies `‖𝓕⁻ (m • 𝓕 φ)‖_p ≤ C A ‖φ‖_p`. -/
+theorem _root_.SchwartzMap.exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le
+    [Nontrivial V] {N : ℕ} (hN : finrank ℝ V < 2 * N) {p : ℝ≥0∞} (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    ∃ C : ℝ≥0, ∀ {m : V → ℂ}, m.HasTemperateGrowth → ∀ {A : ℝ≥0},
+      (∀ k ≤ N, ∀ ξ ≠ 0, ‖iteratedFDeriv ℝ k m ξ‖ ≤ A / ‖ξ‖ ^ k) →
+      ∀ φ : 𝓢(V, F), eLpNorm (SchwartzMap.fourierMultiplierCLM F m φ) p volume ≤
+        C * A * eLpNorm φ p volume := by
+  obtain ⟨C, hC⟩ :=
+    TauCeti.exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le (F := F) hN hp hp_top
+  refine ⟨C, fun {m} hm {A} hmA φ ↦ ?_⟩
+  -- The symbol is bounded, by Mihlin's condition of order zero away from the origin, and on
+  -- Schwartz functions the multiplier agrees with the `L²` multiplier.
+  have hm_bdd : MemLp m (∞ : ℝ≥0∞) volume := by
+    refine memLp_top_of_bound hm.1.continuous.aestronglyMeasurable A ?_
+    filter_upwards [Measure.ae_ne volume 0] with ξ hξ
+    simpa using hmA 0 (Nat.zero_le _) ξ hξ
+  have h := hC hm.1.contDiffOn hmA (hm_bdd.toLp m) hm_bdd.coeFn_toLp (φ.toLp 2)
+  rwa [SchwartzMap.toLp_fourierMultiplierCLM_eq hm hm_bdd,
+    eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ 2 _),
+    eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ 2 _)] at h
+
 /-- **The Mihlin–Hörmander multiplier theorem on `Lᵖ`.** Let `V` be a real inner product space of
 finite dimension `n ≥ 1`, let `2N > n` and `1 < p < ∞`. There is a constant `C` such that for
 every symbol `m` of temperate growth satisfying Mihlin's condition of order `N` with constant `A`,
@@ -340,27 +375,18 @@ theorem exists_fourierMultiplierCLM_eq_and_norm_le_of_norm_iteratedFDeriv_le [No
         TemperedDistribution.fourierMultiplierCLM F m (f : 𝓢'(V, F)) = g ∧
           ‖g‖ ≤ C * A * ‖f‖ := by
   obtain ⟨C, hC⟩ :=
-    exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le (F := F) hN hp hp_top
+    SchwartzMap.exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le (F := F) hN hp
+      hp_top
   refine ⟨C, fun {m} hm {A} hmA f ↦ ?_⟩
-  -- The symbol is bounded, by Mihlin's condition of order zero away from the origin.
-  have hm_bdd : MemLp m (∞ : ℝ≥0∞) volume := by
-    refine memLp_top_of_bound hm.1.continuous.aestronglyMeasurable A ?_
-    filter_upwards [Measure.ae_ne volume 0] with ξ hξ
-    simpa using hmA 0 (Nat.zero_le _) ξ hξ
-  -- On Schwartz functions the multiplier agrees with the `L²` multiplier, so it satisfies the
-  -- `Lᵖ` bound of `exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le`.
+  -- On Schwartz functions the multiplier satisfies the `Lᵖ` bound of
+  -- `SchwartzMap.exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le`.
   set T : 𝓢(V, F) →L[ℂ] 𝓢(V, F) := SchwartzMap.fourierMultiplierCLM F m
   have hS : ∀ φ : 𝓢(V, F), ‖(T φ).toLp p‖ ≤ C * A * ‖φ.toLp p‖ := by
     intro φ
-    have h := hC hm.1.contDiffOn hmA (hm_bdd.toLp m) hm_bdd.coeFn_toLp (φ.toLp 2)
-    rw [SchwartzMap.toLp_fourierMultiplierCLM_eq hm hm_bdd,
-      eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ 2 _),
-      eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ 2 _)] at h
-    rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ p _),
-      eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ p _)]
+    rw [SchwartzMap.norm_toLp, SchwartzMap.norm_toLp]
     have hfin : eLpNorm (φ : V → F) p volume ≠ (∞ : ℝ≥0∞) := (φ.memLp p).eLpNorm_ne_top
     calc _ ≤ ((C : ℝ≥0∞) * A * eLpNorm (φ : V → F) p volume).toReal :=
-          ENNReal.toReal_mono (by finiteness) h
+          ENNReal.toReal_mono (by finiteness) (hC hm hmA φ)
       _ = _ := by simp [ENNReal.toReal_mul]
   -- The bound passes from the dense Schwartz functions to all of `Lᵖ`.
   refine (TemperedDistribution.fourierMultiplierCLM F m ∘L
@@ -369,5 +395,94 @@ theorem exists_fourierMultiplierCLM_eq_and_norm_le_of_norm_iteratedFDeriv_le [No
   simp only [T, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_coe,
     Lp.toTemperedDistributionCLM_apply, Lp.toTemperedDistribution_toLp_eq,
     TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq hm]
+
+/-- **The Mihlin–Hörmander theorem for operator-valued symbols.** Let `V` be a real inner product
+space of finite dimension `n ≥ 1`, let `2N > n` and `1 < p < ∞`, and let `G` and `H` be
+finite-dimensional complex normed spaces. There is a constant `C` such that for every symbol
+`b : V → G →L[ℂ] H` of temperate growth satisfying Mihlin's condition of order `N` with constant
+`A`, the Fourier multiplier `𝓕⁻ (ξ ↦ b ξ (𝓕 u ξ))` of every Schwartz function `u` satisfies
+`‖𝓕⁻ (b 𝓕 u)‖_p ≤ C A ‖u‖_p`.
+
+The norms of `G` and `H` need not come from inner products. The symbol is expanded as
+`b ξ = ∑ₖ mₖ(ξ) Bₖ` in a basis `Bₖ` of `G →L[ℂ] H`, whose coordinate functionals turn Mihlin's
+condition for `b` into Mihlin's condition for the scalar symbols `mₖ`, and `H` is identified with
+a Euclidean space. -/
+theorem exists_eLpNorm_fourierInv_apply_le_of_norm_iteratedFDeriv_le {G H : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G] [NormedAddCommGroup H]
+    [NormedSpace ℂ H] [FiniteDimensional ℂ H] [Nontrivial V] {N : ℕ} (hN : finrank ℝ V < 2 * N)
+    {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    ∃ C : ℝ≥0, ∀ {b : V → G →L[ℂ] H}, b.HasTemperateGrowth → ∀ {A : ℝ≥0},
+      (∀ k ≤ N, ∀ ξ ≠ 0, ‖iteratedFDeriv ℝ k b ξ‖ ≤ A / ‖ξ‖ ^ k) →
+      ∀ u : 𝓢(V, G), eLpNorm (𝓕⁻ fun ξ ↦ b ξ (𝓕 u ξ)) p volume ≤
+        C * A * eLpNorm u p volume := by
+  classical
+  have := FiniteDimensional.completeSpace ℂ G
+  have := FiniteDimensional.completeSpace ℂ H
+  set B := Module.finBasis ℂ (G →L[ℂ] H)
+  set E := EuclideanSpace ℂ (Fin (finrank ℂ H))
+  let e : H ≃L[ℂ] E := ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  let c : Fin (finrank ℂ (G →L[ℂ] H)) → (G →L[ℂ] H) →L[ℂ] ℂ :=
+    fun k ↦ LinearMap.toContinuousLinearMap (B.coord k)
+  obtain ⟨C₀, hC₀⟩ :=
+    SchwartzMap.exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le (F := E) hN hp
+      hp_top
+  refine ⟨∑ k, C₀ * (‖(e.symm : E →L[ℂ] H)‖₊ * ‖c k‖₊ * ‖(e : H →L[ℂ] E).comp (B k)‖₊),
+    fun {b} hb {A} hA u ↦ ?_⟩
+  -- The scalar coefficients `mₖ = cₖ ∘ b` satisfy Mihlin's condition with constant `‖cₖ‖ A`.
+  set m : Fin (finrank ℂ (G →L[ℂ] H)) → V → ℂ := fun k ξ ↦ c k (b ξ)
+  have hm (k) : (m k).HasTemperateGrowth :=
+    ((c k).restrictScalars ℝ).hasTemperateGrowth.comp hb
+  have hmA (k) : ∀ j ≤ N, ∀ ξ ≠ 0,
+      ‖iteratedFDeriv ℝ j (m k) ξ‖ ≤ ((‖c k‖₊ * A : ℝ≥0) : ℝ) / ‖ξ‖ ^ j := by
+    intro j hj ξ hξ
+    have h := ((c k).restrictScalars ℝ).norm_iteratedFDeriv_comp_left (hb.1.contDiffAt (x := ξ))
+      (n := j) (by exact_mod_cast le_top)
+    rw [ContinuousLinearMap.norm_restrictScalars] at h
+    refine h.trans ?_
+    rw [NNReal.coe_mul, coe_nnNorm, mul_div_assoc]
+    gcongr
+    exact hA j hj ξ hξ
+  -- The multiplier of `b` is the sum of the scalar multipliers `mₖ(D)` applied to `e ∘ Bₖ ∘ u`.
+  set uk : Fin (finrank ℂ (G →L[ℂ] H)) → 𝓢(V, E) :=
+    fun k ↦ SchwartzMap.postcompCLM ((e : H →L[ℂ] E).comp (B k)) u
+  have hdec : (𝓕⁻ fun ξ ↦ b ξ (𝓕 u ξ)) =
+      ∑ k, fun x ↦ (e.symm : E →L[ℂ] H) (SchwartzMap.fourierMultiplierCLM E (m k) (uk k) x) := by
+    set Φ : 𝓢(V, H) := ∑ k, SchwartzMap.postcompCLM (e.symm : E →L[ℂ] H)
+      (SchwartzMap.smulLeftCLM E (m k) (𝓕 (uk k)))
+    have hΦ : (fun ξ ↦ b ξ (𝓕 u ξ)) = ⇑Φ := by
+      funext ξ
+      simp only [Φ, sum_apply, SchwartzMap.postcompCLM_apply,
+        SchwartzMap.smulLeftCLM_apply_apply (hm _)]
+      simp only [uk, SchwartzMap.fourier_postcompCLM_apply, map_smul, comp_apply,
+        ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply, m, c,
+        LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply]
+      conv_lhs => rw [← B.sum_repr (b ξ)]
+      simp only [FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul, Pi.smul_apply]
+    funext x
+    rw [hΦ, ← SchwartzMap.fourierInv_coe, fourierInv_sum, sum_apply, Finset.sum_apply]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [SchwartzMap.fourierInv_postcompCLM_apply, SchwartzMap.fourierMultiplierCLM_apply]
+  rw [hdec]
+  refine (eLpNorm_sum_le (by exact_mod_cast hp.le)).trans ?_
+  push_cast
+  rw [Finset.sum_mul, Finset.sum_mul]
+  refine Finset.sum_le_sum fun k _ ↦ ?_
+  have h₁ : eLpNorm (fun x ↦ (e.symm : E →L[ℂ] H)
+      (SchwartzMap.fourierMultiplierCLM E (m k) (uk k) x)) p volume ≤
+      ‖(e.symm : E →L[ℂ] H)‖₊ *
+        eLpNorm (SchwartzMap.fourierMultiplierCLM E (m k) (uk k)) p volume :=
+    eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
+      ((e.symm : E →L[ℂ] H).continuous.comp (SchwartzMap.continuous _)).aestronglyMeasurable
+      (.of_forall fun x ↦ (e.symm : E →L[ℂ] H).le_opNNNorm _) p
+  have h₂ : eLpNorm (uk k) p volume ≤ ‖(e : H →L[ℂ] E).comp (B k)‖₊ * eLpNorm u p volume :=
+    eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul (SchwartzMap.continuous _).aestronglyMeasurable
+      (.of_forall fun x ↦ by
+        simpa [uk] using ((e : H →L[ℂ] E).comp (B k)).le_opNNNorm (u x)) p
+  calc _ ≤ ‖(e.symm : E →L[ℂ] H)‖₊ * (C₀ * ((‖c k‖₊ * A : ℝ≥0) : ℝ≥0∞) *
+        (‖(e : H →L[ℂ] E).comp (B k)‖₊ * eLpNorm u p volume)) := by
+        refine h₁.trans ?_
+        gcongr
+        exact (hC₀ (hm k) (hmA k) (uk k)).trans (by gcongr)
+    _ = _ := by push_cast; ring
 
 end TauCeti

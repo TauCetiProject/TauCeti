@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Content
 public import TauCeti.NumberTheory.QuadraticOrder.NormOne
 import Mathlib.Tactic.LinearCombination
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 import TauCeti.NumberTheory.BinaryQuadraticForm.OfMatrix
 
@@ -180,15 +179,9 @@ private theorem regularRep_smul_eq (hfD : f.discrim = D)
     {z : QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D} {γ : SL(2, R)}
     (hγ : (γ : Matrix (Fin 2) (Fin 2) R) = regularRep R f hfD z) :
     γ • f.map (Int.castRingHom R) = f.map (Int.castRingHom R) := by
-  have hc : (γ : Matrix (Fin 2) (Fin 2) R) * castGeneratorMatrix R f hfD =
-      castGeneratorMatrix R f hfD * γ := by
-    have hω : regularRep R f hfD ω = castGeneratorMatrix R f hfD := by simp [regularRep_apply]
-    rw [hγ, ← hω, ← map_mul, ← map_mul, mul_comm]
-  have hinv :
-      (γ : Matrix (Fin 2) (Fin 2) R) * ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) = 1 := by
-    rw [← SpecialLinearGroup.coe_mul, mul_inv_cancel, SpecialLinearGroup.coe_one]
-  rw [← ofMatrix_castGeneratorMatrix f hfD, ← ofMatrix_conj, hc, Matrix.mul_assoc, hinv,
-    Matrix.mul_one]
+  have hω : regularRep R f hfD ω = castGeneratorMatrix R f hfD := by simp [regularRep_apply]
+  rw [← ofMatrix_castGeneratorMatrix f hfD, ← hω]
+  exact smul_ofMatrix_eq_self_of_commute (hγ ▸ (Commute.all z ω).map (regularRep R f hfD))
 
 /-- The norm-one elements of the order act on `R²` by automorphs of `f`. -/
 private def unitaryToStabilizer (hfD : f.discrim = D) :
@@ -232,25 +225,17 @@ private theorem regularRep_injective (hfD : f.discrim = D)
   · linear_combination h₀₀ - (((D - f.b) / 2 : ℤ) : R) * him
   · exact him
 
-/-- When `2` is not a zero divisor, an automorph of `f = Q_M` commutes with the generator matrix
-`M`, since `Q_M` and the trace determine `M`. Its coordinates against `M` lie in `R` because the
-coefficients of `f` generate the unit ideal, so it is the image of a norm-one element of the
-order. -/
+/-- When `2` is not a zero divisor and the coefficients of `f` generate the unit ideal of `R`,
+every automorph of `f` over `R` is the image of a norm-one element of the order. -/
 private theorem unitaryToStabilizer_surjective (hfD : f.discrim = D)
     (hf : Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤) (h2 : IsLeftRegular (2 : R)) :
     Function.Surjective (unitaryToStabilizer (R := R) f hfD) := by
   rintro ⟨γ, hγ⟩
-  rw [mem_stabilizer_iff] at hγ
-  have hconj : (γ : Matrix (Fin 2) (Fin 2) R) * castGeneratorMatrix R f hfD *
-      ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) = castGeneratorMatrix R f hfD := by
-    refine (ofMatrix_inj_of_trace_eq h2 ?_).mp ?_
-    · exact ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct γ) _
-    · rw [ofMatrix_conj, ofMatrix_castGeneratorMatrix, hγ]
+  -- An automorph of `f = Q_M` commutes with the generator matrix `M`.
   have hcomm : (γ : Matrix (Fin 2) (Fin 2) R) * castGeneratorMatrix R f hfD =
       castGeneratorMatrix R f hfD * γ := by
-    conv_rhs => rw [← hconj]
-    rw [Matrix.mul_assoc _ _ (γ : Matrix (Fin 2) (Fin 2) R), ← SpecialLinearGroup.coe_mul,
-      inv_mul_cancel, SpecialLinearGroup.coe_one, Matrix.mul_one]
+    rw [← commute_iff_eq, ← mem_stabilizer_ofMatrix_iff_commute h2, ofMatrix_castGeneratorMatrix]
+    exact hγ
   have he := two_mul_ediv_two_of_discrim_eq (discrim_eq_sq_sub_four_mul f hfD)
   have he' := congrArg (Int.cast : ℤ → R) he
   rw [castGeneratorMatrix_eq] at hcomm

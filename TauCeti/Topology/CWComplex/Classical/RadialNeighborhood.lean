@@ -146,6 +146,8 @@ private lemma continuousOn_map_inv_norm_smul (n : ℕ) (j : cell C n) :
   exact ((continuous_norm.comp continuous_subtype_val).continuousOn).inv₀
     fun y hy ↦ (lt_trans (by norm_num) hy).ne'
 
+section
+
 variable [T2Space X]
 
 private lemma radialNeighborhoodLT_subset_skeletonLT (n : ℕ) :
@@ -191,10 +193,15 @@ lemma radialNeighborhood_subset_complex : A.radialNeighborhood ⊆ C :=
   iUnion_subset fun n ↦ (radialNeighborhoodLT_subset_skeletonLT A n).trans
     (skeletonLT C n).subset_complex
 
-omit [T2Space X] in
+end
+
 /-- The radial neighborhood contains the base. -/
 lemma base_subset_radialNeighborhood : D ⊆ A.radialNeighborhood :=
   radialNeighborhoodLT_subset_radialNeighborhood A 0
+
+section
+
+variable [T2Space X]
 
 /-- A point of the frontier of an `n`-cell lies in the radial neighborhood exactly when it lies in
 its `n`-th stage. -/
@@ -411,6 +418,8 @@ theorem isOpen_radialNeighborhood (hC : IsOpen C) : IsOpen A.radialNeighborhood 
   rw [← inter_eq_right.2 (radialNeighborhood_subset_complex A), ← Subtype.image_preimage_coe]
   exact hC.isOpenMap_subtype_val _ (isOpen_preimage_val_radialNeighborhood A)
 
+end
+
 /-! ### The radial deformation -/
 
 /-- Stage `m` of the radial deformation at time `s`: the radial push `TauCeti.radialPush 2⁻¹`
@@ -419,30 +428,21 @@ private def stage (m : ℕ) (s : I) (x : X) : X :=
   cellDeformation {j : cell C m | j ∉ A.I m}
     ⟨fun q ↦ radialPush 2⁻¹ q.1 q.2, continuous_radialPush (by norm_num)⟩ (s, x)
 
-omit [T2Space X] in
 /-- A stage fixes every point outside the open `m`-cells not in `A`. -/
 private lemma stage_of_forall_notMem {m : ℕ} {s : I} {x : X}
     (hx : ∀ j : cell C m, j ∉ A.I m → x ∉ openCell m j) : stage A m s x = x :=
   cellDeformation_of_notMem fun j hj ↦ hx j hj
 
-omit [T2Space X] in
 /-- A stage fixes the points of `A`. -/
 private lemma stage_of_mem {m : ℕ} {s : I} {x : X} (hx : x ∈ A) : stage A m s x = x :=
   stage_of_forall_notMem A fun _ hj hxj ↦ hj ((A.mem_I_iff_of_mem_openCell hxj).2 hx)
 
-/-- A stage fixes the lower skeleton. -/
-private lemma stage_of_mem_skeletonLT {m : ℕ} {s : I} {x : X}
-    (hx : x ∈ (skeletonLT C (m : ℕ∞) : Set X)) : stage A m s x = x :=
-  cellDeformation_of_mem_skeletonLT hx
-
-omit [T2Space X] in
 /-- Through the characteristic map of a cell outside `A`, a stage is the radial push. -/
 private lemma stage_map {m : ℕ} {j : cell C m} (hj : j ∉ A.I m) (s : I) {y : Fin m → ℝ}
     (hy : ‖y‖ ≤ 1) : stage A m s (map m j y) = map m j (radialPush 2⁻¹ s y) :=
   cellDeformation_map (fun t _ hy ↦ radialPush_of_norm_eq_one (by norm_num) (by norm_num) t hy)
     (A := {j : cell C m | j ∉ A.I m}) hj s hy
 
-omit [T2Space X] in
 /-- At time `0` a stage is the identity. -/
 private lemma stage_zero (m : ℕ) (x : X) : stage A m 0 x = x := by
   by_cases h : ∃ j : cell C m, j ∉ A.I m ∧ x ∈ openCell m j
@@ -452,6 +452,15 @@ private lemma stage_zero (m : ℕ) (x : X) : stage A m 0 x = x := by
     exact map_map_symm m hx
   · push Not at h
     exact stage_of_forall_notMem A h
+
+section
+
+variable [T2Space X]
+
+/-- A stage fixes the lower skeleton. -/
+private lemma stage_of_mem_skeletonLT {m : ℕ} {s : I} {x : X}
+    (hx : x ∈ (skeletonLT C (m : ℕ∞) : Set X)) : stage A m s x = x :=
+  cellDeformation_of_mem_skeletonLT hx
 
 /-- A stage keeps the radial neighborhood inside itself. -/
 private lemma stage_mem {m : ℕ} (s : I) {x : X} (hx : x ∈ A.radialNeighborhood) :
@@ -485,28 +494,25 @@ private lemma stage_one_mem {m : ℕ} {x : X}
   · rw [stage_of_mem A hxA]
     exact .inr hxA
 
-omit [T2Space X] in
+end
+
 /-- Stage `m` runs during the time interval `[2⁻¹ ^ (m + 1), 2⁻¹ ^ m]`. -/
 private def stageTime (m : ℕ) (t : I) : I :=
   projIcc 0 1 zero_le_one (2 ^ (m + 1) * (t : ℝ) - 1)
 
-omit [T2Space X] in
 private lemma stageTime_def (m : ℕ) (t : I) :
     stageTime m t = projIcc 0 1 zero_le_one (2 ^ (m + 1) * (t : ℝ) - 1) :=
   rfl
 
-omit [T2Space X] in
 private lemma continuous_stageTime (m : ℕ) : Continuous (stageTime m) :=
   continuous_projIcc.comp ((continuous_const.mul continuous_subtype_val).sub continuous_const)
 
-omit [T2Space X] in
 private lemma stageTime_of_le {m : ℕ} {t : I} (ht : (t : ℝ) ≤ ((2 : ℝ) ^ (m + 1))⁻¹) :
     stageTime m t = 0 := by
   refine projIcc_of_le_left _ ?_
   rw [sub_nonpos, ← le_div_iff₀' (by positivity), one_div]
   exact ht
 
-omit [T2Space X] in
 private lemma stageTime_of_ge {m : ℕ} {t : I} (ht : ((2 : ℝ) ^ m)⁻¹ ≤ t) : stageTime m t = 1 := by
   refine projIcc_of_right_le _ ?_
   have h2 : (0 : ℝ) < 2 ^ m := by positivity
@@ -514,22 +520,18 @@ private lemma stageTime_of_ge {m : ℕ} {t : I} (ht : ((2 : ℝ) ^ m)⁻¹ ≤ t
   rw [pow_succ]
   nlinarith
 
-omit [T2Space X] in
 private lemma stageTime_one (m : ℕ) : stageTime m 1 = 1 :=
   stageTime_of_ge (by simpa using inv_le_one_of_one_le₀ (one_le_pow₀ one_le_two))
 
-omit [T2Space X] in
 /-- The stages `0, …, m` at time `t`, the higher ones first. -/
 private def stagesUpTo : ℕ → I → X → X
   | 0, t, x => stage A 0 (stageTime 0 t) x
   | m + 1, t, x => stagesUpTo m t (stage A (m + 1) (stageTime (m + 1) t) x)
 
-omit [T2Space X] in
 private lemma stagesUpTo_succ (m : ℕ) (t : I) (x : X) :
     stagesUpTo A (m + 1) t x = stagesUpTo A m t (stage A (m + 1) (stageTime (m + 1) t) x) :=
   rfl
 
-omit [T2Space X] in
 /-- Before time `2⁻¹ ^ (m + 1)` the stages `0, …, m` have not started. -/
 private lemma stagesUpTo_of_le {m : ℕ} {t : I} (ht : (t : ℝ) ≤ ((2 : ℝ) ^ (m + 1))⁻¹) (x : X) :
     stagesUpTo A m t x = x := by
@@ -540,16 +542,16 @@ private lemma stagesUpTo_of_le {m : ℕ} {t : I} (ht : (t : ℝ) ≤ ((2 : ℝ) 
     refine ih (ht.trans ?_) x
     exact inv_anti₀ (by positivity) (pow_le_pow_right₀ one_le_two (Nat.le_succ _))
 
-omit [T2Space X] in
 private lemma stagesUpTo_zero (m : ℕ) (x : X) : stagesUpTo A m 0 x = x :=
   stagesUpTo_of_le A (by simp) x
 
-omit [T2Space X] in
 private lemma stagesUpTo_of_mem {m : ℕ} (t : I) {x : X} (hx : x ∈ A) :
     stagesUpTo A m t x = x := by
   induction m with
   | zero => exact stage_of_mem A hx
   | succ m ih => rw [stagesUpTo_succ, stage_of_mem A hx, ih]
+
+variable [T2Space X]
 
 private lemma stagesUpTo_mem {m : ℕ} (t : I) {x : X} (hx : x ∈ A.radialNeighborhood) :
     stagesUpTo A m t x ∈ A.radialNeighborhood := by
