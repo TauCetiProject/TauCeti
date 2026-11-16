@@ -65,7 +65,9 @@ Two linear trivializations whose base sets contain `b` read a class of `(F, F �
 the fibre pair over `b` differing by the sign of the determinant of their coordinate change at `b`
 (`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`): an invertible
 linear map acts on `Hⁿ(F, F ∖ {0})` by the sign of its determinant. This is the transition rule
-for the fibre classes of an oriented bundle.
+for the fibre classes of an oriented bundle. In homology, the maps
+`Hₙ(E_b, E_b ∖ {0}) ⟶ Hₙ(F, F ∖ {0})` induced by the two trivializations differ by the same sign
+(`Bundle.Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul`).
 
 ## Main definitions and results
 
@@ -98,6 +100,8 @@ for the fibre classes of an oriented bundle.
   the top degree is determined on the fibres.
 * `Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`: fibre classes
   read in two trivializations differ by the sign of the coordinate change.
+* `Bundle.Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul`: the maps on
+  the homology of the fibre pairs induced by two linear trivializations differ by the same sign.
 
 ## References
 
@@ -534,6 +538,30 @@ theorem singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul {b : B} (hb 
   rw [hcomp, TopPair.singularCohomologyMap_comp,
     singularCohomologyMap_continuousLinearMap_compl_zero, Preadditive.zsmul_comp, Category.id_comp]
   exact congr($(ModuleCat.hom_zsmul _ _) g)
+
+/-- **Fibre classes read in two trivializations differ by the sign of the coordinate change**, in
+homology: for linear trivializations `e` and `e'` whose base sets contain `b`, the map
+`Hₙ(E_b, E_b ∖ {0}) ⟶ Hₙ(F, F ∖ {0})` induced by `e'` is the one induced by `e`, multiplied by
+the sign of the determinant of the coordinate change from `e` to `e'` at `b`. This is the homology
+counterpart of `Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`.
+-/
+theorem singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul {b : B} (hb : b ∈ e.baseSet)
+    (hb' : b ∈ e'.baseSet) (R : C) (n : ℕ) :
+    TopPair.singularHomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom R n =
+      (SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det : ℤ) •
+        TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom R
+          n := by
+  have hf : Set.MapsTo (e.coordChangeL ℝ e' b : F →L[ℝ] F) ({0}ᶜ : Set F) {0}ᶜ :=
+    (e.coordChangeL ℝ e' b).mapsTo_compl_zero
+  -- The fibre of `e'` at `b` is the fibre of `e` followed by the coordinate change.
+  have hcomp : (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom =
+      (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom ≫
+        TopPair.ofSubsetMap (TopCat.ofHom ((e.coordChangeL ℝ e' b : F →L[ℝ] F) : C(F, F))) hf := by
+    rw [← e.continuousLinearEquivAt_trans_coordChangeL ℝ e' hb hb',
+      ContinuousLinearEquiv.complZeroPairIso_trans, Iso.trans_hom]
+    exact congrArg _ (ContinuousLinearEquiv.complZeroPairIso_hom _)
+  rw [hcomp, TopPair.singularHomologyMap_comp, singularHomologyMap_continuousLinearMap_compl_zero,
+    Preadditive.comp_zsmul, Category.comp_id]
 
 end CoordChange
 
