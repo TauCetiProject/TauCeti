@@ -121,8 +121,8 @@ private theorem norm_smul_ofSmooth_compSmooth (hq : IsQuotientCoveringMap q G)
     rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner (ofSmooth u),
       ← Real.sqrt_mul hG.le]
     exact congrArg Real.sqrt (inner_ofSmooth_comp_of_isQuotientCoveringMap hq hf u u)
-  rw [norm_smul, hnorm, Real.norm_of_nonneg (by positivity), ← mul_assoc, Real.sqrt_eq_rpow,
-    ← Real.rpow_add hG, neg_add_cancel, Real.rpow_zero, one_mul]
+  rw [norm_smul, hnorm, Real.norm_of_nonneg (by positivity), Real.rpow_neg hG.le,
+    ← Real.sqrt_eq_rpow, inv_mul_cancel_left₀ (by positivity)]
 
 /-- **The normalized pullback on `H¹`.** For a finite quotient covering map `q : M → N` which is
 a local Riemannian isometry, the normalized pullback `u ↦ |G| ^ (-1/2) (u ∘ q)` of smooth
@@ -147,7 +147,7 @@ theorem normalizedPullback_ofSmooth (hq : IsQuotientCoveringMap q G)
 is the normalized pullback `|G| ^ (-1/2) q^*` of the value of `w` in `L²(N)`. -/
 theorem toLp_normalizedPullback (hq : IsQuotientCoveringMap q G)
     (hf : IsLocalRiemannianIsometry I I' q) (w : SobolevH1 I' N) :
-    toLp (normalizedPullback hq hf w) = hq.normalizedPullbackLp 2 hf.inner_mfderiv (toLp w) := by
+    toLp (normalizedPullback hq hf w) = hq.normalizedPullbackLp ℝ 2 hf.inner_mfderiv (toLp w) := by
   refine congrFun (denseRange_ofSmooth.equalizer
     (g := fun w ↦ toLp (normalizedPullback hq hf w))
     (toLp.continuous.comp (LinearIsometry.continuous _))
@@ -161,11 +161,11 @@ theorem toLp_normalizedPullback (hq : IsQuotientCoveringMap q G)
   filter_upwards [Lp.coeFn_smul ((Nat.card G : ℝ) ^ (-(1 / 2 : ℝ)))
       (toLp (ofSmooth (u.comp ⟨q, hf.contMDiff⟩))),
     toLp_ofSmooth_ae_eq (u.comp ⟨q, hf.contMDiff⟩),
-    hq.coeFn_normalizedPullbackLp hf.inner_mfderiv (toLp (ofSmooth u)),
+    hq.coeFn_normalizedPullbackLp (𝕜 := ℝ) hf.inner_mfderiv (toLp (ofSmooth u)),
     (QuasiMeasurePreserving.of_map_le_smul hq.continuous.measurable
       (hq.map_riemannianVolume hf.inner_mfderiv).le).ae_eq_comp (toLp_ofSmooth_ae_eq u)]
     with x h₁ h₂ h₃ h₄
-  rw [h₁, h₃, hc, Pi.smul_apply, h₂]
+  rw [h₁, h₃, Algebra.algebraMap_self_apply, hc, Pi.smul_apply, h₂]
   exact congrArg _ h₄.symm
 
 /-- **The energy-form identity.** The normalized pullback preserves the Dirichlet form, the
