@@ -5,12 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Fourier.FourierTransform
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
-# Directional derivatives of the Fourier phases
+# Smoothness and directional derivatives of the Fourier phases
+
+The Fourier character `t ↦ 𝐞 t` is smooth (`Real.contDiff_fourierChar`).
 
 On a real inner-product space, the phases `ζ ↦ 𝐞 ⟪ζ, x⟫` and `y ↦ 𝐞 (-⟪y, ζ⟫)` of the inverse and
 direct Fourier integrals have directional derivatives `2πi ⟪v, x⟫ 𝐞 ⟪ζ, x⟫` and
@@ -22,6 +26,7 @@ used to integrate by parts against the phase.
 
 ## Main results
 
+* `Real.contDiff_fourierChar`: the Fourier character `t ↦ 𝐞 t` is smooth.
 * `Real.hasLineDerivAt_fourierChar_inner`: the directional derivative of `ζ ↦ 𝐞 ⟪ζ, x⟫`.
 * `Real.hasLineDerivAt_fourierChar_neg_inner`: the directional derivative of
   `y ↦ 𝐞 (-⟪y, ζ⟫)`.
@@ -32,6 +37,12 @@ public section
 open scoped FourierTransform RealInnerProductSpace
 
 namespace Real
+
+/-- The Fourier character `t ↦ 𝐞 t = exp(2πi t)` is smooth. -/
+theorem contDiff_fourierChar {n : WithTop ℕ∞} : ContDiff ℝ n fun t : ℝ ↦ (𝐞 t : ℂ) := by
+  simp_rw [fourierChar_apply]
+  exact Complex.contDiff_exp.comp
+    ((Complex.ofRealCLM.contDiff.comp (contDiff_const.mul contDiff_id)).mul contDiff_const)
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 

@@ -391,12 +391,9 @@ variable [FiniteDimensional ℝ E]
 support of the distribution. -/
 theorem localFourier_eq_zero_of_disjoint_dsupport {T : 𝓓'(Ω, ℂ)} {φ : 𝓓(Ω, ℂ)}
     (h : Disjoint (tsupport φ) (dsupport T)) (η : E) : T.localFourier φ η = 0 := by
-  rw [localFourier, ← map_zero T.complexPairing]
-  -- The cut-off test function vanishes on the open neighbourhood `(tsupport φ)ᶜ` of the support.
-  refine complexPairing_eq_of_eventuallyEq T ?_
-  refine eventuallyEq_of_mem ((isClosed_tsupport φ).isOpen_compl.mem_nhdsSet.2
-    h.subset_compl_left) fun y hy => ?_
-  simp [image_eq_zero_of_notMem_tsupport hy]
+  rw [localFourier_def]
+  exact complexPairing_eq_zero_of_disjoint_dsupport T <| h.mono_left <|
+    tsupport_bilinLeftCLM_subset _ _ φ
 
 /-- A distribution is microlocally smooth in every direction at a point of `Ω` outside its
 support. -/
@@ -475,9 +472,8 @@ theorem localFourier_eq_fourier {T : 𝓓'(Ω, ℂ)} {U : Set E} {f : E → ℂ}
     (hT : ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ y, φ y • f y) {φ : 𝓓(Ω, ℂ)}
     (hφ : tsupport φ ⊆ U) (η : E) : T.localFourier φ η = 𝓕 (fun y => φ y * f y) η := by
   have hψ : tsupport (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
-      (TauCeti.contDiff_fourierAtom η) φ) ⊆ U := by
-    rw [bilinLeftCLM_apply]
-    exact (tsupport_mul_subset_left (f := φ)).trans hφ
+      (TauCeti.contDiff_fourierAtom η) φ) ⊆ U :=
+    (tsupport_bilinLeftCLM_subset _ _ φ).trans hφ
   rw [localFourier, complexPairing_eq_integral hf hT hψ, Real.fourier_eq]
   simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', Circle.smul_def, smul_eq_mul,
     TauCeti.fourierAtom_eq_fourierChar]
