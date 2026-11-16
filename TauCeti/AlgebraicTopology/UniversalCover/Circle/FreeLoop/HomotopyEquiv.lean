@@ -52,6 +52,10 @@ namespace Circle
 private def freeLoopRatio : C(I × C(Circle, Circle), Circle) :=
   ⟨fun p ↦ p.2 (unitToCircle p.1) * (p.2 1)⁻¹, by fun_prop⟩
 
+private theorem freeLoopRatio_apply (t : I) (f : C(Circle, Circle)) :
+    freeLoopRatio (t, f) = f (unitToCircle t) * (f 1)⁻¹ :=
+  (rfl)
+
 /-- **The angle function of the free loops of the circle.** The lift `θ(t, f)` of the family of
 loops `t ↦ f(e^{2πit}) f(1)⁻¹` through `Circle.exp : ℝ → S¹` starting at `θ(0, f) = 0`. It is
 jointly continuous in `t` and in the free loop `f`. -/
@@ -62,7 +66,7 @@ def freeLoopAngle : C(I × C(Circle, Circle), ℝ) :=
 @[simp]
 theorem exp_freeLoopAngle (t : I) (f : C(Circle, Circle)) :
     exp (freeLoopAngle (t, f)) = f (unitToCircle t) * (f 1)⁻¹ :=
-  congr_fun (isCoveringMap_exp.liftHomotopy_lifts _ _ _) (t, f)
+  (congr_fun (isCoveringMap_exp.liftHomotopy_lifts _ _ _) (t, f)).trans (freeLoopRatio_apply t f)
 
 @[simp]
 theorem freeLoopAngle_zero (f : C(Circle, Circle)) : freeLoopAngle (0, f) = 0 :=
@@ -75,7 +79,7 @@ theorem eq_freeLoopAngle_iff (θ : C(I × C(Circle, Circle), ℝ)) :
     θ = freeLoopAngle ↔
       (∀ t f, exp (θ (t, f)) = f (unitToCircle t) * (f 1)⁻¹) ∧ ∀ f, θ (0, f) = 0 := by
   rw [freeLoopAngle, isCoveringMap_exp.eq_liftHomotopy_iff', funext_iff, Prod.forall]
-  rfl
+  simp only [Function.comp_apply, freeLoopRatio_apply, ContinuousMap.const_apply]
 
 /-- The angle function sweeps `2π` times the degree of the free loop. -/
 theorem freeLoopAngle_one (f : C(Circle, Circle)) :
