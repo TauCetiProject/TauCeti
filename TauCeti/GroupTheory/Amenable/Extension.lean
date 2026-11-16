@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Amenable.Subgroup
+import TauCeti.GroupTheory.Amenable.Additive
 
 /-!
 # Extensions of amenable discrete groups
 
 If `N` is a normal subgroup of a discrete group `G` and both `N` and `G ⧸ N` are amenable, then
 `G` is amenable. As for solvable groups in Mathlib (`isSolvable_of_ker_le_range`), the result is
-proved for homomorphisms `ψ : K →* G` and `φ : G →* Q` of discrete groups with
-`φ.ker ≤ ψ.range`: if `K` and `Q` are amenable, so is `G`.
+proved for homomorphisms `ψ : K →* G` and `φ : G →* Q` with `φ.ker ≤ ψ.range`: if `K` and `Q` are
+amenable discrete groups, then `G` is amenable for every group topology.
 
 The mean on `G` is an iterated mean. For a mean `n` on `K` and a bounded function `f` on `G`,
 the *fiber average* `x ↦ n (k ↦ f (x * ψ k))` (`TauCeti.UCB.fiberAverage`) is again bounded by
@@ -32,10 +33,12 @@ the iterated mean is left invariant when `n` and `m` are.
 
 * `TauCeti.Mean.IsLeftInvariant.extension`: the iterated mean of left-invariant means along a
   section of `φ` is left invariant when `φ.ker ≤ ψ.range`.
-* `TauCeti.Amenable.of_ker_le_range`: if `φ.ker ≤ ψ.range` and `K`, `Q` are amenable, then `G` is
-  amenable.
-* `TauCeti.amenable_iff_subgroup_quotient`: a discrete group with a normal subgroup `N` is
-  amenable exactly when `N` and `G ⧸ N` are.
+* `TauCeti.Amenable.of_ker_le_range`, `TauCeti.AddAmenable.of_ker_le_range`: if `φ.ker ≤ ψ.range`
+  and `K`, `Q` are amenable discrete groups or additive groups, then the middle group is amenable
+  for every group topology.
+* `TauCeti.amenable_iff_subgroup_quotient`, `TauCeti.addAmenable_iff_addSubgroup_quotient`: a
+  discrete group or additive group with a normal subgroup `N` is amenable exactly when `N` and the
+  quotient are.
 
 ## References
 
@@ -50,6 +53,8 @@ noncomputable section
 open scoped BoundedContinuousFunction
 
 namespace TauCeti
+
+section DiscreteMiddle
 
 variable {G K Q : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
   [Group K] [TopologicalSpace K] [DiscreteTopology K] [Group Q]
@@ -159,21 +164,46 @@ theorem IsLeftInvariant.extension {n : Mean K} {m : Mean Q} (hn : n.IsLeftInvari
 
 end Mean
 
-variable [TopologicalSpace Q] [DiscreteTopology Q]
+end DiscreteMiddle
 
-/-- If `ψ : K →* G` and `φ : G →* Q` are homomorphisms of discrete groups with
-`φ.ker ≤ ψ.range`, and `K` and `Q` are amenable, then `G` is amenable. -/
-theorem Amenable.of_ker_le_range [Amenable K] [Amenable Q] (ψ : K →* G) (φ : G →* Q)
-    (h : φ.ker ≤ ψ.range) : Amenable G := by
+/-- If `ψ : K →* G` and `φ : G →* Q` are homomorphisms with `φ.ker ≤ ψ.range` and `K`, `Q` are
+amenable discrete groups, then `G` is amenable for every group topology on `G`. -/
+theorem Amenable.of_ker_le_range {G K Q : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [Group K] [TopologicalSpace K] [DiscreteTopology K]
+    [Group Q] [TopologicalSpace Q] [DiscreteTopology Q] [Amenable K] [Amenable Q]
+    (ψ : K →* G) (φ : G →* Q) (h : φ.ker ≤ ψ.range) : Amenable G := by
+  refine Amenable.of_discrete ?_
+  let : TopologicalSpace G := ⊥
+  let : DiscreteTopology G := discreteTopology_bot G
   -- Corestrict `φ` to its range, which is amenable as a subgroup of `Q`.
   have hφ := φ.rangeRestrict_surjective
   obtain ⟨n, hn⟩ := Amenable.exists_isLeftInvariant (G := K)
   obtain ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := φ.range)
   exact ⟨⟨_, hn.extension hm (φ.ker_rangeRestrict ▸ h) (Function.surjInv_eq hφ)⟩⟩
 
+/-- If `ψ : K →+ A` and `φ : A →+ Q` are homomorphisms with `φ.ker ≤ ψ.range` and `K`, `Q` are
+amenable discrete additive groups, then `A` is amenable for every additive group topology on `A`. -/
+theorem AddAmenable.of_ker_le_range {A K Q : Type*} [AddGroup A] [TopologicalSpace A]
+    [IsTopologicalAddGroup A] [AddGroup K] [TopologicalSpace K] [DiscreteTopology K]
+    [AddGroup Q] [TopologicalSpace Q] [DiscreteTopology Q] [AddAmenable K] [AddAmenable Q]
+    (ψ : K →+ A) (φ : A →+ Q) (h : φ.ker ≤ ψ.range) : AddAmenable A :=
+  amenable_multiplicative_iff.1 <|
+    Amenable.of_ker_le_range (AddMonoidHom.toMultiplicative ψ) (AddMonoidHom.toMultiplicative φ)
+      fun x hx => by
+        have hx' : x.toAdd ∈ φ.ker := by
+          simpa [MonoidHom.mem_ker, AddMonoidHom.mem_ker] using hx
+        obtain ⟨k, hk⟩ := h hx'
+        exact ⟨Multiplicative.ofAdd k, by simp [hk]⟩
+
+attribute [to_additive existing] Amenable.of_ker_le_range
+
 /-- A discrete group with a normal subgroup `N` is amenable exactly when `N` and `G ⧸ N` are
 amenable. -/
-theorem amenable_iff_subgroup_quotient (N : Subgroup G) [N.Normal] :
+@[to_additive addAmenable_iff_addSubgroup_quotient
+  /-- A discrete additive group with a normal additive subgroup `N` is amenable exactly when `N`
+  and `A ⧸ N` are amenable. -/]
+theorem amenable_iff_subgroup_quotient {G : Type*} [Group G] [TopologicalSpace G]
+    [DiscreteTopology G] (N : Subgroup G) [N.Normal] :
     Amenable G ↔ Amenable N ∧ Amenable (G ⧸ N) := by
   have := QuotientGroup.discreteTopology (isOpen_discrete (N : Set G))
   refine ⟨fun _ => ⟨inferInstance, ?_⟩, fun ⟨_, _⟩ =>
@@ -183,8 +213,12 @@ theorem amenable_iff_subgroup_quotient (N : Subgroup G) [N.Normal] :
 
 /-- A discrete group is amenable when it has an amenable normal subgroup with amenable
 quotient. -/
-theorem Amenable.of_subgroup_quotient (N : Subgroup G) [N.Normal] [Amenable N]
-    [Amenable (G ⧸ N)] : Amenable G :=
+@[to_additive
+  /-- A discrete additive group is amenable when it has an amenable normal additive subgroup with
+  amenable quotient. -/]
+theorem Amenable.of_subgroup_quotient {G : Type*} [Group G] [TopologicalSpace G]
+    [DiscreteTopology G] (N : Subgroup G) [N.Normal] [Amenable N] [Amenable (G ⧸ N)] :
+    Amenable G :=
   (amenable_iff_subgroup_quotient N).2 ⟨‹_›, ‹_›⟩
 
 end TauCeti

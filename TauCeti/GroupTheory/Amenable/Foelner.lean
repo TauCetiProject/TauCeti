@@ -59,9 +59,9 @@ nontrivial filter. The proof picks for `(K, n)` a witness for `K` with tolerance
   relative translation boundaries along a nontrivial filter give Følner sets.
 * `MulEquiv.hasFoelnerSets_iff`, `AddEquiv.hasAddFoelnerSets_iff`: having Følner sets is invariant
   under group isomorphisms.
-* `TauCeti.isAddFoelner_iff_isFoelner_multiplicative`,
-  `TauCeti.hasAddFoelnerSets_iff_hasFoelnerSets_multiplicative`: explicit compatibility across
-  `Multiplicative` and `Additive`.
+* `TauCeti.hasFoelnerSets_multiplicative_iff`, `TauCeti.hasAddFoelnerSets_additive_iff`:
+  compatibility of `HasFoelnerSets` and `HasAddFoelnerSets` across `Multiplicative` and
+  `Additive`.
 
 ## References
 
@@ -82,8 +82,9 @@ variable {X : Type*} [MeasurableSpace X] [MeasurableSingletonClass X] [Decidable
 
 /-- For a finite nonempty `F`, the counting-measure Følner ratio of `F` at `m` is below
 `ENNReal.ofReal ε` exactly when `|mF △ F| < ε · |F|`. -/
-@[to_additive /-- For a finite nonempty `F`, the counting-measure additive Følner ratio of `F` at
-`m` is below `ENNReal.ofReal ε` exactly when `|(m +ᵥ F) △ F| < ε · |F|`. -/]
+@[to_additive count_vadd_symmDiff_div_count_lt_ofReal_iff
+  /-- For a finite nonempty `F`, the counting-measure additive Følner ratio of `F` at `m` is below
+  `ENNReal.ofReal ε` exactly when `|(m +ᵥ F) △ F| < ε · |F|`. -/]
 theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : Type*}
     [SMul M X] {F : Finset X} (hF : F.Nonempty) (m : M) {ε : ℝ} :
     Measure.count ((m • (F : Set X)) ∆ F) / Measure.count (F : Set X) < ENNReal.ofReal ε ↔
@@ -95,8 +96,9 @@ theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : T
 omit [MeasurableSingletonClass X] in
 /-- The counting-measure Følner ratio of a measurable finite set bounds the cardinality ratio
 from above. -/
-@[to_additive /-- The counting-measure additive Følner ratio of a measurable finite set bounds the
-cardinality ratio from above. -/]
+@[to_additive card_vadd_symmDiff_div_card_le_count_div_count
+  /-- The counting-measure additive Følner ratio of a measurable finite set bounds the cardinality
+  ratio from above. -/]
 theorem MeasureTheory.Measure.card_smul_symmDiff_div_card_le_count_div_count {M : Type*}
     [SMul M X] {F : Finset X} (hFm : MeasurableSet (F : Set X)) (m : M) :
     (#((m • F) ∆ F) : ℝ≥0∞) / #F ≤
@@ -110,8 +112,9 @@ theorem MeasureTheory.Measure.card_smul_symmDiff_div_card_le_count_div_count {M 
 omit [MeasurableSingletonClass X] in
 /-- The real cardinality ratios of a counting-measure Følner family of finite sets tend to
 zero for every group element. -/
-@[to_additive /-- The real cardinality ratios of a counting-measure additive Følner family of
-finite sets tend to zero for every group element. -/]
+@[to_additive tendsto_card_vadd_symmDiff_div_card
+  /-- The real cardinality ratios of a counting-measure additive Følner family of finite sets tend
+  to zero for every group element. -/]
 theorem IsFoelner.tendsto_card_smul_symmDiff_div_card [MulAction G X] {ι : Type*}
     {l : Filter ι} {F : ι → Finset X}
     (hF : IsFoelner G Measure.count l (fun i => (F i : Set X))) (g : G) :
@@ -277,41 +280,15 @@ namespace TauCeti
 
 section TypeTags
 
-variable {A : Type*} [AddGroup A] {X : Type*} [MeasurableSpace X]
+variable {A : Type*} [AddGroup A]
 
-/-- An additive Følner family for `A` acting on `X` is a multiplicative Følner family for
-`Multiplicative A` acting on `X`. -/
-theorem isAddFoelner_iff_isFoelner_multiplicative [AddAction A X] (μ : Measure X)
-    {ι : Type*} (l : Filter ι) (F : ι → Set X) :
-    IsAddFoelner A μ l F ↔ IsFoelner (Multiplicative A) μ l F := by
-  simp only [isAddFoelner_iff, isFoelner_iff, Multiplicative.forall]
-  rfl
-
-/-- A multiplicative Følner family for `G` acting on `X` is an additive Følner family for
-`Additive G` acting on `X`. -/
-theorem isFoelner_iff_isAddFoelner_additive [MulAction G X] (μ : Measure X)
-    {ι : Type*} (l : Filter ι) (F : ι → Set X) :
-    IsFoelner G μ l F ↔ IsAddFoelner (Additive G) μ l F := by
-  simp only [isFoelner_iff, isAddFoelner_iff, Additive.forall]
-  rfl
-
-/-- An additive group `A` has additive Følner sets if and only if `Multiplicative A` has Følner
-sets. -/
-theorem hasAddFoelnerSets_iff_hasFoelnerSets_multiplicative :
-    HasAddFoelnerSets A ↔ HasFoelnerSets (Multiplicative A) := by
+/-- `Multiplicative A` has Følner sets if and only if `A` has additive Følner sets. -/
+@[simp]
+theorem hasFoelnerSets_multiplicative_iff :
+    HasFoelnerSets (Multiplicative A) ↔ HasAddFoelnerSets A := by
   classical
-  simp only [hasAddFoelnerSets_iff, hasFoelnerSets_iff]
+  simp only [hasFoelnerSets_iff, hasAddFoelnerSets_iff]
   refine ⟨fun h K ε hε => ?_, fun h K ε hε => ?_⟩
-  · obtain ⟨F, hF, hFK⟩ := h (K.image Multiplicative.toAdd) ε hε
-    refine ⟨F.image Multiplicative.ofAdd, hF.image _, fun g hg => ?_⟩
-    have htr : g • F.image Multiplicative.ofAdd =
-        (g.toAdd +ᵥ F).image Multiplicative.ofAdd := by
-      simp only [smul_finset_def, vadd_finset_def, image_image]
-      rfl
-    rw [htr, ← image_symmDiff _ _ Multiplicative.ofAdd.injective,
-      card_image_of_injective _ Multiplicative.ofAdd.injective,
-      card_image_of_injective _ Multiplicative.ofAdd.injective]
-    exact hFK g.toAdd (mem_image_of_mem _ hg)
   · obtain ⟨F, hF, hFK⟩ := h (K.image Multiplicative.ofAdd) ε hε
     refine ⟨F.image Multiplicative.toAdd, hF.image _, fun a ha => ?_⟩
     have htr : a +ᵥ F.image Multiplicative.toAdd =
@@ -322,11 +299,23 @@ theorem hasAddFoelnerSets_iff_hasFoelnerSets_multiplicative :
       card_image_of_injective _ Multiplicative.toAdd.injective,
       card_image_of_injective _ Multiplicative.toAdd.injective]
     exact hFK (.ofAdd a) (mem_image_of_mem _ ha)
+  · obtain ⟨F, hF, hFK⟩ := h (K.image Multiplicative.toAdd) ε hε
+    refine ⟨F.image Multiplicative.ofAdd, hF.image _, fun g hg => ?_⟩
+    have htr : g • F.image Multiplicative.ofAdd =
+        (g.toAdd +ᵥ F).image Multiplicative.ofAdd := by
+      obtain ⟨g, rfl⟩ := Multiplicative.ofAdd.surjective g
+      ext x
+      simp [mem_smul_finset, mem_vadd_finset, ← ofAdd_add]
+    rw [htr, ← image_symmDiff _ _ Multiplicative.ofAdd.injective,
+      card_image_of_injective _ Multiplicative.ofAdd.injective,
+      card_image_of_injective _ Multiplicative.ofAdd.injective]
+    exact hFK g.toAdd (mem_image_of_mem _ hg)
 
-/-- A group `G` has Følner sets if and only if `Additive G` has additive Følner sets. -/
-theorem hasFoelnerSets_iff_hasAddFoelnerSets_additive :
-    HasFoelnerSets G ↔ HasAddFoelnerSets (Additive G) := by
-  rw [hasAddFoelnerSets_iff_hasFoelnerSets_multiplicative,
+/-- `Additive G` has additive Følner sets if and only if `G` has Følner sets. -/
+@[simp]
+theorem hasAddFoelnerSets_additive_iff :
+    HasAddFoelnerSets (Additive G) ↔ HasFoelnerSets G := by
+  rw [← hasFoelnerSets_multiplicative_iff,
     (MulEquiv.multiplicativeAdditive G).hasFoelnerSets_iff]
 
 end TypeTags

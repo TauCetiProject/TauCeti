@@ -18,8 +18,8 @@ import Mathlib.RingTheory.PrincipalIdealDomain
 # Closure properties of finitely generated groups
 
 Mathlib has a substantial theory of finitely generated commutative groups in
-`Mathlib/GroupTheory/FiniteAbelian.lean` / `Mathlib/GroupTheory/FiniteAbelian/Basic.lean` — the
-structure theorem, `finite_of_fg_isMulTorsion`, and
+`Mathlib/GroupTheory/FiniteAbelian/Basic.lean` — the structure theorem,
+`finite_of_fg_isMulTorsion`, and
 `Subgroup.finiteIndex_range_powMonoidHom_of_fg`, which is the finiteness of `G ⧸ Gⁿ`. Three
 closure properties it does not carry are collected here, together with finiteness of the torsion
 subgroup, a `Fin`-indexed form of finite generation, and surjective presentations of finitely
@@ -256,7 +256,7 @@ theorem CommGroup.fg_iff_exists_fin_zpowersPiHom_surjective {G : Type*} [CommGro
       ∃ (n : ℕ) (τ : Fin n → G),
         Function.Surjective (zpowersPiHom τ fun _ _ => .all _ _) := by
   rw [Group.fg_iff_exists_fin_generating_family]
-  exact exists_congr fun n => exists_congr fun τ => surjective_zpowersPiHom_iff.symm
+  exact exists_congr fun n => exists_congr fun τ => zpowersPiHom_surjective_iff.symm
 
 /-- An additive commutative group is finitely generated if and only if it is the image of
 `zmultiplesPiHom` for some `Fin n`-indexed tuple of generators. -/
@@ -265,7 +265,7 @@ theorem AddCommGroup.fg_iff_exists_fin_zmultiplesPiHom_surjective {A : Type*} [A
       ∃ (n : ℕ) (τ : Fin n → A),
         Function.Surjective (zmultiplesPiHom τ fun _ _ => .all _ _) := by
   rw [AddGroup.fg_iff_exists_fin_generating_family]
-  exact exists_congr fun n => exists_congr fun τ => surjective_zmultiplesPiHom_iff.symm
+  exact exists_congr fun n => exists_congr fun τ => zmultiplesPiHom_surjective_iff.symm
 
 /-- A commutative group is finitely generated if and only if it admits a surjective homomorphism
 from `Fin n → Multiplicative ℤ` for some `n : ℕ`. -/

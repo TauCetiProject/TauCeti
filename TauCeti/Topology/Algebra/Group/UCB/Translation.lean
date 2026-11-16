@@ -66,6 +66,9 @@ variable {𝕜 G : Type*} [NormedField 𝕜] [Group G] [TopologicalSpace G] [IsT
 
 /-- A left translate `x ↦ f (g * x)` of a function in `ucbSubalgebra 𝕜 G` lies in
 `ucbSubalgebra 𝕜 G`. -/
+@[to_additive (dont_translate := 𝕜) compContinuous_addLeft_mem_addUcbSubalgebra
+  /-- A left translate `x ↦ f (g + x)` of a function in `addUcbSubalgebra 𝕜 G` lies in
+  `addUcbSubalgebra 𝕜 G`. -/]
 theorem compContinuous_mulLeft_mem_ucbSubalgebra {f : G →ᵇ 𝕜} (hf : f ∈ ucbSubalgebra 𝕜 G)
     (g : G) : f.compContinuous (ContinuousMap.mulLeft g) ∈ ucbSubalgebra 𝕜 G := by
   -- `g * u * x = (g * u * g⁻¹) * (g * x)`, and `g * u * g⁻¹ → 1` as `u → 1`.
@@ -78,6 +81,9 @@ theorem compContinuous_mulLeft_mem_ucbSubalgebra {f : G →ᵇ 𝕜} (hf : f ∈
 
 /-- A right translate `x ↦ f (x * g)` of a function in `ucbSubalgebra 𝕜 G` lies in
 `ucbSubalgebra 𝕜 G`. -/
+@[to_additive (dont_translate := 𝕜) compContinuous_addRight_mem_addUcbSubalgebra
+  /-- A right translate `x ↦ f (x + g)` of a function in `addUcbSubalgebra 𝕜 G` lies in
+  `addUcbSubalgebra 𝕜 G`. -/]
 theorem compContinuous_mulRight_mem_ucbSubalgebra {f : G →ᵇ 𝕜} (hf : f ∈ ucbSubalgebra 𝕜 G)
     (g : G) : f.compContinuous (ContinuousMap.mulRight g) ∈ ucbSubalgebra 𝕜 G := by
   rw [mem_ucbSubalgebra_iff] at hf ⊢
@@ -86,12 +92,16 @@ theorem compContinuous_mulRight_mem_ucbSubalgebra {f : G →ᵇ 𝕜} (hf : f �
   simpa [mul_assoc] using hu (x * g)
 
 /-- A left translate `x ↦ f (g * x)` of a function in `ucb G` lies in `ucb G`. -/
+@[to_additive compContinuous_addLeft_mem_addUcb
+  /-- A left translate `x ↦ f (g + x)` of a function in `addUcb G` lies in `addUcb G`. -/]
 theorem compContinuous_mulLeft_mem_ucb {f : G →ᵇ ℝ} (hf : f ∈ ucb G) (g : G) :
     f.compContinuous (ContinuousMap.mulLeft g) ∈ ucb G := by
   rw [ucb_eq_ucbSubalgebra] at hf ⊢
   exact compContinuous_mulLeft_mem_ucbSubalgebra hf g
 
 /-- A right translate `x ↦ f (x * g)` of a function in `ucb G` lies in `ucb G`. -/
+@[to_additive compContinuous_addRight_mem_addUcb
+  /-- A right translate `x ↦ f (x + g)` of a function in `addUcb G` lies in `addUcb G`. -/]
 theorem compContinuous_mulRight_mem_ucb {f : G →ᵇ ℝ} (hf : f ∈ ucb G) (g : G) :
     f.compContinuous (ContinuousMap.mulRight g) ∈ ucb G := by
   rw [ucb_eq_ucbSubalgebra] at hf ⊢

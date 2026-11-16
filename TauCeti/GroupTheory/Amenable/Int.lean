@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Amenable.Additive
+public import TauCeti.GroupTheory.Amenable.Average
 public import TauCeti.MeasureTheory.Group.Foelner.Int
 
 /-!
@@ -49,7 +49,7 @@ instance AddAmenable.int
 
 /-- The integer group has Følner sets, viewed multiplicatively through `Multiplicative.ofAdd`. -/
 theorem hasFoelnerSets_multiplicative_int : HasFoelnerSets (Multiplicative ℤ) :=
-  hasAddFoelnerSets_iff_hasFoelnerSets_multiplicative.1 hasAddFoelnerSets_int
+  hasFoelnerSets_multiplicative_iff.2 hasAddFoelnerSets_int
 
 /-- The integer group is amenable for every group topology. -/
 instance Amenable.multiplicative_int
