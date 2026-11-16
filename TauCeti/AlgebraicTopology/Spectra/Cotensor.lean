@@ -315,6 +315,16 @@ noncomputable def levelSmashCotensorAdjunction (K : PointedSSet.{0}) :
     (BraidedCategory.tensorLeftIsoTensorRight ((free 0).obj K) ≪≫
       Mod.tensorRightFreeIso ((SymmetricSequence.free 0).obj K))
 
+/-- Levelwise smash with a fixed pointed simplicial set preserves colimits of every size. -/
+instance levelSmashRight_preservesColimitsOfSize.{v, w} (K : PointedSSet.{0}) :
+    Limits.PreservesColimitsOfSize.{v, w} (levelSmashRight K) :=
+  (levelSmashCotensorAdjunction K).leftAdjoint_preservesColimits
+
+/-- The cotensor by a pointed simplicial set preserves limits of every size. -/
+instance cotensor_preservesLimitsOfSize.{v, w} (K : PointedSSet.{0}) :
+    Limits.PreservesLimitsOfSize.{v, w} (cotensor K) :=
+  (levelSmashCotensorAdjunction K).rightAdjoint_preservesLimits
+
 /-- The cotensor adjunction curries a map after identifying levelwise smash with balanced smash
 by the free spectrum and exchanging the two factors. -/
 lemma levelSmashCotensorAdjunction_homEquiv_apply (K : PointedSSet.{0})

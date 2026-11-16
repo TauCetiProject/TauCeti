@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.AddBasepoint
 public import TauCeti.AlgebraicTopology.SimplicialSet.PrismRealization
 public import TauCeti.AlgebraicTopology.Spectra.Colimits
 public import TauCeti.AlgebraicTopology.Spectra.Free
+public import TauCeti.AlgebraicTopology.Spectra.Limits
 public import TauCeti.CategoryTheory.MorphismProperty.LiftingProperty
 public import Mathlib.CategoryTheory.Presentable.Finite
 
@@ -290,5 +291,20 @@ lemma free_map_addBasepoint_map_mem_llp_levelFibrations {A B : SSet.{0}} {i : A 
   refine (freeAddBasepointAdjunction n).strictMap_llp_le_llp (P := fibrations SSet.{0})
     (fun _ _ f hf ↦ ((levelFibrations_iff f).1 hf n).mem) _ ⟨?_⟩
   rwa [fibrations_eq, ← SSet.anodyneExtensions_eq_llp_rlp]
+
+/-- A map of symmetric spectra is a projective cofibration if and only if it has the left lifting
+property against all level trivial fibrations. -/
+lemma projectiveCofibrations_iff {A B : SymmetricSpectrum} (i : A ⟶ B) :
+    projectiveCofibrations i ↔ levelTrivialFibrations.llp i :=
+  Iff.rfl
+
+/-- The canonical map `E ⟶ ⊤_ SymmetricSpectrum` is a level fibration if and only if the
+underlying simplicial set of every level of `E` is a Kan complex. -/
+lemma levelFibrations_terminal_from_iff (E : SymmetricSpectrum) :
+    levelFibrations (terminal.from E) ↔ ∀ n, SSet.KanComplex ((evaluation n).obj E).right :=
+  (levelFibrations_iff _).trans <| forall_congr' fun n ↦
+    (isFibrant_iff_of_isTerminal ((evaluation n).map (terminal.from E)).right
+      (terminalIsTerminal.isTerminalObj (evaluation n ⋙ forgetBasepoint)
+        (⊤_ SymmetricSpectrum))).symm
 
 end TauCeti.SymmetricSpectrum

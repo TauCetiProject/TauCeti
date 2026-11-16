@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
 
+import Mathlib.AlgebraicTopology.SimplicialSet.Monomorphisms
 -- The degreewise formulas below compute through the native undercategory presentation.
 import all TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
 
@@ -172,10 +173,37 @@ lemma addBasepointForgetAdjunction_homEquiv (K : SSet.{u}) (X : PointedSSet.{u})
     addBasepointForgetAdjunction.homEquiv K X = addBasepointHomEquiv K X := by
   rw [addBasepointForgetAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
 
+/-- The unit of `(-)₊ ⊣ forget` corresponds to `𝟙 (K₊)` under `addBasepointHomEquiv`. -/
+lemma addBasepointForgetAdjunction_unit_app (K : SSet.{u}) :
+    dsimp% addBasepointForgetAdjunction.unit.app K =
+      addBasepointHomEquiv K (addBasepoint.obj K) (𝟙 (addBasepoint.obj K)) :=
+  (rfl)
+
 /-- The unit of `(-)₊ ⊣ forget` embeds each simplex `x` as `some x`. -/
+@[simp]
 lemma addBasepointForgetAdjunction_unit_app_app (K : SSet.{u}) (n : SimplexCategoryᵒᵖ)
     (x : K.obj n) :
-    (addBasepointForgetAdjunction.unit.app K).app n x = some x :=
+    dsimp% (addBasepointForgetAdjunction.unit.app K).app n x = some x :=
+  (rfl)
+
+/-- The counit of `(-)₊ ⊣ forget` corresponds to `𝟙 X.right` under `addBasepointHomEquiv.symm`. -/
+lemma addBasepointForgetAdjunction_counit_app (X : PointedSSet.{u}) :
+    dsimp% addBasepointForgetAdjunction.counit.app X =
+      (addBasepointHomEquiv X.right X).symm (𝟙 X.right) :=
+  (rfl)
+
+/-- On the adjoined basepoint, the counit of `(-)₊ ⊣ forget` evaluates to the basepoint of `X`. -/
+@[simp]
+lemma addBasepointForgetAdjunction_counit_app_right_app_none (X : PointedSSet.{u})
+    (n : SimplexCategoryᵒᵖ) :
+    dsimp% (addBasepointForgetAdjunction.counit.app X).right.app n none = X.point n :=
+  (rfl)
+
+/-- On an unbased simplex `some x`, the counit of `(-)₊ ⊣ forget` evaluates to `x`. -/
+@[simp]
+lemma addBasepointForgetAdjunction_counit_app_right_app_some (X : PointedSSet.{u})
+    (n : SimplexCategoryᵒᵖ) (x : X.right.obj n) :
+    dsimp% (addBasepointForgetAdjunction.counit.app X).right.app n (some x) = x :=
   (rfl)
 
 /-- On underlying simplicial sets, the naturality square of the unit of `(-)₊ ⊣ forget` at any map
@@ -215,21 +243,13 @@ lemma addBasepoint_map_right_mem_of_isStableUnderCobaseChange
 
 /-- Adjoining a disjoint basepoint preserves monomorphisms on underlying simplicial sets. -/
 instance mono_addBasepoint_map_right {K L : SSet.{u}} (f : K ⟶ L) [Mono f] :
-    Mono (addBasepoint.map f).right := by
-  rw [NatTrans.mono_iff_mono_app]
-  intro n
-  have hf : Function.Injective (f.app n) :=
-    (mono_iff_injective (f.app n)).1 ((NatTrans.mono_iff_mono_app f).1 inferInstance n)
-  rw [mono_iff_injective]
-  rintro (_ | x₁) (_ | x₂) h
-  · rfl
-  · cases h
-  · cases h
-  · exact congrArg some (hf (Option.some.inj h))
+    Mono (addBasepoint.map f).right :=
+  addBasepoint_map_right_mem_of_isStableUnderCobaseChange
+    (MorphismProperty.monomorphisms SSet.{u}) (.infer_property f)
 
-/-- Adjoining a disjoint basepoint preserves monomorphisms of pointed simplicial sets. -/
-instance mono_addBasepoint_map {K L : SSet.{u}} (f : K ⟶ L) [Mono f] :
-    Mono (addBasepoint.map f) :=
-  forgetBasepoint.mono_of_mono_map (mono_addBasepoint_map_right f)
+/-- Adjoining a disjoint basepoint sends monomorphisms of simplicial sets to monomorphisms of
+pointed simplicial sets. -/
+instance addBasepoint_preservesMonomorphisms : addBasepoint.{u}.PreservesMonomorphisms where
+  preserves f _ := forgetBasepoint.mono_of_mono_map (mono_addBasepoint_map_right f)
 
 end TauCeti.PointedSSet

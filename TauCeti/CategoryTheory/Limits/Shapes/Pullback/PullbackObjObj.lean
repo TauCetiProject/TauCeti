@@ -91,7 +91,7 @@ lemma ofNatIso_snd (sq : G.PullbackObjObj f₁ f₃) (e : G ≅ G') :
 lemma ofNatIso_π (sq : G.PullbackObjObj f₁ f₃) (e : G ≅ G') :
     (sq.ofNatIso e).π = (e.inv.app (op Y₁)).app X₃ ≫ sq.π := (rfl)
 
-/-- Postcomposing `sq.ofNatIso e` with `e.hom` on the domain recovers `sq.π`. -/
+/-- Precomposing `(sq.ofNatIso e).π` with `e.hom` recovers `sq.π`. -/
 @[reassoc]
 lemma hom_comp_ofNatIso_π (sq : G.PullbackObjObj f₁ f₃) (e : G ≅ G') :
     (e.hom.app (op Y₁)).app X₃ ≫ (sq.ofNatIso e).π = sq.π :=

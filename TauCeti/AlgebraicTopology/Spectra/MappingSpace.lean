@@ -194,6 +194,16 @@ noncomputable def levelSmashMappingSpaceAdjunction (X : SymmetricSpectrum) :
     levelSmash X ⊣ mappingSpace X :=
   (SymmetricSequence.freeEvaluationAdjunction 0).comp (Mod.ihomAdjunction X)
 
+/-- Levelwise smash with a fixed spectrum preserves colimits of every size. -/
+instance levelSmash_preservesColimitsOfSize.{v, w} (X : SymmetricSpectrum) :
+    PreservesColimitsOfSize.{v, w} (levelSmash X) :=
+  (levelSmashMappingSpaceAdjunction X).leftAdjoint_preservesColimits
+
+/-- The pointed mapping space out of a spectrum preserves limits of every size. -/
+instance mappingSpace_preservesLimitsOfSize.{v, w} (X : SymmetricSpectrum) :
+    PreservesLimitsOfSize.{v, w} (mappingSpace X) :=
+  (levelSmashMappingSpaceAdjunction X).rightAdjoint_preservesLimits
+
 /-- The adjunction `X ∧ - ⊣ Map(X, -)` curries a spectrum map `X ∧ K ⟶ Y` into `Hom_S(X, Y)` and
 restricts it to the generator `K ⟶ (G₀ K)₀`. -/
 lemma levelSmashMappingSpaceAdjunction_homEquiv_apply (X : SymmetricSpectrum)
