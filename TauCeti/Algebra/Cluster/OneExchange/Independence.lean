@@ -36,85 +36,79 @@ uniqueness for all integer powers.
 
 public section
 
-namespace Units
+namespace TauCeti
 
-variable {B : Type*} [Monoid B]
+section Group
 
-/-- The ordered coefficient in the `n`th power of the exchange `E * x⁻¹`.
-It is a unit of the ambient monoid, without asserting that it is a coefficient unit. -/
-def exchangeProduct (x E : Bˣ) (n : ℕ) : Bˣ :=
+variable {G : Type*} [Group G]
+
+/-- The ordered coefficient in the `n`th power of the exchange `E * x⁻¹` in a group.
+For units of a monoid, it is a unit of the ambient monoid, without asserting that it is a
+coefficient unit. -/
+def exchangeProduct (x E : G) (n : ℕ) : G :=
   (E * x⁻¹) ^ n * x ^ n
 
 /-- The defining formula for the ordered exchange coefficient. -/
-theorem exchangeProduct_def (x E : Bˣ) (n : ℕ) :
+theorem exchangeProduct_def (x E : G) (n : ℕ) :
     exchangeProduct x E n = (E * x⁻¹) ^ n * x ^ n := (rfl)
 
 @[simp]
-theorem exchangeProduct_one_left (E : Bˣ) (n : ℕ) : exchangeProduct 1 E n = E ^ n := by
+theorem exchangeProduct_one_left (E : G) (n : ℕ) : exchangeProduct 1 E n = E ^ n := by
   simp [exchangeProduct_def]
 
 @[simp]
-theorem exchangeProduct_one_right (x : Bˣ) (n : ℕ) : exchangeProduct x 1 n = 1 := by
+theorem exchangeProduct_one_right (x : G) (n : ℕ) : exchangeProduct x 1 n = 1 := by
   simp [exchangeProduct_def]
 
 @[simp]
-theorem exchangeProduct_zero (x E : Bˣ) : exchangeProduct x E 0 = 1 := by
+theorem exchangeProduct_zero (x E : G) : exchangeProduct x E 0 = 1 := by
   simp [exchangeProduct]
 
 @[simp]
-theorem exchangeProduct_one (x E : Bˣ) : exchangeProduct x E 1 = E := by
+theorem exchangeProduct_one (x E : G) : exchangeProduct x E 1 = E := by
   simp [exchangeProduct, mul_assoc]
 
 /-- The ordered recurrence, with the next conjugated factor on the right. -/
-theorem exchangeProduct_succ (x E : Bˣ) (n : ℕ) :
+theorem exchangeProduct_succ (x E : G) (n : ℕ) :
     exchangeProduct x E (n + 1) = exchangeProduct x E n * x⁻¹ ^ n * E * x ^ n := by
   unfold exchangeProduct
   rw [pow_succ (E * x⁻¹), pow_succ x]
   group
 
 /-- The recurrence by inverse conjugation, useful for coefficient membership. -/
-theorem exchangeProduct_succ' (x E : Bˣ) (n : ℕ) :
+theorem exchangeProduct_succ' (x E : G) (n : ℕ) :
     exchangeProduct x E (n + 1) = E * (x⁻¹ * exchangeProduct x E n * x) := by
   unfold exchangeProduct
   group
 
 /-- Powers of an exchange have the ordered coefficient `exchangeProduct`. -/
-theorem mul_inv_pow_eq_exchangeProduct_mul_inv_pow (x E : Bˣ) (n : ℕ) :
+theorem mul_inv_pow_eq_exchangeProduct_mul_inv_pow (x E : G) (n : ℕ) :
     (E * x⁻¹) ^ n = exchangeProduct x E n * x⁻¹ ^ n := by
   unfold exchangeProduct
   group
 
 /-- If `E` commutes with `x`, ordered exchange products are ordinary powers of `E`. -/
-theorem exchangeProduct_eq_pow_of_commute {x E : Bˣ} (h : Commute x E) (n : ℕ) :
+theorem exchangeProduct_eq_pow_of_commute {x E : G} (h : Commute x E) (n : ℕ) :
     exchangeProduct x E n = E ^ n := by
   rw [exchangeProduct_def, (h.symm.inv_right).mul_pow]
   simp [mul_assoc]
 
-end Units
-
-namespace Units
-
-variable {B : Type*} [CommMonoid B]
-
-/-- Ordered exchange products in a commutative monoid are ordinary powers. -/
-@[simp]
-theorem exchangeProduct_eq_pow (x E : Bˣ) (n : ℕ) : exchangeProduct x E n = E ^ n :=
-  exchangeProduct_eq_pow_of_commute (.all x E) n
-
-end Units
-
-namespace Units
-
-variable {B : Type*} [Monoid B]
-
 /-- Multiplicative maps transport the ordered exchange coefficients. -/
 @[simp]
-theorem map_exchangeProduct {A F : Type*} [Monoid A] [FunLike F Bˣ Aˣ]
-    [MonoidHomClass F Bˣ Aˣ] (f : F) (x E : Bˣ) (n : ℕ) :
+theorem map_exchangeProduct {H F : Type*} [Group H] [FunLike F G H]
+    [MonoidHomClass F G H] (f : F) (x E : G) (n : ℕ) :
     f (exchangeProduct x E n) = exchangeProduct (f x) (f E) n := by
   simp [exchangeProduct_def]
 
-end Units
+end Group
+
+/-- Ordered exchange products in a commutative group are ordinary powers. -/
+@[simp]
+theorem exchangeProduct_eq_pow {G : Type*} [CommGroup G] (x E : G) (n : ℕ) :
+    exchangeProduct x E n = E ^ n :=
+  exchangeProduct_eq_pow_of_commute (.all x E) n
+
+end TauCeti
 
 namespace TauCeti
 
@@ -124,10 +118,10 @@ variable {B S : Type*} [Monoid B] [SetLike S B] [SubmonoidClass S B] (C : S) (x 
 conjugation by the old coordinate preserves it. -/
 theorem exchangeProduct_mem
     (hx : ∀ c ∈ C, (↑x⁻¹ : B) * c * x ∈ C) (hE : (E : B) ∈ C) (n : ℕ) :
-    (Units.exchangeProduct x E n : B) ∈ C := by
+    (↑(exchangeProduct x E n) : B) ∈ C := by
   induction n with
   | zero => simp
-  | succ n ih => simpa only [Units.exchangeProduct_succ', Units.val_mul] using mul_mem hE (hx _ ih)
+  | succ n ih => simpa only [exchangeProduct_succ', Units.val_mul] using mul_mem hE (hx _ ih)
 
 end TauCeti
 
@@ -143,19 +137,19 @@ theorem linearIndependent_mul_inv_pow
     (hli : LinearIndependent C (fun n : ℕ ↦ (↑(x ^ n) : B))) :
     LinearIndependent C (fun n : ℕ ↦ (↑((E * x⁻¹) ^ n) : B)) := by
   classical
-  let p (n : ℕ) : C := ⟨Units.exchangeProduct x E n,
+  let p (n : ℕ) : C := ⟨↑(exchangeProduct x E n),
     exchangeProduct_mem C x E hx hE n⟩
   have hp (n : ℕ) : IsRightRegular (p n) :=
-    fun _ _ h ↦ Subtype.ext <| (Units.exchangeProduct x E n).isRegular.right
+    fun _ _ h ↦ Subtype.ext <| (exchangeProduct x E n).isRegular.right
       (congrArg ((↑) : C → B) h)
   have hi := ((Units.linearIndependent_zpow_iff x).mpr hli).comp (fun n : ℕ ↦ -(n : ℤ))
     (neg_injective.comp Nat.cast_injective)
   have hsmul (c : C) (b : B) : c • b = (c : B) * b := by
-    rw [SetLike.coe_smul, smul_eq_mul]
+    rw [setLike_smul_def, smul_eq_mul]
   have hfactor : (p • ((fun n : ℤ ↦ (↑(x ^ n) : B)) ∘ fun n : ℕ ↦ -(n : ℤ))) =
       fun n : ℕ ↦ (↑((E * x⁻¹) ^ n) : B) := by
     funext n
-    rw [Units.mul_inv_pow_eq_exchangeProduct_mul_inv_pow]
+    rw [mul_inv_pow_eq_exchangeProduct_mul_inv_pow]
     simp only [Pi.smul_apply', Function.comp_apply, hsmul, p, Units.val_mul,
       zpow_neg, zpow_natCast, inv_pow]
   simpa only [hfactor] using hi.smul_of_isRightRegular hp

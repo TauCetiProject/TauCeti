@@ -10,18 +10,19 @@ public import Mathlib.Algebra.Group.Submonoid.MulAction
 /-!
 # Scalar actions of `SetLike` structures
 
-The low-priority scalar action on a `SetLike` structure is induced by coercion to its ambient
-type. This file exposes the defining equation for general `SetLike` scalar actions.
+Mathlib's low-priority scalar action *by* an element of a `SetLike` subtype on another type is
+induced by coercion of the element to its ambient type. This file exposes the defining
+equation of that action.
 -/
 
 public section
 
-namespace SetLike
+namespace TauCeti
 
 variable {B S α : Type*} [SetLike S B] [SMul B α]
 
 /-- An element of a `SetLike` subtype acts by its coercion to the ambient type. -/
 @[to_additive]
-theorem coe_smul (C : S) (c : C) (a : α) : c • a = (c : B) • a := (rfl)
+theorem setLike_smul_def (C : S) (c : C) (a : α) : c • a = (c : B) • a := (rfl)
 
-end SetLike
+end TauCeti
