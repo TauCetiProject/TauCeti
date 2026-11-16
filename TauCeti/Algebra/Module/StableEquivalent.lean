@@ -44,6 +44,8 @@ zero module and `ℤ` are not stably equivalent over `ℤ`.
   large.
 * `TauCeti.stableEquivalent_fin_fun_iff`: `P` is stably equivalent to `Rᵐ` if and only if
   `P × Rᵏ ≃ₗ[R] Rᵐ⁺ᵏ` for some `k`.
+* `TauCeti.stableEquivalent_fin_fun_fin_fun_iff`: over a semiring with invariant basis number,
+  `Rⁿ` and `Rᵐ` are stably equivalent exactly when `n = m`.
 * `TauCeti.StableEquivalent.isStablyFree`: a module stably equivalent to a free module is stably
   free.
 * `TauCeti.StableEquivalent.lift_rank_eq`, `TauCeti.StableEquivalent.finrank_eq`: over a ring
@@ -157,6 +159,14 @@ theorem stableEquivalent_fin_fun_iff {m : ℕ} :
   exists_congr fun k =>
     ⟨fun ⟨e⟩ => ⟨e.trans (LinearEquiv.piFinAppend R R m k).symm⟩,
       fun ⟨e⟩ => ⟨e.trans (LinearEquiv.piFinAppend R R m k)⟩⟩
+
+/-- Over a semiring with invariant basis number, the finite free modules `Rⁿ` and `Rᵐ` are stably
+equivalent exactly when `n = m`. -/
+theorem stableEquivalent_fin_fun_fin_fun_iff [InvariantBasisNumber R] {n m : ℕ} :
+    StableEquivalent R (Fin n → R) (Fin m → R) ↔ n = m :=
+  ⟨fun ⟨k, ⟨e⟩⟩ => Nat.add_right_cancel <| eq_of_fin_equiv R <|
+      (LinearEquiv.piFinAppend R R n k).trans (e.trans (LinearEquiv.piFinAppend R R m k).symm),
+    fun h => h ▸ .refl R _⟩
 
 end Semiring
 
