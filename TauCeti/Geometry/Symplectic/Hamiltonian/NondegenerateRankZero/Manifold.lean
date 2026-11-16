@@ -87,6 +87,7 @@ at `x` of the functions `ℓ ∘ F`, for `ℓ` a linear functional on `G`, form 
 the symplectic vector space `(T_x M, σ_x)`: their Hamiltonian endomorphisms generate a Cartan
 subalgebra of `sp(T_x M, σ_x)`. For `G = ℝⁿ` these are the Hessians of the components of `F`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isNondegenerateRankZeroPoint_pi_iff`). -/
+@[mk_iff]
 structure IsNondegenerateRankZeroPoint (F : M → G) (x : M) : Prop where
   /-- The map is `C²` at the point. -/
   contMDiffAt : ContMDiffAt I 𝓘(ℝ, G) 2 F x
@@ -117,12 +118,10 @@ theorem isNondegenerateRankZeroPoint_iff_of_span_eq {κ : Type*}
       Submodule.span ℝ (range fun ℓ : G →L[ℝ] ℝ ↦
         (criticalHessian I (ℓ ∘ F) x).toBilinForm.toQuadraticMap) = Submodule.span ℝ (range Q)) :
     hσ.IsNondegenerateRankZeroPoint F x ↔ ContMDiffAt I 𝓘(ℝ, G) 2 F x ∧ mvfderiv I F x = 0 ∧
-      (hσ.symplecticFormAt x).IsNondegenerateQuadraticFamily Q :=
-  ⟨fun hx ↦ ⟨hx.contMDiffAt, hx.mvfderiv_eq_zero,
-      (SymplecticForm.isNondegenerateQuadraticFamily_iff_of_span_eq
-        (h hx.contMDiffAt hx.mvfderiv_eq_zero)).1 hx.isNondegenerateQuadraticFamily⟩,
-    fun ⟨hF, h0, hQ⟩ ↦ ⟨hF, h0,
-      (SymplecticForm.isNondegenerateQuadraticFamily_iff_of_span_eq (h hF h0)).2 hQ⟩⟩
+      (hσ.symplecticFormAt x).IsNondegenerateQuadraticFamily Q := by
+  rw [isNondegenerateRankZeroPoint_iff]
+  exact and_congr_right fun hF ↦ and_congr_right fun h0 ↦
+    SymplecticForm.isNondegenerateQuadraticFamily_iff_of_span_eq (h hF h0)
 
 /-! ### The preferred chart -/
 
@@ -227,15 +226,10 @@ private theorem isNondegenerateRankZeroPoint_iff_comp_right_aux
       rw [ℓ.mvfderiv_comp_apply hFd, h]
       simp
     ext u
-    rw [← Function.comp_assoc, LinearMap.BilinMap.toQuadraticMap_apply,
-      ContinuousLinearMap.toBilinForm_apply, criticalHessian_comp_apply rfl
-        (ℓ.contMDiff.contMDiffAt.comp _ hF) hφ hcrit, ← he, QuadraticMap.comp_apply,
-      LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply,
-      ContinuousLinearEquiv.coe_coe, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv]
+    simp [← Function.comp_assoc,
+      criticalHessian_comp_apply rfl (ℓ.contMDiff.contMDiffAt.comp _ hF) hφ hcrit, ← he]
   have hsymp : SymplecticForm.IsSymplectomorphism η (hσ.symplecticFormAt (φ y)) e.toLinearEquiv :=
-    SymplecticForm.isSymplectomorphism_iff.2 fun u w ↦ by
-      rw [IsNondegenerate.symplecticFormAt_apply, ← hη, ← he,
-        ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.coe_coe]
+    SymplecticForm.isSymplectomorphism_iff.2 fun u w ↦ by simp [← hη, ← he]
   refine ⟨fun ⟨_, h, hfam⟩ ↦ ⟨hF, h0.1 h, ?_⟩, fun h ↦ ⟨hF.comp y hφ, h0.2 h.mvfderiv_eq_zero, ?_⟩⟩
   · rw [← SymplecticForm.isNondegenerateQuadraticFamily_comp_iff hsymp]
     simpa only [hQ (h0.1 h)] using hfam
@@ -256,8 +250,7 @@ theorem isNondegenerateRankZeroPoint_comp_right_iff [IsManifold I' ∞ N] {τ : 
     hτ.IsNondegenerateRankZeroPoint (F ∘ φ) y ↔ hσ.IsNondegenerateRankZeroPoint F (φ y) := by
   refine Iff.trans ?_ (isNondegenerateRankZeroPoint_iff_comp_right_aux (hτ.symplecticFormAt y) hφ
     hinv (fun u w ↦ (hστ u w).trans (symplecticFormAt_apply hτ y u w).symm) hF)
-  exact ⟨fun h ↦ ⟨h.contMDiffAt, h.mvfderiv_eq_zero, h.isNondegenerateQuadraticFamily⟩,
-    fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩⟩
+  exact isNondegenerateRankZeroPoint_iff _ _ _
 
 /-- **Nondegenerate rank-zero points in symplectic coordinates.** Let `φ : E' → M` be a map from a
 symplectic vector space `(E', ω₀)`, such as the inverse of a Darboux chart, which is `C²` at `y`,
@@ -280,8 +273,7 @@ theorem _root_.TauCeti.SymplecticForm.isNondegenerateRankZeroPoint_comp_right_if
   simp only [contMDiffAt_iff_contDiffAt, h0, toQuadraticMap_toBilinForm_criticalHessian,
     extChartAt_model_space_eq_id, PartialEquiv.refl_symm, PartialEquiv.refl_coe, Function.comp_id,
     id_eq]
-  exact ⟨fun h ↦ ⟨h.contDiffAt, h.fderiv_eq_zero, h.isNondegenerateQuadraticFamily⟩,
-    fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩⟩
+  exact SymplecticForm.isNondegenerateRankZeroPoint_iff _ _ _
 
 end Comp
 
