@@ -123,9 +123,7 @@ private theorem hasFDerivAt_lhRadius {y : ℝ²} (hy : y 1 ^ 2 < 1) :
     using 1
   ext v
   have hs : √(1 - y 1 ^ 2) ≠ 0 := Real.sqrt_ne_zero'.2 (sub_pos.2 hy)
-  simp only [Fin.isValue, neg_smul, neg_apply, smul_apply, PiLp.proj_apply, smul_eq_mul, one_div,
-    _root_.mul_inv_rev, Nat.add_one_sub_one, pow_one, nsmul_eq_mul, Nat.cast_ofNat, smul_neg,
-    neg_inj]
+  simp
   field_simp
 
 private theorem contDiffAt_lhVec {y : ℝ²} (hy : y 1 ^ 2 < 1) : ContDiffAt ℝ ∞ lhVec y := by
@@ -151,13 +149,11 @@ private theorem fderiv_lhVec_apply {y : ℝ²} (hy : y 1 ^ 2 < 1) (v : ℝ²) :
   fin_cases i
   · refine (key 0 _ ((hasFDerivAt_lhRadius hy).mul
       (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 y 0).cos)).trans ?_
-    simp only [Fin.isValue, neg_smul, smul_neg, add_apply, smul_apply, PiLp.proj_apply, smul_eq_mul,
-      neg_mul, mul_neg, neg_apply, Nat.succ_eq_add_one, Nat.reduceAdd, Fin.zero_eta, cons_val_zero]
+    simp
     ring
   · refine (key 1 _ ((hasFDerivAt_lhRadius hy).mul
       (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 y 0).sin)).trans ?_
-    simp only [Fin.isValue, neg_smul, smul_neg, add_apply, smul_apply, PiLp.proj_apply, smul_eq_mul,
-      neg_apply, Nat.succ_eq_add_one, Nat.reduceAdd, Fin.mk_one, cons_val_one, cons_val_zero]
+    simp
     ring
   · refine (key 2 _ (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 y 1)).trans ?_
     simp
@@ -170,8 +166,7 @@ private theorem dotProduct_cross_fderiv_lhVec {y : ℝ²} (hy : y 1 ^ 2 < 1) (v 
   have hq : √(1 - y 1 ^ 2) * (y 1 / √(1 - y 1 ^ 2)) = y 1 :=
     mul_div_cancel₀ _ (Real.sqrt_ne_zero'.2 (sub_pos.2 hy))
   rw [fderiv_lhVec_apply hy, fderiv_lhVec_apply hy]
-  simp only [lhVec, cross_apply, dotProduct, Fin.sum_univ_three]
-  simp only [Fin.isValue, cons_val_zero, Nat.succ_eq_add_one, Nat.reduceAdd, cons_val_one, cons_val]
+  simp [lhVec, cross_apply, dotProduct, Fin.sum_univ_three]
   linear_combination (v 0 * w 1 - v 1 * w 0) * (sin (y 0) ^ 2 + cos (y 0) ^ 2) * hs +
     (v 0 * w 1 - v 1 * w 0) * y 1 * (sin (y 0) ^ 2 + cos (y 0) ^ 2) * hq +
     (v 0 * w 1 - v 1 * w 0) * sin_sq_add_cos_sq (y 0)
@@ -271,7 +266,8 @@ private theorem mvfderiv_coe_mfderiv_sphereLongitudeHeight (a : ℝ) (y : longit
     (by simp)
   rw [← mvfderiv_comp_apply y ((contMDiff_coe_sphere (n := 2) (m := 1) _).mdifferentiableAt
       one_ne_zero) ((contMDiff_sphereLongitudeHeight a y).mdifferentiableAt (by simp)) v]
-  have hcomp : ((↑) : S² → ℝ³) ∘ sphereLongitudeHeight a = lhVec ∘ Subtype.val := (rfl)
+  have hcomp : ((↑) : S² → ℝ³) ∘ sphereLongitudeHeight a = lhVec ∘ Subtype.val :=
+    funext (Set.val_codRestrict_apply _ _ _)
   rw [hcomp, mvfderiv_comp_apply_of_differentiableAt hd
     (contMDiff_subtype_val.mdifferentiableAt one_ne_zero), mvfderiv_apply_eq_mfderiv_apply,
     Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
@@ -463,7 +459,8 @@ theorem duistermaatHeckmanMeasure_sphereAreaForm_height :
   have h1 : Measurable fun y : ℝ² ↦ y 1 :=
     (EuclideanSpace.proj (1 : Fin 2) : ℝ² →L[ℝ] ℝ).continuous.measurable
   have hcomp : (fun x : S² ↦ (x : ℝ³) 2) ∘ sphereLongitudeHeight 0 =
-      (fun y : ℝ² ↦ y 1) ∘ Subtype.val := (rfl)
+      (fun y : ℝ² ↦ y 1) ∘ Subtype.val :=
+    funext fun y ↦ by simp [coe_sphereLongitudeHeight]
   rw [SmoothTwoForm.duistermaatHeckmanMeasure_def, liouvilleMeasure_sphereAreaForm,
     Measure.map_map measurable_height (measurableEmbedding_sphereLongitudeHeight 0).measurable,
     hcomp, ← Measure.map_map h1 measurable_subtype_coe,
