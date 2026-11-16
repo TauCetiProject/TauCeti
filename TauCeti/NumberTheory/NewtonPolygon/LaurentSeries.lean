@@ -59,11 +59,12 @@ initial polynomial. The multiplicity of `σ` as a slope of `P (Y + c)` is the de
 minus the multiplicity of `lc(c)` as a root of `in_σ (P)`, and the number of slopes of `P (Y + c)`
 below `σ` is that root multiplicity minus the multiplicity of `c` as a root of `P`. For a split
 polynomial, the roots `r` with `ord(r) > ord(c)` move up to the slope `σ`, while those with
-`ord(r) = ord(c)` and `lc(r) = lc(c)` leave it for slopes below `σ`. In particular, the leading
-coefficient of a root `c` of `P` is a root of the initial polynomial at the slope `-c.order`,
-which is `-ord(c)` for `c ≠ 0`; for `c = 0` this slope is `0` and `lc(0) = 0`. The supporting
-values and the slopes above `-ord(c)` do not move; this holds for every real additive valuation
-(`TauCeti.NumberTheory.NewtonPolygon.Taylor`).
+`ord(r) = ord(c)` and `lc(r) = lc(c)` leave it: for `r ≠ c` to slopes below `σ`, and `r = c` to
+the root `0` of `P (Y + c)`, which contributes no slope. In particular, the leading coefficient of
+a root `c` of `P` is a root of the initial polynomial at the slope `-c.order`, which is `-ord(c)`
+for `c ≠ 0`; for `c = 0` this slope is `0` and `lc(0) = 0`. The supporting values at slopes at
+least `-ord(c)` and the slopes above `-ord(c)` do not move; this holds for every real additive
+valuation (`TauCeti.NumberTheory.NewtonPolygon.Taylor`).
 
 ## Main definitions
 
@@ -705,10 +706,9 @@ theorem rootMultiplicity_le_rootMultiplicity_initialPolynomial (P : R⸨X⸩[X])
   rcases eq_or_ne P 0 with rfl | hP
   · simp
   have hX : (X - C c).initialPolynomial σ = X - C c.leadingCoeff := by
-    have h := initialPolynomial_taylor_of_realAddVal_eq (X : R⸨X⸩[X])
-      (by rwa [AddValuation.map_neg] : realAddVal R (-c) = ((-σ : ℝ) : WithTop ℝ))
-    rwa [taylor_X, initialPolynomial_X, taylor_X, HahnSeries.leadingCoeff_neg, C_neg, C_neg,
-      ← sub_eq_add_neg, ← sub_eq_add_neg] at h
+    simpa [HahnSeries.leadingCoeff_neg, sub_eq_add_neg] using
+      initialPolynomial_taylor_of_realAddVal_eq (X : R⸨X⸩[X]) (c := -c)
+        (by rwa [AddValuation.map_neg])
   rw [le_rootMultiplicity_iff (initialPolynomial_ne_zero σ hP), ← hX, ← initialPolynomial_pow]
   exact _root_.map_dvd (initialPolynomialHom R σ) (pow_rootMultiplicity_dvd P c)
 
@@ -740,7 +740,8 @@ variable {R : Type*} [CommRing R] [IsDomain R]
 slope of the Newton polygon of `P (Y + c)` is the degree of the initial polynomial `in_σ (P)` minus
 the multiplicity of `lc(c)` as a root of `in_σ (P)`. For a split polynomial, the translation moves
 the roots `r` with `ord(r) > ord(c)` up to the slope `σ`, and moves those with `ord(r) = ord(c)` and
-`lc(r) = lc(c)` below it. -/
+`lc(r) = lc(c)` off it: for `r ≠ c` to slopes below `σ`, and `r = c` to the root `0`, which
+contributes no slope. -/
 theorem count_newtonSlopes_taylor_of_realAddVal_eq (P : R⸨X⸩[X]) {σ : ℝ} {c : R⸨X⸩}
     (hσ : realAddVal R c = ((-σ : ℝ) : WithTop ℝ)) :
     ((taylor c P).newtonSlopes (realAddVal R)).count σ =

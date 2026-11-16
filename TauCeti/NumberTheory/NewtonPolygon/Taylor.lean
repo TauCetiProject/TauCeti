@@ -47,23 +47,7 @@ open Filter Set Topology TauCeti
 
 namespace Polynomial
 
-variable {R : Type*} [Ring R]
-
-/-- Translating back by `-c` undoes the translation by `c`, without commutativity. -/
-private theorem taylor_neg_taylor (c : R) (P : R[X]) : taylor (-c) (taylor c P) = P := by
-  have hpow (n : ℕ) : taylor (-c) ((X + C c) ^ n) = X ^ n := by
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      rw [pow_succ', taylor_apply, add_mul, add_comp, X_mul, mul_X_comp, C_mul_comp,
-        ← taylor_apply, ih, mul_add, ← pow_succ, X_pow_mul, C_neg, neg_mul, add_assoc,
-        neg_add_cancel, add_zero]
-  induction P using Polynomial.induction_on' with
-  | add p q hp hq => simp only [map_add, hp, hq]
-  | monomial n a =>
-    rw [taylor_monomial, taylor_apply, C_mul_comp, ← taylor_apply, hpow, C_mul_X_pow_eq_monomial]
-
-variable (v : AddValuation R (WithTop ℝ))
+variable {R : Type*} [Ring R] (v : AddValuation R (WithTop ℝ))
 
 /-- If `v c ≥ -σ`, the supporting value at slope `σ` of the coefficient heights of `P (Y + c)` is
 at least that of `P`: each term `a_{k + m} cᵏ` of the `m`-th coefficient lies on or above the
@@ -78,12 +62,7 @@ private theorem supportingValue_le_supportingValue_taylor (P : R[X]) {σ : ℝ} 
     rw [coe_le_supportingValue_iff] at hμ ⊢
     intro m
     rw [coeff_taylor_eq_sum (Nat.lt_add_one P.natDegree)]
-    refine v.map_le_sum fun k _ => ?_
-    have hnsmul (n : ℕ) (x : R) : v x ≤ v (n • x) := by
-      induction n with
-      | zero => simp
-      | succ n ih => rw [succ_nsmul]; exact v.map_le_add ih le_rfl
-    refine le_trans ?_ (hnsmul _ _)
+    refine v.map_le_sum fun k _ => le_trans ?_ (v.le_map_nsmul _ _)
     rw [v.map_mul, v.map_pow]
     calc ((μ + σ * m : ℝ) : WithTop ℝ)
         = ((μ + σ * ↑(k + m) : ℝ) : WithTop ℝ) + k • ((-σ : ℝ) : WithTop ℝ) := by
@@ -127,30 +106,15 @@ theorem count_newtonSlopes_taylor_of_lt (hσ : ((-σ : ℝ) : WithTop ℝ) < v c
       filter_upwards [Ioi_mem_nhds (neg_lt.mp hσ)] with τ hτ
       exact supportingValue_newtonPolygon_taylor_of_le v P
         (h ▸ WithTop.coe_le_coe.mpr (neg_le.mpr (le_of_lt hτ)))
+  have htop : (taylor c P).newtonPolygon v = ⊤ ↔ P.newtonPolygon v = ⊤ := by
+    rw [← supportingValue_eq_top_iff (σ := σ), hnhds.self_of_nhds, supportingValue_eq_top_iff]
   by_cases hP : P.newtonPolygon v = ⊤
-  · have hT : (taylor c P).newtonPolygon v = ⊤ := by
-      rw [← supportingValue_eq_top_iff (σ := σ), hnhds.self_of_nhds, hP, supportingValue_top]
-    rw [newtonSlopes_congr (hT.trans hP.symm)]
+  · rw [newtonSlopes_congr ((htop.mpr hP).trans hP.symm)]
   obtain ⟨l, u, hf⟩ := exists_isFiniteFace_newtonPolygon hP σ
-  obtain ⟨l', u', hf'⟩ := exists_isFiniteFace_newtonPolygon (f := taylor c P) (v := v)
-    (fun hT => hP (by rw [← supportingValue_eq_top_iff (σ := σ), ← hnhds.self_of_nhds, hT,
-      supportingValue_top])) σ
-  have hreal : (fun τ => (supportingValue ((taylor c P).newtonPolygon v) τ).toReal) =ᶠ[𝓝 σ]
-      fun τ => (supportingValue (P.newtonPolygon v) τ).toReal :=
-    hnhds.mono fun τ hτ => congrArg EReal.toReal hτ
-  have hconv := isConvexSeq_newtonPolygon P v
-  have hconv' := isConvexSeq_newtonPolygon (taylor c P) v
-  have hl : -(l' : ℝ) = -(l : ℝ) := (uniqueDiffWithinAt_Iic σ).eq_deriv _
-    (hf'.hasDerivWithinAt_supportingValue_toReal_left hconv')
-    ((hf.hasDerivWithinAt_supportingValue_toReal_left hconv).congr_of_eventuallyEq
-      (hreal.filter_mono nhdsWithin_le_nhds) hreal.self_of_nhds)
-  have hu : -(u' : ℝ) = -(u : ℝ) := (uniqueDiffWithinAt_Ici σ).eq_deriv _
-    (hf'.hasDerivWithinAt_supportingValue_toReal_right hconv')
-    ((hf.hasDerivWithinAt_supportingValue_toReal_right hconv).congr_of_eventuallyEq
-      (hreal.filter_mono nhdsWithin_le_nhds) hreal.self_of_nhds)
+  obtain ⟨l', u', hf'⟩ := exists_isFiniteFace_newtonPolygon (htop.not.mpr hP) σ
+  obtain ⟨rfl, rfl⟩ := hf.eq_of_eventuallyEq_supportingValue (isConvexSeq_newtonPolygon P v) hf'
+    (isConvexSeq_newtonPolygon (taylor c P) v) hnhds
   rw [count_newtonSlopes_of_isFiniteFace hf, count_newtonSlopes_of_isFiniteFace hf']
-  simp only [neg_inj, Nat.cast_inj] at hl hu
-  rw [hl, hu]
 
 /-- **Translation of the slopes, with multiplicity.** Translating the unknown by `c` does not change
 the slopes `σ` of the Newton polygon with `-σ < v c`, counted with multiplicity. For a split
