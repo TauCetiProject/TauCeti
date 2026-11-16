@@ -20,13 +20,17 @@ positivity, and trace radicals across the boundary parameter regimes:
 * at `δ = 0`, every Markov trace over a star-ordered commutative semiring (and in particular the
   spin-model trace at `q = i`) is positive semidefinite even though `0` is not in
   `jonesLoopParameters`, whereas negative real parameters fail positivity on one strand (while
-  remaining positive semidefinite on zero strands) and `-1` witnesses why `0 < δ` is needed in the
-  normalized pullback criterion;
+  remaining positive semidefinite on zero strands) and `-1` shows that pulling back a positive
+  state to `δ⁻ⁿ tr n` fails to imply admissibility without `0 < δ` (since `(-1)⁻ⁿ` is not positive
+  for odd `n`);
 * in the open gap `1 < δ < √2`, positivity holds on `0`, `1`, and `2` strands and fails from `3`
   strands onward;
 * at `δ = √2` (`2 cos (π / 4)`), `⌊π / arccos (√2 / 2)⌋ = 4`, every level is positive semidefinite,
-  the positive quotient trace unifies with `IsMarkovTrace.quotientStrandIncl`, and the nonzero
-  three-strand Jones–Wenzl projection lies in the trace radical;
+  and the nonzero three-strand Jones–Wenzl projection lies in the trace radical;
+* at any admissible parameter `δ ∈ jonesLoopParameters`,
+  `IsMarkovTrace.quotientStarPositiveFunctional` packages a faithful positive trace directly on the
+  canonical trace-radical quotient and composes with `IsMarkovTrace.quotientStrandIncl` without
+  exposing implementation details;
 * at `δ = 1` (`2 cos (π / 3)`), the two-strand Jones–Wenzl projection `1 - e 0` lies in the trace
   radical but not in the Jacobson radical;
 * on two strands over any commutative ring, `1 - δ • e 0` is idempotent iff `δ ^ 3 = δ`, in
@@ -124,8 +128,9 @@ example {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hlo : -2 ≤ δ) (hneg : �
   exact_mod_cast hneg
 
 -- At `δ = -1`, the unital star characters sending every generator to `-1` pull back the positive
--- identity state on `ℂ` to the normalized Markov trace `(-1)⁻ⁿ tr n`, showing that `0 < δ` cannot
--- be omitted from the normalized pullback admissibility criterion.
+-- identity state on `ℂ` to `(-1)⁻ⁿ tr n`; because `(-1)⁻ⁿ` is negative for odd `n` (violating
+-- `0 < c n` in `mem_jonesLoopParameters_of_pullback`), normalizing by `δ⁻ⁿ` fails to force
+-- admissibility without `0 < δ`.
 example :
     let _ : Fact (IsSelfAdjoint ((-1 : ℝ) : ℂ)) := ⟨Complex.conj_ofReal (-1)⟩
     ∃ (ρ : ∀ n : ℕ, TemperleyLieb ℂ ((-1 : ℝ) : ℂ) n →⋆ₐ[ℂ] ℂ)
@@ -269,22 +274,30 @@ example [Fact (IsSelfAdjoint (√2 : ℂ))]
     fun h0 ↦ zero_ne_one (α := ℂ) (by simpa [h0] using aug_jonesWenzl (δ := (√2 : ℂ)) 3), ?_⟩
   rw [htr.jonesWenzl_mem_traceRadical_iff hunit, hq, hq4, Complex.ofReal_zero]
 
--- Because `IsMarkovTrace.starPositiveFunctional` is `@[expose]`d, its induced positive quotient
--- trace unifies definitionally with `IsMarkovTrace.quotientStrandIncl` across module boundaries.
+-- Without exposing `starPositiveFunctional`, `IsMarkovTrace.quotientStarPositiveFunctional` lives
+-- directly on the canonical trace-radical quotient, composes with
+-- `IsMarkovTrace.quotientStrandIncl`, and is faithful across module boundaries.
 example {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hδ : δ ∈ jonesLoopParameters)
     {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (n : ℕ)
     (x : TemperleyLieb ℂ (δ : ℂ) (n + 1) ⧸
       (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
-    (htr.starPositiveFunctional hδ (n + 2)).quotientTrace (htr.map_mul_comm (n + 2))
-        (htr.quotientStrandIncl n x) =
-      (δ : ℂ) * (htr.starPositiveFunctional hδ (n + 1)).quotientTrace
-        (htr.map_mul_comm (n + 1)) x :=
-  (LinearMap.congr_fun
-      ((htr.starPositiveFunctional hδ (n + 2)).toLinearMap_quotientTrace _) _).trans <|
-    (htr.quotientTrace_quotientStrandIncl n x).trans <|
-      congrArg _ (LinearMap.congr_fun
-        ((htr.starPositiveFunctional hδ (n + 1)).toLinearMap_quotientTrace _) x).symm
+    letI := htr.isStar_traceRadical (n + 1)
+    letI := htr.isStar_traceRadical (n + 2)
+    htr.quotientStarPositiveFunctional hδ (n + 2) (htr.quotientStrandIncl n x) =
+        (δ : ℂ) * htr.quotientStarPositiveFunctional hδ (n + 1) x ∧
+      (htr.quotientStarPositiveFunctional hδ (n + 1)).nullSubmodule = ⊥ ∧
+      (htr.quotientStarPositiveFunctional hδ (n + 1) (star x * x) = 0 ↔ x = 0) ∧
+      (htr.starPositiveFunctional hδ (n + 1)).toLinearMap.traceRadical
+          (htr.starPositiveFunctional_mul_comm hδ (n + 1)) =
+        (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1)) := by
+  have := htr.isStar_traceRadical (n + 1)
+  have := htr.isStar_traceRadical (n + 2)
+  refine ⟨?_, htr.nullSubmodule_quotientStarPositiveFunctional hδ (n + 1),
+    htr.quotientStarPositiveFunctional_star_mul_self_eq_zero_iff hδ (n + 1) x,
+    htr.traceRadical_starPositiveFunctional hδ (n + 1)⟩
+  rw [htr.quotientStarPositiveFunctional_apply, htr.quotientStarPositiveFunctional_apply,
+    htr.quotientTrace_quotientStrandIncl]
 
 -- At `δ = 1` (`m = 3`), `f₂ = 1 - e 0` belongs to the trace radical on two strands, whereas it does
 -- not belong to the Jacobson radical because `1 - f₂ = e 0` is killed by the augmentation.

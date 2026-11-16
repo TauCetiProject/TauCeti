@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TemperleyLieb.QuantumDimension
+public import TauCeti.Algebra.TemperleyLieb.Trace.Star
 public import TauCeti.QuantumGroups.QuantumInteger.Real
 public import TauCeti.RingTheory.TraceFunctional.Positive
 public import Mathlib.Analysis.Complex.Order
@@ -56,9 +57,11 @@ adjacency recurrence `[t] + [t + 2] = δ [t + 1]` holds for every `δ`
 positivity (`TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_of_isPathEigenvectorUpTo`)
 then proves positivity on `n` strands.
 
-At any admissible loop parameter `δ ∈ jonesLoopParameters`, `tr n` packages as an exposed
-`TauCeti.StarPositiveFunctional` (`TauCeti.TemperleyLieb.IsMarkovTrace.starPositiveFunctional`),
-yielding Cauchy–Schwarz and identifying the trace radical with the quadratic null space
+At any admissible loop parameter `δ ∈ jonesLoopParameters`, `tr n` packages as a
+`TauCeti.StarPositiveFunctional` (`TauCeti.TemperleyLieb.IsMarkovTrace.starPositiveFunctional`) and
+descends directly to a faithful `TauCeti.StarPositiveFunctional` on the canonical trace-radical
+quotient (`TauCeti.TemperleyLieb.IsMarkovTrace.quotientStarPositiveFunctional`), yielding
+Cauchy–Schwarz and identifying the trace radical with the quadratic null space
 `{x | tr n (x⋆ * x) = 0}`.
 
 The results are stated for an arbitrary Markov trace, so they apply to the spin-model trace
@@ -70,8 +73,11 @@ hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Compl
 
 * `TauCeti.TemperleyLieb.jonesLoopParameters`: the admissible loop parameters
   `{2 cos (π / m) : m ≥ 3} ∪ [2, ∞)`.
-* `TauCeti.TemperleyLieb.IsMarkovTrace.starPositiveFunctional`: `tr n` packaged as an exposed
+* `TauCeti.TemperleyLieb.IsMarkovTrace.starPositiveFunctional`: `tr n` packaged as a
   `TauCeti.StarPositiveFunctional` at admissible parameters.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.quotientStarPositiveFunctional`: the faithful
+  `TauCeti.StarPositiveFunctional` induced by `tr n` directly on the canonical trace-radical
+  quotient `TemperleyLieb ℂ (δ : ℂ) n ⧸ (tr n).traceRadical (htr.map_mul_comm n)`.
 
 ## Main results
 
@@ -91,8 +97,10 @@ hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Compl
   for every real `δ`, and **the first bad level** characterizing positivity on `n` strands at an
   inadmissible `δ > 0`.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.mem_traceRadical_iff_map_star_mul_self_eq_zero`,
-  `TauCeti.TemperleyLieb.IsMarkovTrace.norm_map_star_mul_sq_le`: trace-radical null-space
-  characterization and Cauchy–Schwarz at admissible parameters.
+  `TauCeti.TemperleyLieb.IsMarkovTrace.norm_map_star_mul_sq_le`,
+  `TauCeti.TemperleyLieb.IsMarkovTrace.nullSubmodule_quotientStarPositiveFunctional`: trace-radical
+  null-space characterization, Cauchy–Schwarz, and faithfulness of the positive quotient trace at
+  admissible parameters.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.mem_jonesLoopParameters_of_pullback`: **pullback
   admissibility criterion** for `δ > 0`.
 
@@ -176,8 +184,10 @@ theorem two_mem_jonesLoopParameters : (2 : ℝ) ∈ jonesLoopParameters :=
   mem_jonesLoopParameters_of_two_le le_rfl
 
 /-- For `δ ∈ [2 cos (π / m), 2 cos (π / (m + 1)))` (`m ≥ 1`), the floor `⌊π / arccos (δ / 2)⌋`
-equals `m`. In particular, this identifies the first bad level `m` on each open gap when `m ≥ 2`,
-as well as at the discrete cosine parameter `δ = 2 cos (π / m)`. -/
+equals `m`, including at the left endpoint `δ = 2 cos (π / m)`. When `m ≥ 2` and `δ` lies in the
+positive open gap `(2 cos (π / m), 2 cos (π / (m + 1)))`, this `m` is the first bad level
+(`IsMarkovTrace.forall_map_star_mul_self_nonneg_iff_lt_floor`); at the left endpoints
+`δ = 2 cos (π / m)` (`m ≥ 2`), positivity holds on every number of strands. -/
 theorem floor_pi_div_arccos_eq {m : ℕ} {δ : ℝ} (hm : 1 ≤ m)
     (hlo : 2 * cos (π / m) ≤ δ) (hhi : δ < 2 * cos (π / (m + 1 : ℕ))) :
     ⌊π / arccos (δ / 2)⌋₊ = m := by
@@ -461,10 +471,7 @@ theorem forall_map_star_mul_self_nonneg_iff_lt_floor (htr : IsMarkovTrace ℂ (�
   ⟨htr.lt_floor_of_forall_nonneg hδ hδJ, fun hn x ↦ htr.map_star_mul_self_nonneg_of_lt_floor hn x⟩
 
 /-- At an admissible loop parameter `δ ∈ jonesLoopParameters`, the Markov trace on `n` strands
-packaged as an exposed `TauCeti.StarPositiveFunctional`. Exposure makes `.toLinearMap`
-definitionally equal to `tr n` across module boundaries, so `StarPositiveFunctional.quotientTrace`
-shares its quotient carrier with `IsMarkovTrace.quotientStrandIncl`. -/
-@[expose]
+packaged as a `TauCeti.StarPositiveFunctional`. -/
 def starPositiveFunctional (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
     (hδ : δ ∈ jonesLoopParameters) (n : ℕ) :
     StarPositiveFunctional (TemperleyLieb ℂ (δ : ℂ) n) where
@@ -482,6 +489,95 @@ theorem toLinearMap_starPositiveFunctional (htr : IsMarkovTrace ℂ (δ : ℂ) t
 theorem starPositiveFunctional_apply (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
     (hδ : δ ∈ jonesLoopParameters) (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n) :
     htr.starPositiveFunctional hδ n x = tr n x := (rfl)
+
+/-- `starPositiveFunctional` is tracial. -/
+theorem starPositiveFunctional_mul_comm (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ) (x y : TemperleyLieb ℂ (δ : ℂ) n) :
+    htr.starPositiveFunctional hδ n (x * y) = htr.starPositiveFunctional hδ n (y * x) :=
+  htr.map_mul_comm n x y
+
+/-- The trace radical of `starPositiveFunctional` coincides with the trace radical of `tr n`. -/
+theorem traceRadical_starPositiveFunctional (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ) :
+    (htr.starPositiveFunctional hδ n).toLinearMap.traceRadical
+        (htr.starPositiveFunctional_mul_comm hδ n) =
+      (tr n).traceRadical (htr.map_mul_comm n) := by
+  simp
+
+/-- At an admissible loop parameter `δ ∈ jonesLoopParameters`, the Markov trace on the canonical
+trace-radical quotient `TemperleyLieb ℂ (δ : ℂ) n ⧸ (tr n).traceRadical (htr.map_mul_comm n)`,
+packaged as a faithful `TauCeti.StarPositiveFunctional` whose underlying linear map is
+`LinearMap.quotientTrace`. Supply the star-stable radical instance via `htr.isStar_traceRadical n`.
+-/
+def quotientStarPositiveFunctional (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
+    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar] :
+    StarPositiveFunctional (TemperleyLieb ℂ (δ : ℂ) n ⧸
+      (tr n).traceRadical (htr.map_mul_comm n)) :=
+  (htr.starPositiveFunctional hδ n).quotientTrace (htr.map_mul_comm n)
+
+/-- Forgetting positivity of `quotientStarPositiveFunctional` recovers the algebraic quotient trace
+`LinearMap.quotientTrace`. -/
+@[simp]
+theorem toLinearMap_quotientStarPositiveFunctional (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
+    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar] :
+    (htr.quotientStarPositiveFunctional hδ n).toLinearMap =
+      (tr n).quotientTrace (htr.map_mul_comm n) :=
+  (htr.starPositiveFunctional hδ n).toLinearMap_quotientTrace (htr.map_mul_comm n)
+
+/-- Evaluating `quotientStarPositiveFunctional` computes `LinearMap.quotientTrace`. -/
+theorem quotientStarPositiveFunctional_apply (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
+    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
+    (x : TemperleyLieb ℂ (δ : ℂ) n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) :
+    htr.quotientStarPositiveFunctional hδ n x =
+      (tr n).quotientTrace (htr.map_mul_comm n) x :=
+  LinearMap.congr_fun (htr.toLinearMap_quotientStarPositiveFunctional hδ n) x
+
+/-- On a quotient class `mk x`, `quotientStarPositiveFunctional` evaluates to `tr n x`. -/
+@[simp]
+theorem quotientStarPositiveFunctional_mk (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
+    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar] (x : TemperleyLieb ℂ (δ : ℂ) n) :
+    htr.quotientStarPositiveFunctional hδ n
+      (Ideal.Quotient.mk ((tr n).traceRadical (htr.map_mul_comm n)) x) = tr n x :=
+  (htr.starPositiveFunctional hδ n).quotientTrace_mk (htr.map_mul_comm n) x
+
+/-- Evaluating `quotientStarPositiveFunctional` at `1` gives `δ ^ n`. -/
+@[simp]
+theorem quotientStarPositiveFunctional_one (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
+    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar] :
+    htr.quotientStarPositiveFunctional hδ n 1 = (δ : ℂ) ^ n := by
+  rw [htr.quotientStarPositiveFunctional_apply, LinearMap.quotientTrace_one, htr.map_one]
+
+/-- The positive quotient trace is tracial. -/
+theorem quotientStarPositiveFunctional_mul_comm (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
+    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
+    (x y : TemperleyLieb ℂ (δ : ℂ) n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) :
+    htr.quotientStarPositiveFunctional hδ n (x * y) =
+      htr.quotientStarPositiveFunctional hδ n (y * x) :=
+  (htr.starPositiveFunctional hδ n).quotientTrace_mul_comm (htr.map_mul_comm n) x y
+
+/-- Faithfulness of the positive quotient trace: a square `x⋆ * x` has zero quotient trace
+exactly when `x = 0`. -/
+@[simp]
+theorem quotientStarPositiveFunctional_star_mul_self_eq_zero_iff
+    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
+    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
+    (x : TemperleyLieb ℂ (δ : ℂ) n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) :
+    htr.quotientStarPositiveFunctional hδ n (star x * x) = 0 ↔ x = 0 :=
+  (htr.starPositiveFunctional hδ n).quotientTrace_star_mul_self_eq_zero_iff
+    (htr.map_mul_comm n) x
+
+/-- The positive quotient trace has trivial GNS null space. -/
+theorem nullSubmodule_quotientStarPositiveFunctional (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
+    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar] :
+    (htr.quotientStarPositiveFunctional hδ n).nullSubmodule = ⊥ :=
+  (htr.starPositiveFunctional hδ n).nullSubmodule_quotientTrace (htr.map_mul_comm n)
 
 /-- **Cauchy–Schwarz inequality** for a Markov trace at an admissible loop parameter. -/
 theorem norm_map_star_mul_sq_le (htr : IsMarkovTrace ℂ (δ : ℂ) tr)

@@ -19,7 +19,7 @@ integer `[t + 1]` (`TauCeti.qInt R δ (t + 1)`) to vertex `t : Fin (k + 1)` turn
 Chebyshev recurrence `[t] + [t + 2] = δ * [t + 1]` into the adjacency recurrence at every non-top
 vertex `t < k`, with boundary defect `[k + 2]` at the top vertex `k`.
 
-Consequently, over any field `K`:
+Consequently, over any commutative ring `R`:
 * if `[k + 2] = 0` and `r t ^ 2 = [t + 1]`, the weights `r` satisfy the global adjacency
   eigenvector equation on `pathGraph (k + 1)`, hence `TauCeti.TemperleyLieb.IsPathEigenvectorUpTo`
   at every base vertex and every strand depth (in particular over `ℝ` at the discrete cosine
@@ -42,7 +42,7 @@ Together with `TauCeti.TemperleyLieb.IsPathEigenvectorUpTo.map`, these lemmas in
   `SimpleGraph.pathGraph (k + 1)`.
 * `TauCeti.TemperleyLieb.isPathEigenvectorUpTo_pathGraph_of_sq_eq_qInt`,
   `TauCeti.TemperleyLieb.isPathEigenvectorUpTo_pathGraph_of_qInt_eq_zero`: bounded-depth and
-  vanishing-boundary `IsPathEigenvectorUpTo` criteria over any field.
+  vanishing-boundary `IsPathEigenvectorUpTo` criteria over any commutative ring.
 * `TauCeti.TemperleyLieb.isPathEigenvectorUpTo_pathGraph_sqrt_qInt`,
   `TauCeti.TemperleyLieb.isPathEigenvectorUpTo_pathGraph_two_mul_cos`: real square-root weight
   specializations for nonnegative quantum integers and for `δ = 2 cos (π / (k + 2))`.
@@ -113,12 +113,12 @@ theorem sum_neighborFinset_pathGraph_qInt {k : ℕ} (v : Fin (k + 1))
       2 * cos (π / (k + 2 : ℕ)) * qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (v + 1) :=
   sum_neighborFinset_pathGraph_qInt_of_eq_zero (qInt_two_mul_cos_pi_div_eq_zero (by omega)) v
 
-/-- Over any field `K`, vertex weights `r` on `SimpleGraph.pathGraph (k + 1)` with
+/-- Over any commutative ring `R`, vertex weights `r` on `SimpleGraph.pathGraph (k + 1)` with
 `r t ^ 2 = [t + 1]` satisfy the bounded-depth eigenvector equation from base vertex `0` up to any
 `n ≤ k`: walks of fewer than `n` steps from `0` never reach the top vertex `k`. -/
-theorem isPathEigenvectorUpTo_pathGraph_of_sq_eq_qInt {K : Type*} [Field K] {δ : K}
-    {k n : ℕ} (hnk : n ≤ k) {r : Fin (k + 1) → K}
-    (hr : ∀ t : Fin (k + 1), r t ^ 2 = qInt K δ (t + 1)) :
+theorem isPathEigenvectorUpTo_pathGraph_of_sq_eq_qInt {R : Type*} [CommRing R] {δ : R}
+    {k n : ℕ} (hnk : n ≤ k) {r : Fin (k + 1) → R}
+    (hr : ∀ t : Fin (k + 1), r t ^ 2 = qInt R δ (t + 1)) :
     IsPathEigenvectorUpTo (pathGraph (k + 1)) 0 r δ n := by
   refine isPathEigenvectorUpTo_iff.2 fun m hm s hs ↦ ?_
   have hle := hs.le_add_of_adj_le_succ Fin.val
@@ -129,12 +129,13 @@ theorem isPathEigenvectorUpTo_pathGraph_of_sq_eq_qInt {K : Type*} [Field K] {δ 
   simp_rw [hr]
   exact sum_neighborFinset_pathGraph_qInt_of_lt δ hlt
 
-/-- Over any field `K`, if `r t ^ 2 = [t + 1]` on `SimpleGraph.pathGraph (k + 1)` and `[k + 2] = 0`,
-then `r` satisfies `IsPathEigenvectorUpTo` at every base vertex `v₀` and every strand depth `n`. -/
-theorem isPathEigenvectorUpTo_pathGraph_of_qInt_eq_zero {K : Type*} [Field K] {δ : K}
-    {k : ℕ} (v₀ : Fin (k + 1)) {r : Fin (k + 1) → K}
-    (hr : ∀ t : Fin (k + 1), r t ^ 2 = qInt K δ (t + 1))
-    (hq : qInt K δ (k + 2) = 0) (n : ℕ) :
+/-- Over any commutative ring `R`, if `r t ^ 2 = [t + 1]` on `SimpleGraph.pathGraph (k + 1)` and
+`[k + 2] = 0`, then `r` satisfies `IsPathEigenvectorUpTo` at every base vertex `v₀` and every
+strand depth `n`. -/
+theorem isPathEigenvectorUpTo_pathGraph_of_qInt_eq_zero {R : Type*} [CommRing R] {δ : R}
+    {k : ℕ} (v₀ : Fin (k + 1)) {r : Fin (k + 1) → R}
+    (hr : ∀ t : Fin (k + 1), r t ^ 2 = qInt R δ (t + 1))
+    (hq : qInt R δ (k + 2) = 0) (n : ℕ) :
     IsPathEigenvectorUpTo (pathGraph (k + 1)) v₀ r δ n := by
   refine .of_forall (fun v ↦ ?_) n
   simp_rw [hr]

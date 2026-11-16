@@ -98,12 +98,10 @@ open SimpleGraph (isWalkFrom_iff_init isWalkFrom_snoc isWalkFrom_zero)
 
 namespace TauCeti.TemperleyLieb
 
-variable {K : Type*} [Field K] {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
-  [DecidableRel G.Adj] (v₀ : V) (r : V → K)
-
 section EigenvectorUpTo
 
-omit [DecidableEq V]
+variable {K : Type*} [Semiring K] {V : Type*} [Fintype V] (G : SimpleGraph V)
+  [DecidableRel G.Adj] (v₀ : V) (r : V → K)
 
 /-- The squares of `r` satisfy the adjacency eigenvector equation with eigenvalue `δ` at the
 endpoints of all walks in `G` from `v₀` with fewer than `n` steps. -/
@@ -137,8 +135,8 @@ theorem IsPathEigenvectorUpTo.of_forall {δ : K}
     IsPathEigenvectorUpTo G v₀ r δ n :=
   fun _ _ _ _ ↦ hδ _
 
-/-- Applying a ring homomorphism between fields preserves `IsPathEigenvectorUpTo`. -/
-theorem IsPathEigenvectorUpTo.map {L : Type*} [Field L] (f : K →+* L) {δ : K} {n : ℕ}
+/-- Applying a ring homomorphism preserves `IsPathEigenvectorUpTo`. -/
+theorem IsPathEigenvectorUpTo.map {L : Type*} [Semiring L] (f : K →+* L) {δ : K} {n : ℕ}
     (hδ : IsPathEigenvectorUpTo G v₀ r δ n) :
     IsPathEigenvectorUpTo G v₀ (f ∘ r) (f δ) n := by
   intro m hm s hs
@@ -154,6 +152,9 @@ theorem IsPathEigenvectorUpTo.apply_of_lt {δ : K} {m : ℕ}
   rwa [Fin.take_apply, show Fin.castLE _ (Fin.last a.val) = a from Fin.ext (by simp)] at h
 
 end EigenvectorUpTo
+
+variable {K : Type*} [Field K] {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
+  [DecidableRel G.Adj] (v₀ : V) (r : V → K)
 
 section Generator
 
