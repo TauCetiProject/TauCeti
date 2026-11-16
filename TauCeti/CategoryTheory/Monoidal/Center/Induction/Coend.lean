@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.End
+import TauCeti.CategoryTheory.Semisimple.Multiplicity
 
 /-!
 # The universal coend property of `Center.inductionObj`
@@ -42,9 +43,10 @@ adjunction `Center.induction k C ⊣ Center.forget C`.
   `CategoryTheory.Center.inductionCoendι_comp_inductionEndπ_of_simple` on simple objects;
 * `CategoryTheory.Center.inductionMapDesc`,
   `CategoryTheory.Center.map_ι_comp_inductionMapDesc`,
-  `CategoryTheory.Center.map_coendι_comp_inductionMapDesc`, and
-  `CategoryTheory.Center.inductionObj_map_hom_ext_ι`: the universal coend descent and uniqueness
-  principle under a functor `F : C ⥤ D`;
+  `CategoryTheory.Center.map_coendι_comp_inductionMapDesc`,
+  `CategoryTheory.Center.inductionObj_map_hom_ext_ι`, and
+  `CategoryTheory.Center.inductionObj_map_hom_ext_coendι`: the universal coend descent and
+  uniqueness principles under a functor `F : C ⥤ D`;
 * `CategoryTheory.Center.inductionDesc`, `CategoryTheory.Center.ι_comp_inductionDesc`,
   `CategoryTheory.Center.coendι_comp_inductionDesc`, and
   `CategoryTheory.Center.inductionObj_hom_ext_coendι`: the universal coend descent and uniqueness
@@ -406,7 +408,56 @@ theorem ι_comp_inductionDesc {X W : C} (w : ∀ Y : C, Y ⊗ X ⊗ Yᘁ ⟶ W) 
     biproduct.ι (inductionSummand X) S ≫ inductionDesc w = w S.repr :=
   map_ι_comp_inductionMapDesc (F := 𝟭 C) w S
 
-variable [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C]
+variable [IsFiniteSemisimpleCategory C]
+
+/-- Morphisms out of `F.obj (inductionObj X)` for a functor `F : C ⥤ D` preserving the biproduct
+of `inductionSummand X` agree once they agree after every coend coprojection
+`F.map (inductionCoendι X Y)`. -/
+theorem inductionObj_map_hom_ext_coendι {D : Type*} [Category* D] [HasZeroMorphisms D]
+    {F : C ⥤ D} [F.PreservesZeroMorphisms] {X : C}
+    [PreservesBiproduct (inductionSummand X) F] {W : D}
+    {f₁ f₂ : F.obj (inductionObj X) ⟶ W}
+    (h : ∀ Y : C, F.map (inductionCoendι X Y) ≫ f₁ = F.map (inductionCoendι X Y) ≫ f₂) :
+    f₁ = f₂ := by
+  refine inductionObj_map_hom_ext_ι fun S ↦ ?_
+  let a := chosenSimpleFamily S.repr
+  let e := chosenSimpleIso S.repr
+  obtain ⟨e', he'⟩ := exists_equiv_of_iso_biproduct_simples a (fun _ : Unit ↦ S.repr)
+    (e.symm ≪≫ (biproductUniqueIso (fun _ : Unit ↦ S.repr)).symm)
+  let : Unique (chosenSimpleIndex S.repr) := e'.unique
+  have hcls : SimpleClasses.classOf (a default) = S :=
+    ((SimpleClasses.classOf_eq_iff_nonempty_iso _ _).2 (he' default)).trans
+      (SimpleClasses.classOf_repr S)
+  have hS := h S.repr
+  rw [inductionCoendι_def, Fintype.sum_unique] at hS
+  have hqp : decompIncl a e default ≫ decompProj a e default =
+      𝟙 (SimpleClasses.classOf (a default)).repr := by
+    simp [decompIncl, decompProj]
+  have hcancel :
+      ((SimpleClasses.classOf (a default)).repr ◁ X ◁ (decompProj a e default)ᘁ ≫
+          decompIncl a e default ▷ (X ⊗ S.reprᘁ)) ≫
+        decompProj a e default ▷ (X ⊗ S.reprᘁ) ≫
+          (SimpleClasses.classOf (a default)).repr ◁ X ◁ (decompIncl a e default)ᘁ ≫
+          biproduct.ι (inductionSummand X) (SimpleClasses.classOf (a default)) =
+      biproduct.ι (inductionSummand X) (SimpleClasses.classOf (a default)) := by
+    simp only [Category.assoc, ← comp_whiskerRight_assoc, hqp, id_whiskerRight, Category.id_comp,
+      ← whiskerLeft_comp_assoc, ← whiskerLeft_comp, ← comp_rightAdjointMate, rightAdjointMate_id,
+      whiskerLeft_id]
+  have hR := congrArg
+    (F.map ((SimpleClasses.classOf (a default)).repr ◁ X ◁ (decompProj a e default)ᘁ ≫
+      decompIncl a e default ▷ (X ⊗ S.reprᘁ)) ≫ ·) hS
+  rw [← F.map_comp_assoc, ← F.map_comp_assoc, hcancel] at hR
+  exact hcls ▸ hR
+
+/-- Two morphisms out of `inductionObj X` agree once they agree after every coend coprojection
+`inductionCoendι X Y`. -/
+theorem inductionObj_hom_ext_coendι {X W : C}
+    {f₁ f₂ : inductionObj X ⟶ W}
+    (h : ∀ Y : C, inductionCoendι X Y ≫ f₁ = inductionCoendι X Y ≫ f₂) :
+    f₁ = f₂ :=
+  inductionObj_map_hom_ext_coendι (F := 𝟭 C) h
+
+variable [MonoidalPreadditive C]
 
 /-- Universal property of `inductionCoendι` under an additive functor `F : C ⥤ D`: any dinatural
 cowedge `w : ∀ Y : C, F.obj (Y ⊗ X ⊗ Yᘁ) ⟶ W` factors through `inductionMapDesc w`. -/
@@ -449,19 +500,6 @@ theorem coendι_comp_inductionDesc {X W : C} (w : ∀ Y : C, Y ⊗ X ⊗ Yᘁ �
     (Y : C) :
     inductionCoendι X Y ≫ inductionDesc w = w Y :=
   map_coendι_comp_inductionMapDesc (F := 𝟭 C) w hw Y
-
-variable (k : Type w) [Field k] [IsAlgClosed k] [Linear k C] [MonoidalLinear k C]
-  [∀ S : SimpleClasses C, FiniteDimensional k (S.repr ⟶ S.repr)]
-
-include k in
-/-- Two morphisms out of `inductionObj X` agree once they agree after every coend coprojection
-`inductionCoendι X Y`. -/
-theorem inductionObj_hom_ext_coendι {X W : C}
-    {f₁ f₂ : inductionObj X ⟶ W}
-    (h : ∀ Y : C, inductionCoendι X Y ≫ f₁ = inductionCoendι X Y ≫ f₂) :
-    f₁ = f₂ :=
-  inductionObj_map_hom_ext_ι (F := 𝟭 C) fun S ↦ by
-    simpa [inductionCoendι_repr k X S] using h S.repr
 
 end UniversalCoend
 
