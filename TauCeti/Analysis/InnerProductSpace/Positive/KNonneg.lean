@@ -49,8 +49,8 @@ and `k`-nonnegativity implies `m`-nonnegativity for `1 ≤ k ≤ m`
   smallest eigenvalues.
 * `LinearMap.isKNonneg_iff_forall_re_trace_nonneg`,
   `LinearMap.isKPos_iff_forall_re_trace_pos`: the characterizations by traces of compressions.
-* `LinearMap.isKNonneg_conj_iff`, `LinearMap.isKPos_conj_iff`: invariance under conjugation by
-  linear isometries.
+* `LinearIsometryEquiv.isKNonneg_conj_iff`, `LinearIsometryEquiv.isKPos_conj_iff`: invariance
+  under conjugation by linear isometries.
 * `ContinuousLinearMap.isClosed_setOf_isKNonneg`: the `k`-nonnegative bounded operators form a
   closed set.
 
@@ -68,8 +68,7 @@ open Module Finset
 
 namespace LinearMap
 
-variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 
@@ -225,18 +224,6 @@ theorem IsKNonneg.smul (hT : T.IsKNonneg k) {c : ℝ} (hc : 0 ≤ c) : ((c : �
 theorem IsKPos.smul (hT : T.IsKPos k) {c : ℝ} (hc : 0 < c) : ((c : 𝕜) • T).IsKPos k :=
   fun w hw ↦ by simpa [inner_smul_left, ← mul_sum] using mul_pos hc (hT w hw)
 
-/-- Conjugating by a linear isometry equivalence preserves `k`-nonnegativity. -/
-@[simp]
-theorem isKNonneg_conj_iff (U : E ≃ₗᵢ[𝕜] F) :
-    (U.toLinearEquiv.conj T).IsKNonneg k ↔ T.IsKNonneg k :=
-  U.forall_orthonormal_sum_re_inner_conj_iff (0 ≤ ·)
-
-/-- Conjugating by a linear isometry equivalence preserves `k`-positivity. -/
-@[simp]
-theorem isKPos_conj_iff (U : E ≃ₗᵢ[𝕜] F) :
-    (U.toLinearEquiv.conj T).IsKPos k ↔ T.IsKPos k :=
-  U.forall_orthonormal_sum_re_inner_conj_iff (0 < ·)
-
 /-! ### Traces of compressions -/
 
 /-- `T` is `k`-nonnegative exactly when its compression to every `k`-dimensional subspace has
@@ -298,6 +285,25 @@ theorem isKPos_two_iff_eigenvalues_add_eigenvalues_pos (hT : T.IsSymmetric)
 end IsSymmetric
 
 end LinearMap
+
+namespace LinearIsometryEquiv
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {T : E →ₗ[𝕜] E} {k : ℕ}
+
+/-- Conjugating by a linear isometry equivalence preserves `k`-nonnegativity. -/
+@[simp]
+theorem isKNonneg_conj_iff (U : E ≃ₗᵢ[𝕜] F) :
+    (U.toLinearEquiv.conj T).IsKNonneg k ↔ T.IsKNonneg k :=
+  U.forall_orthonormal_sum_re_inner_conj_iff (0 ≤ ·)
+
+/-- Conjugating by a linear isometry equivalence preserves `k`-positivity. -/
+@[simp]
+theorem isKPos_conj_iff (U : E ≃ₗᵢ[𝕜] F) :
+    (U.toLinearEquiv.conj T).IsKPos k ↔ T.IsKPos k :=
+  U.forall_orthonormal_sum_re_inner_conj_iff (0 < ·)
+
+end LinearIsometryEquiv
 
 namespace ContinuousLinearMap
 
