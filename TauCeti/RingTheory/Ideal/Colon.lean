@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Basic
+public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.Ideal.Colon
+public import Mathlib.RingTheory.Localization.Ideal
 
 /-!
 # Colon ideals and quotient annihilators
@@ -16,7 +18,8 @@ restricting scalars to `R`.
 
 For an ideal `I` and an element `f` of a commutative ring, `I ∩ (f) = f · (I : f)`. When `f` is
 regular this determines `(I : f)`: generators of `I ∩ (f)`, which an intersection computation
-supplies, divided by `f` generate `(I : f)`.
+supplies, divided by `f` generate `(I : f)`. Colon ideals with finitely generated denominators also
+commute with localization: `(I : J) S = (I S : J S)`.
 
 ## Main results
 
@@ -27,8 +30,11 @@ supplies, divided by `f` generate `(I : f)`.
 * `Ideal.inf_span_singleton_eq_span_singleton_mul_colon`: `I ∩ (f) = f · (I : f)`.
 * `Ideal.colon_singleton_eq_of_inf_span_singleton_eq`: for regular `f`, if `I ∩ (f) = f · J`
   then `(I : f) = J`.
+* `Ideal.colon_span_singleton_mul_of_isLeftRegular`: for regular `f`, `((f) · J : (f)) = J`.
 * `Ideal.exists_eq_span_pow_mul_colon_not_le`: an ideal not contained in every power of `(f)` is
   `(f ^ k) · (I : f ^ k)` with `(I : f ^ k)` not contained in `(f)`.
+* `Ideal.map_colon_of_isLocalization`: for finitely generated `J`, colon ideals commute with
+  localization.
 
 ## References
 
@@ -107,5 +113,55 @@ theorem exists_eq_span_pow_mul_colon_not_le (h : ∃ n, ¬ I ≤ span {f ^ n}) :
   · obtain ⟨a, rfl⟩ := mem_span_singleton'.1 (hIk hx)
     obtain ⟨d, rfl⟩ := mem_span_singleton'.1 (hle (Submodule.mem_colon_singleton.2 hx))
     exact mem_span_singleton'.2 ⟨d, by ring⟩
+
+/-- For a left-regular element `f`, dividing the product `(f) · J` by `(f)` recovers `J`. -/
+theorem colon_span_singleton_mul_of_isLeftRegular (hf : IsLeftRegular f) :
+    (span {f} * J).colon (span {f} : Set R) = J := by
+  rw [colon_span]
+  exact colon_singleton_eq_of_inf_span_singleton_eq hf (inf_eq_left.mpr mul_le_left)
+
+/-- **Colon ideals commute with localization for finitely generated denominators.** If `J` is a
+finitely generated ideal of `R` and `S` is a localization of `R` at a submonoid `M`, then
+`(I : J) S = (I S : J S)`. -/
+theorem map_colon_of_isLocalization (M : Submonoid R) (S : Type*) [CommSemiring S]
+    [Algebra R S] [IsLocalization M S] (hJ : J.FG) :
+    (I.colon (J : Set R)).map (algebraMap R S) =
+      (I.map (algebraMap R S)).colon (J.map (algebraMap R S) : Set S) := by
+  classical
+  refine le_antisymm (map_le_iff_le_comap.mpr fun r hr ↦ Submodule.mem_colon.mpr fun y hy ↦ ?_) ?_
+  · rw [Ideal.map] at hy
+    induction hy using Submodule.span_induction with
+    | mem _ h =>
+      obtain ⟨j, hj, rfl⟩ := h
+      rw [smul_eq_mul, ← map_mul]
+      exact mem_map_of_mem _ (Submodule.mem_colon.mp hr j hj)
+    | zero => rw [smul_zero]; exact zero_mem _
+    | add _ _ _ _ hx hy => simpa only [smul_add] using add_mem hx hy
+    | smul c _ _ hx => rw [smul_comm]; exact Submodule.smul_mem _ c hx
+  · intro z hz
+    obtain ⟨s, rfl⟩ := hJ
+    obtain ⟨x, m, rfl⟩ := IsLocalization.exists_mk'_eq M z
+    have hmul (j : s) : ∃ c : M, (c : R) * (x * j.1) ∈ I := by
+      have hmem : IsLocalization.mk' S x m * algebraMap R S j.1 ∈ I.map (algebraMap R S) :=
+        Submodule.mem_colon.mp hz _ (mem_map_of_mem _ (subset_span j.2))
+      rw [mul_comm, IsLocalization.mul_mk'_eq_mk'_of_mul, mul_comm j.1 x,
+        IsLocalization.mk'_mem_map_algebraMap_iff] at hmem
+      obtain ⟨c, hcM, hcI⟩ := hmem
+      exact ⟨⟨c, hcM⟩, hcI⟩
+    choose c hc using hmul
+    let C : M := ∏ j : s, c j
+    have hCx : (C : R) * x ∈ I.colon (span (s : Set R) : Set R) := by
+      rw [colon_span, Submodule.mem_colon]
+      intro j hj
+      let j' : s := ⟨j, hj⟩
+      have hC : (C : R) = (c j' : R) * (∏ k ∈ Finset.univ.erase j', (c k : R)) := by
+        simpa [C] using
+          congrArg Subtype.val (Finset.mul_prod_erase Finset.univ c (Finset.mem_univ j')).symm
+      rw [smul_eq_mul, hC, mul_comm (c j' : R), mul_assoc, mul_assoc]
+      exact mul_mem_left I _ (hc j')
+    have hmk : IsLocalization.mk' S x m = IsLocalization.mk' S ((C : R) * x) (C * m) :=
+      IsLocalization.mk'_eq_of_eq (by simp [mul_left_comm, mul_comm])
+    rw [hmk, IsLocalization.mk'_mem_map_algebraMap_iff]
+    exact ⟨1, one_mem M, by simpa using hCx⟩
 
 end Ideal

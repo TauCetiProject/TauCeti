@@ -20,7 +20,11 @@ to the residue skyscraper detects a generating section whenever its image is non
 criterion turns surjectivity of restriction to a point into generation of the line bundle there.
 Global generation is equivalent to the existence of Mathlib's
 `SheafOfModules.GeneratingSections`, including the epimorphism from a free sheaf onto the
-line bundle. The trivial line bundle is globally generated
+line bundle; more generally, any indexed family of global sections whose nonvanishing loci cover
+`X` determines morphisms out of the invertible sheaf and induces an epimorphism from the free
+sheaf (`TauCeti.AlgebraicGeometry.hom_ext_of_iSup_nonvanishingLocus_eq_top`,
+`TauCeti.AlgebraicGeometry.epi_freeHomEquiv_symm_of_iSup_nonvanishingLocus_eq_top`). The trivial
+line bundle is globally generated
 (`TauCeti.AlgebraicGeometry.InvertibleSheaf.isGloballyGenerated_trivial`).
 
 ## References
@@ -129,6 +133,59 @@ theorem mem_nonvanishingLocus_of_app_ne_zero {U : X.Opens}
   rw [nonvanishingLocus_map] at hmem
   exact hmem.2
 
+/-- Morphisms out of an invertible sheaf are determined by their values on a family of global
+sections whose nonvanishing loci cover `X`. -/
+theorem hom_ext_of_iSup_nonvanishingLocus_eq_top {ι : Type*} {f : ι → Γ(M, ⊤)}
+    (hcover : (⨆ i, M.nonvanishingLocus (f i)) = ⊤) {N : X.Modules} (p q : M ⟶ N)
+    (htop : ∀ i, p.app ⊤ (f i) = q.app ⊤ (f i)) : p = q := by
+  have hnat (r : M ⟶ N) {U V : X.Opens} (k : V ⟶ U) (s : Γ(M, U)) :
+      r.app V (M.presheaf.map k.op s) = N.presheaf.map k.op (r.app U s) :=
+    r.mapPresheaf.naturality_apply k.op s
+  ext U m
+  apply TopCat.Presheaf.section_ext (⟨N.presheaf, N.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
+  intro x hx
+  obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hcover.symm ▸ Opens.mem_top x)
+  let V := U ⊓ M.nonvanishingLocus (f i)
+  let k : V ⟶ U := homOfLE inf_le_left
+  let j : V ⟶ ⊤ := V.leTop
+  have hV : V ≤ M.nonvanishingLocus (M.presheaf.map j.op (f i)) := by
+    rw [Scheme.Modules.nonvanishingLocus_map]
+    exact le_inf le_rfl inf_le_right
+  obtain ⟨a, ha⟩ := Scheme.Modules.surjective_smul_of_le_nonvanishingLocus hV
+    (M.presheaf.map k.op m)
+  have heq : N.presheaf.map k.op (p.app U m) = N.presheaf.map k.op (q.app U m) := by
+    rw [← hnat, ← hnat, ← ha, Scheme.Modules.Hom.app_smul, Scheme.Modules.Hom.app_smul,
+      hnat, hnat, htop i]
+  have hxV : x ∈ V := ⟨hx, hi⟩
+  rw [← TopCat.Presheaf.germ_res_apply N.presheaf k x hxV,
+    ← TopCat.Presheaf.germ_res_apply N.presheaf k x hxV]
+  exact congrArg _ heq
+
+/-- A family of global sections of an invertible sheaf whose nonvanishing loci cover `X` induces an
+epimorphism from the free sheaf onto `M`. -/
+theorem epi_freeHomEquiv_symm_of_iSup_nonvanishingLocus_eq_top {ι : Type u} (f : ι → Γ(M, ⊤))
+    (hcover : (⨆ i, M.nonvanishingLocus (f i)) = ⊤) :
+    Epi (M.freeHomEquiv.symm (fun i ↦ M.sectionsEquivTop.symm (f i))) := by
+  -- Select the scheme-module category before introducing cancellation morphisms.
+  change @Epi X.Modules _ _ _ _
+  refine ⟨fun {N : X.Modules} p q hpq ↦
+    hom_ext_of_iSup_nonvanishingLocus_eq_top hcover p q fun i ↦ ?_⟩
+  -- Compute the free-sheaf universal property through its public evaluation equations.
+  have heval (r : M ⟶ N) :
+      SheafOfModules.freeHomEquiv N
+        ((SheafOfModules.freeHomEquiv M).symm (fun j ↦ M.sectionsEquivTop.symm (f j)) ≫ r) i =
+        SheafOfModules.sectionsMap r (M.sectionsEquivTop.symm (f i)) :=
+    (SheafOfModules.freeHomEquiv_comp_apply _ r i).trans
+      (congrArg (fun t ↦ SheafOfModules.sectionsMap r (t i))
+        ((SheafOfModules.freeHomEquiv M).apply_symm_apply _))
+  have hsec : SheafOfModules.sectionsMap p (M.sectionsEquivTop.symm (f i)) =
+      SheafOfModules.sectionsMap q (M.sectionsEquivTop.symm (f i)) :=
+    (heval p).symm.trans
+      ((congrArg (fun r ↦ SheafOfModules.freeHomEquiv N r i) hpq).trans (heval q))
+  have h' := congrArg N.sectionsEquivTop hsec
+  rwa [Scheme.Modules.sectionsEquivTop_sectionsMap,
+    Scheme.Modules.sectionsEquivTop_sectionsMap, Equiv.apply_symm_apply] at h'
+
 end TauCeti.AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry.InvertibleSheaf
@@ -186,53 +243,17 @@ theorem isGloballyGenerated_iff_forall_isClosed [JacobsonSpace X] {L : Invertibl
 /-- Morphisms out of a globally generated line bundle are determined by global sections. -/
 theorem IsGloballyGenerated.hom_ext {L : InvertibleSheaf X} (hL : L.IsGloballyGenerated)
     {N : X.Modules} (f g : L.obj ⟶ N) (htop : ∀ s : Γ(L.obj, ⊤), f.app ⊤ s = g.app ⊤ s) :
-    f = g := by
-  have hnat (p : L.obj ⟶ N) {U V : X.Opens} (i : V ⟶ U) (s : Γ(L.obj, U)) :
-      p.app V (L.obj.presheaf.map i.op s) = N.presheaf.map i.op (p.app U s) :=
-    p.mapPresheaf.naturality_apply i.op s
-  ext U m
-  apply TopCat.Presheaf.section_ext (⟨N.presheaf, N.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
-  intro x hx
-  obtain ⟨s, hs⟩ := hL x
-  let V := U ⊓ L.obj.nonvanishingLocus s
-  let i : V ⟶ U := homOfLE inf_le_left
-  let j : V ⟶ ⊤ := V.leTop
-  have hV : V ≤ L.obj.nonvanishingLocus (L.obj.presheaf.map j.op s) := by
-    rw [Scheme.Modules.nonvanishingLocus_map]
-    exact le_inf le_rfl inf_le_right
-  obtain ⟨r, hr⟩ := Scheme.Modules.surjective_smul_of_le_nonvanishingLocus hV
-    (L.obj.presheaf.map i.op m)
-  have heq : N.presheaf.map i.op (f.app U m) = N.presheaf.map i.op (g.app U m) := by
-    rw [← hnat, ← hnat, ← hr, Scheme.Modules.Hom.app_smul, Scheme.Modules.Hom.app_smul,
-      hnat, hnat, htop]
-  have hxV : x ∈ V := ⟨hx, hs⟩
-  rw [← TopCat.Presheaf.germ_res_apply N.presheaf i x hxV,
-    ← TopCat.Presheaf.germ_res_apply N.presheaf i x hxV]
-  exact congrArg _ heq
+    f = g :=
+  hom_ext_of_iSup_nonvanishingLocus_eq_top
+    (isGloballyGenerated_iff_iSup_nonvanishingLocus_eq_top.mp hL) f g htop
 
 /-- A globally generated line bundle admits Mathlib's generating-section data. The associated
 morphism from the free sheaf is an epimorphism. -/
 theorem IsGloballyGenerated.nonempty_generatingSections {L : InvertibleSheaf X}
-    (hL : L.IsGloballyGenerated) : Nonempty L.obj.GeneratingSections := by
-  refine ⟨{ I := Γ(L.obj, ⊤), s := L.obj.sectionsEquivTop.symm, epi := ?_ }⟩
-  -- Select the scheme-module category before introducing cancellation morphisms.
-  change @Epi X.Modules _ _ _ _
-  refine ⟨fun {N : X.Modules} f g hfg ↦ hL.hom_ext f g fun s ↦ ?_⟩
-  -- Compute the free-sheaf universal property through its public evaluation equations.
-  have heval (p : L.obj ⟶ N) :
-      SheafOfModules.freeHomEquiv N
-        ((SheafOfModules.freeHomEquiv L.obj).symm (L.obj.sectionsEquivTop.symm) ≫ p) s =
-        SheafOfModules.sectionsMap p (L.obj.sectionsEquivTop.symm s) :=
-    (SheafOfModules.freeHomEquiv_comp_apply _ p s).trans
-      (congrArg (fun t ↦ SheafOfModules.sectionsMap p (t s))
-        ((SheafOfModules.freeHomEquiv L.obj).apply_symm_apply (L.obj.sectionsEquivTop.symm)))
-  have h : SheafOfModules.sectionsMap f (L.obj.sectionsEquivTop.symm s) =
-      SheafOfModules.sectionsMap g (L.obj.sectionsEquivTop.symm s) :=
-    (heval f).symm.trans
-      ((congrArg (fun p ↦ SheafOfModules.freeHomEquiv N p s) hfg).trans (heval g))
-  have htop := congrArg N.sectionsEquivTop h
-  rwa [Scheme.Modules.sectionsEquivTop_sectionsMap, Scheme.Modules.sectionsEquivTop_sectionsMap,
-    Equiv.apply_symm_apply] at htop
+    (hL : L.IsGloballyGenerated) : Nonempty L.obj.GeneratingSections :=
+  ⟨{ I := Γ(L.obj, ⊤), s := L.obj.sectionsEquivTop.symm,
+     epi := epi_freeHomEquiv_symm_of_iSup_nonvanishingLocus_eq_top id
+       (isGloballyGenerated_iff_iSup_nonvanishingLocus_eq_top.mp hL) }⟩
 
 /-- Global generation of a line bundle is equivalent to the existence of Mathlib's
 family of generating global sections. -/
