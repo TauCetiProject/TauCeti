@@ -38,7 +38,8 @@ the semicontinuity half of the direct method for perimeter problems.
 * `TauCeti.perimeter_congr_ae`, `TauCeti.perimeter_congr_of_inter_eq`, `TauCeti.perimeter_mono`
   and `TauCeti.perimeter_iSup`: invariance under null modification inside `Ω` and locality, and
   monotonicity and inner continuity in `Ω`.
-* `TauCeti.perimeter_compl`, `TauCeti.perimeter_empty` and `TauCeti.perimeter_univ`.
+* `TauCeti.perimeter_compl`, `TauCeti.perimeter_empty`, `TauCeti.perimeter_univ` and
+  `TauCeti.perimeter_of_subsingleton`.
 * `TauCeti.perimeter_le_liminf`: lower semicontinuity of the perimeter.
 
 ## References
@@ -106,6 +107,11 @@ theorem perimeter_iSup {ι : Type*} {Ω : ι → Opens E} (hΩ : Directed (· �
 theorem perimeter_empty : perimeter μ Ω ∅ = 0 := by
   rw [perimeter_def, indicator_empty]
   exact totalVariationOn_zero
+
+/-- In dimension zero every set has perimeter zero, for every measure. -/
+@[simp]
+theorem perimeter_of_subsingleton [Subsingleton E] : perimeter μ Ω s = 0 :=
+  totalVariationOn_of_subsingleton
 
 /-- The perimeter of a subset `t ⊆ s` with respect to `μ.restrict s` agrees with its perimeter with
 respect to `μ`, because the indicator of `t` vanishes off `s`. -/

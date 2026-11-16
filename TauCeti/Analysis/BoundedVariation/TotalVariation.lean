@@ -136,6 +136,13 @@ theorem ofReal_abs_integral_le_totalVariationOn (φ : 𝓓(Ω, E)) (hφ : ∀ x,
 theorem totalVariationOn_zero : totalVariationOn μ Ω 0 = 0 := by
   simp [totalVariationOn_def]
 
+/-- In dimension zero the only test vector field is zero, so every function has total variation
+zero, for every measure. -/
+@[simp]
+theorem totalVariationOn_of_subsingleton [Subsingleton E] : totalVariationOn μ Ω u = 0 :=
+  nonpos_iff_eq_zero.1 <| totalVariationOn_le_iff.2 fun φ _ => by
+    simp [show φ = 0 from TestFunction.ext fun _ => Subsingleton.elim _ _]
+
 /-- **Locality.** The total variation on `Ω` only depends on `u` almost everywhere on `Ω`. -/
 theorem totalVariationOn_congr_ae (h : u =ᵐ[μ.restrict Ω] v) :
     totalVariationOn μ Ω u = totalVariationOn μ Ω v := by
