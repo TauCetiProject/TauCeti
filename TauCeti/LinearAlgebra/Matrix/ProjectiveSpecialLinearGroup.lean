@@ -194,13 +194,11 @@ theorem conjAct_sl2zToPSL2R_smul_map [H.Normal] (γ : SL(2, ℤ)) :
     (mem_map_of_mem _ (by rw [normalizer_eq_top]; trivial)))
 
 /-- The image in `PSL(2, ℝ)` of a normal subgroup of `SL(2, ℤ)` is normal in the level-one
-group, which is the image of `SL(2, ℤ)` and so lies in the normalizer of the image. -/
+group, which is the range of `sl2zToPSL2R` (`Subgroup.normal_subgroupOf_map_range`). -/
 instance normal_subgroupOf_map_sl2zToPSL2R [H.Normal] :
-    ((H.map sl2zToPSL2R).subgroupOf psl2zToPSL2R.range).Normal :=
-  normal_subgroupOf_of_le_normalizer <| by
-    rw [← TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R, MonoidHom.range_eq_map,
-      ← normalizer_eq_top (H := H)]
-    exact le_normalizer_map sl2zToPSL2R
+    ((H.map sl2zToPSL2R).subgroupOf psl2zToPSL2R.range).Normal := by
+  rw [← TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R]
+  infer_instance
 
 /-- A finite-index subgroup of `SL(2, ℤ)` has finite-index image in the level-one group. -/
 instance isFiniteRelIndex_map_sl2zToPSL2R [H.FiniteIndex] :

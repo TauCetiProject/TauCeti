@@ -56,6 +56,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `Subgroup.le_map_conj_of_forall_coe_eq`: `V` lies in `gUg⁻¹` when a map `V → U` sends each `v`
   to `g⁻¹ v g`.
 * `Subgroup.map_map_conj`: the image of a conjugate subgroup is the conjugate of the image.
+* `Subgroup.normal_subgroupOf_map_range`, `AddSubgroup.normal_addSubgroupOf_map_range`: the image
+  of a normal subgroup is normal in the range of the homomorphism.
 * `Subgroup.map_quotientGroupMap_map_mk'`: taking images in quotients commutes with the maps
   induced on quotients.
 * `QuotientGroup.map_mk'_eq_top`, `QuotientAddGroup.map_mk'_eq_top`: the image of `K` in `G ⧸ N`
@@ -376,6 +378,16 @@ continuous. -/
 theorem _root_.Subgroup.le_map_conj_of_forall_coe_eq (V U : Subgroup G) (g : G) (κ : V → U)
     (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g) : V ≤ U.map (MulAut.conj g).toMonoidHom :=
   fun v hv ↦ Subgroup.mem_map.2 ⟨κ ⟨v, hv⟩, (κ ⟨v, hv⟩).2, by simp [hκ, mul_assoc]⟩
+
+/-- The image of a normal subgroup is normal in the range of the homomorphism: the range is the
+image of the whole group, which normalizes the image. -/
+@[to_additive /-- The image of a normal additive subgroup is normal in the range of the additive
+homomorphism: the range is the image of the whole group, which normalizes the image. -/]
+instance _root_.Subgroup.normal_subgroupOf_map_range (N : Subgroup G) [N.Normal] (f : G →* H) :
+    ((N.map f).subgroupOf f.range).Normal :=
+  Subgroup.normal_subgroupOf_of_le_normalizer <| by
+    rw [MonoidHom.range_eq_map, ← Subgroup.normalizer_eq_top (H := N)]
+    exact Subgroup.le_normalizer_map f
 
 /-- The image of a subgroup in `G ⧸ N`, pushed forward along the map `G ⧸ N →* H ⧸ M` induced by
 `f`, is the image in `H ⧸ M` of the image of the subgroup under `f`.

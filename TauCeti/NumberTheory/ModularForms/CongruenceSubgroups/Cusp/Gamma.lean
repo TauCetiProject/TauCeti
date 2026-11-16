@@ -117,10 +117,12 @@ theorem two_mul_mul_card_cuspOrbit_Gamma {N : ℕ} (hN : 3 ≤ N) :
     Matrix.SpecialLinearGroup.index_eq_two_mul_index_withCenter_of_neg_one_notMem hneg]
 
 /-- **`Γ(1)` has one cusp**, as `Γ(1) = SL(2, ℤ)`. -/
+@[simp]
 theorem card_cuspOrbit_Gamma_one : Nat.card ((Gamma 1).map sl2zToPSL2R).CuspOrbit = 1 := by
   simpa [Gamma_one_top, Subgroup.withCenter_def] using mul_card_cuspOrbit_Gamma 1
 
 /-- **`Γ(2)` has three cusps**: there `-I ∈ Γ(2)`, so `2 ε∞ = |SL(2, ℤ / 2)| = 6`. -/
+@[simp]
 theorem card_cuspOrbit_Gamma_two : Nat.card ((Gamma 2).map sl2zToPSL2R).CuspOrbit = 3 := by
   have h := mul_card_cuspOrbit_Gamma 2
   have h6 : Nat.card SL(2, ZMod 2) = 6 := by
