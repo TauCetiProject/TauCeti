@@ -25,21 +25,23 @@ A **smooth based cap** of `γ` (`TauCeti.Floer.IsSmoothBasedCap`) is a smooth ma
 `u : ℝ × ℝ → M`, `1`-periodic in `t`, with `u (0, t) = γ t`, `u (1, t) = x` and `u (s, 0) = x` for
 `s, t ∈ [0, 1]`: a disc bounding `γ`, swept out from `γ` at `s = 0` to its centre at `s = 1`
 through loops based at `x`. Periodicity makes two smooth based caps of `γ` agree along the whole
-line `s = 0`, so that they glue smoothly. A smooth based cap has a raw cap
-`IsSmoothBasedCap.rawCap`, the class of the path `s ↦ u (s, ·)` in the loop space.
+line `s = 0`, so that they glue smoothly. The raw cap of a smooth based cap `u` is its homotopy
+class `IsSmoothBasedHomotopy.homotopyClass`, the class of the path `s ↦ u (s, ·)` in the loop
+space.
 
 * **Two smooth caps differ by the sphere they bound.** For two smooth based caps `u` and `u'` of
-  `γ`, the sphere `u'.rawCap -ᵥ u.rawCap` is represented by the concatenation of `u` run
-  backwards and `u'` (`TauCeti.Floer.IsSmoothBasedCap.rawCap_vsub_rawCap_toMul`), which is smooth
-  after the reparametrization of `TauCeti.rectangleTrans`
+  `γ`, the sphere `u'.homotopyClass -ᵥ u.homotopyClass` is represented by the concatenation of `u`
+  run backwards and `u'`
+  (`TauCeti.Floer.IsSmoothBasedCap.homotopyClass_vsub_homotopyClass_toMul`), which is smooth after
+  the reparametrization of `TauCeti.rectangleTrans`
   (`TauCeti.Floer.IsSmoothBasedCap.contMDiff_rectangleTrans`). So the integral of `φ` over this
   sphere is `∫ u'^* φ - ∫ u^* φ`, the integrals being over the unit square
-  (`TauCeti.Floer.IsSmoothBasedCap.sphereIntegral_rawCap_vsub_rawCap`), by
+  (`TauCeti.Floer.IsSmoothBasedCap.sphereIntegral_homotopyClass_vsub_homotopyClass`), by
   `TauCeti.sphereIntegral_mk_of_contMDiff`.
 * **The area of a raw cap.** If `γ` has a smooth based cap `u₀` (witnessing `h`), the area of a
-  raw cap `D` is `RawCap.area φ h D = ∫ u₀^* φ + ∫_{D -ᵥ u₀.rawCap} φ`. The area is only defined
-  for loops with a smooth based cap. It does not depend on `u₀`: the area of the raw cap of every
-  smooth based cap `u` is `∫ u^* φ` (`TauCeti.Floer.RawCap.area_rawCap`).
+  raw cap `D` is `RawCap.area φ h D = ∫ u₀^* φ + ∫_{D -ᵥ u₀.homotopyClass} φ`. The area is only
+  defined for loops with a smooth based cap. It does not depend on `u₀`: the area of the raw cap of
+  every smooth based cap `u` is `∫ u^* φ` (`TauCeti.Floer.RawCap.area_homotopyClass`).
 * **The recapping law.** Gluing a sphere `a ∈ π₂(M, x)` to a raw cap adds the integral of `φ` over
   `a` to its area, `area (a +ᵥ D) = ∫_a φ + area D` (`TauCeti.Floer.RawCap.area_vadd`), and the
   areas of two raw caps differ by the integral over the sphere by which they differ
@@ -51,10 +53,9 @@ line `s = 0`, so that they glue smoothly. A smooth based cap has a raw cap
   (`TauCeti.Floer.IsSmoothBasedHomotopy.rectangleTrans`), whose homotopy class is the composite of
   theirs (`TauCeti.Floer.IsSmoothBasedHomotopy.homotopyClass_rectangleTrans`). The homotopy class
   `IsSmoothBasedHomotopy.homotopyClass` glues to raw caps `D` of `γ₂`, giving the raw caps
-  `w.homotopyClass ≫ D` of `γ₁`. On smooth caps `u` of `γ₂` this is the concatenation
-  `rectangleTrans w u`, a smooth based cap of `γ₁`
-  (`TauCeti.Floer.IsSmoothBasedHomotopy.rawCap_rectangleTrans`), so gluing a cylinder to a cap adds
-  its integral to the area, `area (w ≫ D) = ∫ w^* φ + area D`
+  `w.homotopyClass ≫ D` of `γ₁`. On smooth caps `u` of `γ₂` this is the class of the concatenation
+  `rectangleTrans w u`, a smooth based cap of `γ₁`, so gluing a cylinder to a cap adds its
+  integral to the area, `area (w ≫ D) = ∫ w^* φ + area D`
   (`TauCeti.Floer.RawCap.area_homotopyClass_comp`), and cutting it off subtracts it
   (`TauCeti.Floer.RawCap.area_inv_homotopyClass_comp`). The energy identity of a Floer cylinder has
   the area `∫ w^* ω` as its topological term; when the cylinder is a smooth based homotopy, this
@@ -65,27 +66,26 @@ The recapping law is the hypothesis of `TauCeti.Floer.CapClass.lift`, with the a
 `TauCeti.sphereIntegralHom` on the group `π₂(M, x)` of spheres. The area is measured with the cap
 oriented from `γ` to its centre, as for `TauCeti.capArea`; the capped action
 `TauCeti.cappedLoopAction` uses the disc oriented from its centre to `γ`, so for a smooth based cap
-`hu : IsSmoothBasedCap I γ u` its area term is `-RawCap.area φ ⟨u, hu⟩ hu.rawCap`
+`hu : IsSmoothBasedCap I γ u` its area term is `-RawCap.area φ ⟨u, hu⟩ hu.homotopyClass`
 (`TauCeti.Floer.IsSmoothBasedCap.cappedLoopAction_comp_prodMap_one_sub`).
 
 ## Main definitions
 
 * `TauCeti.Floer.IsSmoothBasedCap I γ u`: `u` is a smooth based cap of `γ`.
-* `TauCeti.Floer.IsSmoothBasedCap.rawCap`: the raw cap of a smooth based cap.
 * `TauCeti.Floer.IsSmoothBasedHomotopy I γ₁ γ₂ w`: `w` is a smooth based homotopy of loops from
   `γ₁` to `γ₂`.
 * `TauCeti.Floer.IsSmoothBasedHomotopy.homotopyClass`: its class in the fundamental groupoid of the
-  loop space.
+  loop space; for a smooth based cap, its raw cap.
 * `TauCeti.Floer.RawCap.area φ h D`: the integral of `φ` over a raw cap `D` of a loop with a
   smooth based cap (`h`).
 
 ## Main results
 
-* `TauCeti.Floer.IsSmoothBasedCap.rawCap_vsub_rawCap_toMul`: two smooth based caps differ by the
-  sphere represented by their concatenation.
-* `TauCeti.Floer.IsSmoothBasedCap.sphereIntegral_rawCap_vsub_rawCap`: two smooth based caps differ
-  by a sphere whose integral is the difference of their integrals.
-* `TauCeti.Floer.RawCap.area_rawCap`: the area of the raw cap of a smooth based cap is its
+* `TauCeti.Floer.IsSmoothBasedCap.homotopyClass_vsub_homotopyClass_toMul`: two smooth based caps
+  differ by the sphere represented by their concatenation.
+* `TauCeti.Floer.IsSmoothBasedCap.sphereIntegral_homotopyClass_vsub_homotopyClass`: two smooth
+  based caps differ by a sphere whose integral is the difference of their integrals.
+* `TauCeti.Floer.RawCap.area_homotopyClass`: the area of the raw cap of a smooth based cap is its
   integral.
 * `TauCeti.Floer.RawCap.area_vadd`: the recapping law.
 * `TauCeti.Floer.RawCap.area_sub_area`: two raw caps have areas differing by the integral over the
@@ -93,8 +93,6 @@ oriented from `γ` to its centre, as for `TauCeti.capArea`; the capped action
 * `TauCeti.Floer.IsSmoothBasedHomotopy.rectangleTrans`,
   `TauCeti.Floer.IsSmoothBasedHomotopy.homotopyClass_rectangleTrans`: two smooth based homotopies
   glue to a smooth based homotopy, whose homotopy class is the composite of theirs.
-* `TauCeti.Floer.IsSmoothBasedHomotopy.rawCap_rectangleTrans`: the raw cap of a smooth cap glued
-  to a smooth based homotopy is the homotopy class glued to the raw cap.
 * `TauCeti.Floer.RawCap.area_homotopyClass_comp`,
   `TauCeti.Floer.RawCap.area_inv_homotopyClass_comp`: gluing a smooth based homotopy to a raw cap
   adds its integral to the area, and cutting it off subtracts it.
@@ -238,8 +236,10 @@ of a smooth based homotopy from `γ₂`: both are the periodic extension of `γ�
 theorem apply_one_eq_apply_zero (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
     (hv : IsSmoothBasedHomotopy I γ₂ γ₃ v) (t : ℝ) : w (1, t) = v (0, t) :=
   congrFun (Function.Periodic.eq_of_eqOn_Ico (f := fun t ↦ w (1, t)) (g := fun t ↦ v (0, t))
-    (fun t ↦ hw.apply_add_one (1, t)) (fun t ↦ hv.apply_add_one (0, t)) one_pos
-    fun t ht ↦ (hw.apply_one ⟨t, ht.1, ht.2.le⟩).trans (hv.apply_zero ⟨t, ht.1, ht.2.le⟩).symm) t
+    (fun t ↦ hw.apply_add_one (1, t)) (fun t ↦ hv.apply_add_one (0, t)) one_pos 0 <| by
+      rw [zero_add]
+      exact fun t ht ↦
+        (hw.apply_one ⟨t, ht.1, ht.2.le⟩).trans (hv.apply_zero ⟨t, ht.1, ht.2.le⟩).symm) t
 
 /-- A smooth based homotopy from `γ₁` to `γ₂` run backwards is a smooth based homotopy from `γ₂`
 to `γ₁`. -/
@@ -356,14 +356,6 @@ theorem apply_zero_eq_apply_zero (hu : IsSmoothBasedCap I γ u) (hu' : IsSmoothB
     (t : ℝ) : u (0, t) = u' (0, t) := by
   simpa using hu.comp_prodMap_one_sub.apply_one_eq_apply_zero hu' t
 
-/-- The raw cap of a smooth based cap: the homotopy class of its path in the loop space. -/
-def rawCap (hu : IsSmoothBasedCap I γ u) : RawCap γ :=
-  hu.homotopyClass
-
-theorem rawCap_def (hu : IsSmoothBasedCap I γ u) :
-    hu.rawCap = Path.Homotopic.Quotient.mk hu.toPath :=
-  (rfl)
-
 /-- The generalized loop of the reparametrized double loop of two smooth based caps restricts their
 concatenation `rectangleTrans` to the unit square. -/
 private theorem fromDoubleLoop_trans_reparam_apply (hu : IsSmoothBasedCap I γ u)
@@ -384,13 +376,13 @@ theorem contMDiff_rectangleTrans (hu : IsSmoothBasedCap I γ u) (hu' : IsSmoothB
 the sphere by which their raw caps differ is the class of any generalized loop restricting their
 concatenation `rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u'`, `u` run backwards followed
 by `u'`, to the unit square. This concatenation is smooth (`contMDiff_rectangleTrans`). -/
-theorem rawCap_vsub_rawCap_toMul (hu : IsSmoothBasedCap I γ u) (hu' : IsSmoothBasedCap I γ u')
-    {p : Ω^ (Fin 2) M x}
+theorem homotopyClass_vsub_homotopyClass_toMul (hu : IsSmoothBasedCap I γ u)
+    (hu' : IsSmoothBasedCap I γ u') {p : Ω^ (Fin 2) M x}
     (hp : ∀ y, p y = rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u' ((y 0 : ℝ), (y 1 : ℝ))) :
-    (hu'.rawCap -ᵥ hu.rawCap).toMul = ⟦p⟧ := by
+    (hu'.homotopyClass -ᵥ hu.homotopyClass).toMul = ⟦p⟧ := by
   set β := hu.toPath.symm.trans hu'.toPath
   -- The sphere is the class of the double loop `β`: `u` run backwards, then `u'`.
-  have hβ : hu'.rawCap -ᵥ hu.rawCap =
+  have hβ : hu'.homotopyClass -ᵥ hu.homotopyClass =
       .ofMul (fundamentalGroupLoopSpaceMulEquiv
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β))) := by
     -- In the fundamental groupoid, `inv ⟦P⟧ ≫ ⟦P'⟧` is `⟦P.symm.trans P'⟧` by definition of
@@ -409,13 +401,13 @@ theorem rawCap_vsub_rawCap_toMul (hu : IsSmoothBasedCap I γ u) (hu' : IsSmoothB
 /-- **Two smooth caps differ by the sphere they bound.** For smooth based caps `u` and `u'` of the
 same loop, the integral of a closed `C¹` two-form over the sphere by which their raw caps differ
 is the difference of their integrals over the unit square. -/
-theorem sphereIntegral_rawCap_vsub_rawCap [FiniteDimensional ℝ E] [I.Boundaryless]
+theorem sphereIntegral_homotopyClass_vsub_homotopyClass [FiniteDimensional ℝ E] [I.Boundaryless]
     [IsManifold I ∞ M] [CompactSpace M] [T2Space M] {φ : RoughForm I M F 2}
     (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) (hu : IsSmoothBasedCap I γ u)
     (hu' : IsSmoothBasedCap I γ u') :
-    sphereIntegral φ x (hu'.rawCap -ᵥ hu.rawCap).toMul =
+    sphereIntegral φ x (hu'.homotopyClass -ᵥ hu.homotopyClass).toMul =
       rectangleIntegral φ u' (0, 0) (1, 1) - rectangleIntegral φ u (0, 0) (1, 1) := by
-  rw [hu.rawCap_vsub_rawCap_toMul hu' (fromDoubleLoop_trans_reparam_apply hu hu'),
+  rw [hu.homotopyClass_vsub_homotopyClass_toMul hu' (fromDoubleLoop_trans_reparam_apply hu hu'),
     sphereIntegral_mk_of_contMDiff hφ hdφ (hu.contMDiff_rectangleTrans hu')
       (fromDoubleLoop_trans_reparam_apply hu hu'),
     rectangleIntegral_rectangleTrans_comp_prodMap_one_sub (hφ.of_le (by simp))
@@ -428,14 +420,7 @@ end IsSmoothBasedCap
 
 namespace IsSmoothBasedHomotopy
 
-variable {γ₁ γ₂ : Ω M x} {w u : ℝ × ℝ → M}
-
-/-- **The raw cap of a glued cap.** The raw cap of the concatenation of a smooth based homotopy
-`w` and a smooth based cap `u` is the homotopy class of `w` glued to the raw cap of `u`. -/
-theorem rawCap_rectangleTrans (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
-    (hu : IsSmoothBasedCap I γ₂ u) :
-    IsSmoothBasedCap.rawCap (hw.rectangleTrans hu) = hw.homotopyClass ≫ hu.rawCap :=
-  hw.homotopyClass_rectangleTrans hu
+variable {γ₁ γ₂ : Ω M x} {w : ℝ × ℝ → M}
 
 /-- If `w` is a smooth based homotopy from `γ₁` to `γ₂` and `γ₂` has a smooth based cap, then so
 has `γ₁`. -/
@@ -454,29 +439,30 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [Compac
   {φ : RoughForm I M F 2}
 
 /-- The **area** of a raw cap `D` of a loop `γ` with a smooth based cap `u₀`, for a two-form `φ`:
-the integral of `φ` over `u₀` plus its integral over the sphere `D -ᵥ u₀.rawCap` by which `D`
-differs from the raw cap of `u₀`. It is defined only for loops that have a smooth based cap. For a
-closed `C¹` form it is the integral over the raw cap of any smooth based cap
-(`TauCeti.Floer.RawCap.area_rawCap`), so it does not depend on `u₀`. The cap is oriented from `γ`
-to its centre. -/
+the integral of `φ` over `u₀` plus its integral over the sphere `D -ᵥ u₀.homotopyClass` by which
+`D` differs from the raw cap of `u₀`. It is defined only for loops that have a smooth based cap. For
+a closed `C¹` form it is the integral over the raw cap of any smooth based cap
+(`TauCeti.Floer.RawCap.area_homotopyClass`), so it does not depend on `u₀`. The cap is oriented
+from `γ` to its centre. -/
 def RawCap.area (φ : RoughForm I M F 2) (h : ∃ u, IsSmoothBasedCap I γ u) (D : RawCap γ) : F :=
   rectangleIntegral φ h.choose (0, 0) (1, 1) +
-    sphereIntegral φ x (D -ᵥ h.choose_spec.rawCap).toMul
+    sphereIntegral φ x (D -ᵥ h.choose_spec.homotopyClass).toMul
 
 /-- The defining equation of `TauCeti.Floer.RawCap.area`, for an arbitrary two-form. -/
 theorem RawCap.area_def (φ : RoughForm I M F 2) (h : ∃ u, IsSmoothBasedCap I γ u)
     (D : RawCap γ) :
     RawCap.area φ h D = rectangleIntegral φ h.choose (0, 0) (1, 1) +
-      sphereIntegral φ x (D -ᵥ h.choose_spec.rawCap).toMul :=
+      sphereIntegral φ x (D -ᵥ h.choose_spec.homotopyClass).toMul :=
   (rfl)
 
 /-- **The area of a smooth cap.** For a closed `C¹` two-form, the area of the raw cap of a smooth
 based cap `u` is the integral of the form over `u` on the unit square. -/
-theorem RawCap.area_rawCap (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) {u : ℝ × ℝ → M}
-    (hu : IsSmoothBasedCap I γ u) :
-    RawCap.area φ ⟨u, hu⟩ hu.rawCap = rectangleIntegral φ u (0, 0) (1, 1) := by
+theorem RawCap.area_homotopyClass (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0)
+    {u : ℝ × ℝ → M} (hu : IsSmoothBasedCap I γ u) :
+    RawCap.area φ ⟨u, hu⟩ hu.homotopyClass = rectangleIntegral φ u (0, 0) (1, 1) := by
   have h : ∃ u, IsSmoothBasedCap I γ u := ⟨u, hu⟩
-  rw [RawCap.area_def, h.choose_spec.sphereIntegral_rawCap_vsub_rawCap hφ hdφ hu, add_sub_cancel]
+  rw [RawCap.area_def, h.choose_spec.sphereIntegral_homotopyClass_vsub_homotopyClass hφ hdφ hu,
+    add_sub_cancel]
 
 /-- **The recapping law.** If `γ` has a smooth based cap, gluing a sphere `a ∈ π₂(M, x)` to a raw
 cap of `γ` adds the integral of a closed `C¹` two-form over `a` to the area. -/
@@ -509,9 +495,9 @@ theorem RawCap.area_homotopyClass_comp (hφ : IsSmoothForm I 1 φ) (hdφ : mextD
   obtain ⟨u, hu⟩ := h₂
   have : Nonempty (RawCap γ₂) := ⟨D⟩
   -- Write `D` as a sphere glued to the raw cap of `u`, and glue `w` to the smooth cap `u`.
-  rw [← vsub_vadd D hu.rawCap, RawCap.comp_vadd, ← hw.rawCap_rectangleTrans hu,
-    RawCap.area_vadd hφ hdφ, RawCap.area_vadd hφ hdφ, RawCap.area_rawCap hφ hdφ,
-    RawCap.area_rawCap hφ hdφ, rectangleIntegral_rectangleTrans (hφ.of_le (by simp))
+  rw [← vsub_vadd D hu.homotopyClass, RawCap.comp_vadd, ← hw.homotopyClass_rectangleTrans hu,
+    RawCap.area_vadd hφ hdφ, RawCap.area_vadd hφ hdφ, RawCap.area_homotopyClass hφ hdφ,
+    RawCap.area_homotopyClass hφ hdφ, rectangleIntegral_rectangleTrans (hφ.of_le (by simp))
       (hw.contMDiff.of_le (by simp)) (hu.contMDiff.of_le (by simp))
       (hw.apply_one_eq_apply_zero hu)]
   abel
@@ -535,9 +521,9 @@ theorem IsSmoothBasedCap.cappedLoopAction_comp_prodMap_one_sub {σ : RoughForm I
     (hσ : IsSmoothForm I 1 σ) (hdσ : mextDeriv σ = 0) (Ham : ℝ → M → ℝ) {u : ℝ × ℝ → M}
     (hu : IsSmoothBasedCap I γ u) :
     cappedLoopAction σ Ham (fun t ↦ u (0, t)) (u ∘ Prod.map (fun s ↦ 1 - s) id) =
-      -RawCap.area σ ⟨u, hu⟩ hu.rawCap + ∫ t in 0..1, Ham t (u (0, t)) := by
+      -RawCap.area σ ⟨u, hu⟩ hu.homotopyClass + ∫ t in 0..1, Ham t (u (0, t)) := by
   rw [cappedLoopAction_def, rectangleIntegral_comp_prodMap_one_sub (hσ.of_le (by simp))
-    (hu.contMDiff.of_le (by simp)), RawCap.area_rawCap hσ hdσ hu]
+    (hu.contMDiff.of_le (by simp)), RawCap.area_homotopyClass hσ hdσ hu]
 
 end Area
 

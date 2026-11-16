@@ -10,9 +10,9 @@ public import Mathlib.Algebra.Order.ToIntervalMod
 /-!
 # Periodic functions on fundamental intervals
 
-Two `c`-periodic functions on an Archimedean linearly ordered additive group that agree on `[0, c)`
-are equal (`Function.Periodic.eq_of_eqOn_Ico`): every point reduces modulo `c` to a point of
-`[0, c)`, where both functions take the value they take at the point.
+Two `c`-periodic functions on an Archimedean linearly ordered additive group that agree on one
+interval `[a, a + c)` are equal (`Function.Periodic.eq_of_eqOn_Ico`): every point reduces modulo
+`c` to a point of `[a, a + c)`, where both functions take the value they take at the point.
 
 A `c`-periodic function on an Archimedean linearly ordered additive group that is injective on
 `[0, c)` is injective on every half-open interval `[s, s + c)` of length `c`
@@ -40,12 +40,12 @@ theorem Periodic.injOn_Ico (hf : Periodic f c) (hc : 0 < c) (h : Set.InjOn f (Se
     (toIcoMod_eq_toIcoMod hc).2 ((toIcoMod_eq_toIcoMod hc).1 h₀)
   rwa [(toIcoMod_eq_self hc).2 ht₁, (toIcoMod_eq_self hc).2 ht₂] at hs
 
-/-- Two `c`-periodic functions that agree on `[0, c)` are equal. -/
+/-- Two `c`-periodic functions that agree on an interval `[a, a + c)` are equal. -/
 theorem Periodic.eq_of_eqOn_Ico {g : α → β} (hf : Periodic f c) (hg : Periodic g c) (hc : 0 < c)
-    (h : Set.EqOn f g (Set.Ico 0 c)) : f = g :=
+    (a : α) (h : Set.EqOn f g (Set.Ico a (a + c))) : f = g :=
   funext fun t ↦ calc
-    f t = f (toIcoMod hc 0 t) := by rw [toIcoMod, hf.sub_zsmul_eq]
-    _ = g (toIcoMod hc 0 t) := h (toIcoMod_mem_Ico' hc t)
+    f t = f (toIcoMod hc a t) := by rw [toIcoMod, hf.sub_zsmul_eq]
+    _ = g (toIcoMod hc a t) := h (toIcoMod_mem_Ico hc a t)
     _ = g t := by rw [toIcoMod, hg.sub_zsmul_eq]
 
 end Function
