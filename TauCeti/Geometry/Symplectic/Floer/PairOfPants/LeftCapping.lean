@@ -51,7 +51,10 @@ At `c = 0` it is the capping family at `0`
 (`TauCeti.Floer.cappedExchangePerturbation_zero`). At `c = 1` it is the pullback along the
 exchange `σ(w) = 1 - w` of the capping family at `1` of the pair of pants with exchanged inputs
 (`TauCeti.Floer.cappedExchangePerturbation_one`), since `σ` carries the plumbing at `0` to the
-plumbing at `1`. As `σ` carries the end lift of `1` to the end lift of `0`, in the cylinder
+plumbing at `1`; in the real coordinates `ℝ × ℝ ≃ ℂ` this is the pullback of
+`TauCeti.Floer.perturbationPullback_plumbedPerturbation_exchangeEndData`, through which solutions
+of the Floer equation for the capping family at `1` composed with `σ` solve the Floer equation for
+the member `c = 1`. As `σ` carries the end lift of `1` to the end lift of `0`, in the cylinder
 coordinates of the end lift `φ_1` the datum at `c = 1` is the capped cylinder datum of the
 exchanged Hamiltonians (`TauCeti.Floer.cappedCylinderComponent_exchangeEndData`). It is
 therefore `H_1(t) dt` for `s ≥ 2` and `H_∞(t + 1/2) dt` for `s ≤ -3`, like a continuation datum on
@@ -93,7 +96,7 @@ theorem cappedExchangePerturbation_def (H : Puncture → ℝ → M → ℝ) (L c
 
 /-- For `L ≥ 2`, at distance at least `1/2` from `0` the longitudinal coordinate of the end at `0`
 is at most `L / 2`, so the plumbing at `0` leaves the receiving datum unchanged there. -/
-private theorem re_endCoord_zero_le_half (hL : 2 ≤ L) {w : ℂ} (hw : 1 / 2 ≤ ‖w‖) :
+theorem re_endCoord_zero_le_half (hL : 2 ≤ L) {w : ℂ} (hw : 1 / 2 ≤ ‖w‖) :
     (zero.endCoord w).re ≤ L / 2 := by
   have h : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
   linarith [re_endCoord_zero_le_one (w := w) (by linarith)]
@@ -173,6 +176,31 @@ theorem cappedCylinderComponent_exchangeEndData (hH : Periodic (H inf) 1) (hL : 
     ring
   rw [cappedExchangePerturbation_one hH hL, one_sub_cylindricalEndLift_one, hd,
     cappedCylinderComponent_def, exchangeEndData_one, neg_apply, neg_mul, map_neg, neg_neg]
+
+/-- **The end of the family as a pullback.** In the real coordinates `ℝ × ℝ ≃ ℂ`, the capped datum
+at `c = 1` is the pullback along the exchange `σ(z) = (1, 0) - z` of the datum obtained by plumbing
+the negative plane with Hamiltonian `H 0` into the end at `1` of the pair of pants with exchanged
+Hamiltonians. Since `σ` is holomorphic,
+`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_perturbationPullback` turns solutions of
+the Floer equation for the capping datum at `1`, composed with `σ`, into solutions for this end. -/
+theorem perturbationPullback_plumbedPerturbation_exchangeEndData (hH : Periodic (H inf) 1)
+    (hL : 2 ≤ L) (v z : ℝ × ℝ) (x : M) :
+    perturbationPullback (fun z => (1, 0) - z)
+        (fun z x => plumbedPerturbation (Pi.single inf (H zero)) (exchangeEndData H) one L
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x => plumbedPerturbation (Pi.single inf (H zero)) (exchangeEndData H) one L
+          (Complex.equivRealProdCLM.symm z) x Complex.I) v z x =
+      cappedExchangePerturbation H L 1 (Complex.equivRealProdCLM.symm z) x
+        (Complex.equivRealProdCLM.symm v) := by
+  have hσ : Complex.equivRealProdCLM.symm ((1, 0) - z) = 1 - Complex.equivRealProdCLM.symm z := by
+    apply Complex.ext <;> simp
+  have hv : Complex.equivRealProdCLM.symm v = v.1 • (1 : ℂ) + v.2 • Complex.I := by
+    apply Complex.ext <;> simp
+  rw [perturbationPullback_apply, fderiv_const_sub, fderiv_fun_id,
+    cappedExchangePerturbation_one hH hL, hσ, hv]
+  simp only [neg_apply, ContinuousLinearMap.id_apply, Prod.fst_neg, Prod.snd_neg, map_add,
+    map_smul, smul_eq_mul]
+  ring
 
 /-- **The family on the remaining input end.** For `L ≥ 0` and `0 ≤ c ≤ 1`, on the part `s ≥ 2`
 of the input end at `1`, the pullback of the capped datum along the end lift `φ_1` sends a tangent
