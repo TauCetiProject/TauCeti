@@ -22,7 +22,9 @@ uses monotonicity of the (outer) measure; the index runs along an arbitrary
 filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
 
 Convergence in mean square also implies convergence in measure, with integrability of the
-squared deviations required only eventually along the filter.
+squared deviations required only eventually along the filter. In the other direction,
+Chebyshev-type bounds with an auxiliary truncation level give measures tending to zero, and real
+functions tending to zero in measure have upper tails of measure tending to zero.
 
 Pairing preserves convergence in measure along arbitrary filters and for arbitrary measures.
 On finite measure spaces, continuous transformations preserve convergence along arbitrary
@@ -45,6 +47,10 @@ measurable.
   `μ {x | dist (f i x) (g x) ≤ rate i} → 1`; here null-measurability of the
   good events (eventually along the filter) is genuinely needed, since an outer
   measure can assign full measure to both a set and its complement.
+* `TauCeti.tendsto_measure_of_le_ofReal_div_sq_add`: a measure bounded by `δ / ε²` plus a
+  term tending to zero for every `δ > 0` tends to zero.
+* `TauCeti.tendsto_measure_lt_of_tendstoInMeasure`: real functions tending to zero in measure
+  have upper tails of measure tending to zero.
 * `MeasureTheory.TendstoInMeasure.prodMk`: convergence in measure of paired functions,
   for arbitrary measures and filters, without measurability assumptions.
 * `MeasureTheory.TendstoInMeasure.continuous_comp`: continuous unary transformations on
@@ -126,6 +132,50 @@ theorem tendstoInMeasure_of_tendsto_measure_dist_le_rate [PseudoMetricSpace E]
   filter_upwards [hmeas] with i hi
   rw [← prob_compl_eq_one_sub₀ hi, Set.compl_ofPred]
   simp_rw [not_le]
+
+/-- If, for every `δ > 0`, the measure of `A k` is at most `δ / ε²` plus a term `B δ k` tending to
+zero along `l`, then the measure of `A k` tends to zero. This is how Chebyshev-type estimates
+with an auxiliary truncation level `δ` are turned into convergence in probability. -/
+theorem tendsto_measure_of_le_ofReal_div_sq_add {A : ι → Set α} {B : ℝ → ι → ℝ≥0∞} {ε : ℝ}
+    (htail : ∀ δ > 0, Tendsto (B δ) l (𝓝 0))
+    (hbound : ∀ δ > 0, ∀ k, μ (A k) ≤ ENNReal.ofReal (δ / ε ^ 2) + B δ k) :
+    Tendsto (fun k ↦ μ (A k)) l (𝓝 0) := by
+  -- For `ε = 0` the bound is `B 1 k` itself.
+  by_cases hε : ε = 0
+  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (htail 1 one_pos)
+      (fun _ ↦ zero_le) fun k ↦ ?_
+    simpa [hε] using hbound 1 one_pos k
+  refine ENNReal.tendsto_nhds_zero.2 fun c hc ↦ ?_
+  by_cases hctop : c = ∞
+  · simp [hctop]
+  have hcpos : 0 < c.toReal := ENNReal.toReal_pos hc.ne' hctop
+  let δ := c.toReal * ε ^ 2 / 2
+  have hδ : 0 < δ := by positivity
+  have hhalf : 0 < ENNReal.ofReal (c.toReal / 2) := by positivity
+  filter_upwards [ENNReal.tendsto_nhds_zero.1 (htail δ hδ) _ hhalf] with k hk
+  have hquot : δ / ε ^ 2 = c.toReal / 2 := by
+    dsimp [δ]
+    field_simp
+  calc
+    μ (A k) ≤ ENNReal.ofReal (δ / ε ^ 2) + B δ k := hbound δ hδ k
+    _ ≤ ENNReal.ofReal (c.toReal / 2) + ENNReal.ofReal (c.toReal / 2) := by
+      rw [hquot]
+      exact add_le_add le_rfl hk
+    _ = c := by
+      rw [← ENNReal.ofReal_add (by positivity) (by positivity), add_halves,
+        ENNReal.ofReal_toReal hctop]
+
+/-- If real functions `f i` tend to zero in measure, then for every `δ > 0` the measure of the
+upper tail `{x | δ < f i x}` tends to zero. -/
+theorem tendsto_measure_lt_of_tendstoInMeasure {f : ι → α → ℝ}
+    (hf : TendstoInMeasure μ f l fun _ ↦ 0) {δ : ℝ} (hδ : 0 < δ) :
+    Tendsto (fun i ↦ μ {x | δ < f i x}) l (𝓝 0) := by
+  have htail := (tendstoInMeasure_iff_norm.1 hf) δ hδ
+  simp only [sub_zero, Real.norm_eq_abs] at htail
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds htail
+    (fun _ ↦ zero_le) fun i ↦ measure_mono fun x hx ↦ by
+      simp only [Set.mem_ofPred_eq] at hx ⊢
+      exact hx.le.trans (le_abs_self _)
 
 end TauCeti
 
