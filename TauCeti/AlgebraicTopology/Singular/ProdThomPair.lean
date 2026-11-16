@@ -60,6 +60,8 @@ The isomorphism is built from a choice of such a step for each proper subspace o
 
 * `TauCeti.prodThomPairProj`, `TauCeti.prodThomPairPuncturedProj`: the projections
   `B × F → B` and `B × (F ∖ {0}) → B`.
+* `TauCeti.prodThomPairPuncturedSection`: the section `b ↦ (b, v)` of the punctured product
+  at a nonzero vector `v`.
 * `TauCeti.prodThomPairPuncturedHomotopyEquiv`: for `e : F ≃L[ℝ] ℝᵈ⁺¹`, the punctured product
   `B × (F ∖ {0})` is homotopy equivalent to `Sᵈ × B` by `(b, x) ↦ (e x / ‖e x‖, b)`.
 * `TauCeti.isZero_singularHomology_prodThomPair`: `Hₙ(B × F, B × (F ∖ {0})) = 0` for
@@ -202,6 +204,23 @@ product bundle. -/
 @[reassoc]
 lemma map_comp_prodThomPairProj :
     (prodThomPair B F).map ≫ prodThomPairProj B F = prodThomPairPuncturedProj B F :=
+  (rfl)
+
+variable (B) in
+/-- The section `b ↦ (b, v)` of the punctured product bundle `B × (F ∖ {0}) → B` at a nonzero
+vector `v` of the fibre. -/
+def prodThomPairPuncturedSection {v : F} (hv : v ≠ 0) : TopCat.of B ⟶ (prodThomPair B F).snd :=
+  TopCat.ofHom ⟨fun b ↦ ⟨(b, v), hv⟩, by fun_prop⟩
+
+@[simp]
+lemma prodThomPairPuncturedSection_apply {v : F} (hv : v ≠ 0) (b : B) :
+    (prodThomPairPuncturedSection B F hv b).1 = (b, v) :=
+  (rfl)
+
+/-- The section `b ↦ (b, v)` is a section of the projection of the punctured product bundle. -/
+@[reassoc (attr := simp)]
+lemma prodThomPairPuncturedSection_comp_prodThomPairPuncturedProj {v : F} (hv : v ≠ 0) :
+    prodThomPairPuncturedSection B F hv ≫ prodThomPairPuncturedProj B F = 𝟙 _ :=
   (rfl)
 
 /-- The projections of the punctured product bundles commute with the map of the bases. -/
