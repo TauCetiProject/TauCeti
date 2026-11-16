@@ -20,11 +20,13 @@ a quasi-isomorphism when every `e i ≫ K.homologyπ i` is an isomorphism
 (`HomologicalComplex.quasiIso_fromGraded`). Such morphisms are the first step in the
 construction of resolutions by attaching cells.
 
-More generally, the homology of any complex in a degree where both differentials vanish is the
-term in that degree (`HomologicalComplex.XIsoHomologyOfDEqZero`), so it is projective when that
-term is (`HomologicalComplex.projective_homology_of_d_eq_zero`).  These identifications are
-natural (`HomologicalComplex.XIsoHomologyOfDEqZero_hom_naturality`), so a quasi-isomorphism
-between complexes with zero differentials is an isomorphism
+More generally, `K.dFrom i = 0` (`K.dTo j = 0`) holds precisely when every differential leaving
+`i` (entering `j`) vanishes (`HomologicalComplex.dFrom_eq_zero_iff`,
+`HomologicalComplex.dTo_eq_zero_iff`), and the homology of any complex in a degree where both
+differentials vanish is the term in that degree (`HomologicalComplex.XIsoHomologyOfDEqZero`), so it
+is projective when that term is (`HomologicalComplex.projective_homology_of_d_eq_zero`). These
+identifications are natural (`HomologicalComplex.XIsoHomologyOfDEqZero_hom_naturality`), so a
+quasi-isomorphism between complexes with zero differentials is an isomorphism
 (`HomologicalComplex.isIso_of_quasiIso_of_d_eq_zero`).
 -/
 
@@ -49,6 +51,24 @@ instance hasHomology_graded (E : ι → C) (i : ι) : (graded c E).HasHomology i
   ShortComplex.hasHomology_of_zeros _ _ _
 
 variable {c}
+
+/-- The leaving differential `K.dFrom i` vanishes if and only if every differential leaving `i`
+vanishes. -/
+lemma dFrom_eq_zero_iff (K : HomologicalComplex C c) (i : ι) :
+    K.dFrom i = 0 ↔ ∀ j, K.d i j = 0 := by
+  refine ⟨fun h j ↦ ?_, fun h ↦ h (c.next i)⟩
+  by_cases hrel : c.Rel i j
+  · rw [← K.dFrom_comp_xNextIso hrel, h, zero_comp]
+  · exact K.shape i j hrel
+
+/-- The entering differential `K.dTo j` vanishes if and only if every differential entering `j`
+vanishes. -/
+lemma dTo_eq_zero_iff (K : HomologicalComplex C c) (j : ι) :
+    K.dTo j = 0 ↔ ∀ i, K.d i j = 0 := by
+  refine ⟨fun h i ↦ ?_, fun h ↦ h (c.prev j)⟩
+  by_cases hrel : c.Rel i j
+  · rw [← K.xPrevIso_comp_dTo hrel, h, comp_zero]
+  · exact K.shape i j hrel
 
 /-- If the differentials into and out of degree `i` vanish, the term in degree `i` is isomorphic
 to the homology in degree `i`: every element is a cycle, and none but zero is a boundary. -/
