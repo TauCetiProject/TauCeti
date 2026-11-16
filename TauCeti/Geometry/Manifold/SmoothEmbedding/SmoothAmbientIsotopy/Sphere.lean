@@ -97,8 +97,8 @@ theorem exists_smoothAmbientIsotopic_mfderiv_eq (hn : 2 ≤ n) (hk : k ≠ 0)
   set v := deriv γ t
   set w := deriv (fun s => (L (Circle.exp s) : E)) t
   have hKd : MDifferentiableAt (𝓡 1) (𝓡 n) K (Circle.exp t) := K.contMDiff.mdifferentiableAt hk
-  have hv : v ≠ 0 := deriv_coe_comp_circleExp_ne_zero hKd (K.isImmersion.mfderiv_injective hk _)
-  have hw : w ≠ 0 := deriv_coe_comp_circleExp_ne_zero hLd hL
+  have hv : v ≠ 0 := deriv_coe_comp_circleExp_ne_zero (K.isImmersion.mfderiv_injective hk _)
+  have hw : w ≠ 0 := deriv_coe_comp_circleExp_ne_zero hL
   have hxv : ⟪x, v⟫ = 0 := inner_deriv_coe_comp_circleExp_eq_zero hKd
   have hyw : ⟪y, w⟫ = 0 := inner_deriv_coe_comp_circleExp_eq_zero hLd
   have hy : ‖-y‖ = 1 := by rw [norm_neg]; exact norm_eq_of_mem_sphere _

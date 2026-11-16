@@ -50,6 +50,8 @@ element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, t
 `Subgroup.finite_image_mk_of_inv_mul_mem` passes finiteness of the image of a set in `G ⧸ K` to
 `G ⧸ L` when congruence modulo `K` on the set implies congruence modulo `L`.
 `Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`.
+`Subgroup.index_eq_of_equiv`, `Subgroup.ne_zero_of_equiv`, and `Subgroup.finiteIndex_of_equiv`
+read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection.
 -/
 
 public section
@@ -239,6 +241,27 @@ theorem finite_image_mk_of_inv_mul_mem {K L : Subgroup G} {s : Set G}
   exact QuotientGroup.eq.mpr (hcong _ hy x hx (QuotientGroup.eq.mp hyx))
 
 end FiniteImage
+
+/-- An equivalence `G ⧸ H ≃ Fin n` witnesses that `H` has index `n`. -/
+@[to_additive /-- An equivalence `G ⧸ H ≃ Fin n` witnesses that `H` has index `n`. -/]
+theorem index_eq_of_equiv {G : Type*} [Group G] (H : Subgroup G) {n : ℕ}
+    (e : G ⧸ H ≃ Fin n) : H.index = n := by
+  rw [index_eq_card, Nat.card_congr e, Nat.card_fin]
+
+/-- Because `G ⧸ H` contains the identity coset, any equivalence `G ⧸ H ≃ Fin n` forces `n ≠ 0`. -/
+@[to_additive /-- Because `G ⧸ H` contains the zero coset, any equivalence `G ⧸ H ≃ Fin n` forces
+`n ≠ 0`. -/]
+theorem ne_zero_of_equiv {G : Type*} [Group G] (H : Subgroup G) {n : ℕ}
+    (e : G ⧸ H ≃ Fin n) : n ≠ 0 :=
+  (e ((1 : G) : G ⧸ H)).pos.ne'
+
+/-- A subgroup whose coset space is equivalent to a finite type has finite index. -/
+@[to_additive /-- An additive subgroup whose coset space is equivalent to a finite type has finite
+index. -/]
+theorem finiteIndex_of_equiv {G β : Type*} [Group G] [Finite β] (H : Subgroup G)
+    (e : G ⧸ H ≃ β) : H.FiniteIndex :=
+  have : Finite (G ⧸ H) := Finite.of_equiv β e.symm
+  H.finiteIndex_of_finite_quotient
 
 end Subgroup
 

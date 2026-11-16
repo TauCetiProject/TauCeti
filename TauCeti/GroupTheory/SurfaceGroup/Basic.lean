@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Sum
 public import Mathlib.GroupTheory.PresentedGroup
 public import Mathlib.Tactic.DeriveFintype
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Tactic.Group
 
 /-!
 # Surface groups with boundary
@@ -35,6 +36,11 @@ The presentations are taken as definitions. The word on the left of each definin
 available in an arbitrary group (`TauCeti.SurfaceGroup.orientableWord` and
 `TauCeti.SurfaceGroup.nonorientableWord`), so that the universal properties read: homomorphisms
 out of a surface group correspond to tuples of elements at which the surface word is trivial.
+The product of two orientable surface words is again an orientable surface word once the handle
+elements of the second are conjugated (`TauCeti.SurfaceGroup.orientableWord_mul_orientableWord`),
+and likewise for nonorientable surface words and crosscap elements
+(`TauCeti.SurfaceGroup.nonorientableWord_mul_nonorientableWord`): this is the relation of a
+surface glued from two pieces along a boundary curve.
 
 ## Main definitions
 
@@ -108,6 +114,28 @@ theorem orientableWord_snoc (α β : Fin g → G) (γ : Fin m → G) (x : G) :
   rw [orientableWord_def, List.ofFn_succ', List.prod_concat]
   simp [orientableWord_def, mul_assoc]
 
+/-- **The surface word of a glued surface.** The product of the orientable surface words of two
+pieces is the orientable surface word of the concatenated families, once the handle elements of
+the second piece are conjugated by the product `P = (List.ofFn γ₁).prod` of the boundary elements
+of the first: `W(α₁, β₁, γ₁) * W(α₂, β₂, γ₂) = W(α₁ ++ P α₂ P⁻¹, β₁ ++ P β₂ P⁻¹, γ₁ ++ γ₂)`. -/
+theorem orientableWord_mul_orientableWord {g₁ g₂ m₁ m₂ : ℕ} (α₁ β₁ : Fin g₁ → G)
+    (γ₁ : Fin m₁ → G) (α₂ β₂ : Fin g₂ → G) (γ₂ : Fin m₂ → G) :
+    orientableWord α₁ β₁ γ₁ * orientableWord α₂ β₂ γ₂ =
+      orientableWord (Fin.append α₁ fun i ↦ (List.ofFn γ₁).prod * α₂ i * (List.ofFn γ₁).prod⁻¹)
+        (Fin.append β₁ fun i ↦ (List.ofFn γ₁).prod * β₂ i * (List.ofFn γ₁).prod⁻¹)
+        (Fin.append γ₁ γ₂) := by
+  have hconj (P : G) : (List.ofFn fun i ↦ (P * α₂ i * P⁻¹)⁻¹ * (P * β₂ i * P⁻¹)⁻¹ *
+      (P * α₂ i * P⁻¹) * (P * β₂ i * P⁻¹)).prod =
+        P * (List.ofFn fun i ↦ (α₂ i)⁻¹ * (β₂ i)⁻¹ * α₂ i * β₂ i).prod * P⁻¹ := by
+    rw [← MulAut.conj_apply, map_list_prod, List.map_ofFn]
+    congr 2
+    ext i
+    simp only [Function.comp_apply, MulAut.conj_apply]
+    group
+  simp only [orientableWord_def, List.ofFn_add, List.prod_append, Fin.append_left',
+    Fin.append_right, hconj]
+  group
+
 section Nonorientable
 
 variable {M N : Type*} [Monoid M] [Monoid N]
@@ -137,6 +165,23 @@ theorem nonorientableWord_snoc (κ : Fin g → M) (γ : Fin m → M) (x : M) :
     nonorientableWord κ (Fin.snoc (α := fun _ ↦ M) γ x) = nonorientableWord κ γ * x := by
   rw [nonorientableWord_def, List.ofFn_succ', List.prod_concat]
   simp [nonorientableWord_def, mul_assoc]
+
+/-- **The nonorientable surface word of a glued surface.** The product of the nonorientable
+surface words of two pieces is the nonorientable surface word of the concatenated families, once
+the crosscap elements of the second piece are conjugated by the product `P = (List.ofFn γ₁).prod`
+of the boundary elements of the first: `W(κ₁, γ₁) * W(κ₂, γ₂) = W(κ₁ ++ P κ₂ P⁻¹, γ₁ ++ γ₂)`. -/
+theorem nonorientableWord_mul_nonorientableWord {g₁ g₂ m₁ m₂ : ℕ} (κ₁ : Fin g₁ → G)
+    (γ₁ : Fin m₁ → G) (κ₂ : Fin g₂ → G) (γ₂ : Fin m₂ → G) :
+    nonorientableWord κ₁ γ₁ * nonorientableWord κ₂ γ₂ =
+      nonorientableWord (Fin.append κ₁ fun i ↦ (List.ofFn γ₁).prod * κ₂ i * (List.ofFn γ₁).prod⁻¹)
+        (Fin.append γ₁ γ₂) := by
+  have hconj (P : G) : (List.ofFn fun i ↦ (P * κ₂ i * P⁻¹) ^ 2).prod =
+      P * (List.ofFn fun i ↦ κ₂ i ^ 2).prod * P⁻¹ := by
+    rw [← MulAut.conj_apply, map_list_prod, List.map_ofFn]
+    simp [Function.comp_def, conj_pow]
+  simp only [nonorientableWord_def, List.ofFn_add, List.prod_append, Fin.append_left',
+    Fin.append_right, hconj]
+  group
 
 end Nonorientable
 
@@ -295,6 +340,13 @@ theorem peripheral_last :
   have h := orientableWord_a_b_peripheral g (m + 1)
   rwa [orientableWord, List.ofFn_succ', List.prod_concat, ← mul_assoc] at h
 
+/-- In `S⁺(g, m + 1)` the surface word of the generators other than the last peripheral element is
+the inverse of the last peripheral element. -/
+theorem orientableWord_peripheral_castSucc :
+    orientableWord (a g (m + 1)) (b g (m + 1)) (fun j ↦ peripheral g (m + 1) j.castSucc) =
+      (peripheral g (m + 1) (Fin.last m))⁻¹ := by
+  rw [peripheral_last, inv_inv, orientableWord_def]
+
 variable {g m}
 
 /-- **The universal property of the orientable surface group.** Families `α β : Fin g → G` and
@@ -391,6 +443,13 @@ theorem peripheral_last :
   refine eq_inv_of_mul_eq_one_right ?_
   have h := nonorientableWord_c_peripheral g (m + 1)
   rwa [nonorientableWord, List.ofFn_succ', List.prod_concat, ← mul_assoc] at h
+
+/-- In `S⁻(g, m + 1)` the surface word of the generators other than the last peripheral element is
+the inverse of the last peripheral element. -/
+theorem nonorientableWord_peripheral_castSucc :
+    nonorientableWord (c g (m + 1)) (fun j ↦ peripheral g (m + 1) j.castSucc) =
+      (peripheral g (m + 1) (Fin.last m))⁻¹ := by
+  rw [peripheral_last, inv_inv, nonorientableWord_def]
 
 variable {g m}
 
