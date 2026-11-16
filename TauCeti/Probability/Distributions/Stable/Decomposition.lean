@@ -58,7 +58,6 @@ theorem existsUnique_conv_stableCompensatedPoissonMeasure_eq
       stableCompensatedPoissonMeasure α β (ε n) :=
     (stableCompensatedPoissonMeasure_split α β (hε n) (min_le_left r _)).symm
   let large := stableCompensatedPoissonMeasure α β r
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   have hlarge (t : ℝ) : charFun large t ≠ 0 := by
     rw [charFun_stableCompensatedPoissonMeasure hr]
     exact Complex.exp_ne_zero _
@@ -111,7 +110,6 @@ theorem charFun_of_conv_stableCompensatedPoissonMeasure_eq
     charFun μ t = Complex.exp (∫ x in {x : ℝ | |x| ≤ r},
       Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
         (t * sin x : ℝ) * Complex.I ∂stableLevyMeasure α β) := by
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   -- Invalid parameters would make the right-hand side the zero measure, not a probability law.
   have hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1 := by
     rw [← isProbabilityMeasure_stableMeasure_iff (s := 1) (m := 0), ← hμ]

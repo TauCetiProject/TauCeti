@@ -60,7 +60,6 @@ theorem tendsto_stableSmallJumpRemainderMeasure_of_conv_eq
     (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0) :
     Tendsto (β := ProbabilityMeasure ℝ) (fun ε : ℝ ↦ ⟨stableSmallJumpRemainderMeasure α β ε r,
       isProbabilityMeasure_stableSmallJumpRemainderMeasure α β ε r⟩) (𝓝[>] 0) (𝓝 μ) := by
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   -- The decomposition forces valid parameters, since the stable measure is zero otherwise.
   have hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1 := by
     rw [← isProbabilityMeasure_stableMeasure_iff (s := 1) (m := 0), ← hμ]
@@ -100,7 +99,6 @@ private theorem lintegral_sq_le_of_conv_eq
     let V := ∫ x in Metric.ball (0 : ℝ) r, x ^ 2 ∂stableLevyMeasure α β
     ∫⁻ x, ENNReal.ofReal (x ^ 2) ∂(μ : Measure ℝ) ≤
       ENNReal.ofReal (V + (r / 6 * V) ^ 2) := by
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   have hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1 := by
     rw [← isProbabilityMeasure_stableMeasure_iff (s := 1) (m := 0), ← hμ]
     infer_instance
@@ -142,8 +140,7 @@ theorem memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq
     (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0) :
     MemLp id 2 (μ : Measure ℝ) := by
   rcases eq_or_ne α 2 with rfl | hα
-  · let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure 2 β r
-    have hv : (2 : ℝ) ∈ Ioc 0 2 ∧ |β| ≤ 1 := by
+  · have hv : (2 : ℝ) ∈ Ioc 0 2 ∧ |β| ≤ 1 := by
       rw [← isProbabilityMeasure_stableMeasure_iff (s := 1) (m := 0), ← hμ]
       infer_instance
     -- At shape two the Lévy measure vanishes, so the compensated law is the point mass at zero.

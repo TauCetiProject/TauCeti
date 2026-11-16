@@ -99,7 +99,7 @@ theorem map_neg_stableCompensatedPoissonMeasure (α β ε : ℝ) :
 /-- Every compensated stable approximation is a probability measure. Outside the valid parameter
 range the cutoff Lévy mass is zero or infinite, the jump rate is zero, and the law is a point
 mass. -/
-theorem isProbabilityMeasure_stableCompensatedPoissonMeasure (α β ε : ℝ) :
+instance isProbabilityMeasure_stableCompensatedPoissonMeasure (α β ε : ℝ) :
     IsProbabilityMeasure (stableCompensatedPoissonMeasure α β ε) := by
   rw [stableCompensatedPoissonMeasure_def]
   infer_instance

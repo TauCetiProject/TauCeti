@@ -68,7 +68,6 @@ private theorem integrable_abs_rpow_standardStableMeasure_iff
     Integrable (fun x : ℝ ↦ |x| ^ q) (stableMeasure α β 1 0) ↔ q < α := by
   obtain ⟨μ, hμ, -⟩ := existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ
     (by norm_num : (0 : ℝ) < 1)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β 1
   constructor
   · intro h
     rw [← hμ] at h
