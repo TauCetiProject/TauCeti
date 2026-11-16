@@ -11,8 +11,10 @@ public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Analysis.Calculus.Gradient
+public import TauCeti.Analysis.Matrix.Contraction
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.InnerProductSpace.Dual
@@ -64,6 +66,11 @@ constants are parameters, not hidden existential data.
   Lipschitz bilinear forms on a set agrees there with one that is Lipschitz on the whole space.
 * `TauCeti.PDE.matrixBilinearFormLinear`: the coefficient matrix-to-bilinear-form map as a
   continuous linear map.
+* `TauCeti.PDE.aestronglyMeasurable_norm_matrixBilinearForm_sub`: the deviation
+  `x ↦ ‖a(x) - A‖` of a measurable coefficient field from a constant matrix is measurable.
+* `Matrix.abs_contraction_le_mul_norm_matrixBilinearForm_mul_norm`: the contraction
+  `∑ᵢⱼ Mᵢⱼ ⟪H eᵢ, eⱼ⟫` is at most `n ‖M‖ ‖H‖`, with `‖M‖` the operator norm of the attached
+  bilinear form.
 * `TauCeti.PDE.matrixBilinearForm_opNorm_le_of_upper_bound`: a pointwise bilinear upper
   bound controls the operator norm of the attached matrix bilinear form.
 * `TauCeti.PDE.norm_matrixBilinearForm_le_sum_abs`: the operator norm of the attached bilinear
@@ -240,6 +247,19 @@ lemma continuous_matrixBilinearForm :
     Continuous (fun A : Matrix n n ℝ => matrixBilinearForm A) :=
   (matrixBilinearFormLinear (n := n)).continuous.congr fun A =>
     matrixBilinearFormLinear_apply A
+
+/-- The deviation `x ↦ ‖a(x) - A‖` of an a.e. strongly measurable coefficient field from a constant
+matrix, in the operator norm of the attached bilinear forms, is a.e. strongly measurable. -/
+theorem aestronglyMeasurable_norm_matrixBilinearForm_sub {X : Type*} [MeasurableSpace X]
+    {μ : MeasureTheory.Measure X} {a : X → Matrix n n ℝ}
+    (ha : MeasureTheory.AEStronglyMeasurable a μ) (A : Matrix n n ℝ) :
+    MeasureTheory.AEStronglyMeasurable
+      (fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖) μ := by
+  have h : Continuous fun M : Matrix n n ℝ => matrixBilinearForm (M - A) :=
+    continuous_matrixBilinearForm.comp (continuous_sub_right A)
+  simpa only [matrixBilinearForm_sub] using
+    (Continuous.norm (E := EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ)
+      h).comp_aestronglyMeasurable ha
 
 section Continuity
 
@@ -1091,6 +1111,29 @@ theorem tsupport_matrixBilinearForm_gradient_subset {a : EuclideanSpace ℝ n �
     simp [gradient_of_notMem_tsupport hxψ])) (isClosed_tsupport ψ)
 
 end Calculus
+
+/-- The contraction `∑ᵢⱼ Mᵢⱼ ⟪H eᵢ, eⱼ⟫` of an endomorphism `H` of `ℝᵐ` with a matrix `M` is at
+most `m ‖M‖ ‖H‖` in absolute value, where `‖M‖` is the operator norm of the bilinear form
+`(η, ξ) ↦ ηᵀ M ξ` and `‖H‖` that of `H`. -/
+theorem _root_.Matrix.abs_contraction_le_mul_norm_matrixBilinearForm_mul_norm {m : ℕ}
+    (M : Matrix (Fin m) (Fin m) ℝ)
+    (H : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin m)) :
+    |Matrix.contraction M H| ≤ m * ‖matrixBilinearForm M‖ * ‖H‖ := by
+  have h : Matrix.contraction M H = ∑ i, matrixBilinearForm M (EuclideanSpace.single i 1)
+      (H (EuclideanSpace.single i 1)) := by
+    simp [Matrix.mulVec, dotProduct, EuclideanSpace.inner_single_right]
+  rw [h]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
+  calc ∑ i, |matrixBilinearForm M (EuclideanSpace.single i 1) (H (EuclideanSpace.single i 1))|
+      ≤ ∑ _i : Fin m, ‖matrixBilinearForm M‖ * ‖H‖ := by
+        refine Finset.sum_le_sum fun i _ => ?_
+        refine ((matrixBilinearForm M).le_opNorm₂ _ _).trans ?_
+        simp only [PiLp.norm_single, norm_one, mul_one]
+        refine mul_le_mul_of_nonneg_left ((H.le_opNorm _).trans ?_) (by positivity)
+        simp
+    _ = m * ‖matrixBilinearForm M‖ * ‖H‖ := by
+        simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+        ring
 
 end PDE
 
