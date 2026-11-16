@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Morse.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import TauCeti.Analysis.Calculus.Morse.OneDimensional
 import TauCeti.Analysis.Calculus.Morse.Pi
 
 /-!
@@ -26,8 +25,9 @@ the rate of that theorem.
   `-grad f` through `x₀` is `x₀ (1 + 8 x₀² t)^(-1/2)`
   (`TauCeti.maximalIntegralCurve_neg_mgradient_pow_four`). It converges to the critical point `0`
   (`TauCeti.tendsto_maximalIntegralCurve_neg_mgradient_pow_four`), which is degenerate
-  (`TauCeti.not_isManifoldNondegenerateCriticalPoint_pow_four`), but only at a polynomial rate: its
-  distance to `0` is `|x₀| (1 + 8 x₀² t)^(-1/2)`
+  (`TauCeti.isNondegenerateCriticalPoint_pow_iff`, which applies on the manifold `ℝ` by
+  `TauCeti.isManifoldNondegenerateCriticalPoint_modelSpace_iff`), but only at a polynomial rate:
+  its distance to `0` is `|x₀| (1 + 8 x₀² t)^(-1/2)`
   (`TauCeti.riemannianEDist_maximalIntegralCurve_neg_mgradient_pow_four`), and for `x₀ ≠ 0` it
   admits no bound `C exp (-μ t)` with `μ > 0`
   (`TauCeti.not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient_pow_four`).
@@ -124,13 +124,6 @@ theorem tendsto_maximalIntegralCurve_neg_mgradient_pow_four (x₀ : ℝ) :
   · have hlin : Tendsto (fun t : ℝ ↦ 1 + 8 * x₀ ^ 2 * t) atTop atTop :=
       tendsto_atTop_add_const_left _ 1 (tendsto_id.const_mul_atTop (by positivity))
     simpa using ((tendsto_rpow_neg_atTop (by norm_num : (0 : ℝ) < 1 / 2)).comp hlin).const_mul x₀
-
-/-- The critical point `0` of `x ↦ x⁴` is degenerate: its second derivative vanishes. -/
-theorem not_isManifoldNondegenerateCriticalPoint_pow_four :
-    ¬ IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 4) 0 := by
-  rw [isManifoldNondegenerateCriticalPoint_modelSpace_iff,
-    isNondegenerateCriticalPoint_real_iff (by fun_prop)]
-  simp
 
 /-- The trajectory of `-grad x⁴` through `x₀` is at Riemannian distance
 `|x₀| (1 + 8 x₀² t)^(-1/2)` from the critical point `0` at time `t`, wherever
