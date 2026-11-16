@@ -18,8 +18,8 @@ lengths. Both ranks live in the universe of the structure.
 
 The least simultaneous stabilization level is the supremum of the tuple ranks.
 Consequently the internal Scott rank lies between that level and its successor,
-and is below `ω₁` for every countable structure. No countability assumption on the
-relational language is needed for these rank comparisons.
+is an isomorphism invariant, and is below `ω₁` for every countable structure.
+No countability assumption on the relational language is needed for these rank comparisons.
 
 For a countable structure, the back-and-forth class of a tuple at any orbit-stable level, in
 particular at its orbit rank, is exactly its automorphism orbit.
@@ -220,3 +220,57 @@ theorem internalScottRank_lt_omega_one [Countable M] :
       (selfStabilizationOrdinal_lt_omega_one (L := L) M))
 
 end TauCeti
+
+namespace FirstOrder.Language.Equiv
+
+open TauCeti
+
+variable {L : Language.{u, v}} [L.IsRelational]
+variable {M : Type w} [L.Structure M] {N : Type w} [L.Structure N]
+
+/-- Orbit stability transfers along an isomorphism. -/
+private theorem mem_orbitStable_comp_of_mem {n : ℕ} {a : Fin n → M} {α : Ordinal.{w}}
+    (h : α ∈ orbitStable (L := L) a) (e : M ≃[L] N) :
+    α ∈ orbitStable (L := L) (e ∘ a) := by
+  rw [mem_orbitStable_iff] at h ⊢
+  intro b hab β
+  have hb : BFEquiv (L := L) α n a (e.symm ∘ b) :=
+    (e.bfEquiv α a).trans (hab.trans (e.symm.bfEquiv α b))
+  have hb' := h (e.symm ∘ b) hb β
+  have hcomp : e ∘ (e.symm ∘ b) = b := by
+    ext i
+    exact e.apply_symm_apply (b i)
+  simpa only [hcomp] using (e.bfEquiv β a).symm.trans (hb'.trans (e.bfEquiv β (e.symm ∘ b)))
+
+/-- Orbit stability of a tuple is invariant under isomorphism. -/
+theorem mem_orbitStable_comp_iff (e : M ≃[L] N) {n : ℕ} (a : Fin n → M) {α : Ordinal.{w}} :
+    α ∈ orbitStable (L := L) (e ∘ a) ↔ α ∈ orbitStable (L := L) a := by
+  refine ⟨fun h => ?_, fun h => mem_orbitStable_comp_of_mem h e⟩
+  have hcomp : e.symm ∘ (e ∘ a) = a := by
+    ext i
+    exact e.symm_apply_apply (a i)
+  simpa only [hcomp] using mem_orbitStable_comp_of_mem h e.symm
+
+/-- The orbit rank of a tuple is invariant under isomorphism. -/
+@[simp]
+theorem orbitRank_comp (e : M ≃[L] N) {n : ℕ} (a : Fin n → M) :
+    orbitRank (L := L) (e ∘ a) = orbitRank (L := L) a := by
+  simp only [orbitRank_def]
+  congr 1
+  ext α
+  exact e.mem_orbitStable_comp_iff a
+
+/-- The internal Scott rank is an isomorphism invariant. -/
+theorem internalScottRank_eq (e : M ≃[L] N) :
+    internalScottRank (L := L) M = internalScottRank (L := L) N := by
+  apply le_antisymm
+  · rw [internalScottRank_le_iff]
+    intro n a
+    rw [← e.orbitRank_comp a]
+    exact orbitRank_lt_internalScottRank (e ∘ a)
+  · rw [internalScottRank_le_iff]
+    intro n b
+    rw [← e.symm.orbitRank_comp b]
+    exact orbitRank_lt_internalScottRank (e.symm ∘ b)
+
+end FirstOrder.Language.Equiv
