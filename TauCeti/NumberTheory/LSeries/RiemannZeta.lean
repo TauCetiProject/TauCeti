@@ -6,17 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
+public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.LSeries.SumCoeff
-import Mathlib.NumberTheory.Harmonic.ZetaAsymp
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.MellinTransform.UpperTail
 import TauCeti.NumberTheory.LSeries.Convergence
 import TauCeti.NumberTheory.LSeries.SumCoeff
 
 /-!
-# The Riemann zeta function at real arguments
+# The Riemann zeta function at real arguments and on the open right half-plane
 
 For a real `s > 1`, Mathlib's `riemannZeta s` is the sum of the complex Dirichlet series
 `∑ 1 / n ^ s`. This file records the corresponding statements for the real series: the real
@@ -35,6 +38,12 @@ this integral is positive while `1 - 2 ^ (1 - σ)` is negative, so `ζ(σ) < 0`.
 of the zeta factor in the products of L-functions with nonnegative coefficients used in
 Siegel's theorem on real zeros.
 
+Splitting `⌊t⌋₊ = t - Int.fract t` on `(1, ∞)` similarly continues the regularized function
+`riemannZeta₀ s = ζ(s) - (s - 1)⁻¹` to the whole open right half-plane `Re s > 0` (including
+`s = 1`) as `1 - s ∫_1^∞ {t} t^{-(s + 1)} dt`, yielding explicit right-half-plane growth bounds
+`‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / Re s` and `‖ζ(s)‖ ≤ ‖s‖ / ‖s - 1‖ + ‖s‖ / Re s` without spurious
+denominators on `Re s = 1`.
+
 ## Main results
 
 * `TauCeti.hasSum_nat_add_one_rpow_neg_riemannZeta_re`: `∑ (n + 1) ^ (-s) = Re ζ(s)` for `s > 1`;
@@ -46,10 +55,15 @@ Siegel's theorem on real zeros.
 * `TauCeti.one_sub_two_cpow_mul_riemannZeta_eq_mul_integral`: the partial-summation integral of
   the alternating series represents `(1 - 2 ^ (1 - s)) ζ(s)` on `Re s > 0`, `s ≠ 1`.
 * `TauCeti.riemannZeta_lt_zero`: `ζ(σ)` is a negative real number for real `0 < σ < 1`.
+* `TauCeti.riemannZeta₀_eq_one_sub_mul_integral` and `TauCeti.riemannZeta_eq_div_sub_mul_integral`:
+  fractional-part continuation of `riemannZeta₀` and `riemannZeta` on `Re s > 0`.
+* `TauCeti.norm_riemannZeta₀_le_one_add_div` and `TauCeti.norm_riemannZeta_le_div_add_div`:
+  explicit right-half-plane growth bounds on `Re s > 0`.
 
 ## References
 
-* H. Davenport, *Multiplicative Number Theory*, the chapter on Siegel's theorem.
+* H. Davenport, *Multiplicative Number Theory*, Chapters 12 and 21.
+* E. C. Titchmarsh, *The Theory of the Riemann Zeta-Function*, §2.1 (2.1.4).
 -/
 
 public section
@@ -194,5 +208,144 @@ theorem riemannZeta_lt_zero {σ : ℝ} (h₀ : 0 < σ) (h₁ : σ < 1) : riemann
     ring
   rw [hz]
   exact_mod_cast div_neg_of_pos_of_neg (mul_pos h₀ hg) hc
+
+section FractionalPartGrowth
+
+open MeasureTheory Asymptotics
+
+/-- **Fractional-part representation of `riemannZeta₀`.** On the open right half-plane `Re s > 0`
+(including `s = 1`), the regularized zeta function `riemannZeta₀ s` equals
+`1 - s ∫_1^∞ {t} t^{-(s + 1)} dt`. -/
+theorem riemannZeta₀_eq_one_sub_mul_integral {s : ℂ} (hs : 0 < s.re) :
+    riemannZeta₀ s =
+      1 - s * ∫ t in Set.Ioi (1 : ℝ), (↑(Int.fract t) : ℂ) * (t : ℂ) ^ (-(s + 1)) := by
+  have hfract_O : (fun t : ℝ ↦ (↑(Int.fract t) : ℂ)) =O[atTop] fun t ↦ t ^ (0 : ℝ) := by
+    refine isBigO_iff.mpr ⟨1, Eventually.of_forall fun t ↦ ?_⟩
+    simpa [abs_of_nonneg (Int.fract_nonneg t)] using (Int.fract_lt_one t).le
+  set G : ℂ → ℂ := fun z ↦
+    1 - z * ∫ t in Set.Ioi (1 : ℝ), (↑(Int.fract t) : ℂ) * (t : ℂ) ^ (-(z + 1))
+  have hopen : IsOpen {z : ℂ | 0 < z.re} := isOpen_lt continuous_const continuous_re
+  have hG : AnalyticOnNhd ℂ G {z : ℂ | 0 < z.re} :=
+    ((differentiableOn_const 1).sub
+      (differentiableOn_id.mul
+        (differentiableOn_integral_mul_cpow_of_isBigO hfract_O))).analyticOnNhd hopen
+  have hZ : AnalyticOnNhd ℂ riemannZeta₀ {z : ℂ | 0 < z.re} :=
+    differentiable_riemannZeta₀.differentiableOn.analyticOnNhd hopen
+  -- On `Re z > 1`, split `⌊t⌋₊ = t - {t}` in the partial-summation integral of `ζ(z)`.
+  have heq : riemannZeta₀ =ᶠ[𝓝 (2 : ℂ)] G := by
+    filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds
+      (by norm_num : (2 : ℂ) ∈ {z : ℂ | 1 < z.re})] with z hz
+    have hz0 : 0 < z.re := zero_lt_one.trans hz
+    have hz1 : z ≠ 1 := fun h ↦ by simp [h] at hz
+    have hO1 : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, (1 : ℕ → ℂ) k) =O[atTop]
+        fun n ↦ (n : ℝ) ^ (1 : ℝ) := by
+      refine isBigO_iff.mpr ⟨1, Eventually.of_forall fun n ↦ ?_⟩
+      simp
+    have hzeta := LSeries_eq_mul_integral (1 : ℕ → ℂ) zero_le_one hz
+      (LSeriesSummable_one_iff.mpr hz) hO1
+    rw [LSeries_one_eq_riemannZeta hz, riemannZeta_eq_inv_sub_add hz1] at hzeta
+    have hint1 : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (-z)) (Set.Ioi 1) :=
+      integrableOn_Ioi_cpow_of_lt (by simpa using hz) zero_lt_one
+    have hfract_loc : LocallyIntegrableOn (fun t : ℝ ↦ (↑(Int.fract t) : ℂ)) (Set.Ici 1) := by
+      refine ((locallyIntegrable_const (1 : ℝ)).mono
+        (Complex.measurable_ofReal.comp measurable_fract).aestronglyMeasurable
+        (Eventually.of_forall fun t ↦ ?_)).locallyIntegrableOn _
+      simpa [abs_of_nonneg (Int.fract_nonneg t)] using (Int.fract_lt_one t).le
+    have hint2 : IntegrableOn
+        (fun t : ℝ ↦ (↑(Int.fract t) : ℂ) * (t : ℂ) ^ (-(z + 1))) (Set.Ioi 1) :=
+      integrableOn_mul_cpow_of_isBigO hfract_loc hfract_O hz0
+    have hcongr : Set.EqOn
+        (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) * (t : ℂ) ^ (-(z + 1)))
+        (fun t : ℝ ↦ (t : ℂ) ^ (-z) - (↑(Int.fract t) : ℂ) * (t : ℂ) ^ (-(z + 1)))
+        (Set.Ioi 1) := by
+      intro t ht
+      have ht0 : 0 < t := zero_lt_one.trans ht
+      have hfl : (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) = (t : ℂ) - (↑(Int.fract t) : ℂ) := by
+        have hnat : (⌊t⌋₊ : ℝ) = t - Int.fract t := by
+          rw [natCast_floor_eq_intCast_floor ht0.le, Int.self_sub_fract]
+        simp only [Pi.one_apply, sum_const, Nat.card_Icc, add_tsub_cancel_right, nsmul_eq_mul,
+          mul_one]
+        exact_mod_cast hnat
+      dsimp only
+      rw [hfl, sub_mul]
+      congr 1
+      have hpow : (t : ℂ) * (t : ℂ) ^ (-(z + 1)) = (t : ℂ) ^ (1 + -(z + 1)) := by
+        rw [cpow_add _ _ (ofReal_ne_zero.mpr ht0.ne'), cpow_one]
+      rw [hpow]
+      congr 1
+      ring
+    have hmain : ∫ t : ℝ in Set.Ioi 1, (t : ℂ) ^ (-z) = 1 / (z - 1) := by
+      rw [integral_Ioi_cpow_of_lt (by simpa using hz) zero_lt_one, ofReal_one, one_cpow]
+      have hzn : -z + 1 ≠ 0 := by
+        intro h
+        exact hz1 (by linear_combination -h)
+      field_simp [sub_ne_zero.mpr hz1, hzn]
+      ring
+    rw [setIntegral_congr_fun measurableSet_Ioi hcongr, integral_sub hint1 hint2, hmain] at hzeta
+    simp only [G]
+    have hsub : z - 1 ≠ 0 := sub_ne_zero.mpr hz1
+    have hkey : (z - 1)⁻¹ + riemannZeta₀ z = (z - 1)⁻¹ +
+        (1 - z * ∫ t in Set.Ioi (1 : ℝ), (↑(Int.fract t) : ℂ) * (t : ℂ) ^ (-(z + 1))) := by
+      calc
+        (z - 1)⁻¹ + riemannZeta₀ z =
+            z * (1 / (z - 1) - ∫ t in Set.Ioi (1 : ℝ),
+              (↑(Int.fract t) : ℂ) * (t : ℂ) ^ (-(z + 1))) := hzeta
+        _ = (z - 1)⁻¹ +
+            (1 - z * ∫ t in Set.Ioi (1 : ℝ), (↑(Int.fract t) : ℂ) * (t : ℂ) ^ (-(z + 1))) := by
+          field_simp [hsub]
+          ring
+    exact add_left_cancel hkey
+  exact hZ.eqOn_of_preconnected_of_eventuallyEq hG (convex_halfSpace_re_gt 0).isPreconnected
+    (by norm_num : (2 : ℂ) ∈ {z : ℂ | 0 < z.re}) heq hs
+
+/-- **Fractional-part continuation of `riemannZeta`.** For `Re s > 0` and `s ≠ 1`,
+`ζ(s) = s / (s - 1) - s ∫_1^∞ {t} t^{-(s + 1)} dt`. -/
+theorem riemannZeta_eq_div_sub_mul_integral {s : ℂ} (hs : 0 < s.re) (hs₁ : s ≠ 1) :
+    riemannZeta s =
+      s / (s - 1) - s * ∫ t in Set.Ioi (1 : ℝ), (↑(Int.fract t) : ℂ) * (t : ℂ) ^ (-(s + 1)) := by
+  rw [riemannZeta_eq_inv_sub_add hs₁, riemannZeta₀_eq_one_sub_mul_integral hs]
+  field_simp [sub_ne_zero.mpr hs₁]
+  ring
+
+/-- On the open right half-plane `Re s > 0`, `‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / Re s`. -/
+theorem norm_riemannZeta₀_le_one_add_div {s : ℂ} (hs : 0 < s.re) :
+    ‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / s.re := by
+  have hb : ‖∫ t in Set.Ioi (1 : ℝ), (↑(Int.fract t) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ ≤ 1 / s.re :=
+    norm_integral_mul_cpow_le_of_bound (fun t _ ↦ by
+      rw [Complex.norm_real, Real.norm_of_nonneg (Int.fract_nonneg t)]
+      exact (Int.fract_lt_one t).le) hs
+  rw [riemannZeta₀_eq_one_sub_mul_integral hs]
+  calc
+    ‖1 - s * ∫ t in Set.Ioi (1 : ℝ), (↑(Int.fract t) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ ≤
+        ‖(1 : ℂ)‖ +
+          ‖s‖ * ‖∫ t in Set.Ioi (1 : ℝ), (↑(Int.fract t) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ := by
+      rw [← norm_mul]
+      exact norm_sub_le _ _
+    _ ≤ 1 + ‖s‖ * (1 / s.re) := by
+      rw [norm_one]
+      gcongr
+    _ = 1 + ‖s‖ / s.re := by ring
+
+/-- **Explicit right-half-plane growth bound for `riemannZeta`.** For `Re s > 0` and `s ≠ 1`,
+`‖ζ(s)‖ ≤ ‖s‖ / ‖s - 1‖ + ‖s‖ / Re s`. -/
+theorem norm_riemannZeta_le_div_add_div {s : ℂ} (hs : 0 < s.re) (hs₁ : s ≠ 1) :
+    ‖riemannZeta s‖ ≤ ‖s‖ / ‖s - 1‖ + ‖s‖ / s.re := by
+  have hb : ‖∫ t in Set.Ioi (1 : ℝ), (↑(Int.fract t) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ ≤ 1 / s.re :=
+    norm_integral_mul_cpow_le_of_bound (fun t _ ↦ by
+      rw [Complex.norm_real, Real.norm_of_nonneg (Int.fract_nonneg t)]
+      exact (Int.fract_lt_one t).le) hs
+  rw [riemannZeta_eq_div_sub_mul_integral hs hs₁]
+  calc
+    ‖s / (s - 1) - s * ∫ t in Set.Ioi (1 : ℝ), (↑(Int.fract t) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ ≤
+        ‖s / (s - 1)‖ +
+          ‖s‖ * ‖∫ t in Set.Ioi (1 : ℝ), (↑(Int.fract t) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ := by
+      rw [← norm_mul]
+      exact norm_sub_le _ _
+    _ ≤ ‖s‖ / ‖s - 1‖ + ‖s‖ * (1 / s.re) := by
+      rw [norm_div]
+      gcongr
+    _ = ‖s‖ / ‖s - 1‖ + ‖s‖ / s.re := by ring
+
+end FractionalPartGrowth
 
 end TauCeti
