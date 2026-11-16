@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.Algebra.Polynomial.FieldDivision
+import TauCeti.Data.Nat.Factorial.NatCast
 
 /-!
 # Polynomial derivatives
@@ -45,6 +46,9 @@ Over any commutative ring, the quotient of `p` by `X - a` takes the value `p' (a
 
 Over any semiring, the coefficient of `p q'` in degree `deg p + deg q - 1` is
 `leadingCoeff p · leadingCoeff q · deg q`.
+
+In positive characteristic `p`, every iterated derivative `derivative^[k] f` of order `k ≥ p`
+vanishes identically (`Polynomial.iterate_derivative_eq_zero_of_charP`), since `p` divides `k !`.
 -/
 
 public section
@@ -255,5 +259,13 @@ theorem coeff_mul_derivative_natDegree_add_natDegree_sub_one {R : Type*} [Semiri
   · rw [Nat.add_succ_sub_one, coeff_mul_add_eq_of_natDegree_le le_rfl
       ((natDegree_derivative_le q).trans_eq (by omega)), coeff_derivative, leadingCoeff,
       leadingCoeff, hq, Nat.cast_add_one, mul_assoc]
+
+/-- In positive characteristic `p`, every iterated ordinary derivative of order `k ≥ p` vanishes
+identically, since `p` divides `k !`. -/
+theorem iterate_derivative_eq_zero_of_charP {R : Type*} [Semiring R] {p : ℕ} [CharP R p]
+    (hp : 0 < p) {k : ℕ} (hk : p ≤ k) (f : R[X]) :
+    derivative^[k] f = 0 := by
+  rw [iterate_derivative_eq_factorial_smul_sum, ← Nat.cast_smul_eq_nsmul R,
+    Nat.cast_factorial_eq_zero_of_le hp (CharP.cast_eq_zero R p) hk, zero_smul]
 
 end Polynomial

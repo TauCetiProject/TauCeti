@@ -13,6 +13,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.Matrix.Symmetric
+import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
 # Diagonalization of symmetric bilinear forms in every characteristic
@@ -333,8 +334,7 @@ theorem equivalent_toBilin'_diagonal_fin_two {a c a' c' x y z t : R}
   linear_combination (u 0 * v 1 + u 1 * v 0) * horth
 
 /-- Over a local ring in which `2` is a unit, if a value `B u w` of a symmetric bilinear form
-divides every value of the form, then so does one of the self-pairings `B u u`, `B w w` and
-`B (u + w) (u + w)`. -/
+divides every value of the form, then so does some self-pairing `B x x`. -/
 theorem IsSymm.exists_forall_apply_self_dvd_of_forall_dvd [IsLocalRing R]
     (hB : B.IsSymm) (h2 : IsUnit (2 : R)) {u w : M} (h : ∀ y z, B u w ∣ B y z) :
     ∃ x, ∀ y z, B x x ∣ B y z := by
@@ -345,14 +345,9 @@ theorem IsSymm.exists_forall_apply_self_dvd_of_forall_dvd [IsLocalRing R]
   by_cases htu : IsUnit t
   · exact ⟨w, fun y z ↦ (ht ▸ (Units.mul_right_dvd (u := htu.unit)).mpr dvd_rfl).trans (h y z)⟩
   -- Both `s` and `t` lie in the maximal ideal, so `s + t + 2` is a unit.
-  have hunit : IsUnit (s + t + 2) := by
-    by_contra hn
-    refine (mem_nonunits_iff.mp ?_) h2
-    have := IsLocalRing.nonunits_add (IsLocalRing.nonunits_add hn
-      (mem_nonunits_iff.mpr ((IsUnit.neg_iff s).not.mpr hsu)))
-      (mem_nonunits_iff.mpr ((IsUnit.neg_iff t).not.mpr htu))
-    have hsum : s + t + 2 + -s + -t = (2 : R) := by ring
-    rwa [hsum] at this
+  have hunit : IsUnit (s + t + 2) := add_comm 2 (s + t) ▸ TauCeti.isUnit_add_of_isUnit_of_not_isUnit
+    h2 (mem_nonunits_iff.mp
+      (IsLocalRing.nonunits_add (mem_nonunits_iff.mpr hsu) (mem_nonunits_iff.mpr htu)))
   have huw : B (u + w) (u + w) = B u w * (s + t + 2) := by
     simp only [map_add, LinearMap.add_apply, hs, ht, hB.eq w u]
     ring
