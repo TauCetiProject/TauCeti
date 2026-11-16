@@ -26,6 +26,11 @@ Dually, for `B > 0` and any natural degree bound `n`, multiplying `B < ⌊B⌋�
 `n < (2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)`. This includes `n = 0` and `B < 1`, and counts the available
 jet conditions on an integer interval of radius `B`.
 
+For closed intervals `[0, W]` subdivided into `n > 0` equal cells of step `W / n`, clamping the
+floor index `⌊x / (W / n)⌋₊` at `n - 1` keeps the right endpoint `W` inside the last cell while
+preserving `[k * (W / n), (k + 1) * (W / n)]` for all `x ∈ [0, W]`. Similarly, `max 1 ⌈t⌉₊` gives
+a positive cell count bounded by `t + 1` for `t ≥ 0`, and strictly below `t + 1` whenever `t > 0`.
+
 ## Main results
 
 * `TauCeti.natCast_ceil_div_sub_ceil_div_lt`: `⌈t / τ⌉₊ - ⌈s / τ⌉₊ < (t - s) / τ + 1`.
@@ -38,6 +43,10 @@ jet conditions on an integer interval of radius `B`.
 * `TauCeti.lt_floor_add_one_mul_floor_div_add_one`: `n < (⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
 * `TauCeti.lt_two_mul_floor_add_one_mul_floor_div_add_one`:
   `n < (2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
+* `TauCeti.mem_Icc_min_sub_one_natFloor_div`: for `0 ≤ W` and `0 < n`, every `x ∈ [0, W]` lies in
+  the closed cell of step `W / n` indexed by `min (n - 1) ⌊x / (W / n)⌋₊`.
+* `TauCeti.natCast_max_one_ceil_lt_add_one` and `TauCeti.natCast_max_one_ceil_le_add_one`:
+  `max 1 ⌈t⌉₊ < t + 1` for `0 < t`, and `max 1 ⌈t⌉₊ ≤ t + 1` for `0 ≤ t`.
 -/
 
 public section
@@ -141,5 +150,46 @@ example : ⌊(1 / 2 : ℚ)⌋₊ = 0 ∧ ⌊(3 : ℚ) / (1 / 2)⌋₊ = 6 ∧
     2 < (2 * ⌊(3 : ℚ)⌋₊ + 1) * (⌊(2 : ℚ) / 3⌋₊ + 1) := by
   refine ⟨?_, ?_, lt_two_mul_floor_add_one_mul_floor_div_add_one (by norm_num) 3, ?_, ?_,
     lt_two_mul_floor_add_one_mul_floor_div_add_one (by norm_num) 2⟩ <;> norm_num
+
+/-- For `0 ≤ W` and `0 < n`, every `x ∈ [0, W]` lies in the closed cell
+`[k * (W / n), (k + 1) * (W / n)]` of step `W / n` indexed by
+`k = min (n - 1) ⌊x / (W / n)⌋₊`, including at `W = 0` and at the right endpoint `x = W`. -/
+theorem mem_Icc_min_sub_one_natFloor_div {W x : K} (hW : 0 ≤ W) {n : ℕ} (hn : 0 < n)
+    (hx : x ∈ Set.Icc 0 W) :
+    x ∈ Set.Icc ((min (n - 1) ⌊x / (W / n)⌋₊ : ℕ) * (W / n))
+      (((min (n - 1) ⌊x / (W / n)⌋₊ : ℕ) + 1) * (W / n)) := by
+  rcases hW.eq_or_lt with rfl | hW
+  · simp [le_antisymm hx.2 hx.1]
+  have hnpos : (0 : K) < n := Nat.cast_pos.2 hn
+  have hτ : 0 < W / n := div_pos hW hnpos
+  refine ⟨?_, ?_⟩
+  · rw [← le_div_iff₀ hτ]
+    exact (Nat.cast_le.2 (min_le_right _ _)).trans (Nat.floor_le (div_nonneg hx.1 hτ.le))
+  · rcases le_total (n - 1) ⌊x / (W / n)⌋₊ with h | h
+    · have hn1 : ((n - 1 : ℕ) : K) + 1 = n := by exact_mod_cast Nat.sub_add_cancel hn
+      rw [min_eq_left h, hn1, Nat.cast_comm, div_mul_cancel₀ W hnpos.ne']
+      exact hx.2
+    · rw [min_eq_right h, ← div_le_iff₀ hτ]
+      exact (Nat.lt_floor_add_one _).le
+
+section Semiring
+
+variable {R : Type*} [Semiring R] [LinearOrder R] [IsStrictOrderedRing R] [FloorSemiring R]
+
+/-- For a positive `t`, the positive cell count `max 1 ⌈t⌉₊` is strictly below `t + 1`, including
+when `t` is a positive natural number. -/
+theorem natCast_max_one_ceil_lt_add_one {t : R} (ht : 0 < t) :
+    ((max 1 ⌈t⌉₊ : ℕ) : R) < t + 1 := by
+  rw [max_eq_right (Nat.one_le_iff_ne_zero.2 (Nat.ceil_pos.2 ht).ne')]
+  exact Nat.ceil_lt_add_one ht.le
+
+/-- For a nonnegative `t`, the positive cell count `max 1 ⌈t⌉₊` is at most `t + 1`. -/
+theorem natCast_max_one_ceil_le_add_one {t : R} (ht : 0 ≤ t) :
+    ((max 1 ⌈t⌉₊ : ℕ) : R) ≤ t + 1 := by
+  rcases ht.eq_or_lt with rfl | ht
+  · simp
+  · exact (natCast_max_one_ceil_lt_add_one ht).le
+
+end Semiring
 
 end TauCeti
