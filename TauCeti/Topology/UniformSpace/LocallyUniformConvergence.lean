@@ -29,6 +29,11 @@ subsequence of `F` converges locally uniformly on `s`
 continuous function by `m` gives a sequence tending to `0` locally uniformly
 (`TauCeti.tendstoLocallyUniformly_div_natCast`).
 
+Reindexing a locally uniformly convergent family along `ψ` with `ψ → p` keeps it locally
+uniformly convergent (`TendstoLocallyUniformly.comp_tendsto`), and a family that does not depend
+on its index converges locally uniformly to its constant value
+(`TauCeti.tendstoLocallyUniformly_const`).
+
 On an open set on which the limit is continuous, locally uniform convergence is the same as
 continuous convergence at every point of the set
 (`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`).
@@ -58,6 +63,16 @@ theorem IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn {ι 
     ((hf.continuousAt (hs.mem_nhds hx)).tendsto).comp tendsto_snd
   refine ⟨fun h ↦ hfx.congr_uniformity h, fun h ↦ ?_⟩
   exact (hfx.prodMk_nhds h).mono_right (nhds_le_uniformity (f x))
+
+/-- Reindexing a locally uniformly convergent family along `ψ` with `ψ → p` gives a locally
+uniformly convergent family. -/
+theorem TendstoLocallyUniformly.comp_tendsto {ι ι' α β : Type*} [TopologicalSpace α]
+    [UniformSpace β] {F : ι → α → β} {f : α → β} {p : Filter ι} {q : Filter ι'} {ψ : ι' → ι}
+    (h : TendstoLocallyUniformly F f p) (hψ : Tendsto ψ q p) :
+    TendstoLocallyUniformly (fun i ↦ F (ψ i)) f q :=
+  tendstoLocallyUniformly_iff_filter.2 fun x ↦ tendstoUniformlyOnFilter_iff_tendsto.2 <|
+    (tendstoUniformlyOnFilter_iff_tendsto.1 (tendstoLocallyUniformly_iff_filter.1 h x)).comp
+      (hψ.prodMap tendsto_id)
 
 variable {α β ι : Type*} [TopologicalSpace α] [PseudoMetricSpace β] {l : Filter ι}
   {F : ι → α → β} {u : α → β} {s : Set α}
@@ -95,17 +110,22 @@ theorem not_tendstoLocallyUniformlyOn_comp_of_tendsto_norm_atTop {E : Type*}
   exact not_tendsto_nhds_of_tendsto_atTop (hF.comp hφ.tendsto_atTop) ‖g z‖
     ((h.tendsto_at hz).norm)
 
+/-- A family that does not depend on its index converges locally uniformly to its constant
+value. -/
+theorem tendstoLocallyUniformly_const {γ : Type*} [UniformSpace γ] (g : α → γ) :
+    TendstoLocallyUniformly (fun (_ : ι) ↦ g) g l :=
+  (tendstoUniformly_iff_tendsto.2
+    (tendsto_diag_uniformity (fun q : ι × α ↦ g q.2) _)).tendstoLocallyUniformly
+
 /-- For a continuous `g` with values in `ℝ` or `ℂ`, the maps `z ↦ g z / m` tend to `0` locally
 uniformly. -/
 theorem tendstoLocallyUniformly_div_natCast {𝕜 : Type*} [RCLike 𝕜] {g : α → 𝕜}
     (hg : Continuous g) :
     TendstoLocallyUniformly (fun (m : ℕ) z ↦ g z / m) (fun _ ↦ 0) atTop := by
   have hinv : Tendsto (fun m : ℕ ↦ (m : 𝕜)⁻¹) atTop (𝓝 0) := tendsto_inv_atTop_nhds_zero_nat
-  have hg' : TendstoLocallyUniformly (fun (_ : ℕ) z ↦ g z) g atTop :=
-    (tendstoUniformly_iff_tendsto.2
-      (tendsto_diag_uniformity (fun q : ℕ × α ↦ g q.2) _)).tendstoLocallyUniformly
   simpa [div_eq_mul_inv] using
-    hg'.fun_mul₀ hinv.tendstoUniformly_const.tendstoLocallyUniformly hg continuous_const
+    (tendstoLocallyUniformly_const g).fun_mul₀
+      hinv.tendstoUniformly_const.tendstoLocallyUniformly hg continuous_const
 
 /-- A family `Φ` jointly continuous at every point of `α × {q}` converges locally uniformly to
 `fun x ↦ Φ x q` along any parameter family `p` tending to `q`. -/
