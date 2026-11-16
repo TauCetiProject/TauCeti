@@ -193,9 +193,10 @@ theorem isCellular_mapOfIsColimit (φ : T₁.Hom T₂)
       (TopCat.ofHom ((φ.mapOfIsColimit (c₂ := c₂) hc₁).hom.restrictPreimage univ)) := by
   let _ := T₁.cwComplexOfIsColimit hc₁; let _ := T₁.t2Space_of_isColimit hc₁
   let _ := T₂.cwComplexOfIsColimit hc₂; let _ := T₂.t2Space_of_isColimit hc₂
-  refine (T₁.isCellular_iff_forall_comp_ι hc₁).2 fun k ↦ isCellular_univ_iff.2 fun n x hx ↦ ?_
-  change dsimp% φ.mapOfIsColimit (c₂ := c₂) hc₁ (c₁.ι.app k x) ∈ _
-  rw [φ.mapOfIsColimit_ι_apply hc₁]
+  refine (T₁.isCellular_iff_forall_comp_ι hc₁).2 fun k ↦ ?_
+  rw [← TopCat.hom_comp, φ.ι_comp_mapOfIsColimit hc₁, TopCat.hom_comp, TopCat.hom_ofHom]
+  refine isCellular_univ_iff.2 fun n x hx ↦ ?_
+  rw [ContinuousMap.comp_apply]
   exact isCellular_univ_iff.1 (T₂.isCellular_ι hc₂ k) n
     (isCellular_univ_iff.1 (φ.isCellular_app k) n hx)
 
