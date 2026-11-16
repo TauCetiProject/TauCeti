@@ -372,32 +372,35 @@ theorem preimage_timeReverse_slab (T a b : ℝ) :
   simp only [mem_preimage, mem_slab, time_timeReverse,
     ← Set.mem_preimage (f := (T - ·)) (a := p.time), Set.preimage_const_sub_Icc]
 
+/-- Time reversal `t ↦ T - t` maps the time interval `[a', b']` into `[a, b]`, where
+`a' = T - b` and `b' = T - a`. -/
+theorem sub_mem_Icc_of_eq_sub {a b a' b' : ℝ} (T : ℝ) (ha : a' = T - b) (hb : b' = T - a)
+    {s : ℝ} (hs : s ∈ Icc a' b') : T - s ∈ Icc a b := by
+  subst ha hb
+  constructor <;> linarith [hs.1, hs.2]
+
 /-- Time reversal `t ↦ T - t`, as an isometry from the time interval `[a', b']` onto `[a, b]`,
 where `a' = T - b` and `b' = T - a`. It is the time component of `slabTimeReverse`. -/
 def iccTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a) :
     Icc a' b' ≃ᵢ Icc a b where
-  toFun t := ⟨T - t, by
-    obtain ⟨h₁, h₂⟩ := t.2
-    subst ha hb
-    constructor <;> linarith⟩
-  invFun s := ⟨T - s, by
-    obtain ⟨h₁, h₂⟩ := s.2
-    subst ha hb
-    constructor <;> linarith⟩
+  toFun t := ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩
+  invFun s := ⟨T - s,
+    sub_mem_Icc_of_eq_sub T (by rw [hb, sub_sub_cancel]) (by rw [ha, sub_sub_cancel]) s.2⟩
   left_inv t := Subtype.ext (sub_sub_cancel T t)
   right_inv s := Subtype.ext (sub_sub_cancel T s)
   isometry_toFun := Isometry.of_dist_eq fun t s ↦ by
     rw [Subtype.dist_eq, Subtype.dist_eq, dist_sub_left]
 
 /-- Time reversal between intervals sends `t` to `T - t`. -/
-@[simp]
 theorem iccTimeReverse_apply (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
     (t : Icc a' b') :
-    iccTimeReverse T ha hb t = ⟨T - t, by
-      obtain ⟨h₁, h₂⟩ := t.2
-      subst ha hb
-      constructor <;> linarith⟩ :=
+    iccTimeReverse T ha hb t = ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ :=
   (rfl)
+
+/-- The underlying real number of `iccTimeReverse T ha hb t` is `T - t`. -/
+@[simp]
+theorem coe_iccTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
+    (t : Icc a' b') : (iccTimeReverse T ha hb t : ℝ) = T - t := (rfl)
 
 /-- The inverse of time reversal between intervals is time reversal in the opposite direction. -/
 @[simp]
@@ -422,10 +425,8 @@ def slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T -
 @[simp]
 theorem slabTimeReverse_slabMk (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
     (x : E) (t : Icc a' b') :
-    slabTimeReverse T ha hb (slabMk x t) = slabMk x ⟨T - t, by
-      obtain ⟨h₁, h₂⟩ := t.2
-      subst ha hb
-      constructor <;> linarith⟩ :=
+    slabTimeReverse T ha hb (slabMk x t) =
+      slabMk x ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ :=
   (rfl)
 
 @[simp]

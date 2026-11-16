@@ -97,15 +97,14 @@ private theorem hasDerivWithinAt_reverseField (f : ParabolicCkHolderSpace k α E
     HasDerivWithinAt (ParabolicC2HolderSpace.timeExtension
         (ha ▸ hb ▸ sub_lt_sub_left hab T).le (reverseField T ha hb f r m) x)
       (reverseField T ha hb f (r + 1) m (slabMk x t)) (Icc a' b') t := by
-  have hmem : ∀ s ∈ Icc a' b', T - s ∈ Icc a b := fun s hs ↦ by
-    simpa using (iccTimeReverse T ha hb ⟨s, hs⟩).2
   have hd := (HasDerivWithinAt.scomp (t : ℝ)
-    (f.hasDerivWithinAt_mixedDerivL h x ⟨T - t, hmem t t.2⟩)
-    ((hasDerivWithinAt_id (t : ℝ) (Icc a' b')).const_sub T) fun s hs ↦ hmem s hs).const_smul
-    ((-1 : ℝ) ^ r)
+    (f.hasDerivWithinAt_mixedDerivL h x ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩)
+    ((hasDerivWithinAt_id (t : ℝ) (Icc a' b')).const_sub T)
+    fun s hs ↦ sub_mem_Icc_of_eq_sub T ha hb hs).const_smul ((-1 : ℝ) ^ r)
   refine (hd.congr_of_mem (fun s hs ↦ ?_) t.2).congr_deriv ?_
   · simp [ParabolicC2HolderSpace.timeExtension_def, reverseField_apply,
-      projIcc_of_mem (ha ▸ hb ▸ sub_lt_sub_left hab T).le hs, projIcc_of_mem hab.le (hmem s hs)]
+      projIcc_of_mem (ha ▸ hb ▸ sub_lt_sub_left hab T).le hs,
+      projIcc_of_mem hab.le (sub_mem_Icc_of_eq_sub T ha hb hs)]
   · rw [reverseField_apply, slabTimeReverse_slabMk, smul_smul, ← pow_succ]
 
 /-- The reversed fields of order `k - 1` have uniformly Hölder time slices, because the time
@@ -119,7 +118,7 @@ private theorem exists_holderWith_reverseField (f : ParabolicCkHolderSpace k α 
     exact_mod_cast lp.norm_apply_le_norm ENNReal.top_ne_zero _ x
   convert holderWith_neg_one_pow_smul_comp ((timeSliceL r m f x).holderWith_nnnorm.mono hx)
     (iccTimeReverse T ha hb).isometry r using 2 with t
-  simp [reverseField_apply, timeSliceL_apply f h]
+  simp [reverseField_apply, timeSliceL_apply f h, iccTimeReverse_apply]
 
 /-- The reversed fields of order `k` are parabolically `α`-Hölder, because `R` is an isometry. -/
 private theorem memHolder_reverseField (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
@@ -261,8 +260,11 @@ theorem mixedDerivHolderL_timeReverseLIE (f : ParabolicCkHolderSpace k α E F ha
 theorem timeReverseLIE_symm :
     (timeReverseLIE T ha hb (k := k) (α := α) (E := E) (F := F) (hab := hab)).symm =
       timeReverseLIE T (by rw [hb, sub_sub_cancel]) (by rw [ha, sub_sub_cancel]) := by
-  ext f p
-  rfl
+  ext f : 1
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext p
+  rw [timeReverseLIE_apply, timeReverseLIE_apply, ← slabTimeReverse_symm T ha hb,
+    IsometryEquiv.symm_apply_apply]
 
 end ParabolicCkHolderSpace
 

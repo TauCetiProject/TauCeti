@@ -58,11 +58,6 @@ open scoped NNReal BoundedContinuousFunction
 variable {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ} {hab : a < b}
 
-private theorem sub_mem_Icc_of_eq_sub {a' b' : ℝ} (T : ℝ) (ha : a' = T - b) (hb : b' = T - a)
-    {s : ℝ} (hs : s ∈ Icc a' b') : T - s ∈ Icc a b := by
-  subst ha hb
-  constructor <;> linarith [hs.1, hs.2]
-
 namespace ParabolicC2HolderSpace
 
 /-! ### Restriction to a smaller slab -/
@@ -433,9 +428,10 @@ private def reverse (f : ParabolicC1HolderSpace α E F a b) :
   mk ((valueL f).compContinuous ⟨_, (slabTimeReverse T ha hb).continuous⟩)
     (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
       (spatialFDerivL f))
-    (fun t x ↦ by simpa using f.hasSpatialFDerivAt (iccTimeReverse T ha hb t) x)
+    (fun t x ↦ by
+      simpa [iccTimeReverse_apply] using f.hasSpatialFDerivAt (iccTimeReverse T ha hb t) x)
     ((timeEHolderNorm_le_of_lipschitzWith (iccTimeReverse T ha hb).isometry.lipschitzWith
-      fun x t ↦ by simp).trans_lt f.timeEHolderNorm_lt_top)
+      fun x t ↦ by simp [iccTimeReverse_apply]).trans_lt f.timeEHolderNorm_lt_top)
 
 private theorem reverse_apply (f : ParabolicC1HolderSpace α E F a b)
     (p : slab (E := E) a' b') : reverse T ha hb f p = f (slabTimeReverse T ha hb p) := by
