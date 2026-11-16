@@ -190,6 +190,12 @@ theorem integrable (f : BoundedBorelFunction X) (μ : MeasureTheory.Measure X)
     [MeasureTheory.IsFiniteMeasure μ] : MeasureTheory.Integrable f μ :=
   .of_bound f.measurable.aestronglyMeasurable ‖f‖ (.of_forall (norm_coe_le_norm f))
 
+/-- Any natural power of the norm of a symbol is integrable against every finite measure. -/
+theorem integrable_norm_pow (f : BoundedBorelFunction X) (μ : MeasureTheory.Measure X)
+    [MeasureTheory.IsFiniteMeasure μ] (k : ℕ) :
+    MeasureTheory.Integrable (fun x => ‖f x‖ ^ k) μ := by
+  simpa only [coe_pow, Pi.pow_apply, norm_pow] using ((f ^ k).integrable μ).norm
+
 /-- Bundle a measurable function with its everywhere bound. -/
 def ofFunction (f : X → ℂ) (hf : Measurable f)
     (hbound : ∃ M : ℝ, 0 ≤ M ∧ ∀ x, ‖f x‖ ≤ M) : BoundedBorelFunction X :=
@@ -379,6 +385,17 @@ theorem iSup_enorm_truncate_apply {f : X → ℂ} (hf : Measurable f) (x : X) :
     (⨆ n : ℕ, ‖truncate f hf n x‖ₑ) = ‖f x‖ₑ := by
   simpa using iSup_enorm_pow_truncate_apply hf 1 x
 
+/-- By monotone convergence, the supremum over natural thresholds of
+`∫⁻ x, ‖truncate f hf n x‖ₑ ^ k` equals `∫⁻ x, ‖f x‖ₑ ^ k`. -/
+theorem iSup_lintegral_enorm_pow_truncate {f : X → ℂ} (hf : Measurable f) (k : ℕ)
+    (μ : MeasureTheory.Measure X) :
+    (⨆ n : ℕ, ∫⁻ x, ‖truncate f hf n x‖ₑ ^ k ∂μ) = ∫⁻ x, ‖f x‖ₑ ^ k ∂μ := by
+  rw [← MeasureTheory.lintegral_iSup
+    (fun n => (truncate f hf n).measurable.eNorm.pow_const k)
+    (fun _ _ hmn x => pow_le_pow_left'
+      (enorm_truncate_apply_mono hf (Nat.cast_le.2 hmn) x) k)]
+  exact MeasureTheory.lintegral_congr fun x => iSup_enorm_pow_truncate_apply hf k x
+
 /-- As `M → ∞`, `truncate f hf M x` is eventually constant and converges to `f x`. -/
 theorem tendsto_truncate_apply {f : X → ℂ} (hf : Measurable f) (x : X) :
     Tendsto (fun M : ℝ => truncate f hf M x) atTop (𝓝 (f x)) := by
@@ -407,28 +424,6 @@ theorem tendsto_truncate_apply {f : X → ℂ} (hf : Measurable f) (x : X) :
     compStarAlgHom' g hg (truncate f hf M) = truncate (f ∘ g) (hf.comp hg) M := by
   ext x
   simp [Set.indicator_apply, Function.comp_apply]
-
-/-- Pointwise tail bound for the squared norm of the difference of two level-set truncations above
-a common threshold `R`. -/
-theorem norm_sub_truncate_sq_le {f : X → ℂ} (hf : Measurable f) {R M₁ M₂ : ℝ}
-    (hM₁ : R ≤ M₁) (hM₂ : R ≤ M₂) (x : X) :
-    ‖(truncate f hf M₁ - truncate f hf M₂) x‖ ^ 2 ≤
-      ({y | R < ‖f y‖}.indicator (fun y => 4 * ‖f y‖ ^ 2)) x := by
-  by_cases hx : x ∈ {y | R < ‖f y‖}
-  · rw [Set.indicator_of_mem hx, sub_apply]
-    have hsum : ‖truncate f hf M₁ x - truncate f hf M₂ x‖ ≤ 2 * ‖f x‖ := by
-      calc
-        ‖truncate f hf M₁ x - truncate f hf M₂ x‖
-            ≤ ‖truncate f hf M₁ x‖ + ‖truncate f hf M₂ x‖ := norm_sub_le _ _
-        _ ≤ ‖f x‖ + ‖f x‖ :=
-          add_le_add (norm_truncate_apply_le f hf M₁ x) (norm_truncate_apply_le f hf M₂ x)
-        _ = 2 * ‖f x‖ := (two_mul _).symm
-    calc
-      ‖truncate f hf M₁ x - truncate f hf M₂ x‖ ^ 2 ≤ (2 * ‖f x‖) ^ 2 :=
-        pow_le_pow_left₀ (norm_nonneg _) hsum 2
-      _ = 4 * ‖f x‖ ^ 2 := by ring
-  · have hle : ‖f x‖ ≤ R := not_lt.1 (by simpa using hx)
-    simp [hx, hle.trans hM₁, hle.trans hM₂]
 
 /-- Every measurable complex simple function is an everywhere bounded symbol. This embedding is a
 star algebra homomorphism for the pointwise operations on simple functions. -/

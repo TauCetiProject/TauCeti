@@ -361,20 +361,15 @@ theorem norm_sq_integral_apply (P : ProjValMeasure X H) (f : BoundedBorelFunctio
 diagonal measure `P.diag ξ`. -/
 theorem integral_apply_eq_zero_iff (P : ProjValMeasure X H) (f : BoundedBorelFunction X)
     (ξ : H) : P.integral f ξ = 0 ↔ ⇑f =ᵐ[P.diag ξ] 0 := by
-  have hint : Integrable (fun x => ‖f x‖ ^ 2) (P.diag ξ) := by
-    simpa only [sq, BoundedBorelFunction.mul_apply, norm_mul] using
-      ((f * f).integrable (P.diag ξ)).norm
   rw [← norm_eq_zero, ← pow_eq_zero_iff (n := 2) two_ne_zero, norm_sq_integral_apply,
-    integral_eq_zero_iff_of_nonneg (fun _ => by positivity) hint]
+    integral_eq_zero_iff_of_nonneg (fun _ => by positivity) (f.integrable_norm_pow (P.diag ξ) 2)]
   simp [EventuallyEq]
 
 /-- The diagonal measure of `(∫ g dP) ξ` is `P.diag ξ` weighted by `x ↦ ‖g x‖ₑ ^ 2`. -/
 @[simp]
 theorem diag_integral (P : ProjValMeasure X H) (g : BoundedBorelFunction X) (ξ : H) :
     P.diag (P.integral g ξ) = (P.diag ξ).withDensity fun x => ‖g x‖ₑ ^ 2 := by
-  have hint : Integrable (fun x => ‖g x‖ ^ 2) (P.diag ξ) := by
-    simpa only [sq, BoundedBorelFunction.mul_apply, norm_mul] using
-      ((g * g).integrable (P.diag ξ)).norm
+  have hint : Integrable (fun x => ‖g x‖ ^ 2) (P.diag ξ) := g.integrable_norm_pow (P.diag ξ) 2
   ext B hB
   have hind : (fun x => ‖BoundedBorelFunction.indicator B hB g x‖ ^ 2) =
       B.indicator fun x => ‖g x‖ ^ 2 := by
