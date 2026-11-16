@@ -28,8 +28,6 @@ multiple of the identity matrix (`Module.Basis.exists_eq_smul_one_of_commute_coe
 
 ## Main declarations
 
-* `Module.Basis.index_nonempty_of_isSimpleOrder`: every basis of a simple comodule has a nonempty
-  index type.
 * `TauCeti.Comodule.Hom.injective_or_eq_zero`, `TauCeti.Comodule.Hom.surjective_or_eq_zero`, and
   `TauCeti.Comodule.Hom.bijective_of_ne_zero`: structural Schur's lemma for morphisms between
   simple comodules.
@@ -49,14 +47,6 @@ multiple of the identity matrix (`Module.Basis.exists_eq_smul_one_of_commute_coe
 public section
 
 open Module TauCeti TauCeti.Comodule
-
-/-- Any basis of a simple right comodule has a nonempty index type. -/
-theorem Module.Basis.index_nonempty_of_isSimpleOrder {R M ι : Type*} [CommSemiring R]
-    [AddCommMonoid M] [Module R M] (b : Basis ι R M) (C : Type*)
-    [AddCommMonoid C] [Module R C] [Coalgebra R C] [Comodule R C M]
-    [IsSimpleOrder (Subcomodule R C M)] : Nonempty ι :=
-  have := TauCeti.Comodule.nontrivial_of_isSimpleOrder R C M
-  b.index_nonempty
 
 namespace TauCeti.Comodule.Hom
 
@@ -103,10 +93,8 @@ end Ring
 
 section AlgClosed
 
-variable {k C M N : Type*} [Field k] [IsAlgClosed k]
-  [AddCommGroup C] [Module k C] [Coalgebra k C]
-  [AddCommGroup M] [Module k M] [Comodule k C M]
-  [AddCommGroup N] [Module k N] [Comodule k C N]
+variable {k C M N : Type*} [Field k] [IsAlgClosed k] [AddCommGroup C] [Module k C] [Coalgebra k C]
+  [AddCommGroup M] [Module k M] [Comodule k C M] [AddCommGroup N] [Module k N] [Comodule k C N]
 
 /-- **Schur's lemma for comodules.** Over an algebraically closed field, every endomorphism of a
 simple comodule is multiplication by a scalar. No finite-dimensionality hypothesis on `M` is
@@ -125,12 +113,9 @@ theorem exists_eq_smul_of_ne_zero [IsSimpleOrder (Subcomodule k C M)]
     ∃ c : k, g = c • f := by
   have hbij := f.bijective_of_ne_zero hf
   obtain ⟨c, hc⟩ := exists_eq_smul_id ((f.inverse hbij).comp g)
-  refine ⟨c, ?_⟩
-  calc g = (Hom.id k C N).comp g := (id_comp g).symm
-    _ = (f.comp (f.inverse hbij)).comp g := by rw [comp_inverse]
-    _ = f.comp ((f.inverse hbij).comp g) := comp_assoc _ _ _
-    _ = f.comp (c • Hom.id k C M) := by rw [hc]
-    _ = c • f := toLinearMap_injective (by simp)
+  have h := congrArg f.comp hc
+  rw [← comp_assoc, comp_inverse, id_comp] at h
+  exact ⟨c, h.trans (toLinearMap_injective (by simp))⟩
 
 end AlgClosed
 
@@ -138,8 +123,7 @@ end TauCeti.Comodule.Hom
 
 namespace Module.Basis
 
-variable {k A M ι : Type*} [Field k] [IsAlgClosed k]
-  [Ring A] [Algebra k A] [Coalgebra k A]
+variable {k A M ι : Type*} [Field k] [IsAlgClosed k] [Ring A] [Algebra k A] [Coalgebra k A]
   [AddCommGroup M] [Module k M] [Comodule k A M] [IsSimpleOrder (Subcomodule k A M)]
   [Fintype ι] [DecidableEq ι]
 
@@ -153,10 +137,8 @@ theorem exists_eq_smul_one_of_commute_coefficientMatrix (b : Basis ι k M) (T : 
   let φ : Hom k A M M := ⟨Matrix.toLin b b T, (b.map_coact_iff_coefficientMatrix b _).mpr <| by
     simpa [LinearMap.toMatrix_toLin] using hT⟩
   obtain ⟨c, hc⟩ := φ.exists_eq_smul_id
-  refine ⟨c, ?_⟩
-  calc T = LinearMap.toMatrix b b φ.toLinearMap := (LinearMap.toMatrix_toLin b b T).symm
-    _ = LinearMap.toMatrix b b (c • LinearMap.id) := by
-      rw [congrArg Hom.toLinearMap hc, Hom.smul_toLinearMap, Hom.id_toLinearMap]
-    _ = c • (1 : Matrix ι ι k) := by rw [map_smul, LinearMap.toMatrix_id]
+  have hc' : Matrix.toLin b b T = c • LinearMap.id := congrArg Hom.toLinearMap hc
+  exact ⟨c, (LinearMap.toMatrix_toLin b b T).symm.trans <| by
+    rw [hc', map_smul, LinearMap.toMatrix_id]⟩
 
 end Module.Basis

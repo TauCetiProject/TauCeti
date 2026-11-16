@@ -89,18 +89,15 @@ def toStarPositiveFunctional (h : AlgebraicHaar A) : StarPositiveFunctional A :=
   ⟨h.toLinearMap, h.map_star_mul_self_nonneg⟩
 
 /-- Coercing `toStarPositiveFunctional` to a function agrees with coercing `h`. -/
-@[simp]
-theorem toStarPositiveFunctional_apply (h : AlgebraicHaar A) (a : A) :
+@[simp] theorem toStarPositiveFunctional_apply (h : AlgebraicHaar A) (a : A) :
     h.toStarPositiveFunctional a = h a := (rfl)
 
 /-- The underlying linear map of `toStarPositiveFunctional` is `h.toLinearMap`. -/
-@[simp]
-theorem toLinearMap_toStarPositiveFunctional (h : AlgebraicHaar A) :
+@[simp] theorem toLinearMap_toStarPositiveFunctional (h : AlgebraicHaar A) :
     h.toStarPositiveFunctional.toLinearMap = h.toLinearMap := (rfl)
 
 /-- An algebraic Haar functional takes the value `1` at `1`. -/
-@[simp]
-theorem map_one (h : AlgebraicHaar A) : h 1 = 1 := h.map_one'
+@[simp] theorem map_one (h : AlgebraicHaar A) : h 1 = 1 := h.map_one'
 
 /-- Left invariance of an algebraic Haar functional. -/
 theorem isLeftInvariantIntegral (h : AlgebraicHaar A) : h.toLinearMap.IsLeftInvariantIntegral :=
@@ -133,9 +130,8 @@ theorem map_mul_star_self_nonneg (h : AlgebraicHaar A) (a : A) : 0 ≤ h (a * st
   simpa using h.map_star_mul_self_nonneg (star a)
 
 /-- An algebraic Haar functional preserves the involution. -/
-@[simp]
-theorem map_star [StarModule ℂ A] (h : AlgebraicHaar A) (a : A) : h (star a) = star (h a) :=
-  h.toStarPositiveFunctional.map_star a
+@[simp] theorem map_star [StarModule ℂ A] (h : AlgebraicHaar A) (a : A) :
+    h (star a) = star (h a) := h.toStarPositiveFunctional.map_star a
 
 end Bialgebra
 
@@ -150,8 +146,7 @@ def ofIsRightInvariantIntegral (f : A →ₗ[ℂ] ℂ) (h1 : f 1 = 1) (hr : f.Is
   ⟨f, h1, hr.isLeftInvariantIntegral h1, hr, hpos⟩
 
 /-- Applying `ofIsRightInvariantIntegral` evaluates the underlying linear functional. -/
-@[simp]
-theorem ofIsRightInvariantIntegral_apply (f : A →ₗ[ℂ] ℂ) (h1 : f 1 = 1)
+@[simp] theorem ofIsRightInvariantIntegral_apply (f : A →ₗ[ℂ] ℂ) (h1 : f 1 = 1)
     (hr : f.IsRightInvariantIntegral) (hpos : ∀ a, 0 ≤ f (star a * a)) (a : A) :
     ofIsRightInvariantIntegral f h1 hr hpos a = f a := (rfl)
 
@@ -162,28 +157,24 @@ def ofIsLeftInvariantIntegral (f : A →ₗ[ℂ] ℂ) (h1 : f 1 = 1) (hl : f.IsL
   ⟨f, h1, hl, hl.isRightInvariantIntegral h1, hpos⟩
 
 /-- Applying `ofIsLeftInvariantIntegral` evaluates the underlying linear functional. -/
-@[simp]
-theorem ofIsLeftInvariantIntegral_apply (f : A →ₗ[ℂ] ℂ) (h1 : f 1 = 1)
+@[simp] theorem ofIsLeftInvariantIntegral_apply (f : A →ₗ[ℂ] ℂ) (h1 : f 1 = 1)
     (hl : f.IsLeftInvariantIntegral) (hpos : ∀ a, 0 ≤ f (star a * a)) (a : A) :
     ofIsLeftInvariantIntegral f h1 hl hpos a = f a := (rfl)
 
 /-- An algebraic Haar functional on a Hopf algebra is invariant under the antipode. -/
-@[simp]
-theorem map_antipode (h : AlgebraicHaar A) (a : A) : h (HopfAlgebra.antipode ℂ a) = h a :=
-  h.isRightInvariantIntegral.map_antipode h.map_one a
+@[simp] theorem map_antipode (h : AlgebraicHaar A) (a : A) :
+    h (HopfAlgebra.antipode ℂ a) = h a := h.isRightInvariantIntegral.map_antipode h.map_one a
 
 variable [StarModule ℂ A]
 
 /-- An algebraic Haar functional on a Hopf star algebra vanishes on `star a * a` only at `0`. -/
-@[simp]
-theorem map_star_mul_self_eq_zero_iff (h : AlgebraicHaar A) {a : A} :
+@[simp] theorem map_star_mul_self_eq_zero_iff (h : AlgebraicHaar A) {a : A} :
     h (star a * a) = 0 ↔ a = 0 :=
   h.isRightInvariantIntegral.map_star_mul_self_eq_zero_iff h.toLinearMap_ne_zero
     h.map_star_mul_self_nonneg
 
 /-- An algebraic Haar functional on a Hopf star algebra vanishes on `a * star a` only at `0`. -/
-@[simp]
-theorem map_mul_star_self_eq_zero_iff (h : AlgebraicHaar A) {a : A} :
+@[simp] theorem map_mul_star_self_eq_zero_iff (h : AlgebraicHaar A) {a : A} :
     h (a * star a) = 0 ↔ a = 0 := by
   simpa [star_eq_zero] using h.map_star_mul_self_eq_zero_iff (a := star a)
 

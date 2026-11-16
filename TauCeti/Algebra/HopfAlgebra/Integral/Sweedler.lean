@@ -26,9 +26,11 @@ Sweedler's normalized two-sided invariant integral `TauCeti.sweedlerIntegral`.
   field spanned by its simple coefficient submodules, with
   `TauCeti.isLeftInvariantIntegral_sweedlerIntegral` and
   `TauCeti.isRightInvariantIntegral_sweedlerIntegral`.
-* `existsUnique_isLeftInvariantIntegral_and_isRightInvariantIntegral_and_map_one` (in
-  `TauCeti.Coalgebra.IsLinearlyReductive`): existence and uniqueness of a normalized two-sided
-  invariant integral on a linearly reductive bialgebra.
+* `existsUnique_isLeftInvariantIntegral_and_isRightInvariantIntegral_and_map_one_of_sSup_eq_top`
+  (in `TauCeti`) and `existsUnique_isLeftInvariantIntegral_and_isRightInvariantIntegral_and_map_one`
+  (in `TauCeti.Coalgebra.IsLinearlyReductive`): existence and uniqueness of a normalized two-sided
+  invariant integral on a bialgebra spanned by its simple coefficient submodules (in particular, on
+  any linearly reductive bialgebra).
 
 ## References
 
@@ -139,6 +141,16 @@ theorem isRightInvariantIntegral_sweedlerIntegral
       (by simp [Bialgebra.comul_one, Algebra.TensorProduct.one_def])
       (fun b hzero i j ↦ by simp [comul_coefficientMatrix_eq_sum b i j, hzero]) a
 
+/-- Every bialgebra over a field whose simple coefficient submodules span the bialgebra admits a
+unique normalized two-sided invariant integral, given by `sweedlerIntegral`. -/
+theorem existsUnique_isLeftInvariantIntegral_and_isRightInvariantIntegral_and_map_one_of_sSup_eq_top
+    (hspan : sSup (simpleCoefficientSubmodules k A) = ⊤) :
+    ∃! h : A →ₗ[k] k, h.IsLeftInvariantIntegral ∧ h.IsRightInvariantIntegral ∧ h 1 = 1 :=
+  ⟨sweedlerIntegral hspan, ⟨isLeftInvariantIntegral_sweedlerIntegral hspan,
+    isRightInvariantIntegral_sweedlerIntegral hspan, sweedlerIntegral_one hspan⟩,
+    fun _ ⟨hl', _, h1'⟩ ↦ hl'.eq_of_isRightInvariantIntegral
+      (isRightInvariantIntegral_sweedlerIntegral hspan) h1' (sweedlerIntegral_one hspan)⟩
+
 /-- On a Hopf algebra over a field, `sweedlerIntegral` is invariant under the antipode. -/
 @[simp]
 theorem sweedlerIntegral_antipode {H : Type v} [Ring H] [HopfAlgebra k H]
@@ -157,11 +169,8 @@ integral. -/
 theorem existsUnique_isLeftInvariantIntegral_and_isRightInvariantIntegral_and_map_one
     {k : Type u} [Field k] {A : Type v} [Ring A] [Bialgebra k A]
     (hLR : IsLinearlyReductive.{u, v, u} k A) :
-    ∃! h : A →ₗ[k] k, h.IsLeftInvariantIntegral ∧ h.IsRightInvariantIntegral ∧ h 1 = 1 := by
-  have hspan := hLR.sSup_simpleCoefficientSubmodules_eq_top
-  exact ⟨sweedlerIntegral hspan, ⟨isLeftInvariantIntegral_sweedlerIntegral hspan,
-    isRightInvariantIntegral_sweedlerIntegral hspan, sweedlerIntegral_one hspan⟩,
-    fun _ ⟨hl', _, h1'⟩ ↦ hl'.eq_of_isRightInvariantIntegral
-      (isRightInvariantIntegral_sweedlerIntegral hspan) h1' (sweedlerIntegral_one hspan)⟩
+    ∃! h : A →ₗ[k] k, h.IsLeftInvariantIntegral ∧ h.IsRightInvariantIntegral ∧ h 1 = 1 :=
+  existsUnique_isLeftInvariantIntegral_and_isRightInvariantIntegral_and_map_one_of_sSup_eq_top
+    hLR.sSup_simpleCoefficientSubmodules_eq_top
 
 end TauCeti.Coalgebra.IsLinearlyReductive

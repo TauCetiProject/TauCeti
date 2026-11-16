@@ -41,9 +41,9 @@ theorem exists_pos_smul_trace_eq_inv_trace {K ι : Type*} [RCLike K] [Fintype ι
   have hr_pos : 0 < r := Real.sqrt_pos_of_pos (div_pos hgi_pos hg_pos)
   have hc_pos : 0 < c := RCLike.ofReal_pos.mpr hr_pos
   have hc_ne : c ≠ 0 := hc_pos.ne'
-  have hFt_inv : (c • G)⁻¹ = c⁻¹ • G⁻¹ := Matrix.inv_eq_left_inv (by
-    rw [Matrix.smul_mul, Matrix.mul_smul, smul_smul, inv_mul_cancel₀ hc_ne, one_smul,
-      nonsing_inv_mul _ ((isUnit_iff_isUnit_det _).mp hG.isUnit)])
+  have hFt_inv : (c • G)⁻¹ = c⁻¹ • G⁻¹ := by
+    simpa [Units.smul_def] using
+      G.inv_smul' (Units.mk0 c hc_ne) ((isUnit_iff_isUnit_det _).mp hG.isUnit)
   have hG_smul : (c • G).PosDef := by
     rw [hc_def, ← RCLike.real_smul_eq_coe_smul]
     exact hG.smul hr_pos

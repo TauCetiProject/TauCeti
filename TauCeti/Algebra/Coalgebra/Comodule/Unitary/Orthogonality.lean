@@ -11,7 +11,6 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Unitarization
 public import TauCeti.Algebra.HopfAlgebra.Integral.Haar
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.LinearAlgebra.Matrix.PosDef.Trace
-import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # Weighted Schur orthogonality and cross-orthogonality
@@ -46,10 +45,11 @@ that `Ftᵀ` intertwines `u` with its double antipode `(u.map S).map S`.
   between comodules with no nonzero morphism `N → M`, assuming `vᴴ * v = 1` for left-invariant
   contractions of `u` and `star v` and `u * uᴴ = 1` for right-invariant contractions of `star u`
   and `v`.
-* `conjTranspose_map_star_coefficientMatrix_mul_mul_of_schur_orthogonality` (in
-  `LinearMap.IsRightInvariantIntegral`): any matrix `Ft` with nonzero trace satisfying the
-  right-handed Schur orthogonality relation over a star bialgebra satisfies
-  `(u.map star)ᴴ * Ft * u.map star = Ft`.
+* `conjTranspose_map_star_coefficientMatrix_mul_haarGramMatrix_mul` and
+  `conjTranspose_map_star_coefficientMatrix_mul_mul_of_schur_orthogonality` (in
+  `LinearMap.IsRightInvariantIntegral`): over a star bialgebra, `u.map star` preserves the Haar
+  Gram matrix of `b.conjugateMatrixComodule` as well as any matrix `Ft` with nonzero trace
+  satisfying the right-handed Schur orthogonality relation.
 * `existsUnique_posDef_schur_orthogonality_of_conjTranspose_map_star_mul_mul_eq` (in
   `LinearMap.IsRightInvariantIntegral`): weighted Schur orthogonality for a normalized right
   invariant integral from any positive definite matrix `G` satisfying
@@ -201,15 +201,29 @@ end IntertwinersAndCrossOrthogonality
 section StarBialgebra
 
 variable {A M ι : Type*} [Ring A] [StarRing A] [Bialgebra ℂ A] [StarModule ℂ A] [StarCoalgebra ℂ A]
-  [AddCommMonoid M] [Module ℂ M] [Comodule ℂ A M] [Fintype ι] [DecidableEq ι]
+  [AddCommMonoid M] [Module ℂ M] [Comodule ℂ A M] [Fintype ι]
 
 namespace LinearMap.IsRightInvariantIntegral
+
+/-- For a right invariant integral `h` on a complex star bialgebra `A`, the entrywise conjugate
+coefficient matrix `(coefficientMatrix b).map star` preserves the Haar Gram matrix of
+`b.conjugateMatrixComodule`. -/
+theorem conjTranspose_map_star_coefficientMatrix_mul_haarGramMatrix_mul
+    {h : A →ₗ[ℂ] ℂ} (hr : h.IsRightInvariantIntegral) (b : Basis ι ℂ M) :
+    letI : Comodule ℂ A (ι → ℂ) := b.conjugateMatrixComodule
+    ((coefficientMatrix (C := A) b).map star)ᴴ *
+      (haarGramMatrix h (Pi.basisFun ℂ ι)).map (algebraMap ℂ A) *
+        (coefficientMatrix (C := A) b).map star =
+      (haarGramMatrix h (Pi.basisFun ℂ ι)).map (algebraMap ℂ A) := by
+  let _ : Comodule ℂ A (ι → ℂ) := b.conjugateMatrixComodule
+  simpa [b.coefficientMatrix_conjugateMatrixComodule] using
+    conjTranspose_coefficientMatrix_mul_haarGramMatrix_mul hr (Pi.basisFun ℂ ι)
 
 /-- If `Ft` has nonzero trace and satisfies the right-handed Schur orthogonality relation for a
 right invariant integral `h`, then `(u.map star)ᴴ * Ft * u.map star = Ft` (so when `u` is unitary
 over a Hopf star algebra, `Ftᵀ` intertwines `u` with its double antipode via
 `Module.Basis.map_antipode_map_antipode_mul_transpose_of_conjTranspose_map_star_mul_mul_eq`). -/
-theorem conjTranspose_map_star_coefficientMatrix_mul_mul_of_schur_orthogonality
+theorem conjTranspose_map_star_coefficientMatrix_mul_mul_of_schur_orthogonality [DecidableEq ι]
     {h : A →ₗ[ℂ] ℂ} (hr : h.IsRightInvariantIntegral) (b : Basis ι ℂ M) {Ft : Matrix ι ι ℂ}
     (hFt_tr : Ft.trace ≠ 0) (horth : ∀ i j k l,
       h (coefficientMatrix (C := A) b i j * star (coefficientMatrix (C := A) b k l)) =
@@ -219,10 +233,6 @@ theorem conjTranspose_map_star_coefficientMatrix_mul_mul_of_schur_orthogonality
   have : Nonempty ι := not_isEmpty_iff.mp fun _ ↦ hFt_tr (by simp [Matrix.trace])
   let _ : Comodule ℂ A (ι → ℂ) := b.conjugateMatrixComodule
   let G : Matrix ι ι ℂ := haarGramMatrix h (Pi.basisFun ℂ ι)
-  have hGinv : ((coefficientMatrix (C := A) b).map star)ᴴ * G.map (algebraMap ℂ A) *
-      (coefficientMatrix (C := A) b).map star = G.map (algebraMap ℂ A) := by
-    simpa [G, b.coefficientMatrix_conjugateMatrixComodule] using
-      conjTranspose_coefficientMatrix_mul_haarGramMatrix_mul hr (Pi.basisFun ℂ ι)
   have hcard : (Fintype.card ι : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have hmap : Ft.map (algebraMap ℂ A) =
       (Ft.trace / (Fintype.card ι : ℂ)) • G.map (algebraMap ℂ A) := Matrix.ext fun j l ↦ by
@@ -230,7 +240,8 @@ theorem conjTranspose_map_star_coefficientMatrix_mul_mul_of_schur_orthogonality
       simp [G, haarGramMatrix_apply, b.coefficientMatrix_conjugateMatrixComodule, horth]
     simp only [Matrix.map_apply, Matrix.smul_apply, Algebra.smul_def, ← map_mul, hGjl]
     exact congrArg _ (by field_simp)
-  rw [hmap, Matrix.mul_smul, Matrix.smul_mul, hGinv]
+  rw [hmap, Matrix.mul_smul, Matrix.smul_mul,
+    hr.conjTranspose_map_star_coefficientMatrix_mul_haarGramMatrix_mul b]
 
 end LinearMap.IsRightInvariantIntegral
 
@@ -420,16 +431,11 @@ theorem schur_orthogonality (h : AlgebraicHaar A) (b : Basis ι ℂ M)
       (∀ i j k l, h (coefficientMatrix (C := A) b i j *
         star (coefficientMatrix (C := A) b k l)) = if i = k then Ft j l / Ft.trace else 0) := by
   let _ : Comodule ℂ A (ι → ℂ) := b.conjugateMatrixComodule
-  let G : Matrix ι ι ℂ := haarGramMatrix h.toLinearMap (Pi.basisFun ℂ ι)
-  have hG : G.PosDef := posDef_haarGramMatrix (fun _ ↦ h.map_star_mul_self_pos) (Pi.basisFun ℂ ι)
-  have hGinv : ((coefficientMatrix (C := A) b).map star)ᴴ * G.map (algebraMap ℂ A) *
-      (coefficientMatrix (C := A) b).map star = G.map (algebraMap ℂ A) := by
-    simpa [G, b.coefficientMatrix_conjugateMatrixComodule] using
-      conjTranspose_coefficientMatrix_mul_haarGramMatrix_mul h.isRightInvariantIntegral
-        (Pi.basisFun ℂ ι)
+  have hG : (haarGramMatrix h.toLinearMap (Pi.basisFun ℂ ι)).PosDef :=
+    posDef_haarGramMatrix (fun _ ↦ h.map_star_mul_self_pos) (Pi.basisFun ℂ ι)
   have hr := h.isRightInvariantIntegral
-  exact hr.existsUnique_posDef_schur_orthogonality_of_conjTranspose_map_star_mul_mul_eq
-    h.map_one b hu hG hGinv
+  exact hr.existsUnique_posDef_schur_orthogonality_of_conjTranspose_map_star_mul_mul_eq h.map_one b
+    hu hG (hr.conjTranspose_map_star_coefficientMatrix_mul_haarGramMatrix_mul b)
 
 end TauCeti.AlgebraicHaar
 

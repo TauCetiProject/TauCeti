@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.ChangeBasis
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.ChangeBasis
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import Mathlib.RingTheory.HopfAlgebra.Convolution
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Transport
 
 /-!
 # Finite-dimensional unitary comodules
@@ -26,8 +27,10 @@ unitarity is equivalent to the antipode acting on coefficients by transposed sta
 `G` satisfying `(u.map star)ᴴ * G * u.map star = G` for a unitary coefficient matrix `u` has `Gᵀ`
 intertwining `u` with its double antipode `(u.map S).map S`.
 
-These algebraic unitary objects are the finite coefficient objects used in unitarization
-and reconstruction of compact quantum groups.
+These algebraic unitary objects—and the set `TauCeti.unitaryCoefficientSet` of matrix entries of
+unitary `Fin n × Fin n` coefficient matrices over `ℂ`
+(`Module.Basis.coefficientMatrix_mem_unitaryCoefficientSet`)—are the finite coefficient objects
+used in unitarization and reconstruction of compact quantum groups.
 
 ## References
 
@@ -118,6 +121,49 @@ theorem IsUnitary.coefficientMatrix_mem_unitary (h : IsUnitary 𝕜 A M)
 end TauCeti.Comodule
 
 end Coalgebra
+
+namespace TauCeti
+
+/-- The set of matrix entries of all finite-dimensional unitary matrix corepresentations on
+`Fin n → ℂ` of a complex star coalgebra `A`. -/
+noncomputable def unitaryCoefficientSet.{u} (A : Type u) [Semiring A] [Algebra ℂ A] [Coalgebra ℂ A]
+    [StarRing A] : Set A :=
+  {a : A | ∃ (n : ℕ) (ρ : Comodule ℂ A (Fin n → ℂ)), letI := ρ
+    let U := coefficientMatrix (C := A) (Pi.basisFun ℂ (Fin n))
+    U ∈ unitary (Matrix (Fin n) (Fin n) A) ∧ ∃ i j, a = U i j}
+
+/-- Membership in `unitaryCoefficientSet A` unfolds to being an entry of a unitary `Fin n × Fin n`
+coefficient matrix. -/
+theorem mem_unitaryCoefficientSet_iff.{u} {A : Type u} [Semiring A] [Algebra ℂ A] [Coalgebra ℂ A]
+    [StarRing A] {a : A} : a ∈ unitaryCoefficientSet A ↔ ∃ (n : ℕ) (ρ : Comodule ℂ A (Fin n → ℂ)),
+      letI := ρ
+      let U := coefficientMatrix (C := A) (Pi.basisFun ℂ (Fin n))
+      U ∈ unitary (Matrix (Fin n) (Fin n) A) ∧ ∃ i j, a = U i j := Iff.rfl
+
+end TauCeti
+
+/-- Every entry of a unitary coefficient matrix in a finite basis belongs to
+`unitaryCoefficientSet A`. -/
+theorem Module.Basis.coefficientMatrix_mem_unitaryCoefficientSet {A M ι : Type*} [Semiring A]
+    [Algebra ℂ A] [Coalgebra ℂ A] [StarRing A] [AddCommMonoid M] [Module ℂ M] [Comodule ℂ A M]
+    [Fintype ι] [DecidableEq ι] (b : Basis ι ℂ M)
+    (hb : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A)) (i j : ι) :
+    coefficientMatrix (C := A) b i j ∈ unitaryCoefficientSet A := by
+  let e := Fintype.equivFin ι
+  let b' := b.reindex e
+  have hmat : coefficientMatrix (C := A) b' =
+      Matrix.reindexStarAlgEquiv ℂ A e (coefficientMatrix (C := A) b) := Matrix.ext fun p q ↦ by
+    have hcoord : b'.coord p = b.coord (e.symm p) :=
+      LinearMap.ext fun m ↦ by simp [b', Basis.coord_apply]
+    simp [b', coefficientMatrix_apply, hcoord]
+  have hb' : coefficientMatrix (C := A) b' ∈
+      unitary (Matrix (Fin (Fintype.card ι)) (Fin (Fintype.card ι)) A) := by
+    rw [hmat, Unitary.mem_iff, ← map_star, ← map_mul, ← map_mul, (Unitary.mem_iff.mp hb).1,
+      (Unitary.mem_iff.mp hb).2, map_one]
+    exact ⟨rfl, rfl⟩
+  exact ⟨Fintype.card ι, Transport b'.equivFun,
+    by rwa [b'.coefficientMatrix_basisFun_transport_equivFun], e i, e j,
+    by simp [b'.coefficientMatrix_basisFun_transport_equivFun, hmat]⟩
 
 namespace GroupLike
 

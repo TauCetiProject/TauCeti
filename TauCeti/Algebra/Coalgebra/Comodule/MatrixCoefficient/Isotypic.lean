@@ -228,6 +228,10 @@ coefficient spaces. -/
 theorem matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules
     [IsSimpleOrder (Subcomodule k C M)] :
     matrixCoefficientSubmodule (R := k) (C := C) (M := M) ∈ simpleCoefficientSubmodules k C := by
+  -- Realize `M : Type w` inside the regular module `C : Type v` as a simple `D`-submodule `T`
+  -- with the same `D`-isotypic component, then convert `T` into a simple subcomodule `S` of `C`
+  -- in universe `v`. Since `S` and `T` are `D`-linearly equivalent, `M` and `S` share the same
+  -- `D`-isotypic component and therefore the same matrix-coefficient space.
   let D := WithConv (C →ₗ[k] k)
   obtain ⟨T, hT, hTeq⟩ :=
     isotypicComponent_convolution_mem_isotypicComponents (k := k) (C := C) (M := M)

@@ -10,7 +10,6 @@ import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.PositiveIntegral
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Transport
 import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 import TauCeti.Algebra.HopfAlgebra.Integral.Sweedler
-import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # Compact-type Hopf star algebras
@@ -24,8 +23,6 @@ finite-dimensional unitary matrix corepresentations (`TauCeti.unitaryCoefficient
 
 ## Main declarations
 
-* `TauCeti.unitaryCoefficientSet`: the set of entries of unitary `Fin n × Fin n` coefficient
-  matrices over a complex star coalgebra.
 * `TauCeti.AlgebraicHaar.span_unitaryCoefficientSet_eq_top`: if `A` admits an `AlgebraicHaar`
   functional, then `unitaryCoefficientSet A` spans `A` over `ℂ`.
 * `TauCeti.nonempty_algebraicHaar_of_span_unitaryCoefficientSet_eq_top`: if
@@ -49,51 +46,7 @@ open scoped TensorProduct ComplexOrder DirectSum
 
 namespace TauCeti
 
-section CompactType
-
 universe u
-
-/-- The set of matrix entries of all finite-dimensional unitary matrix corepresentations on
-`Fin n → ℂ` of a complex star coalgebra `A`. -/
-def unitaryCoefficientSet (A : Type u) [Semiring A] [Algebra ℂ A] [Coalgebra ℂ A] [StarRing A] :
-    Set A :=
-  {a : A | ∃ (n : ℕ) (ρ : Comodule ℂ A (Fin n → ℂ)), letI := ρ
-    let U := coefficientMatrix (C := A) (Pi.basisFun ℂ (Fin n))
-    U ∈ unitary (Matrix (Fin n) (Fin n) A) ∧ ∃ i j, a = U i j}
-
-/-- Membership in `unitaryCoefficientSet A` unfolds to being an entry of a unitary `Fin n × Fin n`
-coefficient matrix. -/
-theorem mem_unitaryCoefficientSet_iff {A : Type u} [Semiring A] [Algebra ℂ A] [Coalgebra ℂ A]
-    [StarRing A] {a : A} :
-    a ∈ unitaryCoefficientSet A ↔ ∃ (n : ℕ) (ρ : Comodule ℂ A (Fin n → ℂ)), letI := ρ
-      let U := coefficientMatrix (C := A) (Pi.basisFun ℂ (Fin n))
-      U ∈ unitary (Matrix (Fin n) (Fin n) A) ∧ ∃ i j, a = U i j :=
-  Iff.rfl
-
-/-- Every entry of a unitary coefficient matrix in a finite basis belongs to
-`unitaryCoefficientSet A`. -/
-theorem _root_.Module.Basis.coefficientMatrix_mem_unitaryCoefficientSet
-    {A M ι : Type*} [Semiring A] [Algebra ℂ A] [Coalgebra ℂ A] [StarRing A]
-    [AddCommMonoid M] [Module ℂ M] [Comodule ℂ A M] [Fintype ι] [DecidableEq ι]
-    (b : Basis ι ℂ M) (hb : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A)) (i j : ι) :
-    coefficientMatrix (C := A) b i j ∈ unitaryCoefficientSet A := by
-  let e := Fintype.equivFin ι
-  let b' := b.reindex e
-  have hmat : coefficientMatrix (C := A) b' =
-      Matrix.reindexStarAlgEquiv ℂ A e (coefficientMatrix (C := A) b) := Matrix.ext fun p q ↦ by
-    have hcoord : b'.coord p = b.coord (e.symm p) :=
-      LinearMap.ext fun m ↦ by simp [b', Basis.coord_apply]
-    simp [b', coefficientMatrix_apply, hcoord]
-  have hb' : coefficientMatrix (C := A) b' ∈
-      unitary (Matrix (Fin (Fintype.card ι)) (Fin (Fintype.card ι)) A) := by
-    rw [hmat, Unitary.mem_iff, ← map_star, ← map_mul, ← map_mul, (Unitary.mem_iff.mp hb).1,
-      (Unitary.mem_iff.mp hb).2, map_one]
-    exact ⟨rfl, rfl⟩
-  exact ⟨Fintype.card ι, Transport b'.equivFun,
-    by rwa [b'.coefficientMatrix_basisFun_transport_equivFun], e i, e j,
-    by simp [b'.coefficientMatrix_basisFun_transport_equivFun, hmat]⟩
-
-section HopfStarAlgebra
 
 variable {A : Type u} [Ring A] [StarRing A] [HopfAlgebra ℂ A] [StarModule ℂ A] [StarCoalgebra ℂ A]
 
@@ -185,7 +138,8 @@ private theorem sSup_simpleUnitaryCoefficientSubmodules_eq_top
     (hspan : Submodule.span ℂ (unitaryCoefficientSet A) = ⊤) :
     sSup (simpleUnitaryCoefficientSubmodules A) = ⊤ := by
   rw [eq_top_iff, ← hspan, Submodule.span_le]
-  rintro a ⟨n, ρ, hU, i, j, rfl⟩
+  intro a ha
+  obtain ⟨n, ρ, hU, i, j, rfl⟩ := mem_unitaryCoefficientSet_iff.mp ha
   let _ := ρ
   -- Transport the unitary matrix comodule on `Fin n → ℂ` to `EuclideanSpace ℂ (Fin n)`.
   let E := EuclideanSpace ℂ (Fin n)
@@ -234,14 +188,10 @@ private theorem map_star_mul_self_nonneg_of_mem_simpleCoefficientSubmodules
   obtain ⟨_, m, ρ, hS, hU, rfl⟩ := mem_simpleUnitaryCoefficientSubmodules_of_mem hSU_span hP
   let _ := ρ
   have := hS
-  have hConjMem : (letI := (Pi.basisFun ℂ (Fin m)).conjugateMatrixComodule (A := A);
-      matrixCoefficientSubmodule (R := ℂ) (C := A) (M := Fin m → ℂ)) ∈
-        simpleCoefficientSubmodules ℂ A := by
+  obtain ⟨_, m', ρ', hS', hU', hEq'⟩ := mem_simpleUnitaryCoefficientSubmodules_of_mem hSU_span <| by
     have := (Pi.basisFun ℂ (Fin m)).isSimpleOrder_conjugateMatrixComodule (A := A)
     let _ := (Pi.basisFun ℂ (Fin m)).conjugateMatrixComodule (A := A)
-    exact matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules
-  obtain ⟨_, m', ρ', hS', hU', hEq'⟩ := mem_simpleUnitaryCoefficientSubmodules_of_mem hSU_span
-    hConjMem
+    exact matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules (M := Fin m → ℂ)
   let _ := ρ'
   have := hS'
   exact map_star_mul_self_nonneg_of_conj_unitary hr h1 (Pi.basisFun ℂ (Fin m)) hU
@@ -255,19 +205,17 @@ private theorem map_star_mul_eq_zero_of_mem_simpleCoefficientSubmodules_ne
   obtain ⟨_, m, ρ, hSP, hUnitP, rfl⟩ := mem_simpleUnitaryCoefficientSubmodules_of_mem hSU_span hP
   obtain ⟨_, n, σ, hSQ, _, rfl⟩ := mem_simpleUnitaryCoefficientSubmodules_of_mem hSU_span hQ
   let _ := ρ
-  have := hSP
   let _ := σ
+  have := hSP
   have := hSQ
-  have hHom (g : Hom ℂ A (Fin n → ℂ) (Fin m → ℂ)) : g = 0 :=
-    by_contra fun hg ↦ hPQ (matrixCoefficientSubmodule_eq_of_ne_zero hg).symm
-  exact hr.map_star_mul_eq_zero_of_mem_matrixCoefficientSubmodule (Pi.basisFun ℂ (Fin m))
-    (Pi.basisFun ℂ (Fin n)) (Matrix.mem_unitary_iff_conjTranspose.mp hUnitP).2 hHom hx hy
+  refine hr.map_star_mul_eq_zero_of_mem_matrixCoefficientSubmodule (Pi.basisFun ℂ (Fin m))
+    (Pi.basisFun ℂ (Fin n)) (Matrix.mem_unitary_iff_conjTranspose.mp hUnitP).2
+    (fun g ↦ by_contra fun hg ↦ hPQ (matrixCoefficientSubmodule_eq_of_ne_zero hg).symm) hx hy
 
 /-- If the matrix entries of finite-dimensional unitary comodules span a complex Hopf star algebra
 `A`, then `A` admits an `AlgebraicHaar` functional. -/
 theorem nonempty_algebraicHaar_of_span_unitaryCoefficientSet_eq_top
-    (hspan : Submodule.span ℂ (unitaryCoefficientSet A) = ⊤) :
-    Nonempty (AlgebraicHaar A) := by
+    (hspan : Submodule.span ℂ (unitaryCoefficientSet A) = ⊤) : Nonempty (AlgebraicHaar A) := by
   classical
   -- Step 1: Decompose unitary comodules into simple unitary ones, so simple coefficient spaces
   -- span `A` and Sweedler's normalized invariant integral `h` is defined.
@@ -302,9 +250,5 @@ theorem compactType_iff :
     Nonempty (AlgebraicHaar A) ↔ Submodule.span ℂ (unitaryCoefficientSet A) = ⊤ :=
   ⟨fun ⟨h⟩ ↦ h.span_unitaryCoefficientSet_eq_top,
     nonempty_algebraicHaar_of_span_unitaryCoefficientSet_eq_top⟩
-
-end HopfStarAlgebra
-
-end CompactType
 
 end TauCeti

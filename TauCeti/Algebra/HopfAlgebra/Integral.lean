@@ -93,7 +93,7 @@ theorem IsLeftInvariantIntegral.sum_sum_mul {a b : H} {ι κ : Type*}
 
 /-- A left invariant integral `φ` and a right invariant integral `ψ` satisfy
 `φ a * ψ 1 = ψ a * φ 1` on every element `a`. -/
-theorem IsLeftInvariantIntegral.apply_mul_one_eq {φ ψ : H →ₗ[R] R}
+theorem IsLeftInvariantIntegral.apply_mul_apply_one_comm {φ ψ : H →ₗ[R] R}
     (hφ : φ.IsLeftInvariantIntegral) (hψ : ψ.IsRightInvariantIntegral) (a : H) :
     φ a * ψ 1 = ψ a * φ 1 := by
   let r := ℛ R a
@@ -109,7 +109,7 @@ theorem IsLeftInvariantIntegral.eq_of_isRightInvariantIntegral {φ ψ : H →ₗ
     (hφ : φ.IsLeftInvariantIntegral) (hψ : ψ.IsRightInvariantIntegral)
     (hφ1 : φ 1 = 1) (hψ1 : ψ 1 = 1) : φ = ψ := by
   ext a
-  simpa [hφ1, hψ1] using hφ.apply_mul_one_eq hψ a
+  simpa [hφ1, hψ1] using hφ.apply_mul_apply_one_comm hψ a
 
 end Bialgebra
 
