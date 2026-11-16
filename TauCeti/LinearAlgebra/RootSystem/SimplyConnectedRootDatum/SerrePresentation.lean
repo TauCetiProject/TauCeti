@@ -9,9 +9,8 @@ public import TauCeti.Algebra.Lie.Presentation.Serre.Automorphism
 public import TauCeti.Algebra.Lie.Presentation.Serre.Basis
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Basic
 public import TauCeti.Algebra.Lie.Presentation.Serre.Injective
-import TauCeti.Algebra.Lie.Weights.Dimension
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Dimension
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Killing
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.System
 
 /-!
 # The Serre presentation of the pinned split Lie algebra of a Dynkin type
@@ -75,8 +74,6 @@ Through the isomorphism, a representation of the presented algebra is a represen
 * `TauCeti.DynkinType.nontrivial_serreLieAlgebra`: the presented algebra is nontrivial.
 * `TauCeti.DynkinType.serreLift_serreChevalleyInvolution`: the comparison map intertwines the
   two Chevalley involutions.
-* `TauCeti.DynkinType.finrank_lieAlgebra`: the pinned split Lie algebra has dimension
-  `t.rank + t.numRoots`.
 
 ## Implementation notes
 
@@ -311,14 +308,6 @@ theorem lieEquivOfBasis_symm_f (i : Fin t.rank) :
   rw [LieEquiv.symm_apply_eq, lieEquivOfBasis_lieBasis_f]
 
 /-! ## Comparison with a generating Serre system of matching dimension -/
-
-/-- **The dimension of the pinned split Lie algebra is `t.rank + t.numRoots`.** -/
-theorem finrank_lieAlgebra : Module.finrank ℚ (t.lieAlgebra ht) = t.rank + t.numRoots := by
-  have hcard : (t.cartanSubalgebra ht).root.card = t.numRoots := by
-    simpa only [Fintype.card_coe, Fintype.card_fin] using
-      (Fintype.card_congr (t.rootEquiv ht)).symm
-  rw [finrank_eq_finrank_cartan_add_card_root (t.cartanSubalgebra ht),
-    t.finrank_cartanSubalgebra ht, hcard]
 
 section IsSerreSystem
 
