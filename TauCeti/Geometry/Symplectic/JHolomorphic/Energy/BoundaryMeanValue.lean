@@ -52,10 +52,9 @@ threshold works for all curves with image in a fixed compact set.
 * `TauCeti.fderivWithin_norm_fderivWithin_one_sq_apply_I_eq_zero`: the Neumann condition
   `∂ₜ ‖∂ₛu‖² = 0` on the real axis.
 * `TauCeti.pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball`: the
-  boundary mean-value inequality for `J`-holomorphic half-discs, with explicit constants.
-* `pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball_of_ball_subset`:
-  the bound `π ρ² ‖∂ₛu(z)‖² ≤ 16 ∫ ‖∂ₛu‖²` at any point `z` of the closed half-disc with
-  `ball z ρ` inside the disc, which controls `∂ₛu` near the edge and not only at its centre.
+  boundary mean-value inequality for `J`-holomorphic half-discs, with explicit constants, at any
+  point `z` of the closed half-disc with `ball z ρ` inside the disc, which controls `∂ₛu` near the
+  edge and not only at its centre.
 * `exists_pos_forall_pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball`:
   the same with a smallness threshold that is uniform over curves with image in a compact set.
 
@@ -157,19 +156,20 @@ theorem fderivWithin_norm_fderivWithin_one_sq_apply_I_eq_zero {U : Set ℂ} (hU 
       (hJL.mono fun q hq ↦ hq _ hξ _ hξ) hξ
   simp [hsymm, hmix, inner_add_right, hJLx _ hξ _ hacc, hdJ]
 
-/-- **The boundary mean-value inequality for `J`-holomorphic half-discs, at points near the
-edge.** Let `x₀` lie on the real axis, and let `u : ℂ → V` be `C³` on the half-disc
-`{0 ≤ im z} ∩ ball x₀ r`, up to its straight edge, with `∂ₛu` continuous on the closed half-disc,
-solving the Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` and mapping the edge into a closed subspace
-`L`. Derivatives are taken within the closed upper half-plane. Suppose that `J` is `C²` along `u`,
-squares to `-1`, and `a`, `b`, `c` bound the norms of `J`, of its derivative and of its second
-derivative along `u`, and that at the boundary values `J(p)` maps `L` into `Lᗮ` for `p ∈ L`
-nearby. If the energy over the half-disc is small, `16 (4ac + 2b² + 8a²b²) ∫ ‖∂ₛu‖² < π`, then
-every point `z` of the closed upper half-plane and every disc `ball z ρ` inside `ball x₀ r`
-satisfy
+/-- **The boundary mean-value inequality for `J`-holomorphic half-discs.** Let `x₀` lie on the
+real axis, and let `u : ℂ → V` be `C³` on the half-disc `{0 ≤ im y} ∩ ball x₀ r`, up to its
+straight edge, with `∂ₛu` continuous on the closed half-disc, solving the Cauchy--Riemann equation
+`∂ₜu = J(u) ∂ₛu` and mapping the edge into a closed subspace `L`. Derivatives are taken within the
+closed upper half-plane. Suppose that `J` is `C²` along `u`, squares to `-1`, and `a`, `b`, `c`
+bound the norms of `J`, of its derivative and of its second derivative along `u`, and that at the
+boundary values `J(p)` maps `L` into `Lᗮ` for `p ∈ L` nearby. If the energy over the half-disc is
+small, `16 (4ac + 2b² + 8a²b²) ∫ ‖∂ₛu‖² < π`, then every point `z` of the closed upper half-plane
+and every disc `ball z ρ` inside `ball x₀ r` satisfy
 
-`π ρ² ‖∂ₛu(z)‖² ≤ 16 ∫_{{0 ≤ im z} ∩ ball x₀ r} ‖∂ₛu‖²`. -/
-theorem pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball_of_ball_subset
+`π ρ² ‖∂ₛu(z)‖² ≤ 16 ∫_{{0 ≤ im y} ∩ ball x₀ r} ‖∂ₛu‖²`.
+
+In particular `π r² ‖∂ₛu(x₀)‖² ≤ 16 ∫_{{0 ≤ im y} ∩ ball x₀ r} ‖∂ₛu‖²` at the centre. -/
+theorem pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball
     {x₀ z : ℂ} {r ρ a b c : ℝ} (hx₀ : x₀.im = 0) (hz : 0 ≤ z.im) (hρ : 0 ≤ ρ)
     (hzρ : ball z ρ ⊆ ball x₀ r) (hL : IsClosed (L : Set V))
     (hu : ContDiffOn ℝ 3 u ({z | 0 ≤ z.im} ∩ ball x₀ r))
@@ -200,7 +200,7 @@ theorem pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_
   have hHfd : ∀ y : ℂ, 0 < y.im → fderivWithin ℝ u H y = fderiv ℝ u y := fun y hy0 ↦
     fderivWithin_of_mem_nhds (mem_of_superset
       ((isOpen_lt continuous_const continuous_im).mem_nhds hy0) fun z hz ↦ le_of_lt hz)
-  refine pi_mul_sq_mul_le_sixteen_mul_setIntegral_inter_ball_of_ball_subset
+  refine pi_mul_sq_mul_le_sixteen_mul_setIntegral_inter_ball_of_neg_mul_sq_le_laplacian
     (w := fun y ↦ ‖fderivWithin ℝ u H y 1‖ ^ 2)
     (A := 4 * a * c + 2 * b ^ 2 + 8 * a ^ 2 * b ^ 2) hx₀ ?_ (hu'.norm.pow 2)
     (fun _ _ ↦ by positivity) (fun x hx hx0 ↦ ?_) (fun z hz hz0 ↦ ?_) hsmall hz hρ hzρ
@@ -225,46 +225,14 @@ theorem pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_
         simpa only [hHfd y hy.1] using hCR y ⟨(le_of_lt hy.1 : 0 ≤ y.im), hy.2⟩)
       (hJsq z hzS) (ha z hzS) (hb z hzS) (hc z hzS)
 
-/-- **The boundary mean-value inequality for `J`-holomorphic half-discs.** Let `x₀` lie on the
-real axis, and let `u : ℂ → V` be `C³` on the half-disc `{0 ≤ im z} ∩ ball x₀ r`, up to its
-straight edge, with `∂ₛu` continuous on the closed half-disc, solving the Cauchy--Riemann equation
-`∂ₜu = J(u) ∂ₛu` and mapping the edge into a closed subspace `L`. Derivatives are taken within the
-closed upper half-plane. Suppose that `J` is `C²` along `u`, squares to `-1`, and `a`, `b`, `c`
-bound the norms of `J`, of its derivative and of its second derivative along `u`, and that at the
-boundary values `J(p)` maps `L` into `Lᗮ` for `p ∈ L` nearby. If the energy over the half-disc
-is small, `16 (4ac + 2b² + 8a²b²) ∫ ‖∂ₛu‖² < π`, then
-
-`π r² ‖∂ₛu(x₀)‖² ≤ 16 ∫_{{0 ≤ im z} ∩ ball x₀ r} ‖∂ₛu‖²`. -/
-theorem pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball {x₀ : ℂ}
-    {r a b c : ℝ} (hx₀ : x₀.im = 0) (hr : 0 ≤ r) (hL : IsClosed (L : Set V))
-    (hu : ContDiffOn ℝ 3 u ({z | 0 ≤ z.im} ∩ ball x₀ r))
-    (hu' : ContinuousOn (fun y ↦ fderivWithin ℝ u {z | 0 ≤ z.im} y 1)
-      ({z | 0 ≤ z.im} ∩ closedBall x₀ r))
-    (hCR : ∀ y ∈ {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r,
-      fderivWithin ℝ u {z | 0 ≤ z.im} y I = J (u y) (fderivWithin ℝ u {z | 0 ≤ z.im} y 1))
-    (huL : ∀ y ∈ ball x₀ r, y.im = 0 → u y ∈ L)
-    (hJL : ∀ y ∈ ball x₀ r, y.im = 0 →
-      ∀ᶠ p in 𝓝[(L : Set V)] (u y), ∀ v ∈ L, ∀ w ∈ L, ⟪v, J p w⟫_ℝ = 0)
-    (hJ : ∀ y ∈ {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, ContDiffAt ℝ 2 J (u y))
-    (hJsq : ∀ y ∈ {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, ∀ v, J (u y) (J (u y) v) = -v)
-    (ha : ∀ y ∈ {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, ‖J (u y)‖ ≤ a)
-    (hb : ∀ y ∈ {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, ‖fderiv ℝ J (u y)‖ ≤ b)
-    (hc : ∀ y ∈ {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, ‖iteratedFDeriv ℝ 2 J (u y)‖ ≤ c)
-    (hsmall : 16 * (4 * a * c + 2 * b ^ 2 + 8 * a ^ 2 * b ^ 2) *
-      ∫ y in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, ‖fderivWithin ℝ u {z | 0 ≤ z.im} y 1‖ ^ 2 < π) :
-    π * r ^ 2 * ‖fderivWithin ℝ u {z | 0 ≤ z.im} x₀ 1‖ ^ 2 ≤
-      16 * ∫ y in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, ‖fderivWithin ℝ u {z | 0 ≤ z.im} y 1‖ ^ 2 :=
-  pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball_of_ball_subset hx₀
-    hx₀.ge hr subset_rfl hL hu hu' hCR huL hJL hJ hJsq ha hb hc hsmall
-
 /-- **The boundary mean-value inequality for `J`-holomorphic half-discs in a compact set.** Let
 `J` be `C²` on an open set `W` containing a compact set `K`, with `J(x)² = -1` on `K`, and let
 `L` be a closed subspace such that `J(p)` maps `L` into `Lᗮ` for every `p ∈ L ∩ W`. There is an
 energy threshold `δ > 0` such that every solution `u` of `∂ₜu = J(u) ∂ₛu` on a half-disc
-`{0 ≤ im z} ∩ ball x₀ r` centred on the real axis that is `C³` up to the straight edge, has
+`{0 ≤ im y} ∩ ball x₀ r` centred on the real axis that is `C³` up to the straight edge, has
 `∂ₛu` continuous on the closed half-disc, maps the edge into `L` and the half-disc into `K`, and
 has energy `∫ ‖∂ₛu‖² < δ` over it, satisfies
-`π ρ² ‖∂ₛu(z)‖² ≤ 16 ∫_{{0 ≤ im z} ∩ ball x₀ r} ‖∂ₛu‖²` at every point `z` of the closed upper
+`π ρ² ‖∂ₛu(z)‖² ≤ 16 ∫_{{0 ≤ im y} ∩ ball x₀ r} ‖∂ₛu‖²` at every point `z` of the closed upper
 half-plane with `ball z ρ ⊆ ball x₀ r`, in particular at the centre `z = x₀` with `ρ = r`.
 Derivatives are taken within the closed upper half-plane. -/
 theorem
@@ -293,7 +261,7 @@ theorem
   have hI : 0 ≤ ∫ y in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r,
       ‖fderivWithin ℝ u {z | 0 ≤ z.im} y 1‖ ^ 2 := by
     positivity
-  refine pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball_of_ball_subset
+  refine pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball
     hx₀ hz hρ hzρ hL hu hu' hCR huL (fun y hy hy0 ↦ ?_)
     (fun y hy ↦ hJ.contDiffAt (hW.mem_nhds (hKW (huK y hy))))
     (fun y hy ↦ hJsq _ (huK y hy))

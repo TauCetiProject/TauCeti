@@ -9,7 +9,7 @@ public import Mathlib.Topology.MetricSpace.Bounded
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.BoundaryMeanValue
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Analysis.Calculus.FDeriv.CircleMap
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.RCLike.OperatorNorm
@@ -28,7 +28,7 @@ then its derivative blows up strictly slower than `1 / |z - x₀|`:
 `|z - x₀| ‖du(z)‖ → 0` as `z → x₀` in the closed upper half-plane.
 
 This is the boundary counterpart of `TauCeti.tendsto_norm_sub_mul_norm_fderiv_one_nhdsNE`. At a
-point `z` at distance `d` from the puncture the energy on `{0 ≤ im z} ∩ B_{2d}(x₀)` controls
+point `z` at distance `d` from the puncture the energy on `{0 ≤ im y} ∩ B_{2d}(x₀)` controls
 `d² ‖∂ₛu(z)‖²`, once it is below the thresholds of the two mean-value inequalities:
 
 * if `z` lies at height at least `d / 4` above the axis, the interior mean-value inequality
@@ -72,7 +72,7 @@ public section
 namespace TauCeti
 
 open Complex Metric MeasureTheory Set Filter Topology
-open scoped ENNReal NNReal Real InnerProductSpace
+open scoped Real InnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 variable {J : V → V →L[ℝ] V} {W K : Set V} {L : Submodule ℝ V} {u : ℂ → V} {x₀ : ℂ} {R : ℝ}
@@ -108,17 +108,18 @@ private theorem exists_pos_sq_norm_fderivWithin_one_le_energy_of_le_im
   -- The closed disc of radius `d / 8` about `z` lies above the axis and in `B_R(x₀) \ {x₀}`.
   set U := {y : ℂ | 0 < y.im} ∩ (ball x₀ R \ {x₀})
   have hsub : closedBall z (d / 8) ⊆ U := fun y hy ↦ by
-    have hyz : dist y z ≤ d / 8 := hy
+    have hyz : dist y z ≤ d / 8 := mem_closedBall.1 hy
     have him : |z.im - y.im| ≤ dist z y := by
       simpa [dist_eq_norm] using abs_im_le_norm (z - y)
     rw [dist_comm] at him
-    refine ⟨show 0 < y.im by linarith [abs_le.1 him], ?_, fun hyx₀ ↦ ?_⟩
+    refine ⟨mem_ofPred.2 (by linarith [abs_le.1 him]), ?_, fun hyx₀ ↦ ?_⟩
     · rw [mem_ball]
       linarith [dist_triangle y z x₀]
     · rw [mem_singleton_iff.1 hyx₀, dist_comm, hzx₀] at hyz
       linarith
   have hball : ball z (d / 8) ⊆ U := ball_subset_closedBall.trans hsub
-  have hUH : U ⊆ H ∩ (ball x₀ R \ {x₀}) := fun y hy ↦ ⟨show 0 ≤ y.im from hy.1.le, hy.2⟩
+  have hUH : U ⊆ H ∩ (ball x₀ R \ {x₀}) := fun y hy ↦
+    ⟨mem_ofPred.2 (mem_ofPred.1 hy.1).le, hy.2⟩
   -- Above the axis the derivatives within the half-plane are ordinary derivatives.
   have hfdU : ∀ y ∈ U, fderivWithin ℝ u H y = fderiv ℝ u y := fun y hy ↦
     fderivWithin_of_mem_nhds (mem_of_superset
@@ -208,7 +209,7 @@ private theorem exists_pos_sq_norm_fderivWithin_one_le_energy_of_im_lt
   have hfoot_gt := three_mul_norm_sub_div_four_lt_dist_ofReal_re hx₀ hz.1 hnear
   -- The closed disc of radius `3d / 4` about `x` lies in `B_R(x₀)` and misses `x₀`.
   have hcO : closedBall x (3 * d / 4) ⊆ O := fun y hy ↦ by
-    have hyx : dist y x ≤ 3 * d / 4 := hy
+    have hyx : dist y x ≤ 3 * d / 4 := mem_closedBall.1 hy
     refine ⟨?_, fun hyx₀ ↦ ?_⟩
     · rw [mem_ball]
       linarith [dist_triangle y x x₀]
@@ -221,7 +222,7 @@ private theorem exists_pos_sq_norm_fderivWithin_one_le_energy_of_im_lt
       (henergy.mono_set (inter_subset_inter_right _ (ball_subset_ball (by linarith))))
       (Eventually.of_forall fun _ ↦ sq_nonneg _)
       (Eventually.of_forall fun y hy ↦ ⟨hy.1, ?_⟩)
-    have hy2 : dist y x < 3 * d / 4 := hy.2
+    have hy2 : dist y x < 3 * d / 4 := mem_ball.1 hy.2
     rw [mem_ball]
     linarith [dist_triangle y x x₀]
   have hp := hbdry (r := 3 * d / 4) (ρ := d / 2) (by simp [x]) hz.1 (by positivity)
@@ -236,7 +237,7 @@ private theorem exists_pos_sq_norm_fderivWithin_one_le_energy_of_im_lt
 
 /-- Near a boundary puncture, sufficiently small energy on the outer half-disc controls the
 squared directional derivative, uniformly in the direction of approach: a point `z` at distance
-`d` from the puncture satisfies `d² ‖∂ₛu(z)‖² ≤ (512 / π) ∫_{{0 ≤ im z} ∩ B_{2d}(x₀)} ‖∂ₛu‖²`
+`d` from the puncture satisfies `d² ‖∂ₛu(z)‖² ≤ (512 / π) ∫_{{0 ≤ im y} ∩ B_{2d}(x₀)} ‖∂ₛu‖²`
 once that energy is small. -/
 theorem exists_pos_sq_norm_fderivWithin_one_le_energy
     (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
@@ -273,7 +274,7 @@ an open set `W` containing a compact set `K`, with `J(x)² = -1` on `K`, and let
 subspace such that `J(p)` maps `L` into `Lᗮ` for every `p ∈ L ∩ W`. A solution `u` of
 `∂ₜu = J(u) ∂ₛu` that is `C³` up to the straight edge on the punctured half-disc
 `{0 ≤ im z} ∩ B_R(x₀) \ {x₀}`, maps the edge into `L` and the punctured half-disc into `K`, and has
-finite energy `∫_{{0 ≤ im z} ∩ B_R(x₀)} ‖∂ₛu‖² < ∞` satisfies `|z - x₀| ‖∂ₛu(z)‖ → 0` as `z → x₀`
+finite energy `∫_{{0 ≤ im y} ∩ B_R(x₀)} ‖∂ₛu‖² < ∞` satisfies `|z - x₀| ‖∂ₛu(z)‖ → 0` as `z → x₀`
 in the closed upper half-plane. Derivatives are taken within the closed upper half-plane. -/
 theorem tendsto_norm_sub_mul_norm_fderivWithin_one_nhdsWithin
     (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
@@ -294,15 +295,7 @@ theorem tendsto_norm_sub_mul_norm_fderivWithin_one_nhdsWithin
   -- The energy `ε ρ` of `u` in the half-disc of radius `ρ` about the puncture tends to zero.
   set ε : ℝ → ℝ := fun ρ ↦
     ∫ y in ball x₀ ρ, ‖fderivWithin ℝ u H y 1‖ ^ 2 ∂(volume.restrict (H ∩ ball x₀ R)) with hεdef
-  have hε : Tendsto ε (𝓝 0) (𝓝 0) := by
-    refine hE.tendsto_setIntegral_nhds_zero ?_
-    have hvol : Tendsto (fun ρ : ℝ ↦ volume (ball x₀ ρ)) (𝓝 0) (𝓝 0) := by
-      have hc : Continuous fun ρ : ℝ ↦ ENNReal.ofReal ρ ^ 2 * (NNReal.pi : ℝ≥0∞) :=
-        (ENNReal.continuous_mul_const ENNReal.coe_ne_top).comp
-          ((ENNReal.continuous_pow 2).comp ENNReal.continuous_ofReal)
-      simpa using hc.tendsto 0
-    exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hvol
-      (fun _ ↦ zero_le) fun _ ↦ Measure.restrict_apply_le _ _
+  have hε : Tendsto ε (𝓝 0) (𝓝 0) := hE.tendsto_setIntegral_ball_nhds_zero x₀
   have hεz : Tendsto (fun z ↦ ε (2 * ‖z - x₀‖)) (𝓝[H \ {x₀}] x₀) (𝓝 0) :=
     hε.comp ((((continuous_id.sub continuous_const).norm.const_mul 2).tendsto' x₀ 0
       (by simp)).mono_left nhdsWithin_le_nhds)

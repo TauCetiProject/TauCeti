@@ -49,10 +49,8 @@ the Neumann condition and differential inequality for the energy density, is not
 * `TauCeti.neg_mul_sq_le_laplacian_evenReflection`: the even reflection of `w` satisfies
   `Δ w ≥ -A w²` on the whole disc.
 * `TauCeti.pi_mul_sq_mul_le_sixteen_mul_setIntegral_inter_ball_of_neg_mul_sq_le_laplacian`: **the
-  boundary mean-value inequality**.
-* `TauCeti.pi_mul_sq_mul_le_sixteen_mul_setIntegral_inter_ball_of_ball_subset`: the same bound
-  at any point `z` of the closed upper half-plane, by `π ρ² w z` for a disc `ball z ρ` inside
-  the disc of the half-disc.
+  boundary mean-value inequality**, bounding `π ρ² w z` at any point `z` of the closed upper
+  half-plane with `ball z ρ` inside the disc of the half-disc.
 
 ## References
 
@@ -157,18 +155,16 @@ private theorem setIntegral_evenReflection_le (hx₀ : x₀.im = 0)
   rw [hunion, hupper, hlower]
   linarith
 
-/-- **The boundary mean-value inequality at points near the edge.** Let `x₀` lie on the real
-axis, and let `w ≥ 0` be `C²` on the half-disc `{0 ≤ im z} ∩ ball x₀ r` up to its straight edge,
-continuous on its closure, with `Δ w ≥ -A w²` above the axis and vanishing normal derivative
-`∂ₜ w = 0` on the axis. If `16 A ∫ w < π` over the half-disc, then every point `z` of the closed
-upper half-plane and every disc `ball z ρ` contained in `ball x₀ r` satisfy
+/-- **The boundary mean-value inequality.** Let `x₀` lie on the real axis, and let `w ≥ 0` be
+`C²` on the half-disc `{0 ≤ im y} ∩ ball x₀ r` up to its straight edge, continuous on its closure,
+with `Δ w ≥ -A w²` above the axis and vanishing normal derivative `∂ₜ w = 0` on the axis. If
+`16 A ∫ w < π` over the half-disc, then every point `z` of the closed upper half-plane and every
+disc `ball z ρ` contained in `ball x₀ r`, which may cross the real axis, satisfy
 
-`π ρ² w z ≤ 16 ∫_{{0 ≤ im z} ∩ ball x₀ r} w`.
+`π ρ² w z ≤ 16 ∫_{{0 ≤ im y} ∩ ball x₀ r} w`.
 
-The disc about `z` may cross the real axis; the inequality is the interior mean-value
-inequality for the even reflection of `w`, whose integral over `ball x₀ r` is at most twice
-that of `w` over the half-disc. -/
-theorem pi_mul_sq_mul_le_sixteen_mul_setIntegral_inter_ball_of_ball_subset
+In particular `π r² w x₀ ≤ 16 ∫_{{0 ≤ im y} ∩ ball x₀ r} w` at the centre. -/
+theorem pi_mul_sq_mul_le_sixteen_mul_setIntegral_inter_ball_of_neg_mul_sq_le_laplacian
     (hx₀ : x₀.im = 0)
     (hw : ContDiffOn ℝ 2 w ({z | 0 ≤ z.im} ∩ ball x₀ r))
     (hwc : ContinuousOn w ({z | 0 ≤ z.im} ∩ closedBall x₀ r))
@@ -219,23 +215,5 @@ theorem pi_mul_sq_mul_le_sixteen_mul_setIntegral_inter_ball_of_ball_subset
   have h' : π * ρ ^ 2 * w z ≤ 8 * ∫ y in ball z ρ, evenReflection w y := by
     simpa [measureReal_def, hρ.le, mul_comm, mul_left_comm, mul_assoc] using h
   linarith
-
-/-- **The boundary mean-value inequality.** Let `x₀` lie on the real axis, and let `w ≥ 0` be
-`C²` on the half-disc `{0 ≤ im z} ∩ ball x₀ r` up to its straight edge, continuous on its
-closure, with `Δ w ≥ -A w²` above the axis and vanishing normal derivative `∂ₜ w = 0` on the
-axis. If `16 A ∫ w < π` over the half-disc, then
-
-`π r² w x₀ ≤ 16 ∫_{{0 ≤ im z} ∩ ball x₀ r} w`. -/
-theorem pi_mul_sq_mul_le_sixteen_mul_setIntegral_inter_ball_of_neg_mul_sq_le_laplacian
-    (hx₀ : x₀.im = 0) (hr : 0 ≤ r)
-    (hw : ContDiffOn ℝ 2 w ({z | 0 ≤ z.im} ∩ ball x₀ r))
-    (hwc : ContinuousOn w ({z | 0 ≤ z.im} ∩ closedBall x₀ r))
-    (hw0 : ∀ z ∈ {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, 0 ≤ w z)
-    (hN : ∀ x ∈ ball x₀ r, x.im = 0 → fderivWithin ℝ w ({z | 0 ≤ z.im} ∩ ball x₀ r) x I = 0)
-    (hΔ : ∀ z ∈ ball x₀ r, 0 < z.im → -(A * w z ^ 2) ≤ Δ w z)
-    (hsmall : 16 * A * ∫ z in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, w z < π) :
-    π * r ^ 2 * w x₀ ≤ 16 * ∫ z in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, w z :=
-  pi_mul_sq_mul_le_sixteen_mul_setIntegral_inter_ball_of_ball_subset hx₀ hw hwc hw0 hN hΔ hsmall
-    hx₀.ge hr subset_rfl
 
 end TauCeti
