@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Composition.Basic
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Simultaneous stationary elimination for three generating functions
@@ -61,13 +62,6 @@ theorem cotangentGeneratingTripleSum_apply (S : V × W → ℝ) (T : W × U → 
     cotangentGeneratingTripleSum S T R ((q, Q), (a, b)) = S (q, a) + T (a, b) + R (b, Q) :=
   (rfl)
 
-/-- Evaluation of the three-edge action at an arbitrary configuration. -/
-theorem cotangentGeneratingTripleSum_def (S : V × W → ℝ) (T : W × U → ℝ)
-    (R : U × Z → ℝ) (x : (V × Z) × (W × U)) :
-    cotangentGeneratingTripleSum S T R x =
-      S (x.1.1, x.2.1) + T x.2 + R (x.2.2, x.1.2) :=
-  (rfl)
-
 /-- Grouping the internal positions expresses the action as a two-function sum. -/
 private theorem cotangentGeneratingTripleSum_eq_cotangentGeneratingSum (S : V × W → ℝ)
     (T : W × U → ℝ) (R : U × Z → ℝ) :
@@ -100,6 +94,19 @@ theorem differentiableAt_cotangentGeneratingTripleSum {x : (V × Z) × (W × U)}
     (hT.comp x differentiableAt_snd)).add
       (hR.comp x (differentiableAt_snd.snd.prodMk differentiableAt_fst.snd))
 
+/-- Near a configuration where `S`, `T` and `R` are `C^m` with `1 ≤ m` on the corresponding
+edges, all three are differentiable on the edges of nearby configurations. -/
+private theorem eventually_differentiableAt_triple {x : (V × Z) × (W × U)} {m : WithTop ℕ∞}
+    (hS : ContDiffAt ℝ m S (x.1.1, x.2.1)) (hT : ContDiffAt ℝ m T x.2)
+    (hR : ContDiffAt ℝ m R (x.2.2, x.1.2)) (hm : 1 ≤ m) :
+    ∀ᶠ z in 𝓝 x, DifferentiableAt ℝ S (z.1.1, z.2.1) ∧ DifferentiableAt ℝ T z.2 ∧
+      DifferentiableAt ℝ R (z.2.2, z.1.2) := by
+  have hsc : ContinuousAt (fun z : (V × Z) × (W × U) ↦ (z.1.1, z.2.1)) x := by fun_prop
+  have hrc : ContinuousAt (fun z : (V × Z) × (W × U) ↦ (z.2.2, z.1.2)) x := by fun_prop
+  exact (hsc.eventually (hS.eventually_differentiableAt hm)).and
+    ((continuousAt_snd.eventually (hT.eventually_differentiableAt hm)).and
+      (hrc.eventually (hR.eventually_differentiableAt hm)))
+
 /-- The differential of the open-chain action, with all four position variations explicit. -/
 theorem fderiv_cotangentGeneratingTripleSum_apply {x : (V × Z) × (W × U)}
     (hS : DifferentiableAt ℝ S (x.1.1, x.2.1)) (hT : DifferentiableAt ℝ T x.2)
@@ -107,14 +114,14 @@ theorem fderiv_cotangentGeneratingTripleSum_apply {x : (V × Z) × (W × U)}
     fderiv ℝ (cotangentGeneratingTripleSum S T R) x v =
       fderiv ℝ S (x.1.1, x.2.1) (v.1.1, v.2.1) + fderiv ℝ T x.2 v.2 +
         fderiv ℝ R (x.2.2, x.1.2) (v.2.2, v.1.2) := by
-  have hd := ((hS.hasFDerivAt.comp x
+  have hd : fderiv ℝ (cotangentGeneratingTripleSum S T R) x = _ := (((hS.hasFDerivAt.comp x
     ((hasFDerivAt_fst (𝕜 := ℝ) (p := x)).fst.prodMk
       (hasFDerivAt_snd (𝕜 := ℝ) (p := x)).fst)).add
       (hT.hasFDerivAt.comp x hasFDerivAt_snd)).add
         (hR.hasFDerivAt.comp x
           ((hasFDerivAt_snd (𝕜 := ℝ) (p := x)).snd.prodMk
-            (hasFDerivAt_fst (𝕜 := ℝ) (p := x)).snd))
-  exact congrArg (fun L ↦ L v) hd.fderiv
+            (hasFDerivAt_fst (𝕜 := ℝ) (p := x)).snd))).fderiv
+  simp [hd]
 
 /-- The full internal negative Hessian consists of the first edge's negative internal Hessian,
 minus the middle edge's full Hessian and the last edge's first-variable Hessian. -/
@@ -136,11 +143,8 @@ theorem cotangentLegendreHessian_cotangentGeneratingTripleSum_apply_apply
   have heq : (fun z ↦ fderiv ℝ (cotangentGeneratingTripleSum S T R) z (0, v)) =ᶠ[𝓝 x]
       fun z ↦ fderiv ℝ S (z.1.1, z.2.1) (0, v.1) + fderiv ℝ T z.2 v +
         fderiv ℝ R (z.2.2, z.1.2) (v.2, 0) := by
-    have hsc : ContinuousAt (fun z : (V × Z) × (W × U) ↦ (z.1.1, z.2.1)) x := by fun_prop
-    have hrc : ContinuousAt (fun z : (V × Z) × (W × U) ↦ (z.2.2, z.1.2)) x := by fun_prop
-    filter_upwards [hsc.eventually (hS.eventually_differentiableAt (by norm_num)),
-      continuousAt_snd.eventually (hT.eventually_differentiableAt (by norm_num)),
-      hrc.eventually (hR.eventually_differentiableAt (by norm_num))] with z hzS hzT hzR
+    filter_upwards [eventually_differentiableAt_triple hS hT hR (by norm_num)]
+      with z ⟨hzS, hzT, hzR⟩
     simpa using fderiv_cotangentGeneratingTripleSum_apply hzS hzT hzR (0, v)
   have hd := ((hds.add hdt).add hdr).congr_of_eventuallyEq heq
   have ha := ((contDiffAt_cotangentGeneratingTripleSum hS hT hR).hasFDerivAt_fderiv_apply
@@ -201,7 +205,7 @@ theorem cotangentGeneratingTarget_eq_cotangentGeneratingSource_triple_iff
   have hF := differentiableAt_cotangentGeneratingTripleSum (x := ((q, Q), (a, b))) hS hT hR
   rw [← cotangentGeneratingTarget_tripleSum_snd_eq_zero_iff (x := ((q, Q), (a, b))) hS hT hR,
     cotangentGeneratingTarget_snd_eq_neg_fderiv_slice hF, neg_eq_zero]
-  simp only [cotangentGeneratingTripleSum_def]
+  simp only [cotangentGeneratingTripleSum]
 
 /-- Along a differentiable matched branch the internal derivatives cancel, leaving just the
 two endpoint derivatives of the first and last generating functions. -/
@@ -217,7 +221,7 @@ theorem fderiv_cotangentGeneratingTripleSum_comp_graph_apply
         fderiv ℝ R ((c y).2, y.2) (0, v.2) := by
   have hF := differentiableAt_cotangentGeneratingTripleSum (x := (y, c y)) hS hT hR
   have hzero : fderiv ℝ (fun z ↦ cotangentGeneratingTripleSum S T R (y, z)) (c y) = 0 := by
-    simpa only [cotangentGeneratingTripleSum_def] using
+    simpa only [cotangentGeneratingTripleSum] using
       (cotangentGeneratingTarget_eq_cotangentGeneratingSource_triple_iff hS hT hR).1 ⟨h₁, h₂⟩
   rw [hF.hasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero hc hzero,
     fderiv_slice_left hF, ContinuousLinearMap.comp_apply, inl_apply,
@@ -322,10 +326,86 @@ private theorem cotangentLegendreHessian_cotangentGeneratingTripleSum_apply_of_f
     cotangentLegendreHessian_apply_apply, cotangentMixedHessian_apply_apply]
   linarith
 
-/-- **The reduced mixed Hessian is nondegenerate.** A generating function for a differentiable
-matched three-edge branch has invertible mixed Hessian if all three edges and the full internal
-negative Hessian do. Each final variation determines the internal response through the three
-edges, and the internal Hessian identifies that response with the derivative of the branch. The
+/-- If near `y` the source covector of `F` is that of `S` along `z ↦ (z.1, a z)`, then the
+mixed Hessian of `F` at `y` is that of `S` precomposed with the response of `a` to the second
+variable. -/
+private theorem cotangentMixedHessian_eq_comp_of_cotangentGeneratingSource_eventuallyEq
+    {F : V × Z → ℝ} {a : V × Z → W} {y : V × Z}
+    (hF : DifferentiableAt ℝ (fderiv ℝ F) y) (hS : DifferentiableAt ℝ (fderiv ℝ S) (y.1, a y))
+    (ha : DifferentiableAt ℝ a y)
+    (hsrc : cotangentGeneratingSource F =ᶠ[𝓝 y] fun z ↦ cotangentGeneratingSource S (z.1, a z)) :
+    cotangentMixedHessian F y =
+      cotangentMixedHessian S (y.1, a y) ∘L fderiv ℝ a y ∘L inr ℝ V Z := by
+  have hE : HasFDerivAt (fun z : V × Z ↦ (z.1, a z)) ((fst ℝ V Z).prod (fderiv ℝ a y)) y :=
+    hasFDerivAt_fst.prodMk ha.hasFDerivAt
+  have hDs := (hsrc.fderiv_eq (𝕜 := ℝ)).trans
+    ((hasFDerivAt_cotangentGeneratingSource hS).differentiableAt.hasFDerivAt.comp y hE).fderiv
+  ext δQ v
+  simpa [hF, hS] using congrArg (fun L ↦ (L (0, δQ)).2 v) hDs
+
+/-- If a linear map `D` solves the linearized matching equations at `x` for every final
+variation `δQ`, and the middle and last edges have invertible mixed Hessians, then injectivity of
+the internal negative Hessian makes the first internal response `δQ ↦ (D (0, δQ)).1` invertible. -/
+private theorem isInvertible_fst_comp_of_linearized_matching {x : (V × Z) × (W × U)}
+    (hS : ContDiffAt ℝ 2 S (x.1.1, x.2.1)) (hT : ContDiffAt ℝ 2 T x.2)
+    (hR : ContDiffAt ℝ 2 R (x.2.2, x.1.2)) {D : V × Z →L[ℝ] W × U}
+    (hH : Function.Injective (cotangentLegendreHessian (cotangentGeneratingTripleSum S T R) x))
+    (hHT : (cotangentMixedHessian T x.2).IsInvertible)
+    (hHR : (cotangentMixedHessian R (x.2.2, x.1.2)).IsInvertible)
+    (hlin : ∀ δQ : Z,
+      fderiv ℝ (cotangentGeneratingTarget S) (x.1.1, x.2.1) (0, (D (0, δQ)).1) =
+          fderiv ℝ (cotangentGeneratingSource T) x.2 (D (0, δQ)) ∧
+        fderiv ℝ (cotangentGeneratingTarget T) x.2 (D (0, δQ)) =
+          fderiv ℝ (cotangentGeneratingSource R) (x.2.2, x.1.2) ((D (0, δQ)).2, δQ)) :
+    (fst ℝ W U ∘L D ∘L inr ℝ V Z).IsInvertible := by
+  have hS' := (hS.hasFDerivAt_fderiv le_rfl).differentiableAt
+  have hT' := (hT.hasFDerivAt_fderiv le_rfl).differentiableAt
+  have hR' := (hR.hasFDerivAt_fderiv le_rfl).differentiableAt
+  obtain ⟨eT, heT⟩ := (isInvertible_fderiv_cotangentGeneratingSource_iff hT').2 hHT
+  obtain ⟨eR, heR⟩ := (isInvertible_fderiv_cotangentGeneratingSource_iff hR').2 hHR
+  have heT' (v : W × U) : eT v = fderiv ℝ (cotangentGeneratingSource T) x.2 v :=
+    DFunLike.congr_fun heT v
+  have heR' (v : U × Z) : eR v = fderiv ℝ (cotangentGeneratingSource R) (x.2.2, x.1.2) v :=
+    DFunLike.congr_fun heR v
+  refine IsInvertible.of_inverse (g := snd ℝ U Z ∘L (eR.symm : _ →L[ℝ] U × Z) ∘L
+    fderiv ℝ (cotangentGeneratingTarget T) x.2 ∘L (eT.symm : _ →L[ℝ] W × U) ∘L
+    fderiv ℝ (cotangentGeneratingTarget S) (x.1.1, x.2.1) ∘L inr ℝ V W)
+    (ContinuousLinearMap.ext fun δa ↦ ?_) (ContinuousLinearMap.ext fun δQ ↦ ?_)
+  · -- Propagate `δa` through the middle and last edges, then use the internal Hessian.
+    set z := eT.symm (fderiv ℝ (cotangentGeneratingTarget S) (x.1.1, x.2.1) (0, δa))
+    have hz : fderiv ℝ (cotangentGeneratingSource T) x.2 z =
+        fderiv ℝ (cotangentGeneratingTarget S) (x.1.1, x.2.1) (0, δa) := by
+      rw [← heT', eT.apply_symm_apply]
+    have hz₁ : z.1 = δa := by
+      simpa [hT', hS'] using congrArg Prod.fst hz
+    set p := eR.symm (fderiv ℝ (cotangentGeneratingTarget T) x.2 z)
+    have hp : fderiv ℝ (cotangentGeneratingSource R) (x.2.2, x.1.2) p =
+        fderiv ℝ (cotangentGeneratingTarget T) x.2 z := by
+      rw [← heR', eR.apply_symm_apply]
+    have hp₁ : p.1 = z.2 := by
+      simpa [hT', hR'] using congrArg Prod.fst hp
+    have hw : D (0, p.2) = z := by
+      refine hH (ContinuousLinearMap.ext fun e ↦ ?_)
+      rw [cotangentLegendreHessian_cotangentGeneratingTripleSum_apply_of_fderiv_eq
+          hS hT hR (hlin p.2).1 (hlin p.2).2 e,
+        cotangentLegendreHessian_cotangentGeneratingTripleSum_apply_of_fderiv_eq
+          hS hT hR (z := z) (δQ := p.2) (by rw [hz₁, hz]) (by rw [← hp₁, Prod.mk.eta, hp]) e]
+    simp only [ContinuousLinearMap.comp_apply, inr_apply, coe_fst', coe_snd',
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearMap.id_apply]
+    exact (congrArg Prod.fst hw).trans hz₁
+  · -- A final variation is recovered from the response of the internal positions.
+    obtain ⟨hA, hB⟩ := hlin δQ
+    have h₁' : eT.symm (fderiv ℝ (cotangentGeneratingTarget S) (x.1.1, x.2.1)
+        (0, (D (0, δQ)).1)) = D (0, δQ) := by
+      rw [hA, ← heT', eT.symm_apply_apply]
+    have h₂' : eR.symm (fderiv ℝ (cotangentGeneratingTarget T) x.2 (D (0, δQ))) =
+        ((D (0, δQ)).2, δQ) := by
+      rw [hB, ← heR', eR.symm_apply_apply]
+    simp [h₁', h₂']
+
+/-- **The reduced mixed Hessian is nondegenerate.** Let `F` be a generating function for a
+differentiable matched three-edge branch `c`. Then `F` has invertible mixed Hessian when all three
+edges have invertible mixed Hessians and the full internal negative Hessian is injective. The
 local source and matching identities are supplied by `exists_cotangentGeneratingTripleComposition`;
 no separate elimination at either internal position is required. -/
 theorem isInvertible_cotangentMixedHessian_of_triple_relations
@@ -333,7 +413,8 @@ theorem isInvertible_cotangentMixedHessian_of_triple_relations
     (hS : ContDiffAt ℝ 2 S (y.1, (c y).1)) (hT : ContDiffAt ℝ 2 T (c y))
     (hR : ContDiffAt ℝ 2 R ((c y).2, y.2)) (hF : DifferentiableAt ℝ (fderiv ℝ F) y)
     (hc : DifferentiableAt ℝ c y)
-    (hH : (cotangentLegendreHessian (cotangentGeneratingTripleSum S T R) (y, c y)).IsInvertible)
+    (hH : Function.Injective
+      (cotangentLegendreHessian (cotangentGeneratingTripleSum S T R) (y, c y)))
     (hHS : (cotangentMixedHessian S (y.1, (c y).1)).IsInvertible)
     (hHT : (cotangentMixedHessian T (c y)).IsInvertible)
     (hHR : (cotangentMixedHessian R ((c y).2, y.2)).IsInvertible)
@@ -353,8 +434,6 @@ theorem isInvertible_cotangentMixedHessian_of_triple_relations
   have hE₃ : HasFDerivAt (fun z : V × Z ↦ ((c z).2, z.2))
       ((snd ℝ W U ∘L fderiv ℝ c y).prod (snd ℝ V Z)) y :=
     hc.hasFDerivAt.snd.prodMk hasFDerivAt_snd
-  have hDs := (hsrc.fderiv_eq (𝕜 := ℝ)).trans
-    ((hasFDerivAt_cotangentGeneratingSource hS').differentiableAt.hasFDerivAt.comp y hE₁).fderiv
   have hD₁ := ((hasFDerivAt_cotangentGeneratingTarget hS').differentiableAt.hasFDerivAt.comp
     y hE₁).fderiv.symm.trans
     ((h₁.fderiv_eq (𝕜 := ℝ)).trans
@@ -376,57 +455,15 @@ theorem isInvertible_cotangentMixedHessian_of_triple_relations
         coe_snd'] using congrArg (fun L ↦ L (0, δQ)) hD₁
     · simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply, coe_fst',
         coe_snd'] using congrArg (fun L ↦ L (0, δQ)) hD₂
-  obtain ⟨eT, heT⟩ := (isInvertible_fderiv_cotangentGeneratingSource_iff hT').2 hHT
-  obtain ⟨eR, heR⟩ := (isInvertible_fderiv_cotangentGeneratingSource_iff hR').2 hHR
-  have heT' (v : W × U) : eT v = fderiv ℝ (cotangentGeneratingSource T) (c y) v :=
-    DFunLike.congr_fun heT v
-  have heR' (v : U × Z) : eR v = fderiv ℝ (cotangentGeneratingSource R) ((c y).2, y.2) v :=
-    DFunLike.congr_fun heR v
-  -- The mixed Hessian of `F` factors through the response `K` of the first internal position.
-  let K : Z →L[ℝ] W := fst ℝ W U ∘L fderiv ℝ c y ∘L inr ℝ V Z
-  have hMF : cotangentMixedHessian F y = cotangentMixedHessian S (y.1, (c y).1) ∘L K := by
-    ext δQ v
-    simpa [K, hF, hS'] using congrArg (fun L ↦ (L (0, δQ)).2 v) hDs
-  rw [hMF]
-  refine hHS.comp (IsInvertible.of_inverse (g := snd ℝ U Z ∘L (eR.symm : _ →L[ℝ] U × Z) ∘L
-    fderiv ℝ (cotangentGeneratingTarget T) (c y) ∘L (eT.symm : _ →L[ℝ] W × U) ∘L
-    fderiv ℝ (cotangentGeneratingTarget S) (y.1, (c y).1) ∘L inr ℝ V W)
-    (ContinuousLinearMap.ext fun δa ↦ ?_) (ContinuousLinearMap.ext fun δQ ↦ ?_))
-  · -- Propagate `δa` through the middle and last edges, then use the internal Hessian.
-    set z := eT.symm (fderiv ℝ (cotangentGeneratingTarget S) (y.1, (c y).1) (0, δa))
-    have hz : fderiv ℝ (cotangentGeneratingSource T) (c y) z =
-        fderiv ℝ (cotangentGeneratingTarget S) (y.1, (c y).1) (0, δa) := by
-      rw [← heT', eT.apply_symm_apply]
-    have hz₁ : z.1 = δa := by
-      simpa [hT', hS'] using congrArg Prod.fst hz
-    set p := eR.symm (fderiv ℝ (cotangentGeneratingTarget T) (c y) z)
-    have hp : fderiv ℝ (cotangentGeneratingSource R) ((c y).2, y.2) p =
-        fderiv ℝ (cotangentGeneratingTarget T) (c y) z := by
-      rw [← heR', eR.apply_symm_apply]
-    have hp₁ : p.1 = z.2 := by
-      simpa [hT', hR'] using congrArg Prod.fst hp
-    have hw : fderiv ℝ c y (0, p.2) = z := by
-      refine hH.injective (ContinuousLinearMap.ext fun e ↦ ?_)
-      rw [cotangentLegendreHessian_cotangentGeneratingTripleSum_apply_of_fderiv_eq (x := (y, c y))
-          hS hT hR (hlin p.2).1 (hlin p.2).2 e,
-        cotangentLegendreHessian_cotangentGeneratingTripleSum_apply_of_fderiv_eq (x := (y, c y))
-          hS hT hR (z := z) (δQ := p.2) (by rw [hz₁, hz]) (by rw [← hp₁, Prod.mk.eta, hp]) e]
-    simp only [K, ContinuousLinearMap.comp_apply, inr_apply, coe_fst', coe_snd',
-      ContinuousLinearEquiv.coe_coe, ContinuousLinearMap.id_apply]
-    exact (congrArg Prod.fst hw).trans hz₁
-  · -- A final variation is recovered from the response of the internal positions.
-    obtain ⟨hA, hB⟩ := hlin δQ
-    have h₁' : eT.symm (fderiv ℝ (cotangentGeneratingTarget S) (y.1, (c y).1)
-        (0, (fderiv ℝ c y (0, δQ)).1)) = fderiv ℝ c y (0, δQ) := by
-      rw [hA, ← heT', eT.symm_apply_apply]
-    have h₂' : eR.symm (fderiv ℝ (cotangentGeneratingTarget T) (c y) (fderiv ℝ c y (0, δQ))) =
-        ((fderiv ℝ c y (0, δQ)).2, δQ) := by
-      rw [hB, ← heR', eR.symm_apply_apply]
-    simp [K, h₁', h₂']
+  -- The mixed Hessian of `F` factors through the response of the first internal position.
+  rw [cotangentMixedHessian_eq_comp_of_cotangentGeneratingSource_eventuallyEq (a := fun z ↦ (c z).1)
+    hF hS' hc.fst hsrc, hc.hasFDerivAt.fst.fderiv, comp_assoc]
+  exact hHS.comp (isInvertible_fst_comp_of_linearized_matching (x := (y, c y)) hS hT hR hH hHT hHR
+    hlin)
 
 section Elimination
 
-variable [CompleteSpace V] [CompleteSpace W] [CompleteSpace U] [CompleteSpace Z]
+variable [CompleteSpace V] [CompleteSpace Z]
   {q : V} {a : W} {b : U} {Q : Z}
 
 /-- **Simultaneous stationary elimination for three generating functions.** An invertible full
@@ -469,19 +506,8 @@ theorem exists_cotangentGeneratingTripleComposition {n : WithTop ℕ∞}
   -- Group both internal positions: this uses the full Hessian, not successive elimination.
   obtain ⟨c, F, D, hD, hDmem, hc₀, hvalue, hc, hF, hrel, huniq⟩ :=
     exists_cotangentGeneratingComposition hL hM hmatch hH
-  have hs : ∀ᶠ x in 𝓝 ((q, Q), (a, b)),
-      DifferentiableAt ℝ S (x.1.1, x.2.1) ∧ DifferentiableAt ℝ T x.2 ∧
-        DifferentiableAt ℝ R (x.2.2, x.1.2) := by
-    have hsc : ContinuousAt (fun x : (V × Z) × (W × U) ↦ (x.1.1, x.2.1))
-        ((q, Q), (a, b)) := by fun_prop
-    have hrc : ContinuousAt (fun x : (V × Z) × (W × U) ↦ (x.2.2, x.1.2))
-        ((q, Q), (a, b)) := by fun_prop
-    exact (hsc.eventually (hS.eventually_differentiableAt (by
-        exact le_trans (by norm_num : (1 : WithTop ℕ∞) ≤ 2) le_add_self))).and
-      ((continuousAt_snd.eventually (hT.eventually_differentiableAt (by
-        exact le_trans (by norm_num : (1 : WithTop ℕ∞) ≤ 2) le_add_self))).and
-        (hrc.eventually (hR.eventually_differentiableAt (by
-        exact le_trans (by norm_num : (1 : WithTop ℕ∞) ≤ 2) le_add_self))))
+  have hs := eventually_differentiableAt_triple (x := ((q, Q), (a, b))) hS hT hR
+    (le_add_left one_le_two)
   have hmatching : ∀ᶠ x in 𝓝 ((q, Q), (a, b)),
       (cotangentGeneratingTarget S (x.1.1, x.2.1) = cotangentGeneratingSource T x.2 ∧
         cotangentGeneratingTarget T x.2 = cotangentGeneratingSource R (x.2.2, x.1.2)) ↔
@@ -534,16 +560,8 @@ theorem exists_cotangentGeneratingTripleComposition_isInvertible_cotangentMixedH
         (cotangentGeneratingTarget S (x.1.1, x.2.1) = cotangentGeneratingSource T x.2 ∧
           cotangentGeneratingTarget T x.2 = cotangentGeneratingSource R (x.2.2, x.1.2)) ↔
             c x.1 = x.2) := by
-  -- The edge mixed Hessians identify `W`, `U` and `Z` with dual spaces, which are complete.
-  have : CompleteSpace W := by
-    obtain ⟨e, -⟩ := hHS
-    exact (completeSpace_congr (e := e.toEquiv) e.isUniformEmbedding).2 inferInstance
-  have : CompleteSpace U := by
-    obtain ⟨e, -⟩ := hHT
-    exact (completeSpace_congr (e := e.toEquiv) e.isUniformEmbedding).2 inferInstance
-  have : CompleteSpace Z := by
-    obtain ⟨e, -⟩ := hHR
-    exact (completeSpace_congr (e := e.toEquiv) e.isUniformEmbedding).2 inferInstance
+  -- The last edge's mixed Hessian identifies `Z` with a dual space, which is complete.
+  have : CompleteSpace Z := completeSpace_of_isInvertible hHR
   obtain ⟨c, F, D, hD, hmem, hc₀, hvalue, hc, hF, hrel, huniq⟩ :=
     exists_cotangentGeneratingTripleComposition hS hT hR h₁ h₂ hH
   have hnear : ∀ᶠ y in 𝓝 (q, Q),
@@ -562,7 +580,7 @@ theorem exists_cotangentGeneratingTripleComposition_isInvertible_cotangentMixedH
   · exact hS.of_le le_add_self
   · exact hT.of_le le_add_self
   · exact hR.of_le le_add_self
-  · exact hH
+  · exact hH.injective
   · exact hHS
   · exact hHT
   · exact hHR

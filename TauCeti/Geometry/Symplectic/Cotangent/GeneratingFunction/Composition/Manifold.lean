@@ -207,7 +207,7 @@ Near `((q₀, Q₀), a₀)`, the matching equation holds exactly on the graph of
 
 All assertions except the value at `(q₀, Q₀)` are local; no global composite relation and no
 uniqueness of critical points outside this neighbourhood is asserted. -/
-theorem exists_generatingComposition [CompleteSpace E₁] [CompleteSpace E₂] [CompleteSpace E₃]
+theorem exists_generatingComposition [CompleteSpace E₁] [CompleteSpace E₃]
     {n : WithTop ℕ∞} {q₀ : M₁} {a₀ : M₂} {Q₀ : M₃}
     (hS : ContMDiffAt (I₁.prod I₂) 𝓘(ℝ) (n + 2) S (q₀, a₀))
     (hT : ContMDiffAt (I₂.prod I₃) 𝓘(ℝ) (n + 2) T (a₀, Q₀))

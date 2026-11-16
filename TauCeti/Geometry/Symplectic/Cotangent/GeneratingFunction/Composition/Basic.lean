@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Legendre
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Calculus.ImplicitContDiff
 
 /-!
@@ -170,7 +171,7 @@ private theorem eventually_cotangentGeneratingSum_comp_graph_relations
 
 section Elimination
 
-variable [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
+variable [CompleteSpace V] [CompleteSpace U]
   {S : V × W → ℝ} {T : W × U → ℝ} {q : V} {a : W} {Q : U}
 
 /-- **Composition by stationary elimination.** Near a matched pair of cotangent relations,
@@ -197,6 +198,8 @@ theorem exists_cotangentGeneratingComposition {n : WithTop ℕ∞}
       (∀ᶠ x in 𝓝 ((q, Q), a),
         cotangentGeneratingTarget S (x.1.1, x.2) =
           cotangentGeneratingSource T (x.2, x.1.2) ↔ b x.1 = x.2) := by
+  -- The intermediate Hessian identifies `W` with its dual, so `W` is complete.
+  have : CompleteSpace W := completeSpace_of_isInvertible hH
   let F := cotangentGeneratingSum S T
   have hS₂ : ContDiffAt ℝ 2 S (q, a) := hS.of_le (by simp)
   have hT₂ : ContDiffAt ℝ 2 T (a, Q) := hT.of_le (by simp)

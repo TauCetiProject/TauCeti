@@ -124,6 +124,13 @@ theorem cotangentGeneratingTarget_snd_apply (S : V × W → ℝ) (x : V × W) (b
     (cotangentGeneratingTarget S x).2 b = -fderiv ℝ S x (0, b) :=
   (rfl)
 
+/-- The source covector is the derivative of the first-variable slice. -/
+theorem cotangentGeneratingSource_snd_eq_fderiv_slice {q : V} {Q : W}
+    (hS : DifferentiableAt ℝ S (q, Q)) :
+    (cotangentGeneratingSource S (q, Q)).2 = fderiv ℝ (fun z ↦ S (z, Q)) q := by
+  rw [fderiv_slice_left hS]
+  rfl
+
 /-- The target covector is minus the derivative of the second-variable slice. -/
 theorem cotangentGeneratingTarget_snd_eq_neg_fderiv_slice {q : V} {Q : W}
     (hS : DifferentiableAt ℝ S (q, Q)) :
