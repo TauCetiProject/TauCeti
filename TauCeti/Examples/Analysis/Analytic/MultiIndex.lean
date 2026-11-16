@@ -121,8 +121,7 @@ example [CompleteSpace 𝕜] :
   have hmon : (fun z : Fin 1 → 𝕜 ↦ z 0 ^ 2) = fun z ↦ ∏ i : Fin 1, z i ^ (![2] : Fin 1 → ℕ) i := by
     ext z; simp
   have hc : mvTaylorCoeff (fun z : Fin 1 → 𝕜 ↦ z 0 ^ 2) 0 ![2] = 1 := by
-    rw [hmon, mvTaylorCoeff_prod_pow_zero]
-    simp
+    simp [hmon]
   refine ⟨hc, ?_⟩
   have hsq : AnalyticAt 𝕜 (fun w : 𝕜 ↦ w ^ 2) 0 := by fun_prop
   have hderiv := hsq.factorial_smul_mvTaylorCoeff_of_unique (ι := Fin 1) (![2] : Fin 1 → ℕ)
@@ -143,12 +142,11 @@ example : mvTaylorCoeff (fun z : Fin 1 → 𝕜 ↦ z 0 ^ 2) ![3] ![1] = 6 := by
   have hmon (τ : Fin 1 → ℕ) : AnalyticAt 𝕜 (fun z : Fin 1 → 𝕜 ↦ ∏ i, z i ^ τ i) 0 :=
     univ.analyticAt_fun_prod fun i _ ↦
       ((ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ ↦ 𝕜) i).analyticAt 0).fun_pow (τ i)
-  rw [hexp, ((hmon ![2]).add ((hmon ![1]).const_smul (c := (6 : 𝕜)))).mvTaylorCoeff_add
-    analyticAt_const, (hmon ![2]).mvTaylorCoeff_add ((hmon ![1]).const_smul (c := (6 : 𝕜))),
-    mvTaylorCoeff_const_smul, mvTaylorCoeff_prod_pow_zero, mvTaylorCoeff_prod_pow_zero,
-    mvTaylorCoeff_const]
   have h21 : (![1] : Fin 1 → ℕ) ≠ ![2] := by decide
   have h10 : (![1] : Fin 1 → ℕ) ≠ 0 := by decide
+  rw [hexp, ((hmon ![2]).add ((hmon ![1]).const_smul (c := (6 : 𝕜)))).mvTaylorCoeff_add
+    analyticAt_const, (hmon ![2]).mvTaylorCoeff_add ((hmon ![1]).const_smul (c := (6 : 𝕜))),
+    mvTaylorCoeff_const_smul, mvTaylorCoeff_prod_pow_zero, mvTaylorCoeff_prod_pow_zero]
   simp [h21, h10]
 
 -- Over `ℂ`, `f z = 1 + conj (z 0)` on `Fin 1 → ℂ` is nowhere analytic, so all its Taylor
@@ -168,9 +166,8 @@ example :
         hcomp.differentiableAt.sub (differentiableAt_const 1)
       simpa [f, ι₁] using hd
     exact Complex.not_differentiableAt_conj (x 0) hconj
-  refine ⟨fun x α ↦ mvTaylorCoeff_of_not_analyticAt (hnot x) α, ?_⟩
-  rw [mvTaylorCoeff_of_not_analyticAt (hnot 0) 0]
-  simp [f]
+  refine ⟨fun x α ↦ by simp [hnot x], ?_⟩
+  simp [hnot 0, f]
 
 -- Coordinatewise vanishing (`∀ i, α i < 2`) is not preserved by a linear change of variables,
 -- whereas vanishing in a fixed total degree (`∑ i, α i = 1`) is.

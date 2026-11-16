@@ -79,6 +79,7 @@ noncomputable def mvTaylorCoeff (f : (ι → 𝕜) → F) (x : ι → 𝕜) (α 
   if h : AnalyticAt 𝕜 f x then h.choose.mvCoeff α else 0
 
 /-- Off the analytic locus, every multi-index Taylor coefficient is defined to be `0`. -/
+@[simp]
 theorem mvTaylorCoeff_of_not_analyticAt {f : (ι → 𝕜) → F} {x : ι → 𝕜}
     (hf : ¬AnalyticAt 𝕜 f x) (α : ι → ℕ) : mvTaylorCoeff f x α = 0 := by
   simp [mvTaylorCoeff, hf]
@@ -108,6 +109,7 @@ theorem Filter.EventuallyEq.mvTaylorCoeff_eq {f g : (ι → 𝕜) → F} {x : ι
 namespace AnalyticAt
 
 /-- For `f` analytic at `x`, the Taylor coefficient of order `0` is `f x`. -/
+@[simp]
 theorem mvTaylorCoeff_zero {f : (ι → 𝕜) → F} {x : ι → 𝕜} (hf : AnalyticAt 𝕜 f x) :
     TauCeti.mvTaylorCoeff f x 0 = f x := by
   obtain ⟨p, hp⟩ := hf
@@ -156,6 +158,7 @@ theorem mvTaylorCoeff_const_apply_zero (c : F) (x : ι → 𝕜) :
   simp [mvTaylorCoeff_const]
 
 /-- Every nonzero-index Taylor coefficient of a constant function vanishes. -/
+@[simp]
 theorem mvTaylorCoeff_const_of_ne_zero (c : F) (x : ι → 𝕜) {α : ι → ℕ} (hα : α ≠ 0) :
     mvTaylorCoeff (fun _ ↦ c) x α = 0 := by
   simp [mvTaylorCoeff_const, hα]
@@ -320,6 +323,7 @@ theorem mvTaylorCoeff_eq_of_hasSum {f : (ι → 𝕜) → F} {x : ι → 𝕜}
 open scoped Classical in
 /-- At the origin, the vector-valued monomial `z ↦ (∏ i, z i ^ τ i) • v` has Taylor coefficient
 `v` at `τ` and `0` at every other multi-index. -/
+@[simp]
 theorem mvTaylorCoeff_prod_pow_smul_zero (τ : ι → ℕ) (v : F) (α : ι → ℕ) :
     mvTaylorCoeff (fun z : ι → 𝕜 ↦ (∏ i, z i ^ τ i) • v) 0 α = if α = τ then v else 0 := by
   refine mvTaylorCoeff_eq_of_hasSum (𝕜 := 𝕜) (c := fun β ↦ if β = τ then v else 0)
@@ -337,6 +341,7 @@ theorem mvTaylorCoeff_prod_pow_smul_zero (τ : ι → ℕ) (v : F) (α : ι → 
 open scoped Classical in
 /-- At the origin, the scalar monomial `z ↦ ∏ i, z i ^ τ i` has Taylor coefficient `1` at `τ` and
 `0` at every other multi-index. -/
+@[simp]
 theorem mvTaylorCoeff_prod_pow_zero (τ α : ι → ℕ) :
     mvTaylorCoeff (fun z : ι → 𝕜 ↦ ∏ i, z i ^ τ i) 0 α = if α = τ then 1 else 0 := by
   simpa using mvTaylorCoeff_prod_pow_smul_zero (𝕜 := 𝕜) τ (1 : 𝕜) α
