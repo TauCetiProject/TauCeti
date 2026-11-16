@@ -159,28 +159,24 @@ theorem bijective_cohomologyMap_iff_forall_cycles (f : DGAlgHom hA hB) :
     Function.Bijective f.cohomologyMap ↔
       (∀ y ∈ hB.cycles, ∃ x ∈ hA.cycles, f x - y ∈ LinearMap.range dB) ∧
         (∀ x ∈ hA.cycles, f x ∈ LinearMap.range dB → x ∈ LinearMap.range dA) := by
-  have hmk (z : hA.cycles) :
-      f.cohomologyMap (Ideal.Quotient.mk hA.boundaries.asIdeal z) = 0 ↔
-        f (z : A) ∈ LinearMap.range dB := by
+  let mkA := Ideal.Quotient.mk hA.boundaries.asIdeal
+  let mkB := Ideal.Quotient.mk hB.boundaries.asIdeal
+  have hmk (z : hA.cycles) : f.cohomologyMap (mkA z) = 0 ↔ f z ∈ LinearMap.range dB := by
     rw [f.cohomologyMap_mk, hB.quotientMk_eq_zero_iff, hB.mem_boundaries, f.cyclesMap_apply_coe]
   have hsub (z : hA.cycles) (y : hB.cycles) :
-      f.cohomologyMap (Ideal.Quotient.mk hA.boundaries.asIdeal z) =
-        Ideal.Quotient.mk hB.boundaries.asIdeal y ↔ f (z : A) - y ∈ LinearMap.range dB := by
-    rw [f.cohomologyMap_mk, ← sub_eq_zero, ← map_sub, hB.quotientMk_eq_zero_iff,
-      hB.mem_boundaries, Subalgebra.coe_sub, f.cyclesMap_apply_coe]
+      f.cohomologyMap (mkA z) = mkB y ↔ f z - y ∈ LinearMap.range dB := by
+    rw [f.cohomologyMap_mk, ← sub_eq_zero, ← map_sub, hB.quotientMk_eq_zero_iff, hB.mem_boundaries,
+      Subalgebra.coe_sub, f.cyclesMap_apply_coe]
   rw [Function.Bijective, injective_iff_map_eq_zero, and_comm]
-  refine ⟨fun ⟨hsurj, hinj⟩ ↦ ⟨fun y hy ↦ ?_, fun x hx hfx ↦ ?_⟩,
-    fun ⟨hsurj, hinj⟩ ↦ ⟨fun d ↦ ?_, fun c hc ↦ ?_⟩⟩
-  · obtain ⟨c, hc⟩ := hsurj (Ideal.Quotient.mk hB.boundaries.asIdeal ⟨y, hy⟩)
-    obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective c
-    exact ⟨z.1, z.2, (hsub z ⟨y, hy⟩).1 hc⟩
-  · exact hA.mem_boundaries.1 <| hA.quotientMk_eq_zero_iff.1 <| hinj _ ((hmk ⟨x, hx⟩).2 hfx)
-  · obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective d
-    obtain ⟨x, hx, hxy⟩ := hsurj y.1 y.2
-    exact ⟨Ideal.Quotient.mk hA.boundaries.asIdeal ⟨x, hx⟩, (hsub ⟨x, hx⟩ y).2 hxy⟩
-  · obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective c
-    rw [hA.quotientMk_eq_zero_iff, hA.mem_boundaries]
-    exact hinj z.1 z.2 ((hmk z).1 hc)
+  refine ⟨fun ⟨hsurj, hinj⟩ ↦ ⟨fun y hy ↦ by
+      obtain ⟨c, hc⟩ := hsurj (mkB ⟨y, hy⟩); obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective c
+      exact ⟨z.1, z.2, (hsub z ⟨y, hy⟩).1 hc⟩, fun x hx hfx ↦
+      hA.mem_boundaries.1 <| hA.quotientMk_eq_zero_iff.1 <| hinj _ ((hmk ⟨x, hx⟩).2 hfx)⟩,
+    fun ⟨hsurj, hinj⟩ ↦ ⟨fun d ↦ by
+      obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective d; obtain ⟨x, hx, hxy⟩ := hsurj y.1 y.2
+      exact ⟨mkA ⟨x, hx⟩, (hsub ⟨x, hx⟩ y).2 hxy⟩, fun c hc ↦ by
+      obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective c
+      exact hA.quotientMk_eq_zero_iff.2 (hA.mem_boundaries.2 (hinj z.1 z.2 ((hmk z).1 hc)))⟩⟩
 
 end DGAlgHom
 

@@ -235,6 +235,16 @@ theorem reducedPart_coe (ε : 𝒜.Augmentation) (x : ε.augmentationIdeal) :
   apply Subtype.ext
   rw [coe_reducedPart, (mem_augmentationIdeal ε).mp x.property, zero_smul, sub_zero]
 
+/-- The augmentation vanishes on the inclusion of its augmentation ideal. -/
+@[simp] theorem toLinearMap_comp_subtype (ε : 𝒜.Augmentation) :
+    ε.toLinearMap ∘ₗ ε.augmentationIdeal.subtype = 0 :=
+  LinearMap.ext fun x ↦ (mem_augmentationIdeal ε).mp x.property
+
+/-- The reduced-part projection is a left inverse to the inclusion of the augmentation ideal. -/
+@[simp] theorem reducedPart_comp_subtype (ε : 𝒜.Augmentation) :
+    ε.reducedPart ∘ₗ ε.augmentationIdeal.subtype = LinearMap.id :=
+  LinearMap.ext ε.reducedPart_coe
+
 private theorem coe_evalNat_reducedOperation (ε : 𝒜.Augmentation) (n : ℕ)
     (x : ℕ → ε.augmentationIdeal) :
     ((MultilinearMap.evalNat (ε.reducedOperation n) x : ε.augmentationIdeal) : A) =

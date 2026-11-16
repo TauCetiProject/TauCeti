@@ -8,13 +8,14 @@ module
 public import TauCeti.Algebra.Homology.DG.Algebra.Augmentation
 public import TauCeti.Algebra.Homology.DG.Coalgebra.Cobar.TwistingCochain
 public import TauCeti.Algebra.Module.GradedModule.Quotient
+import TauCeti.LinearAlgebra.TensorAlgebra.Projection
 
 /-!
 # Canonical augmentation of the cobar construction
 
 For a noncounital DG coalgebra `(C, Δ, d)`, we construct `cobarAugmentation : Ω C ⟶ R`, describe
-its augmentation ideal `Ω⁺ C`, characterize augmented morphisms out of `Ω C`, and restrict the
-grading and differential to `Ω⁺ C`.
+its augmentation ideal `Ω⁺ C`, show odd derivations mapping generators into `Ω⁺ C` preserve `Ω⁺ C`,
+characterize augmented morphisms out of `Ω C`, and restrict the grading and differential to `Ω⁺ C`.
 
 ## References
 
@@ -47,10 +48,19 @@ theorem ι_mem_cobarAugmentation_augmentationIdeal (c : C) :
     ι R c ∈ hC.cobarAugmentation.augmentationIdeal :=
   hC.cobarAugmentation.mem_augmentationIdeal.2 (hC.cobarAugmentation_ι c)
 
+/-- An odd derivation of `Ω C` mapping generators into `Ω⁺ C` maps all of `Ω C` into `Ω⁺ C`. -/
+theorem cobarAugmentation_derivation_eq_zero {f : C →ₗ[R] TensorAlgebra R C}
+    (hf : ∀ c, hC.cobarAugmentation (f c) = 0) (x : TensorAlgebra R C) :
+    hC.cobarAugmentation (tensorAlgebraDerivation (G.shift (-1)) f x) = 0 := by
+  induction x using TensorAlgebra.induction with
+  | algebraMap _ => simp
+  | ι c => simp [hf c]
+  | add _ _ hx hy => simp [hx, hy]
+  | mul _ _ hx hy => simp [tensorAlgebraDerivation_mul, hx, hy]
+
 theorem cobarAugmentation_tprod {n : ℕ} (hn : 0 < n) (x : Fin n → C) :
     hC.cobarAugmentation (tprod R C n x) = 0 := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
-  rw [tprod_apply, List.ofFn_succ, List.prod_cons, map_mul, hC.cobarAugmentation_ι, zero_mul]
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'; simp
 
 theorem tprod_mem_cobarAugmentation_augmentationIdeal {n : ℕ} (hn : 0 < n) (x : Fin n → C) :
     tprod R C n x ∈ hC.cobarAugmentation.augmentationIdeal :=
@@ -63,23 +73,16 @@ theorem cobarAugmentation_augmentationIdeal_eq_span_tprod :
   set S := Submodule.span R {w | ∃ (n : ℕ) (x : Fin (n + 1) → C), w = tprod R C (n + 1) x}
   refine le_antisymm (fun z hz ↦ ?_) (Submodule.span_le.2 fun _ ⟨n, x, hx⟩ ↦
     hx ▸ hC.tprod_mem_cobarAugmentation_augmentationIdeal (Nat.succ_pos n) x)
-  suffices ∀ y : TensorAlgebra R C, (hC.cobarAugmentation.reducedPart y : TensorAlgebra R C) ∈ S by
-    simpa only [DGAlgAugmentation.coe_reducedPart, hC.cobarAugmentation.mem_augmentationIdeal.1 hz,
-      map_zero, sub_zero] using this z
-  intro y; rw [← ofDirectSum_toDirectSum y]
-  induction toDirectSum y using DirectSum.induction_on with
-  | zero => simp
-  | add _ _ hu hv => simpa only [map_add, Submodule.coe_add] using S.add_mem hu hv
-  | of n t => induction t using PiTensorProduct.induction_on with
-    | add _ _ hu hv => simpa only [map_add, Submodule.coe_add] using S.add_mem hu hv
-    | smul_tprod r x =>
-      rw [DirectSum.of_smul, map_smul, ofDirectSum_of_tprod, map_smul, Submodule.coe_smul]
-      refine S.smul_mem r ?_; cases n with
-      | zero => simp [tprod_apply]
-      | succ k =>
-        rw [DGAlgAugmentation.coe_reducedPart, hC.cobarAugmentation_tprod (Nat.succ_pos k),
-          map_zero, sub_zero]
-        exact Submodule.subset_span ⟨k, x, rfl⟩
+  have hq : S.mkQ ∘ₗ hC.cobarAugmentation.augmentationIdeal.toSubmodule.subtype ∘ₗ
+      hC.cobarAugmentation.reducedPart = 0 := linearMap_ext_tprod fun
+    | 0, _ => by simp [tprod_apply]
+    | k + 1, x => by
+      simp only [LinearMap.comp_apply, LinearMap.zero_apply, Submodule.mkQ_apply,
+        Submodule.Quotient.mk_eq_zero, Submodule.subtype_apply, DGAlgAugmentation.coe_reducedPart,
+        hC.cobarAugmentation_tprod (Nat.succ_pos k), map_zero, sub_zero]
+      exact Submodule.subset_span ⟨k, x, rfl⟩
+  simpa [hC.cobarAugmentation.mem_augmentationIdeal.1 hz] using
+    (Submodule.Quotient.mk_eq_zero S).1 (LinearMap.congr_fun hq z)
 
 theorem cobarAugmentation_augmentationIdeal_le_iff {S : Submodule R (TensorAlgebra R C)} :
     hC.cobarAugmentation.augmentationIdeal.toSubmodule ≤ S ↔
@@ -90,17 +93,14 @@ theorem cobarAugmentation_augmentationIdeal_le_iff {S : Submodule R (TensorAlgeb
 /-- The internal grading inherited by the augmentation ideal `Ω⁺ C` of the cobar construction. -/
 noncomputable def cobarReducedGrading :
     InternalGrading R hC.cobarAugmentation.augmentationIdeal.toSubmodule ℤ :=
-  (InternalGrading.ofDecomposition (tensorAlgebraPiece (G.shift (-1)))).submodule
-    hC.cobarAugmentation.augmentationIdeal.toSubmodule
+  (InternalGrading.ofDecomposition (tensorAlgebraPiece (G.shift (-1)))).submodule _
     ((InternalGrading.isHomogeneous_ofDecomposition_piece_iff _ _).2
       hC.cobarAugmentation.augmentationIdeal.is_homogeneous')
 
 @[simp] theorem mem_cobarReducedGrading_piece {p : ℤ}
     {x : hC.cobarAugmentation.augmentationIdeal.toSubmodule} :
     x ∈ hC.cobarReducedGrading.piece p ↔
-      (x : TensorAlgebra R C) ∈ tensorAlgebraPiece (G.shift (-1)) p := by
-  rw [cobarReducedGrading, InternalGrading.mem_submodule_piece,
-    InternalGrading.ofDecomposition_piece]
+      (x : TensorAlgebra R C) ∈ tensorAlgebraPiece (G.shift (-1)) p := by simp [cobarReducedGrading]
 
 /-- The cobar differential restricted to the augmentation ideal `Ω⁺ C`. -/
 noncomputable def cobarReducedDifferential :
@@ -128,13 +128,12 @@ variable [Ring A] [Algebra R A] {𝒜 : ℤ → Submodule R A} [GradedAlgebra �
 theorem comp_eq_cobarAugmentation_iff (e : DGAlgAugmentation hA)
     (φ : DGAlgHom hC.isDGAlgebra_cobarDifferential hA) :
     e.comp φ = hC.cobarAugmentation ↔ ∀ c, e (φ (ι R c)) = 0 :=
-  ⟨fun h c ↦ by simpa [hC.cobarAugmentation_ι] using DFunLike.congr_fun h (ι R c),
-    fun h ↦ hC.cobarHom_ext (isDGAlgebra_trivialGrading R) fun c ↦ by
-      rw [DGAlgHom.comp_apply, hC.cobarAugmentation_ι, h c]⟩
+  ⟨fun h c ↦ by simpa using DFunLike.congr_fun h (ι R c),
+    fun h ↦ hC.cobarHom_ext _ fun c ↦ by simp [h c]⟩
 
 theorem comp_cobarLift_eq_cobarAugmentation_iff (e : DGAlgAugmentation hA) (τ : C →ₗ[R] A)
     (hτ : IsTwistingCochain G Δ dC 𝒜 dA τ) :
     e.comp (hC.cobarLift hA τ hτ) = hC.cobarAugmentation ↔ ∀ c, e (τ c) = 0 := by
-  rw [hC.comp_eq_cobarAugmentation_iff e]; simp only [hC.cobarLift_ι, map_neg, neg_eq_zero]
+  simp [hC.comp_eq_cobarAugmentation_iff e]
 
 end TauCeti.IsNonCounitalDGCoalgebra

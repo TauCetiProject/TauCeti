@@ -183,8 +183,8 @@ theorem isStrictlyUnital_id {eA : A} (hA : AA.StrictUnit eA) :
   rw [linearPart_id]
   rfl
 
-/-- Because strict units of an `A∞` algebra are unique, the strictly unitality predicate does not
-depend on which strict-unit witnesses are supplied. -/
+/-- Strict unitality of `f` does not depend on the chosen strict-unit witnesses of source and
+target. -/
 theorem isStrictlyUnital_iff_of_strictUnit {eA₁ eA₂ : A} {eB₁ eB₂ : B}
     {hA₁ : AA.StrictUnit eA₁} {hA₂ : AA.StrictUnit eA₂}
     {hB₁ : BB.StrictUnit eB₁} {hB₂ : BB.StrictUnit eB₂} {f : AInfinityHom AA BB} :

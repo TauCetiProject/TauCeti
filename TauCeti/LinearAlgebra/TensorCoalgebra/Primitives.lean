@@ -278,6 +278,22 @@ theorem letter_of_two (a b : M) :
     letter R M (of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])) = 0 := by
   rw [← prepend_ofLetter, letter_prepend]
 
+/-- Two linear maps out of `ReducedTensorWords R M` agree if they agree on single letters and on
+prepended words. -/
+theorem linearMap_ext_ofLetter_prepend {N : Type*} [AddCommMonoid N] [Module R N]
+    {f g : ReducedTensorWords R M →ₗ[R] N}
+    (h1 : ∀ a, f (ofLetter R M a) = g (ofLetter R M a))
+    (h2 : ∀ a w, f (prepend R M a w) = g (prepend R M a w)) : f = g :=
+  linearMap_ext R M fun ⟨n, hn⟩ x ↦ by match n with
+    | 0 => omega
+    | 1 => rw [show of R M ⟨1, hn⟩ (PiTensorProduct.tprod R x) = ofLetter R M (x 0) by
+        rw [ofLetter_eq_of_tprod]
+        exact of_tprod_congr R M hn rfl fun i ↦ by fin_cases i; rfl, h1]
+    | k + 2 => rw [show of R M ⟨k + 2, hn⟩ (PiTensorProduct.tprod R x) = prepend R M (x 0)
+        (of R M ⟨k + 1, Nat.succ_pos k⟩ (PiTensorProduct.tprod R fun i ↦ x i.succ)) by
+        rw [prepend_of_tprod]
+        exact of_tprod_congr R M hn rfl fun i ↦ by cases i using Fin.cases <;> simp, h2]
+
 end Prepend
 
 /-- A word whose length is not one has no letter component. -/
