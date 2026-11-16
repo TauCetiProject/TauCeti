@@ -93,12 +93,12 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [N
 
 variable {K : Type w} [CommRing K]
 
-/-! The two helpers below take their classes with coefficients the monoidal unit
-`𝟙_ (ModuleCat K)`, the coefficients of `singularCohomologyZeroEval` and of the cup product, so that
-their proofs rewrite with plain `rw`. Mathlib defines this unit to be `ModuleCat.of K K`, the
-coefficients of `IsThomClass`, so a class with either coefficients is accepted for the other by
-definitional unfolding. The theorems below rely on this only where a class or a hypothesis passes
-between the two forms, never inside a rewrite. -/
+-- The two helpers below take their classes with coefficients the monoidal unit
+-- `𝟙_ (ModuleCat K)`, the coefficients of `singularCohomologyZeroEval` and of the cup product, so
+-- that their proofs rewrite with plain `rw`. Mathlib defines this unit to be `ModuleCat.of K K`,
+-- the coefficients of `IsThomClass`, so a class with either coefficients is accepted for the other
+-- by definitional unfolding. The theorems below rely on this only where a class or a hypothesis
+-- passes between the two forms, never inside a rewrite.
 
 omit [NormedSpace ℝ F] in
 /-- In rank zero, the restriction of a class `u ∈ H⁰(E, ∅; K)` to a fibre pair `(E_b, ∅)` generates
