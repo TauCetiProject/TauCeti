@@ -7,13 +7,15 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.EilenbergZilber
 public import TauCeti.AlgebraicTopology.Singular.Shuffle
+public import Mathlib.Algebra.Homology.QuasiIso
 
 /-!
 # The Eilenberg–Zilber theorem for singular chains
 
 For topological spaces `X` and `Y`, the Alexander–Whitney map
 `C(X × Y; R ⊗ S) ⟶ C(X; R) ⊗ C(Y; S)` on singular chains is a chain homotopy equivalence with
-homotopy inverse the shuffle map (`TopCat.eilenbergZilberHomotopyEquiv`).
+homotopy inverse the shuffle map (`TopCat.eilenbergZilberHomotopyEquiv`). In particular the shuffle
+map is a quasi-isomorphism (`TopCat.quasiIso_shuffle`).
 
 The composite `shuffle ∘ AW` is the simplicial composite for `Sing X` and `Sing Y`, conjugated by
 the canonical isomorphism `Sing (X × Y) ≅ Sing X × Sing Y` (`TopCat.alexanderWhitney_shuffle`), so
@@ -91,6 +93,13 @@ lemma eilenbergZilberHomotopyEquiv_hom (X Y : TopCat.{w}) (R S : C) :
 lemma eilenbergZilberHomotopyEquiv_inv (X Y : TopCat.{w}) (R S : C) :
     (eilenbergZilberHomotopyEquiv X Y R S).inv = shuffle X Y R S :=
   (rfl)
+
+/-- The shuffle map `C(X; R) ⊗ C(Y; S) ⟶ C(X × Y; R ⊗ S)` is a quasi-isomorphism, being the
+inverse of the Eilenberg–Zilber chain homotopy equivalence. -/
+instance quasiIso_shuffle [CategoryWithHomology C] (X Y : TopCat.{w}) (R S : C) :
+    QuasiIso (shuffle X Y R S) := by
+  rw [← eilenbergZilberHomotopyEquiv_inv]
+  infer_instance
 
 /-- On homology, the shuffle map followed by the Alexander–Whitney map is the identity of
 `Hₙ(C(X; R) ⊗ C(Y; S))`. -/
