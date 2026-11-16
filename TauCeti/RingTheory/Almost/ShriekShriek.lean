@@ -35,7 +35,8 @@ almostification on algebras and of the comparison of faithful flatness of `φ` a
 * `TauCeti.Almost.BasicSetup.Shriek`: the commutative non-unital `V`-algebra `R_! = m~ ⊗[V] R`,
   with the action map `TauCeti.Almost.BasicSetup.Shriek.act : R_! → R`.
 * `TauCeti.Almost.BasicSetup.ShriekShriek`: the commutative `V`-algebra `R_!! = (V ⊕ R_!) ⧸ I`,
-  a quotient of Mathlib's `Unitization V R_!`.
+  a quotient of Mathlib's `Unitization V R_!`, with its universal property
+  `TauCeti.Almost.BasicSetup.ShriekShriek.lift`.
 * `TauCeti.Almost.BasicSetup.shriekShriekRel`: the map `m~ → V ⊕ R_!`, `t ↦ (t, -t ⊗ 1)`,
   whose image is the ideal `I`.
 * `TauCeti.Almost.BasicSetup.IsShriekShriekExact`: exactness of `R`, injectivity of
@@ -90,7 +91,6 @@ variable (R : Type v) [CommRing R] [_root_.Algebra V R]
 (Gabber–Ramero §2.2). It is a type synonym for `m~ ⊗[V] R`, carrying the product
 `(s ⊗ a) * (t ⊗ b) = (s * t) ⊗ (a * b)` described by `Shriek.tmul_mul_tmul`; `Shriek.equiv`
 identifies `R_!` with `m~ ⊗[V] R`. -/
-@[expose]
 def Shriek : Type (max u v) :=
   S.tilde ⊗[V] R
 
@@ -283,9 +283,7 @@ theorem mul_shriekShriekRel (x : Unitization V (S.Shriek R)) (t : S.tilde) :
     x * S.shriekShriekRel R t = S.shriekShriekRel R (x.fst • t) := by
   ext
   · simp
-  · rw [Unitization.snd_mul, fst_shriekShriekRel, snd_shriekShriekRel, snd_shriekShriekRel,
-      mul_neg, mul_tmul_one, smul_neg, ← map_smul, smul_tmul']
-    abel
+  · simp [mul_tmul_one]
 
 /-- The ideal `I` of relations of `R_!!`, spanned by the elements `(t, -t ⊗ 1)` for `t ∈ m~`. -/
 noncomputable def shriekShriekIdeal : Ideal (Unitization V (S.Shriek R)) :=
@@ -300,13 +298,14 @@ theorem shriekShriekRel_mem_shriekShriekIdeal (t : S.tilde) :
 theorem restrictScalars_shriekShriekIdeal :
     (S.shriekShriekIdeal R).restrictScalars V = LinearMap.range (S.shriekShriekRel R) := by
   refine le_antisymm (fun x hx ↦ ?_) ?_
-  · induction hx using Submodule.span_induction with
-    | mem _ hx => exact hx
+  · rw [Submodule.restrictScalars_mem] at hx
+    induction hx using Submodule.span_induction with
+    | mem _ hx => exact LinearMap.mem_range.mpr (Set.mem_range.mp hx)
     | zero => exact zero_mem _
     | add x y _ _ hx hy => exact add_mem hx hy
     | smul a x _ hx =>
-      obtain ⟨t, rfl⟩ := hx
-      exact ⟨a.fst • t, (S.mul_shriekShriekRel R a t).symm⟩
+      obtain ⟨t, rfl⟩ := LinearMap.mem_range.mp hx
+      exact LinearMap.mem_range.mpr ⟨a.fst • t, (S.mul_shriekShriekRel R a t).symm⟩
   · rintro _ ⟨t, rfl⟩
     exact S.shriekShriekRel_mem_shriekShriekIdeal R t
 
@@ -317,7 +316,6 @@ theorem mem_shriekShriekIdeal_iff {x : Unitization V (S.Shriek R)} :
 /-- The **unitisation `R_!! = (V ⊕ R_!) ⧸ I`** of the non-unital algebra `R_! = m~ ⊗[V] R`, where
 `I` is spanned by the elements `(x * y, -(x ⊗ y) ⊗ 1)` for `x, y ∈ m` (Gabber–Ramero §2.2). It is a
 commutative `V`-algebra with an almost isomorphism `R_!! → R` (`isAlmostIso_shriekShriekCounit`). -/
-@[expose]
 def ShriekShriek : Type (max u v) :=
   Unitization V (S.Shriek R) ⧸ S.shriekShriekIdeal R
 
@@ -355,9 +353,10 @@ theorem mk_inl (v : V) : mk S R (Unitization.inl v) = algebraMap V (S.ShriekShri
 @[simp]
 theorem inr_tmul_one (t : S.tilde) :
     inr S R (equiv S R (t ⊗ₜ 1)) = algebraMap V (S.ShriekShriek R) (S.tildeMul t) := by
-  rw [inr_apply, ← mk_inl, ← sub_eq_zero, ← map_sub, mk_eq_zero_iff, ← neg_mem_iff, neg_sub,
-    ← shriekShriekRel_apply]
-  exact S.shriekShriekRel_mem_shriekShriekIdeal R t
+  -- The relation `(t, -t ⊗ 1)` maps to zero in `R_!!`.
+  have := (mk_eq_zero_iff S R).mpr (S.shriekShriekRel_mem_shriekShriekIdeal R t)
+  rw [shriekShriekRel_apply, map_sub, mk_inl, sub_eq_zero] at this
+  exact this.symm
 
 /-- Every element of `R_!!` is the sum of a scalar and an element of `R_!`. -/
 theorem exists_eq_algebraMap_add_inr (x : S.ShriekShriek R) :
@@ -393,6 +392,42 @@ theorem algHom_ext {A : Type*} [Semiring A] [_root_.Algebra V A]
   obtain ⟨v, z, rfl⟩ := exists_eq_algebraMap_add_inr S R x
   rw [map_add, map_add, AlgHom.commutes, AlgHom.commutes, h']
 
+section lift
+
+variable {A : Type*} [Semiring A] [_root_.Algebra V A] (f : S.Shriek R →ₙₐ[V] A)
+
+/-- The extension `V ⊕ R_! → A`, `(v, z) ↦ v + f z`, of `f` kills the ideal of relations `I`. -/
+private theorem unitization_lift_eq_zero
+    (hf : ∀ t, f (equiv S R (t ⊗ₜ 1)) = algebraMap V A (S.tildeMul t))
+    (x : Unitization V (S.Shriek R)) (hx : x ∈ S.shriekShriekIdeal R) :
+    Unitization.lift f x = 0 := by
+  obtain ⟨t, rfl⟩ := (S.mem_shriekShriekIdeal_iff R).mp hx
+  have : f (equiv S R (t ⊗ₜ 1)) + f (-equiv S R (t ⊗ₜ 1)) = 0 := by
+    rw [← map_add, add_neg_cancel, map_zero]
+  simpa [hf] using this
+
+/-- The **universal property of `R_!!`**: a non-unital `V`-algebra map `f : R_! → A` that sends
+each `t ⊗ 1` to the scalar `t ∈ m~ → V` extends uniquely (`algHom_ext`) to a `V`-algebra map
+`R_!! → A`, `(v, z) ↦ v + f z`. -/
+noncomputable def lift (hf : ∀ t, f (equiv S R (t ⊗ₜ 1)) = algebraMap V A (S.tildeMul t)) :
+    S.ShriekShriek R →ₐ[V] A :=
+  Ideal.Quotient.liftₐ (S.shriekShriekIdeal R) (Unitization.lift f)
+    (unitization_lift_eq_zero f hf)
+
+@[simp]
+theorem lift_mk (hf : ∀ t, f (equiv S R (t ⊗ₜ 1)) = algebraMap V A (S.tildeMul t))
+    (x : Unitization V (S.Shriek R)) :
+    lift f hf (mk S R x) = algebraMap V A x.fst + f x.snd := by
+  rw [← NonUnitalAlgHom.toAlgHom_apply, ← Unitization.lift_apply]
+  exact DFunLike.congr_fun (Ideal.Quotient.liftₐ_comp _ _ (unitization_lift_eq_zero f hf)) x
+
+@[simp]
+theorem lift_inr (hf : ∀ t, f (equiv S R (t ⊗ₜ 1)) = algebraMap V A (S.tildeMul t))
+    (z : S.Shriek R) : lift f hf (inr S R z) = f z := by
+  rw [inr_apply, lift_mk, Unitization.fst_inr, map_zero, zero_add, Unitization.snd_inr]
+
+end lift
+
 end ShriekShriek
 
 /-! ### Exactness -/
@@ -404,18 +439,22 @@ end ShriekShriek
 def IsShriekShriekExact : Prop :=
   Function.Injective (S.shriekShriekRel R)
 
+theorem isShriekShriekExact_iff :
+    S.IsShriekShriekExact R ↔ Function.Injective (S.shriekShriekRel R) :=
+  Iff.rfl
+
 /-- If `m~ → V` is injective (for instance if `m` is flat), every `V`-algebra is exact
 (Gabber–Ramero, Remark 2.2.26). -/
 theorem isShriekShriekExact_of_tildeMul_injective (h : Function.Injective S.tildeMul) :
     S.IsShriekShriekExact R := by
-  refine (injective_iff_map_eq_zero _).mpr fun t ht ↦ h ?_
+  refine (S.isShriekShriekExact_iff R).mpr <| (injective_iff_map_eq_zero _).mpr fun t ht ↦ h ?_
   simpa using congrArg (·.fst) ht
 
 /-- If `t ↦ t ⊗ 1` is injective on `m~`, then `R` is exact. -/
 theorem isShriekShriekExact_of_lTensor_injective
     (h : Function.Injective ((Algebra.linearMap V R).lTensor S.tilde)) :
     S.IsShriekShriekExact R := by
-  refine (injective_iff_map_eq_zero _).mpr fun t ht ↦ ?_
+  refine (S.isShriekShriekExact_iff R).mpr <| (injective_iff_map_eq_zero _).mpr fun t ht ↦ ?_
   have h₂ : equiv S R (t ⊗ₜ[V] (1 : R)) = 0 := by
     simpa using congrArg (·.snd) ht
   rw [LinearEquiv.map_eq_zero_iff] at h₂
@@ -424,30 +463,21 @@ theorem isShriekShriekExact_of_lTensor_injective
 
 /-! ### The counit `R_!! → R` -/
 
-/-- The map `V ⊕ R_! → R`, `(v, z) ↦ v + act z`, kills the ideal of relations `I`. -/
-private theorem lift_act_eq_zero (x : Unitization V (S.Shriek R))
-    (hx : x ∈ S.shriekShriekIdeal R) : Unitization.lift (Shriek.act S R) x = 0 := by
-  obtain ⟨t, rfl⟩ := (S.mem_shriekShriekIdeal_iff R).mp hx
-  simp [Algebra.smul_def]
-
 /-- The **natural `V`-algebra map `R_!! → R`**, `(v, t ⊗ r) ↦ v + t • r`, an almost isomorphism
 (`isAlmostIso_shriekShriekCounit`). -/
 noncomputable def shriekShriekCounit : S.ShriekShriek R →ₐ[V] R :=
-  Ideal.Quotient.liftₐ (S.shriekShriekIdeal R) (Unitization.lift (Shriek.act S R))
-    (S.lift_act_eq_zero R)
+  ShriekShriek.lift (Shriek.act S R) fun t ↦ by rw [act_tmul, Algebra.algebraMap_eq_smul_one]
 
 @[simp]
 theorem shriekShriekCounit_mk (x : Unitization V (S.Shriek R)) :
     S.shriekShriekCounit R (ShriekShriek.mk S R x) =
-      algebraMap V R x.fst + Shriek.act S R x.snd := by
-  have : S.shriekShriekCounit R (ShriekShriek.mk S R x) = Unitization.lift (Shriek.act S R) x :=
-    DFunLike.congr_fun (Ideal.Quotient.liftₐ_comp _ _ (S.lift_act_eq_zero R)) x
-  simp [this]
+      algebraMap V R x.fst + Shriek.act S R x.snd :=
+  ShriekShriek.lift_mk _ _ x
 
 @[simp]
 theorem shriekShriekCounit_inr (z : S.Shriek R) :
-    S.shriekShriekCounit R (ShriekShriek.inr S R z) = Shriek.act S R z := by
-  simp [ShriekShriek.inr_apply, shriekShriekCounit_mk]
+    S.shriekShriekCounit R (ShriekShriek.inr S R z) = Shriek.act S R z :=
+  ShriekShriek.lift_inr _ _ z
 
 theorem shriekShriekCounit_tmul (t : S.tilde) (r : R) :
     S.shriekShriekCounit R (ShriekShriek.inr S R (equiv S R (t ⊗ₜ r))) = S.tildeMul t • r := by
@@ -458,9 +488,9 @@ private theorem smul_eq_zero_of_act_eq_zero {ε : V} (hε : ε ∈ S.ideal) {z :
     (hz : Shriek.act S R z = 0) : ε • z = 0 := by
   obtain ⟨g, -, hg⟩ := (S.isAlmostIso_tildeAct R).exists_comp_eq_smul_id hε
   have := LinearMap.congr_fun hg ((equiv S R).symm z)
-  rw [LinearMap.comp_apply, ← Shriek.act_apply, hz, map_zero, LinearMap.smul_apply,
-    LinearMap.id_apply, eq_comm, ← map_smul, LinearEquiv.map_eq_zero_iff] at this
-  exact this
+  simp only [LinearMap.comp_apply, ← Shriek.act_apply, hz, map_zero, LinearMap.smul_apply,
+    LinearMap.id_apply] at this
+  exact (equiv S R).symm.map_eq_zero_iff.mp ((map_smul _ ε z).trans this.symm)
 
 /-- The kernel of `R_!! → R` is almost zero: for `ε, δ ∈ m`, the product `δ ε` kills it. -/
 private theorem smul_eq_zero_of_shriekShriekCounit_eq_zero {ε : V} (hε : ε ∈ S.ideal)
@@ -471,17 +501,16 @@ private theorem smul_eq_zero_of_shriekShriekCounit_eq_zero {ε : V} (hε : ε �
       rw [add_smul, ha, hb, add_zero]
   -- `ε = t` for some `t ∈ m~`, and `ε • (v, z) = (0, ε • z + t ⊗ v)` in `R_!!`, where
   -- `ε • z + t ⊗ v` lies in the kernel of `R_! → R`, which `δ` kills.
-  obtain ⟨t, rfl⟩ : ∃ t, S.tildeMul t = ε := by
-    rw [← LinearMap.mem_range, range_tildeMul]; exact hε
+  obtain ⟨t, rfl⟩ := S.exists_tildeMul_eq hε
   have hw : S.tildeMul t • (algebraMap V _ v + ShriekShriek.inr S R z) =
       ShriekShriek.inr S R (S.tildeMul t • z + equiv S R (t ⊗ₜ algebraMap V R v)) := by
     simp only [Algebra.algebraMap_eq_smul_one, tmul_smul, map_add, map_smul,
-      ShriekShriek.inr_tmul_one, smul_add, smul_smul, mul_comm, add_comm]
+      ShriekShriek.inr_tmul_one, smul_add]
+    module
   have hw₀ : Shriek.act S R (S.tildeMul t • z + equiv S R (t ⊗ₜ algebraMap V R v)) = 0 := by
-    have := hx
-    simp only [map_add, AlgHom.commutes, shriekShriekCounit_inr] at this
+    simp only [map_add, AlgHom.commutes, shriekShriekCounit_inr] at hx
     simp only [map_add, map_smul, act_tmul, Algebra.smul_def]
-    rw [← mul_add, add_comm, this, mul_zero]
+    linear_combination algebraMap V R (S.tildeMul t) * hx
   rw [mul_smul, hw, ← map_smul, smul_eq_zero_of_act_eq_zero S R hδ hw₀, map_zero]
 
 /-- **The natural map `R_!! → R` is an almost isomorphism** (Gabber–Ramero §2.2; Bhatt, Remark
@@ -490,12 +519,14 @@ theorem isAlmostIso_shriekShriekCounit :
     S.IsAlmostIso (S.shriekShriekCounit R).toLinearMap := by
   refine isAlmostIso_iff.mpr ⟨isAlmostZero_iff.mpr fun ε hε x ↦ Subtype.ext ?_,
     isAlmostZero_iff.mpr fun ε hε x ↦ ?_⟩
-  · exact S.smul_eq_zero_of_shriekShriekCounit_eq_zero R hε x.2
+  · rw [Submodule.coe_smul, Submodule.coe_zero]
+    exact S.smul_eq_zero_of_shriekShriekCounit_eq_zero R hε
+      ((AlgHom.toLinearMap_apply _ _).symm.trans (LinearMap.mem_ker.mp x.2))
   · obtain ⟨x, rfl⟩ := Submodule.mkQ_surjective _ x
-    obtain ⟨t, rfl⟩ : ∃ t, S.tildeMul t = ε := by
-      rw [← LinearMap.mem_range, range_tildeMul]; exact hε
+    obtain ⟨t, rfl⟩ := S.exists_tildeMul_eq hε
     rw [← map_smul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-    exact ⟨ShriekShriek.inr S R (equiv S R (t ⊗ₜ x)), S.shriekShriekCounit_tmul R t x⟩
+    exact LinearMap.mem_range.mpr
+      ⟨ShriekShriek.inr S R (equiv S R (t ⊗ₜ x)), by simp⟩
 
 /-- For `R = V`, the natural map `V_!! → V` is bijective: `V_! = m~` and
 `(V ⊕ m~) ⧸ I ≅ V`, `(v, t) ↦ v + t` (Gabber–Ramero §2.2). -/
@@ -506,8 +537,8 @@ theorem shriekShriekCounit_self_bijective : Function.Bijective (S.shriekShriekCo
     induction z using Shriek.induction_on with
     | add z z' hz hz' => rw [map_add, map_add, hz, hz', map_add]
     | tmul t a =>
-      rw [← mul_one a, ← smul_eq_mul, ← smul_tmul, ShriekShriek.inr_tmul_one, act_tmul,
-        smul_eq_mul, mul_one]
+      have : t ⊗ₜ[V] a = a • t ⊗ₜ[V] (1 : V) := by rw [smul_tmul', smul_tmul, smul_eq_mul, mul_one]
+      simp [this, Algebra.smul_def, mul_comm]
   refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun v ↦ ⟨algebraMap V _ v, by simp⟩⟩
   obtain ⟨v, z, rfl⟩ := ShriekShriek.exists_eq_algebraMap_add_inr S V x
   rw [hz, ← map_add] at hx ⊢
@@ -669,5 +700,11 @@ theorem shriekShriekUnitIso_inv_app (B : Algebra S) :
     (shriekShriekUnitIso S).inv.app B =
       (toAlmost S).map ((shriekShriekToElements S).app B) ≫ (adj S).counit.app B := by
   simp [shriekShriekUnitIso, counitIso_hom]
+
+@[simp]
+theorem shriekShriekUnitIso_hom_app (B : Algebra S) :
+    (shriekShriekUnitIso S).hom.app B =
+      (counitIso S).inv.app B ≫ inv ((toAlmost S).map ((shriekShriekToElements S).app B)) := by
+  simp [shriekShriekUnitIso]
 
 end TauCeti.Almost.Algebra
