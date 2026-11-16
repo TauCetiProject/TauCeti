@@ -221,9 +221,9 @@ theorem exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection
     hcont (memLp_of_mem_realSobolevFunctions hu) hg fun φ hφ hc ↦ hweak φ (hφ.of_le (by simp)) hc,
     hweak⟩
 
-/-- **No infinitesimal gauge transformation is Coulomb.** At any field `x`, a `C²` phase `u`
-tending to zero at infinity with `d₀* d₀ u = 0` vanishes: the equation reads `Δu = (p² + q²) u`,
-so `u Δu ≥ 0`. -/
+/-- **No nonzero decaying infinitesimal gauge transformation is Coulomb.** At any field `x`, a
+`C²` phase `u` tending to zero at infinity with `d₀* d₀ u = 0` vanishes: the equation reads
+`Δu = (p² + q²) u`, so `u Δu ≥ 0`. -/
 theorem eq_zero_of_gaugeAdjoint_gaugeDirection_eq_zero (x : ℂ → EuclideanSpace ℝ (Fin 4))
     {u : ℂ → ℝ} (hu : ContDiff ℝ 2 u) (hlim : Tendsto u (cocompact ℂ) (𝓝 0))
     (h : ∀ z, gaugeAdjoint x (gaugeDirection x u) z = 0) : u = 0 := by
@@ -260,17 +260,8 @@ theorem gaugeAdjoint_gaugeDirection_eq_of_integral_mul_eq (hx : Continuous x) {u
         hφc.laplacian.mul_right
     have hweak := hw φ φ.contDiff hφc
     rw [integral_mul_gaugeAdjoint_gaugeDirection hφ2] at hweak
-    have hsplit : ∫ z, u z * (-Δ (φ : ℂ → ℝ) z + P z * φ z) =
-        (∫ z, φ z * (P z * u z)) - ∫ z, Δ (φ : ℂ → ℝ) z * u z := by
-      rw [← integral_sub (hint (fun z ↦ P z * u z) (hP.mul hu.continuous)) hΔφ]
-      exact integral_congr_ae (ae_of_all _ fun z ↦ by ring)
-    have hsplit' : ∫ z, φ z * (P z * u z - g z) =
-        (∫ z, φ z * (P z * u z)) - ∫ z, g z * φ z := by
-      rw [← integral_sub (hint (fun z ↦ P z * u z) (hP.mul hu.continuous))
-        ((hint g hg).congr (ae_of_all _ fun z ↦ mul_comm _ _))]
-      exact integral_congr_ae (ae_of_all _ fun z ↦ by ring)
-    simp only [smul_eq_mul]
-    linarith
+    simpa only [smul_eq_mul] using integral_mul_eq_integral_mul_sub_of_integral_mul_neg_add_mul_eq
+      hΔφ (hint _ (hP.mul hu.continuous)) (hint g hg) hweak
   rw [gaugeAdjoint_gaugeDirection x hu.contDiffAt, hΔ (Set.mem_univ z)]
   ring
 

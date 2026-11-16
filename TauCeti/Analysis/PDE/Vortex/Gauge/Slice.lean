@@ -48,8 +48,9 @@ carries a solution `y ∈ H^k` of the linearized equation `d₁ y = 0` to the el
 kernel of the gauge-fixed operator `L_x = d₀* ⊕ d₁`
 (`TauCeti.Vortex.exists_gaugeFixedOperator_sub_gaugeDirection_eq_zero`). With uniqueness, the
 continuous solutions of `d₁ y = 0` in `H^k` are the direct sum of the infinitesimal gauge
-transformations `d₀ u`, `u ∈ H^(k+1)`, and the kernel of `L_x`, so the kernel of the gauge-fixed
-operator represents the first cohomology `ker d₁ / im d₀` of the deformation complex at `x`.
+transformations `d₀ u`, `u ∈ H^(k+1)` continuous, and the kernel of `L_x`. As a consequence of
+these results, not a statement of this file, the kernel of the gauge-fixed operator represents the
+first cohomology `ker d₁ / im d₀` of the deformation complex at `x`.
 
 The statements concern the linearized gauge action on fields as functions; the nonlinear slice,
 which puts a field of `A_m^k` near `x` into the Coulomb slice `d₀* (· - x) = 0` by an element of
@@ -74,17 +75,28 @@ open scoped Laplacian ContDiff
 
 variable {f : ContDiffBump (0 : ℝ)} {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
+/-- For `k ≥ 3`, a continuous field of `A_m^k` and a continuous variation in `H^k` are `C¹`, by
+the Sobolev embedding. -/
+private theorem contDiff_one_of_three_le {k : ℕ} (hk : 3 ≤ k) (hx : x ∈ framedFieldSpace f m k)
+    (hxc : Continuous x) {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k)
+    (hyc : Continuous y) : ContDiff ℝ 1 x ∧ ContDiff ℝ 1 y := by
+  have hk1 : ((1 : ℕ) : ℝ) + 1 < k := by exact_mod_cast (by omega : 1 + 1 < k)
+  refine ⟨?_, contDiff_of_mem_sobolevFields hk1 hy hyc⟩
+  simpa using (contDiff_of_mem_sobolevFields hk1 (mem_framedFieldSpace.1 hx)
+    (hxc.sub (contDiff_referenceField f m).continuous)).add
+    ((contDiff_referenceField f m).of_le (by simp))
+
 /-- The Coulomb defect of `y - d₀ u` is that of `y` minus the gauge Laplacian of `u`. -/
-private theorem gaugeAdjoint_sub_gaugeDirection {y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hy : ContDiff ℝ 1 y) {u : ℂ → ℝ} (hu : ContDiff ℝ 2 u) (z : ℂ) :
+private theorem gaugeAdjoint_sub_gaugeDirection (hx : ContDiff ℝ 1 x)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : ContDiff ℝ 1 y) {u : ℂ → ℝ} (hu : ContDiff ℝ 2 u)
+    (z : ℂ) :
     gaugeAdjoint x (y - gaugeDirection x u) z =
       gaugeAdjoint x y z - (-Δ u z + (x z 2 ^ 2 + x z 3 ^ 2) * u z) := by
-  have hy' (i : Fin 4) : DifferentiableAt ℝ (fun w ↦ y w i) z :=
-    (contDiff_euclidean.1 hy i).differentiable one_ne_zero z
-  have hdu (v : ℂ) : DifferentiableAt ℝ (fun w ↦ -fderiv ℝ u w v) z :=
-    ((hu.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const).neg.differentiable
-      one_ne_zero z
-  rw [gaugeAdjoint_sub x (hy' 0) (hy' 1) (by simpa using hdu 1) (by simpa using hdu Complex.I),
+  have hx' := differentiableAt_euclidean.1 (hx.differentiable one_ne_zero z)
+  have hy' := differentiableAt_euclidean.1 (hy.differentiable one_ne_zero z)
+  have hdu := differentiableAt_euclidean.1
+    (differentiableAt_gaugeDirection hu.contDiffAt (hx' 2) (hx' 3))
+  rw [gaugeAdjoint_sub x (hy' 0) (hy' 1) (hdu 0) (hdu 1),
     gaugeAdjoint_gaugeDirection x hu.contDiffAt]
 
 /-- **The infinitesimal Coulomb slice.** Let `x` be a continuous field of `A_m^k`, `k ≥ 3`, and `y`
@@ -98,11 +110,10 @@ theorem exists_gaugeAdjoint_sub_gaugeDirection_eq_zero {k : ℕ} (hk : 3 ≤ k)
     ∃ u ∈ realSobolevFunctions ℂ (k + 1) 2, ContDiff ℝ 2 u ∧
       gaugeDirection x u ∈ sobolevFields k ∧
         ∀ z, gaugeAdjoint x (y - gaugeDirection x u) z = 0 := by
+  obtain ⟨hx1, hy1⟩ := contDiff_one_of_three_le hk hx hxc hy hyc
   obtain ⟨n, rfl⟩ : ∃ n, k = n + 1 := ⟨k - 1, by omega⟩
   have hcast : ((n + 1 : ℕ) : ℝ) = n + 1 := Nat.cast_succ n
   rw [hcast] at hx hy ⊢
-  have hk1 : (((1 : ℕ) + 2 : ℕ) : ℝ) ≤ n + 1 := by exact_mod_cast (by omega : 3 ≤ n + 1)
-  have hy1 : ContDiff ℝ 1 y := contDiff_of_mem_sobolevFields (sobolevFields_mono hk1 hy) hyc
   -- The source `d₀* y` lies in `H^n` and is continuous.
   have hg : gaugeAdjoint x y ∈ realSobolevFunctions ℂ n 2 :=
     gaugeAdjoint_mem_realSobolevFunctions (by omega) hx hy hy1
@@ -123,7 +134,7 @@ theorem exists_gaugeAdjoint_sub_gaugeDirection_eq_zero {k : ℕ} (hk : 3 ≤ k)
   refine ⟨u, by convert hu using 2; ring, hu2,
     gaugeDirection_mem_sobolevFields (by omega) hx (by convert hu using 2) (hu2.of_le one_le_two),
     fun z ↦ ?_⟩
-  rw [gaugeAdjoint_sub_gaugeDirection hy1 hu2, ← gaugeAdjoint_gaugeDirection x hu2.contDiffAt,
+  rw [gaugeAdjoint_sub_gaugeDirection hx1 hy1 hu2, ← gaugeAdjoint_gaugeDirection x hu2.contDiffAt,
     hcl z, sub_self]
 
 /-- **Uniqueness of the infinitesimal Coulomb slice.** Let `x` be a continuous field of `A_m^k`,
@@ -146,15 +157,14 @@ theorem existsUnique_gaugeAdjoint_sub_gaugeDirection_eq_zero {k : ℕ} (hk : 3 �
   have hlim (w : ℂ → ℝ) (hw : w ∈ realSobolevFunctions ℂ (k + 1) 2) (hwc : Continuous w) :
       Tendsto w (cocompact ℂ) (𝓝 0) :=
     tendsto_cocompact_of_mem_realSobolevFunctions (by linarith) hw hwc
-  have hk1 : (((1 : ℕ) + 2 : ℕ) : ℝ) ≤ k := by exact_mod_cast hk
-  have hy1 : ContDiff ℝ 1 y := contDiff_of_mem_sobolevFields (sobolevFields_mono hk1 hy) hyc
+  obtain ⟨hx1, hy1⟩ := contDiff_one_of_three_le hk hx hxc hy hyc
   -- The difference `v - u` is an infinitesimal gauge transformation in the Coulomb slice.
   have hdiff : ∀ z, gaugeAdjoint x (gaugeDirection x (v - u)) z = 0 := by
     intro z
     have h₁ := hvcoul z
     have h₂ := hcoul z
-    rw [gaugeAdjoint_sub_gaugeDirection hy1 hv2] at h₁
-    rw [gaugeAdjoint_sub_gaugeDirection hy1 hu2] at h₂
+    rw [gaugeAdjoint_sub_gaugeDirection hx1 hy1 hv2] at h₁
+    rw [gaugeAdjoint_sub_gaugeDirection hx1 hy1 hu2] at h₂
     rw [gaugeAdjoint_gaugeDirection (f := v - u) x (hv2.sub hu2).contDiffAt,
       hv2.contDiffAt.laplacian_sub hu2.contDiffAt, Pi.sub_apply]
     linear_combination h₂ - h₁
@@ -162,14 +172,13 @@ theorem existsUnique_gaugeAdjoint_sub_gaugeDirection_eq_zero {k : ℕ} (hk : 3 �
     (by simpa using (hlim v hv hvc).sub (hlim u hu hu2.continuous)) hdiff
   exact sub_eq_zero.1 h0
 
-/-- **The gauge-fixed kernel is the cohomology of the deformation complex.** Let `x` be a
+/-- **Every linearized solution is gauge-equivalent to an element of `ker L_x`.** Let `x` be a
 continuous vortex of `A_m^k`, `k ≥ 3`, and `y` a continuous variation in `H^k` solving the
 linearized equation `d₁ y = 0`. Then there is a `C²` phase `u ∈ H^(k+1)`, with `d₀ u ∈ H^k`, such
-that `y - d₀ u` lies in the kernel of the gauge-fixed operator `L_x = d₀* ⊕ d₁`. The phase is
-unique (`TauCeti.Vortex.existsUnique_gaugeAdjoint_sub_gaugeDirection_eq_zero`), and no nonzero
-`d₀ u` lies in `ker L_x` (`TauCeti.Vortex.eq_zero_of_gaugeAdjoint_gaugeDirection_eq_zero`), so
-this splitting of `y` into an infinitesimal gauge transformation and an element of `ker L_x` is
-unique. -/
+that `y - d₀ u` lies in the kernel of the gauge-fixed operator `L_x = d₀* ⊕ d₁`. Among continuous
+phases in `H^(k+1)` this `u` is unique
+(`TauCeti.Vortex.existsUnique_gaugeAdjoint_sub_gaugeDirection_eq_zero`); in particular no nonzero
+`d₀ v` with `v` continuous in `H^(k+1)` lies in `ker L_x`. -/
 theorem exists_gaugeFixedOperator_sub_gaugeDirection_eq_zero {k : ℕ} (hk : 3 ≤ k)
     (hx : x ∈ framedFieldSpace f m k) (hxc : Continuous x) (hsol : ∀ z, equation x z = 0)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k) (hyc : Continuous y)
@@ -180,32 +189,11 @@ theorem exists_gaugeFixedOperator_sub_gaugeDirection_eq_zero {k : ℕ} (hk : 3 �
   obtain ⟨u, hu, hu2, hdu, hcoul⟩ :=
     exists_gaugeAdjoint_sub_gaugeDirection_eq_zero hk hx hxc hy hyc
   refine ⟨u, hu, hu2, hdu, fun z ↦ ?_⟩
-  have hk1 : (((1 : ℕ) + 2 : ℕ) : ℝ) ≤ k := by exact_mod_cast hk
-  -- The field `x` and the variation `y` are `C¹` by the Sobolev embedding.
-  have hx1 : ContDiff ℝ 1 x := by
-    simpa using (contDiff_of_mem_sobolevFields (n := 1)
-      (sobolevFields_mono hk1 (mem_framedFieldSpace.1 hx))
-      (hxc.sub (contDiff_referenceField f m).continuous)).add
-      ((contDiff_referenceField f m).of_le (by simp))
-  have hy1 : ContDiff ℝ 1 y := contDiff_of_mem_sobolevFields (sobolevFields_mono hk1 hy) hyc
-  have hxi (i : Fin 4) : DifferentiableAt ℝ (fun w ↦ x w i) z :=
-    (contDiff_euclidean.1 hx1 i).differentiable one_ne_zero z
-  have hdu' : DifferentiableAt ℝ (gaugeDirection x u) z := by
-    have hd (v : ℂ) : DifferentiableAt ℝ (fun w ↦ fderiv ℝ u w v) z :=
-      ((hu2.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const).differentiable
-        one_ne_zero z
-    have hu' : DifferentiableAt ℝ u z := hu2.differentiable two_ne_zero z
-    refine differentiableAt_euclidean.2 fun i ↦ ?_
-    fin_cases i
-    · simpa using (hd 1).neg
-    · simpa using (hd Complex.I).neg
-    · simpa using (hu'.fun_mul (hxi 3)).neg
-    · simpa using hu'.fun_mul (hxi 2)
+  obtain ⟨hx1, hy1⟩ := contDiff_one_of_three_le hk hx hxc hy hyc
+  have hxi := differentiableAt_euclidean.1 (hx1.differentiable one_ne_zero z)
   -- `L_x` is additive, and `L_x (d₀ u)` has vanishing equation rows since `d₁ d₀ = 0`.
-  have hsplit := gaugeFixedOperator_add x (hy1.differentiable one_ne_zero z)
-    (hdu'.const_smul (-1 : ℝ))
-  rw [gaugeFixedOperator_smul, neg_one_smul, neg_one_smul, ← sub_eq_add_neg,
-    ← sub_eq_add_neg] at hsplit
+  have hsplit := gaugeFixedOperator_sub x (hy1.differentiable one_ne_zero z)
+    (differentiableAt_gaugeDirection hu2.contDiffAt (hxi 2) (hxi 3))
   have hL := linearizedEquation_gaugeDirection_eq_zero (hxi 2) (hxi 3) hu2.contDiffAt (hsol z)
   ext i
   fin_cases i

@@ -328,9 +328,11 @@ theorem exists_contDiff_ae_eq_of_forall_mem_sobolevFields {y : ℂ → Euclidean
   ext i
   simp [hz i]
 
-/-- A continuous variation in `H^(n+2)` is `C^n`, by the Sobolev embedding of each coordinate. -/
-theorem contDiff_of_mem_sobolevFields {n : ℕ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hy : y ∈ sobolevFields (n + 2 : ℕ)) (hyc : Continuous y) : ContDiff ℝ n y := by
+/-- For `n + 1 < s`, a continuous variation in `H^s` is `C^n`, by the Sobolev embedding of each
+coordinate. -/
+theorem contDiff_of_mem_sobolevFields {s : ℝ} {n : ℕ} (hs : n + 1 < s)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) (hyc : Continuous y) :
+    ContDiff ℝ n y := by
   refine contDiff_euclidean.2 fun i ↦ contDiff_of_mem_realSobolevFunctions ?_
     (mem_sobolevFields.1 hy i) ((PiLp.continuous_apply 2 _ i).comp hyc)
   rw [Complex.finrank_real_complex]
