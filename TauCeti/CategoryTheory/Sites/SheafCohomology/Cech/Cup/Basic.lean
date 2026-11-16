@@ -1,0 +1,663 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Category.ModuleCat.Limits
+public import Mathlib.Algebra.Category.ModuleCat.Products
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Reverse
+import Mathlib.Tactic.Ring
+
+/-!
+# The cup product on Čech cochains
+
+Let `C` be a category with finite products, `U : ι → C` a family of objects, `R` a commutative
+ring, and `P, Q, S : Cᵒᵖ ⥤ ModuleCat R` presheaves of `R`-modules equipped with a natural
+`R`-bilinear pairing `μ : ∀ X, P(X) →ₗ[R] Q(X) →ₗ[R] S(X)`.
+
+On a `(p + q + 1)`-tuple `c : Fin (p + q + 1) → ι`, the Alexander–Whitney front/back face formula
+restricts a `p`-cochain `a ∈ Čᵖ(U, P)` along the front projection from
+`U(c 0) × ⋯ × U(c (p + q))` to `U(c 0) × ⋯ × U(c p)` and a `q`-cochain `b ∈ Č^q(U, Q)` along the
+back projection to `U(c p) × ⋯ × U(c (p + q))`, and pairs them via `μ`. This defines an
+`R`-bilinear cup product `TauCeti.CategoryTheory.cechCupCochain` on Čech cochains satisfying:
+
+* the graded Leibniz rule `d (a ⌣ b) = d a ⌣ b + (-1)^p • (a ⌣ d b)`
+  (`TauCeti.CategoryTheory.d_cechCupCochain`);
+* associativity for associative pairings (`TauCeti.CategoryTheory.cechCupCochain_assoc`);
+* left and right unit laws for compatible families of unit sections
+  (`TauCeti.CategoryTheory.cechCupCochain_unit_left`,
+  `TauCeti.CategoryTheory.cechCupCochain_unit_right`);
+* naturality with respect to morphisms of families
+  (`TauCeti.CategoryTheory.cechComplexMap_cechCupCochain`) and morphisms of presheaves
+  (`TauCeti.CategoryTheory.cechComplexFunctor_map_cechCupCochain`);
+* the reversal identity with signed tuple reversal `TauCeti.CategoryTheory.cechReverse`
+  (`TauCeti.CategoryTheory.cechReverse_cechCupCochain`).
+
+No thinness hypothesis on `C` and no ordering on `ι` are needed. The passage to fixed-family Čech
+cohomology is in `TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup.Homology`.
+
+## Main definitions
+
+* `TauCeti.CategoryTheory.cechComplexπ`: projection from `Čⁿ(U, P)` onto the factor indexed by a
+  tuple `c : Fin (n + 1) → ι`.
+* `TauCeti.CategoryTheory.cechCochainMk`: construct an `n`-cochain in `Č(U, P)` from its tuple
+  coordinates.
+* `TauCeti.CategoryTheory.cechCupCochain`: the `R`-bilinear cup product on Čech cochains.
+* `TauCeti.CategoryTheory.cechUnitCochain`: the `0`-cochain determined by a compatible family of
+  sections.
+
+## Main results
+
+* `TauCeti.CategoryTheory.d_cechCupCochain`: the graded Leibniz rule on Čech cochains.
+* `TauCeti.CategoryTheory.cechCupCochain_assoc`: associativity on cochains.
+* `TauCeti.CategoryTheory.cechReverse_cechCupCochain`: compatibility with signed tuple reversal.
+* `TauCeti.CategoryTheory.cechComplexMap_cechCupCochain`: compatibility with morphisms of families.
+* `TauCeti.CategoryTheory.cechComplexFunctor_map_cechCupCochain`: naturality in presheaves.
+* `TauCeti.CategoryTheory.cechCupCochain_unit_left`,
+  `TauCeti.CategoryTheory.cechCupCochain_unit_right`: left and right unit laws on cochains.
+
+## References
+
+* The Stacks Project, Cohomology of Sheaves, §20.25 (tag 01FP), for the cup product on Čech
+  cochains, the Leibniz rule, associativity, and graded commutativity.
+-/
+
+public section
+
+noncomputable section
+
+open CategoryTheory Limits Opposite
+
+universe uR w v v' u u'
+
+namespace TauCeti.CategoryTheory
+
+section Helpers
+
+variable {R : Type uR} [CommRing R]
+
+/-- The canonical projection from degree `n` of the Čech complex `Č(U, P)` to the factor indexed
+by a tuple `c : Fin (n + 1) → ι`. Using this wrapper keeps the domain syntactically equal to
+`((cechComplexFunctor U).obj P).X n` during rewriting. -/
+def cechComplexπ {C : Type u} [Category.{v} C] [HasFiniteProducts C]
+    {A : Type u'} [Category.{v'} A] [Preadditive A] [HasProducts.{w} A]
+    {ι : Type w} (U : ι → C) (P : Cᵒᵖ ⥤ A) (n : ℕ) (c : Fin (n + 1) → ι) :
+    ((cechComplexFunctor U).obj P).X n ⟶ P.obj (op (∏ᶜ fun j ↦ U (c j))) :=
+  Pi.π (fun d : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (d j)))) c
+
+/-- `cechComplexπ` is definitionally the product projection `Pi.π`. -/
+theorem cechComplexπ_eq {C : Type u} [Category.{v} C] [HasFiniteProducts C]
+    {A : Type u'} [Category.{v'} A] [Preadditive A] [HasProducts.{w} A]
+    {ι : Type w} (U : ι → C) (P : Cᵒᵖ ⥤ A) (n : ℕ) (c : Fin (n + 1) → ι) :
+    cechComplexπ U P n c =
+      Pi.π (fun d : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (d j)))) c :=
+  (rfl)
+
+/-- Two `n`-cochains in `Č(U, P)` are equal if all their tuple projections agree. -/
+theorem cechComplex_ext {C : Type u} [Category.{v} C] [HasFiniteProducts C] {ι : Type w}
+    {U : ι → C} {P : Cᵒᵖ ⥤ ModuleCat.{w} R} {n : ℕ}
+    {x y : ((cechComplexFunctor U).obj P).X n}
+    (h : ∀ c : Fin (n + 1) → ι, cechComplexπ U P n c x = cechComplexπ U P n c y) : x = y := by
+  let Z : (Fin (n + 1) → ι) → ModuleCat.{w} R := fun d ↦ P.obj (op (∏ᶜ fun j ↦ U (d j)))
+  apply (ModuleCat.piIsoPi Z).toLinearEquiv.injective
+  funext c
+  exact (ModuleCat.piIsoPi_hom_ker_subtype_apply Z c x).trans <|
+    (h c).trans (ModuleCat.piIsoPi_hom_ker_subtype_apply Z c y).symm
+
+/-- Construct a degree-`n` Čech cochain in `Č(U, P)` from its values on all `(n + 1)`-tuples. -/
+def cechCochainMk {C : Type u} [Category.{v} C] [HasFiniteProducts C] {ι : Type w}
+    (U : ι → C) (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : ℕ)
+    (f : ∀ c : Fin (n + 1) → ι, P.obj (op (∏ᶜ fun j ↦ U (c j)))) :
+    ((cechComplexFunctor U).obj P).X n :=
+  (ModuleCat.piIsoPi (fun c : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (c j))))).inv f
+
+/-- The tuple projection of `cechCochainMk` recovers the defining coordinate function. -/
+@[simp]
+theorem cechComplexπ_cechCochainMk {C : Type u} [Category.{v} C] [HasFiniteProducts C] {ι : Type w}
+    (U : ι → C) (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : ℕ)
+    (f : ∀ c : Fin (n + 1) → ι, P.obj (op (∏ᶜ fun j ↦ U (c j)))) (c : Fin (n + 1) → ι) :
+    cechComplexπ U P n c (cechCochainMk U P n f) = f c :=
+  ModuleCat.piIsoPi_inv_kernel_ι_apply _ c f
+
+/-- Index map embedding the front `(p + 1)` vertices into `Fin (n + 1)` when `p ≤ n`. -/
+private def frontFace (p n : ℕ) (hp : p ≤ n) : Fin (p + 1) → Fin (n + 1) :=
+  fun j ↦ ⟨j.val, by omega⟩
+
+/-- Index map embedding the back `(q + 1)` vertices into `Fin (n + 1)` when `p + q = n`. -/
+private def backFace (p q n : ℕ) (h : p + q = n) : Fin (q + 1) → Fin (n + 1) :=
+  fun j ↦ ⟨p + j.val, by omega⟩
+
+private lemma frontFace_comp_succAbove_last (p n : ℕ) (hp : p + 1 ≤ n + 1) :
+    frontFace (p + 1) (n + 1) hp ∘ (Fin.last (p + 1)).succAbove =
+      frontFace p (n + 1) (by omega) := by
+  funext x
+  ext
+  simp [frontFace, Fin.succAbove_last]
+
+private lemma backFace_comp_succAbove_zero (p q n : ℕ) (h : p + (q + 1) = n + 1) :
+    backFace p (q + 1) (n + 1) h ∘ (0 : Fin (q + 2)).succAbove =
+      backFace (p + 1) q (n + 1) (by omega) := by
+  funext y
+  ext
+  simp [backFace]
+  omega
+
+private lemma succAbove_castAdd_comp_frontFace {p q n : ℕ} (h : p + q = n) (i : Fin (p + 1)) :
+    (finCongr (by omega : (p + 1) + (q + 1) = n + 2) (Fin.castAdd (q + 1) i)).succAbove ∘
+        frontFace p n (by omega) =
+      frontFace (p + 1) (n + 1) (by omega) ∘ i.castSucc.succAbove := by
+  funext x
+  ext
+  simp only [Function.comp_apply, frontFace, Fin.succAbove, Fin.lt_def, Fin.val_castSucc,
+    finCongr_apply, Fin.val_cast, Fin.val_castAdd]
+  split_ifs <;> simp
+
+private lemma succAbove_castAdd_comp_backFace {p q n : ℕ} (h : p + q = n) (i : Fin (p + 1)) :
+    (finCongr (by omega : (p + 1) + (q + 1) = n + 2) (Fin.castAdd (q + 1) i)).succAbove ∘
+        backFace p q n h =
+      backFace (p + 1) q (n + 1) (by omega) := by
+  funext y
+  have hle : finCongr (by omega : (p + 1) + (q + 1) = n + 2) (Fin.castAdd (q + 1) i) ≤
+      (backFace p q n h y).castSucc := by
+    simp only [Fin.le_def, Fin.val_castSucc, finCongr_apply, Fin.val_cast, Fin.val_castAdd,
+      backFace]
+    omega
+  ext
+  rw [Function.comp_apply, Fin.succAbove_of_le_castSucc _ _ hle, Fin.val_succ]
+  simp only [backFace]
+  omega
+
+private lemma succAbove_natAdd_comp_frontFace {p q n : ℕ} (h : p + q = n) (j : Fin (q + 1)) :
+    (finCongr (by omega : (p + 1) + (q + 1) = n + 2) (Fin.natAdd (p + 1) j)).succAbove ∘
+        frontFace p n (by omega) =
+      frontFace p (n + 1) (by omega) := by
+  funext x
+  have hlt : (frontFace p n (by omega) x).castSucc <
+      finCongr (by omega : (p + 1) + (q + 1) = n + 2) (Fin.natAdd (p + 1) j) := by
+    simp only [Fin.lt_def, Fin.val_castSucc, finCongr_apply, Fin.val_cast, Fin.val_natAdd,
+      frontFace]
+    omega
+  ext
+  rw [Function.comp_apply, Fin.succAbove_of_castSucc_lt _ _ hlt, Fin.val_castSucc]
+  rfl
+
+private lemma succAbove_natAdd_comp_backFace {p q n : ℕ} (h : p + q = n) (j : Fin (q + 1)) :
+    (finCongr (by omega : (p + 1) + (q + 1) = n + 2) (Fin.natAdd (p + 1) j)).succAbove ∘
+        backFace p q n h =
+      backFace p (q + 1) (n + 1) (by omega) ∘ j.succ.succAbove := by
+  funext y
+  ext
+  simp only [Function.comp_apply, backFace, Fin.succAbove, Fin.lt_def, Fin.val_castSucc,
+    Fin.val_succ, finCongr_apply, Fin.val_cast, Fin.val_natAdd]
+  by_cases hy : (y : ℕ) < (j : ℕ) + 1
+  · have hy' : p + (y : ℕ) < p + 1 + (j : ℕ) := by omega
+    simp [hy, hy']
+  · have hy' : ¬ p + (y : ℕ) < p + 1 + (j : ℕ) := by omega
+    simp only [hy, hy', ↓reduceIte, Fin.val_succ]
+    omega
+
+/-- Projection between finite products of members of `U` induced by a map of finite index sets. -/
+private def tupleProj {C : Type u} [Category.{v} C] [HasFiniteProducts C] {ι : Type w}
+    (U : ι → C) {k m : ℕ} (c : Fin (m + 1) → ι) (f : Fin (k + 1) → Fin (m + 1)) :
+    (∏ᶜ fun j : Fin (m + 1) ↦ U (c j)) ⟶ (∏ᶜ fun i : Fin (k + 1) ↦ U ((c ∘ f) i)) :=
+  Pi.lift fun i ↦ Pi.π (fun j ↦ U (c j)) (f i)
+
+private lemma tupleProj_comp_tupleProj {C : Type u} [Category.{v} C] [HasFiniteProducts C]
+    {ι : Type w} (U : ι → C) {k l m : ℕ} (c : Fin (m + 1) → ι)
+    (g : Fin (l + 1) → Fin (m + 1)) (f : Fin (k + 1) → Fin (l + 1)) :
+    tupleProj U c g ≫ tupleProj U (c ∘ g) f = tupleProj U c (g ∘ f) := by
+  refine Pi.hom_ext _ _ fun i ↦ ?_
+  exact (Category.assoc _ _ _).trans <|
+    (whisker_eq _ (Pi.lift_comp_π (fun j ↦ Pi.π (fun r ↦ U ((c ∘ g) r)) (f j)) i)).trans <|
+    (Pi.lift_comp_π (fun j ↦ Pi.π (fun r ↦ U (c r)) (g j)) (f i)).trans
+      (Pi.lift_comp_π (fun j ↦ Pi.π (fun r ↦ U (c r)) ((g ∘ f) j)) i).symm
+
+private lemma tupleProj_id {C : Type u} [Category.{v} C] [HasFiniteProducts C]
+    {ι : Type w} (U : ι → C) {m : ℕ} (c : Fin (m + 1) → ι) :
+    tupleProj U c id = 𝟙 (∏ᶜ fun j : Fin (m + 1) ↦ U (c j)) := by
+  refine Pi.hom_ext _ _ fun i ↦ ?_
+  exact (Pi.lift_comp_π _ i).trans (Category.id_comp _).symm
+
+private lemma presheaf_map_map {C : Type u} [Category.{v} C] {P : Cᵒᵖ ⥤ ModuleCat.{w} R}
+    {X Y Z : Cᵒᵖ} (f : X ⟶ Y) (g : Y ⟶ Z) (x : P.obj X) :
+    P.map g (P.map f x) = P.map (f ≫ g) x := by
+  rw [P.map_comp, ModuleCat.comp_apply]
+
+private lemma natTrans_app_map {C : Type u} [Category.{v} C] {P Q : Cᵒᵖ ⥤ ModuleCat.{w} R}
+    (α : P ⟶ Q) {X Y : Cᵒᵖ} (f : X ⟶ Y) (x : P.obj X) :
+    α.app Y (P.map f x) = Q.map f (α.app X x) := by
+  rw [← ModuleCat.comp_apply, α.naturality, ModuleCat.comp_apply]
+
+/-- Elementwise differential formula for a Čech complex of modules. -/
+private lemma cechComplexπ_d {C : Type u} [Category.{v} C] [HasFiniteProducts C]
+    {ι : Type w} (U : ι → C) (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : ℕ)
+    (a : ((cechComplexFunctor U).obj P).X n) (c : Fin (n + 2) → ι) :
+    cechComplexπ U P (n + 1) c (((cechComplexFunctor U).obj P).d n (n + 1) a) =
+      ∑ k : Fin (n + 2), (-1 : ℤ) ^ (k : ℕ) •
+        P.map (tupleProj U c k.succAbove).op (cechComplexπ U P n (c ∘ k.succAbove) a) := by
+  have h : ((((cechComplexFunctor U).obj P).d n (n + 1) ≫ cechComplexπ U P (n + 1) c) :
+        ((cechComplexFunctor U).obj P).X n ⟶ P.obj (op (∏ᶜ fun j ↦ U (c j)))) a =
+      (∑ k : Fin (n + 2), (-1 : ℤ) ^ (k : ℕ) •
+        (cechComplexπ U P n (c ∘ k.succAbove) ≫ P.map (tupleProj U c k.succAbove).op)) a :=
+    ConcreteCategory.congr_hom (cechComplexFunctor_obj_d_comp_π U P n c) a
+  exact (ModuleCat.comp_apply _ _ a).symm.trans <| h.trans <| by
+    simp [ModuleCat.hom_sum]
+
+private lemma cechComplexπ_cechReverse {C : Type u} [Category.{v} C] [HasFiniteProducts C]
+    {ι : Type w} (U : ι → C) (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : ℕ)
+    (a : ((cechComplexFunctor U).obj P).X n) (c : Fin (n + 1) → ι) :
+    cechComplexπ U P n c (((cechReverse U).app P).f n a) =
+      (-1 : ℤ) ^ (n * (n + 1) / 2) •
+        P.map (tupleProj U c Fin.rev).op (cechComplexπ U P n (c ∘ Fin.rev) a) := by
+  have h : ((((cechReverse U).app P).f n ≫ cechComplexπ U P n c) :
+        ((cechComplexFunctor U).obj P).X n ⟶ P.obj (op (∏ᶜ fun j ↦ U (c j)))) a =
+      (((-1 : ℤ) ^ (n * (n + 1) / 2) •
+        (cechComplexπ U P n (c ∘ Fin.rev) ≫ P.map (tupleProj U c Fin.rev).op)) :
+        ((cechComplexFunctor U).obj P).X n ⟶ P.obj (op (∏ᶜ fun j ↦ U (c j)))) a :=
+    ConcreteCategory.congr_hom (cechReverse_app_f_π U P n c) a
+  exact (ModuleCat.comp_apply _ _ a).symm.trans <| h.trans <| by simp
+
+private lemma cechComplexπ_cechComplexMap {C : Type u} [Category.{v} C] [HasFiniteProducts C]
+    {ι κ : Type w} {U : ι → C} {V : κ → C}
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : ℕ)
+    (a : ((cechComplexFunctor V).obj P).X n) (c : Fin (n + 1) → ι) :
+    cechComplexπ U P n c ((cechComplexMap P φ).f n a) =
+      P.map ((Limits.Pi.map fun j : Fin (n + 1) ↦ φ.φ (c j) :
+          (∏ᶜ fun j : Fin (n + 1) ↦ U (c j)) ⟶ ∏ᶜ fun j : Fin (n + 1) ↦ V ((φ.f ∘ c) j))).op
+        (cechComplexπ V P n (φ.f ∘ c) a) := by
+  have h : (((cechComplexMap P φ).f n ≫ cechComplexπ U P n c) :
+        ((cechComplexFunctor V).obj P).X n ⟶ P.obj (op (∏ᶜ fun j ↦ U (c j)))) a =
+      ((cechComplexπ V P n (φ.f ∘ c) ≫
+        P.map ((Limits.Pi.map fun j : Fin (n + 1) ↦ φ.φ (c j) :
+          (∏ᶜ fun j ↦ U (c j)) ⟶ ∏ᶜ fun j ↦ V ((φ.f ∘ c) j))).op) :
+        ((cechComplexFunctor V).obj P).X n ⟶ P.obj (op (∏ᶜ fun j ↦ U (c j)))) a :=
+    ConcreteCategory.congr_hom (cechComplexMap_f_π P φ n c) a
+  exact (ModuleCat.comp_apply _ _ a).symm.trans <| h.trans (ModuleCat.comp_apply _ _ a)
+
+private lemma cechComplexπ_cechComplexFunctor_map {C : Type u} [Category.{v} C]
+    [HasFiniteProducts C] {ι : Type w} (U : ι → C) {P Q : Cᵒᵖ ⥤ ModuleCat.{w} R}
+    (α : P ⟶ Q) (n : ℕ) (a : ((cechComplexFunctor U).obj P).X n) (c : Fin (n + 1) → ι) :
+    cechComplexπ U Q n c (((cechComplexFunctor U).map α).f n a) =
+      α.app (op (∏ᶜ fun j ↦ U (c j))) (cechComplexπ U P n c a) := by
+  have h : ((((cechComplexFunctor U).map α).f n ≫ cechComplexπ U Q n c) :
+        ((cechComplexFunctor U).obj P).X n ⟶ Q.obj (op (∏ᶜ fun j ↦ U (c j)))) a =
+      ((cechComplexπ U P n c ≫ α.app (op (∏ᶜ fun j ↦ U (c j)))) :
+        ((cechComplexFunctor U).obj P).X n ⟶ Q.obj (op (∏ᶜ fun j ↦ U (c j)))) a :=
+    ConcreteCategory.congr_hom (cechComplexFunctor_map_f_π U P α n c) a
+  exact (ModuleCat.comp_apply _ _ a).symm.trans <| h.trans (ModuleCat.comp_apply _ _ a)
+
+private lemma cechComplexπ_cechAugmentation {C : Type u} [Category.{v} C] [HasFiniteProducts C]
+    {ι : Type w} (U : ι → C) {T : C} (hT : IsTerminal T) (P : Cᵒᵖ ⥤ ModuleCat.{w} R)
+    (e₀ : P.obj (op T)) (a : Fin 1 → ι) :
+    cechComplexπ U P 0 a
+        ((cechAugmentation U hT P).f 0
+          ((HomologicalComplex.singleObjXSelf (ComplexShape.up ℕ) 0 (P.obj (op T))).inv e₀)) =
+      P.map (hT.from (∏ᶜ fun j ↦ U (a j))).op e₀ := by
+  have h : (((HomologicalComplex.singleObjXSelf (ComplexShape.up ℕ) 0 (P.obj (op T))).inv ≫
+        (cechAugmentation U hT P).f 0 ≫ cechComplexπ U P 0 a) :
+        P.obj (op T) ⟶ P.obj (op (∏ᶜ fun j ↦ U (a j)))) e₀ =
+      P.map (hT.from (∏ᶜ fun j ↦ U (a j))).op e₀ :=
+    ConcreteCategory.congr_hom (cechAugmentation_f_zero_comp_π U hT P a) e₀
+  simpa only [ModuleCat.comp_apply] using h
+
+end Helpers
+
+/-! ### The cup product on Čech cochains -/
+
+section Cochain
+
+variable {R : Type uR} [CommRing R] {C : Type u} [Category.{v} C] [HasFiniteProducts C]
+  {ι : Type w} (U : ι → C) {P Q S : Cᵒᵖ ⥤ ModuleCat.{w} R}
+
+private def cechComplexMk (S : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : ℕ) :
+    ((c : Fin (n + 1) → ι) → S.obj (op (∏ᶜ fun j ↦ U (c j)))) →ₗ[R]
+      ((cechComplexFunctor U).obj S).X n :=
+  (ModuleCat.piIsoPi (fun c : Fin (n + 1) → ι ↦ S.obj (op (∏ᶜ fun j ↦ U (c j))))).inv.hom
+
+private lemma cechComplexπ_cechComplexMk (S : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : ℕ)
+    (c : Fin (n + 1) → ι) (f : (d : Fin (n + 1) → ι) → S.obj (op (∏ᶜ fun j ↦ U (d j)))) :
+    cechComplexπ U S n c (cechComplexMk U S n f) = f c :=
+  ModuleCat.piIsoPi_inv_kernel_ι_apply _ c _
+
+/-- **The cup product on Čech cochains.** Given a family of `R`-bilinear pairings
+`μ : ∀ X, P(X) →ₗ[R] Q(X) →ₗ[R] S(X)` and `p + q = n`, on a tuple `c : Fin (n + 1) → ι` the cup
+product of `a ∈ Čᵖ(U, P)` and `b ∈ Č^q(U, Q)` restricts `a` along the front projection to
+`c 0, …, c p`, restricts `b` along the back projection to `c p, …, c n`, and applies `μ`. -/
+def cechCupCochain (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] S.obj X)
+    (p q n : ℕ) (h : p + q = n) :
+    ((cechComplexFunctor U).obj P).X p →ₗ[R] ((cechComplexFunctor U).obj Q).X q →ₗ[R]
+      ((cechComplexFunctor U).obj S).X n where
+  toFun a :=
+    cechComplexMk U S n ∘ₗ
+      LinearMap.pi fun c ↦
+        (μ (op (∏ᶜ fun j ↦ U (c j)))
+          (P.map (tupleProj U c (frontFace p n (by omega))).op
+            (cechComplexπ U P p (c ∘ frontFace p n (by omega)) a))).comp
+          ((Q.map (tupleProj U c (backFace p q n h)).op).hom.comp
+            (cechComplexπ U Q q (c ∘ backFace p q n h)).hom)
+  map_add' a₁ a₂ := LinearMap.ext fun b ↦ cechComplex_ext fun c ↦ by
+    simp only [LinearMap.add_apply, LinearMap.comp_apply, cechComplexπ_cechComplexMk,
+      LinearMap.pi_apply, map_add]
+  map_smul' r a := LinearMap.ext fun b ↦ cechComplex_ext fun c ↦ by
+    simp only [RingHom.id_apply, LinearMap.smul_apply, LinearMap.comp_apply,
+      cechComplexπ_cechComplexMk, LinearMap.pi_apply, map_smul]
+
+private lemma cechCupCochain_π_faces (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] S.obj X)
+    (p q n : ℕ) (h : p + q = n)
+    (a : ((cechComplexFunctor U).obj P).X p) (b : ((cechComplexFunctor U).obj Q).X q)
+    (c : Fin (n + 1) → ι) :
+    cechComplexπ U S n c (cechCupCochain U μ p q n h a b) =
+      μ (op (∏ᶜ fun j ↦ U (c j)))
+        (P.map (tupleProj U c (frontFace p n (by omega))).op
+          (cechComplexπ U P p (c ∘ frontFace p n (by omega)) a))
+        (Q.map (tupleProj U c (backFace p q n h)).op
+          (cechComplexπ U Q q (c ∘ backFace p q n h) b)) :=
+  cechComplexπ_cechComplexMk U S n c _
+
+/-- The coordinate formula for `cechCupCochain` at a tuple `c : Fin (n + 1) → ι`. -/
+@[simp]
+theorem cechCupCochain_π (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] S.obj X)
+    (p q n : ℕ) (h : p + q = n)
+    (a : ((cechComplexFunctor U).obj P).X p) (b : ((cechComplexFunctor U).obj Q).X q)
+    (c : Fin (n + 1) → ι) :
+    cechComplexπ U S n c (cechCupCochain U μ p q n h a b) =
+      μ (op (∏ᶜ fun j ↦ U (c j)))
+        (P.map (Pi.lift fun j : Fin (p + 1) ↦
+            Pi.π (fun i ↦ U (c i)) ⟨j.val, by omega⟩).op
+          (cechComplexπ U P p (fun j ↦ c ⟨j.val, by omega⟩) a))
+        (Q.map (Pi.lift fun j : Fin (q + 1) ↦
+            Pi.π (fun i ↦ U (c i)) ⟨p + j.val, by omega⟩).op
+          (cechComplexπ U Q q (fun j ↦ c ⟨p + j.val, by omega⟩) b)) :=
+  cechCupCochain_π_faces U μ p q n h a b c
+
+/-- **The graded Leibniz rule for the Čech cup product.** For a natural bilinear pairing `μ`,
+`d (a ⌣ b) = d a ⌣ b + (-1)^p • (a ⌣ d b)`. -/
+theorem d_cechCupCochain (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] S.obj X)
+    (hμ : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y) (x : P.obj X) (y : Q.obj X),
+      μ Y (P.map f x) (Q.map f y) = S.map f (μ X x y))
+    (p q n : ℕ) (h : p + q = n)
+    (a : ((cechComplexFunctor U).obj P).X p) (b : ((cechComplexFunctor U).obj Q).X q) :
+    ((cechComplexFunctor U).obj S).d n (n + 1) (cechCupCochain U μ p q n h a b) =
+      cechCupCochain U μ (p + 1) q (n + 1) (by omega)
+          (((cechComplexFunctor U).obj P).d p (p + 1) a) b +
+        (-1 : ℤ) ^ p • cechCupCochain U μ p (q + 1) (n + 1) (by omega) a
+          (((cechComplexFunctor U).obj Q).d q (q + 1) b) := by
+  refine cechComplex_ext fun c ↦ ?_
+  -- Abbreviate the pairing of `a` restricted along `f` with `b` restricted along `g`.
+  let term (f : Fin (p + 1) → Fin (n + 2)) (g : Fin (q + 1) → Fin (n + 2)) :
+      S.obj (op (∏ᶜ fun j : Fin (n + 2) ↦ U (c j))) :=
+    μ (op (∏ᶜ fun j ↦ U (c j)))
+      (P.map (tupleProj U c f).op (cechComplexπ U P p (c ∘ f) a))
+      (Q.map (tupleProj U c g).op (cechComplexπ U Q q (c ∘ g) b))
+  -- Step 1: Express `d (a ⌣ b)`, `(d a) ⌣ b`, and `(-1)^p • (a ⌣ d b)` in terms of `term`.
+  have hLHS : cechComplexπ U S (n + 1) c
+        (((cechComplexFunctor U).obj S).d n (n + 1) (cechCupCochain U μ p q n h a b)) =
+      ∑ k : Fin (n + 2), (-1 : ℤ) ^ (k : ℕ) •
+        term (k.succAbove ∘ frontFace p n (by omega)) (k.succAbove ∘ backFace p q n h) := by
+    rw [cechComplexπ_d]
+    refine Finset.sum_congr rfl fun k _ ↦ congrArg _ ?_
+    rw [cechCupCochain_π_faces, ← hμ, presheaf_map_map, ← op_comp, presheaf_map_map, ← op_comp,
+      tupleProj_comp_tupleProj, tupleProj_comp_tupleProj]
+    rfl
+  have hRHS₁ : cechComplexπ U S (n + 1) c
+        (cechCupCochain U μ (p + 1) q (n + 1) (by omega)
+          (((cechComplexFunctor U).obj P).d p (p + 1) a) b) =
+      ∑ i : Fin (p + 2), (-1 : ℤ) ^ (i : ℕ) •
+        term (frontFace (p + 1) (n + 1) (by omega) ∘ i.succAbove)
+          (backFace (p + 1) q (n + 1) (by omega)) := by
+    rw [cechCupCochain_π_faces, cechComplexπ_d, map_sum, map_sum, LinearMap.sum_apply]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [map_zsmul, map_zsmul, LinearMap.smul_apply, presheaf_map_map, ← op_comp,
+      tupleProj_comp_tupleProj]
+    rfl
+  have hRHS₂ : cechComplexπ U S (n + 1) c
+        ((-1 : ℤ) ^ p • cechCupCochain U μ p (q + 1) (n + 1) (by omega) a
+          (((cechComplexFunctor U).obj Q).d q (q + 1) b)) =
+      ∑ j : Fin (q + 2), (-1 : ℤ) ^ (p + (j : ℕ)) •
+        term (frontFace p (n + 1) (by omega))
+          (backFace p (q + 1) (n + 1) (by omega) ∘ j.succAbove) := by
+    rw [map_zsmul, cechCupCochain_π_faces, cechComplexπ_d, map_sum, map_sum, Finset.smul_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [map_zsmul, map_zsmul, smul_smul, ← pow_add, presheaf_map_map, ← op_comp,
+      tupleProj_comp_tupleProj]
+    rfl
+  rw [map_add, hLHS, hRHS₁, hRHS₂]
+  -- Step 2: Cancel the boundary terms `i = Fin.last (p + 1)` and `j = 0` on the RHS.
+  have hcancel :
+      (-1 : ℤ) ^ (Fin.last (p + 1) : ℕ) •
+          term (frontFace (p + 1) (n + 1) (by omega) ∘ (Fin.last (p + 1)).succAbove)
+            (backFace (p + 1) q (n + 1) (by omega)) +
+        (-1 : ℤ) ^ (p + (0 : Fin (q + 2))) •
+          term (frontFace p (n + 1) (by omega))
+            (backFace p (q + 1) (n + 1) (by omega) ∘ (0 : Fin (q + 2)).succAbove) = 0 := by
+    rw [frontFace_comp_succAbove_last, backFace_comp_succAbove_zero, Fin.val_last, Fin.val_zero,
+      add_zero, pow_succ, mul_neg_one, neg_smul, neg_add_cancel]
+  rw [Fin.sum_univ_castSucc (n := p + 1), Fin.sum_univ_succ (n := q + 1),
+    add_assoc (∑ i : Fin (p + 1), _), ← add_assoc ((-1 : ℤ) ^ (Fin.last (p + 1) : ℕ) • _),
+    hcancel, zero_add]
+  -- Step 3: Split the LHS sum over `Fin (n + 2) ≃ Fin ((p + 1) + (q + 1))` and match summands.
+  rw [← Fintype.sum_equiv (finCongr (by omega : (p + 1) + (q + 1) = n + 2))
+    (fun k ↦ (-1 : ℤ) ^ ((finCongr (by omega : (p + 1) + (q + 1) = n + 2) k : Fin (n + 2)) : ℕ) •
+      term ((finCongr (by omega : (p + 1) + (q + 1) = n + 2) k).succAbove ∘
+          frontFace p n (by omega))
+        ((finCongr (by omega : (p + 1) + (q + 1) = n + 2) k).succAbove ∘ backFace p q n h))
+    _ (fun _ ↦ rfl), Fin.sum_univ_add]
+  refine congrArg₂ (· + ·) (Finset.sum_congr rfl fun i _ ↦ ?_) (Finset.sum_congr rfl fun j _ ↦ ?_)
+  · rw [succAbove_castAdd_comp_frontFace h i, succAbove_castAdd_comp_backFace h i]
+    simp
+  · rw [succAbove_natAdd_comp_frontFace h j, succAbove_natAdd_comp_backFace h j,
+      show ((finCongr (by omega : (p + 1) + (q + 1) = n + 2)
+          (Fin.natAdd (p + 1) j) : Fin (n + 2)) : ℕ) = p + (j.succ : ℕ) by
+        simp; omega]
+
+private lemma map_tupleProj_comp_congr (P : Cᵒᵖ ⥤ ModuleCat.{w} R) {k l m : ℕ}
+    (c : Fin (m + 1) → ι) (g : Fin (l + 1) → Fin (m + 1)) (f : Fin (k + 1) → Fin (l + 1))
+    {h : Fin (k + 1) → Fin (m + 1)} (hfg : g ∘ f = h) (a : ((cechComplexFunctor U).obj P).X k) :
+    P.map (tupleProj U c (g ∘ f)).op (cechComplexπ U P k ((c ∘ g) ∘ f) a) =
+      P.map (tupleProj U c h).op (cechComplexπ U P k (c ∘ h) a) := by
+  subst hfg; rfl
+
+private lemma map_tupleProj_comp3_congr (P : Cᵒᵖ ⥤ ModuleCat.{w} R) {k l m n : ℕ}
+    (c : Fin (n + 1) → ι) (f₁ : Fin (m + 1) → Fin (n + 1)) (f₂ : Fin (l + 1) → Fin (m + 1))
+    (f₃ : Fin (k + 1) → Fin (l + 1)) {h : Fin (k + 1) → Fin (n + 1)}
+    (hcomp : (f₁ ∘ f₂) ∘ f₃ = h) (a : ((cechComplexFunctor U).obj P).X k) :
+    P.map (tupleProj U c (f₁ ∘ f₂) ≫ tupleProj U ((c ∘ f₁) ∘ f₂) f₃).op
+        (cechComplexπ U P k (((c ∘ f₁) ∘ f₂) ∘ f₃) a) =
+      P.map (tupleProj U c h).op (cechComplexπ U P k (c ∘ h) a) := by
+  have ht : tupleProj U c (f₁ ∘ f₂) ≫ tupleProj U ((c ∘ f₁) ∘ f₂) f₃ =
+      tupleProj U c ((f₁ ∘ f₂) ∘ f₃) :=
+    tupleProj_comp_tupleProj U c (f₁ ∘ f₂) f₃
+  rw [ht]
+  subst hcomp; rfl
+
+private lemma map_tupleProj_id (P : Cᵒᵖ ⥤ ModuleCat.{w} R) {m : ℕ} (c : Fin (m + 1) → ι)
+    {f : Fin (m + 1) → Fin (m + 1)} (hf : f = id) (a : ((cechComplexFunctor U).obj P).X m) :
+    P.map (tupleProj U c f).op (cechComplexπ U P m (c ∘ f) a) = cechComplexπ U P m c a := by
+  subst hf
+  simp [tupleProj_id]
+
+/-- **Associativity of the Čech cup product on cochains.** -/
+theorem cechCupCochain_assoc {P₁ P₂ P₃ P₁₂ P₂₃ P₁₂₃ : Cᵒᵖ ⥤ ModuleCat.{w} R}
+    (μ₁₂ : ∀ X, P₁.obj X →ₗ[R] P₂.obj X →ₗ[R] P₁₂.obj X)
+    (μ₁₂₃ : ∀ X, P₁₂.obj X →ₗ[R] P₃.obj X →ₗ[R] P₁₂₃.obj X)
+    (μ₂₃ : ∀ X, P₂.obj X →ₗ[R] P₃.obj X →ₗ[R] P₂₃.obj X)
+    (μ₁₂₃' : ∀ X, P₁.obj X →ₗ[R] P₂₃.obj X →ₗ[R] P₁₂₃.obj X)
+    (hμ₁₂ : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y) x y, μ₁₂ Y (P₁.map f x) (P₂.map f y) = P₁₂.map f (μ₁₂ X x y))
+    (hμ₂₃ : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y) y z, μ₂₃ Y (P₂.map f y) (P₃.map f z) = P₂₃.map f (μ₂₃ X y z))
+    (hassoc : ∀ X x y z, μ₁₂₃ X (μ₁₂ X x y) z = μ₁₂₃' X x (μ₂₃ X y z))
+    (p q r pq qr n : ℕ) (hpq : p + q = pq) (hqr : q + r = qr) (hn : pq + r = n)
+    (a : ((cechComplexFunctor U).obj P₁).X p) (b : ((cechComplexFunctor U).obj P₂).X q)
+    (c : ((cechComplexFunctor U).obj P₃).X r) :
+    cechCupCochain U μ₁₂₃ pq r n hn (cechCupCochain U μ₁₂ p q pq hpq a b) c =
+      cechCupCochain U μ₁₂₃' p qr n (by omega) a (cechCupCochain U μ₂₃ q r qr hqr b c) := by
+  refine cechComplex_ext fun d ↦ ?_
+  rw [cechCupCochain_π_faces, cechCupCochain_π_faces, cechCupCochain_π_faces,
+    cechCupCochain_π_faces, ← hμ₁₂, ← hμ₂₃, presheaf_map_map, presheaf_map_map, presheaf_map_map,
+    presheaf_map_map, ← op_comp, ← op_comp, ← op_comp, ← op_comp, tupleProj_comp_tupleProj,
+    tupleProj_comp_tupleProj, tupleProj_comp_tupleProj, tupleProj_comp_tupleProj, hassoc]
+  have h1 : frontFace pq n (by omega) ∘ frontFace p pq (by omega) =
+      frontFace p n (by omega) := by
+    funext j; ext; rfl
+  have h2 : frontFace pq n (by omega) ∘ backFace p q pq hpq =
+      backFace p qr n (by omega) ∘ frontFace q qr (by omega) := by
+    funext j; ext; simp [frontFace, backFace]
+  have h3 : backFace p qr n (by omega) ∘ backFace q r qr hqr = backFace pq r n hn := by
+    funext j; ext; simp [backFace]; omega
+  rw [map_tupleProj_comp_congr U P₁ d _ _ h1, map_tupleProj_comp_congr U P₂ d _ _ rfl,
+    map_tupleProj_comp_congr U P₂ d _ _ h2.symm, map_tupleProj_comp_congr U P₃ d _ _ h3]
+
+/-- **Reversal identity for the Čech cup product.** Reversing a cup product of reversed cochains
+recovers the cup product in the opposite order with the Koszul sign `(-1) ^ (p * q)`. -/
+theorem cechReverse_cechCupCochain
+    (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] S.obj X)
+    (μ' : ∀ X : Cᵒᵖ, Q.obj X →ₗ[R] P.obj X →ₗ[R] S.obj X)
+    (hμ' : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y) y x, μ' Y (Q.map f y) (P.map f x) = S.map f (μ' X y x))
+    (hcomm : ∀ X x y, μ' X y x = μ X x y)
+    (p q n : ℕ) (h : p + q = n)
+    (a : ((cechComplexFunctor U).obj P).X p) (b : ((cechComplexFunctor U).obj Q).X q) :
+    ((cechReverse U).app S).f n
+        (cechCupCochain U μ' q p n (by omega)
+          (((cechReverse U).app Q).f q b) (((cechReverse U).app P).f p a)) =
+      (-1 : ℤ) ^ (p * q) • cechCupCochain U μ p q n h a b := by
+  refine cechComplex_ext fun c ↦ ?_
+  rw [cechComplexπ_cechReverse, map_zsmul, cechCupCochain_π_faces, cechCupCochain_π_faces, ← hμ',
+    cechComplexπ_cechReverse, cechComplexπ_cechReverse, map_zsmul, map_zsmul, map_zsmul,
+    LinearMap.smul_apply, map_zsmul, map_zsmul, map_zsmul, smul_smul, smul_smul, ← pow_add,
+    ← pow_add, presheaf_map_map, presheaf_map_map, presheaf_map_map, presheaf_map_map, ← op_comp,
+    ← op_comp, ← op_comp, ← op_comp, tupleProj_comp_tupleProj, tupleProj_comp_tupleProj, hcomm]
+  have hsign : (-1 : ℤ) ^ (n * (n + 1) / 2 + q * (q + 1) / 2 + p * (p + 1) / 2) =
+      (-1 : ℤ) ^ (p * q) := by
+    have hsum : n * (n + 1) / 2 = p * (p + 1) / 2 + q * (q + 1) / 2 + p * q := by
+      have hp2 : 2 ∣ p * (p + 1) := Nat.even_mul_succ_self p |>.two_dvd
+      have hq2 : 2 ∣ q * (q + 1) := Nat.even_mul_succ_self q |>.two_dvd
+      have hmul : n * (n + 1) = p * (p + 1) + q * (q + 1) + 2 * (p * q) := by
+        rw [← h]
+        ring
+      omega
+    have hexp : n * (n + 1) / 2 + q * (q + 1) / 2 + p * (p + 1) / 2 =
+        p * q + 2 * (p * (p + 1) / 2 + q * (q + 1) / 2) := by omega
+    rw [hexp, pow_add, pow_mul (-1 : ℤ) 2 _, neg_one_sq, one_pow, mul_one]
+  have hfP : ((Fin.rev : Fin (n + 1) → Fin (n + 1)) ∘ backFace q p n (by omega)) ∘ Fin.rev =
+      frontFace p n (by omega) := by
+    funext i; ext; simp only [Function.comp_apply, Fin.val_rev, backFace, frontFace]; omega
+  have hfQ : ((Fin.rev : Fin (n + 1) → Fin (n + 1)) ∘ frontFace q n (by omega)) ∘ Fin.rev =
+      backFace p q n h := by
+    funext j; ext; simp only [Function.comp_apply, Fin.val_rev, frontFace, backFace]; omega
+  rw [hsign, map_tupleProj_comp3_congr U P c _ _ _ hfP, map_tupleProj_comp3_congr U Q c _ _ _ hfQ]
+
+/-- Compatibility of the Čech cup product on cochains with a morphism of families. -/
+theorem cechComplexMap_cechCupCochain {κ : Type w} {V : κ → C}
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] S.obj X)
+    (hμ : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y) x y, μ Y (P.map f x) (Q.map f y) = S.map f (μ X x y))
+    (p q n : ℕ) (h : p + q = n)
+    (a : ((cechComplexFunctor V).obj P).X p) (b : ((cechComplexFunctor V).obj Q).X q) :
+    (cechComplexMap S φ).f n (cechCupCochain V μ p q n h a b) =
+      cechCupCochain U μ p q n h ((cechComplexMap P φ).f p a) ((cechComplexMap Q φ).f q b) := by
+  refine cechComplex_ext fun c ↦ ?_
+  rw [cechComplexπ_cechComplexMap, cechCupCochain_π_faces, cechCupCochain_π_faces, ← hμ,
+    cechComplexπ_cechComplexMap, cechComplexπ_cechComplexMap, presheaf_map_map, presheaf_map_map,
+    presheaf_map_map, presheaf_map_map, ← op_comp, ← op_comp, ← op_comp, ← op_comp]
+  have hcomm (k : ℕ) (f : Fin (k + 1) → Fin (n + 1)) :
+      tupleProj U c f ≫ (Limits.Pi.map (fun j : Fin (k + 1) ↦ φ.φ ((c ∘ f) j)) :
+          (∏ᶜ fun j ↦ U ((c ∘ f) j)) ⟶ ∏ᶜ fun j ↦ V ((φ.f ∘ c ∘ f) j)) =
+        (Limits.Pi.map (fun i : Fin (n + 1) ↦ φ.φ (c i)) :
+          (∏ᶜ fun i ↦ U (c i)) ⟶ ∏ᶜ fun i ↦ V ((φ.f ∘ c) i)) ≫ tupleProj V (φ.f ∘ c) f := by
+    refine Pi.hom_ext _ _ fun i ↦ ?_
+    exact (Category.assoc _ _ _).trans <|
+      (whisker_eq _ (Pi.map_π (fun j : Fin (k + 1) ↦ φ.φ ((c ∘ f) j)) i)).trans <|
+      (Category.assoc _ _ _).symm.trans <|
+      (Pi.lift_comp_π (fun j : Fin (k + 1) ↦ Pi.π (fun l ↦ U (c l)) (f j)) i =≫ _).trans <|
+      (Pi.map_π (fun j : Fin (n + 1) ↦ φ.φ (c j)) (f i)).symm.trans <|
+      (_ ≫= (Pi.lift_comp_π (fun j : Fin (k + 1) ↦
+        Pi.π (fun l ↦ V ((φ.f ∘ c) l)) (f j)) i).symm).trans (Category.assoc _ _ _).symm
+  rw [hcomm p (frontFace p n (by omega)), hcomm q (backFace p q n h)]
+  rfl
+
+/-- Naturality of the Čech cup product on cochains with respect to morphisms of presheaves. -/
+theorem cechComplexFunctor_map_cechCupCochain {P' Q' S' : Cᵒᵖ ⥤ ModuleCat.{w} R}
+    (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] S.obj X)
+    (μ' : ∀ X : Cᵒᵖ, P'.obj X →ₗ[R] Q'.obj X →ₗ[R] S'.obj X)
+    (α : P ⟶ P') (β : Q ⟶ Q') (γ : S ⟶ S')
+    (hγ : ∀ X x y, γ.app X (μ X x y) = μ' X (α.app X x) (β.app X y))
+    (p q n : ℕ) (h : p + q = n)
+    (a : ((cechComplexFunctor U).obj P).X p) (b : ((cechComplexFunctor U).obj Q).X q) :
+    ((cechComplexFunctor U).map γ).f n (cechCupCochain U μ p q n h a b) =
+      cechCupCochain U μ' p q n h (((cechComplexFunctor U).map α).f p a)
+        (((cechComplexFunctor U).map β).f q b) := by
+  refine cechComplex_ext fun c ↦ ?_
+  rw [cechComplexπ_cechComplexFunctor_map, cechCupCochain_π_faces, cechCupCochain_π_faces, hγ,
+    cechComplexπ_cechComplexFunctor_map, cechComplexπ_cechComplexFunctor_map, natTrans_app_map,
+    natTrans_app_map]
+
+/-! ### Unit cochains and degree-zero augmentation -/
+
+/-- The `0`-cochain determined by a family of sections `e : ∀ X, P.obj X`. -/
+def cechUnitCochain (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (e : ∀ X : Cᵒᵖ, P.obj X) :
+    ((cechComplexFunctor U).obj P).X 0 :=
+  cechCochainMk U P 0 fun a ↦ e (op (∏ᶜ fun j ↦ U (a j)))
+
+/-- The tuple projection of `cechUnitCochain` evaluates `e` on the singleton product. -/
+@[simp]
+theorem cechUnitCochain_π (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (e : ∀ X : Cᵒᵖ, P.obj X) (a : Fin 1 → ι) :
+    cechComplexπ U P 0 a (cechUnitCochain U P e) = e (op (∏ᶜ fun j ↦ U (a j))) :=
+  cechComplexπ_cechCochainMk U P 0 _ a
+
+/-- A compatible family of sections defines a `0`-cocycle in `Č(U, P)`. -/
+theorem d_cechUnitCochain (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (e : ∀ X : Cᵒᵖ, P.obj X)
+    (he : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y), P.map f (e X) = e Y) :
+    ((cechComplexFunctor U).obj P).d 0 1 (cechUnitCochain U P e) = 0 := by
+  refine cechComplex_ext fun k ↦ ?_
+  rw [cechComplexπ_d, map_zero]
+  simp [cechUnitCochain_π, he]
+
+/-- Left unit law for `cechCupCochain`. -/
+theorem cechCupCochain_unit_left (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] Q.obj X)
+    (e : ∀ X : Cᵒᵖ, P.obj X) (he : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y), P.map f (e X) = e Y)
+    (hl : ∀ X y, μ X (e X) y = y) (q : ℕ) (b : ((cechComplexFunctor U).obj Q).X q) :
+    cechCupCochain U μ 0 q q (zero_add q) (cechUnitCochain U P e) b = b := by
+  refine cechComplex_ext fun c ↦ ?_
+  rw [cechCupCochain_π_faces, cechUnitCochain_π, he, hl]
+  exact map_tupleProj_id U Q c (by funext j; ext; simp [backFace]) b
+
+/-- Right unit law for `cechCupCochain`. -/
+theorem cechCupCochain_unit_right (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] P.obj X)
+    (e : ∀ X : Cᵒᵖ, Q.obj X) (he : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y), Q.map f (e X) = e Y)
+    (hr : ∀ X x, μ X x (e X) = x) (p : ℕ) (a : ((cechComplexFunctor U).obj P).X p) :
+    cechCupCochain U μ p 0 p (add_zero p) a (cechUnitCochain U Q e) = a := by
+  refine cechComplex_ext fun c ↦ ?_
+  rw [cechCupCochain_π_faces, cechUnitCochain_π, he, hr]
+  exact map_tupleProj_id U P c (by funext j; ext; simp [frontFace]) a
+
+/-- Morphisms of families send `cechUnitCochain` to `cechUnitCochain`. -/
+theorem cechComplexMap_cechUnitCochain {κ : Type w} {V : κ → C}
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (P : Cᵒᵖ ⥤ ModuleCat.{w} R)
+    (e : ∀ X : Cᵒᵖ, P.obj X) (he : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y), P.map f (e X) = e Y) :
+    (cechComplexMap P φ).f 0 (cechUnitCochain V P e) = cechUnitCochain U P e := by
+  refine cechComplex_ext fun a ↦ ?_
+  rw [cechComplexπ_cechComplexMap, cechUnitCochain_π, cechUnitCochain_π, he]
+
+/-- Morphisms of presheaves preserving compatible sections send `cechUnitCochain` to
+`cechUnitCochain`. -/
+theorem cechComplexFunctor_map_cechUnitCochain (α : P ⟶ Q)
+    (eP : ∀ X : Cᵒᵖ, P.obj X) (eQ : ∀ X : Cᵒᵖ, Q.obj X)
+    (hα : ∀ X, α.app X (eP X) = eQ X) :
+    ((cechComplexFunctor U).map α).f 0 (cechUnitCochain U P eP) = cechUnitCochain U Q eQ := by
+  refine cechComplex_ext fun a ↦ ?_
+  rw [cechComplexπ_cechComplexFunctor_map, cechUnitCochain_π, cechUnitCochain_π, hα]
+
+/-- The degree-`0` augmentation of a global section `e₀ ∈ P(T)` is `cechUnitCochain` for its
+restrictions to all objects. -/
+theorem cechAugmentation_f_zero_eq_cechUnitCochain {T : C} (hT : IsTerminal T)
+    (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (e₀ : P.obj (op T)) :
+    (cechAugmentation U hT P).f 0
+        ((HomologicalComplex.singleObjXSelf (ComplexShape.up ℕ) 0 (P.obj (op T))).inv e₀) =
+      cechUnitCochain U P (fun X ↦ P.map (hT.from X.unop).op e₀) := by
+  refine cechComplex_ext fun a ↦ ?_
+  rw [cechComplexπ_cechAugmentation, cechUnitCochain_π]
+
+end Cochain
+
+end TauCeti.CategoryTheory

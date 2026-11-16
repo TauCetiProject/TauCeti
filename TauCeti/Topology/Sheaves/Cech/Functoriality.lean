@@ -15,7 +15,9 @@ For a continuous map `f : X ⟶ Y` and a presheaf morphism `P ⟶ f_* Q`, the fi
 pullbacks induce a map from the Čech cohomology of `P` on `Y` to that of `Q` on `X`.
 The target uses its own point-neighborhood cover system, not the inverse images of a
 cofinal system on `Y` (which need not be cofinal on `X`). The map is characterized on
-every small open cover and is natural in the coefficient morphism.
+every small open cover, is natural in the coefficient morphism, and is contravariantly
+functorial in continuous maps (`TopCat.Hom.cechCohomologyPullback_id`,
+`TopCat.Hom.cechCohomologyPullback_comp`).
 
 When `f` is inducing and surjective, for instance a homeomorphism, every open cover of `X` is the
 inverse image of an open cover of `Y`. So if moreover the coefficient morphism is an isomorphism,
@@ -132,6 +134,51 @@ theorem cechCohomologyPullback_naturality {P' : Y.Presheaf A} {Q' : X.Presheaf A
   exact (congrArg (HomologicalComplex.homologyMap (cechComplexPullback f U.opens α) n ≫ ·)
     ((TauCeti.Topology.toCechCohomology A n (fun i ↦ (Opens.map f).obj (U.opens i))
       (U.isOpenCover.comap f.hom)).naturality γ)).trans (Category.assoc _ _ _).symm
+
+/-- Pullback on Čech cohomology along `𝟙 X` and `𝟙 P` is the identity. -/
+@[simp]
+theorem cechCohomologyPullback_id (X : TopCat.{u}) [HasColimitsOfShape (PointOpenCover X) A]
+    (n : ℕ) (P : X.Presheaf A) :
+    cechCohomologyPullback (𝟙 X) n (𝟙 P) =
+      𝟙 ((TauCeti.Topology.cechCohomology X A n).obj P) := by
+  apply cechCohomology_obj_hom_ext
+  intro U
+  rw [Category.comp_id, ← TauCeti.Topology.toCechCohomology_opens A n U]
+  have h1 : HomologicalComplex.homologyMap (cechComplexPullback (𝟙 X) U.opens (𝟙 P)) n = 𝟙 _ :=
+    (congrArg (fun φ ↦ HomologicalComplex.homologyMap φ n)
+      (cechComplexPullback_id X U.opens P)).trans (HomologicalComplex.homologyMap_id _ n)
+  exact (toCechCohomology_app_comp_cechCohomologyPullback (𝟙 X) n (𝟙 P) U.opens U.isOpenCover).trans
+    ((h1 =≫ _).trans (Category.id_comp _))
+
+/-- Pullback on Čech cohomology is contravariantly functorial in continuous maps. -/
+theorem cechCohomologyPullback_comp {X Y Z : TopCat.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    [HasColimitsOfShape (PointOpenCover X) A]
+    [HasColimitsOfShape (PointOpenCover Y) A]
+    [HasColimitsOfShape (PointOpenCover Z) A]
+    (n : ℕ) {P : Z.Presheaf A} {Q : Y.Presheaf A} {S : X.Presheaf A}
+    (β : P ⟶ (TopCat.Presheaf.pushforward A g).obj Q)
+    (α : Q ⟶ (TopCat.Presheaf.pushforward A f).obj S)
+    (γ : P ⟶ (TopCat.Presheaf.pushforward A (f ≫ g)).obj S)
+    (hγ : ∀ V, γ.app V = β.app V ≫ α.app (op ((Opens.map g).obj V.unop))) :
+    cechCohomologyPullback (f ≫ g) n γ =
+      cechCohomologyPullback g n β ≫ cechCohomologyPullback f n α := by
+  apply cechCohomology_obj_hom_ext
+  intro U
+  rw [← TauCeti.Topology.toCechCohomology_opens A n U]
+  have hfg := toCechCohomology_app_comp_cechCohomologyPullback (f ≫ g) n γ U.opens U.isOpenCover
+  have hg := toCechCohomology_app_comp_cechCohomologyPullback g n β U.opens U.isOpenCover
+  have hf := toCechCohomology_app_comp_cechCohomologyPullback f n α
+    (fun i ↦ (Opens.map g).obj (U.opens i)) (U.isOpenCover.comap g.hom)
+  have h1 : HomologicalComplex.homologyMap (cechComplexPullback (f ≫ g) U.opens γ) n =
+      HomologicalComplex.homologyMap (cechComplexPullback g U.opens β) n ≫
+        HomologicalComplex.homologyMap
+          (cechComplexPullback f (fun i ↦ (Opens.map g).obj (U.opens i)) α) n :=
+    (congrArg (fun φ ↦ HomologicalComplex.homologyMap φ n)
+      (cechComplexPullback_comp f g U.opens β α γ hγ)).trans
+      (HomologicalComplex.homologyMap_comp _ _ n)
+  exact hfg.trans <| (h1 =≫ _).trans <| (Category.assoc _ _ _).trans <|
+    (_ ≫= hf.symm).trans <| (Category.assoc _ _ _).symm.trans <|
+    (hg.symm =≫ _).trans <| Category.assoc _ _ _
 
 /-- **Pullback along an inducing surjection is onto.** If `f` is inducing and surjective, for
 instance a homeomorphism, and the coefficient morphism `P ⟶ f_* Q` is an isomorphism, then the
