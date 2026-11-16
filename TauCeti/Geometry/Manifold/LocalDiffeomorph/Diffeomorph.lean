@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 
 /-!
 # Composing local diffeomorphisms with diffeomorphisms
@@ -51,16 +52,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
   {n m : ℕ∞ω}
 
-/-- View a `C^n` diffeomorphism as a `C^m` diffeomorphism for `m ≤ n`. -/
-private def ofLe (h : M ≃ₘ^n⟮I, J⟯ N) (hm : m ≤ n) : M ≃ₘ^m⟮I, J⟯ N where
-  toEquiv := h.toEquiv
-  contMDiff_toFun := h.contMDiff.of_le hm
-  contMDiff_invFun := h.symm.contMDiff.of_le hm
-
 /-- A `C^n` diffeomorphism is a `C^m` local diffeomorphism for every `m ≤ n`. -/
 theorem isLocalDiffeomorph_of_le (h : M ≃ₘ^n⟮I, J⟯ N) (hm : m ≤ n) :
     IsLocalDiffeomorph I J m h :=
-  (h.ofLe hm).isLocalDiffeomorph
+  h.isLocalDiffeomorph.of_le hm
 
 /-- Precomposing a map with a `C^n` diffeomorphism `h` is a `C^m` local diffeomorphism at `x`,
 for `m ≤ n`, if and only if the map is a `C^m` local diffeomorphism at `h x`. -/

@@ -16,23 +16,15 @@ This file relates open-embedding gluing (`TauCeti.chartedSpaceOfIsOpenEmbedding`
 `TopCat.GlueData` gluing (`TopCat.GlueData.chartedSpace`) to atlas pullback along homeomorphisms
 (`Homeomorph.pullbackChartedSpace`).
 
-First, any bijection `e : N ≃ M` that intertwines a jointly surjective family `φ j : U j → M` of
-`C^n` local diffeomorphisms with `C^n` local diffeomorphisms `e.symm ∘ φ j : U j → N` upgrades
-computably to a `C^n` diffeomorphism `N ≃ₘ^n⟮I', I⟯ M` whose underlying equivalence is `e`
-(`TauCeti.diffeomorphOfForallIsLocalDiffeomorphEquiv`). Taking `e = Equiv.refl M` gives the
-canonical identity diffeomorphism between any two charted-space structures on the same carrier for
-which every map of a jointly surjective family is a local diffeomorphism
-(`TauCeti.diffeomorphOfForallIsLocalDiffeomorph`,
-`TopCat.GlueData.IsCompatible.chartedSpaceDiffeomorph`).
-
-Second, pulling back the glued atlas along a homeomorphism `e : N ≃ₜ M` onto the glued carrier
+First, pulling back the glued atlas along a homeomorphism `e : N ≃ₜ M` onto the glued carrier
 makes `N` a `C^n` manifold for which the transported inclusions `e.symm ∘ φ j` are `C^n` local
 diffeomorphisms, so the pulled-back glued atlas has the same maximal atlas as gluing the pieces
-directly along `e.symm ∘ φ j`, and any manifold structure on `N` with local-diffeomorphism
-inclusions `e.symm ∘ φ j` is `C^n` diffeomorphic to the glued manifold via `e`
+directly along `e.symm ∘ φ j`. By `TauCeti.diffeomorphOfForallIsLocalDiffeomorphEquiv`, any
+charted-space structure on `N` with local-diffeomorphism inclusions `e.symm ∘ φ j` is `C^n`
+diffeomorphic to the glued manifold via `e`
 (`TopCat.GlueData.IsCompatible.pullbackGluedDiffeomorph`).
 
-Third, transporting charts onto the pieces `D.U i` (and overlaps `D.V ij`) of `D : TopCat.GlueData`
+Second, transporting charts onto the pieces `D.U i` (and overlaps `D.V ij`) of `D : TopCat.GlueData`
 along homeomorphisms `eU i : D.U i ≃ₜ M i` produces a named glued atlas
 `TopCat.GlueData.pullbackPieceChartedSpace` on `D.toGlueData.glued`, without installing competing
 global instances. Overlap compatibility translates to local diffeomorphy of the conjugated overlap
@@ -47,11 +39,6 @@ For `𝕜 = ℂ` all results apply without change to holomorphic gluings and bih
 
 ## Main definitions
 
-* `TauCeti.diffeomorphOfForallIsLocalDiffeomorphEquiv`,
-  `TauCeti.diffeomorphOfForallIsLocalDiffeomorph`: comparison `C^n` diffeomorphisms determined by a
-  jointly surjective family of local diffeomorphisms.
-* `TopCat.GlueData.IsCompatible.chartedSpaceDiffeomorph`: uniqueness of the glued atlas up to the
-  identity `C^n` diffeomorphism.
 * `TopCat.GlueData.IsCompatible.pullbackGluedDiffeomorph`: upgrading `e : M ≃ₜ D.toGlueData.glued`
   to a `C^n` diffeomorphism when every `e.symm ∘ D.toGlueData.ι i` is a local diffeomorphism.
 * `TopCat.GlueData.pullbackPieceChartedSpace`: named atlas on `D.toGlueData.glued` glued from piece
@@ -91,157 +78,6 @@ open Set Filter Topology IsManifold
 open scoped Manifold ContDiff
 
 namespace TauCeti
-
-section Comparison
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E₀ : Type*} [NormedAddCommGroup E₀] [NormedSpace 𝕜 E₀]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-  {H₀ : Type*} [TopologicalSpace H₀]
-  {H : Type*} [TopologicalSpace H] {H' : Type*} [TopologicalSpace H']
-  {I₀ : ModelWithCorners 𝕜 E₀ H₀}
-  {I : ModelWithCorners 𝕜 E H} {I' : ModelWithCorners 𝕜 E' H'} {n : ℕ∞ω}
-  {J : Type*} {U : J → Type*} [∀ j, TopologicalSpace (U j)] [∀ j, ChartedSpace H₀ (U j)]
-
-/-- **Diffeomorphism from a jointly surjective family.** If `φ j : U j → M` is jointly surjective,
-`e : N ≃ M` is a bijection, every `φ j` is a `C^n` local diffeomorphism into `M`, and every
-`e.symm ∘ φ j` is a `C^n` local diffeomorphism into `N`, then `e` is a `C^n` diffeomorphism
-`N ≃ₘ^n⟮I', I⟯ M`. Neither `IsManifold` nor continuity of `e` needs to be assumed separately. -/
-def diffeomorphOfForallIsLocalDiffeomorphEquiv
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-    {φ : ∀ j, U j → M} (hcover : ∀ x, ∃ j y, φ j y = x) (e : N ≃ M)
-    (hφM : ∀ j, IsLocalDiffeomorph I₀ I n (φ j))
-    (hφN : ∀ j, IsLocalDiffeomorph I₀ I' n (e.symm ∘ φ j)) :
-    N ≃ₘ^n⟮I', I⟯ M where
-  toEquiv := e
-  contMDiff_toFun z := by
-    obtain ⟨j, y, hy⟩ := hcover (e z)
-    have hyz : (e.symm ∘ φ j) y = z := by
-      simp only [Function.comp_apply, hy, e.symm_apply_apply]
-    have hcomp : ContMDiffAt I₀ I n (⇑e ∘ (⇑e.symm ∘ φ j)) y := by
-      have heq : ⇑e ∘ (⇑e.symm ∘ φ j) = φ j :=
-        funext fun w ↦ e.apply_symm_apply (φ j w)
-      rw [heq]
-      exact (hφM j y).contMDiffAt
-    rw [← hyz]
-    exact ((hφN j y).contMDiffAt_comp_iff le_rfl).1 hcomp
-  contMDiff_invFun x := by
-    obtain ⟨j, y, rfl⟩ := hcover x
-    exact ((hφM j y).contMDiffAt_comp_iff le_rfl).1 (hφN j y).contMDiffAt
-
-/-- The underlying equivalence of `diffeomorphOfForallIsLocalDiffeomorphEquiv` is `e`. -/
-@[simp]
-theorem diffeomorphOfForallIsLocalDiffeomorphEquiv_toEquiv
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-    {φ : ∀ j, U j → M} (hcover : ∀ x, ∃ j y, φ j y = x) (e : N ≃ M)
-    (hφM : ∀ j, IsLocalDiffeomorph I₀ I n (φ j))
-    (hφN : ∀ j, IsLocalDiffeomorph I₀ I' n (e.symm ∘ φ j)) :
-    (diffeomorphOfForallIsLocalDiffeomorphEquiv hcover e hφM hφN).toEquiv = e :=
-  (rfl)
-
-/-- The forward map of `diffeomorphOfForallIsLocalDiffeomorphEquiv` is `e`. -/
-@[simp]
-theorem coe_diffeomorphOfForallIsLocalDiffeomorphEquiv
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-    {φ : ∀ j, U j → M} (hcover : ∀ x, ∃ j y, φ j y = x) (e : N ≃ M)
-    (hφM : ∀ j, IsLocalDiffeomorph I₀ I n (φ j))
-    (hφN : ∀ j, IsLocalDiffeomorph I₀ I' n (e.symm ∘ φ j)) :
-    ⇑(diffeomorphOfForallIsLocalDiffeomorphEquiv hcover e hφM hφN) = e :=
-  (rfl)
-
-/-- The inverse map of `diffeomorphOfForallIsLocalDiffeomorphEquiv` is `e.symm`. -/
-@[simp]
-theorem coe_diffeomorphOfForallIsLocalDiffeomorphEquiv_symm
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-    {φ : ∀ j, U j → M} (hcover : ∀ x, ∃ j y, φ j y = x) (e : N ≃ M)
-    (hφM : ∀ j, IsLocalDiffeomorph I₀ I n (φ j))
-    (hφN : ∀ j, IsLocalDiffeomorph I₀ I' n (e.symm ∘ φ j)) :
-    ⇑(diffeomorphOfForallIsLocalDiffeomorphEquiv hcover e hφM hφN).symm = e.symm :=
-  (rfl)
-
-/-- Evaluating `diffeomorphOfForallIsLocalDiffeomorphEquiv` at `z` gives `e z`. -/
-@[simp]
-theorem diffeomorphOfForallIsLocalDiffeomorphEquiv_apply
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-    {φ : ∀ j, U j → M} (hcover : ∀ x, ∃ j y, φ j y = x) (e : N ≃ M)
-    (hφM : ∀ j, IsLocalDiffeomorph I₀ I n (φ j))
-    (hφN : ∀ j, IsLocalDiffeomorph I₀ I' n (e.symm ∘ φ j)) (z : N) :
-    diffeomorphOfForallIsLocalDiffeomorphEquiv hcover e hφM hφN z = e z :=
-  (rfl)
-
-/-- Evaluating the inverse of `diffeomorphOfForallIsLocalDiffeomorphEquiv` at `x` gives
-`e.symm x`. -/
-@[simp]
-theorem diffeomorphOfForallIsLocalDiffeomorphEquiv_symm_apply
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-    {φ : ∀ j, U j → M} (hcover : ∀ x, ∃ j y, φ j y = x) (e : N ≃ M)
-    (hφM : ∀ j, IsLocalDiffeomorph I₀ I n (φ j))
-    (hφN : ∀ j, IsLocalDiffeomorph I₀ I' n (e.symm ∘ φ j)) (x : M) :
-    (diffeomorphOfForallIsLocalDiffeomorphEquiv hcover e hφM hφN).symm x = e.symm x :=
-  (rfl)
-
-/-- **Identity diffeomorphism between two atlases on the same carrier.** Two charted-space
-structures `c` and `c'` on `M` for which every map `φ j` of a jointly surjective family is a `C^n`
-local diffeomorphism are `C^n` diffeomorphic via the identity map. -/
-def diffeomorphOfForallIsLocalDiffeomorph
-    {M : Type*} [TopologicalSpace M] (c : ChartedSpace H M) (c' : ChartedSpace H' M)
-    {φ : ∀ j, U j → M} (hcover : ∀ x, ∃ j y, φ j y = x)
-    (hφc : ∀ j, letI := c; IsLocalDiffeomorph I₀ I n (φ j))
-    (hφc' : ∀ j, letI := c'; IsLocalDiffeomorph I₀ I' n (φ j)) :
-    @Diffeomorph 𝕜 _ E _ _ E' _ _ H _ H' _ I I' M _ c M _ c' n :=
-  @diffeomorphOfForallIsLocalDiffeomorphEquiv 𝕜 _ E₀ _ _ E' _ _ E _ _ H₀ _ H' _ H _ I₀ I' I n
-    J U _ _ M _ c' M _ c φ hcover (Equiv.refl M) hφc' hφc
-
-/-- The underlying map of `diffeomorphOfForallIsLocalDiffeomorph` is the identity. -/
-@[simp]
-theorem coe_diffeomorphOfForallIsLocalDiffeomorph
-    {M : Type*} [TopologicalSpace M] (c : ChartedSpace H M) (c' : ChartedSpace H' M)
-    {φ : ∀ j, U j → M} (hcover : ∀ x, ∃ j y, φ j y = x)
-    (hφc : ∀ j, letI := c; IsLocalDiffeomorph I₀ I n (φ j))
-    (hφc' : ∀ j, letI := c'; IsLocalDiffeomorph I₀ I' n (φ j)) :
-    ⇑(diffeomorphOfForallIsLocalDiffeomorph c c' hcover hφc hφc') = id :=
-  (rfl)
-
-/-- `diffeomorphOfForallIsLocalDiffeomorph` fixes every point. -/
-@[simp]
-theorem diffeomorphOfForallIsLocalDiffeomorph_apply
-    {M : Type*} [TopologicalSpace M] (c : ChartedSpace H M) (c' : ChartedSpace H' M)
-    {φ : ∀ j, U j → M} (hcover : ∀ x, ∃ j y, φ j y = x)
-    (hφc : ∀ j, letI := c; IsLocalDiffeomorph I₀ I n (φ j))
-    (hφc' : ∀ j, letI := c'; IsLocalDiffeomorph I₀ I' n (φ j)) (x : M) :
-    diffeomorphOfForallIsLocalDiffeomorph c c' hcover hφc hφc' x = x :=
-  (rfl)
-
-/-- The inverse of `diffeomorphOfForallIsLocalDiffeomorph` fixes every point. -/
-@[simp]
-theorem diffeomorphOfForallIsLocalDiffeomorph_symm_apply
-    {M : Type*} [TopologicalSpace M] (c : ChartedSpace H M) (c' : ChartedSpace H' M)
-    {φ : ∀ j, U j → M} (hcover : ∀ x, ∃ j y, φ j y = x)
-    (hφc : ∀ j, letI := c; IsLocalDiffeomorph I₀ I n (φ j))
-    (hφc' : ∀ j, letI := c'; IsLocalDiffeomorph I₀ I' n (φ j)) (x : M) :
-    @Diffeomorph.symm 𝕜 _ E _ _ E' _ _ H _ H' _ I I' M _ c M _ c' n
-      (diffeomorphOfForallIsLocalDiffeomorph c c' hcover hφc hφc') x = x :=
-  (rfl)
-
-/-- Forgetting smoothness of `diffeomorphOfForallIsLocalDiffeomorph` gives `Equiv.refl M`. -/
-@[simp]
-theorem diffeomorphOfForallIsLocalDiffeomorph_toEquiv
-    {M : Type*} [TopologicalSpace M] (c : ChartedSpace H M) (c' : ChartedSpace H' M)
-    {φ : ∀ j, U j → M} (hcover : ∀ x, ∃ j y, φ j y = x)
-    (hφc : ∀ j, letI := c; IsLocalDiffeomorph I₀ I n (φ j))
-    (hφc' : ∀ j, letI := c'; IsLocalDiffeomorph I₀ I' n (φ j)) :
-    @Diffeomorph.toEquiv 𝕜 _ E _ _ E' _ _ H _ H' _ I I' M _ c M _ c' n
-      (diffeomorphOfForallIsLocalDiffeomorph c c' hcover hφc hφc') = Equiv.refl M :=
-  (rfl)
-
-end Comparison
 
 section OpenEmbeddingPullback
 
@@ -327,7 +163,7 @@ namespace TopCat.GlueData
 
 universe u
 
-section UniquenessAndTargetPullback
+section TargetPullback
 
 variable {D : TopCat.GlueData.{u}} {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -337,57 +173,6 @@ variable {D : TopCat.GlueData.{u}} {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [∀ i, ChartedSpace H (D.U i)] [∀ ij, ChartedSpace H (D.V ij)] [∀ i, IsManifold I n (D.U i)]
 
 namespace IsCompatible
-
-/-- **Uniqueness of the glued manifold structure up to the identity diffeomorphism.** Any
-charted-space structure `c` on `D.toGlueData.glued` for which every canonical map
-`D.toGlueData.ι i` is a `C^n` local diffeomorphism is `C^n` diffeomorphic to `D.chartedSpace H`
-via the identity map. -/
-noncomputable def chartedSpaceDiffeomorph (h : D.IsCompatible I n)
-    (c : ChartedSpace H' D.toGlueData.glued)
-    (hιc : ∀ i, letI := c; IsLocalDiffeomorph I I' n (D.toGlueData.ι i)) :
-    @Diffeomorph 𝕜 _ E' _ _ E _ _ H' _ H _ I' I
-      D.toGlueData.glued _ c D.toGlueData.glued _ (D.chartedSpace H) n :=
-  TauCeti.diffeomorphOfForallIsLocalDiffeomorph (I₀ := I) (I := I') (I' := I)
-    c (D.chartedSpace H) D.ι_jointly_surjective hιc
-    (fun i ↦ by let := D.chartedSpace H; exact h.isLocalDiffeomorph_ι i)
-
-/-- The underlying map of `chartedSpaceDiffeomorph` is the identity. -/
-@[simp]
-theorem coe_chartedSpaceDiffeomorph (h : D.IsCompatible I n)
-    (c : ChartedSpace H' D.toGlueData.glued)
-    (hιc : ∀ i, letI := c; IsLocalDiffeomorph I I' n (D.toGlueData.ι i)) :
-    ⇑(h.chartedSpaceDiffeomorph c hιc) = id :=
-  (rfl)
-
-/-- `chartedSpaceDiffeomorph` fixes every point of `D.toGlueData.glued`. -/
-@[simp]
-theorem chartedSpaceDiffeomorph_apply (h : D.IsCompatible I n)
-    (c : ChartedSpace H' D.toGlueData.glued)
-    (hιc : ∀ i, letI := c; IsLocalDiffeomorph I I' n (D.toGlueData.ι i))
-    (x : D.toGlueData.glued) :
-    h.chartedSpaceDiffeomorph c hιc x = x :=
-  (rfl)
-
-/-- The inverse of `chartedSpaceDiffeomorph` fixes every point of `D.toGlueData.glued`. -/
-@[simp]
-theorem chartedSpaceDiffeomorph_symm_apply (h : D.IsCompatible I n)
-    (c : ChartedSpace H' D.toGlueData.glued)
-    (hιc : ∀ i, letI := c; IsLocalDiffeomorph I I' n (D.toGlueData.ι i))
-    (x : D.toGlueData.glued) :
-    @Diffeomorph.symm 𝕜 _ E' _ _ E _ _ H' _ H _ I' I
-      D.toGlueData.glued _ c D.toGlueData.glued _ (D.chartedSpace H) n
-      (h.chartedSpaceDiffeomorph c hιc) x = x :=
-  (rfl)
-
-/-- Forgetting smoothness of `chartedSpaceDiffeomorph` gives `Equiv.refl _`. -/
-@[simp]
-theorem chartedSpaceDiffeomorph_toEquiv (h : D.IsCompatible I n)
-    (c : ChartedSpace H' D.toGlueData.glued)
-    (hιc : ∀ i, letI := c; IsLocalDiffeomorph I I' n (D.toGlueData.ι i)) :
-    @Diffeomorph.toEquiv 𝕜 _ E' _ _ E _ _ H' _ H _ I' I
-      D.toGlueData.glued _ c D.toGlueData.glued _ (D.chartedSpace H) n
-      (h.chartedSpaceDiffeomorph c hιc) = Equiv.refl D.toGlueData.glued :=
-  (rfl)
 
 /-- Pulling back the glued atlas of a compatible gluing along `e : M ≃ₜ D.toGlueData.glued` makes
 `M` a `C^n` manifold. -/
@@ -475,7 +260,8 @@ theorem coe_pullbackGluedDiffeomorph (h : D.IsCompatible I n) {M : Type*} [Topol
     (hιM : ∀ i, IsLocalDiffeomorph I I' n (e.symm ∘ D.toGlueData.ι i)) :
     letI := D.chartedSpace H
     ⇑(h.pullbackGluedDiffeomorph e hιM) = e :=
-  (rfl)
+  letI := D.chartedSpace H
+  TauCeti.coe_diffeomorphOfForallIsLocalDiffeomorphEquiv ..
 
 /-- The inverse map of `pullbackGluedDiffeomorph` is `e.symm`. -/
 @[simp]
@@ -484,7 +270,8 @@ theorem coe_pullbackGluedDiffeomorph_symm (h : D.IsCompatible I n) {M : Type*} [
     (hιM : ∀ i, IsLocalDiffeomorph I I' n (e.symm ∘ D.toGlueData.ι i)) :
     letI := D.chartedSpace H
     ⇑(h.pullbackGluedDiffeomorph e hιM).symm = e.symm :=
-  (rfl)
+  letI := D.chartedSpace H
+  TauCeti.coe_diffeomorphOfForallIsLocalDiffeomorphEquiv_symm ..
 
 /-- Evaluating `pullbackGluedDiffeomorph` at `z` gives `e z`. -/
 @[simp]
@@ -493,7 +280,8 @@ theorem pullbackGluedDiffeomorph_apply (h : D.IsCompatible I n) {M : Type*} [Top
     (hιM : ∀ i, IsLocalDiffeomorph I I' n (e.symm ∘ D.toGlueData.ι i)) (z : M) :
     letI := D.chartedSpace H
     h.pullbackGluedDiffeomorph e hιM z = e z :=
-  (rfl)
+  letI := D.chartedSpace H
+  TauCeti.diffeomorphOfForallIsLocalDiffeomorphEquiv_apply ..
 
 /-- Evaluating the inverse of `pullbackGluedDiffeomorph` at `x` gives `e.symm x`. -/
 @[simp]
@@ -502,7 +290,8 @@ theorem pullbackGluedDiffeomorph_symm_apply (h : D.IsCompatible I n) {M : Type*}
     (hιM : ∀ i, IsLocalDiffeomorph I I' n (e.symm ∘ D.toGlueData.ι i)) (x : D.toGlueData.glued) :
     letI := D.chartedSpace H
     (h.pullbackGluedDiffeomorph e hιM).symm x = e.symm x :=
-  (rfl)
+  letI := D.chartedSpace H
+  TauCeti.diffeomorphOfForallIsLocalDiffeomorphEquiv_symm_apply ..
 
 /-- The underlying homeomorphism of `pullbackGluedDiffeomorph` is `e`. -/
 @[simp]
@@ -513,11 +302,11 @@ theorem pullbackGluedDiffeomorph_toHomeomorph (h : D.IsCompatible I n) {M : Type
     (h.pullbackGluedDiffeomorph e hιM).toHomeomorph = e := by
   let := D.chartedSpace H
   ext x
-  rfl
+  exact h.pullbackGluedDiffeomorph_apply e hιM x
 
 end IsCompatible
 
-end UniquenessAndTargetPullback
+end TargetPullback
 
 section PiecePullback
 
@@ -723,7 +512,7 @@ theorem coe_pullbackPieceComparisonDiffeomorph
       D.IsCompatible I' n)
     (hchange : ∀ i, IsLocalDiffeomorph I I' n (eU₂ i ∘ (eU₁ i).symm)) :
     ⇑(pullbackPieceComparisonDiffeomorph eU₁ eU₂ h₁ h₂ hchange) = id :=
-  (rfl)
+  TauCeti.coe_diffeomorphOfForallIsLocalDiffeomorph ..
 
 /-- `pullbackPieceComparisonDiffeomorph` fixes every point of `D.toGlueData.glued`. -/
 @[simp]
@@ -743,7 +532,7 @@ theorem pullbackPieceComparisonDiffeomorph_apply
     (hchange : ∀ i, IsLocalDiffeomorph I I' n (eU₂ i ∘ (eU₁ i).symm))
     (x : D.toGlueData.glued) :
     pullbackPieceComparisonDiffeomorph eU₁ eU₂ h₁ h₂ hchange x = x :=
-  (rfl)
+  TauCeti.diffeomorphOfForallIsLocalDiffeomorph_apply ..
 
 /-- The inverse of `pullbackPieceComparisonDiffeomorph` fixes every point of
 `D.toGlueData.glued`. -/
@@ -767,7 +556,7 @@ theorem pullbackPieceComparisonDiffeomorph_symm_apply
       D.toGlueData.glued _ (D.pullbackPieceChartedSpace H eU₁)
       D.toGlueData.glued _ (D.pullbackPieceChartedSpace H' eU₂) n
       (pullbackPieceComparisonDiffeomorph eU₁ eU₂ h₁ h₂ hchange) x = x :=
-  (rfl)
+  TauCeti.diffeomorphOfForallIsLocalDiffeomorph_symm_apply ..
 
 /-- Forgetting smoothness of `pullbackPieceComparisonDiffeomorph` gives `Equiv.refl _`. -/
 @[simp]
@@ -789,7 +578,7 @@ theorem pullbackPieceComparisonDiffeomorph_toEquiv
       D.toGlueData.glued _ (D.pullbackPieceChartedSpace H eU₁)
       D.toGlueData.glued _ (D.pullbackPieceChartedSpace H' eU₂) n
       (pullbackPieceComparisonDiffeomorph eU₁ eU₂ h₁ h₂ hchange) = Equiv.refl D.toGlueData.glued :=
-  (rfl)
+  TauCeti.diffeomorphOfForallIsLocalDiffeomorph_toEquiv ..
 
 /-- Two piece-transported atlases on `D.toGlueData.glued` with the same model `I` and `C^n`
 local-diffeomorphism piecewise coordinate changes have the same maximal `C^n` atlas. -/
@@ -957,7 +746,7 @@ theorem IsCompatible.coe_pullbackPieceDiffeomorph
     [∀ i, IsManifold I' n (M i)]
     (h : D.IsCompatible I n) (dU : ∀ i, D.U i ≃ₘ^n⟮I, I'⟯ M i) :
     ⇑(h.pullbackPieceDiffeomorph dU) = id :=
-  (rfl)
+  TauCeti.coe_diffeomorphOfForallIsLocalDiffeomorph ..
 
 /-- `IsCompatible.pullbackPieceDiffeomorph` fixes every point of `D.toGlueData.glued`. -/
 @[simp]
@@ -967,7 +756,7 @@ theorem IsCompatible.pullbackPieceDiffeomorph_apply
     [∀ i, IsManifold I' n (M i)]
     (h : D.IsCompatible I n) (dU : ∀ i, D.U i ≃ₘ^n⟮I, I'⟯ M i) (x : D.toGlueData.glued) :
     h.pullbackPieceDiffeomorph dU x = x :=
-  (rfl)
+  TauCeti.diffeomorphOfForallIsLocalDiffeomorph_apply ..
 
 /-- The inverse of `IsCompatible.pullbackPieceDiffeomorph` fixes every point of
 `D.toGlueData.glued`. -/
@@ -981,7 +770,7 @@ theorem IsCompatible.pullbackPieceDiffeomorph_symm_apply
       D.toGlueData.glued _ (D.pullbackPieceChartedSpace H' (fun i ↦ (dU i).toHomeomorph))
       D.toGlueData.glued _ (D.chartedSpace H) n
       (h.pullbackPieceDiffeomorph dU) x = x :=
-  (rfl)
+  TauCeti.diffeomorphOfForallIsLocalDiffeomorph_symm_apply ..
 
 /-- Forgetting smoothness of `IsCompatible.pullbackPieceDiffeomorph` gives `Equiv.refl _`. -/
 @[simp]
@@ -994,7 +783,7 @@ theorem IsCompatible.pullbackPieceDiffeomorph_toEquiv
       D.toGlueData.glued _ (D.pullbackPieceChartedSpace H' (fun i ↦ (dU i).toHomeomorph))
       D.toGlueData.glued _ (D.chartedSpace H) n
       (h.pullbackPieceDiffeomorph dU) = Equiv.refl D.toGlueData.glued :=
-  (rfl)
+  TauCeti.diffeomorphOfForallIsLocalDiffeomorph_toEquiv ..
 
 end DiffeomorphRecharting
 
