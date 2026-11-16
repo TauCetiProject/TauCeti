@@ -119,10 +119,9 @@ theorem isElliptic_ofDifferentialSymbol_smul_id_iff {d : ι → CoordinateSpace 
     simpa using ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℂ ℂ)
   rw [hsym]
   refine ⟨fun h h0 ↦ ?_, fun h ↦ ?_⟩
-  · simp only [h0, mul_zero] at h
-    obtain ⟨e, he⟩ := h
-    have h1 : e 1 = 0 := by simpa using congrArg (fun f : ℂ →L[ℂ] ℂ ↦ f 1) he
-    exact one_ne_zero (e.injective (h1.trans e.map_zero.symm))
+  · -- With `σ_N(x, ξ) = 0` the symbol is the zero map, which is not invertible on `ℂ`.
+    rw [h0, mul_zero, zero_smul ℂ (ContinuousLinearMap.id ℂ ℂ)] at h
+    exact not_subsingleton ℂ (ContinuousLinearMap.isInvertible_zero_iff.1 h).1
   · rw [ContinuousLinearMap.isInvertible_smul_iff
       (mul_ne_zero (pow_ne_zero _ Complex.I_ne_zero) h)]
     exact hid
