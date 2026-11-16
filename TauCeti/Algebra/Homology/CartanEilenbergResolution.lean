@@ -92,7 +92,7 @@ def diskBaseHomotopy : Homotopy (𝟙 _ ≫ diskBaseHom M) 0 where
   hom i j := if h : i + 1 = j then Projective.π _ ≫ eqToHom (congrArg M.X h) else 0
   zero _ _ hij := dite_eq_right hij
   comm j := by
-    rw [prevD_eq _ (show (ComplexShape.down ℕ).Rel (j + 1) j from rfl)]
+    rw [prevD_eq _ (ComplexShape.down_mk (j + 1) j rfl)]
     simp [dNext, diskBaseHom]
 
 /-- The disk part of the cover of `M`: the mapping cone of the identity of `diskBase M`. -/
@@ -253,8 +253,6 @@ lemma d_succ (p : ℕ) : (cartanEilenbergResolution K).d (p + 1) p = rowπ K (p 
 end cartanEilenbergResolution
 
 /-- The augmentation of the Cartan–Eilenberg resolution. -/
--- The body is exposed so that `cartanEilenbergResolutionπ_eq` holds outside this file.
-@[expose]
 def cartanEilenbergResolutionπ : (cartanEilenbergResolution K).X 0 ⟶ K := rowπ K 0
 
 namespace cartanEilenbergResolution
