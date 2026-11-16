@@ -56,9 +56,7 @@ left-regular element commutes with `finsum` even when the support is infinite.
   `∏ᶠ j, f j ^ (-1) ^ j` by `δ (j + 1) * δ j`, for a finitely supported family `δ` of nonzero
   elements, does not change the product.
 * `TauCeti.finprod_mulIndicator_of_mem` and `TauCeti.finsum_indicator_of_mem`: for pairwise
-  disjoint sets `s k`, the product of the indicators of `f k` on `s k` glues the functions `f k`;
-  `TauCeti.finprod_mulIndicator_of_notMem` and `TauCeti.finsum_indicator_of_notMem` give its value
-  off the union.
+  disjoint sets `s k`, the product of the indicators of `f k` on `s k` glues the functions `f k`.
 * `TauCeti.finsum_smul_eq_sum`: a sum weighted by a finitely supported family of scalars is a
   finite sum over the support of the weights.
 * `TauCeti.finsum_smul_inv_smul`: translating the point of a sum weighted by the translates of a
@@ -277,15 +275,6 @@ theorem finprod_mulIndicator_of_mem {ι : Type*} {s : ι → Set α} (hs : Pairw
     ∏ᶠ k, (s k).mulIndicator (f k) x = f j x := by
   rw [finprod_eq_single _ j fun k hk ↦
     mulIndicator_of_notMem (fun hxk ↦ (hs hk).ne_of_mem hxk hx rfl) _, mulIndicator_of_mem hx]
-
-/-- Off the union of the sets `s k`, the product of the multiplicative indicators of `f k` on
-`s k` is `1`. -/
-@[to_additive /-- Off the union of the sets `s k`, the sum of the indicators of `f k` on `s k` is
-`0`. -/]
-theorem finprod_mulIndicator_of_notMem {ι : Type*} {s : ι → Set α} (f : ι → α → M) {x : α}
-    (hx : x ∉ ⋃ k, s k) : ∏ᶠ k, (s k).mulIndicator (f k) x = 1 :=
-  finprod_eq_one_of_forall_eq_one fun k ↦
-    mulIndicator_of_notMem (fun hxk ↦ hx (mem_iUnion_of_mem k hxk)) _
 
 end Indicator
 
