@@ -13,7 +13,7 @@ import TauCeti.Analysis.Complex.GrowthOrder.Zero.Summability
 
 For a general entire function `f` of order at most one with `f 0 ≠ 0`, the partial-fraction
 expansion `logDeriv f z = logDeriv f 0 + ∑' ρ, m_ρ (1 / (z - ρ) + 1 / ρ)` requires pairing
-`1 / (z - ρ)` with `1 / ρ`: when the zeros grow along the real axis, as for `sin (π z)`, neither
+`1 / (z - ρ)` with `1 / ρ`: when the zeros grow along the real axis, as for `cos (π z)`, neither
 `∑ m_ρ (1 / ρ)` nor its real part converges absolutely.
 
 When the zeros of `f` have bounded real parts — that is, lie in a vertical strip — each real part
@@ -23,13 +23,13 @@ below two, inverse-square summability of the zeros therefore makes the real-part
 at most one the paired real-part expansion splits into two separate sums.
 
 If in addition the analytic zero multiplicities are invariant under reflection `s ↦ a - conj s`
-across a vertical line `Re s = a / 2` (`a : ℝ`), with `f a ≠ 0` and
-`(logDeriv f a).re = -(logDeriv f 0).re`, reindexing at `z = a` equates the two zero sums and gives
+across a vertical line `Re s = a / 2` (`a : ℝ`) and `(logDeriv f a).re = -(logDeriv f 0).re`,
+nonvanishing at `0` transfers to `a`, reindexing at `z = a` equates the two zero sums, and
 `(logDeriv f 0).re = -∑' ρ, m_ρ (1 / ρ).re`. Cancelling the constant term yields the unpaired
 identity `(logDeriv f z).re = ∑' ρ, m_ρ (1 / (z - ρ)).re` at every point `z` where `f z ≠ 0`,
-together with positivity and finite-subset lower bounds to the right of all zeros. Multiply `f` by
-`exp (c z)` for real `c ≠ 0` to see that the antisymmetry hypothesis on `logDeriv f` cannot be
-dropped: the zeros are unchanged while `(logDeriv · 0).re` shifts by `c`.
+together with positivity, finite-subset lower bounds, and single-zero lower bounds to the right of
+all zeros. Multiply `f` by `exp (c z)` for real `c ≠ 0` to see that the antisymmetry hypothesis on
+`logDeriv f` cannot be dropped: the zeros are unchanged while `(logDeriv · 0).re` shifts by `c`.
 
 ## Main results
 
@@ -40,9 +40,13 @@ dropped: the zeros are unchanged while `(logDeriv · 0).re` shifts by `c`.
   order at most one.
 * `TauCeti.OrderLE.re_logDeriv_zero_eq_neg_tsum` and `TauCeti.OrderLE.re_logDeriv_eq_tsum`:
   cancellation of `(logDeriv f 0).re` under reflection symmetry across `Re s = a / 2`.
-* `TauCeti.isBounded_re_divisor_support_of_le`, `TauCeti.OrderLE.re_logDeriv_nonneg`, and
-  `TauCeti.OrderLE.sum_analyticOrderNatAt_mul_re_one_div_sub_le`: strip boundedness from a one-sided
-  zero bound, nonnegativity, and finite-sum retention to the right of the zeros.
+* `Differentiable.isBounded_re_divisor_support_of_le`,
+  `Differentiable.analyticOrderNatAt_mul_re_one_div_sub_nonneg`,
+  `TauCeti.OrderLE.re_logDeriv_nonneg`,
+  `TauCeti.OrderLE.sum_analyticOrderNatAt_mul_re_one_div_sub_le`, and
+  `TauCeti.OrderLE.re_one_div_sub_le_re_logDeriv`: strip boundedness from a one-sided zero bound,
+  summand nonnegativity, log-derivative nonnegativity, finite-sum retention, and single-zero
+  retention to the right of the zeros.
 
 ## References
 
@@ -59,20 +63,6 @@ open scoped BigOperators
 namespace TauCeti
 
 variable {f : ℂ → ℂ}
-
-/-- For an entire function, any sequence weighted by `analyticOrderNatAt f` is supported inside the
-whole-plane divisor support of `f`. -/
-private theorem support_analyticOrderNatAt_mul_subset {M : Type*} [MulZeroClass M]
-    (hf : Differentiable ℂ f) (c : ℕ → M) (hc : c 0 = 0) (g : ℂ → M) :
-    Function.support (fun ρ : ℂ ↦ c (analyticOrderNatAt f ρ) * g ρ) ⊆
-      (MeromorphicOn.divisor f Set.univ).support := by
-  have ha : AnalyticOnNhd ℂ f Set.univ := fun w _ ↦ hf.analyticAt w
-  intro ρ hρ
-  by_contra hns
-  rw [Function.notMem_support,
-    ha.meromorphicOn.divisor_eq_analyticOrderNatAt (ha ρ (Set.mem_univ ρ)) (Set.mem_univ ρ),
-    Int.natCast_eq_zero] at hns
-  exact hρ (by simp [hns, hc])
 
 /-! ### Absolute summability of real parts in a vertical strip -/
 
@@ -110,11 +100,10 @@ theorem OrderLE.summable_norm_analyticOrderNatAt_mul_re_one_div_sub {A : ℝ} (h
     have hord : (d ρ).toNat = analyticOrderNatAt f ρ := by
       rw [ha.meromorphicOn.divisor_eq_analyticOrderNatAt (ha ρ (Set.mem_univ ρ)) (Set.mem_univ ρ),
         Int.toNat_natCast]
-    rw [Real.norm_eq_abs, abs_norm, norm_mul, RCLike.norm_natCast, Real.norm_eq_abs, one_div,
-      Complex.inv_re, Complex.normSq_eq_norm_sq, abs_div,
-      abs_of_nonneg (sq_nonneg ‖z - (ρ : ℂ)‖), ← hord]
-    calc ((d ρ).toNat : ℝ) * (|(z - (ρ : ℂ)).re| / ‖z - (ρ : ℂ)‖ ^ 2)
-        ≤ ((d ρ).toNat : ℝ) * (K / (‖(ρ : ℂ)‖ / 2) ^ 2) := by
+    calc ‖‖(analyticOrderNatAt f (ρ : ℂ) : ℝ) * (1 / (z - (ρ : ℂ))).re‖‖
+        = ((d ρ).toNat : ℝ) * (|(z - (ρ : ℂ)).re| / ‖z - (ρ : ℂ)‖ ^ 2) := by
+          simp [← hord, Complex.normSq_eq_norm_sq]
+      _ ≤ ((d ρ).toNat : ℝ) * (K / (‖(ρ : ℂ)‖ / 2) ^ 2) := by
           gcongr
       _ = 4 * K * (((d ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2) := by
           rw [norm_inv]
@@ -122,9 +111,9 @@ theorem OrderLE.summable_norm_analyticOrderNatAt_mul_re_one_div_sub {A : ℝ} (h
           ring
   have hsupp : Function.support
       (fun ρ : ℂ ↦ ‖(analyticOrderNatAt f ρ : ℝ) * (1 / (z - ρ)).re‖) ⊆ d.support := by
-    simpa only [norm_mul, RCLike.norm_natCast] using
-      support_analyticOrderNatAt_mul_subset hf Nat.cast Nat.cast_zero
-        (fun ρ ↦ ‖(1 / (z - ρ)).re‖)
+    simpa only [norm_mul, RCLike.norm_natCast, d, ha.support_divisor_univ_eq] using
+      (Function.support_mul_subset_left (fun ρ ↦ (analyticOrderNatAt f ρ : ℝ))
+        (fun ρ ↦ ‖(1 / (z - ρ)).re‖)).trans (Function.support_comp_subset Nat.cast_zero _)
   exact ((hasSum_subtype_iff_of_support_subset hsupp).mp hsub.hasSum).summable
 
 /-- Summability of the signed real-part partial-fraction series `(analyticOrderNatAt f ρ) *
@@ -183,27 +172,38 @@ theorem OrderLE.re_logDeriv_eq_add_tsum (h : OrderLE f 1) (hf : Differentiable �
       rw [ha.meromorphicOn.divisor_eq_analyticOrderNatAt (ha ρ (Set.mem_univ ρ)) (Set.mem_univ ρ),
         Int.toNat_natCast]
     rw [hord, ← Complex.ofReal_natCast, Complex.re_ofReal_mul, add_re, mul_add]
+  have hsupp (g : ℂ → ℝ) :
+      Function.support (fun ρ : ℂ ↦ (analyticOrderNatAt f ρ : ℝ) * g ρ) ⊆ d.support :=
+    (Function.support_mul_subset_left _ g).trans
+      (ha.support_divisor_univ_eq ▸ Function.support_comp_subset Nat.cast_zero _)
   rw [h.logDeriv_eq_add_tsum hf hf0 hz, add_re, Complex.re_tsum hpair,
     tsum_congr hterm, hs₁.tsum_add hs₂,
     tsum_subtype_eq_of_support_subset
-      (f := fun ρ : ℂ ↦ (analyticOrderNatAt f ρ : ℝ) * (1 / (z - ρ)).re)
-      (support_analyticOrderNatAt_mul_subset hf Nat.cast Nat.cast_zero _),
+      (f := fun ρ : ℂ ↦ (analyticOrderNatAt f ρ : ℝ) * (1 / (z - ρ)).re) (hsupp _),
     tsum_subtype_eq_of_support_subset
-      (f := fun ρ : ℂ ↦ (analyticOrderNatAt f ρ : ℝ) * (1 / ρ).re)
-      (support_analyticOrderNatAt_mul_subset hf Nat.cast Nat.cast_zero _),
+      (f := fun ρ : ℂ ↦ (analyticOrderNatAt f ρ : ℝ) * (1 / ρ).re) (hsupp _),
     add_assoc]
 
 /-- **Real-part cancellation of the Hadamard constant.** If an entire function `f` of order at most
 one has zeros of bounded real part whose multiplicities are invariant under reflection
-`s ↦ a - conj s` across the vertical line `Re s = a / 2` (`a : ℝ`), with `f 0 ≠ 0`, `f a ≠ 0`, and
+`s ↦ a - conj s` across the vertical line `Re s = a / 2` (`a : ℝ`), with `f 0 ≠ 0` and
 `(logDeriv f a).re = -(logDeriv f 0).re`, then
 `(logDeriv f 0).re = -∑' ρ, (analyticOrderNatAt f ρ : ℝ) * (1 / ρ).re`. -/
 theorem OrderLE.re_logDeriv_zero_eq_neg_tsum (h : OrderLE f 1) (hf : Differentiable ℂ f)
     (hf0 : f 0 ≠ 0) (hre : IsBounded (Complex.re '' (MeromorphicOn.divisor f Set.univ).support))
-    {a : ℝ} (hfa : f a ≠ 0)
-    (hord : ∀ s : ℂ, analyticOrderNatAt f (a - conj s) = analyticOrderNatAt f s)
+    {a : ℝ} (hord : ∀ s : ℂ, analyticOrderNatAt f (a - conj s) = analyticOrderNatAt f s)
     (hlog : (logDeriv f a).re = -(logDeriv f 0).re) :
     (logDeriv f 0).re = -∑' ρ : ℂ, (analyticOrderNatAt f ρ : ℝ) * (1 / ρ).re := by
+  have hfa : f a ≠ 0 := by
+    intro hfa0
+    have ha : AnalyticOnNhd ℂ f Set.univ := fun w _ ↦ hf.analyticAt w
+    have htop : analyticOrderAt f a ≠ ⊤ :=
+      ha.analyticOrderAt_ne_top_of_isPreconnected isPreconnected_univ (x := 0) trivial trivial
+        (by simp [(hf.analyticAt 0).analyticOrderAt_eq_zero.mpr hf0])
+    have h0 : analyticOrderNatAt f a = 0 := by
+      simpa [analyticOrderNatAt, (hf.analyticAt 0).analyticOrderAt_eq_zero.mpr hf0] using hord 0
+    exact ((hf.analyticAt a).analyticOrderAt_ne_zero.mpr hfa0)
+      (by rw [← Nat.cast_analyticOrderNatAt htop, h0, Nat.cast_zero])
   have hat := h.re_logDeriv_eq_add_tsum hf hf0 hre hfa
   let φ : ℂ ≃ ℂ :=
     ⟨fun ρ ↦ (a : ℂ) - conj ρ, fun ρ ↦ (a : ℂ) - conj ρ, fun ρ ↦ by simp, fun ρ ↦ by simp⟩
@@ -219,46 +219,36 @@ theorem OrderLE.re_logDeriv_zero_eq_neg_tsum (h : OrderLE f 1) (hf : Differentia
 `(logDeriv f z).re = ∑' ρ, (analyticOrderNatAt f ρ : ℝ) * (1 / (z - ρ)).re`. -/
 theorem OrderLE.re_logDeriv_eq_tsum (h : OrderLE f 1) (hf : Differentiable ℂ f)
     (hf0 : f 0 ≠ 0) (hre : IsBounded (Complex.re '' (MeromorphicOn.divisor f Set.univ).support))
-    {a : ℝ} (hfa : f a ≠ 0)
-    (hord : ∀ s : ℂ, analyticOrderNatAt f (a - conj s) = analyticOrderNatAt f s)
+    {a : ℝ} (hord : ∀ s : ℂ, analyticOrderNatAt f (a - conj s) = analyticOrderNatAt f s)
     (hlog : (logDeriv f a).re = -(logDeriv f 0).re) {z : ℂ} (hz : f z ≠ 0) :
     (logDeriv f z).re = ∑' ρ : ℂ, (analyticOrderNatAt f ρ : ℝ) * (1 / (z - ρ)).re := by
   rw [h.re_logDeriv_eq_add_tsum hf hf0 hre hz,
-    h.re_logDeriv_zero_eq_neg_tsum hf hf0 hre hfa hord hlog]
+    h.re_logDeriv_zero_eq_neg_tsum hf hf0 hre hord hlog]
   ring
 
-/-! ### Positivity and finite-subset bounds to the right of all zeros -/
+/-! ### Positivity, finite-subset bounds, and single-zero bounds to the right of all zeros -/
 
-/-- If an entire function `f` with `f 0 ≠ 0` has zero multiplicities symmetric under
-`s ↦ a - conj s` and all its zeros satisfy `ρ.re ≤ B`, then all its zeros lie in `[a - B, B]`, so
-the real parts of its divisor support are bounded. -/
-theorem isBounded_re_divisor_support_of_le (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) {a B : ℝ}
-    (hord : ∀ s : ℂ, analyticOrderNatAt f (a - conj s) = analyticOrderNatAt f s)
+/-- If an entire function `f` has zero multiplicities symmetric under `s ↦ a - conj s` and all its
+zeros satisfy `ρ.re ≤ B`, then the real parts of all its zeros lie in `[a - B, B]`, so the real
+parts of its divisor support are bounded. -/
+theorem _root_.Differentiable.isBounded_re_divisor_support_of_le (hf : Differentiable ℂ f)
+    {a B : ℝ} (hord : ∀ s : ℂ, analyticOrderNatAt f (a - conj s) = analyticOrderNatAt f s)
     (hle : ∀ ρ, f ρ = 0 → ρ.re ≤ B) :
     IsBounded (Complex.re '' (MeromorphicOn.divisor f Set.univ).support) := by
   have ha : AnalyticOnNhd ℂ f Set.univ := fun w _ ↦ hf.analyticAt w
   refine (Metric.isBounded_Icc (a - B) B).subset ?_
   rintro _ ⟨ρ, hρ, rfl⟩
-  have hfz : f ρ = 0 := by
-    by_contra hne
-    exact (hf.analyticAt ρ).notMem_divisor_support_of_ne_zero (U := Set.univ) hne hρ
-  have htop : analyticOrderAt f ρ ≠ ⊤ := by
-    refine ha.analyticOrderAt_ne_top_of_isPreconnected isPreconnected_univ
-      (x := 0) trivial trivial ?_
-    rw [(hf.analyticAt 0).analyticOrderAt_eq_zero.mpr hf0]
-    simp
-  have hne : analyticOrderNatAt f ρ ≠ 0 := by
-    rw [← Nat.cast_ne_zero (R := ℕ∞), Nat.cast_analyticOrderNatAt htop]
-    exact (hf.analyticAt ρ).analyticOrderAt_ne_zero.mpr hfz
-  have hsymm : f (a - conj ρ) = 0 := apply_eq_zero_of_analyticOrderNatAt_ne_zero (hord ρ ▸ hne)
-  have hsymm_le := hle (a - conj ρ) hsymm
+  rw [Function.mem_support,
+    ha.meromorphicOn.divisor_eq_analyticOrderNatAt (ha ρ (Set.mem_univ ρ)) (Set.mem_univ ρ),
+    Int.natCast_ne_zero] at hρ
+  have hsymm_le := hle (a - conj ρ) (apply_eq_zero_of_analyticOrderNatAt_ne_zero (hord ρ ▸ hρ))
   simp only [sub_re, ofReal_re, conj_re] at hsymm_le
-  exact ⟨by linarith, hle ρ hfz⟩
+  exact ⟨by linarith, hle ρ (apply_eq_zero_of_analyticOrderNatAt_ne_zero hρ)⟩
 
-/-- At a point `z` whose real part is at least the real part of every zero of `f`, every summand
-`(analyticOrderNatAt f ρ : ℝ) * (1 / (z - ρ)).re` is nonnegative. -/
-private theorem analyticOrderNatAt_mul_re_one_div_sub_nonneg (hf : Differentiable ℂ f) {z : ℂ}
-    (hle : ∀ ρ, f ρ = 0 → ρ.re ≤ z.re) (ρ : ℂ) :
+/-- For an entire function `f`, at a point `z` whose real part is at least the real part of every
+zero of `f`, every summand `(analyticOrderNatAt f ρ : ℝ) * (1 / (z - ρ)).re` is nonnegative. -/
+theorem _root_.Differentiable.analyticOrderNatAt_mul_re_one_div_sub_nonneg
+    (hf : Differentiable ℂ f) {z : ℂ} (hle : ∀ ρ, f ρ = 0 → ρ.re ≤ z.re) (ρ : ℂ) :
     0 ≤ (analyticOrderNatAt f ρ : ℝ) * (1 / (z - ρ)).re := by
   by_cases hρ : f ρ = 0
   · have hsub : 0 ≤ (z - ρ).re := by
@@ -269,31 +259,59 @@ private theorem analyticOrderNatAt_mul_re_one_div_sub_nonneg (hf : Differentiabl
   · rw [analyticOrderNatAt, (hf.analyticAt ρ).analyticOrderAt_eq_zero.mpr hρ, ENat.toNat_zero,
       Nat.cast_zero, zero_mul]
 
-/-- Under reflection symmetry across `Re s = a / 2`, `(logDeriv f z).re` is nonnegative at every
-nonzero value `f z ≠ 0` lying to the right of all zeros of `f`. -/
+/-- For an entire function `f` of order at most one with `f 0 ≠ 0`, zero multiplicities symmetric
+under `s ↦ a - conj s`, and `(logDeriv f a).re = -(logDeriv f 0).re`, `(logDeriv f z).re` is
+nonnegative at every `z` with `f z ≠ 0` lying to the right of all zeros of `f`. -/
 theorem OrderLE.re_logDeriv_nonneg (h : OrderLE f 1) (hf : Differentiable ℂ f)
-    (hf0 : f 0 ≠ 0) {a : ℝ} (hfa : f a ≠ 0)
+    (hf0 : f 0 ≠ 0) {a : ℝ}
     (hord : ∀ s : ℂ, analyticOrderNatAt f (a - conj s) = analyticOrderNatAt f s)
     (hlog : (logDeriv f a).re = -(logDeriv f 0).re) {z : ℂ} (hz : f z ≠ 0)
     (hle : ∀ ρ, f ρ = 0 → ρ.re ≤ z.re) :
     0 ≤ (logDeriv f z).re := by
-  have hre := isBounded_re_divisor_support_of_le hf hf0 hord hle
-  rw [h.re_logDeriv_eq_tsum hf hf0 hre hfa hord hlog hz]
-  exact tsum_nonneg (analyticOrderNatAt_mul_re_one_div_sub_nonneg hf hle)
+  have hre := hf.isBounded_re_divisor_support_of_le hord hle
+  rw [h.re_logDeriv_eq_tsum hf hf0 hre hord hlog hz]
+  exact tsum_nonneg (hf.analyticOrderNatAt_mul_re_one_div_sub_nonneg hle)
 
-/-- **Finite-subset retention.** Under reflection symmetry across `Re s = a / 2`, at any point `z`
-with `f z ≠ 0` lying to the right of all zeros of `f`, any finite sum of zero terms is bounded by
-`(logDeriv f z).re`. -/
+/-- **Finite-subset retention.** For an entire function `f` of order at most one with `f 0 ≠ 0`,
+zero multiplicities symmetric under `s ↦ a - conj s`, and `(logDeriv f a).re = -(logDeriv f 0).re`,
+at any point `z` with `f z ≠ 0` lying to the right of all zeros of `f`, any finite sum of zero
+terms is bounded by `(logDeriv f z).re`. -/
 theorem OrderLE.sum_analyticOrderNatAt_mul_re_one_div_sub_le (h : OrderLE f 1)
-    (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) {a : ℝ} (hfa : f a ≠ 0)
+    (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) {a : ℝ}
     (hord : ∀ s : ℂ, analyticOrderNatAt f (a - conj s) = analyticOrderNatAt f s)
     (hlog : (logDeriv f a).re = -(logDeriv f 0).re) {z : ℂ} (hz : f z ≠ 0)
     (hle : ∀ ρ, f ρ = 0 → ρ.re ≤ z.re) (S : Finset ℂ) :
     (∑ ρ ∈ S, (analyticOrderNatAt f ρ : ℝ) * (1 / (z - ρ)).re) ≤ (logDeriv f z).re := by
-  have hre := isBounded_re_divisor_support_of_le hf hf0 hord hle
-  rw [h.re_logDeriv_eq_tsum hf hf0 hre hfa hord hlog hz]
-  exact Summable.sum_le_tsum S (fun ρ _ ↦ analyticOrderNatAt_mul_re_one_div_sub_nonneg hf hle ρ)
+  have hre := hf.isBounded_re_divisor_support_of_le hord hle
+  rw [h.re_logDeriv_eq_tsum hf hf0 hre hord hlog hz]
+  exact Summable.sum_le_tsum S (fun ρ _ ↦ hf.analyticOrderNatAt_mul_re_one_div_sub_nonneg hle ρ)
     (h.summable_analyticOrderNatAt_mul_re_one_div_sub hf (by norm_num) hre z)
+
+/-- **Single-zero retention.** For an entire function `f` of order at most one with `f 0 ≠ 0`, zero
+multiplicities symmetric under `s ↦ a - conj s`, and `(logDeriv f a).re = -(logDeriv f 0).re`, at
+any point `z` with `f z ≠ 0` lying to the right of all zeros of `f`, every zero `ρ` of `f`
+satisfies `(1 / (z - ρ)).re ≤ (logDeriv f z).re`. -/
+theorem OrderLE.re_one_div_sub_le_re_logDeriv (h : OrderLE f 1) (hf : Differentiable ℂ f)
+    (hf0 : f 0 ≠ 0) {a : ℝ}
+    (hord : ∀ s : ℂ, analyticOrderNatAt f (a - conj s) = analyticOrderNatAt f s)
+    (hlog : (logDeriv f a).re = -(logDeriv f 0).re) {z : ℂ} (hz : f z ≠ 0)
+    (hle : ∀ ρ, f ρ = 0 → ρ.re ≤ z.re) {ρ : ℂ} (hρ : f ρ = 0) :
+    (1 / (z - ρ)).re ≤ (logDeriv f z).re := by
+  have hsum := h.sum_analyticOrderNatAt_mul_re_one_div_sub_le hf hf0 hord hlog hz hle {ρ}
+  rw [Finset.sum_singleton] at hsum
+  have ha : AnalyticOnNhd ℂ f Set.univ := fun w _ ↦ hf.analyticAt w
+  have htop : analyticOrderAt f ρ ≠ ⊤ :=
+    ha.analyticOrderAt_ne_top_of_isPreconnected isPreconnected_univ (x := 0) trivial trivial
+      (by simp [(hf.analyticAt 0).analyticOrderAt_eq_zero.mpr hf0])
+  have hne0 : analyticOrderNatAt f ρ ≠ 0 := by
+    rw [← Nat.cast_ne_zero (R := ℕ∞), Nat.cast_analyticOrderNatAt htop]
+    exact (hf.analyticAt ρ).analyticOrderAt_ne_zero.mpr hρ
+  have hm : (1 : ℝ) ≤ (analyticOrderNatAt f ρ : ℝ) := by
+    exact_mod_cast Nat.one_le_iff_ne_zero.mpr hne0
+  have hpos : 0 ≤ (1 / (z - ρ)).re := by
+    rw [one_div, Complex.inv_re]
+    exact div_nonneg (by rw [sub_re]; linarith [hle ρ hρ]) (Complex.normSq_nonneg _)
+  exact le_trans (by simpa using mul_le_mul_of_nonneg_right hm hpos) hsum
 
 /-! ### Examples -/
 

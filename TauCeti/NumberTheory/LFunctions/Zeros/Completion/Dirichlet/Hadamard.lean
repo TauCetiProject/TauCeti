@@ -15,7 +15,7 @@ import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
 
 Let `χ` be a nonprincipal primitive Dirichlet character of conductor `N`, and write
 `Λ₀(s, χ) = (dirichletData χ hχ).entireCompletion s = N ^ (s / 2) Λ(s, χ)`. Combining order at
-most one (`dirichletData_completed_orderLE_one`), nonvanishing at `0`
+most one (`dirichletData_entireCompletion_orderLE_one`), nonvanishing at `0`
 (`dirichletData_entireCompletion_zero_ne_zero`), location of all zeros in the open critical strip
 `0 < Re ρ < 1` (`re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero`), and the general
 functional-equation cancellation of `TauCeti.NumberTheory.LFunctions.Zeros.Completion.Hadamard`
@@ -38,15 +38,17 @@ gives:
 ## Main results
 
 * `TauCeti.LFunctions.re_logDeriv_dirichletData_entireCompletion_zero` and
-  `DirichletCharacter.re_logDeriv_completedLFunction_zero`: the real part of the Hadamard constant
-  equals `-∑' ρ, m_ρ Re (1 / ρ)`.
+  `DirichletCharacter.re_logDeriv_completedLFunction_zero_add_eq_neg_tsum`: the real part of the
+  Hadamard constant equals `-∑' ρ, m_ρ Re (1 / ρ)`.
 * `TauCeti.LFunctions.re_logDeriv_dirichletData_entireCompletion` and
   `DirichletCharacter.re_logDeriv_LFunction_add_eq_tsum`: unpaired real-part partial-fraction
   identities for `Λ₀(s, χ)` and `L(s, χ)`.
 * `DirichletCharacter.sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_add_gammaFactor` and
   `DirichletCharacter.sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le`: retained finite-sum
   lower bounds on `1 ≤ Re s` and on `σ ∈ [1, 2]`.
-* `DirichletCharacter.re_one_div_sub_le_re_logDeriv_LFunction_add` and
+* `TauCeti.LFunctions.re_one_div_sub_le_re_logDeriv_dirichletData_entireCompletion`,
+  `DirichletCharacter.re_one_div_sub_le_re_logDeriv_LFunction_add_gammaFactor`,
+  `DirichletCharacter.re_one_div_sub_le_re_logDeriv_LFunction_add`, and
   `DirichletCharacter.one_div_sub_le_re_logDeriv_LFunction_add`: single-zero specializations for
   complex and real zeros.
 
@@ -66,24 +68,41 @@ namespace TauCeti.LFunctions
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive)
 
-/-- The entire completion of a nonprincipal primitive Dirichlet record has order at most one. -/
-theorem dirichletData_entireCompletion_orderLE_one (hne : χ ≠ 1) :
-    OrderLE (dirichletData χ hχ).entireCompletion 1 := by
-  rw [dirichletData_entireCompletion_of_ne_one χ hχ hne]
-  exact dirichletData_completed_orderLE_one χ hχ hne
-
 /-- The zeros of a nonprincipal primitive Dirichlet entire completion have bounded real parts. -/
 theorem isBounded_re_divisor_support_dirichletData_entireCompletion (hne : χ ≠ 1) :
     IsBounded (Complex.re ''
       (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ).support) :=
   (dirichletData_hasFunctionalEquation χ hχ).isBounded_re_divisor_support_entireCompletion
-    (dirichletData_hasMeromorphicContinuation χ hχ)
-    (dirichletData_entireCompletion_zero_ne_zero χ hχ hne) (B := 1) fun _ hρ ↦
+    (dirichletData_hasMeromorphicContinuation χ hχ) (B := 1) fun _ hρ ↦
       (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hne hρ).2.le
 
-/-- **Paired complex partial fractions for a primitive Dirichlet completion.** Off the zeros of
-`Λ₀(s, χ)`, its logarithmic derivative expands as `Λ₀'/Λ₀(0, χ) + ∑' ρ, m_ρ (1 / (s - ρ) + 1 / ρ)`.
--/
+/-- Absolute summability of the paired complex partial-fraction series for a nonprincipal primitive
+Dirichlet entire completion off its zeros. -/
+theorem summable_norm_divisor_dirichletData_entireCompletion_mul_one_div_sub_add_one_div
+    (hne : χ ≠ 1) {s : ℂ} (hs : (dirichletData χ hχ).entireCompletion s ≠ 0) :
+    Summable (fun ρ :
+        (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ).support ↦
+      ‖((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat : ℂ) *
+        (1 / (s - ρ) + 1 / ρ)‖) :=
+  OrderLE.summable_norm_divisor_mul_one_div_sub_add_one_div
+    (dirichletData_entireCompletion_orderLE_one χ hχ hne)
+    (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
+    (dirichletData_entireCompletion_zero_ne_zero χ hχ) (by norm_num) hs
+
+/-- Complex summability companion to `logDeriv_dirichletData_entireCompletion_eq_add_tsum` for a
+nonprincipal primitive Dirichlet entire completion off its zeros. -/
+theorem summable_divisor_dirichletData_entireCompletion_mul_one_div_sub_add_one_div
+    (hne : χ ≠ 1) {s : ℂ} (hs : (dirichletData χ hχ).entireCompletion s ≠ 0) :
+    Summable (fun ρ :
+        (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ).support ↦
+      ((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat : ℂ) *
+        (1 / (s - ρ) + 1 / ρ)) :=
+  (summable_norm_divisor_dirichletData_entireCompletion_mul_one_div_sub_add_one_div χ hχ hne
+    hs).of_norm
+
+/-- **Paired complex partial fractions for a nonprincipal primitive Dirichlet completion.** Off the
+zeros of `Λ₀(s, χ)`, its logarithmic derivative expands as
+`Λ₀'/Λ₀(0, χ) + ∑' ρ, m_ρ (1 / (s - ρ) + 1 / ρ)`. -/
 theorem logDeriv_dirichletData_entireCompletion_eq_add_tsum (hne : χ ≠ 1) {s : ℂ}
     (hs : (dirichletData χ hχ).entireCompletion s ≠ 0) :
     logDeriv (dirichletData χ hχ).entireCompletion s =
@@ -93,32 +112,48 @@ theorem logDeriv_dirichletData_entireCompletion_eq_add_tsum (hne : χ ≠ 1) {s 
             (1 / (s - ρ) + 1 / ρ) :=
   (dirichletData_entireCompletion_orderLE_one χ hχ hne).logDeriv_eq_add_tsum
     (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
-    (dirichletData_entireCompletion_zero_ne_zero χ hχ hne) hs
+    (dirichletData_entireCompletion_zero_ne_zero χ hχ) hs
 
 /-- Absolute summability of `(analyticOrderNatAt Λ₀ ρ) * Re (1 / (s - ρ))` over `ℂ` for a
 nonprincipal primitive Dirichlet entire completion. -/
 theorem summable_norm_analyticOrderNatAt_dirichletData_entireCompletion_mul_re_one_div_sub
     (hne : χ ≠ 1) (s : ℂ) :
     Summable (fun ρ : ℂ ↦
-      ‖(analyticOrderNatAt (dirichletData χ hχ).entireCompletion ρ : ℝ) * (1 / (s - ρ)).re‖) :=
-  OrderLE.summable_norm_analyticOrderNatAt_mul_re_one_div_sub
-    (dirichletData_entireCompletion_orderLE_one χ hχ hne)
-    (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion (by norm_num)
+      ‖(analyticOrderNatAt (dirichletData χ hχ).entireCompletion ρ : ℝ) * (1 / (s - ρ)).re‖) := by
+  have h := dirichletData_hasMeromorphicContinuation χ hχ
+  exact h.summable_norm_analyticOrderNatAt_entireCompletion_mul_re_one_div_sub
+    (dirichletData_entireCompletion_orderLE_one χ hχ hne) (by norm_num)
     (isBounded_re_divisor_support_dirichletData_entireCompletion χ hχ hne) s
+
+/-- Signed summability of `(analyticOrderNatAt Λ₀ ρ) * Re (1 / (s - ρ))` over `ℂ` for a
+nonprincipal primitive Dirichlet entire completion. -/
+theorem summable_analyticOrderNatAt_dirichletData_entireCompletion_mul_re_one_div_sub
+    (hne : χ ≠ 1) (s : ℂ) :
+    Summable (fun ρ : ℂ ↦
+      (analyticOrderNatAt (dirichletData χ hχ).entireCompletion ρ : ℝ) * (1 / (s - ρ)).re) :=
+  (summable_norm_analyticOrderNatAt_dirichletData_entireCompletion_mul_re_one_div_sub χ hχ hne
+    s).of_norm
 
 /-- Absolute summability of `(analyticOrderNatAt Λ₀ ρ) * Re (1 / ρ)` over `ℂ` for a nonprincipal
 primitive Dirichlet entire completion. -/
 theorem summable_norm_analyticOrderNatAt_dirichletData_entireCompletion_mul_re_one_div
     (hne : χ ≠ 1) :
     Summable (fun ρ : ℂ ↦
-      ‖(analyticOrderNatAt (dirichletData χ hχ).entireCompletion ρ : ℝ) * (1 / ρ).re‖) :=
-  OrderLE.summable_norm_analyticOrderNatAt_mul_re_one_div
-    (dirichletData_entireCompletion_orderLE_one χ hχ hne)
-    (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion (by norm_num)
+      ‖(analyticOrderNatAt (dirichletData χ hχ).entireCompletion ρ : ℝ) * (1 / ρ).re‖) := by
+  have h := dirichletData_hasMeromorphicContinuation χ hχ
+  exact h.summable_norm_analyticOrderNatAt_entireCompletion_mul_re_one_div
+    (dirichletData_entireCompletion_orderLE_one χ hχ hne) (by norm_num)
     (isBounded_re_divisor_support_dirichletData_entireCompletion χ hχ hne)
 
-/-- **Real part of the Hadamard constant for a primitive Dirichlet completion.** For a nonprincipal
-primitive character `χ`, `(logDeriv Λ₀ 0).re = -∑' ρ, m_ρ Re (1 / ρ)`. -/
+/-- Signed summability of `(analyticOrderNatAt Λ₀ ρ) * Re (1 / ρ)` over `ℂ` for a nonprincipal
+primitive Dirichlet entire completion. -/
+theorem summable_analyticOrderNatAt_dirichletData_entireCompletion_mul_re_one_div (hne : χ ≠ 1) :
+    Summable (fun ρ : ℂ ↦
+      (analyticOrderNatAt (dirichletData χ hχ).entireCompletion ρ : ℝ) * (1 / ρ).re) :=
+  (summable_norm_analyticOrderNatAt_dirichletData_entireCompletion_mul_re_one_div χ hχ hne).of_norm
+
+/-- **Real part of the Hadamard constant for a nonprincipal primitive Dirichlet completion.** For a
+nonprincipal primitive character `χ`, `(logDeriv Λ₀ 0).re = -∑' ρ, m_ρ Re (1 / ρ)`. -/
 theorem re_logDeriv_dirichletData_entireCompletion_zero (hne : χ ≠ 1) :
     (logDeriv (dirichletData χ hχ).entireCompletion 0).re =
       -∑' ρ : ℂ,
@@ -126,11 +161,11 @@ theorem re_logDeriv_dirichletData_entireCompletion_zero (hne : χ ≠ 1) :
   (dirichletData_hasFunctionalEquation χ hχ).re_logDeriv_entireCompletion_zero
     (dirichletData_hasMeromorphicContinuation χ hχ)
     (dirichletData_entireCompletion_orderLE_one χ hχ hne)
-    (dirichletData_entireCompletion_zero_ne_zero χ hχ hne)
+    (dirichletData_entireCompletion_zero_ne_zero χ hχ)
     (isBounded_re_divisor_support_dirichletData_entireCompletion χ hχ hne)
 
-/-- **Unpaired real-part partial fractions for a primitive Dirichlet completion.** Off the zeros of
-`Λ₀(s, χ)`, `(logDeriv Λ₀ s).re = ∑' ρ, m_ρ Re (1 / (s - ρ))`. -/
+/-- **Unpaired real-part partial fractions for a nonprincipal primitive Dirichlet completion.** Off
+the zeros of `Λ₀(s, χ)`, `(logDeriv Λ₀ s).re = ∑' ρ, m_ρ Re (1 / (s - ρ))`. -/
 theorem re_logDeriv_dirichletData_entireCompletion (hne : χ ≠ 1) {s : ℂ}
     (hs : (dirichletData χ hχ).entireCompletion s ≠ 0) :
     (logDeriv (dirichletData χ hχ).entireCompletion s).re =
@@ -139,7 +174,7 @@ theorem re_logDeriv_dirichletData_entireCompletion (hne : χ ≠ 1) {s : ℂ}
   (dirichletData_hasFunctionalEquation χ hχ).re_logDeriv_entireCompletion
     (dirichletData_hasMeromorphicContinuation χ hχ)
     (dirichletData_entireCompletion_orderLE_one χ hχ hne)
-    (dirichletData_entireCompletion_zero_ne_zero χ hχ hne)
+    (dirichletData_entireCompletion_zero_ne_zero χ hχ)
     (isBounded_re_divisor_support_dirichletData_entireCompletion χ hχ hne) hs
 
 /-- On `1 ≤ Re s`, the real part of the logarithmic derivative of a nonprincipal primitive
@@ -149,7 +184,7 @@ theorem re_logDeriv_dirichletData_entireCompletion_nonneg (hne : χ ≠ 1) {s : 
   (dirichletData_hasFunctionalEquation χ hχ).re_logDeriv_entireCompletion_nonneg
     (dirichletData_hasMeromorphicContinuation χ hχ)
     (dirichletData_entireCompletion_orderLE_one χ hχ hne)
-    (dirichletData_entireCompletion_zero_ne_zero χ hχ hne)
+    (dirichletData_entireCompletion_zero_ne_zero χ hχ)
     (dirichletData_entireCompletion_ne_zero_of_one_le_re χ hχ hne hs) fun _ hρ ↦
       (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hne hρ).2.le.trans hs
 
@@ -164,9 +199,22 @@ theorem sum_analyticOrderNatAt_dirichletData_entireCompletion_mul_re_one_div_sub
   exact hfe.sum_analyticOrderNatAt_entireCompletion_mul_re_one_div_sub_le
     (dirichletData_hasMeromorphicContinuation χ hχ)
     (dirichletData_entireCompletion_orderLE_one χ hχ hne)
-    (dirichletData_entireCompletion_zero_ne_zero χ hχ hne)
+    (dirichletData_entireCompletion_zero_ne_zero χ hχ)
     (dirichletData_entireCompletion_ne_zero_of_one_le_re χ hχ hne hs)
     (fun _ hρ ↦ (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hne hρ).2.le.trans hs) S
+
+/-- On `1 ≤ Re s`, every zero `ρ` of a nonprincipal primitive Dirichlet entire completion satisfies
+`Re (1 / (s - ρ)) ≤ (logDeriv Λ₀ s).re`. -/
+theorem re_one_div_sub_le_re_logDeriv_dirichletData_entireCompletion (hne : χ ≠ 1)
+    {ρ : ℂ} (hρ : (dirichletData χ hχ).entireCompletion ρ = 0) {s : ℂ} (hs : 1 ≤ s.re) :
+    (1 / (s - ρ)).re ≤ (logDeriv (dirichletData χ hχ).entireCompletion s).re :=
+  (dirichletData_hasFunctionalEquation χ hχ).re_one_div_sub_le_re_logDeriv_entireCompletion
+    (dirichletData_hasMeromorphicContinuation χ hχ)
+    (dirichletData_entireCompletion_orderLE_one χ hχ hne)
+    (dirichletData_entireCompletion_zero_ne_zero χ hχ)
+    (dirichletData_entireCompletion_ne_zero_of_one_le_re χ hχ hne hs)
+    (fun _ hz ↦ (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hne hz).2.le.trans hs)
+    hρ
 
 end TauCeti.LFunctions
 
@@ -187,6 +235,14 @@ theorem summable_norm_analyticOrderNatAt_completedLFunction_mul_re_one_div_sub
   simpa only [analyticOrderNatAt_dirichletData_entireCompletion χ hχ hne] using
     summable_norm_analyticOrderNatAt_dirichletData_entireCompletion_mul_re_one_div_sub χ hχ hne s
 
+/-- Signed summability of `(analyticOrderNatAt χ.completedLFunction ρ) * Re (1 / (s - ρ))` over `ℂ`
+for a nonprincipal primitive character `χ`. -/
+theorem summable_analyticOrderNatAt_completedLFunction_mul_re_one_div_sub
+    (hχ : χ.IsPrimitive) (hne : χ ≠ 1) (s : ℂ) :
+    Summable (fun ρ : ℂ ↦
+      (analyticOrderNatAt χ.completedLFunction ρ : ℝ) * (1 / (s - ρ)).re) :=
+  (χ.summable_norm_analyticOrderNatAt_completedLFunction_mul_re_one_div_sub hχ hne s).of_norm
+
 /-- Absolute summability of `(analyticOrderNatAt χ.completedLFunction ρ) * Re (1 / ρ)` over `ℂ` for
 a nonprincipal primitive character `χ`. -/
 theorem summable_norm_analyticOrderNatAt_completedLFunction_mul_re_one_div
@@ -195,14 +251,21 @@ theorem summable_norm_analyticOrderNatAt_completedLFunction_mul_re_one_div
   simpa only [analyticOrderNatAt_dirichletData_entireCompletion χ hχ hne] using
     summable_norm_analyticOrderNatAt_dirichletData_entireCompletion_mul_re_one_div χ hχ hne
 
+/-- Signed summability of `(analyticOrderNatAt χ.completedLFunction ρ) * Re (1 / ρ)` over `ℂ` for a
+nonprincipal primitive character `χ`. -/
+theorem summable_analyticOrderNatAt_completedLFunction_mul_re_one_div
+    (hχ : χ.IsPrimitive) (hne : χ ≠ 1) :
+    Summable (fun ρ : ℂ ↦ (analyticOrderNatAt χ.completedLFunction ρ : ℝ) * (1 / ρ).re) :=
+  (χ.summable_norm_analyticOrderNatAt_completedLFunction_mul_re_one_div hχ hne).of_norm
+
 /-- **Real part of the Hadamard constant for Mathlib's completed Dirichlet L-function.** For a
 nonprincipal primitive character `χ` modulo `N`,
 `Re (logDeriv χ.completedLFunction 0) + ½ log N = -∑' ρ, m_ρ Re (1 / ρ)`. -/
-theorem re_logDeriv_completedLFunction_zero (hχ : χ.IsPrimitive) (hne : χ ≠ 1) :
+theorem re_logDeriv_completedLFunction_zero_add_eq_neg_tsum (hχ : χ.IsPrimitive) (hne : χ ≠ 1) :
     (logDeriv χ.completedLFunction 0).re + Real.log N / 2 =
       -∑' ρ : ℂ, (analyticOrderNatAt χ.completedLFunction ρ : ℝ) * (1 / ρ).re := by
   have h0 : χ.completedLFunction 0 ≠ 0 := by
-    have hΛ := dirichletData_entireCompletion_zero_ne_zero χ hχ hne
+    have hΛ := dirichletData_entireCompletion_zero_ne_zero χ hχ
     rw [dirichletData_entireCompletion_eq χ hχ hne] at hΛ
     exact right_ne_zero_of_mul hΛ
   have hlog := congrArg Complex.re
@@ -212,8 +275,8 @@ theorem re_logDeriv_completedLFunction_zero (hχ : χ.IsPrimitive) (hne : χ ≠
   simp_rw [← analyticOrderNatAt_dirichletData_entireCompletion χ hχ hne]
   linarith
 
-/-- **Unpaired real-part partial fractions for `DirichletCharacter.LFunction`.** On `0 < Re s` away
-from the zeros of `L(s, χ)`,
+/-- **Unpaired real-part partial fractions for `DirichletCharacter.LFunction`.** For a nonprincipal
+primitive character `χ` modulo `N`, on `0 < Re s` away from the zeros of `L(s, χ)`,
 `Re (L'/L(s, χ)) + ½ log N + Re (γ'/γ(s, χ)) = ∑' ρ, m_ρ Re (1 / (s - ρ))`, where `m_ρ` is the
 multiplicity of `ρ` as a nontrivial zero (`analyticOrderNatAt χ.completedLFunction ρ`). -/
 theorem re_logDeriv_LFunction_add_eq_tsum (hχ : χ.IsPrimitive) (hne : χ ≠ 1) {s : ℂ}
@@ -228,10 +291,10 @@ theorem re_logDeriv_LFunction_add_eq_tsum (hχ : χ.IsPrimitive) (hne : χ ≠ 1
   simp_rw [← analyticOrderNatAt_dirichletData_entireCompletion χ hχ hne]
   linarith
 
-/-- **Retained finite zero sum on `1 ≤ Re s`.** For any finite set `S` in the open right half-plane
-`0 < Re ρ` and any `s` with `1 ≤ Re s`, the finite sum of `m_ρ Re (1 / (s - ρ))` weighted by the
-analytic multiplicities of `χ.LFunction` is bounded by
-`Re (L'/L(s, χ)) + ½ log N + Re (γ'/γ(s, χ))`. -/
+/-- **Retained finite zero sum on `1 ≤ Re s`.** For a nonprincipal primitive character `χ` modulo
+`N`, any finite set `S` in the open right half-plane `0 < Re ρ`, and any `s` with `1 ≤ Re s`, the
+finite sum of `m_ρ Re (1 / (s - ρ))` weighted by the analytic multiplicities of `χ.LFunction` is
+bounded by `Re (L'/L(s, χ)) + ½ log N + Re (γ'/γ(s, χ))`. -/
 theorem sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_add_gammaFactor
     (hχ : χ.IsPrimitive) (hne : χ ≠ 1) {S : Finset ℂ} (hS : ∀ ρ ∈ S, 0 < ρ.re)
     {s : ℂ} (hs : 1 ≤ s.re) :
@@ -263,34 +326,24 @@ theorem sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le (hχ : χ.IsPrimi
     (re_le_norm _).trans (χ.norm_logDeriv_gammaFactor_ofReal_le ⟨hσ₁, hσ₂⟩)
   linarith
 
-/-- **Single-zero lower bound on `1 ≤ Re s`.** If `ρ` is a zero of `χ.LFunction` with `0 < Re ρ`
-and `1 ≤ Re s`, then `Re (1 / (s - ρ)) ≤ Re (L'/L(s, χ)) + ½ log N + Re (γ'/γ(s, χ))`. -/
+/-- **Single-zero lower bound on `1 ≤ Re s`.** For a nonprincipal primitive character `χ` modulo
+`N`, if `ρ` is a zero of `χ.LFunction` with `0 < Re ρ` and `1 ≤ Re s`, then
+`Re (1 / (s - ρ)) ≤ Re (L'/L(s, χ)) + ½ log N + Re (γ'/γ(s, χ))`. -/
 theorem re_one_div_sub_le_re_logDeriv_LFunction_add_gammaFactor (hχ : χ.IsPrimitive) (hne : χ ≠ 1)
     {ρ : ℂ} (hρ : 0 < ρ.re) (hz : χ.LFunction ρ = 0) {s : ℂ} (hs : 1 ≤ s.re) :
     (1 / (s - ρ)).re ≤
       (logDeriv χ.LFunction s).re + Real.log N / 2 + (logDeriv χ.gammaFactor s).re := by
-  have hsum := χ.sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_add_gammaFactor hχ hne
-    (S := {ρ}) (by simpa using hρ) hs
-  rw [Finset.sum_singleton] at hsum
+  have hspos : 0 < s.re := by linarith
+  have hL : χ.LFunction s ≠ 0 := χ.LFunction_ne_zero_of_one_le_re (.inl hne) hs
   have hΛ0 : (dirichletData χ hχ).entireCompletion ρ = 0 :=
     (dirichletData_entireCompletion_eq_zero_iff χ hχ hne hρ).mpr hz
-  have hpos : 0 ≤ (1 / (s - ρ)).re :=
-    (re_one_div_sub_pos_of_dirichletData_entireCompletion_eq_zero χ hχ hne hΛ0 hs).le
-  have hm : (1 : ℝ) ≤ (analyticOrderNatAt χ.LFunction ρ : ℝ) := by
-    rw [← analyticOrderNatAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hρ]
-    have ha := (dirichletData_hasMeromorphicContinuation χ hχ).analyticAt_entireCompletion ρ
-    have hne0 : analyticOrderNatAt (dirichletData χ hχ).entireCompletion ρ ≠ 0 := by
-      rw [← Nat.cast_ne_zero (R := ℕ∞), Nat.cast_analyticOrderNatAt
-        (analyticOrderAt_dirichletData_entireCompletion_ne_top χ hχ hne ρ)]
-      exact ha.analyticOrderAt_ne_zero.mpr hΛ0
-    exact_mod_cast Nat.one_le_iff_ne_zero.mpr hne0
-  calc (1 / (s - ρ)).re = 1 * (1 / (s - ρ)).re := (one_mul _).symm
-    _ ≤ (analyticOrderNatAt χ.LFunction ρ : ℝ) * (1 / (s - ρ)).re :=
-        mul_le_mul_of_nonneg_right hm hpos
-    _ ≤ (logDeriv χ.LFunction s).re + Real.log N / 2 + (logDeriv χ.gammaFactor s).re := hsum
+  have hle := re_one_div_sub_le_re_logDeriv_dirichletData_entireCompletion χ hχ hne hΛ0 hs
+  have hlog := congrArg Complex.re (logDeriv_dirichletData_entireCompletion χ hχ hne hspos hL)
+  rw [add_re, add_re, div_ofNat_re, ofReal_re] at hlog
+  linarith
 
-/-- **Single complex zero lower bound on `[1, 2]`.** If `ρ` is a zero of `χ.LFunction` with
-`0 < Re ρ` and `σ ∈ [1, 2]`, then
+/-- **Single complex zero lower bound on `[1, 2]`.** For a nonprincipal primitive character `χ`
+modulo `N`, if `ρ` is a zero of `χ.LFunction` with `0 < Re ρ` and `σ ∈ [1, 2]`, then
 `Re (1 / (σ - ρ)) ≤ Re (L'/L(σ, χ)) + ½ log N + TauCeti.gammaLogDerivBound`. -/
 theorem re_one_div_sub_le_re_logDeriv_LFunction_add (hχ : χ.IsPrimitive) (hne : χ ≠ 1)
     {ρ : ℂ} (hρ : 0 < ρ.re) (hz : χ.LFunction ρ = 0) {σ : ℝ} (hσ₁ : 1 ≤ σ) (hσ₂ : σ ≤ 2) :
