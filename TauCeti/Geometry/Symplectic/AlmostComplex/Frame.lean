@@ -33,7 +33,7 @@ root
 * it intertwines the two complex structures, `J Ψ_J = Ψ_J J₀`
   (`TauCeti.SymplecticForm.Compatible.apply_unitaryFrame`);
 * it is a linear symplectomorphism of `(V, ω)`
-  (`TauCeti.SymplecticForm.Compatible.unitaryFrame_apply_unitaryFrame`);
+  (`TauCeti.SymplecticForm.Compatible.apply_unitaryFrame_unitaryFrame`);
 * it is the identity for `J = J₀` (`TauCeti.SymplecticForm.unitaryFrame_self`).
 
 So `Ψ_J` is a symplectic isomorphism carrying `J₀` to `J`
@@ -201,7 +201,7 @@ theorem Compatible.apply_unitaryFrame (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫)
 /-- **The unitary frame is symplectic**: `ω(Ψ_J u, Ψ_J v) = ω(u, v)`, when the inner product of `V`
 is the metric `ω(·, J₀ ·)`. -/
 @[simp]
-theorem Compatible.unitaryFrame_apply_unitaryFrame (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫)
+theorem Compatible.apply_unitaryFrame_unitaryFrame (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫)
     (hJ : ω.Compatible J) (u v : V) :
     ω (ω.unitaryFrame J u) (ω.unitaryFrame J v) = ω u v := by
   -- `ω(a, b) = g_J(a, -J b)` and `-J Ψ v = Ψ (-J₀ v)`.
@@ -259,7 +259,7 @@ theorem Compatible.isInvertible_unitaryFrame (hJ : ω.Compatible J) :
 theorem Compatible.isSymplectomorphism_unitaryFrameEquiv (hJ : ω.Compatible J)
     (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) :
     IsSymplectomorphism ω ω hJ.unitaryFrameEquiv.toLinearEquiv :=
-  isSymplectomorphism_iff.2 fun u v ↦ by simpa using hJ.unitaryFrame_apply_unitaryFrame hg u v
+  isSymplectomorphism_iff.2 fun u v ↦ by simpa using hJ.apply_unitaryFrame_unitaryFrame hg u v
 
 /-- The unitary frame carries `J₀` to `J`. -/
 theorem Compatible.transport_unitaryFrameEquiv (hJ : ω.Compatible J)

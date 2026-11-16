@@ -160,7 +160,7 @@ theorem frameLoop_unitaryFrame_apply_add_apply_eq_zero (hg : ∀ v w, ω v (J₀
     ω (frameLoop (fun s ↦ ω.unitaryFrame (J s)) S t u) v +
       ω u (frameLoop (fun s ↦ ω.unitaryFrame (J s)) S t v) = 0 :=
   frameLoop_apply_add_apply_eq_zero (hJ.unitaryFrame (.of_forall hJc))
-    (hJc t).isInvertible_unitaryFrame (fun s ↦ (hJc s).unitaryFrame_apply_unitaryFrame hg) hS u v
+    (hJc t).isInvertible_unitaryFrame (fun s ↦ (hJc s).apply_unitaryFrame_unitaryFrame hg) hS u v
 
 /-- The loop of a continuous `S` in the unitary frames of a `C¹` family of compatible structures
 is continuous. -/
