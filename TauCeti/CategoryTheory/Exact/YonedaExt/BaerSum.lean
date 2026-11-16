@@ -28,8 +28,9 @@ duals of `Hom` modules in Auslander-Reiten theory.
 * The `AddCommGroup` instance on `TauCeti.ExactStructure.Ext1 E Z X` is the Baer sum.
 * The `Module R` instance on `TauCeti.ExactStructure.Ext1 E Z X`, for `R`-linear categories.
 * `TauCeti.ExactStructure.Ext1.pushoutLinearMap` and
-  `TauCeti.ExactStructure.Ext1.pullbackLinearMap`: cobase and base change as `R`-linear maps, and
-  `TauCeti.ExactStructure.Ext1.pullbackLinearEquiv`: base change along an isomorphism.
+  `TauCeti.ExactStructure.Ext1.pullbackLinearMap`: cobase and base change as `R`-linear maps.
+* `TauCeti.ExactStructure.Ext1.pushoutLinearEquiv` and
+  `TauCeti.ExactStructure.Ext1.pullbackLinearEquiv`: cobase and base change along isomorphisms.
 
 ## Main results
 
@@ -343,6 +344,18 @@ theorem pushout_sum {ι : Type*} (s : Finset ι) (ξ : E.Ext1 Z X) (v : ι → (
     ξ.pushout (∑ i ∈ s, v i) = ∑ i ∈ s, ξ.pushout (v i) :=
   map_sum (AddMonoidHom.mk' (fun v ↦ ξ.pushout v) (pushout_add ξ)) v s
 
+/-- Base change is additive in the class, for finite sums. -/
+theorem sum_pullback {ι : Type*} (s : Finset ι) (ξ : ι → E.Ext1 Z X) (u : Z' ⟶ Z) :
+    (∑ i ∈ s, ξ i).pullback u = ∑ i ∈ s, (ξ i).pullback u :=
+  map_sum (AddMonoidHom.mk' (fun ξ ↦ ξ.pullback u) fun ξ₁ ξ₂ ↦ add_pullback ξ₁ ξ₂ u :
+    E.Ext1 Z X →+ E.Ext1 Z' X) ξ s
+
+/-- Cobase change is additive in the class, for finite sums. -/
+theorem sum_pushout {ι : Type*} (s : Finset ι) (ξ : ι → E.Ext1 Z X) (v : X ⟶ X') :
+    (∑ i ∈ s, ξ i).pushout v = ∑ i ∈ s, (ξ i).pushout v :=
+  map_sum (AddMonoidHom.mk' (fun ξ ↦ ξ.pushout v) fun ξ₁ ξ₂ ↦ add_pushout ξ₁ ξ₂ v :
+    E.Ext1 Z X →+ E.Ext1 Z X') ξ s
+
 /-! ### The module structure -/
 
 section Linear
@@ -438,6 +451,22 @@ theorem pullbackLinearEquiv_apply (e : Z' ≅ Z) (ξ : E.Ext1 Z X) :
 @[simp]
 theorem pullbackLinearEquiv_symm_apply (e : Z' ≅ Z) (ξ : E.Ext1 Z' X) :
     (pullbackLinearEquiv R e).symm ξ = ξ.pullback e.inv := (rfl)
+
+/-- **Cobase change along an isomorphism** `e : X ≅ X'`, as an `R`-linear equivalence
+`Ext¹_E(Z, X) ≃ Ext¹_E(Z, X')`. -/
+noncomputable def pushoutLinearEquiv (e : X ≅ X') : E.Ext1 Z X ≃ₗ[R] E.Ext1 Z X' :=
+  { pushoutLinearMap R e.hom with
+    invFun ξ := ξ.pushout e.inv
+    left_inv ξ := by simp
+    right_inv ξ := by simp }
+
+@[simp]
+theorem pushoutLinearEquiv_apply (e : X ≅ X') (ξ : E.Ext1 Z X) :
+    pushoutLinearEquiv R e ξ = ξ.pushout e.hom := (rfl)
+
+@[simp]
+theorem pushoutLinearEquiv_symm_apply (e : X ≅ X') (ξ : E.Ext1 Z X') :
+    (pushoutLinearEquiv R e).symm ξ = ξ.pushout e.inv := (rfl)
 
 end Linear
 
