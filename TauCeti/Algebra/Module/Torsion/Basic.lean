@@ -39,7 +39,8 @@ of the torsion submodules.
 
 ## Main definitions
 
-* `TauCeti.AddSubgroup.torsionByPiEquiv`: torsion of a product is the product of torsions.
+* `TauCeti.AddSubgroup.torsionByPiEquiv` and `TauCeti.AddSubgroup.torsionByProdEquiv`: torsion of a
+  product is the product of torsions.
 * `TauCeti.AddSubgroup.torsionByTorsionByEquiv`: nested torsion for `a ∣ b`.
 * `AddEquiv.torsionByCongr`: transport torsion along an additive equivalence.
 * `TauCeti.Submodule.torsionProdEquiv`: the torsion submodule of `M × N` is the product of the
@@ -128,6 +129,38 @@ def torsionByPiEquiv {ι : Type*} (A : ι → Type*) [∀ i, AddCommGroup (A i)]
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
+
+/-- The `n`-torsion subgroup of a binary direct product `A × B` is additively equivalent to the
+product of the `n`-torsion subgroups of `A` and `B`. -/
+def torsionByProdEquiv (A : Type*) (B : Type*) [AddCommGroup A] [AddCommGroup B] (n : ℤ) :
+    _root_.AddSubgroup.torsionBy (A × B) n ≃+
+      _root_.AddSubgroup.torsionBy A n × _root_.AddSubgroup.torsionBy B n where
+  toFun x :=
+    (⟨x.1.1, (Submodule.mem_torsionBy_iff _ _).2 <|
+        congrArg Prod.fst ((Submodule.mem_torsionBy_iff _ _).1 x.2)⟩,
+      ⟨x.1.2, (Submodule.mem_torsionBy_iff _ _).2 <|
+        congrArg Prod.snd ((Submodule.mem_torsionBy_iff _ _).1 x.2)⟩)
+  invFun x :=
+    ⟨(x.1.1, x.2.1), (Submodule.mem_torsionBy_iff _ _).2 <| Prod.ext
+      ((Submodule.mem_torsionBy_iff _ _).1 x.1.2) ((Submodule.mem_torsionBy_iff _ _).1 x.2.2)⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+
+@[simp]
+theorem torsionByProdEquiv_apply_fst_coe {A : Type*} {B : Type*} [AddCommGroup A] [AddCommGroup B]
+    (n : ℤ) (x : _root_.AddSubgroup.torsionBy (A × B) n) :
+    ((torsionByProdEquiv A B n x).1 : A) = (x : A × B).1 := (rfl)
+
+@[simp]
+theorem torsionByProdEquiv_apply_snd_coe {A : Type*} {B : Type*} [AddCommGroup A] [AddCommGroup B]
+    (n : ℤ) (x : _root_.AddSubgroup.torsionBy (A × B) n) :
+    ((torsionByProdEquiv A B n x).2 : B) = (x : A × B).2 := (rfl)
+
+@[simp]
+theorem torsionByProdEquiv_symm_apply_coe {A : Type*} {B : Type*} [AddCommGroup A] [AddCommGroup B]
+    (n : ℤ) (x : _root_.AddSubgroup.torsionBy A n × _root_.AddSubgroup.torsionBy B n) :
+    ((torsionByProdEquiv A B n).symm x : A × B) = ((x.1 : A), (x.2 : B)) := (rfl)
 
 /-- `torsionByPiEquiv` sends a torsion element to its pointwise torsion elements. -/
 @[simp]

@@ -5,8 +5,10 @@ Authors: Wentao Li
 -/
 module
 
-public import TauCeti.Algebra.Module.SpanRank
 public import Mathlib.LinearAlgebra.Pi
+public import TauCeti.Algebra.Module.SpanRank
+public import TauCeti.GroupTheory.Rank
+import Mathlib.Algebra.Group.ULift
 import Mathlib.Data.Nat.ChineseRemainder
 import Mathlib.GroupTheory.OrderOfElement
 import TauCeti.SetTheory.Cardinal.Finite
@@ -21,9 +23,8 @@ the least number of generators of the product is the maximum of the least number
 If one factor is infinite, coprimality forces all the others to be trivial, and the statements
 reduce to that factor.
 
-The generator number is Mathlib's `Submodule.spanFinrank` over `ℤ`, the least number of generators
-of a finitely generated group. By Mathlib's convention it is `0` for a group that is not finitely
-generated, so for such factors the generator-number statement holds by that convention only.
+Both Mathlib's `Submodule.spanFinrank` over `ℤ` and `AddGroup.rank` (when the factors are finitely
+generated) are supported.
 -/
 
 public section
@@ -149,5 +150,59 @@ theorem spanFinrank_pi_eq_sup_of_coprime_card
       (Module.Finite.fg_top (R := ℤ) (M := ∀ i, M i))
     simpa only [Submodule.map_top, LinearMap.range_eq_top.mpr (LinearMap.proj_surjective i)]
       using h
+
+/-- For finitely generated abelian groups of pairwise coprime orders, `AddGroup.rank` of their
+product equals the supremum of the factor ranks. -/
+theorem rank_pi_eq_sup_of_coprime_card [∀ i, AddGroup.FG (M i)]
+    (hcop : Pairwise fun i j ↦ (Nat.card (M i)).Coprime (Nat.card (M j))) :
+    AddGroup.rank (∀ i, M i) = Finset.univ.sup (fun i ↦ AddGroup.rank (M i)) := by
+  rw [AddGroup.rank_eq_spanFinrank_top, spanFinrank_pi_eq_sup_of_coprime_card M hcop]
+  exact Finset.sup_congr rfl fun i _ ↦ (AddGroup.rank_eq_spanFinrank_top (M i)).symm
+
+/-- For finitely generated abelian groups `A` and `B` of coprime orders, `AddGroup.rank (A × B)`
+equals `max (AddGroup.rank A) (AddGroup.rank B)`. -/
+theorem rank_prod_eq_max_of_coprime_card {A : Type u} {B : Type v} [AddCommGroup A] [AddCommGroup B]
+    [AddGroup.FG A] [AddGroup.FG B] (hcop : (Nat.card A).Coprime (Nat.card B)) :
+    AddGroup.rank (A × B) = max (AddGroup.rank A) (AddGroup.rank B) := by
+  let A' := ULift.{v} A
+  let B' := ULift.{u} B
+  let eA : A' ≃+ A := { toEquiv := Equiv.ulift, map_add' := fun _ _ ↦ rfl }
+  let eB : B' ≃+ B := { toEquiv := Equiv.ulift, map_add' := fun _ _ ↦ rfl }
+  have hfgA : AddGroup.FG A' :=
+    AddGroup.fg_of_surjective (f := eA.symm.toAddMonoidHom) eA.symm.surjective
+  have hfgB : AddGroup.FG B' :=
+    AddGroup.fg_of_surjective (f := eB.symm.toAddMonoidHom) eB.symm.surjective
+  let F : Bool → Type (max u v) | true => A' | false => B'
+  let instGrp : ∀ b, AddCommGroup (F b)
+    | true => inferInstanceAs (AddCommGroup A')
+    | false => inferInstanceAs (AddCommGroup B')
+  let instFG : ∀ b, AddGroup.FG (F b)
+    | true => hfgA
+    | false => hfgB
+  let eProd : A × B ≃+ ∀ b : Bool, F b :=
+    { toFun := fun x b ↦ match b with | true => eA.symm x.1 | false => eB.symm x.2
+      invFun := fun y ↦ (eA (y true), eB (y false))
+      left_inv := fun x ↦ Prod.ext (eA.apply_symm_apply x.1) (eB.apply_symm_apply x.2)
+      right_inv := fun y ↦ funext fun b ↦ by
+        cases b
+        · exact eB.symm_apply_apply (y false)
+        · exact eA.symm_apply_apply (y true)
+      map_add' := fun _ _ ↦ funext fun b ↦ by cases b <;> rfl }
+  have hcopF : Pairwise fun b₁ b₂ ↦ (Nat.card (F b₁)).Coprime (Nat.card (F b₂)) := by
+    intro b₁ b₂ hne
+    cases b₁ <;> cases b₂
+    · exact absurd rfl hne
+    · dsimp [F]
+      rw [Nat.card_congr eB.toEquiv, Nat.card_congr eA.toEquiv]
+      exact hcop.symm
+    · dsimp [F]
+      rw [Nat.card_congr eA.toEquiv, Nat.card_congr eB.toEquiv]
+      exact hcop
+    · exact absurd rfl hne
+  have htrue : AddGroup.rank (F true) = AddGroup.rank A := AddGroup.rank_congr eA
+  have hfalse : AddGroup.rank (F false) = AddGroup.rank B := AddGroup.rank_congr eB
+  rw [AddGroup.rank_congr eProd, rank_pi_eq_sup_of_coprime_card F hcopF]
+  have huniv : (Finset.univ : Finset Bool) = {true, false} := by decide
+  rw [huniv, Finset.sup_insert, Finset.sup_singleton, htrue, hfalse]
 
 end TauCeti.AddCommGroup

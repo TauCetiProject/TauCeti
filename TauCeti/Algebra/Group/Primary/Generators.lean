@@ -12,8 +12,8 @@ public import TauCeti.Algebra.Group.Primary.Decomposition
 # The generator number of a finite abelian group
 
 The least number of generators of a finite abelian group is the maximum of the least
-numbers for its prime-primary components. We use the canonical primary decomposition
-and Mathlib's `Submodule.spanFinrank` over `ℤ`, without introducing another invariant.
+numbers for its prime-primary components. We record this for both Mathlib's
+`Submodule.spanFinrank` over `ℤ` and `AddGroup.rank`, using the canonical primary decomposition.
 The maximum is taken over the prime divisors of the group order; for the trivial group
 this set is empty and the maximum is zero.
 
@@ -47,5 +47,42 @@ theorem spanFinrank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finit
     (p := ⊤)
   rw [Submodule.map_top, LinearEquiv.range] at he
   exact he.trans (spanFinrank_pi_eq_sup_of_coprime_card M hcop)
+
+/-- The minimal number of generators `AddGroup.rank A` of a finite abelian group `A` equals the
+supremum of `AddGroup.rank` over its prime-primary components. -/
+theorem rank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finite A] :
+    AddGroup.rank A =
+      Finset.univ.sup (fun p : (Nat.card A).primeFactors ↦
+        AddGroup.rank (_root_.AddCommGroup.primaryComponent A p.1)) := by
+  rw [AddGroup.rank_eq_spanFinrank_top, spanFinrank_eq_sup_primaryComponents A]
+  exact Finset.sup_congr rfl fun p _ ↦
+    (AddGroup.rank_eq_spanFinrank_top (_root_.AddCommGroup.primaryComponent A p.1)).symm
+
+/-- For every prime `p`, the rank of the `p`-primary component of a finite abelian group `A` is at
+most `AddGroup.rank A`. -/
+theorem rank_primaryComponent_le (A : Type*) [AddCommGroup A] [Finite A] {p : ℕ} (hp : p.Prime) :
+    AddGroup.rank (_root_.AddCommGroup.primaryComponent A p) ≤ AddGroup.rank A := by
+  by_cases hmem : p ∈ (Nat.card A).primeFactors
+  · rw [rank_eq_sup_primaryComponents A]
+    exact Finset.le_sup (f := fun q : (Nat.card A).primeFactors ↦
+      AddGroup.rank (_root_.AddCommGroup.primaryComponent A q.1)) (Finset.mem_univ ⟨p, hmem⟩)
+  · have hfac : (Nat.card A).factorization p = 0 :=
+      Nat.factorization_eq_zero_of_not_dvd fun hdvd ↦
+        hmem (Nat.mem_primeFactors.mpr ⟨hp, hdvd, Nat.card_pos.ne'⟩)
+    have hcard : Nat.card (_root_.AddCommGroup.primaryComponent A p) = 1 := by
+      rw [natCard_primaryComponent A hp, hfac, pow_zero]
+    have : Subsingleton (_root_.AddCommGroup.primaryComponent A p) :=
+      Finite.card_le_one_iff_subsingleton.mp hcard.le
+    rw [AddGroup.rank_eq_zero]
+    exact Nat.zero_le _
+
+/-- For a finite abelian group `A`, `AddGroup.rank A ≤ n` if and only if every prime-primary
+component has rank at most `n`. -/
+theorem rank_le_iff_forall_prime_primaryComponent (A : Type*) [AddCommGroup A] [Finite A] (n : ℕ) :
+    AddGroup.rank A ≤ n ↔
+      ∀ p : ℕ, p.Prime → AddGroup.rank (_root_.AddCommGroup.primaryComponent A p) ≤ n := by
+  refine ⟨fun h p hp ↦ (rank_primaryComponent_le A hp).trans h, fun h ↦ ?_⟩
+  rw [rank_eq_sup_primaryComponents A]
+  exact Finset.sup_le fun p _ ↦ h p.1 (Nat.prime_of_mem_primeFactors p.2)
 
 end TauCeti.AddCommGroup
