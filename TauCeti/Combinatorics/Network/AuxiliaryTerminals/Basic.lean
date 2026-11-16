@@ -36,6 +36,8 @@ capacity of `S`, for arbitrary `A` and `B`.
   `TauCeti.AuxTerminalHom.sink`: its three kinds of arrows.
 * `TauCeti.AuxTerminalHom.originalEquiv`: the arrows between original vertices are exactly the
   original arrows.
+* `TauCeti.AuxTerminalHom.originalArrow`: an original arrow with its endpoints, as an arrow of
+  the auxiliary-terminal family.
 * `TauCeti.auxTerminalCapacity cap cσ cτ`: the capacities `cap` on original arrows, `cσ a` on
   `σ → a` and `cτ b` on `b → τ`.
 * `TauCeti.auxTerminalRestrict g`: the restriction of an assignment to the original arrows.
@@ -135,6 +137,30 @@ theorem original_injective {v w : V} :
 theorem original_inj {v w : V} {e e' : Q v w} :
     original (A := A) (B := B) e = original e' ↔ e = e' :=
   original_injective.eq_iff
+
+/-- An original arrow, including its endpoints, regarded as an arrow of the auxiliary-terminal
+family. -/
+def originalArrow : (Σ x y, Q x y) → (Σ x y, AuxTerminalHom Q A B x y)
+  | ⟨x, y, e⟩ => ⟨inl x, inl y, original e⟩
+
+@[simp]
+theorem originalArrow_mk {x y : V} (e : Q x y) :
+    originalArrow (A := A) (B := B) ⟨x, y, e⟩ = ⟨inl x, inl y, original e⟩ :=
+  (rfl)
+
+theorem originalArrow_injective : (originalArrow (Q := Q) (A := A) (B := B)).Injective := by
+  rintro ⟨x, y, e⟩ ⟨x', y', e'⟩ h
+  simp only [originalArrow_mk, Sigma.mk.injEq, inl.injEq] at h
+  obtain ⟨rfl, h⟩ := h
+  simp only [heq_eq_eq, Sigma.mk.injEq, inl.injEq] at h
+  obtain ⟨rfl, h⟩ := h
+  rw [heq_eq_eq, original_inj] at h
+  rw [h]
+
+@[simp]
+theorem originalArrow_inj {e e' : Σ x y, Q x y} :
+    originalArrow (A := A) (B := B) e = originalArrow e' ↔ e = e' :=
+  originalArrow_injective.eq_iff
 
 /-- The fresh source has an arrow to `Sum.inl a` only when `a ∈ A`. -/
 theorem mem_of_source {a : V} (e : AuxTerminalHom Q A B (inr false) (inl a)) : a ∈ A :=

@@ -40,30 +40,6 @@ variable {V : Type u} {Q : V → V → Type v} {A B : Finset V}
 
 namespace AuxTerminalHom
 
-/-- An original arrow, including its endpoints, regarded as an arrow of the auxiliary-terminal
-family. -/
-def originalArrow : (Σ x y, Q x y) → (Σ x y, AuxTerminalHom Q A B x y)
-  | ⟨x, y, e⟩ => ⟨inl x, inl y, original e⟩
-
-@[simp]
-theorem originalArrow_mk {x y : V} (e : Q x y) :
-    originalArrow (A := A) (B := B) ⟨x, y, e⟩ = ⟨inl x, inl y, original e⟩ :=
-  (rfl)
-
-theorem originalArrow_injective : (originalArrow (Q := Q) (A := A) (B := B)).Injective := by
-  rintro ⟨x, y, e⟩ ⟨x', y', e'⟩ h
-  simp only [originalArrow_mk, Sigma.mk.injEq, inl.injEq] at h
-  obtain ⟨rfl, h⟩ := h
-  simp only [heq_eq_eq, Sigma.mk.injEq, inl.injEq] at h
-  obtain ⟨rfl, h⟩ := h
-  rw [heq_eq_eq, original_inj] at h
-  rw [h]
-
-@[simp]
-theorem originalArrow_inj {e e' : Σ x y, Q x y} :
-    originalArrow (A := A) (B := B) e = originalArrow e' ↔ e = e' :=
-  originalArrow_injective.eq_iff
-
 /-- The inclusion of the original arrow family into the auxiliary-terminal family. -/
 private abbrev originalPrefunctor : @Prefunctor V ⟨Q⟩ (V ⊕ Bool) ⟨AuxTerminalHom Q A B⟩ :=
   @Prefunctor.mk V ⟨Q⟩ (V ⊕ Bool) ⟨AuxTerminalHom Q A B⟩ inl fun e ↦ original e
@@ -98,9 +74,9 @@ private theorem vertices_liftFromSource {a w : V} (ha : a ∈ A) (q : ArrowWalk 
 private theorem arrows_liftFromSource {a w : V} (ha : a ∈ A) (q : ArrowWalk Q a w) :
     (liftFromSource (B := B) ha q).arrows =
       [⟨inr false, inl a, source ha⟩] ++ q.arrows.map originalArrow := by
-  rw [liftFromSource, ArrowWalk.arrows_comp, ArrowWalk.arrows_mapPath, ArrowWalk.arrows_cons,
+  rw [liftFromSource, ArrowWalk.arrows_comp, Prefunctor.arrows_mapPath, ArrowWalk.arrows_cons,
     ArrowWalk.arrows_nil, List.nil_append]
-  congr 1
+  exact congrArg _ (List.map_congr_left fun ⟨_, _, e⟩ _ ↦ (originalArrow_mk e).symm)
 
 @[simp]
 theorem vertices_lift {a b : V} (ha : a ∈ A) (hb : b ∈ B) (q : ArrowWalk Q a b) :
