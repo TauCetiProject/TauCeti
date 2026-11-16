@@ -354,7 +354,12 @@ kernels agree since `(cochainComplex R H M).d 0 1` is `ModuleCat.ofHom (d R H M 
 (`cochainComplex_d_succ`). -/
 private noncomputable def kernelEquivFixed :
     LinearMap.ker ((cochainComplex R H M).d 0 (0 + 1)).hom ≃ₗ[R] fixedSubcomodule R H M :=
-  LinearEquiv.ofEq _ _ (ker_d_zero R H M)
+  LinearEquiv.ofEq _ _ <| by
+    -- After `cochainComplex_d_succ`, the map is `(ModuleCat.ofHom (d R H M 0)).hom`, which is
+    -- `d R H M 0` by `ModuleCat.hom_ofHom`; the lemma cannot be rewritten here because the source
+    -- and target are spelled `(cochainComplex R H M).X n`, so `exact` applies it by unfolding.
+    rw [cochainComplex_d_succ]
+    exact ker_d_zero R H M
 
 /-- The degree-zero cohomology of the Hochschild complex is the module of invariants
 `Mᴴ = {m | ρ m = m ⊗ 1}`. -/
@@ -379,8 +384,15 @@ theorem coe_cohomologyZeroIso_hom_homologyπ (x : (cochainComplex R H M).cycles 
   have hπ : (cochainComplex R H M).isoHomologyπ₀.inv.hom
       (((cochainComplex R H M).homologyπ 0).hom x) = x :=
     (cochainComplex R H M).isoHomologyπ₀.hom_inv_id_apply x
+  simp only [ModuleCat.kernelCone, Limits.Fork.app_zero_eq_ι, Limits.Fork.ι_ofι,
+    ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply] at hx
   simp only [cohomologyZeroIso, Iso.trans_hom, Iso.symm_hom, ModuleCat.hom_comp,
     LinearMap.comp_apply, hπ]
+  -- The remaining step is `(kernelEquivFixed R H M).toModuleIso`, which is `LinearEquiv.ofEq`
+  -- and so the identity on elements (`LinearEquiv.coe_ofEq_apply`). That lemma cannot be
+  -- rewritten here: the kernel lives in `(cochainComplex R H M).X 0`, which is `M` only by
+  -- unfolding (`cochainComplex_X`), so `exact` closes the goal with `hx` up to that
+  -- identification.
   exact hx
 
 /-! ### Functoriality in the coefficients -/
@@ -431,14 +443,17 @@ theorem d_comp_cochainsMap (f : Hom R H M N) (n : ℕ) :
     d R H N n ∘ₗ cochainsMap f n = cochainsMap f (n + 1) ∘ₗ d R H M n := by
   induction n with
   | zero =>
-    rw [d_zero, d_zero]
     refine LinearMap.ext fun m ↦ ?_
-    simp only [LinearMap.comp_apply, LinearMap.sub_apply, map_sub]
-    exact congrArg₂ (· - ·) (f.map_coact_apply m).symm rfl
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, cochainsMap_zero_apply, d_zero_apply,
+      d_zero_apply, map_sub, cochainsMap, LinearMap.rTensor_tmul, cochainsMap_zero_apply,
+      LinearMap.rTensor, cochainsMap, ← f.map_coact_apply]
   | succ n ih =>
     have h₁ : (d R H N n).rTensor H ∘ₗ cochainsMap f (n + 1) =
         cochainsMap f (n + 2) ∘ₗ (d R H M n).rTensor H :=
-      TensorProduct.ext' fun x h ↦ congrArg (· ⊗ₜ[R] h) (LinearMap.congr_fun ih x)
+      TensorProduct.ext' fun x h ↦ by
+        rw [LinearMap.comp_apply, LinearMap.comp_apply, cochainsMap_succ_tmul,
+          LinearMap.rTensor_tmul, LinearMap.rTensor_tmul, cochainsMap_succ_tmul,
+          ← LinearMap.comp_apply, ih, LinearMap.comp_apply]
     have h₂ : lastComul R H (cochains R H N n) ∘ₗ cochainsMap f (n + 1) =
         cochainsMap f (n + 2) ∘ₗ lastComul R H (cochains R H M n) :=
       lastComul_comp_rTensor R H (cochainsMap f n)
