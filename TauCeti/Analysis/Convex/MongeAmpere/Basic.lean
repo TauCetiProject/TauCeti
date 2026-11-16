@@ -403,22 +403,12 @@ on it, every measure is absolutely continuous with respect to an additive Haar m
 vector is a subgradient at the only point. -/
 theorem mongeAmpereMeasure_ite_of_subsingleton [Subsingleton E] :
     mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) = μ.restrict Ω := by
-  have hΩ : IsOpen Ω := by
-    rcases Ω.eq_empty_or_nonempty with h | h
-    · rw [h]
-      exact isOpen_empty
-    · rw [Subsingleton.eq_univ_of_nonempty h]
-      exact isOpen_univ
-  have hu : ConvexOn ℝ Ω u := ⟨Set.subsingleton_of_subsingleton.convex,
-    fun x _ y _ a b _ _ hab => by
-      rw [Subsingleton.elim (a • x + b • y) x, Subsingleton.elim y x, ← add_smul, hab, one_smul]⟩
+  have hu : ConvexOn ℝ Ω u := convexOn_iff_pairwise_pos.2
+    ⟨Set.subsingleton_of_subsingleton.convex, Set.subsingleton_of_subsingleton.pairwise _⟩
   have hμ : μ ≪ (addHaar : Measure E) := fun s hs => by
-    rcases s.eq_empty_or_nonempty with rfl | hne
-    · exact measure_empty
-    · rw [Subsingleton.eq_univ_of_nonempty hne] at hs
-      exact absurd hs (isOpen_univ.measure_pos addHaar univ_nonempty).ne'
+    simp [(isOpen_discrete s).eq_empty_of_measure_zero hs]
   ext s hs
-  rw [mongeAmpereMeasure_ite_apply μ hΩ hu hμ hs, Measure.restrict_apply hs]
+  rw [mongeAmpereMeasure_ite_apply μ (isOpen_discrete Ω) hu hμ hs, Measure.restrict_apply hs]
   congr 1
   ext y
   simp only [mem_iUnion, mem_ofPred_eq, exists_prop]
