@@ -9,10 +9,10 @@ public import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 import TauCeti.Geometry.Manifold.Distribution.Kernel
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Connection
+import TauCeti.Geometry.Manifold.Riemannian.Submersion.Curvature
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Integrability
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill.Connection
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Metric
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
@@ -23,10 +23,11 @@ Let `f : M → N` be a Riemannian submersion with horizontal and vertical orthog
 `h` and `v`, horizontal lift `horizontalLift`, and fundamental tensors `A` (`oneillA`) and `T`
 (`oneillT`). Writing `∇` for the Levi-Civita connection of `M`, `∇^N` for that of `N`, and
 `∇A`, `∇T` for the covariant derivatives of `A` and `T` under the induced Hom-bundle connection
-`∇.hom (∇.hom ∇)`, this file proves the four curvature equations of O'Neill's Theorem 2 that live
-intrinsically on `M` and `N` (under Lee's sign convention
-`R(X, Y) Z = ∇_X ∇_Y Z - ∇_Y ∇_X Z - ∇_[X, Y] Z`, which is opposite to O'Neill's `(1, 3)` sign
-while agreeing on sectional-curvature numerators `⟪R(u, v) v, u⟫`):
+`∇.hom (∇.hom ∇)`, this file proves O'Neill's curvature equations `{1}`, `{2}`, and `{3}` together
+with the horizontal-projection and horizontal-lift forms of `{4}` (building on the inner-product
+form `TauCeti.IsRiemannianSubmersion.inner_curvatureTensor_of_mem_orthogonal_ker` in
+`Submersion/Curvature.lean`, under Lee's sign convention
+`R(X, Y) Z = ∇_X ∇_Y Z - ∇_Y ∇_X Z - ∇_[X, Y] Z`):
 
 * `{1}` (three vertical, one horizontal): for vertical `u, v, w` and horizontal `z`,
   `⟪R(u, v) w, z⟫ = ⟪(∇_u T) v w, z⟫ - ⟪(∇_v T) u w, z⟫`.
@@ -36,9 +37,9 @@ while agreeing on sectional-curvature numerators `⟪R(u, v) v, u⟫`):
   `⟪R(u, v) z, w⟫ = ⟪(∇_u A) v z, w⟫ - ⟪(∇_v A) u z, w⟫ - 2 ⟪T_(A_u v) z, w⟫`, together with
   its single-derivative Bianchi form
   `-⟪(∇_z A) u v, w⟫ - ⟪A_u v, T_w z⟫ + ⟪A_v z, T_w u⟫ + ⟪A_z u, T_w v⟫`.
-* `{4}` (four horizontal): for horizontal `u, v, z, w`,
-  `⟪R(u, v) z, w⟫ = ⟪R^N(df u, df v)(df z), df w⟫ - ⟪A_v z, A_u w⟫ + ⟪A_u z, A_v w⟫`
-  `+ 2 ⟪A_u v, A_z w⟫`, along with the horizontal-projection identity for `h (R(u, v) z)`.
+* `{4}` (horizontal-projection and horizontal-lift forms): for horizontal `u, v, z`,
+  `h (R(u, v) z) = L_x (R^N(df u, df v)(df z)) + A_u (A_v z) - A_v (A_u z) - 2 A_z (A_u v)`,
+  and the base curvature pairing expressed via `horizontalLift`.
 
 The purely vertical Gauss equation (`{0}`), which compares four vertical arguments with the
 intrinsic curvature of a fibre submanifold, requires endowing the fibres with a submanifold
@@ -54,9 +55,9 @@ equation `{4}` where `curvatureTensor` on `N` appears.
 * `TauCeti.IsRiemannianSubmersion.inner_curvatureTensor_horizontal_vertical` and
   `TauCeti.IsRiemannianSubmersion.inner_curvatureTensor_horizontal_vertical_eq_neg`:
   O'Neill's `{3}` in commutator and single-derivative forms.
-* `TauCeti.IsRiemannianSubmersion.starProjection_orthogonal_ker_curvatureTensor_horizontal`,
-  `TauCeti.IsRiemannianSubmersion.inner_curvatureTensor_horizontal`, and
-  `TauCeti.IsRiemannianSubmersion.inner_curvatureTensor_eq_horizontalLift`: O'Neill's `{4}`.
+* `TauCeti.IsRiemannianSubmersion.starProjection_orthogonal_ker_curvatureTensor_horizontal` and
+  `TauCeti.IsRiemannianSubmersion.inner_curvatureTensor_eq_horizontalLift`: projection and
+  horizontal-lift forms of O'Neill's `{4}`.
 
 ## References
 
@@ -80,19 +81,27 @@ variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
-  {f : M → N} (h : IsRiemannianSubmersion I J f)
 
 -- These regularity indices are propositionally, but not definitionally, equal to `2`.
 private instance : IsManifold I (minSmoothness ℝ 2) M := by
   rw [minSmoothness_of_isRCLikeNormedField]
   exact .of_le (by norm_cast)
+
+private theorem contMDiffOn_leviCivitaConnection_apply_of_isOpen {u : Set M} (hu : IsOpen u)
+    {X σ : Π y : M, TangentSpace I y} (hX : CMDiff[u] ∞ (T% X)) (hσ : CMDiff[u] ∞ (T% σ)) :
+    CMDiff[u] ∞ (T% (fun y ↦ leviCivitaConnection I M σ y (X y))) :=
+  (contMDiffOn_leviCivitaConnection (I := I) (n := ∞) (m := ∞) (k := ∞) hu le_rfl le_rfl
+    (by simpa using hσ)).clm_bundle_apply hX
+
+variable
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
+  {f : M → N} (h : IsRiemannianSubmersion I J f)
 
 private instance : IsManifold J (minSmoothness ℝ 2) N := by
   rw [minSmoothness_of_isRCLikeNormedField]
@@ -103,15 +112,6 @@ include h
 /-! ### Total-space curvature equations `{1}`, `{2}`, `{3}` -/
 
 section TotalCurvature
-
-omit [FiniteDimensional ℝ F] [IsManifold J ∞ N]
-  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] h in
-private theorem contMDiffOn_leviCivitaConnection_apply_of_isOpen {u : Set M} (hu : IsOpen u)
-    {X σ : Π y : M, TangentSpace I y} (hX : CMDiff[u] ∞ (T% X)) (hσ : CMDiff[u] ∞ (T% σ)) :
-    CMDiff[u] ∞ (T% (fun y ↦ leviCivitaConnection I M σ y (X y))) :=
-  (contMDiffOn_leviCivitaConnection (I := I) (n := ∞) (m := ∞) (k := ∞) hu le_rfl le_rfl
-    (by simpa using hσ)).clm_bundle_apply hX
 
 variable [T2Space M] {x : M}
 
@@ -527,21 +527,12 @@ theorem inner_curvatureTensor_horizontal_vertical
   have hB₂on : CMDiff[W₀] ∞ (T% B₂) :=
     hB₂.mono (Set.inter_subset_left.trans Set.inter_subset_right)
   have hB₃on : CMDiff[W₀] ∞ (T% B₃) := hB₃.mono Set.inter_subset_right
-  have hXd := (hXon.contMDiffAt (hUopen.mem_nhds hfx₀)).mdifferentiableAt (by simp)
-  have hYd := (hYon.contMDiffAt (hUopen.mem_nhds hfx₀)).mdifferentiableAt (by simp)
   have hB₁_1 := (hB₁on.contMDiffAt (hW₀.mem_nhds hfx₀)).of_le (m := 1) (by simp)
   have hB₂_1 := (hB₂on.contMDiffAt (hW₀.mem_nhds hfx₀)).of_le (m := 1) (by simp)
   have hB₃_1 := (hB₃on.contMDiffAt (hW₀.mem_nhds hfx₀)).of_le (m := 1) (by simp)
   have hbr_split : mlieBracket I X Y x =
       h.horizontalLift x (mlieBracket J B₁ B₂ (f x)) + (2 : ℝ) • h.oneillA x u v := by
-    conv_lhs =>
-      rw [← (mfderiv I J f x).ker.starProjection_add_starProjection_orthogonal
-        (mlieBracket I X Y x)]
-    rw [← h.horizontalLift_mfderiv, h.mfderiv_mlieBracket_horizontalLift hB₁_1 hB₂_1,
-      h.starProjection_ker_mlieBracket hXd hYd
-        (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _)
-        (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _),
-      show X x = u from hXx₁, show Y x = v from hXx₂, add_comm]
+    simpa only [X, Y, hXx₁, hXx₂] using h.mlieBracket_horizontalLift hB₁_1 hB₂_1
   have hbr : ⟪cov Z x (mlieBracket I X Y x), w⟫_ℝ =
       ⟪h.oneillA x (h.horizontalLift x (leviCivitaConnection J N B₂ (f x) (B₁ (f x)))) z, w⟫_ℝ -
         ⟪h.oneillA x (h.horizontalLift x (leviCivitaConnection J N B₁ (f x) (B₂ (f x)))) z, w⟫_ℝ +
@@ -616,53 +607,6 @@ section HorizontalCurvature
 
 variable [T2Space M] [T2Space N] {x : M}
 
-omit [T2Space N] in
-/-- Evaluate the horizontal projection of the iterated covariant derivative along basic horizontal
-lifts `L BA`, `L BB`, and `L B₃` for smooth base fields. -/
-private theorem starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift_iterated
-    (x : M) {BA BB B₃ : Π q : N, TangentSpace J q}
-    (hBB : CMDiff ∞ (T% BB)) (hB₃ : CMDiff ∞ (T% B₃)) :
-    (mfderiv I J f x).kerᗮ.starProjection
-        (leviCivitaConnection I M
-          (fun y ↦ leviCivitaConnection I M (fun q ↦ h.horizontalLift q (B₃ (f q))) y
-            (h.horizontalLift y (BB (f y)))) x
-          (h.horizontalLift x (BA (f x)))) =
-      h.horizontalLift x
-          (leviCivitaConnection J N (fun q ↦ leviCivitaConnection J N B₃ q (BB q)) (f x)
-            (BA (f x))) +
-        h.oneillA x (h.horizontalLift x (BA (f x)))
-          (h.oneillA x (h.horizontalLift x (BB (f x))) (h.horizontalLift x (B₃ (f x)))) := by
-  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  set covM := leviCivitaConnection I M
-  set covN := leviCivitaConnection J N
-  have hlift (B : Π q : N, TangentSpace J q) (hB : CMDiff ∞ (T% B)) :
-      CMDiff ∞ (T% (fun y ↦ h.horizontalLift y (B (f y)))) :=
-    fun y ↦ h.contMDiffAt_horizontalLift (hB (f y)) (by simp)
-  set Z : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (B₃ (f y))
-  set NBZ : Π q : N, TangentSpace J q := fun q ↦ covN B₃ q (BB q)
-  have hNBZ : CMDiff ∞ (T% NBZ) := covN.contMDiff_apply hBB hB₃
-  have hLNBZ := hlift NBZ hNBZ
-  have hABZ : CMDiff ∞ (T% (fun y ↦ h.oneillA y (h.horizontalLift y (BB (f y))) (Z y))) :=
-    (h.contMDiff_oneillA.clm_bundle_apply (hlift BB hBB)).clm_bundle_apply (hlift B₃ hB₃)
-  have hsplit : (fun y ↦ covM Z y (h.horizontalLift y (BB (f y)))) =
-      (fun y ↦ h.horizontalLift y (NBZ (f y))) +
-        fun y ↦ h.oneillA y (h.horizontalLift y (BB (f y))) (Z y) :=
-    funext fun y ↦
-      h.leviCivitaConnection_horizontalLift ((hB₃ (f y)).of_le (m := 1) (by simp)) (BB (f y))
-  rw [hsplit, covM.isCovariantDerivativeOnUniv.add (hLNBZ.mdifferentiableAt (by simp))
-      (hABZ.mdifferentiableAt (by simp)),
-    add_apply, map_add,
-    h.starProjection_covariantDerivative_horizontalLift
-      (isLeviCivitaConnection_leviCivitaConnection I)
-      (isLeviCivitaConnection_leviCivitaConnection J)
-      ((hNBZ (f x)).of_le (m := 1) (by simp)) (BA (f x))]
-  have hA_term := h.oneillA_apply_of_eventually_mem_ker (hABZ.mdifferentiableAt (by simp))
-    (.of_forall fun y ↦ h.oneillA_apply_mem_ker _ (h.horizontalLift_mem_orthogonal_ker y _))
-    (h.horizontalLift x (BA (f x)))
-  rw [Submodule.starProjection_eq_self_iff.mpr (h.horizontalLift_mem_orthogonal_ker x _)]
-    at hA_term
-  rw [← hA_term]
-
 /-- **O'Neill's curvature equation `{4}` (horizontal-projection form).** For horizontal vectors
 `u, v, z`, writing `L_x = h.horizontalLift x`,
 `h (R(u, v) z) = L_x (R^N(df u, df v)(df z)) + A_u (A_v z) - A_v (A_u z) - 2 A_z (A_u v)`. -/
@@ -677,84 +621,22 @@ theorem starProjection_orthogonal_ker_curvatureTensor_horizontal
         h.oneillA x u (h.oneillA x v z) -
         h.oneillA x v (h.oneillA x u z) -
         (2 : ℝ) • h.oneillA x z (h.oneillA x u v) := by
-  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  set covM := leviCivitaConnection I M
-  set covN := leviCivitaConnection J N
-  obtain ⟨B₁, hB₁, hB₁x⟩ := exists_contMDiff_section_eq J F ∞ (mfderiv I J f x u)
-  obtain ⟨B₂, hB₂, hB₂x⟩ := exists_contMDiff_section_eq J F ∞ (mfderiv I J f x v)
-  obtain ⟨B₃, hB₃, hB₃x⟩ := exists_contMDiff_section_eq J F ∞ (mfderiv I J f x z)
-  set X : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (B₁ (f y))
-  set Y : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (B₂ (f y))
-  set Z : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (B₃ (f y))
-  have hlift (B : Π q : N, TangentSpace J q) (hB : CMDiff ∞ (T% B)) :
-      CMDiff ∞ (T% (fun y ↦ h.horizontalLift y (B (f y)))) :=
-    fun y ↦ h.contMDiffAt_horizontalLift (hB (f y)) (by simp)
-  have hX := hlift B₁ hB₁
-  have hY := hlift B₂ hB₂
-  have hZ := hlift B₃ hB₃
-  have hXx : h.horizontalLift x (B₁ (f x)) = u := by
-    rw [hB₁x, h.horizontalLift_mfderiv_of_mem x hu]
-  have hYx : h.horizontalLift x (B₂ (f x)) = v := by
-    rw [hB₂x, h.horizontalLift_mfderiv_of_mem x hv]
-  have hZx : h.horizontalLift x (B₃ (f x)) = z := by
-    rw [hB₃x, h.horizontalLift_mfderiv_of_mem x hz]
-  have hbr_split : mlieBracket I X Y x =
-      h.horizontalLift x (mlieBracket J B₁ B₂ (f x)) + (2 : ℝ) • h.oneillA x u v := by
-    conv_lhs =>
-      rw [← (mfderiv I J f x).ker.starProjection_add_starProjection_orthogonal
-        (mlieBracket I X Y x)]
-    rw [← h.horizontalLift_mfderiv,
-      h.mfderiv_mlieBracket_horizontalLift ((hB₁ (f x)).of_le (m := 1) (by simp))
-        ((hB₂ (f x)).of_le (m := 1) (by simp)),
-      h.starProjection_ker_mlieBracket (hX.mdifferentiableAt (by simp))
-        (hY.mdifferentiableAt (by simp))
-        (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _)
-        (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _),
-      hXx, hYx, add_comm]
-  have hbr : (mfderiv I J f x).kerᗮ.starProjection (covM Z x (mlieBracket I X Y x)) =
-      h.horizontalLift x (covN B₃ (f x) (mlieBracket J B₁ B₂ (f x))) +
-        (2 : ℝ) • h.oneillA x z (h.oneillA x u v) := by
-    rw [hbr_split, map_add, map_add, map_smul, map_smul,
-      h.starProjection_covariantDerivative_horizontalLift
-        (isLeviCivitaConnection_leviCivitaConnection I)
-        (isLeviCivitaConnection_leviCivitaConnection J) ((hB₃ (f x)).of_le (m := 1) (by simp)),
-      h.starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift_of_mem_ker
-        ((hB₃ (f x)).of_le (m := 1) (by simp)) (h.oneillA_apply_mem_ker u hv),
-      hZx]
-  have hcurvM := curvatureTensor_apply covM x hX hY hZ
-  have hcurvN := curvatureTensor_apply covN (f x) hB₁ hB₂ hB₃
-  rw [hXx, hYx, hZx] at hcurvM
-  rw [hB₁x, hB₂x, hB₃x] at hcurvN
-  have htXY := h.starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift_iterated x
-    (BA := B₁) hB₂ hB₃
-  have htYX := h.starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift_iterated x
-    (BA := B₂) hB₁ hB₃
-  simp only [hXx, hYx, hZx] at htXY htYX
-  rw [hcurvM, hcurvN, curvatureOperator_apply, curvatureOperator_apply, map_sub, map_sub,
-    map_sub, map_sub, hXx, hYx]
-  rw [show (mfderiv I J f x).kerᗮ.starProjection (covM (fun y ↦ covM Z y (Y y)) x u) = _ from htXY,
-    show (mfderiv I J f x).kerᗮ.starProjection (covM (fun y ↦ covM Z y (X y)) x v) = _ from htYX,
-    hbr]
-  abel
-
-/-- **O'Neill's curvature equation `{4}`.** For horizontal tangent vectors `u, v, z, w`,
-`⟪R(u, v) z, w⟫ = ⟪R^N(df u, df v)(df z), df w⟫ - ⟪A_v z, A_u w⟫ + ⟪A_u z, A_v w⟫`
-`+ 2 ⟪A_u v, A_z w⟫`. -/
-theorem inner_curvatureTensor_horizontal
-    {u v z w : TangentSpace I x}
-    (hu : u ∈ (mfderiv I J f x).kerᗮ) (hv : v ∈ (mfderiv I J f x).kerᗮ)
-    (hz : z ∈ (mfderiv I J f x).kerᗮ) (hw : w ∈ (mfderiv I J f x).kerᗮ) :
-    ⟪(leviCivitaConnection I M).curvatureTensor x u v z, w⟫_ℝ =
-      ⟪(leviCivitaConnection J N).curvatureTensor (f x)
-          (mfderiv I J f x u) (mfderiv I J f x v) (mfderiv I J f x z),
-        mfderiv I J f x w⟫_ℝ -
-        ⟪h.oneillA x v z, h.oneillA x u w⟫_ℝ +
-        ⟪h.oneillA x u z, h.oneillA x v w⟫_ℝ +
-        2 * ⟪h.oneillA x u v, h.oneillA x z w⟫_ℝ := by
-  have hp : ⟪(leviCivitaConnection I M).curvatureTensor x u v z, w⟫_ℝ =
-      ⟪(mfderiv I J f x).kerᗮ.starProjection
-        ((leviCivitaConnection I M).curvatureTensor x u v z), w⟫_ℝ := by
-    rw [Submodule.inner_starProjection_left_eq_right, Submodule.starProjection_eq_self_iff.mpr hw]
+  set rhs := h.horizontalLift x ((leviCivitaConnection J N).curvatureTensor (f x)
+      (mfderiv I J f x u) (mfderiv I J f x v) (mfderiv I J f x z)) +
+    h.oneillA x u (h.oneillA x v z) -
+    h.oneillA x v (h.oneillA x u z) -
+    (2 : ℝ) • h.oneillA x z (h.oneillA x u v)
+  have hrhs : rhs ∈ (mfderiv I J f x).kerᗮ :=
+    sub_mem (sub_mem (add_mem (h.horizontalLift_mem_orthogonal_ker x _)
+      (h.oneillA_apply_mem_orthogonal_ker u (h.oneillA_apply_mem_ker v hz)))
+      (h.oneillA_apply_mem_orthogonal_ker v (h.oneillA_apply_mem_ker u hz)))
+      (Submodule.smul_mem _ _ (h.oneillA_apply_mem_orthogonal_ker z (h.oneillA_apply_mem_ker u hv)))
+  refine ext_inner_right ℝ fun t ↦ ?_
+  set w := (mfderiv I J f x).kerᗮ.starProjection t
+  have hw : w ∈ (mfderiv I J f x).kerᗮ := Submodule.starProjection_apply_mem _ _
+  have hrhs_eq : ⟪rhs, t⟫_ℝ = ⟪rhs, w⟫_ℝ := by
+    rw [← Submodule.inner_starProjection_left_eq_right,
+      Submodule.starProjection_eq_self_iff.mpr hrhs]
   have hl : ⟪h.horizontalLift x ((leviCivitaConnection J N).curvatureTensor (f x)
         (mfderiv I J f x u) (mfderiv I J f x v) (mfderiv I J f x z)), w⟫_ℝ =
       ⟪(leviCivitaConnection J N).curvatureTensor (f x)
@@ -762,8 +644,9 @@ theorem inner_curvatureTensor_horizontal
         mfderiv I J f x w⟫_ℝ := by
     conv_lhs => rw [← h.horizontalLift_mfderiv_of_mem x hw]
     exact (h.horizontalLift x).inner_map_map _ _
-  rw [hp, h.starProjection_orthogonal_ker_curvatureTensor_horizontal hu hv hz]
-  simp only [inner_sub_left, inner_add_left, real_inner_smul_left, hl, h.inner_oneillA]
+  rw [Submodule.inner_starProjection_left_eq_right, hrhs_eq,
+    h.inner_curvatureTensor_of_mem_orthogonal_ker hu hv hz hw]
+  simp only [rhs, inner_sub_left, inner_add_left, real_inner_smul_left, hl, h.inner_oneillA]
   linarith
 
 /-- Base metric-lowered curvature expressed on arbitrary base tangent vectors via
@@ -780,7 +663,7 @@ theorem inner_curvatureTensor_eq_horizontalLift
           h.oneillA x (h.horizontalLift x v) (h.horizontalLift x w)⟫_ℝ -
         2 * ⟪h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v),
           h.oneillA x (h.horizontalLift x z) (h.horizontalLift x w)⟫_ℝ := by
-  have h₄ := h.inner_curvatureTensor_horizontal
+  have h₄ := h.inner_curvatureTensor_of_mem_orthogonal_ker
     (h.horizontalLift_mem_orthogonal_ker x u) (h.horizontalLift_mem_orthogonal_ker x v)
     (h.horizontalLift_mem_orthogonal_ker x z) (h.horizontalLift_mem_orthogonal_ker x w)
   simp only [h.mfderiv_horizontalLift] at h₄

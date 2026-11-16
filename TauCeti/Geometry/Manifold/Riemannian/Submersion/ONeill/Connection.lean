@@ -38,9 +38,10 @@ derivatives `∇A` and `∇T` via `contMDiff_oneillA` and `contMDiff_oneillT`.
 * `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_of_eventually_mem_ker_of_mem_ker` and its
   three horizontal/vertical companions: O'Neill's Lemma 1 decomposing `∇` via `A` and `T`.
 * `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift_of_mem_ker`,
-  `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift`, and
+  `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift_of_mem_orthogonal_ker`, and
   `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift_apply`: O'Neill's Lemma 2
-  and the full Levi-Civita derivative of a basic horizontal lift.
+  and the full Levi-Civita derivative of a basic horizontal lift (building on
+  `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift`).
 * `TauCeti.IsRiemannianSubmersion.exists_contMDiffOn_horizontalLift`: local extension of a
   horizontal vector to a smooth basic horizontal lift without `[T2Space N]`.
 * `TauCeti.IsRiemannianSubmersion.hom_oneillA_apply`,
@@ -72,19 +73,85 @@ variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
-  {f : M → N} (h : IsRiemannianSubmersion I J f) {x : M}
+  {x : M}
 
 -- These regularity indices are propositionally, but not definitionally, equal to `2`.
 private instance : IsManifold I (minSmoothness ℝ 2) M := by
   rw [minSmoothness_of_isRCLikeNormedField]
   exact .of_le (by norm_cast)
+
+private theorem hom_hom_apply
+    {S : Π y : M, TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y}
+    (hS : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E)) ∞
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
+        (E := fun z ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] TangentSpace I z) y (S y)))
+    {Y Z : Π y : M, TangentSpace I y} (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x)
+    (w : TangentSpace I x) :
+    ((leviCivitaConnection I M).hom ((leviCivitaConnection I M).hom (leviCivitaConnection I M)))
+        S x w (Y x) (Z x) =
+      leviCivitaConnection I M (fun y ↦ S y (Y y) (Z y)) x w -
+        S x (leviCivitaConnection I M Y x w) (Z x) -
+        S x (Y x) (leviCivitaConnection I M Z x w) := by
+  let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
+  let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
+  let _ : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E) := inferInstance
+  let _ : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E) := inferInstance
+  have hSd := hS.mdifferentiableAt (by simp) (x := x)
+  rw [CovariantDerivative.hom_apply _ _ hSd hY w, sub_apply,
+    CovariantDerivative.hom_apply _ _ (hSd.clm_bundle_apply hY) hZ w]
+  abel
+
+/-- Skew-adjointness of a smooth bilinear bundle section in its last two slots passes to its
+covariant derivative under the induced Hom-bundle connection. -/
+private theorem inner_hom_hom_of_skew
+    {S : Π y : M, TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y}
+    (hS : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E)) ∞
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
+        (E := fun z ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] TangentSpace I z) y (S y)))
+    (hskew : ∀ y u a b, ⟪S y u a, b⟫_ℝ = -⟪a, S y u b⟫_ℝ)
+    (w u a b : TangentSpace I x) :
+    ⟪((leviCivitaConnection I M).hom ((leviCivitaConnection I M).hom (leviCivitaConnection I M)))
+        S x w u a, b⟫_ℝ =
+      -⟪a, ((leviCivitaConnection I M).hom
+          ((leviCivitaConnection I M).hom (leviCivitaConnection I M))) S x w u b⟫_ℝ := by
+  let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
+  let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
+  let _ : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E) := inferInstance
+  let _ : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E) := inferInstance
+  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have hSd := hS.mdifferentiableAt (by simp) (x := x)
+  have hU := mdifferentiableAt_extend I E u
+  have hA := mdifferentiableAt_extend I E a
+  have hB := mdifferentiableAt_extend I E b
+  have hSUA := (hSd.clm_bundle_apply hU).clm_bundle_apply hA
+  have hSUB := (hSd.clm_bundle_apply hU).clm_bundle_apply hB
+  set φ₁ : M → ℝ := fun y ↦ ⟪S y (extend E u y) (extend E a y), extend E b y⟫_ℝ
+  set φ₂ : M → ℝ := fun y ↦ ⟪extend E a y, S y (extend E u y) (extend E b y)⟫_ℝ
+  have hzero : φ₁ + φ₂ = fun _ ↦ 0 :=
+    funext fun y ↦ by simp only [Pi.add_apply, φ₁, φ₂, hskew, neg_add_cancel]
+  have hmetric := isMetricCompatible_leviCivitaConnection I (M := M)
+  have hm₁ := hmetric.mvfderiv_inner_eq (extend E w) hSUA hB
+  have hm₂ := hmetric.mvfderiv_inner_eq (extend E w) hA hSUB
+  have hd : mvfderiv I (φ₁ + φ₂) x (extend E w x) = 0 := by
+    rw [hzero, mvfderiv_const, zero_apply]
+  rw [mvfderiv_add (TauCeti.Manifold.mdifferentiableAt_inner hSUA hB)
+      (TauCeti.Manifold.mdifferentiableAt_inner hA hSUB), add_apply, hm₁, hm₂] at hd
+  have hevalA := hom_hom_apply hS hU hA w
+  have hevalB := hom_hom_apply hS hU hB w
+  simp only [extend_apply_self, hskew] at hd hevalA hevalB
+  rw [hevalA, hevalB]
+  simp only [inner_sub_left, inner_sub_right, hskew]
+  linarith
+
+variable
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
+  {f : M → N} (h : IsRiemannianSubmersion I J f)
 
 private instance : IsManifold J (minSmoothness ℝ 2) N := by
   rw [minSmoothness_of_isRCLikeNormedField]
@@ -202,25 +269,6 @@ theorem leviCivitaConnection_horizontalLift_of_mem_ker
     h.starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift_of_mem_ker hB hu]
 
 /-- The Levi-Civita derivative of a basic horizontal lift `X : y ↦ h.horizontalLift y (B (f y))`
-along `h.horizontalLift x v` is the horizontal lift of `∇^N_v B` plus
-`A_(h.horizontalLift x v) (X x)`. -/
-theorem leviCivitaConnection_horizontalLift
-    {B : Π z : N, TangentSpace J z} (hB : CMDiffAt 1 (T% B) (f x))
-    (v : TangentSpace J (f x)) :
-    leviCivitaConnection I M (fun y ↦ h.horizontalLift y (B (f y))) x (h.horizontalLift x v) =
-      h.horizontalLift x (leviCivitaConnection J N B (f x) v) +
-        h.oneillA x (h.horizontalLift x v) (h.horizontalLift x (B (f x))) := by
-  let : IsManifold I ((1 : ℕ∞ω) + 1) M := .of_le (n := ∞) (by simp)
-  have hXd : MDiffAt (T% (fun y ↦ h.horizontalLift y (B (f y)))) x :=
-    (h.contMDiffAt_horizontalLift hB (by norm_num)).mdifferentiableAt one_ne_zero
-  rw [h.leviCivitaConnection_of_eventually_mem_orthogonal_ker_of_mem_orthogonal_ker hXd
-      (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _)
-      (h.horizontalLift_mem_orthogonal_ker x v),
-    h.starProjection_covariantDerivative_horizontalLift
-      (isLeviCivitaConnection_leviCivitaConnection I)
-      (isLeviCivitaConnection_leviCivitaConnection J) hB v]
-
-/-- The Levi-Civita derivative of a basic horizontal lift `X : y ↦ h.horizontalLift y (B (f y))`
 along a horizontal vector `u` is the horizontal lift of `∇^N_(df u) B` plus `A_u (X x)`. -/
 theorem leviCivitaConnection_horizontalLift_of_mem_orthogonal_ker
     {B : Π z : N, TangentSpace J z} (hB : CMDiffAt 1 (T% B) (f x))
@@ -268,75 +316,6 @@ theorem exists_contMDiffOn_horizontalLift {u : TangentSpace I x}
   · simp [extend_apply_self, h.horizontalLift_mfderiv_of_mem x hu]
 
 /-! ### Covariant derivatives of `A` and `T` -/
-
-omit [FiniteDimensional ℝ F] [IsManifold J ∞ N]
-  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] h in
-private theorem hom_hom_apply
-    {S : Π y : M, TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y}
-    (hS : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E)) ∞
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
-        (E := fun z ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] TangentSpace I z) y (S y)))
-    {Y Z : Π y : M, TangentSpace I y} (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x)
-    (w : TangentSpace I x) :
-    ((leviCivitaConnection I M).hom ((leviCivitaConnection I M).hom (leviCivitaConnection I M)))
-        S x w (Y x) (Z x) =
-      leviCivitaConnection I M (fun y ↦ S y (Y y) (Z y)) x w -
-        S x (leviCivitaConnection I M Y x w) (Z x) -
-        S x (Y x) (leviCivitaConnection I M Z x w) := by
-  let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
-  let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
-  let _ : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E) := inferInstance
-  let _ : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E) := inferInstance
-  have hSd := hS.mdifferentiableAt (by simp) (x := x)
-  rw [CovariantDerivative.hom_apply _ _ hSd hY w, sub_apply,
-    CovariantDerivative.hom_apply _ _ (hSd.clm_bundle_apply hY) hZ w]
-  abel
-
-omit [FiniteDimensional ℝ F] [IsManifold J ∞ N]
-  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] h in
-/-- Skew-adjointness of a smooth bilinear bundle section in its last two slots passes to its
-covariant derivative under the induced Hom-bundle connection. -/
-private theorem inner_hom_hom_of_skew
-    {S : Π y : M, TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y}
-    (hS : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E)) ∞
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
-        (E := fun z ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] TangentSpace I z) y (S y)))
-    (hskew : ∀ y u a b, ⟪S y u a, b⟫_ℝ = -⟪a, S y u b⟫_ℝ)
-    (w u a b : TangentSpace I x) :
-    ⟪((leviCivitaConnection I M).hom ((leviCivitaConnection I M).hom (leviCivitaConnection I M)))
-        S x w u a, b⟫_ℝ =
-      -⟪a, ((leviCivitaConnection I M).hom
-          ((leviCivitaConnection I M).hom (leviCivitaConnection I M))) S x w u b⟫_ℝ := by
-  let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
-  let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
-  let _ : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E) := inferInstance
-  let _ : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E) := inferInstance
-  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have hSd := hS.mdifferentiableAt (by simp) (x := x)
-  have hU := mdifferentiableAt_extend I E u
-  have hA := mdifferentiableAt_extend I E a
-  have hB := mdifferentiableAt_extend I E b
-  have hSUA := (hSd.clm_bundle_apply hU).clm_bundle_apply hA
-  have hSUB := (hSd.clm_bundle_apply hU).clm_bundle_apply hB
-  set φ₁ : M → ℝ := fun y ↦ ⟪S y (extend E u y) (extend E a y), extend E b y⟫_ℝ
-  set φ₂ : M → ℝ := fun y ↦ ⟪extend E a y, S y (extend E u y) (extend E b y)⟫_ℝ
-  have hzero : φ₁ + φ₂ = fun _ ↦ 0 :=
-    funext fun y ↦ by simp only [Pi.add_apply, φ₁, φ₂, hskew, neg_add_cancel]
-  have hmetric := isMetricCompatible_leviCivitaConnection I (M := M)
-  have hm₁ := hmetric.mvfderiv_inner_eq (extend E w) hSUA hB
-  have hm₂ := hmetric.mvfderiv_inner_eq (extend E w) hA hSUB
-  have hd : mvfderiv I (φ₁ + φ₂) x (extend E w x) = 0 := by
-    rw [hzero, mvfderiv_const, zero_apply]
-  rw [mvfderiv_add (TauCeti.Manifold.mdifferentiableAt_inner hSUA hB)
-      (TauCeti.Manifold.mdifferentiableAt_inner hA hSUB), add_apply, hm₁, hm₂] at hd
-  have hevalA := hom_hom_apply hS hU hA w
-  have hevalB := hom_hom_apply hS hU hB w
-  simp only [extend_apply_self, hskew] at hd hevalA hevalB
-  rw [hevalA, hevalB]
-  simp only [inner_sub_left, inner_sub_right, hskew]
-  linarith
 
 variable [T2Space M]
 

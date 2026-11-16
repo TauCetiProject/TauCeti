@@ -7,23 +7,27 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
-import TauCeti.Geometry.Manifold.Riemannian.Submersion.Curvature.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Submersion.Curvature
+import TauCeti.Geometry.Manifold.Riemannian.Submersion.Curvature.Equations
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Integrability
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill.Connection
 
 /-!
 # O'Neill's sectional-curvature formulas for a Riemannian submersion
 
-Specializing O'Neill's curvature equations `{2}` and `{4}` to two-planes yields O'Neill's
-sectional-curvature formulas (Corollaries 1 and 2):
+Building on the horizontal sectional-curvature identity
+`TauCeti.IsRiemannianSubmersion.sectionalCurvature_mfderiv` in `Submersion/Curvature.lean` and
+O'Neill's curvature equation `{2}` in `Submersion/Curvature/Equations.lean`, this file proves the
+remaining sectional-curvature corollaries of O'Neill's Theorem 2 (Corollaries 1 and 2):
 
-* For horizontal `u, v`,
-  `K^N(df u, df v) = K(u, v) + 3 ‖A_u v‖² / det Gram(u, v)` (and on horizontal fields `X, Y`,
-  `+ (3 / 4) ‖v [X, Y]‖² / det Gram(X, Y)`), so `K(u, v) ≤ K^N(df u, df v)` with equality iff
-  `A_u v = 0`, and lower sectional-curvature bounds at `x` push forward to `f x`.
 * For horizontal `u` and vertical `v` (requiring `[T2Space M]` only, not `[T2Space N]`),
   `K(u, v) = (⟪(∇_u T) v v, u⟫ + ‖A_u v‖² - ‖T_v u‖²) / (‖u‖² ‖v‖²)`, which simplifies to
   `‖A_u v‖² / (‖u‖² ‖v‖²) ≥ 0` when `T` vanishes near `x` (totally geodesic fibres).
+* For horizontal `u, v` (and horizontal fields `X, Y`), horizontal-lift, orthonormal, and
+  vertical Lie-bracket (`+ (3 / 4) ‖v [X, Y]‖² / det Gram(X, Y)`) forms of O'Neill's horizontal
+  sectional-curvature formula, monotonicity `K(u, v) ≤ K^N(df u, df v)`, the equality
+  characterization `K^N(df u, df v) = K(u, v) ↔ A_u v = 0`, and pushforward of lower
+  sectional-curvature bounds from `M` to `N`.
 
 ## Main results
 
@@ -35,10 +39,11 @@ sectional-curvature formulas (Corollaries 1 and 2):
 * `TauCeti.IsRiemannianSubmersion.sectionalCurvature_horizontal_vertical` and
   `TauCeti.IsRiemannianSubmersion.sectionalCurvature_nonneg_of_eventually_oneillT_eq_zero`:
   mixed horizontal-vertical sectional curvature and non-negativity for totally geodesic fibres.
-* `TauCeti.IsRiemannianSubmersion.sectionalCurvature_mfderiv_of_mem`,
-  `TauCeti.IsRiemannianSubmersion.sectionalCurvature_eq_add_horizontalLift`, and
+* `TauCeti.IsRiemannianSubmersion.sectionalCurvature_eq_add_horizontalLift`,
+  `TauCeti.IsRiemannianSubmersion.sectionalCurvature_mfderiv_of_orthonormal`, and
   `TauCeti.IsRiemannianSubmersion.sectionalCurvature_mfderiv_eq_add_mlieBracket_of_orthonormal`:
-  O'Neill's horizontal sectional-curvature formulas in `A`-tensor and Lie-bracket forms.
+  horizontal-lift, orthonormal, and Lie-bracket forms of O'Neill's horizontal sectional-curvature
+  formula.
 * `TauCeti.IsRiemannianSubmersion.sectionalCurvature_le_sectionalCurvature_mfderiv`,
   `TauCeti.IsRiemannianSubmersion.sectionalCurvature_mfderiv_eq_iff`, and
   `TauCeti.IsRiemannianSubmersion.le_sectionalCurvature_of_forall_le`: monotonicity, equality
@@ -65,30 +70,19 @@ namespace TauCeti.IsRiemannianSubmersion
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
   {f : M → N} (h : IsRiemannianSubmersion I J f)
-
--- These regularity indices are propositionally, but not definitionally, equal to `2`.
-private instance : IsManifold I (minSmoothness ℝ 2) M := by
-  rw [minSmoothness_of_isRCLikeNormedField]
-  exact .of_le (by norm_cast)
 
 include h
 
 /-! ### Gram matrices, linear independence, and orthonormality on horizontal pairs -/
 
 section Gram
-
-omit [IsManifold I ∞ M] [IsManifold J ∞ N]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
 
 /-- Horizontal lifting preserves Gram matrices of tangent pairs. -/
 @[simp]
@@ -124,6 +118,16 @@ theorem orthonormal_mfderiv_iff_of_mem {x : M} {u v : TangentSpace I x}
     h.gram_mfderiv_of_mem hu hv]
 
 end Gram
+
+variable
+  [IsManifold I ∞ M] [IsManifold J ∞ N]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
+
+-- These regularity indices are propositionally, but not definitionally, equal to `2`.
+private instance : IsManifold I (minSmoothness ℝ 2) M := by
+  rw [minSmoothness_of_isRCLikeNormedField]
+  exact .of_le (by norm_cast)
 
 /-! ### Mixed horizontal-vertical sectional curvature -/
 
@@ -222,21 +226,6 @@ section HorizontalSectional
 
 variable [T2Space M] [T2Space N] {x : M}
 
-/-- **Horizontal sectional-curvature numerator.** For horizontal tangent vectors `u, v`,
-`⟪R^N(df u, df v)(df v), df u⟫ = ⟪R(u, v) v, u⟫ + 3 ‖A_u v‖²`. -/
-theorem inner_curvatureTensor_mfderiv_self
-    {u v : TangentSpace I x}
-    (hu : u ∈ (mfderiv I J f x).kerᗮ) (hv : v ∈ (mfderiv I J f x).kerᗮ) :
-    ⟪(leviCivitaConnection J N).curvatureTensor (f x)
-        (mfderiv I J f x u) (mfderiv I J f x v) (mfderiv I J f x v),
-      mfderiv I J f x u⟫_ℝ =
-      ⟪(leviCivitaConnection I M).curvatureTensor x u v v, u⟫_ℝ +
-        3 * ‖h.oneillA x u v‖ ^ 2 := by
-  have h₄ := h.inner_curvatureTensor_horizontal hu hv hv hu
-  rw [h.oneillA_self hu, h.oneillA_self hv, inner_zero_left, h.oneillA_antisymm hv hu,
-    inner_neg_right, real_inner_self_eq_norm_sq] at h₄
-  linarith
-
 /-- Sectional-curvature numerator on the base expressed via `horizontalLift`. -/
 theorem inner_curvatureTensor_self_eq_horizontalLift (u v : TangentSpace J (f x)) :
     ⟪(leviCivitaConnection J N).curvatureTensor (f x) u v v, u⟫_ℝ =
@@ -244,24 +233,10 @@ theorem inner_curvatureTensor_self_eq_horizontalLift (u v : TangentSpace J (f x)
           (h.horizontalLift x u) (h.horizontalLift x v) (h.horizontalLift x v),
         h.horizontalLift x u⟫_ℝ +
         3 * ‖h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v)‖ ^ 2 := by
-  simpa only [h.mfderiv_horizontalLift] using
-    h.inner_curvatureTensor_mfderiv_self (h.horizontalLift_mem_orthogonal_ker x u)
-      (h.horizontalLift_mem_orthogonal_ker x v)
-
-/-- **O'Neill's horizontal sectional-curvature formula (Corollary 1).** For horizontal tangent
-vectors `u, v`, `K^N(df u, df v) = K(u, v) + 3 ‖A_u v‖² / det Gram(u, v)`. On dependent pairs both
-sides use the same zero-denominator quotient, so no linear-independence hypothesis is needed. -/
-theorem sectionalCurvature_mfderiv_of_mem
-    {u v : TangentSpace I x}
-    (hu : u ∈ (mfderiv I J f x).kerᗮ) (hv : v ∈ (mfderiv I J f x).kerᗮ) :
-    (leviCivitaConnection J N).sectionalCurvature
-        (isMetricCompatible_leviCivitaConnection J) (f x)
-        (mfderiv I J f x u) (mfderiv I J f x v) =
-      (leviCivitaConnection I M).sectionalCurvature
-          (isMetricCompatible_leviCivitaConnection I) x u v +
-        3 * ‖h.oneillA x u v‖ ^ 2 / (Matrix.gram ℝ ![u, v]).det := by
-  rw [sectionalCurvature_apply, sectionalCurvature_apply, h.gram_mfderiv_of_mem hu hv,
-    h.inner_curvatureTensor_mfderiv_self hu hv, add_div]
+  have h₄ := h.inner_curvatureTensor_self_of_mem_orthogonal_ker
+    (h.horizontalLift_mem_orthogonal_ker x u) (h.horizontalLift_mem_orthogonal_ker x v)
+  simp only [h.mfderiv_horizontalLift] at h₄
+  linarith
 
 /-- **O'Neill's horizontal sectional-curvature formula on base vectors.** Writing
 `L_x = h.horizontalLift x`, for arbitrary `u, v : TangentSpace J (f x)`,
@@ -275,7 +250,7 @@ theorem sectionalCurvature_eq_add_horizontalLift (u v : TangentSpace J (f x)) :
         3 * ‖h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v)‖ ^ 2 /
           (Matrix.gram ℝ ![u, v]).det := by
   simpa only [h.mfderiv_horizontalLift, h.gram_horizontalLift] using
-    h.sectionalCurvature_mfderiv_of_mem (h.horizontalLift_mem_orthogonal_ker x u)
+    h.sectionalCurvature_mfderiv (h.horizontalLift_mem_orthogonal_ker x u)
       (h.horizontalLift_mem_orthogonal_ker x v)
 
 /-- On an orthonormal horizontal pair `u, v`, `K^N(df u, df v) = K(u, v) + 3 ‖A_u v‖²`. -/
@@ -289,7 +264,7 @@ theorem sectionalCurvature_mfderiv_of_orthonormal
       (leviCivitaConnection I M).sectionalCurvature
           (isMetricCompatible_leviCivitaConnection I) x u v +
         3 * ‖h.oneillA x u v‖ ^ 2 := by
-  rw [h.sectionalCurvature_mfderiv_of_mem hu hv, Matrix.gram_eq_one_iff_orthonormal.mpr horth,
+  rw [h.sectionalCurvature_mfderiv hu hv, Matrix.gram_eq_one_iff_orthonormal.mpr horth,
     Matrix.det_one, div_one]
 
 /-- On an orthonormal base pair `u, v`, writing `L_x = h.horizontalLift x`,
@@ -320,7 +295,7 @@ theorem sectionalCurvature_mfderiv_eq_add_mlieBracket
           (isMetricCompatible_leviCivitaConnection I) x (X x) (Y x) +
         3 / 4 * ‖(mfderiv I J f x).ker.starProjection (mlieBracket I X Y x)‖ ^ 2 /
           (Matrix.gram ℝ ![X x, Y x]).det := by
-  rw [h.sectionalCurvature_mfderiv_of_mem hXh.self_of_nhds hYh.self_of_nhds,
+  rw [h.sectionalCurvature_mfderiv hXh.self_of_nhds hYh.self_of_nhds,
     h.starProjection_ker_mlieBracket hX hY hXh hYh, norm_smul, Real.norm_ofNat]
   ring
 
@@ -352,7 +327,7 @@ theorem sectionalCurvature_le_sectionalCurvature_mfderiv
       (leviCivitaConnection J N).sectionalCurvature
         (isMetricCompatible_leviCivitaConnection J) (f x)
         (mfderiv I J f x u) (mfderiv I J f x v) := by
-  rw [h.sectionalCurvature_mfderiv_of_mem hu hv]
+  rw [h.sectionalCurvature_mfderiv hu hv]
   have hdet : 0 ≤ (Matrix.gram ℝ ![u, v]).det := (Matrix.posSemidef_gram ℝ ![u, v]).det_nonneg
   exact le_add_of_nonneg_right (div_nonneg (by positivity) hdet)
 
@@ -384,7 +359,7 @@ theorem sectionalCurvature_mfderiv_eq_iff
     by_cases huv : LinearIndependent ℝ ![u, v]
     · have hdet : (Matrix.gram ℝ ![u, v]).det ≠ 0 :=
         (Matrix.posDef_gram_of_linearIndependent huv).det_pos.ne'
-      rw [h.sectionalCurvature_mfderiv_of_mem hu hv, add_eq_left, div_eq_zero_iff] at heq
+      rw [h.sectionalCurvature_mfderiv hu hv, add_eq_left, div_eq_zero_iff] at heq
       rcases heq with hnum | hfalse
       · have hsq : ‖h.oneillA x u v‖ ^ 2 = 0 := by linarith
         exact norm_eq_zero.mp (sq_eq_zero_iff.mp hsq)
@@ -394,7 +369,7 @@ theorem sectionalCurvature_mfderiv_eq_iff
       · obtain ⟨c, hc⟩ := not_forall.mp ((LinearIndependent.pair_iff' hu₀).not.mp huv)
         rw [← not_not.mp hc, map_smul, h.oneillA_self hu, smul_zero]
   · intro hA
-    rw [h.sectionalCurvature_mfderiv_of_mem hu hv, hA, norm_zero, zero_pow two_ne_zero, mul_zero,
+    rw [h.sectionalCurvature_mfderiv hu hv, hA, norm_zero, zero_pow two_ne_zero, mul_zero,
       zero_div, add_zero]
 
 /-- On base vectors `u, v`, writing `L_x = h.horizontalLift x`, equality
