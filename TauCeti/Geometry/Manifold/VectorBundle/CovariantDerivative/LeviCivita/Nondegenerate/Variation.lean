@@ -67,7 +67,8 @@ parameter manifold along a parameter curve:
   with `h` the first variation of the family in the direction of the velocity of the curve.
 * `deriv_covariantDerivative_apply_eq_of_mfderiv_eq`: the variation of the connection depends only
   on the position and velocity of the curve.
-* `differentiableAt_difference_of_isLeviCivitaConnection` and
+* `differentiableAt_difference_of_isLeviCivitaConnection`,
+  `hasDerivAt_difference_of_isLeviCivitaConnection` and
   `two_mul_apply_deriv_difference_eq_derivBilinearTensor`: the same results for the difference
   tensors `∇ˢ - ∇ᵗ` (Mathlib's `CovariantDerivative.difference`), whose derivative `Γ'` at `t` is
   the tensor of the first variation formula.
@@ -355,6 +356,19 @@ theorem differentiableAt_difference_of_isLeviCivitaConnection
   exact h.congr_of_eventuallyEq (Eventually.of_forall fun s ↦
     congrArg (fun A ↦ A v) ((cov s).difference_apply_eq_extend (cov t) y u))
 
+/-- **The derivative of the difference tensors of a family of Levi-Civita connections.** In the
+setting of `differentiableAt_difference_of_isLeviCivitaConnection`, the curve `s ↦ (∇ˢ - ∇ᵗ)_y`
+has derivative `Γ'_y = ∂ₛ (∇ˢ - ∇ᵗ)_y` at `t`, as a curve in the normed space `E →L E →L E`. -/
+theorem hasDerivAt_difference_of_isLeviCivitaConnection
+    (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
+    (hcov : ∀ s, (g.metric (c s)).IsLeviCivitaConnection (cov s)) (y : M) :
+    HasDerivAt (F := E →L[ℝ] E →L[ℝ] E) (fun s ↦ (cov s).difference (cov t) y)
+      (deriv (fun s ↦ (cov s).difference (cov t) y) t) t :=
+  -- The fibres `T_y M` are read as the model space `E`, whose normed structure the parameter
+  -- derivative of the difference tensors uses.
+  DifferentiableAt.hasDerivAt (𝕜 := ℝ) (F := E →L[ℝ] E →L[ℝ] E)
+    (g.differentiableAt_difference_of_isLeviCivitaConnection hc hcov y)
+
 /-- **The variation of the Levi-Civita connection as a tensor.** Let `g` be a smooth family of
 nondegenerate metrics parametrized by `P`, let `c` be a parameter curve which is `C²` at `t`, and
 let `∇ˢ` be a Levi-Civita connection of `g_{c s}` for every `s`. Write `h = δ_{c'(t)} g` for the
@@ -373,9 +387,8 @@ theorem two_mul_apply_deriv_difference_eq_derivBilinearTensor
       (cov t).derivBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y u w v +
         (cov t).derivBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y v w u -
         (cov t).derivBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y v u w := by
-  have hd := DifferentiableAt.hasDerivAt (𝕜 := ℝ) (F := E →L[ℝ] E →L[ℝ] E)
-    (g.differentiableAt_difference_of_isLeviCivitaConnection hc hcov y)
-  have hdu := (TauCeti.hasDerivAt_clm_apply₂ (F := E) (F' := E) (G := E)).mp hd u v
+  have hdu := (TauCeti.hasDerivAt_clm_apply₂ (F := E) (F' := E) (G := E)).mp
+    (g.hasDerivAt_difference_of_isLeviCivitaConnection hc hcov y) u v
   -- The curve `s ↦ Γ'` evaluated on `(u, v)` is `s ↦ ∇ˢ_v U` shifted by a constant.
   have hext := HasDerivAt.sub_const (F := E) (cov t (extend E u) y v)
     (DifferentiableAt.hasDerivAt (F := E)

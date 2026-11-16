@@ -103,15 +103,11 @@ theorem hasDerivAt_curvatureOperator_of_isLeviCivitaConnection
         (cov t (fun y ↦ deriv (fun s ↦ (cov s).difference (cov t) y) t (Z y) (X y)) x (Y x) -
           deriv (fun s ↦ (cov s).difference (cov t) x) t (cov t Z x (Y x)) (X x) -
           deriv (fun s ↦ (cov s).difference (cov t) x) t (Z x) (cov t X x (Y x)))) t := by
-  have hC (y : M) : HasDerivAt (F := E →L[ℝ] E →L[ℝ] E)
-      (fun s ↦ (cov s).difference (cov t) y)
-      (deriv (fun s ↦ (cov s).difference (cov t) y) t) t :=
-    DifferentiableAt.hasDerivAt (𝕜 := ℝ) (F := E →L[ℝ] E →L[ℝ] E)
-      (g.differentiableAt_difference_of_isLeviCivitaConnection hc hcov y)
   have hZ' : ∀ᶠ y in 𝓝 x, MDiffAt (T% Z) y :=
     ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp hZ).mono fun y hy ↦
       hy.mdifferentiableAt (by simp)
-  exact hasDerivAt_curvatureOperator_of_hasDerivAt_difference (Eventually.of_forall hC)
+  exact hasDerivAt_curvatureOperator_of_hasDerivAt_difference
+    (Eventually.of_forall (g.hasDerivAt_difference_of_isLeviCivitaConnection hc hcov))
     (congrFun (hcov t).torsion x) (hX.mdifferentiableAt (by simp))
     (hY.mdifferentiableAt (by simp)) hZ'
     (g.contMDiffAt_covariantDerivative_apply_of_isLeviCivitaConnection hc hcov hX hZ)
@@ -142,10 +138,7 @@ theorem hasDerivAt_curvatureTensor_of_isLeviCivitaConnection
         (cov t).hom ((cov t).hom (cov t))
           (fun y ↦ deriv (fun s ↦ (cov s).difference (cov t) y) t) x v w u) t :=
   hasDerivAt_curvatureTensor_of_hasDerivAt_difference
-    -- The fibres `T_y M` are read as the model space `E`, whose normed structure the parameter
-    -- derivative of the difference tensors uses.
-    (Eventually.of_forall fun y ↦ DifferentiableAt.hasDerivAt (𝕜 := ℝ) (F := E →L[ℝ] E →L[ℝ] E)
-      (g.differentiableAt_difference_of_isLeviCivitaConnection hc hcov y))
+    (Eventually.of_forall (g.hasDerivAt_difference_of_isLeviCivitaConnection hc hcov))
     (congrFun (hcov t).torsion x)
     (fun _ _ hX hZ ↦ g.contMDiffAt_covariantDerivative_apply_of_isLeviCivitaConnection hc hcov
       ((hX x).of_le (by simp)) ((hZ x).of_le (by simp)))
