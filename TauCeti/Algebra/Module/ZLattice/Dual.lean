@@ -62,6 +62,8 @@ defined from it.
   dual basis.
 * `ZLattice.dual_span_orthonormalBasis`: the `ℤ`-span of an orthonormal basis is self-dual.
 * `ZLattice.dual_span_singleton`: the dual of `c ℤ ⊆ ℝ` (`c ≠ 0`) is `c⁻¹ ℤ`.
+* `ZLattice.dual_span_one_half`, `ZLattice.span_two_lt_span_one_half`,
+  `ZLattice.dual_span_one_half_lt`: the dual of `½ ℤ ⊆ ℝ` is `2 ℤ`, strictly contained in `½ ℤ`.
 * `ZLattice.inf_dual_span_singleton_eq_bot_of_irrational_sq`: when `c²` is irrational, `c ℤ ⊆ ℝ`
   meets its dual `c⁻¹ ℤ` only at `0`.
 * `ZLattice.mem_dual_of_mem_orthogonal_span`: a vector orthogonal to `L` lies in `L^∨`.
@@ -190,6 +192,30 @@ theorem dual_span_singleton {c : ℝ} (hc : c ≠ 0) :
     calc (n : ℝ) * c * ((m : ℝ) * c⁻¹)
         = (m : ℝ) * (n : ℝ) * (c * c⁻¹) := by ring
       _ = (m : ℝ) * (n : ℝ) := by rw [mul_inv_cancel₀ hc, mul_one]
+
+/-- The dual of the rank-one lattice `½ ℤ ⊆ ℝ` is `2 ℤ`. -/
+theorem dual_span_one_half :
+    dual (span ℤ {1 / 2} : Submodule ℤ ℝ) = span ℤ {2} := by
+  rw [dual_span_singleton (by norm_num)]
+  norm_num
+
+/-- In `ℝ`, `2 ℤ` is a proper sublattice of `½ ℤ`. -/
+theorem span_two_lt_span_one_half :
+    (span ℤ {2} : Submodule ℤ ℝ) < span ℤ {1 / 2} := by
+  refine lt_of_le_not_ge
+    (span_le.mpr (Set.singleton_subset_iff.mpr (mem_span_singleton.mpr ⟨4, ?_⟩))) fun h ↦ ?_
+  · rw [zsmul_eq_mul]
+    norm_num
+  · obtain ⟨n, hn⟩ := mem_span_singleton.mp (h (mem_span_singleton_self (1 / 2)))
+    rw [zsmul_eq_mul] at hn
+    have h4 : (4 : ℝ) * n = 1 := by linarith
+    have h4' : 4 * n = 1 := by exact_mod_cast h4
+    omega
+
+/-- The dual `2 ℤ` of `½ ℤ ⊆ ℝ` is strictly contained in `½ ℤ`. -/
+theorem dual_span_one_half_lt :
+    dual (span ℤ {1 / 2} : Submodule ℤ ℝ) < span ℤ {1 / 2} :=
+  dual_span_one_half ▸ span_two_lt_span_one_half
 
 /-- When `c²` is irrational, the rank-one lattice `c ℤ ⊆ ℝ` meets its dual `c⁻¹ ℤ` only at `0`. -/
 theorem inf_dual_span_singleton_eq_bot_of_irrational_sq {c : ℝ} (hc : Irrational (c ^ 2)) :
