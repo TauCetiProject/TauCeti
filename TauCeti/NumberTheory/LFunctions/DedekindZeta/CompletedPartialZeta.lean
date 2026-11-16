@@ -16,6 +16,7 @@ import TauCeti.Analysis.Meromorphic.Order
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.LFunctions.Theta.GammaIntegral
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 import TauCeti.RingTheory.ClassGroup.Basic
 import TauCeti.RingTheory.FractionalIdeal.Norm
 import TauCeti.Topology.ContinuousOn.PuncturedNhds

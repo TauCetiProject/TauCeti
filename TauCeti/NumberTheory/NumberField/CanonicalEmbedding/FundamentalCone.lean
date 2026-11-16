@@ -37,9 +37,6 @@ Mathlib's `idealSet K J` for a nonzero integral ideal `J`:
 
 ## Main declarations
 
-* `NumberField.mixedEmbedding.norm_coe_idealLattice_eq_zero_iff` and
-  `NumberField.mixedEmbedding.norm_coe_idealLattice_ne_zero`: a point of `idealLattice K I` has
-  nonzero mixed norm iff it is nonzero.
 * `NumberField.mixedEmbedding.fundamentalCone.coneGen`,
   `NumberField.mixedEmbedding.fundamentalCone.idealLatticeNeZeroEquiv`,
   `NumberField.mixedEmbedding.fundamentalCone.idealLatticeFundamentalConeEquiv`,
@@ -55,26 +52,6 @@ public section
 open NumberField NumberField.mixedEmbedding NumberField.mixedEmbedding.fundamentalCone
   NumberField.Units Ideal Submodule
 open scoped nonZeroDivisors
-
-namespace NumberField.mixedEmbedding
-
-variable {K : Type*} [Field K] [NumberField K]
-
-/-- A point of `idealLattice K I` has mixed norm zero if and only if it is zero. -/
-@[simp]
-theorem norm_coe_idealLattice_eq_zero_iff {I : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
-    {x : idealLattice K I} :
-    mixedEmbedding.norm (x : mixedSpace K) = 0 ↔ x = 0 := by
-  obtain ⟨a, _, ha⟩ := (mem_idealLattice K I).mp x.2
-  rw [← ha, norm_eq_zero_iff' ⟨a, rfl⟩, ha, Submodule.coe_eq_zero]
-
-/-- Nonzero points of `idealLattice K I` have nonzero mixed norm. -/
-theorem norm_coe_idealLattice_ne_zero {I : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
-    {x : idealLattice K I} (hx : x ≠ 0) :
-    mixedEmbedding.norm (x : mixedSpace K) ≠ 0 :=
-  norm_coe_idealLattice_eq_zero_iff.not.mpr hx
-
-end NumberField.mixedEmbedding
 
 namespace NumberField.mixedEmbedding.fundamentalCone
 

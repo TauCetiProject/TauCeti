@@ -145,13 +145,13 @@ private theorem tsum_mk0_eq_inv_mk0 (J : (Ideal (𝓞 K))⁰) (s : ℂ) :
     (∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk0 J)⁻¹},
         (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)) =
       ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)))},
-        (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) :=
-  (Equiv.subtypeEquivRight fun 𝔟 : (Ideal (𝓞 K))⁰ ↦
-    show ClassGroup.mk0 𝔟 = (ClassGroup.mk0 J)⁻¹ ↔
-        IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K))) by
-      rw [eq_inv_iff_mul_eq_one, ← map_mul, ClassGroup.mk0_eq_one_iff (𝔟 * J).2,
-        Submonoid.coe_mul]).tsum_eq
-    fun 𝔟 ↦ (absNorm (𝔟.1 : Ideal (𝓞 K)) : ℂ) ^ (-s)
+        (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) := by
+  have h (𝔟 : (Ideal (𝓞 K))⁰) :
+      ClassGroup.mk0 𝔟 = (ClassGroup.mk0 J)⁻¹ ↔
+        IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K))) := by
+    rw [eq_inv_iff_mul_eq_one, ← map_mul, ClassGroup.mk0_eq_one_iff (𝔟 * J).2,
+      Submonoid.coe_mul]
+  exact (Equiv.subtypeEquivRight h).tsum_eq fun 𝔟 ↦ (absNorm (𝔟.1 : Ideal (𝓞 K)) : ℂ) ^ (-s)
 
 /-- **The sum over the points of `J` in the fundamental cone.** For `Re s > 1`, the sum of
 `|N(x)|^(-s)` over the points `x` of the fundamental cone that are images of elements of `J`
