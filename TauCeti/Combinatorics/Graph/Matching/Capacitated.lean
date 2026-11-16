@@ -39,8 +39,9 @@ graph are all allowed.
 
 ## Main results
 
-* `Graph.Iso.isCapacitatedMatching_comp_iff`: pulling vertex capacities and edge multiplicities
-  back along a graph isomorphism preserves and reflects multiset capacitated matchings.
+* `Graph.Iso.isCapacitatedMatching_comp_iff`, `Graph.Iso.isCapacitatedMatching_comp_symm_iff`:
+  pulling vertex capacities and edge multiplicities back, or pushing them forward, along a graph
+  isomorphism preserves and reflects multiset capacitated matchings.
 * `Graph.IsCapacitatedMatching.sum_le_sum_of_isVertexCover`: **weak duality**, the size of a
   multiset capacitated matching is at most the weight of any vertex cover.
 * `Graph.IsCapacitatedMatching.isMatching`: in a loopless multigraph, the edges used by a multiset
@@ -106,6 +107,15 @@ theorem Iso.isCapacitatedMatching_comp_iff {α' : Type u'} {β' : Type v'} {H : 
       H.IsCapacitatedMatching b x := by
   rw [isCapacitatedMatching_def, isCapacitatedMatching_def, ← f.vertexEquiv.forall_congr_right]
   simp [Finset.sum_map]
+
+/-- Pushing vertex capacities and edge multiplicities forward along a graph isomorphism preserves
+and reflects multiset capacitated matchings. -/
+@[simp]
+theorem Iso.isCapacitatedMatching_comp_symm_iff {α' : Type u'} {β' : Type v'} {H : Graph α' β'}
+    [Fintype E(H)] (f : Iso G H) (b : V(G) → ℕ) (x : E(G) → ℕ) :
+    H.IsCapacitatedMatching (b ∘ f.vertexEquiv.symm) (x ∘ f.edgeEquiv.symm) ↔
+      G.IsCapacitatedMatching b x := by
+  simpa using f.symm.isCapacitatedMatching_comp_iff b x
 
 /-! ### Ordinary matchings as unit-capacity matchings -/
 
