@@ -14,6 +14,10 @@ Primitive Dirichlet characters are identified by their lifts to a common nonzero
 of the lifts forces equality of the original levels, because changing level preserves the
 conductor. This gives an equality criterion without choosing representatives at prime arguments.
 
+Passing to the associated primitive character `χ.primitiveCharacter` preserves and reflects both
+principality (`DirichletCharacter.primitiveCharacter_eq_one_iff`) and quadraticity
+(`DirichletCharacter.isQuadratic_primitiveCharacter_iff`).
+
 For primitive quadratic characters, their product at the least common multiple level is principal
 exactly when the original characters coincide, including their levels. This separates the
 exceptional equal-character case in two-character arguments for real Dirichlet L-functions.
@@ -43,9 +47,22 @@ theorem IsPrimitive.changeLevel_eq_changeLevel_iff [CommMonoidWithZero R] [NeZer
   · rintro ⟨rfl, rfl⟩
     rfl
 
+/-- The primitive character associated to `χ` is principal if and only if `χ` is principal. -/
+@[simp]
+theorem primitiveCharacter_eq_one_iff [CommMonoidWithZero R] [NeZero N]
+    (χ : DirichletCharacter R N) : χ.primitiveCharacter = 1 ↔ χ = 1 :=
+  ⟨fun h ↦ by rw [← χ.changeLevel_primitiveCharacter, h, map_one],
+    fun h ↦ by rcases h with rfl; exact primitiveCharacter_one⟩
+
 section Quadratic
 
 variable [CommRing R]
+
+/-- The primitive character associated to `χ` is quadratic if and only if `χ` is quadratic. -/
+@[simp]
+theorem isQuadratic_primitiveCharacter_iff [NeZero N] (χ : DirichletCharacter R N) :
+    χ.primitiveCharacter.IsQuadratic ↔ χ.IsQuadratic := by
+  rw [← isQuadratic_changeLevel_iff χ.conductor_dvd_level, χ.changeLevel_primitiveCharacter]
 
 /-- The common-level product of two primitive characters, one of them quadratic, is principal
 exactly when they are the same primitive character. In particular, different primitive levels

@@ -8,17 +8,18 @@ module
 public import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 public import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Residue
 public import TauCeti.NumberTheory.LSeries.SmoothedSum
-import Mathlib.Analysis.Convex.Jensen
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
-import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 import TauCeti.Analysis.Contour.Residue.Rectangle
+import TauCeti.Analysis.SpecialFunctions.Gamma.Growth
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Gamma.Residue
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 import TauCeti.NumberTheory.LSeries.Quadratic.Character
 import TauCeti.NumberTheory.LSeries.RiemannZeta
+import TauCeti.NumberTheory.LSeries.Twist
 
 /-!
 # Smoothed sums and Goldfeld's inequality for the four-factor L-function product
@@ -76,49 +77,29 @@ private theorem hasSum_mellinInv_two_sub_pairProd (χ : DirichletCharacter ℂ M
     (ψ : DirichletCharacter ℂ N) {β x : ℝ} (hβ : β < 2) (hx : 0 < x) :
     HasSum (fun n : ℕ ↦ χ.zetaMulPairCoeffs ψ n * ((n : ℝ) ^ (-β) : ℝ) * Real.exp (-n * x))
       (mellinInv (2 - β) (fun w ↦ Gamma w * pairProd χ ψ (w + β)) x) := by
-  set a : ℕ → ℂ := fun n ↦ χ.zetaMulPairCoeffs ψ n * ((n : ℝ) ^ (-β) : ℝ)
-  have hp (n : ℕ) : a n = 0 ∨ 0 < (n : ℝ) := by
-    rcases eq_or_ne n 0 with rfl | hn
-    · exact Or.inl (by simp [a])
-    · exact Or.inr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn))
-  have hL2 := (LSeriesHasSum_zetaMulPairCoeffs χ ψ (s := 2) (by norm_num)).summable.norm
-  have hsum : Summable fun n : ℕ ↦ ‖a n‖ / (n : ℝ) ^ (2 - β) := by
-    refine hL2.congr fun n ↦ ?_
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp [a]
-    have hn0 : 0 < (n : ℝ) := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)
-    rw [LSeries.norm_term_eq]
-    simp only [hn, ↓reduceIte, a, norm_mul, norm_real, re_ofNat,
-      Real.norm_of_nonneg (Real.rpow_nonneg hn0.le _), div_eq_mul_inv]
-    rw [mul_assoc, ← Real.rpow_neg hn0.le (2 - β), ← Real.rpow_add hn0,
-      ← Real.rpow_neg hn0.le (2 : ℝ)]
-    congr 2
-    ring
-  have hm := TauCeti.hasSum_mellinInv_Gamma_mul hp (sub_pos.mpr hβ) hsum hx
-  have heq : mellinInv (2 - β) (fun s ↦ Gamma s * ∑' i, a i / ((i : ℝ) : ℂ) ^ s) x =
+  set f : ℕ → ℂ := fun n ↦ χ.zetaMulPairCoeffs ψ n * (n : ℂ) ^ (-(β : ℂ))
+  have hf0 : f 0 = 0 := by simp [f]
+  have hsum : LSeriesSummable f ((2 - β : ℝ) : ℂ) := by
+    have h2 := (LSeriesHasSum_zetaMulPairCoeffs χ ψ (s := 2) (by norm_num)).LSeriesSummable
+    refine h2.congr fun n ↦ ?_
+    dsimp only [f]
+    rw [TauCeti.LSeries.term_mul_natCast_cpow_neg]
+    congr 1; push_cast; ring
+  have hm := TauCeti.LSeries.hasSum_mellinInv_Gamma_mul_LSeries hf0 (sub_pos.mpr hβ) hsum hx
+  have hterm : (fun n : ℕ ↦ f n * Real.exp (-n * x)) =
+      fun n : ℕ ↦ χ.zetaMulPairCoeffs ψ n * ((n : ℝ) ^ (-β) : ℝ) * Real.exp (-n * x) := by
+    ext n
+    simp only [f, ofReal_cpow n.cast_nonneg, ofReal_neg, ofReal_natCast]
+  have heq : mellinInv (2 - β) (fun w ↦ Gamma w * LSeries f w) x =
       mellinInv (2 - β) (fun w ↦ Gamma w * pairProd χ ψ (w + β)) x := by
-    rw [mellinInv, mellinInv]
+    simp only [mellinInv]
     congr 2
     ext t
-    set w : ℂ := ((2 - β : ℝ) : ℂ) + t * I
-    have hwre : 1 < (w + (β : ℂ)).re := by simp [w]
-    have htsum : (∑' n : ℕ, a n / ((n : ℝ) : ℂ) ^ w) = pairProd χ ψ (w + β) := by
-      dsimp only [pairProd]
-      rw [← (LSeriesHasSum_zetaMulPairCoeffs χ ψ hwre).tsum_eq]
-      refine tsum_congr fun n ↦ ?_
-      rcases eq_or_ne n 0 with rfl | hn
-      · simp [a]
-      have hn0 : (0 : ℝ) ≤ n := n.cast_nonneg
-      have hnc : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-      rw [LSeries.term_of_ne_zero hn]
-      simp only [a, div_eq_mul_inv, ofReal_natCast]
-      rw [ofReal_cpow hn0, ofReal_neg, ofReal_natCast, mul_assoc, ← cpow_neg, ← cpow_neg,
-        ← cpow_add _ _ hnc]
-      ring_nf
-    change (x : ℂ) ^ (-w) • (Gamma w * ∑' n : ℕ, a n / ((n : ℝ) : ℂ) ^ w) =
-      (x : ℂ) ^ (-w) • (Gamma w * pairProd χ ψ (w + β))
-    rw [htsum]
-  rwa [heq] at hm
+    have hre : 1 < (((2 - β : ℝ) : ℂ) + t * I + β).re := by simp
+    dsimp only [f]
+    rw [TauCeti.LSeries.LSeries_mul_natCast_cpow_neg,
+      (LSeriesHasSum_zetaMulPairCoeffs χ ψ hre).LSeries_eq]
+  rwa [hterm, heq] at hm
 
 private theorem norm_riemannZeta_le_three_mul {s : ℂ} (hs : 1 / 2 ≤ s.re)
     (hs1 : 1 / 2 ≤ ‖s - 1‖) : ‖riemannZeta s‖ ≤ 3 * (1 + ‖s‖) := by
@@ -135,8 +116,7 @@ private theorem norm_LFunction_le_three_mul {L : ℕ} [NeZero L] (ρ : Dirichlet
     ‖ρ.LFunction s‖ ≤ 3 * L * (1 + ‖s‖) := by
   by_cases hρ : ρ = 1
   · have hne : s ≠ 1 := fun h ↦ by simp [h] at hs1; linarith
-    rw [hρ, show (1 : DirichletCharacter ℂ L).LFunction s = LFunctionTrivChar L s from rfl,
-      LFunctionTrivChar_eq_mul_riemannZeta hne, norm_mul]
+    rw [hρ, ← LFunctionTrivChar, LFunctionTrivChar_eq_mul_riemannZeta hne, norm_mul]
     have hprod : ‖∏ p ∈ L.primeFactors, (1 - (p : ℂ) ^ (-s))‖ ≤ L := by
       rw [norm_prod]
       calc
@@ -181,11 +161,28 @@ private theorem norm_pairProd_le (χ : DirichletCharacter ℂ M) (ψ : Dirichlet
           (3 * ((M : ℝ) * N) * (1 + ‖s‖)) := by gcongr
     _ = 81 * ((M : ℝ) * N) ^ 2 * (1 + ‖s‖) ^ 4 := by ring
 
-private theorem exists_norm_pairProd_le (χ : DirichletCharacter ℂ M)
-    (ψ : DirichletCharacter ℂ N) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ s : ℂ, 1 / 2 ≤ s.re → 1 / 2 ≤ ‖s - 1‖ →
-      ‖pairProd χ ψ s‖ ≤ C * (1 + ‖s‖) ^ 4 :=
-  ⟨81 * ((M : ℝ) * N) ^ 2, by positivity, fun _ hs hs1 ↦ norm_pairProd_le χ ψ hs hs1⟩
+private theorem norm_pairProd_add_mul_I_le (χ : DirichletCharacter ℂ M)
+    (ψ : DirichletCharacter ℂ N) {σ : ℝ} (hre : 1 / 2 ≤ σ) (h1 : 1 / 2 ≤ |σ - 1|) (t : ℝ) :
+    ‖pairProd χ ψ ((σ : ℂ) + t * I)‖ ≤
+      324 * ((M : ℝ) * N) ^ 2 * (1 + |σ|) ^ 4 * (1 + t ^ 2) ^ 2 := by
+  set s : ℂ := (σ : ℂ) + t * I
+  have hs_re : 1 / 2 ≤ s.re := by simpa [s] using hre
+  have hs_1 : 1 / 2 ≤ ‖s - 1‖ :=
+    h1.trans (by simpa [s] using abs_re_le_norm (s - 1))
+  have hnorm_s : 1 + ‖s‖ ≤ (1 + |σ|) * (1 + |t|) := by
+    have hle : ‖s‖ ≤ |σ| + |t| := by simpa [s] using Complex.norm_le_abs_re_add_abs_im s
+    nlinarith [abs_nonneg σ, abs_nonneg t]
+  have ht4 : (1 + |t|) ^ 4 ≤ 4 * (1 + t ^ 2) ^ 2 := by
+    have h2 : (1 + |t|) ^ 2 ≤ 2 * (1 + t ^ 2) := by nlinarith [sq_nonneg (|t| - 1), sq_abs t]
+    calc (1 + |t|) ^ 4 = ((1 + |t|) ^ 2) ^ 2 := by ring
+      _ ≤ (2 * (1 + t ^ 2)) ^ 2 := pow_le_pow_left₀ (by positivity) h2 2
+      _ = 4 * (1 + t ^ 2) ^ 2 := by ring
+  calc ‖pairProd χ ψ s‖ ≤ 81 * ((M : ℝ) * N) ^ 2 * (1 + ‖s‖) ^ 4 :=
+        norm_pairProd_le χ ψ hs_re hs_1
+    _ ≤ 81 * ((M : ℝ) * N) ^ 2 * ((1 + |σ|) * (1 + |t|)) ^ 4 := by gcongr
+    _ = 81 * ((M : ℝ) * N) ^ 2 * (1 + |σ|) ^ 4 * (1 + |t|) ^ 4 := by ring
+    _ ≤ 81 * ((M : ℝ) * N) ^ 2 * (1 + |σ|) ^ 4 * (4 * (1 + t ^ 2) ^ 2) := by gcongr
+    _ = 324 * ((M : ℝ) * N) ^ 2 * (1 + |σ|) ^ 4 * (1 + t ^ 2) ^ 2 := by ring
 
 private theorem analyticAt_pairProd (χ : DirichletCharacter ℂ M) (ψ : DirichletCharacter ℂ N)
     {s : ℂ} (hs1 : s ≠ 1) : AnalyticAt ℂ (pairProd χ ψ) s := by
@@ -200,8 +197,7 @@ private theorem verticalIntegrable_Gamma_mul_pairProd (χ : DirichletCharacter �
     (hre : 1 / 2 ≤ σ₀ + β) (h1 : 1 / 2 ≤ |σ₀ + β - 1|) :
     VerticalIntegrable (fun w ↦ Gamma w * pairProd χ ψ (w + β)) σ₀ := by
   obtain ⟨CΓ, hCΓ⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hΓ 3
-  obtain ⟨CP, hCP0, hCP⟩ := exists_norm_pairProd_le χ ψ
-  set K : ℝ := 1 + |σ₀ + β|
+  set C : ℝ := 324 * ((M : ℝ) * N) ^ 2 * (1 + |σ₀ + β|) ^ 4
   have hcont : Continuous fun t : ℝ ↦ Gamma (σ₀ + t * I) * pairProd χ ψ (σ₀ + t * I + β) := by
     refine Continuous.mul (continuous_iff_continuousAt.mpr fun t ↦ ?_)
       (continuous_iff_continuousAt.mpr fun t ↦ ?_)
@@ -211,46 +207,26 @@ private theorem verticalIntegrable_Gamma_mul_pairProd (χ : DirichletCharacter �
       have hre_eq : σ₀ + β = 1 := by
         have := congrArg re h; simp at this; linarith
       rw [hre_eq] at h1; norm_num at h1
-  refine (integrable_inv_one_add_sq.const_mul (max CΓ 0 * CP * (4 * K ^ 4))).mono'
+  refine (integrable_inv_one_add_sq.const_mul (max CΓ 0 * C)).mono'
     hcont.aestronglyMeasurable (Eventually.of_forall fun t ↦ ?_)
-  set s : ℂ := (σ₀ : ℂ) + t * I + β
-  have hs_re : s.re = σ₀ + β := by simp [s]
-  have hs_1 : 1 / 2 ≤ ‖s - 1‖ :=
-    h1.trans (by simpa [s, sub_re, add_sub_right_comm] using abs_re_le_norm (s - 1))
-  have hnorm_s : 1 + ‖s‖ ≤ K * (1 + |t|) := by
-    have : ‖s‖ ≤ |σ₀ + β| + |t| := by
-      calc ‖s‖ = ‖((σ₀ + β : ℝ) : ℂ) + t * I‖ := by congr 1; simp [s]; ring
-        _ ≤ ‖((σ₀ + β : ℝ) : ℂ)‖ + ‖(t : ℂ) * I‖ := norm_add_le _ _
-        _ = |σ₀ + β| + |t| := by rw [norm_real, Real.norm_eq_abs]; simp
-    have hK1 : 1 ≤ K := by simp [K]
-    nlinarith [abs_nonneg t, abs_nonneg (σ₀ + β)]
-  have ht4 : (1 + |t|) ^ 4 ≤ 4 * (1 + t ^ 2) ^ 2 := by
-    have h2 : (1 + |t|) ^ 2 ≤ 2 * (1 + t ^ 2) := by nlinarith [sq_nonneg (|t| - 1), sq_abs t]
-    calc (1 + |t|) ^ 4 = ((1 + |t|) ^ 2) ^ 2 := by ring
-      _ ≤ (2 * (1 + t ^ 2)) ^ 2 := pow_le_pow_left₀ (by positivity) h2 2
-      _ = 4 * (1 + t ^ 2) ^ 2 := by ring
-  have hP : ‖pairProd χ ψ s‖ ≤ CP * (4 * K ^ 4) * (1 + t ^ 2) ^ 2 := by
-    calc ‖pairProd χ ψ s‖ ≤ CP * (1 + ‖s‖) ^ 4 := hCP s (hs_re ▸ hre) hs_1
-      _ ≤ CP * (K * (1 + |t|)) ^ 4 := by gcongr
-      _ = CP * K ^ 4 * (1 + |t|) ^ 4 := by ring
-      _ ≤ CP * K ^ 4 * (4 * (1 + t ^ 2) ^ 2) := by gcongr
-      _ = CP * (4 * K ^ 4) * (1 + t ^ 2) ^ 2 := by ring
+  have hs : (σ₀ : ℂ) + t * I + β = ((σ₀ + β : ℝ) : ℂ) + t * I := by push_cast; ring
+  have hP : ‖pairProd χ ψ ((σ₀ : ℂ) + t * I + β)‖ ≤ C * (1 + t ^ 2) ^ 2 := by
+    rw [hs]; exact norm_pairProd_add_mul_I_le χ ψ hre h1 t
   have hG : ‖Gamma ((σ₀ : ℂ) + t * I)‖ ≤ max CΓ 0 * ((1 + t ^ 2) ^ 3)⁻¹ :=
     (hCΓ t).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
   rw [norm_mul]
-  calc ‖Gamma ((σ₀ : ℂ) + t * I)‖ * ‖pairProd χ ψ s‖
-      ≤ max CΓ 0 * ((1 + t ^ 2) ^ 3)⁻¹ * (CP * (4 * K ^ 4) * (1 + t ^ 2) ^ 2) :=
+  calc ‖Gamma ((σ₀ : ℂ) + t * I)‖ * ‖pairProd χ ψ ((σ₀ : ℂ) + t * I + β)‖
+      ≤ max CΓ 0 * ((1 + t ^ 2) ^ 3)⁻¹ * (C * (1 + t ^ 2) ^ 2) :=
         mul_le_mul hG hP (norm_nonneg _) (by positivity)
-    _ = max CΓ 0 * CP * (4 * K ^ 4) * (1 + t ^ 2)⁻¹ := by
+    _ = max CΓ 0 * C * (1 + t ^ 2)⁻¹ := by
         have : 0 < 1 + t ^ 2 := by positivity
         field_simp
 
 private theorem norm_Gamma_mul_pairProd_le_of_one_le_abs (χ : DirichletCharacter ℂ M)
-    (ψ : DirichletCharacter ℂ N) {CP : ℝ}
-    (hCP : ∀ s : ℂ, 1 / 2 ≤ s.re → 1 / 2 ≤ ‖s - 1‖ → ‖pairProd χ ψ s‖ ≤ CP * (1 + ‖s‖) ^ 4)
-    {β σ y : ℝ} (hβ : β ∈ Ioo (1 / 2) 1) (hσ : σ ∈ Icc (1 / 2 - β) (2 - β)) (hy : 1 ≤ |y|) :
+    (ψ : DirichletCharacter ℂ N) {β σ y : ℝ} (hβ : β ∈ Ioo (1 / 2) 1)
+    (hσ : σ ∈ Icc (1 / 2 - β) (2 - β)) (hy : 1 ≤ |y|) :
     ‖Gamma (σ + y * I) * pairProd χ ψ (σ + y * I + β)‖ ≤
-      Real.Gamma 8 * CP * 256 * (|y| ^ 2)⁻¹ := by
+      20736 * Real.Gamma 8 * ((M : ℝ) * N) ^ 2 * (|y| ^ 2)⁻¹ := by
   set w : ℂ := (σ : ℂ) + y * I
   have hw_re : w.re = σ := by simp [w]
   have hpos6 : 0 < w.re + 6 := by rw [hw_re]; linarith [hσ.1, hβ.2]
@@ -273,66 +249,50 @@ private theorem norm_Gamma_mul_pairProd_le_of_one_le_abs (χ : DirichletCharacte
     (by norm_num : (1 / 2 : ℝ) ≤ 1).trans
       (hy.trans (by simpa [s, w] using abs_im_le_norm (s - 1)))
   have hs_norm : 1 + ‖s‖ ≤ 4 * |y| := by
-    have : ‖s‖ ≤ |σ + β| + |y| := by
-      calc ‖s‖ = ‖((σ + β : ℝ) : ℂ) + y * I‖ := by congr 1; simp [s, w]; ring
-        _ ≤ ‖((σ + β : ℝ) : ℂ)‖ + ‖(y : ℂ) * I‖ := norm_add_le _ _
-        _ = |σ + β| + |y| := by rw [norm_real, Real.norm_eq_abs]; simp
+    have hle : ‖s‖ ≤ |σ + β| + |y| := by simpa [s, w] using Complex.norm_le_abs_re_add_abs_im s
     have habs : |σ + β| ≤ 2 := abs_le.mpr ⟨by linarith [hσ.1], by linarith [hσ.2]⟩
     linarith
-  have hCP0 : 0 ≤ CP :=
-    nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hCP s hs_re hs_1)) (by positivity)
-  have hPs : ‖pairProd χ ψ s‖ ≤ CP * 256 * |y| ^ 4 := by
-    calc ‖pairProd χ ψ s‖ ≤ CP * (1 + ‖s‖) ^ 4 := hCP s hs_re hs_1
-      _ ≤ CP * (4 * |y|) ^ 4 := by gcongr
-      _ = CP * 256 * |y| ^ 4 := by ring
+  have hPs : ‖pairProd χ ψ s‖ ≤ 20736 * ((M : ℝ) * N) ^ 2 * |y| ^ 4 := by
+    calc ‖pairProd χ ψ s‖ ≤ 81 * ((M : ℝ) * N) ^ 2 * (1 + ‖s‖) ^ 4 :=
+          norm_pairProd_le χ ψ hs_re hs_1
+      _ ≤ 81 * ((M : ℝ) * N) ^ 2 * (4 * |y|) ^ 4 := by gcongr
+      _ = 20736 * ((M : ℝ) * N) ^ 2 * |y| ^ 4 := by ring
   rw [norm_mul]
   calc ‖Gamma w‖ * ‖pairProd χ ψ s‖
-      ≤ Real.Gamma 8 / |y| ^ 6 * (CP * 256 * |y| ^ 4) :=
+      ≤ Real.Gamma 8 / |y| ^ 6 * (20736 * ((M : ℝ) * N) ^ 2 * |y| ^ 4) :=
         mul_le_mul hΓw hPs (norm_nonneg _)
           (div_nonneg (Real.Gamma_pos_of_pos (by norm_num)).le (by positivity))
-    _ = Real.Gamma 8 * CP * 256 * (|y| ^ 2)⁻¹ := by
+    _ = 20736 * Real.Gamma 8 * ((M : ℝ) * N) ^ 2 * (|y| ^ 2)⁻¹ := by
         have : 0 < |y| := by linarith
         field_simp
 
-private theorem exists_horiz_decay_Gamma_mul_pairProd (χ : DirichletCharacter ℂ M)
-    (ψ : DirichletCharacter ℂ N) {β : ℝ} (hβ : β ∈ Ioo (1 / 2) 1) :
-    ∃ B : ℝ → ℝ, Tendsto B atTop (𝓝 0) ∧
-      ∀ᶠ T : ℝ in atTop, ∀ σ ∈ Icc (1 / 2 - β) (2 - β),
-        ‖Gamma (σ + T * I) * pairProd χ ψ (σ + T * I + β)‖ ≤ B T ∧
-        ‖Gamma (σ - T * I) * pairProd χ ψ (σ - T * I + β)‖ ≤ B T := by
-  obtain ⟨CP, _, hCP⟩ := exists_norm_pairProd_le χ ψ
-  set K : ℝ := Real.Gamma 8 * CP * 256
-  have hB0 : Tendsto (fun T : ℝ ↦ K * (T ^ 2)⁻¹) atTop (𝓝 0) := by
-    simpa using (((tendsto_pow_atTop (by norm_num : 2 ≠ 0)).inv_tendsto_atTop).const_mul K)
-  refine ⟨fun T ↦ K * (T ^ 2)⁻¹, hB0, ?_⟩
-  filter_upwards [eventually_ge_atTop 1] with T hT σ hσ
-  have hTabs : |T| = T := abs_of_nonneg (by linarith)
-  refine ⟨by simpa [K, hTabs] using
-    norm_Gamma_mul_pairProd_le_of_one_le_abs χ ψ hCP hβ hσ (by linarith), ?_⟩
-  simpa [K, sub_eq_add_neg, neg_mul, abs_neg, hTabs] using
-    norm_Gamma_mul_pairProd_le_of_one_le_abs χ ψ hCP hβ hσ (y := -T) (by simp [hTabs, hT])
-
-private theorem meromorphicAt_LFunction {L : ℕ} [NeZero L] (ρ : DirichletCharacter ℂ L) (z : ℂ) :
-    MeromorphicAt ρ.LFunction z := by
-  by_cases hρ : ρ = 1
-  · have hne : ∀ᶠ s in 𝓝[≠] z, s ≠ 1 := by
-      rcases eq_or_ne z 1 with rfl | hz1
-      · exact self_mem_nhdsWithin
-      · exact nhdsWithin_le_nhds (isOpen_ne.mem_nhds hz1)
-    refine (((differentiable_LFunctionTrivChar₁ L).analyticAt z).meromorphicAt.div
-      (analyticAt_id.sub (analyticAt_const (v := (1 : ℂ)))).meromorphicAt).congr
-      (hne.mono fun s hs ↦ ?_)
-    have hs1 : s - 1 ≠ 0 := sub_ne_zero.mpr hs
-    rw [hρ, show (1 : DirichletCharacter ℂ L).LFunction s = LFunctionTrivChar L s from rfl,
-      Pi.div_apply, Pi.sub_apply, id_eq, LFunctionTrivChar₁, Function.update_of_ne hs,
-      mul_div_cancel_left₀ _ hs1]
-  · exact ((differentiable_LFunction hρ).analyticAt z).meromorphicAt
+private theorem tendsto_integral_norm_Gamma_mul_pairProd (χ : DirichletCharacter ℂ M)
+    (ψ : DirichletCharacter ℂ N) {β : ℝ} (hβ : β ∈ Ioo (1 / 2) 1) (sgn : ℝ) (hsgn : |sgn| = 1) :
+    Tendsto (fun T : ℝ ↦ ∫ σ : ℝ in (1 / 2 - β)..(2 - β),
+        ‖Gamma (σ + ((sgn * T : ℝ) : ℂ) * I) *
+          pairProd χ ψ (σ + ((sgn * T : ℝ) : ℂ) * I + β)‖)
+      atTop (𝓝 0) := by
+  set K : ℝ := 20736 * Real.Gamma 8 * ((M : ℝ) * N) ^ 2
+  have hlim : Tendsto (fun T : ℝ ↦ (3 / 2 : ℝ) * (K * (T ^ 2)⁻¹)) atTop (𝓝 0) := by
+    simpa using
+      (((tendsto_pow_atTop (by norm_num : 2 ≠ 0)).inv_tendsto_atTop).const_mul K).const_mul
+        (3 / 2 : ℝ)
+  refine squeeze_zero_norm' (a := fun T ↦ (3 / 2 : ℝ) * (K * (T ^ 2)⁻¹)) ?_ hlim
+  filter_upwards [eventually_ge_atTop (1 : ℝ)] with T hT
+  have hTabs : |sgn * T| = T := by rw [abs_mul, hsgn, one_mul, abs_of_nonneg (by linarith)]
+  have hlen : |(2 - β) - (1 / 2 - β)| = 3 / 2 := by norm_num
+  refine (intervalIntegral.norm_integral_le_of_norm_le_const (C := K * (T ^ 2)⁻¹)
+    fun σ hσ ↦ ?_).trans_eq (by rw [hlen, mul_comm])
+  have hσ' : σ ∈ Icc (1 / 2 - β) (2 - β) := by
+    rw [uIoc_of_le (by linarith)] at hσ; exact ⟨hσ.1.le, hσ.2⟩
+  simpa only [K, hTabs, norm_norm] using
+    norm_Gamma_mul_pairProd_le_of_one_le_abs χ ψ hβ hσ' (y := sgn * T) (by linarith)
 
 private theorem meromorphicAt_pairProd (χ : DirichletCharacter ℂ M) (ψ : DirichletCharacter ℂ N)
     (z : ℂ) : MeromorphicAt (pairProd χ ψ) z :=
-  (((LFunction_modOne_eq ▸ meromorphicAt_LFunction (1 : DirichletCharacter ℂ 1) z).mul
-    (meromorphicAt_LFunction χ z)).mul (meromorphicAt_LFunction ψ z)).mul
-      (meromorphicAt_LFunction (χ.mul ψ) z)
+  (((LFunction_modOne_eq ▸ (1 : DirichletCharacter ℂ 1).meromorphic_LFunction z).mul
+    (χ.meromorphic_LFunction z)).mul (ψ.meromorphic_LFunction z)).mul
+      ((χ.mul ψ).meromorphic_LFunction z)
 
 private theorem sum_residue_pairProd (χ : DirichletCharacter ℂ M) (ψ : DirichletCharacter ℂ N)
     {β x : ℝ} (hβ : β ∈ Ioo (1 / 2) 1) (hx : 0 < x) :
@@ -351,9 +311,9 @@ private theorem sum_residue_pairProd (χ : DirichletCharacter ℂ M) (ψ : Diric
   have hres0 : TauCeti.Contour.residue
       (fun z ↦ (x : ℂ) ^ (-z) * (Gamma z * pairProd χ ψ (z + β))) 0 = pairProd χ ψ β := by
     have hcongr : (fun z ↦ (x : ℂ) ^ (-z) * (Gamma z * pairProd χ ψ (z + β))) =
-        fun z ↦ ((x : ℂ) ^ (-z) * pairProd χ ψ (z + β)) * Gamma (z - 0) := by
-      ext z; simp; ring
-    simpa [hcongr] using TauCeti.Contour.residue_mul_Gamma_sub hg0
+        fun z ↦ ((x : ℂ) ^ (-z) * pairProd χ ψ (z + β)) * Gamma z := by
+      ext z; ring
+    simpa [hcongr] using TauCeti.Contour.residue_mul_Gamma_zero hg0
   set F₁ : ℂ → ℂ := fun s ↦ pairProd χ ψ s * ((x : ℂ) ^ (-(s - β)) * Gamma (s - β))
   have hcomp : (fun z ↦ (x : ℂ) ^ (-z) * (Gamma z * pairProd χ ψ (z + β))) =
       fun z ↦ F₁ (z + β) := by
@@ -380,11 +340,10 @@ private theorem differentiableOn_Gamma_mul_pairProd (χ : DirichletCharacter ℂ
     (((analyticAt_pairProd χ ψ hw1).comp_of_eq (f := fun z : ℂ ↦ z + β)
       (by fun_prop) rfl).differentiableAt)).differentiableWithinAt
 
-/-- **Contour-shifted smoothed sum of the four-factor L-function product.** For any Dirichlet
-characters `χ` and `ψ`, real `1 / 2 < β < 1`, and `x > 0`, shifting the Mellin inverse
-representation of `∑_{n ≥ 1} a_n n⁻ᵝ e^{-n x}` from `Re w = 2 - β` to `Re w = 1 / 2 - β` picks up
-`F(β)` from the pole of `Γ(w)` at `w = 0` and the residue of `F(s) x^{-(s - β)} Γ(s - β)` at
-`s = 1`. -/
+/-- **Smoothed sum identity for the four-factor L-function product.** For any Dirichlet characters
+`χ` and `ψ`, real `1 / 2 < β < 1`, and `x > 0`, the series `∑_{n ≥ 1} a_n n⁻ᵝ e^{-n x}` sums to
+`F(β)` plus the residue of `F(s) x^{-(s - β)} Γ(s - β)` at `s = 1` plus
+`mellinInv (1 / 2 - β) (w ↦ Γ(w) F(w + β)) x`. -/
 theorem hasSum_zetaMulPairCoeffs_mul_rpow_mul_exp (χ : DirichletCharacter ℂ M)
     (ψ : DirichletCharacter ℂ N) {β x : ℝ}
     (hβ : β ∈ Ioo (1 / 2) 1) (hx : 0 < x) :
@@ -402,7 +361,7 @@ theorem hasSum_zetaMulPairCoeffs_mul_rpow_mul_exp (χ : DirichletCharacter ℂ M
   have hf_diff : DifferentiableOn ℂ f ((Icc (1 / 2 - β) (2 - β) ×ℂ univ) \ (↑S : Set ℂ)) := by
     simpa [f, S] using differentiableOn_Gamma_mul_pairProd χ ψ hβ.2
   have hmero : ∀ s ∈ S, MeromorphicAt f s := fun s _ ↦
-    (meromorphicAt_Gamma s).mul
+    (Meromorphic.Gamma s).mul
       (MeromorphicAt.comp_analyticAt (g := fun w : ℂ ↦ w + β)
         (meromorphicAt_pairProd χ ψ (s + β)) (by fun_prop))
   have ha_int : VerticalIntegrable f (1 / 2 - β) :=
@@ -424,7 +383,10 @@ theorem hasSum_zetaMulPairCoeffs_mul_rpow_mul_exp (χ : DirichletCharacter ℂ M
       rcases hs with rfl | rfl
       · simp only [zero_re, mem_Ioo]; constructor <;> linarith [hβ.1, hβ.2]
       · simp only [ofReal_re, mem_Ioo]; constructor <;> linarith [hβ.1, hβ.2])
-    ha_int hb_int (exists_horiz_decay_Gamma_mul_pairProd χ ψ hβ)
+    ha_int hb_int
+    (by simpa [f, one_mul] using tendsto_integral_norm_Gamma_mul_pairProd χ ψ hβ 1 (by norm_num))
+    (by simpa [f, sub_eq_add_neg, neg_mul] using
+      tendsto_integral_norm_Gamma_mul_pairProd χ ψ hβ (-1) (by norm_num))
   have hneS : (0 : ℂ) ≠ ((1 - β : ℝ) : ℂ) := by
     intro h; have := congrArg re h; simp at this; linarith [hβ.2]
   rw [Finset.sum_pair hneS, sum_residue_pairProd χ ψ hβ hx, sub_eq_iff_eq_add] at hshift
@@ -513,23 +475,15 @@ private theorem norm_Gamma_half_sub_le {β : ℝ} (hβ : β ∈ Icc (3 / 4) (5 /
 private theorem norm_pairProd_half_le (χ : DirichletCharacter ℂ M) (ψ : DirichletCharacter ℂ N)
     (t : ℝ) :
     ‖pairProd χ ψ ((1 / 2 : ℂ) + t * I)‖ ≤ 5184 * ((M : ℝ) * N) ^ 2 * (1 + t ^ 2) ^ 2 := by
-  set s : ℂ := (1 / 2 : ℂ) + t * I
-  have hs_re : 1 / 2 ≤ s.re := by simp [s]
-  have hs_1 : 1 / 2 ≤ ‖s - 1‖ := by
-    have : |(s - 1).re| = 1 / 2 := by simp [s]; norm_num
-    exact this ▸ abs_re_le_norm (s - 1)
-  have hs_norm : 1 + ‖s‖ ≤ 2 * (1 + |t|) := by
-    have : ‖s‖ ≤ 1 / 2 + |t| := (norm_add_le _ _).trans (by simp)
-    linarith [abs_nonneg t]
-  have ht4 : (1 + ‖s‖) ^ 4 ≤ 64 * (1 + t ^ 2) ^ 2 := by
-    have h2 : (1 + |t|) ^ 2 ≤ 2 * (1 + t ^ 2) := by nlinarith [sq_nonneg (|t| - 1), sq_abs t]
-    calc (1 + ‖s‖) ^ 4 ≤ (2 * (1 + |t|)) ^ 4 := pow_le_pow_left₀ (by positivity) hs_norm 4
-      _ = 16 * ((1 + |t|) ^ 2) ^ 2 := by ring
-      _ ≤ 16 * (2 * (1 + t ^ 2)) ^ 2 := by gcongr
-      _ = 64 * (1 + t ^ 2) ^ 2 := by ring
-  calc ‖pairProd χ ψ s‖ ≤ 81 * ((M : ℝ) * N) ^ 2 * (1 + ‖s‖) ^ 4 :=
-        norm_pairProd_le χ ψ hs_re hs_1
-    _ ≤ 81 * ((M : ℝ) * N) ^ 2 * (64 * (1 + t ^ 2) ^ 2) := by gcongr
+  have h := norm_pairProd_add_mul_I_le χ ψ (σ := 1 / 2) le_rfl (by norm_num) t
+  have hcast : ((1 / 2 : ℝ) : ℂ) + t * I = (1 / 2 : ℂ) + t * I := by push_cast; rfl
+  rw [hcast] at h
+  refine h.trans ?_
+  have hnum : (324 : ℝ) * (1 + |(1 / 2 : ℝ)|) ^ 4 ≤ 5184 := by norm_num
+  have hfac : 0 ≤ ((M : ℝ) * N) ^ 2 * (1 + t ^ 2) ^ 2 := by positivity
+  calc 324 * ((M : ℝ) * N) ^ 2 * (1 + |(1 / 2 : ℝ)|) ^ 4 * (1 + t ^ 2) ^ 2
+      = (324 * (1 + |(1 / 2 : ℝ)|) ^ 4) * (((M : ℝ) * N) ^ 2 * (1 + t ^ 2) ^ 2) := by ring
+    _ ≤ 5184 * (((M : ℝ) * N) ^ 2 * (1 + t ^ 2) ^ 2) := mul_le_mul_of_nonneg_right hnum hfac
     _ = 5184 * ((M : ℝ) * N) ^ 2 * (1 + t ^ 2) ^ 2 := by ring
 
 private theorem norm_Gamma_mul_pairProd_half_sub_le (χ : DirichletCharacter ℂ M)
@@ -590,16 +544,6 @@ theorem norm_mellinInv_Gamma_mul_pair_le (χ : DirichletCharacter ℂ M)
     _ = 209018880 * ((M : ℝ) * N) ^ 2 * x ^ (β - 1 / 2) := by
         simp only [C]; field_simp [Real.pi_ne_zero]; ring
 
-private theorem Gamma_one_sub_le_inv {β : ℝ} (hβ : β ∈ Ioo 0 1) :
-    Real.Gamma (1 - β) ≤ (1 - β)⁻¹ := by
-  have h1 : 0 < 1 - β := sub_pos.mpr hβ.2
-  have h2 : Real.Gamma (1 - β + 1) ≤ 1 := by
-    have hmax := Real.convexOn_Gamma.le_max_of_mem_Icc (x := 1) (y := 2) (z := 1 - β + 1)
-      zero_lt_one two_pos ⟨by linarith [hβ.2], by linarith [hβ.1]⟩
-    simpa [Real.Gamma_one, Real.Gamma_two] using hmax
-  rw [Real.Gamma_add_one h1.ne', ← le_div_iff₀' h1, one_div] at h2
-  exact h2
-
 omit [NeZero M] [NeZero N] in
 private theorem exp_neg_le_tsum_zetaMulPairCoeffs_re {χ : DirichletCharacter ℂ M}
     {ψ : DirichletCharacter ℂ N} (hχ : χ.IsQuadratic) (hψ : ψ.IsQuadratic)
@@ -647,7 +591,8 @@ private theorem quarter_mul_sub_mul_rpow_le_LFunction_one_re {χ : DirichletChar
     have hmain_ge : 1 / 4 ≤ x ^ (β - 1) * Real.Gamma (1 - β) * R := by
       dsimp only [pairProd] at hm_re; linarith
     exact hmain_ge.trans (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left
-      (Gamma_one_sub_le_inv ⟨by linarith [hβ.1], hβ.2⟩) (Real.rpow_pos_of_pos hx.1 _).le) hR_pos.le)
+      (Real.Gamma_le_inv (sub_pos.mpr hβ.2) (by linarith [hβ.1]))
+      (Real.rpow_pos_of_pos hx.1 _).le) hR_pos.le)
   have h1β : 0 < 1 - β := sub_pos.mpr hβ.2
   have hmul := mul_le_mul_of_nonneg_right hmain_ub
     (mul_nonneg h1β.le (Real.rpow_nonneg hx.1.le (1 - β)))
@@ -679,7 +624,7 @@ theorem le_LFunction_one_mul_mul_re_of_nonpos {χ : DirichletCharacter ℂ M}
       hR_pos.le
   set A : ℝ := 840000000 * P ^ 2
   have hA1 : 840000000 ≤ A := by nlinarith
-  set x : ℝ := A ^ (-4 : ℝ)
+  set x : ℝ := A ^ (-4 : ℝ) with hx_def
   have hx : 0 < x := Real.rpow_pos_of_pos (by linarith) _
   have hx_half : x ≤ 1 / 4 :=
     (Real.rpow_le_rpow_of_nonpos (by norm_num) hA1 (by norm_num)).trans (by norm_num)
@@ -688,7 +633,7 @@ theorem le_LFunction_one_mul_mul_re_of_nonpos {χ : DirichletCharacter ℂ M}
     have hxpow : x ^ (β - 1 / 2) ≤ A⁻¹ :=
       (Real.rpow_le_rpow_of_exponent_ge (z := 1 / 4) hx (by linarith)
         (by linarith)).trans_eq (by
-          rw [show x = A ^ (-4 : ℝ) from rfl, ← Real.rpow_mul (by linarith)]
+          rw [hx_def, ← Real.rpow_mul (by linarith)]
           norm_num [Real.rpow_neg_one])
     calc ‖mellinInv (1 / 2 - β) (fun w ↦ Gamma w * pairProd χ ψ (w + β)) x‖
         ≤ 209018880 * P ^ 2 * A⁻¹ := hb.trans (by gcongr)

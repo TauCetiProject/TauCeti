@@ -53,6 +53,8 @@ completion of `ζ(s) - (s - 1)⁻¹`. Since `0 ≤ {t} < 1`, this bounds `‖rie
 * `TauCeti.one_sub_two_cpow_mul_riemannZeta_eq_mul_integral`: the partial-summation integral of
   the alternating series represents `(1 - 2 ^ (1 - s)) ζ(s)` on `Re s > 0`, `s ≠ 1`.
 * `TauCeti.riemannZeta_lt_zero`: `ζ(σ)` is a negative real number for real `0 < σ < 1`.
+* `TauCeti.integrableOn_fract_mul_cpow` and `TauCeti.differentiableOn_integral_fract_mul_cpow`:
+  integrability and holomorphy of `∫_1^∞ {t} t^(-s-1) dt` on `Re s > 0`.
 * `TauCeti.riemannZeta₀_eq_one_sub_mul_integral`: `riemannZeta₀ s = 1 - s ∫_1^∞ {t} t^(-s-1) dt`
   on `Re s > 0`.
 * `TauCeti.norm_riemannZeta₀_le` and `TauCeti.norm_riemannZeta_le`: explicit vertical linear
@@ -206,7 +208,16 @@ theorem riemannZeta_lt_zero {σ : ℝ} (h₀ : 0 < σ) (h₁ : σ < 1) : riemann
   rw [hz]
   exact_mod_cast div_neg_of_pos_of_neg (mul_pos h₀ hg) hc
 
-private theorem integrableOn_fract_mul_cpow {s : ℂ} (hs : 0 < s.re) :
+private theorem norm_fract_mul_cpow_le {s : ℂ} {t : ℝ} (ht : 0 < t) :
+    ‖((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ ≤ t ^ (-(s.re + 1)) := by
+  rw [norm_mul, norm_real, Real.norm_of_nonneg (Int.fract_nonneg t),
+    norm_cpow_eq_rpow_re_of_pos ht]
+  simp only [neg_re, add_re, one_re]
+  exact mul_le_of_le_one_left (Real.rpow_nonneg ht.le _) (Int.fract_lt_one t).le
+
+/-- The Euler–Maclaurin remainder integrand `{t} t ^ (-(s + 1))` is integrable on `(1, ∞)`
+whenever `Re s > 0`. -/
+theorem integrableOn_fract_mul_cpow {s : ℂ} (hs : 0 < s.re) :
     MeasureTheory.IntegrableOn
       (fun t : ℝ ↦ ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))) (Set.Ioi 1) := by
   refine (integrableOn_Ioi_rpow_of_lt (by linarith : -(s.re + 1) < -1) zero_lt_one).mono'
@@ -215,13 +226,11 @@ private theorem integrableOn_fract_mul_cpow {s : ℂ} (hs : 0 < s.re) :
         (fun t (ht : t ∈ Set.Ioi (1 : ℝ)) ↦ (continuousAt_ofReal_cpow_const _ _
           (Or.inr (zero_lt_one.trans ht).ne')).continuousWithinAt) measurableSet_Ioi))) ?_
   filter_upwards [MeasureTheory.ae_restrict_mem measurableSet_Ioi] with t ht
-  have ht0 : 0 < t := zero_lt_one.trans ht
-  rw [norm_mul, norm_real, Real.norm_of_nonneg (Int.fract_nonneg t),
-    norm_cpow_eq_rpow_re_of_pos ht0]
-  simp only [neg_re, add_re, one_re]
-  exact mul_le_of_le_one_left (Real.rpow_nonneg ht0.le _) (Int.fract_lt_one t).le
+  exact norm_fract_mul_cpow_le (zero_lt_one.trans ht)
 
-private theorem differentiableOn_integral_fract_mul_cpow :
+/-- The Euler–Maclaurin remainder integral `s ↦ ∫_1^∞ {t} t ^ (-(s + 1)) dt` is holomorphic on
+the right half-plane `Re s > 0`. -/
+theorem differentiableOn_integral_fract_mul_cpow :
     DifferentiableOn ℂ
       (fun s : ℂ ↦ ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
       {s : ℂ | 0 < s.re} := by
@@ -321,11 +330,7 @@ theorem norm_riemannZeta₀_le {s : ℂ} (hs : 0 < s.re) :
         refine MeasureTheory.norm_integral_le_of_norm_le
           (integrableOn_Ioi_rpow_of_lt (by linarith : -(s.re + 1) < -1) zero_lt_one) ?_
         filter_upwards [MeasureTheory.ae_restrict_mem measurableSet_Ioi] with t ht
-        have ht0 : 0 < t := zero_lt_one.trans ht
-        rw [norm_mul, norm_real, Real.norm_of_nonneg (Int.fract_nonneg t),
-          norm_cpow_eq_rpow_re_of_pos ht0]
-        simp only [neg_re, add_re, one_re]
-        exact mul_le_of_le_one_left (Real.rpow_nonneg ht0.le _) (Int.fract_lt_one t).le
+        exact norm_fract_mul_cpow_le (zero_lt_one.trans ht)
       _ = 1 / s.re := by
         rw [integral_Ioi_rpow_of_lt (by linarith) zero_lt_one, Real.one_rpow]
         ring
