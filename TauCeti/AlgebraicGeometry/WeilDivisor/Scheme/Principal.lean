@@ -27,7 +27,8 @@ The main results are:
   divisor plus a principal divisor to be effective.
 
 This file completes the global step left open by
-`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Order.lean`.
+`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Order.lean`. The proof reuses Mathlib's
+`exists_isUnit_germ_eq` and `Scheme.ord_of_isUnit`. No formalization is vendored.
 -/
 
 public section
