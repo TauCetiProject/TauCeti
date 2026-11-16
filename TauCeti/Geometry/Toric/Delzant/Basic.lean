@@ -59,6 +59,14 @@ the normals (`TauCeti.Toric.facetPolyhedron_add`). It preserves the active const
 smoothness of vertices and the Delzant property (`TauCeti.Toric.isDelzant_add_iff`). This is the
 freedom of shifting a moment map by a constant.
 
+Labelling the facets by nonzero natural numbers `m j`, that is, replacing the normals by
+`m j • u j` and the support constants by `m j * c j`, keeps the polyhedron and the active
+constraints (`TauCeti.Toric.facetPolyhedron_nsmul`, `TauCeti.Toric.activeSet_nsmul`). These are the
+labelled polytopes of Lerman and Tolman, whose labels record the finite isotropy along the facets
+of a toric orbifold. A point is a smooth vertex of the labelled presentation exactly when it is
+one of `(u, c)` and every constraint active there has label one
+(`TauCeti.Toric.isSmoothVertex_nsmul_iff`), because a member of a lattice basis is primitive.
+
 ## Main definitions
 
 * `TauCeti.Toric.facetPairing i u j`: the linear functional `x ↦ ⟨x, u j⟩` on `V*`.
@@ -85,6 +93,7 @@ freedom of shifting a moment map by a constant.
 * `TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`: for an injective lattice map, a Delzant
   polytope has a point on none of its facets.
 * `TauCeti.Toric.facetPolyhedron_add`, `TauCeti.Toric.isDelzant_add_iff`: translations.
+* `TauCeti.Toric.facetPolyhedron_nsmul`, `TauCeti.Toric.isSmoothVertex_nsmul_iff`: labels.
 
 ## References
 
@@ -94,6 +103,8 @@ freedom of shifting a moment map by a constant.
   Springer, 2001, Section 28.
 * V. Guillemin, *Moment Maps and Combinatorial Invariants of Hamiltonian `T^n`-spaces*,
   Birkhäuser, 1994, Chapter 1.
+* E. Lerman, S. Tolman, *Hamiltonian torus actions on symplectic orbifolds and toric varieties*,
+  Trans. Amer. Math. Soc. 349 (1997), 4201–4230.
 -/
 
 public section
@@ -411,5 +422,54 @@ theorem isDelzant_add_iff :
       exact vadd_mem_vadd_set hx
 
 end Translation
+
+/-! ### Labels -/
+
+section Label
+
+variable (m : ι → ℕ)
+
+/-- The pairing with a labelled normal `m j • u j` is `m j` times the pairing with `u j`. -/
+theorem facetPairing_nsmul (j : ι) :
+    facetPairing i (fun j ↦ m j • u j) j = (m j : ℝ) • facetPairing i u j := by
+  ext y
+  simp [nsmul_eq_mul]
+
+variable {m}
+
+/-- Labelling the normals by nonzero `m j` and scaling the support constants accordingly does not
+change the active facets. -/
+theorem activeSet_nsmul (hm : ∀ j, m j ≠ 0) (y : StrongDual ℝ V) :
+    activeSet (facetPairing i (fun j ↦ m j • u j)) (fun j ↦ m j * c j) y =
+      activeSet (facetPairing i u) c y := by
+  ext j
+  simp only [mem_activeSet, facetPairing_nsmul, LinearMap.smul_apply, smul_eq_mul]
+  exact mul_right_inj' (Nat.cast_ne_zero.2 (hm j))
+
+/-- Labelling the normals by nonzero `m j` and scaling the support constants accordingly does not
+change the polyhedron. -/
+theorem facetPolyhedron_nsmul (hm : ∀ j, m j ≠ 0) :
+    facetPolyhedron i (fun j ↦ m j • u j) (fun j ↦ m j * c j) = facetPolyhedron i u c := by
+  ext y
+  simp only [mem_facetPolyhedron, map_nsmul, nsmul_eq_mul]
+  exact forall_congr' fun j ↦ mul_le_mul_iff_right₀ (Nat.cast_pos.2 (Nat.pos_of_ne_zero (hm j)))
+
+/-- **Smooth vertices of a labelled presentation.** A point is a smooth vertex for the labelled
+normals `m j • u j` exactly when it is a smooth vertex for `u` and every facet active there has
+label one. -/
+theorem isSmoothVertex_nsmul_iff (hm : ∀ j, m j ≠ 0) {y : StrongDual ℝ V} :
+    IsSmoothVertex i (fun j ↦ m j • u j) (fun j ↦ m j * c j) y ↔
+      (∀ j ∈ activeSet (facetPairing i u) c y, m j = 1) ∧ IsSmoothVertex i u c y := by
+  rw [isSmoothVertex_def, isSmoothVertex_def, activeSet_nsmul hm]
+  constructor
+  · rintro ⟨b, hb⟩
+    -- A member of a lattice basis is primitive, so it is not a proper multiple.
+    have h1 (j : ι) (hj : j ∈ activeSet (facetPairing i u) c y) : m j = 1 :=
+      (b.isPrimitive ⟨j, hj⟩).eq_one_of_eq_nsmul (hb ⟨j, hj⟩)
+    exact ⟨h1, b, fun j ↦ by rw [hb, h1 j j.2, one_smul]⟩
+  · rintro ⟨h1, b, hb⟩
+    exact ⟨b, fun j ↦ by rw [hb, h1 j j.2, one_smul]⟩
+
+end Label
 
 end TauCeti.Toric
