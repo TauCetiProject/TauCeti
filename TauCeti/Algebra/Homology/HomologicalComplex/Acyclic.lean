@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Additive
+public import Mathlib.Algebra.Homology.Embedding.CochainComplex
+public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
+public import Mathlib.Algebra.Homology.Embedding.StupidTrunc
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
@@ -17,8 +20,11 @@ Let `F : C ⥤ D` be an additive functor between abelian categories and `P` a cl
 `C`, closed under isomorphisms, such that in a short exact sequence `0 ⟶ A ⟶ B ⟶ C ⟶ 0` with `A`
 and `B` in `P` also `C` lies in `P`, and `F` sends such a sequence to a short exact sequence. Then
 `F` sends acyclic complexes `0 ⟶ Q⁰ ⟶ Q¹ ⟶ ⋯` with terms in `P` to acyclic complexes
-(`HomologicalComplex.Acyclic.map_of_shortExact`). The cycles `Zⁿ` lie in `P` by induction, using
-the short exact sequences `0 ⟶ Zⁿ ⟶ Qⁿ ⟶ Zⁿ⁺¹ ⟶ 0`, and `F` keeps these exact.
+(`HomologicalComplex.Acyclic.map_of_shortExact`), and more generally every bounded-below acyclic
+`ℤ`-indexed cochain complex with terms in `P`
+(`HomologicalComplex.Acyclic.map_of_shortExact_of_isStrictlyGE`).
+The cycles `Zⁿ` lie in `P` by induction, using the short exact sequences
+`0 ⟶ Zⁿ ⟶ Qⁿ ⟶ Zⁿ⁺¹ ⟶ 0`, and `F` keeps these exact.
 
 ## References
 
@@ -119,5 +125,33 @@ theorem map_of_shortExact (hQ : Q.Acyclic) (hQP : ∀ n, P (Q.X n)) :
     exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ').1
       ((ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).2
         (shortExact_map_cyclesSequence F P hP hF hQ hQP n).exact)
+
+include hP hF in
+/-- **`F` preserves acyclicity of bounded-below `ℤ`-indexed complexes in an adapted class.**
+Restricting `Q` along `ComplexShape.embeddingUpIntGE b` reduces to `map_of_shortExact`. -/
+theorem map_of_shortExact_of_isStrictlyGE {Q : CochainComplex C ℤ} (b : ℤ) [Q.IsStrictlyGE b]
+    (hQ : Q.Acyclic) (hQP : ∀ n, P (Q.X n)) :
+    ((F.mapHomologicalComplex _).obj Q).Acyclic := by
+  let e := ComplexShape.embeddingUpIntGE b
+  have hQ' : (Q.restriction e).Acyclic := fun n ↦ by
+    have he : (Q.restriction e).extend e ≅ Q := asIso (Q.ιStupidTrunc e)
+    exact ((Q.restriction e).extend_exactAt_iff e (j := n) rfl).1
+      ((ShortComplex.exact_iff_of_iso ((shortComplexFunctor C _ (e.f n)).mapIso he)).2
+        (hQ (e.f n)))
+  have hFQ' : (((F.mapHomologicalComplex _).obj Q).restriction e).Acyclic :=
+    map_of_shortExact F P hP hF hQ' fun n ↦ hQP (e.f n)
+  have hFQ_ext : (((F.mapHomologicalComplex _).obj Q).restriction e).extend e ≅
+      (F.mapHomologicalComplex _).obj Q :=
+    asIso (((F.mapHomologicalComplex _).obj Q).ιStupidTrunc e)
+  intro m
+  have hm : ((((F.mapHomologicalComplex _).obj Q).restriction e).extend e).ExactAt m := by
+    by_cases h : b ≤ m
+    · lift m - b to ℕ using sub_nonneg.2 h with k hk
+      exact ((((F.mapHomologicalComplex _).obj Q).restriction e).extend_exactAt_iff e
+        (j := k) (by simp only [e, ComplexShape.embeddingUpIntGE_f]; omega)).2 (hFQ' k)
+    · exact HomologicalComplex.extend_exactAt _ e m fun k hk ↦ by
+        simp only [e, ComplexShape.embeddingUpIntGE_f] at hk
+        omega
+  exact (ShortComplex.exact_iff_of_iso ((shortComplexFunctor D _ m).mapIso hFQ_ext)).1 hm
 
 end HomologicalComplex.Acyclic
