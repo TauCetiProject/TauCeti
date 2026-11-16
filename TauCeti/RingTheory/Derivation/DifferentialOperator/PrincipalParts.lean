@@ -44,8 +44,9 @@ sending `jet m x` to `a • jet m (b • x)`.
   sending `x` to the class of `1 ⊗ₜ x`.
 * `TauCeti.PrincipalParts.liftEquiv`: the universal `A`-linear equivalence
   `(PrincipalParts R A M m →ₗ[A] N) ≃ₗ[A] differentialOperators R A M N m`.
-* `TauCeti.PrincipalParts.map` and `TauCeti.PrincipalParts.transition`: functoriality in `M` and
-  surjective order-transition maps for `n ≤ m`.
+* `TauCeti.PrincipalParts.map`, `TauCeti.PrincipalParts.mapAlgebra`, and
+  `TauCeti.PrincipalParts.transition`: functoriality in `M` and along algebra towers `R → A → B`,
+  together with surjective order-transition maps for `n ≤ m`.
 * `TauCeti.PrincipalParts.zeroEquiv`, `TauCeti.PrincipalParts.counit`, and
   `TauCeti.PrincipalParts.oneEquiv`: the order-zero identification `P^0(M) ≃ₗ[A] M`, the counit
   `P^m(M) →ₗ[A] M`, and the first-order splitting `P^1(A) ≃ₗ[A] Ω[A⁄R] × A`.
@@ -251,6 +252,19 @@ theorem diagDiff_self_apply (a : A) (z : A ⊗[R] A) :
     simp [mul_comm]
   | add x y hx hy => rw [map_add, mul_add, hx, hy]
 
+/-- An `A`-submodule predicate holds on `KaehlerDifferential.ideal R A` once it holds on every
+diagonal generator `1 ⊗ₜ a - a ⊗ₜ 1`. -/
+@[elab_as_elim]
+private theorem kaehlerIdeal_induction {p : A ⊗[R] A → Prop} {u : A ⊗[R] A}
+    (hu : u ∈ KaehlerDifferential.ideal R A)
+    (diag : ∀ a : A, p ((1 : A) ⊗ₜ[R] a - a ⊗ₜ[R] (1 : A)))
+    (zero : p 0) (add : ∀ x y, p x → p y → p (x + y))
+    (smul : ∀ (c : A) x, p x → p (c • x)) : p u := by
+  rw [← Submodule.restrictScalars_mem A,
+    ← KaehlerDifferential.submodule_span_range_eq_ideal] at hu
+  exact Submodule.span_induction (by rintro _ ⟨a, rfl⟩; exact diag a) zero
+    (fun x y _ _ ↦ add x y) (fun c x _ ↦ smul c x) hu
+
 private theorem iSup_map_diagDiff_self (J : Ideal (A ⊗[R] A)) :
     (⨆ a : A, (J.restrictScalars A).map (diagDiff R a)) =
       (KaehlerDifferential.ideal R A * J).restrictScalars A := by
@@ -261,13 +275,9 @@ private theorem iSup_map_diagDiff_self (J : Ideal (A ⊗[R] A)) :
     exact Submodule.mul_mem_mul (KaehlerDifferential.one_smul_sub_smul_one_mem_ideal R a) hz
   · intro z (hz : z ∈ KaehlerDifferential.ideal R A * J)
     refine Submodule.mul_induction_on hz (fun u hu y hy ↦ ?_) fun _ _ h₁ h₂ ↦ add_mem h₁ h₂
-    have hu' :
-        u ∈ Submodule.span A (Set.range fun s : A ↦ (1 : A) ⊗ₜ[R] s - s ⊗ₜ[R] (1 : A)) := by
-      rwa [KaehlerDifferential.submodule_span_range_eq_ideal]
-    refine Submodule.span_induction (fun v hv ↦ ?_) (by simp)
-      (fun x₁ x₂ _ _ ih₁ ih₂ ↦ by rw [add_mul]; exact add_mem ih₁ ih₂)
-      (fun c x₁ _ ih₁ ↦ by rw [smul_mul_assoc]; exact Submodule.smul_mem _ c ih₁) hu'
-    obtain ⟨a, rfl⟩ := hv
+    refine kaehlerIdeal_induction hu (fun a ↦ ?_) (by simp)
+      (fun _ _ ih₁ ih₂ ↦ by rw [add_mul]; exact add_mem ih₁ ih₂)
+      (fun c _ ih₁ ↦ by rw [smul_mul_assoc]; exact Submodule.smul_mem _ c ih₁)
     rw [← diagDiff_self_apply]
     exact Submodule.mem_iSup_of_mem a (Submodule.mem_map_of_mem hy)
 
@@ -351,7 +361,7 @@ theorem span_range_jet (m : ℕ) :
 
 /-- Two `A`-linear maps out of `PrincipalParts R A M m` are equal as soon as they agree on
 `jet R A M m x` for all `x : M`. -/
-@[ext]
+@[ext high + 1]
 theorem hom_ext {N : Type*} [AddCommGroup N] [Module A N] {m : ℕ}
     {f g : PrincipalParts R A M m →ₗ[A] N}
     (h : ∀ x : M, f (jet R A M m x) = g (jet R A M m x)) : f = g := by
@@ -440,31 +450,55 @@ variable (R : Type*) {A M M' M'' N N' : Type*} [CommRing R] [CommRing A] [Algebr
   [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
   [AddCommGroup N'] [Module R N'] [Module A N'] [IsScalarTower R A N']
 
+section MapAlgebra
+
+variable (B : Type*) [CommRing B] [Algebra R B] [Algebra A B] [IsScalarTower R A B]
+  {M_B : Type*} [AddCommGroup M_B] [Module R M_B] [Module A M_B] [Module B M_B]
+  [IsScalarTower A B M_B] [IsScalarTower R B M_B]
+
+/-- Functoriality of `PrincipalParts` along a tower of commutative algebras `R → A → B` and an
+`A`-linear map `fM : M →ₗ[A] M_B` into a `B`-module: `jet m x` maps to `jet m (fM x)`. -/
+def mapAlgebra (fM : M →ₗ[A] M_B) (m : ℕ) :
+    PrincipalParts R A M m →ₗ[A] PrincipalParts R B M_B m :=
+  have := IsScalarTower.to₁₂₄ R A B (PrincipalParts R B M_B m)
+  lift (differentialOperators.restrictOfAlgebra B fM m
+    ⟨jet R B M_B m, jet_mem_differentialOperators m⟩)
+
+variable {R B}
+
+@[simp]
+theorem mapAlgebra_jet (fM : M →ₗ[A] M_B) (m : ℕ) (x : M) :
+    mapAlgebra R B fM m (jet R A M m x) = jet R B M_B m (fM x) := by
+  simp [mapAlgebra]
+
+end MapAlgebra
+
 /-- Functoriality of `PrincipalParts` in the `A`-module `M`: an `A`-linear map `φ : M →ₗ[A] M'`
 induces `PrincipalParts.map R m φ : PrincipalParts R A M m →ₗ[A] PrincipalParts R A M' m` carrying
 `jet m x` to `jet m (φ x)`. -/
 def map (m : ℕ) (φ : M →ₗ[A] M') : PrincipalParts R A M m →ₗ[A] PrincipalParts R A M' m :=
-  lift ⟨jet R A M' m ∘ₗ φ.restrictScalars R,
-    comp_restrictScalars_mem_differentialOperators (jet_mem_differentialOperators m) φ⟩
+  mapAlgebra R A φ m
 
 variable {R}
 
 @[simp]
 theorem map_jet (m : ℕ) (φ : M →ₗ[A] M') (x : M) :
     map R m φ (jet R A M m x) = jet R A M' m (φ x) :=
-  lift_jet _ x
+  mapAlgebra_jet φ m x
 
 theorem map_mkQ (m : ℕ) (φ : M →ₗ[A] M') (a : A) (x : M) :
     map R m φ (mkQ R A M m (a ⊗ₜ[R] x)) = mkQ R A M' m (a ⊗ₜ[R] φ x) := by
   rw [mkQ_tmul, map_smul, map_jet, ← mkQ_tmul]
 
 @[simp]
-theorem map_id (m : ℕ) : map R m (LinearMap.id : M →ₗ[A] M) = LinearMap.id :=
-  hom_ext fun x ↦ by simp
+theorem map_id (m : ℕ) : map R m (LinearMap.id : M →ₗ[A] M) = LinearMap.id := by
+  ext x
+  simp
 
 theorem map_comp (m : ℕ) (ψ : M' →ₗ[A] M'') (φ : M →ₗ[A] M') :
-    map R m (ψ ∘ₗ φ) = map R m ψ ∘ₗ map R m φ :=
-  hom_ext fun x ↦ by simp
+    map R m (ψ ∘ₗ φ) = map R m ψ ∘ₗ map R m φ := by
+  ext x
+  simp
 
 /-- Naturality of `liftEquiv` in the source module `M`. -/
 theorem coe_liftEquiv_comp_map (m : ℕ) (φ : M →ₗ[A] M') (f : PrincipalParts R A M' m →ₗ[A] N) :
@@ -507,16 +541,27 @@ theorem transition_surjective {n m : ℕ} (h : n ≤ m) :
 
 @[simp]
 theorem transition_rfl {m : ℕ} :
-    transition R (A := A) (M := M) (le_refl m) = LinearMap.id :=
-  hom_ext fun x ↦ by simp
+    transition R (A := A) (M := M) (le_refl m) = LinearMap.id := by
+  ext x
+  simp
 
 theorem transition_trans {k n m : ℕ} (h₁ : k ≤ n) (h₂ : n ≤ m) :
-    transition R (A := A) (M := M) h₁ ∘ₗ transition R h₂ = transition R (h₁.trans h₂) :=
-  hom_ext fun x ↦ by simp
+    transition R (A := A) (M := M) h₁ ∘ₗ transition R h₂ = transition R (h₁.trans h₂) := by
+  ext x
+  simp
+
+theorem transition_comp_mapAlgebra {B M_B : Type*} [CommRing B] [Algebra R B] [Algebra A B]
+    [IsScalarTower R A B] [AddCommGroup M_B] [Module R M_B] [Module A M_B] [Module B M_B]
+    [IsScalarTower A B M_B] [IsScalarTower R B M_B] {n m : ℕ} (h : n ≤ m) (fM : M →ₗ[A] M_B) :
+    (transition R h).restrictScalars A ∘ₗ mapAlgebra R B fM m =
+      mapAlgebra R B fM n ∘ₗ transition R h := by
+  ext x
+  simp
 
 theorem transition_comp_map {n m : ℕ} (h : n ≤ m) (φ : M →ₗ[A] M') :
-    transition R h ∘ₗ map R m φ = map R n φ ∘ₗ transition R h :=
-  hom_ext fun x ↦ by simp
+    transition R h ∘ₗ map R m φ = map R n φ ∘ₗ transition R h := by
+  ext x
+  simp
 
 /-- Pre-composing with `transition R h` corresponds under `liftEquiv` to the order-monotonicity
 inclusion `differentialOperators_mono h`. -/
@@ -547,7 +592,7 @@ def zeroEquiv : PrincipalParts R A M 0 ≃ₗ[A] M :=
       LinearMap.restrictScalars_mem_differentialOperators_zero _⟩)
     (jetZeroLinearMap R A M)
     (LinearMap.ext fun x ↦ lift_jet _ x)
-    (hom_ext fun x ↦ by simp [jetZeroLinearMap])
+    (by ext x; simp [jetZeroLinearMap])
 
 @[simp]
 theorem zeroEquiv_jet (x : M) : zeroEquiv R A M (jet R A M 0 x) = x := by
@@ -572,12 +617,14 @@ theorem counit_zero : counit R A M 0 = (zeroEquiv R A M).toLinearMap := by
   simp [counit]
 
 theorem counit_comp_transition {n m : ℕ} (h : n ≤ m) :
-    counit R A M n ∘ₗ transition R h = counit R A M m :=
-  hom_ext fun x ↦ by simp
+    counit R A M n ∘ₗ transition R h = counit R A M m := by
+  ext x
+  simp
 
 theorem counit_comp_map (m : ℕ) (φ : M →ₗ[A] M') :
-    counit R A M' m ∘ₗ map R m φ = φ ∘ₗ counit R A M m :=
-  hom_ext fun x ↦ by simp
+    counit R A M' m ∘ₗ map R m φ = φ ∘ₗ counit R A M m := by
+  ext x
+  simp
 
 end Functoriality
 
@@ -623,11 +670,8 @@ private def tensorLsmul : A ⊗[R] A →ₐ[A] Module.End A (A ⊗[R] M) :=
 
 private theorem tensorLsmul_tmul_tmul (a b c : A) (x : M) :
     tensorLsmul R A M (a ⊗ₜ[R] b) (c ⊗ₜ[R] x) = (a * c) ⊗ₜ[R] (b • x) := by
-  have hbc : Module.End.baseChangeHom R A M (Algebra.lsmul R R M b) =
-      (Algebra.lsmul R R M b).baseChange A := rfl
-  rw [tensorLsmul, Algebra.TensorProduct.lift_tmul, mul_apply_eq_comp, AlgHom.comp_apply, hbc,
-    LinearMap.baseChange_tmul]
-  simp [Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul']
+  simp [tensorLsmul, TensorProduct.liftAux_tmul, Algebra.algebraMap_eq_smul_one,
+    TensorProduct.smul_tmul']
 
 private theorem tensorLsmul_diag (a : A) :
     tensorLsmul R A M ((1 : A) ⊗ₜ[R] a - a ⊗ₜ[R] (1 : A)) = diagDiff R a := by
@@ -663,29 +707,19 @@ private theorem tensorLsmul_mem_of_mem_ideal_pow :
       ∀ z : A ⊗[R] M, tensorLsmul R A M u z ∈ principalPartsRel R A M m
   | 0, u, hu, z => by
     rw [pow_one] at hu
-    have hu' :
-        u ∈ Submodule.span A (Set.range fun s : A ↦ (1 : A) ⊗ₜ[R] s - s ⊗ₜ[R] (1 : A)) := by
-      rwa [KaehlerDifferential.submodule_span_range_eq_ideal]
-    refine Submodule.span_induction (fun v hv ↦ ?_) (by simp)
-      (fun x₁ x₂ _ _ ih₁ ih₂ ↦ by rw [map_add, LinearMap.add_apply]; exact add_mem ih₁ ih₂)
-      (fun c x₁ _ ih₁ ↦ by
-        rw [map_smul, LinearMap.smul_apply]; exact Submodule.smul_mem _ c ih₁) hu'
-    obtain ⟨a, rfl⟩ := hv
+    refine kaehlerIdeal_induction hu (fun a ↦ ?_) (by simp)
+      (fun _ _ ih₁ ih₂ ↦ by rw [map_add, LinearMap.add_apply]; exact add_mem ih₁ ih₂)
+      (fun c _ ih₁ ↦ by rw [map_smul, LinearMap.smul_apply]; exact Submodule.smul_mem _ c ih₁)
     rw [tensorLsmul_diag]
     exact diagDiff_mem_principalPartsRel_zero a z
   | m + 1, u, hu, z => by
     rw [pow_succ'] at hu
-    refine Submodule.mul_induction_on hu (fun v hv w hw ↦ ?_) fun x y hx hy ↦ by
+    refine Submodule.mul_induction_on hu (fun v hv w hw ↦ ?_) fun _ _ hx hy ↦ by
       rw [map_add, LinearMap.add_apply]; exact add_mem hx hy
-    have hv' :
-        v ∈ Submodule.span A (Set.range fun s : A ↦ (1 : A) ⊗ₜ[R] s - s ⊗ₜ[R] (1 : A)) := by
-      rwa [KaehlerDifferential.submodule_span_range_eq_ideal]
-    refine Submodule.span_induction (fun g hg ↦ ?_) (by simp)
-      (fun x₁ x₂ _ _ ih₁ ih₂ ↦ by
-        rw [add_mul, map_add, LinearMap.add_apply]; exact add_mem ih₁ ih₂)
-      (fun c x₁ _ ih₁ ↦ by
-        rw [smul_mul_assoc, map_smul, LinearMap.smul_apply]; exact Submodule.smul_mem _ c ih₁) hv'
-    obtain ⟨a, rfl⟩ := hg
+    refine kaehlerIdeal_induction hv (fun a ↦ ?_) (by simp)
+      (fun _ _ ih₁ ih₂ ↦ by rw [add_mul, map_add, LinearMap.add_apply]; exact add_mem ih₁ ih₂)
+      (fun c _ ih₁ ↦ by
+        rw [smul_mul_assoc, map_smul, LinearMap.smul_apply]; exact Submodule.smul_mem _ c ih₁)
     rw [map_mul, mul_apply_eq_comp, tensorLsmul_diag]
     exact diagDiff_mem_principalPartsRel_succ a (tensorLsmul_mem_of_mem_ideal_pow m hw z)
 
@@ -808,36 +842,40 @@ theorem eq_comul_of_forall_jet {m n : ℕ}
 order transition from `0 + n` to `n`. -/
 theorem counit_comp_comul (n : ℕ) :
     counit R A (PrincipalParts R A M n) 0 ∘ₗ comul R A M 0 n =
-      transition R (Nat.le_add_left n 0) :=
-  hom_ext fun x ↦ by simp
+      transition R (Nat.le_add_left n 0) := by
+  ext x
+  simp
 
 /-- Right counit law for `comul`: applying `PrincipalParts.map R m (counit 0)` at the inner order
 `0` is the identity on `PrincipalParts R A M m`. -/
 theorem map_counit_comp_comul (m : ℕ) :
-    map R m (counit R A M 0) ∘ₗ comul R A M m 0 = LinearMap.id :=
-  hom_ext fun x ↦ by
-    rw [LinearMap.comp_apply, comul_jet]
-    simp
+    map R m (counit R A M 0) ∘ₗ comul R A M m 0 = LinearMap.id := by
+  ext x
+  rw [LinearMap.comp_apply, comul_jet]
+  simp
 
 /-- Coassociativity of `comul`: the two ways of decomposing `k + (m + n)`-jets into iterated
 `k`-, `m`-, and `n`-jets agree up to the associativity transition `k + m + n ≤ k + (m + n)`. -/
 theorem comul_coassoc (k m n : ℕ) :
     map R k (comul R A M m n) ∘ₗ comul R A M k (m + n) =
       comul R A (PrincipalParts R A M n) k m ∘ₗ comul R A M (k + m) n ∘ₗ
-        transition R (by omega : k + m + n ≤ k + (m + n)) :=
-  hom_ext fun x ↦ by simp
+        transition R (by omega : k + m + n ≤ k + (m + n)) := by
+  ext x
+  simp
 
 /-- Compatibility of `comul` with order transitions in both indices. -/
 theorem transition_comp_comul {m m' n n' : ℕ} (hm : m' ≤ m) (hn : n' ≤ n) :
     transition R hm ∘ₗ map R m (transition R hn) ∘ₗ comul R A M m n =
-      comul R A M m' n' ∘ₗ transition R (Nat.add_le_add hm hn) :=
-  hom_ext fun x ↦ by simp
+      comul R A M m' n' ∘ₗ transition R (Nat.add_le_add hm hn) := by
+  ext x
+  simp
 
 /-- Naturality of `comul` with respect to an `A`-linear map `φ : M →ₗ[A] M'`. -/
 theorem map_comp_comul {M' : Type*} [AddCommGroup M'] [Module R M'] [Module A M']
     [IsScalarTower R A M'] (m n : ℕ) (φ : M →ₗ[A] M') :
-    map R m (map R n φ) ∘ₗ comul R A M m n = comul R A M' m n ∘ₗ map R (m + n) φ :=
-  hom_ext fun x ↦ by simp
+    map R m (map R n φ) ∘ₗ comul R A M m n = comul R A M' m n ∘ₗ map R (m + n) φ := by
+  ext x
+  simp
 
 /-- Under the universal property `lift`, composition `P ∘ₗ Q` of differential operators of orders
 at most `m` and `n` factors as `lift P ∘ₗ map R m (lift Q) ∘ₗ comul R A M m n`. -/
@@ -845,8 +883,9 @@ theorem lift_comp {N O : Type*} [AddCommGroup N] [Module R N] [Module A N] [IsSc
     [AddCommGroup O] [Module R O] [Module A O] [IsScalarTower R A O]
     {m n : ℕ} (P : differentialOperators R A N O m) (Q : differentialOperators R A M N n) :
     lift ⟨(P : N →ₗ[R] O) ∘ₗ (Q : M →ₗ[R] N), comp_mem_differentialOperators P.2 Q.2⟩ =
-      lift P ∘ₗ map R m (lift Q) ∘ₗ comul R A M m n :=
-  hom_ext fun x ↦ by simp
+      lift P ∘ₗ map R m (lift Q) ∘ₗ comul R A M m n := by
+  ext x
+  simp
 
 /-- Additive splitting of `comul` on an infinitesimal coordinate increment
 `jet (m + n) a - a • jet (m + n) 1`: under `comul`, `jet (m + n) a - a • jet (m + n) 1` decomposes

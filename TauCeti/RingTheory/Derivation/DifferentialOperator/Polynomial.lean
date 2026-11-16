@@ -45,11 +45,11 @@ characteristic zero hypothesis.
 
 ## Main results
 
-* `TauCeti.smulCommutator_X_derivative`, `TauCeti.derivative_mem_differentialOperators_one`, and
-  `TauCeti.derivative_notMem_differentialOperators_zero`.
-* `TauCeti.smulCommutator_X_hasseDeriv_succ`, `TauCeti.smulCommutator_X_pow_hasseDeriv`,
+* `TauCeti.smulCommutator_X_hasseDeriv_succ`, `TauCeti.smulCommutator_pow_X_hasseDeriv`,
   `TauCeti.hasseDeriv_mem_differentialOperators`, and
   `TauCeti.hasseDeriv_notMem_differentialOperators_of_lt`.
+* `TauCeti.smulCommutator_X_derivative`, `TauCeti.derivative_mem_differentialOperators_one`, and
+  `TauCeti.derivative_notMem_differentialOperators_zero`.
 * `TauCeti.PrincipalParts.polynomialSelfEquiv_jet`: the universal `m`-jet of `f : R[X]` maps to
   `∑ k ∈ Finset.range (m + 1), hasseDeriv k f • Ideal.Quotient.mk _ (X ^ k)`.
 
@@ -67,35 +67,11 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-/-! ### Ordinary and Hasse derivatives on `R[X]` -/
+/-! ### Hasse and ordinary derivatives on `R[X]` -/
 
 section Derivatives
 
 variable {R : Type*} [CommRing R]
-
-/-- On `R[X]`, the commutator `[d/dX, X]` is the identity operator. -/
-@[simp]
-theorem smulCommutator_X_derivative :
-    smulCommutator R (X : R[X]) (derivative : R[X] →ₗ[R] R[X]) = LinearMap.id := by
-  apply LinearMap.ext
-  intro f
-  rw [smulCommutator_apply_apply, LinearMap.id_apply, smul_eq_mul, smul_eq_mul, derivative_mul,
-    derivative_X, one_mul, add_sub_cancel_right]
-
-/-- `Polynomial.derivative` has differential order at most `1` on `R[X]`. -/
-theorem derivative_mem_differentialOperators_one :
-    (derivative : R[X] →ₗ[R] R[X]) ∈ differentialOperators R R[X] R[X] R[X] 1 := by
-  have h : ((derivative' : Derivation R R[X] R[X]) : R[X] →ₗ[R] R[X]) = derivative :=
-    LinearMap.ext derivative'_apply
-  exact h ▸ (derivative' (R := R)).mem_differentialOperators_one
-
-/-- Over a nontrivial ring `R`, `Polynomial.derivative` does not have differential order `0`. -/
-theorem derivative_notMem_differentialOperators_zero [Nontrivial R] :
-    (derivative : R[X] →ₗ[R] R[X]) ∉ differentialOperators R R[X] R[X] R[X] 0 := by
-  intro h0
-  have hX := congr($(smulCommutator_eq_zero_of_mem_differentialOperators_zero h0 X) 1)
-  rw [smulCommutator_X_derivative, LinearMap.id_apply, LinearMap.zero_apply] at hX
-  exact one_ne_zero hX
 
 /-- Commutator of the `(k + 1)`-th Hasse derivative with multiplication by `g : R[X]`:
 `[hasseDeriv (k + 1), g] = ∑ ij ∈ (antidiagonal (k + 1)).erase (0, k + 1),`
@@ -110,7 +86,7 @@ theorem smulCommutator_hasseDeriv_succ (k : ℕ) (g : R[X]) :
   rw [smulCommutator_apply_apply, smul_eq_mul, smul_eq_mul, hasseDeriv_mul,
     ← add_sum_erase _ _ hmem, hasseDeriv_zero, LinearMap.id_apply, add_sub_cancel_left,
     LinearMap.sum_apply]
-  rfl
+  simp only [LinearMap.smul_apply, smul_eq_mul]
 
 /-- Commutator of Hasse derivatives with `X`: `[hasseDeriv (k + 1), X] = hasseDeriv k`. -/
 @[simp]
@@ -130,7 +106,7 @@ theorem smulCommutator_X_hasseDeriv_succ (k : ℕ) :
 
 /-- Iterated commutators of Hasse derivatives with `X`:
 `(smulCommutator R X ^ j) (hasseDeriv (k + j)) = hasseDeriv k`. -/
-theorem smulCommutator_X_pow_hasseDeriv_add (k j : ℕ) :
+theorem smulCommutator_pow_X_hasseDeriv_add (k j : ℕ) :
     (smulCommutator R (X : R[X]) ^ j) (hasseDeriv (k + j) : R[X] →ₗ[R] R[X]) = hasseDeriv k := by
   induction j with
   | zero => simp
@@ -139,9 +115,9 @@ theorem smulCommutator_X_pow_hasseDeriv_add (k j : ℕ) :
 
 /-- The top `k`-fold commutator of `hasseDeriv k` with `X` is the identity operator. -/
 @[simp]
-theorem smulCommutator_X_pow_hasseDeriv (k : ℕ) :
+theorem smulCommutator_pow_X_hasseDeriv (k : ℕ) :
     (smulCommutator R (X : R[X]) ^ k) (hasseDeriv k : R[X] →ₗ[R] R[X]) = LinearMap.id := by
-  simpa using smulCommutator_X_pow_hasseDeriv_add (R := R) 0 k
+  simpa using smulCommutator_pow_X_hasseDeriv_add (R := R) 0 k
 
 /-- Over any commutative ring `R`, the `k`-th Hasse derivative on `R[X]` is a differential operator
 of order at most `k`. -/
@@ -167,9 +143,25 @@ theorem hasseDeriv_notMem_differentialOperators_of_lt [Nontrivial R] {j k : ℕ}
     (hasseDeriv k : R[X] →ₗ[R] R[X]) ∉ differentialOperators R R[X] R[X] R[X] j := by
   intro hj
   have hzero := smulCommutator_pow_eq_zero hj h (X : R[X])
-  rw [smulCommutator_X_pow_hasseDeriv] at hzero
+  rw [smulCommutator_pow_X_hasseDeriv] at hzero
   have h1 := congr($hzero (1 : R[X]))
   simp at h1
+
+/-- On `R[X]`, the commutator `[d/dX, X]` is the identity operator. -/
+@[simp]
+theorem smulCommutator_X_derivative :
+    smulCommutator R (X : R[X]) (derivative : R[X] →ₗ[R] R[X]) = LinearMap.id := by
+  simpa [hasseDeriv_one, hasseDeriv_zero] using smulCommutator_X_hasseDeriv_succ (R := R) 0
+
+/-- `Polynomial.derivative` has differential order at most `1` on `R[X]`. -/
+theorem derivative_mem_differentialOperators_one :
+    (derivative : R[X] →ₗ[R] R[X]) ∈ differentialOperators R R[X] R[X] R[X] 1 :=
+  hasseDeriv_one (R := R) ▸ hasseDeriv_mem_differentialOperators 1
+
+/-- Over a nontrivial ring `R`, `Polynomial.derivative` does not have differential order `0`. -/
+theorem derivative_notMem_differentialOperators_zero [Nontrivial R] :
+    (derivative : R[X] →ₗ[R] R[X]) ∉ differentialOperators R R[X] R[X] R[X] 0 :=
+  hasseDeriv_one (R := R) ▸ hasseDeriv_notMem_differentialOperators_of_lt Nat.zero_lt_one
 
 end Derivatives
 
@@ -189,9 +181,9 @@ def polynomialTensorTaylorEquiv : R[X] ⊗[R] R[X] ≃ₐ[R[X]] R[X][X] :=
 @[simp]
 theorem polynomialTensorTaylorEquiv_tmul (p f : R[X]) :
     polynomialTensorTaylorEquiv R (p ⊗ₜ[R] f) = p • taylor (X : R[X]) (f.map C) := by
-  simp [polynomialTensorTaylorEquiv, polyEquivTensor_symm_apply_tmul_eq_smul,
-    Polynomial.algebraMap_eq]
-  rfl
+  rw [polynomialTensorTaylorEquiv, AlgEquiv.trans_apply, coe_polyEquivTensor'_symm,
+    polyEquivTensor_symm_apply_tmul_eq_smul, Polynomial.algebraMap_eq, map_smul,
+    ← AlgEquiv.coe_toAlgHom, toAlgHom_taylorEquiv, taylorAlgHom_apply]
 
 @[simp]
 theorem polynomialTensorTaylorEquiv_diag_X :

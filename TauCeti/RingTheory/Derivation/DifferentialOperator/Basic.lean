@@ -33,9 +33,10 @@ symbol of `P` evaluated at `df`. This file develops the algebraic theory:
 * `differentialOperatorsZeroEquiv`: order-zero differential operators `M → N` are canonically
   `A`-linearly isomorphic to `M →ₗ[A] N`, where `differentialOperators R A M N m` carries the
   left `A`-module structure `(g • D) x = g • D x`.
-* `differentialOperators_mono` and `comp_mem_differentialOperators`: the orders are increasing
-  and add under composition, so the operators on `M` form a filtered ring
-  (`SetLike.GradedMonoid`).
+* `differentialOperators_mono`, `comp_mem_differentialOperators`, and
+  `differentialOperators.restrictOfAlgebra`: the orders are increasing, add under composition
+  (so the operators on `M` form a filtered ring, `SetLike.GradedMonoid`), and are preserved by
+  pre-composition along an `A`-linear map into a module over an `A`-algebra `B`.
 * `Derivation.mem_differentialOperators_one` and `differentialOperatorsOneEquiv`: an operator
   `D : A →ₗ[R] M` has order at most one exactly when `D = δ + (· • m)` for a derivation `δ` and
   `m : M`, and this splitting is unique, with `m = D 1`.
@@ -391,31 +392,84 @@ theorem _root_.LinearMap.restrictScalars_comp_mem_differentialOperators (f : N �
     f.restrictScalars R ∘ₗ D ∈ differentialOperators R A M O m := by
   simpa using comp_mem_differentialOperators f.restrictScalars_mem_differentialOperators_zero hD
 
-/-- Pre-composing with an `A`-linear map commutes with `smulCommutator`. -/
-theorem smulCommutator_comp_restrictScalars {M' : Type*} [AddCommMonoid M']
-    [Module A M'] [Module R M'] [IsScalarTower R A M'] (a : A) (D : M →ₗ[R] N)
-    (f : M' →ₗ[A] M) :
-    smulCommutator R a (D ∘ₗ f.restrictScalars R) =
-      smulCommutator R a D ∘ₗ f.restrictScalars R := by
+section
+
+variable {B M' : Type*} [CommSemiring B] [Algebra R B] [Algebra A B]
+  [AddCommMonoid M'] [Module R M'] [Module A M'] [Module B M']
+  [IsScalarTower R A M'] [IsScalarTower A B M'] [IsScalarTower R B M']
+  [Module B N] [IsScalarTower A B N] [IsScalarTower R B N]
+
+variable (B) in
+/-- Pre-composing an operator over `B / R` with an `A`-linear map intertwines `smulCommutator`
+via `algebraMap A B`. -/
+theorem smulCommutator_comp_restrictScalars (a : A) (E : M' →ₗ[R] N) (f : M →ₗ[A] M') :
+    smulCommutator R a (E ∘ₗ f.restrictScalars R) =
+      smulCommutator R (algebraMap A B a) E ∘ₗ f.restrictScalars R := by
   ext x
-  simp
+  simp [algebraMap_smul]
+
+/-- Pre-composing a differential operator of order at most `m` over `B / R` with an `A`-linear
+map `f : M →ₗ[A] M'` produces a differential operator of order at most `m` over `A / R`. -/
+theorem comp_restrictScalars_mem_differentialOperators_of_mem_algebra
+    {E : M' →ₗ[R] N} {m : ℕ} (hE : E ∈ differentialOperators R B M' N m) (f : M →ₗ[A] M') :
+    E ∘ₗ f.restrictScalars R ∈ differentialOperators R A M N m := by
+  induction m generalizing E with
+  | zero =>
+    rw [mem_differentialOperators_zero_iff_smulCommutator] at hE ⊢
+    intro a
+    rw [smulCommutator_comp_restrictScalars B, hE, LinearMap.zero_comp]
+  | succ m ih =>
+    rw [mem_differentialOperators_succ_iff] at hE ⊢
+    intro a
+    rw [smulCommutator_comp_restrictScalars B]
+    exact ih (hE (algebraMap A B a))
+
+end
 
 /-- Pre-composing a differential operator of order at most `m` with an `A`-linear map preserves
 order at most `m`. -/
 theorem comp_restrictScalars_mem_differentialOperators {M' : Type*} [AddCommMonoid M']
     [Module A M'] [Module R M'] [IsScalarTower R A M'] {D : M →ₗ[R] N} {m : ℕ}
     (hD : D ∈ differentialOperators R A M N m) (f : M' →ₗ[A] M) :
-    D ∘ₗ f.restrictScalars R ∈ differentialOperators R A M' N m := by
-  induction m generalizing D with
-  | zero =>
-    rw [mem_differentialOperators_zero_iff_smulCommutator] at hD ⊢
-    intro a
-    rw [smulCommutator_comp_restrictScalars, hD, LinearMap.zero_comp]
-  | succ m ih =>
-    rw [mem_differentialOperators_succ_iff] at hD ⊢
-    intro a
-    rw [smulCommutator_comp_restrictScalars]
-    exact ih (hD a)
+    D ∘ₗ f.restrictScalars R ∈ differentialOperators R A M' N m :=
+  comp_restrictScalars_mem_differentialOperators_of_mem_algebra hD f
+
+section
+
+variable (B : Type*) {M' : Type*} [CommSemiring B] [Algebra R B] [Algebra A B]
+  [IsScalarTower R A B]
+  [AddCommMonoid M'] [Module R M'] [Module A M'] [Module B M']
+  [IsScalarTower A B M'] [IsScalarTower R B M']
+  [Module B N] [IsScalarTower A B N] [IsScalarTower R B N]
+
+/-- Restricting an operator in `differentialOperators R B M' N m` along `fM : M →ₗ[A] M'`
+as an `R`-linear map into `differentialOperators R A M N m`. -/
+def differentialOperators.restrictOfAlgebra (fM : M →ₗ[A] M') (m : ℕ) :
+    differentialOperators R B M' N m →ₗ[R] differentialOperators R A M N m :=
+  have := IsScalarTower.to₁₂₄ R A B M'
+  { toFun E := ⟨(E : M' →ₗ[R] N) ∘ₗ fM.restrictScalars R,
+      comp_restrictScalars_mem_differentialOperators_of_mem_algebra E.2 fM⟩
+    map_add' _ _ := by ext; rfl
+    map_smul' _ _ := by ext; rfl }
+
+variable {B}
+
+@[simp]
+theorem differentialOperators.restrictOfAlgebra_apply_apply (fM : M →ₗ[A] M') {m : ℕ}
+    (E : differentialOperators R B M' N m) (x : M) :
+    (differentialOperators.restrictOfAlgebra (R := R) B fM m E : M →ₗ[R] N) x =
+      (E : M' →ₗ[R] N) (fM x) := by
+  rfl
+
+@[simp]
+theorem differentialOperators.restrictOfAlgebra_smul (fM : M →ₗ[A] M') {m : ℕ} (a : A)
+    (E : differentialOperators R B M' N m) :
+    differentialOperators.restrictOfAlgebra (R := R) B fM m (algebraMap A B a • E) =
+      a • differentialOperators.restrictOfAlgebra (R := R) B fM m E := by
+  ext x
+  simp [algebraMap_smul]
+
+end
 
 variable (R A N) in
 /-- The differential operators on `N` form a filtered ring under composition. -/

@@ -24,8 +24,6 @@ localization of `PrincipalParts R A M m` at `S`, and induces a `B`-linear isomor
 
 ## Main definitions
 
-* `TauCeti.PrincipalParts.mapAlgebra`: functoriality of `PrincipalParts` along a tower of
-  commutative algebras `R → A → B` and an `A`-linear map `M →ₗ[A] M'` into a `B`-module.
 * `TauCeti.differentialOperators.extendOfIsLocalization`: the unique extension of
   `D : differentialOperators R A M N m` to `differentialOperators R B M_S N m` when `N` is a
   `B`-module.
@@ -114,116 +112,6 @@ end Uniqueness
 
 namespace TauCeti
 
-/-! ### Functoriality along algebra maps -/
-
-section AlgebraMap
-
-section Semiring
-
-variable {R A B M M' N : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B]
-  [Algebra R A] [Algebra A B] [Algebra R B] [IsScalarTower R A B]
-  [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M]
-  [AddCommMonoid M'] [Module R M'] [Module A M'] [Module B M']
-  [IsScalarTower A B M'] [IsScalarTower R B M']
-  [AddCommGroup N] [Module R N] [Module A N] [Module B N]
-  [IsScalarTower R A N] [IsScalarTower A B N] [IsScalarTower R B N]
-
-/-- Pre-composing a differential operator over `B / R` with an `A`-linear map `fM : M →ₗ[A] M'`
-produces a differential operator over `A / R` of the same order bound. -/
-theorem comp_mem_differentialOperators_of_algebra (B : Type*) [CommSemiring B] [Algebra A B]
-    [Algebra R B] [IsScalarTower R A M'] [Module B M']
-    [IsScalarTower A B M'] [IsScalarTower R B M']
-    [Module B N] [IsScalarTower A B N] [IsScalarTower R B N]
-    {E : M' →ₗ[R] N} {m : ℕ}
-    (hE : E ∈ differentialOperators R B M' N m) (fM : M →ₗ[A] M') :
-    E ∘ₗ fM.restrictScalars R ∈ differentialOperators R A M N m := by
-  have hcomm : ∀ (a : A) (F : M' →ₗ[R] N),
-      smulCommutator R a (F ∘ₗ fM.restrictScalars R) =
-        smulCommutator R (algebraMap A B a) F ∘ₗ fM.restrictScalars R := fun a F ↦ by
-    ext x
-    simp [algebraMap_smul]
-  induction m generalizing E with
-  | zero =>
-    rw [mem_differentialOperators_zero_iff_smulCommutator] at hE ⊢
-    intro a
-    rw [hcomm, hE, LinearMap.zero_comp]
-  | succ m ih =>
-    rw [mem_differentialOperators_succ_iff] at hE ⊢
-    intro a
-    rw [hcomm]
-    exact ih (hE (algebraMap A B a))
-
-/-- Restricting an operator in `differentialOperators R B M' N m` along `fM : M →ₗ[A] M'`
-as an `R`-linear map into `differentialOperators R A M N m`. -/
-def differentialOperators.restrictOfAlgebra (B : Type*) [CommSemiring B] [Algebra A B]
-    [Algebra R B] [IsScalarTower R A B] [Module B M'] [IsScalarTower A B M'] [IsScalarTower R B M']
-    [Module B N] [IsScalarTower A B N] [IsScalarTower R B N]
-    (fM : M →ₗ[A] M') (m : ℕ) :
-    differentialOperators R B M' N m →ₗ[R] differentialOperators R A M N m :=
-  have : IsScalarTower R A M' := .of_algebraMap_smul fun r y ↦ by
-    rw [← algebraMap_smul B, ← IsScalarTower.algebraMap_apply R A B, algebraMap_smul]
-  { toFun E := ⟨(E : M' →ₗ[R] N) ∘ₗ fM.restrictScalars R,
-      comp_mem_differentialOperators_of_algebra B E.2 fM⟩
-    map_add' _ _ := by ext; rfl
-    map_smul' _ _ := by ext; rfl }
-
-@[simp]
-theorem differentialOperators.restrictOfAlgebra_apply_apply (fM : M →ₗ[A] M') {m : ℕ}
-    (E : differentialOperators R B M' N m) (x : M) :
-    (differentialOperators.restrictOfAlgebra (R := R) B fM m E : M →ₗ[R] N) x =
-      (E : M' →ₗ[R] N) (fM x) := by
-  rfl
-
-@[simp]
-theorem differentialOperators.restrictOfAlgebra_smul (fM : M →ₗ[A] M') {m : ℕ} (a : A)
-    (E : differentialOperators R B M' N m) :
-    differentialOperators.restrictOfAlgebra (R := R) B fM m (algebraMap A B a • E) =
-      a • differentialOperators.restrictOfAlgebra (R := R) B fM m E := by
-  ext x
-  simp [algebraMap_smul]
-
-end Semiring
-
-namespace PrincipalParts
-
-section Ring
-
-variable {R A B M M' : Type*} [CommRing R] [CommRing A] [CommRing B]
-  [Algebra R A] [Algebra A B] [Algebra R B] [IsScalarTower R A B]
-  [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
-  [AddCommGroup M'] [Module R M'] [Module A M'] [Module B M']
-  [IsScalarTower A B M'] [IsScalarTower R B M']
-
-/-- Functoriality of `PrincipalParts` along a tower of commutative algebras `R → A → B` and an
-`A`-linear map `fM : M →ₗ[A] M'` into a `B`-module: `jet m x` maps to `jet m (fM x)`. -/
-def mapAlgebra (R B : Type*) {A M M' : Type*} [CommRing R] [CommRing A] [CommRing B]
-    [Algebra R A] [Algebra A B] [Algebra R B] [IsScalarTower R A B]
-    [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
-    [AddCommGroup M'] [Module R M'] [Module A M'] [Module B M']
-    [IsScalarTower A B M'] [IsScalarTower R B M']
-    (fM : M →ₗ[A] M') (m : ℕ) :
-    PrincipalParts R A M m →ₗ[A] PrincipalParts R B M' m :=
-  have : IsScalarTower R A (PrincipalParts R B M' m) := .of_algebraMap_smul fun r z ↦ by
-    rw [← algebraMap_smul B, ← IsScalarTower.algebraMap_apply R A B, algebraMap_smul]
-  lift (differentialOperators.restrictOfAlgebra B fM m
-    ⟨jet R B M' m, jet_mem_differentialOperators m⟩)
-
-@[simp]
-theorem mapAlgebra_jet (fM : M →ₗ[A] M') (m : ℕ) (x : M) :
-    mapAlgebra R B fM m (jet R A M m x) = jet R B M' m (fM x) := by
-  simp [mapAlgebra]
-
-theorem transition_comp_mapAlgebra {n m : ℕ} (h : n ≤ m) (fM : M →ₗ[A] M') :
-    (transition R h).restrictScalars A ∘ₗ mapAlgebra R B fM m =
-      mapAlgebra R B fM n ∘ₗ transition R h :=
-  hom_ext fun x ↦ by simp
-
-end Ring
-
-end PrincipalParts
-
-end AlgebraMap
-
 /-! ### Extension of differential operators to localizations -/
 
 namespace differentialOperators
@@ -234,6 +122,18 @@ variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
   {M M_S N : Type*} [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
   [AddCommGroup M_S] [Module R M_S] [Module A M_S]
   [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
+
+private theorem algebraMap_smul_map_units_inv_smul {P : Type*} [AddCommGroup P]
+    (S : Submonoid A) (B : Type*) [CommRing B] [Algebra A B] [IsLocalization S B] [Module B P]
+    (s : S) (z : P) :
+    algebraMap A B s • (((IsLocalization.map_units B s).unit⁻¹ : Bˣ) • z) = z := by
+  simpa [Units.smul_def] using smul_inv_smul (IsLocalization.map_units B s).unit z
+
+private theorem map_units_inv_smul_algebraMap_smul {P : Type*} [AddCommGroup P]
+    (S : Submonoid A) (B : Type*) [CommRing B] [Algebra A B] [IsLocalization S B] [Module B P]
+    (s : S) (z : P) :
+    (((IsLocalization.map_units B s).unit⁻¹ : Bˣ) : B) • (algebraMap A B s • z) = z := by
+  simpa [Units.smul_def] using inv_smul_smul (IsLocalization.map_units B s).unit z
 
 /-- Cocycle rule for the localized commutators `C a`: `[D, a₁ * a₂]` acts on `y : M_S` as
 `a₁ • C a₂ y + C a₁ (a₂ • y)`. -/
@@ -291,8 +191,8 @@ private theorem extendSuccFun_wellDefined (S : Submonoid A) (B : Type*) [CommRin
     {y : M_S} {x₁ x₂ : M} {s₁ s₂ : S} (hs₁ : s₁ • y = fM x₁) (hs₂ : s₂ • y = fM x₂) :
     ((IsLocalization.map_units B s₁).unit⁻¹ : Bˣ) • (D x₁ - C s₁ y) =
       ((IsLocalization.map_units B s₂).unit⁻¹ : Bˣ) • (D x₂ - C s₂ y) := by
-  have hs₁' : (s₁ : A) • y = fM x₁ := (Submonoid.smul_def s₁ y).symm.trans hs₁
-  have hs₂' : (s₂ : A) • y = fM x₂ := (Submonoid.smul_def s₂ y).symm.trans hs₂
+  have hs₁' : (s₁ : A) • y = fM x₁ := by simpa [Submonoid.smul_def] using hs₁
+  have hs₂' : (s₂ : A) • y = fM x₂ := by simpa [Submonoid.smul_def] using hs₂
   have hfeq : fM ((s₂ : A) • x₁) = fM ((s₁ : A) • x₂) := by
     rw [map_smul, map_smul, ← hs₁', ← hs₂', smul_comm]
   obtain ⟨t, ht⟩ := IsLocalizedModule.exists_of_eq (S := S) hfeq
@@ -311,11 +211,8 @@ private theorem extendSuccFun_wellDefined (S : Submonoid A) (B : Type*) [CommRin
     rw [ht, mul_comm (s₂ : A) s₁]
   apply (IsLocalization.map_units B s₁).smul_left_cancel.mp
   apply (IsLocalization.map_units B s₂).smul_left_cancel.mp
-  rw [Units.smul_def, Units.smul_def,
-    ← mul_smul (algebraMap A B s₁) ↑(IsLocalization.map_units B s₁).unit⁻¹, IsUnit.mul_val_inv,
-    one_smul, smul_comm (algebraMap A B s₂) (algebraMap A B s₁),
-    ← mul_smul (algebraMap A B s₂) ↑(IsLocalization.map_units B s₂).unit⁻¹,
-    IsUnit.mul_val_inv, one_smul]
+  rw [algebraMap_smul_map_units_inv_smul, smul_comm (algebraMap A B s₂) (algebraMap A B s₁),
+    algebraMap_smul_map_units_inv_smul]
   exact hcross
 
 private def extendSuccFun (S : Submonoid A) (B : Type*) [CommRing B]
@@ -337,7 +234,7 @@ private theorem smul_extendSuccFun (S : Submonoid A) (B : Type*) [CommRing B]
     algebraMap A B s • extendSuccFun S B fM D C y = D x - C s y := by
   dsimp only [extendSuccFun]
   rw [extendSuccFun_wellDefined S B fM hC_mem hC_f (IsLocalizedModule.surj S fM y).choose_spec hs,
-    Units.smul_def, ← mul_smul, IsUnit.mul_val_inv, one_smul]
+    algebraMap_smul_map_units_inv_smul]
 
 private def extendSuccLinearMap (S : Submonoid A) (B : Type*) [CommRing B]
     [Algebra A B] [Algebra R B] [IsScalarTower R A B] [IsLocalization S B]
@@ -364,15 +261,12 @@ private def extendSuccLinearMap (S : Submonoid A) (B : Type*) [CommRing B]
       map_add, map_add]
     abel
   map_smul' r y := by
-    have : IsScalarTower R A M_S := .of_algebraMap_smul fun c z ↦ by
-      rw [← algebraMap_smul B, ← IsScalarTower.algebraMap_apply R A B, algebraMap_smul]
+    have := IsScalarTower.to₁₂₄ R A B M_S
     obtain ⟨⟨x, s⟩, hs⟩ := IsLocalizedModule.surj S fM y
     dsimp only at hs
+    have hs' : (s : A) • y = fM x := by simpa [Submonoid.smul_def] using hs
     have hrs : s • (r • y) = fM (r • x) := by
-      rw [Submonoid.smul_def, ← algebraMap_smul B (s : A), ← algebraMap_smul B r y,
-        smul_comm (algebraMap A B s) (algebraMap R B r) y, algebraMap_smul B r,
-        algebraMap_smul B (s : A), ← Submonoid.smul_def, hs,
-        ← LinearMap.restrictScalars_apply R fM (r • x), map_smul, LinearMap.restrictScalars_apply]
+      simp [Submonoid.smul_def, fM.map_smul_of_tower, ← hs', smul_comm (s : A) r y]
     apply (IsLocalization.map_units B s).smul_left_cancel.mp
     rw [RingHom.id_apply, smul_extendSuccFun S B fM hC_mem hC_f hrs, smul_comm _ r,
       smul_extendSuccFun S B fM hC_mem hC_f hs, map_smul, map_smul, smul_sub]
@@ -415,14 +309,14 @@ private theorem smulCommutator_algebraMap_extendSuccLinearMap (S : Submonoid A) 
   ext y
   obtain ⟨⟨x, s⟩, hs⟩ := IsLocalizedModule.surj S fM y
   dsimp only at hs
+  have hs' : (s : A) • y = fM x := by simpa [Submonoid.smul_def] using hs
   have hay : s • (algebraMap A B a • y) = fM (a • x) := by
-    rw [Submonoid.smul_def, algebraMap_smul, smul_comm (s : A) a y, ← Submonoid.smul_def, hs,
-      map_smul]
+    simp [Submonoid.smul_def, algebraMap_smul, smul_comm (s : A) a y, hs']
   apply (IsLocalization.map_units B s).smul_left_cancel.mp
   rw [smulCommutator_apply_apply, smul_sub, extendSuccLinearMap_apply, extendSuccLinearMap_apply,
     smul_extendSuccFun S B fM hC_mem hC_f hay, smul_comm (algebraMap A B s) (algebraMap A B a),
     smul_extendSuccFun S B fM hC_mem hC_f hs,
-    scale_sub_commutator S B fM hC_mem hC_f (Submonoid.smul_def s y ▸ hs) a,
+    scale_sub_commutator S B fM hC_mem hC_f hs' a,
     mul_comm a (s : A), commutator_mul_eq S B fM hC_mem hC_f s a y]
   abel
 
@@ -459,7 +353,7 @@ private theorem extendSuccLinearMap_mem_differentialOperators (S : Submonoid A) 
       (((IsLocalization.map_units B t).unit⁻¹ : Bˣ) : B) •
         (algebraMap A B t • smulCommutator R b E) ∈ differentialOperators R B M_S N m :=
     smul_mem_differentialOperators _ hsub
-  rwa [← mul_smul, IsUnit.val_inv_mul, one_smul] at hinv
+  rwa [map_units_inv_smul_algebraMap_smul] at hinv
 
 private def extendAux (S : Submonoid A) (B : Type*) [CommRing B]
     [Algebra A B] [Algebra R B] [IsScalarTower R A B] [IsLocalization S B]
@@ -542,9 +436,8 @@ def extendOfIsLocalizationEquiv (S : Submonoid A) (B : Type*) [CommRing B]
       map_add' := fun _ _ ↦ (eq_extendOfIsLocalization S B fM fun x ↦ by simp).symm
       map_smul' := fun _ _ ↦ (eq_extendOfIsLocalization S B fM fun x ↦ by simp).symm }
     (restrictOfAlgebra B fM m)
-    (LinearMap.ext fun _ ↦ (eq_extendOfIsLocalization S B fM fun _ ↦ rfl).symm)
-    (LinearMap.ext fun D ↦ Subtype.ext <| LinearMap.ext fun x ↦
-      extendOfIsLocalization_apply S B fM D x)
+    (LinearMap.ext fun _ ↦ (eq_extendOfIsLocalization S B fM fun _ ↦ by simp).symm)
+    (LinearMap.ext fun _ ↦ Subtype.ext <| LinearMap.ext fun _ ↦ by simp)
 
 @[simp]
 theorem extendOfIsLocalizationEquiv_apply (S : Submonoid A) (B : Type*) [CommRing B]
@@ -679,26 +572,17 @@ theorem tensorLocalizationEquiv_symm_jet (m : ℕ) (x : M) :
   apply (tensorLocalizationEquiv R S B fM m).injective
   simp
 
+include S in
+variable (R) in
 /-- `PrincipalParts R B M_S m` is the base change of `PrincipalParts R A M m` along a localization
 `A → B`. -/
-theorem isBaseChange_mapAlgebra (R : Type*) {A M M_S : Type*} [CommRing R] [CommRing A]
-    [Algebra R A] (S : Submonoid A) (B : Type*) [CommRing B] [Algebra A B] [Algebra R B]
-    [IsScalarTower R A B] [IsLocalization S B]
-    [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
-    [AddCommGroup M_S] [Module R M_S] [Module A M_S] [Module B M_S]
-    [IsScalarTower A B M_S] [IsScalarTower R B M_S]
-    (fM : M →ₗ[A] M_S) [IsLocalizedModule S fM] (m : ℕ) :
+theorem isBaseChange_mapAlgebra (m : ℕ) :
     IsBaseChange B (mapAlgebra R B fM m) :=
   IsBaseChange.of_equiv (tensorLocalizationEquiv R S B fM m) fun z ↦ by simp
 
+variable (R) in
 /-- `PrincipalParts R B M_S m` is the localization of `PrincipalParts R A M m` at `S`. -/
-theorem isLocalizedModule_mapAlgebra (R : Type*) {A M M_S : Type*} [CommRing R] [CommRing A]
-    [Algebra R A] (S : Submonoid A) (B : Type*) [CommRing B] [Algebra A B] [Algebra R B]
-    [IsScalarTower R A B] [IsLocalization S B]
-    [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
-    [AddCommGroup M_S] [Module R M_S] [Module A M_S] [Module B M_S]
-    [IsScalarTower A B M_S] [IsScalarTower R B M_S]
-    (fM : M →ₗ[A] M_S) [IsLocalizedModule S fM] (m : ℕ) :
+theorem isLocalizedModule_mapAlgebra (m : ℕ) :
     IsLocalizedModule S (mapAlgebra R B fM m) :=
   (isLocalizedModule_iff_isBaseChange S B _).2 (isBaseChange_mapAlgebra R S B fM m)
 
