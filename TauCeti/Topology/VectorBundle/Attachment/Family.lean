@@ -27,9 +27,9 @@ For a single bundle this is `TauCeti.isIso_singularHomologyMap_of_attach_discBun
 bundles occur together when a critical level of a Morse–Bott function carries several critical
 submanifolds, of possibly different dimensions and indices: crossing the level attaches the
 negative disc bundle of each of them, and the relative homology across the level is the sum of
-the contributions of the critical submanifolds. The bundles may have different fibres, so they
-are not the restrictions of one vector bundle to the pieces of a disjoint union, and the theorem
-for one bundle does not apply to them at once.
+the contributions of the critical submanifolds. The bundles may have different model fibres,
+whereas a Mathlib `FiberBundle F E` has a single model fibre `F`, so the theorem for one bundle
+does not apply to them at once.
 
 ## The proof
 
@@ -131,6 +131,18 @@ private abbrev discMap (c : ι) {A T : Set Z} (hAT : A ⊆ T) (hXA : X ⊆ A)
     fun v hv ↦ hXA (mem_of_eq_of_mem (TopPair.Hom.w_apply (f c) ⟨v.1, hv⟩).symm
       (TopPair.Hom.snd (f c) ⟨v.1, hv⟩).2)
 
+/-- Following the disc `D(E c)` by a map of pairs which fixes the points of `Z` gives the disc
+again. -/
+private lemma discMap_comp_ofInclusionMap (c : ι) {A T A' T' : Set Z} (hAT : A ⊆ T)
+    (hA'T' : A' ⊆ T') (hXA : X ⊆ A) (hXA' : X ⊆ A') (hT : range (TopPair.Hom.fst (f c)) ⊆ T)
+    (hT' : range (TopPair.Hom.fst (f c)) ⊆ T') (g : C(T, T'))
+    (hg : ∀ x : T, (x : Z) ∈ A → (g x : Z) ∈ A') (hgx : ∀ x, (g x : Z) = x) :
+    discMap f c hAT hXA hT ≫ TopPair.ofInclusionMap hAT hA'T' g hg =
+      discMap f c hA'T' hXA' hT' := by
+  rw [← TopPair.ofInclusionMap_comp]
+  congr 1
+  exact ContinuousMap.ext fun _ ↦ Subtype.ext (hgx _)
+
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ)
 
 /-- The identity of `T` as a map of pairs `(T, X) ⟶ (T, A)`, for `X ⊆ A ⊆ T`. This is the map of
@@ -149,8 +161,8 @@ private lemma singularHomologyMap_discMap_comp_quotMap_eq_zero (a : ι) {A T : S
   refine TopPair.singularHomologyMap_eq_zero_of_fac _ R
     (TopCat.ofHom (⟨fun v ↦ ⟨TopPair.Hom.fst (f a) v, hA ⟨v, rfl⟩⟩,
       (TopPair.Hom.fst (f a)).hom.continuous.subtype_mk _⟩ : C(discBundle (F a) (E a), A))) ?_ n
-  rw [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst, TopPair.ofInclusionMap_fst]
-  rfl
+  rw [← TopPair.ofInclusionMap_comp, TopPair.ofInclusionMap_fst]
+  exact TopCat.ext fun _ ↦ rfl
 
 variable [∀ a, TopologicalSpace (B a)] [∀ a, NormedAddCommGroup (F a)] [∀ a, NormedSpace ℝ (F a)]
   [∀ a b, NormedSpace ℝ (E a b)] [∀ a, FiberBundle (F a) (E a)] [∀ a, VectorBundle ℝ (F a) (E a)]
@@ -250,12 +262,8 @@ private lemma comp_quotMap_eq_zero_of_comp_inclMap [DecidableEq ι]
         (range_subset_attachUnion f hc)) R n ≫ TopPair.singularHomologyMap k R n =
       TopPair.singularHomologyMap (discMap f c _ (subset_attachUnion f _)
         (range_subset_attachUnion f (hst hc))) R n := by
-    rw [← TopPair.singularHomologyMap_comp]
-    congr 1
-    exact TopPair.hom_ext_of_fst _ (by
-      rw [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst, TopPair.ofInclusionMap_fst,
-        TopPair.ofInclusionMap_fst]
-      rfl)
+    rw [← TopPair.singularHomologyMap_comp,
+      discMap_comp_ofInclusionMap f c _ _ _ _ _ _ _ _ fun _ ↦ rfl]
   have := isIso_singularHomologyMap_discMap_erase f R n hnorm hX hf hfX hinter hc
   have := isIso_singularHomologyMap_discMap_erase f R n hnorm hX hf hfX hinter (hst hc)
   have : IsIso (TopPair.singularHomologyMap k R n) := IsIso.of_isIso_fac_left hk
@@ -263,10 +271,7 @@ private lemma comp_quotMap_eq_zero_of_comp_inclMap [DecidableEq ι]
   have hsq : quotMap (subset_attachUnion f (s.erase c)) (attachUnion_mono f (s.erase_subset c)) ≫
       k = inclMap f hst ≫ quotMap (subset_attachUnion f (t.erase c))
         (attachUnion_mono f (t.erase_subset c)) :=
-    TopPair.hom_ext_of_fst _ (by
-      rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst,
-        TopPair.ofInclusionMap_fst, TopPair.ofInclusionMap_fst, TopPair.ofInclusionMap_fst]
-      rfl)
+    TopPair.ofInclusionMap_comp_ofInclusionMap_eq _ _ _ _ _ _ _ _ fun _ ↦ rfl
   rw [← cancel_mono (TopPair.singularHomologyMap k R n), Category.assoc,
     ← TopPair.singularHomologyMap_comp, hsq, TopPair.singularHomologyMap_comp, hg]
   simp
@@ -359,12 +364,10 @@ def isColimitCofanSingularHomologyOfAttachDiscBundles [Finite ι]
     (isIso_singularHomologyMap_discMap_erase f R n hnorm hX hf hfX hinter (Finset.mem_univ c))
   have hθ (c : ι) : TopPair.singularHomologyMap (θ' c) R n ≫ TopPair.singularHomologyMap (q c) R n =
       (θi c).hom := by
-    rw [← TopPair.singularHomologyMap_comp]
-    congr 1
-    exact TopPair.hom_ext_of_fst _ (by
-      rw [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst, TopPair.ofInclusionMap_fst,
-        TopPair.ofInclusionMap_fst]
-      rfl)
+    rw [← TopPair.singularHomologyMap_comp,
+      discMap_comp_ofInclusionMap f c _ _ _ _ _ _ _ _ fun _ ↦ rfl]
+    -- `θi c` is `asIso` of this map.
+    rfl
   have he (a : ι) : TopPair.singularHomologyMap (θ' a) R n ≫ TopPair.singularHomologyMap e.hom R n =
       TopPair.singularHomologyMap (f a) R n := by
     rw [← TopPair.singularHomologyMap_comp]
@@ -385,14 +388,13 @@ def isColimitCofanSingularHomologyOfAttachDiscBundles [Finite ι]
           rw [← Category.assoc, singularHomologyMap_discMap_comp_quotMap_eq_zero f R n a _ _ _
             (range_subset_attachUnion f (Finset.mem_erase.2 ⟨h, Finset.mem_univ a⟩))]
           simp
+  have hπ (c : ι) : b.π c = TopPair.singularHomologyMap (q c) R n ≫ (θi c).inv := rfl
   have total : ∑ c, b.π c ≫ b.ι c = 𝟙 b.pt := by
     -- The difference `𝟙 - ∑ c, π c ≫ ι c` vanishes after every projection, hence vanishes.
     refine (sub_eq_zero.1 ?_).symm
     refine eq_zero_of_forall_comp_singularHomologyMap_eq_zero f R n hnorm hX hf hfX hinter _ _
       fun c _ ↦ (Preadditive.IsIso.comp_right_eq_zero _ (θi c).inv).1 ?_
-    rw [Category.assoc]
-    change (𝟙 b.pt - ∑ a, b.π a ≫ b.ι a) ≫ b.π c = 0
-    rw [Preadditive.sub_comp, Category.id_comp, Preadditive.sum_comp,
+    rw [Category.assoc, ← hπ, Preadditive.sub_comp, Category.id_comp, Preadditive.sum_comp,
       Finset.sum_eq_single c (fun a _ ha ↦ by rw [Category.assoc, bicone_ι_π_ne b ha]; simp)
         (by simp), Category.assoc, bicone_ι_π_self, Category.comp_id, sub_self]
   IsColimit.ofIsoColimit (isBilimitOfTotal b total).isColimit
