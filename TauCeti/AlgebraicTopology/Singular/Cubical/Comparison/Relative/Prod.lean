@@ -28,10 +28,10 @@ is a monomorphism (`TopPair.mono_cubicalChainComplexMap_prodLeftMap`): a normali
 is short exact (`TopPair.shortExact_cubicalChainComplexProdShortComplex`). The complex is
 functorial in both pairs (`TopPair.cubicalChainComplexProdMap`).
 
-No hypothesis is placed on the subspaces. When the interiors of `A × Y` and `X × B` cover
-`A × Y ∪ X × B`, for instance when `A` and `B` are open, the small-chain theorem identifies the
-homology of `N(P × Q)` with the relative homology of `(X × Y, A × Y ∪ X × B)`; that comparison is
-not made here.
+No hypothesis is placed on the subspaces. When `A` and `B` are open, the homology of `N(P × Q)`
+is the relative singular homology of `(X × Y, A × Y ∪ X × B)`
+(`TauCeti.quasiIso_cubicalChainComplexProdToSingular`, in
+`TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Excisive`).
 
 ## Main definitions
 
