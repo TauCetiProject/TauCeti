@@ -28,9 +28,10 @@ Kozlov's cut-minimality, edge count and odd-triangle count are transported:
   `𝔽₂` cost of the sign pattern of the gauge, and cut-minimality of the staircase
   (`SimpleGraph.isCutMinimal_staircase`) bounds that below by the number `t (t + 1) / 2` of
   staircase edges (`SimpleGraph.two_mul_card_edgeFinset_staircase`).
-* `Sym3.stair_defect_mul`: `3 N = (2 t + 1) · t (t + 1)`, since `N` is twice the number of
-  triangles with an odd number of staircase edges
-  (`SimpleGraph.three_mul_card_oddTriangleFinset_staircase`).
+* `Sym3.stair_defect_mul`: `3 N = (2 t + 1) · t (t + 1)` for the moved-point defect
+  `N = defect (stair (2 t + 1))`. Each odd triangle (one with an odd number of staircase edges)
+  contributes `2` to `N` and every other triangle `0`, so `N` is twice the odd-triangle count
+  `1² + 2² + ⋯ + t²` (`SimpleGraph.three_mul_card_oddTriangleFinset_staircase`).
 
 ## References
 
@@ -363,8 +364,9 @@ private theorem stair_defect (n : ℕ) : defect (stair n) = 2 * #(stGraph n).odd
   rw [stair_tri_term]
   split_ifs <;> simp
 
-/-- **`N/D = m/3` for the staircase.** `3N = (2t+1) · D` with `D = t(t+1)`, from
-`SimpleGraph.three_mul_card_oddTriangleFinset_staircase`. -/
+/-- **Defect of the staircase.** `3 N = (2 t + 1) · D` for the moved-point defect `N` and the
+gauge lower bound `D = t (t + 1)`, from `SimpleGraph.three_mul_card_oddTriangleFinset_staircase`.
+For `t ≥ 1` this is `N / D = (2 t + 1) / 3`; at `t = 0` both sides are `0`. -/
 theorem stair_defect_mul (t : ℕ) :
     3 * defect (stair (2 * t + 1)) = (2 * t + 1) * (t * (t + 1)) := by
   have h := SimpleGraph.three_mul_card_oddTriangleFinset_staircase 1 t

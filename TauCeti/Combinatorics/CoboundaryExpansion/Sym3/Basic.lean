@@ -205,9 +205,9 @@ theorem cost_ge_of_forall_cons_one {m : ℕ} (α : Fin (m + 1) → Fin (m + 1) �
 /-! ### Balanced replication
 
 Replace each vertex of `K_k` by a block of `q` consecutive vertices of `K_{kq}`
-(`finProdFinEquiv`), put `1` on the pairs inside a block and the seed value between blocks. These
-are only the two counts the upper bound needs; the general cochain statements are the roadmap's
-`Cochain.defect_replicate` and `Cochain.gaugeDist_replicate`. -/
+(`finProdFinEquiv`), put `1` on the pairs inside a block and the seed value between blocks.
+Replication multiplies the defect by `q ^ 3` (`Sym3.defect_rep`) and the gauge lower bound by
+`q ^ 2` (`Sym3.cost_rep_ge`). -/
 
 section Replication
 
