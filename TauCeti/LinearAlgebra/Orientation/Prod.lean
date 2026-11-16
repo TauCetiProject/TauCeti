@@ -29,6 +29,9 @@ factor past each of the `n` basis vectors of the second.
 Reassociating `(E × F) × G` as `E × (F × G)` carries the product orientation `(o × o') × o''` to
 `o × (o' × o'')` (`Orientation.map_prodAssoc_prod`): both list the bases of the three factors in
 the same order.
+
+Deleting a trivial factor equipped with its positive orientation preserves the orientation of the
+remaining factor (`Orientation.map_uniqueProd_prod`, `Orientation.map_prodUnique_prod`).
 -/
 
 public section
@@ -326,5 +329,52 @@ theorem map_prodAssoc_prod (o : Orientation R E (Fin m)) (o' : Orientation R F (
     rcases d.orientation_eq_or_eq_neg o'' with ho'' | ho'' <;> subst o <;> subst o' <;>
     subst o'' <;>
     simp only [prod_neg_left, prod_neg_right, Orientation.map_neg, Orientation.reindex_neg, hbase]
+
+/-- **Left unit of product orientations.** Deleting a trivial left factor equipped with its
+positive orientation carries `positiveOrientation × p` to `p` (reindexed along `0 + n = n`). -/
+theorem map_uniqueProd_prod [Unique E] (p : Orientation R F (Fin n))
+    (hm : Module.finrank R E = 0) (hn : Module.finrank R F = n) :
+    Orientation.map (Fin (0 + n)) (LinearEquiv.uniqueProd : (E × F) ≃ₗ[R] F)
+        (prod (positiveOrientation : Orientation R E (Fin 0)) p hm hn) =
+      Orientation.reindex R F (finCongr (zero_add n)).symm p := by
+  let b := Module.finBasisOfFinrankEq R E hm
+  let c := Module.finBasisOfFinrankEq R F hn
+  have hb : b.orientation = positiveOrientation := Basis.orientation_isEmpty b
+  have he : ((b.prod c).reindex finSumFinEquiv).map (LinearEquiv.uniqueProd : (E × F) ≃ₗ[R] F) =
+      c.reindex (finCongr (zero_add n)).symm := by
+    refine Basis.eq_of_apply_eq fun k ↦ ?_
+    have hk : finSumFinEquiv.symm k = Sum.inr (finCongr (zero_add n) k) := by
+      apply finSumFinEquiv.injective
+      ext
+      simp
+    simp [Basis.prod_apply, hk]
+  have hbase : Orientation.map (Fin (0 + n)) (LinearEquiv.uniqueProd : (E × F) ≃ₗ[R] F)
+      (prod (positiveOrientation : Orientation R E (Fin 0)) c.orientation hm hn) =
+      Orientation.reindex R F (finCongr (zero_add n)).symm c.orientation := by
+    rw [← hb, prod_basis_orientation, ← Basis.orientation_map, he, Basis.orientation_reindex]
+  rcases c.orientation_eq_or_eq_neg p with hp | hp <;> subst p <;>
+    simp only [prod_neg_right, Orientation.map_neg, Orientation.reindex_neg, hbase]
+
+/-- **Right unit of product orientations.** Deleting a trivial right factor equipped with its
+positive orientation carries `o × positiveOrientation` to `o`. -/
+theorem map_prodUnique_prod [Unique F] (o : Orientation R E (Fin m))
+    (hm : Module.finrank R E = m) (hn : Module.finrank R F = 0) :
+    Orientation.map (Fin (m + 0)) (LinearEquiv.prodUnique : (E × F) ≃ₗ[R] E)
+        (prod o (positiveOrientation : Orientation R F (Fin 0)) hm hn) = o := by
+  let b := Module.finBasisOfFinrankEq R E hm
+  let c := Module.finBasisOfFinrankEq R F hn
+  have hc : c.orientation = positiveOrientation := Basis.orientation_isEmpty c
+  have he : ((b.prod c).reindex finSumFinEquiv).map (LinearEquiv.prodUnique : (E × F) ≃ₗ[R] E) =
+      b := by
+    refine Basis.eq_of_apply_eq fun k ↦ ?_
+    have hk : finSumFinEquiv.symm (k : Fin (m + 0)) = Sum.inl k := by
+      simpa using (finSumFinEquiv_symm_apply_castAdd (m := m) (n := 0) k)
+    simp [Basis.prod_apply, hk]
+  have hbase : Orientation.map (Fin (m + 0)) (LinearEquiv.prodUnique : (E × F) ≃ₗ[R] E)
+      (prod b.orientation (positiveOrientation : Orientation R F (Fin 0)) hm hn) =
+      b.orientation := by
+    rw [← hc, prod_basis_orientation, ← Basis.orientation_map, he]
+  rcases b.orientation_eq_or_eq_neg o with ho | ho <;> subst o <;>
+    simp only [prod_neg_left, Orientation.map_neg, hbase]
 
 end Orientation

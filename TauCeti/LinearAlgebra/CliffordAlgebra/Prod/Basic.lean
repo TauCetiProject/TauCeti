@@ -37,7 +37,7 @@ pure tensor `a ᵍ⊗ b` acts by `ρ₁ a γ ^ j ⊗ ρ₂ b`.
 
 For the spinor modules of oriented even-dimensional Euclidean spaces, `γ` is the chirality
 operator, and the normalized volume element of `V ⊕ W` then acts by the tensor grading; see
-`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod.lean`.
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/Basic.lean`.
 
 ## Main definitions
 
@@ -51,8 +51,9 @@ operator, and the normalized volume element of `V ⊕ W` then acts by the tensor
   `γ ^ k ⊗ ρ₂ (·)`.
 * `AlgHom.cliffordProdTensor_map_inr_of_mem_evenOdd`: an element of `CliffordAlgebra Q₂` of
   parity `j` acts by `γ ^ j ⊗ ρ₂ (·)`.
-* `AlgHom.cliffordProdTensor_toProd_tmul`: under `CliffordAlgebra.prodEquiv`, the pure tensor
-  `a ᵍ⊗ b` with `b` of parity `j` acts by `ρ₁ a γ ^ j ⊗ ρ₂ b`.
+* `AlgHom.cliffordProdTensor_toProd_tmul`, `AlgHom.cliffordProdTensor_toProd_tmul_tmul`: under
+  `CliffordAlgebra.prodEquiv`, the pure tensor `a ᵍ⊗ b` with `b` of parity `j` acts by
+  `ρ₁ a γ ^ j ⊗ ρ₂ b`, yielding the Koszul sign `(-1) ^ (j * k)` on homogeneous vectors.
 * `AlgHom.map_mul_cliffordProdTensor_ι`: the tensor grading `γ ⊗ γ₂` anticommutes with every
   vector.
 
@@ -224,5 +225,27 @@ theorem cliffordProdTensor_toProd_tmul (a : CliffordAlgebra Q₁) {j : ZMod 2}
   rw [toProd, GradedTensorProduct.lift_tmul, map_mul, cliffordProdTensor_map_inl,
     cliffordProdTensor_map_inr_of_mem_evenOdd ρ₁ γ hγ hγρ ρ₂ hb, LinearMap.rTensor,
     ← Module.End.one_eq_id, ← TensorProduct.map_mul, one_mul]
+
+include hγ in
+/-- On a pure tensor `e ⊗ f` with `e` homogeneous for the grading (`γ e = (-1) ^ k • e`), the
+pure graded tensor `a ᵍ⊗ b` with `b` of parity `j` acts with the Koszul sign
+`(-1) ^ (j.val * k)`. -/
+theorem cliffordProdTensor_toProd_tmul_tmul (a : CliffordAlgebra Q₁) {j : ZMod 2}
+    {b : CliffordAlgebra Q₂} (hb : b ∈ evenOdd Q₂ j) {k : ℕ} {e : E}
+    (he : γ e = (-1 : R) ^ k • e) (f : F) :
+    cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ b)) (e ⊗ₜ f) =
+      (-1 : R) ^ (j.val * k) • (ρ₁ a e ⊗ₜ ρ₂ b f) := by
+  rw [cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hb, map_tmul]
+  have hj : j.val = 0 ∨ j.val = 1 := by have := j.val_lt; omega
+  rcases hj with hj | hj
+  · simp [hj]
+  · simp [hj, he, TensorProduct.smul_tmul']
+
+/-- Equal grading operators define the same graded tensor product of Clifford modules. -/
+theorem cliffordProdTensor_congr_grading {γ' : Module.End R E} (hγ' : γ' * γ' = 1)
+    (hγ'ρ : ∀ v, γ' * ρ₁ (ι Q₁ v) = -(ρ₁ (ι Q₁ v) * γ')) (h : γ' = γ) :
+    cliffordProdTensor ρ₁ γ' hγ' hγ'ρ ρ₂ = cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ := by
+  subst h
+  rfl
 
 end AlgHom
