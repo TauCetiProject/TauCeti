@@ -101,6 +101,13 @@ private lemma pow_ofIdx_mul_ofIdx_smul_eq (n : ℕ) (x : M) :
     rw [pow_succ', mul_smul, ih, pow_succ', _root_.mul_apply_eq_comp, mul_smul]
     simp [_root_.RootPairing.reflection_apply]
 
+/-- The Cartan product of the two roots, in the form in which it enters the linear reflections
+`Module.reflection (P.coroot_root_two i)` and `Module.reflection (P.coroot_root_two j)`. -/
+private lemma coroot_root_mul_coroot_root :
+    P.toLinearMap.flip (P.coroot i) (P.root j) * P.toLinearMap.flip (P.coroot j) (P.root i) =
+      P.pairing i j * P.pairing j i := by
+  rw [P.coroot_root_eq_pairing, P.coroot_root_eq_pairing, mul_comm]
+
 /-- **The iterates of a product of two reflections.** This is Mathlib's
 `Module.reflection_mul_reflection_pow_apply` for the reflections in two roots `αᵢ`, `αⱼ` of a root
 pairing, read in the Weyl group; its Chebyshev polynomials are evaluated at the Cartan product
@@ -118,8 +125,7 @@ theorem pow_ofIdx_mul_ofIdx_smul (n : ℕ) (x : M)
             P.coroot' j x • P.root j) := by
   rw [RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq]
   exact Module.reflection_mul_reflection_pow_apply (P.coroot_root_two i) (P.coroot_root_two j) n x t
-    (by rw [ht, _root_.RootPairing.root_coroot'_eq_pairing,
-      _root_.RootPairing.root_coroot'_eq_pairing]; ring)
+    (by rw [ht, RootPairing.weylGroup.coroot_root_mul_coroot_root])
 
 /-- **The iterates of a product of two reflections on the first of the two roots.** This is
 Mathlib's `Module.reflection_mul_reflection_pow_apply_self` read in the Weyl group; it is the case
@@ -135,52 +141,9 @@ theorem pow_ofIdx_mul_ofIdx_smul_root (n : ℕ)
   rw [RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq]
   exact Module.reflection_mul_reflection_pow_apply_self (P.coroot_root_two i)
     (P.coroot_root_two j) n t
-    (by rw [ht, _root_.RootPairing.root_coroot'_eq_pairing,
-      _root_.RootPairing.root_coroot'_eq_pairing]; ring)
+    (by rw [ht, RootPairing.weylGroup.coroot_root_mul_coroot_root])
 
 /-! ## The braid relations -/
-
-/-- **The braid relation at Cartan product `1`**: the product of the two reflections has order
-dividing `3`, the `A₂` configuration. -/
-@[simp, grind =]
-theorem pow_three_ofIdx_mul_ofIdx_eq_one
-    (h : P.pairing i j * P.pairing j i = 1) :
-    (_root_.RootPairing.weylGroup.ofIdx P i *
-      _root_.RootPairing.weylGroup.ofIdx P j) ^ 3 = 1 := by
-  refine RootPairing.weylGroup.eq_one_of_smul_eq_self fun x ↦ ?_
-  rw [RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq]
-  exact LinearEquiv.congr_fun (Module.reflection_mul_reflection_pow_three_eq_one
-    (P.coroot_root_two i) (P.coroot_root_two j) (by simpa [mul_comm] using h)) x
-
-/-- **The braid relation at Cartan product `2`**: the product of the two reflections has order
-dividing `4`, the `B₂` configuration. -/
-@[simp, grind =]
-theorem pow_four_ofIdx_mul_ofIdx_eq_one
-    (h : P.pairing i j * P.pairing j i = 2) :
-    (_root_.RootPairing.weylGroup.ofIdx P i *
-      _root_.RootPairing.weylGroup.ofIdx P j) ^ 4 = 1 := by
-  refine RootPairing.weylGroup.eq_one_of_smul_eq_self fun x ↦ ?_
-  rw [RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq]
-  exact LinearEquiv.congr_fun (Module.reflection_mul_reflection_pow_four_eq_one
-    (P.coroot_root_two i) (P.coroot_root_two j) (by simpa [mul_comm] using h)) x
-
-/-- **The braid relation at Cartan product `3`**: the product of the two reflections has order
-dividing `6`, the `G₂` configuration. -/
-@[simp, grind =]
-theorem pow_six_ofIdx_mul_ofIdx_eq_one
-    (h : P.pairing i j * P.pairing j i = 3) :
-    (_root_.RootPairing.weylGroup.ofIdx P i *
-      _root_.RootPairing.weylGroup.ofIdx P j) ^ 6 = 1 := by
-  refine RootPairing.weylGroup.eq_one_of_smul_eq_self fun x ↦ ?_
-  rw [RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq]
-  exact LinearEquiv.congr_fun (Module.reflection_mul_reflection_pow_six_eq_one
-    (P.coroot_root_two i) (P.coroot_root_two j) (by simpa [mul_comm] using h)) x
-
-/-! ## The order is no smaller
-
-The exact orders are those of the two linear reflections, computed in
-`Module.orderOf_reflection_mul_reflection_eq_three` and its siblings from the `αᵢ^∨`-coordinate of
-`gⁿ • αᵢ`, which avoids the value `⟨αᵢ, αᵢ^∨⟩ = 2`. -/
 
 /-- A power of the product of the two reflections is trivial in the Weyl group exactly when the
 same power of the product of the two linear reflections is. -/
@@ -194,6 +157,45 @@ lemma pow_ofIdx_mul_ofIdx_eq_one_iff (n : ℕ) :
     simp
   · rw [RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq, h]
     simp
+
+/-- **The braid relation at Cartan product `1`**: the product of the two reflections has order
+dividing `3`, the `A₂` configuration. -/
+@[simp, grind =]
+theorem pow_three_ofIdx_mul_ofIdx_eq_one
+    (h : P.pairing i j * P.pairing j i = 1) :
+    (_root_.RootPairing.weylGroup.ofIdx P i *
+      _root_.RootPairing.weylGroup.ofIdx P j) ^ 3 = 1 :=
+  (RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_eq_one_iff P i j 3).mpr
+    (Module.reflection_mul_reflection_pow_three_eq_one (P.coroot_root_two i) (P.coroot_root_two j)
+      ((RootPairing.weylGroup.coroot_root_mul_coroot_root P i j).trans h))
+
+/-- **The braid relation at Cartan product `2`**: the product of the two reflections has order
+dividing `4`, the `B₂` configuration. -/
+@[simp, grind =]
+theorem pow_four_ofIdx_mul_ofIdx_eq_one
+    (h : P.pairing i j * P.pairing j i = 2) :
+    (_root_.RootPairing.weylGroup.ofIdx P i *
+      _root_.RootPairing.weylGroup.ofIdx P j) ^ 4 = 1 :=
+  (RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_eq_one_iff P i j 4).mpr
+    (Module.reflection_mul_reflection_pow_four_eq_one (P.coroot_root_two i) (P.coroot_root_two j)
+      ((RootPairing.weylGroup.coroot_root_mul_coroot_root P i j).trans h))
+
+/-- **The braid relation at Cartan product `3`**: the product of the two reflections has order
+dividing `6`, the `G₂` configuration. -/
+@[simp, grind =]
+theorem pow_six_ofIdx_mul_ofIdx_eq_one
+    (h : P.pairing i j * P.pairing j i = 3) :
+    (_root_.RootPairing.weylGroup.ofIdx P i *
+      _root_.RootPairing.weylGroup.ofIdx P j) ^ 6 = 1 :=
+  (RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_eq_one_iff P i j 6).mpr
+    (Module.reflection_mul_reflection_pow_six_eq_one (P.coroot_root_two i) (P.coroot_root_two j)
+      ((RootPairing.weylGroup.coroot_root_mul_coroot_root P i j).trans h))
+
+/-! ## The order is no smaller
+
+The exact orders are those of the two linear reflections, computed in
+`Module.orderOf_reflection_mul_reflection_eq_three` and its siblings from the `αᵢ^∨`-coordinate of
+`gⁿ • αᵢ`, which avoids the value `⟨αᵢ, αᵢ^∨⟩ = 2`. -/
 
 /-- The product of the two reflections has the same order in the Weyl group as the product of the
 two linear reflections. -/
@@ -211,7 +213,8 @@ theorem orderOf_ofIdx_mul_ofIdx_eq_three
       _root_.RootPairing.weylGroup.ofIdx P j) = 3 := by
   rw [RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx]
   exact Module.orderOf_reflection_mul_reflection_eq_three (hf := P.coroot_root_two i)
-    (hg := P.coroot_root_two j) (by simpa [mul_comm] using h) h3
+    (hg := P.coroot_root_two j)
+    ((RootPairing.weylGroup.coroot_root_mul_coroot_root P i j).trans h) h3
 
 /-- **At Cartan product `2` the product of the two reflections has order exactly `4`**, provided
 `4 ≠ 0`. -/
@@ -222,7 +225,8 @@ theorem orderOf_ofIdx_mul_ofIdx_eq_four
       _root_.RootPairing.weylGroup.ofIdx P j) = 4 := by
   rw [RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx]
   exact Module.orderOf_reflection_mul_reflection_eq_four (hf := P.coroot_root_two i)
-    (hg := P.coroot_root_two j) (by simpa [mul_comm] using h) h4
+    (hg := P.coroot_root_two j)
+    ((RootPairing.weylGroup.coroot_root_mul_coroot_root P i j).trans h) h4
 
 /-- **At Cartan product `3` the product of the two reflections has order exactly `6`**, provided
 `3 ≠ 0` and `4 ≠ 0`. -/
@@ -233,7 +237,8 @@ theorem orderOf_ofIdx_mul_ofIdx_eq_six
       _root_.RootPairing.weylGroup.ofIdx P j) = 6 := by
   rw [RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx]
   exact Module.orderOf_reflection_mul_reflection_eq_six (hf := P.coroot_root_two i)
-    (hg := P.coroot_root_two j) (by simpa [mul_comm] using h) h3 h4
+    (hg := P.coroot_root_two j)
+    ((RootPairing.weylGroup.coroot_root_mul_coroot_root P i j).trans h) h3 h4
 
 /-! ## The entries of the Coxeter matrix of a base -/
 

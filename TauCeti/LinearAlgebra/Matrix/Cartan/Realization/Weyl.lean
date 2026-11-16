@@ -53,7 +53,9 @@ Coxeter group on the simple reflections, is Kac's Proposition 3.13 and is not pr
   preserve the pairing, `(sᵢ λ)(sᵢ h) = λ(h)`.
 * `TauCeti.CartanRealization.apply_sub_mem_rootLattice_of_mem_weylGroup`: for an integral matrix,
   `w λ - λ ∈ Q` for every element `w` of the Weyl group and every `λ` integral on the coroots, so
-  `w` preserves `Q` (`TauCeti.CartanRealization.apply_mem_rootLattice_iff_of_mem_weylGroup`).
+  `w` preserves `Q` (`TauCeti.CartanRealization.apply_mem_rootLattice_iff_of_mem_weylGroup`) and
+  every lattice between `Q` and the integral functionals
+  (`TauCeti.CartanRealization.apply_mem_iff_of_mem_weylGroup`).
 * `TauCeti.CartanRealization.CoweightLattice.apply_mem_weightLattice_iff_of_mem_weylGroup`: the
   Weyl group preserves the weight lattice, and
   `TauCeti.CartanRealization.CoweightLattice.simpleCoreflection_mem_lattice_iff`: the dual
@@ -180,8 +182,7 @@ theorem dualMap_simpleCoreflection (i : I) :
 @[simp]
 theorem simpleReflection_apply_simpleCoreflection (i : I) (lam : Dual K H) (h : H) :
     R.simpleReflection hA i lam (R.simpleCoreflection hA i h) = lam h := by
-  rw [simpleReflection_apply_apply, ← mul_apply_eq_comp, simpleCoreflection_mul_self,
-    FunLike.coe_one_eq_id, id_eq]
+  simp [simpleReflection_apply_apply, ← mul_apply_eq_comp]
 
 /-- A simple reflection moves a functional `λ` by `-λ(hᵢ) αᵢ`, an element of the root lattice when
 `λ(hᵢ)` is an integer. -/
@@ -260,16 +261,24 @@ theorem apply_sub_mem_rootLattice_of_mem_weylGroup {w : Dual K H ≃ₗ[K] Dual 
     rw [mul_apply_eq_comp, ← sub_add_sub_cancel _ (w₂ lam)]
     exact add_mem (h₁ hint) h₂'
 
-/-- **The Weyl group preserves the root lattice**, for an integral matrix. -/
-theorem apply_mem_rootLattice_iff_of_mem_weylGroup {w : Dual K H ≃ₗ[K] Dual K H}
-    (hw : w ∈ R.weylGroup hA) {lam : Dual K H} : w lam ∈ R.rootLattice ↔ lam ∈ R.rootLattice := by
+/-- **The Weyl group preserves every lattice between the root lattice and the integral
+functionals**, for an integral matrix: if `Q ≤ M` and every element of `M` takes integral values on
+the simple coroots, then `w λ ∈ M ↔ λ ∈ M` for every element `w` of the Weyl group. -/
+theorem apply_mem_iff_of_mem_weylGroup {M : Submodule ℤ (Dual K H)} (hQM : R.rootLattice ≤ M)
+    (hM : ∀ lam ∈ M, ∀ i, ∃ n : ℤ, lam (R.coroot i) = n) {w : Dual K H ≃ₗ[K] Dual K H}
+    (hw : w ∈ R.weylGroup hA) {lam : Dual K H} : w lam ∈ M ↔ lam ∈ M := by
   have key {w : Dual K H ≃ₗ[K] Dual K H} (hw : w ∈ R.weylGroup hA) {lam : Dual K H}
-      (hlam : lam ∈ R.rootLattice) : w lam ∈ R.rootLattice := by
+      (hlam : lam ∈ M) : w lam ∈ M := by
     rw [← sub_add_cancel (w lam) lam]
-    exact add_mem (R.apply_sub_mem_rootLattice_of_mem_weylGroup hA hw
-      (R.exists_apply_coroot_eq_intCast_of_mem_rootLattice hlam)) hlam
+    exact add_mem (hQM (R.apply_sub_mem_rootLattice_of_mem_weylGroup hA hw (hM lam hlam))) hlam
   refine ⟨fun h ↦ ?_, key hw⟩
   simpa using key (inv_mem hw) h
+
+/-- **The Weyl group preserves the root lattice**, for an integral matrix. -/
+theorem apply_mem_rootLattice_iff_of_mem_weylGroup {w : Dual K H ≃ₗ[K] Dual K H}
+    (hw : w ∈ R.weylGroup hA) {lam : Dual K H} : w lam ∈ R.rootLattice ↔ lam ∈ R.rootLattice :=
+  R.apply_mem_iff_of_mem_weylGroup hA le_rfl
+    (fun _ h ↦ R.exists_apply_coroot_eq_intCast_of_mem_rootLattice h) hw
 
 /-! ### The Coxeter relations -/
 
@@ -350,7 +359,8 @@ theorem orderOf_simpleReflection_mul_simpleReflection [CharZero K] {i j : I}
   rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four A hij h4]
   obtain ⟨hij0, hji0⟩ | h | h | h := cartan_product_cases hzero hprod h4
   · rw [hij0, zero_mul, coxeterOrder_zero]
-    exact Module.orderOf_reflection_mul_reflection_eq_two hli
+    exact Module.orderOf_reflection_mul_reflection_eq_two
+      (smul_ne_zero two_ne_zero (R.root_linearIndependent.ne_zero i))
       (by rw [dual_eval_coroot_root, hij0, Int.cast_zero])
       (by rw [dual_eval_coroot_root, hji0, Int.cast_zero])
   · rw [h, coxeterOrder_one]
@@ -415,14 +425,9 @@ theorem apply_sub_mem_rootLattice_of_mem_weylGroup {w : Dual ℚ H ≃ₗ[ℚ] D
 /-- **The Weyl group preserves the weight lattice.** -/
 theorem apply_mem_weightLattice_iff_of_mem_weylGroup {w : Dual ℚ H ≃ₗ[ℚ] Dual ℚ H}
     (hw : w ∈ R.weylGroup hA) {lam : Dual ℚ H} :
-    w lam ∈ L.weightLattice ↔ lam ∈ L.weightLattice := by
-  have key {w : Dual ℚ H ≃ₗ[ℚ] Dual ℚ H} (hw : w ∈ R.weylGroup hA) {lam : Dual ℚ H}
-      (hlam : lam ∈ L.weightLattice) : w lam ∈ L.weightLattice := by
-    rw [← sub_add_cancel (w lam) lam]
-    exact add_mem (L.rootLattice_le_weightLattice
-      (L.apply_sub_mem_rootLattice_of_mem_weylGroup hA hw hlam)) hlam
-  refine ⟨fun h ↦ ?_, key hw⟩
-  simpa using key (inv_mem hw) h
+    w lam ∈ L.weightLattice ↔ lam ∈ L.weightLattice :=
+  R.apply_mem_iff_of_mem_weylGroup hA L.rootLattice_le_weightLattice
+    (fun _ h ↦ L.exists_apply_coroot_eq_intCast h) hw
 
 /-- **The dual simple reflections preserve the coweight lattice.** -/
 theorem simpleCoreflection_mem_lattice_iff (i : I) {h : H} :

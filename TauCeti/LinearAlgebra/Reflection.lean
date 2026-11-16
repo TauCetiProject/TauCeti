@@ -28,10 +28,10 @@ Finally it computes the order of the product `r₁ r₂` of two reflections `r�
 product around. If `f(y) = g(x) = 0`, or `c = 1, 2, 3`, then `(r₁ r₂)ᵐ = 1` for `m = 2, 3, 4, 6`.
 For `c = 1, 2, 3` these are the exact orders as soon as `3 ≠ 0` and `4 ≠ 0` (as far as they are
 needed), read off the `f`-coordinate of `(r₁ r₂)ⁿ x`, which avoids the value `f(x) = 2`; for
-`f(y) = g(x) = 0` the order is exactly `2` when `x` and `y` are linearly independent and `2 ≠ 0`.
-Over a ring of characteristic zero, an integral Cartan product `c ≥ 4` gives infinite order, again
-for linearly independent `x` and `y`. This is the rank-two computation behind the Weyl group of a
-Kac–Moody realization, where the simple roots need not belong to any finite root system.
+`f(y) = g(x) = 0` the order is exactly `2` as soon as `2 • x ≠ 0`. Over a ring of characteristic
+zero, an integral Cartan product `c ≥ 4` gives infinite order for linearly independent `x` and `y`.
+This is the rank-two computation behind the Weyl group of a Kac–Moody realization, where the
+simple roots need not belong to any finite root system.
 
 ## References
 
@@ -236,17 +236,16 @@ theorem reflection_mul_reflection_pow_apply_self_eq_self_iff (hxy : LinearIndepe
   obtain ⟨h₁, h₂⟩ := hxy.eq_of_pair h'
   exact ⟨h₁, by linear_combination -h₂⟩
 
-/-- **The product of two reflections each fixing the other's vector has order `2`**: if the
-vectors are linearly independent, `f y = 0`, `g x = 0` and `2 ≠ 0`, then `r₁ r₂` has order
-exactly `2`. -/
-theorem orderOf_reflection_mul_reflection_eq_two [NeZero (2 : R)]
-    (hxy : LinearIndependent R ![x, y]) (hfy : f y = 0) (hgx : g x = 0) :
+/-- **The product of two reflections each fixing the other's vector has order `2`**: if
+`f y = 0`, `g x = 0` and `2 • x ≠ 0`, then `r₁ r₂` has order exactly `2`. -/
+theorem orderOf_reflection_mul_reflection_eq_two (hx : (2 : R) • x ≠ 0) (hfy : f y = 0)
+    (hgx : g x = 0) :
     orderOf (reflection hf * reflection hg) = 2 := by
-  refine orderOf_eq_prime (reflection_mul_reflection_pow_two_eq_one hf hg hfy hgx) fun h1 ↦ ?_
-  have := ((reflection_mul_reflection_pow_apply_self_eq_self_iff hxy 1).mp
-    (by rw [pow_one, h1]; simp)).1
-  norm_num [hfy, S_zero, S_one] at this
-  exact (two_ne_zero : (2 : R) ≠ 0) (by linear_combination -this)
+  refine orderOf_eq_prime (reflection_mul_reflection_pow_two_eq_one hf hg hfy hgx) fun h1 ↦ hx ?_
+  -- Since `g x = 0`, the product `r₁ r₂` sends `x` to `r₁ x = x - 2 • x`, which is `x` only if
+  -- `2 • x = 0`.
+  have h : -x = x := by simpa [reflection_apply, hgx, hf] using LinearEquiv.congr_fun h1 x
+  rw [two_smul, ← neg_eq_iff_add_eq_zero, h]
 
 /-- **At Cartan product `1` the product of two reflections has order exactly `3`**, provided
 `3 ≠ 0`. -/
