@@ -14,6 +14,7 @@ import Mathlib.CategoryTheory.Limits.Types.Filtered
 import Mathlib.CategoryTheory.Limits.Types.Products
 import Mathlib.CategoryTheory.Limits.Types.Pullbacks
 import TauCeti.Topology.LocallyConstant.Extend
+import TauCeti.Topology.Sets.Compacts
 
 /-!
 # The K-sheaf of locally constant functions
@@ -123,27 +124,25 @@ theorem isKSheaf_locallyConstant [T2Space X] [LocallyCompactSpace X] :
       · exact LocallyConstant.ext fun x => LocallyConstant.piecewise'_apply_right h₀ h₂ h₃ f₂ f₃ hf
           ⟨x, sq.le₃₄ x.2⟩ x.2
   nonempty_isColimit_coconeOfCompacts K := by
-    have hnhds : ∀ {L : Set X} (hL : IsCompact L), (K : Set X) ⊆ interior L →
-        (⟨L, hL⟩ : Compacts X) ∈ K.compactNhds := fun _ hKL x =>
-      mem_interior_iff_mem_nhds.1 (hKL x.2)
     refine ⟨Types.FilteredColimit.isColimitOf' _ _ ?_ ?_⟩
     · intro (f : LocallyConstant (K : Set X) M)
       obtain ⟨L, hL, hKL, g, hg⟩ := LocallyConstant.exists_isCompact_comap_eq K.isCompact f
-      exact ⟨op ⟨_, hnhds hL hKL⟩, g, hg.symm⟩
+      exact ⟨op ⟨⟨L, hL⟩, Compacts.mem_compactNhds_iff_subset_interior.2 hKL⟩, g, hg.symm⟩
     · rintro ⟨L⟩ (f : LocallyConstant (L.1 : Set X) M) (g : LocallyConstant (L.1 : Set X) M) h
       obtain ⟨L', hL', hKL', hL'L, hfg⟩ := LocallyConstant.exists_isCompact_comap_eq_comap
-        K.isCompact (fun x hx => mem_interior_iff_mem_nhds.2 (L.2 ⟨x, hx⟩)) f g h
-      exact ⟨op ⟨_, hnhds hL' hKL'⟩, (homOfLE hL'L).op, hfg⟩
+        K.isCompact (Compacts.mem_compactNhds_iff_subset_interior.1 L.2) f g h
+      exact ⟨op ⟨⟨L', hL'⟩, Compacts.mem_compactNhds_iff_subset_interior.2 hKL'⟩,
+        (homOfLE hL'L).op, hfg⟩
 
 end Types
 
 section Module
 
-variable (X : TopCat.{u}) (R : Type u) [Ring R] (M : Type u) [AddCommGroup M] [Module R M]
+variable (X : TopCat.{u}) (R : Type v) [Ring R] (M : Type v) [AddCommGroup M] [Module R M]
 
 /-- The K-presheaf of `R`-modules of locally constant functions with values in an `R`-module `M`.
 Its underlying K-presheaf of types is `TopCat.KPresheaf.locallyConstant X M`. -/
-abbrev locallyConstantModule : KPresheaf (ModuleCat.{u} R) X where
+abbrev locallyConstantModule : KPresheaf (ModuleCat.{max u v} R) X where
   obj K := ModuleCat.of R (LocallyConstant (K.unop : Set X) M)
   map f := ModuleCat.ofHom <|
     LocallyConstant.comapₗ R ⟨inclusion (leOfHom f.unop), continuous_inclusion (leOfHom f.unop)⟩
@@ -153,7 +152,7 @@ abbrev locallyConstantModule : KPresheaf (ModuleCat.{u} R) X where
 /-- The underlying K-presheaf of types of `TopCat.KPresheaf.locallyConstantModule X R M` is
 `TopCat.KPresheaf.locallyConstant X M`. -/
 theorem locallyConstantModule_comp_forget :
-    locallyConstantModule X R M ⋙ forget (ModuleCat.{u} R) = locallyConstant X M :=
+    locallyConstantModule X R M ⋙ forget (ModuleCat.{max u v} R) = locallyConstant X M :=
   rfl
 
 variable {X R M}
@@ -161,26 +160,36 @@ variable {X R M}
 /-- On a locally compact Hausdorff space, the locally constant functions with values in an
 `R`-module `M` form a K-sheaf of `R`-modules. -/
 theorem isKSheaf_locallyConstantModule [T2Space X] [LocallyCompactSpace X] :
-    (locallyConstantModule X R M).IsKSheaf where
-  nonempty_isTerminal := by
-    have : IsEmpty ((⊥ : Compacts X) : Set X) := ⟨fun x => x.2⟩
+    (locallyConstantModule X R M).IsKSheaf := by
+  -- The K-sheaf axioms for the underlying K-presheaf of types, which the forgetful functor
+  -- reflects. Since `F ⋙ forget` maps `f` to `forget.map (F.map f)` by definition, its pullback
+  -- squares and its cocones of compact neighbourhoods are the images under `forget` of those of
+  -- `F = locallyConstantModule X R M`.
+  have h : IsKSheaf (locallyConstantModule X R M ⋙ forget (ModuleCat.{max u v} R)) :=
+    locallyConstantModule_comp_forget X R M ▸ isKSheaf_locallyConstant
+  refine
+    { nonempty_isTerminal := ?_
+      isPullback := fun sq => ?_
+      nonempty_isColimit_coconeOfCompacts := fun K => ?_ }
+  · have : IsEmpty ((⊥ : Compacts X) : Set X) := ⟨fun x => x.2⟩
     have : Subsingleton (LocallyConstant ((⊥ : Compacts X) : Set X) M) :=
       ⟨fun _ _ => LocallyConstant.ext isEmptyElim⟩
     exact ⟨(ModuleCat.isZero_of_subsingleton _).isTerminal⟩
-  isPullback sq := by
-    refine IsPullback.of_map (forget (ModuleCat.{u} R)) ?_
-      ((isKSheaf_locallyConstant (M := M)).isPullback sq)
+  · refine IsPullback.of_map (forget (ModuleCat.{max u v} R)) ?_ (h.isPullback sq)
     rw [← Functor.map_comp, ← Functor.map_comp]
-  nonempty_isColimit_coconeOfCompacts K := by
-    -- The compact neighbourhoods of `K` form a nonempty codirected set, so the diagram is filtered
-    -- and the forgetful functor reflects its colimits.
+  · -- The compact neighbourhoods of `K` form a nonempty codirected set, so the diagram is filtered
+    -- and the forgetful functor, which factors through abelian groups, reflects its colimits.
     have : Nonempty K.compactNhds := by
       obtain ⟨L, hL, hKL, -⟩ := exists_compact_between K.isCompact isOpen_univ (subset_univ _)
-      exact ⟨⟨⟨L, hL⟩, fun x => mem_interior_iff_mem_nhds.1 (hKL x.2)⟩⟩
-    have : ReflectsColimitsOfShape (K.compactNhds)ᵒᵖ (forget (ModuleCat.{u} R)) :=
+      exact ⟨⟨⟨L, hL⟩, Compacts.mem_compactNhds_iff_subset_interior.2 hKL⟩⟩
+    have := preservesFilteredColimitsOfSize_shrink.{u, v, u, v} (forget AddCommGrpCat.{max u v})
+    have : PreservesColimitsOfShape (K.compactNhds)ᵒᵖ (forget (ModuleCat.{max u v} R)) :=
+      comp_preservesColimitsOfShape (forget₂ (ModuleCat.{max u v} R) AddCommGrpCat)
+        (forget AddCommGrpCat)
+    have : ReflectsColimitsOfShape (K.compactNhds)ᵒᵖ (forget (ModuleCat.{max u v} R)) :=
       reflectsColimitsOfShape_of_reflectsIsomorphisms
-    exact ⟨isColimitOfReflects (forget (ModuleCat.{u} R))
-      ((isKSheaf_locallyConstant (M := M)).nonempty_isColimit_coconeOfCompacts K).some⟩
+    exact ⟨isColimitOfReflects (forget (ModuleCat.{max u v} R))
+      (h.nonempty_isColimit_coconeOfCompacts K).some⟩
 
 end Module
 

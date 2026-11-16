@@ -25,9 +25,10 @@ agree is open.
 Together, these say that the locally constant functions on `K` are the germs along `K` of the
 locally constant functions on its compact neighbourhoods. This is the continuity axiom of a
 K-sheaf for the locally constant functions, see
-`TauCeti.Topology.Sheaves.KSheaf.LocallyConstant`. The second statement fails for continuous real
-functions: on a metric space, `x ↦ dist x K` and `0` agree on a compact set `K` but on no
-neighbourhood of `K` unless `K` is open.
+`TauCeti.Topology.Sheaves.KSheaf.LocallyConstant`. The agreement statement
+(`LocallyConstant.exists_isCompact_comap_eq_comap`) fails for continuous real functions: on a
+metric space, `x ↦ dist x K` and `0` agree on a compact set `K` but on no neighbourhood of `K`
+unless `K` is open.
 
 ## Main results
 
