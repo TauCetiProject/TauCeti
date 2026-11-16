@@ -14,7 +14,7 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 # Barnes's first lemma
 
 **Barnes's first lemma** (DLMF 5.13.3) evaluates the vertical-line integral of a product of four
-Gamma functions, two increasing and two decreasing along the imaginary axis: for complex parameters
+Gamma functions, two with arguments shifted by `+ i y` and two by `- i y`: for complex parameters
 `a, b, c, d` with positive real parts,
 
 `(2π)⁻¹ ∫_{-∞}^∞ Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y) dy =`
@@ -43,12 +43,15 @@ applies the Mellin–Barnes representation of `(1 + u)^{-(b + d)}`
 
 ## Main results
 
-* `Complex.exists_norm_Gamma_mul_Gamma_mul_Gamma_mul_Gamma_le_mul_inv_one_add_sq_pow`: on any
-  vertical line avoiding the poles of all four factors, the four-Gamma Barnes integrand decays
-  faster than every power `(1 + y²)⁻ᵐ`.
-* `Complex.integrable_Gamma_mul_Gamma_mul_Gamma_mul_Gamma` and
-  `Complex.verticalIntegrable_Gamma_mul_Gamma_mul_Gamma_mul_Gamma`: integrability of the four-Gamma
-  Barnes integrand on every pole-free vertical line.
+* `Complex.exists_norm_Gamma_mul_Gamma_mul_Gamma_mul_Gamma_le_mul_inv_one_add_sq_pow`: when none of
+  `Re a, Re b, Re c, Re d` is a nonpositive integer, the four-Gamma Barnes integrand
+  `y ↦ Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y)` decays faster than every power `(1 + y²)⁻ᵐ`.
+* `Complex.integrable_Gamma_mul_Gamma_mul_Gamma_mul_Gamma`: integrability of
+  `y ↦ Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y)` when none of `Re a, Re b, Re c, Re d` is a
+  nonpositive integer.
+* `Complex.verticalIntegrable_Gamma_mul_Gamma_mul_Gamma_mul_Gamma`: integrability of
+  `s ↦ Γ(a + s) Γ(b + s) Γ(c - s) Γ(d - s)` on every vertical line `Re s = σ` avoiding the poles
+  of all four factors.
 * `Complex.integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma`: **Barnes's first lemma** (DLMF 5.13.3)
   for `Re a, Re b, Re c, Re d > 0`.
 * `Complex.integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma_vertical`: Barnes's first lemma along a
@@ -71,7 +74,7 @@ open Complex hiding exp continuous_exp log
 
 namespace Complex
 
-/-- Along any vertical line avoiding the poles of all four factors, the four-Gamma Barnes integrand
+/-- When none of `Re a, Re b, Re c, Re d` is a nonpositive integer, the four-Gamma Barnes integrand
 `y ↦ Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y)` decays faster than every power of `|y|`: for
 every `m`, its norm is bounded by a constant multiple of `(1 + y²)⁻ᵐ`. -/
 theorem exists_norm_Gamma_mul_Gamma_mul_Gamma_mul_Gamma_le_mul_inv_one_add_sq_pow {a b c d : ℂ}
@@ -80,10 +83,10 @@ theorem exists_norm_Gamma_mul_Gamma_mul_Gamma_mul_Gamma_le_mul_inv_one_add_sq_po
     ∃ C : ℝ, ∀ y : ℝ,
       ‖Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) * Gamma (d - y * I)‖ ≤
         C * ((1 + y ^ 2) ^ m)⁻¹ := by
-  obtain ⟨Ca, hCa⟩ := exists_norm_Gamma_add_mul_I_le_mul_inv_one_add_sq_pow ha m
-  obtain ⟨Cb, hCb⟩ := exists_norm_Gamma_add_mul_I_le_mul_inv_one_add_sq_pow hb 0
-  obtain ⟨Cc, hCc⟩ := exists_norm_Gamma_add_mul_I_le_mul_inv_one_add_sq_pow hc 0
-  obtain ⟨Cd, hCd⟩ := exists_norm_Gamma_add_mul_I_le_mul_inv_one_add_sq_pow hd 0
+  obtain ⟨Ca, hCa⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow ha m
+  obtain ⟨Cb, hCb⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hb 0
+  obtain ⟨Cc, hCc⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hc 0
+  obtain ⟨Cd, hCd⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hd 0
   have hCa0 : 0 ≤ Ca := by simpa using (norm_nonneg _).trans (hCa 0)
   have hCb0 : 0 ≤ Cb := by simpa using (norm_nonneg _).trans (hCb 0)
   have hCc0 : 0 ≤ Cc := by simpa using (norm_nonneg _).trans (hCc 0)
@@ -105,7 +108,7 @@ theorem exists_norm_Gamma_mul_Gamma_mul_Gamma_mul_Gamma_le_mul_inv_one_add_sq_po
       Ca * Cb * Cc * Cd * ((1 + y ^ 2) ^ m)⁻¹ := by ring
   simpa only [norm_mul, hrhs] using h1234
 
-/-- Along every vertical line avoiding the poles of all four factors, the four-Gamma Barnes
+/-- When none of `Re a, Re b, Re c, Re d` is a nonpositive integer, the four-Gamma Barnes
 integrand `y ↦ Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y)` is integrable. -/
 theorem integrable_Gamma_mul_Gamma_mul_Gamma_mul_Gamma {a b c d : ℂ}
     (ha : ∀ n : ℕ, a.re ≠ -n) (hb : ∀ n : ℕ, b.re ≠ -n)
@@ -114,13 +117,10 @@ theorem integrable_Gamma_mul_Gamma_mul_Gamma_mul_Gamma {a b c d : ℂ}
       Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) * Gamma (d - y * I) := by
   obtain ⟨C, hC⟩ :=
     exists_norm_Gamma_mul_Gamma_mul_Gamma_mul_Gamma_le_mul_inv_one_add_sq_pow ha hb hc hd 1
-  have hcont_c : Continuous fun y : ℝ ↦ Gamma (c - y * I) := by
-    simpa [comp_def, sub_eq_add_neg] using (continuous_Gamma_add_mul_I hc).comp continuous_neg
-  have hcont_d : Continuous fun y : ℝ ↦ Gamma (d - y * I) := by
-    simpa [comp_def, sub_eq_add_neg] using (continuous_Gamma_add_mul_I hd).comp continuous_neg
   have hcont : Continuous fun y : ℝ ↦
       Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) * Gamma (d - y * I) :=
-    (((continuous_Gamma_add_mul_I ha).mul (continuous_Gamma_add_mul_I hb)).mul hcont_c).mul hcont_d
+    (((continuous_Gamma_add_mul_I ha).mul (continuous_Gamma_add_mul_I hb)).mul
+      (continuous_Gamma_sub_mul_I hc)).mul (continuous_Gamma_sub_mul_I hd)
   exact (integrable_inv_one_add_sq.const_mul C).mono' hcont.aestronglyMeasurable
     (Eventually.of_forall fun y ↦ by simpa using hC y)
 
@@ -172,10 +172,8 @@ private theorem integrable_barnesKernel {a b c d : ℂ} (ha : 0 < a.re) (hb : 0 
         (Ioi (0 : ℝ) ×ˢ (univ : Set ℝ)) z :=
       ((continuous_Gamma_add_mul_I hb').comp continuous_snd).continuousWithinAt
     have hGd : ContinuousWithinAt (fun p : ℝ × ℝ ↦ Gamma (d - (p.2 : ℂ) * I))
-        (Ioi (0 : ℝ) ×ˢ (univ : Set ℝ)) z := by
-      have hcont_d : Continuous fun y : ℝ ↦ Gamma (d - y * I) := by
-        simpa [comp_def, sub_eq_add_neg] using (continuous_Gamma_add_mul_I hd').comp continuous_neg
-      exact (hcont_d.comp continuous_snd).continuousWithinAt
+        (Ioi (0 : ℝ) ×ˢ (univ : Set ℝ)) z :=
+      ((continuous_Gamma_sub_mul_I hd').comp continuous_snd).continuousWithinAt
     exact (hpow1.mul hpow2).mul (hGb.mul hGd)
   · rw [Measure.restrict_prod_eq_prod_univ]
     filter_upwards [ae_restrict_mem (measurableSet_Ioi.prod MeasurableSet.univ)] with z hz

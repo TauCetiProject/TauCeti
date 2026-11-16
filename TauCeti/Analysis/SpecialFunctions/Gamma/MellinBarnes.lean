@@ -35,16 +35,18 @@ Barnes's first lemma.
 
 * `Complex.hasMellin_one_add_cpow_neg`: the Mellin transform of `(1 + t)^{-a}` converges at every
   `s` with `0 < Re s < Re a` and equals `Γ(s) Γ(a - s) / Γ(a)` there.
+* `Complex.integrable_Gamma_add_mul_Gamma_sub`: `y ↦ Γ(b + i y) Γ(d - i y)` is integrable whenever
+  neither `Re b` nor `Re d` is a nonpositive integer.
 * `Complex.verticalIntegrable_Gamma_mul_Gamma_sub`: `s ↦ Γ(s) Γ(a - s)` is integrable on every
   vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer.
 * `Complex.mellinInv_Gamma_mul_Gamma_sub`: Mellin inversion of `Γ(s) Γ(a - s)` on a vertical line
   `Re s = σ` with `0 < σ < Re a` is `Γ(a) (1 + u)^{-a}`.
 * `Complex.integral_cpow_neg_mul_Gamma_mul_Gamma_sub`: the same formula as the unnormalised
-  vertical integral `∫ u^{-(σ + i y)} Γ(σ + i y) Γ(a - σ - i y) dy = 2π Γ(a) (1 + u)^{-a}`.
-* `Complex.integrable_Gamma_add_mul_Gamma_sub` and
-  `Complex.integral_cpow_neg_mul_Gamma_add_mul_Gamma_sub`: integrability of
-  `y ↦ Γ(b + i y) Γ(d - i y)` for pole-free real parts and the complex-shifted Mellin–Barnes
-  integral `∫ u^{-(b + i y)} Γ(b + i y) Γ(d - i y) dy = 2π Γ(b + d) (1 + u)^{-(b + d)}`.
+  vertical integral `∫ u^{-(σ + i y)} Γ(σ + i y) Γ(a - σ - i y) dy = 2π Γ(a) (1 + u)^{-a}` for
+  `0 < σ < Re a` and `u > 0`.
+* `Complex.integral_cpow_neg_mul_Gamma_add_mul_Gamma_sub`: the complex-shifted Mellin–Barnes
+  integral `∫ u^{-(b + i y)} Γ(b + i y) Γ(d - i y) dy = 2π Γ(b + d) (1 + u)^{-(b + d)}` for
+  `Re b, Re d > 0` and `u > 0`.
 
 ## References
 
@@ -124,19 +126,22 @@ theorem hasMellin_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.r
       setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
       ← betaIntegral, betaIntegral_eq_Gamma_mul_div _ _ hs has, add_sub_cancel]
 
+/-- When neither `Re b` nor `Re d` is a nonpositive integer, `y ↦ Γ(b + i y) Γ(d - i y)` is
+integrable. -/
+theorem integrable_Gamma_add_mul_Gamma_sub {b d : ℂ} (hb : ∀ n : ℕ, b.re ≠ -n)
+    (hd : ∀ n : ℕ, d.re ≠ -n) :
+    Integrable fun y : ℝ ↦ Gamma (b + y * I) * Gamma (d - y * I) := by
+  obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hd 0
+  exact (integrable_Gamma_add_mul_I hb).mul_bdd (continuous_Gamma_sub_mul_I hd).aestronglyMeasurable
+    (Eventually.of_forall fun y ↦ by simpa [sub_eq_add_neg] using hC (-y))
+
 /-- On every vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer, the
 product `Γ(s) Γ(a - s)` is integrable. -/
 theorem verticalIntegrable_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n)
     (haσ : ∀ n : ℕ, a.re - σ ≠ -n) :
-    VerticalIntegrable (fun s ↦ Gamma s * Gamma (a - s)) σ := by
-  have hsub (y : ℝ) : a - (σ + y * I) = ↑(a.re - σ) + ↑(a.im - y) * I := by
-    apply Complex.ext <;> simp
-  obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow haσ 0
-  refine (verticalIntegrable_Gamma hσ).mul_bdd (c := C) ?_
-    (Eventually.of_forall fun y ↦ by simpa [hsub] using hC (a.im - y))
-  refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun y ↦ ?_)
-  refine (differentiableAt_Gamma _ fun m h ↦ haσ m ?_).continuousAt.comp (by fun_prop)
-  simpa using congrArg re h
+    VerticalIntegrable (fun s ↦ Gamma s * Gamma (a - s)) σ :=
+  (integrable_Gamma_add_mul_Gamma_sub (b := σ) (d := a - σ) (by simpa using hσ)
+    (by simpa using haσ)).congr (Eventually.of_forall fun y ↦ by simp only [sub_add_eq_sub_sub])
 
 /-- **The Mellin–Barnes integral of `(1 + u)^{-a}`.** On every vertical line `Re s = σ` with
 `0 < σ < Re a`, Mellin inversion of `Γ(s) Γ(a - s)` gives `Γ(a) (1 + u)^{-a}` for `u > 0`:
@@ -177,18 +182,6 @@ theorem integral_cpow_neg_mul_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : 0 
   simp only [smul_eq_mul] at h
   rw [← h, ← mul_assoc,
     show (2 * π : ℂ) * ((1 / (2 * π) : ℝ) : ℂ) = 1 by push_cast; field_simp, one_mul]
-
-/-- Along any vertical line avoiding the poles of both factors, `y ↦ Γ(b + i y) Γ(d - i y)` is
-integrable. -/
-theorem integrable_Gamma_add_mul_Gamma_sub {b d : ℂ} (hb : ∀ n : ℕ, b.re ≠ -n)
-    (hd : ∀ n : ℕ, d.re ≠ -n) :
-    Integrable fun y : ℝ ↦ Gamma (b + y * I) * Gamma (d - y * I) := by
-  obtain ⟨C, hC⟩ := exists_norm_Gamma_add_mul_I_le_mul_inv_one_add_sq_pow hd 0
-  have hcont_d : Continuous fun y : ℝ ↦ Gamma (d - y * I) := by
-    simpa [Function.comp_def, sub_eq_add_neg] using
-      (continuous_Gamma_add_mul_I hd).comp continuous_neg
-  exact (integrable_Gamma_add_mul_I hb).mul_bdd hcont_d.aestronglyMeasurable
-    (Eventually.of_forall fun y ↦ by simpa [sub_eq_add_neg] using hC (-y))
 
 /-- **The Mellin–Barnes integral of `(1 + u)^{-(b + d)}`** with complex shifts: for `Re b > 0`,
 `Re d > 0`, and `u > 0`,
