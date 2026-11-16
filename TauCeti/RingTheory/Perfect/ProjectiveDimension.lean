@@ -5,18 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+public import Mathlib.Algebra.Category.ModuleCat.ProjectiveDimension
 public import Mathlib.FieldTheory.IsPerfectClosure
 public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
-import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
-import Mathlib.Algebra.Category.ModuleCat.ProjectiveDimension
+import Mathlib.LinearAlgebra.TensorProduct.Associator
 import TauCeti.Algebra.Category.ModuleCat.Projective.SequentialColimit
+import TauCeti.Algebra.Category.ModuleCat.Projective.Tor
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.RingTheory.Perfect.PerfectClosure
+import TauCeti.RingTheory.Perfect.Tor
 import TauCeti.RingTheory.RegularLocalRing.Frobenius
 
 /-!
-# Projective dimension over the perfection of a ring with flat Frobenius
+# Projective dimension over perfect quotients of perfections
 
 Let `K` be a ring of exponential characteristic `p` whose Frobenius endomorphism is flat, and
 suppose that every `K`-module has projective dimension at most `d`. Then every module over a
@@ -34,18 +37,30 @@ injective. The perfect closure is flat over each of them because it is flat over
 changes from these subrings, which have projective dimension at most `d`, and the telescope
 sequence adds one (`ModuleCat.hasProjectiveDimensionLT_succ_of_iSup_eq_top`).
 
-Bhatt and Scholze use this bound for the perfection `P` of a regular ring, and then transport it
-along a surjection from `P` onto a perfect ring, to bound the projective dimension of modules over
-perfectly finitely presented algebras over the perfection of a regular ring.
+When `p` is prime, Tor independence of perfect rings (`TauCeti.isZero_Tor_succ_of_perfectRing`)
+makes every surjective homomorphism `f : P →+* R` of perfect rings a homological epimorphism:
+`Tor_{k+1}^P(R, R) = 0` for all `k` and `R ⊗[P] R ≃ R`. Consequently projective dimension does not
+increase along `f` (`TauCeti.hasProjectiveDimensionLT_of_surjective_of_perfectRing`), and the
+global dimension bound `d + 1` passes from a perfect closure of `K` to every perfect quotient `R`
+(`IsPerfectClosure.hasProjectiveDimensionLE_succ_of_isRegularRing_of_surjective`).
 
 ## Main results
 
+* `TauCeti.hasProjectiveDimensionLT_of_surjective_of_perfectRing`: along a surjective homomorphism
+  `f : P →+* R` of perfect rings of prime characteristic `p`, `pd_P M < n` implies `pd_R M < n`.
+* `TauCeti.projectiveDimension_le_restrictScalars_of_surjective_of_perfectRing`: the corresponding
+  inequality `pd_R M ≤ pd_P M`.
 * `IsPerfectClosure.hasProjectiveDimensionLE_succ`: if Frobenius of `K` is flat and every
   `K`-module has projective dimension at most `d`, then every module over a perfect closure of
   `K` has projective dimension at most `d + 1`.
 * `IsPerfectClosure.hasProjectiveDimensionLE_succ_of_isRegularRing`: over a perfect closure of a
   regular ring of Krull dimension at most `d`, every module has projective dimension at most
   `d + 1`.
+* `IsPerfectClosure.hasProjectiveDimensionLE_succ_of_surjective`: the bound `d + 1` passes to
+  every perfect quotient of a perfect closure of `K`.
+* `IsPerfectClosure.hasProjectiveDimensionLE_succ_of_isRegularRing_of_surjective`: over a perfect
+  quotient of a perfect closure of a regular ring of Krull dimension at most `d`, every module has
+  projective dimension at most `d + 1`.
 
 ## References
 
@@ -60,6 +75,36 @@ public section
 open CategoryTheory
 
 universe u
+
+namespace TauCeti
+
+/-- **Projective dimension does not increase along a surjection of perfect rings.** By Tor
+independence of perfect rings, a surjective homomorphism `f : P →+* R` of perfect rings of prime
+characteristic `p` is a homological epimorphism, so every `R`-module of projective dimension `< n`
+over `P` also has projective dimension `< n` over `R`. -/
+theorem hasProjectiveDimensionLT_of_surjective_of_perfectRing
+    {P R : Type u} [CommRing P] [CommRing R] (p : ℕ) [Fact p.Prime]
+    [ExpChar P p] [PerfectRing P p] [ExpChar R p] [PerfectRing R p]
+    {f : P →+* R} (hf : Function.Surjective f) (M : ModuleCat.{u} R) {n : ℕ}
+    (h : HasProjectiveDimensionLT ((ModuleCat.restrictScalars f).obj M) n) :
+    HasProjectiveDimensionLT M n := by
+  let := f.toAlgebra
+  have : TensorProduct.CompatibleSMul P R R R := .of_algebraMap_surjective R R hf
+  exact ModuleCat.hasProjectiveDimensionLT_of_restrictScalars_of_isZero_Tor
+    (isZero_Tor_succ_of_perfectRing (A := P) (p := p) R R) M h
+
+/-- **Projective dimension does not increase along a surjection of perfect rings**:
+`pd_R M ≤ pd_P M` for every surjective homomorphism `f : P →+* R` of perfect rings of prime
+characteristic `p` and every `R`-module `M`. -/
+theorem projectiveDimension_le_restrictScalars_of_surjective_of_perfectRing
+    {P R : Type u} [CommRing P] [CommRing R] (p : ℕ) [Fact p.Prime]
+    [ExpChar P p] [PerfectRing P p] [ExpChar R p] [PerfectRing R p]
+    {f : P →+* R} (hf : Function.Surjective f) (M : ModuleCat.{u} R) :
+    projectiveDimension M ≤ projectiveDimension ((ModuleCat.restrictScalars f).obj M) :=
+  projectiveDimension_le_of_hasProjectiveDimensionLT fun _ h ↦
+    hasProjectiveDimensionLT_of_surjective_of_perfectRing p hf M h
+
+end TauCeti
 
 namespace IsPerfectClosure
 
@@ -145,5 +190,29 @@ theorem hasProjectiveDimensionLE_succ_of_isRegularRing [IsRegularRing K] {d : �
     (hd : ringKrullDim K ≤ d) (M : ModuleCat.{u} L) : HasProjectiveDimensionLE M (d + 1) :=
   hasProjectiveDimensionLE_succ i p (TauCeti.IsRegularRing.flat_frobenius p)
     (TauCeti.IsRegularRing.hasProjectiveDimensionLE hd) M
+
+include i in
+/-- Over a perfect quotient of a perfect closure of a ring with flat Frobenius and global dimension
+at most `d`, every module has projective dimension at most `d + 1`. -/
+theorem hasProjectiveDimensionLE_succ_of_surjective [Fact p.Prime] (hF : (frobenius K p).Flat)
+    {d : ℕ} (h : ∀ N : ModuleCat.{u} K, HasProjectiveDimensionLE N d)
+    {R : Type u} [CommRing R] [ExpChar R p] [PerfectRing R p]
+    {f : L →+* R} (hf : Function.Surjective f) (M : ModuleCat.{u} R) :
+    HasProjectiveDimensionLE M (d + 1) :=
+  TauCeti.hasProjectiveDimensionLT_of_surjective_of_perfectRing p hf M
+    (hasProjectiveDimensionLE_succ i p hF h ((ModuleCat.restrictScalars f).obj M))
+
+include i p in
+/-- **Global dimension bound for perfect quotients of perfections of regular rings**
+(Bhatt–Scholze, Proposition 11.31). If `K` is a regular ring of Krull dimension at most `d` and
+`f : L →+* R` is a surjective homomorphism from a perfect closure of `K` onto a perfect ring `R`,
+then every `R`-module has projective dimension at most `d + 1`. -/
+theorem hasProjectiveDimensionLE_succ_of_isRegularRing_of_surjective [Fact p.Prime]
+    [IsRegularRing K] {d : ℕ} (hd : ringKrullDim K ≤ d)
+    {R : Type u} [CommRing R] [ExpChar R p] [PerfectRing R p]
+    {f : L →+* R} (hf : Function.Surjective f) (M : ModuleCat.{u} R) :
+    HasProjectiveDimensionLE M (d + 1) :=
+  hasProjectiveDimensionLE_succ_of_surjective i p (TauCeti.IsRegularRing.flat_frobenius p)
+    (TauCeti.IsRegularRing.hasProjectiveDimensionLE hd) hf M
 
 end IsPerfectClosure

@@ -35,6 +35,8 @@ across the tensor sign of `R ⊗[B] M`.
   `r ∈ B`, `r ⊗ m = 1 ⊗ r • m`.
 * `Submodule.one_tmul_mem_baseChange_of_smul_mem`: if `a • x ∈ N` and `a` becomes a unit in `A`,
   then `1 ⊗ₜ x` lies in the base change of `N` to `A`.
+* `TensorProduct.CompatibleSMul.of_compatibleSMul_self`: if `A`-scalars move across the tensor
+  sign in `A ⊗[R] A`, then they do so in `M ⊗[R] N` for any `A`-modules `M` and `N`.
 -/
 
 public section
@@ -98,3 +100,19 @@ theorem LinearMap.baseChange_leftInverse {R A M N : Type*} [CommSemiring R] [Sem
     Function.LeftInverse (f.baseChange A) (g.baseChange A) := fun z ↦ by
   rw [← LinearMap.comp_apply, ← LinearMap.baseChange_comp, h, LinearMap.baseChange_id,
     LinearMap.id_apply]
+
+/-- If `A`-scalars move across the tensor sign in `A ⊗[R] A` (for instance when `R → A` is
+surjective, or more generally an epimorphism of commutative rings), then `A`-scalars move across
+the tensor sign in `M ⊗[R] N` for any `A`-modules `M` and `N`. -/
+theorem TensorProduct.CompatibleSMul.of_compatibleSMul_self {R A M N : Type*} [CommSemiring R]
+    [CommSemiring A] [Algebra R A] [AddCommMonoid M] [Module R M] [Module A M]
+    [IsScalarTower R A M] [AddCommMonoid N] [Module R N] [Module A N] [IsScalarTower R A N]
+    [TensorProduct.CompatibleSMul R A A A] :
+    TensorProduct.CompatibleSMul R A M N where
+  smul_tmul a m n := by
+    have h : a ⊗ₜ[R] (1 : A) = (1 : A) ⊗ₜ[R] a := by
+      simpa using TensorProduct.CompatibleSMul.smul_tmul (R := R) a (1 : A) (1 : A)
+    have hmap := congrArg (TensorProduct.map
+      ((LinearMap.toSpanSingleton A M m).restrictScalars R)
+      ((LinearMap.toSpanSingleton A N n).restrictScalars R)) h
+    simpa using hmap

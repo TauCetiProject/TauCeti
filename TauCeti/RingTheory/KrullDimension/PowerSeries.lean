@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.KrullDimension.Regular
 public import Mathlib.RingTheory.PowerSeries.Basic
+import Mathlib.RingTheory.MvPowerSeries.Equiv
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 import Mathlib.RingTheory.PowerSeries.Ideal
 import TauCeti.RingTheory.PowerSeries.Ideal
@@ -21,12 +22,21 @@ For a Noetherian ring `R`, the variable `X` is a non-zero-divisor in the Jacobso
 dim R⟦X⟧ = dim R + 1.
 ```
 
+By induction on the number of variables through `MvPowerSeries.finSuccEquiv`, adjoining finitely
+many formal power series variables raises the Krull dimension by the number of variables:
+
+```text
+dim R⟦X_i : i ∈ σ⟧ = dim R + |σ|.
+```
+
 This is the power series analogue of Mathlib's `Polynomial.ringKrullDim_of_isNoetherianRing`.
 
 ## Main results
 
 * `PowerSeries.ringKrullDim_of_isNoetherianRing`: for a Noetherian ring `R`,
   `dim R⟦X⟧ = dim R + 1`.
+* `MvPowerSeries.ringKrullDim_of_isNoetherianRing`: for a Noetherian ring `R` and a finite type
+  `σ`, `dim (MvPowerSeries σ R) = dim R + Nat.card σ`.
 -/
 
 public section
@@ -50,3 +60,29 @@ theorem ringKrullDim_of_isNoetherianRing [IsNoetherianRing R] :
     ringKrullDim_eq_of_ringEquiv (RingHom.quotientKerEquivOfSurjective constantCoeff_surj)]
 
 end PowerSeries
+
+namespace MvPowerSeries
+
+variable {σ R : Type*} [CommRing R]
+
+private theorem ringKrullDim_fin_of_isNoetherianRing [IsNoetherianRing R] (n : ℕ) :
+    ringKrullDim (MvPowerSeries (Fin n) R) = ringKrullDim R + n := by
+  induction n with
+  | zero =>
+    rw [Nat.cast_zero, add_zero]
+    exact ringKrullDim_eq_of_ringEquiv (isEmptyEquiv (Fin 0) R).toRingEquiv
+  | succ n ih =>
+    rw [ringKrullDim_eq_of_ringEquiv (finSuccEquiv R n).toRingEquiv,
+      PowerSeries.ringKrullDim_of_isNoetherianRing, ih, Nat.cast_succ, add_assoc]
+
+/-- **The dimension of a multivariate power series ring.** Over a Noetherian ring `R`, adjoining
+finitely many formal power series variables raises the Krull dimension by the number of
+variables. -/
+theorem ringKrullDim_of_isNoetherianRing [Finite σ] [IsNoetherianRing R] :
+    ringKrullDim (MvPowerSeries σ R) = ringKrullDim R + Nat.card σ := by
+  cases nonempty_fintype σ
+  rw [Nat.card_eq_fintype_card,
+    ringKrullDim_eq_of_ringEquiv (renameEquiv R (Fintype.equivFin σ)).toRingEquiv,
+    ringKrullDim_fin_of_isNoetherianRing]
+
+end MvPowerSeries
