@@ -140,118 +140,93 @@ theorem forall_map_mapRingEquiv_eq_iff_mem_lifts
 
 /-! ### Algebraic extensions of constants and the Krull-topological Galois isomorphism -/
 
+section ConstantExtension
+
+variable (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
+include hX
+
 /-- If `K / F` is algebraic, then `K(X) / F(X)` is algebraic. -/
-theorem isAlgebraic_of_isAlgebraic
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) [Algebra.IsAlgebraic F K] :
+theorem isAlgebraic_of_isAlgebraic [Algebra.IsAlgebraic F K] :
     Algebra.IsAlgebraic (RatFunc F) (RatFunc K) :=
   TauCeti.isAlgebraic_of_constantCompositum_eq_top (k := F) (k' := K)
     ((TauCeti.constantCompositum_def _ _ _).trans (adjoin_range_algebraMap_eq_top hX))
 
 /-- If `K / F` is separable, then `K(X) / F(X)` is separable. -/
-theorem isSeparable_of_isSeparable
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) [Algebra.IsSeparable F K] :
+theorem isSeparable_of_isSeparable [Algebra.IsSeparable F K] :
     Algebra.IsSeparable (RatFunc F) (RatFunc K) :=
   TauCeti.isSeparable_of_constantCompositum_eq_top (k := F) (k' := K)
     ((TauCeti.constantCompositum_def _ _ _).trans (adjoin_range_algebraMap_eq_top hX))
 
 /-- If `K / F` is normal, then `K(X) / F(X)` is normal. -/
-theorem normal_of_normal
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) [hN : Normal F K] :
-    Normal (RatFunc F) (RatFunc K) := by
+theorem normal_of_normal [hN : Normal F K] : Normal (RatFunc F) (RatFunc K) := by
   have := isAlgebraic_of_isAlgebraic hX
   refine ⟨fun z ↦ IntermediateField.splits_of_mem_adjoin (RatFunc F) (RatFunc K)
-    (L := RatFunc K) (S := Set.range (algebraMap K (RatFunc K))) ?_ ?_⟩
-  · rintro _ ⟨c, rfl⟩
-    refine ⟨Algebra.IsIntegral.isIntegral _, ?_⟩
-    have hdvd : minpoly (RatFunc F) (algebraMap K (RatFunc K) c) ∣
-        (minpoly F c).map (algebraMap F (RatFunc F)) := by
-      refine minpoly.dvd (RatFunc F) _ ?_
-      rw [aeval_map_algebraMap, aeval_algebraMap_apply, minpoly.aeval, map_zero]
-    have hsp : (((minpoly F c).map (algebraMap F (RatFunc F))).map
-        (algebraMap (RatFunc F) (RatFunc K))).Splits := by
-      rw [Polynomial.map_map, ← IsScalarTower.algebraMap_eq F (RatFunc F) (RatFunc K),
-        IsScalarTower.algebraMap_eq F K (RatFunc K), ← Polynomial.map_map]
-      exact (hN.splits c).map (algebraMap K (RatFunc K))
-    exact Polynomial.Splits.of_dvd hsp
-      (Polynomial.map_monic_ne_zero ((minpoly.monic (hN.isIntegral c)).map _))
-      (Polynomial.map_dvd _ hdvd)
-  · rw [adjoin_range_algebraMap_eq_top hX]
-    trivial
+    (L := RatFunc K) (S := Set.range (algebraMap K (RatFunc K))) ?_ (by
+      rw [adjoin_range_algebraMap_eq_top hX]; trivial)⟩
+  rintro _ ⟨c, rfl⟩
+  have hdvd : minpoly (RatFunc F) (algebraMap K (RatFunc K) c) ∣
+      (minpoly F c).map (algebraMap F (RatFunc F)) :=
+    minpoly.dvd (RatFunc F) _ (by rw [aeval_map_algebraMap, aeval_algebraMap_apply, minpoly.aeval,
+      map_zero])
+  have hsp : (((minpoly F c).map (algebraMap F (RatFunc F))).map
+      (algebraMap (RatFunc F) (RatFunc K))).Splits := by
+    rw [Polynomial.map_map, ← IsScalarTower.algebraMap_eq F (RatFunc F) (RatFunc K),
+      IsScalarTower.algebraMap_eq F K (RatFunc K), ← Polynomial.map_map]
+    exact (hN.splits c).map (algebraMap K (RatFunc K))
+  exact ⟨Algebra.IsIntegral.isIntegral _, Polynomial.Splits.of_dvd hsp
+    (Polynomial.map_monic_ne_zero ((minpoly.monic (hN.isIntegral c)).map _))
+    (Polynomial.map_dvd _ hdvd)⟩
 
 /-- If `K / F` is Galois, then `K(X) / F(X)` is Galois. -/
-theorem isGalois_of_isGalois
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) [IsGalois F K] :
-    IsGalois (RatFunc F) (RatFunc K) :=
+theorem isGalois_of_isGalois [IsGalois F K] : IsGalois (RatFunc F) (RatFunc K) :=
   letI := isSeparable_of_isSeparable hX
   letI := normal_of_normal hX
   ⟨⟩
 
 /-- The `F(X)`-automorphism of `K(X)` induced by `σ ∈ Gal(K/F)` on coefficients, fixing `X`. -/
-noncomputable def mapAlgEquiv
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) (σ : Gal(K/F)) :
-    Gal(RatFunc K/RatFunc F) :=
+noncomputable def mapAlgEquiv (σ : Gal(K/F)) : Gal(RatFunc K/RatFunc F) :=
   AlgEquiv.ofRingEquiv (f := mapRingEquiv σ.toRingEquiv)
     (mapRingEquiv_algebraMap_ratFunc hX σ.commutes)
 
 @[simp]
-theorem coe_mapAlgEquiv
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) (σ : Gal(K/F)) :
-    ⇑(mapAlgEquiv hX σ) = mapRingEquiv σ.toRingEquiv :=
-  (rfl)
+theorem coe_mapAlgEquiv (σ : Gal(K/F)) : ⇑(mapAlgEquiv hX σ) = mapRingEquiv σ.toRingEquiv := (rfl)
 
 @[simp]
-theorem toRingEquiv_mapAlgEquiv
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) (σ : Gal(K/F)) :
-    (mapAlgEquiv hX σ).toRingEquiv = mapRingEquiv σ.toRingEquiv :=
-  (rfl)
+theorem toRingEquiv_mapAlgEquiv (σ : Gal(K/F)) :
+    (mapAlgEquiv hX σ).toRingEquiv = mapRingEquiv σ.toRingEquiv := (rfl)
 
 @[simp]
-theorem mapAlgEquiv_X
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) (σ : Gal(K/F)) :
-    mapAlgEquiv hX σ RatFunc.X = RatFunc.X :=
+theorem mapAlgEquiv_X (σ : Gal(K/F)) : mapAlgEquiv hX σ RatFunc.X = RatFunc.X :=
   mapRingEquiv_X σ.toRingEquiv
 
 @[simp]
-theorem mapAlgEquiv_C
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) (σ : Gal(K/F)) (c : K) :
+theorem mapAlgEquiv_C (σ : Gal(K/F)) (c : K) :
     mapAlgEquiv hX σ (RatFunc.C c) = RatFunc.C (σ c) :=
   mapRingEquiv_C σ.toRingEquiv c
 
-theorem mapAlgEquiv_algebraMap_const
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) (σ : Gal(K/F)) (c : K) :
+theorem mapAlgEquiv_algebraMap_const (σ : Gal(K/F)) (c : K) :
     mapAlgEquiv hX σ (algebraMap K (RatFunc K) c) = algebraMap K (RatFunc K) (σ c) :=
   mapRingEquiv_algebraMap_const σ.toRingEquiv c
 
 /-- Coefficient automorphisms as a group homomorphism `Gal(K/F) →* Gal(K(X)/F(X))`. -/
-noncomputable def mapAlgEquivHom
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
-    Gal(K/F) →* Gal(RatFunc K/RatFunc F) where
+noncomputable def mapAlgEquivHom : Gal(K/F) →* Gal(RatFunc K/RatFunc F) where
   toFun := mapAlgEquiv hX
-  map_one' := AlgEquiv.ext fun z ↦ by
+  map_one' := AlgEquiv.ext fun _ ↦ by
     have h1 : (1 : Gal(K/F)).toRingEquiv = RingEquiv.refl K := RingEquiv.ext fun _ ↦ rfl
-    rw [coe_mapAlgEquiv, h1, mapRingEquiv_refl]
-    rfl
-  map_mul' σ τ := AlgEquiv.ext fun z ↦ by
+    rw [coe_mapAlgEquiv, h1, mapRingEquiv_refl]; rfl
+  map_mul' σ τ := AlgEquiv.ext fun _ ↦ by
     have hmul : (σ * τ).toRingEquiv = τ.toRingEquiv.trans σ.toRingEquiv :=
       RingEquiv.ext fun _ ↦ rfl
-    rw [coe_mapAlgEquiv, hmul, mapRingEquiv_trans]
-    rfl
+    rw [coe_mapAlgEquiv, hmul, mapRingEquiv_trans]; rfl
 
 @[simp]
-theorem mapAlgEquivHom_apply
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) (σ : Gal(K/F)) :
-    mapAlgEquivHom hX σ = mapAlgEquiv hX σ :=
-  (rfl)
+theorem mapAlgEquivHom_apply (σ : Gal(K/F)) : mapAlgEquivHom hX σ = mapAlgEquiv hX σ := (rfl)
 
 @[simp]
-theorem mapAlgEquiv_symm
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) (σ : Gal(K/F)) :
-    (mapAlgEquiv hX σ).symm = mapAlgEquiv hX σ.symm :=
+theorem mapAlgEquiv_symm (σ : Gal(K/F)) : (mapAlgEquiv hX σ).symm = mapAlgEquiv hX σ.symm :=
   (map_inv (mapAlgEquivHom hX) σ).symm
 
-theorem mapAlgEquivHom_injective
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
-    Function.Injective (mapAlgEquivHom hX) := fun σ τ h ↦
+theorem mapAlgEquivHom_injective : Function.Injective (mapAlgEquivHom hX) := fun σ τ h ↦
   AlgEquiv.ext fun c ↦ (algebraMap K (RatFunc K)).injective <| by
     simpa only [mapAlgEquivHom_apply, mapAlgEquiv_algebraMap_const] using
       congr($(h) (algebraMap K (RatFunc K) c))
@@ -262,25 +237,19 @@ variable [Algebra.IsAlgebraic F K]
 
 /-- When `K / F` is algebraic, every `F(X)`-automorphism of `K(X)` comes from an `F`-automorphism
 of `K`, because `K` is integrally closed in `K(X)`. -/
-theorem mapAlgEquivHom_surjective
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
-    Function.Surjective (mapAlgEquivHom hX) := by
+theorem mapAlgEquivHom_surjective : Function.Surjective (mapAlgEquivHom hX) := by
   have hmem (ψ : Gal(RatFunc K/RatFunc F)) (c : K) :
-      ∃ d : K, algebraMap K (RatFunc K) d = ψ (algebraMap K (RatFunc K) c) := by
-    have hintF : IsIntegral F (algebraMap K (RatFunc K) c) :=
-      (Algebra.IsIntegral.isIntegral (R := F) c).map (IsScalarTower.toAlgHom F K (RatFunc K))
-    have hint : IsIntegral K (ψ (algebraMap K (RatFunc K) c)) :=
-      (hintF.map (ψ.restrictScalars F)).tower_top
-    exact TauCeti.isIntegrallyClosedIn_ratFunc.isIntegral_iff.mp hint
+      ∃ d : K, algebraMap K (RatFunc K) d = ψ (algebraMap K (RatFunc K) c) :=
+    TauCeti.isIntegrallyClosedIn_ratFunc.isIntegral_iff.mp <|
+      (((Algebra.IsIntegral.isIntegral (R := F) c).map
+        (IsScalarTower.toAlgHom F K (RatFunc K))).map (ψ.restrictScalars F)).tower_top
   let f (ψ : Gal(RatFunc K/RatFunc F)) (c : K) : K := (hmem ψ c).choose
   have hf (ψ : Gal(RatFunc K/RatFunc F)) (c : K) :
-      algebraMap K (RatFunc K) (f ψ c) = ψ (algebraMap K (RatFunc K) c) :=
-    (hmem ψ c).choose_spec
+      algebraMap K (RatFunc K) (f ψ c) = ψ (algebraMap K (RatFunc K) c) := (hmem ψ c).choose_spec
   intro ψ
   have hinj := (algebraMap K (RatFunc K)).injective
   let σ : Gal(K/F) :=
-    { toFun := f ψ
-      invFun := f ψ.symm
+    { toFun := f ψ, invFun := f ψ.symm
       left_inv := fun c ↦ hinj <| by rw [hf, hf, AlgEquiv.symm_apply_apply]
       right_inv := fun c ↦ hinj <| by rw [hf, hf, AlgEquiv.apply_symm_apply]
       map_mul' := fun a b ↦ hinj <| by rw [hf, map_mul, map_mul, map_mul, hf, hf]
@@ -288,39 +257,31 @@ theorem mapAlgEquivHom_surjective
       commutes' := fun r ↦ hinj <| by
         rw [hf, ← IsScalarTower.algebraMap_apply F K (RatFunc K),
           IsScalarTower.algebraMap_apply F (RatFunc F) (RatFunc K), AlgEquiv.commutes] }
-  refine ⟨σ, AlgEquiv.ext ?_⟩
+  refine ⟨σ, AlgEquiv.ext fun z ↦ ?_⟩
   have hpoly :
       (mapAlgEquivHom hX σ : RatFunc K →+* RatFunc K).comp (algebraMap K[X] (RatFunc K)) =
-        (ψ : RatFunc K →+* RatFunc K).comp (algebraMap K[X] (RatFunc K)) := by
-    refine Polynomial.ringHom_ext' ?_ ?_
-    · ext c
+        (ψ : RatFunc K →+* RatFunc K).comp (algebraMap K[X] (RatFunc K)) :=
+    Polynomial.ringHom_ext' (RingHom.ext fun c ↦ by
       simp only [RingHom.comp_apply, RingHom.coe_coe, algebraMap_C, ← algebraMap_eq_C,
         mapAlgEquivHom_apply, mapAlgEquiv_algebraMap_const]
-      exact hf ψ c
-    · simp only [RingHom.comp_apply, RingHom.coe_coe, algebraMap_X, mapAlgEquivHom_apply,
-        mapAlgEquiv_X]
-      rw [← hX, AlgEquiv.commutes]
-  have hhom : (mapAlgEquivHom hX σ : RatFunc K →+* RatFunc K) = (ψ : RatFunc K →+* RatFunc K) :=
-    IsFractionRing.ringHom_ext (A := K[X]) fun p ↦ congr($hpoly p)
-  exact fun z ↦ congr($hhom z)
+      exact hf ψ c) (by
+      simp only [RingHom.comp_apply, RingHom.coe_coe, algebraMap_X, mapAlgEquivHom_apply,
+        mapAlgEquiv_X]; rw [← hX, AlgEquiv.commutes])
+  exact RingHom.congr_fun (IsFractionRing.ringHom_ext (A := K[X])
+    (f1 := (mapAlgEquivHom hX σ : RatFunc K →+* RatFunc K))
+    (f2 := (ψ : RatFunc K →+* RatFunc K))
+    fun p ↦ by simpa only [RingHom.comp_apply] using RingHom.congr_fun hpoly p) z
 
-theorem mapAlgEquivHom_bijective
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
-    Function.Bijective (mapAlgEquivHom hX) :=
+theorem mapAlgEquivHom_bijective : Function.Bijective (mapAlgEquivHom hX) :=
   ⟨mapAlgEquivHom_injective hX, mapAlgEquivHom_surjective hX⟩
 
-private noncomputable def mapAlgEquivMulEquiv
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
-    Gal(K/F) ≃* Gal(RatFunc K/RatFunc F) :=
+private noncomputable def mapAlgEquivMulEquiv : Gal(K/F) ≃* Gal(RatFunc K/RatFunc F) :=
   MulEquiv.ofBijective (mapAlgEquivHom hX) (mapAlgEquivHom_bijective hX)
 
 /-- For algebraic `K / F`, the coefficient-map homomorphism `Gal(K/F) →* Gal(K(X)/F(X))` is
 continuous for the Krull topologies. -/
-theorem continuous_mapAlgEquivHom
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
-    Continuous (mapAlgEquivHom hX) := by
-  apply continuous_of_continuousAt_one _ (continuousAt_def.mpr _)
-  intro U hU
+theorem continuous_mapAlgEquivHom : Continuous (mapAlgEquivHom hX) := by
+  refine continuous_of_continuousAt_one _ (continuousAt_def.mpr fun U hU ↦ ?_)
   rw [map_one, krullTopology_mem_nhds_one_iff] at hU
   obtain ⟨E, _, hEU⟩ := hU
   rw [krullTopology_mem_nhds_one_iff]
@@ -331,24 +292,18 @@ theorem continuous_mapAlgEquivHom
   let E₀ := IntermediateField.adjoin F (S : Set K)
   refine ⟨E₀, inferInstance, fun σ hσ ↦ hEU ?_⟩
   rw [SetLike.mem_coe, IntermediateField.mem_fixingSubgroup_iff] at hσ ⊢
-  have hmap {p : K[X]} (hp : (p.coeffs : Set K) ⊆ E₀) :
-      p.map (σ.toRingEquiv : K →+* K) = p := by
+  have hmap {p : K[X]} (hp : (p.coeffs : Set K) ⊆ E₀) : p.map (σ.toRingEquiv : K →+* K) = p := by
     ext m
     rw [Polynomial.coeff_map]
-    by_cases hm : p.coeff m = 0
-    · rw [hm, map_zero]
-    · exact hσ _ (hp (Polynomial.coeff_mem_coeffs hm))
-  have hbi (i : Fin (Module.finrank (RatFunc F) E)) :
-      mapAlgEquivHom hX σ (b i : RatFunc K) = b i := by
-    have hnum : (b i : RatFunc K).num.map (σ.toRingEquiv : K →+* K) = (b i : RatFunc K).num :=
-      hmap fun c hc ↦ IntermediateField.subset_adjoin F (S : Set K) <|
-        Finset.mem_coe.mpr <| Finset.mem_biUnion.mpr
-          ⟨i, Finset.mem_univ _, Finset.mem_union_left _ hc⟩
-    have hden : (b i : RatFunc K).denom.map (σ.toRingEquiv : K →+* K) =
-        (b i : RatFunc K).denom :=
-      hmap fun c hc ↦ IntermediateField.subset_adjoin F (S : Set K) <|
-        Finset.mem_coe.mpr <| Finset.mem_biUnion.mpr
-          ⟨i, Finset.mem_univ _, Finset.mem_union_right _ hc⟩
+    exact (eq_or_ne (p.coeff m) 0).elim (fun hm ↦ by rw [hm, map_zero]) fun hm ↦
+      hσ _ (hp (Polynomial.coeff_mem_coeffs hm))
+  have hbi (i) : mapAlgEquivHom hX σ (b i : RatFunc K) = b i := by
+    have hsub {p : K[X]} (hp : p.coeffs ⊆ S) : (p.coeffs : Set K) ⊆ E₀ :=
+      fun _ hc ↦ IntermediateField.subset_adjoin F (S : Set K) (Finset.mem_coe.mpr (hp hc))
+    have hnum := hmap (p := (b i : RatFunc K).num) <| hsub fun _ hc ↦
+      Finset.mem_biUnion.mpr ⟨i, Finset.mem_univ _, Finset.mem_union_left _ hc⟩
+    have hden := hmap (p := (b i : RatFunc K).denom) <| hsub fun _ hc ↦
+      Finset.mem_biUnion.mpr ⟨i, Finset.mem_univ _, Finset.mem_union_right _ hc⟩
     conv_lhs => rw [← num_div_denom (b i : RatFunc K)]
     rw [mapAlgEquivHom_apply, coe_mapAlgEquiv, map_div₀, mapRingEquiv_algebraMap,
       mapRingEquiv_algebraMap, hnum, hden, num_div_denom]
@@ -358,27 +313,23 @@ theorem continuous_mapAlgEquivHom
   rw [hy', map_sum]
   exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, hbi]
 
-private theorem continuous_mapAlgEquivMulEquiv_symm
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
+private theorem continuous_mapAlgEquivMulEquiv_symm :
     Continuous (mapAlgEquivMulEquiv hX).symm := by
   have := isAlgebraic_of_isAlgebraic hX
-  apply continuous_of_continuousAt_one (mapAlgEquivMulEquiv hX).symm.toMonoidHom
-    (continuousAt_def.mpr _)
-  intro U hU
+  refine continuous_of_continuousAt_one (mapAlgEquivMulEquiv hX).symm.toMonoidHom
+    (continuousAt_def.mpr fun U hU ↦ ?_)
   rw [map_one, krullTopology_mem_nhds_one_iff] at hU
   obtain ⟨E₀, _, hE₀U⟩ := hU
   rw [krullTopology_mem_nhds_one_iff]
   let b₀ := Module.finBasis F E₀
-  let S : Set (RatFunc K) := Set.range fun i ↦ algebraMap K (RatFunc K) (b₀ i)
-  let E := IntermediateField.adjoin (RatFunc F) S
+  let E := IntermediateField.adjoin (RatFunc F) (Set.range fun i ↦ algebraMap K (RatFunc K) (b₀ i))
   refine ⟨E, inferInstance, fun ψ hψ ↦ hE₀U ?_⟩
   rw [MulEquiv.coe_toMonoidHom]
   rw [SetLike.mem_coe, IntermediateField.mem_fixingSubgroup_iff] at hψ ⊢
   set σ := (mapAlgEquivMulEquiv hX).symm ψ
-  have hσψ : mapAlgEquivHom hX σ = ψ := (mapAlgEquivMulEquiv hX).apply_symm_apply ψ
-  have hbi (i : Fin (Module.finrank F E₀)) : σ (b₀ i : K) = b₀ i := by
-    apply (algebraMap K (RatFunc K)).injective
-    rw [← mapAlgEquiv_algebraMap_const hX, ← mapAlgEquivHom_apply, hσψ]
+  have hψσ : mapAlgEquivHom hX σ = ψ := (mapAlgEquivMulEquiv hX).apply_symm_apply ψ
+  have hbi (i) : σ (b₀ i : K) = b₀ i := (algebraMap K (RatFunc K)).injective <| by
+    rw [← mapAlgEquiv_algebraMap_const hX, ← mapAlgEquivHom_apply, hψσ]
     exact hψ _ (IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩)
   intro c hc
   have hc' := congrArg Subtype.val (b₀.sum_repr ⟨c, hc⟩).symm
@@ -386,52 +337,43 @@ private theorem continuous_mapAlgEquivMulEquiv_symm
   rw [hc', map_sum]
   exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, hbi]
 
-/-- **Galois group of a rational function field over an algebraic extension of constants**: for any
-algebraic extension `K / F` and any `F`-algebra map `F(X) → K(X)` fixing `X`, coefficientwise
-action is an isomorphism of topological groups `Gal(K/F) ≃ₜ* Gal(K(X)/F(X))` for the Krull
-topologies. -/
-noncomputable def mapAlgEquivContinuousMulEquiv
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
-    Gal(K/F) ≃ₜ* Gal(RatFunc K/RatFunc F) where
+/-- **Galois group of a rational function field over an algebraic extension of constants**: for
+algebraic `K / F` and any `F`-algebra map `F(X) → K(X)` fixing `X`, coefficientwise action is a
+topological group isomorphism `Gal(K/F) ≃ₜ* Gal(K(X)/F(X))` for the Krull topologies. -/
+noncomputable def mapAlgEquivContinuousMulEquiv : Gal(K/F) ≃ₜ* Gal(RatFunc K/RatFunc F) where
   __ := mapAlgEquivMulEquiv hX
   continuous_toFun := continuous_mapAlgEquivHom hX
   continuous_invFun := continuous_mapAlgEquivMulEquiv_symm hX
 
 @[simp]
-theorem mapAlgEquivContinuousMulEquiv_apply
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) (σ : Gal(K/F)) :
-    mapAlgEquivContinuousMulEquiv hX σ = mapAlgEquiv hX σ :=
-  (rfl)
+theorem mapAlgEquivContinuousMulEquiv_apply (σ : Gal(K/F)) :
+    mapAlgEquivContinuousMulEquiv hX σ = mapAlgEquiv hX σ := (rfl)
 
 @[simp]
-theorem mapAlgEquivContinuousMulEquiv_symm_mapAlgEquiv
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) (σ : Gal(K/F)) :
+theorem mapAlgEquivContinuousMulEquiv_symm_mapAlgEquiv (σ : Gal(K/F)) :
     (mapAlgEquivContinuousMulEquiv hX).symm (mapAlgEquiv hX σ) = σ := by
   rw [← mapAlgEquivContinuousMulEquiv_apply hX σ, ContinuousMulEquiv.symm_apply_apply]
 
 @[simp]
-theorem mapAlgEquiv_mapAlgEquivContinuousMulEquiv_symm
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
-    (ψ : Gal(RatFunc K/RatFunc F)) :
+theorem mapAlgEquiv_mapAlgEquivContinuousMulEquiv_symm (ψ : Gal(RatFunc K/RatFunc F)) :
     mapAlgEquiv hX ((mapAlgEquivContinuousMulEquiv hX).symm ψ) = ψ :=
   (mapAlgEquivContinuousMulEquiv hX).apply_symm_apply ψ
 
 theorem algebraMap_const_mapAlgEquivContinuousMulEquiv_symm
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
     (ψ : Gal(RatFunc K/RatFunc F)) (c : K) :
     algebraMap K (RatFunc K) ((mapAlgEquivContinuousMulEquiv hX).symm ψ c) =
-      ψ (algebraMap K (RatFunc K) c) := by
-  have h := mapAlgEquiv_mapAlgEquivContinuousMulEquiv_symm hX ψ
-  exact (mapAlgEquiv_algebraMap_const hX _ c).symm.trans congr($(h) (algebraMap K (RatFunc K) c))
+      ψ (algebraMap K (RatFunc K) c) :=
+  (mapAlgEquiv_algebraMap_const hX _ c).symm.trans
+    congr($(mapAlgEquiv_mapAlgEquivContinuousMulEquiv_symm hX ψ) (algebraMap K (RatFunc K) c))
 
 @[simp]
-theorem C_mapAlgEquivContinuousMulEquiv_symm
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
-    (ψ : Gal(RatFunc K/RatFunc F)) (c : K) :
+theorem C_mapAlgEquivContinuousMulEquiv_symm (ψ : Gal(RatFunc K/RatFunc F)) (c : K) :
     RatFunc.C ((mapAlgEquivContinuousMulEquiv hX).symm ψ c) = ψ (RatFunc.C c) := by
   simpa only [algebraMap_eq_C] using algebraMap_const_mapAlgEquivContinuousMulEquiv_symm hX ψ c
 
 end IsAlgebraic
+
+end ConstantExtension
 
 end TauCeti.RatFunc
 

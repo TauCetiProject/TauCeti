@@ -401,38 +401,36 @@ theorem isUnramified_bot (P : Place k F) :
     P.IsUnramified (k' := k) (F' := (⊥ : IntermediateField F M)) :=
   (isUnramified_iff_of_algEquiv P (IntermediateField.botEquiv F M)).mpr (isUnramified_self P)
 
-/-- **Unramifiedness in a finite compositum** (Stichtenoth, Corollary 3.9.3): a place is
-unramified in the supremum of finitely many finite separable intermediate fields of `M / F`
-exactly when it is unramified in each of them. -/
+/-- **Unramifiedness in a finite compositum** (Stichtenoth, Corollary 3.9.3): a place is unramified
+in the supremum of finitely many finite separable intermediate fields of `M / F` iff it is
+unramified in each of them. -/
 @[simp]
 theorem isUnramified_iSup_iff {ι : Type*} [Finite ι]
     (hF : TauCeti.IsFunctionField k F) (P : Place k F) (t : ι → IntermediateField F M)
     [∀ i, FiniteDimensional F (t i)] [∀ i, Algebra.IsSeparable F (t i)] :
-    P.IsUnramified (k' := k) (F' := ↥(⨆ i, t i)) ↔
-      ∀ i, P.IsUnramified (k' := k) (F' := t i) := by
+    P.IsUnramified (k' := k) (F' := ↥(⨆ i, t i)) ↔ ∀ i, P.IsUnramified (k' := k) (F' := t i) := by
   cases nonempty_fintype ι
-  have key (s : Finset ι) :
-      ∃ (_ : FiniteDimensional F ↥(s.sup t)) (_ : Algebra.IsSeparable F ↥(s.sup t)),
-        (P.IsUnramified (k' := k) (F' := ↥(s.sup t)) ↔
-          ∀ i ∈ s, P.IsUnramified (k' := k) (F' := t i)) := by
+  have key (s : Finset ι) : ∃ (_ : FiniteDimensional F ↥(s.sup t)) (_ : Algebra.IsSeparable F
+      ↥(s.sup t)), (P.IsUnramified (k' := k) (F' := ↥(s.sup t)) ↔
+        ∀ i ∈ s, P.IsUnramified (k' := k) (F' := t i)) := by
     induction s using Finset.cons_induction with
     | empty =>
       rw [Finset.sup_empty]
       exact ⟨inferInstance, inferInstance,
         iff_of_true (isUnramified_bot P) fun _ h ↦ (Finset.notMem_empty _ h).elim⟩
-    | cons a s ha ih =>
+    | cons a s _ ih =>
       obtain ⟨_, _, ih⟩ := ih
       rw [Finset.sup_cons]
       exact ⟨inferInstance, inferInstance,
         by rw [isUnramified_sup_iff hF P, ih, Finset.forall_mem_cons]⟩
   obtain ⟨_, _, huniv⟩ := key Finset.univ
-  rw [← isUnramified_iff_of_algEquiv P
-    (IntermediateField.equivOfEq (Finset.sup_univ_eq_iSup t)), huniv]
-  exact ⟨fun h i ↦ h i (Finset.mem_univ i), fun h i _ ↦ h i⟩
+  rw [← isUnramified_iff_of_algEquiv P (IntermediateField.equivOfEq (Finset.sup_univ_eq_iSup t)),
+    huniv]
+  simp
 
 /-- **Unramifiedness in a Galois closure** (Stichtenoth, Corollary 3.9.3): a place is unramified
-in the normal closure inside `M` of a finite separable intermediate field `E` of `M / F` exactly
-when it is unramified in `E`. The ambient extension `M / F` need not be finite or Galois. -/
+in the normal closure inside `M` of a finite separable intermediate field `E` of `M / F` iff it is
+unramified in `E`. The ambient extension `M / F` need not be finite or Galois. -/
 @[simp]
 theorem isUnramified_normalClosure_iff
     (hF : TauCeti.IsFunctionField k F) (P : Place k F) (E : IntermediateField F M)
@@ -445,7 +443,7 @@ theorem isUnramified_normalClosure_iff
     AlgEquiv.Algebra.isSeparable f.equivFieldRange
   rw [isUnramified_iff_of_algEquiv P (IntermediateField.equivOfEq (normalClosure_def F E M)),
     isUnramified_iSup_iff hF P]
-  refine ⟨fun h ↦ (isUnramified_iff_of_algEquiv P E.val.equivFieldRange).mpr (h E.val),
+  exact ⟨fun h ↦ (isUnramified_iff_of_algEquiv P E.val.equivFieldRange).mpr (h E.val),
     fun h f ↦ (isUnramified_iff_of_algEquiv P f.equivFieldRange).mp h⟩
 
 end Place

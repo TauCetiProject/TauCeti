@@ -172,8 +172,7 @@ theorem AlgEquiv.continuous_autCongr {L' : Type*} [Field L'] [Algebra K L'] (e :
       fun σ hσ ↦ hEs ((e.autCongr_mem_fixingSubgroup_iff E).2 hσ)⟩
 
 /-- **An isomorphism of field extensions induces an isomorphism of topological Galois groups.**
-Conjugation by `e : L ≃ₐ[K] L'` upgrades `e.autCongr` to a topological group isomorphism
-`Gal(L/K) ≃ₜ* Gal(L'/K)` for the Krull topologies. -/
+Conjugation by `e : L ≃ₐ[K] L'` upgrades `e.autCongr` to `Gal(L/K) ≃ₜ* Gal(L'/K)`. -/
 def AlgEquiv.autContinuousCongr {L' : Type*} [Field L'] [Algebra K L'] (e : L ≃ₐ[K] L') :
     Gal(L/K) ≃ₜ* Gal(L'/K) where
   __ := e.autCongr
@@ -182,63 +181,54 @@ def AlgEquiv.autContinuousCongr {L' : Type*} [Field L'] [Algebra K L'] (e : L �
 
 @[simp]
 theorem AlgEquiv.autContinuousCongr_apply {L' : Type*} [Field L'] [Algebra K L']
-    (e : L ≃ₐ[K] L') (σ : Gal(L/K)) : e.autContinuousCongr σ = e.autCongr σ :=
-  (rfl)
+    (e : L ≃ₐ[K] L') (σ : Gal(L/K)) : e.autContinuousCongr σ = e.autCongr σ := (rfl)
 
 @[simp]
 theorem AlgEquiv.autContinuousCongr_refl :
-    (AlgEquiv.refl : L ≃ₐ[K] L).autContinuousCongr = ContinuousMulEquiv.refl _ := by
-  ext σ x
-  rfl
+    (AlgEquiv.refl : L ≃ₐ[K] L).autContinuousCongr = ContinuousMulEquiv.refl _ := by ext; rfl
 
 @[simp]
 theorem AlgEquiv.autContinuousCongr_symm {L' : Type*} [Field L'] [Algebra K L']
-    (e : L ≃ₐ[K] L') : e.autContinuousCongr.symm = e.symm.autContinuousCongr :=
-  (rfl)
+    (e : L ≃ₐ[K] L') : e.autContinuousCongr.symm = e.symm.autContinuousCongr := (rfl)
 
 @[simp]
 theorem AlgEquiv.autContinuousCongr_trans {L' L'' : Type*} [Field L'] [Field L'']
     [Algebra K L'] [Algebra K L''] (e₁ : L ≃ₐ[K] L') (e₂ : L' ≃ₐ[K] L'') :
     e₁.autContinuousCongr.trans e₂.autContinuousCongr = (e₁.trans e₂).autContinuousCongr := by
-  ext σ x
-  rfl
+  ext; rfl
 
 section RestrictScalars
 
-/-- **Restriction of scalars on Galois groups is continuous for the Krull topologies.**
-For any tower of fields `F → K → L`, the canonical injection
-`AlgEquiv.restrictScalarsHom F : Gal(L/K) →* Gal(L/F)` is continuous; neither algebraicity nor
-normality is needed. -/
-theorem AlgEquiv.continuous_restrictScalarsHom (F : Type*) [Field F] [Algebra F K] [Algebra F L]
-    [IsScalarTower F K L] :
+variable {F : Type*} [Field F] [Algebra F K] [Algebra F L] [IsScalarTower F K L]
+
+variable (F) in
+/-- **Restriction of scalars on Galois groups is continuous for the Krull topologies** for any
+tower of fields `F → K → L`; neither algebraicity nor normality is needed. -/
+theorem AlgEquiv.continuous_restrictScalarsHom :
     Continuous (AlgEquiv.restrictScalarsHom F : Gal(L/K) →* Gal(L/F)) := by
   refine continuous_of_continuousAt_one _ fun U hU ↦ ?_
   rw [map_one, krullTopology_mem_nhds_one_iff] at hU
   obtain ⟨E, _, hEU⟩ := hU
   let b := Module.finBasis F E
   let E' := IntermediateField.adjoin K (Set.range fun i ↦ (b i : L))
-  have : FiniteDimensional K E' := by
-    refine IntermediateField.finiteDimensional_adjoin ?_
-    rintro _ ⟨i, rfl⟩
-    exact ((Algebra.IsIntegral.isIntegral (R := F) (b i)).map E.val).tower_top
+  have : FiniteDimensional K E' := IntermediateField.finiteDimensional_adjoin fun _ ⟨i, hi⟩ ↦
+    hi ▸ ((Algebra.IsIntegral.isIntegral (R := F) (b i)).map E.val).tower_top
   refine Filter.mem_map.2 <| (krullTopology_mem_nhds_one_iff K L _).2
-    ⟨E', inferInstance, fun τ hτ ↦ hEU <| (IntermediateField.mem_fixingSubgroup_iff E _).2 ?_⟩
-  intro x hx
+    ⟨E', inferInstance, fun τ hτ ↦ hEU <| (IntermediateField.mem_fixingSubgroup_iff E _).2
+      fun x hx ↦ ?_⟩
   have hx' : x = ∑ i, b.repr ⟨x, hx⟩ i • (b i : L) := by
     simpa only [map_sum, map_smul, IntermediateField.coe_val] using
       congrArg E.val (b.sum_repr ⟨x, hx⟩).symm
   rw [AlgEquiv.restrictScalarsHom_apply, AlgEquiv.restrictScalars_apply, hx', map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [← AlgEquiv.restrictScalars_apply F, map_smul, AlgEquiv.restrictScalars_apply,
-    (IntermediateField.mem_fixingSubgroup_iff E' τ).mp hτ _
-      (IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩)]
+  exact Finset.sum_congr rfl fun i _ ↦ by
+    rw [← AlgEquiv.restrictScalars_apply F, map_smul, AlgEquiv.restrictScalars_apply,
+      (IntermediateField.mem_fixingSubgroup_iff E' τ).mp hτ _
+        (IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩)]
 
-/-- **The image of restriction of scalars is closed in the Krull topology** when the base field
-extension `K/F` is algebraic: an automorphism of `L/F` comes from `Gal(L/K)` precisely when it
-fixes each element of `K` in `L`, and each point stabilizer is clopen by
-`IsIntegral.isLocallyConstant_apply`. Neither algebraicity nor normality of `L/K` is needed. -/
-theorem AlgEquiv.isClosed_range_restrictScalarsHom (F : Type*) [Field F] [Algebra F K]
-    [Algebra F L] [IsScalarTower F K L] [Algebra.IsAlgebraic F K] :
+variable (F) in
+/-- **The image of restriction of scalars is closed in the Krull topology** when `K/F` is algebraic
+(neither algebraicity nor normality of `L/K` is needed). -/
+theorem AlgEquiv.isClosed_range_restrictScalarsHom [Algebra.IsAlgebraic F K] :
     IsClosed ((AlgEquiv.restrictScalarsHom F : Gal(L/K) →* Gal(L/F)).range : Set Gal(L/F)) := by
   have hrange : ((AlgEquiv.restrictScalarsHom F : Gal(L/K) →* Gal(L/F)).range : Set Gal(L/F)) =
       ⋂ c : K, {σ : Gal(L/F) | σ (algebraMap K L c) = algebraMap K L c} := by
@@ -250,87 +240,73 @@ theorem AlgEquiv.isClosed_range_restrictScalarsHom (F : Type*) [Field F] [Algebr
   exact isClosed_iInter fun c ↦
     ((Algebra.IsIntegral.isIntegral (R := F) c).algebraMap).isLocallyConstant_apply.isClosed_fiber _
 
-private noncomputable def restrictScalarsHomRangeMulEquiv (F K L : Type*) [Field F] [Field K]
-    [Field L] [Algebra F K] [Algebra K L] [Algebra F L] [IsScalarTower F K L] :
+private noncomputable def restrictScalarsHomRangeMulEquiv :
     Gal(L/K) ≃* (AlgEquiv.restrictScalarsHom F : Gal(L/K) →* Gal(L/F)).range :=
   MonoidHom.ofInjective (AlgEquiv.restrictScalarsHom_injective F)
 
-private theorem restrictScalarsHomRangeMulEquiv_symm_apply_apply {F K L : Type*} [Field F]
-    [Field K] [Field L] [Algebra F K] [Algebra K L] [Algebra F L] [IsScalarTower F K L]
+private theorem restrictScalarsHomRangeMulEquiv_symm_apply_apply
     (σ : (AlgEquiv.restrictScalarsHom F : Gal(L/K) →* Gal(L/F)).range) (x : L) :
-    (restrictScalarsHomRangeMulEquiv F K L).symm σ x = (σ : Gal(L/F)) x := by
-  have h := congrArg (fun u : (AlgEquiv.restrictScalarsHom F : Gal(L/K) →* Gal(L/F)).range ↦
-      (u : Gal(L/F)) x)
-    ((restrictScalarsHomRangeMulEquiv F K L).apply_symm_apply σ)
-  exact h
+    (restrictScalarsHomRangeMulEquiv (F := F) (K := K) (L := L)).symm σ x = (σ : Gal(L/F)) x :=
+  congrArg (fun u : (AlgEquiv.restrictScalarsHom F : Gal(L/K) →* Gal(L/F)).range ↦ (u : Gal(L/F)) x)
+    ((restrictScalarsHomRangeMulEquiv (F := F) (K := K) (L := L)).apply_symm_apply σ)
 
-private theorem continuous_restrictScalarsHomRangeMulEquiv_symm (F K L : Type*) [Field F]
-    [Field K] [Field L] [Algebra F K] [Algebra K L] [Algebra F L] [IsScalarTower F K L]
-    [Algebra.IsAlgebraic F K] :
-    Continuous (restrictScalarsHomRangeMulEquiv F K L).symm := by
-  refine continuous_of_continuousAt_one (restrictScalarsHomRangeMulEquiv F K L).symm.toMonoidHom
+variable [Algebra.IsAlgebraic F K]
+
+private theorem continuous_restrictScalarsHomRangeMulEquiv_symm :
+    Continuous (restrictScalarsHomRangeMulEquiv (F := F) (K := K) (L := L)).symm := by
+  refine continuous_of_continuousAt_one
+    (restrictScalarsHomRangeMulEquiv (F := F) (K := K) (L := L)).symm.toMonoidHom
     fun U hU ↦ ?_
   rw [map_one, krullTopology_mem_nhds_one_iff] at hU
   obtain ⟨E, _, hEU⟩ := hU
   let b := Module.finBasis K E
   let E₀ := IntermediateField.adjoin F (Set.range fun i ↦ (b i : L))
-  have : FiniteDimensional F E₀ := by
-    refine IntermediateField.finiteDimensional_adjoin ?_
-    rintro _ ⟨i, rfl⟩
-    exact isIntegral_trans (A := K) _ ((Algebra.IsIntegral.isIntegral (R := K) (b i)).map E.val)
-  have hnhds : (Subtype.val ⁻¹' (E₀.fixingSubgroup : Set Gal(L/F))) ∈
-      nhds (1 : (AlgEquiv.restrictScalarsHom F : Gal(L/K) →* Gal(L/F)).range) :=
-    continuous_subtype_val.continuousAt (E₀.fixingSubgroup_isOpen.mem_nhds (one_mem _))
-  refine Filter.mem_map.2 (Filter.mem_of_superset hnhds fun σ hσ ↦ hEU ?_)
+  have : FiniteDimensional F E₀ := IntermediateField.finiteDimensional_adjoin fun _ ⟨i, hi⟩ ↦
+    hi ▸ isIntegral_trans (A := K) _ ((Algebra.IsIntegral.isIntegral (R := K) (b i)).map E.val)
+  refine Filter.mem_map.2 <| Filter.mem_of_superset
+    (continuous_subtype_val.continuousAt (E₀.fixingSubgroup_isOpen.mem_nhds (one_mem _)))
+    fun σ hσ ↦ hEU ?_
   rw [MulEquiv.coe_toMonoidHom, SetLike.mem_coe, IntermediateField.mem_fixingSubgroup_iff]
   intro x hx
   have hx' : x = ∑ i, b.repr ⟨x, hx⟩ i • (b i : L) := by
     simpa only [map_sum, map_smul, IntermediateField.coe_val] using
       congrArg E.val (b.sum_repr ⟨x, hx⟩).symm
   rw [hx', map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [map_smul, restrictScalarsHomRangeMulEquiv_symm_apply_apply,
-    (IntermediateField.mem_fixingSubgroup_iff E₀ _).mp hσ _
-      (IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩)]
+  exact Finset.sum_congr rfl fun i _ ↦ by
+    rw [map_smul, restrictScalarsHomRangeMulEquiv_symm_apply_apply,
+      (IntermediateField.mem_fixingSubgroup_iff E₀ _).mp hσ _
+        (IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩)]
 
 /-- **Restriction of scalars embeds `Gal(L/K)` as a topological subgroup of `Gal(L/F)`** when `K/F`
-is algebraic: `AlgEquiv.restrictScalarsHom F` induces a topological group isomorphism
-`Gal(L/K) ≃ₜ* (AlgEquiv.restrictScalarsHom F).range` for the Krull topologies, with no normality or
-algebraicity assumption on `L/K`. -/
+is algebraic, with no normality or algebraicity assumption on `L/K`. -/
 noncomputable def AlgEquiv.restrictScalarsHomRangeEquiv (F K L : Type*) [Field F] [Field K]
     [Field L] [Algebra F K] [Algebra K L] [Algebra F L] [IsScalarTower F K L]
     [Algebra.IsAlgebraic F K] :
     Gal(L/K) ≃ₜ* (AlgEquiv.restrictScalarsHom F : Gal(L/K) →* Gal(L/F)).range where
-  __ := restrictScalarsHomRangeMulEquiv F K L
+  __ := restrictScalarsHomRangeMulEquiv (F := F) (K := K) (L := L)
   continuous_toFun := (AlgEquiv.continuous_restrictScalarsHom F).subtype_mk _
-  continuous_invFun := continuous_restrictScalarsHomRangeMulEquiv_symm F K L
+  continuous_invFun := continuous_restrictScalarsHomRangeMulEquiv_symm (F := F) (K := K) (L := L)
 
 @[simp]
-theorem AlgEquiv.coe_restrictScalarsHomRangeEquiv_apply {F : Type*} [Field F] [Algebra F K]
-    [Algebra F L] [IsScalarTower F K L] [Algebra.IsAlgebraic F K] (τ : Gal(L/K)) :
-    (AlgEquiv.restrictScalarsHomRangeEquiv F K L τ : Gal(L/F)) = τ.restrictScalars F :=
-  (rfl)
+theorem AlgEquiv.coe_restrictScalarsHomRangeEquiv_apply (τ : Gal(L/K)) :
+    (AlgEquiv.restrictScalarsHomRangeEquiv F K L τ : Gal(L/F)) = τ.restrictScalars F := (rfl)
 
 @[simp]
-theorem AlgEquiv.restrictScalarsHomRangeEquiv_symm_restrictScalars {F : Type*} [Field F]
-    [Algebra F K] [Algebra F L] [IsScalarTower F K L] [Algebra.IsAlgebraic F K] (τ : Gal(L/K))
+theorem AlgEquiv.restrictScalarsHomRangeEquiv_symm_restrictScalars (τ : Gal(L/K))
     (hτ : τ.restrictScalars F ∈ (AlgEquiv.restrictScalarsHom F : Gal(L/K) →* Gal(L/F)).range) :
     (AlgEquiv.restrictScalarsHomRangeEquiv F K L).symm ⟨τ.restrictScalars F, hτ⟩ = τ := by
   apply (AlgEquiv.restrictScalarsHomRangeEquiv F K L).injective
-  ext x
-  simp
+  ext x; simp
 
 @[simp]
-theorem AlgEquiv.restrictScalars_restrictScalarsHomRangeEquiv_symm {F : Type*} [Field F]
-    [Algebra F K] [Algebra F L] [IsScalarTower F K L] [Algebra.IsAlgebraic F K]
+theorem AlgEquiv.restrictScalars_restrictScalarsHomRangeEquiv_symm
     (σ : (AlgEquiv.restrictScalarsHom F : Gal(L/K) →* Gal(L/F)).range) :
     ((AlgEquiv.restrictScalarsHomRangeEquiv F K L).symm σ).restrictScalars F = (σ : Gal(L/F)) := by
   rw [← AlgEquiv.coe_restrictScalarsHomRangeEquiv_apply (F := F) (K := K) (L := L),
     ContinuousMulEquiv.apply_symm_apply]
 
 @[simp]
-theorem AlgEquiv.restrictScalarsHomRangeEquiv_symm_apply_apply {F : Type*} [Field F] [Algebra F K]
-    [Algebra F L] [IsScalarTower F K L] [Algebra.IsAlgebraic F K]
+theorem AlgEquiv.restrictScalarsHomRangeEquiv_symm_apply_apply
     (σ : (AlgEquiv.restrictScalarsHom F : Gal(L/K) →* Gal(L/F)).range) (x : L) :
     (AlgEquiv.restrictScalarsHomRangeEquiv F K L).symm σ x = (σ : Gal(L/F)) x := by
   rw [← AlgEquiv.restrictScalars_apply F,

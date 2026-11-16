@@ -144,25 +144,20 @@ section IsAlgClosed
 variable {M : Type*} [Field M] [Algebra k M] [Algebra (RatFunc k) M]
   [IsScalarTower k (RatFunc k) M] [IsAlgClosed k]
 
-/-- Over an algebraically closed field `k`, adjoining any `n`-th root `y` (`n ≠ 0`) of a rational
-function `u ∈ k(t)` whose order at every unmarked place is divisible by `n` produces a finite
-algebraic Belyi pair. -/
+/-- Over algebraically closed `k`, adjoining an `n`-th root (`n ≠ 0`) of `u ∈ k(t)` with
+`n ∣ P.ord u` at every unmarked place `P` yields a finite algebraic Belyi pair. -/
 theorem isAlgebraicBelyiPair_adjoin_of_pow_eq {y : M} {n : ℕ} {u : RatFunc k} (hn : n ≠ 0)
     (hy : y ^ n = algebraMap (RatFunc k) M u)
     (hdvd : ∀ P ∉ Place.zeroOneInfty k, (n : ℤ) ∣ P.ord u) :
     ∃ _ : FiniteDimensional (RatFunc k) ↥(RatFunc k)⟮y⟯,
       IsAlgebraicBelyiPair k ↥(RatFunc k)⟮y⟯ := by
-  have hy_int : IsIntegral (RatFunc k) y :=
-    ⟨X ^ n - C u, monic_X_pow_sub_C u hn, by simp [hy]⟩
   have hfin : FiniteDimensional (RatFunc k) ↥(RatFunc k)⟮y⟯ :=
-    IntermediateField.adjoin.finiteDimensional hy_int
+    IntermediateField.adjoin.finiteDimensional ⟨X ^ n - C u, monic_X_pow_sub_C u hn, by simp [hy]⟩
   exact ⟨hfin, IsAlgebraicBelyiPair.of_pow_eq isIntegrallyClosedIn_of_isAlgClosed
     (IntermediateField.adjoin_adjoinSimple_gen_eq_top (F := RatFunc k) y) (Subtype.ext hy) hn hdvd⟩
 
-/-- Over an algebraically closed field `k`, adjoining any `n`-th root `y` (`n ≠ 0`) of a rational
-function `c t ^ a (t - 1) ^ b` (`c ≠ 0`) produces a finite algebraic Belyi pair. Unlike
-`TauCeti.IsAlgebraicBelyiPair.of_pow_eq_X_zpow_mul_X_sub_one_zpow` over a general base field, no
-coprimality hypothesis on `(n, a, b)` is needed because `k` cannot gain algebraic constants. -/
+/-- Over algebraically closed `k`, adjoining an `n`-th root (`n ≠ 0`) of `c t ^ a (t - 1) ^ b`
+(`c ≠ 0`) yields a finite algebraic Belyi pair with no coprimality hypothesis on `(n, a, b)`. -/
 theorem isAlgebraicBelyiPair_adjoin_of_pow_eq_X_zpow_mul_X_sub_one_zpow
     {y : M} {n : ℕ} {c : k} (hn : n ≠ 0) (hc : c ≠ 0) (a b : ℤ)
     (hy : y ^ n = algebraMap (RatFunc k) M
