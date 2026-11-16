@@ -144,6 +144,14 @@ theorem isBipartite_staircase (c t : ℕ) : (staircase c t).IsBipartite := by
   intro u v huv
   rcases u with i | u <;> rcases v with j | v <;> simp_all
 
+/-- `staircase c t` is bipartite with the rows `Sum.inl i` on one side and the columns
+`Sum.inr (Sum.inl j)` on the other; the vertices of the `Fin c` summand lie on neither side. -/
+theorem isBipartiteWith_staircase (c t : ℕ) :
+    (staircase c t).IsBipartiteWith (Set.range Sum.inl) (Set.range fun j ↦ .inr (.inl j)) where
+  disjoint := Set.disjoint_left.mpr <| by rintro _ ⟨i, rfl⟩ ⟨j, hj⟩; cases hj
+  mem_of_adj u v h := by
+    rcases u with i | (j | k) <;> rcases v with i' | (j' | k') <;> simp_all
+
 /-- `staircase c t` contains no `3`-cliques. -/
 theorem cliqueFree_staircase (c t : ℕ) : (staircase c t).CliqueFree 3 :=
   (isBipartite_staircase c t).cliqueFree (by decide)

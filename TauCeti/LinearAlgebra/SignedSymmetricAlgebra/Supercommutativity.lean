@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Grading
+public import TauCeti.RingTheory.GradedAlgebra.Coarsen
 import Mathlib.GroupTheory.GroupAction.Ring
 import TauCeti.Algebra.CharP.Invertible
 
@@ -13,9 +14,11 @@ import TauCeti.Algebra.CharP.Invertible
 # Supercommutativity of the signed symmetric algebra
 
 Homogeneous elements of `TauCeti.SignedSym G`, not just its generators, obey the Koszul
-commutation rule. In particular every odd homogeneous element has square zero when 2 is
-invertible in the coefficient ring. These identities allow the signed symmetric algebra to
-serve as a receiving supercommutative algebra in universal properties and tensor comparisons.
+commutation rule. Passing to `TauCeti.parityGrading` extends these identities to elements of pure
+parity across multiple integer degrees: even-parity elements lie in the center of `SignedSym G`
+over any commutative ring, and every element of odd parity has square zero when `2` is invertible
+in the coefficient ring. These identities allow the signed symmetric algebra to serve as a receiving
+supercommutative algebra in universal properties and tensor comparisons.
 
 The proof uses `TauCeti.SignedSym.homogeneous_induction` from the grading API.
 The construction follows the supercommutative algebra of J. Pardon,
@@ -97,5 +100,47 @@ theorem sq_eq_neg {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiece G p) (h
 theorem sq_eq_zero [Invertible (2 : R)] {p : ℤ} {a : SignedSym G}
     (ha : a ∈ signedSymPiece G p) (hp : Odd p) : a ^ 2 = 0 :=
   eq_zero_of_eq_neg_of_invertible_two (R := R) (sq_eq_neg G ha hp)
+
+/-- Elements of pure parity supercommute with the sign determined by their parities, even when
+they combine multiple integer degrees. -/
+theorem mul_eq_uzpow_smul_mul_of_mem_parityGrading {i j : ZMod 2} {a b : SignedSym G}
+    (ha : a ∈ parityGrading (signedSymPiece G) i) (hb : b ∈ parityGrading (signedSymPiece G) j) :
+    a * b = ((-1 : ℤˣ) ^ (i * j)) • (b * a) :=
+  TauCeti.mul_eq_uzpow_smul_mul_of_mem_parityGrading
+    (fun ha hb => by rw [Units.smul_def]; exact mul_eq_negOnePow_smul_mul G ha hb) ha hb
+
+/-- Every element of even parity commutes with all of `SignedSym G`. -/
+theorem commute_of_mem_parityGrading_zero {a : SignedSym G}
+    (ha : a ∈ parityGrading (signedSymPiece G) 0) (b : SignedSym G) : Commute a b :=
+  TauCeti.commute_of_mul_eq_uzpow_smul_mul_of_mem_zero
+    (mul_eq_uzpow_smul_mul_of_mem_parityGrading G) ha b
+
+/-- Every element of even parity lies in the center of `SignedSym G`. -/
+theorem mem_center_of_mem_parityGrading_zero {a : SignedSym G}
+    (ha : a ∈ parityGrading (signedSymPiece G) 0) : a ∈ Subalgebra.center R (SignedSym G) :=
+  Subalgebra.mem_center_iff.mpr fun b => (commute_of_mem_parityGrading_zero G ha b).symm
+
+/-- Every element of odd parity squares to its own negative, over any commutative ring. -/
+theorem sq_eq_neg_of_mem_parityGrading_one {a : SignedSym G}
+    (ha : a ∈ parityGrading (signedSymPiece G) 1) : a ^ 2 = -(a ^ 2) := by
+  rw [pow_two]
+  exact TauCeti.mul_self_eq_neg_of_mul_eq_uzpow_smul_mul_of_mem_one
+    (mul_eq_uzpow_smul_mul_of_mem_parityGrading G) ha
+
+/-- Every element of odd parity has square zero when `2` is invertible in the coefficient ring,
+even if it sums terms of distinct odd integer degrees. -/
+theorem sq_eq_zero_of_mem_parityGrading_one [Invertible (2 : R)] {a : SignedSym G}
+    (ha : a ∈ parityGrading (signedSymPiece G) 1) : a ^ 2 = 0 :=
+  eq_zero_of_eq_neg_of_invertible_two (R := R) (sq_eq_neg_of_mem_parityGrading_one G ha)
+
+/-- Generators of even parity are central in `SignedSym G`. -/
+theorem generator_mem_center_of_mem_parityGrading_zero {x : V}
+    (hx : x ∈ parityGrading G.piece 0) : generator G x ∈ Subalgebra.center R (SignedSym G) :=
+  mem_center_of_mem_parityGrading_zero G (generator_mem_parityGrading G hx)
+
+/-- Generators of odd parity square to zero when `2` is invertible. -/
+theorem generator_sq_eq_zero_of_mem_parityGrading_one [Invertible (2 : R)] {x : V}
+    (hx : x ∈ parityGrading G.piece 1) : generator G x ^ 2 = 0 :=
+  sq_eq_zero_of_mem_parityGrading_one G (generator_mem_parityGrading G hx)
 
 end TauCeti.SignedSym

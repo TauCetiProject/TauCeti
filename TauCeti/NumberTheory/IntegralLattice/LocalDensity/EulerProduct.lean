@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.DirichletCharacter.EulerProduct
 public import TauCeti.NumberTheory.IntegralLattice.LocalDensity.Basic
 public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 
 /-!
 # The product of the local densities over the good primes

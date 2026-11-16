@@ -140,8 +140,7 @@ private theorem genLoopLoopHomeomorph_map_tangentCircleDoubleLoop (hu : ‖u‖ 
   have he₁ : e (0 : Fin (k + 2)).succ = (Fin.last _).castSucc := by
     simp [e, Fin.ext_iff, Fin.coe_sub_one]
   have he₂ (j : Fin (k + 1)) : e j.succ.succ = j.castSucc.castSucc := by
-    simp [e, Equiv.swap_apply_of_ne_of_ne, Fin.succ_succ_ne_one, sub_eq_iff_eq_add]
-    grind [Fin.succ_castSucc, Fin.coeSucc_eq_succ]
+    simp [e, Equiv.swap_apply_of_ne_of_ne, Fin.succ_succ_ne_one]
   refine GenLoop.ext _ _ fun w => ?_
   rw [GenLoop.genLoopLoopHomeomorph_apply, GenLoop.genLoopLoopHomeomorph_apply,
     GenLoop.map_apply, tangentCircleDoubleLoop_apply, GenLoop.congr_apply,
