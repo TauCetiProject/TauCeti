@@ -167,10 +167,10 @@ theorem detLineChartEquiv_eq_detLineEquivOfBijective_smul
     simp only [detLineChartEquiv_symm_tmul, detLineStabilizationEquiv_apply, hsign, one_smul,
       detLineCoprodEquiv_def, LinearEquiv.detLineCongr_ιMulti]
     rw [TauCeti.detLineFourTermEquiv_ιMulti_tmul_of_finrank_eq_zero _ _ _ _ hker hB hΛ hcoker 0,
-      LinearMap.detLineEquivOfBijective_symm_one hT 0 _ 0
-        (TauCeti.detLineEquivOfFinrankEqZero_ιMulti hcoker _)]
-  rw [← LinearEquiv.eq_symm_apply, LinearEquiv.map_smul, hone, ← LinearEquiv.map_smul,
-    smul_eq_mul, mul_one, LinearEquiv.symm_apply_apply]
+      LinearMap.detLineEquivOfBijective_symm_one_eq_ιMulti_tmul]
+  rw [← LinearEquiv.eq_symm_apply, map_smul, hone]
+  apply (LinearMap.detLineEquivOfBijective hT).injective
+  simp
 
 end Subsingleton
 

@@ -147,9 +147,7 @@ theorem isComplexPositiveDetLine_detLineEquivOfBijective_symm_one
   have : Subsingleton (ker f) := Submodule.subsingleton_iff_eq_bot.2 (ker_eq_bot.2 hf'.1)
   have : Subsingleton (N ⧸ range f) :=
     Submodule.Quotient.subsingleton_iff.2 (range_eq_top.2 hf'.2)
-  have hcoker := finrank_quotient_range_eq_zero_of_surjective hf.2
-  rw [detLineEquivOfBijective_symm_one hf 0 (TauCeti.detLineEquivOfFinrankEqZero hcoker).toLinearMap
-    0 (TauCeti.detLineEquivOfFinrankEqZero_ιMulti hcoker _), isComplexPositiveDetLine_iff,
+  rw [detLineEquivOfBijective_symm_one_eq_ιMulti_tmul, isComplexPositiveDetLine_iff,
     detLineRestrictScalarsEquiv_tmul, LinearEquiv.detLineCongr_ιMulti]
   refine (isComplexPositive_ιMulti_of_subsingleton _).isComplexPositiveTMulDual_tmul
     ((isComplexPositive_ιMulti_of_subsingleton 0).isComplexPositiveDual_of_apply_eq_one ?_)
