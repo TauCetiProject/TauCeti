@@ -33,6 +33,9 @@ vectors indexed by `ι`.
   linear equivalence are the coordinates of the vector transported back.
 * `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
   the ambient module, are linearly independent.
+* `Module.Basis.span_range_coe`: the vectors of a basis of a submodule `U`, viewed in the ambient
+  module, span `U`.
+* `Module.Basis.ofSpanEq`: a linearly independent family spanning a submodule `U` is a basis of `U`.
 * `Module.Basis.eq_sum_repr_smul_of_mem`: an ambient vector in a submodule `U` expands as the
   coordinate sum of any finite basis of `U`.
 * `Module.Basis.repr_eq_zero_of_mem_of_notMem`: a vector of a submodule spanned by basis vectors has
@@ -132,6 +135,23 @@ independent. -/
 theorem linearIndependent_coe_basis (b : Module.Basis n R U) :
     LinearIndependent R fun i ↦ (b i : M) :=
   b.linearIndependent.map_injOn U.subtype U.injective_subtype.injOn
+
+/-- The vectors of a basis of a submodule `U`, viewed in the ambient module, span `U`. -/
+theorem span_range_coe (b : Module.Basis n R U) :
+    Submodule.span R (Set.range fun i ↦ (b i : M)) = U := by
+  have h := congrArg (Submodule.map U.subtype) b.span_eq
+  rwa [Submodule.map_span, Submodule.map_subtype_top, ← Set.range_comp] at h
+
+/-- A linearly independent family `v` spanning a submodule `U` is a basis of `U`. -/
+noncomputable def ofSpanEq {v : n → M} (hv : LinearIndependent R v)
+    (h : Submodule.span R (Set.range v) = U) : Module.Basis n R U :=
+  (Basis.span hv).map (LinearEquiv.ofEq _ _ h)
+
+/-- The vectors of `Module.Basis.ofSpanEq hv h`, viewed in the ambient module, are those of `v`. -/
+@[simp]
+theorem coe_ofSpanEq {v : n → M} (hv : LinearIndependent R v)
+    (h : Submodule.span R (Set.range v) = U) (i : n) : (ofSpanEq hv h i : M) = v i := by
+  simp [ofSpanEq, Basis.span_apply]
 
 /-- An ambient vector belonging to a submodule `U` expands in any finite basis of `U`. -/
 theorem eq_sum_repr_smul_of_mem [Fintype n] (b : Module.Basis n R U) {x : M} (hx : x ∈ U) :

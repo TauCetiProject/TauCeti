@@ -22,6 +22,9 @@ families that single out the first basis vector `b 0`.
   determinant of `v` by the sign `(-1) ^ p` of moving it to the front
   (`Module.Basis.det_insertNth_comp`). This is the determinant of a block diagonal family, in a
   basis split as the line through `b 0` and the image of `b'`, without assuming `f` injective.
+  The same holds for families split into two blocks by `Fin.append`, with the multiple of `b 0`
+  at the front of the first block (`Module.Basis.det_append_cons_smul_comp`) or `b 0` at the
+  front of the second, after `q` vectors (`Module.Basis.det_append_cons_comp`).
 * Adding multiples `t l • x` of a first vector `x` to the remaining basis vectors `b l.succ` does
   not change the determinant, which is then the coordinate of `x` along `b 0`
   (`Module.Basis.det_cons_add_smul`). This is the determinant of a unitriangular change of basis
@@ -72,6 +75,60 @@ theorem det_insertNth_comp (hb : ∀ l, b l.succ = f (b' l)) (p : Fin (m + 1)) (
   rw [AlternatingMap.map_insertNth, Matrix.vecCons, ← one_smul R (b 0),
     det_cons_smul_comp b b' hb, one_mul]
   simp
+
+/-- The block form of `Module.Basis.det_cons_smul_comp`: if the basis vectors `b l.succ` are the
+images `f (b' l)` of a basis `b'`, the determinant in `b` of the family `a • b 0, f (u 0), …`
+followed by the family `f (v 0), …` is `a` times the determinant of `u` followed by `v` in `b'`. -/
+theorem det_append_cons_smul_comp (hb : ∀ l, b l.succ = f (b' l)) (a : R) {p q : ℕ}
+    (u : Fin p → N) (v : Fin q → N) (h : m + 1 = p + 1 + q) (h' : m = p + q) :
+    b.det (Fin.append (Fin.cons (a • b 0) fun l ↦ f (u l)) (fun l ↦ f (v l)) ∘ Fin.cast h) =
+      a * b'.det (Fin.append u v ∘ Fin.cast h') := by
+  have key : Fin.append (Fin.cons (a • b 0) fun l ↦ f (u l)) (fun l ↦ f (v l)) ∘ Fin.cast h =
+      Fin.cons (a • b 0) (f ∘ (Fin.append u v ∘ Fin.cast h')) := by
+    funext k
+    induction k using Fin.cases with
+    | zero =>
+      have : Fin.cast h 0 = Fin.castAdd q 0 := Fin.ext rfl
+      simp only [Function.comp_apply, this, Fin.append_left, Fin.cons_zero]
+    | succ k =>
+      by_cases hk : (k : ℕ) < p
+      · have h₁ : Fin.cast h k.succ = Fin.castAdd q (Fin.succ ⟨k, hk⟩) := Fin.ext rfl
+        have h₂ : Fin.cast h' k = Fin.castAdd q ⟨k, hk⟩ := Fin.ext rfl
+        simp only [Function.comp_apply, h₁, h₂, Fin.append_left, Fin.cons_succ]
+      · have h₁ : Fin.cast h k.succ = Fin.natAdd (p + 1) ⟨k - p, by omega⟩ :=
+          Fin.ext (by simp; omega)
+        have h₂ : Fin.cast h' k = Fin.natAdd p ⟨k - p, by omega⟩ := Fin.ext (by simp; omega)
+        simp only [Function.comp_apply, h₁, h₂, Fin.append_right, Fin.cons_succ]
+  rw [key, b.det_cons_smul_comp b' hb]
+
+/-- The block form of `Module.Basis.det_insertNth_comp`: if the basis vectors `b l.succ` are the
+images `f (b' l)` of a basis `b'`, the determinant in `b` of the family `f (u 0), …, f (u (q - 1))`
+followed by the family `b 0, f (v 0), …` is `(-1) ^ q` times the determinant of `u` followed by `v`
+in `b'`, the sign of moving `b 0` to the front. -/
+theorem det_append_cons_comp (hb : ∀ l, b l.succ = f (b' l)) {p q : ℕ} (u : Fin q → N)
+    (v : Fin p → N) (h : m + 1 = q + (p + 1)) (h' : m = q + p) :
+    b.det (Fin.append (fun l ↦ f (u l)) (Fin.cons (b 0) fun l ↦ f (v l)) ∘ Fin.cast h) =
+      (-1) ^ q * b'.det (Fin.append u v ∘ Fin.cast h') := by
+  have key : Fin.append (fun l ↦ f (u l)) (Fin.cons (b 0) fun l ↦ f (v l)) ∘ Fin.cast h =
+      (⟨q, by omega⟩ : Fin (m + 1)).insertNth (b 0) (f ∘ (Fin.append u v ∘ Fin.cast h')) := by
+    funext k
+    induction k using Fin.succAboveCases (⟨q, by omega⟩ : Fin (m + 1)) with
+    | x =>
+      have : Fin.cast h ⟨q, by omega⟩ = Fin.natAdd q 0 := Fin.ext (by simp)
+      simp [this]
+    | p i =>
+      rw [Fin.insertNth_apply_succAbove]
+      by_cases hi : (i : ℕ) < q
+      · have h₁ : Fin.cast h ((⟨q, by omega⟩ : Fin (m + 1)).succAbove i) =
+            Fin.castAdd (p + 1) ⟨i, hi⟩ := Fin.ext (by simp [Fin.succAbove, Fin.lt_def, hi])
+        have h₂ : Fin.cast h' i = Fin.castAdd p ⟨i, hi⟩ := Fin.ext (by simp)
+        simp only [Function.comp_apply, h₁, h₂, Fin.append_left]
+      · have h₁ : Fin.cast h ((⟨q, by omega⟩ : Fin (m + 1)).succAbove i) =
+            Fin.natAdd q (Fin.succ ⟨i - q, by omega⟩) :=
+          Fin.ext (by simp [Fin.succAbove, Fin.lt_def, hi]; omega)
+        have h₂ : Fin.cast h' i = Fin.natAdd q ⟨i - q, by omega⟩ := Fin.ext (by simp; omega)
+        simp only [Function.comp_apply, h₁, h₂, Fin.append_right, Fin.cons_succ]
+  rw [key, b.det_insertNth_comp b' hb]
 
 end Comp
 

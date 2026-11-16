@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
+import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.Determinant.Cons
 
 /-!
@@ -61,86 +62,13 @@ variable {F : Type*} [Field F]
   {C D : HomologicalComplex (ModuleCat F) (ComplexShape.up (ZMod 2))} {n : ZMod 2 → ℕ}
   {c : ∀ k, Basis (Fin (n k + 1)) F (C.X k)} {e : ∀ k, Basis (Fin (n k)) F (D.X k)} {φ : D ⟶ C}
 
-/-- The family of a bracket in the degree of `b 0 = z⁻`: a multiple of `b 0` and images of
-boundaries, followed by images of lifts. -/
-private theorem det_append_cons_smul_comp {M N : Type*} [AddCommGroup M] [Module F M]
-    [AddCommGroup N] [Module F N] {m : ℕ} (b : Basis (Fin (m + 1)) F M) (b' : Basis (Fin m) F N)
-    {f : N →ₗ[F] M} (hb : ∀ l, b l.succ = f (b' l)) (a : F) {p q : ℕ} (u : Fin p → N)
-    (v : Fin q → N) (h : m + 1 = p + 1 + q) (h' : m = p + q) :
-    b.det (Fin.append (Fin.cons (a • b 0) (f ∘ u)) (f ∘ v) ∘ Fin.cast h) =
-      a * b'.det (Fin.append u v ∘ Fin.cast h') := by
-  have key : Fin.append (Fin.cons (a • b 0) (f ∘ u)) (f ∘ v) ∘ Fin.cast h =
-      Fin.cons (a • b 0) (f ∘ (Fin.append u v ∘ Fin.cast h')) := by
-    funext k
-    induction k using Fin.cases with
-    | zero =>
-      have : Fin.cast h 0 = Fin.castAdd q 0 := Fin.ext rfl
-      simp only [Function.comp_apply, this, Fin.append_left, Fin.cons_zero]
-    | succ k =>
-      by_cases hk : (k : ℕ) < p
-      · have h₁ : Fin.cast h k.succ = Fin.castAdd q (Fin.succ ⟨k, hk⟩) := Fin.ext rfl
-        have h₂ : Fin.cast h' k = Fin.castAdd q ⟨k, hk⟩ := Fin.ext rfl
-        simp only [Function.comp_apply, h₁, h₂, Fin.append_left, Fin.cons_succ]
-      · have h₁ : Fin.cast h k.succ = Fin.natAdd (p + 1) ⟨k - p, by omega⟩ :=
-          Fin.ext (by simp; omega)
-        have h₂ : Fin.cast h' k = Fin.natAdd p ⟨k - p, by omega⟩ := Fin.ext (by simp; omega)
-        simp only [Function.comp_apply, h₁, h₂, Fin.append_right, Fin.cons_succ]
-  rw [key, b.det_cons_smul_comp b' hb]
-
-/-- The family of a bracket in the degree of `b 0 = z⁺`: images of boundaries, followed by `b 0`
-and images of lifts. Moving `b 0` to the front costs the sign `(-1) ^ q`. -/
-private theorem det_append_cons_comp {M N : Type*} [AddCommGroup M] [Module F M]
-    [AddCommGroup N] [Module F N] {m : ℕ} (b : Basis (Fin (m + 1)) F M) (b' : Basis (Fin m) F N)
-    {f : N →ₗ[F] M} (hb : ∀ l, b l.succ = f (b' l)) {p q : ℕ} (u : Fin q → N) (v : Fin p → N)
-    (h : m + 1 = q + (p + 1)) (h' : m = q + p) :
-    b.det (Fin.append (f ∘ u) (Fin.cons (b 0) (f ∘ v)) ∘ Fin.cast h) =
-      (-1) ^ q * b'.det (Fin.append u v ∘ Fin.cast h') := by
-  have key : Fin.append (f ∘ u) (Fin.cons (b 0) (f ∘ v)) ∘ Fin.cast h =
-      (⟨q, by omega⟩ : Fin (m + 1)).insertNth (b 0) (f ∘ (Fin.append u v ∘ Fin.cast h')) := by
-    funext k
-    induction k using Fin.succAboveCases (⟨q, by omega⟩ : Fin (m + 1)) with
-    | x =>
-      have : Fin.cast h ⟨q, by omega⟩ = Fin.natAdd q 0 := Fin.ext (by simp)
-      simp [this]
-    | p i =>
-      rw [Fin.insertNth_apply_succAbove]
-      by_cases hi : (i : ℕ) < q
-      · have h₁ : Fin.cast h ((⟨q, by omega⟩ : Fin (m + 1)).succAbove i) =
-            Fin.castAdd (p + 1) ⟨i, hi⟩ := Fin.ext (by simp [Fin.succAbove, Fin.lt_def, hi])
-        have h₂ : Fin.cast h' i = Fin.castAdd p ⟨i, hi⟩ := Fin.ext (by simp)
-        simp only [Function.comp_apply, h₁, h₂, Fin.append_left]
-      · have h₁ : Fin.cast h ((⟨q, by omega⟩ : Fin (m + 1)).succAbove i) =
-            Fin.natAdd q (Fin.succ ⟨i - q, by omega⟩) :=
-          Fin.ext (by simp [Fin.succAbove, Fin.lt_def, hi]; omega)
-        have h₂ : Fin.cast h' i = Fin.natAdd q ⟨i - q, by omega⟩ := Fin.ext (by simp; omega)
-        simp only [Function.comp_apply, h₁, h₂, Fin.append_right, Fin.cons_succ]
-  rw [key, b.det_insertNth_comp b' hb]
-
-/-- The span of a basis of a submodule, read in the ambient module, is the submodule. -/
-private theorem span_range_coe {M : Type*} [AddCommGroup M] [Module F M] {S : Submodule F M}
-    {ι : Type*} (b : Basis ι F S) : Submodule.span F (Set.range fun l ↦ (b l : M)) = S := by
-  have h := congrArg (Submodule.map S.subtype) b.span_eq
-  rwa [Submodule.map_span, Submodule.map_subtype_top, ← Set.range_comp] at h
-
-/-- A basis of a submodule `S` made of a linearly independent family spanning `S`. -/
-private def basisOfSpanEq {M : Type*} [AddCommGroup M] [Module F M] {S : Submodule F M}
-    {ι : Type*} {v : ι → M} (hv : LinearIndependent F v) (h : Submodule.span F (Set.range v) = S) :
-    Basis ι F S :=
-  (Basis.span hv).map (LinearEquiv.ofEq _ _ h)
-
-@[simp]
-private theorem coe_basisOfSpanEq {M : Type*} [AddCommGroup M] [Module F M] {S : Submodule F M}
-    {ι : Type*} {v : ι → M} (hv : LinearIndependent F v)
-    (h : Submodule.span F (Set.range v) = S) (l : ι) : (basisOfSpanEq hv h l : M) = v l := by
-  simp [basisOfSpanEq, Basis.span_apply]
-
 /-- The span of the image under `φ` of a basis of the boundaries of `D` is the image of the
 boundaries. -/
 private theorem span_image {k k' : ZMod 2} {p : ℕ}
     (bD : Basis (Fin p) F (LinearMap.range (D.d k k').hom)) :
     Submodule.span F (Set.range fun l ↦ (φ.f k').hom (bD l)) =
       (LinearMap.range (D.d k k').hom).map (φ.f k').hom := by
-  have h := congrArg (Submodule.map (φ.f k').hom) (span_range_coe bD)
+  have h := congrArg (Submodule.map (φ.f k').hom) bD.span_range_coe
   rwa [Submodule.map_span, ← Set.range_comp] at h
 
 section Block
@@ -235,18 +163,16 @@ private theorem torsionBracket_cons (hi : (ComplexShape.up (ZMod 2)).prev i' = i
     (bD₀ : Basis (Fin q) F (LinearMap.range (D.d i' i).hom)) (sD : Fin q → D.X i')
     (hsD : ∀ l, (D.d i' i).hom (sD l) = bD₀ l)
     (b₁ : Basis (Fin (p + 1)) F (LinearMap.range (C.d i i').hom))
-    (hb₁ : ∀ l, (b₁ l : C.X i') =
-      (Fin.cons (a • c i' 0) (fun l ↦ (φ.f i').hom (bD₁ l)) : Fin (p + 1) → C.X i') l)
+    (hb₁ : (fun l ↦ (b₁ l : C.X i')) = Fin.cons (a • c i' 0) fun l ↦ (φ.f i').hom (bD₁ l))
     (b₀ : Basis (Fin q) F (LinearMap.range (C.d i' i).hom))
     (hs : ∀ l, (C.d i' i).hom ((φ.f i').hom (sD l)) = b₀ l) :
     torsionBracket c hi hk hC b₁ b₀ (fun l ↦ (φ.f i').hom (sD l)) hs =
       a * torsionBracket e hi hk hD bD₁ bD₀ sD hsD := by
   have hn' := eq_add_of_exactAt e hi hk hD bD₁ bD₀
-  rw [torsionBracket_eq_det_append c hi hk hC _ _ _ _ (by omega : n i' + 1 = p + 1 + q),
-    torsionBracket_eq_det_append e hi hk hD _ _ _ _ hn', ← det_append_cons_smul_comp
-      (c i') (e i') (hc i') a _ _ (by omega) hn']
-  rw [show (fun l ↦ (b₁ l : C.X i')) = _ from funext hb₁]
-  rfl
+  have hn : n i' + 1 = p + 1 + q := by omega
+  rw [torsionBracket_eq_det_append c hi hk hC _ _ _ _ hn,
+    torsionBracket_eq_det_append e hi hk hD _ _ _ _ hn', hb₁,
+    (c i').det_append_cons_smul_comp (e i') (hc i') a _ _ hn hn']
 
 omit ha hd in
 /-- The bracket in the degree `i` of `c i 0`: the lifts there are `c i 0` followed by the image
@@ -258,18 +184,17 @@ private theorem torsionBracket_image (hi : (ComplexShape.up (ZMod 2)).prev i = i
     (bD₁ : Basis (Fin p) F (LinearMap.range (D.d i i').hom)) (sD : Fin p → D.X i)
     (hsD : ∀ l, (D.d i i').hom (sD l) = bD₁ l)
     (b₀ : Basis (Fin q) F (LinearMap.range (C.d i' i).hom))
-    (hb₀ : ∀ l, (b₀ l : C.X i) = (φ.f i).hom (bD₀ l))
+    (hb₀ : (fun l ↦ (b₀ l : C.X i)) = fun l ↦ (φ.f i).hom (bD₀ l))
     (b₁ : Basis (Fin (p + 1)) F (LinearMap.range (C.d i i').hom))
     (hs : ∀ l, (C.d i i').hom
       ((Fin.cons (c i 0) (fun l ↦ (φ.f i).hom (sD l)) : Fin (p + 1) → C.X i) l) = b₁ l) :
     torsionBracket c hi hk hC b₀ b₁ (Fin.cons (c i 0) fun l ↦ (φ.f i).hom (sD l)) hs =
       (-1) ^ q * torsionBracket e hi hk hD bD₀ bD₁ sD hsD := by
   have hn' := eq_add_of_exactAt e hi hk hD bD₀ bD₁
-  rw [torsionBracket_eq_det_append c hi hk hC _ _ _ _ (by omega : n i + 1 = q + (p + 1)),
-    torsionBracket_eq_det_append e hi hk hD _ _ _ _ hn', ← det_append_cons_comp
-      (c i) (e i) (hc i) _ _ (by omega) hn']
-  rw [show (fun l ↦ (b₀ l : C.X i)) = _ from funext hb₀]
-  rfl
+  have hn : n i + 1 = q + (p + 1) := by omega
+  rw [torsionBracket_eq_det_append c hi hk hC _ _ _ _ hn,
+    torsionBracket_eq_det_append e hi hk hD _ _ _ _ hn', hb₀,
+    (c i).det_append_cons_comp (e i) (hc i) _ _ hn hn']
 
 private theorem acyclic_iff_of_block (hii' : i + 1 = i') : C.Acyclic ↔ D.Acyclic := by
   have h₁ : finrank F (LinearMap.range (C.d i i').hom) =
@@ -281,24 +206,22 @@ private theorem acyclic_iff_of_block (hii' : i + 1 = i') : C.Acyclic ↔ D.Acycl
     rw [← span_image_eq_range hc ha hd (chosenBoundaryBasis D e i' i),
       finrank_span_eq_card (linearIndependent_image hc _), Fintype.card_fin]
   have hii : i' + 1 = i := by rw [← hii', add_assoc, CharTwo.add_self_eq_zero, add_zero]
-  have := Module.Finite.of_basis (c i)
-  have := Module.Finite.of_basis (e i)
-  have := Module.Finite.of_basis (c i')
-  have := Module.Finite.of_basis (e i')
+  -- In either degree `j`, with `j'` the other one, exactness compares the sum of the dimensions of
+  -- the two boundary spaces with that of `C.X j` or `D.X j`, and all of these drop by one.
+  have key {j j' : ZMod 2} (hjj' : j + 1 = j') (hj'j : j' + 1 = j)
+      (h : j = i ∧ j' = i' ∨ j = i' ∧ j' = i) : C.ExactAt j ↔ D.ExactAt j := by
+    have := Module.Finite.of_basis (c j)
+    have := Module.Finite.of_basis (e j)
+    rw [exactAt_iff_finrank_add_finrank C ((ComplexShape.up _).prev_eq' hj'j)
+      ((ComplexShape.up _).next_eq' hjj'), exactAt_iff_finrank_add_finrank D
+      ((ComplexShape.up _).prev_eq' hj'j) ((ComplexShape.up _).next_eq' hjj'),
+      finrank_eq_card_basis (c j), finrank_eq_card_basis (e j), Fintype.card_fin, Fintype.card_fin]
+    rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> omega
   refine forall_congr' fun j ↦ ?_
   obtain h | h : j = i ∨ j = i' :=
     hii' ▸ (by decide : ∀ x j : ZMod 2, j = x ∨ j = x + 1) i j
-  · rw [h, exactAt_iff_finrank_add_finrank C ((ComplexShape.up _).prev_eq' hii)
-      ((ComplexShape.up _).next_eq' hii'), exactAt_iff_finrank_add_finrank D
-      ((ComplexShape.up _).prev_eq' hii) ((ComplexShape.up _).next_eq' hii'), h₁, h₂,
-      finrank_eq_card_basis (c i), finrank_eq_card_basis (e i), Fintype.card_fin, Fintype.card_fin]
-    omega
-  · rw [h, exactAt_iff_finrank_add_finrank C ((ComplexShape.up _).prev_eq' hii')
-      ((ComplexShape.up _).next_eq' hii), exactAt_iff_finrank_add_finrank D
-      ((ComplexShape.up _).prev_eq' hii') ((ComplexShape.up _).next_eq' hii), h₁, h₂,
-      finrank_eq_card_basis (c i'), finrank_eq_card_basis (e i'), Fintype.card_fin,
-      Fintype.card_fin]
-    omega
+  · exact key (h ▸ hii') (h ▸ hii) (.inl ⟨h, rfl⟩)
+  · exact key (h ▸ hii) (h ▸ hii') (.inr ⟨h, rfl⟩)
 
 end Block
 
@@ -321,8 +244,8 @@ private theorem parityTorsion_eq_of_block_one_zero :
   let bD₁ := chosenBoundaryBasis D e 0 1
   let sD₀ := chosenBoundaryLift D e 0 1
   let sD₁ := chosenBoundaryLift D e 1 0
-  let b₀ := basisOfSpanEq (linearIndependent_cons hc ha bD₀) (span_cons_eq_range hc hd bD₀)
-  let b₁ := basisOfSpanEq (linearIndependent_image hc bD₁) (span_image_eq_range hc ha hd bD₁)
+  let b₀ := Basis.ofSpanEq (linearIndependent_cons hc ha bD₀) (span_cons_eq_range hc hd bD₀)
+  let b₁ := Basis.ofSpanEq (linearIndependent_image hc bD₁) (span_image_eq_range hc ha hd bD₁)
   have hs₀ (l) : (C.d 0 1).hom ((φ.f 0).hom (sD₀ l)) = b₁ l := by
     simp [b₁, sD₀, bD₁, Hom.comm_apply]
   have hs₁ (l) : (C.d 1 0).hom ((Fin.cons (c 1 0) fun l ↦ (φ.f 1).hom (sD₁ l) :
@@ -332,9 +255,9 @@ private theorem parityTorsion_eq_of_block_one_zero :
     parityTorsion_eq hD bD₀ bD₁ sD₀ (chosenBoundaryLift_spec D e 0 1) sD₁
       (chosenBoundaryLift_spec D e 1 0),
     torsionBracket_image hc _ _ _ (hD 1) bD₁ bD₀ sD₁ (chosenBoundaryLift_spec D e 1 0) b₁
-      (fun l ↦ by simp [b₁]),
+      (funext fun l ↦ by simp [b₁]),
     torsionBracket_cons hc (a := a) _ _ _ (hD 0) bD₀ bD₁ sD₀ (chosenBoundaryLift_spec D e 0 1) b₀
-      (fun l ↦ by simp [b₀]), mul_inv]
+      (funext fun l ↦ by simp [b₀]), mul_inv]
   ring
 
 end BlockOneZero
@@ -358,8 +281,8 @@ private theorem parityTorsion_eq_of_block_zero_one :
   let bD₁ := chosenBoundaryBasis D e 0 1
   let sD₀ := chosenBoundaryLift D e 0 1
   let sD₁ := chosenBoundaryLift D e 1 0
-  let b₀ := basisOfSpanEq (linearIndependent_image hc bD₀) (span_image_eq_range hc ha hd bD₀)
-  let b₁ := basisOfSpanEq (linearIndependent_cons hc ha bD₁) (span_cons_eq_range hc hd bD₁)
+  let b₀ := Basis.ofSpanEq (linearIndependent_image hc bD₀) (span_image_eq_range hc ha hd bD₀)
+  let b₁ := Basis.ofSpanEq (linearIndependent_cons hc ha bD₁) (span_cons_eq_range hc hd bD₁)
   have hs₀ (l) : (C.d 0 1).hom ((Fin.cons (c 0 0) fun l ↦ (φ.f 0).hom (sD₀ l) :
       Fin _ → C.X 0) l) = b₁ l := by
     induction l using Fin.cases <;> simp [b₁, sD₀, bD₁, hd, Hom.comm_apply]
@@ -369,9 +292,9 @@ private theorem parityTorsion_eq_of_block_zero_one :
     parityTorsion_eq hD bD₀ bD₁ sD₀ (chosenBoundaryLift_spec D e 0 1) sD₁
       (chosenBoundaryLift_spec D e 1 0),
     torsionBracket_cons hc (a := a) _ _ _ (hD 1) bD₁ bD₀ sD₁ (chosenBoundaryLift_spec D e 1 0) b₁
-      (fun l ↦ by simp [b₁]),
+      (funext fun l ↦ by simp [b₁]),
     torsionBracket_image hc _ _ _ (hD 0) bD₀ bD₁ sD₀ (chosenBoundaryLift_spec D e 0 1) b₀
-      (fun l ↦ by simp [b₀]), mul_inv, ← inv_pow, inv_neg_one]
+      (funext fun l ↦ by simp [b₀]), mul_inv, ← inv_pow, inv_neg_one]
   ring
 
 end BlockZeroOne
