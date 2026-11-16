@@ -36,26 +36,31 @@ namespace TauCeti.Probability
 
 variable {a b : ℝ}
 
-/-- For positive shapes, the noncentral F law with degrees `2 * a` and `2 * b` is the image of the
-noncentral Beta law with shapes `a` and `b` under `x ↦ (b / a) * x / (1 - x)`, with the same
-noncentrality. -/
-theorem noncentralFMeasure_eq_map_noncentralBetaMeasure (ha : 0 < a) (hb : 0 < b) (l : ℝ≥0) :
+/-- For a nonzero first shape, the noncentral F law with degrees `2 * a` and `2 * b` is the image
+of the noncentral Beta law with shapes `a` and `b` under `x ↦ (b / a) * x / (1 - x)`, with the
+same noncentrality. Outside the positive-shape range, both sides are zero. -/
+theorem noncentralFMeasure_eq_map_noncentralBetaMeasure (ha : a ≠ 0) (b : ℝ) (l : ℝ≥0) :
     noncentralFMeasure (2 * a) (2 * b) l =
       (noncentralBetaMeasure a b l).map (fun x ↦ b / a * (x / (1 - x))) := by
-  let _ := isProbabilityMeasure_chiSquaredMeasure (mul_pos two_pos hb).le
-  rw [noncentralFMeasure_eq_map (by positivity) (by positivity),
-    noncentralBetaMeasure_eq_map hb, Measure.map_map (by fun_prop) (by fun_prop)]
-  refine Measure.map_congr ?_
-  filter_upwards [Measure.ae_prod_mem_iff_ae_ae_mem (measurableSet_Ici.prod measurableSet_Ioi)
-    |>.2 ((ae_nonneg_noncentralChiSquaredMeasure (2 * a) l).mono fun u hu ↦
-      (ae_pos_chiSquaredMeasure (by positivity : (0 : ℝ) < 2 * b)).mono fun v hv ↦
-        ⟨hu, hv⟩)] with z hz
-  have hu : 0 ≤ z.1 := hz.1
-  have hv : 0 < z.2 := hz.2
-  have huv : z.1 + z.2 ≠ 0 := by positivity
-  simp only [Function.comp_apply]
-  rw [one_sub_div huv, add_sub_cancel_left, div_div_div_cancel_right₀ huv]
-  field_simp
+  by_cases hab : 0 < a ∧ 0 < b
+  · let _ := isProbabilityMeasure_chiSquaredMeasure (mul_pos two_pos hab.2).le
+    rw [noncentralFMeasure_eq_map (mul_pos two_pos hab.1) (mul_pos two_pos hab.2),
+      noncentralBetaMeasure_eq_map hab.2, Measure.map_map (by fun_prop) (by fun_prop)]
+    refine Measure.map_congr ?_
+    filter_upwards [Measure.ae_prod_mem_iff_ae_ae_mem (measurableSet_Ici.prod measurableSet_Ioi)
+      |>.2 ((ae_nonneg_noncentralChiSquaredMeasure (2 * a) l).mono fun u hu ↦
+        (ae_pos_chiSquaredMeasure (mul_pos two_pos hab.2)).mono fun v hv ↦
+          ⟨hu, hv⟩)] with z hz
+    have hu : 0 ≤ z.1 := hz.1
+    have hv : 0 < z.2 := hz.2
+    have huv : z.1 + z.2 ≠ 0 := by positivity
+    simp only [Function.comp_apply]
+    rw [one_sub_div huv, add_sub_cancel_left, div_div_div_cancel_right₀ huv]
+    field_simp
+  · have hbeta : ¬ (0 ≤ a ∧ 0 < b) := fun h ↦
+      hab ⟨lt_of_le_of_ne h.1 ha.symm, h.2⟩
+    rw [noncentralFMeasure_of_not_pos (by simpa using hab),
+      noncentralBetaMeasure_of_not hbeta, Measure.map_zero]
 
 end TauCeti.Probability
 
@@ -63,24 +68,17 @@ namespace ProbabilityTheory
 
 open TauCeti.Probability
 
-/-- If `X` has a noncentral Beta law with positive first shape `a`, then
+/-- If `X` has a noncentral Beta law with nonzero first shape `a`, then
 `(b / a) * X / (1 - X)` has the noncentral F law with degrees `2 * a` and `2 * b` and the same
-noncentrality. For nonpositive `b`, the source law and target law are both zero, so the statement
-also respects the families' totalizations outside their probability ranges. -/
+noncentrality. Outside the positive-shape range, the source law and target law are both zero, so
+the statement also respects the families' totalizations outside their probability ranges. -/
 theorem HasLaw.mul_div_one_sub_noncentralBetaMeasure {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} {X : Ω → ℝ} {a b : ℝ} {l : ℝ≥0}
-    (hX : HasLaw X (noncentralBetaMeasure a b l) P) (ha : 0 < a) :
+    (hX : HasLaw X (noncentralBetaMeasure a b l) P) (ha : a ≠ 0) :
     HasLaw (fun ω ↦ b / a * (X ω / (1 - X ω)))
       (noncentralFMeasure (2 * a) (2 * b) l) P := by
-  by_cases hb : 0 < b
-  · rw [noncentralFMeasure_eq_map_noncentralBetaMeasure ha hb]
-    exact (hasLaw_map (P := noncentralBetaMeasure a b l)
-      (X := fun x : ℝ ↦ b / a * (x / (1 - x))) (by fun_prop)).fun_comp hX
-  · have hP : P = 0 := by
-      rw [← Measure.map_eq_zero_iff hX.aemeasurable, hX.map_eq,
-        noncentralBetaMeasure_of_not (fun h ↦ hb h.2)]
-    subst P
-    rw [noncentralFMeasure_of_not_pos (by simp [hb])]
-    exact ⟨aemeasurable_zero_measure, Measure.map_zero _⟩
+  rw [noncentralFMeasure_eq_map_noncentralBetaMeasure ha]
+  exact (hasLaw_map (P := noncentralBetaMeasure a b l)
+    (X := fun x : ℝ ↦ b / a * (x / (1 - x))) (by fun_prop)).fun_comp hX
 
 end ProbabilityTheory
