@@ -36,7 +36,7 @@ neighbourhood of a semialgebraic analytic submanifold is a Nash map on it.
 The class is closed under the operations of the category:
 
 * restriction to open semialgebraic subsets and to smaller semialgebraic analytic submanifolds;
-* polynomial maps, pointwise ring operations, finite sums and products, reciprocals and quotients
+* polynomial maps, pointwise ring operations, finite sums, reciprocals and quotients
   of nonvanishing maps, and polynomial postcomposition;
 * pairing, and products of maps on products of submanifolds;
 * composition;
@@ -51,8 +51,9 @@ The class is closed under the operations of the category:
 * `TauCeti.NashOnSubmanifold d f S`: `f` is a Nash map on `S` in dimension `d`.
 * `IsOpen.nashOnSubmanifold_iff`: on open sets, Nash maps are the maps with Nash coordinate germs.
 * `TauCeti.nashOnSubmanifold_of_forall_isNashAt`: restrictions of ambient Nash maps.
-* `TauCeti.NashOnSubmanifold.inv`, `TauCeti.NashOnSubmanifold.div`: pointwise reciprocals and
-  quotients where no denominator coordinate vanishes.
+* `Finset.nashOnSubmanifold_sum`, `TauCeti.NashOnSubmanifold.inv`,
+  `TauCeti.NashOnSubmanifold.div`: finite sums, and pointwise reciprocals and quotients where no
+  denominator coordinate vanishes.
 * `TauCeti.NashOnSubmanifold.comp`: composition.
 * `TauCeti.NashOnSubmanifold.prodMap`: products.
 * `TauCeti.NashOnSubmanifold.of_leftInvOn`: analytic inverses of Nash maps are Nash.
@@ -218,25 +219,9 @@ theorem mul (hf : NashOnSubmanifold d f S) (hg : NashOnSubmanifold d g S) :
 theorem _root_.Finset.nashOnSubmanifold_sum {ι : Type*} {F : ι → (Fin n → ℝ) → τ → ℝ}
     (N : Finset ι) (hS : IsAnalyticSubmanifold d S) (hS' : IsSemialgebraic S)
     (hF : ∀ i ∈ N, NashOnSubmanifold d (F i) S) :
-    NashOnSubmanifold d (fun x ↦ ∑ i ∈ N, F i x) S := by
-  classical
-  induction N using Finset.induction_on with
-  | empty => simpa using nashOnSubmanifold_const 0 hS hS'
-  | @insert a N ha ih =>
-    exact ((hF a (Finset.mem_insert_self a N)).add
-      (ih fun i hi ↦ hF i (Finset.mem_insert_of_mem hi))).congr fun x _ ↦ by simp [ha]
-
-/-- A finite product of Nash maps on a semialgebraic analytic submanifold is a Nash map. -/
-theorem _root_.Finset.nashOnSubmanifold_prod {ι : Type*} {F : ι → (Fin n → ℝ) → τ → ℝ}
-    (N : Finset ι) (hS : IsAnalyticSubmanifold d S) (hS' : IsSemialgebraic S)
-    (hF : ∀ i ∈ N, NashOnSubmanifold d (F i) S) :
-    NashOnSubmanifold d (fun x ↦ ∏ i ∈ N, F i x) S := by
-  classical
-  induction N using Finset.induction_on with
-  | empty => simpa using nashOnSubmanifold_const 1 hS hS'
-  | @insert a N ha ih =>
-    exact ((hF a (Finset.mem_insert_self a N)).mul
-      (ih fun i hi ↦ hF i (Finset.mem_insert_of_mem hi))).congr fun x _ ↦ by simp [ha]
+    NashOnSubmanifold d (∑ i ∈ N, F i) S :=
+  Finset.sum_induction _ (NashOnSubmanifold d · S) (fun _ _ ↦ .add)
+    (nashOnSubmanifold_const 0 hS hS') hF
 
 /-- The pointwise reciprocal of a Nash map whose coordinates never vanish on `S` is a Nash map. -/
 theorem inv (hf : NashOnSubmanifold d f S) (h0 : ∀ x ∈ S, ∀ i, f x i ≠ 0) :
@@ -299,18 +284,6 @@ theorem nashOnSubmanifold_sumElim_iff {g : (Fin n → ℝ) → τ' → ℝ} :
   · simpa using h.eval_comp fun i : τ ↦ X (Sum.inl i)
   · simpa using h.eval_comp fun i : τ' ↦ X (Sum.inr i)
 
-/-- On a semialgebraic analytic submanifold `S`, a map into a finite product is a Nash map
-exactly when each coordinate is. -/
-theorem IsAnalyticSubmanifold.nashOnSubmanifold_pi_iff (hS : IsAnalyticSubmanifold d S)
-    (hS' : IsSemialgebraic S) :
-    NashOnSubmanifold d f S ↔
-      ∀ i, NashOnSubmanifold d (fun x (_ : Unit) ↦ f x i) S := by
-  refine ⟨fun h i ↦ by simpa using h.eval_comp fun _ : Unit ↦ X i, fun h ↦ ?_⟩
-  refine ⟨hS.analyticOnSubmanifold_iff.2 fun x hx e he hxe ↦
-    analyticAt_pi_iff.2 fun i ↦
-      analyticAt_pi_iff.1 ((h i).analyticOnSubmanifold.analyticAt_chart hx he hxe) (),
-    .pi hS' fun i ↦ (h i).isSemialgebraicOn⟩
-
 namespace NashOnSubmanifold
 
 /-! ### Composition -/
@@ -351,23 +324,6 @@ theorem of_leftInvOn {T : Set (Fin m → ℝ)} {f : (Fin n → ℝ) → Fin m �
         rintro _ ⟨x, hx, rfl⟩
         rw [hgf hx] }
   exact φ.isSemialgebraicOn_symm hf.isSemialgebraicOn
-
-/-- **Restriction of Nash embeddings to submanifolds.** If `f` is a Nash map on `S` with values in
-`T` and `g` is analytic on `T` with `g ∘ f = id` on `S`, then for every smaller `k`-dimensional
-semialgebraic analytic submanifold `S₀ ⊆ S`, the image `f '' S₀` is a `k`-dimensional
-semialgebraic analytic submanifold, `f` restricts to a Nash map on `S₀` in dimension `k`, and `g`
-restricts to a Nash map on `f '' S₀` in dimension `k`. -/
-theorem image_mono_of_leftInvOn {k : ℕ} {S₀ : Set (Fin n → ℝ)} {T : Set (Fin m → ℝ)}
-    {f : (Fin n → ℝ) → Fin m → ℝ} {g : (Fin m → ℝ) → Fin n → ℝ}
-    (hf : NashOnSubmanifold d f S) (hg : AnalyticOnSubmanifold d' g T)
-    (hfT : MapsTo f S T) (hgf : LeftInvOn g f S) (hS₀S : S₀ ⊆ S)
-    (hS₀ : IsAnalyticSubmanifold k S₀) (hS₀' : IsSemialgebraic S₀) :
-    IsAnalyticSubmanifold k (f '' S₀) ∧ IsSemialgebraic (f '' S₀) ∧
-      NashOnSubmanifold k f S₀ ∧ NashOnSubmanifold k g (f '' S₀) :=
-  have hf₀ : NashOnSubmanifold k f S₀ := hf.mono hS₀S hS₀ hS₀'
-  ⟨hS₀.image_of_leftInvOn hf₀.analyticOnSubmanifold hg (hfT.mono_left hS₀S) (hgf.mono hS₀S),
-    hf₀.isSemialgebraicOn.isSemialgebraic_image, hf₀,
-    hf₀.of_leftInvOn hS₀ hg (hfT.mono_left hS₀S) (hgf.mono hS₀S)⟩
 
 /-! ### Transport along Nash charts -/
 

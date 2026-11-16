@@ -151,7 +151,7 @@ theorem IsSemialgebraicOn.congr {f g : (σ → R) → (τ → R)} {s : Set (σ �
 /-- Semialgebraicity of a map depends only on its pointwise values. -/
 theorem IsSemialgebraicMap.congr {f g : (σ → R) → (τ → R)} (hf : IsSemialgebraicMap f)
     (h : ∀ x, f x = g x) : IsSemialgebraicMap g :=
-  isSemialgebraicOn_univ.1 <| (isSemialgebraicOn_univ.2 hf).congr fun x _ ↦ h x
+  funext h ▸ hf
 
 /-- Every function is semialgebraic on the empty set. -/
 @[simp]

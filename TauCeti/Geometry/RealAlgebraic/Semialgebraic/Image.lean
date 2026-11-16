@@ -64,7 +64,7 @@ All results assume projection closure, `[TauCeti.HasSemialgebraicProjections R]`
   `TauCeti.isSemialgebraicOn_sumElim_iff`: a pair is semialgebraic exactly when its components
   are, and `TauCeti.isSemialgebraicOn_pi_iff`: so is a function with finitely many output
   coordinates; `TauCeti.IsSemialgebraicOn.add`, `TauCeti.IsSemialgebraicOn.mul`,
-  `TauCeti.IsSemialgebraicOn.sub`, `Finset.isSemialgebraicOn_sum`, `Finset.isSemialgebraicOn_prod`,
+  `TauCeti.IsSemialgebraicOn.sub`, `Finset.isSemialgebraicOn_sum`,
   `TauCeti.IsSemialgebraicOn.inv`, `TauCeti.IsSemialgebraicOn.div`: pointwise arithmetic.  Negation
   and the coordinatewise reciprocal map itself need no projection and are proved in
   `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Function`.
@@ -351,27 +351,8 @@ theorem IsSemialgebraicMap.sub (hf : IsSemialgebraicMap f) (hg : IsSemialgebraic
 semialgebraic. -/
 theorem _root_.Finset.isSemialgebraicOn_sum {ι : Type*} {F : ι → (σ → R) → (τ → R)} (N : Finset ι)
     (hs : IsSemialgebraic s) (hF : ∀ i ∈ N, IsSemialgebraicOn (F i) s) :
-    IsSemialgebraicOn (fun x => ∑ i ∈ N, F i x) s := by
-  classical
-  induction N using Finset.induction_on with
-  | empty => simpa using isSemialgebraicOn_const 0 hs
-  | @insert a N ha ih =>
-    have hadd := (hF a (Finset.mem_insert_self a N)).add
-      (ih fun i hi => hF i (Finset.mem_insert_of_mem hi))
-    exact hadd.congr fun x _ => by simp [ha]
-
-/-- Given projection closure, a finite product of semialgebraic functions on a semialgebraic domain
-is semialgebraic. -/
-theorem _root_.Finset.isSemialgebraicOn_prod {ι : Type*} {F : ι → (σ → R) → (τ → R)} (N : Finset ι)
-    (hs : IsSemialgebraic s) (hF : ∀ i ∈ N, IsSemialgebraicOn (F i) s) :
-    IsSemialgebraicOn (fun x => ∏ i ∈ N, F i x) s := by
-  classical
-  induction N using Finset.induction_on with
-  | empty => simpa using isSemialgebraicOn_const 1 hs
-  | @insert a N ha ih =>
-    have hmul := (hF a (Finset.mem_insert_self a N)).mul
-      (ih fun i hi => hF i (Finset.mem_insert_of_mem hi))
-    exact hmul.congr fun x _ => by simp [ha]
+    IsSemialgebraicOn (∑ i ∈ N, F i) s :=
+  Finset.sum_induction _ (IsSemialgebraicOn · s) (fun _ _ => .add) (isSemialgebraicOn_const 0 hs) hF
 
 /-- Given projection closure, the points of the common domain at which two semialgebraic
 functions agree form a semialgebraic set. -/

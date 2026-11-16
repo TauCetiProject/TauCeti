@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.Analysis.Normed.Module.Basic
 public import TauCeti.Analysis.Convex.StdSimplex
+import Mathlib.LinearAlgebra.StdBasis
 import TauCeti.Analysis.Convex.Intrinsic
 import TauCeti.Analysis.Normed.Affine.AddTorsor.Bases
 
@@ -18,9 +19,11 @@ import TauCeti.Analysis.Normed.Affine.AddTorsor.Bases
 The *open simplex* spanned by an affinely independent finite family `p` of points of a real
 normed space is the intrinsic interior of its convex hull. This file
 identifies it with the set of affine combinations of `p` with all weights positive
-(`AffineIndependent.mem_intrinsicInterior_convexHull_iff`), and shows that a proper face misses
-it: a point of the open simplex lying in the convex hull of `p '' s` forces `s` to contain every
-index (`AffineIndependent.eq_univ_of_mem_intrinsicInterior_convexHull`). The centroid of the
+(`AffineIndependent.mem_intrinsicInterior_convexHull_iff`) — equivalently, the image of the open
+standard simplex under `w ↦ ∑ i, w i • p i`
+(`AffineIndependent.intrinsicInterior_convexHull_eq_image_sum_smul`) — and shows that a proper face
+misses it: a point of the open simplex lying in the convex hull of `p '' s` forces `s` to contain
+every index (`AffineIndependent.eq_univ_of_mem_intrinsicInterior_convexHull`). The centroid of the
 family lies in its open simplex (`AffineIndependent.centroid_mem_intrinsicInterior_convexHull`),
 and its continuous affine barycentric coordinates assemble into a global affine map
 `E →ᵃ[ℝ] (ι → ℝ)` mapping the closed and open simplices into the closed and open standard simplices
@@ -44,19 +47,21 @@ space need not be finite-dimensional.
 
 ## Main results
 
-* `AffineIndependent.mem_intrinsicInterior_convexHull_iff`: the intrinsic interior of the convex
-  hull of an affinely independent finite family consists of its affine combinations with positive
-  weights.
+* `AffineIndependent.mem_intrinsicInterior_convexHull_iff`,
+  `AffineIndependent.intrinsicInterior_convexHull_eq_image_sum_smul`: the intrinsic interior of the
+  convex hull of an affinely independent finite family consists of its affine combinations with
+  positive weights, i.e., the image of the open standard simplex under `w ↦ ∑ i, w i • p i`.
 * `AffineIndependent.centroid_mem_intrinsicInterior_convexHull`: the centroid of a simplex lies
   in its intrinsic interior.
 * `AffineIndependent.eq_univ_of_mem_intrinsicInterior_convexHull`: a proper face of a simplex
   misses its intrinsic interior.
 * `AffineIndependent.exists_affineMap_barycentricCoord`: global affine barycentric coordinate map
   inverting `w ↦ ∑ i, w i • p i` on closed and open simplices.
-* `TauCeti.intrinsicInterior_convexHull_pi_single`,
+* `TauCeti.affineIndependent_pi_single`, `TauCeti.intrinsicInterior_convexHull_pi_single`,
   `TauCeti.intrinsicInterior_range_stdSimplex_weights`,
-  `TauCeti.intrinsicInterior_facet_stdSimplex_weights`: coordinate descriptions of the intrinsic
-  interiors of coordinate faces, the standard simplex, and its facets.
+  `TauCeti.intrinsicInterior_facet_stdSimplex_weights`: affine independence of coordinate vertices
+  and coordinate descriptions of the intrinsic interiors of coordinate faces, the standard simplex,
+  and its facets.
 
 ## References
 
@@ -115,6 +120,23 @@ theorem AffineIndependent.mem_intrinsicInterior_convexHull_iff (hp : AffineIndep
     obtain ⟨v, hv, rfl⟩ := eq_affineCombination_of_mem_affineSpan_of_fintype hyA
     exact affineCombination_mem_convexHull (fun i _ => (hf v hv i ▸ hy i).le) hv
 
+/-- The barycentric combination map `w ↦ ∑ i, w i • p i` maps the open standard simplex onto the
+open simplex `intrinsicInterior ℝ (convexHull ℝ (range p))`. -/
+theorem AffineIndependent.intrinsicInterior_convexHull_eq_image_sum_smul
+    (hp : AffineIndependent ℝ p) :
+    intrinsicInterior ℝ (convexHull ℝ (range p)) =
+      (fun w : ι → ℝ => ∑ i, w i • p i) ''
+        {w ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | ∀ i, 0 < w i} := by
+  ext x
+  rw [hp.mem_intrinsicInterior_convexHull_iff]
+  constructor
+  · rintro ⟨w, hw₀, hw₁, rfl⟩
+    exact ⟨w, ⟨StdSimplex.mem_range_toFun_comp_weights_iff.2 ⟨fun i => (hw₀ i).le, hw₁⟩, hw₀⟩,
+      (Finset.affineCombination_eq_linear_combination _ _ _ hw₁).symm⟩
+  · rintro ⟨w, ⟨hw, hw₀⟩, rfl⟩
+    obtain ⟨-, hw₁⟩ := StdSimplex.mem_range_toFun_comp_weights_iff.1 hw
+    exact ⟨w, hw₀, hw₁, Finset.affineCombination_eq_linear_combination _ _ _ hw₁⟩
+
 /-- The centroid of a nonempty affinely independent finite family lies in the open simplex it
 spans. -/
 theorem AffineIndependent.centroid_mem_intrinsicInterior_convexHull [Nonempty ι]
@@ -161,10 +183,7 @@ theorem AffineIndependent.exists_affineMap_barycentricCoord (hp : AffineIndepend
     · rw [range_eq_empty]
       simp
   · obtain ⟨f, hf, -, -⟩ := hp.exists_continuousAffineMap_apply_affineCombination
-    let B : E →ᵃ[ℝ] (ι → ℝ) :=
-      { toFun := fun x i => f i x
-        linear := LinearMap.pi fun i => (f i).linear
-        map_vadd' := fun q v => funext fun i => (f i).toAffineMap.map_vadd q v }
+    let B : E →ᵃ[ℝ] (ι → ℝ) := AffineMap.pi fun i => (f i).toAffineMap
     have hleft (w : ι → ℝ) (hw : ∑ i, w i = 1) : B (∑ i, w i • p i) = w := by
       ext i
       have hcomb := Finset.univ.affineCombination_eq_linear_combination p w hw
@@ -189,17 +208,11 @@ end AffineIndependent
 
 namespace TauCeti
 
-/-- The standard basis vectors `Pi.single i 1` are affinely independent on any subset of `ι`. -/
-theorem affineIndependent_pi_single {ι : Type*} [DecidableEq ι] (t : Set ι) :
-    AffineIndependent ℝ (fun j : t => (Pi.single (j : ι) 1 : ι → ℝ)) := by
-  refine (linearIndependent_iff'.2 fun s g hg j hjs => ?_).affineIndependent
-  have hval := congr_fun hg j.1
-  rw [Finset.sum_apply, Pi.zero_apply, Finset.sum_eq_single j] at hval
-  · simpa using hval
-  · intro k _ hkj
-    have hne : (k : ι) ≠ j.1 := fun h => hkj (Subtype.ext h)
-    simp [Pi.single_eq_of_ne' hne]
-  · exact fun hj => absurd hjs hj
+/-- The standard basis vectors `Pi.single i 1` over a ring `R` are affinely independent on any
+subset of `ι`. -/
+theorem affineIndependent_pi_single (R : Type*) {ι : Type*} [Ring R] [DecidableEq ι] (t : Set ι) :
+    AffineIndependent R (fun j : t => (Pi.single (j : ι) 1 : ι → R)) :=
+  ((Pi.linearIndependent_single_one ι R).comp Subtype.val Subtype.val_injective).affineIndependent
 
 variable {ι : Type*} [Finite ι] [DecidableEq ι]
 
@@ -236,7 +249,7 @@ theorem intrinsicInterior_convexHull_pi_single (t : Set ι) :
     simp
   ext x
   refine ⟨fun hx => ⟨intrinsicInterior_subset hx, ?_⟩, fun ⟨hx, hpos⟩ => ?_⟩
-  · rw [himg, (affineIndependent_pi_single t).mem_intrinsicInterior_convexHull_iff] at hx
+  · rw [himg, (affineIndependent_pi_single ℝ t).mem_intrinsicInterior_convexHull_iff] at hx
     obtain ⟨w, hw0, hw1, rfl⟩ := hx
     intro i hi
     rw [Finset.affineCombination_eq_linear_combination _ _ _ hw1, Finset.sum_apply,
@@ -247,7 +260,7 @@ theorem intrinsicInterior_convexHull_pi_single (t : Set ι) :
       simp [Pi.single_eq_of_ne' hne]
     · simp
   · obtain ⟨_, hsum, hzero⟩ := mem_convexHull_pi_single_iff.1 hx
-    rw [himg, (affineIndependent_pi_single t).mem_intrinsicInterior_convexHull_iff]
+    rw [himg, (affineIndependent_pi_single ℝ t).mem_intrinsicInterior_convexHull_iff]
     have hw1 : ∑ j : t, x j.1 = 1 := by
       have hsub : ∑ j : t, x j.1 = ∑ i ∈ univ.filter (· ∈ t), x i :=
         (Finset.sum_subtype _ (fun _ => by simp) x).symm
