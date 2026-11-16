@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Polynomial.DegreeLT
 public import TauCeti.LinearAlgebra.Matrix.ConfluentVandermonde
 public import TauCeti.RingTheory.Polynomial.HermiteInterpolation
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # The confluent Vandermonde matrix is the matrix of the Hermite jet map
@@ -91,15 +92,7 @@ theorem toLin_confluentVandermonde (a : Fin r → R) (m : Fin r → ℕ) :
 theorem hermiteJet_bijective_iff_isUnit_det (a : Fin r → R) (m : Fin r → ℕ) :
     Bijective (hermiteJet a m) ↔ IsUnit (Matrix.confluentVandermonde a m).det := by
   rw [← toMatrix_hermiteJet]
-  constructor
-  · intro hb
-    have he : (LinearEquiv.ofBijective (hermiteJet a m) hb : _ →ₗ[R] _) = hermiteJet a m :=
-      LinearMap.ext fun p => LinearEquiv.ofBijective_apply (hermiteJet a m) p
-    simpa only [he] using (LinearEquiv.ofBijective _ hb).isUnit_det
-      (degreeLT.basis R (∑ i, m i)) (lexJetBasis R m)
-  · intro h
-    rw [← LinearEquiv.coe_ofIsUnitDet h, LinearEquiv.coe_coe]
-    exact (LinearEquiv.ofIsUnitDet h).bijective
+  exact LinearMap.bijective_iff_isUnit_det_toMatrix _ _ _
 
 /-- Over a field, the Hermite jet map is bijective iff the nodes of nonzero multiplicity are
 pairwise distinct. A repeated node of multiplicity `0` is allowed. -/
