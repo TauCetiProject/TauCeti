@@ -312,13 +312,12 @@ theorem barCoboundary_apply (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n 
       ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) • φ (Fin.contractNth j.castSucc (· * ·) a) := by
   simp [barCoboundary]
 
-/-- The Hochschild coboundary of `φ` is the alternating sum of its cofaces. -/
-private theorem hochschildCoboundary_eq_sum (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1)
-    ↦ A) M) :
-    hochschildCoboundary R A M n φ =
-      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • hochschildCoface R A M i φ := by
+/-- The bar coboundary of `φ` is the alternating sum of its first `n + 1` Hochschild cofaces. -/
+theorem barCoboundary_eq_sum (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
+    barCoboundary R A M n φ =
+      ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) • hochschildCoface R A M j.castSucc φ := by
   ext a
-  simp
+  simp [hochschildFace_castSucc]
 
 /-- The Hochschild coboundary is the bar coboundary plus the signed last coface. -/
 theorem hochschildCoboundary_eq_barCoboundary_add

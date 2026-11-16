@@ -228,8 +228,8 @@ theorem ι_desc {n : ℕ} {P : ModuleCat R}
 
 /-- A family of `R`-linear maps out of the stages compatible with the periodicity maps is compatible
 with every transition map of the periodic system. -/
-private theorem linearMap_comp_of_periodicity_comp {n : ℕ} {P : Type*} [AddCommGroup P] [Module R P]
-    (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] P)
+private theorem linearMap_comp_of_periodicity_comp {n : ℕ} {P : Type*} [AddCommMonoid P]
+    [Module R P] (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] P)
     (hg : ∀ k, g (k + 1) ∘ₗ (cyclicTotalHomologyPeriodicity R A M (n + 2 * k)).hom = g k)
     {i j : ℕ} (h : i ≤ j) :
     g j ∘ₗ (cyclicTotalHomologyPeriodicTransition R A M n h).hom = g i := by
@@ -243,10 +243,18 @@ private theorem linearMap_comp_of_periodicity_comp {n : ℕ} {P : Type*} [AddCom
       cyclicTotalHomologyPeriodicTransition_succ, ModuleCat.hom_comp, ← LinearMap.comp_assoc,
       hg, ih]
 
+/-- Two `R`-linear maps out of periodic cyclic cohomology into an `R`-module in any universe agree
+when they agree on every stage. -/
+@[ext]
+theorem linearMap_ext {n : ℕ} {P : Type*} [AddCommMonoid P] [Module R P]
+    {f g : periodicCyclicCohomology R A M n →ₗ[R] P}
+    (h : ∀ k, f ∘ₗ (ι R A M n k).hom = g ∘ₗ (ι R A M n k).hom) : f = g :=
+  Module.DirectLimit.hom_ext h
+
 /-- The universe-polymorphic universal property of periodic cyclic cohomology as an `R`-linear map:
 a compatible family of `R`-linear maps out of the stages `H^(n+2k)(Tot)` into an `R`-module `P` in
-any universe factors through `HP^n`. -/
-def lift {n : ℕ} {P : Type*} [AddCommGroup P] [Module R P]
+any universe factors uniquely through `HP^n`. -/
+def lift {n : ℕ} {P : Type*} [AddCommMonoid P] [Module R P]
     (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] P)
     (hg : ∀ k, g (k + 1) ∘ₗ (cyclicTotalHomologyPeriodicity R A M (n + 2 * k)).hom = g k) :
     periodicCyclicCohomology R A M n →ₗ[R] P :=
@@ -256,7 +264,7 @@ def lift {n : ℕ} {P : Type*} [AddCommGroup P] [Module R P]
 /-- The `R`-linear map out of periodic cyclic cohomology induced by a compatible family agrees with
 the family on each stage. -/
 @[simp]
-theorem lift_ι {n : ℕ} {P : Type*} [AddCommGroup P] [Module R P]
+theorem lift_ι {n : ℕ} {P : Type*} [AddCommMonoid P] [Module R P]
     (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] P)
     (hg : ∀ k, g (k + 1) ∘ₗ (cyclicTotalHomologyPeriodicity R A M (n + 2 * k)).hom = g k)
     (k : ℕ) (x : (cyclicTotalComplex R A M).homology (n + 2 * k)) :
@@ -264,6 +272,25 @@ theorem lift_ι {n : ℕ} {P : Type*} [AddCommGroup P] [Module R P]
   Module.DirectLimit.lift_of
     (f := fun _ _ h ↦ (cyclicTotalHomologyPeriodicTransition R A M n h).hom)
     g (fun _ _ h y ↦ LinearMap.congr_fun (linearMap_comp_of_periodicity_comp g hg h) y) x
+
+/-- The `R`-linear map out of periodic cyclic cohomology induced by a compatible family composes
+with each stage inclusion to give the family. -/
+@[simp]
+theorem lift_comp_ι {n : ℕ} {P : Type*} [AddCommMonoid P] [Module R P]
+    (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] P)
+    (hg : ∀ k, g (k + 1) ∘ₗ (cyclicTotalHomologyPeriodicity R A M (n + 2 * k)).hom = g k)
+    (k : ℕ) :
+    lift g hg ∘ₗ (ι R A M n k).hom = g k :=
+  LinearMap.ext (lift_ι g hg k)
+
+/-- Uniqueness of `lift`: an `R`-linear map out of periodic cyclic cohomology equals `lift g hg` if
+and only if it restricts to `g k` on every stage `k`. -/
+theorem eq_lift_iff {n : ℕ} {P : Type*} [AddCommMonoid P] [Module R P]
+    (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] P)
+    (hg : ∀ k, g (k + 1) ∘ₗ (cyclicTotalHomologyPeriodicity R A M (n + 2 * k)).hom = g k)
+    (f : periodicCyclicCohomology R A M n →ₗ[R] P) :
+    f = lift g hg ↔ ∀ k, f ∘ₗ (ι R A M n k).hom = g k :=
+  ⟨fun h k ↦ by rw [h, lift_comp_ι], fun h ↦ linearMap_ext fun k ↦ by rw [h, lift_comp_ι]⟩
 
 /-- The canonical map `H^m(Tot) → HP^n` from a degree `m` equal to `n + 2k`, through the
 identification of `H^m(Tot)` with the `k`-th stage. -/

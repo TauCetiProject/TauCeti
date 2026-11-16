@@ -112,6 +112,16 @@ theorem cochainPeriodicity_apply (φ : MultilinearMap (RingHom.id R) (fun _ : Fi
           φ (hochschildFace r.castSucc (hochschildFace j.succ.castSucc a)) := by
   simp [cochainPeriodicity, LinearMap.sum_apply]
 
+/-- Connes' unaveraged cochain periodicity operator `S₀` as a double sum of pairs of Hochschild
+cofaces. -/
+theorem cochainPeriodicity_eq_sum
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
+    cochainPeriodicity R A M n φ =
+      ∑ j : Fin (n + 1), ∑ r ∈ Finset.Iic j, (-1 : ℤ) ^ ((j : ℕ) - r) •
+        hochschildCoface R A M j.succ.castSucc (hochschildCoface R A M r.castSucc φ) := by
+  ext a
+  simp [cochainPeriodicity_apply, hochschildCoface_apply]
+
 /-- Pulling cochains back along a homomorphism of nonunital algebras commutes with
 `cochainPeriodicity`. -/
 theorem cochainPeriodicity_compLinearMap {B : Type u} [NonUnitalNonAssocSemiring B] [Module R B]

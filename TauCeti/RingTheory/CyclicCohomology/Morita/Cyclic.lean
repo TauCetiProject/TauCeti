@@ -84,27 +84,6 @@ namespace TauCeti
 
 /-! ### Compatibility with the cyclic bicomplex and periodicity -/
 
-/-- The bar coboundary `b'` as an alternating sum of the first `n + 1` Hochschild cofaces. -/
-private theorem barCoboundary_eq_sum_coface {R B M : Type*} [Semiring R]
-    [NonUnitalNonAssocSemiring B] [Module R B] [IsScalarTower R B B] [SMulCommClass R B B]
-    [AddCommGroup M] [Module R M] [SMulCommClass R R M] (n : ℕ)
-    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M) :
-    barCoboundary R B M n ψ =
-      ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) • hochschildCoface R B M j.castSucc ψ := by
-  ext a
-  simp [barCoboundary_apply, hochschildCoface_apply, hochschildFace_castSucc]
-
-/-- Connes' unaveraged cochain periodicity operator `S₀` as a double sum of pairs of cofaces. -/
-private theorem cochainPeriodicity_eq_sum_coface {R B M : Type*} [Semiring R]
-    [NonUnitalNonAssocSemiring B] [Module R B] [IsScalarTower R B B] [SMulCommClass R B B]
-    [AddCommGroup M] [Module R M] [SMulCommClass R R M] (n : ℕ)
-    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M) :
-    cochainPeriodicity R B M n ψ =
-      ∑ j : Fin (n + 1), ∑ r ∈ Finset.Iic j, (-1 : ℤ) ^ ((j : ℕ) - r) •
-        hochschildCoface R B M j.succ.castSucc (hochschildCoface R B M r.castSucc ψ) := by
-  ext a
-  simp [cochainPeriodicity_apply, hochschildCoface_apply]
-
 section BicomplexCompatibility
 
 variable {R A M : Type*} [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
@@ -116,7 +95,7 @@ theorem matrixCochainExtension_barCoboundary (ι : Type*) [Fintype ι] (n : ℕ)
     (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     matrixCochainExtension ι (n + 1) (barCoboundary R A M n φ) =
       barCoboundary R (Matrix ι ι A) M n (matrixCochainExtension ι n φ) := by
-  rw [barCoboundary_eq_sum_coface, barCoboundary_eq_sum_coface, map_sum]
+  rw [barCoboundary_eq_sum, barCoboundary_eq_sum, map_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [map_zsmul, matrixCochainExtension_hochschildCoface]
 
@@ -125,7 +104,7 @@ theorem matrixCochainExtension_cochainPeriodicity (ι : Type*) [Fintype ι] (n :
     (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     matrixCochainExtension ι (n + 2) (cochainPeriodicity R A M n φ) =
       cochainPeriodicity R (Matrix ι ι A) M n (matrixCochainExtension ι n φ) := by
-  rw [cochainPeriodicity_eq_sum_coface, cochainPeriodicity_eq_sum_coface, map_sum]
+  rw [cochainPeriodicity_eq_sum, cochainPeriodicity_eq_sum, map_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [map_sum]
   refine Finset.sum_congr rfl fun r _ ↦ ?_

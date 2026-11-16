@@ -580,6 +580,14 @@ theorem hochschildCoboundary_apply (φ : MultilinearMap (RingHom.id R) (fun _ : 
       ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • φ (hochschildFace i a) := by
   simp [hochschildCoboundary]
 
+/-- The Hochschild coboundary of `φ` is the alternating sum of its cofaces. -/
+theorem hochschildCoboundary_eq_sum
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
+    hochschildCoboundary R A M n φ =
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • hochschildCoface R A M i φ := by
+  ext a
+  simp
+
 /-- The Hochschild coboundary in the explicit form of the multiplication of adjacent entries,
 followed by the cyclic term. -/
 theorem hochschildCoboundary_apply_eq_sum_contractNth_add

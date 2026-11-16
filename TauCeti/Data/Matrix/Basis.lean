@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.Data.Matrix.Basis
 
 /-!
@@ -16,7 +17,8 @@ Only the shared index type needs to be finite. `Matrix.smul_vecMulVec_single_sin
 scaled outer product of two coordinate vectors as a matrix unit, and
 `Matrix.one_add_single_mul_one_add_single_of_ne` multiplies two elementary matrices `1 + c Eᵢⱼ`
 and `1 + d Eₖₗ` with `j ≠ k`, whose cross term vanishes. `LinearMap.apply_eq_sum_sum_smul_single`
-expands a linear map on matrices along the matrix units.
+expands a linear map on matrices along the matrix units. `Matrix.singleNonUnitalAlgHom` bundles
+the diagonal corner embedding `x ↦ Matrix.single i i x` as a nonunital algebra homomorphism.
 -/
 
 /-- The product of two matrix units vanishes unless their inner indices agree. -/
@@ -55,3 +57,37 @@ public theorem LinearMap.apply_eq_sum_sum_smul_single {ι κ R M : Type*} [Finty
   simp only [map_sum]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   rw [← map_smul, Matrix.smul_single, smul_eq_mul, mul_one]
+
+/-- The diagonal corner embedding `x ↦ Matrix.single i i x` as a nonunital `R`-algebra
+homomorphism into square matrices. -/
+@[expose]
+public def Matrix.singleNonUnitalAlgHom (R : Type*) {ι A : Type*} [Monoid R]
+    [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [Fintype ι] [DecidableEq ι] (i : ι) :
+    A →ₙₐ[R] Matrix ι ι A where
+  __ := Matrix.singleAddMonoidHom i i
+  map_mul' x y := (Matrix.single_mul_single_same x i i i y).symm
+  map_smul' r x := (Matrix.smul_single r i i x).symm
+
+/-- `Matrix.singleNonUnitalAlgHom R i` sends `x` to the single-entry matrix
+`Matrix.single i i x`. -/
+@[simp]
+public theorem Matrix.singleNonUnitalAlgHom_apply (R : Type*) {ι A : Type*} [Monoid R]
+    [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [Fintype ι] [DecidableEq ι] (i : ι)
+    (x : A) :
+    Matrix.singleNonUnitalAlgHom R i x = Matrix.single i i x :=
+  rfl
+
+/-- The underlying linear map of `Matrix.singleNonUnitalAlgHom R i` is
+`Matrix.singleLinearMap R i i`. -/
+@[simp]
+public theorem Matrix.toLinearMap_singleNonUnitalAlgHom (R : Type*) {ι A : Type*} [Semiring R]
+    [NonUnitalNonAssocSemiring A] [Module R A] [Fintype ι] [DecidableEq ι] (i : ι) :
+    (Matrix.singleNonUnitalAlgHom R (A := A) i : A →ₗ[R] Matrix ι ι A) =
+      Matrix.singleLinearMap R i i :=
+  LinearMap.ext fun _ ↦ rfl
+
+/-- The diagonal corner embedding `Matrix.singleNonUnitalAlgHom R i` is injective. -/
+public theorem Matrix.singleNonUnitalAlgHom_injective (R : Type*) {ι A : Type*} [Monoid R]
+    [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [Fintype ι] [DecidableEq ι] (i : ι) :
+    Function.Injective (Matrix.singleNonUnitalAlgHom R (A := A) i) :=
+  fun _ _ h ↦ by simpa using congrArg (fun M : Matrix ι ι A ↦ M i i) h

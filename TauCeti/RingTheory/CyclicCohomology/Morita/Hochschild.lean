@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.CyclicCohomology.Matrix
 public import TauCeti.RingTheory.HochschildCohomology.Complex
 import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Matrix.Basis
 
 /-!
 # Matrix Morita invariance of Hochschild cohomology
@@ -128,12 +129,6 @@ variable {R A M ι : Type*} [Semiring R] [NonUnitalNonAssocSemiring A] [Module R
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
   [SMulCommClass R R M] [Fintype ι] [DecidableEq ι]
 
-/-- The nonunital corner embedding `x ↦ Matrix.single r r x` into square matrices. -/
-private def singleCornerNonUnitalAlgHom (r : ι) : A →ₙₐ[R] Matrix ι ι A where
-  __ := Matrix.singleLinearMap R r r
-  map_zero' := Matrix.single_zero r r
-  map_mul' x y := (Matrix.single_mul_single_same x r r r y).symm
-
 /-- Corner restriction commutes with every Hochschild coface. -/
 theorem matrixCochainCornerRestriction_hochschildCoface (r : ι) {n : ℕ} (i : Fin (n + 2))
     (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ Matrix ι ι A) M) :
@@ -142,18 +137,15 @@ theorem matrixCochainCornerRestriction_hochschildCoface (r : ι) {n : ℕ} (i : 
   ext a
   simp only [matrixCochainCornerRestriction_apply, hochschildCoface_apply]
   congr 1
-  exact (comp_hochschildFace (singleCornerNonUnitalAlgHom (R := R) r) i a).symm
+  exact (comp_hochschildFace (Matrix.singleNonUnitalAlgHom R (A := A) r) i a).symm
 
 /-- Corner restriction commutes with the Hochschild coboundary. -/
 theorem matrixCochainCornerRestriction_hochschildCoboundary (r : ι) (n : ℕ)
     (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ Matrix ι ι A) M) :
     matrixCochainCornerRestriction r (n + 1) (hochschildCoboundary R (Matrix ι ι A) M n φ) =
       hochschildCoboundary R A M n (matrixCochainCornerRestriction r n φ) := by
-  ext a
-  simp only [matrixCochainCornerRestriction_apply, hochschildCoboundary_apply]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  congr 2
-  exact (comp_hochschildFace (singleCornerNonUnitalAlgHom (R := R) r) i a).symm
+  simpa [matrixCochainCornerRestriction, Matrix.toLinearMap_singleNonUnitalAlgHom] using
+    (hochschildCoboundary_compLinearMap (Matrix.singleNonUnitalAlgHom R (A := A) r) φ).symm
 
 end CornerRestrictionAlgebra
 
@@ -212,21 +204,40 @@ end HochschildCocycles
 
 /-! ### Loday's Hochschild cochain homotopy -/
 
-/-- The Hochschild coboundary as an alternating sum of cofaces. -/
-private theorem hochschildCoboundary_eq_sum_coface {R B M : Type*} [Semiring R]
-    [NonUnitalNonAssocSemiring B] [Module R B] [IsScalarTower R B B] [SMulCommClass R B B]
-    [AddCommGroup M] [Module R M] [SMulCommClass R R M] (n : ℕ)
-    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M) :
-    hochschildCoboundary R B M n ψ =
-      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • hochschildCoface R B M i ψ := by
-  ext a
-  simp [hochschildCoboundary_apply, hochschildCoface_apply]
-
 section HochschildHomotopy
 
 variable {R A M ι : Type*} [Semiring R] [Semiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
   [SMulCommClass R R M] [Fintype ι] [DecidableEq ι]
+
+/-- Non-dependent evaluation of `Fin.insertNth` strictly below the insertion index. -/
+private theorem insertNth_apply_of_lt {m : ℕ} {α : Type*} (k : Fin (m + 1)) (s : α)
+    (q : Fin m → α) (j : Fin (m + 1)) (hj : (j : ℕ) < k) :
+    Fin.insertNth (α := fun _ ↦ α) k s q j = q ⟨j, by omega⟩ := by
+  have h : j = k.succAbove ⟨j, by omega⟩ := by
+    rw [Fin.succAbove_of_castSucc_lt _ _
+      (Fin.lt_def.2 (show ((⟨j, by omega⟩ : Fin m).castSucc : ℕ) < k from hj))]
+    rfl
+  conv_lhs => rw [h]
+  exact Fin.insertNth_apply_succAbove (α := fun _ ↦ α) k s q _
+
+/-- Non-dependent evaluation of `Fin.insertNth` at the insertion index. -/
+private theorem insertNth_apply_of_eq {m : ℕ} {α : Type*} (k : Fin (m + 1)) (s : α)
+    (q : Fin m → α) (j : Fin (m + 1)) (hj : (j : ℕ) = k) :
+    Fin.insertNth (α := fun _ ↦ α) k s q j = s := by
+  have hjk : j = k := Fin.ext hj
+  subst hjk
+  exact Fin.insertNth_apply_same (α := fun _ ↦ α) j s q
+
+/-- Non-dependent evaluation of `Fin.insertNth` strictly above the insertion index. -/
+private theorem insertNth_apply_of_gt {m : ℕ} {α : Type*} (k : Fin (m + 1)) (s : α)
+    (q : Fin m → α) (j : Fin (m + 1)) (hj : (k : ℕ) < j) :
+    Fin.insertNth (α := fun _ ↦ α) k s q j = q ⟨(j : ℕ) - 1, by omega⟩ := by
+  have h : j = k.succAbove ⟨(j : ℕ) - 1, by omega⟩ := by
+    rw [Fin.succAbove_of_le_castSucc _ _ (by simp [Fin.le_def]; omega)]
+    exact Fin.ext (by simp; omega)
+  conv_lhs => rw [h]
+  exact Fin.insertNth_apply_succAbove (α := fun _ ↦ α) k s q _
 
 /-- The coordinatewise linear map applied to the `j`-th matrix entry in Loday's homotopy term
 `hᵢ*`: slot `0` is multiplied on the right by `E_{q₀ r}`, slots `0 < j ≤ i` are sandwiched between
@@ -249,12 +260,17 @@ private def homotopyTuple (r : ι) {n : ℕ} (i : Fin (n + 1)) (q : Fin (i + 1) 
   i.succ.insertNth (Matrix.single r (q (Fin.last i)) 1) fun j ↦
     homotopyEntry (R := R) r i q j (a j)
 
+private theorem homotopyTuple_castSucc_of_le (r : ι) {n : ℕ} (i : Fin (n + 1))
+    (q : Fin (i + 1) → ι) (a : Fin (n + 1) → Matrix ι ι A) {k : Fin (n + 1)} (hki : k ≤ i) :
+    homotopyTuple (R := R) r i q a k.castSucc = homotopyEntry (R := R) r i q k (a k) := by
+  have hk : k.castSucc = i.succ.succAbove k :=
+    (Fin.succAbove_of_castSucc_lt i.succ k (Fin.castSucc_lt_succ_iff.2 hki)).symm
+  rw [hk, homotopyTuple, Fin.insertNth_apply_succAbove]
+
 private theorem homotopyTuple_zero (r : ι) {n : ℕ} (i : Fin (n + 1)) (q : Fin (i + 1) → ι)
     (a : Fin (n + 1) → Matrix ι ι A) :
     homotopyTuple (R := R) r i q a 0 = a 0 * Matrix.single (q 0) r 1 := by
-  have h0 : (0 : Fin (n + 2)) = i.succ.succAbove (0 : Fin (n + 1)) := by
-    rw [Fin.succAbove_of_castSucc_lt i.succ (0 : Fin (n + 1)) (by simp), Fin.castSucc_zero]
-  rw [h0, homotopyTuple, Fin.insertNth_apply_succAbove]
+  rw [← Fin.castSucc_zero, homotopyTuple_castSucc_of_le r i q a (Fin.zero_le i)]
   simp [homotopyEntry]
 
 private theorem homotopyTuple_of_pos_of_le (r : ι) {n : ℕ} (i : Fin (n + 1)) (q : Fin (i + 1) → ι)
@@ -262,15 +278,9 @@ private theorem homotopyTuple_of_pos_of_le (r : ι) {n : ℕ} (i : Fin (n + 1)) 
     homotopyTuple (R := R) r i q a m =
       Matrix.single r (q ⟨(m : ℕ) - 1, by omega⟩) 1 * a ⟨m, by omega⟩ *
         Matrix.single (q ⟨m, by omega⟩) r 1 := by
-  let j : Fin (n + 1) := ⟨m, by omega⟩
-  have hm : m = i.succ.succAbove j := by
-    rw [Fin.succAbove_of_castSucc_lt _ _ (by simp [Fin.lt_def, j]; omega)]
-    exact Fin.ext rfl
-  have hj0 : j ≠ 0 := by intro h; exact hm0.ne' (congrArg Fin.val h)
-  have hji : j ≤ i := hmi
-  conv_lhs => rw [hm]
-  rw [homotopyTuple, Fin.insertNth_apply_succAbove]
-  simp [homotopyEntry, hj0, hji, j]
+  rw [homotopyTuple, insertNth_apply_of_lt _ _ _ _ (by simp; omega)]
+  have hj0 : (⟨m, by omega⟩ : Fin (n + 1)) ≠ 0 := fun h ↦ hm0.ne' (congrArg Fin.val h)
+  simp [homotopyEntry, hj0, show (⟨m, by omega⟩ : Fin (n + 1)) ≤ i from hmi]
 
 private theorem homotopyTuple_succ_self (r : ι) {n : ℕ} (i : Fin (n + 1)) (q : Fin (i + 1) → ι)
     (a : Fin (n + 1) → Matrix ι ι A) :
@@ -280,15 +290,11 @@ private theorem homotopyTuple_succ_self (r : ι) {n : ℕ} (i : Fin (n + 1)) (q 
 private theorem homotopyTuple_of_gt (r : ι) {n : ℕ} (i : Fin (n + 1)) (q : Fin (i + 1) → ι)
     (a : Fin (n + 1) → Matrix ι ι A) (m : Fin (n + 2)) (hm : (i : ℕ) + 1 < m) :
     homotopyTuple (R := R) r i q a m = a ⟨(m : ℕ) - 1, by omega⟩ := by
-  let j : Fin (n + 1) := ⟨(m : ℕ) - 1, by omega⟩
-  have hm' : m = i.succ.succAbove j := by
-    rw [Fin.succAbove_of_le_castSucc _ _ (by simp [Fin.le_def, j]; omega)]
-    exact Fin.ext (by simp [j]; omega)
-  have hj0 : j ≠ 0 := by intro h; have := congrArg Fin.val h; simp [j] at this; omega
-  have hji : ¬ j ≤ i := by simp [Fin.le_def, j]; omega
-  conv_lhs => rw [hm']
-  rw [homotopyTuple, Fin.insertNth_apply_succAbove]
-  simp [homotopyEntry, hj0, hji, j]
+  rw [homotopyTuple, insertNth_apply_of_gt _ _ _ _ hm]
+  have hj0 : (⟨(m : ℕ) - 1, by omega⟩ : Fin (n + 1)) ≠ 0 := fun h ↦ by
+    have := congrArg Fin.val h; simp at this; omega
+  have hji : ¬ (⟨(m : ℕ) - 1, by omega⟩ : Fin (n + 1)) ≤ i := by simp [Fin.le_def]; omega
+  simp [homotopyEntry, hj0, hji]
 
 private theorem homotopyTuple_update (r : ι) {n : ℕ} (i : Fin (n + 1)) (q : Fin (i + 1) → ι)
     (a : Fin (n + 1) → Matrix ι ι A) (j : Fin (n + 1)) (z : Matrix ι ι A) :
@@ -296,16 +302,12 @@ private theorem homotopyTuple_update (r : ι) {n : ℕ} (i : Fin (n + 1)) (q : F
       Function.update (homotopyTuple (R := R) r i q a) (i.succ.succAbove j)
         (homotopyEntry (R := R) r i q j z) := by
   funext k
-  refine Fin.succAboveCases i.succ ?_ ?_ k
-  · simp [homotopyTuple, (Fin.succAbove_ne i.succ j).symm]
-  · intro m
-    simp only [homotopyTuple, Fin.insertNth_apply_succAbove]
-    by_cases hmj : m = j
-    · subst hmj
-      simp
-    · have hne : i.succ.succAbove m ≠ i.succ.succAbove j :=
-        fun h ↦ hmj (Fin.succAbove_right_injective h)
-      simp [hmj, hne]
+  refine Fin.succAboveCases i.succ (by simp [homotopyTuple, (Fin.succAbove_ne i.succ j).symm])
+    (fun m ↦ ?_) k
+  simp only [homotopyTuple, Fin.insertNth_apply_succAbove]
+  by_cases hmj : m = j
+  · subst hmj; simp
+  · simp [hmj, Fin.succAbove_right_injective.ne hmj]
 
 /-- The `q`-summand of `hᵢ* ψ` as a multilinear map. -/
 private def hochschildMatrixHomotopySummand (r : ι) {n : ℕ} (i : Fin (n + 1))
@@ -314,11 +316,11 @@ private def hochschildMatrixHomotopySummand (r : ι) {n : ℕ} (i : Fin (n + 1))
     MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ Matrix ι ι A) M where
   toFun a := ψ (homotopyTuple (R := R) r i q a)
   map_update_add' := by
-    intro inst a j x y
+    intro inst _ _ _ _
     obtain rfl : inst = instDecidableEqFin (n + 1) := Subsingleton.elim _ _
     simp only [homotopyTuple_update, map_add, ψ.map_update_add]
   map_update_smul' := by
-    intro inst a j c x
+    intro inst _ _ _ _
     obtain rfl : inst = instDecidableEqFin (n + 1) := Subsingleton.elim _ _
     simp only [homotopyTuple_update, map_smul, ψ.map_update_smul]
 
@@ -327,12 +329,8 @@ private def hochschildMatrixHomotopyTerm (r : ι) {n : ℕ} (i : Fin (n + 1)) :
     MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ Matrix ι ι A) M →ₗ[R]
       MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ Matrix ι ι A) M where
   toFun ψ := ∑ q : Fin (i + 1) → ι, hochschildMatrixHomotopySummand (R := R) r i q ψ
-  map_add' ψ₁ ψ₂ := by
-    ext a
-    simp [hochschildMatrixHomotopySummand, Finset.sum_add_distrib]
-  map_smul' c ψ := by
-    ext a
-    simp [hochschildMatrixHomotopySummand, Finset.smul_sum]
+  map_add' _ _ := by ext; simp [hochschildMatrixHomotopySummand, Finset.sum_add_distrib]
+  map_smul' _ _ := by ext; simp [hochschildMatrixHomotopySummand, Finset.smul_sum]
 
 private theorem hochschildMatrixHomotopyTerm_apply (r : ι) {n : ℕ} (i : Fin (n + 1))
     (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ Matrix ι ι A) M)
@@ -365,13 +363,8 @@ private theorem hochschildMatrixHomotopyTerm_zero_hochschildCoface_zero (r : ι)
         homotopyTuple_of_gt _ _ _ _ _ (by simp only [Fin.val_zero, Fin.val_succ]; omega)]
       simp
   simp_rw [hterm]
-  have hsum :
-      (∑ q : Fin ((0 : Fin (m + 1)) + 1) → ι,
-          ψ (Function.update a 0 (a 0 * Matrix.single (q 0) (q 0) 1))) =
-        ∑ s : ι, ψ (Function.update a 0 (a 0 * Matrix.single s s 1)) :=
-    ((Equiv.funUnique (Fin 1) ι).symm.sum_comp
-      (fun q : Fin 1 → ι ↦ ψ (Function.update a 0 (a 0 * Matrix.single (q 0) (q 0) 1)))).symm
-  rw [hsum]
+  refine (Fintype.sum_equiv (Equiv.funUnique (Fin 1) ι) _
+    (fun s : ι ↦ ψ (Function.update a 0 (a 0 * Matrix.single s s 1))) fun _ ↦ rfl).trans ?_
   simp only [← ψ.map_update_sum, ← Finset.mul_sum, Matrix.sum_single_one, mul_one,
     Function.update_eq_self]
 
@@ -404,15 +397,68 @@ private theorem hochschildMatrixHomotopyTerm_last_hochschildCoface_last (r : ι)
       Matrix.single_mul_mul_single, one_mul, mul_one, hp, hp, hlast, finRotate_last]
   | succ t =>
     rw [Fin.cons_succ, homotopyTuple_of_pos_of_le _ _ _ _ _ (by simp) (by simp),
-      Matrix.single_mul_mul_single, one_mul, mul_one, hp, hp]
-    have hprev : (⟨(t.castSucc.succ : ℕ) - 1, by simp⟩ : Fin (m + 1)) = t.castSucc :=
-      Fin.ext (by simp)
-    have hcurr : (⟨(t.castSucc.succ : ℕ), by simp⟩ : Fin (m + 1)) = t.succ :=
-      Fin.ext (by simp)
-    have hrot : finRotate (m + 1) t.castSucc = t.succ := by
-      ext
-      simp
-    rw [hprev, hcurr, hrot]
+      Matrix.single_mul_mul_single, one_mul, mul_one, hp, hp,
+      show (⟨(t.castSucc.succ : ℕ) - 1, by simp⟩ : Fin (m + 1)) = t.castSucc from Fin.ext (by simp),
+      show (⟨(t.castSucc.succ : ℕ), by simp⟩ : Fin (m + 1)) = t.succ from Fin.ext (by simp),
+      show finRotate (m + 1) t.castSucc = t.succ from Fin.ext (by simp)]
+
+/-- Diagonal tuple identity: applying face `i + 1` to the `(i + 1)`-th homotopy tuple with
+appended index `s` agrees with applying face `i + 1` to the `i`-th homotopy tuple, except that
+entry `i + 1` acquires a right factor `E_{s s}`. -/
+private theorem hochschildFace_succ_homotopyTuple_succ (r : ι) {n : ℕ} (i : Fin (n + 1))
+    (q : Fin ((i : ℕ) + 1) → ι) (s : ι) (a : Fin (n + 2) → Matrix ι ι A) :
+    hochschildFace i.succ.castSucc (homotopyTuple (R := R) r i.succ (Fin.snoc q s) a) =
+      Function.update
+        (hochschildFace i.succ.castSucc (homotopyTuple (R := R) r i.castSucc q a))
+        i.succ
+        (Matrix.single r (q (Fin.last i)) 1 * a i.succ * Matrix.single s s 1) := by
+  funext t
+  rw [hochschildFace_castSucc, hochschildFace_castSucc]
+  rcases lt_trichotomy (t : ℕ) (i.succ : ℕ) with ht | ht | ht
+  · -- Below the contracted slot `i + 1`: `Fin.snoc q s` agrees with `q`.
+    have hne : t ≠ i.succ := fun h ↦ ht.ne (congrArg Fin.val h)
+    rw [Function.update_of_ne hne, Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using ht),
+      Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using ht)]
+    rcases eq_or_ne t 0 with rfl | ht0
+    · rw [Fin.castSucc_zero, homotopyTuple_zero, homotopyTuple_zero]
+      exact congrArg (fun x ↦ a 0 * Matrix.single x r 1)
+        (Fin.snoc_castSucc (α := fun _ ↦ ι) s q (0 : Fin ((i : ℕ) + 1)))
+    · have htpos : 0 < (t : ℕ) := Nat.pos_of_ne_zero (fun h ↦ ht0 (Fin.ext h))
+      rw [homotopyTuple_of_pos_of_le _ _ _ _ _ (by simpa using htpos) (by simp at ht ⊢; omega),
+        homotopyTuple_of_pos_of_le _ _ _ _ _ (by simpa using htpos) (by simp at ht ⊢; omega)]
+      have hsnoc (j : Fin ((i : ℕ) + 1)) :
+          Fin.snoc (α := fun _ ↦ ι) q s ⟨j, Nat.lt_succ_of_lt j.2⟩ = q j :=
+        Fin.snoc_castSucc (α := fun _ ↦ ι) s q j
+      rw [hsnoc ⟨(t.castSucc : ℕ) - 1,
+          by simp only [Fin.val_castSucc, Fin.val_succ] at ht ⊢; omega⟩,
+        hsnoc ⟨(t.castSucc : ℕ), by simp only [Fin.val_castSucc, Fin.val_succ] at ht ⊢; omega⟩]
+  · -- At the contracted slot `i + 1`: `E_{s r} * E_{r s} = E_{s s}`.
+    obtain rfl : t = i.succ := Fin.ext ht
+    rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, Function.update_self,
+      homotopyTuple_of_pos_of_le _ _ _ _ _ (by simp) (by simp), homotopyTuple_succ_self,
+      mul_assoc, Matrix.single_mul_single_same, mul_one,
+      show (⟨(i.succ.castSucc : ℕ) - 1, by simp⟩ : Fin ((i.succ : ℕ) + 1)) =
+        (Fin.last (i : ℕ)).castSucc from Fin.ext (by simp),
+      show (⟨(i.succ.castSucc : ℕ), by simp⟩ : Fin ((i.succ : ℕ) + 1)) =
+        Fin.last (i.succ : ℕ) from Fin.ext (by simp),
+      Fin.snoc_castSucc, Fin.snoc_last]
+    rfl
+  · -- Above the contracted slot `i + 1`: both tuples read untransformed entries of `a`.
+    have hne : t ≠ i.succ := fun h ↦ ht.ne' (congrArg Fin.val h)
+    rw [Function.update_of_ne hne, Fin.contractNth_apply_of_gt _ _ _ _ (by simpa using ht),
+      Fin.contractNth_apply_of_gt _ _ _ _ (by simpa using ht),
+      homotopyTuple_of_gt _ _ _ _ _ (by simp at ht ⊢; omega),
+      homotopyTuple_of_gt _ _ _ _ _ (by simp at ht ⊢; omega)]
+
+/-- Entry `i + 1` of face `i + 1` of the `i`-th homotopy tuple is `E_{r, qᵢ} * a_{i+1}`. -/
+private theorem hochschildFace_succ_homotopyTuple_castSucc_self (r : ι) {n : ℕ} (i : Fin (n + 1))
+    (q : Fin ((i : ℕ) + 1) → ι) (a : Fin (n + 2) → Matrix ι ι A) :
+    hochschildFace i.succ.castSucc (homotopyTuple (R := R) r i.castSucc q a) i.succ =
+      Matrix.single r (q (Fin.last i)) 1 * a i.succ := by
+  rw [hochschildFace_castSucc, Fin.contractNth_apply_of_eq _ _ _ _ rfl]
+  have hcast : i.succ.castSucc = i.castSucc.succ := rfl
+  rw [hcast, homotopyTuple_succ_self, homotopyTuple_of_gt _ _ _ _ _ (by simp)]
+  congr 1
 
 /-- Face identity 3 (diagonal cancellation): `h_{i+1}* (δ_{i+1} ψ) = h_i* (δ_{i+1} ψ)`. -/
 private theorem hochschildMatrixHomotopyTerm_succ_hochschildCoface_succ (r : ι) {n : ℕ}
@@ -425,71 +471,99 @@ private theorem hochschildMatrixHomotopyTerm_succ_hochschildCoface_succ (r : ι)
   ext a
   rw [hochschildMatrixHomotopyTerm_apply, hochschildMatrixHomotopyTerm_apply]
   simp only [hochschildCoface_apply]
+  -- Split off the final index `s` from the `(i + 2)`-tuple via `Fin.snocEquiv`.
   trans ∑ p : ι × (Fin ((i : ℕ) + 1) → ι),
       ψ (hochschildFace i.succ.castSucc
         (homotopyTuple (R := R) r i.succ (Fin.snoc p.2 p.1) a))
   · exact ((Fin.snocEquiv (fun _ : Fin ((i : ℕ) + 1 + 1) ↦ ι)).sum_comp
       (fun q : Fin ((i : ℕ) + 1 + 1) → ι ↦
         ψ (hochschildFace i.succ.castSucc (homotopyTuple (R := R) r i.succ q a)))).symm
+  -- Sum over `s` first inside slot `i + 1`, using multilinearity and `∑ s, E_{s s} = 1`.
   rw [Fintype.sum_prod_type, Finset.sum_comm]
   refine Finset.sum_congr rfl fun q _ ↦ ?_
-  have hterm (s : ι) :
-      hochschildFace i.succ.castSucc
-          (homotopyTuple (R := R) r i.succ (Fin.snoc q s) a) =
-        Function.update
-          (hochschildFace i.succ.castSucc (homotopyTuple (R := R) r i.castSucc q a))
-          i.succ
-          (Matrix.single r (q (Fin.last i)) 1 * a i.succ * Matrix.single s s 1) := by
-    funext t
-    rw [hochschildFace_castSucc, hochschildFace_castSucc]
-    rcases lt_trichotomy (t : ℕ) (i.succ : ℕ) with ht | ht | ht
-    · have hne : t ≠ i.succ := fun h ↦ ht.ne (congrArg Fin.val h)
-      rw [Function.update_of_ne hne, Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using ht),
-        Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using ht)]
-      rcases eq_or_ne t 0 with rfl | ht0
-      · rw [Fin.castSucc_zero, homotopyTuple_zero, homotopyTuple_zero]
-        have h0 : (0 : Fin ((i : ℕ) + 1 + 1)) = (0 : Fin ((i : ℕ) + 1)).castSucc := rfl
-        rw [h0, Fin.snoc_castSucc]
-      · have htpos : 0 < (t : ℕ) := Nat.pos_of_ne_zero (fun h ↦ ht0 (Fin.ext h))
-        rw [homotopyTuple_of_pos_of_le _ _ _ _ _ (by simpa using htpos) (by simp at ht ⊢; omega),
-          homotopyTuple_of_pos_of_le _ _ _ _ _ (by simpa using htpos) (by simp at ht ⊢; omega)]
-        have h1 : (⟨(t.castSucc : ℕ) - 1,
-              by simp only [Fin.val_castSucc, Fin.val_succ] at ht ⊢; omega⟩ :
-              Fin ((i : ℕ) + 1 + 1)) =
-            (⟨(t.castSucc : ℕ) - 1, by simp only [Fin.val_castSucc, Fin.val_succ] at ht ⊢; omega⟩ :
-              Fin ((i : ℕ) + 1)).castSucc := Fin.ext rfl
-        have h2 : (⟨(t.castSucc : ℕ),
-              by simp only [Fin.val_castSucc, Fin.val_succ] at ht ⊢; omega⟩ :
-              Fin ((i : ℕ) + 1 + 1)) =
-            (⟨(t.castSucc : ℕ), by simp only [Fin.val_castSucc, Fin.val_succ] at ht ⊢; omega⟩ :
-              Fin ((i : ℕ) + 1)).castSucc := Fin.ext rfl
-        rw [h1, h2, Fin.snoc_castSucc, Fin.snoc_castSucc]
-    · obtain rfl : t = i.succ := Fin.ext ht
-      rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, Function.update_self,
-        homotopyTuple_of_pos_of_le _ _ _ _ _ (by simp) (by simp), homotopyTuple_succ_self,
-        mul_assoc, Matrix.single_mul_single_same, mul_one]
-      have h1 : (⟨(i.succ.castSucc : ℕ) - 1, by simp⟩ : Fin ((i : ℕ) + 1 + 1)) =
-          (Fin.last (i : ℕ)).castSucc := Fin.ext (by simp)
-      have h2 : (⟨(i.succ.castSucc : ℕ), by simp⟩ : Fin ((i : ℕ) + 1 + 1)) =
-          Fin.last ((i : ℕ) + 1) := Fin.ext (by simp)
-      have h3 : (Fin.last (i.succ : ℕ) : Fin ((i : ℕ) + 1 + 1)) = Fin.last ((i : ℕ) + 1) := rfl
-      have hsnoc : Fin.snoc (α := fun _ ↦ ι) q s (Fin.last ((i : ℕ) + 1)) = s := by simp
-      rw [h1, h2, h3, Fin.snoc_castSucc, hsnoc]
+  simp only [hochschildFace_succ_homotopyTuple_succ, ← ψ.map_update_sum, ← Finset.mul_sum,
+    Matrix.sum_single_one, mul_one]
+  rw [← hochschildFace_succ_homotopyTuple_castSucc_self (R := R) r i q a, Function.update_eq_self]
+
+/-- Lower-triangle tuple identity: for `k ≤ i`, taking face `k` of the `(i + 1)`-th homotopy tuple
+with index `s` inserted at position `k` agrees with the `i`-th homotopy tuple of face `k`, except
+that slot `k` inserts the diagonal matrix unit `E_{s s}` between `a k.castSucc` and `a k.succ`. -/
+private theorem hochschildFace_castSucc_homotopyTuple_succ_of_le (r : ι) {n : ℕ}
+    (i k : Fin (n + 1)) (hki : k ≤ i) (q : Fin ((i : ℕ) + 1) → ι) (s : ι)
+    (a : Fin (n + 2) → Matrix ι ι A) :
+    hochschildFace k.castSucc.castSucc
+        (homotopyTuple (R := R) r i.succ
+          (Fin.insertNth (α := fun _ ↦ ι) ⟨k, Nat.lt_succ_of_le (Nat.le_succ_of_le hki)⟩ s q) a) =
+      Function.update
+        (homotopyTuple (R := R) r i q (hochschildFace k.castSucc a))
+        k.castSucc
+        (homotopyEntry (R := R) r i q k (a k.castSucc * Matrix.single s s 1 * a k.succ)) := by
+  let k' : Fin ((i : ℕ) + 1 + 1) := ⟨k, Nat.lt_succ_of_le (Nat.le_succ_of_le hki)⟩
+  funext t
+  rw [hochschildFace_castSucc]
+  rcases lt_trichotomy (t : ℕ) (k : ℕ) with ht | ht | ht
+  · -- Below the contracted slot `k`: all queried indices lie strictly below `k'`.
+    have hne : t ≠ k.castSucc := fun h ↦ ht.ne (congrArg Fin.val h)
+    rw [Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using ht), Function.update_of_ne hne]
+    rcases eq_or_ne t 0 with rfl | ht0
+    · rw [Fin.castSucc_zero, homotopyTuple_zero, homotopyTuple_zero, hochschildFace_castSucc,
+        Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using ht), Fin.castSucc_zero,
+        insertNth_apply_of_lt k' s q 0 (by simpa [k'] using ht)]
       rfl
-    · have hne : t ≠ i.succ := fun h ↦ ht.ne' (congrArg Fin.val h)
-      rw [Function.update_of_ne hne, Fin.contractNth_apply_of_gt _ _ _ _ (by simpa using ht),
-        Fin.contractNth_apply_of_gt _ _ _ _ (by simpa using ht),
-        homotopyTuple_of_gt _ _ _ _ _ (by simp at ht ⊢; omega),
-        homotopyTuple_of_gt _ _ _ _ _ (by simp at ht ⊢; omega)]
-  have hbase :
-      hochschildFace i.succ.castSucc (homotopyTuple (R := R) r i.castSucc q a) i.succ =
-        Matrix.single r (q (Fin.last i)) 1 * a i.succ := by
-    rw [hochschildFace_castSucc, Fin.contractNth_apply_of_eq _ _ _ _ rfl]
-    have hcast : i.succ.castSucc = i.castSucc.succ := rfl
-    rw [hcast, homotopyTuple_succ_self, homotopyTuple_of_gt _ _ _ _ _ (by simp)]
-    congr 1
-  simp only [hterm, ← ψ.map_update_sum, ← Finset.mul_sum,
-    Matrix.sum_single_one, mul_one, ← hbase, Function.update_eq_self]
+    · have htpos : 0 < (t : ℕ) := Nat.pos_of_ne_zero (fun h ↦ ht0 (Fin.ext h))
+      rw [homotopyTuple_of_pos_of_le _ _ _ _ _ (by simpa using htpos) (by simp; omega),
+        homotopyTuple_of_pos_of_le _ _ _ _ _ htpos (by omega), hochschildFace_castSucc,
+        Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using ht),
+        insertNth_apply_of_lt k' s q _ (by simp [k']; omega),
+        insertNth_apply_of_lt k' s q _ (by simp [k']; omega)]
+      rfl
+  · -- At the contracted slot `k`: the inserted `s` cancels as `E_{s r} * E_{r s} = E_{s s}`.
+    obtain rfl : t = k.castSucc := Fin.ext ht
+    rw [Fin.contractNth_apply_of_eq _ _ _ _ (by simp), Function.update_self]
+    by_cases hk0 : k = 0
+    · subst hk0
+      rw [Fin.castSucc_zero, Fin.castSucc_zero, Fin.succ_zero_eq_one,
+        homotopyTuple_zero, homotopyTuple_of_pos_of_le _ _ _ _ _ (by simp) (by simp),
+        insertNth_apply_of_eq k' s q _ (by simp [k']),
+        insertNth_apply_of_eq k' s q _ (by simp [k']),
+        insertNth_apply_of_gt k' s q _ (by simp [k'])]
+      simp only [homotopyEntry, ↓reduceIte, LinearMap.mulRight_apply, mul_assoc, Fin.val_one,
+        Nat.sub_self, Fin.mk_zero]
+      rw [← mul_assoc (Matrix.single s r 1), Matrix.single_mul_single_same, mul_one]
+      rfl
+    · have hkpos : 0 < (k : ℕ) := Nat.pos_of_ne_zero (fun h ↦ hk0 (Fin.ext h))
+      rw [homotopyTuple_of_pos_of_le _ _ _ _ _ (by simpa using hkpos) (by simp; omega),
+        homotopyTuple_of_pos_of_le _ _ _ _ _ (by simp) (by simp; omega),
+        insertNth_apply_of_lt k' s q _ (by simpa [k'] using Nat.sub_lt hkpos zero_lt_one),
+        insertNth_apply_of_eq k' s q _ (by simp [k']),
+        insertNth_apply_of_eq k' s q _ (by simp [k']),
+        insertNth_apply_of_gt k' s q _ (by simp [k'])]
+      simp only [homotopyEntry, hk0, ↓reduceIte, ↓reduceDIte, hki, LinearMap.comp_apply,
+        LinearMap.mulRight_apply, LinearMap.mulLeft_apply, mul_assoc, Fin.val_castSucc,
+        Fin.val_succ, Nat.add_sub_cancel]
+      rw [← mul_assoc (Matrix.single s r 1), Matrix.single_mul_single_same, mul_one]
+      rfl
+  · -- Above the contracted slot `k`: indices shift down by one across `k'`.
+    have hne : t ≠ k.castSucc := fun h ↦ ht.ne' (congrArg Fin.val h)
+    rw [Fin.contractNth_apply_of_gt _ _ _ _ (by simpa using ht), Function.update_of_ne hne]
+    rcases lt_trichotomy (t : ℕ) (i.succ : ℕ) with hti | hti | hti
+    · have htpos : 0 < (t : ℕ) := by omega
+      rw [homotopyTuple_of_pos_of_le _ _ _ _ _ (by simp) (by simp at hti ⊢; omega),
+        homotopyTuple_of_pos_of_le _ _ _ _ _ htpos (by simp at hti ⊢; omega),
+        hochschildFace_castSucc, Fin.contractNth_apply_of_gt _ _ _ _ (by simpa using ht),
+        insertNth_apply_of_gt k' s q _ (by simp [k']; omega),
+        insertNth_apply_of_gt k' s q _ (by simp [k']; omega)]
+      simp only [Fin.val_succ, Nat.add_sub_cancel]
+      rfl
+    · obtain rfl : t = i.succ := Fin.ext hti
+      rw [homotopyTuple_succ_self, homotopyTuple_succ_self,
+        insertNth_apply_of_gt k' s q _ (by simp [k']; omega)]
+      simp only [Fin.val_last, Fin.val_succ, Nat.add_sub_cancel]
+      rfl
+    · rw [homotopyTuple_of_gt _ _ _ _ _ (by simp at hti ⊢; omega),
+        homotopyTuple_of_gt _ _ _ _ _ hti, hochschildFace_castSucc,
+        Fin.contractNth_apply_of_gt _ _ _ _ (by simp at ht hti ⊢; omega)]
+      exact congrArg a (Fin.ext (by simp; omega))
 
 /-- Face identity 4 (lower triangle): for `k ≤ i`, `h_{i+1}* (δ_k ψ) = δ_k (h_i* ψ)`. -/
 private theorem hochschildMatrixHomotopyTerm_succ_hochschildCoface_of_le (r : ι) {n : ℕ}
@@ -503,6 +577,8 @@ private theorem hochschildMatrixHomotopyTerm_succ_hochschildCoface_of_le (r : ι
   rw [hochschildMatrixHomotopyTerm_apply, hochschildCoface_apply,
     hochschildMatrixHomotopyTerm_apply]
   simp only [hochschildCoface_apply]
+  -- Split off the `k`-th index `s` from the `(i + 2)`-tuple of summation indices via
+  -- `Fin.insertNthEquiv`.
   let k' : Fin ((i : ℕ) + 1 + 1) := ⟨k, by omega⟩
   trans ∑ p : ι × (Fin ((i : ℕ) + 1) → ι),
       ψ (hochschildFace k.castSucc.castSucc
@@ -510,173 +586,31 @@ private theorem hochschildMatrixHomotopyTerm_succ_hochschildCoface_of_le (r : ι
   · exact ((Fin.insertNthEquiv (fun _ : Fin ((i : ℕ) + 1 + 1) ↦ ι) k').sum_comp
       (fun q : Fin ((i : ℕ) + 1 + 1) → ι ↦
         ψ (hochschildFace k.castSucc.castSucc (homotopyTuple (R := R) r i.succ q a)))).symm
+  -- Sum over `s` first inside slot `k`, using multilinearity, linearity of `homotopyEntry`,
+  -- and `∑ s, E_{s s} = 1`.
   rw [Fintype.sum_prod_type, Finset.sum_comm]
   refine Finset.sum_congr rfl fun q _ ↦ ?_
-  have hq_lt (s : ι) (m : ℕ) (hm : m < k) :
-      Fin.insertNth (α := fun _ ↦ ι) k' s q ⟨m, by omega⟩ = q ⟨m, by omega⟩ := by
-    have hsucc : (⟨m, by omega⟩ : Fin ((i : ℕ) + 1 + 1)) = k'.succAbove ⟨m, by omega⟩ := by
-      rw [Fin.succAbove_of_castSucc_lt _ _ (by simp [Fin.lt_def, k', hm])]
-      exact Fin.ext rfl
-    rw [hsucc, Fin.insertNth_apply_succAbove]
-  have hq_eq (s : ι) : Fin.insertNth (α := fun _ ↦ ι) k' s q k' = s :=
-    Fin.insertNth_apply_same (α := fun _ ↦ ι) k' s q
-  have hq_gt (s : ι) (m : ℕ) (hm1 : (k : ℕ) < m) (hm2 : m < (i : ℕ) + 1 + 1) :
-      Fin.insertNth (α := fun _ ↦ ι) k' s q ⟨m, hm2⟩ = q ⟨m - 1, by omega⟩ := by
-    have hsucc : (⟨m, hm2⟩ : Fin ((i : ℕ) + 1 + 1)) = k'.succAbove ⟨m - 1, by omega⟩ := by
-      rw [Fin.succAbove_of_le_castSucc _ _ (by simp [Fin.le_def, k']; omega)]
-      exact Fin.ext (by simp; omega)
-    rw [hsucc, Fin.insertNth_apply_succAbove]
-  have hterm (s : ι) :
-      hochschildFace k.castSucc.castSucc
-          (homotopyTuple (R := R) r i.succ (Fin.insertNth (α := fun _ ↦ ι) k' s q) a) =
-        Function.update
-          (homotopyTuple (R := R) r i q (hochschildFace k.castSucc a))
-          k.castSucc
-          (if k = 0 then
-            a 0 * Matrix.single s s 1 * a 1 * Matrix.single (q 0) r 1
-          else
-            Matrix.single r (q ⟨(k : ℕ) - 1, by omega⟩) 1 * a k.castSucc *
-              Matrix.single s s 1 * a k.succ * Matrix.single (q ⟨k, by omega⟩) r 1) := by
-    funext t
-    rw [hochschildFace_castSucc]
-    rcases lt_trichotomy (t : ℕ) (k : ℕ) with ht | ht | ht
-    · have hne : t ≠ k.castSucc := fun h ↦ ht.ne (congrArg Fin.val h)
-      rw [Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using ht), Function.update_of_ne hne]
-      rcases eq_or_ne t 0 with rfl | ht0
-      · rw [Fin.castSucc_zero, homotopyTuple_zero, homotopyTuple_zero, hochschildFace_castSucc,
-          Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using ht), Fin.castSucc_zero]
-        have := hq_lt s 0 ht
-        exact congrArg (fun x ↦ a 0 * Matrix.single x r 1) this
-      · have htpos : 0 < (t : ℕ) := Nat.pos_of_ne_zero (fun h ↦ ht0 (Fin.ext h))
-        rw [homotopyTuple_of_pos_of_le _ _ _ _ _ (by simpa using htpos) (by simp; omega),
-          homotopyTuple_of_pos_of_le _ _ _ _ _ htpos (by omega), hochschildFace_castSucc,
-          Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using ht)]
-        have h1 := hq_lt s ((t : ℕ) - 1) (by omega)
-        have h2 := hq_lt s (t : ℕ) ht
-        simp only [Fin.val_castSucc] at h1 h2 ⊢
-        rw [h1, h2]
-        rfl
-    · obtain rfl : t = k.castSucc := Fin.ext ht
-      rw [Fin.contractNth_apply_of_eq _ _ _ _ (by simp), Function.update_self]
-      by_cases hk0 : k = 0
-      · subst hk0
-        simp only [↓reduceIte]
-        rw [Fin.castSucc_zero, Fin.castSucc_zero, Fin.succ_zero_eq_one,
-          homotopyTuple_zero, homotopyTuple_of_pos_of_le _ _ _ _ _ (by simp) (by simp)]
-        have h0 : (0 : Fin ((i : ℕ) + 1 + 1)) = k' := Fin.ext rfl
-        have h1 : (⟨(1 : Fin (n + 3)) - 1, by simp⟩ : Fin ((i : ℕ) + 1 + 1)) = k' :=
-          Fin.ext (by simp [k'])
-        have h2 := hq_gt s 1 (by simp) (by omega)
-        have h1' : (⟨(1 : Fin (n + 3)), by simp⟩ : Fin ((i : ℕ) + 1 + 1)) = ⟨1, by omega⟩ :=
-          Fin.ext rfl
-        rw [h0, h1, hq_eq, h1', h2]
-        simp only [Nat.sub_self, Fin.mk_zero, Fin.val_one, Fin.mk_one]
-        calc
-          a 0 * Matrix.single s r 1 * (Matrix.single r s 1 * a 1 * Matrix.single (q 0) r 1)
-              = a 0 * (Matrix.single s r 1 * Matrix.single r s 1) * a 1 *
-                Matrix.single (q 0) r 1 := by simp only [mul_assoc]
-          _ = a 0 * Matrix.single s s 1 * a 1 * Matrix.single (q 0) r 1 := by
-                rw [Matrix.single_mul_single_same, mul_one]
-      · have hkpos : 0 < (k : ℕ) := Nat.pos_of_ne_zero (fun h ↦ hk0 (Fin.ext h))
-        simp only [hk0, ↓reduceIte]
-        rw [homotopyTuple_of_pos_of_le _ _ _ _ _ (by simpa using hkpos) (by simp; omega),
-          homotopyTuple_of_pos_of_le _ _ _ _ _ (by simp) (by simp; omega)]
-        have hm1 := hq_lt s ((k : ℕ) - 1) (by omega)
-        have hmk : (⟨(k.castSucc.castSucc : ℕ), by simp; omega⟩ : Fin ((i : ℕ) + 1 + 1)) = k' :=
-          Fin.ext rfl
-        have hmk' : (⟨(k.castSucc.succ : ℕ) - 1, by simp; omega⟩ : Fin ((i : ℕ) + 1 + 1)) = k' :=
-          Fin.ext (by simp [k'])
-        have hmp := hq_gt s ((k : ℕ) + 1) (by omega) (by omega)
-        have hmp' : (⟨(k.castSucc.succ : ℕ), by simp; omega⟩ : Fin ((i : ℕ) + 1 + 1)) =
-            ⟨(k : ℕ) + 1, by omega⟩ := Fin.ext (by simp)
-        have hm1' : (⟨(k.castSucc.castSucc : ℕ) - 1, by simp; omega⟩ : Fin ((i : ℕ) + 1 + 1)) =
-            ⟨(k : ℕ) - 1, by omega⟩ := Fin.ext rfl
-        rw [hm1', hm1, hmk, hmk', hq_eq, hmp', hmp]
-        have ha1 : (⟨(k.castSucc.castSucc : ℕ), by simp; omega⟩ : Fin (n + 2)) = k.castSucc :=
-          Fin.ext rfl
-        have ha2 : (⟨(k.castSucc.succ : ℕ), by simp; omega⟩ : Fin (n + 2)) = k.succ :=
-          Fin.ext (by simp)
-        have hqsub : (⟨(k : ℕ) + 1 - 1, by omega⟩ : Fin (i + 1)) = ⟨k, by omega⟩ :=
-          Fin.ext (Nat.add_sub_cancel _ 1)
-        rw [ha1, ha2, hqsub]
-        calc
-          Matrix.single r (q ⟨(k : ℕ) - 1, by omega⟩) 1 * a k.castSucc * Matrix.single s r 1 *
-              (Matrix.single r s 1 * a k.succ * Matrix.single (q ⟨k, by omega⟩) r 1)
-              = Matrix.single r (q ⟨(k : ℕ) - 1, by omega⟩) 1 * a k.castSucc *
-                (Matrix.single s r 1 * Matrix.single r s 1) * a k.succ *
-                Matrix.single (q ⟨k, by omega⟩) r 1 := by simp only [mul_assoc]
-          _ = Matrix.single r (q ⟨(k : ℕ) - 1, by omega⟩) 1 * a k.castSucc *
-                Matrix.single s s 1 * a k.succ * Matrix.single (q ⟨k, by omega⟩) r 1 := by
-                rw [Matrix.single_mul_single_same, mul_one]
-    · have hne : t ≠ k.castSucc := fun h ↦ ht.ne' (congrArg Fin.val h)
-      rw [Fin.contractNth_apply_of_gt _ _ _ _ (by simpa using ht), Function.update_of_ne hne]
-      rcases lt_trichotomy (t : ℕ) (i.succ : ℕ) with hti | hti | hti
-      · have htpos : 0 < (t : ℕ) := by omega
-        rw [homotopyTuple_of_pos_of_le _ _ _ _ _ (by simp) (by simp at hti ⊢; omega),
-          homotopyTuple_of_pos_of_le _ _ _ _ _ htpos (by simp at hti ⊢; omega),
-          hochschildFace_castSucc, Fin.contractNth_apply_of_gt _ _ _ _ (by simpa using ht)]
-        have h1 := hq_gt s (t : ℕ) ht (by simp only [Fin.val_succ] at hti; omega)
-        have h2 := hq_gt s ((t : ℕ) + 1) (by omega) (by simp only [Fin.val_succ] at hti; omega)
-        have h1' : (⟨(t.succ : ℕ) - 1, by simp only [Fin.val_succ] at hti ⊢; omega⟩ :
-              Fin ((i : ℕ) + 1 + 1)) =
-            ⟨(t : ℕ), by simp only [Fin.val_succ] at hti; omega⟩ := Fin.ext (by simp)
-        have h2' : (⟨(t.succ : ℕ), by simp only [Fin.val_succ] at hti ⊢; omega⟩ :
-              Fin ((i : ℕ) + 1 + 1)) =
-            ⟨(t : ℕ) + 1, by simp only [Fin.val_succ] at hti; omega⟩ := Fin.ext (by simp)
-        rw [h1', h1, h2', h2]
-        have hq2 : (⟨(t : ℕ) + 1 - 1, by simp only [Fin.val_succ] at hti; omega⟩ : Fin (i + 1)) =
-            ⟨t, by simp only [Fin.val_succ] at hti; omega⟩ := Fin.ext (Nat.add_sub_cancel _ 1)
-        have ha : (⟨(t.succ : ℕ), by simp only [Fin.val_succ]; omega⟩ : Fin (n + 2)) =
-            (⟨t, by omega⟩ : Fin (n + 1)).succ := Fin.ext (by simp)
-        rw [hq2, ha]
-      · obtain rfl : t = i.succ := Fin.ext hti
-        rw [homotopyTuple_succ_self, homotopyTuple_succ_self]
-        have hlast := hq_gt s ((i : ℕ) + 1) (by omega) (by omega)
-        have hlast' : Fin.last (i.succ : ℕ) = ⟨(i : ℕ) + 1, by simp⟩ := Fin.ext (by simp)
-        rw [hlast', hlast]
-        congr 1
-      · rw [homotopyTuple_of_gt _ _ _ _ _ (by simp at hti ⊢; omega),
-          homotopyTuple_of_gt _ _ _ _ _ hti, hochschildFace_castSucc,
-          Fin.contractNth_apply_of_gt _ _ _ _ (by simp at ht hti ⊢; omega)]
-        congr 1
-        exact Fin.ext (by simp; omega)
-  simp only [hterm, ← ψ.map_update_sum]
-  by_cases hk0 : k = 0
-  · subst hk0
-    simp only [↓reduceIte, Fin.castSucc_zero]
-    have hsum : (∑ s : ι, a 0 * Matrix.single s s 1 * a 1 * Matrix.single (q 0) r 1) =
-        homotopyTuple (R := R) r i q (hochschildFace 0 a) 0 := by
-      simp_rw [← Finset.sum_mul, ← Finset.mul_sum, Matrix.sum_single_one, mul_one]
-      rw [homotopyTuple_zero, ← Fin.castSucc_zero, hochschildFace_castSucc,
-        Fin.contractNth_apply_of_eq _ _ _ _ (by simp), Fin.castSucc_zero, Fin.succ_zero_eq_one]
-    rw [hsum, Function.update_eq_self]
-  · simp only [hk0, ↓reduceIte]
-    have hkpos : 0 < (k : ℕ) := Nat.pos_of_ne_zero (fun h ↦ hk0 (Fin.ext h))
-    have hsum : (∑ s : ι, Matrix.single r (q ⟨(k : ℕ) - 1, by omega⟩) 1 * a k.castSucc *
-          Matrix.single s s 1 * a k.succ * Matrix.single (q ⟨k, by omega⟩) r 1) =
-        homotopyTuple (R := R) r i q (hochschildFace k.castSucc a) k.castSucc := by
-      simp_rw [← Finset.sum_mul, ← Finset.mul_sum, Matrix.sum_single_one, mul_one]
-      rw [homotopyTuple_of_pos_of_le _ _ _ _ _ (by simpa using hkpos) (by simpa using hki),
-        hochschildFace_castSucc, Fin.contractNth_apply_of_eq _ _ _ _ (by simp)]
-      simp only [Fin.val_castSucc, Fin.eta]
-      simp only [mul_assoc]
-    rw [hsum, Function.update_eq_self]
+  dsimp only [k']
+  simp only [hochschildFace_castSucc_homotopyTuple_succ_of_le r i k hki,
+    ← ψ.map_update_sum, ← map_sum, ← Finset.sum_mul, ← Finset.mul_sum,
+    Matrix.sum_single_one, mul_one]
+  have hslot : homotopyEntry (R := R) r i q k (a k.castSucc * a k.succ) =
+      homotopyTuple (R := R) r i q (hochschildFace k.castSucc a) k.castSucc := by
+    rw [homotopyTuple_castSucc_of_le r i q _ hki, hochschildFace_castSucc,
+      Fin.contractNth_apply_of_eq _ _ _ _ rfl]
+  rw [hslot, Function.update_eq_self]
 
-/-- Face identity 5 (upper triangle): for `i < k`, `h_i* (δ_{k+1} ψ) = δ_k (h_i* ψ)`. -/
-private theorem hochschildMatrixHomotopyTerm_castSucc_hochschildCoface_succ_of_lt (r : ι) {n : ℕ}
+/-- Upper-triangle tuple identity: for `i < k`, taking face `k + 1` of the `i`-th homotopy tuple
+equals the `i`-th homotopy tuple of face `k`. -/
+private theorem hochschildFace_succ_homotopyTuple_castSucc_of_lt (r : ι) {n : ℕ}
     (i : Fin (n + 1)) (k : Fin (n + 2)) (hik : (i : ℕ) < k)
-    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ Matrix ι ι A) M) :
-    hochschildMatrixHomotopyTerm (R := R) r i.castSucc
-        (hochschildCoface R (Matrix ι ι A) M k.succ ψ) =
-      hochschildCoface R (Matrix ι ι A) M k
-        (hochschildMatrixHomotopyTerm (R := R) r i ψ) := by
-  ext a
-  rw [hochschildMatrixHomotopyTerm_apply, hochschildCoface_apply,
-    hochschildMatrixHomotopyTerm_apply]
-  simp only [hochschildCoface_apply]
-  refine Finset.sum_congr rfl fun q _ ↦ congrArg ψ (funext fun t ↦ ?_)
+    (q : Fin ((i : ℕ) + 1) → ι) (a : Fin (n + 2) → Matrix ι ι A) :
+    hochschildFace k.succ (homotopyTuple (R := R) r i.castSucc q a) =
+      homotopyTuple (R := R) r i q (hochschildFace k a) := by
+  funext t
   induction k using Fin.lastCases with
   | last =>
+    -- Cyclic wraparound face: `a_{n+1}` lies past `i + 1` and multiplies `a_0` on the left.
     rw [Fin.succ_last, hochschildFace_last, hochschildFace_last]
     cases t using Fin.cases with
     | zero =>
@@ -703,13 +637,14 @@ private theorem hochschildMatrixHomotopyTerm_castSucc_hochschildCoface_succ_of_l
         have ha : (⟨(t.succ : ℕ) - 1, by omega⟩ : Fin (n + 1)) =
             (⟨(t : ℕ) - 1, by omega⟩ : Fin n).succ := Fin.ext (by simp; omega)
         rw [ha, Fin.cons_succ]
-        congr 1
-        exact Fin.ext (by simp; omega)
+        exact congrArg a (Fin.ext (by simp; omega))
   | cast j =>
+    -- Interior contraction face at `j + 1 > i + 1`: acts strictly past the inserted `E_{r, qᵢ}`.
     rw [Fin.succ_castSucc, hochschildFace_castSucc, hochschildFace_castSucc]
     have hij : (i : ℕ) < j := by simpa using hik
     rcases lt_trichotomy (t : ℕ) (j.succ : ℕ) with htj | htj | htj
-    · rw [Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using htj)]
+    · -- Below the contracted slot `j + 1`: split on `t` relative to the inserted slot `i + 1`.
+      rw [Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using htj)]
       rcases lt_trichotomy (t : ℕ) (i.succ : ℕ) with hti | hti | hti
       · rcases eq_or_ne t 0 with rfl | ht0
         · rw [Fin.castSucc_zero, homotopyTuple_zero, homotopyTuple_zero,
@@ -728,17 +663,35 @@ private theorem hochschildMatrixHomotopyTerm_castSucc_hochschildCoface_succ_of_l
           homotopyTuple_of_gt _ _ _ _ _ hti,
           Fin.contractNth_apply_of_lt _ _ _ _ (by simp at htj hti ⊢; omega)]
         rfl
-    · rw [Fin.contractNth_apply_of_eq _ _ _ _ (by simpa using htj),
+    · -- At the contracted slot `j + 1`: both sides multiply the untransformed entries
+      -- `a j * a (j + 1)`.
+      rw [Fin.contractNth_apply_of_eq _ _ _ _ (by simpa using htj),
         homotopyTuple_of_gt _ _ _ _ _ (by simp at htj ⊢; omega),
         homotopyTuple_of_gt _ _ _ _ _ (by simp at htj ⊢; omega),
         homotopyTuple_of_gt _ _ _ _ _ (by simp at htj ⊢; omega),
         Fin.contractNth_apply_of_eq _ _ _ _ (by simp at htj ⊢; omega)]
       congr 1; exact congrArg a (Fin.ext (by simp at htj ⊢; omega))
-    · rw [Fin.contractNth_apply_of_gt _ _ _ _ (by simpa using htj),
+    · -- Above the contracted slot `j + 1`: both sides read the shifted untransformed entry of `a`.
+      rw [Fin.contractNth_apply_of_gt _ _ _ _ (by simpa using htj),
         homotopyTuple_of_gt _ _ _ _ _ (by simp at htj ⊢; omega),
         homotopyTuple_of_gt _ _ _ _ _ (by simp at htj ⊢; omega),
         Fin.contractNth_apply_of_gt _ _ _ _ (by simp at htj ⊢; omega)]
       exact congrArg a (Fin.ext (by simp at htj ⊢; omega))
+
+/-- Face identity 5 (upper triangle): for `i < k`, `h_i* (δ_{k+1} ψ) = δ_k (h_i* ψ)`. -/
+private theorem hochschildMatrixHomotopyTerm_castSucc_hochschildCoface_succ_of_lt (r : ι) {n : ℕ}
+    (i : Fin (n + 1)) (k : Fin (n + 2)) (hik : (i : ℕ) < k)
+    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ Matrix ι ι A) M) :
+    hochschildMatrixHomotopyTerm (R := R) r i.castSucc
+        (hochschildCoface R (Matrix ι ι A) M k.succ ψ) =
+      hochschildCoface R (Matrix ι ι A) M k
+        (hochschildMatrixHomotopyTerm (R := R) r i ψ) := by
+  ext a
+  rw [hochschildMatrixHomotopyTerm_apply, hochschildCoface_apply,
+    hochschildMatrixHomotopyTerm_apply]
+  simp only [hochschildCoface_apply,
+    hochschildFace_succ_homotopyTuple_castSucc_of_lt r i k hik]
+  rfl
 
 /-- Loday's Hochschild contracting homotopy `H_n = ∑_i (-1)^i hᵢ* : Cⁿ⁺¹ → Cⁿ`. -/
 private def hochschildMatrixHomotopy (r : ι) (n : ℕ) :
@@ -752,7 +705,7 @@ private theorem hochschildMatrixHomotopy_hochschildCoboundary_zero (r : ι)
     hochschildMatrixHomotopy (R := R) r 0 (hochschildCoboundary R (Matrix ι ι A) M 0 ψ) =
       ψ - matrixCochainExtension ι 0 (matrixCochainCornerRestriction r 0 ψ) := by
   rw [hochschildMatrixHomotopy, LinearMap.sum_apply, Fin.sum_univ_one,
-    hochschildCoboundary_eq_sum_coface, Fin.sum_univ_two]
+    hochschildCoboundary_eq_sum, Fin.sum_univ_two]
   simp only [Fin.val_zero, pow_zero, one_smul, Fin.val_one, pow_one, neg_smul, map_add, map_neg]
   have h1 : (1 : Fin 2) = Fin.last 1 := rfl
   have h0 : (0 : Fin 1) = Fin.last 0 := rfl
@@ -779,14 +732,14 @@ private theorem hochschildCoboundary_hochschildMatrixHomotopy_add (r : ι) (n : 
           (hochschildCoboundary R (Matrix ι ι A) M (n + 1) ψ) =
         ∑ i : Fin (n + 2), ∑ k : Fin (n + 3), F i k := by
     rw [hochschildMatrixHomotopy, LinearMap.sum_apply]
-    simp only [hochschildCoboundary_eq_sum_coface, LinearMap.smul_apply, map_sum, map_zsmul,
+    simp only [hochschildCoboundary_eq_sum, LinearMap.smul_apply, map_sum, map_zsmul,
       smul_smul, ← pow_add, F]
     refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
     rw [add_comm (k : ℕ) (i : ℕ)]
   have hbH :
       hochschildCoboundary R (Matrix ι ι A) M n (hochschildMatrixHomotopy (R := R) r n ψ) =
         ∑ j : Fin (n + 1), ∑ k : Fin (n + 2), G j k := by
-    rw [hochschildCoboundary_eq_sum_coface]
+    rw [hochschildCoboundary_eq_sum]
     simp only [hochschildMatrixHomotopy, LinearMap.sum_apply, LinearMap.smul_apply, map_sum,
       map_zsmul, Finset.smul_sum, smul_smul, ← pow_add, G]
     rw [Finset.sum_comm]
@@ -803,26 +756,16 @@ private theorem hochschildCoboundary_hochschildMatrixHomotopy_add (r : ι) (n : 
     have h2 := (Finset.sum_filter_add_sum_filter_not
       (Finset.univ.filter (fun k : Fin (n + 3) ↦ ¬ (k : ℕ) < i))
       (fun k : Fin (n + 3) ↦ (i : ℕ) + 1 < k) (F i)).symm
-    have hmid :
-        (Finset.univ.filter (fun k : Fin (n + 3) ↦ ¬ (k : ℕ) < i)).filter
-          (fun k : Fin (n + 3) ↦ ¬ (i : ℕ) + 1 < k) = {i.castSucc, i.succ} := by
-      ext k
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-        Finset.mem_singleton, Fin.ext_iff, Fin.val_castSucc, Fin.val_succ]
-      omega
-    have hgt :
-        (Finset.univ.filter (fun k : Fin (n + 3) ↦ ¬ (k : ℕ) < i)).filter
-          (fun k : Fin (n + 3) ↦ (i : ℕ) + 1 < k) =
+    have hmid : (Finset.univ.filter (fun k : Fin (n + 3) ↦ ¬ (k : ℕ) < i)).filter
+        (fun k : Fin (n + 3) ↦ ¬ (i : ℕ) + 1 < k) = {i.castSucc, i.succ} := by
+      ext k; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
+        Finset.mem_singleton, Fin.ext_iff, Fin.val_castSucc, Fin.val_succ]; omega
+    have hgt : (Finset.univ.filter (fun k : Fin (n + 3) ↦ ¬ (k : ℕ) < i)).filter
+        (fun k : Fin (n + 3) ↦ (i : ℕ) + 1 < k) =
         Finset.univ.filter (fun k : Fin (n + 3) ↦ (i : ℕ) + 1 < k) := by
-      ext k
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-      omega
-    have hne : i.castSucc ≠ i.succ := by
-      intro h
-      have := congrArg Fin.val h
-      simp at this
-    rw [h1, h2, hgt, hmid, Finset.sum_pair hne]
-    abel
+      ext k; simp only [Finset.mem_filter, Finset.mem_univ, true_and]; omega
+    have hne : i.castSucc ≠ i.succ := fun h ↦ by simp [Fin.ext_iff] at h
+    rw [h1, h2, hgt, hmid, Finset.sum_pair hne]; abel
   -- 1. Diagonal terms telescope to `ψ - tr (res_r ψ)`.
   have hdiag :
       ∑ i : Fin (n + 2), (F i i.castSucc + F i i.succ) =
@@ -840,20 +783,11 @@ private theorem hochschildCoboundary_hochschildMatrixHomotopy_add (r : ι) (n : 
       simp only [F, Fin.val_castSucc, Fin.val_succ, heven, hodd, one_smul, neg_smul,
         sub_eq_add_neg]
     simp_rw [hsimp, Finset.sum_sub_distrib]
-    conv_lhs =>
-      arg 1
-      rw [Fin.sum_univ_succ]
-    conv_lhs =>
-      arg 2
-      rw [Fin.sum_univ_castSucc]
-    have hcancel :
-        (∑ j : Fin (n + 1), hochschildMatrixHomotopyTerm (R := R) r j.succ
-          (hochschildCoface R (Matrix ι ι A) M j.succ.castSucc ψ)) =
-        (∑ j : Fin (n + 1), hochschildMatrixHomotopyTerm (R := R) r j.castSucc
-          (hochschildCoface R (Matrix ι ι A) M j.castSucc.succ ψ)) := by
-      refine Finset.sum_congr rfl fun j _ ↦ ?_
-      exact hochschildMatrixHomotopyTerm_succ_hochschildCoface_succ r j ψ
-    rw [hcancel, Fin.castSucc_zero, hochschildMatrixHomotopyTerm_zero_hochschildCoface_zero,
+    conv_lhs => rw [Fin.sum_univ_succ]; arg 2; rw [Fin.sum_univ_castSucc]
+    have hcancel := Finset.sum_congr (s₁ := Finset.univ) rfl fun (j : Fin (n + 1)) _ ↦
+      hochschildMatrixHomotopyTerm_succ_hochschildCoface_succ (R := R) r j ψ
+    simp_rw [hcancel, ← Fin.succ_castSucc]
+    rw [Fin.castSucc_zero, hochschildMatrixHomotopyTerm_zero_hochschildCoface_zero,
       Fin.succ_last, hochschildMatrixHomotopyTerm_last_hochschildCoface_last]
     abel
   -- 2. Lower triangle terms (`k < i`) match `-G j k` for `k ≤ j`.
@@ -865,26 +799,21 @@ private theorem hochschildCoboundary_hochschildMatrixHomotopy_add (r : ι) (n : 
     have h0 : Finset.univ.filter (fun k : Fin (n + 3) ↦ (k : ℕ) < (0 : Fin (n + 2))) = ∅ := by
       ext k; simp
     rw [h0, Finset.sum_empty, zero_add]
-    refine Finset.sum_congr rfl fun j _ ↦ (Finset.sum_bij (fun k _ ↦ k.castSucc) ?_ ?_ ?_ ?_).symm
-    · intro k hk
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.val_castSucc,
-        Fin.val_succ] at hk ⊢
-      omega
-    · intro k₁ _ k₂ _ h
-      exact Fin.castSucc_injective _ h
-    · intro k' hk'
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.val_succ] at hk'
-      refine ⟨⟨k', by omega⟩, ?_, Fin.ext rfl⟩
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-      omega
-    · intro k hk
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk
-      let k₀ : Fin (n + 1) := ⟨k, by omega⟩
-      have hk_eq : k = k₀.castSucc := Fin.ext rfl
-      rw [hk_eq]
-      simp only [F, G, Fin.val_succ, Fin.val_castSucc, add_right_comm _ 1, pow_succ, mul_neg_one,
-        neg_smul]
-      rw [hochschildMatrixHomotopyTerm_succ_hochschildCoface_of_le r j k₀ hk ψ]
+    refine Finset.sum_congr rfl fun j _ ↦ (Finset.sum_bij (fun k _ ↦ k.castSucc)
+      (fun k hk ↦ by simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.val_castSucc,
+        Fin.val_succ] at hk ⊢; omega)
+      (fun _ _ _ _ h ↦ Fin.castSucc_injective _ h)
+      (fun k' hk' ↦ by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.val_succ] at hk'
+        exact ⟨⟨k', by omega⟩, by simp only [Finset.mem_filter, Finset.mem_univ, true_and]; omega,
+          Fin.ext rfl⟩)
+      (fun k hk ↦ by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk
+        let k₀ : Fin (n + 1) := ⟨k, by omega⟩
+        rw [show k = k₀.castSucc from Fin.ext rfl]
+        simp only [F, G, Fin.val_succ, Fin.val_castSucc, add_right_comm _ 1, pow_succ, mul_neg_one,
+          neg_smul]
+        rw [hochschildMatrixHomotopyTerm_succ_hochschildCoface_of_le r j k₀ hk ψ])).symm
   -- 3. Upper triangle terms (`i + 1 < k`) match `-G j k` for `j < k`.
   have hupper :
       (∑ i : Fin (n + 2),
@@ -897,49 +826,32 @@ private theorem hochschildCoboundary_hochschildMatrixHomotopy_add (r : ι) (n : 
       ext k; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.val_last,
         Finset.notMem_empty, iff_false]; omega
     rw [hlast, Finset.sum_empty, add_zero]
-    refine Finset.sum_congr rfl fun j _ ↦ (Finset.sum_bij (fun k _ ↦ k.succ) ?_ ?_ ?_ ?_).symm
-    · intro k hk
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.val_castSucc,
-        Fin.val_succ] at hk ⊢
-      omega
-    · intro k₁ _ k₂ _ h
-      exact Fin.succ_injective _ h
-    · intro k' hk'
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.val_castSucc] at hk'
-      refine ⟨⟨(k' : ℕ) - 1, by omega⟩, ?_, Fin.ext (by simp; omega)⟩
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-      omega
-    · intro k hk
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_le] at hk
-      simp only [F, G, Fin.val_castSucc, Fin.val_succ, ← add_assoc, pow_succ, mul_neg_one, neg_smul]
-      rw [hochschildMatrixHomotopyTerm_castSucc_hochschildCoface_succ_of_lt r j k hk ψ]
+    refine Finset.sum_congr rfl fun j _ ↦ (Finset.sum_bij (fun k _ ↦ k.succ)
+      (fun k hk ↦ by simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.val_castSucc,
+        Fin.val_succ] at hk ⊢; omega)
+      (fun _ _ _ _ h ↦ Fin.succ_injective _ h)
+      (fun k' hk' ↦ by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.val_castSucc] at hk'
+        exact ⟨⟨(k' : ℕ) - 1, by omega⟩,
+          by simp only [Finset.mem_filter, Finset.mem_univ, true_and]; omega,
+          Fin.ext (by simp; omega)⟩)
+      (fun k hk ↦ by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_le] at hk
+        simp only [F, G, Fin.val_castSucc, Fin.val_succ, ← add_assoc, pow_succ, mul_neg_one,
+          neg_smul]
+        rw [hochschildMatrixHomotopyTerm_castSucc_hochschildCoface_succ_of_lt r j k hk ψ])).symm
+  -- Combine: the off-diagonal terms cancel `∑ j, ∑ k, G j k`, leaving the diagonal `hdiag`.
   rw [hbH, hHb]
   simp_rw [hrow]
   rw [Finset.sum_add_distrib, Finset.sum_add_distrib, hdiag, hlower, hupper]
-  have hcancel :
-      (∑ j : Fin (n + 1), ∑ k : Fin (n + 2), G j k) +
-      ((∑ j : Fin (n + 1), ∑ k ∈ Finset.univ.filter (fun k : Fin (n + 2) ↦ (k : ℕ) ≤ j), -G j k) +
-        ∑ j : Fin (n + 1), ∑ k ∈ Finset.univ.filter (fun k : Fin (n + 2) ↦ ¬ (k : ℕ) ≤ j),
-          -G j k) = 0 := by
+  have hoff :
+      (∑ j : Fin (n + 1), ∑ k ∈ Finset.univ.filter (fun k : Fin (n + 2) ↦ (k : ℕ) ≤ j), -G j k) +
+        (∑ j : Fin (n + 1),
+          ∑ k ∈ Finset.univ.filter (fun k : Fin (n + 2) ↦ ¬ (k : ℕ) ≤ j), -G j k) =
+      -(∑ j : Fin (n + 1), ∑ k : Fin (n + 2), G j k) := by
     rw [← Finset.sum_add_distrib]
     simp_rw [Finset.sum_filter_add_sum_filter_not, Finset.sum_neg_distrib]
-    exact add_neg_cancel _
-  calc
-    (∑ j : Fin (n + 1), ∑ k : Fin (n + 2), G j k) +
-        ((∑ j : Fin (n + 1),
-            ∑ k ∈ Finset.univ.filter (fun k : Fin (n + 2) ↦ (k : ℕ) ≤ j), -G j k) +
-          (ψ - matrixCochainExtension ι (n + 1) (matrixCochainCornerRestriction r (n + 1) ψ)) +
-          ∑ j : Fin (n + 1),
-            ∑ k ∈ Finset.univ.filter (fun k : Fin (n + 2) ↦ ¬ (k : ℕ) ≤ j), -G j k)
-        = (ψ - matrixCochainExtension ι (n + 1) (matrixCochainCornerRestriction r (n + 1) ψ)) +
-          ((∑ j : Fin (n + 1), ∑ k : Fin (n + 2), G j k) +
-            ((∑ j : Fin (n + 1),
-                ∑ k ∈ Finset.univ.filter (fun k : Fin (n + 2) ↦ (k : ℕ) ≤ j), -G j k) +
-              ∑ j : Fin (n + 1),
-                ∑ k ∈ Finset.univ.filter (fun k : Fin (n + 2) ↦ ¬ (k : ℕ) ≤ j), -G j k)) := by
-          abel
-    _ = ψ - matrixCochainExtension ι (n + 1) (matrixCochainCornerRestriction r (n + 1) ψ) := by
-          rw [hcancel, add_zero]
+  rw [add_right_comm _ (ψ - _), hoff, add_neg_cancel_left]
 
 /-- On any Hochschild cocycle `ψ` on `Matrix ι ι A`, the difference `ψ - tr (res_r ψ)` is a
 Hochschild coboundary. -/
