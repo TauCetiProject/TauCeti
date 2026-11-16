@@ -60,7 +60,8 @@ a uniformizer or a unit of maximal or positive odd defect.
 * `TauCeti.isGLB_quadraticDefect`: `𝔡(a)` is the greatest lower bound of the ideals
   `(a - ξ²) 𝒪[K]`, and `TauCeti.exists_quadraticDefect_eq_spanSingleton`: it is one of them.
 * `TauCeti.quadraticDefect_eq_zero_iff` and `TauCeti.defectExponent_eq_top_iff`: the defect
-  detects squares.
+  detects squares; `TauCeti.exists_defectExponent_eq_coe`: a nonsquare has a finite defect
+  exponent.
 * `TauCeti.quadraticDefect_eq_maximalIdeal_zpow`: `𝔡(a) = 𝓂[K] ^ δ(a)` for a nonsquare `a`, and
   `TauCeti.quadraticDefect_eq_spanSingleton_of_defectExponent_eq`: `𝔡(a) = c 𝒪[K]` whenever
   `v_K(c) = δ(a)`.
@@ -194,6 +195,11 @@ def defectExponent (a : Kˣ) : WithTop ℤ :=
 theorem defectExponent_eq_top_iff {a : Kˣ} : defectExponent a = ⊤ ↔ IsSquare a := by
   unfold defectExponent
   split_ifs with h <;> simp [h]
+
+/-- A nonsquare unit has a finite defect exponent. -/
+theorem exists_defectExponent_eq_coe {a : Kˣ} (ha : ¬IsSquare a) :
+    ∃ d : ℤ, defectExponent a = d :=
+  (WithTop.ne_top_iff_exists.mp (mt defectExponent_eq_top_iff.mp ha)).imp fun _ h ↦ h.symm
 
 /-- A unit with finite defect exponent is not a square. -/
 theorem not_isSquare_of_defectExponent_eq {a : Kˣ} {d : ℤ}

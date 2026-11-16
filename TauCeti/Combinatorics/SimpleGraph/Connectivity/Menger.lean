@@ -39,11 +39,6 @@ Each form comes with weak duality, which needs no finiteness, and a witness form
 family and a separator of equal size. The local form and the set-to-set form also have predicate
 forms; the predicate form of the local form holds for arbitrary vertices `s` and `t`.
 
-## Main definitions
-
-* `SimpleGraph.Walk.InternallyDisjoint`: two walks from `s` to `t` sharing no vertex other than `s`
-  and `t`.
-
 ## Main results
 
 * `SimpleGraph.card_le_card_of_not_reachable_induce`: weak duality for internally disjoint walks.
@@ -95,59 +90,6 @@ variable {V : Type u} {G : SimpleGraph V}
 namespace Walk
 
 variable {s t : V} {p q : G.Walk s t}
-
-/-- Two walks from `s` to `t` are *internally disjoint* when they share no vertex other than `s`
-and `t`. -/
-def InternallyDisjoint (p q : G.Walk s t) : Prop :=
-  ∀ v ∈ p.support, v ∈ q.support → v = s ∨ v = t
-
-theorem internallyDisjoint_def :
-    p.InternallyDisjoint q ↔ ∀ v ∈ p.support, v ∈ q.support → v = s ∨ v = t :=
-  Iff.rfl
-
-theorem InternallyDisjoint.symm (h : p.InternallyDisjoint q) : q.InternallyDisjoint p :=
-  fun v hq hp ↦ h v hp hq
-
-theorem internallyDisjoint_comm : p.InternallyDisjoint q ↔ q.InternallyDisjoint p :=
-  ⟨.symm, .symm⟩
-
-/-- Two distinct internally disjoint paths form a cycle when one is traversed in reverse. -/
-theorem InternallyDisjoint.isCycle_append_reverse (h : p.InternallyDisjoint q) (hp : p.IsPath)
-    (hq : q.IsPath) (hpq : p ≠ q) : (p.append q.reverse).IsCycle := by
-  refine hp.isCycle_append (Walk.isPath_reverse_iff q |>.2 hq) ?_ ?_
-  · rw [List.disjoint_left]
-    intro x hxp hxq
-    have hxq' : x ∈ q.support := List.mem_of_mem_dropLast (by simpa using hxq)
-    obtain hxs | hxt := h x (List.mem_of_mem_tail hxp) hxq'
-    · subst x
-      exact hp.start_notMem_tail_support hxp
-    · subst x
-      exact (Walk.isPath_reverse_iff q |>.2 hq).start_notMem_tail_support hxq
-  · by_contra hlength
-    push Not at hlength
-    exact hpq (Walk.eq_of_length_le_one hlength.1 (by simpa using hlength.2))
-
-/-- The two arcs obtained by splitting a cycle at a vertex are internally disjoint walks with the
-same endpoints. -/
-theorem IsCycle.takeUntil_internallyDisjoint_dropUntil_reverse [DecidableEq V]
-    {c : G.Walk s s} (hc : c.IsCycle)
-    (ht : t ∈ c.support) :
-    (c.takeUntil t ht).InternallyDisjoint (c.dropUntil t ht).reverse := by
-  have hdisj : (c.takeUntil t ht).support.tail.Disjoint
-      (c.dropUntil t ht).support.tail := by
-    have hnodup := hc.2
-    rw [← c.take_spec ht, Walk.tail_support_append, List.nodup_append'] at hnodup
-    exact hnodup.2.2
-  intro x hxp hxq
-  have hxq' : x ∈ (c.dropUntil t ht).support := by simpa using hxq
-  by_cases hxs : x = s
-  · exact .inl hxs
-  by_cases hxt : x = t
-  · exact .inr hxt
-  exfalso
-  apply hdisj
-  · exact ((c.takeUntil t ht).mem_support_iff.mp hxp).resolve_left hxs
-  · exact ((c.dropUntil t ht).mem_support_iff.mp hxq').resolve_left hxt
 
 @[simp]
 theorem internallyDisjoint_toArrowWalk_iff :
@@ -256,13 +198,6 @@ theorem forall_reachable_induce_iff_exists_paths [Finite V] (k : ℕ) :
   · by_contra h
     exact hX.not_ge (by simpa using card_le_card_of_not_reachable_induce hP hs ht h)
 
-/-- A walk between distinct nonadjacent vertices visits a vertex other than its endpoints. -/
-theorem Walk.exists_mem_support_ne_ne (hst : s ≠ t) (hadj : ¬G.Adj s t) (p : G.Walk s t) :
-    ∃ v ∈ p.support, v ≠ s ∧ v ≠ t := by
-  cases p with
-  | nil => exact absurd rfl hst
-  | @cons _ x _ h p => exact ⟨x, by simp, h.ne.symm, fun hxt ↦ hadj (hxt ▸ h)⟩
-
 /-! ### Paths between adjacent vertices -/
 
 /-- **Weak duality for internally vertex-disjoint paths between possibly adjacent vertices.** Let
@@ -317,7 +252,9 @@ theorem exists_paths_vertexSeparator_card_add_one_eq [Finite V] (h : G.Adj s t) 
     obtain ⟨i, rfl⟩ := Fin.exists_castSucc_eq.2 hi
     exact hP'c i ▸ (P i).exists_mem_support_ne_ne h.ne hadj
   have hdisj' : Pairwise fun i j ↦ (P' i).InternallyDisjoint (P' j) := by
-    intro i j hij v hvi hvj
+    intro i j hij
+    rw [Walk.internallyDisjoint_def]
+    intro v hvi hvj
     induction i using Fin.lastCases with
     | last => simpa [hP'l] using hvi
     | cast i =>
@@ -325,14 +262,15 @@ theorem exists_paths_vertexSeparator_card_add_one_eq [Finite V] (h : G.Adj s t) 
       | last => simpa [hP'l] using hvj
       | cast j =>
         rw [hP'c] at hvi hvj
-        exact hdisj (fun hij' ↦ hij (congrArg _ hij')) v hvi hvj
+        exact Walk.internallyDisjoint_def.1
+          (hdisj (fun hij' ↦ hij (congrArg _ hij'))) v hvi hvj
   refine ⟨k, P', X, fun i j hij ↦ ?_, fun i ↦ ?_, hdisj', hP'l, hs, ht, hX, hk⟩
   · by_contra hne
     obtain ⟨v, hv, hvs, hvt⟩ : ∃ v ∈ (P' i).support, v ≠ s ∧ v ≠ t := by
       by_cases hi : i = Fin.last k
       · exact hij ▸ hint (hi ▸ Ne.symm hne)
       · exact hint hi
-    exact (hdisj' hne v hv (hij ▸ hv)).elim hvs hvt
+    exact (Walk.internallyDisjoint_def.1 (hdisj' hne) v hv (hij ▸ hv)).elim hvs hvt
   · induction i using Fin.lastCases with
     | last => exact hP'l ▸ h.isPath_toWalk
     | cast i => simpa [P'] using hP i

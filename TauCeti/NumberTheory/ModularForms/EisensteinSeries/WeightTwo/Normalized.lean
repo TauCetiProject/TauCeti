@@ -337,6 +337,8 @@ theorem qExpansion_normalizedCharG2MFRaise_coeff_self_of_gaussSum_ne_zero [NeZer
   exact qExpansion_normalizedCharG2MF_coeff_one_of_gaussSum_ne_zero ψ φ dvd_rfl h hpar hg
 
 /-- The coefficient of `E₂^{ψ,φ,t}` at `t` is `1`. -/
+-- Rewrite before simplification turns the q-expansion into `expand t (...)`.
+@[simp↓]
 theorem qExpansion_normalizedCharG2MFRaise_coeff_self (htuv : t * (u * v) ∣ N)
     (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1) (hφ : φ.IsPrimitive) :
     (qExpansion 1 (normalizedCharG2MFRaise ψ φ t htuv)).coeff t = 1 :=

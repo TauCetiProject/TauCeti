@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra.Basic
-public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Bidual
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Pullback
-public import TauCeti.AlgebraicGeometry.VectorBundle.InternalHom.Pullback
 
 /-!
 # The geometric total space of a vector bundle
@@ -215,7 +213,6 @@ theorem totalSpaceHomEquiv_comp_map {E F : FiniteLocallyFreeSheaf X} (a : E ⟶ 
   exact (Category.assoc _ _ _).symm.trans
     ((congrArg (· ≫ _) hinv).trans (Category.assoc _ _ _))
 
-
 section BaseChange
 
 variable {Y : Scheme.{u}} (f : Y ⟶ X)
@@ -257,6 +254,19 @@ lemma totalSpaceSchemeBaseChangeIso_hom_app (E : FiniteLocallyFreeSheaf X) :
           (relativeSpecSymmetricAlgebraBaseChangeIso f).hom.app
             (op ((toQuasicoherent X).obj (dual E))) :=
   (rfl)
+
+/-- The inverse component of `totalSpaceSchemeBaseChangeIso` at `E`: the inverse component of
+`relativeSpecSymmetricAlgebraBaseChangeIso` at `E^∨`, followed by relative Spec of the symmetric
+algebra of the inverses of the two identifications in `totalSpaceSchemeBaseChangeIso_hom_app`. -/
+lemma totalSpaceSchemeBaseChangeIso_inv_app (E : FiniteLocallyFreeSheaf X) :
+    (totalSpaceSchemeBaseChangeIso f).inv.app E =
+      (relativeSpecSymmetricAlgebraBaseChangeIso f).inv.app
+          (op ((toQuasicoherent X).obj (dual E))) ≫
+        (relativeSpec Y).map
+          ((symmetricAlgebra Y).map ((pullbackToQuasicoherentIso f).hom.app (dual E))).op ≫
+          (relativeSpec Y).map
+            ((symmetricAlgebra Y).map ((toQuasicoherent Y).map (pullbackDualIso f E).inv)).op :=
+  Category.assoc _ _ _
 
 variable (E : FiniteLocallyFreeSheaf X)
 

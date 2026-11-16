@@ -127,13 +127,10 @@ private theorem eventually_edist_neg_mgradient
     ∃ c > 0, ∃ C > 0, ∀ᶠ t in atTop, edist (γ t) p ≤ ENNReal.ofReal (C * Real.exp (-(c * t))) := by
   have heq := hγ.eqOn_maximalIntegralCurve_Ici
     (contMDiff_neg_mgradient_one hf) (b := 1) (by norm_num)
-  have hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) (γ 1) :=
-    fun t ht ↦ hγ.Ioi_subset_maximalIntegralCurveInterval_of_Ici
-      (by norm_num : (0 : ℝ) < 1) (by simp only [mem_Ioi, mem_Ici] at *; linarith)
   have hlim := (hγ.tendsto_maximalIntegralCurve_iff
     (contMDiff_neg_mgradient_one hf) (by norm_num : (0 : ℝ) < 1)).2 hconv
   obtain ⟨c, hc, C, hC, hbound⟩ :=
-    exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient hp hx hlim hf
+    exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient hp hlim hf
   refine ⟨c, hc, C * Real.exp c, by positivity, ?_⟩
   filter_upwards [(tendsto_atTop_add_const_right atTop (-1 : ℝ) tendsto_id).eventually hbound,
     eventually_ge_atTop (1 : ℝ)] with t ht ht1
