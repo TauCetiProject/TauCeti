@@ -51,11 +51,12 @@ results on completed combinations apply to vector-valued series:
   `b`, `c` and `b ⊗ c` it is the kernel product (`TauCeti.NovikovModule.kernelProduct`) of the
   kernel `TauCeti.NovikovSeries.cauchyKernel`, which sends a pair of generators `⟨i, A⟩`,
   `⟨j, A'⟩` to the generator `⟨(i, j), A + A'⟩`
-  (`TauCeti.NovikovSeries.basisCoordinates_cauchyProduct`). This kernel has potential bound `0`
-  and is unchanged when one input and the output are translated by the same class
-  (`TauCeti.NovikovSeries.cauchyKernel_vadd_fst`, `TauCeti.NovikovSeries.cauchyKernel_vadd_snd`),
-  so in coordinates the Cauchy product is the Novikov-bilinear map
-  `TauCeti.NovikovModule.novikovKernelProduct` of this kernel.
+  (`TauCeti.NovikovSeries.basisCoordinates_cauchyProduct`). This kernel has potential bound `0`.
+  For a commutative group `H`, it is the kernel `TauCeti.NovikovModule.kernelOfMatrix` of the
+  constant matrix with entry `1` at `((i, j), i, j)` relative to the lifts `⟨i, 0⟩`
+  (`TauCeti.NovikovSeries.cauchyKernel_eq_kernelOfMatrix`), so in coordinates the Cauchy product
+  is the Novikov-bilinear map `TauCeti.NovikovModule.novikovProductOfMatrix` of this matrix
+  (`TauCeti.NovikovSeries.basisCoordinates_cauchyProduct_eq_novikovProductOfMatrix`).
 
 For `V = R` with the basis `{1}`, the coordinate of `κ(v)` at the lift `⟨(), 0⟩` is `v` itself
 (`TauCeti.NovikovSeries.coordinates_basisCoordinates_singleton`).
@@ -354,25 +355,42 @@ theorem basisCoordinates_basisCoordinates_symm_eq_novikovMapOfMatrix
 
 end ChangeOfBasis
 
-section Invariance
+section CauchyProduct
 
-variable {R H ι κ : Type*} [Semiring R] [AddCancelCommMonoid H]
+variable {R V W H ι κ : Type*} [AddCommGroup H]
 
-/-- The Cauchy kernel is unchanged when its first input and its output are translated by the
-same `g`. -/
-theorem cauchyKernel_vadd_fst (g : H) (i : ι) (A : H) (p₂ : Σ _ : κ, H) (k : ι × κ) (C : H) :
-    cauchyKernel (R := R) ⟨i, g +ᵥ A⟩ p₂ ⟨k, g +ᵥ C⟩ = cauchyKernel ⟨i, A⟩ p₂ ⟨k, C⟩ := by
+/-- With the lifts `⟨i, 0⟩`, the Cauchy kernel is the kernel
+`TauCeti.NovikovModule.kernelOfMatrix` of the constant matrix with entry `1` at
+`((i, j), i, j)` and `0` elsewhere. -/
+theorem cauchyKernel_eq_kernelOfMatrix [Semiring R] [DecidableEq ι] [DecidableEq κ]
+    (N : H →+ ℝ) :
+    cauchyKernel (R := R) (ι := ι) (κ := κ) =
+      NovikovModule.kernelOfMatrix (fun _ => (0 : H)) (fun _ => (0 : H)) (fun _ => (0 : H))
+        (fun i j k => if k = (i, j) then (1 : NovikovSeries R H N) else 0) := by
   classical
-  simp [cauchyKernel_apply, add_assoc]
+  funext ⟨i, A⟩ ⟨j, A'⟩ ⟨k, C⟩
+  rw [cauchyKernel_apply, NovikovModule.kernelOfMatrix_apply]
+  by_cases hk : k = (i, j)
+  · subst hk
+    simp [coeff_one, sub_sub, sub_eq_zero]
+  · simp [hk]
 
-/-- The Cauchy kernel is unchanged when its second input and its output are translated by the
-same `g`. -/
-theorem cauchyKernel_vadd_snd (g : H) (p₁ : Σ _ : ι, H) (j : κ) (A : H) (k : ι × κ) (C : H) :
-    cauchyKernel (R := R) p₁ ⟨j, g +ᵥ A⟩ ⟨k, g +ᵥ C⟩ = cauchyKernel p₁ ⟨j, A⟩ ⟨k, C⟩ := by
-  classical
-  simp [cauchyKernel_apply, add_left_comm _ g]
+/-- **The Cauchy product in basis coordinates** is the Novikov-bilinear product
+`TauCeti.NovikovModule.novikovProductOfMatrix` of the constant matrix with entry `1` at
+`((i, j), i, j)` and `0` elsewhere, relative to the lifts `⟨i, 0⟩`, `⟨j, 0⟩` and `⟨(i, j), 0⟩`. -/
+theorem basisCoordinates_cauchyProduct_eq_novikovProductOfMatrix [CommSemiring R]
+    [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W] [Fintype ι] [Fintype κ]
+    [DecidableEq ι] [DecidableEq κ] {N : H →+ ℝ} (b : Module.Basis ι R V)
+    (c : Module.Basis κ R W) (v : NovikovSeries V H N) (w : NovikovSeries W H N) :
+    basisCoordinates (b.tensorProduct c) (cauchyProduct R v w) =
+      NovikovModule.novikovProductOfMatrix negPeriod_vadd negPeriod_vadd negPeriod_vadd
+        (fun _ => 0) (fun _ => 0) (fun _ => 0) (fun i j k => if k = (i, j) then 1 else 0)
+        (basisCoordinates b v) (basisCoordinates c w) := by
+  ext p₀
+  rw [basisCoordinates_cauchyProduct, NovikovModule.kernelProduct_apply_val,
+    NovikovModule.novikovProductOfMatrix_apply_val, cauchyKernel_eq_kernelOfMatrix N]
 
-end Invariance
+end CauchyProduct
 
 end NovikovSeries
 
