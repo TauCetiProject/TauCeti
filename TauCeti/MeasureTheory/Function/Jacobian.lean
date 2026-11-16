@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 
 /-!
 # Change of variables: pushforward bounds, `Lᵖ` bounds and affine invariance of set integrals
@@ -39,7 +40,9 @@ transformed derivative `x ↦ D (f x) ∘ Df x` by those of `u` and `D` on `f ''
 Such constants exist on every compact set on which a `C¹` map has invertible derivative
 (`MeasureTheory.exists_det_bounds_of_isCompact`), so precomposition with a map that is `C¹`,
 injective and with invertible derivative on an open set preserves local integrability
-(`MeasureTheory.LocallyIntegrableOn.comp_contDiffOn_diffeo`).
+(`MeasureTheory.LocallyIntegrableOn.comp_contDiffOn_diffeo`). For a bijection `φ`, a bound
+`‖Dφ⁻¹‖ ≤ A` on the derivative of its inverse gives the Jacobian lower bound `A^{-n} ≤ |det Dφ|`
+everywhere, in dimension `n` (`Equiv.inv_pow_le_abs_det_fderiv`).
 
 A continuous affine map `T` carrying a set `s` of finite measure onto itself preserves
 integrals over `s`. When `s` is not null, the linear part of `T` has determinant `±1`, because the
@@ -67,6 +70,8 @@ a permutation of the vertices of a simplex, acts on integrals over it.
   preserved.
 * `ContinuousAffineMap.setIntegral_comp_of_image_eq`: integrals over `s` are invariant under a
   continuous affine map carrying `s` onto itself, when `s` has finite measure.
+* `Equiv.inv_pow_le_abs_det_fderiv`: if `‖Dφ⁻¹(φ x)‖ ≤ L`, then `|det Dφ(x)| ≥ L^{-n}` in
+  dimension `n`.
 -/
 
 public section
@@ -329,3 +334,19 @@ theorem setIntegral_comp_of_image_eq (T : E →ᴬ[ℝ] E) (hμ : μ s ≠ ∞)
   rw [← hmp.setIntegral_preimage_emb (T.continuous.measurableEmbedding hinj) g s, hpre]
 
 end ContinuousAffineMap
+
+/-- **A lower bound for the Jacobian determinant.** If a bijection `φ` of a finite-dimensional real
+normed space is differentiable at `x`, its inverse is differentiable at `φ x`, and
+`‖Dφ⁻¹(φ x)‖ ≤ L`, then `|det Dφ(x)| ≥ L^{-n}` in dimension `n`. -/
+theorem Equiv.inv_pow_le_abs_det_fderiv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] (φ : E ≃ E) {x : E} (hφ : DifferentiableAt ℝ φ x)
+    (hψ : DifferentiableAt ℝ φ.symm (φ x)) {L : ℝ} (hL : ‖fderiv ℝ φ.symm (φ x)‖ ≤ L) :
+    (L ^ Module.finrank ℝ E)⁻¹ ≤ |(fderiv ℝ φ x).det| := by
+  have h := φ.det_fderiv_symm_mul_det_fderiv (y := φ x) (by rwa [φ.symm_apply_apply]) hψ
+  rw [φ.symm_apply_apply] at h
+  have hle : |(fderiv ℝ φ.symm (φ x)).det| ≤ L ^ Module.finrank ℝ E :=
+    (ContinuousLinearMap.abs_det_le_opNorm_pow _).trans (pow_le_pow_left₀ (norm_nonneg _) hL _)
+  have hpos : 0 < |(fderiv ℝ φ.symm (φ x)).det| := abs_pos.2 (left_ne_zero_of_mul_eq_one h)
+  rw [eq_inv_of_mul_eq_one_left (by rw [← abs_mul, mul_comm, h, abs_one] :
+    |(fderiv ℝ φ x).det| * |(fderiv ℝ φ.symm (φ x)).det| = 1)]
+  exact inv_anti₀ hpos hle
