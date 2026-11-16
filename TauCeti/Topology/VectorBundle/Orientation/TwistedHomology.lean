@@ -118,10 +118,8 @@ theorem twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀ [ConnectedSpace 
   -- modulo `2`.
   let γ : FundamentalGroupoid.mk b' ⟶ FundamentalGroupoid.mk b :=
     Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath b' b)
-  have hγ := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
-    (map_ιTwistedHomology₀.{u, uB, max uE uι u} (signLocalSystem F E R hι) γ)) a
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hγ
-  rw [← hγ, twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀_self,
+  rw [← map_ιTwistedHomology₀_apply.{u, uB, max uE uι u} _ γ a,
+    twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀_self,
     signLocalSystemFiberEquiv_apply, signLocalSystemObjEquiv_map_apply]
   -- The lift of `γ⁻¹` starting at `o` ends at `o'` or at `-o'`.
   set e := (isCoveringMap_proj hι).monodromy (inv γ)
@@ -193,20 +191,16 @@ theorem twistedHomology₀Equiv_ιTwistedHomology₀ [PathConnectedSpace B]
       (ιTwistedHomology₀ (VectorBundleOrientationCover.signLocalSystem F E R hι) b' a) =
       VectorBundleOrientationCover.signLocalSystemFiberEquiv hι (o b') a := by
   have := isTrivial_monodromyRepresentation_of_iso_constant (signLocalSystemIso (R := R) hι o) b
-  -- Transport `a` to the basepoint along a path `γ`; the trivialization given by `o` is natural.
+  -- Transport `a` to the basepoint along a path `γ`; transport factors through the
+  -- trivialization given by `o`.
   let γ : FundamentalGroupoid.mk b' ⟶ FundamentalGroupoid.mk b :=
     Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath b' b)
-  have hγ := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
-    (map_ιTwistedHomology₀.{u, uB, max uE uι u}
-      (VectorBundleOrientationCover.signLocalSystem F E R hι) γ)) a
-  have hn := LinearMap.congr_fun
-    (congrArg ModuleCat.Hom.hom ((signLocalSystemIso (R := R) hι o).hom.naturality γ)) a
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hγ hn
-  rw [← hγ, twistedHomology₀Equiv, LinearEquiv.trans_apply,
-    twistedHomology₀EquivOfIsTrivial_ιTwistedHomology₀]
-  -- The constant system transports along `γ` by the identity.
+  rw [← map_ιTwistedHomology₀_apply.{u, uB, max uE uι u} _ γ a, twistedHomology₀Equiv,
+    LinearEquiv.trans_apply, twistedHomology₀EquivOfIsTrivial_ιTwistedHomology₀,
+    map_eq_of_iso_constant (signLocalSystemIso hι o) γ]
   exact congrArg ULift.down ((signLocalSystemIso_hom_app_apply hι o b _).symm.trans
-    (hn.trans (signLocalSystemIso_hom_app_apply hι o b' a)))
+    ((((signLocalSystemIso hι o).app _).inv_hom_id_apply _).trans
+      (signLocalSystemIso_hom_app_apply hι o b' a)))
 
 omit [FiniteDimensional ℝ F] in
 /-- The inverse identification sends `r` to the class of the element of the fibre over any point
@@ -218,6 +212,17 @@ theorem twistedHomology₀Equiv_symm_apply [PathConnectedSpace B]
         ((VectorBundleOrientationCover.signLocalSystemFiberEquiv hι (o b')).symm r) :=
   (LinearEquiv.symm_apply_eq _).2 (by
     rw [twistedHomology₀Equiv_ιTwistedHomology₀, LinearEquiv.apply_symm_apply])
+
+omit [FiniteDimensional ℝ F] in
+/-- The inverse identification sends `r` to the class of the element of the fibre over `b` whose
+value at the orientation `o b` is `r`. -/
+@[simp]
+theorem twistedHomology₀Equiv_symm_apply_self [PathConnectedSpace B]
+    (o : VectorBundleOrientation F E ι) (b : B) (r : R) :
+    (twistedHomology₀Equiv hι o b).symm r =
+      ιTwistedHomology₀ (VectorBundleOrientationCover.signLocalSystem F E R hι) b
+        ((VectorBundleOrientationCover.signLocalSystemFiberEquiv hι (o b)).symm r) :=
+  twistedHomology₀Equiv_symm_apply hι o b b r
 
 omit [FiniteDimensional ℝ F] in
 /-- The identification of `H₀(B; o(E))` with `R` given by `o` does not depend on the basepoint
