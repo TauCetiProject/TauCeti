@@ -19,9 +19,10 @@ the coadjoint representations:
 `Ad*_k (ν ∘ dφ) = (Ad*_{φ k} ν) ∘ dφ`
 
 (`MonoidHom.coadjointRepresentation_comp_groupLieAlgebraMap`). This file draws the consequences
-for coadjoint orbits and stabilizers, aimed at a covering homomorphism `φ`, that is, one whose
-differential is bijective (`ContMDiffMonoidMorphism.isCoveringMap_of_lieMap_bijective`). Such a
-`φ` identifies `𝔨` with `𝔤`, and `ν ↦ ν ∘ dφ` identifies `𝔤*` with `𝔨*`.
+for coadjoint orbits and stabilizers, aimed at homomorphisms `φ` whose differential is
+bijective. For finite-dimensional Lie groups with connected target such a homomorphism is a
+covering map (`ContMDiffMonoidMorphism.isCoveringMap_of_lieMap_bijective`). Such a `φ` identifies
+`𝔨` with `𝔤`, and `ν ↦ ν ∘ dφ` identifies `𝔤*` with `𝔨*`.
 
 * If `φ` is surjective, the `K`-orbit of `ν ∘ dφ` is the image of the `G`-orbit of `ν`
   (`MonoidHom.range_coadjointRepresentation_comp_groupLieAlgebraMap`), and when moreover `dφ` is
