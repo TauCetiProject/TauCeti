@@ -115,14 +115,11 @@ private theorem lhVec_mem_sphere {y : ℝ²} (hy : y 1 ^ 2 ≤ 1) : lhVec y ∈ 
   rw [mem_sphere_zero_iff_norm]
   exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 h
 
-private theorem hasFDerivAt_coord (y : ℝ²) (i : Fin 2) :
-    HasFDerivAt (fun x : ℝ² ↦ x i) (EuclideanSpace.proj i : ℝ² →L[ℝ] ℝ) y :=
-  PiLp.hasFDerivAt_apply 2 y i
-
 private theorem hasFDerivAt_lhRadius {y : ℝ²} (hy : y 1 ^ 2 < 1) :
     HasFDerivAt (fun x : ℝ² ↦ √(1 - x 1 ^ 2))
       ((-(y 1 / √(1 - y 1 ^ 2))) • (EuclideanSpace.proj 1 : ℝ² →L[ℝ] ℝ)) y := by
-  convert (((hasFDerivAt_coord y 1).pow 2).const_sub 1).sqrt (sub_pos.2 hy).ne' using 1
+  convert (((PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 y 1).pow 2).const_sub 1).sqrt (sub_pos.2 hy).ne'
+    using 1
   ext v
   have hs : √(1 - y 1 ^ 2) ≠ 0 := Real.sqrt_ne_zero'.2 (sub_pos.2 hy)
   simp
@@ -149,13 +146,15 @@ private theorem fderiv_lhVec_apply {y : ℝ²} (hy : y 1 ^ 2 < 1) (v : ℝ²) :
     congrArg (· v) (((EuclideanSpace.proj i : ℝ³ →L[ℝ] ℝ).hasFDerivAt.comp y hd).unique hD)
   ext i
   fin_cases i
-  · refine (key 0 _ ((hasFDerivAt_lhRadius hy).mul (hasFDerivAt_coord y 0).cos)).trans ?_
+  · refine (key 0 _ ((hasFDerivAt_lhRadius hy).mul
+      (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 y 0).cos)).trans ?_
     simp
     ring
-  · refine (key 1 _ ((hasFDerivAt_lhRadius hy).mul (hasFDerivAt_coord y 0).sin)).trans ?_
+  · refine (key 1 _ ((hasFDerivAt_lhRadius hy).mul
+      (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 y 0).sin)).trans ?_
     simp
     ring
-  · refine (key 2 _ (hasFDerivAt_coord y 1)).trans ?_
+  · refine (key 2 _ (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 y 1)).trans ?_
     simp
 
 /-- The triple product of the parametrization with two of its derivatives is `dθ ∧ dh`. -/
@@ -198,7 +197,7 @@ private theorem sq_lt_one_of_mem_longitudeHeightStrip {a : ℝ} (y : longitudeHe
 /-- The **longitude–height parametrization** of the unit sphere,
 `(θ, h) ↦ (√(1 - h²) cos θ, √(1 - h²) sin θ, h)`, on the strip `(a, a + 2π) × (-1, 1)`. It is
 smooth and injective (`TauCeti.contMDiff_sphereLongitudeHeight`,
-`TauCeti.injective_sphereLongitudeHeight`), and it pulls the area form back to `dθ ∧ dh`
+`TauCeti.sphereLongitudeHeight_injective`), and it pulls the area form back to `dθ ∧ dh`
 (`TauCeti.mpullback_sphereLongitudeHeight_sphereAreaForm`). -/
 def sphereLongitudeHeight (a : ℝ) : longitudeHeightStrip a → S² :=
   Set.codRestrict (fun y : longitudeHeightStrip a ↦ lhVec y) _ fun y ↦
@@ -221,7 +220,7 @@ theorem contMDiff_sphereLongitudeHeight (a : ℝ) :
 
 /-- The longitude–height parametrization is injective: on a strip of width `2π`, the longitude is
 determined by its cosine and sine. -/
-theorem injective_sphereLongitudeHeight (a : ℝ) : Function.Injective (sphereLongitudeHeight a) := by
+theorem sphereLongitudeHeight_injective (a : ℝ) : Function.Injective (sphereLongitudeHeight a) := by
   intro y z h
   have h' (i : Fin 3) := congrArg (fun x : S² ↦ (x : ℝ³) i) h
   simp only [coe_sphereLongitudeHeight, PiLp.toLp_apply] at h'
@@ -256,7 +255,7 @@ theorem measurableEmbedding_sphereLongitudeHeight (a : ℝ) :
     MeasurableEmbedding (sphereLongitudeHeight a) :=
   haveI := (longitudeHeightStrip a).isOpen.polishSpace
   (contMDiff_sphereLongitudeHeight a).continuous.measurableEmbedding
-    (injective_sphereLongitudeHeight a)
+    (sphereLongitudeHeight_injective a)
 
 /-- Read in `ℝ³`, the differential of the parametrization is the derivative of its formula. -/
 private theorem mvfderiv_coe_mfderiv_sphereLongitudeHeight (a : ℝ) (y : longitudeHeightStrip a)
@@ -300,7 +299,7 @@ theorem mpullback_sphereLongitudeHeight_sphereAreaForm (a : ℝ) :
 
 /-! ### The area measure in longitude–height coordinates -/
 
-/-- **Lebesgue measure on the strip is the area measure of `S²`.** The parametrization
+/-- **Lebesgue measure on the strip is the area measure of its image.** The parametrization
 `sphereLongitudeHeight a` carries Lebesgue measure on the strip `(a, a + 2π) × (-1, 1)` to the
 Liouville measure `|σ|` of the area form of the unit sphere, restricted to the image of the
 strip. -/
@@ -312,9 +311,15 @@ theorem map_volume_sphereLongitudeHeight (a : ℝ) :
     (SmoothForm.coe_mpullback _ (contMDiff_sphereLongitudeHeight a) sphereAreaForm).symm,
     mpullback_sphereLongitudeHeight_sphereAreaForm,
     SmoothTwoForm.liouvilleMeasure_mpullback_subtypeVal,
-    SmoothTwoForm.liouvilleMeasure_const_continuousDet]
+    SmoothTwoForm.liouvilleMeasure_const_continuousDet, OrthonormalBasis.addHaar_eq_volume]
 
 /-! ### The meridian is null -/
+
+/-- The coordinates of a point of the unit sphere satisfy `x₁² + x₂² + x₃² = 1`. -/
+private theorem coord_sq_add_coord_sq_add_coord_sq (x : S²) :
+    (x : ℝ³) 0 ^ 2 + (x : ℝ³) 1 ^ 2 + (x : ℝ³) 2 ^ 2 = 1 := by
+  have h : ‖(x : ℝ³)‖ ^ 2 = 1 := by rw [mem_sphere_zero_iff_norm.1 x.2, one_pow]
+  rwa [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three] at h
 
 /-- A point of the sphere off the vertical axis is covered by one of the strips starting at
 longitudes `0` and `-π`. -/
@@ -326,9 +331,7 @@ private theorem mem_range_sphereLongitudeHeight_of_ne (x : S²)
     rcases hx with hx | hx
     · exact hx (congrArg Complex.re h)
     · exact hx (congrArg Complex.im h)
-  have hnorm : ‖(x : ℝ³)‖ ^ 2 = 1 := by
-    rw [mem_sphere_zero_iff_norm.1 x.2, one_pow]
-  rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three] at hnorm
+  have hnorm := coord_sq_add_coord_sq_add_coord_sq x
   -- `‖z‖ = √(1 - h²)` for the height `h` of `x`.
   have hz2 : ‖z‖ = √(1 - (x : ℝ³) 2 ^ 2) := by
     rw [Complex.norm_def, Complex.normSq_mk]
@@ -372,9 +375,8 @@ private theorem liouvilleMeasure_poles :
   refine Set.Finite.of_finite_image (f := fun x : S² ↦ (x : ℝ³) 2)
     ((Set.finite_singleton 1).insert (-1) |>.subset ?_) ?_
   · rintro _ ⟨x, ⟨h0, h1⟩, rfl⟩
-    have hnorm : ‖(x : ℝ³)‖ ^ 2 = 1 := by
-      rw [mem_sphere_zero_iff_norm.1 x.2, one_pow]
-    rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three, h0, h1] at hnorm
+    have hnorm := coord_sq_add_coord_sq_add_coord_sq x
+    rw [h0, h1] at hnorm
     have : ((x : ℝ³) 2 + 1) * ((x : ℝ³) 2 - 1) = 0 := by linear_combination hnorm
     rcases mul_eq_zero.1 this with h | h
     · exact Or.inl (by linarith)
@@ -436,7 +438,9 @@ private theorem map_restrict_longitudeHeightStrip_zero :
   set e : ℝ² → ℝ × ℝ := fun y ↦ (y 0, y 1)
   have he : MeasurePreserving e volume volume :=
     (volume_preserving_finTwoArrow ℝ).comp (PiLp.volume_preserving_ofLp (Fin 2))
-  have hS : (longitudeHeightStrip 0 : Set ℝ²) = e ⁻¹' (Ioo 0 (0 + 2 * π) ×ˢ Ioo (-1) 1) := rfl
+  have hS : (longitudeHeightStrip 0 : Set ℝ²) = e ⁻¹' (Ioo 0 (0 + 2 * π) ×ˢ Ioo (-1) 1) := by
+    ext y
+    simp [e, mem_longitudeHeightStrip]
   have hsnd : (fun y : ℝ² ↦ y 1) = Prod.snd ∘ e := rfl
   rw [hS, hsnd, ← Measure.map_map measurable_snd he.measurable,
     (he.restrict_preimage (measurableSet_Ioo.prod measurableSet_Ioo)).map_eq,
@@ -481,7 +485,6 @@ the point mass `4π δ_c`. -/
 theorem duistermaatHeckmanMeasure_sphereAreaForm_const {F : Type*} [MeasurableSpace F] (c : F) :
     sphereAreaForm.duistermaatHeckmanMeasure 1 (fun _ : S² ↦ c) =
       ENNReal.ofReal (4 * π) • Measure.dirac c := by
-  rw [SmoothTwoForm.duistermaatHeckmanMeasure_def, Measure.map_const,
-    liouvilleMeasure_sphereAreaForm_univ]
+  rw [SmoothTwoForm.duistermaatHeckmanMeasure_const, liouvilleMeasure_sphereAreaForm_univ]
 
 end TauCeti

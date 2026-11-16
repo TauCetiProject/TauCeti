@@ -45,9 +45,10 @@ On a symplectic vector space `(V, σ)`, regarded as a manifold with the constant
 Liouville measure is the Haar measure normalized by any Darboux basis
 (`TauCeti.SymplecticForm.liouvilleMeasure_constSmooth`). In particular the Liouville measure of
 the standard form `Σ dq_i ∧ dp_i` on `ℂ^ι = EuclideanSpace ℝ ι × EuclideanSpace ℝ ι` is Lebesgue
-measure (`TauCeti.SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm`), and so is the
-Liouville measure of the area form `dx ∧ dy` of the plane `ℝ²`
-(`TauCeti.SmoothTwoForm.liouvilleMeasure_const_continuousDet`).
+measure (`TauCeti.SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm`). Likewise on a
+plane the Liouville measure of the determinant form of a basis is the Haar measure of that basis
+(`TauCeti.SmoothTwoForm.liouvilleMeasure_const_continuousDet`), so the area form `dx ∧ dy` of `ℝ²`
+has Liouville measure Lebesgue measure.
 
 ## Main definitions
 
@@ -77,8 +78,8 @@ Liouville measure of the area form `dx ∧ dy` of the plane `ℝ²`
   symplectic form is the Haar measure of a Darboux basis.
 * `TauCeti.SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm`: the Liouville measure of
   the standard symplectic form on `ℂ^ι` is Lebesgue measure.
-* `TauCeti.SmoothTwoForm.liouvilleMeasure_const_continuousDet`: the Liouville measure of the area
-  form `dx ∧ dy` of `ℝ²` is Lebesgue measure.
+* `TauCeti.SmoothTwoForm.liouvilleMeasure_const_continuousDet`: on a plane, the Liouville measure
+  of the determinant form of a basis is the Haar measure of that basis.
 
 ## References
 
@@ -318,20 +319,22 @@ instance fact_finrank_euclideanSpace_fin_two :
     Fact (finrank ℝ (EuclideanSpace ℝ (Fin 2)) = 2 * 1) :=
   ⟨by simp⟩
 
-/-- **The Liouville measure of the area form of the plane is Lebesgue measure.** On `ℝ²`, the
-constant two-form `dx ∧ dy`, the determinant form of the standard basis, has Liouville measure the
-Lebesgue measure `volume`. -/
-theorem SmoothTwoForm.liouvilleMeasure_const_continuousDet :
-    SmoothTwoForm.liouvilleMeasure 1
-      (SmoothForm.const (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.continuousDet) = volume := by
-  set b := (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  [MeasurableSpace V] [BorelSpace V] [Fact (finrank ℝ V = 2 * 1)]
+
+/-- **The Liouville measure of a constant area form on a plane.** On a two-dimensional space `V`,
+the constant two-form given by the determinant form of a basis `b` has Liouville measure the Haar
+measure normalized by `b`. For the standard basis of `ℝ²`, the form `dx ∧ dy`, this is Lebesgue
+measure. -/
+theorem SmoothTwoForm.liouvilleMeasure_const_continuousDet {b : Basis (Fin 2) ℝ V} :
+    SmoothTwoForm.liouvilleMeasure 1 (SmoothForm.const b.continuousDet) = b.addHaar := by
   set b' := b.reindex (finCongr (by norm_num : 2 = 2 * 1))
-  set α : SmoothTwoForm 𝓘(ℝ, EuclideanSpace ℝ (Fin 2)) (EuclideanSpace ℝ (Fin 2)) :=
-    SmoothForm.const b.continuousDet
-  -- `dx ∧ dy` is its own volume form, and it takes the value `1` on the standard basis.
-  have hval (x : EuclideanSpace ℝ (Fin 2)) : (α.volumeForm 1).1 x b' = 1 := by
+  set α : SmoothTwoForm 𝓘(ℝ, V) V := SmoothForm.const b.continuousDet
+  -- The determinant form is its own volume form, and it takes the value `1` on `b`.
+  have hval (x : V) : (α.volumeForm 1).1 x b' = 1 := by
     have hb : ⇑b' = fun r ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 1) r)).2 := by
       funext r
+      rw [Module.Basis.reindex_apply]
       fin_cases r <;> rfl
     have h := ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv (α.1 x) (m := 1)
       (fun p ↦ b p.2) (fun _ _ ↦ ?_) (fun i j ↦ ?_)
@@ -347,7 +350,6 @@ theorem SmoothTwoForm.liouvilleMeasure_const_continuousDet :
         fin_cases k <;> rfl
       · simp
   rw [SmoothTwoForm.liouvilleMeasure_def, RoughForm.measure_eq_smul_addHaar (c := 1) b' hval,
-    abs_one, ENNReal.ofReal_one, one_smul, Module.Basis.addHaar_reindex,
-    OrthonormalBasis.addHaar_eq_volume]
+    abs_one, ENNReal.ofReal_one, one_smul, Module.Basis.addHaar_reindex]
 
 end TauCeti
