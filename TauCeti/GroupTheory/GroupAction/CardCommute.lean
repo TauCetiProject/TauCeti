@@ -37,7 +37,7 @@ open MulAction
 
 namespace TauCeti
 
-variable {G α : Type*} [Group G] [MulAction G α]
+variable (G α : Type*) [Group G] [MulAction G α]
 
 /-- **The class formula**, in a division semiring `𝕜` in which the order of `G` is nonzero: a
 `G`-set `α` has `Σ_ω |G| / |G_ω|` points, the sum running over the orbits `ω` and `|G_ω|` being
@@ -51,12 +51,8 @@ theorem card_eq_finsum_card_group_div_cardStabilizerOnOrbit (𝕜 : Type*) [Divi
   have hG : (Nat.card G : 𝕜) ≠ 0 := NeZero.ne _
   have := finite_of_natCast_card_ne_zero hG
   -- The order of a stabilizer divides `|G|`, so it is nonzero in `𝕜` as well.
-  have hdvd (ω : orbitRel.Quotient G α) : cardStabilizerOnOrbit ω ∣ Nat.card G := by
-    induction ω using Quotient.inductionOn' with | h a => ?_
-    rw [cardStabilizerOnOrbit_mk]
-    exact Subgroup.card_subgroup_dvd_card _
   have hstab (ω : orbitRel.Quotient G α) : (cardStabilizerOnOrbit ω : 𝕜) ≠ 0 := fun h ↦ by
-    obtain ⟨k, hk⟩ := hdvd ω
+    obtain ⟨k, hk⟩ := cardStabilizerOnOrbit_dvd_card ω
     exact hG (by rw [hk, Nat.cast_mul, h, zero_mul])
   cases finite_or_infinite α with
   | inr hα =>
@@ -74,6 +70,6 @@ theorem card_eq_finsum_card_group_div_cardStabilizerOnOrbit (𝕜 : Type*) [Divi
       card_eq_sum_card_group_div_card_stabilizer G α, Nat.cast_sum]
     refine Finset.sum_congr rfl fun ω _ ↦ ?_
     rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card, ← cardStabilizerOnOrbit_mk,
-      Quotient.out_eq', Nat.cast_div (hdvd ω) (hstab ω)]
+      Quotient.out_eq', Nat.cast_div (cardStabilizerOnOrbit_dvd_card ω) (hstab ω)]
 
 end TauCeti

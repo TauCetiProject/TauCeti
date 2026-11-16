@@ -62,6 +62,8 @@ All declarations are in the namespace `TauCeti.Matrix.SpecialOrthogonalGroup`.
 * `fixedBy_poles_eq_pair`, `exists_fixedBy_poles_eq_pair`: the poles fixed by a nonidentity
   element of `K` are a pair `{p, -p}`, and `card_fixedBy_poles`: there are exactly two of them.
 * `nonempty_poles_iff`: `K` has a pole exactly when it is nontrivial.
+* `one_lt_cardStabilizerOnOrbit_poles`: for finite `K`, every orbit of poles has a stabilizer of
+  order at least `2`.
 * `card_poles_add_two_mul`: the double count `|P| + 2 (|K| - 1) = s |K|`.
 * `finsum_one_sub_inv_cardStabilizerOnOrbit_poles_eq_two_sub_two_div_card`: the pole-orbit
   equation `Σⱼ (1 - 1 / mⱼ) = 2 - 2 / |K|`, with the stabilizer orders read off as
@@ -116,6 +118,7 @@ theorem coe_dotProduct_self (p : poles K) : (p : Fin 3 → ℝ) ⬝ᵥ p = 1 :=
   p.2.1
 
 /-- A pole is nonzero. -/
+@[simp]
 theorem coe_ne_zero (p : poles K) : (p : Fin 3 → ℝ) ≠ 0 := fun h ↦ by
   simpa [h] using coe_dotProduct_self p
 
@@ -209,6 +212,15 @@ instance (p : poles K) : Nontrivial (stabilizer K p) := by
   exact ⟨⟨g, mem_stabilizer_iff.mpr (Subtype.ext (by rw [SubMulAction.val_smul, hgp]))⟩, 1,
     fun h ↦ hg ((Subgroup.mk_eq_one _).mp h)⟩
 
+/-- **Every orbit of poles has a stabilizer of order at least `2`**, for a finite group of
+rotations: the stabilizer of a pole contains a nonidentity rotation. -/
+theorem one_lt_cardStabilizerOnOrbit_poles [Finite K] (ω : orbitRel.Quotient K (poles K)) :
+    1 < cardStabilizerOnOrbit ω := by
+  induction ω using Quotient.inductionOn' with | h p => ?_
+  rw [cardStabilizerOnOrbit_mk]
+  exact Finite.one_lt_card
+
+variable (K) in
 /-- **The double count of fixed poles.** For a finite group `K` of rotations with pole set `P` and
 `s` orbits of poles, `|P| + 2 (|K| - 1) = s |K|`. -/
 theorem card_poles_add_two_mul [Finite K] :
@@ -229,6 +241,7 @@ theorem card_poles_add_two_mul [Finite K] :
   rw [← hB, ← Finset.add_sum_erase _ _ (Finset.mem_univ 1), hfix]
   simp
 
+variable (K) in
 /-- **The pole-orbit equation.** For a finite group `K` of rotations of `ℝ³`, the orders `m_ω` of
 the stabilizers of its orbits `ω` of poles satisfy `Σ_ω (1 - 1 / m_ω) = 2 - 2 / |K|`. -/
 theorem finsum_one_sub_inv_cardStabilizerOnOrbit_poles_eq_two_sub_two_div_card [Finite K] :
@@ -240,13 +253,13 @@ theorem finsum_one_sub_inv_cardStabilizerOnOrbit_poles_eq_two_sub_two_div_card [
   -- Divide the class formula by `|K|`, then use the double count.
   have hsum : ∑ ω : orbitRel.Quotient K (poles K), (cardStabilizerOnOrbit ω : ℚ)⁻¹ =
       Nat.card (poles K) / Nat.card K := by
-    rw [card_eq_finsum_card_group_div_cardStabilizerOnOrbit (G := K) (α := poles K) ℚ,
+    rw [card_eq_finsum_card_group_div_cardStabilizerOnOrbit K (poles K) ℚ,
       finsum_eq_sum_of_fintype, Finset.sum_div]
     refine Finset.sum_congr rfl fun ω _ ↦ ?_
     rw [div_div_cancel_left₀ hN.ne']
   have hcount : (Nat.card (poles K) : ℚ) + 2 * (Nat.card K - 1) =
       Nat.card (orbitRel.Quotient K (poles K)) * Nat.card K := by
-    have h := congrArg (Nat.cast : ℕ → ℚ) (card_poles_add_two_mul (K := K))
+    have h := congrArg (Nat.cast : ℕ → ℚ) (card_poles_add_two_mul K)
     push_cast [Nat.cast_sub (Nat.one_le_iff_ne_zero.mpr Nat.card_pos.ne')] at h
     exact h
   rw [finsum_eq_sum_of_fintype, Finset.sum_sub_distrib, hsum, Finset.sum_const, Finset.card_univ,
@@ -260,22 +273,22 @@ private theorem one_sub_inv_cardStabilizerOnOrbit_mem [Finite K]
     (ω : orbitRel.Quotient K (poles K)) :
     (1 : ℚ) / 2 ≤ 1 - (cardStabilizerOnOrbit ω : ℚ)⁻¹ ∧
       1 - (cardStabilizerOnOrbit ω : ℚ)⁻¹ ≤ 1 - (Nat.card K : ℚ)⁻¹ := by
-  induction ω using Quotient.inductionOn' with | h p => ?_
-  rw [cardStabilizerOnOrbit_mk]
-  have h2 : (2 : ℚ) ≤ Nat.card (stabilizer K p) := by exact_mod_cast Finite.one_lt_card
-  have hle : (Nat.card (stabilizer K p) : ℚ) ≤ Nat.card K := by
-    exact_mod_cast Subgroup.card_le_card_group _
+  have h2 : (2 : ℚ) ≤ cardStabilizerOnOrbit ω := by
+    exact_mod_cast one_lt_cardStabilizerOnOrbit_poles ω
+  have hle : (cardStabilizerOnOrbit ω : ℚ) ≤ Nat.card K := by
+    exact_mod_cast cardStabilizerOnOrbit_le_card ω
   constructor
   · linarith [inv_anti₀ (by norm_num : (0 : ℚ) < 2) h2]
   · linarith [inv_anti₀ (by linarith) hle]
 
+variable (K) in
 /-- **A nontrivial finite group of rotations has two or three orbits of poles.** -/
 theorem card_orbitRel_quotient_poles_eq_two_or_three [Finite K] [Nontrivial K] :
     Nat.card (orbitRel.Quotient K (poles K)) = 2 ∨
       Nat.card (orbitRel.Quotient K (poles K)) = 3 := by
   classical
   have := Fintype.ofFinite (orbitRel.Quotient K (poles K))
-  have heq := finsum_one_sub_inv_cardStabilizerOnOrbit_poles_eq_two_sub_two_div_card (K := K)
+  have heq := finsum_one_sub_inv_cardStabilizerOnOrbit_poles_eq_two_sub_two_div_card K
   rw [finsum_eq_sum_of_fintype] at heq
   set s := Nat.card (orbitRel.Quotient K (poles K))
   have hcard : (Finset.univ : Finset (orbitRel.Quotient K (poles K))).card = s := by
@@ -308,7 +321,7 @@ theorem stabilizer_eq_top_of_card_orbitRel_quotient_poles_eq_two [Finite K]
     (h : Nat.card (orbitRel.Quotient K (poles K)) = 2) (p : poles K) : stabilizer K p = ⊤ := by
   classical
   have := Fintype.ofFinite (orbitRel.Quotient K (poles K))
-  have heq := finsum_one_sub_inv_cardStabilizerOnOrbit_poles_eq_two_sub_two_div_card (K := K)
+  have heq := finsum_one_sub_inv_cardStabilizerOnOrbit_poles_eq_two_sub_two_div_card K
   rw [finsum_eq_sum_of_fintype] at heq
   -- With two orbits of stabilizer orders `m₁, m₂ ≤ |K|`, the pole-orbit equation reads
   -- `1 / m₁ + 1 / m₂ = 2 / |K|`: the terms `1 / m_ω - 1 / |K|` are nonnegative and sum to zero, so
