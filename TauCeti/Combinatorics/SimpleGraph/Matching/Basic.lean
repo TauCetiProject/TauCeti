@@ -8,16 +8,12 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Matching
 public import Mathlib.Combinatorics.SimpleGraph.VertexCover
 
-import Mathlib.Order.Zorn
-
 /-!
 # Maximal matchings, the matching number, and vertex-cover duality
 
-This file develops the basic extremal theory of matchings on a simple graph `G` without finiteness
-assumptions, parallel to Mathlib's `SimpleGraph.vertexCoverNum`:
+This file develops the basic extremal theory of matchings on a simple graph `G`, parallel to
+Mathlib's `SimpleGraph.vertexCoverNum`:
 
-* Every chain of matchings has a matching supremum, so every matching extends to a maximal matching
-  (`SimpleGraph.Subgraph.IsMatching.exists_le_maximal`).
 * A subgraph is a maximal matching if and only if it is a matching whose vertex set covers every
   edge of `G` (`SimpleGraph.Subgraph.maximal_isMatching_iff`).
 * Every matching `M` has twice as many vertices as edges in both `ℕ∞` and `ℕ`
@@ -25,8 +21,10 @@ assumptions, parallel to Mathlib's `SimpleGraph.vertexCoverNum`:
   and at most as many edges as the vertices in any vertex cover `C`
   (`SimpleGraph.Subgraph.IsMatching.encard_edgeSet_le_encard_of_isVertexCover`).
 * The matching number `SimpleGraph.matchingNum G : ℕ∞` is the supremum of `M.edgeSet.encard` over
-  all matchings `M : G.Subgraph`. It is always attained (`SimpleGraph.matchingNum_exists`) and
-  satisfies `G.matchingNum ≤ G.vertexCoverNum` and `G.vertexCoverNum ≤ 2 * G.matchingNum`.
+  all matchings `M : G.Subgraph`. Whenever `G.matchingNum ≠ ⊤` (in particular, when `V` or
+  `G.edgeSet` is finite), it is attained by a maximal matching (`SimpleGraph.matchingNum_exists`,
+  `SimpleGraph.exists_maximal_isMatching`), and every simple graph satisfies
+  `G.matchingNum ≤ G.vertexCoverNum` and `G.vertexCoverNum ≤ 2 * G.matchingNum`.
 
 ## Main definitions
 
@@ -38,7 +36,8 @@ assumptions, parallel to Mathlib's `SimpleGraph.vertexCoverNum`:
   set is a vertex cover of `G`.
 * `SimpleGraph.Subgraph.IsMatching.encard_edgeSet_le_encard_of_isVertexCover`: weak duality between
   matchings and vertex covers.
-* `SimpleGraph.matchingNum_exists`: every simple graph has a matching attaining `G.matchingNum`.
+* `SimpleGraph.matchingNum_exists`: every simple graph with finite matching number has a matching
+  attaining `G.matchingNum`.
 * `SimpleGraph.matchingNum_le_vertexCoverNum`,
   `SimpleGraph.vertexCoverNum_le_two_mul_matchingNum`: general two-sided bounds between the
   matching number and the vertex cover number.
@@ -61,27 +60,6 @@ variable {M : G.Subgraph}
 theorem isMatching_bot : (⊥ : G.Subgraph).IsMatching := by
   intro v hv
   simp at hv
-
-/-- The supremum of a chain of matchings is a matching. -/
-theorem isMatching_sSup_of_isChain {c : Set G.Subgraph}
-    (hc : ∀ N ∈ c, N.IsMatching) (hchain : IsChain (· ≤ ·) c) :
-    (sSup c).IsMatching := by
-  intro v hv
-  rw [verts_sSup, mem_iUnion₂] at hv
-  obtain ⟨N₁, hN₁, hv₁⟩ := hv
-  obtain ⟨w, hvw, hwuniq⟩ := hc N₁ hN₁ hv₁
-  refine ⟨w, sSup_adj.2 ⟨N₁, hN₁, hvw⟩, fun y hy ↦ ?_⟩
-  obtain ⟨N₂, hN₂, hvy⟩ := sSup_adj.1 hy
-  rcases hchain.total hN₁ hN₂ with h₁₂ | h₂₁
-  · exact (hc N₂ hN₂ (hvy.fst_mem)).unique hvy (h₁₂.2 hvw)
-  · exact hwuniq y (h₂₁.2 hvy)
-
-/-- Every matching is contained in a maximal matching. -/
-theorem IsMatching.exists_le_maximal (hM : M.IsMatching) :
-    ∃ M' : G.Subgraph, M ≤ M' ∧ Maximal IsMatching M' :=
-  zorn_le_nonempty₀ (Set.ofPred IsMatching)
-    (fun c hc hchain _ _ ↦ ⟨sSup c, isMatching_sSup_of_isChain hc hchain, fun _ ↦ le_sSup⟩)
-    M hM
 
 /-- A subgraph `M` is a maximal matching if and only if it is a matching and its vertex set is a
 vertex cover of `G`. -/
@@ -273,38 +251,14 @@ theorem matchingNum_le_vertexCoverNum (G : SimpleGraph V) :
   obtain ⟨C, hCnum, hC⟩ := G.vertexCoverNum_exists
   exact matchingNum_le_iff.2 fun M hM ↦ hCnum ▸ hM.encard_edgeSet_le_encard_of_isVertexCover hC
 
-/-- Every simple graph has a maximal matching. -/
-theorem exists_maximal_isMatching (G : SimpleGraph V) :
-    ∃ M : G.Subgraph, Maximal Subgraph.IsMatching M := by
-  obtain ⟨M, -, hM⟩ := Subgraph.isMatching_bot (G := G) |>.exists_le_maximal
-  exact ⟨M, hM⟩
-
-/-- The vertex cover number of any simple graph is at most twice its matching number. -/
-theorem vertexCoverNum_le_two_mul_matchingNum (G : SimpleGraph V) :
-    G.vertexCoverNum ≤ 2 * G.matchingNum := by
-  obtain ⟨M, hMmax⟩ := G.exists_maximal_isMatching
-  obtain ⟨hM, hcov⟩ := Subgraph.maximal_isMatching_iff.1 hMmax
-  exact hcov.vertexCoverNum_le.trans <|
-    hM.encard_verts.trans_le (mul_le_mul_right hM.encard_edgeSet_le_matchingNum 2)
-
-/-- Every simple graph has a matching attaining `G.matchingNum`. -/
-theorem matchingNum_exists (G : SimpleGraph V) :
+/-- Every simple graph with finite matching number has a matching attaining `G.matchingNum`. -/
+theorem matchingNum_exists (hfin : G.matchingNum ≠ ⊤) :
     ∃ M : G.Subgraph, M.IsMatching ∧ M.edgeSet.encard = G.matchingNum := by
-  rcases eq_or_ne G.matchingNum ⊤ with htop | hfin
-  · obtain ⟨M, hMmax⟩ := G.exists_maximal_isMatching
-    obtain ⟨hM, hcov⟩ := Subgraph.maximal_isMatching_iff.1 hMmax
-    refine ⟨M, hM, ?_⟩
-    rw [htop]
-    by_contra hne
-    have h2ne : 2 * M.edgeSet.encard ≠ ⊤ := by simp [two_mul, hne]
-    have hvc : G.vertexCoverNum ≠ ⊤ :=
-      ne_top_of_le_ne_top h2ne (hcov.vertexCoverNum_le.trans_eq hM.encard_verts)
-    exact hvc (top_unique (htop ▸ G.matchingNum_le_vertexCoverNum))
-  · have : Nonempty {M : G.Subgraph // M.IsMatching} := ⟨⟨⊥, Subgraph.isMatching_bot⟩⟩
-    have hsup : (⨆ M : {M : G.Subgraph // M.IsMatching}, M.1.edgeSet.encard) = G.matchingNum := by
-      rw [matchingNum_def, iSup_subtype]
-    obtain ⟨M, hM⟩ := ENat.exists_eq_iSup_of_lt_top (hsup ▸ lt_top_iff_ne_top.2 hfin)
-    exact ⟨M.1, M.2, hM.trans hsup⟩
+  have : Nonempty {M : G.Subgraph // M.IsMatching} := ⟨⟨⊥, Subgraph.isMatching_bot⟩⟩
+  have hsup : (⨆ M : {M : G.Subgraph // M.IsMatching}, M.1.edgeSet.encard) = G.matchingNum := by
+    rw [matchingNum_def, iSup_subtype]
+  obtain ⟨M, hM⟩ := ENat.exists_eq_iSup_of_lt_top (hsup ▸ lt_top_iff_ne_top.2 hfin)
+  exact ⟨M.1, M.2, hM.trans hsup⟩
 
 /-- A matching attaining a finite matching number is maximal. -/
 theorem Subgraph.IsMatching.maximal_of_encard_edgeSet_eq_matchingNum {M : G.Subgraph}
@@ -317,6 +271,22 @@ theorem Subgraph.IsMatching.maximal_of_encard_edgeSet_eq_matchingNum {M : G.Subg
   have hMfin : M.edgeSet.Finite := encard_ne_top_iff.1 (heq.trans_ne hfin)
   have hlt_encard : M.edgeSet.encard < M'.edgeSet.encard := hMfin.encard_lt_encard hssub
   exact (hlt_encard.trans_le (hM'.encard_edgeSet_le_matchingNum.trans_eq heq.symm)).false
+
+/-- Every simple graph with finite matching number has a maximal matching. -/
+theorem exists_maximal_isMatching (hfin : G.matchingNum ≠ ⊤) :
+    ∃ M : G.Subgraph, Maximal Subgraph.IsMatching M :=
+  let ⟨M, hM, hMcard⟩ := G.matchingNum_exists hfin
+  ⟨M, hM.maximal_of_encard_edgeSet_eq_matchingNum hfin hMcard⟩
+
+/-- The vertex cover number of any simple graph is at most twice its matching number. -/
+theorem vertexCoverNum_le_two_mul_matchingNum (G : SimpleGraph V) :
+    G.vertexCoverNum ≤ 2 * G.matchingNum := by
+  rcases eq_or_ne G.matchingNum ⊤ with htop | hfin
+  · simp [htop]
+  · obtain ⟨M, hMmax⟩ := G.exists_maximal_isMatching hfin
+    obtain ⟨hM, hcov⟩ := Subgraph.maximal_isMatching_iff.1 hMmax
+    exact hcov.vertexCoverNum_le.trans <|
+      hM.encard_verts.trans_le (mul_le_mul_right hM.encard_edgeSet_le_matchingNum 2)
 
 /-- A matching whose edge count equals the size of some vertex cover attains `G.matchingNum`. -/
 theorem Subgraph.IsMatching.encard_edgeSet_eq_matchingNum_of_isVertexCover
@@ -365,8 +335,9 @@ theorem matchingNum_eq_top_iff_vertexCoverNum_eq_top :
 
 /-- Twice the matching number of `G` is at most the cardinality of the vertex type. -/
 theorem two_mul_matchingNum_le_card : 2 * G.matchingNum ≤ ENat.card V := by
-  obtain ⟨M, hM, hMcard⟩ := G.matchingNum_exists
-  rw [← hMcard, ← hM.encard_verts]
+  simp only [matchingNum_def, ENat.mul_iSup, iSup_le_iff]
+  intro M hM
+  rw [← hM.encard_verts]
   exact Set.encard_le_card
 
 /-- Every graph on a finite vertex type has finite matching number. -/
