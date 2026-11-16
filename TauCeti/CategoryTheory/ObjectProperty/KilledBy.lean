@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.ObjectProperty.ColimitsOfShape
+public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 public import Mathlib.CategoryTheory.ObjectProperty.EpiMono
 public import Mathlib.CategoryTheory.Preadditive.Basic
 
@@ -14,8 +16,8 @@ public import Mathlib.CategoryTheory.Preadditive.Basic
 In a preadditive category, a natural number `e` kills an object `Z` when `e • 𝟙 Z = 0`. The
 objects killed by `e` form an object property, `CategoryTheory.ObjectProperty.isKilledBy C e`,
 closed under subobjects and quotients: if `e` kills `W`, it kills every subobject and every
-quotient of `W`. In a category of modules this is the condition that `e` annihilates every
-element.
+quotient of `W`. It contains the zero objects and is closed under colimits of every shape. In a
+category of modules this is the condition that `e` annihilates every element.
 -/
 
 public section
@@ -48,5 +50,20 @@ instance (e : ℕ) : (isKilledBy C e).IsClosedUnderQuotients where
     rw [prop_isKilledBy_iff] at hZ ⊢
     rw [← cancel_epi f, Preadditive.comp_nsmul, Category.comp_id, comp_zero,
       ← Category.id_comp f, ← Preadditive.nsmul_comp, hZ, zero_comp]
+
+/-- Zero objects are killed by every natural number. -/
+instance (e : ℕ) [HasZeroObject C] : (isKilledBy C e).ContainsZero :=
+  ⟨_, isZero_zero C, (isZero_zero C).eq_of_src _ _⟩
+
+/-- A colimit of objects killed by `e` is killed by `e`. -/
+instance (e : ℕ) (J : Type*) [Category* J] : (isKilledBy C e).IsClosedUnderColimitsOfShape J where
+  colimitsOfShape_le := by
+    rintro X ⟨h⟩
+    rw [prop_isKilledBy_iff]
+    refine h.isColimit.hom_ext fun j ↦ ?_
+    have hj : e • 𝟙 (h.diag.obj j) = 0 := h.prop_diag_obj j
+    -- `e • ι = (e • 𝟙) ≫ ι` vanishes on every leg of the colimit cocone.
+    rw [Preadditive.comp_nsmul, Category.comp_id, comp_zero, ← Category.id_comp (h.ι.app j),
+      ← Preadditive.nsmul_comp, hj, zero_comp]
 
 end CategoryTheory.ObjectProperty
