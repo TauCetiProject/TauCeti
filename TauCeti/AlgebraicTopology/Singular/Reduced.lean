@@ -41,7 +41,9 @@ A morphism out of zeroth homology is determined by its values on the classes of 
 (`TauCeti.singularHomology₀_hom_ext`), and any family of values on the classes of points that is
 constant along paths is attained by such a morphism (`TauCeti.singularHomology₀Desc`,
 `TauCeti.singularHomology₀Section_singularHomology₀Desc`). Points joined by a path have the same
-class (`TauCeti.singularHomology₀Section_eq_of_joined`). On a path-connected space the class of a
+class (`TauCeti.singularHomology₀Section_eq_of_joined`). Multiplying the class of each point by a
+unit that is constant along paths is an automorphism
+(`TauCeti.isIso_singularHomology₀Desc_units_smul`). On a path-connected space the class of a
 point does not depend on the point, and with coefficients in a ring it spans zeroth homology
 (`TauCeti.singularHomology₀_eq_smul_singularHomology₀Section`). Since its augmentation is an
 isomorphism, every map out of a path-connected space is injective on zeroth homology
@@ -188,6 +190,21 @@ lemma singularHomology₀Section_singularHomology₀Desc {X : TopCat.{w}} {Y : C
     (hv : ∀ ⦃x y : X⦄, Path x y → v x = v y) (x : X) :
     singularHomology₀Section R x ≫ singularHomology₀Desc R v hv = v x := by
   simp [singularHomology₀Desc]
+
+/-- Multiplying the class of each point `x` by a unit `u x` which is constant along paths is an
+automorphism of zeroth singular homology. -/
+theorem isIso_singularHomology₀Desc_units_smul {K : Type*} [Semiring K] [Linear K C]
+    {X : TopCat.{w}} (u : X → Kˣ) (hu : ∀ ⦃x y : X⦄, Path x y → u x = u y) :
+    IsIso (singularHomology₀Desc R (X := X) (fun x ↦ (u x : K) • singularHomology₀Section R x)
+      fun x y γ ↦ by rw [hu γ, singularHomology₀Section_eq_of_joined _ ⟨γ⟩]) := by
+  -- The inverse multiplies the class of `x` by `(u x)⁻¹`.
+  refine ⟨singularHomology₀Desc R (X := X)
+      (fun x ↦ (((u x)⁻¹ : Kˣ) : K) • singularHomology₀Section R x)
+      fun x y γ ↦ by rw [hu γ, singularHomology₀Section_eq_of_joined _ ⟨γ⟩],
+    singularHomology₀_hom_ext _ fun x ↦ ?_, singularHomology₀_hom_ext _ fun x ↦ ?_⟩ <;>
+  simp only [singularHomology₀Section_singularHomology₀Desc_assoc, Linear.smul_comp,
+    singularHomology₀Section_singularHomology₀Desc, smul_smul, Category.comp_id, Units.mul_inv,
+    Units.inv_mul, one_smul]
 
 variable [HasKernels C]
 

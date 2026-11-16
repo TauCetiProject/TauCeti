@@ -418,22 +418,6 @@ private theorem thomPairOverSingularHomologyFinrankInv_naturality
   rw [ConcreteCategory.hom_ofHom, show ContinuousMap.inclusion h x = inclusion h x from
     Subtype.ext ((ContinuousMap.inclusion_apply_coe h x).trans (coe_inclusion h x).symm)]
 
-/-- Multiplying the class of each point `x` by a unit `u x` which is constant along paths is an
-automorphism of `H₀(X; K)`. -/
-private theorem isIso_singularHomology₀Desc_units_smul {X : TopCat.{w}} (u : X → Kˣ)
-    (hu : ∀ ⦃x y : X⦄, Path x y → u x = u y) :
-    IsIso (singularHomology₀Desc (ModuleCat.of K K) (X := X)
-      (fun x ↦ (u x : K) • singularHomology₀Section (ModuleCat.of K K) x)
-      fun x y γ ↦ by rw [hu γ, singularHomology₀Section_eq_of_joined _ ⟨γ⟩]) := by
-  -- The inverse multiplies the class of `x` by `(u x)⁻¹`.
-  refine ⟨singularHomology₀Desc (ModuleCat.of K K) (X := X)
-      (fun x ↦ (((u x)⁻¹ : Kˣ) : K) • singularHomology₀Section (ModuleCat.of K K) x)
-      fun x y γ ↦ by rw [hu γ, singularHomology₀Section_eq_of_joined _ ⟨γ⟩],
-    singularHomology₀_hom_ext _ fun x ↦ ?_, singularHomology₀_hom_ext _ fun x ↦ ?_⟩ <;>
-  simp only [singularHomology₀Section_singularHomology₀Desc_assoc, Linear.smul_comp,
-    singularHomology₀Section_singularHomology₀Desc, smul_smul, Category.comp_id, Units.mul_inv,
-    Units.inv_mul, one_smul]
-
 /-- Over a subset of the base set of a chosen trivialization, the map is an isomorphism: read
 through the trivialization it is the isomorphism `H₀(W) ≅ Hᵣ(W × F, W × (F ∖ {0}))` of the product
 bundle after multiplying the class of each point by its unit. -/
@@ -443,7 +427,8 @@ private theorem isIso_thomPairOverSingularHomologyFinrankInv_of_subset
     IsIso (thomPairOverSingularHomologyFinrankInv hg W) := by
   have hu : ∀ ⦃x y : TopCat.of W⦄, Path x y → ε c x = ε c y := fun _ _ γ ↦
     hg.eq_of_path c continuous_subtype_val (fun x ↦ hW x.2) γ
-  have := isIso_singularHomology₀Desc_units_smul (K := K) (fun x : TopCat.of W ↦ ε c x) hu
+  have := isIso_singularHomology₀Desc_units_smul (ModuleCat.of K K)
+    (fun x : TopCat.of W ↦ ε c x) hu
   have h : thomPairOverSingularHomologyFinrankInv hg W ≫
       TopPair.singularHomologyMap ((trivializationAt F E c).thomPairOverIso ℝ hW).hom
         (ModuleCat.of K K) (finrank ℝ F) =
@@ -899,9 +884,9 @@ private theorem singularHomologyMap_complZeroPairIso_hom_orientedFiberGenerator
   have h₀ : TopPair.singularHomologyMap (e₀.continuousLinearEquivAt ℝ b hb₀).complZeroPairIso.hom
       (ModuleCat.of K K) (finrank ℝ F)
         (TopPair.singularHomologyMap (e₀.continuousLinearEquivAt ℝ b hb₀).complZeroPairIso.inv
-          (ModuleCat.of K K) (finrank ℝ F) γ) = γ := by
-    rw [← ConcreteCategory.comp_apply, ← TopPair.singularHomologyMap_comp, Iso.inv_hom_id,
-      TopPair.singularHomologyMap_id, ConcreteCategory.id_apply]
+          (ModuleCat.of K K) (finrank ℝ F) γ) = γ :=
+    (TopPair.singularHomologyMapIso _ (e₀.continuousLinearEquivAt ℝ b hb₀).complZeroPairIso
+      _).inv_hom_id_apply γ
   have hne : ω ≠ -ω := Module.Ray.ne_neg_self ω
   have hneg (f : ((TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))).singularHomology
       (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K) ⟶ (TopPair.ofSubset (X := TopCat.of F)
@@ -921,6 +906,26 @@ private theorem singularHomologyMap_complZeroPairIso_hom_orientedFiberGenerator
   · rw [e₀.singularHomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq e hb₀ hb _ hι
       (h'.trans h.symm), orientedFiberGenerator, ite_eq_right (h.trans_ne hne.symm), map_neg, h₀,
       ite_eq_right (h'.trans_ne hne.symm)]
+
+open scoped Classical in
+include hι in
+/-- Every linear trivialization pulls `γ` back to the oriented fibre generator if it reads the
+orientation as `ω`, and to its negative otherwise. -/
+private theorem singularHomologyMap_complZeroPairIso_inv_eq_orientedFiberGenerator
+    (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet) :
+    TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv
+        (ModuleCat.of K K) (finrank ℝ F) γ =
+      if e.mapOrientation ι hb (o b) = ω then o.orientedFiberGenerator ω γ b
+      else -o.orientedFiberGenerator ω γ b := by
+  apply (ModuleCat.mono_iff_injective (TopPair.singularHomologyMap
+    (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom (ModuleCat.of K K)
+      (finrank ℝ F))).1 inferInstance
+  refine ((TopPair.singularHomologyMapIso _ (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso
+    _).inv_hom_id_apply γ).trans ?_
+  split_ifs with h
+  · rw [o.singularHomologyMap_complZeroPairIso_hom_orientedFiberGenerator hι ω e hb, ite_eq_left h]
+  · rw [map_neg, o.singularHomologyMap_complZeroPairIso_hom_orientedFiberGenerator hι ω e hb,
+      ite_eq_right h, neg_neg]
 
 open scoped Classical in
 include hι in
@@ -970,15 +975,7 @@ theorem thomPairSingularHomologyFinrankIso_hom_apply_of_mapOrientation_eq
           (TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv
             (ModuleCat.of K K) (finrank ℝ F) γ)) =
       singularHomology₀Section (ModuleCat.of K K) (X := TopCat.of B) b 1 := by
-  have hγb : TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv
-      (ModuleCat.of K K) (finrank ℝ F) γ = o.orientedFiberGenerator ω γ b := by
-    apply (ModuleCat.mono_iff_injective (TopPair.singularHomologyMap
-      (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom (ModuleCat.of K K)
-        (finrank ℝ F))).1 inferInstance
-    rw [o.singularHomologyMap_complZeroPairIso_hom_orientedFiberGenerator hι ω e hb, ite_eq_left h,
-      ← ConcreteCategory.comp_apply, ← TopPair.singularHomologyMap_comp, Iso.inv_hom_id,
-      TopPair.singularHomologyMap_id, ConcreteCategory.id_apply]
-  rw [hγb]
+  rw [o.singularHomologyMap_complZeroPairIso_inv_eq_orientedFiberGenerator hι ω e hb, ite_eq_left h]
   exact thomPairSingularHomologyFinrankIsoOfIsLocalFiberGenerator_hom_apply _ b
 
 /-- The oriented isomorphism `Hᵣ(E, E₀; K) ≅ H₀(B; K)` sends the class of the fibre pair over `b`
@@ -991,16 +988,8 @@ theorem thomPairSingularHomologyFinrankIso_hom_apply_of_mapOrientation_eq_neg
           (TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv
             (ModuleCat.of K K) (finrank ℝ F) γ)) =
       -singularHomology₀Section (ModuleCat.of K K) (X := TopCat.of B) b 1 := by
-  have hγb : TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv
-      (ModuleCat.of K K) (finrank ℝ F) γ = -o.orientedFiberGenerator ω γ b := by
-    apply (ModuleCat.mono_iff_injective (TopPair.singularHomologyMap
-      (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom (ModuleCat.of K K)
-        (finrank ℝ F))).1 inferInstance
-    rw [map_neg, o.singularHomologyMap_complZeroPairIso_hom_orientedFiberGenerator hι ω e hb,
-      ite_eq_right (h.trans_ne (Module.Ray.ne_neg_self ω).symm), neg_neg,
-      ← ConcreteCategory.comp_apply, ← TopPair.singularHomologyMap_comp, Iso.inv_hom_id,
-      TopPair.singularHomologyMap_id, ConcreteCategory.id_apply]
-  rw [hγb, map_neg, map_neg]
+  rw [o.singularHomologyMap_complZeroPairIso_inv_eq_orientedFiberGenerator hι ω e hb,
+    ite_eq_right (h.trans_ne (Module.Ray.ne_neg_self ω).symm), map_neg, map_neg]
   exact congrArg Neg.neg (thomPairSingularHomologyFinrankIsoOfIsLocalFiberGenerator_hom_apply _ b)
 
 end VectorBundleOrientation
