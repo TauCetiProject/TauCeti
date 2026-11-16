@@ -30,7 +30,8 @@ Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 3.
 ## Main results
 
 * `TauCeti.UpperHalfPlane.poincareRiemannianMetric`: the Poincaré metric, with tangent-coordinate
-  formula `UpperHalfPlane.poincareRiemannianMetric_inner`.
+  formulas `UpperHalfPlane.poincareRiemannianMetric_inner`, `UpperHalfPlane.inner_tangentSpace_eq`,
+  and `UpperHalfPlane.norm_tangentSpace_eq`.
 * `UpperHalfPlane.riemannianVolume_eq_volume`: the Riemannian volume of the Poincaré metric is
   Mathlib's invariant measure `volume`.
 -/
@@ -143,6 +144,22 @@ theorem _root_.UpperHalfPlane.poincareRiemannianMetric_inner (z : ℍ)
 /-- The tangent bundle of the upper half-plane carries the Poincaré tensor. -/
 instance instRiemannianBundle : RiemannianBundle (fun z : ℍ ↦ TangentSpace 𝓘(ℝ, ℂ) z) :=
   ⟨poincareRiemannianMetric.toRiemannianMetric⟩
+
+/-- The Poincaré inner product on `T_z ℍ` in the tangent coordinates of the inclusion chart. -/
+theorem _root_.UpperHalfPlane.inner_tangentSpace_eq (z : ℍ)
+    (v w : TangentSpace 𝓘(ℝ, ℂ) z) :
+    inner ℝ v w =
+      inner ℝ (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v)
+        (tangentSpaceCastModel 𝓘(ℝ, ℂ) z w) / z.im ^ 2 :=
+  _root_.UpperHalfPlane.poincareRiemannianMetric_inner z v w
+
+/-- The Poincaré norm of a tangent vector at `z : ℍ` is its Euclidean norm in model coordinates
+divided by `z.im`. -/
+theorem _root_.UpperHalfPlane.norm_tangentSpace_eq (z : ℍ) (v : TangentSpace 𝓘(ℝ, ℂ) z) :
+    ‖v‖ = ‖tangentSpaceCastModel 𝓘(ℝ, ℂ) z v‖ / z.im := by
+  rw [norm_eq_sqrt_real_inner, _root_.UpperHalfPlane.inner_tangentSpace_eq,
+    real_inner_self_eq_norm_sq, Real.sqrt_div (sq_nonneg _), Real.sqrt_sq (norm_nonneg _),
+    Real.sqrt_sq z.im_pos.le]
 
 /-- The Poincaré tensor is smooth as a real Riemannian bundle. -/
 instance instIsContMDiffRiemannianBundle : IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ
