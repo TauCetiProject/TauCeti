@@ -74,9 +74,10 @@ theorem isMaximalTorus_iff (k : Type u) [Field k] (H : _root_.CommHopfAlgCat.{u}
             J ≤ I → I ≤ J :=
   Iff.rfl
 
-/-- A torus is maximal if its points over an algebraically closed extension of the base field
-embed as a maximal commutative subgroup of a group. The base field itself need not be
-algebraically closed. -/
+/-- A torus `T` in an affine group `H` over `k` is maximal if, for an algebraically closed
+extension `K` of `k`, an injective homomorphism from the `K`-points of `H` into a group `G` maps
+the `K`-points of `T` onto a maximal commutative subgroup of `G`. The base field itself need not
+be algebraically closed. -/
 theorem isMaximalTorus_of_maximal_points {k : Type u} [Field k]
     {K : Type*} [Field K] [Algebra k K] [IsAlgClosed K]
     {H : _root_.CommHopfAlgCat.{u} k} [Algebra.FiniteType k H]
