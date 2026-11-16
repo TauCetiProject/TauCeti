@@ -19,61 +19,33 @@ import TauCeti.NumberTheory.LocalField.Herbrand.HasseArf.Abelian
 # Orbit counts and Artin slopes of a separable subextension
 
 Let `L/K` be a finite separable extension of nonarchimedean local fields embedded in a finite
-Galois extension `M/K` with Galois group `G = Gal(M/K)`, and let `H = Gal(M/L)` be the subgroup
-of `G` fixing the image of `L` in `M` (`TauCeti.embeddingSubgroup K L M`). Left cosets `G / H`
-are in bijection with `K`-embeddings `L →ₐ[K] M`.
-
-For each upper ramification index `u ≥ -1`, the upper ramification group `G^u` acts on `G / H`
-with orbit space `G / (G^u H)` of cardinality `[G : G^u H]`
-(`TauCeti.embeddingOrbitCount K L M u`). By Herbrand's theorem `(G/N)^u = G^u N / N`, this orbit
-count is independent of the choice of finite Galois overfield `M/K`:
-* at `u = -1`, `G^{-1} = G` acts transitively and the orbit count is `1`;
-* for `u ∈ (-1, 0]`, `G^u = G_0` and the orbit count is the residue degree `f(L/K)`;
-* immediately past `0` (where `G^u = G_1` is wild inertia), the orbit count is
-  `f(L/K) · ε(L/K)`, where `ε(L/K)` is the tame ramification index;
-* for sufficiently large `u`, `G^u = 1` and the orbit count reaches `[L : K]`.
-
-Beyond `G_1`, the chain of subgroups `G_i H` (`i ≥ 1`) refines `G_1 H ≥ H`, whose index
-`[G_1 H : H]` equals `p ^ w(L/K)` for `p = ringChar 𝓀[K]` and `w(L/K)` the wild ramification
-exponent. Consequently every step index `[G_i H : G_{i+1} H]` (`i ≥ 1`) is a power of `p`, and
-listing `φ_{M/K}(i) + 1` with multiplicity `log_p [G_i H : G_{i+1} H]` for
-`1 ≤ i ≤ largestLowerJump K M` defines the nondecreasing list of **Artin slopes**
-(`TauCeti.artinSlopeList K L M`). Its length is `wildRamificationExponent K L`, its entries are
-all strictly greater than `1`, the multiplicity of every real number `a` in the list is read off
-the right-hand jump ratio of `embeddingOrbitCount K L M` at `a - 1`, and therefore
-`artinSlopeList K L M` is likewise independent of the finite Galois overfield `M`. When `L = M`
-and `Gal(M/K)` is abelian, Hasse–Arf implies that every entry of `artinSlopeList K M M` is an
-integer at least `2`.
+Galois extension `M/K` with `G = Gal(M/K)` and `H = Gal(M/L) = TauCeti.embeddingSubgroup K L M`.
+For each upper ramification index `u ≥ -1`, `TauCeti.embeddingOrbitCount K L M u = [G : G^u H]`
+counts the `G^u`-orbits on `K`-embeddings `L →ₐ[K] M` and is independent of `M` by Herbrand's
+theorem. Beyond wild inertia `G_1`, every step index `[G_i H : G_{i+1} H]` (`i ≥ 1`) is a power
+of `p = ringChar 𝓀[K]`; listing `φ_{M/K}(i) + 1` with multiplicity `log_p [G_i H : G_{i+1} H]`
+yields the nondecreasing list of Artin slopes `TauCeti.artinSlopeList K L M`.
 
 ## Main definitions
 
-* `TauCeti.embeddingSubgroup K L M`: the subgroup `H = Gal(M/L)` of `Gal(M/K)` fixing the image
-  of `L`.
+* `TauCeti.embeddingSubgroup K L M`: the fixing subgroup `H = Gal(M/L)` inside `Gal(M/K)`.
 * `TauCeti.embeddingOrbitCount K L M u`: the orbit count `[G : G^u H]` at upper index `u`.
-* `TauCeti.artinSlopeList K L M`: the nondecreasing list of Artin slopes of `L/K` with
-  multiplicities.
+* `TauCeti.artinSlopeList K L M`: the nondecreasing list of Artin slopes of `L/K`.
 
 ## Main results
 
-* `TauCeti.embeddingOrbitCount_neg_one`, `TauCeti.embeddingOrbitCount_of_mem_Ioc_zero`,
-  `TauCeti.index_lowerRamificationGroup_one_sup_embeddingSubgroup`,
-  `TauCeti.embeddingOrbitCount_eq_finrank_of_lowerRamificationGroup_eq_bot`: values of the orbit
-  count along the canonical ramification filtration.
-* `TauCeti.embeddingOrbitCount_eq`: independence of `embeddingOrbitCount K L M u` from the finite
-  Galois overfield `M`.
-* `TauCeti.length_artinSlopeList`: `(artinSlopeList K L M).length = wildRamificationExponent K L`.
-* `TauCeti.artinSlopeList_eq_nil_iff`: `artinSlopeList K L M = [] ↔ IsTamelyRamified K L`.
-* `TauCeti.exists_gt_forall_natLog_div_embeddingOrbitCount_eq_count_artinSlopeList`: multiplicity
-  in `artinSlopeList` as the right-hand `p`-logarithmic jump ratio of `embeddingOrbitCount`.
-* `TauCeti.artinSlopeList_eq`: independence of `artinSlopeList K L M` from `M`.
-* `TauCeti.exists_nat_eq_of_mem_artinSlopeList_self`: Hasse–Arf integrality of Galois Artin
-  slopes in the abelian case.
+* `TauCeti.embeddingOrbitCount_eq`: independence of `embeddingOrbitCount K L M u` from `M`.
+* `TauCeti.exists_gt_forall_natLog_div_embeddingOrbitCount_eq_count_artinSlopeList` and
+  `TauCeti.artinSlopeList_eq`: multiplicity recovery from jump ratios and independence from `M`.
+* `TauCeti.length_artinSlopeList` and `TauCeti.artinSlopeList_eq_nil_iff`: length equals
+  `wildRamificationExponent K L`, empty iff tamely ramified.
+* `TauCeti.exists_nat_eq_of_mem_artinSlopeList_self`: Hasse–Arf integrality for abelian `M/K`.
 
 ## References
 
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §§1–3.
-* P. Deligne, *Les corps locaux de caractéristique p, limites de corps locaux de caractéristique 0*,
-  in *Représentations des groupes réductifs sur un corps local*, Hermann, 1984, Appendix, §A.6.
+* P. Deligne, *Les corps locaux de caractéristique p, limites de corps locaux de
+  caractéristique 0*, Appendix, §A.6.
 -/
 
 public section
@@ -100,13 +72,13 @@ theorem embeddingSubgroup_def :
   (rfl)
 
 variable {K L M} in
-/-- An automorphism `σ : M ≃ₐ[K] M` belongs to `embeddingSubgroup K L M` if and only if it fixes
-every element in the image of `L`. -/
+/-- An automorphism `σ : M ≃ₐ[K] M` belongs to `embeddingSubgroup K L M` iff it fixes every
+element in the image of `L`. -/
 @[simp]
 theorem mem_embeddingSubgroup_iff {σ : M ≃ₐ[K] M} :
     σ ∈ embeddingSubgroup K L M ↔ ∀ x : L, σ (algebraMap L M x) = algebraMap L M x := by
   rw [embeddingSubgroup_def, IntermediateField.mem_fixingSubgroup_iff]
-  exact ⟨fun h x ↦ h _ ⟨x, rfl⟩, by rintro h _ ⟨x, rfl⟩; exact h x⟩
+  exact ⟨fun h x ↦ h _ ⟨x, rfl⟩, fun h _ ⟨x, hx⟩ ↦ hx ▸ h x⟩
 
 /-- `embeddingSubgroup K L M` is the image of
 `AlgEquiv.restrictScalarsHom K : Gal(M/L) →* Gal(M/K)`. No normality or finiteness is needed. -/
@@ -115,31 +87,26 @@ theorem range_restrictScalarsHom_eq_embeddingSubgroup :
       embeddingSubgroup K L M := by
   ext σ
   rw [MonoidHom.mem_range, mem_embeddingSubgroup_iff]
-  refine ⟨?_, fun hσ ↦ ⟨{ σ with commutes' := hσ }, rfl⟩⟩
-  rintro ⟨τ, rfl⟩ x
-  exact τ.commutes x
+  exact ⟨fun ⟨τ, h⟩ x ↦ h ▸ τ.commutes x,
+    fun h ↦ ⟨{ σ with commutes' := h }, rfl⟩⟩
 
 /-- For `L = M`, the fixing subgroup of `M` in `Gal(M/K)` is trivial. -/
 @[simp]
 theorem embeddingSubgroup_self : embeddingSubgroup K M M = ⊥ := by
-  ext σ
-  simp [AlgEquiv.ext_iff]
+  ext; simp [AlgEquiv.ext_iff]
 
 /-- For `L = K`, every `K`-automorphism of `M` fixes the image of `K`. -/
 @[simp]
 theorem embeddingSubgroup_base : embeddingSubgroup K K M = ⊤ := by
-  ext σ
-  simp
+  ext; simp
 
 /-- In a tower `M / L / E / K`, the fixing subgroup of `L` is contained in that of `E`. -/
 theorem embeddingSubgroup_antitone (E : Type*) [Field E] [Algebra K E] [Algebra E L]
     [Algebra E M] [IsScalarTower K E M] [IsScalarTower E L M] :
-    embeddingSubgroup K L M ≤ embeddingSubgroup K E M := by
-  intro σ hσ
-  rw [mem_embeddingSubgroup_iff] at hσ ⊢
-  intro x
-  rw [IsScalarTower.algebraMap_apply E L M]
-  exact hσ (algebraMap E L x)
+    embeddingSubgroup K L M ≤ embeddingSubgroup K E M := fun _ hσ ↦
+  mem_embeddingSubgroup_iff.2 fun x ↦ by
+    rw [IsScalarTower.algebraMap_apply E L M]
+    exact mem_embeddingSubgroup_iff.1 hσ _
 
 /-- In a finite Galois extension `M/K` containing `L`, the order of `embeddingSubgroup K L M`
 equals `[M : L]`. -/
@@ -158,10 +125,10 @@ theorem index_embeddingSubgroup [Module.Finite K M] [IsGalois K M] :
     (embeddingSubgroup K L M).index = Module.finrank K L := by
   have : Module.Finite K L := Module.Finite.left K L M
   have : Module.Finite L M := .of_restrictScalars_finite K L M
-  have hmul := (embeddingSubgroup K L M).index_mul_card
+  have h := (embeddingSubgroup K L M).index_mul_card
   rw [natCard_embeddingSubgroup K L M, IsGalois.card_aut_eq_finrank K M,
-    ← Module.finrank_mul_finrank K L M] at hmul
-  exact Nat.eq_of_mul_eq_mul_right Module.finrank_pos hmul
+    ← Module.finrank_mul_finrank K L M] at h
+  exact Nat.eq_of_mul_eq_mul_right Module.finrank_pos h
 
 /-- In a tower `M' / M / L / K` with `M/K` normal, pulling `embeddingSubgroup K L M` back along
 restriction `Gal(M'/K) →* Gal(M/K)` recovers `embeddingSubgroup K L M'`. -/
@@ -173,14 +140,10 @@ theorem comap_restrictNormalHom_embeddingSubgroup (M' : Type*) [Field M']
       embeddingSubgroup K L M' := by
   ext σ'
   simp only [Subgroup.mem_comap, mem_embeddingSubgroup_iff]
-  have hcomm (x : L) :
-      algebraMap M M' ((AlgEquiv.restrictNormalHom M σ') (algebraMap L M x)) =
-        σ' (algebraMap L M' x) := by
-    rw [IsScalarTower.algebraMap_apply L M M']
-    exact σ'.restrictNormal_commutes M (algebraMap L M x)
-  refine ⟨fun h x ↦ ?_, fun h x ↦ (algebraMap M M').injective ?_⟩
-  · rw [← hcomm x, h x, ← IsScalarTower.algebraMap_apply L M M']
-  · rw [hcomm x, h x, IsScalarTower.algebraMap_apply L M M']
+  refine forall_congr' fun x ↦ ?_
+  rw [← (algebraMap M M').injective.eq_iff]
+  change algebraMap M M' (σ'.restrictNormal M _) = _ ↔ _
+  rw [σ'.restrictNormal_commutes, ← IsScalarTower.algebraMap_apply L M M']
 
 /-- Transport of `embeddingSubgroup` along an `L`-algebra equivalence `e : M ≃ₐ[L] M'`. -/
 theorem map_autCongr_embeddingSubgroup {M' : Type*} [Field M'] [Algebra K M'] [Algebra L M']
@@ -191,16 +154,12 @@ theorem map_autCongr_embeddingSubgroup {M' : Type*} [Field M'] [Algebra K M'] [A
   let eK : M ≃ₐ[K] M' := e.restrictScalars K
   ext σ'
   simp only [Subgroup.mem_map, mem_embeddingSubgroup_iff]
-  refine ⟨?_, fun h ↦ ⟨eK.autCongr.symm σ', fun x ↦ ?_, eK.autCongr.apply_symm_apply σ'⟩⟩
-  · rintro ⟨σ, hσ, rfl⟩ x
-    have hx1 : eK.symm (algebraMap L M' x) = algebraMap L M x := e.symm.commutes x
-    have hx2 : eK (algebraMap L M x) = algebraMap L M' x := e.commutes x
-    change (eK.autCongr σ) (algebraMap L M' x) = algebraMap L M' x
-    rw [AlgEquiv.autCongr_apply, AlgEquiv.trans_apply, AlgEquiv.trans_apply, hx1, hσ x, hx2]
-  · have hx1 : eK (algebraMap L M x) = algebraMap L M' x := e.commutes x
-    have hx2 : eK.symm (algebraMap L M' x) = algebraMap L M x := e.symm.commutes x
-    rw [AlgEquiv.autCongr_symm, AlgEquiv.autCongr_apply, AlgEquiv.trans_apply,
-      AlgEquiv.trans_apply, AlgEquiv.symm_symm, hx1, h x, hx2]
+  refine ⟨fun ⟨σ, hσ, h⟩ x ↦ ?_,
+    fun h ↦ ⟨eK.autCongr.symm σ', fun x ↦ ?_, eK.autCongr.apply_symm_apply σ'⟩⟩
+  · rw [← h]
+    simpa [eK, AlgEquiv.autCongr_apply, e.symm.commutes x, e.commutes x] using congrArg e (hσ x)
+  · simpa [eK, AlgEquiv.autCongr_symm, AlgEquiv.autCongr_apply, e.commutes x, e.symm.commutes x]
+      using congrArg e.symm (h x)
 
 end EmbeddingSubgroup
 
@@ -214,28 +173,42 @@ variable (K M : Type*)
 /-- At `J + 1 = (largestLowerJump K M).toNat + 1`, the lower ramification group of `M/K` is
 trivial. -/
 theorem lowerRamificationGroup_toNat_largestLowerJump_add_one :
-    lowerRamificationGroup K M (((largestLowerJump K M).toNat + 1 : ℕ) : ℤ) = ⊥ := by
-  apply lowerRamificationGroup_eq_bot_of_largestLowerJump_lt (K := K) (L := M)
-  have := neg_one_le_largestLowerJump K M
-  omega
+    lowerRamificationGroup K M (((largestLowerJump K M).toNat + 1 : ℕ) : ℤ) = ⊥ :=
+  lowerRamificationGroup_eq_bot_of_largestLowerJump_lt (K := K) (L := M)
+    (by have := neg_one_le_largestLowerJump K M; omega)
 
 /-- In a finite Galois local-field extension, the index of the inertia group `G_0` is the
 inertia degree. -/
 theorem index_lowerRamificationGroup_zero [IsGalois K M] :
     (lowerRamificationGroup K M 0).index = inertiaDegree K M := by
-  have hmul := (lowerRamificationGroup K M 0).index_mul_card
+  have h := (lowerRamificationGroup K M 0).index_mul_card
   rw [natCard_lowerRamificationGroup_zero K M, IsGalois.card_aut_eq_finrank K M,
-    ← ramificationIndex_mul_inertiaDegree (K := K) (L := M), mul_comm _ (inertiaDegree K M)] at hmul
-  exact Nat.eq_of_mul_eq_mul_right ramificationIndex_pos hmul
+    ← ramificationIndex_mul_inertiaDegree (K := K) (L := M), mul_comm _ (inertiaDegree K M)] at h
+  exact Nat.eq_of_mul_eq_mul_right ramificationIndex_pos h
 
 /-- In a finite Galois local-field extension, the index of wild inertia `G_1` is
 `inertiaDegree K M * tameRamificationIndex K M`. -/
 theorem index_lowerRamificationGroup_one [IsGalois K M] :
     (lowerRamificationGroup K M 1).index = inertiaDegree K M * tameRamificationIndex K M := by
-  have hle : lowerRamificationGroup K M 1 ≤ lowerRamificationGroup K M 0 :=
-    lowerRamificationGroup_antitone K M (by omega)
-  rw [← Subgroup.relIndex_mul_index hle, relIndex_lowerRamificationGroup_one_zero K M,
-    index_lowerRamificationGroup_zero K M, mul_comm]
+  rw [← Subgroup.relIndex_mul_index
+      (lowerRamificationGroup_antitone K M (by omega : (0 : ℤ) ≤ 1)),
+    relIndex_lowerRamificationGroup_one_zero K M, index_lowerRamificationGroup_zero K M, mul_comm]
+
+/-- For `v ∈ (φ_{M/K}(i), φ_{M/K}(i + 1)]` (`i : ℕ`), the upper ramification group `G^v` equals
+the lower ramification group `G_{i + 1}`. -/
+theorem upperRamificationGroup_eq_of_herbrand_lt_of_le [IsGalois K M] {i : ℕ}
+    {v : RamificationIndexDomain}
+    (hv₁ : herbrand K M ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ < v)
+    (hv₂ : v ≤ herbrand K M ⟨((i + 1 : ℕ) : ℝ),
+      Nat.cast_mem_ramificationIndexDomain (i + 1)⟩) :
+    upperRamificationGroup K M v = lowerRamificationGroup K M ((i + 1 : ℕ) : ℤ) := by
+  have h₁ := inverseHerbrand_strictMono K M hv₁
+  have h₂ := (inverseHerbrand_strictMono K M).monotone hv₂
+  rw [inverseHerbrand_herbrand] at h₁ h₂
+  rw [upperRamificationGroup_def]
+  exact lowerRamificationGroupReal_eq_of_sub_one_lt_of_le K M (i := ((i + 1 : ℕ) : ℤ))
+    (by have := Subtype.mk_lt_mk.1 h₁; push_cast; linarith)
+    (by exact_mod_cast Subtype.mk_le_mk.1 h₂)
 
 end LocalFieldsRamification
 
@@ -264,23 +237,19 @@ theorem embeddingOrbitCount_def (u : RamificationIndexDomain) :
 /-- The orbit count is positive at every upper ramification index. -/
 theorem embeddingOrbitCount_pos (u : RamificationIndexDomain) :
     0 < embeddingOrbitCount K L M u := by
-  have hcard : Nat.card (M ≃ₐ[K] M) ≠ 0 := by
-    rw [IsGalois.card_aut_eq_finrank K M]
-    exact Module.finrank_pos.ne'
-  have : Finite (M ≃ₐ[K] M) := Nat.finite_of_card_ne_zero hcard
+  have : Finite (M ≃ₐ[K] M) := Nat.finite_of_card_ne_zero (by
+    rw [IsGalois.card_aut_eq_finrank K M]; exact Module.finrank_pos.ne')
   exact Subgroup.index_pos
 
 /-- The orbit count is nondecreasing in the upper index `u`, because the upper ramification
 filtration is antitone. -/
-theorem embeddingOrbitCount_mono : Monotone (embeddingOrbitCount K L M) := by
-  intro u v huv
-  exact Subgroup.index_antitone (sup_le_sup_right (upperRamificationGroup_antitone K M huv) _)
+theorem embeddingOrbitCount_mono : Monotone (embeddingOrbitCount K L M) := fun _ _ h ↦
+  Subgroup.index_antitone (sup_le_sup_right (upperRamificationGroup_antitone K M h) _)
 
 /-- The orbit count never exceeds `[L : K]`. -/
 theorem embeddingOrbitCount_le_finrank (u : RamificationIndexDomain) :
     embeddingOrbitCount K L M u ≤ Module.finrank K L := by
-  rw [← index_embeddingSubgroup K L M]
-  exact Subgroup.index_antitone le_sup_right
+  rw [← index_embeddingSubgroup K L M]; exact Subgroup.index_antitone le_sup_right
 
 /-- For `L = M`, `embeddingSubgroup K M M = ⊥`, so the orbit count is the index of `G^u` in
 `Gal(M/K)`. -/
@@ -299,37 +268,35 @@ theorem embeddingOrbitCount_self_left (u : RamificationIndexDomain) :
 @[simp]
 theorem embeddingOrbitCount_neg_one :
     embeddingOrbitCount K L M ⟨-1, le_rfl⟩ = 1 := by
-  have htop : upperRamificationGroup K M ⟨-1, le_rfl⟩ = ⊤ := by
-    rw [upperRamificationGroup_of_coe_le_zero K M (by norm_num)]
-    have h1 := lowerRamificationGroupReal_intCast K M (-1)
-    simp only [Int.cast_neg, Int.cast_one] at h1
-    rw [h1]
-    exact lowerRamificationGroup_eq_top_of_le_neg_one K M le_rfl
-  rw [embeddingOrbitCount_def, htop, top_sup_eq, Subgroup.index_top]
+  have h1 := lowerRamificationGroupReal_intCast K M (-1)
+  simp only [Int.cast_neg, Int.cast_one] at h1
+  rw [embeddingOrbitCount_def, upperRamificationGroup_of_coe_le_zero K M (by norm_num), h1,
+    lowerRamificationGroup_eq_top_of_le_neg_one K M le_rfl, top_sup_eq, Subgroup.index_top]
 
-/-- Beyond `φ_{M/K}(N - 1)` where `G_N = ⊥`, the upper ramification group `G^u` is trivial and the
-orbit count reaches `[L : K]`. -/
+/-- Beyond `φ_{M/K}(N - 1)` where `G_N = ⊥`, the upper ramification group `G^u` is trivial and
+the orbit count reaches `[L : K]`. -/
 theorem embeddingOrbitCount_eq_finrank_of_lowerRamificationGroup_eq_bot {N : ℕ}
     (hN : lowerRamificationGroup K M N = ⊥) {u : RamificationIndexDomain}
     (hu : (match N with
       | 0 => (-1 : ℝ)
-      | m + 1 => (herbrand K M ⟨m, Nat.cast_mem_ramificationIndexDomain m⟩ : ℝ)) < (u : ℝ)) :
+      | m + 1 =>
+        (herbrand K M ⟨m, Nat.cast_mem_ramificationIndexDomain m⟩ : ℝ)) < (u : ℝ)) :
     embeddingOrbitCount K L M u = Module.finrank K L := by
   have hbot : upperRamificationGroup K M u = ⊥ := by
     rw [upperRamificationGroup_def, lowerRamificationGroupReal_def, ← le_bot_iff, ← hN]
-    apply lowerRamificationGroup_antitone K M
-    cases N with
-    | zero =>
-      have hneg : (⟨-1, le_rfl⟩ : RamificationIndexDomain) < u := Subtype.mk_lt_mk.2 hu
-      have hψ := inverseHerbrand_strictMono K M hneg
-      rw [inverseHerbrand_of_coe_le_zero K M (by norm_num)] at hψ
-      exact Int.lt_ceil.2 (by exact_mod_cast Subtype.mk_lt_mk.1 hψ)
-    | succ m =>
-      have hm : herbrand K M ⟨m, Nat.cast_mem_ramificationIndexDomain m⟩ < u :=
-        Subtype.mk_lt_mk.2 hu
-      have hψ := inverseHerbrand_strictMono K M hm
-      rw [inverseHerbrand_herbrand] at hψ
-      exact Int.lt_ceil.2 (by exact_mod_cast Subtype.mk_lt_mk.1 hψ)
+    have hlt : (((N : ℤ) - 1 : ℤ) : ℝ) < inverseHerbrand K M u := by
+      cases N with
+      | zero =>
+        have hψ := inverseHerbrand_strictMono K M (Subtype.mk_lt_mk.2 hu : ⟨-1, le_rfl⟩ < u)
+        rw [inverseHerbrand_of_coe_le_zero K M (by norm_num)] at hψ
+        simpa using Subtype.mk_lt_mk.1 hψ
+      | succ m =>
+        have hψ := inverseHerbrand_strictMono K M (Subtype.mk_lt_mk.2 hu :
+          herbrand K M ⟨m, Nat.cast_mem_ramificationIndexDomain m⟩ < u)
+        rw [inverseHerbrand_herbrand] at hψ
+        simpa using Subtype.mk_lt_mk.1 hψ
+    have hceil : (N : ℤ) - 1 < ⌈(inverseHerbrand K M u : ℝ)⌉ := Int.lt_ceil.2 hlt
+    exact lowerRamificationGroup_antitone K M (by omega)
   rw [embeddingOrbitCount_def, hbot, bot_sup_eq, index_embeddingSubgroup]
 
 /-- **Tower invariance of `embeddingOrbitCount`.** In a tower `M' / M / L / K` of local fields
@@ -348,19 +315,16 @@ theorem embeddingOrbitCount_tower_eq (M' : Type*)
   have : Module.Finite M M' := .of_restrictScalars_finite K M M'
   let π : (M' ≃ₐ[K] M') →* (M ≃ₐ[K] M) := AlgEquiv.restrictNormalHom M
   have hsurj : Function.Surjective π := AlgEquiv.restrictNormalHom_surjective M'
-  have hker : π.ker ≤ embeddingSubgroup K L M' := by
-    rw [← comap_restrictNormalHom_embeddingSubgroup K L M M']
-    exact Subgroup.comap_mono bot_le
-  have hcomap : (upperRamificationGroup K M u ⊔ embeddingSubgroup K L M).comap π =
-      upperRamificationGroup K M' u ⊔ embeddingSubgroup K L M' := by
-    have hmap : (upperRamificationGroup K M' u ⊔ embeddingSubgroup K L M').map π =
-        upperRamificationGroup K M u ⊔ embeddingSubgroup K L M := by
-      rw [Subgroup.map_sup, map_restrictNormalHom_upperRamificationGroup K M M' u,
-        ← comap_restrictNormalHom_embeddingSubgroup K L M M',
-        Subgroup.map_comap_eq_self_of_surjective hsurj]
-    rw [← hmap, Subgroup.comap_map_eq_self (hker.trans le_sup_right)]
-  rw [embeddingOrbitCount_def, embeddingOrbitCount_def, ← hcomap,
-    Subgroup.index_comap_of_surjective _ hsurj]
+  have hker : π.ker ≤ embeddingSubgroup K L M' :=
+    comap_restrictNormalHom_embeddingSubgroup K L M M' ▸ Subgroup.comap_mono bot_le
+  have hmap : (upperRamificationGroup K M' u ⊔ embeddingSubgroup K L M').map π =
+      upperRamificationGroup K M u ⊔ embeddingSubgroup K L M := by
+    rw [Subgroup.map_sup, map_restrictNormalHom_upperRamificationGroup K M M' u,
+      ← comap_restrictNormalHom_embeddingSubgroup K L M M',
+      Subgroup.map_comap_eq_self_of_surjective hsurj]
+  rw [embeddingOrbitCount_def, embeddingOrbitCount_def,
+    ← Subgroup.index_comap_of_surjective _ hsurj, ← hmap,
+    Subgroup.comap_map_eq_self (hker.trans le_sup_right)]
 
 /-- Transport of `embeddingOrbitCount` along an `L`-algebra equivalence `e : M ≃ₐ[L] M'`. -/
 theorem embeddingOrbitCount_eq_of_algEquiv {M' : Type*}
@@ -370,20 +334,45 @@ theorem embeddingOrbitCount_eq_of_algEquiv {M' : Type*}
     (e : M ≃ₐ[L] M') (u : RamificationIndexDomain) :
     embeddingOrbitCount K L M u = embeddingOrbitCount K L M' u := by
   let eK : M ≃ₐ[K] M' := e.restrictScalars K
-  have hupper : (upperRamificationGroup K M u).map (eK.autCongr :
-      (M ≃ₐ[K] M) →* (M' ≃ₐ[K] M')) = upperRamificationGroup K M' u := by
-    rw [upperRamificationGroup_def, upperRamificationGroup_def]
-    have hψ : inverseHerbrand K M u = inverseHerbrand K M' u := by
-      apply (herbrand_strictMono K M').injective
-      rw [herbrand_inverseHerbrand, ← herbrand_eq_of_algEquiv eK, herbrand_inverseHerbrand]
-    rw [hψ, lowerRamificationGroupReal_def, lowerRamificationGroupReal_def,
-      map_autCongr_lowerRamificationGroup eK]
   have hsup : (upperRamificationGroup K M u ⊔ embeddingSubgroup K L M).map
       (eK.autCongr : (M ≃ₐ[K] M) →* (M' ≃ₐ[K] M')) =
-        upperRamificationGroup K M' u ⊔ embeddingSubgroup K L M' := by
-    rw [Subgroup.map_sup, hupper, map_autCongr_embeddingSubgroup K L M e]
+      upperRamificationGroup K M' u ⊔ embeddingSubgroup K L M' := by
+    rw [Subgroup.map_sup, map_autCongr_upperRamificationGroup eK u,
+      map_autCongr_embeddingSubgroup K L M e]
   rw [embeddingOrbitCount_def, embeddingOrbitCount_def, ← hsup]
   exact (Subgroup.index_map_equiv _ eK.autCongr).symm
+
+/-- Helper comparing `embeddingOrbitCount K L M u` against a finite Galois intermediate field
+`N` of `AlgebraicClosure L` containing the image of `M`. -/
+private theorem embeddingOrbitCount_eq_intermediateField
+    {N : IntermediateField K (AlgebraicClosure L)} [Module.Finite K N] [IsGalois K N]
+    [ValuativeRel N] [TopologicalSpace N] [IsNonarchimedeanLocalField N]
+    [ValuativeExtension K N] [Algebra L N] [IsScalarTower K L N]
+    (hLN : ∀ x : L, ((algebraMap L N x : N) : AlgebraicClosure L) = algebraMap L _ x)
+    (ι : M →ₐ[L] AlgebraicClosure L) (hFN : (ι.restrictScalars K).fieldRange ≤ N)
+    (u : RamificationIndexDomain) :
+    embeddingOrbitCount K L M u = embeddingOrbitCount K L N u := by
+  let Ω := AlgebraicClosure L
+  let F : IntermediateField K Ω := (ι.restrictScalars K).fieldRange
+  let eK : M ≃ₐ[K] F := AlgEquiv.ofInjectiveField (ι.restrictScalars K)
+  have : Module.Finite K F := Module.Finite.equiv eK.toLinearEquiv
+  have : IsGalois K F := IsGalois.of_algEquiv eK
+  let _ := finiteIntermediateFieldValuativeRel K Ω F
+  let _ := finiteIntermediateFieldTopology K Ω F
+  have := finiteIntermediateField_isNonarchimedeanLocalField K Ω F
+  have := finiteIntermediateField_valuativeExtension K Ω F
+  let _ : Algebra L F := ((eK : M →+* F).comp (algebraMap L M)).toAlgebra
+  have : IsScalarTower K L F := IsScalarTower.of_algebraMap_eq fun x ↦ by
+    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
+      ← IsScalarTower.algebraMap_apply K L M]
+    exact (eK.commutes x).symm
+  let j : F →ₐ[K] N := IntermediateField.inclusion hFN
+  let _ : Algebra F N := j.toRingHom.toAlgebra
+  have : IsScalarTower K F N := IsScalarTower.of_algebraMap_eq fun x ↦ (j.commutes x).symm
+  have : IsScalarTower L F N := IsScalarTower.of_algebraMap_eq fun x ↦
+    Subtype.ext ((hLN x).trans (ι.commutes x).symm)
+  rw [embeddingOrbitCount_eq_of_algEquiv K L M ({ eK with commutes' := fun _ ↦ rfl }) u,
+    ← embeddingOrbitCount_tower_eq K L F N u]
 
 /-- **Independence of the finite Galois overfield.** For any two finite Galois extensions `M₁/K`
 and `M₂/K` of nonarchimedean local fields containing `L`, the orbit counts
@@ -404,59 +393,26 @@ theorem embeddingOrbitCount_eq (M₂ : Type*)
   let F₁ : IntermediateField K Ω := (ι₁.restrictScalars K).fieldRange
   let F₂ : IntermediateField K Ω := (ι₂.restrictScalars K).fieldRange
   let N : IntermediateField K Ω := F₁ ⊔ F₂
-  let e₁K : M ≃ₐ[K] F₁ := AlgEquiv.ofInjectiveField (ι₁.restrictScalars K)
-  let e₂K : M₂ ≃ₐ[K] F₂ := AlgEquiv.ofInjectiveField (ι₂.restrictScalars K)
-  have : Module.Finite K F₁ := Module.Finite.equiv e₁K.toLinearEquiv
-  have : Module.Finite K F₂ := Module.Finite.equiv e₂K.toLinearEquiv
-  have : IsGalois K F₁ := IsGalois.of_algEquiv e₁K
-  have : IsGalois K F₂ := IsGalois.of_algEquiv e₂K
+  have : Module.Finite K F₁ :=
+    Module.Finite.equiv (AlgEquiv.ofInjectiveField (ι₁.restrictScalars K)).toLinearEquiv
+  have : Module.Finite K F₂ :=
+    Module.Finite.equiv (AlgEquiv.ofInjectiveField (ι₂.restrictScalars K)).toLinearEquiv
+  have : IsGalois K F₁ :=
+    IsGalois.of_algEquiv (AlgEquiv.ofInjectiveField (ι₁.restrictScalars K))
+  have : IsGalois K F₂ :=
+    IsGalois.of_algEquiv (AlgEquiv.ofInjectiveField (ι₂.restrictScalars K))
   have : Module.Finite K N := IntermediateField.finiteDimensional_sup F₁ F₂
   have : IsGalois K N := inferInstance
-  let _ := finiteIntermediateFieldValuativeRel K Ω F₁
-  let _ := finiteIntermediateFieldTopology K Ω F₁
-  have := finiteIntermediateField_isNonarchimedeanLocalField K Ω F₁
-  have := finiteIntermediateField_valuativeExtension K Ω F₁
-  let _ := finiteIntermediateFieldValuativeRel K Ω F₂
-  let _ := finiteIntermediateFieldTopology K Ω F₂
-  have := finiteIntermediateField_isNonarchimedeanLocalField K Ω F₂
-  have := finiteIntermediateField_valuativeExtension K Ω F₂
   let _ := finiteIntermediateFieldValuativeRel K Ω N
   let _ := finiteIntermediateFieldTopology K Ω N
   have := finiteIntermediateField_isNonarchimedeanLocalField K Ω N
   have := finiteIntermediateField_valuativeExtension K Ω N
-  let _ : Algebra L F₁ := ((e₁K : M →+* F₁).comp (algebraMap L M)).toAlgebra
-  have : IsScalarTower K L F₁ := IsScalarTower.of_algebraMap_eq fun x ↦ by
-    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, ← IsScalarTower.algebraMap_apply K L M]
-    exact (e₁K.commutes x).symm
-  let e₁ : M ≃ₐ[L] F₁ := { e₁K with commutes' := fun _ ↦ rfl }
-  let _ : Algebra L F₂ := ((e₂K : M₂ →+* F₂).comp (algebraMap L M₂)).toAlgebra
-  have : IsScalarTower K L F₂ := IsScalarTower.of_algebraMap_eq fun x ↦ by
-    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, ← IsScalarTower.algebraMap_apply K L M₂]
-    exact (e₂K.commutes x).symm
-  let e₂ : M₂ ≃ₐ[L] F₂ := { e₂K with commutes' := fun _ ↦ rfl }
-  let j₁ : F₁ →ₐ[K] N := IntermediateField.inclusion le_sup_left
-  let j₂ : F₂ →ₐ[K] N := IntermediateField.inclusion le_sup_right
-  let _ : Algebra F₁ N := j₁.toRingHom.toAlgebra
-  let _ : Algebra F₂ N := j₂.toRingHom.toAlgebra
-  have : IsScalarTower K F₁ N := IsScalarTower.of_algebraMap_eq fun x ↦ (j₁.commutes x).symm
-  have : IsScalarTower K F₂ N := IsScalarTower.of_algebraMap_eq fun x ↦ (j₂.commutes x).symm
-  let _ : Algebra L N := ((algebraMap L Ω).codRestrict N.toSubring fun x ↦ by
-    refine le_sup_left (a := F₁) (b := F₂) ⟨algebraMap L M x, ?_⟩
-    exact ι₁.commutes x).toAlgebra
-  have hLN₁ : ∀ x : L, j₁ (algebraMap L F₁ x) = algebraMap L N x := fun x ↦ by
-    apply Subtype.ext
-    exact ι₁.commutes x
-  have hLN₂ : ∀ x : L, j₂ (algebraMap L F₂ x) = algebraMap L N x := fun x ↦ by
-    apply Subtype.ext
-    exact ι₂.commutes x
-  have : IsScalarTower L F₁ N := IsScalarTower.of_algebraMap_eq fun x ↦ (hLN₁ x).symm
-  have : IsScalarTower L F₂ N := IsScalarTower.of_algebraMap_eq fun x ↦ (hLN₂ x).symm
-  have : IsScalarTower K L N := IsScalarTower.of_algebraMap_eq fun x ↦ by
-    rw [← hLN₁ (algebraMap K L x), ← IsScalarTower.algebraMap_apply K L F₁, j₁.commutes]
-  rw [embeddingOrbitCount_eq_of_algEquiv K L M e₁ u,
-    ← embeddingOrbitCount_tower_eq K L F₁ N u,
-    embeddingOrbitCount_tower_eq K L F₂ N u,
-    ← embeddingOrbitCount_eq_of_algEquiv K L M₂ e₂ u]
+  let _ : Algebra L N := ((algebraMap L Ω).codRestrict N.toSubring fun x ↦
+    le_sup_left (a := F₁) (b := F₂) ⟨algebraMap L M x, ι₁.commutes x⟩).toAlgebra
+  have : IsScalarTower K L N := IsScalarTower.of_algebraMap_eq fun x ↦ Subtype.ext
+    (IsScalarTower.algebraMap_apply K L Ω x)
+  rw [embeddingOrbitCount_eq_intermediateField K L M (N := N) (fun _ ↦ rfl) ι₁ le_sup_left u,
+    embeddingOrbitCount_eq_intermediateField K L M₂ (N := N) (fun _ ↦ rfl) ι₂ le_sup_right u]
 
 variable [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
   [ValuativeExtension K L]
@@ -476,22 +432,11 @@ private theorem relIndex_lowerRamificationGroup_embeddingSubgroup (i : ℤ) :
   have : ValuativeExtension L M := .of_isScalarTower (K := K)
   have : Module.Finite L M := .of_restrictScalars_finite K L M
   let f : (M ≃ₐ[L] M) →* (M ≃ₐ[K] M) := AlgEquiv.restrictScalarsHom K
-  have hf : Function.Injective f := AlgEquiv.restrictScalarsHom_injective K
   rw [← comap_restrictScalarsHom_lowerRamificationGroup K M L i,
-    ← range_restrictScalarsHom_eq_embeddingSubgroup K L M, Subgroup.relIndex]
-  let e : (M ≃ₐ[L] M) ≃* f.range := MulEquiv.ofBijective f.rangeRestrict
-    ⟨fun a b hab ↦ hf (congrArg Subtype.val hab), f.rangeRestrict_surjective⟩
-  have hcomap : ((lowerRamificationGroup K M i).comap f).map (e : (M ≃ₐ[L] M) →* f.range) =
-      (lowerRamificationGroup K M i).subgroupOf f.range := by
-    ext ⟨σ, hσ⟩
-    obtain ⟨τ, rfl⟩ := hσ
-    simp only [Subgroup.mem_map, Subgroup.mem_comap, Subgroup.mem_subgroupOf]
-    refine ⟨?_, fun h ↦ ⟨τ, h, rfl⟩⟩
-    rintro ⟨τ', hτ', h_eq⟩
-    have : τ' = τ := hf (congrArg Subtype.val h_eq)
-    rwa [← this]
-  rw [← hcomap]
-  exact Subgroup.index_map_equiv _ e
+    ← range_restrictScalarsHom_eq_embeddingSubgroup K L M, Subgroup.relIndex,
+    ← Subgroup.index_comap_of_surjective _ (fun ⟨_, σ, h⟩ ↦ ⟨σ, Subtype.ext h⟩ :
+      Function.Surjective f.rangeRestrict)]
+  rfl
 
 /-- The index `[G : G_0 H]` of inertia joined with `H` equals the inertia degree `f(L/K)`. -/
 @[simp]
@@ -516,11 +461,10 @@ theorem index_lowerRamificationGroup_zero_sup_embeddingSubgroup :
 theorem embeddingOrbitCount_of_mem_Ioc_zero {u : RamificationIndexDomain}
     (hu₁ : (-1 : ℝ) < u) (hu₂ : (u : ℝ) ≤ 0) :
     embeddingOrbitCount K L M u = inertiaDegree K L := by
-  have hG : upperRamificationGroup K M u = lowerRamificationGroup K M 0 := by
-    rw [upperRamificationGroup_of_coe_le_zero K M hu₂]
-    exact lowerRamificationGroupReal_eq_of_sub_one_lt_of_le K M (i := 0)
-      (by simpa using hu₁) (by simpa using hu₂)
-  rw [embeddingOrbitCount_def, hG, index_lowerRamificationGroup_zero_sup_embeddingSubgroup]
+  rw [embeddingOrbitCount_def, upperRamificationGroup_of_coe_le_zero K M hu₂,
+    lowerRamificationGroupReal_eq_of_sub_one_lt_of_le K M (i := 0)
+      (by simpa using hu₁) (by simpa using hu₂),
+    index_lowerRamificationGroup_zero_sup_embeddingSubgroup]
 
 /-- At `u = 0`, the orbit count equals `inertiaDegree K L`. -/
 @[simp]
@@ -546,9 +490,8 @@ theorem index_lowerRamificationGroup_one_sup_embeddingSubgroup :
   rw [relIndex_lowerRamificationGroup_embeddingSubgroup K L M 1,
     index_lowerRamificationGroup_one L M, index_lowerRamificationGroup_one K M,
     inertiaDegree_tower (K := K) (L := L) M, tameRamificationIndex_tower K L M] at hmul
-  have hpos : 0 < inertiaDegree L M * tameRamificationIndex L M :=
-    Nat.mul_pos inertiaDegree_pos (tameRamificationIndex_pos L M)
-  refine Nat.eq_of_mul_eq_mul_left hpos ?_
+  refine Nat.eq_of_mul_eq_mul_left
+    (Nat.mul_pos (inertiaDegree_pos (K := L) (L := M)) (tameRamificationIndex_pos L M)) ?_
   linear_combination hmul
 
 /-- The relative index `[G_1 H : H]` equals `p ^ wildRamificationExponent K L`, where `p` is the
@@ -563,9 +506,8 @@ theorem relIndex_embeddingSubgroup_lowerRamificationGroup_one :
   rw [index_lowerRamificationGroup_one_sup_embeddingSubgroup K L M,
     index_embeddingSubgroup K L M, ← ramificationIndex_mul_inertiaDegree (K := K) (L := L),
     ← tameRamificationIndex_mul_pow_wildRamificationExponent K L] at hmul
-  have hpos : 0 < inertiaDegree K L * tameRamificationIndex K L :=
-    Nat.mul_pos inertiaDegree_pos (tameRamificationIndex_pos K L)
-  refine Nat.eq_of_mul_eq_mul_right hpos ?_
+  refine Nat.eq_of_mul_eq_mul_right
+    (Nat.mul_pos (inertiaDegree_pos (K := K) (L := L)) (tameRamificationIndex_pos K L)) ?_
   linear_combination hmul
 
 end OrbitCount
@@ -576,11 +518,7 @@ section ArtinSlopeList
 
 private theorem list_sum_map_range (n : ℕ) (f : ℕ → ℕ) :
     ((List.range n).map f).sum = ∑ j ∈ Finset.range n, f j := by
-  induction n with
-  | zero => simp
-  | succ m ih =>
-    rw [List.range_succ, List.map_append, List.sum_append, ih, Finset.sum_range_succ]
-    simp
+  induction n <;> simp [List.range_succ, Finset.sum_range_succ, *]
 
 variable (K L M : Type*)
   [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
@@ -599,7 +537,8 @@ def artinSlopeList : List ℝ :=
       (Nat.log (ringChar 𝓀[K])
         ((lowerRamificationGroup K M ((j + 2 : ℕ) : ℤ) ⊔ embeddingSubgroup K L M).relIndex
           (lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) ⊔ embeddingSubgroup K L M)))
-      ((herbrand K M ⟨((j + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (j + 1)⟩ : ℝ) + 1)
+      ((herbrand K M ⟨((j + 1 : ℕ) : ℝ),
+        Nat.cast_mem_ramificationIndexDomain (j + 1)⟩ : ℝ) + 1)
 
 /-- Defining formula for `artinSlopeList`. -/
 theorem artinSlopeList_def :
@@ -619,39 +558,25 @@ theorem one_lt_of_mem_artinSlopeList {a : ℝ} (ha : a ∈ artinSlopeList K L M)
   rw [artinSlopeList_def, List.mem_flatMap] at ha
   obtain ⟨j, -, hj⟩ := ha
   obtain ⟨-, rfl⟩ := List.mem_replicate.1 hj
-  have h0 : (herbrand K M ⟨0, by norm_num⟩ : ℝ) = 0 := by
-    rw [herbrand_of_coe_le_zero K M le_rfl]
-  have hpos : (0 : ℝ) <
-      herbrand K M ⟨((j + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (j + 1)⟩ := by
-    rw [← h0]
-    exact Subtype.mk_lt_mk.1 (herbrand_strictMono K M (Subtype.mk_lt_mk.2 (by positivity)))
+  have hpos := Subtype.mk_lt_mk.1 (herbrand_strictMono K M
+    (Subtype.mk_lt_mk.2 (by positivity) : (⟨0, by norm_num⟩ : RamificationIndexDomain) <
+      ⟨((j + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (j + 1)⟩))
+  rw [herbrand_of_coe_le_zero K M le_rfl] at hpos
   linarith
 
 /-- `artinSlopeList K L M` is sorted in nondecreasing order. -/
 theorem pairwise_le_artinSlopeList :
     (artinSlopeList K L M).Pairwise (· ≤ ·) := by
-  rw [artinSlopeList_def]
-  set J := (largestLowerJump K M).toNat
-  let d : ℕ → ℕ := fun j ↦
-    Nat.log (ringChar 𝓀[K])
-      ((lowerRamificationGroup K M ((j + 2 : ℕ) : ℤ) ⊔ embeddingSubgroup K L M).relIndex
-        (lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) ⊔ embeddingSubgroup K L M))
-  let val : ℕ → ℝ := fun j ↦
-    (herbrand K M ⟨((j + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (j + 1)⟩ : ℝ) + 1
-  have hmono : StrictMono val := fun i j hij ↦ by
-    have hlt : (⟨((i + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (i + 1)⟩ :
-        RamificationIndexDomain) <
-          ⟨((j + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (j + 1)⟩ :=
-      Subtype.mk_lt_mk.2 (by exact_mod_cast Nat.add_lt_add_right hij 1)
-    have := Subtype.mk_lt_mk.1 (herbrand_strictMono K M hlt)
-    dsimp [val]
-    linarith
-  change ((List.range J).flatMap fun j ↦ List.replicate (d j) (val j)).Pairwise (· ≤ ·)
-  rw [List.pairwise_flatMap]
-  refine ⟨fun j _ ↦ List.pairwise_replicate.2 (Or.inr le_rfl), ?_⟩
-  refine List.Pairwise.imp (R := (· < ·)) (fun {i j} hij a ha b hb ↦ ?_) List.pairwise_lt_range
+  rw [artinSlopeList_def, List.pairwise_flatMap]
+  refine ⟨fun _ _ ↦ List.pairwise_replicate.2 (Or.inr le_rfl),
+    List.Pairwise.imp (R := (· < ·)) (fun {i j} hij _ ha _ hb ↦ ?_) List.pairwise_lt_range⟩
   rw [(List.mem_replicate.1 ha).2, (List.mem_replicate.1 hb).2]
-  exact (hmono hij).le
+  have hlt := Subtype.mk_lt_mk.1 (herbrand_strictMono K M
+    (Subtype.mk_lt_mk.2 (by exact_mod_cast Nat.add_lt_add_right hij 1) :
+      (⟨((i + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (i + 1)⟩ :
+        RamificationIndexDomain) <
+      ⟨((j + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (j + 1)⟩))
+  linarith
 
 /-- **Multiplicity in `artinSlopeList` from `embeddingOrbitCount`.** For every real `a > 1`,
 putting `u = a - 1`, there is `w > u` such that for every `v ∈ (u, w]`, the `p`-logarithm of the
@@ -668,67 +593,48 @@ theorem exists_gt_forall_natLog_div_embeddingOrbitCount_eq_count_artinSlopeList 
               embeddingOrbitCount K L M ⟨a - 1, Set.mem_Ici.2 (by linarith)⟩) =
               (artinSlopeList K L M).count a := by
   set u : RamificationIndexDomain := ⟨a - 1, Set.mem_Ici.2 (by linarith)⟩
-  set p := ringChar 𝓀[K]
   set J := (largestLowerJump K M).toNat
   set H := embeddingSubgroup K L M
-  let d : ℕ → ℕ := fun j ↦
-    Nat.log p
-      ((lowerRamificationGroup K M ((j + 2 : ℕ) : ℤ) ⊔ H).relIndex
-        (lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) ⊔ H))
+  let d : ℕ → ℕ := fun j ↦ Nat.log (ringChar 𝓀[K])
+    ((lowerRamificationGroup K M ((j + 2 : ℕ) : ℤ) ⊔ H).relIndex
+      (lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) ⊔ H))
   let val : ℕ → ℝ := fun j ↦
-    (herbrand K M ⟨((j + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (j + 1)⟩ : ℝ) + 1
+    (herbrand K M ⟨((j + 1 : ℕ) : ℝ),
+      Nat.cast_mem_ramificationIndexDomain (j + 1)⟩ : ℝ) + 1
   have hval_inj : Function.Injective val := fun i j hij ↦ by
-    have hφ : herbrand K M ⟨((i + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (i + 1)⟩ =
-        herbrand K M ⟨((j + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (j + 1)⟩ :=
-      Subtype.ext (by dsimp [val] at hij; linarith)
-    have := (herbrand_strictMono K M).injective hφ
-    have hcast : ((i + 1 : ℕ) : ℝ) = ((j + 1 : ℕ) : ℝ) := congrArg Subtype.val this
-    exact Nat.add_right_cancel (Nat.cast_injective hcast)
-  have hcount_eq (h_match : ∀ j < J, val j ≠ a) : (artinSlopeList K L M).count a = 0 := by
+    have hφ : (⟨((i + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (i + 1)⟩ :
+        RamificationIndexDomain) =
+        ⟨((j + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (j + 1)⟩ :=
+      (herbrand_strictMono K M).injective (Subtype.ext (by dsimp [val] at hij; linarith))
+    have hval := congrArg Subtype.val hφ
+    exact_mod_cast (by dsimp at hval; push_cast at hval; linarith : (i : ℝ) = j)
+  have hcount_zero (h : ∀ j < J, val j ≠ a) : (artinSlopeList K L M).count a = 0 := by
     rw [List.count_eq_zero, artinSlopeList_def, List.mem_flatMap]
-    rintro ⟨j, hj, hmem⟩
-    exact h_match j (List.mem_range.1 hj) (List.mem_replicate.1 hmem).2.symm
+    rintro ⟨j, hj, hm⟩
+    exact h j (List.mem_range.1 hj) (List.mem_replicate.1 hm).2.symm
   set x := inverseHerbrand K M u with hx_def
   have hx_pos : (0 : ℝ) < x := by
-    have h0 : inverseHerbrand K M ⟨0, by norm_num⟩ = ⟨0, by norm_num⟩ :=
-      inverseHerbrand_of_coe_le_zero K M le_rfl
-    have hlt : (⟨0, by norm_num⟩ : RamificationIndexDomain) < u :=
-      Subtype.mk_lt_mk.2 (by exact sub_pos.2 ha)
-    have hψ := inverseHerbrand_strictMono K M hlt
-    rw [h0, ← hx_def] at hψ
+    have hψ := inverseHerbrand_strictMono K M
+      (Subtype.mk_lt_mk.2 (sub_pos.2 ha) : ⟨0, by norm_num⟩ < u)
+    rw [inverseHerbrand_of_coe_le_zero K M le_rfl] at hψ
     exact Subtype.mk_lt_mk.1 hψ
   by_cases hint : ∃ j : ℕ, (x : ℝ) = ((j + 1 : ℕ) : ℝ)
   · obtain ⟨j, hj⟩ := hint
     have hx_eq : x = ⟨((j + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (j + 1)⟩ :=
       Subtype.ext hj
+    have hu_φ : herbrand K M ⟨((j + 1 : ℕ) : ℝ),
+        Nat.cast_mem_ramificationIndexDomain (j + 1)⟩ = u := by
+      rw [← hx_eq, hx_def, herbrand_inverseHerbrand]
     have ha_eq : val j = a := by
-      have hu_φ : herbrand K M ⟨((j + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (j + 1)⟩ =
-          u := by
-        rw [← hx_eq, hx_def]
-        exact herbrand_inverseHerbrand K M u
-      have := congrArg Subtype.val hu_φ
-      dsimp [val, u] at this ⊢
-      linarith
+      have := congrArg Subtype.val hu_φ; dsimp [val, u] at this ⊢; linarith
     let w := herbrand K M ⟨((j + 2 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (j + 2)⟩
-    have huw : u < w := by
-      rw [← herbrand_inverseHerbrand K M u, ← hx_def, hx_eq]
-      exact herbrand_strictMono K M (Subtype.mk_lt_mk.2 (by push_cast; linarith))
-    refine ⟨w, huw, fun v huv hvw ↦ ?_⟩
+    refine ⟨w, hu_φ ▸ herbrand_strictMono K M (Subtype.mk_lt_mk.2 (by push_cast; linarith)),
+      fun v huv hvw ↦ ?_⟩
     have hGu : upperRamificationGroup K M u = lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) := by
       rw [upperRamificationGroup_def, ← hx_def, hx_eq]
       simpa using lowerRamificationGroupReal_intCast K M ((j + 1 : ℕ) : ℤ)
-    have hGv : upperRamificationGroup K M v = lowerRamificationGroup K M ((j + 2 : ℕ) : ℤ) := by
-      rw [upperRamificationGroup_def]
-      apply lowerRamificationGroupReal_eq_of_sub_one_lt_of_le K M (i := ((j + 2 : ℕ) : ℤ))
-      · have hlt : (x : ℝ) < (inverseHerbrand K M v : ℝ) :=
-          Subtype.mk_lt_mk.1 (hx_def ▸ inverseHerbrand_strictMono K M huv)
-        rw [hj] at hlt
-        push_cast at hlt ⊢
-        linarith
-      · have hle : (inverseHerbrand K M v : ℝ) ≤ (inverseHerbrand K M w : ℝ) :=
-          Subtype.mk_le_mk.1 ((inverseHerbrand_strictMono K M).monotone hvw)
-        rw [show w = herbrand K M _ from rfl, inverseHerbrand_herbrand] at hle
-        exact_mod_cast hle
+    have hGv : upperRamificationGroup K M v = lowerRamificationGroup K M ((j + 2 : ℕ) : ℤ) :=
+      upperRamificationGroup_eq_of_herbrand_lt_of_le K M (i := j + 1) (hu_φ.symm ▸ huv) hvw
     have hdiv : embeddingOrbitCount K L M v / embeddingOrbitCount K L M u =
         (lowerRamificationGroup K M ((j + 2 : ℕ) : ℤ) ⊔ H).relIndex
           (lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) ⊔ H) := by
@@ -742,16 +648,15 @@ theorem exists_gt_forall_natLog_div_embeddingOrbitCount_eq_count_artinSlopeList 
     rw [hdiv]
     by_cases hjJ : j < J
     · rw [artinSlopeList_def, List.count_flatMap]
-      have hmap : ((List.range J).map fun k ↦
-          (List.replicate (d k) (val k)).count a).sum = d j := by
-        rw [list_sum_map_range, Finset.sum_eq_single j]
-        · simp [ha_eq]
-        · intro k _ hkj
-          have hne : val k ≠ a := fun hka ↦ hkj (hval_inj (hka.trans ha_eq.symm))
-          simp [List.count_replicate, hne]
-        · intro hj_not
-          exact absurd (Finset.mem_range.2 hjJ) hj_not
-      exact hmap.symm
+      symm
+      rw [list_sum_map_range, Finset.sum_eq_single j]
+      · change List.count a (List.replicate (d j) (val j)) = d j
+        rw [ha_eq, List.count_replicate_self]
+      · intro k _ hkj
+        change List.count a (List.replicate (d k) (val k)) = 0
+        exact List.count_eq_zero.2 fun hm ↦
+          hkj (hval_inj ((List.mem_replicate.1 hm).2.symm.trans ha_eq.symm))
+      · exact fun h ↦ absurd (Finset.mem_range.2 hjJ) h
     · have hbot₁ : lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) = ⊥ :=
         lowerRamificationGroup_eq_bot_of_largestLowerJump_lt (K := K) (L := M)
           (by have := neg_one_le_largestLowerJump K M; omega)
@@ -759,49 +664,39 @@ theorem exists_gt_forall_natLog_div_embeddingOrbitCount_eq_count_artinSlopeList 
         lowerRamificationGroup_eq_bot_of_largestLowerJump_lt (K := K) (L := M)
           (by have := neg_one_le_largestLowerJump K M; omega)
       rw [hbot₁, hbot₂, Subgroup.relIndex_self, Nat.log_one_right,
-        hcount_eq fun k hk hka ↦ hjJ (hval_inj (hka.trans ha_eq.symm) ▸ hk)]
+        hcount_zero fun k hk hka ↦ hjJ (hval_inj (hka.trans ha_eq.symm) ▸ hk)]
   · push Not at hint
     have hceil_pos : (0 : ℤ) < ⌈(x : ℝ)⌉ := Int.lt_ceil.2 (by simpa using hx_pos)
     obtain ⟨j, hj_ceil⟩ : ∃ j : ℕ, ⌈(x : ℝ)⌉ = ((j + 1 : ℕ) : ℤ) :=
       ⟨(⌈(x : ℝ)⌉ - 1).toNat, by omega⟩
     have hxj₁ : (j : ℝ) < x := by
-      have h1 : (((j + 1 : ℕ) : ℤ) : ℝ) - 1 < x := by
-        rw [← hj_ceil]
-        exact sub_lt_iff_lt_add.2 (Int.ceil_lt_add_one (x : ℝ))
-      push_cast at h1
-      linarith
-    have hxj₂ : (x : ℝ) < ((j + 1 : ℕ) : ℝ) := by
-      have hle : (x : ℝ) ≤ (((j + 1 : ℕ) : ℤ) : ℝ) := hj_ceil ▸ Int.le_ceil (x : ℝ)
-      exact lt_of_le_of_ne (by simpa using hle) (hint j)
+      have h1 : (((j + 1 : ℕ) : ℤ) : ℝ) - 1 < x :=
+        hj_ceil ▸ sub_lt_iff_lt_add.2 (Int.ceil_lt_add_one (x : ℝ))
+      push_cast at h1; linarith
+    have hxj₂ : (x : ℝ) < ((j + 1 : ℕ) : ℝ) :=
+      lt_of_le_of_ne (by have h := Int.le_ceil (x : ℝ); rw [hj_ceil] at h; exact_mod_cast h)
+        (hint j)
     let w := herbrand K M ⟨((j + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (j + 1)⟩
+    have hφj_lt : herbrand K M ⟨j, Nat.cast_mem_ramificationIndexDomain j⟩ < u := by
+      rw [← herbrand_inverseHerbrand K M u]
+      exact herbrand_strictMono K M (Subtype.mk_lt_mk.2 hxj₁)
     have huw : u < w := by
-      rw [← herbrand_inverseHerbrand K M u, ← hx_def]
+      rw [← herbrand_inverseHerbrand K M u]
       exact herbrand_strictMono K M (Subtype.mk_lt_mk.2 hxj₂)
     refine ⟨w, huw, fun v huv hvw ↦ ?_⟩
-    have hGu : upperRamificationGroup K M u = lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) := by
-      rw [upperRamificationGroup_def, ← hx_def]
-      exact lowerRamificationGroupReal_eq_of_sub_one_lt_of_le K M (i := ((j + 1 : ℕ) : ℤ))
-        (by push_cast; linarith) (by exact_mod_cast hxj₂.le)
-    have hGv : upperRamificationGroup K M v = lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) := by
-      rw [upperRamificationGroup_def]
-      apply lowerRamificationGroupReal_eq_of_sub_one_lt_of_le K M (i := ((j + 1 : ℕ) : ℤ))
-      · have hlt : (x : ℝ) < (inverseHerbrand K M v : ℝ) :=
-          Subtype.mk_lt_mk.1 (hx_def ▸ inverseHerbrand_strictMono K M huv)
-        push_cast
-        linarith
-      · have hle : (inverseHerbrand K M v : ℝ) ≤ (inverseHerbrand K M w : ℝ) :=
-          Subtype.mk_le_mk.1 ((inverseHerbrand_strictMono K M).monotone hvw)
-        rw [show w = herbrand K M _ from rfl, inverseHerbrand_herbrand] at hle
-        exact_mod_cast hle
-    have heq_occ : embeddingOrbitCount K L M v = embeddingOrbitCount K L M u := by
-      rw [embeddingOrbitCount_def, embeddingOrbitCount_def, hGv, hGu]
-    rw [heq_occ, Nat.div_self (embeddingOrbitCount_pos K L M u), Nat.log_one_right,
-      hcount_eq fun k _ hka ↦ ?_]
-    have hu_φ : herbrand K M ⟨((k + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (k + 1)⟩ =
-        u := Subtype.ext (by dsimp [val, u] at hka ⊢; linarith)
-    have hxk : x = ⟨((k + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (k + 1)⟩ := by
-      rw [hx_def, ← hu_φ, inverseHerbrand_herbrand]
-    exact hint k (congrArg Subtype.val hxk)
+    have hGu : upperRamificationGroup K M u = lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) :=
+      upperRamificationGroup_eq_of_herbrand_lt_of_le K M hφj_lt huw.le
+    have hGv : upperRamificationGroup K M v = lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) :=
+      upperRamificationGroup_eq_of_herbrand_lt_of_le K M (hφj_lt.trans huv) hvw
+    rw [show embeddingOrbitCount K L M v = embeddingOrbitCount K L M u by
+        rw [embeddingOrbitCount_def, embeddingOrbitCount_def, hGv, hGu],
+      Nat.div_self (embeddingOrbitCount_pos K L M u), Nat.log_one_right,
+      hcount_zero fun k _ hka ↦ hint k <| by
+        have h := inverseHerbrand_herbrand K M
+          ⟨((k + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (k + 1)⟩
+        rw [show herbrand K M _ = u from Subtype.ext (by dsimp [val, u] at hka ⊢; linarith),
+          ← hx_def] at h
+        exact congrArg Subtype.val h]
 
 /-- **Independence of `artinSlopeList` from the finite Galois overfield.** For any two finite
 Galois extensions `M/K` and `M₂/K` containing `L`, `artinSlopeList K L M = artinSlopeList K L M₂`.
@@ -812,31 +707,23 @@ theorem artinSlopeList_eq (M₂ : Type*)
     [ValuativeExtension K M₂] [Module.Finite K M₂] [IsGalois K M₂] :
     artinSlopeList K L M = artinSlopeList K L M₂ := by
   refine List.Perm.eq_of_pairwise'
-    (pairwise_le_artinSlopeList K L M) (pairwise_le_artinSlopeList K L M₂) ?_
-  rw [List.perm_iff_count]
-  intro a
+    (pairwise_le_artinSlopeList K L M) (pairwise_le_artinSlopeList K L M₂)
+    (List.perm_iff_count.2 fun a ↦ ?_)
   by_cases ha : 1 < a
   · obtain ⟨w₁, huw₁, hw₁⟩ :=
       exists_gt_forall_natLog_div_embeddingOrbitCount_eq_count_artinSlopeList K L M ha
     obtain ⟨w₂, huw₂, hw₂⟩ :=
       exists_gt_forall_natLog_div_embeddingOrbitCount_eq_count_artinSlopeList K L M₂ ha
-    let v := min w₁ w₂
-    have huv : (⟨a - 1, Set.mem_Ici.2 (by linarith)⟩ : RamificationIndexDomain) < v :=
-      lt_min huw₁ huw₂
-    rw [← hw₁ v huv (min_le_left _ _), ← hw₂ v huv (min_le_right _ _),
-      embeddingOrbitCount_eq K L M M₂ v,
-      embeddingOrbitCount_eq K L M M₂ ⟨a - 1, Set.mem_Ici.2 (by linarith)⟩]
-  · have hc₁ : (artinSlopeList K L M).count a = 0 :=
-      List.count_eq_zero.2 fun hmem ↦ ha (one_lt_of_mem_artinSlopeList K L M hmem)
-    have hc₂ : (artinSlopeList K L M₂).count a = 0 :=
-      List.count_eq_zero.2 fun hmem ↦ ha (one_lt_of_mem_artinSlopeList K L M₂ hmem)
-    rw [hc₁, hc₂]
+    rw [← hw₁ (min w₁ w₂) (lt_min huw₁ huw₂) (min_le_left _ _),
+      ← hw₂ (min w₁ w₂) (lt_min huw₁ huw₂) (min_le_right _ _),
+      embeddingOrbitCount_eq K L M M₂ _, embeddingOrbitCount_eq K L M M₂ _]
+  · simp [List.count_eq_zero.2 fun hm ↦ ha (one_lt_of_mem_artinSlopeList K L _ hm)]
 
 variable [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
   [ValuativeExtension K L]
 
-/-- Every step index `[G_{i+1} H : G_{i+2} H]` (`i ≥ 0`) divides `p ^ wildRamificationExponent K L`,
-and therefore equals `p ^ log_p [G_{i+1} H : G_{i+2} H]`. -/
+/-- Every step index `[G_{i+1} H : G_{i+2} H]` (`i ≥ 0`) divides
+`p ^ wildRamificationExponent K L`, hence equals `p ^ log_p [G_{i+1} H : G_{i+2} H]`. -/
 theorem pow_natLog_relIndex_lowerRamificationGroup_sup_embeddingSubgroup (j : ℕ) :
     ringChar 𝓀[K] ^
         Nat.log (ringChar 𝓀[K])
@@ -844,19 +731,19 @@ theorem pow_natLog_relIndex_lowerRamificationGroup_sup_embeddingSubgroup (j : �
             (lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) ⊔ embeddingSubgroup K L M)) =
       (lowerRamificationGroup K M ((j + 2 : ℕ) : ℤ) ⊔ embeddingSubgroup K L M).relIndex
         (lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) ⊔ embeddingSubgroup K L M) := by
-  set p := ringChar 𝓀[K]
-  have hp : p.Prime := CharP.prime_ringChar 𝓀[K]
+  have hp : (ringChar 𝓀[K]).Prime := CharP.prime_ringChar 𝓀[K]
   set H := embeddingSubgroup K L M
   set K₂ := lowerRamificationGroup K M ((j + 2 : ℕ) : ℤ) ⊔ H
   set K₁ := lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) ⊔ H
   set K₀ := lowerRamificationGroup K M 1 ⊔ H
-  have hH₂ : H ≤ K₂ := le_sup_right
-  have h₂₁ : K₂ ≤ K₁ := sup_le_sup_right (lowerRamificationGroup_antitone K M (by omega)) H
-  have h₁₀ : K₁ ≤ K₀ := sup_le_sup_right (lowerRamificationGroup_antitone K M (by omega)) H
-  have hdvd : K₂.relIndex K₁ ∣ p ^ wildRamificationExponent K L := by
+  have h₂₁ : K₂ ≤ K₁ :=
+    sup_le_sup_right (lowerRamificationGroup_antitone K M (by omega)) H
+  have h₁₀ : K₁ ≤ K₀ :=
+    sup_le_sup_right (lowerRamificationGroup_antitone K M (by omega)) H
+  have hdvd : K₂.relIndex K₁ ∣ ringChar 𝓀[K] ^ wildRamificationExponent K L := by
     rw [← relIndex_embeddingSubgroup_lowerRamificationGroup_one K L M,
-      ← Subgroup.relIndex_mul_relIndex H K₁ K₀ (hH₂.trans h₂₁) h₁₀,
-      ← Subgroup.relIndex_mul_relIndex H K₂ K₁ hH₂ h₂₁]
+      ← Subgroup.relIndex_mul_relIndex H K₁ K₀ (le_sup_right.trans h₂₁) h₁₀,
+      ← Subgroup.relIndex_mul_relIndex H K₂ K₁ le_sup_right h₂₁]
     exact ⟨H.relIndex K₂ * K₁.relIndex K₀, by ring⟩
   obtain ⟨m, -, hm⟩ := (Nat.dvd_prime_pow hp).1 hdvd
   rw [hm, Nat.log_pow hp.one_lt]
@@ -881,36 +768,23 @@ private theorem prod_relIndex_lowerRamificationGroup_sup_embeddingSubgroup :
         (sup_le_sup_right (lowerRamificationGroup_antitone K M (by omega)) H)
         (sup_le_sup_right (lowerRamificationGroup_antitone K M (by omega)) H)
   rw [hchain (largestLowerJump K M).toNat]
-  have hAJ : A (largestLowerJump K M).toNat = H := by
-    simp only [A, lowerRamificationGroup_toNat_largestLowerJump_add_one K M, bot_sup_eq]
-  have hA0 : A 0 = lowerRamificationGroup K M 1 ⊔ H := by simp [A]
-  rw [hAJ, hA0, relIndex_embeddingSubgroup_lowerRamificationGroup_one K L M]
+  dsimp only [A]
+  rw [lowerRamificationGroup_toNat_largestLowerJump_add_one, bot_sup_eq]
+  simpa using relIndex_embeddingSubgroup_lowerRamificationGroup_one K L M
 
 /-- The number of Artin slopes (counted with multiplicity) equals the wild ramification exponent
 `w(L/K) = v_p(e(L/K))`. -/
 @[simp]
 theorem length_artinSlopeList :
     (artinSlopeList K L M).length = wildRamificationExponent K L := by
-  let p := ringChar 𝓀[K]
-  have hp : p.Prime := CharP.prime_ringChar 𝓀[K]
-  let d : ℕ → ℕ := fun j ↦
-    Nat.log p
-      ((lowerRamificationGroup K M ((j + 2 : ℕ) : ℤ) ⊔ embeddingSubgroup K L M).relIndex
-        (lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) ⊔ embeddingSubgroup K L M))
-  have hlen : (artinSlopeList K L M).length =
-      ∑ j ∈ Finset.range (largestLowerJump K M).toNat, d j := by
-    rw [artinSlopeList_def, List.length_flatMap]
-    simpa [d] using list_sum_map_range (largestLowerJump K M).toNat d
-  rw [hlen]
-  apply Nat.pow_right_injective hp.two_le
-  have hpow : p ^ ∑ j ∈ Finset.range (largestLowerJump K M).toNat, d j =
-      ∏ j ∈ Finset.range (largestLowerJump K M).toNat, p ^ d j :=
-    (Finset.prod_pow_eq_pow_sum _ _ _).symm
-  refine hpow.trans ?_
-  dsimp only [p]
-  rw [← prod_relIndex_lowerRamificationGroup_sup_embeddingSubgroup K L M]
-  exact Finset.prod_congr rfl fun j _ ↦
-    pow_natLog_relIndex_lowerRamificationGroup_sup_embeddingSubgroup K L M j
+  apply Nat.pow_right_injective (CharP.prime_ringChar 𝓀[K]).two_le
+  dsimp only
+  rw [artinSlopeList_def, List.length_flatMap, list_sum_map_range,
+    ← Finset.prod_pow_eq_pow_sum,
+    ← prod_relIndex_lowerRamificationGroup_sup_embeddingSubgroup K L M]
+  exact Finset.prod_congr rfl fun j _ ↦ by
+    simpa [List.length_replicate] using
+      pow_natLog_relIndex_lowerRamificationGroup_sup_embeddingSubgroup K L M j
 
 /-- `artinSlopeList K L M` is empty if and only if `L/K` is tamely ramified. -/
 @[simp]
@@ -933,28 +807,19 @@ theorem exists_nat_eq_of_mem_artinSlopeList_self (K M : Type*)
   obtain ⟨j, -, hj⟩ := ha
   obtain ⟨hlog, rfl⟩ := List.mem_replicate.1 hj
   rw [embeddingSubgroup_self, sup_bot_eq, sup_bot_eq] at hlog
-  have hrel_ne : (lowerRamificationGroup K M ((j + 2 : ℕ) : ℤ)).relIndex
-      (lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ)) ≠ 1 := by
-    intro h1
-    rw [h1, Nat.log_one_right] at hlog
-    exact hlog rfl
   have hlt : lowerRamificationGroup K M (((j + 1 : ℕ) : ℤ) + 1) <
-      lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) := by
-    refine lt_of_le_of_ne (lowerRamificationGroup_antitone K M (by omega)) fun heq ↦ hrel_ne ?_
-    have hidx : ((j + 2 : ℕ) : ℤ) = ((j + 1 : ℕ) : ℤ) + 1 := by omega
-    rw [hidx, heq, Subgroup.relIndex_self]
+      lowerRamificationGroup K M ((j + 1 : ℕ) : ℤ) :=
+    lt_of_le_of_ne (lowerRamificationGroup_antitone K M (by omega)) fun heq ↦
+      hlog (by rw [show ((j + 2 : ℕ) : ℤ) = ((j + 1 : ℕ) : ℤ) + 1 by omega, heq,
+        Subgroup.relIndex_self, Nat.log_one_right])
   have hlower : LowerJump K M
       ⟨((j + 1 : ℕ) : ℝ), Nat.cast_mem_ramificationIndexDomain (j + 1)⟩ :=
     (lowerJump_intCast_iff K M (i := ((j + 1 : ℕ) : ℤ))
       (by simpa using Nat.cast_mem_ramificationIndexDomain (j + 1))).2 hlt
   obtain ⟨z, hz⟩ := hasseArf K M ((upperJump_herbrand_iff K M _).2 hlower)
   rw [hz] at ha1 ⊢
-  have hz1 : 1 ≤ z := by
-    have : (0 : ℝ) < z := by linarith
-    have : (0 : ℤ) < z := by exact_mod_cast this
-    omega
-  refine ⟨(z + 1).toNat, by omega, ?_⟩
-  have hcast : (((z + 1).toNat : ℕ) : ℤ) = z + 1 := Int.toNat_of_nonneg (by omega)
-  exact_mod_cast hcast.symm
+  have hz_pos : (0 : ℤ) < z := by exact_mod_cast (by linarith : (0 : ℝ) < z)
+  exact ⟨(z + 1).toNat, by omega, by exact_mod_cast (Int.toNat_of_nonneg (by omega) :
+    (((z + 1).toNat : ℕ) : ℤ) = z + 1).symm⟩
 
 end TauCeti
