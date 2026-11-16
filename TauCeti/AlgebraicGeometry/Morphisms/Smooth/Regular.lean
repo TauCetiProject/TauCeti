@@ -142,7 +142,7 @@ theorem mem_smoothLocus_of_comp_eq_id (f : X ⟶ S) [Flat f]
     Arrow.rightFunc.mapIso e
   have : IsRegularLocalRing (Localization.AtPrime q) := .of_ringEquiv eq.commRingCatIsoToRingEquiv
   -- On stalks, the section is a retraction of the stalk map of `f`.
-  have hfs : f (s y) = y := by rw [← Scheme.Hom.comp_apply, hs]; rfl
+  have hfs : f (s y) = y := by simp [← Scheme.Hom.comp_apply, hs]
   let c := S.presheaf.stalkCongr (.of_eq hfs)
   have hf : f.stalkMap (s y) ≫ s.stalkMap y ≫ c.inv = 𝟙 _ := by
     rw [← Category.assoc, ← stalkMap_comp, stalkMap_congr_hom _ _ hs]

@@ -12,7 +12,6 @@ public import TauCeti.RingTheory.LocalRing.MaximalIdeal.Flat
 public import TauCeti.RingTheory.RegularLocalRing.Descent
 
 import Mathlib.RingTheory.Flat.Localization
-import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import TauCeti.RingTheory.RegularLocalRing.OfQuotient
 import TauCeti.RingTheory.RegularLocalRing.Quotient
 
@@ -42,8 +41,8 @@ Conversely, if `S` is a regular local ring, flat over a local ring `R`, and the 
 Geometrically, this is the closed fibre through the image of the closed point under a section of
 `Spec S → Spec R`. Here `R ≅ S ⧸ ker σ` is regular by descent, so `ker σ` needs `dim S - dim R`
 generators, and their images generate the maximal ideal of the closed fibre, since
-`𝔪_S = ker σ + 𝔪_R S`. By Krull's height theorem, the closed fibre has dimension at least
-`dim S - dim R`.
+`𝔪_S = ker σ + 𝔪_R S`. By the fibre dimension inequality, the closed fibre has dimension at
+least `dim S - dim R`.
 
 ## Main declarations
 
@@ -168,15 +167,14 @@ theorem quotient_map_maximalIdeal_of_algHom [IsRegularLocalRing S] [IsLocalRing 
     rw [Ideal.map_sup, Ideal.map_quotient_self, sup_bot_eq]
   have hμ : (maximalIdeal (S ⧸ I)).spanFinrank ≤ p.spanFinrank :=
     hmI ▸ Ideal.spanFinrank_map_le_of_fg _ p.fg_of_isNoetherianRing
-  have hμI : I.spanFinrank ≤ (maximalIdeal R).spanFinrank :=
-    Ideal.spanFinrank_map_le_of_fg _ (maximalIdeal R).fg_of_isNoetherianRing
-  -- By Krull's height theorem, `dim S ≤ dim S ⧸ I + μ(I)`.
-  have hkrull := ringKrullDim_le_ringKrullDim_quotient_add_spanFinrank I
-    (by rwa [ringJacobson_eq_maximalIdeal])
-  rw [← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)] at hkrull
+  -- By the fibre dimension inequality, `dim S ≤ dim R + dim S ⧸ I`.
+  have hfib :=
+    ringKrullDim_le_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal (R := R) (S := S)
+  rw [← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := S),
+    ← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := R)] at hfib
   refine _root_.IsRegularLocalRing.of_spanFinrank_maximalIdeal_le _ ?_
-  rw [← ENat.WithBot.add_le_add_natCast_right_iff (c := I.spanFinrank)]
-  exact le_trans (by exact_mod_cast (by omega)) hkrull
+  rw [← ENat.WithBot.add_le_add_natCast_left_iff (c := (maximalIdeal R).spanFinrank)]
+  exact le_trans (by exact_mod_cast (by omega)) hfib
 
 end IsRegularLocalRing
 

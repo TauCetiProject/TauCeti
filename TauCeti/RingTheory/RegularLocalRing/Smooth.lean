@@ -42,9 +42,10 @@ so the differentials of the generators of `I` are linearly independent in `κ �
 is the Jacobian criterion `TauCeti.formallySmooth_of_ker_eq_span_of_sum_mul_mem_sq`.
 
 The relative version replaces the residue field condition by a section. Let `S` be a regular
-local ring which is flat and essentially of finite presentation over a ring `R`, and suppose that
+local ring which is flat and essentially of finite type over a ring `R`, and suppose that
 the structure map `R → S` has an `R`-algebra retraction `σ : S → R`. Then `S` is formally smooth
-over `R`. Indeed `R` is local, its residue field `k` is the residue field of the closed fibre
+over `R`. Indeed `R` is local and Noetherian, being a quotient of `S`, so that `S` is essentially
+of finite presentation over `R`. Its residue field `k` is the residue field of the closed fibre
 `k ⊗[R] S` through the retraction, and this closed fibre is regular
 (`TauCeti.IsRegularLocalRing.quotient_map_maximalIdeal_of_algHom`). So it is formally smooth over
 `k` by the field case, and Mathlib's fibre criterion
@@ -60,9 +61,9 @@ where the source is regular.
 * `TauCeti.formallySmooth_of_isRegularLocalRing`: a regular local algebra essentially of finite
   type over a field `k`, with residue field formally smooth over `k`, is formally smooth over `k`.
 * `TauCeti.formallySmooth_of_isRegularLocalRing_of_algHom`: a regular local algebra, flat and
-  essentially of finite presentation over `R`, with an `R`-algebra retraction to `R`, is
+  essentially of finite type over `R`, with an `R`-algebra retraction to `R`, is
   formally smooth over `R`.
-* `TauCeti.isSmoothAt_of_isRegularLocalRing_of_algHom`: a finitely presented algebra `S` is
+* `TauCeti.isSmoothAt_of_isRegularLocalRing_of_algHom`: an algebra `S` essentially of finite type is
   smooth at a prime `q` over `p` if `S_q` is regular, flat over the base and has an algebra
   retraction to `R_p`.
 
@@ -157,24 +158,23 @@ open TensorProduct
 variable {R : Type*} [CommRing R]
 
 /-- **A regular local algebra with a retraction is formally smooth.** Let `A` be a regular local
-ring which is flat over `R` and essentially of finite presentation, being the localization of a
-finitely presented `R`-algebra `P` at a submonoid `M`. If the structure map `R → A` has an
+ring which is flat and essentially of finite type over `R`. If the structure map `R → A` has an
 `R`-algebra retraction `σ`, then `A` is formally smooth over `R`. -/
-theorem formallySmooth_of_isRegularLocalRing_of_algHom {A P : Type*} [CommRing A] [Algebra R A]
-    [IsRegularLocalRing A] [Module.Flat R A] [CommRing P] [Algebra R P] [Algebra P A]
-    [IsScalarTower R P A] [Algebra.FinitePresentation R P] (M : Submonoid P) [IsLocalization M A]
-    (σ : A →ₐ[R] R) : Algebra.FormallySmooth R A := by
+theorem formallySmooth_of_isRegularLocalRing_of_algHom {A : Type*} [CommRing A] [Algebra R A]
+    [Algebra.EssFiniteType R A] [IsRegularLocalRing A] [Module.Flat R A] (σ : A →ₐ[R] R) :
+    Algebra.FormallySmooth R A := by
   have hσ : Function.Surjective σ := fun r ↦ ⟨algebraMap R A r, σ.commutes r⟩
   have : Nontrivial R := (algebraMap R A).domain_nontrivial
   have : IsLocalRing R := .of_surjective' σ.toRingHom hσ
   have : IsLocalHom (algebraMap R A) := ⟨fun r hr ↦ by simpa using hr.map σ⟩
+  -- `R` is a quotient of `A`, hence Noetherian, so `A` is essentially of finite presentation.
+  have : IsNoetherianRing R := isNoetherianRing_of_surjective A R σ.toRingHom hσ
+  have : Algebra.FinitePresentation R (Algebra.EssFiniteType.subalgebra R A) :=
+    Algebra.FinitePresentation.of_finiteType.mp inferInstance
   -- The closed fibre `k ⊗[R] A` is regular.
   have := IsRegularLocalRing.quotient_map_maximalIdeal_of_algHom σ
   have : IsRegularLocalRing (ResidueField R ⊗[R] A) :=
     .of_ringEquiv (Algebra.TensorProduct.quotIdealMapEquivQuotTensor A (maximalIdeal R)).toRingEquiv
-  have : Algebra.EssFiniteType R A := by
-    have : Algebra.EssFiniteType P A := .of_isLocalization A M
-    exact .comp R P A
   -- The base change `τ` of `σ` identifies the residue field of the fibre with `k`.
   let τ : ResidueField R ⊗[R] A →ₐ[ResidueField R] ResidueField R :=
     Algebra.TensorProduct.lift (AlgHom.id _ _) ((Algebra.ofId R _).comp σ)
@@ -193,51 +193,25 @@ theorem formallySmooth_of_isRegularLocalRing_of_algHom {A P : Type*} [CommRing A
     .of_equiv (AlgEquiv.ofBijective (Algebra.ofId _ _) ⟨RingHom.injective _, hsurj⟩)
   have : Algebra.FormallySmooth (ResidueField R) (ResidueField R ⊗[R] A) :=
     formallySmooth_of_isRegularLocalRing
-  exact .of_formallySmooth_residueField_tensor M
+  exact .of_formallySmooth_residueField_tensor (Algebra.EssFiniteType.submonoid R A)
 
-/-- **Smoothness at a prime from a retraction of the local rings.** Let `S` be a finitely presented
-`R`-algebra and `q` a prime of `S` over the prime `p` of `R`. If the local ring `S_q` is regular
-and flat over `R`, and has an `R`-algebra homomorphism `σ` to `R_p`, then `S` is smooth over `R`
-at `q`. Such a `σ` is a retraction of the localized structure map `R_p → S_q`.
-
-The localization steps follow the proof of Mathlib's `Algebra.IsSmoothAt.of_formallySmooth_fiber`.
--/
+/-- **Smoothness at a prime from a retraction of the local rings.** Let `S` be an `R`-algebra
+essentially of finite type and `q` a prime of `S` over the prime `p` of `R`. If the local ring
+`S_q` is regular and flat over `R`, and has an `R`-algebra homomorphism `σ` to `R_p`, then `S` is
+smooth over `R` at `q`. Such a `σ` is a retraction of the localized structure map `R_p → S_q`. -/
 theorem isSmoothAt_of_isRegularLocalRing_of_algHom {S : Type*} [CommRing S] [Algebra R S]
-    [Algebra.FinitePresentation R S] (p : Ideal R) (q : Ideal S) [p.IsPrime] [q.IsPrime]
+    [Algebra.EssFiniteType R S] (p : Ideal R) (q : Ideal S) [p.IsPrime] [q.IsPrime]
     [q.LiesOver p] [IsRegularLocalRing (Localization.AtPrime q)]
     [Module.Flat R (Localization.AtPrime q)]
     (σ : Localization.AtPrime q →ₐ[R] Localization.AtPrime p) :
     Algebra.IsSmoothAt R q := by
   let Rp := Localization.AtPrime p
-  let Sp := Localization (Algebra.algebraMapSubmonoid S p.primeCompl)
   let Sq := Localization.AtPrime q
   let := Localization.AtPrime.algebraOfLiesOver p q
   have : Module.Flat Rp Sq := (Module.flat_iff_of_isLocalization Rp p.primeCompl Sq).mpr ‹_›
-  -- `σ` is `R_p`-linear, since `R_p` is a localization of `R`.
-  have hσ : (σ : Sq →+* Rp).comp (algebraMap Rp Sq) = RingHom.id Rp :=
-    IsLocalization.ringHom_ext p.primeCompl <| RingHom.ext fun r ↦ by
-      simp [Rp, ← IsScalarTower.algebraMap_apply]
-  -- `S_q` is a localization of `S_p`, which is finitely presented over `R_p`.
-  let f : Sp →ₐ[S] Sq := IsLocalization.liftAlgHom
-    (M := Algebra.algebraMapSubmonoid S p.primeCompl) (f := Algebra.ofId _ _) (by
-      rintro ⟨_, x, hx, rfl⟩
-      simpa using! IsLocalization.map_units (M := q.primeCompl) Sq ⟨algebraMap _ _ x,
-        by simp_all [q.over_def p]⟩)
-  algebraize [f.toRingHom]
-  have : IsScalarTower R Sp Sq := .to₁₃₄ _ S _ _
-  have : IsScalarTower Rp Sp Sq := .of_algebraMap_eq' <| by
-    apply IsLocalization.ringHom_ext p.primeCompl
-    simp only [RingHom.comp_assoc, ← IsScalarTower.algebraMap_eq]
-  have : IsLocalization (Algebra.algebraMapSubmonoid Sp q.primeCompl) Sq :=
-    .isLocalization_of_submonoid_le _ _ (Algebra.algebraMapSubmonoid S p.primeCompl) _
-    (by rintro _ ⟨x, hx, rfl⟩; simp_all [q.over_def p])
-  have : Algebra.FinitePresentation Rp Sp := by
-    have : Algebra.IsPushout R Rp S Sp :=
-      .symm <| Algebra.isPushout_of_isLocalization p.primeCompl _ _ _
-    exact .equiv (Algebra.IsPushout.equiv R Rp S Sp)
-  have := formallySmooth_of_isRegularLocalRing_of_algHom (R := Rp) (A := Sq) (P := Sp)
-    (Algebra.algebraMapSubmonoid _ q.primeCompl)
-    { (σ : Sq →+* Rp) with commutes' := fun r ↦ congr($hσ r) }
+  have : Algebra.EssFiniteType Rp Sq := .of_comp R Rp Sq
+  have := formallySmooth_of_isRegularLocalRing_of_algHom
+    (σ.extendScalarsOfIsLocalization Rp p.primeCompl)
   exact .comp R Rp Sq
 
 end Retraction

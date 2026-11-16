@@ -195,11 +195,12 @@ theorem extendSection_hom_apply {M N : Model R K C toK} [M.IsProper] [N.IsProper
     f.hom (M.extendSection p hp x) = N.extendSection p hp x := by
   rw [← Scheme.Hom.comp_apply, extendSection_hom]
 
-/-- On a model whose total space has regular local rings, the extension of a rational point of
-the generic fibre lies in the smooth locus of the structure morphism. -/
+/-- If the local rings of the total space of a model along the extension of a rational point of
+the generic fibre are regular, for instance if the total space is regular, then this extension
+lies in the smooth locus of the structure morphism. -/
 theorem range_extendSection_subset_smoothLocus (M : Model R K C toK) [M.IsProper]
-    [∀ x : M.total, IsRegularLocalRing (M.total.presheaf.stalk x)]
-    (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _) :
+    (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _)
+    [∀ y, IsRegularLocalRing (M.total.presheaf.stalk (M.extendSection p hp y))] :
     Set.range (M.extendSection p hp) ⊆ M.toBase.smoothLocus :=
   M.toBase.range_subset_smoothLocus_of_comp_eq_id _ (M.extendSection_toBase p hp)
 
