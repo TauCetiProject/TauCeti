@@ -34,7 +34,8 @@ by conjugation on every transitive normal subgroup.
 * `ConjAct.mk_eq_mk_iff_isConj`: conjugation orbits are the classes of `IsConj`.
 * `MonoidHom.map_conjNormal_val`: a homomorphism from a normal subgroup to a commutative monoid is
   unchanged by conjugation by an element of that subgroup.
-* `Subgroup.conjugationAction`: the explicit conjugation action on a normal subgroup.
+* `Subgroup.conjugationAction`: the explicit conjugation action on a normal subgroup, under which
+  each element fixes itself (`Subgroup.conjugationAction_coe_smul_self`).
 * `Subgroup.inv_mul_mul_mem_conjAct_smul_iff`: conjugation preserves subgroup membership.
 * `Subgroup.mem_conjAct_smul_iff`: membership in a conjugate `g H g⁻¹`.
 * `Subgroup.mem_conjAct_smul_of_mem_center`: a central element of a subgroup lies in each of its
@@ -96,7 +97,23 @@ attribute [local instance] conjugationAction
 theorem coe_conjugationAction_smul (g : G) (n : N) :
     ((g • n : N) : G) = g * n * g⁻¹ := (rfl)
 
-variable {N} [IsMulCommutative N]
+variable {N}
+
+/-- Conjugating an element of a normal subgroup by itself fixes it, without any commutativity
+assumption. -/
+@[simp]
+theorem conjugationAction_coe_smul_self (n : N) : (n : G) • n = n := by
+  ext
+  simp
+
+/-- Conjugating an element of a normal subgroup by its inverse fixes it, without any
+commutativity assumption. -/
+@[simp]
+theorem conjugationAction_coe_inv_smul_self (n : N) : (n : G)⁻¹ • n = n := by
+  ext
+  simp
+
+variable [IsMulCommutative N]
 
 /-- Conjugation by an element of an abelian normal subgroup is trivial on that subgroup. -/
 @[simp]

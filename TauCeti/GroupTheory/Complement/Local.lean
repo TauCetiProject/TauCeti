@@ -20,7 +20,8 @@ is a projection, without any assertion that it is a homomorphism. Restricting a 
 to an intermediate subgroup containing `N` restricts its left projection. For `N` normal in `G`,
 conjugating a local complement `K` of `N` in `H` by `g` gives a local complement of `N` in
 `g H g⁻¹` whose left projection is `x ↦ g • c (g⁻¹ * x * g)`, where `c` is the left projection
-along `K` and `G` acts on `N` by conjugation.
+along `K` and `G` acts on `N` by conjugation; conjugating by `a ∈ N` preserves the ambient
+subgroup `H` without any normality assumption (`Subgroup.IsLocalComplement.conj_coe_smul`).
 
 These constructions reuse Mathlib's `Subgroup.IsComplement.equiv` for global complements.
 Restriction of a complement to an intermediate subgroup uses Dedekind's modular law.
@@ -115,6 +116,18 @@ theorem IsLocalComplement.conj_smul [N.Normal] (h : N.IsLocalComplement K H) (g 
   constructor
   · rw [← hN, ← smul_inf, h.inf_eq_bot, smul_bot]
   · rw [← hN, ← smul_sup, h.sup_eq]
+
+/-- Conjugating a local complement `K` of `N` in `H` by an element `a ∈ N` gives another local
+complement of `N` in the same subgroup `H`, without any normality assumption. -/
+theorem IsLocalComplement.conj_coe_smul (h : N.IsLocalComplement K H) (a : N) :
+    N.IsLocalComplement (MulAut.conj (a : G) • K) H := by
+  have hN : MulAut.conj (a : G) • N = N := conj_smul_eq_self_of_mem a.property
+  have hH : MulAut.conj (a : G) • H = H := conj_smul_eq_self_of_mem (h.left_le a.property)
+  refine ⟨?_, ?_⟩
+  · conv_lhs => enter [1]; rw [← hN]
+    rw [← smul_inf, h.inf_eq_bot, smul_bot]
+  · conv_lhs => enter [1]; rw [← hN]
+    rw [← smul_sup, h.sup_eq, hH]
 
 /-- A conjugate of a complement of the normal subgroup `N` is again a complement of `N`. -/
 theorem IsComplement'.conj_smul [N.Normal] {D : Subgroup G} (h : N.IsComplement' D) (g : G) :
