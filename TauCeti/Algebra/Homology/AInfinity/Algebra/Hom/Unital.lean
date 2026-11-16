@@ -30,6 +30,8 @@ unit-containing words, and their Taylor maps read only its one-letter component.
 ## Main results
 
 * `TauCeti.AInfinityHom.isStrictlyUnital_id`: the identity is strictly unital.
+* `TauCeti.AInfinityHom.isStrictlyUnital_iff_of_strictUnit`: strict unitality is independent of the
+  chosen strict-unit witnesses.
 * `TauCeti.AInfinityHom.IsStrict.isStrictlyUnital_iff`: for a strict `A∞` morphism,
   strictly unitality is equivalent to preservation of the unit by its linear part.
 * `TauCeti.AInfinityHom.IsStrictlyUnital.comp`: composition preserves strict unitality,
@@ -179,6 +181,16 @@ theorem isStrictlyUnital_id {eA : A} (hA : AA.StrictUnit eA) :
     (AInfinityHom.id AA).IsStrictlyUnital hA hA := by
   apply (isStrict_id AA).isStrictlyUnital
   rw [linearPart_id]
+  rfl
+
+/-- Because strict units of an `A∞` algebra are unique, the strictly unitality predicate does not
+depend on which strict-unit witnesses are supplied. -/
+theorem isStrictlyUnital_iff_of_strictUnit {eA₁ eA₂ : A} {eB₁ eB₂ : B}
+    {hA₁ : AA.StrictUnit eA₁} {hA₂ : AA.StrictUnit eA₂}
+    {hB₁ : BB.StrictUnit eB₁} {hB₂ : BB.StrictUnit eB₂} {f : AInfinityHom AA BB} :
+    f.IsStrictlyUnital hA₁ hB₁ ↔ f.IsStrictlyUnital hA₂ hB₂ := by
+  obtain rfl : eA₁ = eA₂ := hA₁.eq hA₂
+  obtain rfl : eB₁ = eB₂ := hB₁.eq hB₂
   rfl
 
 end AInfinityHom

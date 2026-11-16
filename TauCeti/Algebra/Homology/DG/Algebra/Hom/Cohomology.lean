@@ -35,6 +35,8 @@ cohomology of the comparison between differential graded algebras and `A∞` alg
   of its image.
 * `TauCeti.DGAlgHom.cohomologyMap_id` and `TauCeti.DGAlgHom.cohomologyMap_comp`: passage to
   cohomology preserves identities and composition.
+* `TauCeti.DGAlgHom.bijective_cohomologyMap_iff_forall_cycles`: the quasi-isomorphism condition
+  expressed directly on cycles and boundaries.
 
 ## References
 
@@ -149,6 +151,41 @@ theorem cohomologyMap_comp (g : DGAlgHom hB hC) (f : DGAlgHom hA hB) :
   intro x
   obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective x
   simp only [cohomologyMap_mk, GradedAlgHom.comp_apply, cyclesMap_comp]
+
+/-- A DG algebra morphism induces a bijection on cohomology algebras if and only if every target
+cycle agrees modulo target boundaries with the image of a source cycle, and every source cycle
+mapped to a target boundary is already a source boundary. -/
+theorem bijective_cohomologyMap_iff_forall_cycles (f : DGAlgHom hA hB) :
+    Function.Bijective f.cohomologyMap ↔
+      (∀ y ∈ hB.cycles, ∃ x ∈ hA.cycles, f x - y ∈ LinearMap.range dB) ∧
+        (∀ x ∈ hA.cycles, f x ∈ LinearMap.range dB → x ∈ LinearMap.range dA) := by
+  rw [Function.Bijective, injective_iff_map_eq_zero]
+  constructor
+  · rintro ⟨hinj, hsurj⟩
+    refine ⟨fun y hy ↦ ?_, fun x hx hfx ↦ ?_⟩
+    · obtain ⟨c, hc⟩ := hsurj (Ideal.Quotient.mk hB.boundaries.asIdeal ⟨y, hy⟩)
+      obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective c
+      rw [f.cohomologyMap_mk, ← sub_eq_zero, ← map_sub, hB.quotientMk_eq_zero_iff,
+        hB.mem_boundaries, Subalgebra.coe_sub, f.cyclesMap_apply_coe] at hc
+      exact ⟨z.1, z.2, hc⟩
+    · have h0 : f.cohomologyMap (Ideal.Quotient.mk hA.boundaries.asIdeal ⟨x, hx⟩) = 0 := by
+        rw [f.cohomologyMap_mk, hB.quotientMk_eq_zero_iff, hB.mem_boundaries, f.cyclesMap_apply_coe]
+        exact hfx
+      have hx0 := hinj _ h0
+      rwa [hA.quotientMk_eq_zero_iff, hA.mem_boundaries] at hx0
+  · rintro ⟨hsurj, hinj⟩
+    refine ⟨fun c hc ↦ ?_, fun d ↦ ?_⟩
+    · obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective c
+      rw [f.cohomologyMap_mk, hB.quotientMk_eq_zero_iff, hB.mem_boundaries,
+        f.cyclesMap_apply_coe] at hc
+      rw [hA.quotientMk_eq_zero_iff, hA.mem_boundaries]
+      exact hinj z.1 z.2 hc
+    · obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective d
+      obtain ⟨x, hx, hxy⟩ := hsurj y.1 y.2
+      refine ⟨Ideal.Quotient.mk hA.boundaries.asIdeal ⟨x, hx⟩, ?_⟩
+      rw [f.cohomologyMap_mk, ← sub_eq_zero, ← map_sub, hB.quotientMk_eq_zero_iff,
+        hB.mem_boundaries, Subalgebra.coe_sub, f.cyclesMap_apply_coe]
+      exact hxy
 
 end DGAlgHom
 
