@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import TauCeti.Algebra.MvPolynomial.HasseDeriv.Basic
 public import TauCeti.RingTheory.MvPolynomial.Kronecker
+public import TauCeti.RingTheory.MvPolynomial.PolynomialGraph
 public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 
 import Mathlib.Algebra.Field.ZMod
@@ -26,9 +27,11 @@ import TauCeti.Data.Finsupp.Weight
 For `B : ℕ`, the *power substitution* `MvPolynomial.powerSubstitution B` sends a bivariate
 polynomial `F(Z, W)` (variable `0` is `Z`, variable `1` is `W`) to the univariate polynomial
 `F(X, X ^ B)`. It is the Kronecker substitution of `TauCeti.RingTheory.MvPolynomial.Kronecker`
-for the weight `![1, B]`, which sends the exponent `μ` to `μ 0 + B * μ 1`. On exponents with
-`μ 0 < B` this map is injective (uniqueness of quotient and remainder on division by `B`), so the
-substitution is injective on polynomials of `Z`-degree below `B`.
+for the weight `![1, B]`, which sends the exponent `μ` to `μ 0 + B * μ 1`, and its underlying ring
+homomorphism is the two-variable case `TauCeti.polynomialGraph R 2 B`
+(`MvPolynomial.powerSubstitution_toRingHom`). On exponents with `μ 0 < B` this map is injective
+(uniqueness of quotient and remainder on division by `B`), so the substitution is injective on
+polynomials of `Z`-degree below `B`.
 
 When `B = p ^ e` is a power of the characteristic `p`, differentiating `F(X, X ^ (p ^ e))`
 suppresses variation in `W`:
@@ -52,6 +55,8 @@ that `k !` is a unit, its ordinary-derivative counterpart
 
 ## Main results
 
+* `MvPolynomial.powerSubstitution_toRingHom`: the ring homomorphism underlying `powerSubstitution B`
+  is `TauCeti.polynomialGraph R 2 B`.
 * `MvPolynomial.coeff_powerSubstitution`: for `F` of `Z`-degree below `B` and `μ 0 < B`, the
   coefficient of `X ^ (μ 0 + B * μ 1)` in `F(X, X ^ B)` is the coefficient of `Z ^ μ 0 W ^ μ 1`.
 * `MvPolynomial.powerSubstitution_injOn`, `MvPolynomial.powerSubstitution_eq_zero_iff`: the
@@ -119,6 +124,13 @@ theorem powerSubstitution_X_one (B : ℕ) :
 theorem powerSubstitution_eq_aeval_X_pow (B : ℕ) :
     powerSubstitution (R := R) B = aeval fun s ↦ (Polynomial.X : Polynomial R) ^ ![1, B] s := by
   refine algHom_ext fun s ↦ ?_
+  fin_cases s <;> simp [powerSubstitution]
+
+/-- The ring homomorphism underlying `powerSubstitution B` is the two-variable Kronecker
+substitution `TauCeti.polynomialGraph R 2 B`. -/
+theorem powerSubstitution_toRingHom (B : ℕ) :
+    (powerSubstitution (R := R) B).toRingHom = TauCeti.polynomialGraph R 2 B := by
+  refine ringHom_ext (fun a ↦ by simp [powerSubstitution]) fun s ↦ ?_
   fin_cases s <;> simp [powerSubstitution]
 
 /-- The power substitution sends the monomial `c Z ^ μ 0 W ^ μ 1` to `c X ^ (μ 0 + B * μ 1)`. -/

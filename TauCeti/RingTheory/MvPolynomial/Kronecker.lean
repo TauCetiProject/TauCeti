@@ -32,6 +32,8 @@ evaluated at `(a ^ eₛ)ₛ`.
 
 * `Finsupp.exists_injOn_weight`: every finite set of exponent vectors is separated by
   `weight e` for some `e : σ → ℕ`.
+* `MvPolynomial.support_aeval_X_pow_subset`: the exponents of the image of `f` under `Xₛ ↦ T ^ eₛ`
+  are among the weights `weight e μ` of `μ ∈ f.support`.
 * `MvPolynomial.coeff_aeval_X_pow_weight`: if `weight e` is injective on a set containing the
   support of `f` and `μ`, the coefficient of `T ^ (weight e μ)` is that of `X^μ` in `f`.
 * `MvPolynomial.injOn_aeval_X_pow`, `MvPolynomial.linearIndependent_aeval_X_pow`: the
@@ -89,6 +91,21 @@ variable {R σ : Type*}
 section CommSemiring
 
 variable [CommSemiring R]
+
+/-- The exponents of `f` after the Kronecker substitution `Xₛ ↦ T ^ eₛ` are among the `e`-weights
+of the exponents in the support of `f`. -/
+theorem support_aeval_X_pow_subset (e : σ → ℕ) (f : MvPolynomial σ R) :
+    (aeval (fun s ↦ (Polynomial.X : Polynomial R) ^ e s) f).support ⊆
+      f.support.image (weight e) := by
+  classical
+  intro N hN
+  by_contra hNim
+  apply Polynomial.mem_support_iff.mp hN
+  conv_lhs => rw [f.as_sum]
+  simp only [map_sum, aeval_X_pow_left_monomial, Polynomial.finsetSum_coeff,
+    Polynomial.coeff_monomial_apply]
+  exact Finset.sum_eq_zero fun μ hμ ↦
+    ite_eq_right_iff.mpr fun h ↦ absurd (Finset.mem_image.mpr ⟨μ, hμ, h⟩) hNim
 
 /-- If `weight e` is injective on a set `T` containing the support of `f` and the exponent `μ`,
 then after the Kronecker substitution `Xₛ ↦ T ^ eₛ` the coefficient of `T ^ (weight e μ)` is the

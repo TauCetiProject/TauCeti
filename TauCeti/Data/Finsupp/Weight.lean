@@ -9,7 +9,9 @@ public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Option
+public import Mathlib.Data.Nat.Digits.Defs
 public import TauCeti.Data.Finsupp.Order
+import Mathlib.Data.Nat.Digits.Lemmas
 
 /-!
 # Weights of finitely supported functions
@@ -69,6 +71,10 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.finite_weightedStrip`: the weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` is
   finite. Polynomials in `Z = X 0` and `W = X 1` supported on it have `Z`-degree below `B`, which
   is the condition under which the power substitution `Z ↦ X, W ↦ X ^ B` is injective.
+* `Finsupp.weight_pow_eq_ofDigits`, `Finsupp.weight_pow_lt`, `Finsupp.injOn_weight_pow`: the
+  base-`B` weight `i ↦ B ^ i` on `Fin m →₀ ℕ` evaluates `Nat.ofDigits B` on the coordinate list;
+  on the box `{d | ∀ i, d i < B}` its values lie strictly below `B ^ m` and the weight is
+  injective.
 -/
 
 public section
@@ -309,5 +315,42 @@ theorem finite_weightedStrip (B N : ℕ) :
   · simp
   · exact (finite_of_nat_weight_lt ![1, B] (Fin.forall_fin_two.2 ⟨one_ne_zero, hB.ne'⟩) N).subset
       fun _ h ↦ h.2
+
+/-- The base-`B` weight `i ↦ B ^ i` sends `d : Fin m →₀ ℕ` to the base-`B` evaluation
+`Nat.ofDigits B (List.ofFn d)` of its coordinates. -/
+theorem weight_pow_eq_ofDigits (m B : ℕ) (d : Fin m →₀ ℕ) :
+    weight (fun i : Fin m ↦ B ^ (i : ℕ)) d = Nat.ofDigits B (List.ofFn d) := by
+  simp [weight_apply, Finsupp.sum_fintype, Nat.ofDigits_eq_sum_mapIdx, List.mapIdx_eq_ofFn,
+    List.sum_ofFn, mul_comm]
+
+/-- If every coordinate of `d : Fin m →₀ ℕ` is strictly below `B`, then its base-`B` weight
+`∑ i, d i * B ^ i` is strictly below `B ^ m`. -/
+theorem weight_pow_lt {m B : ℕ} {d : Fin m →₀ ℕ} (hd : ∀ i, d i < B) :
+    weight (fun i : Fin m ↦ B ^ (i : ℕ)) d < B ^ m := by
+  rcases m.eq_zero_or_pos with rfl | hm
+  · simp [Subsingleton.elim d 0]
+  · rcases lt_or_ge 1 B with hB | hB
+    · rw [weight_pow_eq_ofDigits]
+      exact (Nat.ofDigits_lt_base_pow_length hB (List.forall_mem_ofFn_iff.mpr hd)).trans_eq
+        (by simp)
+    · have hB1 : B = 1 :=
+        le_antisymm hB (Nat.pos_of_ne_zero fun h0 ↦ absurd (h0 ▸ hd ⟨0, hm⟩) (Nat.not_lt_zero _))
+      have hd0 : d = 0 := Finsupp.ext fun i ↦ Nat.lt_one_iff.mp (hB1 ▸ hd i)
+      simp [hB1, hd0]
+
+/-- The base-`B` weight `i ↦ B ^ i` is injective on the box `{d : Fin m →₀ ℕ | ∀ i, d i < B}` for
+every `m` and `B`: for `1 < B` by uniqueness of base-`B` digits, while for `B ≤ 1` the box contains
+at most the zero exponent vector. -/
+theorem injOn_weight_pow (m B : ℕ) :
+    Set.InjOn (weight fun i : Fin m ↦ B ^ (i : ℕ)) {d : Fin m →₀ ℕ | ∀ i, d i < B} := by
+  intro d hd e he h
+  simp only [Set.mem_ofPred_eq] at hd he
+  rcases lt_or_ge 1 B with hB | hB
+  · rw [weight_pow_eq_ofDigits, weight_pow_eq_ofDigits] at h
+    have hfn := List.ofFn_injective (Nat.ofDigits_inj_of_len_eq hB (by simp)
+      (List.forall_mem_ofFn_iff.mpr hd) (List.forall_mem_ofFn_iff.mpr he) h)
+    exact DFunLike.coe_injective hfn
+  · exact Finsupp.ext fun i ↦
+      (Nat.lt_one_iff.mp ((hd i).trans_le hB)).trans (Nat.lt_one_iff.mp ((he i).trans_le hB)).symm
 
 end Finsupp
