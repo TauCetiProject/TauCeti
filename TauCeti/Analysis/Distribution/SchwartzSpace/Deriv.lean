@@ -167,7 +167,7 @@ theorem norm_iterate_lineDerivOp_smulLeftCLM_clm_le_of_support_subset_closedBall
   rw [iterate_lineDerivOp_smulLeftCLM_clm, add_apply, smul_apply,
     smulLeftCLM_apply_apply L.hasTemperateGrowth]
   refine (norm_add_le _ _).trans
-    (add_le_add (L.norm_smul_le_of_support_subset_closedBall hsupp x) ?_)
+    (add_le_add (L.norm_apply_smul_le_of_support_subset_closedBall hsupp x) ?_)
   rw [norm_smul, norm_mul, Real.norm_eq_abs, abs_of_nonneg (by positivity),
     mul_assoc ((k : ℝ) + 1) ‖L‖ ‖v‖]
   gcongr

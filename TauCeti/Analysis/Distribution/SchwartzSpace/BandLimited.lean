@@ -129,7 +129,8 @@ private theorem norm_toLp_smulLeftCLM_clm_le (σ : 𝓢(V, H)) {t M : ℝ} (ht :
   refine norm_toLp_two_le_of_support_subset_closedBall _ ht ((subset_tsupport _).trans
     ((tsupport_smulLeftCLM_subset _ σ).trans (Set.inter_subset_left.trans hσ))) fun ξ ↦ ?_
   rw [smulLeftCLM_apply_apply L.hasTemperateGrowth]
-  refine (L.norm_smul_le_of_support_subset_closedBall ((subset_tsupport _).trans hσ) ξ).trans ?_
+  refine (L.norm_apply_smul_le_of_support_subset_closedBall
+    ((subset_tsupport _).trans hσ) ξ).trans ?_
   gcongr
   exact hσM ξ
 
