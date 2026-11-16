@@ -118,10 +118,10 @@ theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : SmoothTwoFor
         Complex.equivRealProdCLM.symm z ≠ 1) ∧
         Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
     rw [← iUnion_preimage_plumbedTruncation hq (by linarith : 0 < L)]
-    refine subset_antisymm (iUnion_subset fun n ↦ subset_iUnion (fun R ↦
-      Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R) _) (iUnion_subset fun R z hz ↦ ?_)
-    obtain ⟨n, hn⟩ := exists_nat_ge R
-    exact mem_iUnion.2 ⟨n, preimage_mono (plumbedTruncation_mono q L (by linarith)) hz⟩
+    exact Monotone.iUnion_comp_tendsto_atTop
+      (s := fun R ↦ Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R)
+      (fun _ _ h ↦ preimage_mono (plumbedTruncation_mono q L h))
+      (tendsto_atTop_add_const_left _ _ tendsto_natCast_atTop_atTop)
   refine ⟨?_, ?_⟩
   · rw [← hT]
     exact aestronglyMeasurable_iUnion_iff.2 fun n ↦
@@ -132,28 +132,6 @@ theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : SmoothTwoFor
         hBa hBb u).trans_lt (ENNReal.add_lt_top.2
           ⟨ENNReal.sum_lt_top.2 fun _ _ ↦ ENNReal.ofReal_lt_top,
             ENNReal.sum_lt_top.2 fun _ _ ↦ ENNReal.ofReal_lt_top⟩))
-
-/-- Along loops `y R` that lie in the truncation `Σ_R` for large `R` and whose images under a map
-`u` continuous on the four-punctured sphere converge pointwise to `x`, the integrals of a bounded
-continuous Hamiltonian converge to its integral along `x`. -/
-private theorem tendsto_intervalIntegral_of_mem_plumbedTruncation (hq : q ≠ inf) (hL : 0 < L)
-    {u : ℝ × ℝ → M}
-    (hu : ContinuousOn u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1) ∧
-      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1})
-    {y : ℝ → ℝ → ℂ} (hy : ∀ R, Continuous (y R))
-    (hyT : ∀ᶠ R in atTop, ∀ t, y R t ∈ q.plumbedTruncation L R) {H : ℝ → M → ℝ}
-    (hH : Continuous (uncurry H)) {B : ℝ} (hB : ∀ t x, |H t x| ≤ B) {x : ℝ → M}
-    (hx : ∀ t, Tendsto (fun R ↦ u (Complex.equivRealProdCLM (y R t))) atTop (𝓝 (x t))) :
-    Tendsto (fun R ↦ ∫ t in (0 : ℝ)..1, H t (u (Complex.equivRealProdCLM (y R t)))) atTop
-      (𝓝 (∫ t in (0 : ℝ)..1, H t (x t))) := by
-  refine tendsto_intervalIntegral_comp_of_tendsto_of_norm_le hH ?_
-    (Eventually.of_forall fun R t _ ↦ (Real.norm_eq_abs _).trans_le (hB _ _)) fun t _ ↦ hx t
-  filter_upwards [hyT] with R hR
-  refine (hu.comp_continuous (Complex.equivRealProdCLM.continuous.comp (hy R))
-    fun t ↦ ?_).continuousOn
-  simpa only [mem_ofPred_eq, comp_apply, ContinuousLinearEquiv.symm_apply_apply] using
-    plumbedTruncation_subset hq hL R (hR t)
 
 variable [FiniteDimensional ℝ E]
 
@@ -224,23 +202,36 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation
   have hTP := iUnion_preimage_plumbedTruncation hq hL0
   have hRP := ω.integrableOn_hamiltonianCurvature_plumbedPerturbation hq hHa hHb hHas hHbs hab hL
     hBa hBb hu.continuousOn
-  -- The Hamiltonian terms along the outer circles converge, by dominated convergence.
+  -- The Hamiltonian terms along the outer circles converge, by dominated convergence, since for
+  -- `R > 0` the circles lie in `Σ_R`, where `u` is continuous.
+  have hmem {R : ℝ} {w : ℂ} (hw : w ∈ q.plumbedTruncation L R) :
+      Complex.equivRealProdCLM w ∈ {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
+    simpa only [mem_ofPred_eq, ContinuousLinearEquiv.symm_apply_apply] using
+      plumbedTruncation_subset hq hL0 R hw
   have hHa_lim (r : Puncture) (hr : r ∈ Finset.univ.erase inf) :=
-    tendsto_intervalIntegral_of_mem_plumbedTruncation hq hL0 hu.continuousOn
-      (y := fun R t ↦ q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I)))
-      (fun R ↦ (q.contDiff_plumbingMap L (n := 0)).continuous.comp
-        ((r.contDiff_cylindricalEndLift 0).continuous.comp (by fun_prop)))
-      ((eventually_gt_atTop 0).mono fun R hR t ↦
-        plumbingMap_cylindricalEndLift_mem_plumbedTruncation (Finset.ne_of_mem_erase hr) hL0.le
-          hR t)
-      (hHas r).continuous (hBa r) (hxa r (Finset.ne_of_mem_erase hr))
+    tendsto_intervalIntegral_comp_of_continuousOn (hHas r).continuous
+      (fun _ ↦ (Real.norm_eq_abs _).trans_le (hBa r _ _)) hu.continuousOn (t₁ := 0) (t₂ := 1)
+      (y := fun R t ↦ Complex.equivRealProdCLM
+        (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I))))
+      (Eventually.of_forall fun R ↦ (Complex.equivRealProdCLM.continuous.comp
+        ((q.contDiff_plumbingMap L (n := 0)).continuous.comp
+          ((r.contDiff_cylindricalEndLift 0).continuous.comp (by fun_prop)))).continuousOn)
+      ((eventually_gt_atTop 0).mono fun R hR t _ ↦ hmem
+        (plumbingMap_cylindricalEndLift_mem_plumbedTruncation (Finset.ne_of_mem_erase hr) hL0.le
+          hR t))
+      fun t _ ↦ hxa r (Finset.ne_of_mem_erase hr) t
   have hHb_lim (r : Puncture) (hr : r ∈ Finset.univ.erase q) :=
-    tendsto_intervalIntegral_of_mem_plumbedTruncation hq hL0 hu.continuousOn
-      (y := fun R t ↦ r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I))
-      (fun R ↦ (r.contDiff_cylindricalEndLift 0).continuous.comp (by fun_prop))
-      ((eventually_gt_atTop 0).mono fun R hR t ↦
-        cylindricalEndLift_mem_plumbedTruncation hq (Finset.ne_of_mem_erase hr) hL0.le hR t)
-      (hHbs r).continuous (hBb r) (hxb r (Finset.ne_of_mem_erase hr))
+    tendsto_intervalIntegral_comp_of_continuousOn (hHbs r).continuous
+      (fun _ ↦ (Real.norm_eq_abs _).trans_le (hBb r _ _)) hu.continuousOn (t₁ := 0) (t₂ := 1)
+      (y := fun R t ↦ Complex.equivRealProdCLM
+        (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I)))
+      (Eventually.of_forall fun R ↦ (Complex.equivRealProdCLM.continuous.comp
+        ((r.contDiff_cylindricalEndLift 0).continuous.comp (by fun_prop))).continuousOn)
+      ((eventually_gt_atTop 0).mono fun R hR t _ ↦ hmem
+        (cylindricalEndLift_mem_plumbedTruncation hq (Finset.ne_of_mem_erase hr) hL0.le hR t))
+      fun t _ ↦ hxb r (Finset.ne_of_mem_erase hr) t
   -- Both sides of the identity on `Σ_R` converge, and they agree for `R ≥ L/2`.
   have hlim := ((tendsto_setIntegral_of_monotone hTm hTmono (hTP ▸ hA)).add
     ((tendsto_finsetSum _ hHa_lim).add
