@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Localization.BaseChange
+import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 
 /-!
 # Base change of a tensor product, and injectivity of base-change maps
@@ -39,6 +41,8 @@ The image of a base change map spans its target over the extended scalars.
 
 ## Main results
 
+* `Module.Basis.isBaseChange_of_map_basis`: a map carrying a basis to a basis over extended
+  scalars is a base-change map.
 * `IsBaseChange.tensorProduct`: a tensor product of base changes is a base change of the tensor
   product.
 * `IsBaseChange.liftBaseChange_bijective`, `IsBaseChange.liftBaseChange_injective`: the map
@@ -59,6 +63,19 @@ The image of a base change map spans its target over the extended scalars.
 public section
 
 open scoped TensorProduct
+
+/-- A linear map carrying a basis to a basis over the extended scalars is a base-change map. -/
+theorem Module.Basis.isBaseChange_of_map_basis
+    {A S M N ι : Type*} [CommSemiring A] [CommSemiring S] [Algebra A S]
+    [AddCommMonoid M] [Module A M] [AddCommMonoid N] [Module A N] [Module S N]
+    [IsScalarTower A S N] (c : Basis ι A M) (b : Basis ι S N) (f : M →ₗ[A] N)
+    (h : ∀ i, f (c i) = b i) : IsBaseChange S f := by
+  have he : (Finsupp.linearCombination A b).comp c.repr.toLinearMap = f := by
+    apply c.ext
+    intro i
+    simp [h]
+  have hbase := (IsBaseChange.of_basis A b).comp_equiv c.repr (Finsupp.linearCombination A b)
+  rwa [he] at hbase
 
 variable {R S M M' N N' : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
   [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module R M']

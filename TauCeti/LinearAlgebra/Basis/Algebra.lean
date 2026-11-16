@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
-public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 public import TauCeti.LinearAlgebra.Basis.RangeSpan
 import Mathlib.Algebra.Algebra.Operations
 
@@ -42,7 +42,7 @@ end Pushout
 
 section Descent
 
-variable {A S B ι : Type*} [CommSemiring A] [CommSemiring S] [Semiring B]
+variable {A S B ι : Type*} [CommSemiring A] [Semiring S] [Semiring B]
   [Algebra A S] [Module S B] [Algebra A B] [IsScalarTower A S B]
 
 variable (b : Basis ι S B) (A)
@@ -53,12 +53,12 @@ noncomputable def descendSubalgebra
     (h₁ : ∀ i, b.repr 1 i ∈ Set.range (algebraMap A S))
     (hmul : ∀ i j l, b.repr (b i * b j) l ∈ Set.range (algebraMap A S)) : Subalgebra A B := by
   let M := Submodule.span A (Set.range b)
-  have hunit : (1 : B) ∈ M := (mem_span_iff_repr_range b 1).mpr h₁
+  have hunit : (1 : B) ∈ M := (mem_span_range_iff_forall_repr_mem b 1).mpr h₁
   have hprod : M * M ≤ M := by
     dsimp only [M]
     rw [Submodule.span_mul_span, Submodule.span_le]
     rintro _ ⟨_, ⟨i, rfl⟩, _, ⟨j, rfl⟩, rfl⟩
-    exact (b.mem_span_iff_repr_range _).mpr (hmul i j)
+    exact (b.mem_span_range_iff_forall_repr_mem _).mpr (hmul i j)
   exact M.toSubalgebra hunit fun _ _ hx hy ↦ hprod (Submodule.mul_mem_mul hx hy)
 
 variable (h₁ : ∀ i, b.repr 1 i ∈ Set.range (algebraMap A S))
@@ -80,7 +80,8 @@ theorem coe_descendSubalgebra :
 theorem mem_descendSubalgebra_iff (x : B) :
     x ∈ b.descendSubalgebra A h₁ hmul ↔
       ∀ i, b.repr x i ∈ Set.range (algebraMap A S) := by
-  rw [← Subalgebra.mem_toSubmodule, descendSubalgebra_toSubmodule, mem_span_iff_repr_range]
+  rw [← Subalgebra.mem_toSubmodule, descendSubalgebra_toSubmodule,
+    mem_span_range_iff_forall_repr_mem]
 
 /-- Each original basis vector belongs to the descended subalgebra. -/
 @[simp]
@@ -88,19 +89,25 @@ theorem self_mem_descendSubalgebra (i : ι) : b i ∈ b.descendSubalgebra A h₁
   rw [← Subalgebra.mem_toSubmodule, descendSubalgebra_toSubmodule]
   exact Submodule.subset_span (Set.mem_range_self i)
 
-/-- Extending scalars from the underlying module of the descended subalgebra recovers the
-original module. Faithfulness of `A → S` is not required. -/
-theorem isBaseChange_descendSubalgebra :
-    IsBaseChange S (b.descendSubalgebra A h₁ hmul).val.toLinearMap := by
-  let e := (LinearEquiv.ofEq _ _ (b.descendSubalgebra_toSubmodule A h₁ hmul).symm).trans
+/-- Identify the span subtype with the subalgebra subtype while preserving ambient values. -/
+private noncomputable def descendSubalgebraEquiv :
+    Submodule.span A (Set.range b) ≃ₗ[A] b.descendSubalgebra A h₁ hmul :=
+  (LinearEquiv.ofEq _ _ (b.descendSubalgebra_toSubmodule A h₁ hmul).symm).trans
     (b.descendSubalgebra A h₁ hmul).toSubmoduleEquiv
-  have he : (Submodule.span A (Set.range b)).subtype.comp e.symm.toLinearMap =
-      (b.descendSubalgebra A h₁ hmul).val.toLinearMap := by
-    ext x
-    simp only [LinearMap.coe_comp, Submodule.coe_subtype, LinearEquiv.coe_coe,
-      Function.comp_apply, AlgHom.toLinearMap_apply, Subalgebra.coe_val]
-    exact LinearEquiv.coe_ofEq_apply (b.descendSubalgebra_toSubmodule A h₁ hmul) x
-  simpa only [he] using (b.isBaseChange_span (A := A)).comp_equiv e.symm _
+
+@[simp]
+private theorem coe_descendSubalgebraEquiv_apply (x : Submodule.span A (Set.range b)) :
+    (descendSubalgebraEquiv (A := A) (b := b) h₁ hmul x : B) = x := by
+  dsimp only [descendSubalgebraEquiv, LinearEquiv.trans_apply, Subalgebra.toSubmoduleEquiv]
+  exact LinearEquiv.coe_ofEq_apply _ _
+
+@[simp]
+private theorem coe_descendSubalgebraEquiv_symm_apply
+    (x : b.descendSubalgebra A h₁ hmul) :
+    ((descendSubalgebraEquiv (A := A) (b := b) h₁ hmul).symm x : B) = x := by
+  have h := coe_descendSubalgebraEquiv_apply (A := A) (b := b) h₁ hmul
+    ((descendSubalgebraEquiv (A := A) (b := b) h₁ hmul).symm x)
+  simpa only [LinearEquiv.apply_symm_apply] using h.symm
 
 variable [FaithfulSMul A S]
 
@@ -108,27 +115,53 @@ variable [FaithfulSMul A S]
 of the scalar action of `A` on `S` ensures that these vectors are `A`-linearly independent. -/
 noncomputable def descendBasis : Basis ι A (b.descendSubalgebra A h₁ hmul) :=
   (Basis.span (b.linearIndependent.restrict_scalars' A)).map
-    ((LinearEquiv.ofEq _ _ (b.descendSubalgebra_toSubmodule A h₁ hmul).symm).trans
-      (b.descendSubalgebra A h₁ hmul).toSubmoduleEquiv)
+    (descendSubalgebraEquiv (A := A) (b := b) h₁ hmul)
 
 @[simp]
 theorem coe_descendBasis_apply (i : ι) :
     (b.descendBasis A h₁ hmul i : B) = b i := by
-  simp only [descendBasis, Basis.map_apply, LinearEquiv.trans_apply,
-    Subalgebra.toSubmoduleEquiv, Basis.span_apply]
-  exact LinearEquiv.coe_ofEq_apply _ _
+  simp [descendBasis, Basis.span_apply]
 
 /-- Coordinates in the descended basis map to the original coordinates. -/
 @[simp]
 theorem descendBasis_repr_apply (x : b.descendSubalgebra A h₁ hmul) (i : ι) :
     algebraMap A S ((b.descendBasis A h₁ hmul).repr x i) = b.repr (x : B) i := by
-  have ibc := b.isBaseChange_descendSubalgebra A h₁ hmul
-  have hb : ibc.basis (b.descendBasis A h₁ hmul) = b := by
-    ext j
-    simp [IsBaseChange.basis_apply]
-  simpa [hb] using (ibc.basis_repr_comp_apply (b.descendBasis A h₁ hmul) x i).symm
+  classical
+  let c := b.descendBasis A h₁ hmul
+  have h := congrArg (fun y : b.descendSubalgebra A h₁ hmul ↦ (y : B))
+    (c.linearCombination_repr x)
+  have hsmul (a : A) (y : B) : b.repr (a • y) = a • b.repr y :=
+    (b.repr.restrictScalars A).map_smul a y
+  have hrepr := congrArg (fun y : B ↦ b.repr y i) h
+  simp [Finsupp.linearCombination_apply, Finsupp.sum, map_sum, hsmul, c,
+    Finsupp.single_apply] at hrepr
+  by_cases hi : (b.descendBasis A h₁ hmul).repr x i = 0 <;>
+    simpa [Algebra.smul_def, hi] using hrepr
 
 end Descent
+
+section BaseChange
+
+variable {A S B ι : Type*} [CommSemiring A] [CommSemiring S] [Semiring B]
+  [Algebra A S] [Module S B] [Algebra A B] [IsScalarTower A S B]
+
+variable (b : Basis ι S B) (A)
+  (h₁ : ∀ i, b.repr 1 i ∈ Set.range (algebraMap A S))
+  (hmul : ∀ i j l, b.repr (b i * b j) l ∈ Set.range (algebraMap A S))
+
+/-- Extending scalars from the underlying module of the descended subalgebra recovers the
+original module. Faithfulness of `A → S` is not required. -/
+theorem isBaseChange_descendSubalgebra :
+    IsBaseChange S (b.descendSubalgebra A h₁ hmul).val.toLinearMap := by
+  have he : (Submodule.span A (Set.range b)).subtype.comp
+      (descendSubalgebraEquiv (A := A) (b := b) h₁ hmul).symm.toLinearMap =
+      (b.descendSubalgebra A h₁ hmul).val.toLinearMap := by
+    ext x
+    exact coe_descendSubalgebraEquiv_symm_apply (A := A) (b := b) h₁ hmul x
+  simpa only [he] using (b.isBaseChange_span (A := A)).comp_equiv
+    (descendSubalgebraEquiv (A := A) (b := b) h₁ hmul).symm _
+
+end BaseChange
 
 section Pushout
 
