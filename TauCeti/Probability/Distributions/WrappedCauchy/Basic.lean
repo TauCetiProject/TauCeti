@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.Probability.Distributions.Cauchy
 public import Mathlib.Probability.HasLaw
-public import Mathlib.Probability.Independence.Basic
 import TauCeti.MeasureTheory.Measure.CharacteristicFunction.AddCircle
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map

@@ -20,7 +20,7 @@ Mathlib as `ProbabilityTheory.mgf_dirac'`.
 
 ## Main results
 
-* `cdf_dirac` — the cdf of a real Dirac measure;
+* `TauCeti.Probability.cdf_dirac` — the cdf of a real Dirac measure;
 * `MeasureTheory.Measure.quantile_dirac` and `MeasureTheory.Measure.upperQuantile_dirac` — the
   lower and upper quantile functions of a Dirac measure;
 * `TauCeti.Probability.integrableExpSet_dirac` — every exponential moment exists under a Dirac
