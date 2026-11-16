@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
 import TauCeti.Combinatorics.SimpleGraph.Staircase
-import TauCeti.Combinatorics.SimpleGraph.OddTriple
-import TauCeti.Order.Hom.PowersetCard
+import TauCeti.Combinatorics.SimpleGraph.OddTriangles
+import TauCeti.Algebra.BigOperators.Sym
 import TauCeti.GroupTheory.Perm.ParityRetract
 import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.Tactic.Linarith
@@ -182,78 +182,6 @@ private theorem two_mul_card_edgeFinset_stGraph (t : ℕ) :
   rw [← (stIso t).card_edgeFinset_eq, SimpleGraph.two_mul_card_edgeFinset_staircase]
   ring
 
-/-! ## Counting edges and triangles on `Fin n` -/
-
-/-- A finset of off-diagonal unordered pairs, counted over the pairs `u < v`. -/
-private theorem card_eq_sum_lt {n : ℕ} (F : Finset (Sym2 (Fin n))) (hF : ∀ u, s(u, u) ∉ F) :
-    #F = ∑ u : Fin n, ∑ v : Fin n, if u < v ∧ s(u, v) ∈ F then 1 else 0 := by
-  rw [← Fintype.sum_prod_type' (fun u v => if u < v ∧ s(u, v) ∈ F then 1 else 0),
-    ← Finset.card_filter]
-  symm
-  refine card_bij (fun p _ => s(p.1, p.2)) (fun p hp => (mem_filter.mp hp).2.2) ?_ ?_
-  · rintro ⟨a, b⟩ ha ⟨a', b'⟩ hb h
-    have ha' := (mem_filter.mp ha).2.1
-    have hb' := (mem_filter.mp hb).2.1
-    rcases Sym2.eq_iff.mp h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-    · rfl
-    · exact absurd (ha'.trans hb') (lt_irrefl _)
-  · intro e he
-    induction e using Sym2.ind with
-    | _ u v =>
-      rcases lt_trichotomy u v with h | rfl | h
-      · exact ⟨(u, v), by simp [h, he], rfl⟩
-      · exact absurd he (hF u)
-      · exact ⟨(v, u), by simp [h, Sym2.eq_swap ▸ he], Sym2.eq_swap⟩
-
-/-- A triangle is odd exactly when an odd number of its three pairs are edges
-(`SimpleGraph.triple_mem_oddTripleFinset_iff`). -/
-private theorem mem_oddTriangleFinset_triple {n : ℕ} (H : SimpleGraph (Fin n))
-    [DecidableRel H.Adj] {a b c : Fin n} :
-    {a, b, c} ∈ H.oddTriangleFinset ↔
-      xor (xor (decide (H.Adj a b)) (decide (H.Adj b c))) (decide (H.Adj a c)) = true := by
-  rw [SimpleGraph.mem_oddTriangleFinset, SimpleGraph.filter_edgeFinset_toFinset_subset,
-    ← SimpleGraph.mem_oddTripleFinset, SimpleGraph.triple_mem_oddTripleFinset_iff]
-  by_cases x : H.Adj a b <;> by_cases y : H.Adj b c <;> by_cases z : H.Adj a c <;> simp [x, y, z]
-
-/-- The sorted triples `u < v < w` spanning an odd triangle. -/
-private def oddTriples {n : ℕ} (H : SimpleGraph (Fin n)) [DecidableRel H.Adj] :
-    Finset (Fin n × Fin n × Fin n) :=
-  {p | p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧ {p.1, p.2.1, p.2.2} ∈ H.oddTriangleFinset}
-
-/-- An odd triangle is the set of a unique sorted triple (`Set.powersetCard.ofLtTriple`). -/
-private theorem card_oddTriples {n : ℕ} (H : SimpleGraph (Fin n)) [DecidableRel H.Adj] :
-    #(oddTriples H) = #H.oddTriangleFinset := by
-  refine card_bij (fun p _ => {p.1, p.2.1, p.2.2})
-    (fun p hp => (mem_filter.mp hp).2.2.2) ?_ ?_
-  · rintro ⟨a, b, c⟩ ha ⟨a', b', c'⟩ hb h
-    obtain ⟨-, hab, hbc, -⟩ := mem_filter.mp ha
-    obtain ⟨-, hab', hbc', -⟩ := mem_filter.mp hb
-    have := Set.powersetCard.ofLtTriple.injective (a₁ := ⟨(a, b, c), hab, hbc⟩)
-      (a₂ := ⟨(a', b', c'), hab', hbc'⟩)
-      (Subtype.ext (by simpa only [Set.powersetCard.val_ofLtTriple] using h))
-    simpa using congrArg Subtype.val this
-  · intro s hs
-    obtain ⟨a, b, c, hab, hbc, hs3⟩ :=
-      Set.powersetCard.exists_lt_lt_val_eq ⟨s, (SimpleGraph.mem_oddTriangleFinset.mp hs).1⟩
-    refine ⟨(a, b, c), ?_, hs3.symm⟩
-    simp only [oddTriples, mem_filter, mem_univ, true_and]
-    exact ⟨hab, hbc, hs3 ▸ hs⟩
-
-/-- The odd triangles of a graph on `Fin n`, counted over the triples `u < v < w`. -/
-private theorem card_oddTriangleFinset_eq_sum {n : ℕ} (H : SimpleGraph (Fin n))
-    [DecidableRel H.Adj] :
-    #H.oddTriangleFinset = ∑ u : Fin n, ∑ v : Fin n, ∑ w : Fin n, if u < v ∧ v < w then
-      (xor (xor (decide (H.Adj u v)) (decide (H.Adj v w))) (decide (H.Adj u w))).toNat
-      else 0 := by
-  rw [← card_oddTriples, oddTriples, card_filter]
-  simp only [Fintype.sum_prod_type]
-  refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ =>
-    Finset.sum_congr rfl fun w _ => ?_
-  by_cases h : u < v ∧ v < w
-  · simp only [h.1, h.2, true_and, mem_oddTriangleFinset_triple, Bool.toNat, Bool.cond_eq_ite,
-      ↓reduceIte]
-  · rw [ite_eq_right h, ite_eq_right fun h' => h ⟨h'.1, h'.2.1⟩]
-
 /-! ## The staircase cochain: gauge distance and defect -/
 
 /-- **Cut-minimality, transported.** Every `Sym(3)` gauge `β` on `Fin (2 t + 1)` has cost at least
@@ -267,7 +195,7 @@ theorem stair_cost_lower (t : ℕ) (β : Fin (2 * t + 1) → S3) :
     ((⊤ : SimpleGraph (Fin (2 * t + 1))).between S Sᶜ).edgeFinset
   have hF : #F = ∑ u, ∑ v, if u < v then
       Bool.toNat (xor (xor (oddPerm (β u)) (oddPerm (β v))) (stEdge u.val v.val)) else 0 := by
-    rw [card_eq_sum_lt F (fun u => by simp [F, mem_symmDiff])]
+    rw [card_eq_sum_sum_ite_lt_of_forall_mk_notMem F (fun u => by simp [F, mem_symmDiff])]
     refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ => ?_
     by_cases huv : u < v
     · have he := stGraph_adj_of_lt huv
@@ -313,14 +241,17 @@ private theorem stair_tri_term (n : ℕ) (u v w : Fin n) :
 
 /-- The defect of the staircase is twice its number of odd triangles. -/
 private theorem stair_defect (n : ℕ) : defect (stair n) = 2 * #(stGraph n).oddTriangleFinset := by
-  rw [defect_eq_sum, card_oddTriangleFinset_eq_sum, Finset.mul_sum]
+  rw [defect_eq_sum, SimpleGraph.card_oddTriangleFinset_eq_sum, Finset.mul_sum]
   refine Finset.sum_congr rfl fun u _ => ?_
   rw [Finset.mul_sum]
   refine Finset.sum_congr rfl fun v _ => ?_
   rw [Finset.mul_sum]
   refine Finset.sum_congr rfl fun w _ => ?_
   rw [stair_tri_term]
-  split_ifs <;> simp
+  by_cases h : u < v ∧ v < w
+  · by_cases x : (stGraph n).Adj u v <;> by_cases y : (stGraph n).Adj v w <;>
+      by_cases z : (stGraph n).Adj u w <;> simp [h, x, y, z]
+  · rw [ite_eq_right h, ite_eq_right fun h' => h ⟨h'.1, h'.2.1⟩, Nat.mul_zero]
 
 /-- **Defect of the staircase.** The moved-point defect of `stair (2 t + 1)` satisfies
 `3 * defect (stair (2 t + 1)) = (2 t + 1) * (t (t + 1))`, where `t (t + 1)` is the gauge lower bound
