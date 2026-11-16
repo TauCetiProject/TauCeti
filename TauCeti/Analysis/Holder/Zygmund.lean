@@ -10,7 +10,9 @@ public import TauCeti.Analysis.Holder.Iterated
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.SmoothSeries
+import TauCeti.Analysis.Calculus.Taylor.Integral
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
@@ -18,7 +20,7 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
-# Hölder–Zygmund distributions of non-integer order are `C^{k,α}` functions
+# The Hölder–Zygmund spaces of non-integer order are the Hölder spaces `C_b^{k,α}`
 
 The Hölder–Zygmund space `𝒞^s = B^s_{∞,∞}` consists of the tempered distributions `u` whose
 Littlewood–Paley blocks are bounded functions with `‖Δⱼ u‖_∞ ≤ 2^{-js} ‖u‖`. For non-integer
@@ -48,6 +50,22 @@ For the `k`-th derivatives, the sup bounds `O(2^{-jα})` together with the Lipsc
 (`exists_holderWith_tsum_of_rpow_mul_le`). The partial sums of the blocks converge to `f` in `L^∞`
 and to `u` in `𝓢'`, so `f` represents `u`.
 
+Conversely, every bounded `C^k` function `f` with `α`-Hölder `k`-th derivative, for any `α ≥ 0`,
+is an element of `𝒞^{k+α}`: with `L` the Hölder constant of `D^k f`,
+
+`‖Δⱼ f‖_∞ ≤ C 2^{-j (k + α)} (‖f‖_∞ + L)`.
+
+For `j = 0` this is the uniform `L^∞` bound on the blocks. For `j ≥ 1` the block is the
+convolution with the kernel `𝓕⁻ ψⱼ`, whose Fourier transform `ψⱼ` vanishes near the origin, so the
+kernel annihilates every polynomial
+(`ContDiffBump.integral_fourierInv_inhomogeneousLittlewoodPaley_succ_smul_apply_eq_zero`). Hence
+`Δⱼ f (x)` is the integral of the kernel against the Taylor remainder of `f` at `x` of order `k`,
+which is at most `L ‖y‖ ^ (k + α) / k!`
+(`TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le_of_holderWith`), and the moment of order `k + α`
+of `𝓕⁻ ψⱼ` is `O(2^{-j (k + α)})`. Together with the first inclusion this identifies
+`𝒞^{k+α}` with `C_b^{k,α}`, and `𝒞^α` with `C^{0,α}`, as Banach spaces, with equivalent norms,
+for `0 < α < 1`.
+
 ## Main declarations
 
 * `TauCeti.BesovSpace.exists_toLpTop_eq_and_contDiff_and_norm_iteratedFDeriv_le_and_holderWith`:
@@ -62,6 +80,14 @@ and to `u` in `𝓢'`, so `f` represents `u`.
 * `TauCeti.BesovSpace.toHolderSpace`: the inclusion `𝒞^α → C^{0,α}` as a continuous linear map
   into the Hölder space with norm `‖f‖_∞ + [f]_α`, characterised by
   `TauCeti.BesovSpace.toHolderSpace_eq_iff` and `TauCeti.BesovSpace.toLpTop_toHolderSpace`.
+* `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_contDiff_of_holderWith`: conversely, every
+  bounded `C^k` function with `α`-Hölder `k`-th derivative lies in `𝒞^{k+α}`, and
+  `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_holderWith` is the case `k = 0`.
+* `TauCeti.BesovSpace.ofCkHolderSpace` and `TauCeti.BesovSpace.ofHolderSpace`: the inclusions
+  `C_b^{k,α} → 𝒞^{k+α}` and `C^{0,α} → 𝒞^α` as continuous linear maps, characterised by
+  `TauCeti.BesovSpace.toDistr_ofCkHolderSpace` and `TauCeti.BesovSpace.toDistr_ofHolderSpace`.
+* `TauCeti.BesovSpace.ckHolderSpaceEquiv` and `TauCeti.BesovSpace.holderSpaceEquiv`: for
+  `0 < α < 1`, the isomorphisms `𝒞^{k+α} ≃ C_b^{k,α}` and `𝒞^α ≃ C^{0,α}`.
 
 ## References
 
@@ -622,6 +648,316 @@ theorem toCkHolderSpace_eq_iff (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1)
   refine ⟨fun h ↦ h ▸ toLpTop_toCkHolderSpace φ k hα0 hα1 u, fun h ↦ CkHolderSpace.ext fun x ↦ ?_⟩
   rw [toCkHolderSpace_apply, coe_ckHolderRepr, repr_eq φ (fun u ↦ (ckRepr_spec φ k hα0 hα1 u).1) h,
     CkHolderSpace.coe_toBoundedContinuousFunction]
+
+/-! ### The converse inclusion `C_b^{k,α} ⊆ 𝒞^{k+α}` -/
+
+omit [CompleteSpace F] in
+/-- The kernel of `Δ_{j+1}` annihilates the Taylor polynomial of `f` at `x`, so its convolution
+with `f` at `x` only sees the Taylor remainder, of size `L ‖y‖ ^ (k + α) / k!`. -/
+private theorem norm_fourierInv_convolution_le {k : ℕ} {α L : ℝ≥0} {f : E →ᵇ F}
+    (hf : ContDiff ℝ k f) (hH : HolderWith L α (iteratedFDeriv ℝ k f)) (j : ℕ) (x : E) :
+    ‖(𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) ⋆[lsmul ℂ ℂ] (f : E → F)) x‖ ≤
+      L / k.factorial * ∫ y, ‖y‖ ^ ((k : ℝ) + α) *
+        ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) y‖ := by
+  set K : 𝓢(E, ℂ) := 𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz (j + 1))
+  have hK : (K : E → ℂ) = 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ) := by
+    rw [SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
+  rw [← hK]
+  -- The Taylor polynomial `P y` of `f` at `x`, evaluated at `x - y`, is a sum of homogeneous
+  -- polynomials `A i (y, …, y)`, each annihilated by `K`.
+  set A : (i : ℕ) → E [×i]→L[ℝ] F := fun i ↦
+    ((i.factorial : ℝ)⁻¹ • iteratedFDeriv ℝ i f x).compContinuousLinearMap
+      fun _ ↦ -ContinuousLinearMap.id ℝ E
+  set P : E → F := fun y ↦ ∑ i ∈ Finset.range (k + 1), A i (fun _ ↦ y)
+  have hPint : Integrable (fun y ↦ K y • P y) := by
+    simp_rw [P, Finset.smul_sum]
+    exact integrable_finsetSum _ fun i _ ↦ K.integrable_smul_apply (A i)
+  have hP : ∫ y, K y • P y = 0 := by
+    simp_rw [P, Finset.smul_sum]
+    rw [integral_finsetSum _ fun i _ ↦ K.integrable_smul_apply (A i)]
+    exact Finset.sum_eq_zero fun i _ ↦ by
+      rw [hK]
+      exact φ.integral_fourierInv_inhomogeneousLittlewoodPaley_succ_smul_apply_eq_zero j (A i)
+  have hfint : Integrable (fun y ↦ K y • f (x - y)) :=
+    (K.integrable.norm.mul_const ‖f‖).mono'
+      (K.continuous.smul
+        (f.continuous.comp (continuous_const.sub continuous_id))).aestronglyMeasurable
+      (.of_forall fun y ↦ by
+        rw [norm_smul]
+        exact mul_le_mul_of_nonneg_left (f.norm_coe_le_norm _) (norm_nonneg _))
+  -- Taylor's theorem with the Hölder remainder bounds the integrand.
+  set s : ℝ := k + α
+  have hR (y : E) : ‖K y • (f (x - y) - P y)‖ ≤ L / k.factorial * (‖y‖ ^ s * ‖K y‖) := by
+    have hT := norm_map_add_sub_sum_iteratedFDeriv_le_of_holderWith hf hH x (-y)
+    rw [← sub_eq_add_neg, norm_neg] at hT
+    have hPy : P y = ∑ i ∈ Finset.range (k + 1),
+        (i.factorial : ℝ)⁻¹ • iteratedFDeriv ℝ i f x (fun _ ↦ -y) := by
+      simp [P, A]
+    rw [norm_smul, hPy]
+    calc ‖K y‖ * ‖f (x - y) - ∑ i ∈ Finset.range (k + 1),
+          (i.factorial : ℝ)⁻¹ • iteratedFDeriv ℝ i f x (fun _ ↦ -y)‖
+        ≤ ‖K y‖ * (L * ‖y‖ ^ s / k.factorial) := mul_le_mul_of_nonneg_left hT (norm_nonneg _)
+      _ = L / k.factorial * (‖y‖ ^ s * ‖K y‖) := by ring
+  rw [convolution_def]
+  simp only [lsmul_apply]
+  rw [← sub_zero (∫ y, K y • f (x - y)), ← hP, ← integral_sub hfint hPint, ← integral_const_mul]
+  refine norm_integral_le_of_norm_le
+    ((K.integrable_norm_rpow_mul_norm (by positivity)).const_mul _) (.of_forall fun y ↦ ?_)
+  rw [← smul_sub]
+  exact hR y
+
+/-- **Bounded `C^{k,α}` functions are Hölder–Zygmund distributions of order `k + α`.** There is a
+constant `C` such that for every bounded continuous `f` which is `C^k` with `α`-Hölder `k`-th
+derivative, with Hölder constant `L`, the tempered distribution of `f` lies in
+`𝒞^{k+α} = B^{k+α}_{∞,∞}` with norm at most `C (‖f‖_∞ + L)`. -/
+theorem exists_toDistr_eq_and_norm_le_of_contDiff_of_holderWith (k : ℕ) (α : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (f : E →ᵇ F), ContDiff ℝ k f → ∀ {L : ℝ≥0},
+      HolderWith L α (iteratedFDeriv ℝ k f) →
+        ∃ u : BesovSpace F φ (k + α) ∞ ∞, u.toDistr = toLpTop volume ℂ f ∧
+          ‖u‖ ≤ C * (‖f‖ + L) := by
+  obtain ⟨C₀, hC₀⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
+  set s : ℝ := k + α
+  set M₁ := ∫ y, ‖y‖ ^ s * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖
+  set C := max C₀ (2 ^ s * M₁ / k.factorial)
+  have hC : 0 ≤ C := (le_max_right _ _).trans' (by positivity)
+  refine ⟨C, hC, fun f hf L hH ↦ ?_⟩
+  choose g hg hgn using fun j ↦ hC₀ (p := ∞) j (toLpTop volume ℂ f)
+  have hbound (j : ℕ) : 2 ^ (s * j) * ‖g j‖ ≤ C * (‖f‖ + L) := by
+    rcases j with _ | j
+    · rw [Nat.cast_zero, mul_zero, Real.rpow_zero, one_mul]
+      exact (hgn 0).trans (mul_le_mul (le_max_left _ _)
+        ((norm_toLpTop_le (𝕜 := ℂ) volume f).trans (le_add_of_nonneg_right L.coe_nonneg))
+        (norm_nonneg _) hC)
+    -- For `j ≥ 1` the block is the convolution with `𝓕⁻ ψ_{j+1}`, which only sees the
+    -- Taylor remainder of `f`.
+    have hconv : 𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) ⋆[lsmul ℂ ℂ]
+        (toLpTop volume ℂ f : E → F) =
+        𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) ⋆[lsmul ℂ ℂ] (f : E → F) :=
+      convolution_congr _ (EventuallyEq.refl _ _) (coeFn_toLpTop (𝕜 := ℂ) volume f)
+    have hgj : ‖g (j + 1)‖ ≤ L / k.factorial * (((2 ^ j : ℝ) ^ s)⁻¹ * M₁) := by
+      rw [← φ.integral_norm_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ s j]
+      refine Lp.norm_top_le_of_ae_bound (by positivity) ?_
+      filter_upwards [ae_eq_convolution_of_littlewoodPaleyBlock_eq φ (j + 1) (hg (j + 1))]
+        with x hx
+      rw [hx, hconv]
+      exact norm_fourierInv_convolution_le φ hf hH j x
+    have h2 : (2 : ℝ) ^ (s * (j + 1 : ℕ)) * ((2 ^ j : ℝ) ^ s)⁻¹ = 2 ^ s := by
+      rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, ← Real.rpow_neg zero_le_two,
+        ← Real.rpow_add two_pos]
+      congr 1
+      push_cast
+      ring
+    calc 2 ^ (s * (j + 1 : ℕ)) * ‖g (j + 1)‖
+        ≤ 2 ^ (s * (j + 1 : ℕ)) * (L / k.factorial * (((2 ^ j : ℝ) ^ s)⁻¹ * M₁)) := by gcongr
+      _ = 2 ^ s * M₁ / k.factorial * L := by
+          rw [← h2]
+          ring
+      _ ≤ C * (‖f‖ + L) := mul_le_mul (le_max_right _ _)
+          (le_add_of_nonneg_left (norm_nonneg f)) L.coe_nonneg hC
+  -- The constant sequence `C (‖f‖ + L)` is an `ℓ^∞` majorant of the weighted blocks.
+  set c : ℝ := C * (‖f‖ + L)
+  have hc : 0 ≤ c := by positivity
+  let b : lp (fun _ : ℕ ↦ ℝ) ∞ := ⟨fun _ ↦ c, memℓp_infty ⟨c, by
+    rintro _ ⟨k, rfl⟩
+    exact (Real.norm_of_nonneg hc).le⟩⟩
+  obtain ⟨u, hu, hub⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq g b hg hbound
+  exact ⟨u, hu, hub.trans (lp.norm_le_of_forall_le hc fun _ ↦ (Real.norm_of_nonneg hc).le)⟩
+
+/-- **Bounded Hölder functions are Hölder–Zygmund distributions of order `α`.** There is a
+constant `C` such that for every bounded continuous `α`-Hölder `f`, with Hölder constant `L`, the
+tempered distribution of `f` lies in `𝒞^α = B^α_{∞,∞}` with norm at most `C (‖f‖_∞ + L)`. -/
+theorem exists_toDistr_eq_and_norm_le_of_holderWith (α : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (f : E →ᵇ F) {L : ℝ≥0}, HolderWith L α f →
+      ∃ u : BesovSpace F φ α ∞ ∞, u.toDistr = toLpTop volume ℂ f ∧ ‖u‖ ≤ C * (‖f‖ + L) := by
+  obtain ⟨C, hC, h⟩ := exists_toDistr_eq_and_norm_le_of_contDiff_of_holderWith (F := F) φ 0 α
+  refine ⟨C, hC, fun f L hH ↦ ?_⟩
+  have h0 := h f (contDiff_zero.2 f.continuous) (L := L) fun x y ↦ by
+    rw [iteratedFDeriv_zero_eq_comp, Function.comp_apply, Function.comp_apply,
+      LinearIsometryEquiv.edist_map]
+    exact hH x y
+  rwa [Nat.cast_zero, zero_add] at h0
+
+/-- The constant of `exists_toDistr_eq_and_norm_le_of_contDiff_of_holderWith`. -/
+private def ofCkConst (k : ℕ) (α : ℝ≥0) : ℝ :=
+  (exists_toDistr_eq_and_norm_le_of_contDiff_of_holderWith (F := F) φ k α).choose
+
+/-- The element of `𝒞^{k+α}` represented by a bounded `C^{k,α}` map, with the norm bound. -/
+private theorem exists_toDistr_eq_ckHolderSpace (k : ℕ) {α : ℝ≥0} (f : CkHolderSpace k α E F) :
+    ∃ u : BesovSpace F φ (k + α) ∞ ∞,
+      u.toDistr = toLpTop volume ℂ f.toBoundedContinuousFunction ∧
+        ‖u‖ ≤ 2 * ofCkConst (F := F) φ k α * ‖f‖ := by
+  obtain ⟨hC, h⟩ :=
+    (exists_toDistr_eq_and_norm_le_of_contDiff_of_holderWith (F := F) φ k α).choose_spec
+  obtain ⟨u, hu, hun⟩ := h f.toBoundedContinuousFunction (by simpa using f.contDiff)
+    (L := nnHolderNorm α (iteratedFDeriv ℝ k f))
+    (by simpa using f.memHolder_iteratedFDeriv.holderWith)
+  refine ⟨u, hu, hun.trans ?_⟩
+  have hf : ‖f.toBoundedContinuousFunction‖ + (nnHolderNorm α (iteratedFDeriv ℝ k f) : ℝ) ≤
+      2 * ‖f‖ := by
+    linarith [f.norm_toBoundedContinuousFunction_le, f.nnHolderNorm_iteratedFDeriv_le]
+  calc ofCkConst (F := F) φ k α * (‖f.toBoundedContinuousFunction‖ +
+        (nnHolderNorm α (iteratedFDeriv ℝ k f) : ℝ))
+      ≤ ofCkConst (F := F) φ k α * (2 * ‖f‖) := mul_le_mul_of_nonneg_left hf hC
+    _ = 2 * ofCkConst (F := F) φ k α * ‖f‖ := by ring
+
+/-- The element of `𝒞^{k+α}` represented by a bounded `C^{k,α}` map. -/
+private def ckBesovRepr (k : ℕ) {α : ℝ≥0} (f : CkHolderSpace k α E F) :
+    BesovSpace F φ (k + α) ∞ ∞ :=
+  (exists_toDistr_eq_ckHolderSpace φ k f).choose
+
+private theorem toDistr_ckBesovRepr (k : ℕ) {α : ℝ≥0} (f : CkHolderSpace k α E F) :
+    (ckBesovRepr φ k f).toDistr = toLpTop volume ℂ f.toBoundedContinuousFunction :=
+  (exists_toDistr_eq_ckHolderSpace φ k f).choose_spec.1
+
+variable (F) in
+/-- **The inclusion `C_b^{k,α} ⊆ 𝒞^{k+α}`**: a bounded `C^k` map with bounded derivatives through
+order `k` and `α`-Hölder `k`-th derivative, as an element of the Hölder–Zygmund space
+`B^{k+α}_{∞,∞}`. -/
+def ofCkHolderSpace (k : ℕ) (α : ℝ≥0) :
+    CkHolderSpace k α E F →L[ℝ] BesovSpace F φ (k + α) ∞ ∞ :=
+  LinearMap.mkContinuous
+    { toFun := ckBesovRepr φ k
+      map_add' f g := ext <| by
+        rw [toDistr_add, toDistr_ckBesovRepr, toDistr_ckBesovRepr, toDistr_ckBesovRepr,
+          CkHolderSpace.toBoundedContinuousFunction_add, map_add, Lp.toTemperedDistribution_add]
+      map_smul' c f := ext <| by
+        rw [RingHom.id_apply, toDistr_ckBesovRepr, CkHolderSpace.toBoundedContinuousFunction_smul,
+          ← Complex.coe_smul c f.toBoundedContinuousFunction, map_smul,
+          Lp.toTemperedDistribution_smul, ← toDistr_ckBesovRepr, ← toDistr_smul,
+          Complex.coe_smul] }
+    (2 * ofCkConst (F := F) φ k α) fun f ↦ (exists_toDistr_eq_ckHolderSpace φ k f).choose_spec.2
+
+/-- The element `ofCkHolderSpace F φ k α f` of `𝒞^{k+α}` is the tempered distribution of `f`. -/
+@[simp]
+theorem toDistr_ofCkHolderSpace (k : ℕ) {α : ℝ≥0} (f : CkHolderSpace k α E F) :
+    (ofCkHolderSpace F φ k α f).toDistr = toLpTop volume ℂ f.toBoundedContinuousFunction :=
+  toDistr_ckBesovRepr φ k f
+
+/-- The constant of `exists_toDistr_eq_and_norm_le_of_holderWith`. -/
+private def ofHolderConst (α : ℝ≥0) : ℝ :=
+  (exists_toDistr_eq_and_norm_le_of_holderWith (F := F) φ α).choose
+
+/-- The element of `𝒞^α` represented by a bounded `α`-Hölder function, with the norm bound. -/
+private theorem exists_toDistr_eq_holderSpace {α : ℝ≥0} (f : HolderSpace α E F) :
+    ∃ u : BesovSpace F φ α ∞ ∞, u.toDistr = toLpTop volume ℂ f.toBoundedContinuousFunction ∧
+      ‖u‖ ≤ 2 * ofHolderConst (F := F) φ α * ‖f‖ := by
+  obtain ⟨hC, h⟩ := (exists_toDistr_eq_and_norm_le_of_holderWith (F := F) φ α).choose_spec
+  obtain ⟨u, hu, hun⟩ := h f.toBoundedContinuousFunction (L := ‖f‖₊)
+    (by simpa using f.holderWith_nnnorm)
+  refine ⟨u, hu, hun.trans ?_⟩
+  have hf : ‖f.toBoundedContinuousFunction‖ + (‖f‖₊ : ℝ) ≤ 2 * ‖f‖ := by
+    rw [coe_nnNorm]
+    linarith [f.norm_toBoundedContinuousFunction_le]
+  calc ofHolderConst (F := F) φ α * (‖f.toBoundedContinuousFunction‖ + (‖f‖₊ : ℝ))
+      ≤ ofHolderConst (F := F) φ α * (2 * ‖f‖) := mul_le_mul_of_nonneg_left hf hC
+    _ = 2 * ofHolderConst (F := F) φ α * ‖f‖ := by ring
+
+/-- The element of `𝒞^α` represented by a bounded `α`-Hölder function. -/
+private def holderBesovRepr {α : ℝ≥0} (f : HolderSpace α E F) : BesovSpace F φ α ∞ ∞ :=
+  (exists_toDistr_eq_holderSpace φ f).choose
+
+private theorem toDistr_holderBesovRepr {α : ℝ≥0} (f : HolderSpace α E F) :
+    (holderBesovRepr φ f).toDistr = toLpTop volume ℂ f.toBoundedContinuousFunction :=
+  (exists_toDistr_eq_holderSpace φ f).choose_spec.1
+
+variable (F) in
+/-- **The inclusion `C^{0,α} ⊆ 𝒞^α`**: a bounded `α`-Hölder function, as an element of the
+Hölder–Zygmund space `B^α_{∞,∞}`. -/
+def ofHolderSpace (α : ℝ≥0) : HolderSpace α E F →L[ℝ] BesovSpace F φ α ∞ ∞ :=
+  LinearMap.mkContinuous
+    { toFun := holderBesovRepr φ
+      map_add' f g := ext <| by
+        rw [toDistr_add, toDistr_holderBesovRepr, toDistr_holderBesovRepr,
+          toDistr_holderBesovRepr, HolderSpace.toBoundedContinuousFunction_add, map_add,
+          Lp.toTemperedDistribution_add]
+      map_smul' c f := ext <| by
+        rw [RingHom.id_apply, toDistr_holderBesovRepr,
+          HolderSpace.toBoundedContinuousFunction_smul,
+          ← Complex.coe_smul c f.toBoundedContinuousFunction, map_smul,
+          Lp.toTemperedDistribution_smul, ← toDistr_holderBesovRepr, ← toDistr_smul,
+          Complex.coe_smul] }
+    (2 * ofHolderConst (F := F) φ α) fun f ↦ (exists_toDistr_eq_holderSpace φ f).choose_spec.2
+
+/-- The element `ofHolderSpace F φ α f` of `𝒞^α` is the tempered distribution of `f`. -/
+@[simp]
+theorem toDistr_ofHolderSpace {α : ℝ≥0} (f : HolderSpace α E F) :
+    (ofHolderSpace F φ α f).toDistr = toLpTop volume ℂ f.toBoundedContinuousFunction :=
+  toDistr_holderBesovRepr φ f
+
+/-- `ofHolderSpace` is a left inverse of `toHolderSpace`. -/
+@[simp]
+theorem ofHolderSpace_toHolderSpace {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
+    (u : BesovSpace F φ α ∞ ∞) :
+    ofHolderSpace F φ α (toHolderSpace F φ hα0 hα1 u) = u :=
+  ext <| by rw [toDistr_ofHolderSpace, toLpTop_toHolderSpace]
+
+/-- `ofHolderSpace` is a right inverse of `toHolderSpace`. -/
+@[simp]
+theorem toHolderSpace_ofHolderSpace {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
+    (f : HolderSpace α E F) :
+    toHolderSpace F φ hα0 hα1 (ofHolderSpace F φ α f) = f :=
+  (toHolderSpace_eq_iff φ hα0 hα1).2 (toDistr_ofHolderSpace φ f).symm
+
+variable (F) in
+/-- **`𝒞^α = C^{0,α}` with equivalent norms** for `0 < α < 1`: the Hölder–Zygmund space
+`B^α_{∞,∞}` and the space of bounded `α`-Hölder functions are isomorphic Banach spaces, through
+`toHolderSpace` and its inverse `ofHolderSpace`. -/
+def holderSpaceEquiv {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) :
+    BesovSpace F φ α ∞ ∞ ≃L[ℝ] HolderSpace α E F :=
+  ContinuousLinearEquiv.equivOfInverse (toHolderSpace F φ hα0 hα1) (ofHolderSpace F φ α)
+    (ofHolderSpace_toHolderSpace φ hα0 hα1) (toHolderSpace_ofHolderSpace φ hα0 hα1)
+
+/-- `holderSpaceEquiv` acts as `toHolderSpace`. -/
+@[simp]
+theorem holderSpaceEquiv_apply {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
+    (u : BesovSpace F φ α ∞ ∞) :
+    holderSpaceEquiv F φ hα0 hα1 u = toHolderSpace F φ hα0 hα1 u :=
+  (rfl)
+
+/-- The inverse of `holderSpaceEquiv` acts as `ofHolderSpace`. -/
+@[simp]
+theorem holderSpaceEquiv_symm_apply {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
+    (f : HolderSpace α E F) :
+    (holderSpaceEquiv F φ hα0 hα1).symm f = ofHolderSpace F φ α f :=
+  (rfl)
+
+/-- `ofCkHolderSpace` is a left inverse of `toCkHolderSpace`. -/
+@[simp]
+theorem ofCkHolderSpace_toCkHolderSpace (k : ℕ) {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
+    (u : BesovSpace F φ (k + α) ∞ ∞) :
+    ofCkHolderSpace F φ k α (toCkHolderSpace F φ k hα0 hα1 u) = u :=
+  ext <| by rw [toDistr_ofCkHolderSpace, toLpTop_toCkHolderSpace]
+
+/-- `ofCkHolderSpace` is a right inverse of `toCkHolderSpace`. -/
+@[simp]
+theorem toCkHolderSpace_ofCkHolderSpace (k : ℕ) {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
+    (f : CkHolderSpace k α E F) :
+    toCkHolderSpace F φ k hα0 hα1 (ofCkHolderSpace F φ k α f) = f :=
+  (toCkHolderSpace_eq_iff φ k hα0 hα1).2 (toDistr_ofCkHolderSpace φ k f).symm
+
+variable (F) in
+/-- **`𝒞^{k+α} = C_b^{k,α}` with equivalent norms** for `0 < α < 1`: the Hölder–Zygmund space
+`B^{k+α}_{∞,∞}` and the space of bounded `C^k` maps with bounded derivatives through order `k` and
+`α`-Hölder `k`-th derivative are isomorphic Banach spaces, through `toCkHolderSpace` and its
+inverse `ofCkHolderSpace`. -/
+def ckHolderSpaceEquiv (k : ℕ) {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) :
+    BesovSpace F φ (k + α) ∞ ∞ ≃L[ℝ] CkHolderSpace k α E F :=
+  ContinuousLinearEquiv.equivOfInverse (toCkHolderSpace F φ k hα0 hα1) (ofCkHolderSpace F φ k α)
+    (ofCkHolderSpace_toCkHolderSpace φ k hα0 hα1) (toCkHolderSpace_ofCkHolderSpace φ k hα0 hα1)
+
+/-- `ckHolderSpaceEquiv` acts as `toCkHolderSpace`. -/
+@[simp]
+theorem ckHolderSpaceEquiv_apply (k : ℕ) {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
+    (u : BesovSpace F φ (k + α) ∞ ∞) :
+    ckHolderSpaceEquiv F φ k hα0 hα1 u = toCkHolderSpace F φ k hα0 hα1 u :=
+  (rfl)
+
+/-- The inverse of `ckHolderSpaceEquiv` acts as `ofCkHolderSpace`. -/
+@[simp]
+theorem ckHolderSpaceEquiv_symm_apply (k : ℕ) {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
+    (f : CkHolderSpace k α E F) :
+    (ckHolderSpaceEquiv F φ k hα0 hα1).symm f = ofCkHolderSpace F φ k α f :=
+  (rfl)
 
 end BesovSpace
 

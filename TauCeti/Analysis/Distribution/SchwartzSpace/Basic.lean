@@ -27,6 +27,7 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   supremum of Schwartz seminorms of `f` times `(1 + ‖x‖) ^ (-k)`.
 * `SchwartzMap.integrable_norm_pow_mul_norm_sq`: `‖x‖ ^ k ‖f x‖²` is integrable.
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
+* `SchwartzMap.integrable_norm_rpow_mul_norm`: `‖x‖ ^ s ‖f x‖` is integrable for real `s ≥ 0`.
 * `SchwartzMap.integrable_one_add_norm_sq_rpow_mul_norm`: `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is integrable
   for every real `r`.
 * `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
@@ -186,6 +187,21 @@ theorem integrable_one_add_norm_smul_sq_rpow_mul_norm (c m : ℝ) (f : 𝓢(E, F
     (.of_forall fun x ↦ by
       rw [Real.norm_of_nonneg (by positivity)]
       exact f.one_add_norm_smul_sq_rpow_mul_norm_le (𝕜 := ℝ) c m μ.integrablePower x)
+
+omit [SecondCountableTopology E] in
+/-- For a Schwartz function `f` and real `s ≥ 0`, the moment weight `‖x‖ ^ s ‖f x‖` is
+integrable. -/
+theorem integrable_norm_rpow_mul_norm (f : 𝓢(E, F)) {s : ℝ} (hs : 0 ≤ s) :
+    Integrable (fun x ↦ ‖x‖ ^ s * ‖f x‖) μ :=
+  (f.integrable_one_add_norm_smul_sq_rpow_mul_norm (μ := μ) 1 s).mono'
+    ((continuous_norm.rpow_const fun _ ↦ Or.inr hs).mul f.continuous.norm).aestronglyMeasurable
+    (.of_forall fun x ↦ by
+      rw [one_smul, Real.norm_of_nonneg (by positivity)]
+      gcongr
+      calc ‖x‖ ^ s = (‖x‖ ^ 2) ^ (s / 2) := by
+            rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg x)]
+            ring_nf
+        _ ≤ (1 + ‖x‖ ^ 2) ^ (s / 2) := by gcongr; linarith)
 
 omit [SecondCountableTopology E] in
 /-- The norms of the derivatives of a Schwartz function are integrable. -/

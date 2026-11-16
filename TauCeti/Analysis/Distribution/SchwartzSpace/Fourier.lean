@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.LpSpace
+import Mathlib.Analysis.Fourier.FourierTransformDeriv
+import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 
@@ -39,6 +41,12 @@ For the inverse Fourier transform, iterating Mathlib's `SchwartzMap.fourierInv_l
 gives `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`, the inverse Fourier transform commutes with
 postcomposition by a continuous linear map, and Mathlib's `norm_fourier_toL2_eq` gives
 Plancherel's theorem `‖𝓕⁻ f‖_{L²} = ‖f‖_{L²}`.
+
+The moments of a Schwartz function `K` are the derivatives of its Fourier transform at the origin,
+`D^n (𝓕 K) 0 (m₁, …, mₙ) = (-2πi)ⁿ ∫ ⟪y, m₁⟫ ⋯ ⟪y, mₙ⟫ K y`. So if `D^n (𝓕 K) 0 = 0`, as happens
+for every `n` when `𝓕 K` vanishes near the origin, then `K` annihilates every homogeneous
+polynomial of degree `n`: `∫ K y • A (y, …, y) = 0` for every continuous `n`-multilinear map `A`.
+This is the cancellation of the kernels of Littlewood–Paley blocks against Taylor polynomials.
 
 For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 `y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v` is a Schwartz function whose Fourier transform
@@ -81,6 +89,13 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   `‖𝓕⁻ (w • 𝓕 f)‖_{L²} = ‖w • 𝓕 f‖_{L²}`.
 * `SchwartzMap.sum_sum_norm_toLp_lineDerivOp_lineDerivOp_sq`: the squared `L²` norms of the
   second derivatives along an orthonormal basis sum to the squared `L²` norm of the Laplacian.
+* `SchwartzMap.iteratedFDeriv_fourier_zero_apply`: the moments of a Schwartz function are the
+  derivatives of its Fourier transform at the origin.
+* `SchwartzMap.integrable_smul_apply`: a Schwartz function times a homogeneous polynomial is
+  integrable.
+* `SchwartzMap.integral_smul_apply_eq_zero_of_iteratedFDeriv_fourier_eq_zero`: a Schwartz function
+  whose Fourier transform has vanishing `n`-th derivative at the origin annihilates the
+  homogeneous polynomials of degree `n`.
 * `SchwartzMap.cutoffExponential`: the cut-off exponential `y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v`.
 * `SchwartzMap.fourier_cutoffExponential`: its Fourier transform.
 
@@ -438,6 +453,90 @@ theorem fourier_cutoffExponential [CompleteSpace F] (φ : 𝓢(E, ℂ)) {ε : �
     TauCeti.fourier_comp_smul (fun z ↦ φ z • v), TauCeti.fourier_smul_const, fourier_coe]
 
 end CutoffExponential
+
+section Moments
+
+variable [NormedSpace ℂ F]
+
+/-- **Moments are derivatives of the Fourier transform at the origin.** The `n`-th derivative of
+the Fourier transform of a Schwartz function `K` at the origin is, up to the factor `(-2πi)ⁿ`, the
+moment `∫ ⟪y, m₁⟫ ⋯ ⟪y, mₙ⟫ K y`. -/
+theorem iteratedFDeriv_fourier_zero_apply (K : 𝓢(E, ℂ)) (n : ℕ) (m : Fin n → E) :
+    iteratedFDeriv ℝ n (𝓕 (K : E → ℂ)) 0 m =
+      (-(2 * π * Complex.I)) ^ n * ∫ y, ((∏ i, ⟪y, m i⟫ : ℝ) : ℂ) * K y := by
+  have hint : Integrable (fun v ↦ VectorFourier.fourierPowSMulRight (innerSL ℝ) (K : E → ℂ) v n) :=
+    ((K.integrable_pow_mul volume n).const_mul ((2 * π * ‖innerSL ℝ (E := E)‖) ^ n)).mono'
+      (K.continuous.fourierPowSMulRight (innerSL ℝ) n).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun v ↦ by
+        simpa [mul_assoc] using
+          VectorFourier.norm_fourierPowSMulRight_le (innerSL ℝ) (K : E → ℂ) v n)
+  rw [Real.iteratedFDeriv_fourier (N := n) (fun k _ ↦ K.integrable_pow_mul volume k)
+    K.continuous.aestronglyMeasurable le_rfl, Real.fourier_eq]
+  simp only [inner_zero_right, neg_zero, AddChar.map_zero_eq_one, one_smul]
+  rw [ContinuousMultilinearMap.integral_apply hint, ← integral_const_mul]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun y ↦ ?_)
+  simp only [VectorFourier.fourierPowSMulRight_apply, smul_eq_mul, Complex.real_smul,
+    Complex.ofReal_prod]
+  -- The factors are `innerSL ℝ y (m i)`, which is `⟪y, m i⟫` by definition; `innerSL_apply_apply`
+  -- does not rewrite them because `innerSL ℝ` appears here as a map `E →L[ℝ] E →L[ℝ] ℝ`.
+  congr 3 with i
+
+/-- A Schwartz function times a homogeneous polynomial, `y ↦ K y • A (y, …, y)` for a continuous
+multilinear map `A`, is integrable. -/
+theorem integrable_smul_apply (K : 𝓢(E, ℂ)) {n : ℕ} (A : E [×n]→L[ℝ] F) :
+    Integrable (fun y ↦ K y • A (fun _ ↦ y)) :=
+  ((K.integrable_pow_mul volume n).const_mul ‖A‖).mono'
+    (K.continuous.smul (A.coe_continuous.comp
+      (continuous_pi fun _ ↦ continuous_id))).aestronglyMeasurable
+    (.of_forall fun y ↦ by
+      rw [norm_smul, mul_comm, ← mul_assoc]
+      refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
+      simpa using A.le_opNorm (fun _ ↦ y))
+
+/-- **Vanishing moments.** If the `n`-th derivative of the Fourier transform of a Schwartz function
+`K` vanishes at the origin, then `K` annihilates every homogeneous polynomial of degree `n`:
+`∫ K y • A (y, …, y) = 0` for every continuous `n`-multilinear map `A`. -/
+theorem integral_smul_apply_eq_zero_of_iteratedFDeriv_fourier_eq_zero (K : 𝓢(E, ℂ)) {n : ℕ}
+    (hK : iteratedFDeriv ℝ n (𝓕 (K : E → ℂ)) 0 = 0) (A : E [×n]→L[ℝ] F) :
+    ∫ y, K y • A (fun _ ↦ y) = 0 := by
+  classical
+  -- Expand `A (y, …, y)` in an orthonormal basis `b`: it is a combination of the products
+  -- `⟪b (r 1), y⟫ ⋯ ⟪b (r n), y⟫`, whose moments against `K` vanish.
+  set b := stdOrthonormalBasis ℝ E
+  have hexp (y : E) : K y • A (fun _ ↦ y) =
+      ∑ r : Fin n → Fin (Module.finrank ℝ E),
+        (((∏ i, ⟪y, b (r i)⟫ : ℝ) : ℂ) * K y) • A (fun i ↦ b (r i)) := by
+    conv_lhs => rw [← funext fun _ : Fin n ↦ b.sum_repr' y, A.map_sum]
+    rw [Finset.smul_sum]
+    refine Finset.sum_congr rfl fun r _ ↦ ?_
+    rw [A.map_smul_univ (fun i ↦ ⟪b (r i), y⟫) (fun i ↦ b (r i)), ← Complex.coe_smul, smul_smul,
+      mul_comm]
+    simp_rw [real_inner_comm]
+  have hmoment (r : Fin n → Fin (Module.finrank ℝ E)) :
+      ∫ y, ((∏ i, ⟪y, b (r i)⟫ : ℝ) : ℂ) * K y = 0 := by
+    have h := iteratedFDeriv_fourier_zero_apply K n (fun i ↦ b (r i))
+    rw [hK, zero_apply, eq_comm, mul_eq_zero] at h
+    exact h.resolve_left (pow_ne_zero _ (by simp [Real.pi_ne_zero]))
+  have hint (r : Fin n → Fin (Module.finrank ℝ E)) :
+      Integrable (fun y ↦ ((∏ i, ⟪y, b (r i)⟫ : ℝ) : ℂ) * K y) :=
+    (K.integrable_pow_mul volume n).mono'
+      ((Complex.continuous_ofReal.comp (continuous_finsetProd _ fun i _ ↦
+        continuous_id.inner continuous_const)).mul K.continuous).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun y ↦ by
+        rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, Finset.abs_prod]
+        refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
+        calc ∏ i, |⟪y, b (r i)⟫| ≤ ∏ _i : Fin n, ‖y‖ := by
+              gcongr with i
+              exact (abs_real_inner_le_norm _ _).trans (by rw [b.orthonormal.1 (r i), mul_one])
+          _ = ‖y‖ ^ n := by simp)
+  by_cases hF : CompleteSpace F
+  swap
+  · exact integral_of_not_completeSpace hF
+  simp_rw [hexp]
+  rw [integral_finsetSum _ fun r _ ↦ (hint r).smul_const _]
+  exact Finset.sum_eq_zero fun r _ ↦ by rw [integral_smul_const, hmoment, zero_smul]
+
+end Moments
 
 variable [InnerProductSpace ℂ F] [CompleteSpace F]
 
