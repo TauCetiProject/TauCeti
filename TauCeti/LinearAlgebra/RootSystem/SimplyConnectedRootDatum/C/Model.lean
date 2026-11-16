@@ -326,6 +326,10 @@ lemma pairRoot_comm (x y : Signed n) : pairRoot x y = pairRoot y x :=
 @[simp] lemma pairRoot_signedNeg_self (p : Signed n) : pairRoot p (signedNeg p) = 0 := by
   rw [pairRoot_def, signedWeight_signedNeg, add_neg_cancel]
 
+/-- The diagonal `q = signedNeg p` with the arguments swapped. -/
+@[simp] lemma pairRoot_signedNeg_self_left (p : Signed n) : pairRoot (signedNeg p) p = 0 := by
+  rw [pairRoot_comm, pairRoot_signedNeg_self]
+
 lemma pairCoroot_comm (x y : Signed n) : pairCoroot x y = pairCoroot y x := by
   rcases eq_or_ne x y with rfl | h
   · rfl
@@ -335,6 +339,10 @@ lemma pairCoroot_comm (x y : Signed n) : pairCoroot x y = pairCoroot y x := by
 (`TauCeti.DynkinType.TypeC.pairRoot_signedNeg_self`). -/
 @[simp] lemma pairCoroot_signedNeg_self (p : Signed n) : pairCoroot p (signedNeg p) = 0 := by
   rw [pairCoroot_of_ne (signedNeg_ne p).symm, signedCoweight_signedNeg, add_neg_cancel]
+
+/-- The diagonal `q = signedNeg p` with the arguments swapped. -/
+@[simp] lemma pairCoroot_signedNeg_self_left (p : Signed n) : pairCoroot (signedNeg p) p = 0 := by
+  rw [pairCoroot_comm, pairCoroot_signedNeg_self]
 
 lemma pairRoot_dotProduct_pairCoroot_self {p q : Signed n} (h : q ≠ signedNeg p) :
     pairRoot p q ⬝ᵥ pairCoroot p q = 2 := by
@@ -492,6 +500,11 @@ identity. -/
   · rw [h3, signedReflection_signedNeg_left]
   exact signedReflection_of_ne h1 h3 h3 (by rwa [signedNeg_signedNeg])
 
+/-- The diagonal `q = signedNeg p` with the arguments swapped. -/
+@[simp] lemma signedReflection_signedNeg_self_left (p z : Signed n) :
+    signedReflection (signedNeg p) p z = z := by
+  simpa only [signedNeg_signedNeg] using signedReflection_signedNeg_self (signedNeg p) z
+
 /-! ### The pairings of a root and its coroot against a signed basis vector -/
 
 lemma dotProduct_pairCoroot_left {p q : Signed n} (h : q ≠ signedNeg p) :
@@ -595,9 +608,10 @@ lemma signedCoweight_signedReflection (p q z : Signed n) :
           · rw [signedReflection_of_ne h1 h2 h3 h4, pairRoot_dotProduct_of_ne h1 h2 h3 h4]
             module
 
-/-- `TauCeti.DynkinType.TypeC.signedReflection p q` is an involution, for all `p` and `q`. -/
-lemma signedReflection_involutive (p q : Signed n) : Involutive (signedReflection p q) := by
-  intro z
+/-- Applying `TauCeti.DynkinType.TypeC.signedReflection p q` twice is the identity, for all `p`
+and `q`. -/
+@[simp] lemma signedReflection_signedReflection (p q z : Signed n) :
+    signedReflection p q (signedReflection p q z) = z := by
   by_cases h1 : z = p
   · rw [h1, signedReflection_left, signedReflection_signedNeg_right]
   by_cases h2 : z = q
@@ -607,6 +621,10 @@ lemma signedReflection_involutive (p q : Signed n) : Involutive (signedReflectio
   by_cases h4 : z = signedNeg q
   · rw [h4, signedReflection_signedNeg_right, signedReflection_left]
   rw [signedReflection_of_ne h1 h2 h3 h4, signedReflection_of_ne h1 h2 h3 h4]
+
+/-- `TauCeti.DynkinType.TypeC.signedReflection p q` is an involution, for all `p` and `q`. -/
+lemma signedReflection_involutive (p q : Signed n) : Involutive (signedReflection p q) :=
+  signedReflection_signedReflection p q
 
 lemma signedReflection_injective (p q : Signed n) : Injective (signedReflection p q) :=
   (signedReflection_involutive p q).injective
