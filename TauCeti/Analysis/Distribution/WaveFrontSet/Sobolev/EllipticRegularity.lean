@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.LineDeriv
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import TauCeti.Analysis.Distribution.TestFunction.ContDiffBump
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.InteriorRegularity
 import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 
@@ -128,6 +128,15 @@ private theorem sum_smulLeftCLM_iteratedLineDerivOp_cutoffTempered (hg : ∀ i, 
       funext fun x ↦ by rw [Pi.smul_apply, smul_eq_mul],
     TemperedDistribution.smulLeftCLM_smul htg, _root_.smul_apply]
 
+/-- A compact subset `K` of an open set `W ⊆ Ω` has a complex test function on `Ω` equal to `1`
+near `K` whose topological support lies in `W`. -/
+private theorem exists_cutoff_tsupport_subset {K W : Set (CoordinateSpace d)} (hK : IsCompact K)
+    (hW : IsOpen W) (hKW : K ⊆ W) (hWΩ : W ⊆ Ω) :
+    ∃ χ : 𝓓(Ω, ℂ), (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ tsupport χ ⊆ W := by
+  obtain ⟨χ, -, hχ1, hχW⟩ := TestFunction.exists_cutoff_tsupport_subset (n := ⊤) hK hW hKW hWΩ
+  refine ⟨TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM χ, hχ1.mono fun x hx ↦ by simp [hx], ?_⟩
+  exact (tsupport_comp_subset (g := ofRealCLM) (by simp) χ).trans hχW
+
 variable {T : 𝓓'(Ω, ℂ)} {x₀ : CoordinateSpace d} {s : ℝ}
 
 /-- **The local parametrix applied to `φ T`.** Let `a` be an elliptic classical symbol of order
@@ -186,41 +195,30 @@ theorem IsLocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp
     T.IsLocallySobolevAt (s + k) x₀ := by
   obtain ⟨U, hU, hUs⟩ := h.exists_nhds_forall_memSobolev_cutoffTempered
   obtain ⟨δ, hδ, a, ha, haP⟩ := exists_isElliptic_coefficient_eq hg hk hP
-  obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1
+  obtain ⟨ε, hε, hεU⟩ := nhds_basis_ball.mem_iff.1
     (inter_mem (inter_mem hU (Ω.isOpen.mem_nhds h.mem)) (closedBall_mem_nhds x₀ hδ))
+  have hεΩ : ball x₀ ε ⊆ Ω := fun x hx ↦ (hεU hx).1.2
   -- Cutoffs `ψ`, `χ`, `φ` around `x₀`, each equal to `1` near the support of the previous one.
-  let βψ : ContDiffBump x₀ := ⟨ε / 4, ε / 2, by positivity, by linarith⟩
-  let βχ : ContDiffBump x₀ := ⟨2 * ε / 3, 3 * ε / 4, by positivity, by linarith⟩
-  let βφ : ContDiffBump x₀ := ⟨3 * ε / 4, ε, by positivity, by linarith⟩
-  have hsub {r : ℝ} (hr : r ≤ ε) : closedBall x₀ r ⊆ Ω :=
-    (closedBall_subset_closedBall hr).trans fun x hx ↦ (hεU hx).1.2
-  have hψΩ : closedBall x₀ βψ.rOut ⊆ Ω := hsub (by simp [βψ]; linarith)
-  have hχΩ : closedBall x₀ βχ.rOut ⊆ Ω := hsub (by simp [βχ]; linarith)
-  have hφ1 {β : ContDiffBump x₀} (hβ : closedBall x₀ β.rOut ⊆ Ω) (hβε : β.rOut ≤ 3 * ε / 4) :
-      ∀ x ∈ tsupport (β.toTestFunction ℂ hβ), βφ.toTestFunction ℂ (hsub le_rfl) x = 1 :=
-    fun x hx ↦ by
-      rw [ContDiffBump.tsupport_toTestFunction] at hx
-      rw [ContDiffBump.toTestFunction_apply,
-        βφ.one_of_mem_closedBall (closedBall_subset_closedBall hβε hx), RCLike.ofReal_one]
-  -- On the ball of radius `2 ε / 3`, `χ = 1` and `a` is the symbol of `P`.
-  have haψ : ∀ᶠ x in 𝓝ˢ (tsupport (βψ.toTestFunction ℂ hψΩ)), ∀ ξ,
+  obtain ⟨ψ, hψ1, hψs⟩ := exists_cutoff_tsupport_subset (isCompact_singleton (x := x₀))
+    isOpen_ball (singleton_subset_iff.2 (mem_ball_self hε)) hεΩ
+  obtain ⟨χ, hχ1, hχs⟩ :=
+    exists_cutoff_tsupport_subset ψ.hasCompactSupport.isCompact isOpen_ball hψs hεΩ
+  obtain ⟨φ, hφ1, -⟩ := exists_cutoff_tsupport_subset χ.hasCompactSupport.isCompact Ω.isOpen
+    χ.tsupport_subset subset_rfl
+  -- Near the support of `ψ`, `χ = 1` and `a` is the symbol of `P`.
+  have haψ : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ,
       a.toSymbol.coefficient (x, ξ) = differentialSymbol t m
-        (fun i x ↦ (c i * (βχ.toTestFunction ℂ hχΩ x * g i x)) • ContinuousLinearMap.id ℂ ℂ)
-        (x, ξ) := by
-    rw [ContDiffBump.tsupport_toTestFunction]
-    refine Filter.mem_of_superset (isOpen_ball.mem_nhdsSet.2
-      (closedBall_subset_ball (show ε / 2 < 2 * ε / 3 by linarith))) fun x hx ξ ↦ ?_
-    rw [haP x (hεU (ball_subset_closedBall.trans (closedBall_subset_closedBall (by linarith))
-      hx)).2]
-    simp only [differentialSymbol_def, ContDiffBump.toTestFunction_apply,
-      βχ.one_of_mem_closedBall (ball_subset_closedBall hx), RCLike.ofReal_one, one_mul]
-  refine isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered.2 ⟨βψ.toTestFunction ℂ hψΩ, ?_,
-    memSobolev_cutoffTempered_of_isElliptic hg hk ha (hφ1 hχΩ le_rfl)
-      (hφ1 hψΩ (by simp [βψ]; linarith)) haψ (hUs _ ((βχ.tsupport_toTestFunction ℂ hχΩ).le.trans
-        ((closedBall_subset_closedBall (show 3 * ε / 4 ≤ ε by linarith)).trans
-          fun x hx ↦ (hεU hx).1.1)))⟩
-  rw [ContDiffBump.toTestFunction_apply,
-    βψ.one_of_mem_closedBall (mem_closedBall_self (by positivity)), RCLike.ofReal_one]
+        (fun i x ↦ (c i * (χ x * g i x)) • ContinuousLinearMap.id ℂ ℂ) (x, ξ) := by
+    filter_upwards [hχ1, isOpen_ball.mem_nhdsSet.2 hψs] with x hx hxε ξ
+    rw [haP x (hεU hxε).2]
+    simp only [differentialSymbol_def, hx, one_mul]
+  have hψχ (x) (hx : x ∈ tsupport ψ) : x ∈ tsupport χ :=
+    subset_tsupport _ (by simp [hχ1.self_of_nhdsSet x hx])
+  refine isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered.2 ⟨ψ, ?_,
+    memSobolev_cutoffTempered_of_isElliptic hg hk ha hφ1.self_of_nhdsSet
+      (fun x hx ↦ hφ1.self_of_nhdsSet x (hψχ x hx)) haψ
+      (hUs _ (hχs.trans fun x hx ↦ (hεU hx).1.1))⟩
+  rw [hψ1.self_of_nhdsSet x₀ rfl]
   exact one_ne_zero
 
 /-- **Elliptic operators shift local Sobolev regularity by exactly their order.** For a
