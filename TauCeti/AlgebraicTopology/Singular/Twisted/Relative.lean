@@ -300,8 +300,7 @@ lemma twistedChainComplexπ_comp_twistedChainComplexCoefficientMap (η : L ⟶ K
 meeting the complement of the subspace through its component at the initial vertex of `σ`. -/
 @[reassoc (attr := simp)]
 lemma twistedChainComplexCoefficientMap_f_comp_twistedChainComplexCoeff (η : L ⟶ K) {k : ℕ}
-    (σ : (TopCat.toSSet.obj P.fst) _⦋k⦌)
-    (hσ : ¬Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map) :
+    (σ : (TopCat.toSSet.obj P.fst) _⦋k⦌) (hσ : ¬Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map) :
     (P.twistedChainComplexCoefficientMap η).f k ≫ P.twistedChainComplexCoeff K σ hσ =
       P.twistedChainComplexCoeff L σ hσ ≫ η.app (LocalCoefficientSystem.initialVertex σ) := by
   refine ModuleCat.hom_ext <| LinearMap.ext fun y ↦ ?_
@@ -309,23 +308,16 @@ lemma twistedChainComplexCoefficientMap_f_comp_twistedChainComplexCoeff (η : L 
   have hπ := congrArg (fun g ↦ (g.f k).hom a)
     (P.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap η)
   simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply] at hπ ⊢
-  rw [hπ, P.twistedChainComplexCoeff_twistedChainComplexπ_f_apply,
-    P.twistedChainComplexCoeff_twistedChainComplexπ_f_apply,
-    LocalCoefficientSystem.twistedChainComplexCoeff_twistedChainComplexCoefficientMap_f_apply]
+  simp [hπ]
 
-/-- A morphism of local coefficient systems acts on the relative coefficient at a simplex `σ`
-meeting the complement of the subspace through its component at the initial vertex of `σ`,
-evaluated at an element. -/
 @[simp]
 lemma twistedChainComplexCoeff_twistedChainComplexCoefficientMap_f_apply (η : L ⟶ K) {k : ℕ}
-    (σ : (TopCat.toSSet.obj P.fst) _⦋k⦌)
-    (hσ : ¬Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map)
+    (σ : (TopCat.toSSet.obj P.fst) _⦋k⦌) (hσ : ¬Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map)
     (y : (P.twistedChainComplex L).X k) :
     (P.twistedChainComplexCoeff K σ hσ).hom (((P.twistedChainComplexCoefficientMap η).f k).hom y) =
       (η.app (LocalCoefficientSystem.initialVertex σ)).hom
         ((P.twistedChainComplexCoeff L σ hσ).hom y) :=
-  congrArg (fun g ↦ g.hom y)
-    (P.twistedChainComplexCoefficientMap_f_comp_twistedChainComplexCoeff η σ hσ)
+  congrArg (·.hom y) (P.twistedChainComplexCoefficientMap_f_comp_twistedChainComplexCoeff η σ hσ)
 
 /-- The identity of a coefficient system induces the identity on relative twisted chains. -/
 @[simp]

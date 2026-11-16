@@ -830,13 +830,13 @@ lemma twistedChainComplexCoeff_twistedChainComplexCoefficientMap_f_apply (η : L
       (η.app (initialVertex σ)).hom ((twistedChainComplexCoeff L σ).hom a) :=
   congrArg (·.hom a) (twistedChainComplexCoefficientMap_f_comp_twistedChainComplexCoeff η σ)
 
-/-- The identity of a coefficient system induces the identity of twisted chain complexes. -/
+/-- The identity coefficient morphism induces the identity on twisted chain complexes. -/
 @[simp]
 lemma twistedChainComplexCoefficientMap_id (L : LocalCoefficientSystem.{u, v, max v w} R X) :
     twistedChainComplexCoefficientMap (𝟙 L) = 𝟙 (twistedChainComplex L) :=
   (twistedChainsFunctor R X ⋙ AlgebraicTopology.alternatingFaceMapComplex _).map_id L
 
-/-- A composite of coefficient morphisms induces the composite on twisted chain complexes. -/
+/-- Composition of coefficient morphisms induces composition on twisted chain complexes. -/
 @[simp, reassoc]
 lemma twistedChainComplexCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) :
     twistedChainComplexCoefficientMap (η ≫ θ) =
@@ -848,17 +848,17 @@ def twistedChainComplexCoefficientIso (e : L ≅ K) :
     twistedChainComplex L ≅ twistedChainComplex K :=
   (twistedChainsFunctor R X ⋙ AlgebraicTopology.alternatingFaceMapComplex _).mapIso e
 
-/-- The forward map of the induced isomorphism of twisted chain complexes is the map induced by
-`e.hom`. -/
+/-- The forward map of `twistedChainComplexCoefficientIso e` is induced by `e.hom`. -/
 @[simp]
 lemma twistedChainComplexCoefficientIso_hom (e : L ≅ K) :
-    (twistedChainComplexCoefficientIso e).hom = twistedChainComplexCoefficientMap e.hom := (rfl)
+    (twistedChainComplexCoefficientIso e).hom = twistedChainComplexCoefficientMap e.hom :=
+  (rfl)
 
-/-- The inverse of the induced isomorphism of twisted chain complexes is the map induced by
-`e.inv`. -/
+/-- The inverse of `twistedChainComplexCoefficientIso e` is induced by `e.inv`. -/
 @[simp]
 lemma twistedChainComplexCoefficientIso_inv (e : L ≅ K) :
-    (twistedChainComplexCoefficientIso e).inv = twistedChainComplexCoefficientMap e.inv := (rfl)
+    (twistedChainComplexCoefficientIso e).inv = twistedChainComplexCoefficientMap e.inv :=
+  (rfl)
 
 /-- An isomorphism of local coefficient systems induces an isomorphism of twisted chain
 complexes. -/
