@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 public import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Pietsch
 public import TauCeti.Analysis.Normed.Operator.Extend
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
