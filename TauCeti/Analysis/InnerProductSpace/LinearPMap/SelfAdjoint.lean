@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5, Adam Bornemann
+Authors: The Tau Ceti contributors
 -/
 module
 
@@ -65,20 +65,10 @@ linear maps used by the semigroup development.
   the adjoint; `dense_domain_of_adjoint_eq_neg` and `isSelfAdjoint_smul_of_adjoint_eq_neg`: a
   skew-adjoint partial linear map has dense domain, and its multiple by a nonzero purely imaginary
   scalar is self-adjoint.
-
-## Provenance
-
-The shifted-surjectivity and domain-density criteria added here are adapted from
-[`ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Basic.lean`](https://github.com/AIQ-Kitware/aiq-dkps-formalization/blob/main/ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Basic.lean)
-and
-[`ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Stone.lean`](https://github.com/AIQ-Kitware/aiq-dkps-formalization/blob/main/ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Stone.lean)
-in the AIQ-Kitware DKPS formalization (copyright (c) 2026 Kitware, Inc.;
-authors Jon Crall and Claude Opus 5; Apache-2.0). The donor `Basic.lean`
-credits the earlier
-[`Spectra/OneParameterUnitaryGroup/Basic.lean`](https://github.com/adambornemann-glitch/Spectra/blob/8dbaaf6728d1342ae16acf79fd7eef7c59b37e63/Spectra/OneParameterUnitaryGroup/Basic.lean)
-at commit `8dbaaf6728d1342ae16acf79fd7eef7c59b37e63` (copyright (c) 2026
-Spectra Formalization Project; author Adam Bornemann; Apache-2.0).
-The present formulations use TauCeti's canonical `LinearPMap` adjoint API.
+* `LinearPMap.IsFormalAdjoint.adjoint_eq_of_smul_sub_surjective`: a formal adjoint `B` of `A` is
+  the adjoint `A†` when the conjugate shifts `c - A` and `conj c - B` are surjective;
+  `IsFormalAdjoint.adjoint_eq_neg_of_surjective_sub_add` is the skew-symmetric case `B = -A`,
+  `c = 1`.
 
 ## References
 
@@ -392,90 +382,71 @@ theorem isSelfAdjoint_smul_of_adjoint_eq_neg [CompleteSpace E] {G : E →ₗ.[�
   rw [LinearPMap.isSelfAdjoint_def, adjoint_smul G hc, hG, hconj,
     LinearPMap.smul_neg, LinearPMap.neg_smul, neg_neg]
 
+/-- **Shifts of formal adjoints are formal adjoints.** If `B` is a formal adjoint of `A`, then
+`c • x - A x` and `conj c • y - B y` pair as `x` and `y` do after the shift. -/
+theorem IsFormalAdjoint.inner_smul_sub_eq {A B : E →ₗ.[𝕜] E} (hAB : A.IsFormalAdjoint B) (c : 𝕜)
+    (x : A.domain) (y : B.domain) :
+    inner 𝕜 (c • (x : E) - A x) (y : E) =
+      inner 𝕜 (x : E) ((starRingEnd 𝕜) c • (y : E) - B y) := by
+  rw [inner_sub_left, inner_smul_left, inner_sub_right, inner_smul_right, hAB x y]
 
-/-! ## Von Neumann's shifted-surjectivity criterion -/
-
-section VonNeumann
-
-open Complex InnerProductSpace
-
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-
-/-- Surjectivity of `A + i` for a symmetric partial operator makes its domain dense.
-This supplies the density hypothesis needed when using the adjoint of the operator. -/
-theorem dense_domain_of_surjective_add_I (A : H →ₗ.[ℂ] H) (hsym : A.IsFormalAdjoint A)
-    (hplus : ∀ φ : H, ∃ ψ : A.domain, A ψ + I • (ψ : H) = φ) :
-    Dense (A.domain : Set H) := by
+/-- **Conjugate-shift surjectivity makes the domain dense.** If `B` is a formal adjoint of `A` and
+both `x ↦ c • x - A x` and `y ↦ conj c • y - B y` are surjective, then `A` is densely defined. -/
+theorem IsFormalAdjoint.dense_domain_of_smul_sub_surjective [CompleteSpace E] {A B : E →ₗ.[𝕜] E}
+    (hAB : A.IsFormalAdjoint B) {c : 𝕜}
+    (hA : Function.Surjective fun x : A.domain => c • (x : E) - A x)
+    (hB : Function.Surjective fun y : B.domain => (starRingEnd 𝕜) c • (y : E) - B y) :
+    Dense (A.domain : Set E) := by
   rw [Submodule.dense_iff_topologicalClosure_eq_top,
     Submodule.topologicalClosure_eq_top_iff, Submodule.eq_bot_iff]
-  intro x hx
-  obtain ⟨ψ, hψ⟩ := hplus x
-  have hx0 : ⟪(ψ : H), x⟫_ℂ = 0 :=
-    (Submodule.mem_orthogonal _ x).mp hx (ψ : H) ψ.2
-  have hIm : (⟪(ψ : H), A ψ⟫_ℂ).im = 0 := hsym.im_inner_self_apply ψ
-  have hexp : ⟪(ψ : H), A ψ⟫_ℂ + I * ⟪(ψ : H), (ψ : H)⟫_ℂ = 0 := by
-    rw [← hψ, inner_add_right, inner_smul_right] at hx0
-    exact hx0
-  have him : (⟪(ψ : H), (ψ : H)⟫_ℂ).re = 0 := by
-    have hi := congrArg Complex.im hexp
-    simp only [Complex.add_im, Complex.mul_im, Complex.I_re, Complex.I_im, Complex.zero_im,
-      hIm, zero_mul, one_mul, zero_add] at hi
-    exact hi
-  have hψ0 : (ψ : H) = 0 :=
-    (re_inner_self_nonpos (𝕜 := ℂ) (x := (ψ : H))).mp
-      (by simpa only [RCLike.re_to_complex] using (le_of_eq him))
-  have : ψ = 0 := Subtype.ext hψ0
-  rw [this] at hψ
-  simpa using hψ.symm
+  intro z hz
+  obtain ⟨y, rfl⟩ := hB z
+  obtain ⟨x, hx⟩ := hA y
+  have hx' : c • (x : E) - A x = y := hx
+  have hxz : inner 𝕜 (x : E) ((starRingEnd 𝕜) c • (y : E) - B y) = 0 :=
+    (Submodule.mem_orthogonal _ _).mp hz (x : E) x.property
+  have hyy : inner 𝕜 (y : E) y = 0 := by
+    calc inner 𝕜 (y : E) y = inner 𝕜 (c • (x : E) - A x) y := by rw [hx']
+      _ = inner 𝕜 (x : E) ((starRingEnd 𝕜) c • (y : E) - B y) := hAB.inner_smul_sub_eq c x y
+      _ = 0 := hxz
+  have hy0 : y = 0 := Subtype.ext (inner_self_eq_zero.mp hyy)
+  simp [hy0]
 
-/-- **Von Neumann's criterion.** A symmetric partial linear map is self-adjoint if its
-shifts by `+i` and `-i` are surjective. Density follows from the first shift, so no
-independent density hypothesis is needed. -/
-theorem isSelfAdjoint_of_surjective_addSub
-    (A : H →ₗ.[ℂ] H) (hsym : A.IsFormalAdjoint A)
-    (hplus : ∀ φ : H, ∃ ψ : A.domain, A ψ + I • (ψ : H) = φ)
-    (hminus : ∀ φ : H, ∃ ψ : A.domain, A ψ - I • (ψ : H) = φ) :
-    IsSelfAdjoint A := by
-  have hdense := dense_domain_of_surjective_add_I A hsym hplus
-  rw [LinearPMap.isSelfAdjoint_def]
-  refine le_antisymm ?_ (hsym.le_adjoint hdense)
-  have hker : ∀ w : (A.adjoint).domain, A.adjoint w = I • (w : H) → (w : H) = 0 := by
-    intro w hw
-    obtain ⟨v, hv⟩ := hplus (w : H)
-    have hadj : ⟪A.adjoint w, (v : H)⟫_ℂ = ⟪(w : H), A v⟫_ℂ :=
-      LinearPMap.adjoint_isFormalAdjoint hdense w v
-    rw [hw, inner_smul_left, Complex.conj_I] at hadj
-    have key : ⟪(w : H), A v⟫_ℂ + I * ⟪(w : H), (v : H)⟫_ℂ =
-        ⟪(w : H), (w : H)⟫_ℂ := by
-      rw [← inner_smul_right, ← inner_add_right, hv]
-    have hww : ⟪(w : H), (w : H)⟫_ℂ = 0 := by rw [← key, ← hadj]; ring
-    exact inner_self_eq_zero.mp hww
-  apply LinearPMap.le_of_eqLocus_ge
-  intro w hw
-  set W : (A.adjoint).domain := ⟨w, hw⟩ with hWdef
-  obtain ⟨x, hx⟩ := hminus (A.adjoint W - I • (W : H))
-  have hxin : (x : H) ∈ (A.adjoint).domain := (hsym.le_adjoint hdense).1 x.2
-  have hxeq : A.adjoint (⟨(x : H), hxin⟩ : (A.adjoint).domain) = A x :=
-    ((hsym.le_adjoint hdense).2 (x := x) (y := ⟨(x : H), hxin⟩) rfl).symm
-  set W' : (A.adjoint).domain := W - ⟨(x : H), hxin⟩ with hW'def
-  have hW'val : (W' : H) = (W : H) - (x : H) := by
-    simp only [hW'def, Submodule.coe_sub]
-  have hrearr : A.adjoint W - A x = I • (W : H) - I • (x : H) := by
-    have h2 : A.adjoint W = A x - I • (x : H) + I • (W : H) := by rw [hx]; abel
-    rw [h2]; abel
-  have hAW' : A.adjoint W' = I • (W' : H) := by
-    have e1 : A.adjoint W' = A.adjoint W - A x := by
-      rw [hW'def, LinearPMap.map_sub, hxeq]
-    rw [e1, hrearr, hW'val, smul_sub]
-  have hWx : (W : H) = (x : H) := sub_eq_zero.mp (hW'val ▸ hker W' hAW')
-  have hwx : w = (x : H) := by
-    have hWcoe : (W : H) = w := by rw [hWdef]
-    rw [← hWcoe]
-    exact hWx
-  subst hwx
-  exact ⟨hw, x.2, hxeq⟩
+/-- **A formal adjoint with surjective conjugate shifts is the adjoint.** If `B` is a formal
+adjoint of `A` and both `x ↦ c • x - A x` and `y ↦ conj c • y - B y` are surjective, then
+`A† = B`. No separate density hypothesis on the domain of `A` is needed. -/
+theorem IsFormalAdjoint.adjoint_eq_of_smul_sub_surjective [CompleteSpace E] {A B : E →ₗ.[𝕜] E}
+    (hAB : A.IsFormalAdjoint B) {c : 𝕜}
+    (hA : Function.Surjective fun x : A.domain => c • (x : E) - A x)
+    (hB : Function.Surjective fun y : B.domain => (starRingEnd 𝕜) c • (y : E) - B y) :
+    A† = B := by
+  have hdense := hAB.dense_domain_of_smul_sub_surjective hA hB
+  have hle : B ≤ A† := hAB.le_adjoint hdense
+  refine (eq_of_le_of_domain_eq hle (le_antisymm hle.1 fun y hy => ?_)).symm
+  let ya : A†.domain := ⟨y, hy⟩
+  obtain ⟨x, hx⟩ := hB ((starRingEnd 𝕜) c • (y : E) - A† ya)
+  have hx' : (starRingEnd 𝕜) c • (x : E) - B x = (starRingEnd 𝕜) c • y - A† ya := hx
+  have hyx : y = (x : E) := by
+    refine ext_inner_left 𝕜 fun w => ?_
+    obtain ⟨v, rfl⟩ := hA w
+    calc inner 𝕜 (c • (v : E) - A v) y
+        = inner 𝕜 (v : E) ((starRingEnd 𝕜) c • y - A† ya) :=
+          (adjoint_isFormalAdjoint hdense).symm.inner_smul_sub_eq c v ya
+      _ = inner 𝕜 (v : E) ((starRingEnd 𝕜) c • (x : E) - B x) := by rw [hx']
+      _ = inner 𝕜 (c • (v : E) - A v) x := (hAB.inner_smul_sub_eq c v x).symm
+  simpa only [hyx] using x.property
 
-end VonNeumann
+/-- **A skew-symmetric map with surjective shifts `1 - G` and `1 + G` is skew-adjoint.** If `-G`
+is a formal adjoint of `G` and both `x ↦ x - G x` and `x ↦ x + G x` are surjective, then
+`G† = -G`. No separate density hypothesis on the domain of `G` is needed. -/
+theorem IsFormalAdjoint.adjoint_eq_neg_of_surjective_sub_add [CompleteSpace E] {G : E →ₗ.[𝕜] E}
+    (hG : G.IsFormalAdjoint (-G)) (hsub : Function.Surjective fun x : G.domain => (x : E) - G x)
+    (hadd : Function.Surjective fun x : G.domain => (x : E) + G x) : G† = -G :=
+  hG.adjoint_eq_of_smul_sub_surjective (c := 1) (by simpa only [one_smul] using hsub)
+    fun t => by
+      obtain ⟨x, hx⟩ := hadd t
+      exact ⟨⟨x, by rw [neg_domain]; exact x.2⟩, by simpa only [map_one, one_smul, neg_apply,
+        sub_neg_eq_add, Subtype.coe_eta] using hx⟩
 
 end LinearPMap
 
