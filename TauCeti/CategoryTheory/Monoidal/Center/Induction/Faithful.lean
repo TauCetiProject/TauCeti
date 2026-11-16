@@ -43,15 +43,17 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [HasZeroMorphisms C]
   [Simple (𝟙_ C)] [HasRightDual (SimpleClasses.classOf (𝟙_ C)).repr]
 
 /-- The summand indexed by the class of the tensor unit is isomorphic to `X`, naturally in `X`.
-This uses `SimpleClasses.classOfReprIso (𝟙_ C)`, its right-dual comparison, and the unitors. -/
+This uses `SimpleClasses.classOfReprIso (𝟙_ C)`, the right adjoint mate of its inverse,
+and the unitors. -/
 def inductionUnitSummandIso (X : C) :
     (SimpleClasses.classOf (𝟙_ C)).repr ⊗ X ⊗ (SimpleClasses.classOf (𝟙_ C)).reprᘁ ≅ X :=
   tensorIso (SimpleClasses.classOfReprIso (𝟙_ C))
     (whiskerLeftIso X (SimpleClasses.classOfReprIso (𝟙_ C)).rightAdjointMate.symm) ≪≫
       (λ_ (X ⊗ 𝟙_ C)) ≪≫ (ρ_ X)
 
-/-- The unit-summand identification uses the representative's isomorphism to the unit,
-uniqueness of its right dual, and the two unitors. -/
+/-- The forward unit-summand identification is the composite of
+`(SimpleClasses.classOfReprIso (𝟙_ C)).hom`, the right adjoint mate of
+`(SimpleClasses.classOfReprIso (𝟙_ C)).inv`, and the left and right unitors. -/
 theorem inductionUnitSummandIso_hom (X : C) :
     (inductionUnitSummandIso X).hom =
       (SimpleClasses.classOfReprIso (𝟙_ C)).hom ▷
@@ -60,8 +62,9 @@ theorem inductionUnitSummandIso_hom (X : C) :
         (λ_ (X ⊗ 𝟙_ C)).hom ≫ (ρ_ X).hom := by
   simp [inductionUnitSummandIso, tensorHom_def]
 
-/-- The inverse unit-summand identification uses the inverse unitors and representative
-comparisons. -/
+/-- The inverse unit-summand identification is the composite of the inverse right and left
+unitors, the right adjoint mate of `(SimpleClasses.classOfReprIso (𝟙_ C)).hom`, and
+`(SimpleClasses.classOfReprIso (𝟙_ C)).inv`. -/
 theorem inductionUnitSummandIso_inv (X : C) :
     (inductionUnitSummandIso X).inv =
       (ρ_ X).inv ≫ (λ_ (X ⊗ 𝟙_ C)).inv ≫
