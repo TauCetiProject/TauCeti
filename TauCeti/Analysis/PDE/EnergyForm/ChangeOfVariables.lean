@@ -81,9 +81,10 @@ formulation transfers (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`).
   coefficients stay Lipschitz.
 * `TauCeti.PDE.memLp_pullbackDensity`, `TauCeti.PDE.memLp_pullbackDrift`: the transformed
   zeroth-order coefficient, right-hand side and drift stay in `Lᵖ`.
-* `TauCeti.PDE.exists_uniformlyEllipticOn_and_lipschitzOnWith_pullbackPrincipal`: for mutually
-  inverse changes of variables of order two with Jacobian determinants at least one in absolute
-  value, a uniformly elliptic Lipschitz principal coefficient stays so on compact convex pieces.
+* `TauCeti.PDE.exists_uniformlyEllipticOn_and_lipschitzOnWith_pullbackPrincipal`: for a change of
+  variables `Φ` of order one with an inverse `Ψ` of order two, both with Jacobian determinants at
+  least one in absolute value, a uniformly elliptic Lipschitz principal coefficient stays so on
+  compact convex pieces.
 * `TauCeti.PDE.exists_forall_energyFormH1_compL_restrictL_eq`: a weak solution, restricted to an
   open subset and carried by a change of variables with an inverse, solves the transformed
   equation, with bounded lower-order coefficients and square-integrable right-hand side.
@@ -623,12 +624,12 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {L L' : ℝ}
 
 /-- **Ellipticity and Lipschitz bounds under mutually inverse changes of variables.** Let `Φ` and
-`Ψ` be mutually inverse changes of variables of order two with Jacobian determinants at least one
-in absolute value, and let `Φ` map a nonempty subset `s` of a compact convex subset of its domain
-into `t`. If `a` is uniformly elliptic and Lipschitz on `t`, the pulled-back principal coefficient
-is uniformly elliptic and Lipschitz on `s`. -/
+`Ψ` be mutually inverse changes of variables, `Φ` of order one and `Ψ` of order two, with Jacobian
+determinants at least one in absolute value, and let `Φ` map a nonempty subset `s` of a compact
+convex subset of its domain into `t`. If `a` is uniformly elliptic and Lipschitz on `t`, the
+pulled-back principal coefficient is uniformly elliptic and Lipschitz on `s`. -/
 theorem exists_uniformlyEllipticOn_and_lipschitzOnWith_pullbackPrincipal [Nonempty ι]
-    (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L 1)
+    (hΦ : Wkp.IsChangeOfVariables 1 U' U Φ L 1)
     (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L' 1) (hΨΦ : LeftInvOn Ψ Φ U')
     (hΦΨ : RightInvOn Ψ Φ U) {B s t : Set (EuclideanSpace ℝ ι)} (hB : IsCompact B)
     (hBc : Convex ℝ B) (hBU : B ⊆ U') (hs : s ⊆ B) (hsne : s.Nonempty) (hmaps : MapsTo Φ s t)
@@ -654,8 +655,7 @@ theorem exists_uniformlyEllipticOn_and_lipschitzOnWith_pullbackPrincipal [Nonemp
   -- Lipschitz bound: `Φ` and `DΨ ∘ Φ` are `C¹` on `U'`, hence Lipschitz on `B`.
   obtain ⟨KΦ, hKΦ⟩ := (hΦ.contDiffOn.mono hBU).exists_lipschitzOnWith (by norm_num) hBc hB
   have hT : ContDiffOn ℝ 1 (fun x => fderiv ℝ Ψ (Φ x)) U' :=
-    (hΨ.contDiffOn.fderiv_of_isOpen U.isOpen (by norm_num)).comp
-      (hΦ.contDiffOn.of_le (by norm_num)) hΦ.mapsTo
+    (hΨ.contDiffOn.fderiv_of_isOpen U.isOpen (by norm_num)).comp hΦ.contDiffOn hΦ.mapsTo
   obtain ⟨KT, hKT⟩ := (hT.mono hBU).exists_lipschitzOnWith one_ne_zero hBc hB
   obtain ⟨K', hK'⟩ := exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal (KJ := 0)
     (J := 1) hmaps hcomp (hKΦ.mono hs) (hKT.mono hs) hΨL

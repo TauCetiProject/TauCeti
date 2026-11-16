@@ -147,8 +147,9 @@ private theorem exists_lowerOrder_eq_restrictL_of_isChangeOfVariables [Nonempty 
     (fun y _ => hΦΨ y) hb hc hu
   obtain ⟨z, hzH, hz⟩ := Metric.mem_closure_iff.1 hy₀H r hr
   obtain ⟨lam', Lam', K', hellip, hK'⟩ :=
-    exists_uniformlyEllipticOn_and_lipschitzOnWith_pullbackPrincipal hΦ hΨ (fun x _ => hΨΦ x)
-      (fun y _ => hΦΨ y) (isCompact_closedBall y₀ r) (convex_closedBall y₀ r)
+    exists_uniformlyEllipticOn_and_lipschitzOnWith_pullbackPrincipal (hΦ.mono one_le_two) hΨ
+      (fun x _ => hΨΦ x) (fun y _ => hΦΨ y) (isCompact_closedBall y₀ r)
+      (convex_closedBall y₀ r)
       (hrB.trans inter_subset_left)
       (fun x (hx : x ∈ (Ω' : Set (EuclideanSpace ℝ ι)) ∩ B'') => ball_subset_closedBall hx.2)
       (by exact ⟨z, ⟨hzH, mem_ball_comm.1 hz⟩, mem_ball_comm.1 hz⟩)
