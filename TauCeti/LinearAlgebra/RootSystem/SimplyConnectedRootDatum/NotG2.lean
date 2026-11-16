@@ -35,14 +35,14 @@ theorem isNotG2_rationalRootSystem_of_ne_G2 {t : DynkinType} {ht : t.Valid}
     h ((hasCartanType_rationalRootSystem t ht).eq_of_valid
       (hasCartanType_G2_of_isG2 hG2 (t.rationalBase ht)) ht valid_G2)
 
-/-- Outside type `G₂`, the pinned datum has Cartan integers bounded by two, as required
-by the general double-chain lemmas. -/
-theorem pairingIn_simplyConnectedRootDatum_mem_zero_one_two_of_ne_G2
-    {t : DynkinType} (ht : t.Valid) (h : t ≠ .G2) (α β : Fin t.numRoots) :
-    (t.simplyConnectedRootDatum ht).pairingIn ℤ α β ∈ ({-2, -1, 0, 1, 2} : Set ℤ) := by
-  let := isNotG2_rationalRootSystem_of_ne_G2 (ht := ht) h
-  simpa using RootPairing.IsNotG2.pairingIn_mem_zero_one_two
-    (P := t.rationalRootSystem ht) α β
+/-- The pinned rational root system has no triple root strings exactly when its Dynkin
+type is not `G₂`. -/
+@[simp] theorem isNotG2_rationalRootSystem_iff {t : DynkinType} {ht : t.Valid} :
+    (t.rationalRootSystem ht).IsNotG2 ↔ t ≠ G2 := by
+  refine ⟨fun h hG2 => ?_, isNotG2_rationalRootSystem_of_ne_G2⟩
+  subst t
+  exact ((RootPairing.not_isG2_iff_isNotG2 (G2.rationalRootSystem ht)).mpr h)
+    (isG2_of_hasCartanType_G2 (G2.hasCartanType_rationalRootSystem ht))
 
 /-- The Cartan integers of the rational type-B system lie between `-2` and `2`. -/
 instance instIsNotG2RationalRootSystemB (n : ℕ) (hn : (B n).Valid) :

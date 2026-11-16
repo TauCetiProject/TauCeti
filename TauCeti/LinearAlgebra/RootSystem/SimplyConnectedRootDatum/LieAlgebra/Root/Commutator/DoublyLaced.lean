@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NotG2
 import TauCeti.LinearAlgebra.RootSystem.Finite.DoubleChain
 
@@ -27,8 +26,8 @@ discharging their non-root hypotheses from the integral root datum.
 
 Outside type `G₂`, the double chain implies that `3α + β` and `α + 2β` are not roots,
 so `commutatorElement_chevalleyRootSubgroup_of_root_eq_add_of_root_eq_add` applies. The non-root
-exclusions are proved in `TauCeti.LinearAlgebra.RootSystem.Finite.DoubleChain`, using the
-Cartan-integer bound outside `G₂` from
+exclusions are proved in `TauCeti.LinearAlgebra.RootSystem.Finite.DoubleChain`, using Mathlib's
+root-string length bound outside `G₂` and the rational root system from
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NotG2`.
 Alternatively, the root-string conditions `chainBotCoeff α β = 0` and
 `chainTopCoeff α β = 2` supply the same non-root hypotheses, without excluding `G₂`.
@@ -82,7 +81,6 @@ theorem chevalleyRootSubgroup_mul_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_t
           (.ofAdd (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
             (u ^ 2 * v))) *
         chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u) := by
-  let := t.isReduced_simplyConnectedRootDatum ht
   exact chevalleyRootSubgroup_mul_of_root_eq_add_of_root_eq_add ρ M hM hnil hγ hδ
     (root_add_root_notMem_range_root_of_chainTopCoeff_le_two
       (t.simplyConnectedRootDatum ht) hγ hδ htop.le)
@@ -107,7 +105,6 @@ theorem commutatorElement_chevalleyRootSubgroup_of_chainBotCoeff_eq_zero_of_chai
       chevalleyRootSubgroup ρ M hM hnil δ A
         (.ofAdd (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
           (u ^ 2 * v))) := by
-  let := t.isReduced_simplyConnectedRootDatum ht
   exact commutatorElement_chevalleyRootSubgroup_of_root_eq_add_of_root_eq_add
     ρ M hM hnil hγ hδ
     (root_add_root_notMem_range_root_of_chainTopCoeff_le_two
@@ -115,8 +112,9 @@ theorem commutatorElement_chevalleyRootSubgroup_of_chainBotCoeff_eq_zero_of_chai
     (root_add_root_notMem_range_root_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
       (t.simplyConnectedRootDatum ht) hγ hbot htop) A u v
 
-/-- Outside `G₂`, the double chain itself supplies the non-root hypotheses of the
-root-subgroup reordering formula. -/
+/-- Outside `G₂`, reorder `x_α(u) x_β(v)` as `x_β(v) x_γ(N_{α,β} u v)` times
+`x_δ((N_{α,β} N_{α,γ} / 2) u² v) x_α(u)` along `γ = α + β`, `δ = α + γ`.
+The coefficients are integral and the value ring is any commutative ring. -/
 theorem chevalleyRootSubgroup_mul_of_ne_G2_of_root_eq_add_of_root_eq_add (h : t ≠ .G2)
     {α β γ δ : Fin t.numRoots}
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
@@ -133,18 +131,20 @@ theorem chevalleyRootSubgroup_mul_of_ne_G2_of_root_eq_add_of_root_eq_add (h : t 
           (.ofAdd (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
             (u ^ 2 * v))) *
         chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u) := by
-  let := t.isReduced_simplyConnectedRootDatum ht
-  exact chevalleyRootSubgroup_mul_of_root_eq_add_of_root_eq_add ρ M hM hnil hγ hδ
-    (root_add_root_notMem_range_root_left_of_pairingIn_mem_zero_one_two_of_double_chain
-      (t.simplyConnectedRootDatum ht)
-      (pairingIn_simplyConnectedRootDatum_mem_zero_one_two_of_ne_G2 ht h) hγ hδ)
-    (root_add_root_notMem_range_root_right_of_pairingIn_mem_zero_one_two_of_double_chain
-      (t.simplyConnectedRootDatum ht)
-      (pairingIn_simplyConnectedRootDatum_mem_zero_one_two_of_ne_G2 ht h) hγ hδ) A u v
+  let := isNotG2_rationalRootSystem_of_ne_G2 (ht := ht) h
+  have hlen : (t.simplyConnectedRootDatum ht).chainBotCoeff α β +
+      (t.simplyConnectedRootDatum ht).chainTopCoeff α β ≤ 2 := by
+    simpa using (t.rationalRootSystem ht).chainBotCoeff_add_chainTopCoeff_le_two α β
+  exact chevalleyRootSubgroup_mul_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
+    ρ M hM hnil hγ hδ
+    (chainBotCoeff_eq_zero_of_chainBotCoeff_add_chainTopCoeff_le_two
+      (t.simplyConnectedRootDatum ht) hγ hδ hlen)
+    ((t.simplyConnectedRootDatum ht).chainTopCoeff_eq_two_of_chainTopCoeff_le_two
+      hγ hδ (by omega)) A u v
 
-/-- Outside `G₂`, the double chain implies that `3α + β` and `α + 2β` are not roots,
-so `commutatorElement_chevalleyRootSubgroup_of_root_eq_add_of_root_eq_add` applies over every
-commutative value ring. -/
+/-- Outside `G₂`, the double chain `γ = α + β`, `δ = α + γ` has commutator formula
+`⁅x_α(u), x_β(v)⁆ = x_γ(N_{α,β} u v) x_δ((N_{α,β} N_{α,γ} / 2) u² v)`.
+The coefficients are integral and the formula holds over every commutative value ring. -/
 theorem commutatorElement_chevalleyRootSubgroup_of_ne_G2_of_root_eq_add_of_root_eq_add (h : t ≠ .G2)
     {α β γ δ : Fin t.numRoots}
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
@@ -159,15 +159,16 @@ theorem commutatorElement_chevalleyRootSubgroup_of_ne_G2_of_root_eq_add_of_root_
       chevalleyRootSubgroup ρ M hM hnil δ A
         (.ofAdd (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
           (u ^ 2 * v))) := by
-  let := t.isReduced_simplyConnectedRootDatum ht
-  exact commutatorElement_chevalleyRootSubgroup_of_root_eq_add_of_root_eq_add
+  let := isNotG2_rationalRootSystem_of_ne_G2 (ht := ht) h
+  have hlen : (t.simplyConnectedRootDatum ht).chainBotCoeff α β +
+      (t.simplyConnectedRootDatum ht).chainTopCoeff α β ≤ 2 := by
+    simpa using (t.rationalRootSystem ht).chainBotCoeff_add_chainTopCoeff_le_two α β
+  exact commutatorElement_chevalleyRootSubgroup_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
     ρ M hM hnil hγ hδ
-    (root_add_root_notMem_range_root_left_of_pairingIn_mem_zero_one_two_of_double_chain
-      (t.simplyConnectedRootDatum ht)
-      (pairingIn_simplyConnectedRootDatum_mem_zero_one_two_of_ne_G2 ht h) hγ hδ)
-    (root_add_root_notMem_range_root_right_of_pairingIn_mem_zero_one_two_of_double_chain
-      (t.simplyConnectedRootDatum ht)
-      (pairingIn_simplyConnectedRootDatum_mem_zero_one_two_of_ne_G2 ht h) hγ hδ) A u v
+    (chainBotCoeff_eq_zero_of_chainBotCoeff_add_chainTopCoeff_le_two
+      (t.simplyConnectedRootDatum ht) hγ hδ hlen)
+    ((t.simplyConnectedRootDatum ht).chainTopCoeff_eq_two_of_chainTopCoeff_le_two
+      hγ hδ (by omega)) A u v
 
 end
 

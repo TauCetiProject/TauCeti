@@ -9,8 +9,6 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgeb
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NotG2
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 public import TauCeti.Algebra.Group.Subgroup.OrderedProduct
-import TauCeti.LinearAlgebra.RootSystem.Finite.PositiveCombinations
-import TauCeti.LinearAlgebra.RootSystem.RankTwo
 
 /-!
 # Ordered positive-root products outside G₂
@@ -79,10 +77,7 @@ private theorem commutator_mem_higher_roots
           (t.rationalBase ht).height γ},
         (chevalleyRootSubgroup ρ M hM hnil γ A).range := by
   classical
-  have hne : t ≠ .G2 := by
-    rintro rfl
-    exact ((RootPairing.not_isG2_iff_isNotG2 (G2.rationalRootSystem ht)).mpr inferInstance)
-      (isG2_of_hasCartanType_G2 (G2.hasCartanType_rationalRootSystem ht))
+  have hne : t ≠ .G2 := isNotG2_rationalRootSystem_iff.mp inferInstance
   let P := t.rationalRootSystem ht
   let b := t.rationalBase ht
   let H := ⨆ γ ∈ {γ ∈ posRootsFinset P b |
