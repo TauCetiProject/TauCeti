@@ -179,26 +179,14 @@ private theorem awayι_projToVeronese {f : veronese 𝒜 d} {k : ℕ}
       projToVeronese 𝒜 d = fromProjChart 𝒜 d hf hk :=
   (veroneseAffineOpenCover 𝒜 d).openCover.ι_glueMorphisms _ _ ⟨⟨k, hk⟩, ⟨f, hf⟩⟩
 
-/-- `Spec` of the chart isomorphism `A^{(d)}_{(f)} ≃ A_{(f)}` is inverse to `Spec` of its
-inverse: these are the two directions of `Spec` of the isomorphism of rings. -/
-@[reassoc]
-private theorem SpecMap_awayVeroneseEquiv_comp_SpecMap_symm (f : veronese 𝒜 d) :
-    Spec.map (CommRingCat.ofHom (awayVeroneseEquiv f).toRingHom) ≫
-      Spec.map (CommRingCat.ofHom (awayVeroneseEquiv f).symm.toRingHom) = 𝟙 _ :=
-  (Scheme.Spec.mapIso (awayVeroneseEquiv f).toRingEquiv.toCommRingCatIso.op).hom_inv_id
-
-@[reassoc]
-private theorem SpecMap_awayVeroneseEquiv_symm_comp_SpecMap (f : veronese 𝒜 d) :
-    Spec.map (CommRingCat.ofHom (awayVeroneseEquiv f).symm.toRingHom) ≫
-      Spec.map (CommRingCat.ofHom (awayVeroneseEquiv f).toRingHom) = 𝟙 _ :=
-  (Scheme.Spec.mapIso (awayVeroneseEquiv f).toRingEquiv.toCommRingCatIso.op).inv_hom_id
-
 private theorem awayι_veroneseToProj_projToVeronese {f : veronese 𝒜 d} {k : ℕ}
     (hf : f ∈ veroneseGrading 𝒜 d k) (hk : 0 < k) :
     awayι (veroneseGrading 𝒜 d) f hf hk ≫ veroneseToProj 𝒜 d ≫ projToVeronese 𝒜 d =
       awayι (veroneseGrading 𝒜 d) f hf hk := by
   rw [awayι_veroneseToProj_assoc, toProjChart, Category.assoc, awayι_projToVeronese 𝒜 d hf hk,
-    fromProjChart, SpecMap_awayVeroneseEquiv_symm_comp_SpecMap_assoc]
+    fromProjChart]
+  exact (Scheme.Spec.mapIso (awayVeroneseEquiv f).toRingEquiv.toCommRingCatIso.op).inv_hom_id_assoc
+    _
 
 private theorem awayι_projToVeronese_veroneseToProj {f : veronese 𝒜 d} {k : ℕ}
     (hf : f ∈ veroneseGrading 𝒜 d k) (hk : 0 < k) :
@@ -206,7 +194,9 @@ private theorem awayι_projToVeronese_veroneseToProj {f : veronese 𝒜 d} {k : 
       projToVeronese 𝒜 d ≫ veroneseToProj 𝒜 d =
       awayι 𝒜 (f : A) (mem_veroneseGrading.1 hf) (Nat.mul_pos (NeZero.pos d) hk) := by
   rw [awayι_projToVeronese_assoc 𝒜 d hf hk, fromProjChart, Category.assoc,
-    awayι_veroneseToProj 𝒜 d hf hk, toProjChart, SpecMap_awayVeroneseEquiv_comp_SpecMap_symm_assoc]
+    awayι_veroneseToProj 𝒜 d hf hk, toProjChart]
+  exact (Scheme.Spec.mapIso (awayVeroneseEquiv f).toRingEquiv.toCommRingCatIso.op).hom_inv_id_assoc
+    _
 
 /-- **The projective spectrum of a Veronese subalgebra.** For `d ≠ 0`, the projective spectra of
 `A^{(d)} = ⨁ₖ 𝒜 (d k)` and of `A` are isomorphic. On the chart of `f ∈ 𝒜 (d k)`, `k > 0`, it is
