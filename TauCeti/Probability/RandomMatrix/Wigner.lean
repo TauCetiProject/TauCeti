@@ -85,6 +85,7 @@ section Deterministic
 variable (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ) {n : ℕ} (ω : Ω)
 
 /-- Subtracting two Wigner matrices subtracts their coordinate arrays, including at size zero. -/
+@[simp]
 theorem wignerMatrix_sub (ξ' : StrictUpper → Ω → ℂ) (η' : ℕ → Ω → ℝ) (n : ℕ) :
     wignerMatrix ξ η n ω - wignerMatrix ξ' η' n ω =
       wignerMatrix (fun ij ω ↦ ξ ij ω - ξ' ij ω) (fun i ω ↦ η i ω - η' i ω) n ω := by
