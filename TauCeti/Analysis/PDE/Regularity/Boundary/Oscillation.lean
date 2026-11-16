@@ -165,6 +165,15 @@ private theorem mul_indicator_le_matrixBilinearForm_gradient
       exact h.quadraticForm_nonneg hxO _
     · rw [indicator_of_notMem (s := {y | 0 < W1p.value u y}) hu, map_zero, zero_apply]
 
+/-- `∫ g ≤ ∫ h` when `g ≤ h` almost everywhere, `h` is integrable and `∫ h ≥ 0`, also when `g` is
+not integrable, since then `∫ g = 0`. -/
+private theorem integral_le_of_ae_le_of_integral_nonneg {α : Type*} [MeasurableSpace α]
+    {ν : Measure α} {g h : α → ℝ} (hgh : g ≤ᵐ[ν] h) (hh : Integrable h ν)
+    (h0 : 0 ≤ ∫ x, h x ∂ν) : ∫ x, g x ∂ν ≤ ∫ x, h x ∂ν := by
+  by_cases hg : Integrable g ν
+  · exact integral_mono_ae hg hh hgh
+  · rwa [integral_undef hg]
+
 /-- The cut-off step of the test-function argument: for `ε > 0`, the density `⟨a ∇u, ∇v⟩` of a
 subsolution `u` of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ f` with `u⁺ ∈ H¹₀(Ω)` against a nonnegative `v ∈ H¹(Ω)`, cut
 off to `{u⁺ > ε v}`, has integral at most `∫_Ω f⁺ v`. It is `ε⁻¹` times a lower bound for the
@@ -214,19 +223,14 @@ private theorem setIntegral_indicator_matrixBilinearForm_le
   have hfm : ∫ x in Omega, f x * W1p.value m x ∂mu ≤
       ε * ∫ x in Omega, max (f x) 0 * W1p.value v x ∂mu := by
     rw [← integral_const_mul]
-    have hpt : ∀ᵐ x ∂mu.restrict Omega,
-        f x * W1p.value m x ≤ ε * (max (f x) 0 * W1p.value v x) := by
-      filter_upwards [hval, hm0] with x hx hx0
+    refine integral_le_of_ae_le_of_integral_nonneg ?_ (hfv.const_mul ε) (integral_nonneg_of_ae ?_)
+    · filter_upwards [hval, hm0] with x hx hx0
       calc f x * W1p.value m x ≤ max (f x) 0 * W1p.value m x :=
             mul_le_mul_of_nonneg_right (le_max_left _ _) hx0
         _ ≤ max (f x) 0 * (ε * W1p.value v x) :=
             mul_le_mul_of_nonneg_left (hx ▸ min_le_right _ _) (le_max_right _ _)
         _ = ε * (max (f x) 0 * W1p.value v x) := by ring
-    by_cases hint : Integrable (fun x => f x * W1p.value m x) (mu.restrict Omega)
-    · exact integral_mono_ae hint (hfv.const_mul ε) hpt
-    · rw [integral_undef hint]
-      refine integral_nonneg_of_ae ?_
-      filter_upwards [hv] with x hvx
+    · filter_upwards [hv] with x hvx
       exact mul_nonneg hε.le (mul_nonneg (le_max_right _ _) hvx)
   have htest := hu ⟨_, hmem⟩ hm0
   rw [energyFormH1_zero_zero_eq_setIntegral] at htest
