@@ -210,6 +210,12 @@ theorem stableSchurBasis_apply (μ : n.Partition) : stableSchurBasis R n μ = st
   refine (stableSymmetricProjEquiv R le_rfl).injective (Subtype.ext ?_)
   simp [stableSchurBasis]
 
+/-- **The Schur coordinates of a Schur function**: `s_μ` is the basis vector of index `μ`. -/
+@[simp]
+theorem stableSchurBasis_repr_stableSchur (μ : n.Partition) :
+    (stableSchurBasis R n).repr (stableSchur R μ) = Finsupp.single μ 1 := by
+  rw [← stableSchurBasis_apply, Module.Basis.repr_self]
+
 /-- **The Schur coordinates of a symmetric function are the Schur coordinates of any of its
 projections to an alphabet with at least `n` letters.** -/
 theorem stableSchurBasis_repr_apply {d : ℕ} (hn : n ≤ d) (f : stableSymmetricSubmodule R n)

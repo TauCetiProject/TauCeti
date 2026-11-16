@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+public import TauCeti.GroupTheory.Index.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.ZMod.Units
 
@@ -74,6 +75,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
   nonassociative ring.
+* `Matrix.SpecialLinearGroup.coe_GL_eq_mapGL`: the coercion of `SL(n, ℤ)` into `GL(n, S)` is
+  `mapGL S`.
 * `Matrix.SpecialLinearGroup.coe_mapGL_int`: the matrix of `mapGL S` on `SL(n, ℤ)` is the
   entrywise integer cast.
 * `Matrix.SpecialLinearGroup.coe_mapGL_fin_two`: the entrywise matrix of `mapGL S` on `SL₂(R)`,
@@ -87,6 +90,11 @@ proof is independent of the source's.
   `{±I}` when `R` has no zero divisors.
 * `Matrix.SpecialLinearGroup.finite_center` and
   `Matrix.SpecialLinearGroup.card_center_le_two`: that centre is finite, of order at most two.
+* `Matrix.SpecialLinearGroup.center_le_iff_neg_one_mem`: a subgroup of `SL₂` contains the centre
+  exactly when it contains `-I`.
+* `Matrix.SpecialLinearGroup.index_eq_two_mul_index_withCenter_of_neg_one_notMem` and
+  `Matrix.SpecialLinearGroup.relIndex_withCenter_eq_two_of_neg_one_notMem`: when `-I ∉ Γ`,
+  `[SL₂(R) : Γ] = 2 · [SL₂(R) : ±Γ]`.
 * `Matrix.SpecialLinearGroup.disjoint_center_iff_neg_one_notMem`: the simp-normal form of the
   `= 1` case, `Disjoint (center _) Γ ↔ -I ∉ Γ`.
 * `Matrix.SpecialLinearGroup.card_center_subgroupOf_eq_two_iff` and
@@ -240,6 +248,11 @@ lemma fin_two_mul_sub_mul_eq_one {R : Type*} [CommRing R] (g : SL(2, R)) :
 lemma intCast_fin_two_mul_sub_mul_eq_one {R : Type*} [NonAssocRing R] (g : SL(2, ℤ)) :
     ((g 0 0 : ℤ) : R) * (g 1 1 : ℤ) - (g 0 1 : ℤ) * (g 1 0 : ℤ) = 1 := by
   exact_mod_cast congrArg (Int.cast : ℤ → R) g.fin_two_mul_sub_mul_eq_one
+
+/-- The coercion of `SL(n, ℤ)` into `GL(n, S)` is `mapGL S`. -/
+lemma coe_GL_eq_mapGL {n : Type*} [Fintype n] [DecidableEq n] {S : Type*} [CommRing S]
+    (g : SpecialLinearGroup n ℤ) : (g : GL n S) = mapGL S g :=
+  rfl
 
 /-- The matrix of `mapGL S σ` for an integral `σ` is its entrywise integer cast: this is
 `mapGL_coe_matrix` with `algebraMap ℤ S` written as `Int.cast`. -/
@@ -453,6 +466,42 @@ theorem disjoint_center_iff_neg_one_notMem [NoZeroDivisors R] [NeZero (2 : R)]
       (-1 : SpecialLinearGroup (Fin 2) R) ∉ Γ := by
   rw [← Subgroup.subgroupOf_eq_bot, ← Subgroup.card_eq_one]
   exact card_center_subgroupOf_eq_one_iff Γ
+
+/-- **A subgroup of `SL₂` contains the centre exactly when it contains `-I`**, the centre being
+`{±I}` by `mem_center_iff_eq_one_or_eq_neg_one`. -/
+@[simp]
+theorem center_le_iff_neg_one_mem [NoZeroDivisors R]
+    {Γ : Subgroup (SpecialLinearGroup (Fin 2) R)} :
+    Subgroup.center (SpecialLinearGroup (Fin 2) R) ≤ Γ ↔
+      (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ := by
+  refine ⟨fun h ↦ h (mem_center_iff_eq_one_or_eq_neg_one.mpr (.inr rfl)), fun h g hg ↦ ?_⟩
+  rcases mem_center_iff_eq_one_or_eq_neg_one.mp hg with rfl | rfl
+  · exact Γ.one_mem
+  · exact h
+
+/-- **The `±Γ` factor of two, index form**: when `-I ∉ Γ`, the index of `Γ` in `SL₂(R)` is
+twice the index of `±Γ`, the centre being `{±I}` by `mem_center_iff_eq_one_or_eq_neg_one`.
+
+This is the conversion the general-level valence formula and the Sturm bound are stated
+against: both read `k · [SL₂(ℤ) : ±Γ] / 12`, while a full-coset norm product is computed over
+`Γ`-cosets, which is twice as many. -/
+theorem index_eq_two_mul_index_withCenter_of_neg_one_notMem [NoZeroDivisors R]
+    {Γ : Subgroup (SpecialLinearGroup (Fin 2) R)} (h : (-1 : SpecialLinearGroup (Fin 2) R) ∉ Γ) :
+    Γ.index = 2 * Γ.withCenter.index :=
+  Subgroup.index_eq_two_mul_index_withCenter
+    (mem_center_iff_eq_one_or_eq_neg_one.mpr (.inr rfl)) h
+    fun _ hc ↦ mem_center_iff_eq_one_or_eq_neg_one.mp hc
+
+/-- **The `±Γ` factor of two, relative-index form**: `Γ` has index `2` inside `±Γ` when
+`-I ∉ Γ`. The geometric reading of
+`index_eq_two_mul_index_withCenter_of_neg_one_notMem`: adjoining `-I` exactly halves the
+number of cosets. -/
+theorem relIndex_withCenter_eq_two_of_neg_one_notMem [NoZeroDivisors R]
+    {Γ : Subgroup (SpecialLinearGroup (Fin 2) R)} (h : (-1 : SpecialLinearGroup (Fin 2) R) ∉ Γ) :
+    Γ.relIndex Γ.withCenter = 2 :=
+  Subgroup.relIndex_withCenter_eq_two
+    (mem_center_iff_eq_one_or_eq_neg_one.mpr (.inr rfl)) h
+    fun _ hc ↦ mem_center_iff_eq_one_or_eq_neg_one.mp hc
 
 /-- **The `±I` factor is `2` exactly when `-I ∈ Γ`.** The part of the centre that `Γ` contains is
 `{I}` or `{±I}` according to whether `Γ` contains `-I`, so the centre factor in the stabiliser
