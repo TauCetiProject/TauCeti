@@ -472,6 +472,13 @@ theorem Hom.comp_assoc {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
     Hom.comp h (Hom.comp g f) = Hom.comp (Hom.comp h g) f := by
   apply Hom.ext <;> rfl
 
+/-- A morphism of Serre graphs surjective on vertices and on darts is right-cancellable. -/
+theorem Hom.cancel_right {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
+    {f : Γ.Hom Δ} {g₁ g₂ : Δ.Hom Θ} (hfV : Function.Surjective f.mapV)
+    (hfE : Function.Surjective f.mapE) : g₁.comp f = g₂.comp f ↔ g₁ = g₂ :=
+  ⟨fun h => Hom.ext _ (hfV.injective_comp_right (congrArg Hom.mapV h))
+    (hfE.injective_comp_right (congrArg Hom.mapE h)), congrArg (Hom.comp · f)⟩
+
 @[simp] theorem Hom.toPrefunctor_id :
     (Hom.id Γ).toPrefunctor = Prefunctor.id Γ.V := by
   unfold Hom.id Hom.toPrefunctor Prefunctor.id
