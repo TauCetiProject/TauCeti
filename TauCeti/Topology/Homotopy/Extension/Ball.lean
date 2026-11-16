@@ -219,17 +219,16 @@ theorem hasHomotopyExtensionProperty_setOf_eq_one {D : Set X} {ρ : X → ℝ}
     (hφD : ∀ x ∈ D, ∀ c, 0 ≤ c → c * ρ x ≤ 1 → φ c x ∈ D ∧ ρ (φ c x) = c * ρ x)
     (hφ1 : ∀ x ∈ D, φ 1 x = x) :
     HasHomotopyExtensionProperty {x : D | ρ x = 1} := by
-  -- The cylinder `I × D` retracts onto `{0} × D ∪ I × {ρ = 1}` by the radial projection of the
-  -- unit interval cylinder of `ℝ` read on `(t, ρ x)`: the height becomes the first coordinate of
-  -- the projection, and `x` is rescaled by `φ` so that `ρ` becomes its second coordinate.
+  -- `I × D` retracts onto `{0} × D ∪ I × {ρ = 1}` by the radial projection of the cylinder of `ℝ`
+  -- read on `(t, ρ x)`: it gives the height, and `x` is rescaled by `φ` to give `ρ`.
   -- The value of `ρ`, as a point of the closed unit ball of `ℝ`.
-  have hmem (x : D) : ρ x ∈ closedBall (0 : ℝ) 1 := by
-    rw [mem_closedBall_zero_iff, Real.norm_of_nonneg (hρD x x.2).1]
-    exact (hρD x x.2).2
+  have hmem (x : D) : ρ x ∈ closedBall (0 : ℝ) 1 :=
+    mem_closedBall_zero_iff.2 ((Real.norm_of_nonneg (hρD x x.2).1).trans_le (hρD x x.2).2)
   let ρD : C(D, closedBall (0 : ℝ) 1) :=
     ⟨fun x ↦ ⟨ρ x, hmem x⟩, (continuousOn_iff_continuous_domRestrict.1 hρ).subtype_mk hmem⟩
   have hρD_apply (x : D) : (ρD x : ℝ) = ρ x := rfl
   let p : I × D → I × closedBall (0 : ℝ) 1 := fun q ↦ (q.1, ρD q.2)
+  have hp_apply (q : I × D) : (p q).2 = ρD q.2 := rfl
   have hpc : Continuous p := by fun_prop
   -- The scale `c q = 2 / ballRadialDen (p q)` carries `ρ` to the second coordinate of the
   -- radial projection.
@@ -237,7 +236,7 @@ theorem hasHomotopyExtensionProperty_setOf_eq_one {D : Set X} {ρ : X → ℝ}
   have hc_apply (q : I × D) : c q = 2 / ballRadialDen (p q) := rfl
   have hc0 (q : I × D) : 0 ≤ c q := div_nonneg zero_le_two (ballRadialDen_pos _).le
   have hcρ (q : I × D) : c q * ρ q.2 = (ballRadialProjection (p q)).2 := by
-    rw [ballRadialProjection_def, smul_eq_mul, ← hρD_apply]
+    rw [ballRadialProjection_def, smul_eq_mul, hp_apply, hρD_apply, hc_apply]
   have hcρ1 (q : I × D) : c q * ρ q.2 ≤ 1 := by
     rw [hcρ]
     exact (Real.le_norm_self _).trans (mem_closedBall_zero_iff.1 (ballRadialProjection_spec _).2.1)

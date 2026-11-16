@@ -453,34 +453,41 @@ theorem exists_isPushout_union_image (hF : IsClosed F) (hFU : F ⊆ U) (hAD : A 
         (TopCat.ofHom j) := by
   have : CompactSpace D := isCompact_iff_compactSpace.1 hD
   have hΘc : Continuous fun x : D ↦ Θ x := hΘ.comp_continuous continuous_subtype_val Subtype.prop
+  have hFsub : F ⊆ U ∩ (F ∪ Θ '' D) := fun y hy ↦ ⟨hFU hy, Or.inl hy⟩
   let α : C(A, F) :=
     ⟨fun x ↦ ⟨Θ x, (hΘF x (hAD x.2)).2 x.2⟩, (hΘc.comp (continuous_inclusion hAD)).subtype_mk _⟩
+  have hα (x : A) : (α x : M) = Θ x := rfl
   let χ : C(D, ↥(U ∩ (F ∪ Θ '' D))) :=
     ⟨fun x ↦ ⟨Θ x, hΘU x.2, Or.inr (mem_image_of_mem Θ x.2)⟩, hΘc.subtype_mk _⟩
-  let j : C(F, ↥(U ∩ (F ∪ Θ '' D))) :=
-    ⟨fun y ↦ ⟨y, hFU y.2, Or.inl y.2⟩, continuous_subtype_val.subtype_mk _⟩
-  refine ⟨α, χ, j, fun _ ↦ rfl, fun _ ↦ rfl, (IsPushout.of_isClosedEmbedding_of_union ?_ ?_ ?_ ?_
+  have hχ (x : D) : (χ x : M) = Θ x := rfl
+  let j : C(F, ↥(U ∩ (F ∪ Θ '' D))) := ContinuousMap.inclusion hFsub
+  have hj (y : F) : (j y : M) = y := ContinuousMap.inclusion_apply_coe hFsub y
+  refine ⟨α, χ, j, hα, hj, (IsPushout.of_isClosedEmbedding_of_union ?_ ?_ ?_ ?_
     fun y x hyx ↦ ?_).flip⟩
   · -- Both composites send `x ∈ A` to the point `Θ x`.
     rw [← TopCat.ofHom_comp, ← TopCat.ofHom_comp]
     refine congrArg TopCat.ofHom (ContinuousMap.ext fun x ↦ Subtype.ext ?_)
-    simp [α, χ, j]
+    rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, hχ, hj, hα,
+      ContinuousMap.inclusion_apply_coe]
   · -- `F` is closed.
-    refine ⟨(IsEmbedding.subtypeVal.of_comp_iff).1 IsEmbedding.subtypeVal, ?_⟩
-    convert hF.preimage (continuous_subtype_val (p := (· ∈ U ∩ (F ∪ Θ '' D)))) using 1
-    ext y
-    exact ⟨by rintro ⟨z, rfl⟩; exact z.2, fun hy ↦ ⟨⟨y, hy⟩, rfl⟩⟩
+    simp only [TopCat.hom_ofHom]
+    exact IsClosedEmbedding.inclusion hFsub (hF.preimage continuous_subtype_val)
   · -- `Θ` is injective on the compact set `D`.
+    simp only [TopCat.hom_ofHom]
     exact χ.continuous.isClosedEmbedding fun x x' hxx' ↦
-      Subtype.ext (hinj x.2 x'.2 (congrArg Subtype.val hxx'))
-  · refine eq_univ_of_forall fun y ↦ ?_
+      Subtype.ext (hinj x.2 x'.2 (by rw [← hχ, ← hχ, hxx']))
+  · simp only [TopCat.hom_ofHom]
+    refine eq_univ_of_forall fun y ↦ ?_
     obtain hy | ⟨x, hx, hxy⟩ := y.2.2
-    · exact Or.inl ⟨⟨y, hy⟩, rfl⟩
-    · exact Or.inr ⟨⟨x, hx⟩, Subtype.ext hxy⟩
+    · exact Or.inl ⟨⟨y, hy⟩, Subtype.ext (hj _)⟩
+    · exact Or.inr ⟨⟨x, hx⟩, Subtype.ext ((hχ _).trans hxy)⟩
   · -- A point of `F` in `Θ(D)` lies in `Θ(A)`.
-    have h : (y : M) = Θ x := congrArg Subtype.val hyx
+    simp only [TopCat.hom_ofHom] at hyx
+    have h : (y : M) = Θ x := by rw [← hj, hyx, hχ]
     have hxA : (x : X) ∈ A := (hΘF x x.2).1 (h ▸ y.2)
-    exact ⟨⟨x, hxA⟩, Subtype.ext h.symm, rfl⟩
+    refine ⟨⟨x, hxA⟩, Subtype.ext ?_, Subtype.ext ?_⟩
+    · rw [TopCat.ofHom_apply, hα, h]
+    · rw [TopCat.ofHom_apply, ContinuousMap.inclusion_apply_coe]
 
 end UnionImage
 
