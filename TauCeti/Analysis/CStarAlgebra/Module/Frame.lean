@@ -144,11 +144,8 @@ theorem IsParsevalFrame.isStarProjection_gram {A ι E : Type*} [Fintype ι]
   isSelfAdjoint := CStarMatrix.isSelfAdjoint_gram x
   isIdempotentElem := by
     ext i j
-    simp only [CStarMatrix.mul_apply, CStarMatrix.gram_apply]
-    have hsum : ∑ k, unop (inner Aᵐᵒᵖ (x i) (x k)) * unop (inner Aᵐᵒᵖ (x k) (x j)) =
-        unop (inner Aᵐᵒᵖ (x i) (∑ k, inner Aᵐᵒᵖ (x k) (x j) • x k)) := by
-      simp [inner_sum_right, Finset.unop_sum]
-    rw [hsum, hx.sum_inner_smul (x j)]
+    conv_rhs => rw [CStarMatrix.gram_apply, ← hx.sum_inner_smul (x j)]
+    simp [CStarMatrix.mul_apply, inner_sum_right, Finset.unop_sum]
 
 section NonUnital
 
@@ -164,8 +161,7 @@ noncomputable def frameAnalysisCLM (A : Type*) [NonUnitalCStarAlgebra A] [Partia
     ContinuousLinearMap.pi fun i ↦
       (MulOpposite.opContinuousLinearEquiv ℂ).symm.toContinuousLinearMap.comp (innerSL (x i))
 
-@[simp]
-theorem frameAnalysisCLM_apply_apply (x : ι → E) (z : E) (i : ι) :
+@[simp] theorem frameAnalysisCLM_apply_apply (x : ι → E) (z : E) (i : ι) :
     frameAnalysisCLM A x z i = unop (inner Aᵐᵒᵖ (x i) z) := by
   simp [frameAnalysisCLM, innerSL_apply]
 
@@ -184,17 +180,15 @@ noncomputable def frameSynthesisCLM (A : Type*) [NonUnitalCStarAlgebra A] [Parti
     (ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ A) i).comp
       (WithCStarModule.equivL ℂ (A := Aᵐᵒᵖ) (E := ι → A)).toContinuousLinearMap)
 
-@[simp]
-theorem frameSynthesisCLM_apply (x : ι → E) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
+@[simp] theorem frameSynthesisCLM_apply (x : ι → E) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
     frameSynthesisCLM A x v = ∑ i, op (v i) • x i := by simp [frameSynthesisCLM]
 
 theorem frameSynthesisCLM_op_smul (x : ι → E) (a : A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
     frameSynthesisCLM A x (op a • v) = op a • frameSynthesisCLM A x v := by
   let _ := CStarModule.distribSMul Aᵐᵒᵖ E
   rw [frameSynthesisCLM_apply, frameSynthesisCLM_apply, Finset.smul_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [WithCStarModule.smul_apply, MulOpposite.smul_eq_mul_unop, unop_op, op_mul,
-    (CStarModule.semigroupAction Aᵐᵒᵖ E).mul_smul]
+  exact Finset.sum_congr rfl fun i _ ↦ by
+    simp [MulOpposite.smul_eq_mul_unop, op_mul, (CStarModule.semigroupAction Aᵐᵒᵖ E).mul_smul]
 
 /-- The synthesis and analysis operators of any finite family form a module adjoint pair. -/
 theorem isAdjointPair_frameSynthesisCLM_frameAnalysisCLM (x : ι → E) :
@@ -212,8 +206,7 @@ theorem frameAnalysisCLM_frameSynthesisCLM_apply (x : ι → E) (v : C⋆ᵐᵒ�
       CStarMatrix.mulVecCLM (CStarMatrix.gram A x) v := by
   ext i; simp [inner_sum_right, Finset.unop_sum]
 
-@[simp]
-theorem frameAnalysisCLM_comp_frameSynthesisCLM (x : ι → E) :
+@[simp] theorem frameAnalysisCLM_comp_frameSynthesisCLM (x : ι → E) :
     (frameAnalysisCLM A x).comp (frameSynthesisCLM A x) =
       CStarMatrix.mulVecCLM (CStarMatrix.gram A x) :=
   ContinuousLinearMap.ext fun v ↦ frameAnalysisCLM_frameSynthesisCLM_apply x v
@@ -255,21 +248,15 @@ theorem isParsevalFrame_iff_isStarProjection_gram_and_surjective_frameSynthesisC
     IsParsevalFrame Aᵐᵒᵖ x ↔
       IsStarProjection (CStarMatrix.gram A x) ∧ Function.Surjective (frameSynthesisCLM A x) := by
   refine ⟨fun hx ↦ ⟨hx.isStarProjection_gram, fun z ↦ ⟨frameAnalysisCLM A x z,
-    by simpa using hx.sum_inner_smul z⟩⟩, ?_⟩
-  rintro ⟨hp, hsurj⟩
-  refine isParsevalFrame_iff.mpr fun z ↦ ?_
+    by simpa using hx.sum_inner_smul z⟩⟩, fun ⟨hp, hsurj⟩ ↦ isParsevalFrame_iff.mpr fun z ↦ ?_⟩
   obtain ⟨v, rfl⟩ := hsurj z
-  set G := CStarMatrix.gram A x
-  set w := CStarMatrix.mulVecCLM G v - v
-  have hΘΦw : frameAnalysisCLM A x (frameSynthesisCLM A x w) = 0 := by
-    rw [frameAnalysisCLM_frameSynthesisCLM_apply, map_sub, CStarMatrix.mulVecCLM_mulVecCLM,
-      hp.isIdempotentElem.eq, sub_self]
+  set w := CStarMatrix.mulVecCLM (CStarMatrix.gram A x) v - v
   have hΦw : frameSynthesisCLM A x w = 0 := (inner_self (A := Aᵐᵒᵖ)).mp <| by
     rw [(isAdjointPair_frameSynthesisCLM_frameAnalysisCLM (A := A) x).inner_eq_cstarModule,
-      hΘΦw, inner_zero_right]
-  have hsub : frameSynthesisCLM A x (CStarMatrix.mulVecCLM G v) = frameSynthesisCLM A x v :=
-    sub_eq_zero.mp (by rw [← map_sub]; exact hΦw)
-  rwa [← frameAnalysisCLM_frameSynthesisCLM_apply, frameSynthesisCLM_frameAnalysisCLM_apply] at hsub
+      frameAnalysisCLM_frameSynthesisCLM_apply, map_sub, CStarMatrix.mulVecCLM_mulVecCLM,
+      hp.isIdempotentElem.eq, sub_self, inner_zero_right]
+  rw [map_sub, sub_eq_zero, ← frameAnalysisCLM_frameSynthesisCLM_apply] at hΦw
+  simpa only [frameSynthesisCLM_apply, frameAnalysisCLM_apply_apply, op_unop] using hΦw
 
 /-- Over any (possibly non-unital) C⋆-algebra `A`, every right Hilbert `A`-module admitting a
 finite Parseval frame is automatically complete. -/
@@ -294,26 +281,8 @@ theorem sum_op_smul_single_one {A ι : Type*} [Fintype ι] [DecidableEq ι] [Rin
     (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
     ∑ i : ι, op (v i) • (WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A)) = v := by
   apply (WithCStarModule.linearEquiv Aᵐᵒᵖ Aᵐᵒᵖ (ι → A)).injective
-  rw [map_sum]
-  ext j
-  simp only [Finset.sum_apply, WithCStarModule.linearEquiv_apply, WithCStarModule.equiv_pi_apply,
-    WithCStarModule.smul_apply, WithCStarModule.equiv_symm_pi_apply,
-    MulOpposite.smul_eq_mul_unop, unop_op, Pi.single_apply, ite_mul, one_mul, zero_mul]
-  exact Fintype.sum_ite_eq j (fun i ↦ v i)
-
-/-- The analysis operator of `x : ι → E` bundled as a right `A`-linear (`Aᵐᵒᵖ`-linear) map. -/
-def frameAnalysisLinearMap (A : Type*) {ι E : Type*} [SeminormedRing A] [StarRing A] [Module ℂ A]
-    [PartialOrder A] [AddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
-    (x : ι → E) : E →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) where
-  toFun z := (WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm fun i ↦ unop (inner Aᵐᵒᵖ (x i) z)
-  map_add' y z := by ext i; simp [inner_add_right]
-  map_smul' a z := by ext i; simp [MulOpposite.smul_eq_mul_unop, inner_op_smul_right]
-
-@[simp] theorem frameAnalysisLinearMap_apply_apply {A ι E : Type*} [SeminormedRing A] [StarRing A]
-    [Module ℂ A] [PartialOrder A] [AddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [Norm E]
-    [CStarModule Aᵐᵒᵖ E] (x : ι → E) (z : E) (i : ι) :
-    frameAnalysisLinearMap A x z i = unop (inner Aᵐᵒᵖ (x i) z) := by
-  simp [frameAnalysisLinearMap]
+  rw [map_sum]; ext j
+  simpa [MulOpposite.smul_eq_mul_unop, Pi.single_apply] using Fintype.sum_ite_eq j fun i ↦ v i
 
 /-- The synthesis operator of `x : ι → E` bundled as a right `A`-linear (`Aᵐᵒᵖ`-linear) map. -/
 def frameSynthesisLinearMap (A : Type*) {ι E : Type*} [Fintype ι] [Ring A] [AddCommMonoid E]
@@ -324,49 +293,62 @@ def frameSynthesisLinearMap (A : Type*) {ι E : Type*} [Fintype ι] [Ring A] [Ad
     simp only [RingHom.id_apply, WithCStarModule.smul_apply, MulOpposite.smul_eq_mul_unop,
       op_mul, mul_smul, Finset.smul_sum, op_unop]
 
-@[simp] theorem frameSynthesisLinearMap_apply {A ι E : Type*} [Fintype ι] [Ring A]
-    [AddCommMonoid E] [Module Aᵐᵒᵖ E] (x : ι → E) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
-    frameSynthesisLinearMap A x v = ∑ i, op (v i) • x i := by
-  simp [frameSynthesisLinearMap]
+section Synthesis
 
-theorem frameSynthesisLinearMap_single_one {A ι E : Type*} [Fintype ι] [DecidableEq ι] [Ring A]
-    [AddCommMonoid E] [Module Aᵐᵒᵖ E] (x : ι → E) (i : ι) :
+variable {A ι E : Type*} [Fintype ι] [Ring A] [AddCommMonoid E] [Module Aᵐᵒᵖ E]
+
+@[simp] theorem frameSynthesisLinearMap_apply (x : ι → E) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
+    frameSynthesisLinearMap A x v = ∑ i, op (v i) • x i := by simp [frameSynthesisLinearMap]
+
+theorem frameSynthesisLinearMap_single_one [DecidableEq ι] (x : ι → E) (i : ι) :
     frameSynthesisLinearMap A x
       ((WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A))) = x i := by
   simp [Pi.single_apply, apply_ite op, ite_smul]
 
 /-- Any right `A`-linear map out of `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` equals the synthesis map of its values on
 the standard basis. -/
-theorem eq_frameSynthesisLinearMap_of_linearMap {A ι E : Type*} [Fintype ι] [DecidableEq ι]
-    [Ring A] [AddCommMonoid E] [Module Aᵐᵒᵖ E]
+theorem eq_frameSynthesisLinearMap_of_linearMap [DecidableEq ι]
     (f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E) :
     f = frameSynthesisLinearMap A
       (fun i ↦ f ((WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A)))) := by
-  ext v
-  conv_lhs => rw [← sum_op_smul_single_one v]
+  ext v; conv_lhs => rw [← sum_op_smul_single_one v]
   simp [map_sum]
 
-@[simp] theorem frameAnalysisLinearMap_comp_frameSynthesisLinearMap {A ι E : Type*} [Fintype ι]
-    [SeminormedRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A]
-    [AddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E] (x : ι → E) :
-    (frameAnalysisLinearMap A x).comp (frameSynthesisLinearMap A x) =
-      CStarMatrix.mulVecLinearMap (CStarMatrix.gram A x) := by
-  ext v i
-  simp [inner_sum_right, Finset.unop_sum]
+end Synthesis
 
-theorem IsParsevalFrame.frameSynthesisLinearMap_comp_frameAnalysisLinearMap {A ι E : Type*}
-    [Fintype ι] [SeminormedRing A] [StarRing A] [Module ℂ A] [PartialOrder A]
-    [AddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
-    {x : ι → E} (hx : IsParsevalFrame Aᵐᵒᵖ x) :
+/-- The analysis operator of `x : ι → E` bundled as a right `A`-linear (`Aᵐᵒᵖ`-linear) map. -/
+def frameAnalysisLinearMap (A : Type*) {ι E : Type*} [SeminormedRing A] [StarRing A] [Module ℂ A]
+    [PartialOrder A] [AddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
+    (x : ι → E) : E →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) where
+  toFun z := (WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm fun i ↦ unop (inner Aᵐᵒᵖ (x i) z)
+  map_add' y z := by ext i; simp [inner_add_right]
+  map_smul' a z := by ext i; simp [MulOpposite.smul_eq_mul_unop, inner_op_smul_right]
+
+section Analysis
+
+variable {A ι E : Type*} [SeminormedRing A] [StarRing A] [Module ℂ A] [PartialOrder A]
+  [AddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
+
+@[simp] theorem frameAnalysisLinearMap_apply_apply (x : ι → E) (z : E) (i : ι) :
+    frameAnalysisLinearMap A x z i = unop (inner Aᵐᵒᵖ (x i) z) := by simp [frameAnalysisLinearMap]
+
+variable [Fintype ι]
+
+theorem IsParsevalFrame.frameSynthesisLinearMap_comp_frameAnalysisLinearMap {x : ι → E}
+    (hx : IsParsevalFrame Aᵐᵒᵖ x) :
     (frameSynthesisLinearMap A x).comp (frameAnalysisLinearMap A x) = LinearMap.id := by
   ext z; simpa [LinearMap.comp_apply] using hx.sum_inner_smul z
 
+variable [StarModule ℂ A]
+
+@[simp] theorem frameAnalysisLinearMap_comp_frameSynthesisLinearMap (x : ι → E) :
+    (frameAnalysisLinearMap A x).comp (frameSynthesisLinearMap A x) =
+      CStarMatrix.mulVecLinearMap (CStarMatrix.gram A x) := by
+  ext v i; simp [inner_sum_right, Finset.unop_sum]
+
 /-- The range of `frameAnalysisLinearMap A x` for a Parseval frame `x` is
 `LinearMap.range (CStarMatrix.mulVecLinearMap (CStarMatrix.gram A x))`. -/
-theorem IsParsevalFrame.range_frameAnalysisLinearMap {A ι E : Type*} [Fintype ι]
-    [SeminormedRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A]
-    [AddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
-    {x : ι → E} (hx : IsParsevalFrame Aᵐᵒᵖ x) :
+theorem IsParsevalFrame.range_frameAnalysisLinearMap {x : ι → E} (hx : IsParsevalFrame Aᵐᵒᵖ x) :
     LinearMap.range (frameAnalysisLinearMap A x) =
       LinearMap.range (CStarMatrix.mulVecLinearMap (CStarMatrix.gram A x)) := by
   refine le_antisymm ?_
@@ -375,7 +357,9 @@ theorem IsParsevalFrame.range_frameAnalysisLinearMap {A ι E : Type*} [Fintype �
   rintro _ ⟨z, rfl⟩
   refine ⟨frameAnalysisLinearMap A x z, ?_⟩
   rw [← frameAnalysisLinearMap_comp_frameSynthesisLinearMap, LinearMap.comp_apply]
-  simpa [LinearMap.comp_apply] using congrArg (frameAnalysisLinearMap A x) (hx.sum_inner_smul z)
+  simpa using congrArg (frameAnalysisLinearMap A x) (hx.sum_inner_smul z)
+
+end Analysis
 
 end UnitalAlgebraic
 
@@ -385,27 +369,24 @@ variable {A ι E : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
 
 @[simp] theorem coe_frameAnalysisLinearMap (x : ι → E) :
-    ⇑(frameAnalysisLinearMap A x) = ⇑(frameAnalysisCLM A x) := by
-  funext z; ext i; simp
+    ⇑(frameAnalysisLinearMap A x) = ⇑(frameAnalysisCLM A x) := by funext z; ext i; simp
 
 variable [Fintype ι]
 
 /-- The standard basis `i ↦ Pi.single i 1` of `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` is a Parseval frame. -/
 theorem isParsevalFrame_single_one [DecidableEq ι] :
     IsParsevalFrame Aᵐᵒᵖ
-      (fun i : ι ↦ (WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A))) := by
-  refine isParsevalFrame_iff.mpr fun v ↦ ?_
-  simpa [WithCStarModule.inner_single_left, inner_mulOpposite] using sum_op_smul_single_one v
+      (fun i : ι ↦ (WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A))) :=
+  isParsevalFrame_iff.mpr fun v ↦ by
+    simpa [WithCStarModule.inner_single_left, inner_mulOpposite] using sum_op_smul_single_one v
 
 @[simp] theorem coe_frameSynthesisLinearMap (x : ι → E) :
-    ⇑(frameSynthesisLinearMap A x) = ⇑(frameSynthesisCLM A x) := by
-  funext v; simp
+    ⇑(frameSynthesisLinearMap A x) = ⇑(frameSynthesisCLM A x) := by funext v; simp
 
 theorem frameSynthesisCLM_single_one [DecidableEq ι] (x : ι → E) (i : ι) :
     frameSynthesisCLM A x ((WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A))) =
       x i := by
-  rw [← coe_frameSynthesisLinearMap]
-  exact frameSynthesisLinearMap_single_one x i
+  rw [← coe_frameSynthesisLinearMap]; exact frameSynthesisLinearMap_single_one x i
 
 /-- The analysis map of a Parseval frame is a right `A`-linear isometry into
 `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)`. -/
@@ -434,16 +415,13 @@ noncomputable def IsParsevalFrame.equivRangeGram {x : ι → E} (hx : IsParseval
     { toLinearMap := (frameAnalysisLinearMap A x).codRestrict S fun z ↦ by
         dsimp only [S]; rw [← hx.range_frameAnalysisLinearMap]; exact LinearMap.mem_range_self _ z
       norm_map' := fun z ↦ by simpa using hx.frameAnalysisIsometry.norm_map z }
-  let g : S →ₗ[Aᵐᵒᵖ] E := (frameSynthesisLinearMap A x).comp S.subtype
-  refine LinearIsometryEquiv.ofLinearIsometry f g ?_ ?_
-  · apply LinearMap.ext; rintro ⟨w, v, hv⟩; apply Subtype.ext
-    have hw : CStarMatrix.mulVecLinearMap (CStarMatrix.gram A x) w = w := by
-      rw [← hv, CStarMatrix.mulVecLinearMap_mulVecLinearMap,
-        hx.isStarProjection_gram.isIdempotentElem.eq]
-    simp only [f, g, LinearMap.comp_apply, LinearMap.codRestrict_apply, Submodule.coe_subtype,
-      LinearMap.id_apply]
-    rw [← LinearMap.comp_apply, frameAnalysisLinearMap_comp_frameSynthesisLinearMap, hw]
-  · exact LinearMap.ext fun z ↦ by simpa [f, g, LinearMap.comp_apply] using hx.sum_inner_smul z
+  refine LinearIsometryEquiv.ofLinearIsometry f ((frameSynthesisLinearMap A x).comp S.subtype) ?_
+    (LinearMap.ext fun z ↦ by simpa [f, LinearMap.comp_apply] using hx.sum_inner_smul z)
+  apply LinearMap.ext; rintro ⟨w, v, rfl⟩; apply Subtype.ext
+  dsimp only [f, LinearMap.comp_apply, LinearMap.codRestrict_apply, LinearIsometry.coe_toLinearMap,
+    Submodule.coe_subtype, LinearMap.id_apply]
+  rw [← LinearMap.comp_apply, frameAnalysisLinearMap_comp_frameSynthesisLinearMap,
+    CStarMatrix.mulVecLinearMap_mulVecLinearMap, hx.isStarProjection_gram.isIdempotentElem.eq]
 
 @[simp] theorem IsParsevalFrame.coe_equivRangeGram_apply {x : ι → E} (hx : IsParsevalFrame Aᵐᵒᵖ x)
     (z : E) : (hx.equivRangeGram z : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) = frameAnalysisCLM A x z := by
@@ -461,32 +439,24 @@ theorem exists_isParsevalFrame_and_gram_eq_of_isStarProjection {p : CStarMatrix 
     (hp : IsStarProjection p) (U : E ≃ₗᵢ[Aᵐᵒᵖ] LinearMap.range (CStarMatrix.mulVecLinearMap p)) :
     ∃ x : ι → E, IsParsevalFrame Aᵐᵒᵖ x ∧ CStarMatrix.gram A x = p := by
   classical
-  set S := LinearMap.range (CStarMatrix.mulVecLinearMap p)
   let e : ι → C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) :=
     fun j ↦ (WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single j (1 : A))
-  let u : ι → S := fun j ↦ ⟨CStarMatrix.mulVecLinearMap p (e j), e j, rfl⟩
+  let u : ι → LinearMap.range (CStarMatrix.mulVecLinearMap p) :=
+    fun j ↦ ⟨CStarMatrix.mulVecLinearMap p (e j), e j, rfl⟩
   let x : ι → E := fun j ↦ U.symm (u j)
   have hgram : CStarMatrix.gram A x = p := by
     have hU : CStarMatrix.gram A x =
-        CStarMatrix.gram A (fun j ↦ CStarMatrix.mulVecCLM p (e j)) := by
-      ext i j; simp [x, u]
+        CStarMatrix.gram A (fun j ↦ CStarMatrix.mulVecCLM p (e j)) := by ext i j; simp [x, u]
     rw [hU, CStarMatrix.gram_mulVecCLM_single_one, ← CStarMatrix.star_eq_conjTranspose,
       hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq]
   refine ⟨x, isParsevalFrame_iff_isStarProjection_gram_and_surjective_frameSynthesisCLM.mpr
     ⟨hgram ▸ hp, fun z ↦ ?_⟩, hgram⟩
   obtain ⟨v, hv⟩ := (U z).2
-  refine ⟨v, ?_⟩
-  let a : ι → A := WithCStarModule.equiv Aᵐᵒᵖ (ι → A) v
-  have hv_sum : U z = ∑ j, op (a j) • u j := Subtype.ext <|
-    calc (U z : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) = CStarMatrix.mulVecLinearMap p v := hv.symm
-      _ = CStarMatrix.mulVecLinearMap p (∑ j, op (a j) • e j) :=
-            congrArg (CStarMatrix.mulVecLinearMap p) (sum_op_smul_single_one v).symm
-      _ = ∑ j, op (a j) • (u j).1 := by simp [map_sum, u]
-      _ = (∑ j, op (a j) • u j : S).1 := by simp
-  calc frameSynthesisCLM A x v = ∑ j, op (a j) • U.symm.toLinearEquiv (u j) :=
-        frameSynthesisCLM_apply x v
-    _ = U.symm.toLinearEquiv (∑ j, op (a j) • u j) := by simp [map_sum]
-    _ = z := by rw [← hv_sum]; exact U.symm_apply_apply z
+  refine ⟨v, U.toLinearEquiv.injective (Subtype.ext ?_)⟩
+  rw [frameSynthesisCLM_apply, map_sum]
+  simp only [map_smul, LinearIsometryEquiv.coe_toLinearEquiv]
+  rw [← hv]; conv_rhs => rw [← sum_op_smul_single_one v, map_sum]
+  simp [x, u, e]
 
 /-- Over a unital C⋆-algebra, `E` admits an `ι`-indexed Parseval frame iff `E` is unitarily
 isomorphic to `LinearMap.range (CStarMatrix.mulVecLinearMap p)` for a star projection `p`. -/
@@ -504,55 +474,7 @@ end Unital
 
 section Splitting
 
-variable {A E : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-/-- Any right `A`-linear map out of `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` into a right Hilbert `A`-module equals the
-synthesis map of its values on the standard basis, and is therefore bounded and complex-linear. -/
-theorem eq_frameSynthesisCLM_of_linearMap {ι : Type*} [Fintype ι] [DecidableEq ι]
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
-    (f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
-    f v = frameSynthesisCLM A
-      (fun i ↦ f ((WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A)))) v := by
-  rw [← coe_frameSynthesisLinearMap]
-  exact LinearMap.congr_fun (eq_frameSynthesisLinearMap_of_linearMap f) v
-
-/-- Every right `A`-linear map out of a finitely generated free right Hilbert `A`-module
-`C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` into a right Hilbert `A`-module is continuous. -/
-theorem continuous_of_linearMap {ι : Type*} [Finite ι]
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
-    (f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E) : Continuous f := by
-  classical
-  cases nonempty_fintype ι
-  have heq : ⇑f = ⇑(frameSynthesisCLM A
-      (fun i ↦ f ((WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A))))) :=
-    funext (eq_frameSynthesisCLM_of_linearMap f)
-  rw [heq]
-  exact (frameSynthesisCLM A _).continuous
-
-/-- If `f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E` and `g : E →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` satisfy
-`f ∘ₗ g = .id` on a complete right Hilbert `A`-module `E`, then `g` is continuous. -/
-theorem continuous_rightInverse_of_comp_eq_id {ι : Type*} [Finite ι]
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
-    (f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E) (g : E →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))
-    (hfg : f ∘ₗ g = LinearMap.id) : Continuous g := by
-  classical
-  cases nonempty_fintype ι
-  have : IsScalarTower ℂ Aᵐᵒᵖ E := CStarModule.isScalarTower Aᵐᵒᵖ E
-  have : IsScalarTower ℂ Aᵐᵒᵖ C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) :=
-    CStarModule.isScalarTower Aᵐᵒᵖ C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)
-  have hf_cont : Continuous f := continuous_of_linearMap f
-  have hP_cont : Continuous (g ∘ₗ f) := continuous_of_linearMap (g ∘ₗ f)
-  have hfg_apply (z : E) : f (g z) = z := LinearMap.congr_fun hfg z
-  refine (g.restrictScalars ℂ).continuous_of_isClosed_graph ?_
-  have hgraph : ((g.restrictScalars ℂ).graph : Set (E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))) =
-      {p : E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) | f p.2 = p.1 ∧ (g ∘ₗ f) p.2 = p.2} := by
-    ext ⟨x, y⟩
-    simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, LinearMap.restrictScalars_apply,
-      Set.mem_ofPred_eq, LinearMap.comp_apply]
-    exact ⟨fun h ↦ ⟨by rw [h, hfg_apply], by rw [h, hfg_apply]⟩, fun ⟨h1, h2⟩ ↦ by rw [← h1, h2]⟩
-  rw [hgraph]
-  exact (isClosed_eq (hf_cont.comp continuous_snd) continuous_fst).inter
-    (isClosed_eq (hP_cont.comp continuous_snd) continuous_snd)
+variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
 private theorem algebraMap_inv_le_gram_of_le_smul {ι W : Type*} [Fintype ι] [DecidableEq ι]
     [AddCommGroup W] [Module ℂ W] [SMul Aᵐᵒᵖ W] [Norm W] [CStarModule Aᵐᵒᵖ W]
@@ -567,8 +489,78 @@ private theorem algebraMap_inv_le_gram_of_le_smul {ι W : Type*} [Fintype ι] [D
   rw [hw, CStarMatrix.sum_star_mul_gram_mul, inv_smul_le_iff_of_pos hC]
   exact hbound w
 
+private theorem exists_gram_eq_one_of_isStrictlyPositive {ι W : Type*} [Fintype ι] [DecidableEq ι]
+    [AddCommGroup W] [Module ℂ W] [Module Aᵐᵒᵖ W] [Norm W] [CStarModule Aᵐᵒᵖ W] {y : ι → W}
+    (hM : IsStrictlyPositive (CStarMatrix.gram A y)) :
+    ∃ B S : CStarMatrix ι ι A, CStarMatrix.gram A (fun j ↦ ∑ k, op (B k j) • y k) = 1 ∧
+      ∀ k, ∑ j, op (S j k) • ∑ l, op (B l j) • y l = y k := by
+  have : ContinuousFunctionalCalculus ℝ (CStarMatrix ι ι A) IsSelfAdjoint :=
+    IsSelfAdjoint.instContinuousFunctionalCalculus
+  set M := CStarMatrix.gram A y with hM_def
+  set S := CFC.sqrt M
+  set B := CFC.sqrt (Ring.inverse M)
+  have hBS : B * S = 1 := by
+    rw [show B = Ring.inverse S from CFC.sqrt_ringInverse]
+    exact Ring.inverse_mul_cancel S (hM.sqrt M).isUnit
+  refine ⟨B, S, ?_, fun k ↦ ?_⟩
+  · ext i j
+    rw [CStarMatrix.gram_apply, ← CStarMatrix.sum_star_mul_gram_mul, ← hM_def]
+    have hmul : (star B * M * B) i j = ∑ k, ∑ l, star (B k i) * M k l * B l j := by
+      simp only [CStarMatrix.mul_apply, CStarMatrix.star_apply, Finset.sum_mul, mul_assoc]
+      exact Finset.sum_comm
+    rw [← hmul, (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq, ← CFC.conjSqrt_apply,
+      CFC.conjSqrt_ringInverse_self M hM]
+  · simp only [Finset.smul_sum, ← mul_smul, ← op_mul]
+    rw [Finset.sum_comm]
+    simp_rw [← Finset.sum_smul, ← Finset.op_sum, ← CStarMatrix.mul_apply, hBS,
+      CStarMatrix.one_apply, apply_ite op, ite_smul]
+    simp
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
+
+/-- Any right `A`-linear map out of `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` into a right Hilbert `A`-module equals the
+synthesis map of its values on the standard basis, and is therefore bounded and complex-linear. -/
+theorem eq_frameSynthesisCLM_of_linearMap {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
+    f v = frameSynthesisCLM A
+      (fun i ↦ f ((WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A)))) v := by
+  rw [← coe_frameSynthesisLinearMap]
+  exact LinearMap.congr_fun (eq_frameSynthesisLinearMap_of_linearMap f) v
+
+/-- Every right `A`-linear map out of a finitely generated free right Hilbert `A`-module
+`C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` into a right Hilbert `A`-module is continuous. -/
+theorem continuous_of_linearMap {ι : Type*} [Finite ι]
+    (f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E) : Continuous f := by
+  classical
+  cases nonempty_fintype ι
+  rw [show ⇑f = _ from funext (eq_frameSynthesisCLM_of_linearMap f)]
+  exact (frameSynthesisCLM A _).continuous
+
+variable [CompleteSpace E]
+
+/-- If `f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E` and `g : E →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` satisfy
+`f ∘ₗ g = .id` on a complete right Hilbert `A`-module `E`, then `g` is continuous. -/
+theorem continuous_rightInverse_of_comp_eq_id {ι : Type*} [Finite ι]
+    (f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E) (g : E →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))
+    (hfg : f ∘ₗ g = LinearMap.id) : Continuous g := by
+  classical
+  cases nonempty_fintype ι
+  have : IsScalarTower ℂ Aᵐᵒᵖ E := CStarModule.isScalarTower Aᵐᵒᵖ E
+  have : IsScalarTower ℂ Aᵐᵒᵖ C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) :=
+    CStarModule.isScalarTower Aᵐᵒᵖ C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)
+  have hfg_apply (z : E) : f (g z) = z := LinearMap.congr_fun hfg z
+  refine (g.restrictScalars ℂ).continuous_of_isClosed_graph ?_
+  have hgraph : ((g.restrictScalars ℂ).graph : Set (E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))) =
+      {p : E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) | f p.2 = p.1 ∧ (g ∘ₗ f) p.2 = p.2} := by
+    ext ⟨x, y⟩
+    simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, LinearMap.restrictScalars_apply,
+      Set.mem_ofPred_eq, LinearMap.comp_apply]
+    exact ⟨fun h ↦ ⟨by rw [h, hfg_apply], by rw [h, hfg_apply]⟩, fun ⟨h1, h2⟩ ↦ by rw [← h1, h2]⟩
+  rw [hgraph]
+  exact (isClosed_eq ((continuous_of_linearMap f).comp continuous_snd) continuous_fst).inter
+    (isClosed_eq ((continuous_of_linearMap (g ∘ₗ f)).comp continuous_snd) continuous_snd)
+
 private theorem isStrictlyPositive_gram_splitting {ι : Type*} [Fintype ι] [DecidableEq ι]
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
     (f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E) (g : E →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))
     (hfg : f ∘ₗ g = LinearMap.id) :
     IsStrictlyPositive (CStarMatrix.gram A fun i : ι ↦
@@ -581,28 +573,24 @@ private theorem isStrictlyPositive_gram_splitting {ι : Type*} [Fintype ι] [Dec
     CStarModule.isScalarTower Aᵐᵒᵖ C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)
   let gL : E →L[ℂ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) :=
     { toLinearMap := g.restrictScalars ℂ, cont := continuous_rightInverse_of_comp_eq_id f g hfg }
-  let e : ι → C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) :=
-    fun i ↦ (WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A))
   let h : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :=
     (WithCStarModule.linearEquiv Aᵐᵒᵖ Aᵐᵒᵖ (E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))).symm.toLinearMap ∘ₗ
       f.prod (LinearMap.id - g ∘ₗ f)
-  have hh_apply (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
+  have hh (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
       h v = (WithCStarModule.equiv Aᵐᵒᵖ (E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))).symm (f v, v - g (f v)) := by
     simp [h]
-  set C : ℝ := 2 * (1 + ‖gL‖ ^ 2)
-  have hC : 0 < C := by positivity
+  have hC : (0 : ℝ) < 2 * (1 + ‖gL‖ ^ 2) := by positivity
   refine (isStrictlyPositive_algebraMap (inv_pos.mpr hC)).of_le <|
     algebraMap_inv_le_gram_of_le_smul _ hC fun w ↦ ?_
   have hw_sum : (∑ i, op (w i) • (WithCStarModule.equiv Aᵐᵒᵖ (E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))).symm
-      (f (e i), e i - g (f (e i)))) = h w := by
-    simp_rw [← hh_apply, ← map_smul, ← map_sum]; rw [sum_op_smul_single_one]
-  have hh_fst : (h w).fst = f w := by simp [hh_apply]
-  have hh_snd : (h w).snd = w - g (f w) := by simp [hh_apply]
-  rw [hw_sum, WithCStarModule.prod_inner, unop_add, hh_fst, hh_snd]
+      (f ((WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A))),
+        (WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A)) -
+          g (f ((WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A)))))) = h w := by
+    simp_rw [← hh, ← map_smul, ← map_sum]; rw [sum_op_smul_single_one]
+  rw [hw_sum, WithCStarModule.prod_inner, unop_add, show (h w).fst = f w by simp [hh],
+    show (h w).snd = w - g (f w) by simp [hh]]
   set u := unop (inner Aᵐᵒᵖ (f w) (f w))
   set v := unop (inner Aᵐᵒᵖ (w - g (f w)) (w - g (f w)))
-  have hu : 0 ≤ u := unop_nonneg.mpr inner_self_nonneg
-  have hv : 0 ≤ v := unop_nonneg.mpr inner_self_nonneg
   have hg_le : unop (inner Aᵐᵒᵖ (g (f w)) (g (f w))) ≤ ‖gL‖ ^ 2 • u :=
     unop_inner_map_map_self_le gL (fun b z ↦ g.map_smul (op b) z) (f w)
   have hw_split : unop (inner Aᵐᵒᵖ w w) ≤ (2 : ℝ) • (‖gL‖ ^ 2 • u + v) := by
@@ -612,45 +600,16 @@ private theorem isStrictlyPositive_gram_splitting {ι : Type*} [Fintype ι] [Dec
   have hCu : ‖gL‖ ^ 2 • u + v ≤ (1 + ‖gL‖ ^ 2) • (u + v) := by
     calc ‖gL‖ ^ 2 • u + v
         ≤ (u + ‖gL‖ ^ 2 • u) + (v + ‖gL‖ ^ 2 • v) :=
-          add_le_add (le_add_of_nonneg_left hu)
-            (le_add_of_nonneg_right (smul_nonneg (sq_nonneg _) hv))
+          add_le_add (le_add_of_nonneg_left (unop_nonneg.mpr inner_self_nonneg))
+            (le_add_of_nonneg_right (smul_nonneg (sq_nonneg _)
+              (unop_nonneg.mpr inner_self_nonneg)))
       _ = (1 + ‖gL‖ ^ 2) • (u + v) := by module
   rw [mul_smul]
   exact hw_split.trans (smul_le_smul_of_nonneg_left hCu zero_le_two)
 
-private theorem exists_gram_eq_one_of_isStrictlyPositive {ι W : Type*} [Fintype ι] [DecidableEq ι]
-    [AddCommGroup W] [Module ℂ W] [Module Aᵐᵒᵖ W] [Norm W] [CStarModule Aᵐᵒᵖ W] {y : ι → W}
-    (hM : IsStrictlyPositive (CStarMatrix.gram A y)) :
-    ∃ B S : CStarMatrix ι ι A, CStarMatrix.gram A (fun j ↦ ∑ k, op (B k j) • y k) = 1 ∧
-      ∀ k, ∑ j, op (S j k) • ∑ l, op (B l j) • y l = y k := by
-  have : ContinuousFunctionalCalculus ℝ (CStarMatrix ι ι A) IsSelfAdjoint :=
-    IsSelfAdjoint.instContinuousFunctionalCalculus
-  set M : CStarMatrix ι ι A := CStarMatrix.gram A y with hM_def
-  set S : CStarMatrix ι ι A := CFC.sqrt M
-  set B : CStarMatrix ι ι A := CFC.sqrt (Ring.inverse M)
-  have hB_eq : B = Ring.inverse S := CFC.sqrt_ringInverse
-  have hBS : B * S = 1 := by
-    rw [hB_eq]
-    exact Ring.inverse_mul_cancel S (IsStrictlyPositive.sqrt M hM).isUnit
-  have hB_sa : star B = B := (CFC.sqrt_nonneg (Ring.inverse M)).isSelfAdjoint.star_eq
-  refine ⟨B, S, ?_, fun k ↦ ?_⟩
-  · ext i j
-    rw [CStarMatrix.gram_apply, ← CStarMatrix.sum_star_mul_gram_mul, ← hM_def]
-    have hmul : (star B * M * B) i j = ∑ k, ∑ l, star (B k i) * M k l * B l j := by
-      simp only [CStarMatrix.mul_apply, CStarMatrix.star_apply, Finset.sum_mul, mul_assoc]
-      exact Finset.sum_comm
-    rw [← hmul, hB_sa, ← CFC.conjSqrt_apply, CFC.conjSqrt_ringInverse_self M hM]
-  · simp only [Finset.smul_sum, ← mul_smul, ← op_mul]
-    rw [Finset.sum_comm]
-    have hsum (m : ι) : ∑ j, op (B m j * S j k) • y m = op ((B * S) m k) • y m := by
-      rw [← Finset.sum_smul, ← Finset.op_sum, CStarMatrix.mul_apply]
-    simp_rw [hsum, hBS]
-    simp [CStarMatrix.one_apply, apply_ite op, ite_smul]
-
 /-- Any complete right Hilbert `A`-module `E` that splits as a right `A`-linear retract of
 `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` (`f ∘ₗ g = LinearMap.id`) admits an `ι`-indexed Parseval frame. -/
 theorem exists_isParsevalFrame_of_comp_eq_id {ι : Type*} [Fintype ι]
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
     (f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E) (g : E →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))
     (hfg : f ∘ₗ g = LinearMap.id) : ∃ x : ι → E, IsParsevalFrame Aᵐᵒᵖ x := by
   classical
@@ -669,11 +628,8 @@ theorem exists_isParsevalFrame_of_comp_eq_id {ι : Type*} [Fintype ι]
   let π_fst : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) →ₗ[Aᵐᵒᵖ] E :=
     LinearMap.fst Aᵐᵒᵖ E C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) ∘ₗ
       (WithCStarModule.linearEquiv Aᵐᵒᵖ Aᵐᵒᵖ (E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))).toLinearMap
-  have hπ_fst (w : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))) : π_fst w = w.fst := by
-    simp [π_fst]
-  have hη_fst (j : ι) : (η j).fst = x j := by
-    rw [← hπ_fst, map_sum]
-    simp [hπ_fst, y, x]
+  have hπ_fst (w : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))) : π_fst w = w.fst := by simp [π_fst]
+  have hη_fst (j : ι) : (η j).fst = x j := by rw [← hπ_fst, map_sum]; simp [hπ_fst, y, x]
   refine ⟨x, isParsevalFrame_iff.mpr fun z ↦ ?_⟩
   let u₀ : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :=
     (WithCStarModule.equiv Aᵐᵒᵖ (E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))).symm (z, 0)
@@ -749,15 +705,19 @@ def polarMatrix (A : Type*) {ι E F : Type*} [DecidableEq ι] [AddGroupWithOne A
     [Inner Aᵐᵒᵖ F] (x : ι → E) (T : E → F) : CStarMatrix ι ι A :=
   CStarMatrix.gram A (fun i ↦ T (x i)) + (1 - CStarMatrix.gram A x)
 
-theorem polarMatrix_def {A ι E F : Type*} [DecidableEq ι] [AddGroupWithOne A] [Inner Aᵐᵒᵖ E]
-    [Inner Aᵐᵒᵖ F] (x : ι → E) (T : E → F) :
+section PolarBasic
+
+variable {A ι E F : Type*} [DecidableEq ι] [AddGroupWithOne A] [Inner Aᵐᵒᵖ E] [Inner Aᵐᵒᵖ F]
+
+theorem polarMatrix_def (x : ι → E) (T : E → F) :
     polarMatrix A x T = CStarMatrix.gram A (fun i ↦ T (x i)) + (1 - CStarMatrix.gram A x) := (rfl)
 
-@[simp] theorem polarMatrix_apply {A ι E F : Type*} [DecidableEq ι] [AddGroupWithOne A]
-    [Inner Aᵐᵒᵖ E] [Inner Aᵐᵒᵖ F] (x : ι → E) (T : E → F) (i j : ι) :
+@[simp] theorem polarMatrix_apply (x : ι → E) (T : E → F) (i j : ι) :
     polarMatrix A x T i j =
       unop (inner Aᵐᵒᵖ (T (x i)) (T (x j))) + (1 - CStarMatrix.gram A x) i j := by
   simp [polarMatrix_def]
+
+end PolarBasic
 
 theorem IsParsevalFrame.polarMatrix_nonneg {A ι E F : Type*} [Fintype ι] [DecidableEq ι]
     [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
@@ -766,33 +726,31 @@ theorem IsParsevalFrame.polarMatrix_nonneg {A ι E F : Type*} [Fintype ι] [Deci
     {x : ι → E} (hx : IsParsevalFrame Aᵐᵒᵖ x) (T : E → F) : 0 ≤ polarMatrix A x T :=
   add_nonneg (CStarMatrix.gram_nonneg _) hx.isStarProjection_gram.one_sub.nonneg
 
-theorem IsParsevalFrame.polarMatrix_mul_gram {A ι E F 𝓕 : Type*} [Fintype ι] [DecidableEq ι]
-    [SeminormedRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A]
-    [AddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
-    [AddCommGroup F] [Module ℂ F] [Module Aᵐᵒᵖ F] [Norm F] [CStarModule Aᵐᵒᵖ F]
-    [FunLike 𝓕 E F] [LinearMapClass 𝓕 Aᵐᵒᵖ E F]
-    {x : ι → E} (hx : IsParsevalFrame Aᵐᵒᵖ x) (T : 𝓕) :
+section PolarAlg
+
+variable {A ι E F 𝓕 : Type*} [Fintype ι] [DecidableEq ι]
+  [SeminormedRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A]
+  [AddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
+  [AddCommGroup F] [Module ℂ F] [Module Aᵐᵒᵖ F] [Norm F] [CStarModule Aᵐᵒᵖ F]
+  [FunLike 𝓕 E F] [LinearMapClass 𝓕 Aᵐᵒᵖ E F]
+
+theorem IsParsevalFrame.polarMatrix_mul_gram {x : ι → E} (hx : IsParsevalFrame Aᵐᵒᵖ x) (T : 𝓕) :
     polarMatrix A x T * CStarMatrix.gram A x = CStarMatrix.gram A (fun i ↦ T (x i)) := by
   rw [polarMatrix_def, add_mul, hx.isStarProjection_gram.one_sub_mul_self, add_zero]
-  ext i j; simp only [CStarMatrix.mul_apply, CStarMatrix.gram_apply]
-  have hsum : ∑ k, unop (inner Aᵐᵒᵖ (T (x i)) (T (x k))) * unop (inner Aᵐᵒᵖ (x k) (x j)) =
-      unop (inner Aᵐᵒᵖ (T (x i)) (T (∑ k, inner Aᵐᵒᵖ (x k) (x j) • x k))) := by
-    simp [map_sum, inner_sum_right, Finset.unop_sum]
-  rw [hsum, hx.sum_inner_smul (x j)]
+  ext i j
+  conv_rhs => rw [CStarMatrix.gram_apply, ← hx.sum_inner_smul (x j)]
+  simp [CStarMatrix.mul_apply, map_sum, inner_sum_right, Finset.unop_sum]
 
-theorem IsParsevalFrame.commute_polarMatrix_gram {A ι E F 𝓕 : Type*} [Fintype ι] [DecidableEq ι]
-    [SeminormedRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A]
-    [AddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
-    [AddCommGroup F] [Module ℂ F] [Module Aᵐᵒᵖ F] [Norm F] [CStarModule Aᵐᵒᵖ F]
-    [FunLike 𝓕 E F] [LinearMapClass 𝓕 Aᵐᵒᵖ E F]
-    {x : ι → E} (hx : IsParsevalFrame Aᵐᵒᵖ x) (T : 𝓕) :
-    Commute (polarMatrix A x T) (CStarMatrix.gram A x) := by
+theorem IsParsevalFrame.commute_polarMatrix_gram {x : ι → E} (hx : IsParsevalFrame Aᵐᵒᵖ x)
+    (T : 𝓕) : Commute (polarMatrix A x T) (CStarMatrix.gram A x) := by
   have hsa : IsSelfAdjoint (polarMatrix A x T) := by
     rw [polarMatrix_def]
     exact (CStarMatrix.isSelfAdjoint_gram _).add hx.isStarProjection_gram.one_sub.isSelfAdjoint
   exact IsSelfAdjoint.commute_of_mul_eq_isSelfAdjoint _ _ _ hsa
     hx.isStarProjection_gram.isSelfAdjoint (CStarMatrix.isSelfAdjoint_gram _)
     (hx.polarMatrix_mul_gram T)
+
+end PolarAlg
 
 variable {A ι E F : Type*} [Fintype ι] [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
@@ -833,21 +791,19 @@ theorem IsParsevalFrame.isStrictlyPositive_polarMatrix [DecidableEq ι] {x : ι 
   suffices polarMatrix A x T = CStarMatrix.gram A y from
     this ▸ isStrictlyPositive_gram_splitting f g hfg
   set p := CStarMatrix.gram A x with hp_def
-  have hp : IsStarProjection p := hx.isStarProjection_gram
   have hfe (i : ι) : f (e i) = T (x i) := by
     rw [LinearMap.comp_apply, frameSynthesisLinearMap_single_one, LinearEquiv.coe_coe]
   have h1p (i : ι) : CStarMatrix.mulVecCLM (1 - p) (e i) = e i - g (f (e i)) := by
     rw [hfe, ← CStarMatrix.coe_mulVecLinearMap, map_sub, LinearMap.sub_apply,
-      CStarMatrix.mulVecLinearMap_one, LinearMap.id_apply]
-    congr 1
-    rw [hp_def, ← frameAnalysisLinearMap_comp_frameSynthesisLinearMap, LinearMap.comp_apply,
-      frameSynthesisLinearMap_single_one]
-    simp [g]
+      CStarMatrix.mulVecLinearMap_one, LinearMap.id_apply, hp_def,
+      ← frameAnalysisLinearMap_comp_frameSynthesisLinearMap, LinearMap.comp_apply,
+      frameSynthesisLinearMap_single_one]; simp [g]
   have hy_fst (i : ι) : (y i).fst = T (x i) := by simp [y, hfe]
   have hy_snd (i : ι) : (y i).snd = CStarMatrix.mulVecCLM (1 - p) (e i) := by rw [h1p]; simp [y]
   have h1p_gram : CStarMatrix.gram A (fun j ↦ CStarMatrix.mulVecCLM (1 - p) (e j)) = 1 - p := by
     rw [CStarMatrix.gram_mulVecCLM_single_one, ← CStarMatrix.star_eq_conjTranspose,
-      hp.one_sub.isSelfAdjoint.star_eq, hp.one_sub.isIdempotentElem.eq]
+      hx.isStarProjection_gram.one_sub.isSelfAdjoint.star_eq,
+      hx.isStarProjection_gram.one_sub.isIdempotentElem.eq]
   ext i j
   rw [polarMatrix_apply, ← hp_def, CStarMatrix.gram_apply, WithCStarModule.prod_inner, unop_add,
     hy_fst, hy_fst, hy_snd, hy_snd,
@@ -867,20 +823,18 @@ noncomputable def IsParsevalFrame.polarModulus {x : ι → E} (hx : IsParsevalFr
     (T : E ≃ₗ[Aᵐᵒᵖ] F) : E ≃ₗ[Aᵐᵒᵖ] E :=
   letI := Classical.decEq ι
   let S := CFC.sqrt (polarMatrix A x T)
-  let B := Ring.inverse S
   LinearEquiv.ofLinearMap
     ((frameSynthesisLinearMap A x).comp
       ((CStarMatrix.mulVecLinearMap S).comp (frameAnalysisLinearMap A x)))
     ((frameSynthesisLinearMap A x).comp
-      ((CStarMatrix.mulVecLinearMap B).comp (frameAnalysisLinearMap A x)))
+      ((CStarMatrix.mulVecLinearMap (Ring.inverse S)).comp (frameAnalysisLinearMap A x)))
     (by
       have hS := hx.isUnit_sqrt_polarMatrix T
       have hcomm_S : Commute S (CStarMatrix.gram A x) :=
         (hx.commute_polarMatrix_gram T).cfcₙ_nnreal NNReal.sqrt
-      have hB_eq : B = ↑hS.unit⁻¹ := Ring.inverse_of_isUnit hS
-      have hcomm_B : Commute B (CStarMatrix.gram A x) := by
-        rw [hB_eq]; exact Commute.units_inv_left (by simpa [S] using hcomm_S)
-      exact frameSynthesis_mulVec_comp_eq_id hx (Ring.mul_inverse_cancel S hS) hcomm_B)
+      have hcomm : Commute (Ring.inverse S) (CStarMatrix.gram A x) := by
+        rw [Ring.inverse_of_isUnit hS]; exact Commute.units_inv_left (by simpa [S] using hcomm_S)
+      exact frameSynthesis_mulVec_comp_eq_id hx (Ring.mul_inverse_cancel S hS) hcomm)
     (frameSynthesis_mulVec_comp_eq_id hx (Ring.inverse_mul_cancel S (hx.isUnit_sqrt_polarMatrix T))
       ((hx.commute_polarMatrix_gram T).cfcₙ_nnreal NNReal.sqrt))
 
@@ -910,12 +864,11 @@ theorem IsParsevalFrame.isAdjointPair_polarModulus {x : ι → E} (hx : IsParsev
   classical
   rw [isAdjointPair_inner_iff]; intro y z
   rw [hx.polarModulus_apply T y, hx.polarModulus_apply T z]
-  set S := CFC.sqrt (polarMatrix A x T)
-  have hS_sa : star S = S := (CFC.sqrt_nonneg (polarMatrix A x T)).isSelfAdjoint.star_eq
-  have hadj_ΦΘ := isAdjointPair_frameSynthesisCLM_frameAnalysisCLM (A := A) x
-  rw [hadj_ΦΘ.inner_eq_cstarModule,
-    (CStarMatrix.isAdjointPair_mulVecCLM_star S).inner_eq_cstarModule, hS_sa,
-    hadj_ΦΘ.symm_cstarModule.inner_eq_cstarModule]
+  have hadj := isAdjointPair_frameSynthesisCLM_frameAnalysisCLM (A := A) x
+  rw [hadj.inner_eq_cstarModule,
+    (CStarMatrix.isAdjointPair_mulVecCLM_star _).inner_eq_cstarModule,
+    (CFC.sqrt_nonneg (polarMatrix A x T)).isSelfAdjoint.star_eq,
+    hadj.symm_cstarModule.inner_eq_cstarModule]
 
 /-- `hx.polarModulus T` is positive: `0 ≤ ⟨z, |T| z⟩_A` for all `z : E`. -/
 theorem IsParsevalFrame.inner_polarModulus_right_nonneg {x : ι → E} (hx : IsParsevalFrame Aᵐᵒᵖ x)
@@ -924,13 +877,12 @@ theorem IsParsevalFrame.inner_polarModulus_right_nonneg {x : ι → E} (hx : IsP
   rw [hx.polarModulus_apply T z]
   set S := CFC.sqrt (polarMatrix A x T)
   set R := CFC.sqrt S
-  have hR_sa : star R = R := (CFC.sqrt_nonneg S).isSelfAdjoint.star_eq
-  have hR_sq : R * R = S := CFC.sqrt_mul_sqrt_self S (CFC.sqrt_nonneg _)
   have hRR (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
       CStarMatrix.mulVecCLM S v = CStarMatrix.mulVecCLM (star R) (CStarMatrix.mulVecCLM R v) := by
-    rw [hR_sa, CStarMatrix.mulVecCLM_mulVecCLM, hR_sq]
-  have hadj_ΦΘ := isAdjointPair_frameSynthesisCLM_frameAnalysisCLM (A := A) x
-  rw [← hadj_ΦΘ.symm_cstarModule.inner_eq_cstarModule, hRR,
+    rw [(CFC.sqrt_nonneg S).isSelfAdjoint.star_eq, CStarMatrix.mulVecCLM_mulVecCLM,
+      CFC.sqrt_mul_sqrt_self S (CFC.sqrt_nonneg _)]
+  have hadj := (isAdjointPair_frameSynthesisCLM_frameAnalysisCLM (A := A) x).symm_cstarModule
+  rw [← hadj.inner_eq_cstarModule, hRR,
     ← (CStarMatrix.isAdjointPair_mulVecCLM_star R).inner_eq_cstarModule]
   exact inner_self_nonneg
 
@@ -943,15 +895,15 @@ theorem IsParsevalFrame.inner_polarModulus_polarModulus {x : ι → E} (hx : IsP
   apply unop_injective
   rw [hx.polarModulus_apply T y, hx.polarModulus_apply T z]
   set S := CFC.sqrt (polarMatrix A x T)
-  have hS_sa : star S = S := (CFC.sqrt_nonneg (polarMatrix A x T)).isSelfAdjoint.star_eq
-  have hS_sq : S * S = polarMatrix A x T := CFC.sqrt_mul_sqrt_self _ (hx.polarMatrix_nonneg T)
   have hcomm_S : Commute S (CStarMatrix.gram A x) :=
     (hx.commute_polarMatrix_gram T).cfcₙ_nnreal NNReal.sqrt
   have hSpS : S * CStarMatrix.gram A x * S = CStarMatrix.gram A (fun i ↦ T (x i)) := by
-    rw [mul_assoc, ← hcomm_S.eq, ← mul_assoc, hS_sq, hx.polarMatrix_mul_gram T]
+    rw [mul_assoc, ← hcomm_S.eq, ← mul_assoc, CFC.sqrt_mul_sqrt_self _ (hx.polarMatrix_nonneg T),
+      hx.polarMatrix_mul_gram T]
   rw [(isAdjointPair_frameSynthesisCLM_frameAnalysisCLM (A := A) x).inner_eq_cstarModule,
     frameAnalysisCLM_frameSynthesisCLM_apply,
-    (CStarMatrix.isAdjointPair_mulVecCLM_star S).inner_eq_cstarModule, hS_sa,
+    (CStarMatrix.isAdjointPair_mulVecCLM_star S).inner_eq_cstarModule,
+    (CFC.sqrt_nonneg (polarMatrix A x T)).isSelfAdjoint.star_eq,
     CStarMatrix.mulVecCLM_mulVecCLM, CStarMatrix.mulVecCLM_mulVecCLM, hSpS]
   have hquad := CStarMatrix.sum_star_mul_gram_mul (A := A) (fun i ↦ T (x i))
     (frameAnalysisCLM A x y) (frameAnalysisCLM A x z)

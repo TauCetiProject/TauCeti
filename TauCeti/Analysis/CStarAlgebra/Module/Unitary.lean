@@ -116,20 +116,17 @@ namespace LinearMap
 variable {R A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
   [Semiring R] [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [Module R E] [CStarModule A E]
   [SeminormedAddCommGroup F] [Module ℂ F] [SMul A F] [Module R F] [CStarModule A F]
+  (f : E →ₗ[R] F) (hf : ∀ x : E, inner A (f x) (f x) = inner A x x)
 
 /-- An `R`-linear map between Hilbert C⋆-modules preserving self-inner products is an `R`-linear
 isometry. -/
-def isometryOfInnerCStarModule (f : E →ₗ[R] F)
-    (hf : ∀ x : E, inner A (f x) (f x) = inner A x x) : E →ₗᵢ[R] F where
+def isometryOfInnerCStarModule : E →ₗᵢ[R] F where
   toLinearMap := f
   norm_map' x := norm_map_of_inner_map_map_self (hf x)
 
-@[simp] theorem coe_isometryOfInnerCStarModule (f : E →ₗ[R] F)
-    (hf : ∀ x : E, inner A (f x) (f x) = inner A x x) : ⇑(f.isometryOfInnerCStarModule hf) = f :=
-  (rfl)
+@[simp] theorem coe_isometryOfInnerCStarModule : ⇑(f.isometryOfInnerCStarModule hf) = f := (rfl)
 
-@[simp] theorem isometryOfInnerCStarModule_toLinearMap (f : E →ₗ[R] F)
-    (hf : ∀ x : E, inner A (f x) (f x) = inner A x x) :
+@[simp] theorem isometryOfInnerCStarModule_toLinearMap :
     (f.isometryOfInnerCStarModule hf).toLinearMap = f := (rfl)
 
 end LinearMap
@@ -141,24 +138,20 @@ section General
 variable {R A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
   [Semiring R] [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [Module R E] [CStarModule A E]
   [SeminormedAddCommGroup F] [Module ℂ F] [SMul A F] [Module R F] [CStarModule A F]
+  (f : E ≃ₗ[R] F) (hf : ∀ x : E, inner A (f x) (f x) = inner A x x)
 
 /-- An `R`-linear equivalence between Hilbert C⋆-modules preserving self-inner products is a linear
 isometric equivalence. -/
-def isometryOfInnerCStarModule (f : E ≃ₗ[R] F)
-    (hf : ∀ x : E, inner A (f x) (f x) = inner A x x) : E ≃ₗᵢ[R] F where
+def isometryOfInnerCStarModule : E ≃ₗᵢ[R] F where
   toLinearEquiv := f
   norm_map' := (f.toLinearMap.isometryOfInnerCStarModule hf).norm_map
 
-@[simp] theorem coe_isometryOfInnerCStarModule (f : E ≃ₗ[R] F)
-    (hf : ∀ x : E, inner A (f x) (f x) = inner A x x) : ⇑(f.isometryOfInnerCStarModule hf) = f :=
-  (rfl)
+@[simp] theorem coe_isometryOfInnerCStarModule : ⇑(f.isometryOfInnerCStarModule hf) = f := (rfl)
 
-@[simp] theorem isometryOfInnerCStarModule_toLinearEquiv (f : E ≃ₗ[R] F)
-    (hf : ∀ x : E, inner A (f x) (f x) = inner A x x) :
+@[simp] theorem isometryOfInnerCStarModule_toLinearEquiv :
     (f.isometryOfInnerCStarModule hf).toLinearEquiv = f := (rfl)
 
-@[simp] theorem coe_symm_isometryOfInnerCStarModule (f : E ≃ₗ[R] F)
-    (hf : ∀ x : E, inner A (f x) (f x) = inner A x x) :
+@[simp] theorem coe_symm_isometryOfInnerCStarModule :
     ⇑(f.isometryOfInnerCStarModule hf).symm = f.symm := (rfl)
 
 end General
@@ -302,12 +295,12 @@ namespace CStarModule
 variable {A E F : Type*} [Ring A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A]
   [Norm A] [SeminormedAddCommGroup E] [Module ℂ E] [Module A E] [CStarModule A E]
   [SeminormedAddCommGroup F] [Module ℂ F] [Module A F] [CStarModule A F]
+  (U : E → F) (hsurj : Function.Surjective U)
+  (hinner : ∀ x y : E, inner A (U x) (U y) = inner A x y)
 
 /-- Upgrade any plain surjective function `U : E → F` preserving `⟪·, ·⟫_A` to a bundled unitary
 `E ≃ₗᵢ[A] F`. -/
-noncomputable def linearIsometryEquivOfSurjectiveInner (U : E → F)
-    (hsurj : Function.Surjective U) (hinner : ∀ x y : E, inner A (U x) (U y) = inner A x y) :
-    E ≃ₗᵢ[A] F :=
+noncomputable def linearIsometryEquivOfSurjectiveInner : E ≃ₗᵢ[A] F :=
   let e : E ≃ F := Equiv.ofBijective U ⟨injective_of_inner_map_map hinner, hsurj⟩
   have hadj : LinearMap.IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip e e.symm :=
@@ -316,22 +309,18 @@ noncomputable def linearIsometryEquivOfSurjectiveInner (U : E → F)
      map_smul' := hadj.map_smul_coeff_cstarModule } : E ≃ₗ[A] F).isometryOfInnerCStarModule
     fun x ↦ hinner x x
 
-@[simp] theorem coe_linearIsometryEquivOfSurjectiveInner (U : E → F)
-    (hsurj : Function.Surjective U) (hinner : ∀ x y : E, inner A (U x) (U y) = inner A x y) :
+@[simp] theorem coe_linearIsometryEquivOfSurjectiveInner :
     ⇑(linearIsometryEquivOfSurjectiveInner U hsurj hinner) = U := (rfl)
 
-theorem linearIsometryEquivOfSurjectiveInner_apply (U : E → F)
-    (hsurj : Function.Surjective U) (hinner : ∀ x y : E, inner A (U x) (U y) = inner A x y)
-    (x : E) : linearIsometryEquivOfSurjectiveInner U hsurj hinner x = U x := (rfl)
+theorem linearIsometryEquivOfSurjectiveInner_apply (x : E) :
+    linearIsometryEquivOfSurjectiveInner U hsurj hinner x = U x := (rfl)
 
-@[simp] theorem linearIsometryEquivOfSurjectiveInner_symm_apply_apply (U : E → F)
-    (hsurj : Function.Surjective U) (hinner : ∀ x y : E, inner A (U x) (U y) = inner A x y)
-    (x : E) : (linearIsometryEquivOfSurjectiveInner U hsurj hinner).symm (U x) = x :=
+@[simp] theorem linearIsometryEquivOfSurjectiveInner_symm_apply_apply (x : E) :
+    (linearIsometryEquivOfSurjectiveInner U hsurj hinner).symm (U x) = x :=
   (linearIsometryEquivOfSurjectiveInner U hsurj hinner).symm_apply_apply x
 
-theorem linearIsometryEquivOfSurjectiveInner_apply_symm_apply (U : E → F)
-    (hsurj : Function.Surjective U) (hinner : ∀ x y : E, inner A (U x) (U y) = inner A x y)
-    (y : F) : U ((linearIsometryEquivOfSurjectiveInner U hsurj hinner).symm y) = y :=
+theorem linearIsometryEquivOfSurjectiveInner_apply_symm_apply (y : F) :
+    U ((linearIsometryEquivOfSurjectiveInner U hsurj hinner).symm y) = y :=
   (linearIsometryEquivOfSurjectiveInner U hsurj hinner).apply_symm_apply y
 
 end CStarModule

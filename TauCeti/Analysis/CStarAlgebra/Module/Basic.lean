@@ -166,20 +166,22 @@ theorem induced_inner (g : M →ₗ[ℂ] E) (hg : Function.Injective g)
 
 end Induced
 
+section Submodule
+
+variable {A E : Type*} [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [SeminormedAddCommGroup E] [Module ℂ E] [Module A E] [IsScalarTower ℂ A E] [CStarModule A E]
+
 /-- Any `A`-submodule of a `CStarModule` over a unital coefficient ring inherits a `CStarModule`
 structure by restricting the inner product. -/
-instance _root_.Submodule.instCStarModule {A E : Type*} [Ring A] [StarRing A] [Module ℂ A]
-    [PartialOrder A] [Norm A] [SeminormedAddCommGroup E] [Module ℂ E] [Module A E]
-    [IsScalarTower ℂ A E] [CStarModule A E] (S : Submodule A E) : CStarModule A S :=
+instance _root_.Submodule.instCStarModule (S : Submodule A E) : CStarModule A S :=
   CStarModule.induced (S.subtype.restrictScalars ℂ) Subtype.val_injective
-    (fun _ _ ↦ rfl) (fun _ ↦ rfl)
+    (fun _ _ ↦ rfl) fun _ ↦ rfl
 
 /-- The `A`-valued inner product on a submodule agrees with that of the ambient `CStarModule`. -/
-@[simp]
-theorem _root_.Submodule.coe_inner_cstarModule {A E : Type*} [Ring A] [StarRing A] [Module ℂ A]
-    [PartialOrder A] [Norm A] [SeminormedAddCommGroup E] [Module ℂ E] [Module A E]
-    [IsScalarTower ℂ A E] [CStarModule A E] (S : Submodule A E) (x y : S) :
+@[simp] theorem _root_.Submodule.coe_inner_cstarModule (S : Submodule A E) (x y : S) :
     inner A x y = inner A (x : E) (y : E) := (rfl)
+
+end Submodule
 
 variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
@@ -279,16 +281,11 @@ theorem inner_map_map_self_le_of_norm_le [AddCommGroup F] [Module ℂ F] [SMul A
     ← map_smul, ← map_add, Unitization.norm_inr, Unitization.norm_inr, ← norm_sq_eq A,
     ← norm_sq_eq A]
   set w := z.fst • x + z.snd • x
-  have hw0 : 0 ≤ ‖w‖ := CStarModule.norm_nonneg A
-  have hTw0 : 0 ≤ ‖T w‖ := CStarModule.norm_nonneg A
-  have hw := hC w
   rcases le_or_gt 0 C with _ | _
-  · calc ‖T w‖ ^ 2 ≤ (C * ‖w‖) ^ 2 := by gcongr
-      _ = C ^ 2 * ‖w‖ ^ 2 := mul_pow C ‖w‖ 2
-  · have hw_eq : ‖w‖ = 0 := by nlinarith
-    have hTw_eq : ‖T w‖ = 0 := by nlinarith
-    rw [hw_eq, hTw_eq]
-    simp
+  · rw [← mul_pow]; exact pow_le_pow_left₀ (CStarModule.norm_nonneg A) (hC w) 2
+  · have : ‖T w‖ = 0 := by
+      nlinarith [CStarModule.norm_nonneg A (x := w), CStarModule.norm_nonneg A (x := T w), hC w]
+    rw [this, zero_pow two_ne_zero]; positivity
 
 end Norm
 

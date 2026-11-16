@@ -95,20 +95,13 @@ theorem exists_isParsevalFrame_iff_finite_projective {A E : Type*}
     [CStarModule Aᵐᵒᵖ E] :
     (∃ (n : ℕ) (x : Fin n → E), IsParsevalFrame Aᵐᵒᵖ x) ↔
       Module.Finite Aᵐᵒᵖ E ∧ Module.Projective Aᵐᵒᵖ E := by
-  constructor
-  · rintro ⟨n, x, hx⟩
-    exact ⟨hx.finite, hx.projective⟩
-  · rintro ⟨_, _⟩
-    obtain ⟨n, f₀, g₀, _, _, hfg₀⟩ := Module.Finite.exists_comp_eq_id_of_projective Aᵐᵒᵖ E
-    let e_pi : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, Fin n → A) ≃ₗ[Aᵐᵒᵖ] (Fin n → Aᵐᵒᵖ) :=
-      WithCStarModule.piOpLinearEquiv A (Fin n)
-    let f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, Fin n → A) →ₗ[Aᵐᵒᵖ] E := f₀ ∘ₗ e_pi.toLinearMap
-    let g : E →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, Fin n → A) := e_pi.symm.toLinearMap ∘ₗ g₀
-    have hfg : f ∘ₗ g = LinearMap.id := by
-      ext z
-      simpa [f, g, LinearMap.comp_apply] using LinearMap.congr_fun hfg₀ z
-    obtain ⟨x, hx⟩ := exists_isParsevalFrame_of_comp_eq_id f g hfg
-    exact ⟨n, x, hx⟩
+  refine ⟨fun ⟨_, _, hx⟩ ↦ ⟨hx.finite, hx.projective⟩, fun ⟨_, _⟩ ↦ ?_⟩
+  obtain ⟨n, f₀, g₀, _, _, hfg₀⟩ := Module.Finite.exists_comp_eq_id_of_projective Aᵐᵒᵖ E
+  let e := WithCStarModule.piOpLinearEquiv A (Fin n)
+  obtain ⟨x, hx⟩ := exists_isParsevalFrame_of_comp_eq_id (f₀ ∘ₗ e.toLinearMap)
+    (e.symm.toLinearMap ∘ₗ g₀)
+    (by ext z; simpa [LinearMap.comp_apply] using LinearMap.congr_fun hfg₀ z)
+  exact ⟨n, x, hx⟩
 
 /-- Every algebraic finitely generated projective right `A`-module `M` (with compatible complex
 scalar multiplication, for example via `Module.compHom M (algebraMap ℂ Aᵐᵒᵖ)`) admits a norm and a
@@ -127,12 +120,12 @@ theorem exists_completeSpace_cstarModule_of_finite_projective (A M : Type*)
   let e_pi : F_n ≃ₗ[Aᵐᵒᵖ] (Fin n → Aᵐᵒᵖ) := WithCStarModule.piOpLinearEquiv A (Fin n)
   let f : F_n →ₗ[Aᵐᵒᵖ] M := f₀ ∘ₗ e_pi.toLinearMap
   let g : M →ₗ[Aᵐᵒᵖ] F_n := e_pi.symm.toLinearMap ∘ₗ g₀
-  have hg_inj : Function.Injective g := e_pi.symm.injective.comp hg₀_inj
   have hfg_apply : Function.LeftInverse f g := fun m ↦ by
     simpa [f, g, LinearMap.comp_apply] using LinearMap.congr_fun hfg₀ m
   let : Norm M := ⟨fun m ↦ ‖g m‖⟩
   let : CStarModule Aᵐᵒᵖ M :=
-    CStarModule.induced (g.restrictScalars ℂ) hg_inj g.map_smul fun _ ↦ rfl
+    CStarModule.induced (g.restrictScalars ℂ) (e_pi.symm.injective.comp hg₀_inj) g.map_smul
+      fun _ ↦ rfl
   let : NormedAddCommGroup M := CStarModule.normedAddCommGroup Aᵐᵒᵖ
   let : NormedSpace ℂ M := .ofCore (CStarModule.normedSpaceCore Aᵐᵒᵖ)
   have hisom : Isometry g := AddMonoidHomClass.isometry_of_norm (g.restrictScalars ℂ) fun _ ↦ rfl
@@ -140,12 +133,12 @@ theorem exists_completeSpace_cstarModule_of_finite_projective (A M : Type*)
     (hfg_apply.isClosed_range (continuous_of_linearMap f) hisom.continuous).isComplete⟩
 
 variable {A E F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] [Module Aᵐᵒᵖ E]
+  [CStarModule Aᵐᵒᵖ E] [Module.Finite Aᵐᵒᵖ E] [Module.Projective Aᵐᵒᵖ E]
 
 /-- Every right `A`-linear map out of a complete finitely generated projective right Hilbert
 `A`-module into any right C⋆-module over `A` is automatically adjointable. -/
 theorem exists_isAdjointPair_of_finite_projective
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] [Module Aᵐᵒᵖ E]
-    [CStarModule Aᵐᵒᵖ E] [Module.Finite Aᵐᵒᵖ E] [Module.Projective Aᵐᵒᵖ E]
     [AddCommGroup F] [Module ℂ F] [Module Aᵐᵒᵖ F] [Norm F] [CStarModule Aᵐᵒᵖ F]
     (T : E →ₗ[Aᵐᵒᵖ] F) :
     ∃ S : F →ₗ[Aᵐᵒᵖ] E,
@@ -154,19 +147,17 @@ theorem exists_isAdjointPair_of_finite_projective
   obtain ⟨_, x, hx⟩ := exists_isParsevalFrame_iff_finite_projective.mpr ⟨‹_›, ‹_›⟩
   exact ⟨frameAdjoint Aᵐᵒᵖ x T, hx.isAdjointPair_frameAdjoint T⟩
 
+variable [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] [Module Aᵐᵒᵖ F]
+  [CStarModule Aᵐᵒᵖ F]
+
 /-- Every right `A`-linear equivalence `T : E ≃ₗ[Aᵐᵒᵖ] F` between complete finitely generated
 projective right Hilbert `A`-modules admits a polar decomposition `T = U ∘ |T|` into a self-adjoint
 positive module automorphism `|T| : E ≃ₗ[Aᵐᵒᵖ] E` and a unitary isomorphism `U : E ≃ₗᵢ[Aᵐᵒᵖ] F`. -/
-theorem exists_polar_linearIsometryEquiv_of_finite_projective
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] [Module Aᵐᵒᵖ E]
-    [CStarModule Aᵐᵒᵖ E] [Module.Finite Aᵐᵒᵖ E] [Module.Projective Aᵐᵒᵖ E]
-    [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] [Module Aᵐᵒᵖ F]
-    [CStarModule Aᵐᵒᵖ F] (T : E ≃ₗ[Aᵐᵒᵖ] F) :
+theorem exists_polar_linearIsometryEquiv_of_finite_projective (T : E ≃ₗ[Aᵐᵒᵖ] F) :
     ∃ (U : E ≃ₗᵢ[Aᵐᵒᵖ] F) (P : E ≃ₗ[Aᵐᵒᵖ] E),
       LinearMap.IsAdjointPair (innerₛₗ (A := Aᵐᵒᵖ) (E := E)).flip
         (innerₛₗ (A := Aᵐᵒᵖ) (E := E)).flip P P ∧
-      (∀ z : E, 0 ≤ inner Aᵐᵒᵖ z (P z)) ∧
-      (∀ z : E, U (P z) = T z) := by
+      (∀ z : E, 0 ≤ inner Aᵐᵒᵖ z (P z)) ∧ (∀ z : E, U (P z) = T z) := by
   obtain ⟨_, _, hx⟩ := exists_isParsevalFrame_iff_finite_projective.mpr ⟨‹_›, ‹_›⟩
   exact ⟨hx.polarUnitary T, hx.polarModulus T, hx.isAdjointPair_polarModulus T,
     hx.inner_polarModulus_right_nonneg T, hx.polarUnitary_polarModulus_apply T⟩
@@ -175,11 +166,7 @@ theorem exists_polar_linearIsometryEquiv_of_finite_projective
 (`E ≃ₗᵢ[Aᵐᵒᵖ] F`) if and only if they are algebraically isomorphic as right `A`-modules
 (`E ≃ₗ[Aᵐᵒᵖ] F`). In particular, the complete Hilbert `A`-module structure on any finitely generated
 projective right `A`-module is unique up to unitary isomorphism. -/
-theorem nonempty_linearIsometryEquiv_iff_nonempty_linearEquiv
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] [Module Aᵐᵒᵖ E]
-    [CStarModule Aᵐᵒᵖ E] [Module.Finite Aᵐᵒᵖ E] [Module.Projective Aᵐᵒᵖ E]
-    [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] [Module Aᵐᵒᵖ F]
-    [CStarModule Aᵐᵒᵖ F] :
+theorem nonempty_linearIsometryEquiv_iff_nonempty_linearEquiv :
     Nonempty (E ≃ₗᵢ[Aᵐᵒᵖ] F) ↔ Nonempty (E ≃ₗ[Aᵐᵒᵖ] F) :=
   ⟨fun ⟨U⟩ ↦ ⟨U.toLinearEquiv⟩, fun ⟨T⟩ ↦
     let ⟨U, _, _, _, _⟩ := exists_polar_linearIsometryEquiv_of_finite_projective T

@@ -39,42 +39,31 @@ namespace CStarAlgebra
 `‖z * b * star z‖ ≤ K * ‖z * a * star z‖` for every `z : A`, then `b ≤ K • a`. -/
 theorem le_smul_of_norm_conjugate_le {A : Type*} [CStarAlgebra A] [PartialOrder A]
     [StarOrderedRing A] {a b : A} {K : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hK : 0 ≤ K)
-    (hnorm : ∀ z : A, ‖z * b * star z‖ ≤ K * ‖z * a * star z‖) :
-    b ≤ K • a := by
-  have hε_bound : ∀ ε : ℝ, 0 < ε → b ≤ K • a + (K * ε) • (1 : A) := by
-    intro ε hε
-    set d : A := a + algebraMap ℝ A ε
-    have hd : IsStrictlyPositive d :=
-      IsStrictlyPositive.nonneg_add ha (isStrictlyPositive_algebraMap hε)
-    set s : A := CFC.sqrt d⁻¹ʳ
-    have hs_sa : star s = s := (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq
-    have hconj (x : A) : s * x * star s = CFC.conjSqrt d⁻¹ʳ x := by
-      rw [hs_sa, CFC.conjSqrt_apply]
-    have hsa_nonneg : 0 ≤ CFC.conjSqrt d⁻¹ʳ a := by
-      simpa using CFC.conjSqrt_le_conjSqrt (c := d⁻¹ʳ) ha
-    have hsb_nonneg : 0 ≤ CFC.conjSqrt d⁻¹ʳ b := by
-      simpa using CFC.conjSqrt_le_conjSqrt (c := d⁻¹ʳ) hb
-    have hsa_le_one : CFC.conjSqrt d⁻¹ʳ a ≤ 1 :=
-      (CFC.conjSqrt_le_conjSqrt (le_add_of_nonneg_right (algebraMap_nonneg A hε.le))).trans_eq
-        (CFC.conjSqrt_ringInverse_self d hd)
-    have hsa_norm : ‖CFC.conjSqrt d⁻¹ʳ a‖ ≤ 1 :=
-      (CStarAlgebra.norm_le_one_iff_of_nonneg _ hsa_nonneg).mpr hsa_le_one
-    have hsb_le : CFC.conjSqrt d⁻¹ʳ b ≤ K • (1 : A) := by
-      rw [← Algebra.algebraMap_eq_smul_one,
-        ← CStarAlgebra.norm_le_iff_le_algebraMap _ hK hsb_nonneg, ← hconj b]
-      exact (hnorm s).trans (by rw [hconj a]; exact mul_le_of_le_one_right hK hsa_norm)
-    calc b = CFC.conjSqrt d (CFC.conjSqrt d⁻¹ʳ b) :=
-          (CFC.conjSqrt_conjSqrt_ringInverse d b hd).symm
-      _ ≤ CFC.conjSqrt d (K • 1) := CFC.conjSqrt_le_conjSqrt hsb_le
-      _ = K • d := by rw [map_smul, CFC.conjSqrt_one d hd.nonneg]
-      _ = K • a + (K * ε) • (1 : A) := by
-          rw [smul_add, Algebra.algebraMap_eq_smul_one, smul_smul]
+    (hnorm : ∀ z : A, ‖z * b * star z‖ ≤ K * ‖z * a * star z‖) : b ≤ K • a := by
   have : (𝓝[>] (0 : ℝ)).NeBot := nhdsWithin_Ioi_neBot le_rfl
   have hcont : Continuous (fun ε : ℝ ↦ K • a + (K * ε) • (1 : A)) := by fun_prop
-  have htendsto :
-      Tendsto (fun ε : ℝ ↦ K • a + (K * ε) • (1 : A)) (𝓝[>] 0) (𝓝 (K • a)) := by
-    simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
-  refine le_of_tendsto_of_tendsto tendsto_const_nhds htendsto ?_
-  filter_upwards [self_mem_nhdsWithin] with ε hε using hε_bound ε hε
+  refine le_of_tendsto_of_tendsto (b := 𝓝[>] (0 : ℝ)) tendsto_const_nhds
+    (by simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds) ?_
+  filter_upwards [self_mem_nhdsWithin] with ε hε
+  set d : A := a + algebraMap ℝ A ε
+  have hd : IsStrictlyPositive d :=
+    IsStrictlyPositive.nonneg_add ha (isStrictlyPositive_algebraMap hε)
+  have hconj (x : A) : CFC.sqrt d⁻¹ʳ * x * star (CFC.sqrt d⁻¹ʳ) = CFC.conjSqrt d⁻¹ʳ x := by
+    rw [(CFC.sqrt_nonneg _).isSelfAdjoint.star_eq, CFC.conjSqrt_apply]
+  have hsb_le : CFC.conjSqrt d⁻¹ʳ b ≤ K • (1 : A) := by
+    rw [← Algebra.algebraMap_eq_smul_one,
+      ← CStarAlgebra.norm_le_iff_le_algebraMap _ hK (by simpa using CFC.conjSqrt_le_conjSqrt hb),
+      ← hconj b]
+    refine (hnorm _).trans ?_
+    rw [hconj a]
+    refine mul_le_of_le_one_right hK <| (CStarAlgebra.norm_le_one_iff_of_nonneg _
+      (by simpa using CFC.conjSqrt_le_conjSqrt ha)).mpr ?_
+    exact (CFC.conjSqrt_le_conjSqrt (le_add_of_nonneg_right (algebraMap_nonneg A hε.le))).trans_eq
+      (CFC.conjSqrt_ringInverse_self d hd)
+  calc b = CFC.conjSqrt d (CFC.conjSqrt d⁻¹ʳ b) := (CFC.conjSqrt_conjSqrt_ringInverse d b hd).symm
+    _ ≤ CFC.conjSqrt d (K • 1) := CFC.conjSqrt_le_conjSqrt hsb_le
+    _ = K • a + (K * ε) • (1 : A) := by
+        rw [map_smul, CFC.conjSqrt_one d hd.nonneg, smul_add, Algebra.algebraMap_eq_smul_one,
+          smul_smul]
 
 end CStarAlgebra
