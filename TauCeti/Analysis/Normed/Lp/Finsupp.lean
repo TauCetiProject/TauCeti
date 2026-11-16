@@ -163,15 +163,14 @@ theorem tsum_toLp (p : ℝ≥0∞) (f : ι →₀ E) : ∑' i, f.toLp p i = f.su
 the support of `f`. -/
 theorem norm_toLp_rpow {p : ℝ≥0∞} (hp : 0 < p.toReal) (f : ι →₀ E) :
     ‖f.toLp p‖ ^ p.toReal = f.sum fun _ a ↦ ‖a‖ ^ p.toReal := by
-  rw [lp.norm_rpow_eq_tsum hp]
-  exact tsum_eq_sum fun i hi ↦ by simp [notMem_support_iff.mp hi, Real.zero_rpow hp.ne']
+  classical
+  rw [toLp_eq_sum_single, Finsupp.sum, Finsupp.sum]
+  exact lp.norm_sum_single hp (⇑f) f.support
 
 /-- For `0 < p.toReal`, `‖f.toLp p‖` is `(f.sum fun _ a ↦ ‖a‖ ^ p) ^ p⁻¹`. -/
 theorem norm_toLp {p : ℝ≥0∞} (hp : 0 < p.toReal) (f : ι →₀ E) :
     ‖f.toLp p‖ = (f.sum fun _ a ↦ ‖a‖ ^ p.toReal) ^ p.toReal⁻¹ := by
-  rw [lp.norm_eq_tsum_rpow hp, one_div]
-  congr 1
-  exact tsum_eq_sum fun i hi ↦ by simp [notMem_support_iff.mp hi, Real.zero_rpow hp.ne']
+  rw [← norm_toLp_rpow hp, Real.rpow_rpow_inv (lp.norm_nonneg' _) hp.ne']
 
 /-- The `ℓ¹` norm of `f.toLp 1` is `f.sum fun _ a ↦ ‖a‖`. -/
 @[simp]

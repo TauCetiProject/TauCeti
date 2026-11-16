@@ -127,16 +127,17 @@ variable {𝔽 : Type*} [NontriviallyNormedField 𝔽] [NormedSpace 𝔽 E] [Dis
 @[simp]
 theorem lpBCFₗᵢ_toLpInfty (f : α →ᵇ E) : lpBCFₗᵢ E 𝔽 (toLpInfty 𝔽 f) = f := by
   ext x
-  rfl
+  simp [coe_lpBCFₗᵢ]
 
 @[simp]
 theorem toLpInfty_lpBCFₗᵢ (a : lp (fun _ : α ↦ E) ∞) : toLpInfty 𝔽 (lpBCFₗᵢ E 𝔽 a) = a := by
   ext x
-  rfl
+  simp [coe_lpBCFₗᵢ]
 
 theorem toLpInfty_eq_lpBCFₗᵢ_symm :
-    (toLpInfty 𝔽 : (α →ᵇ E) →ₗᵢ[𝔽] lp (fun _ : α ↦ E) ∞) = (lpBCFₗᵢ E 𝔽).symm.toLinearIsometry :=
-  LinearIsometry.ext fun _ ↦ lp.ext rfl
+    (toLpInfty 𝔽 : (α →ᵇ E) →ₗᵢ[𝔽] lp (fun _ : α ↦ E) ∞) = (lpBCFₗᵢ E 𝔽).symm.toLinearIsometry := by
+  ext f x
+  simp [coe_lpBCFₗᵢ_symm]
 
 end Discrete
 
@@ -275,10 +276,9 @@ theorem lpOneDualEquiv_def :
 
 @[simp]
 theorem lpOneDualEquiv_toLinearIsometry :
-    (lpOneDualEquiv 𝕜 α).toLinearIsometry = toLpOneDual 𝕜 α :=
-  LinearIsometry.ext fun f ↦ by
-    have h : (lpBCFₗᵢ 𝕜 𝕜).symm f = toLpInfty 𝕜 f := lp.ext rfl
-    simp [lpOneDualEquiv_def, toLpOneDual_def, h]
+    (lpOneDualEquiv 𝕜 α).toLinearIsometry = toLpOneDual 𝕜 α := by
+  rw [lpOneDualEquiv_def, toLpOneDual_def, toLpInfty_eq_lpBCFₗᵢ_symm]
+  rfl
 
 @[simp]
 theorem coe_lpOneDualEquiv :

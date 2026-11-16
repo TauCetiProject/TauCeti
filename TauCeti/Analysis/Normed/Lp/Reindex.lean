@@ -16,9 +16,9 @@ Let `f : ι → G` be a sequence in `ℓᵖ` and let `g : ι' → ι` be injecti
 sequence `s.indicator (f ∘ g)`, which reads `f` along `g` on `s` and vanishes off `s`, takes each
 value of `f` at most once, so it again lies in `ℓᵖ`, with no larger norm
 (`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). When `e : α ≃ β` is a
-bijection, precomposing with `e` preserves both `Memℓp` (`Equiv.memℓp_comp_iff`) and the `ℓᵖ` norm,
-giving an additive equivalence `AddEquiv.lpCongrLeft` at every exponent and, for `1 ≤ p`, a linear
-isometric equivalence `LinearIsometryEquiv.lpCongrLeft` (the `lp` counterpart of
+bijection, precomposing with `e` preserves `Memℓp` (`Equiv.memℓp_comp_iff`), giving an additive
+equivalence `AddEquiv.lpCongrLeft` at every exponent and, for `1 ≤ p`, a linear isometric
+equivalence `LinearIsometryEquiv.lpCongrLeft` (the `lp` counterpart of
 `LinearIsometryEquiv.piLpCongrLeft`). Shifts of a sequence indexed by `ℕ` are the basic injective
 examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`. In particular a sequence indexed
 by `ℕ` lies in `ℓᵖ` exactly when its tail `j ↦ f (j + d)` does (`TauCeti.memℓp_nat_add_iff`).
@@ -238,15 +238,11 @@ variable {α β γ : Type*}
 
 /-- Precomposing with a bijection preserves membership in `ℓᵖ` at every exponent. -/
 theorem Equiv.memℓp_comp_iff {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} (e : α ≃ β)
-    {f : β → E} : Memℓp (f ∘ e) p ↔ Memℓp f p := by
-  rcases p.trichotomy with rfl | rfl | hp
-  · simp only [memℓp_zero_iff]
-    refine ⟨fun h ↦ ?_, fun h ↦ h.preimage e.injective.injOn⟩
-    simpa [Set.preimage_preimage] using h.preimage e.symm.injective.injOn
-  · rw [memℓp_infty_iff, memℓp_infty_iff, ← e.surjective.range_comp (fun b ↦ ‖f b‖)]
-    rfl
-  · simp only [memℓp_gen_iff hp]
-    exact e.summable_iff (f := fun b ↦ ‖f b‖ ^ p.toReal)
+    {f : β → E} : Memℓp (f ∘ e) p ↔ Memℓp f p :=
+  ⟨fun hf ↦ by
+      simpa [Function.comp_def] using
+        hf.indicator_comp (s := _root_.Set.univ) e.symm.injective.injOn,
+    fun hf ↦ by simpa using hf.indicator_comp (s := _root_.Set.univ) e.injective.injOn⟩
 
 /-- An equivalence of index types `e : α ≃ β` induces an additive equivalence
 `lp (fun _ : α ↦ E) p ≃+ lp (fun _ : β ↦ E) p` sending `f` to `f ∘ e.symm`. -/
@@ -296,25 +292,6 @@ theorem AddEquiv.tsum_lpCongrLeft {p : ℝ≥0∞} {E : Type*} [NormedAddCommGro
     ∑' b, AddEquiv.lpCongrLeft p E e f b = ∑' a, f a :=
   e.symm.tsum_eq f
 
-/-- Reindexing `lp` along an equivalence preserves the `ℓᵖ` norm for every `0 ≤ p ≤ ∞`. -/
-@[simp]
-theorem AddEquiv.norm_lpCongrLeft {p : ℝ≥0∞} {E : Type*} [NormedAddCommGroup E] (e : α ≃ β)
-    (f : lp (fun _ : α ↦ E) p) : ‖AddEquiv.lpCongrLeft p E e f‖ = ‖f‖ := by
-  rcases p.trichotomy with rfl | rfl | hp
-  · simp only [lp.norm_eq_card_dsupport]
-    refine congrArg Nat.cast (Finset.card_bij (fun b _ ↦ e.symm b) ?_ ?_ ?_)
-    · intro b hb
-      simpa using hb
-    · intro b₁ _ b₂ _ h
-      exact e.symm.injective h
-    · intro a ha
-      exact ⟨e a, by simpa using ha, e.symm_apply_apply a⟩
-  · simp only [lp.norm_eq_ciSup, lpCongrLeft_apply]
-    exact e.symm.iSup_congr fun _ ↦ rfl
-  · simp only [lp.norm_eq_tsum_rpow hp, lpCongrLeft_apply]
-    congr 1
-    exact e.symm.tsum_eq fun a ↦ ‖f a‖ ^ p.toReal
-
 section LinearIsometryEquiv
 
 variable (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 E : Type*) [NormedRing 𝕜] [NormedAddCommGroup E]
@@ -326,7 +303,13 @@ def LinearIsometryEquiv.lpCongrLeft (e : α ≃ β) :
     lp (fun _ : α ↦ E) p ≃ₗᵢ[𝕜] lp (fun _ : β ↦ E) p where
   __ := AddEquiv.lpCongrLeft p E e
   map_smul' _ _ := lp.ext rfl
-  norm_map' := AddEquiv.norm_lpCongrLeft e
+  norm_map' f := by
+    have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+    exact le_antisymm
+      (lp.norm_le_of_forall_eq_indicator_comp hp (f' := AddEquiv.lpCongrLeft p E e f)
+        (s := Set.univ) e.symm.injective.injOn fun _ ↦ by simp)
+      (lp.norm_le_of_forall_eq_indicator_comp hp (f := AddEquiv.lpCongrLeft p E e f)
+        (s := Set.univ) e.injective.injOn fun _ ↦ by simp)
 
 variable {p 𝕜 E}
 

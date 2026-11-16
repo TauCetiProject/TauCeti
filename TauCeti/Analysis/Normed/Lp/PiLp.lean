@@ -208,6 +208,18 @@ namespace PiLp
 
 section OneDual
 
+section
+
+variable {𝕜 ι : Type*} [Fintype ι] [DecidableEq ι] [NontriviallyNormedField 𝕜]
+  {E : ι → Type*} [∀ i, SeminormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
+
+private theorem sum_apply_single (φ : PiLp ∞ (fun i ↦ StrongDual 𝕜 (E i))) (i : ι) (u : E i) :
+    ∑ j, φ j (PiLp.single 1 i u j) = φ i u := by
+  rw [Fintype.sum_eq_single i fun j hji ↦ by simp [hji]]
+  simp
+
+end
+
 variable (𝕜 : Type*) {ι : Type*} [Fintype ι] [NontriviallyNormedField 𝕜]
   (E : ι → Type*) [∀ i, SeminormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
 
@@ -215,75 +227,49 @@ variable (𝕜 : Type*) {ι : Type*} [Fintype ι] [NontriviallyNormedField 𝕜]
 `PiLp ∞ (fun i ↦ StrongDual 𝕜 (E i))` is isometrically isomorphic to the continuous dual of the
 sum-normed product `PiLp 1 E` via `φ ↦ (v ↦ ∑ i, φ i (v i))`. -/
 noncomputable def oneDualEquiv :
-    PiLp ∞ (fun i ↦ StrongDual 𝕜 (E i)) ≃ₗᵢ[𝕜] StrongDual 𝕜 (PiLp 1 E) where
-  toFun φ := ∑ i, (φ i).comp
-    ((ContinuousLinearMap.proj i).comp (PiLp.continuousLinearEquiv 1 𝕜 E).toContinuousLinearMap)
-  invFun :=
-    letI := Classical.decEq ι
-    fun Λ ↦ WithLp.toLp ∞ fun i ↦ Λ.comp
-      ((PiLp.continuousLinearEquiv 1 𝕜 E).symm.toContinuousLinearMap.comp
-        (ContinuousLinearMap.single 𝕜 E i))
-  map_add' _ _ := by
-    ext v
-    simp [Finset.sum_add_distrib]
-  map_smul' _ _ := by
-    ext v
-    simp [Finset.mul_sum]
-  left_inv φ := by
-    classical
-    ext i u
-    simp only [ContinuousLinearMap.comp_apply, sum_apply,
-      ContinuousLinearMap.proj_apply, ContinuousLinearMap.single_apply]
-    rw [Finset.sum_eq_single i]
-    · simp
-    · intro j _ hji
-      simp [hji]
-    · intro hi
-      exact absurd (Finset.mem_univ i) hi
-  right_inv Λ := by
-    classical
-    ext v
-    have hv : ∑ i, PiLp.single 1 i (v i) = v := by
-      ext j
-      simp [Finset.sum_apply]
-    conv_rhs => rw [← hv, map_sum]
-    simp
-  norm_map' φ := by
-    classical
-    let Φ : StrongDual 𝕜 (PiLp 1 E) := ∑ i, (φ i).comp
-      ((ContinuousLinearMap.proj i).comp (PiLp.continuousLinearEquiv 1 𝕜 E).toContinuousLinearMap)
-    have hΦ_single (i : ι) (u : E i) : Φ (PiLp.single 1 i u) = φ i u := by
-      simp only [Φ, sum_apply, ContinuousLinearMap.comp_apply,
-        ContinuousLinearMap.proj_apply]
-      rw [Finset.sum_eq_single i]
-      · simp
-      · intro j _ hji
-        simp [hji]
-      · intro hi
-        exact absurd (Finset.mem_univ i) hi
-    refine le_antisymm ?_ ?_
-    · refine ContinuousLinearMap.opNorm_le_bound Φ (norm_nonneg φ) fun v ↦ ?_
-      simp only [Φ, sum_apply, ContinuousLinearMap.comp_apply,
-        ContinuousLinearMap.proj_apply]
+    PiLp ∞ (fun i ↦ StrongDual 𝕜 (E i)) ≃ₗᵢ[𝕜] StrongDual 𝕜 (PiLp 1 E) :=
+  LinearIsometryEquiv.ofBounds
+    { toFun φ := ∑ i, (φ i).comp
+        ((ContinuousLinearMap.proj i).comp (PiLp.continuousLinearEquiv 1 𝕜 E).toContinuousLinearMap)
+      invFun :=
+        letI := Classical.decEq ι
+        fun Λ ↦ WithLp.toLp ∞ fun i ↦ Λ.comp
+          ((PiLp.continuousLinearEquiv 1 𝕜 E).symm.toContinuousLinearMap.comp
+            (ContinuousLinearMap.single 𝕜 E i))
+      map_add' _ _ := by ext v; simp [Finset.sum_add_distrib]
+      map_smul' _ _ := by ext v; simp [Finset.mul_sum]
+      left_inv φ := by
+        classical
+        ext i u
+        simpa [sum_apply] using sum_apply_single φ i u
+      right_inv Λ := by
+        classical
+        ext v
+        have hv : ∑ i, PiLp.single 1 i (v i) = v := by ext j; simp [Finset.sum_apply]
+        conv_rhs => rw [← hv, map_sum]
+        simp }
+    (fun φ ↦ ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg φ) fun v ↦ by
+      simp only [LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk, sum_apply,
+        ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply]
       calc ‖∑ i, φ i (v i)‖
           ≤ ∑ i, ‖φ i (v i)‖ := norm_sum_le _ _
         _ ≤ ∑ i, ‖φ i‖ * ‖v i‖ := Finset.sum_le_sum fun i _ ↦ (φ i).le_opNorm (v i)
-        _ ≤ ∑ i, ‖φ‖ * ‖v i‖ :=
-          Finset.sum_le_sum fun i _ ↦
+        _ ≤ ∑ i, ‖φ‖ * ‖v i‖ := Finset.sum_le_sum fun i _ ↦
             mul_le_mul_of_nonneg_right (PiLp.norm_apply_le φ i) (norm_nonneg _)
-        _ = ‖φ‖ * ‖v‖ := by rw [← Finset.mul_sum, PiLp.norm_eq_of_L1]
-    · rw [PiLp.norm_eq_ciSup]
-      refine Real.iSup_le (fun i ↦ ?_) (norm_nonneg Φ)
-      refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Φ) fun u ↦ ?_
-      rw [← hΦ_single i u]
-      simpa using Φ.le_opNorm (PiLp.single 1 i u)
+        _ = ‖φ‖ * ‖v‖ := by rw [← Finset.mul_sum, PiLp.norm_eq_of_L1])
+    (fun Λ ↦ by
+      rw [PiLp.norm_eq_ciSup]
+      refine Real.iSup_le (fun i ↦ ?_) (norm_nonneg Λ)
+      refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Λ) fun u ↦ ?_
+      classical
+      simpa [LinearEquiv.coe_symm_mk] using Λ.le_opNorm (PiLp.single 1 i u))
 
 variable {𝕜 E}
 
 /-- `PiLp.oneDualEquiv` acts by summing the coordinate evaluations `φ i (v i)`. -/
 theorem oneDualEquiv_apply (φ : PiLp ∞ (fun i ↦ StrongDual 𝕜 (E i))) (v : PiLp 1 E) :
     oneDualEquiv 𝕜 E φ v = ∑ i, φ i (v i) := by
-  simp [oneDualEquiv]
+  simp [oneDualEquiv, LinearIsometryEquiv.ofBounds]
 
 /-- On a single-coordinate vector `PiLp.single 1 i u`, `PiLp.oneDualEquiv φ` evaluates `φ i` at
 `u`. -/
@@ -291,12 +277,7 @@ theorem oneDualEquiv_apply (φ : PiLp ∞ (fun i ↦ StrongDual 𝕜 (E i))) (v 
 theorem oneDualEquiv_apply_single [DecidableEq ι] (φ : PiLp ∞ (fun i ↦ StrongDual 𝕜 (E i)))
     (i : ι) (u : E i) :
     oneDualEquiv 𝕜 E φ (PiLp.single 1 i u) = φ i u := by
-  rw [oneDualEquiv_apply, Finset.sum_eq_single i]
-  · simp
-  · intro j _ hji
-    simp [hji]
-  · intro hi
-    exact absurd (Finset.mem_univ i) hi
+  rw [oneDualEquiv_apply, sum_apply_single]
 
 /-- The `i`-th coordinate functional of `(PiLp.oneDualEquiv 𝕜 E).symm Λ` evaluates at `u` to
 `Λ (PiLp.single 1 i u)`. -/
