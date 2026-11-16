@@ -8,6 +8,10 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Skeleton
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Relative
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
+public import TauCeti.Topology.Homotopy.MappingCylinder
+import TauCeti.AlgebraicTopology.Homotopy.Whitehead
+import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Compression
+import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
 
 /-!
 # `n`-connected maps and singular homology
