@@ -130,10 +130,9 @@ private theorem isIntegral_trace_of_pow_eq_one_of_splits {f : End k V} {n : ℕ}
 
 omit [FiniteDimensional k V] in
 /-- **The trace of an endomorphism of finite order is an algebraic integer**, over an arbitrary
-field. When the characteristic polynomial splits the trace is a sum of roots of unity; that
-splitting hypothesis is removed by base change to an algebraic closure, which preserves both the
-order of `f` and, up to the field embedding, its trace, and an element of `k` whose image in the
-closure is integral over `ℤ` is itself integral over `ℤ`. -/
+field. For finite-dimensional `V`, the trace is a sum of eigenvalues over an algebraic closure of
+`k`, each of them a root of unity. If `V` is not finite-dimensional, `LinearMap.trace` is `0` by
+convention, so the statement holds trivially. -/
 theorem isIntegral_trace_of_pow_eq_one {f : End k V} {n : ℕ} (hn : n ≠ 0) (hf : f ^ n = 1) :
     IsIntegral ℤ (LinearMap.trace k V f) := by
   by_cases hfin : Module.Finite k V
@@ -161,8 +160,9 @@ section Eigenspace
 variable {f : End k V} {n : ℕ}
 
 omit [FiniteDimensional k V] in
-/-- The trace of `f ^ m` on the `μ`-eigenspace of `f` is `dim(V_μ) * μ ^ m`, because `f ^ m` acts
-there as the scalar `μ ^ m`. -/
+/-- The trace of `f ^ m` on the `μ`-eigenspace of `f` is `finrank k (f.eigenspace μ) * μ ^ m`,
+because `f ^ m` acts there as the scalar `μ ^ m`. If the eigenspace is not finite-dimensional, both
+`LinearMap.trace` and `finrank` are `0` by convention, so both sides vanish. -/
 theorem trace_pow_restrict_eigenspace (f : End k V) (μ : k) (m : ℕ) :
     LinearMap.trace k _ ((f ^ m).restrict (mapsTo_pow_eigenspace f μ m)) =
       (finrank k (f.eigenspace μ) : k) * μ ^ m := by
@@ -199,9 +199,10 @@ theorem trace_pow_eq_sum_eigenvalue_pow (hn : (n : k) ≠ 0) (hf : f ^ n = 1) (m
 omit [FiniteDimensional k V] in
 /-- **A ring endomorphism raising the roots of unity to the `j`-th power raises an endomorphism of
 finite order to the `j`-th power, as far as the trace can see**: if `f ^ n = 1` and `σ μ = μ ^ j`
-for every `n`-th root of unity `μ`, then `σ (tr f) = tr (f ^ j)`. Both sides are the sum
-`∑ μ, dim(V_μ) · μ ^ j` over the eigenvalues, since a ring homomorphism fixes the dimensions,
-which enter as natural numbers. -/
+for every `n`-th root of unity `μ`, then `σ (tr f) = tr (f ^ j)`. For finite-dimensional `V`, both
+sides are the sum `∑ μ, dim(V_μ) · μ ^ j` over the eigenvalues, since a ring homomorphism fixes the
+dimensions, which enter as natural numbers. If `V` is not finite-dimensional, `LinearMap.trace` is
+`0` by convention, so both sides are `0`. -/
 theorem map_trace_eq_trace_pow {j : ℕ} (hn : (n : k) ≠ 0) (hf : f ^ n = 1) (σ : k →+* k)
     (hσ : ∀ μ : k, μ ^ n = 1 → σ μ = μ ^ j) :
     σ (LinearMap.trace k V f) = LinearMap.trace k V (f ^ j) := by
@@ -222,8 +223,9 @@ variable {V : Type w} [AddCommGroup V] [Module ℂ V] [FiniteDimensional ℂ V]
 
 omit [FiniteDimensional ℂ V] in
 /-- **Complex conjugation of the trace inverts the endomorphism.** If `f ^ n = 1` with `n ≠ 0`, then
-the conjugate of the trace of `f` is the trace of its inverse `f ^ (n - 1)`: the eigenvalues of `f`
-are `n`-th roots of unity, and conjugation inverts those. -/
+the conjugate of the trace of `f` is the trace of its inverse `f ^ (n - 1)`. For finite-dimensional
+`V`, the eigenvalues of `f` are `n`-th roots of unity, and conjugation inverts those. If `V` is not
+finite-dimensional, `LinearMap.trace` is `0` by convention, so both sides are `0`. -/
 theorem conj_trace_eq_trace_pow_sub_one {f : End ℂ V} {n : ℕ} (hn : n ≠ 0) (hf : f ^ n = 1) :
     (starRingEnd ℂ) (LinearMap.trace ℂ V f) = LinearMap.trace ℂ V (f ^ (n - 1)) :=
   map_trace_eq_trace_pow (Nat.cast_ne_zero.2 hn) hf (starRingEnd ℂ) fun μ hμ => by

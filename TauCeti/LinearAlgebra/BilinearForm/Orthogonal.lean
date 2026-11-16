@@ -107,8 +107,9 @@ namespace LinearMap.BilinForm
 variable {K V : Type*} [CommSemiring K] [AddCommMonoid V] [Module K V]
 
 /-- A submodule on which the restricted form is right-separating meets its orthogonal complement
-only in zero. This converse of `LinearMap.BilinForm.nondegenerate_restrict_of_disjoint_orthogonal`
-needs no reflexivity. -/
+only in zero. This strengthens the converse of
+`LinearMap.BilinForm.nondegenerate_restrict_of_disjoint_orthogonal`: it needs only that the
+restricted form is right-separating, not nondegenerate, and no reflexivity. -/
 theorem disjoint_orthogonal_of_restrict_separatingRight {B : LinearMap.BilinForm K V}
     {W : Submodule K V} (h : (B.restrict W).SeparatingRight) : Disjoint W (B.orthogonal W) := by
   rw [Submodule.disjoint_def]

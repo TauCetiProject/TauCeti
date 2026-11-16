@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Data.Fin.Basic
 public import Mathlib.LinearAlgebra.Matrix.Dual
-public import Mathlib.LinearAlgebra.Reflection
 
 /-!
 # The classical model of type `Cₙ` in the pinned coordinates
@@ -568,8 +567,9 @@ lemma signedCoweight_signedReflection {p q : Signed n} (h : q ≠ signedNeg p)
           · rw [signedReflection_of_ne h1 h2 h3 h4, pairRoot_dotProduct_of_ne h1 h2 h3 h4]
             module
 
-lemma signedReflection_injective (p q : Signed n) : Injective (signedReflection p q) := by
-  refine Involutive.injective fun z => ?_
+/-- `TauCeti.DynkinType.TypeC.signedReflection p q` is an involution, for all `p` and `q`. -/
+lemma signedReflection_involutive (p q : Signed n) : Involutive (signedReflection p q) := by
+  intro z
   by_cases h1 : z = p
   · rw [h1, signedReflection_left, signedReflection_signedNeg_right]
   by_cases h2 : z = q
@@ -579,6 +579,9 @@ lemma signedReflection_injective (p q : Signed n) : Injective (signedReflection 
   by_cases h4 : z = signedNeg q
   · rw [h4, signedReflection_signedNeg_right, signedReflection_left]
   rw [signedReflection_of_ne h1 h2 h3 h4, signedReflection_of_ne h1 h2 h3 h4]
+
+lemma signedReflection_injective (p q : Signed n) : Injective (signedReflection p q) :=
+  (signedReflection_involutive p q).injective
 
 lemma signedReflection_signedNeg (p q z : Signed n) :
     signedReflection p q (signedNeg z) = signedNeg (signedReflection p q z) := by

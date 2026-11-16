@@ -91,8 +91,10 @@ variable {k : Type u} {G : Type v} {V : Type w} [Field k] [IsAlgClosed k] [Monoi
 
 /-- **The Galois action on character values is by power maps.** If `g ^ n = 1` and the ring
 endomorphism `σ` of the coefficient field raises every `n`-th root of unity to the `j`-th power,
-then `σ (χ(g)) = χ(g ^ j)`: the eigenvalues of `ρ g` are `n`-th roots of unity, and `σ` fixes the
-dimensions of the eigenspaces they are weighted by. -/
+then `σ (χ(g)) = χ(g ^ j)`. For finite-dimensional `V`, the eigenvalues of `ρ g` are `n`-th roots of
+unity, and `σ` fixes the dimensions of the eigenspaces they are weighted by. If `V` is not
+finite-dimensional, `ρ.character` is identically `0`, since `LinearMap.trace` is `0` by convention,
+and the identity holds trivially. -/
 theorem map_character_eq_character_pow (ρ : Representation k G V) {g : G} {n j : ℕ}
     (hn : (n : k) ≠ 0) (hg : g ^ n = 1) (σ : k →+* k) (hσ : ∀ μ : k, μ ^ n = 1 → σ μ = μ ^ j) :
     σ (ρ.character g) = ρ.character (g ^ j) := by
@@ -105,7 +107,8 @@ omit [IsAlgClosed k] in
 /-- **The Galois action on character values is by power maps**, in the form where the power `j` is
 witnessed on a single primitive `n`-th root of unity: if `σ ζ = ζ ^ j` for a primitive `n`-th root
 of unity `ζ` and `g ^ n = 1`, then `σ (χ(g)) = χ(g ^ j)`. The coefficient field need not be
-algebraically closed. -/
+algebraically closed. If `V` is not finite-dimensional, `ρ.character` is identically `0`, since
+`LinearMap.trace` is `0` by convention, and the identity holds trivially. -/
 theorem map_character_eq_character_pow_of_isPrimitiveRoot (ρ : Representation k G V) {g : G}
     {n j : ℕ} {ζ : k} (hζ : IsPrimitiveRoot ζ n) (hn : (n : k) ≠ 0) (hg : g ^ n = 1)
     (σ : k →+* k) (hσ : σ ζ = ζ ^ j) :
@@ -144,7 +147,8 @@ variable {k : Type u} {G : Type v} {V : Type w} [Field k] [IsAlgClosed k] [Group
 /-- **The Galois twist of a character is the power-map twist of its class function.** On a group
 of exponent dividing `n`, the composite `σ ∘ χ` is `TauCeti.ClassFunction.powMap j` applied to the
 class function of `χ`. This is the form in which a Galois group acts on `ClassFunction k G`. If `V`
-is not finite-dimensional, every character vanishes and both sides are `0`. -/
+is not finite-dimensional, `ClassFunction.ofCharacter ρ` is `0`, since `LinearMap.trace` is `0` by
+convention, and both sides vanish. -/
 theorem Representation.map_ofCharacter_eq_powMap (ρ : Representation k G V) {n j : ℕ}
     (hn : (n : k) ≠ 0) (hG : ∀ g : G, g ^ n = 1) (σ : k →+* k)
     (hσ : ∀ μ : k, μ ^ n = 1 → σ μ = μ ^ j) :
