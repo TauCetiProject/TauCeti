@@ -153,12 +153,9 @@ theorem exists_norm_mulLeftCLM_le (φ : ContDiffBump (0 : E)) {N : ℕ} (hN : |s
     fun {p q} _ _ A hA hbd M hAM ↦ ?_⟩
   -- Each term `L k (c k u)` has norm at most `‖L k‖ C ‖c k‖_{C^N}`, and the derivatives of the
   -- coordinate `c k` are bounded by `‖b.coordCLM k‖ M`.
-  calc ‖mulLeftCLM φ s p q A hA hbd‖
-      ≤ ∑ k, ‖postcomp φ s p q (b k) ∘L smulLeftCLM F φ s p q (b.coordCLM k ∘ A)
-          (hA.continuousLinearMap_comp _)
-          (ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_of_forall_exists _
-            (hA.1.of_le (mod_cast le_top)) hbd)‖ := norm_sum_le _ _
-    _ ≤ ∑ k, ‖b k‖ * (C * (‖b.coordCLM k‖ * M)) := by
+  rw [mulLeftCLM]
+  calc _ ≤ ∑ k, ‖b k‖ * (C * (‖b.coordCLM k‖ * M)) := by
+        refine (norm_sum_le _ _).trans ?_
         refine Finset.sum_le_sum fun k _ ↦ (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
         refine mul_le_mul (norm_postcomp_le _) (hmul _ _ fun n hn x ↦ ?_) (norm_nonneg _)
           (norm_nonneg _)
