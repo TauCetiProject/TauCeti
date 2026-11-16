@@ -8,7 +8,6 @@ module
 public import Mathlib.CategoryTheory.Preadditive.Projective.Resolution
 public import Mathlib.LinearAlgebra.Basis.SMul
 public import Mathlib.RepresentationTheory.Rep.Iso
-public import TauCeti.AlgebraicTopology.Cellular.Augmentation
 public import TauCeti.AlgebraicTopology.Cellular.Equivariant
 public import TauCeti.AlgebraicTopology.Cellular.LocalDegree
 public import TauCeti.RepresentationTheory.FreeOfBasis
@@ -30,8 +29,9 @@ translated cell `g • i` (`TauCeti.cellActionChainRepresentation_cellularChainB
 closed cell `closedCell n (g • i) = g • closedCell n i` misses any point of `openCell n k`, so the
 induced map into the local homology `Hₙ(Xⁿ, Xⁿ ∖ {x})` at `x ∈ openCell n k` factors through the
 subspace `Xⁿ ∖ {x}` (`TauCeti.cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_notMem` and
-`TauCeti.cellularChainGroupMap_cellularChainBasis_eq_smul`). Functoriality of cellular chains on
-`1` and `g * h` turns these local scalars into units over `R`.
+`TauCeti.cellularChainGroupMap_cellularChainBasis_eq_smul`, proved in
+`TauCeti.AlgebraicTopology.Cellular.LocalDegree`). Functoriality of cellular chains on `1` and
+`g * h` turns these local scalars into units over `R`.
 
 When `G` acts freely on the cells (`hfree`) and `R` is a commutative ring, rescaling the geometric
 cellular basis along each orbit by `TauCeti.cellActionUnit` produces an `R`-basis
@@ -74,142 +74,12 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Metric Set Topology Topology.RelCWComplex
+open CategoryTheory Set Topology Topology.RelCWComplex
 open scoped Pointwise
 
 universe w
 
 namespace TauCeti
-
-section LocalCoordinates
-
-variable {X Y : Type w} [TopologicalSpace X] [T2Space X] [TopologicalSpace Y] [T2Space Y]
-  {D : Set X} {D' : Set Y} (C : Set X) [RelCWComplex C D] (C' : Set Y) [RelCWComplex C' D']
-  (R : Type w) [Ring R]
-
-/-- At a point `x` of the open `n`-cell `i`, the map from the `n`-th cellular chain group to the
-local homology `Hₙ(Xⁿ, Xⁿ ∖ {x})` sends any chain `c` to its `i`-th cellular coordinate times the
-local class of `i` at `x`. -/
-theorem singularHomologyMap_skeletonPairToComplSingleton_eq_repr_smul {n : ℕ} {i : cell C n}
-    (x : skeletonObj C (n + 1)) (hx : (x : X) ∈ openCell n i)
-    (c : (cellularChainGroup C (ModuleCat.of R R) n : ModuleCat R)) :
-    TopPair.singularHomologyMap
-        (skeletonPairToComplSingleton C x (notMem_skeletonLT_of_mem_openCell n hx))
-        (ModuleCat.of R R) n c =
-      ((cellularChainBasis C R n).repr c i) • cellLocalClass C (ModuleCat.of R R) x hx 1 := by
-  conv_lhs => rw [← (cellularChainBasis C R n).linearCombination_repr c]
-  rw [Finsupp.linearCombination_apply, map_finsuppSum, Finsupp.sum, Finset.sum_eq_single i]
-  · rw [map_smul, singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_self]
-  · intro l _ hl
-    rw [map_smul, singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_of_ne C R x
-      hx hl, smul_zero]
-  · intro hi
-    rw [Finsupp.notMem_support_iff.1 hi, zero_smul, map_zero]
-
-/-- The `i`-th cellular coordinate of an `n`-chain `c` is recovered from its image in the local
-homology `Hₙ(Xⁿ, Xⁿ ∖ {x})` at any point `x` of the open `n`-cell `i`, via the inverse of
-`TauCeti.cellLocalClass`. -/
-theorem cellularChainBasis_repr_eq_inv_cellLocalClass {n : ℕ} {i : cell C n}
-    (x : skeletonObj C (n + 1)) (hx : (x : X) ∈ openCell n i)
-    (c : (cellularChainGroup C (ModuleCat.of R R) n : ModuleCat R)) :
-    (cellularChainBasis C R n).repr c i =
-      inv (cellLocalClass C (ModuleCat.of R R) x hx)
-        (TopPair.singularHomologyMap
-          (skeletonPairToComplSingleton C x (notMem_skeletonLT_of_mem_openCell n hx))
-          (ModuleCat.of R R) n c) := by
-  rw [singularHomologyMap_skeletonPairToComplSingleton_eq_repr_smul C R x hx c, map_smul,
-    ← ModuleCat.comp_apply, IsIso.hom_inv_id, ModuleCat.id_apply, smul_eq_mul, mul_one]
-
-/-- If a cellular map `f` sends the closed `n`-cell `i` into the complement of `x`, then the
-characteristic pair map of `i` followed by `f` and the projection to local homology at `x`
-factors through `X'ⁿ ∖ {x}` and therefore induces zero on `Hₙ`. -/
-private theorem singularHomologyMap_characteristicCellPairMap_comp_eq_zero
-    {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f) {n : ℕ} {i : cell C n}
-    (x : skeletonObj C' (n + 1)) (hx : (x : Y) ∉ (skeletonLT C' (n : ℕ∞) : Set Y))
-    (hmiss : ∀ z (hz : z ∈ closedCell n i), (f ⟨z, closedCell_subset_complex n i hz⟩ : Y) ≠ x) :
-    TopPair.singularHomologyMap
-        (characteristicCellPairMap C i ≫ skeletonPairMap C C' hf n ≫
-          skeletonPairToComplSingleton C' x hx) (ModuleCat.of R R) n = 0 := by
-  set Φ := characteristicCellPairMap C i ≫ skeletonPairMap C C' hf n ≫
-    skeletonPairToComplSingleton C' x hx
-  have hfst : TopPair.Hom.fst Φ = cellDiskHom i ≫ skeletonMap C C' hf (n + 1) := by
-    -- `(TopPair.ofSubset _).fst` unfolds to `skeletonObj C' (n + 1)` only at `default`
-    -- transparency, so `erw` discharges the trailing identity on that object.
-    rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, characteristicCellPairMap_fst,
-      skeletonPairMap_fst, skeletonPairToComplSingleton_fst]
-    erw [Category.comp_id]
-    rfl
-  have hnotEq (p : TopCat.disk.{w} n) :
-      (TopPair.Hom.fst Φ p : skeletonObj C' (n + 1)) ≠ x := by
-    intro hp
-    have hclosed : map n i (diskHomeomorphClosedBall n p) ∈ closedCell n i :=
-      ⟨_, (diskHomeomorphClosedBall n p).2, rfl⟩
-    have key : ∀ (a b : X) (ha : a ∈ C) (hb : b ∈ C),
-        a = b → (f ⟨a, ha⟩ : Y) = (f ⟨b, hb⟩ : Y) := by rintro a _ _ _ rfl; rfl
-    have hval : (f ⟨_, closedCell_subset_complex n i hclosed⟩ : Y) = x :=
-      (key _ _ _ _ (coe_cellDiskHom_apply i p).symm).trans <|
-        (congrArg Subtype.val (skeletonMap_apply C C' hf (n + 1) (cellDiskHom i p))).symm.trans <|
-          congrArg Subtype.val ((ConcreteCategory.congr_hom hfst p).symm.trans hp)
-    exact hmiss _ hclosed hval
-  exact TopPair.singularHomologyMap_eq_zero_of_fac Φ (ModuleCat.of R R)
-    (TopCat.ofHom ⟨fun p ↦ ⟨TopPair.Hom.fst Φ p, hnotEq p⟩,
-      (TopPair.Hom.fst Φ).hom.continuous.subtype_mk _⟩) rfl n
-
-/-- If a cellular map `f` sends the closed `n`-cell `i` into the complement of a point `x` of the
-open `n`-cell `k`, then the `k`-th cellular coordinate of the image of the basis vector of `i`
-under `f` vanishes. -/
-theorem cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_notMem
-    {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f) {n : ℕ}
-    {i : cell C n} {k : cell C' n} (x : skeletonObj C' (n + 1)) (hx : (x : Y) ∈ openCell n k)
-    (hmiss : ∀ z (hz : z ∈ closedCell n i), (f ⟨z, closedCell_subset_complex n i hz⟩ : Y) ≠ x) :
-    (cellularChainBasis C' R n).repr
-        (cellularChainGroupMap C C' hf (ModuleCat.of R R) n
-          (cellularChainBasis C R n i)) k = 0 := by
-  have hcomp :
-      Sigma.ι (fun _ : cell C n ↦ ModuleCat.of R R) i ≫
-          (cellularChainGroupIso C (ModuleCat.of R R) n).inv ≫
-          cellularChainGroupMap C C' hf (ModuleCat.of R R) n ≫
-          TopPair.singularHomologyMap
-            (skeletonPairToComplSingleton C' x (notMem_skeletonLT_of_mem_openCell n hx))
-            (ModuleCat.of R R) n ≫
-          inv (cellLocalClass C' (ModuleCat.of R R) x hx) = 0 := by
-    rw [ι_cellularChainGroupIso_inv_eq_singularHomologyMap_characteristicCellPairMap_assoc,
-      cellularChainGroupMap_def, ← TopPair.singularHomologyMap_comp_assoc,
-      ← TopPair.singularHomologyMap_comp_assoc, Category.assoc,
-      singularHomologyMap_characteristicCellPairMap_comp_eq_zero C C' R hf x _ hmiss,
-      zero_comp, comp_zero]
-  rw [cellularChainBasis_repr_eq_inv_cellLocalClass C' R x hx, cellularChainBasis_apply,
-    ← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
-    ← ModuleCat.comp_apply, hcomp]
-  rfl
-
-/-- **A cellular map carrying the closed cell of `i` into the closed cell of `i'` sends the
-cellular basis vector of `i` to a scalar multiple of the cellular basis vector of `i'`.** -/
-theorem cellularChainGroupMap_cellularChainBasis_eq_smul
-    {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f) {n : ℕ}
-    {i : cell C n} {i' : cell C' n}
-    (hi : ∀ z (hz : z ∈ closedCell n i),
-      (f ⟨z, closedCell_subset_complex n i hz⟩ : Y) ∈ closedCell n i') :
-    cellularChainGroupMap C C' hf (ModuleCat.of R R) n (cellularChainBasis C R n i) =
-      ((cellularChainBasis C' R n).repr
-        (cellularChainGroupMap C C' hf (ModuleCat.of R R) n (cellularChainBasis C R n i)) i') •
-        cellularChainBasis C' R n i' := by
-  apply (cellularChainBasis C' R n).repr.injective
-  rw [map_smul, Module.Basis.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one]
-  ext k
-  by_cases hk : k = i'
-  · subst hk
-    rw [Finsupp.single_eq_same]
-  · rw [Finsupp.single_eq_of_ne hk]
-    let x : skeletonObj C' (n + 1) := ⟨map n k 0, map_mem_skeletonLT_succ k (by simp)⟩
-    have hx : (x : Y) ∈ openCell n k := ⟨0, mem_ball_zero_iff.2 (by simp), rfl⟩
-    refine cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_notMem C C' R hf x hx
-      fun z hz hzx ↦ ?_
-    have hdisj := disjoint_closedCell_openCell_of_ne (C := C') (n := n) (m := n) le_rfl
-      fun h ↦ hk (eq_of_heq (Sigma.mk.inj_iff.1 h).2).symm
-    exact hdisj.notMem_of_mem_left (hi z hz) (hzx ▸ hx)
-
-end LocalCoordinates
 
 section MonoidAction
 
@@ -522,6 +392,32 @@ def cellActionChainRepIsoFreeOrbitQuotient (n : ℕ) :
         funext Quotient.out_eq'
       exact h ▸ Function.bijective_id)
 
+/-- Under `TauCeti.cellActionChainRepIsoFreeOrbitQuotient`, the generator `single o (single g 1)`
+maps to the `g`-translate in cellular chains of the orbit representative `o.out`. -/
+@[simp]
+theorem cellActionChainRepIsoFreeOrbitQuotient_inv_hom_single {n : ℕ}
+    (o : letI := cellMulAction hcell n; MulAction.orbitRel.Quotient G (cell C n)) (g : G) :
+    letI := cellMulAction hcell n
+    (cellActionChainRepIsoFreeOrbitQuotient C hcell hfree R n).inv.hom
+        (Finsupp.single o (MonoidAlgebra.single g 1)) =
+      cellActionChainRepresentation C hcell R n g (cellularChainBasis C R n o.out) := by
+  let := cellMulAction hcell n
+  unfold cellActionChainRepIsoFreeOrbitQuotient
+  exact cellActionChainRepIsoFree_inv_hom_single _ _ _ _ _ _ o g
+
+/-- Under `TauCeti.cellActionChainRepIsoFreeOrbitQuotient`, the cellular basis vector of the orbit
+representative `o.out` maps to the generator `single o (single 1 1)`. This is not a `simp` lemma
+because `simp` unfolds `TauCeti.cellularChainBasis` first. -/
+theorem cellActionChainRepIsoFreeOrbitQuotient_hom_hom_cellularChainBasis {n : ℕ}
+    (o : letI := cellMulAction hcell n; MulAction.orbitRel.Quotient G (cell C n)) :
+    letI := cellMulAction hcell n
+    (cellActionChainRepIsoFreeOrbitQuotient C hcell hfree R n).hom.hom
+        (cellularChainBasis C R n o.out) =
+      Finsupp.single o (MonoidAlgebra.single 1 1) := by
+  let := cellMulAction hcell n
+  unfold cellActionChainRepIsoFreeOrbitQuotient
+  exact cellActionChainRepIsoFree_hom_hom_cellularChainBasis _ _ _ _ _ _ o
+
 include hfree in
 /-- **Each term of the cellular chain complex of a free cellular action is projective in
 `Rep R G`.** -/
@@ -621,63 +517,48 @@ representation: continuous translations carrying open cells onto open cells are 
 cellular augmentation is natural under cellular maps. -/
 def cellActionAugmentationRep :
     Rep.of (cellActionChainRepresentation C hcell R 0) ⟶ Rep.trivial R G R :=
-  Rep.ofHom
-    { toLinearMap := (cellularAugmentation C (ModuleCat.of R R)).hom
-      isIntertwining' g := LinearMap.ext fun x ↦ by
-        rw [LinearMap.comp_apply, LinearMap.comp_apply, Representation.trivial_apply,
-          cellActionChainRepresentation_apply]
-        exact ConcreteCategory.congr_hom (cellularChainGroupMap_comp_cellularAugmentation C C
-          (isCellular_cellActionSMul C g (hcell g)) (ModuleCat.of R R)) x }
+  cellularActionAugmentation C (fun g ↦ cellActionSMul C g (hcell g))
+    (fun g ↦ isCellular_cellActionSMul C g (hcell g)) (cellActionSMul_one C (hcell 1))
+    (fun g h ↦ cellActionSMul_mul C (hcell g) (hcell h) (hcell (g * h))) R
 
 /-- The underlying linear map of `TauCeti.cellActionAugmentationRep` is the cellular augmentation
 of `C`. -/
 @[simp]
 theorem cellActionAugmentationRep_hom_toLinearMap :
     (cellActionAugmentationRep C hcell R).hom.toLinearMap =
-      (cellularAugmentation C (ModuleCat.of R R)).hom :=
-  (rfl)
+      (cellularAugmentation C (ModuleCat.of R R)).hom := by
+  unfold cellActionAugmentationRep
+  exact cellularActionAugmentation_hom_toLinearMap _ _ _ _ _ _
 
 /-- The equivariant cellular augmentation vanishes on the boundaries of `1`-cells. -/
 @[reassoc (attr := simp)]
 theorem cellActionDifferentialRep_comp_cellActionAugmentationRep :
     cellActionDifferentialRep C hcell R 0 ≫ cellActionAugmentationRep C hcell R = 0 := by
-  refine Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext fun x ↦ ?_
-  have h := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
-    (cellularDifferential_comp_cellularAugmentation C (ModuleCat.of R R))) x
-  simp only [ModuleCat.hom_comp, ModuleCat.hom_zero, LinearMap.comp_apply,
-    LinearMap.zero_apply] at h
-  simpa [Rep.hom_comp] using h
+  unfold cellActionDifferentialRep cellActionAugmentationRep
+  exact cellularActionDifferential_comp_cellularActionAugmentation _ _ _ _ _ _
 
 /-- The **augmentation of `TauCeti.cellActionChainComplexRep`**, as a chain map in
 `ChainComplex (Rep R G) ℕ` to the trivial representation placed in degree `0`. -/
 def cellActionChainComplexRepAugmentation :
     cellActionChainComplexRep C hcell R ⟶
       (ChainComplex.single₀ (Rep.{w} R G)).obj (Rep.trivial R G R) :=
-  ((cellActionChainComplexRep C hcell R).toSingle₀Equiv _).symm
-    ⟨eqToHom (cellActionChainComplexRep_X C hcell R 0) ≫ cellActionAugmentationRep C hcell R, by
-      simp [cellActionChainComplexRep_d]⟩
+  cellularActionComplexAugmentation C (fun g ↦ cellActionSMul C g (hcell g))
+    (fun g ↦ isCellular_cellActionSMul C g (hcell g)) (cellActionSMul_one C (hcell 1))
+    (fun g h ↦ cellActionSMul_mul C (hcell g) (hcell h) (hcell (g * h))) R
 
 /-- In degree `0` the chain-map augmentation is `TauCeti.cellActionAugmentationRep`. -/
 @[simp]
 theorem cellActionChainComplexRepAugmentation_f_zero :
     (cellActionChainComplexRepAugmentation C hcell R).f 0 =
-      eqToHom (cellActionChainComplexRep_X C hcell R 0) ≫ cellActionAugmentationRep C hcell R :=
-  ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
+      eqToHom (cellActionChainComplexRep_X C hcell R 0) ≫ cellActionAugmentationRep C hcell R := by
+  unfold cellActionChainComplexRepAugmentation cellActionAugmentationRep
+  exact cellularActionComplexAugmentation_f_zero _ _ _ _ _ _
 
 /-- **When `C` is contractible, the equivariant cellular augmentation is a quasi-isomorphism.** -/
 theorem quasiIso_cellActionChainComplexRepAugmentation [ContractibleSpace C] :
     QuasiIso (cellActionChainComplexRepAugmentation C hcell R) := by
-  rw [← HomologicalComplex.quasiIso_map_iff_of_preservesHomology _ (forget₂ _ (ModuleCat R)),
-    quasiIso_iff_of_arrow_mk_iso _ (cellularChainComplexAugmentation C (ModuleCat.of R R)) ?_]
-  · exact quasiIso_cellularChainComplexAugmentation _ _
-  · refine Arrow.isoMk' _ _ (cellActionChainComplexRepForget₂Iso C hcell R)
-      ((HomologicalComplex.singleMapHomologicalComplex _ _ 0).app _) ?_
-    -- Keep `forget₂` visible on the object transport (`eqToHom_map`) and on the augmentation (`h`).
-    have h : (forget₂ (Rep R G) (ModuleCat R)).map (cellActionAugmentationRep C hcell R) =
-        cellularAugmentation C (ModuleCat.of R R) := by
-      rw [Rep.forget₂_moduleCat_map, cellActionAugmentationRep_hom_toLinearMap, ModuleCat.ofHom_hom]
-    ext : 1
-    simp [-Rep.forget₂_moduleCat_map, eqToHom_map, h]
+  unfold cellActionChainComplexRepAugmentation
+  exact quasiIso_cellularActionComplexAugmentation _ _ _ _ _ _
 
 end Augmentation
 

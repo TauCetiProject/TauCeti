@@ -28,8 +28,9 @@ space `E` over an aspherical base `(B, b)`.
   induced CW structure on `B` (`TauCeti.quotientCellularChainRepIsoFree`).
 
 In both cases `G` acts on the left on `E` by deck transformations through the given action of
-`IsQuotientCoveringMap p G`: Mathlib's `IsQuotientCoveringMap.deckTransformationMulEquiv` identifies
-`G` with the group of deck transformations of `p`, and `IsQuotientCoveringMap.fundamentalGroupEquiv`
+`IsQuotientCoveringMap p G`: `IsQuotientCoveringMap.deckMulEquiv` (in
+`TauCeti.AlgebraicTopology.UniversalCover.Deck.Quotient.ActingGroup`) identifies `G` with the group
+of deck transformations of `p`, and Mathlib's `IsQuotientCoveringMap.fundamentalGroupEquiv`
 identifies `G` with the opposite `(FundamentalGroup B b)ᵐᵒᵖ` of the fundamental group of `B`. On the
 based-path universal cover `TauCeti.UniversalCover b`, `TauCeti.UniversalCover.smul_mk` makes a loop
 class `γ` act on the left by prepending `γ⁻¹`, giving a left action of `FundamentalGroup B b`

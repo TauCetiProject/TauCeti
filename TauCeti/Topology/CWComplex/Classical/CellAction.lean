@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.CWComplex.Classical.Basic
 public import TauCeti.Topology.CWComplex.Classical.Map
+import Mathlib.GroupTheory.GroupAction.Quotient
 
 /-!
 # Actions on the cells of a relative CW complex
@@ -169,18 +170,12 @@ def sigmaSMulCellEquiv
     (Σ _ : ι, G) ≃ cell C n :=
   letI := cellMulAction hcell n
   haveI := isCancelSMul_cell hcell hfree n
-  Equiv.ofBijective (fun x ↦ x.2 • s x.1) <| by
-    refine ⟨fun ⟨a, g⟩ ⟨a', g'⟩ h ↦ ?_, fun c ↦ ?_⟩
-    · dsimp only at h
-      have hq : (Quotient.mk'' (s a) : MulAction.orbitRel.Quotient G (cell C n)) =
-          Quotient.mk'' (s a') :=
-        Quotient.sound' (MulAction.mem_orbit_iff.2 ⟨g⁻¹ * g', by rw [mul_smul, ← h, inv_smul_smul]⟩)
-      obtain rfl : a = a' := hs.1 hq
-      obtain rfl : g = g' := IsCancelSMul.right_cancel g g' (s a) h
-      rfl
-    · obtain ⟨a, ha⟩ := hs.2 (Quotient.mk'' c)
-      obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.1 (Quotient.exact' ha.symm)
-      exact ⟨⟨a, g⟩, hg⟩
+  let e : ι ≃ MulAction.orbitRel.Quotient G (cell C n) := Equiv.ofBijective _ hs
+  let φ : MulAction.orbitRel.Quotient G (cell C n) → cell C n := s ∘ e.symm
+  have hφ : Function.LeftInverse Quotient.mk'' φ := fun o ↦ e.apply_symm_apply o
+  (Equiv.sigmaEquivProd ι G).trans <|
+    (Equiv.prodCongr e (Equiv.refl G)).trans
+      (MulAction.selfEquivOrbitsQuotientProd' hφ IsCancelSMul.stabilizer_eq_bot).symm
 
 /-- The `n`-cell indexed by `⟨a, g⟩` is the translate `g • s a`. -/
 @[simp]
@@ -192,8 +187,13 @@ theorem sigmaSMulCellEquiv_apply
         MulAction.orbitRel.Quotient G (cell C n))))
     (x : Σ _ : ι, G) :
     letI := cellMulAction hcell n
-    sigmaSMulCellEquiv hcell hfree s hs x = x.2 • s x.1 :=
-  (rfl)
+    sigmaSMulCellEquiv hcell hfree s hs x = x.2 • s x.1 := by
+  let := cellMulAction hcell n
+  have := isCancelSMul_cell hcell hfree n
+  let e : ι ≃ MulAction.orbitRel.Quotient G (cell C n) := Equiv.ofBijective _ hs
+  rcases x with ⟨a, g⟩
+  change g • s (e.symm (e a)) = g • s a
+  rw [e.symm_apply_apply]
 
 end FreeCellAction
 
