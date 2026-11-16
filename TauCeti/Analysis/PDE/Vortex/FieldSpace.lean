@@ -15,7 +15,9 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # The affine Sobolev space of framed plane vortex fields
@@ -58,6 +60,13 @@ embedding into `C₀`, and it is bounded. In particular its section satisfies th
 `α(z) (z / |z|)^(-m) → 1`, and its modulus tends to one; with the maximum principle this gives
 `|α| ≤ 1` for every `C²` vortex in `A_m^s`. No equation map, gauge group, Fredholm property or
 smooth structure on the quotient is constructed here.
+
+A continuous field lying in `A_m^k` for every `k` is smooth
+(`contDiff_of_forall_mem_framedFieldSpace`). Conversely, a smooth field all of whose derivatives
+of `x - x_ref` are `O(exp (-c |z|))` at infinity, for some `c > 0`, lies in `A_m^s` for every `s`
+(`mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField`), by the classical
+description of `H^k`
+(`TemperedDistribution.mem_realSobolevFunctions_natCast_of_memLp_iteratedFDeriv`).
 
 ## References
 
@@ -531,5 +540,25 @@ theorem exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace {f : ContDiffBump 
   refine ⟨C₁ + C₂, fun z ↦ ?_⟩
   rw [hsplit, iteratedFDeriv_add_apply hd.contDiffAt href.contDiffAt]
   exact (norm_add_le _ _).trans (add_le_add (hC₁ z) (hC₂ z))
+
+/-- **Exponentially decaying fields lie in every `A_m^s`.** A smooth field `x` such that every
+derivative of `x - x_ref` is `O(exp (-c |z|))` at infinity, for some `c > 0`, lies in the affine
+Sobolev space `A_m^s` for every real `s`. -/
+theorem mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField
+    {f : ContDiffBump (0 : ℝ)} {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
+    {c : ℝ} (hc : 0 < c)
+    (hdec : ∀ n : ℕ, iteratedFDeriv ℝ n (x - referenceField f m) =O[cocompact ℂ]
+      fun z ↦ Real.exp (-(c * ‖z‖))) (s : ℝ) :
+    x ∈ framedFieldSpace f m s := by
+  obtain ⟨k, hk⟩ := exists_nat_ge s
+  refine framedFieldSpace_mono f m hk (mem_framedFieldSpace.2 (mem_sobolevFields.2 fun i ↦ ?_))
+  have hy : ContDiff ℝ ∞ (x - referenceField f m) := hx.sub (contDiff_referenceField f m)
+  have hyi : ContDiff ℝ ∞ fun z ↦ (x - referenceField f m) z i :=
+    (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).contDiff.comp hy
+  refine TemperedDistribution.mem_realSobolevFunctions_natCast_of_memLp_iteratedFDeriv
+    (by norm_num) (by norm_num) (hyi.of_le (by exact_mod_cast le_top)) fun n _ ↦ ?_
+  exact (hyi.continuous_iteratedFDeriv (by exact_mod_cast le_top)).memLp_of_isBigO_exp_neg_mul_norm
+    hc ((EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).isBigO_iteratedFDeriv_comp_left
+      hy (by exact_mod_cast le_top) (hdec n)) 2
 
 end TauCeti.Vortex

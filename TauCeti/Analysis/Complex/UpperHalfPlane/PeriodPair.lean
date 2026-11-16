@@ -12,6 +12,7 @@ public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Map
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.WeierstrassZeta
 import Mathlib.Analysis.Normed.Group.Tannery
 import TauCeti.Algebra.Field.Basic
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
 
@@ -667,12 +668,6 @@ theorem tendstoLocallyUniformly_weierstrassZeta_periodPair_div (M : ℕ) (b : Fi
         (1 / (((b 0 : ℂ) * z + b 1) / M - (y 0 * z + y 1)) + 1 / ((y 0 : ℂ) * z + y 1) +
           ((b 0 : ℂ) * z + b 1) / M / ((y 0 : ℂ) * z + y 1) ^ 2))
       (fun z : ℍ ↦ z.periodPair.weierstrassZeta (((b 0 : ℂ) * z + b 1) / M)) atTop := by
-  rcases eq_or_ne M 0 with rfl | hM
-  · -- for `M = 0` every summand and the limit vanish
-    simp only [Nat.cast_zero, div_zero, zero_sub, one_div, inv_neg, zero_div, add_zero,
-      neg_add_cancel, Finset.sum_const_zero, PeriodPair.weierstrassZeta_zero]
-    exact (tendsto_const_nhds (x := (0 : ℂ))).tendstoUniformly_const.tendstoLocallyUniformly
-  have : NeZero M := ⟨hM⟩
   rw [tendstoLocallyUniformly_iff_forall_isCompact]
   intro K hK
   obtain ⟨A, B, hB, HABK⟩ := subset_verticalStrip_of_isCompact hK
@@ -680,7 +675,7 @@ theorem tendstoLocallyUniformly_weierstrassZeta_periodPair_div (M : ℕ) (b : Fi
     continuous_coe.continuousOn
   set r₀ := r ⟨⟨A, B⟩, hB⟩
   have hr₀ : 0 < r₀ := r_pos _
-  set R : ℝ := |(b 0 : ℝ)| * |C| + |(b 1 : ℝ)| + 1
+  set R : ℝ := ‖(b 0 : ℂ)‖ * |C| + ‖(b 1 : ℂ)‖ + 1
   have hR : 0 < R := by positivity
   have hlim : (fun z : ℍ ↦ z.periodPair.weierstrassZeta (((b 0 : ℂ) * z + b 1) / M)) =
       fun z : ℍ ↦ ∑' y : Fin 2 → ℤ, (1 / (((b 0 : ℂ) * z + b 1) / M - (y 0 * z + y 1)) +
@@ -703,15 +698,9 @@ theorem tendstoLocallyUniformly_weierstrassZeta_periodPair_div (M : ℕ) (b : Fi
   have hl : r₀ * ‖y‖ ≤ ‖(y 0 : ℂ) * z + y 1‖ :=
     (mul_le_mul_of_nonneg_right (r_lower_bound_on_verticalStrip z hB (HABK hz))
       (norm_nonneg _)).trans (r_mul_max_le z hy0)
-  have hx : ‖((b 0 : ℂ) * z + b 1) / M‖ < R := by
-    have hM : (1 : ℝ) ≤ M := by exact_mod_cast NeZero.one_le
-    have hz' : ‖(z : ℂ)‖ ≤ |C| := (hC z hz).trans (le_abs_self C)
-    rw [norm_div, Complex.norm_natCast]
-    refine (div_le_self (norm_nonneg _) hM).trans_lt ?_
-    refine (norm_add_le _ _).trans_lt ?_
-    rw [norm_mul, Complex.norm_intCast, Complex.norm_intCast]
-    have := mul_le_mul_of_nonneg_left hz' (abs_nonneg (b 0 : ℝ))
-    linarith
+  have hx : ‖((b 0 : ℂ) * z + b 1) / M‖ < R :=
+    (Complex.norm_mul_add_div_natCast_le M _ _ ((hC z hz).trans (le_abs_self C))).trans_lt
+      (lt_add_one _)
   refine (weierstrassZeta_bound hx (hy'.trans hl)).trans ?_
   rw [mul_assoc (2 * R ^ 2), ← Real.mul_rpow hr₀.le (norm_nonneg _)]
   exact mul_le_mul_of_nonneg_left

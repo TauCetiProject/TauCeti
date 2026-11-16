@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.ChordalDist
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Basic
 public import TauCeti.Topology.Path.Separation
 import TauCeti.Topology.ConnectedComponents
-import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Null chains and prime ends
@@ -492,9 +491,8 @@ def lift {α : Sort*} (f : ∀ C : ℕ → Set ℂ, IsNullChain U C → α)
 theorem lift_mk {α : Sort*} (f : ∀ C : ℕ → Set ℂ, IsNullChain U C → α)
     (hf : ∀ (C C' : ℕ → Set ℂ) (hC : IsNullChain U C) (hC' : IsNullChain U C'),
       NullChainEquivalent U C C' → f C hC = f C' hC') (C : ℕ → Set ℂ) (hC : IsNullChain U C) :
-    lift f hf (mk C hC) = f C hC := by
-  unfold lift mk
-  exact Quotient.lift_mk _ _ _
+    lift f hf (mk C hC) = f C hC :=
+  (rfl)
 
 /-- The **filter of a prime end**: the filter of any null chain representing it, whose members
 are the sets containing one of the domains that chain cuts off. -/

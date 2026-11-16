@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 
 /-!
@@ -26,6 +27,9 @@ symbol `⟨ξ⟩ ^ t = (1 + ‖ξ‖ ^ 2) ^ (t / 2)`, extends to an operator `H^
 
 * `SchwartzMap.HasSobolevExtension`: `A` extends to a bounded operator `H^s → H^r`, characterised
   by `SchwartzMap.hasSobolevExtension_iff`.
+* `SchwartzMap.hasSobolevExtension_iff_exists_norm_le`: `A` extends to `H^s → H^r` exactly when
+  `‖A u‖_{H^r} ≤ C ‖u‖_{H^s}` for every Schwartz function `u`, since Schwartz functions are dense
+  in `H^s`.
 * `SchwartzMap.hasSobolevExtension_zero`, `SchwartzMap.hasSobolevExtension_id`: the zero map and the
   identity extend.
 * `SchwartzMap.HasSobolevExtension.comp`, `SchwartzMap.HasSobolevExtension.add`,
@@ -63,6 +67,25 @@ theorem hasSobolevExtension_iff {A : 𝓢(E, F) →L[ℂ] 𝓢(E, G)} {s r : ℝ
     HasSobolevExtension A s r ↔ ∃ T : H^{s}(E, F) →L[ℂ] H^{r}(E, G),
       T ∘L toBesselPotentialSpaceCLM s 2 = toBesselPotentialSpaceCLM r 2 ∘L A :=
   Iff.rfl
+
+/-- `A` extends to a bounded operator `H^s → H^r` if and only if the a priori estimate
+`‖A u‖_{H^r} ≤ C ‖u‖_{H^s}` holds for some `C ≥ 0` and every Schwartz function `u`. -/
+theorem hasSobolevExtension_iff_exists_norm_le {A : 𝓢(E, F) →L[ℂ] 𝓢(E, G)} {s r : ℝ} :
+    HasSobolevExtension A s r ↔ ∃ C ≥ 0, ∀ u,
+      ‖toBesselPotentialSpaceCLM r 2 (A u)‖ ≤ C * ‖toBesselPotentialSpaceCLM s 2 u‖ := by
+  constructor
+  · rintro ⟨T, hT⟩
+    refine ⟨‖T‖, norm_nonneg T, fun u ↦ ?_⟩
+    rw [← ContinuousLinearMap.comp_apply (toBesselPotentialSpaceCLM r 2) A, ← hT,
+      ContinuousLinearMap.comp_apply]
+    exact T.le_opNorm _
+  · rintro ⟨C, -, hC⟩
+    -- Schwartz functions are dense in `H^s`, so the estimate extends `A` by continuity.
+    have hdense := denseRange_toBesselPotentialSpaceCLM (E := E) (F := F) s (p := 2)
+      ENNReal.ofNat_ne_top
+    refine ⟨((toBesselPotentialSpaceCLM r 2).toLinearMap ∘ₗ A.toLinearMap).extendOfNorm
+      (toBesselPotentialSpaceCLM s 2).toLinearMap, ContinuousLinearMap.ext fun u ↦ ?_⟩
+    exact LinearMap.extendOfNorm_eq hdense ⟨C, hC⟩ u
 
 /-- The zero map extends to a bounded operator `H^s → H^r`. -/
 theorem hasSobolevExtension_zero (s r : ℝ) :

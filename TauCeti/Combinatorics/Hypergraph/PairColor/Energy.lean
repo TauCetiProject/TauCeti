@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Density
+public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Order.Partition.Finpartition
 public import Mathlib.Basic.Real.Basic
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Data.Rat.BigOperators
+import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
+import TauCeti.Algebra.BigOperators.Finset.WeightedCauchySchwarz
 import TauCeti.Order.Partition.Finpartition
 
 /-!
@@ -57,6 +60,8 @@ pairs of parts, this is the energy increment of the regularity lemma for pair-co
   identity.
 * `TauCeti.PairColorSystem.energy_mono_of_refines`: refining the partition does not decrease the
   energy.
+* `TauCeti.PairColorSystem.sum_abs_pairColorDensity_sub_le`: an energy gap of at most `ε` bounds
+  the `L¹` deviation between fine and coarse block densities by `√ε` on average.
 * `TauCeti.PairColorSystem.card_mul_sq_pairColorDensity_sub_le_sum`: Cauchy–Schwarz on a rectangle
   whose sides are unions of parts.
 * `TauCeti.PairColorSystem.mul_card_le_sum_sq_pairColorDensity_sub_of_witness`: the deviation gain
@@ -335,6 +340,35 @@ energy of `P`. -/
 theorem energy_mono_of_refines : S.energy P ≤ S.energy Q := by
   rw [← sub_nonneg, ← S.sum_sq_pairColorDensity_sub_div_eq_energy_sub h]
   exact div_nonneg (sum_nonneg fun _ _ ↦ sum_nonneg fun _ _ ↦ sq_nonneg _) (Nat.cast_nonneg _)
+
+/-- **Pair-energy gap controls `L¹` density deviation.** If `Q` refines `P` and
+`S.energy Q - S.energy P ≤ ε`, then for every color `c` the fine and coarse block densities
+differ by at most `√ε` on average over all ordered distinct pairs. -/
+theorem sum_abs_pairColorDensity_sub_le {ε : ℝ}
+    (hgap : S.energy Q - S.energy P ≤ ε) (c : κ) :
+    ∑ p ∈ (univ : Finset V).offDiag,
+        |(pairColorDensity S c (Q.part p.1) (Q.part p.2) : ℝ) -
+          pairColorDensity S c (P.part p.1) (P.part p.2)| ≤
+      Real.sqrt ε * #(univ : Finset V).offDiag := by
+  rcases (univ : Finset V).offDiag.eq_empty_or_nonempty with h0 | hne
+  · simp [h0]
+  set D : ℝ := (#(univ : Finset V).offDiag : ℝ)
+  have hD₀ : 0 < D := Nat.cast_pos.2 hne.card_pos
+  rw [← S.sum_sq_pairColorDensity_sub_div_eq_energy_sub h] at hgap
+  have hw : ∑ _p ∈ (univ : Finset V).offDiag, D⁻¹ ≤ 1 := by
+    rw [sum_const, nsmul_eq_mul, mul_inv_cancel₀ hD₀.ne']
+  have hsq : ∑ p ∈ (univ : Finset V).offDiag, D⁻¹ *
+      ((pairColorDensity S c (Q.part p.1) (Q.part p.2) : ℝ) -
+        pairColorDensity S c (P.part p.1) (P.part p.2)) ^ 2 ≤ ε := by
+    refine le_trans ?_ hgap
+    rw [← mul_sum, inv_mul_eq_div]
+    gcongr with p
+    exact single_le_sum (f := fun k ↦ ((pairColorDensity S k (Q.part p.1) (Q.part p.2) : ℝ) -
+      pairColorDensity S k (P.part p.1) (P.part p.2)) ^ 2) (fun _ _ ↦ sq_nonneg _) (mem_univ c)
+  have hcs := weighted_sum_abs_le_sqrt (univ : Finset V).offDiag (fun _ ↦ D⁻¹) _
+    (fun _ _ ↦ inv_nonneg.2 hD₀.le) hw hsq
+  rw [← mul_sum, inv_mul_le_iff₀ hD₀] at hcs
+  linarith
 
 omit h in
 /-- **A resolved witness forces a gain on its block.** Let `A ×ˢ B` be a block of parts of `P`,
