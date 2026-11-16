@@ -349,7 +349,7 @@ theorem prodThomPairPuncturedLineSingularCohomologyEquiv_apply
 
 /-- On the positive side, the class `π^* b + σ ⌣ π^* c` of
 `TauCeti.prodThomPairPuncturedLineSingularCohomologyEquiv` restricts to `b + c`. -/
-theorem prodThomPairPuncturedLineSingularCohomologyEquiv_restrict_one
+theorem singularCohomologyMap_prodThomPairPuncturedLineSection_one_lineSingularCohomologyEquiv
     (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (m : ℕ)
     (bc : (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m ×
       (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m) :
@@ -359,7 +359,7 @@ theorem prodThomPairPuncturedLineSingularCohomologyEquiv_restrict_one
 
 /-- On the negative side, the class `π^* b + σ ⌣ π^* c` of
 `TauCeti.prodThomPairPuncturedLineSingularCohomologyEquiv` restricts to `b`. -/
-theorem prodThomPairPuncturedLineSingularCohomologyEquiv_restrict_neg_one
+theorem singularCohomologyMap_prodThomPairPuncturedLineSection_neg_one_lineSingularCohomologyEquiv
     (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (m : ℕ)
     (bc : (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m ×
       (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m) :
