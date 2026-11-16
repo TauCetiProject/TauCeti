@@ -20,9 +20,9 @@ This is how a module presented by a basis of "brackets" of basis vectors, such a
 piece of the graded Lie algebra of a free group, is identified with an exterior square without
 comparing the index set `{(i, j) | i < j}` with Mathlib's index set of two-element subsets.
 
-Over a field `K` of characteristic not `2`, two endomorphisms `A, B : Module.End K V` also combine
-into a *symmetric wedge product* `TauCeti.wedgeEnd A B : Module.End K (⋀[K]^2 V)` sending `u ∧ v`
-to `2⁻¹ • (A u ∧ B v + B u ∧ A v)`. The `2⁻¹` normalization gives
+Over a commutative ring `R` in which `2` is invertible, two endomorphisms `A, B : Module.End R M`
+also combine into a *symmetric wedge product* `TauCeti.wedgeEnd A B : Module.End R (⋀[R]^2 M)`
+sending `u ∧ v` to `⅟(2 : R) • (A u ∧ B v + B u ∧ A v)`. The `⅟(2 : R)` normalization gives
 `wedgeEnd A A = exteriorPower.map 2 A` and `wedgeEnd id id = id`, which matches the bivector
 curvature-operator convention for Kulkarni–Nomizu products on inner product spaces.
 
@@ -30,7 +30,7 @@ curvature-operator convention for Kulkarni–Nomizu products on inner product sp
 
 * `LinearMap.IsAlt.exteriorSquareEquiv`: the isomorphism `⋀²M ≃ N` induced by an alternating
   bilinear map carrying the ordered pairs of a basis of `M` to a basis of `N`.
-* `TauCeti.wedgeEnd`: the symmetric wedge product of two endomorphisms on `⋀[K]^2 V`.
+* `TauCeti.wedgeEnd`: the symmetric wedge product of two endomorphisms on `⋀[R]^2 M`.
 
 ## Main results
 
@@ -38,8 +38,9 @@ curvature-operator convention for Kulkarni–Nomizu products on inner product sp
 * `LinearMap.IsAlt.exteriorSquareEquiv_symm_apply`: its inverse sends the basis vector indexed by
   `i < j` to `b i ∧ b j`.
 * `exteriorPower.ιMulti_two_add_left`, `exteriorPower.ιMulti_two_add_right`,
-  `exteriorPower.ιMulti_two_smul_left`, `exteriorPower.ιMulti_two_smul_right`, and
-  `exteriorPower.ιMulti_two_swap`: bilinearity and swap antisymmetry of `u ∧ w`.
+  `exteriorPower.ιMulti_two_smul_left`, `exteriorPower.ιMulti_two_smul_right`,
+  `exteriorPower.ιMulti_two_swap`, and `exteriorPower.linearMap_ext_ιMulti_two`: bilinearity,
+  swap antisymmetry, and pure-wedge extensionality for `u ∧ w`.
 * `TauCeti.wedgeEnd_apply_ιMulti`, `TauCeti.wedgeEnd_comm`, `TauCeti.wedgeEnd_self`, and
   `TauCeti.wedgeEnd_id`: evaluation, commutativity, diagonal specialization to
   `exteriorPower.map 2`, and the identity law for `wedgeEnd`.
@@ -79,6 +80,13 @@ theorem ιMulti_two_smul_left (u w : M) (c : R) :
 theorem ιMulti_two_swap (u w : M) :
     ιMulti R 2 ![w, u] = -ιMulti R 2 ![u, w] := by
   simpa using ((ιMulti R 2).isAlt_toBilinMap.neg u w).symm
+
+/-- Two linear maps out of `⋀[R]^2 M` agree if they agree on all pure wedges `u ∧ w`. -/
+theorem linearMap_ext_ιMulti_two {N : Type*} [AddCommGroup N] [Module R N]
+    {f g : ⋀[R]^2 M →ₗ[R] N}
+    (h : ∀ u w, f (ιMulti R 2 ![u, w]) = g (ιMulti R 2 ![u, w])) : f = g :=
+  linearMap_ext <| AlternatingMap.ext fun v ↦ by
+    rw [← FinVec.etaExpand_eq v]; exact h (v 0) (v 1)
 
 end exteriorPower
 
@@ -138,71 +146,66 @@ namespace TauCeti
 
 section WedgeEnd
 
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+variable {R M : Type*} [CommRing R] [Invertible (2 : R)] [AddCommGroup M] [Module R M]
 
-private theorem end_ext_ιMulti {f g : Module.End K (⋀[K]^2 V)}
-    (h : ∀ u w, f (exteriorPower.ιMulti K 2 ![u, w]) = g (exteriorPower.ιMulti K 2 ![u, w])) :
-    f = g :=
-  exteriorPower.linearMap_ext <| AlternatingMap.ext fun v ↦ by
-    rw [← FinVec.etaExpand_eq v]; exact h (v 0) (v 1)
-
-private theorem isAlt_wedgeEndAux (A B : Module.End K V) :
-    (((exteriorPower.ιMulti K 2).toMultilinearMap.toBilinMap).compl₁₂ A B +
-      ((exteriorPower.ιMulti K 2).toMultilinearMap.toBilinMap).compl₁₂ B A).IsAlt := fun u ↦ by
+omit [Invertible (2 : R)] in
+private theorem isAlt_wedgeEndAux (A B : Module.End R M) :
+    (((exteriorPower.ιMulti R 2).toMultilinearMap.toBilinMap).compl₁₂ A B +
+      ((exteriorPower.ιMulti R 2).toMultilinearMap.toBilinMap).compl₁₂ B A).IsAlt := fun u ↦ by
   simp [LinearMap.compl₁₂_apply, exteriorPower.ιMulti_two_swap (B u) (A u)]
 
-private noncomputable def wedgeEndAux (A B : Module.End K V) : Module.End K (⋀[K]^2 V) :=
-  (2 : K)⁻¹ • exteriorPower.alternatingMapLinearEquiv (isAlt_wedgeEndAux A B).toAlternatingMap
+private noncomputable def wedgeEndAux (A B : Module.End R M) : Module.End R (⋀[R]^2 M) :=
+  ⅟(2 : R) • exteriorPower.alternatingMapLinearEquiv (isAlt_wedgeEndAux A B).toAlternatingMap
 
-private theorem wedgeEndAux_ιMulti (A B : Module.End K V) (u v : V) :
-    wedgeEndAux A B (exteriorPower.ιMulti K 2 ![u, v]) = (2 : K)⁻¹ •
-      (exteriorPower.ιMulti K 2 ![A u, B v] + exteriorPower.ιMulti K 2 ![B u, A v]) := by
+private theorem wedgeEndAux_ιMulti (A B : Module.End R M) (u v : M) :
+    wedgeEndAux A B (exteriorPower.ιMulti R 2 ![u, v]) = ⅟(2 : R) •
+      (exteriorPower.ιMulti R 2 ![A u, B v] + exteriorPower.ιMulti R 2 ![B u, A v]) := by
   simp [wedgeEndAux, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti,
     LinearMap.IsAlt.toAlternatingMap_apply]
 
-private theorem wedgeEndAux_comm (A B : Module.End K V) : wedgeEndAux A B = wedgeEndAux B A :=
-  end_ext_ιMulti fun _ _ ↦ by simp [wedgeEndAux_ιMulti, add_comm]
+private theorem wedgeEndAux_comm (A B : Module.End R M) : wedgeEndAux A B = wedgeEndAux B A :=
+  exteriorPower.linearMap_ext_ιMulti_two fun _ _ ↦ by simp [wedgeEndAux_ιMulti, add_comm]
 
-private theorem wedgeEndAux_add_left (A₁ A₂ B : Module.End K V) :
+private theorem wedgeEndAux_add_left (A₁ A₂ B : Module.End R M) :
     wedgeEndAux (A₁ + A₂) B = wedgeEndAux A₁ B + wedgeEndAux A₂ B :=
-  end_ext_ιMulti fun _ _ ↦ by
+  exteriorPower.linearMap_ext_ιMulti_two fun _ _ ↦ by
     simp only [LinearMap.add_apply, wedgeEndAux_ιMulti, exteriorPower.ιMulti_two_add_left,
       exteriorPower.ιMulti_two_add_right, smul_add]; abel
 
-private theorem wedgeEndAux_smul_left (c : K) (A B : Module.End K V) :
+private theorem wedgeEndAux_smul_left (c : R) (A B : Module.End R M) :
     wedgeEndAux (c • A) B = c • wedgeEndAux A B :=
-  end_ext_ιMulti fun _ _ ↦ by
+  exteriorPower.linearMap_ext_ιMulti_two fun _ _ ↦ by
     simp only [LinearMap.smul_apply, wedgeEndAux_ιMulti, exteriorPower.ιMulti_two_smul_left,
-      exteriorPower.ιMulti_two_smul_right, smul_add, smul_comm (2 : K)⁻¹ c]
+      exteriorPower.ιMulti_two_smul_right, smul_add, smul_comm (⅟(2 : R)) c]
 
-/-- The symmetric wedge product of two endomorphisms `A, B : Module.End K V` on `⋀[K]^2 V`,
-characterized on pure wedges by `wedgeEnd A B (u ∧ v) = 2⁻¹ • (A u ∧ B v + B u ∧ A v)`. -/
-noncomputable def wedgeEnd : Module.End K V →ₗ[K] Module.End K V →ₗ[K] Module.End K (⋀[K]^2 V) :=
-  LinearMap.mk₂ K wedgeEndAux wedgeEndAux_add_left wedgeEndAux_smul_left
+/-- The symmetric wedge product of two endomorphisms `A, B : Module.End R M` on `⋀[R]^2 M`,
+characterized on pure wedges by `wedgeEnd A B (u ∧ v) = ⅟(2 : R) • (A u ∧ B v + B u ∧ A v)`. -/
+noncomputable def wedgeEnd : Module.End R M →ₗ[R] Module.End R M →ₗ[R] Module.End R (⋀[R]^2 M) :=
+  LinearMap.mk₂ R wedgeEndAux wedgeEndAux_add_left wedgeEndAux_smul_left
     (fun A B₁ B₂ ↦ by
       rw [wedgeEndAux_comm A, wedgeEndAux_add_left, wedgeEndAux_comm B₁, wedgeEndAux_comm B₂])
     (fun c A B ↦ by rw [wedgeEndAux_comm A, wedgeEndAux_smul_left, wedgeEndAux_comm B])
 
-/-- On a pure wedge `u ∧ v`, `wedgeEnd A B` evaluates to `2⁻¹ • (A u ∧ B v + B u ∧ A v)`. -/
-@[simp] theorem wedgeEnd_apply_ιMulti (A B : Module.End K V) (u v : V) :
-    wedgeEnd A B (exteriorPower.ιMulti K 2 ![u, v]) = (2 : K)⁻¹ •
-      (exteriorPower.ιMulti K 2 ![A u, B v] + exteriorPower.ιMulti K 2 ![B u, A v]) := by
+/-- On a pure wedge `u ∧ v`, `wedgeEnd A B` evaluates to
+`⅟(2 : R) • (A u ∧ B v + B u ∧ A v)`. -/
+@[simp] theorem wedgeEnd_apply_ιMulti (A B : Module.End R M) (u v : M) :
+    wedgeEnd A B (exteriorPower.ιMulti R 2 ![u, v]) = ⅟(2 : R) •
+      (exteriorPower.ιMulti R 2 ![A u, B v] + exteriorPower.ιMulti R 2 ![B u, A v]) := by
   simp [wedgeEnd, wedgeEndAux_ιMulti]
 
 /-- The symmetric wedge product of endomorphisms is commutative. -/
-theorem wedgeEnd_comm (A B : Module.End K V) : wedgeEnd A B = wedgeEnd B A := wedgeEndAux_comm A B
+theorem wedgeEnd_comm (A B : Module.End R M) : wedgeEnd A B = wedgeEnd B A := wedgeEndAux_comm A B
 
-/-- When `2 ≠ 0`, `wedgeEnd A A` equals the induced exterior-square map `exteriorPower.map 2 A`. -/
-@[simp] theorem wedgeEnd_self [NeZero (2 : K)] (A : Module.End K V) :
+/-- `wedgeEnd A A` equals the induced exterior-square map `exteriorPower.map 2 A`. -/
+@[simp] theorem wedgeEnd_self (A : Module.End R M) :
     wedgeEnd A A = exteriorPower.map 2 A :=
-  end_ext_ιMulti fun u v ↦ by
+  exteriorPower.linearMap_ext_ιMulti_two fun u v ↦ by
     have hAv : ![A u, A v] = A ∘ ![u, v] := by ext i; fin_cases i <;> rfl
-    simp [exteriorPower.map_apply_ιMulti, ← two_smul K, smul_smul,
-      inv_mul_cancel₀ (NeZero.ne (2 : K)), hAv]
+    simp [exteriorPower.map_apply_ιMulti, ← two_smul R, smul_smul, hAv]
 
-/-- When `2 ≠ 0`, `wedgeEnd id id` is the identity on `⋀[K]^2 V`. -/
-theorem wedgeEnd_id [NeZero (2 : K)] :
-    wedgeEnd (LinearMap.id : Module.End K V) LinearMap.id = LinearMap.id := by
+/-- `wedgeEnd id id` is the identity on `⋀[R]^2 M`. -/
+theorem wedgeEnd_id :
+    wedgeEnd (LinearMap.id : Module.End R M) LinearMap.id = LinearMap.id := by
   rw [wedgeEnd_self, exteriorPower.map_id]
 
 end WedgeEnd

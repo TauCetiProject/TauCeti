@@ -15,12 +15,14 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 
 The real inner product `innerₗ E` is a nondegenerate bilinear form on `E`
 (`TauCeti.nondegenerate_inner`): a vector orthogonal to every vector is orthogonal to itself, hence
-zero. This is the hypothesis under which Mathlib's bilinear-form constructions, such as the dual
-basis `LinearMap.BilinForm.dualBasis`, apply to the inner product. In finite dimension it is
-moreover a perfect pairing (`TauCeti.bijective_innerₗ`), as Mathlib's `exteriorPower.hodgeStar`
-requires of its bilinear form. Its pullback along an injective linear map, such as the metric
-induced by an immersion, is again nondegenerate (`TauCeti.nondegenerate_inner_comp`), so a vector
-is determined by its pairings with it (`TauCeti.eq_of_forall_inner_comp`).
+zero. Thus `innerₗ E` is injective (`TauCeti.innerₗ_injective`) and left-cancellable on linear maps
+into `E` (`TauCeti.innerₗ_comp_eq_iff`). This is the hypothesis under which Mathlib's bilinear-form
+constructions, such as the dual basis `LinearMap.BilinForm.dualBasis`, apply to the inner product.
+In finite dimension it is moreover a perfect pairing (`TauCeti.bijective_innerₗ`), as Mathlib's
+`exteriorPower.hodgeStar` requires of its bilinear form. Its pullback along an injective linear map,
+such as the metric induced by an immersion, is again nondegenerate
+(`TauCeti.nondegenerate_inner_comp`), so a vector is determined by its pairings with it
+(`TauCeti.eq_of_forall_inner_comp`).
 
 The dual basis of a basis `b` for the inner product pairs with a vector to give its coordinates
 in `b` (`Module.Basis.inner_dualBasis_left`), and it is obtained from `b` by the inverse of the Gram
@@ -39,6 +41,17 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- The real inner product is a nondegenerate bilinear form. -/
 theorem nondegenerate_inner : (innerₗ E).Nondegenerate :=
   ⟨fun x hx ↦ inner_self_eq_zero.mp (hx x), fun y hy ↦ inner_self_eq_zero.mp (hy y)⟩
+
+/-- The real inner product `innerₗ E : E →ₗ[ℝ] E →ₗ[ℝ] ℝ` is injective: two vectors with the same
+inner products against every vector are equal. -/
+theorem innerₗ_injective : Function.Injective (innerₗ E) :=
+  fun _ _ h ↦ ext_inner_right ℝ fun v ↦ congr($h v)
+
+/-- Left-cancellation of `innerₗ E` on linear maps into `E`: `innerₗ E ∘ₗ A = innerₗ E ∘ₗ B` iff
+`A = B`. -/
+theorem innerₗ_comp_eq_iff {W : Type*} [AddCommMonoid W] [Module ℝ W] {A B : W →ₗ[ℝ] E} :
+    innerₗ E ∘ₗ A = innerₗ E ∘ₗ B ↔ A = B :=
+  ⟨fun h ↦ LinearMap.ext fun u ↦ innerₗ_injective (LinearMap.congr_fun h u), fun h ↦ h ▸ rfl⟩
 
 /-- In finite dimension the real inner product is a perfect pairing: `v ↦ ⟪v, ·⟫` is a bijection
 onto the dual. -/

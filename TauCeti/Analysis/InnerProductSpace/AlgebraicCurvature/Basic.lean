@@ -29,8 +29,10 @@ under the orthogonal group of `V`, and a continuous linear equivalence induces a
 equivalence `TauCeti.FourTensor.algebraicCurvatureSubmoduleCongr`. Currying via
 `TauCeti.FourTensor.toLinearMap₄` transfers sectional polarization from algebraic four-linear maps,
 showing that an algebraic curvature tensor is uniquely determined by its sectional-numerator values
-`r ![u, v, u, v]` on linearly independent pairs `(u, v)` and vanishes when `Module.finrank ℝ V ≤ 1`.
-With this sign convention `r(u, v, u, v)` is positive on the round sphere.
+`r ![u, v, u, v]` on linearly independent pairs `(u, v)`. On a finite-dimensional space `V` with
+`Module.finrank ℝ V ≤ 1`, first-pair antisymmetry alone forces every such four-tensor (and in
+particular every algebraic curvature tensor) to vanish. With this sign convention `r(u, v, u, v)`
+is positive on the round sphere.
 
 On a finite-dimensional real inner product space the *Ricci contraction*
 `Ric(u, v) = ∑ᵢ r(eᵢ, u, eᵢ, v)` and the *scalar contraction* `Scal = ∑ᵢ Ric(eᵢ, eᵢ)` do not depend
@@ -47,9 +49,13 @@ of the inner product with itself is the constant-curvature tensor
 `r(u, v, z, w) = ⟪u, z⟫ ⟪v, w⟫ - ⟪u, w⟫ ⟪v, z⟫`, the curvature four-tensor of the unit sphere.
 It is positive on `(u, v, u, v)`, where it is the Gram determinant, exactly for linearly
 independent `u, v`, and it is invariant under linear isometries.
-Its Ricci contraction is `(n - 1) g` and its scalar contraction is `n (n - 1)`, and `κ` times it
-is the four-tensor of every curvature operator satisfying `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`,
-the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
+Its Ricci contraction is `(n - 1) g` and its scalar contraction is `n (n - 1)`. When `V` is a
+finite-dimensional real inner product space with `Module.finrank ℝ V = 2`, `⋀[ℝ]^2 V` is
+one-dimensional, so every skew-pair (hence every algebraic curvature) four-tensor is a scalar
+multiple of `constantCurvature V`, specifically `(scalar r / 2) • constantCurvature V`. Moreover,
+`κ` times `constantCurvature V` is the four-tensor of every curvature operator satisfying
+`R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`, the identity recorded by
+`Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 
 ## Main definitions
 
@@ -72,7 +78,7 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 * `TauCeti.FourTensor.isClosed_algebraicCurvatureSubmodule`: the submodule is closed.
 * `TauCeti.FourTensor.IsAlgebraicCurvature.compContinuousLinearMap` and
   `TauCeti.FourTensor.pullbackAlgebraicCurvature_injective`: pullback preserves algebraic curvature
-  tensors and is injective along a continuous linear map admitting a right inverse.
+  tensors and is injective along a continuous linear map with dense range.
 * `TauCeti.FourTensor.isAlgebraicCurvature_compContinuousLinearMap_iff` and
   `TauCeti.FourTensor.comap_compContinuousLinearMapL_algebraicCurvatureSubmodule`: a continuous
   linear equivalence identifies the algebraic curvature tensors of the two spaces.
@@ -80,8 +86,9 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
   `TauCeti.FourTensor.IsAlgebraicCurvature.eq_of_apply_self_eq`: sectional polarization of
   algebraic curvature tensors.
 * `TauCeti.FourTensor.eq_zero_of_antisymm_first_of_finrank_le_one` and
-  `TauCeti.FourTensor.IsAlgebraicCurvature.eq_zero_of_finrank_le_one`: four-tensors antisymmetric in
-  their first two arguments vanish when `Module.finrank ℝ V ≤ 1`.
+  `TauCeti.FourTensor.IsAlgebraicCurvature.eq_zero_of_finrank_le_one`: on a finite-dimensional
+  space `V` with `Module.finrank ℝ V ≤ 1`, four-tensors antisymmetric in their first two arguments
+  vanish.
 * `TauCeti.FourTensor.ricci_apply_orthonormalBasis` and
   `TauCeti.FourTensor.scalar_apply_orthonormalBasis`: the contractions in an orthonormal basis.
 * `TauCeti.FourTensor.ricci_compContinuousLinearMap_linearIsometryEquiv` and
@@ -93,6 +100,10 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 * `TauCeti.FourTensor.constantCurvature_compContinuousLinearMap_linearIsometry`: linear isometries
   pull the constant-curvature tensor back to the constant-curvature tensor.
 * `TauCeti.FourTensor.ricci_constantCurvature` and `TauCeti.FourTensor.scalar_constantCurvature`.
+* `TauCeti.FourTensor.eq_smul_constantCurvature_of_finrank_eq_two` and
+  `TauCeti.FourTensor.IsAlgebraicCurvature.eq_smul_constantCurvature_of_finrank_eq_two`: on a
+  two-dimensional real inner product space, every skew-pair (hence algebraic curvature)
+  four-tensor equals `(scalar r / 2) • constantCurvature V`.
 * `TauCeti.FourTensor.inner_eq_mul_constantCurvature`: a curvature operator of constant curvature
   `κ` has four-tensor `κ` times the constant-curvature tensor.
 
@@ -309,13 +320,16 @@ theorem pullbackAlgebraicCurvature_comp {U : Type*} [NormedAddCommGroup U] [Norm
       (pullbackAlgebraicCurvature g).comp (pullbackAlgebraicCurvature f) := by
   ext; simp [ContinuousMultilinearMap.compContinuousLinearMap_apply]
 
-/-- If `f : W →L[ℝ] V` has a right inverse `g : V → W`, `pullbackAlgebraicCurvature f` is
-injective. -/
-theorem pullbackAlgebraicCurvature_injective (f : W →L[ℝ] V) {g : V → W}
-    (hfg : Function.LeftInverse f g) : Function.Injective (pullbackAlgebraicCurvature f) :=
-  fun _ _ hrq ↦ Subtype.ext <| ContinuousMultilinearMap.ext fun m ↦ by
-    simpa [ContinuousMultilinearMap.compContinuousLinearMap_apply, hfg _]
-      using congr($(congrArg Subtype.val hrq) (fun i ↦ g (m i)))
+/-- If `f : W →L[ℝ] V` has dense range, `pullbackAlgebraicCurvature f` is injective. -/
+theorem pullbackAlgebraicCurvature_injective (f : W →L[ℝ] V) (hf : DenseRange f) :
+    Function.Injective (pullbackAlgebraicCurvature f) := fun r q hrq ↦ Subtype.ext <|
+  ContinuousMultilinearMap.ext <| congrFun <|
+    (DenseRange.piMap fun _ : Fin 4 ↦ hf).equalizer r.1.cont q.1.cont <| funext fun m ↦ by
+      have hm : Pi.map (fun _ : Fin 4 ↦ (f : W → V)) m = fun i ↦ f (m i) :=
+        funext fun i ↦ Pi.map_apply _ m i
+      simpa only [Function.comp_apply, hm, coe_pullbackAlgebraicCurvature_apply,
+        ContinuousMultilinearMap.compContinuousLinearMap_apply] using
+        congr($(congrArg Subtype.val hrq) m)
 
 /-- A continuous linear equivalence `e : V ≃L[ℝ] W` induces a continuous linear equivalence on
 submodules of algebraic curvature tensors by pulling back along `e.symm`. -/
@@ -428,11 +442,10 @@ theorem ofLinearMap₄_apply (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V �
     ofLinearMap₄ T m = T (m 0) (m 1) (m 2) (m 3) :=
   (rfl)
 
-@[simp] theorem ofLinearMap₄_toLinearMap₄ (r : FourTensor V) : ofLinearMap₄ r.toLinearMap₄ = r := by
-  ext m; conv_rhs => rw [← FinVec.etaExpand_eq m]
-  simp [FinVec.etaExpand, FinVec.map, FinVec.seq, Matrix.vecTail]
 @[simp] theorem toLinearMap₄_ofLinearMap₄ (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ) :
     (ofLinearMap₄ T).toLinearMap₄ = T := by ext; simp
+@[simp] theorem ofLinearMap₄_toLinearMap₄ (r : FourTensor V) : ofLinearMap₄ r.toLinearMap₄ = r :=
+  toLinearMap₄_injective (toLinearMap₄_ofLinearMap₄ r.toLinearMap₄)
 
 /-- On a finite-dimensional real normed space, continuous four-tensors are linearly equivalent to
 curried four-linear forms. -/
@@ -669,6 +682,45 @@ theorem scalar_constantCurvature :
   rw [constantCurvature, map_smul, scalar_kulkarniNomizu_innerₗ, bilinFormTrace_inner,
     smul_eq_mul]
   ring
+
+/-- **In dimension `2`, every four-tensor antisymmetric in its first and last pairs of arguments is
+`(Scal / 2)` times the constant-curvature tensor.** -/
+theorem eq_smul_constantCurvature_of_finrank_eq_two (hn : Module.finrank ℝ V = 2) {r : FourTensor V}
+    (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
+    (hr₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :
+    r = (scalar r / 2) • constantCurvature V := by
+  set b := (stdOrthonormalBasis ℝ V).reindex (finCongr hn)
+  let k := r ![b 0, b 1, b 0, b 1]
+  have hrk : r = k • constantCurvature V := by
+    have hf0 : (⟨0, by decide⟩ : Fin 2) = 0 := rfl
+    have hf1 : (⟨1, by decide⟩ : Fin 2) = 1 := rfl
+    apply toLinearMap₄_injective
+    refine b.toBasis.ext fun i ↦ b.toBasis.ext fun j ↦ b.toBasis.ext fun p ↦
+      b.toBasis.ext fun q ↦ ?_
+    simp only [OrthonormalBasis.coe_toBasis, toLinearMap₄_apply, smul_apply, smul_eq_mul,
+      constantCurvature_apply]
+    by_cases hij : i = j
+    · rw [hij]; ring_nf; linarith [hr₁ (b j) (b j) (b p) (b q)]
+    by_cases hpq : p = q
+    · rw [hpq]; ring_nf; linarith [hr₂ (b i) (b j) (b q) (b q)]
+    fin_cases i <;> fin_cases j <;> try exact absurd rfl hij
+    all_goals fin_cases p <;> fin_cases q <;> try exact absurd rfl hpq
+    all_goals simp only [hf0, hf1, orthonormal_iff_ite.mp b.orthonormal, ↓reduceIte,
+      (by decide : (0 : Fin 2) ≠ 1), (by decide : (1 : Fin 2) ≠ 0)]
+    · ring
+    · linarith [hr₂ (b 0) (b 1) (b 1) (b 0)]
+    · linarith [hr₁ (b 1) (b 0) (b 0) (b 1)]
+    · linarith [hr₁ (b 1) (b 0) (b 1) (b 0), hr₂ (b 0) (b 1) (b 1) (b 0)]
+  have hscal : scalar r = 2 * k := by
+    rw [hrk, map_smul, scalar_constantCurvature, hn, smul_eq_mul]; norm_num; ring
+  rwa [show k = scalar r / 2 by linarith] at hrk
+
+/-- **In dimension `2`, every algebraic curvature tensor is `(Scal / 2)` times the
+constant-curvature tensor.** -/
+theorem IsAlgebraicCurvature.eq_smul_constantCurvature_of_finrank_eq_two {r : FourTensor V}
+    (hr : IsAlgebraicCurvature r) (hn : Module.finrank ℝ V = 2) :
+    r = (scalar r / 2) • constantCurvature V :=
+  FourTensor.eq_smul_constantCurvature_of_finrank_eq_two hn hr.antisymm_first hr.antisymm_last
 
 /-- A curvature operator of constant curvature `κ`, `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)` as in
 `Bundle.RiemannianMetric.IsConstantCurvatureTensor`, has four-tensor

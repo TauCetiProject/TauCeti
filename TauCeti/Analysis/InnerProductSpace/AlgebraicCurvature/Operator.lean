@@ -13,12 +13,13 @@ public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Square
 import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Analysis.Normed.Module.HahnBanach
+import Mathlib.Analysis.LocallyConvex.HahnBanach
 import Mathlib.Data.Fin.Tuple.Reflection
 import Mathlib.LinearAlgebra.Dual.Basis
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
-import TauCeti.LinearAlgebra.BilinearForm.Squares
+import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Trace
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.LinearAlgebra.ExteriorPower.Bilinear
 
@@ -30,8 +31,9 @@ On a finite-dimensional real inner product space `V`, every algebraic curvature 
 `curvatureOperator r : Module.End ℝ (⋀[ℝ]^2 V)` characterized by
 `⟪curvatureOperator r (u ∧ v), z ∧ w⟫ = r ![u, v, z, w]`, with left inverse `ofExteriorEnd`.
 Passing from four-tensors to operators on `⋀[ℝ]^2 V` unlocks spectral curvature conditions (such as
-positive or nonnegative curvature operator) and diagonalizes the Ricci–Weyl curvature decomposition
-into endomorphism blocks.
+positive or nonnegative curvature operator) and expresses the Ricci–Weyl curvature decomposition as
+pairwise orthogonal symmetric endomorphisms of `⋀[ℝ]^2 V` (namely `c • Id`,
+`(2 / (n - 2)) • wedgeEnd (tracelessRicciEnd r) Id`, and the Weyl operator).
 
 The image of `curvatureOperator` is `bianchiEndSubmodule V`, the submodule of symmetric
 endomorphisms of `⋀[ℝ]^2 V` satisfying the first Bianchi identity, yielding a linear equivalence
@@ -42,10 +44,7 @@ as half the Kulkarni–Nomizu product of `⟪A ·, ·⟫` and `⟪B ·, ·⟫`, 
 tensors with symmetric wedge products of Riesz endomorphisms.
 
 Finally, for any real normed space `V` of `n := Module.finrank ℝ V`, `algebraicCurvatureSubmodule V`
-has `Module.finrank` equal to `n ^ 2 * (n ^ 2 - 1) / 12` (both `0` in infinite dimension). When
-`Module.finrank ℝ V = 2` on a real inner product space, sectional polarization forces every
-skew-pair (hence every algebraic curvature) four-tensor to equal
-`(scalar r / 2) • constantCurvature V`.
+has `Module.finrank` equal to `n ^ 2 * (n ^ 2 - 1) / 12` (both `0` in infinite dimension).
 
 ## Main definitions
 
@@ -72,10 +71,6 @@ skew-pair (hence every algebraic curvature) four-tensor to equal
 * `TauCeti.FourTensor.finrank_bianchiEndSubmodule`,
   `TauCeti.FourTensor.finrank_algebraicCurvatureSubmodule`: rank formula
   `n ^ 2 * (n ^ 2 - 1) / 12` for `n = Module.finrank ℝ V`.
-* `TauCeti.FourTensor.eq_smul_constantCurvature_of_finrank_eq_two`,
-  `TauCeti.FourTensor.IsAlgebraicCurvature.eq_smul_constantCurvature_of_finrank_eq_two`: in
-  dimension `2`, every skew-pair (hence algebraic curvature) tensor is
-  `(scalar r / 2) • constantCurvature V`.
 
 ## References
 
@@ -146,25 +141,18 @@ private def ofExteriorBilin : BilinForm ℝ (⋀[ℝ]^2 V) →ₗ[ℝ] FourTenso
     ofExteriorBilin B ![u, v, z, w] =
       B (exteriorPower.ιMulti ℝ 2 ![u, v]) (exteriorPower.ιMulti ℝ 2 ![z, w]) := by
   simp [ofExteriorBilin]
-omit [FiniteDimensional ℝ V] in
-private theorem bilin_ext_ιMulti {B₁ B₂ : BilinForm ℝ (⋀[ℝ]^2 V)}
-    (h : ∀ u v z w, B₁ (exteriorPower.ιMulti ℝ 2 ![u, v]) (exteriorPower.ιMulti ℝ 2 ![z, w]) =
-      B₂ (exteriorPower.ιMulti ℝ 2 ![u, v]) (exteriorPower.ιMulti ℝ 2 ![z, w])) : B₁ = B₂ :=
-  exteriorPower.linearMap_ext <| AlternatingMap.ext fun u ↦
-    exteriorPower.linearMap_ext <| AlternatingMap.ext fun v ↦ by
-      rw [← FinVec.etaExpand_eq u, ← FinVec.etaExpand_eq v]; exact h (u 0) (u 1) (v 0) (v 1)
 private def pairSymmEquivSymmBilin :
     pairSymmSubmodule V ≃ₗ[ℝ] TauCeti.BilinForm.symmSubmodule ℝ (⋀[ℝ]^2 V) where
   toFun r := ⟨pairSymmToBilin r, TauCeti.BilinForm.mem_symmSubmodule.mpr
     ⟨fun x y ↦ congr($(LinearMap.flip_exteriorSquareBilinear _ _ _
       (fun u v z w ↦ by simpa using r.2.swap_pairs u v z w)) y x)⟩⟩
-  map_add' _ _ := Subtype.ext <| bilin_ext_ιMulti fun _ _ _ _ ↦ by simp
-  map_smul' _ _ := Subtype.ext <| bilin_ext_ιMulti fun _ _ _ _ ↦ by simp
+  map_add' _ _ := Subtype.ext <| exteriorPower.bilinMap_ext_ιMulti_two fun _ _ _ _ ↦ by simp
+  map_smul' _ _ := Subtype.ext <| exteriorPower.bilinMap_ext_ιMulti_two fun _ _ _ _ ↦ by simp
   invFun B := ⟨ofExteriorBilin B.1, ⟨fun u v z w ↦ by simp [exteriorPower.ιMulti_two_swap v u],
     fun u v z w ↦ by simp [exteriorPower.ιMulti_two_swap w z],
     fun _ _ _ _ ↦ by simpa using (TauCeti.BilinForm.mem_symmSubmodule.mp B.2).eq _ _⟩⟩
   left_inv _ := Subtype.ext <| toLinearMap₄_injective <| by ext; simp [ofExteriorBilin_apply]
-  right_inv _ := Subtype.ext <| bilin_ext_ιMulti fun _ _ _ _ ↦ by simp
+  right_inv _ := Subtype.ext <| exteriorPower.bilinMap_ext_ιMulti_two fun _ _ _ _ ↦ by simp
 private theorem inner_symmComp (B : BilinForm ℝ (⋀[ℝ]^2 V)) (a b : ⋀[ℝ]^2 V) :
     ⟪B.symmCompOfNondegenerate (innerₗ (⋀[ℝ]^2 V)) TauCeti.nondegenerate_inner a, b⟫ = B a b :=
   B.symmCompOfNondegenerate_left_apply TauCeti.nondegenerate_inner b a
@@ -303,7 +291,7 @@ theorem IsBianchiEnd.isAlgebraicCurvature_ofExteriorEnd {R : Module.End ℝ (⋀
   refine ⟨fun h ↦ ⟨?_, fun u v z w ↦ by simpa using h.cyclic_eq_zero u v z w⟩,
     IsBianchiEnd.isAlgebraicCurvature_ofExteriorEnd⟩
   have hbil : innerₗ (⋀[ℝ]^2 V) ∘ₗ R = (innerₗ (⋀[ℝ]^2 V) ∘ₗ R).flip :=
-    bilin_ext_ιMulti fun u v z w ↦ by simpa using h.swap_pairs u v z w
+    exteriorPower.bilinMap_ext_ιMulti_two fun u v z w ↦ by simpa using h.swap_pairs u v z w
   exact fun x y ↦ by simpa [real_inner_comm] using congr($hbil x y)
 
 variable (V) in
@@ -332,44 +320,12 @@ theorem range_curvatureOperator :
     ⟨(algebraicCurvatureEquivBianchiEnd V).symm ⟨R, hR⟩,
       congrArg Subtype.val ((algebraicCurvatureEquivBianchiEnd V).apply_symm_apply ⟨R, hR⟩)⟩⟩
 
-private theorem sum_inner_ιMulti_smul {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
-    (y : ⋀[ℝ]^2 V) :
-    ∑ j, ∑ i, ⟪y, exteriorPower.ιMulti ℝ 2 ![b i, b j]⟫ •
-      exteriorPower.ιMulti ℝ 2 ![b i, b j] = (2 : ℝ) • y := by
-  refine exteriorPower.ext_inner_ιMulti_two fun u v ↦ ?_
-  let w := (exteriorPower.ιMulti ℝ 2 (M := V)).toMultilinearMap.toBilinMap
-  have hw (x z : V) :
-      ∑ j, ∑ i, (⟪b i, x⟫ * ⟪b j, z⟫) * ⟪y, exteriorPower.ιMulti ℝ 2 ![b i, b j]⟫ =
-        ⟪y, exteriorPower.ιMulti ℝ 2 ![x, z]⟫ := by
-    have hlin : ∑ j, ∑ i, (⟪b i, x⟫ * ⟪b j, z⟫) • w (b i) (b j) = w x z := by
-      conv_rhs => rw [← b.sum_repr' x, ← b.sum_repr' z]
-      simp_rw [map_sum, LinearMap.sum_apply, map_smul, LinearMap.smul_apply, smul_smul,
-        mul_comm ⟪b _, z⟫]
-    have h := congr(⟪y, $hlin⟫); dsimp only [w] at h
-    simpa only [inner_sum, real_inner_smul_right, MultilinearMap.toBilinMap_apply,
-      AlternatingMap.coe_multilinearMap] using h
-  simp_rw [sum_inner, real_inner_smul_left, exteriorPower.inner_ιMulti_two, mul_sub,
-    Finset.sum_sub_distrib, mul_comm ⟪y, _⟫]
-  rw [hw u v, hw v u, exteriorPower.ιMulti_two_swap v u, inner_neg_right]; ring
-
 /-- The scalar contraction of `ofExteriorEnd R` is twice the trace of `R` on `⋀[ℝ]^2 V`. -/
 @[simp] theorem scalar_ofExteriorEnd (R : Module.End ℝ (⋀[ℝ]^2 V)) :
     scalar (ofExteriorEnd R) = 2 * LinearMap.trace ℝ (⋀[ℝ]^2 V) R := by
   let b := stdOrthonormalBasis ℝ V
-  let B := stdOrthonormalBasis ℝ (⋀[ℝ]^2 V)
-  rw [scalar_apply_orthonormalBasis b, R.trace_eq_sum_inner B]
-  have hexp (i j) : ofExteriorEnd R ![b i, b j, b i, b j] =
-      ∑ a, ⟪R (⟪B a, exteriorPower.ιMulti ℝ 2 ![b i, b j]⟫ •
-        exteriorPower.ιMulti ℝ 2 ![b i, b j]), B a⟫ := by
-    rw [ofExteriorEnd_apply]
-    set w := exteriorPower.ιMulti ℝ 2 ![b i, b j]
-    nth_rw 2 [← B.sum_repr' w]
-    simp_rw [inner_sum, real_inner_smul_right, map_smul, real_inner_smul_left]
-  simp_rw [hexp]
-  conv_lhs => arg 2; ext j; rw [Finset.sum_comm]
-  rw [Finset.sum_comm]
-  simp_rw [← sum_inner, ← map_sum, sum_inner_ιMulti_smul b, map_smul, real_inner_smul_left,
-    real_inner_comm _ (B _), ← Finset.mul_sum]
+  rw [scalar_apply_orthonormalBasis b, Finset.sum_comm]
+  simpa only [ofExteriorEnd_apply] using b.sum_inner_ιMulti_two_eq_two_mul_trace R
 
 /-- The trace of `curvatureOperator r` on `⋀[ℝ]^2 V` is half the scalar contraction of `r`. -/
 @[simp] theorem trace_curvatureOperator (r : algebraicCurvatureSubmodule V) :
@@ -379,17 +335,20 @@ private theorem sum_inner_ιMulti_smul {ι : Type*} [Fintype ι] (b : Orthonorma
 
 /-- Orthogonal equivariance of `curvatureOperator` under a linear isometric equivalence
 `e : W ≃ₗᵢ[ℝ] V`, expressed via `pullbackAlgebraicCurvature`. -/
-theorem curvatureOperator_compContinuousLinearMap_linearIsometryEquiv {W : Type*}
+theorem curvatureOperator_pullbackAlgebraicCurvature_linearIsometryEquiv {W : Type*}
     [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (e : W ≃ₗᵢ[ℝ] V)
     (r : algebraicCurvatureSubmodule V) :
     curvatureOperator (pullbackAlgebraicCurvature e.toLinearIsometry.toContinuousLinearMap r) =
       (e.toLinearEquiv.exteriorPower 2).symm.conj (curvatureOperator r) := by
   rw [curvatureOperator_eq_iff]; intro u v z w
-  have hcancel (y : ⋀[ℝ]^2 V) : exteriorPower.map 2 e.toLinearIsometry.toLinearMap
-      ((e.toLinearEquiv.exteriorPower 2).symm y) = y :=
-    (e.toLinearEquiv.exteriorPower 2).apply_symm_apply y
+  have hmap : e.toLinearIsometry.toLinearMap = e.toLinearEquiv.toLinearMap :=
+    LinearMap.ext fun _ ↦ by simp
   have hf (x : ⋀[ℝ]^2 W) : e.toLinearEquiv.exteriorPower 2 x =
-      exteriorPower.map 2 e.toLinearIsometry.toLinearMap x := rfl
+      exteriorPower.map 2 e.toLinearIsometry.toLinearMap x := by
+    rw [hmap, ← LinearEquiv.exteriorPower_toLinearMap, LinearEquiv.coe_toLinearMap]
+  have hcancel (y : ⋀[ℝ]^2 V) : exteriorPower.map 2 e.toLinearIsometry.toLinearMap
+      ((e.toLinearEquiv.exteriorPower 2).symm y) = y := by
+    rw [← hf, LinearEquiv.apply_symm_apply]
   simp only [LinearEquiv.conj_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LinearEquiv.symm_symm, ← exteriorPower.inner_map_map e.toLinearIsometry, hcancel, hf,
     exteriorPower.map_apply_ιMulti_two, LinearIsometry.coe_toLinearMap,
@@ -405,13 +364,13 @@ bilinear forms `(x, y) ↦ ⟪A x, y⟫` and `(x, y) ↦ ⟪B x, y⟫`. -/
 theorem inner_wedgeEnd_ιMulti (A B : Module.End ℝ V) (u v z w : V) :
     ⟪wedgeEnd A B (exteriorPower.ιMulti ℝ 2 ![u, v]), exteriorPower.ιMulti ℝ 2 ![z, w]⟫ =
       (1 / 2 : ℝ) * kulkarniNomizu (innerₗ V ∘ₗ A) (innerₗ V ∘ₗ B) ![u, v, z, w] := by
-  simp only [wedgeEnd_apply_ιMulti, smul_add, inner_add_left, real_inner_smul_left,
+  simp only [wedgeEnd_apply_ιMulti, invOf_eq_inv, smul_add, inner_add_left, real_inner_smul_left,
     exteriorPower.inner_ιMulti_two, kulkarniNomizu_apply, LinearMap.comp_apply,
     innerₗ_apply_apply]; ring
 
 /-- The four-tensor induced by `wedgeEnd A B` is half the Kulkarni–Nomizu four-tensor of
 `⟪A ·, ·⟫` and `⟪B ·, ·⟫`. -/
-@[simp] theorem ofExteriorEnd_wedgeEnd (A B : Module.End ℝ V) :
+theorem ofExteriorEnd_wedgeEnd (A B : Module.End ℝ V) :
     ofExteriorEnd (wedgeEnd A B) = (1 / 2 : ℝ) • kulkarniNomizu (innerₗ V ∘ₗ A) (innerₗ V ∘ₗ B) :=
   toLinearMap₄_injective <| by ext u v z w; simp only [toLinearMap₄_apply, ofExteriorEnd_apply,
     smul_apply, smul_eq_mul, inner_wedgeEnd_ιMulti]
@@ -424,20 +383,21 @@ theorem isBianchiEnd_wedgeEnd {A B : Module.End ℝ V} (hA : A.IsSymmetric) (hB 
     (mem_algebraicCurvatureSubmodule.mpr (isAlgebraicCurvature_kulkarniNomizu
       ⟨fun x y ↦ by simp [hA x y, real_inner_comm]⟩ ⟨fun x y ↦ by simp [hB x y, real_inner_comm]⟩))
 
-/-- For symmetric bilinear forms `h` and `k`, the curvature operator of `kulkarniNomizu h k` is
+/-- Whenever `kulkarniNomizu h k` is an algebraic curvature tensor, its curvature operator is
 `2 • wedgeEnd A B`, where `A` and `B` are the Riesz endomorphisms representing `h` and `k`. -/
-theorem curvatureOperator_kulkarniNomizu {h k : BilinForm ℝ V} (hh : h.IsSymm) (hk : k.IsSymm) :
-    curvatureOperator ⟨kulkarniNomizu h k,
-      mem_algebraicCurvatureSubmodule.mpr (isAlgebraicCurvature_kulkarniNomizu hh hk)⟩ =
+theorem curvatureOperator_kulkarniNomizu {h k : BilinForm ℝ V}
+    (hr : kulkarniNomizu h k ∈ algebraicCurvatureSubmodule V) :
+    curvatureOperator ⟨kulkarniNomizu h k, hr⟩ =
       (2 : ℝ) • wedgeEnd (h.symmCompOfNondegenerate (innerₗ V) TauCeti.nondegenerate_inner)
         (k.symmCompOfNondegenerate (innerₗ V) TauCeti.nondegenerate_inner) := by
-  rw [curvatureOperator_eq_iff]; intro u v z w
   have H (b : BilinForm ℝ V) :
       innerₗ V ∘ₗ b.symmCompOfNondegenerate (innerₗ V) TauCeti.nondegenerate_inner = b :=
     LinearMap.ext₂ fun x y ↦ b.symmCompOfNondegenerate_left_apply TauCeti.nondegenerate_inner y x
-  rw [LinearMap.smul_apply, real_inner_smul_left, inner_wedgeEnd_ιMulti, H h, H k]; ring
+  refine ofExteriorEnd_injective ?_
+  rw [ofExteriorEnd_curvatureOperator, map_smul, ofExteriorEnd_wedgeEnd, H h, H k, smul_smul]
+  norm_num
 
-/-! ### Dimension formula and two-dimensional classification -/
+/-! ### Dimension formula -/
 
 private theorem finrank_pairSymmSubmodule : Module.finrank ℝ (pairSymmSubmodule V) =
     Nat.multichoose ((Module.finrank ℝ V).choose 2) 2 := by
@@ -583,45 +543,6 @@ theorem finrank_bianchiEndSubmodule : Module.finrank ℝ (bianchiEndSubmodule V)
   rw [← (algebraicCurvatureEquivBianchiEnd V).finrank_eq,
     finrank_algebraicCurvatureSubmodule_of_inner]
 
-/-- **In dimension `2`, every four-tensor antisymmetric in its first and last pairs of arguments is
-`(Scal / 2)` times the constant-curvature tensor.** -/
-theorem eq_smul_constantCurvature_of_finrank_eq_two (hn : Module.finrank ℝ V = 2) {r : FourTensor V}
-    (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
-    (hr₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :
-    r = (scalar r / 2) • constantCurvature V := by
-  set b := (stdOrthonormalBasis ℝ V).reindex (finCongr hn)
-  let k := r ![b 0, b 1, b 0, b 1]
-  have hrk : r = k • constantCurvature V := by
-    have hf0 : (⟨0, by decide⟩ : Fin 2) = 0 := rfl
-    have hf1 : (⟨1, by decide⟩ : Fin 2) = 1 := rfl
-    apply toLinearMap₄_injective
-    refine b.toBasis.ext fun i ↦ b.toBasis.ext fun j ↦ b.toBasis.ext fun p ↦
-      b.toBasis.ext fun q ↦ ?_
-    simp only [OrthonormalBasis.coe_toBasis, toLinearMap₄_apply, smul_apply, smul_eq_mul,
-      constantCurvature_apply]
-    by_cases hij : i = j
-    · rw [hij]; ring_nf; linarith [hr₁ (b j) (b j) (b p) (b q)]
-    by_cases hpq : p = q
-    · rw [hpq]; ring_nf; linarith [hr₂ (b i) (b j) (b q) (b q)]
-    fin_cases i <;> fin_cases j <;> try exact absurd rfl hij
-    all_goals fin_cases p <;> fin_cases q <;> try exact absurd rfl hpq
-    all_goals simp only [hf0, hf1, orthonormal_iff_ite.mp b.orthonormal, ↓reduceIte,
-      (by decide : (0 : Fin 2) ≠ 1), (by decide : (1 : Fin 2) ≠ 0)]
-    · ring
-    · linarith [hr₂ (b 0) (b 1) (b 1) (b 0)]
-    · linarith [hr₁ (b 1) (b 0) (b 0) (b 1)]
-    · linarith [hr₁ (b 1) (b 0) (b 1) (b 0), hr₂ (b 0) (b 1) (b 1) (b 0)]
-  have hscal : scalar r = 2 * k := by
-    rw [hrk, map_smul, scalar_constantCurvature, hn, smul_eq_mul]; norm_num; ring
-  rwa [show k = scalar r / 2 by linarith] at hrk
-
-/-- **In dimension `2`, every algebraic curvature tensor is `(Scal / 2)` times the
-constant-curvature tensor.** -/
-theorem IsAlgebraicCurvature.eq_smul_constantCurvature_of_finrank_eq_two {r : FourTensor V}
-    (hr : IsAlgebraicCurvature r) (hn : Module.finrank ℝ V = 2) :
-    r = (scalar r / 2) • constantCurvature V :=
-  FourTensor.eq_smul_constantCurvature_of_finrank_eq_two hn hr.antisymm_first hr.antisymm_last
-
 end Operator
 
 section Dimension
@@ -634,21 +555,6 @@ private theorem lt_curv_dim_succ_three (m : ℕ) :
   rw [hsq, show (m + 3) ^ 2 * ((m + 4) * (m + 2)) =
     m ^ 4 + 12 * m ^ 3 + 53 * m ^ 2 + 102 * m + 72 by ring]
   omega
-
-private theorem exists_retraction_euclideanSpace {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] {n : ℕ} {v : Fin n → V} (hv : LinearIndependent ℝ v) :
-    ∃ (P : V →L[ℝ] EuclideanSpace ℝ (Fin n)) (J : EuclideanSpace ℝ (Fin n) → V),
-      ∀ x, P (J x) = x := by
-  classical
-  let p : Submodule ℝ V := Submodule.span ℝ (Set.range v)
-  let bp : Module.Basis (Fin n) ℝ p := Module.Basis.span hv
-  have : FiniteDimensional ℝ p := Module.Finite.of_basis bp
-  choose φ hφ using fun i : Fin n ↦
-    exists_extension_norm_eq p (bp.coord i).toContinuousLinearMap
-  let eE : EuclideanSpace ℝ (Fin n) ≃L[ℝ] (Fin n → ℝ) := EuclideanSpace.equiv (Fin n) ℝ
-  refine ⟨eE.symm.toContinuousLinearMap.comp (ContinuousLinearMap.pi φ),
-    fun x ↦ (bp.equivFun.symm (eE x) : V), fun x ↦ eE.injective <| funext fun i ↦ ?_⟩
-  simp [-Module.Basis.equivFun_symm_apply, (hφ i).1, ← bp.equivFun_apply]
 
 /-- **Dimension of the space of algebraic curvature tensors.** On any real normed space `V` of
 `finrank` `n`, `algebraicCurvatureSubmodule V` has `finrank` `n ^ 2 * (n ^ 2 - 1) / 12` (both sides
@@ -667,12 +573,21 @@ theorem finrank_algebraicCurvatureSubmodule {V : Type*} [NormedAddCommGroup V] [
       have : Infinite (Module.Basis.ofVectorSpaceIndex ℝ V) :=
         not_finite_iff_infinite.mp fun _ ↦ hV (Module.Finite.of_basis b)
       let m := Module.finrank ℝ (algebraicCurvatureSubmodule V)
-      obtain ⟨P, J, hPJ⟩ := exists_retraction_euclideanSpace
-        (v := fun k : Fin (m + 3) ↦ b (Infinite.natEmbedding _ k))
-        (b.linearIndependent.comp _ ((Infinite.natEmbedding _).injective.comp Fin.val_injective))
+      let v : Fin (m + 3) → V := fun k ↦ b (Infinite.natEmbedding _ k)
+      have hv : LinearIndependent ℝ v :=
+        b.linearIndependent.comp _ ((Infinite.natEmbedding _).injective.comp Fin.val_injective)
+      let p : Submodule ℝ V := Submodule.span ℝ (Set.range v)
+      let bp : Module.Basis (Fin (m + 3)) ℝ p := Module.Basis.span hv
+      have : FiniteDimensional ℝ p := Module.Finite.of_basis bp
+      obtain ⟨P, hP⟩ := Submodule.ClosedComplemented.of_finiteDimensional p
+      let e : p ≃L[ℝ] EuclideanSpace ℝ (Fin (m + 3)) :=
+        (bp.equivFun.trans (EuclideanSpace.equiv _ ℝ).toLinearEquiv.symm).toContinuousLinearEquiv
+      let Q : V →L[ℝ] EuclideanSpace ℝ (Fin (m + 3)) := e.toContinuousLinearMap.comp P
+      have hQ : Function.Surjective Q := fun x ↦ ⟨(e.symm x : V), by simp [Q, hP]⟩
       have hle := LinearMap.finrank_le_finrank_of_injective
-        (show Function.Injective (pullbackAlgebraicCurvature P).toLinearMap from
-          pullbackAlgebraicCurvature_injective P hPJ)
+        (f := (pullbackAlgebraicCurvature Q).toLinearMap)
+        (by simpa only [ContinuousLinearMap.coe_coe] using
+          pullbackAlgebraicCurvature_injective Q hQ.denseRange)
       rw [finrank_algebraicCurvatureSubmodule_of_inner, finrank_euclideanSpace_fin] at hle
       exact not_lt_of_ge hle (lt_curv_dim_succ_three m)
     rw [Module.finrank_of_infinite_dimensional hnot, Module.finrank_of_infinite_dimensional hV]; rfl

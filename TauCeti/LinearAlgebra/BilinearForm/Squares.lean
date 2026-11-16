@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Sym.Card
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
-public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import Mathlib.LinearAlgebra.TensorPower.Symmetric
 public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
-import Mathlib.LinearAlgebra.Dual.Basis
-import TauCeti.LinearAlgebra.SymmetricPower.Basis
+import TauCeti.LinearAlgebra.SymmetricPower.Lift
 
 /-!
 # Bilinear forms from functionals on the second symmetric and exterior powers
@@ -23,11 +20,6 @@ alternating because a repeated argument wedges to zero.  Both assignments are in
 tensors span the symmetric square, and on the exterior side the passage from a functional to an
 alternating map is Mathlib's universal property, an equivalence.
 
-Using the universal property `SymmetricPower.lift`, the symmetric assignment upgrades to a linear
-equivalence `TauCeti.BilinForm.symmetricSquareDualEquiv` onto the submodule
-`TauCeti.BilinForm.symmSubmodule` of symmetric bilinear forms, giving the rank formula
-`Nat.multichoose (Module.finrank k V) 2` for finite free modules.
-
 Nothing here is representation theory: this is the dictionary that
 `TauCeti.RepresentationTheory.InvariantForm.Squares` runs the invariants of the two squares
 through to reach invariant forms.  The symmetric side is available over a commutative
@@ -35,11 +27,8 @@ semiring, the exterior side over a commutative ring, which is where Mathlib's ex
 
 ## Main definitions
 
-* `TauCeti.BilinForm.symmSubmodule`: the submodule of symmetric bilinear forms on a module.
 * `TauCeti.BilinForm.ofSymmetricSquareDual` and `TauCeti.BilinForm.ofExteriorSquareDual`: a
   functional on the second symmetric or exterior power, read as a bilinear form on `V`.
-* `TauCeti.BilinForm.symmetricSquareDualEquiv`: the linear equivalence
-  `Module.Dual k (Sym[k]^2 V) ≃ₗ[k] symmSubmodule k V`.
 
 ## Main results
 
@@ -52,22 +41,17 @@ semiring, the exterior side over a commutative ring, which is where Mathlib's ex
 * `LinearMap.BilinForm.IsSymm.exists_ofSymmetricSquareDual_eq` and
   `LinearMap.BilinForm.IsAlt.exists_ofExteriorSquareDual_eq`: every symmetric, respectively
   alternating, form is the form of a functional on the corresponding square.
-* `TauCeti.BilinForm.finrank_symmSubmodule`: for finite free `V`, the rank of `symmSubmodule k V`
-  is `Nat.multichoose (Module.finrank k V) 2`.
 
 ## Implementation notes
 
-`ofSymmetricSquareDual` and `ofExteriorSquareDual` are kept as plain linear maps into
-`BilinForm k V` for callers that work inside the ambient space of all bilinear forms, with
-surjectivity onto the symmetric and alternating forms recorded as existence results.  On the
-exterior side `ofExteriorSquareDual` is `exteriorPower.alternatingMapLinearEquiv.symm`, the
+The two maps are built as plain linear maps rather than as equivalences onto the symmetric and the
+alternating forms; the surjectivity statements are existence results.  On the exterior side the
+equivalence is available: `ofExteriorSquareDual` is `exteriorPower.alternatingMapLinearEquiv`, the
 universal property of the exterior power, followed by `MultilinearMap.toBilinMap`, and both its
 injectivity and its surjectivity onto the alternating forms come from that equivalence.  On the
 symmetric side Mathlib has no universal property of the symmetric power -- it is an explicit TODO of
-`Mathlib/LinearAlgebra/TensorPower/Symmetric.lean` -- so surjectivity uses `SymmetricPower.lift`
-from this repository and injectivity is read off the pure tensors spanning;
-`symmetricSquareDualEquiv` packages both by restricting the codomain of `ofSymmetricSquareDual` to
-`symmSubmodule k V`.
+`Mathlib/LinearAlgebra/TensorPower/Symmetric.lean` -- so surjectivity onto the symmetric forms uses
+`SymmetricPower.lift` from this repository, and injectivity is read off the pure tensors spanning.
 -/
 
 public section
@@ -79,25 +63,6 @@ namespace TauCeti
 open LinearMap (BilinForm)
 
 namespace BilinForm
-
-section SymmSubmodule
-
-/-- **The submodule of symmetric bilinear forms** on `M`: the forms `B` satisfying `B.IsSymm`,
-equivalently the fixed points of `LinearMap.BilinForm.flipHom`. -/
-def symmSubmodule (R M : Type*) [CommSemiring R] [AddCommMonoid M] [Module R M] :
-    Submodule R (BilinForm R M) :=
-  LinearMap.eqLocus (LinearMap.BilinForm.flipHom : BilinForm R M ≃ₗ[R] BilinForm R M).toLinearMap
-    LinearMap.id
-
-/-- Membership in `symmSubmodule R M` is symmetry of the bilinear form. -/
-@[simp]
-theorem mem_symmSubmodule {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-    {B : BilinForm R M} :
-    B ∈ symmSubmodule R M ↔ B.IsSymm := by
-  rw [symmSubmodule, LinearMap.mem_eqLocus]
-  exact LinearMap.BilinForm.isSymm_iff_flip.symm
-
-end SymmSubmodule
 
 variable {V : Type*}
 
@@ -157,29 +122,6 @@ theorem _root_.LinearMap.BilinForm.IsSymm.exists_ofSymmetricSquareDual_eq
       fin_cases a <;> fin_cases b <;> simp_all [hB.eq (v 1)]
     exact key (e 0) (e 1) (e.injective.ne (by decide))
   exact ⟨SymmetricPower.lift f hf, by ext x y; simp [f]⟩
-
-/-- Reading a functional on `Sym[k]^2V` as a bilinear form gives a linear equivalence with the
-submodule of symmetric bilinear forms on `V`. -/
-noncomputable def symmetricSquareDualEquiv :
-    Module.Dual k (Sym[k]^2V) ≃ₗ[k] symmSubmodule k V :=
-  LinearEquiv.ofBijective
-    (ofSymmetricSquareDual.codRestrict (symmSubmodule k V) fun ψ ↦
-      mem_symmSubmodule.mpr (isSymm_ofSymmetricSquareDual ψ))
-    ⟨fun _ _ h ↦ ofSymmetricSquareDual_injective (congrArg Subtype.val h), fun B ↦
-      let ⟨ψ, hψ⟩ := (mem_symmSubmodule.mp B.2).exists_ofSymmetricSquareDual_eq
-      ⟨ψ, Subtype.ext hψ⟩⟩
-
-/-- Coercing `symmetricSquareDualEquiv ψ` to `BilinForm k V` recovers `ofSymmetricSquareDual ψ`. -/
-@[simp] theorem coe_symmetricSquareDualEquiv_apply (ψ : Module.Dual k (Sym[k]^2V)) :
-    (symmetricSquareDualEquiv ψ : BilinForm k V) = ofSymmetricSquareDual ψ := (rfl)
-
-/-- For finite free `V`, `symmSubmodule k V` has rank `Nat.multichoose (Module.finrank k V) 2`. -/
-theorem finrank_symmSubmodule [StrongRankCondition k] [Module.Free k V] [Module.Finite k V] :
-    Module.finrank k (symmSubmodule k V) = Nat.multichoose (Module.finrank k V) 2 := by
-  classical
-  rw [← (symmetricSquareDualEquiv (k := k) (V := V)).finrank_eq,
-    ← ((Module.Free.chooseBasis k V).symmetricPower 2).toDualEquiv.finrank_eq,
-    SymmetricPower.finrank_eq]
 
 end CommSemiring
 
