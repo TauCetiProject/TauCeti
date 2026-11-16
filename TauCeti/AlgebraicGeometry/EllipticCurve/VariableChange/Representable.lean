@@ -73,18 +73,23 @@ namespace ChangeRing
 instance isDomain [IsDomain B] : IsDomain (ChangeRing B) :=
   Localization.Away.isDomain (X_ne_zero 0)
 
-variable (B) in
 /-- The localization map `B[u, r, s, t] → B[u, u⁻¹, r, s, t]` is injective, since `u` is not a
 zero divisor. -/
-theorem algebraMap_injective :
-    Function.Injective (algebraMap (MvPolynomial (Fin 4) B) (ChangeRing B)) :=
-  IsLocalization.injective _ (Submonoid.powers_le.2 (isRegular_X (n := 0)).mem_nonZeroDivisors)
+instance faithfulSMul_mvPolynomial : FaithfulSMul (MvPolynomial (Fin 4) B) (ChangeRing B) :=
+  (faithfulSMul_iff_algebraMap_injective _ _).2 <|
+    IsLocalization.injective _ (Submonoid.powers_le.2 (isRegular_X (n := 0)).mem_nonZeroDivisors)
+
+/-- The coefficient map `B → B[u, u⁻¹, r, s, t]` is injective. -/
+instance faithfulSMul : FaithfulSMul B (ChangeRing B) :=
+  .trans B (MvPolynomial (Fin 4) B) (ChangeRing B)
+
+/-- `B[u, u⁻¹, r, s, t]` has characteristic `p` when `B` has. -/
+instance charP (p : ℕ) [CharP B p] : CharP (ChangeRing B) p :=
+  charP_of_injective_algebraMap' B p
 
 /-- `B[u, u⁻¹, r, s, t]` has characteristic zero when `B` has. -/
 instance charZero [CharZero B] : CharZero (ChangeRing B) :=
-  charZero_of_injective_algebraMap (R := B) <| by
-    rw [IsScalarTower.algebraMap_eq B (MvPolynomial (Fin 4) B) (ChangeRing B)]
-    exact (algebraMap_injective B).comp (C_injective _ _)
+  CharP.charP_to_charZero (ChangeRing B)
 
 variable (B) in
 /-- The universal change of variables `(u, r, s, t)` over `B[u, u⁻¹, r, s, t]`. -/
