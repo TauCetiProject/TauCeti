@@ -24,10 +24,10 @@ inverses of the inclusions `inrX` and `inlX` and vanish on the other inclusion
 (`HomologicalComplex.homotopyCofiber.inrX_sndX_apply`,
 `HomologicalComplex.homotopyCofiber.inlX_fstX_apply`), so `inrX` is injective, and the
 differential of the cone is `d (inrX x) = inrX (d x)` and `d (inlX x) = -inlX (d x) + inrX (φ x)`
-(`HomologicalComplex.homotopyCofiber.d_inrX_apply`,
-`HomologicalComplex.homotopyCofiber.d_inlX_apply`); where the differential of `K` vanishes, the
+(`HomologicalComplex.homotopyCofiber.inrX_d_apply`,
+`HomologicalComplex.homotopyCofiber.inlX_d_apply`); where the differential of `K` vanishes, the
 latter is `d (inlX x) = inrX (φ x)`
-(`HomologicalComplex.homotopyCofiber.d_inlX_apply_of_d_eq_zero`).
+(`HomologicalComplex.homotopyCofiber.inlX_d_apply_of_d_eq_zero`).
 
 For chain complexes indexed by `ℤ`, bases of `K` and `L` give the mapping cone the basis
 `HomologicalComplex.homotopyCofiber.basis`: the basis of `L.X i` followed by that of
@@ -136,22 +136,22 @@ theorem inrX_hom_injective (i : ι) : Function.Injective (inrX φ i).hom :=
 
 /-- The differential of the mapping cone on an element of `L`. -/
 @[simp]
-theorem d_inrX_apply (i j : ι) (x : L.X i) :
+theorem inrX_d_apply (i j : ι) (x : L.X i) :
     (d φ i j).hom ((inrX φ i).hom x) = (inrX φ j).hom ((L.d i j).hom x) :=
   congr(($(inrX_d φ i j)).hom x)
 
 /-- The differential of the mapping cone on an element of `K`. -/
-theorem d_inlX_apply {i j k : ι} (hij : c.Rel i j) (hjk : c.Rel j k) (x : K.X j) :
+theorem inlX_d_apply {i j k : ι} (hij : c.Rel i j) (hjk : c.Rel j k) (x : K.X j) :
     (d φ i j).hom ((inlX φ j i hij).hom x) =
       -(inlX φ k j hjk).hom ((K.d j k).hom x) + (inrX φ j).hom ((φ.f j).hom x) :=
   congr(($(inlX_d φ i j k hij hjk)).hom x)
 
 /-- The differential of the mapping cone on an element of `K` in a degree where the differential
 of `K` vanishes: it is `φ` followed by the inclusion of `L`. -/
-theorem d_inlX_apply_of_d_eq_zero {i j : ι} (hij : c.Rel i j) (hK : K.d j (c.next j) = 0)
+theorem inlX_d_apply_of_d_eq_zero {i j : ι} (hij : c.Rel i j) (hK : K.d j (c.next j) = 0)
     (x : K.X j) : (d φ i j).hom ((inlX φ j i hij).hom x) = (inrX φ j).hom ((φ.f j).hom x) := by
   by_cases hj : c.Rel j (c.next j)
-  · rw [d_inlX_apply φ hij hj, hK]
+  · rw [inlX_d_apply φ hij hj, hK]
     simp
   · exact congr(($(inlX_d' φ i j hij hj)).hom x)
 

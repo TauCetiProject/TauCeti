@@ -348,13 +348,13 @@ private theorem range_inrX_comp_subtype {j : ℤ} :
     · obtain ⟨l, hl⟩ := (Basis.ofVectorSpace F (LinearMap.range (C.d (j + 1) j).hom) t).2
       exact ⟨(inrX ζ (j + 1)).hom l, by simp [hl]⟩
     · exact ⟨(inlX ζ j (j + 1) hrel).hom (g j t), by
-        simp [d_inlX_apply_of_d_eq_zero ζ hrel (hG _ _), hζ]⟩
+        simp [inlX_d_apply_of_d_eq_zero ζ hrel (hG _ _), hζ]⟩
   · rintro _ ⟨w, rfl⟩
     obtain ⟨⟨l, x⟩, rfl⟩ := (XEquiv ζ hrel).symm.surjective w
     refine ⟨⟨(C.d (j + 1) j).hom l + (ζ.f j).hom x, ?_⟩, ?_⟩
     · rw [LinearMap.mem_ker, map_add, C.d_comp_d_apply,
         ζ.d_apply_eq_zero_of_d_apply_eq_zero j _ x (by simp [hG]), add_zero]
-    · simp [XEquiv_symm_apply, d_inlX_apply_of_d_eq_zero ζ hrel (hG _ _)]
+    · simp [XEquiv_symm_apply, inlX_d_apply_of_d_eq_zero ζ hrel (hG _ _)]
 
 include hG hy hζ in
 /-- The mapping cone of a chain map `ζ` from a complex with zero differential which picks
@@ -368,8 +368,8 @@ theorem acyclic_homotopyCofiber_of_homologyπ : (homotopyCofiber ζ).Acyclic := 
   rw [LinearMap.mem_ker] at hw
   have hrel : (ComplexShape.down ℤ).Rel i (i - 1) := by simp
   obtain ⟨⟨l, x⟩, rfl⟩ := (XEquiv ζ hrel).symm.surjective w
-  simp only [homotopyCofiber_d, XEquiv_symm_apply, map_add, d_inrX_apply ζ i (i - 1),
-    d_inlX_apply_of_d_eq_zero ζ hrel (hG _ _)] at hw
+  simp only [homotopyCofiber_d, XEquiv_symm_apply, map_add, inrX_d_apply ζ i (i - 1),
+    inlX_d_apply_of_d_eq_zero ζ hrel (hG _ _)] at hw
   rw [← map_add, ← map_zero (inrX ζ (i - 1)).hom] at hw
   have hlx := inrX_hom_injective ζ (i - 1) hw
   obtain rfl : x = 0 := eq_zero_of_d_apply_eq ζ hG g h y hy hζ (by simp) x (-l)
@@ -409,7 +409,7 @@ private theorem coneLift_spec {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F 
   rw [coe_coneBoundaryBasis, homotopyCofiber_d]
   induction k using Fin.addCases with
   | left k => simp [coneLift, chosenBoundaryLift_spec]
-  | right k => simp [coneLift, d_inlX_apply_of_d_eq_zero ζ _ (hG _ _), hζ]
+  | right k => simp [coneLift, inlX_d_apply_of_d_eq_zero ζ _ (hG _ _), hζ]
 
 /-- Including the basis of `G.X a` into the mapping cone along `a = j`; the degrees `j` and
 `j + 1 - 1` are only propositionally equal. -/

@@ -48,8 +48,9 @@ denotes the determinant of the basis `x` with respect to the basis `y`.
 
 ## Main declarations
 
-* `HomologicalComplex.kerBasisOfHomology`: the basis of the cycles made of a basis of the
-  boundaries followed by cycles representing a basis of the homology.
+* `HomologicalComplex.kerBasisOfHomology`: for a homological complex of modules over any ring, the
+  basis of the cycles made of a basis of the boundaries followed by cycles representing a basis of
+  the homology.
 * `HomologicalComplex.torsionBracketWithHomology`: the bracket `[bⱼ₊₁ zⱼ₊₁ sⱼ / cⱼ₊₁]` of a degree.
 * `HomologicalComplex.torsionBracketWithHomology_eq_det_append`: the bracket is the determinant of
   the boundary basis followed by the homology representatives and the lifts.
@@ -80,21 +81,18 @@ open CategoryTheory Module
 
 namespace HomologicalComplex
 
-variable {F : Type*} [Field F] {C : ChainComplex (ModuleCat F) ℤ}
-
-variable {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i))
-
 section KerBasis
 
-variable {l i k : ℤ} (hl : (ComplexShape.down ℤ).prev i = l)
-  (hk : (ComplexShape.down ℤ).next i = k) {κ σ : Type*}
-  (b : Basis κ F (LinearMap.range (C.d l i).hom)) (h : Basis σ F (C.homology i))
+variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
+  {C : HomologicalComplex (ModuleCat R) c} {l i k : ι} (hl : c.prev i = l) (hk : c.next i = k)
+  {κ σ : Type*} (b : Basis κ R (LinearMap.range (C.d l i).hom)) (h : Basis σ R (C.homology i))
   (y : σ → C.cycles i) (hy : ∀ t, C.homologyπ i (y t) = h t)
 
-/-- The basis `(b, y)` of the cycles `Zᵢ`, the kernel of the differential `C.d i k` out of degree
-`i`, made of a basis `b` of the boundaries `Bᵢ`, the image of the differential `C.d l i` into
-degree `i`, followed by cycles `y` representing a basis `h` of the homology `Hᵢ`. -/
-def kerBasisOfHomology : Basis (κ ⊕ σ) F (LinearMap.ker (C.d i k).hom) :=
+/-- For a homological complex `C` of modules, the basis `(b, y)` of the cycles `Zᵢ`, the kernel of
+the differential `C.d i k` out of degree `i`, made of a basis `b` of the boundaries `Bᵢ`, the image
+of the differential `C.d l i` into degree `i`, followed by cycles `y` representing a basis `h` of
+the homology `Hᵢ`. -/
+def kerBasisOfHomology : Basis (κ ⊕ σ) R (LinearMap.ker (C.d i k).hom) :=
   Basis.ofExactLift (Submodule.inclusion_injective _)
     (C.exact_inclusion_moduleCatKerHomologyClass hk hl) b h (C.moduleCatCyclesToKer i k ∘ y)
     fun t ↦ by rw [Function.comp_apply, moduleCatKerHomologyClass_moduleCatCyclesToKer, hy]
@@ -113,6 +111,10 @@ theorem coe_kerBasisOfHomology_inr (t : σ) :
   simp [kerBasisOfHomology]
 
 end KerBasis
+
+variable {F : Type*} [Field F] {C : ChainComplex (ModuleCat F) ℤ}
+
+variable {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i))
 
 section Bracket
 
