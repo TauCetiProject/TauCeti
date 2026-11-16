@@ -9,7 +9,6 @@ public import TauCeti.Analysis.ODE.Periodic
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
 public import TauCeti.LinearAlgebra.Determinant.Endomorphism
 public import TauCeti.Topology.Instances.AddCircle.Coe
-import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Data.SignType.Basic
 import TauCeti.LinearAlgebra.LinearMap.KerCoker
 
