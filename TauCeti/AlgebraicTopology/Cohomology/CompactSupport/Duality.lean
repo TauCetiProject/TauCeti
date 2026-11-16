@@ -274,11 +274,8 @@ theorem bijective_dualityMap_of_isEmpty [IsEmpty M] :
     (isZero_singularCohomology_of_isEmpty _ ℤ L (TopCat.of M) p).of_iso
       (TopCat.compactSupportCohomologyIsoOfCompactSpace p)
   have hh : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).obj
-      (TopCat.of M)) := by
-    rcases q with _ | q
-    · exact isZero_singularHomologyFunctor_zero_of_isEmpty L _
-    · exact AlgebraicTopology.isZero_singularHomologyFunctor_of_totallyDisconnectedSpace _ _ L _
-        q.succ_ne_zero
+      (TopCat.of M)) :=
+    isZero_singularHomologyFunctor_of_isEmpty L _ q
   have := hc.isIso hh (o.dualityMap hn L p q h)
   exact ConcreteCategory.bijective_of_isIso _
 
