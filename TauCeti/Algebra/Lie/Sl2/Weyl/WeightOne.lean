@@ -33,11 +33,13 @@ variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ
 /-- The pinned Weyl automorphism sends a lowest-weight vector of weight minus one on a
 length-two raising string to its raising bracket. -/
 theorem weylAut_apply_of_lie_h_eq_neg (t : IsSl2Triple h e f)
-    (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) {y : L}
+    (he : ∀ z, ∃ k, (ad K L e ^ k) z = 0)
+    (hf : ∀ z, ∃ k, (ad K L f ^ k) z = 0) {y : L}
     (hhy : ⁅h, y⁆ = -y) (hfy : ⁅f, y⁆ = 0) (heey : ⁅e, ⁅e, y⁆⁆ = 0) :
-    weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero y = ⁅e, y⁆ := by
-  have hf' := (show IsNilpotent (ad K L (-f)) by simpa using hf.neg).exists_pow_apply_eq_zero
-  have he' := he.exists_pow_apply_eq_zero
+    weylAut t he hf y = ⁅e, y⁆ := by
+  have hf' : ∀ z, ∃ k, (ad K L (-f) ^ k) z = 0 :=
+    fun z => (hf z).imp fun _ => ad_neg_pow_apply_eq_zero
+  have he' := he
   have hfey : ⁅f, ⁅e, y⁆⁆ = y := by
     rw [leibniz_lie, ← lie_skew f e, t.lie_e_f, neg_lie, hhy, hfy, lie_zero, neg_neg,
       add_zero]
@@ -52,7 +54,7 @@ theorem weylAut_apply_of_lie_h_eq_neg (t : IsSl2Triple h e f)
   have hF : expAd (-f) hf' (y + ⁅e, y⁆) = ⁅e, y⁆ := by
     rw [map_add, hFy, hFEy]
     abel
-  rw [weylAut_apply he' hf.exists_pow_apply_eq_zero t, hE, hF, expAd_apply_of_lie_eq_zero he' heey]
+  rw [weylAut_apply he' hf t, hE, hF, expAd_apply_of_lie_eq_zero he' heey]
 
 section Associative
 
@@ -68,8 +70,9 @@ theorem weylUnit_conj_of_lie_h_eq_neg (t : IsSl2Triple H E F)
     (hHY : ⁅H, Y⁆ = -Y) (hFY : ⁅F, Y⁆ = 0) (hEEY : ⁅E, ⁅E, Y⁆⁆ = 0) :
     (weylUnit hE hF : A) * Y * (((weylUnit hE hF)⁻¹ : Aˣ) : A) = ⁅E, Y⁆ := by
   rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
-  exact t.weylAut_apply_of_lie_h_eq_neg (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
-    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) hHY hFY hEEY
+  exact t.weylAut_apply_of_lie_h_eq_neg
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE).exists_pow_apply_eq_zero
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF).exists_pow_apply_eq_zero hHY hFY hEEY
 
 /-- Conjugation by the pinned Weyl unit sends a highest-weight element of weight one on a
 length-two lowering string to the negative of its lowering commutator. -/
@@ -84,8 +87,8 @@ theorem _root_.IsSl2Triple.weylUnit_conj_of_lie_h_eq_self (t : IsSl2Triple H E F
   rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF,
     ← t.weylAut_neg_symm he hf hnf hne]
   simpa only [neg_lie] using t.neg_symm.weylAut_apply_of_lie_h_eq_neg
-    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF.neg)
-    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE.neg)
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF.neg).exists_pow_apply_eq_zero
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE.neg).exists_pow_apply_eq_zero
     (by simp only [neg_lie, hHY]) (by simp only [neg_lie, hEY, neg_zero])
     (by simp only [neg_lie, lie_neg, neg_neg, hFFY])
 

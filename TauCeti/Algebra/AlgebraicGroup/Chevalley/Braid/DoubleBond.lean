@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Lattice
 import TauCeti.Algebra.Lie.Presentation.Serre.DoubleBond
 
 /-!
@@ -21,8 +22,11 @@ The rational operator identity is
 Kostant-stable lattice, then use multiplicativity of scalar extension and the matrix
 realization. In particular, no division takes place in the value ring, and no
 restriction on weight multiplicities, characteristic or reducedness is needed.
-The lattice-to-matrix transport uses the shared word-identity theorem in
-`TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic`.
+The represented Serre system is supplied by
+`TauCeti.DynkinType.ChevalleyDatum.isSerreSystem_representation` in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum`. The lattice-to-matrix transport uses
+`TauCeti.DynkinType.ChevalleyDatum.prod_map_weylElement_eq_of_prod_map_weylUnit_eq` in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Lattice`.
 
 ## References
 

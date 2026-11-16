@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Lattice
 import TauCeti.Algebra.Lie.Presentation.Serre.TripleBond
 
 /-!
@@ -16,9 +17,13 @@ relation in the actual points of every Chevalley datum over every commutative ri
 In particular the equality holds in characteristics two and three and over nonreduced
 rings, without division by the root-string factorials in those rings.
 
-The rational Serre-operator identity is restricted to the admissible lattice and then
-base changed using the shared word-identity transport in
-`TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic`.
+The rational identity `TauCeti.IsSerreSystem.weylUnit_braid_of_cartan_eq_neg_three`
+applies to the represented Serre system
+`TauCeti.DynkinType.ChevalleyDatum.isSerreSystem_representation` in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum`. It is restricted to the admissible
+lattice and then base changed using
+`TauCeti.DynkinType.ChevalleyDatum.prod_map_weylElement_eq_of_prod_map_weylUnit_eq` in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Lattice`.
 
 ## References
 

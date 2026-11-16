@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Lattice
-public import TauCeti.Algebra.Lie.Presentation.Serre
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Lattice
 import TauCeti.Algebra.Lie.Presentation.Serre.SingleBond
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 
 /-!
-# Weyl word identities and the single-bond braid relation in Chevalley data
+# The single-bond braid relation in Chevalley data
 
 Pinned simple Weyl representatives at a single bond satisfy the length-three braid
 relation over every commutative ring. The equality holds in the actual point group,
@@ -21,9 +20,11 @@ The rational Serre-operator braid relation is first restricted to the datum's in
 Kostant-stable lattice and then extended to the value ring. This avoids imposing any
 restriction on weight multiplicities or choosing a signed permutation weight basis.
 `TauCeti.DynkinType.ChevalleyDatum.isSerreSystem_representation` identifies the datum's
-rational operators as a Serre system. Together with
-`TauCeti.DynkinType.ChevalleyDatum.prod_map_weylElement_eq_of_prod_map_weylUnit_eq`,
-this transports Serre-operator word identities to pinned simple Weyl representatives.
+rational operators as a Serre system in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum`. The shared word-identity theorem
+`TauCeti.DynkinType.ChevalleyDatum.prod_map_weylElement_eq_of_prod_map_weylUnit_eq` in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Lattice` transports Serre-operator word
+identities to pinned simple Weyl representatives.
 
 ## References
 
@@ -42,19 +43,6 @@ attribute [local instance high] Algebra.toModule
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
-
-/-- The represented pinned generators form a Serre system for the transposed Cartan matrix. -/
-theorem isSerreSystem_representation :
-    IsSerreSystem ℚ t.cartanMatrix.transpose
-      (fun k => D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h k)))
-      (fun k => D.representation
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl k))))
-      (fun k => D.representation
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inr k)))) := by
-  simpa only [Function.comp_def, LieHom.comp_apply, AlgHom.toLieHom_apply,
-    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
-    (t.isSerreSystem_lieBasis ht).map
-      (D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ))
 
 /-- Pinned simple Weyl representatives at a single bond satisfy the length-three braid
 relation over every commutative value ring. -/

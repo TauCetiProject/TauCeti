@@ -89,7 +89,8 @@ theorem weylAut_apply_of_lie_eq_two_smul (t : IsSl2Triple h e f)
   have hweight : ⁅-h, y⁆ = (-2 : ℚ) • y := by simp [hhy]
   have hthird : ⁅-f, ⁅-f, ⁅-f, y⁆⁆⁆ = 0 := by
     simpa only [pow_succ, pow_zero, one_mul, mul_apply_eq_comp, ad_apply] using
-      t.neg_symm.pow_ad_apply_eq_zero_of_weight_neg_nat hnf 2 hweight (by simp [hey])
+      t.neg_symm.pow_ad_apply_eq_zero_of_weight_neg_nat hnf.exists_pow_apply_eq_zero 2 hweight
+        (by simp [hey])
   rw [← t.weylAut_neg_symm he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero
     hnf.exists_pow_apply_eq_zero hne.exists_pow_apply_eq_zero]
   simpa only [neg_lie, lie_neg, neg_neg] using

@@ -45,7 +45,7 @@ verifies for the standard triple of `sl (Fin 2) K`.
 The lowest-weight calculus also allows zero vectors: `IsSl2Triple.lie_f_pow_succ_toEnd_e`
 gives the lowering coefficient on any raising string, and
 `IsSl2Triple.pow_ad_apply_eq_zero_of_weight_neg_nat` gives its endpoint when the raising adjoint
-is nilpotent, without a finite-dimensionality assumption. The coefficient induction follows
+is locally nilpotent, without a finite-dimensionality assumption. The coefficient induction follows
 Mathlib's `IsSl2Triple.HasPrimitiveVectorWith.lie_e_pow_succ_toEnd_f`.
 
 ## Main definitions
@@ -119,19 +119,19 @@ end StringCoefficients
 open LieAlgebra
 
 /-- A lowest-weight vector of weight minus `n` is killed by `n + 1` raising operations
-when the raising adjoint is nilpotent. -/
+when the raising adjoint is locally nilpotent. -/
 lemma pow_ad_apply_eq_zero_of_weight_neg_nat
     {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
     {h e f : L} (t : IsSl2Triple h e f)
-    (he : IsNilpotent (ad K L e)) {y : L} (n : ℕ)
+    (he : ∀ z, ∃ k, (ad K L e ^ k) z = 0) {y : L} (n : ℕ)
     (hyh : ⁅h, y⁆ = -(n : ℚ) • y) (hyf : ⁅f, y⁆ = 0) :
     (ad K L e ^ (n + 1)) y = 0 := by
   -- Both powers iterate the same bracket function, independently of the scalar ring.
   have powers (m : ℕ) : (LieModule.toEnd ℚ L L e ^ m) y = (ad K L e ^ m) y := by
     rw [← ad_eq_toEnd, TauCeti.ad_pow_apply_eq_ad_pow_apply ℚ K]
-  obtain ⟨N, hN⟩ := he
-  have top : (ad K L e ^ (N + (n + 1))) y = 0 := by
-    simp [pow_add, hN]
+  obtain ⟨N, hN⟩ := he y
+  have top : (ad K L e ^ (N + (n + 1))) y = 0 :=
+    Module.End.pow_map_zero_of_le (by omega) hN
   have step (k : ℕ) (_ : k < N)
       (hk : (ad K L e ^ (k + 1 + (n + 1))) y = 0) :
       (ad K L e ^ (k + (n + 1))) y = 0 := by
