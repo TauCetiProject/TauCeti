@@ -162,6 +162,7 @@ theorem compProdMap_compProdMap (P P' : CoordinateSpace n →L[ℝ] CoordinateSp
   Symbol.ext (funext fun _ => by simp)
 
 /-- The linear change of variables commutes with the inclusion of symbol classes. -/
+@[simp]
 theorem compProdMap_inclusion (h : m ≤ m') (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
     (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (a : Symbol n V W m) :
     compProdMap P Q (inclusion h a) = inclusion h (compProdMap P Q a) :=
