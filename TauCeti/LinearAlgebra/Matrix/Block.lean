@@ -87,8 +87,8 @@ public theorem toBlocks₂₂_eq_submatrix {m n p q α : Type*} (M : Matrix (m �
 
 /-- A matrix with vanishing off-diagonal blocks is the block-diagonal matrix of its diagonal
 blocks. -/
-public theorem eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero {p q α : Type*}
-    [Zero α] {X : Matrix (p ⊕ q) (p ⊕ q) α} (h₁₂ : X.toBlocks₁₂ = 0) (h₂₁ : X.toBlocks₂₁ = 0) :
+public theorem eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero {m n p q α : Type*}
+    [Zero α] {X : Matrix (m ⊕ n) (p ⊕ q) α} (h₁₂ : X.toBlocks₁₂ = 0) (h₂₁ : X.toBlocks₂₁ = 0) :
     X = fromBlocks X.toBlocks₁₁ 0 0 X.toBlocks₂₂ := by
   rw [← h₁₂, ← h₂₁, fromBlocks_toBlocks]
 
