@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Calculus.ContDiff.UniformOn
 import TauCeti.Analysis.Calculus.FDeriv.BoundedContinuousFunction
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
+import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 
 /-!
 # The trajectory section of a vector field on Sobolev paths
@@ -318,6 +319,19 @@ theorem trajectorySection_eq_zero_iff (hV : LipschitzWith K V) (hγ : AEStrongly
 
 /-! ### The linearization -/
 
+omit [NormedSpace ℝ F] [CompleteSpace F] in
+/-- If `a` is uniformly `r`-close to `a₀`, then `γ t + a t` is `r`-close to `γ t + a₀ t`. -/
+private theorem add_apply_mem_ball_add_apply {a a₀ : C₀(ℝ, F)} {r : ℝ} (h : ‖a - a₀‖ < r)
+    (t : ℝ) : γ t + a t ∈ ball (γ t + a₀ t) r := by
+  rw [mem_ball, dist_eq_norm, add_sub_add_left_eq_sub, ← sub_apply]
+  exact ((a - a₀).norm_coe_le_norm t).trans_lt h
+
+omit [NormedSpace ℝ F] [CompleteSpace F] in
+/-- If `γ` is bounded by `C`, then `γ + a` is bounded by `C + ‖a‖`. -/
+private theorem norm_add_apply_le {C : ℝ} (hC : ∀ x ∈ range γ, ‖x‖ ≤ C) (a : C₀(ℝ, F)) (t : ℝ) :
+    ‖γ t + a t‖ ≤ C + ‖a‖ :=
+  (norm_add_le _ _).trans (add_le_add (hC _ (mem_range_self t)) (a.norm_coe_le_norm t))
+
 omit [CompleteSpace F] in
 /-- The pointwise remainder of the trajectory section: if the first-order remainder of `V` against
 its derivative at the centre is at most `c` times the increment on balls of radius `r` inside `s`
@@ -330,11 +344,8 @@ private theorem norm_sub_sub_le_of_norm_sub_lt {s : Set F} {V' : F → F →L[�
     {a₀ a₁ a₂ : C₀(ℝ, F)} {t : ℝ} (hs : ball (γ t + a₀ t) r ⊆ s) (h₁ : ‖a₁ - a₀‖ < r)
     (h₂ : ‖a₂ - a₀‖ < r) :
     ‖V (γ t + a₁ t) - V (γ t + a₂ t) - V' (γ t + a₀ t) (a₁ t - a₂ t)‖ ≤ c * ‖a₁ t - a₂ t‖ := by
-  have hmem : ∀ a : C₀(ℝ, F), ‖a - a₀‖ < r → γ t + a t ∈ ball (γ t + a₀ t) r := fun a ha ↦ by
-    rw [mem_ball, dist_eq_norm, add_sub_add_left_eq_sub, ← sub_apply]
-    exact (BoundedContinuousFunction.norm_coe_le_norm (a - a₀).toBCF t).trans_lt
-      (by rwa [ZeroAtInftyContinuousMap.norm_toBCF_eq_norm])
-  have h := hη _ r hr hs _ (hmem a₁ h₁) _ (hmem a₂ h₂)
+  have h := hη _ r hr hs _ (add_apply_mem_ball_add_apply h₁ t) _
+    (add_apply_mem_ball_add_apply h₂ t)
   rwa [add_sub_add_left_eq_sub] at h
 
 /-- Paths close to `ξ₀` in `W^{1,p}` have continuous representatives uniformly close to that of
@@ -459,10 +470,8 @@ theorem hasStrictFDerivAt_trajectorySection_of_isBounded_range (hV : LipschitzWi
   set ξc := toZeroAtInfty (F := F) hp ξ₀
   refine hasStrictFDerivAt_trajectorySection hV hγ hp (s := ball 0 (C + ‖ξc‖ + 1))
     (fun x _ ↦ hV' x) (hV's _) one_pos (fun t ↦ ball_subset_ball' ?_) hAL
-  have hξ : ‖ξc t‖ ≤ ‖ξc‖ := (BoundedContinuousFunction.norm_coe_le_norm ξc.toBCF t).trans_eq
-    ZeroAtInftyContinuousMap.norm_toBCF_eq_norm
   rw [dist_zero_right]
-  linarith [norm_add_le (γ t) (ξc t), hC _ (mem_range_self t)]
+  linarith [norm_add_apply_le hC ξc t]
 
 /-- **The linearization along a bounded reference path, continuous case.** On a proper
 space, a continuous derivative `V'` is uniformly continuous on balls, so
@@ -491,16 +500,10 @@ private theorem exists_contDiff_add_toZeroAtInfty (hγ : Continuous γ)
         (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) → ℝ →ᵇ F,
       ContDiff ℝ ω ι ∧ ∀ ξ t, ι ξ t = γ t + toZeroAtInfty (F := F) hp ξ t := by
   obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1 hb
-  refine ⟨fun ξ ↦ BoundedContinuousFunction.ofNormedAddCommGroup γ hγ C
-      (fun t ↦ hC _ (mem_range_self t)) + (toZeroAtInfty (F := F) hp ξ).toBCF,
-    contDiff_const.add (IsLinearMap.with_bound ⟨fun ξ₁ ξ₂ ↦ ?_, fun c ξ ↦ ?_⟩ √2
-      fun ξ ↦ ?_).contDiff, fun ξ t ↦ by simp⟩
-  · ext t
-    simp
-  · ext t
-    simp
-  · rw [ZeroAtInftyContinuousMap.norm_toBCF_eq_norm]
-    exact norm_toZeroAtInfty_le_sqrt_two_mul_norm hp ξ
+  exact ⟨fun ξ ↦ BoundedContinuousFunction.ofNormedAddCommGroup γ hγ C
+      (fun t ↦ hC _ (mem_range_self t)) + ZeroAtInftyContinuousMap.toBCFₗᵢ ℝ (toZeroAtInfty hp ξ),
+    contDiff_const.add ((ZeroAtInftyContinuousMap.toBCFₗᵢ ℝ).toContinuousLinearMap.comp
+      (toZeroAtInfty (F := F) hp)).contDiff, fun ξ t ↦ by simp⟩
 
 /-- Around a path `δ / 4`-close to `ξ₀` in `W^{1,p}`, balls of radius `δ / 2` lie in the balls of
 radius `δ` around `γ + ξ₀`. -/
@@ -513,23 +516,14 @@ private theorem ball_add_toZeroAtInfty_subset (hp : p ≠ ∞)
   have hz := norm_toZeroAtInfty_sub_lt hp (r := δ / 2) (ξ := ξ) (ξ₀ := ξ₀)
     (by rw [← dist_eq_norm]; linarith [mem_ball.1 hξ])
   refine ball_subset_ball' ?_
-  rw [dist_eq_norm, add_sub_add_left_eq_sub, ← sub_apply]
-  have h : ‖(toZeroAtInfty (F := F) hp ξ - toZeroAtInfty (F := F) hp ξ₀) t‖ < δ / 2 :=
-    (BoundedContinuousFunction.norm_coe_le_norm
-      (toZeroAtInfty (F := F) hp ξ - toZeroAtInfty (F := F) hp ξ₀).toBCF t).trans_lt
-      (by rwa [ZeroAtInftyContinuousMap.norm_toBCF_eq_norm])
-  linarith
+  linarith [mem_ball.1 (add_apply_mem_ball_add_apply (γ := γ) hz t)]
 
 /-- **The trajectory section is `C^{n+1}`.** Let `V` be a Lipschitz vector field which is uniformly
 `C^{n+1}` on a set `s` (`TauCeti.UniformContDiffOn`), let `γ` be a continuous reference path with
 bounded range, and let `ξ₀` be a Sobolev path such that `γ + ξ₀` stays at distance at least
 `δ > 0` from the complement of `s`. Then the trajectory section is `C^{n+1}` at `ξ₀`.
 
-Near `ξ₀` the derivative at `ξ` is the trajectory operator with coefficient `-V' (γ + ξ)`. This
-coefficient depends `Cⁿ` on `ξ`: the Sobolev embedding sends `ξ` affinely to the bounded
-continuous path `γ + ξ`, on which the superposition operator `f ↦ -V' ∘ f` is `Cⁿ`
-(`BoundedContinuousFunction.contDiffAt_of_forall_apply_eq`), and the trajectory operator depends
-smoothly on its `L∞` coefficient (`TauCeti.WeakDerivStep.contDiff_trajectoryOperator`). -/
+Near `ξ₀` the derivative at `ξ` is the trajectory operator with coefficient `-V' (γ + ξ)`. -/
 theorem contDiffAt_trajectorySection (hV : LipschitzWith K V) (hγ : Continuous γ)
     (hb : Bornology.IsBounded (range γ)) (hp : p ≠ ∞) {s : Set F} {n : ℕ}
     (hVs : UniformContDiffOn ℝ (n + 1) V s)
@@ -546,6 +540,7 @@ theorem contDiffAt_trajectorySection (hV : LipschitzWith K V) (hγ : Continuous 
       exact ⟨-Φ, fun _ t ↦ by rw [neg_apply, hΦ]⟩
     · exact ⟨0, fun h ↦ absurd h hf⟩
   choose Θ hΘ using hΘ
+  -- The Sobolev embedding sends `ξ` affinely to the bounded continuous path `γ + ξ`.
   obtain ⟨ι, hιc, hι⟩ := exists_contDiff_add_toZeroAtInfty hγ hb hp
   -- Paths `δ / 4`-close to `ξ₀` stay `δ / 2` inside `s`.
   have hsξ : ∀ ξ ∈ ball ξ₀ (δ / 4), ∀ t,
@@ -561,7 +556,9 @@ theorem contDiffAt_trajectorySection (hV : LipschitzWith K V) (hγ : Continuous 
     filter_upwards [BoundedContinuousFunction.coeFn_toLpTop (𝕜 := ℝ)
       (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) (Θ (ι ξ))] with t ht
     rw [ht, hΘ _ (fun t ↦ by rw [hι]; exact hsξ ξ hξ t (mem_ball_self (half_pos hδ))) t, hι]
-  · -- It depends `Cⁿ` on `ξ`, through the superposition operator `f ↦ -V' ∘ f`.
+  · -- It depends `Cⁿ` on `ξ`, through the superposition operator `f ↦ -V' ∘ f`
+    -- (`BoundedContinuousFunction.contDiffAt_of_forall_apply_eq`), since the trajectory operator
+    -- depends smoothly on its `L∞` coefficient (`contDiff_trajectoryOperator`).
     have hΘc : ContDiffAt ℝ n Θ (ι ξ₀) :=
       BoundedContinuousFunction.contDiffAt_of_forall_apply_eq hV'n.neg hδ
         (fun t ↦ by rw [hι]; exact hs t) fun f hf t ↦ hΘ f (fun t ↦ hs t <| by
@@ -583,15 +580,15 @@ theorem contDiff_trajectorySection (hV : LipschitzWith K V) (hγ : Continuous γ
 
 /-- **The trajectory section of a `Cⁿ` field is `Cⁿ`.** On a proper space, let `V` be a Lipschitz
 vector field which is `Cⁿ` for some `n ≤ ∞`, and let `γ` be a continuous reference path with
-bounded range. Then the trajectory section is `Cⁿ`. Along each Sobolev path `ξ₀`, the field is
-uniformly `C^{m+1}`, for each `m + 1 ≤ n`, on a compact ball containing a neighbourhood of `γ + ξ₀`
-(`ContDiffOn.uniformContDiffOn`), so `TauCeti.WeakDerivStep.contDiffAt_trajectorySection`
-applies; continuity holds for every Lipschitz field
-(`TauCeti.WeakDerivStep.lipschitzWith_trajectorySection`). -/
+bounded range. Then the trajectory section is `Cⁿ`. -/
 theorem contDiff_trajectorySection_of_contDiff [ProperSpace F] (hV : LipschitzWith K V)
     (hγ : Continuous γ) (hb : Bornology.IsBounded (range γ)) (hp : p ≠ ∞) {n : ℕ∞}
     (hVn : ContDiff ℝ n V) :
     ContDiff ℝ n (trajectorySection V γ hV hγ.aestronglyMeasurable hp) := by
+  -- Continuity holds for every Lipschitz field (`lipschitzWith_trajectorySection`). For each
+  -- `m + 1 ≤ n`, along each Sobolev path `ξ₀` the field is uniformly `C^{m+1}` on a compact ball
+  -- containing a neighbourhood of `γ + ξ₀` (`ContDiffOn.uniformContDiffOn`), so
+  -- `contDiffAt_trajectorySection` applies.
   refine contDiff_iff_forall_nat_le.2 fun m hm ↦ ?_
   rcases m with _ | m
   · exact contDiff_zero.2 (lipschitzWith_trajectorySection hV _ hp).continuous
@@ -604,10 +601,7 @@ theorem contDiff_trajectorySection_of_contDiff [ProperSpace F] (hV : LipschitzWi
       isOpen_ball (closedBall_subset_ball (lt_add_one R)) (isCompact_closedBall 0 R)
   refine contDiffAt_trajectorySection hV hγ hb hp hVs one_pos fun t ↦
     ball_subset_closedBall.trans (closedBall_subset_closedBall' ?_)
-  have hξ : ‖toZeroAtInfty (F := F) hp ξ₀ t‖ ≤ ‖toZeroAtInfty (F := F) hp ξ₀‖ :=
-    (BoundedContinuousFunction.norm_coe_le_norm (toZeroAtInfty (F := F) hp ξ₀).toBCF t).trans_eq
-      ZeroAtInftyContinuousMap.norm_toBCF_eq_norm
   rw [dist_zero_right]
-  linarith [norm_add_le (γ t) (toZeroAtInfty (F := F) hp ξ₀ t), hC _ (mem_range_self t)]
+  linarith [norm_add_apply_le hC (toZeroAtInfty (F := F) hp ξ₀) t]
 
 end TauCeti.WeakDerivStep
