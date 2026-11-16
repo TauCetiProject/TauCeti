@@ -128,15 +128,6 @@ private theorem sum_smulLeftCLM_iteratedLineDerivOp_cutoffTempered (hg : ∀ i, 
       funext fun x ↦ by rw [Pi.smul_apply, smul_eq_mul],
     TemperedDistribution.smulLeftCLM_smul htg, _root_.smul_apply]
 
-/-- A compact subset `K` of an open set `W ⊆ Ω` has a complex test function on `Ω` equal to `1`
-near `K` whose topological support lies in `W`. -/
-private theorem exists_cutoff_tsupport_subset {K W : Set (CoordinateSpace d)} (hK : IsCompact K)
-    (hW : IsOpen W) (hKW : K ⊆ W) (hWΩ : W ⊆ Ω) :
-    ∃ χ : 𝓓(Ω, ℂ), (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ tsupport χ ⊆ W := by
-  obtain ⟨χ, -, hχ1, hχW⟩ := TestFunction.exists_cutoff_tsupport_subset (n := ⊤) hK hW hKW hWΩ
-  refine ⟨TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM χ, hχ1.mono fun x hx ↦ by simp [hx], ?_⟩
-  exact (tsupport_comp_subset (g := ofRealCLM) (by simp) χ).trans hχW
-
 variable {T : 𝓓'(Ω, ℂ)} {x₀ : CoordinateSpace d} {s : ℝ}
 
 /-- **The local parametrix applied to `φ T`.** Let `a` be an elliptic classical symbol of order
@@ -199,12 +190,12 @@ theorem IsLocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp
     (inter_mem (inter_mem hU (Ω.isOpen.mem_nhds h.mem)) (closedBall_mem_nhds x₀ hδ))
   have hεΩ : ball x₀ ε ⊆ Ω := fun x hx ↦ (hεU hx).1.2
   -- Cutoffs `ψ`, `χ`, `φ` around `x₀`, each equal to `1` near the support of the previous one.
-  obtain ⟨ψ, hψ1, hψs⟩ := exists_cutoff_tsupport_subset (isCompact_singleton (x := x₀))
-    isOpen_ball (singleton_subset_iff.2 (mem_ball_self hε)) hεΩ
-  obtain ⟨χ, hχ1, hχs⟩ :=
-    exists_cutoff_tsupport_subset ψ.hasCompactSupport.isCompact isOpen_ball hψs hεΩ
-  obtain ⟨φ, hφ1, -⟩ := exists_cutoff_tsupport_subset χ.hasCompactSupport.isCompact Ω.isOpen
-    χ.tsupport_subset subset_rfl
+  obtain ⟨ψ, hψ1, hψs⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
+    (isCompact_singleton (x := x₀)) isOpen_ball (singleton_subset_iff.2 (mem_ball_self hε)) hεΩ
+  obtain ⟨χ, hχ1, hχs⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
+    ψ.hasCompactSupport.isCompact isOpen_ball hψs hεΩ
+  obtain ⟨φ, hφ1, -⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
+    χ.hasCompactSupport.isCompact Ω.isOpen χ.tsupport_subset subset_rfl
   -- Near the support of `ψ`, `χ = 1` and `a` is the symbol of `P`.
   have haψ : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ,
       a.toSymbol.coefficient (x, ξ) = differentialSymbol t m
