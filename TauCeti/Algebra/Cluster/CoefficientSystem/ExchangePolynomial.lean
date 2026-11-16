@@ -196,6 +196,16 @@ theorem dilationFactor_scale (H : ExchangePolynomial 𝕂) (e : 𝕂ˣ) (b : ℤ
   conv_rhs => enter [1]; rw [← posPart_sub_negPart b]
   simp [sub_eq_add_neg, zpow_add, mul_zpow, mul_assoc, mul_left_comm, mul_comm]
 
+/-- Dilating `H` by `κ` multiplies its dilation factor at `b` by `κ ^ (r * b⁺)`. -/
+@[simp]
+theorem dilationFactor_dilate (H : ExchangePolynomial 𝕂) (κ : 𝕂ˣ) (b : ℤ) :
+    (H.dilate κ).dilationFactor b = κ ^ ((H.degree : ℤ) * b⁺) * H.dilationFactor b := by
+  have h0 : (H.dilate κ).isUnit_coeff_zero.unit = H.isUnit_coeff_zero.unit :=
+    Units.ext (by simp)
+  rw [dilationFactor_def, dilationFactor_def, unit_dilate_last, h0, mul_zpow, ← zpow_natCast,
+    ← zpow_mul]
+  simp [mul_assoc, mul_comm]
+
 /-! ### Endpoint-one and degree-one polynomials -/
 
 /-- An exchange polynomial has endpoint coefficients equal to `1` when `h_0 = 1` and `h_r = 1`. -/
@@ -214,6 +224,11 @@ protected theorem IsEndpointOne.coeff_last {H : ExchangePolynomial 𝕂} (h : H.
 protected theorem IsEndpointOne.reverse {H : ExchangePolynomial 𝕂} (h : H.IsEndpointOne) :
     H.reverse.IsEndpointOne := ⟨by simp [h.2], by simp [h.1]⟩
 
+@[simp]
+theorem isEndpointOne_reverse_iff {H : ExchangePolynomial 𝕂} :
+    H.reverse.IsEndpointOne ↔ H.IsEndpointOne :=
+  ⟨fun h ↦ by simpa using h.reverse, fun h ↦ h.reverse⟩
+
 protected theorem IsEndpointOne.dilationFactor {H : ExchangePolynomial 𝕂} (h : H.IsEndpointOne)
     (b : ℤ) : H.dilationFactor b = 1 := by
   have h0 : H.isUnit_coeff_zero.unit = 1 := Units.ext (by simp [h.1])
@@ -231,7 +246,7 @@ def binary : ExchangePolynomial 𝕂 := ⟨1, Nat.one_pos, fun _ ↦ 1, isUnit_o
 @[simp] theorem reverse_binary : (binary : ExchangePolynomial 𝕂).reverse = binary := by
   ext l <;> simp
 
-theorem isEndpointOne_binary : (binary : ExchangePolynomial 𝕂).IsEndpointOne := ⟨rfl, rfl⟩
+@[simp] theorem isEndpointOne_binary : (binary : ExchangePolynomial 𝕂).IsEndpointOne := ⟨rfl, rfl⟩
 
 @[simp] theorem dilationFactor_binary (b : ℤ) :
     (binary : ExchangePolynomial 𝕂).dilationFactor b = 1 := isEndpointOne_binary.dilationFactor b

@@ -76,7 +76,7 @@ theorem exchangeExponent_apply [Finite I] (d : ExchangeData 𝕂 row)
 
 /-- When column `k` has a nonzero entry, the formal Laurent exponents `d.exchangeExponent k l` for
 `0 ≤ l ≤ r_k` are pairwise distinct. -/
-theorem injOn_exchangeExponent_of_ne_zero [Finite I] (d : ExchangeData 𝕂 row)
+theorem injOn_exchangeExponent_of_matrix_ne_zero [Finite I] (d : ExchangeData 𝕂 row)
     {k : K} {i : I} (hi : d.exchange.matrix i k ≠ 0) :
     Set.InjOn (d.exchangeExponent k) {l | l ≤ (d.polynomial k).degree} := by
   intro l₁ hl₁ l₂ hl₂ h
@@ -92,12 +92,30 @@ theorem injOn_exchangeExponent_of_ne_zero [Finite I] (d : ExchangeData 𝕂 row)
   · omega
   · exact absurd hβ0 hβ
 
-theorem exchangeExponent_val_injective_of_ne_zero [Finite I]
+theorem exchangeExponent_val_injective_of_matrix_ne_zero [Finite I]
     (d : ExchangeData 𝕂 row) {k : K} {i : I} (hi : d.exchange.matrix i k ≠ 0) :
     Function.Injective (fun l : Fin ((d.polynomial k).degree + 1) ↦
       d.exchangeExponent k l.val) := fun l₁ l₂ h ↦
-  Fin.ext <| d.injOn_exchangeExponent_of_ne_zero hi (Nat.lt_succ_iff.mp l₁.isLt)
+  Fin.ext <| d.injOn_exchangeExponent_of_matrix_ne_zero hi (Nat.lt_succ_iff.mp l₁.isLt)
     (Nat.lt_succ_iff.mp l₂.isLt) h
+
+theorem exchangeExponent_mutation_self {R : Type*} [CommSemiring R] [Finite I]
+    [DecidableEq I] [DecidableEq K] (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row)
+    {k : K} {l : ℕ} (hl : l ≤ (d.polynomial k).degree) :
+    (d.mutation c k).exchangeExponent k l =
+      d.exchangeExponent k ((d.polynomial k).degree - l) := by
+  ext i
+  by_cases hi : i = row k
+  · simp [hi]
+  · simp [exchangeExponent_apply_of_ne _ _ _ hi, posPart_neg, negPart_neg,
+      Nat.sub_sub_self hl, add_comm]
+
+theorem exchangeExponent_of_column_eq_zero [Finite I] (d : ExchangeData 𝕂 row) {k : K}
+    (h0 : ∀ i, d.exchange.matrix i k = 0) (l : ℕ) :
+    d.exchangeExponent k l = Finsupp.single (row k) (-1) := by
+  ext i
+  by_cases hi : i = row k <;>
+    simp [hi, exchangeExponent_apply_of_ne, (d.dividedColumn_eq_zero_iff k i).mpr (h0 i)]
 
 @[simp]
 theorem exchangeExponent_map [Finite I] (ψ : 𝕂 →*₀ 𝕂')
@@ -105,6 +123,21 @@ theorem exchangeExponent_map [Finite I] (ψ : 𝕂 →*₀ 𝕂')
     (d.map ψ).exchangeExponent k l = d.exchangeExponent k l := by
   ext i
   by_cases hi : i = row k <;> simp [hi, exchangeExponent_apply_of_ne]
+
+@[simp]
+theorem exchangeExponent_reindex {I' K' : Type*} {row' : K' ↪ I'} [Finite I] [Finite I']
+    (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
+    (d : ExchangeData 𝕂 row) (k' : K') (l : ℕ) :
+    (reindex eI eK h d).exchangeExponent k' l =
+      Finsupp.mapDomain eI (d.exchangeExponent (eK.symm k') l) := by
+  ext i'
+  have hrow : eI.symm (row' k') = row (eK.symm k') := by
+    simpa using (Equiv.symm_apply_eq eI).mpr (h (eK.symm k')).symm
+  by_cases hi : i' = row' k'
+  · subst hi; simp [hrow]
+  · have hi' : eI.symm i' ≠ row (eK.symm k') := fun heq ↦
+      hi (eI.symm.injective (heq.trans hrow.symm))
+    simp [exchangeExponent_apply_of_ne _ _ _ hi, exchangeExponent_apply_of_ne _ _ _ hi']
 
 end Exponents
 
@@ -274,7 +307,7 @@ theorem rename_exchangeNumerator_mul_inv_unitX {R : Type*} [CommSemiring R] [Fin
 
 /-- When column `k` is nonzero, the `l`-th coefficient of the formal exchange right-hand side at
 `d.exchangeExponent k l` is `φ(h_{k,l})` with no cancellation between terms. -/
-theorem coeff_rename_exchangeNumerator_mul_inv_unitX_of_ne_zero {R : Type*} [CommSemiring R]
+theorem coeff_rename_exchangeNumerator_mul_inv_unitX_of_matrix_ne_zero {R : Type*} [CommSemiring R]
     [Finite I] (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row)
     {k : K} {i : I} (hi : d.exchange.matrix i k ≠ 0) (l : Fin ((d.polynomial k).degree + 1)) :
     (LaurentRing.rename Subtype.val (d.exchangeNumerator c k) *
@@ -283,18 +316,19 @@ theorem coeff_rename_exchangeNumerator_mul_inv_unitX_of_ne_zero {R : Type*} [Com
   rw [rename_exchangeNumerator_mul_inv_unitX, AddMonoidAlgebra.coeff_sum,
     Finsupp.finsetSum_apply, Finset.sum_eq_single l]
   · simp
-  · exact fun m _ hml ↦ by simp [(d.exchangeExponent_val_injective_of_ne_zero hi).ne hml]
+  · exact fun m _ hml ↦ by simp [(d.exchangeExponent_val_injective_of_matrix_ne_zero hi).ne hml]
   · exact fun hl ↦ absurd (Finset.mem_univ l) hl
 
 /-- Over any nontrivial commutative semiring `R`, a nonzero column has nonzero formal exchange
 numerator. -/
-theorem exchangeNumerator_ne_zero_of_ne_zero {R : Type*} [CommSemiring R] [Nontrivial R]
+theorem exchangeNumerator_ne_zero_of_matrix_ne_zero {R : Type*} [CommSemiring R] [Nontrivial R]
     [Finite I] (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row)
     {k : K} {i : I} (hi : d.exchange.matrix i k ≠ 0) :
     d.exchangeNumerator c k ≠ 0 := by
   intro hzero
   refine ((d.polynomial k).isUnit_coeff_zero.map c.toScalar).ne_zero ?_
-  simpa [hzero] using (d.coeff_rename_exchangeNumerator_mul_inv_unitX_of_ne_zero c hi 0).symm
+  simpa [hzero] using
+    (d.coeff_rename_exchangeNumerator_mul_inv_unitX_of_matrix_ne_zero c hi 0).symm
 
 /-- On a zero column, the formal exchange numerator collapses to the scalar `H_k(1)`. -/
 theorem exchangeNumerator_of_column_eq_zero {R : Type*} [CommSemiring R] [Finite I]

@@ -41,7 +41,7 @@ structure Hom {𝕂 𝕂' : Type*} [CommMonoidWithZero 𝕂] [CommMonoidWithZero
 /-- Reinterpret a homomorphism of coefficient systems as a morphism of monoids with zero. -/
 add_decl_doc Hom.toMonoidWithZeroHom
 
-attribute [simp] Hom.normalizer_map
+attribute [simp] Hom.toScalar_comp Hom.normalizer_map
 
 namespace Hom
 

@@ -93,6 +93,11 @@ theorem isNormalized_normalize (H : ExchangePolynomial 𝕂) : c.IsNormalized (c
 protected theorem IsNormalized.normalize_eq {H : ExchangePolynomial 𝕂} (h : c.IsNormalized H) :
     c.normalize H = H := by rw [normalize_def, h, H.scale_one]
 
+@[simp]
+theorem normalize_eq_self_iff {H : ExchangePolynomial 𝕂} :
+    c.normalize H = H ↔ c.IsNormalized H := by
+  rw [normalize_def, H.scale_eq_self_iff, isNormalized_iff]
+
 /-- Normalization is idempotent. -/
 @[simp]
 theorem normalize_normalize (H : ExchangePolynomial 𝕂) :
@@ -105,6 +110,11 @@ theorem normalize_reverse (H : ExchangePolynomial 𝕂) :
 
 protected theorem IsNormalized.reverse {H : ExchangePolynomial 𝕂} (h : c.IsNormalized H) :
     c.IsNormalized H.reverse := by simpa [IsNormalized] using h
+
+@[simp]
+theorem isNormalized_reverse_iff {H : ExchangePolynomial 𝕂} :
+    c.IsNormalized H.reverse ↔ c.IsNormalized H :=
+  ⟨fun h ↦ by simpa using h.reverse, fun h ↦ h.reverse⟩
 
 /-! ### Value subgroup and orbit transversals -/
 
@@ -130,6 +140,13 @@ theorem normalizer_scale_of_mem {u : 𝕂ˣ} (hu : u ∈ c.normalizerSubgroup)
     conv_lhs => rw [mul_comm x y]
     simpa [ihx, mul_assoc] using ihy (H.scale x)
   | inv x _ ihx => simpa [mul_assoc] using congrArg (x * ·) (ihx (H.scale x⁻¹)).symm
+
+theorem mem_normalizerSubgroup_iff {u : 𝕂ˣ} :
+    u ∈ c.normalizerSubgroup ↔ ∃ H, c.normalizer H = u := by
+  refine ⟨fun hu ↦ ⟨(c.normalize ExchangePolynomial.binary).scale u⁻¹, ?_⟩, ?_⟩
+  · simp [c.normalizer_scale_of_mem (inv_mem hu)]
+  · rintro ⟨H, rfl⟩
+    exact c.normalizer_mem_normalizerSubgroup H
 
 /-- Normalization is invariant under scaling by any element of `G_ν`. -/
 theorem normalize_scale_of_mem {u : 𝕂ˣ} (hu : u ∈ c.normalizerSubgroup)
@@ -191,6 +208,17 @@ theorem ofTransversal_normalizer_mem (toScalar : 𝕂 →*₀ R) (G : Subgroup �
     (ofTransversal toScalar G S hrev htrans).normalizer H ∈ G :=
   ((htrans H).choose).prop
 
+theorem ofTransversal_normalizer_eq_iff (toScalar : 𝕂 →*₀ R) (G : Subgroup 𝕂ˣ)
+    (S : Set (ExchangePolynomial 𝕂)) (hrev : ∀ ⦃H⦄, H ∈ S → H.reverse ∈ S)
+    (htrans : ∀ H : ExchangePolynomial 𝕂, ∃! u : G, H.scale u.val ∈ S)
+    {H : ExchangePolynomial 𝕂} {u : 𝕂ˣ} :
+    (ofTransversal toScalar G S hrev htrans).normalizer H = u ↔ u ∈ G ∧ H.scale u ∈ S := by
+  rw [ofTransversal_normalizer]
+  refine ⟨?_, fun ⟨huG, huS⟩ ↦
+    congrArg Subtype.val ((htrans H).choose_spec.2 ⟨u, huG⟩ huS).symm⟩
+  rintro rfl
+  exact ⟨((htrans H).choose).prop, (htrans H).choose_spec.1⟩
+
 @[simp]
 theorem isNormalized_ofTransversal_iff (toScalar : 𝕂 →*₀ R) (G : Subgroup 𝕂ˣ)
     (S : Set (ExchangePolynomial 𝕂)) (hrev : ∀ ⦃H⦄, H ∈ S → H.reverse ∈ S)
@@ -202,6 +230,22 @@ theorem isNormalized_ofTransversal_iff (toScalar : 𝕂 →*₀ R) (G : Subgroup
   · have hmem : H.scale ((htrans H).choose : 𝕂ˣ) ∈ S := (htrans H).choose_spec.1
     rwa [h, H.scale_one] at hmem
   · simpa using congrArg Subtype.val ((htrans H).choose_spec.2 1 (by simpa using hS)).symm
+
+@[simp]
+theorem normalizerSubgroup_ofTransversal (toScalar : 𝕂 →*₀ R) (G : Subgroup 𝕂ˣ)
+    (S : Set (ExchangePolynomial 𝕂)) (hrev : ∀ ⦃H⦄, H ∈ S → H.reverse ∈ S)
+    (htrans : ∀ H : ExchangePolynomial 𝕂, ∃! u : G, H.scale u.val ∈ S) :
+    (ofTransversal toScalar G S hrev htrans).normalizerSubgroup = G := by
+  let c := ofTransversal toScalar G S hrev htrans
+  ext u
+  rw [c.mem_normalizerSubgroup_iff]
+  refine ⟨?_, fun hu ↦ ⟨(c.normalize ExchangePolynomial.binary).scale u⁻¹, ?_⟩⟩
+  · rintro ⟨H, rfl⟩
+    exact ofTransversal_normalizer_mem toScalar G S hrev htrans H
+  · rw [ofTransversal_normalizer_eq_iff]
+    refine ⟨hu, ?_⟩
+    simpa using (isNormalized_ofTransversal_iff toScalar G S hrev htrans).mp
+      (c.isNormalized_normalize ExchangePolynomial.binary)
 
 /-- A coefficient system is uniquely recovered from its scalar map, its normalizer subgroup, and
 its set of normalized polynomials. -/
@@ -249,6 +293,12 @@ theorem trivial_normalize (H : ExchangePolynomial R) : (trivial R).normalize H =
 @[simp]
 theorem isNormalized_trivial (H : ExchangePolynomial R) : (trivial R).IsNormalized H := (rfl)
 
+@[simp]
+theorem normalizerSubgroup_trivial : (trivial R).normalizerSubgroup = ⊥ := by
+  ext u
+  rw [(trivial R).mem_normalizerSubgroup_iff, Subgroup.mem_bot]
+  exact ⟨by rintro ⟨_, rfl⟩; rfl, fun hu ↦ ⟨ExchangePolynomial.binary, hu.symm⟩⟩
+
 end Trivial
 
 /-! ### Normalized systems from zero-sum-free semifields -/
@@ -278,6 +328,7 @@ noncomputable def ofSemifield (φ : F →*₀ R) : CoefficientSystem F R where
 theorem val_ofSemifield_normalizer (φ : F →*₀ R) (H : ExchangePolynomial F) :
     (((ofSemifield φ).normalizer H : Fˣ) : F) = (∑ l, H.coeff l)⁻¹ := by simp [ofSemifield]
 
+@[simp]
 theorem ofSemifield_normalizer_scale (φ : F →*₀ R) (u : Fˣ) (H : ExchangePolynomial F) :
     (ofSemifield φ).normalizer (H.scale u) = u⁻¹ * (ofSemifield φ).normalizer H :=
   mk0_sum_scale_inv u H
@@ -286,6 +337,19 @@ theorem ofSemifield_normalizer_scale (φ : F →*₀ R) (u : Fˣ) (H : ExchangeP
 theorem isNormalized_ofSemifield_iff (φ : F →*₀ R) {H : ExchangePolynomial F} :
     (ofSemifield φ).IsNormalized H ↔ ∑ l, H.coeff l = 1 := by
   rw [isNormalized_iff, Units.ext_iff, val_ofSemifield_normalizer, Units.val_one, inv_eq_one]
+
+@[simp]
+theorem normalizerSubgroup_ofSemifield (φ : F →*₀ R) :
+    (ofSemifield φ).normalizerSubgroup = ⊤ := by
+  ext u
+  rw [(ofSemifield φ).mem_normalizerSubgroup_iff]
+  exact ⟨fun _ ↦ Subgroup.mem_top u, fun _ ↦
+    ⟨((ofSemifield φ).normalize ExchangePolynomial.binary).scale u⁻¹, by simp⟩⟩
+
+@[simp]
+theorem ofSemifield_normalize_scale (φ : F →*₀ R) (u : Fˣ) (H : ExchangePolynomial F) :
+    (ofSemifield φ).normalize (H.scale u) = (ofSemifield φ).normalize H :=
+  (ofSemifield φ).normalize_scale_of_mem (by simp) H
 
 end Semifield
 

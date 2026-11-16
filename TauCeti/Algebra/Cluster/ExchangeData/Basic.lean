@@ -547,6 +547,7 @@ theorem reindex_refl (h : ∀ k, Equiv.refl I (row k) = row (Equiv.refl K k)) :
   · simp
   · funext k; simp
 
+@[simp]
 theorem reindex_trans (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
     (eI' : I' ≃ I'') (eK' : K' ≃ K'') (h' : ∀ k, eI' (row' k) = row'' (eK' k)) :
     (reindex (𝕂 := 𝕂) eI eK h).trans (reindex eI' eK' h') =
@@ -555,6 +556,18 @@ theorem reindex_trans (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = r
   ext d : 2
   · exact congrArg (fun e ↦ e d.exchange) (ExchangeMatrix.reindex_trans eI eK h eI' eK' h')
   · funext k; simp
+
+/-- Nested reindexing applications collapse to the composite relabelling. -/
+@[simp]
+theorem reindex_reindex (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
+    (eI' : I' ≃ I'') (eK' : K' ≃ K'') (h' : ∀ k, eI' (row' k) = row'' (eK' k))
+    (d : ExchangeData 𝕂 row) :
+    reindex eI' eK' h' (reindex eI eK h d) =
+      reindex (eI.trans eI') (eK.trans eK')
+        (fun k ↦ by rw [Equiv.trans_apply, Equiv.trans_apply, h, h']) d := by
+  simpa only [Equiv.trans_apply] using
+    congrArg (fun e : ExchangeData 𝕂 row ≃ ExchangeData 𝕂 row'' ↦ e d)
+      (reindex_trans eI eK h eI' eK' h')
 
 @[simp]
 theorem dividedColumn_reindex (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
@@ -583,13 +596,13 @@ theorem map_reindex (ψ : 𝕂 →*₀ 𝕂') (eI : I ≃ I') (eK : K ≃ K')
     (h : ∀ k, eI (row k) = row' (eK k)) (d : ExchangeData 𝕂 row) :
     (reindex eI eK h d).map ψ = reindex eI eK h (d.map ψ) := by ext : 1 <;> rfl
 
-/-- Reindexing commutes with state mutation. -/
-theorem reindex_mutation [DecidableEq I] [DecidableEq I'] [DecidableEq K] [DecidableEq K']
+/-- State mutation commutes with reindexing. -/
+theorem mutation_reindex [DecidableEq I] [DecidableEq I'] [DecidableEq K] [DecidableEq K']
     (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
     (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) (k : K) :
-    reindex eI eK h (d.mutation c k) = (reindex eI eK h d).mutation c (eK k) := by
+    (reindex eI eK h d).mutation c (eK k) = reindex eI eK h (d.mutation c k) := by
   ext : 1
-  · exact (d.exchange.mutation_reindex eI eK h k).symm
+  · exact d.exchange.mutation_reindex eI eK h k
   · funext j'
     by_cases hj : j' = eK k
     · subst hj; simp
@@ -602,7 +615,7 @@ theorem reindex_mutationWord [DecidableEq I] [DecidableEq I'] [DecidableEq K] [D
     (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) (w : List K) :
     reindex eI eK h (d.mutationWord c w) = (reindex eI eK h d).mutationWord c (w.map eK) := by
   simp only [mutationWord, List.foldl_map]
-  exact (List.foldl_hom (reindex eI eK h) fun s k ↦ (s.reindex_mutation eI eK h c k).symm).symm
+  exact (List.foldl_hom (reindex eI eK h) fun s k ↦ s.mutation_reindex eI eK h c k).symm
 
 end Reindex
 
