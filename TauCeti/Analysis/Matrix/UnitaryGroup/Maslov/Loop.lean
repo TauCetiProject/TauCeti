@@ -112,17 +112,8 @@ theorem realImage_eq_realImage_iff_souriau_eq {U V : unitaryGroup n ℂ} :
     have hO : ((V⁻¹ * U : unitaryGroup n ℂ) : Matrix n n ℂ) *
         ((V⁻¹ * U : unitaryGroup n ℂ) : Matrix n n ℂ)ᵀ = 1 := by
       simpa only [coe_souriau, OneMemClass.coe_one] using congrArg Subtype.val hs
-    -- A unitary matrix with `O Oᵀ = 1` lies in `O(n, ℂ) ∩ U(n) = O(n)`.
-    have hOU : (unitarySubgroupUnitsEquiv.symm (V⁻¹ * U) : GL n ℂ) ∈
-        TauCeti.GLOrthogonal n ℂ ⊓ unitarySubgroup (GL n ℂ) :=
-      ⟨TauCeti.GLOrthogonal.mem_iff'.2 hO, (unitarySubgroupUnitsEquiv.symm (V⁻¹ * U)).2⟩
-    rw [TauCeti.GLOrthogonal.inf_unitarySubgroup_eq_map_real] at hOU
-    obtain ⟨B, hB, hBO⟩ := hOU
-    have hN := TauCeti.GLOrthogonal.mem_iff_mem_orthogonalGroup.1 hB
-    set N := (B : Matrix n n ℝ)
-    have hON : N.map ((↑) : ℝ → ℂ) = ((V⁻¹ * U : unitaryGroup n ℂ) : Matrix n n ℂ) := by
-      ext i j
-      simpa [N] using congrArg (fun A : GL n ℂ ↦ (A : Matrix n n ℂ) i j) hBO
+    obtain ⟨N, hN, hON⟩ := exists_mem_orthogonalGroup_map_eq_of_mul_transpose_eq_one _ hO
+    rw [Complex.coe_algebraMap] at hON
     have hU : (U : Matrix n n ℂ) = V * N.map ((↑) : ℝ → ℂ) := by
       rw [hON, ← Submonoid.coe_mul, mul_inv_cancel_left]
     rw [hU, realImage_mul_map_ofReal _ ((isUnit_iff_isUnit_det _).2
@@ -259,8 +250,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 /-- **Every loop of maximal totally real subspaces of `ℂⁿ` has a Souriau index.** There is a
 path `γ` of unitary frames whose Souriau maps close up such that the loop of Lagrangians
 `t ↦ γ t ℝⁿ` has the native Maslov index of `Λ`, and that index is Souriau's index of `γ`.
-The proof takes for `γ` the unitary frames of the Lagrangian loop to which `Λ` deforms
-(`TauCeti.TotallyRealLoop.exists_unitary_maslovIndex_eq`). -/
+See also `TauCeti.TotallyRealLoop.exists_unitary_maslovIndex_eq`. -/
 theorem exists_maslovIndex_eq_unitaryGroup_maslovIndex
     (Λ : TotallyRealLoop (EuclideanSpace ℂ n)) :
     ∃ (U V : unitaryGroup n ℂ) (γ : Path U V) (h : souriau U = souriau V),
