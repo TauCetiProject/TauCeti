@@ -142,6 +142,12 @@ theorem IsRhombusConcave.add [AddCommMonoid R] [Preorder R] [IsOrderedAddMonoid 
   intro a b c d hr
   simpa only [Pi.add_apply, add_add_add_comm] using add_le_add (hf hr) (hg hr)
 
+/-- Natural scaling preserves rhombus concavity. -/
+theorem IsRhombusConcave.nsmul [AddCommMonoid R] [Preorder R] [IsOrderedAddMonoid R]
+    {f : Vertex n → R} (hf : IsRhombusConcave f) (k : ℕ) : IsRhombusConcave (k • f) := by
+  intro a b c d hr
+  simpa only [Pi.smul_apply, smul_add] using nsmul_le_nsmul_right (hf.le hr) k
+
 /-- Adding a constant does not affect rhombus concavity, even for monoid values. -/
 @[simp] theorem isRhombusConcave_add_const_iff [AddCommMonoid R] [Preorder R]
     [IsOrderedCancelAddMonoid R] (f : Vertex n → R) (c : R) :
@@ -171,8 +177,9 @@ theorem IsRhombusConcave.smul_of_nonneg {S : Type*} [Zero S] [Preorder S]
   simpa only [Pi.smul_apply, smul_add] using smul_le_smul_of_nonneg_left (hf.le hr) hc
 
 /-- Order-preserving additive maps preserve rhombus concavity. -/
-theorem IsRhombusConcave.map [AddZeroClass R] [Preorder R]
-    {S : Type*} [AddZeroClass S] [Preorder S] (φ : R →+o S)
+theorem IsRhombusConcave.map [Add R] [Preorder R]
+    {S F : Type*} [FunLike F R S] [Add S] [Preorder S]
+    [AddHomClass F R S] [OrderHomClass F R S] (φ : F)
     {f : Vertex n → R} (hf : IsRhombusConcave f) : IsRhombusConcave (fun p => φ (f p)) := by
   intro a b c d hr
   simpa only [map_add] using OrderHomClass.mono φ (hf.le hr)
@@ -430,9 +437,11 @@ instance : Inhabited (Hive n R) := ⟨0⟩
 @[simp] theorem zero_apply (p : Vertex n) : (0 : Hive n R) p = 0 := (rfl)
 
 /-- Nonnegative scalars from a partially ordered semiring act on hives. -/
-instance instSMulNonneg {S : Type*} [Semiring S] [PartialOrder S]
-    [Module S R] [PosSMulMono S R] : SMul (Nonneg S) (Hive n R) where
+instance instSMulWithZeroNonneg {S : Type*} [Semiring S] [PartialOrder S]
+    [Module S R] [PosSMulMono S R] : SMulWithZero (Nonneg S) (Hive n R) where
   smul c h := ⟨c.1 • ⇑h, by simp, fun hr => (h.isRhombusConcave.smul_of_nonneg c.2).le hr⟩
+  smul_zero c := by ext _; exact smul_zero c.1
+  zero_smul h := by ext p; exact zero_smul S (h p)
 
 @[simp] theorem coe_smul_nonneg {S : Type*} [Semiring S] [PartialOrder S]
     [Module S R] [PosSMulMono S R] (c : Nonneg S) (h : Hive n R) : ⇑(c • h) = c.1 • ⇑h := (rfl)
@@ -440,6 +449,14 @@ instance instSMulNonneg {S : Type*} [Semiring S] [PartialOrder S]
 @[simp] theorem smul_nonneg_apply {S : Type*} [Semiring S] [PartialOrder S]
     [Module S R] [PosSMulMono S R] (c : Nonneg S) (h : Hive n R) (p : Vertex n) :
     (c • h) p = c.1 • h p := (rfl)
+
+/-- Nonnegative scaling satisfies the multiplicative action laws. -/
+instance instMulActionWithZeroNonneg {S : Type*} [Semiring S] [PartialOrder S]
+    [IsOrderedRing S] [Module S R] [PosSMulMono S R] :
+    MulActionWithZero (Nonneg S) (Hive n R) where
+  __ := instSMulWithZeroNonneg
+  one_smul h := by ext p; simp only [smul_nonneg_apply, Nonneg.coe_one, one_smul]
+  mul_smul c d h := by ext p; simp only [smul_nonneg_apply, Nonneg.coe_mul, mul_smul]
 
 /-- Push a hive forward along an order-preserving additive monoid homomorphism. -/
 def map {S : Type*} [AddCommMonoid S] [Preorder S] (φ : R →+o S) (h : Hive n R) : Hive n S where
@@ -457,9 +474,9 @@ theorem coe_map {S : Type*} [AddCommMonoid S] [Preorder S]
 @[simp] theorem map_id (h : Hive n R) : h.map (OrderAddMonoidHom.id R) = h := by
   ext p; simp
 
-@[simp] theorem map_comp {S T : Type*} [AddCommMonoid S] [Preorder S]
+@[simp] theorem map_map {S T : Type*} [AddCommMonoid S] [Preorder S]
     [AddCommMonoid T] [Preorder T] (ψ : S →+o T) (φ : R →+o S) (h : Hive n R) :
-    h.map (ψ.comp φ) = (h.map φ).map ψ := by ext p; rfl
+    (h.map φ).map ψ = h.map (ψ.comp φ) := by ext p; rfl
 
 @[simp] theorem map_zero {S : Type*} [AddCommMonoid S] [Preorder S] (φ : R →+o S) :
     (0 : Hive n R).map φ = 0 := by ext p; simp
@@ -475,8 +492,7 @@ instance : Add (Hive n R) where
 @[simp] theorem add_apply (h₁ h₂ : Hive n R) (p : Vertex n) : (h₁ + h₂) p = h₁ p + h₂ p := (rfl)
 
 instance : SMul ℕ (Hive n R) where
-  smul k h := ⟨k • ⇑h, by simp, fun hr => by
-    simp only [Pi.smul_apply, ← smul_add]; exact nsmul_le_nsmul_right (h.le_of_isRhombus hr) k⟩
+  smul k h := ⟨k • ⇑h, by simp, fun hr => (h.isRhombusConcave.nsmul k).le hr⟩
 
 @[simp] theorem coe_nsmul (k : ℕ) (h : Hive n R) : ⇑(k • h) = k • ⇑h := (rfl)
 @[simp] theorem nsmul_apply (k : ℕ) (h : Hive n R) (p : Vertex n) : (k • h) p = k • h p := (rfl)
@@ -489,6 +505,15 @@ def coeAddMonoidHom (n : ℕ) (R : Type*) [AddCommMonoid R] [Preorder R] [IsOrde
     Hive n R →+ (Vertex n → R) := ⟨⟨fun h => ⇑h, rfl⟩, fun _ _ => rfl⟩
 
 @[simp] theorem coeAddMonoidHom_apply (h : Hive n R) : coeAddMonoidHom n R h = ⇑h := (rfl)
+
+/-- Hives form a module over the semiring of nonnegative scalars. -/
+instance instModuleNonneg {S : Type*} [Semiring S] [PartialOrder S] [IsOrderedRing S]
+    [Module S R] [PosSMulMono S R] : Module (Nonneg S) (Hive n R) :=
+  Function.Injective.module (Nonneg S) (coeAddMonoidHom n R)
+    (by
+      intro h₁ h₂ heq
+      exact DFunLike.coe_injective (by simpa only [coeAddMonoidHom_apply] using heq))
+    (fun _ _ => by simp only [coeAddMonoidHom_apply, coe_smul_nonneg, Nonneg.coe_smul])
 
 @[simp] theorem map_add {S : Type*} [AddCommMonoid S] [Preorder S] [IsOrderedAddMonoid S]
     (φ : R →+o S) (h₁ h₂ : Hive n R) : (h₁ + h₂).map φ = h₁.map φ + h₂.map φ := by
@@ -558,6 +583,12 @@ variable {n : ℕ} {R : Type*} [AddCommGroup R] [Preorder R]
   simp [rhombusSlack_def, map_sub]
 
 variable [IsOrderedAddMonoid R]
+
+/-- Normalization commutes with natural scaling. -/
+@[simp] theorem ofRhombusConcave_nsmul (k : ℕ) (f : Vertex n → R)
+    (hf : IsRhombusConcave f) :
+    ofRhombusConcave (k • f) (hf.nsmul k) = k • ofRhombusConcave f hf := by
+  ext p; simp only [ofRhombusConcave_apply, nsmul_apply, Pi.smul_apply, smul_sub]
 
 /-- Normalization commutes with nonnegative scaling. -/
 @[simp] theorem ofRhombusConcave_smul_nonneg {S : Type*} [Semiring S] [PartialOrder S]
