@@ -239,15 +239,12 @@ private theorem toReal_edist_sq_mul_le (hττ' : τ < τ') {A B : ℝ}
   have hτ' : 0 < τ' := zero_le.trans_lt hττ'
   have hP' : edist x v ^ 2 / (2 * τ') ≠ ⊤ :=
     ENNReal.div_ne_top (by finiteness) (by simp [hτ'.ne'])
-  have hA' := hA ▸ moreauYosida_le φ τ' hv
   have htop : φ v ≠ ⊤ := by
     rintro h
     rw [h, EReal.top_add_of_ne_bot (EReal.coe_ennreal_ne_bot _), top_le_iff] at hB
     exact EReal.coe_ne_top _ hB
-  have hbot : φ v ≠ ⊥ := by
-    rintro h
-    rw [h, EReal.bot_add, le_bot_iff] at hA'
-    exact EReal.coe_ne_bot _ hA'
+  have hbot : φ v ≠ ⊥ := apply_ne_bot_of_moreauYosida_ne_bot hv (hA ▸ EReal.coe_ne_bot A)
+  have hA' := hA ▸ moreauYosida_le φ τ' hv
   obtain ⟨a, ha⟩ : ∃ a : ℝ, φ v = a := ⟨_, (EReal.coe_toReal htop hbot).symm⟩
   -- With `τ = 0` the penalty is `⊤` away from `x`, so `v` is at distance `0` from `x`.
   rcases eq_or_ne τ 0 with rfl | hτ

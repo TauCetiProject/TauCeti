@@ -174,10 +174,7 @@ private theorem forall_edist_ne_top_and_exists_eq
   have hP : edist (u 0) (u n) ^ 2 / (2 * τ') ≠ ⊤ :=
     ENNReal.div_ne_top (ENNReal.pow_ne_top (hfin n)) (by simp [hτ'.ne'])
   have hcoer := hA ▸ moreauYosida_le φ τ' (hfin n)
-  have hbot : φ (u n) ≠ ⊥ := by
-    rintro h
-    rw [h, EReal.bot_add] at hcoer
-    exact EReal.coe_ne_bot _ (le_bot_iff.1 hcoer)
+  have hbot : φ (u n) ≠ ⊥ := apply_ne_bot_of_moreauYosida_ne_bot (hfin n) (hA ▸ EReal.coe_ne_bot A)
   have htop : φ (u n) ≠ ⊤ := ne_top_of_le_ne_top (EReal.coe_ne_top E) hle
   refine ⟨(φ (u n)).toReal, (EReal.coe_toReal htop hbot).symm, ?_⟩
   rw [← EReal.coe_toReal htop hbot, EReal.coe_le_coe_add_coe_ennreal_iff hP] at hcoer
@@ -644,7 +641,7 @@ theorem exists_isGeneralizedMinimizingMovement (hl : ∀ y, pure y ≤ l y)
   have hAbot : moreauYosida φ τ' x₀ ≠ ⊥ := moreauYosida_ne_bot_of_lt (half_lt_self hτ₀) hx₀ h₀
   have hAtop : moreauYosida φ τ' x₀ ≠ ⊤ :=
     ne_top_of_le_ne_top hφx₀ (moreauYosida_le_self φ τ' x₀)
-  have hEbot : φ x₀ ≠ ⊥ := fun h ↦ hAbot (le_bot_iff.1 (h ▸ moreauYosida_le_self φ τ' x₀))
+  have hEbot : φ x₀ ≠ ⊥ := apply_ne_bot_of_moreauYosida_ne_bot (by simp) hAbot
   set A := (moreauYosida φ τ' x₀).toReal
   set E := (φ x₀).toReal
   have hA : moreauYosida φ τ' x₀ = A := (EReal.coe_toReal hAtop hAbot).symm
