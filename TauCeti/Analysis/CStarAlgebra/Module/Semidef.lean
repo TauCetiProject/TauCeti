@@ -28,7 +28,9 @@ structure when `DenseRange ι`, and `SeparationQuotient E` kills null vectors.
 * `TauCeti.IsPosSemidefCStarModuleAlong.inner_mul_inner_swap_le`, `norm_inner_le`,
   `map_smul_of_inner_eq`: C⋆-algebra and norm Cauchy–Schwarz inequalities without definiteness, and
   automatic `A₀`-equivariance of inner-product-preserving maps into definite C⋆-modules.
-* `TauCeti.PosSemidefCStarModule.rightModuleCoreAlong`, `isPosSemidefCStarModuleAlong_op`.
+* `TauCeti.PosSemidefCStarModule.rightModuleCoreAlong`, `isPosSemidefCStarModuleAlong_op`, and
+  scoped instances `TauCeti.IsPosSemidefCStarModuleAlong.instInnerRightModule`,
+  `instIsPosSemidefCStarModuleAlongOp`.
 * `SeparationQuotient.instCStarModule`, `separationQuotientInner`, `separationQuotientSMul`,
   `separationQuotientLiftOfInner`: separated-quotient structure and universal property.
 
@@ -718,12 +720,13 @@ noncomputable instance WithCStarModule.instPosSemidefCStarModuleComplex {E : Typ
     norm_eq_sqrt_norm_inner_self x := by
       simpa only [← inner_self_re_eq_norm] using norm_eq_sqrt_re_inner x }
 
-namespace TauCeti.PosSemidefCStarModule
-
+namespace TauCeti
 section SubalgebraRightModule
 
 variable {A S : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [SetLike S A] [NonUnitalSubringClass S A] [SMulMemClass S ℂ A] [StarMemClass S A]
+
+namespace PosSemidefCStarModule
 
 /-- Any `⋆`-subalgebra `s` of a C⋆-algebra `A` is a right module over itself (`sᵐᵒᵖ`) with
 `Aᵐᵒᵖ`-valued inner product `op (star (x : A) * (y : A))` along `(subtype s).op`. -/
@@ -752,8 +755,23 @@ theorem isPosSemidefCStarModuleAlong_op (s : S) :
   rw [h, AddSubgroupClass.coe_norm, MulOpposite.norm_op, CStarRing.norm_star_mul_self,
     Real.sqrt_mul_self (norm_nonneg _)]
 
+end PosSemidefCStarModule
+
+namespace IsPosSemidefCStarModuleAlong
+
+/-- Right-module `Aᵐᵒᵖ`-valued inner product `MulOpposite.op (star (x : A) * (y : A))` on a
+`⋆`-subalgebra `s` of `A`. -/
+noncomputable scoped instance instInnerRightModule (s : S) : Inner Aᵐᵒᵖ s :=
+  (PosSemidefCStarModule.rightModuleCoreAlong s).toInner
+
+/-- Right-module `IsPosSemidefCStarModuleAlong` instance on a `⋆`-subalgebra `s` of `A`. -/
+scoped instance instIsPosSemidefCStarModuleAlongOp (s : S) :
+    IsPosSemidefCStarModuleAlong (NonUnitalStarSubalgebraClass.subtype s).op s :=
+  PosSemidefCStarModule.isPosSemidefCStarModuleAlong_op s
+
+end IsPosSemidefCStarModuleAlong
 end SubalgebraRightModule
-end TauCeti.PosSemidefCStarModule
+end TauCeti
 
 -- Witness that `PosSemidefCStarModule` admits nonzero null vectors (pullback along `fst`).
 example {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]

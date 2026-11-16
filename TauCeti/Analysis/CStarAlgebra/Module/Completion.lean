@@ -531,15 +531,6 @@ section SubalgebraRightModule
 variable {A S : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [SetLike S A] [NonUnitalSubringClass S A] [SMulMemClass S ℂ A] [StarMemClass S A]
 
-/-- Right-module `Aᵐᵒᵖ`-valued inner product `MulOpposite.op (star (x : A) * (y : A))` on a
-`⋆`-subalgebra `s` of `A`. -/
-noncomputable scoped instance instInnerRightModule (s : S) : Inner Aᵐᵒᵖ s :=
-  (PosSemidefCStarModule.rightModuleCoreAlong s).toInner
-/-- Right-module `IsPosSemidefCStarModuleAlong` instance on a `⋆`-subalgebra `s` of `A`. -/
-scoped instance instIsPosSemidefCStarModuleAlongOp (s : S) :
-    IsPosSemidefCStarModuleAlong (NonUnitalStarSubalgebraClass.subtype s).op s :=
-  PosSemidefCStarModule.isPosSemidefCStarModuleAlong_op s
-
 private lemma inner_subtype_eq (s : S) (x y : s) :
     inner Aᵐᵒᵖ (LinearMap.ofClass (NonUnitalStarSubalgebraClass.subtype s) x)
       (LinearMap.ofClass (NonUnitalStarSubalgebraClass.subtype s) y) = inner Aᵐᵒᵖ x y := by

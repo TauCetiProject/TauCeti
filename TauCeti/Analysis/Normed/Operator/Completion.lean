@@ -11,7 +11,6 @@ public import Mathlib.Analysis.Normed.Module.Completion
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.Normed.Group.BallSphere
 public import TauCeti.Analysis.Normed.Operator.Basic
-public import TauCeti.Analysis.Normed.Operator.LinearIsometry
 public import TauCeti.Topology.Algebra.LinearMapCompletion
 public import TauCeti.Topology.Algebra.SeparationQuotient.Basic
 
@@ -27,9 +26,9 @@ extension changes the operator norm (the continuous semilinear analogues of
 normed module extends surjectively (`LinearIsometry.fromCompletion_surjective_of_denseRange`).
 
 Descending a bounded semilinear map to `SeparationQuotient E` via `SeparationQuotient.liftCLM`
-likewise preserves the operator norm (`SeparationQuotient.norm_liftCLM`). Lifting
-`Completion.toComplₗᵢ` through `SeparationQuotient E` and extending from its completion yields the
-canonical `SMul`-equivariant linear isometric equivalence
+likewise preserves the operator norm (`SeparationQuotient.norm_liftCLM`). Completing the
+norm-preserving quotient map `E →ₗᵢ[𝕜] SeparationQuotient E` yields the canonical
+`SMul`-equivariant linear isometric equivalence
 `UniformSpace.Completion.completionSeparationQuotientₗᵢ` between `Completion (SeparationQuotient E)`
 and `Completion E`, upgrading `UniformSpace.Completion.completionSeparationQuotientEquiv`.
 
@@ -280,40 +279,34 @@ namespace UniformSpace.Completion
 variable (𝕜 E : Type*) [Semiring 𝕜] [SeminormedAddCommGroup E] [Module 𝕜 E]
   [UniformContinuousConstSMul 𝕜 E]
 
-private noncomputable def fromCompletionLiftToComplₗᵢ :
-    Completion (SeparationQuotient E) →ₗᵢ[𝕜] Completion E :=
-  let g := SeparationQuotient.liftₗᵢ (toComplₗᵢ : E →ₗᵢ[𝕜] Completion E)
-  { g.toContinuousLinearMap.fromCompletion with
-    norm_map' := g.isometry.completion_extension.norm_map_of_map_zero
-      g.toContinuousLinearMap.fromCompletion.map_zero }
-
 /-- The canonical linear isometric equivalence between the completion of the separation quotient
 of a seminormed module and the completion of the module itself, upgrading
 `UniformSpace.Completion.completionSeparationQuotientEquiv`. -/
 noncomputable def completionSeparationQuotientₗᵢ :
     Completion (SeparationQuotient E) ≃ₗᵢ[𝕜] Completion E :=
-  LinearIsometryEquiv.ofSurjective (fromCompletionLiftToComplₗᵢ 𝕜 E) <| by
-    rw [← Set.range_eq_univ, ← Set.univ_subset_iff, ← (denseRange_coe (α := E)).closure_eq]
-    refine closure_minimal ?_
-      (fromCompletionLiftToComplₗᵢ 𝕜 E).isometry.isUniformInducing.isComplete_range.isClosed
-    rintro _ ⟨x, rfl⟩
-    exact ⟨(SeparationQuotient.mk x : SeparationQuotient E),
-      ((SeparationQuotient.liftₗᵢ (toComplₗᵢ : E →ₗᵢ[𝕜] Completion E)).toContinuousLinearMap
-        |>.fromCompletion_apply_coe _).trans (SeparationQuotient.liftₗᵢ_mk _ x)⟩
+  -- `LinearIsometry.fromCompletion` assumes `[PseudoMetricSpace 𝕜]`; complete `mkCLM` instead.
+  (LinearIsometryEquiv.ofSurjective
+    (⟨(SeparationQuotient.mkCLM 𝕜 E).toLinearMap, fun x ↦ by simp [SeparationQuotient.norm_mk]⟩ :
+      E →ₗᵢ[𝕜] SeparationQuotient E).completion <| by
+    rw [LinearIsometry.coe_completion, LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe,
+      funext (SeparationQuotient.mkCLM_apply 𝕜 E)]
+    have h := (completionSeparationQuotientEquiv E).symm.surjective
+    rwa [completionSeparationQuotientEquiv, Equiv.coe_fn_symm_mk] at h).symm
 
 variable {𝕜 E}
+
+@[simp] theorem completionSeparationQuotientₗᵢ_symm_coe (x : E) :
+    (completionSeparationQuotientₗᵢ 𝕜 E).symm (x : Completion E) =
+      ((SeparationQuotient.mk x : SeparationQuotient E) : Completion (SeparationQuotient E)) := by
+  rw [completionSeparationQuotientₗᵢ, LinearIsometryEquiv.symm_symm,
+    LinearIsometryEquiv.coe_ofSurjective, LinearIsometry.completion_apply_coe,
+    LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, SeparationQuotient.mkCLM_apply]
 
 @[simp] theorem completionSeparationQuotientₗᵢ_coe_mk (x : E) :
     completionSeparationQuotientₗᵢ 𝕜 E
       ((SeparationQuotient.mk x : SeparationQuotient E) : Completion (SeparationQuotient E)) =
       (x : Completion E) :=
-  ((SeparationQuotient.liftₗᵢ (toComplₗᵢ : E →ₗᵢ[𝕜] Completion E)).toContinuousLinearMap
-    |>.fromCompletion_apply_coe _).trans (SeparationQuotient.liftₗᵢ_mk _ x)
-
-@[simp] theorem completionSeparationQuotientₗᵢ_symm_coe (x : E) :
-    (completionSeparationQuotientₗᵢ 𝕜 E).symm (x : Completion E) =
-      ((SeparationQuotient.mk x : SeparationQuotient E) : Completion (SeparationQuotient E)) :=
-  (completionSeparationQuotientₗᵢ 𝕜 E).injective <| by simp
+  (completionSeparationQuotientₗᵢ 𝕜 E).symm.injective <| by simp
 
 @[simp] theorem toEquiv_completionSeparationQuotientₗᵢ :
     (completionSeparationQuotientₗᵢ 𝕜 E).toEquiv = completionSeparationQuotientEquiv E :=
@@ -324,16 +317,18 @@ variable {𝕜 E}
         extension_coe (SeparationQuotient.uniformContinuous_lift' _),
         SeparationQuotient.lift'_mk (uniformContinuous_coe E)]
 
-@[simp] theorem completionSeparationQuotientₗᵢ_smul {A : Type*} [SMul A E]
-    [UniformContinuousConstSMul A E] (a : A) (u : Completion (SeparationQuotient E)) :
-    completionSeparationQuotientₗᵢ 𝕜 E (a • u) = a • completionSeparationQuotientₗᵢ 𝕜 E u :=
-  (SeparationQuotient.liftₗᵢ (toComplₗᵢ : E →ₗᵢ[𝕜] Completion E)).toContinuousLinearMap
-    |>.fromCompletion_smul (SeparationQuotient.liftₗᵢ_smul _ (coe_smul a)) u
-
 @[simp] theorem completionSeparationQuotientₗᵢ_symm_smul {A : Type*} [SMul A E]
     [UniformContinuousConstSMul A E] (a : A) (u : Completion E) :
     (completionSeparationQuotientₗᵢ 𝕜 E).symm (a • u) =
-      a • (completionSeparationQuotientₗᵢ 𝕜 E).symm u :=
-  (completionSeparationQuotientₗᵢ 𝕜 E).injective <| by simp
+      a • (completionSeparationQuotientₗᵢ 𝕜 E).symm u := by
+  rw [completionSeparationQuotientₗᵢ, LinearIsometryEquiv.symm_symm,
+    LinearIsometryEquiv.coe_ofSurjective, ← LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometry.toContinuousLinearMap_completion]
+  exact ContinuousLinearMap.completion_smul _ (fun x ↦ by simp [SeparationQuotient.mk_smul]) u
+
+@[simp] theorem completionSeparationQuotientₗᵢ_smul {A : Type*} [SMul A E]
+    [UniformContinuousConstSMul A E] (a : A) (u : Completion (SeparationQuotient E)) :
+    completionSeparationQuotientₗᵢ 𝕜 E (a • u) = a • completionSeparationQuotientₗᵢ 𝕜 E u :=
+  (completionSeparationQuotientₗᵢ 𝕜 E).symm.injective <| by simp
 
 end UniformSpace.Completion
