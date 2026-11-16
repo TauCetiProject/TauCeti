@@ -96,13 +96,11 @@ private theorem integralForm_typeE₈CoordinateEquiv (u w : Fin 8 → ℤ) :
 /-- Multiplication of row vectors by the E₈ Cartan matrix, a linear equivalence because the
 Cartan matrix has determinant `1`. -/
 private noncomputable def cartanVecMulEquiv : (Fin 8 → ℤ) ≃ₗ[ℤ] (Fin 8 → ℤ) :=
+  have hu : IsUnit (CartanMatrix.E 8) := by
+    rw [Matrix.isUnit_iff_isUnit_det, CartanMatrix.E₈_det]
+    exact isUnit_one
   LinearEquiv.ofBijective (CartanMatrix.E 8).vecMulLinear
-    ⟨fun _ _ h ↦ sub_eq_zero.mp (Matrix.eq_zero_of_vecMul_eq_zero
-        (by rw [CartanMatrix.E₈_det]; norm_num) (by rw [sub_vecMul]; exact sub_eq_zero.mpr h)),
-      by
-        rw [Matrix.coe_vecMulLinear, Matrix.vecMul_surjective_iff_isUnit,
-          Matrix.isUnit_iff_isUnit_det, CartanMatrix.E₈_det]
-        exact isUnit_one⟩
+    ⟨Matrix.vecMul_injective_of_isUnit hu, Matrix.vecMul_surjective_iff_isUnit.mpr hu⟩
 
 /-- The identification of the E₈ lattice with the weight lattice of the pinned E₈ datum, written
 in the basis of fundamental weights: a lattice vector goes to its pairings with the simple roots. -/
