@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import Mathlib.Analysis.Normed.Operator.Extend
-import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
@@ -171,14 +170,14 @@ private theorem exists_sq_bound_compCLM_succ
   set P := compCLM ℂ (F := F) hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv)
   let b := stdOrthonormalBasis ℝ E
   -- The coefficients of the chain rule are bounded multipliers on `H^k`.
-  have hc (i j : Fin (Module.finrank ℝ E)) : ∃ c, ∀ w : 𝓢(E, F),
+  have hc (i j : Fin (Module.finrank ℝ E)) : ∃ c, 0 ≤ c ∧ ∀ w : 𝓢(E, F),
       ‖toBesselPotentialSpaceCLM k 2
         (smulLeftCLM F (fun x ↦ ((⟪b j, fderiv ℝ φ x (b i)⟫ : ℝ) : ℂ)) w)‖ ≤
         c * ‖toBesselPotentialSpaceCLM k 2 w‖ :=
     exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (by norm_num) ENNReal.ofNat_ne_top k
       (hφ.inner_fderiv_apply _ _)
       fun n _ ↦ hφ.exists_norm_iteratedFDeriv_inner_fderiv_apply_le hb _ _ n
-  choose c hc using hc
+  choose c _ hc using hc
   set K := ∑ i, ∑ j, c i j ^ 2
   refine ⟨C * (1 + K), by positivity, fun u ↦ ?_⟩
   have hd (i : Fin (Module.finrank ℝ E)) :
@@ -220,7 +219,7 @@ theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_natCast
     (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
     (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C) {M : ℝ}
     (hM : ∀ y, |(fderiv ℝ φ.symm y).det| ≤ M) (k : ℕ) :
-    ∃ C, ∀ u : 𝓢(E, F),
+    ∃ C, 0 ≤ C ∧ ∀ u : 𝓢(E, F),
       ‖toBesselPotentialSpaceCLM k 2 (compCLM ℂ hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) u)‖
         ≤ C * ‖toBesselPotentialSpaceCLM k 2 u‖ := by
   set P := compCLM ℂ (F := F) hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv)
@@ -228,7 +227,7 @@ theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_natCast
   suffices h : ∃ C, 0 ≤ C ∧ ∀ u : 𝓢(E, F),
       ‖toBesselPotentialSpaceCLM k 2 (P u)‖ ^ 2 ≤ C * ‖toBesselPotentialSpaceCLM k 2 u‖ ^ 2 by
     obtain ⟨C, hC0, hC⟩ := h
-    refine ⟨√C, fun u ↦ ?_⟩
+    refine ⟨√C, Real.sqrt_nonneg _, fun u ↦ ?_⟩
     rw [← Real.sqrt_sq (norm_nonneg (toBesselPotentialSpaceCLM k 2 (P u))),
       ← Real.sqrt_sq (norm_nonneg (toBesselPotentialSpaceCLM k 2 u)), ← Real.sqrt_mul hC0]
     exact Real.sqrt_le_sqrt (hC u)
@@ -249,11 +248,11 @@ theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_natCast
 growth and bounded derivatives of positive order, then `‖w ∘ φ‖_{H^{-k}} ≤ C ‖w‖_{H^{-k}}` for every
 natural `k` and every Schwartz function `w`. By duality this is the bound of the pushforward
 `φ_* v = |det Dφ⁻¹| (v ∘ φ⁻¹)` on `H^k`. -/
-theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_neg_natCast
+private theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_neg_natCast
     (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
     (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
     (hb' : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ.symm x‖ ≤ C) (k : ℕ) :
-    ∃ C, ∀ w : 𝓢(E, F),
+    ∃ C, 0 ≤ C ∧ ∀ w : 𝓢(E, F),
       ‖toBesselPotentialSpaceCLM (-k) 2
           (compCLM ℂ hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) w)‖ ≤
         C * ‖toBesselPotentialSpaceCLM (-k) 2 w‖ := by
@@ -264,40 +263,39 @@ theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_neg_natCast
   -- The pushforward `φ_* v = J (v ∘ φ⁻¹)` is bounded on `H^k`.
   obtain ⟨M, hM⟩ := hψ.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le hφ' (by simpa using hb) 0
   have hM' (y : E) : |(fderiv ℝ φ.symm.symm y).det| ≤ M := by simpa using hM y
-  obtain ⟨Cs, hCs⟩ := exists_norm_toBesselPotentialSpaceCLM_compCLM_le_natCast (F := F)
+  obtain ⟨Cs, hCs0, hCs⟩ := exists_norm_toBesselPotentialSpaceCLM_compCLM_le_natCast (F := F)
     (φ := φ.symm) hψ hφ' hb' hM' k
-  obtain ⟨CJ, hCJ⟩ := exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (F := F) (p := 2)
+  obtain ⟨CJ, hCJ0, hCJ⟩ := exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (F := F) (p := 2)
     (by norm_num) ENNReal.ofNat_ne_top k hJ fun n _ ↦
       hφ.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le hψ hb' n
   have hQ (v : 𝓢(E, F)) : ‖toBesselPotentialSpaceCLM k 2 (pushforwardCLM ℂ φ hφ hψ v)‖ ≤
-      max CJ 0 * (max Cs 0 * ‖toBesselPotentialSpaceCLM k 2 v‖) := by
+      CJ * (Cs * ‖toBesselPotentialSpaceCLM k 2 v‖) := by
     have hv : pushforwardCLM ℂ φ hφ hψ v = smulLeftCLM F J
         (compCLM ℂ hψ (hφ'.exists_norm_le_of_leftInverse φ.symm.left_inv) v) := by
       ext y
       rw [pushforwardCLM_apply, smulLeftCLM_apply_apply hJ, compCLM_apply, Function.comp_apply]
       rfl
     rw [hv]
-    refine ((hCJ _).trans (mul_le_mul_of_nonneg_right (le_max_left CJ 0) (norm_nonneg _))).trans ?_
-    exact mul_le_mul_of_nonneg_left ((hCs v).trans
-      (mul_le_mul_of_nonneg_right (le_max_left Cs 0) (norm_nonneg _))) (le_max_right _ _)
+    exact (hCJ _).trans (mul_le_mul_of_nonneg_left (hCs v) hCJ0)
   -- Duality turns the bound of the transpose `φ_*` on `H^k` into the bound on `H^{-k}`.
-  refine ⟨max CJ 0 * max Cs 0, fun w ↦ ?_⟩
-  refine norm_toBesselPotentialSpaceCLM_neg_le_of_forall (k : ℝ) _ (by positivity) fun v ↦ ?_
+  refine ⟨CJ * Cs, mul_nonneg hCJ0 hCs0, fun w ↦ ?_⟩
+  refine norm_toBesselPotentialSpaceCLM_neg_le_of_forall (k : ℝ) _
+    (mul_nonneg (mul_nonneg hCJ0 hCs0) (norm_nonneg _)) fun v ↦ ?_
   rw [integral_inner_compCLM_eq hφ hψ]
   calc _ ≤ ‖toBesselPotentialSpaceCLM (-k) 2 w‖ *
         ‖toBesselPotentialSpaceCLM k 2 (pushforwardCLM ℂ φ hφ hψ v)‖ :=
         norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm (k : ℝ) w _
     _ ≤ ‖toBesselPotentialSpaceCLM (-k) 2 w‖ *
-        (max CJ 0 * (max Cs 0 * ‖toBesselPotentialSpaceCLM k 2 v‖)) :=
+        (CJ * (Cs * ‖toBesselPotentialSpaceCLM k 2 v‖)) :=
         mul_le_mul_of_nonneg_left (hQ v) (norm_nonneg _)
     _ = _ := by ring
 
 /-- **Changes of variables on `H^m` for integer `m`, on Schwartz functions.** -/
-theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_intCast
+private theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_intCast
     (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
     (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
     (hb' : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ.symm x‖ ≤ C) (m : ℤ) :
-    ∃ C, ∀ u : 𝓢(E, F),
+    ∃ C, 0 ≤ C ∧ ∀ u : 𝓢(E, F),
       ‖toBesselPotentialSpaceCLM m 2
           (compCLM ℂ hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) u)‖ ≤
         C * ‖toBesselPotentialSpaceCLM m 2 u‖ := by
@@ -322,23 +320,23 @@ theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le
           (compCLM ℂ hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) u)‖ ≤
         C * ‖toBesselPotentialSpaceCLM s 2 u‖ := by
   set P := compCLM ℂ (F := F) hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv)
-  obtain ⟨C₀, hC₀⟩ := exists_norm_toBesselPotentialSpaceCLM_compCLM_le_intCast (F := F) hφ hψ hb
-    hb' ⌊s⌋
-  obtain ⟨C₁, hC₁⟩ := exists_norm_toBesselPotentialSpaceCLM_compCLM_le_intCast (F := F) hφ hψ hb
-    hb' (⌊s⌋ + 1)
+  obtain ⟨C₀, hC₀0, hC₀⟩ := exists_norm_toBesselPotentialSpaceCLM_compCLM_le_intCast (F := F) hφ hψ
+    hb hb' ⌊s⌋
+  obtain ⟨C₁, hC₁0, hC₁⟩ := exists_norm_toBesselPotentialSpaceCLM_compCLM_le_intCast (F := F) hφ hψ
+    hb hb' (⌊s⌋ + 1)
   have h₀ (u : 𝓢(E, F)) : ‖toBesselPotentialSpaceCLM (⌊s⌋ : ℝ) 2 ((P : 𝓢(E, F) →ₗ[ℂ] 𝓢(E, F)) u)‖
-      ≤ max C₀ 0 * ‖toBesselPotentialSpaceCLM (⌊s⌋ : ℝ) 2 u‖ := by
+      ≤ C₀ * ‖toBesselPotentialSpaceCLM (⌊s⌋ : ℝ) 2 u‖ := by
     rw [ContinuousLinearMap.coe_coe]
-    exact (hC₀ u).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
+    exact hC₀ u
   have h₁ (u : 𝓢(E, F)) :
       ‖toBesselPotentialSpaceCLM ((⌊s⌋ : ℝ) + 1) 2 ((P : 𝓢(E, F) →ₗ[ℂ] 𝓢(E, F)) u)‖ ≤
-        max C₁ 0 * ‖toBesselPotentialSpaceCLM ((⌊s⌋ : ℝ) + 1) 2 u‖ := by
-    have h := (hC₁ u).trans (mul_le_mul_of_nonneg_right (le_max_left C₁ 0) (norm_nonneg _))
+        C₁ * ‖toBesselPotentialSpaceCLM ((⌊s⌋ : ℝ) + 1) 2 u‖ := by
+    have h := hC₁ u
     rw [Int.cast_add, Int.cast_one] at h
     rw [ContinuousLinearMap.coe_coe]
     exact h
-  have h := norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm (le_max_right C₀ 0)
-    (le_max_right C₁ 0) h₀ h₁ ⟨Int.fract_nonneg s, (Int.fract_lt_one s).le⟩
+  have h := norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm hC₀0 hC₁0 h₀ h₁
+    ⟨Int.fract_nonneg s, (Int.fract_lt_one s).le⟩
   rw [ContinuousLinearMap.coe_coe] at h
   have hs : (1 - Int.fract s) * (⌊s⌋ : ℝ) + Int.fract s * ((⌊s⌋ : ℝ) + 1) = s := by
     rw [Int.fract]
@@ -411,14 +409,8 @@ def compCLM (φ : E ≃ E) (hφ : (φ : E → E).HasTemperateGrowth)
     (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
     (hb' : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ.symm x‖ ≤ C) (s : ℝ) :
     H^{s}(E, F) →L[ℂ] H^{s}(E, F) :=
-  let L : H^{s}(E, F) →ₗ[ℂ] H^{s}(E, F) :=
-    { toFun u := (u.memSobolev_toDistr.compCLM hφ hψ hb hb').toBesselPotentialSpace
-      map_add' u v := ext (by simp)
-      map_smul' c u := ext (by simp) }
-  { L with
-    cont := continuous_of_continuous_toDistr (L.restrictScalars ℝ) <|
-      ((TemperedDistribution.compCLM F φ hφ hψ).continuous.comp continuous_toDistr).congr
-        fun u ↦ by simp [L] }
+  restrictCLM (TemperedDistribution.compCLM F φ hφ hψ) fun u ↦
+    u.memSobolev_toDistr.compCLM hφ hψ hb hb'
 
 variable (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
     (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
@@ -427,7 +419,7 @@ variable (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).Ha
 @[simp]
 theorem toDistr_compCLM (u : H^{s}(E, F)) :
     (compCLM φ hφ hψ hb hb' s u).toDistr = TemperedDistribution.compCLM F φ hφ hψ u.toDistr :=
-  MemSobolev.toBesselPotentialSpace_toDistr _
+  toDistr_restrictCLM _ _ u
 
 /-- On Schwartz functions the pullback is composition with `φ`. -/
 @[simp]

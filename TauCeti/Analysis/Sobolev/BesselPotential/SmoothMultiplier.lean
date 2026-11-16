@@ -120,25 +120,16 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 theorem exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (hp : 1 < p) (hp_top : p ≠ ∞)
     (k : ℕ) {g : E → ℂ} (hg : g.HasTemperateGrowth)
     (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) :
-    ∃ C, ∀ u : 𝓢(E, F), ‖toBesselPotentialSpaceCLM k p (smulLeftCLM F g u)‖ ≤
+    ∃ C, 0 ≤ C ∧ ∀ u : 𝓢(E, F), ‖toBesselPotentialSpaceCLM k p (smulLeftCLM F g u)‖ ≤
       C * ‖toBesselPotentialSpaceCLM k p u‖ := by
   -- Multiplication by `g` preserves `H^k`, so by the closed graph theorem it is bounded there.
-  have hmem (f : H^{(k : ℝ), p}(E, F)) :
-      MemSobolev (k : ℝ) p (TemperedDistribution.smulLeftCLM F g f.toDistr) :=
-    f.memSobolev_toDistr.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top hg hbd
-  let L : H^{(k : ℝ), p}(E, F) →ₗ[ℂ] H^{(k : ℝ), p}(E, F) :=
-    { toFun f := (hmem f).toBesselPotentialSpace
-      map_add' f f' := BesselPotentialSpace.ext (by simp)
-      map_smul' c f := BesselPotentialSpace.ext (by simp) }
-  have hL : Continuous L :=
-    BesselPotentialSpace.continuous_of_continuous_toDistr (L.restrictScalars ℝ) <|
-      ((TemperedDistribution.smulLeftCLM F g).continuous.comp
-        BesselPotentialSpace.continuous_toDistr).congr fun f ↦ by simp [L]
-  let T : H^{(k : ℝ), p}(E, F) →L[ℂ] H^{(k : ℝ), p}(E, F) := ⟨L, hL⟩
-  refine ⟨‖T‖, fun u ↦ ?_⟩
+  let T : H^{(k : ℝ), p}(E, F) →L[ℂ] H^{(k : ℝ), p}(E, F) :=
+    BesselPotentialSpace.restrictCLM (TemperedDistribution.smulLeftCLM F g) fun f ↦
+      f.memSobolev_toDistr.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top hg hbd
+  refine ⟨‖T‖, norm_nonneg _, fun u ↦ ?_⟩
   have hT : T (toBesselPotentialSpaceCLM k p u) =
       toBesselPotentialSpaceCLM k p (smulLeftCLM F g u) :=
-    BesselPotentialSpace.ext (by simp [T, L, smulLeftCLM_toTemperedDistributionCLM_eq])
+    BesselPotentialSpace.ext (by simp [T, smulLeftCLM_toTemperedDistributionCLM_eq])
   rw [← hT]
   exact T.le_opNorm _
 
