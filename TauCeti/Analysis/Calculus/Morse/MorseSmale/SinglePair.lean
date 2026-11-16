@@ -78,7 +78,8 @@ namespace IsNondegenerateCriticalPoint
 every point of the stable set of a nondegenerate critical point `q` has a `C^n` chart with
 differentiable inverse flattening the stable set onto the stable Hessian subspace, in the form of
 `TauCeti.IsSliceChart`. -/
-theorem exists_isSliceChart_stableSet {q : E} (hq : IsNondegenerateCriticalPoint f q) {n : ℕ}
+private theorem exists_isSliceChart_stableSet {q : E} (hq : IsNondegenerateCriticalPoint f q)
+    {n : ℕ}
     (hn : n ≠ 0) (hfs : ContDiff ℝ (n + 1) f) (hf : LipschitzWith K (∇ f)) {y : E}
     (hy : y ∈ Flow.stableSet (negativeGradientFlow f hf) q) :
     ∃ e : OpenPartialHomeomorph E E, y ∈ e.source ∧ (∀ z ∈ e.source, ContDiffAt ℝ n e z) ∧
@@ -92,7 +93,7 @@ theorem exists_isSliceChart_stableSet {q : E} (hq : IsNondegenerateCriticalPoint
 /-- **The excess dimension of a transverse intersection.** For nondegenerate critical points `p`
 and `q`, the dimension of the unstable Hessian subspace of `p` minus the codimension of the stable
 Hessian subspace of `q` is `ind p - ind q`. -/
-theorem finrank_unstableLinearSubspace_sub_codim_stableLinearSubspace {p q : E}
+private theorem finrank_unstableLinearSubspace_sub_codim_stableLinearSubspace {p q : E}
     (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q) :
     finrank ℝ hp.contDiffAt.unstableLinearSubspace -
         (finrank ℝ E - finrank ℝ hq.contDiffAt.stableLinearSubspace) =
@@ -135,6 +136,34 @@ private theorem range_sup_span_tangentConeAt_stableSet_eq_top {W : Type*} [AddCo
     simpa using Submodule.neg_mem _ hmem
   rw [eq_top_iff, ← hA, hgrad]
   exact sup_le_sup_left ((Submodule.span_singleton_le_iff_mem _ _).2 hneg) _
+
+/-- Above the supports of the family, the derivative of the perturbed flow sends the tangent space
+of the unstable set of `p` at `x`, read through a chart `e` flattening it onto `L`, into the
+tangent space of the perturbed unstable set of `p` at the end point. -/
+private theorem range_fderiv_comp_le_span_tangentConeAt_unstableSet_perturb
+    (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i)) {c : ℝ}
+    (hc : ∀ i, tsupport (h i) ⊆ f ⁻¹' Iio c) {p x : E} {L : Submodule ℝ E}
+    {e : OpenPartialHomeomorph E E}
+    (hS : IsSliceChart e (L : Set E) (Flow.unstableSet (negativeGradientFlow f hf) p))
+    (hxe : x ∈ e.source) (hxu : x ∈ Flow.unstableSet (negativeGradientFlow f hf) p) (hx : c < f x)
+    (he : DifferentiableAt ℝ e x) (hes : DifferentiableAt ℝ e.symm (e x)) (s : EuclideanSpace ℝ ι)
+    {K' : ℝ≥0} (hf' : LipschitzWith K' (∇ (perturb f h s))) (T : ℝ) :
+    LinearMap.range ((fderiv ℝ (negativeGradientFlow (perturb f h s) hf' T) x).comp
+        ((fderiv ℝ e.symm (e x)).comp L.subtypeL) : L →ₗ[ℝ] E) ≤
+      Submodule.span ℝ (tangentConeAt ℝ
+        (Flow.unstableSet (negativeGradientFlow (perturb f h s) hf') p)
+        (negativeGradientFlow (perturb f h s) hf' T x)) := by
+  have hφs : ContDiff ℝ 2 (perturb f h s) := contDiff_perturb hfs hh s
+  obtain ⟨A, hA⟩ := e.exists_hasFDerivAt_of_chart hxe he hes
+  have hAs : fderiv ℝ e.symm (e x) = (A.symm : E →L[ℝ] E) :=
+    (e.hasFDerivAt_symm (e.map_source hxe) (by rwa [e.left_inv hxe])).fderiv
+  rw [Flow.span_tangentConeAt_apply (Flow.isInvariant_unstableSet _ p)
+    (differentiable_negativeGradientFlow_apply _ hf' hφs (-T) _)
+    (differentiable_negativeGradientFlow_apply _ hf' hφs T x),
+    tangentConeAt_unstableSet_perturb hf hf' hc p hx hfs.continuous.continuousAt,
+    hS.span_tangentConeAt_eq_comap (Submodule.isClosed_of_finiteDimensional _) hxe hxu hA, hAs]
+  rintro _ ⟨w, rfl⟩
+  exact ⟨A.symm (w : E), by simp, rfl⟩
 
 /-- **Transversality in one chart of the unstable set.** The statement of
 `exists_pos_ae_span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_perturb_eq_top`
@@ -230,7 +259,6 @@ private theorem ae_span_tangentConeAt_sup_span_tangentConeAt_perturb_eq_top_of_u
   filter_upwards [hae] with s hs hsδ K' hf' x hxC hxe hlt hys
   -- Read the conclusion at `v = e x`.
   set φ := negativeGradientFlow (perturb f h s) hf'
-  have hφs : ContDiff ℝ 2 (perturb f h s) := contDiff_perturb hfs2 hh s
   have hΦφ : ∀ x', (Φ T (x', s)).1 = φ T x' := fun x' ↦ by
     rw [perturbedFlow_apply_of_norm_le (hfs2.differentiable two_ne_zero) hf hh hc
       (hsδ.le.trans hδ) hf']
@@ -244,20 +272,16 @@ private theorem ae_span_tangentConeAt_sup_span_tangentConeAt_perturb_eq_top_of_u
   rw [hGv] at key
   refine eq_top_iff.2 (key.symm.le.trans (sup_le_sup ?_ ?_))
   · -- The derivative in `v` is the image under the flow of the tangent space of the unstable set.
-    obtain ⟨A, hA⟩ := e.exists_hasFDerivAt_of_chart hxe ((he x hxe).differentiableAt hm0)
-      ((hes _ (e.map_source hxe)).differentiableAt hm0)
-    have hAs : fderiv ℝ e.symm (v : E) = (A.symm : E →L[ℝ] E) :=
-      (e.hasFDerivAt_symm (e.map_source hxe) (by rwa [e.left_inv hxe])).fderiv
-    rw [Flow.span_tangentConeAt_apply (Flow.isInvariant_unstableSet _ p)
-      (differentiable_negativeGradientFlow_apply _ hf' hφs (-T) _)
-      (differentiable_negativeGradientFlow_apply _ hf' hφs T x),
-      tangentConeAt_unstableSet_perturb hf hf' hc₂ p (hCc hxC) hfs2.continuous.continuousAt,
-      (isSliceChart_iff.2 heS).span_tangentConeAt_eq_comap
-        (Submodule.isClosed_of_finiteDimensional _) hxe (hCu hxC) hA,
-      fderiv_negativeGradientFlow_perturb hfs2 hf hh hc (hsδ.le.trans hδ) hf']
-    rintro _ ⟨w, rfl⟩
-    refine ⟨A.symm (w : E), by simp, ?_⟩
-    simp [(hGd _ hU).fderiv, hAs, hxv, Φ]
+    have hD : (fderiv ℝ G (v, s)).comp (ContinuousLinearMap.inl ℝ Lu (EuclideanSpace ℝ ι)) =
+        (fderiv ℝ (φ T) x).comp ((fderiv ℝ e.symm (e x)).comp Lu.subtypeL) := by
+      rw [(hGd _ hU).fderiv,
+        fderiv_negativeGradientFlow_perturb hfs2 hf hh hc (hsδ.le.trans hδ) hf']
+      ext w
+      simp [hxv, v, Φ]
+    rw [hD]
+    exact range_fderiv_comp_le_span_tangentConeAt_unstableSet_perturb hfs2 hf hh hc₂
+      (isSliceChart_iff.2 heS) hxe (hCu hxC) (hCc hxC) ((he x hxe).differentiableAt hm0)
+      ((hes _ (e.map_source hxe)).differentiableAt hm0) s hf' T
   · rw [tangentConeAt_stableSet_perturb hf hf' hc₁ q hlt hfs2.continuous.continuousAt]
 
 /-- **Transversality for one pair of critical points, for almost every small perturbation.** Let
