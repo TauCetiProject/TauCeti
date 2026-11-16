@@ -41,6 +41,9 @@ identification of group schemes or of their points.
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4–6*, Plates II and III.
 * J.-P. Serre, *Complex Semisimple Lie Algebras*, Chapter VI, appendix.
+
+The Serre-lift isomorphism construction, dimension-count bijectivity proof, and generator equations
+adapt `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Pinned`.
 -/
 
 public section
@@ -50,45 +53,39 @@ namespace TauCeti.SpStd
 open _root_.LieAlgebra.Symplectic
 
 /-- **The rank-two symplectic carrier node corresponding to a Bourbaki-numbered node of `B₂`.** It
-identifies `Fin (DynkinType.B 2).rank` with `Fin 2` and exchanges the two nodes via
-`Equiv.swap 0 1`, sending the long node `0` of `B₂` to the final node `1` of `SpStd 1` and the
-short node `1` of `B₂` to node `0` of `SpStd 1`. -/
+exchanges the two nodes via `Equiv.swap 0 1`, sending the long node `0` of `B₂` to the final node
+`1` of `SpStd 1` and the short node `1` of `B₂` to node `0` of `SpStd 1`. -/
 def b2NodeEquiv : Fin (DynkinType.B 2).rank ≃ Fin 2 :=
-  (finCongr (DynkinType.rank_B 2)).trans (Equiv.swap 0 1)
+  (Equiv.swap 0 1 : Equiv.Perm (Fin 2))
 
-/-- The node correspondence is `finCongr (DynkinType.rank_B 2)` followed by `Equiv.swap 0 1`. -/
-theorem b2NodeEquiv_def :
-    b2NodeEquiv = (finCongr (DynkinType.rank_B 2)).trans (Equiv.swap 0 1) :=
+/-- The node correspondence is `Equiv.swap 0 1`. -/
+theorem b2NodeEquiv_def : b2NodeEquiv = (Equiv.swap 0 1 : Equiv.Perm (Fin 2)) :=
   (rfl)
 
-/-- Evaluating `b2NodeEquiv` casts the rank to `2` and swaps the two nodes. This is not a `simp`
-lemma so that `Equiv.apply_symm_apply` and `Equiv.symm_apply_apply` remain applicable to
-`b2NodeEquiv`. -/
+/-- Evaluating `b2NodeEquiv` swaps the two nodes `0` and `1`. This is not a `simp` lemma so that
+`Equiv.apply_symm_apply` and `Equiv.symm_apply_apply` remain applicable to `b2NodeEquiv`. -/
 theorem b2NodeEquiv_apply (i : Fin (DynkinType.B 2).rank) :
-    b2NodeEquiv i = Equiv.swap 0 1 (finCongr (DynkinType.rank_B 2) i) :=
+    b2NodeEquiv i = (Equiv.swap 0 1 : Equiv.Perm (Fin 2)) i :=
   (rfl)
 
-/-- Evaluating `b2NodeEquiv.symm` swaps the two nodes of `Fin 2` and casts back to the rank of
-`B₂`. -/
+/-- Evaluating `b2NodeEquiv.symm` swaps the two nodes `0` and `1`. -/
 theorem b2NodeEquiv_symm_apply (i : Fin 2) :
-    b2NodeEquiv.symm i = (finCongr (DynkinType.rank_B 2)).symm (Equiv.swap 0 1 i) :=
+    b2NodeEquiv.symm i = (Equiv.swap 0 1 : Equiv.Perm (Fin 2)) i :=
   (rfl)
 
-/-- The node swap in `b2NodeEquiv` agrees with `TauCeti.lengthPermRankTwo`. -/
+/-- The node swap `b2NodeEquiv` agrees with `TauCeti.lengthPermRankTwo`. -/
 theorem b2NodeEquiv_apply_eq_lengthPermRankTwo (i : Fin (DynkinType.B 2).rank) :
-    b2NodeEquiv i = lengthPermRankTwo (finCongr (DynkinType.rank_B 2) i) := by
-  rw [b2NodeEquiv_apply]
-  generalize finCongr (DynkinType.rank_B 2) i = c
-  fin_cases c <;> simp
+    b2NodeEquiv i = lengthPermRankTwo i := by
+  obtain ⟨j, rfl⟩ := b2NodeEquiv.symm.surjective i
+  rw [Equiv.apply_symm_apply, b2NodeEquiv_symm_apply]
+  fin_cases j <;> simp
 
 /-- **The final carrier node `1` corresponds to the long simple root of `B₂`.** -/
 theorem b2NodeEquiv_eq_one_iff (i : Fin (DynkinType.B 2).rank) :
     b2NodeEquiv i = 1 ↔ (DynkinType.B 2).IsLongSimpleRoot i := by
-  rw [b2NodeEquiv_apply]
-  have hcast : finCongr (DynkinType.rank_B 2) i = i := rfl
-  rw [hcast]
-  dsimp only [DynkinType.rank] at i
-  fin_cases i <;> simp [DynkinType.isLongSimpleRoot_B]
+  obtain ⟨j, rfl⟩ := b2NodeEquiv.symm.surjective i
+  rw [Equiv.apply_symm_apply, DynkinType.isLongSimpleRoot_B, b2NodeEquiv_symm_apply]
+  fin_cases j <;> simp
 
 /-- **The initial carrier node `0` corresponds to the short simple root of `B₂`.** -/
 theorem b2NodeEquiv_eq_zero_iff (i : Fin (DynkinType.B 2).rank) :
@@ -115,8 +112,8 @@ private theorem isSerreSystem_b2 :
       (b2NodeEquiv j) (b2NodeEquiv i)
     rw [DynkinType.cartanMatrix_C] at hC
     exact hC.trans (by
-      rw [b2NodeEquiv_apply, b2NodeEquiv_apply, Equiv.swap_apply_self, Equiv.swap_apply_self]
-      rfl)
+      rw [← b2NodeEquiv_symm_apply, ← b2NodeEquiv_symm_apply,
+        Equiv.symm_apply_apply, Equiv.symm_apply_apply])
   simpa only [hCM, Function.comp_def] using h
 
 private def b2PinnedLieHom :
@@ -167,7 +164,9 @@ def b2PinnedLieEquiv :
 private theorem b2PinnedLieEquiv_apply
     (x : (DynkinType.B 2).lieAlgebra (DynkinType.valid_B.mpr le_rfl)) :
     b2PinnedLieEquiv x = serreLift isSerreSystem_b2
-      (((DynkinType.B 2).serreLiftEquiv validB2).symm x) := rfl
+      (((DynkinType.B 2).serreLiftEquiv validB2).symm x) := by
+  rw [b2PinnedLieEquiv, LieEquiv.ofBijective_toFun, b2PinnedLieHom, LieHom.comp_apply,
+    LieEquiv.coe_toLieHom]
 
 /-- The comparison sends each pinned `B₂` Cartan generator to the standard simple coroot at the
 swapped symplectic node. -/

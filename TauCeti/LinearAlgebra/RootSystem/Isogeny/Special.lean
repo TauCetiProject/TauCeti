@@ -136,6 +136,14 @@ noncomputable def b2SpecialIsogeny :
   rw [b2SpecialIsogeny]
   simp
 
+/-- In fundamental-weight coordinates, `b2SpecialIsogeny.weightMap` evaluates `χ` at
+`lengthPermRankTwo i` and rescales by the squared root length at `lengthPermRankTwo i`. -/
+theorem b2SpecialIsogeny_weightMap_apply (χ : Fin 2 → ℤ) (i : Fin 2) :
+    b2SpecialIsogeny.weightMap χ i =
+      (B 2).rootLength (lengthPermRankTwo i) * χ (lengthPermRankTwo i) := by
+  fin_cases i <;>
+    simp [b2SpecialIsogenyMatrix_def, rootLength_B, Matrix.vecHead, Matrix.vecTail]
+
 @[simp] lemma b2SpecialIsogeny_coweightMap :
     b2SpecialIsogeny.coweightMap = b2SpecialIsogenyMatrixᵀ.mulVecLin := by
   rw [b2SpecialIsogeny]

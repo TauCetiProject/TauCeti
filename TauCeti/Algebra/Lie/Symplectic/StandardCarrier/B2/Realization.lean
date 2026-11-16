@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.B2.Datum
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Frobenius
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.OperatorCongr
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Restriction
 
 /-!
 # Realizing the pinned B₂ Chevalley datum on the rank-two symplectic carrier
@@ -21,9 +22,10 @@ simple-root operators are reindexed by `TauCeti.SpStd.b2NodeEquiv`, and their co
 are pushed forward along the invertible character-lattice map induced by `b2NodeEquiv`.
 
 Consequently, their integral toral defining Hopf ideals inside `O(GL₄)` are equal over `ℤ`
-(`TauCeti.SpStd.b2ChevalleyDatum_definingIdeal_eq`), so their affine group schemes over `ℤ` and
-their subgroups of `GL₄(A)` for every commutative ring `A` coincide on the nose, retaining any
-nilpotents in `A` and nonreduced fibres in characteristic two.
+(`TauCeti.SpStd.kostantToralDefiningIdeal_b2ChevalleyDatum_eq_definingIdeal`), so their affine
+group schemes over `ℤ` and their subgroups of `GL₄(A)` for every commutative ring `A` coincide at
+the integral scheme level without passing to reduced subschemes or field points, retaining points
+over nonreduced rings and rings of characteristic two.
 
 `TauCeti.SpStd.b2ChevalleyDatumPointsEquiv` packages the resulting group isomorphism
 `b2ChevalleyDatum.points A ≃* points 1 A`. Across this identification:
@@ -43,13 +45,14 @@ nilpotents in `A` and nonreduced fibres in characteristic two.
 
 ## Main results
 
-* `TauCeti.SpStd.b2ChevalleyDatum_definingIdeal_eq`, `TauCeti.SpStd.b2ChevalleyDatum_groupScheme`,
-  and `TauCeti.SpStd.b2ChevalleyDatum_points`: exact equality of the integral defining Hopf ideals,
-  affine group schemes over `ℤ`, and matrix-point subgroups over every commutative ring.
+* `TauCeti.SpStd.kostantToralDefiningIdeal_b2ChevalleyDatum_eq_definingIdeal`,
+  `TauCeti.SpStd.b2ChevalleyDatum_groupScheme`, and `TauCeti.SpStd.b2ChevalleyDatum_points`: exact
+  equality of the integral defining Hopf ideals, affine group schemes over `ℤ`, and matrix-point
+  subgroups over every commutative ring.
 * `TauCeti.SpStd.b2ChevalleyDatumPointsEquiv_rootSubgroupPoints_simpleIndex`,
-  `TauCeti.SpStd.b2ChevalleyDatumPointsEquiv_rootSubgroupPoints_reflectionPerm_simpleIndex`, and
-  `TauCeti.SpStd.b2ChevalleyDatumPointsEquiv_torusPoints`: the forward and inverse transport
-  equations on simple root subgroups and torus points.
+  `TauCeti.SpStd.b2ChevalleyDatumPointsEquiv_rootSubgroupPoints_reflectionPerm_simpleIndex`,
+  `TauCeti.SpStd.b2ChevalleyDatumPointsEquiv_torusPoints`, and their `*_symm_*` inverses: the
+  forward and inverse transport equations on simple root subgroups and torus points.
 * `TauCeti.SpStd.b2ChevalleyDatumPointsEquiv_map` and
   `TauCeti.SpStd.b2ChevalleyDatumPointsEquiv_frobenius`: naturality in the value ring and
   intertwining of Frobenius endomorphisms.
@@ -61,6 +64,9 @@ nilpotents in `A` and nonreduced fibres in characteristic two.
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapters 2 and 3.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
+
+The `ChevalleyDatumPointsEquiv` realization API and theorem layout follow
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Geck.Realization`.
 -/
 
 public section
@@ -76,23 +82,28 @@ noncomputable section
 
 /-! ## Equality of the integral defining ideals, group schemes, and point subgroups -/
 
-private theorem isNilpotent_b2PinnedRepresentation_rootGenerator
-    (k : Fin (DynkinType.B 2).rank ⊕ Fin (DynkinType.B 2).rank) :
-    IsNilpotent (b2PinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ
-      (((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).rootGenerator k))) := by
-  rw [b2PinnedRepresentation_ι_rootGenerator]
-  exact isNilpotent_rep_rootGenerator 1 _
-
-private theorem kostantToralDefiningIdeal_b2PinnedRepresentation_eq :
+/-- **The integral defining Hopf ideal of `b2ChevalleyDatum` is `definingIdeal 1`.** Reindexing the
+signed simple-root operators by `b2NodeEquiv` permutes the root-subgroup coordinate maps, and
+reindexing the character lattice by `b2NodeEquiv` preserves the kernel of the weight-torus
+coordinate map. -/
+theorem kostantToralDefiningIdeal_b2ChevalleyDatum_eq_definingIdeal :
     kostantToralDefiningIdeal
         ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).rootGenerator
         ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).h
-        b2PinnedRepresentation (lattice 1).toAddSubgroup
-        b2PinnedRepresentation_kostantForm_mem_lattice
-        isNilpotent_b2PinnedRepresentation_rootGenerator
-        (latticeBasis 1) b2BasisWeight =
+        b2ChevalleyDatum.representation b2ChevalleyDatum.lattice
+        b2ChevalleyDatum.representation_mem_lattice
+        b2ChevalleyDatum.isNilpotent_representation_rootGenerator
+        b2ChevalleyDatum.basis b2ChevalleyDatum.coordinateWeight =
       definingIdeal 1 := by
-  rw [definingIdeal_def]
+  rw [b2ChevalleyDatum_coordinateWeight, definingIdeal_def]
+  -- Unfold the exposed carrier, lattice, and basis fields of `b2ChevalleyDatum`.
+  change kostantToralDefiningIdeal
+      ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).rootGenerator
+      ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).h
+      b2PinnedRepresentation (lattice 1).toAddSubgroup
+      b2PinnedRepresentation_kostantForm_mem_lattice
+      b2ChevalleyDatum.isNilpotent_representation_rootGenerator
+      (latticeBasis 1) b2BasisWeight = _
   let e : (Fin (1 + 1) → ℤ) ≃ₗ[ℤ] (Fin (DynkinType.B 2).rank → ℤ) :=
     LinearEquiv.funCongrLeft ℤ ℤ b2NodeEquiv
   have hwt : b2BasisWeight = fun a => e (basisWeight 1 a) := by
@@ -116,7 +127,7 @@ private theorem kostantToralDefiningIdeal_b2PinnedRepresentation_eq :
           ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).h
           b2PinnedRepresentation (lattice 1).toAddSubgroup
           b2PinnedRepresentation_kostantForm_mem_lattice k
-          (isNilpotent_b2PinnedRepresentation_rootGenerator k)
+          (b2ChevalleyDatum.isNilpotent_representation_rootGenerator k)
           (latticeBasis 1) =
         kostantRootSubgroupCoordinateMap (rootGenerator 1) (cartanGenerator 1) (rep 1)
           (lattice 1).toAddSubgroup (rep_kostantForm_mem_lattice 1)
@@ -132,7 +143,7 @@ private theorem kostantToralDefiningIdeal_b2PinnedRepresentation_eq :
       ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).h
       b2PinnedRepresentation (lattice 1).toAddSubgroup
       b2PinnedRepresentation_kostantForm_mem_lattice
-      isNilpotent_b2PinnedRepresentation_rootGenerator
+      b2ChevalleyDatum.isNilpotent_representation_rootGenerator
       (latticeBasis 1) b2BasisWeight _).mp le_rfl
     refine ⟨fun k' => ?_, htorus ▸ hle.2⟩
     obtain ⟨k, rfl⟩ := (b2NodeEquiv.sumCongr b2NodeEquiv).surjective k'
@@ -144,25 +155,9 @@ private theorem kostantToralDefiningIdeal_b2PinnedRepresentation_eq :
       exact ⟨fun k => by simpa only [← hroot k] using hle.1 (Sum.map b2NodeEquiv b2NodeEquiv k),
         htorus.symm ▸ hle.2⟩
 
-/-- **The integral defining Hopf ideal of `b2ChevalleyDatum` is `definingIdeal 1`.** Reindexing the
-signed simple-root operators by `b2NodeEquiv` permutes the root-subgroup coordinate maps, and
-reindexing the character lattice by `b2NodeEquiv` preserves the kernel of the weight-torus
-coordinate map. -/
-theorem b2ChevalleyDatum_definingIdeal_eq :
-    kostantToralDefiningIdeal
-        ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).rootGenerator
-        ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).h
-        b2ChevalleyDatum.representation b2ChevalleyDatum.lattice
-        b2ChevalleyDatum.representation_mem_lattice
-        b2ChevalleyDatum.isNilpotent_representation_rootGenerator
-        b2ChevalleyDatum.basis b2ChevalleyDatum.coordinateWeight =
-      definingIdeal 1 := by
-  rw [b2ChevalleyDatum_coordinateWeight]
-  exact kostantToralDefiningIdeal_b2PinnedRepresentation_eq
-
 /-- **The integral group scheme of `b2ChevalleyDatum` is `SpStd.groupScheme 1`.** -/
 theorem b2ChevalleyDatum_groupScheme : b2ChevalleyDatum.groupScheme = groupScheme 1 := by
-  have h := b2ChevalleyDatum_definingIdeal_eq
+  have h := kostantToralDefiningIdeal_b2ChevalleyDatum_eq_definingIdeal
   rw [DynkinType.ChevalleyDatum.groupScheme, kostantToralGroupScheme, groupScheme_def]
   dsimp only [b2ChevalleyDatum] at h ⊢
   rw [h]
@@ -171,24 +166,16 @@ theorem b2ChevalleyDatum_groupScheme : b2ChevalleyDatum.groupScheme = groupSchem
 across `b2ChevalleyDatum_groupScheme`. -/
 theorem b2ChevalleyDatum_groupSchemeι :
     b2ChevalleyDatum.groupSchemeι = eqToHom b2ChevalleyDatum_groupScheme ≫ carrierι 1 := by
-  have h := b2ChevalleyDatum_definingIdeal_eq.trans (definingIdeal_def 1)
-  have hq (I J : HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ ((1 + 1) + (1 + 1))))
-      (hIJ : I = J) :
-      CommHopfAlgCat.quotientSpecι _ I =
-        eqToHom (congrArg (CommHopfAlgCat.quotientSpec _) hIJ) ≫
-          CommHopfAlgCat.quotientSpecι _ J := by
-    subst hIJ
-    simp
+  have h := kostantToralDefiningIdeal_b2ChevalleyDatum_eq_definingIdeal.trans (definingIdeal_def 1)
   rw [DynkinType.ChevalleyDatum.groupSchemeι_def, carrierι_def,
-    kostantToralGroupSchemeι_def, kostantToralGroupSchemeι_def]
-  dsimp only [b2ChevalleyDatum] at h ⊢
-  rw [hq _ _ h, Category.assoc]
-  rfl
+    kostantToralGroupSchemeι_def, kostantToralGroupSchemeι_def, ← Category.assoc]
+  exact congrArg (· ≫ eqToHom (GeneralLinear.groupScheme_def ℤ ((1 + 1) + (1 + 1))).symm)
+    (CommHopfAlgCat.eqToHom_comp_quotientSpecι _ h).symm
 
 /-- **The point subgroup of `b2ChevalleyDatum` over any commutative ring `A` is `points 1 A`.** -/
 theorem b2ChevalleyDatum_points (A : Type v) [CommRing A] :
     b2ChevalleyDatum.points A = points 1 A := by
-  have h := b2ChevalleyDatum_definingIdeal_eq
+  have h := kostantToralDefiningIdeal_b2ChevalleyDatum_eq_definingIdeal
   rw [DynkinType.ChevalleyDatum.points_def, points_def]
   dsimp only [b2ChevalleyDatum] at h ⊢
   rw [h]
@@ -276,20 +263,6 @@ theorem b2ChevalleyDatumPointsEquiv_symm_rootSubgroupPoints_inr
     b2ChevalleyDatumPointsEquiv_rootSubgroupPoints_reflectionPerm_simpleIndex,
     Equiv.apply_symm_apply]
 
-private theorem kostantTorusMatrix_b2BasisWeight (A : Type v) [CommRing A]
-    (s : Fin (DynkinType.B 2).rank → Aˣ) :
-    kostantTorusMatrix (lattice 1).toAddSubgroup (latticeBasis 1) b2BasisWeight s =
-      kostantTorusMatrix (lattice 1).toAddSubgroup (latticeBasis 1) (basisWeight 1)
-        (s ∘ b2NodeEquiv.symm) := by
-  apply Units.ext
-  rw [kostantTorusMatrix_apply, kostantTorusMatrix_apply, diagGL_coe, diagGL_coe]
-  apply congrArg diagonal
-  funext a
-  apply congrArg Units.val
-  rw [torusCharacter_def, torusCharacter_def, ← b2NodeEquiv.symm.prod_comp]
-  refine Finset.prod_congr rfl fun j _ => ?_
-  rw [Function.comp_apply, b2BasisWeight_apply_apply, Equiv.apply_symm_apply]
-
 /-- **Torus points of `b2ChevalleyDatum` correspond to `weightTorusPoints 1` with the two
 fundamental-weight parameters swapped by `b2NodeEquiv.symm`.** -/
 @[simp↓]
@@ -299,8 +272,14 @@ theorem b2ChevalleyDatumPointsEquiv_torusPoints (A : Type v) [CommRing A]
       weightTorusPoints 1 A (s ∘ b2NodeEquiv.symm) := by
   apply Subtype.ext
   rw [coe_b2ChevalleyDatumPointsEquiv, DynkinType.ChevalleyDatum.coe_torusPoints,
-    b2ChevalleyDatum_coordinateWeight, coe_weightTorusPoints]
-  exact kostantTorusMatrix_b2BasisWeight A s
+    b2ChevalleyDatum_coordinateWeight, coe_weightTorusPoints, Function.comp_def]
+  have hwt : b2BasisWeight =
+      fun a => (LinearEquiv.funCongrLeft ℤ ℤ b2NodeEquiv).toLinearMap (basisWeight 1 a) :=
+    funext fun a => funext (b2BasisWeight_apply_apply a)
+  have hmat := kostantTorusMatrix_torusPointMap (lattice 1).toAddSubgroup (latticeBasis 1)
+    (basisWeight 1) (LinearEquiv.funCongrLeft ℤ ℤ b2NodeEquiv).toLinearMap s
+  rw [← hwt, torusPointMap_funCongrLeft] at hmat
+  exact hmat.symm
 
 /-- The inverse point isomorphism sends `weightTorusPoints 1 A s` to `b2ChevalleyDatum.torusPoints`
 with parameters reindexed by `b2NodeEquiv`. -/
@@ -327,6 +306,7 @@ theorem b2ChevalleyDatumPointsEquiv_map {A : Type v} {B : Type v'} [CommRing A] 
   apply Subtype.ext
   rw [coe_b2ChevalleyDatumPointsEquiv, GeneralLinear.IntegralPointsPresentation.coe_map,
     GeneralLinear.IntegralPointsPresentation.coe_map, coe_b2ChevalleyDatumPointsEquiv]
+  -- Match the exposed datum dimension `b2ChevalleyDatum.dim` with `(1 + 1) + (1 + 1)`.
   rfl
 
 /-- **The point isomorphism intertwines the `p ^ k`-power Frobenius endomorphism of
@@ -349,22 +329,6 @@ theorem b2ChevalleyDatumPointsEquiv_symm_frobenius (p k : ℕ) (A : Type v) [Com
 
 /-! ## Injectivity of all root subgroups over every commutative ring -/
 
-private theorem rootSubgroupPoints_one_injective (k : Fin (1 + 1) ⊕ Fin (1 + 1))
-    (A : Type v) [CommRing A] :
-    Function.Injective (rootSubgroupPoints 1 k A) := by
-  intro u v huv
-  have hmat := congrArg (fun g : points 1 A =>
-    ((g : GeneralLinearGroup (Fin ((1 + 1) + (1 + 1))) A) :
-      Matrix (Fin ((1 + 1) + (1 + 1))) (Fin ((1 + 1) + (1 + 1))) A)
-      (finSumFinEquiv (rootTarget 1 k)) (finSumFinEquiv (rootSource 1 k))) huv
-  simp only [coe_rootSubgroupPoints] at hmat
-  rw [kostantRootSubgroupMatrix_apply_of_isRootStep _ _ _ _ _ k _ (latticeBasis 1) isUnit_one
-      (rep_rootGenerator_latticeBasis 1 k) (rep_rootGenerator_rep_rootGenerator_eq_zero 1 k _),
-    kostantRootSubgroupMatrix_apply_of_isRootStep _ _ _ _ _ k _ (latticeBasis 1) isUnit_one
-      (rep_rootGenerator_latticeBasis 1 k) (rep_rootGenerator_rep_rootGenerator_eq_zero 1 k _),
-    one_zsmul, one_zsmul, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply] at hmat
-  exact Multiplicative.toAdd.injective hmat
-
 /-- **Every root subgroup of `b2ChevalleyDatum` is injective**, across all eight roots of `B₂` and
 over every commutative ring `A` (including nonreduced rings and rings of characteristic two). -/
 theorem b2ChevalleyDatum_rootSubgroupPoints_injective (γ : Fin (DynkinType.B 2).numRoots)
@@ -372,7 +336,7 @@ theorem b2ChevalleyDatum_rootSubgroupPoints_injective (γ : Fin (DynkinType.B 2)
     Function.Injective (b2ChevalleyDatum.rootSubgroupPoints γ A) := by
   refine b2ChevalleyDatum.rootSubgroupPoints_injective_of_simple A (fun i => ?_) γ
   intro u v huv
-  exact rootSubgroupPoints_one_injective (.inl (b2NodeEquiv i)) A (by
+  exact rootSubgroupPoints_injective 1 (.inl (b2NodeEquiv i)) A (by
     simpa only [b2ChevalleyDatumPointsEquiv_rootSubgroupPoints_simpleIndex] using
       congrArg (b2ChevalleyDatumPointsEquiv A) huv)
 

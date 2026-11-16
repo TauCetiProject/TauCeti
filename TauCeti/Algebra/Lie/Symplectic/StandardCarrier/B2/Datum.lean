@@ -20,7 +20,7 @@ pinned rational Lie algebra of type `B₂`. Reading the four coordinate weights 
 node swap `TauCeti.SpStd.b2NodeEquiv` gives a full-weight Chevalley datum
 `TauCeti.SpStd.b2ChevalleyDatum` for `TauCeti.DynkinType.B 2`.
 
-Because the four weights `(±1, 0)` and `(∓1, ±1)` span the entire fundamental-weight lattice
+Because the four weights `(0, ±1)` and `(±1, ∓1)` span the entire fundamental-weight lattice
 `Fin (DynkinType.B 2).rank → ℤ`, the chosen basis of `b2ChevalleyDatum.weightLattice` is the
 standard basis of fundamental weights, the coordinate weights equal `b2BasisWeight` with no
 lattice-index correction, and `fullWeightTorusRestriction` is the identity on torus parameters.
@@ -55,6 +55,10 @@ proved in `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.B2.Realization`.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4–6*, Plates II and III.
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapters 2 and 3.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
+
+The datum assembly and full-weight character-lattice equations adapt
+`TauCeti.Algebra.Lie.G2.ShortRoot.Datum` and
+`TauCeti.Algebra.Lie.E6.DoubledMinuscule.Datum`.
 -/
 
 public section
@@ -88,8 +92,8 @@ theorem b2PinnedRepresentation_ι
     (x : (DynkinType.B 2).lieAlgebra (DynkinType.valid_B.mpr le_rfl)) :
     b2PinnedRepresentation (_root_.UniversalEnvelopingAlgebra.ι ℚ x) =
       rep 1 (_root_.UniversalEnvelopingAlgebra.ι ℚ (b2PinnedLieEquiv x)) := by
-  rw [b2PinnedRepresentation_def, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι]
-  rfl
+  rw [b2PinnedRepresentation_def, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι,
+    LieEquiv.coe_toLieHom]
 
 /-- Applying `b2PinnedRepresentation` on the Lie algebra multiplies a coordinate vector by the
 `4 × 4` symplectic matrix `b2PinnedLieEquiv x`. -/
@@ -178,15 +182,6 @@ theorem b2PinnedRepresentation_kostantForm_mem_lattice :
   rw [← hmap]
   exact Subring.mem_map.mpr ⟨u, hu, rfl⟩
 
-private theorem span_lattice_one_eq_top :
-    Submodule.span ℚ (((lattice 1).toAddSubgroup : AddSubgroup _) :
-      Set ((Fin (1 + 1) ⊕ Fin (1 + 1)) → ℚ)) = ⊤ := by
-  have hlattice : lattice 1 = TauCeti.coordinateLattice (Fin (1 + 1) ⊕ Fin (1 + 1)) := by
-    ext v
-    simp only [mem_lattice_iff, TauCeti.mem_coordinateLattice_iff]
-  simpa only [Submodule.coe_toAddSubgroup, hlattice] using
-    (TauCeti.instIsLatticeCoordinateLattice (Fin (1 + 1) ⊕ Fin (1 + 1))).span_eq_top
-
 /-! ## Coordinate weights in Bourbaki `B₂` numbering -/
 
 /-- The integral weight of a standard symplectic coordinate in Bourbaki `B₂` fundamental-weight
@@ -241,11 +236,8 @@ lattice.** -/
 theorem span_range_b2Weight_eq_top : Submodule.span ℤ (Set.range b2Weight) = ⊤ := by
   let e : (Fin (1 + 1) → ℤ) ≃ₗ[ℤ] (Fin (DynkinType.B 2).rank → ℤ) :=
     LinearEquiv.funCongrLeft ℤ ℤ b2NodeEquiv
-  have hrange : Set.range b2Weight = e '' Set.range (weight 1) := by
-    ext w
-    simp only [Set.mem_range, Set.mem_image]
-    exact ⟨fun ⟨a, ha⟩ => ⟨weight 1 a, ⟨a, rfl⟩, ha⟩,
-      fun ⟨_, ⟨a, rfl⟩, hw⟩ => ⟨a, hw⟩⟩
+  have hrange : Set.range b2Weight = e '' Set.range (weight 1) :=
+    Set.range_comp' e (weight 1)
   rw [hrange, Submodule.span_image_linearEquiv, span_range_weight_eq_top 1, Submodule.map_top,
     LinearEquiv.range]
 
@@ -270,7 +262,8 @@ basis of its weight lattice. -/
   injective_representation_ι := b2PinnedRepresentation_ι_injective
   lattice := (lattice 1).toAddSubgroup
   representation_mem_lattice := b2PinnedRepresentation_kostantForm_mem_lattice
-  span_lattice_eq_top := by exact span_lattice_one_eq_top
+  span_lattice_eq_top := by
+    simpa only [Submodule.coe_toAddSubgroup] using (instIsLatticeLattice 1).span_eq_top
   dim := (1 + 1) + (1 + 1)
   basis := latticeBasis 1
   weight := b2BasisWeight
