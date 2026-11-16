@@ -222,11 +222,33 @@ noncomputable def orthShapeRelabelRepEquiv (σ : Equiv.Perm (Fin μ.card)) (t : 
       orthShapeRelabelEquiv_apply_coe, orthShapeRep_apply_coe, Representation.tensorPower_apply,
       permTensorAction_apply, PiTensorProduct.reindexRepresentation_apply] using h
 
+/-- The relabeling isomorphism of representations is induced by permuting the tensor factors. -/
+@[simp]
+theorem orthShapeRelabelRepEquiv_apply_coe (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ)
+    (x : (orthShapeSpace k n t).toSubmodule) :
+    ((orthShapeRelabelRepEquiv σ t x : (orthShapeSpace k n (relabel σ t)).toSubmodule) :
+        ⨂[k]^μ.card (Fin n → k)) = permTensorAction k n μ.card σ x :=
+  orthShapeRelabelEquiv_apply_coe σ t x
+
 /-- The shape spaces of two tableaux of the same shape are isomorphic representations of the
 orthogonal group: up to isomorphism `E_t` depends only on the shape of `t`. -/
 noncomputable def orthShapeRepEquiv (t t' : YoungTableau μ) :
     (orthShapeRep k n t).Equiv (orthShapeRep k n t') :=
   relabel_relabelPerm t t' ▸ orthShapeRelabelRepEquiv (relabelPerm t t') t
+
+/-- The isomorphism between the shape spaces of `t` and `t'` permutes the tensor factors by the
+permutation `TauCeti.YoungTableau.relabelPerm t t'` carrying `t` to `t'`. -/
+@[simp]
+theorem orthShapeRepEquiv_apply_coe (t t' : YoungTableau μ)
+    (x : (orthShapeSpace k n t).toSubmodule) :
+    ((orthShapeRepEquiv t t' x : (orthShapeSpace k n t').toSubmodule) :
+        ⨂[k]^μ.card (Fin n → k)) = permTensorAction k n μ.card (relabelPerm t t') x := by
+  have key : ∀ (σ : Equiv.Perm (Fin μ.card)) (s : YoungTableau μ) (hs : relabel σ t = s),
+      ((hs ▸ orthShapeRelabelRepEquiv σ t : (orthShapeRep k n t).Equiv (orthShapeRep k n s)) x :
+        ⨂[k]^μ.card (Fin n → k)) = permTensorAction k n μ.card σ x := by
+    rintro σ _ rfl
+    exact orthShapeRelabelRepEquiv_apply_coe σ t x
+  exact key _ _ (relabel_relabelPerm t t')
 
 /-- The shape spaces of two tableaux of the same shape have the same `Module.finrank`. -/
 theorem finrank_orthShapeSpace_eq (t t' : YoungTableau μ) :
@@ -253,24 +275,6 @@ theorem orthShapeSpace_toSubmodule_of_card_le_one (t : YoungTableau μ) (h : μ.
 
 /-! ## One-column shapes -/
 
-/-- On a shape with at most one column, every permutation scales the Young symmetrizer by its
-sign, so a transposition negates every tensor in its image. -/
-private theorem permTensorAction_swap_youngSymmetrizerOver_of_rowLen_le_one
-    (t : YoungTableau μ) (h : μ.rowLen 0 ≤ 1) {i j : Fin μ.card} (hij : i ≠ j)
-    (x : ⨂[k]^μ.card (Fin n → k)) :
-    permTensorAction k n μ.card (Equiv.swap i j)
-        (permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t) x) =
-      -permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t) x := by
-  have hq := congrArg (MonoidAlgebra.mapAlgHom (Equiv.Perm (Fin μ.card)) (Algebra.ofId ℚ k))
-    (single_mul_youngSymmetrizer_of_colSubgroup_eq_top t ((colSubgroup_eq_top_iff t).mpr h)
-      (Equiv.swap i j))
-  rw [map_mul, MonoidAlgebra.mapAlgHom_single, map_one, map_smul, ← youngSymmetrizerOver_def,
-    Equiv.Perm.sign_swap hij, Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one,
-    neg_one_smul] at hq
-  have := LinearMap.congr_fun (congrArg (permTensorActionAlgHom k n μ.card) hq) x
-  rwa [map_mul, ← MonoidAlgebra.of_apply, permTensorActionAlgHom_of, mul_apply_eq_comp,
-    map_neg, LinearMap.neg_apply] at this
-
 /-- On a shape with at most one column the Young symmetrizer is the antisymmetrization, whose
 image consists of alternating tensors; these are harmonic, so the whole Weyl module is. -/
 theorem weylModule_le_harmonicTensors_of_rowLen_le_one (t : YoungTableau μ)
@@ -282,7 +286,7 @@ theorem weylModule_le_harmonicTensors_of_rowLen_le_one (t : YoungTableau μ)
   rw [weylModule_toSubmodule]
   rintro _ ⟨x, rfl⟩
   exact mem_harmonicTensors_of_forall_swap_eq_neg fun i j hij =>
-    permTensorAction_swap_youngSymmetrizerOver_of_rowLen_le_one t h hij x
+    permTensorAction_swap_youngSymmetrizerOver_of_rowLen_le_one k n t h hij x
 
 /-- **For a one-column shape the shape space is the whole Weyl module**, that is
 `E_{(1ᵈ)} = ⋀ᵈ(kⁿ)` (`TauCeti.YoungTableau.weylRepEquivExtPowerRep`): alternating tensors are
@@ -304,17 +308,6 @@ theorem orthShapeSpace_eq_bot_iff_of_rowLen_le_one [Nontrivial k] (t : YoungTabl
 
 /-! ## One-row shapes -/
 
-/-- On a shape with at most one row the Young symmetrizer sends `v^{⊗d}` to `d! • v^{⊗d}`. -/
-private theorem permTensorActionAlgHom_youngSymmetrizerOver_tprod_const_of_colLen_le_one
-    (t : YoungTableau μ) (h : μ.colLen 0 ≤ 1) (v : Fin n → k) :
-    permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-        (PiTensorProduct.tprod k fun _ => v) =
-      (μ.card.factorial : k) • PiTensorProduct.tprod k fun _ => v := by
-  rw [permTensorActionAlgHom_youngSymmetrizerOver_of_rowSubgroup_eq_top k n t
-    ((rowSubgroup_eq_top_iff t).mpr h)]
-  simp [LinearMap.sum_apply, PiTensorProduct.reindex_tprod, Fintype.card_perm,
-    ← Nat.cast_smul_eq_nsmul k]
-
 /-- **A one-row shape space is nonzero once `n ≥ 2`**, provided `k` has a square root `i` of
 `-1`: the vector `v = e₀ + i e₁` is isotropic, so `v^{⊗d}` is harmonic, and it is symmetric, so the
 symmetrizer sends it to `d! • v^{⊗d} ≠ 0`. -/
@@ -332,9 +325,10 @@ theorem orthShapeSpace_ne_bot_of_colLen_le_one [Nontrivial k] (t : YoungTableau 
   have hmem : permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
       (PiTensorProduct.tprod k fun _ => v) ∈ orthShapeSpace k n t := by
     refine mem_orthShapeSpace.mpr ⟨LinearMap.mem_range_self _ _, ?_⟩
-    rw [permTensorActionAlgHom_youngSymmetrizerOver_tprod_const_of_colLen_le_one t h]
+    rw [permTensorActionAlgHom_youngSymmetrizerOver_tprod_const_of_colLen_le_one k n t h]
     exact Submodule.smul_mem _ _ (tprod_mem_harmonicTensors fun _ _ _ => hv)
-  rw [hbot, permTensorActionAlgHom_youngSymmetrizerOver_tprod_const_of_colLen_le_one t h] at hmem
+  rw [hbot, permTensorActionAlgHom_youngSymmetrizerOver_tprod_const_of_colLen_le_one k n t h]
+    at hmem
   have hzero := congrArg (fun w => (tensorPowerBasis k n μ.card).repr w fun _ => a)
     ((Submodule.mem_bot k).mp hmem)
   simp [tensorPowerBasis_def, v, hab.symm, Nat.factorial_ne_zero] at hzero
