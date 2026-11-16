@@ -108,8 +108,9 @@ theorem closure_pair_eq_top :
     rw [M24_def]
     exact Subgroup.closure_preimage_eq_top _
   rw [eq_top_iff, ← h]
-  refine Subgroup.closure_mono ?_
-  rintro ⟨x, hx⟩ (rfl | rfl) <;> simp
+  refine Subgroup.closure_mono fun x hx ↦ ?_
+  simpa only [Set.mem_preimage, Subgroup.coe_subtype, Set.mem_insert_iff, Set.mem_singleton_iff,
+    Subtype.ext_iff] using hx
 
 /-! ### Generator orders -/
 

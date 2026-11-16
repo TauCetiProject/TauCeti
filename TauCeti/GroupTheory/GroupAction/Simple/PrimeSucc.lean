@@ -11,6 +11,7 @@ public import TauCeti.Data.Nat.Factorial.Prime
 public import TauCeti.GroupTheory.GroupAction.Simple.Stabilizer
 public import TauCeti.GroupTheory.GroupAction.SubMulAction
 public import TauCeti.GroupTheory.GroupAction.Transitive
+public import TauCeti.GroupTheory.Subgroup.Simple
 
 /-!
 # Simplicity of transitive groups of degree `p + 1`
@@ -30,8 +31,10 @@ transitive on the other `p` points. In the second case `p` divides `|N|`. In the
 acts regularly, which `TauCeti.stabilizer_ne_bot_of_card_eq_succ` excludes: an automorphism of
 order `p` of a group of order `p + 1` forces `p + 1` to be a prime power.
 
-Finally, if `p` divides `|N|`, then the index of `N` is prime to `p`, so `N` contains `a`, and
-with it the normal closure of `a`.
+Finally, since `p` divides the order of every nontrivial normal subgroup and `p ^ 2` does not
+divide `|G|`, the criterion
+`TauCeti.isSimpleGroup_of_normalClosure_eq_top_of_forall_prime_dvd_natCard` applies: the index of
+`N` is prime to `p`, so `N` contains `a`, and with it the normal closure of `a`.
 
 The hypothesis on `p + 1` cannot be dropped: the affine group of the line over the field with
 eight elements acts faithfully and doubly transitively on `7 + 1` points and is normally generated
@@ -39,6 +42,9 @@ by an element of order `7`, but its translations form a proper normal subgroup.
 
 ## Main results
 
+* `TauCeti.is_two_pretransitive_of_card_eq_succ_of_smul_ne`: a transitive action on `p + 1`
+  points is doubly transitive if some element `a` fixes a point and moves a point that `a ^ p`
+  fixes.
 * `TauCeti.prime_dvd_natCard_of_normal_of_card_eq_succ`: in a faithful transitive action on
   `p + 1` points of a group containing an element of order `p`, the order of every nontrivial
   normal subgroup is divisible by `p`, if two distinct primes divide `p + 1`.
@@ -59,6 +65,35 @@ namespace TauCeti
 
 open _root_.MulAction TauCeti.MulAction
 
+/-- **Double transitivity in degree `p + 1`.** Let a group `G` act transitively on `p + 1` points,
+`p` prime. If some element `a` of `G` fixes a point and moves a point `y` that `a ^ p` fixes, then
+the action of `G` is doubly transitive.
+
+For a group of permutations containing a cycle with a unique fixed point, of any length, see
+`TauCeti.is_two_pretransitive_of_isCycle_mem_of_existsUnique_fixedPoint`. The present statement
+is about an arbitrary action, which need not be faithful, and asks only for the period of one
+moved point. -/
+theorem is_two_pretransitive_of_card_eq_succ_of_smul_ne
+    {G X : Type*} [Group G] [MulAction G X] [IsPretransitive G X]
+    {p : ℕ} (hp : p.Prime) (hcard : Nat.card X = p + 1)
+    {a : G} {x y : X} (hx : a • x = x) (hy : a ^ p • y = y) (hay : a • y ≠ y) :
+    IsMultiplyPretransitive G X 2 := by
+  have : Finite X := Nat.finite_of_card_ne_zero (by omega)
+  have hax : a ∈ stabilizer G x := mem_stabilizer_iff.mpr hx
+  have hyx : y ∈ SubMulAction.ofStabilizer G x :=
+    (SubMulAction.mem_ofStabilizer_iff G x).mpr fun h ↦ hay (h ▸ hx)
+  -- The element `a` of the stabilizer of `x` moves the point `y` of the complement of `x`, which
+  -- has `p` points, and `a ^ p` fixes it: the stabilizer of `x` is transitive on this complement.
+  have hY : Nat.card (SubMulAction.ofStabilizer G x) = p := by
+    rw [SubMulAction.nat_card_ofStabilizer_eq, hcard, Nat.add_sub_cancel]
+  have : IsPretransitive (stabilizer G x) (SubMulAction.ofStabilizer G x) :=
+    isPretransitive_of_prime_natCard_of_smul_ne (hY ▸ hp) (g := ⟨a, hax⟩) (x := ⟨y, hyx⟩)
+      (Subtype.ext (by
+        rw [hY, SubMulAction.val_smul, subgroup_smul_def, Subgroup.coe_pow, hy]))
+      fun h ↦ hay (by
+        simpa only [SubMulAction.val_smul, subgroup_smul_def] using congrArg Subtype.val h)
+  exact SubMulAction.ofStabilizer.isMultiplyPretransitive.mpr (is_one_pretransitive_iff.mpr this)
+
 /-- **Normal subgroups in degree `p + 1`.** Let a group `G` act faithfully and transitively on
 `p + 1` points, `p` prime, with two distinct primes dividing `p + 1`, and let `G` contain an
 element of order `p`. Then `p` divides the order of every nontrivial normal subgroup of `G`. -/
@@ -75,24 +110,23 @@ theorem prime_dvd_natCard_of_normal_of_card_eq_succ
   obtain ⟨x, hx⟩ := (IsPGroup.of_card (n := 1) (by rw [Nat.card_zpowers, ha, pow_one])
     : IsPGroup p (Subgroup.zpowers a)).nonempty_fixed_point_of_prime_not_dvd_card X fun h ↦
       hp.one_lt.ne' (Nat.dvd_one.mp ((Nat.dvd_add_right dvd_rfl).mp (hcard ▸ h)))
-  replace hx : a • x = x := hx ⟨a, Subgroup.mem_zpowers a⟩
+  replace hx : a • x = x := by
+    simpa only [subgroup_smul_def] using mem_fixedPoints.mp hx ⟨a, Subgroup.mem_zpowers a⟩
   obtain ⟨y, hy⟩ : ∃ y : X, a • y ≠ y := by
     by_contra! h
     exact hp.ne_one (ha ▸ orderOf_eq_one_iff.mpr (eq_of_smul_eq_smul fun y ↦ by rw [h y, one_smul]))
-  have hyx : y ≠ x := fun h ↦ hy (h ▸ hx)
   have hax : a ∈ stabilizer G x := mem_stabilizer_iff.mpr hx
-  -- So the stabilizer of `x` is transitive, hence primitive, on the other `p` points, and the
-  -- action of `G` is doubly transitive, hence primitive.
+  -- So the action of `G` is doubly transitive, hence primitive, and the stabilizer of `x` is
+  -- transitive, hence primitive, on the other `p` points.
+  have h2 : IsMultiplyPretransitive G X 2 := is_two_pretransitive_of_card_eq_succ_of_smul_ne hp
+    hcard hx (by rw [← ha, pow_orderOf_eq_one, one_smul]) hy
+  have : IsPreprimitive G X := isPreprimitive_of_is_two_pretransitive h2
   have hY : Nat.card (SubMulAction.ofStabilizer G x) = p := by
     rw [SubMulAction.nat_card_ofStabilizer_eq, hcard, Nat.add_sub_cancel]
   have : IsPretransitive (stabilizer G x) (SubMulAction.ofStabilizer G x) :=
-    isPretransitive_of_prime_natCard_of_smul_ne (hY ▸ hp) (g := ⟨a, hax⟩)
-      (Subtype.ext (by rw [hY, Subgroup.coe_pow, Subgroup.coe_one, ← ha, pow_orderOf_eq_one]))
-      (x := ⟨y, hyx⟩) fun h ↦ hy (congrArg Subtype.val h)
+    is_one_pretransitive_iff.mp (SubMulAction.ofStabilizer.isMultiplyPretransitive.mp h2)
   have : IsPreprimitive (stabilizer G x) (SubMulAction.ofStabilizer G x) :=
     IsPreprimitive.of_prime_card (hY ▸ hp)
-  have : IsPreprimitive G X := isPreprimitive_of_is_two_pretransitive
-    (SubMulAction.ofStabilizer.isMultiplyPretransitive.mpr (is_one_pretransitive_iff.mpr ‹_›))
   have : IsPretransitive N X := IsQuasiPreprimitive.isPretransitive_of_normal_of_ne_bot N hN
   -- If `p` does not divide `|N|`, then `N` meets the stabilizer of `x` trivially, since a
   -- nontrivial intersection would be transitive on the other `p` points; so `N` acts regularly.
@@ -104,7 +138,8 @@ theorem prime_dvd_natCard_of_normal_of_card_eq_succ
   by_contra hne
   have : IsPretransitive (N.subgroupOf (stabilizer G x)) (SubMulAction.ofStabilizer G x) :=
     IsQuasiPreprimitive.isPretransitive_of_normal_of_ne_bot _ hne
-  have : Nonempty (SubMulAction.ofStabilizer G x) := ⟨⟨y, hyx⟩⟩
+  have : Nonempty (SubMulAction.ofStabilizer G x) :=
+    ⟨⟨y, (SubMulAction.mem_ofStabilizer_iff G x).mpr fun h ↦ hy (h ▸ hx)⟩⟩
   refine hdiv (dvd_trans ?_ (Subgroup.card_dvd_of_le (inf_le_left : N ⊓ stabilizer G x ≤ N)))
   rw [← Nat.card_congr (Subgroup.subgroupOfEquivOfLe inf_le_right).toEquiv,
     Subgroup.inf_subgroupOf_right, ← hY]
@@ -124,9 +159,7 @@ theorem isSimpleGroup_of_normalClosure_eq_top_of_card_eq_succ
   have hp2 := hp.two_le
   have : Finite X := Nat.finite_of_card_ne_zero (by omega)
   have : Nontrivial X := Finite.one_lt_card_iff_nontrivial.mp (by omega)
-  obtain ⟨u, v, huv⟩ := exists_pair_ne X
-  obtain ⟨g, rfl⟩ := exists_smul_eq G u v
-  have : Nontrivial G := ⟨⟨g, 1, fun h ↦ huv (by rw [h, one_smul])⟩⟩
+  have : Nontrivial G := (surjective_smul G (Classical.arbitrary X)).nontrivial
   -- The normal generator `a` is not `1`, so it has order `p`.
   have ha1 : a ≠ 1 := by
     rintro rfl
@@ -136,18 +169,10 @@ theorem isSimpleGroup_of_normalClosure_eq_top_of_card_eq_succ
     have := hp.sq_dvd_factorial_iff.mp (h.trans ((Subgroup.card_dvd_of_injective
       (toPermHom G X) toPerm_injective).trans (by rw [Nat.card_perm, hcard])))
     omega
-  refine ⟨fun N _ ↦ ?_⟩
-  by_cases hN : N = ⊥
-  · exact Or.inl hN
-  right
-  -- The order of `N` is divisible by `p`, so its index is not, and `a` lies in `N`.
-  have hdiv : p ∣ Nat.card N := prime_dvd_natCard_of_normal_of_card_eq_succ hp hcard hq hr hqr
-    hqdvd hrdvd (orderOf_eq_prime ha ha1) N hN
-  have hcop : (Nat.card (G ⧸ N)).Coprime p := by
-    rw [← Subgroup.index_eq_card, Nat.coprime_comm, hp.coprime_iff_not_dvd]
-    exact fun hi ↦ hsq (by rw [← N.card_mul_index, pow_two]; exact Nat.mul_dvd_mul hdiv hi)
-  have hmem : a ∈ N := (QuotientGroup.eq_one_iff a).mp (hcop.pow_left_bijective.injective
-    (by simp only [← QuotientGroup.mk_pow, ha, QuotientGroup.mk_one, one_pow]))
-  exact top_unique (hgen ▸ Subgroup.normalClosure_le_normal (Set.singleton_subset_iff.mpr hmem))
+  -- The order of every nontrivial normal subgroup is divisible by `p`, which occurs only once in
+  -- the order of `G`.
+  exact isSimpleGroup_of_normalClosure_eq_top_of_forall_prime_dvd_natCard hp hsq
+    (fun N _ hN ↦ prime_dvd_natCard_of_normal_of_card_eq_succ hp hcard hq hr hqr hqdvd hrdvd
+      (orderOf_eq_prime ha ha1) N hN) a ha hgen
 
 end TauCeti
