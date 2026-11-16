@@ -83,8 +83,8 @@ endpoints `eₙ` stay at distance at least `1` from each other
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith`: Arzelà–Ascoli for maps that
   are uniformly Lipschitz with values in a compact set on exhausting bands of the plane.
 * `TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn`: an equicontinuous
-  sequence of maps on an open subset of a proper space, with values in a compact set, has a
-  locally uniformly convergent subsequence.
+  sequence of maps on an open subset of a proper space, with values at each point in a compact
+  set, has a locally uniformly convergent subsequence.
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall`: Arzelà–Ascoli
   for uniformly Lipschitz maps with values in a compact set on exhausting discs of the plane.
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add`: translates `u(s + σₙ, t)`, `σₙ → ∞`,
@@ -295,20 +295,20 @@ theorem isCompact_setOf_periodic_lipschitzWith {M : Type*} [MetricSpace M] {K : 
     UniformFun.tendsto_iff_tendstoUniformly.2 hux⟩
 
 /-- **Arzelà–Ascoli on an open set of a proper space.** Let `u n` be an equicontinuous sequence of
-maps on an open subset `Ω` of a proper metric space, with values on `Ω` in a compact subset `K` of
-a pseudometric space. A subsequence of the `u n` converges locally uniformly on `Ω` to a map
-continuous on `Ω`. -/
+maps on an open subset `Ω` of a proper metric space, with values in a pseudometric space, such that
+for each `x ∈ Ω` the values `u n x` lie in a common compact set. A subsequence of the `u n`
+converges locally uniformly on `Ω` to a map continuous on `Ω`. -/
 theorem exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn {X M : Type*}
     [MetricSpace X] [ProperSpace X] [PseudoMetricSpace M] {Ω : Set X} (hΩ : IsOpen Ω)
-    {K : Set M} (hK : IsCompact K) {u : ℕ → X → M} (hu : EquicontinuousOn u Ω)
-    (huK : ∀ n, MapsTo (u n) Ω K) :
+    {u : ℕ → X → M} (hu : EquicontinuousOn u Ω)
+    (hbd : ∀ x ∈ Ω, ∃ Q, IsCompact Q ∧ ∀ n, u n x ∈ Q) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ g : X → M, ContinuousOn g Ω ∧
       TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) g atTop Ω := by
   classical
   let : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
   let U : ℕ → C(Ω, M) := fun n ↦ ⟨Ω.domRestrict (u n), (hu.continuousOn n).domRestrict⟩
   obtain ⟨a, -, φ, hφ, hlim⟩ := (ArzelaAscoli.isCompact_closure_range_of_equicontinuous
-    ((equicontinuous_restrict_iff _).mpr hu) fun x ↦ ⟨K, hK, fun n ↦ huK n x.2⟩).tendsto_subseq
+    ((equicontinuous_restrict_iff _).mpr hu) fun x : Ω ↦ hbd x x.2).tendsto_subseq
     (x := U) fun n ↦ subset_closure (mem_range_self n)
   -- Extend the limit off `Ω` by the first map, only to express convergence on a subset of `X`.
   let g : X → M := fun x ↦ if hx : x ∈ Ω then a ⟨x, hx⟩ else u 0 x

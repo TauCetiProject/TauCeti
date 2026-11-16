@@ -17,7 +17,7 @@ blow up, bubbling analysis rescales the solutions at centres `cᵢ → z₀` by 
 `εᵢ K(cᵢ + εᵢ w)` and have energy density one at the origin and at most four on discs of radii
 `Rᵢ → ∞` (`TauCeti.SmoothTwoForm.exists_rescale_isComplexLinearMap_perturbedMFDeriv`). This file
 shows that a subsequence of the rescaled maps converges to a continuous map `v : ℝ × ℝ → M`, the
-bubble at `z₀`.
+candidate bubble at `z₀`.
 
 As in `TauCeti.Geometry.Symplectic.Floer.Compactness.BoundedDensity`, convergence in `M` is
 measured through a map `e : M → F` into a normed space, differentiable at the points of a compact
@@ -72,7 +72,8 @@ perturbation `εᵢ K(cᵢ + εᵢ w)` and the structure `J(cᵢ + εᵢ w, ·)`
 This is the output of the choice of centres and scales at a bubbling point,
 `TauCeti.SmoothTwoForm.exists_rescale_isComplexLinearMap_perturbedMFDeriv`, with `A = 4`. Then a
 subsequence of the rescaled maps converges, locally uniformly on `ℝ × ℝ` after applying `e` and
-pointwise in `M`, to a continuous map `v : ℝ × ℝ → M` with values in `K`: the bubble. -/
+pointwise in `M`, to a continuous map `v : ℝ × ℝ → M` with values in `K`. This is the candidate
+bubble, shown here only to be continuous, not holomorphic or nonconstant. -/
 theorem IsNondegenerate.exists_strictMono_tendstoLocallyUniformly_comp_rescale
     (hω : ω.IsNondegenerate) {K : Set M} (hK : IsCompact K)
     (he : ∀ x ∈ K, MDifferentiableAt I 𝓘(ℝ, F) e x) (he_inj : InjOn e K)
@@ -134,17 +135,18 @@ theorem IsNondegenerate.exists_strictMono_tendstoLocallyUniformly_comp_rescale
       (fun n w hw ↦ (hres' n hw).2.2) (fun n w hw ↦ (hres' n hw).2.1)
   exact ⟨fun n ↦ φ n + N, fun m n hmn ↦ Nat.add_lt_add_right (hφ hmn) N, v, hv, hvK, hconv, hpt⟩
 
-/-- **Bubbles in a manifold.** Let `uᵢ` solve the Floer equation `(du - X_K)^{0,1} = 0` on an open
-set `U` of the domain, with values in a compact set `K ⊆ M` and continuous Floer energy densities,
-for domain-dependent structures `J(z, x)` on `T_x M`. Let `e : M → F` be a map into a normed space,
-differentiable at the points of `K` and injective on `K`, with `J` uniformly tame with respect to
-`e`, `c ‖d e v‖² ≤ ω(v, J(z, x) v)` with `c > 0`, and the pushforwards `d e (X_{K_s})`,
-`d e (X_{K_t})` at most `B`, on `U × K`. If the energy densities of the `uᵢ` at points `zᵢ → z₀ ∈ U`
-tend to `∞`, there are centres `cᵢ → z₀`, scales `εᵢ > 0` with `εᵢ → 0` and radii `Rᵢ → ∞` with
-`εᵢ Rᵢ → 0`, such that the rescaled maps `w ↦ uᵢ(cᵢ + εᵢ w)` eventually have energy density one at
-the origin for the rescaled perturbation `εᵢ K(cᵢ + εᵢ w)`, and a subsequence of them converges,
-locally uniformly on `ℝ × ℝ` after applying `e` and pointwise in `M`, to a continuous map
-`v : ℝ × ℝ → M` with values in `K`. -/
+/-- **Limits of rescaled Floer solutions in a manifold.** Let `uᵢ` solve the Floer equation
+`(du - X_K)^{0,1} = 0` on an open set `U` of the domain, with values in a compact set `K ⊆ M` and
+continuous Floer energy densities, for domain-dependent structures `J(z, x)` on `T_x M`. Let
+`e : M → F` be a map into a normed space, differentiable at the points of `K` and injective on
+`K`, with `J` uniformly tame with respect to `e`, `c ‖d e v‖² ≤ ω(v, J(z, x) v)` with `c > 0`, and
+the pushforwards `d e (X_{K_s})`, `d e (X_{K_t})` at most `B`, on `U × K`. If the energy densities
+of the `uᵢ` at points `zᵢ → z₀ ∈ U` tend to `∞`, there are centres `cᵢ → z₀`, scales `εᵢ > 0`
+with `εᵢ → 0` and radii `Rᵢ → ∞` with `εᵢ Rᵢ → 0`, such that the rescaled maps
+`w ↦ uᵢ(cᵢ + εᵢ w)` eventually have energy density one at the origin for the rescaled perturbation
+`εᵢ K(cᵢ + εᵢ w)`, and a subsequence of them converges, locally uniformly on `ℝ × ℝ` after applying
+`e` and pointwise in `M`, to a continuous map `v : ℝ × ℝ → M` with values in `K`. The limit is
+only shown to be continuous, not holomorphic or nonconstant. -/
 theorem IsNondegenerate.exists_rescale_tendstoLocallyUniformly_comp (hω : ω.IsNondegenerate)
     {K : Set M} (hK : IsCompact K) (he : ∀ x ∈ K, MDifferentiableAt I 𝓘(ℝ, F) e x)
     (he_inj : InjOn e K)

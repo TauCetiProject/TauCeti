@@ -70,8 +70,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
     equicontinuousOn_of_forall_isCompact_norm_fderiv_le hD
       (fun n ↦ ((hu (ψ n)).differentiableOn (by norm_num)).mono sdiff_subset) hb
   obtain ⟨χ, hχ, v, hvc, hconv⟩ :=
-    exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn hD hK hequi
-      fun n z hz ↦ huK (ψ n) hz.1
+    exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn hD hequi
+      fun z hz ↦ ⟨K, hK, fun n ↦ huK (ψ n) hz.1⟩
   refine ⟨ψ ∘ χ, Z, v, hψ.comp hχ, hZΩ, hZE, ?_, ?_, ?_, ?_, hconv⟩
   · intro z hz ε hε
     exact hχ.tendsto_atTop.eventually (hconc z hz ε hε)

@@ -181,8 +181,8 @@ theorem IsNondegenerate.exists_strictMono_tendstoLocallyUniformlyOn_comp (hω : 
   -- Arzelà–Ascoli for the maps `e ∘ uₙ`, with values in the compact set `e(K)`.
   have hec : ContinuousOn e K := fun x hx ↦ (he x hx).continuousAt.continuousWithinAt
   obtain ⟨φ, hφ, G, hGc, hconvG⟩ :=
-    TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn hΩ
-      (hK.image_of_continuousOn hec) hequi fun n z hz ↦ mem_image_of_mem e (huK n hz)
+    TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn hΩ hequi
+      fun z hz ↦ ⟨e '' K, hK.image_of_continuousOn hec, fun n ↦ mem_image_of_mem e (huK n hz)⟩
   -- The limit is read back in `K` through `e`.
   have : Nonempty M := ⟨u 0 0⟩
   obtain ⟨v, hv, hvK, hev, hpt⟩ := hK.exists_tendsto_of_tendsto_comp hec he_inj
