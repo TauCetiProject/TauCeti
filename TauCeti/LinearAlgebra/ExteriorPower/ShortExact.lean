@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.ExteriorPower.FreeShortExact
-import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # Top exterior powers of a short exact sequence
@@ -32,8 +31,6 @@ of the quotient.
 * `TauCeti.exteriorPower.shortExactEquiv`: the isomorphism `⋀ᵃ U ⊗ ⋀ᶜ W ≃ ⋀ᵃ⁺ᶜ V`.
 * `TauCeti.exteriorPower.shortExactEquiv_tmul_ιMulti`: its value on exterior products, for
   arbitrary lifts.
-* `TauCeti.exteriorPower.ιMulti_comp_ne_zero_of_eq_basis`: lifts along `g` of a basis of `W` have
-  a nonzero exterior product.
 
 ## References
 
@@ -53,13 +50,6 @@ variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 
 variable {U W : Type*} [AddCommGroup U] [Module K U] [AddCommGroup W] [Module K W]
   {f : U →ₗ[K] V} {g : V →ₗ[K] W}
-
-/-- The exterior product of lifts `v₁, …, vₙ` along `g` of the vectors of a basis of `W` is
-nonzero. -/
-theorem ιMulti_comp_ne_zero_of_eq_basis {n : ℕ} {b : Module.Basis (Fin n) K W} {v : Fin n → V}
-    (hv : ∀ i, g (v i) = b i) : ιMulti K n (g ∘ v) ≠ 0 := by
-  rw [show g ∘ v = ⇑b from funext hv]
-  exact (ιMulti_ne_zero_iff _).2 b.linearIndependent
 
 /-- For a short exact sequence `0 → U → V → W → 0` of finite-dimensional vector spaces, the
 canonical isomorphism `⋀ᵃ U ⊗ ⋀ᶜ W ≃ ⋀ᵃ⁺ᶜ V`, where `a = dim U` and `c = dim W`. It sends
