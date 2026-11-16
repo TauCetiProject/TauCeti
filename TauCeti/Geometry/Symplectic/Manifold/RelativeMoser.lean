@@ -590,10 +590,12 @@ private theorem IsSymplectic.exists_diffeomorph_opens_eventually_mpullback_eq
         rw [SmoothForm.eval₂_mpullback (Ψ ∘ Subtype.val) hΨU,
           Manifold.mfderiv_comp_subtype_val_apply, Manifold.mfderiv_comp_subtype_val_apply, hd]
         refine (heq q u w).trans ?_
-        have h := DFunLike.congr_fun (DFunLike.congr_fun
-          (bilinFormAt_mpullback_subtype_val (σ := θ) ⟨f q, hfU q⟩) (mfderiv J I f q u)) w
-        exact (SmoothForm.bilinFormAt_apply θ (f q) _ _).symm.trans
-          (h.symm.trans (SmoothForm.bilinFormAt_apply _ _ _ _))
+        -- `w` lives in `TangentSpace I (f q)`, so the goal does not typecheck at reducible
+        -- transparency and cannot be rewritten; chain `eval₂_apply` through the restriction.
+        have h := congrArg (fun φ ↦ φ ![mfderiv J I f q u, w])
+          (SmoothForm.coe_mpullback_subtype_val_apply θ ⟨f q, hfU q⟩)
+        exact (SmoothBundleForm.eval₂_apply θ (f q) _ _).trans
+          (h.symm.trans (SmoothBundleForm.eval₂_apply _ _ _ _).symm)
   rw [hfU'] at hΘf hΘ
   exact ⟨Θ, hΘf, hΘ⟩
 
@@ -627,13 +629,13 @@ theorem IsSymplectic.exists_diffeomorph_opens_of_isCoisotropicMap_of_eval₂_eq
   -- Restrict to an open neighbourhood `U₀ ⊆ U` of `f(Q)` on which `Θ` pulls `Ψ^* σ` back to `θ`.
   obtain ⟨A, ⟨hA, hfA⟩, hAΘ⟩ := (hasBasis_nhdsSet _).mem_iff.1 hΘ
   let U₀ : Opens M := ⟨Subtype.val '' A, U.isOpen.isOpenEmbedding_subtypeVal.isOpenMap A hA⟩
-  let ι : U₀ → U := fun z ↦ ⟨z, Subtype.coe_image_subset (U : Set M) A z.2⟩
-  -- `ι` only changes the membership witness, so it commutes with the inclusions into `M`.
-  have hιval : Subtype.val ∘ ι = Subtype.val := funext fun _ ↦ rfl
+  have hU₀ : U₀ ≤ U := Subtype.coe_image_subset (U : Set M) A
+  let ι : U₀ → U := Opens.inclusion hU₀
+  have hιval : Subtype.val ∘ ι = Subtype.val := Set.val_comp_inclusion hU₀
   have hιA (z : U₀) : ι z ∈ A := by
     obtain ⟨a, ha, h⟩ := z.2
     rwa [show ι z = a from Subtype.ext ((congrFun hιval z).trans h.symm)]
-  have hι : ContMDiff I I ∞ ι := (TauCeti.ContMDiff.subtypeVal_comp_iff U ι).1 contMDiff_subtype_val
+  have hι : ContMDiff I I ∞ ι := contMDiff_inclusion hU₀
   -- The corrected map `Ψ ∘ Θ` on `U₀` pulls `σ` back to `θ`.
   let Φ : U₀ → N := (Ψ ∘ Subtype.val) ∘ Θ ∘ ι
   have hΦ : ContMDiff I K ∞ Φ := hΨU.comp (Θ.contMDiff.comp hι)
