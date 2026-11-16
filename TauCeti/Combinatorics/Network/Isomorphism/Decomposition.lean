@@ -102,8 +102,7 @@ theorem target_weightedWalkEquiv (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
 theorem walk_weightedWalkEquiv (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
     @Quiver.Path.cast W ⟨N'.Hom⟩ _ _ _ _ (source_weightedWalkEquiv e p)
       (target_weightedWalkEquiv e p) (e.weightedWalkEquiv R p).walk = e.mapPath p.walk := by
-  cases weightedWalkEquiv_apply e p
-  rfl
+  rw [@Quiver.Path.cast_eq_iff_heq W ⟨N'.Hom⟩, weightedWalkEquiv_apply]
 
 /-- The weight of a transported weighted walk is unchanged. -/
 @[simp]
@@ -115,28 +114,28 @@ theorem weight_weightedWalkEquiv (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
 @[simp]
 theorem arrows_weightedWalkEquiv (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
     (e.weightedWalkEquiv R p).walk.arrows = p.walk.arrows.map e.totalHomEquiv := by
-  change (e.mapPath p.walk).arrows = _
+  rw [weightedWalkEquiv_apply]
   exact e.arrows_mapPath p.walk
 
 /-- The vertices of a transported weighted walk are the transported vertices. -/
 @[simp]
 theorem vertices_weightedWalkEquiv (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
     (e.weightedWalkEquiv R p).walk.vertices = p.walk.vertices.map e.vertexEquiv := by
-  change (e.mapPath p.walk).vertices = _
+  rw [weightedWalkEquiv_apply]
   exact e.vertices_mapPath p.walk
 
 /-- Transport preserves the length of a weighted walk. -/
 @[simp]
 theorem length_weightedWalkEquiv (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
     (e.weightedWalkEquiv R p).walk.length = p.walk.length := by
-  change (e.mapPath p.walk).length = _
+  rw [weightedWalkEquiv_apply]
   exact e.length_mapPath p.walk
 
 /-- Transport preserves and reflects whether a weighted walk is a path. -/
 @[simp]
 theorem isPath_weightedWalkEquiv (e : N ≃ₙ N') (p : WeightedWalk N.Hom R) :
     (e.weightedWalkEquiv R p).walk.IsPath ↔ p.walk.IsPath := by
-  change (e.mapPath p.walk).IsPath ↔ _
+  rw [weightedWalkEquiv_apply]
   exact e.isPath_mapPath p.walk
 
 /-- The inverse of weighted-walk transport is transport along the inverse isomorphism. -/
@@ -146,12 +145,73 @@ theorem weightedWalkEquiv_symm (e : N ≃ₙ N') :
   ext p
   simp only [weightedWalkEquiv, Equiv.coe_fn_symm_mk, Equiv.coe_fn_mk]
 
+/-- Inverse weighted-walk transport applies inverse path transport and keeps the weight. -/
+theorem weightedWalkEquiv_symm_apply (e : N ≃ₙ N') (p : WeightedWalk N'.Hom R) :
+    (e.weightedWalkEquiv R).symm p = ⟨_, _, e.symm.mapPath p.walk, p.weight⟩ := by
+  rw [← weightedWalkEquiv_symm]
+  exact weightedWalkEquiv_apply e.symm p
+
+/-- The source of a pulled-back weighted walk is the pulled-back source. -/
+@[simp]
+theorem source_weightedWalkEquiv_symm (e : N ≃ₙ N') (p : WeightedWalk N'.Hom R) :
+    ((e.weightedWalkEquiv R).symm p).source = e.symm.vertexEquiv p.source := by
+  rw [weightedWalkEquiv_symm_apply]
+
+/-- The target of a pulled-back weighted walk is the pulled-back target. -/
+@[simp]
+theorem target_weightedWalkEquiv_symm (e : N ≃ₙ N') (p : WeightedWalk N'.Hom R) :
+    ((e.weightedWalkEquiv R).symm p).target = e.symm.vertexEquiv p.target := by
+  rw [weightedWalkEquiv_symm_apply]
+
+/-- The walk of a pulled-back weighted walk is the inverse-transported walk. -/
+@[simp]
+theorem walk_weightedWalkEquiv_symm (e : N ≃ₙ N') (p : WeightedWalk N'.Hom R) :
+    @Quiver.Path.cast V ⟨N.Hom⟩ _ _ _ _ (source_weightedWalkEquiv_symm e p)
+      (target_weightedWalkEquiv_symm e p) ((e.weightedWalkEquiv R).symm p).walk =
+        e.symm.mapPath p.walk := by
+  rw [@Quiver.Path.cast_eq_iff_heq V ⟨N.Hom⟩, weightedWalkEquiv_symm_apply]
+
+/-- Pulling back a weighted walk leaves its weight unchanged. -/
+@[simp]
+theorem weight_weightedWalkEquiv_symm (e : N ≃ₙ N') (p : WeightedWalk N'.Hom R) :
+    ((e.weightedWalkEquiv R).symm p).weight = p.weight := by
+  rw [weightedWalkEquiv_symm_apply]
+
+/-- Pulling back a weighted walk inverse-transports its arrows. -/
+@[simp]
+theorem arrows_weightedWalkEquiv_symm (e : N ≃ₙ N') (p : WeightedWalk N'.Hom R) :
+    ((e.weightedWalkEquiv R).symm p).walk.arrows =
+      p.walk.arrows.map e.totalHomEquiv.symm := by
+  rw [weightedWalkEquiv_symm_apply, arrows_mapPath, totalHomEquiv_symm]
+
+/-- Pulling back a weighted walk inverse-transports its vertices. -/
+@[simp]
+theorem vertices_weightedWalkEquiv_symm (e : N ≃ₙ N') (p : WeightedWalk N'.Hom R) :
+    ((e.weightedWalkEquiv R).symm p).walk.vertices =
+      p.walk.vertices.map e.vertexEquiv.symm := by
+  rw [weightedWalkEquiv_symm_apply, vertices_mapPath, symm_vertexEquiv]
+
+/-- Pulling back preserves the length of a weighted walk. -/
+@[simp]
+theorem length_weightedWalkEquiv_symm (e : N ≃ₙ N') (p : WeightedWalk N'.Hom R) :
+    ((e.weightedWalkEquiv R).symm p).walk.length = p.walk.length := by
+  rw [weightedWalkEquiv_symm_apply]
+  exact e.symm.length_mapPath p.walk
+
+/-- Pulling back preserves and reflects whether a weighted walk is a path. -/
+@[simp]
+theorem isPath_weightedWalkEquiv_symm (e : N ≃ₙ N') (p : WeightedWalk N'.Hom R) :
+    ((e.weightedWalkEquiv R).symm p).walk.IsPath ↔ p.walk.IsPath := by
+  rw [weightedWalkEquiv_symm_apply]
+  exact e.symm.isPath_mapPath p.walk
+
 /-- Transport along the identity network isomorphism fixes weighted walks. -/
 @[simp]
 theorem weightedWalkEquiv_refl (N : Network K V) :
     (refl N).weightedWalkEquiv R = Equiv.refl _ := by
   apply Equiv.ext
   rintro ⟨s, t, p, q⟩
+  simp only [weightedWalkEquiv_apply, Equiv.refl_apply]
   exact weightedWalk_mk_eq (refl_vertexEquiv_apply N s) (refl_vertexEquiv_apply N t)
     (mapPath_refl N p) q
 
@@ -163,6 +223,7 @@ theorem weightedWalkEquiv_trans {X : Type u''} {N'' : Network K X}
       (e.weightedWalkEquiv R).trans (f.weightedWalkEquiv R) := by
   apply Equiv.ext
   rintro ⟨s, t, p, q⟩
+  simp only [weightedWalkEquiv_apply, Equiv.trans_apply]
   exact weightedWalk_mk_eq (trans_vertexEquiv_apply e f s) (trans_vertexEquiv_apply e f t)
     (mapPath_trans e f p) q
 
@@ -173,6 +234,16 @@ theorem assignment_weightedWalkEquiv [AddCommMonoid R] (e : N ≃ₙ N')
     (e.weightedWalkEquiv R p).assignment = e.assignmentEquiv R p.assignment := by
   rw [weightedWalkEquiv_apply, WeightedWalk.assignment_def, WeightedWalk.assignment_def]
   exact e.walkAssignment_mapPath p.walk p.weight
+
+/-- The assignment of a pulled-back weighted walk is the pulled-back assignment. -/
+@[simp]
+theorem assignment_weightedWalkEquiv_symm [AddCommMonoid R] (e : N ≃ₙ N')
+    (p : WeightedWalk N'.Hom R) :
+    ((e.weightedWalkEquiv R).symm p).assignment =
+      (e.assignmentEquiv R).symm p.assignment := by
+  rw [weightedWalkEquiv_symm_apply, WeightedWalk.assignment_def, WeightedWalk.assignment_def,
+    assignmentEquiv_symm]
+  exact e.symm.walkAssignment_mapPath p.walk p.weight
 
 variable (R) in
 /-- Transport a weighted closed walk along a network isomorphism, keeping its weight. -/
@@ -203,8 +274,7 @@ theorem walk_weightedClosedWalkEquiv (e : N ≃ₙ N') (c : WeightedClosedWalk N
     @Quiver.Path.cast W ⟨N'.Hom⟩ _ _ _ _ (base_weightedClosedWalkEquiv e c)
       (base_weightedClosedWalkEquiv e c) (e.weightedClosedWalkEquiv R c).walk =
         e.mapPath c.walk := by
-  cases weightedClosedWalkEquiv_apply e c
-  rfl
+  rw [@Quiver.Path.cast_eq_iff_heq W ⟨N'.Hom⟩, weightedClosedWalkEquiv_apply]
 
 /-- The weight of a transported weighted closed walk is unchanged. -/
 @[simp]
@@ -216,7 +286,7 @@ theorem weight_weightedClosedWalkEquiv (e : N ≃ₙ N') (c : WeightedClosedWalk
 @[simp]
 theorem arrows_weightedClosedWalkEquiv (e : N ≃ₙ N') (c : WeightedClosedWalk N.Hom R) :
     (e.weightedClosedWalkEquiv R c).walk.arrows = c.walk.arrows.map e.totalHomEquiv := by
-  change (e.mapPath c.walk).arrows = _
+  rw [weightedClosedWalkEquiv_apply]
   exact e.arrows_mapPath c.walk
 
 /-- The vertices of a transported weighted closed walk are the transported vertices. -/
@@ -224,7 +294,7 @@ theorem arrows_weightedClosedWalkEquiv (e : N ≃ₙ N') (c : WeightedClosedWalk
 theorem vertices_weightedClosedWalkEquiv (e : N ≃ₙ N')
     (c : WeightedClosedWalk N.Hom R) :
     (e.weightedClosedWalkEquiv R c).walk.vertices = c.walk.vertices.map e.vertexEquiv := by
-  change (e.mapPath c.walk).vertices = _
+  rw [weightedClosedWalkEquiv_apply]
   exact e.vertices_mapPath c.walk
 
 /-- Transport preserves the length of a weighted closed walk. -/
@@ -232,7 +302,7 @@ theorem vertices_weightedClosedWalkEquiv (e : N ≃ₙ N')
 theorem length_weightedClosedWalkEquiv (e : N ≃ₙ N')
     (c : WeightedClosedWalk N.Hom R) :
     (e.weightedClosedWalkEquiv R c).walk.length = c.walk.length := by
-  change (e.mapPath c.walk).length = _
+  rw [weightedClosedWalkEquiv_apply]
   exact e.length_mapPath c.walk
 
 /-- Transport preserves and reflects whether a weighted closed walk is a cycle. -/
@@ -240,7 +310,7 @@ theorem length_weightedClosedWalkEquiv (e : N ≃ₙ N')
 theorem isCycle_weightedClosedWalkEquiv (e : N ≃ₙ N')
     (c : WeightedClosedWalk N.Hom R) :
     (e.weightedClosedWalkEquiv R c).walk.IsCycle ↔ c.walk.IsCycle := by
-  change (e.mapPath c.walk).IsCycle ↔ _
+  rw [weightedClosedWalkEquiv_apply]
   exact e.isCycle_mapPath c.walk
 
 /-- The inverse of weighted closed-walk transport is transport along the inverse isomorphism. -/
@@ -250,12 +320,75 @@ theorem weightedClosedWalkEquiv_symm (e : N ≃ₙ N') :
   ext c
   simp only [weightedClosedWalkEquiv, Equiv.coe_fn_symm_mk, Equiv.coe_fn_mk]
 
+/-- Inverse weighted closed-walk transport applies inverse path transport and keeps the weight. -/
+theorem weightedClosedWalkEquiv_symm_apply (e : N ≃ₙ N')
+    (c : WeightedClosedWalk N'.Hom R) :
+    (e.weightedClosedWalkEquiv R).symm c = ⟨_, e.symm.mapPath c.walk, c.weight⟩ := by
+  rw [← weightedClosedWalkEquiv_symm]
+  exact weightedClosedWalkEquiv_apply e.symm c
+
+/-- The base of a pulled-back weighted closed walk is the pulled-back base. -/
+@[simp]
+theorem base_weightedClosedWalkEquiv_symm (e : N ≃ₙ N')
+    (c : WeightedClosedWalk N'.Hom R) :
+    ((e.weightedClosedWalkEquiv R).symm c).base = e.symm.vertexEquiv c.base := by
+  rw [weightedClosedWalkEquiv_symm_apply]
+
+/-- The walk of a pulled-back weighted closed walk is the inverse-transported walk. -/
+@[simp]
+theorem walk_weightedClosedWalkEquiv_symm (e : N ≃ₙ N')
+    (c : WeightedClosedWalk N'.Hom R) :
+    @Quiver.Path.cast V ⟨N.Hom⟩ _ _ _ _ (base_weightedClosedWalkEquiv_symm e c)
+      (base_weightedClosedWalkEquiv_symm e c) ((e.weightedClosedWalkEquiv R).symm c).walk =
+        e.symm.mapPath c.walk := by
+  rw [@Quiver.Path.cast_eq_iff_heq V ⟨N.Hom⟩, weightedClosedWalkEquiv_symm_apply]
+
+/-- Pulling back a weighted closed walk leaves its weight unchanged. -/
+@[simp]
+theorem weight_weightedClosedWalkEquiv_symm (e : N ≃ₙ N')
+    (c : WeightedClosedWalk N'.Hom R) :
+    ((e.weightedClosedWalkEquiv R).symm c).weight = c.weight := by
+  rw [weightedClosedWalkEquiv_symm_apply]
+
+/-- Pulling back a weighted closed walk inverse-transports its arrows. -/
+@[simp]
+theorem arrows_weightedClosedWalkEquiv_symm (e : N ≃ₙ N')
+    (c : WeightedClosedWalk N'.Hom R) :
+    ((e.weightedClosedWalkEquiv R).symm c).walk.arrows =
+      c.walk.arrows.map e.totalHomEquiv.symm := by
+  rw [weightedClosedWalkEquiv_symm_apply, arrows_mapPath, totalHomEquiv_symm]
+
+/-- Pulling back a weighted closed walk inverse-transports its vertices. -/
+@[simp]
+theorem vertices_weightedClosedWalkEquiv_symm (e : N ≃ₙ N')
+    (c : WeightedClosedWalk N'.Hom R) :
+    ((e.weightedClosedWalkEquiv R).symm c).walk.vertices =
+      c.walk.vertices.map e.vertexEquiv.symm := by
+  rw [weightedClosedWalkEquiv_symm_apply, vertices_mapPath, symm_vertexEquiv]
+
+/-- Pulling back preserves the length of a weighted closed walk. -/
+@[simp]
+theorem length_weightedClosedWalkEquiv_symm (e : N ≃ₙ N')
+    (c : WeightedClosedWalk N'.Hom R) :
+    ((e.weightedClosedWalkEquiv R).symm c).walk.length = c.walk.length := by
+  rw [weightedClosedWalkEquiv_symm_apply]
+  exact e.symm.length_mapPath c.walk
+
+/-- Pulling back preserves and reflects whether a weighted closed walk is a cycle. -/
+@[simp]
+theorem isCycle_weightedClosedWalkEquiv_symm (e : N ≃ₙ N')
+    (c : WeightedClosedWalk N'.Hom R) :
+    ((e.weightedClosedWalkEquiv R).symm c).walk.IsCycle ↔ c.walk.IsCycle := by
+  rw [weightedClosedWalkEquiv_symm_apply]
+  exact e.symm.isCycle_mapPath c.walk
+
 /-- Transport along the identity network isomorphism fixes weighted closed walks. -/
 @[simp]
 theorem weightedClosedWalkEquiv_refl (N : Network K V) :
     (refl N).weightedClosedWalkEquiv R = Equiv.refl _ := by
   apply Equiv.ext
   rintro ⟨s, c, q⟩
+  simp only [weightedClosedWalkEquiv_apply, Equiv.refl_apply]
   exact weightedClosedWalk_mk_eq (refl_vertexEquiv_apply N s) (mapPath_refl N c) q
 
 /-- Weighted closed-walk transport commutes with composition of network isomorphisms. -/
@@ -266,6 +399,7 @@ theorem weightedClosedWalkEquiv_trans {X : Type u''} {N'' : Network K X}
       (e.weightedClosedWalkEquiv R).trans (f.weightedClosedWalkEquiv R) := by
   apply Equiv.ext
   rintro ⟨s, c, q⟩
+  simp only [weightedClosedWalkEquiv_apply, Equiv.trans_apply]
   exact weightedClosedWalk_mk_eq (trans_vertexEquiv_apply e f s) (mapPath_trans e f c) q
 
 /-- The assignment of a transported weighted closed walk is the transported assignment. -/
@@ -276,6 +410,16 @@ theorem assignment_weightedClosedWalkEquiv [AddCommMonoid R] (e : N ≃ₙ N')
   rw [weightedClosedWalkEquiv_apply, WeightedClosedWalk.assignment_def,
     WeightedClosedWalk.assignment_def]
   exact e.walkAssignment_mapPath c.walk c.weight
+
+/-- The assignment of a pulled-back weighted closed walk is the pulled-back assignment. -/
+@[simp]
+theorem assignment_weightedClosedWalkEquiv_symm [AddCommMonoid R] (e : N ≃ₙ N')
+    (c : WeightedClosedWalk N'.Hom R) :
+    ((e.weightedClosedWalkEquiv R).symm c).assignment =
+      (e.assignmentEquiv R).symm c.assignment := by
+  rw [weightedClosedWalkEquiv_symm_apply, WeightedClosedWalk.assignment_def,
+    WeightedClosedWalk.assignment_def, assignmentEquiv_symm]
+  exact e.symm.walkAssignment_mapPath c.walk c.weight
 
 /-! ### Path–cycle decompositions -/
 
