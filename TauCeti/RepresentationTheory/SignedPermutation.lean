@@ -152,7 +152,7 @@ theorem mem_signFixed_iff {x : X} {m : M} :
 /-- If the sign of every element of the stabilizer of `x` is `1`, every vector is fixed. -/
 theorem signFixed_eq_top {x : X} (h : ∀ g : G, g • x = x → ε g x = 1) :
     signFixed R ε x = (⊤ : Submodule R M) :=
-  eq_top_iff.2 fun m _ g hg ↦ by rw [h g hg, one_smul]
+  eq_top_iff.2 fun _ _ ↦ mem_signFixed_iff.2 fun g hg ↦ by rw [h g hg, one_smul]
 
 /-- If some element of the stabilizer of `x` has sign `-1` and `2` is a nonzerodivisor on `M`, no
 nonzero vector is fixed: a fixed vector `m` has `-m = m`. -/
@@ -162,7 +162,7 @@ theorem signFixed_eq_bot (h2 : IsSMulRegular M (2 : R)) {x : X}
   refine eq_bot_iff.2 fun m hm ↦ (Submodule.mem_bot R).2 <|
     isSMulRegular_iff_right_eq_zero_of_smul.1 h2 m ?_
   have hneg : -m = m := by
-    have hfix := hm g hg
+    have hfix := mem_signFixed_iff.1 hm g hg
     rwa [(Int.units_eq_one_or _).resolve_left hne, Units.neg_smul, one_smul] at hfix
   rw [two_smul]
   exact neg_eq_iff_add_eq_zero.1 hneg
@@ -213,7 +213,7 @@ theorem smul_eq_smul_of_mem_signFixed {x : X} {m : M} (hm : m ∈ signFixed R ε
   have hab : (b⁻¹ * a) • x = x := by rw [mul_smul, h, inv_smul_smul]
   have hε' := hε b (b⁻¹ * a) x
   rw [mul_inv_cancel_left, hab] at hε'
-  rw [hε', mul_smul, hm _ hab]
+  rw [hε', mul_smul, mem_signFixed_iff.1 hm _ hab]
 
 /-- The stabilizer sign at a point is trivial exactly when it is trivial at any other point of the
 orbit: the stabilizer of `a • x` is the conjugate of the stabilizer of `x`, with conjugate signs. -/
@@ -223,7 +223,7 @@ theorem forall_smul_eq_imp_eq_one_smul_iff (a : G) (x : X) :
   have key {g : G} (hg : g • a • x = a • x) : ε (a⁻¹ * g * a) x = ε g (a • x) := by
     have h1 : ε a⁻¹ (a • x) * ε a x = 1 := by
       rw [← hε, inv_mul_cancel, sign_one_of_cocycle hε]
-    rw [hε, hε, hg, mul_assoc, mul_comm (ε g _), ← mul_assoc, h1, one_mul]
+    rw [hε, hε, hg, mul_right_comm, h1, one_mul]
   refine ⟨fun h g hg ↦ ?_, fun h g hg ↦ ?_⟩
   · have hg' : (a * g * a⁻¹) • a • x = a • x := by
       rw [mul_smul, mul_smul, inv_smul_smul, hg]
@@ -289,8 +289,9 @@ private noncomputable def ofOrbitSignFixed (hfin : ∀ x : X, (orbit G x).Finite
     refine (mem_invariants_signedPermRep_iff hε).2 fun g x ↦ ?_
     obtain ⟨a, ha⟩ := MulAction.exists_smul_out_eq (ω := (⟦x⟧ : orbitRel.Quotient G X)) rfl
     have hc := mem_orbitSignFixed_iff.1 c.2 ⟦x⟧
+    have hga : (g * a) • (⟦x⟧ : orbitRel.Quotient G X).out = g • x := by rw [mul_smul, ha]
     simp only [ofSupportFinite_coe, orbitRel.Quotient.quotient_smul_eq]
-    rw [orbitValue_eq hε hc ha, orbitValue_eq hε hc (by rw [mul_smul, ha]), hε, ha, mul_smul]⟩
+    rw [orbitValue_eq hε hc ha, orbitValue_eq hε hc hga, hε, ha, mul_smul]⟩
 
 private theorem ofOrbitSignFixed_apply_smul_out (hfin : ∀ x : X, (orbit G x).Finite)
     (c : orbitSignFixed R M ε) (ω : orbitRel.Quotient G X) (a : G) :
@@ -308,7 +309,7 @@ finite group, take `hfin := Finite.finite_mulAction_orbit`. -/
 noncomputable def invariantsSignedPermRepEquiv (hfin : ∀ x : X, (orbit G x).Finite) :
     (signedPermRep R M ε hε).invariants ≃ₗ[R] orbitSignFixed R M ε where
   toFun f := ⟨(f : X →₀ M).comapDomain Quotient.out Quotient.out_injective.injOn,
-    mem_orbitSignFixed_iff.2 fun ω g hg ↦ by
+    mem_orbitSignFixed_iff.2 fun ω ↦ mem_signFixed_iff.2 fun g hg ↦ by
       rw [comapDomain_apply, ← (mem_invariants_signedPermRep_iff hε).1 f.2, hg]⟩
   map_add' _ _ := by ext; simp
   map_smul' _ _ := by ext; simp
@@ -346,7 +347,6 @@ def trivialSignOrbits (ε : G → X → ℤˣ) : Set (orbitRel.Quotient G X) :=
   {ω | ∀ g : G, g • ω.out = ω.out → ε g ω.out = 1}
 
 omit hε in
-@[simp]
 theorem mem_trivialSignOrbits_iff {ω : orbitRel.Quotient G X} :
     ω ∈ trivialSignOrbits ε ↔ ∀ g : G, g • ω.out = ω.out → ε g ω.out = 1 :=
   Iff.rfl
@@ -358,7 +358,7 @@ theorem mk_mem_trivialSignOrbits_iff (x : X) :
   obtain ⟨a, ha⟩ := MulAction.exists_smul_out_eq (ω := (⟦x⟧ : orbitRel.Quotient G X)) rfl
   have h := forall_smul_eq_imp_eq_one_smul_iff hε a (⟦x⟧ : orbitRel.Quotient G X).out
   rw [ha] at h
-  exact h.symm
+  exact mem_trivialSignOrbits_iff.trans h.symm
 
 omit hε in
 /-- When `2` is a nonzerodivisor on `M`, a function on the orbit space has values fixed by the
@@ -369,10 +369,10 @@ theorem orbitSignFixed_eq_supported (h2 : IsSMulRegular M (2 : R)) :
   rw [mem_orbitSignFixed_iff, mem_supported']
   refine ⟨fun hc ω hω ↦ ?_, fun hc ω ↦ ?_⟩
   · have h : ∃ g : G, g • ω.out = ω.out ∧ ε g ω.out ≠ 1 := by
-      simpa [trivialSignOrbits, not_forall] using hω
+      simpa [mem_trivialSignOrbits_iff, not_forall] using hω
     simpa [signFixed_eq_bot h2 h] using hc ω
   · by_cases hω : ω ∈ trivialSignOrbits ε
-    · rw [signFixed_eq_top hω]
+    · rw [signFixed_eq_top (mem_trivialSignOrbits_iff.1 hω)]
       exact Submodule.mem_top
     · rw [hc ω hω]
       exact zero_mem _
@@ -415,7 +415,7 @@ theorem invariantsSignedPermRepEquivFinsupp_symm_apply_eq_zero
     (c : trivialSignOrbits ε →₀ M) {x : X} (hx : ⟦x⟧ ∉ trivialSignOrbits ε) :
     ((invariantsSignedPermRepEquivFinsupp R M hε hfin h2).symm c : X →₀ M) x = 0 := by
   set f := (invariantsSignedPermRepEquivFinsupp R M hε hfin h2).symm c
-  have hf : (f : X →₀ M) x ∈ signFixed R ε x := fun g hg ↦ by
+  have hf : (f : X →₀ M) x ∈ signFixed R ε x := mem_signFixed_iff.2 fun g hg ↦ by
     rw [← (mem_invariants_signedPermRep_iff hε).1 f.2, hg]
   rw [mk_mem_trivialSignOrbits_iff hε] at hx
   push Not at hx
