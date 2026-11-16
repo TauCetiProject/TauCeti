@@ -238,6 +238,7 @@ private theorem changeBasepointPullbackHom_tmul (m : (pullback R f rfl).obj M)
 
 /-- On a pure tensor, `changeBasepointPullbackHom` pushes the path factor forward along `f`:
 `m ⊗ c ↦ m ⊗ f_* c`. -/
+@[simp]
 theorem restrictScalarsEquiv_changeBasepointPullbackHom_tmul (m : (pullback R f rfl).obj M)
     (c : cubicalChainModule (MoorePathBetween B' a b) (MooreLoopSpace B' b) R) :
     restrictScalarsEquiv (loopChainMap R f (rfl : f b = f b))
