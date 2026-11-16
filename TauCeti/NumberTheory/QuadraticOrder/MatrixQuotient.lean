@@ -30,11 +30,12 @@ this induces a canonical group isomorphism (`residueUnitsQuotientPeriodMatrixEqu
 When `discr a b < -4`, the only integral units of `ℤ[ω]` are `±1`
 (`units_eq_one_or_neg_one_of_discr_lt_neg_four`), so `unitPeriodMatrixSubgroup a b N` collapses to
 the scalar sign subgroup `Subgroup.zpowers (-1)` (`unitPeriodMatrixSubgroup_eq_zpowers_neg_one`),
-and at `N = 2` it is trivial (`unitPeriodMatrixSubgroup_two_of_discr_lt_neg_four`). By contrast,
-at the Gaussian (`discr = -4`) and Eisenstein (`discr = -3`) discriminants every level-`2`
-multiplication matrix lifts to an integral unit (`unitPeriodMatrixSubgroup_gaussian_two`,
-`unitPeriodMatrixSubgroup_eisenstein_two`, `unitPeriodMatrixSubgroup_neg_three_three_two`), so the
-level-`2` quotient is trivial whereas the scalar signs reduce trivially modulo `2`.
+and at `N = 2` it is trivial (`unitPeriodMatrixSubgroup_two_eq_bot_of_discr_lt_neg_four`). By
+contrast, at the Gaussian (`discr = -4`) and Eisenstein (`discr = -3`) discriminants every level-`2`
+multiplication matrix lifts to an integral unit (`unitPeriodMatrixSubgroup_neg_one_zero_two_eq_top`,
+`unitPeriodMatrixSubgroup_neg_one_one_two_eq_top`,
+`unitPeriodMatrixSubgroup_neg_three_three_two_eq_top`), so the level-`2` quotient is trivial
+whereas the scalar signs reduce trivially modulo `2`.
 
 Finally, over `(a, b) = (0, 0)` in `ZMod 3` — the ramified reduction occurring when `3` divides
 both `a` and `b` — the three lower-triangular unipotent matrices `!![1, 0; s, 1]` (`s : ZMod 3`)
@@ -175,27 +176,6 @@ theorem residueUnitsQuotientPeriodMatrixEquiv_symm_mk {R : Type*} [CommRing R] {
 
 /-! ### Discriminants strictly below `-4` versus the Gaussian and Eisenstein cases -/
 
-/-- **Units for `discr a b < -4`**: in an integral quadratic algebra of discriminant strictly less
-than `-4`, the only units are `1` and `-1`. -/
-theorem units_eq_one_or_neg_one_of_discr_lt_neg_four {a b : ℤ} (hd : discr a b < -4)
-    (u : (QuadraticAlgebra ℤ a b)ˣ) : u = 1 ∨ u = -1 := by
-  have hnorm_unit : IsUnit (norm (u : QuadraticAlgebra ℤ a b)) :=
-    isUnit_iff_norm_isUnit.mp u.isUnit
-  have hnorm_nonneg : 0 ≤ norm (u : QuadraticAlgebra ℤ a b) :=
-    norm_nonneg_of_discr_nonpos (by omega) _
-  have hnorm : norm (u : QuadraticAlgebra ℤ a b) = 1 := by
-    rcases Int.isUnit_iff.mp hnorm_unit with h1 | h1 <;> omega
-  have h4 := four_mul_norm_eq (u : QuadraticAlgebra ℤ a b)
-  rw [hnorm, mul_one] at h4
-  have him : (u : QuadraticAlgebra ℤ a b).im = 0 := by
-    by_contra hne
-    have : 1 ≤ (u : QuadraticAlgebra ℤ a b).im ^ 2 := by have := sq_pos_iff.mpr hne; omega
-    nlinarith [sq_nonneg (trace (u : QuadraticAlgebra ℤ a b))]
-  rw [him, trace_def, him] at h4
-  rcases sq_eq_one_iff.mp (by nlinarith : (u : QuadraticAlgebra ℤ a b).re ^ 2 = 1) with h1 | h1
-  · exact .inl <| Units.ext <| by ext <;> simp [h1, him]
-  · exact .inr <| Units.ext <| by ext <;> simp [h1, him]
-
 /-- When `discr a b < -4`, the reduced global-unit subgroup `unitPeriodMatrixSubgroup a b N` is the
 scalar sign subgroup `{±I} = Subgroup.zpowers (-1)`. -/
 theorem unitPeriodMatrixSubgroup_eq_zpowers_neg_one {a b : ℤ} (hd : discr a b < -4) (N : ℕ) :
@@ -231,7 +211,7 @@ theorem periodMatrixQuotientEquivZpowersNegOne_mk {a b : ℤ} {N : ℕ} {a' b' :
 subgroup is trivial and the quotient collapses to `periodMatrixGroup (a : ZMod 2) (b : ZMod 2)`
 itself. -/
 @[simp]
-theorem unitPeriodMatrixSubgroup_two_of_discr_lt_neg_four {a b : ℤ} (hd : discr a b < -4) :
+theorem unitPeriodMatrixSubgroup_two_eq_bot_of_discr_lt_neg_four {a b : ℤ} (hd : discr a b < -4) :
     unitPeriodMatrixSubgroup a b 2 = ⊥ := by
   rw [unitPeriodMatrixSubgroup_eq_zpowers_neg_one hd 2, Subgroup.zpowers_eq_bot]
   exact Subtype.ext <| Units.ext <| by
@@ -240,7 +220,7 @@ theorem unitPeriodMatrixSubgroup_two_of_discr_lt_neg_four {a b : ℤ} (hd : disc
 /-- In the Gaussian integer algebra (`a = -1`, `b = 0`, `discr = -4`), the reduced global-unit
 subgroup at level `2` is the entire multiplication-matrix group. -/
 @[simp]
-theorem unitPeriodMatrixSubgroup_gaussian_two :
+theorem unitPeriodMatrixSubgroup_neg_one_zero_two_eq_top :
     unitPeriodMatrixSubgroup (-1) 0 2 = ⊤ := by
   rw [unitPeriodMatrixSubgroup_def, MonoidHom.range_eq_top]
   exact periodUnitMatrixEquiv.surjective.comp units_map_zmod_two_gaussian_surjective
@@ -248,7 +228,7 @@ theorem unitPeriodMatrixSubgroup_gaussian_two :
 /-- In the Eisenstein integer algebra (`a = -1`, `b = 1`, `discr = -3`), the reduced global-unit
 subgroup at level `2` is the entire multiplication-matrix group. -/
 @[simp]
-theorem unitPeriodMatrixSubgroup_eisenstein_two :
+theorem unitPeriodMatrixSubgroup_neg_one_one_two_eq_top :
     unitPeriodMatrixSubgroup (-1) 1 2 = ⊤ := by
   rw [unitPeriodMatrixSubgroup_def, MonoidHom.range_eq_top]
   exact periodUnitMatrixEquiv.surjective.comp units_map_zmod_two_eisenstein_surjective
@@ -257,7 +237,7 @@ theorem unitPeriodMatrixSubgroup_eisenstein_two :
 `discr = -3`), every level-`2` multiplication matrix likewise lifts to an integral unit (`1`,
 `ω - 1`, or `(ω - 1)²`). -/
 @[simp]
-theorem unitPeriodMatrixSubgroup_neg_three_three_two :
+theorem unitPeriodMatrixSubgroup_neg_three_three_two_eq_top :
     unitPeriodMatrixSubgroup (-3) 3 2 = ⊤ := by
   rw [unitPeriodMatrixSubgroup_def, MonoidHom.range_eq_top]
   refine periodUnitMatrixEquiv.surjective.comp fun u ↦ ?_
@@ -292,13 +272,20 @@ def unipotentPeriodMatrixHom (R : Type*) [CommRing R] :
   map_mul' s t := by
     rw [← map_mul periodUnitMatrixEquiv]; congr 1; apply Units.ext; ext <;> simp [add_comm]
 
-/-- Underlying `2 × 2` matrix of `unipotentPeriodMatrixHom R (Multiplicative.ofAdd s)`. -/
+/-- Underlying `2 × 2` matrix of `unipotentPeriodMatrixHom R s`. -/
 @[simp]
-theorem coe_unipotentPeriodMatrixHom {R : Type*} [CommRing R] (s : R) :
-    (((unipotentPeriodMatrixHom R (Multiplicative.ofAdd s) :
+theorem coe_unipotentPeriodMatrixHom {R : Type*} [CommRing R] (s : Multiplicative R) :
+    (((unipotentPeriodMatrixHom R s :
         periodMatrixGroup (0 : R) (0 : R)) : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) =
-      !![1, 0; s, 1] := by
+      !![1, 0; s.toAdd, 1] := by
   simp [unipotentPeriodMatrixHom, periodMulMatrix_eq]
+
+/-- `periodUnitMatrixEquiv.symm` sends `unipotentPeriodMatrixHom R s` to the unit `1 + sω`. -/
+theorem val_periodUnitMatrixEquiv_symm_unipotentPeriodMatrixHom {R : Type*} [CommRing R]
+    (s : Multiplicative R) :
+    ((periodUnitMatrixEquiv.symm (unipotentPeriodMatrixHom R s) :
+      (QuadraticAlgebra R 0 0)ˣ) : QuadraticAlgebra R 0 0) = ⟨1, s.toAdd⟩ := by
+  simp
 
 /-- Injectivity of the composite `Multiplicative (ZMod 3) →* periodMatrixGroup 0 0 ⧸ {±I}`. -/
 private theorem unipotentPeriodMatrixHom_mk_injective :
@@ -313,14 +300,17 @@ private theorem unipotentPeriodMatrixHom_mk_injective :
   obtain ⟨k, hk⟩ := hs
   rw [show (-1 : periodMatrixGroup (0 : ZMod 3) (0 : ZMod 3)) = periodUnitMatrixEquiv (-1) by simp,
     ← map_zpow] at hk
-  have him := congrArg (fun u : (QuadraticAlgebra (ZMod 3) 0 0)ˣ ↦ u.val.im)
-    (periodUnitMatrixEquiv.injective hk)
-  have hneg_im : (((-1 : (QuadraticAlgebra (ZMod 3) 0 0)ˣ) ^ k :
-      (QuadraticAlgebra (ZMod 3) 0 0)ˣ) : QuadraticAlgebra (ZMod 3) 0 0).im = 0 := by
+  have him := congrArg (fun M : periodMatrixGroup (0 : ZMod 3) (0 : ZMod 3) ↦
+      ((M : GL (Fin 2) (ZMod 3)) : Matrix (Fin 2) (Fin 2) (ZMod 3)) 1 0) hk
+  have hneg : ((((-1 : (QuadraticAlgebra (ZMod 3) 0 0)ˣ) ^ k :
+      (QuadraticAlgebra (ZMod 3) 0 0)ˣ) : QuadraticAlgebra (ZMod 3) 0 0)).im = 0 := by
     rcases Int.even_or_odd k with ⟨n, rfl⟩ | ⟨n, rfl⟩
     · simp [← two_mul, zpow_mul]
     · simp [zpow_add, zpow_mul]
-  exact Multiplicative.toAdd.injective (hneg_im ▸ him.symm)
+  simp only [coe_periodUnitMatrixEquiv, coe_periodUnitMatrix, periodMulMatrix_eq,
+    coe_unipotentPeriodMatrixHom, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_one,
+    Matrix.cons_val_zero, hneg] at him
+  exact Multiplicative.toAdd.injective him.symm
 
 /-- Surjectivity of the composite `Multiplicative (ZMod 3) →* periodMatrixGroup 0 0 ⧸ {±I}`. -/
 private theorem unipotentPeriodMatrixHom_mk_surjective :
@@ -335,16 +325,24 @@ private theorem unipotentPeriodMatrixHom_mk_surjective :
   rcases (show ∀ t : ZMod 3, IsUnit t → t = 1 ∨ t = -1 by decide) u.val.re hu with h1 | h1
   · refine ⟨Multiplicative.ofAdd u.val.im, ?_⟩
     simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply]
-    congr 1; dsimp only [unipotentPeriodMatrixHom, MonoidHom.coe_mk, OneHom.coe_mk]
-    congr 1; apply Units.ext; ext <;> simp [h1]
+    congr 1
+    apply periodUnitMatrixEquiv.symm.injective
+    apply Units.ext
+    rw [val_periodUnitMatrixEquiv_symm_unipotentPeriodMatrixHom, MulEquiv.symm_apply_apply]
+    ext <;> simp [h1]
   · refine ⟨Multiplicative.ofAdd (-u.val.im), ?_⟩
-    simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply, QuotientGroup.eq,
+    have hneg : unipotentPeriodMatrixHom (ZMod 3) (Multiplicative.ofAdd (-u.val.im)) =
+        -periodUnitMatrixEquiv u := by
+      apply periodUnitMatrixEquiv.symm.injective
+      apply Units.ext
+      rw [val_periodUnitMatrixEquiv_symm_unipotentPeriodMatrixHom, ← periodUnitMatrixEquiv_neg,
+        MulEquiv.symm_apply_apply]
+      ext <;> simp [h1]
+    simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply, hneg, QuotientGroup.eq,
       Subgroup.mem_zpowers_iff]
     refine ⟨1, ?_⟩
-    rw [zpow_one, show (-1 : periodMatrixGroup (0 : ZMod 3) (0 : ZMod 3)) =
-      periodUnitMatrixEquiv (-1) by simp]
-    dsimp only [unipotentPeriodMatrixHom, MonoidHom.coe_mk, OneHom.coe_mk]
-    rw [← map_inv, ← map_mul]; congr 1; apply Units.ext; ext <;> simp [h1]
+    rw [zpow_one, eq_inv_mul_iff_mul_eq]
+    simp
 
 /-- Over `ZMod 3` with `(a, b) = (0, 0)`, the three lower-triangular unipotent matrices
 `!![1, 0; s, 1]` (`s : ZMod 3`) form a complete, irredundant set of coset representatives for

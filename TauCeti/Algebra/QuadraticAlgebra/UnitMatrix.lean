@@ -63,7 +63,7 @@ theorem periodUnitMatrix_neg (u : (QuadraticAlgebra R a b)ˣ) :
   apply Units.ext
   simp only [coe_periodUnitMatrix, Units.val_neg, periodMulMatrix_eq]
   ext i j
-  fin_cases i <;> fin_cases j <;> simp; ring
+  fin_cases i <;> fin_cases j <;> simp [add_comm]
 
 /-- The group of invertible quadratic multiplication matrices. -/
 def periodMatrixGroup (a b : R) : Subgroup (GL (Fin 2) R) :=

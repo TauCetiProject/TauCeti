@@ -23,7 +23,8 @@ This file reads the relative Galois theory of `rayClassField 𝔫 / rayClassFiel
 
 * For any `K`-embedding `f : M →ₐ[K] L` between finite abelian extensions of `K`, restricting the
   Artin symbol `ideleClassArtinMap K L c` along `f` recovers `ideleClassArtinMap K M c`
-  (`restrictNormalHom_ideleClassArtinMap`). Passing to ray class groups shows that restriction
+  (`algHom_restrictNormalHom_ideleClassArtinMap`, with scalar-tower form
+  `restrictNormalHom_ideleClassArtinMap`). Passing to ray class groups shows that restriction
   `Gal(rayClassField 𝔫 / K) →* Gal(rayClassField 𝔪 / K)` corresponds under `rayClassArtinEquiv` to
   the transition map `classMap h : Cl_𝔫 →* Cl_𝔪` (`restrictNormalHom_rayClassArtinEquiv`), and
   restriction to `hilbertClassField K` corresponds to `rayClassToClassGroup 𝔪`
@@ -37,9 +38,13 @@ This file reads the relative Galois theory of `rayClassField 𝔫 / rayClassFiel
   `residueUnitsQuotientArtinEquiv` of `Gal(rayClassField 𝔪 / hilbertClassField K)`.
 * Consequently `[rayClassField 𝔫 : rayClassField 𝔪] = #(classMap h).ker`
   (`finrank_rayClassField_rayClassField`), `[rayClassField 𝔪 : hilbertClassField K]` satisfies the
-  relative ray class degree formula (`finrank_hilbertClassField_rayClassField_mul_index`), and the
-  relative field norm is the product of Galois conjugates indexed by these kernels or residue-unit
-  quotients (`algebraMap_norm_rayClassField`, `algebraMap_norm_hilbertClassField_rayClassField`,
+  relative ray class degree formula (`finrank_hilbertClassField_rayClassField_mul_index`),
+  degrees multiply cleanly across towers through `hilbertClassField K`
+  (`classNumber_mul_finrank_hilbertClassField_rayClassField`,
+  `finrank_hilbertClassField_mul_finrank_rayClassField`),
+  and the relative field norm is the product of Galois conjugates indexed by these kernels or
+  residue-unit quotients (`algebraMap_norm_rayClassField`,
+  `algebraMap_norm_hilbertClassField_rayClassField`,
   `algebraMap_norm_hilbertClassField_of_infinitePart_eq_empty`).
 
 ## References
@@ -63,14 +68,13 @@ open scoped IsMulCommutative in
 /-- **Tower compatibility of the global Artin map of abelian extensions**: for any `K`-embedding
 `f : M →ₐ[K] L` of finite abelian extensions of `K`, restricting the Artin symbol in `Gal(L/K)`
 along `f` yields the Artin symbol in `Gal(M/K)`. -/
-theorem restrictNormalHom_ideleClassArtinMap
+theorem algHom_restrictNormalHom_ideleClassArtinMap
     {M L : Type*} [Field M] [NumberField M] [Algebra K M] [IsAbelianGalois K M]
     [Field L] [NumberField L] [Algebra K L] [IsAbelianGalois K L]
     (f : M →ₐ[K] L) (c : IdeleClassGroup (𝓞 K) K) :
     f.restrictNormalHom (ideleClassArtinMap K L c) = ideleClassArtinMap K M c := by
   apply (Group.Abelianization.equivOfComm (H := Gal(M/K))).injective
-  change Group.Abelianization.of (f.restrictNormalHom (ideleClassArtinMap K L c)) =
-    Group.Abelianization.of (ideleClassArtinMap K M c)
+  rw [Group.Abelianization.equivOfComm_apply, Group.Abelianization.equivOfComm_apply]
   have h := DFunLike.congr_fun
     (globalArtinMap_comp K L f IsSepClosed.lift) (Additive.ofMul c)
   have hL := of_ideleClassArtinMap K L IsSepClosed.lift c
@@ -82,18 +86,18 @@ theorem restrictNormalHom_ideleClassArtinMap
   rw [← hL, Group.Abelianization.map_of, ← hM] at h'
   exact h'
 
-/-- Scalar-tower form of `restrictNormalHom_ideleClassArtinMap`. -/
+/-- Scalar-tower form of `algHom_restrictNormalHom_ideleClassArtinMap`. -/
 @[simp]
-theorem restrictNormal_ideleClassArtinMap
+theorem restrictNormalHom_ideleClassArtinMap
     (M : Type*) {L : Type*} [Field M] [NumberField M] [Algebra K M] [IsAbelianGalois K M]
     [Field L] [NumberField L] [Algebra K L] [IsAbelianGalois K L]
     [Algebra M L] [IsScalarTower K M L] (c : IdeleClassGroup (𝓞 K) K) :
     AlgEquiv.restrictNormalHom M (ideleClassArtinMap K L c) = ideleClassArtinMap K M c := by
-  rw [← AlgHom.restrictNormalHom_toAlgHom (F := K), restrictNormalHom_ideleClassArtinMap]
+  rw [← AlgHom.restrictNormalHom_toAlgHom (F := K), algHom_restrictNormalHom_ideleClassArtinMap]
 
 /-- **Tower compatibility of ray-class Artin maps**: for `h : 𝔪 ∣ 𝔫` and admissible extensions
 `f : M →ₐ[K] L`, restriction along `f` intertwines `rayClassArtinMap` with `classMap h`. -/
-theorem restrictNormalHom_rayClassArtinMap
+theorem algHom_restrictNormalHom_rayClassArtinMap
     {M L : Type} [Field M] [NumberField M] [Algebra K M] [IsAbelianGalois K M]
     [Field L] [NumberField L] [Algebra K L] [IsAbelianGalois K L]
     {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (hM : IsAdmissibleModulus K M 𝔪)
@@ -101,17 +105,18 @@ theorem restrictNormalHom_rayClassArtinMap
     f.restrictNormalHom (rayClassArtinMap 𝔫 hL x) = rayClassArtinMap 𝔪 hM (classMap h x) := by
   obtain ⟨c, rfl⟩ := rayClassQuotient_surjective 𝔫 x
   rw [rayClassArtinMap_rayClassQuotient, classMap_rayClassQuotient,
-    rayClassArtinMap_rayClassQuotient, restrictNormalHom_ideleClassArtinMap]
+    rayClassArtinMap_rayClassQuotient, algHom_restrictNormalHom_ideleClassArtinMap]
 
-/-- Scalar-tower form of `restrictNormalHom_rayClassArtinMap`. -/
-theorem restrictNormal_rayClassArtinMap
+/-- Scalar-tower form of `algHom_restrictNormalHom_rayClassArtinMap`. -/
+theorem restrictNormalHom_rayClassArtinMap
     (M : Type) {L : Type} [Field M] [NumberField M] [Algebra K M] [IsAbelianGalois K M]
     [Field L] [NumberField L] [Algebra K L] [IsAbelianGalois K L]
     [Algebra M L] [IsScalarTower K M L] {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
     (hM : IsAdmissibleModulus K M 𝔪) (hL : IsAdmissibleModulus K L 𝔫) (x : RayClassGroup 𝔫) :
     AlgEquiv.restrictNormalHom M (rayClassArtinMap 𝔫 hL x) =
       rayClassArtinMap 𝔪 hM (classMap h x) := by
-  rw [← AlgHom.restrictNormalHom_toAlgHom (F := K), restrictNormalHom_rayClassArtinMap h hM hL]
+  rw [← AlgHom.restrictNormalHom_toAlgHom (F := K),
+    algHom_restrictNormalHom_rayClassArtinMap h hM hL]
 
 /-- **Restriction between ray class fields is the transition map on ray class groups**: for
 `h : 𝔪 ∣ 𝔫`, restricting `rayClassArtinEquiv 𝔫 x` to `rayClassField 𝔪` gives
@@ -122,7 +127,7 @@ theorem restrictNormalHom_rayClassArtinEquiv {𝔪 𝔫 : Modulus K} (h : 𝔪 �
     AlgEquiv.restrictNormalHom (rayClassField 𝔪) (rayClassArtinEquiv 𝔫 x) =
       rayClassArtinEquiv 𝔪 (classMap h x) := by
   rw [rayClassArtinEquiv_apply, rayClassArtinEquiv_apply]
-  exact restrictNormal_rayClassArtinMap (rayClassField 𝔪) h
+  exact restrictNormalHom_rayClassArtinMap (rayClassField 𝔪) h
     (isAdmissibleModulus_rayClassField 𝔪) (isAdmissibleModulus_rayClassField 𝔫) x
 
 /-- **Restriction from a ray class field to the Hilbert class field** sends the Artin symbol of a
@@ -175,7 +180,7 @@ theorem restrictScalars_kerClassMapArtinEquiv {𝔪 𝔫 : Modulus K} (h : 𝔪 
     [Algebra (rayClassField 𝔪) (rayClassField 𝔫)]
     [IsScalarTower K (rayClassField 𝔪) (rayClassField 𝔫)] (x : (classMap h).ker) :
     (kerClassMapArtinEquiv h x).restrictScalars K = rayClassArtinEquiv 𝔫 x := by
-  change AlgEquiv.restrictScalarsHom K (kerClassMapArtinEquiv h x) = rayClassArtinEquiv 𝔫 x
+  rw [← AlgEquiv.restrictScalarsHom_apply K]
   simp [kerClassMapArtinEquiv]
 
 /-- Pointwise evaluation of `kerClassMapArtinEquiv` agrees with `rayClassArtinEquiv 𝔫`. -/
@@ -260,16 +265,26 @@ theorem residueUnitsQuotientArtinEquiv_mk_apply {𝔪 : Modulus K} (h : 𝔪.inf
 
 /-! ### Relative degrees and Galois norms -/
 
+section RelativeDegreesAndNorms
+
+private theorem isGalois_rayClassField_of_tower (M : Type*) [Field M] [Algebra K M]
+    {𝔫 : Modulus K} [Algebra M (rayClassField 𝔫)] [IsScalarTower K M (rayClassField 𝔫)] :
+    IsGalois M (rayClassField 𝔫) :=
+  IsGalois.tower_top_of_isGalois K M (rayClassField 𝔫)
+
+private theorem finiteDimensional_rayClassField_of_tower (M : Type*) [Field M] [Algebra K M]
+    {𝔫 : Modulus K} [Algebra M (rayClassField 𝔫)] [IsScalarTower K M (rayClassField 𝔫)] :
+    FiniteDimensional M (rayClassField 𝔫) :=
+  FiniteDimensional.right K M (rayClassField 𝔫)
+
 /-- **Relative degree of ray class fields**: for `h : 𝔪 ∣ 𝔫`,
 `[rayClassField 𝔫 : rayClassField 𝔪] = #(classMap h).ker`. -/
 theorem finrank_rayClassField_rayClassField {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
     [Algebra (rayClassField 𝔪) (rayClassField 𝔫)]
     [IsScalarTower K (rayClassField 𝔪) (rayClassField 𝔫)] :
     Module.finrank (rayClassField 𝔪) (rayClassField 𝔫) = Nat.card (classMap h).ker := by
-  have : IsGalois (rayClassField 𝔪) (rayClassField 𝔫) :=
-    IsGalois.tower_top_of_isGalois K (rayClassField 𝔪) (rayClassField 𝔫)
-  have : FiniteDimensional (rayClassField 𝔪) (rayClassField 𝔫) :=
-    FiniteDimensional.right K (rayClassField 𝔪) (rayClassField 𝔫)
+  have := isGalois_rayClassField_of_tower (K := K) (rayClassField 𝔪) (𝔫 := 𝔫)
+  have := finiteDimensional_rayClassField_of_tower (K := K) (rayClassField 𝔪) (𝔫 := 𝔫)
   rw [← IsGalois.card_aut_eq_finrank, Nat.card_congr (kerClassMapArtinEquiv h).symm.toEquiv]
 
 /-- Whenever `rayClassField 𝔫` is a `K`-tower over `rayClassField 𝔪`,
@@ -295,6 +310,41 @@ theorem finrank_hilbertClassField_rayClassField (𝔪 : Modulus K)
   rw [finrank_rayClassField_rayClassField (Modulus.one_dvd 𝔪),
     ker_rayClassToClassGroup_eq_ker_classMap_one_dvd]
 
+/-- The degree of a ray class field over `K` factors through the Hilbert class field:
+`classNumber K * [rayClassField 𝔪 : hilbertClassField K] = [rayClassField 𝔪 : K]`. -/
+theorem classNumber_mul_finrank_hilbertClassField_rayClassField (𝔪 : Modulus K)
+    [Algebra (hilbertClassField K) (rayClassField 𝔪)]
+    [IsScalarTower K (hilbertClassField K) (rayClassField 𝔪)] :
+    classNumber K * Module.finrank (hilbertClassField K) (rayClassField 𝔪) =
+      Module.finrank K (rayClassField 𝔪) := by
+  have : Module.Free K (hilbertClassField K) := .of_divisionRing K (hilbertClassField K)
+  have : Module.Free (hilbertClassField K) (rayClassField 𝔪) :=
+    .of_divisionRing (hilbertClassField K) (rayClassField 𝔪)
+  rw [← finrank_hilbertClassField K,
+    Module.finrank_mul_finrank K (hilbertClassField K) (rayClassField 𝔪)]
+
+/-- Degree multiplicativity over the Hilbert class field: for any `K`-tower
+`hilbertClassField K ⊆ rayClassField 𝔪 ⊆ rayClassField 𝔫`,
+`[rayClassField 𝔪 : hilbertClassField K] * [rayClassField 𝔫 : rayClassField 𝔪] =
+[rayClassField 𝔫 : hilbertClassField K]`. -/
+theorem finrank_hilbertClassField_mul_finrank_rayClassField (𝔪 𝔫 : Modulus K)
+    [Algebra (hilbertClassField K) (rayClassField 𝔪)]
+    [IsScalarTower K (hilbertClassField K) (rayClassField 𝔪)]
+    [Algebra (hilbertClassField K) (rayClassField 𝔫)]
+    [IsScalarTower K (hilbertClassField K) (rayClassField 𝔫)]
+    [Algebra (rayClassField 𝔪) (rayClassField 𝔫)]
+    [IsScalarTower K (rayClassField 𝔪) (rayClassField 𝔫)] :
+    Module.finrank (hilbertClassField K) (rayClassField 𝔪) *
+        Module.finrank (rayClassField 𝔪) (rayClassField 𝔫) =
+      Module.finrank (hilbertClassField K) (rayClassField 𝔫) := by
+  have : Module.Free K (rayClassField 𝔪) := .of_divisionRing K (rayClassField 𝔪)
+  have : Module.Free (rayClassField 𝔪) (rayClassField 𝔫) :=
+    .of_divisionRing (rayClassField 𝔪) (rayClassField 𝔫)
+  have hmul := Module.finrank_mul_finrank K (rayClassField 𝔪) (rayClassField 𝔫)
+  rw [← classNumber_mul_finrank_hilbertClassField_rayClassField 𝔪,
+    ← classNumber_mul_finrank_hilbertClassField_rayClassField 𝔫, mul_assoc] at hmul
+  exact Nat.mul_left_cancel (NumberField.classNumber_pos K) hmul
+
 /-- **Relative ray class degree formula** over the Hilbert class field:
 `[rayClassField 𝔪 : hilbertClassField K] * [(𝓞 K)ˣ : unitsCongruenceSubgroup 𝔪] =
 #(𝓞 K ⧸ 𝔪.finitePart)ˣ * 2 ^ #𝔪.infinitePart`. -/
@@ -314,7 +364,8 @@ theorem finrank_hilbertClassField_rayClassField_mul_index_of_infinitePart_eq_emp
     Module.finrank (hilbertClassField K) (rayClassField 𝔪) *
         (unitsCongruenceSubgroup 𝔪).index =
       Nat.card (𝓞 K ⧸ 𝔪.finitePart)ˣ := by
-  simpa [h] using finrank_hilbertClassField_rayClassField_mul_index 𝔪
+  rw [finrank_hilbertClassField_rayClassField,
+    card_ker_rayClassToClassGroup_mul_index_of_infinitePart_eq_empty h]
 
 /-- **Norm in a ray class field tower as a product over `(classMap h).ker`.** -/
 theorem algebraMap_norm_rayClassField {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
@@ -323,10 +374,8 @@ theorem algebraMap_norm_rayClassField {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫
     algebraMap (rayClassField 𝔪) (rayClassField 𝔫) (Algebra.norm (rayClassField 𝔪) y) =
       ∏ᶠ x : (classMap h).ker, rayClassArtinEquiv 𝔫 x y := by
   classical
-  have : IsGalois (rayClassField 𝔪) (rayClassField 𝔫) :=
-    IsGalois.tower_top_of_isGalois K (rayClassField 𝔪) (rayClassField 𝔫)
-  have : FiniteDimensional (rayClassField 𝔪) (rayClassField 𝔫) :=
-    FiniteDimensional.right K (rayClassField 𝔪) (rayClassField 𝔫)
+  have := isGalois_rayClassField_of_tower (K := K) (rayClassField 𝔪) (𝔫 := 𝔫)
+  have := finiteDimensional_rayClassField_of_tower (K := K) (rayClassField 𝔪) (𝔫 := 𝔫)
   rw [Algebra.norm_eq_prod_automorphisms, ← finprod_eq_prod_of_fintype,
     ← finprod_comp_equiv (kerClassMapArtinEquiv h).toEquiv]
   simp
@@ -338,13 +387,9 @@ theorem algebraMap_norm_hilbertClassField_rayClassField (𝔪 : Modulus K)
     [IsScalarTower K (hilbertClassField K) (rayClassField 𝔪)] (y : rayClassField 𝔪) :
     algebraMap (hilbertClassField K) (rayClassField 𝔪) (Algebra.norm (hilbertClassField K) y) =
       ∏ᶠ x : (rayClassToClassGroup 𝔪).ker, rayClassArtinEquiv 𝔪 x y := by
-  classical
-  have : IsGalois (hilbertClassField K) (rayClassField 𝔪) :=
-    IsGalois.tower_top_of_isGalois K (hilbertClassField K) (rayClassField 𝔪)
-  have : FiniteDimensional (hilbertClassField K) (rayClassField 𝔪) :=
-    FiniteDimensional.right K (hilbertClassField K) (rayClassField 𝔪)
-  rw [Algebra.norm_eq_prod_automorphisms, ← finprod_eq_prod_of_fintype,
-    ← finprod_comp_equiv (kerRayClassToClassGroupArtinEquiv 𝔪).toEquiv]
+  rw [algebraMap_norm_rayClassField (Modulus.one_dvd 𝔪),
+    ← finprod_comp_equiv (MulEquiv.subgroupCongr
+      (ker_rayClassToClassGroup_eq_ker_classMap_one_dvd 𝔪)).toEquiv]
   simp
 
 /-- **Norm from a purely finite ray class field to the Hilbert class field** as a product over the
@@ -360,5 +405,7 @@ theorem algebraMap_norm_hilbertClassField_of_infinitePart_eq_empty {𝔪 : Modul
   rw [algebraMap_norm_hilbertClassField_rayClassField 𝔪,
     ← finprod_comp_equiv (residueUnitsQuotientEquivKerRayClassToClassGroup h).toEquiv]
   simp [residueUnitsQuotientArtinEquiv]
+
+end RelativeDegreesAndNorms
 
 end TauCeti.ClassFieldTheory

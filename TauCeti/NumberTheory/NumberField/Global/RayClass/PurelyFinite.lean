@@ -172,7 +172,6 @@ noncomputable def residueRayClass (𝔪 : Modulus K) :
   (residueSignRayClass 𝔪).comp (MonoidHom.inl _ _)
 
 /-- `residueRayClass 𝔪 u` evaluates `residueSignRayClass 𝔪` at `(u, 1)`. -/
-@[simp]
 theorem residueRayClass_apply (𝔪 : Modulus K) (u : (𝓞 K ⧸ 𝔪.finitePart)ˣ) :
     residueRayClass 𝔪 u = residueSignRayClass 𝔪 (u, 1) :=
   (rfl)
@@ -227,12 +226,5 @@ theorem card_ker_rayClassToClassGroup_mul_index_of_infinitePart_eq_empty {𝔪 :
     Nat.card (rayClassToClassGroup 𝔪).ker * (unitsCongruenceSubgroup 𝔪).index =
       Nat.card (𝓞 K ⧸ 𝔪.finitePart)ˣ := by
   simpa [h] using card_ker_rayClassToClassGroup_mul_index 𝔪
-
-/-- When `𝔪.infinitePart = ∅`, the ray class number formula has no archimedean factor `2 ^ #𝔪∞`. -/
-theorem card_rayClassGroup_mul_index_of_infinitePart_eq_empty {𝔪 : Modulus K}
-    (h : 𝔪.infinitePart = ∅) :
-    Nat.card (RayClassGroup 𝔪) * (unitsCongruenceSubgroup 𝔪).index =
-      Nat.card (ClassGroup (𝓞 K)) * Nat.card (𝓞 K ⧸ 𝔪.finitePart)ˣ := by
-  simpa [h] using card_rayClassGroup_mul_index 𝔪
 
 end TauCeti.GlobalNumberFields

@@ -7,6 +7,10 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.Tower
 public import TauCeti.NumberTheory.NumberField.Quadratic.CongruenceUnits
+public import TauCeti.NumberTheory.QuadraticOrder.MatrixQuotient
+import Mathlib.GroupTheory.OrderOfElement
+import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Values
+import TauCeti.NumberTheory.NumberField.Quadratic.Units
 
 /-!
 # Multiplication-matrix Galois actions and ray class field degrees for imaginary quadratic fields
@@ -20,8 +24,9 @@ formulas of `TauCeti.NumberTheory.NumberField.Quadratic.CongruenceUnits` yields 
 multiplication-matrix and degree dictionary over `hilbertClassField K`:
 
 1. **Multiplication-matrix presentation of `Gal(K_(N) / H_K)` and norm products.** Any ring
-   isomorphism `e : 𝓞 K ≃+* QuadraticAlgebra ℤ a b` (such as the canonical `(1, τ_D)` presentation
-   from `exists_ringOfIntegers_periodAlgEquiv`) induces a group isomorphism
+   isomorphism `e : 𝓞 K ≃+* QuadraticAlgebra ℤ a b` (for instance a period-algebra presentation
+   onto `QuadraticAlgebra ℤ (-periodCoeffC D) (-periodCoeffB D)` from
+   `exists_ringOfIntegers_periodAlgEquiv`) induces a group isomorphism
    `periodMatrixQuotientArtinEquiv : periodMatrixGroup (a : ZMod N) (b : ZMod N) ⧸
    unitPeriodMatrixSubgroup a b N ≃* Gal(rayClassField (Modulus.spanNat K N) / hilbertClassField K)`
    and expresses the relative norm to `hilbertClassField K` as the product of conjugates over this
@@ -30,17 +35,21 @@ multiplication-matrix and degree dictionary over `hilbertClassField K`:
      Galois group is `periodMatrixGroup (a : ZMod 2) (b : ZMod 2)` itself
      (`periodMatrixArtinEquivTwo`, `algebraMap_norm_hilbertClassField_periodMatrixTwo`).
    * At level `N = 3` when `discr a b < -4` and `(a : ZMod 3) = (b : ZMod 3) = 0` — which holds for
-     the canonical `(1, τ_D)` presentation when `2` is inert and `3` ramifies (`D ≡ 21 (mod 24)`,
-     `D < -4`) — the three lower-triangular unipotent matrices `!![1, 0; s, 1]` (`s : ZMod 3`)
-     give a `Multiplicative (ZMod 3)` isomorphism onto `Gal(K_(3) / H_K)` and express the norm to
-     `H_K` as the `3`-factor product over `s : ZMod 3` (`unipotentLevelThreeArtinEquiv`,
+     the period presentation whenever `3` ramifies (`3 ∣ D`, `D < -4`, for example `D ≡ 0 (mod 12)`
+     or `D ≡ 9, 21 (mod 24)`, via `intCast_neg_periodCoeffB_zmod_three_eq_zero` and
+     `intCast_neg_periodCoeffC_zmod_three_eq_zero_of_three_dvd`) — the three lower-triangular
+     unipotent matrices `!![1, 0; s, 1]` (`s : ZMod 3`) give a `Multiplicative (ZMod 3)` isomorphism
+     onto `Gal(K_(3) / H_K)` and express the norm to `H_K` as the `3`-factor product over
+     `s : ZMod 3` (`unipotentLevelThreeArtinEquiv`,
      `algebraMap_norm_hilbertClassField_unipotentLevelThree`).
 2. **Closed ray class field degree formulas at levels `2`, `3`, `6`, and `8`.** Using the exact
-   unit congruence subgroups (`⊤` at `1`, `{±1}` at `2`, `⊥` for `3 ≤ N`), this file evaluates
-   `[K_(N) : H_K]` for all imaginary quadratic fields — including `D = -4` and `D = -3`, where
-   `[K_(2) : H_K] = 1` despite `#(𝓞 K ⧸ (2))ˣ > 1` — and deduces the unconditional relative tower
-   degrees `[K_(6) : K_(2)] = (3 - χ_D(3)).toNat` and `[K_(8) : K_(2)] = 8`, valid uniformly for
-   every imaginary quadratic discriminant `D`.
+   unit congruence subgroups (`⊤` at `1`, `{±1}` at `2`, `⊥` for `3 ≤ N`), this file establishes
+   `[K_(N) : H_K] * #(𝓞 K)ˣ = #(𝓞 K ⧸ (N))ˣ` for every `3 ≤ N`
+   (`finrank_hilbertClassField_rayClassField_spanNat_mul_card_units`), evaluates `[K_(N) : H_K]` at
+   levels `2`, `3`, `6`, and `8` for all imaginary quadratic fields — including `D = -4` and
+   `D = -3`, where `[K_(2) : H_K] = 1` despite `#(𝓞 K ⧸ (2))ˣ > 1` — and deduces the unconditional
+   relative tower degrees `[K_(6) : K_(2)] = (3 - χ_D(3)).toNat` and `[K_(8) : K_(2)] = 8`, valid
+   uniformly for every imaginary quadratic discriminant `D`.
 
 ## References
 
@@ -55,8 +64,9 @@ open IsDedekindDomain Module NumberField QuadraticAlgebra TauCeti.GlobalNumberFi
   TauCeti.NumberField
 open scoped NumberField nonZeroDivisors
 open TauCeti.Multiquadratic (fundamentalDiscriminantChar isFundamentalDiscr_discr
-  fundamentalDiscriminantChar_isQuadratic fundamentalDiscriminantChar_two
-  fundamentalDiscriminantChar_natCast_eq_legendreSym)
+  fundamentalDiscriminantChar_le_one fundamentalDiscriminantChar_neg_four_two
+  fundamentalDiscriminantChar_neg_four_three fundamentalDiscriminantChar_neg_three_two
+  fundamentalDiscriminantChar_neg_three_three)
 
 namespace TauCeti.ClassFieldTheory
 
@@ -68,7 +78,7 @@ section MatrixAction
 
 /-- **Multiplication-matrix reciprocity over the Hilbert class field**: given any ring isomorphism
 `e : 𝓞 K ≃+* QuadraticAlgebra ℤ a b`, the level-`N` multiplication-matrix group modulo the reduced
-global units is canonically isomorphic to
+global units is isomorphic to
 `Gal(rayClassField (Modulus.spanNat K N) / hilbertClassField K)`. -/
 def periodMatrixQuotientArtinEquiv {a b : ℤ} (e : 𝓞 K ≃+* QuadraticAlgebra ℤ a b)
     (N : ℕ) [NeZero N]
@@ -102,6 +112,9 @@ theorem restrictScalars_periodMatrixQuotientArtinEquiv_mk {a b : ℤ}
       rayClassArtinEquiv (Modulus.spanNat K N)
         (residueRayClass (Modulus.spanNat K N)
           ((unitsQuotientSpanNatCastPeriodEquivOfRingEquiv e N).symm M)) := by
+  rw [periodMatrixQuotientArtinEquiv_def]
+  -- `(Modulus.spanNat K N).finitePart` is definitionally `Ideal.span {(N : 𝓞 K)}`; `change`
+  -- reconciles the two so `residueUnitsQuotientPeriodMatrixEquiv_symm_mk` matches.
   change ((residueUnitsQuotientArtinEquiv (Modulus.spanNat_infinitePart (K := K) N))
     ((residueUnitsQuotientPeriodMatrixEquiv e N).symm M)).restrictScalars K = _
   rw [residueUnitsQuotientPeriodMatrixEquiv_symm_mk]
@@ -149,7 +162,7 @@ def periodMatrixArtinEquivTwo {a b : ℤ} (e : 𝓞 K ≃+* QuadraticAlgebra ℤ
       Gal(rayClassField (Modulus.spanNat K 2)/hilbertClassField K) :=
   ((QuotientGroup.quotientBot.symm).trans
     (QuotientGroup.quotientMulEquivOfEq
-      (unitPeriodMatrixSubgroup_two_of_discr_lt_neg_four hd).symm)).trans
+      (unitPeriodMatrixSubgroup_two_eq_bot_of_discr_lt_neg_four hd).symm)).trans
     (periodMatrixQuotientArtinEquiv e 2)
 
 /-- `periodMatrixArtinEquivTwo` sends a matrix `M` to `periodMatrixQuotientArtinEquiv e 2` on the
@@ -176,18 +189,16 @@ theorem algebraMap_norm_hilbertClassField_periodMatrixTwo {a b : ℤ}
         (Algebra.norm (hilbertClassField K) y) =
       ∏ᶠ M : periodMatrixGroup (a : ZMod 2) (b : ZMod 2),
         periodMatrixArtinEquivTwo e hd M y := by
-  classical
-  have : IsGalois (hilbertClassField K) (rayClassField (Modulus.spanNat K 2)) :=
-    IsGalois.tower_top_of_isGalois K _ _
-  have : FiniteDimensional (hilbertClassField K) (rayClassField (Modulus.spanNat K 2)) :=
-    FiniteDimensional.right K _ _
-  rw [Algebra.norm_eq_prod_automorphisms, ← finprod_eq_prod_of_fintype,
-    ← finprod_comp_equiv (periodMatrixArtinEquivTwo e hd).toEquiv]
-  rfl
+  rw [algebraMap_norm_hilbertClassField_periodMatrixQuotient e 2 y,
+    ← finprod_comp_equiv ((QuotientGroup.quotientBot.symm).trans
+      (QuotientGroup.quotientMulEquivOfEq
+        (unitPeriodMatrixSubgroup_two_eq_bot_of_discr_lt_neg_four hd).symm)).toEquiv]
+  simp [periodMatrixArtinEquivTwo]
 
 /-- **Level-`3` unipotent reciprocity when `3` divides `a` and `b` and `discr a b < -4`** (as holds
-for `(1, τ_D)` when `2` is inert and `3` ramifies, i.e. `D ≡ 21 (mod 24)` and `D < -4`): the three
-unipotent matrices `!![1, 0; s, 1]` (`s : ZMod 3`) identify `Multiplicative (ZMod 3)` with
+for the period presentation whenever `3` ramifies, i.e. `3 ∣ D` and `D < -4`, for example
+`D ≡ 0 (mod 12)` or `D ≡ 9, 21 (mod 24)`): the three unipotent matrices `!![1, 0; s, 1]`
+(`s : ZMod 3`) identify `Multiplicative (ZMod 3)` with
 `Gal(rayClassField (Modulus.spanNat K 3) / hilbertClassField K)`. -/
 def unipotentLevelThreeArtinEquiv {a b : ℤ} (e : 𝓞 K ≃+* QuadraticAlgebra ℤ a b)
     (hd : QuadraticAlgebra.discr a b < -4) (ha : (a : ZMod 3) = 0) (hb : (b : ZMod 3) = 0)
@@ -237,16 +248,12 @@ theorem algebraMap_norm_hilbertClassField_unipotentLevelThree {a b : ℤ}
     algebraMap (hilbertClassField K) (rayClassField (Modulus.spanNat K 3))
         (Algebra.norm (hilbertClassField K) y) =
       ∏ s : ZMod 3, unipotentLevelThreeArtinEquiv e hd ha hb (Multiplicative.ofAdd s) y := by
-  classical
-  have : IsGalois (hilbertClassField K) (rayClassField (Modulus.spanNat K 3)) :=
-    IsGalois.tower_top_of_isGalois K _ _
-  have : FiniteDimensional (hilbertClassField K) (rayClassField (Modulus.spanNat K 3)) :=
-    FiniteDimensional.right K _ _
-  rw [Algebra.norm_eq_prod_automorphisms,
-    ← Fintype.prod_equiv (Multiplicative.ofAdd.trans
-      (unipotentLevelThreeArtinEquiv e hd ha hb).toEquiv)]
-  intro s
-  rfl
+  rw [algebraMap_norm_hilbertClassField_periodMatrixQuotient e 3 y,
+    ← finprod_comp_equiv (Multiplicative.ofAdd.trans
+      (unipotentPeriodMatrixQuotientEquivZModThree.trans
+        (periodMatrixQuotientEquivZpowersNegOne hd ha hb)).toEquiv),
+    finprod_eq_prod_of_fintype]
+  simp [unipotentLevelThreeArtinEquiv]
 
 end MatrixAction
 
@@ -272,13 +279,14 @@ theorem index_unitsCongruenceSubgroup_spanNat_two (hK : finrank ℚ K = 2) :
   rw [unitsCongruenceSubgroup_spanNat hK 2]
   simp only [OfNat.ofNat_ne_one, ↓reduceIte]
   have hmul := (Subgroup.zpowers (-1 : (𝓞 K)ˣ)).card_mul_index
-  rw [card_zpowers_neg_one_units_ringOfIntegers,
+  rw [Nat.card_zpowers, Units.orderOf_neg_one, ringChar.eq_zero,
     TauCeti.NumberField.Units.card_units_of_isTotallyComplex_of_discr hK] at hmul
+  simp only [OfNat.zero_ne_ofNat, ↓reduceIte] at hmul
   split_ifs at hmul ⊢ <;> omega
 
-/-- **Index of `unitsCongruenceSubgroup (Modulus.spanNat K N)` for `3 ≤ N`**: every non-identity
-root of unity acts nontrivially modulo `(N)`, so the index is `#(𝓞 K)ˣ` (`4` at `D = -4`, `6` at
-`D = -3`, and `2` for `D < -4`). -/
+/-- **Index of `unitsCongruenceSubgroup (Modulus.spanNat K N)` for `3 ≤ N`**: no unit other than
+`1` is congruent to `1` modulo `(N)`, so the index is `#(𝓞 K)ˣ` (`4` at `D = -4`, `6` at `D = -3`,
+and `2` for `D < -4`). -/
 theorem index_unitsCongruenceSubgroup_spanNat_of_three_le (hK : finrank ℚ K = 2) {N : ℕ}
     [NeZero N] (hN : 3 ≤ N) :
     (unitsCongruenceSubgroup (Modulus.spanNat K N)).index =
@@ -292,32 +300,60 @@ theorem index_unitsCongruenceSubgroup_spanNat_of_three_le (hK : finrank ℚ K = 
     TauCeti.NumberField.Units.card_units_of_isTotallyComplex_of_discr hK] at hmul
   exact hmul
 
-/-- Evaluation of `χ_D(2)` and `χ_D(3)` at the Gaussian discriminant `D = -4`. -/
-private theorem char_of_eq_neg_four {D : ℤ} (hD : Int.IsFundamentalDiscr D) (h : D = -4) :
-    fundamentalDiscriminantChar D hD 2 = 0 ∧
-      fundamentalDiscriminantChar D hD 3 = -1 := by
-  have hnsq : ¬IsSquare ((-4 : ℤ) : ZMod 3) := by decide
-  have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
-  refine ⟨?_, ?_⟩
-  · rw [fundamentalDiscriminantChar_two, h, ZMod.χ₈_int_eq_if_mod_eight]
-    norm_num
-  · rw [show (3 : ZMod D.natAbs) = ((3 : ℕ) : ℤ) by norm_num,
-      fundamentalDiscriminantChar_natCast_eq_legendreSym hD (by decide), h,
-      legendreSym.eq_neg_one_iff]
-    exact hnsq
+/-- **General relative degree relation at level `N ≥ 3` for imaginary quadratic fields**:
+`[K_(N) : H_K] * #(𝓞 K)ˣ = #(𝓞 K ⧸ (N))ˣ`, with `#(𝓞 K)ˣ` given by
+`TauCeti.NumberField.Units.card_units_of_isTotallyComplex_of_discr`. -/
+theorem finrank_hilbertClassField_rayClassField_spanNat_mul_card_units
+    (hK : finrank ℚ K = 2) {N : ℕ} [NeZero N] (hN : 3 ≤ N)
+    [Algebra (hilbertClassField K) (rayClassField (Modulus.spanNat K N))]
+    [IsScalarTower K (hilbertClassField K) (rayClassField (Modulus.spanNat K N))] :
+    Module.finrank (hilbertClassField K) (rayClassField (Modulus.spanNat K N)) *
+        Nat.card (𝓞 K)ˣ =
+      Nat.card (𝓞 K ⧸ Ideal.span {(N : 𝓞 K)})ˣ := by
+  have hrel := finrank_hilbertClassField_rayClassField_mul_index_of_infinitePart_eq_empty
+    (Modulus.spanNat_infinitePart (K := K) N)
+  rw [Modulus.spanNat_finitePart, index_unitsCongruenceSubgroup_spanNat_of_three_le hK hN,
+    ← TauCeti.NumberField.Units.card_units_of_isTotallyComplex_of_discr hK] at hrel
+  exact hrel
 
-/-- Evaluation of `χ_D(2)` and `χ_D(3)` at the Eisenstein discriminant `D = -3`. -/
-private theorem char_of_eq_neg_three {D : ℤ} (hD : Int.IsFundamentalDiscr D) (h : D = -3) :
-    fundamentalDiscriminantChar D hD 2 = -1 ∧
-      fundamentalDiscriminantChar D hD 3 = 0 := by
-  have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
-  refine ⟨?_, ?_⟩
-  · rw [fundamentalDiscriminantChar_two, h, ZMod.χ₈_int_eq_if_mod_eight]
-    norm_num
-  · rw [show (3 : ZMod D.natAbs) = ((3 : ℕ) : ℤ) by norm_num,
-      fundamentalDiscriminantChar_natCast_eq_legendreSym hD (by decide), h,
-      legendreSym.eq_zero_iff 3 (-3), ZMod.intCast_zmod_eq_zero_iff_dvd]
-    omega
+/-- Integer-cast form of `finrank_hilbertClassField_rayClassField_spanNat_mul_card_units` with
+`#(𝓞 K)ˣ` evaluated by discriminant. -/
+private theorem intCast_finrank_hilbertClassField_rayClassField_spanNat_mul_card_units
+    (hK : finrank ℚ K = 2) {N : ℕ} [NeZero N] (hN : 3 ≤ N)
+    [Algebra (hilbertClassField K) (rayClassField (Modulus.spanNat K N))]
+    [IsScalarTower K (hilbertClassField K) (rayClassField (Modulus.spanNat K N))] :
+    (Module.finrank (hilbertClassField K) (rayClassField (Modulus.spanNat K N)) : ℤ) *
+        (if discr K = -4 then 4 else if discr K = -3 then 6 else 2) =
+      (Nat.card (𝓞 K ⧸ Ideal.span {(N : 𝓞 K)})ˣ : ℤ) := by
+  have h := congrArg (Nat.cast : ℕ → ℤ) <|
+    finrank_hilbertClassField_rayClassField_spanNat_mul_card_units hK hN
+  rw [Nat.cast_mul, TauCeti.NumberField.Units.card_units_of_isTotallyComplex_of_discr hK] at h
+  simpa using h
+
+omit [IsTotallyComplex K] in
+/-- Case split on `discr K ∈ {-4, -3}` together with the values of `χ_D(2)` and `χ_D(3)`
+(and the uniform bound `χ_D(2), χ_D(3) ≤ 1` away from `-4` and `-3`). -/
+private theorem discr_cases_char_two_three (hK : finrank ℚ K = 2) :
+    (discr K = -4 ∧
+      fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 2 = 0 ∧
+      fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 3 = -1) ∨
+    (discr K = -3 ∧
+      fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 2 = -1 ∧
+      fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 3 = 0) ∨
+    (discr K ≠ -4 ∧ discr K ≠ -3 ∧
+      fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 2 ≤ 1 ∧
+      fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 3 ≤ 1) := by
+  generalize hD : isFundamentalDiscr_discr hK = hD'
+  clear hD
+  generalize discr K = D at hD' ⊢
+  rcases eq_or_ne D (-4) with rfl | h4
+  · exact Or.inl ⟨rfl, fundamentalDiscriminantChar_neg_four_two hD',
+      fundamentalDiscriminantChar_neg_four_three hD'⟩
+  rcases eq_or_ne D (-3) with rfl | h3
+  · exact Or.inr (Or.inl ⟨rfl, fundamentalDiscriminantChar_neg_three_two hD',
+      fundamentalDiscriminantChar_neg_three_three hD'⟩)
+  · exact Or.inr (Or.inr ⟨h4, h3, fundamentalDiscriminantChar_le_one hD' 2,
+      fundamentalDiscriminantChar_le_one hD' 3⟩)
 
 /-- **Degree of `K_(2)` over the Hilbert class field**: `1` at `D = -4` and `D = -3` (where the
 fourth or sixth roots of unity surject onto `(𝓞 K ⧸ (2))ˣ`), and `(2 - χ_D(2)).toNat` (`1`, `2`,
@@ -333,15 +369,10 @@ theorem finrank_hilbertClassField_rayClassField_two (hK : finrank ℚ K = 2)
       (Modulus.spanNat_infinitePart (K := K) 2)
   rw [Nat.cast_mul, Modulus.spanNat_finitePart, Nat.cast_ofNat, card_units_quotient_span_two hK,
     index_unitsCongruenceSubgroup_spanNat_two hK] at hrel
-  rcases eq_or_ne (discr K) (-4) with h4 | h4
-  · rw [(char_of_eq_neg_four (isFundamentalDiscr_discr hK) h4).1, h4] at hrel
-    simp only [h4, true_or, ↓reduceIte]; norm_num at hrel ⊢; omega
-  rcases eq_or_ne (discr K) (-3) with h3 | h3
-  · rw [(char_of_eq_neg_three (isFundamentalDiscr_discr hK) h3).1, h3] at hrel
-    simp only [h3, or_true, ↓reduceIte]; norm_num at hrel ⊢; omega
-  simp only [h4, h3, or_self, ↓reduceIte] at hrel ⊢
-  rcases fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 2 with hc | hc | hc
-    <;> rw [hc] at hrel ⊢ <;> omega
+  rcases discr_cases_char_two_three hK with ⟨hD, hc2, _⟩ | ⟨hD, hc2, _⟩ | ⟨h4, h3, _, _⟩
+  · simp [hD, hc2] at hrel ⊢; omega
+  · simp [hD, hc2] at hrel ⊢; omega
+  · simp [h4, h3] at hrel ⊢; omega
 
 /-- Specialization of `finrank_hilbertClassField_rayClassField_two` to `discr K < -4`. -/
 theorem finrank_hilbertClassField_rayClassField_two_of_discr_lt_neg_four (hK : finrank ℚ K = 2)
@@ -362,20 +393,12 @@ theorem finrank_hilbertClassField_rayClassField_three (hK : finrank ℚ K = 2)
     Module.finrank (hilbertClassField K) (rayClassField (Modulus.spanNat K 3)) =
       if discr K = -4 then 2 else if discr K = -3 then 1
       else (3 - fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 3).toNat := by
-  have hrel := congrArg (Nat.cast : ℕ → ℤ) <|
-    finrank_hilbertClassField_rayClassField_mul_index_of_infinitePart_eq_empty
-      (Modulus.spanNat_infinitePart (K := K) 3)
-  rw [Nat.cast_mul, Modulus.spanNat_finitePart, Nat.cast_ofNat, card_units_quotient_span_three hK,
-    index_unitsCongruenceSubgroup_spanNat_of_three_le hK (le_refl 3)] at hrel
-  rcases eq_or_ne (discr K) (-4) with h4 | h4
-  · rw [(char_of_eq_neg_four (isFundamentalDiscr_discr hK) h4).2, h4] at hrel
-    simp only [h4, ↓reduceIte]; norm_num at hrel ⊢; omega
-  rcases eq_or_ne (discr K) (-3) with h3 | h3
-  · rw [(char_of_eq_neg_three (isFundamentalDiscr_discr hK) h3).2, h3] at hrel
-    simp only [h3, ↓reduceIte]; norm_num at hrel ⊢; omega
-  simp only [h4, h3, ↓reduceIte] at hrel ⊢
-  rcases fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 3 with hc | hc | hc
-    <;> rw [hc] at hrel ⊢ <;> omega
+  have hrel := intCast_finrank_hilbertClassField_rayClassField_spanNat_mul_card_units hK (le_refl 3)
+  rw [Nat.cast_ofNat, card_units_quotient_span_three hK] at hrel
+  rcases discr_cases_char_two_three hK with ⟨hD, _, hc3⟩ | ⟨hD, _, hc3⟩ | ⟨h4, h3, _, _⟩
+  · simp [hD, hc3] at hrel ⊢; omega
+  · simp [hD, hc3] at hrel ⊢; omega
+  · simp [h4, h3] at hrel ⊢; omega
 
 /-- Specialization of `finrank_hilbertClassField_rayClassField_three` to `discr K < -4`. -/
 theorem finrank_hilbertClassField_rayClassField_three_of_discr_lt_neg_four (hK : finrank ℚ K = 2)
@@ -395,24 +418,15 @@ theorem finrank_hilbertClassField_rayClassField_six (hK : finrank ℚ K = 2)
       (if discr K = -4 ∨ discr K = -3 then 1
         else (2 - fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 2).toNat) *
         (3 - fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 3).toNat := by
-  have hrel := congrArg (Nat.cast : ℕ → ℤ) <|
-    finrank_hilbertClassField_rayClassField_mul_index_of_infinitePart_eq_empty
-      (Modulus.spanNat_infinitePart (K := K) 6)
-  rw [Nat.cast_mul, Modulus.spanNat_finitePart, Nat.cast_ofNat, card_units_quotient_span_six hK,
-    index_unitsCongruenceSubgroup_spanNat_of_three_le hK (by decide)] at hrel
-  have hq2 := fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 2
-  have hq3 := fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 3
-  rcases eq_or_ne (discr K) (-4) with h4 | h4
-  · obtain ⟨hc2, hc3⟩ := char_of_eq_neg_four (isFundamentalDiscr_discr hK) h4
-    rw [hc2, hc3, h4] at hrel; simp only [h4, true_or, ↓reduceIte]; rw [hc3]
-    norm_num at hrel ⊢; omega
-  rcases eq_or_ne (discr K) (-3) with h3 | h3
-  · obtain ⟨hc2, hc3⟩ := char_of_eq_neg_three (isFundamentalDiscr_discr hK) h3
-    rw [hc2, hc3, h3] at hrel; simp only [h3, or_true, ↓reduceIte]; rw [hc3]
-    norm_num at hrel ⊢; omega
-  simp only [h4, h3, or_self, ↓reduceIte] at hrel ⊢
-  rcases hq2 with hc2 | hc2 | hc2 <;> rcases hq3 with hc3 | hc3 | hc3 <;>
-    (rw [hc2, hc3] at hrel ⊢; rw [← Int.toNat_mul (by omega) (by omega)]; omega)
+  have hrel := intCast_finrank_hilbertClassField_rayClassField_spanNat_mul_card_units
+    hK (N := 6) (by decide)
+  rw [Nat.cast_ofNat, card_units_quotient_span_six hK] at hrel
+  rcases discr_cases_char_two_three hK with ⟨hD, hc2, hc3⟩ | ⟨hD, hc2, hc3⟩ | ⟨h4, h3, hc2, hc3⟩
+  · simp [hD, hc2, hc3] at hrel ⊢; omega
+  · simp [hD, hc2, hc3] at hrel ⊢; omega
+  · simp only [h4, h3, or_self, ↓reduceIte] at hrel ⊢
+    rw [← Int.toNat_mul (by omega) (by omega)]
+    exact Nat.cast_injective (R := ℤ) (by rw [Int.toNat_of_nonneg (by nlinarith)]; linarith)
 
 /-- **Degree of `K_(8)` over the Hilbert class field** for all imaginary quadratic fields. -/
 theorem finrank_hilbertClassField_rayClassField_eight (hK : finrank ℚ K = 2)
@@ -422,96 +436,69 @@ theorem finrank_hilbertClassField_rayClassField_eight (hK : finrank ℚ K = 2)
       8 * (if discr K = -4 ∨ discr K = -3 then 1
         else (2 - fundamentalDiscriminantChar (discr K)
           (isFundamentalDiscr_discr hK) 2).toNat) := by
-  have hrel := congrArg (Nat.cast : ℕ → ℤ) <|
-    finrank_hilbertClassField_rayClassField_mul_index_of_infinitePart_eq_empty
-      (Modulus.spanNat_infinitePart (K := K) 8)
-  rw [Nat.cast_mul, Modulus.spanNat_finitePart, Nat.cast_ofNat, card_units_quotient_span_eight hK,
-    index_unitsCongruenceSubgroup_spanNat_of_three_le hK (by decide)] at hrel
-  rcases eq_or_ne (discr K) (-4) with h4 | h4
-  · rw [(char_of_eq_neg_four (isFundamentalDiscr_discr hK) h4).1, h4] at hrel
-    simp only [h4, true_or, ↓reduceIte]; norm_num at hrel ⊢; omega
-  rcases eq_or_ne (discr K) (-3) with h3 | h3
-  · rw [(char_of_eq_neg_three (isFundamentalDiscr_discr hK) h3).1, h3] at hrel
-    simp only [h3, or_true, ↓reduceIte]; norm_num at hrel ⊢; omega
-  simp only [h4, h3, or_self, ↓reduceIte] at hrel ⊢
-  rcases fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 2 with hc | hc | hc
-    <;> rw [hc] at hrel ⊢ <;> omega
-
-omit [IsTotallyComplex K] in
-/-- Relate `[rayClassField 𝔪 : K]` to `classNumber K * [rayClassField 𝔪 : hilbertClassField K]`
-using the canonical inclusion inside `Kᵃᵇ`. -/
-private theorem classNumber_mul_eq_finrank_rayClassField (𝔪 : Modulus K) {a : ℕ}
-    (h𝔪 : ∀ [Algebra (hilbertClassField K) (rayClassField 𝔪)]
-      [IsScalarTower K (hilbertClassField K) (rayClassField 𝔪)],
-        Module.finrank (hilbertClassField K) (rayClassField 𝔪) = a) :
-    classNumber K * a = Module.finrank K (rayClassField 𝔪) := by
-  let : Algebra (hilbertClassField K) (rayClassField 𝔪) :=
-    (IntermediateField.inclusion (hilbertClassField_le_rayClassField 𝔪)).toAlgebra
-  have : IsScalarTower K (hilbertClassField K) (rayClassField 𝔪) :=
-    .of_algebraMap_eq fun _ ↦ rfl
-  have : Module.Free K (hilbertClassField K) := .of_divisionRing K (hilbertClassField K)
-  have : Module.Free (hilbertClassField K) (rayClassField 𝔪) :=
-    .of_divisionRing (hilbertClassField K) (rayClassField 𝔪)
-  rw [← finrank_hilbertClassField K, ← h𝔪,
-    Module.finrank_mul_finrank K (hilbertClassField K) (rayClassField 𝔪)]
-
-omit [IsTotallyComplex K] in
-/-- Deduce `[rayClassField 𝔫 : rayClassField 𝔪]` from the degrees of `rayClassField 𝔪` and
-`rayClassField 𝔫` over `hilbertClassField K` by cancelling `classNumber K > 0` over `K`. -/
-private theorem finrank_mul_finrank_via_hilbertClassField {𝔪 𝔫 : Modulus K}
-    [Algebra (rayClassField 𝔪) (rayClassField 𝔫)]
-    [IsScalarTower K (rayClassField 𝔪) (rayClassField 𝔫)]
-    {a b : ℕ}
-    (h𝔪 : ∀ [Algebra (hilbertClassField K) (rayClassField 𝔪)]
-      [IsScalarTower K (hilbertClassField K) (rayClassField 𝔪)],
-        Module.finrank (hilbertClassField K) (rayClassField 𝔪) = a)
-    (h𝔫 : ∀ [Algebra (hilbertClassField K) (rayClassField 𝔫)]
-      [IsScalarTower K (hilbertClassField K) (rayClassField 𝔫)],
-        Module.finrank (hilbertClassField K) (rayClassField 𝔫) = b) :
-    a * Module.finrank (rayClassField 𝔪) (rayClassField 𝔫) = b := by
-  have : Module.Free K (rayClassField 𝔪) := .of_divisionRing K (rayClassField 𝔪)
-  have : Module.Free (rayClassField 𝔪) (rayClassField 𝔫) :=
-    .of_divisionRing (rayClassField 𝔪) (rayClassField 𝔫)
-  have hmul := Module.finrank_mul_finrank K (rayClassField 𝔪) (rayClassField 𝔫)
-  rw [← classNumber_mul_eq_finrank_rayClassField 𝔪 h𝔪,
-    ← classNumber_mul_eq_finrank_rayClassField 𝔫 h𝔫, mul_assoc] at hmul
-  exact Nat.mul_left_cancel (NumberField.classNumber_pos K) hmul
-
-omit [IsTotallyComplex K] in
-/-- Positivity of the level-`2` factor `[K_(2) : H_K]`. -/
-private theorem levelTwoFactor_pos (hK : finrank ℚ K = 2) :
-    0 < if discr K = -4 ∨ discr K = -3 then 1
-      else (2 - fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 2).toNat := by
-  split_ifs; · omega
-  rcases fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 2 with hc | hc | hc
-    <;> rw [hc] <;> omega
+  have hrel := intCast_finrank_hilbertClassField_rayClassField_spanNat_mul_card_units
+    hK (N := 8) (by decide)
+  rw [Nat.cast_ofNat, card_units_quotient_span_eight hK] at hrel
+  rcases discr_cases_char_two_three hK with ⟨hD, hc2, _⟩ | ⟨hD, hc2, _⟩ | ⟨h4, h3, _, _⟩
+  · simp [hD, hc2] at hrel ⊢; omega
+  · simp [hD, hc2] at hrel ⊢; omega
+  · simp [h4, h3] at hrel ⊢; omega
 
 /-- **Unconditional relative degree `[K_(6) : K_(2)] = 3 - χ_D(3)`** for every imaginary quadratic
 field `K` (including `D = -4` and `D = -3`, since the unit congruence subgroup shrinks from `{±1}`
 to `{1}` between levels `2` and `6`). -/
-theorem finrank_rayClassField_two_six (hK : finrank ℚ K = 2)
+theorem finrank_rayClassField_two_rayClassField_six (hK : finrank ℚ K = 2)
     [Algebra (rayClassField (Modulus.spanNat K 2)) (rayClassField (Modulus.spanNat K 6))]
     [IsScalarTower K (rayClassField (Modulus.spanNat K 2))
       (rayClassField (Modulus.spanNat K 6))] :
     Module.finrank (rayClassField (Modulus.spanNat K 2))
         (rayClassField (Modulus.spanNat K 6)) =
-      (3 - fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 3).toNat :=
-  Nat.mul_left_cancel (levelTwoFactor_pos hK) <| finrank_mul_finrank_via_hilbertClassField
-    (finrank_hilbertClassField_rayClassField_two hK)
-    (finrank_hilbertClassField_rayClassField_six hK)
+      (3 - fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 3).toNat := by
+  let : Algebra (hilbertClassField K) (rayClassField (Modulus.spanNat K 2)) :=
+    (IntermediateField.inclusion
+      (hilbertClassField_le_rayClassField (Modulus.spanNat K 2))).toAlgebra
+  have : IsScalarTower K (hilbertClassField K) (rayClassField (Modulus.spanNat K 2)) :=
+    .of_algebraMap_eq fun _ ↦ rfl
+  let : Algebra (hilbertClassField K) (rayClassField (Modulus.spanNat K 6)) :=
+    (IntermediateField.inclusion
+      (hilbertClassField_le_rayClassField (Modulus.spanNat K 6))).toAlgebra
+  have : IsScalarTower K (hilbertClassField K) (rayClassField (Modulus.spanNat K 6)) :=
+    .of_algebraMap_eq fun _ ↦ rfl
+  have hmul := finrank_hilbertClassField_mul_finrank_rayClassField
+    (Modulus.spanNat K 2) (Modulus.spanNat K 6)
+  rw [finrank_hilbertClassField_rayClassField_two hK,
+    finrank_hilbertClassField_rayClassField_six hK] at hmul
+  refine Nat.mul_left_cancel ?_ hmul
+  split_ifs
+  · omega
+  · have := fundamentalDiscriminantChar_le_one (isFundamentalDiscr_discr hK) 2; omega
 
 /-- **Unconditional relative degree `[K_(8) : K_(2)] = 8`** for every imaginary quadratic field `K`
 (including `D = -4` and `D = -3`). -/
-theorem finrank_rayClassField_two_eight (hK : finrank ℚ K = 2)
+theorem finrank_rayClassField_two_rayClassField_eight (hK : finrank ℚ K = 2)
     [Algebra (rayClassField (Modulus.spanNat K 2)) (rayClassField (Modulus.spanNat K 8))]
     [IsScalarTower K (rayClassField (Modulus.spanNat K 2))
       (rayClassField (Modulus.spanNat K 8))] :
     Module.finrank (rayClassField (Modulus.spanNat K 2))
         (rayClassField (Modulus.spanNat K 8)) = 8 := by
-  have hmul := finrank_mul_finrank_via_hilbertClassField
-    (finrank_hilbertClassField_rayClassField_two hK)
-    (finrank_hilbertClassField_rayClassField_eight hK)
-  exact Nat.mul_left_cancel (levelTwoFactor_pos hK) (hmul.trans (mul_comm 8 _))
+  let : Algebra (hilbertClassField K) (rayClassField (Modulus.spanNat K 2)) :=
+    (IntermediateField.inclusion
+      (hilbertClassField_le_rayClassField (Modulus.spanNat K 2))).toAlgebra
+  have : IsScalarTower K (hilbertClassField K) (rayClassField (Modulus.spanNat K 2)) :=
+    .of_algebraMap_eq fun _ ↦ rfl
+  let : Algebra (hilbertClassField K) (rayClassField (Modulus.spanNat K 8)) :=
+    (IntermediateField.inclusion
+      (hilbertClassField_le_rayClassField (Modulus.spanNat K 8))).toAlgebra
+  have : IsScalarTower K (hilbertClassField K) (rayClassField (Modulus.spanNat K 8)) :=
+    .of_algebraMap_eq fun _ ↦ rfl
+  have hmul := finrank_hilbertClassField_mul_finrank_rayClassField
+    (Modulus.spanNat K 2) (Modulus.spanNat K 8)
+  rw [finrank_hilbertClassField_rayClassField_two hK,
+    finrank_hilbertClassField_rayClassField_eight hK] at hmul
+  refine Nat.mul_left_cancel ?_ (hmul.trans (mul_comm 8 _))
+  split_ifs
+  · omega
+  · have := fundamentalDiscriminantChar_le_one (isFundamentalDiscr_discr hK) 2; omega
 
 end Degrees
 
