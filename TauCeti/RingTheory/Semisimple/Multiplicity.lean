@@ -65,6 +65,9 @@ reconstruction from hom-space dimensions returns to the finite-dimensional `k`-a
 * `TauCeti.nonempty_linearEquiv_of_finrank_linearMap_eq`: finite modules over a finite-dimensional
   semisimple algebra are linearly equivalent when every simple left ideal has the same hom-space
   dimension into them.
+* `IsSemisimpleModule.nonempty_linearEquiv_of_finrank_linearMap_eq`: over an arbitrary
+  `k`-algebra, semisimple modules finite-dimensional over `k` are linearly equivalent when every
+  simple submodule of either has the same hom-space dimension into them.
 * `TauCeti.natCard_linearMap_eq_pow_jordanHolderMultiplicity`: over any ring, maps from a
   finitely generated semisimple module `M` to a simple module `S` number `#End(S) ^ [M : S]`.
 * `TauCeti.natCard_linearMap_pi_eq_prod_pow`: maps from `M` into a finite product of simple
@@ -629,6 +632,83 @@ theorem nonempty_linearEquiv_of_finrank_linearMap_eq
   exact ⟨epM |>.trans (nonempty_linearEquiv_pi_of_natCard_eq hfiber).some |>.trans epP.symm⟩
 
 end ReconstructionFromHom
+
+/-! ### Reconstructing finite-dimensional semisimple modules from hom-space dimensions -/
+
+section ReconstructionFromSubmodules
+
+variable {k A M P : Type*} [Field k] [Ring A] [Algebra k A]
+variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+variable [AddCommGroup P] [Module k P] [Module A P] [IsScalarTower k A P]
+
+/-- Two finite products of simple modules contain equally many copies of a simple module `T`,
+finite-dimensional over `k`, when the maps out of `T` into them span spaces of equal dimension. The
+copies are counted up to an isomorphism `S ≃ T`, so that `S` itself need not be finite-dimensional
+over `k`. -/
+private theorem natCard_eq_natCard_of_finrank_linearMap_eq {S T : Type*} [AddCommGroup S]
+    [Module A S] [AddCommGroup T] [Module k T] [Module A T] [IsScalarTower k A T]
+    [IsSimpleModule A T] [FiniteDimensional k T] (e : S ≃ₗ[A] T)
+    {ι κ : Type*} [Finite ι] [Finite κ] {N : ι → Type*} [∀ i, AddCommGroup (N i)]
+    [∀ i, Module k (N i)] [∀ i, Module A (N i)] [∀ i, IsScalarTower k A (N i)]
+    [∀ i, IsSimpleModule A (N i)] {Q : κ → Type*} [∀ j, AddCommGroup (Q j)]
+    [∀ j, Module k (Q j)] [∀ j, Module A (Q j)] [∀ j, IsScalarTower k A (Q j)]
+    [∀ j, IsSimpleModule A (Q j)] (eM : M ≃ₗ[A] ∀ i, N i) (eP : P ≃ₗ[A] ∀ j, Q j)
+    (h : Module.finrank k (T →ₗ[A] M) = Module.finrank k (T →ₗ[A] P)) :
+    Nat.card {i // Nonempty (S ≃ₗ[A] N i)} = Nat.card {j // Nonempty (S ≃ₗ[A] Q j)} := by
+  rw [Nat.card_congr (Equiv.subtypeEquivRight fun i ↦ (⟨fun ⟨f⟩ ↦ ⟨e.symm.trans f⟩,
+      fun ⟨f⟩ ↦ ⟨e.trans f⟩⟩ : Nonempty (S ≃ₗ[A] N i) ↔ Nonempty (T ≃ₗ[A] N i))),
+    Nat.card_congr (Equiv.subtypeEquivRight fun j ↦ (⟨fun ⟨f⟩ ↦ ⟨e.symm.trans f⟩,
+      fun ⟨f⟩ ↦ ⟨e.trans f⟩⟩ : Nonempty (S ≃ₗ[A] Q j) ↔ Nonempty (T ≃ₗ[A] Q j)))]
+  refine Nat.eq_of_mul_eq_mul_right (finrank_end_pos (k := k) (A := A) (S := T)) ?_
+  rw [← eM.finrank_linearMap_eq_natCard_mul_finrank_end (k := k),
+    ← eP.finrank_linearMap_eq_natCard_mul_finrank_end (k := k), h]
+
+variable [FiniteDimensional k M] [IsSemisimpleModule A M]
+  [FiniteDimensional k P] [IsSemisimpleModule A P]
+
+/-- **Semisimple modules are determined by maps out of their simple submodules.** Two semisimple
+modules, finite-dimensional over `k`, are isomorphic when every simple submodule `S` of either has
+spaces of maps `S → M` and `S → P` of the same dimension over `k`. -/
+theorem _root_.IsSemisimpleModule.nonempty_linearEquiv_of_finrank_linearMap_eq
+    (hM : ∀ (S : Submodule A M) [IsSimpleModule A S],
+      Module.finrank k (S →ₗ[A] M) = Module.finrank k (S →ₗ[A] P))
+    (hP : ∀ (S : Submodule A P) [IsSimpleModule A S],
+      Module.finrank k (S →ₗ[A] M) = Module.finrank k (S →ₗ[A] P)) :
+    Nonempty (M ≃ₗ[A] P) := by
+  have : Module.Finite A M := Module.Finite.of_restrictScalars_finite k A M
+  have : Module.Finite A P := Module.Finite.of_restrictScalars_finite k A P
+  have : IsNoetherian A M := isNoetherian_of_tower k inferInstance
+  have : IsArtinian A M := isArtinian_of_tower k inferInstance
+  have : IsNoetherian A P := isNoetherian_of_tower k inferInstance
+  have : IsArtinian A P := isArtinian_of_tower k inferInstance
+  obtain ⟨n, SM, eM, hSM⟩ := IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp A M
+  obtain ⟨m, SP, eP, hSP⟩ := IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp A P
+  let epM : M ≃ₗ[A] ∀ i, SM i := eM.trans DFinsupp.linearEquivFunOnFintype
+  let epP : P ≃ₗ[A] ∀ j, SP j := eP.trans DFinsupp.linearEquivFunOnFintype
+  -- Compare the Jordan-Hölder multiplicities, which count the factors isomorphic to `S`.
+  refine IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq M P
+    fun S _ _ _ ↦ ?_
+  rw [jordanHolderMultiplicity_eq_of_linearEquiv epM, jordanHolderMultiplicity_pi_eq_natCard,
+    jordanHolderMultiplicity_eq_of_linearEquiv epP, jordanHolderMultiplicity_pi_eq_natCard]
+  by_cases hSM' : ∃ i, Nonempty (S ≃ₗ[A] SM i)
+  · obtain ⟨i, ⟨e⟩⟩ := hSM'
+    have := hSM i
+    have : FiniteDimensional k (SM i) :=
+      .of_injective ((SM i).subtype.restrictScalars k) Subtype.val_injective
+    exact natCard_eq_natCard_of_finrank_linearMap_eq e epM epP (hM (SM i))
+  by_cases hSP' : ∃ j, Nonempty (S ≃ₗ[A] SP j)
+  · obtain ⟨j, ⟨e⟩⟩ := hSP'
+    have := hSP j
+    have : FiniteDimensional k (SP j) :=
+      .of_injective ((SP j).subtype.restrictScalars k) Subtype.val_injective
+    exact natCard_eq_natCard_of_finrank_linearMap_eq e epM epP (hP (SP j))
+  -- Otherwise `S` is a factor of neither module.
+  push Not at hSM' hSP'
+  have : IsEmpty {i // Nonempty (S ≃ₗ[A] SM i)} := ⟨fun i ↦ (hSM' i.1).false i.2.some⟩
+  have : IsEmpty {j // Nonempty (S ≃ₗ[A] SP j)} := ⟨fun j ↦ (hSP' j.1).false j.2.some⟩
+  simp
+
+end ReconstructionFromSubmodules
 
 /-! ### The isotypic case -/
 
