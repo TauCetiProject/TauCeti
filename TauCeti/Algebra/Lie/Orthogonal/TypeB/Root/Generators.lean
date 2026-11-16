@@ -209,40 +209,6 @@ theorem typeBSimpleCorootMatrix_castSucc (j : Fin n) :
       typeBDifferenceCorootMatrix j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ) := by
   simp [typeBSimpleCorootMatrix]
 
-/-- The divided square of a Bourbaki simple-root matrix. It vanishes at long nodes and is the
-integral short-root divided square at the terminal node. -/
-def typeBSimpleRootDividedSquare (i : Fin (n + 1)) :
-    Matrix (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1)) (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1)) K :=
-  Fin.lastCases (typeBShortRootDividedSquare (Fin.last n)) (fun _ => 0) i
-
-@[simp]
-theorem typeBSimpleRootDividedSquare_last :
-    typeBSimpleRootDividedSquare (K := K) (Fin.last n) =
-      typeBShortRootDividedSquare (Fin.last n) := by
-  simp [typeBSimpleRootDividedSquare]
-
-@[simp]
-theorem typeBSimpleRootDividedSquare_castSucc (j : Fin n) :
-    typeBSimpleRootDividedSquare (K := K) j.castSucc = 0 := by
-  simp [typeBSimpleRootDividedSquare]
-
-/-- The divided square of a negative Bourbaki simple-root matrix. It vanishes at long nodes and
-is the integral negative short-root divided square at the terminal node. -/
-def typeBSimpleNegativeRootDividedSquare (i : Fin (n + 1)) :
-    Matrix (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1)) (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1)) K :=
-  Fin.lastCases (typeBShortNegativeRootDividedSquare (Fin.last n)) (fun _ => 0) i
-
-@[simp]
-theorem typeBSimpleNegativeRootDividedSquare_last :
-    typeBSimpleNegativeRootDividedSquare (K := K) (Fin.last n) =
-      typeBShortNegativeRootDividedSquare (Fin.last n) := by
-  simp [typeBSimpleNegativeRootDividedSquare]
-
-@[simp]
-theorem typeBSimpleNegativeRootDividedSquare_castSucc (j : Fin n) :
-    typeBSimpleNegativeRootDividedSquare (K := K) j.castSucc = 0 := by
-  simp [typeBSimpleNegativeRootDividedSquare]
-
 end AddGroupWithOne
 
 section NonAssocRing
@@ -286,43 +252,6 @@ theorem typeBShortNegativeRootMatrix_cube (i : ι) :
   rw [typeBShortNegativeRootMatrix_mul_self, Matrix.smul_mul]
   simp [typeBShortNegativeRootMatrix, typeBShortNegativeRootDividedSquare_def, mul_sub,
     Matrix.single_mul_single_of_ne]
-
-/-- A simple-root matrix squares to twice its integral divided square. -/
-theorem typeBSimpleRootMatrix_mul_self (i : Fin (n + 1)) :
-    typeBSimpleRootMatrix (K := K) i * typeBSimpleRootMatrix i =
-      2 • typeBSimpleRootDividedSquare i := by
-  refine Fin.lastCases ?_ (fun j => ?_) i
-  · simpa [typeBSimpleRootDividedSquare] using
-      (typeBShortRootMatrix_mul_self (K := K) (Fin.last n))
-  · simp [typeBSimpleRootDividedSquare,
-      typeBDifferenceRootMatrix_mul_self (K := K) j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ)]
-
-/-- The left-associated cube of every Bourbaki simple-root matrix vanishes. -/
-theorem typeBSimpleRootMatrix_cube (i : Fin (n + 1)) :
-    typeBSimpleRootMatrix (K := K) i * typeBSimpleRootMatrix i * typeBSimpleRootMatrix i = 0 := by
-  refine Fin.lastCases ?_ (fun j => ?_) i
-  · simpa using typeBShortRootMatrix_cube (K := K) (Fin.last n)
-  · simp [typeBDifferenceRootMatrix_mul_self (K := K) j.castSucc j.succ
-      (ne_of_lt j.castSucc_lt_succ)]
-
-/-- A negative simple-root matrix squares to twice its integral divided square. -/
-theorem typeBSimpleNegativeRootMatrix_mul_self (i : Fin (n + 1)) :
-    typeBSimpleNegativeRootMatrix (K := K) i * typeBSimpleNegativeRootMatrix i =
-      2 • typeBSimpleNegativeRootDividedSquare i := by
-  refine Fin.lastCases ?_ (fun j => ?_) i
-  · simpa [typeBSimpleNegativeRootDividedSquare] using
-      (typeBShortNegativeRootMatrix_mul_self (K := K) (Fin.last n))
-  · simp [typeBSimpleNegativeRootDividedSquare,
-      typeBDifferenceRootMatrix_mul_self (K := K) j.succ j.castSucc (ne_of_gt j.castSucc_lt_succ)]
-
-/-- The left-associated cube of every negative Bourbaki simple-root matrix vanishes. -/
-theorem typeBSimpleNegativeRootMatrix_cube (i : Fin (n + 1)) :
-    typeBSimpleNegativeRootMatrix (K := K) i * typeBSimpleNegativeRootMatrix i *
-      typeBSimpleNegativeRootMatrix i = 0 := by
-  refine Fin.lastCases ?_ (fun j => ?_) i
-  · simpa using typeBShortNegativeRootMatrix_cube (K := K) (Fin.last n)
-  · simp [typeBDifferenceRootMatrix_mul_self (K := K) j.succ j.castSucc
-      (ne_of_gt j.castSucc_lt_succ)]
 
 end NonAssocRing
 
