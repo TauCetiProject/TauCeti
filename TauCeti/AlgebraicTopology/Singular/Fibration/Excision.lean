@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Excisive
 public import TauCeti.Topology.Homotopy.SerreFibration.WeakHomotopyEquivalence
+import Mathlib.Algebra.Homology.DerivedCategory.KProjective
+import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 
 /-!
 # Excisive couples of preimages under a Serre fibration
