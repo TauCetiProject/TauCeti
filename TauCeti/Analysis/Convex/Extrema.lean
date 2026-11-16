@@ -20,9 +20,11 @@ neighbourhood of `x` in the domain is a subgradient relative to the whole domain
 The same holds when the function touching `u` from below at `x` is only differentiable there
 rather than affine: if `u - g` has a local minimum at `x` relative to `s` and `g` has derivative
 `ℓ` at `x` within `s`, then `x' ↦ u x + ℓ (x' - x)` lies below `u` on all of `s`
-(`ConvexOn.add_le_of_isLocalMinOn_sub`). No differentiability of `u` is needed. This is the
-first-order condition used for transport costs `h (x - y)` with `h` convex but not
-differentiable, as in Gangbo and McCann.
+(`ConvexOn.add_le_of_isLocalMinOn_sub`). No differentiability of `u` is needed. Taking `g = u`
+yields the first-order tangent-support inequality for a differentiable convex function
+(`ConvexOn.add_le_of_hasFDerivWithinAt` and `ConvexOn.add_le_of_hasFDerivAt`), without any
+interior-point or open-domain assumption. This is also the first-order condition used for
+transport costs `h (x - y)` with `h` convex but not differentiable, as in Gangbo and McCann.
 
 Both results hold for functions on a real topological vector space with values in an ordered real
 vector space (carrying an order-closed vector space topology for the second); the case of
@@ -91,3 +93,20 @@ theorem ConvexOn.add_le_of_isLocalMinOn_sub (hu : ConvexOn ℝ s u) (hx : x ∈ 
     rw [inv_smul_smul₀ ht.ne']
   rw [← le_sub_iff_add_le']
   exact le_of_tendsto hslope hev
+
+/-- **First-order tangent support of a convex function (derivative within the domain).** If `u` is
+convex on `s`, `x ∈ s`, and `u` has Fréchet derivative `ℓ` at `x` within `s`, then the tangent
+`x' ↦ u x + ℓ (x' - x)` lies below `u` on all of `s`. No open-domain or interior-point hypothesis
+is needed. -/
+theorem ConvexOn.add_le_of_hasFDerivWithinAt (hu : ConvexOn ℝ s u) (hx : x ∈ s)
+    {ℓ : E →L[ℝ] β} (h : HasFDerivWithinAt u ℓ s x) :
+    ∀ x' ∈ s, u x + ℓ (x' - x) ≤ u x' :=
+  hu.add_le_of_isLocalMinOn_sub hx h (by simp [IsLocalMinOn, IsMinFilter])
+
+/-- **First-order tangent support of a convex function.** If `u` is convex on `s`, `x ∈ s`, and
+`u` has Fréchet derivative `ℓ` at `x`, then the tangent `x' ↦ u x + ℓ (x' - x)` lies below `u` on
+all of `s`. -/
+theorem ConvexOn.add_le_of_hasFDerivAt (hu : ConvexOn ℝ s u) (hx : x ∈ s)
+    {ℓ : E →L[ℝ] β} (h : HasFDerivAt u ℓ x) :
+    ∀ x' ∈ s, u x + ℓ (x' - x) ≤ u x' :=
+  hu.add_le_of_hasFDerivWithinAt hx h.hasFDerivWithinAt
