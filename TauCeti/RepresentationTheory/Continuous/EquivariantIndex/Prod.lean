@@ -47,26 +47,41 @@ variable {𝕜 G E₁ E₂ F₁ F₂ : Type*} [NontriviallyNormedField 𝕜] [Co
   {ρ₁ : ContRepresentation 𝕜 G F₁} {ρ₂ : ContRepresentation 𝕜 G F₂}
 
 /-- The equivariant Fredholm index is additive under binary products of intertwining maps,
-as an equality of actual virtual representations in `contRepRing`. -/
+as an equality of actual virtual representations in `contRepRing`. Fredholmness and strong
+continuity of the factors are derived from the corresponding product certificates. -/
+@[simp]
 theorem equivariantIndex_prodMap (T : π₁ →ⁱL ρ₁) (S : π₂ →ⁱL ρ₂)
-    (hT : T.toContinuousLinearMap.IsFredholm) (hS : S.toContinuousLinearMap.IsFredholm)
-    (hπ₁ : ∀ v, Continuous fun g ↦ π₁ g v) (hπ₂ : ∀ v, Continuous fun g ↦ π₂ g v)
-    (hρ₁ : ∀ v, Continuous fun g ↦ ρ₁ g v) (hρ₂ : ∀ v, Continuous fun g ↦ ρ₂ g v) :
-    (T.prodMap S).equivariantIndex (by
-        simpa only [toContinuousLinearMap_prodMap] using hT.prodMap hS)
-        (continuous_prod_apply hπ₁ hπ₂) (continuous_prod_apply hρ₁ hρ₂) =
-      T.equivariantIndex hT hπ₁ hρ₁ + S.equivariantIndex hS hπ₂ hρ₂ := by
-  have hU : (T.prodMap S).toContinuousLinearMap.IsFredholm := by
-    simpa only [toContinuousLinearMap_prodMap] using hT.prodMap hS
+    (hTS : (T.prodMap S).toContinuousLinearMap.IsFredholm)
+    (hπ : ∀ v, Continuous fun g ↦ (π₁.prod π₂) g v)
+    (hρ : ∀ v, Continuous fun g ↦ (ρ₁.prod ρ₂) g v) :
+    (T.prodMap S).equivariantIndex hTS hπ hρ =
+      T.equivariantIndex
+        (Eq.mp (congrArg ContinuousLinearMap.IsFredholm (toContinuousLinearMap_prodMap T S))
+          hTS).of_prodMap_left
+        (continuous_of_continuous_prod_apply_left hπ)
+        (continuous_of_continuous_prod_apply_left hρ) +
+      S.equivariantIndex
+        (Eq.mp (congrArg ContinuousLinearMap.IsFredholm (toContinuousLinearMap_prodMap T S))
+          hTS).of_prodMap_right
+        (continuous_of_continuous_prod_apply_right hπ)
+        (continuous_of_continuous_prod_apply_right hρ) := by
+  have hU := Eq.mp
+    (congrArg ContinuousLinearMap.IsFredholm (toContinuousLinearMap_prodMap T S)) hTS
+  have hT := hU.of_prodMap_left
+  have hS := hU.of_prodMap_right
+  have hπ₁ := continuous_of_continuous_prod_apply_left hπ
+  have hπ₂ := continuous_of_continuous_prod_apply_right hπ
+  have hρ₁ := continuous_of_continuous_prod_apply_left hρ
+  have hρ₂ := continuous_of_continuous_prod_apply_right hρ
   have := hT.finite_ker
   have := hS.finite_ker
-  have := hU.finite_ker
+  have := hTS.finite_ker
   have := hT.isClosed_range
   have := hS.isClosed_range
-  have := hU.isClosed_range
+  have := hTS.isClosed_range
   have := hT.finite_coker
   have := hS.finite_coker
-  have := hU.finite_coker
+  have := hTS.finite_coker
   have hkT := T.continuous_kerRepresentation hπ₁
   have hkS := S.continuous_kerRepresentation hπ₂
   have hcT := T.continuous_cokerRepresentation hρ₁
@@ -75,14 +90,14 @@ theorem equivariantIndex_prodMap (T : π₁ →ⁱL ρ₁) (S : π₂ →ⁱL ρ
   let ec := T.cokerProdEquiv S
   rw [equivariantIndex_def, equivariantIndex_def, equivariantIndex_def,
     SplitK0.of_congr (ContFDRep.ofContRepresentationIso ek.toLinearEquiv
-      (fun g v ↦ ek.toIntertwiningMap.isIntertwining _ _ g v)
-      ((T.prodMap S).continuous_kerRepresentation (continuous_prod_apply hπ₁ hπ₂))
+      (fun g v ↦ ek.toContIntertwiningMap.isIntertwining g v)
+      ((T.prodMap S).continuous_kerRepresentation hπ)
       (T.kerRepresentation.continuous_prod S.kerRepresentation hkT hkS)),
     SplitK0.of_congr (ContFDRep.ofContRepresentationIso ec.toLinearEquiv
-      (fun g v ↦ ec.toIntertwiningMap.isIntertwining _ _ g v)
-      ((T.prodMap S).continuous_cokerRepresentation (continuous_prod_apply hρ₁ hρ₂))
+      (fun g v ↦ ec.toContIntertwiningMap.isIntertwining g v)
+      ((T.prodMap S).continuous_cokerRepresentation hρ)
       (T.cokerRepresentation.continuous_prod S.cokerRepresentation hcT hcS)),
-    contRepRing_of_prod _ _ hkT hkS, contRepRing_of_prod _ _ hcT hcS]
+    contRepRing_of_prod, contRepRing_of_prod]
   abel
 
 end ContIntertwiningMap
