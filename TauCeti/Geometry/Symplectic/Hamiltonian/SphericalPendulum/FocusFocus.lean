@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.Morse.NormSq
+import TauCeti.Analysis.Calculus.Morse.Prod
 import TauCeti.Analysis.Calculus.Morse.ScalarComposition
 
 /-!
@@ -39,7 +40,11 @@ parametrization of a neighbourhood of the north pole in `(T*S², ω₀)`, with `
 In these coordinates `H = (‖ξ‖² - ⟪ξ, x⟫²) / 2 + √(1 - ‖x‖²)` and `J = x₁ ξ₂ - x₂ ξ₁`, so the
 Hessians at the origin are `‖ξ‖² - ‖x‖²` and `2 (x₁ ξ₂ - x₂ ξ₁)`. Their Hamiltonian endomorphisms
 are `(x, ξ) ↦ 2 (ξ, x)`, a hyperbolic map with square `4`, and twice the quarter turn of both
-planes, an elliptic map with square `-4`, and they commute. By the focus–focus criterion
+planes, an elliptic map with square `-4`, and they commute
+(`hamiltonianEnd_hessian_sphericalPendulumHamiltonian_comp_sphericalPendulumUpperParam_mul_self`,
+`hamiltonianEnd_hessian_angularMomentum_comp_sphericalPendulumUpperParam_mul_self`,
+`quadraticPoissonBracket_hessian_comp_sphericalPendulumUpperParam_zero`). By the focus–focus
+criterion
 `TauCeti.SymplecticForm.isNondegenerateQuadraticFamily_of_mul_self_eq_one_of_mul_self_eq_neg_one`,
 the Hessians span a Cartan subalgebra of `sp(4, ℝ)`: the origin is a nondegenerate rank-zero
 point of `F` read in these coordinates
@@ -58,8 +63,12 @@ critical value of `F` (`TauCeti.eventually_isRegularValue_sphericalPendulumEnerg
 * `TauCeti.hessianQuadraticForm_sphericalPendulumHamiltonian_comp_sphericalPendulumUpperParam_zero`,
   `TauCeti.hessianQuadraticForm_angularMomentum_comp_sphericalPendulumUpperParam_zero`: the
   Hessians of `H` and `J` at the north pole in these coordinates.
+* `hamiltonianEnd_hessian_sphericalPendulumHamiltonian_comp_sphericalPendulumUpperParam_mul_self`,
+  `hamiltonianEnd_hessian_angularMomentum_comp_sphericalPendulumUpperParam_mul_self`,
+  `quadraticPoissonBracket_hessian_comp_sphericalPendulumUpperParam_zero`: the focus–focus type of
+  the Hessians, one hyperbolic and one elliptic commuting generator.
 * `isNondegenerateRankZeroPoint_sphericalPendulumEnergyMomentum_comp_sphericalPendulumUpperParam`:
-  the north pole equilibrium is a nondegenerate rank-zero point of focus–focus type.
+  the north pole equilibrium is a nondegenerate rank-zero point.
 
 ## References
 
@@ -93,6 +102,17 @@ noncomputable def sphericalPendulumUpperParam
   (q, z.2 0 • EuclideanSpace.single 0 1 + z.2 1 • EuclideanSpace.single 1 1 - ⟪z.2, z.1⟫_ℝ • q)
 
 variable (z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2))
+
+/-- Over the open unit disc the height `√(1 - ‖x‖²)` of the hemisphere is positive. -/
+private theorem sqrt_one_sub_norm_sq_pos {x : EuclideanSpace ℝ (Fin 2)} (hx : ‖x‖ < 1) :
+    0 < √(1 - ‖x‖ ^ 2) :=
+  Real.sqrt_pos.2 (by nlinarith [norm_nonneg x])
+
+/-- Over the closed unit disc the squared height of the hemisphere is `1 - x₁² - x₂²`. -/
+private theorem sqrt_one_sub_norm_sq_sq {x : EuclideanSpace ℝ (Fin 2)} (hx : ‖x‖ ≤ 1) :
+    √(1 - ‖x‖ ^ 2) ^ 2 = 1 - (x 0 ^ 2 + x 1 ^ 2) := by
+  rw [Real.sq_sqrt (by nlinarith [norm_nonneg x]), EuclideanSpace.real_norm_sq_eq,
+    Fin.sum_univ_two]
 
 /-- The position `q = (x₁, x₂, √(1 - ‖x‖²))` in the canonical coordinates `(x, ξ)`. -/
 theorem fst_sphericalPendulumUpperParam : (sphericalPendulumUpperParam z).1 =
@@ -137,9 +157,7 @@ theorem sphericalPendulumUpperParam_zero :
 /-- Over the closed unit disc the canonical coordinates take values in the phase space. -/
 theorem sphericalPendulumUpperParam_mem_sphericalPendulumPhaseSpace {z} (hz : ‖z.1‖ ≤ 1) :
     sphericalPendulumUpperParam z ∈ sphericalPendulumPhaseSpace := by
-  have hs : √(1 - ‖z.1‖ ^ 2) ^ 2 = 1 - (z.1 0 ^ 2 + z.1 1 ^ 2) := by
-    rw [Real.sq_sqrt (by nlinarith [norm_nonneg z.1]), EuclideanSpace.real_norm_sq_eq,
-      Fin.sum_univ_two]
+  have hs := sqrt_one_sub_norm_sq_sq hz
   rw [mem_sphericalPendulumPhaseSpace, ← sq_eq_sq₀ (norm_nonneg _) zero_le_one, one_pow,
     EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three]
   simp only [PiLp.inner_apply, Fin.sum_univ_three, Fin.sum_univ_two, RCLike.inner_apply,
@@ -163,9 +181,7 @@ private theorem injOn_sphericalPendulumUpperParam :
   have hc : ⟪z.2, z.1⟫_ℝ = ⟪z'.2, z.1⟫_ℝ := by
     have h₂ := congrArg (fun y ↦ y.2 2) h
     simp only [snd_apply_two, ← hx] at h₂
-    exact mul_right_cancel₀
-      (Real.sqrt_pos.2 (by nlinarith [norm_nonneg z.1, show ‖z.1‖ < 1 from hz])).ne'
-      (neg_inj.1 h₂)
+    exact mul_right_cancel₀ (sqrt_one_sub_norm_sq_pos hz).ne' (neg_inj.1 h₂)
   have h₃ := congrArg (fun y ↦ y.2 0) h
   have h₄ := congrArg (fun y ↦ y.2 1) h
   simp only [snd_apply_zero, snd_apply_one, ← hx] at h₃ h₄
@@ -228,14 +244,13 @@ theorem bijOn_sphericalPendulumUpperParam :
     BijOn sphericalPendulumUpperParam {z | ‖z.1‖ < 1}
       (sphericalPendulumPhaseSpace ∩ {y | 0 < y.1 2}) := by
   refine ⟨fun z hz ↦ ?_, injOn_sphericalPendulumUpperParam, surjOn_sphericalPendulumUpperParam⟩
-  have hpos : 0 < 1 - ‖z.1‖ ^ 2 := by nlinarith [norm_nonneg z.1, show ‖z.1‖ < 1 from hz]
   exact ⟨sphericalPendulumUpperParam_mem_sphericalPendulumPhaseSpace (le_of_lt hz),
-    by simpa [fst_apply_two] using Real.sqrt_pos.2 hpos⟩
+    by simpa [fst_apply_two] using sqrt_one_sub_norm_sq_pos hz⟩
 
 /-- The canonical coordinates are smooth over the open unit disc. -/
 theorem contDiffAt_sphericalPendulumUpperParam {n : WithTop ℕ∞} {z} (hz : ‖z.1‖ < 1) :
     ContDiffAt ℝ n sphericalPendulumUpperParam z := by
-  have hpos : 1 - ‖z.1‖ ^ 2 ≠ 0 := by nlinarith [norm_nonneg z.1]
+  have hpos : 1 - ‖z.1‖ ^ 2 ≠ 0 := (Real.sqrt_pos.1 (sqrt_one_sub_norm_sq_pos hz)).ne'
   have hcoord (i : Fin 2) : ContDiffAt ℝ n
       (fun z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦ z.1 i) z :=
     ((EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).contDiff.comp
@@ -274,13 +289,14 @@ private theorem hasFDerivAt_position {z : EuclideanSpace ℝ (Fin 2) × Euclidea
     (hz : ‖z.1‖ < 1) :
     HasFDerivAt (fun z ↦ (sphericalPendulumUpperParam z).1)
       ((positionFDeriv z.1).comp (ContinuousLinearMap.fst ℝ _ _)) z := by
-  have hpos : 0 < 1 - ‖z.1‖ ^ 2 := by nlinarith [norm_nonneg z.1]
+  have hs := (sqrt_one_sub_norm_sq_pos hz).ne'
   have hsq : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin 2) ↦ √(1 - ‖y‖ ^ 2))
       ((-(√(1 - ‖z.1‖ ^ 2))⁻¹) • innerSL ℝ z.1) z.1 := by
-    convert ((hasStrictFDerivAt_norm_sq z.1).hasFDerivAt.const_sub 1).sqrt hpos.ne' using 1
-    have hs : √(1 - ‖z.1‖ ^ 2) ≠ 0 := (Real.sqrt_pos.2 (by nlinarith [norm_nonneg z.1])).ne'
+    convert ((hasStrictFDerivAt_norm_sq z.1).hasFDerivAt.const_sub 1).sqrt
+      (Real.sqrt_pos.1 (sqrt_one_sub_norm_sq_pos hz)).ne' using 1
     ext v
-    simp
+    simp only [neg_smul, neg_apply, smul_apply, coe_innerSL_apply, smul_eq_mul, one_div,
+      mul_inv_rev, smul_neg, nsmul_eq_mul, Nat.cast_ofNat, neg_inj]
     field_simp
   exact ((((EuclideanSpace.proj 0 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).hasFDerivAt.smul_const _).add
     ((EuclideanSpace.proj 1 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).hasFDerivAt.smul_const _)).add
@@ -315,10 +331,18 @@ theorem stdSymplecticForm_fderiv_sphericalPendulumUpperParam {z} (hz : ‖z.1‖
     (u w : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)) :
     stdSymplecticForm (fderiv ℝ sphericalPendulumUpperParam z u)
       (fderiv ℝ sphericalPendulumUpperParam z w) = stdSymplecticForm u w := by
-  have hs : √(1 - ‖z.1‖ ^ 2) ≠ 0 := (Real.sqrt_pos.2 (by nlinarith [norm_nonneg z.1])).ne'
+  have hs := (sqrt_one_sub_norm_sq_pos hz).ne'
   rw [(hasFDerivAt_sphericalPendulumUpperParam hz).fderiv]
-  simp [positionFDeriv, fst_sphericalPendulumUpperParam, PiLp.inner_apply, Fin.sum_univ_three,
-    Fin.sum_univ_two]
+  simp only [positionFDeriv, Fin.isValue, neg_smul, ContinuousLinearMap.add_comp,
+    PiLp.inner_apply, RCLike.inner_apply, conj_trivial, Fin.sum_univ_two, smul_add,
+    fst_sphericalPendulumUpperParam, ContinuousLinearMap.prod_apply, add_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
+    ContinuousLinearMap.smulRight_apply, PiLp.proj_apply, neg_apply, smul_apply, coe_innerSL_apply,
+    smul_eq_mul, sub_apply, ContinuousLinearMap.coe_snd', smul_neg, fderivInnerCLM_apply,
+    stdSymplecticForm_apply, PiLp.add_apply, PiLp.smul_apply, PiLp.single_apply, mul_ite, mul_one,
+    mul_zero, PiLp.neg_apply, PiLp.sub_apply, Fin.sum_univ_three, ↓reduceIte, zero_ne_one,
+    add_zero, Fin.reduceEq, neg_zero, one_ne_zero, zero_add, zero_sub, neg_add_rev, neg_neg,
+    mul_neg, neg_mul]
   field_simp
   ring
 
@@ -329,14 +353,10 @@ theorem stdSymplecticForm_fderiv_sphericalPendulumUpperParam {z} (hz : ‖z.1‖
 theorem sphericalPendulumHamiltonian_sphericalPendulumUpperParam {z} (hz : ‖z.1‖ ≤ 1) :
     sphericalPendulumHamiltonian (sphericalPendulumUpperParam z) =
       (‖z.2‖ ^ 2 - ⟪z.2, z.1⟫_ℝ ^ 2) / 2 + √(1 - ‖z.1‖ ^ 2) := by
-  have hs : √(1 - ‖z.1‖ ^ 2) ^ 2 = 1 - (z.1 0 ^ 2 + z.1 1 ^ 2) := by
-    rw [Real.sq_sqrt (by nlinarith [norm_nonneg z.1]), EuclideanSpace.real_norm_sq_eq,
-      Fin.sum_univ_two]
-  rw [show sphericalPendulumUpperParam z =
-      ((sphericalPendulumUpperParam z).1, (sphericalPendulumUpperParam z).2) from rfl,
-    sphericalPendulumHamiltonian_apply, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three,
-    EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two, fst_apply_two, snd_apply_zero,
-    snd_apply_one, snd_apply_two]
+  have hs := sqrt_one_sub_norm_sq_sq hz
+  rw [← Prod.mk.eta (p := sphericalPendulumUpperParam z), sphericalPendulumHamiltonian_apply,
+    EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three, EuclideanSpace.real_norm_sq_eq,
+    Fin.sum_univ_two, fst_apply_two, snd_apply_zero, snd_apply_one, snd_apply_two]
   simp only [PiLp.inner_apply, Fin.sum_univ_two, RCLike.inner_apply, conj_trivial]
   linear_combination ((z.2 0 * z.1 0 + z.2 1 * z.1 1) ^ 2 / 2) * hs
 
@@ -344,9 +364,7 @@ theorem sphericalPendulumHamiltonian_sphericalPendulumUpperParam {z} (hz : ‖z.
 theorem angularMomentum_sphericalPendulumUpperParam :
     angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
       (sphericalPendulumUpperParam z) = z.1 0 * z.2 1 - z.1 1 * z.2 0 := by
-  rw [show sphericalPendulumUpperParam z =
-      ((sphericalPendulumUpperParam z).1, (sphericalPendulumUpperParam z).2) from rfl,
-    angularMomentum_apply]
+  rw [← Prod.mk.eta (p := sphericalPendulumUpperParam z), angularMomentum_apply]
   simp only [EuclideanSpace.inner_single_right, fst_apply_zero, fst_apply_one, snd_apply_zero,
     snd_apply_one, one_mul, conj_trivial]
   ring
@@ -364,25 +382,6 @@ theorem fderiv_sphericalPendulumEnergyMomentum_comp_sphericalPendulumUpperParam_
   simp [positionFDeriv]
 
 /-! ### The Hessians at the north pole -/
-
-private theorem hessianQuadraticForm_kinetic
-    (v : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)) :
-    hessianQuadraticForm
-      (fun z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦ ‖z.2‖ ^ 2 / 2) 0 v =
-      ‖v.2‖ ^ 2 := by
-  have h : (fun z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦ ‖z.2‖ ^ 2 / 2) =
-      ((1 / 2 : ℝ) • fun y : EuclideanSpace ℝ (Fin 2) ↦ ‖y‖ ^ 2) ∘
-        ContinuousLinearMap.snd ℝ _ _ := by
-    funext z
-    simp only [Function.comp_apply, ContinuousLinearMap.coe_snd', Pi.smul_apply, smul_eq_mul]
-    ring
-  have hf : ContDiffAt ℝ 2 ((1 / 2 : ℝ) • fun y : EuclideanSpace ℝ (Fin 2) ↦ ‖y‖ ^ 2)
-      (ContinuousLinearMap.snd ℝ (EuclideanSpace ℝ (Fin 2)) (EuclideanSpace ℝ (Fin 2)) 0) :=
-    (contDiff_const.smul (contDiff_norm_sq ℝ)).contDiffAt
-  rw [h, ContinuousLinearMap.hessianQuadraticForm_comp _ hf, QuadraticMap.comp_apply,
-    hessianQuadraticForm_smul, smul_apply, hessianQuadraticForm_norm_sq]
-  simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_snd', smul_eq_mul]
-  ring
 
 private theorem hessianQuadraticForm_inner_sq
     (v : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)) :
@@ -403,37 +402,31 @@ private theorem hessianQuadraticForm_inner_sq
   rw [h, hessianQuadraticForm_scalar_comp (by fun_prop) hg hc]
   simp
 
-private theorem hessianQuadraticForm_height
-    (v : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)) :
-    hessianQuadraticForm
-      (fun z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦ √(1 - ‖z.1‖ ^ 2)) 0 v =
-      -‖v.1‖ ^ 2 := by
+/-- The Hessian of the height `√(1 - ‖x‖²)` of the hemisphere at the centre of the disc:
+`-‖v‖²`. -/
+private theorem hessianQuadraticForm_height (v : EuclideanSpace ℝ (Fin 2)) :
+    hessianQuadraticForm (fun x : EuclideanSpace ℝ (Fin 2) ↦ √(1 - ‖x‖ ^ 2)) 0 v = -‖v‖ ^ 2 := by
   have hn : ContDiffAt ℝ 2 (fun y : EuclideanSpace ℝ (Fin 2) ↦ ‖y‖ ^ 2) 0 :=
     (contDiff_norm_sq ℝ).contDiffAt
   have hc : fderiv ℝ (fun y : EuclideanSpace ℝ (Fin 2) ↦ ‖y‖ ^ 2) 0 = 0 := by
     simp
-  have hd : HasDerivAt (fun t : ℝ ↦ √(1 - t)) (-(1 / 2)) 0 := by
+  have h0 : ‖(0 : EuclideanSpace ℝ (Fin 2))‖ ^ 2 = 0 := by simp
+  have hd : HasDerivAt (fun t : ℝ ↦ √(1 - t)) (-(1 / 2))
+      (‖(0 : EuclideanSpace ℝ (Fin 2))‖ ^ 2) := by
     have h := ((hasDerivAt_id' (0 : ℝ)).const_sub 1).sqrt (by norm_num)
     rw [sub_zero, Real.sqrt_one, mul_one] at h
+    rw [h0]
     convert h using 1
     ring
   have hs : ContDiffAt ℝ 2 (fun t : ℝ ↦ √(1 - t)) (‖(0 : EuclideanSpace ℝ (Fin 2))‖ ^ 2) := by
-    rw [norm_zero, zero_pow two_ne_zero]
+    rw [h0]
     exact (Real.contDiffAt_sqrt (by norm_num)).comp 0 (contDiffAt_const.sub contDiffAt_id)
-  -- `√(1 - ‖x‖²)` is `t ↦ √(1 - t)` after the critical function `‖x‖²`, read on the first factor.
-  have hφ := hessianQuadraticForm_scalar_comp (φ := fun t : ℝ ↦ √(1 - t))
-    (f := fun y : EuclideanSpace ℝ (Fin 2) ↦ ‖y‖ ^ 2) hs hn hc
-  have h : (fun z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦ √(1 - ‖z.1‖ ^ 2)) =
-      ((fun t : ℝ ↦ √(1 - t)) ∘ fun y : EuclideanSpace ℝ (Fin 2) ↦ ‖y‖ ^ 2) ∘
-        ContinuousLinearMap.fst ℝ _ _ := rfl
-  have hcomp : ContDiffAt ℝ 2
-      ((fun t : ℝ ↦ √(1 - t)) ∘ fun y : EuclideanSpace ℝ (Fin 2) ↦ ‖y‖ ^ 2)
-      (ContinuousLinearMap.fst ℝ (EuclideanSpace ℝ (Fin 2)) (EuclideanSpace ℝ (Fin 2)) 0) :=
-    ContDiffAt.comp (f := fun y : EuclideanSpace ℝ (Fin 2) ↦ ‖y‖ ^ 2) 0 hs hn
-  rw [h, ContinuousLinearMap.hessianQuadraticForm_comp _ hcomp, map_zero, hφ,
-    QuadraticMap.comp_apply, smul_apply, norm_zero, zero_pow two_ne_zero, hd.deriv,
-    ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_fst', hessianQuadraticForm_norm_sq,
-    smul_eq_mul]
+  -- `√(1 - ‖x‖²)` is `t ↦ √(1 - t)` after the critical function `‖x‖²`; `change` unfolds the
+  -- composition.
+  change hessianQuadraticForm
+    ((fun t : ℝ ↦ √(1 - t)) ∘ fun y : EuclideanSpace ℝ (Fin 2) ↦ ‖y‖ ^ 2) 0 v = _
+  rw [hessianQuadraticForm_scalar_comp (f := fun y ↦ ‖y‖ ^ 2) hs hn hc, smul_apply, hd.deriv,
+    hessianQuadraticForm_norm_sq, smul_eq_mul]
   ring
 
 /-- The Hessian of the energy at the north pole, in the canonical coordinates:
@@ -444,31 +437,31 @@ theorem hessianQuadraticForm_sphericalPendulumHamiltonian_comp_sphericalPendulum
       ‖v.2‖ ^ 2 - ‖v.1‖ ^ 2 := by
   have hU : {z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) | ‖z.1‖ < 1} ∈ 𝓝 0 :=
     (isOpen_lt (continuous_norm.comp continuous_fst) continuous_const).mem_nhds (by simp)
+  -- Near the north pole, `H` is the separated sum of the height `√(1 - ‖x‖²)` and the kinetic
+  -- energy `‖ξ‖² / 2`, corrected by `-⟪ξ, x⟫² / 2`.
   have heq : sphericalPendulumHamiltonian ∘ sphericalPendulumUpperParam =ᶠ[𝓝 0]
-      ((fun z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦ ‖z.2‖ ^ 2 / 2) +
-        -fun z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦ ⟪z.2, z.1⟫_ℝ ^ 2 / 2) +
-        fun z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦ √(1 - ‖z.1‖ ^ 2) := by
+      ((fun x : EuclideanSpace ℝ (Fin 2) ↦ √(1 - ‖x‖ ^ 2)) ∘ Prod.fst +
+        ((1 / 2 : ℝ) • fun ξ : EuclideanSpace ℝ (Fin 2) ↦ ‖ξ‖ ^ 2) ∘ Prod.snd) +
+        -fun z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦ ⟪z.2, z.1⟫_ℝ ^ 2 / 2 := by
     filter_upwards [hU] with z hz
     rw [Function.comp_apply, sphericalPendulumHamiltonian_sphericalPendulumUpperParam hz.le]
-    simp only [Pi.add_apply, Pi.neg_apply]
+    simp only [Pi.add_apply, Pi.neg_apply, Function.comp_apply, Pi.smul_apply, smul_eq_mul]
     ring
-  have h₁ : ContDiffAt ℝ 2
-      (fun z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦ ‖z.2‖ ^ 2 / 2) 0 :=
-    ((contDiff_norm_sq ℝ).comp contDiff_snd |>.div_const 2).contDiffAt
-  have h₂ : ContDiffAt ℝ 2
+  have hφ : ContDiffAt ℝ 2 (fun x : EuclideanSpace ℝ (Fin 2) ↦ √(1 - ‖x‖ ^ 2)) 0 :=
+    (contDiffAt_const.sub (contDiff_norm_sq ℝ).contDiffAt).sqrt (by simp)
+  have hψ : ContDiffAt ℝ 2 ((1 / 2 : ℝ) • fun ξ : EuclideanSpace ℝ (Fin 2) ↦ ‖ξ‖ ^ 2) 0 :=
+    (contDiff_const.smul (contDiff_norm_sq ℝ)).contDiffAt
+  have hι : ContDiffAt ℝ 2
       (-fun z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦ ⟪z.2, z.1⟫_ℝ ^ 2 / 2) 0 :=
     ((contDiff_snd.inner ℝ contDiff_fst).pow 2 |>.div_const 2).contDiffAt.neg
-  have h₁₂ : ContDiffAt ℝ 2
-      ((fun z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦ ‖z.2‖ ^ 2 / 2) +
-        -fun z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦ ⟪z.2, z.1⟫_ℝ ^ 2 / 2) 0 :=
-    h₁.add h₂
-  have h₃ : ContDiffAt ℝ 2
-      (fun z : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) ↦ √(1 - ‖z.1‖ ^ 2)) 0 :=
-    (contDiffAt_const.sub ((contDiff_norm_sq ℝ).comp contDiff_fst).contDiffAt).sqrt (by simp)
-  rw [hessianQuadraticForm_congr_of_eventuallyEq heq, hessianQuadraticForm_add h₁₂ h₃,
-    hessianQuadraticForm_add h₁ h₂, hessianQuadraticForm_neg]
-  simp only [add_apply, neg_apply, hessianQuadraticForm_kinetic, hessianQuadraticForm_inner_sq,
-    hessianQuadraticForm_height]
+  have hsum : ContDiffAt ℝ 2 ((fun x : EuclideanSpace ℝ (Fin 2) ↦ √(1 - ‖x‖ ^ 2)) ∘ Prod.fst +
+      ((1 / 2 : ℝ) • fun ξ : EuclideanSpace ℝ (Fin 2) ↦ ‖ξ‖ ^ 2) ∘ Prod.snd) 0 :=
+    (hφ.comp (f := Prod.fst) 0 contDiffAt_fst).add (hψ.comp (f := Prod.snd) 0 contDiffAt_snd)
+  rw [hessianQuadraticForm_congr_of_eventuallyEq heq, hessianQuadraticForm_add hsum hι,
+    ← Prod.mk_zero_zero, hessianQuadraticForm_comp_fst_add_comp_snd hφ hψ, Prod.mk_zero_zero,
+    hessianQuadraticForm_neg, hessianQuadraticForm_smul]
+  simp only [add_apply, neg_apply, QuadraticMap.prod_apply, smul_apply, smul_eq_mul,
+    hessianQuadraticForm_height, hessianQuadraticForm_norm_sq, hessianQuadraticForm_inner_sq]
   ring
 
 /-- The Hessian of the vertical angular momentum at the north pole, in the canonical coordinates:
@@ -489,7 +482,10 @@ theorem hessianQuadraticForm_angularMomentum_comp_sphericalPendulumUpperParam_ze
     funext z
     simp [B, ℓ, angularMomentum_sphericalPendulumUpperParam]
   rw [h, hessianQuadraticForm_apply, B.fderiv_fderiv_apply_self]
-  simp [B, ℓ]
+  simp only [Fin.isValue, ↓reduceIte, one_ne_zero, add_apply, sub_apply,
+    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.coe_fst', PiLp.proj_apply, ContinuousLinearMap.flip_apply, smul_apply,
+    ContinuousLinearMap.coe_snd', smul_eq_mul, B, ℓ]
   ring
 
 /-! ### The north pole is a focus–focus point -/
@@ -510,7 +506,7 @@ private noncomputable def rotEnd :
   (R.prodMap R).toLinearMap
 
 private theorem swapEnd_mul_self : swapEnd * swapEnd = 1 := by
-  ext v <;> rfl
+  ext v <;> simp [swapEnd]
 
 private theorem rotEnd_mul_self : rotEnd * rotEnd = -1 := by
   refine LinearMap.ext fun v ↦ Prod.ext ?_ ?_ <;> ext i <;> fin_cases i <;> simp [rotEnd]
@@ -526,7 +522,11 @@ private theorem hamiltonianEnd_hessian_hamiltonian :
   refine ((stdSymplecticForm.eq_hamiltonianEnd_iff).2 fun v w ↦ ?_).symm
   simp only [QuadraticMap.polar,
     hessianQuadraticForm_sphericalPendulumHamiltonian_comp_sphericalPendulumUpperParam_zero]
-  simp [swapEnd, EuclideanSpace.real_norm_sq_eq, PiLp.inner_apply, Fin.sum_univ_two]
+  simp only [swapEnd, LinearMap.smul_apply, LinearMap.prod_apply, LinearMap.coe_snd,
+    LinearMap.coe_fst, Function.prod_apply, Prod.smul_mk, stdSymplecticForm_apply,
+    PiLp.inner_apply, PiLp.smul_apply, smul_eq_mul, RCLike.inner_apply, conj_trivial,
+    Fin.sum_univ_two, Fin.isValue, Prod.snd_add, EuclideanSpace.real_norm_sq_eq, PiLp.add_apply,
+    Prod.fst_add]
   ring
 
 private theorem hamiltonianEnd_hessian_angularMomentum :
@@ -536,19 +536,81 @@ private theorem hamiltonianEnd_hessian_angularMomentum :
   refine ((stdSymplecticForm.eq_hamiltonianEnd_iff).2 fun v w ↦ ?_).symm
   simp only [QuadraticMap.polar,
     hessianQuadraticForm_angularMomentum_comp_sphericalPendulumUpperParam_zero]
-  simp [rotEnd, PiLp.inner_apply, Fin.sum_univ_two]
+  simp only [rotEnd, Fin.isValue, ContinuousLinearMap.coe_prodMap,
+    ContinuousLinearMap.toLinearMap_add, ContinuousLinearMap.coe_smulRight,
+    ContinuousLinearMap.toLinearMap_neg, LinearMap.smul_apply, LinearMap.prodMap_apply,
+    LinearMap.add_apply, LinearMap.coe_smulRight, LinearMap.neg_apply, ContinuousLinearMap.coe_coe,
+    PiLp.proj_apply, neg_smul, Prod.smul_mk, smul_add, smul_neg, stdSymplecticForm_apply,
+    PiLp.inner_apply, PiLp.add_apply, PiLp.neg_apply, PiLp.smul_apply, PiLp.single_apply,
+    smul_eq_mul, mul_ite, mul_one, mul_zero, RCLike.inner_apply, conj_trivial, Fin.sum_univ_two,
+    ↓reduceIte, zero_ne_one, add_zero, mul_neg, one_ne_zero, neg_zero, zero_add, Prod.fst_add,
+    Prod.snd_add]
   ring
 
-/-- **The unstable equilibrium of the spherical pendulum is a focus–focus point.** Read in the
-canonical coordinates `TauCeti.sphericalPendulumUpperParam`, a symplectic parametrization of the
-phase space near the north pole `(e₃, 0)`, the energy–momentum map `F = (H, J)` has a
-nondegenerate rank-zero point at the origin: its differential vanishes and the Hessians of `H`
-and `J` span a Cartan subalgebra of `sp(4, ℝ)`. With the Hessians
-`TauCeti.hessianQuadraticForm_sphericalPendulumHamiltonian_comp_sphericalPendulumUpperParam_zero`
-and `TauCeti.hessianQuadraticForm_angularMomentum_comp_sphericalPendulumUpperParam_zero`, the
-Hamiltonian endomorphisms are `(x, ξ) ↦ 2 (ξ, x)`, with square `4`, and twice the quarter turn of
-both planes, with square `-4`: one hyperbolic and one elliptic commuting generator, the
-focus–focus block. -/
+/-- **The energy Hessian at the north pole is hyperbolic.** In the canonical coordinates, the
+Hamiltonian endomorphism of the Hessian of `H` at the origin is `(x, ξ) ↦ 2 (ξ, x)`, whose square
+is `4`. -/
+theorem
+    hamiltonianEnd_hessian_sphericalPendulumHamiltonian_comp_sphericalPendulumUpperParam_mul_self :
+    (stdSymplecticForm (V := EuclideanSpace ℝ (Fin 2))).hamiltonianEnd
+        (hessianQuadraticForm (sphericalPendulumHamiltonian ∘ sphericalPendulumUpperParam) 0) *
+      (stdSymplecticForm (V := EuclideanSpace ℝ (Fin 2))).hamiltonianEnd
+        (hessianQuadraticForm (sphericalPendulumHamiltonian ∘ sphericalPendulumUpperParam) 0) =
+      4 := by
+  rw [hamiltonianEnd_hessian_hamiltonian, smul_mul_smul, swapEnd_mul_self]
+  norm_num [ofNat_smul_eq_nsmul (R := ℝ)]
+
+/-- **The angular momentum Hessian at the north pole is elliptic.** In the canonical coordinates,
+the Hamiltonian endomorphism of the Hessian of `J` at the origin is twice the quarter turn of both
+planes, whose square is `-4`. -/
+theorem hamiltonianEnd_hessian_angularMomentum_comp_sphericalPendulumUpperParam_mul_self :
+    (stdSymplecticForm (V := EuclideanSpace ℝ (Fin 2))).hamiltonianEnd
+        (hessianQuadraticForm (angularMomentum (EuclideanSpace.single 0 1)
+          (EuclideanSpace.single 1 1) ∘ sphericalPendulumUpperParam) 0) *
+      (stdSymplecticForm (V := EuclideanSpace ℝ (Fin 2))).hamiltonianEnd
+        (hessianQuadraticForm (angularMomentum (EuclideanSpace.single 0 1)
+          (EuclideanSpace.single 1 1) ∘ sphericalPendulumUpperParam) 0) =
+      -4 := by
+  rw [hamiltonianEnd_hessian_angularMomentum, smul_mul_smul, rotEnd_mul_self]
+  norm_num [ofNat_smul_eq_nsmul (R := ℝ)]
+
+/-- In the canonical coordinates, the Hessians of `H` and `J` at the north pole Poisson-commute:
+their Hamiltonian endomorphisms commute. -/
+theorem quadraticPoissonBracket_hessian_comp_sphericalPendulumUpperParam_zero :
+    (stdSymplecticForm (V := EuclideanSpace ℝ (Fin 2))).quadraticPoissonBracket
+      (hessianQuadraticForm (sphericalPendulumHamiltonian ∘ sphericalPendulumUpperParam) 0)
+      (hessianQuadraticForm (angularMomentum (EuclideanSpace.single 0 1)
+        (EuclideanSpace.single 1 1) ∘ sphericalPendulumUpperParam) 0) = 0 := by
+  rw [SymplecticForm.quadraticPoissonBracket_eq_zero_iff, hamiltonianEnd_hessian_hamiltonian,
+    hamiltonianEnd_hessian_angularMomentum]
+  exact (commute_swapEnd_rotEnd.smul_left _).smul_right _
+
+/-- The halved coordinate functionals of `ℝ × ℝ` span its dual. -/
+private theorem span_range_half_fst_half_snd :
+    Submodule.span ℝ (range ![(1 / 2 : ℝ) • ContinuousLinearMap.fst ℝ ℝ ℝ,
+      (1 / 2 : ℝ) • ContinuousLinearMap.snd ℝ ℝ ℝ]) = ⊤ := by
+  refine eq_top_iff.2 fun ℓ _ ↦ (Submodule.mem_span_range_iff_exists_fun ℝ).2
+    ⟨![2 * ℓ (1, 0), 2 * ℓ (0, 1)], ?_⟩
+  ext <;>
+  simp only [one_div, Fin.sum_univ_two, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, ContinuousLinearMap.add_comp, ContinuousLinearMap.smul_comp,
+    ContinuousLinearMap.fst_comp_inl, ContinuousLinearMap.snd_comp_inl,
+    ContinuousLinearMap.fst_comp_inr, ContinuousLinearMap.snd_comp_inr, smul_zero, add_zero,
+    zero_add, smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul, mul_one,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply,
+    ContinuousLinearMap.inr_apply] <;>
+  ring
+
+/-- **The unstable equilibrium of the spherical pendulum is a nondegenerate rank-zero point.**
+Read in the canonical coordinates `TauCeti.sphericalPendulumUpperParam`, a symplectic
+parametrization of the phase space near the north pole `(e₃, 0)`, the energy–momentum map
+`F = (H, J)` has a nondegenerate rank-zero point at the origin: its differential vanishes and the
+Hessians of `H` and `J` span a Cartan subalgebra of `sp(4, ℝ)`. Its type is focus–focus: by
+`hamiltonianEnd_hessian_sphericalPendulumHamiltonian_comp_sphericalPendulumUpperParam_mul_self`,
+`hamiltonianEnd_hessian_angularMomentum_comp_sphericalPendulumUpperParam_mul_self` and
+`quadraticPoissonBracket_hessian_comp_sphericalPendulumUpperParam_zero`, the Hamiltonian
+endomorphisms of the Hessians have squares `4` and `-4` and commute: one hyperbolic and one
+elliptic commuting generator, the focus–focus block. -/
 theorem
     isNondegenerateRankZeroPoint_sphericalPendulumEnergyMomentum_comp_sphericalPendulumUpperParam :
     (stdSymplecticForm (V := EuclideanSpace ℝ (Fin 2))).IsNondegenerateRankZeroPoint
@@ -563,10 +625,7 @@ theorem
   -- the Hessians of `(½ fst) ∘ F` and `(½ snd) ∘ F`.
   let L : Fin 2 → ℝ × ℝ →L[ℝ] ℝ :=
     ![(1 / 2 : ℝ) • ContinuousLinearMap.fst ℝ ℝ ℝ, (1 / 2 : ℝ) • ContinuousLinearMap.snd ℝ ℝ ℝ]
-  have hL : Submodule.span ℝ (range L) = ⊤ := by
-    refine eq_top_iff.2 fun ℓ _ ↦ (Submodule.mem_span_range_iff_exists_fun ℝ).2
-      ⟨![2 * ℓ (1, 0), 2 * ℓ (0, 1)], ?_⟩
-    ext <;> simp [L, Fin.sum_univ_two] <;> ring
+  have hL : Submodule.span ℝ (range L) = ⊤ := span_range_half_fst_half_snd
   have hQ : (fun i ↦ hessianQuadraticForm (L i ∘ (sphericalPendulumEnergyMomentum ∘
       sphericalPendulumUpperParam)) 0) = ![(1 / 2 : ℝ) • QH, (1 / 2 : ℝ) • QJ] := by
     funext i
@@ -581,15 +640,22 @@ theorem
     fun hF _ ↦ by rw [span_range_hessianQuadraticForm_comp_left hF hL, hQ]]
   refine ⟨hF, fderiv_sphericalPendulumEnergyMomentum_comp_sphericalPendulumUpperParam_zero, ?_⟩
   -- `½ A_H` and `½ A_J` are commuting square roots of `1` and `-1`: a focus–focus pair.
+  have h4 : (4 : Module.End ℝ (EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2))) =
+      (4 : ℝ) • 1 := by
+    norm_num [ofNat_smul_eq_nsmul (R := ℝ)]
   refine SymplecticForm.isNondegenerateQuadraticFamily_of_mul_self_eq_one_of_mul_self_eq_neg_one
     (by simp) ?_ ?_ ?_
-  · rw [map_smul, hamiltonianEnd_hessian_hamiltonian, smul_smul, smul_mul_smul, swapEnd_mul_self]
+  · rw [map_smul, smul_mul_smul,
+      hamiltonianEnd_hessian_sphericalPendulumHamiltonian_comp_sphericalPendulumUpperParam_mul_self,
+      h4, smul_smul]
     norm_num
-  · rw [map_smul, hamiltonianEnd_hessian_angularMomentum, smul_smul, smul_mul_smul,
-      rotEnd_mul_self]
+  · rw [map_smul, smul_mul_smul,
+      hamiltonianEnd_hessian_angularMomentum_comp_sphericalPendulumUpperParam_mul_self, h4,
+      smul_neg, smul_smul]
     norm_num
-  · rw [SymplecticForm.quadraticPoissonBracket_eq_zero_iff, map_smul, map_smul,
-      hamiltonianEnd_hessian_hamiltonian, hamiltonianEnd_hessian_angularMomentum]
-    exact ((commute_swapEnd_rotEnd.smul_left _).smul_right _).smul_left _ |>.smul_right _
+  · rw [SymplecticForm.quadraticPoissonBracket_eq_zero_iff, map_smul, map_smul]
+    exact ((SymplecticForm.quadraticPoissonBracket_eq_zero_iff _).1
+      quadraticPoissonBracket_hessian_comp_sphericalPendulumUpperParam_zero).smul_left _
+      |>.smul_right _
 
 end TauCeti
