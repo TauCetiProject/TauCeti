@@ -37,8 +37,6 @@ torsor comparison used to show that the algebraic transfer lands in Hopf-algebro
 
 ## Main definitions
 
-* `WeierstrassCurve.IsStrictGamma1ThreeChange a₁ a₃ C`: `C` has `u = 1` and carries
-  `gamma1ThreeNormalForm a₁ a₃` to another `Γ₁(3)` normal form.
 * `TauCeti.Gamma1ThreeHopfAlgebroid.ArrowRingOf B a₁ a₃`: the quotient of `B[r, s, t]` classifying
   strict `Γ₁(3)` arrows out of `gamma1ThreeNormalForm a₁ a₃`.
 * `TauCeti.Gamma1ThreeHopfAlgebroid.ArrowRingOf.lift`: the universal property of
@@ -52,8 +50,8 @@ torsor comparison used to show that the algebraic transfer lands in Hopf-algebro
 
 * T. Bauer, *Computation of the homotopy of the spectrum tmf*, in *Groups, homotopy and
   configuration spaces*, Geom. Topol. Monogr. 13 (2008), §7.
-* K. Carrick, J. Davies and S. van Nigtevecht, *Topological modular forms with level structure:
-  deformations, transfers, and differentials*, §4.2.
+* K. Carrick, J. Davies and S. van Nigtevecht, *The descent spectral sequence for topological
+  modular forms*, arXiv:2412.01640v2, §4.2.
 -/
 
 public section
@@ -61,84 +59,6 @@ public section
 noncomputable section
 
 universe u
-
-namespace WeierstrassCurve
-
-variable {R S : Type*} [CommRing R] [CommRing S]
-
-/-- A change of variables `C` is a **strict `Γ₁(3)` arrow** out of `gamma1ThreeNormalForm a₁ a₃`
-when `C.u = 1` and `C • gamma1ThreeNormalForm a₁ a₃` again has `a₂ = a₄ = a₆ = 0`. -/
-def IsStrictGamma1ThreeChange (a₁ a₃ : R) (C : VariableChange R) : Prop :=
-  C.u = 1 ∧ (C • gamma1ThreeNormalForm a₁ a₃).a₂ = 0 ∧
-    (C • gamma1ThreeNormalForm a₁ a₃).a₄ = 0 ∧ (C • gamma1ThreeNormalForm a₁ a₃).a₆ = 0
-
-/-- Explicit unfolding of `IsStrictGamma1ThreeChange`. -/
-theorem isStrictGamma1ThreeChange_iff {a₁ a₃ : R} {C : VariableChange R} :
-    IsStrictGamma1ThreeChange a₁ a₃ C ↔
-      C.u = 1 ∧ (C • gamma1ThreeNormalForm a₁ a₃).a₂ = 0 ∧
-        (C • gamma1ThreeNormalForm a₁ a₃).a₄ = 0 ∧ (C • gamma1ThreeNormalForm a₁ a₃).a₆ = 0 :=
-  Iff.rfl
-
-/-- Characterization of `IsStrictGamma1ThreeChange a₁ a₃ ⟨1, r, s, t⟩` by the three defining
-polynomial equations in `(r, s, t)`. -/
-theorem isStrictGamma1ThreeChange_mk_iff {a₁ a₃ r s t : R} :
-    IsStrictGamma1ThreeChange a₁ a₃ ⟨1, r, s, t⟩ ↔
-      3 * r - s ^ 2 - a₁ * s = 0 ∧
-        3 * r ^ 2 - a₁ * r * s - a₃ * s - a₁ * t - 2 * s * t = 0 ∧
-        r ^ 3 - a₁ * r * t - a₃ * t - t ^ 2 = 0 := by
-  simp [IsStrictGamma1ThreeChange]
-
-namespace IsStrictGamma1ThreeChange
-
-/-- A strict `Γ₁(3)` arrow `C` equals `⟨1, C.r, C.s, C.t⟩`. -/
-theorem eq_mk {a₁ a₃ : R} {C : VariableChange R} (h : IsStrictGamma1ThreeChange a₁ a₃ C) :
-    C = ⟨1, C.r, C.s, C.t⟩ :=
-  VariableChange.ext h.1 rfl rfl rfl
-
-/-- Acting by a strict `Γ₁(3)` arrow produces `gamma1ThreeNormalForm (a₁ + 2s) (a₃ + a₁r + 2t)`. -/
-theorem smul_eq {a₁ a₃ : R} {C : VariableChange R} (h : IsStrictGamma1ThreeChange a₁ a₃ C) :
-    C • gamma1ThreeNormalForm a₁ a₃ =
-      gamma1ThreeNormalForm (a₁ + 2 * C.s) (a₃ + a₁ * C.r + 2 * C.t) := by
-  have hW := (eq_gamma1ThreeNormalForm_iff (C • gamma1ThreeNormalForm a₁ a₃)).mpr ⟨h.2.1, h.2.2⟩
-  conv_lhs => rw [hW]
-  conv_lhs => rw [h.eq_mk]
-  simp
-
-/-- The identity change of variables is a strict `Γ₁(3)` arrow. -/
-theorem one (a₁ a₃ : R) : IsStrictGamma1ThreeChange a₁ a₃ 1 := by
-  refine ⟨rfl, ?_, ?_, ?_⟩ <;> simp
-
-/-- Strict `Γ₁(3)` arrows are closed under composition. -/
-theorem mul {a₁ a₃ : R} {C₁ C₂ : VariableChange R}
-    (h₁ : IsStrictGamma1ThreeChange a₁ a₃ C₁)
-    (h₂ : IsStrictGamma1ThreeChange (a₁ + 2 * C₁.s) (a₃ + a₁ * C₁.r + 2 * C₁.t) C₂) :
-    IsStrictGamma1ThreeChange a₁ a₃ (C₂ * C₁) := by
-  refine ⟨by rw [VariableChange.mul_def, h₂.1, h₁.1, mul_one], ?_⟩
-  rw [mul_smul, h₁.smul_eq]
-  exact h₂.2
-
-/-- The inverse of a strict `Γ₁(3)` arrow is a strict `Γ₁(3)` arrow from its target back to its
-source. -/
-theorem inv {a₁ a₃ : R} {C : VariableChange R} (h : IsStrictGamma1ThreeChange a₁ a₃ C) :
-    IsStrictGamma1ThreeChange (a₁ + 2 * C.s) (a₃ + a₁ * C.r + 2 * C.t) C⁻¹ := by
-  refine ⟨by simp [VariableChange.inv_def, h.1], ?_⟩
-  rw [← h.smul_eq, inv_smul_smul]
-  exact ⟨gamma1ThreeNormalForm_a₂ a₁ a₃, gamma1ThreeNormalForm_a₄ a₁ a₃,
-    gamma1ThreeNormalForm_a₆ a₁ a₃⟩
-
-/-- Strict `Γ₁(3)` arrows are preserved along ring homomorphisms. -/
-theorem map {a₁ a₃ : R} {C : VariableChange R} (h : IsStrictGamma1ThreeChange a₁ a₃ C)
-    (f : R →+* S) : IsStrictGamma1ThreeChange (f a₁) (f a₃) (C.map f) := by
-  refine ⟨by simp [h.1], ?_⟩
-  have hsmul : C.map f • gamma1ThreeNormalForm (f a₁) (f a₃) =
-      (C • gamma1ThreeNormalForm a₁ a₃).map f := by
-    rw [← map_gamma1ThreeNormalForm, map_variableChange]
-  rw [hsmul]
-  simp [h.2.1, h.2.2.1, h.2.2.2]
-
-end IsStrictGamma1ThreeChange
-
-end WeierstrassCurve
 
 namespace TauCeti.Gamma1ThreeHopfAlgebroid
 
@@ -149,7 +69,7 @@ variable (B : Type*) [CommRing B] (a₁ a₃ : B)
 namespace ArrowRingOf
 
 /-- The universal strict change of variables `⟨1, X 0, X 1, X 2⟩` over `B[r, s, t]`. -/
-def polyChange : VariableChange (MvPolynomial (Fin 3) B) :=
+private def polyChange : VariableChange (MvPolynomial (Fin 3) B) :=
   ⟨1, X 0, X 1, X 2⟩
 
 /-- The ideal of `B[r, s, t]` generated by the `a₂`, `a₄` and `a₆` coefficients of
@@ -159,6 +79,15 @@ def ideal : Ideal (MvPolynomial (Fin 3) B) :=
     { (polyChange B • gamma1ThreeNormalForm (C a₁) (C a₃)).a₂,
       (polyChange B • gamma1ThreeNormalForm (C a₁) (C a₃)).a₄,
       (polyChange B • gamma1ThreeNormalForm (C a₁) (C a₃)).a₆ }
+
+/-- Explicit three-generator presentation of `ArrowRingOf.ideal B a₁ a₃` in `B[r, s, t]`. -/
+theorem ideal_def :
+    ideal B a₁ a₃ =
+      Ideal.span
+        { 3 * X 0 - X 1 ^ 2 - C a₁ * X 1,
+          3 * X 0 ^ 2 - C a₁ * X 0 * X 1 - C a₃ * X 1 - C a₁ * X 2 - 2 * X 1 * X 2,
+          X 0 ^ 3 - C a₁ * X 0 * X 2 - C a₃ * X 2 - X 2 ^ 2 } := by
+  simp [ideal, polyChange]
 
 end ArrowRingOf
 
@@ -220,32 +149,33 @@ theorem isStrictGamma1ThreeChange_universalChange :
       (polyChange B • gamma1ThreeNormalForm (C a₁) (C a₃)).map
         (Ideal.Quotient.mk (ideal B a₁ a₃)) := by
     rw [hW, ← polyChange_map_mk, map_variableChange]
+  rw [isStrictGamma1ThreeChange_iff]
   refine ⟨rfl, ?_, ?_, ?_⟩ <;> rw [hsmul]
   · exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (by simp))
   · exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (by simp))
   · exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (by simp))
 
 /-- Relation `3r - s² - a₁s = 0` in `ArrowRingOf B a₁ a₃`. -/
-theorem three_mul_r_sub_s_sq_sub_a₁_mul_s :
+theorem three_mul_r_sub_s_sq_sub_a₁_mul_s_eq_zero :
     3 * r B a₁ a₃ - s B a₁ a₃ ^ 2 - algebraMap B (ArrowRingOf B a₁ a₃) a₁ * s B a₁ a₃ = 0 := by
-  simpa [universalChange] using (isStrictGamma1ThreeChange_universalChange B a₁ a₃).2.1
+  simpa [universalChange] using (isStrictGamma1ThreeChange_universalChange B a₁ a₃).a₂_eq_zero
 
 /-- Relation `3r² - a₁rs - a₃s - a₁t - 2st = 0` in `ArrowRingOf B a₁ a₃`. -/
-theorem relation_a₄ :
+theorem three_mul_r_sq_sub_a₁_mul_r_mul_s_sub_a₃_mul_s_sub_a₁_mul_t_sub_two_mul_s_mul_t_eq_zero :
     3 * r B a₁ a₃ ^ 2 -
       algebraMap B (ArrowRingOf B a₁ a₃) a₁ * r B a₁ a₃ * s B a₁ a₃ -
       algebraMap B (ArrowRingOf B a₁ a₃) a₃ * s B a₁ a₃ -
       algebraMap B (ArrowRingOf B a₁ a₃) a₁ * t B a₁ a₃ -
       2 * s B a₁ a₃ * t B a₁ a₃ = 0 := by
-  simpa [universalChange] using (isStrictGamma1ThreeChange_universalChange B a₁ a₃).2.2.1
+  simpa [universalChange] using (isStrictGamma1ThreeChange_universalChange B a₁ a₃).a₄_eq_zero
 
 /-- Relation `r³ - a₁rt - a₃t - t² = 0` in `ArrowRingOf B a₁ a₃`. -/
-theorem relation_a₆ :
+theorem r_cube_sub_a₁_mul_r_mul_t_sub_a₃_mul_t_sub_t_sq_eq_zero :
     r B a₁ a₃ ^ 3 -
       algebraMap B (ArrowRingOf B a₁ a₃) a₁ * r B a₁ a₃ * t B a₁ a₃ -
       algebraMap B (ArrowRingOf B a₁ a₃) a₃ * t B a₁ a₃ -
       t B a₁ a₃ ^ 2 = 0 := by
-  simpa [universalChange] using (isStrictGamma1ThreeChange_universalChange B a₁ a₃).2.2.2
+  simpa [universalChange] using (isStrictGamma1ThreeChange_universalChange B a₁ a₃).a₆_eq_zero
 
 variable {B a₁ a₃} {B' S : Type*} [CommRing B'] [CommRing S]
 
@@ -266,12 +196,12 @@ private theorem ideal_le_ker_evalPolyHom {f : B →+* S} {D : VariableChange S}
   rw [ideal, Ideal.span_le]
   have hsmul : (polyChange B • gamma1ThreeNormalForm (C a₁) (C a₃)).map (evalPolyHom f D) =
       D • gamma1ThreeNormalForm (f a₁) (f a₃) := by
-    rw [← map_variableChange, polyChange_map_evalPolyHom f hD.1, map_gamma1ThreeNormalForm]
+    rw [← map_variableChange, polyChange_map_evalPolyHom f hD.u_eq_one, map_gamma1ThreeNormalForm]
     simp [evalPolyHom]
   rintro _ (rfl | rfl | rfl)
-  · rw [SetLike.mem_coe, RingHom.mem_ker, ← map_a₂, hsmul, hD.2.1]
-  · rw [SetLike.mem_coe, RingHom.mem_ker, ← map_a₄, hsmul, hD.2.2.1]
-  · rw [SetLike.mem_coe, RingHom.mem_ker, ← map_a₆, hsmul, hD.2.2.2]
+  · rw [SetLike.mem_coe, RingHom.mem_ker, ← map_a₂, hsmul, hD.a₂_eq_zero]
+  · rw [SetLike.mem_coe, RingHom.mem_ker, ← map_a₄, hsmul, hD.a₄_eq_zero]
+  · rw [SetLike.mem_coe, RingHom.mem_ker, ← map_a₆, hsmul, hD.a₆_eq_zero]
 
 /-- **Universal property of `ArrowRingOf B a₁ a₃`**: ring homomorphisms out of
 `ArrowRingOf B a₁ a₃` classify pairs `(f, D)` of a ring homomorphism `f : B →+* S` and a strict
@@ -288,7 +218,7 @@ def lift :
     · simp [IsScalarTower.algebraMap_apply B (MvPolynomial (Fin 3) B) (ArrowRingOf B a₁ a₃),
         evalPolyHom]
     · ext
-      · simp [universalChange, p.2.1]
+      · simp [universalChange, p.2.u_eq_one]
       · simp [universalChange, r, evalPolyHom]
       · simp [universalChange, s, evalPolyHom]
       · simp [universalChange, t, evalPolyHom]
@@ -510,7 +440,8 @@ theorem isPushout {B B' : Type u} [CommRing B] [CommRing B'] {a₁ a₃ : B} (f 
 
 /-- Forward homomorphism of `shearEquiv`: precomposing the universal strict arrow over `(a₁', a₃')`
 with `C₀`. -/
-def shearHom {a₁' a₃' : B} {C₀ : VariableChange B} (hC₀ : IsStrictGamma1ThreeChange a₁ a₃ C₀)
+private def shearHom {a₁' a₃' : B} {C₀ : VariableChange B}
+    (hC₀ : IsStrictGamma1ThreeChange a₁ a₃ C₀)
     (ha₁ : a₁' = a₁ + 2 * C₀.s) (ha₃ : a₃' = a₃ + a₁ * C₀.r + 2 * C₀.t) :
     ArrowRingOf B a₁ a₃ →+* ArrowRingOf B a₁' a₃' :=
   lift ⟨(algebraMap B _,
@@ -531,21 +462,21 @@ def shearHom {a₁' a₃' : B} {C₀ : VariableChange B} (hC₀ : IsStrictGamma1
     exact isStrictGamma1ThreeChange_universalChange B a₁' a₃'⟩
 
 @[simp]
-theorem shearHom_comp_algebraMap {a₁' a₃' : B} {C₀ : VariableChange B}
+private theorem shearHom_comp_algebraMap {a₁' a₃' : B} {C₀ : VariableChange B}
     (hC₀ : IsStrictGamma1ThreeChange a₁ a₃ C₀)
     (ha₁ : a₁' = a₁ + 2 * C₀.s) (ha₃ : a₃' = a₃ + a₁ * C₀.r + 2 * C₀.t) :
     (shearHom hC₀ ha₁ ha₃).comp (algebraMap B _) = algebraMap B _ :=
   lift_comp_algebraMap _
 
 @[simp]
-theorem shearHom_algebraMap {a₁' a₃' : B} {C₀ : VariableChange B}
+private theorem shearHom_algebraMap {a₁' a₃' : B} {C₀ : VariableChange B}
     (hC₀ : IsStrictGamma1ThreeChange a₁ a₃ C₀)
     (ha₁ : a₁' = a₁ + 2 * C₀.s) (ha₃ : a₃' = a₃ + a₁ * C₀.r + 2 * C₀.t) (b : B) :
     shearHom hC₀ ha₁ ha₃ (algebraMap B _ b) = algebraMap B _ b :=
   lift_algebraMap _ b
 
 @[simp]
-theorem universalChange_map_shearHom {a₁' a₃' : B} {C₀ : VariableChange B}
+private theorem universalChange_map_shearHom {a₁' a₃' : B} {C₀ : VariableChange B}
     (hC₀ : IsStrictGamma1ThreeChange a₁ a₃ C₀)
     (ha₁ : a₁' = a₁ + 2 * C₀.s) (ha₃ : a₃' = a₃ + a₁ * C₀.r + 2 * C₀.t) :
     (universalChange B a₁ a₃).map (shearHom hC₀ ha₁ ha₃) =
@@ -562,32 +493,80 @@ def shearEquiv {a₁' a₃' : B} {C₀ : VariableChange B} (hC₀ : IsStrictGamm
     rw [ha₁, ha₃]
     exact hC₀.inv
   have ha₁' : a₁ = a₁' + 2 * C₀⁻¹.s := by
-    simp [ha₁, VariableChange.inv_def, hC₀.1]
+    simp [ha₁, VariableChange.inv_def, hC₀.u_eq_one]
   have ha₃' : a₃ = a₃' + a₁' * C₀⁻¹.r + 2 * C₀⁻¹.t := by
-    simp [ha₁, ha₃, VariableChange.inv_def, hC₀.1]
+    simp [ha₁, ha₃, VariableChange.inv_def, hC₀.u_eq_one]
     ring
   let fwd := shearHom hC₀ ha₁ ha₃
   let bwd := shearHom hC₀' ha₁' ha₃'
   have hbwd_fwd : bwd.comp fwd = RingHom.id _ := by
     refine ringHom_ext (RingHom.ext fun b ↦ by simp [fwd, bwd]) ?_
-    rw [← VariableChange.map_map, universalChange_map_shearHom, VariableChange.map_mul,
-      universalChange_map_shearHom, VariableChange.map_map, shearHom_comp_algebraMap, mul_assoc,
-      ← VariableChange.map_mul, inv_mul_cancel, VariableChange.map_one, mul_one,
-      VariableChange.map_id]
+    rw [← VariableChange.map_map]
+    simp [fwd, bwd, VariableChange.map_map, mul_assoc]
   have hfwd_bwd : fwd.comp bwd = RingHom.id _ := by
     refine ringHom_ext (RingHom.ext fun b ↦ by simp [fwd, bwd]) ?_
-    rw [← VariableChange.map_map, universalChange_map_shearHom, VariableChange.map_mul,
-      universalChange_map_shearHom, VariableChange.map_map, shearHom_comp_algebraMap, mul_assoc,
-      ← VariableChange.map_mul, mul_inv_cancel, VariableChange.map_one, mul_one,
-      VariableChange.map_id]
+    rw [← VariableChange.map_map]
+    simp [fwd, bwd, VariableChange.map_map, mul_assoc]
   exact AlgEquiv.ofRingEquiv (f := RingEquiv.ofRingHom fwd bwd hfwd_bwd hbwd_fwd)
     (fun b ↦ shearHom_algebraMap hC₀ ha₁ ha₃ b)
 
-theorem shearEquiv_toRingHom {a₁' a₃' : B} {C₀ : VariableChange B}
+private theorem coe_ringHom_shearEquiv {a₁' a₃' : B} {C₀ : VariableChange B}
     (hC₀ : IsStrictGamma1ThreeChange a₁ a₃ C₀)
     (ha₁ : a₁' = a₁ + 2 * C₀.s) (ha₃ : a₃' = a₃ + a₁ * C₀.r + 2 * C₀.t) :
-    (shearEquiv hC₀ ha₁ ha₃).toRingHom = shearHom hC₀ ha₁ ha₃ :=
-  (rfl)
+    (shearEquiv hC₀ ha₁ ha₃ : ArrowRingOf B a₁ a₃ →+* ArrowRingOf B a₁' a₃') =
+      shearHom hC₀ ha₁ ha₃ :=
+  RingHom.ext fun _ ↦ rfl
+
+@[simp]
+theorem universalChange_map_shearEquiv {a₁' a₃' : B} {C₀ : VariableChange B}
+    (hC₀ : IsStrictGamma1ThreeChange a₁ a₃ C₀)
+    (ha₁ : a₁' = a₁ + 2 * C₀.s) (ha₃ : a₃' = a₃ + a₁ * C₀.r + 2 * C₀.t) :
+    (universalChange B a₁ a₃).map
+      (shearEquiv hC₀ ha₁ ha₃ : ArrowRingOf B a₁ a₃ →+* ArrowRingOf B a₁' a₃') =
+      universalChange B a₁' a₃' * C₀.map (algebraMap B _) := by
+  rw [coe_ringHom_shearEquiv, universalChange_map_shearHom]
+
+@[simp]
+theorem shearEquiv_r {a₁' a₃' : B} {C₀ : VariableChange B}
+    (hC₀ : IsStrictGamma1ThreeChange a₁ a₃ C₀)
+    (ha₁ : a₁' = a₁ + 2 * C₀.s) (ha₃ : a₃' = a₃ + a₁ * C₀.r + 2 * C₀.t) :
+    shearEquiv hC₀ ha₁ ha₃ (r B a₁ a₃) =
+      r B a₁' a₃' + algebraMap B (ArrowRingOf B a₁' a₃') C₀.r := by
+  rw [← universalChange_r, ← RingHom.coe_coe (shearEquiv hC₀ ha₁ ha₃), ← VariableChange.map_r,
+    universalChange_map_shearEquiv]
+  simp [VariableChange.mul_def, hC₀.u_eq_one]
+
+@[simp]
+theorem shearEquiv_s {a₁' a₃' : B} {C₀ : VariableChange B}
+    (hC₀ : IsStrictGamma1ThreeChange a₁ a₃ C₀)
+    (ha₁ : a₁' = a₁ + 2 * C₀.s) (ha₃ : a₃' = a₃ + a₁ * C₀.r + 2 * C₀.t) :
+    shearEquiv hC₀ ha₁ ha₃ (s B a₁ a₃) =
+      s B a₁' a₃' + algebraMap B (ArrowRingOf B a₁' a₃') C₀.s := by
+  rw [← universalChange_s, ← RingHom.coe_coe (shearEquiv hC₀ ha₁ ha₃), ← VariableChange.map_s,
+    universalChange_map_shearEquiv]
+  simp [VariableChange.mul_def, hC₀.u_eq_one]
+
+@[simp]
+theorem shearEquiv_t {a₁' a₃' : B} {C₀ : VariableChange B}
+    (hC₀ : IsStrictGamma1ThreeChange a₁ a₃ C₀)
+    (ha₁ : a₁' = a₁ + 2 * C₀.s) (ha₃ : a₃' = a₃ + a₁ * C₀.r + 2 * C₀.t) :
+    shearEquiv hC₀ ha₁ ha₃ (t B a₁ a₃) =
+      t B a₁' a₃' + r B a₁' a₃' * algebraMap B (ArrowRingOf B a₁' a₃') C₀.s +
+        algebraMap B (ArrowRingOf B a₁' a₃') C₀.t := by
+  rw [← universalChange_t, ← RingHom.coe_coe (shearEquiv hC₀ ha₁ ha₃), ← VariableChange.map_t,
+    universalChange_map_shearEquiv]
+  simp [VariableChange.mul_def, hC₀.u_eq_one]
+
+@[simp]
+theorem shearEquiv_symm {a₁' a₃' : B} {C₀ : VariableChange B}
+    (hC₀ : IsStrictGamma1ThreeChange a₁ a₃ C₀)
+    (ha₁ : a₁' = a₁ + 2 * C₀.s) (ha₃ : a₃' = a₃ + a₁ * C₀.r + 2 * C₀.t) :
+    (shearEquiv hC₀ ha₁ ha₃).symm =
+      shearEquiv (C₀ := C₀⁻¹) (by rw [ha₁, ha₃]; exact hC₀.inv)
+        (by simp [ha₁, VariableChange.inv_def, hC₀.u_eq_one])
+        (by simp [ha₁, ha₃, VariableChange.inv_def, hC₀.u_eq_one]; ring) := by
+  ext x
+  rfl
 
 end ArrowRingOf
 

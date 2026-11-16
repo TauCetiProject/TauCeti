@@ -47,8 +47,9 @@ particular `c₄`, `c₆` and `Δ` of `universalCurve R` are `Γ'`-invariant.
 ## Main results
 
 * `counit_comp_algebraMap`, `counit_comp_rightUnit`: unit–counit identities.
-* `coproduct_r`, `coproduct_s`, `coproduct_t`, `coproduct_eq_shearEquiv_comp_map`: explicit
-  formulas for `Δ` (`Δr = r₁ + r₂`, `Δs = s₁ + s₂`, `Δt = t₁ + t₂ + s₁r₂`) and its factorization
+* `coproduct_comp_algebraMap`, `coproduct_comp_rightUnit`, `coproduct_r`, `coproduct_s`,
+  `coproduct_t`, `coproduct_eq_shearEquiv_comp_map`: left/right unit compatibility, explicit
+  coordinate formulas (`Δr = r₁ + r₂`, `Δs = s₁ + s₂`, `Δt = t₁ + t₂ + s₁r₂`), and factorization
   through the groupoid shearing equivalence `ArrowRingOf.shearEquiv`.
 * `pushoutLift_counit_id_comp_coproduct`, `pushoutLift_id_counit_comp_coproduct`,
   `coproduct_coassoc`: left/right counit laws and coassociativity.
@@ -61,12 +62,19 @@ particular `c₄`, `c₆` and `Δ` of `universalCurve R` are `Γ'`-invariant.
 * `rightUnit_toBaseRing_of_isIntegralModularForm`, `rightUnit_c₄`, `rightUnit_c₆`, `rightUnit_Δ`:
   level-one integral modular forms pull back to `H⁰(A', Γ')`.
 
+## Provenance
+
+The Hopf-algebroid structure maps, `pushoutLift` statement idioms, theorem layout, and
+`ArrowRingOf.ringHom_ext` proof strategy closely adapt `TauCeti.WeierstrassHopfAlgebroid` in
+`TauCeti/AlgebraicGeometry/EllipticCurve/VariableChange/HopfAlgebroid.lean` from the level-one
+Weierstrass groupoid to strict `Γ₁(3)` normal-form arrows.
+
 ## References
 
 * T. Bauer, *Computation of the homotopy of the spectrum tmf*, in *Groups, homotopy and
   configuration spaces*, Geom. Topol. Monogr. 13 (2008), §7.
-* K. Carrick, J. Davies and S. van Nigtevecht, *Topological modular forms with level structure:
-  deformations, transfers, and differentials*, §4.2.
+* K. Carrick, J. Davies and S. van Nigtevecht, *The descent spectral sequence for topological
+  modular forms*, arXiv:2412.01640v2, §4.2.
 -/
 
 public section
@@ -176,9 +184,29 @@ private def mkArrowAlgHom {S : Type*} [CommRing S] [Algebra R S]
     rw [hf₁, hf₃]
     exact p.2
   AlgHom.mk (ArrowRingOf.lift ⟨(f, p.1.2), hp⟩) fun x ↦ by
-    change ArrowRingOf.lift ⟨(f, p.1.2), hp⟩ (algebraMap R (ArrowRing R) x) = algebraMap R S x
-    rw [IsScalarTower.algebraMap_apply R (BaseRing R) (ArrowRing R), ArrowRingOf.lift_algebraMap]
+    rw [RingHom.toFun_eq_coe, IsScalarTower.algebraMap_apply R (BaseRing R) (ArrowRing R),
+      ArrowRingOf.lift_algebraMap]
     exact eval₂Hom_C _ _ x
+
+@[simp]
+private theorem coe_ringHom_mkArrowAlgHom {S : Type*} [CommRing S] [Algebra R S]
+    (p : {p : (S × S) × VariableChange S // IsStrictGamma1ThreeChange p.1.1 p.1.2 p.2}) :
+    (mkArrowAlgHom R p : ArrowRing R →+* S) =
+      ArrowRingOf.lift ⟨(eval₂Hom (algebraMap R S) ![p.1.1.1, p.1.1.2], p.1.2), by
+        have hf₁ : (eval₂Hom (algebraMap R S) ![p.1.1.1, p.1.1.2] : BaseRing R →+* S) (a₁ R) =
+            p.1.1.1 := by simp [a₁]
+        have hf₃ : (eval₂Hom (algebraMap R S) ![p.1.1.1, p.1.1.2] : BaseRing R →+* S) (a₃ R) =
+            p.1.1.2 := by simp [a₃]
+        rw [hf₁, hf₃]
+        exact p.2⟩ :=
+  rfl
+
+@[simp]
+private theorem mkArrowAlgHom_apply {S : Type*} [CommRing S] [Algebra R S]
+    (p : {p : (S × S) × VariableChange S // IsStrictGamma1ThreeChange p.1.1 p.1.2 p.2})
+    (y : ArrowRing R) :
+    mkArrowAlgHom R p y = (mkArrowAlgHom R p : ArrowRing R →+* S) y :=
+  rfl
 
 /-- **`R`-algebra homomorphisms `ArrowRing R →ₐ[R] S` classify strict `Γ₁(3)` arrows** over `S`. -/
 def arrowEquiv (S : Type*) [CommRing S] [Algebra R S] :
@@ -186,33 +214,73 @@ def arrowEquiv (S : Type*) [CommRing S] [Algebra R S] :
       {p : (S × S) × VariableChange S // IsStrictGamma1ThreeChange p.1.1 p.1.2 p.2} where
   toFun k := ⟨((k (algebraMap (BaseRing R) (ArrowRing R) (a₁ R)),
       k (algebraMap (BaseRing R) (ArrowRing R) (a₃ R))),
-    (universalChange R).map k.toRingHom),
+    (universalChange R).map (k : ArrowRing R →+* S)),
     (ArrowRingOf.isStrictGamma1ThreeChange_universalChange (BaseRing R) (a₁ R) (a₃ R)).map
-      k.toRingHom⟩
+      (k : ArrowRing R →+* S)⟩
   invFun := mkArrowAlgHom R
   left_inv k := by
     apply AlgHom.toRingHom_injective
     refine ArrowRingOf.ringHom_ext (baseRing_ringHom_ext R (RingHom.ext fun x ↦ ?_) ?_ ?_) ?_
     · simp only [RingHom.comp_apply, ← IsScalarTower.algebraMap_apply R (BaseRing R) (ArrowRing R),
         RingHom.coe_coe, AlgHom.commutes]
-    · change ArrowRingOf.lift _ (algebraMap (BaseRing R) (ArrowRing R) (a₁ R)) =
-        k (algebraMap (BaseRing R) (ArrowRing R) (a₁ R))
-      rw [ArrowRingOf.lift_algebraMap]
-      simp [a₁]
-    · change ArrowRingOf.lift _ (algebraMap (BaseRing R) (ArrowRing R) (a₃ R)) =
-        k (algebraMap (BaseRing R) (ArrowRing R) (a₃ R))
-      rw [ArrowRingOf.lift_algebraMap]
-      simp [a₃]
-    · exact ArrowRingOf.map_lift _
+    · simp; simp [ArrowRing, a₁]
+    · simp; simp [ArrowRing, a₃]
+    · simp
   right_inv p := by
     refine Subtype.ext (Prod.ext (Prod.ext ?_ ?_) ?_)
-    · change ArrowRingOf.lift _ (algebraMap (BaseRing R) (ArrowRing R) (a₁ R)) = p.1.1.1
-      rw [ArrowRingOf.lift_algebraMap]
-      simp [a₁]
-    · change ArrowRingOf.lift _ (algebraMap (BaseRing R) (ArrowRing R) (a₃ R)) = p.1.1.2
-      rw [ArrowRingOf.lift_algebraMap]
-      simp [a₃]
-    · exact ArrowRingOf.map_lift _
+    · simp; simp [a₁]
+    · simp; simp [a₃]
+    · simp
+
+@[simp]
+theorem arrowEquiv_apply {S : Type*} [CommRing S] [Algebra R S] (k : ArrowRing R →ₐ[R] S) :
+    arrowEquiv R S k =
+      ⟨((k (algebraMap (BaseRing R) (ArrowRing R) (a₁ R)),
+          k (algebraMap (BaseRing R) (ArrowRing R) (a₃ R))),
+        (universalChange R).map (k : ArrowRing R →+* S)),
+        (ArrowRingOf.isStrictGamma1ThreeChange_universalChange (BaseRing R) (a₁ R) (a₃ R)).map
+          (k : ArrowRing R →+* S)⟩ :=
+  (rfl)
+
+@[simp]
+theorem arrowEquiv_symm_algebraMap_a₁ {S : Type*} [CommRing S] [Algebra R S]
+    (p : {p : (S × S) × VariableChange S // IsStrictGamma1ThreeChange p.1.1 p.1.2 p.2}) :
+    (arrowEquiv R S).symm p (algebraMap (BaseRing R) (ArrowRing R) (a₁ R)) = p.1.1.1 :=
+  congrArg (fun q ↦ q.1.1.1) ((arrowEquiv R S).right_inv p)
+
+@[simp]
+theorem arrowEquiv_symm_algebraMap_a₃ {S : Type*} [CommRing S] [Algebra R S]
+    (p : {p : (S × S) × VariableChange S // IsStrictGamma1ThreeChange p.1.1 p.1.2 p.2}) :
+    (arrowEquiv R S).symm p (algebraMap (BaseRing R) (ArrowRing R) (a₃ R)) = p.1.1.2 :=
+  congrArg (fun q ↦ q.1.1.2) ((arrowEquiv R S).right_inv p)
+
+@[simp]
+theorem universalChange_map_arrowEquiv_symm {S : Type*} [CommRing S] [Algebra R S]
+    (p : {p : (S × S) × VariableChange S // IsStrictGamma1ThreeChange p.1.1 p.1.2 p.2}) :
+    (universalChange R).map (((arrowEquiv R S).symm p : ArrowRing R →ₐ[R] S) : ArrowRing R →+* S) =
+      p.1.2 :=
+  congrArg (fun q ↦ q.1.2) ((arrowEquiv R S).right_inv p)
+
+@[simp]
+theorem arrowEquiv_symm_r {S : Type*} [CommRing S] [Algebra R S]
+    (p : {p : (S × S) × VariableChange S // IsStrictGamma1ThreeChange p.1.1 p.1.2 p.2}) :
+    (arrowEquiv R S).symm p (r R) = p.1.2.r := by
+  simpa only [VariableChange.map_r, RingHom.coe_coe, ArrowRingOf.universalChange_r] using
+    congrArg VariableChange.r (universalChange_map_arrowEquiv_symm R p)
+
+@[simp]
+theorem arrowEquiv_symm_s {S : Type*} [CommRing S] [Algebra R S]
+    (p : {p : (S × S) × VariableChange S // IsStrictGamma1ThreeChange p.1.1 p.1.2 p.2}) :
+    (arrowEquiv R S).symm p (s R) = p.1.2.s := by
+  simpa only [VariableChange.map_s, RingHom.coe_coe, ArrowRingOf.universalChange_s] using
+    congrArg VariableChange.s (universalChange_map_arrowEquiv_symm R p)
+
+@[simp]
+theorem arrowEquiv_symm_t {S : Type*} [CommRing S] [Algebra R S]
+    (p : {p : (S × S) × VariableChange S // IsStrictGamma1ThreeChange p.1.1 p.1.2 p.2}) :
+    (arrowEquiv R S).symm p (t R) = p.1.2.t := by
+  simpa only [VariableChange.map_t, RingHom.coe_coe, ArrowRingOf.universalChange_t] using
+    congrArg VariableChange.t (universalChange_map_arrowEquiv_symm R p)
 
 /-- The **right unit** `η_R : BaseRing R →ₐ[R] ArrowRing R` as an `R`-algebra homomorphism,
 classifying the target `universalChange R • universalCurve R` of the universal strict `Γ₁(3)`
@@ -239,7 +307,7 @@ theorem rightUnitAlgHom_apply (x : BaseRing R) : rightUnitAlgHom R x = rightUnit
 theorem rightUnit_C (c : R) : rightUnit R (C c) = algebraMap R (ArrowRing R) c :=
   (rightUnitAlgHom R).commutes c
 
-theorem rightUnit_algebraMap_R (c : R) :
+theorem rightUnit_algebraMap (c : R) :
     rightUnit R (algebraMap R (BaseRing R) c) = algebraMap R (ArrowRing R) c :=
   (rightUnitAlgHom R).commutes c
 
@@ -248,9 +316,9 @@ theorem rightUnit_comp_C :
     (rightUnit R).comp C = algebraMap R (ArrowRing R) :=
   RingHom.ext (rightUnit_C R)
 
-theorem rightUnit_comp_algebraMap_R :
+theorem rightUnit_comp_algebraMap :
     (rightUnit R).comp (algebraMap R (BaseRing R)) = algebraMap R (ArrowRing R) :=
-  RingHom.ext (rightUnit_algebraMap_R R)
+  RingHom.ext (rightUnit_algebraMap R)
 
 @[simp]
 theorem rightUnit_a₁ :
@@ -290,6 +358,7 @@ theorem mem_invariantSubalgebra {x : BaseRing R} :
 def counit : ArrowRing R →+* BaseRing R :=
   ArrowRingOf.lift ⟨(RingHom.id (BaseRing R), 1), IsStrictGamma1ThreeChange.one _ _⟩
 
+/-- `ε η_L = id`: the source of an identity strict arrow is the original curve. -/
 @[simp]
 theorem counit_comp_algebraMap :
     (counit R).comp (algebraMap (BaseRing R) (ArrowRing R)) = RingHom.id (BaseRing R) :=
@@ -316,10 +385,11 @@ theorem counit_s : counit R (s R) = 0 :=
 theorem counit_t : counit R (t R) = 0 :=
   ArrowRingOf.lift_t _
 
+/-- `ε η_R = id`: the target of an identity strict arrow is the original curve. -/
 @[simp]
 theorem counit_comp_rightUnit : (counit R).comp (rightUnit R) = RingHom.id (BaseRing R) := by
   refine baseRing_ringHom_ext R (RingHom.ext fun c ↦ ?_) ?_ ?_
-  · simp only [RingHom.comp_apply, rightUnit_algebraMap_R,
+  · simp only [RingHom.comp_apply, rightUnit_algebraMap,
       IsScalarTower.algebraMap_apply R (BaseRing R) (ArrowRing R), counit_algebraMap,
       RingHom.id_apply]
   · simp [map_ofNat]
@@ -356,6 +426,7 @@ def coproduct : ArrowRing R →+* TensorSquare R :=
     rw [ha₁, ha₃]
     exact ArrowRingOf.isStrictGamma1ThreeChange_universalChange (ArrowRing R) _ _⟩
 
+/-- `Δ η_L = (η_L ⊗ 1) η_L`: the source of a composite arrow is the source of its first factor. -/
 @[simp]
 theorem coproduct_comp_algebraMap :
     (coproduct R).comp (algebraMap (BaseRing R) (ArrowRing R)) =
@@ -419,7 +490,7 @@ theorem coproduct_comp_rightUnit :
     (coproduct R).comp (rightUnit R) =
       (ArrowRingOf.map (rightUnit R)).comp (rightUnit R) := by
   refine baseRing_ringHom_ext R (RingHom.ext fun c ↦ ?_) ?_ ?_
-  · simp only [RingHom.comp_apply, rightUnit_algebraMap_R,
+  · simp only [RingHom.comp_apply, rightUnit_algebraMap,
       IsScalarTower.algebraMap_apply R (BaseRing R) (ArrowRing R), coproduct_algebraMap,
       ArrowRingOf.mapOfEq_algebraMap]
   · simp only [RingHom.comp_apply, rightUnit_a₁, map_add, map_mul, map_ofNat, coproduct_algebraMap,
@@ -447,11 +518,12 @@ theorem universalChange_map_comp_coproduct {S : Type*} [CommRing S] (k : TensorS
 left unit: `Δ = shearEquiv ∘ map η_L`. -/
 theorem coproduct_eq_shearEquiv_comp_map :
     coproduct R =
-      (ArrowRingOf.shearEquiv
+      (ArrowRingOf.shearEquiv (a₁' := rightUnit R (a₁ R)) (a₃' := rightUnit R (a₃ R))
         (ArrowRingOf.isStrictGamma1ThreeChange_universalChange (BaseRing R) (a₁ R) (a₃ R))
-        (by simp) (by simp)).toRingHom.comp
+        (by simp) (by simp) :
+          ArrowRingOf (ArrowRing R) (algebraMap (BaseRing R) (ArrowRing R) (a₁ R))
+            (algebraMap (BaseRing R) (ArrowRing R) (a₃ R)) →+* TensorSquare R).comp
         (ArrowRingOf.map (algebraMap (BaseRing R) (ArrowRing R))) := by
-  rw [ArrowRingOf.shearEquiv_toRingHom]
   refine ArrowRingOf.ringHom_ext (RingHom.ext fun x ↦ by simp) ?_
   simp [← VariableChange.map_map]
 
@@ -508,6 +580,7 @@ def conjugation : ArrowRing R →+* ArrowRing R :=
     simpa using (ArrowRingOf.isStrictGamma1ThreeChange_universalChange
       (BaseRing R) (a₁ R) (a₃ R)).inv⟩
 
+/-- `c η_L = η_R`: the source of `C⁻¹` is the target of `C`. -/
 @[simp]
 theorem conjugation_comp_algebraMap :
     (conjugation R).comp (algebraMap (BaseRing R) (ArrowRing R)) = rightUnit R :=
@@ -523,6 +596,7 @@ theorem universalChange_map_conjugation :
     (universalChange R).map (conjugation R) = (universalChange R)⁻¹ :=
   ArrowRingOf.map_lift _
 
+/-- Conjugation negates the horizontal translation coordinate: `c(r) = -r`. -/
 @[simp]
 theorem conjugation_r : conjugation R (r R) = -r R := by
   have h := congrArg VariableChange.r (universalChange_map_conjugation R)
@@ -530,6 +604,7 @@ theorem conjugation_r : conjugation R (r R) = -r R := by
     VariableChange.inv_def, inv_one, Units.val_one, one_pow, mul_one] at h
   exact h
 
+/-- Conjugation negates the shear coordinate: `c(s) = -s`. -/
 @[simp]
 theorem conjugation_s : conjugation R (s R) = -s R := by
   have h := congrArg VariableChange.s (universalChange_map_conjugation R)
@@ -537,6 +612,8 @@ theorem conjugation_s : conjugation R (s R) = -s R := by
     VariableChange.inv_def, inv_one, Units.val_one, mul_one] at h
   exact h
 
+/-- Conjugation sends `t` to `-t + r * s`, with the cross-term `r * s` arising from inverting
+`(x, y) ↦ (x + r, y + sx + t)`. -/
 @[simp]
 theorem conjugation_t : conjugation R (t R) = -t R + r R * s R := by
   have h := congrArg VariableChange.t (universalChange_map_conjugation R)
@@ -545,11 +622,12 @@ theorem conjugation_t : conjugation R (t R) = -t R + r R * s R := by
     inv_one, Units.val_one, one_pow, mul_one] at h
   linear_combination h
 
+/-- `c η_R = η_L`: the target of `C⁻¹` is the source of `C`. -/
 @[simp]
 theorem conjugation_comp_rightUnit :
     (conjugation R).comp (rightUnit R) = algebraMap (BaseRing R) (ArrowRing R) := by
   refine baseRing_ringHom_ext R (RingHom.ext fun c ↦ ?_) ?_ ?_
-  · simp only [RingHom.comp_apply, rightUnit_algebraMap_R,
+  · simp only [RingHom.comp_apply, rightUnit_algebraMap,
       IsScalarTower.algebraMap_apply R (BaseRing R) (ArrowRing R), conjugation_algebraMap]
   · simp [map_ofNat]
     ring
@@ -561,6 +639,7 @@ theorem conjugation_rightUnit (x : BaseRing R) :
     conjugation R (rightUnit R x) = algebraMap (BaseRing R) (ArrowRing R) x :=
   RingHom.congr_fun (conjugation_comp_rightUnit R) x
 
+/-- `c ∘ c = id`: conjugation is an involution on `ArrowRing R`. -/
 @[simp]
 theorem conjugation_comp_conjugation :
     (conjugation R).comp (conjugation R) = RingHom.id (ArrowRing R) := by
@@ -571,6 +650,7 @@ theorem conjugation_comp_conjugation :
 theorem conjugation_conjugation (x : ArrowRing R) : conjugation R (conjugation R x) = x :=
   RingHom.congr_fun (conjugation_comp_conjugation R) x
 
+/-- `ε ∘ c = ε`: inverting an identity arrow yields the identity arrow. -/
 @[simp]
 theorem counit_comp_conjugation : (counit R).comp (conjugation R) = counit R := by
   refine ArrowRingOf.ringHom_ext (RingHom.ext fun x ↦ by simp) ?_
@@ -607,6 +687,30 @@ theorem pushoutLift_id_conjugation_comp_coproduct :
 def toBaseRing : MvPolynomial Coeff ℤ →+* BaseRing R :=
   (universalCurve R).specialize
 
+/-- Explicit unfolding of `toBaseRing R` as `(universalCurve R).specialize`. -/
+theorem toBaseRing_def : toBaseRing R = (universalCurve R).specialize :=
+  (rfl)
+
+@[simp]
+theorem toBaseRing_X_A₁ : toBaseRing R (X .A₁) = a₁ R := by
+  simp [toBaseRing]
+
+@[simp]
+theorem toBaseRing_X_A₂ : toBaseRing R (X .A₂) = 0 := by
+  simp [toBaseRing]
+
+@[simp]
+theorem toBaseRing_X_A₃ : toBaseRing R (X .A₃) = a₃ R := by
+  simp [toBaseRing]
+
+@[simp]
+theorem toBaseRing_X_A₄ : toBaseRing R (X .A₄) = 0 := by
+  simp [toBaseRing]
+
+@[simp]
+theorem toBaseRing_X_A₆ : toBaseRing R (X .A₆) = 0 := by
+  simp [toBaseRing]
+
 @[simp]
 theorem map_toBaseRing_curve :
     WeierstrassCurve.map Universal.curve (toBaseRing R) = universalCurve R :=
@@ -630,6 +734,14 @@ def toArrowRing : WeierstrassHopfAlgebroid.ArrowRing →+* ArrowRing R :=
   ChangeRing.lift
     ((algebraMap (BaseRing R) (ArrowRing R)).comp (toBaseRing R), universalChange R)
 
+/-- Explicit unfolding of `toArrowRing R` via `ChangeRing.lift`. -/
+theorem toArrowRing_def :
+    toArrowRing R =
+      ChangeRing.lift
+        ((algebraMap (BaseRing R) (ArrowRing R)).comp (toBaseRing R), universalChange R) :=
+  (rfl)
+
+/-- `(toBaseRing R, toArrowRing R)` intertwines the left units. -/
 @[simp]
 theorem toArrowRing_comp_algebraMap :
     (toArrowRing R).comp (algebraMap (MvPolynomial Coeff ℤ) WeierstrassHopfAlgebroid.ArrowRing) =
@@ -647,16 +759,29 @@ theorem universalChange_map_toArrowRing :
     (ChangeRing.universalChange (MvPolynomial Coeff ℤ)).map (toArrowRing R) = universalChange R :=
   ChangeRing.map_lift _
 
+@[simp]
+theorem toArrowRing_algebraMap_X (i : Fin 4) :
+    toArrowRing R
+      (algebraMap (MvPolynomial (Fin 4) (MvPolynomial Coeff ℤ))
+        WeierstrassHopfAlgebroid.ArrowRing (X i)) =
+      ![1, r R, s R, t R] i := by
+  simp [toArrowRing]
+
+@[simp]
+theorem toArrowRing_universalChange_u_inv :
+    toArrowRing R
+      ((ChangeRing.universalChange (MvPolynomial Coeff ℤ)).u⁻¹ :
+        WeierstrassHopfAlgebroid.ArrowRingˣ) = 1 := by
+  simp [toArrowRing]
+
 /-- `(toBaseRing R, toArrowRing R)` intertwines the right units. -/
 @[simp]
 theorem toArrowRing_comp_rightUnit :
     (toArrowRing R).comp WeierstrassHopfAlgebroid.rightUnit =
-      (rightUnit R).comp (toBaseRing R) := by
-  refine Universal.map_curve_injective ?_
-  dsimp only
-  rw [WeierstrassHopfAlgebroid.map_comp_rightUnit, universalChange_map_toArrowRing,
-    toArrowRing_comp_algebraMap, ← WeierstrassCurve.map_map, map_toBaseRing_curve,
-    ← map_rightUnit_universalCurve, ← map_toBaseRing_curve, WeierstrassCurve.map_map]
+      (rightUnit R).comp (toBaseRing R) :=
+  Universal.map_curve_injective (by
+    simp only [WeierstrassHopfAlgebroid.map_comp_rightUnit]
+    simp [← WeierstrassCurve.map_map])
 
 @[simp]
 theorem toArrowRing_rightUnit (f : MvPolynomial Coeff ℤ) :
@@ -695,12 +820,7 @@ factor `u⁻ᵏ` in `WeierstrassCurve.isIntegralModularForm_iff_rightUnit` becom
 theorem rightUnit_toBaseRing_of_isIntegralModularForm {k : ℕ} {f : MvPolynomial Coeff ℤ}
     (hf : IsIntegralModularForm k f) :
     rightUnit R (toBaseRing R f) = algebraMap (BaseRing R) (ArrowRing R) (toBaseRing R f) := by
-  have h := congrArg (toArrowRing R) (isIntegralModularForm_iff_rightUnit.mp hf)
-  rw [toArrowRing_rightUnit, map_mul, map_pow, toArrowRing_algebraMap] at h
-  have hu : toArrowRing R ↑(ChangeRing.universalChange (MvPolynomial Coeff ℤ)).u⁻¹ = 1 := by
-    simp [toArrowRing]
-  rw [hu, one_pow, one_mul] at h
-  exact h
+  simpa using congrArg (toArrowRing R) (isIntegralModularForm_iff_rightUnit.mp hf)
 
 /-- Pullback of any level-one integral modular form lies in `invariantSubalgebra R`. -/
 theorem toBaseRing_mem_invariantSubalgebra_of_isIntegralModularForm {k : ℕ}
@@ -708,30 +828,36 @@ theorem toBaseRing_mem_invariantSubalgebra_of_isIntegralModularForm {k : ℕ}
     toBaseRing R f ∈ invariantSubalgebra R :=
   rightUnit_toBaseRing_of_isIntegralModularForm R hf
 
+/-- The invariant `c₄` of `universalCurve R` is fixed by `rightUnit R`. -/
 theorem rightUnit_c₄ :
     rightUnit R (universalCurve R).c₄ =
       algebraMap (BaseRing R) (ArrowRing R) (universalCurve R).c₄ := by
   rw [← toBaseRing_c₄]
   exact rightUnit_toBaseRing_of_isIntegralModularForm R isIntegralModularForm_c₄
 
+/-- The invariant `c₆` of `universalCurve R` is fixed by `rightUnit R`. -/
 theorem rightUnit_c₆ :
     rightUnit R (universalCurve R).c₆ =
       algebraMap (BaseRing R) (ArrowRing R) (universalCurve R).c₆ := by
   rw [← toBaseRing_c₆]
   exact rightUnit_toBaseRing_of_isIntegralModularForm R isIntegralModularForm_c₆
 
+/-- The discriminant `Δ` of `universalCurve R` is fixed by `rightUnit R`. -/
 theorem rightUnit_Δ :
     rightUnit R (universalCurve R).Δ =
       algebraMap (BaseRing R) (ArrowRing R) (universalCurve R).Δ := by
   rw [← toBaseRing_Δ]
   exact rightUnit_toBaseRing_of_isIntegralModularForm R isIntegralModularForm_Δ
 
+/-- `(universalCurve R).c₄` belongs to `invariantSubalgebra R = H⁰(A', Γ')`. -/
 theorem c₄_mem_invariantSubalgebra : (universalCurve R).c₄ ∈ invariantSubalgebra R :=
   rightUnit_c₄ R
 
+/-- `(universalCurve R).c₆` belongs to `invariantSubalgebra R = H⁰(A', Γ')`. -/
 theorem c₆_mem_invariantSubalgebra : (universalCurve R).c₆ ∈ invariantSubalgebra R :=
   rightUnit_c₆ R
 
+/-- `(universalCurve R).Δ` belongs to `invariantSubalgebra R = H⁰(A', Γ')`. -/
 theorem Δ_mem_invariantSubalgebra : (universalCurve R).Δ ∈ invariantSubalgebra R :=
   rightUnit_Δ R
 
