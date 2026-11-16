@@ -39,7 +39,10 @@ The following results need only a preordered time index. Sampling along a monoto
 preserves martingales, supermartingales, and submartingales with respect to the sampled
 filtration (`MeasureTheory.Martingale.comp`, `MeasureTheory.Supermartingale.comp`, and
 `MeasureTheory.Submartingale.comp`). The norm of a Banach-valued
-martingale is a submartingale (`MeasureTheory.Martingale.norm`). A square-integrable real
+martingale is a submartingale (`MeasureTheory.Martingale.norm`), and raising an almost everywhere
+nonnegative real submartingale — in particular the norm of a Banach-valued martingale — to an
+integrable power `p ≥ 1` gives a submartingale (`MeasureTheory.Submartingale.rpow` and
+`MeasureTheory.Martingale.norm_rpow`). A square-integrable real
 martingale has conditional square equal to its current square plus the conditional square
 of its future increment (`MeasureTheory.Martingale.condExp_sq`). For a real submartingale,
 multiplication by a nonnegative position known at an earlier date preserves the expectation
@@ -229,6 +232,35 @@ theorem Martingale.memLp_sub_of_monotoneOn (hX : Martingale X ℱ μ) {τ : ℕ 
     MemLp (X (τ (i + 1)) - X (τ i)) p μ :=
   hX.memLp_sub_of_le (hτ (by simp) hi.le (Nat.zero_le i))
     (hτ hi.le hi (Nat.le_succ i)) (hτ hi (by simp) hi) hp hn
+
+/-- Raising an almost everywhere nonnegative real submartingale to a power `p ≥ 1` gives a
+submartingale whenever the powered values are integrable. No sigma-finiteness assumption on the
+filtration trims is required. -/
+theorem Submartingale.rpow (hY : Submartingale Y ℱ μ) (hpos : ∀ t, 0 ≤ᵐ[μ] Y t) {p : ℝ}
+    (hp : 1 ≤ p) (hint : ∀ t, Integrable (fun ω ↦ Y t ω ^ p) μ) :
+    Submartingale (fun t ω ↦ Y t ω ^ p) ℱ μ := by
+  have hp0 : 0 < p := zero_lt_one.trans_le hp
+  refine ⟨fun t ↦ (Real.continuous_rpow_const hp0.le).comp_stronglyMeasurable
+    (hY.stronglyAdapted t), fun i j hij ↦ ?_, hint⟩
+  by_cases hμ : SigmaFinite (μ.trim (ℱ.le i))
+  · have hl :=
+      (Real.continuous_rpow_const hp0.le).lowerSemicontinuous.lowerSemicontinuousOn (Set.Ici 0)
+    have hjensen := (convexOn_rpow hp).map_condExp_le (ℱ.le i) hl (hpos j) isClosed_Ici
+      (hY.integrable j) (hint j)
+    filter_upwards [hpos i, hY.ae_le_condExp hij, hjensen] with ω hpos_i hle hjen
+    exact (Real.rpow_le_rpow hpos_i hle hp0.le).trans hjen
+  · have hcond0 : μ[Y j | ℱ i] = 0 := condExp_of_not_sigmaFinite (ℱ.le i) hμ
+    have hcondp0 : μ[fun ω ↦ Y j ω ^ p | ℱ i] = 0 := condExp_of_not_sigmaFinite (ℱ.le i) hμ
+    filter_upwards [hpos i, hY.ae_le_condExp hij] with ω hpos_i hle
+    have hYi0 : Y i ω = 0 := le_antisymm (by simpa [hcond0] using hle) hpos_i
+    simp [hYi0, hcondp0, Real.zero_rpow hp0.ne']
+
+/-- For `p ≥ 1`, the `p`-th power of the norm of a Banach-valued martingale is a submartingale
+whenever it is integrable at each date. -/
+theorem Martingale.norm_rpow (hX : Martingale X ℱ μ) {p : ℝ} (hp : 1 ≤ p)
+    (hint : ∀ t, Integrable (fun ω ↦ ‖X t ω‖ ^ p) μ) :
+    Submartingale (fun t ω ↦ ‖X t ω‖ ^ p) ℱ μ :=
+  hX.norm.rpow (fun _ ↦ .of_forall fun _ ↦ norm_nonneg _) hp hint
 
 /-- The conditional square of a square-integrable real martingale value is
 the current square plus the conditional square of the future increment. -/
