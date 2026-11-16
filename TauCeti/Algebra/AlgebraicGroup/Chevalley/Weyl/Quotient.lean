@@ -280,7 +280,8 @@ private theorem quotientSection_injective [Nontrivial A] (hs : t ≠ .G2) :
       simpleClass, p, QuotientGroup.lift_mk']
     rw [D.weylSubgroupMap_simpleLift]
     simp only [simpleLift, D.weylProjection_weylElement]
-  exact Function.LeftInverse.injective (fun w => DFunLike.congr_fun hp w)
+  exact Function.LeftInverse.injective (g := p) fun w => by
+    simpa only [MonoidHom.comp_apply, MonoidHom.id_apply] using DFunLike.congr_fun hp w
 
 /-- The quotient of a Chevalley datum's Weyl subgroup by its actual torus is the Weyl
 group of the pinned root datum, over every nontrivial commutative ring, outside type G₂. -/
@@ -288,6 +289,12 @@ def weylQuotientEquivOfNeG2 [Nontrivial A] (hs : t ≠ .G2) :
     Q ≃* (t.simplyConnectedRootDatum ht).weylGroup :=
   (MulEquiv.ofBijective (D.quotientSection A hs)
     ⟨D.quotientSection_injective A hs, D.quotientSection_surjective A hs⟩).symm
+
+private theorem weylQuotientEquivOfNeG2_symm_apply [Nontrivial A] (hs : t ≠ .G2)
+    (w : (t.simplyConnectedRootDatum ht).weylGroup) :
+    (D.weylQuotientEquivOfNeG2 A hs).symm w = D.quotientSection A hs w := by
+  rw [weylQuotientEquivOfNeG2, MulEquiv.symm_symm]
+  exact MulEquiv.ofBijective_apply _ _ _
 
 /-- The inverse Weyl quotient equivalence sends a pinned simple reflection to the class
 of its pinned Weyl representative. -/
@@ -297,8 +304,9 @@ theorem weylQuotientEquivOfNeG2_symm_ofIdx [Nontrivial A] (hs : t ≠ .G2)
     (D.weylQuotientEquivOfNeG2 A hs).symm
         (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) =
       QuotientGroup.mk
-        ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ :=
-  D.quotientSection_simple A hs i
+        ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ := by
+  rw [D.weylQuotientEquivOfNeG2_symm_apply, D.quotientSection_simple, simpleClass,
+    simpleLift]
 
 /-- The Weyl quotient equivalence sends the class of a pinned simple Weyl representative
 to its simple reflection. -/
@@ -342,20 +350,20 @@ theorem ker_weylProjection_of_ne_G2 (hs : t ≠ .G2) :
     (D.quotientSection_injective K hs), D.quotientSection_comp_weylProjection K hs,
     QuotientGroup.ker_mk']
 
-/-- The Weyl quotient equivalence is induced by the native Weyl projection. -/
-@[simp]
-theorem weylQuotientEquivOfNeG2_mk (hs : t ≠ .G2) (g : Nₖ) :
-    D.weylQuotientEquivOfNeG2 K hs (QuotientGroup.mk g) = D.weylProjection K g := by
-  apply (D.weylQuotientEquivOfNeG2 K hs).eq_symm_apply.mp
-  exact (DFunLike.congr_fun (D.quotientSection_comp_weylProjection K hs) g).symm
-
 /-- The inverse Weyl quotient equivalence sends a Weyl projection to its quotient class. -/
 @[simp]
 theorem weylQuotientEquivOfNeG2_symm_weylProjection (hs : t ≠ .G2) (g : Nₖ) :
     (D.weylQuotientEquivOfNeG2 K hs).symm (D.weylProjection K g) =
       QuotientGroup.mk g := by
-  apply (D.weylQuotientEquivOfNeG2 K hs).symm_apply_eq.mpr
-  exact (D.weylQuotientEquivOfNeG2_mk K hs g).symm
+  rw [D.weylQuotientEquivOfNeG2_symm_apply, ← MonoidHom.comp_apply,
+    D.quotientSection_comp_weylProjection, QuotientGroup.mk'_apply]
+
+/-- The Weyl quotient equivalence is induced by the native Weyl projection. -/
+@[simp]
+theorem weylQuotientEquivOfNeG2_mk (hs : t ≠ .G2) (g : Nₖ) :
+    D.weylQuotientEquivOfNeG2 K hs (QuotientGroup.mk g) = D.weylProjection K g := by
+  apply (D.weylQuotientEquivOfNeG2 K hs).eq_symm_apply.mp
+  exact (D.weylQuotientEquivOfNeG2_symm_weylProjection K hs g).symm
 
 end
 
