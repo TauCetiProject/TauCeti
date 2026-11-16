@@ -172,6 +172,22 @@ lemma coe_pullbackFiberι_apply {K : TopCat.{u}} (p : E ⟶ B) (g : K ⟶ B) {k 
     (h : g k = b) (e : p.fiber b) : (p.pullbackFiberι g h e : K × E) = (k, e.1) :=
   (rfl)
 
+/-- The inclusion of a fibre into a base change at `k`, followed by the projection to the parameter
+space, is constant at `k`. -/
+@[reassoc (attr := simp)]
+lemma pullbackFiberι_comp_pullbackFst {K : TopCat.{u}} (p : E ⟶ B) (g : K ⟶ B) {k : K} {b : B}
+    (h : g k = b) : p.pullbackFiberι g h ≫ TopCat.pullbackFst g p = TopCat.const k :=
+  (rfl)
+
+/-- The inclusion of a fibre into a base change, followed by the projection to the total space, is
+the inclusion of the fibre. -/
+@[reassoc (attr := simp)]
+lemma pullbackFiberι_comp_pullbackSnd {K : TopCat.{u}} (p : E ⟶ B) (g : K ⟶ B) {k : K} {b : B}
+    (h : g k = b) : p.pullbackFiberι g h ≫ TopCat.pullbackSnd g p = p.fiberι b := by
+  ext e
+  rw [ConcreteCategory.comp_apply, fiberι_apply, TopCat.pullbackSnd_apply,
+    coe_pullbackFiberι_apply]
+
 /-- The inclusion of the fibre of `p` over `g k` into the base change of `p` along `g`, at `k`, is
 the inclusion of the fibre of the base change over `k`, read through
 `TopCat.Hom.fiberPullbackFstIso`. -/
@@ -245,6 +261,19 @@ lemma pullbackMapOfCompEq_id {p' : E' ⟶ B} (sq : CommSq f p p' (𝟙 B)) (h : 
     (hφ : 𝟙 K ≫ h = h ≫ 𝟙 B) :
     sq.pullbackMapOfCompEq (𝟙 K) hφ =
       TopCat.pullbackMapOfCompEq h (sq.w.trans (Category.comp_id p)) :=
+  (rfl)
+
+/-- The maps of base changes induced by maps of fibrations compose along horizontal composites of
+squares. It is stated in this direction so that `simp` can use it: the middle square and parameter
+space cannot be recovered from the composite. -/
+@[reassoc (attr := simp)]
+lemma pullbackMapOfCompEq_comp_pullbackMapOfCompEq {E'' B'' K'' : TopCat.{u}} {f' : E' ⟶ E''}
+    {p'' : E'' ⟶ B''} {g' : B' ⟶ B''} (sq : CommSq f p p' g) (sq' : CommSq f' p' p'' g')
+    {h : K ⟶ B} {h' : K' ⟶ B'} {h'' : K'' ⟶ B''} (φ : K ⟶ K') (φ' : K' ⟶ K'')
+    (hφ : φ ≫ h' = h ≫ g) (hφ' : φ' ≫ h'' = h' ≫ g') :
+    sq.pullbackMapOfCompEq φ hφ ≫ sq'.pullbackMapOfCompEq φ' hφ' =
+      (sq.horiz_comp sq').pullbackMapOfCompEq (φ ≫ φ')
+        (by rw [Category.assoc, hφ', reassoc_of% hφ]) :=
   (rfl)
 
 /-- On fibres, the map of base changes induced by a map of fibrations is the map of fibres: the
