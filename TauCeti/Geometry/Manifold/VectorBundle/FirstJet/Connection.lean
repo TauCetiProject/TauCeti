@@ -39,7 +39,10 @@ trivialization.
 * `TauCeti.FirstJetBundle.horizontalLift`: the corresponding right inverse `Vₓ → J¹Vₓ` of the
   projection, whose image is the kernel of the covariant derivative, and
   `TauCeti.FirstJetBundle.connectionEquiv`: the resulting isomorphism
-  `J¹Vₓ ≃ Vₓ × Hom(TₓM, Vₓ)`, `j ↦ (value j, ∇ j)`.
+  `J¹Vₓ ≃ Vₓ × Hom(TₓM, Vₓ)`, `j ↦ (value j, ∇ j)`. Thus two differentiable sections have
+  equal first jets exactly when their values and covariant derivatives agree
+  (`TauCeti.FirstJetBundle.jet_eq_iff`); in particular, a first jet vanishes exactly when both
+  its value and covariant derivative vanish (`TauCeti.FirstJetBundle.jet_eq_zero_iff`).
 * `TauCeti.FirstJetBundle.covariantDerivative_add_one_form` and
   `TauCeti.FirstJetBundle.covariantDerivative_sub_covariantDerivative`: changing the covariant
   derivative by an endomorphism-valued one-form `A` changes the derivative coordinate of the
@@ -328,6 +331,25 @@ theorem connectionEquiv_symm_apply (hcov : IsCovariantDerivativeOn F cov U)
     (p : V x × (TangentSpace I x →L[𝕜] V x)) :
     (connectionEquiv hcov x).symm p = horizontalLift hcov x p.1 + ofDeriv I F x p.2 :=
   (rfl)
+
+/-- A connection identifies the first jets of two differentiable sections exactly when their
+values and covariant derivatives agree. The connection laws are needed only on a set containing
+the point. -/
+theorem jet_eq_iff (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U)
+    {s t : Π x : M, V x} (hs : MDiffAt (T% s) x) (ht : MDiffAt (T% t) x) :
+    jet I F s x = jet I F t x ↔ s x = t x ∧ cov s x = cov t x := by
+  rw [← (connectionEquiv hcov x).injective.eq_iff]
+  simp only [connectionEquiv_apply, value_jet, covariantDerivative_jet hcov hx hs,
+    covariantDerivative_jet hcov hx ht, Prod.mk.injEq]
+
+/-- A differentiable section has zero first jet exactly when its value and covariant derivative
+vanish. The connection laws are needed only on a set containing the point. -/
+theorem jet_eq_zero_iff (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U)
+    {s : Π x : M, V x} (hs : MDiffAt (T% s) x) :
+    jet I F s x = 0 ↔ s x = 0 ∧ cov s x = 0 := by
+  rw [← (connectionEquiv hcov x).map_eq_zero_iff]
+  simp only [connectionEquiv_apply, value_jet, covariantDerivative_jet hcov hx hs,
+    Prod.mk_eq_zero]
 
 end FirstJetBundle
 
