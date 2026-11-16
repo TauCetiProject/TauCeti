@@ -584,13 +584,6 @@ theorem weightSpace_subcomodule (N : Subcomodule R (MonoidAlgebra R G) V) (g : G
   rw [Hom.weightSpace_eq_comap_of_injective (Subcomodule.subtype N)
     (Subcomodule.subtype_injective N) g, Subcomodule.subtype_toLinearMap]
 
-/-- A vector of a subcomodule is a weight vector of the subcomodule exactly when it is one of the
-ambient comodule. -/
-theorem mem_weightSpace_subcomodule {N : Subcomodule R (MonoidAlgebra R G) V} {g : G} {n : N} :
-    letI : Comodule R (MonoidAlgebra R G) N := Subcomodule.instComodule N
-    n ∈ weightSpace R G N g ↔ (n : V) ∈ weightSpace R G V g := by
-  rw [weightSpace_subcomodule, Submodule.mem_comap, SMulMemClass.subtype_apply]
-
 variable (R G V)
 
 /-- The `g`-weight submodule is the range of the `g`-weight projection: the projection is

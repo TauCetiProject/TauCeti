@@ -269,12 +269,6 @@ theorem weightSpace_subcomodule (N : Subcomodule R C V) (π : C →ₗc[R] Monoi
   rw [weightSpace_eq_comap_of_injective π (Subcomodule.subtype N)
     (Subcomodule.subtype_injective N) x, Subcomodule.subtype_toLinearMap]
 
-/-- A vector of a subcomodule is a weight vector of the subcomodule exactly when it is one of the
-ambient comodule. -/
-theorem mem_weightSpace_subcomodule {N : Subcomodule R C V} {π : C →ₗc[R] MonoidAlgebra R X}
-    {x : X} {n : N} : n ∈ weightSpace N π x ↔ (n : V) ∈ weightSpace V π x := by
-  rw [weightSpace_subcomodule, Submodule.mem_comap, SMulMemClass.subtype_apply]
-
 end Subcomodule
 
 section MatrixCoefficient
