@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Action.Pointwise.Finset
 public import Mathlib.Data.Finset.SymmDiff
-public import Mathlib.MeasureTheory.Group.FoelnerFilter
-public import Mathlib.MeasureTheory.Measure.Count
+public import TauCeti.MeasureTheory.Group.Foelner.Count
 import TauCeti.Data.ENNReal.NatCastDiv
 
 /-!
@@ -47,7 +46,8 @@ nontrivial filter. The proof picks for `(K, n)` a witness for `K` with tolerance
   passes every finite test.
 * `TauCeti.exists_isFoelner_atTop`: if every finite test has a witness, there is a Følner family
   of finite nonempty sets indexed by `Finset G × ℕ` along `atTop`.
-* `TauCeti.hasFoelnerSets_iff`: `HasFoelnerSets G` is equivalent to the finite-set condition.
+* `TauCeti.hasFoelnerSets_iff_exists_finite_set`, `TauCeti.hasFoelnerSets_iff`: `HasFoelnerSets G`
+  is equivalent to the finite-set condition (`Set.Finite` / `Set.ncard` and `Finset`).
 * `TauCeti.HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card`: finite sets with vanishing
   relative translation boundaries along a nontrivial filter give Følner sets.
 * `MulEquiv.hasFoelnerSets_iff`: having Følner sets is invariant under group isomorphisms.
@@ -75,9 +75,8 @@ theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : T
     [SMul M X] {F : Finset X} (hF : F.Nonempty) (m : M) {ε : ℝ} :
     Measure.count ((m • (F : Set X)) ∆ F) / Measure.count (F : Set X) < ENNReal.ofReal ε ↔
       (#((m • F) ∆ F) : ℝ) < ε * #F := by
-  -- Turn the counting measures into cardinalities.
-  simp only [← coe_smul_finset, ← coe_symmDiff, Measure.count_apply_finset]
-  exact ENNReal.natCast_div_natCast_lt_ofReal_iff (Finset.card_pos.2 hF)
+  simpa only [← coe_smul_finset, ← coe_symmDiff, Set.ncard_coe_finset] using
+    Measure.count_smul_symmDiff_div_count_lt_ofReal_iff_ncard F.finite_toSet (coe_nonempty.2 hF) m
 
 omit [MeasurableSingletonClass X] in
 /-- The counting-measure Følner ratio of a measurable finite set bounds the cardinality ratio
@@ -86,11 +85,8 @@ theorem MeasureTheory.Measure.card_smul_symmDiff_div_card_le_count_div_count {M 
     [SMul M X] {F : Finset X} (hFm : MeasurableSet (F : Set X)) (m : M) :
     (#((m • F) ∆ F) : ℝ≥0∞) / #F ≤
       Measure.count ((m • (F : Set X)) ∆ F) / Measure.count (F : Set X) := by
-  rw [Measure.count_apply_finset' hFm]
-  refine ENNReal.div_le_div_right ?_ _
-  rw [← coe_smul_finset, ← coe_symmDiff]
-  calc (#((m • F) ∆ F) : ℝ≥0∞) = ∑' _ : (((m • F) ∆ F : Finset X) : Set X), (1 : ℝ≥0∞) := by simp
-    _ ≤ _ := Measure.le_count_apply
+  simpa only [← coe_smul_finset, ← coe_symmDiff, Set.ncard_coe_finset] using
+    Measure.ncard_smul_symmDiff_div_ncard_le_count_div_count F.finite_toSet hFm m
 
 omit [MeasurableSingletonClass X] in
 /-- The real cardinality ratios of a counting-measure Følner family of finite sets tend to
@@ -99,15 +95,8 @@ theorem IsFoelner.tendsto_card_smul_symmDiff_div_card [MulAction G X] {ι : Type
     {l : Filter ι} {F : ι → Finset X}
     (hF : IsFoelner G Measure.count l (fun i => (F i : Set X))) (g : G) :
     Tendsto (fun i => (#((g • F i) ∆ F i) : ℝ) / #(F i)) l (𝓝 0) := by
-  have hlimit := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
-    (hF.tendsto_meas_smul_symmDiff g)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlimit
-    (Eventually.of_forall fun i => by positivity) ?_
-  filter_upwards [hF.eventually_measurableSet,
-    (hF.tendsto_meas_smul_symmDiff g).eventually (gt_mem_nhds zero_lt_one)] with i hFm hlt
-  have hle := Measure.card_smul_symmDiff_div_card_le_count_div_count hFm g
-  have := ENNReal.toReal_mono hlt.ne_top hle
-  simpa [ENNReal.toReal_div, Function.comp_def] using this
+  simpa only [← coe_smul_finset, ← coe_symmDiff, Set.ncard_coe_finset] using
+    hF.tendsto_ncard_smul_symmDiff_div_ncard g
 
 omit [MeasurableSingletonClass X] in
 /-- A Følner family for counting measure along a nontrivial filter passes every finite test: for
@@ -165,6 +154,23 @@ end Count
 
 namespace TauCeti
 
+/-- Passing a finite translation-boundary test with a finite nonempty `F : Set X` (measured via
+`Set.ncard`) is equivalent to passing it with a nonempty `F : Finset X`. -/
+theorem exists_finite_ncard_smul_symmDiff_lt_iff {M X : Type*} [SMul M X] [DecidableEq X]
+    {K : Finset M} {ε : ℝ} :
+    (∃ F : Set X, F.Finite ∧ F.Nonempty ∧
+        ∀ m ∈ K, (((m • F) ∆ F).ncard : ℝ) < ε * F.ncard) ↔
+      ∃ F : Finset X, F.Nonempty ∧ ∀ m ∈ K, (#((m • F) ∆ F) : ℝ) < ε * #F := by
+  constructor
+  · rintro ⟨F, hfin, hne, hFK⟩
+    refine ⟨hfin.toFinset, hfin.toFinset_nonempty.2 hne, fun m hm ↦ ?_⟩
+    rw [← Set.ncard_coe_finset, coe_symmDiff, coe_smul_finset, Set.Finite.coe_toFinset,
+      ← Set.ncard_eq_toFinset_card _ hfin]
+    exact hFK m hm
+  · rintro ⟨F, hne, hFK⟩
+    refine ⟨F, F.finite_toSet, coe_nonempty.2 hne, fun m hm ↦ ?_⟩
+    simpa only [← coe_smul_finset, ← coe_symmDiff, Set.ncard_coe_finset] using hFK m hm
+
 variable (G) in
 /-- A group `G` has Følner sets when Mathlib's maximal Følner filter for the left regular action
 of `G` on itself with counting measure is nontrivial. The measurable space `⊤` is installed
@@ -173,16 +179,22 @@ abbrev HasFoelnerSets : Prop :=
   letI : MeasurableSpace G := ⊤
   NeBot (maxFoelner G (Measure.count : Measure G))
 
+/-- `DecidableEq`-free finite-`Set` characterization of `HasFoelnerSets G` via `Set.ncard`. -/
+theorem hasFoelnerSets_iff_exists_finite_set :
+    HasFoelnerSets G ↔
+      ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
+        ∃ F : Set G, F.Finite ∧ F.Nonempty ∧
+          ∀ g ∈ K, (((g • F) ∆ F).ncard : ℝ) < ε * F.ncard := by
+  let : MeasurableSpace G := ⊤
+  exact maxFoelner_count_neBot_iff
+
 /-- A group has Følner sets exactly when for every finite `K ⊆ G` and every `ε > 0` there is a
 finite nonempty `F ⊆ G` with `|gF △ F| < ε · |F|` for all `g ∈ K`. -/
 theorem hasFoelnerSets_iff [DecidableEq G] : HasFoelnerSets G ↔
     ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
       ∃ F : Finset G, F.Nonempty ∧ ∀ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F := by
-  let : MeasurableSpace G := ⊤
-  refine ⟨fun h K ε hε => (isFoelner_maxFoelner G Measure.count).exists_finset_card_smul_symmDiff_lt
-    K hε, fun h => ?_⟩
-  obtain ⟨F, -, hF⟩ := exists_isFoelner_atTop h
-  exact ((isFoelner_iff_tendsto _ _).1 hF).neBot
+  rw [hasFoelnerSets_iff_exists_finite_set]
+  simp_rw [exists_finite_ncard_smul_symmDiff_lt_iff]
 
 /-- A group has Følner sets if a family of eventually nonempty finite sets has vanishing
 relative translation boundaries along a nontrivial filter. -/

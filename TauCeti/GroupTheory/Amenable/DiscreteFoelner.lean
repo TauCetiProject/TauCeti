@@ -46,7 +46,8 @@ assigns it the value `0`. Reiter's condition then yields Følner sets among the 
 * `TauCeti.Amenable.hasFoelnerSets`: an amenable discrete group has Følner sets.
 * `TauCeti.amenable_iff_hasFoelnerSets`: a discrete group is amenable exactly when it has Følner
   sets.
-* `TauCeti.amenable_iff_exists_finset`: the same characterization in terms of finite sets.
+* `TauCeti.amenable_iff_exists_finite_set`, `TauCeti.amenable_iff_exists_finset`: the same
+  characterization in terms of finite subsets (`Set.Finite` / `Set.ncard` and `Finset`).
 
 ## References
 
@@ -163,6 +164,14 @@ theorem Amenable.hasFoelnerSets [DiscreteTopology G] [Amenable G] : HasFoelnerSe
 /-- A discrete group is amenable exactly when it has Følner sets. -/
 theorem amenable_iff_hasFoelnerSets [DiscreteTopology G] : Amenable G ↔ HasFoelnerSets G :=
   ⟨fun _ ↦ Amenable.hasFoelnerSets, .of_hasFoelnerSets⟩
+
+/-- `DecidableEq`-free finite-`Set` characterization of discrete group amenability. -/
+theorem amenable_iff_exists_finite_set [DiscreteTopology G] :
+    Amenable G ↔
+      ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
+        ∃ F : Set G, F.Finite ∧ F.Nonempty ∧
+          ∀ g ∈ K, (((g • F) ∆ F).ncard : ℝ) < ε * F.ncard :=
+  amenable_iff_hasFoelnerSets.trans hasFoelnerSets_iff_exists_finite_set
 
 /-- A discrete group is amenable exactly when for every finite `K ⊆ G` and every `ε > 0` there is
 a finite nonempty `F ⊆ G` with `|gF △ F| < ε · |F|` for all `g ∈ K`. -/
