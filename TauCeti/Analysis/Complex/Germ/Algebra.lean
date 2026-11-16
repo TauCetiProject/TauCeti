@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
 public import TauCeti.Order.Filter.Germ
-import Mathlib.Analysis.Complex.RemovableSingularity
+import Mathlib.Analysis.Calculus.DSlope
 
 /-!
 # Holomorphic germs near a set
@@ -99,6 +99,11 @@ theorem ofFun_eq_iff {f g : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s)
 theorem ofFun_add (f g : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s)
     (hg : AnalyticOnNhd ℂ g s) : ofFun (f + g) (hf.add hg) = ofFun f hf + ofFun g hg :=
   Subtype.ext (Germ.coe_add f g)
+
+@[simp]
+theorem ofFun_sub (f g : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s)
+    (hg : AnalyticOnNhd ℂ g s) : ofFun (f - g) (hf.sub hg) = ofFun f hf - ofFun g hg :=
+  Subtype.ext (Germ.coe_sub f g)
 
 @[simp]
 theorem ofFun_mul (f g : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s)
@@ -202,7 +207,7 @@ theorem ofFun_inv {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s) (hne : ∀ x �
 
 /-- A holomorphic germ vanishes at a point of the base set exactly when the coordinate minus
 that point divides it. The quotient is represented by the `dslope` of a representative, which
-is holomorphic by the removable singularity theorem. -/
+is holomorphic by `AnalyticOnNhd.dslope`. -/
 theorem dvd_iff_eval_eq_zero {x : ℂ} (hx : x ∈ s) (g : holomorphicGerms s) :
     ofFun id analyticOnNhd_id - algebraMap ℂ (holomorphicGerms s) x ∣ g ↔ eval x hx g = 0 := by
   constructor
@@ -211,17 +216,10 @@ theorem dvd_iff_eval_eq_zero {x : ℂ} (hx : x ∈ s) (g : holomorphicGerms s) :
   · obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
     intro hfx
     rw [eval_ofFun] at hfx
-    have hU : {z | AnalyticAt ℂ f z} ∈ 𝓝 x := (isOpen_analyticAt ℂ f).mem_nhds (hf x hx)
-    have hd : AnalyticOnNhd ℂ (dslope f x) s :=
-      (((Complex.differentiableOn_dslope hU).mpr fun z hz ↦
-        hz.differentiableAt.differentiableWithinAt).analyticOnNhd
-        (isOpen_analyticAt ℂ f)).mono hf
-    refine ⟨ofFun (dslope f x) hd, Subtype.ext ?_⟩
-    have hfun : f = (id - fun _ ↦ x) * dslope f x := by
-      ext z
-      simpa [hfx, smul_eq_mul] using (sub_smul_dslope f x z).symm
-    rw [coe_ofFun, Subalgebra.coe_mul, Subalgebra.coe_sub, coe_ofFun, coe_ofFun]
-    exact congrArg (fun φ : ℂ → ℂ ↦ (φ : Germ (𝓝ˢ s) ℂ)) hfun
+    refine ⟨ofFun (dslope f x) (hf.dslope x), ?_⟩
+    rw [← ofFun_const, ← ofFun_sub, ← ofFun_mul, ofFun_eq_iff]
+    refine .of_forall fun z ↦ ?_
+    simpa [hfx, smul_eq_mul] using (sub_smul_dslope f x z).symm
 
 /-- The spectrum of a holomorphic germ is its set of values on the base set. -/
 theorem spectrum_eq (g : holomorphicGerms s) :
