@@ -118,10 +118,8 @@ theorem index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_su
       rw [← hT]
       ext x
       simp [I, sub_eq_zero]
-    obtain ⟨K, hK, hKT⟩ := LinearMap.exists_antilipschitzWith _ hker
-    refine ⟨(K : ℝ)⁻¹, by positivity, fun v ↦ ?_⟩
-    rw [inv_mul_le_iff₀ (by exact_mod_cast hK)]
-    exact hKT.le_mul_norm (map_zero _) v
+    obtain ⟨K, -, hKT⟩ := LinearMap.exists_antilipschitzWith _ hker
+    exact antilipschitzWith_iff_exists_mul_le_norm.1 ⟨K, hKT⟩
   obtain ⟨α₁, hα₁, h₁⟩ := hbound hδminus
   obtain ⟨α₂, hα₂, h₂⟩ := hbound hδplus
   have hshift (T : E →L[ℝ] E) (δ : ℝ) :
@@ -212,8 +210,8 @@ theorem index_trajectoryOperator_eq_add_finrank_eigenspace_atTop
 same non-exceptional limit at `+∞`, and with limits `δ₂ < ν < δ₁` at `-∞`, where `ν` is the only
 eigenvalue of the symmetric limit `A⁻` in `[δ₂, δ₁]`. Then the index of `u ↦ u' + (A - c₁) u`
 exceeds that of `u ↦ u' + (A - c₂) u` by the multiplicity of `ν`: as the decay weight at `-∞`
-increases through `ν`, its slope decreasing through `ν`, the index decreases by the dimension of
-the eigenspace of `A⁻` at `ν`. -/
+strengthens, its slope decreasing through `ν`, the index decreases by the dimension of the
+eigenspace of `A⁻` at `ν`. -/
 theorem index_trajectoryOperator_eq_add_finrank_eigenspace_atBot
     (hA : Continuous A) (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric)
     (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
