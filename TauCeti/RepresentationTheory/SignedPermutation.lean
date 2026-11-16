@@ -37,19 +37,20 @@ nontrivial and `2` is a nonzerodivisor on `M` (`TauCeti.signFixed_eq_bot`), for 
 invertible in `R`. Without that hypothesis it need not vanish: over `𝔽₂` the sign `-1` acts
 trivially, and over `ℤ/4` the vectors fixed by `-1` are the `2`-torsion.
 
-**The orbit decomposition.** For a finite group `G`, an invariant function is determined by its
-values at a chosen representative of each orbit, and these values can be prescribed freely in the
-submodules `signFixed R ε x`. This gives a linear equivalence
+**The orbit decomposition.** When every orbit is finite, an invariant function is determined by
+its values at a chosen representative of each orbit, and these values can be prescribed freely in
+the submodules `signFixed R ε x`. This gives a linear equivalence
 (`TauCeti.invariantsSignedPermRepEquiv`) between the invariants and the finitely supported
 functions on the orbit space `MulAction.orbitRel.Quotient G X` whose value at an orbit `ω` lies in
 `signFixed R ε ω.out`. The value of the invariant function at `a • ω.out` is `ε a ω.out` times
 its value at `ω.out`, which does not depend on the choice of `a`
 (`TauCeti.smul_eq_smul_of_mem_signFixed`). The set `X` may be infinite, as the set of singular
-simplices of a space is; only the orbits have to be finite.
+simplices of a space is; only the orbits have to be finite, as they are for a finite group
+(`Finite.finite_mulAction_orbit`).
 
 When `2` is a nonzerodivisor on `M`, each orbit therefore contributes a copy of `M` if the sign
 character of the stabilizer of one, equivalently every, point of the orbit is trivial
-(`TauCeti.forall_smul_eq_imp_eq_one_iff_of_smul`), and nothing otherwise. The invariants are then
+(`TauCeti.forall_smul_eq_imp_eq_one_smul_iff`), and nothing otherwise. The invariants are then
 the finitely supported functions with values in `M` on the set `TauCeti.trivialSignOrbits ε` of
 orbits with trivial stabilizer sign (`TauCeti.invariantsSignedPermRepEquivFinsupp`), and the
 orbit of `x` belongs to this set exactly when the stabilizer sign at `x` is trivial
@@ -164,8 +165,7 @@ theorem signFixed_eq_bot (h2 : IsSMulRegular M (2 : R)) {x : X}
     have hfix := hm g hg
     rwa [(Int.units_eq_one_or _).resolve_left hne, Units.neg_smul, one_smul] at hfix
   rw [two_smul]
-  nth_rw 1 [← hneg]
-  exact neg_add_cancel m
+  exact neg_eq_iff_add_eq_zero.1 hneg
 
 end SignFixed
 
@@ -217,7 +217,7 @@ theorem smul_eq_smul_of_mem_signFixed {x : X} {m : M} (hm : m ∈ signFixed R ε
 
 /-- The stabilizer sign at a point is trivial exactly when it is trivial at any other point of the
 orbit: the stabilizer of `a • x` is the conjugate of the stabilizer of `x`, with conjugate signs. -/
-theorem forall_smul_eq_imp_eq_one_iff_of_smul (a : G) (x : X) :
+theorem forall_smul_eq_imp_eq_one_smul_iff (a : G) (x : X) :
     (∀ g : G, g • a • x = a • x → ε g (a • x) = 1) ↔ ∀ g : G, g • x = x → ε g x = 1 := by
   -- on the stabilizer of `a • x`, the sign of `g` at `a • x` is the sign of `a⁻¹ * g * a` at `x`
   have key {g : G} (hg : g • a • x = a • x) : ε (a⁻¹ * g * a) x = ε g (a • x) := by
@@ -260,10 +260,11 @@ private theorem orbitValue_mk_out_ne_zero {c : orbitRel.Quotient G X →₀ M} {
   exact hy rfl
 
 omit hε in
-private theorem finite_support_orbitValue [Finite G] (c : orbitRel.Quotient G X →₀ M) :
+private theorem finite_support_orbitValue (hfin : ∀ x : X, (orbit G x).Finite)
+    (c : orbitRel.Quotient G X →₀ M) :
     (Function.support fun y ↦
       orbitValue ε (⟦y⟧ : orbitRel.Quotient G X).out (c ⟦y⟧) y).Finite := by
-  refine (c.support.finite_toSet.biUnion fun ω _ ↦ Set.finite_range fun g : G ↦ g • ω.out).subset
+  refine (c.support.finite_toSet.biUnion fun ω _ ↦ hfin ω.out).subset
     fun y hy ↦ Set.mem_biUnion (orbitValue_mk_out_ne_zero hy) ?_
   obtain ⟨a, ha⟩ := MulAction.exists_smul_out_eq (ω := (⟦y⟧ : orbitRel.Quotient G X)) rfl
   exact ⟨a, ha⟩
@@ -271,63 +272,71 @@ private theorem finite_support_orbitValue [Finite G] (c : orbitRel.Quotient G X 
 variable (R M) in
 /-- The finitely supported functions on the orbit space whose value at each orbit `ω` is fixed by
 the stabilizer sign at the representative `ω.out`. -/
-noncomputable abbrev orbitSignFixed (ε : G → X → ℤˣ) :
+noncomputable def orbitSignFixed (ε : G → X → ℤˣ) :
     Submodule R (orbitRel.Quotient G X →₀ M) :=
   Finsupp.submodule fun ω ↦ signFixed R ε ω.out
 
+omit hε in
+@[simp]
+theorem mem_orbitSignFixed_iff {c : orbitRel.Quotient G X →₀ M} :
+    c ∈ orbitSignFixed R M ε ↔ ∀ ω, c ω ∈ signFixed R ε ω.out :=
+  Finsupp.mem_submodule_iff _ _
+
 /-- The invariant function with prescribed values at the orbit representatives. -/
-private noncomputable def ofOrbitSignFixed [Finite G] (c : orbitSignFixed R M ε) :
-    (signedPermRep R M ε hε).invariants :=
-  ⟨ofSupportFinite _ (finite_support_orbitValue (c : orbitRel.Quotient G X →₀ M)), by
+private noncomputable def ofOrbitSignFixed (hfin : ∀ x : X, (orbit G x).Finite)
+    (c : orbitSignFixed R M ε) : (signedPermRep R M ε hε).invariants :=
+  ⟨ofSupportFinite _ (finite_support_orbitValue hfin (c : orbitRel.Quotient G X →₀ M)), by
     refine (mem_invariants_signedPermRep_iff hε).2 fun g x ↦ ?_
     obtain ⟨a, ha⟩ := MulAction.exists_smul_out_eq (ω := (⟦x⟧ : orbitRel.Quotient G X)) rfl
-    have hc := c.2 ⟦x⟧
+    have hc := mem_orbitSignFixed_iff.1 c.2 ⟦x⟧
     simp only [ofSupportFinite_coe, orbitRel.Quotient.quotient_smul_eq]
     rw [orbitValue_eq hε hc ha, orbitValue_eq hε hc (by rw [mul_smul, ha]), hε, ha, mul_smul]⟩
 
-private theorem ofOrbitSignFixed_apply_smul_out [Finite G] (c : orbitSignFixed R M ε)
-    (ω : orbitRel.Quotient G X) (a : G) :
-    ((ofOrbitSignFixed hε c : _) : X →₀ M) (a • ω.out) =
+private theorem ofOrbitSignFixed_apply_smul_out (hfin : ∀ x : X, (orbit G x).Finite)
+    (c : orbitSignFixed R M ε) (ω : orbitRel.Quotient G X) (a : G) :
+    ((ofOrbitSignFixed hε hfin c : _) : X →₀ M) (a • ω.out) =
       ε a ω.out • (c : orbitRel.Quotient G X →₀ M) ω := by
   simp only [ofOrbitSignFixed, ofSupportFinite_coe, orbitRel.Quotient.quotient_smul_eq,
     Quotient.out_eq]
-  exact orbitValue_eq hε (c.2 ω) rfl
+  exact orbitValue_eq hε (mem_orbitSignFixed_iff.1 c.2 ω) rfl
 
 variable (R M) in
-/-- **The orbit decomposition of the invariants.** For a finite group, an invariant function of
-the signed permutation representation is determined by its values at the orbit representatives,
-and these values can be any vectors fixed by the stabilizer signs there. -/
-noncomputable def invariantsSignedPermRepEquiv [Finite G] :
+/-- **The orbit decomposition of the invariants.** When every orbit is finite, an invariant
+function of the signed permutation representation is determined by its values at the orbit
+representatives, and these values can be any vectors fixed by the stabilizer signs there. For a
+finite group, take `hfin := Finite.finite_mulAction_orbit`. -/
+noncomputable def invariantsSignedPermRepEquiv (hfin : ∀ x : X, (orbit G x).Finite) :
     (signedPermRep R M ε hε).invariants ≃ₗ[R] orbitSignFixed R M ε where
-  toFun f := ⟨(f : X →₀ M).comapDomain Quotient.out Quotient.out_injective.injOn, fun ω g hg ↦ by
-    rw [comapDomain_apply, ← (mem_invariants_signedPermRep_iff hε).1 f.2, hg]⟩
-  map_add' _ _ := Subtype.ext <| Finsupp.ext fun _ ↦ rfl
-  map_smul' _ _ := Subtype.ext <| Finsupp.ext fun _ ↦ rfl
-  invFun := ofOrbitSignFixed hε
+  toFun f := ⟨(f : X →₀ M).comapDomain Quotient.out Quotient.out_injective.injOn,
+    mem_orbitSignFixed_iff.2 fun ω g hg ↦ by
+      rw [comapDomain_apply, ← (mem_invariants_signedPermRep_iff hε).1 f.2, hg]⟩
+  map_add' _ _ := by ext; simp
+  map_smul' _ _ := by ext; simp
+  invFun := ofOrbitSignFixed hε hfin
   left_inv f := Subtype.ext <| Finsupp.ext fun y ↦ by
     obtain ⟨a, ha⟩ := MulAction.exists_smul_out_eq (ω := (⟦y⟧ : orbitRel.Quotient G X)) rfl
     rw [← ha, ofOrbitSignFixed_apply_smul_out, (mem_invariants_signedPermRep_iff hε).1 f.2]
     exact congrArg _ (comapDomain_apply _ _ _ _)
   right_inv c := Subtype.ext <| Finsupp.ext fun ω ↦ by
-    simpa [sign_one_of_cocycle hε] using ofOrbitSignFixed_apply_smul_out hε c ω 1
+    simpa [sign_one_of_cocycle hε] using ofOrbitSignFixed_apply_smul_out hε hfin c ω 1
 
 /-- The value of the orbit coefficients of an invariant function at an orbit is its value at the
 representative. -/
 @[simp]
-theorem invariantsSignedPermRepEquiv_apply [Finite G] (f : (signedPermRep R M ε hε).invariants)
-    (ω : orbitRel.Quotient G X) :
-    (invariantsSignedPermRepEquiv R M hε f : orbitRel.Quotient G X →₀ M) ω =
+theorem invariantsSignedPermRepEquiv_apply (hfin : ∀ x : X, (orbit G x).Finite)
+    (f : (signedPermRep R M ε hε).invariants) (ω : orbitRel.Quotient G X) :
+    (invariantsSignedPermRepEquiv R M hε hfin f : orbitRel.Quotient G X →₀ M) ω =
       (f : X →₀ M) ω.out :=
   comapDomain_apply _ _ _ _
 
 /-- The invariant function with orbit coefficients `c` has value `ε a ω.out • c ω` at
 `a • ω.out`. -/
 @[simp]
-theorem invariantsSignedPermRepEquiv_symm_apply_smul_out [Finite G] (c : orbitSignFixed R M ε)
-    (ω : orbitRel.Quotient G X) (a : G) :
-    ((invariantsSignedPermRepEquiv R M hε).symm c : X →₀ M) (a • ω.out) =
+theorem invariantsSignedPermRepEquiv_symm_apply_smul_out (hfin : ∀ x : X, (orbit G x).Finite)
+    (c : orbitSignFixed R M ε) (ω : orbitRel.Quotient G X) (a : G) :
+    ((invariantsSignedPermRepEquiv R M hε hfin).symm c : X →₀ M) (a • ω.out) =
       ε a ω.out • (c : orbitRel.Quotient G X →₀ M) ω :=
-  ofOrbitSignFixed_apply_smul_out hε c ω a
+  ofOrbitSignFixed_apply_smul_out hε hfin c ω a
 
 /-! ### The orbits with trivial stabilizer sign -/
 
@@ -347,7 +356,7 @@ trivial. -/
 theorem mk_mem_trivialSignOrbits_iff (x : X) :
     ⟦x⟧ ∈ trivialSignOrbits ε ↔ ∀ g : G, g • x = x → ε g x = 1 := by
   obtain ⟨a, ha⟩ := MulAction.exists_smul_out_eq (ω := (⟦x⟧ : orbitRel.Quotient G X)) rfl
-  have h := forall_smul_eq_imp_eq_one_iff_of_smul hε a (⟦x⟧ : orbitRel.Quotient G X).out
+  have h := forall_smul_eq_imp_eq_one_smul_iff hε a (⟦x⟧ : orbitRel.Quotient G X).out
   rw [ha] at h
   exact h.symm
 
@@ -357,7 +366,7 @@ stabilizer signs exactly when it is supported on the orbits with trivial stabili
 theorem orbitSignFixed_eq_supported (h2 : IsSMulRegular M (2 : R)) :
     orbitSignFixed R M ε = supported M R (trivialSignOrbits ε) := by
   ext c
-  rw [Finsupp.mem_submodule_iff, mem_supported']
+  rw [mem_orbitSignFixed_iff, mem_supported']
   refine ⟨fun hc ω hω ↦ ?_, fun hc ω ↦ ?_⟩
   · have h : ∃ g : G, g • ω.out = ω.out ∧ ε g ω.out ≠ 1 := by
       simpa [trivialSignOrbits, not_forall] using hω
@@ -369,24 +378,48 @@ theorem orbitSignFixed_eq_supported (h2 : IsSMulRegular M (2 : R)) :
       exact zero_mem _
 
 variable (R M) in
-/-- **The orbit basis of invariant chains with sign coefficients.** For a finite group and `2` a
-nonzerodivisor on `M`, the invariants of the signed permutation representation are the finitely
-supported functions with values in `M` on the orbits whose stabilizer sign is trivial; the other
-orbits contribute nothing. -/
-noncomputable def invariantsSignedPermRepEquivFinsupp [Finite G] (h2 : IsSMulRegular M (2 : R)) :
-    (signedPermRep R M ε hε).invariants ≃ₗ[R]
-      trivialSignOrbits ε →₀ M :=
-  (invariantsSignedPermRepEquiv R M hε).trans <|
+/-- **The orbit basis of invariant chains with sign coefficients.** When every orbit is finite and
+`2` is a nonzerodivisor on `M`, the invariants of the signed permutation representation are the
+finitely supported functions with values in `M` on the orbits whose stabilizer sign is trivial; the
+other orbits contribute nothing. -/
+noncomputable def invariantsSignedPermRepEquivFinsupp (hfin : ∀ x : X, (orbit G x).Finite)
+    (h2 : IsSMulRegular M (2 : R)) :
+    (signedPermRep R M ε hε).invariants ≃ₗ[R] trivialSignOrbits ε →₀ M :=
+  (invariantsSignedPermRepEquiv R M hε hfin).trans <|
     (LinearEquiv.ofEq _ _ (orbitSignFixed_eq_supported h2)).trans (supportedEquivFinsupp _)
 
 /-- The coefficient of the image of an invariant function at an orbit with trivial stabilizer sign
 is its value at the representative. -/
 @[simp]
-theorem invariantsSignedPermRepEquivFinsupp_apply [Finite G] (h2 : IsSMulRegular M (2 : R))
-    (f : (signedPermRep R M ε hε).invariants)
+theorem invariantsSignedPermRepEquivFinsupp_apply (hfin : ∀ x : X, (orbit G x).Finite)
+    (h2 : IsSMulRegular M (2 : R)) (f : (signedPermRep R M ε hε).invariants)
     (ω : trivialSignOrbits ε) :
-    invariantsSignedPermRepEquivFinsupp R M hε h2 f ω = (f : X →₀ M) ω.1.out := by
+    invariantsSignedPermRepEquivFinsupp R M hε hfin h2 f ω = (f : X →₀ M) ω.1.out := by
   simp [invariantsSignedPermRepEquivFinsupp]
+
+/-- The invariant function with coefficients `c` on the orbits with trivial stabilizer sign has
+value `ε a ω.out • c ω` at `a • ω.out`. -/
+@[simp]
+theorem invariantsSignedPermRepEquivFinsupp_symm_apply_smul_out
+    (hfin : ∀ x : X, (orbit G x).Finite) (h2 : IsSMulRegular M (2 : R))
+    (c : trivialSignOrbits ε →₀ M) (ω : trivialSignOrbits ε) (a : G) :
+    ((invariantsSignedPermRepEquivFinsupp R M hε hfin h2).symm c : X →₀ M) (a • ω.1.out) =
+      ε a ω.1.out • c ω := by
+  classical
+  simp [invariantsSignedPermRepEquivFinsupp]
+
+/-- The invariant function with coefficients `c` on the orbits with trivial stabilizer sign
+vanishes at the points of the other orbits. -/
+theorem invariantsSignedPermRepEquivFinsupp_symm_apply_eq_zero
+    (hfin : ∀ x : X, (orbit G x).Finite) (h2 : IsSMulRegular M (2 : R))
+    (c : trivialSignOrbits ε →₀ M) {x : X} (hx : ⟦x⟧ ∉ trivialSignOrbits ε) :
+    ((invariantsSignedPermRepEquivFinsupp R M hε hfin h2).symm c : X →₀ M) x = 0 := by
+  set f := (invariantsSignedPermRepEquivFinsupp R M hε hfin h2).symm c
+  have hf : (f : X →₀ M) x ∈ signFixed R ε x := fun g hg ↦ by
+    rw [← (mem_invariants_signedPermRep_iff hε).1 f.2, hg]
+  rw [mk_mem_trivialSignOrbits_iff hε] at hx
+  push Not at hx
+  simpa [signFixed_eq_bot h2 hx] using hf
 
 end Group
 
