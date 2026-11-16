@@ -901,23 +901,38 @@ theorem cyclicTotalHomologyMk_succ_eq_zero_iff {n : ℕ}
       inferInstance
     rw [cyclicTotalComplex_d_apply, Iso.inv_hom_id_apply, Iso.inv_hom_id_apply, hw]
 
-/-- A linear map on total cocycles vanishing on cocycles with zero total cohomology class descends
-to the cohomology of the total complex. -/
-def cyclicTotalHomologyDesc {N : Type*} [AddCommGroup N] [Module R N] (n : ℕ)
-    (f : LinearMap.ker (cyclicTotalDifferential R A M n) →ₗ[R] N)
-    (hf : ∀ x, cyclicTotalHomologyMk R A M n x = 0 → f x = 0) :
-    (cyclicTotalComplex R A M).homology n →ₗ[R] N :=
+/-- Two linear maps out of `Hⁿ(Tot)` agree once they agree on classes of total cocycles. -/
+theorem cyclicTotalHomology_linearMap_ext {N : Type*} [AddCommMonoid N] [Module R N] {n : ℕ}
+    {f g : (cyclicTotalComplex R A M).homology n →ₗ[R] N}
+    (h : f ∘ₗ cyclicTotalHomologyMk R A M n = g ∘ₗ cyclicTotalHomologyMk R A M n) : f = g :=
+  LinearMap.ext fun z ↦ by
+    obtain ⟨x, rfl⟩ := cyclicTotalHomologyMk_surjective n z; exact LinearMap.congr_fun h x
+
+section Desc
+
+variable {N : Type*} [AddCommGroup N] [Module R N] (n : ℕ)
+  (f : LinearMap.ker (cyclicTotalDifferential R A M n) →ₗ[R] N)
+  (hf : ∀ x, cyclicTotalHomologyMk R A M n x = 0 → f x = 0)
+
+/-- A linear map on total cocycles killing total coboundaries descends to `Hⁿ(Tot)`. -/
+def cyclicTotalHomologyDesc : (cyclicTotalComplex R A M).homology n →ₗ[R] N :=
   (cyclicTotalHomologyMk R A M n).liftOfSurjective (cyclicTotalHomologyMk_surjective n)
     ⟨f, fun x hx ↦ LinearMap.mem_ker.2 (hf x (LinearMap.mem_ker.1 hx))⟩
 
-/-- The descended map sends the class of a total cocycle to the value of the original map. -/
+/-- `cyclicTotalHomologyDesc` sends `[x]` to `f x`. -/
 @[simp]
-theorem cyclicTotalHomologyDesc_mk {N : Type*} [AddCommGroup N] [Module R N] (n : ℕ)
-    (f : LinearMap.ker (cyclicTotalDifferential R A M n) →ₗ[R] N)
-    (hf : ∀ x, cyclicTotalHomologyMk R A M n x = 0 → f x = 0)
+theorem cyclicTotalHomologyDesc_cyclicTotalHomologyMk
     (x : LinearMap.ker (cyclicTotalDifferential R A M n)) :
     cyclicTotalHomologyDesc n f hf (cyclicTotalHomologyMk R A M n x) = f x :=
   LinearMap.equivOfSurjective_apply _ _
+
+/-- Composing `cyclicTotalHomologyDesc` with `cyclicTotalHomologyMk` recovers `f`. -/
+@[simp]
+theorem cyclicTotalHomologyDesc_comp_cyclicTotalHomologyMk :
+    cyclicTotalHomologyDesc n f hf ∘ₗ cyclicTotalHomologyMk R A M n = f :=
+  LinearMap.ext (cyclicTotalHomologyDesc_cyclicTotalHomologyMk n f hf)
+
+end Desc
 
 /-- A cyclic cocycle, included into column zero, is a total cocycle. -/
 theorem cyclicCochainsToTotal_mem_ker {m : ℕ} (φ : cyclicCocycles R A M m) :

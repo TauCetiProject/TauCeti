@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.Data.Matrix.Basis
 
 /-!
@@ -16,7 +17,8 @@ Only the shared index type needs to be finite. `Matrix.smul_vecMulVec_single_sin
 scaled outer product of two coordinate vectors as a matrix unit, and
 `Matrix.one_add_single_mul_one_add_single_of_ne` multiplies two elementary matrices `1 + c Eᵢⱼ`
 and `1 + d Eₖₗ` with `j ≠ k`, whose cross term vanishes. `LinearMap.apply_eq_sum_sum_smul_single`
-expands a linear map on matrices along the matrix units.
+expands a linear map on matrices along the matrix units, and `TauCeti.matrixCornerNonUnitalAlgHom`
+bundles the `(r, r)` diagonal corner inclusion as a nonunital algebra homomorphism.
 -/
 
 /-- The product of two matrix units vanishes unless their inner indices agree. -/
@@ -55,3 +57,25 @@ public theorem LinearMap.apply_eq_sum_sum_smul_single {ι κ R M : Type*} [Finty
   simp only [map_sum]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   rw [← map_smul, Matrix.smul_single, smul_eq_mul, mul_one]
+
+/-- The `(r, r)` diagonal corner inclusion `x ↦ Matrix.single r r x` as `A →ₙₐ[R] Matrix ι ι A`. -/
+public def TauCeti.matrixCornerNonUnitalAlgHom (R A : Type*) {ι : Type*} [Semiring R]
+    [NonUnitalNonAssocSemiring A] [Module R A] [Fintype ι] [DecidableEq ι] (r : ι) :
+    A →ₙₐ[R] Matrix ι ι A where
+  __ := Matrix.singleLinearMap R r r
+  map_zero' := map_zero (Matrix.singleLinearMap R r r)
+  map_mul' x y := (Matrix.single_mul_single_same x r r r y).symm
+
+/-- Evaluating `matrixCornerNonUnitalAlgHom` gives `Matrix.single r r`. -/
+@[simp]
+public theorem TauCeti.matrixCornerNonUnitalAlgHom_apply {R A ι : Type*} [Semiring R]
+    [NonUnitalNonAssocSemiring A] [Module R A] [Fintype ι] [DecidableEq ι] (r : ι) (x : A) :
+    TauCeti.matrixCornerNonUnitalAlgHom R A r x = Matrix.single r r x :=
+  Matrix.singleLinearMap_apply R r r x
+
+/-- The underlying linear map of `matrixCornerNonUnitalAlgHom` is `Matrix.singleLinearMap`. -/
+@[simp]
+public theorem TauCeti.toLinearMap_matrixCornerNonUnitalAlgHom (R A : Type*) {ι : Type*}
+    [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A] [Fintype ι] [DecidableEq ι] (r : ι) :
+    (TauCeti.matrixCornerNonUnitalAlgHom R A r : A →ₗ[R] Matrix ι ι A) =
+      Matrix.singleLinearMap R r r := by ext; simp

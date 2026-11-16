@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.Trace
+public import TauCeti.Data.Matrix.Basis
 public import TauCeti.RingTheory.CyclicCohomology.Cohomology
 public import TauCeti.RingTheory.CyclicCohomology.ConnesOperator
 import TauCeti.Data.Fin.Basic
@@ -25,12 +25,13 @@ No multiplication on the coefficient module is needed. The cochain constructions
 any semiring whose action on the coefficient module commutes with itself. In degree zero the
 construction is ordinary matrix trace followed by the original linear functional.
 
-Matrix extension commutes with every Hochschild coface, hence with the Hochschild
-coboundary: `(bφ)#Tr = b(φ#Tr)`. For the faces multiplying adjacent entries this is the
+Matrix extension commutes with every Hochschild coface, hence with the bar and Hochschild
+coboundaries: `(bφ)#Tr = b(φ#Tr)`. For the faces multiplying adjacent entries this is the
 expansion of a matrix product over the intermediate index, which lengthens a closed index
 path by one; the last face is reduced to the zeroth by cyclic rotation. Consequently matrix
 extension maps cyclic cocycles and coboundaries to cyclic cocycles and coboundaries, and
-induces a map `HCⁿ(A; M) → HCⁿ(Matrix ι ι A; M)` on cyclic cohomology.
+induces an injective map `HCⁿ(A; M) → HCⁿ(Matrix ι ι A; M)` on cyclic cohomology with diagonal
+corner restriction as a left inverse.
 
 The convention follows Connes, *Noncommutative Geometry*, Chapter III, §1.
 The construction uses `MultilinearMap.compLinearMap` and `Matrix.entryLinearMap`.
@@ -38,8 +39,10 @@ The construction uses `MultilinearMap.compLinearMap` and `Matrix.entryLinearMap`
 ## Main definitions
 
 * `TauCeti.matrixCochainExtension`: the matrix extension `φ ↦ φ#Tr`.
-* `TauCeti.matrixCyclicCochainExtension`: its restriction to cyclic cochains.
+* `TauCeti.matrixCornerRestriction`: restriction of a matrix cochain to a diagonal corner.
+* `TauCeti.matrixCyclicCochainExtension`: restriction of matrix extension to cyclic cochains.
 * `TauCeti.cyclicCohomology.matrixExtension`: the induced map on cyclic cohomology.
+* `TauCeti.cyclicCohomology.cornerRestriction`: diagonal corner restriction on cyclic cohomology.
 
 ## Main results
 
@@ -48,11 +51,16 @@ The construction uses `MultilinearMap.compLinearMap` and `Matrix.entryLinearMap`
   block-diagonal matrices, the cochain-level input to additivity of the pairings on direct sums.
 * `TauCeti.matrixCochainExtension_diagonal`: on diagonal matrices, matrix extension is the sum of
   the original cochain over the diagonal positions.
+* `TauCeti.matrixCornerRestriction_matrixCochainExtension`: diagonal corner restriction is a left
+  inverse to matrix extension of cochains.
 * `TauCeti.matrixCochainExtension_hochschildCoface`,
-  `TauCeti.matrixCochainExtension_hochschildCoboundary`: compatibility with the cofaces and the
-  Hochschild coboundary.
+  `TauCeti.matrixCochainExtension_hochschildCoboundary`,
+  `TauCeti.matrixCochainExtension_barCoboundary`: compatibility with the cofaces and the Hochschild
+  and bar coboundaries.
 * `TauCeti.cyclicCohomology.matrixExtension_map`: on cyclic cohomology, matrix extension is natural
   for algebra homomorphisms.
+* `TauCeti.cyclicCohomology.matrixExtension_injective`: matrix extension on cyclic cohomology is
+  injective for any nonempty finite index type.
 -/
 
 public section
@@ -449,7 +457,94 @@ theorem matrixCochainExtension_hochschildCoboundary (ι : Type*) [Fintype ι] (n
   simp only [hochschildCoboundary_apply, hface, Finset.smul_sum]
   exact Finset.sum_comm
 
+/-- Matrix extension commutes with the bar coboundary `b'`. -/
+theorem matrixCochainExtension_barCoboundary (ι : Type*) [Fintype ι] (n : ℕ)
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => A) M) :
+    matrixCochainExtension ι (n + 1) (barCoboundary R A M n φ) =
+      barCoboundary R (Matrix ι ι A) M n (matrixCochainExtension ι n φ) := by
+  have h1 := eq_sub_of_add_eq (hochschildCoboundary_eq_barCoboundary_add (R := R) φ).symm
+  have h2 := eq_sub_of_add_eq (hochschildCoboundary_eq_barCoboundary_add (R := R)
+    (matrixCochainExtension ι n φ)).symm
+  rw [h1, h2, map_sub, map_zsmul, matrixCochainExtension_hochschildCoboundary,
+    matrixCochainExtension_hochschildCoface]
+
 end Coboundary
+
+section Corner
+
+variable {R A M ι : Type*} [Semiring R] [DecidableEq ι]
+
+section Linear
+
+variable [AddCommMonoid A] [Module R A] [AddCommMonoid M] [Module R M] [SMulCommClass R R M]
+
+/-- Restrict a degree-`n` cochain on `Matrix ι ι A` to `A` along the `(r, r)` diagonal corner. -/
+def matrixCornerRestriction (r : ι) (n : ℕ) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => Matrix ι ι A) M →ₗ[R]
+      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => A) M where
+  toFun Φ := Φ.compLinearMap fun _ => Matrix.singleLinearMap R r r
+  map_add' _ _ := by ext; simp [MultilinearMap.compLinearMap_apply]
+  map_smul' _ _ := by ext; simp [MultilinearMap.compLinearMap_apply]
+
+/-- Corner restriction evaluates a matrix cochain on `Matrix.single r r` entries. -/
+@[simp]
+theorem matrixCornerRestriction_apply (r : ι) (n : ℕ)
+    (Φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => Matrix ι ι A) M)
+    (x : Fin (n + 1) → A) :
+    matrixCornerRestriction r n Φ x = Φ fun j => Matrix.single r r (x j) := (rfl)
+
+/-- Restricting a matrix-extended cochain to any diagonal corner recovers the original cochain. -/
+@[simp]
+theorem matrixCornerRestriction_matrixCochainExtension [Fintype ι] (r : ι) (n : ℕ)
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => A) M) :
+    matrixCornerRestriction r n (matrixCochainExtension ι n φ) = φ :=
+  MultilinearMap.ext (matrixCochainExtension_single ι r n φ)
+
+/-- Corner restriction is a left inverse to matrix extension of cochains. -/
+@[simp]
+theorem matrixCornerRestriction_comp_matrixCochainExtension [Fintype ι] (r : ι) (n : ℕ) :
+    matrixCornerRestriction (R := R) (A := A) (M := M) r n ∘ₗ matrixCochainExtension ι n =
+      LinearMap.id :=
+  LinearMap.ext (matrixCornerRestriction_matrixCochainExtension r n)
+
+/-- Corner restriction commutes with the cyclic operator. -/
+theorem matrixCornerRestriction_cyclicOperator {M : Type*} [AddCommGroup M] [Module R M]
+    [SMulCommClass R R M] (r : ι) (n : ℕ)
+    (Φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => Matrix ι ι A) M) :
+    matrixCornerRestriction r n (cyclicOperator R (Matrix ι ι A) M n Φ) =
+      cyclicOperator R A M n (matrixCornerRestriction r n Φ) := by
+  ext x; simp only [matrixCornerRestriction_apply, cyclicOperator_apply, Function.comp_def]
+
+end Linear
+
+section Coface
+
+variable [NonUnitalNonAssocSemiring A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
+  [AddCommMonoid M] [Module R M] [SMulCommClass R R M] [Fintype ι]
+
+/-- Corner restriction commutes with every Hochschild coface. -/
+theorem matrixCornerRestriction_hochschildCoface (r : ι) (n : ℕ) (i : Fin (n + 2))
+    (Φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => Matrix ι ι A) M) :
+    matrixCornerRestriction r (n + 1) (hochschildCoface R (Matrix ι ι A) M i Φ) =
+      hochschildCoface R A M i (matrixCornerRestriction r n Φ) := by
+  ext x
+  simpa only [matrixCornerRestriction_apply, hochschildCoface_apply, Function.comp_def,
+    matrixCornerNonUnitalAlgHom_apply] using
+    congrArg Φ (comp_hochschildFace (matrixCornerNonUnitalAlgHom R A r) i x).symm
+
+/-- Corner restriction commutes with the Hochschild coboundary. -/
+theorem matrixCornerRestriction_hochschildCoboundary {M : Type*} [AddCommGroup M] [Module R M]
+    [SMulCommClass R R M] (r : ι) (n : ℕ)
+    (Φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => Matrix ι ι A) M) :
+    matrixCornerRestriction r (n + 1) (hochschildCoboundary R (Matrix ι ι A) M n Φ) =
+      hochschildCoboundary R A M n (matrixCornerRestriction r n Φ) := by
+  simpa only [matrixCornerRestriction, LinearMap.coe_mk, AddHom.coe_mk,
+    toLinearMap_matrixCornerNonUnitalAlgHom] using
+    (hochschildCoboundary_compLinearMap (matrixCornerNonUnitalAlgHom R A r) Φ).symm
+
+end Coface
+
+end Corner
 
 section CyclicCohomology
 
@@ -528,6 +623,52 @@ theorem matrixExtension_map {B : Type _} [Ring B] [Algebra R B] (f : A →ₐ[R]
   -- the linear maps in `matrixCochainExtension_compLinearMap`. Mathlib has no simp lemma for the
   -- underlying function of `NonUnitalAlgHomClass.toNonUnitalAlgHom`, so this is closed by `exact`.
   exact matrixCochainExtension_compLinearMap ι n (f : A →ₗ[R] B) φ.1.1
+
+variable (M n) in
+/-- Diagonal corner restriction `HCⁿ(Matrix ι ι A; M) →ₗ[R] HCⁿ(A; M)` along `r : ι`. -/
+noncomputable def cornerRestriction (r : ι) :
+    cyclicCohomology R (Matrix ι ι A) M n →ₗ[R] cyclicCohomology R A M n :=
+  desc n (mk R A M n ∘ₗ
+      (cyclicCochainsMap M (matrixCornerNonUnitalAlgHom R A r : A →ₗ[R] Matrix ι ι A) n).restrict
+        fun _ => cyclicCochainsMap_mem_cyclicCocycles (matrixCornerNonUnitalAlgHom R A r))
+    fun _ hΦ => (mk_eq_zero_iff R A M n _).2
+      (cyclicCochainsMap_mem_cyclicCoboundaries (matrixCornerNonUnitalAlgHom R A r) hΦ)
+
+/-- `cornerRestriction` sends `[Φ]` to the class of its pullback along the `(r, r)` corner map. -/
+@[simp]
+theorem cornerRestriction_mk (r : ι) (Φ : cyclicCocycles R (Matrix ι ι A) M n) :
+    cornerRestriction M n r (mk R (Matrix ι ι A) M n Φ) =
+      mk R A M n ⟨cyclicCochainsMap M
+          (matrixCornerNonUnitalAlgHom R A r : A →ₗ[R] Matrix ι ι A) n Φ,
+        cyclicCochainsMap_mem_cyclicCocycles (matrixCornerNonUnitalAlgHom R A r) Φ.2⟩ :=
+  desc_mk _ _ _ Φ
+
+/-- In a shared universe, `cornerRestriction` agrees with `map` along the corner map. -/
+@[simp]
+theorem map_matrixCornerNonUnitalAlgHom_eq_cornerRestriction.{u} {B κ : Type u}
+    [Ring B] [Algebra R B] [Fintype κ] [DecidableEq κ] (r : κ) (n : ℕ) :
+    (map M (matrixCornerNonUnitalAlgHom R B r) n).hom = cornerRestriction M n r :=
+  LinearMap.ext fun c => by
+    obtain ⟨Φ, rfl⟩ := mk_surjective _ _ _ n c; rw [map_mk, cornerRestriction_mk]
+
+/-- Diagonal corner restriction is a left inverse to matrix extension on cyclic cohomology. -/
+@[simp]
+theorem cornerRestriction_matrixExtension (r : ι) (c : cyclicCohomology R A M n) :
+    cornerRestriction M n r (matrixExtension M ι n c) = c := by
+  obtain ⟨φ, rfl⟩ := mk_surjective R A M n c
+  rw [matrixExtension_mk, cornerRestriction_mk]
+  exact congrArg (mk R A M n) (Subtype.ext <| Subtype.ext <| MultilinearMap.ext fun _ => by simp)
+
+/-- `cornerRestriction` composed with `matrixExtension` is the identity on `HCⁿ(A; M)`. -/
+@[simp]
+theorem cornerRestriction_comp_matrixExtension (r : ι) :
+    cornerRestriction (R := R) (A := A) M n r ∘ₗ matrixExtension M ι n = LinearMap.id :=
+  LinearMap.ext (cornerRestriction_matrixExtension r)
+
+/-- Matrix extension on cyclic cohomology is injective for any nonempty finite index type `ι`. -/
+theorem matrixExtension_injective [Nonempty ι] :
+    Function.Injective (matrixExtension (R := R) (A := A) M ι n) :=
+  let ⟨r⟩ := ‹Nonempty ι›; Function.LeftInverse.injective (cornerRestriction_matrixExtension r)
 
 end cyclicCohomology
 

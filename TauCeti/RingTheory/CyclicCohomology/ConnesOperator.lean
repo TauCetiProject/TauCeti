@@ -284,6 +284,20 @@ theorem cyclicOperator_pow_hochschildCoface (k : ℕ) (hk : k < n + 2)
       ← _root_.mul_apply_eq_comp _ (cyclicOperator R A M n), ← pow_succ, pow_succ (-1 : ℤ),
       mul_neg_one, neg_smul]
 
+/-- Rotating the `m`-th coface `m + 1` times produces the last coface up to sign. -/
+theorem neg_one_pow_smul_cyclicOperator_pow_succ_hochschildCoface {m : ℕ} (hm : m ≤ n)
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
+    (-1 : ℤ) ^ (m + 1) • (cyclicOperator R A M (n + 1) ^ (m + 1))
+        (hochschildCoface R A M (⟨m, by omega⟩ : Fin (n + 1)).castSucc φ) =
+      -((-1 : ℤ) ^ (n + 1) •
+        hochschildCoface R A M (Fin.last (n + 1)) ((cyclicOperator R A M n ^ m) φ)) := by
+  have hcast : (⟨m, by omega⟩ : Fin (n + 1)).castSucc = ⟨m, by omega⟩ := rfl
+  rw [hcast, pow_succ' (cyclicOperator R A M (n + 1)), _root_.mul_apply_eq_comp,
+    cyclicOperator_pow_hochschildCoface m (by omega) φ, map_zsmul,
+    cyclicOperator_hochschildCoface_zero, smul_smul, smul_smul, ← pow_add,
+    show m + 1 + m = 2 * m + 1 by omega, pow_succ, pow_mul, neg_one_sq, one_pow, one_mul,
+    neg_one_mul, neg_smul]
+
 end Coface
 
 /-! ### The bar coboundary and the cyclic bicomplex -/
@@ -313,12 +327,10 @@ theorem barCoboundary_apply (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n 
   simp [barCoboundary]
 
 /-- The Hochschild coboundary of `φ` is the alternating sum of its cofaces. -/
-private theorem hochschildCoboundary_eq_sum (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1)
-    ↦ A) M) :
+private theorem hochschildCoboundary_eq_sum
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     hochschildCoboundary R A M n φ =
-      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • hochschildCoface R A M i φ := by
-  ext a
-  simp
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • hochschildCoface R A M i φ := by ext; simp
 
 /-- The Hochschild coboundary is the bar coboundary plus the signed last coface. -/
 theorem hochschildCoboundary_eq_barCoboundary_add
@@ -326,25 +338,83 @@ theorem hochschildCoboundary_eq_barCoboundary_add
     hochschildCoboundary R A M n φ =
       barCoboundary R A M n φ +
         (-1 : ℤ) ^ (n + 1) • hochschildCoface R A M (Fin.last (n + 1)) φ := by
-  ext a
-  rw [hochschildCoboundary_apply_eq_sum_contractNth_add]
-  simp
+  ext a; rw [hochschildCoboundary_apply_eq_sum_contractNth_add]; simp
 
 /-- Conjugating the Hochschild coboundary by the cyclic operator gives the bar coboundary up to
 the last coface: `λ (b φ) = b' (λ φ) + (-1)ⁿ⁺¹ δₙ₊₁ φ`. -/
-theorem cyclicOperator_hochschildCoboundary (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1)
-    ↦ A) M) :
+theorem cyclicOperator_hochschildCoboundary
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     cyclicOperator R A M (n + 1) (hochschildCoboundary R A M n φ) =
       barCoboundary R A M n (cyclicOperator R A M n φ) +
         (-1 : ℤ) ^ (n + 1) • hochschildCoface R A M (Fin.last (n + 1)) φ := by
   rw [hochschildCoboundary_eq_sum, map_sum, Fin.sum_univ_succ, map_zsmul, Fin.val_zero, pow_zero,
-    one_smul, cyclicOperator_hochschildCoface_zero]
-  refine (add_comm _ _).trans ?_
-  congr 1
-  rw [barCoboundary, LinearMap.sum_apply]
+    one_smul, cyclicOperator_hochschildCoface_zero, barCoboundary, LinearMap.sum_apply]
+  refine (add_comm _ _).trans ?_; congr 1
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [map_zsmul, cyclicOperator_hochschildCoface_succ, LinearMap.smul_apply, Fin.val_succ,
     pow_succ, mul_neg_one, neg_smul, smul_neg, neg_neg]
+
+/-- Evaluating `hochschildCoboundary` on `λ φ` differs from `λ (b φ)` by the signed last cofaces. -/
+theorem hochschildCoboundary_cyclicOperator
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
+    hochschildCoboundary R A M n (cyclicOperator R A M n φ) =
+      cyclicOperator R A M (n + 1) (hochschildCoboundary R A M n φ) +
+        (-1 : ℤ) ^ (n + 1) • hochschildCoface R A M (Fin.last (n + 1)) (cyclicOperator R A M n φ) -
+        (-1 : ℤ) ^ (n + 1) • hochschildCoface R A M (Fin.last (n + 1)) φ := by
+  rw [hochschildCoboundary_eq_barCoboundary_add, cyclicOperator_hochschildCoboundary]; abel
+
+/-- Split-sum cancellation between rotated cofaces and the Hochschild coboundary of `λ^m φ`. -/
+theorem sum_filter_cyclicOperator_pow_hochschildCoface_add_hochschildCoboundary
+    {m : ℕ} (hm : m ≤ n) (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
+    (∑ i ∈ Finset.univ.filter (fun i : Fin (n + 1) ↦ m ≤ (i : ℕ)),
+        (-1 : ℤ) ^ ((i : ℕ) + 1) •
+          (cyclicOperator R A M (n + 1) ^ m) (hochschildCoface R A M i.castSucc φ)) +
+      (∑ i ∈ Finset.univ.filter (fun i : Fin (n + 1) ↦ (i : ℕ) ≤ m),
+        (-1 : ℤ) ^ ((i : ℕ) + 1) •
+          (cyclicOperator R A M (n + 1) ^ (m + 1)) (hochschildCoface R A M i.castSucc φ)) +
+      hochschildCoboundary R A M n ((cyclicOperator R A M n ^ m) φ) = 0 := by
+  have hpush (s : Finset (Fin (n + 1))) (r : ℕ) :
+      (∑ x ∈ s, cyclicOperator R A M (n + 1) ((-1 : ℤ) ^ ((x : ℕ) + 1) •
+          (cyclicOperator R A M (n + 1) ^ r) (hochschildCoface R A M x.castSucc φ))) =
+        ∑ i ∈ s, (-1 : ℤ) ^ ((i : ℕ) + 1) •
+          (cyclicOperator R A M (n + 1) ^ (r + 1)) (hochschildCoface R A M i.castSucc φ) :=
+    Finset.sum_congr rfl fun _ _ ↦ by rw [map_zsmul, ← _root_.mul_apply_eq_comp, ← pow_succ']
+  induction m with
+  | zero =>
+    have hbar : (∑ x : Fin (n + 1),
+        (-1 : ℤ) ^ ((x : ℕ) + 1) • (1 : Module.End R _) (hochschildCoface R A M x.castSucc φ)) =
+        -barCoboundary R A M n φ := by
+      rw [barCoboundary, LinearMap.sum_apply, ← Finset.sum_neg_distrib]
+      exact Finset.sum_congr rfl fun _ _ ↦ by
+        rw [_root_.one_apply_eq_self, LinearMap.smul_apply, pow_succ, mul_neg_one, neg_smul]
+    rw [Finset.filter_true_of_mem fun _ _ ↦ Nat.zero_le _,
+      show (Finset.univ.filter fun i : Fin (n + 1) ↦ (i : ℕ) ≤ 0) = {0} by
+        ext i; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton,
+          Nat.le_zero, Fin.ext_iff, Fin.val_zero],
+      Finset.sum_singleton, pow_zero, pow_zero, zero_add, pow_one, Fin.val_zero, zero_add, pow_one,
+      neg_one_smul, Fin.castSucc_zero, cyclicOperator_hochschildCoface_zero,
+      _root_.one_apply_eq_self, hochschildCoboundary_eq_barCoboundary_add, hbar]; abel
+  | succ m ih =>
+    have hm' : m ≤ n := Nat.le_of_succ_le hm
+    let im : Fin (n + 1) := ⟨m, by omega⟩
+    let im1 : Fin (n + 1) := ⟨m + 1, by omega⟩
+    have hinsA : (Finset.univ.filter fun i : Fin (n + 1) ↦ m ≤ (i : ℕ)) =
+        insert im (Finset.univ.filter fun i : Fin (n + 1) ↦ m + 1 ≤ (i : ℕ)) := by
+      ext i; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
+        Fin.ext_iff, im]; omega
+    have hinsB : (Finset.univ.filter fun i : Fin (n + 1) ↦ (i : ℕ) ≤ m + 1) =
+        insert im1 (Finset.univ.filter fun i : Fin (n + 1) ↦ (i : ℕ) ≤ m) := by
+      ext i; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
+        Fin.ext_iff, im1]; omega
+    have stepA := congrArg (cyclicOperator R A M (n + 1)) (ih hm')
+    rw [map_zero, map_add, map_add, hinsA, Finset.sum_insert (by simp [im]), map_add, map_sum,
+      map_sum, hpush, hpush, map_zsmul, ← _root_.mul_apply_eq_comp, ← pow_succ',
+      neg_one_pow_smul_cyclicOperator_pow_succ_hochschildCoface hm' φ] at stepA
+    rw [hinsB, Finset.sum_insert (by simp [im1]),
+      neg_one_pow_smul_cyclicOperator_pow_succ_hochschildCoface hm φ,
+      pow_succ' (cyclicOperator R A M n), _root_.mul_apply_eq_comp,
+      hochschildCoboundary_cyclicOperator, ← _root_.mul_apply_eq_comp, ← pow_succ']
+    convert stepA using 1; abel
 
 variable (R A M n) in
 /-- The first commutation relation of the cyclic bicomplex: `(1 - λ) b = b' (1 - λ)`. -/
