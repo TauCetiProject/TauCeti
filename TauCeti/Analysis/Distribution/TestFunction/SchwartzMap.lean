@@ -77,6 +77,9 @@ def toSchwartzMapCLM : 𝓓_{K}(E, F) →L[𝕜] 𝓢(E, F) :=
       exact seminorm_toSchwartzMap_le f hR hKR k l }
 
 @[simp]
+theorem coe_toSchwartzMapCLM (f : 𝓓_{K}(E, F)) : ⇑(toSchwartzMapCLM 𝕜 f) = f :=
+  (rfl)
+
 theorem toSchwartzMapCLM_apply (f : 𝓓_{K}(E, F)) (x : E) : toSchwartzMapCLM 𝕜 f x = f x :=
   (rfl)
 
@@ -96,7 +99,15 @@ def toSchwartzMapCLM : 𝓓(Ω, F) →L[𝕜] 𝓢(E, F) :=
       (ContDiffMapSupportedIn.toSchwartzMapCLM 𝕜).continuous.congr fun _ ↦ (rfl)
 
 @[simp]
+theorem coe_toSchwartzMapCLM (f : 𝓓(Ω, F)) : ⇑(toSchwartzMapCLM 𝕜 f) = f :=
+  (rfl)
+
 theorem toSchwartzMapCLM_apply (f : 𝓓(Ω, F)) (x : E) : toSchwartzMapCLM 𝕜 f x = f x :=
   (rfl)
+
+theorem hasCompactSupport_toSchwartzMapCLM (f : 𝓓(Ω, F)) :
+    HasCompactSupport (toSchwartzMapCLM 𝕜 f) := by
+  rw [coe_toSchwartzMapCLM]
+  exact f.hasCompactSupport
 
 end TestFunction

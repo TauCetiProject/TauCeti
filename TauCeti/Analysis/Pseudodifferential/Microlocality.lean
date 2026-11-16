@@ -323,13 +323,9 @@ private theorem isMicrolocallySmoothAt_toDistribution_quantizeSobolev {a : Symbo
         rw [coefficient_sub, Pi.sub_apply, coefficient_inclusion, hbψ, hψ1 x (not_not.1 hx)]
         simp) t v h) hx₀
   -- `Op(b) v = Op(b) (χ v) + Op(e) v` with `e` smoothing.
-  have hχS (x : CoordinateSpace n) : toSchwartzMapCLM ℂ χ x = χ x := toSchwartzMapCLM_apply χ x
-  have hχSc : HasCompactSupport (toSchwartzMapCLM ℂ χ) := by
-    rw [show ⇑(toSchwartzMapCLM ℂ χ) = χ from funext hχS]
-    exact χ.hasCompactSupport
   obtain ⟨e, he, hesm, hbe⟩ :=
     exists_isSmoothing_and_toDistr_quantizeSobolev_eq_quantizeSobolev_smulLeftCLM_add hb hbK
-      hχSc (hχK.mono fun y hy ↦ (hχS y).trans hy)
+      (hasCompactSupport_toSchwartzMapCLM (𝕜 := ℂ) χ) (by rwa [coe_toSchwartzMapCLM])
   have hsplit : toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr =
       toDistribution ⊤ (b.quantizeSobolev hb t
         (BesselPotentialSpace.smulLeftCLM t (toSchwartzMapCLM ℂ χ) v)).toDistr +

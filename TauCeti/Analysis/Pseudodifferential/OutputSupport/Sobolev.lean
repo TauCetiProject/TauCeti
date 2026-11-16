@@ -19,7 +19,7 @@ this is immediate from the quantization formula, and it extends to `H^s` by dens
 value of `Op(b) v` on a fixed test function is continuous in `v`.
 
 This is the Sobolev-level counterpart of the output-support results for the Schwartz-level
-quantization in `TauCeti.Analysis.Pseudodifferential.OutputSupport`.
+quantization in `TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic`.
 
 ## Main results
 

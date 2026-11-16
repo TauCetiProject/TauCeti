@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Amplitude.Basic
-public import TauCeti.Analysis.Pseudodifferential.OutputSupport
+public import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Convolution
 import TauCeti.Analysis.Calculus.CoordinateDeriv.ParametricIntegral
