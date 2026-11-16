@@ -107,66 +107,75 @@ theorem PosDef.cfc_log_inv {P : Matrix n n 𝕜} (hP : P.PosDef) :
       hP.1.isSelfAdjoint, ← cfc_neg]
   exact cfc_congr fun x _ ↦ Real.log_inv x
 
+/-- The canonical entrywise embedding `Matrix n n 𝕜 →⋆ₐ[ℝ] Matrix n n ℂ` induced by
+`RCLike.map 𝕜 ℂ`. -/
+def mapToComplexStarAlgHom : Matrix n n 𝕜 →⋆ₐ[ℝ] Matrix n n ℂ where
+  toFun A := A.map (RCLike.map 𝕜 ℂ)
+  map_one' := by ext i j; by_cases hij : i = j <;> simp [Matrix.one_apply, hij]
+  map_mul' A B := by
+    ext i j; simp only [map_apply, Matrix.mul_apply, map_sum]
+    exact Finset.sum_congr rfl fun _ _ ↦ Complex.ext (by simp) (by simp)
+  map_zero' := by ext; simp
+  map_add' A B := by ext i j; exact Complex.ext (by simp) (by simp)
+  commutes' r := by ext i j; by_cases hij : i = j <;> simp [Algebra.algebraMap_eq_smul_one, hij]
+  map_star' A := by
+    ext i j
+    exact Complex.ext (by simp [star_eq_conjTranspose]) (by simp [star_eq_conjTranspose])
+
+/-- Evaluating `Matrix.mapToComplexStarAlgHom` entrywise applies `RCLike.map 𝕜 ℂ`. -/
+@[simp]
+theorem mapToComplexStarAlgHom_apply (A : Matrix n n 𝕜) (i j : n) :
+    mapToComplexStarAlgHom A i j = RCLike.map 𝕜 ℂ (A i j) := by rfl
+
+/-- The entrywise embedding `Matrix.mapToComplexStarAlgHom` is continuous. -/
+theorem continuous_mapToComplexStarAlgHom :
+    Continuous (mapToComplexStarAlgHom (n := n) (𝕜 := 𝕜)) :=
+  continuous_pi fun _ ↦ continuous_pi fun _ ↦
+    (RCLike.map 𝕜 ℂ).continuous.comp ((continuous_apply _).comp (continuous_apply _))
+
+/-- Entrywise embedding into `ℂ` preserves positive semidefiniteness. -/
+theorem PosSemidef.mapToComplexStarAlgHom {A : Matrix n n 𝕜} (hA : A.PosSemidef) :
+    (Matrix.mapToComplexStarAlgHom A).PosSemidef := by
+  let Φ := Matrix.mapToComplexStarAlgHom (n := n) (𝕜 := 𝕜)
+  have hmul : Φ A = (Φ (CFC.sqrt A))ᴴ * Φ (CFC.sqrt A) := by
+    rw [← star_eq_conjTranspose, ← map_star, (CFC.sqrt_nonneg A).isSelfAdjoint.star_eq, ← map_mul,
+      CFC.sqrt_mul_sqrt_self A hA.nonneg]
+  exact hmul ▸ posSemidef_conjTranspose_mul_self _
+
+/-- Entrywise embedding into `ℂ` preserves positive definiteness. -/
+theorem PosDef.mapToComplexStarAlgHom {A : Matrix n n 𝕜} (hA : A.PosDef) :
+    (Matrix.mapToComplexStarAlgHom A).PosDef :=
+  isStrictlyPositive_iff_posDef.1 ⟨hA.posSemidef.mapToComplexStarAlgHom.nonneg,
+    hA.isUnit.map Matrix.mapToComplexStarAlgHom.toRingHom⟩
+
 /-- **Operator monotonicity of the matrix logarithm.** For positive definite matrices `A ≤ B` over
 any `RCLike` field `𝕜`, `cfc Real.log A ≤ cfc Real.log B` in the Loewner order. -/
 theorem PosDef.cfc_log_le_cfc_log {A B : Matrix n n 𝕜} (hA : A.PosDef) (hle : A ≤ B) :
     cfc Real.log A ≤ cfc Real.log B := by
-  -- Transfer `CFC.log_le_log` from `Matrix n n ℂ` along entrywise `RCLike.map 𝕜 ℂ`.
-  let Φ : Matrix n n 𝕜 →⋆ₐ[ℝ] Matrix n n ℂ :=
-    { toFun := fun M ↦ M.map (RCLike.map 𝕜 ℂ)
-      map_one' := by
-        ext i j; by_cases hij : i = j <;> simp [Matrix.one_apply, hij]
-      map_mul' := fun M N ↦ by
-        ext i j
-        simp only [map_apply, Matrix.mul_apply, map_sum]
-        refine Finset.sum_congr rfl fun k _ ↦ ?_
-        apply Complex.ext <;> simp
-      map_zero' := by ext; simp
-      map_add' := fun M N ↦ by
-        ext i j; apply Complex.ext <;> simp
-      commutes' := fun r ↦ by
-        ext i j; by_cases hij : i = j <;> simp [Algebra.algebraMap_eq_smul_one, hij]
-      map_star' := fun M ↦ by
-        ext i j; apply Complex.ext <;> simp [star_eq_conjTranspose] }
-  have hΦ_cont : Continuous Φ :=
-    continuous_pi fun _ ↦ continuous_pi fun _ ↦
-      (RCLike.map 𝕜 ℂ).continuous.comp (continuous_apply _ |>.comp (continuous_apply _))
-  have hΦ_psd {M : Matrix n n 𝕜} (hM : M.PosSemidef) : (Φ M).PosSemidef := by
-    have hsq : CFC.sqrt M * CFC.sqrt M = M := CFC.sqrt_mul_sqrt_self M hM.nonneg
-    have hself : (CFC.sqrt M)ᴴ = CFC.sqrt M := (CFC.sqrt_nonneg M).isSelfAdjoint
-    have hΦself : (Φ (CFC.sqrt M))ᴴ = Φ (CFC.sqrt M) := by
-      rw [← star_eq_conjTranspose, ← map_star, star_eq_conjTranspose, hself]
-    have hmul : Φ M = (Φ (CFC.sqrt M))ᴴ * Φ (CFC.sqrt M) := by
-      rw [hΦself, ← map_mul, hsq]
-    rw [hmul]
-    exact posSemidef_conjTranspose_mul_self _
-  have hΦA : IsStrictlyPositive (Φ A) :=
-    ⟨(hΦ_psd hA.posSemidef).nonneg, hA.isUnit.map Φ.toRingHom⟩
+  let Φ := Matrix.mapToComplexStarAlgHom (n := n) (𝕜 := 𝕜)
   have hΦle : Φ A ≤ Φ B := by
     rw [le_iff, ← map_sub]
-    exact hΦ_psd (le_iff.1 hle)
+    exact (le_iff.1 hle).mapToComplexStarAlgHom
   have hB_sa : IsSelfAdjoint B := (hA.posSemidef.nonneg.trans hle).isSelfAdjoint
-  have hlog : CFC.log (Φ A) ≤ CFC.log (Φ B) := CFC.log_le_log hΦle hΦA
+  have hlog : CFC.log (Φ A) ≤ CFC.log (Φ B) :=
+    CFC.log_le_log hΦle (isStrictlyPositive_iff_posDef.2 hA.mapToComplexStarAlgHom)
   unfold CFC.log at hlog
-  rw [← StarAlgHom.map_cfc Φ Real.log A (A.finite_real_spectrum.continuousOn _) hΦ_cont
-      hA.1.isSelfAdjoint (hA.1.isSelfAdjoint.map Φ),
-    ← StarAlgHom.map_cfc Φ Real.log B (B.finite_real_spectrum.continuousOn _) hΦ_cont
-      hB_sa (hB_sa.map Φ),
+  rw [← StarAlgHom.map_cfc Φ Real.log A (A.finite_real_spectrum.continuousOn _)
+      continuous_mapToComplexStarAlgHom hA.1.isSelfAdjoint (hA.1.isSelfAdjoint.map Φ),
+    ← StarAlgHom.map_cfc Φ Real.log B (B.finite_real_spectrum.continuousOn _)
+      continuous_mapToComplexStarAlgHom hB_sa (hB_sa.map Φ),
     le_iff, ← map_sub] at hlog
   rw [le_iff]
-  have hdiff_herm : (cfc Real.log B - cfc Real.log A).IsHermitian :=
-    (IsSelfAdjoint.isHermitian (cfc_predicate Real.log B)).sub
-      (IsSelfAdjoint.isHermitian (cfc_predicate Real.log A))
-  refine posSemidef_iff_dotProduct_mulVec.2 ⟨hdiff_herm, fun x ↦ ?_⟩
-  let y : n → ℂ := fun i ↦ RCLike.map 𝕜 ℂ (x i)
-  have hy := (posSemidef_iff_dotProduct_mulVec.1 hlog).2 y
-  have hquad : star y ⬝ᵥ Φ (cfc Real.log B - cfc Real.log A) *ᵥ y =
+  refine posSemidef_iff_dotProduct_mulVec.2
+    ⟨(cfc_predicate Real.log B).isHermitian.sub (cfc_predicate Real.log A).isHermitian, fun x ↦ ?_⟩
+  have hy := (posSemidef_iff_dotProduct_mulVec.1 hlog).2 (fun i ↦ RCLike.map 𝕜 ℂ (x i))
+  have hquad : star (fun i ↦ RCLike.map 𝕜 ℂ (x i)) ⬝ᵥ Φ (cfc Real.log B - cfc Real.log A) *ᵥ
+      (fun i ↦ RCLike.map 𝕜 ℂ (x i)) =
       RCLike.map 𝕜 ℂ (star x ⬝ᵥ (cfc Real.log B - cfc Real.log A) *ᵥ x) := by
-    simp only [dotProduct, mulVec, map_sum, y, Φ, StarAlgHom.coe_mk', AlgHom.coe_mk,
-      RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk, map_apply, Pi.star_apply,
+    simp only [dotProduct, mulVec, map_sum, Φ, mapToComplexStarAlgHom_apply, Pi.star_apply,
       RCLike.star_def, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    apply Complex.ext <;> simp
+    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
+      Complex.ext (by simp) (by simp)
   rw [hquad, Complex.nonneg_iff] at hy
   exact RCLike.nonneg_iff.2 ⟨by simpa using hy.1, by simpa using hy.2.symm⟩
 

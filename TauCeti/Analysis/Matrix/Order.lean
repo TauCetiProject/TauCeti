@@ -75,33 +75,27 @@ open scoped Matrix.Norms.L2Operator
 
 /-- A Hermitian matrix with `‖A‖ ≤ L` satisfies `A ≤ L • 1` in the Loewner order. -/
 theorem IsHermitian.le_smul_one_of_l2_opNorm_le [Fintype n] [DecidableEq n] {A : Matrix n n 𝕜}
-    (hA : A.IsHermitian) {L : ℝ} (hL : ‖A‖ ≤ L) :
-    A ≤ L • (1 : Matrix n n 𝕜) := by
+    (hA : A.IsHermitian) {L : ℝ} (hL : ‖A‖ ≤ L) : A ≤ L • (1 : Matrix n n 𝕜) := by
   rw [← Algebra.algebraMap_eq_smul_one]
   refine le_algebraMap_of_spectrum_le (fun x hx ↦ ?_) hA.isSelfAdjoint
-  rw [hA.spectrum_real_eq_range_eigenvalues] at hx
-  obtain ⟨i, rfl⟩ := hx
-  have h := norm_le_pi_norm hA.eigenvalues i
-  rw [Real.norm_eq_abs, ← hA.l2_opNorm_eq_norm_eigenvalues] at h
-  exact (le_abs_self _).trans (h.trans hL)
+  obtain ⟨i, rfl⟩ := hA.spectrum_real_eq_range_eigenvalues ▸ hx
+  exact (le_abs_self _).trans <| le_trans
+    (by simpa [hA.l2_opNorm_eq_norm_eigenvalues] using norm_le_pi_norm hA.eigenvalues i) hL
 
 /-- A Hermitian matrix with `‖A‖ ≤ L` satisfies `-(L • 1) ≤ A` in the Loewner order. -/
 theorem IsHermitian.neg_smul_one_le_of_l2_opNorm_le [Fintype n] [DecidableEq n] {A : Matrix n n 𝕜}
-    (hA : A.IsHermitian) {L : ℝ} (hL : ‖A‖ ≤ L) :
-    -(L • (1 : Matrix n n 𝕜)) ≤ A :=
+    (hA : A.IsHermitian) {L : ℝ} (hL : ‖A‖ ≤ L) : -(L • (1 : Matrix n n 𝕜)) ≤ A :=
   neg_le.1 (hA.neg.le_smul_one_of_l2_opNorm_le (by simpa using hL))
 
 /-- A positive semidefinite matrix is bounded above by `‖A‖ • 1` in the Loewner order. -/
 theorem PosSemidef.le_l2_opNorm_smul_one [Fintype n] [DecidableEq n] {A : Matrix n n 𝕜}
-    (hA : A.PosSemidef) :
-    A ≤ ‖A‖ • (1 : Matrix n n 𝕜) :=
+    (hA : A.PosSemidef) : A ≤ ‖A‖ • (1 : Matrix n n 𝕜) :=
   hA.1.le_smul_one_of_l2_opNorm_le le_rfl
 
 /-- A positive semidefinite matrix bounded above by `L • 1` (`0 ≤ L`) has `ℓ²` operator norm at
 most `L`. -/
 theorem PosSemidef.l2_opNorm_le_of_le_smul_one [Fintype n] [DecidableEq n] {A : Matrix n n 𝕜}
-    (hA : A.PosSemidef) {L : ℝ} (hL : 0 ≤ L) (hU : A ≤ L • (1 : Matrix n n 𝕜)) :
-    ‖A‖ ≤ L := by
+    (hA : A.PosSemidef) {L : ℝ} (hL : 0 ≤ L) (hU : A ≤ L • (1 : Matrix n n 𝕜)) : ‖A‖ ≤ L := by
   rw [hA.1.l2_opNorm_eq_norm_eigenvalues]
   refine (pi_norm_le_iff_of_nonneg hL).2 fun i ↦ ?_
   rw [Real.norm_eq_abs, abs_of_nonneg (hA.eigenvalues_nonneg i)]

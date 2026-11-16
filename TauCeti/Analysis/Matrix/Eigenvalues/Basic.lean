@@ -40,13 +40,13 @@ The perturbation estimate combines the operator Weyl inequality in
 
 Weyl's additive inequalities `λₖ(A + B) ≤ λᵢ(A) + λⱼ(B)` for `i + j ≤ k`, and their lower
 counterpart, are the matrix forms of the operator inequalities in
-`TauCeti.Analysis.InnerProductSpace.CourantFischer`. In particular, sorted eigenvalues are
-monotone in the Loewner order (`Matrix.IsHermitian.eigenvalues₀_mono`). A Hermitian matrix of rank
-at most `r` has at most `r` positive eigenvalues, so a perturbation `A - B` of rank at most `r`
-gives the rank interlacing `λ_{i+r}(A) ≤ λᵢ(B)`. Consequently the numbers of eigenvalues of `A` and
-`B` in `(-∞, t]`, counted with multiplicity, differ by at most `rank (A - B)` for every `t`. Divided
-by the size, this is the uniform bound on the difference of the distribution functions of the
-empirical spectral measures that drives truncation arguments for random matrices.
+`TauCeti.Analysis.InnerProductSpace.CourantFischer`. A Hermitian matrix of rank at most `r` has
+at most `r` positive eigenvalues, so a perturbation `A - B` of rank at most `r` gives the rank
+interlacing `λ_{i+r}(A) ≤ λᵢ(B)`. Consequently the numbers of eigenvalues of `A` and `B` in
+`(-∞, t]`, counted with multiplicity, differ by at most `rank (A - B)` for every `t`. Divided by
+the size, this is the uniform bound on the difference of the distribution functions of the
+empirical spectral measures that drives truncation arguments for random matrices. Sorted
+eigenvalues are also monotone in the Loewner order (`Matrix.IsHermitian.eigenvalues₀_mono`).
 
 ## References
 
@@ -240,13 +240,10 @@ theorem IsHermitian.eigenvalues₀_mono (hA : A.IsHermitian) (hB : B.IsHermitian
     hA.eigenvalues₀ k ≤ hB.eigenvalues₀ k := by
   obtain ⟨C, rfl⟩ : ∃ C, B = A + C := ⟨B - A, (add_sub_cancel A B).symm⟩
   have hC : C.PosSemidef := by simpa [add_sub_cancel_left] using le_iff.1 hle
-  let last : Fin (Fintype.card ι) := ⟨Fintype.card ι - 1, Nat.sub_lt (Nat.pos_of_ne_zero
-    (by have := k.isLt; omega)) one_pos⟩
-  have hle' := hA.le_eigenvalues₀_add hC.isHermitian (i := k) (j := last) (k := k)
-    (by dsimp [last]; have := k.isLt; omega)
-  have h0 : 0 ≤ hC.isHermitian.eigenvalues₀ last := hC.eigenvalues₀_nonneg last
-  -- Both sides enumerate the eigenvalues of `A + C`; only the Hermitian proofs differ.
-  exact (le_add_of_nonneg_right h0).trans hle'
+  let last : Fin (Fintype.card ι) := ⟨Fintype.card ι - 1, by have := k.isLt; omega⟩
+  exact (le_add_of_nonneg_right (hC.eigenvalues₀_nonneg last)).trans <|
+    hA.le_eigenvalues₀_add hC.isHermitian (i := k) (j := last) (k := k)
+      (by dsimp [last]; have := k.isLt; omega)
 
 /-- A Hermitian matrix of rank at most `r` has at most `r` positive eigenvalues: its sorted
 eigenvalues are nonpositive from index `r` on. -/

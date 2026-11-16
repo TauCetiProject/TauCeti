@@ -354,110 +354,22 @@ theorem PosSemidef.vonNeumannEntropy_strong_subadditivity
 
 /-! ### Joint convexity of the relative entropy -/
 
-/-- The canonical entrywise embedding `Matrix m m 𝕜 →⋆ₐ[ℝ] Matrix m m ℂ` induced by
-`RCLike.map 𝕜 ℂ`. -/
-private def mapToComplexStarAlgHom : Matrix m m 𝕜 →⋆ₐ[ℝ] Matrix m m ℂ where
-  toFun A := A.map (RCLike.map 𝕜 ℂ)
-  map_one' := by
-    ext i j
-    by_cases hij : i = j <;> simp [Matrix.one_apply, hij]
-  map_mul' A B := by
-    ext i j
-    simp only [map_apply, Matrix.mul_apply, map_sum]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    apply Complex.ext <;> simp
-  map_zero' := by ext; simp
-  map_add' A B := by
-    ext i j
-    apply Complex.ext <;> simp
-  commutes' r := by
-    ext i j
-    by_cases hij : i = j <;> simp [Algebra.algebraMap_eq_smul_one, hij]
-  map_star' A := by
-    ext i j
-    apply Complex.ext <;> simp [star_eq_conjTranspose]
-
-private theorem continuous_mapToComplexStarAlgHom :
-    Continuous (mapToComplexStarAlgHom (m := m) (𝕜 := 𝕜)) :=
-  continuous_pi fun _ ↦ continuous_pi fun _ ↦
-    (RCLike.map 𝕜 ℂ).continuous.comp (continuous_apply _ |>.comp (continuous_apply _))
-
-private theorem PosDef.mapToComplexStarAlgHom {A : Matrix m m 𝕜} (hA : A.PosDef) :
-    (Matrix.mapToComplexStarAlgHom A).PosDef := by
-  let Φ := Matrix.mapToComplexStarAlgHom (m := m) (𝕜 := 𝕜)
-  have hdiag : (diagonal (fun i ↦ (hA.1.eigenvalues i : ℂ))).PosDef :=
-    posDef_diagonal_iff.2 fun i ↦ by exact_mod_cast hA.eigenvalues_pos i
-  have hU_inj : Function.Injective (fun v ↦ v ᵥ* Φ hA.1.eigenvectorUnitary.1) := by
-    have hUU : Φ hA.1.eigenvectorUnitary.1 * (Φ hA.1.eigenvectorUnitary.1)ᴴ = 1 := by
-      rw [← star_eq_conjTranspose, ← map_star, ← map_mul, ← Unitary.coe_star,
-        Unitary.coe_mul_star_self, map_one]
-    exact Function.LeftInverse.injective (g := (· ᵥ* (Φ hA.1.eigenvectorUnitary.1)ᴴ)) fun v ↦ by
-      dsimp only
-      rw [vecMul_vecMul, hUU, vecMul_one]
-  have hspec : Φ A = Φ hA.1.eigenvectorUnitary.1 *
-      diagonal (fun i ↦ (hA.1.eigenvalues i : ℂ)) * (Φ hA.1.eigenvectorUnitary.1)ᴴ := by
-    conv_lhs => rw [hA.1.spectral_theorem]
-    simp only [Unitary.conjStarAlgAut_apply, map_mul]
-    rw [← star_eq_conjTranspose, map_star, star_eq_conjTranspose]
-    congr 2
-    ext i j
-    by_cases hij : i = j <;> simp [Φ, Matrix.mapToComplexStarAlgHom, hij]
-  rw [hspec]
-  exact hdiag.mul_mul_conjTranspose_same hU_inj
-
-omit [Fintype m] [DecidableEq m] in
-private theorem PosDef.blockDiagonal_posDef {o : Type*} [DecidableEq o] [Finite m] [Finite o]
-    {M : o → Matrix m m 𝕜} (hM : ∀ k, (M k).PosDef) : (blockDiagonal M).PosDef := by
-  have : Fintype m := Fintype.ofFinite m
-  have : Fintype o := Fintype.ofFinite o
-  have hH : (blockDiagonal M).IsHermitian := by
-    rw [IsHermitian, blockDiagonal_conjTranspose]
-    exact congrArg blockDiagonal (funext fun k ↦ (hM k).1.eq)
-  refine PosDef.of_dotProduct_mulVec_pos hH fun x hx ↦ ?_
-  have hquad : star x ⬝ᵥ blockDiagonal M *ᵥ x =
-      ∑ k : o, star (fun i ↦ x (i, k)) ⬝ᵥ M k *ᵥ (fun i ↦ x (i, k)) := by
-    simp only [dotProduct, mulVec, Fintype.sum_prod_type, blockDiagonal_apply]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
-    congr 1
-    rw [Finset.sum_comm]
-    simp
-  rw [hquad]
-  obtain ⟨⟨i₀, k₀⟩, hne⟩ := Function.ne_iff.1 hx
-  have hne₀ : (fun i ↦ x (i, k₀)) ≠ 0 := fun h ↦ hne (congrFun h i₀)
-  refine RCLike.pos_iff.2 ⟨?_, ?_⟩
-  · rw [map_sum]
-    have hpos := (hM k₀).re_dotProduct_pos hne₀
-    have hge : ∀ k ∈ Finset.univ,
-        0 ≤ RCLike.re (star (fun i ↦ x (i, k)) ⬝ᵥ M k *ᵥ fun i ↦ x (i, k)) :=
-      fun k _ ↦ ((hM k).posSemidef).re_dotProduct_nonneg _
-    exact lt_of_lt_of_le hpos (Finset.single_le_sum hge (Finset.mem_univ k₀))
-  · rw [map_sum]
-    exact Finset.sum_eq_zero fun k _ ↦ (hM k).1.im_star_dotProduct_mulVec_self _
-
 private theorem cfc_blockDiagonal_of_isHermitian {o : Type*} [Fintype o] [DecidableEq o]
     (f : ℝ → ℝ) {M : o → Matrix m m 𝕜} (hM : ∀ k, (M k).IsHermitian) :
     cfc f (blockDiagonal M) = blockDiagonal fun k ↦ cfc f (M k) := by
   have hBM : (blockDiagonal M).IsHermitian := by
     rw [IsHermitian, blockDiagonal_conjTranspose]
     exact congrArg blockDiagonal (funext fun k ↦ (hM k).eq)
-  -- Intertwine `blockDiagonal M` and `M k` with the inclusion of the `k`-th block.
   let V (k : o) : Matrix (m × o) m 𝕜 := of fun p j ↦ if p = (j, k) then 1 else 0
   have hint (k : o) : blockDiagonal M * V k = V k * M k := by
     ext ⟨i, l⟩ j
-    by_cases hlk : l = k
-    · subst hlk
-      simp [V, Matrix.mul_apply, blockDiagonal_apply]
-    · simp [V, Matrix.mul_apply, blockDiagonal_apply, hlk]
+    by_cases hlk : l = k <;> simp [V, Matrix.mul_apply, blockDiagonal_apply, hlk]
   ext ⟨i, l⟩ ⟨j, k⟩
   have hcfc := congrFun (congrFun (hBM.cfc_mul_eq_mul_cfc (hM k) (hint k) f) (i, l)) j
   have hL : (cfc f (blockDiagonal M) * V k) (i, l) j = cfc f (blockDiagonal M) (i, l) (j, k) := by
     simp [V, Matrix.mul_apply]
   have hR : (V k * cfc f (M k)) (i, l) j = (blockDiagonal fun r ↦ cfc f (M r)) (i, l) (j, k) := by
-    by_cases hlk : l = k
-    · subst hlk
-      simp [V, Matrix.mul_apply, blockDiagonal_apply]
-    · simp [V, Matrix.mul_apply, blockDiagonal_apply, hlk]
+    by_cases hlk : l = k <;> simp [V, Matrix.mul_apply, blockDiagonal_apply, hlk]
   rw [← hL, hcfc, hR]
 
 /-- **Positive homogeneity of the relative entropy.** Scaling both positive definite arguments by a
@@ -466,44 +378,51 @@ theorem PosDef.relativeEntropy_smul {ρ σ : Matrix m m 𝕜} (hρ : ρ.PosDef) 
     {c : ℝ} (hc : 0 < c) :
     relativeEntropy (c • ρ) (c • σ) = (c : EReal) * relativeEntropy ρ σ := by
   let : NormedAlgebra ℝ (Matrix m m 𝕜) := Matrix.l2OpNormedAlgebraReal
-  have hσc : (c • σ).PosDef := hσ.smul hc
-  have hlogρ : cfc Real.log (c • ρ) =
-      algebraMap ℝ (Matrix m m 𝕜) (Real.log c) + cfc Real.log ρ :=
-    CFC.log_smul' ρ hc (isStrictlyPositive_iff_posDef.2 hρ)
-  have hlogσ : cfc Real.log (c • σ) =
-      algebraMap ℝ (Matrix m m 𝕜) (Real.log c) + cfc Real.log σ :=
-    CFC.log_smul' σ hc (isStrictlyPositive_iff_posDef.2 hσ)
-  rw [relativeEntropy_of_posDef hσc, relativeEntropy_of_posDef hσ, ← EReal.coe_mul,
-    hlogρ, hlogσ, add_sub_add_left_eq_sub, smul_mul_assoc, trace_smul, RCLike.smul_re]
+  have hlog (A : Matrix m m 𝕜) (hA : A.PosDef) :
+      cfc Real.log (c • A) = algebraMap ℝ (Matrix m m 𝕜) (Real.log c) + cfc Real.log A :=
+    CFC.log_smul' A hc (isStrictlyPositive_iff_posDef.2 hA)
+  rw [relativeEntropy_of_posDef (hσ.smul hc), relativeEntropy_of_posDef hσ, ← EReal.coe_mul,
+    hlog ρ hρ, hlog σ hσ, add_sub_add_left_eq_sub, smul_mul_assoc, trace_smul, RCLike.smul_re]
 
 /-- **Subadditivity of the relative entropy** for positive definite matrices over `ℂ`, by
 partial-trace monotonicity on two-block diagonal matrices. -/
 private theorem PosDef.relativeEntropy_add_le_complex {ρ₁ ρ₂ σ₁ σ₂ : Matrix m m ℂ}
     (hρ₁ : ρ₁.PosDef) (hρ₂ : ρ₂.PosDef) (hσ₁ : σ₁.PosDef) (hσ₂ : σ₂.PosDef) :
     relativeEntropy (ρ₁ + ρ₂) (σ₁ + σ₂) ≤ relativeEntropy ρ₁ σ₁ + relativeEntropy ρ₂ σ₂ := by
+  have hBD (A₁ A₂ : Matrix m m ℂ) (h₁ : A₁.PosDef) (h₂ : A₂.PosDef) :
+      (blockDiagonal ![A₁, A₂]).PosDef := by
+    let S := blockDiagonal ![CFC.sqrt A₁, CFC.sqrt A₂]
+    have hmul : Sᴴ * S = blockDiagonal ![A₁, A₂] := by
+      rw [blockDiagonal_conjTranspose, ← blockDiagonal_mul]
+      refine congrArg blockDiagonal (funext (Fin.forall_fin_two.2 ⟨?_, ?_⟩))
+      · simp [(CFC.sqrt_nonneg A₁).isSelfAdjoint.isHermitian.eq,
+          CFC.sqrt_mul_sqrt_self A₁ h₁.posSemidef.nonneg]
+      · simp [(CFC.sqrt_nonneg A₂).isSelfAdjoint.isHermitian.eq,
+          CFC.sqrt_mul_sqrt_self A₂ h₂.posSemidef.nonneg]
+    have hu : IsUnit (blockDiagonal ![A₁, A₂]) :=
+      (isUnit_iff_isUnit_det _).2 (by
+        rw [det_blockDiagonal, Fin.prod_univ_two]
+        exact ((isUnit_iff_isUnit_det _).1 h₁.isUnit).mul ((isUnit_iff_isUnit_det _).1 h₂.isUnit))
+    exact isStrictlyPositive_iff_posDef.1 ⟨(hmul ▸ posSemidef_conjTranspose_mul_self S).nonneg, hu⟩
   let P : Matrix (m × Fin 2) (m × Fin 2) ℂ := blockDiagonal ![ρ₁, ρ₂]
   let Q : Matrix (m × Fin 2) (m × Fin 2) ℂ := blockDiagonal ![σ₁, σ₂]
-  have hP : P.PosDef := PosDef.blockDiagonal_posDef (Fin.forall_fin_two.2 ⟨hρ₁, hρ₂⟩)
-  have hQ : Q.PosDef := PosDef.blockDiagonal_posDef (Fin.forall_fin_two.2 ⟨hσ₁, hσ₂⟩)
-  have hPtr : P.partialTraceRight = ρ₁ + ρ₂ := by
-    ext i j
-    simp [P, partialTraceRight_apply, blockDiagonal_apply, Fin.sum_univ_two]
-  have hQtr : Q.partialTraceRight = σ₁ + σ₂ := by
-    ext i j
-    simp [Q, partialTraceRight_apply, blockDiagonal_apply, Fin.sum_univ_two]
+  have hP : P.PosDef := hBD ρ₁ ρ₂ hρ₁ hρ₂
+  have hQ : Q.PosDef := hBD σ₁ σ₂ hσ₁ hσ₂
+  have htr (A₁ A₂ : Matrix m m ℂ) : (blockDiagonal ![A₁, A₂]).partialTraceRight = A₁ + A₂ := by
+    ext i j; simp [partialTraceRight_apply, blockDiagonal_apply, Fin.sum_univ_two]
   have hmono := hP.relativeEntropy_partialTraceRight_le hQ
-  rw [hPtr, hQtr] at hmono
+  rw [htr ρ₁ ρ₂, htr σ₁ σ₂] at hmono
   refine hmono.trans_eq ?_
   rw [relativeEntropy_of_posDef hQ, relativeEntropy_of_posDef hσ₁, relativeEntropy_of_posDef hσ₂,
     ← EReal.coe_add]
   congr 1
-  have hlogP : cfc Real.log P = blockDiagonal fun k ↦ cfc Real.log (![ρ₁, ρ₂] k) :=
-    cfc_blockDiagonal_of_isHermitian Real.log (Fin.forall_fin_two.2 ⟨hρ₁.1, hρ₂.1⟩)
-  have hlogQ : cfc Real.log Q = blockDiagonal fun k ↦ cfc Real.log (![σ₁, σ₂] k) :=
-    cfc_blockDiagonal_of_isHermitian Real.log (Fin.forall_fin_two.2 ⟨hσ₁.1, hσ₂.1⟩)
+  have hlogP := cfc_blockDiagonal_of_isHermitian Real.log (M := ![ρ₁, ρ₂])
+    (Fin.forall_fin_two.2 ⟨hρ₁.1, hρ₂.1⟩)
+  have hlogQ := cfc_blockDiagonal_of_isHermitian Real.log (M := ![σ₁, σ₂])
+    (Fin.forall_fin_two.2 ⟨hσ₁.1, hσ₂.1⟩)
   have hP_eq : P = blockDiagonal ![ρ₁, ρ₂] := rfl
-  rw [hlogP, hlogQ, ← blockDiagonal_sub, hP_eq,
-    ← blockDiagonal_mul, trace_blockDiagonal, Fin.sum_univ_two, map_add]
+  rw [hlogP, hlogQ, ← blockDiagonal_sub, hP_eq, ← blockDiagonal_mul, trace_blockDiagonal,
+    Fin.sum_univ_two, map_add]
   rfl
 
 /-- **Subadditivity of the relative entropy.** For positive definite matrices over any `RCLike`
@@ -511,24 +430,21 @@ field, `D(ρ₁ + ρ₂ ‖ σ₁ + σ₂) ≤ D(ρ₁ ‖ σ₁) + D(ρ₂ ‖ 
 theorem PosDef.relativeEntropy_add_le {ρ₁ ρ₂ σ₁ σ₂ : Matrix m m 𝕜}
     (hρ₁ : ρ₁.PosDef) (hρ₂ : ρ₂.PosDef) (hσ₁ : σ₁.PosDef) (hσ₂ : σ₂.PosDef) :
     relativeEntropy (ρ₁ + ρ₂) (σ₁ + σ₂) ≤ relativeEntropy ρ₁ σ₁ + relativeEntropy ρ₂ σ₂ := by
-  let Φ := Matrix.mapToComplexStarAlgHom (m := m) (𝕜 := 𝕜)
+  let Φ := Matrix.mapToComplexStarAlgHom (n := m) (𝕜 := 𝕜)
   have hD (ρ σ : Matrix m m 𝕜) (hρ : ρ.PosDef) (hσ : σ.PosDef) :
       relativeEntropy (Φ ρ) (Φ σ) = relativeEntropy ρ σ := by
     rw [relativeEntropy_of_posDef hσ.mapToComplexStarAlgHom, relativeEntropy_of_posDef hσ]
     congr 1
-    have hlogρ : cfc Real.log (Φ ρ) = Φ (cfc Real.log ρ) :=
-      (StarAlgHom.map_cfc Φ Real.log ρ (ρ.finite_real_spectrum.continuousOn _)
-        continuous_mapToComplexStarAlgHom hρ.1.isSelfAdjoint (hρ.1.isSelfAdjoint.map Φ)).symm
-    have hlogσ : cfc Real.log (Φ σ) = Φ (cfc Real.log σ) :=
-      (StarAlgHom.map_cfc Φ Real.log σ (σ.finite_real_spectrum.continuousOn _)
-        continuous_mapToComplexStarAlgHom hσ.1.isSelfAdjoint (hσ.1.isSelfAdjoint.map Φ)).symm
-    rw [hlogρ, hlogσ, ← map_sub, ← map_mul]
-    simp [Φ, Matrix.mapToComplexStarAlgHom, Matrix.trace]
+    have hlog (A : Matrix m m 𝕜) (hA : A.PosDef) : cfc Real.log (Φ A) = Φ (cfc Real.log A) :=
+      (StarAlgHom.map_cfc Φ Real.log A (A.finite_real_spectrum.continuousOn _)
+        continuous_mapToComplexStarAlgHom hA.1.isSelfAdjoint (hA.1.isSelfAdjoint.map Φ)).symm
+    rw [hlog ρ hρ, hlog σ hσ, ← map_sub, ← map_mul]
+    simp only [Matrix.trace, Matrix.diag_apply, map_sum, Φ, mapToComplexStarAlgHom_apply]
+    simp
   have h := hρ₁.mapToComplexStarAlgHom.relativeEntropy_add_le_complex
     hρ₂.mapToComplexStarAlgHom hσ₁.mapToComplexStarAlgHom hσ₂.mapToComplexStarAlgHom
-  rw [← map_add Φ ρ₁ ρ₂, ← map_add Φ σ₁ σ₂,
+  rwa [← map_add Φ ρ₁ ρ₂, ← map_add Φ σ₁ σ₂,
     hD _ _ (hρ₁.add hρ₂) (hσ₁.add hσ₂), hD _ _ hρ₁ hσ₁, hD _ _ hρ₂ hσ₂] at h
-  exact h
 
 /-- **Joint convexity of the Umegaki relative entropy.** For positive definite matrices `ρ₁, ρ₂,
 σ₁, σ₂` over any `RCLike` field and nonnegative real weights `a, b`,
@@ -539,18 +455,12 @@ theorem PosDef.relativeEntropy_smul_add_smul_le {ρ₁ ρ₂ σ₁ σ₂ : Matri
     relativeEntropy (a • ρ₁ + b • ρ₂) (a • σ₁ + b • σ₂) ≤
       (a : EReal) * relativeEntropy ρ₁ σ₁ + (b : EReal) * relativeEntropy ρ₂ σ₂ := by
   rcases ha.eq_or_lt with rfl | ha <;> rcases hb.eq_or_lt with rfl | hb
-  · rw [relativeEntropy_of_posDef hσ₁, relativeEntropy_of_posDef hσ₂]
-    simp
+  · rw [relativeEntropy_of_posDef hσ₁, relativeEntropy_of_posDef hσ₂]; simp
   · rw [zero_smul, zero_add, zero_smul, zero_add, hρ₂.relativeEntropy_smul hσ₂ hb,
-      relativeEntropy_of_posDef hσ₁]
-    simp
+      relativeEntropy_of_posDef hσ₁]; simp
   · rw [zero_smul, add_zero, zero_smul, add_zero, hρ₁.relativeEntropy_smul hσ₁ ha,
-      relativeEntropy_of_posDef hσ₂]
-    simp
-  · calc relativeEntropy (a • ρ₁ + b • ρ₂) (a • σ₁ + b • σ₂)
-        ≤ relativeEntropy (a • ρ₁) (a • σ₁) + relativeEntropy (b • ρ₂) (b • σ₂) :=
-          (hρ₁.smul ha).relativeEntropy_add_le (hρ₂.smul hb) (hσ₁.smul ha) (hσ₂.smul hb)
-      _ = (a : EReal) * relativeEntropy ρ₁ σ₁ + (b : EReal) * relativeEntropy ρ₂ σ₂ := by
-          rw [hρ₁.relativeEntropy_smul hσ₁ ha, hρ₂.relativeEntropy_smul hσ₂ hb]
+      relativeEntropy_of_posDef hσ₂]; simp
+  · exact ((hρ₁.smul ha).relativeEntropy_add_le (hρ₂.smul hb) (hσ₁.smul ha) (hσ₂.smul hb)).trans_eq
+      (by rw [hρ₁.relativeEntropy_smul hσ₁ ha, hρ₂.relativeEntropy_smul hσ₂ hb])
 
 end Matrix
