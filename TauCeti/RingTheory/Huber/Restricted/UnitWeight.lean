@@ -7,21 +7,19 @@ module
 
 public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
 public import TauCeti.RingTheory.Huber.WeightedEval.Completion
-public import TauCeti.RingTheory.Huber.WeightedEval.Finite
+public import TauCeti.RingTheory.Huber.WeightedEval.UnitWeight
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Rename
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.BoundedEval
 
-import Mathlib.Analysis.Normed.Unbundled.IsPowMulFaithful
-
 /-!
-# Completed comparison, weight bounds, and naturality for unit weights
+# Completed comparison and naturality for unit weights
 
 When each weight is a singleton multiplicative unit `Tᵢ = {uᵢ}` (`TauCeti.IsNormMulUnit`) and
 `‖uᵢ‖ * cᵢ = 1`, `TauCeti.Huber.weightedRestrictedGaussAlgEquiv` identifies the Huber weighted
 restricted-series subring `R⟨X⟩_T` with the Gauss-normed ring `R{X/c}` at polyradii `c`. This file
-extends that comparison to completions, converts between topological weight bounds and norm bounds
-at `c`, and establishes naturality for polynomials, variable renamings, bounded coefficient maps,
-and bounded evaluation.
+extends that comparison to completions and establishes naturality for polynomials, variable
+renamings, bounded coefficient maps, and bounded evaluation (using the singleton-weight boundedness
+characterisations from `TauCeti.RingTheory.Huber.WeightedEval.UnitWeight`).
 
 ## Main definitions
 
@@ -37,10 +35,6 @@ and bounded evaluation.
   polynomial inclusions and variable renamings.
 * `TauCeti.Huber.continuous_weightedRestrictedCompletionGaussAlgEquiv` and its `_symm`:
   continuity of the completed unit-weight Gauss comparison in both directions.
-* `TauCeti.Huber.isWeightBounded_singleton_of_norm_le`,
-  `TauCeti.Huber.IsPseudoUniformizer.isWeightBounded_units_iff_norm_le`, and
-  `TauCeti.Huber.isWeightBounded_units_iff_norm_le`: conversion between `IsWeightBounded` for
-  singleton weights and coordinatewise norm bounds `‖aᵢ‖ ≤ cᵢ`.
 * `TauCeti.Huber.weightedRestrictedGaussAlgEquiv_weightedMap` and
   `TauCeti.Huber.weightedRestrictedCompletionGaussAlgEquiv_weightedMapCompletion`: naturality for
   bounded coefficient homomorphisms before and after completion.
@@ -60,108 +54,6 @@ public section
 namespace TauCeti.Huber
 
 open _root_.MvPowerSeries TauCeti.MvPowerSeries
-
-section WeightBounded
-
-variable {k : ℕ}
-
-/-- Norm bounds `‖tᵢ‖ * cᵢ ≤ 1` and `‖aᵢ‖ ≤ cᵢ` imply `IsWeightBounded` for singleton weights
-`Tᵢ = {tᵢ}` along any bounded ring homomorphism `‖φ r‖ ≤ C * ‖r‖`, without assuming contractivity,
-multiplicativity of norms, or `‖1‖ = 1`. -/
-theorem isWeightBounded_singleton_of_norm_le {R S : Type*} [SeminormedCommRing R]
-    [SeminormedCommRing S] {φ : R →+* S} {C : ℝ} (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖)
-    {t : Fin k → R} {c : Fin k → ℝ} (htc : ∀ i, ‖t i‖ * c i ≤ 1)
-    {a : Fin k → S} (ha : ∀ i, ‖a i‖ ≤ c i) :
-    IsWeightBounded φ (fun i ↦ ({t i} : Set R)) a := by
-  rw [isWeightBounded_singleton_iff_forall_isPowerBounded]
-  intro i
-  refine isPowerBounded_iff.mpr
-    ((isBounded_closedBall_zero (R := S) (max ‖(1 : S)‖ (max C 0))).subset ?_)
-  rintro _ ⟨n, rfl⟩
-  rw [mem_closedBall_zero_iff]
-  cases n with
-  | zero => simp
-  | succ m =>
-    have hci : 0 ≤ c i := (norm_nonneg (a i)).trans (ha i)
-    have hpow_t : ‖φ (t i ^ (m + 1))‖ ≤ max C 0 * ‖t i‖ ^ (m + 1) :=
-      (hφ _).trans <| (mul_le_mul_of_nonneg_right (le_max_left C 0) (norm_nonneg _)).trans
-        (mul_le_mul_of_nonneg_left (norm_pow_le' (t i) m.succ_pos) (le_max_right C 0))
-    have hpow_a : ‖a i ^ (m + 1)‖ ≤ c i ^ (m + 1) :=
-      (norm_pow_le' (a i) m.succ_pos).trans (pow_le_pow_left₀ (norm_nonneg _) (ha i) _)
-    calc ‖(φ (t i) * a i) ^ (m + 1)‖
-        = ‖φ (t i ^ (m + 1)) * a i ^ (m + 1)‖ := by rw [mul_pow, map_pow]
-      _ ≤ ‖φ (t i ^ (m + 1))‖ * ‖a i ^ (m + 1)‖ := norm_mul_le _ _
-      _ ≤ (max C 0 * ‖t i‖ ^ (m + 1)) * c i ^ (m + 1) :=
-          mul_le_mul hpow_t hpow_a (norm_nonneg _) (by positivity)
-      _ = max C 0 * (‖t i‖ * c i) ^ (m + 1) := by rw [mul_assoc, ← mul_pow]
-      _ ≤ max C 0 * 1 := mul_le_mul_of_nonneg_left
-          (pow_le_one₀ (mul_nonneg (norm_nonneg _) hci) (htc i)) (le_max_right C 0)
-      _ ≤ max ‖(1 : S)‖ (max C 0) := by rw [mul_one]; exact le_max_right _ _
-
-private theorem norm_le_of_isWeightBounded_units {R S : Type*} [SeminormedCommRing R]
-    [SeminormedCommRing S] {φ : R →+* S} {C : ℝ} (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖)
-    (u : Fin k → Rˣ) (hu : ∀ i, IsNormMulUnit (u i : R)) {c : Fin k → ℝ}
-    (hc : ∀ i, ‖(u i : R)‖ * c i = 1) (hS : IsPowMul (‖·‖ : S → ℝ))
-    (hpb : ∀ x : S, IsPowerBounded x → ‖x‖ ≤ 1)
-    {a : Fin k → S} (hb : IsWeightBounded φ (fun i ↦ ({(u i : R)} : Set R)) a) (i : Fin k) :
-    ‖a i‖ ≤ c i := by
-  have hle1 : ‖φ (u i) * a i‖ ≤ 1 :=
-    hpb _ ((isWeightBounded_singleton_iff_forall_isPowerBounded φ _ a).mp hb i)
-  have hu0 : ‖(u i : R)‖ ≠ 0 := fun h0 ↦ by simpa [h0] using hc i
-  have : NormOneClass R := ⟨NormedRing.norm_one_of_norm_mul hu0 (hu i).norm_mul⟩
-  have hinv : ‖(((u i)⁻¹ : Rˣ) : R)‖ = c i := by
-    rw [(Units.isNormMulUnit_iff_norm_inv (u i)).mp (hu i)]
-    exact mul_left_cancel₀ hu0 ((mul_inv_cancel₀ hu0).trans (hc i).symm)
-  have hφ_bdd : φ.IsBounded :=
-    ⟨max C 1, by positivity, fun r ↦
-      (hφ r).trans (mul_le_mul_of_nonneg_right (le_max_left C 1) (norm_nonneg r))⟩
-  have hcancel : a i = φ (((u i)⁻¹ : Rˣ) : R) * (φ (u i) * a i) := by
-    rw [← mul_assoc, ← map_mul, Units.inv_mul, map_one, one_mul]
-  calc ‖a i‖ = ‖φ (((u i)⁻¹ : Rˣ) : R) * (φ (u i) * a i)‖ := congrArg norm hcancel
-    _ ≤ ‖φ (((u i)⁻¹ : Rˣ) : R)‖ * ‖φ (u i) * a i‖ := norm_mul_le _ _
-    _ ≤ c i * 1 := mul_le_mul ((contraction_of_isPowMul hS hφ_bdd _).trans_eq hinv) hle1
-        (norm_nonneg _) (hinv ▸ norm_nonneg _)
-    _ = c i := mul_one _
-
-/-- **Weight bounds equal polydisc bounds under a pseudouniformiser and a power-multiplicative
-norm.** Along any bounded ring homomorphism `φ : R →+* S` into a seminormed commutative ring with a
-pseudouniformiser and power-multiplicative norm, a tuple `a` is weight-bounded for multiplicative
-units `Tᵢ = {uᵢ}` (`‖uᵢ‖ * cᵢ = 1`) precisely when `‖aᵢ‖ ≤ cᵢ` for every `i`. -/
-theorem IsPseudoUniformizer.isWeightBounded_units_iff_norm_le {R S : Type*}
-    [SeminormedCommRing R] [SeminormedCommRing S] {ϖ : S} (hϖ : IsPseudoUniformizer ϖ)
-    (hS : IsPowMul (‖·‖ : S → ℝ)) {φ : R →+* S} {C : ℝ} (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖)
-    (u : Fin k → Rˣ) (hu : ∀ i, IsNormMulUnit (u i : R)) {c : Fin k → ℝ}
-    (hc : ∀ i, ‖(u i : R)‖ * c i = 1) {a : Fin k → S} :
-    IsWeightBounded φ (fun i ↦ ({(u i : R)} : Set R)) a ↔ ∀ i, ‖a i‖ ≤ c i :=
-  ⟨norm_le_of_isWeightBounded_units hφ u hu hc hS
-      fun _ hx ↦ (hϖ.isPowerBounded_iff_norm_le_one hS).mp hx,
-    isWeightBounded_singleton_of_norm_le hφ fun i ↦ (hc i).le⟩
-
-/-- **Weight bounds equal polydisc bounds over a normed field.** Along any bounded homomorphism
-into a normed field `K`, a tuple `a` is weight-bounded for multiplicative units `Tᵢ = {uᵢ}`
-(`‖uᵢ‖ * cᵢ = 1`) precisely when `‖aᵢ‖ ≤ cᵢ` for every `i`. -/
-theorem isWeightBounded_units_iff_norm_le {R K : Type*} [SeminormedCommRing R] [NormedField K]
-    {φ : R →+* K} {C : ℝ} (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖) (u : Fin k → Rˣ)
-    (hu : ∀ i, IsNormMulUnit (u i : R)) {c : Fin k → ℝ} (hc : ∀ i, ‖(u i : R)‖ * c i = 1)
-    {a : Fin k → K} :
-    IsWeightBounded φ (fun i ↦ ({(u i : R)} : Set R)) a ↔ ∀ i, ‖a i‖ ≤ c i :=
-  ⟨norm_le_of_isWeightBounded_units hφ u hu hc (fun x n _ ↦ norm_pow x n)
-      fun _ ↦ isPowerBounded_iff_norm_le_one.mp,
-    isWeightBounded_singleton_of_norm_le hφ fun i ↦ (hc i).le⟩
-
-/-- When singleton weights `{tᵢ}` map into `{s_{e i}}` and satisfy `‖tᵢ‖ * cᵢ = 1` and
-`‖sⱼ‖ * dⱼ = 1`, the target polyradii reindex to `c`. -/
-theorem radii_comp_eq_of_singleton_subset {m : ℕ} {R : Type*} [Norm R]
-    {t : Fin k → R} {c : Fin k → ℝ} (hc : ∀ i, ‖t i‖ * c i = 1)
-    {s : Fin m → R} {d : Fin m → ℝ} (hd : ∀ j, ‖s j‖ * d j = 1)
-    (e : Fin k → Fin m) (hts : ∀ i, ({t i} : Set R) ⊆ {s (e i)}) :
-    d ∘ e = c := by
-  funext i
-  have hi : t i = s (e i) := Set.singleton_subset_singleton.mp (hts i)
-  have hne : ‖t i‖ ≠ 0 := fun h0 ↦ by simpa [h0] using hc i
-  exact mul_left_cancel₀ hne (by rw [Function.comp_apply, hc i, ← hd (e i), hi])
-
-end WeightBounded
 
 section Completion
 
