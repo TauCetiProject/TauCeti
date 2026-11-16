@@ -12,9 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Integral.Prod
-import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
