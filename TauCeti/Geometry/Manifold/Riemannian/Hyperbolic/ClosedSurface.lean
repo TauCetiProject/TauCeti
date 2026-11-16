@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.Volume
 public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.LiouvilleEnergy.Sobolev
-import TauCeti.Geometry.Manifold.Riemannian.MaximumPrinciple
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Regularity
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Trudinger
 import TauCeti.Geometry.Manifold.Riemannian.TotalCurvature
@@ -49,9 +48,6 @@ closed surface carries a conformal hyperbolic metric, and its area is `-∫ K dV
 
 ## Main results
 
-* `TauCeti.Manifold.eq_of_neg_laplaceBeltrami_add_add_exp_eq_zero`: on a compact boundaryless
-  Riemannian manifold, the equation `-laplaceBeltrami I φ + K + e^(2φ) = 0` has at most one `C²`
-  solution.
 * `TauCeti.Manifold.existsUnique_contMDiff_neg_laplaceBeltrami_add_add_exp_eq_zero`: on a closed
   connected smooth Riemannian surface, for smooth `K` with `∫ K dV < 0`, the equation
   `-laplaceBeltrami I φ + K + e^(2φ) = 0` has a unique smooth solution.
@@ -75,6 +71,14 @@ closed surface carries a conformal hyperbolic metric, and its area is `-∫ K dV
   2-manifolds*, J. Differential Geom. 5 (1971), 325–332.
 * J. L. Kazdan and F. W. Warner, *Curvature functions for compact 2-manifolds*, Ann. of Math. 99
   (1974), 14–47.
+
+## Attribution
+
+The existence, uniqueness and characterization theorems for conformal hyperbolic metrics are
+adapted from the closed pull request
+[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536) (branch
+`chrisflav:roadmap/closed-surface-hyperbolic-metric-worker-73`), with the existence proof split
+from the uniqueness argument.
 -/
 
 public section
@@ -87,33 +91,6 @@ noncomputable section
 section CurvaturePDE
 
 namespace TauCeti.Manifold
-
-section Uniqueness
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  {M : Type*} [TopologicalSpace M] [CompactSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-
-/-- **Uniqueness for the curvature equation.** On a compact boundaryless Riemannian manifold, two
-`C²` solutions of `Δ⁺φ + K + e^(2φ) = 0` coincide, for any function `K`. -/
-theorem eq_of_neg_laplaceBeltrami_add_add_exp_eq_zero {K φ ψ : M → ℝ}
-    (hφ : ContMDiff I 𝓘(ℝ) 2 φ) (hψ : ContMDiff I 𝓘(ℝ) 2 ψ)
-    (hφK : ∀ x, -laplaceBeltrami I φ x + K x + Real.exp (2 * φ x) = 0)
-    (hψK : ∀ x, -laplaceBeltrami I ψ x + K x + Real.exp (2 * ψ x) = 0) : φ = ψ := by
-  -- Both solve `Δ u = K + e^(2u)`, whose right side is strictly increasing in `u`, so the
-  -- comparison principle applies in both directions.
-  have hmono (x : M) : StrictMono fun t : ℝ ↦ K x + Real.exp (2 * t) := fun s t hst ↦ by
-    have hexp := Real.exp_lt_exp.2 (mul_lt_mul_of_pos_left hst two_pos)
-    dsimp only
-    linarith
-  refine le_antisymm (le_of_le_laplaceBeltrami_of_laplaceBeltrami_le hmono hφ hψ
-    (fun x ↦ by linarith [hφK x]) (fun x ↦ by linarith [hψK x])) ?_
-  exact le_of_le_laplaceBeltrami_of_laplaceBeltrami_le hmono hψ hφ
-    (fun x ↦ by linarith [hψK x]) (fun x ↦ by linarith [hφK x])
-
-end Uniqueness
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]

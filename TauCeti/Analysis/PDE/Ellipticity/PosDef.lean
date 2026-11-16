@@ -34,6 +34,13 @@ field of positive-definite matrices on a compact set is uniformly elliptic
 
 * D. Gilbarg and N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Springer (2001), Chapter 3.
+
+## Attribution
+
+Adapted from the positive-definite ellipticity lemma of the closed pull request
+[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536) (branch
+`chrisflav:roadmap/closed-surface-hyperbolic-metric-worker-73`), whose proof is split here into
+the coercivity lemma and its uniformly elliptic consequences.
 -/
 
 public section

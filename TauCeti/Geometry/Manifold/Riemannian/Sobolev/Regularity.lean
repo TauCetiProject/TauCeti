@@ -22,6 +22,7 @@ import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
 # Interior elliptic regularity on the Sobolev space `H¹(M)`
@@ -70,6 +71,15 @@ hence zero (`ae_eq_zero_of_integral_contMDiff_smul_eq_zero`).
   §6.3.
 * D. Gilbarg and N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Springer (2001), Chapter 8.
+
+## Attribution
+
+Adapted from the chart bridge, De Giorgi continuity and semilinear bootstrap of the closed pull
+request
+[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536) (branch
+`chrisflav:roadmap/closed-surface-hyperbolic-metric-worker-73`), with the long proofs split into
+chart helper lemmas and its orthogonality lemma replaced by Mathlib's
+`ae_eq_zero_of_integral_contMDiff_smul_eq_zero`.
 -/
 
 public section
@@ -108,13 +118,9 @@ attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 private theorem measurePreserving_coordEquiv_symm (E : Type*) [NormedAddCommGroup E]
     [NormedSpace ℝ E] [FiniteDimensional ℝ E] :
     MeasurePreserving (coordEquiv E).symm volume (Module.finBasis ℝ E).addHaar := by
-  refine ⟨(coordEquiv E).symm.continuous.measurable, ?_⟩
-  have hmap : ((EuclideanSpace.basisFun (Fin (finrank ℝ E)) ℝ).toBasis).map
-      (coordEquiv E).symm.toLinearEquiv = Module.finBasis ℝ E := by
-    ext k
-    simpa [EuclideanSpace.basisFun_apply] using coordEquiv_symm_single E k
-  rw [← (EuclideanSpace.basisFun (Fin (finrank ℝ E)) ℝ).addHaar_eq_volume,
-    Module.Basis.map_addHaar, hmap]
+  rw [← (EuclideanSpace.basisFun (Fin (finrank ℝ E)) ℝ).addHaar_eq_volume]
+  -- `(coordEquiv E).symm` is the linear equivalence matching the two bases.
+  exact Module.Basis.measurePreserving_equiv _ (Module.finBasis ℝ E) (Equiv.refl _)
 
 end MeasureCoord
 

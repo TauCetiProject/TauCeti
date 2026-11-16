@@ -27,6 +27,13 @@ representatives. It is the manifold counterpart of `TauCeti.exists_contDiffOn_ae
 
 * `TauCeti.exists_contMDiff_ae_eq_of_locally`: local `Cⁿ` representatives glue to a global `Cⁿ`
   representative.
+
+## Attribution
+
+Adapted from the manifold gluing lemma of the closed pull request
+[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536) (branch
+`chrisflav:roadmap/closed-surface-hyperbolic-metric-worker-73`), moved to its own file and
+generalized from the Riemannian volume to any measure that charges nonempty open sets.
 -/
 
 public section
