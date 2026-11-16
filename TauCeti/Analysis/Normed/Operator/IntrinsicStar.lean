@@ -5,17 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Star.LinearMap
+public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Topology.Algebra.Star.LinearMap
 
 /-!
-# Continuity of intrinsic conjugation of operators
+# Continuity and norm preservation of intrinsic conjugation of operators
 
 Mathlib's intrinsic star on `WithConv (E →L[𝕜] F)` sends `f` to
-`x ↦ star (f (star x))`, unlike the Hilbert-space adjoint. Over a complete
-nontrivially normed field, for finite-dimensional source spaces this operation is
-continuous in the operator topology. In particular,
-entrywise conjugation preserves continuous families of finite matrices.
+`x ↦ star (f (star x))`, unlike the Hilbert-space adjoint. When the source and target are
+`NormedStarGroup` normed spaces, this operation preserves operator norms
+(`ContinuousLinearMap.norm_ofConv_star_toConv`). Over a complete nontrivially normed field,
+for finite-dimensional source spaces this operation is continuous in the operator topology
+(`ContinuousLinearMap.continuous_intrinsicStar`). In particular, entrywise conjugation
+preserves continuous families of finite matrices.
 
 The operator and its algebraic laws are those of
 `Mathlib.Topology.Algebra.Star.LinearMap` (Monica Omar).
@@ -26,6 +29,21 @@ public section
 open WithConv
 
 namespace ContinuousLinearMap
+
+/-- Intrinsic conjugation preserves the operator norm of continuous linear maps between
+`NormedStarGroup` seminormed spaces. -/
+@[simp]
+theorem norm_ofConv_star_toConv {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [InvolutiveStar 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [StarAddMonoid E] [StarModule 𝕜 E]
+    [NormedStarGroup E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [StarAddMonoid F] [StarModule 𝕜 F]
+    [NormedStarGroup F]
+    (f : E →L[𝕜] F) : ‖(star (toConv f)).ofConv‖ = ‖f‖ := by
+  have hle : ∀ g : E →L[𝕜] F, ‖(star (toConv g)).ofConv‖ ≤ ‖g‖ := fun g =>
+    opNorm_le_bound _ (norm_nonneg g) fun x => by
+      rw [intrinsicStar_apply, norm_star]
+      exact (g.le_opNorm (star x)).trans_eq (by rw [norm_star])
+  exact le_antisymm (hle f) (by simpa using hle (star (toConv f)).ofConv)
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [InvolutiveStar 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [StarAddMonoid E] [StarModule 𝕜 E]

@@ -33,12 +33,14 @@ that drives the approximate-unit argument showing that closed two-sided ideals a
 drives the proof of the C⋆-identity on the quotient by a closed two-sided ideal.
 
 `Filter.IsIncreasingApproximateUnit.mono` records that any proper filter finer than an increasing
-approximate unit is again an increasing approximate unit.
+approximate unit is again an increasing approximate unit, and
+`Filter.IsIncreasingApproximateUnit.tendsto_mul_mul` shows that the two-sided products `e * a * e`
+converge to `a`.
 -/
 
 public section
 
-open Filter
+open Filter Topology
 open scoped CStarAlgebra
 
 namespace Filter.IsIncreasingApproximateUnit
@@ -55,6 +57,22 @@ theorem mono {l l' : Filter A} (hl : l.IsIncreasingApproximateUnit) (hle : l' �
   tendsto_mul_right m := (hl.tendsto_mul_right m).mono_left hle
   eventually_nonneg := hl.eventually_nonneg.filter_mono hle
   eventually_norm := hl.eventually_norm.filter_mono hle
+
+/-- Along an increasing approximate unit `e`, the two-sided products `e * a * e` converge to `a`. -/
+theorem tendsto_mul_mul {l : Filter A} (hl : l.IsIncreasingApproximateUnit) (a : A) :
+    Tendsto (fun e => e * a * e) l (𝓝 a) := by
+  have hL := tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_right a)
+  have hR := tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_left a)
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  refine squeeze_zero' (Eventually.of_forall fun _ => norm_nonneg _) ?_ (by simpa using hR.add hL)
+  filter_upwards [hl.eventually_norm] with e he
+  calc ‖e * a * e - a‖
+      = ‖e * (a * e - a) + (e * a - a)‖ := by congr 1; noncomm_ring
+    _ ≤ ‖e * (a * e - a)‖ + ‖e * a - a‖ := norm_add_le _ _
+    _ ≤ 1 * ‖a * e - a‖ + ‖e * a - a‖ := by
+        gcongr
+        exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right he (norm_nonneg _))
+    _ = ‖a * e - a‖ + ‖e * a - a‖ := by rw [one_mul]
 
 /-- Along an increasing approximate unit, `e * a → a` uniformly for `a` in a compact set. -/
 theorem tendstoUniformlyOn_mul_right {l : Filter A} (hl : l.IsIncreasingApproximateUnit)

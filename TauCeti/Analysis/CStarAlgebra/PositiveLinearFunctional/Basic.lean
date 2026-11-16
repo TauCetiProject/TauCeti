@@ -17,11 +17,17 @@ public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 ## Pullback along surjective homomorphisms
 
 The norm of a positive functional on a possibly nonunital C⋆-algebra is its limit along any
-increasing approximate unit, Mathlib's `PositiveContinuousLinearMap.tendsto_nhds_opNorm`. A
-surjective star-algebra homomorphism carries increasing approximate units to increasing
-approximate units, so pulling a positive functional back along it does not change the norm,
-`PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective`. In particular states pull back
-to states along quotient maps; without surjectivity the norm can drop, for instance to `0`.
+increasing approximate unit, Mathlib's `PositiveContinuousLinearMap.tendsto_nhds_opNorm`. As direct
+consequences:
+
+* `PositiveContinuousLinearMap.opNorm_add`: the operator norm is additive on positive functionals,
+  `‖ω₁ + ω₂‖ = ‖ω₁‖ + ‖ω₂‖`.
+* `PositiveContinuousLinearMap.tendsto_mul_self_nhds_opNorm`: along any increasing approximate unit
+  `e`, the squared values `ω (e * e)` also tend to `‖ω‖`.
+* `PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective`: a surjective star-algebra
+  homomorphism carries increasing approximate units to increasing approximate units, so pulling a
+  positive functional back along it does not change the norm. In particular states pull back to
+  states along quotient maps; without surjectivity the norm can drop, for instance to `0`.
 
 ## Positive functionals in the weak-* dual
 
@@ -47,6 +53,56 @@ open Filter
 open scoped ComplexOrder Topology
 
 namespace PositiveContinuousLinearMap
+
+section Norm
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+/-- The operator norm is additive on positive continuous linear functionals. -/
+theorem opNorm_add (ω₁ ω₂ : A →P[ℂ] ℂ) :
+    ‖((ω₁ + ω₂ : A →P[ℂ] ℂ) : A →L[ℂ] ℂ)‖ =
+      ‖(ω₁ : A →L[ℂ] ℂ)‖ + ‖(ω₂ : A →L[ℂ] ℂ)‖ := by
+  have hl := CStarAlgebra.increasingApproximateUnit A
+  have := hl.neBot
+  exact Complex.ofReal_injective <| tendsto_nhds_unique
+    ((ω₁ + ω₂).tendsto_nhds_opNorm hl)
+    (by
+      simpa [Complex.ofReal_add] using
+        (ω₁.tendsto_nhds_opNorm hl).add (ω₂.tendsto_nhds_opNorm hl))
+
+/-- Along any increasing approximate unit `e`, the values `ω (e * e)` of a positive continuous
+linear functional tend to `‖ω‖`. -/
+theorem tendsto_mul_self_nhds_opNorm (ω : A →P[ℂ] ℂ) {l : Filter A}
+    (hl : l.IsIncreasingApproximateUnit) :
+    Tendsto (fun e => ω (e * e)) l (𝓝 (‖(ω : A →L[ℂ] ℂ)‖ : ℂ)) := by
+  by_cases h0 : ‖(ω : A →L[ℂ] ℂ)‖ = 0
+  · have hω : (ω : A →L[ℂ] ℂ) = 0 := norm_eq_zero.mp h0
+    have hval : ∀ x, ω x = 0 := fun x => by
+      simpa using DFunLike.congr_fun hω x
+    simpa [h0, hval] using tendsto_const_nhds
+  have hpos : 0 < ‖(ω : A →L[ℂ] ℂ)‖ := lt_of_le_of_ne (norm_nonneg _) (Ne.symm h0)
+  have hlim : Tendsto (fun e => ‖ω e‖) l (𝓝 ‖(ω : A →L[ℂ] ℂ)‖) := by
+    simpa [Complex.norm_real, Real.norm_of_nonneg (norm_nonneg _)] using
+      (ω.tendsto_nhds_opNorm hl).norm
+  have hnorm : Tendsto (fun e => ‖ω (e * e)‖) l (𝓝 ‖(ω : A →L[ℂ] ℂ)‖) := by
+    have hlo : Tendsto (fun e => ‖ω e‖ ^ 2 / ‖(ω : A →L[ℂ] ℂ)‖) l (𝓝 ‖(ω : A →L[ℂ] ℂ)‖) := by
+      have h := (hlim.pow 2).div_const ‖(ω : A →L[ℂ] ℂ)‖
+      rwa [sq, mul_div_cancel_right₀ _ h0] at h
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' hlo hlim ?_ ?_
+    · filter_upwards [hl.eventually_nonneg] with e he
+      have hsq : star e * e = e * e := by rw [he.isSelfAdjoint.star_eq]
+      rw [div_le_iff₀ hpos, mul_comm, ← hsq]
+      exact ω.norm_map_sq_le_opNorm_mul e
+    · filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he₀ he₁
+      refine CStarAlgebra.norm_le_norm_of_le_of_nonneg (ω.mono ?_) (ω.map_nonneg ?_)
+      · exact CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one he₀ he₁
+      · simpa [he₀.isSelfAdjoint.star_eq] using star_mul_self_nonneg e
+  refine hnorm.ofReal.congr' ?_
+  filter_upwards [hl.eventually_nonneg] with e he₀
+  have hsq : 0 ≤ e * e := by simpa [he₀.isSelfAdjoint.star_eq] using star_mul_self_nonneg e
+  exact Complex.norm_of_nonneg' (ω.map_nonneg hsq)
+
+end Norm
 
 variable {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
