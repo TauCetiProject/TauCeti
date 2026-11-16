@@ -47,9 +47,11 @@ A pair `(p, q)` of signed basis vectors names a root only when `q ≠ signedNeg 
 diagonal `q = -p` the sum `p + q` is zero, which is no root, and there is no reflection in it, so
 outside that hypothesis `TauCeti.DynkinType.TypeC.pairRoot`,
 `TauCeti.DynkinType.TypeC.pairCoroot` and `TauCeti.DynkinType.TypeC.signedReflection` are total
-functions carrying auxiliary data with no root-theoretic meaning. Every substantive lemma below
-accordingly assumes `q ≠ signedNeg p`, and the root indices of the datum are built so that the
-hypothesis always holds.
+functions carrying auxiliary data with no root-theoretic meaning. On the diagonal
+`pairRoot p (signedNeg p) = 0` and `signedReflection p (signedNeg p)` is the identity, so the
+reflection lemmas and the bound on the pairings hold for every pair, trivially on the diagonal.
+The other pairing lemmas below assume `q ≠ signedNeg p`, and the root indices of the datum are
+built so that the hypothesis always holds.
 
 ## Main definitions
 
@@ -320,7 +322,7 @@ lemma pairRoot_comm (x y : Signed n) : pairRoot x y = pairRoot y x :=
   add_comm _ _
 
 /-- On the diagonal `q = signedNeg p` the vector `p + q` is zero. -/
-lemma pairRoot_signedNeg_self (p : Signed n) : pairRoot p (signedNeg p) = 0 := by
+@[simp] lemma pairRoot_signedNeg_self (p : Signed n) : pairRoot p (signedNeg p) = 0 := by
   rw [pairRoot_def, signedWeight_signedNeg, add_neg_cancel]
 
 lemma pairCoroot_comm (x y : Signed n) : pairCoroot x y = pairCoroot y x := by
@@ -341,9 +343,12 @@ lemma pairRoot_dotProduct_pairCoroot_self {p q : Signed n} (h : q ≠ signedNeg 
 
 /-- Cartan integers between roots in the classical type `C` model have absolute value at most
 two. -/
-lemma abs_pairRoot_dotProduct_pairCoroot_le_two {x y p q : Signed n}
-    (hpq : q ≠ signedNeg p) :
+lemma abs_pairRoot_dotProduct_pairCoroot_le_two {x y p q : Signed n} :
     |pairRoot x y ⬝ᵥ pairCoroot p q| ≤ 2 := by
+  rcases eq_or_ne q (signedNeg p) with rfl | hpq
+  · rw [pairCoroot_of_ne (signedNeg_ne p).symm, signedCoweight_signedNeg, add_neg_cancel,
+      dotProduct_zero, abs_zero]
+    norm_num
   have atom_le_one (z : Signed n) : |signedWeight z ⬝ᵥ pairCoroot p q| ≤ 1 := by
     rcases eq_or_ne p q with rfl | hpq_ne
     · rw [pairCoroot_self, signedWeight_dotProduct_signedCoweight, abs_le]
@@ -474,7 +479,7 @@ def signedReflection (p q z : Signed n) : Signed n :=
 
 /-- On the diagonal `q = signedNeg p`, where `p + q` is not a root, `signedReflection p q` is the
 identity. -/
-lemma signedReflection_signedNeg_self (p z : Signed n) :
+@[simp] lemma signedReflection_signedNeg_self (p z : Signed n) :
     signedReflection p (signedNeg p) z = z := by
   by_cases h1 : z = p
   · rw [h1, signedReflection_left, signedNeg_signedNeg]
@@ -603,19 +608,11 @@ lemma signedReflection_injective (p q : Signed n) : Injective (signedReflection 
 
 lemma signedReflection_signedNeg (p q z : Signed n) :
     signedReflection p q (signedNeg z) = signedNeg (signedReflection p q z) := by
-  by_cases h1 : z = p
-  · rw [h1, signedReflection_left, signedReflection_signedNeg_left, signedNeg_signedNeg]
-  by_cases h2 : z = q
-  · rw [h2, signedReflection_right, signedReflection_signedNeg_right, signedNeg_signedNeg]
-  by_cases h3 : z = signedNeg p
-  · rw [h3, signedReflection_signedNeg_left, signedNeg_signedNeg, signedReflection_left]
-  by_cases h4 : z = signedNeg q
-  · rw [h4, signedReflection_signedNeg_right, signedNeg_signedNeg, signedReflection_right]
-  rw [signedReflection_of_ne h1 h2 h3 h4,
-    signedReflection_of_ne (fun hc => h3 (by rw [← hc, signedNeg_signedNeg]))
-      (fun hc => h4 (by rw [← hc, signedNeg_signedNeg]))
-      (fun hc => h1 (by rw [← signedNeg_signedNeg z, hc, signedNeg_signedNeg]))
-      (fun hc => h2 (by rw [← signedNeg_signedNeg z, hc, signedNeg_signedNeg]))]
+  refine signedWeight_injective ?_
+  rw [signedWeight_signedReflection p q (signedNeg z),
+    signedWeight_signedNeg (signedReflection p q z), signedWeight_signedReflection p q z,
+    signedWeight_signedNeg z, neg_dotProduct, neg_smul]
+  module
 
 /-- Reflection in the root `p + q` transports the root of a pair to the root of the reflected
 pair. -/

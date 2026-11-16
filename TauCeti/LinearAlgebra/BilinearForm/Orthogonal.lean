@@ -80,9 +80,10 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 * `LinearMap.BilinForm.IsAlt.isCompl_span_pair_orthogonal` and
   `LinearMap.BilinForm.IsAlt.finrank_orthogonal_span_pair_add_two`: a hyperbolic pair of an
   alternating form spans a complement of its orthogonal complement, which has codimension two.
-* `LinearMap.BilinForm.restrict_nondegenerate_iff_disjoint_orthogonal`: for a reflexive form, a
-  restriction is nondegenerate exactly when the submodule meets its orthogonal complement in zero,
-  in any dimension.
+* `LinearMap.BilinForm.restrict_separatingRight_iff_disjoint_orthogonal` and
+  `LinearMap.BilinForm.restrict_nondegenerate_iff_disjoint_orthogonal`: a restriction is
+  right-separating, and for a reflexive form nondegenerate, exactly when the submodule meets its
+  orthogonal complement in zero, in any dimension and over any commutative semiring.
 * `LinearMap.BilinForm.IsRefl.nondegenerate_restrict_of_isCompl_ker`: a reflexive form is
   nondegenerate on every complement of its kernel.
 * `LinearMap.BilinForm.finrank_le_finrank_add_finrank_orthogonal` and
@@ -106,16 +107,26 @@ namespace LinearMap.BilinForm
 
 variable {K V : Type*} [CommSemiring K] [AddCommMonoid V] [Module K V]
 
-/-- A submodule on which the restricted form is right-separating meets its orthogonal complement
-only in zero. This strengthens the converse of
-`LinearMap.BilinForm.nondegenerate_restrict_of_disjoint_orthogonal`: it needs only that the
-restricted form is right-separating, not nondegenerate, and no reflexivity. -/
-theorem disjoint_orthogonal_of_restrict_separatingRight {B : LinearMap.BilinForm K V}
-    {W : Submodule K V} (h : (B.restrict W).SeparatingRight) : Disjoint W (B.orthogonal W) := by
-  rw [Submodule.disjoint_def]
-  intro x hx hx'
-  have hx0 : (⟨x, hx⟩ : W) = 0 := h _ fun y => (mem_orthogonal_iff.mp hx') y y.2
-  simpa using congrArg Subtype.val hx0
+/-- The restriction of a form to a submodule is right-separating exactly when the submodule meets
+its orthogonal complement only in zero: an element of the submodule orthogonal to it is in the
+right kernel of the restriction. No reflexivity is needed. -/
+theorem restrict_separatingRight_iff_disjoint_orthogonal {B : LinearMap.BilinForm K V}
+    {W : Submodule K V} : (B.restrict W).SeparatingRight ↔ Disjoint W (B.orthogonal W) := by
+  refine ⟨fun h ↦ Submodule.disjoint_def.mpr fun x hx hx' ↦ ?_, fun h y hy ↦ ?_⟩
+  · have hx0 : (⟨x, hx⟩ : W) = 0 := h _ fun y => (mem_orthogonal_iff.mp hx') y y.2
+    simpa using congrArg Subtype.val hx0
+  · exact Subtype.ext (Submodule.disjoint_def.mp h y y.2
+      (mem_orthogonal_iff.mpr fun x hx ↦ hy ⟨x, hx⟩))
+
+/-- For a reflexive form, the restriction to a submodule is nondegenerate exactly when the
+submodule meets its orthogonal complement only in zero. Unlike
+`LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal`, this needs no
+finite-dimensionality. -/
+theorem restrict_nondegenerate_iff_disjoint_orthogonal {B : LinearMap.BilinForm K V}
+    (hB : B.IsRefl) {W : Submodule K V} :
+    (B.restrict W).Nondegenerate ↔ Disjoint W (B.orthogonal W) := by
+  rw [← restrict_separatingRight_iff_disjoint_orthogonal]
+  exact ⟨fun h ↦ h.2, fun hR ↦ ⟨fun x hx ↦ hR x fun y ↦ hB.eq_zero (hx y), hR⟩⟩
 
 /-- A family of pairwise orthogonal submodules, on each of which the form is right-separating, is
 independent. -/
@@ -343,16 +354,6 @@ theorem IsAlt.sup_span_singleton_le_orthogonal {B : LinearMap.BilinForm R M} (hB
     exact hB.isRefl.eq_zero ((mem_orthogonal_iff.mp hv) w hw)
   · apply Submodule.span_le.mpr
     simpa [Submodule.mem_orthogonalBilin_span] using hB v
-
-/-- For a reflexive form, the restriction to a submodule is nondegenerate exactly when the
-submodule meets its orthogonal complement only in zero. Unlike
-`LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal`, this needs no
-finite-dimensionality. -/
-theorem restrict_nondegenerate_iff_disjoint_orthogonal {B : LinearMap.BilinForm R M}
-    (hB : B.IsRefl) {W : Submodule R M} :
-    (B.restrict W).Nondegenerate ↔ Disjoint W (B.orthogonal W) :=
-  ⟨fun h ↦ disjoint_orthogonal_of_restrict_separatingRight h.2,
-    B.nondegenerate_restrict_of_disjoint_orthogonal hB⟩
 
 /-- For a reflexive form, and in particular for an alternating one, the restriction to a
 complement of the kernel is nondegenerate. This extends
