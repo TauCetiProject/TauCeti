@@ -13,6 +13,8 @@ public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 
 import Mathlib.Algebra.Category.ModuleCat.ProjectiveDimension
+import Mathlib.Algebra.CharP.Algebra
+import Mathlib.Algebra.Ring.Shrink
 import Mathlib.RingTheory.KrullDimension.Polynomial
 import Mathlib.RingTheory.RegularLocalRing.Polynomial
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.ProjectiveDimension
@@ -180,8 +182,75 @@ namespace TauCeti
 
 section RestrictScalars
 
-variable {A B : Type u} [CommRing A] [CommRing B] (p : ℕ) [Fact p.Prime] [ExpChar A p]
-  [PerfectRing A p] [PerfectRing B p] (f : A →+* B) [(ModuleCat.restrictScalars.{u} f).Full]
+universe v w
+
+variable {A : Type u} {B : Type v} [CommRing A] [CommRing B] [Small.{w} A] [Small.{w} B]
+  (p : ℕ) [Fact p.Prime] [ExpChar A p] [PerfectRing A p] [PerfectRing B p]
+  (f : A →+* B) [(ModuleCat.restrictScalars.{w} f).Full]
+
+include p in
+/-- Along a ring homomorphism `f : A →+* B` between perfect rings of prime characteristic `p` whose
+restriction of scalars is full, every `B`-module `M` satisfies `pd_B M ≤ pd_A M`. -/
+theorem projectiveDimension_le_restrictScalars_of_perfectRing (M : ModuleCat.{w} B) :
+    projectiveDimension M ≤ projectiveDimension ((ModuleCat.restrictScalars f).obj M) := by
+  -- Shrink `A` and `B` into `M`'s universe `w`, where `ModuleCat.{w}` is monoidal and has `Tor`.
+  let eA : Shrink.{w} A ≃+* A := Shrink.ringEquiv A
+  let eB : Shrink.{w} B ≃+* B := Shrink.ringEquiv B
+  let f' : Shrink.{w} A →+* Shrink.{w} B := eB.symm.toRingHom.comp (f.comp eA.toRingHom)
+  have hf' : f.comp (eA : Shrink.{w} A →+* A) = (eB : Shrink.{w} B →+* B).comp f' := by
+    ext x
+    simp [f']
+  have : ExpChar (Shrink.{w} A) p :=
+    expChar_of_injective_ringHom (f := eA.symm.toRingHom) eA.symm.injective p
+  have : PerfectRing (Shrink.{w} A) p :=
+    ⟨by
+      have h : (fun x : Shrink.{w} A ↦ x ^ p) = eA.symm ∘ (fun y : A ↦ y ^ p) ∘ eA := by
+        ext x; simp
+      rw [h]
+      exact eA.symm.bijective.comp
+        ((PerfectRing.bijective_frobenius (R := A) (p := p)).comp eA.bijective)⟩
+  have : PerfectRing (Shrink.{w} B) p :=
+    ⟨by
+      have h : (fun x : Shrink.{w} B ↦ x ^ p) = eB.symm ∘ (fun y : B ↦ y ^ p) ∘ eB := by
+        ext x; simp
+      rw [h]
+      exact eB.symm.bijective.comp
+        ((PerfectRing.bijective_frobenius (R := B) (p := p)).comp eB.bijective)⟩
+  -- Transfer fullness of restriction of scalars across the shrinking equivalences.
+  have : (ModuleCat.restrictScalars.{w} f').Full :=
+    Functor.Full.of_iso <|
+      (ModuleCat.restrictScalarsComp (f.comp eA.toRingHom) eB.symm.toRingHom ≪≫
+        Functor.isoWhiskerLeft _ (ModuleCat.restrictScalarsComp eA.toRingHom f)).symm
+  -- Apply the same-universe bound in `w`, then transport projective dimension back along `eA` and
+  -- `eB`.
+  have := RingHomInvPair.of_ringEquiv eA
+  have := RingHomInvPair.symm (eA : Shrink.{w} A →+* A) eA.symm
+  have := RingHomInvPair.of_ringEquiv eB
+  have := RingHomInvPair.symm (eB : Shrink.{w} B →+* B) eB.symm
+  let M' : ModuleCat.{w} (Shrink.{w} B) :=
+    (ModuleCat.restrictScalars.{w} (eB : Shrink.{w} B →+* B)).obj M
+  let N : ModuleCat.{w} A := (ModuleCat.restrictScalars.{w} f).obj M
+  let φB : M' ≃ₛₗ[(eB : Shrink.{w} B →+* B)] M :=
+    { (eB : Shrink.{w} B →+* B).restrictScalarsSemilinearMap M with
+      invFun := fun m ↦ m
+      left_inv := fun m ↦ (eB : Shrink.{w} B →+* B).restrictScalarsSemilinearMap_apply M m
+      right_inv := fun m ↦ (eB : Shrink.{w} B →+* B).restrictScalarsSemilinearMap_apply M m }
+  let φA : (ModuleCat.restrictScalars.{w} (eA : Shrink.{w} A →+* A)).obj N
+      ≃ₛₗ[(eA : Shrink.{w} A →+* A)] N :=
+    { (eA : Shrink.{w} A →+* A).restrictScalarsSemilinearMap N with
+      invFun := fun m ↦ m
+      left_inv := fun m ↦ (eA : Shrink.{w} A →+* A).restrictScalarsSemilinearMap_apply N m
+      right_inv := fun m ↦ (eA : Shrink.{w} A →+* A).restrictScalarsSemilinearMap_apply N m }
+  let c : (ModuleCat.restrictScalars.{w} f').obj M' ≅
+      (ModuleCat.restrictScalars.{w} (eA : Shrink.{w} A →+* A)).obj N :=
+    ((ModuleCat.restrictScalarsComp' f' (eB : Shrink.{w} B →+* B)
+      (f.comp (eA : Shrink.{w} A →+* A)) hf').symm ≪≫
+      ModuleCat.restrictScalarsComp (eA : Shrink.{w} A →+* A) f).app M
+  rw [← ModuleCat.projectiveDimension_eq_of_semiLinearEquiv eB φB,
+    ← ModuleCat.projectiveDimension_eq_of_semiLinearEquiv eA φA,
+    ← projectiveDimension_eq_of_iso c]
+  exact ModuleCat.projectiveDimension_le_restrictScalars f' M' fun i ↦
+    isZero_Tor_succ_restrictScalars_of_perfectRing (p := p) f' (ModuleCat.of _ _) i
 
 include p in
 /-- **Projective dimension along a homological epimorphism of perfect rings (`<` form).** Let `A`
@@ -189,29 +258,22 @@ be a perfect ring of prime characteristic `p` and `f : A →+* B` a ring homomor
 ring `B` whose restriction of scalars is full, for instance a surjective homomorphism or a
 localization. If a `B`-module `M` has projective dimension less than `n` over `A`, then it has
 projective dimension less than `n` over `B`. -/
-theorem hasProjectiveDimensionLT_of_restrictScalars_of_perfectRing (M : ModuleCat.{u} B) {n : ℕ}
+theorem hasProjectiveDimensionLT_of_restrictScalars_of_perfectRing (M : ModuleCat.{w} B) {n : ℕ}
     (h : HasProjectiveDimensionLT ((ModuleCat.restrictScalars f).obj M) n) :
     HasProjectiveDimensionLT M n :=
-  ModuleCat.hasProjectiveDimensionLT_of_restrictScalars f M h fun i _ ↦
-    isZero_Tor_succ_restrictScalars_of_perfectRing (p := p) f (ModuleCat.of B B) i
+  projectiveDimension_lt_iff.mp <|
+    (projectiveDimension_le_restrictScalars_of_perfectRing p f M).trans_lt
+      (projectiveDimension_lt_iff.mpr h)
 
 include p in
 /-- **Projective dimension along a homological epimorphism of perfect rings.** Let `A` be a perfect
 ring of prime characteristic `p` and `f : A →+* B` a ring homomorphism to a perfect ring `B` whose
 restriction of scalars is full. If a `B`-module `M` has projective dimension at most `d` over `A`,
 then it has projective dimension at most `d` over `B`. -/
-theorem hasProjectiveDimensionLE_of_restrictScalars_of_perfectRing (M : ModuleCat.{u} B) {d : ℕ}
+theorem hasProjectiveDimensionLE_of_restrictScalars_of_perfectRing (M : ModuleCat.{w} B) {d : ℕ}
     (h : HasProjectiveDimensionLE ((ModuleCat.restrictScalars f).obj M) d) :
     HasProjectiveDimensionLE M d :=
   hasProjectiveDimensionLT_of_restrictScalars_of_perfectRing p f M h
-
-include p in
-/-- Along a ring homomorphism `f : A →+* B` between perfect rings of prime characteristic `p` whose
-restriction of scalars is full, every `B`-module `M` satisfies `pd_B M ≤ pd_A M`. -/
-theorem projectiveDimension_le_restrictScalars_of_perfectRing (M : ModuleCat.{u} B) :
-    projectiveDimension M ≤ projectiveDimension ((ModuleCat.restrictScalars f).obj M) :=
-  ModuleCat.projectiveDimension_le_restrictScalars f M fun i ↦
-    isZero_Tor_succ_restrictScalars_of_perfectRing (p := p) f (ModuleCat.of B B) i
 
 end RestrictScalars
 
@@ -219,7 +281,9 @@ end TauCeti
 
 namespace IsPerfectClosure
 
-variable {K L R : Type u} [CommRing K] [CommRing L] [CommRing R] (i : K →+* L) (p : ℕ)
+universe v
+
+variable {K L : Type u} {R : Type v} [CommRing K] [CommRing L] [CommRing R] (i : K →+* L) (p : ℕ)
   [Fact p.Prime] [ExpChar K p] [ExpChar L p] [PerfectRing L p] [IsPerfectClosure i p]
   [PerfectRing R p] {f : L →+* R}
 
@@ -231,6 +295,7 @@ theorem hasProjectiveDimensionLE_succ_of_surjective (hF : (frobenius K p).Flat) 
     (h : ∀ N : ModuleCat.{u} K, HasProjectiveDimensionLE N d) (hf : Function.Surjective f)
     (M : ModuleCat.{u} R) : HasProjectiveDimensionLE M (d + 1) := by
   have := f.full_restrictScalars hf
+  have := small_of_surjective hf
   exact TauCeti.hasProjectiveDimensionLE_of_restrictScalars_of_perfectRing p f M
     (hasProjectiveDimensionLE_succ i p hF h _)
 

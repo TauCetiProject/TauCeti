@@ -27,9 +27,8 @@ fixed module `M` of projective dimension at most `d` it suffices that `Tor_{i+1}
 presentation `0 → K → P → M → 0`, vanishing of `Tor₁^R(M, S)` makes `0 → S ⊗[R] K → S ⊗[R] P →
 S ⊗[R] M → 0` exact, while vanishing of the higher `Tor` groups shifts to `K`.
 
-Both hypotheses must hold in general: over `R = k[x] ⧸ (x ^ 2)` and `S = k`, the module `M = k` has
-`Tor_i^R(k, k) ≠ 0` while `S ⊗[R] M = k` is projective; conversely, over `R = ℤ` and `S = ℤ ⧸ 4ℤ`,
-the module `M = ℤ ⧸ 2ℤ` has projective dimension `1` over `ℤ`, `Tor₁^ℤ(ℤ ⧸ 2ℤ, ℤ ⧸ 4ℤ) ≠ 0`, and
+The `Tor`-vanishing hypothesis cannot be dropped in general: over `R = ℤ` and `S = ℤ ⧸ 4ℤ`, the
+module `M = ℤ ⧸ 2ℤ` has projective dimension `1` over `ℤ`, `Tor₁^ℤ(ℤ ⧸ 2ℤ, ℤ ⧸ 4ℤ) ≠ 0`, and
 `S ⊗[ℤ] M ≃ ℤ ⧸ 2ℤ` has infinite projective dimension over `ℤ ⧸ 4ℤ`.
 
 Combining this base-change bound with the homological epimorphism criterion for `Tor`
@@ -86,7 +85,7 @@ private noncomputable def tensorKerIsoOfIsZeroTorOne {P M : Type u} [AddCommGrou
     exact (LinearMap.lTensor_inj_iff_rTensor_inj S (LinearMap.ker f).subtype).mpr
       ((f.shortExact_shortComplexKer hf).rTensor_injective_of_isZero_Tor_one (of R S) hTor)
   have hex : Function.Exact ι (TensorProduct.AlgebraTensorModule.lTensor S S f) := by
-    change Function.Exact ((LinearMap.ker f).subtype.lTensor S) (f.lTensor S)
+    simp only [ι, TensorProduct.AlgebraTensorModule.coe_lTensor]
     exact lTensor_exact S f.exact_subtype_ker_map hf
   let e := (LinearEquiv.ofInjective ι hinj).trans
     (LinearEquiv.ofEq _ _ (LinearMap.exact_iff.mp hex).symm)
