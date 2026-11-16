@@ -216,18 +216,18 @@ section Complete
 variable [CompleteSpace E] [CompleteSpace E']
 
 /-- **Noether's theorem for Hamiltonian systems.** Let `μ` be a moment map of the action by
-fundamental vector fields and `X` a Hamiltonian vector field of a differentiable `G`-invariant
-function `f`. Then `μ` is constant along every integral curve of `X` on a preconnected set of
-times. -/
+fundamental vector fields and `X` a Hamiltonian vector field of a `G`-invariant function `f`.
+Then `μ` is constant along every integral curve of `X` on a preconnected set of times along which
+`f` is differentiable. -/
 theorem IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_map_smul
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) {f : M → ℝ}
-    (hf : MDifferentiable I' 𝓘(ℝ) f) (hfG : ∀ (g : G) x, f (g • x) = f x)
-    {X : (x : M) → TangentSpace I' x} (hX : σ.IsHamiltonianVectorField f X) {γ : ℝ → M}
-    {s : Set ℝ} (hs : IsPreconnected s) (hγ : IsMIntegralCurveOn γ X s) {t₀ t : ℝ}
-    (ht₀ : t₀ ∈ s) (ht : t ∈ s) : μ (γ t) = μ (γ t₀) :=
-  h.apply_eq_of_isMIntegralCurveOn hX hs hγ (fun u _ ξ ↦ by
+    (hfG : ∀ (g : G) x, f (g • x) = f x) {X : (x : M) → TangentSpace I' x}
+    (hX : σ.IsHamiltonianVectorField f X) {γ : ℝ → M} {s : Set ℝ} (hs : IsPreconnected s)
+    (hγ : IsMIntegralCurveOn γ X s) (hf : ∀ t ∈ s, MDifferentiableAt I' 𝓘(ℝ) f (γ t))
+    {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) : μ (γ t) = μ (γ t₀) :=
+  h.apply_eq_of_isMIntegralCurveOn hX hs hγ (fun u hu ξ ↦ by
     rw [InfinitesimalAction.fundamental_apply]
-    exact mvfderiv_fundamentalVectorField_eq_zero_of_map_smul (hf (γ u))
+    exact mvfderiv_fundamentalVectorField_eq_zero_of_map_smul (hf u hu)
       ((ContMDiffSMul.contMDiff_smul_const (n := ∞) (γ u)).mdifferentiableAt (by simp))
       (fun g ↦ hfG g (γ u)) ξ) ht₀ ht
 

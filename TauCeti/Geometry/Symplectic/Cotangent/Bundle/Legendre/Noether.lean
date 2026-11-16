@@ -202,9 +202,9 @@ theorem momentMap_legendreMap_eq_of_isMIntegralCurveOn (hL : ContMDiff I.tangent
     CotangentBundle.momentMap IG G (legendreMap L (γ t)) =
       CotangentBundle.momentMap IG G (legendreMap L (γ t₀)) :=
   (isEquivariantMomentMap_momentMap_comp_legendreMap hL hLG).toIsMomentMap
-    |>.apply_eq_of_isMIntegralCurveOn_of_map_smul
-    ((contMDiff_lagrangianEnergy hL (m := 1) (by simp)).mdifferentiable one_ne_zero)
-    (fun g ↦ lagrangianEnergy_smul (hLG g)) hX hs hγ ht₀ ht
+    |>.apply_eq_of_isMIntegralCurveOn_of_map_smul (fun g ↦ lagrangianEnergy_smul (hLG g)) hX hs
+      hγ (fun t _ ↦ (contMDiff_lagrangianEnergy hL (m := 1) (by simp)).mdifferentiableAt
+        one_ne_zero) ht₀ ht
 
 /-- **Noether's theorem** along a global integral curve: for a smooth Lagrangian `L` invariant
 under the tangent lift of a smooth action of `G`, the Noether charges are constant along every
@@ -232,8 +232,8 @@ theorem IsHyperregularLagrangian.momentMap_eq_of_isMIntegralCurveOn
     (hγ : IsMIntegralCurveOn γ X s) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     CotangentBundle.momentMap IG G (γ t) = CotangentBundle.momentMap IG G (γ t₀) :=
   CotangentBundle.isEquivariantMomentMap_momentMap.apply_eq_of_isMIntegralCurveOn_of_map_smul
-    ((hLh.contMDiff_hamiltonian hL).mdifferentiable (by simp))
-    (fun g ↦ hLh.hamiltonian_smul (hLG g)) hX hs hγ ht₀ ht
+    (fun g ↦ hLh.hamiltonian_smul (hLG g)) hX hs hγ
+    (fun t _ ↦ (hLh.contMDiff_hamiltonian hL).mdifferentiableAt (by simp)) ht₀ ht
 
 end Noether
 
