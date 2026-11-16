@@ -124,7 +124,7 @@ theorem iSup_rootSubgroupPoints_inversions_le_positivePoints_inf_map_negativePoi
   refine ⟨D.rootSubgroupPoints_mem_positivePoints k hγ_pos u, ?_⟩
   let β := (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k n)⁻¹ γ
   have hβ_neg : β ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-    rw [negRoots_eq_compl, t.posRoots_rationalRootSystem ht, Set.mem_compl_iff, mem_posRoots]
+    rw [← compl_posRoots, t.posRoots_rationalRootSystem ht, Set.mem_compl_iff, mem_posRoots]
     exact hγ'.2
   have hnβ : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k n) β = γ := by
     simp only [β, ← Equiv.Perm.mul_apply, ← map_mul, mul_inv_cancel, map_one,

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Generation
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Elementary
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 public import TauCeti.GroupTheory.TitsSystem.Bruhat.Basic
@@ -329,7 +330,7 @@ def titsSystem : TitsSystem (D.extendedElementarySubgroup k) where
     rw [Subgroup.map_sup,
       Subgroup.map_subgroupOf_eq_of_le (D.borelSubgroup_le_extendedElementarySubgroup k),
       Subgroup.map_subgroupOf_eq_of_le (D.weylSubgroup_le_extendedElementarySubgroup k),
-      D.borelSubgroup_sup_weylSubgroup_eq_extendedElementarySubgroup k,
+      D.borelSubgroup_sup_weylSubgroup k,
       ← MonoidHom.range_eq_map, Subgroup.range_subtype]
   intersection_normal := inferInstance
   simple := Set.range fun i : Fin t.rank ↦ QuotientGroup.mk (D.extElemSimpleRep k i)
