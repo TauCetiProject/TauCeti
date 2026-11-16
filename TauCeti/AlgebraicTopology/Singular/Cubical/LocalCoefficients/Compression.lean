@@ -76,6 +76,8 @@ local coefficients.
   of `A` induces a quasi-isomorphism of normalized cubical chains with local coefficients.
 * `TauCeti.quasiIso_normalizedTwistedCubicalChainComplexMap_subtypeVal_of_relHomotopyGroup`: the
   same conclusion from the vanishing of the relative homotopy sets.
+* `TauCeti.quasiIso_twistedChainComplexMap_subtypeVal_of_relHomotopyGroup`: the same conclusion for
+  simplicial singular chains with local coefficients.
 * `TauCeti.SubspaceCubeDeformation.epi_homologyMap_normalizedTwistedCubicalChainComplexMap`,
   `TauCeti.SubspaceCubeDeformation.quasiIsoAt_normalizedTwistedCubicalChainComplexMap`: below the
   dimension bound `n` of the deformation, the inclusion of `A` is surjective on homology with
@@ -770,6 +772,27 @@ theorem quasiIso_normalizedTwistedCubicalChainComplexMap_subtypeVal_of_relHomoto
       (normalizedTwistedCubicalChainComplexMap (X := TopCat.of A) (ContinuousMap.subtypeVal A) L) :=
   (nonempty_subspaceCubeDeformation_of_relHomotopyGroup h₀ fun k _ ↦ h k).some
     |>.quasiIso_normalizedTwistedCubicalChainComplexMap L
+
+/-- **The inclusion of a subspace with vanishing relative homotopy sets induces a
+quasi-isomorphism of singular chains with local coefficients.** If every point of `X` is joined by
+a path to a point of `A`, and the relative homotopy set `π_{n+1}(X, A, a)` is trivial for every
+`n` and every `a ∈ A`, then for every local coefficient system `L` on `X` the inclusion of `A`
+induces a quasi-isomorphism from the singular chains of `A` with coefficients in `L|_A` to those of
+`X` with coefficients in `L`. It is the simplicial counterpart of
+`TauCeti.quasiIso_normalizedTwistedCubicalChainComplexMap_subtypeVal_of_relHomotopyGroup`. -/
+theorem quasiIso_twistedChainComplexMap_subtypeVal_of_relHomotopyGroup
+    {R : Type u} [Ring R] {X : TopCat.{v}} {A : Set X} (h₀ : ∀ x : X, ∃ a ∈ A, Joined x a)
+    (h : ∀ (n : ℕ) (a : A), Subsingleton (RelHomotopyGroup (Fin n) ⟨TopPair.ofSubset A, a⟩))
+    (L : LocalCoefficientSystem.{u, v, v} R X) :
+    QuasiIso (twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal A)) L) := by
+  let i : TopCat.of A ⟶ X := TopCat.ofHom (ContinuousMap.subtypeVal A)
+  have : QuasiIso (normalizedTwistedCubicalChainComplexMap i.hom L) :=
+    quasiIso_normalizedTwistedCubicalChainComplexMap_subtypeVal_of_relHomotopyGroup h₀ h L
+  have h' := twistedCubicalToSingularMap_naturality i L
+  have : QuasiIso (normalizedTwistedCubicalChainComplexMap i.hom L ≫
+      twistedCubicalToSingularMap L) := inferInstance
+  rw [h'] at this
+  exact quasiIso_of_comp_left (twistedCubicalToSingularMap _) _
 
 /-- **The inclusion of a subspace is surjective on homology with local coefficients below the
 connectivity of the pair.** If every point of `X` is joined by a path to a point of `A`, and the
