@@ -40,7 +40,7 @@ complex conjugation on `H^s`: the element `u⁻¹ - 1` is the quasi-inverse of `
 algebra structure of `H^s(ℂ)` alone then bounds `‖u⁻¹ - v⁻¹‖_{H^s}` linearly in `‖u - v‖_{H^s}`
 for `u` near each `v`.
 
-Completeness uses complex conjugation on `H^s(ℂ)`, `s > 1`, an isometry
+Completeness uses complex conjugation on `H^s(ℂ)`, an isometry
 (`TemperedDistribution.MemSobolev.norm_toBesselPotentialSpace_of_ae_eq_conj`); in particular
 `‖u⁻¹ - 1‖_{H^s} = ‖u - 1‖_{H^s}`. If `uₙ - 1 → h` in `H^s(ℂ)`, the values converge almost
 everywhere by the Sobolev embedding, so the continuous representative of `h` satisfies
@@ -89,6 +89,8 @@ treated here.
 
 * A. Jaffe and C. H. Taubes, *Vortices and Monopoles*, Progress in Physics 2, Birkhäuser, 1980,
   Chapter III.
+* S. K. Donaldson and P. B. Kronheimer, *The Geometry of Four-Manifolds*, Oxford University Press,
+  1990, Section 4.2.
 * M. E. Taylor, *Partial Differential Equations III: Nonlinear Equations*, 2nd ed., Applied
   Mathematical Sciences 117, Springer, 2011, Chapter 13, §3.
 -/
@@ -314,7 +316,7 @@ instance instT2Space : T2Space (SobolevTopologicalGaugeGroup hs) :=
   isEmbedding_subOne.t2Space
 
 /-- **Inversion preserves the distance to the identity:** `‖u⁻¹ - 1‖_{H^s} = ‖u - 1‖_{H^s}`, since
-`u⁻¹ - 1 = conj (u - 1)` and complex conjugation is an isometry of `H^s(ℂ)`, `s > 1`. -/
+`u⁻¹ - 1 = conj (u - 1)` and complex conjugation is an isometry of `H^s(ℂ)`. -/
 @[simp]
 theorem norm_subOne_inv (u : SobolevTopologicalGaugeGroup hs) : ‖subOne u⁻¹‖ = ‖subOne u‖ := by
   have h := nonneg hs
@@ -324,7 +326,7 @@ theorem norm_subOne_inv (u : SobolevTopologicalGaugeGroup hs) : ‖subOne u⁻¹
       with z h₁ h₂
     rw [h₁, h₂, map_sub, map_one]
   have hn := (memSobolev_toLp_inclusion h (subOne u)).norm_toBesselPotentialSpace_of_ae_eq_conj
-    (finrank_real_complex_lt_two_mul hs) hae (memSobolev_toLp_inclusion h (subOne u⁻¹))
+    hae (memSobolev_toLp_inclusion h (subOne u⁻¹))
   rwa [toBesselPotentialSpace_memSobolev_toLp_inclusion,
     toBesselPotentialSpace_memSobolev_toLp_inclusion] at hn
 
@@ -359,10 +361,10 @@ theorem isClosed_range_subOne :
   set w : ℂ → Circle := fun z ↦ ⟨1 + g z, mem_sphere_zero_iff_norm.2 (hnorm z)⟩
   have hw : w ∈ sobolevGaugeGroup hs := by
     refine (mem_sobolevGaugeGroup hs w).2 ⟨hgc.subtype_mk _, ?_, ?_⟩
-    · refine mem_realSobolevFunctions_of_ae_eq (re_mem_realSobolevFunctions hs' hH) ?_
+    · refine mem_realSobolevFunctions_of_ae_eq (re_mem_realSobolevFunctions hH) ?_
       filter_upwards [hg] with z hz
       simp [w, hz]
-    · refine mem_realSobolevFunctions_of_ae_eq (im_mem_realSobolevFunctions hs' hH) ?_
+    · refine mem_realSobolevFunctions_of_ae_eq (im_mem_realSobolevFunctions hH) ?_
       filter_upwards [hg] with z hz
       simp [w, hz]
   refine ⟨(toSubgroup hs).symm ⟨w, hw⟩, toLp_inclusion_injective h0 (Lp.ext ?_)⟩
