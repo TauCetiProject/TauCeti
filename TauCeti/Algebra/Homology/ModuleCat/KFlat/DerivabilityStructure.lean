@@ -23,7 +23,9 @@ cover `CategoryTheory.forget (ModuleCat.{u} R) ⋙ ModuleCat.free R ⟶ 𝟭 (Mo
 (`CochainComplex.hasLeftResolutions_arrow_kFlatLocalizerMorphism_moduleCat`), induces an equivalence
 on localized categories (`CochainComplex.isLocalizedEquivalence_kFlatLocalizerMorphism_moduleCat`),
 and forms a left derivability structure with respect to quasi-isomorphisms
-(`CochainComplex.isLeftDerivabilityStructure_kFlatLocalizerMorphism_moduleCat`).
+(`CochainComplex.isLeftDerivabilityStructure_kFlatLocalizerMorphism_moduleCat`), instantiating the
+total left derived tensor product bifunctor of
+`TauCeti.Algebra.Homology.Monoidal.KFlat.DerivedTensor` on `DerivedCategory (ModuleCat.{u} R)`.
 
 ## References
 

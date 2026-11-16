@@ -14,7 +14,7 @@ public import Mathlib.CategoryTheory.Functor.Derived.Adjunction
 public import Mathlib.CategoryTheory.Localization.DerivabilityStructure.Derives
 public import Mathlib.RingTheory.Flat.CategoryTheory
 import TauCeti.Algebra.Homology.Bifunctor.TwoTermSupport
-import TauCeti.Algebra.Homology.ModuleCat.KFlat.Tensor
+import TauCeti.Algebra.Homology.Monoidal.KFlat.Tensor
 import TauCeti.CategoryTheory.Localization.DerivabilityStructure.Derives
 import Mathlib.CategoryTheory.Functor.Derived.PointwiseRightDerived
 
@@ -273,7 +273,8 @@ def derivedExtendRestrictScalarsAdj :
 /-- Characterization of the unit of `derivedExtendRestrictScalarsAdj` on a complex model `Q.obj K`
 in terms of the complex-level extension–restriction unit. -/
 @[reassoc (attr := simp)]
-lemma derivedExtendRestrictScalarsAdj_unit_app_Q (K : CochainComplex (_root_.ModuleCat.{u} R) ℤ) :
+lemma derivedExtendRestrictScalarsAdj_unit_fac_app
+    (K : CochainComplex (_root_.ModuleCat.{u} R) ℤ) :
     (derivedExtendRestrictScalarsAdj α).unit.app (DerivedCategory.Q.obj K) ≫
       (_root_.ModuleCat.restrictScalars.{u} f).mapDerivedCategory.map (α.app K) =
     DerivedCategory.Q.map
@@ -286,7 +287,8 @@ lemma derivedExtendRestrictScalarsAdj_unit_app_Q (K : CochainComplex (_root_.Mod
 /-- Characterization of the counit of `derivedExtendRestrictScalarsAdj` on a complex model `Q.obj M`
 in terms of the complex-level extension–restriction counit. -/
 @[reassoc (attr := simp)]
-lemma derivedExtendRestrictScalarsAdj_counit_app_Q (M : CochainComplex (_root_.ModuleCat.{u} S) ℤ) :
+lemma derivedExtendRestrictScalarsAdj_counit_fac_app
+    (M : CochainComplex (_root_.ModuleCat.{u} S) ℤ) :
     G.map ((_root_.ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors.inv.app M) ≫
       (derivedExtendRestrictScalarsAdj α).counit.app (DerivedCategory.Q.obj M) =
     α.app (((_root_.ModuleCat.restrictScalars.{u} f).mapHomologicalComplex (.up ℤ)).obj M) ≫

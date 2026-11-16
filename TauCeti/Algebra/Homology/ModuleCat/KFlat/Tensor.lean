@@ -6,23 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.DerivedTensor
-public import TauCeti.Algebra.Homology.ModuleCat.KFlat.Resolution
-import TauCeti.Algebra.Homology.Monoidal.Braiding
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
+import TauCeti.Algebra.Homology.ModuleCat.KFlat.DerivabilityStructure
+import TauCeti.Algebra.Homology.Monoidal.KFlat.Tensor
 
 /-!
-# Independence of K-flat tensor models
+# Independence of K-flat tensor models for modules
 
-A quasi-isomorphism between K-flat complexes of modules remains a quasi-isomorphism after
-tensoring on either side with any complex (`CochainComplex.quasiIso_tensorHom_id_of_isKFlat`,
-`CochainComplex.quasiIso_id_tensorHom_of_isKFlat`), and the tensor product of two
-quasi-isomorphisms `f : K₁ ⟶ L₁` and `g : K₂ ⟶ L₂` is a quasi-isomorphism whenever `L₁` and `K₂`
-are K-flat (`CochainComplex.quasiIso_tensorHom_of_isKFlat`). Thus the endofunctor
+Because a quasi-isomorphism between K-flat complexes of modules remains a quasi-isomorphism after
+tensoring on the right with any complex (`CochainComplex.quasiIso_tensorHom_id_of_isKFlat`, via
+`TauCeti.Algebra.Homology.ModuleCat.KFlat.DerivabilityStructure`), the endofunctor
 `CochainComplex.kFlatTensor` of the unbounded derived category sends quasi-isomorphisms in its
-K-flat input to natural isomorphisms. The comparison is induced by the specified map of models, so
-its identity and composition laws are those of `CochainComplex.kFlatTensorMap`.
+K-flat input to natural isomorphisms (`CochainComplex.isIso_kFlatTensorMap`). The comparison is
+induced by the specified map of models, so its identity and composition laws are those of
+`CochainComplex.kFlatTensorMap`.
 
-The arbitrary factor is resolved by a K-flat complex, and the Koszul braiding exchanges the two
-factors. No boundedness, freeness or termwise flatness is required of either input.
+No boundedness, freeness or termwise flatness is required of either input.
 
 ## References
 
@@ -34,66 +34,12 @@ public section
 noncomputable section
 
 open CategoryTheory CategoryTheory.Functor HomologicalComplex
-open scoped MonoidalCategory
 
 namespace CochainComplex
 
 universe u
 
-variable {R : Type u} [CommRing R]
-
-/-- Tensoring on the right with a K-flat complex preserves quasi-isomorphisms. -/
-instance quasiIso_tensorHom_id (A : CochainComplex (ModuleCat.{u} R) ℤ) [A.IsKFlat]
-    {K L : CochainComplex (ModuleCat.{u} R) ℤ} (f : K ⟶ L) [QuasiIso f] :
-    QuasiIso (tensorHom f (𝟙 A)) := by
-  rw [HomologicalComplex.tensorHom, ← whiskerRight_eq_mapBifunctorMap]
-  have : QuasiIso (A ◁ f) := by
-    rw [whiskerLeft_eq_mapBifunctorMap]
-    exact inferInstanceAs (QuasiIso (tensorHom (𝟙 A) f))
-  exact quasiIso_of_arrow_mk_iso (A ◁ f) (f ▷ A)
-    (Arrow.isoMk (β_ A K) (β_ A L) (BraidedCategory.braiding_naturality_right A f).symm)
-
-/-- A quasi-isomorphism between K-flat complexes stays a quasi-isomorphism after tensoring
-with an arbitrary, possibly unbounded, complex. -/
-instance quasiIso_tensorHom_id_of_isKFlat
-    {K L : CochainComplex (ModuleCat.{u} R) ℤ} [K.IsKFlat] [L.IsKFlat]
-    (f : K ⟶ L) [QuasiIso f] (A : CochainComplex (ModuleCat.{u} R) ℤ) :
-    QuasiIso (tensorHom f (𝟙 A)) := by
-  obtain ⟨P, p, hp, hP⟩ := A.exists_quasiIso_isKFlat_moduleCat
-  have : QuasiIso p := hp
-  have : P.IsKFlat := hP
-  have h : tensorHom (𝟙 K) p ≫ tensorHom f (𝟙 A) =
-      tensorHom f (𝟙 P) ≫ tensorHom (𝟙 L) p := by
-    simp only [← mapBifunctorMap_comp, Category.id_comp, Category.comp_id]
-  apply (quasiIso_iff_comp_left (tensorHom (𝟙 K) p) _).1
-  rw [h]
-  infer_instance
-
-/-- A quasi-isomorphism between K-flat complexes of `R`-modules remains a quasi-isomorphism after
-tensoring on the left with an arbitrary, possibly unbounded, complex `A`. -/
-instance quasiIso_id_tensorHom_of_isKFlat (A : CochainComplex (ModuleCat.{u} R) ℤ)
-    {K L : CochainComplex (ModuleCat.{u} R) ℤ} [K.IsKFlat] [L.IsKFlat]
-    (f : K ⟶ L) [QuasiIso f] :
-    QuasiIso (tensorHom (𝟙 A) f) := by
-  rw [HomologicalComplex.tensorHom, ← whiskerLeft_eq_mapBifunctorMap]
-  have : QuasiIso (f ▷ A) := by
-    rw [whiskerRight_eq_mapBifunctorMap]
-    exact inferInstanceAs (QuasiIso (tensorHom f (𝟙 A)))
-  exact quasiIso_of_arrow_mk_iso (f ▷ A) (A ◁ f)
-    (Arrow.isoMk (β_ K A) (β_ L A) (BraidedCategory.braiding_naturality_left f A).symm)
-
-/-- The tensor product of two quasi-isomorphisms `f : K₁ ⟶ L₁` and `g : K₂ ⟶ L₂` of cochain
-complexes of `R`-modules is a quasi-isomorphism whenever `L₁` and `K₂` are K-flat. -/
-instance quasiIso_tensorHom_of_isKFlat
-    {K₁ L₁ K₂ L₂ : CochainComplex (ModuleCat.{u} R) ℤ} [L₁.IsKFlat] [K₂.IsKFlat]
-    (f : K₁ ⟶ L₁) (g : K₂ ⟶ L₂) [QuasiIso f] [QuasiIso g] :
-    QuasiIso (tensorHom f g) := by
-  have hfg : tensorHom f g = tensorHom f (𝟙 K₂) ≫ tensorHom (𝟙 L₁) g := by
-    simp only [← mapBifunctorMap_comp, Category.id_comp, Category.comp_id]
-  rw [hfg]
-  infer_instance
-
-variable [HasDerivedCategory (ModuleCat.{u} R)]
+variable {R : Type u} [CommRing R] [HasDerivedCategory (ModuleCat.{u} R)]
 
 /-- A quasi-isomorphism of K-flat models induces an invertible transformation on the entire
 unbounded derived category, not just on bounded or K-flat right inputs. -/

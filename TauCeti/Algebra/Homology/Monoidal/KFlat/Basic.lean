@@ -388,7 +388,7 @@ end Bounded
 
 end CochainComplex
 
-section MonoidalUnit
+section TensorUnit
 
 variable {C : Type*} [Category* C] [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C]
   [∀ X₁ X₂ : GradedObject ℤ C, GradedObject.HasTensor X₁ X₂]
@@ -400,7 +400,7 @@ variable {C : Type*} [Category* C] [Abelian C] [MonoidalCategory C] [MonoidalPre
 
 /-- When `CochainComplex C ℤ` carries its totalized monoidal structure, its monoidal unit `𝟙_` is
 K-flat. -/
-instance CochainComplex.isKFlat_monoidalUnit : (𝟙_ (CochainComplex C ℤ)).IsKFlat :=
+instance CochainComplex.isKFlat_tensorUnit' : (𝟙_ (CochainComplex C ℤ)).IsKFlat :=
   inferInstanceAs (CochainComplex.IsKFlat (HomologicalComplex.tensorUnit C (.up ℤ)))
 
-end MonoidalUnit
+end TensorUnit

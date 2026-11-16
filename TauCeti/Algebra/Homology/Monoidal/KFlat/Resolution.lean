@@ -421,10 +421,8 @@ lemma attachMap_attachDesc :
     rw [inr_attachMap_assoc, inr_attachDesc, comm, inr_attachDesc_assoc]
   ext q
   refine mappingCone.ext_from _ (q + 1) q rfl ?_ ?_
-  · simp only [attachMap, mappingCone.map, comp_f, Category.assoc, mappingCone.inl_v_desc_f_assoc,
-      Cochain.zero_cochain_comp_v, Cochain.ofHom_v, attachDesc, boundaryPrimitive, Cochain.mk_v]
-    rw [mappingCone.inl_v_desc_f, Cochain.mk_v, reassoc_of% (he (q + 1)),
-      boundaryPairsMap_snd_assoc, HomologicalComplex.XIsoOfEq_hom_naturality]
+  · simp [attachMap, mappingCone.map, reassoc_of% (he (q + 1)),
+      HomologicalComplex.XIsoOfEq_hom_naturality]
   · simpa only [comp_f, Category.assoc] using congr_arg (fun φ ↦ φ.f q) hinr
 
 end StepFunctorial
@@ -586,10 +584,7 @@ public def kFlatResolutionFunctor : CochainComplex C ℤ ⥤ CochainComplex C �
 public def kFlatResolution.πNatTrans :
     kFlatResolutionFunctor E p ⟶ 𝟭 (CochainComplex C ℤ) where
   app K := kFlatResolution.π E.obj p.app K
-  naturality _ _ g := colimit.hom_ext fun k ↦ by
-    dsimp only [kFlatResolutionFunctor, Functor.id_obj, Functor.id_map]
-    rw [ι_colimMap_assoc, kFlatResolution.sequenceMap_app, kFlatResolution.ι_π,
-      kFlatResolution.stageMap_toComplex, kFlatResolution.ι_π_assoc]
+  naturality _ _ _ := colimit.hom_ext fun _ ↦ by simp [kFlatResolutionFunctor]
 
 /-- The functorial resolution `(kFlatResolutionFunctor E p).obj K` is canonically isomorphic to
 `kFlatResolution E.obj p.app K`. -/
