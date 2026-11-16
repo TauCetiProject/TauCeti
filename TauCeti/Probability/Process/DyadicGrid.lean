@@ -10,7 +10,7 @@ public import TauCeti.Probability.Martingale.Convergence
 public import TauCeti.Topology.Instances.Real.DyadicGrid
 public import TauCeti.Probability.Process.Filtration.NullAugmentation
 import Mathlib.MeasureTheory.Function.FactorsThrough
-import TauCeti.MeasureTheory.Function.ConditionalExpectation.Completion
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.Completion
 
 /-!
 # Dyadic observations of continuous paths
@@ -283,8 +283,9 @@ theorem tendsto_eLpNorm_condExp_dyadicNatural [IsFiniteMeasure P]
   have hle : (natural X hX).nullAugment P T ≤ eventuallyMeasurableSpace (⨆ n, G n) (ae P) :=
     (eventuallyMeasurableSpace_iSup_dyadicNatural_eq_nullAugment_natural hX hcont).ge
   have hfix : P[f | ⨆ n, G n] =ᵐ[P] f :=
-    TauCeti.MeasureTheory.condExp_of_aestronglyMeasurable_eventuallyMeasurableSpace
-      (iSup_le G.le) (hfm.mono hle) (hf.integrable hp)
+    condExp_of_aestronglyMeasurable' (iSup_le G.le)
+      (TauCeti.MeasureTheory.aestronglyMeasurable_eventuallyMeasurableSpace_iff.1 (hfm.mono hle))
+      (hf.integrable hp)
   exact (hf.tendsto_eLpNorm_condExp (ℱ := G) hp').congr fun n ↦
     eLpNorm_congr_ae ((Filter.EventuallyEq.refl _ _).sub hfix)
 
