@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Transport
 public import TauCeti.LinearAlgebra.Determinant.Endomorphism
+import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
 # Determinant lines of families of endomorphisms
@@ -37,8 +38,9 @@ normalized generator is `det T` times the generator of the trivialization given 
 the orientations given by invertibility when `det (T a) * det (T b) > 0`
 (`TauCeti.detLineOrientationTransport_detLineEquivOfBijective_of_pos`) and reverses them when
 `det (T a) * det (T b) < 0`
-(`TauCeti.detLineOrientationTransport_detLineEquivOfBijective_of_neg`), that is, according to the
-parity of the number of real eigenvalues, counted with multiplicity, that change sign. At the
+(`TauCeti.detLineOrientationTransport_detLineEquivOfBijective_of_neg`). The latter happens exactly
+when `T a` and `T b` have numbers of negative real eigenvalues, counted with multiplicity, of
+different parity. At the
 realification of a complex-linear endomorphism the normalized generator is complex positive
 (`LinearMap.isComplexPositiveDetLine_detLineEndGenerator`). So transporting the complex
 orientation of a complex-linear endomorphism to a bijective `T b` gives the orientation of
@@ -136,9 +138,8 @@ private def kerCoprodEquiv : V ≃ₗ[ℝ] (A.coprod (S V).subtypeL).ker where
   left_inv u := by simp
   right_inv := by
     rintro ⟨⟨u, s⟩, hx⟩
-    have hs : (s : V) = -A u := by
-      have : A u + s = 0 := hx
-      exact eq_neg_of_add_eq_zero_right this
+    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coprod_apply] at hx
+    have hs : (s : V) = -A u := eq_neg_of_add_eq_zero_right hx
     exact Subtype.ext (Prod.ext (by simp) (Subtype.ext (by simp [hs])))
 
 omit [FiniteDimensional ℝ V] in
@@ -159,7 +160,9 @@ private theorem kerCoprodEquiv_trans_kerEquivOfProd_symm :
   ext u : 2
   simp [graphCoord, kerCoprodEquiv_apply, coe_q_apply]
 
-/-- `LinearEquiv.neg` acts on the determinant line by `(-1) ^ n`. -/
+/-- `LinearEquiv.neg` acts on the determinant line by `(-1) ^ n`
+(`LinearEquiv.detLineCongr_neg_apply`), here on the first factor of a tensor product with a dual
+determinant line. -/
 private theorem congr_neg_refl {M N : Type*} [AddCommGroup M] [Module ℝ M] [AddCommGroup N]
     [Module ℝ N] (z : detLine ℝ M ⊗[ℝ] Dual ℝ (detLine ℝ N)) :
     TensorProduct.congr (LinearEquiv.neg ℝ : M ≃ₗ[ℝ] M).detLineCongr
@@ -167,14 +170,8 @@ private theorem congr_neg_refl {M N : Type*} [AddCommGroup M] [Module ℝ M] [Ad
       (-1 : ℝ) ^ finrank ℝ M • z := by
   induction z using TensorProduct.inductionOn with
   | tmul x φ =>
-    have hdet : LinearMap.det ((LinearEquiv.neg ℝ : M ≃ₗ[ℝ] M) : M →ₗ[ℝ] M) =
-        (-1) ^ finrank ℝ M := by
-      rw [show ((LinearEquiv.neg ℝ : M ≃ₗ[ℝ] M) : M →ₗ[ℝ] M) = (-1 : ℝ) • LinearMap.id from
-          LinearMap.ext fun x ↦ by simp,
-        LinearMap.det_smul, LinearMap.det_id, mul_one]
-    rw [TensorProduct.congr_tmul, LinearEquiv.detLineCongr_apply_eq_det_smul, hdet,
-      LinearEquiv.detLineCongr_refl, LinearEquiv.refl_symm, LinearEquiv.dualMap_refl,
-      LinearEquiv.refl_apply, smul_tmul']
+    rw [TensorProduct.congr_tmul, LinearEquiv.detLineCongr_neg_apply, LinearEquiv.detLineCongr_refl,
+      LinearEquiv.refl_symm, LinearEquiv.dualMap_refl, LinearEquiv.refl_apply, smul_tmul']
   | add x y hx hy => rw [map_add, hx, hy, smul_add]
 
 /-- The identification of the top submodule with the space, as the stabilizer of the chart. -/
@@ -204,8 +201,8 @@ private theorem endFourTermEquiv_eq_neg_one_pow_smul (t : detLine ℝ V ⊗[ℝ]
       (surjective_of_isInvertible_prod (isInvertible A)))
     (LinearEquiv.neg ℝ) (kerCoprodEquiv A) stabEquiv (LinearEquiv.refl ℝ _) ?_ ?_ ?_ t
   · rw [congr_neg_refl] at hnat
-    rw [detLineCoprodEquiv_def, hnat, smul_smul, ← pow_add, ← two_mul, pow_mul, neg_one_sq,
-      one_pow, one_smul]
+    rw [detLineCoprodEquiv_def, hnat, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow,
+      one_smul]
   · refine LinearMap.ext fun a ↦ Subtype.ext (Prod.ext ?_ (Subtype.ext ?_))
     · simp [kerCoprodHom_apply, kerCoprodEquiv_apply]
     · simp [kerCoprodHom_apply, kerCoprodEquiv_apply]
@@ -233,7 +230,7 @@ private theorem detLineChartEquiv_detLineEndEquiv_symm_one {β : detLine ℝ V}
     rw [map_smul, detLineStabilizationEquiv_apply, smul_smul,
       endFourTermEquiv_eq_neg_one_pow_smul]
     congr 1
-    rw [← pow_add, add_assoc, ← two_mul, pow_add, pow_mul, neg_one_sq, one_pow, mul_one]
+    rw [← pow_add, add_assoc, pow_add, Even.neg_one_pow ⟨_, rfl⟩, mul_one]
   -- The kernel coordinate reads the graph `u ↦ (-u, A u)` as `u ↦ (-u, 0)`.
   have hβ : (kerEquivOfProd (A.coprod (S V).subtypeL) q
       (isInvertible A)).toLinearEquiv.symm.detLineCongr ((kerCoprodEquiv A).detLineCongr β) =
@@ -302,12 +299,12 @@ theorem detLineOrientationTransport_rayOfNeZero_detLineEndGenerator
   detLineOrientationTransport_rayOfNeZero hT hF (isDetLineCoherentOn_detLineEndGenerator T _)
 
 /-- The orientation of the determinant line of a bijective `T a` given by invertibility is
-transported to the ray of `(det (T a))⁻¹ * det (T b)` times the generator of the bijective
+transported to the ray of `det (T a) * det (T b)` times the generator of the bijective
 trivialization at a bijective `T b`. -/
 private theorem detLineOrientationTransport_detLineEquivOfBijective
     (hT : ContinuousOn T (uIcc a b)) (hF : ∀ t ∈ uIcc a b, IsFredholm (T t))
     (ha : Function.Bijective (T a)) (hb : Function.Bijective (T b))
-    (hc : ((LinearMap.det (T a : V →ₗ[ℝ] V))⁻¹ * LinearMap.det (T b : V →ₗ[ℝ] V)) •
+    (hc : (LinearMap.det (T a : V →ₗ[ℝ] V) * LinearMap.det (T b : V →ₗ[ℝ] V)) •
       (LinearMap.detLineEquivOfBijective hb).symm 1 ≠ 0) :
     detLineOrientationTransport a b hT hF
         (rayOfNeZero ℝ _ ((LinearMap.detLineEquivOfBijective ha).symm.map_ne_zero_iff.2
@@ -315,12 +312,13 @@ private theorem detLineOrientationTransport_detLineEquivOfBijective
       rayOfNeZero ℝ _ hc := by
   have hda : LinearMap.det (T a : V →ₗ[ℝ] V) ≠ 0 := fun h ↦
     LinearMap.det_eq_zero_iff_ker_ne_bot.1 h (LinearMap.ker_eq_bot.2 ha.1)
-  have hv := (isDetLineCoherentOn_detLineEndGenerator T (uIcc a b)).smul (inv_ne_zero hda)
+  -- Scaling the normalized generators by `det (T a)` gives `det (T a) ^ 2` times the generator
+  -- of invertibility at `a`, which has the same ray.
+  have hv := (isDetLineCoherentOn_detLineEndGenerator T (uIcc a b)).smul hda
   have key := detLineOrientationTransport_rayOfNeZero hT hF hv
   simp only [LinearMap.detLineEndGenerator_eq_det_smul _ ha,
-    LinearMap.detLineEndGenerator_eq_det_smul _ hb, smul_smul, inv_mul_cancel₀ hda,
-    one_smul] at key
-  exact key
+    LinearMap.detLineEndGenerator_eq_det_smul _ hb, smul_smul] at key
+  rwa [(ray_eq_iff _ _).2 (SameRay.sameRay_pos_smul_left _ (mul_self_pos.2 hda))] at key
 
 /-- **Transport preserves the orientations of invertibility when the determinants have the same
 sign.** Along a continuous path of endomorphisms of a real finite-dimensional normed space from a
@@ -336,15 +334,9 @@ theorem detLineOrientationTransport_detLineEquivOfBijective_of_pos
           one_ne_zero)) =
       rayOfNeZero ℝ _ ((LinearMap.detLineEquivOfBijective hb).symm.map_ne_zero_iff.2
         one_ne_zero) := by
-  have hpos : 0 < (LinearMap.det (T a : V →ₗ[ℝ] V))⁻¹ * LinearMap.det (T b : V →ₗ[ℝ] V) := by
-    have hda : LinearMap.det (T a : V →ₗ[ℝ] V) ≠ 0 := by rintro h'; simp [h'] at h
-    rw [show (LinearMap.det (T a : V →ₗ[ℝ] V))⁻¹ * LinearMap.det (T b : V →ₗ[ℝ] V) =
-      (LinearMap.det (T a : V →ₗ[ℝ] V) * LinearMap.det (T b : V →ₗ[ℝ] V)) /
-        LinearMap.det (T a : V →ₗ[ℝ] V) ^ 2 by field_simp]
-    positivity
   have hb₀ := (LinearMap.detLineEquivOfBijective hb).symm.map_ne_zero_iff.2 (one_ne_zero (α := ℝ))
-  rw [detLineOrientationTransport_detLineEquivOfBijective hT hF ha hb (smul_ne_zero hpos.ne' hb₀)]
-  exact (ray_eq_iff _ _).2 (SameRay.sameRay_pos_smul_left _ hpos)
+  rw [detLineOrientationTransport_detLineEquivOfBijective hT hF ha hb (smul_ne_zero h.ne' hb₀)]
+  exact (ray_eq_iff _ _).2 (SameRay.sameRay_pos_smul_left _ h)
 
 /-- **Transport reverses the orientations of invertibility when the determinants have opposite
 signs.** Along a continuous path of endomorphisms of a real finite-dimensional normed space from a
@@ -361,20 +353,13 @@ theorem detLineOrientationTransport_detLineEquivOfBijective_of_neg
           one_ne_zero)) =
       -rayOfNeZero ℝ _ ((LinearMap.detLineEquivOfBijective hb).symm.map_ne_zero_iff.2
         one_ne_zero) := by
-  have hneg : (LinearMap.det (T a : V →ₗ[ℝ] V))⁻¹ * LinearMap.det (T b : V →ₗ[ℝ] V) < 0 := by
-    have hda : LinearMap.det (T a : V →ₗ[ℝ] V) ≠ 0 := by rintro h'; simp [h'] at h
-    rw [show (LinearMap.det (T a : V →ₗ[ℝ] V))⁻¹ * LinearMap.det (T b : V →ₗ[ℝ] V) =
-      (LinearMap.det (T a : V →ₗ[ℝ] V) * LinearMap.det (T b : V →ₗ[ℝ] V)) /
-        LinearMap.det (T a : V →ₗ[ℝ] V) ^ 2 by field_simp]
-    exact div_neg_of_neg_of_pos h (by positivity)
   have hb₀ := (LinearMap.detLineEquivOfBijective hb).symm.map_ne_zero_iff.2 (one_ne_zero (α := ℝ))
-  rw [detLineOrientationTransport_detLineEquivOfBijective hT hF ha hb
-    (smul_ne_zero hneg.ne hb₀)]
+  rw [detLineOrientationTransport_detLineEquivOfBijective hT hF ha hb (smul_ne_zero h.ne hb₀)]
   -- Negation of orientations of determinant lines is `Module.Ray`'s negation for the additive
   -- group structure of the tensor product (`LinearMap.instNegRayDetLine`).
   let : AddCommGroup (T b : V →ₗ[ℝ] V).detLine := TensorProduct.addCommGroup
   exact ((ray_eq_iff _ (neg_ne_zero.2 hb₀)).2
-    ((sameRay_neg_smul_left_iff_of_ne hb₀ hneg.ne).2 hneg)).trans (neg_rayOfNeZero ℝ _ hb₀).symm
+    ((sameRay_neg_smul_left_iff_of_ne hb₀ h.ne).2 h)).trans (neg_rayOfNeZero ℝ _ hb₀).symm
 
 end Transport
 

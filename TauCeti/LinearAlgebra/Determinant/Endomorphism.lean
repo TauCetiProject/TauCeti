@@ -172,13 +172,6 @@ theorem sign_detLineEndEquiv [LinearOrder K] [IsStrictOrderedRing K] (hT : Funct
       SignType.sign (LinearMap.det T) * SignType.sign (T.detLineEquivOfBijective hT x) := by
   rw [detLineEndEquiv_eq_inv_det_mul T hT, sign_mul, TauCeti.sign_inv]
 
-/-- An endomorphism of a finite-dimensional vector space has kernel and cokernel of the same
-dimension. -/
-theorem finrank_quotient_range_eq_finrank_ker : finrank K (V ⧸ range T) = finrank K (ker T) := by
-  have h₁ := Submodule.finrank_quotient_add_finrank (range T)
-  have h₂ := T.finrank_range_add_finrank_ker
-  omega
-
 /-! ### The normalized generator -/
 
 /-- **The normalized generator of the determinant line of an endomorphism.** The element of
@@ -186,11 +179,12 @@ theorem finrank_quotient_range_eq_finrank_ker : finrank K (V ⧸ range T) = finr
 `(-1) ^ (dim (ker T) * (dim V + 1))`.
 
 The sign makes these generators continuous in families of endomorphisms of a real
-finite-dimensional normed space: kernel charts of the determinant line bundle read them as one
-fixed vector (`TauCeti.isDetLineCoherentOn_detLineEndGenerator`). Without it, when `dim V` is
-even, the elements `T.detLineEndEquiv.symm 1` change sign whenever the parity of `dim (ker T)`
-jumps. The sign is `1` when `T` is injective, when `dim V` is odd, and when `ker T` has even
-dimension, for instance when `T` is the realification of a complex-linear map. -/
+finite-dimensional normed space: a single kernel chart, stabilizing by the whole space, reads them
+all as one fixed vector, so they are coherent
+(`TauCeti.isDetLineCoherentOn_detLineEndGenerator`). Without it, when `dim V` is even, the
+elements `T.detLineEndEquiv.symm 1` change sign whenever the parity of `dim (ker T)` jumps. The
+sign is `1` when `T` is injective, when `dim V` is odd, and when `ker T` has even dimension, for
+instance when `T` is the realification of a complex-linear map. -/
 def detLineEndGenerator : T.detLine :=
   (-1 : K) ^ (finrank K (ker T) * (finrank K V + 1)) • T.detLineEndEquiv.symm 1
 

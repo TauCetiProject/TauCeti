@@ -95,6 +95,12 @@ def detLineRestrictScalarsEquiv :
   TensorProduct.congr (LinearEquiv.detLineCongr (f.kerRestrictScalarsEquiv ℝ).symm)
     (LinearEquiv.detLineCongr (f.cokerRestrictScalarsEquiv ℝ).symm).dualMap
 
+theorem detLineRestrictScalarsEquiv_def :
+    f.detLineRestrictScalarsEquiv =
+      TensorProduct.congr (LinearEquiv.detLineCongr (f.kerRestrictScalarsEquiv ℝ).symm)
+        (LinearEquiv.detLineCongr (f.cokerRestrictScalarsEquiv ℝ).symm).dualMap :=
+  (rfl)
+
 @[simp]
 theorem detLineRestrictScalarsEquiv_tmul (x : TauCeti.detLine ℝ (ker (f.restrictScalars ℝ)))
     (φ : Dual ℝ (TauCeti.detLine ℝ (N ⧸ range (f.restrictScalars ℝ)))) :
@@ -279,10 +285,8 @@ variable {V : Type*} [AddCommGroup V] [Module ℂ V] [Module ℝ V] [IsScalarTow
 /-- **The normalized generator of a complex-linear endomorphism is complex positive.** For a
 complex-linear endomorphism `f` of a finite-dimensional complex vector space, the normalized
 generator `LinearMap.detLineEndGenerator` of the determinant line of the underlying real
-endomorphism lies in its complex orientation. Here kernel and space have even real dimension, so
-the generator is the canonical element `(detLineEndEquiv (f.restrictScalars ℝ)).symm 1`, which
-comes from `β ⊗ φ` with `β` complex positive and `φ β = 1`, and the four-term exact sequence of
-`f` respects complex orientations. -/
+endomorphism lies in its complex orientation. The sign normalizing the generator is `1` here,
+because the kernel has even real dimension. -/
 theorem isComplexPositiveDetLine_detLineEndGenerator (f : V →ₗ[ℂ] V) :
     f.IsComplexPositiveDetLine (f.restrictScalars ℝ).detLineEndGenerator := by
   have : FiniteDimensional ℂ V := Module.Finite.of_restrictScalars_finite ℝ ℂ V
@@ -292,6 +296,8 @@ theorem isComplexPositiveDetLine_detLineEndGenerator (f : V →ₗ[ℂ] V) :
     rw [← (f.kerRestrictScalarsEquiv ℝ).finrank_eq,
       TauCeti.finrank_real_eq_two_mul_finrank_complex (V := ker f)]
     exact (even_two_mul _).mul_right _
+  -- The canonical element comes from `β ⊗ φ` with `β` complex positive and `φ β = 1`, and the
+  -- four-term exact sequence of `f` respects complex orientations.
   obtain ⟨β, hβ⟩ := TauCeti.exists_isComplexPositive (E := V)
   obtain ⟨φ, hφ⟩ := Module.Projective.exists_dual_eq_one ℝ hβ.ne_zero
   have hgen : (f.restrictScalars ℝ).detLineEndGenerator =
@@ -313,7 +319,7 @@ theorem isComplexPositiveDetLine_detLineEndGenerator (f : V →ₗ[ℂ] V) :
     (hβ.isComplexPositiveTMulDual_tmul (hβ.isComplexPositiveDual_of_apply_eq_one hφ))
   simp only [LinearEquiv.detLineCongr_refl, LinearEquiv.rTensor_tmul, LinearEquiv.refl_apply]
     at key
-  rwa [isComplexPositiveDetLine_iff, detLineRestrictScalarsEquiv, hgen]
+  rwa [isComplexPositiveDetLine_iff, detLineRestrictScalarsEquiv_def, hgen]
 
 end Endomorphism
 
