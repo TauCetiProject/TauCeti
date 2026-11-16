@@ -15,9 +15,10 @@ Three true bits starting from `(3, 1)` on `y² = x³ + x` over `𝔽₇` give re
 of `[7]P` and `[8]P`. The invariant certifies that the second is infinity without
 assuming the order of `P`. Leading zero bits are also allowed. A distinguished
 two-torsion input gives a zero pair after one true bit, illustrating why it is excluded
-from `LadderRel.coordinates` while `LadderRel.cross_coordinates` still holds. Finally,
-`LadderRel.map` transports composite-modulus derivations to prime-field derivations.
+from the nonvanishing theorem.
 -/
+
+public section
 
 namespace TauCeti.Montgomery
 
@@ -55,19 +56,9 @@ example [Fact (Nat.Prime 7)] :
   refine ⟨hinv.2.1, (coordinates_z_eq_zero_iff (by simp)).mp ?_⟩
   simpa [Pair.cross_def] using hinv.2.2.2
 
--- The relation is meaningful over composite residue rings, and commutes with reduction.
-example : ∃ U V, LadderRel (2 : ZMod 35) 4 ⟨22, 1⟩ 100 U V ∧
-    LadderRel (2 : ZMod 5) 4 ⟨2, 1⟩ 100
-      (U.map (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5)))
-      (V.map (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5))) := by
-  obtain ⟨U, V, h⟩ := LadderRel.exists_pairs (2 : ZMod 35) 4 ⟨22, 1⟩ 100
-  refine ⟨U, V, h, ?_⟩
-  let φ := ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5)
-  have h2 : φ 2 = 2 := by decide
-  have h4 : φ 4 = 4 := by decide
-  have hS : (⟨22, 1⟩ : Pair (ZMod 35)).map φ = ⟨2, 1⟩ := by
-    ext <;> simp only [Pair.map_x, Pair.map_z] <;> decide
-  simpa only [h2, h4, hS] using h.map φ
+-- The relation is meaningful over composite residue rings, where its outputs may vanish.
+example : ∃ U V, LadderRel (2 : ZMod 35) 4 ⟨22, 1⟩ 100 U V := by
+  exact LadderRel.exists_pairs 2 4 ⟨22, 1⟩ 100
 
 -- Leading zeros preserve the index but can change the raw representatives.
 example {K : Type*} [Field K] [DecidableEq K] {A B N D : K}
@@ -92,25 +83,10 @@ example {K : Type*} [Field K] [DecidableEq K] {A B N D c : K}
   exact ⟨U, V, h, h.coordinates h₂ hB hD hND
     (by simp [hc, coordinates_ne_zero hB P]) (by simp) hP hPT⟩
 
--- At the distinguished point, a one-bit derivation has a zero first output, yet
--- LadderRel.cross_coordinates still applies unconditionally.
-example [Fact (Nat.Prime 7)] : LadderRel (2 : ZMod 7) 4 ⟨0, 1⟩ 1 0 ⟨4, 0⟩ ∧
-    (0 : Pair (ZMod 7)).cross
-      (coordinates 0 1 ((1 : ℕ) • twoTorsionPoint (0 : ZMod 7) one_ne_zero)) = 0 ∧
-    (⟨4, 0⟩ : Pair (ZMod 7)).cross
-      (coordinates 0 1 ((2 : ℕ) • twoTorsionPoint (0 : ZMod 7) one_ne_zero)) = 0 := by
-  have h₁ : LadderRel (2 : ZMod 7) 4 ⟨0, 1⟩ 1 0 ⟨4, 0⟩ := by
-    convert (LadderRel.zero (N := (2 : ZMod 7)) (D := 4) (S := ⟨0, 1⟩)).bit true
-      using 1 <;> norm_num
-    ext <;> norm_num [double_x, double_z, diffAdd_x, diffAdd_z, Pair.cross_def]
-  exact ⟨h₁, h₁.cross_coordinates (by norm_num) (by simp)⟩
-
--- Away from twoTorsionPoint (including at P = 0), vanishing of U.z characterizes addOrderOf P ∣ n.
-example {K : Type*} [Field K] [DecidableEq K] {A B N D : K} {S U V : Pair K} {n : ℕ}
-    (h : LadderRel N D S n U V) (h₂ : (2 : K) ≠ 0) (hB : B ≠ 0) (hD : D ≠ 0)
-    (hND : 4 * N = (A + 2) * D) (hS : S ≠ 0) (hSP : S.cross (coordinates A B 0) = 0) :
-    U.z = 0 := by
-  rw [h.z_eq_zero_iff_addOrderOf_dvd h₂ hB hD hND hS hSP (twoTorsionPoint_ne_zero A hB).symm]
-  simp
+-- At the distinguished point, even a one-bit derivation has a zero first output.
+example : LadderRel (2 : ZMod 7) 4 ⟨0, 1⟩ 1 0 ⟨4, 0⟩ := by
+  convert (LadderRel.zero (N := (2 : ZMod 7)) (D := 4) (S := ⟨0, 1⟩)).bit true
+    using 1 <;> norm_num
+  ext <;> norm_num [double_x, double_z, diffAdd_x, diffAdd_z, Pair.cross_def]
 
 end TauCeti.Montgomery

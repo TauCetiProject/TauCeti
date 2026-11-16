@@ -16,10 +16,8 @@ public import Mathlib.Data.Nat.BinaryRec
 steps, starting with infinity and the raw pair `S`. It records consecutive multiples:
 `LadderRel.coordinates` proves that `R` and `T` are nonzero representatives of `[n]P`
 and `[n + 1]P` when `S` represents `P`, provided `P` is neither infinity nor the
-distinguished point of order two. `LadderRel.cross_coordinates` proves the cross-difference
-relation unconditionally over any field when `4 * N = (A + 2) * D`, including at infinity,
-at the distinguished point of order two, and in characteristic two. The relation is defined
-over any commutative ring and commutes with ring homomorphisms via `LadderRel.map`.
+distinguished point of order two. The relation is defined over any commutative ring;
+its geometric interpretation is over a field of characteristic different from two.
 
 This is a relation between polynomial coordinate expressions, not a scalar-multiplication
 implementation. `LadderRel.exists_pairs` shows that every natural index is reached. Leading
@@ -62,50 +60,9 @@ theorem exists_pairs (N D : R) (S : Pair R) (n : ℕ) : ∃ U V, LadderRel N D S
       if b then double N D V else diffAdd V U S, ?_⟩
     simpa only [Nat.bit_val] using h.bit b
 
-/-- Binary Montgomery-ladder derivations commute with any ring homomorphism. -/
-theorem map {R' : Type*} [CommRing R'] {n : ℕ} {U V : Pair R}
-    (f : R →+* R') (h : LadderRel N D S n U V) :
-    LadderRel (f N) (f D) (S.map f) n (U.map f) (V.map f) := by
-  induction h with
-  | zero =>
-    have h₀ : (⟨1, 0⟩ : Pair R).map f = ⟨1, 0⟩ := by ext <;> simp
-    simpa only [h₀] using .zero
-  | bit b _ ih =>
-    convert ih.bit b using 1 <;> cases b <;> simp
-
 section Field
 
 variable {K : Type*} [Field K] [DecidableEq K] {A B N D : K} {S U V : Pair K} {n : ℕ}
-
-/-- **Unconditional cross-difference invariant of the binary ladder.** Over any field, every
-derivation from a pair whose cross difference with `coordinates A B P` vanishes produces pairs
-whose cross differences with the consecutive multiples `[n]P` and `[n + 1]P` vanish, provided
-`4 * N = (A + 2) * D`. Unlike `LadderRel.coordinates`, this allows `P = 0`,
-`P = twoTorsionPoint A hB`, `S = 0`, `B = 0`, `D = 0`, and characteristic two, where raw outputs
-may degenerate to `(0, 0)`. -/
-theorem cross_coordinates (h : LadderRel N D S n U V) (hND : 4 * N = (A + 2) * D)
-    {P : (model A B).toAffine.Point} (hSP : S.cross (Montgomery.coordinates A B P) = 0) :
-    U.cross (Montgomery.coordinates A B (n • P)) = 0 ∧
-      V.cross (Montgomery.coordinates A B ((n + 1) • P)) = 0 := by
-  induction h with
-  | zero =>
-    simp [hSP]
-  | @bit n U V b _ ih =>
-    obtain ⟨hUP, hVP⟩ := ih
-    have hsub : (n + 1) • P - n • P = P := by simp [succ_nsmul]
-    have hsum : (n + 1) • P + n • P = (2 * n + 1) • P := by
-      simp [add_nsmul, two_mul, add_assoc, add_comm, add_left_comm]
-    have hdiff := diffAdd_cross_eq_zero_of_cross_eq_zero hVP hUP (by simpa only [hsub] using hSP)
-    have hdoubleU := double_cross_eq_zero_of_cross_eq_zero hND hUP
-    have hdoubleV := double_cross_eq_zero_of_cross_eq_zero hND hVP
-    rw [hsum] at hdiff
-    cases b <;> simp only [Bool.toNat_false, Bool.toNat_true, Bool.false_eq_true,
-      ↓reduceIte, Nat.add_zero]
-    · refine ⟨?_, hdiff⟩
-      simpa only [mul_nsmul, two_nsmul, nsmul_add] using hdoubleU
-    · refine ⟨hdiff, ?_⟩
-      have hsucc : 2 * n + 1 + 1 = 2 * (n + 1) := by omega
-      simpa only [hsucc, mul_nsmul, two_nsmul, nsmul_add] using hdoubleV
 
 /-- **The binary ladder invariant.** Every derivation from a nonzero representative of `P`
 produces nonzero representatives of the consecutive multiples `[n]P` and `[n + 1]P`.
@@ -121,45 +78,25 @@ theorem coordinates (h : LadderRel N D S n U V) (h₂ : (2 : K) ≠ 0) (hB : B �
   | zero =>
     simp only [zero_nsmul, Nat.zero_add, one_nsmul, Montgomery.coordinates_zero]
     exact ⟨by simp [Pair.ne_zero_iff], by simp, hS, hSP⟩
-  | @bit n U V b hL ih =>
+  | @bit n U V b _ ih =>
     obtain ⟨hU, hUP, hV, hVP⟩ := ih
-    obtain ⟨hcrossU, hcrossV⟩ := (hL.bit b).cross_coordinates hND hSP
     have hsub : (n + 1) • P - n • P = P := by simp [succ_nsmul]
+    have hsum : (n + 1) • P + n • P = (2 * n + 1) • P := by
+      simp [add_nsmul, two_mul, add_assoc, add_comm, add_left_comm]
+    have hdiff := diffAdd_cross_eq_zero_of_cross_eq_zero hVP hUP
+      (by simpa only [hsub] using hSP)
     have hne := (diffAdd_ne_zero_iff_of_cross_eq_zero h₂ hB hV hU hS hVP hUP
       (by simpa only [hsub] using hSP)).mpr (by simpa only [hsub] using And.intro hP hPT)
-    have hdoubleU := (double_coordinates_of_cross_eq_zero hD hND hU hUP).1
-    have hdoubleV := (double_coordinates_of_cross_eq_zero hD hND hV hVP).1
-    cases b <;> simp only [↓reduceIte, Bool.false_eq_true] at hcrossU hcrossV ⊢
-    · exact ⟨hdoubleU, hcrossU, hne, hcrossV⟩
-    · exact ⟨hne, hcrossU, hdoubleV, hcrossV⟩
-
-/-- Over a field of characteristic different from two with `B ≠ 0` and `D ≠ 0`, the `n`-th output
-of the binary ladder from a nonzero representative of `P ≠ twoTorsionPoint A hB` has vanishing
-second field if and only if `[n]P = 0`. Unlike `LadderRel.coordinates`, `P = 0` is included. -/
-theorem z_eq_zero_iff_nsmul_eq_zero (h : LadderRel N D S n U V) (h₂ : (2 : K) ≠ 0)
-    (hB : B ≠ 0) (hD : D ≠ 0) (hND : 4 * N = (A + 2) * D)
-    {P : (model A B).toAffine.Point} (hS : S ≠ 0)
-    (hSP : S.cross (Montgomery.coordinates A B P) = 0)
-    (hPT : P ≠ twoTorsionPoint A hB) :
-    U.z = 0 ↔ n • P = 0 := by
-  rcases eq_or_ne P 0 with rfl | hP
-  · have hU := (h.cross_coordinates hND hSP).1
-    have hz : U.z = 0 := by simpa [Montgomery.coordinates_zero, Pair.cross_def] using hU
-    simp [hz]
-  · obtain ⟨hU, hUP, _, _⟩ := h.coordinates h₂ hB hD hND hS hSP hP hPT
-    exact z_eq_zero_iff_of_cross_coordinates_eq_zero hB hU hUP
-
-/-- Over a field of characteristic different from two with `B ≠ 0` and `D ≠ 0`, the `n`-th output
-of the binary ladder from a nonzero representative of `P ≠ twoTorsionPoint A hB` has vanishing
-second field if and only if `addOrderOf P ∣ n`. -/
-theorem z_eq_zero_iff_addOrderOf_dvd (h : LadderRel N D S n U V) (h₂ : (2 : K) ≠ 0)
-    (hB : B ≠ 0) (hD : D ≠ 0) (hND : 4 * N = (A + 2) * D)
-    {P : (model A B).toAffine.Point} (hS : S ≠ 0)
-    (hSP : S.cross (Montgomery.coordinates A B P) = 0)
-    (hPT : P ≠ twoTorsionPoint A hB) :
-    U.z = 0 ↔ addOrderOf P ∣ n :=
-  (h.z_eq_zero_iff_nsmul_eq_zero h₂ hB hD hND hS hSP hPT).trans
-    addOrderOf_dvd_iff_nsmul_eq_zero.symm
+    have hdoubleU := double_coordinates_of_cross_eq_zero hD hND hU hUP
+    have hdoubleV := double_coordinates_of_cross_eq_zero hD hND hV hVP
+    rw [hsum] at hdiff
+    cases b <;> simp only [Bool.toNat_false, Bool.toNat_true, Bool.false_eq_true,
+      ↓reduceIte, Nat.add_zero]
+    · refine ⟨hdoubleU.1, ?_, hne, hdiff⟩
+      simpa only [mul_nsmul, two_nsmul, nsmul_add] using hdoubleU.2
+    · refine ⟨hne, hdiff, hdoubleV.1, ?_⟩
+      have hsucc : 2 * n + 1 + 1 = 2 * (n + 1) := by omega
+      simpa only [hsucc, mul_nsmul, two_nsmul, nsmul_add] using hdoubleV.2
 
 end Field
 

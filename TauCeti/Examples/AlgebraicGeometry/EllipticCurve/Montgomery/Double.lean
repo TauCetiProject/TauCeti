@@ -64,13 +64,4 @@ example (P : (model (0 : ZMod 2) 1).toAffine.Point) :
       (double 1 1 (coordinates 0 1 P)).cross (coordinates 0 1 (P + P)) = 0 :=
   double_coordinates (by decide) (by decide) P
 
--- With (N, D) = (0, 0), the doubling formula vanishes identically, yet still has vanishing cross
--- difference with coordinates A B (P + P) because 4 * 0 = (A + 2) * 0.
-example {R : Type*} [CommRing R] (P : Pair R) : double 0 0 P = 0 :=
-  double_zero_zero P
-
-example {K : Type*} [Field K] [DecidableEq K] (A B : K) (P : (model A B).toAffine.Point) :
-    (double 0 0 (coordinates A B P)).cross (coordinates A B (P + P)) = 0 :=
-  double_cross_eq_zero_of_cross_eq_zero (by ring) (Pair.cross_self _)
-
 end TauCeti.Montgomery

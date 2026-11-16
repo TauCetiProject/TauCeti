@@ -59,10 +59,7 @@ a `K`-rational point exactly when `(r³ + A r² + r) / B` is a square in `K`.
   `B ≠ 0`, respectively over a nontrivial domain for any `B`.
 * `TauCeti.Montgomery.coordinates_z_eq_zero_iff` and
   `TauCeti.Montgomery.coordinates_x_eq_zero_iff`: its fields vanish exactly at infinity and at
-  the distinguished point of order two, respectively;
-  `TauCeti.Montgomery.z_eq_zero_iff_of_cross_coordinates_eq_zero` and
-  `TauCeti.Montgomery.x_eq_zero_iff_of_cross_coordinates_eq_zero` extend both criteria to any
-  nonzero representative over a domain.
+  the distinguished point of order two, respectively.
 * `TauCeti.Montgomery.coordinates_neg`: the coordinate pair of `-P` is that of `P`.
 * `TauCeti.Montgomery.cross_coordinates_eq_zero_iff`: over a domain, the coordinate pairs of `P`
   and `Q` have vanishing cross difference exactly when `P = Q` or `P = -Q`.
@@ -177,30 +174,6 @@ theorem coordinates_x_eq_zero_iff (hB : B ≠ 0) {P : (model A B).toAffine.Point
   · simp only [← Affine.Point.zero_def, coordinates_zero, one_ne_zero, false_iff]
     exact (twoTorsionPoint_ne_zero A hB).symm
   · rw [coordinates_some, some_eq_twoTorsionPoint_iff hB]
-
-/-- Over a domain with `B ≠ 0`, a nonzero representative of `coordinates A B P` has vanishing
-second field if and only if `P` is the point at infinity. -/
-theorem z_eq_zero_iff_of_cross_coordinates_eq_zero (hB : B ≠ 0)
-    {P : (model A B).toAffine.Point} {S : Pair R} (hS : S ≠ 0)
-    (hSP : S.cross (coordinates A B P) = 0) :
-    S.z = 0 ↔ P = 0 := by
-  refine ⟨fun hz ↦ ?_, fun hP ↦ ?_⟩
-  · have hx : S.x ≠ 0 := (Pair.ne_zero_iff.mp hS).resolve_right (not_not.mpr hz)
-    simpa [Pair.cross_def, hz, hx, coordinates_z_eq_zero_iff hB] using hSP
-  · subst hP
-    simpa [coordinates_zero, Pair.cross_def] using hSP
-
-/-- Over a domain with `B ≠ 0`, a nonzero representative of `coordinates A B P` has vanishing
-first field if and only if `P` is the distinguished point of order two `(0, 0)`. -/
-theorem x_eq_zero_iff_of_cross_coordinates_eq_zero (hB : B ≠ 0)
-    {P : (model A B).toAffine.Point} {S : Pair R} (hS : S ≠ 0)
-    (hSP : S.cross (coordinates A B P) = 0) :
-    S.x = 0 ↔ P = twoTorsionPoint A hB := by
-  refine ⟨fun hx ↦ ?_, fun hP ↦ ?_⟩
-  · have hz : S.z ≠ 0 := (Pair.ne_zero_iff.mp hS).resolve_left (not_not.mpr hx)
-    simpa [Pair.cross_def, hx, hz, coordinates_x_eq_zero_iff hB] using hSP
-  · subst hP
-    simpa [coordinates_twoTorsionPoint hB, Pair.cross_def, hB] using hSP
 
 /-- **The coordinate pairs of two native points have vanishing cross difference exactly when the
 points are equal or negatives of each other**, for `B ≠ 0` over a domain. This includes the case

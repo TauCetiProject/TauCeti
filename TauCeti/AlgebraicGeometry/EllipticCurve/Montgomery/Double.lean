@@ -19,8 +19,7 @@ residue rings.
 `double_coordinates` proves correctness on Mathlib's native point group, including infinity
 and points of order two. Its output is nonzero even when the model is singular, since native
 points are nonsingular. `double_coordinates_of_cross_eq_zero` gives the same result for any nonzero
-representative of a point's coordinate pair, and `double_cross_eq_zero_of_cross_eq_zero` drops
-`D ≠ 0` and nonzeroness of the representative for the cross-difference relation alone.
+representative of a point's coordinate pair.
 
 The proof uses Mathlib's duplication numerator and denominator, in particular
 `WeierstrassCurve.Affine.den_duplication_ne_zero_or_num_duplication_ne_zero` and
@@ -88,20 +87,6 @@ theorem map_double (f : R →+* S) (N D : R) (P : Pair R) :
 @[simp]
 theorem double_zero (N D : R) : double N D 0 = 0 := by
   ext <;> simp [double]
-
-/-- With vanishing scaled constants `(0, 0)`, Montgomery doubling returns the zero pair on every
-input. -/
-@[simp]
-theorem double_zero_zero (P : Pair R) : double 0 0 P = 0 := by
-  ext <;> simp [double]
-
-/-- When `D = 0` and `4 * N = 0`, Montgomery doubling returns the zero pair on every input. -/
-theorem double_eq_zero_of_four_mul_eq_zero {N : R} (hN : 4 * N = 0) (P : Pair R) :
-    double N 0 P = 0 := by
-  ext
-  · simp [double_x]
-  · rw [double_z, Pair.zero_z]
-    linear_combination ((P.x + P.z) ^ 2 - (P.x - P.z) ^ 2) * P.x * P.z * hN
 
 /-- Infinity doubles to infinity when `D` is nonzero. -/
 @[simp]
@@ -186,20 +171,6 @@ theorem double_coordinates_of_cross_eq_zero (hD : D ≠ 0)
   · rw [Pair.ne_zero_iff] at hn ⊢
     simpa [hc] using hn
   · simp [hx]
-
-/-- **Doubling of arbitrary representatives.** Over any field, if `4 * N = (A + 2) * D` and `S` has
-vanishing cross difference with `coordinates A B P`, then `double N D S` has vanishing cross
-difference with `coordinates A B (P + P)`. Neither `D ≠ 0`, `B ≠ 0`, `S ≠ 0`, nor odd
-characteristic is required: when `D = 0` or `S = 0` the output is the zero pair. -/
-theorem double_cross_eq_zero_of_cross_eq_zero
-    (h : 4 * N = (A + 2) * D) {P : (model A B).toAffine.Point} {S : Pair K}
-    (hSP : S.cross (coordinates A B P) = 0) :
-    (double N D S).cross (coordinates A B (P + P)) = 0 := by
-  rcases eq_or_ne D 0 with rfl | hD
-  · rw [double_eq_zero_of_four_mul_eq_zero (by simpa using h) S, Pair.zero_cross]
-  · rcases eq_or_ne S 0 with rfl | hS
-    · simp
-    · exact (double_coordinates_of_cross_eq_zero hD h hS hSP).2
 
 end Field
 
