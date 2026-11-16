@@ -114,7 +114,10 @@ private theorem assoc_rTensor_reducedComul (h : H) :
           1 ⊗ₜ t := by
     intro t
     induction t with
-    | tmul a b => simp; abel
+    | tmul a b =>
+      simp only [LinearMap.rTensor_tmul, TensorProduct.mk_apply, TensorProduct.assoc_tmul,
+        LinearMap.flip_apply, LinearMap.lTensor_tmul]
+      abel
     | add s t hs ht =>
       simp only [map_add, TensorProduct.add_tmul, TensorProduct.tmul_add] at hs ht ⊢
       linear_combination (norm := module) hs + ht
@@ -149,7 +152,7 @@ private theorem lastComul_comp_rTensor (f : X →ₗ[R] Y) :
   refine TensorProduct.ext' fun x h ↦ ?_
   simp only [lastComul, LinearMap.comp_apply, LinearMap.rTensor_tmul, LinearMap.lTensor_tmul,
     LinearEquiv.coe_coe]
-  rw [LinearMap.rTensor, LinearMap.rTensor, TensorProduct.map_map_assoc_symm]
+  rw [LinearMap.rTensor_def, LinearMap.rTensor_def, TensorProduct.map_map_assoc_symm]
   simp
 
 /-- Coassociativity of the reduced comultiplication, transported to the last two factors. -/
@@ -307,7 +310,12 @@ theorem d_comp_d (n : ℕ) : d R H M (n + 1) ∘ₗ d R H M n = 0 := by
   | zero =>
     rw [d_succ_eq, d_zero, lastComul_eq]
     refine LinearMap.ext fun m ↦ ?_
-    simp [LinearMap.rTensor_sub, Algebra.TensorProduct.one_def]
+    simp only [Nat.reduceAdd, LinearMap.rTensor_sub, zero_add, pow_one, LinearMap.coe_comp,
+      LinearMap.coe_add, LinearMap.coe_smul, Function.comp_apply, LinearMap.sub_apply,
+      LinearMap.flip_apply, TensorProduct.mk_apply, Pi.add_apply, map_sub, LinearMap.rTensor_tmul,
+      Pi.smul_apply, LinearEquiv.coe_coe, LinearMap.lTensor_tmul, Bialgebra.comul_one,
+      Algebra.TensorProduct.one_def, coassoc_symm_apply, TensorProduct.assoc_symm_tmul,
+      neg_smul, one_smul, neg_sub, LinearMap.zero_apply]
     abel
   | succ n ih =>
     rw [d_succ_eq R H M (n + 1), pow_succ, mul_neg_one,
@@ -410,6 +418,16 @@ noncomputable def cochainsMap (f : Hom R H M N) :
   | n + 1 => (cochainsMap f n).rTensor H
 
 /-- In degree zero, the induced map on cochains is the comodule morphism itself. -/
+theorem cochainsMap_zero (f : Hom R H M N) : cochainsMap f 0 = f.toLinearMap :=
+  (rfl)
+
+/-- In degree `n + 1`, the induced map on cochains is the map in degree `n` tensored with the
+identity of `H`. -/
+theorem cochainsMap_succ (f : Hom R H M N) (n : ℕ) :
+    cochainsMap f (n + 1) = (cochainsMap f n).rTensor H :=
+  (rfl)
+
+/-- In degree zero, the induced map on cochains is the comodule morphism itself. -/
 @[simp]
 theorem cochainsMap_zero_apply (f : Hom R H M N) (m : M) : cochainsMap f 0 m = f m :=
   (rfl)
@@ -427,7 +445,7 @@ theorem cochainsMap_id (n : ℕ) : cochainsMap (Hom.id R H M) n = LinearMap.id :
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [cochainsMap, ih, LinearMap.rTensor_id]
+    rw [cochainsMap_succ, ih, LinearMap.rTensor_id]
 
 /-- The map induced on cochains by a composite is the composite of the induced maps. -/
 @[simp]
@@ -436,7 +454,7 @@ theorem cochainsMap_comp (g : Hom R H N P) (f : Hom R H M N) (n : ℕ) :
   induction n with
   | zero => rfl
   | succ n ih =>
-    simp only [cochainsMap, ih, LinearMap.rTensor_comp]
+    rw [cochainsMap_succ, cochainsMap_succ, cochainsMap_succ, ih, LinearMap.rTensor_comp]
 
 /-- The map induced by a comodule morphism commutes with the Hochschild differential. -/
 theorem d_comp_cochainsMap (f : Hom R H M N) (n : ℕ) :
@@ -445,8 +463,8 @@ theorem d_comp_cochainsMap (f : Hom R H M N) (n : ℕ) :
   | zero =>
     refine LinearMap.ext fun m ↦ ?_
     rw [LinearMap.comp_apply, LinearMap.comp_apply, cochainsMap_zero_apply, d_zero_apply,
-      d_zero_apply, map_sub, cochainsMap, LinearMap.rTensor_tmul, cochainsMap_zero_apply,
-      LinearMap.rTensor, cochainsMap, ← f.map_coact_apply]
+      d_zero_apply, map_sub, cochainsMap_succ, LinearMap.rTensor_tmul, cochainsMap_zero_apply,
+      LinearMap.rTensor_def, cochainsMap_zero, ← f.map_coact_apply]
   | succ n ih =>
     have h₁ : (d R H N n).rTensor H ∘ₗ cochainsMap f (n + 1) =
         cochainsMap f (n + 2) ∘ₗ (d R H M n).rTensor H :=
