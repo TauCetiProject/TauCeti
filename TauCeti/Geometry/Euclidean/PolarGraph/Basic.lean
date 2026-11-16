@@ -56,7 +56,7 @@ theorem angle_def (p : PolarPoint) : angle p = p.1.2 := (rfl)
 @[simp] theorem radius_ne_zero (p : PolarPoint) : radius p ≠ 0 := ne_of_gt (radius_pos p)
 
 /-- Polar points are determined by their radius and unrestricted angle. -/
-@[ext] theorem PolarPoint.ext {p q : PolarPoint} (hr : radius p = radius q)
+theorem PolarPoint.ext {p q : PolarPoint} (hr : radius p = radius q)
     (ha : angle p = angle q) : p = q :=
   Subtype.ext (Prod.ext hr ha)
 
@@ -232,24 +232,18 @@ theorem separation_def (u : PolarPoint → ℝ) (k : ℤ) (p : PolarPoint) :
   simp [separation_def, sub_eq_add_neg, add_comm]
 
 /-- One-turn invariance along a point's deck orbit makes every separation at that point zero. -/
-theorem separation_eq_zero_of_deckShift_one_eq_of_orbit {u : PolarPoint → ℝ} {p : PolarPoint}
+theorem separation_eq_zero_of_deckShift_one_deckShift_eq {u : PolarPoint → ℝ} {p : PolarPoint}
     (hu : ∀ m : ℤ, u (deckShift 1 (deckShift m p)) = u (deckShift m p)) (k : ℤ) :
     separation u k p = 0 := by
-  have h (m : ℤ) : u (deckShift m p) = u p := by
-    induction m using Int.induction_on with
-    | zero => simp
-    | succ n ih => simpa only [deckShift_add] using (hu n).trans ih
-    | pred n ih =>
-      have hn := hu (-(n : ℤ) - 1)
-      rw [← deckShift_add, sub_add_cancel] at hn
-      exact hn.symm.trans ih
-  simp [separation_def, h]
+  have hp : Function.Periodic (fun m : ℤ ↦ u (deckShift m p)) 1 := fun m ↦ by
+    simpa only [deckShift_add] using hu m
+  simpa [separation_def, sub_eq_zero] using hp.zsmul_eq k
 
 /-- A height invariant under one full turn has zero separation under every deck shift. -/
 theorem separation_eq_zero_of_deckShift_one_eq {u : PolarPoint → ℝ}
     (hu : ∀ p, u (deckShift 1 p) = u p) (k : ℤ) (p : PolarPoint) :
     separation u k p = 0 :=
-  separation_eq_zero_of_deckShift_one_eq_of_orbit (fun _ ↦ hu _) k
+  separation_eq_zero_of_deckShift_one_deckShift_eq (fun _ ↦ hu _) k
 
 /-- The surface parametrization of a polar height function. -/
 def graph (u : PolarPoint → ℝ) (p : PolarPoint) : ℂ × ℝ := (projection p, u p)
