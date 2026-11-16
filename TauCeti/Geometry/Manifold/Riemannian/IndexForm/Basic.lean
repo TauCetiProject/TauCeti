@@ -51,9 +51,11 @@ without requiring the normal component of `D_t V(a) + u` to vanish.
   bilinearity, with zero, negation, subtraction and finite-sum laws.
 * `TauCeti.Manifold.intervalIntegrable_indexFormIntegrand`:
   integrability from `C¹` lifts on the closed interval.
-* `TauCeti.Manifold.indexForm_add_adjacent_intervals` and
-  `TauCeti.Manifold.sum_indexForm_adjacent_intervals`: additivity over pieces with separately
-  integrable integrands, allowing corners at the joining parameters.
+* `TauCeti.Manifold.indexForm_add_adjacent_intervals`,
+  `TauCeti.Manifold.sum_indexForm_adjacent_intervals`,
+  `TauCeti.Manifold.intervalIntegrable_indexFormIntegrand_of_eqOn_uIoo`, and
+  `TauCeti.Manifold.indexForm_eq_sum_of_eqOn_uIoo`: additivity over pieces with separately
+  integrable or piecewise `C¹` integrands, allowing corners at the joining parameters.
 * `TauCeti.Manifold.indexForm_eq_inner_sub_inner_sub_integral` and
   `TauCeti.Manifold.indexForm_eq_inner_alongCurveWithin_sub_inner_sub_integral`: integration by
   parts with unrestricted and within-set derivatives.
@@ -659,6 +661,42 @@ theorem sum_indexForm_adjacent_intervals {n : ℕ} (τ : Fin (n + 1) → ℝ)
       indexForm I γ V W (τ 0) (τ (Fin.last n)) := by
   simp only [indexForm_def]
   exact TauCeti.intervalIntegral.sum_integral_adjacent_intervals_fin τ hint
+
+/-- If `γ` and two fields `V, W` agree on `uIoo a b` with a curve `δ` and fields `P, Q` having `C¹`
+lifts on `uIcc a b`, then `indexFormIntegrand I γ V W` is interval integrable on `a..b`. -/
+theorem intervalIntegrable_indexFormIntegrand_of_eqOn_uIoo {δ : ℝ → M}
+    {P Q : ∀ t, TangentSpace I (δ t)}
+    (hγ : EqOn γ δ (uIoo a b))
+    (hV : ∀ t ∈ uIoo a b, HEq (V t) (P t))
+    (hW : ∀ t ∈ uIoo a b, HEq (W t) (Q t))
+    (hP : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (δ r) (P r)) (uIcc a b))
+    (hQ : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (δ r) (Q r)) (uIcc a b)) :
+    IntervalIntegrable (indexFormIntegrand I γ V W) MeasureTheory.volume a b := by
+  refine (intervalIntegrable_indexFormIntegrand hP hQ).congr_uIoo fun t ht ↦ ?_
+  have hmem : uIoo a b ∈ 𝓝 t := isOpen_Ioo.mem_nhds ht
+  exact (indexFormIntegrand_congr (eventually_of_mem hmem hγ)
+    (eventually_of_mem hmem hV) (eventually_of_mem hmem hW)).symm
+
+/-- **Piecewise additivity of the index form.** If `γ` and two tangent fields `V, W` agree on each
+open piece `uIoo (τ i.castSucc) (τ i.succ)` of an arbitrary finite partition `τ` with a curve
+`γ' i` and fields `V' i, W' i` having `C¹` lifts on `uIcc (τ i.castSucc) (τ i.succ)`, then
+`indexForm I γ V W (τ 0) (τ (Fin.last n))` is the sum of the piece index forms
+`indexForm I (γ' i) (V' i) (W' i) (τ i.castSucc) (τ i.succ)`. -/
+theorem indexForm_eq_sum_of_eqOn_uIoo {n : ℕ} (τ : Fin (n + 1) → ℝ)
+    {γ' : Fin n → ℝ → M}
+    {V' W' : ∀ i : Fin n, ∀ t, TangentSpace I (γ' i t)}
+    (hγ : ∀ i : Fin n, EqOn γ (γ' i) (uIoo (τ i.castSucc) (τ i.succ)))
+    (hV : ∀ i : Fin n, ∀ t ∈ uIoo (τ i.castSucc) (τ i.succ), HEq (V t) (V' i t))
+    (hW : ∀ i : Fin n, ∀ t ∈ uIoo (τ i.castSucc) (τ i.succ), HEq (W t) (W' i t))
+    (hV' : ∀ i : Fin n, ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+      (fun r ↦ TotalSpace.mk' E (γ' i r) (V' i r)) (uIcc (τ i.castSucc) (τ i.succ)))
+    (hW' : ∀ i : Fin n, ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+      (fun r ↦ TotalSpace.mk' E (γ' i r) (W' i r)) (uIcc (τ i.castSucc) (τ i.succ))) :
+    indexForm I γ V W (τ 0) (τ (Fin.last n)) =
+      ∑ i : Fin n, indexForm I (γ' i) (V' i) (W' i) (τ i.castSucc) (τ i.succ) := by
+  rw [← sum_indexForm_adjacent_intervals τ fun i ↦
+    intervalIntegrable_indexFormIntegrand_of_eqOn_uIoo (hγ i) (hV i) (hW i) (hV' i) (hW' i)]
+  exact Finset.sum_congr rfl fun i _ ↦ indexForm_congr (hγ i) (hV i) (hW i)
 
 /-! ### Integration by parts -/
 

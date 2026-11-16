@@ -56,8 +56,9 @@ defined for all time.
 * `TauCeti.Manifold.curveVelocity_riemannianExp_add_smul` and
   `TauCeti.Manifold.curveVelocity_riemannianExp_smul`: velocities of affine and radial curves
   through the exponential map.
-* `TauCeti.Manifold.curveVelocity_riemannianExp_smul_zero`: the radial curve `s ↦ exp_p (s • v)`
-  leaves `p` with velocity `v`.
+* `TauCeti.Manifold.curveVelocity_riemannianExp_smul_zero` and
+  `TauCeti.Manifold.acceleration_riemannianExp_smul_zero`: the radial curve `s ↦ exp_p (s • v)`
+  leaves `p` with velocity `v` and vanishing covariant acceleration.
 * `TauCeti.Manifold.mfderiv_riemannianExp_zero`: the differential of the exponential map at `0`
   is the identity.
 * `TauCeti.Manifold.isLocalDiffeomorphAt_riemannianExp_zero`: the exponential map is a local
@@ -360,6 +361,15 @@ theorem contMDiffAt_riemannianExp_smul_zero [T2Space M] (p : M) (v : TangentSpac
   -- `mfderiv_congr_point` moves the base point of the differential from `0 • v` to `0`
   exact (DFunLike.congr_fun (mfderiv_congr_point (I := 𝓘(ℝ, TangentSpace I p)) (I' := I)
     (f := riemannianExp I M p) (zero_smul ℝ v)) v).trans (mfderiv_riemannianExp_apply_zero p v)
+
+/-- The radial curve `s ↦ exp_p (s • v)` has vanishing covariant acceleration at `0`. -/
+@[simp] theorem acceleration_riemannianExp_smul_zero [T2Space M] (p : M) (v : TangentSpace I p) :
+    CovariantDerivative.acceleration (CovariantDerivative.leviCivitaConnection I M)
+      (fun s : ℝ ↦ riemannianExp I M p (s • v)) 0 = 0 := by
+  have key (γ : ℝ → M) (hγ : γ = maximalGeodesic I M p v) :
+      CovariantDerivative.acceleration (CovariantDerivative.leviCivitaConnection I M) γ 0 = 0 :=
+    hγ ▸ acceleration_maximalGeodesic_eq_zero zero_mem_geodesicInterval
+  exact key _ (funext (riemannianExp_smul p v))
 
 /-- **The differential of the exponential map at the origin is the identity**, under the
 canonical identification `NormedSpace.fromTangentSpace` of the tangent space to `T_p M` at `0`

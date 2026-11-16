@@ -41,6 +41,8 @@ follows the geodesic `s ↦ exp_(γ b) (s • V b)`, which is fixed when `V b = 
 * `TauCeti.Manifold.exponentialVariation`: the exponential variation of a curve along a field.
 * `TauCeti.Manifold.exponentialVariation_zero`: its central curve is the original curve.
 * `TauCeti.Manifold.variationField_exponentialVariation`: its variation field is the given field.
+* `TauCeti.Manifold.acceleration_exponentialVariation_zero`: its transverse curves have vanishing
+  covariant acceleration at `s = 0`.
 * `TauCeti.Manifold.contMDiffAt_exponentialVariation`: its joint regularity on the domain of the
   exponential map.
 * `TauCeti.Manifold.contMDiffAt_exponentialVariation_zero`: its joint regularity along the
@@ -103,6 +105,13 @@ theorem variationField_exponentialVariation (t : ℝ) :
     variationField I (exponentialVariation I γ V) t = V t := by
   rw [variationField_apply]
   exact curveVelocity_riemannianExp_smul_zero (γ t) (V t)
+
+/-- Each transverse geodesic of the exponential variation has vanishing covariant acceleration at
+the central parameter `s = 0`. -/
+theorem acceleration_exponentialVariation_zero (t : ℝ) :
+    CovariantDerivative.acceleration (CovariantDerivative.leviCivitaConnection I M)
+      (fun s ↦ exponentialVariation I γ V s t) 0 = 0 :=
+  acceleration_riemannianExp_smul_zero (γ t) (V t)
 
 /-- The exponential variation is jointly `C^n` at every `(s, t)` with `s • V t` in the domain of
 the exponential map at `γ t`, when the lift of `V` to the tangent bundle is `C^n` at `t`. -/

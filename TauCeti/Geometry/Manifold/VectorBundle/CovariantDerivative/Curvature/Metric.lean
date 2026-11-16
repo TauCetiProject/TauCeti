@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
@@ -18,6 +19,9 @@ The curvature endomorphisms of a metric-compatible connection are skew-adjoint:
 `⟪R(X,Y)σ, τ⟫ = -⟪σ, R(X,Y)τ⟫`. The first theorem applies to `C^n` fields and
 `C^(n + 1)` sections for `1 ≤ n`, under the corresponding finite regularity hypotheses;
 the second specializes it to the smooth pointwise curvature tensor on arbitrary fibre vectors.
+On the tangent bundle, skew-symmetry in the first and last pairs also makes
+`⟪R(u, w) w, v⟫` invariant under projecting `u` and `v` orthogonally away from `ℝ ∙ w`
+(`CovariantDerivative.IsMetricCompatible.inner_curvatureTensor_sub_starProjection_singleton`).
 
 Under these hypotheses this is antisymmetry in the last two arguments of the
 metric-lowered Riemann tensor. Together with antisymmetry in the first two arguments,
@@ -126,6 +130,37 @@ theorem IsMetricCompatible.inner_curvatureTensor_eq_neg
   let _ : ContMDiffVectorBundle (∞ + 1) F V I := by
     simpa using (inferInstance : ContMDiffVectorBundle ∞ F V I)
   exact hcov.inner_curvatureOperator_eq_neg (n := ∞) (by simp) hX hY hσ hτ x
+
+end CovariantDerivative
+
+namespace CovariantDerivative
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {cov : CovariantDerivative I E (TangentSpace I : M → Type _)}
+  [ContMDiffCovariantDerivative cov ∞]
+  [RiemannianBundle (TangentSpace I : M → Type _)]
+  [IsContMDiffRiemannianBundle I 2 E (TangentSpace I : M → Type _)]
+
+/-- For a smooth metric-compatible connection on the tangent bundle, projecting `u` and `v`
+orthogonally away from `ℝ ∙ w` leaves `⟪R(u, w) w, v⟫` unchanged, by skew-symmetry of `R` in its
+first and last pairs of arguments. -/
+theorem IsMetricCompatible.inner_curvatureTensor_sub_starProjection_singleton
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
+    (x : M) (w u v : TangentSpace I x) :
+    inner ℝ (cov.curvatureTensor x (u - (ℝ ∙ w).starProjection u) w w)
+      (v - (ℝ ∙ w).starProjection v) =
+      inner ℝ (cov.curvatureTensor x u w w) v := by
+  have hskew := hcov.inner_curvatureTensor_eq_neg x u w w w
+  have hzero : inner ℝ (cov.curvatureTensor x u w w) w = 0 := by
+    rw [real_inner_comm (cov.curvatureTensor x u w w) w] at hskew
+    linarith
+  rw [Submodule.starProjection_singleton, Submodule.starProjection_singleton,
+    RCLike.ofReal_real_eq_id, id_eq]
+  simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply,
+    curvatureTensor_self, smul_zero, sub_zero, inner_sub_right, real_inner_smul_right, hzero,
+    mul_zero]
 
 end CovariantDerivative
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # First variation of energy for curves with corners
@@ -17,11 +18,13 @@ extensions agree at every moving vertex, while their longitudinal velocities may
 
 The energy is the existing `TauCeti.Manifold.energy` of the assembled curve. It is locally the
 sum of the piece energies, even though the unrestricted velocity at a corner may take a junk
-value. Summing the smooth first-variation formula gives the endpoint terms, the bulk acceleration
-integrals, and at each interior vertex the incoming boundary pairing minus the outgoing one.
-Since both transverse velocities are the velocity of the same moving vertex, this is the usual
-pairing of the variation field with the incoming-minus-outgoing velocity jump. Keeping the two
-pairings separate avoids transports between propositionally equal tangent fibres.
+value; on `C²` piece extensions, its first derivative near zero is likewise the sum of the piece
+energy derivatives (`TauCeti.Manifold.eventually_deriv_energy_eq_sum_of_piecewise`). Summing the
+smooth first-variation formula gives the endpoint terms, the bulk acceleration integrals, and at
+each interior vertex the incoming boundary pairing minus the outgoing one. Since both transverse
+velocities are the velocity of the same moving vertex, this is the usual pairing of the variation
+field with the incoming-minus-outgoing velocity jump. Keeping the two pairings separate avoids
+transports between propositionally equal tangent fibres.
 
 The partition and its extensions are witnesses, not part of a new curve or energy carrier.
 In particular the resulting derivative is independent of these choices. The fixed-endpoint
@@ -102,8 +105,48 @@ theorem eventually_energy_eq_sum_of_piecewise {n : ℕ} (τ : Fin (n + 1) → �
 
 end EnergySum
 
+/-- On a nondecreasing partition, the first piece `G 0` agrees near `0` at the left outer endpoint
+`τ 0` with `F`. -/
+theorem eventuallyEq_piecewise_left {α : Type*} {n : ℕ} (τ : Fin (n + 2) → ℝ)
+    (hτ : Monotone τ) {F : ℝ → ℝ → α} {G : Fin (n + 1) → ℝ → ℝ → α}
+    (hFG : ∀ᶠ s in 𝓝 (0 : ℝ), ∀ i : Fin (n + 1),
+      EqOn (F s) (G i s) (Icc (τ i.castSucc) (τ i.succ))) :
+    (fun s ↦ G 0 s (τ 0)) =ᶠ[𝓝 0] fun s ↦ F s (τ 0) :=
+  hFG.mono fun _ hs ↦ (hs 0 ⟨le_rfl, hτ (Fin.zero_le _)⟩).symm
+
+/-- On a nondecreasing partition, the last piece `G (Fin.last n)` agrees near `0` at the right
+outer endpoint `τ (Fin.last (n + 1))` with `F`. -/
+theorem eventuallyEq_piecewise_right {α : Type*} {n : ℕ} (τ : Fin (n + 2) → ℝ)
+    (hτ : Monotone τ) {F : ℝ → ℝ → α} {G : Fin (n + 1) → ℝ → ℝ → α}
+    (hFG : ∀ᶠ s in 𝓝 (0 : ℝ), ∀ i : Fin (n + 1),
+      EqOn (F s) (G i s) (Icc (τ i.castSucc) (τ i.succ))) :
+    (fun s ↦ G (Fin.last n) s (τ (Fin.last (n + 1)))) =ᶠ[𝓝 0]
+      fun s ↦ F s (τ (Fin.last (n + 1))) :=
+  hFG.mono fun _ hs ↦ (hs (Fin.last n) ⟨hτ (Fin.le_last _), le_rfl⟩).symm
+
 variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+
+/-- Near `s = 0`, the first derivative of the energy of a piecewise `C²` family is the sum of the
+first derivatives of the energies of its smooth piece extensions. -/
+theorem eventually_deriv_energy_eq_sum_of_piecewise {n : ℕ} (τ : Fin (n + 1) → ℝ)
+    (hτ : Monotone τ) {F : ℝ → ℝ → M} {G : Fin n → ℝ → ℝ → M}
+    (hG : ∀ i t, t ∈ Icc (τ i.castSucc) (τ i.succ) →
+      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ G i z.1 z.2) (0, t))
+    (hFG : ∀ᶠ s in 𝓝 0, ∀ i : Fin n,
+      EqOn (F s) (G i s) (Icc (τ i.castSucc) (τ i.succ))) :
+    (deriv fun s ↦ energy I (F s) (τ 0) (τ (Fin.last n))) =ᶠ[𝓝 0]
+      fun s ↦ ∑ i : Fin n, deriv (fun q ↦ energy I (G i q) (τ i.castSucc) (τ i.succ)) s := by
+  let _ := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+    (IB := I) (n := 1) (F := E) (V := fun x : M ↦ TangentSpace I x)
+  have heq := eventually_energy_eq_sum_of_piecewise τ hτ
+    (fun i t ht ↦ (hG i t ht).of_le one_le_two) hFG
+  have hdiff : ∀ i : Fin n, ∀ᶠ s in 𝓝 0,
+      DifferentiableAt ℝ (fun q ↦ energy I (G i q) (τ i.castSucc) (τ i.succ)) s := fun i ↦
+    eventually_differentiableAt_energy fun t ht ↦
+      hG i t (by simpa only [uIcc_of_le (hτ (Fin.castSucc_le_succ i))] using ht)
+  filter_upwards [heq.deriv, eventually_all.mpr hdiff] with s hs hds
+  rw [hs, deriv_fun_sum fun i _ ↦ hds i]
 
 /-- The first variation of energy for a continuous piecewise smooth family, including all
 corner terms. At an interior vertex the scalar jump is the pairing with the incoming velocity
@@ -135,10 +178,9 @@ theorem hasDerivAt_energy_piecewise {n : ℕ} (τ : Fin (n + 2) → ℝ)
   have hboundary : ∑ i : Fin (n + 1), (B i (τ i.succ) - B i (τ i.castSucc)) =
       B (Fin.last n) (τ (Fin.last (n + 1))) - B 0 (τ 0) +
         ∑ j : Fin n, (B j.castSucc (τ j.succ.castSucc) - B j.succ (τ j.succ.castSucc)) := by
-    rw [Finset.sum_sub_distrib, Fin.sum_univ_castSucc (fun i ↦ B i (τ i.succ)),
-      Fin.sum_univ_succ (fun i ↦ B i (τ i.castSucc)), Finset.sum_sub_distrib]
-    simp only [Fin.succ_castSucc, Fin.succ_last, Fin.castSucc_zero]
-    ring
+    simpa only [Fin.succ_last, Fin.castSucc_zero, Fin.succ_castSucc] using
+      Fin.sum_univ_sub_eq_add_sum_castSucc_sub_succ
+        (fun i ↦ B i (τ i.castSucc)) (fun i ↦ B i (τ i.succ))
   convert hd.congr_of_eventuallyEq heq using 1
   rw [← hboundary]
   simp only [B, Finset.sum_sub_distrib]
@@ -160,19 +202,13 @@ theorem hasDerivAt_energy_piecewise_of_fixed_endpoints {n : ℕ} (τ : Fin (n + 
         ∑ i : Fin (n + 1), ∫ t in τ i.castSucc..τ i.succ,
           inner ℝ (variationField I (G i) t)
             (acceleration (leviCivitaConnection I M) (G i 0) t)) 0 := by
-  have hleft : τ 0 ∈ Icc (τ (0 : Fin (n + 1)).castSucc) (τ (0 : Fin (n + 1)).succ) :=
-    ⟨le_rfl, hτ (Fin.zero_le _)⟩
-  have hright : τ (Fin.last (n + 1)) ∈
-      Icc (τ (Fin.last n).castSucc) (τ (Fin.last n).succ) :=
-    ⟨hτ (Fin.le_last _), le_rfl⟩
-  have haG : ∀ᶠ s in 𝓝 0, G 0 s (τ 0) = G 0 0 (τ 0) := by
-    filter_upwards [hFG, ha] with s hs hs0
-    rw [← hs 0 hleft, hs0, hFG.self_of_nhds 0 hleft]
+  have hleft := eventuallyEq_piecewise_left τ hτ hFG
+  have hright := eventuallyEq_piecewise_right τ hτ hFG
+  have haG : ∀ᶠ s in 𝓝 0, G 0 s (τ 0) = G 0 0 (τ 0) :=
+    (hleft.trans ha).mono fun _ hs ↦ hs.trans hleft.self_of_nhds.symm
   have hbG : ∀ᶠ s in 𝓝 0,
-      G (Fin.last n) s (τ (Fin.last (n + 1))) =
-        G (Fin.last n) 0 (τ (Fin.last (n + 1))) := by
-    filter_upwards [hFG, hb] with s hs hs0
-    rw [← hs (Fin.last n) hright, hs0, hFG.self_of_nhds (Fin.last n) hright]
+      G (Fin.last n) s (τ (Fin.last (n + 1))) = G (Fin.last n) 0 (τ (Fin.last (n + 1))) :=
+    (hright.trans hb).mono fun _ hs ↦ hs.trans hright.self_of_nhds.symm
   have h := hasDerivAt_energy_piecewise τ hτ hG hFG
   simpa only [variationField_eq_zero haG, variationField_eq_zero hbG, inner_zero_left,
     sub_zero, zero_add, sub_self] using h

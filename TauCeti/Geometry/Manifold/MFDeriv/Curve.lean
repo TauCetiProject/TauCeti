@@ -107,9 +107,11 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   `HasMFDerivAt.hasDerivAt_extChartAt_comp`: a curve read in any fixed extended chart containing
   its value has the coordinate expression of its velocity as velocity.
 * `TauCeti.Manifold.variationField`: the variation field `V(t) = ∂F/∂s (0, t)` of a two-parameter
-  family `F : 𝕜 → 𝕜 → M`, the transverse velocity at `s = 0`; it vanishes where the curves near
-  `s = 0` share a point (`TauCeti.Manifold.variationField_eq_zero`) and is the differential of the
-  uncurried family in the first coordinate direction (`TauCeti.Manifold.variationField_eq_mfderiv`).
+  family `F : 𝕜 → 𝕜 → M`, the transverse velocity at `s = 0`; it depends only on the transverse
+  germ at `0` (`TauCeti.Manifold.heq_variationField_of_eventuallyEq`), vanishes where the curves
+  near `s = 0` share a point (`TauCeti.Manifold.variationField_eq_zero`), and is the differential
+  of the uncurried family in the first coordinate direction
+  (`TauCeti.Manifold.variationField_eq_mfderiv`).
 * `TauCeti.Manifold.hasDerivWithinAt_extChartAt_comp_curve`: reading the curve in the chart
   centred at the current point differentiates it to the velocity itself, with
   `TauCeti.Manifold.hasDerivAt_extChartAt_comp_curve` its unrestricted case and
@@ -120,8 +122,9 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
 * `TauCeti.Manifold.mfderiv_eq_zero_of_eqOn_Iic` and
   `TauCeti.Manifold.mfderiv_eq_zero_of_eqOn_Ici`: a real curve constant on a closed half-line has
   zero manifold derivative in the interior of that half-line.
-* `TauCeti.Manifold.curveVelocityLift_eq_of_mdifferentiableAt_if_le`: two real curves meeting at
-  `c`, whose concatenation at `c` is differentiable there, have the same velocity at `c`.
+* `TauCeti.Manifold.curveVelocityLift_eq_of_mdifferentiableAt_if_le` and
+  `TauCeti.Manifold.curveVelocityLift_eq_of_eqOn_Icc`: velocity lifts agree at differentiable
+  junctions and across nondegenerate closed intervals.
 -/
 
 public section
@@ -587,6 +590,13 @@ theorem variationField_eq_zero {t : 𝕜} (h : ∀ᶠ s in 𝓝 (0 : 𝕜), F s 
     Filter.EventuallyEq.mfderiv_eq (f := fun _ ↦ F 0 t) h, mfderiv_const]
   exact zero_apply _
 
+/-- Two families agreeing at `t` for variation parameters near `0` have heterogeneously equal
+variation fields at `t`. -/
+theorem heq_variationField_of_eventuallyEq {G : 𝕜 → 𝕜 → M} {t : 𝕜}
+    (h : (fun s ↦ F s t) =ᶠ[𝓝 (0 : 𝕜)] fun s ↦ G s t) :
+    HEq (variationField I F t) (variationField I G t) :=
+  heq_of_eq h.curveVelocity_eq
+
 /-- The variation field is the differential of the uncurried family in the direction of the
 first parameter. -/
 theorem variationField_eq_mfderiv {t : 𝕜}
@@ -659,6 +669,26 @@ theorem _root_.Filter.EventuallyEq.curveVelocityLiftWithin_eq {δ : 𝕜 → M}
   refine TotalSpace.ext ht ?_
   rw [curveVelocityLiftWithin_snd, curveVelocityLiftWithin_snd, hv]
   exact TauCeti.heq_tangentSpaceCast ht.symm _
+
+/-- Two curves which agree near `t` have the same unrestricted velocity lift at `t`. -/
+theorem _root_.Filter.EventuallyEq.curveVelocityLift_eq {δ : 𝕜 → M} (h : γ =ᶠ[𝓝 t] δ) :
+    curveVelocityLift I γ t = curveVelocityLift I δ t := by
+  rw [← curveVelocityLiftWithin_univ, ← curveVelocityLiftWithin_univ]
+  exact (nhdsWithin_univ t ▸ h).curveVelocityLiftWithin_eq h.self_of_nhds
+
+/-- Two differentiable curves agreeing within a set `s` of unique differentiability at `t`, and at
+`t`, have the same unrestricted velocity lift at `t`. -/
+theorem _root_.Filter.EventuallyEq.curveVelocityLift_eq_of_uniqueDiffWithinAt {δ : 𝕜 → M}
+    (h : γ =ᶠ[𝓝[s] t] δ) (ht : γ t = δ t) (hs : UniqueDiffWithinAt 𝕜 s t)
+    (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t) (hδ : MDifferentiableAt 𝓘(𝕜, 𝕜) I δ t) :
+    curveVelocityLift I γ t = curveVelocityLift I δ t := by
+  have hwithin {β : 𝕜 → M} (hβ : MDifferentiableAt 𝓘(𝕜, 𝕜) I β t) :
+      curveVelocityLiftWithin I β s t = curveVelocityLift I β t := by
+    rw [curveVelocityLiftWithin_apply, curveVelocityLift_apply,
+      curveVelocityWithin_subset (Set.subset_univ _) hs hβ.mdifferentiableWithinAt,
+      curveVelocityWithin_univ]
+  rw [← hwithin hγ, ← hwithin hδ]
+  exact h.curveVelocityLiftWithin_eq ht
 
 variable
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
@@ -929,6 +959,15 @@ theorem curveVelocityLift_eq_of_mdifferentiableAt_if_le {δ : ℝ → N} {c : �
         rw [hlift hη (uniqueDiffWithinAt_Iic c), hlift hη (uniqueDiffWithinAt_Ici c)]
     _ = curveVelocityLiftWithin I γ (Ici c) c := hR.curveVelocityLiftWithin_eq (hηc.trans hjoin)
     _ = curveVelocityLift I γ c := hlift hγ (uniqueDiffWithinAt_Ici c)
+
+/-- Two differentiable real curves that agree on a nondegenerate closed interval `[a, b]` have the
+same velocity lift at every parameter of `[a, b]`, including the endpoints. -/
+theorem curveVelocityLift_eq_of_eqOn_Icc {b : ℝ} {δ : ℝ → N}
+    (hab : a < b) (ht : t ∈ Icc a b) (hEq : EqOn γ δ (Icc a b))
+    (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t) (hδ : MDifferentiableAt 𝓘(ℝ, ℝ) I δ t) :
+    curveVelocityLift I γ t = curveVelocityLift I δ t :=
+  Filter.EventuallyEq.curveVelocityLift_eq_of_uniqueDiffWithinAt
+    (eventually_nhdsWithin_of_forall hEq) (hEq ht) (uniqueDiffOn_Icc hab t ht) hγ hδ
 
 end TauCeti.Manifold
 

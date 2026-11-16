@@ -46,8 +46,9 @@ differentiability criterion for maps whose tangent maps preserve inner products.
   to a Riemannian manifold, `z ↦ ‖df_z ξ‖` is continuous.
 * `ContMDiffOn.contDiffOn_inner_mfderiv`: for a `C^(m+1)` map `f` from an open subset of a normed
   space to a `C^m` Riemannian manifold, `z ↦ ⟪df_z ξ, df_z η⟫` is `C^m`.
-* `TauCeti.inner_tangentSpace_congr` and `TauCeti.norm_tangentSpace_congr`: inner products and
-  norms of vectors in the tangent spaces at two equal points agree.
+* `TauCeti.inner_eq_of_totalSpaceMk_eq`, `TauCeti.inner_tangentSpace_congr`, and
+  `TauCeti.norm_tangentSpace_congr`: inner products and norms of vectors in fibres over equal base
+  points agree.
 * `TauCeti.mfderiv_mem_ball_of_apply_eq_self`: if `f` fixes `p` and its differential at `p`
   preserves the metric there, it maps every ball around the origin of `T_p M` into itself.
 -/
@@ -276,6 +277,20 @@ variable
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+
+/-- Vectors in fibres of a bundle that agree as points of the total space have equal inner
+products. Unlike `inner_tangentSpace_congr`, this requires no definitional identification of the
+fibres with the model space. -/
+theorem inner_eq_of_totalSpaceMk_eq {𝕜 B F : Type*} {V : B → Type*} [∀ x, Inner 𝕜 (V x)]
+    {x y : B} {u w : V x} {u' w' : V y}
+    (hu : TotalSpace.mk' F x u = TotalSpace.mk' F y u')
+    (hw : TotalSpace.mk' F x w = TotalSpace.mk' F y w') :
+    inner 𝕜 u w = inner 𝕜 u' w' := by
+  obtain ⟨rfl, hu'⟩ := TotalSpace.ext_iff.mp hu
+  obtain ⟨_, hw'⟩ := TotalSpace.ext_iff.mp hw
+  cases hu'
+  cases hw'
+  rfl
 
 /-- The inner products of two vectors in the tangent spaces at two equal points agree. Both
 tangent spaces are the model space, so the vectors are compared there. -/

@@ -126,18 +126,23 @@ theorem iteratedDeriv_two_const_add_smul (a b : F) :
 
 end AffineLine
 
-/-- The second derivative of `s ↦ √(g s)` at a point `t` where `0 < g t`, `g` is differentiable
-near `t` with derivative `g'` at `t`, and `deriv g` has derivative `g''` at `t`, is
+/-- The second derivative of `s ↦ √(g s)` at a point `t` where `0 < g t`, `g` has derivative
+`g'` at `t`, and `deriv g` has derivative `g''` at `t`, is
 `g'' / (2 * √(g t)) - g' ^ 2 / (4 * g t * √(g t))`. -/
 theorem hasDerivAt_deriv_sqrt {g : ℝ → ℝ} {g' g'' t : ℝ} (ht : 0 < g t)
-    (hg : ∀ᶠ s in 𝓝 t, DifferentiableAt ℝ g s)
     (hg' : HasDerivAt g g' t) (hg'' : HasDerivAt (deriv g) g'' t) :
     HasDerivAt (deriv fun s ↦ √(g s))
       (g'' / (2 * √(g t)) - g' ^ 2 / (4 * g t * √(g t))) t := by
   have hpos : ∀ᶠ s in 𝓝 t, 0 < g s :=
     continuousAt_const.eventually_lt hg'.continuousAt ht
-  have hderiv : deriv (fun s ↦ √(g s)) =ᶠ[𝓝 t] fun s ↦ deriv g s / (2 * √(g s)) :=
-    (hg.and hpos).mono fun s ⟨hds, hspos⟩ ↦ (hds.hasDerivAt.sqrt hspos.ne').deriv
+  have hderiv : deriv (fun s ↦ √(g s)) =ᶠ[𝓝 t] fun s ↦ deriv g s / (2 * √(g s)) := by
+    filter_upwards [eventually_eventually_nhds.mpr hpos] with s hspos
+    by_cases hds : DifferentiableAt ℝ g s
+    · exact (hds.hasDerivAt.sqrt hspos.self_of_nhds.ne').deriv
+    · have hds_sqrt : ¬ DifferentiableAt ℝ (fun u ↦ √(g u)) s := fun hd ↦
+        hds ((hd.pow 2).congr_of_eventuallyEq (hspos.mono fun u hu ↦ (Real.sq_sqrt hu.le).symm))
+      rw [deriv_zero_of_not_differentiableAt hds_sqrt, deriv_zero_of_not_differentiableAt hds,
+        zero_div]
   have hden : HasDerivAt (fun s ↦ 2 * √(g s)) (2 * (g' / (2 * √(g t)))) t :=
     (hg'.sqrt ht.ne').const_mul 2
   refine ((HasDerivAt.fun_div hg'' hden (by positivity)).congr_of_eventuallyEq hderiv).congr_deriv
@@ -150,10 +155,10 @@ theorem hasDerivAt_deriv_sqrt {g : ℝ → ℝ} {g' g'' t : ℝ} (ht : 0 < g t)
 
 /-- Evaluating `hasDerivAt_deriv_sqrt` as `deriv (deriv fun s ↦ √(g s)) t`. -/
 theorem deriv_deriv_sqrt {g : ℝ → ℝ} {t : ℝ} (ht : 0 < g t)
-    (hg : ∀ᶠ s in 𝓝 t, DifferentiableAt ℝ g s) (hg'' : DifferentiableAt ℝ (deriv g) t) :
+    (hg : DifferentiableAt ℝ g t) (hg'' : DifferentiableAt ℝ (deriv g) t) :
     deriv (deriv fun s ↦ √(g s)) t =
       deriv (deriv g) t / (2 * √(g t)) - deriv g t ^ 2 / (4 * g t * √(g t)) :=
-  (hasDerivAt_deriv_sqrt ht hg hg.self_of_nhds.hasDerivAt hg''.hasDerivAt).deriv
+  (hasDerivAt_deriv_sqrt ht hg.hasDerivAt hg''.hasDerivAt).deriv
 
 /-- The second derivative of the square root of a quadratic polynomial
 `Q s = a + b * s + c * s ^ 2` at a point `t` where `Q` is positive is
@@ -161,21 +166,14 @@ theorem deriv_deriv_sqrt {g : ℝ → ℝ} {t : ℝ} (ht : 0 < g t)
 theorem deriv_deriv_sqrt_quadratic {a b c t : ℝ} (ht : 0 < a + b * t + c * t ^ 2) :
     deriv (deriv fun s ↦ √(a + b * s + c * s ^ 2)) t =
       (4 * a * c - b ^ 2) / (4 * (a + b * t + c * t ^ 2) * √(a + b * t + c * t ^ 2)) := by
-  have hQ (s : ℝ) := hasDerivAt_quadratic a b c s
-  have hpos : ∀ᶠ s in 𝓝 t, 0 < a + b * s + c * s ^ 2 :=
-    continuousAt_const.eventually_lt (HasDerivAt.continuousAt (hQ t)) ht
-  have hderiv : deriv (fun s ↦ √(a + b * s + c * s ^ 2)) =ᶠ[𝓝 t]
-      fun s ↦ (b + 2 * c * s) / (2 * √(a + b * s + c * s ^ 2)) :=
-    hpos.mono fun s hs ↦ (HasDerivAt.sqrt (hQ s) hs.ne').deriv
-  have hnum : HasDerivAt (fun s ↦ b + 2 * c * s) (2 * c) t := by
-    simpa using HasDerivAt.const_add b (HasDerivAt.const_mul (2 * c) (hasDerivAt_id t))
-  have hden : HasDerivAt (fun s ↦ 2 * √(a + b * s + c * s ^ 2))
-      (2 * ((b + 2 * c * t) / (2 * √(a + b * t + c * t ^ 2)))) t :=
-    HasDerivAt.const_mul 2 (HasDerivAt.sqrt (hQ t) ht.ne')
-  rw [hderiv.deriv_eq, (HasDerivAt.fun_div hnum hden (by positivity)).deriv]
-  have hsq := Real.sq_sqrt ht.le
+  have hd : deriv (fun s ↦ a + b * s + c * s ^ 2) = fun s ↦ b + 2 * c * s :=
+    funext fun s ↦ (hasDerivAt_quadratic a b c s).deriv
+  have hdd : HasDerivAt (deriv fun s ↦ a + b * s + c * s ^ 2) (2 * c) t := by
+    rw [hd]
+    simpa using ((hasDerivAt_id t).const_mul (2 * c)).const_add b
+  rw [(hasDerivAt_deriv_sqrt (g := fun s ↦ a + b * s + c * s ^ 2) ht
+    (hasDerivAt_quadratic a b c t) hdd).deriv]
   field_simp
-  rw [hsq]
   ring
 
 /-- The second derivative at `0` of the square root of a quadratic polynomial

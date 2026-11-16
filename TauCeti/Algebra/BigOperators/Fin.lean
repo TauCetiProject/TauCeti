@@ -76,6 +76,15 @@ theorem sum_univ_castSucc_sub_succ {G : Type*} [AddCommGroup G] {n : ℕ}
     ∑ i : Fin n, (f i.castSucc - f i.succ) = f 0 - f (last n) := by
   simpa only [neg_sub_neg] using sum_univ_succ_sub_castSucc (fun i ↦ -f i)
 
+/-- Summing piece boundary differences `r i - l i` over `Fin (n + 1)` separates the outer endpoint
+terms `r (last n) - l 0` from the interior jumps `r j.castSucc - l j.succ`. -/
+theorem sum_univ_sub_eq_add_sum_castSucc_sub_succ {G : Type*} [AddCommGroup G] {n : ℕ}
+    (l r : Fin (n + 1) → G) :
+    ∑ i : Fin (n + 1), (r i - l i) =
+      r (last n) - l 0 + ∑ j : Fin n, (r j.castSucc - l j.succ) := by
+  rw [Finset.sum_sub_distrib, sum_univ_castSucc r, sum_univ_succ l, Finset.sum_sub_distrib,
+    add_comm _ (r (last n)), sub_add_eq_sub_sub, add_sub_right_comm, add_sub_assoc]
+
 -- Adapted from [AINTLIB](https://github.com/CBirkbeck/AINTLIB) (Chris Birkbeck), Apache-2.0, at
 -- commit `2baa76f742bdb4fb8ee323fabba41203bd390e08`,
 -- `LeanModularForms/HeckeRIngs/GLn/DiagonalCosets.lean`, where it is a step in the uniqueness of

@@ -88,8 +88,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `‖v‖ ≤ ‖v + w‖` for every `w ∈ Uᗮ`.
 * `Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal`: Pythagoras for `‖v - (b + c)‖²` with
   `b ∈ R` and `c ∈ Rᗮ`, split along `R` and `Rᗮ`.
-* `Submodule.inner_sub_starProjection_singleton`: over `ℝ`, projecting two vectors away from
-  `ℝ ∙ w` subtracts `⟪u, w⟫ ⟪v, w⟫ / ‖w‖²` from their inner product.
+* `Submodule.inner_sub_starProjection_singleton`: projecting two vectors away from `𝕜 ∙ w`
+  subtracts `⟪u, w⟫_𝕜 ⟪w, v⟫_𝕜 / ↑‖w‖²` from their inner product.
 * `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
   `U ⊓ Vᗮ = ⊥`.
 * `Submodule.rank_le_of_disjoint_orthogonal`: if `U ⊓ Vᗮ = ⊥`, then `rank U ≤ rank V`.
@@ -359,6 +359,17 @@ theorem span_range_starProjection_orthogonal_basis_succ
   rw [hw']
   exact sum_mem fun j _ ↦ smul_mem _ _ (subset_span ⟨j, rfl⟩)
 
+/-- Projecting two vectors `u` and `v` orthogonally away from `𝕜 ∙ w` subtracts
+`⟪u, w⟫_𝕜 * ⟪w, v⟫_𝕜 / ↑‖w‖²` from their inner product. Holds unconditionally, including for
+`w = 0` via `0 / 0 = 0`. -/
+theorem inner_sub_starProjection_singleton (w u v : E) :
+    ⟪u - (𝕜 ∙ w).starProjection u, v - (𝕜 ∙ w).starProjection v⟫_𝕜 =
+      ⟪u, v⟫_𝕜 - ⟪u, w⟫_𝕜 * ⟪w, v⟫_𝕜 / ((‖w‖ ^ 2 : ℝ) : 𝕜) := by
+  have horth : ⟪u - (𝕜 ∙ w).starProjection u, (𝕜 ∙ w).starProjection v⟫_𝕜 = 0 :=
+    (𝕜 ∙ w).starProjection_inner_eq_zero u _ (starProjection_apply_mem _ v)
+  rw [inner_sub_right, horth, sub_zero, inner_sub_left, starProjection_singleton,
+    inner_smul_left, map_div₀, inner_conj_symm, RCLike.conj_ofReal, div_mul_eq_mul_div]
+
 section Real
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -377,19 +388,6 @@ theorem norm_sub_add_sq_of_mem_of_mem_orthogonal (v : F) {b c : F} (hb : b ∈ R
     R.inner_right_of_mem_orthogonal (R.sub_mem (R.starProjection_apply_mem v) hb) hperp,
     norm_sub_sq_real, real_inner_comm]
   ring
-
-omit R in
-/-- Over `ℝ`, projecting two vectors `u` and `v` orthogonally away from `ℝ ∙ w` subtracts
-`⟪u, w⟫ ⟪v, w⟫ / ‖w‖²` from their inner product. Holds unconditionally, including for `w = 0` via
-`0 / 0 = 0`. -/
-theorem inner_sub_starProjection_singleton (w u v : F) :
-    ⟪u - (ℝ ∙ w).starProjection u, v - (ℝ ∙ w).starProjection v⟫_ℝ =
-      ⟪u, v⟫_ℝ - ⟪u, w⟫_ℝ * ⟪v, w⟫_ℝ / ‖w‖ ^ 2 := by
-  have horth : ⟪u - (ℝ ∙ w).starProjection u, (ℝ ∙ w).starProjection v⟫_ℝ = 0 :=
-    (ℝ ∙ w).starProjection_inner_eq_zero u _ (starProjection_apply_mem _ v)
-  rw [inner_sub_right, horth, sub_zero, inner_sub_left, starProjection_singleton,
-    RCLike.ofReal_real_eq_id, id_eq, real_inner_smul_left, real_inner_comm w u,
-    real_inner_comm w v, div_mul_eq_mul_div]
 
 end Real
 

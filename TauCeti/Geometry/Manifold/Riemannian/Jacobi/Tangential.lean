@@ -47,8 +47,9 @@ everywhere exactly when it and its covariant derivative are orthogonal to `γ'` 
   normal everywhere if and only if `J` and `DJ` are normal at one parameter.
 * `TauCeti.Manifold.IsJacobiFieldOn.starProjection_singleton_eq`: the orthogonal projection of a
   Jacobi field onto the velocity line is `(α + β t) γ'(t)` with explicit coefficients.
-* `TauCeti.Manifold.IsGeodesicCurveOn.alongCurveWithin_starProjection_singleton` and
-  `TauCeti.Manifold.IsGeodesicCurveOn.alongCurveWithin_sub_starProjection_singleton`: covariant
+* `TauCeti.Manifold.IsGeodesicCurveOn.alongCurveWithin_starProjection_singleton`,
+  `TauCeti.Manifold.IsGeodesicCurveOn.alongCurveWithin_sub_starProjection_singleton`, and
+  `TauCeti.Manifold.IsGeodesicCurveOn.alongCurve_sub_starProjection_singleton`: covariant
   differentiation preserves the tangential and normal splitting.
 * `TauCeti.Manifold.IsJacobiFieldOn.isJacobiFieldOn_starProjection_singleton` and
   `TauCeti.Manifold.IsJacobiFieldOn.isJacobiFieldOn_sub_starProjection_singleton`: the tangential
@@ -312,6 +313,30 @@ theorem IsGeodesicCurveOn.alongCurveWithin_sub_starProjection_singleton
   have hD := alongCurveWithin_add (leviCivitaConnection I M) γ N P s hN hP.1
   rw [← hsum, hP.2] at hD
   exact eq_sub_of_add_eq hD.symm
+
+omit [T2Space M] in
+/-- Covariant differentiation commutes with the normal projection of a differentiable field
+along a curve that is a geodesic near `t`. -/
+theorem IsGeodesicCurveOn.alongCurve_sub_starProjection_singleton
+    (h : IsGeodesicCurveOn I γ s) (hs : s ∈ 𝓝 t)
+    (hJ : DifferentiableAt ℝ (sectionCoord (F := E) γ J (γ t)) t) :
+    alongCurve (leviCivitaConnection I M) γ
+        (fun r ↦ J r - (ℝ ∙ curveVelocity I γ r).starProjection (J r)) t =
+      alongCurve (leviCivitaConnection I M) γ J t -
+        (ℝ ∙ curveVelocity I γ t).starProjection
+          (alongCurve (leviCivitaConnection I M) γ J t) := by
+  obtain ⟨ε, hε, hsub⟩ := Metric.mem_nhds_iff.mp hs
+  set b := Metric.ball t ε
+  have hb_nhds : b ∈ 𝓝 t := Metric.ball_mem_nhds t hε
+  have heq : (fun r ↦ J r - (ℝ ∙ curveVelocity I γ r).starProjection (J r)) =ᶠ[𝓝[b] t]
+      fun r ↦ J r - (ℝ ∙ curveVelocityWithin I γ b r).starProjection (J r) := by
+    filter_upwards [self_mem_nhdsWithin] with r hr
+    rw [curveVelocityWithin_of_mem_nhds (Metric.isOpen_ball.mem_nhds hr)]
+  rw [← alongCurveWithin_of_mem_nhds _ γ _ hb_nhds,
+    alongCurveWithin_congr _ γ _ heq (heq.eq_of_nhdsWithin (Metric.mem_ball_self hε)),
+    (h.mono Metric.isOpen_ball.uniqueDiffOn hsub).alongCurveWithin_sub_starProjection_singleton
+      (convex_ball t ε).isPreconnected (Metric.mem_ball_self hε) hJ.differentiableWithinAt,
+    alongCurveWithin_of_mem_nhds _ γ J hb_nhds, curveVelocityWithin_of_mem_nhds hb_nhds]
 
 omit [T2Space M] in
 /-- The normal projection of a differentiable field along a geodesic and its covariant derivative
