@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Basic
+import Mathlib.Algebra.Group.Submonoid.Membership
 import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Image
 import Mathlib.Data.Set.Insert
-import Mathlib.GroupTheory.Perm.Fin
+import Mathlib.GroupTheory.Perm.Sign
 
 /-!
 # Insertions and appends in tuples
@@ -74,8 +75,9 @@ once.
   change the set of entries.
 * `Fin.existsUnique_isLeft_castSucc_and_isRight_succ`: a tuple in `α ⊕ β` from the left summand to
   the right one that never steps back steps from left to right exactly once.
-* `Fin.eq_comp_perm_of_tail_of_swap`: a family of maps on tuples `Fin j → α` that respects
-  permutations of `Fin.tail` and swaps of the first two entries is invariant under all permutations.
+* `Fin.comp_perm_eq_of_cons_of_swap`: a family of maps `F` on tuples `Fin j → α` for which
+  prepending an entry (`Fin.cons v`) respects `F j`-equality and swapping the first two entries
+  leaves `F` invariant is invariant under all permutations.
 -/
 
 public section
@@ -378,7 +380,7 @@ theorem image_cons_le_eq_insert {α : Type*} {n : ℕ} (x : α) (p : Fin m → �
     Fin.cons x p '' {index | (index : ℕ) ≤ n} =
       insert x (p '' {index | (index : ℕ) < n}) := by
   ext element
-  simp [Set.mem_image, Fin.exists_fin_succ, eq_comm]
+  simp [Set.mem_image, Fin.exists_fin_succ, eq_comm, Nat.add_one_le_iff]
 
 /-- Inserting the entry `1` into a tuple gives a tuple that does not vanish. -/
 theorem insertNth_one_ne_zero {α : Type*} [Zero α] [One α] [NeZero (1 : α)] {n : ℕ}
@@ -474,10 +476,11 @@ theorem existsUnique_isLeft_castSucc_and_isRight_succ {α β : Type*} {n : ℕ}
   · have := hmono (castSucc_lt_iff_succ_le.mp (castSucc_lt_castSucc_iff.mpr h))
     omega
 
-/-- Any family of maps on tuples `Fin j → α` that respects permutations of `Fin.tail` and swaps of
-the first two entries is invariant under every permutation of `Fin j`. -/
-theorem eq_comp_perm_of_tail_of_swap {β : ℕ → Sort*} (F : ∀ j, (Fin j → α) → β j)
-    (htail : ∀ j (v : α) (m m' : Fin j → α), F j m = F j m' →
+/-- Any family of maps `F` on tuples `Fin j → α` such that prepending an entry via `Fin.cons`
+respects `F j`-equality (`F j m = F j m' → F (j + 1) (cons v m) = F (j + 1) (cons v m')`) and `F`
+is invariant under `Equiv.swap 0 1` is invariant under every permutation of `Fin j`. -/
+theorem comp_perm_eq_of_cons_of_swap {β : ℕ → Sort*} (F : ∀ j, (Fin j → α) → β j)
+    (hcons : ∀ j (v : α) (m m' : Fin j → α), F j m = F j m' →
       F (j + 1) (cons v m : Fin (j + 1) → α) = F (j + 1) (cons v m' : Fin (j + 1) → α))
     (hswap : ∀ j (m : Fin (j + 2) → α), F (j + 2) (m ∘ Equiv.swap 0 1) = F (j + 2) m) :
     ∀ (j : ℕ) (m : Fin j → α) (σ : Equiv.Perm (Fin j)), F j (m ∘ σ) = F j m
@@ -485,33 +488,22 @@ theorem eq_comp_perm_of_tail_of_swap {β : ℕ → Sort*} (F : ∀ j, (Fin j →
       have hm : m ∘ σ = m := funext fun i => i.elim0
       rw [hm]
   | j + 1, m, σ => by
-      have ih := eq_comp_perm_of_tail_of_swap F htail hswap j
-      have h0 : ∀ (r : Fin (j + 1)) (m' : Fin (j + 1) → α),
-          F (j + 1) (m' ∘ Equiv.swap 0 r) = F (j + 1) m' := by
-        intro r
-        refine cases (fun m' => by simp) (fun q m' => ?_) r
-        cases j with
-        | zero => exact q.elim0
-        | succ j' =>
-            have h1q (a : Fin (j' + 2) → α) :
-                F (j' + 2) (a ∘ Equiv.swap 1 q.succ) = F (j' + 2) a := by
-              conv_lhs =>
-                rw [← cons_self_tail a, ← succ_zero_eq_one, cons_comp_swap_succ]
-              exact (htail (j' + 1) (a 0) _ _ (ih (tail a) (Equiv.swap 0 q))).trans
-                (congrArg (F (j' + 2)) (cons_self_tail a))
-            have hconj := Equiv.symm_trans_swap_trans (0 : Fin (j' + 2)) 1 (Equiv.swap 1 q.succ)
-            rw [Equiv.symm_swap, Equiv.swap_apply_of_ne_of_ne zero_ne_one (succ_ne_zero q).symm,
-              Equiv.swap_apply_left] at hconj
-            rw [← hconj, Equiv.coe_trans, Equiv.coe_trans, ← Function.comp_assoc,
-              ← Function.comp_assoc, h1q, hswap, h1q]
-      obtain ⟨⟨r, e⟩, rfl⟩ := Equiv.Perm.decomposeFin.symm.surjective σ
-      have hdecomp : m ∘ Equiv.Perm.decomposeFin.symm (r, e) =
-          (cons ((m ∘ Equiv.swap 0 r) 0) (tail (m ∘ Equiv.swap 0 r) ∘ e) : Fin (j + 1) → α) := by
-        funext x
-        refine cases ?_ (fun y => ?_) x <;> simp [tail]
-      rw [hdecomp]
-      refine (htail j ((m ∘ Equiv.swap 0 r) 0) _ _ (ih _ e)).trans ?_
-      rw [cons_self_tail]
-      exact h0 r m
+      have hadj : ∀ (n : ℕ) (i : Fin n) (a : Fin (n + 1) → α),
+          F (n + 1) (a ∘ Equiv.swap i.castSucc i.succ) = F (n + 1) a := by
+        intro n
+        induction n with
+        | zero => intro i; exact i.elim0
+        | succ n ih =>
+          intro i a
+          refine cases ?_ (fun q => ?_) i
+          · simpa using hswap n a
+          · conv_lhs => rw [← cons_self_tail a, ← succ_castSucc, cons_comp_swap_succ]
+            exact (hcons (n + 1) (a 0) _ _ (ih q (tail a))).trans
+              (congrArg (F (n + 2)) (cons_self_tail a))
+      revert m
+      refine Submonoid.induction_of_closure_eq_top_left
+        (Equiv.Perm.mclosure_swap_castSucc_succ j) σ (fun m => by simp) ?_
+      rintro _ ⟨i, rfl⟩ τ ih m
+      rw [Equiv.Perm.coe_mul, ← Function.comp_assoc, ih, hadj]
 
 end Fin

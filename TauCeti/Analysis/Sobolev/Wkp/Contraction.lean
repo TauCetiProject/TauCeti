@@ -7,10 +7,14 @@ module
 
 public import TauCeti.Analysis.Calculus.IteratedGradient.Multilinear
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.MeasureTheory.Function.EssSup
 import TauCeti.MeasureTheory.Function.Lp.Basic
+import TauCeti.MeasureTheory.Measure.Support
 
 /-!
 # Iterated directional derivatives, contractions, and all-order symmetry on `W^{k,p}`
@@ -103,15 +107,10 @@ theorem iteratedGradient_succ_swap_ae (j : ℕ) (u : Wkp mu Omega p (j + 3)) :
     exact hwv.ae_eq (hv.comm hvw hw)
   let b := stdOrthonormalBasis ℝ E
   filter_upwards [ae_all_iff.2 fun i => ae_all_iff.2 fun l => hpair (b i) (b l)] with x hx v w
-  have hvx : v = ∑ i, b.repr v i • b i := (b.sum_repr v).symm
-  have hwx : w = ∑ l, b.repr w l • b l := (b.sum_repr w).symm
-  conv_lhs => rw [hvx, hwx]
-  conv_rhs => rw [hvx, hwx]
-  simp only [map_sum, map_smul, FunLike.coe_sum, FunLike.coe_smul, Finset.sum_apply,
-    Pi.smul_apply, Finset.smul_sum, smul_smul]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun l _ => Finset.sum_congr rfl fun i _ => ?_
-  rw [hx i l, mul_comm]
+  have hflip : iteratedGradient (j + 2) u x = (iteratedGradient (j + 2) u x).flip :=
+    ContinuousLinearMap.coe_injective <| b.toBasis.ext fun i =>
+      ContinuousLinearMap.coe_injective <| b.toBasis.ext fun l => hx i l
+  exact congrArg (fun L => L v w) hflip
 
 /-- **Outer contraction of `iteratedGradient` under `lineDerivL`.** For `u ∈ W^{j+2,p}(Ω)` and
 `v : E`, the highest weak derivative of `lineDerivL v (j + 1) u` is obtained by contracting the
@@ -365,7 +364,7 @@ permutation `σ : Equiv.Perm (Fin j)` leaves the operator unchanged. -/
 theorem iteratedLineDerivL_comp_perm (k : ℕ) (j : ℕ) (m : Fin j → E) (σ : Equiv.Perm (Fin j)) :
     iteratedLineDerivL (mu := mu) (Omega := Omega) (p := p) k j (m ∘ σ) =
       iteratedLineDerivL k j m := by
-  refine Fin.eq_comp_perm_of_tail_of_swap
+  refine Fin.comp_perm_eq_of_cons_of_swap
     (fun i m' => iteratedLineDerivL (mu := mu) (Omega := Omega) (p := p) k i m')
     (fun i v m₁ m₂ h => ?_) (fun i m' => ?_) j m σ
   · rw [iteratedLineDerivL_succ, iteratedLineDerivL_succ, Fin.cons_zero, Fin.cons_zero,
@@ -403,7 +402,7 @@ theorem iteratedLineDerivZeroL_succ_apply :
         iteratedGradient_lineDerivL (m 0) j u, ContinuousLinearMap.compLp_comp,
         IteratedGradient.evalL_comp_contractL_one, Fin.cons_self_tail]
 
-/-- Sharp `Lᵖ` bound for `(j + 1)`-fold directional derivatives in terms of the top seminorm. -/
+/-- `Lᵖ` bound for `(j + 1)`-fold directional derivatives in terms of the top seminorm. -/
 theorem norm_iteratedLineDerivZeroL_succ_apply_le (j : ℕ) (m : Fin (j + 1) → E)
     (u : Wkp mu Omega p (j + 1)) :
     ‖iteratedLineDerivZeroL (j + 1) m u‖ ≤ (∏ r, ‖m r‖) * ‖iteratedGradient j u‖ := by
@@ -564,15 +563,6 @@ end Sobolev
 
 section Examples
 
-private theorem fderiv_sq_real (x : ℝ) :
-    fderiv ℝ (fun y : ℝ => y ^ 2) x = (2 * x) • ContinuousLinearMap.id ℝ ℝ := by
-  have hd : HasFDerivAt (fun y : ℝ => y * y)
-      (x • ContinuousLinearMap.id ℝ ℝ + x • ContinuousLinearMap.id ℝ ℝ) x :=
-    (hasFDerivAt_id x).mul (hasFDerivAt_id x)
-  have hsq : (fun y : ℝ => y ^ 2) = fun y : ℝ => y * y := funext sq
-  rw [hsq, hd.fderiv, ← add_smul]
-  ring_nf
-
 -- Check 1: on Ω = (0, 1) ⊆ ℝ, u(x) = x² in W^{2,p}(Ω) differentiated in direction v = 3 has
 -- value 6x almost everywhere and weak derivative 6 = (D²u)⟨3⟩¹ almost everywhere.
 example {p : ENNReal} [Fact (1 ≤ p)] :
@@ -591,17 +581,15 @@ example {p : ENNReal} [Fact (1 ≤ p)] :
   · refine (value_lineDerivL_ae_eq_of_contDiffOn 1 u (3 : ℝ)
       (hf.contDiffOn.of_le one_le_two) hu).trans (.of_forall fun x => ?_)
     dsimp only
-    rw [fderiv_sq_real]
-    simp only [smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]
+    rw [fderiv_pow_ring (𝕜 := ℝ) (x := x) 2]
+    simp only [Nat.add_one_sub_one, pow_one, two_smul, smul_apply, ContinuousLinearMap.id_apply,
+      smul_eq_mul]
     ring
   · filter_upwards [iteratedGradient_lineDerivL_ae (3 : ℝ) 0 u,
       iteratedGradient_ae_eq_of_contDiffOn 1 u hf.contDiffOn hu] with x h1 h2
     rw [h1, h2, iteratedGradientChain_succ, iteratedGradientChain_zero]
-    have hgrad : gradient (fun y : ℝ => y ^ 2) = fun y : ℝ => 2 * y := by
-      funext y
-      refine ext_inner_left ℝ fun z => ?_
-      rw [gradient, real_inner_comm, InnerProductSpace.toDual_symm_apply, fderiv_sq_real]
-      simp [RCLike.inner_apply, mul_comm]
+    have hgrad : gradient (fun y : ℝ => y ^ 2) = fun y : ℝ => 2 * y :=
+      funext fun y => by simp [gradient_eq_deriv']
     rw [hgrad]
     have hd : HasFDerivAt (fun y : ℝ => (2 : ℝ) * y)
         ((2 : ℝ) • ContinuousLinearMap.id ℝ ℝ) x := by
@@ -609,61 +597,20 @@ example {p : ENNReal} [Fact (1 ≤ p)] :
     rw [hd.fderiv, smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]
     norm_num
 
-private theorem eLpNorm_const_mul_id_Ioo_top_le {c : ℝ} (hc : 0 ≤ c) :
-    eLpNorm (fun x : ℝ => c * x) ⊤ (volume.restrict (Set.Ioo (0 : ℝ) 1)) ≤ ENNReal.ofReal c := by
-  have hm : AEStronglyMeasurable (fun x : ℝ => c * x)
-      (volume.restrict (Set.Ioo (0 : ℝ) 1)) :=
-    (continuous_const.mul continuous_id).aestronglyMeasurable
-  rw [eLpNorm_exponent_top hm]
-  refine eLpNormEssSup_le_of_ae_bound (C := c) ?_
-  filter_upwards [ae_restrict_mem isOpen_Ioo.measurableSet] with x hx
-  rw [Real.norm_of_nonneg (mul_nonneg hc hx.1.le)]
-  nlinarith [hx.2]
-
--- Helper for Check 2: the L^∞ norm of `x ↦ c * x` on `(0, 1)` is `c` for `0 < c`.
-private theorem lpNorm_const_mul_id_Ioo_top {c : ℝ} (hc : 0 < c) :
+-- Helper for Check 2: the L^∞ norm of `x ↦ c * x` on `(0, 1)` is `c` for `0 ≤ c`.
+private theorem lpNorm_const_mul_id_Ioo_top {c : ℝ} (hc : 0 ≤ c) :
     lpNorm (fun x : ℝ => c * x) ⊤ (volume.restrict (Set.Ioo (0 : ℝ) 1)) = c := by
-  have hm : AEStronglyMeasurable (fun x : ℝ => c * x)
-      (volume.restrict (Set.Ioo (0 : ℝ) 1)) :=
-    (continuous_const.mul continuous_id).aestronglyMeasurable
-  have he : eLpNorm (fun x : ℝ => c * x) ⊤ (volume.restrict (Set.Ioo (0 : ℝ) 1)) =
-      ENNReal.ofReal c := by
-    refine le_antisymm (eLpNorm_const_mul_id_Ioo_top_le hc.le) ?_
-    by_contra! hlt
-    set M := (eLpNorm (fun x : ℝ => c * x) ⊤ (volume.restrict (Set.Ioo (0 : ℝ) 1))).toReal
-    have htop : eLpNorm (fun x : ℝ => c * x) ⊤ (volume.restrict (Set.Ioo (0 : ℝ) 1)) ≠ ⊤ :=
-      hlt.ne_top
-    have hMc : M < c := by
-      have hlt' := (ENNReal.toReal_lt_toReal htop ENNReal.ofReal_ne_top).2 hlt
-      rwa [ENNReal.toReal_ofReal hc.le] at hlt'
-    set r := max (c / 2) ((M + c) / 2)
-    have hr0 : 0 < r := lt_of_lt_of_le (half_pos hc) (le_max_left _ _)
-    have hrc : r < c := max_lt (half_lt_self hc) (by linarith)
-    have hMr : eLpNorm (fun x : ℝ => c * x) ⊤ (volume.restrict (Set.Ioo (0 : ℝ) 1)) <
-        ENNReal.ofReal r := by
-      rw [← ENNReal.ofReal_toReal htop]
-      exact ENNReal.ofReal_lt_ofReal_iff hr0 |>.2
-        (lt_of_lt_of_le (by linarith) (le_max_right _ _))
-    have hae : ∀ᵐ x ∂volume.restrict (Set.Ioo (0 : ℝ) 1), ‖c * x‖ₑ < ENNReal.ofReal r := by
-      rw [eLpNorm_exponent_top hm, eLpNormEssSup_eq_essSup_eNorm] at hMr
-      exact ae_lt_of_essSup_lt hMr
-    have hsub : Set.Ioo (r / c) 1 ⊆ Set.Ioo (0 : ℝ) 1 :=
-      Set.Ioo_subset_Ioo_left (div_nonneg hr0.le hc.le)
-    have hae' : ∀ᵐ x ∂volume.restrict (Set.Ioo (r / c) 1),
-        x ∈ Set.Ioo (r / c) 1 ∧ ‖c * x‖ₑ < ENNReal.ofReal r :=
-      (ae_restrict_mem isOpen_Ioo.measurableSet).and
-        (ae_restrict_of_ae_restrict_of_subset hsub hae)
-    have : NeZero (volume.restrict (Set.Ioo (r / c) 1)) :=
-      ⟨Measure.restrict_eq_zero.not.2
-        ((Measure.measure_Ioo_pos volume).2 ((div_lt_one hc).2 hrc)).ne'⟩
-    obtain ⟨x, hxI, hxr⟩ := hae'.exists
-    have hcx_pos : 0 < c * x := mul_pos hc (lt_trans (div_pos hr0 hc) hxI.1)
-    have hcx_lt : c * x < r := by
-      rw [Real.eNorm_eq_ofReal hcx_pos.le] at hxr
-      exact (ENNReal.ofReal_lt_ofReal_iff hr0).1 hxr
-    have hrc_lt : r < x * c := (div_lt_iff₀ hc).1 hxI.1
-    linarith
-  rw [lpNorm, he, ENNReal.toReal_ofReal hc.le]
+  have hid : eLpNorm (id : ℝ → ℝ) ⊤ (volume.restrict (Set.Ioo (0 : ℝ) 1)) = 1 := by
+    rw [eLpNorm_exponent_top continuous_id.aestronglyMeasurable, eLpNormEssSup_eq_essSup_eNorm]
+    simp only [id_eq]
+    rw [essSup_eq_iSup_support _ continuous_eNorm.lowerSemicontinuous Measure.support_mem_ae,
+      Measure.support_restrict_of_isOpen volume isOpen_Ioo, closure_Ioo zero_ne_one]
+    refine le_antisymm (iSup₂_le fun x hx => ?_)
+      (le_iSup₂_of_le (1 : ℝ) ⟨zero_le_one, le_rfl⟩ (by simp))
+    rw [Real.eNorm_eq_ofReal hx.1]
+    simpa using ENNReal.ofReal_le_ofReal hx.2
+  have h := lpNorm_const_smul c (id : ℝ → ℝ) (volume.restrict (Set.Ioo (0 : ℝ) 1)) (p := ⊤)
+  simpa [Pi.smul_def, lpNorm, hid, coe_nnNorm, Real.norm_of_nonneg hc] using h
 
 -- Check 2: sharpness of the componentwise bound `‖lineDerivL v 0 u‖ ≤ ‖v‖ * ‖iteratedGradient 0 u‖`
 -- at `p = ⊤` for `u(x) = x²` on `Ioo 0 1` and `v = 3`: both sides equal `6`.
@@ -684,8 +631,9 @@ example :
         fun x : ℝ => 6 * x := by
       refine hd.trans (.of_forall fun x => ?_)
       dsimp only
-      rw [fderiv_sq_real]
-      simp only [smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]
+      rw [fderiv_pow_ring (𝕜 := ℝ) (x := x) 2]
+      simp only [Nat.add_one_sub_one, pow_one, two_smul, smul_apply, ContinuousLinearMap.id_apply,
+        smul_eq_mul]
       ring
     rw [Lp.norm_def, eLpNorm_congr_ae h6, ← lpNorm]
     exact lpNorm_const_mul_id_Ioo_top (c := 6) (by norm_num)
@@ -694,7 +642,9 @@ example :
     have h2 : (fun x : ℝ => ‖iteratedFDeriv ℝ 1 (fun y : ℝ => y ^ 2) x‖) =
         fun x : ℝ => ‖(2 : ℝ) * x‖ := by
       funext x
-      rw [norm_iteratedFDeriv_one, fderiv_sq_real, norm_smul, ContinuousLinearMap.norm_id, mul_one]
+      rw [norm_iteratedFDeriv_one, fderiv_pow_ring (𝕜 := ℝ) (x := x) 2, norm_smul,
+        ContinuousLinearMap.norm_id, mul_one]
+      simp [two_smul, two_mul]
     have hlp : lpNorm (iteratedFDeriv ℝ 1 (fun y : ℝ => y ^ 2)) ⊤
         (volume.restrict (Ω : Set ℝ)) =
         lpNorm (fun x : ℝ => (2 : ℝ) * x) ⊤ (volume.restrict (Set.Ioo (0 : ℝ) 1)) := by
