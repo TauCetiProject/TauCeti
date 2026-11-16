@@ -36,9 +36,8 @@ tangent bundle.
   `‖a‖² - ⟪a, p⟫²`.
 * `TauCeti.sphereTangentEquiv_symm_eq_sum_mgradient`: `(sphereTangentEquiv x).symm w` expanded as a
   linear combination of round height gradients along any finite orthonormal basis of `E`.
-* `TauCeti.contMDiff_sphereTangentEquiv_symm` and
-  `TauCeti.contMDiff_section_sphereTangentEquiv_symm`: `C^m` regularity of lifting orthogonal
-  ambient maps into `TangentBundle (𝓡 n) (sphere (0 : E) 1)`.
+* `TauCeti.contMDiff_sphereTangentEquiv_symm`: `C^m` regularity of lifting orthogonal ambient maps
+  along an arbitrary `C^m` base map into `TangentBundle (𝓡 n) (sphere (0 : E) 1)`.
 
 ## References
 
@@ -166,16 +165,5 @@ theorem contMDiff_sphereTangentEquiv_symm {E' H' M : Type*}
   exact hsum.congr fun z ↦
     congrArg (TotalSpace.mk' (EuclideanSpace ℝ (Fin n)) (f z))
       (sphereTangentEquiv_symm_eq_sum_mgradient (n := n) b (f z) ⟨u z, hu z⟩)
-
-/-- A `C^m` ambient map `u : sphere (0 : E) 1 → E` satisfying `u x ∈ (ℝ ∙ (x : E))ᗮ` at every
-point `x` defines a `C^m` tangent vector field on `sphere (0 : E) 1`. -/
-theorem contMDiff_section_sphereTangentEquiv_symm {m : ℕ∞ω} {u : sphere (0 : E) 1 → E}
-    (hu_diff : ContMDiff (𝓡 n) 𝓘(ℝ, E) m u)
-    (hu : ∀ x : sphere (0 : E) 1, u x ∈ (ℝ ∙ (x : E))ᗮ) :
-    ContMDiff (𝓡 n) (𝓡 n).tangent m
-      (fun x : sphere (0 : E) 1 ↦
-        (⟨x, (sphereTangentEquiv x).symm ⟨u x, hu x⟩⟩ :
-          TangentBundle (𝓡 n) (sphere (0 : E) 1))) :=
-  contMDiff_sphereTangentEquiv_symm contMDiff_id hu_diff hu
 
 end TauCeti

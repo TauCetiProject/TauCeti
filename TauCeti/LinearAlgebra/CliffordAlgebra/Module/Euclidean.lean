@@ -6,44 +6,45 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.InnerProductSpace.SkewSymmetric
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Module.Metric
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
-import Mathlib.Algebra.Quaternion
+
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.InnerProductSpace.Positive.Definite
 import TauCeti.LinearAlgebra.CliffordAlgebra.Classification
-import TauCeti.LinearAlgebra.CliffordAlgebra.Module.Metric
+import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Four
 import TauCeti.LinearAlgebra.QuadraticForm.PosDef
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
-# Skew-adjoint negative Clifford modules on real inner product spaces
+# Euclidean actions of negative-definite Clifford algebras
 
-Let `W` be a finite-dimensional real module over a Clifford algebra `CliffordAlgebra Q` whose
-quadratic space admits a finite orthogonal basis squaring to `-1`. Averaging any positive-definite
-symmetric bilinear form on `W` (`TauCeti.exists_posDef_quadraticForm`) over the finite signed
-monomial group produces an invariant metric on `W` making every Clifford vector act skew-adjointly
-(`AlgHom.exists_posDef_isSymm_isSkewAdjoint_map_cliffordAlgebraι`). Any real inner product space `E`
-of the same finite dimension is isometric to `(W, B)`
-(`TauCeti.exists_linearEquiv_inner_eq_of_posDef`), so conjugating the representation transports the
-Clifford module to `E` with skew-adjoint vector actions
-(`AlgHom.exists_linearEquiv_inner_conjAlgEquiv_map_cliffordAlgebraι_left`).
+Given a representation of a negative-definite real Clifford algebra `CliffordAlgebra Q` (whose
+quadratic space has a finite orthogonal basis squaring to `-1`) on a finite-dimensional real vector
+space `W`, averaging any positive-definite quadratic form (`TauCeti.exists_posDef_quadraticForm`)
+over the finite signed monomial group equips `W` with an invariant metric making every Clifford
+vector act skew-adjointly (`AlgHom.exists_posDef_isSymm_isSkewAdjoint_map_cliffordAlgebraι`).
+Transferring that metric to any finite-dimensional real inner product space `E` of the same
+`finrank` (`TauCeti.exists_linearEquiv_inner_eq_of_posDef`) conjugates the representation to `E`
+with skew-adjoint vector actions
+(`AlgHom.exists_linearEquiv_inner_conjAlgEquiv_map_cliffordAlgebraι_left`), yielding both a
+continuous-linear Clifford representation (`AlgHom.exists_skew_map_cliffordAlgebraι_of_finrank_eq`)
+and `q` pairwise anticommuting skew-symmetric continuous linear operators squaring to `-1`
+(`AlgHom.exists_skew_sq_neg_id_anticommute_clm_of_finrank_eq`).
 
-Evaluating such a representation on an orthogonal family of vectors squaring to `-1` yields an
-`ι`-indexed family of linear operators `A_i : E →ₗ[ℝ] E` satisfying `A_i² = -I`,
-`A_i A_j + A_j A_i = 0` for `i ≠ j`, and `⟪A_i x, y⟫_ℝ = -⟪x, A_i y⟫_ℝ`, bundled here as
-`TauCeti.SkewAdjointCliffordSystem ι E`. Each `A_i` is a linear isometry equivalence of `E`, sends
-every vector `x` into `(ℝ ∙ x)ᗮ`, and maps any unit vector `x` to an orthonormal family `i ↦ A_i x`
-in `(ℝ ∙ x)ᗮ` — an orthonormal basis when `dim E = |ι| + 1`
-(`TauCeti.SkewAdjointCliffordSystem.orthonormalBasisOrthogonal`). Conversely, given any basis `b`
-of `(M, Q)` consisting of pairwise `Q`-orthogonal vectors squaring to `-1`, any
-`SkewAdjointCliffordSystem I E` lifts via the universal property to a skew-adjoint
-`CliffordAlgebra Q`-module structure on `E`
-(`TauCeti.SkewAdjointCliffordSystem.toCliffordAlgHom`).
+Bundling an `ι`-indexed family of pairwise anticommuting skew-adjoint complex structures on a real
+inner product space `E` as `TauCeti.SkewAdjointCliffordSystem ι E` provides linear-isometry
+upgrades (`isometryEquiv`), reindexing and isometric transport (`reindex`, `map`, `empty`),
+orthonormal hyperplane bases (`orthonormalBasisOrthogonal`), and the bidirectional correspondence
+with skew-adjoint `CliffordAlgebra Q`-modules (`ofSkewAdjointAlgHom`, `toCliffordAlgHom`).
 
-Finally, combining this metric transport with the classification isomorphisms
-`Cliff(0, 1) ≅ M₁(ℂ)`, `Cliff(0, 3) ≅ M₁(ℍ) × M₁(ℍ)` and `Cliff(0, 7) ≅ M₈(ℝ) × M₈(ℝ)` from
-`TauCeti.realClifford_classification` produces `SkewAdjointCliffordSystem (Fin n) E` on every real
-inner product space `E` of dimension `n + 1` for `n ∈ {0, 1, 3, 7}`
-(`TauCeti.nonempty_skewAdjointCliffordSystem_of_finrank_eq_succ`).
+Combined with the real Clifford algebra models `Cliff(0, 1) ≃ₐ[ℝ] ℂ`,
+`Cliff(0, 3) ≃ₐ[ℝ] ℍ[ℝ] × ℍ[ℝ]`, and `Cliff(0, 7) ≃ₐ[ℝ] M₈(ℝ) × M₈(ℝ)` (together with the empty
+family for `n = 0`), this yields both unbundled operator families
+(`TauCeti.exists_skew_sq_neg_id_anticommute_clm`) and bundled `SkewAdjointCliffordSystem (Fin n) E`
+instances (`TauCeti.nonempty_skewAdjointCliffordSystem_of_finrank_eq_succ`) on any
+`(n + 1)`-dimensional real inner product space for `n ∈ {0, 1, 3, 7}`.
 
 ## Main definitions
 
@@ -61,24 +62,32 @@ inner product space `E` of dimension `n + 1` for `n ∈ {0, 1, 3, 7}`
 ## Main results
 
 * `AlgHom.exists_linearEquiv_inner_conjAlgEquiv_map_cliffordAlgebraι_left`: every
-  finite-dimensional real module over a negative-definite Clifford algebra conjugates to a
-  skew-adjoint module on any real inner product space of the same dimension.
-* `TauCeti.SkewAdjointCliffordSystem.orthonormal_op`: at a unit vector `x`, `i ↦ S.op i x` is
-  orthonormal.
+  finite-dimensional real module over a negative-definite Clifford algebra conjugates along a linear
+  equivalence to a skew-adjoint module on any real inner product space of the same dimension.
+* `AlgHom.exists_skew_map_cliffordAlgebraι_of_finrank_eq`: if `CliffordAlgebra Q` (for `Q` with a
+  finite orthogonal `-1`-basis) has a finite-dimensional real module `W`, then any
+  finite-dimensional real inner product space `E` of equal `finrank` admits an algebra homomorphism
+  `CliffordAlgebra Q →ₐ[ℝ] (E →L[ℝ] E)` under which every vector acts skew-symmetrically.
+* `AlgHom.exists_skew_sq_neg_id_anticommute_clm_of_finrank_eq`: if `Cliff(0, q)` has a
+  finite-dimensional real module `W`, then any finite-dimensional real inner product space `E` of
+  equal `finrank` admits `q` pairwise anticommuting skew-symmetric continuous linear endomorphisms
+  squaring to `-1`.
+* `TauCeti.exists_skew_sq_neg_id_anticommute_clm`: for `n ∈ {0, 1, 3, 7}`, every
+  `(n + 1)`-dimensional real inner product space admits `n` pairwise anticommuting skew-symmetric
+  continuous linear endomorphisms squaring to `-1`.
 * `TauCeti.nonempty_skewAdjointCliffordSystem_of_finrank_eq_succ`: a real inner product space of
   dimension `n + 1` admits a `SkewAdjointCliffordSystem (Fin n) E` when `n ∈ {0, 1, 3, 7}`.
 
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §§4–5.
-* A. Hatcher, *Vector Bundles and K-Theory*, §1.1.
+* A. Hatcher, *Vector Bundles and K-Theory*, §1.1 (orthogonal multiplications and tangent frames on
+  `S¹`, `S³`, and `S⁷`).
 -/
 
 public section
 
-noncomputable section
-
-open CliffordAlgebra Module
+open CliffordAlgebra Module TauCeti
 open scoped InnerProductSpace Quaternion
 
 namespace AlgHom
@@ -94,7 +103,7 @@ theorem exists_linearEquiv_inner_conjAlgEquiv_map_cliffordAlgebraι_left
     (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℝ W)
     {I : Type*} [_root_.Finite I] (b : Module.Basis I ℝ M)
     (hb : ∀ i j, i ≠ j → Q.IsOrtho (b i) (b j)) (hQ : ∀ i, Q (b i) = -1)
-    (hdim : finrank ℝ W = finrank ℝ E) :
+    (hdim : Module.finrank ℝ W = Module.finrank ℝ E) :
     ∃ φ : W ≃ₗ[ℝ] E, ∀ (v : M) (x y : E),
       ⟪((φ.conjAlgEquiv ℝ).toAlgHom.comp ρ) (ι Q v) x, y⟫_ℝ =
         -⟪x, ((φ.conjAlgEquiv ℝ).toAlgHom.comp ρ) (ι Q v) y⟫_ℝ := by
@@ -108,9 +117,97 @@ theorem exists_linearEquiv_inner_conjAlgEquiv_map_cliffordAlgebraι_left
   conv_rhs => rw [← φ.apply_symm_apply x, hφ]
   simpa only [Pi.neg_apply, map_neg] using hskew v (φ.symm x) (φ.symm y)
 
+/-- If `CliffordAlgebra Q`, where `Q` has a finite orthogonal basis squaring to `-1`, admits a
+finite-dimensional real module `W`, then any finite-dimensional real inner product space `E` of
+equal `finrank` admits an algebra homomorphism `CliffordAlgebra Q →ₐ[ℝ] (E →L[ℝ] E)` under which
+every vector acts skew-symmetrically. -/
+theorem exists_skew_map_cliffordAlgebraι_of_finrank_eq
+    {M W E : Type*} [AddCommGroup M] [Module ℝ M] {Q : QuadraticForm ℝ M}
+    [AddCommGroup W] [Module ℝ W] [FiniteDimensional ℝ W]
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℝ W)
+    {I : Type*} [_root_.Finite I] (b : Module.Basis I ℝ M)
+    (hb : ∀ i j, i ≠ j → Q.IsOrtho (b i) (b j)) (hQ : ∀ i, Q (b i) = -1)
+    (hdim : Module.finrank ℝ W = Module.finrank ℝ E) :
+    ∃ σ : CliffordAlgebra Q →ₐ[ℝ] (E →L[ℝ] E),
+      ∀ (v : M) (x y : E), ⟪σ (ι Q v) x, y⟫_ℝ = -⟪x, σ (ι Q v) y⟫_ℝ := by
+  obtain ⟨φ, hφ⟩ := ρ.exists_linearEquiv_inner_conjAlgEquiv_map_cliffordAlgebraι_left b hb hQ hdim
+  exact ⟨(Module.End.toContinuousLinearMap E).toAlgHom.comp ((φ.conjAlgEquiv ℝ).toAlgHom.comp ρ),
+    fun v x y ↦ by simpa only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+      Module.End.toContinuousLinearMap_apply] using hφ v x y⟩
+
+/-- If `Cliff(0, q)` admits a finite-dimensional real module `W`, then any finite-dimensional real
+inner product space `E` of equal `finrank` admits `q` pairwise anticommuting skew-symmetric
+continuous linear endomorphisms squaring to `-1`. -/
+theorem exists_skew_sq_neg_id_anticommute_clm_of_finrank_eq {q : ℕ}
+    {W E : Type*} [AddCommGroup W] [Module ℝ W] [FiniteDimensional ℝ W]
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    (ρ : CliffordAlgebra (realCliffordForm 0 q) →ₐ[ℝ] Module.End ℝ W)
+    (hdim : Module.finrank ℝ W = Module.finrank ℝ E) :
+    ∃ A : Fin q → (E →L[ℝ] E),
+      (∀ i x y, ⟪A i x, y⟫_ℝ = -⟪x, A i y⟫_ℝ) ∧
+      (∀ i x, A i (A i x) = -x) ∧
+      (∀ i j, i ≠ j → ∀ x, A i (A j x) + A j (A i x) = 0) := by
+  let b : Module.Basis (Fin (0 + q)) ℝ (Fin (0 + q) → ℝ) := Pi.basisFun ℝ (Fin (0 + q))
+  have hb : ∀ i j, i ≠ j → (realCliffordForm 0 q).IsOrtho (b i) (b j) := fun i j hij ↦ by
+    simpa [b] using isOrtho_realCliffordForm_single hij 1 1
+  have hQ : ∀ i, realCliffordForm 0 q (b i) = -1 := fun i ↦ by
+    simp [b]
+  obtain ⟨σ, hσ⟩ := ρ.exists_skew_map_cliffordAlgebraι_of_finrank_eq b hb hQ hdim
+  let e : Fin q → Fin (0 + q) := Fin.cast (Nat.zero_add q).symm
+  refine ⟨fun i ↦ σ (ι (realCliffordForm 0 q) (b (e i))), fun i ↦ hσ _, fun i x ↦ ?_,
+    fun i j hij x ↦ ?_⟩
+  · have hsq := congrArg (fun T : E →L[ℝ] E ↦ T x)
+      (σ.map_cliffordAlgebraι_mul_self_of_eq_neg_one (hQ (e i)))
+    simpa only [mul_apply_eq_comp, neg_apply, one_apply_eq_self] using hsq
+  · have heij : e i ≠ e j := fun h ↦ hij ((Fin.cast_injective _) h)
+    have hanti := congrArg (fun T : E →L[ℝ] E ↦ T x)
+      (σ.map_cliffordAlgebraι_anticommute_of_isOrtho (hb (e i) (e j) heij))
+    simpa only [add_apply, mul_apply_eq_comp, zero_apply] using hanti
+
 end AlgHom
 
 namespace TauCeti
+
+private noncomputable def cliffordModuleZeroOne :
+    CliffordAlgebra (realCliffordForm 0 1) →ₐ[ℝ] Module.End ℝ ℂ :=
+  (Algebra.lmul ℝ ℂ).comp realCliffordZeroOneEquivComplex.toAlgHom
+
+private noncomputable def cliffordModuleZeroThree :
+    CliffordAlgebra (realCliffordForm 0 3) →ₐ[ℝ] Module.End ℝ ℍ[ℝ] :=
+  (Algebra.lmul ℝ ℍ[ℝ]).comp
+    ((AlgHom.fst ℝ ℍ[ℝ] ℍ[ℝ]).comp realCliffordZeroThreeEquivQuaternionProd.toAlgHom)
+
+private theorem nonempty_cliffordModule_zero_seven :
+    Nonempty (CliffordAlgebra (realCliffordForm 0 7) →ₐ[ℝ] Module.End ℝ (Fin 8 → ℝ)) := by
+  obtain ⟨e⟩ := realClifford_classification_of_residue_eq_seven 0 7
+    (by rw [realCliffordResidue_def])
+  exact ⟨(Matrix.toLinAlgEquiv' (R := ℝ) (n := Fin 8)).toAlgHom.comp
+    ((AlgHom.fst ℝ (Matrix (Fin 8) (Fin 8) ℝ) (Matrix (Fin 8) (Fin 8) ℝ)).comp e.toAlgHom)⟩
+
+/-- For `n ∈ {0, 1, 3, 7}`, every `(n + 1)`-dimensional real inner product space `E` admits `n`
+pairwise anticommuting skew-symmetric continuous linear endomorphisms squaring to `-1`. For
+`n ∈ {1, 3, 7}`, these arise from the real Clifford algebras `Cliff(0, 1) ≃ₐ[ℝ] ℂ`,
+`Cliff(0, 3) ≃ₐ[ℝ] ℍ[ℝ] × ℍ[ℝ]`, and `Cliff(0, 7) ≃ₐ[ℝ] M₈(ℝ) × M₈(ℝ)`. -/
+theorem exists_skew_sq_neg_id_anticommute_clm {n : ℕ}
+    (hn : n = 0 ∨ n = 1 ∨ n = 3 ∨ n = 7)
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    (hE : Module.finrank ℝ E = n + 1) :
+    ∃ A : Fin n → (E →L[ℝ] E),
+      (∀ i x y, ⟪A i x, y⟫_ℝ = -⟪x, A i y⟫_ℝ) ∧
+      (∀ i x, A i (A i x) = -x) ∧
+      (∀ i j, i ≠ j → ∀ x, A i (A j x) + A j (A i x) = 0) := by
+  have : FiniteDimensional ℝ E :=
+    FiniteDimensional.of_finrank_pos (by rw [hE]; exact Nat.succ_pos n)
+  rcases hn with rfl | rfl | rfl | rfl
+  · exact ⟨Fin.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0⟩
+  · exact cliffordModuleZeroOne.exists_skew_sq_neg_id_anticommute_clm_of_finrank_eq
+      (Complex.finrank_real_complex.trans hE.symm)
+  · exact cliffordModuleZeroThree.exists_skew_sq_neg_id_anticommute_clm_of_finrank_eq
+      (Quaternion.finrank_eq_four.trans hE.symm)
+  · obtain ⟨ρ⟩ := nonempty_cliffordModule_zero_seven
+    exact ρ.exists_skew_sq_neg_id_anticommute_clm_of_finrank_eq
+      ((by rw [Module.finrank_fin_fun] : Module.finrank ℝ (Fin 8 → ℝ) = 8).trans hE.symm)
 
 /-! ### Skew-adjoint Clifford generator systems on real inner product spaces -/
 
@@ -167,39 +264,33 @@ theorem inner_op_right (i : ι) (x y : E) : ⟪x, S.op i y⟫_ℝ = -⟪S.op i x
 
 /-- Each generator preserves the inner product of `E`. -/
 @[simp]
-theorem inner_op_op (i : ι) (x y : E) : ⟪S.op i x, S.op i y⟫_ℝ = ⟪x, y⟫_ℝ := by
-  rw [S.inner_op_left, S.op_op_self, inner_neg_right, neg_neg]
+theorem inner_op_op (i : ι) (x y : E) : ⟪S.op i x, S.op i y⟫_ℝ = ⟪x, y⟫_ℝ :=
+  inner_apply_apply_of_skew_of_sq_neg_id (S.inner_op_left i) (S.op_op_self i) x y
 
 /-- Each generator preserves norms on `E`. -/
 @[simp]
-theorem norm_op (i : ι) (x : E) : ‖S.op i x‖ = ‖x‖ := by
-  rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner, S.inner_op_op]
+theorem norm_op (i : ι) (x : E) : ‖S.op i x‖ = ‖x‖ :=
+  norm_apply_of_skew_of_sq_neg_id (S.inner_op_left i) (S.op_op_self i) x
 
 /-- Every vector is orthogonal to its image under a generator. -/
 @[simp]
-theorem inner_self_op (i : ι) (x : E) : ⟪x, S.op i x⟫_ℝ = 0 := by
-  have h := S.inner_op_left i x x
-  rw [real_inner_comm] at h
-  linarith
+theorem inner_self_op (i : ι) (x : E) : ⟪x, S.op i x⟫_ℝ = 0 :=
+  inner_self_apply_eq_zero_of_skew (S.inner_op_left i) x
 
 /-- Symmetric form of `inner_self_op`: `⟪S.op i x, x⟫_ℝ = 0`. -/
 @[simp]
-theorem inner_op_self (i : ι) (x : E) : ⟪S.op i x, x⟫_ℝ = 0 := by
-  rw [real_inner_comm, S.inner_self_op]
+theorem inner_op_self (i : ι) (x : E) : ⟪S.op i x, x⟫_ℝ = 0 :=
+  inner_apply_self_eq_zero_of_skew (S.inner_op_left i) x
 
 /-- For every `x : E`, `S.op i x` lies in the orthogonal complement `(ℝ ∙ x)ᗮ`. -/
 @[simp]
 theorem mem_orthogonal_span_singleton (i : ι) (x : E) : S.op i x ∈ (ℝ ∙ x)ᗮ :=
-  Submodule.mem_orthogonal_singleton_iff_inner_right.mpr (S.inner_self_op i x)
+  mem_orthogonal_span_singleton_of_skew (S.inner_op_left i) x
 
 /-- Distinct generators send any vector `x` to pairwise orthogonal vectors. -/
-theorem inner_op_eq_zero_of_ne {i j : ι} (hij : i ≠ j) (x : E) : ⟪S.op i x, S.op j x⟫_ℝ = 0 := by
-  have h₁ : ⟪S.op i x, S.op j x⟫_ℝ = -⟪x, S.op i (S.op j x)⟫_ℝ := S.inner_op_left i x (S.op j x)
-  have h₂ : ⟪S.op i x, S.op j x⟫_ℝ = -⟪x, S.op j (S.op i x)⟫_ℝ := by
-    rw [real_inner_comm, S.inner_op_left j x (S.op i x)]
-  have hsum : ⟪x, S.op i (S.op j x)⟫_ℝ + ⟪x, S.op j (S.op i x)⟫_ℝ = 0 := by
-    rw [← inner_add_right, S.op_op_add_swap hij x, inner_zero_right]
-  linarith
+theorem inner_op_eq_zero_of_ne {i j : ι} (hij : i ≠ j) (x : E) : ⟪S.op i x, S.op j x⟫_ℝ = 0 :=
+  inner_apply_apply_eq_zero_of_skew_anticommute (S.inner_op_left i) (S.inner_op_left j)
+    (S.op_op_add_swap hij) x
 
 /-- Each generator upgraded to a linear isometry equivalence of `E`, with inverse `-S.op i`. -/
 def isometryEquiv (i : ι) : E ≃ₗᵢ[ℝ] E where
@@ -211,13 +302,13 @@ def isometryEquiv (i : ι) : E ≃ₗᵢ[ℝ] E where
 
 /-- Applying `S.isometryEquiv i` agrees with `S.op i`. -/
 @[simp]
-theorem isometryEquiv_apply (i : ι) (x : E) : S.isometryEquiv i x = S.op i x := by
-  rfl
+theorem isometryEquiv_apply (i : ι) (x : E) : S.isometryEquiv i x = S.op i x :=
+  (rfl)
 
 /-- The inverse of `S.isometryEquiv i` acts as `-S.op i`. -/
 @[simp]
-theorem isometryEquiv_symm_apply (i : ι) (x : E) : (S.isometryEquiv i).symm x = -S.op i x := by
-  rfl
+theorem isometryEquiv_symm_apply (i : ι) (x : E) : (S.isometryEquiv i).symm x = -S.op i x :=
+  (rfl)
 
 /-- Reindexing a `SkewAdjointCliffordSystem` along an equivalence of index types. -/
 def reindex (e : ι' ≃ ι) : SkewAdjointCliffordSystem ι' E where
@@ -228,8 +319,8 @@ def reindex (e : ι' ≃ ι) : SkewAdjointCliffordSystem ι' E where
 
 /-- Generators of `S.reindex e` are obtained by precomposing the index with `e`. -/
 @[simp]
-theorem reindex_op (e : ι' ≃ ι) (i : ι') : (S.reindex e).op i = S.op (e i) := by
-  rfl
+theorem reindex_op (e : ι' ≃ ι) (i : ι') : (S.reindex e).op i = S.op (e i) :=
+  (rfl)
 
 /-- Transporting a `SkewAdjointCliffordSystem` along a linear isometry equivalence of ambient
 inner product spaces. -/
@@ -265,7 +356,8 @@ instance [IsEmpty ι] : Unique (SkewAdjointCliffordSystem ι E) where
 
 /-- At any unit vector `x ∈ E`, the vectors `S.op i x` form an orthonormal family in `E`. -/
 theorem orthonormal_op {x : E} (hx : ‖x‖ = 1) : Orthonormal ℝ fun i ↦ S.op i x :=
-  ⟨fun i ↦ by rw [S.norm_op, hx], fun {_ _} hij ↦ S.inner_op_eq_zero_of_ne hij x⟩
+  orthonormal_apply_of_skew_anticommute S.inner_op_left S.op_op_self
+    (fun _ _ hij ↦ S.op_op_add_swap hij) hx
 
 /-- The vector `S.op i x` bundled as an element of `(ℝ ∙ x)ᗮ`. -/
 def orthogonalVec (i : ι) (x : E) : (ℝ ∙ x)ᗮ :=
@@ -273,8 +365,8 @@ def orthogonalVec (i : ι) (x : E) : (ℝ ∙ x)ᗮ :=
 
 /-- Coercing `S.orthogonalVec i x` back to `E` recovers `S.op i x`. -/
 @[simp]
-theorem coe_orthogonalVec (i : ι) (x : E) : (S.orthogonalVec i x : E) = S.op i x := by
-  rfl
+theorem coe_orthogonalVec (i : ι) (x : E) : (S.orthogonalVec i x : E) = S.op i x :=
+  (rfl)
 
 /-- Reindexing `S` reindexes `orthogonalVec`. -/
 @[simp]
@@ -286,46 +378,40 @@ theorem reindex_orthogonalVec (e : ι' ≃ ι) (i : ι') (x : E) :
 /-- At any unit vector `x ∈ E`, the vectors `S.orthogonalVec i x` form an orthonormal family in
 `(ℝ ∙ x)ᗮ`. -/
 theorem orthonormal_orthogonalVec {x : E} (hx : ‖x‖ = 1) :
-    Orthonormal ℝ fun i ↦ S.orthogonalVec i x := by
-  refine ⟨fun i ↦ ?_, fun {_ _} hij ↦ ?_⟩
-  · simp only [← Submodule.norm_coe, coe_orthogonalVec, S.norm_op, hx]
-  · simp only [Submodule.coe_inner, coe_orthogonalVec]
-    exact S.inner_op_eq_zero_of_ne hij x
+    Orthonormal ℝ fun i ↦ S.orthogonalVec i x :=
+  orthonormal_orthogonal_of_skew_anticommute S.inner_op_left S.op_op_self
+    (fun _ _ hij ↦ S.op_op_add_swap hij) hx
 
 /-- When `dim E = |ι| + 1`, the vectors `S.op i x` at any unit vector `x ∈ E` form an orthonormal
 basis of the hyperplane `(ℝ ∙ x)ᗮ`. -/
-def orthonormalBasisOrthogonal [Fintype ι] (hdim : finrank ℝ E = Fintype.card ι + 1)
+noncomputable def orthonormalBasisOrthogonal [Fintype ι] (hdim : finrank ℝ E = Fintype.card ι + 1)
     {x : E} (hx : ‖x‖ = 1) : OrthonormalBasis ι ℝ (ℝ ∙ x)ᗮ :=
-  have : Fact (finrank ℝ E = Fintype.card ι + 1) := ⟨hdim⟩
-  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ (Fintype.card ι)
-  have hon := S.orthonormal_orthogonalVec hx
-  have hfin : finrank ℝ (ℝ ∙ x)ᗮ = Fintype.card ι :=
-    Submodule.finrank_orthogonal_span_singleton (norm_ne_zero_iff.mp (hx.trans_ne one_ne_zero))
-  have hspan : finrank ℝ (Submodule.span ℝ (Set.range fun i ↦ S.orthogonalVec i x)) =
-      finrank ℝ (ℝ ∙ x)ᗮ :=
-    (finrank_span_eq_card hon.linearIndependent).trans hfin.symm
-  OrthonormalBasis.mk hon (Submodule.eq_top_of_finrank_eq hspan).ge
+  orthonormalBasisOrthogonalOfSkewFamily S.inner_op_left S.op_op_self
+    (fun _ _ hij ↦ S.op_op_add_swap hij) hdim hx
 
 /-- The `i`-th basis vector of `S.orthonormalBasisOrthogonal` is `S.orthogonalVec i x`. -/
 @[simp]
 theorem orthonormalBasisOrthogonal_apply [Fintype ι] (hdim : finrank ℝ E = Fintype.card ι + 1)
     {x : E} (hx : ‖x‖ = 1) (i : ι) :
-    S.orthonormalBasisOrthogonal hdim hx i = S.orthogonalVec i x := by
-  rw [orthonormalBasisOrthogonal, OrthonormalBasis.coe_mk]
+    S.orthonormalBasisOrthogonal hdim hx i = S.orthogonalVec i x :=
+  Subtype.ext (coe_orthonormalBasisOrthogonalOfSkewFamily_apply S.inner_op_left S.op_op_self
+    (fun _ _ hij ↦ S.op_op_add_swap hij) hdim hx i)
 
 /-- Coerced to `E`, the `i`-th basis vector of `S.orthonormalBasisOrthogonal` is `S.op i x`. -/
 theorem coe_orthonormalBasisOrthogonal_apply [Fintype ι] (hdim : finrank ℝ E = Fintype.card ι + 1)
     {x : E} (hx : ‖x‖ = 1) (i : ι) :
-    ((S.orthonormalBasisOrthogonal hdim hx i : (ℝ ∙ x)ᗮ) : E) = S.op i x := by
-  rw [orthonormalBasisOrthogonal_apply, coe_orthogonalVec]
+    ((S.orthonormalBasisOrthogonal hdim hx i : (ℝ ∙ x)ᗮ) : E) = S.op i x :=
+  coe_orthonormalBasisOrthogonalOfSkewFamily_apply S.inner_op_left S.op_op_self
+    (fun _ _ hij ↦ S.op_op_add_swap hij) hdim hx i
 
 /-- The `i`-th coordinate of `w ∈ (ℝ ∙ x)ᗮ` in `S.orthonormalBasisOrthogonal` is the ambient inner
 product `⟪S.op i x, w⟫_ℝ`. -/
 @[simp]
 theorem orthonormalBasisOrthogonal_repr_apply [Fintype ι] (hdim : finrank ℝ E = Fintype.card ι + 1)
     {x : E} (hx : ‖x‖ = 1) (w : (ℝ ∙ x)ᗮ) (i : ι) :
-    (S.orthonormalBasisOrthogonal hdim hx).repr w i = ⟪S.op i x, (w : E)⟫_ℝ := by
-  rw [OrthonormalBasis.repr_apply_apply, Submodule.coe_inner, coe_orthonormalBasisOrthogonal_apply]
+    (S.orthonormalBasisOrthogonal hdim hx).repr w i = ⟪S.op i x, (w : E)⟫_ℝ :=
+  orthonormalBasisOrthogonalOfSkewFamily_repr_apply S.inner_op_left S.op_op_self
+    (fun _ _ hij ↦ S.op_op_add_swap hij) hdim hx w i
 
 /-- Reconstructing a vector in `(ℝ ∙ x)ᗮ` from its coordinates `c : EuclideanSpace ℝ ι` gives
 `∑ i, c.ofLp i • S.op i x` in `E`. -/
@@ -355,12 +441,8 @@ def ofSkewAdjointAlgHom (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℝ E) (v
     (hskew : ∀ i (x y : E), ⟪ρ (ι Q (v i)) x, y⟫_ℝ = -⟪x, ρ (ι Q (v i)) y⟫_ℝ) :
     SkewAdjointCliffordSystem I E where
   op i := ρ (ι Q (v i))
-  op_op_self i x := by
-    rw [← mul_apply_eq_comp, comp_ι_sq_scalar ρ, hQ i, map_neg, map_one,
-      LinearMap.neg_apply, one_apply_eq_self]
-  op_op_add_swap hij x := by
-    rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← LinearMap.add_apply, ← map_mul ρ, ← map_mul ρ,
-      ← map_add ρ, ι_mul_ι_add_swap_of_isOrtho (hortho hij), map_zero, LinearMap.zero_apply]
+  op_op_self i x := ρ.map_cliffordAlgebraι_apply_self_of_eq_neg_one (hQ i) x
+  op_op_add_swap hij x := ρ.map_cliffordAlgebraι_apply_anticommute_of_isOrtho (hortho hij) x
   inner_op_left := hskew
 
 /-- The `i`-th generator of `ofSkewAdjointAlgHom` is `ρ (ι Q (v i))`. -/
@@ -368,13 +450,13 @@ def ofSkewAdjointAlgHom (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℝ E) (v
 theorem ofSkewAdjointAlgHom_op (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℝ E) (v : I → M)
     (hortho : ∀ {i j}, i ≠ j → Q.IsOrtho (v i) (v j)) (hQ : ∀ i, Q (v i) = -1)
     (hskew : ∀ i (x y : E), ⟪ρ (ι Q (v i)) x, y⟫_ℝ = -⟪x, ρ (ι Q (v i)) y⟫_ℝ) (i : I) :
-    (ofSkewAdjointAlgHom ρ v hortho hQ hskew).op i = ρ (ι Q (v i)) := by
-  rfl
+    (ofSkewAdjointAlgHom ρ v hortho hQ hskew).op i = ρ (ι Q (v i)) :=
+  (rfl)
 
 /-- Extending an `I`-indexed `SkewAdjointCliffordSystem` along a pairwise `Q`-orthogonal basis
 `b : Module.Basis I ℝ M` of vectors squaring to `-1` gives a representation of `CliffordAlgebra Q`
 on `E`. -/
-def toCliffordAlgHom (S : SkewAdjointCliffordSystem I E) (b : Module.Basis I ℝ M)
+noncomputable def toCliffordAlgHom (S : SkewAdjointCliffordSystem I E) (b : Module.Basis I ℝ M)
     (hb : ∀ {i j}, i ≠ j → Q.IsOrtho (b i) (b j)) (hQ : ∀ i, Q (b i) = -1) :
     CliffordAlgebra Q →ₐ[ℝ] Module.End ℝ E :=
   CliffordAlgebra.lift Q ⟨b.constr ℝ S.op,
@@ -418,8 +500,6 @@ end CliffordModule
 
 end SkewAdjointCliffordSystem
 
-/-! ### Concrete skew-adjoint Clifford systems in dimensions `1`, `2`, `4`, and `8` -/
-
 /-- Any finite-dimensional real module `W` over `CliffordAlgebra (realCliffordForm 0 q)` yields a
 `SkewAdjointCliffordSystem (Fin q) E` on every real inner product space `E` of the same finite
 dimension. -/
@@ -429,60 +509,8 @@ theorem nonempty_skewAdjointCliffordSystem_of_algHom_realClifford {q : ℕ} {W E
     (ρ : CliffordAlgebra (realCliffordForm 0 q) →ₐ[ℝ] Module.End ℝ W)
     (hdim : finrank ℝ W = finrank ℝ E) :
     Nonempty (SkewAdjointCliffordSystem (Fin q) E) := by
-  let b := Pi.basisFun ℝ (Fin (0 + q))
-  have hb : ∀ i j, i ≠ j → (realCliffordForm 0 q).IsOrtho (b i) (b j) := fun i j hij ↦ by
-    simpa only [b, Pi.basisFun_apply] using isOrtho_realCliffordForm_single hij 1 1
-  have hQ : ∀ i, realCliffordForm 0 q (b i) = -1 := fun i ↦ by
-    simp [b]
-  obtain ⟨φ, hφ⟩ :=
-    ρ.exists_linearEquiv_inner_conjAlgEquiv_map_cliffordAlgebraι_left b hb hQ hdim
-  exact ⟨(SkewAdjointCliffordSystem.ofSkewAdjointAlgHom ((φ.conjAlgEquiv ℝ).toAlgHom.comp ρ) b
-    (fun hij ↦ hb _ _ hij) hQ fun i ↦ hφ (b i)).reindex (finCongr (Nat.zero_add q).symm)⟩
-
-/-- Every `2`-dimensional real inner product space admits a `1`-generator skew-adjoint Clifford
-system. -/
-theorem nonempty_skewAdjointCliffordSystem_of_finrank_eq_two {E : Type*}
-    [NormedAddCommGroup E] [InnerProductSpace ℝ E] (hE : finrank ℝ E = 2) :
-    Nonempty (SkewAdjointCliffordSystem (Fin 1) E) := by
-  have : Fact (finrank ℝ E = 1 + 1) := ⟨hE⟩
-  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ 1
-  obtain ⟨e⟩ := realClifford_classification_of_residue_eq_one 0 1
-    (by rw [realCliffordResidue_def])
-  let ρ : CliffordAlgebra (realCliffordForm 0 1) →ₐ[ℝ] Module.End ℝ ℂ :=
-    (Algebra.lmul ℝ ℂ).comp ((Matrix.finOneAlgEquiv ℝ ℂ).symm.toAlgHom.comp e.toAlgHom)
-  exact nonempty_skewAdjointCliffordSystem_of_algHom_realClifford ρ
-    (Complex.finrank_real_complex.trans hE.symm)
-
-/-- Every `4`-dimensional real inner product space admits a `3`-generator skew-adjoint Clifford
-system. -/
-theorem nonempty_skewAdjointCliffordSystem_of_finrank_eq_four {E : Type*}
-    [NormedAddCommGroup E] [InnerProductSpace ℝ E] (hE : finrank ℝ E = 4) :
-    Nonempty (SkewAdjointCliffordSystem (Fin 3) E) := by
-  have : Fact (finrank ℝ E = 3 + 1) := ⟨hE⟩
-  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ 3
-  obtain ⟨e⟩ := realClifford_classification_of_residue_eq_three 0 3
-    (by rw [realCliffordResidue_def])
-  let ρ : CliffordAlgebra (realCliffordForm 0 3) →ₐ[ℝ] Module.End ℝ ℍ[ℝ] :=
-    (Algebra.lmul ℝ ℍ[ℝ]).comp
-      ((Matrix.finOneAlgEquiv ℝ ℍ[ℝ]).symm.toAlgHom.comp
-        ((AlgHom.fst ℝ _ _).comp e.toAlgHom))
-  exact nonempty_skewAdjointCliffordSystem_of_algHom_realClifford ρ
-    (Quaternion.finrank_eq_four.trans hE.symm)
-
-/-- Every `8`-dimensional real inner product space admits a `7`-generator skew-adjoint Clifford
-system. -/
-theorem nonempty_skewAdjointCliffordSystem_of_finrank_eq_eight {E : Type*}
-    [NormedAddCommGroup E] [InnerProductSpace ℝ E] (hE : finrank ℝ E = 8) :
-    Nonempty (SkewAdjointCliffordSystem (Fin 7) E) := by
-  have : Fact (finrank ℝ E = 7 + 1) := ⟨hE⟩
-  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ 7
-  obtain ⟨e⟩ := realClifford_classification_of_residue_eq_seven 0 7
-    (by rw [realCliffordResidue_def])
-  let ρ : CliffordAlgebra (realCliffordForm 0 7) →ₐ[ℝ] Module.End ℝ (Fin 8 → ℝ) :=
-    (Matrix.toLinAlgEquiv' (R := ℝ) (n := Fin 8)).toAlgHom.comp
-      ((AlgHom.fst ℝ _ _).comp e.toAlgHom)
-  have hW : finrank ℝ (Fin 8 → ℝ) = 8 := by simp
-  exact nonempty_skewAdjointCliffordSystem_of_algHom_realClifford ρ (hW.trans hE.symm)
+  obtain ⟨A, hskew, hsq, hanti⟩ := ρ.exists_skew_sq_neg_id_anticommute_clm_of_finrank_eq hdim
+  exact ⟨⟨fun i ↦ (A i).toLinearMap, hsq, fun {i j} hij ↦ hanti i j hij, hskew⟩⟩
 
 /-- Every real inner product space of dimension `n + 1` with `n ∈ {0, 1, 3, 7}` admits an
 `n`-generator skew-adjoint Clifford system. -/
@@ -490,10 +518,7 @@ theorem nonempty_skewAdjointCliffordSystem_of_finrank_eq_succ {n : ℕ} {E : Typ
     [NormedAddCommGroup E] [InnerProductSpace ℝ E] (hE : finrank ℝ E = n + 1)
     (hn : n = 0 ∨ n = 1 ∨ n = 3 ∨ n = 7) :
     Nonempty (SkewAdjointCliffordSystem (Fin n) E) := by
-  rcases hn with rfl | rfl | rfl | rfl
-  · exact ⟨SkewAdjointCliffordSystem.empty⟩
-  · exact nonempty_skewAdjointCliffordSystem_of_finrank_eq_two hE
-  · exact nonempty_skewAdjointCliffordSystem_of_finrank_eq_four hE
-  · exact nonempty_skewAdjointCliffordSystem_of_finrank_eq_eight hE
+  obtain ⟨A, hskew, hsq, hanti⟩ := exists_skew_sq_neg_id_anticommute_clm hn hE
+  exact ⟨⟨fun i ↦ (A i).toLinearMap, hsq, fun {i j} hij ↦ hanti i j hij, hskew⟩⟩
 
 end TauCeti
