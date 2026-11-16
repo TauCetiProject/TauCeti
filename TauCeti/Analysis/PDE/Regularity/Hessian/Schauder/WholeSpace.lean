@@ -54,7 +54,7 @@ on the ball by the bound `N` of `‖D²u‖`, since `R ≤ 1`. At larger distanc
 The bound of `‖D²u‖_∞` on the right side is then removed by interpolation. The inequalities
 `‖D²u‖_∞ ≤ 32 ε⁻² ‖u‖_∞ + 2 ε^α [D²u]_α` and `‖Du‖_∞ ≤ 34 ε⁻¹ ‖u‖_∞ + 2 ε^(1+α) [D²u]_α`
 (`HolderWith.norm_iteratedFDeriv_add_two_le_of_norm_le`,
-`HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le_add_two`) give, for `ε ≤ 1`, the common bound
+`HolderWith.norm_iteratedFDeriv_succ_le_of_contDiff_of_norm_le`) give, for `ε ≤ 1`, the common bound
 `(34 ε⁻¹ + 32 ε⁻²) ‖u‖_∞ + 2 ε^α [D²u]_α` of both
 (`HolderWith.norm_fderiv_le_and_norm_iteratedFDeriv_two_le`); it bounds `‖D²u‖_∞` in the first
 estimate and is also the bound on `‖Du‖_∞` in the conclusion. The finiteness of `‖D²u‖_∞` that
