@@ -78,14 +78,11 @@ a supersolution.
   inequality, under a Sobolev inequality on `W^{1,2}_0(Ω)`.
 * `TauCeti.PDE.exists_eLpNorm_rpow_le_mul_eLpNorm_rpow_lowerOrder`: the reverse Hölder inequality
   for powers of a positive supersolution of the equation with lower-order terms, under a Sobolev
-  inequality on `W^{1,2}_0(Ω)`; `TauCeti.PDE.exists_eLpNorm_rpow_le_mul_eLpNorm_rpow` is the case
-  without lower-order terms.
-* `TauCeti.PDE.exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm_lowerOrder` and
-  `TauCeti.PDE.exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm`: its form for `0 < p < 1` as a bound
-  of the `L^{χp}` norm of `u` by its `L^p` norm.
-* `TauCeti.PDE.exists_eLpNorm_le_mul_rpow_mul_eLpNorm_lowerOrder` and
-  `TauCeti.PDE.exists_eLpNorm_le_mul_rpow_mul_eLpNorm`: Moser's estimate for small positive
-  powers, in every dimension.
+  inequality on `W^{1,2}_0(Ω)`.
+* `TauCeti.PDE.exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm_lowerOrder`: its form for `0 < p < 1`
+  as a bound of the `L^{χp}` norm of `u` by its `L^p` norm.
+* `TauCeti.PDE.exists_eLpNorm_le_mul_rpow_mul_eLpNorm_lowerOrder`: Moser's estimate for small
+  positive powers, in every dimension.
 * `TauCeti.PDE.exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv_lowerOrder`: its
   scale-invariant form
   `(⨍_{B(x₀, R/2)} u^s)^{1/s} ≤ D (1 + Θ)^e (⨍_{B(x₀, R)} u^p)^{1/p}` for `p ≤ 2`, together with
@@ -351,43 +348,6 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow_lowerOrder :
     eLpNorm_congr_ae (Filter.EventuallyEq.symm (ae_restrict_of_ae_restrict_of_subset hs hwv))
   rwa [hwu ((Metric.ball_subset_ball hrρ.le).trans hball), hwu hball]
 
-/-- **Moser's reverse Hölder inequality for powers of a positive supersolution.** There is a
-constant `C ≥ 0`, depending only on the dimension, with the following property. Let `a` be
-measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and suppose that
-`W^{1,2}_0(Ω)` satisfies the Sobolev inequality `‖v‖_q ≤ S ‖∇v‖₂`. Let `u ∈ H¹(Ω)` be a weak
-supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative
-`v ∈ H¹₀(Ω)`, with `u ≥ ε` almost everywhere for some `ε > 0`. Then for every `p < 1` and all
-concentric balls `B(x₀, r) ⊂ B(x₀, ρ) ⊆ Ω`,
-
-`‖u^{p/2}‖_{L^q(B(x₀, r))} ≤ S C (1 + |p| Λ / ((1 - p) λ)) / (ρ - r) · ‖u^{p/2}‖_{L²(B(x₀, ρ))}`.
-
-The constant depends on neither `u` nor `ε`. -/
-theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure]
-      {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-      {lam Lam : ℝ} {q : ℝ≥0∞} {S : ℝ≥0} {u : W1p mu Omega 2} {ε p : ℝ}
-      {x₀ : EuclideanSpace ℝ ι} {r ρ : ℝ},
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
-      AEStronglyMeasurable a (mu.restrict Omega) →
-      (∀ v ∈ w1p0Submodule mu Omega 2,
-        eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ) →
-      (∀ v : W1p0 mu Omega 2,
-        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-          0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2)) →
-      0 < ε → (∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) → p < 1 →
-      0 < r → r < ρ → Metric.ball x₀ ρ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
-      eLpNorm (fun x => W1p.value u x ^ (p / 2)) q (mu.restrict (Metric.ball x₀ r)) ≤
-        S * ENNReal.ofReal (C * (1 + |p| * Lam / ((1 - p) * lam)) / (ρ - r)) *
-          eLpNorm (fun x => W1p.value u x ^ (p / 2)) 2 (mu.restrict (Metric.ball x₀ ρ)) := by
-  obtain ⟨C, hC0, hstep⟩ := exists_eLpNorm_rpow_le_mul_eLpNorm_rpow_lowerOrder (ι := ι)
-  refine ⟨C, hC0, ?_⟩
-  intro mu _ Omega a lam Lam q S u ε p x₀ r ρ h ha hS hu hε hεu hp hr hrρ hball
-  have := hstep mu (b := 0) (c := 0) (beta := 0) (gamma := 0) h ha aestronglyMeasurable_const
-    aestronglyMeasurable_const (fun _ _ => by rw [Pi.zero_apply, norm_zero])
-    (fun _ _ => by rw [Pi.zero_apply, norm_zero]) hS hu hε hεu hp hr hrρ hball
-  simpa only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, mul_zero, add_zero,
-    Real.sqrt_zero, mul_div_assoc] using this
-
 omit [DecidableEq ι] in
 /-- On a ball `B(x₀, s) ⊆ Ω` where `u ≥ ε > 0`, the `L^t` norm of `u^{p/2}` is
 `‖u‖_{L^{tp/2}}^{p/2}`, for `p > 0`. -/
@@ -485,42 +445,6 @@ theorem exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm_lowerOrder :
   convert hpow using 4
   simp only [A]
   ring
-
-/-- **One step of Moser's iteration for small positive powers.** There is a constant `C ≥ 0`,
-depending only on the dimension, with the following property. Under the hypotheses of
-`TauCeti.PDE.exists_eLpNorm_rpow_le_mul_eLpNorm_rpow`, with a finite Sobolev exponent `q`,
-write `χ = q / 2`.
-Then for every `0 < p < 1` and all concentric balls `B(x₀, r) ⊂ B(x₀, ρ) ⊆ Ω`,
-
-`‖u‖_{L^{χp}(B(x₀, r))} ≤ (S C (1 + p Λ / ((1 - p) λ)) / (ρ - r))^{2/p} ‖u‖_{L^p(B(x₀, ρ))}`.
-
-For `q > 2` the exponent `χp` exceeds `p`, so the integrability of `u` improves on the smaller
-ball; the constant blows up as `p → 1`. -/
-theorem exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure]
-      {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-      {lam Lam : ℝ} {q : ℝ≥0∞} {S : ℝ≥0} {u : W1p mu Omega 2} {ε p : ℝ}
-      {x₀ : EuclideanSpace ℝ ι} {r ρ : ℝ},
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
-      AEStronglyMeasurable a (mu.restrict Omega) → q ≠ (∞ : ℝ≥0∞) →
-      (∀ v ∈ w1p0Submodule mu Omega 2,
-        eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ) →
-      (∀ v : W1p0 mu Omega 2,
-        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-          0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2)) →
-      0 < ε → (∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) → 0 < p → p < 1 →
-      0 < r → r < ρ → Metric.ball x₀ ρ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
-      eLpNorm (W1p.value u) (ENNReal.ofReal (q.toReal / 2 * p)) (mu.restrict (Metric.ball x₀ r)) ≤
-        ENNReal.ofReal ((S * C * (1 + p * Lam / ((1 - p) * lam)) / (ρ - r)) ^ (2 / p)) *
-          eLpNorm (W1p.value u) (ENNReal.ofReal p) (mu.restrict (Metric.ball x₀ ρ)) := by
-  obtain ⟨C, hC0, hstep⟩ := exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm_lowerOrder (ι := ι)
-  refine ⟨C, hC0, ?_⟩
-  intro mu _ Omega a lam Lam q S u ε p x₀ r ρ h ha hq hS hu hε hεu hp0 hp hr hrρ hball
-  have := hstep mu (b := 0) (c := 0) (beta := 0) (gamma := 0) h ha aestronglyMeasurable_const
-    aestronglyMeasurable_const (fun _ _ => by rw [Pi.zero_apply, norm_zero])
-    (fun _ _ => by rw [Pi.zero_apply, norm_zero]) hq hS hu hε hεu hp0 hp hr hrρ hball
-  simpa only [zero_div, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, add_zero,
-    Real.sqrt_zero, mul_zero, mul_div_assoc] using this
 
 section Iteration
 
@@ -883,44 +807,6 @@ theorem exists_eLpNorm_le_mul_rpow_mul_eLpNorm_lowerOrder [Nonempty ι] {p s : �
     _ ≤ (|D'| + 1) * (1 + Θ) ^ e * R ^ (n / s - n / p) := by
         gcongr
         linarith [le_abs_self D']
-
-/-- **Moser's iteration for small positive powers of a supersolution.** Let `n ≥ 1` be the
-dimension, and let `p > 0` and `s > 0` with `(n - 2) s < n`, that is `s < n/(n - 2)` when `n ≥ 3`
-and `s` arbitrary when `n ≤ 2`. There is `D > 0`, depending on `λ`, `Λ`, `p`, `s`, the dimension
-and the normalization of the additive Haar measure `mu`, with the following property. Let `a` be
-measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak
-supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`,
-with `u ≥ ε` almost everywhere for some `ε > 0`. Then on every ball `B(x₀, R) ⊆ Ω`,
-
-`‖u‖_{L^s(B(x₀, R/2))} ≤ D R^{n/s - n/p} ‖u‖_{L^p(B(x₀, R))}`.
-
-Since `|B(x₀, R)|` is proportional to `Rⁿ`, this says
-`(⨍_{B(x₀, R/2)} u^s)^{1/s} ≤ D' (⨍_{B(x₀, R)} u^p)^{1/p}` with `D'` independent of `R`. The
-constant does not depend on `u` or `ε`. -/
-theorem exists_eLpNorm_le_mul_rpow_mul_eLpNorm [Nonempty ι] {p s : ℝ} (hp : 0 < p) (hs : 0 < s)
-    (hsn : ((Fintype.card ι : ℝ) - 2) * s < Fintype.card ι) :
-    ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
-      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {ε : ℝ}
-      {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
-      AEStronglyMeasurable a (mu.restrict Omega) →
-      (∀ v : W1p0 mu Omega 2,
-        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-          0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2)) →
-      0 < ε → (∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) →
-      0 < R → Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
-      eLpNorm (W1p.value u) (ENNReal.ofReal s) (mu.restrict (Metric.ball x₀ (R / 2))) ≤
-        ENNReal.ofReal (D * R ^ ((Fintype.card ι : ℝ) / s - (Fintype.card ι : ℝ) / p)) *
-          eLpNorm (W1p.value u) (ENNReal.ofReal p) (mu.restrict (Metric.ball x₀ R)) := by
-  obtain ⟨D, e, hD, -, hiter⟩ := exists_eLpNorm_le_mul_rpow_mul_eLpNorm_lowerOrder (mu := mu)
-    (lam := lam) (Lam := Lam) hp hs hsn
-  refine ⟨D, hD, ?_⟩
-  intro Omega a u ε x₀ R h ha hu hε hεu hR hball
-  have := hiter (b := 0) (c := 0) (beta := 0) (gamma := 0) h ha aestronglyMeasurable_const
-    aestronglyMeasurable_const (fun _ _ => by rw [Pi.zero_apply, norm_zero])
-    (fun _ _ => by rw [Pi.zero_apply, norm_zero]) hu hε hεu hR hball
-  simpa only [zero_mul, zero_div, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow,
-    add_zero, Real.sqrt_zero, Real.one_rpow, mul_one] using this
 
 omit [DecidableEq ι] in
 /-- On a ball `B(x₀, t) ⊆ Ω`, where `u ≥ ε > 0`, the real number `(‖u‖_{L^q(B)}).toReal` equals
