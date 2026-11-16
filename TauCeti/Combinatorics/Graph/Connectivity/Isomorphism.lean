@@ -206,6 +206,16 @@ empty actual vertex set. -/
 theorem vertexConnectivity_eq (f : Iso G H) : H.vertexConnectivity = G.vertexConnectivity :=
   f.toSimpleGraphIso.vertexConnectivity_eq
 
+/-- A native multigraph cut vertex is carried to a native cut vertex by a multigraph
+isomorphism. -/
+@[simp]
+theorem isCutVertex_vertexEquiv_iff (f : Iso G H) (x : V(G)) :
+    H.IsCutVertex (f.vertexEquiv x) ↔ G.IsCutVertex x := by
+  rw [H.isCutVertex_iff_toSimpleGraph_isCutVertex (f.vertexEquiv x).property,
+    G.isCutVertex_iff_toSimpleGraph_isCutVertex x.property]
+  simpa only [toSimpleGraphIso_apply] using
+    (f.toSimpleGraphIso.isCutVertex_iff (v := x))
+
 end Iso
 
 end Graph
