@@ -98,7 +98,7 @@ end TauCeti.Probability
 
 namespace ProbabilityTheory
 
-open TauCeti.Probability
+open TauCeti TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {m n : ℕ}
 
@@ -135,5 +135,16 @@ theorem HasLaw.ae_spectralMeasure_apply_singleton_zero_gaussianGramComplex [NeZe
     ∀ᵐ ω ∂P, ∃ h : (A ω).IsHermitian,
       ((A ω).spectralMeasure h : Measure ℝ) {0} = (m : ℝ≥0∞)⁻¹ * (m - n : ℕ) :=
   hA.ae (TauCeti.Probability.ae_spectralMeasure_apply_singleton_zero_gaussianGramComplex m n)
+
+/-- The Gram matrix of a complex Ginibre random matrix almost surely has the exact zero
+spectral atom determined by its shape, with positive row dimension. -/
+theorem HasLaw.ae_spectralMeasure_mul_conjTranspose_self_apply_singleton_zero_ginibreComplex
+    [NeZero m] {X : Ω → Matrix (Fin m) (Fin n) ℂ}
+    (hX : HasLaw X (ginibreComplex m n) P) :
+    ∀ᵐ ω ∂P,
+      ((X ω * (X ω)ᴴ).spectralMeasure (isHermitian_mul_conjTranspose_self (X ω)) :
+        Measure ℝ) {0} = (m : ℝ≥0∞)⁻¹ * (m - n : ℕ) :=
+  hX.ae <|
+    Probability.ae_spectralMeasure_mul_conjTranspose_self_apply_singleton_zero_ginibreComplex m n
 
 end ProbabilityTheory

@@ -53,6 +53,30 @@ def ginibreComplexPDF (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) : ℝ≥0∞ 
 theorem ginibreComplexPDF_eq_ofReal (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) :
     ginibreComplexPDF m n X = ENNReal.ofReal (ginibreComplexPDFReal m n X) := (rfl)
 
+/-- The real-valued density is one when the row dimension is zero. -/
+@[simp]
+theorem ginibreComplexPDFReal_zero_left (n : ℕ) (X : Matrix (Fin 0) (Fin n) ℂ) :
+    ginibreComplexPDFReal 0 n X = 1 := by
+  simp [ginibreComplexPDFReal_def]
+
+/-- The real-valued density is one when the column dimension is zero. -/
+@[simp]
+theorem ginibreComplexPDFReal_zero_right (m : ℕ) (X : Matrix (Fin m) (Fin 0) ℂ) :
+    ginibreComplexPDFReal m 0 X = 1 := by
+  simp [ginibreComplexPDFReal_def]
+
+/-- The extended density is one when the row dimension is zero. -/
+@[simp]
+theorem ginibreComplexPDF_zero_left (n : ℕ) (X : Matrix (Fin 0) (Fin n) ℂ) :
+    ginibreComplexPDF 0 n X = 1 := by
+  simp [ginibreComplexPDF_eq_ofReal]
+
+/-- The extended density is one when the column dimension is zero. -/
+@[simp]
+theorem ginibreComplexPDF_zero_right (m : ℕ) (X : Matrix (Fin m) (Fin 0) ℂ) :
+    ginibreComplexPDF m 0 X = 1 := by
+  simp [ginibreComplexPDF_eq_ofReal]
+
 /-- The real-valued complex Ginibre density is strictly positive. -/
 theorem ginibreComplexPDFReal_pos (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) :
     0 < ginibreComplexPDFReal m n X := by
@@ -80,6 +104,12 @@ theorem ginibreComplexPDFReal_eq_exp_neg_trace (m n : ℕ) (X : Matrix (Fin m) (
   have h := Matrix.re_trace_mul_conjTranspose_self X
   simp only [RCLike.re_to_complex] at h
   rw [h]
+
+/-- The extended Ginibre density depends only on the real trace of `X * Xᴴ`. -/
+theorem ginibreComplexPDF_eq_exp_neg_trace (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) :
+    ginibreComplexPDF m n X =
+      ENNReal.ofReal (Real.exp (-(X * Xᴴ).trace.re) / Real.pi ^ (m * n)) := by
+  rw [ginibreComplexPDF_eq_ofReal, ginibreComplexPDFReal_eq_exp_neg_trace]
 
 /-- The entrywise formula for the complex Ginibre density. -/
 theorem ginibreComplexPDF_def (m n : ℕ) (X : Matrix (Fin m) (Fin n) ℂ) :
@@ -126,14 +156,14 @@ theorem ginibreComplex_eq_withDensity (m n : ℕ) :
   simp [properComplexGaussianPDF_one, ginibreComplexPDF_def, e,
     MeasurableEquiv.coe_curry_symm, Fintype.sum_prod_type]
 
-/-- The complex Ginibre density has total integral one, including empty matrix spaces. -/
+/-- The complex Ginibre density has total integral one, including when one dimension is zero. -/
 theorem lintegral_ginibreComplexPDF (m n : ℕ) :
     ∫⁻ X, ginibreComplexPDF m n X = 1 := by
   rw [← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ,
     ← ginibreComplex_eq_withDensity]
   exact measure_univ
 
-/-- The real-valued Ginibre density has integral one, including empty matrix spaces. -/
+/-- The real-valued Ginibre density has integral one, including when one dimension is zero. -/
 theorem integral_ginibreComplexPDFReal_eq_one (m n : ℕ) :
     ∫ X, ginibreComplexPDFReal m n X = 1 := by
   simp_rw [← toReal_ginibreComplexPDF]

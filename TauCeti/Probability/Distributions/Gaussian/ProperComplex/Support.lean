@@ -58,6 +58,7 @@ theorem support_properComplexGaussianMeasure {C : Matrix iota iota ℂ} (hC : C.
     ContinuousLinearEquiv.coe_toHomeomorph]
 
 /-- A proper complex Gaussian with positive-definite covariance has full support. -/
+@[simp]
 theorem support_properComplexGaussianMeasure_of_posDef {C : Matrix iota iota ℂ}
     (hC : C.PosDef) (m : iota → ℂ) :
     (properComplexGaussianMeasure m C).support = Set.univ := by

@@ -41,7 +41,10 @@ theorem map_transpose_ginibreComplex (m n : ℕ) :
     (ginibreComplex m n).map Matrix.transpose = ginibreComplex n m := by
   rw [ginibreComplex_eq_map_properComplexGaussianMeasure n m, ← map_vec_ginibreComplex m n,
     Measure.map_map (by fun_prop) measurable_matrix_vec]
-  congr 1
+  exact congrArg (fun f ↦ (ginibreComplex m n).map f) (by
+    funext X
+    ext i j
+    simp)
 
 /-- Conjugate-transposing a complex Ginibre matrix swaps its row and column dimensions. -/
 @[simp]
@@ -57,8 +60,11 @@ theorem map_conjTranspose_ginibreComplex (m n : ℕ) :
   rw [Measure.map_map (by fun_prop) (by fun_prop), ← ginibreComplex_def] at h
   rw [← properComplexGaussianMeasure_zero_one_eq_pi, ← map_vec_ginibreComplex m n,
     Measure.map_map (by fun_prop) measurable_matrix_vec] at h
-  convert h using 1
-  congr 1
+  rw [← h]
+  exact congrArg (fun f ↦ (ginibreComplex m n).map f) (by
+    funext X
+    ext i j
+    simp)
 
 /-- The companion Gram matrix of an `m × n` complex Ginibre matrix has dimension `n` and
 sample size `m`. -/

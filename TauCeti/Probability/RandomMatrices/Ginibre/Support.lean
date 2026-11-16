@@ -44,10 +44,10 @@ theorem support_ginibreComplex (m n : ℕ) : (ginibreComplex m n).support = Set.
       Set.univ := by
     apply Set.range_eq_univ.mpr
     intro X
-    exact ⟨fun p ↦ X p.1 p.2, rfl⟩
+    exact ⟨fun p ↦ X p.1 p.2, by ext i j; simp⟩
   rw [hr, closure_univ]
 
-/-- The support of a standard complex Gaussian Gram law is the closed cone of
+/-- The support of a standard complex Gaussian Gram law is the closed set of
 positive-semidefinite matrices of rank at most its sample size. -/
 @[simp]
 theorem support_gaussianGramComplex (m n : ℕ) :

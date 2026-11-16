@@ -97,25 +97,6 @@ theorem map_re_im_properComplexGaussianScalar :
     Measure.map_map (by fun_prop) (by fun_prop)]
   simpa [Function.comp_def, Matrix.one_apply_eq, Real.toNNReal_inv] using h
 
-/-- Complex conjugation preserves the standard scalar proper complex Gaussian law. -/
-@[simp]
-theorem map_star_properComplexGaussianScalar :
-    properComplexGaussianScalar.map (starRingEnd ℂ) = properComplexGaussianScalar := by
-  apply MeasurableEquiv.map_measurableEquiv_injective Complex.measurableEquivRealProd
-  have he : (Complex.measurableEquivRealProd : ℂ → ℝ × ℝ) = fun z ↦ (z.re, z.im) :=
-    funext Complex.measurableEquivRealProd_apply
-  rw [he]
-  rw [Measure.map_map (by fun_prop) (by fun_prop)]
-  calc
-    _ = (properComplexGaussianScalar.map (fun z ↦ (z.re, z.im))).map
-        (Prod.map id (fun x : ℝ ↦ -x)) := by
-      rw [Measure.map_map (by fun_prop) (by fun_prop)]
-      rfl
-    _ = _ := by
-      rw [map_re_im_properComplexGaussianScalar, ← Measure.map_prod_map _ _
-        measurable_id measurable_neg, Measure.map_id, gaussianReal_map_neg]
-      simp
-
 /-- The centered real and imaginary coordinates, indexed by `Fin 2`, have the product
 Gaussian law with variance half the complex variance, including zero variance. -/
 @[simp]

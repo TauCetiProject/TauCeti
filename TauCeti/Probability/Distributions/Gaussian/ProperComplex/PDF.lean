@@ -237,15 +237,21 @@ theorem integrable_properComplexGaussianPDFReal (m : ι → ℂ) (C : Matrix ι 
 
 /-- The unit-covariance proper complex Gaussian density is the exponential of the negative
 sum of squared distances from the mean, divided by `π ^ card ι`. -/
+theorem properComplexGaussianPDFReal_one (m z : ι → ℂ) :
+    properComplexGaussianPDFReal m 1 z =
+      exp (-(∑ i, ‖z i - m i‖ ^ 2)) / π ^ Fintype.card ι := by
+  have hq (w : ι → ℂ) : (star w ⬝ᵥ w).re = ∑ i, ‖w i‖ ^ 2 := by
+    simp [dotProduct, Complex.conj_mul', ← Complex.ofReal_pow]
+  simp only [properComplexGaussianPDFReal_of_posDef _ _ Matrix.PosDef.one, inv_one,
+    Matrix.one_mulVec, Matrix.det_one, Complex.one_re, mul_one, hq,
+    Pi.sub_apply]
+
+/-- The extended unit-covariance density is the nonnegative lift of the exponential
+of the negative sum of squared distances from the mean, divided by `π ^ card ι`. -/
 theorem properComplexGaussianPDF_one (m z : ι → ℂ) :
     properComplexGaussianPDF m 1 z =
       ENNReal.ofReal (exp (-(∑ i, ‖z i - m i‖ ^ 2)) / π ^ Fintype.card ι) := by
-  have hq (w : ι → ℂ) : (star w ⬝ᵥ w).re = ∑ i, ‖w i‖ ^ 2 := by
-    simp [dotProduct, Complex.conj_mul', ← Complex.ofReal_pow]
-  simp only [properComplexGaussianPDF_eq_ofReal,
-    properComplexGaussianPDFReal_of_posDef _ _ Matrix.PosDef.one, inv_one,
-    Matrix.one_mulVec, Matrix.det_one, Complex.one_re, mul_one, hq,
-    Pi.sub_apply]
+  simp only [properComplexGaussianPDF_eq_ofReal, properComplexGaussianPDFReal_one]
 
 /-- The scalar standard proper complex Gaussian has density `π⁻¹ exp(-‖z‖²)` with respect
 to planar Lebesgue measure. -/

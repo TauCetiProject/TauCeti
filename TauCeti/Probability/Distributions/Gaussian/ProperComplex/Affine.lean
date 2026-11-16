@@ -17,7 +17,8 @@ and positive semidefinite covariance `C` to the proper complex Gaussian with mea
 `L *ᵥ m + c` and covariance `L * C * Lᴴ`. Rectangular maps allow singular images
 and coordinate restrictions. The real and imaginary parts of a coordinate have a planar
 Gaussian law with spherical covariance equal to half the complex variance. Multiplication
-by a unit complex scalar preserves a centered proper complex Gaussian law.
+by a unit complex scalar preserves a centered proper complex Gaussian law. Complex conjugation
+also preserves the standard scalar law.
 
 The affine identity follows by realification from
 `TauCeti.Probability.map_affine_multivariateGaussian`. The planar marginal uses
@@ -130,6 +131,36 @@ theorem properComplexGaussianMeasure_centered_rotation (C : Matrix ι ι ℂ)
     simpa only [Matrix.smul_mulVec, Matrix.one_mulVec, Matrix.mulVec_zero, add_zero] using h
   · simp [properComplexGaussianMeasure_of_not_posSemidef _ hC,
       Measure.map_dirac' (by fun_prop : Measurable (fun z : ι → ℂ ↦ u • z))]
+
+/-- Complex conjugation preserves the standard scalar proper complex Gaussian law. -/
+@[simp]
+theorem map_star_properComplexGaussianScalar :
+    properComplexGaussianScalar.map (starRingEnd ℂ) = properComplexGaussianScalar := by
+  let L : Matrix (Unit ⊕ Unit) (Unit ⊕ Unit) ℝ :=
+    Matrix.diagonal (Sum.elim (fun _ ↦ 1) (fun _ ↦ -1))
+  have hcov : L * complexGaussianRealCovariance (1 : Matrix Unit Unit ℂ) * Lᵀ =
+      complexGaussianRealCovariance (1 : Matrix Unit Unit ℂ) := by
+    ext a b
+    cases a <;> cases b <;> simp [L, Matrix.mul_apply]
+  have h := map_affine_multivariateGaussian
+    (complexToRealEuclidean Unit (0 : Unit → ℂ))
+    ((posSemidef_complexGaussianRealCovariance_iff _).2 Matrix.PosSemidef.one) L 0
+  simp only [map_zero, add_zero, hcov] at h
+  have hreflect (x : EuclideanSpace ℝ (Unit ⊕ Unit)) :
+      star ((complexToRealEuclidean Unit).symm x ()) =
+        (complexToRealEuclidean Unit).symm (L.toEuclideanLin x) () := by
+    apply Complex.ext <;> simp [L, Matrix.toEuclideanLin, Matrix.mulVec, dotProduct,
+      complexToRealEuclidean_symm_apply]
+  rw [properComplexGaussianScalar_def, properComplexGaussianMeasure_def,
+    Measure.map_map (by fun_prop) (by fun_prop),
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  simp only [← Pi.zero_def, map_zero]
+  conv_rhs =>
+    rw [Measure.map_map (by fun_prop) (by fun_prop), ← h,
+      Measure.map_map (by fun_prop) (by fun_prop)]
+  exact congrArg (fun f ↦ Measure.map f _) (by
+    funext x
+    simpa only [Function.comp_apply, starRingEnd_apply] using hreflect x)
 
 end TauCeti.Probability
 

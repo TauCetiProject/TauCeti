@@ -51,7 +51,7 @@ theorem map_diag_re_gaussianGramComplex (m n : ℕ) [NeZero n] :
   rw [MeasurableEquiv.coe_curry] at hsum
   rw [gaussianGramComplex_def, Measure.map_map (by fun_prop) (by fun_prop),
     ginibreComplex_def, Measure.map_map (by fun_prop) (by fun_prop)]
-  convert hsum using 1
+  rw [← hsum]
   congr 1
   funext z
   ext i
