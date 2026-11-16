@@ -16,8 +16,10 @@ quadratic map by another through an injective isometry.  It gives the latter rel
 reflexivity, transitivity, and equivalence-invariance API, from which anisotropy is read off as
 an isometry invariant.
 
-For scalar values, it defines the represented-unit value set, proves its elementary square-class
-and unit-scaling invariance, and gives the criterion that, for a form with trivial radical,
+For scalar values, it defines the represented-unit value set, proves its square-class invariance
+and unit-scaling equivariance (`mem_unitValueSet_smul_iff`) together with the invariance of
+`Represents` under simultaneous unit scaling of form and target (`represents_smul_same_iff`),
+and gives the criterion that, for a form with trivial radical,
 representing a unit is equivalent to isotropy after adjoining the one-dimensional form with that
 unit as its negative coefficient. A nondegenerate form has trivial radical by Mathlib's
 `radical_eq_bot` theorem. A form over a field with trivial radical pairs every nonzero isotropic
@@ -263,12 +265,12 @@ theorem mem_unitValueSet_mul_sq_iff (Q : QuadraticMap R M R) (a b : Rˣ) :
     (represents_mul_sq_iff Q (a : R) b)
 
 /-- Scaling a quadratic map and the target value by the same scalar preserves representation. -/
-theorem Represents.smul_map {S M N : Type*} [Monoid S] [AddCommMonoid M] [Module R M]
+theorem Represents.smul_same {S M N : Type*} [Monoid S] [AddCommMonoid M] [Module R M]
     [AddCommMonoid N] [Module R N] [DistribMulAction S N] [SMulCommClass S R N]
     {Q : QuadraticMap R M N} {a : N} (h : Represents Q a) (c : S) :
     Represents (c • Q) (c • a) := by
-  obtain ⟨v, rfl⟩ := h
-  exact ⟨v, rfl⟩
+  obtain ⟨v, hv⟩ := h
+  exact ⟨v, by rw [smul_apply, hv]⟩
 
 /-- Scaling a quadratic map and the target value by the same unit gives an equivalent
 representation condition. -/

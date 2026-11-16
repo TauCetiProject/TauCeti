@@ -5,14 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.QuadraticForm.Global.NormForm
-import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+public import TauCeti.NumberTheory.HilbertSymbol.Basic
+public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
+import TauCeti.NumberTheory.QuadraticForm.Global.NormForm
 
 /-!
 # The ternary case of the Hasse–Minkowski theorem
 
-Let `Q` be a regular ternary quadratic form over a number field `K`. This file proves that `Q` is
-isotropic over `K` if and only if it is isotropic at every finite and every real place of `K`.
+Let `Q` be a ternary quadratic form over a number field `K`. This file proves that `Q` is isotropic
+over `K` if and only if it is isotropic at every finite and every real place of `K`.
 
 For a normalized diagonal ternary form `⟨1, -a, -b⟩` with `a, b ∈ Kˣ`, isotropy over any field of
 characteristic different from two is equivalent to positivity of the Hilbert symbol `(a, b)`
@@ -20,13 +23,14 @@ characteristic different from two is equivalent to positivity of the Hilbert sym
 representation of `b` by the binary norm plane `⟨1, -a⟩`. Because the canonical diagonal
 localizations identify `(⟨1, -a, -b⟩)_v` and `(⟨1, -a, -b⟩)_w` with the corresponding ternary
 forms over `K_v` and `ℝ`, local isotropy of `⟨1, -a, -b⟩` translates place by place into local
-positivity of `(a, b)`, and `TauCeti.hilbertSymbol_eq_one_iff_forall` closes the local-to-global
-equivalence.
+positivity of `(a, b)`, and `TauCeti.hilbertSymbol_eq_one_iff_forall_places` closes the
+local-to-global equivalence.
 
-An arbitrary regular ternary form `Q` over `K` is diagonalized as `⟨u₀, u₁, u₂⟩` with unit weights
-and rescaled by `u₀⁻¹` to the normalized form `⟨1, -a, -b⟩` where `a = -u₀⁻¹ u₁` and
-`b = -u₀⁻¹ u₂`; both global anisotropy and `QuadraticForm.IsLocallyIsotropic` are invariant under
-isometry and nonzero global scaling.
+An arbitrary three-dimensional form `Q` over `K` that is anisotropic is automatically nondegenerate
+(since `2 ≠ 0` in a number field), hence diagonalizes via `TauCeti.exists_presentedForm_equivalent`
+as `⟨w 0, w 1, w 2⟩` with unit weights and rescales by `(w 0)⁻¹` to `⟨1, -a, -b⟩` where
+`a = -(w 0)⁻¹ * w 1` and `b = -(w 0)⁻¹ * w 2`; both global anisotropy and
+`QuadraticForm.IsLocallyIsotropic` are invariant under isometry and nonzero global scaling.
 
 ## Main results
 
@@ -34,7 +38,7 @@ isometry and nonzero global scaling.
   local-to-global isotropy equivalence for `⟨1, -a, -b⟩` with `a, b ∈ Kˣ`.
 * `QuadraticForm.not_anisotropic_of_isLocallyIsotropic_ternary` and
   `QuadraticForm.not_anisotropic_iff_isLocallyIsotropic_ternary`: the Hasse–Minkowski isotropy
-  theorem for arbitrary regular three-dimensional quadratic forms over a number field.
+  theorem for arbitrary three-dimensional quadratic forms over a number field.
 * `QuadraticForm.anisotropic_iff_not_isLocallyIsotropic_ternary`: contrapositive characterization
   of global anisotropy in dimension three.
 
@@ -62,7 +66,7 @@ variable {V : Type v} [AddCommGroup V] [Module K V]
 
 /-- At a finite place `v`, the localization of `⟨1, -a, -b⟩` is isotropic if and only if the local
 Hilbert symbol `(a_v, b_v)_v` is `1`. -/
-theorem not_anisotropic_atFinitePlace_weightedSumSquares_one_neg_neg_iff
+theorem not_anisotropic_atFinitePlace_weightedSumSquares_one_neg_neg_iff_hilbertSymbol_eq_one
     (v : HeightOneSpectrum (𝓞 K)) (a b : Kˣ) :
     ¬ (atFinitePlace (weightedSumSquares K ![1, -(a : K), -(b : K)]) v).Anisotropic ↔
       TauCeti.hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b) = 1 := by
@@ -79,9 +83,10 @@ theorem not_anisotropic_atFinitePlace_weightedSumSquares_one_neg_neg_iff
     fin_cases i <;> simp [unitAtFinitePlace_apply]
   rw [hcoeff, ← TauCeti.hilbertSymbol_eq_one_iff_not_anisotropic_weightedSumSquares]
 
+omit [NumberField K] in
 /-- At a real place `w`, the localization of `⟨1, -a, -b⟩` is isotropic if and only if the real
 Hilbert symbol `(a_w, b_w)_w` is `1`. -/
-theorem not_anisotropic_atRealPlace_weightedSumSquares_one_neg_neg_iff
+theorem not_anisotropic_atRealPlace_weightedSumSquares_one_neg_neg_iff_hilbertSymbol_eq_one
     (w : {w : InfinitePlace K // w.IsReal}) (a b : Kˣ) :
     ¬ (atRealPlace (weightedSumSquares K ![1, -(a : K), -(b : K)]) w).Anisotropic ↔
       TauCeti.hilbertSymbol (TauCeti.unitAtRealPlace w a) (TauCeti.unitAtRealPlace w b) = 1 := by
@@ -104,65 +109,53 @@ theorem not_anisotropic_weightedSumSquares_one_neg_neg_iff_isLocallyIsotropic (a
       IsLocallyIsotropic (weightedSumSquares K ![1, -(a : K), -(b : K)]) := by
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   rw [← TauCeti.hilbertSymbol_eq_one_iff_not_anisotropic_weightedSumSquares,
-    TauCeti.hilbertSymbol_eq_one_iff_forall, isLocallyIsotropic_iff]
+    TauCeti.hilbertSymbol_eq_one_iff_forall_places, isLocallyIsotropic_iff]
   exact and_congr
     (forall_congr' fun v =>
-      (not_anisotropic_atFinitePlace_weightedSumSquares_one_neg_neg_iff v a b).symm)
+      (not_anisotropic_atFinitePlace_weightedSumSquares_one_neg_neg_iff_hilbertSymbol_eq_one
+        v a b).symm)
     (forall_congr' fun w =>
-      (not_anisotropic_atRealPlace_weightedSumSquares_one_neg_neg_iff w a b).symm)
+      (not_anisotropic_atRealPlace_weightedSumSquares_one_neg_neg_iff_hilbertSymbol_eq_one
+        w a b).symm)
 
-/-- **The ternary case of the Hasse–Minkowski theorem.** A regular three-dimensional quadratic form
-over a number field `K` that is isotropic at every finite and every real place is isotropic over
-`K`. -/
+/-- **The ternary case of the Hasse–Minkowski theorem.** A three-dimensional quadratic form over a
+number field `K` that is isotropic at every finite and every real place is isotropic over `K`. -/
 theorem not_anisotropic_of_isLocallyIsotropic_ternary
-    {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (hrank : Module.finrank K V = 3)
+    {Q : _root_.QuadraticForm K V} (hrank : Module.finrank K V = 3)
     (hloc : Q.IsLocallyIsotropic) : ¬ Q.Anisotropic := by
+  intro hA
   have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  obtain ⟨w, hQw⟩ := Q.equivalent_weightedSumSquares_units_of_nondegenerate'
-    (QuadraticMap.nondegenerate_associated_iff.mpr hQ).1
-  let σ : Fin 3 ≃ Fin (Module.finrank K V) := finCongr hrank.symm
-  have hre : (weightedSumSquares K w).Equivalent
-      (weightedSumSquares K ![(w (σ 0) : K), (w (σ 1) : K), (w (σ 2) : K)]) := by
-    rw [weightedSumSquares_units]
-    refine (TauCeti.equivalent_weightedSumSquares_comp (fun i => (w i : K)) σ).trans ?_
-    have hfun : ((fun i => (w i : K)) ∘ σ) =
-        ![(w (σ 0) : K), (w (σ 1) : K), (w (σ 2) : K)] := by
-      funext i
-      fin_cases i <;> rfl
-    rw [hfun]
-  have hQter : Q.Equivalent
-      (weightedSumSquares K ![(w (σ 0) : K), (w (σ 1) : K), (w (σ 2) : K)]) :=
-    hQw.trans hre
-  let u₀ : Kˣ := w (σ 0)
-  let a : Kˣ := -(u₀⁻¹ * w (σ 1))
-  let b : Kˣ := -(u₀⁻¹ * w (σ 2))
-  have hscale : weightedSumSquares K ![(u₀ : K), (w (σ 1) : K), (w (σ 2) : K)] =
-      (u₀ : K) • weightedSumSquares K ![1, -(a : K), -(b : K)] := by
-    rw [smul_weightedSumSquares]
+  obtain ⟨⟨n, w⟩, ⟨e⟩⟩ := TauCeti.exists_presentedForm_equivalent Q hA.nondegenerate
+  obtain rfl : n = 3 := by simpa [hrank] using e.toLinearEquiv.finrank_eq.symm
+  let a : Kˣ := -((w 0)⁻¹ * w 1)
+  let b : Kˣ := -((w 0)⁻¹ * w 2)
+  have hscale : TauCeti.presentedForm ⟨3, w⟩ =
+      (w 0 : K) • weightedSumSquares K ![1, -(a : K), -(b : K)] := by
+    rw [TauCeti.presentedForm_eq_weightedSumSquares_coe, smul_weightedSumSquares]
     congr 1
     funext i
-    fin_cases i <;> simp [u₀, a, b]
-  rw [hQter.anisotropic_iff, hscale, anisotropic_smul_iff u₀.isUnit]
+    fin_cases i <;> simp [a, b]
   have hloc' : IsLocallyIsotropic (weightedSumSquares K ![1, -(a : K), -(b : K)]) := by
-    rw [← isLocallyIsotropic_smul_iff u₀.ne_zero, ← hscale,
-      ← QuadraticMap.Equivalent.isLocallyIsotropic_iff hQter]
+    rw [← isLocallyIsotropic_smul_iff (w 0).ne_zero, ← hscale,
+      ← QuadraticMap.Equivalent.isLocallyIsotropic_iff ⟨e⟩]
     exact hloc
-  exact (not_anisotropic_weightedSumSquares_one_neg_neg_iff_isLocallyIsotropic a b).mpr hloc'
+  rw [QuadraticMap.Equivalent.anisotropic_iff ⟨e⟩, hscale, anisotropic_smul_iff (w 0).isUnit] at hA
+  exact (not_anisotropic_weightedSumSquares_one_neg_neg_iff_isLocallyIsotropic a b).mpr hloc' hA
 
-/-- **The ternary Hasse–Minkowski equivalence.** A regular three-dimensional quadratic form over a
-number field is isotropic if and only if it is isotropic at every finite and every real place. -/
+/-- **The ternary Hasse–Minkowski equivalence.** A three-dimensional quadratic form over a number
+field is isotropic if and only if it is isotropic at every finite and every real place. -/
 theorem not_anisotropic_iff_isLocallyIsotropic_ternary
-    {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (hrank : Module.finrank K V = 3) :
+    {Q : _root_.QuadraticForm K V} (hrank : Module.finrank K V = 3) :
     ¬ Q.Anisotropic ↔ Q.IsLocallyIsotropic :=
-  ⟨isLocallyIsotropic_of_not_anisotropic Q, not_anisotropic_of_isLocallyIsotropic_ternary hQ hrank⟩
+  ⟨isLocallyIsotropic_of_not_anisotropic Q, not_anisotropic_of_isLocallyIsotropic_ternary hrank⟩
 
-/-- A regular three-dimensional quadratic form over a number field is anisotropic if and only if
-it is anisotropic at some finite or real place. -/
+/-- A three-dimensional quadratic form over a number field is anisotropic if and only if it is
+anisotropic at some finite or real place. -/
 theorem anisotropic_iff_not_isLocallyIsotropic_ternary
-    {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (hrank : Module.finrank K V = 3) :
+    {Q : _root_.QuadraticForm K V} (hrank : Module.finrank K V = 3) :
     Q.Anisotropic ↔ ¬ Q.IsLocallyIsotropic :=
-  (not_iff_comm.mp (not_anisotropic_iff_isLocallyIsotropic_ternary hQ hrank)).symm
+  (not_iff_comm.mp (not_anisotropic_iff_isLocallyIsotropic_ternary hrank)).symm
 
 end Ternary
 

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 public import TauCeti.NumberTheory.QuadraticForm.Global.Operations
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
 # Local properties of quadratic forms over number fields
@@ -18,9 +18,10 @@ extensions of the global forms, so their witnesses compare actual localizations 
 independently chosen family of local quadratic spaces.
 
 Global witnesses base-change to local witnesses.  The resulting API also records invariance
-under global equivalence and nonzero scalar multiplication, as well as the rank constraint imposed
-by local equivalence.  These are the common hypotheses used in local-to-global statements for
-quadratic forms.
+under global equivalence, invariance of `IsLocallyIsotropic` under nonzero scalar multiplication,
+the `c⁻¹`-shift law for `LocallyRepresentsScalar` under nonzero scalar multiplication, and the
+rank constraint imposed by local equivalence.  These are the common hypotheses used in
+local-to-global statements for quadratic forms.
 
 Complex places do not occur in the definitions: over `ℂ`, isotropy is automatic in dimension
 at least two, representation of regular forms is controlled only by dimension, and regular forms
