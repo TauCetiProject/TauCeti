@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Analysis.Calculus.ParametricIntegral
-public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.Algebra.Monoid
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 
 /-!
 # Integrals over a compact manifold of parameters
@@ -200,15 +200,13 @@ theorem continuousOn_fderiv_of_contMDiffOn (hu : IsOpen u)
     (hg : ContMDiffOn (𝓘(ℝ, E).prod J) 𝓘(ℝ, F) 1 (uncurry g) (u ×ˢ univ)) :
     ContinuousOn (fun p : E × N ↦ fderiv ℝ (fun z ↦ g z p.2) p.1) (u ×ˢ univ) := by
   intro p hp
-  have hg' : ContMDiffAt ((𝓘(ℝ, E).prod J).prod 𝓘(ℝ, E)) 𝓘(ℝ, F) 1
-      (uncurry fun (q : E × N) (z : E) ↦ g z q.2) (p, p.1) :=
-    (hg.contMDiffAt ((hu.prod isOpen_univ).mem_nhds hp)).comp (p, p.1)
-      (contMDiffAt_snd.prodMk (contMDiffAt_snd.comp (p, p.1) contMDiffAt_fst))
-  have h := ContMDiffAt.mfderiv (m := 0) (fun (q : E × N) (z : E) ↦ g z q.2) Prod.fst hg'
-    contMDiffAt_fst (by norm_num)
-  erw [inTangentCoordinates_model_space] at h
-  refine (h.continuousAt.congr (Eventually.of_forall fun q ↦ ?_)).continuousWithinAt
-  exact mfderiv_eq_fderiv
+  have hg' : ContMDiffAt (J.prod 𝓘(ℝ, E)) 𝓘(ℝ, F) 1 (uncurry fun (a : N) (z : E) ↦ g z a)
+      p.swap :=
+    (hg.contMDiffAt ((hu.prod isOpen_univ).mem_nhds hp)).comp p.swap
+      (contMDiffAt_snd.prodMk contMDiffAt_fst)
+  have h := (hg'.fderiv_right (n := 0) (by norm_num)).continuousAt.comp
+    continuous_swap.continuousAt
+  exact h.continuousWithinAt
 
 omit [I.Boundaryless] [T2Space N] in
 /-- **Differentiation under the integral sign over a compact manifold of parameters.** If
