@@ -195,7 +195,8 @@ private theorem isFundamentalDiscr_five : Int.IsFundamentalDiscr 5 :=
   Int.isFundamentalDiscr_iff_squarefree.mpr
     (Or.inl ⟨rfl, Int.squarefree_natAbs.mp Nat.prime_five.squarefree⟩)
 
-local instance : Fact (¬ IsSquare (5 : ℤ)) :=
+/-- `5` is not a square in `ℤ`. -/
+local instance instFactNotIsSquareFive : Fact (¬ IsSquare (5 : ℤ)) :=
   ⟨fun h ↦ isFundamentalDiscr_five.not_isSquare_rat (by decide) (h.map (Int.castRingHom ℚ))⟩
 
 private theorem nat_sqrt_five : Nat.sqrt 5 = 2 :=
@@ -270,7 +271,8 @@ private theorem isFundamentalDiscr_eight : Int.IsFundamentalDiscr 8 :=
   (Int.isFundamentalDiscr_four_mul (m := 2)).mpr
     ⟨Int.squarefree_natAbs.mp Nat.prime_two.squarefree, Or.inl rfl⟩
 
-local instance : Fact (¬ IsSquare (8 : ℤ)) :=
+/-- `8` is not a square in `ℤ`. -/
+local instance instFactNotIsSquareEight : Fact (¬ IsSquare (8 : ℤ)) :=
   ⟨fun h ↦ isFundamentalDiscr_eight.not_isSquare_rat (by decide) (h.map (Int.castRingHom ℚ))⟩
 
 private theorem nat_sqrt_eight : Nat.sqrt 8 = 2 :=
@@ -345,7 +347,8 @@ private theorem isFundamentalDiscr_twelve : Int.IsFundamentalDiscr 12 :=
   (Int.isFundamentalDiscr_four_mul (m := 3)).mpr
     ⟨Int.squarefree_natAbs.mp Nat.prime_three.squarefree, Or.inr rfl⟩
 
-local instance : Fact (¬ IsSquare (12 : ℤ)) :=
+/-- `12` is not a square in `ℤ`. -/
+local instance instFactNotIsSquareTwelve : Fact (¬ IsSquare (12 : ℤ)) :=
   ⟨fun h ↦ isFundamentalDiscr_twelve.not_isSquare_rat (by decide) (h.map (Int.castRingHom ℚ))⟩
 
 private theorem nat_sqrt_twelve : Nat.sqrt 12 = 3 :=
