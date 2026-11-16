@@ -57,9 +57,10 @@ the subleading term is read off from the Taylor expansion of `p` at `-a`.
 
 Over a semifield, translating by `τ` and reflecting at a degree bound `d` sends the root `a⁻¹ + τ`
 of `p` to the root `a` of `(taylor τ p).reflect d` (`Polynomial.isRoot_reflect_taylor_iff`).
-Reversal commutes with regular scalar multiplication (`Polynomial.reverse_smul_of_smul_regular`,
-`Polynomial.reverse_smul`), so unit scaling leaves `1 - lc(Q)⁻¹ Q*` unchanged
-(`Polynomial.one_sub_C_inverse_mul_reverse_units_smul`).
+Reversal fixes `1` (`Polynomial.reverse_one`), shifts reflections past `natDegree` by powers of `X`
+(`Polynomial.reflect_natDegree_add`), commutes with degree-preserving maps and regular scalars, is
+involutive when `natTrailingDegree = 0` (`Polynomial.reverse_reverse_of_natTrailingDegree_eq_zero`),
+and leaves `1 - lc(Q)⁻¹ Q*` invariant under unit scaling.
 -/
 
 public section
@@ -404,26 +405,42 @@ theorem reverse_C_mul_prod_X_sub_C {K ι : Type*} [Field K] (s : Finset ι) (r :
   simp only [Finset.prod_mul_distrib, ← map_prod]
   rw [← mul_assoc, ← C_mul]
 
+/-- The reversal of `1` is `1`. -/
+@[simp] theorem reverse_one [Semiring R] : (1 : R[X]).reverse = 1 := by rw [← C_1, reverse_C, C_1]
+
+/-- Reflecting `p` at `p.natDegree + k` multiplies `p.reverse` by `X ^ k`. -/
+theorem reflect_natDegree_add [Semiring R] (p : R[X]) (k : ℕ) :
+    p.reflect (p.natDegree + k) = p.reverse * X ^ k := by
+  simpa only [mul_one, reverse, reflect_one] using reflect_mul p 1 le_rfl (by simp)
+
+/-- Mapping coefficients preserves reversal whenever it preserves `natDegree`. -/
+theorem reverse_map_of_natDegree_eq [Semiring R] [Semiring S] {p : R[X]} {f : R →+* S}
+    (h : (p.map f).natDegree = p.natDegree) : (p.map f).reverse = p.reverse.map f := by
+  rw [reverse, h, reflect_map, ← reverse]
+
+/-- Reversing twice recovers a polynomial with `natTrailingDegree = 0`. -/
+theorem reverse_reverse_of_natTrailingDegree_eq_zero [Semiring R] {p : R[X]}
+    (h : p.natTrailingDegree = 0) : p.reverse.reverse = p := by
+  rw [reverse, reverse_natDegree, h, Nat.sub_zero, reverse, reflect_reflect]
+
 /-- Reversing a polynomial commutes with scalar multiplication by an `R`-regular scalar. -/
 theorem reverse_smul_of_smul_regular {S : Type*} [Semiring R] [SMulZeroClass S R] {k : S}
     (p : R[X]) (h : IsSMulRegular R k) : (k • p).reverse = k • p.reverse := by
-  rw [reverse, natDegree_smul_of_smul_regular p h, reverse]
-  ext i
-  simp
+  rw [reverse, natDegree_smul_of_smul_regular p h, reverse]; ext i; simp
 
 /-- Reversing a polynomial commutes with cancellative scalar multiplication. -/
-@[simp]
-theorem reverse_smul {S : Type*} [Semiring R] [SMulZeroClass S R] [IsLeftCancelSMul S R]
+@[simp] theorem reverse_smul {S : Type*} [Semiring R] [SMulZeroClass S R] [IsLeftCancelSMul S R]
     (p : R[X]) (c : S) : (c • p).reverse = c • p.reverse :=
   reverse_smul_of_smul_regular p (.all c)
 
-/-- Scaling `Q` by a unit of a commutative ring leaves `1 - lc(Q)⁻¹ Q*` unchanged. -/
-theorem one_sub_C_inverse_mul_reverse_units_smul [CommRing R] (Q : R[X]) (c : Rˣ) :
+/-- Scaling `Q` by a unit of a ring leaves `1 - lc(Q)⁻¹ Q*` unchanged. -/
+theorem one_sub_C_inverse_mul_reverse_units_smul [Ring R] (Q : R[X]) (c : Rˣ) :
     1 - C (Ring.inverse (c • Q).leadingCoeff) * (c • Q).reverse =
       1 - C (Ring.inverse Q.leadingCoeff) * Q.reverse := by
   have hlc : (c • Q).leadingCoeff = (c : R) * Q.leadingCoeff := by
     rw [leadingCoeff_smul_of_smul_regular Q (IsSMulRegular.all c), Units.smul_def, smul_eq_mul]
-  rw [hlc, reverse_smul, Units.smul_def, smul_eq_C_mul, ← mul_assoc, ← C_mul,
-    Ring.inverse_mul (.inl c.isUnit), Ring.inverse_unit, mul_assoc, c.inv_mul, mul_one]
+  have hinv : Ring.inverse ((c : R) * Q.leadingCoeff) * (c : R) = Ring.inverse Q.leadingCoeff := by
+    rw [Ring.inverse_mul (.inl c.isUnit), Ring.inverse_unit, mul_assoc, c.inv_mul, mul_one]
+  rw [hlc, reverse_smul, Units.smul_def, smul_eq_C_mul, ← mul_assoc, ← C_mul, hinv]
 
 end Polynomial

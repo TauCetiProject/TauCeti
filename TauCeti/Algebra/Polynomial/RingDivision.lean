@@ -15,8 +15,8 @@ coprime when `a - b` is a unit. Substituting any polynomial `p` for `X` shows th
 `p - C b` are coprime as well (`Polynomial.isCoprime_sub_C_of_isUnit_sub`), for example the
 binomials `X ^ n - C a` and `X ^ n - C b`.
 
-Over a commutative semiring, if a polynomial `p` with invertible leading and constant coefficients
-divides `q`, with `q.natDegree ≤ p.natDegree` and `q.coeff 0 = p.coeff 0`, then `q = p`
+Over a semiring, if a polynomial `p` with invertible leading and constant coefficients divides `q`,
+with `q.natDegree ≤ p.natDegree` and `q.coeff 0 = p.coeff 0`, then `q = p`
 (`Polynomial.eq_of_dvd_of_natDegree_le_of_coeff_zero`).
 -/
 
@@ -29,9 +29,9 @@ theorem isCoprime_sub_C_of_isUnit_sub {R : Type*} [CommRing R] (p : R[X]) {a b :
     (h : IsUnit (a - b)) : IsCoprime (p - C a) (p - C b) := by
   simpa using (isCoprime_X_sub_C_of_isUnit_sub h).map (aeval p).toRingHom
 
-/-- Over a commutative semiring, if `p` has invertible leading and constant coefficients, `p ∣ q`,
+/-- Over a semiring, if `p` has invertible leading and constant coefficients, `p ∣ q`,
 `q.natDegree ≤ p.natDegree`, and `q.coeff 0 = p.coeff 0`, then `q = p`. -/
-theorem eq_of_dvd_of_natDegree_le_of_coeff_zero {R : Type*} [CommSemiring R] {p q : R[X]}
+theorem eq_of_dvd_of_natDegree_le_of_coeff_zero {R : Type*} [Semiring R] {p q : R[X]}
     (hp : IsUnit p.leadingCoeff) (hp0 : IsUnit (p.coeff 0)) (hdvd : p ∣ q)
     (hdeg : q.natDegree ≤ p.natDegree) (h0 : q.coeff 0 = p.coeff 0) : q = p := by
   rcases subsingleton_or_nontrivial R with _ | _

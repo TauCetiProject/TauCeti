@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.FieldTheory.Minpoly.Basic
-public import TauCeti.LinearAlgebra.End.Split
 import Mathlib.Algebra.Polynomial.Div
 
 /-!
@@ -94,39 +93,54 @@ end Module.End
 
 namespace LinearMap
 
-variable {R M F : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup F] [Module R F]
-
-private theorem ker_aeval_eq_ker_one_sub_aeval {E : Type*} [AddCommGroup E] [Module R E]
-    (w : Module.End R E) {P : R[X]} (hP : IsUnit (P.coeff 0)) :
-    ker (aeval w P) = ker (1 - aeval w (1 - C (↑hP.unit⁻¹ : R) * P)) := by
-  ext x
-  simp [Algebra.algebraMap_eq_smul_one, hP.unit⁻¹.isUnit.smul_eq_zero]
+variable {R M F : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid F]
+  [Module R F]
 
 /-- Along a linear retract `π ∘ₗ σ = id`, for any polynomial `P` with invertible constant
 coefficient, the retraction and section identify `ker P(σ ∘ₗ u ∘ₗ π)` with `ker P(u)`. -/
 noncomputable def kerAevalCompCompEquiv {π : F →ₗ[R] M} {σ : M →ₗ[R] F}
     (h : π ∘ₗ σ = LinearMap.id) (u : Module.End R M) {P : R[X]} (hP : IsUnit (P.coeff 0)) :
     ker (aeval (σ ∘ₗ u ∘ₗ π) P) ≃ₗ[R] ker (aeval u P) :=
-  (LinearEquiv.ofEq _ _ ((ker_aeval_eq_ker_one_sub_aeval (σ ∘ₗ u ∘ₗ π) hP).trans <| by
-    have hB0 : (1 - C (↑hP.unit⁻¹ : R) * P).coeff 0 = 0 := by simp [hP.val_inv_mul]
-    rw [Module.End.aeval_comp_comp_of_comp_eq_id h u hB0, ← splitEnd_one_sub π σ h])).trans
-    ((kerSplitEndEquiv π σ h (1 - aeval u (1 - C (↑hP.unit⁻¹ : R) * P))).trans
-      (LinearEquiv.ofEq _ _ (ker_aeval_eq_ker_one_sub_aeval u hP).symm))
+  LinearEquiv.ofLinearMap
+    ((π.comp (Submodule.subtype _)).codRestrict _ fun y ↦ mem_ker.mpr <| by
+      have hr : u.comp π = π.comp (σ ∘ₗ u ∘ₗ π) := by rw [← comp_assoc, ← comp_assoc, h, id_comp]
+      simpa [mem_ker.mp y.property] using
+        LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hr P) y.1)
+    ((σ.comp (Submodule.subtype _)).codRestrict _ fun x ↦ mem_ker.mpr <| by
+      have hs : (σ ∘ₗ u ∘ₗ π).comp σ = σ.comp u := by rw [comp_assoc, comp_assoc, h, comp_id]
+      simpa [mem_ker.mp x.property] using
+        LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hs P) x.1)
+    (LinearMap.ext fun x ↦ Subtype.ext (LinearMap.congr_fun h x.1))
+    (LinearMap.ext fun y ↦ Subtype.ext <| by
+      have hr : u.comp π = π.comp (σ ∘ₗ u ∘ₗ π) := by rw [← comp_assoc, ← comp_assoc, h, id_comp]
+      have hπy : aeval u P (π y) = 0 := by
+        simpa [mem_ker.mp y.property] using
+          LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hr P) y.1
+      have hdiv : π (aeval (σ ∘ₗ u ∘ₗ π) P.divX y.1) = aeval u P.divX (π y) :=
+        (LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hr P.divX) y.1).symm
+      have h₁ : σ (u (aeval u P.divX (π y))) + P.coeff 0 • (y : F) = 0 := by
+        have hF := LinearMap.congr_fun (congrArg (aeval (σ ∘ₗ u ∘ₗ π)) (X_mul_divX_add P).symm) y.1
+        rw [mem_ker.mp y.property] at hF
+        simpa [-X_mul_divX_add, Algebra.algebraMap_eq_smul_one, hdiv] using hF.symm
+      have h₂ : σ (u (aeval u P.divX (π y))) + P.coeff 0 • σ (π y) = 0 := by
+        have hM :=
+          congrArg σ (LinearMap.congr_fun (congrArg (aeval u) (X_mul_divX_add P).symm) (π y))
+        rw [hπy, map_zero] at hM
+        simpa [-X_mul_divX_add, Algebra.algebraMap_eq_smul_one] using hM.symm
+      have hsmul : P.coeff 0 • σ (π y) = P.coeff 0 • (y : F) := by
+        rw [← add_zero (P.coeff 0 • σ (π y)), ← h₁, add_left_comm, ← add_assoc, h₂, zero_add]
+      simpa [← mul_smul, hP.val_inv_mul] using congrArg ((↑hP.unit⁻¹ : R) • ·) hsmul)
 
 /-- The polynomial-kernel equivalence along a retract applies the retraction. -/
-@[simp]
-theorem coe_kerAevalCompCompEquiv_apply {π : F →ₗ[R] M} {σ : M →ₗ[R] F}
+@[simp] theorem coe_kerAevalCompCompEquiv_apply {π : F →ₗ[R] M} {σ : M →ₗ[R] F}
     (h : π ∘ₗ σ = LinearMap.id) (u : Module.End R M) {P : R[X]} (hP : IsUnit (P.coeff 0))
-    (x : ker (aeval (σ ∘ₗ u ∘ₗ π) P)) :
-    (kerAevalCompCompEquiv h u hP x : M) = π x := by
+    (x : ker (aeval (σ ∘ₗ u ∘ₗ π) P)) : (kerAevalCompCompEquiv h u hP x : M) = π x := by
   simp [kerAevalCompCompEquiv]
 
 /-- The inverse polynomial-kernel equivalence along a retract applies the section. -/
-@[simp]
-theorem coe_kerAevalCompCompEquiv_symm_apply {π : F →ₗ[R] M} {σ : M →ₗ[R] F}
+@[simp] theorem coe_kerAevalCompCompEquiv_symm_apply {π : F →ₗ[R] M} {σ : M →ₗ[R] F}
     (h : π ∘ₗ σ = LinearMap.id) (u : Module.End R M) {P : R[X]} (hP : IsUnit (P.coeff 0))
-    (x : ker (aeval u P)) :
-    ((kerAevalCompCompEquiv h u hP).symm x : F) = σ x := by
+    (x : ker (aeval u P)) : ((kerAevalCompCompEquiv h u hP).symm x : F) = σ x := by
   simp [kerAevalCompCompEquiv]
 
 end LinearMap

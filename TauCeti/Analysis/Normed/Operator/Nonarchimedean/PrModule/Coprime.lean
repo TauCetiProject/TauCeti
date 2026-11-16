@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Basic
+import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Coleman
 import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Spectrum
 import TauCeti.Analysis.Polynomial.Coleman.Coprime
@@ -119,9 +120,8 @@ theorem IsPrCompact.isUnit_aeval_iff {u : M →L[R] M} (hu : u.IsPrCompact) {P :
   have htd : P.natTrailingDegree = 0 := natTrailingDegree_eq_zero.2 (.inr hP.ne_zero)
   have hlc : IsUnit P.reverse.leadingCoeff := by
     rwa [reverse_leadingCoeff, trailingCoeff, htd]
-  have hrev : P.reverse.reverse = P := by
-    rw [reverse, reverse_natDegree, htd, Nat.sub_zero, reverse, reflect_reflect]
-  simpa only [hrev] using hu.isUnit_aeval_reverse_iff hlc
+  simpa only [reverse_reverse_of_natTrailingDegree_eq_zero htd] using
+    hu.isUnit_aeval_reverse_iff hlc
 
 /-- **Direct polynomial evaluation and coprimality on model spaces.** For a row-compact
 endomorphism `u` of `C₀(I, R)` and a polynomial `P` whose constant coefficient is a unit, `P(u)` is

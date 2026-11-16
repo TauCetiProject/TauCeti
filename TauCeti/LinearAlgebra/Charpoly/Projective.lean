@@ -13,6 +13,7 @@ public import TauCeti.LinearAlgebra.End.Aeval
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import TauCeti.LinearAlgebra.Trace.Projective
 import Mathlib.RingTheory.LocalProperties.Basic
+import TauCeti.Algebra.Polynomial.Reverse
 
 /-!
 # The reversed characteristic polynomial on a finite projective module
@@ -47,7 +48,8 @@ If `π : R ^ n → M` and `σ : M → R ^ n` split `M` off a free module, then
 * **Cayley–Hamilton**: for some `n` bounding its degree, the reflection `X ^ n · Q(1/X)` of
   `Q = projectiveCharpolyRev f` is a monic polynomial killing `f`
   (`LinearMap.exists_aeval_reflect_projectiveCharpolyRev_eq_zero`,
-  `LinearMap.monic_reflect_projectiveCharpolyRev`).
+  `LinearMap.monic_reflect_projectiveCharpolyRev`), so `Q.reverse` kills `f` when `f` is invertible
+  (`LinearMap.aeval_reverse_projectiveCharpolyRev_eq_zero_of_isUnit`).
 
 The last statement turns a norm into an integral equation: an element of a finite projective
 `R`-algebra is a root of a monic polynomial whose coefficients are those of the reversed
@@ -300,6 +302,15 @@ theorem exists_aeval_reflect_projectiveCharpolyRev_eq_zero (f : Module.End R M) 
   have hgσ := congr(π ∘ₗ $(Module.End.aeval_comp_of_comp_eq hg g.charpoly))
   rw [aeval_self_charpoly, zero_comp, comp_zero, ← comp_assoc, h, id_comp] at hgσ
   exact hgσ.symm
+
+/-- **Cayley–Hamilton for an invertible endomorphism of a finite projective module.** When `f` is a
+unit of `Module.End R M`, the reversal of `projectiveCharpolyRev f` kills `f`. -/
+theorem aeval_reverse_projectiveCharpolyRev_eq_zero_of_isUnit {f : Module.End R M}
+    (hf : IsUnit f) : aeval f (projectiveCharpolyRev f).reverse = 0 := by
+  obtain ⟨n, hn, hCH⟩ := exists_aeval_reflect_projectiveCharpolyRev_eq_zero f
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hn
+  rw [reflect_natDegree_add, map_mul, map_pow, aeval_X] at hCH
+  exact (hf.pow k).mul_left_eq_zero.mp hCH
 
 /-- The reflection `X ^ n · Q(1/X)` of the reversed characteristic polynomial `Q` of `f` is monic
 whenever `n` bounds the degree of `Q`. -/
