@@ -46,6 +46,14 @@ the `q`th band, by Milnor's cell attachment theorem in homology
 the band has no critical point of index `n`, and over a division ring its dimension is the number
 of these critical points times the dimension of the coefficients.
 
+The spectral sequence does not depend on where exactly the bands are cut. If `a ≤ a'` and each
+band `f⁻¹[a q, a' q]` is compact and free of critical points, the identity of `M` induces a
+morphism from the spectral sequence of `q ↦ {f ≤ a q}` to that of `q ↦ {f ≤ a' q}` which is an
+isomorphism on every page from the first on
+(`TauCeti.isIso_filteredSpaceSpectralSequenceMap_sublevel_hom_f`): on the first page it is the
+map on the relative homology of the bands induced by the inclusions of sublevels, which cross
+bands without critical points.
+
 If moreover no two critical points have indices differing by one, every differential of every page
 vanishes (`TauCeti.IsMorse.filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_ne_add_one`): a
 differential raises the total degree by one, so it would join critical points of indices `n` and
@@ -63,6 +71,8 @@ which records only the dimensions.
   function, a compact band without critical points contributes nothing to the first page.
 * `TauCeti.filteredSpaceSpectralSequenceFirstPageXIsoOfCollars`: for a smooth function, a compact
   band contributes the relative homology of its critical part.
+* `TauCeti.isIso_filteredSpaceSpectralSequenceMap_sublevel_hom_f`: moving the cuts within regular
+  intervals induces an isomorphism of spectral sequences from the first page on.
 * `TauCeti.IsMorse.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma`: the first page is
   free on the critical points of the band.
 * `TauCeti.IsMorse.isZero_filteredSpaceSpectralSequence_page_two_X`: it vanishes in a total degree
@@ -167,6 +177,39 @@ def filteredSpaceSpectralSequenceFirstPageXIsoOfCollars (hf : ContMDiff I 𝓘(�
         have := hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨by linarith, h₂⟩
         linarith [this.2])
       R n
+
+/-- **The spectral sequence of the sublevel filtration does not depend on where the bands are
+cut.** Let `a ≤ a'` be monotone sequences such that each band `f⁻¹[a q, a' q]` is compact and
+contains no critical point of the smooth function `f`. The identity of `M` carries each sublevel
+`{f ≤ a q}` into `{f ≤ a' q}`, and the morphism it induces from the spectral sequence of the
+filtration `q ↦ {f ≤ a q}` to that of `q ↦ {f ≤ a' q}` is an isomorphism on every object of every
+page from the first on. So moving the cuts of a critical-band filtration within the regular
+intervals between consecutive critical values does not change its spectral sequence. -/
+theorem isIso_filteredSpaceSpectralSequenceMap_sublevel_hom_f (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {a' : ℤ → ℝ} (ha : Monotone a) (ha' : Monotone a') (haa' : ∀ q, a q ≤ a' q)
+    (hcompact : ∀ q, IsCompact (f ⁻¹' Icc (a q) (a' q)))
+    (hcrit : ∀ q, ∀ x ∈ criticalPoints I f, f x ∉ Icc (a q) (a' q)) (r : ℤ) (hr : 2 ≤ r)
+    (pq : ℤ × ℤ) :
+    IsIso (((filteredSpaceSpectralSequenceMap (Y := TopCat.of M) (Y' := TopCat.of M) R
+      ((sublevel_mono f).comp ha) ((sublevel_mono f).comp ha') (𝟙 _)
+        fun q _ hx ↦ (hx : f _ ≤ a q).trans (haa' q)).hom r hr).f pq) := by
+  -- The inclusion `{f ≤ a q} ⊆ {f ≤ a' q}` induces isomorphisms on homology.
+  have hiso (q : ℤ) (k : ℕ) :
+      IsIso (SSet.homologyMap (TopCat.toSSet.map (sublevelPair f (haa' q)).map) R k) :=
+    isIso_homologyMap_map_sublevelPair_of_mfderiv_ne_zero hf (haa' q) (hcompact q)
+      (fun x h₁ h₂ hx ↦ hcrit q x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨h₁, h₂⟩) R k
+  refine isIso_filteredSpaceSpectralSequenceMap_hom_f R _ _ _ _ (fun q n ↦ ?_) r hr pq
+  -- The map of pairs induced by the identity consists of the two sublevel inclusions.
+  set φ := filteredSpaceStepMap (Y := TopCat.of M) (Y' := TopCat.of M)
+    ((sublevel_mono f).comp ha) ((sublevel_mono f).comp ha') (𝟙 _)
+      (fun q _ hx ↦ (hx : f _ ≤ a q).trans (haa' q)) (Int.le_add_one le_rfl : q ≤ q + 1)
+  have hfst : TopPair.Hom.fst φ = (sublevelPair f (haa' (q + 1))).map :=
+    TopCat.hom_ext (ContinuousMap.ext fun x ↦ Subtype.ext (filteredSpaceStepMap_fst_apply ..))
+  have hsnd : TopPair.Hom.snd φ = (sublevelPair f (haa' q)).map :=
+    TopCat.hom_ext (ContinuousMap.ext fun x ↦ Subtype.ext (filteredSpaceStepMap_snd_apply ..))
+  refine TopPair.isIso_singularHomologyMap_of_isIso R φ n ?_ ?_ (fun m _ ↦ ?_) (fun m _ ↦ ?_) <;>
+    simp only [hfst, hsnd]
+  exacts [hiso (q + 1) n, hiso q n, hiso (q + 1) m, hiso q m]
 
 /-- **The first page of the spectral sequence of a critical-band filtration is free on the
 critical points.** Let `f` be a Morse function and `a : ℤ → ℝ` monotone, and let the band
