@@ -45,6 +45,7 @@ def principalForm (p v : E) : ℝ :=
   (1 + ‖p‖ ^ 2) * ‖v‖ ^ 2 - (inner ℝ p v) ^ 2
 
 /-- The defining formula of the principal quadratic form. -/
+@[simp low]
 theorem principalForm_def (p v : E) :
     principalForm p v = (1 + ‖p‖ ^ 2) * ‖v‖ ^ 2 - (inner ℝ p v) ^ 2 := (rfl)
 
