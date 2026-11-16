@@ -85,22 +85,20 @@ noncomputable def restrictBoundaryTangentSpace
     let dι := mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
       (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x
     (ContinuousLinearMap.precomp ℝ dι).comp ((g.inner (x : M)).comp dι)
-  symm x v w := by
+  symm x _ _ := by
     simpa only [ContinuousLinearMap.precomp_apply, ContinuousLinearMap.comp_apply] using
       g.symm (x : M) _ _
-  pos x v hv := by
-    let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M) :=
-      TauCeti.isManifold_boundary M one_ne_zero
+  pos x _ hv := by
+    let _ := TauCeti.isManifold_boundary (n := n) (k := 1) M one_ne_zero
     have hinj := (TauCeti.isImmersion_subtypeVal_boundary (n := n) (k := 1) M
       one_ne_zero).mfderiv_injective one_ne_zero x
     exact g.pos (x : M) _ ((map_ne_zero_iff _ hinj).2 hv)
-  continuousAt x := by
+  continuousAt x :=
     let dι := mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
       (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x
-    exact (g.continuousAt (x : M)).comp_of_eq dι.continuous.continuousAt (map_zero dι)
+    (g.continuousAt (x : M)).comp_of_eq dι.continuous.continuousAt (map_zero dι)
   isVonNBounded x := by
-    let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M) :=
-      TauCeti.isManifold_boundary M one_ne_zero
+    let _ := TauCeti.isManifold_boundary (n := n) (k := 1) M one_ne_zero
     let _ : NormedAddCommGroup (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x) :=
       inferInstanceAs (NormedAddCommGroup (EuclideanSpace ℝ (Fin n)))
     let _ : NormedSpace ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x) :=
@@ -114,13 +112,10 @@ noncomputable def restrictBoundaryTangentSpace
     let A : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x →L[ℝ]
         TangentSpace (𝓡∂ (n + 1)) (x : M) :=
       mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) Subtype.val x
-    obtain ⟨K, -, hK⟩ := A.toLinearMap.exists_antilipschitzWith (LinearMap.ker_eq_bot.2 hinj)
-    refine NormedSpace.isVonNBounded_of_isBounded ℝ
+    obtain ⟨_, -, hK⟩ := A.toLinearMap.exists_antilipschitzWith (LinearMap.ker_eq_bot.2 hinj)
+    exact NormedSpace.isVonNBounded_of_isBounded ℝ
       ((hK.isBounded_preimage
-        ((NormedSpace.isVonNBounded_iff ℝ).mp (g.isVonNBounded (x : M)))).subset ?_)
-    intro v hv
-    change g.inner (x : M) (A v) (A v) < 1
-    exact hv
+        ((NormedSpace.isVonNBounded_iff ℝ).mp (g.isVonNBounded (x : M)))).subset fun _ hv ↦ hv)
 
 /-- The restricted boundary metric evaluates the ambient metric on boundary tangent derivatives. -/
 @[simp]
@@ -224,19 +219,14 @@ instance halfSpaceBoundaryMetric_isContMDiff {k : ℕ∞ω}
       (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
     [IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M)] :
     IsContMDiffRiemannianBundle 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) k (EuclideanSpace ℝ (Fin n))
-      (fun x : (𝓡∂ (n + 1)).boundary M ↦ TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x) := by
-  let g := ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
-    (IB := 𝓡∂ (n + 1)) (n := k) (F := EuclideanSpace ℝ (Fin (n + 1)))
-    (V := fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)
-  let gb : ContMDiffRiemannianMetric 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) k
-      (EuclideanSpace ℝ (Fin n))
       (fun x : (𝓡∂ (n + 1)).boundary M ↦ TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x) :=
-    g.restrictBoundaryTangentSpace
-  refine ⟨gb.inner, gb.contMDiff, fun x v w ↦ ?_⟩
-  rw [inner_tangentSpace_boundary,
-    ContMDiffRiemannianMetric.restrictBoundaryTangentSpace_inner (n := n) (k := k) (M := M) g x v w,
-    ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
-  rfl
+  let g := ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle (IB := 𝓡∂ (n + 1)) (n := k)
+    (F := EuclideanSpace ℝ (Fin (n + 1))) (V := fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)
+  let gb := g.restrictBoundaryTangentSpace
+  ⟨gb.inner, gb.contMDiff, fun x v w ↦ by
+    rw [inner_tangentSpace_boundary,
+      ContMDiffRiemannianMetric.restrictBoundaryTangentSpace_inner (n := n) (k := k) (M := M) g,
+      ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]; rfl⟩
 
 /-- If the ambient Riemannian metric is continuous on a `C¹` manifold with boundary, then the
 induced boundary metric is continuous. -/
@@ -261,8 +251,7 @@ noncomputable def halfSpaceBoundaryVolume [MeasurableSpace M] [BorelSpace M] [Li
     [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin (n + 1)))
       (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] :
     Measure ((𝓡∂ (n + 1)).boundary M) :=
-  let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M) :=
-    isManifold_boundary M one_ne_zero
+  let _ := isManifold_boundary (n := n) (k := 1) M one_ne_zero
   let _ : LindelofSpace ((𝓡∂ (n + 1)).boundary M) :=
     ((𝓡∂ (n + 1)).isClosed_boundary one_ne_zero).isClosedEmbedding_subtypeVal.LindelofSpace
   riemannianVolume 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) ((𝓡∂ (n + 1)).boundary M)
@@ -278,6 +267,19 @@ theorem halfSpaceBoundaryVolume_eq_riemannianVolume
     halfSpaceBoundaryVolume (n := n) (M := M) =
       riemannianVolume 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) ((𝓡∂ (n + 1)).boundary M) :=
   (rfl)
+
+/-- The Riemannian boundary volume measure is locally finite: every boundary point has a
+neighbourhood in the boundary of finite boundary measure. -/
+instance isLocallyFiniteMeasure_halfSpaceBoundaryVolume
+    [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
+    [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin (n + 1)))
+      (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] :
+    IsLocallyFiniteMeasure (halfSpaceBoundaryVolume (n := n) (M := M)) := by
+  let _ := isManifold_boundary (n := n) (k := 1) M one_ne_zero
+  let _ : LindelofSpace ((𝓡∂ (n + 1)).boundary M) :=
+    ((𝓡∂ (n + 1)).isClosed_boundary one_ne_zero).isClosedEmbedding_subtypeVal.LindelofSpace
+  rw [halfSpaceBoundaryVolume_eq_riemannianVolume]
+  infer_instance
 
 end BoundaryMetric
 
@@ -296,19 +298,18 @@ private theorem riemannianVolume_eq_count_of_subsingleton
     riemannianVolume 𝓘(ℝ, E) B = Measure.count := by
   let _ : MeasurableSpace E := borel E
   have _ : BorelSpace E := ⟨rfl⟩
-  have hsource (x : B) : (chartAt E x).source = {x} := by
-    ext y
-    exact ⟨fun hy ↦ (chartAt E x).injOn hy (mem_chart_source E x) (Subsingleton.elim _ _),
+  have hsource (x : B) : (chartAt E x).source = {x} := Set.ext fun y ↦
+    ⟨fun hy ↦ (chartAt E x).injOn hy (mem_chart_source E x) (Subsingleton.elim _ _),
       fun hy ↦ hy.symm ▸ mem_chart_source E x⟩
-  have : DiscreteTopology B := discreteTopology_iff_isOpen_singleton.2 fun x ↦
+  have _ : DiscreteTopology B := discreteTopology_iff_isOpen_singleton.2 fun x ↦
     hsource x ▸ (chartAt E x).open_source
-  have : Countable B := by
+  have _ : Countable B := by
     obtain ⟨t, ht, hcover⟩ := LindelofSpace.elim_nhds_subcover (fun x : B ↦ ({x} : Set B))
       fun x ↦ (isOpen_discrete {x}).mem_nhds rfl
     exact countable_univ_iff.1 (hcover ▸ ht.biUnion fun x _ ↦ countable_singleton x)
   refine Measure.ext_of_singleton fun x ↦ ?_
-  have hfin : Module.finrank ℝ E = 0 := Module.finrank_zero_of_subsingleton
-  have : IsEmpty (Fin (Module.finrank ℝ E)) := hfin ▸ inferInstanceAs (IsEmpty (Fin 0))
+  have _ : IsEmpty (Fin (Module.finrank ℝ E)) :=
+    Module.finrank_zero_of_subsingleton (R := ℝ) (M := E) ▸ inferInstanceAs (IsEmpty (Fin 0))
   have hx_meas : MeasurableSet ({x} : Set B) := (isOpen_discrete {x}).measurableSet
   rw [Measure.count_singleton' hx_meas, riemannianVolume_apply_of_subset (hsource x).symm.subset,
     chartRiemannianVolume_apply x hx_meas, Module.Basis.addHaar_eq_dirac, extChartAt_source,
@@ -325,8 +326,7 @@ theorem halfSpaceBoundaryVolume_zero_eq_count {M : Type*} [TopologicalSpace M]
     [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin 1))
       (fun x : M ↦ TangentSpace (𝓡∂ 1) x)] :
     halfSpaceBoundaryVolume (n := 0) (M := M) = Measure.count := by
-  let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1 ((𝓡∂ 1).boundary M) :=
-    isManifold_boundary (n := 0) M one_ne_zero
+  let _ := isManifold_boundary (n := 0) (k := 1) M one_ne_zero
   let _ : LindelofSpace ((𝓡∂ 1).boundary M) :=
     ((𝓡∂ 1).isClosed_boundary one_ne_zero).isClosedEmbedding_subtypeVal.LindelofSpace
   exact riemannianVolume_eq_count_of_subsingleton
@@ -342,7 +342,7 @@ theorem halfSpaceBoundaryVolume_zero_singleton {M : Type*} [TopologicalSpace M]
       (fun x : M ↦ TangentSpace (𝓡∂ 1) x)]
     (x : (𝓡∂ 1).boundary M) :
     halfSpaceBoundaryVolume (n := 0) (M := M) {x} = 1 := by
-  have : T1Space ((𝓡∂ 1).boundary M) := ChartedSpace.t1Space (EuclideanSpace ℝ (Fin 0)) _
+  have _ : T1Space ((𝓡∂ 1).boundary M) := ChartedSpace.t1Space (EuclideanSpace ℝ (Fin 0)) _
   rw [halfSpaceBoundaryVolume_zero_eq_count, Measure.count_singleton' (measurableSet_singleton x)]
 
 end ZeroDimBoundary
@@ -364,8 +364,7 @@ theorem isOutwardPointing_add_mfderiv_subtypeVal_boundary (x : (𝓡∂ (n + 1))
       (v + mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
         (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x w) ↔
       IsOutwardPointing (x : M) v := by
-  let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M) :=
-    isManifold_boundary M one_ne_zero
+  let _ := isManifold_boundary (n := n) (k := 1) M one_ne_zero
   rw [isOutwardPointing_iff, isOutwardPointing_iff, and_iff_right x.property,
     and_iff_right x.property, map_add, map_add, PiLp.add_apply]
   have hz : (NormedSpace.fromTangentSpace (𝕜 := ℝ) (extChartAt (𝓡∂ (n + 1)) (x : M) (x : M))
@@ -379,7 +378,7 @@ theorem isOutwardPointing_add_mfderiv_subtypeVal_boundary (x : (𝓡∂ (n + 1))
 
 /-- In any tangent-bundle trivialization at `α` containing a boundary point `y`, the image of
 `-e₀` under `symmL` points outward at `y`. -/
-private theorem isOutwardPointing_symmL_neg_single_zero
+theorem isOutwardPointing_trivializationAt_symmL_neg_single_zero
     {α : M} {y : (𝓡∂ (n + 1)).boundary M}
     (hy : (y : M) ∈ (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
       (TangentSpace (𝓡∂ (n + 1))) α).baseSet) :
@@ -388,10 +387,9 @@ private theorem isOutwardPointing_symmL_neg_single_zero
         (TangentSpace (𝓡∂ (n + 1))) α).symmL ℝ (y : M) (-EuclideanSpace.single 0 1)) := by
   let e := trivializationAt (EuclideanSpace ℝ (Fin (n + 1))) (TangentSpace (𝓡∂ (n + 1))) α
   let v₀ : EuclideanSpace ℝ (Fin (n + 1)) := -EuclideanSpace.single 0 1
-  have hy' : (y : M) ∈ (extChartAt (𝓡∂ (n + 1)) α).source := by
-    simpa only [e, TangentBundle.trivializationAt_baseSet, extChartAt_source] using hy
   have hyc : (y : M) ∈ (chartAt (EuclideanHalfSpace (n + 1)) α).source := by
-    rwa [← extChartAt_source (I := 𝓡∂ (n + 1))]
+    simpa only [e, TangentBundle.trivializationAt_baseSet] using hy
+  have hy' : (y : M) ∈ (extChartAt (𝓡∂ (n + 1)) α).source := by rwa [extChartAt_source]
   rw [isOutwardPointing_iff_tangentCoordChange y.property hy']
   have hWs : (e.symmL ℝ (y : M) v₀ : EuclideanSpace ℝ (Fin (n + 1))) =
       tangentCoordChange (𝓡∂ (n + 1)) α (y : M) (y : M) v₀ :=
@@ -399,8 +397,7 @@ private theorem isOutwardPointing_symmL_neg_single_zero
   have hcoord : tangentCoordChange (𝓡∂ (n + 1)) (y : M) α (y : M) (e.symmL ℝ (y : M) v₀) = v₀ := by
     rw [hWs, tangentCoordChange_comp ⟨⟨hy', mem_extChartAt_source (y : M)⟩, hy'⟩,
       tangentCoordChange_self hy']
-  rw [hcoord]
-  simp [v₀]
+  rw [hcoord]; simp [v₀]
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
 
@@ -414,48 +411,59 @@ theorem IsOutwardPointing.starProjection_orthogonal_range_mfderiv_subtypeVal
         (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x).rangeᗮ.starProjection v) := by
   set dι := mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
     (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x
-  have hmem : dι.range.starProjection v ∈ dι.range :=
-    (dι.range.orthogonalProjectionOnto v).property
+  have hmem : dι.range.starProjection v ∈ dι.range := (dι.range.orthogonalProjectionOnto v).property
   obtain ⟨w, hw⟩ := hmem
   have hsub : dι.rangeᗮ.starProjection v = v + dι (-w) := by
-    rw [Submodule.starProjection_orthogonal_val, ← hw, map_neg, sub_eq_add_neg]
-    rfl
+    rw [Submodule.starProjection_orthogonal_val, ← hw, map_neg, sub_eq_add_neg]; rfl
   rwa [hsub, isOutwardPointing_add_mfderiv_subtypeVal_boundary]
 
-/-- The unnormalized outward normal at `x`, obtained by projecting the preferred chart's negative
-zeroth coordinate vector orthogonally to the boundary tangent space. -/
-private noncomputable def halfSpaceOutwardNormalAux (x : (𝓡∂ (n + 1)).boundary M) :
-    TangentSpace (𝓡∂ (n + 1)) (x : M) :=
+/-- Unnormalized local outward normal near a boundary chart center `α`. -/
+private noncomputable def localOutwardNormalAux (α y : (𝓡∂ (n + 1)).boundary M) :
+    TangentSpace (𝓡∂ (n + 1)) (y : M) :=
   (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-    (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x).rangeᗮ.starProjection
+    (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) y).rangeᗮ.starProjection
       ((trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-        (TangentSpace (𝓡∂ (n + 1))) (x : M)).symmL ℝ (x : M) (-EuclideanSpace.single 0 1))
+        (TangentSpace (𝓡∂ (n + 1))) (α : M)).symmL ℝ (y : M) (-EuclideanSpace.single 0 1))
 
-private theorem isOutwardPointing_halfSpaceOutwardNormalAux (x : (𝓡∂ (n + 1)).boundary M) :
-    IsOutwardPointing (x : M) (halfSpaceOutwardNormalAux x) :=
+private theorem isOutwardPointing_localOutwardNormalAux {α y : (𝓡∂ (n + 1)).boundary M}
+    (hy : (y : M) ∈ (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+      (TangentSpace (𝓡∂ (n + 1))) (α : M)).baseSet) :
+    IsOutwardPointing (y : M) (localOutwardNormalAux α y) :=
   IsOutwardPointing.starProjection_orthogonal_range_mfderiv_subtypeVal
-    (isOutwardPointing_symmL_neg_single_zero (FiberBundle.mem_baseSet_trivializationAt' (x : M)))
+    (isOutwardPointing_trivializationAt_symmL_neg_single_zero hy)
+
+private theorem inner_localOutwardNormalAux_mfderiv_subtypeVal (α y : (𝓡∂ (n + 1)).boundary M)
+    (w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) y) :
+    inner ℝ (localOutwardNormalAux α y)
+      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) y w) = 0 := by
+  rw [localOutwardNormalAux, Submodule.starProjection_orthogonal_val]
+  exact (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+    (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) y).range.starProjection_inner_eq_zero _ _
+      (LinearMap.mem_range_self _ w)
 
 /-- The **outward-pointing unit normal** along the boundary of a Riemannian manifold modeled on
 `𝓡∂ (n + 1)`: at each boundary point `x`, the unique ambient tangent vector of norm `1` that
 points outward (`TauCeti.IsOutwardPointing`) and is orthogonal to `mfderiv Subtype.val x`. -/
 noncomputable def halfSpaceOutwardUnitNormal (x : (𝓡∂ (n + 1)).boundary M) :
     TangentSpace (𝓡∂ (n + 1)) (x : M) :=
-  ‖halfSpaceOutwardNormalAux x‖⁻¹ • halfSpaceOutwardNormalAux x
+  ‖localOutwardNormalAux x x‖⁻¹ • localOutwardNormalAux x x
 
 /-- The outward unit normal has norm `1` at every boundary point. -/
 @[simp]
 theorem norm_halfSpaceOutwardUnitNormal (x : (𝓡∂ (n + 1)).boundary M) :
     ‖halfSpaceOutwardUnitNormal x‖ = 1 := by
-  have hne : halfSpaceOutwardNormalAux x ≠ 0 :=
-    (isOutwardPointing_halfSpaceOutwardNormalAux x).ne_zero
+  have hne : localOutwardNormalAux x x ≠ 0 :=
+    (isOutwardPointing_localOutwardNormalAux
+      (FiberBundle.mem_baseSet_trivializationAt' (x : M))).ne_zero
   rw [halfSpaceOutwardUnitNormal, norm_smul, norm_inv, norm_norm,
     inv_mul_cancel₀ (norm_ne_zero_iff.2 hne)]
 
 /-- The outward unit normal points outward at every boundary point. -/
 theorem isOutwardPointing_halfSpaceOutwardUnitNormal (x : (𝓡∂ (n + 1)).boundary M) :
     IsOutwardPointing (x : M) (halfSpaceOutwardUnitNormal x) := by
-  have hout := isOutwardPointing_halfSpaceOutwardNormalAux x
+  have hout := isOutwardPointing_localOutwardNormalAux
+    (FiberBundle.mem_baseSet_trivializationAt' (x : M))
   exact hout.smul_pos (inv_pos.2 (norm_pos_iff.2 hout.ne_zero))
 
 /-- The outward unit normal is orthogonal to every tangent vector pushed forward from the
@@ -466,12 +474,8 @@ theorem inner_halfSpaceOutwardUnitNormal_mfderiv_subtypeVal (x : (𝓡∂ (n + 1
     inner ℝ (halfSpaceOutwardUnitNormal x)
       (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
         (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x w) = 0 := by
-  set dι := mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-    (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x
-  have horth : inner ℝ (halfSpaceOutwardNormalAux x) (dι w) = 0 := by
-    rw [halfSpaceOutwardNormalAux, Submodule.starProjection_orthogonal_val]
-    exact dι.range.starProjection_inner_eq_zero _ _ (LinearMap.mem_range_self _ w)
-  rw [halfSpaceOutwardUnitNormal, real_inner_smul_left, horth, mul_zero]
+  rw [halfSpaceOutwardUnitNormal, real_inner_smul_left,
+    inner_localOutwardNormalAux_mfderiv_subtypeVal, mul_zero]
 
 /-- Symmetric form of `TauCeti.inner_halfSpaceOutwardUnitNormal_mfderiv_subtypeVal`. -/
 @[simp]
@@ -493,33 +497,24 @@ theorem eq_halfSpaceOutwardUnitNormal_of_norm_eq_one {x : (𝓡∂ (n + 1)).boun
       inner ℝ v (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
         (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x w) = 0) :
     v = halfSpaceOutwardUnitNormal x := by
-  let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M) :=
-    isManifold_boundary M one_ne_zero
+  let _ := isManifold_boundary (n := n) (k := 1) M one_ne_zero
   set dι := mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
     (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x
   set N := halfSpaceOutwardUnitNormal x
-  have hvW : v ∈ dι.rangeᗮ :=
-    (Submodule.mem_orthogonal' dι.range v).2 fun _ ⟨w, hw⟩ ↦ hw ▸ horth w
-  have hNW : N ∈ dι.rangeᗮ :=
-    (Submodule.mem_orthogonal' dι.range N).2 fun _ ⟨w, hw⟩ ↦
-      hw ▸ inner_halfSpaceOutwardUnitNormal_mfderiv_subtypeVal x w
-  have hinj : Function.Injective dι :=
-    (isImmersion_subtypeVal_boundary (n := n) (k := 1) M one_ne_zero).mfderiv_injective
-      one_ne_zero x
-  have hdimV : Module.finrank ℝ (TangentSpace (𝓡∂ (n + 1)) (x : M)) = n + 1 := by
-    rw [TauCeti.finrank_tangentSpace]
-    simp
-  have hdimR : Module.finrank ℝ dι.range = n := by
-    rw [LinearMap.finrank_range_of_inj hinj, TauCeti.finrank_tangentSpace]
-    simp
+  have hvW : v ∈ dι.rangeᗮ := (Submodule.mem_orthogonal' _ _).2 fun _ ⟨w, hw⟩ ↦ hw ▸ horth w
+  have hNW : N ∈ dι.rangeᗮ := (Submodule.mem_orthogonal' _ _).2 fun _ ⟨w, hw⟩ ↦
+    hw ▸ inner_halfSpaceOutwardUnitNormal_mfderiv_subtypeVal x w
+  have hinj := (isImmersion_subtypeVal_boundary (n := n) (k := 1) M one_ne_zero).mfderiv_injective
+    one_ne_zero x
   have hdimOrth : Module.finrank ℝ dι.rangeᗮ = 1 := by
     have hsum := dι.range.finrank_add_finrank_orthogonal
+    rw [LinearMap.finrank_range_of_inj hinj, TauCeti.finrank_tangentSpace,
+      TauCeti.finrank_tangentSpace] at hsum
+    simp only [finrank_euclideanSpace_fin] at hsum
     omega
-  have hNne : (⟨N, hNW⟩ : dι.rangeᗮ) ≠ 0 := by
-    intro h0
-    have hN0 : N = 0 := congrArg Subtype.val h0
+  have hNne : (⟨N, hNW⟩ : dι.rangeᗮ) ≠ 0 := fun h0 ↦ by
     have hnormN := norm_halfSpaceOutwardUnitNormal x
-    rw [show halfSpaceOutwardUnitNormal x = N from rfl, hN0, norm_zero] at hnormN
+    rw [show halfSpaceOutwardUnitNormal x = 0 from congrArg Subtype.val h0, norm_zero] at hnormN
     exact zero_ne_one hnormN
   have htop : Submodule.span ℝ ({⟨N, hNW⟩} : Set dι.rangeᗮ) = ⊤ :=
     Submodule.eq_top_of_finrank_eq ((finrank_span_singleton hNne).trans hdimOrth.symm)
@@ -527,30 +522,12 @@ theorem eq_halfSpaceOutwardUnitNormal_of_norm_eq_one {x : (𝓡∂ (n + 1)).boun
     (htop.symm ▸ Submodule.mem_top (x := (⟨v, hvW⟩ : dι.rangeᗮ)))
   have hvc : v = c • N := (congrArg Subtype.val hc).symm
   have habs : |c| = 1 := by
-    have := hnorm
-    rw [hvc, norm_smul, norm_halfSpaceOutwardUnitNormal, mul_one, Real.norm_eq_abs] at this
-    exact this
-  rcases abs_eq (by positivity : (0 : ℝ) ≤ 1) |>.1 habs with rfl | rfl
+    simpa [N, hvc, norm_smul, norm_halfSpaceOutwardUnitNormal, Real.norm_eq_abs] using hnorm
+  rcases (abs_eq (by positivity : (0 : ℝ) ≤ 1)).1 habs with rfl | rfl
   · simp [hvc]
   · exfalso
-    have hzero : N + v = 0 := by
-      rw [hvc, neg_one_smul, add_neg_cancel]
-    exact ((isOutwardPointing_halfSpaceOutwardUnitNormal x).add hout).ne_zero hzero
-
-/-- Unnormalized local outward normal near a boundary chart center `α`. -/
-private noncomputable def localOutwardNormalAux (α y : (𝓡∂ (n + 1)).boundary M) :
-    TangentSpace (𝓡∂ (n + 1)) (y : M) :=
-  (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-    (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) y).rangeᗮ.starProjection
-      ((trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-        (TangentSpace (𝓡∂ (n + 1))) (α : M)).symmL ℝ (y : M) (-EuclideanSpace.single 0 1))
-
-private theorem isOutwardPointing_localOutwardNormalAux {α y : (𝓡∂ (n + 1)).boundary M}
-    (hy : (y : M) ∈ (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-      (TangentSpace (𝓡∂ (n + 1))) (α : M)).baseSet) :
-    IsOutwardPointing (y : M) (localOutwardNormalAux α y) :=
-  IsOutwardPointing.starProjection_orthogonal_range_mfderiv_subtypeVal
-    (isOutwardPointing_symmL_neg_single_zero hy)
+    exact ((isOutwardPointing_halfSpaceOutwardUnitNormal x).add hout).ne_zero (by
+      rw [hvc, neg_one_smul, add_neg_cancel])
 
 private theorem contMDiffAt_localOutwardNormalAux {k : ℕ∞ω}
     [IsManifold (𝓡∂ (n + 1)) (k + 1) M]
@@ -563,17 +540,12 @@ private theorem contMDiffAt_localOutwardNormalAux {k : ℕ∞ω}
         TotalSpace.mk' (EuclideanSpace ℝ (Fin (n + 1)))
           (E := fun z : M ↦ TangentSpace (𝓡∂ (n + 1)) z) (y : M)
           (localOutwardNormalAux α y)) α := by
-  have _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (k + 1) ((𝓡∂ (n + 1)).boundary M) :=
-    isManifold_boundary (n := n) (k := k + 1) M (by simp)
+  have _ := isManifold_boundary (n := n) (k := k + 1) M (by simp)
   have _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M) :=
     IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
-  have hι : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) (k + 1)
-      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) :=
-    (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k + 1) M (by simp)).contMDiff
-  have hinj : Function.Injective (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) α) :=
-    (isImmersion_subtypeVal_boundary (n := n) (k := k + 1) M (by simp)).mfderiv_injective
-      (by simp) α
+  have hι := (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k + 1) M (by simp)).contMDiff
+  have hinj := (isImmersion_subtypeVal_boundary (n := n) (k := k + 1) M
+    (by simp)).mfderiv_injective (by simp) α
   let e := trivializationAt (EuclideanSpace ℝ (Fin (n + 1))) (TangentSpace (𝓡∂ (n + 1))) (α : M)
   let v₀ : EuclideanSpace ℝ (Fin (n + 1)) := -EuclideanSpace.single 0 1
   have hW_ambient : ContMDiffAt (𝓡∂ (n + 1))
@@ -589,83 +561,6 @@ private theorem contMDiffAt_localOutwardNormalAux {k : ℕ∞ω}
   exact (hι α).starProjection_orthogonal_range_mfderiv_apply le_rfl hinj
     (hW_ambient.comp α ((hι α).of_le le_self_add))
 
-private theorem contMDiffAt_norm_localOutwardNormalAux {k : ℕ∞ω}
-    [IsManifold (𝓡∂ (n + 1)) (k + 1) M]
-    [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) k (EuclideanSpace ℝ (Fin (n + 1)))
-      (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
-    (α : (𝓡∂ (n + 1)).boundary M) :
-    ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ) k
-      (fun y : (𝓡∂ (n + 1)).boundary M ↦ ‖localOutwardNormalAux α y‖) α := by
-  have hmetric : IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) k (EuclideanSpace ℝ (Fin (n + 1)))
-      (fun z : M ↦ TangentSpace (𝓡∂ (n + 1)) z) := inferInstance
-  have hU := contMDiffAt_localOutwardNormalAux (k := k) α
-  have hinner : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ) k
-      (fun y : (𝓡∂ (n + 1)).boundary M ↦
-        inner ℝ (localOutwardNormalAux α y) (localOutwardNormalAux α y)) α :=
-    ContMDiffAt.inner_bundle (h := hmetric) hU hU
-  have hα_ne : localOutwardNormalAux α α ≠ 0 :=
-    (isOutwardPointing_localOutwardNormalAux
-      (FiberBundle.mem_baseSet_trivializationAt' (α : M))).ne_zero
-  have hr : ContDiffAt ℝ k Real.sqrt
-      ((fun y : (𝓡∂ (n + 1)).boundary M ↦
-        inner ℝ (localOutwardNormalAux α y) (localOutwardNormalAux α y)) α) :=
-    Real.contDiffAt_sqrt (inner_self_ne_zero.mpr hα_ne)
-  simpa only [Function.comp_def, ← norm_eq_sqrt_real_inner] using
-    hr.comp_contMDiffAt (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin n)))
-      (f := fun y : (𝓡∂ (n + 1)).boundary M ↦
-        inner ℝ (localOutwardNormalAux α y) (localOutwardNormalAux α y)) hinner
-
-private theorem contMDiffAt_normalized_localOutwardNormalAux {k : ℕ∞ω}
-    [IsManifold (𝓡∂ (n + 1)) (k + 1) M]
-    [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) k (EuclideanSpace ℝ (Fin (n + 1)))
-      (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
-    (α : (𝓡∂ (n + 1)).boundary M) :
-    ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
-      ((𝓡∂ (n + 1)).prod 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))) k
-      (fun y : (𝓡∂ (n + 1)).boundary M ↦
-        (⟨(y : M), ‖localOutwardNormalAux α y‖⁻¹ • localOutwardNormalAux α y⟩ :
-          TotalSpace (EuclideanSpace ℝ (Fin (n + 1)))
-            (fun z : M ↦ TangentSpace (𝓡∂ (n + 1)) z))) α := by
-  have hα_ne : localOutwardNormalAux α α ≠ 0 :=
-    (isOutwardPointing_localOutwardNormalAux
-      (FiberBundle.mem_baseSet_trivializationAt' (α : M))).ne_zero
-  exact ((contMDiffAt_norm_localOutwardNormalAux (k := k) α).inv₀
-    (norm_ne_zero_iff.mpr hα_ne)).smul_totalSpace
-      (contMDiffAt_localOutwardNormalAux (k := k) α)
-
-private theorem eventuallyEq_normalized_localOutwardNormalAux
-    (α : (𝓡∂ (n + 1)).boundary M) :
-    (fun x : (𝓡∂ (n + 1)).boundary M ↦
-      (⟨(x : M), halfSpaceOutwardUnitNormal x⟩ : TangentBundle (𝓡∂ (n + 1)) M)) =ᶠ[𝓝 α]
-    (fun y : (𝓡∂ (n + 1)).boundary M ↦
-      (⟨(y : M), ‖localOutwardNormalAux α y‖⁻¹ • localOutwardNormalAux α y⟩ :
-        TangentBundle (𝓡∂ (n + 1)) M)) := by
-  have hU_nhds : Subtype.val ⁻¹'
-      (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-        (TangentSpace (𝓡∂ (n + 1))) (α : M)).baseSet ∈ 𝓝 α :=
-    continuous_subtype_val.continuousAt.preimage_mem_nhds
-      ((trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-        (TangentSpace (𝓡∂ (n + 1))) (α : M)).open_baseSet.mem_nhds
-          (FiberBundle.mem_baseSet_trivializationAt' (α : M)))
-  filter_upwards [hU_nhds] with y hy
-  apply congrArg (fun v : TangentSpace (𝓡∂ (n + 1)) (y : M) ↦
-    (⟨(y : M), v⟩ : TangentBundle (𝓡∂ (n + 1)) M))
-  have hy_out := isOutwardPointing_localOutwardNormalAux hy
-  have hy_ne := hy_out.ne_zero
-  symm
-  refine eq_halfSpaceOutwardUnitNormal_of_norm_eq_one ?_ ?_ ?_
-  · rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (norm_ne_zero_iff.2 hy_ne)]
-  · exact hy_out.smul_pos (inv_pos.2 (norm_pos_iff.2 hy_ne))
-  · intro w
-    have horth : inner ℝ (localOutwardNormalAux α y)
-        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) y w) = 0 := by
-      rw [localOutwardNormalAux, Submodule.starProjection_orthogonal_val]
-      exact (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) y).range.starProjection_inner_eq_zero _ _
-          (LinearMap.mem_range_self _ w)
-    rw [real_inner_smul_left, horth, mul_zero]
-
 /-- **Regularity of the outward unit normal.** On a `C^(k + 1)` manifold with boundary carrying a
 `C^k` Riemannian metric, the outward unit normal is a `C^k` map into the ambient tangent bundle. -/
 theorem contMDiff_halfSpaceOutwardUnitNormal {k : ℕ∞ω}
@@ -674,9 +569,40 @@ theorem contMDiff_halfSpaceOutwardUnitNormal {k : ℕ∞ω}
       (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] :
     ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)).tangent k
       (fun x : (𝓡∂ (n + 1)).boundary M ↦
-        (⟨(x : M), halfSpaceOutwardUnitNormal x⟩ : TangentBundle (𝓡∂ (n + 1)) M)) :=
-  fun α ↦ (contMDiffAt_normalized_localOutwardNormalAux (k := k) α).congr_of_eventuallyEq
-    (eventuallyEq_normalized_localOutwardNormalAux α)
+        (⟨(x : M), halfSpaceOutwardUnitNormal x⟩ : TangentBundle (𝓡∂ (n + 1)) M)) := by
+  intro α
+  have hU := contMDiffAt_localOutwardNormalAux (k := k) α
+  have hα_ne : localOutwardNormalAux α α ≠ 0 :=
+    (isOutwardPointing_localOutwardNormalAux
+      (FiberBundle.mem_baseSet_trivializationAt' (α : M))).ne_zero
+  have hnorm : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ) k
+      (fun y : (𝓡∂ (n + 1)).boundary M ↦ ‖localOutwardNormalAux α y‖) α := by
+    have hinner : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ) k
+        (fun y : (𝓡∂ (n + 1)).boundary M ↦
+          inner ℝ (localOutwardNormalAux α y) (localOutwardNormalAux α y)) α :=
+      ContMDiffAt.inner_bundle hU hU
+    simpa only [Function.comp_def, ← norm_eq_sqrt_real_inner] using
+      (Real.contDiffAt_sqrt (inner_self_ne_zero.mpr hα_ne)).comp_contMDiffAt
+        (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin n)))
+        (f := fun y : (𝓡∂ (n + 1)).boundary M ↦
+          inner ℝ (localOutwardNormalAux α y) (localOutwardNormalAux α y)) hinner
+  have hloc := (hnorm.inv₀ (norm_ne_zero_iff.mpr hα_ne)).smul_totalSpace hU
+  refine hloc.congr_of_eventuallyEq ?_
+  have hU_nhds : Subtype.val ⁻¹' (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+      (TangentSpace (𝓡∂ (n + 1))) (α : M)).baseSet ∈ 𝓝 α :=
+    continuous_subtype_val.continuousAt.preimage_mem_nhds
+      ((trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+        (TangentSpace (𝓡∂ (n + 1))) (α : M)).open_baseSet.mem_nhds
+          (FiberBundle.mem_baseSet_trivializationAt' (α : M)))
+  filter_upwards [hU_nhds] with y hy
+  apply congrArg (fun v : TangentSpace (𝓡∂ (n + 1)) (y : M) ↦
+    (⟨(y : M), v⟩ : TangentBundle (𝓡∂ (n + 1)) M))
+  have hy_out := isOutwardPointing_localOutwardNormalAux hy
+  symm
+  refine eq_halfSpaceOutwardUnitNormal_of_norm_eq_one ?_
+    (hy_out.smul_pos (inv_pos.2 (norm_pos_iff.2 hy_out.ne_zero))) fun w ↦ ?_
+  · rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (norm_ne_zero_iff.2 hy_out.ne_zero)]
+  · rw [real_inner_smul_left, inner_localOutwardNormalAux_mfderiv_subtypeVal, mul_zero]
 
 /-- For a continuous Riemannian metric on a `C¹` manifold with boundary, the outward unit normal
 is continuous into the ambient tangent bundle. -/
@@ -709,7 +635,7 @@ theorem exists_halfSpaceOutwardUnitNormal
             (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) Subtype.val x w) = 0 := by
   have _ : IsManifold (𝓡∂ (n + 1)) (∞ + 1) M := by
     simpa using (inferInstance : IsManifold (𝓡∂ (n + 1)) ∞ M)
-  refine ⟨halfSpaceOutwardUnitNormal, contMDiff_halfSpaceOutwardUnitNormal (k := ∞), fun x ↦
+  exact ⟨halfSpaceOutwardUnitNormal, contMDiff_halfSpaceOutwardUnitNormal (k := ∞), fun x ↦
     ⟨norm_halfSpaceOutwardUnitNormal x, isOutwardPointing_halfSpaceOutwardUnitNormal x,
       inner_halfSpaceOutwardUnitNormal_mfderiv_subtypeVal x⟩⟩
 
