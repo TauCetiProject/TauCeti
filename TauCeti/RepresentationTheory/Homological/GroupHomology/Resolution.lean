@@ -48,31 +48,6 @@ universe u
 
 variable {k G : Type u} [CommRing k] [Group G] (A : Rep.{u} k G)
 
-/-- **Group homology from a projective resolution, through a comparison map.** For a projective
-resolution `P` of the trivial representation `k` and a chain map `φ` from the bar resolution to `P`
-lying over the identity of `k`, `groupHomologyIso A n P` is the map on homology induced by the
-identification of the inhomogeneous chains with `(A ⊗ bar)_G` followed by `A ⊗ φ`. -/
-theorem groupHomologyIso_hom_eq_homologyMap (P : ProjectiveResolution (Rep.trivial k G k))
-    (φ : Rep.barComplex k G ⟶ P.complex)
-    (comm : φ.f 0 ≫ P.π.f 0 = (Rep.barResolution k G).π.f 0) (n : ℕ) :
-    (groupHomologyIso A n P).hom = HomologicalComplex.homologyMap
-      ((groupHomology.inhomogeneousChainsIso A).hom ≫
-        (((Rep.coinvariantsTensor k G).obj A).mapHomologicalComplex _).map φ) n := by
-  have h := ProjectiveResolution.isoLeftDerivedObj_hom_naturality (𝟙 _)
-    (Rep.barResolution k G) P φ (comm.trans (Category.comp_id _).symm)
-    ((Rep.coinvariantsTensor k G).obj A) n
-  rw [CategoryTheory.Functor.map_id, Category.id_comp] at h
-  -- `groupHomologyIso` is `groupHomologyIsoTor` followed by the `Tor` computation from `P`,
-  -- and `groupHomologyIsoTor` is the inhomogeneous chain isomorphism followed by the inverse
-  -- `Tor` computation from the bar resolution.
-  have h₁ : (groupHomologyIso A n P).hom = _ := Iso.trans_hom _ _
-  have h₂ : (groupHomologyIsoTor A n).hom = _ := Iso.trans_hom _ _
-  rw [h₁, h₂, Iso.symm_hom, isoOfQuasiIsoAt_hom, HomologicalComplex.homologyMap_comp]
-  -- The homotopy equivalence `HomotopyEquiv.ofIso e` has forward map `e.hom` by definition, and
-  -- `groupHomology A n` is the homology of the inhomogeneous chains by definition; `exact`
-  -- compares these presentations up to unfolding.
-  exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ((Iso.inv_comp_eq _).2 h))
-
 /-- **Group homology from two projective resolutions related by a chain map.** For projective
 resolutions `P` and `Q` of the trivial representation `k` and a chain map
 `φ : P.complex ⟶ Q.complex` lying over the identity of `k`, `groupHomologyIso` intertwines the two
@@ -105,5 +80,31 @@ theorem homologyMap_comp_groupHomologyIso_inv
       (groupHomologyIso A n P).inv :=
   (Iso.comp_inv_eq _).2 <|
     (Iso.eq_inv_comp _).2 (groupHomologyIso_hom_comp_homologyMap A P Q φ comm n)
+
+/-- **Group homology from a projective resolution, through a comparison map.** For a projective
+resolution `P` of the trivial representation `k` and a chain map `φ` from the bar resolution to `P`
+lying over the identity of `k`, `groupHomologyIso A n P` is the map on homology induced by the
+identification of the inhomogeneous chains with `(A ⊗ bar)_G` followed by `A ⊗ φ`. -/
+theorem groupHomologyIso_hom_eq_homologyMap (P : ProjectiveResolution (Rep.trivial k G k))
+    (φ : Rep.barComplex k G ⟶ P.complex)
+    (comm : φ.f 0 ≫ P.π.f 0 = (Rep.barResolution k G).π.f 0) (n : ℕ) :
+    (groupHomologyIso A n P).hom = HomologicalComplex.homologyMap
+      ((groupHomology.inhomogeneousChainsIso A).hom ≫
+        (((Rep.coinvariantsTensor k G).obj A).mapHomologicalComplex _).map φ) n := by
+  -- `groupHomologyIso` is `groupHomologyIsoTor` followed by the `Tor` computation, so for the bar
+  -- resolution the two `Tor` isomorphisms cancel, leaving the inhomogeneous chain isomorphism.
+  have hbar : (groupHomologyIso A n (Rep.barResolution k G)).hom =
+      HomologicalComplex.homologyMap (groupHomology.inhomogeneousChainsIso A).hom n := by
+    have h₁ : (groupHomologyIso A n (Rep.barResolution k G)).hom = _ := Iso.trans_hom _ _
+    have h₂ : (groupHomologyIsoTor A n).hom = _ := Iso.trans_hom _ _
+    rw [h₁, h₂, Iso.symm_hom, isoOfQuasiIsoAt_hom]
+    exact (Category.assoc _ _ _).trans <|
+      (congrArg (_ ≫ ·) (Rep.torIso A (Rep.barResolution k G) n).inv_hom_id).trans
+        (Category.comp_id _)
+  -- The homotopy equivalence `HomotopyEquiv.ofIso e` has forward map `e.hom` by definition, and
+  -- `groupHomology A n` is the homology of the inhomogeneous chains by definition; `exact`
+  -- compares these presentations up to unfolding.
+  exact ((groupHomologyIso_hom_comp_homologyMap A (Rep.barResolution k G) P φ comm n).symm.trans
+    (congrArg (· ≫ _) hbar)).trans (HomologicalComplex.homologyMap_comp _ _ n).symm
 
 end Rep

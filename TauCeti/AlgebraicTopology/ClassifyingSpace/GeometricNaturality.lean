@@ -27,7 +27,7 @@ in each degree with simplex relabelling (`MonoidHom.universalGSpaceCellularRepIs
 lifting the cellular-to-ordered naturality square directly to `Rep k G`
 (`MonoidHom.universalGSpaceCellularComplexIso_hom_naturality`), and composing with the
 ordered join-to-bar comparison gives equivariant naturality in `Rep k G` of the explicit
-geometric cellular-to-bar homotopy equivalence
+forward map of `TauCeti.universalGSpaceCellularRepStandardHomotopyEquiv`
 (`MonoidHom.universalGSpaceCellularRepStandardHomotopyEquiv_hom_naturality`).
 
 Consequently, the geometric cellular projective resolution
@@ -131,20 +131,29 @@ group homomorphism `φ : G →* H`. -/
 def universalGSpaceCellularRepresentationHom (φ : G →* H) (n : ℕ) :
     _root_.Rep.of (universalGSpaceCellularRepresentation k G n) ⟶
       _root_.Rep.res φ (_root_.Rep.of (universalGSpaceCellularRepresentation k H n)) :=
-  cellularActionRepresentationHom univ isCellular_universalGSpaceCellularTranslation
-    universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
-    univ isCellular_universalGSpaceCellularTranslation
-    universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
-    φ φ.isCellular_universalGSpaceCellularMap
-    φ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap k n
+  eqToHom (congrArg _root_.Rep.of (universalGSpaceCellularRepresentation_def k G n)) ≫
+    cellularActionRepresentationHom univ isCellular_universalGSpaceCellularTranslation
+      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
+      univ isCellular_universalGSpaceCellularTranslation
+      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
+      φ φ.isCellular_universalGSpaceCellularMap
+      φ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap k n ≫
+    (_root_.Rep.resFunctor φ).map
+      (eqToHom (congrArg _root_.Rep.of (universalGSpaceCellularRepresentation_def k H n)).symm)
 
 /-- Forgetting equivariance recovers the geometric cellular chain-group map of Milnor joins. -/
 @[simp]
 theorem universalGSpaceCellularRepresentationHom_hom_toLinearMap (φ : G →* H) (n : ℕ) :
     (φ.universalGSpaceCellularRepresentationHom (k := k) n).hom.toLinearMap =
       (cellularChainGroupMap univ univ φ.isCellular_universalGSpaceCellularMap
-        (ModuleCat.of k k) n).hom :=
-  cellularActionRepresentationHom_hom_toLinearMap _ _ _ _ _ _ _ _ _ _ _ _ _
+        (ModuleCat.of k k) n).hom := by
+  have heq {G' : Type u} [Group G'] {V : Type u} [AddCommGroup V] [Module k V]
+      {ρ₁ ρ₂ : Representation k G' V} (h : _root_.Rep.of ρ₁ = _root_.Rep.of ρ₂) :
+      (eqToHom h).hom.toLinearMap = LinearMap.id := by
+    simpa [_root_.Rep.forget₂_moduleCat_map] using
+      congrArg ModuleCat.Hom.hom (eqToHom_map (forget₂ (_root_.Rep k G') (ModuleCat k)) h)
+  simp [universalGSpaceCellularRepresentationHom, _root_.Rep.hom_comp,
+    _root_.Rep.resMap_hom_toLinearMap, heq]
 
 /-- On geometric cellular basis vectors, `universalGSpaceCellularRepresentationHom` sends the
 cell of an `n`-simplex to the cell of its relabelled `n`-simplex, even when `φ` is not
@@ -175,8 +184,10 @@ representations. -/
 @[simp]
 theorem universalGSpaceCellularRepresentationHom_id (n : ℕ) :
     (MonoidHom.id G).universalGSpaceCellularRepresentationHom (k := k) n =
-      𝟙 (_root_.Rep.of (universalGSpaceCellularRepresentation k G n)) :=
-  cellularActionRepresentationHom_eq_id _ _ _ _ _ _ _ universalGSpaceCellularMap_id n
+      𝟙 (_root_.Rep.of (universalGSpaceCellularRepresentation k G n)) := by
+  rw [universalGSpaceCellularRepresentationHom,
+    cellularActionRepresentationHom_eq_id _ _ _ _ _ _ _ universalGSpaceCellularMap_id n]
+  simp [_root_.Rep.resMap_id]
 
 /-- Geometric cellular chain-representation maps respect composition of group homomorphisms,
 restricting the second map along the first homomorphism. -/
@@ -185,9 +196,26 @@ theorem universalGSpaceCellularRepresentationHom_comp {K : Type u} [Group K]
     (ψ : H →* K) (φ : G →* H) (n : ℕ) :
     (ψ.comp φ).universalGSpaceCellularRepresentationHom (k := k) n =
       φ.universalGSpaceCellularRepresentationHom n ≫
-        (_root_.Rep.resFunctor φ).map (ψ.universalGSpaceCellularRepresentationHom n) :=
-  cellularActionRepresentationHom_comp _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-    (universalGSpaceCellularMap_comp ψ φ) n
+        (_root_.Rep.resFunctor φ).map (ψ.universalGSpaceCellularRepresentationHom n) := by
+  -- Rewrite under `(_root_.Rep.resFunctor φ).map` before `simp` projects it to `Rep.resMap φ`.
+  rw [universalGSpaceCellularRepresentationHom, universalGSpaceCellularRepresentationHom,
+    universalGSpaceCellularRepresentationHom,
+    cellularActionRepresentationHom_comp univ isCellular_universalGSpaceCellularTranslation
+      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
+      univ isCellular_universalGSpaceCellularTranslation
+      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
+      φ φ.isCellular_universalGSpaceCellularMap
+      φ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap k
+      univ isCellular_universalGSpaceCellularTranslation
+      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
+      ψ ψ.isCellular_universalGSpaceCellularMap
+      ψ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap
+      (ψ.comp φ).isCellular_universalGSpaceCellularMap
+      (ψ.comp φ).universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap
+      (universalGSpaceCellularMap_comp ψ φ) n,
+    (_root_.Rep.resFunctor φ).map_comp, (_root_.Rep.resFunctor φ).map_comp,
+    eqToHom_map, eqToHom_map, eqToHom_map, eqToHom_map, eqToHom_map]
+  simp [Category.assoc]
 
 /-- The equivariant chain map on geometric cellular chains of Milnor's join induced by a group
 homomorphism `φ : G →* H`. -/
@@ -195,12 +223,15 @@ def universalGSpaceCellularComplexMap (φ : G →* H) :
     universalGSpaceCellularComplex k G ⟶
       ((_root_.Rep.resFunctor φ).mapHomologicalComplex _).obj
         (universalGSpaceCellularComplex k H) :=
-  cellularActionComplexMap univ isCellular_universalGSpaceCellularTranslation
-    universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
-    univ isCellular_universalGSpaceCellularTranslation
-    universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
-    φ φ.isCellular_universalGSpaceCellularMap
-    φ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap k
+  eqToHom (universalGSpaceCellularComplex_def k G) ≫
+    cellularActionComplexMap univ isCellular_universalGSpaceCellularTranslation
+      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
+      univ isCellular_universalGSpaceCellularTranslation
+      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
+      φ φ.isCellular_universalGSpaceCellularMap
+      φ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap k ≫
+    ((_root_.Rep.resFunctor φ).mapHomologicalComplex _).map
+      (eqToHom (universalGSpaceCellularComplex_def k H).symm)
 
 /-- In each degree, `universalGSpaceCellularComplexMap` is
 `universalGSpaceCellularRepresentationHom` up to the canonical term transports. -/
@@ -210,16 +241,19 @@ theorem universalGSpaceCellularComplexMap_f (φ : G →* H) (n : ℕ) :
       eqToHom (universalGSpaceCellularComplex_X k G n) ≫
         φ.universalGSpaceCellularRepresentationHom n ≫
         eqToHom (by
-          rw [Functor.mapHomologicalComplex_obj_X, universalGSpaceCellularComplex_X]) :=
-  cellularActionComplexMap_f _ _ _ _ _ _ _ _ _ _ _ _ _
+          rw [Functor.mapHomologicalComplex_obj_X, universalGSpaceCellularComplex_X]) := by
+  rw [universalGSpaceCellularComplexMap, universalGSpaceCellularRepresentationHom,
+    eqToHom_map, eqToHom_map]
+  simp
 
 /-- The identity homomorphism induces the identity chain map on the equivariant geometric
 cellular complex. -/
 @[simp]
 theorem universalGSpaceCellularComplexMap_id :
     (MonoidHom.id G).universalGSpaceCellularComplexMap (k := k) =
-      𝟙 (universalGSpaceCellularComplex k G) :=
-  cellularActionComplexMap_eq_id _ _ _ _ _ _ _ universalGSpaceCellularMap_id
+      𝟙 (universalGSpaceCellularComplex k G) := by
+  ext n : 1
+  simp
 
 /-- Equivariant geometric cellular chain maps respect composition of group homomorphisms,
 restricting the second map along the first homomorphism. -/
@@ -229,9 +263,25 @@ theorem universalGSpaceCellularComplexMap_comp {K : Type u} [Group K]
     (ψ.comp φ).universalGSpaceCellularComplexMap (k := k) =
       φ.universalGSpaceCellularComplexMap ≫
         ((_root_.Rep.resFunctor φ).mapHomologicalComplex _).map
-          ψ.universalGSpaceCellularComplexMap :=
-  cellularActionComplexMap_comp _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-    (universalGSpaceCellularMap_comp ψ φ)
+          ψ.universalGSpaceCellularComplexMap := by
+  rw [universalGSpaceCellularComplexMap, universalGSpaceCellularComplexMap,
+    universalGSpaceCellularComplexMap,
+    cellularActionComplexMap_comp univ isCellular_universalGSpaceCellularTranslation
+      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
+      univ isCellular_universalGSpaceCellularTranslation
+      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
+      φ φ.isCellular_universalGSpaceCellularMap
+      φ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap k
+      univ isCellular_universalGSpaceCellularTranslation
+      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
+      ψ ψ.isCellular_universalGSpaceCellularMap
+      ψ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap
+      (ψ.comp φ).isCellular_universalGSpaceCellularMap
+      (ψ.comp φ).universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap
+      (universalGSpaceCellularMap_comp ψ φ)]
+  simp only [Functor.map_comp, eqToHom_map, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp]
+  exact congrArg (eqToHom _ ≫ ·) (Category.assoc _ _ _)
 
 /-- Forgetting the group actions intertwines `universalGSpaceCellularComplexMap` with the
 module-level geometric cellular chain map. -/
@@ -243,8 +293,15 @@ theorem universalGSpaceCellularComplexForget₂Iso_hom_naturality (φ : G →* H
     (universalGSpaceCellularComplexForget₂Iso k G).hom ≫
       ((forget₂ (_root_.Rep k G) (ModuleCat k)).mapHomologicalComplex _).map
         φ.universalGSpaceCellularComplexMap ≫
-      ((universalGSpaceCellularComplex k H).repResForget₂Iso φ).hom :=
-  cellularActionComplexForget₂Iso_hom_naturality _ _ _ _ _ _ _ _ _ _ _ _
+      ((universalGSpaceCellularComplex k H).repResForget₂Iso φ).hom := by
+  ext n : 1
+  have h : (forget₂ (_root_.Rep k G) (ModuleCat k)).map
+      (φ.universalGSpaceCellularRepresentationHom (k := k) n) =
+        cellularChainGroupMap univ univ φ.isCellular_universalGSpaceCellularMap
+          (ModuleCat.of k k) n := by
+    rw [_root_.Rep.forget₂_moduleCat_map,
+      universalGSpaceCellularRepresentationHom_hom_toLinearMap, ModuleCat.ofHom_hom]
+  simp [-_root_.Rep.forget₂_moduleCat_map, eqToHom_map, h]
 
 /-- In degree zero, `universalGSpaceCellularComplexMap` commutes with the equivariant cellular
 augmentations. -/
@@ -252,8 +309,41 @@ augmentations. -/
 theorem universalGSpaceCellularComplexMap_f_zero_comp_augmentation (φ : G →* H) :
     (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
         (_root_.Rep.resFunctor φ).map ((universalGSpaceCellularAugmentation k H).f 0) =
-      (universalGSpaceCellularAugmentation k G).f 0 :=
-  cellularActionComplexMap_f_zero_comp_augmentation _ _ _ _ _ _ _ _ _ _ _ _
+      (universalGSpaceCellularAugmentation k G).f 0 := by
+  have haug (G' : Type u) [Group G'] :
+      (universalGSpaceCellularAugmentation k G').f 0 =
+        eqToHom (congrArg (fun C ↦ C.X 0) (universalGSpaceCellularComplex_def k G')) ≫
+          (cellularActionComplexAugmentation univ universalGSpaceCellularTranslation
+            isCellular_universalGSpaceCellularTranslation
+            universalGSpaceCellularTranslation_one
+            universalGSpaceCellularTranslation_mul k).f 0 := by
+    rw [universalGSpaceCellularAugmentation_def, HomologicalComplex.comp_f,
+      HomologicalComplex.eqToHom_f]
+  have hmap :
+      (_root_.Rep.resFunctor φ).map ((universalGSpaceCellularAugmentation k H).f 0) =
+        eqToHom (by rw [universalGSpaceCellularComplex_def]) ≫
+          (_root_.Rep.resFunctor φ).map
+            ((cellularActionComplexAugmentation univ universalGSpaceCellularTranslation
+              isCellular_universalGSpaceCellularTranslation
+              universalGSpaceCellularTranslation_one
+              universalGSpaceCellularTranslation_mul k).f 0) := by
+    rw [haug H, (_root_.Rep.resFunctor φ).map_comp, eqToHom_map]
+  have hcf :
+      (φ.universalGSpaceCellularComplexMap (k := k)).f 0 =
+        eqToHom (congrArg (fun C ↦ C.X 0) (universalGSpaceCellularComplex_def k G)) ≫
+          (cellularActionComplexMap univ isCellular_universalGSpaceCellularTranslation
+            universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
+            univ isCellular_universalGSpaceCellularTranslation
+            universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
+            φ φ.isCellular_universalGSpaceCellularMap
+            φ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap k).f 0 ≫
+          eqToHom (by simp [universalGSpaceCellularComplex_def]) := by
+    rw [universalGSpaceCellularComplexMap, eqToHom_map, HomologicalComplex.comp_f,
+      HomologicalComplex.comp_f, HomologicalComplex.eqToHom_f, HomologicalComplex.eqToHom_f]
+  refine (congrArg₂ (· ≫ ·) hcf hmap).trans ?_
+  rw [Category.assoc, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+    cellularActionComplexMap_f_zero_comp_augmentation]
+  exact (haug G).symm
 
 /-- In each degree, the equivariant cellular-to-ordered isomorphism
 `universalGSpaceCellularRepIso` intertwines `universalGSpaceCellularRepresentationHom` with
@@ -268,12 +358,10 @@ theorem universalGSpaceCellularRepIso_hom_naturality (φ : G →* H) (n : ℕ) :
   obtain ⟨c, rfl⟩ := (realizationCellEquiv _ n).symm.surjective i
   simp only [_root_.Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
     LinearMap.comp_apply, _root_.Rep.resMap_hom_toLinearMap,
-    universalGSpaceCellularRepIso_hom_toLinearMap, LinearEquiv.coe_coe]
-  rw [Representation.IntertwiningMap.toLinearMap_apply,
-    φ.universalGSpaceCellularRepresentationHom_hom_cellularChainBasis,
     Representation.IntertwiningMap.toLinearMap_apply]
-  erw [universalGSpaceCellularChainLinearEquiv_cellularChainBasis,
-    universalGSpaceCellularChainLinearEquiv_cellularChainBasis]
+  rw [φ.universalGSpaceCellularRepresentationHom_hom_cellularChainBasis,
+    universalGSpaceCellularRepIso_hom_cellularChainBasis,
+    universalGSpaceCellularRepIso_hom_cellularChainBasis]
   exact (MulActionHom.toRepRes_hom_single (k := k) (φ.universalGSpaceCellMulActionHom n) c
     (realizationChainScale k n : k)).symm
 
@@ -299,18 +387,19 @@ theorem universalGSpaceCellularComplexIso_hom_naturality (φ : G →* H) :
           (universalGSpaceCellularComplexIso k H).hom =
       (universalGSpaceCellularComplexIso k G).hom ≫ φ.universalGSpaceChainMap := by
   ext n : 1
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    Functor.mapHomologicalComplex_map_f, universalGSpaceCellularComplexMap_f]
-  dsimp only [Functor.mapHomologicalComplex_obj_X, universalGSpaceChainComplex_X]
-  rw [universalGSpaceCellularComplexIso_hom_f, universalGSpaceCellularComplexIso_hom_f,
-    universalGSpaceChainMap_f]
-  change _ ≫ (_root_.Rep.resFunctor φ).map
-      (eqToHom (universalGSpaceCellularComplex_X k H n) ≫
-        (universalGSpaceCellularRepIso k H n).hom) = _
-  rw [(_root_.Rep.resFunctor φ).map_comp, eqToHom_map]
-  dsimp only [Functor.mapHomologicalComplex_obj_X]
-  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  exact congrArg (eqToHom _ ≫ ·) (φ.universalGSpaceCellularRepIso_hom_naturality n)
+  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f]
+  have hmap :
+      (_root_.Rep.resFunctor φ).map
+          (Y := _root_.Rep.ofMulAction k H ((indexedJoin fun _ : ℕ => H).RealizationCell n))
+          ((universalGSpaceCellularComplexIso k H).hom.f n) =
+        eqToHom (by rw [universalGSpaceCellularComplex_X]) ≫
+          (_root_.Rep.resFunctor φ).map (universalGSpaceCellularRepIso k H n).hom := by
+    rw [universalGSpaceCellularComplexIso_hom_f, (_root_.Rep.resFunctor φ).map_comp, eqToHom_map]
+  refine (congrArg₂ (· ≫ ·) (φ.universalGSpaceCellularComplexMap_f n) hmap).trans ?_
+  rw [Category.assoc, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+    φ.universalGSpaceCellularRepIso_hom_naturality, ← Category.assoc]
+  exact congrArg₂ (· ≫ ·) (universalGSpaceCellularComplexIso_hom_f k G n).symm
+    (φ.universalGSpaceChainMap_f n).symm
 
 /-- Inverse form of `universalGSpaceCellularComplexIso_hom_naturality`. -/
 @[reassoc]
@@ -442,12 +531,7 @@ theorem universalGSpaceCellularResolutionMap_f (φ : G →* H) (n : ℕ) :
         eqToHom (by
           rw [Functor.mapHomologicalComplex_obj_X,
             universalGSpaceCellularResolution_complex, universalGSpaceCellularComplex_X]) := by
-  rw [universalGSpaceCellularResolutionMap_def, HomologicalComplex.comp_f,
-    HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f,
-    HomologicalComplex.eqToHom_f, HomologicalComplex.eqToHom_f,
-    eqToHom_map, universalGSpaceCellularComplexMap_f]
-  dsimp only [Functor.mapHomologicalComplex_obj_X]
-  simp [Category.assoc]
+  simp [universalGSpaceCellularResolutionMap_def, eqToHom_map]
 
 /-- The identity homomorphism induces the identity chain map on the cellular resolution
 complex. -/
@@ -460,21 +544,17 @@ theorem universalGSpaceCellularResolutionMap_id :
 
 /-- Composition of group homomorphisms induces composition of cellular resolution chain maps,
 restricting the second map along the first homomorphism. -/
-@[reassoc]
+@[simp, reassoc]
 theorem universalGSpaceCellularResolutionMap_comp {K : Type u} [Group K]
     (ψ : H →* K) (φ : G →* H) :
     (ψ.comp φ).universalGSpaceCellularResolutionMap (k := k) =
       φ.universalGSpaceCellularResolutionMap ≫
         ((_root_.Rep.resFunctor φ).mapHomologicalComplex _).map
           ψ.universalGSpaceCellularResolutionMap := by
-  ext n : 1
-  rw [universalGSpaceCellularResolutionMap_f, HomologicalComplex.comp_f,
-    Functor.mapHomologicalComplex_map_f, universalGSpaceCellularResolutionMap_f,
-    universalGSpaceCellularResolutionMap_f, (_root_.Rep.resFunctor φ).map_comp,
-    (_root_.Rep.resFunctor φ).map_comp, eqToHom_map, eqToHom_map,
-    universalGSpaceCellularRepresentationHom_comp]
-  dsimp only [Functor.mapHomologicalComplex_obj_X]
-  simp [Category.assoc]
+  simp only [universalGSpaceCellularResolutionMap_def, universalGSpaceCellularComplexMap_comp,
+    Functor.map_comp, eqToHom_map, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp]
+  exact congrArg (eqToHom _ ≫ ·) (Category.assoc _ _ _)
 
 /-- In degree zero, `universalGSpaceCellularResolutionMap` commutes with the augmentations of
 `universalGSpaceCellularResolution`. -/
@@ -483,25 +563,29 @@ theorem universalGSpaceCellularResolutionMap_f_zero_comp_π (φ : G →* H) :
     (φ.universalGSpaceCellularResolutionMap (k := k)).f 0 ≫
         (_root_.Rep.resFunctor φ).map ((universalGSpaceCellularResolution k H).π.f 0) =
       (universalGSpaceCellularResolution k G).π.f 0 := by
-  have hπG : (universalGSpaceCellularResolution k G).π.f 0 =
-      (eqToHom (universalGSpaceCellularResolution_complex k G)).f 0 ≫
-        (universalGSpaceCellularAugmentation k G).f 0 := by
+  have hπ (G' : Type u) [Group G'] :
+      (universalGSpaceCellularResolution k G').π.f 0 =
+        eqToHom (congrArg (fun C ↦ C.X 0) (universalGSpaceCellularResolution_complex k G')) ≫
+          (universalGSpaceCellularAugmentation k G').f 0 := by
     rw [universalGSpaceCellularResolution_π,
       universalGSpaceCellularComplexIso_hom_comp_universalGSpaceAugmentation,
-      HomologicalComplex.comp_f]
-  have hπH : (universalGSpaceCellularResolution k H).π.f 0 =
-      (eqToHom (universalGSpaceCellularResolution_complex k H)).f 0 ≫
-        (universalGSpaceCellularAugmentation k H).f 0 := by
-    rw [universalGSpaceCellularResolution_π,
-      universalGSpaceCellularComplexIso_hom_comp_universalGSpaceAugmentation,
-      HomologicalComplex.comp_f]
-  rw [universalGSpaceCellularResolutionMap_def, HomologicalComplex.comp_f,
-    HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f, hπH,
-    Category.assoc, Category.assoc, ← (_root_.Rep.resFunctor φ).map_comp,
-    ← Category.assoc ((eqToHom (universalGSpaceCellularResolution_complex k H).symm).f 0),
-    ← HomologicalComplex.comp_f, eqToHom_trans, eqToHom_refl, HomologicalComplex.id_f,
-    Category.id_comp, φ.universalGSpaceCellularComplexMap_f_zero_comp_augmentation]
-  exact hπG.symm
+      HomologicalComplex.comp_f, HomologicalComplex.eqToHom_f]
+  have hmap :
+      (_root_.Rep.resFunctor φ).map ((universalGSpaceCellularResolution k H).π.f 0) =
+        eqToHom (by rw [universalGSpaceCellularResolution_complex]) ≫
+          (_root_.Rep.resFunctor φ).map ((universalGSpaceCellularAugmentation k H).f 0) := by
+    rw [hπ H, (_root_.Rep.resFunctor φ).map_comp, eqToHom_map]
+  have hrf :
+      (φ.universalGSpaceCellularResolutionMap (k := k)).f 0 =
+        eqToHom (congrArg (fun C ↦ C.X 0) (universalGSpaceCellularResolution_complex k G)) ≫
+          φ.universalGSpaceCellularComplexMap.f 0 ≫
+          eqToHom (by simp [universalGSpaceCellularResolution_complex]) := by
+    rw [universalGSpaceCellularResolutionMap_def, eqToHom_map, HomologicalComplex.comp_f,
+      HomologicalComplex.comp_f, HomologicalComplex.eqToHom_f, HomologicalComplex.eqToHom_f]
+  refine (congrArg₂ (· ≫ ·) hrf hmap).trans ?_
+  rw [Category.assoc, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+    φ.universalGSpaceCellularComplexMap_f_zero_comp_augmentation]
+  exact (hπ G).symm
 
 /-- **Change of groups for group homology via Milnor's geometric cellular resolution.** For a
 group homomorphism `φ : G →* H` and a compatible coefficient map `ξ : A ⟶ Res(φ)(B)`, the

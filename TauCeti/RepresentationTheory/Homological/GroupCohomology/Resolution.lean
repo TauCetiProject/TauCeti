@@ -120,8 +120,6 @@ theorem groupCohomologyIso_inv_eq_homologyMap (P : ProjectiveResolution (Rep.tri
       ((HomologicalComplex.unopFunctor _ _).map
         ((((linearYoneda k (Rep k G)).obj A).rightOp.mapHomologicalComplex _).map φ).op ≫
         (groupCohomology.inhomogeneousCochainsIso A).inv) n := by
-  have hext := ProjectiveResolution.isoExt_hom_comp_homologyMap (R := k)
-    (Rep.barResolution k G) P φ comm n A
   have hinhom : (isoOfQuasiIsoAt
       (HomotopyEquiv.ofIso (groupCohomology.inhomogeneousCochainsIso A)).hom n).inv =
       HomologicalComplex.homologyMap (groupCohomology.inhomogeneousCochainsIso A).inv n :=
@@ -129,17 +127,21 @@ theorem groupCohomologyIso_inv_eq_homologyMap (P : ProjectiveResolution (Rep.tri
       ((congrArg (HomologicalComplex.homologyMap · n)
         (groupCohomology.inhomogeneousCochainsIso A).hom_inv_id).trans
         (HomologicalComplex.homologyMap_id _ n)))
-  -- `groupCohomologyIso` is `groupCohomologyIsoExt` followed by the `Ext` computation from `P`,
-  -- and `groupCohomologyIsoExt` is the `Ext` computation from the bar resolution followed by the
-  -- inhomogeneous cochain isomorphism. The unfolding is taken from the `Iso.trans` lemmas, not
-  -- restated and proved by `rfl`: restated, its `Ext` objects carry fresh instance terms and the
-  -- kernel unfolds `Ext` to match.
-  have h₁ : (groupCohomologyIso A n P).inv = _ := Iso.trans_inv _ _
-  have h₂ : (groupCohomologyIsoExt A n).inv = _ := Iso.trans_inv _ _
-  rw [h₁, h₂, Iso.symm_inv, hinhom]
-  exact ((Category.assoc _ _ _).symm.trans
-    (congrArg (· ≫ _) ((Iso.inv_comp_eq _).2 hext.symm))).trans
-      (HomologicalComplex.homologyMap_comp _ _ n).symm
+  -- `groupCohomologyIso` is `groupCohomologyIsoExt` followed by the `Ext` computation, so for the
+  -- bar resolution the two `Ext` computations cancel. The unfolding is taken from the `Iso.trans`
+  -- lemmas, not restated and proved by `rfl`: restated, its `Ext` objects carry fresh instance
+  -- terms and the kernel unfolds `Ext` to match.
+  have hbar : (groupCohomologyIso A n (_root_.Rep.barResolution k G)).inv =
+      HomologicalComplex.homologyMap (groupCohomology.inhomogeneousCochainsIso A).inv n := by
+    have h₁ : (groupCohomologyIso A n (_root_.Rep.barResolution k G)).inv = _ := Iso.trans_inv _ _
+    have h₂ : (groupCohomologyIsoExt A n).inv = _ := Iso.trans_inv _ _
+    rw [h₁, h₂, Iso.symm_inv, hinhom]
+    exact ((Category.assoc _ _ _).symm.trans
+      (congrArg (· ≫ _) (Rep.barResolution.extIso k G A n).inv_hom_id)).trans
+        (Category.id_comp _)
+  exact ((_root_.Rep.homologyMap_comp_groupCohomologyIso_inv A (_root_.Rep.barResolution k G)
+      P φ comm n).symm.trans (congrArg (_ ≫ ·) hbar)).trans
+    (HomologicalComplex.homologyMap_comp _ _ n).symm
 
 variable {A} in
 /-- The identification of the inhomogeneous cochains with `Hom(bar, -)` is natural in the
