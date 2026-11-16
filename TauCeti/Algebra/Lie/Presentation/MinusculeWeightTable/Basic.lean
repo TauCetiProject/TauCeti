@@ -622,9 +622,11 @@ theorem loweringMatrix_apply_eq_zero_of_weight_sub_ne (i : B) (a b : ι)
   rw [Pi.sub_apply, Pi.neg_apply, T.weight_reflection, hb]
   ring
 
-/-- A raising matrix cast into any ring vanishes off the entries whose weight difference at a node
-`k` is the Cartan entry `cartanMatrix k i`, the `k`-th coordinate of the `i`-th simple root. -/
-theorem raisingMatrix_map_apply_eq_zero_of_weight_sub_ne {R : Type*} [Ring R] (i k : B) (a b : ι)
+/-- A raising matrix cast into any additive group with one vanishes off the entries whose weight
+difference at a node `k` is the Cartan entry `cartanMatrix k i`, the `k`-th coordinate of the
+`i`-th simple root. -/
+theorem raisingMatrix_map_apply_eq_zero_of_weight_sub_ne {R : Type*} [AddGroupWithOne R]
+    (i k : B) (a b : ι)
     (h : T.weight a k - T.weight b k ≠ T.cartanMatrix k i) :
     ((T.raisingMatrix i).map (Int.cast : ℤ → R)) a b = 0 := by
   rw [Matrix.map_apply, T.raisingMatrix_apply_eq_zero_of_weight_sub_ne i a b
@@ -650,20 +652,21 @@ theorem loweringMatrix_map_col {R : Type*} [AddGroupWithOne R]
   ext b
   simp [Matrix.col_apply, Pi.single_apply, ite_and, ite_apply]
 
-/-- Multiplying a matrix on the right by a raising matrix over any ring: the column `b` of `M * Eᵢ`
-is the column `sᵢ b` of `M` when `wt b i = -1`, and zero otherwise. -/
-theorem mul_raisingMatrix_map_apply [Fintype ι] {R : Type*} [Ring R] (i : B) (M : Matrix ι ι R)
-    (a b : ι) :
+/-- Multiplying a matrix with any rows on the right by a raising matrix, over any not necessarily
+associative ring: the column `b` of `M * Eᵢ` is the column `sᵢ b` of `M` when `wt b i = -1`, and
+zero otherwise. -/
+theorem mul_raisingMatrix_map_apply [Fintype ι] {m R : Type*} [NonAssocRing R] (i : B)
+    (M : Matrix m ι R) (a : m) (b : ι) :
     (M * (T.raisingMatrix i).map (Int.cast : ℤ → R)) a b =
       if T.weight b i = -1 then M a (T.reflection i b) else 0 := by
   by_cases hb : T.weight b i = -1
   all_goals simp [Matrix.mul_apply, hb]
 
-/-- The product of two raising matrices cast into any ring vanishes off the entries whose weight
-difference at a node `k` is the sum `cartanMatrix k i + cartanMatrix k j` of the `k`-th
-coordinates of the two simple roots. -/
+/-- The product of two raising matrices cast into any not necessarily associative ring vanishes
+off the entries whose weight difference at a node `k` is the sum
+`cartanMatrix k i + cartanMatrix k j` of the `k`-th coordinates of the two simple roots. -/
 theorem raisingMatrix_mul_raisingMatrix_apply_eq_zero_of_weight_sub_ne_add [Fintype ι] {R : Type*}
-    [Ring R] (i j k : B) (a b : ι)
+    [NonAssocRing R] (i j k : B) (a b : ι)
     (h : T.weight a k - T.weight b k ≠ T.cartanMatrix k i + T.cartanMatrix k j) :
     ((T.raisingMatrix i).map (Int.cast : ℤ → R) *
       (T.raisingMatrix j).map (Int.cast : ℤ → R)) a b = 0 :=

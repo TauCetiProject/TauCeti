@@ -103,7 +103,7 @@ private theorem coe_rootSubgroupPoints_signedWeightTable (t : R) :
 /-- The commutator `⁅x_{±αᵢ}(t), x_{±αⱼ}(1)⁆` of two signed simple-root points, the central
 parameter of the Heisenberg group they generate when the nodes are adjacent. -/
 noncomputable def adjacentRootCommutator (t : R) : points R :=
-  (rootSubgroupPoints (signedRootIndex positive i) R).adjacentRootCommutator
+  (rootSubgroupPoints (signedRootIndex positive i) R).commutatorElementOfAddOne
     (rootSubgroupPoints (signedRootIndex positive j) R) t
 
 /-- The commutator formula `⁅x_{±αᵢ}(t), x_{±αⱼ}(1)⁆` defining the central parameter. -/
@@ -111,12 +111,12 @@ theorem adjacentRootCommutator_def (t : R) :
     adjacentRootCommutator positive i j R t =
       ⁅rootSubgroupPoints (signedRootIndex positive i) R (ofAdd t),
         rootSubgroupPoints (signedRootIndex positive j) R (ofAdd 1)⁆ := by
-  rw [adjacentRootCommutator, MonoidHom.adjacentRootCommutator_def]
+  rw [adjacentRootCommutator, MonoidHom.commutatorElementOfAddOne_def]
 
 /-- The central parameter vanishes at `0`. -/
 @[simp]
 theorem adjacentRootCommutator_zero : adjacentRootCommutator positive i j R 0 = 1 :=
-  MonoidHom.adjacentRootCommutator_zero (rootSubgroupPoints (signedRootIndex positive i) R)
+  MonoidHom.commutatorElementOfAddOne_zero (rootSubgroupPoints (signedRootIndex positive i) R)
     (rootSubgroupPoints (signedRootIndex positive j) R)
 
 /-- **The adjacent Chevalley commutator formula** on the carrier points:
@@ -125,7 +125,7 @@ theorem commutatorElement_rootSubgroupPoints_adjacent (hij : CartanMatrix.E 7 i 
     ⁅rootSubgroupPoints (signedRootIndex positive i) R (ofAdd s),
       rootSubgroupPoints (signedRootIndex positive j) R (ofAdd t)⁆ =
         adjacentRootCommutator positive i j R (s * t) :=
-  (weightTable.signed positive).commutatorElement_eq_adjacentRootCommutator _ _
+  (weightTable.signed positive).commutatorElement_eq_commutatorElementOfAddOne _ _
     (coe_rootSubgroupPoints_signedWeightTable positive i R)
     (coe_rootSubgroupPoints_signedWeightTable positive j R)
     (signedWeightTable_cartanMatrix_adjacent positive i j hij)
@@ -141,7 +141,7 @@ theorem coe_adjacentRootCommutator (hij : CartanMatrix.E 7 i j = -1) (t : R) :
           (Sum.elim raisingMatrix loweringMatrix (signedRootIndex positive j)).map Int.cast -
         (Sum.elim raisingMatrix loweringMatrix (signedRootIndex positive j)).map Int.cast *
           (Sum.elim raisingMatrix loweringMatrix (signedRootIndex positive i)).map Int.cast) := by
-  rw [adjacentRootCommutator, (weightTable.signed positive).coe_adjacentRootCommutator _ _
+  rw [adjacentRootCommutator, (weightTable.signed positive).coe_commutatorElementOfAddOne _ _
     (coe_rootSubgroupPoints_signedWeightTable positive i R)
     (coe_rootSubgroupPoints_signedWeightTable positive j R)
     (signedWeightTable_cartanMatrix_adjacent positive i j hij)
@@ -154,7 +154,7 @@ theorem coe_adjacentRootCommutator (hij : CartanMatrix.E 7 i j = -1) (t : R) :
 theorem adjacentRootCommutator_add (hij : CartanMatrix.E 7 i j = -1) (s t : R) :
     adjacentRootCommutator positive i j R (s + t) =
       adjacentRootCommutator positive i j R s * adjacentRootCommutator positive i j R t :=
-  (weightTable.signed positive).adjacentRootCommutator_add _ _
+  (weightTable.signed positive).commutatorElementOfAddOne_add _ _
     (coe_rootSubgroupPoints_signedWeightTable positive i R)
     (coe_rootSubgroupPoints_signedWeightTable positive j R)
     (signedWeightTable_cartanMatrix_adjacent positive i j hij)
@@ -163,7 +163,7 @@ theorem adjacentRootCommutator_add (hij : CartanMatrix.E 7 i j = -1) (s t : R) :
 /-- The central parameter inverts under negation of `t`. -/
 theorem adjacentRootCommutator_neg (hij : CartanMatrix.E 7 i j = -1) (t : R) :
     adjacentRootCommutator positive i j R (-t) = (adjacentRootCommutator positive i j R t)⁻¹ :=
-  (weightTable.signed positive).adjacentRootCommutator_neg _ _
+  (weightTable.signed positive).commutatorElementOfAddOne_neg _ _
     (coe_rootSubgroupPoints_signedWeightTable positive i R)
     (coe_rootSubgroupPoints_signedWeightTable positive j R)
     (signedWeightTable_cartanMatrix_adjacent positive i j hij)
@@ -191,7 +191,7 @@ theorem adjacentRootCommutatorHom_apply (hij : CartanMatrix.E 7 i j = -1) (u : M
 `3`. -/
 theorem adjacentRootCommutator_injective (hij : CartanMatrix.E 7 i j = -1) :
     Function.Injective (adjacentRootCommutator positive i j R) :=
-  (weightTable.signed positive).adjacentRootCommutator_injective _ _
+  (weightTable.signed positive).commutatorElementOfAddOne_injective _ _
     (coe_rootSubgroupPoints_signedWeightTable positive i R)
     (coe_rootSubgroupPoints_signedWeightTable positive j R)
     (signedWeightTable_cartanMatrix_adjacent positive i j hij)
@@ -203,7 +203,7 @@ theorem commute_adjacentRootCommutator_rootSubgroupPoints_left (hij : CartanMatr
     (s t : R) :
     Commute (adjacentRootCommutator positive i j R s)
       (rootSubgroupPoints (signedRootIndex positive i) R (ofAdd t)) :=
-  (weightTable.signed positive).commute_adjacentRootCommutator_left _ _
+  (weightTable.signed positive).commute_commutatorElementOfAddOne_left _ _
     (coe_rootSubgroupPoints_signedWeightTable positive i R)
     (coe_rootSubgroupPoints_signedWeightTable positive j R)
     (signedWeightTable_cartanMatrix_adjacent positive i j hij)
@@ -214,7 +214,7 @@ theorem commute_adjacentRootCommutator_rootSubgroupPoints_right (hij : CartanMat
     (s t : R) :
     Commute (adjacentRootCommutator positive i j R s)
       (rootSubgroupPoints (signedRootIndex positive j) R (ofAdd t)) :=
-  (weightTable.signed positive).commute_adjacentRootCommutator_right _ _
+  (weightTable.signed positive).commute_commutatorElementOfAddOne_right _ _
     (coe_rootSubgroupPoints_signedWeightTable positive i R)
     (coe_rootSubgroupPoints_signedWeightTable positive j R)
     (signedWeightTable_cartanMatrix_adjacent positive i j hij)
@@ -224,7 +224,7 @@ theorem commute_adjacentRootCommutator_rootSubgroupPoints_right (hij : CartanMat
 `⁅x_{±αⱼ}(t), x_{±αᵢ}(1)⁆ = ⁅x_{±αᵢ}(-t), x_{±αⱼ}(1)⁆`. -/
 theorem adjacentRootCommutator_swap (hij : CartanMatrix.E 7 i j = -1) (t : R) :
     adjacentRootCommutator positive j i R t = adjacentRootCommutator positive i j R (-t) :=
-  (weightTable.signed positive).adjacentRootCommutator_swap _ _
+  (weightTable.signed positive).commutatorElementOfAddOne_swap _ _
     (coe_rootSubgroupPoints_signedWeightTable positive i R)
     (coe_rootSubgroupPoints_signedWeightTable positive j R)
     (signedWeightTable_cartanMatrix_adjacent positive i j hij)
@@ -360,13 +360,12 @@ theorem mem_adjacentRootSubgroup_iff (hij : CartanMatrix.E 7 i j = -1) {g : poin
     g ∈ adjacentRootSubgroup positive i j R ↔
       ∃ x y z : R, rootSubgroupPoints (signedRootIndex positive j) R (ofAdd y) *
           rootSubgroupPoints (signedRootIndex positive i) R (ofAdd x) *
-            adjacentRootCommutator positive i j R z = g := by
-  rw [← range_adjacentHeisenbergHom positive i j R hij, MonoidHom.mem_range]
-  constructor
-  · rintro ⟨h, rfl⟩
-    exact ⟨h.x, h.y, h.z, (adjacentHeisenbergHom_apply positive i j R hij h).symm⟩
-  · rintro ⟨x, y, z, rfl⟩
-    exact ⟨⟨x, y, z⟩, adjacentHeisenbergHom_apply positive i j R hij _⟩
+            adjacentRootCommutator positive i j R z = g :=
+  (weightTable.signed positive).mem_range_sup_range_iff _ _
+    (coe_rootSubgroupPoints_signedWeightTable positive i R)
+    (coe_rootSubgroupPoints_signedWeightTable positive j R)
+    (signedWeightTable_cartanMatrix_adjacent positive i j hij)
+    (signedWeightTable_cartanMatrix_adjacent_symm positive i j hij)
 
 /-- **The adjacent-root subgroup is a Heisenberg group** over every commutative ring, through the
 coordinates `(x, y, z) ↦ x_{±αⱼ}(y) x_{±αᵢ}(x) ⁅x_{±αᵢ}(z), x_{±αⱼ}(1)⁆`. -/

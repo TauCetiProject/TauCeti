@@ -15,16 +15,16 @@ import TauCeti.LinearAlgebra.Matrix.UnipotentCommutator
 
 Let `T` be a minuscule weight table and `i`, `j` two nodes with
 `T.cartanMatrix i j = T.cartanMatrix j i = -1`, and write `Eᵢ` and `Eⱼ` for the raising matrices
-`T.raisingMatrix i` and `T.raisingMatrix j` cast into a commutative ring `R`. The raising strings
+`T.raisingMatrix i` and `T.raisingMatrix j` cast into a ring `R`. The raising strings
 through such a pair have length at most two, `Eᵢ Eⱼ Eᵢ = 0`, so the commutator matrix
-`[Eᵢ, Eⱼ] = Eᵢ Eⱼ - Eⱼ Eᵢ` annihilates `Eᵢ` and `Eⱼ` on both sides and squares to zero, and the
-unipotent elements `1 + s • Eᵢ` and `1 + t • Eⱼ` satisfy the adjacent case of the Chevalley
-commutator formula
+`[Eᵢ, Eⱼ] = Eᵢ Eⱼ - Eⱼ Eᵢ` annihilates `Eᵢ` and `Eⱼ` on both sides and squares to zero. When `R`
+is commutative, the unipotent elements `1 + s • Eᵢ` and `1 + t • Eⱼ` satisfy the adjacent case of
+the Chevalley commutator formula
 
   `(1 + s • Eᵢ) (1 + t • Eⱼ) (1 - s • Eᵢ) (1 - t • Eⱼ) = 1 + (s * t) • [Eᵢ, Eⱼ]`.
 
 When some weight has coordinate `-1` at `i`, the commutator matrix has an entry equal to `1` or
-`-1`, and the Heisenberg matrix parametrization
+`-1`, and for commutative `R` the Heisenberg matrix parametrization
 `(x, y, z) ↦ 1 + x • Eᵢ + y • Eⱼ + (x * y) • Eⱼ Eᵢ + z • [Eᵢ, Eⱼ]` is an injective
 multiplicative map from `TauCeti.HeisenbergGroup R` to `Matrix ι ι R`, in every characteristic.
 
@@ -38,7 +38,7 @@ points and `x`, `y` with their simple-root subgroups, the table being `T` for po
 
 ## Main definitions
 
-* `MonoidHom.adjacentRootCommutator`: the commutator `⁅x(t), y(1)⁆` of two one-parameter
+* `MonoidHom.commutatorElementOfAddOne`: the commutator `⁅x(t), y(1)⁆` of two one-parameter
   subgroups `x` and `y` of a group.
 * `TauCeti.MinusculeWeightTable.raisingCommutatorMatrix`: the commutator `[Eᵢ, Eⱼ]`.
 * `TauCeti.MinusculeWeightTable.raisingHeisenbergMatrix`: the Heisenberg matrix parametrization
@@ -67,14 +67,15 @@ points and `x`, `y` with their simple-root subgroups, the table being `T` for po
   as `(1 + y • Eⱼ) (1 + x • Eᵢ) (1 + z • [Eᵢ, Eⱼ])`, and is injective when some weight has
   coordinate `-1` at `i`.
 * `TauCeti.MinusculeWeightTable.coe_commutatorElement_eq_one_add_smul_raisingCommutatorMatrix`
-  and `commutatorElement_eq_adjacentRootCommutator`: `⁅x(s), y(t)⁆` has matrix
+  and `commutatorElement_eq_commutatorElementOfAddOne`: `⁅x(s), y(t)⁆` has matrix
   `1 + (s * t) • [Eᵢ, Eⱼ]` and equals `⁅x(s * t), y(1)⁆`.
-* `TauCeti.MinusculeWeightTable.coe_adjacentHeisenbergHom`, `adjacentHeisenbergHom_injective` and
-  `range_adjacentHeisenbergHom`: the Heisenberg parametrization has matrix
-  `raisingHeisenbergMatrix`, is injective, and has range `x.range ⊔ y.range`.
-* `TauCeti.MinusculeWeightTable.adjacentRootCommutator_injective`,
-  `commute_adjacentRootCommutator_left`, `commute_adjacentRootCommutator_right` and
-  `adjacentRootCommutator_swap`: the central parameter is faithful, commutes with `x` and `y`,
+* `TauCeti.MinusculeWeightTable.coe_adjacentHeisenbergHom`, `adjacentHeisenbergHom_injective`,
+  `range_adjacentHeisenbergHom` and `mem_range_sup_range_iff`: the Heisenberg parametrization has
+  matrix `raisingHeisenbergMatrix`, is injective, and has range `x.range ⊔ y.range`, whose
+  elements are exactly the products `y(b) x(a) ⁅x(c), y(1)⁆`.
+* `TauCeti.MinusculeWeightTable.commutatorElementOfAddOne_injective`,
+  `commute_commutatorElementOfAddOne_left`, `commute_commutatorElementOfAddOne_right` and
+  `commutatorElementOfAddOne_swap`: the central parameter is faithful, commutes with `x` and `y`,
   and changes sign when the pair is reversed.
 
 ## References
@@ -97,32 +98,34 @@ variable {R : Type*} [AddMonoid R] [One R] {G : Type*} [Group G] (x y : Multipli
 /-- The commutator `⁅x(t), y(1)⁆` of two one-parameter subgroups `x` and `y`, as a function of
 the parameter `t` of the first. For adjacent root subgroups it is the central parameter of the
 Heisenberg group they generate. -/
-def adjacentRootCommutator (t : R) : G :=
+def commutatorElementOfAddOne (t : R) : G :=
   ⁅x (ofAdd t), y (ofAdd 1)⁆
 
 /-- The commutator formula `⁅x(t), y(1)⁆` defining the central parameter. -/
-theorem adjacentRootCommutator_def (t : R) :
-    x.adjacentRootCommutator y t = ⁅x (ofAdd t), y (ofAdd 1)⁆ :=
+theorem commutatorElementOfAddOne_def (t : R) :
+    x.commutatorElementOfAddOne y t = ⁅x (ofAdd t), y (ofAdd 1)⁆ :=
   (rfl)
 
 /-- The central parameter vanishes at `0`. -/
 @[simp]
-theorem adjacentRootCommutator_zero : x.adjacentRootCommutator y 0 = 1 := by
-  rw [adjacentRootCommutator, ofAdd_zero, map_one, commutatorElement_one_left]
+theorem commutatorElementOfAddOne_zero : x.commutatorElementOfAddOne y 0 = 1 := by
+  rw [commutatorElementOfAddOne, ofAdd_zero, map_one, commutatorElement_one_left]
 
 end MonoidHom
 
 namespace TauCeti.MinusculeWeightTable
 
 variable {B ι : Type*} (T : MinusculeWeightTable B ι) [Fintype ι] [DecidableEq ι]
-  {R : Type*} [CommRing R]
+
+section Ring
+
+variable {R : Type*} [Ring R]
 
 /-! ## Adjacent raising strings -/
 
 attribute [local instance 100] LieRing.ofAssociativeRing in
-/-- An alternating triple of raising operators at nodes joined by a Cartan entry `-1` vanishes:
-raising strings through such a pair have length at most two. Over `ℤ` this follows from
-`Eᵢ * Eᵢ = 0` and the Serre relation `⁅Eᵢ, ⁅Eᵢ, Eⱼ⁆⁆ = 0`, and it casts into `R`. -/
+/-- The alternating product `Eᵢ * Eⱼ * Eᵢ` of raising matrices cast into any ring vanishes when
+`T.cartanMatrix i j = -1`. -/
 @[simp]
 theorem raisingMatrix_mul_raisingMatrix_mul_raisingMatrix_of_cartanMatrix_eq_neg_one (i j : B)
     (hij : T.cartanMatrix i j = -1) :
@@ -138,7 +141,7 @@ theorem raisingMatrix_mul_raisingMatrix_mul_raisingMatrix_of_cartanMatrix_eq_neg
 omit [Fintype ι] [DecidableEq ι] in
 /-- A weight with coordinate `-1` at one end of an edge with Cartan entries `-1` supplies a
 two-step raising string: a weight with coordinates `(-1, 0)` or `(0, -1)` at the two nodes. -/
-theorem exists_raising_string_of_cartanMatrix_eq_neg_one (i j : B)
+private theorem exists_raising_string_of_cartanMatrix_eq_neg_one (i j : B)
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1)
     (hi : ∃ a, T.weight a i = -1) :
     ∃ a, (T.weight a i = -1 ∧ T.weight a j = 0) ∨
@@ -162,7 +165,7 @@ private theorem raisingMatrix_mul_raisingMatrix_mul_self (i j : B) :
 /-! ## The commutator matrix -/
 
 /-- The commutator matrix `[Eᵢ, Eⱼ] = Eᵢ Eⱼ - Eⱼ Eᵢ` of the raising matrices at two nodes, cast
-into a commutative ring. -/
+into a ring. -/
 def raisingCommutatorMatrix (i j : B) : Matrix ι ι R :=
   ⁅(T.raisingMatrix i).map (Int.cast : ℤ → R), (T.raisingMatrix j).map (Int.cast : ℤ → R)⁆
 
@@ -214,7 +217,7 @@ theorem raisingCommutatorMatrix_mul_raisingMatrix_right (i j : B)
     T.raisingMatrix_mul_raisingMatrix_mul_raisingMatrix_of_cartanMatrix_eq_neg_one j i hji,
     mul_assoc, T.raisingMatrix_map_mul_self, mul_zero, sub_zero]
 
-/-- The commutator matrix of an adjacent pair squares to zero over every commutative ring. -/
+/-- The commutator matrix of an adjacent pair squares to zero over every ring. -/
 @[simp]
 theorem raisingCommutatorMatrix_mul_self (i j : B)
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) :
@@ -224,8 +227,8 @@ theorem raisingCommutatorMatrix_mul_self (i j : B)
     T.raisingCommutatorMatrix_mul_raisingMatrix_left i j hij,
     T.raisingCommutatorMatrix_mul_raisingMatrix_right i j hji, zero_mul, zero_mul, sub_zero]
 
-/-- The commutator matrix of an adjacent pair has an entry equal to `1` or `-1`, over any
-commutative ring, when some weight has coordinate `-1` at `i`. -/
+/-- The commutator matrix of an adjacent pair has an entry equal to `1` or `-1`, over any ring,
+when some weight has coordinate `-1` at `i`. -/
 theorem exists_raisingCommutatorMatrix_apply_eq_one_or_eq_neg_one (i j : B)
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1)
     (hi : ∃ a, T.weight a i = -1) :
@@ -246,7 +249,7 @@ theorem exists_raisingCommutatorMatrix_apply_eq_one_or_eq_neg_one (i j : B)
       hb, hi']
 
 /-- Scalar multiples of the commutator matrix of an adjacent pair have unique parameters, over any
-commutative ring, when some weight has coordinate `-1` at `i`. -/
+ring, when some weight has coordinate `-1` at `i`. -/
 theorem smul_raisingCommutatorMatrix_injective (i j : B)
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1)
     (hi : ∃ a, T.weight a i = -1) :
@@ -258,8 +261,14 @@ theorem smul_raisingCommutatorMatrix_injective (i j : B)
     have he := congrFun (congrFun h a) b
     simpa [Matrix.smul_apply, hab, smul_eq_mul] using he
 
+end Ring
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
+
 /-- **The adjacent Chevalley commutator formula** for the unipotent matrices `1 + s • Eᵢ` and
-`1 + t • Eⱼ`: their commutator is `1 + (s * t) • [Eᵢ, Eⱼ]`. -/
+`1 + t • Eⱼ` over a commutative ring: their commutator is `1 + (s * t) • [Eᵢ, Eⱼ]`. -/
 theorem one_add_smul_raisingMatrix_mul_eq_one_add_smul_raisingCommutatorMatrix (i j : B)
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) (s t : R) :
     (1 + s • (T.raisingMatrix i).map Int.cast) *
@@ -418,42 +427,42 @@ theorem coe_commutatorElement_eq_one_add_smul_raisingCommutatorMatrix
 
 /-- The commutator of two adjacent root elements depends only on the product of their
 parameters: `⁅x(s), y(t)⁆ = ⁅x(s * t), y(1)⁆`. -/
-theorem commutatorElement_eq_adjacentRootCommutator
+theorem commutatorElement_eq_commutatorElementOfAddOne
     (hx : ∀ t : R, ((x (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix i).map (Int.cast : ℤ → R))
     (hy : ∀ t : R, ((y (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix j).map (Int.cast : ℤ → R))
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) (s t : R) :
-    ⁅x (ofAdd s), y (ofAdd t)⁆ = x.adjacentRootCommutator y (s * t) := by
+    ⁅x (ofAdd s), y (ofAdd t)⁆ = x.commutatorElementOfAddOne y (s * t) := by
   apply Subtype.ext
   apply Units.ext
-  rw [MonoidHom.adjacentRootCommutator,
+  rw [MonoidHom.commutatorElementOfAddOne,
     T.coe_commutatorElement_eq_one_add_smul_raisingCommutatorMatrix x y hx hy hij hji,
     T.coe_commutatorElement_eq_one_add_smul_raisingCommutatorMatrix x y hx hy hij hji, mul_one]
 
 /-- The central parameter `⁅x(t), y(1)⁆` has matrix `1 + t • [Eᵢ, Eⱼ]`. -/
-theorem coe_adjacentRootCommutator
+theorem coe_commutatorElementOfAddOne
     (hx : ∀ t : R, ((x (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix i).map (Int.cast : ℤ → R))
     (hy : ∀ t : R, ((y (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix j).map (Int.cast : ℤ → R))
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) (t : R) :
-    (((x.adjacentRootCommutator y t : G) : GL ι R) : Matrix ι ι R) =
+    (((x.commutatorElementOfAddOne y t : G) : GL ι R) : Matrix ι ι R) =
       1 + t • T.raisingCommutatorMatrix i j := by
-  rw [MonoidHom.adjacentRootCommutator,
+  rw [MonoidHom.commutatorElementOfAddOne,
     T.coe_commutatorElement_eq_one_add_smul_raisingCommutatorMatrix x y hx hy hij hji, mul_one]
 
-private theorem coe_mul_mul_adjacentRootCommutator
+private theorem coe_mul_mul_commutatorElementOfAddOne
     (hx : ∀ t : R, ((x (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix i).map (Int.cast : ℤ → R))
     (hy : ∀ t : R, ((y (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix j).map (Int.cast : ℤ → R))
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) (g : HeisenbergGroup R) :
-    (((y (ofAdd g.y) * x (ofAdd g.x) * x.adjacentRootCommutator y g.z : G) : GL ι R) :
+    (((y (ofAdd g.y) * x (ofAdd g.x) * x.commutatorElementOfAddOne y g.z : G) : GL ι R) :
       Matrix ι ι R) = T.raisingHeisenbergMatrix i j g := by
   rw [T.raisingHeisenbergMatrix_eq_mul i j hij hji]
   simp only [Subgroup.coe_mul, Units.val_mul, hx, hy,
-    T.coe_adjacentRootCommutator x y hx hy hij hji]
+    T.coe_commutatorElementOfAddOne x y hx hy hij hji]
 
 /-- **The Heisenberg parametrization** `(x, y, z) ↦ y(y) x(x) ⁅x(z), y(1)⁆` of the subgroup
 generated by two adjacent root subgroups, a homomorphism from `TauCeti.HeisenbergGroup R`. -/
@@ -464,13 +473,13 @@ def adjacentHeisenbergHom
       1 + t • (T.raisingMatrix j).map (Int.cast : ℤ → R))
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) :
     HeisenbergGroup R →* G where
-  toFun g := y (ofAdd g.y) * x (ofAdd g.x) * x.adjacentRootCommutator y g.z
+  toFun g := y (ofAdd g.y) * x (ofAdd g.x) * x.commutatorElementOfAddOne y g.z
   map_one' := by simp
   map_mul' g h := by
     apply Subtype.ext
     apply Units.ext
     have hmul := T.raisingHeisenbergMatrix_mul i j hij hji g h
-    simpa only [← T.coe_mul_mul_adjacentRootCommutator x y hx hy hij hji, Subgroup.coe_mul,
+    simpa only [← T.coe_mul_mul_commutatorElementOfAddOne x y hx hy hij hji, Subgroup.coe_mul,
       Units.val_mul] using hmul
 
 /-- The Heisenberg parametrization sends `(x, y, z)` to `y(y) x(x) ⁅x(z), y(1)⁆`. -/
@@ -481,7 +490,7 @@ theorem adjacentHeisenbergHom_apply
       1 + t • (T.raisingMatrix j).map (Int.cast : ℤ → R))
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) (g : HeisenbergGroup R) :
     T.adjacentHeisenbergHom x y hx hy hij hji g =
-      y (ofAdd g.y) * x (ofAdd g.x) * x.adjacentRootCommutator y g.z :=
+      y (ofAdd g.y) * x (ofAdd g.x) * x.commutatorElementOfAddOne y g.z :=
   (rfl)
 
 /-- The Heisenberg parametrization `(x, y, z) ↦ y(y) x(x) ⁅x(z), y(1)⁆` has matrix
@@ -494,7 +503,7 @@ theorem coe_adjacentHeisenbergHom
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) (g : HeisenbergGroup R) :
     ((T.adjacentHeisenbergHom x y hx hy hij hji g : GL ι R) : Matrix ι ι R) =
       T.raisingHeisenbergMatrix i j g :=
-  T.coe_mul_mul_adjacentRootCommutator x y hx hy hij hji g
+  T.coe_mul_mul_commutatorElementOfAddOne x y hx hy hij hji g
 
 /-- The first Heisenberg coordinate parametrizes the first root subgroup. -/
 @[simp]
@@ -526,34 +535,34 @@ theorem adjacentHeisenbergHom_z
     (hy : ∀ t : R, ((y (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix j).map (Int.cast : ℤ → R))
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) (a : R) :
-    T.adjacentHeisenbergHom x y hx hy hij hji ⟨0, 0, a⟩ = x.adjacentRootCommutator y a := by
+    T.adjacentHeisenbergHom x y hx hy hij hji ⟨0, 0, a⟩ = x.commutatorElementOfAddOne y a := by
   simp [adjacentHeisenbergHom_apply]
 
 /-- The central parameter is additive: `⁅x(s + t), y(1)⁆ = ⁅x(s), y(1)⁆ ⁅x(t), y(1)⁆`. -/
-theorem adjacentRootCommutator_add
+theorem commutatorElementOfAddOne_add
     (hx : ∀ t : R, ((x (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix i).map (Int.cast : ℤ → R))
     (hy : ∀ t : R, ((y (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix j).map (Int.cast : ℤ → R))
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) (s t : R) :
-    x.adjacentRootCommutator y (s + t) =
-      x.adjacentRootCommutator y s * x.adjacentRootCommutator y t := by
+    x.commutatorElementOfAddOne y (s + t) =
+      x.commutatorElementOfAddOne y s * x.commutatorElementOfAddOne y t := by
   have h := (T.adjacentHeisenbergHom x y hx hy hij hji).map_mul ⟨0, 0, s⟩ ⟨0, 0, t⟩
   have he : (⟨0, 0, s⟩ : HeisenbergGroup R) * ⟨0, 0, t⟩ = ⟨0, 0, s + t⟩ := by
     ext <;> simp
   rwa [he, adjacentHeisenbergHom_z, adjacentHeisenbergHom_z, adjacentHeisenbergHom_z] at h
 
 /-- The central parameter inverts under negation: `⁅x(-t), y(1)⁆ = ⁅x(t), y(1)⁆⁻¹`. -/
-theorem adjacentRootCommutator_neg
+theorem commutatorElementOfAddOne_neg
     (hx : ∀ t : R, ((x (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix i).map (Int.cast : ℤ → R))
     (hy : ∀ t : R, ((y (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix j).map (Int.cast : ℤ → R))
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) (t : R) :
-    x.adjacentRootCommutator y (-t) = (x.adjacentRootCommutator y t)⁻¹ := by
+    x.commutatorElementOfAddOne y (-t) = (x.commutatorElementOfAddOne y t)⁻¹ := by
   apply eq_inv_of_mul_eq_one_left
-  rw [← T.adjacentRootCommutator_add x y hx hy hij hji, neg_add_cancel,
-    MonoidHom.adjacentRootCommutator_zero]
+  rw [← T.commutatorElementOfAddOne_add x y hx hy hij hji, neg_add_cancel,
+    MonoidHom.commutatorElementOfAddOne_zero]
 
 /-- The central parameter `t ↦ ⁅x(t), y(1)⁆` as a one-parameter subgroup. -/
 def adjacentRootCommutatorHom
@@ -563,11 +572,11 @@ def adjacentRootCommutatorHom
       1 + t • (T.raisingMatrix j).map (Int.cast : ℤ → R))
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) :
     Multiplicative R →* G where
-  toFun u := x.adjacentRootCommutator y (toAdd u)
+  toFun u := x.commutatorElementOfAddOne y (toAdd u)
   map_one' := by simp
   map_mul' u v := by
     simp only [toAdd_mul]
-    exact T.adjacentRootCommutator_add x y hx hy hij hji _ _
+    exact T.commutatorElementOfAddOne_add x y hx hy hij hji _ _
 
 /-- The central one-parameter subgroup evaluates to the commutator `⁅x(toAdd u), y(1)⁆`. -/
 @[simp]
@@ -577,7 +586,7 @@ theorem adjacentRootCommutatorHom_apply
     (hy : ∀ t : R, ((y (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix j).map (Int.cast : ℤ → R))
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) (u : Multiplicative R) :
-    T.adjacentRootCommutatorHom x y hx hy hij hji u = x.adjacentRootCommutator y (toAdd u) :=
+    T.adjacentRootCommutatorHom x y hx hy hij hji u = x.commutatorElementOfAddOne y (toAdd u) :=
   (rfl)
 
 /-- **The Heisenberg parametrization is injective** over every commutative ring, in every
@@ -597,14 +606,14 @@ theorem adjacentHeisenbergHom_injective
 
 /-- The central parameter `t ↦ ⁅x(t), y(1)⁆` is injective over every commutative ring, without
 inverting `2` or `3`, when some weight has coordinate `-1` at `i`. -/
-theorem adjacentRootCommutator_injective
+theorem commutatorElementOfAddOne_injective
     (hx : ∀ t : R, ((x (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix i).map (Int.cast : ℤ → R))
     (hy : ∀ t : R, ((y (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix j).map (Int.cast : ℤ → R))
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1)
     (hi : ∃ a, T.weight a i = -1) :
-    Function.Injective (x.adjacentRootCommutator y) := by
+    Function.Injective (x.commutatorElementOfAddOne y) := by
   intro s t h
   have he : T.adjacentHeisenbergHom x y hx hy hij hji ⟨0, 0, s⟩ =
       T.adjacentHeisenbergHom x y hx hy hij hji ⟨0, 0, t⟩ := by
@@ -612,41 +621,41 @@ theorem adjacentRootCommutator_injective
   exact congrArg HeisenbergGroup.z (T.adjacentHeisenbergHom_injective x y hx hy hij hji hi he)
 
 /-- The central parameter commutes with the first root subgroup. -/
-theorem commute_adjacentRootCommutator_left
+theorem commute_commutatorElementOfAddOne_left
     (hx : ∀ t : R, ((x (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix i).map (Int.cast : ℤ → R))
     (hy : ∀ t : R, ((y (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix j).map (Int.cast : ℤ → R))
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) (s t : R) :
-    Commute (x.adjacentRootCommutator y s) (x (ofAdd t)) := by
+    Commute (x.commutatorElementOfAddOne y s) (x (ofAdd t)) := by
   have h : Commute (⟨0, 0, s⟩ : HeisenbergGroup R) ⟨t, 0, 0⟩ := by
     apply HeisenbergGroup.ext <;> simp
   simpa using h.map (T.adjacentHeisenbergHom x y hx hy hij hji)
 
 /-- The central parameter commutes with the second root subgroup. -/
-theorem commute_adjacentRootCommutator_right
+theorem commute_commutatorElementOfAddOne_right
     (hx : ∀ t : R, ((x (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix i).map (Int.cast : ℤ → R))
     (hy : ∀ t : R, ((y (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix j).map (Int.cast : ℤ → R))
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) (s t : R) :
-    Commute (x.adjacentRootCommutator y s) (y (ofAdd t)) := by
+    Commute (x.commutatorElementOfAddOne y s) (y (ofAdd t)) := by
   have h : Commute (⟨0, 0, s⟩ : HeisenbergGroup R) ⟨0, t, 0⟩ := by
     apply HeisenbergGroup.ext <;> simp
   simpa using h.map (T.adjacentHeisenbergHom x y hx hy hij hji)
 
 /-- Reversing the pair negates the central parameter: `⁅y(t), x(1)⁆ = ⁅x(-t), y(1)⁆`. -/
-theorem adjacentRootCommutator_swap
+theorem commutatorElementOfAddOne_swap
     (hx : ∀ t : R, ((x (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix i).map (Int.cast : ℤ → R))
     (hy : ∀ t : R, ((y (ofAdd t) : GL ι R) : Matrix ι ι R) =
       1 + t • (T.raisingMatrix j).map (Int.cast : ℤ → R))
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) (t : R) :
-    y.adjacentRootCommutator x t = x.adjacentRootCommutator y (-t) := by
+    y.commutatorElementOfAddOne x t = x.commutatorElementOfAddOne y (-t) := by
   apply Subtype.ext
   apply Units.ext
-  rw [T.coe_adjacentRootCommutator y x hy hx hji hij,
-    T.coe_adjacentRootCommutator x y hx hy hij hji, raisingCommutatorMatrix,
+  rw [T.coe_commutatorElementOfAddOne y x hy hx hji hij,
+    T.coe_commutatorElementOfAddOne x y hx hy hij hji, raisingCommutatorMatrix,
     raisingCommutatorMatrix, Ring.lie_def, Ring.lie_def]
   module
 
@@ -663,7 +672,7 @@ theorem range_adjacentHeisenbergHom
   · rintro _ ⟨g, rfl⟩
     have hx' (u : Multiplicative R) : x u ∈ x.range ⊔ y.range := Subgroup.mem_sup_left ⟨u, rfl⟩
     have hy' (u : Multiplicative R) : y u ∈ x.range ⊔ y.range := Subgroup.mem_sup_right ⟨u, rfl⟩
-    rw [adjacentHeisenbergHom_apply, MonoidHom.adjacentRootCommutator, commutatorElement_def]
+    rw [adjacentHeisenbergHom_apply, MonoidHom.commutatorElementOfAddOne, commutatorElement_def]
     exact Subgroup.mul_mem _ (Subgroup.mul_mem _ (hy' _) (hx' _))
       (Subgroup.mul_mem _ (Subgroup.mul_mem _ (Subgroup.mul_mem _ (hx' _) (hy' _))
         (Subgroup.inv_mem _ (hx' _))) (Subgroup.inv_mem _ (hy' _)))
@@ -673,6 +682,23 @@ theorem range_adjacentHeisenbergHom
       exact ⟨⟨toAdd u, 0, 0⟩, by simp⟩
     · rintro _ ⟨u, rfl⟩
       exact ⟨⟨0, toAdd u, 0⟩, by simp⟩
+
+/-- An element lies in the join `x.range ⊔ y.range` of two adjacent root subgroups exactly when it
+has Heisenberg coordinates: it is `y(b) x(a) ⁅x(c), y(1)⁆` for some `a`, `b`, `c`. -/
+theorem mem_range_sup_range_iff
+    (hx : ∀ t : R, ((x (ofAdd t) : GL ι R) : Matrix ι ι R) =
+      1 + t • (T.raisingMatrix i).map (Int.cast : ℤ → R))
+    (hy : ∀ t : R, ((y (ofAdd t) : GL ι R) : Matrix ι ι R) =
+      1 + t • (T.raisingMatrix j).map (Int.cast : ℤ → R))
+    (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) {g : G} :
+    g ∈ x.range ⊔ y.range ↔
+      ∃ a b c : R, y (ofAdd b) * x (ofAdd a) * x.commutatorElementOfAddOne y c = g := by
+  rw [← T.range_adjacentHeisenbergHom x y hx hy hij hji, MonoidHom.mem_range]
+  constructor
+  · rintro ⟨h, rfl⟩
+    exact ⟨h.x, h.y, h.z, (T.adjacentHeisenbergHom_apply x y hx hy hij hji h).symm⟩
+  · rintro ⟨a, b, c, rfl⟩
+    exact ⟨⟨a, b, c⟩, T.adjacentHeisenbergHom_apply x y hx hy hij hji _⟩
 
 /-- **The join of two adjacent root subgroups is a Heisenberg group**, through the coordinates
 `(x, y, z) ↦ y(y) x(x) ⁅x(z), y(1)⁆`, over every commutative ring. -/
@@ -701,5 +727,7 @@ theorem coe_adjacentHeisenbergEquiv
   (rfl)
 
 end HeisenbergSubgroup
+
+end CommRing
 
 end TauCeti.MinusculeWeightTable
