@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Basic
 public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
+public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
 /-!
@@ -31,7 +32,8 @@ structure sheaf is the rank of the source over the field
 An isomorphism of schemes is a closed immersion, and pullback along it is direct image along its
 inverse. So pullback along an isomorphism over `R` preserves cohomology as an `R`-module
 (`Scheme.Hom.cohomologyPullbackBaseLinearEquivOfIsIso`), again without any hypothesis on the
-schemes or the coefficient sheaf.
+schemes or the coefficient sheaf. In particular the cohomology of the structure sheaf is invariant
+under isomorphisms of schemes over `R` (`Scheme.Hom.cohomologyTrivialBaseLinearEquivOfIsIso`).
 
 ## References
 
@@ -192,25 +194,85 @@ section IsIso
 variable {X Y : Scheme.{u}} (g : X ⟶ Y) [IsIso g] (R : Type u) [CommRing R]
   [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))] [g.IsOver (Spec (.of R))]
 
+/-- Along an isomorphism of schemes `g`, pullback is direct image along the inverse, both being
+left adjoint to direct image along `g`. -/
+noncomputable def pullbackIsoPushforwardInv : pullback g ≅ pushforward (inv g) :=
+  (pullbackPushforwardAdjunction g).leftAdjointUniq
+    (CategoryTheory.Equivalence.mk (pushforward (inv g)) (pushforward g)
+      ((pushforwardId Y).symm ≪≫ pushforwardCongr (IsIso.inv_hom_id g).symm ≪≫
+        (pushforwardComp (inv g) g).symm)
+      (pushforwardComp g (inv g) ≪≫ pushforwardCongr (IsIso.hom_inv_id g) ≪≫
+        pushforwardId X)).toAdjunction
+
 /-- Pullback along an isomorphism of schemes over `R` preserves cohomology as an `R`-module.
-Along an isomorphism, pullback is direct image along the inverse, both being left adjoint to
-direct image along `g`, so this is the closed-immersion comparison for the inverse of `g`. -/
+Along an isomorphism, pullback is direct image along the inverse
+(`Scheme.Hom.pullbackIsoPushforwardInv`), so this is the closed-immersion comparison for the
+inverse of `g`. -/
 noncomputable def cohomologyPullbackBaseLinearEquivOfIsIso (M : Y.Modules) (n : ℕ) :
     Cohomology ((pullback g).obj M) n ≃ₗ[R] Cohomology M n :=
-  let E : Y.Modules ≌ X.Modules := .mk (pushforward (inv g)) (pushforward g)
-    ((pushforwardId Y).symm ≪≫ pushforwardCongr (IsIso.inv_hom_id g).symm ≪≫
-      (pushforwardComp (inv g) g).symm)
-    (pushforwardComp g (inv g) ≪≫ pushforwardCongr (IsIso.hom_inv_id g) ≪≫ pushforwardId X)
-  (cohomologyBaseLinearEquivOfIso R
-      (((pullbackPushforwardAdjunction g).leftAdjointUniq E.toAdjunction).app M) n).trans
+  (cohomologyBaseLinearEquivOfIso R ((pullbackIsoPushforwardInv g).app M) n).trans
     (cohomologyPushforwardBaseLinearEquiv (inv g) R M n)
+
+/-- The base-linear comparison along an isomorphism commutes with maps of coefficient
+sheaves. -/
+lemma cohomologyPullbackBaseLinearEquivOfIsIso_naturality {M N : Y.Modules} (α : M ⟶ N) (n : ℕ)
+    (x : Cohomology ((pullback g).obj M) n) :
+    cohomologyPullbackBaseLinearEquivOfIsIso g R N n
+        (cohomologyMapBaseLinear R X ((pullback g).map α) n x) =
+      cohomologyMapBaseLinear R Y α n (cohomologyPullbackBaseLinearEquivOfIsIso g R M n x) := by
+  simp only [cohomologyPullbackBaseLinearEquivOfIsIso, LinearEquiv.trans_apply,
+    cohomologyBaseLinearEquivOfIso_apply, Iso.app_hom]
+  rw [← LinearMap.comp_apply, ← cohomologyMapBaseLinear_comp,
+    (pullbackIsoPushforwardInv g).hom.naturality,
+    cohomologyMapBaseLinear_comp, LinearMap.comp_apply,
+    cohomologyPushforwardBaseLinearEquiv_naturality]
+
+/-- Cohomology of a pullback along an isomorphism is finite over the base ring exactly when the
+original cohomology is finite. -/
+@[simp]
+theorem moduleFinite_cohomology_pullback_iff_of_isIso (M : Y.Modules) (n : ℕ) :
+    Module.Finite R (Cohomology ((pullback g).obj M) n) ↔ Module.Finite R (Cohomology M n) :=
+  Module.Finite.equiv_iff (cohomologyPullbackBaseLinearEquivOfIsIso g R M n)
 
 /-- Pullback along an isomorphism of schemes over a commutative ring preserves cohomology
 finranks, including the value zero assigned to modules of infinite rank. -/
+@[simp]
 theorem finrank_cohomology_pullback_of_isIso (M : Y.Modules) (n : ℕ) :
     Module.finrank R (Cohomology ((pullback g).obj M) n) = Module.finrank R (Cohomology M n) :=
   (cohomologyPullbackBaseLinearEquivOfIsIso g R M n).finrank_eq
 
+/-- The cohomology of the structure sheaf is invariant, as a module over the base ring, under an
+isomorphism of schemes over `R`. -/
+noncomputable def cohomologyTrivialBaseLinearEquivOfIsIso (n : ℕ) :
+    Cohomology (InvertibleSheaf.trivial X).obj n ≃ₗ[R]
+      Cohomology (InvertibleSheaf.trivial Y).obj n :=
+  (cohomologyBaseLinearEquivOfIso R (InvertibleSheaf.pullbackTrivialObjIso g) n).symm.trans
+    (cohomologyPullbackBaseLinearEquivOfIsIso g R _ n)
+
+include g in
+/-- An isomorphism of schemes over a commutative ring preserves the finranks of the cohomology
+of the structure sheaf. -/
+theorem finrank_cohomology_trivial_of_isIso (n : ℕ) :
+    Module.finrank R (Cohomology (InvertibleSheaf.trivial X).obj n) =
+      Module.finrank R (Cohomology (InvertibleSheaf.trivial Y).obj n) :=
+  (cohomologyTrivialBaseLinearEquivOfIsIso g R n).finrank_eq
+
 end IsIso
+
+section IsIsoField
+
+variable {X Y : Scheme.{u}} (g : X ⟶ Y) [IsIso g] (k : Type u) [Field k]
+  [X.Over (Spec (.of k))] [Y.Over (Spec (.of k))] [g.IsOver (Spec (.of k))]
+
+/-- Pullback along an isomorphism of schemes over a field preserves the truncated Euler
+characteristic. -/
+@[simp]
+theorem eulerCharBelow_pullback_of_isIso (M : Y.Modules) (n : ℕ) :
+    eulerCharBelow k X ((pullback g).obj M) n = eulerCharBelow k Y M n := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp only [eulerCharBelow_succ, finrank_cohomology_pullback_of_isIso, ih]
+
+end IsIsoField
 
 end AlgebraicGeometry.Scheme.Hom

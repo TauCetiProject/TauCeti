@@ -54,9 +54,7 @@ not be smooth, irreducible or geometrically connected, nor have a rational point
 theorem eulerDegree_pullback [CompactSpace X] [QuasiSeparatedSpace X]
     (L : InvertibleSheaf X) :
     ((pullback g).obj L).eulerDegree K = L.eulerDegree k := by
-  let e : (Scheme.Modules.pullback g).obj (trivial X).obj ≅ (trivial Y).obj :=
-    (Scheme.Modules.pullback g).mapIso (trivialObjIsoUnit X) ≪≫
-      Scheme.Modules.pullbackObjUnitIso g ≪≫ (trivialObjIsoUnit Y).symm
+  let e := pullbackTrivialObjIso g
   rw [eulerDegree_eq_finrank_sub, eulerDegree_eq_finrank_sub, pullback_obj_obj,
     ← Scheme.Modules.finrank_cohomology_congr K e 0,
     ← Scheme.Modules.finrank_cohomology_congr K e 1]

@@ -60,6 +60,8 @@ For a component `Cⱼ` of the special fibre of a regular model, these say that `
 * `IsExceptionalCurveOfFirstKind.isIntegral_subscheme` and
   `IsExceptionalCurveOfFirstKind.topologicalKrullDim_subscheme`: `E` is an integral curve, so in
   particular `I ≠ ⊤` (`not_isExceptionalCurveOfFirstKind_top`).
+* `AlgebraicGeometry.Scheme.IdealSheafData.isExceptionalCurveOfFirstKind_comap_iff_of_isIso`:
+  being an exceptional curve of the first kind is invariant under isomorphisms of schemes.
 * `IsExceptionalCurveOfFirstKind.subsingleton_cohomology_succ_trivial`: `Hⁿ(E, 𝒪_E) = 0` for
   `n ≥ 1`, with the genus-zero consequences
   `IsExceptionalCurveOfFirstKind.finrank_globalSections_cohomology_one_trivial_eq_zero` and
@@ -136,33 +138,10 @@ theorem isExceptionalCurveOfFirstKind_iff_intersectionNumber {I : X.IdealSheafDa
   · exact (nonempty_iso_twistingSheaf_iff_intersectionNumber hI e).mp he
   · exact (nonempty_iso_twistingSheaf_iff_intersectionNumber hI e).mpr he
 
-/-- The cohomology of the structure sheaf is invariant, as a module over the base ring, under an
-isomorphism of schemes over a commutative ring `R`. -/
-private def cohomologyTrivialLinearEquivOfIsIso {Y Z : Scheme.{u}} (g : Y ⟶ Z) [IsIso g]
-    (R : Type u) [CommRing R] [Y.Over (Spec (.of R))] [Z.Over (Spec (.of R))]
-    [g.IsOver (Spec (.of R))] (n : ℕ) :
-    Cohomology (InvertibleSheaf.trivial Y).obj n ≃ₗ[R]
-      Cohomology (InvertibleSheaf.trivial Z).obj n :=
-  -- The pullback of the structure sheaf `𝒪_Z` is the structure sheaf `𝒪_Y`.
-  (Scheme.Modules.cohomologyBaseLinearEquivOfIso R ((Scheme.Modules.pullback g).mapIso
-      (InvertibleSheaf.trivialObjIsoUnit Z) ≪≫ Scheme.Modules.pullbackObjUnitIso g ≪≫
-        (InvertibleSheaf.trivialObjIsoUnit Y).symm) n).symm.trans
-    (g.cohomologyPullbackBaseLinearEquivOfIsIso R _ n)
-
 namespace IsExceptionalCurveOfFirstKind
 
 variable {I : X.IdealSheafData} (hE : I.IsExceptionalCurveOfFirstKind)
 include hE
-
-/-- **The constant field of an exceptional curve.** The global functions on an exceptional curve
-of the first kind `E ≅ ℙ¹_κ` form a field, isomorphic to `κ`. -/
-theorem isField_globalSections : IsField Γ(I.subscheme, ⊤) := by
-  obtain ⟨κ, _, e, -⟩ := hE.exists_iso
-  have hκ : IsField Γ(projectiveLine κ, ⊤) :=
-    MulEquiv.isField (Field.toIsField κ)
-      (RingEquiv.ofBijective _
-        (projectiveLine.bijective_baseRingToGlobalSections κ)).symm.toMulEquiv
-  exact MulEquiv.isField hκ (Scheme.Γ.mapIso e.op).commRingCatIsoToRingEquiv.toMulEquiv
 
 /-- An exceptional curve of the first kind is quasi-compact. -/
 theorem compactSpace : CompactSpace I.subscheme := by
@@ -177,8 +156,14 @@ theorem quasiSeparatedSpace : QuasiSeparatedSpace I.subscheme := by
 /-- An exceptional curve of the first kind is integral, as the projective line is. -/
 theorem isIntegral_subscheme : IsIntegral I.subscheme := by
   obtain ⟨κ, _, e, -⟩ := hE.exists_iso
-  have : Nonempty I.subscheme := ⟨e.hom.base (Classical.arbitrary _)⟩
-  exact isIntegral_of_isOpenImmersion e.inv
+  exact .of_isIso e.hom
+
+/-- **The constant field of an exceptional curve.** The global functions on an exceptional curve
+of the first kind `E ≅ ℙ¹_κ` form a field, isomorphic to `κ`. -/
+theorem isField_globalSections : IsField Γ(I.subscheme, ⊤) := by
+  obtain ⟨κ, _, e, -⟩ := hE.exists_iso
+  have := hE.isIntegral_subscheme
+  exact isField_of_universallyClosed κ (e.inv ≫ (projectiveLine κ ↘ Spec (.of κ)))
 
 /-- An exceptional curve of the first kind is one-dimensional, as the projective line is. -/
 theorem topologicalKrullDim_subscheme : topologicalKrullDim I.subscheme = 1 := by
@@ -199,7 +184,7 @@ theorem subsingleton_cohomology_succ_trivial (n : ℕ) :
     rcases n with _ | n
     · exact inferInstanceAs (Subsingleton (Cohomology _ 1))
     · exact (Pi.basisFun κ (Fin 2)).subsingleton_cohomology_proj_of_card_le _ (n + 2) (by simp)
-  exact (cohomologyTrivialLinearEquivOfIsIso e.inv κ (n + 1)).toEquiv.subsingleton
+  exact (e.inv.cohomologyTrivialBaseLinearEquivOfIsIso κ (n + 1)).toEquiv.subsingleton
 
 /-- **An exceptional curve has genus zero over its constant field**:
 `dim_{Γ(E, 𝒪_E)} H¹(E, 𝒪_E) = 0`. This is the genus `gᵢ` of a component of the numerical type of
@@ -231,12 +216,11 @@ private lemma intersectionNumber_eq_mul {κ : Type u} [Field κ]
   -- Regard `ℙ¹_κ` as a scheme over `k` through `e`, and compute there.
   let : (projectiveLine κ).Over (Spec (.of k)) := ⟨e.hom ≫ (I.subscheme ↘ Spec (.of k))⟩
   have : e.hom.IsOver (Spec (.of k)) := ⟨rfl⟩
-  have hκ : IsField Γ(projectiveLine κ, ⊤) := MulEquiv.isField hE.isField_globalSections
-    (Scheme.Γ.mapIso e.op).commRingCatIsoToRingEquiv.symm.toMulEquiv
-  have h := LineBundleClass.eulerDegree_mul_finrank_cohomology_zero_trivial k κ hκ
+  have h := LineBundleClass.eulerDegree_mul_finrank_cohomology_zero_trivial k κ
+    (isField_of_universallyClosed κ (projectiveLine κ ↘ Spec (.of κ)))
     (LineBundleClass.pullback (e.hom ≫ I.subschemeι) a)
   rw [(projectiveLine.cohomologyZeroTrivialLinearEquiv κ).finrank_eq, Module.finrank_self,
-    Nat.cast_one, mul_one, (cohomologyTrivialLinearEquivOfIsIso e.hom k 0).finrank_eq,
+    Nat.cast_one, mul_one, Scheme.Hom.finrank_cohomology_trivial_of_isIso e.hom k 0,
     ← LineBundleClass.pullback_comp, LineBundleClass.eulerDegree_pullback_of_isIso e.hom rfl] at h
   rw [LineBundleClass.intersectionNumber_def, LineBundleClass.intersectionNumber_def, h, mul_comm,
     LineBundleClass.pullback_comp]
@@ -262,10 +246,36 @@ theorem intersectionNumber_mk_toInvertibleSheaf :
   rw [hE.intersectionNumber_eq_mul k e, LineBundleClass.intersectionNumber_mk,
     (projectiveLine.nonempty_iso_twistingSheaf_iff κ _ 1).mp he, one_mul]
 
+/-- **Exceptional curves are invariant under isomorphisms.** The inverse image of an exceptional
+curve of the first kind along an isomorphism of schemes `g : Y ⟶ X` is an exceptional curve of
+the first kind. -/
+theorem comap_of_isIso {Y : Scheme.{u}} (g : Y ⟶ X) [IsIso g] :
+    (I.comap g).IsExceptionalCurveOfFirstKind := by
+  obtain ⟨hI, κ, _, e, he⟩ := isExceptionalCurveOfFirstKind_iff_intersectionNumber.mp hE
+  have hI' := hI.comap g
+  -- The inverse image of `E` is the fibre product `Y ×_X E`, isomorphic to `E` since `g` is.
+  let ψ : (I.comap g).subscheme ≅ I.subscheme :=
+    I.comapIso g ≪≫ asIso (Limits.pullback.snd g I.subschemeι)
+  have hψ : ψ.inv ≫ (I.comap g).subschemeι ≫ g = I.subschemeι := by
+    simp [ψ, Limits.pullback.condition]
+  refine isExceptionalCurveOfFirstKind_iff_intersectionNumber.mpr
+    ⟨hI', κ, _, e ≪≫ ψ.symm, ?_⟩
+  rw [← hI.pullback_mk_toInvertibleSheaf hI', ← LineBundleClass.pullback_inv,
+    LineBundleClass.intersectionNumber_def, LineBundleClass.pullback_comp, Iso.trans_hom,
+    Iso.symm_hom, Category.assoc, Category.assoc, hψ, ← LineBundleClass.intersectionNumber_def, he]
+
 end IsExceptionalCurveOfFirstKind
 
-/-- The whole scheme is not an exceptional curve of the first kind: the ideal sheaf `⊤` cuts out
-the empty subscheme. -/
+/-- Being an exceptional curve of the first kind is invariant under isomorphisms of schemes. -/
+@[simp]
+theorem isExceptionalCurveOfFirstKind_comap_iff_of_isIso {Y : Scheme.{u}} {I : X.IdealSheafData}
+    (g : Y ⟶ X) [IsIso g] :
+    (I.comap g).IsExceptionalCurveOfFirstKind ↔ I.IsExceptionalCurveOfFirstKind := by
+  refine ⟨fun hE ↦ ?_, fun hE ↦ hE.comap_of_isIso g⟩
+  simpa only [← comap_comp, IsIso.inv_hom_id, comap_id] using hE.comap_of_isIso (inv g)
+
+/-- The empty closed subscheme is not an exceptional curve of the first kind: the unit ideal
+sheaf `⊤` cuts out the empty subscheme. -/
 @[simp]
 theorem not_isExceptionalCurveOfFirstKind_top :
     ¬ (⊤ : X.IdealSheafData).IsExceptionalCurveOfFirstKind := fun hE ↦
