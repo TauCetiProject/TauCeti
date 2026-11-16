@@ -138,12 +138,12 @@ theorem uniformlyEllipticOn_radialCoefficient (hα : 0 < α) (hβ : 0 ≤ β)
       abs_dotProduct_radialCoefficient_mulVec_le (α := α) (β := β) x η ξ
 
 /-- For `β ≤ 0` and `2 α + β ≥ 0`, so that `|α + β| ≤ α`, the bilinear form of the radial
-coefficient is bounded by its tangential eigenvalue `α`: `ηᵀ a(x) ξ = ⟪η, α ξ + t x⟫` with
-`‖α ξ + t x‖ ≤ α ‖ξ‖`. -/
+coefficient is bounded by its tangential eigenvalue: `|ηᵀ a(x) ξ| ≤ α ‖η‖ ‖ξ‖`. -/
 theorem abs_dotProduct_radialCoefficient_mulVec_le_of_nonpos (hβ : β ≤ 0) (hαβ : 0 ≤ 2 * α + β)
     (x η ξ : EuclideanSpace ℝ (Fin n)) :
     |η ⬝ᵥ (radialCoefficient α β x *ᵥ ξ)| ≤ α * ‖η‖ * ‖ξ‖ := by
   have hα : 0 ≤ α := by linarith
+  -- Write `ηᵀ a(x) ξ = ⟪η, α ξ + t x⟫` and show `‖α ξ + t x‖ ≤ α ‖ξ‖`.
   set t : ℝ := β / ‖x‖ ^ 2 * ⟪x, ξ⟫_ℝ with ht
   have heq : η ⬝ᵥ (radialCoefficient α β x *ᵥ ξ) = ⟪η, α • ξ + t • x⟫_ℝ := by
     rw [dotProduct_radialCoefficient_mulVec, inner_add_right, real_inner_smul_right,
