@@ -12,6 +12,8 @@ public import TauCeti.RingTheory.LocalRing.MaximalIdeal.Flat
 public import TauCeti.RingTheory.RegularLocalRing.Descent
 
 import Mathlib.RingTheory.Flat.Localization
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Square
+import TauCeti.RingTheory.RegularLocalRing.MiracleFlatness
 import TauCeti.RingTheory.RegularLocalRing.OfQuotient
 import TauCeti.RingTheory.RegularLocalRing.Quotient
 
@@ -36,13 +38,16 @@ ideals, so regularity ascends along local homomorphisms of this kind which are f
 localizations of étale algebras at primes. This is the local input for showing that an algebra
 smooth over a regular ring is regular.
 
-Conversely, if `S` is a regular local ring, flat over a local ring `R`, and the structure map
-`R → S` has an `R`-algebra retraction `σ : S → R`, then the closed fibre `S ⧸ 𝔪_R S` is regular.
+Conversely, suppose that `S` is a regular local ring and that the structure map `R → S` has an
+`R`-algebra retraction `σ : S → R`. Then `R` is regular: if `a ∈ 𝔪_R \ 𝔪_R²`, then its image in
+`S` lies in `𝔪_S \ 𝔪_S²`, so `R ⧸ (a)` is a retract of the regular local ring `S ⧸ (a)`, and
+induction on the embedding dimension applies. The closed fibre `S ⧸ 𝔪_R S` is regular too.
 Geometrically, this is the closed fibre through the image of the closed point under a section of
-`Spec S → Spec R`. Here `R ≅ S ⧸ ker σ` is regular by descent, so `ker σ` needs `dim S - dim R`
+`Spec S → Spec R`. Here `R ≅ S ⧸ ker σ` is regular, so `ker σ` needs `dim S - dim R`
 generators, and their images generate the maximal ideal of the closed fibre, since
 `𝔪_S = ker σ + 𝔪_R S`. By the fibre dimension inequality, the closed fibre has dimension at
-least `dim S - dim R`.
+least `dim S - dim R`. So it has dimension exactly `dim S - dim R`, and miracle flatness
+(`TauCeti.Algebra.flat_of_isCohenMacaulay`) shows that `S` is flat over `R`.
 
 ## Main declarations
 
@@ -57,8 +62,10 @@ least `dim S - dim R`.
   homomorphism;
 * `TauCeti.IsRegularLocalRing.of_flat_of_formallyUnramified`: the same for a flat, formally
   unramified local homomorphism essentially of finite type;
-* `TauCeti.IsRegularLocalRing.quotient_map_maximalIdeal_of_algHom`: the closed fibre of a flat
-  regular local algebra with an algebra retraction to the base is regular.
+* `TauCeti.IsRegularLocalRing.of_algHom`: a retract of a regular local ring is regular;
+* `TauCeti.IsRegularLocalRing.quotient_map_maximalIdeal_of_algHom`: the closed fibre of a regular
+  local algebra with an algebra retraction to the base is regular;
+* `TauCeti.IsRegularLocalRing.flat_of_algHom`: such an algebra is flat over the base.
 
 ## References
 
@@ -66,6 +73,8 @@ least `dim S - dim R`.
 -/
 
 public section
+
+universe u v
 
 namespace TauCeti
 
@@ -129,16 +138,75 @@ theorem of_hasGoingDown_of_quotient_map_maximalIdeal [IsRegularLocalRing R] [IsL
   rw [ringKrullDim_eq_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal R (S := S),
     ← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := R), add_comm]
 
-/-- **The closed fibre through a section is regular.** If `S` is a regular local ring, flat over a
-local ring `R`, and `σ : S →ₐ[R] R` is a retraction of the structure map, then the closed fibre
-`S ⧸ 𝔪_R S` is a regular local ring. -/
-theorem quotient_map_maximalIdeal_of_algHom [IsRegularLocalRing S] [IsLocalRing R]
-    [Module.Flat R S] (σ : S →ₐ[R] R) :
-    IsRegularLocalRing (S ⧸ (maximalIdeal R).map (algebraMap R S)) := by
-  have : IsLocalHom (algebraMap R S) := ⟨fun r hr ↦ by simpa using hr.map σ⟩
+private theorem of_comp_eq_id_aux (dimension : ℕ) :
+    ∀ (R : Type u) (S : Type v) [CommRing R] [CommRing S] [IsRegularLocalRing S]
+      (φ : R →+* S) (σ : S →+* R), σ.comp φ = RingHom.id R →
+      (maximalIdeal S).spanFinrank = dimension → IsRegularLocalRing R := by
+  induction dimension using Nat.strong_induction_on with
+  | ind dimension induction =>
+    intro R S _ _ _ φ σ h hdimension
+    have hσφ (r : R) : σ (φ r) = r := RingHom.congr_fun h r
+    have hσ : Function.Surjective σ := fun r ↦ ⟨φ r, hσφ r⟩
+    have : Nontrivial R := φ.domain_nontrivial
+    have : IsLocalRing R := .of_surjective' σ hσ
+    have : IsNoetherianRing R := isNoetherianRing_of_surjective S R σ hσ
+    have : IsDomain R := Function.Injective.isDomain φ (Function.LeftInverse.injective hσφ)
+    have : IsLocalHom σ := .of_surjective σ hσ
+    have hfg := (maximalIdeal R).fg_of_isNoetherianRing
+    by_cases hsq : maximalIdeal R ≤ maximalIdeal R ^ 2
+    · -- Then `𝔪_R` needs no generators, so `R` is a field.
+      have h0 := TauCeti.IsLocalRing.spanFinrank_map_maximalIdeal_quotient_of_le_sq hfg hsq
+      rw [Ideal.map_quotient_self, Submodule.spanFinrank_bot] at h0
+      refine .of_spanFinrank_maximalIdeal_le _ ?_
+      rw [← h0]
+      exact_mod_cast ringKrullDim_nonneg_of_nontrivial
+    -- Otherwise a parameter `a` of `R` maps to a parameter of `S`, and `R ⧸ (a)` is a retract
+    -- of the regular local ring `S ⧸ (a)` of smaller embedding dimension.
+    obtain ⟨a, ham, ha⟩ := Set.not_subset.mp hsq
+    have ha0 : a ≠ 0 := by
+      rintro rfl
+      exact ha (zero_mem _)
+    have hφa : φ a ∈ maximalIdeal S := (mem_maximalIdeal _).mpr fun hu ↦
+      (mem_maximalIdeal _).mp ham (hσφ a ▸ hu.map σ)
+    have hφa2 : φ a ∉ maximalIdeal S ^ 2 := fun h2 ↦ ha <| by
+      simpa [hσφ, Ideal.map_pow, map_maximalIdeal_of_surjective σ hσ] using
+        Ideal.mem_map_of_mem σ h2
+    have : IsRegularLocalRing (S ⧸ Ideal.span {φ a}) := quotient_span_singleton hφa hφa2
+    have hdrop := spanFinrank_maximalIdeal_quotient_span_singleton_add_one (R := S)
+      (x := φ a) fun h0 ↦ ha0 (by rw [← hσφ a, h0, map_zero])
+    have : IsRegularLocalRing (R ⧸ Ideal.span {a}) := by
+      refine induction _ (by omega) _ (S ⧸ Ideal.span {φ a})
+        (Ideal.quotientMap _ φ ?_) (Ideal.quotientMap _ σ ?_) ?_ rfl
+      · exact (Ideal.span_singleton_le_iff_mem _).mpr (Ideal.mem_span_singleton_self _)
+      · exact (Ideal.span_singleton_le_iff_mem _).mpr
+          (Ideal.mem_comap.mpr (by rw [hσφ]; exact Ideal.mem_span_singleton_self _))
+      · exact Ideal.Quotient.ringHom_ext (RingHom.ext fun r ↦ by simp [hσφ])
+    -- Since `R` is a domain, `dim R ⧸ (a) = dim R - 1`.
+    have hdim := ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors
+      (mem_nonZeroDivisors_of_ne_zero ha0) ham
+    have hgen := Ideal.spanFinrank_le_spanFinrank_map_add_spanFinrank
+      ((Ideal.span_singleton_le_iff_mem _).mpr ham) (Submodule.fg_span_singleton a)
+    have hone : (Ideal.span {a}).spanFinrank = 1 := Submodule.spanFinrank_singleton ha0
+    rw [map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective, hone] at hgen
+    refine .of_spanFinrank_maximalIdeal_le _ ?_
+    rw [← hdim, ← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := R ⧸ Ideal.span {a})]
+    exact_mod_cast hgen
+
+/-- **A retract of a regular local ring is regular.** If the structure map of a regular local
+`R`-algebra `S` has an `R`-algebra retraction `σ : S →ₐ[R] R`, then `R` is a regular local ring. -/
+theorem of_algHom [IsRegularLocalRing S] (σ : S →ₐ[R] R) : IsRegularLocalRing R :=
+  of_comp_eq_id_aux _ R S (algebraMap R S) σ (RingHom.ext σ.commutes) rfl
+
+/-- The maximal ideals of `R` and of the closed fibre `S ⧸ 𝔪_R S` together need at most as many
+generators as the maximal ideal of `S`, if `S` is a regular local `R`-algebra with an `R`-algebra
+retraction. -/
+private theorem spanFinrank_maximalIdeal_quotient_add_le [IsRegularLocalRing S] [IsLocalRing R]
+    [IsLocalRing (S ⧸ (maximalIdeal R).map (algebraMap R S))] (σ : S →ₐ[R] R) :
+    (maximalIdeal (S ⧸ (maximalIdeal R).map (algebraMap R S))).spanFinrank +
+      (maximalIdeal R).spanFinrank ≤ (maximalIdeal S).spanFinrank := by
   have hσ : Function.Surjective σ := fun r ↦ ⟨algebraMap R S r, σ.commutes r⟩
   have : IsLocalHom σ.toRingHom := IsLocalHom.of_surjective _ hσ
-  have : IsRegularLocalRing R := of_flat_of_isLocalHom (S := S)
+  have : IsRegularLocalRing R := of_algHom σ
   -- `S ⧸ ker σ ≅ R` is regular, so `ker σ` needs `dim S - dim R` generators.
   set p := RingHom.ker (σ : S →+* R)
   let e := RingHom.quotientKerEquivOfSurjective (f := (σ : S →+* R)) hσ
@@ -152,10 +220,6 @@ theorem quotient_map_maximalIdeal_of_algHom [IsRegularLocalRing S] [IsLocalRing 
   -- The maximal ideal of the closed fibre is generated by the image of `ker σ`, since
   -- `𝔪_S = ker σ + 𝔪_R S`.
   set I := (maximalIdeal R).map (algebraMap R S)
-  have hIm : I ≤ maximalIdeal S := map_maximalIdeal_le _
-  have : Nontrivial (S ⧸ I) :=
-    Ideal.Quotient.nontrivial_iff.mpr (ne_top_of_le_ne_top (maximalIdeal.isMaximal S).ne_top hIm)
-  have : IsLocalRing (S ⧸ I) := .of_surjective' _ Ideal.Quotient.mk_surjective
   have hm : maximalIdeal S ≤ p ⊔ I := fun a ha ↦ by
     rw [← sub_add_cancel a (algebraMap R S (σ a))]
     refine add_mem (Ideal.mem_sup_left (by simp [p])) (Ideal.mem_sup_right ?_)
@@ -167,6 +231,22 @@ theorem quotient_map_maximalIdeal_of_algHom [IsRegularLocalRing S] [IsLocalRing 
     rw [Ideal.map_sup, Ideal.map_quotient_self, sup_bot_eq]
   have hμ : (maximalIdeal (S ⧸ I)).spanFinrank ≤ p.spanFinrank :=
     hmI ▸ Ideal.spanFinrank_map_le_of_fg _ p.fg_of_isNoetherianRing
+  change (maximalIdeal (S ⧸ I)).spanFinrank + _ ≤ _
+  omega
+
+/-- **The closed fibre through a section is regular.** If `S` is a regular local ring and
+`σ : S →ₐ[R] R` is a retraction of the structure map, then the closed fibre `S ⧸ 𝔪_R S` is a
+regular local ring. -/
+theorem quotient_map_maximalIdeal_of_algHom [IsRegularLocalRing S] [IsLocalRing R]
+    (σ : S →ₐ[R] R) : IsRegularLocalRing (S ⧸ (maximalIdeal R).map (algebraMap R S)) := by
+  have : IsLocalHom (algebraMap R S) := ⟨fun r hr ↦ by simpa using hr.map σ⟩
+  have : IsRegularLocalRing R := of_algHom σ
+  set I := (maximalIdeal R).map (algebraMap R S)
+  have : Nontrivial (S ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr
+    (ne_top_of_le_ne_top (maximalIdeal.isMaximal S).ne_top (map_maximalIdeal_le _))
+  have : IsLocalRing (S ⧸ I) := .of_surjective' _ Ideal.Quotient.mk_surjective
+  have hμ : (maximalIdeal (S ⧸ I)).spanFinrank + (maximalIdeal R).spanFinrank ≤
+      (maximalIdeal S).spanFinrank := spanFinrank_maximalIdeal_quotient_add_le σ
   -- By the fibre dimension inequality, `dim S ≤ dim R + dim S ⧸ I`.
   have hfib :=
     ringKrullDim_le_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal (R := R) (S := S)
@@ -175,6 +255,28 @@ theorem quotient_map_maximalIdeal_of_algHom [IsRegularLocalRing S] [IsLocalRing 
   refine _root_.IsRegularLocalRing.of_spanFinrank_maximalIdeal_le _ ?_
   rw [← ENat.WithBot.add_le_add_natCast_left_iff (c := (maximalIdeal R).spanFinrank)]
   exact le_trans (by exact_mod_cast (by omega)) hfib
+
+/-- **A regular local algebra with a retraction is flat.** If `S` is a regular local ring and
+`σ : S →ₐ[R] R` is a retraction of the structure map, then `S` is flat over `R`. Here `R` is
+regular by `TauCeti.IsRegularLocalRing.of_algHom`, the closed fibre has the expected dimension, and
+miracle flatness applies. -/
+theorem flat_of_algHom [IsRegularLocalRing S] (σ : S →ₐ[R] R) : Module.Flat R S := by
+  have : IsRegularLocalRing R := of_algHom σ
+  have : IsLocalHom (algebraMap R S) := ⟨fun r hr ↦ by simpa using hr.map σ⟩
+  set I := (maximalIdeal R).map (algebraMap R S)
+  have : Nontrivial (S ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr
+    (ne_top_of_le_ne_top (maximalIdeal.isMaximal S).ne_top (map_maximalIdeal_le _))
+  have : IsLocalRing (S ⧸ I) := .of_surjective' _ Ideal.Quotient.mk_surjective
+  have hμ : (maximalIdeal (S ⧸ I)).spanFinrank + (maximalIdeal R).spanFinrank ≤
+      (maximalIdeal S).spanFinrank := spanFinrank_maximalIdeal_quotient_add_le σ
+  have hI := ringKrullDim_le_spanFinrank_maximalIdeal (S ⧸ I)
+  refine TauCeti.Algebra.flat_of_isCohenMacaulay isCohenMacaulay (le_antisymm
+    ringKrullDim_le_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal ?_)
+  rw [← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := S),
+    ← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := R)]
+  calc _ ≤ ((maximalIdeal R).spanFinrank : WithBot ℕ∞) + (maximalIdeal (S ⧸ I)).spanFinrank :=
+        add_le_add_right hI _
+    _ ≤ (maximalIdeal S).spanFinrank := by rw [add_comm]; exact_mod_cast hμ
 
 end IsRegularLocalRing
 

@@ -22,7 +22,7 @@ model are in bijection with rational points of that generic fibre.
 
 This extends each marking separately. Distinct generic markings can meet on the special fibre,
 and their extensions need not pass through the relative smooth locus. They do when the total
-space of the model has regular local rings: a section of a flat morphism locally of finite
+space of the model has regular local rings: a section of a morphism locally of finite
 presentation passes through the smooth locus at every regular point
 (`AlgebraicGeometry.Scheme.Hom.range_subset_smoothLocus_of_comp_eq_id`).
 
