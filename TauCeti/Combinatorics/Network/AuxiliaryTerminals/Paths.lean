@@ -20,10 +20,12 @@ single terminals. This file makes the three path operations in that reduction ex
   avoid both terminal sets.
 
 The lifting formulas record the complete vertex and arrow lists. Projection is the inverse
-decomposition on walks from the fresh source to the fresh sink. Trimming can shorten a projection,
-so it is characterized instead by containment of its vertices and arrows. These containment
-formulas imply that trimming preserves internally vertex-disjoint and arrow-disjoint indexed
-families, including the zero-length path at a vertex of `A ∩ B`.
+decomposition on walks from the fresh source to the fresh sink: lifting a projection gives back the
+original walk. Trimming can shorten a projection, so it is characterized instead by containment of
+its vertices and arrows. These containment formulas imply that trimming turns pairwise internally
+vertex-disjoint families into pairwise vertex-disjoint original paths, and families whose original
+arrows are pairwise disjoint into pairwise arrow-disjoint original paths. A trimmed path may have
+length zero at a vertex of `A ∩ B`.
 -/
 
 public section
@@ -43,6 +45,25 @@ family. -/
 def originalArrow : (Σ x y, Q x y) → (Σ x y, AuxTerminalHom Q A B x y)
   | ⟨x, y, e⟩ => ⟨inl x, inl y, original e⟩
 
+@[simp]
+theorem originalArrow_mk {x y : V} (e : Q x y) :
+    originalArrow (A := A) (B := B) ⟨x, y, e⟩ = ⟨inl x, inl y, original e⟩ :=
+  (rfl)
+
+theorem originalArrow_injective : (originalArrow (Q := Q) (A := A) (B := B)).Injective := by
+  rintro ⟨x, y, e⟩ ⟨x', y', e'⟩ h
+  simp only [originalArrow_mk, Sigma.mk.injEq, inl.injEq] at h
+  obtain ⟨rfl, h⟩ := h
+  simp only [heq_eq_eq, Sigma.mk.injEq, inl.injEq] at h
+  obtain ⟨rfl, h⟩ := h
+  rw [heq_eq_eq, original_inj] at h
+  rw [h]
+
+@[simp]
+theorem originalArrow_inj {e e' : Σ x y, Q x y} :
+    originalArrow (A := A) (B := B) e = originalArrow e' ↔ e = e' :=
+  originalArrow_injective.eq_iff
+
 /-- An original walk preceded by the arrow from the fresh source. -/
 private def liftFromSource {a : V} (ha : a ∈ A) :
     ∀ {w : V}, ArrowWalk Q a w →
@@ -59,46 +80,54 @@ def lift {a b : V} (ha : a ∈ A) (hb : b ∈ B) (q : ArrowWalk Q a b) :
   (liftFromSource ha q).cons (sink hb)
 
 @[simp]
-private theorem liftFromSource_vertices {a w : V} (ha : a ∈ A) (q : ArrowWalk Q a w) :
+private theorem vertices_liftFromSource {a w : V} (ha : a ∈ A) (q : ArrowWalk Q a w) :
     (liftFromSource (B := B) ha q).vertices = inr false :: q.vertices.map inl := by
   induction q with
   | nil => simp [liftFromSource]
   | cons q e ih => simp [liftFromSource, ih]
 
 @[simp]
-private theorem liftFromSource_arrows {a w : V} (ha : a ∈ A) (q : ArrowWalk Q a w) :
+private theorem arrows_liftFromSource {a w : V} (ha : a ∈ A) (q : ArrowWalk Q a w) :
     (liftFromSource (B := B) ha q).arrows =
       [⟨inr false, inl a, source ha⟩] ++ q.arrows.map originalArrow := by
   induction q with
   | nil => simp [liftFromSource]
-  | cons q e ih => simp [liftFromSource, ih, originalArrow]
+  | cons q e ih => simp [liftFromSource, ih]
 
 @[simp]
-theorem lift_vertices {a b : V} (ha : a ∈ A) (hb : b ∈ B) (q : ArrowWalk Q a b) :
+theorem vertices_lift {a b : V} (ha : a ∈ A) (hb : b ∈ B) (q : ArrowWalk Q a b) :
     (lift ha hb q).vertices = inr false :: q.vertices.map inl ++ [inr true] := by
   simp [lift]
 
 @[simp]
-theorem lift_arrows {a b : V} (ha : a ∈ A) (hb : b ∈ B) (q : ArrowWalk Q a b) :
+theorem arrows_lift {a b : V} (ha : a ∈ A) (hb : b ∈ B) (q : ArrowWalk Q a b) :
     (lift ha hb q).arrows = [⟨inr false, inl a, source ha⟩] ++
       q.arrows.map originalArrow ++ [⟨inl b, inr true, sink hb⟩] := by
   simp [lift]
 
-private theorem nodup_aux_vertices_iff (l : List V) :
-    (inr false :: l.map inl ++ [inr true]).Nodup ↔ l.Nodup := by
+/-- An original arrow occurs in a lifted walk exactly when it occurs in the original walk. -/
+theorem originalArrow_mem_arrows_lift {a b : V} (ha : a ∈ A) (hb : b ∈ B) (q : ArrowWalk Q a b)
+    {e : Σ x y, Q x y} : originalArrow e ∈ (lift ha hb q).arrows ↔ e ∈ q.arrows := by
+  rw [arrows_lift, List.mem_append, List.mem_append,
+    List.mem_map_of_injective originalArrow_injective]
+  obtain ⟨x, y, e⟩ := e
+  simp only [originalArrow_mk, List.mem_singleton, Sigma.mk.injEq, reduceCtorEq, false_and,
+    false_or, inl.injEq, or_iff_left_iff_imp, and_imp]
+  rintro rfl h
+  simp at h
+
+/-- Lifting preserves and reflects the property of being a path. -/
+@[simp]
+theorem isPath_lift {a b : V} (ha : a ∈ A) (hb : b ∈ B) (q : ArrowWalk Q a b) :
+    (lift ha hb q).IsPath ↔ q.IsPath := by
+  rw [ArrowWalk.isPath_def, ArrowWalk.isPath_def, vertices_lift]
   simp only [List.nodup_cons, List.mem_map, List.mem_singleton, List.nodup_append]
   simp only [List.nodup_map_iff inl_injective]
   simp
 
-/-- Lifting preserves and reflects the property of being a path. -/
-@[simp]
-theorem lift_isPath_iff {a b : V} (ha : a ∈ A) (hb : b ∈ B) (q : ArrowWalk Q a b) :
-    (lift ha hb q).IsPath ↔ q.IsPath := by
-  rw [ArrowWalk.isPath_def, ArrowWalk.isPath_def, lift_vertices]
-  exact nodup_aux_vertices_iff _
-
 /-- A decomposition of an auxiliary-terminal walk into its source arrow, an original walk, and
 its sink arrow. -/
+@[ext]
 structure Projection
     (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) where
   /-- The first original vertex. -/
@@ -111,11 +140,8 @@ structure Projection
   target_mem : target ∈ B
   /-- The original part of the auxiliary-terminal walk. -/
   walk : ArrowWalk Q source target
-  /-- The exact vertex decomposition. -/
-  vertices_eq : p.vertices = inr false :: walk.vertices.map inl ++ [inr true]
-  /-- The exact arrow decomposition. -/
-  arrows_eq : p.arrows = [⟨inr false, inl source, AuxTerminalHom.source source_mem⟩] ++
-    walk.arrows.map originalArrow ++ [⟨inl target, inr true, AuxTerminalHom.sink target_mem⟩]
+  /-- Lifting the original part gives back the auxiliary-terminal walk. -/
+  lift_walk : lift source_mem target_mem walk = p
 
 private theorem eq_nil_of_target_source
     (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr false)) :
@@ -127,24 +153,20 @@ private theorem eq_nil_of_target_source
 
 private theorem exists_projection_to_inl {y : V ⊕ Bool}
     (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) y) {w : V} (hy : y = inl w) :
-    ∃ (a : V) (ha : a ∈ A) (q : ArrowWalk Q a w),
-      p.vertices = inr false :: q.vertices.map inl ∧
-      p.arrows = [⟨inr false, inl a, source ha⟩] ++ q.arrows.map originalArrow := by
+    ∃ (a : V) (ha : a ∈ A) (q : ArrowWalk Q a w), p ≍ liftFromSource (B := B) ha q := by
   induction p generalizing w with
   | nil => exact absurd hy Sum.inr_ne_inl
   | @cons z y p e ih =>
     subst hy
     rcases z with u | _ | _
-    · obtain ⟨a, ha, q, hv, he⟩ := ih rfl
-      refine ⟨a, ha, q.cons (originalEquiv.symm e), ?_, ?_⟩
-      · simp [hv]
-      · simp [he, originalArrow, original_originalEquiv_symm]
+    · obtain ⟨a, ha, q, h⟩ := ih rfl
+      refine ⟨a, ha, q.cons (originalEquiv.symm e), ?_⟩
+      rw [eq_of_heq h]
+      simp only [liftFromSource, original_originalEquiv_symm, heq_eq_eq]
     · have hp : p = ArrowWalk.nil _ := eq_nil_of_target_source p
       subst hp
-      refine ⟨w, mem_of_source e, ArrowWalk.nil w, rfl, ?_⟩
-      simp only [ArrowWalk.arrows_cons, ArrowWalk.arrows_nil, List.nil_append, List.map_nil,
-        List.append_nil]
-      rw [eq_source e]
+      refine ⟨w, mem_of_source e, ArrowWalk.nil w, ?_⟩
+      rw [liftFromSource, ← eq_source e]
     · exact isEmptyElim (α := AuxTerminalHom Q A B (inr true) (inl w)) e
 
 /-- Every walk from the fresh source to the fresh sink has an exact projection to an original
@@ -155,10 +177,9 @@ private theorem projection_nonempty
   cases p with
   | @cons y _ p e =>
     rcases y with b | _ | _
-    · obtain ⟨a, ha, q, hv, he⟩ := exists_projection_to_inl p rfl
-      refine ⟨⟨a, ha, b, mem_of_sink e, q, by simp [hv], ?_⟩⟩
-      simp only [ArrowWalk.arrows_cons, he, List.append_assoc]
-      rw [eq_sink e]
+    · obtain ⟨a, ha, q, h⟩ := exists_projection_to_inl p rfl
+      refine ⟨⟨a, ha, b, mem_of_sink e, q, ?_⟩⟩
+      rw [lift, ← eq_of_heq h, ← eq_sink e]
     · exact isEmptyElim (α := AuxTerminalHom Q A B (inr false) (inr true)) e
     · exact isEmptyElim (α := AuxTerminalHom Q A B (inr true) (inr true)) e
 
@@ -167,6 +188,30 @@ vertices. -/
 noncomputable def project
     (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) : Projection p :=
   Classical.choice (projection_nonempty p)
+
+/-- The exact vertex decomposition of a projected walk. -/
+theorem Projection.vertices_eq
+    {p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)} (P : Projection p) :
+    p.vertices = inr false :: P.walk.vertices.map inl ++ [inr true] := by
+  obtain ⟨_, _, _, _, _, rfl⟩ := P
+  exact vertices_lift ..
+
+/-- The exact arrow decomposition of a projected walk. -/
+theorem Projection.arrows_eq
+    {p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)} (P : Projection p) :
+    p.arrows = [⟨inr false, inl P.source, AuxTerminalHom.source P.source_mem⟩] ++
+      P.walk.arrows.map originalArrow ++
+        [⟨inl P.target, inr true, AuxTerminalHom.sink P.target_mem⟩] := by
+  obtain ⟨_, _, _, _, _, rfl⟩ := P
+  exact arrows_lift ..
+
+/-- Projection preserves and reflects the property of being a path. -/
+@[simp]
+theorem Projection.isPath_iff
+    {p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)} (P : Projection p) :
+    P.walk.IsPath ↔ p.IsPath := by
+  obtain ⟨_, _, _, _, _, rfl⟩ := P
+  exact (isPath_lift ..).symm
 
 end AuxTerminalHom
 
@@ -188,7 +233,7 @@ theorem reachableAvoiding_auxTerminalHom_iff {X : Set (V ⊕ Bool)} (hσ : inr f
   · rintro ⟨a, ha, b, hb, h⟩
     obtain ⟨q, hq⟩ := reachableAvoiding_def.1 h
     refine reachableAvoiding_def.2 ⟨AuxTerminalHom.lift ha hb q, fun x hx ↦ ?_⟩
-    rw [AuxTerminalHom.lift_vertices] at hx
+    rw [AuxTerminalHom.vertices_lift] at hx
     simp only [List.cons_append, List.mem_cons, List.mem_append, List.mem_map,
       List.not_mem_nil, or_false] at hx
     rcases hx with rfl | ⟨v, hv, rfl⟩ | rfl
@@ -196,15 +241,9 @@ theorem reachableAvoiding_auxTerminalHom_iff {X : Set (V ⊕ Bool)} (hσ : inr f
 
 namespace AuxTerminalHom
 
-/-- Projection preserves and reflects the property of being a path. -/
-theorem Projection.isPath_iff
-    {p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)} (P : Projection p) :
-    P.walk.IsPath ↔ p.IsPath := by
-  rw [ArrowWalk.isPath_def, ArrowWalk.isPath_def, P.vertices_eq]
-  exact (nodup_aux_vertices_iff _).symm
-
 /-- A projected auxiliary-terminal walk trimmed to a path whose internal vertices avoid both
 terminal sets. -/
+@[ext]
 structure Trimming
     (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) where
   /-- The source of the trimmed path. -/
@@ -222,9 +261,11 @@ structure Trimming
   /-- Internal vertices of the trimmed path avoid both terminal sets. -/
   interior_notMem : ∀ v ∈ walk.vertices, v ≠ source → v ≠ target → v ∉ A ∧ v ∉ B
   /-- Every trimmed vertex comes from the auxiliary-terminal walk. -/
-  vertices_map_subset : walk.vertices.map inl ⊆ p.vertices
+  map_vertices_subset : walk.vertices.map inl ⊆ p.vertices
   /-- Every trimmed arrow comes from the auxiliary-terminal walk. -/
-  arrows_map_subset : walk.arrows.map originalArrow ⊆ p.arrows
+  map_arrows_subset : walk.arrows.map originalArrow ⊆ p.arrows
+
+attribute [simp] Trimming.isPath
 
 /-- Every auxiliary-terminal walk admits a trimming. -/
 private theorem trimming_nonempty
@@ -254,18 +295,21 @@ theorem pairwise_disjoint_vertices_trim {I : Type*}
     Pairwise fun i j ↦ (trim (P i)).walk.vertices.Disjoint (trim (P j)).walk.vertices := by
   intro i j hij v hvi hvj
   have h := ArrowWalk.internallyDisjoint_def.1 (hP hij) (inl v)
-    ((trim (P i)).vertices_map_subset (List.mem_map_of_mem hvi))
-    ((trim (P j)).vertices_map_subset (List.mem_map_of_mem hvj))
+    ((trim (P i)).map_vertices_subset (List.mem_map_of_mem hvi))
+    ((trim (P j)).map_vertices_subset (List.mem_map_of_mem hvj))
   exact h.elim Sum.inl_ne_inr Sum.inl_ne_inr
 
-/-- Trimming preserves pairwise arrow-disjointness. -/
+/-- Trimming turns auxiliary-terminal walks that share no original arrow into pairwise
+arrow-disjoint original paths. The walks may share their source and sink arrows, so their trimmed
+paths may share endpoints. -/
 theorem pairwise_disjoint_arrows_trim {I : Type*}
     (P : I → ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true))
-    (hP : Pairwise fun i j ↦ (P i).arrows.Disjoint (P j).arrows) :
+    (hP : Pairwise fun i j ↦
+      ∀ ⦃e⦄, originalArrow e ∈ (P i).arrows → originalArrow e ∉ (P j).arrows) :
     Pairwise fun i j ↦ (trim (P i)).walk.arrows.Disjoint (trim (P j)).walk.arrows := by
   intro i j hij e hei hej
-  exact hP hij ((trim (P i)).arrows_map_subset (List.mem_map_of_mem hei))
-    ((trim (P j)).arrows_map_subset (List.mem_map_of_mem hej))
+  exact hP hij ((trim (P i)).map_arrows_subset (List.mem_map_of_mem hei))
+    ((trim (P j)).map_arrows_subset (List.mem_map_of_mem hej))
 
 end AuxTerminalHom
 

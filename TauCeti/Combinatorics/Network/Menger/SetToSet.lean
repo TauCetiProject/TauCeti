@@ -49,9 +49,9 @@ Both directions reduce to the vertex-capacitated Menger theorem between two vert
 for the arrow family `TauCeti.AuxTerminalHom Q A B`, which adds a fresh source `σ` with an arrow to
 every vertex of `A` and a fresh sink `τ` with an arrow from every vertex of `B`; the original
 vertices keep their capacities. Walks from `A` to `B` lift to `σ`–`τ` walks through the same
-original vertices, and every `σ`–`τ` walk projects to a walk from `A` to `B`
+original vertices (`TauCeti.AuxTerminalHom.lift`), so separators correspond
 (`TauCeti.reachableAvoiding_auxTerminalHom_iff`). Each `σ`–`τ` path of a packing is then trimmed to
-an `A`–`B` path (`TauCeti.ArrowWalk.exists_isPath_interior_notMem`), which visits no new vertex.
+an `A`–`B` path (`TauCeti.AuxTerminalHom.trim`), which visits no new vertex.
 
 ## References
 
@@ -84,7 +84,7 @@ theorem card_le_sum_of_forall_not_reachableAvoiding [DecidableEq V] {A B : Finse
   -- Lift every member to a walk between the auxiliary terminals.
   let P' (i : ι) := AuxTerminalHom.lift (ha i) (hb i) (P i)
   have hP' (i : ι) : (P' i).vertices = inr false :: (P i).vertices.map inl ++ [inr true] :=
-    AuxTerminalHom.lift_vertices (ha i) (hb i) (P i)
+    AuxTerminalHom.vertices_lift (ha i) (hb i) (P i)
   have hsep : ¬ReachableAvoiding (AuxTerminalHom Q A B)
       ((X.map .inl : Finset (V ⊕ Bool)) : Set (V ⊕ Bool)) (inr false) (inr true) := by
     rw [reachableAvoiding_auxTerminalHom_iff (by simp) (by simp)]
@@ -126,7 +126,7 @@ theorem exists_paths_setSeparator_sum_eq [Finite V] [DecidableEq V] (c : V → �
   · -- A member through `v` comes from a member of the packing through `inl v`.
     refine (card_le_card fun i hi ↦ ?_).trans (hP' (inl v) inl_ne_inr inl_ne_inr)
     simp only [mem_filter, mem_univ, true_and] at hi ⊢
-    exact (T i).vertices_map_subset (List.mem_map_of_mem hi)
+    exact (T i).map_vertices_subset (List.mem_map_of_mem hi)
   · refine (reachableAvoiding_auxTerminalHom_iff (by simpa using hσ) (by simpa using hτ)).2
       ⟨a, ha, b, hb, ?_⟩
     rwa [hpre]
