@@ -53,6 +53,7 @@ quadratic forms with the subgroup preserving both summands.
   `LinearMap.fiberProductAssoc_symm_apply_fst`, `LinearMap.fiberProductAssoc_symm_apply_snd`.
 * `LinearMap.injective_prodMap`: a product of injective linear maps is injective, stated for the
   coercion of `f.prodMap g`.
+* `LinearMap.kerProdMapEquiv`: the kernel of `f.prodMap g` is `ker f × ker g`.
 * `LinearMap.finite_ker_prodMap`, `LinearMap.finrank_ker_prodMap`: the kernel of `f.prodMap g` is
   finite when those of `f` and `g` are, with the summed rank.
 * `LinearMap.surjective_coprod_of_comp_left`, `LinearMap.surjective_coprod_of_comp_right`,
@@ -237,18 +238,37 @@ theorem injective_prodMap {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₄} (h
 
 variable (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄)
 
+/-- The kernel of `f.prodMap g` is `ker f × ker g`. -/
+def kerProdMapEquiv : ker (f.prodMap g) ≃ₗ[R] ker f × ker g :=
+  (LinearEquiv.ofEq _ _ (ker_prodMap f g)).trans (Submodule.prodEquiv _ _)
+
+@[simp]
+theorem coe_kerProdMapEquiv_apply_fst (x : ker (f.prodMap g)) :
+    ((kerProdMapEquiv f g x).1 : M₁) = (x : M₁ × M₂).1 :=
+  (rfl)
+
+@[simp]
+theorem coe_kerProdMapEquiv_apply_snd (x : ker (f.prodMap g)) :
+    ((kerProdMapEquiv f g x).2 : M₂) = (x : M₁ × M₂).2 :=
+  (rfl)
+
+@[simp]
+theorem coe_kerProdMapEquiv_symm_apply (x : ker f × ker g) :
+    ((kerProdMapEquiv f g).symm x : M₁ × M₂) = ((x.1 : M₁), (x.2 : M₂)) :=
+  (rfl)
+
 variable {f g} in
 /-- The kernel of `f.prodMap g` is `ker f × ker g`, so it is finite when they are. -/
 instance finite_ker_prodMap [Module.Finite R (ker f)] [Module.Finite R (ker g)] :
     Module.Finite R (ker (f.prodMap g)) :=
-  .equiv ((Submodule.prodEquiv _ _).symm.trans (LinearEquiv.ofEq _ _ (ker_prodMap f g).symm))
+  .equiv (kerProdMapEquiv f g).symm
 
 /-- The kernel of `f.prodMap g` has rank `finrank (ker f) + finrank (ker g)`. -/
 @[simp]
 theorem finrank_ker_prodMap [StrongRankCondition R] [Module.Free R (ker f)]
     [Module.Free R (ker g)] [Module.Finite R (ker f)] [Module.Finite R (ker g)] :
     Module.finrank R (ker (f.prodMap g)) = Module.finrank R (ker f) + Module.finrank R (ker g) := by
-  rw [ker_prodMap, (Submodule.prodEquiv _ _).finrank_eq, Module.finrank_prod]
+  rw [(kerProdMapEquiv f g).finrank_eq, Module.finrank_prod]
 
 /-- If `(x, y) ↦ f (h x) + g y` is surjective, then so is `(x, y) ↦ f x + g y`. -/
 theorem surjective_coprod_of_comp_left {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₃} {h : M₄ →ₗ[R] M₁}

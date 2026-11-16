@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Contraction
 public import TauCeti.LinearAlgebra.Determinant.Exact
 public import TauCeti.LinearAlgebra.Prod
 public import TauCeti.LinearAlgebra.Quotient.Prod
+import TauCeti.Algebra.Module.Equiv.Basic
 import TauCeti.LinearAlgebra.Contraction
 import TauCeti.LinearAlgebra.TensorProduct.Basic
 
@@ -233,13 +234,13 @@ private theorem detLineCongr_detLineProdEquiv_assoc_of_equiv {X X' Y Z : Type*} 
   have hX (s : detLine K (U × V) ⊗[K] detLine K W) :
       detLineProdEquiv K X W (κ₁.symm.detLineCongr.toLinearMap.rTensor _ s) =
         (κ₁.symm.prodCongr (.refl K W)).detLineCongr (detLineProdEquiv K _ W s) := by
-    rw [detLineCongr_prodCongr_detLineProdEquiv, LinearEquiv.detLineCongr_refl]
-    rfl
+    rw [detLineCongr_prodCongr_detLineProdEquiv, LinearEquiv.detLineCongr_refl,
+      ← LinearEquiv.rTensor, ← LinearEquiv.coe_rTensor, LinearEquiv.coe_coe]
   have hX' (s : detLine K U ⊗[K] detLine K (V × W)) :
       detLineProdEquiv K U X' (κ₂.symm.detLineCongr.toLinearMap.lTensor _ s) =
         ((LinearEquiv.refl K U).prodCongr κ₂.symm).detLineCongr (detLineProdEquiv K U _ s) := by
-    rw [detLineCongr_prodCongr_detLineProdEquiv, LinearEquiv.detLineCongr_refl]
-    rfl
+    rw [detLineCongr_prodCongr_detLineProdEquiv, LinearEquiv.detLineCongr_refl,
+      ← LinearEquiv.lTensor, ← LinearEquiv.coe_lTensor, LinearEquiv.coe_coe]
   rw [LinearEquiv.coe_trans, LinearEquiv.coe_trans, LinearMap.rTensor_comp_apply,
     LinearMap.lTensor_comp_apply, hX, hX', ← detLineCongr_prodAssoc_detLineProdEquiv]
   simpa only [LinearEquiv.detLineCongr_trans, LinearEquiv.trans_apply,
@@ -262,31 +263,6 @@ variable {K : Type*} [Field K] {M N M' N' : Type*} [AddCommGroup M] [Module K M]
 
 variable {M'' N'' : Type*} [AddCommGroup M''] [Module K M''] [AddCommGroup N''] [Module K N'']
   (k : M'' →ₗ[K] N'')
-
-/-- The kernel of `f.prodMap g` is `ker f × ker g`. -/
-private def kerProdMapEquiv : ker (f.prodMap g) ≃ₗ[K] ker f × ker g :=
-  (LinearEquiv.ofEq _ _ (ker_prodMap f g)).trans (Submodule.prodEquiv _ _)
-
-@[simp]
-private theorem coe_kerProdMapEquiv_symm_apply (x : ker f × ker g) :
-    ((kerProdMapEquiv f g).symm x : M × M') = ((x.1 : M), (x.2 : M')) := (rfl)
-
-/-- The cokernel of `f.prodMap g` is the product of the cokernels of `f` and `g`. -/
-private def cokerProdMapEquiv :
-    ((N × N') ⧸ range (f.prodMap g)) ≃ₗ[K] (N ⧸ range f) × (N' ⧸ range g) :=
-  (Submodule.quotEquivOfEq _ _ (range_prodMap f g)).trans (Submodule.quotientProdEquiv _ _)
-
-@[simp]
-private theorem cokerProdMapEquiv_mk (x : N × N') :
-    cokerProdMapEquiv f g (Submodule.Quotient.mk x) =
-      (Submodule.Quotient.mk x.1, Submodule.Quotient.mk x.2) := by
-  simp [cokerProdMapEquiv]
-
-@[simp]
-private theorem cokerProdMapEquiv_symm_mk (y : N) (y' : N') :
-    (cokerProdMapEquiv f g).symm (Submodule.Quotient.mk y, Submodule.Quotient.mk y') =
-      Submodule.Quotient.mk (y, y') := by
-  simp [cokerProdMapEquiv, LinearEquiv.symm_apply_eq]
 
 section Kernel
 
@@ -312,7 +288,7 @@ private theorem detLineKerProdMap_apply (u : Fin (finrank K (ker f)) → ker f)
     coe_detLineProdEquiv_tmul]
   congr 1
   funext i
-  induction i using Fin.addCases <;> ext <;> simp [kerProdMapEquiv]
+  induction i using Fin.addCases <;> ext <;> simp
 
 /-- Exchanging the summands of the kernel: if `e : ker (f.prodMap g) ≃ ker (g.prodMap f)` swaps the
 two components, the kernel factors are exchanged with the sign `(-1) ^ (dim ker f * dim ker g)`. -/
@@ -329,7 +305,7 @@ private theorem detLineKerProdMap_detLineCongr (e : ker (f.prodMap g) ≃ₗ[K] 
   -- Read through the kernel splittings, the exchange `e` is the swap of `ker f × ker g`.
   have hswap : (kerProdMapEquiv f g).symm.trans (e.trans (kerProdMapEquiv g f)) =
       LinearEquiv.prodComm K (ker f) (ker g) := by
-    ext x <;> simp [kerProdMapEquiv, he]
+    ext x <;> simp [he]
   rw [map_smul, ← detLineCongr_prodComm_detLineProdEquiv, ← hswap]
   simp only [LinearEquiv.detLineCongr_trans, LinearEquiv.trans_apply]
 
@@ -629,11 +605,6 @@ section Assoc
 
 variable [FiniteDimensional K (ker k)] [FiniteDimensional K (N'' ⧸ range k)]
 
-/-- Multiplication by a nonzero scalar `c`, as a linear map, is `c • id`. -/
-private theorem toLinearMap_smulOfNeZero {V : Type*} [AddCommGroup V] [Module K V] (c : K)
-    (hc : c ≠ 0) : (LinearEquiv.smulOfNeZero K V c hc).toLinearMap = c • LinearMap.id :=
-  LinearMap.ext fun _ ↦ LinearEquiv.smulOfNeZero_apply _ _ _ _ _
-
 /-- **Associativity of the direct sum isomorphism of determinant lines.** For linear maps `f`, `g`
 and `k` with finite-dimensional kernels and cokernels, the two ways of splitting the determinant
 line of a triple direct sum into `det f ⊗ det g ⊗ det k` agree: the associators
@@ -671,7 +642,7 @@ theorem detLineProdMapEquiv_detLineCongr_prodAssoc (x : ((f.prodMap g).prodMap k
       TensorProduct.toLinearMap_congr, LinearEquiv.trans_apply, congr_tmul]
     refine (TensorProduct.assoc_rTensor_comp_map_tensorTensorTensorComm_tmul ?_ hC).symm
     -- The kernel factors: `hK` up to the Koszul signs, which agree on both sides.
-    simp only [toLinearMap_smulOfNeZero, LinearMap.comp_smul, LinearMap.comp_id,
+    simp only [LinearEquiv.toLinearMap_smulOfNeZero, LinearMap.comp_smul, LinearMap.comp_id,
       LinearMap.rTensor_smul, LinearMap.lTensor_smul, LinearMap.smul_apply,
       LinearEquiv.smulOfNeZero_apply, map_smul, hK, smul_smul]
     rw [← pow_add, ← pow_add]

@@ -17,9 +17,10 @@ public import Mathlib.LinearAlgebra.BilinearMap
 Mathlib's `LinearEquiv.smulOfUnit` packages multiplication by a unit `u` of the base ring as a
 linear equivalence, but records no lemma evaluating it at a vector. This file supplies that
 evaluation lemma, in the `simp`-normal form that rewrites an application of
-`LinearEquiv.smulOfUnit` to a scalar multiplication. It also records how a linear automorphism,
-viewed as a permutation of the module through `MulAction.toPermHom`, moves the set underlying a
-submodule.
+`LinearEquiv.smulOfUnit` to a scalar multiplication, and identifies the linear map underlying
+`LinearEquiv.smulOfNeZero` with a scalar multiple of the identity. It also records how a linear
+automorphism, viewed as a permutation of the module through `MulAction.toPermHom`, moves the set
+underlying a submodule.
 Postcomposition with an isomorphism of targets also transports hom spaces over auxiliary
 scalars, even when the ring defining the linear maps is noncommutative.
 For coordinate transport, forgetting linearity gives the corresponding additive word
@@ -42,6 +43,8 @@ by the equivalence.
 * `LinearEquiv.toPermHom_smul_coe`: the permutation of the module underlying a linear
   automorphism moves the set underlying a submodule to the set underlying its image.
 * `LinearEquiv.smulOfUnit_apply`: `LinearEquiv.smulOfUnit u` acts as multiplication by `u`.
+* `LinearEquiv.toLinearMap_smulOfNeZero`: `LinearEquiv.smulOfNeZero K V c hc` is `c • id` as a
+  linear map.
 * `LinearEquiv.funCongrLeft_toAddMonoidHom`: forgetting linearity in coordinate transport
   gives additive coordinate transport.
 -/
@@ -204,5 +207,11 @@ variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 @[simp]
 theorem smulOfUnit_apply (u : Rˣ) (x : M) : (smulOfUnit u : M ≃ₗ[R] M) x = (u : R) • x :=
   (rfl)
+
+/-- Multiplication by a nonzero scalar `c` of a field, as a linear map, is `c • id`. -/
+@[simp]
+theorem toLinearMap_smulOfNeZero (K V : Type*) [Field K] [AddCommGroup V] [Module K V] (c : K)
+    (hc : c ≠ 0) : (smulOfNeZero K V c hc).toLinearMap = c • LinearMap.id :=
+  LinearMap.ext fun _ ↦ smulOfNeZero_apply _ _ _ _ _
 
 end LinearEquiv
