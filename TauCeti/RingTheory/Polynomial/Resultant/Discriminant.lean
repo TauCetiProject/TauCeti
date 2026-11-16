@@ -83,6 +83,10 @@ depressed specialization of that formula is used to compare a quartic with its c
   discriminant is squarefree.
 * `Polynomial.discr_ne_zero_iff`: over a field, a nonzero polynomial that need not be monic is
   separable exactly when its discriminant is nonzero.
+* `Multiset.discr_prod_X_sub_C_ne_zero_iff`,
+  `Multiset.prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr`: for a multiset `R` over a
+  field, the discriminant of `∏_{w ∈ R} (X - w)` vanishes exactly when `R` has a repeated element,
+  and up to sign it is the product `∏_{w ∈ R} ∏_{u ∈ R ∖ w} (w - u)` of the differences.
 * `Squarefree.discr_ne_zero`: a squarefree polynomial over a GCD domain of characteristic zero
   has nonzero discriminant.
 * `Polynomial.separable_map_iff_map_discr_ne_zero`,
@@ -1084,3 +1088,38 @@ theorem discr_depressedQuartic (p q r : R) :
   ring
 
 end TauCeti
+
+namespace Multiset
+
+variable {K : Type*} [Field K]
+
+/-- A product of linear factors splits. -/
+private theorem splits_prod_X_sub_C (R : Multiset K) : (R.map fun w ↦ X - C w).prod.Splits :=
+  Splits.multisetProd fun f hf ↦ by
+    obtain ⟨w, -, rfl⟩ := Multiset.mem_map.1 hf
+    exact Splits.X_sub_C w
+
+/-- The discriminant of `∏_{w ∈ R} (X - w)` is nonzero exactly when `R` has no repeated
+element. -/
+theorem discr_prod_X_sub_C_ne_zero_iff (R : Multiset K) :
+    (R.map fun w ↦ X - C w).prod.discr ≠ 0 ↔ R.Nodup := by
+  have hmon := monic_multisetProd_X_sub_C R
+  have hsplits := splits_prod_X_sub_C R
+  rw [hmon.discr_ne_zero_iff, ← nodup_roots_iff_of_splits hmon.ne_zero hsplits,
+    roots_multiset_prod_X_sub_C]
+
+/-- **The discriminant as a product of differences.** For a multiset `R` of `m` elements,
+`∏_{w ∈ R} ∏_{u ∈ R ∖ w} (w - u) = (-1)^(m (m - 1) / 2) discr (∏_{w ∈ R} (X - w))`. The left side
+is the product of the derivative of `∏_{w ∈ R} (X - w)` over its roots. -/
+theorem prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr [DecidableEq K] (R : Multiset K) :
+    (R.map fun w ↦ ((R.erase w).map fun u ↦ w - u).prod).prod =
+      (-1) ^ (card R * (card R - 1) / 2) * (R.map fun w ↦ X - C w).prod.discr := by
+  have hmon := monic_multisetProd_X_sub_C R
+  have hsplits := splits_prod_X_sub_C R
+  have h := hmon.prod_roots_eval_derivative hsplits
+  rw [roots_multiset_prod_X_sub_C, natDegree_multiset_prod_X_sub_C_eq_card] at h
+  rw [← h]
+  exact congrArg Multiset.prod
+    (Multiset.map_congr rfl fun w hw ↦ (eval_multiset_prod_X_sub_C_derivative hw).symm)
+
+end Multiset
