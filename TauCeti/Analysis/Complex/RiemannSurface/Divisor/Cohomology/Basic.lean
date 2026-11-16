@@ -110,6 +110,7 @@ def divisorCechCohomologyZeroIso (n : ℕ) :
   (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).mapIso
     ((sheafToPresheaf _ _).mapIso (divisorSheafZeroIso X))
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The isomorphism `Hⁿ(X, 𝒪(0)) ≅ Hⁿ(X, 𝒪)` is the map on cohomology induced by `𝒪(0) ≅ 𝒪`. -/
 @[simp]
 theorem divisorCechCohomologyZeroIso_hom (n : ℕ) :
@@ -117,6 +118,7 @@ theorem divisorCechCohomologyZeroIso_hom (n : ℕ) :
       (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map (divisorSheafZeroIso X).hom.hom :=
   (rfl)
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The inverse of `Hⁿ(X, 𝒪(0)) ≅ Hⁿ(X, 𝒪)` is the map on cohomology induced by `𝒪 ≅ 𝒪(0)`. -/
 @[simp]
 theorem divisorCechCohomologyZeroIso_inv (n : ℕ) :
@@ -124,6 +126,7 @@ theorem divisorCechCohomologyZeroIso_inv (n : ℕ) :
       (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map (divisorSheafZeroIso X).inv.hom :=
   (rfl)
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- `Hⁿ(X, 𝒪(0))` is finite-dimensional exactly when `Hⁿ(X, 𝒪)` is. -/
 theorem finiteDimensional_divisorCechCohomology_zero_iff (n : ℕ) :
     FiniteDimensional ℂ (divisorCechCohomology (0 : WeilDivisor X) n) ↔
