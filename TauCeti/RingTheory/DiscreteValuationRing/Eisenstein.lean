@@ -5,12 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
+public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
+public import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 import Mathlib.RingTheory.Ideal.GoingUp
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.RingTheory.Polynomial.Eisenstein.LocalRing
 import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
@@ -23,7 +28,10 @@ a polynomial `f` that is Eisenstein at the maximal ideal of `A`. Then `B` is a l
 with maximal ideal `x B` and the residue field of `B` is that of `A`. If moreover `B` is a domain
 and `A → B` is injective, then `B` is a discrete valuation ring with uniformizer `x`, in which the
 uniformizer of `A` is `x ^ deg f` up to a unit. So `B / A` has ramification index `deg f` and
-inertia degree one.
+inertia degree one, the normalized additive valuation on `A` scales by `deg f` in `B`, and any
+polynomial of degree `< deg f` evaluated at `x` has valuation determined by the valuations of its
+coefficients. When `E = K(α)` is generated over `K = Frac A` by a root `α` of `f`, `A[α]` is the
+integral closure of `A` in `E` and is a discrete valuation ring.
 
 The point is that `f ≡ X ^ deg f` modulo the maximal ideal `𝔪` of `A`, so `x ^ deg f ∈ 𝔪 B` and
 `x` lies in every maximal ideal of `B`; and `B / x B` is a quotient of `A / 𝔪`, because every
@@ -42,6 +50,13 @@ adjoining an `n`-th root of `ϖ` (`TauCeti.RingTheory.DiscreteValuationRing.Kumm
 * `Polynomial.IsEisensteinAt.ramificationIdx_eq_natDegree`: the ramification index of the maximal
   ideal of `B` over `A` is the degree of `f`.
 * `Polynomial.IsEisensteinAt.inertiaDeg_eq_one`: its inertia degree over `A` is one.
+* `Polynomial.IsEisensteinAt.addVal_algebraMap` and
+  `Polynomial.IsEisensteinAt.addVal_aeval_of_natDegree_lt`: valuation scaling and power-basis
+  valuation formula when `B` is a domain with injective structure map from `A`.
+* `Polynomial.IsEisensteinAt.integralClosure_eq_adjoin`,
+  `Polynomial.IsEisensteinAt.adjoin_singleton_eq_top_integralClosure`, and
+  `Polynomial.IsEisensteinAt.isDiscreteValuationRing_integralClosure`: `integralClosure A E = A[α]`,
+  a discrete valuation ring generated over `A` by `α`, for `E = K(α)`.
 
 ## References
 
@@ -51,7 +66,7 @@ adjoining an `n`-th root of `ϖ` (`TauCeti.RingTheory.DiscreteValuationRing.Kumm
 
 public section
 
-open IsLocalRing Polynomial
+open IntermediateField IsLocalRing Polynomial
 
 namespace Polynomial.IsEisensteinAt
 
@@ -232,5 +247,102 @@ theorem ramificationIdx_eq_natDegree [IsDomain B] [FaithfulSMul A B]
     P.ramificationIdx A = f.natDegree :=
   let ⟨_, hmo, hg, hgx, hdeg⟩ := hf.exists_monic_aeval_eq_zero hx
   (ramificationIdx_eq_natDegree_of_monic hg hmo hgx hadj P).trans hdeg
+
+/-- In a domain `B` with injective structure map from a discrete valuation ring `A`, generated over
+`A` by a root `x` of an Eisenstein polynomial `f`, the normalized additive valuation on `A` scales
+by `f.natDegree` in `B`. Here `IsDiscreteValuationRing B` always holds by
+`Polynomial.IsEisensteinAt.isDiscreteValuationRing_of_adjoin_eq_top`. -/
+theorem addVal_algebraMap [IsDomain B] [FaithfulSMul A B] [IsDiscreteValuationRing B]
+    (hf : f.IsEisensteinAt (maximalIdeal A)) (hx : aeval x f = 0)
+    (hadj : Algebra.adjoin A {x} = ⊤) (a : A) :
+    IsDiscreteValuationRing.addVal B (algebraMap A B a) =
+      f.natDegree • IsDiscreteValuationRing.addVal A a := by
+  have : Module.Finite A B :=
+    ⟨by simpa [hadj] using (hf.isIntegral_of_aeval_eq_zero hx).fg_adjoin_singleton⟩
+  have hpos : 0 < f.natDegree :=
+    natDegree_pos_of_aeval_root (leadingCoeff_ne_zero.mp hf.isUnit_leadingCoeff.ne_zero) hx
+      fun _ ↦ (FaithfulSMul.algebraMap_eq_zero_iff A B).mp
+  have hne : (maximalIdeal A).map (algebraMap A B) ≠ ⊥ := by
+    obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible A
+    intro h
+    refine (FaithfulSMul.algebraMap_eq_zero_iff A B).not.mpr hϖ.ne_zero (Ideal.mem_bot.mp ?_)
+    rw [← h, hϖ.maximalIdeal_eq]
+    exact Ideal.mem_map_of_mem _ (Ideal.mem_span_singleton_self ϖ)
+  have hmap : (maximalIdeal A).map (algebraMap A B) = maximalIdeal B ^ f.natDegree := by
+    rw [TauCeti.IsDiscreteValuationRing.map_maximalIdeal_eq_pow_ramificationIdx hne,
+      hf.ramificationIdx_eq_natDegree hx hadj]
+  exact TauCeti.IsDiscreteValuationRing.addVal_algebraMap_of_map_maximalIdeal_eq_pow
+    hpos.ne' hmap a
+
+/-- **Power-basis valuation formula.** In a domain `B` with injective structure map from a discrete
+valuation ring `A`, generated over `A` by a root `x` of an Eisenstein polynomial `f`, for every
+`p : A[X]` with `p.natDegree < f.natDegree` the valuation of `aeval x p` is the minimum of
+`f.natDegree • addVal A (p.coeff i) + i` over `i : Fin f.natDegree`. -/
+theorem addVal_aeval_of_natDegree_lt [IsDomain B] [FaithfulSMul A B] [IsDiscreteValuationRing B]
+    (hf : f.IsEisensteinAt (maximalIdeal A)) (hx : aeval x f = 0)
+    (hadj : Algebra.adjoin A {x} = ⊤) {p : A[X]} (hp : p.natDegree < f.natDegree) :
+    IsDiscreteValuationRing.addVal B (aeval x p) =
+      ⨅ i : Fin f.natDegree,
+        (f.natDegree • IsDiscreteValuationRing.addVal A (p.coeff i) + (i : ℕ)) :=
+  TauCeti.IsDiscreteValuationRing.addVal_aeval_of_natDegree_lt
+    (hf.addVal_algebraMap hx hadj) (hf.irreducible_of_adjoin_eq_top hx hadj) hp
+
+section IntegralClosure
+
+variable {K E : Type*} [Field K] [Algebra A K] [IsFractionRing A K]
+  [Field E] [Algebra K E] [Algebra A E] [IsScalarTower A K E] {α : E}
+
+/-- If `E = K⟮α⟯` is generated over `K = Frac A` by a root `α` of an Eisenstein polynomial
+`f : A[X]`, then the integral closure of `A` in `E` is `A[α]`. -/
+theorem integralClosure_eq_adjoin (hf : f.IsEisensteinAt (maximalIdeal A))
+    (hα : aeval α f = 0) (hgen : K⟮α⟯ = ⊤) :
+    integralClosure A E = Algebra.adjoin A {α} := by
+  have := FaithfulSMul.trans A K E
+  have hint : IsIntegral A α := hf.isIntegral_of_aeval_eq_zero hα
+  set S : Subalgebra A E := Algebra.adjoin A {α}
+  let αS : S := ⟨α, Algebra.self_mem_adjoin_singleton A α⟩
+  have hxS : aeval αS f = 0 := Subtype.ext ((aeval_subalgebra_coe f S αS).trans hα)
+  have hadjS : Algebra.adjoin A {αS} = ⊤ := by
+    apply Subalgebra.map_injective (f := S.val) Subtype.val_injective
+    rw [AlgHom.map_adjoin, Set.image_singleton, Algebra.map_top, Subalgebra.range_val,
+      Subalgebra.coe_val]
+  have := hf.isDiscreteValuationRing_of_adjoin_eq_top hxS hadjS
+  have : Algebra.IsIntegral A S :=
+    have := Algebra.finite_adjoin_simple_of_isIntegral hint
+    inferInstance
+  have : IsFractionRing S E :=
+    TauCeti.IntermediateField.isFractionRing_algebra_adjoin_of_adjoin_eq_top hgen
+  refine le_antisymm (fun z hz ↦ ?_) (Algebra.adjoin_le (Set.singleton_subset_iff.mpr hint))
+  obtain ⟨y, rfl⟩ := (IsIntegralClosure.isIntegral_iff (A := S)).mp hz
+  exact y.2
+
+/-- In the situation of `Polynomial.IsEisensteinAt.integralClosure_eq_adjoin`, the root `α` viewed
+in `integralClosure A E` generates `integralClosure A E` as an `A`-algebra. -/
+theorem adjoin_singleton_eq_top_integralClosure (hf : f.IsEisensteinAt (maximalIdeal A))
+    (hα : aeval α f = 0) (hgen : K⟮α⟯ = ⊤) :
+    Algebra.adjoin A
+      {(⟨α, (mem_integralClosure_iff A E).mpr (hf.isIntegral_of_aeval_eq_zero hα)⟩ :
+        integralClosure A E)} = ⊤ := by
+  apply Subalgebra.map_injective (f := (integralClosure A E).val) Subtype.val_injective
+  rw [AlgHom.map_adjoin, Set.image_singleton, Algebra.map_top, Subalgebra.range_val,
+    Subalgebra.coe_val]
+  exact (hf.integralClosure_eq_adjoin hα hgen).symm
+
+/-- In the situation of `Polynomial.IsEisensteinAt.integralClosure_eq_adjoin`,
+`integralClosure A E` is a discrete valuation ring. -/
+theorem isDiscreteValuationRing_integralClosure (hf : f.IsEisensteinAt (maximalIdeal A))
+    (hα : aeval α f = 0) (hgen : K⟮α⟯ = ⊤) :
+    IsDiscreteValuationRing (integralClosure A E) := by
+  have : FaithfulSMul A E := FaithfulSMul.trans A K E
+  have : FaithfulSMul A (integralClosure A E) :=
+    FaithfulSMul.tower_bot A (integralClosure A E) E
+  let x : integralClosure A E :=
+    ⟨α, (mem_integralClosure_iff A E).mpr (hf.isIntegral_of_aeval_eq_zero hα)⟩
+  have hx : aeval x f = 0 :=
+    Subtype.ext ((aeval_subalgebra_coe f (integralClosure A E) x).trans hα)
+  exact hf.isDiscreteValuationRing_of_adjoin_eq_top hx
+    (hf.adjoin_singleton_eq_top_integralClosure hα hgen)
+
+end IntegralClosure
 
 end Polynomial.IsEisensteinAt

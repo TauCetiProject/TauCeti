@@ -8,7 +8,6 @@ module
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
-import Mathlib.Algebra.MvPolynomial.Supported
 import Mathlib.Order.Zorn
 import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 import Mathlib.RingTheory.Flat.EquationalCriterion
@@ -122,7 +121,7 @@ private lemma transcendentalExt_maximalIdeal_eq_map
 /-- Evaluation `TranscendentalExt R ι →+* L` induced by universal property of localization. -/
 private def transcendentalExtToField : TranscendentalExt R ι →+* L :=
   IsLocalization.lift (M := (kerMvEval R ι).primeCompl) (g := mvEval R ι) fun y ↦
-    (show mvEval R ι y.1 ≠ 0 from y.2).isUnit
+    IsUnit.mk0 _ (mt RingHom.mem_ker.mpr (Ideal.mem_primeCompl_iff.mp y.2))
 
 private instance : IsLocalHom (transcendentalExtToField R ι) := by
   refine ⟨fun x hx ↦ ?_⟩
@@ -138,29 +137,19 @@ private instance : IsLocalHom (transcendentalExtToField R ι) := by
   exact isUnit_of_mul_isUnit_left (hs ▸ hp_unit)
 
 /-- `L` as an algebra over `ResidueField (TranscendentalExt R ι)`. -/
-@[instance_reducible]
-private def transcendentalExtResidueAlgebra :
+private abbrev transcendentalExtResidueAlgebra :
     Algebra (ResidueField (TranscendentalExt R ι)) L :=
   (ResidueField.lift (transcendentalExtToField R ι)).toAlgebra
 
-private lemma transcendentalExt_isScalarTower (hι : AlgebraicIndependent (ResidueField R) ι) :
+private lemma transcendentalExt_isScalarTower
+    [IsLocalHom (algebraMap R (TranscendentalExt R ι))] :
     let _ := transcendentalExtResidueAlgebra R ι
-    have _ : IsLocalHom (algebraMap R (TranscendentalExt R ι)) :=
-      ((local_hom_tfae _).out 1 3).mpr (transcendentalExt_maximalIdeal_eq_map R ι hι).ge
-    let _ : Algebra (ResidueField R) (ResidueField (TranscendentalExt R ι)) :=
-      (ResidueField.map (algebraMap R (TranscendentalExt R ι))).toAlgebra
     IsScalarTower (ResidueField R) (ResidueField (TranscendentalExt R ι)) L := by
-  let _ := transcendentalExtResidueAlgebra R ι
-  have _ : IsLocalHom (algebraMap R (TranscendentalExt R ι)) :=
-    ((local_hom_tfae _).out 1 3).mpr (transcendentalExt_maximalIdeal_eq_map R ι hι).ge
-  let _ : Algebra (ResidueField R) (ResidueField (TranscendentalExt R ι)) :=
-    (ResidueField.map (algebraMap R (TranscendentalExt R ι))).toAlgebra
+  intro _
   refine IsScalarTower.of_algebraMap_eq fun x ↦ ?_
   obtain ⟨r, rfl⟩ := residue_surjective x
-  change algebraMap (ResidueField R) L (residue R r) =
-    ResidueField.lift (transcendentalExtToField R ι)
-      (ResidueField.map (algebraMap R (TranscendentalExt R ι)) (residue R r))
-  rw [ResidueField.map_residue, ResidueField.lift_residue_apply,
+  rw [RingHom.algebraMap_toAlgebra, ResidueField.algebraMap_residue,
+    ResidueField.lift_residue_apply,
     IsScalarTower.algebraMap_apply R (MvPolynomial σ R) (TranscendentalExt R ι),
     transcendentalExtToField, IsLocalization.lift_eq]
   simp [mvEval, MvPolynomial.algebraMap_eq]
@@ -170,18 +159,15 @@ residue field of `TranscendentalExt R ι`. -/
 private lemma transcendentalExt_isAlgebraic (hι : IsTranscendenceBasis (ResidueField R) ι) :
     let _ := transcendentalExtResidueAlgebra R ι
     Algebra.IsAlgebraic (ResidueField (TranscendentalExt R ι)) L := by
-  let _ := transcendentalExtResidueAlgebra R ι
+  intro _
   have _ : IsLocalHom (algebraMap R (TranscendentalExt R ι)) :=
     ((local_hom_tfae _).out 1 3).mpr (transcendentalExt_maximalIdeal_eq_map R ι hι.1).ge
-  let _ : Algebra (ResidueField R) (ResidueField (TranscendentalExt R ι)) :=
-    (ResidueField.map (algebraMap R (TranscendentalExt R ι))).toAlgebra
-  have _ := transcendentalExt_isScalarTower R ι hι.1
+  have _ := transcendentalExt_isScalarTower R ι
   refine (hι.isAlgebraic_iff (S := ResidueField (TranscendentalExt R ι))).mpr fun i ↦ ?_
   have hi : ι i = algebraMap (ResidueField (TranscendentalExt R ι)) L
       (residue _ (algebraMap (MvPolynomial σ R) _ (MvPolynomial.X i))) := by
-    change ι i = ResidueField.lift (transcendentalExtToField R ι)
-      (residue _ (algebraMap (MvPolynomial σ R) _ (MvPolynomial.X i)))
-    rw [ResidueField.lift_residue_apply, transcendentalExtToField, IsLocalization.lift_eq]
+    rw [RingHom.algebraMap_toAlgebra, ResidueField.lift_residue_apply,
+      transcendentalExtToField, IsLocalization.lift_eq]
     simp [mvEval]
   rw [hi]
   exact isAlgebraic_algebraMap _
@@ -218,17 +204,18 @@ private instance (s : AlgStage R L) : Algebra.IsIntegral R s.Quot := s.isIntegra
 
 /-- Evaluation from `s.Quot` into `L`. -/
 private def evalQuot (s : AlgStage R L) : s.Quot →+* L :=
-  Ideal.Quotient.lift s.ideal (mvEval R ((↑) : s.carrier → L)) s.le_ker
+  Ideal.Quotient.lift s.ideal (mvEval R ((↑) : s.carrier → L)) fun _ ha ↦
+    RingHom.mem_ker.mp (s.le_ker ha)
 
 @[simp]
 private lemma evalQuot_mk (s : AlgStage R L) (p : MvPolynomial s.carrier R) :
     s.evalQuot (Ideal.Quotient.mk s.ideal p) = mvEval R ((↑) : s.carrier → L) p :=
-  rfl
+  Ideal.Quotient.lift_mk s.ideal _ _
 
 @[simp]
 private lemma evalQuot_algebraMap (s : AlgStage R L) (r : R) :
     s.evalQuot (algebraMap R s.Quot r) = algebraMap (ResidueField R) L (residue R r) := by
-  change s.evalQuot (Ideal.Quotient.mk s.ideal (MvPolynomial.C r)) = _
+  rw [← Ideal.Quotient.mk_algebraMap, MvPolynomial.algebraMap_eq, evalQuot_mk]
   simp [mvEval]
 
 private lemma ker_evalQuot_eq_map_maximalIdeal (s : AlgStage R L) :
@@ -239,8 +226,7 @@ private lemma ker_evalQuot_eq_map_maximalIdeal (s : AlgStage R L) :
     rw [map_add, Ideal.Quotient.eq_zero_iff_mem.mpr hq, zero_add]
     have hmap : ((maximalIdeal R).map MvPolynomial.C).map (Ideal.Quotient.mk s.ideal) =
         (maximalIdeal R).map (algebraMap R s.Quot) := by
-      rw [Ideal.map_map]
-      rfl
+      rw [Ideal.map_map, ← MvPolynomial.algebraMap_eq, Ideal.Quotient.mk_comp_algebraMap]
     rw [← hmap]
     exact Ideal.mem_map_of_mem _ hm
   · rw [Ideal.mem_comap, RingHom.mem_ker, evalQuot_algebraMap,
@@ -250,14 +236,12 @@ private lemma range_evalQuot (s : AlgStage R L) :
     Set.range s.evalQuot = (Algebra.adjoin (ResidueField R) s.carrier : Set L) := by
   have hsurj : Function.Surjective (Ideal.Quotient.mk s.ideal) := Ideal.Quotient.mk_surjective
   have h1 : Set.range s.evalQuot = Set.range (mvEval R ((↑) : s.carrier → L)) := by
-    rw [← hsurj.range_comp]
-    rfl
+    rw [← hsurj.range_comp, ← RingHom.coe_comp, evalQuot, Ideal.Quotient.lift_comp_mk]
   have h2 : Function.Surjective (MvPolynomial.map (residue R) :
       MvPolynomial s.carrier R →+* MvPolynomial s.carrier (ResidueField R)) :=
     MvPolynomial.map_surjective _ residue_surjective
-  rw [h1, mvEval_eq_comp, RingHom.coe_comp, h2.range_comp]
-  change Set.range (MvPolynomial.aeval (R := ResidueField R) ((↑) : s.carrier → L)) = _
-  rw [← AlgHom.coe_range, ← Algebra.adjoin_eq_range]
+  rw [h1, mvEval_eq_comp, RingHom.coe_comp, h2.range_comp, AlgHom.toRingHom_eq_coe,
+    AlgHom.coe_toRingHom, ← AlgHom.coe_range, ← Algebra.adjoin_eq_range]
 
 /-- When `L` is algebraic over `ResidueField R`, `(maximalIdeal R).map (algebraMap R s.Quot)` is
 maximal in `s.Quot`. -/
@@ -267,8 +251,7 @@ private lemma isMaximal_map_maximalIdeal_quot [Algebra.IsAlgebraic (ResidueField
   let Ks : Subalgebra (ResidueField R) L := Algebra.adjoin (ResidueField R) s.carrier
   let _ : Field Ks := (Subalgebra.isField_of_algebraic Ks).toField
   let ψ₀ : s.Quot →+* Ks := s.evalQuot.codRestrict Ks.toSubring fun x ↦ by
-    change s.evalQuot x ∈ (Ks : Set L)
-    rw [← range_evalQuot]
+    rw [Subalgebra.mem_toSubring, ← SetLike.mem_coe, ← range_evalQuot]
     exact ⟨x, rfl⟩
   have hsurj : Function.Surjective ψ₀ := fun y ↦ by
     have hy : (y : L) ∈ Set.range s.evalQuot := by
@@ -439,12 +422,31 @@ private lemma comap_chainIdeal {C : Set (AlgStage R L)} (hC : IsChain (· ≤ ·
       hinj (by simpa [MvPolynomial.rename_rename] using heq)
     exact hqp ▸ (mem_ideal_iff_of_le hts q).mpr hq
 
+/-- Canonical `R`-algebra map from a stage quotient in `C` to the chain colimit quotient. -/
+private def chainQuotHom {C : Set (AlgStage R L)} (hC : IsChain (· ≤ ·) C) (hne : C.Nonempty)
+    {s : AlgStage R L} (hs : s ∈ C) :
+    s.Quot →ₐ[R] MvPolynomial (chainCarrier C) R ⧸ chainIdeal hC hne :=
+  Ideal.Quotient.liftₐ s.ideal
+    ((Ideal.Quotient.mkₐ R (chainIdeal hC hne)).comp
+      (MvPolynomial.rename (Set.inclusion (carrier_subset_chainCarrier hs))))
+    fun f hf ↦ by
+      rw [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem]
+      exact ⟨s, hs, f, hf, rfl⟩
+
+@[simp]
+private lemma chainQuotHom_mk {C : Set (AlgStage R L)} (hC : IsChain (· ≤ ·) C)
+    (hne : C.Nonempty) {s : AlgStage R L} (hs : s ∈ C) (f : MvPolynomial s.carrier R) :
+    chainQuotHom hC hne hs (Ideal.Quotient.mk s.ideal f) =
+      Ideal.Quotient.mk (chainIdeal hC hne)
+        (MvPolynomial.rename (Set.inclusion (carrier_subset_chainCarrier hs)) f) := by
+  rw [← Ideal.Quotient.mkₐ_eq_mk R, ← AlgHom.comp_apply, chainQuotHom,
+    Ideal.Quotient.liftₐ_comp, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
+
 /-- Flatness of the chain colimit quotient, via the equational criterion. -/
 private lemma flat_chainIdeal {C : Set (AlgStage R L)} (hC : IsChain (· ≤ ·) C)
     (hne : C.Nonempty) :
     Module.Flat R (MvPolynomial (chainCarrier C) R ⧸ chainIdeal hC hne) := by
   classical
-  set IU := chainIdeal hC hne
   refine Module.Flat.of_forall_isTrivialRelation fun {n} r x hrel ↦ ?_
   choose p hp using fun i ↦ Ideal.Quotient.mk_surjective (x i)
   obtain ⟨s, hs, hvars⟩ :=
@@ -454,23 +456,16 @@ private lemma flat_chainIdeal {C : Set (AlgStage R L)} (hC : IsChain (· ≤ ·)
     hvars u (Finset.mem_biUnion.mpr ⟨i, Finset.mem_univ _, hu⟩)
   choose q hq using fun i ↦ MvPolynomial.exists_rename_eq_of_vars_subset_range (p i)
     (Set.inclusion hsub) (Set.inclusion_injective hsub) fun u hu ↦ ⟨⟨u.1, hp_mem i u hu⟩, rfl⟩
-  let j : s.Quot →ₐ[R] MvPolynomial (chainCarrier C) R ⧸ IU :=
-    Ideal.Quotient.liftₐ s.ideal
-      ((Ideal.Quotient.mkₐ R IU).comp (MvPolynomial.rename (Set.inclusion hsub)))
-      fun f hf ↦ Ideal.Quotient.eq_zero_iff_mem.mpr ⟨s, hs, f, hf, rfl⟩
+  let j := chainQuotHom hC hne hs
   have hj_inj : Function.Injective j := by
-    rw [RingHom.injective_iff_ker_eq_bot]
+    rw [← AlgHom.coe_toRingHom, RingHom.injective_iff_ker_eq_bot]
     ext z
     obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective z
-    rw [RingHom.mem_ker, Ideal.mem_bot]
-    change Ideal.Quotient.mk IU (MvPolynomial.rename (Set.inclusion hsub) f) = 0 ↔
-      Ideal.Quotient.mk s.ideal f = 0
-    rw [Ideal.Quotient.eq_zero_iff_mem, Ideal.Quotient.eq_zero_iff_mem,
-      ← comap_chainIdeal hC hne hs]
-    rfl
+    rw [RingHom.mem_ker, AlgHom.coe_toRingHom, chainQuotHom_mk, Ideal.mem_bot,
+      Ideal.Quotient.eq_zero_iff_mem, Ideal.Quotient.eq_zero_iff_mem,
+      ← comap_chainIdeal hC hne hs, Ideal.mem_comap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
   have hqx (i : Fin n) : j (Ideal.Quotient.mk s.ideal (q i)) = x i := by
-    change Ideal.Quotient.mk IU (MvPolynomial.rename (Set.inclusion hsub) (q i)) = x i
-    rw [hq, hp]
+    rw [chainQuotHom_mk, hq, hp]
   have hrel_s : ∑ i, r i • Ideal.Quotient.mk s.ideal (q i) = 0 :=
     hj_inj (by rw [map_zero, map_sum]; simpa [hqx] using hrel)
   obtain ⟨m, c, y, hy⟩ := Module.Flat.isTrivialRelation_of_sum_smul_eq_zero hrel_s
@@ -512,12 +507,8 @@ private def chainSup {C : Set (AlgStage R L)} (hC : IsChain (· ≤ ·) C) (hne 
   isIntegral := ⟨fun z ↦ by
     obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective z
     obtain ⟨s, hs, q, rfl⟩ := exists_rename_of_chain hC hne p
-    let j : s.Quot →ₐ[R] MvPolynomial (chainCarrier C) R ⧸ chainIdeal hC hne :=
-      Ideal.Quotient.liftₐ s.ideal
-        ((Ideal.Quotient.mkₐ R (chainIdeal hC hne)).comp
-          (MvPolynomial.rename (Set.inclusion (carrier_subset_chainCarrier hs))))
-        fun f hf ↦ Ideal.Quotient.eq_zero_iff_mem.mpr ⟨s, hs, f, hf, rfl⟩
-    exact (Algebra.IsIntegral.isIntegral (R := R) (Ideal.Quotient.mk s.ideal q)).map j⟩
+    exact (Algebra.IsIntegral.isIntegral (R := R) (Ideal.Quotient.mk s.ideal q)).map
+      (chainQuotHom hC hne hs)⟩
 
 private lemma le_chainSup {C : Set (AlgStage R L)} (hC : IsChain (· ≤ ·) C)
     (hne : C.Nonempty) {s : AlgStage R L} (hs : s ∈ C) :
@@ -526,25 +517,24 @@ private lemma le_chainSup {C : Set (AlgStage R L)} (hC : IsChain (· ≤ ·) C)
 
 /-! #### Adjoining one missing algebraic element -/
 
-/-- Residue field algebra structure `Algebra (ResidueField s.Quot) L` induced by `s.evalQuot`. -/
-private instance instQuotResidueAlgebra [Algebra.IsAlgebraic (ResidueField R) L]
-    (s : AlgStage R L) : Algebra (ResidueField s.Quot) L :=
-  have : IsLocalHom s.evalQuot := ⟨fun x hx ↦ by
+private instance instIsLocalHomEvalQuot [Algebra.IsAlgebraic (ResidueField R) L]
+    (s : AlgStage R L) : IsLocalHom s.evalQuot :=
+  ⟨fun x hx ↦ by
     by_contra hnu
     have hmem : x ∈ maximalIdeal s.Quot := (mem_maximalIdeal x).mpr hnu
     rw [maximalIdeal_quot_eq_map, ← ker_evalQuot_eq_map_maximalIdeal, RingHom.mem_ker] at hmem
     exact hx.ne_zero hmem⟩
+
+/-- Residue field algebra structure `Algebra (ResidueField s.Quot) L` induced by `s.evalQuot`. -/
+private instance instQuotResidueAlgebra [Algebra.IsAlgebraic (ResidueField R) L]
+    (s : AlgStage R L) : Algebra (ResidueField s.Quot) L :=
   (ResidueField.lift s.evalQuot).toAlgebra
 
 private lemma evalQuot_eq_comp_residue [Algebra.IsAlgebraic (ResidueField R) L]
     (s : AlgStage R L) :
     s.evalQuot = (algebraMap (ResidueField s.Quot) L).comp (residue s.Quot) := by
-  have : IsLocalHom s.evalQuot := ⟨fun x hx ↦ by
-    by_contra hnu
-    have hmem : x ∈ maximalIdeal s.Quot := (mem_maximalIdeal x).mpr hnu
-    rw [maximalIdeal_quot_eq_map, ← ker_evalQuot_eq_map_maximalIdeal, RingHom.mem_ker] at hmem
-    exact hx.ne_zero hmem⟩
-  exact RingHom.ext fun q ↦ (ResidueField.lift_residue_apply s.evalQuot q).symm
+  rw [instQuotResidueAlgebra, RingHom.algebraMap_toAlgebra]
+  exact (ResidueField.lift_comp_residue s.evalQuot).symm
 
 private lemma isIntegral_over_quotResidueField [Algebra.IsAlgebraic (ResidueField R) L]
     (s : AlgStage R L) (a : L) :
@@ -580,8 +570,8 @@ private lemma insertPresentation_rename {s : AlgStage R L} (a : L) (g : s.Quot[X
       algebraMap s.Quot (AdjoinRoot g) (Ideal.Quotient.mk s.ideal p) := by
   induction p using MvPolynomial.induction_on with
   | C r =>
-    simp only [MvPolynomial.algHom_C, AlgHom.commutes]
-    rfl
+    rw [MvPolynomial.algHom_C, AlgHom.commutes, ← MvPolynomial.algebraMap_eq,
+      Ideal.Quotient.mk_algebraMap, ← IsScalarTower.algebraMap_apply]
   | add f₁ f₂ ih₁ ih₂ => simp [map_add, ih₁, ih₂]
   | mul_X f x ih =>
     rw [map_mul, map_mul, ih, MvPolynomial.rename_X, insertPresentation, MvPolynomial.aeval_X]
@@ -607,9 +597,8 @@ private lemma insertPresentation_surjective {s : AlgStage R L} {a : L} (ha : a �
     refine ⟨MvPolynomial.rename (Set.inclusion (Set.subset_insert a s.carrier)) f *
         MvPolynomial.X (⟨a, Set.mem_insert a s.carrier⟩ : ↥(insert a s.carrier)) ^ n, ?_⟩
     rw [map_mul, map_pow, insertPresentation_rename, ← Polynomial.C_mul_X_pow_eq_monomial,
-      map_mul, map_pow, AdjoinRoot.mk_X, AdjoinRoot.mk_C]
+      map_mul, map_pow, AdjoinRoot.mk_X, AdjoinRoot.mk_C, ← AdjoinRoot.algebraMap_eq]
     simp only [insertPresentation, MvPolynomial.aeval_X, dite_eq_right_of_eq_false (eq_false ha)]
-    rfl
 
 /-- Evaluation `AdjoinRoot g →+* L` sending `root g` to `a`, compatible with `insertPresentation`.
 -/
@@ -652,8 +641,9 @@ private lemma ker_insertPresentation_le [Algebra.IsAlgebraic (ResidueField R) L]
   intro p hp
   have hπp : insertPresentation a g p ∈ maximalIdeal (AdjoinRoot g) :=
     le_maximalIdeal (RingHom.ker_ne_top ψB) (by
-      change (ψB.comp (insertPresentation a g).toRingHom) p = 0
-      rwa [hψB_comp, ← RingHom.mem_ker])
+      rw [RingHom.mem_ker, ← AlgHom.coe_toRingHom, ← RingHom.comp_apply,
+        ← AlgHom.toRingHom_eq_coe, hψB_comp, ← RingHom.mem_ker]
+      exact hp)
   have hmap_eq : ((maximalIdeal R).map
       (MvPolynomial.C : R →+* MvPolynomial ↥(insert a s.carrier) R)).map
       (insertPresentation a g).toRingHom = maximalIdeal (AdjoinRoot g) := by
@@ -696,9 +686,8 @@ private lemma exists_gt_of_notMem [Algebra.IsAlgebraic (ResidueField R) L]
     { carrier := insert a s.carrier
       ideal := RingHom.ker π
       le_ker := fun p hp ↦ by
-        rw [RingHom.mem_ker, ← hψB_comp, RingHom.comp_apply]
-        change ψB (π p) = 0
-        rw [RingHom.mem_ker.mp hp, map_zero]
+        rw [RingHom.mem_ker, ← hψB_comp, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
+          RingHom.coe_coe, RingHom.mem_ker.mp hp, map_zero]
       ker_le := ker_insertPresentation_le s ha hg hgmap hirr
       flat := Module.Flat.of_linearEquiv e.toLinearEquiv
       isIntegral := ⟨fun z ↦ by
@@ -791,15 +780,14 @@ instance instIsLocalRing : IsLocalRing (ResidueExtension R L) :=
 theorem maximalIdeal_eq_map :
     maximalIdeal (ResidueExtension R L) =
       (maximalIdeal R).map (algebraMap R (ResidueExtension R L)) := by
-  let f : (chosenAlgStage R L).Quot →+* ResidueExtension R L :=
-    (equivQuot R L).symm.toRingEquiv.toRingHom
-  have hf : Function.Surjective f := (equivQuot R L).symm.surjective
-  rw [← map_maximalIdeal_of_surjective f hf,
+  let e : (chosenAlgStage R L).Quot →ₐ[R] ResidueExtension R L := (equivQuot R L).symm.toAlgHom
+  rw [← map_maximalIdeal_of_surjective e.toRingHom (equivQuot R L).symm.surjective,
     AlgStage.maximalIdeal_quot_eq_map,
     transcendentalExt_maximalIdeal_eq_map R ((↑) : chosenTrBasis R L → L)
       (chosenTrBasis_spec R L).1,
-    Ideal.map_map, Ideal.map_map]
-  congr 1
+    Ideal.map_map, Ideal.map_map, RingHom.comp_assoc,
+    ← IsScalarTower.algebraMap_eq R (TrBase R L) (chosenAlgStage R L).Quot,
+    AlgHom.toRingHom_eq_coe, e.comp_algebraMap]
 
 /-- If `maximalIdeal R` is finitely generated, then so is `maximalIdeal (ResidueExtension R L)`. -/
 theorem maximalIdeal_fg (h : (maximalIdeal R).FG) :
@@ -822,22 +810,21 @@ instance instFlat : Module.Flat R (ResidueExtension R L) :=
 instance instFaithfullyFlat : Module.FaithfullyFlat R (ResidueExtension R L) :=
   Module.FaithfullyFlat.of_flat_of_isLocalHom
 
-/-- Surjective ring homomorphism `(chosenAlgStage R L).Quot →+* L` compatible with `residue R`. -/
+/-- The stage evaluation `(chosenAlgStage R L).evalQuot` is surjective onto `L`. -/
 private lemma toFieldHom_surjective :
     Function.Surjective (chosenAlgStage R L).evalQuot := by
   rw [← Set.range_eq_univ, AlgStage.range_evalQuot, chosenAlgStage_carrier, Algebra.adjoin_univ]
   exact Set.eq_univ_of_forall fun _ ↦ trivial
 
+/-- `(chosenAlgStage R L).evalQuot` restricts on `R` to
+`algebraMap (ResidueField R) L ∘ residue R`. -/
 private lemma toFieldHom_algebraMap (r : R) :
     (chosenAlgStage R L).evalQuot (algebraMap R (chosenAlgStage R L).Quot r) =
       algebraMap (ResidueField R) L (residue R r) := by
   rw [IsScalarTower.algebraMap_apply R (TrBase R L) (chosenAlgStage R L).Quot,
     AlgStage.evalQuot_algebraMap]
-  let _ : Algebra (ResidueField R) (ResidueField (TrBase R L)) :=
-    (ResidueField.map (algebraMap R (TrBase R L))).toAlgebra
   have _ := transcendentalExt_isScalarTower R ((↑) : chosenTrBasis R L → L)
-    (chosenTrBasis_spec R L).1
-  rw [← ResidueField.map_residue (algebraMap R (TrBase R L)) r]
+  rw [← ResidueField.algebraMap_residue (R := R) (S := TrBase R L) r]
   exact (IsScalarTower.algebraMap_apply
     (ResidueField R) (ResidueField (TrBase R L)) L (residue R r)).symm
 
@@ -845,42 +832,26 @@ private lemma toFieldHom_algebraMap (r : R) :
 `ResidueField (ResidueExtension R L) ≃ₐ[ResidueField R] L`. -/
 def residueFieldEquiv : ResidueField (ResidueExtension R L) ≃ₐ[ResidueField R] L := by
   let _ : Algebra R L := ((algebraMap (ResidueField R) L).comp (residue R)).toAlgebra
+  have : IsScalarTower R (ResidueField R) L := .of_algebraMap_eq' rfl
   let ψ : ResidueExtension R L →ₐ[R] L :=
-    { (chosenAlgStage R L).evalQuot.comp (equivQuot R L).toRingHom with
+    { (chosenAlgStage R L).evalQuot.comp (equivQuot R L).toAlgHom.toRingHom with
       commutes' := fun r ↦ by
-        change (chosenAlgStage R L).evalQuot
-          (equivQuot R L (algebraMap R (ResidueExtension R L) r)) = _
-        rw [AlgEquiv.commutes]
-        exact toFieldHom_algebraMap R L r }
+        simp only [RingHom.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
+          MonoidHom.coe_ofClass, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+          AlgEquiv.coe_toAlgHom, AlgEquiv.commutes, toFieldHom_algebraMap,
+          RingHom.algebraMap_toAlgebra] }
   have hψ : Function.Surjective ψ :=
     (toFieldHom_surjective R L).comp (equivQuot R L).surjective
-  let e₀ : ResidueField (ResidueExtension R L) ≃ₐ[R] L :=
-    residueFieldAlgEquivOfSurjective (ψ := ψ) hψ
-  refine AlgEquiv.ofRingEquiv (f := e₀.toRingEquiv) fun x ↦ ?_
-  obtain ⟨r, rfl⟩ := residue_surjective x
-  change e₀ (ResidueField.map (algebraMap R (ResidueExtension R L)) (residue R r)) =
-    algebraMap (ResidueField R) L (residue R r)
-  rw [ResidueField.map_residue]
-  change residueFieldAlgEquivOfSurjective (ψ := ψ) hψ
-    (residue (ResidueExtension R L) (algebraMap R (ResidueExtension R L) r)) = _
-  rw [residueFieldAlgEquivOfSurjective_residue]
-  exact ψ.commutes r
+  exact (residueFieldAlgEquivOfSurjective (ψ := ψ) hψ).extendScalarsOfSurjective
+    residue_surjective
 
 /-- When `L` is algebraically closed, so is `ResidueField (ResidueExtension R L)`. -/
 instance instIsAlgClosedResidueField [IsAlgClosed L] :
-    IsAlgClosed (ResidueField (ResidueExtension R L)) := by
-  let e := (residueFieldEquiv R L).toRingEquiv
-  refine IsAlgClosed.of_exists_root _ fun p _ hp ↦ ?_
-  have hdeg : (p.map e.toRingHom).degree ≠ 0 := by
-    rw [degree_map_eq_of_injective e.injective]
-    exact (degree_pos_of_irreducible hp).ne'
-  obtain ⟨x, hx⟩ := IsAlgClosed.exists_root (p.map e.toRingHom) hdeg
-  refine ⟨e.symm x, e.injective ?_⟩
-  rw [map_zero]
-  change e.toRingHom (eval (e.symm x) p) = 0
-  have hex : e.toRingHom (e.symm x) = x := e.apply_symm_apply x
-  rw [← eval₂_hom, hex, ← eval_map]
-  exact hx
+    IsAlgClosed (ResidueField (ResidueExtension R L)) :=
+  ⟨fun p ↦ by
+    let e := (residueFieldEquiv R L).toRingEquiv
+    simpa [Polynomial.map_map] using
+      IsAlgClosed.splits_domain (f := e.symm.toRingHom) (p.map e.toRingHom)⟩
 
 end ResidueExtension
 
