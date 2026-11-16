@@ -453,7 +453,7 @@ section CyclicalMonotonicity
 variable {ι X Y M : Type*} [TopologicalSpace X] [MeasurableSpace X]
   [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace (X × Y)]
   [HasOuterApproxClosed (X × Y)] [HereditarilyLindelofSpace (X × Y)]
-  [AddCommMonoid M] [LinearOrder M] [TopologicalSpace M] [OrderTopology M] [ContinuousAdd M]
+  [AddCommMonoid M] [Preorder M] [TopologicalSpace M] [OrderClosedTopology M] [ContinuousAdd M]
   {l : Filter ι} [l.NeBot] {πs : ι → ProbabilityMeasure (X × Y)}
   {π : ProbabilityMeasure (X × Y)} {cs : ι → X × Y → M} {c : X × Y → M}
 
@@ -461,12 +461,13 @@ variable {ι X Y M : Type*} [TopologicalSpace X] [MeasurableSpace X]
 `X × Y` converging weakly to `π` along a nontrivial filter `l`, and let `cs` converge continuously
 to `c`, that is, `cs i z' → c z` as `(i, z') → (l, z)`. If `(πs i).toMeasure.support` is eventually
 `cs i`-cyclically monotone, then `π.toMeasure.support` is `c`-cyclically monotone. No integrability
-or finiteness of total cost is needed, and `M` may be `ℝ` or `ℝ≥0∞`. -/
+or finiteness of total cost is needed, and `M` may be any preordered commutative monoid with closed
+order and continuous addition, such as `ℝ` or `ℝ≥0∞`. -/
 theorem isCyclicallyMonotone_support_of_tendsto (hπ : Tendsto πs l (𝓝 π))
     (hcm : ∀ᶠ i in l, IsCyclicallyMonotone (cs i) (πs i).toMeasure.support)
     (hc : ∀ z, Tendsto (Function.uncurry cs) (l ×ˢ 𝓝 z) (𝓝 (c z))) :
     IsCyclicallyMonotone c π.toMeasure.support := by
-  refine isCyclicallyMonotone_iff.2 fun n x y hmem σ ↦ not_lt.1 fun hlt ↦ ?_
+  refine isCyclicallyMonotone_iff.2 fun n x y hmem σ ↦ ?_
   let z : Fin n → X × Y := fun j ↦ (x j, y j)
   have ht₁ : Tendsto (fun p : ι × (Fin n → X × Y) ↦ ∑ j, cs p.1 ((p.2 j).1, (p.2 (σ j)).2))
       (l ×ˢ 𝓝 z) (𝓝 (∑ j, c (x j, y (σ j)))) :=
@@ -476,7 +477,8 @@ theorem isCyclicallyMonotone_support_of_tendsto (hπ : Tendsto πs l (𝓝 π))
       (l ×ˢ 𝓝 z) (𝓝 (∑ j, c (x j, y j))) :=
     tendsto_finsetSum _ fun j _ ↦ (hc (x j, y j)).comp <| tendsto_fst.prodMk <|
       ((continuous_apply j).tendsto z).comp tendsto_snd
-  obtain ⟨P, hP, Q, hQ, hPQ⟩ := Filter.eventually_prod_iff.1 (ht₁.eventually_lt ht₂ hlt)
+  refine le_of_tendsto_of_tendsto_of_frequently ht₂ ht₁ <| Filter.frequently_iff.2 fun {S} hS ↦ ?_
+  obtain ⟨P, hP, Q, hQ, hPQ⟩ := Filter.mem_prod_iff.1 hS
   obtain ⟨V, hVQ, hVopen, hzV⟩ := mem_nhds_iff.1 hQ
   obtain ⟨U, hU, hUV⟩ := isOpen_pi_iff'.1 hVopen z hzV
   have hpos : ∀ᶠ i in l, ∀ j, 0 < (πs i).toMeasure (U j) := eventually_all.2 fun j ↦ by
@@ -484,10 +486,10 @@ theorem isCyclicallyMonotone_support_of_tendsto (hπ : Tendsto πs l (𝓝 π))
       (Measure.mem_support_iff_forall _).1 (hmem j) _ ((hU j).1.mem_nhds (hU j).2)
     exact eventually_lt_of_lt_liminf
       (hUj.trans_le (ProbabilityMeasure.le_liminf_measure_open_of_tendsto hπ (hU j).1))
-  obtain ⟨i, hci, hPi, hi⟩ := (hcm.and (hP.and hpos)).exists
+  obtain ⟨i, hci, hPi, hi⟩ := (hcm.and (Filter.Eventually.and hP hpos)).exists
   choose w hw using fun j ↦ Measure.nonempty_inter_support_of_pos (hi j)
-  exact (hci.sum_le n (fun j ↦ (w j).1) (fun j ↦ (w j).2) (fun j ↦ (hw j).2) σ).not_gt
-    (hPQ hPi (hVQ (hUV fun j _ ↦ (hw j).1)))
+  exact ⟨(i, w), hPQ ⟨hPi, hVQ (hUV fun j _ ↦ (hw j).1)⟩,
+    hci.sum_le n (fun j ↦ (w j).1) (fun j ↦ (w j).2) (fun j ↦ (hw j).2) σ⟩
 
 end CyclicalMonotonicity
 

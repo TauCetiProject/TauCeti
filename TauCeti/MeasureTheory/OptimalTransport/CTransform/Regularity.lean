@@ -14,17 +14,18 @@ public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Basic
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import TauCeti.Analysis.Calculus.Rademacher
 import TauCeti.MeasureTheory.Covering.Besicovitch
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Regularity of the infimal `c`-transform for displacement costs
 
 For a displacement cost `c (x, y) = h (x - y)` on a finite-dimensional real inner product space `E`,
-extracting transport maps from `c`-concave potentials requires local finiteness and
+extracting transport maps from `c`-concave potentials requires avoiding `⊥` locally and
 almost-everywhere differentiability of `φ = cTransformSymm c ψ`. Unlike the quadratic cost
 `h z = ‖z‖ ^ 2 / 2` (where `x ↦ ‖x‖ ^ 2 / 2 - φ x` is convex), general displacement costs need two
 geometric regularity steps:
 
-1. **Full-measure interior of the finiteness domain** (Gangbo–McCann, Proposition 3.3). Even for
+1. **Full-measure interior of `{x | φ x ≠ ⊥}`** (Gangbo–McCann, Proposition 3.3). Even for
    smooth strictly convex superlinear `h` on `ℝ²`, a `c`-concave potential `φ` can take `-∞` on a
    dense set while remaining finite on a set of positive Lebesgue measure unless the level sets of
    `h` satisfy the cone condition (H2) at infinity: for every height `r` and aperture `θ ∈ (0, π)`,
@@ -32,15 +33,17 @@ geometric regularity steps:
    `{x | ‖x - p‖ ‖z‖ cos (θ / 2) ≤ ⟪z, x - p⟫ ≤ r ‖z‖}`. Under continuity of `h` and (H2), a
    finite ball cover of the unit sphere (`IsCompact.finite_cover_balls`) forces any point where
    `φ = ⊥` to propagate `φ = ⊥` to a ball of comparable radius nearby, so
-   `{x | φ x ≠ ⊥} \ interior {x | φ x ≠ ⊥}` has zero Haar measure by Besicovitch/Lebesgue density
+   `{x | φ x ≠ ⊥} \ interior {x | φ x ≠ ⊥}` (where `{x | φ x ≠ ⊥}` is the finiteness domain whenever
+   `ψ ≢ ⊥`) has zero Haar measure by Besicovitch/Lebesgue density
    (`NullMeasurableSet.ae_eq_setOf_tendsto_measure_inter_div`,
-   `TauCeti.addHaar_diff_interior_setOf_cTransformSymm_ne_bot_eq_zero`), and `φ` is locally bounded
+   `TauCeti.addHaar_sdiff_interior_setOf_cTransformSymm_ne_bot_eq_zero`), and `φ` is locally bounded
    below on `interior {x | φ x ≠ ⊥}`
    (`TauCeti.exists_eventually_le_cTransformSymm_of_mem_interior`).
 2. **Local Lipschitzness and Rademacher differentiability** (Gangbo–McCann, Proposition C.2 and
    Theorem 3.7). Under convexity of `h` and superlinear growth `h z / ‖z‖ → ∞`, local lower bounds
    and upper semicontinuity of `φ` confine nearly optimal target points `y` for `x₁` near `x₀` to a
-   bounded ball, where `h` is Lipschitz (`ConvexOn.exists_lipschitzOnWith_of_isBounded`); hence
+   bounded ball, where `h` is Lipschitz (`ConvexOn.locallyLipschitz`,
+   `LocallyLipschitzOn.exists_lipschitzOnWith_of_compact`); hence
    `x ↦ (φ x).toReal` is locally Lipschitz wherever `φ` is locally bounded below
    (`TauCeti.locallyLipschitzOn_toReal_cTransformSymm_of_eventually_le`), and therefore
    differentiable Haar-almost everywhere on `{x | φ x ≠ ⊥}` by Rademacher's theorem
@@ -51,13 +54,15 @@ geometric regularity steps:
 
 * `TauCeti.exists_eventually_le_cTransformSymm_of_mem_interior` — under continuity of `h` and the
   cone condition, `cTransformSymm` is locally bounded below on `interior {x | φ x ≠ ⊥}`;
-* `TauCeti.addHaar_diff_interior_setOf_cTransformSymm_ne_bot_eq_zero` — under continuity of `h` and
+* `TauCeti.addHaar_sdiff_interior_setOf_cTransformSymm_ne_bot_eq_zero` — under continuity of `h` and
   the cone condition, `{x | φ x ≠ ⊥} \ interior {x | φ x ≠ ⊥}` is Haar-null;
 * `TauCeti.locallyLipschitzOn_toReal_cTransformSymm_of_eventually_le` and
   `TauCeti.locallyLipschitzOn_interior_toReal_cTransformSymm` — local Lipschitzness of the real
-  representative of `cTransformSymm` for convex superlinear `h`;
-* `TauCeti.ae_eventually_ne_bot_and_differentiableAt_toReal_cTransformSymm` — Haar-almost everywhere
-  local finiteness and differentiability on `{x | φ x ≠ ⊥}`.
+  representative of `cTransformSymm` for convex superlinear `h` where locally bounded below, and on
+  `interior {x | φ x ≠ ⊥}` under the cone condition (H2);
+* `TauCeti.ae_eventually_ne_bot_and_differentiableAt_toReal_cTransformSymm` — avoiding `⊥` locally
+  and differentiability of the real representative Haar-almost everywhere on `{x | φ x ≠ ⊥}` (the
+  finiteness domain when `ψ ≢ ⊥`).
 
 ## References
 
@@ -75,7 +80,7 @@ open scoped ENNReal NNReal RealInnerProductSpace Topology
 
 namespace TauCeti
 
-/-! ### Cone condition and regularity of the finiteness domain -/
+/-! ### Cone condition and regularity of `{x | cTransformSymm c ψ x ≠ ⊥}` -/
 
 section ConeRegularity
 
@@ -144,8 +149,7 @@ whenever `cTransformSymm` avoids `⊥` at a reference point `x_ref` within dista
 private theorem le_sub_of_norm_sub_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] {h : E → ℝ} (hc : Continuous h) {ψ : E → EReal} {x₀ x_ref : E}
     {R : ℝ} (hR : 0 ≤ R) (href_dist : ‖x_ref - x₀‖ ≤ 1)
-    (href_bot : cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x_ref ≠ ⊥)
-    (hψ_top : ∀ y, ψ y ≠ ⊤) :
+    (href_bot : cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x_ref ≠ ⊥) :
     ∃ m₀ : ℝ, ∀ x y : E, ‖x - x₀‖ ≤ 1 → ‖x₀ - y‖ ≤ R →
       (m₀ : EReal) ≤ (h (x - y) : EReal) - ψ y := by
   obtain ⟨m_h, -, hm_h⟩ := (isCompact_closedBall (0 : E) (R + 1)).exists_isMinOn
@@ -161,7 +165,8 @@ private theorem le_sub_of_norm_sub_le {E : Type*} [NormedAddCommGroup E] [Normed
   refine ⟨h m_h - h M_h + (φ x_ref).toReal, fun x y hx hy ↦ ?_⟩
   rcases eq_or_ne (ψ y) ⊥ with hybot | hybot
   · simp [hybot]
-  have hψy : ψ y = ((ψ y).toReal : EReal) := (EReal.coe_toReal (hψ_top y) hybot).symm
+  have hψy : ψ y = ((ψ y).toReal : EReal) :=
+    (EReal.coe_toReal (ne_top_of_cTransformSymm_ne_bot href_bot y) hybot).symm
   have hφ_le : ((φ x_ref).toReal : EReal) ≤ (h (x_ref - y) : EReal) - ((ψ y).toReal : EReal) := by
     rw [EReal.coe_toReal href_top href_bot, ← hψy]
     exact cTransformSymm_le _ ψ x_ref y
@@ -210,40 +215,38 @@ private theorem exists_net_forall_closedBall_le [Nontrivial E]
     (mem_ball_iff_norm.1 hzu) hδ₀ hδ₁ hx
   exact hcone_z (x - x₀ + p) hc₁ hc₂
 
-/-- **Local lower bound on the interior of the finiteness domain** (Gangbo–McCann, Proposition 3.3).
-If `h` is continuous and satisfies the cone condition (H2), then `cTransformSymm` for the cost
-`h (x - y)` is locally bounded below by a real constant around every point of
-`interior {x | cTransformSymm c ψ x ≠ ⊥}`. -/
-theorem exists_eventually_le_cTransformSymm_of_mem_interior (hc : Continuous h)
+/-- Given witnesses `g u` in `closedBall (x₀ + (δ / 2) • u) (δ / 80)` where `cTransformSymm`
+avoids `⊥`, continuity of `h` and the cone condition (H2) yield a uniform real lower bound on
+`cTransformSymm` at every `x ∈ closedBall x₀ (δ / 80)` whose shifted balls still contain `g u`. -/
+private theorem exists_le_cTransformSymm_of_forall_sphere [Nontrivial E]
+    (hc : Continuous h)
     (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
       ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
         ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p)
-    {ψ : E → EReal} {x₀ : E}
-    (hx₀ : x₀ ∈ interior {x | cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x ≠ ⊥}) :
-    ∃ m : ℝ, ∀ᶠ x in 𝓝 x₀, (m : EReal) ≤ cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x := by
+    {ψ : E → EReal} {x₀ : E} {δ : ℝ} (hδ₀ : 0 < δ) (hδ₁ : δ ≤ 1) {g : E → E}
+    (hg_mem : ∀ u ∈ sphere (0 : E) 1, g u ∈ closedBall (x₀ + (δ / 2) • u) (δ / 80))
+    (hg_bot : ∀ u ∈ sphere (0 : E) 1,
+      cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ (g u) ≠ ⊥) :
+    ∃ m : ℝ, ∀ x ∈ closedBall x₀ (δ / 80),
+      (∀ u ∈ sphere (0 : E) 1, g u ∈ closedBall (x + (δ / 2) • u) (δ / 80)) →
+      (m : EReal) ≤ cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x := by
   set φ := cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ
   by_cases hall : ∀ y, ψ y = ⊥
-  · exact ⟨0, Eventually.of_forall fun x ↦ le_cTransformSymm fun y ↦ by simp [hall y]⟩
+  · exact ⟨0, fun _ _ _ ↦ le_cTransformSymm fun y ↦ by simp [hall y]⟩
   obtain ⟨y₁, hy₁⟩ : ∃ y, ψ y ≠ ⊥ := by simpa using hall
-  have hx₀_bot : φ x₀ ≠ ⊥ := interior_subset hx₀
-  have hψ_top : ∀ y, ψ y ≠ ⊤ := fun y hy ↦ hx₀_bot <| eq_bot_iff.2 <| by
-    simpa [hy] using cTransformSymm_le (fun z : E × E ↦ h (z.1 - z.2)) ψ x₀ y
-  rcases subsingleton_or_nontrivial E with hsub | hnon
-  · refine ⟨(φ x₀).toReal, Eventually.of_forall fun x ↦ ?_⟩
-    rw [Subsingleton.elim x x₀,
-      EReal.coe_toReal (cTransformSymm_lt_top_of_ne_bot _ hy₁ x₀).ne hx₀_bot]
-  obtain ⟨δ₀, hδ₀_pos, hδ₀_sub⟩ := Metric.mem_nhds_iff.1 (mem_interior_iff_mem_nhds.1 hx₀)
-  set δ := min (δ₀ / 2) 1
-  have hδ_pos : 0 < δ := by positivity
-  have hδ_le : δ ≤ 1 := min_le_right _ _
-  have hcb_sub : closedBall x₀ δ ⊆ {x | φ x ≠ ⊥} :=
-    (closedBall_subset_ball (lt_of_le_of_lt (min_le_left _ _) (by linarith))).trans hδ₀_sub
-  obtain ⟨R, F, hR₀, hFne, hFsub, hnet⟩ := exists_net_forall_closedBall_le h_cone
-  obtain ⟨m₀, hm₀⟩ := le_sub_of_norm_sub_le hc (by positivity : 0 ≤ R + 1)
-    (by simp : ‖x₀ - x₀‖ ≤ 1) hx₀_bot hψ_top
-  set m₁ := F.inf' hFne fun u ↦ (φ (x₀ + (δ / 2) • u)).toReal
-  refine ⟨min m₀ m₁, eventually_of_mem (closedBall_mem_nhds x₀ (by positivity : 0 < δ / 80))
-    fun x hx ↦ le_cTransformSymm fun y ↦ ?_⟩
+  obtain ⟨R, F, hR₀, ⟨u₀, hu₀⟩, hFsub, hnet⟩ := exists_net_forall_closedBall_le h_cone
+  have hgu₀_dist : ‖g u₀ - x₀‖ ≤ 1 := by
+    have hmem := mem_closedBall_iff_norm.1 (hg_mem u₀ (hFsub hu₀))
+    have hu₀_norm : ‖(δ / 2) • u₀‖ = δ / 2 := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity),
+        mem_sphere_zero_iff_norm.1 (hFsub hu₀), mul_one]
+    calc ‖g u₀ - x₀‖ = ‖(g u₀ - (x₀ + (δ / 2) • u₀)) + (δ / 2) • u₀‖ := by congr 1; abel
+      _ ≤ ‖g u₀ - (x₀ + (δ / 2) • u₀)‖ + ‖(δ / 2) • u₀‖ := norm_add_le _ _
+      _ ≤ 1 := by linarith
+  obtain ⟨m₀, hm₀⟩ :=
+    le_sub_of_norm_sub_le hc (by positivity : 0 ≤ R + 1) hgu₀_dist (hg_bot u₀ (hFsub hu₀))
+  set m₁ := F.inf' ⟨u₀, hu₀⟩ fun u ↦ (φ (g u)).toReal
+  refine ⟨min m₀ m₁, fun x hx hg_x ↦ le_cTransformSymm fun y ↦ ?_⟩
   have hx_dist : ‖x - x₀‖ ≤ δ / 80 := mem_closedBall_iff_norm.1 hx
   by_cases hyR : ‖x₀ - y‖ ≤ R + 1
   · exact (EReal.coe_le_coe_iff.2 (min_le_left _ _)).trans
@@ -254,20 +257,50 @@ theorem exists_eventually_le_cTransformSymm_of_mem_interior (hc : Continuous h)
       simpa only [sub_sub_sub_cancel_left] using norm_sub_norm_le (x₀ - y) (x₀ - x)
     rw [norm_sub_rev x₀ x] at htri
     linarith
-  obtain ⟨u, huF, hu_le⟩ := hnet (x - y) hp x δ hδ_pos hδ_le
-  set z := x₀ + (δ / 2) • u
-  have hz_mem : z ∈ closedBall (x + (δ / 2) • u) (δ / 80) := mem_closedBall_iff_norm.2 <| by
-    simpa only [z, add_sub_add_right_eq_sub, norm_sub_rev] using hx_dist
-  have hzy : h (z - y) ≤ h (x - y) := by simpa only [sub_add_sub_cancel] using hu_le z hz_mem
-  have hz_bot : φ z ≠ ⊥ := hcb_sub <| mem_closedBall_iff_norm.2 <| by
-    rw [show z - x₀ = (δ / 2) • u by simp [z], norm_smul, Real.norm_eq_abs,
-      abs_of_pos (by positivity : 0 < δ / 2), mem_sphere_zero_iff_norm.1 (hFsub huF), mul_one]
-    linarith
+  obtain ⟨u, huF, hu_le⟩ := hnet (x - y) hp x δ hδ₀ hδ₁
+  have hguy : h (g u - y) ≤ h (x - y) :=
+    by simpa only [sub_add_sub_cancel] using hu_le (g u) (hg_x u (hFsub huF))
   calc ((min m₀ m₁ : ℝ) : EReal) ≤ (m₁ : EReal) := EReal.coe_le_coe_iff.2 (min_le_right _ _)
-    _ ≤ ((φ z).toReal : EReal) := EReal.coe_le_coe_iff.2 (Finset.inf'_le _ huF)
-    _ = φ z := EReal.coe_toReal (cTransformSymm_lt_top_of_ne_bot _ hy₁ z).ne hz_bot
-    _ ≤ (h (z - y) : EReal) - ψ y := cTransformSymm_le _ ψ z y
-    _ ≤ (h (x - y) : EReal) - ψ y := EReal.sub_le_sub (EReal.coe_le_coe_iff.2 hzy) le_rfl
+    _ ≤ ((φ (g u)).toReal : EReal) := EReal.coe_le_coe_iff.2 (Finset.inf'_le _ huF)
+    _ = φ (g u) := EReal.coe_toReal (cTransformSymm_lt_top_of_ne_bot _ hy₁ (g u)).ne
+        (hg_bot u (hFsub huF))
+    _ ≤ (h (g u - y) : EReal) - ψ y := cTransformSymm_le _ ψ (g u) y
+    _ ≤ (h (x - y) : EReal) - ψ y := EReal.sub_le_sub (EReal.coe_le_coe_iff.2 hguy) le_rfl
+
+/-- **Local lower bound on `interior {x | cTransformSymm c ψ x ≠ ⊥}`**
+(Gangbo–McCann, Proposition 3.3). If `h` is continuous and satisfies the cone condition (H2), then
+`cTransformSymm` for the cost `h (x - y)` is locally bounded below by a real constant around every
+point of `interior {x | cTransformSymm c ψ x ≠ ⊥}` (the interior of the finiteness domain when
+`ψ ≢ ⊥`). -/
+theorem exists_eventually_le_cTransformSymm_of_mem_interior (hc : Continuous h)
+    (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
+      ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
+        ⟪z, x - p⟫ ≤ r * ‖z‖ → h x ≤ h p)
+    {ψ : E → EReal} {x₀ : E}
+    (hx₀ : x₀ ∈ interior {x | cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x ≠ ⊥}) :
+    ∃ m : ℝ, ∀ᶠ x in 𝓝 x₀, (m : EReal) ≤ cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x := by
+  set φ := cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ
+  rcases subsingleton_or_nontrivial E with hsub | hnon
+  · by_cases hall : ∀ y, ψ y = ⊥
+    · exact ⟨0, Eventually.of_forall fun _ ↦ le_cTransformSymm fun y ↦ by simp [hall y]⟩
+    obtain ⟨y₁, hy₁⟩ : ∃ y, ψ y ≠ ⊥ := by simpa using hall
+    refine ⟨(φ x₀).toReal, Eventually.of_forall fun x ↦ ?_⟩
+    rw [Subsingleton.elim x x₀,
+      EReal.coe_toReal (cTransformSymm_lt_top_of_ne_bot _ hy₁ x₀).ne (interior_subset hx₀)]
+  obtain ⟨δ₀, hδ₀_pos, hδ₀_sub⟩ := Metric.mem_nhds_iff.1 (mem_interior_iff_mem_nhds.1 hx₀)
+  set δ := min (δ₀ / 2) 1
+  have hδ_pos : 0 < δ := by positivity
+  have hcb_sub : closedBall x₀ δ ⊆ {x | φ x ≠ ⊥} :=
+    (closedBall_subset_ball (lt_of_le_of_lt (min_le_left _ _) (by linarith))).trans hδ₀_sub
+  obtain ⟨m, hm⟩ := exists_le_cTransformSymm_of_forall_sphere hc h_cone hδ_pos (min_le_right _ _)
+    (g := fun u ↦ x₀ + (δ / 2) • u) (fun _ _ ↦ mem_closedBall_self (by positivity))
+    fun u hu ↦ hcb_sub <| mem_closedBall_iff_norm.2 <| by
+      simp only [add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+        abs_of_pos (by positivity : 0 < δ / 2), mem_sphere_zero_iff_norm.1 hu, mul_one]
+      linarith
+  refine ⟨m, eventually_of_mem (closedBall_mem_nhds x₀ (by positivity : 0 < δ / 80))
+    fun x hx ↦ hm x hx fun u _ ↦ mem_closedBall_iff_norm.2 ?_⟩
+  simpa only [add_sub_add_right_eq_sub, norm_sub_rev] using mem_closedBall_iff_norm.1 hx
 
 /-- If `cTransformSymm` takes `⊥` at `x₁`, then under continuity of `h` and the cone condition (H2),
 it takes `⊥` on an entire ball `closedBall (x₁ + (δ / 2) • u) (δ / 80)` for some unit vector `u`. -/
@@ -282,58 +315,25 @@ private theorem exists_closedBall_subset_setOf_cTransformSymm_eq_bot [Nontrivial
     ∃ u ∈ sphere (0 : E) 1,
       closedBall (x₁ + (δ / 2) • u) (δ / 80) ⊆
         {x | cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x = ⊥} := by
-  set φ := cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ
-  obtain ⟨R, F, hR₀, hFne, hFsub, hnet⟩ := exists_net_forall_closedBall_le h_cone
   by_contra! hcon
-  have hcon' : ∀ u, ∃ x, u ∈ F → x ∈ closedBall (x₁ + (δ / 2) • u) (δ / 80) ∧ φ x ≠ ⊥ := fun u ↦ by
-    by_cases hu : u ∈ F
-    · obtain ⟨x, hx_cb, hx_bot⟩ := not_subset.1 (hcon u (hFsub hu))
+  have hcon' : ∀ u, ∃ x, u ∈ sphere (0 : E) 1 →
+      x ∈ closedBall (x₁ + (δ / 2) • u) (δ / 80) ∧
+        cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x ≠ ⊥ := fun u ↦ by
+    by_cases hu : u ∈ sphere (0 : E) 1
+    · obtain ⟨x, hx_cb, hx_bot⟩ := not_subset.1 (hcon u hu)
       exact ⟨x, fun _ ↦ ⟨hx_cb, hx_bot⟩⟩
     · exact ⟨x₁, fun h ↦ (hu h).elim⟩
   choose g hg using hcon'
-  obtain ⟨u₀, hu₀⟩ := hFne
-  have hy_ne_bot : ∃ y, ψ y ≠ ⊥ := by
-    by_contra! hall
-    have htop : φ x₁ = ⊤ := eq_top_iff.2 (le_cTransformSymm fun y ↦ by simp [hall y])
-    exact bot_ne_top (hx₁.symm.trans htop)
-  obtain ⟨y₁, hy₁⟩ := hy_ne_bot
-  have hψ_top : ∀ y, ψ y ≠ ⊤ := fun y hy ↦ (hg u₀ hu₀).2 <| eq_bot_iff.2 <| by
-    simpa [hy] using cTransformSymm_le (fun z : E × E ↦ h (z.1 - z.2)) ψ (g u₀) y
-  have hgu₀_dist : ‖g u₀ - x₁‖ ≤ 1 := by
-    have hmem := mem_closedBall_iff_norm.1 (hg u₀ hu₀).1
-    have hu₀_norm : ‖(δ / 2) • u₀‖ = δ / 2 := by
-      rw [norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity),
-        mem_sphere_zero_iff_norm.1 (hFsub hu₀), mul_one]
-    calc ‖g u₀ - x₁‖ = ‖(g u₀ - (x₁ + (δ / 2) • u₀)) + (δ / 2) • u₀‖ := by congr 1; abel
-      _ ≤ ‖g u₀ - (x₁ + (δ / 2) • u₀)‖ + ‖(δ / 2) • u₀‖ := norm_add_le _ _
-      _ ≤ 1 := by linarith
-  obtain ⟨m₀, hm₀⟩ := le_sub_of_norm_sub_le hc hR₀ hgu₀_dist (hg u₀ hu₀).2 hψ_top
-  set m₁ := F.inf' ⟨u₀, hu₀⟩ fun u ↦ (φ (g u)).toReal
-  set m := min m₀ m₁ - 1
-  have hlt : φ x₁ < (m : EReal) := hx₁ ▸ EReal.bot_lt_coe m
-  rw [show φ x₁ = _ from cTransformSymm_apply _ ψ x₁] at hlt
-  obtain ⟨y, hy⟩ := iInf_lt_iff.1 hlt
-  have hyR : R < ‖x₁ - y‖ := by
-    by_contra! hle
-    have hge := hm₀ x₁ y (by simp) hle
-    exact (hy.trans_le (EReal.coe_le_coe_iff.2 (by linarith [min_le_left m₀ m₁]))).not_ge hge
-  obtain ⟨u, huF, hu_le⟩ := hnet (x₁ - y) hyR x₁ δ hδ₀ hδ₁
-  have hguy : h (g u - y) ≤ h (x₁ - y) := by
-    simpa only [sub_add_sub_cancel] using hu_le (g u) (hg u huF).1
-  have hgu_le : ((φ (g u)).toReal : EReal) ≤ (h (x₁ - y) : EReal) - ψ y := by
-    calc ((φ (g u)).toReal : EReal) = φ (g u) :=
-          EReal.coe_toReal (cTransformSymm_lt_top_of_ne_bot _ hy₁ (g u)).ne (hg u huF).2
-      _ ≤ (h (g u - y) : EReal) - ψ y := cTransformSymm_le _ ψ (g u) y
-      _ ≤ (h (x₁ - y) : EReal) - ψ y := EReal.sub_le_sub (EReal.coe_le_coe_iff.2 hguy) le_rfl
-  have hm_lt : (m : EReal) < ((φ (g u)).toReal : EReal) := EReal.coe_lt_coe_iff.2 <| by
-    linarith [min_le_right m₀ m₁, Finset.inf'_le (f := fun u ↦ (φ (g u)).toReal) huF]
-  exact (hy.trans hm_lt).not_ge hgu_le
+  obtain ⟨m, hm⟩ := exists_le_cTransformSymm_of_forall_sphere hc h_cone hδ₀ hδ₁
+    (fun u hu ↦ (hg u hu).1) (fun u hu ↦ (hg u hu).2)
+  have hle := hm x₁ (mem_closedBall_self (by positivity)) fun u hu ↦ (hg u hu).1
+  exact EReal.coe_ne_bot m (eq_bot_iff.2 (hle.trans_eq hx₁))
 
-/-- **The finiteness domain of `cTransformSymm` equals its interior up to Haar measure zero**
+/-- **The set `{x | cTransformSymm c ψ x ≠ ⊥}` equals its interior up to Haar measure zero**
 (Gangbo–McCann, Proposition 3.3). Under continuity of `h` and the cone condition (H2), the
-boundary points `{x | cTransformSymm c ψ x ≠ ⊥} \ interior {x | cTransformSymm c ψ x ≠ ⊥}` have
-zero additive Haar measure. -/
-theorem addHaar_diff_interior_setOf_cTransformSymm_ne_bot_eq_zero
+boundary points `{x | cTransformSymm c ψ x ≠ ⊥} \ interior {x | cTransformSymm c ψ x ≠ ⊥}` (the
+boundary of the finiteness domain when `ψ ≢ ⊥`) have zero additive Haar measure. -/
+theorem addHaar_sdiff_interior_setOf_cTransformSymm_ne_bot_eq_zero
     [MeasurableSpace E] [BorelSpace E] (ρ : Measure E) [ρ.IsAddHaarMeasure] (hc : Continuous h)
     (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
       ∃ z, z ≠ 0 ∧ ∀ x, ‖x - p‖ * ‖z‖ * Real.cos (θ / 2) ≤ ⟪z, x - p⟫ →
@@ -355,10 +355,7 @@ theorem addHaar_diff_interior_setOf_cTransformSymm_ne_bot_eq_zero
       (ae_eq_set.1 hS_meas.ae_eq_setOf_tendsto_measure_inter_div).1
   intro x₀ hx₀
   by_contra hx₀_int
-  have hball_pos : ∀ᶠ r in 𝓝[>] (0 : ℝ), ρ (closedBall x₀ r) ≠ 0 ∧ ρ (closedBall x₀ r) ≠ ∞ :=
-    eventually_nhdsWithin_of_forall fun r (hr : 0 < r) ↦
-      ⟨((isOpen_ball.measure_pos ρ (nonempty_ball.2 hr)).trans_le
-        (measure_mono ball_subset_closedBall)).ne', measure_closedBall_lt_top.ne⟩
+  have hball_pos := eventually_measure_closedBall_ne_zero_ne_top ρ x₀
   have hcompl := (hS_meas.tendsto_measure_compl_inter_div_iff hball_pos).2 hx₀
   set α : ℝ≥0∞ := ENNReal.ofReal ((1 / 80 : ℝ) ^ Module.finrank ℝ E)
   have hα : 0 < α := ENNReal.ofReal_pos.2 (by positivity)
@@ -402,11 +399,11 @@ private theorem exists_norm_sub_le_of_sub_lt {E : Type*} [NormedAddCommGroup E] 
     {ψ : E → EReal} {x₀ : E} {η m M : ℝ} (hη : 0 < η)
     (hm : ∀ x' ∈ ball x₀ η, (m : EReal) ≤ cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x') :
     ∃ R : ℝ, 0 ≤ R ∧ ∀ x₁ ∈ ball x₀ (η / 2), ∀ y : E,
-      ψ y ≠ ⊥ → ψ y ≠ ⊤ → h (x₁ - y) - (ψ y).toReal < M + 1 → ‖x₁ - y‖ ≤ R := by
+      ψ y ≠ ⊥ → h (x₁ - y) - (ψ y).toReal < M + 1 → ‖x₁ - y‖ ≤ R := by
   set C := max 0 (2 * (M + 1 - m) / η) + |h 0| / η + 1
   obtain ⟨R₀, -, hR₀⟩ := Filter.hasBasis_cobounded_norm.eventually_iff.1
     (h_superlinear.eventually_ge_atTop C)
-  refine ⟨max R₀ η + 1, by positivity, fun x₁ hx₁ y hy_bot hy_top hlt ↦ ?_⟩
+  refine ⟨max R₀ η + 1, by positivity, fun x₁ hx₁ y hy_bot hlt ↦ ?_⟩
   by_contra! hgt
   set v := x₁ - y
   have hv_η : η < ‖v‖ := lt_of_le_of_lt (by linarith [le_max_right R₀ η]) hgt
@@ -426,8 +423,10 @@ private theorem exists_norm_sub_le_of_sub_lt {E : Type*} [NormedAddCommGroup E] 
     calc ‖x' - x₀‖ = ‖(x₁ - x₀) - t • v‖ := by simp only [x', sub_right_comm]
       _ ≤ ‖x₁ - x₀‖ + ‖t • v‖ := norm_sub_le _ _
       _ < η := by linarith
+  have hx'_bot : cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x' ≠ ⊥ :=
+    ne_bot_of_le_ne_bot (EReal.coe_ne_bot m) (hm x' hx'_mem)
   have hm_x' : (m : EReal) ≤ (h (x' - y) : EReal) - ((ψ y).toReal : EReal) := by
-    rw [EReal.coe_toReal hy_top hy_bot]
+    rw [EReal.coe_toReal (ne_top_of_cTransformSymm_ne_bot hx'_bot y) hy_bot]
     exact (hm x' hx'_mem).trans (cTransformSymm_le _ ψ x' y)
   rw [← EReal.coe_sub, EReal.coe_le_coe_iff] at hm_x'
   have hconv_step : h (x' - y) ≤ (1 - t) * h v + t * h 0 := by
@@ -443,7 +442,7 @@ private theorem exists_norm_sub_le_of_sub_lt {E : Type*} [NormedAddCommGroup E] 
     have hident : (2 / η) * (t * (h v - h 0)) = (h v - h 0) / ‖v‖ := by
       simp only [t]
       field_simp
-    rwa [hident, show (2 / η) * (M + 1 - m) = 2 * (M + 1 - m) / η by ring] at hmul
+    rwa [hident, div_mul_eq_mul_div] at hmul
   have hdiv₂ : h 0 / ‖v‖ ≤ |h 0| / η :=
     (div_le_div_of_nonneg_right (le_abs_self _) hv_pos.le).trans
       (div_le_div_of_nonneg_left (abs_nonneg _) hη hv_η.le)
@@ -454,24 +453,24 @@ private theorem exists_norm_sub_le_of_sub_lt {E : Type*} [NormedAddCommGroup E] 
 nearly optimal shifts transfer Lipschitzness of `h` on `ball 0 (R + η + 1)` to `(φ ·).toReal`. -/
 private theorem lipschitzOnWith_toReal_cTransformSymm {E : Type*} [NormedAddCommGroup E]
     {h : E → ℝ} {ψ : E → EReal} {y₁ x₀ : E}
-    (hy₁ : ψ y₁ ≠ ⊥) (hψ_top : ∀ y, ψ y ≠ ⊤) {η m M R : ℝ} {K : ℝ≥0}
+    (hy₁ : ψ y₁ ≠ ⊥) {η m M R : ℝ} {K : ℝ≥0}
     (hball : ∀ x', dist x' x₀ < η →
       (m : EReal) ≤ cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x' ∧
         cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x' < (M : EReal))
     (hR : ∀ x₁ ∈ ball x₀ (η / 2), ∀ y : E,
-      ψ y ≠ ⊥ → ψ y ≠ ⊤ → h (x₁ - y) - (ψ y).toReal < M + 1 → ‖x₁ - y‖ ≤ R)
+      ψ y ≠ ⊥ → h (x₁ - y) - (ψ y).toReal < M + 1 → ‖x₁ - y‖ ≤ R)
     (hK : LipschitzOnWith K h (ball (0 : E) (R + η + 1))) :
     LipschitzOnWith K (fun x ↦ (cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x).toReal)
       (ball x₀ (η / 2)) := by
-  set φ := cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ
+  set φ := cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ with hφ
   have oneside : ∀ x₁ ∈ ball x₀ (η / 2), ∀ x₂ ∈ ball x₀ (η / 2),
       (φ x₂).toReal - (φ x₁).toReal ≤ K * dist x₁ x₂ := by
     intro x₁ hx₁ x₂ hx₂
     have hη : 0 < η := by linarith [mem_ball.1 hx₁, dist_nonneg (x := x₁) (y := x₀)]
     have hx₁_η : dist x₁ x₀ < η := by linarith [mem_ball.1 hx₁]
+    have hx₁_bot : φ x₁ ≠ ⊥ := ne_bot_of_le_ne_bot (EReal.coe_ne_bot m) (hball x₁ hx₁_η).1
     have hφx₁_real : φ x₁ = ((φ x₁).toReal : EReal) :=
-      (EReal.coe_toReal (cTransformSymm_lt_top_of_ne_bot _ hy₁ x₁).ne
-        (ne_bot_of_le_ne_bot (EReal.coe_ne_bot m) (hball x₁ hx₁_η).1)).symm
+      (EReal.coe_toReal (cTransformSymm_lt_top_of_ne_bot _ hy₁ x₁).ne hx₁_bot).symm
     have hφx₁_le : (φ x₁).toReal ≤ M := EReal.coe_le_coe_iff.1 (hφx₁_real ▸ (hball x₁ hx₁_η).2.le)
     have hx₂_η : dist x₂ x₀ < η := by linarith [mem_ball.1 hx₂]
     have hφx₂_real : φ x₂ = ((φ x₂).toReal : EReal) :=
@@ -483,13 +482,12 @@ private theorem lipschitzOnWith_toReal_cTransformSymm {E : Type*} [NormedAddComm
     have hlt_x₁ : φ x₁ < (((φ x₁).toReal + ε' : ℝ) : EReal) := by
       conv_lhs => rw [hφx₁_real]
       exact EReal.coe_lt_coe_iff.2 (by linarith)
-    conv at hlt_x₁ => lhs; rw [show φ x₁ = _ from cTransformSymm_apply _ ψ x₁]
-    obtain ⟨y, hy⟩ := iInf_lt_iff.1 hlt_x₁
-    dsimp only at hy
+    rw [hφ, cTransformSymm_lt_iff] at hlt_x₁
+    obtain ⟨y, hy⟩ := hlt_x₁
     have hy_bot : ψ y ≠ ⊥ := fun hb ↦ by simp [hb] at hy
-    rw [← EReal.coe_toReal (hψ_top y) hy_bot, ← EReal.coe_sub, EReal.coe_lt_coe_iff] at hy
-    have hxy₁ : ‖x₁ - y‖ ≤ R :=
-      hR x₁ hx₁ y hy_bot (hψ_top y) (by linarith [min_le_right ε 1])
+    have hy_top : ψ y ≠ ⊤ := ne_top_of_cTransformSymm_ne_bot hx₁_bot y
+    rw [← EReal.coe_toReal hy_top hy_bot, ← EReal.coe_sub, EReal.coe_lt_coe_iff] at hy
+    have hxy₁ : ‖x₁ - y‖ ≤ R := hR x₁ hx₁ y hy_bot (by linarith [min_le_right ε 1])
     have hmem₁ : x₁ - y ∈ ball (0 : E) (R + η + 1) := mem_ball_zero_iff.2 (by linarith)
     have hmem₂ : x₂ - y ∈ ball (0 : E) (R + η + 1) := mem_ball_zero_iff.2 <| by
       have hd₁₂ : ‖x₂ - x₁‖ < η := by
@@ -502,7 +500,7 @@ private theorem lipschitzOnWith_toReal_cTransformSymm {E : Type*} [NormedAddComm
     have hlip := hK.dist_le_mul (x₂ - y) hmem₂ (x₁ - y) hmem₁
     rw [Real.dist_eq, dist_sub_right, dist_comm x₂ x₁] at hlip
     have hφx₂_le : (φ x₂).toReal ≤ h (x₂ - y) - (ψ y).toReal := by
-      rw [← EReal.coe_le_coe_iff, EReal.coe_sub, EReal.coe_toReal (hψ_top y) hy_bot, ← hφx₂_real]
+      rw [← EReal.coe_le_coe_iff, EReal.coe_sub, EReal.coe_toReal hy_top hy_bot, ← hφx₂_real]
       exact cTransformSymm_le _ ψ x₂ y
     linarith [(abs_le.1 hlip).2, min_le_left ε 1]
   refine LipschitzOnWith.of_dist_le_mul fun x₁ hx₁ x₂ hx₂ ↦ ?_
@@ -532,15 +530,12 @@ theorem locallyLipschitzOn_toReal_cTransformSymm_of_eventually_le (hh : ConvexOn
     exact ⟨0, univ, univ_mem, hzero ▸ (LipschitzWith.const (0 : ℝ)).lipschitzOnWith⟩
   push Not at hall
   obtain ⟨y₁, hy₁⟩ := hall
-  have hc : Continuous h := continuousOn_univ.1 (hh.continuousOn isOpen_univ)
+  have hc : Continuous h := hh.locallyLipschitz.continuous
   have husc : UpperSemicontinuous φ :=
     upperSemicontinuous_cTransformSymm_of_continuous
       (fun y ↦ hc.comp (continuous_id.sub continuous_const)) ψ
   intro x₀ hx₀
   obtain ⟨m, hm_ev⟩ := hs x₀ hx₀
-  have hψ_top : ∀ y, ψ y ≠ ⊤ := fun y hy ↦ by
-    have hbot : φ x₀ = ⊥ := eq_bot_iff.2 (by simpa [hy] using cTransformSymm_le _ ψ x₀ y)
-    exact EReal.coe_ne_bot m (eq_bot_iff.2 (hm_ev.self_of_nhds.trans_eq hbot))
   have hx₀_top : φ x₀ < ⊤ := cTransformSymm_lt_top_of_ne_bot _ hy₁ x₀
   set M := (φ x₀).toReal + 1
   have hx₀_lt : φ x₀ < (M : EReal) := by
@@ -551,14 +546,11 @@ theorem locallyLipschitzOn_toReal_cTransformSymm_of_eventually_le (hh : ConvexOn
   obtain ⟨η, hη, hball⟩ := Metric.eventually_nhds_iff.1 (hm_ev.and hM_ev)
   obtain ⟨R, -, hR⟩ := exists_norm_sub_le_of_sub_lt hh h_superlinear hη
     fun x' hx' ↦ (hball (mem_ball.1 hx')).1
-  have hbnd : Bornology.IsBounded (h '' ball (0 : E) (R + η + 2)) :=
-    ((isCompact_closedBall (0 : E) (R + η + 2)).image hc).isBounded.subset
-      (image_mono ball_subset_closedBall)
-  obtain ⟨K, hK⟩ :=
-    (hh.subset (subset_univ _) (convex_ball _ _)).exists_lipschitzOnWith_of_isBounded
-      (r' := R + η + 1) (by linarith) hbnd
+  obtain ⟨K, hK⟩ := hh.locallyLipschitz.locallyLipschitzOn.exists_lipschitzOnWith_of_compact
+    (isCompact_closedBall (0 : E) (R + η + 1))
   exact ⟨K, ball x₀ (η / 2), nhdsWithin_le_nhds (ball_mem_nhds x₀ (by positivity)),
-    lipschitzOnWith_toReal_cTransformSymm hy₁ hψ_top (fun _ hx' ↦ hball hx') hR hK⟩
+    lipschitzOnWith_toReal_cTransformSymm hy₁ (fun _ hx' ↦ hball hx') hR
+      (hK.mono ball_subset_closedBall)⟩
 
 end LocallyLipschitz
 
@@ -567,10 +559,10 @@ section InteriorRegularity
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {h : E → ℝ}
 
-/-- **Local Lipschitzness on the interior of the finiteness domain**
+/-- **Local Lipschitzness on `interior {x | cTransformSymm c ψ x ≠ ⊥}`**
 (Gangbo–McCann, Proposition C.2). Under convexity, superlinear growth, and the cone condition (H2),
 the real representative of `cTransformSymm` for `h (x - y)` is locally Lipschitz on
-`interior {x | cTransformSymm c ψ x ≠ ⊥}`. -/
+`interior {x | cTransformSymm c ψ x ≠ ⊥}` (the interior of the finiteness domain when `ψ ≢ ⊥`). -/
 theorem locallyLipschitzOn_interior_toReal_cTransformSymm (hh : ConvexOn ℝ univ h)
     (h_superlinear : Tendsto (fun x ↦ h x / ‖x‖) (Bornology.cobounded E) atTop)
     (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
@@ -580,8 +572,7 @@ theorem locallyLipschitzOn_interior_toReal_cTransformSymm (hh : ConvexOn ℝ uni
     LocallyLipschitzOn (interior {x | cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x ≠ ⊥})
       fun x ↦ (cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x).toReal :=
   locallyLipschitzOn_toReal_cTransformSymm_of_eventually_le hh h_superlinear fun _ hx ↦
-    exists_eventually_le_cTransformSymm_of_mem_interior
-      (continuousOn_univ.1 (hh.continuousOn isOpen_univ)) h_cone hx
+    exists_eventually_le_cTransformSymm_of_mem_interior hh.locallyLipschitz.continuous h_cone hx
 
 /-- **Haar-almost everywhere differentiability of `cTransformSymm`** (Gangbo–McCann, Theorem 3.7).
 Under convexity, superlinear growth, and the cone condition (H2), at Haar-almost every point where
@@ -599,11 +590,11 @@ theorem ae_eventually_ne_bot_and_differentiableAt_toReal_cTransformSymm
       (∀ᶠ x' in 𝓝 x, cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x' ≠ ⊥) ∧
         DifferentiableAt ℝ
           (fun x' ↦ (cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x').toReal) x := by
-  have hc : Continuous h := continuousOn_univ.1 (hh.continuousOn isOpen_univ)
+  have hc : Continuous h := hh.locallyLipschitz.continuous
   have hint : ∀ᵐ x ∂ρ, cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x ≠ ⊥ →
       x ∈ interior {x' | cTransformSymm (fun z : E × E ↦ h (z.1 - z.2)) ψ x' ≠ ⊥} := by
     rw [ae_iff]
-    convert addHaar_diff_interior_setOf_cTransformSymm_ne_bot_eq_zero ρ hc h_cone ψ using 2
+    convert addHaar_sdiff_interior_setOf_cTransformSymm_ne_bot_eq_zero ρ hc h_cone ψ using 2
     ext x
     simp
   have hdiff := (locallyLipschitzOn_interior_toReal_cTransformSymm hh h_superlinear h_cone

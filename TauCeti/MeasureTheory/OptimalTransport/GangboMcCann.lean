@@ -22,15 +22,16 @@ import TauCeti.MeasureTheory.OptimalTransport.Twist.StrictConvex
 /-!
 # Gangbo–McCann's theorem for strictly convex displacement costs
 
-For a strictly convex displacement cost `c (x, y) = h (x - y)` on a finite-dimensional real inner
-product space `E`, `TauCeti.gradient_fenchelConjugate_eq_sub_of_mem_contactSet` shows that at any
-point `x` where a `c`-concave potential `φ` is finite nearby and differentiable, its unique contact
-partner is `T x = x - ∇h⋆(∇φ x)`, where `h⋆` is the Legendre–Fenchel conjugate of `h`. Under
-superlinear growth `h z / ‖z‖ → ∞` and the cone condition (H2) at infinity,
+For a strictly convex superlinear displacement cost `c (x, y) = h (x - y)` on a finite-dimensional
+real inner product space `E` (so that the Legendre–Fenchel conjugate `h⋆` of `h` is finite and
+`C¹`), `TauCeti.gradient_fenchelConjugate_eq_sub_of_mem_contactSet` identifies any contact partner
+`(x, y)` of a `c`-concave potential `φ` at a point `x` where `φ` avoids `⊥` nearby and has
+differentiable real representative as `y = x - ∇h⋆(∇φ x)`. Under superlinear growth `h z / ‖z‖ → ∞`
+and the cone condition (H2) at infinity,
 `TauCeti.ae_eventually_ne_bot_and_differentiableAt_toReal_cTransformSymm` (in
 `TauCeti.MeasureTheory.OptimalTransport.CTransform.Regularity`) shows that every `c`-concave
 potential avoids `⊥` on a neighbourhood and has differentiable real representative at Haar-almost
-every point of its finiteness domain `{x | φ x ≠ ⊥}`.
+every point of `{x | φ x ≠ ⊥}` (its finiteness domain whenever `φ ≢ ⊤`).
 
 Combining this potential regularity with
 `TauCeti.exists_isOptimalCoupling_isCyclicallyMonotone_support` and Rockafellar–Rüschendorf
@@ -101,7 +102,7 @@ theorem eq_graphPlan_of_ae_mem_cSuperdifferential_of_strictConvexOn (hπ : π.fs
         ∇ (fun q ↦ (fenchelConjugate (innerₗ E) (fun z ↦ (h z : EReal)) q).toReal)
           (∇ (fun x' ↦ (φ x').toReal) x)) μ := by
   set c : E × E → ℝ := fun z ↦ h (z.1 - z.2)
-  have hc : Continuous h := continuousOn_univ.1 (h_strict.convexOn.continuousOn isOpen_univ)
+  have hc : Continuous h := h_strict.convexOn.locallyLipschitz.continuous
   have hsuper_cc : Tendsto (fun x ↦ h x / ‖x‖) (cocompact E) atTop :=
     Metric.cobounded_eq_cocompact (α := E) ▸ h_superlinear
   rw [cSuperdifferential_def] at hcon
@@ -159,7 +160,7 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_of_strictConvexOn [IsFiniteMeasure
       π = graphPlan (fun x ↦ x -
         ∇ (fun q ↦ (fenchelConjugate (innerₗ E) (fun z ↦ (h z : EReal)) q).toReal)
           (∇ (fun x' ↦ (φ x').toReal) x)) μ := by
-  have hc : Continuous h := continuousOn_univ.1 (h_strict.convexOn.continuousOn isOpen_univ)
+  have hc : Continuous h := h_strict.convexOn.locallyLipschitz.continuous
   have hc_prod : Continuous fun z : E × E ↦ ENNReal.ofReal (h (z.1 - z.2)) :=
     ENNReal.continuous_ofReal.comp (hc.comp (continuous_fst.sub continuous_snd))
   have hcm : IsCyclicallyMonotone (fun z : E × E ↦ h (z.1 - z.2)) π.support :=
@@ -174,7 +175,8 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_of_strictConvexOn [IsFiniteMeasure
 
 /-- **Uniqueness of the optimal plan for a strictly convex displacement cost**
 (Gangbo–McCann, Theorem 1.2). Between finite measures on a finite-dimensional real inner product
-space with `μ ≪ ρ`, if the optimal cost for `h (x - y)` is finite, any two optimal couplings are
+space with `μ ≪ ρ`, if `h` is nonnegative, strictly convex, superlinear, and satisfies the cone
+condition (H2), and the optimal cost for `h (x - y)` is finite, then any two optimal couplings are
 equal. -/
 theorem IsOptimalCoupling.unique_of_strictConvexOn [IsFiniteMeasure μ] (hμ : μ ≪ ρ)
     {π' : Measure (E × E)} (h_nonneg : ∀ x, 0 ≤ h x) (h_strict : StrictConvexOn ℝ univ h)
@@ -237,7 +239,7 @@ theorem exists_isCConcave_and_isKantorovichOptimalTransportMap_of_strictConvexOn
             (∇ (fun x' ↦ (φ x').toReal) x)) := by
   set c : E × E → ℝ := fun z ↦ h (z.1 - z.2)
   have hc : Continuous c :=
-    (continuousOn_univ.1 (h_strict.convexOn.continuousOn isOpen_univ)).comp
+    h_strict.convexOn.locallyLipschitz.continuous.comp
       (continuous_fst.sub continuous_snd)
   obtain ⟨π, hopt, hcm⟩ := exists_isOptimalCoupling_isCyclicallyMonotone_support μ ν hc
     fun z ↦ h_nonneg _
@@ -292,7 +294,7 @@ theorem exists_isKantorovichOptimalTransportMap_of_strictConvexOn [IsFiniteMeasu
           S =ᵐ[μ] T := by
   have hc : Continuous fun z : E × E ↦ ENNReal.ofReal (h (z.1 - z.2)) :=
     ENNReal.continuous_ofReal.comp
-      ((continuousOn_univ.1 (h_strict.convexOn.continuousOn isOpen_univ)).comp
+      (h_strict.convexOn.locallyLipschitz.continuous.comp
         (continuous_fst.sub continuous_snd))
   obtain ⟨π, hπ⟩ := (exists_isOptimalCoupling_iff hc.lowerSemicontinuous).2
     (exists_isCoupling_of_transportCost_ne_top hfin).choose_spec.measure_univ_eq
