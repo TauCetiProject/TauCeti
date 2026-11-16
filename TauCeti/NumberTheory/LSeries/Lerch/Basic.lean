@@ -15,6 +15,7 @@ import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
+import TauCeti.Analysis.SpecialFunctions.Complex.LogBounds
 
 /-!
 # The Lerch series
@@ -28,24 +29,30 @@ term is kept at `z = 0`, where `0 ^ 0 = 1`, so `Φ(0, s, c) = exp (-s log c)`. I
 
 The series converges absolutely for `‖z‖ < 1` and every `c`: the terms grow at most
 polynomially in `n`, and a finite shift of the index moves `c` into the right half-plane. On
-the polydisc domain `‖z‖ < 1`, `0 < re c`, in the coordinates `(s, z, c)`, the terms and their
-Fréchet derivatives have locally summable majorants, so the series converges locally uniformly
-and `(s, z, c) ↦ Φ(z, s, c)` is complex differentiable, that is, jointly holomorphic. The
-derivative in `s` is the termwise derivative `-∑ zⁿ log (n + c) exp (-s log (n + c))`, and
-that series converges absolutely. These are the initial germs for the analytic continuation
-of `Φ` and for its differential relations in `z` and `c`.
+the initial domain `s ∈ ℂ`, `‖z‖ < 1`, `0 < re c`, in the coordinates `(s, z, c)`, the terms
+and their Fréchet derivatives have locally summable majorants, so the series converges locally
+uniformly and `(s, z, c) ↦ Φ(z, s, c)` is complex differentiable, that is, jointly holomorphic.
+The derivative in `s` is the termwise derivative `-∑ zⁿ log (n + c) exp (-s log (n + c))`; that
+series converges absolutely, and locally uniformly on the initial domain. The derivatives in
+`z` and `c` are termwise as well. These are the initial germs for the analytic continuation of
+`Φ` and for its differential relations in `z` and `c`.
 
 ## Main results
 
 * `TauCeti.lerchSeries`: the Lerch series `Φ(z, s, c)`.
 * `TauCeti.hasSum_lerchSeries`, `TauCeti.summable_norm_lerchSeries`: absolute convergence for
   `‖z‖ < 1` and all `s`, `c`.
-* `TauCeti.lerchSeries_eq_exp_add_mul_lerchSeries_add_one`: `Φ(z, s, c) = c⁻ˢ + z Φ(z, s, c + 1)`,
-  and its iterate `TauCeti.lerchSeries_eq_sum_add_pow_mul`.
-* `TauCeti.hasSumLocallyUniformlyOn_lerchSeries`: locally uniform convergence on the polydisc
-  domain.
-* `TauCeti.differentiableOn_lerchSeries`: joint holomorphy on the polydisc domain.
-* `TauCeti.hasDerivAt_lerchSeries_exponent`: the termwise derivative in `s`.
+* `TauCeti.lerchSeries_eq_exp_add_mul_lerchSeries_add_one`:
+  `Φ(z, s, c) = exp (-s log c) + z Φ(z, s, c + 1)`, and its iterate
+  `TauCeti.lerchSeries_eq_sum_add_pow_mul`.
+* `TauCeti.hasSumLocallyUniformlyOn_lerchSeries`: locally uniform convergence on the initial
+  domain `s ∈ ℂ`, `‖z‖ < 1`, `0 < re c`.
+* `TauCeti.differentiableOn_lerchSeries`: joint holomorphy on the initial domain.
+* `TauCeti.hasDerivAt_lerchSeries_exponent`: the termwise derivative in `s`, whose series
+  converges locally uniformly on the initial domain
+  (`TauCeti.hasSumLocallyUniformlyOn_lerchSeries_deriv_exponent`).
+* `TauCeti.hasDerivAt_lerchSeries_left`, `TauCeti.hasDerivAt_lerchSeries_param`: the termwise
+  derivatives in `z` and in `c` on the initial domain.
 * `TauCeti.lerchSeries_zero_exponent`, `TauCeti.lerchSeries_neg_one_exponent`: the rational
   values `Φ(z, 0, c) = 1 / (1 - z)` and `Φ(z, -1, c) = c / (1 - z) + z / (1 - z)²`.
 
@@ -66,39 +73,10 @@ namespace TauCeti
 
 /-! ### Estimates for the terms
 
-On a neighbourhood `‖s‖ < S`, `‖z‖ < r < 1`, `δ < re c`, `‖c‖ < M` of a point of the polydisc
+On a neighbourhood `‖s‖ < S`, `‖z‖ < r < 1`, `δ < re c`, `‖c‖ < M` of a point of the initial
 domain, the logarithm `log (n + c)` grows like `log n`, so `exp (-s log (n + c))` grows at most
 polynomially in `n` and the geometric factor `zⁿ` absorbs it, uniformly together with the
 Fréchet derivatives of the terms. -/
-
-private theorem abs_log_le {x δ B : ℝ} (hδ : 0 < δ) (hx : δ ≤ x) (hxB : x ≤ B) (hB : 1 ≤ B) :
-    |Real.log x| ≤ |Real.log δ| + Real.log B := by
-  have h1 : Real.log δ ≤ Real.log x := Real.log_le_log hδ hx
-  have h2 : Real.log x ≤ Real.log B := Real.log_le_log (hδ.trans_le hx) hxB
-  have h3 : 0 ≤ Real.log B := Real.log_nonneg hB
-  refine abs_le.2 ⟨?_, ?_⟩ <;> linarith [neg_abs_le (Real.log δ), le_abs_self (Real.log δ)]
-
-private theorem norm_log_le {w : ℂ} {δ B : ℝ} (hδ : 0 < δ) (hw : δ ≤ ‖w‖) (hwB : ‖w‖ ≤ B)
-    (hB : 1 ≤ B) : ‖log w‖ ≤ |Real.log δ| + π + Real.log B := by
-  calc ‖log w‖ ≤ |(log w).re| + |(log w).im| := norm_le_abs_re_add_abs_im _
-    _ ≤ (|Real.log δ| + Real.log B) + π := by
-      rw [log_re, log_im]
-      exact add_le_add (abs_log_le hδ hw hwB hB) (abs_arg_le_pi w)
-    _ = _ := by ring
-
-private theorem norm_exp_neg_mul_log_le {s w : ℂ} {S δ B : ℝ} (hs : ‖s‖ ≤ S) (hδ : 0 < δ)
-    (hw : δ ≤ ‖w‖) (hwB : ‖w‖ ≤ B) (hB : 1 ≤ B) :
-    ‖exp (-s * log w)‖ ≤ Real.exp (S * (|Real.log δ| + π)) * B ^ ⌈S⌉₊ := by
-  have hS : 0 ≤ S := (norm_nonneg s).trans hs
-  have hlogB : 0 ≤ Real.log B := Real.log_nonneg hB
-  rw [norm_exp]
-  calc Real.exp (-s * log w).re ≤ Real.exp (S * (|Real.log δ| + π) + ⌈S⌉₊ * Real.log B) := by
-        refine Real.exp_le_exp.2 ((re_le_norm _).trans ?_)
-        rw [norm_mul, norm_neg]
-        calc ‖s‖ * ‖log w‖ ≤ S * (|Real.log δ| + π + Real.log B) :=
-              mul_le_mul hs (norm_log_le hδ hw hwB hB) (norm_nonneg _) hS
-          _ ≤ _ := by nlinarith [Nat.le_ceil S]
-    _ = _ := by rw [Real.exp_add, Real.exp_nat_mul, Real.exp_log (by linarith)]
 
 /-- The `n`-th term of the Lerch series, in the coordinates `(s, z, c)`. -/
 private noncomputable def term (n : ℕ) (p : ℂ × ℂ × ℂ) : ℂ :=
@@ -113,17 +91,30 @@ private noncomputable def term' (n : ℕ) (p : ℂ × ℂ × ℂ) : ℂ × ℂ �
     exp (-p.1 * log (n + p.2.2)) • ((n * p.2.1 ^ (n - 1)) •
       (ContinuousLinearMap.fst ℂ ℂ ℂ).comp (ContinuousLinearMap.snd ℂ ℂ (ℂ × ℂ)))
 
-private theorem natCast_add_mem_slitPlane (n : ℕ) {c : ℂ} (hc : 0 < c.re) :
-    (n : ℂ) + c ∈ slitPlane :=
-  mem_slitPlane_iff.2 <| Or.inl <| by
-    simp only [add_re, natCast_re]
-    positivity
-
 private theorem term'_apply_one_zero (n : ℕ) (p : ℂ × ℂ × ℂ) :
     term' n p ((1 : ℂ), (0 : ℂ × ℂ)) =
       -(p.2.1 ^ n * log (n + p.2.2) * exp (-p.1 * log (n + p.2.2))) := by
   simp [term']
   ring
+
+private theorem term'_apply_zero_one_zero (n : ℕ) (p : ℂ × ℂ × ℂ) :
+    term' n p ((0 : ℂ), (1 : ℂ), (0 : ℂ)) =
+      n * p.2.1 ^ (n - 1) * exp (-p.1 * log (n + p.2.2)) := by
+  simp [term']
+  ring
+
+private theorem term'_apply_zero_zero_one (n : ℕ) (p : ℂ × ℂ × ℂ) :
+    term' n p ((0 : ℂ), (0 : ℂ), (1 : ℂ)) =
+      -p.1 * p.2.1 ^ n * (n + p.2.2)⁻¹ * exp (-p.1 * log (n + p.2.2)) := by
+  simp [term']
+  ring
+
+/-- The `n`-th term of the `s`-derivative series is bounded by the norm of `term' n`. -/
+private theorem norm_deriv_exponent_term_le (n : ℕ) (p : ℂ × ℂ × ℂ) :
+    ‖p.2.1 ^ n * log (n + p.2.2) * exp (-p.1 * log (n + p.2.2))‖ ≤ ‖term' n p‖ := by
+  have h := (term' n p).le_opNorm ((1 : ℂ), (0 : ℂ × ℂ))
+  rwa [term'_apply_one_zero, norm_neg, Prod.norm_def, norm_one, norm_zero,
+    max_eq_left zero_le_one, mul_one] at h
 
 private theorem hasFDerivAt_term (n : ℕ) {p : ℂ × ℂ × ℂ} (hp : (n + p.2.2) ∈ slitPlane) :
     HasFDerivAt (term n) (term' n p) p := by
@@ -199,7 +190,7 @@ private theorem norm_term_le_majorant {S r δ M : ℝ} {s z c : ℂ} (n : ℕ) (
   calc ‖term n (s, z, c)‖ = ‖z‖ ^ n * ‖exp (-s * log (n + c))‖ := by simp [term]
     _ ≤ r ^ n * (Real.exp (S * (|Real.log δ| + π)) * (M * (n + 1)) ^ ⌈S⌉₊) := by
         gcongr
-        exact norm_exp_neg_mul_log_le hs hδ hδw hwP hP
+        exact norm_exp_neg_mul_log_le_of_norm_mem_Icc hs hδ hP ⟨hδw, hwP⟩
     _ = Real.exp (S * (|Real.log δ| + π)) * (M * (n + 1)) ^ ⌈S⌉₊ * r ^ n * 1 := by ring
     _ ≤ Real.exp (S * (|Real.log δ| + π)) * (M * (n + 1)) ^ ⌈S⌉₊ * r ^ n *
           (M * (n + 1) * (S / δ + |Real.log δ| + π + 1 + r⁻¹)) := by gcongr
@@ -213,7 +204,7 @@ private theorem norm_term'_le_majorant {S r δ M : ℝ} {s z c : ℂ} (n : ℕ) 
   set A : ℝ := |Real.log δ| + π
   have hn : (n : ℝ) ≤ P := by simp only [P]; nlinarith
   have hP : 1 ≤ P := by simp only [P]; nlinarith [Nat.cast_nonneg (α := ℝ) n]
-  have hL : ‖log (n + c)‖ ≤ A + P := (norm_log_le hδ hδw hwP hP).trans
+  have hL : ‖log (n + c)‖ ≤ A + P := (norm_log_le_of_norm_mem_Icc hδ hP ⟨hδw, hwP⟩).trans
     (by linarith [Real.log_le_sub_one_of_pos (by linarith : 0 < P)])
   have hinv : ‖((n : ℂ) + c)⁻¹‖ ≤ δ⁻¹ := by
     rw [norm_inv]
@@ -231,7 +222,7 @@ private theorem norm_term'_le_majorant {S r δ M : ℝ} {s z c : ℂ} (n : ℕ) 
   have hSδ : 0 ≤ S / δ := div_nonneg hS hδ.le
   calc ‖term' n (s, z, c)‖ ≤ r ^ n * (Real.exp (S * A) * P ^ ⌈S⌉₊ * (S * δ⁻¹ + (A + P))) +
         Real.exp (S * A) * P ^ ⌈S⌉₊ * (P * r ^ n * r⁻¹) := by
-        have hE := norm_exp_neg_mul_log_le hs hδ hδw hwP hP
+        have hE := norm_exp_neg_mul_log_le_of_norm_mem_Icc hs hδ hP ⟨hδw, hwP⟩
         refine (norm_term'_le n (s, z, c)).trans ?_
         dsimp only
         gcongr
@@ -241,7 +232,7 @@ private theorem norm_term'_le_majorant {S r δ M : ℝ} {s z c : ℂ} (n : ℕ) 
         nlinarith
     _ = majorant S r δ M n := by simp only [majorant, P, A]; ring
 
-/-- Each point of the disc domain has a preconnected open neighbourhood on which the terms of
+/-- Each point of the initial domain has a preconnected open neighbourhood on which the terms of
 the Lerch series and their derivatives have a common summable majorant. -/
 private theorem exists_nhds_summable_bound {p : ℂ × ℂ × ℂ} (hz : ‖p.2.1‖ < 1)
     (hc : 0 < p.2.2.re) :
@@ -272,8 +263,9 @@ private theorem exists_nhds_summable_bound {p : ℂ × ℂ × ℂ} (hz : ‖p.2.
 /-! ### The Lerch series -/
 
 /-- The Lerch series `Φ(z, s, c) = ∑_{n ≥ 0} zⁿ exp (-s log (n + c))`, with the principal
-logarithm. It converges absolutely for `‖z‖ < 1` (`TauCeti.hasSum_lerchSeries`); for `0 < re c`
-its terms are the principal powers `zⁿ (n + c) ^ (-s)`. -/
+logarithm. It converges absolutely for `‖z‖ < 1` (`TauCeti.summable_norm_lerchSeries`), with
+sum `TauCeti.hasSum_lerchSeries`; for `0 < re c` its terms are the principal powers
+`zⁿ (n + c) ^ (-s)`. -/
 noncomputable def lerchSeries (z s c : ℂ) : ℂ :=
   ∑' n : ℕ, z ^ n * exp (-s * log (n + c))
 
@@ -350,8 +342,8 @@ theorem lerchSeries_neg_one_exponent {z c : ℂ} (hz : ‖z‖ < 1) (hc : ∀ n 
     ring
   · ring
 
-/-- The Lerch series converges locally uniformly on the polydisc domain `‖z‖ < 1`, `0 < re c`,
-in the coordinates `(s, z, c)`. -/
+/-- The Lerch series converges locally uniformly on the initial domain `s ∈ ℂ`, `‖z‖ < 1`,
+`0 < re c`, in the coordinates `(s, z, c)`. -/
 theorem hasSumLocallyUniformlyOn_lerchSeries :
     HasSumLocallyUniformlyOn
       (fun (n : ℕ) (p : ℂ × ℂ × ℂ) => p.2.1 ^ n * exp (-p.1 * log (n + p.2.2)))
@@ -366,12 +358,13 @@ private theorem hasFDerivAt_lerchSeries {p : ℂ × ℂ × ℂ} (hz : ‖p.2.1�
       Summable fun n => ‖term' n p‖ := by
   obtain ⟨U, hUo, hUc, hpU, hUD, u, hu, hb⟩ := exists_nhds_summable_bound hz hc
   exact ⟨hasFDerivAt_tsum_of_isPreconnected hu hUo hUc
-    (fun n q hq => hasFDerivAt_term n (natCast_add_mem_slitPlane n (hUD hq).2))
+    (fun n q hq => hasFDerivAt_term n (mem_slitPlane_iff.2 <| .inl <| by
+      simpa using add_pos_of_nonneg_of_pos (Nat.cast_nonneg (α := ℝ) n) (hUD hq).2))
     (fun n q hq => (hb n q hq).2) hpU (summable_norm_term hz hc).of_norm hpU,
     .of_nonneg_of_le (fun _ => norm_nonneg _) (fun n => (hb n p hpU).2) hu⟩
 
 /-- **Joint holomorphy of the Lerch series.** The map `(s, z, c) ↦ Φ(z, s, c)` is complex
-differentiable on the polydisc domain `‖z‖ < 1`, `0 < re c`. -/
+differentiable on the initial domain `s ∈ ℂ`, `‖z‖ < 1`, `0 < re c`. -/
 theorem differentiableOn_lerchSeries :
     DifferentiableOn ℂ (fun p : ℂ × ℂ × ℂ => lerchSeries p.2.1 p.1 p.2.2)
       {p | ‖p.2.1‖ < 1 ∧ 0 < p.2.2.re} := fun _ hp =>
@@ -385,11 +378,21 @@ theorem summable_norm_lerchSeries_deriv_exponent {z : ℂ} (hz : ‖z‖ < 1) (s
       Summable fun n : ℕ => ‖z ^ n * (log (n + c) * exp (-s * log (n + c)))‖ := by
     refine .of_nonneg_of_le (fun _ => norm_nonneg _) (fun n => ?_)
       (hasFDerivAt_lerchSeries (p := (s, z, c)) hz hc).2
-    have h := (term' n (s, z, c)).le_opNorm ((1 : ℂ), (0 : ℂ × ℂ))
-    rwa [term'_apply_one_zero, norm_neg, Prod.norm_def, norm_one, norm_zero,
-      max_eq_left zero_le_one, mul_one, mul_assoc] at h
+    simpa only [mul_assoc] using norm_deriv_exponent_term_le n (s, z, c)
   simpa only [mul_assoc] using
     summable_norm_pow_mul_of_re_pos (fun w => log w * exp (-s * log w)) key c
+
+/-- The termwise `s`-derivative series of the Lerch series converges locally uniformly on the
+initial domain `s ∈ ℂ`, `‖z‖ < 1`, `0 < re c`, in the coordinates `(s, z, c)`. -/
+theorem hasSumLocallyUniformlyOn_lerchSeries_deriv_exponent :
+    HasSumLocallyUniformlyOn
+      (fun (n : ℕ) (p : ℂ × ℂ × ℂ) => p.2.1 ^ n * log (n + p.2.2) * exp (-p.1 * log (n + p.2.2)))
+      (fun p => ∑' n : ℕ, p.2.1 ^ n * log (n + p.2.2) * exp (-p.1 * log (n + p.2.2)))
+      {p | ‖p.2.1‖ < 1 ∧ 0 < p.2.2.re} := by
+  refine hasSumLocallyUniformlyOn_of_of_forall_exists_nhds fun p hp => ?_
+  obtain ⟨U, hUo, -, hpU, -, u, hu, hb⟩ := exists_nhds_summable_bound hp.1 hp.2
+  exact ⟨U, mem_nhdsWithin_of_mem_nhds (hUo.mem_nhds hpU), HasSumUniformlyOn.of_norm_le_summable
+    hu fun n q hq => (norm_deriv_exponent_term_le n q).trans (hb n q hq).2⟩
 
 private theorem hasDerivAt_lerchSeries_exponent_of_re_pos {z c : ℂ} (hz : ‖z‖ < 1)
     (hc : 0 < c.re) (s : ℂ) :
@@ -422,5 +425,36 @@ theorem hasDerivAt_lerchSeries_exponent {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ)
   congr 1
   · exact Finset.sum_congr rfl fun i _ => by ring
   · exact congrArg _ (tsum_congr fun n => by push_cast; ring_nf)
+
+/-- The derivative of the Lerch series in `z` is the termwise derivative
+`∂_z Φ(z, s, c) = ∑ n zⁿ⁻¹ exp (-s log (n + c))` on the initial domain `‖z‖ < 1`, `0 < re c`. -/
+theorem hasDerivAt_lerchSeries_left {z c : ℂ} (hz : ‖z‖ < 1) (hc : 0 < c.re) (s : ℂ) :
+    HasDerivAt (fun z => lerchSeries z s c)
+      (∑' n : ℕ, n * z ^ (n - 1) * exp (-s * log (n + c))) z := by
+  obtain ⟨hF, hsum⟩ := hasFDerivAt_lerchSeries (p := (s, z, c)) hz hc
+  have h : HasDerivAt (fun z => lerchSeries z s c)
+      ((∑' n, term' n (s, z, c)) ((0 : ℂ), (1 : ℂ), (0 : ℂ))) z :=
+    hF.comp_hasDerivAt (f := fun z => (s, z, c)) z
+      ((hasDerivAt_const z s).prodMk ((hasDerivAt_id z).prodMk (hasDerivAt_const z c)))
+  convert h using 1
+  have happ := (ContinuousLinearMap.apply ℂ ℂ ((0 : ℂ), (1 : ℂ), (0 : ℂ))).map_tsum hsum.of_norm
+  simp only [ContinuousLinearMap.apply_apply, term'_apply_zero_one_zero] at happ
+  exact happ.symm
+
+/-- The derivative of the Lerch series in `c` is the termwise derivative
+`∂_c Φ(z, s, c) = ∑ -s zⁿ (n + c)⁻¹ exp (-s log (n + c))` on the initial domain `‖z‖ < 1`,
+`0 < re c`. -/
+theorem hasDerivAt_lerchSeries_param {z c : ℂ} (hz : ‖z‖ < 1) (hc : 0 < c.re) (s : ℂ) :
+    HasDerivAt (fun c => lerchSeries z s c)
+      (∑' n : ℕ, -s * z ^ n * (n + c)⁻¹ * exp (-s * log (n + c))) c := by
+  obtain ⟨hF, hsum⟩ := hasFDerivAt_lerchSeries (p := (s, z, c)) hz hc
+  have h : HasDerivAt (fun c => lerchSeries z s c)
+      ((∑' n, term' n (s, z, c)) ((0 : ℂ), (0 : ℂ), (1 : ℂ))) c :=
+    hF.comp_hasDerivAt (f := fun c => (s, z, c)) c
+      ((hasDerivAt_const c s).prodMk ((hasDerivAt_const c z).prodMk (hasDerivAt_id c)))
+  convert h using 1
+  have happ := (ContinuousLinearMap.apply ℂ ℂ ((0 : ℂ), (0 : ℂ), (1 : ℂ))).map_tsum hsum.of_norm
+  simp only [ContinuousLinearMap.apply_apply, term'_apply_zero_zero_one] at happ
+  exact happ.symm
 
 end TauCeti

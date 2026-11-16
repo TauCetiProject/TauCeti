@@ -36,6 +36,9 @@ The estimate `Complex.norm_log_le_of_re_mem_Icc` bounds the principal logarithm 
 in the real part on a positive vertical strip, with logarithmic growth in the imaginary part.
 Its proof adapts Robby Sneiderman’s strip argument from
 [PrimeNumberTheoremAnd](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/83f85e91fccdeecc8248fe6d51c30edfb3a07d15/PrimeNumberTheoremAnd/Mathlib/Analysis/SpecialFunctions/Gamma/DigammaBounds.lean).
+On an annulus `δ ≤ ‖w‖ ≤ B` with `0 < δ` and `1 ≤ B`, the principal logarithm is bounded by
+`|log δ| + π + log B`, so `exp (-s log w)` grows at most like a fixed power of `B`, uniformly in
+`‖s‖ ≤ S`.
 
 Finally, Mathlib's `Complex.hasSum_taylorSeries_log` has a vanishing constant term; dropping it
 re-indexes the Taylor series of `log (1 + z)` from `0`, the form a power series without constant
@@ -45,6 +48,10 @@ term takes.
 
 * `Complex.norm_log_le_of_re_mem_Icc`: an explicit principal-log norm bound on every
   positive vertical strip, including empty and singleton strips.
+* `Real.abs_log_le_of_mem_Icc`, `Complex.norm_log_le_of_norm_mem_Icc`: logarithm bounds on an
+  interval `[δ, B]` and on the annulus `δ ≤ ‖w‖ ≤ B`.
+* `Complex.norm_exp_neg_mul_log_le_of_norm_mem_Icc`: on the same annulus,
+  `‖exp (-s log w)‖ ≤ exp (S (|log δ| + π)) B ^ ⌈S⌉₊` for `‖s‖ ≤ S`.
 
 * `Complex.summable_taylorSeries_neg_log`: for a summable `r : ι → ℂ` with every `‖r i‖ < 1`, the
   family `(i, e) ↦ r i ^ (e + 1) / (e + 1)` is summable over `ι × ℕ`.
@@ -223,5 +230,50 @@ theorem norm_log_le_of_re_mem_Icc {a b : ℝ} (ha : 0 < a) {s : ℂ}
   have h := norm_le_abs_re_add_abs_im (Complex.log s)
   rw [Complex.log_re, Complex.log_im] at h
   linarith
+
+end Complex
+
+namespace Real
+
+/-- On an interval `[δ, B]` with `0 < δ` and `1 ≤ B`, the logarithm is bounded in absolute
+value by `|log δ| + log B`. -/
+theorem abs_log_le_of_mem_Icc {δ B x : ℝ} (hδ : 0 < δ) (hB : 1 ≤ B) (hx : x ∈ Set.Icc δ B) :
+    |log x| ≤ |log δ| + log B := by
+  have h1 : log δ ≤ log x := log_le_log hδ hx.1
+  have h2 : log x ≤ log B := log_le_log (hδ.trans_le hx.1) hx.2
+  have h3 : 0 ≤ log B := log_nonneg hB
+  refine abs_le.2 ⟨?_, ?_⟩ <;> linarith [neg_abs_le (log δ), le_abs_self (log δ)]
+
+end Real
+
+namespace Complex
+
+/-- A principal-log estimate on an annulus: if `δ ≤ ‖w‖ ≤ B` with `0 < δ` and `1 ≤ B`, then
+`‖log w‖ ≤ |log δ| + π + log B`. -/
+theorem norm_log_le_of_norm_mem_Icc {δ B : ℝ} (hδ : 0 < δ) (hB : 1 ≤ B) {w : ℂ}
+    (hw : ‖w‖ ∈ Set.Icc δ B) : ‖log w‖ ≤ |Real.log δ| + Real.pi + Real.log B := by
+  calc ‖log w‖ ≤ |(log w).re| + |(log w).im| := norm_le_abs_re_add_abs_im _
+    _ ≤ (|Real.log δ| + Real.log B) + Real.pi := by
+      rw [log_re, log_im]
+      exact add_le_add (Real.abs_log_le_of_mem_Icc hδ hB hw) (abs_arg_le_pi w)
+    _ = _ := by ring
+
+/-- A bound for `‖exp (-s log w)‖`, the norm of the principal power `w ^ (-s)` for `w ≠ 0`, on
+an annulus `δ ≤ ‖w‖ ≤ B` with `0 < δ` and `1 ≤ B`, uniform in `‖s‖ ≤ S`: it is at most
+`exp (S (|log δ| + π)) B ^ ⌈S⌉₊`, polynomial in the outer radius `B`. -/
+theorem norm_exp_neg_mul_log_le_of_norm_mem_Icc {S δ B : ℝ} {s w : ℂ} (hs : ‖s‖ ≤ S)
+    (hδ : 0 < δ) (hB : 1 ≤ B) (hw : ‖w‖ ∈ Set.Icc δ B) :
+    ‖exp (-s * log w)‖ ≤ Real.exp (S * (|Real.log δ| + Real.pi)) * B ^ ⌈S⌉₊ := by
+  have hS : 0 ≤ S := (norm_nonneg s).trans hs
+  have hlogB : 0 ≤ Real.log B := Real.log_nonneg hB
+  rw [norm_exp]
+  calc Real.exp (-s * log w).re
+        ≤ Real.exp (S * (|Real.log δ| + Real.pi) + ⌈S⌉₊ * Real.log B) := by
+        refine Real.exp_le_exp.2 ((re_le_norm _).trans ?_)
+        rw [norm_mul, norm_neg]
+        calc ‖s‖ * ‖log w‖ ≤ S * (|Real.log δ| + Real.pi + Real.log B) :=
+              mul_le_mul hs (norm_log_le_of_norm_mem_Icc hδ hB hw) (norm_nonneg _) hS
+          _ ≤ _ := by nlinarith [Nat.le_ceil S]
+    _ = _ := by rw [Real.exp_add, Real.exp_nat_mul, Real.exp_log (by linarith)]
 
 end Complex
