@@ -369,6 +369,21 @@ theorem Hom.toGeomEdge_mapE_congr {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, 
   · rfl
   · rw [f.map_rev, Δ.toGeomEdge_rev]
 
+/-- Two distinct darts with the same image under a morphism of Serre graphs lie on distinct
+geometric edges: the images of a dart and of its reverse are distinct. -/
+theorem Hom.toGeomEdge_ne_toGeomEdge_of_ne_of_mapE_eq {Γ : SerreGraph.{u, v}}
+    {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ) {e₁ e₂ : Γ.E} (hne : e₁ ≠ e₂)
+    (he : f.mapE e₁ = f.mapE e₂) : Γ.toGeomEdge e₁ ≠ Γ.toGeomEdge e₂ := by
+  rw [Ne, toGeomEdge_eq_toGeomEdge_iff]
+  rintro (rfl | rfl)
+  · exact hne rfl
+  · exact Δ.rev_ne (f.mapE e₁) (by rw [← f.map_rev, he])
+
+/-- A morphism of Serre graphs identifying two darts identifies their terminal vertices. -/
+theorem Hom.mapV_tgt_eq_of_mapE_eq {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ)
+    {e₁ e₂ : Γ.E} (he : f.mapE e₁ = f.mapE e₂) : f.mapV (Γ.tgt e₁) = f.mapV (Γ.tgt e₂) := by
+  rw [← f.map_tgt, ← f.map_tgt, he]
+
 /-- The preimage of an orientation under a morphism of Serre graphs is an orientation. -/
 theorem Hom.isOrientation_preimage {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
     (f : Γ.Hom Δ) {O' : Set Δ.E} (hO' : Δ.IsOrientation O') : Γ.IsOrientation (f.mapE ⁻¹' O') :=

@@ -27,7 +27,8 @@ shapes.
 
 In both cases the folding map `Γ → Γ'` sends `e₂` to `e₁`, the reverse of `e₂` to the reverse of
 `e₁`, and is the identity on the other darts; it is surjective on vertices, so a fold of a
-connected graph is connected.
+connected graph is connected. A morphism from `Γ` identifying `e₁` with `e₂` factors uniquely
+through the folding map.
 
 When `e₂` is a loop and `e₁` is its reverse, there is no folding map, since deleting the geometric
 edge of `e₂` deletes `e₁` too. Deleting that geometric edge still keeps a connected graph
@@ -46,15 +47,22 @@ restricts to the identity on them.
 * `TauCeti.SerreGraph.foldV`: the vertex map of a fold of two darts with distinct terminal
   vertices.
 * `TauCeti.SerreGraph.fold`: the fold of two darts with distinct terminal vertices.
+* `TauCeti.SerreGraph.foldGeomEdgeEquiv`: the geometric edges of the fold are those of `Γ` other
+  than the edge of `e₂`.
 * `TauCeti.SerreGraph.foldHom`: the folding map onto `Γ.fold e₁ e₂ h`.
+* `TauCeti.SerreGraph.foldLift`: the morphism out of the fold induced by a morphism out of `Γ`
+  identifying `e₁` with `e₂`.
 
 ## Main results
 
+* `TauCeti.SerreGraph.comp_restrictInclusion_comp_deleteEdgeHom`,
+  `TauCeti.SerreGraph.deleteEdgeHom_ext`, `TauCeti.SerreGraph.foldLift_comp_foldHom`,
+  `TauCeti.SerreGraph.foldHom_ext`: the universal property of the folding maps.
 * `TauCeti.SerreGraph.Connected.deleteEdge`, `TauCeti.SerreGraph.Connected.fold`: folding two
   darts with the same initial vertex keeps a connected graph connected. The first also covers a
   loop `e₂` with `e₁` its reverse.
-* `TauCeti.SerreGraph.card_V_fold`, `TauCeti.SerreGraph.card_geomEdge_fold`: a fold of two darts
-  with distinct terminal vertices removes one vertex and one geometric edge.
+* `TauCeti.SerreGraph.card_fold_V_add_one`, `TauCeti.SerreGraph.card_fold_geomEdge_add_one`: a fold
+  of two darts with distinct terminal vertices removes one vertex and one geometric edge.
 
 ## References
 
@@ -65,7 +73,7 @@ restricts to the identity on them.
 
 public section
 
-universe u v
+universe u v w x
 
 namespace TauCeti
 
@@ -90,30 +98,59 @@ section foldE
 
 variable {Γ} {e₁ e₂ : Γ.E} (h : Γ.toGeomEdge e₁ ≠ Γ.toGeomEdge e₂)
 
-/-- The dart map of a fold sends `e₂` to `e₁`. -/
-@[simp] theorem foldE_self : (foldE h e₂).1 = e₁ := by
-  simp [foldE]
-
-/-- The dart map of a fold sends the reverse of `e₂` to the reverse of `e₁`. -/
-@[simp] theorem foldE_rev : (foldE h (Γ.rev e₂)).1 = Γ.rev e₁ := by
-  simp [foldE, Γ.rev_ne e₂]
-
-/-- The dart map of a fold fixes every dart off the geometric edge of `e₂`, as a dart of `Γ`. -/
+/-- The dart map of a fold fixes every dart off the geometric edge of `e₂`. -/
 @[simp] theorem foldE_of_ne {f : Γ.E} (hf : Γ.toGeomEdge f ≠ Γ.toGeomEdge e₂) :
-    (foldE h f).1 = f := by
+    foldE h f = ⟨f, hf⟩ := by
   simp [foldE, hf]
+
+-- Not `@[simp]`: `simp [h]` proves the evaluations at `e₁` and `t(e₁)` by the `_of_ne` lemmas.
+/-- The dart map of a fold fixes `e₁`. -/
+theorem foldE_left : foldE h e₁ = ⟨e₁, h⟩ :=
+  foldE_of_ne h h
+
+/-- The dart map of a fold sends `e₂` to `e₁`. -/
+@[simp] theorem foldE_right : foldE h e₂ = ⟨e₁, h⟩ := by
+  simp [foldE]
 
 /-- The dart map of a fold fixes every dart of `Γ.deleteEdge e₂`. -/
 @[simp] theorem foldE_val (f : (Γ.deleteEdge e₂).E) : foldE h f.1 = f :=
-  Subtype.ext (foldE_of_ne h f.2)
+  foldE_of_ne h f.2
 
-/-- The dart map of a fold commutes with reversal. -/
-theorem foldE_rev_apply (f : Γ.E) : (foldE h (Γ.rev f)).1 = Γ.rev (foldE h f).1 := by
+/-- The dart map of a fold commutes with reversal; in particular it sends the reverse of `e₂` to
+the reverse of `e₁`. -/
+@[simp] theorem foldE_rev (f : Γ.E) : foldE h (Γ.rev f) = (Γ.deleteEdge e₂).rev (foldE h f) := by
   by_cases hf : Γ.toGeomEdge f = Γ.toGeomEdge e₂
-  · obtain rfl | rfl := Γ.toGeomEdge_eq_toGeomEdge_iff.1 hf.symm <;> simp
+  · obtain rfl | rfl := Γ.toGeomEdge_eq_toGeomEdge_iff.1 hf.symm <;>
+      simp [foldE, Γ.rev_ne]
   · simp [hf]
 
+/-- The dart map of a fold is surjective: every dart of `Γ.deleteEdge e₂` is its own image. -/
+theorem foldE_surjective : Function.Surjective (foldE h) :=
+  fun f => ⟨f.1, foldE_val h f⟩
+
+/-- The darts sent to `g` by the dart map of a fold: `g` itself, together with `e₂` if `g` is
+`e₁`, and with the reverse of `e₂` if `g` is the reverse of `e₁`. -/
+theorem foldE_eq_iff {f : Γ.E} {g : (Γ.deleteEdge e₂).E} :
+    foldE h f = g ↔ f = g.1 ∨ f = e₂ ∧ g.1 = e₁ ∨ f = Γ.rev e₂ ∧ g.1 = Γ.rev e₁ := by
+  obtain ⟨g, hg⟩ := g
+  have hg₁ : g ≠ e₂ := by rintro rfl; exact hg rfl
+  have hg₂ : g ≠ Γ.rev e₂ := by rintro rfl; exact hg (Γ.toGeomEdge_rev e₂)
+  by_cases hf : Γ.toGeomEdge f = Γ.toGeomEdge e₂
+  · obtain rfl | rfl := Γ.toGeomEdge_eq_toGeomEdge_iff.1 hf.symm <;> simp [Subtype.ext_iff] <;>
+      grind [Γ.rev_ne]
+  · grind [foldE_of_ne, toGeomEdge_rev]
+
 end foldE
+
+variable {Γ} in
+/-- A morphism identifying `e₁` with `e₂` takes the same value at a dart and at its image under the
+dart map of the fold. -/
+theorem Hom.mapE_foldE_val {Δ : SerreGraph.{w, x}} (g : Γ.Hom Δ) {e₁ e₂ : Γ.E}
+    (h : Γ.toGeomEdge e₁ ≠ Γ.toGeomEdge e₂) (hg : g.mapE e₁ = g.mapE e₂) (f : Γ.E) :
+    g.mapE (foldE h f).1 = g.mapE f := by
+  by_cases hf : Γ.toGeomEdge f = Γ.toGeomEdge e₂
+  · obtain rfl | rfl := Γ.toGeomEdge_eq_toGeomEdge_iff.1 hf.symm <;> simp [hg]
+  · simp [hf]
 
 variable {Γ} in
 /-- The folding map of two parallel darts `e₁` and `e₂` on distinct geometric edges: it sends `e₂`
@@ -127,7 +164,7 @@ noncomputable def deleteEdgeHom {e₁ e₂ : Γ.E} (h : Γ.toGeomEdge e₁ ≠ �
     by_cases hf : Γ.toGeomEdge f = Γ.toGeomEdge e₂
     · obtain rfl | rfl := Γ.toGeomEdge_eq_toGeomEdge_iff.1 hf.symm <;> simp_all
     · simp [hf]
-  map_rev f := Subtype.ext (foldE_rev_apply h f)
+  map_rev := foldE_rev h
 
 section deleteEdgeHom
 
@@ -142,15 +179,62 @@ variable {Γ} {e₁ e₂ : Γ.E} (h : Γ.toGeomEdge e₁ ≠ Γ.toGeomEdge e₂)
 theorem deleteEdgeHom_mapE (f : Γ.E) : (deleteEdgeHom h hsrc htgt).mapE f = foldE h f :=
   (rfl)
 
--- With `Hom.map_rev`, `simp` also computes the image of the reverse of `e₂`.
+/-- The folding map of two parallel darts fixes every dart off the geometric edge of `e₂`. -/
+@[simp] theorem deleteEdgeHom_mapE_of_ne {f : Γ.E} (hf : Γ.toGeomEdge f ≠ Γ.toGeomEdge e₂) :
+    (deleteEdgeHom h hsrc htgt).mapE f = ⟨f, hf⟩ :=
+  foldE_of_ne h hf
+
+/-- The folding map of two parallel darts fixes `e₁`. -/
+theorem deleteEdgeHom_mapE_left : (deleteEdgeHom h hsrc htgt).mapE e₁ = ⟨e₁, h⟩ :=
+  foldE_left h
+
 /-- The folding map of two parallel darts sends `e₂` to `e₁`. -/
-@[simp] theorem deleteEdgeHom_mapE_self : ((deleteEdgeHom h hsrc htgt).mapE e₂).1 = e₁ :=
-  foldE_self h
+@[simp] theorem deleteEdgeHom_mapE_right : (deleteEdgeHom h hsrc htgt).mapE e₂ = ⟨e₁, h⟩ :=
+  foldE_right h
 
 /-- The folding map of two parallel darts fixes every dart of `Γ.deleteEdge e₂`. -/
 @[simp] theorem deleteEdgeHom_mapE_val (f : (Γ.deleteEdge e₂).E) :
     (deleteEdgeHom h hsrc htgt).mapE f.1 = f :=
   foldE_val h f
+
+/-- The folding map of two parallel darts identifies `e₁` with `e₂`. -/
+theorem deleteEdgeHom_mapE_left_eq_right :
+    (deleteEdgeHom h hsrc htgt).mapE e₁ = (deleteEdgeHom h hsrc htgt).mapE e₂ :=
+  (deleteEdgeHom_mapE_left h hsrc htgt).trans (deleteEdgeHom_mapE_right h hsrc htgt).symm
+
+/-- The folding map of two parallel darts is surjective on darts. -/
+theorem deleteEdgeHom_mapE_surjective : Function.Surjective (deleteEdgeHom h hsrc htgt).mapE :=
+  foldE_surjective h
+
+/-- The darts sent to `g` by the folding map of two parallel darts. -/
+theorem deleteEdgeHom_mapE_eq_iff {f : Γ.E} {g : (Γ.deleteEdge e₂).E} :
+    (deleteEdgeHom h hsrc htgt).mapE f = g ↔
+      f = g.1 ∨ f = e₂ ∧ g.1 = e₁ ∨ f = Γ.rev e₂ ∧ g.1 = Γ.rev e₁ :=
+  foldE_eq_iff h
+
+/-- The folding map of two parallel darts is a retraction of the inclusion of `Γ.deleteEdge e₂`
+into `Γ`. -/
+@[simp] theorem deleteEdgeHom_comp_restrictInclusion :
+    (deleteEdgeHom h hsrc htgt).comp (Γ.restrictInclusion _ _) = Hom.id _ :=
+  Hom.ext _ (by ext; simp) (by ext; simp)
+
+/-- A morphism from `Γ` identifying `e₁` with `e₂` factors through the folding map of two parallel
+darts, by its restriction to `Γ.deleteEdge e₂`. -/
+theorem comp_restrictInclusion_comp_deleteEdgeHom {Δ : SerreGraph.{w, x}} (g : Γ.Hom Δ)
+    (hg : g.mapE e₁ = g.mapE e₂) :
+    (g.comp (Γ.restrictInclusion _ _)).comp (deleteEdgeHom h hsrc htgt) = g :=
+  Hom.ext _ (by ext; simp) (by ext; simp [deleteEdgeHom_mapE, g.mapE_foldE_val h hg])
+
+/-- Two morphisms out of `Γ.deleteEdge e₂` agreeing after the folding map of two parallel darts are
+equal. -/
+theorem deleteEdgeHom_ext {Δ : SerreGraph.{w, x}} {g₁ g₂ : (Γ.deleteEdge e₂).Hom Δ}
+    (hg : g₁.comp (deleteEdgeHom h hsrc htgt) = g₂.comp (deleteEdgeHom h hsrc htgt)) :
+    g₁ = g₂ := by
+  have hV := congrArg Hom.mapV hg
+  have hE := congrArg Hom.mapE hg
+  simp only [Hom.comp_mapV, Hom.comp_mapE] at hV hE
+  exact Hom.ext _ (Function.surjective_id.injective_comp_right hV)
+    ((deleteEdgeHom_mapE_surjective h hsrc htgt).injective_comp_right hE)
 
 end deleteEdgeHom
 
@@ -188,20 +272,52 @@ noncomputable def foldV (e₁ e₂ : Γ.E) (h : Γ.tgt e₁ ≠ Γ.tgt e₂) (a 
     {a : Γ.V // a ≠ Γ.tgt e₂} :=
   if ha : a = Γ.tgt e₂ then ⟨Γ.tgt e₁, h⟩ else ⟨a, ha⟩
 
-/-- The vertex map of a fold sends `t(e₂)` to `t(e₁)`. -/
-@[simp] theorem foldV_tgt (e₁ e₂ : Γ.E) (h : Γ.tgt e₁ ≠ Γ.tgt e₂) :
-    Γ.foldV e₁ e₂ h (Γ.tgt e₂) = ⟨Γ.tgt e₁, h⟩ := by
-  simp [foldV]
+section foldV
+
+variable (e₁ e₂ : Γ.E) (h : Γ.tgt e₁ ≠ Γ.tgt e₂)
 
 /-- The vertex map of a fold fixes every vertex other than `t(e₂)`. -/
-@[simp] theorem foldV_of_ne (e₁ e₂ : Γ.E) (h : Γ.tgt e₁ ≠ Γ.tgt e₂) {a : Γ.V} (ha : a ≠ Γ.tgt e₂) :
-    Γ.foldV e₁ e₂ h a = ⟨a, ha⟩ := by
+@[simp] theorem foldV_of_ne {a : Γ.V} (ha : a ≠ Γ.tgt e₂) : Γ.foldV e₁ e₂ h a = ⟨a, ha⟩ := by
   simp [foldV, ha]
 
+/-- The vertex map of a fold fixes `t(e₁)`. -/
+theorem foldV_tgt_left : Γ.foldV e₁ e₂ h (Γ.tgt e₁) = ⟨Γ.tgt e₁, h⟩ :=
+  Γ.foldV_of_ne e₁ e₂ h h
+
+/-- The vertex map of a fold sends `t(e₂)` to `t(e₁)`. -/
+@[simp] theorem foldV_tgt_right : Γ.foldV e₁ e₂ h (Γ.tgt e₂) = ⟨Γ.tgt e₁, h⟩ := by
+  simp [foldV]
+
+/-- The vertex map of a fold fixes every vertex of the fold. -/
+@[simp] theorem foldV_val (a : {a : Γ.V // a ≠ Γ.tgt e₂}) : Γ.foldV e₁ e₂ h a.1 = a :=
+  Γ.foldV_of_ne e₁ e₂ h a.2
+
 /-- The vertex map of a fold is surjective: every vertex other than `t(e₂)` is its own image. -/
-theorem foldV_surjective (e₁ e₂ : Γ.E) (h : Γ.tgt e₁ ≠ Γ.tgt e₂) :
-    Function.Surjective (Γ.foldV e₁ e₂ h) :=
-  fun a => ⟨a.1, Γ.foldV_of_ne e₁ e₂ h a.2⟩
+theorem foldV_surjective : Function.Surjective (Γ.foldV e₁ e₂ h) :=
+  fun a => ⟨a.1, Γ.foldV_val e₁ e₂ h a⟩
+
+/-- The vertices sent to `b` by the vertex map of a fold: `b` itself, together with `t(e₂)` if `b`
+is `t(e₁)`. -/
+theorem foldV_eq_iff {a : Γ.V} {b : {a : Γ.V // a ≠ Γ.tgt e₂}} :
+    Γ.foldV e₁ e₂ h a = b ↔ a = b.1 ∨ a = Γ.tgt e₂ ∧ b.1 = Γ.tgt e₁ := by
+  obtain ⟨b, hb⟩ := b
+  by_cases ha : a = Γ.tgt e₂
+  · subst ha
+    simp [Subtype.ext_iff, eq_comm, hb]
+  · simp [ha, Subtype.ext_iff]
+
+end foldV
+
+variable {Γ} in
+/-- A morphism identifying `t(e₁)` with `t(e₂)` takes the same value at a vertex and at its image
+under the vertex map of the fold. -/
+theorem Hom.mapV_foldV_val {Δ : SerreGraph.{w, x}} (g : Γ.Hom Δ) {e₁ e₂ : Γ.E}
+    (h : Γ.tgt e₁ ≠ Γ.tgt e₂) (hg : g.mapV (Γ.tgt e₁) = g.mapV (Γ.tgt e₂)) (a : Γ.V) :
+    g.mapV (Γ.foldV e₁ e₂ h a).1 = g.mapV a := by
+  by_cases ha : a = Γ.tgt e₂
+  · subst ha
+    simpa using hg
+  · simp [ha]
 
 /-- The fold of two darts `e₁`, `e₂` with distinct terminal vertices: the graph obtained from
 `Γ.deleteEdge e₂` by deleting the vertex `t(e₂)`, every dart of `Γ` at `t(e₂)` being attached to
@@ -214,20 +330,62 @@ theorem foldV_surjective (e₁ e₂ : Γ.E) (h : Γ.tgt e₁ ≠ Γ.tgt e₂) :
   rev_rev := (Γ.deleteEdge e₂).rev_rev
   rev_ne := (Γ.deleteEdge e₂).rev_ne
 
+section fold
+
+variable (e₁ e₂ : Γ.E) (h : Γ.tgt e₁ ≠ Γ.tgt e₂)
+
 /-- The source of a dart of the fold is the image of its source in `Γ`. -/
-@[simp] theorem fold_src (e₁ e₂ : Γ.E) (h : Γ.tgt e₁ ≠ Γ.tgt e₂) (f : (Γ.fold e₁ e₂ h).E) :
+@[simp] theorem fold_src (f : (Γ.fold e₁ e₂ h).E) :
     (Γ.fold e₁ e₂ h).src f = Γ.foldV e₁ e₂ h (Γ.src f.1) :=
   rfl
 
 /-- Reversal in the fold is reversal in `Γ`. -/
-@[simp] theorem fold_rev_val (e₁ e₂ : Γ.E) (h : Γ.tgt e₁ ≠ Γ.tgt e₂) (f : (Γ.fold e₁ e₂ h).E) :
-    ((Γ.fold e₁ e₂ h).rev f).1 = Γ.rev f.1 :=
+@[simp] theorem fold_rev_val (f : (Γ.fold e₁ e₂ h).E) : ((Γ.fold e₁ e₂ h).rev f).1 = Γ.rev f.1 :=
   rfl
 
 /-- The target of a dart of the fold is the image of its target in `Γ`. -/
-@[simp] theorem fold_tgt (e₁ e₂ : Γ.E) (h : Γ.tgt e₁ ≠ Γ.tgt e₂) (f : (Γ.fold e₁ e₂ h).E) :
+@[simp] theorem fold_tgt (f : (Γ.fold e₁ e₂ h).E) :
     (Γ.fold e₁ e₂ h).tgt f = Γ.foldV e₁ e₂ h (Γ.tgt f.1) :=
   rfl
+
+/-- A fold of a graph with finitely many vertices has finitely many vertices. -/
+instance [Finite Γ.V] : Finite (Γ.fold e₁ e₂ h).V :=
+  inferInstanceAs (Finite {a : Γ.V // a ≠ Γ.tgt e₂})
+
+/-- A fold of a graph with finitely many darts has finitely many darts. -/
+instance [Finite Γ.E] : Finite (Γ.fold e₁ e₂ h).E :=
+  inferInstanceAs (Finite (Γ.deleteEdge e₂).E)
+
+/-- A fold has a vertex, the terminal vertex of `e₁`. -/
+instance : Nonempty (Γ.fold e₁ e₂ h).V :=
+  ⟨Γ.foldV e₁ e₂ h (Γ.tgt e₁)⟩
+
+/-- Equality of vertices of a fold is decidable when it is in `Γ`. -/
+instance [DecidableEq Γ.V] : DecidableEq (Γ.fold e₁ e₂ h).V :=
+  inferInstanceAs (DecidableEq {a : Γ.V // a ≠ Γ.tgt e₂})
+
+/-- Equality of darts of a fold is decidable when it is in `Γ`. -/
+instance [DecidableEq Γ.E] : DecidableEq (Γ.fold e₁ e₂ h).E :=
+  inferInstanceAs (DecidableEq (Γ.deleteEdge e₂).E)
+
+/-- The geometric edges of the fold are those of `Γ` other than the edge of `e₂`. -/
+noncomputable def foldGeomEdgeEquiv :
+    (Γ.fold e₁ e₂ h).GeomEdge ≃ {q : Γ.GeomEdge // q ≠ Γ.toGeomEdge e₂} :=
+  (GeomEdge.congr (Γ.fold e₁ e₂ h) (Δ := Γ.deleteEdge e₂) (.refl _) fun _ => rfl).trans
+    (Γ.deleteEdgeGeomEdgeEquiv e₂)
+
+@[simp] theorem coe_foldGeomEdgeEquiv_toGeomEdge (f : (Γ.fold e₁ e₂ h).E) :
+    (Γ.foldGeomEdgeEquiv e₁ e₂ h ((Γ.fold e₁ e₂ h).toGeomEdge f) : Γ.GeomEdge) =
+      Γ.toGeomEdge f.1 := by
+  rw [foldGeomEdgeEquiv, Equiv.trans_apply]
+  exact (congrArg (fun q => (Γ.deleteEdgeGeomEdgeEquiv e₂ q : Γ.GeomEdge))
+    (GeomEdge.congr_toGeomEdge _ _ _ f)).trans (Γ.coe_deleteEdgeGeomEdgeEquiv_toGeomEdge e₂ f)
+
+/-- A fold of a graph with finitely many geometric edges has finitely many geometric edges. -/
+instance [Finite Γ.GeomEdge] : Finite (Γ.fold e₁ e₂ h).GeomEdge :=
+  .of_equiv _ (Γ.foldGeomEdgeEquiv e₁ e₂ h).symm
+
+end fold
 
 variable {Γ} in
 /-- The folding map of two darts `e₁`, `e₂` with the same initial vertex and distinct terminal
@@ -244,7 +402,7 @@ noncomputable def foldHom {e₁ e₂ : Γ.E} (h : Γ.tgt e₁ ≠ Γ.tgt e₂) (
     by_cases hf : Γ.toGeomEdge f = Γ.toGeomEdge e₂
     · obtain rfl | rfl := Γ.toGeomEdge_eq_toGeomEdge_iff.1 hf.symm <;> simp_all
     · simp [hf]
-  map_rev f := Subtype.ext (foldE_rev_apply _ f)
+  map_rev := foldE_rev _
 
 section foldHom
 
@@ -259,36 +417,130 @@ theorem foldHom_mapE (f : Γ.E) : (foldHom h hsrc).mapE f =
     foldE (Γ.toGeomEdge_ne_toGeomEdge_of_src_eq_of_tgt_ne hsrc h) f :=
   (rfl)
 
--- With `Hom.map_rev`, `simp` also computes the image of the reverse of `e₂`.
-/-- The folding map sends `e₂` to `e₁`. -/
-@[simp] theorem foldHom_mapE_self : ((foldHom h hsrc).mapE e₂).1 = e₁ :=
-  foldE_self _
+-- The darts of `Γ.fold e₁ e₂ h` are only up to unfolding darts of `Γ.deleteEdge e₂`, so `simp` does
+-- not apply lemmas about darts of the fold to a dart written `⟨f, hf⟩`. The evaluations of the
+-- folding map are therefore stated as darts of `Γ`, and its value at `e₂` as its value at `e₁`.
+
+/-- The folding map identifies `e₂` with `e₁`. -/
+@[simp] theorem foldHom_mapE_right : (foldHom h hsrc).mapE e₂ = (foldHom h hsrc).mapE e₁ :=
+  (foldE_right _).trans (foldE_left _).symm
+
+/-- The folding map fixes `e₁`. -/
+@[simp] theorem coe_foldHom_mapE_left : ((foldHom h hsrc).mapE e₁).1 = e₁ :=
+  congrArg Subtype.val (foldE_left _)
+
+/-- The folding map fixes every dart off the geometric edge of `e₂`. -/
+@[simp] theorem coe_foldHom_mapE_of_ne {f : Γ.E} (hf : Γ.toGeomEdge f ≠ Γ.toGeomEdge e₂) :
+    ((foldHom h hsrc).mapE f).1 = f :=
+  congrArg Subtype.val (foldE_of_ne _ hf)
 
 /-- The folding map fixes every dart of `Γ.deleteEdge e₂`. -/
 @[simp] theorem foldHom_mapE_val (f : (Γ.fold e₁ e₂ h).E) : (foldHom h hsrc).mapE f.1 = f :=
   foldE_val _ f
 
+/-- The folding map identifies `t(e₁)` with `t(e₂)`. -/
+theorem foldHom_mapV_tgt_left_eq_right :
+    (foldHom h hsrc).mapV (Γ.tgt e₁) = (foldHom h hsrc).mapV (Γ.tgt e₂) :=
+  (Γ.foldV_tgt_left e₁ e₂ h).trans (Γ.foldV_tgt_right e₁ e₂ h).symm
+
+/-- The folding map is surjective on vertices. -/
+theorem foldHom_mapV_surjective : Function.Surjective (foldHom h hsrc).mapV :=
+  Γ.foldV_surjective e₁ e₂ h
+
+/-- The folding map is surjective on darts. -/
+theorem foldHom_mapE_surjective : Function.Surjective (foldHom h hsrc).mapE :=
+  foldE_surjective _
+
+/-- The darts sent to `g` by the folding map. -/
+theorem foldHom_mapE_eq_iff {f : Γ.E} {g : (Γ.fold e₁ e₂ h).E} :
+    (foldHom h hsrc).mapE f = g ↔ f = g.1 ∨ f = e₂ ∧ g.1 = e₁ ∨ f = Γ.rev e₂ ∧ g.1 = Γ.rev e₁ :=
+  foldE_eq_iff _
+
 end foldHom
+
+variable {Γ} in
+/-- The morphism out of the fold induced by a morphism `g` from `Γ` identifying `e₁` with `e₂`: it
+sends a vertex or a dart of the fold to the image under `g` of the same vertex or dart of `Γ`. -/
+def foldLift {e₁ e₂ : Γ.E} (h : Γ.tgt e₁ ≠ Γ.tgt e₂) {Δ : SerreGraph.{w, x}} (g : Γ.Hom Δ)
+    (hg : g.mapE e₁ = g.mapE e₂) : (Γ.fold e₁ e₂ h).Hom Δ where
+  mapV a := g.mapV a.1
+  mapE f := g.mapE f.1
+  map_src f := (g.map_src f.1).trans (g.mapV_foldV_val h (g.mapV_tgt_eq_of_mapE_eq hg) _).symm
+  map_rev f := g.map_rev f.1
+
+section foldLift
+
+variable {Γ} {e₁ e₂ : Γ.E} (h : Γ.tgt e₁ ≠ Γ.tgt e₂) {Δ : SerreGraph.{w, x}} (g : Γ.Hom Δ)
+  (hg : g.mapE e₁ = g.mapE e₂)
+
+/-- The induced morphism sends a vertex of the fold to the image of the same vertex of `Γ`. -/
+@[simp] theorem foldLift_mapV (a : (Γ.fold e₁ e₂ h).V) : (foldLift h g hg).mapV a = g.mapV a.1 :=
+  (rfl)
+
+-- `foldLift_mapV` does not apply to `Γ.foldV e₁ e₂ h a`, whose type is only up to unfolding the
+-- type of vertices of the fold.
+/-- The induced morphism sends the image of a vertex under the vertex map of the fold to the image
+of that vertex. -/
+@[simp] theorem foldLift_mapV_foldV (a : Γ.V) :
+    (foldLift h g hg).mapV (Γ.foldV e₁ e₂ h a) = g.mapV a :=
+  g.mapV_foldV_val h (g.mapV_tgt_eq_of_mapE_eq hg) a
+
+/-- The induced morphism sends a dart of the fold to the image of the same dart of `Γ`. -/
+@[simp] theorem foldLift_mapE (f : (Γ.fold e₁ e₂ h).E) : (foldLift h g hg).mapE f = g.mapE f.1 :=
+  (rfl)
+
+-- This must be tried before `foldLift_mapE`, which would leave the image under `g` of an unknown
+-- dart of the fold.
+/-- The induced morphism sends the image of a dart under the folding map to the image of that
+dart. -/
+@[simp high] theorem foldLift_mapE_foldHom (hsrc : Γ.src e₁ = Γ.src e₂) (f : Γ.E) :
+    (foldLift h g hg).mapE ((foldHom h hsrc).mapE f) = g.mapE f :=
+  g.mapE_foldE_val _ hg f
+
+/-- A morphism from `Γ` identifying `e₁` with `e₂` factors through the folding map. -/
+@[simp] theorem foldLift_comp_foldHom (hsrc : Γ.src e₁ = Γ.src e₂) :
+    (foldLift h g hg).comp (foldHom h hsrc) = g :=
+  Hom.ext _ (funext fun a => by simp) (funext fun f => by simp)
+
+end foldLift
+
+/-- Two morphisms out of the fold agreeing after the folding map are equal. -/
+theorem foldHom_ext {Γ : SerreGraph.{u, v}} {e₁ e₂ : Γ.E} {h : Γ.tgt e₁ ≠ Γ.tgt e₂}
+    (hsrc : Γ.src e₁ = Γ.src e₂) {Δ : SerreGraph.{w, x}} {g₁ g₂ : (Γ.fold e₁ e₂ h).Hom Δ}
+    (hg : g₁.comp (foldHom h hsrc) = g₂.comp (foldHom h hsrc)) : g₁ = g₂ := by
+  have hV := congrArg Hom.mapV hg
+  have hE := congrArg Hom.mapE hg
+  simp only [Hom.comp_mapV, Hom.comp_mapE] at hV hE
+  exact Hom.ext _ ((foldHom_mapV_surjective h hsrc).injective_comp_right hV)
+    ((foldHom_mapE_surjective h hsrc).injective_comp_right hE)
+
+/-- The morphism induced on the fold is the unique morphism whose composite with the folding map is
+`g`. -/
+theorem foldLift_unique {Γ : SerreGraph.{u, v}} {e₁ e₂ : Γ.E} {h : Γ.tgt e₁ ≠ Γ.tgt e₂}
+    (hsrc : Γ.src e₁ = Γ.src e₂) {Δ : SerreGraph.{w, x}} {g : Γ.Hom Δ} (hg : g.mapE e₁ = g.mapE e₂)
+    {k : (Γ.fold e₁ e₂ h).Hom Δ} (hk : k.comp (foldHom h hsrc) = g) : k = foldLift h g hg :=
+  foldHom_ext hsrc (hk.trans (foldLift_comp_foldHom h g hg hsrc).symm)
 
 variable {Γ} in
 /-- A fold of a connected graph is connected. -/
 theorem Connected.fold (hΓ : Γ.Connected) {e₁ e₂ : Γ.E} (h : Γ.tgt e₁ ≠ Γ.tgt e₂)
     (hsrc : Γ.src e₁ = Γ.src e₂) : (Γ.fold e₁ e₂ h).Connected :=
-  (foldHom h hsrc).connected_of_surjective (Γ.foldV_surjective e₁ e₂ h) hΓ
+  (foldHom h hsrc).connected_of_surjective (foldHom_mapV_surjective h hsrc) hΓ
 
 /-- A fold of two darts with distinct terminal vertices lowers the number of vertices by one. -/
-theorem card_V_fold [Finite Γ.V] (e₁ e₂ : Γ.E) (h : Γ.tgt e₁ ≠ Γ.tgt e₂) :
+theorem card_fold_V_add_one [Finite Γ.V] (e₁ e₂ : Γ.E) (h : Γ.tgt e₁ ≠ Γ.tgt e₂) :
     Nat.card (Γ.fold e₁ e₂ h).V + 1 = Nat.card Γ.V := by
   classical
   exact (Finite.card_option (α := {a : Γ.V // a ≠ Γ.tgt e₂})).symm.trans
     (Nat.card_congr (Equiv.optionSubtypeNe _))
 
 /-- A fold of two darts with distinct terminal vertices lowers the number of geometric edges by
-one: it has the geometric edges of `Γ.deleteEdge e₂`. -/
-theorem card_geomEdge_fold [Finite Γ.GeomEdge] (e₁ e₂ : Γ.E) (h : Γ.tgt e₁ ≠ Γ.tgt e₂) :
+one. -/
+theorem card_fold_geomEdge_add_one [Finite Γ.GeomEdge] (e₁ e₂ : Γ.E) (h : Γ.tgt e₁ ≠ Γ.tgt e₂) :
     Nat.card (Γ.fold e₁ e₂ h).GeomEdge + 1 = Nat.card Γ.GeomEdge := by
-  rw [← Γ.card_deleteEdge_geomEdge_add_one e₂]
-  exact congrArg (· + 1) (Nat.card_congr (GeomEdge.congr _ (.refl _) fun _ => rfl))
+  classical
+  rw [Nat.card_congr (Γ.foldGeomEdgeEquiv e₁ e₂ h), ← Finite.card_option,
+    Nat.card_congr (Equiv.optionSubtypeNe _)]
 
 end SerreGraph
 
