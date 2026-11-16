@@ -16,11 +16,13 @@ also lets `NeZero.charZero` infer nonvanishing of factorials cast to characteris
 scalars, so constructions requiring an invertible factorial apply automatically there.
 
 The file also records `Nat.sq_eq_descFactorial_two_add`, the expansion `n ^ 2 = (n)₂ + n` of a
-square into falling factorials, which converts second factorial moments into second moments,
-and `Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`, `6 ^ n * n ! ≤ (2 * n + 1)!`, the
-termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`, and
-`Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`, `((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, the
-termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`.
+square into falling factorials, which converts second factorial moments into second moments;
+`Nat.pow_le_two_mul_descFactorial`, the falling-factorial lower bound `n ^ k ≤ 2 * (n)_k` whenever
+`k * (k - 1) ≤ n`; `Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`,
+`6 ^ n * n ! ≤ (2 * n + 1)!`, the termwise comparison of the power series of `x * exp (x ^ 2 / 6)`
+and `sinh x`; and `Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`,
+`((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, the termwise comparison that sums moment bounds `((n + 1)!)² aⁿ`
+against the series of `cosh`.
 -/
 
 public section
@@ -41,6 +43,59 @@ theorem sq_eq_descFactorial_two_add (n : ℕ) : n ^ 2 = n.descFactorial 2 + n :=
   rcases n with _ | n
   · simp
   · rw [succ_descFactorial_succ, descFactorial_one, Nat.pow_two, succ_mul, Nat.mul_comm]
+
+/-- If `k * (k - 1) ≤ n`, then `n ^ k ≤ 2 * n.descFactorial k`. In particular, `n ^ 3 ≤ 2 * (n)₃`
+for `n ≥ 6`. -/
+theorem pow_le_two_mul_descFactorial {n k : ℕ} (h : k * (k - 1) ≤ n) :
+    n ^ k ≤ 2 * n.descFactorial k := by
+  have hkey : ∀ m, (2 * n - m * (m - 1)) * n ^ m ≤ 2 * n * n.descFactorial m := by
+    intro m
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      simp only [Nat.add_sub_cancel]
+      by_cases hlt : (m + 1) * m < 2 * n
+      · have hstep : (m + 1) * m = m * (m - 1) + 2 * m := by
+          cases m with
+          | zero => simp
+          | succ j =>
+            simp only [Nat.add_sub_cancel]
+            rw [Nat.mul_comm (j + 1) j, ← Nat.add_mul]
+        have hmn : m ≤ n := by omega
+        have hsub : 2 * n - m * (m - 1) = (2 * n - (m + 1) * m) + 2 * m := by omega
+        have hle1 : (2 * n - (m + 1) * m) * n ≤ (n - m) * (2 * n - m * (m - 1)) := by
+          set a := 2 * n - (m + 1) * m
+          have ha : a ≤ 2 * (n - m) := by omega
+          calc a * n = a * ((n - m) + m) := by rw [Nat.sub_add_cancel hmn]
+            _ = a * (n - m) + a * m := Nat.mul_add a (n - m) m
+            _ ≤ a * (n - m) + (2 * (n - m)) * m :=
+                Nat.add_le_add_left (Nat.mul_le_mul_right m ha) _
+            _ = (n - m) * (a + 2 * m) := by
+                rw [Nat.mul_add, Nat.mul_comm a (n - m)]
+                congr 1
+                ac_rfl
+            _ = (n - m) * (2 * n - m * (m - 1)) := by rw [hsub]
+        calc (2 * n - (m + 1) * m) * n ^ (m + 1)
+            = (2 * n - (m + 1) * m) * n * n ^ m := by
+                rw [Nat.pow_succ, Nat.mul_assoc, Nat.mul_comm (n ^ m) n, ← Nat.mul_assoc]
+          _ ≤ (n - m) * (2 * n - m * (m - 1)) * n ^ m := Nat.mul_le_mul_right _ hle1
+          _ = (n - m) * ((2 * n - m * (m - 1)) * n ^ m) := Nat.mul_assoc _ _ _
+          _ ≤ (n - m) * (2 * n * n.descFactorial m) := Nat.mul_le_mul_left _ ih
+          _ = 2 * n * ((n - m) * n.descFactorial m) := by
+                rw [← Nat.mul_assoc, Nat.mul_comm (n - m), Nat.mul_assoc]
+          _ = 2 * n * n.descFactorial (m + 1) := by rw [descFactorial_succ]
+      · have hzero : 2 * n - (m + 1) * m = 0 := Nat.sub_eq_zero_of_le (Nat.le_of_not_lt hlt)
+        simp [hzero]
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rcases k with _ | _ | k
+    · simp
+    · simp
+    · exact absurd h (Nat.not_le_of_lt (Nat.mul_pos (Nat.succ_pos _) (Nat.succ_pos _)))
+  · have hle : n * n ^ k ≤ n * (2 * n.descFactorial k) := by
+      calc n * n ^ k ≤ (2 * n - k * (k - 1)) * n ^ k := Nat.mul_le_mul_right _ (by omega)
+        _ ≤ 2 * n * n.descFactorial k := hkey k
+        _ = n * (2 * n.descFactorial k) := by rw [Nat.mul_comm 2 n, Nat.mul_assoc]
+    exact Nat.le_of_mul_le_mul_left hle hn
 
 /-- `6 ^ n * n ! ≤ (2 * n + 1)!`, with equality at `n = 0` and `n = 1`. -/
 theorem six_pow_mul_factorial_le_factorial_two_mul_add_one (n : ℕ) :

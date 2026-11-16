@@ -17,6 +17,7 @@ import TauCeti.Combinatorics.Enumerative.CoupledRecoloring
 import TauCeti.Combinatorics.Hypergraph.Polyad.Energy.Gap
 import TauCeti.Combinatorics.Hypergraph.Polyad.Permute
 import TauCeti.Combinatorics.Hypergraph.Polyad.Rank
+import TauCeti.Data.Nat.Factorial.Basic
 import TauCeti.Order.Partition.Pi
 
 /-!
@@ -38,15 +39,8 @@ the `S₃`-orbits yields `H.Approximates3 H' ε` from the polyad energy gap, and
 subpolyad discrepancies across fine children yields `H'.TopRegularOverMostPolyads C δ₁ ε 1`
 (`Colored3Graph.exists_recoloring_topRegularOverMostPolyads`).
 
-We also lift rank amplification (`Colored3Graph.IsTopRegularOverPolyad.of_rank_one`) from single
-polyads to triadic complexes (`Colored3Graph.exceptionalPolyadMass_le_of_rank_one` and
-`Colored3Graph.TopRegularOverMostPolyads.of_rank_one`).
-
 ## Main results
 
-* `TauCeti.Colored3Graph.exceptionalPolyadMass_le_of_rank_one` and
-  `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_rank_one`: rank amplification on a triadic
-  complex.
 * `TauCeti.Colored3Graph.exists_recoloring_topRegularOverMostPolyads`: coupled recoloring from a
   fine rank-one top-regular refinement with small polyad energy gap.
 
@@ -63,20 +57,6 @@ open Finset Finpartition Real
 namespace TauCeti
 
 section Helpers
-
-/-- For `n ≥ 6`, `n³ ≤ 2 * n.descFactorial 3`. -/
-private theorem pow_three_le_two_mul_descFactorial {n : ℕ} (hn : 6 ≤ n) :
-    n ^ 3 ≤ 2 * n.descFactorial 3 := by
-  have hdesc : n.descFactorial 3 = n * (n - 1) * (n - 2) := by
-    simp [Nat.descFactorial_succ, mul_assoc]
-    ring
-  rw [hdesc]
-  have h1 : n ^ 2 ≤ 2 * (n - 1) * (n - 2) := by
-    zify [show 1 ≤ n by omega, show 2 ≤ n by omega]
-    nlinarith
-  calc n ^ 3 = n * n ^ 2 := by ring
-    _ ≤ n * (2 * (n - 1) * (n - 2)) := Nat.mul_le_mul_left n h1
-    _ = 2 * (n * (n - 1) * (n - 2)) := by ring
 
 open Classical in
 /-- Repeated-cell injective triples over an equipartition into `t` cells of size at least `1`
@@ -207,32 +187,6 @@ namespace Colored3Graph
 
 variable {κ V : Type*} [Fintype V] [DecidableEq V]
 
-/-- **Rank amplification for exceptional polyad mass.** Every polyad that is rank-one top-regular
-at tolerance `δ₁` is rank-`r` top-regular at tolerance `δ` whenever `0 < δ` and
-`2 ^ r * δ₁ ≤ δ ^ 2`, so the rank-`r` exceptional mass is at most the rank-one exceptional
-mass. -/
-theorem exceptionalPolyadMass_le_of_rank_one [DecidableEq κ] (H : Colored3Graph κ V)
-    (C : TriadicComplex3 V) {δ₁ δ : ℝ} {r : ℕ}
-    (hδ : 0 < δ) (hδε : (2 : ℝ) ^ r * δ₁ ≤ δ ^ 2) :
-    H.exceptionalPolyadMass C δ r ≤ H.exceptionalPolyadMass C δ₁ 1 := by
-  classical
-  rw [exceptionalPolyadMass_def, exceptionalPolyadMass_def]
-  refine div_le_div_of_nonneg_right (sum_le_sum_of_subset_of_nonneg ?_
-    fun _ _ _ ↦ Nat.cast_nonneg _) (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _)
-  intro P
-  simp only [mem_filter]
-  exact fun ⟨hP, hreg⟩ ↦ ⟨hP, fun h1 ↦ hreg (h1.of_rank_one hδ hδε)⟩
-
-/-- **Rank amplification on a triadic complex.** Rank-one top regularity over most polyads at
-tolerance `δ₁` implies rank-`r` top regularity over most polyads at tolerance `δ` whenever `0 < δ`
-and `2 ^ r * δ₁ ≤ δ ^ 2`. -/
-theorem TopRegularOverMostPolyads.of_rank_one [DecidableEq κ] {H : Colored3Graph κ V}
-    {C : TriadicComplex3 V} {δ₁ δ ε : ℝ} {r : ℕ}
-    (h : H.TopRegularOverMostPolyads C δ₁ ε 1) (hδ : 0 < δ) (hδε : (2 : ℝ) ^ r * δ₁ ≤ δ ^ 2) :
-    H.TopRegularOverMostPolyads C δ ε r :=
-  topRegularOverMostPolyads_iff.2
-    ((H.exceptionalPolyadMass_le_of_rank_one C hδ hδε).trans (topRegularOverMostPolyads_iff.1 h))
-
 section Internal
 
 variable [Fintype κ] [DecidableEq κ]
@@ -326,18 +280,19 @@ private theorem exists_piecewise_coloring_on_disjoint (H : Colored3Graph κ V)
   classical
   let H' : Colored3Graph κ V := ⟨fun e ↦
     if h : ∃ Q ∈ G, e ∈ Q.unorderedSupport then xQ h.choose e else H.color e⟩
+  have hH'_color (e : Set.powersetCard V 3) : H'.color e =
+      if h : ∃ Q ∈ G, e ∈ Q.unorderedSupport then xQ h.choose e else H.color e :=
+    rfl
   have hH'_eq {Q : Polyad3 S} (hQ : Q ∈ G) {e : Set.powersetCard V 3}
       (he : e ∈ Q.unorderedSupport) : H'.color e = xQ Q e := by
     have hex : ∃ Q' ∈ G, e ∈ Q'.unorderedSupport := ⟨Q, hQ, he⟩
     have hch : hex.choose = Q := by
       by_contra hne
       exact disjoint_left.1 (hdisj hex.choose_spec.1 hQ hne) hex.choose_spec.2 he
-    change (if h : ∃ Q' ∈ G, e ∈ Q'.unorderedSupport then xQ h.choose e else H.color e) = _
-    rw [dite_eq_left hex, hch]
+    rw [hH'_color, dite_eq_left hex, hch]
   have hH'_out {e : Set.powersetCard V 3} (he : ∀ Q ∈ G, e ∉ Q.unorderedSupport) :
       H'.color e = H.color e := by
-    change (if h : ∃ Q' ∈ G, e ∈ Q'.unorderedSupport then xQ h.choose e else H.color e) = _
-    exact dite_eq_right fun ⟨Q, hQ, hm⟩ ↦ he Q hQ hm
+    rw [hH'_color, dite_eq_right fun ⟨Q, hQ, hm⟩ ↦ he Q hQ hm]
   refine ⟨H', hH'_eq, ?_⟩
   have hedit_set : {e | H.color e ≠ H'.color e} =
       ((G.biUnion fun Q ↦ {e ∈ Q.unorderedSupport | H'.color e ≠ H.color e} :
@@ -697,7 +652,7 @@ private theorem sum_card_support_bad_fine_le (H : Colored3Graph κ V) {C D : Tri
       have h1 := card_polyad3_le D.skeleton; rw [hVeq, Fintype.card_fin] at h1; exact_mod_cast h1
     have hts : (t : ℝ) * s ≤ Fintype.card V := by exact_mod_cast Nat.mul_div_le (Fintype.card V) t
     have hpow : (Fintype.card V : ℝ) ^ 3 ≤ 2 * (Fintype.card V).descFactorial 3 := by
-      exact_mod_cast pow_three_le_two_mul_descFactorial hV6
+      exact_mod_cast Nat.pow_le_two_mul_descFactorial (k := 3) hV6
     calc _ ≤ ∑ _Q : Polyad3 D.skeleton, (γ * (s : ℝ) ^ 3) := by
           rw [sum_filter]
           refine sum_le_sum fun Q _ ↦ ?_
@@ -778,7 +733,7 @@ private theorem topRegularOverMostPolyads_of_glued (H H' : Colored3Graph κ V)
   have hrep : ∑ P : Polyad3 C.skeleton with ¬P.HasDistinctCells, (#P.support : ℝ) ≤
       (ε / 4) * (Fintype.card V).descFactorial 3 := by
     have hpow : (Fintype.card V : ℝ) ^ 3 ≤ 2 * (Fintype.card V).descFactorial 3 := by
-      exact_mod_cast pow_three_le_two_mul_descFactorial hV6
+      exact_mod_cast Nat.pow_le_two_mul_descFactorial (k := 3) hV6
     have hdiv : 6 / (#C.skeleton.vertexPart.parts : ℝ) ≤ ε / 8 := by
       rw [div_le_iff₀ (Nat.cast_pos.2 ht_pos)]; rw [div_le_iff₀ hε] at ht; linarith
     calc _ ≤ 6 * (Fintype.card V : ℝ) ^ 3 / #C.skeleton.vertexPart.parts :=

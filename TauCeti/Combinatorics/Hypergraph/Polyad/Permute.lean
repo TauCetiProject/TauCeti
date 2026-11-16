@@ -32,9 +32,7 @@ ordered injective triples to unordered triples is injective on its support. Cons
 `S₃`-orbits have disjoint unordered supports
 (`Polyad3.disjoint_unorderedSupport_of_forall_ne_permute`), and any injective ordering of the
 vertex cells picks a unique strictly increasing canonical representative in each distinct-cell
-orbit (`Polyad3.HasDistinctCells.existsUnique_permute_strictMono`). We also compute the exact
-number of subpolyads of any polyad (`card_subpolyad3_eq`) and bound it by
-`2 ^ (#c₀ * #c₁ + #c₀ * #c₂ + #c₁ * #c₂)`.
+orbit (`Polyad3.HasDistinctCells.existsUnique_permute_strictMono`).
 
 ## Main definitions
 
@@ -57,8 +55,6 @@ number of subpolyads of any polyad (`card_subpolyad3_eq`) and bound it by
   `S₃`-orbits have disjoint unordered supports.
 * `TauCeti.Polyad3.HasDistinctCells.existsUnique_permute_strictMono`: unique canonical orbit
   representative for distinct-cell polyads.
-* `TauCeti.card_subpolyad3_eq` and `TauCeti.card_subpolyad3_le`: cardinality bounds for
-  `Subpolyad3 P`.
 -/
 
 public section
@@ -387,7 +383,7 @@ theorem mem_pairSupportAt (P : Polyad3 S) {i j : Fin 3} (hij : i ≠ j)
 
 end Polyad3
 
-/-! ### Permuting subpolyads and counting subpolyads -/
+/-! ### Permuting subpolyads -/
 
 namespace Subpolyad3
 
@@ -527,40 +523,6 @@ theorem unionSupport_permute {ι : Type*} [Fintype ι] (Q : ι → Subpolyad3 P)
 
 end Subpolyad3
 
-/-- The exact number of subpolyads of a polyad `P` is
-`2 ^ (#pairSupport₀₁ + #pairSupport₀₂ + #pairSupport₁₂)`. -/
-theorem card_subpolyad3_eq {S : PairSkeleton3 κ V} (P : Polyad3 S) :
-    Fintype.card (Subpolyad3 P) =
-      2 ^ (#P.pairSupport₀₁ + #P.pairSupport₀₂ + #P.pairSupport₁₂) := by
-  let e : Subpolyad3 P ≃
-      P.pairSupport₀₁.powerset × P.pairSupport₀₂.powerset × P.pairSupport₁₂.powerset :=
-    { toFun := fun Q ↦
-        (⟨Q.pair₀₁, mem_powerset.2 Q.pair₀₁_sub⟩,
-          ⟨Q.pair₀₂, mem_powerset.2 Q.pair₀₂_sub⟩,
-          ⟨Q.pair₁₂, mem_powerset.2 Q.pair₁₂_sub⟩)
-      invFun := fun ⟨q₀₁, q₀₂, q₁₂⟩ ↦
-        ⟨q₀₁.1, q₀₂.1, q₁₂.1, mem_powerset.1 q₀₁.2, mem_powerset.1 q₀₂.2, mem_powerset.1 q₁₂.2⟩
-      left_inv := fun _ ↦ Subpolyad3.ext_data rfl rfl rfl
-      right_inv := fun ⟨_, _, _⟩ ↦ rfl }
-  rw [Fintype.card_congr e, Fintype.card_prod, Fintype.card_prod, Fintype.card_coe,
-    Fintype.card_coe, Fintype.card_coe, card_powerset, card_powerset, card_powerset,
-    pow_add, pow_add, mul_assoc]
-
-/-- The number of subpolyads of a polyad `P` is at most
-`2 ^ (#P.c₀ * #P.c₁ + #P.c₀ * #P.c₂ + #P.c₁ * #P.c₂)`. -/
-theorem card_subpolyad3_le {S : PairSkeleton3 κ V} (P : Polyad3 S) :
-    Fintype.card (Subpolyad3 P) ≤ 2 ^ (#P.c₀ * #P.c₁ + #P.c₀ * #P.c₂ + #P.c₁ * #P.c₂) := by
-  have hle {A B : Finset V} {E : Finset {p : V × V // p.1 ≠ p.2}}
-      (hE : ∀ p ∈ E, p.1.1 ∈ A ∧ p.1.2 ∈ B) : #E ≤ #A * #B := by
-    rw [← card_product]
-    exact card_le_card_of_injOn (fun p ↦ p.1) (fun p hp ↦ mem_product.2 (hE p hp))
-      Subtype.val_injective.injOn
-  rw [card_subpolyad3_eq]
-  refine Nat.pow_le_pow_right two_pos (Nat.add_le_add (Nat.add_le_add ?_ ?_) ?_)
-  · exact hle fun p hp ↦ ⟨((P.mem_pairSupport₀₁ p).1 hp).1, ((P.mem_pairSupport₀₁ p).1 hp).2.1⟩
-  · exact hle fun p hp ↦ ⟨((P.mem_pairSupport₀₂ p).1 hp).1, ((P.mem_pairSupport₀₂ p).1 hp).2.1⟩
-  · exact hle fun p hp ↦ ⟨((P.mem_pairSupport₁₂ p).1 hp).1, ((P.mem_pairSupport₁₂ p).1 hp).2.1⟩
-
 /-! ### Invariance of triple densities and top regularity under role permutation -/
 
 namespace Colored3Graph
@@ -684,12 +646,26 @@ theorem HasDistinctCells.injOn_ofFinEmb {P : Polyad3 S} (hP : P.HasDistinctCells
 noncomputable def unorderedSupport (P : Polyad3 S) : Finset (Set.powersetCard V 3) :=
   P.support.image fun x ↦ Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩
 
+/-- The unordered support of a polyad is the image of its ordered support under `ofFinEmb`. -/
+theorem unorderedSupport_def (P : Polyad3 S) :
+    P.unorderedSupport =
+      P.support.image fun x ↦ Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ :=
+  (rfl)
+
+/-- An unordered triple lies in the unordered support of a polyad iff it underlies some ordered
+triple in the polyad's support. -/
+@[simp]
+theorem mem_unorderedSupport (P : Polyad3 S) {s : Set.powersetCard V 3} :
+    s ∈ P.unorderedSupport ↔
+      ∃ x ∈ P.support, Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ = s := by
+  simp [unorderedSupport]
+
 /-- Role permutation preserves the unordered support of a polyad. -/
 @[simp]
 theorem unorderedSupport_permute (P : Polyad3 S) (σ : Equiv.Perm (Fin 3)) :
     (P.permute σ).unorderedSupport = P.unorderedSupport := by
   ext s
-  simp only [unorderedSupport, mem_image, support_permute, mem_map, Equiv.coe_toEmbedding,
+  simp only [mem_unorderedSupport, support_permute, mem_map, Equiv.coe_toEmbedding,
     permuteTripleEquiv_apply]
   constructor
   · rintro ⟨_, ⟨x, hx, rfl⟩, rfl⟩
@@ -707,8 +683,8 @@ theorem disjoint_unorderedSupport_of_forall_ne_permute {P Q : Polyad3 S}
     (h : ∀ σ : Equiv.Perm (Fin 3), Q ≠ P.permute σ) :
     Disjoint P.unorderedSupport Q.unorderedSupport := by
   refine disjoint_left.2 fun s hsP hsQ ↦ ?_
-  obtain ⟨x, hxP, rfl⟩ := mem_image.1 hsP
-  obtain ⟨y, hyQ, hxy⟩ := mem_image.1 hsQ
+  obtain ⟨x, hxP, rfl⟩ := P.mem_unorderedSupport.1 hsP
+  obtain ⟨y, hyQ, hxy⟩ := Q.mem_unorderedSupport.1 hsQ
   obtain ⟨σ, hσ⟩ := ofFinEmb_eq_iff_exists_permuteTriple.1 hxy.symm
   have hyP : y ∈ (P.permute σ).support :=
     hσ ▸ (P.permuteTriple_mem_support_permute σ x).2 hxP
@@ -753,7 +729,7 @@ theorem HasDistinctCells.card_filter_unorderedSupport {κ₃ : Type*} [Decidable
     {P : Polyad3 S} (hP : P.HasDistinctCells) (H : Colored3Graph κ₃ V) (c : κ₃) :
     #{s ∈ P.unorderedSupport | H.color s = c} =
       #{x ∈ P.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} := by
-  rw [unorderedSupport, filter_image,
+  rw [unorderedSupport_def, filter_image,
     card_image_of_injOn (hP.injOn_ofFinEmb.mono (filter_subset _ _))]
 
 end Polyad3
@@ -766,6 +742,20 @@ variable {S : PairSkeleton3 κ V} {P : Polyad3 S}
 noncomputable def unorderedSupport (Q : Subpolyad3 P) : Finset (Set.powersetCard V 3) :=
   Q.support.image fun x ↦ Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩
 
+/-- The unordered support of a subpolyad is the image of its ordered support under `ofFinEmb`. -/
+theorem unorderedSupport_def (Q : Subpolyad3 P) :
+    Q.unorderedSupport =
+      Q.support.image fun x ↦ Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ :=
+  (rfl)
+
+/-- An unordered triple lies in the unordered support of a subpolyad iff it underlies some ordered
+triple in the subpolyad's support. -/
+@[simp]
+theorem mem_unorderedSupport (Q : Subpolyad3 P) {s : Set.powersetCard V 3} :
+    s ∈ Q.unorderedSupport ↔
+      ∃ x ∈ Q.support, Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ = s := by
+  simp [unorderedSupport]
+
 /-- The unordered support of a subpolyad lies in the unordered support of its parent polyad. -/
 theorem unorderedSupport_subset (Q : Subpolyad3 P) :
     Q.unorderedSupport ⊆ P.unorderedSupport :=
@@ -776,7 +766,7 @@ theorem unorderedSupport_subset (Q : Subpolyad3 P) :
 theorem unorderedSupport_permute (Q : Subpolyad3 P) (σ : Equiv.Perm (Fin 3)) :
     (Q.permute σ).unorderedSupport = Q.unorderedSupport := by
   ext s
-  simp only [unorderedSupport, mem_image, support_permute, mem_map, Equiv.coe_toEmbedding,
+  simp only [mem_unorderedSupport, support_permute, mem_map, Equiv.coe_toEmbedding,
     permuteTripleEquiv_apply]
   constructor
   · rintro ⟨_, ⟨x, hx, rfl⟩, rfl⟩
@@ -796,7 +786,7 @@ theorem card_filter_unorderedSupport {κ₃ : Type*} [DecidableEq κ₃] (Q : Su
     #{s ∈ Q.unorderedSupport | H.color s = c} =
       #{x ∈ Q.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} := by
   have hinj := hP.injOn_ofFinEmb.mono Q.support_subset
-  rw [unorderedSupport, filter_image, card_image_of_injOn (hinj.mono (filter_subset _ _))]
+  rw [unorderedSupport_def, filter_image, card_image_of_injOn (hinj.mono (filter_subset _ _))]
 
 end Subpolyad3
 
