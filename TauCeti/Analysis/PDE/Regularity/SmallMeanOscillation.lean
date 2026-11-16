@@ -13,6 +13,7 @@ import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.MaximalFunction
 import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
 import TauCeti.MeasureTheory.Integral.UncenteredMaximalFunction
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # The `W^{1,p}` estimate for coefficients of small mean oscillation
@@ -68,8 +69,9 @@ The restriction `p > 2` comes from the `L²` mean oscillation estimate.
 ## Small mean oscillation below a radius
 
 Coefficients of vanishing mean oscillation have small mean oscillation only on balls of radius at
-most some `r₀`. The estimate still holds for them, with the same constants, for every `u` whose
-gradient vanishes outside a ball `B(x₀, r₀ / 4)`
+most some `r₀`. The estimate still holds for them, with the same constant `C` and the threshold `δ`
+shrunk by the factor `4 · 8^(n + 1)`, both independent of `r₀`, for every `u` whose gradient
+vanishes outside a ball `B(x₀, r₀ / 4)`
 (`TauCeti.PDE.exists_eLpNorm_gradient_le_of_setAverage_le_of_gradient_eq_zero`).
 Such a `u` solves the same equation with `a` replaced by any field agreeing with `a` on
 `B(x₀, r₀ / 4)`, and with `R = r₀ / 4` the field `b = ψ a + (1 - ψ) A₀` has small mean oscillation
@@ -90,7 +92,8 @@ frozen matrix of `B(x₀, 4R)`.
 * `TauCeti.PDE.exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le`: the
   `W^{1,p}` estimate for coefficients of small mean oscillation, `2 < p < ∞`.
 * `TauCeti.PDE.exists_eqOn_ball_and_forall_setAverage_le`: a coefficient field of small mean
-  oscillation below a radius agrees near a ball with one of small mean oscillation at every scale.
+  oscillation below a radius `r₀` agrees on a ball `B(x₀, R)`, `4R ≤ r₀`, with a field of small
+  mean oscillation at every scale.
 * `TauCeti.PDE.exists_eLpNorm_gradient_le_of_setAverage_le_of_gradient_eq_zero`:
   the `W^{1,p}` estimate for coefficients of small mean oscillation below a radius, for functions
   whose gradient vanishes outside a small ball.
@@ -555,19 +558,6 @@ section Localization
 
 variable {F : Type*} [NormedAddCommGroup F]
 
-/-- The ratio of the volumes of two balls in `ℝ^{n+1}` is the `(n + 1)`-th power of the ratio of
-their radii. -/
-private theorem measureReal_ball_div_measureReal_ball (c c' : EuclideanSpace ℝ (Fin (n + 1)))
-    {r r' : ℝ} (hr : 0 < r) (hr' : 0 < r') :
-    volume.real (ball c' r') / volume.real (ball c r) = (r' / r) ^ (n + 1) := by
-  have h0 : (volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).toReal ≠ 0 :=
-    ENNReal.toReal_ne_zero.2 ⟨(measure_ball_pos _ _ one_pos).ne', measure_ball_lt_top.ne⟩
-  simp only [measureReal_def, Measure.addHaar_ball_of_pos _ _ hr,
-    Measure.addHaar_ball_of_pos _ _ hr', ENNReal.toReal_mul, finrank_euclideanSpace_fin,
-    ENNReal.toReal_ofReal (pow_nonneg hr.le _), ENNReal.toReal_ofReal (pow_nonneg hr'.le _)]
-  rw [div_pow]
-  field_simp
-
 /-- A bounded measurable field `β`, multiplied by a bounded measurable weight `w`, stays within
 integrable distance of any constant on every ball. -/
 private theorem integrableOn_mul_norm_sub {β : EuclideanSpace ℝ (Fin (n + 1)) → F}
@@ -609,7 +599,8 @@ private theorem norm_sub_le_of_forall_setAverage_le {β : EuclideanSpace ℝ (Fi
       (ball_subset_ball (by rw [pow_succ]; nlinarith)) (measure_ball_pos _ _ hrm).ne'
       measure_ball_lt_top.ne (integrableOn_norm_sub hβ hbd (P m) c _)
       (integrableOn_norm_sub hβ hbd (P (m + 1)) c _)
-    rw [measureReal_ball_div_measureReal_ball _ _ hrm (by positivity),
+    rw [Measure.addHaar_real_ball_div_addHaar_real_ball _ _ _ hrm (by positivity),
+      finrank_euclideanSpace_fin,
       show 2 ^ (m + 1) * r / (2 ^ m * r) = 2 by field_simp; ring] at hstep
     calc ‖P 0 - P (m + 1)‖ ≤ ‖P 0 - P m‖ + ‖P m - P (m + 1)‖ :=
           norm_sub_le_norm_sub_add_norm_sub _ _ _
@@ -655,7 +646,9 @@ private theorem setAverage_norm_cutoff_sub_le_of_le [NormedSpace ℝ F]
             (.of_forall inter_subset_right)
       _ ≤ _ := setIntegral_mono_on hint (integrableOn_norm_sub hβ hbd P₀ x₀ _) measurableSet_ball
           fun x _ => mul_le_of_le_one_left (norm_nonneg _) (hψ x).2
-  have hvol := measureReal_ball_div_measureReal_ball c x₀ hr (by positivity : 0 < 4 * R)
+  have hvol := Measure.addHaar_real_ball_div_addHaar_real_ball volume c x₀ hr
+    (by positivity : 0 < 4 * R)
+  rw [finrank_euclideanSpace_fin] at hvol
   have hvol0 : 0 < volume.real (ball c r) := ENNReal.toReal_pos (measure_ball_pos _ _ hr).ne'
     measure_ball_lt_top.ne
   simp_rw [hpt]
@@ -722,12 +715,13 @@ private theorem setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
         field_simp
     _ ≤ _ := by gcongr
 
-/-- A convex combination of two vectors of norm at most `L` has norm at most `L`. -/
+/-- A convex combination of two vectors of norm at most `L` has norm at most `L`: convexity of the
+closed ball, stated in a general normed space because instantiating `convex_closedBall` directly at
+the space of bilinear forms exhausts the heartbeat limit. -/
 private theorem norm_smul_add_one_sub_smul_le [NormedSpace ℝ F] {t L : ℝ} (ht : t ∈ Icc 0 1)
-    {P P' : F} (hP : ‖P‖ ≤ L) (hP' : ‖P'‖ ≤ L) : ‖t • P + (1 - t) • P'‖ ≤ L := by
-  refine (norm_add_le _ _).trans ?_
-  rw [norm_smul, norm_smul, Real.norm_of_nonneg ht.1, Real.norm_of_nonneg (sub_nonneg.2 ht.2)]
-  nlinarith [ht.1, ht.2]
+    {P P' : F} (hP : ‖P‖ ≤ L) (hP' : ‖P'‖ ≤ L) : ‖t • P + (1 - t) • P'‖ ≤ L :=
+  mem_closedBall_zero_iff.1 (convex_closedBall (0 : F) L (mem_closedBall_zero_iff.2 hP)
+    (mem_closedBall_zero_iff.2 hP') ht.1 (sub_nonneg.2 ht.2) (add_sub_cancel _ _))
 
 /-- **The cutoff field on a ball where the cutoff vanishes** is the constant `P₀`. -/
 private theorem setAverage_norm_cutoff_sub_eq_zero [NormedSpace ℝ F]
@@ -776,7 +770,8 @@ private theorem exists_setAverage_le_and_div_mul_norm_sub_le
     (s := ball c (2 ^ m * r)) (t := ball x₀ (4 * R))
     (ball_subset_ball' (by linarith)) (measure_ball_pos _ _ hmr).ne' measure_ball_lt_top.ne
     (integrableOn_norm_sub hβ hbd (P m) c _) (integrableOn_norm_sub hβ hbd P₀ x₀ _)
-  rw [measureReal_ball_div_measureReal_ball _ _ hmr (by positivity)] at hlast
+  rw [Measure.addHaar_real_ball_div_addHaar_real_ball _ _ _ hmr (by positivity),
+    finrank_euclideanSpace_fin] at hlast
   have hratio : (4 * R / (2 ^ m * r)) ^ (n + 1) ≤ 8 ^ (n + 1) := by
     gcongr
     rw [div_le_iff₀ hmr]
@@ -831,21 +826,6 @@ private theorem exists_setAverage_norm_cutoff_sub_le [NormedSpace ℝ F]
   have hK : (5 + 2 * 2 ^ (n + 1) + 2 * 8 ^ (n + 1) : ℝ) ≤ 4 * 8 ^ (n + 1) := by nlinarith
   nlinarith [mul_le_mul_of_nonneg_right hK hδ]
 
-/-- The bilinear form of a convex combination of two matrices is the convex combination of their
-bilinear forms. -/
-private theorem matrixBilinearForm_smul_add_one_sub_smul (t : ℝ)
-    (A B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
-    matrixBilinearForm (t • A + (1 - t) • B) =
-      t • matrixBilinearForm A + (1 - t) • matrixBilinearForm B := by
-  simp only [← matrixBilinearFormLinear_apply, map_add, map_smul]
-
-/-- A constant coefficient field uniformly elliptic on a nonempty set is uniformly elliptic on
-every set. -/
-private theorem UniformlyEllipticOn.const_of_mem {X : Type*} {Ω : Set X} {A : Matrix (Fin (n + 1))
-    (Fin (n + 1)) ℝ} {lam Lam : ℝ} (h : UniformlyEllipticOn Ω (fun _ => A) lam Lam) {x : X}
-    (hx : x ∈ Ω) (S : Set X) : UniformlyEllipticOn S (fun _ => A) lam Lam :=
-  uniformlyEllipticOn_iff.2 ⟨h.pos, h.le, fun _ _ => (uniformlyEllipticOn_iff.1 h).2.2 hx⟩
-
 /-- **The cutoff field on small balls.** Under the hypotheses of
 `exists_eqOn_ball_and_forall_setAverage_le`, let `A₀` be the frozen matrix of `B(x₀, 4R)` and let
 `ψ ∈ [0, 1]` be a `K`-Lipschitz cutoff, `K R ≤ 2`, vanishing where `dist x x₀ ≥ 2R`. On every ball
@@ -873,8 +853,7 @@ private theorem exists_uniformlyEllipticOn_and_setAverage_cutoff_le {lam Lam δ 
   have hδ : 0 ≤ δ := (average_nonneg fun x =>
     norm_nonneg (matrixBilinearForm (a x) - matrixBilinearForm A₀)).trans hδ₀
   have hβ : AEStronglyMeasurable (fun x => matrixBilinearForm (a x)) volume :=
-    (matrixBilinearFormLinear.continuous.comp_aestronglyMeasurable ha).congr
-      (.of_forall fun x => matrixBilinearFormLinear_apply (a x))
+    continuous_matrixBilinearForm.comp_aestronglyMeasurable ha
   rcases le_or_gt (3 * R) (dist c x₀) with hfar | hnear
   · -- A small ball far from `x₀`, where the field is `A₀`.
     refine ⟨A₀, hA₀.const_of_mem (mem_ball_self (by positivity)) _, ?_⟩
@@ -896,8 +875,7 @@ private theorem exists_uniformlyEllipticOn_and_setAverage_cutoff_le {lam Lam δ 
     · exact (UniformlyEllipticOn.smul_add_one_sub_smul (hA.const_of_mem (mem_ball_self hr) _)
         (hA₀.const_of_mem (mem_ball_self (by positivity)) _) (fun _ => hψ c)
         fun x hx => absurd (mem_univ x) hx).mono_set (subset_univ _)
-    · rw [matrixBilinearForm_smul_add_one_sub_smul]
-      exact hP
+    · simpa only [matrixBilinearForm_add, matrixBilinearForm_smul] using hP
 
 /-- **Small mean oscillation below a radius extends to every scale near a ball.** Let `a` be a
 measurable coefficient matrix on `ℝ^{n+1}` bounded by `Λ` such that on every ball of radius at most
@@ -931,8 +909,7 @@ theorem exists_eqOn_ball_and_forall_setAverage_le {lam Lam δ r₀ R : ℝ}
   have hδ : 0 ≤ δ := (average_nonneg fun x =>
     norm_nonneg (matrixBilinearForm (a x) - matrixBilinearForm A₀)).trans hδ₀
   have hβ : AEStronglyMeasurable (fun x => matrixBilinearForm (a x)) volume :=
-    (matrixBilinearFormLinear.continuous.comp_aestronglyMeasurable ha).congr
-      (.of_forall fun x => matrixBilinearFormLinear_apply (a x))
+    continuous_matrixBilinearForm.comp_aestronglyMeasurable ha
   obtain ⟨ψ, hψs, hψr, hψ1, hψsupp, hψlip⟩ :=
     exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv x₀ (r := R) hR (t := 2) one_lt_two
   have hψm : Continuous ψ := hψs.continuous
@@ -945,13 +922,13 @@ theorem exists_eqOn_ball_and_forall_setAverage_le {lam Lam δ r₀ R : ℝ}
     (hψm.aestronglyMeasurable.smul ha).add
       ((continuous_const.sub hψm).aestronglyMeasurable.smul_const A₀), fun x => ?_,
     fun x hx => ?_, fun c r hr => ?_⟩
-  · rw [matrixBilinearForm_smul_add_one_sub_smul]
+  · rw [matrixBilinearForm_add, matrixBilinearForm_smul, matrixBilinearForm_smul]
     exact norm_smul_add_one_sub_smul_le
       (F := EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ)
       (hψ x) (hbd x)
       (hA₀.opNorm_matrixBilinearForm_le (mem_ball_self (by positivity)))
   · simp [hψ1 (ball_subset_closedBall hx)]
-  simp only [matrixBilinearForm_smul_add_one_sub_smul]
+  simp only [matrixBilinearForm_add, matrixBilinearForm_smul]
   rcases le_or_gt R r with hRr | hrR
   · -- A large ball: compare with `A₀`.
     refine ⟨A₀, hA₀.const_of_mem (mem_ball_self (by positivity)) _,
@@ -962,23 +939,6 @@ theorem exists_eqOn_ball_and_forall_setAverage_le {lam Lam δ r₀ R : ℝ}
     linarith [pow_pos (by norm_num : (0 : ℝ) < 8) (n + 1)]
   exact exists_uniformlyEllipticOn_and_setAverage_cutoff_le ha hbd hosc hA₀ hδ₀ hψm hψ hψ0 hψlip
     hKR hRr₀ hr hrR
-
-/-- The energy form `a(u, v)` without lower-order terms only sees the coefficients where `∇u` does
-not vanish: it is unchanged when `a` is replaced by a field agreeing with it on a set `s` outside of
-which `∇u = 0` almost everywhere. -/
-private theorem energyFormH1_eq_of_eqOn_of_ae_gradient_eq_zero
-    {a b : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    {s : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hab : EqOn a b s)
-    {u : W1p volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2}
-    (hu : ∀ᵐ x, x ∉ s → W1p.gradient u x = 0)
-    (v : W1p volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2) :
-    energyFormH1 a 0 0 u v = energyFormH1 b 0 0 u v := by
-  rw [energyFormH1_def, energyFormH1_def]
-  refine integral_congr_ae ?_
-  filter_upwards [ae_restrict_of_ae hu] with x hx
-  by_cases hxs : x ∈ s
-  · rw [hab hxs]
-  · simp [hx hxs]
 
 /-- **The `W^{1,p}` estimate for coefficients of small mean oscillation below a radius.** Let
 `2 < p < ∞` and `0 < λ ≤ Λ`. There are constants `C` and `δ > 0`, depending only on `n`, `p`, `λ`
@@ -1035,7 +995,7 @@ theorem exists_eLpNorm_gradient_le_of_setAverage_le_of_gradient_eq_zero
   · obtain ⟨A, hA, hAδ⟩ := hbosc c r hr
     exact ⟨A, hA, hAδ.trans_eq (by field_simp)⟩
   · rw [← hu φ]
-    exact energyFormH1_eq_of_eqOn_of_ae_gradient_eq_zero hba hsupp _
+    exact energyFormH1_eq_of_eqOn_of_ae_gradient_eq_zero hba (ae_restrict_of_ae hsupp) _
 
 end Localization
 
