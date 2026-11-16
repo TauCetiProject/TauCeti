@@ -9,7 +9,9 @@ public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.FDeriv.EuclideanMatrix
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Matrix.EuclideanLin
@@ -38,10 +40,12 @@ with the pulled-back coefficients
 The zeroth-order coefficient and the right-hand side transform as densities, because the
 volume element changes by the factor `J`. The transformed principal coefficient is again
 uniformly elliptic and bounded when `DΦ` and its inverse are bounded and `J` is bounded below
-(`TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipal`). If moreover `Φ` has an inverse change of
-variables, the transformed drift, zeroth-order coefficient and right-hand side stay in `Lᵖ`
-(`TauCeti.PDE.memLp_pullbackDrift`, `TauCeti.PDE.memLp_pullbackDensity`); with `p = ∞`, bounded
-lower-order coefficients stay bounded.
+(`TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipal`), and it is Lipschitz when `a` is and the
+change of variables has Lipschitz derivatives
+(`TauCeti.PDE.exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal`). If moreover `Φ` has an
+inverse change of variables, the transformed drift, zeroth-order coefficient and right-hand side
+stay in `Lᵖ` (`TauCeti.PDE.memLp_pullbackDrift`, `TauCeti.PDE.memLp_pullbackDensity`); with
+`p = ∞`, bounded lower-order coefficients stay bounded.
 
 This is the change of variables that flattens the boundary of a domain: if `Φ` maps a piece of a
 half-space onto a neighbourhood of a boundary point of `Ω`, a weak solution in `Ω` becomes a weak
@@ -68,6 +72,10 @@ formulation transfers (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`).
 * `TauCeti.PDE.energyFormH1_compL_eq_setIntegral`: weak solutions are carried to weak solutions.
 * `TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipal`: uniform ellipticity and boundedness are
   preserved, with explicit constants.
+* `TauCeti.PDE.matrixBilinearForm_pullbackPrincipal_eq_bilinearComp`: the bilinear form of the
+  transformed principal coefficient, written with a left inverse `T` of `DΦ`.
+* `TauCeti.PDE.exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal`: Lipschitz principal
+  coefficients stay Lipschitz.
 * `TauCeti.PDE.memLp_pullbackDensity`, `TauCeti.PDE.memLp_pullbackDrift`: the transformed
   zeroth-order coefficient, right-hand side and drift stay in `Lᵖ`.
 
@@ -203,6 +211,31 @@ theorem energyIntegrand_pullback {Φ : EuclideanSpace ℝ ι → EuclideanSpace 
     pullbackDensity_apply]
   ring
 
+/-- **The transformed principal coefficient through a left inverse of `DΦ`.** If `T` is a left
+inverse of `DΦ(x)`, the bilinear form of `a'(x)` is `|det DΦ(x)|` times the bilinear form of
+`a(Φ x)` evaluated on `T* η` and `T* ξ`. -/
+theorem matrixBilinearForm_pullbackPrincipal_eq_bilinearComp
+    {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    {x : EuclideanSpace ℝ ι} {T : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι}
+    (hT : T ∘L fderiv ℝ Φ x = ContinuousLinearMap.id ℝ _) :
+    matrixBilinearForm (pullbackPrincipal Φ a x) =
+      |(fderiv ℝ Φ x).det| •
+        (matrixBilinearForm (a (Φ x))).bilinearComp T.adjoint T.adjoint := by
+  have hdet : (fderiv ℝ Φ x).det ≠ 0 := by
+    have h : T.det * (fderiv ℝ Φ x).det = 1 := by
+      rw [ContinuousLinearMap.det, ContinuousLinearMap.det, ← LinearMap.det_comp]
+      exact (congrArg ContinuousLinearMap.det hT).trans (by
+        rw [ContinuousLinearMap.det, ContinuousLinearMap.coe_id, LinearMap.det_id])
+    exact right_ne_zero_of_mul_eq_one h
+  -- `DΦ(x)* ∘ T* = (T ∘ DΦ(x))* = id`, so every covector is `DΦ(x)*` of its image under `T*`.
+  have hinv (η : EuclideanSpace ℝ ι) : (fderiv ℝ Φ x).adjoint (T.adjoint η) = η := by
+    rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp, hT,
+      ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
+  ext η ξ
+  conv_lhs => rw [← hinv η, ← hinv ξ]
+  rw [matrixBilinearForm_pullbackPrincipal a hdet]
+  simp
+
 end Coefficients
 
 /-! ### Uniform ellipticity of the transformed principal coefficient -/
@@ -315,6 +348,66 @@ theorem UniformlyEllipticOn.pullbackPrincipal [Nonempty ι] {s t : Set (Euclidea
     exact (ha (hmaps hx)).2 η ξ
 
 end Ellipticity
+
+/-! ### Lipschitz continuity of the transformed principal coefficient -/
+
+section Lipschitz
+
+open scoped NNReal
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- **Lipschitz principal coefficients stay Lipschitz.** Let `Φ` map `s` into `t`, and let `T` be
+a pointwise left inverse of `DΦ` on `s`. If `x ↦ a(x)` is Lipschitz and bounded on `t` in the
+operator norm of its bilinear forms, and `Φ`, `T` and the Jacobian `|det DΦ|` are Lipschitz on
+`s`, with `T` and `|det DΦ|` bounded there, then the transformed principal coefficient
+`a'(x) = |det DΦ(x)| M(x)⁻¹ a(Φ x) M(x)⁻ᵀ` is Lipschitz on `s`. -/
+theorem exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal
+    {s t : Set (EuclideanSpace ℝ ι)} {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {T : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι}
+    {KΦ KT KJ Ka : ℝ≥0} {L J M : ℝ} (hmaps : MapsTo Φ s t)
+    (hT : ∀ x ∈ s, T x ∘L fderiv ℝ Φ x = ContinuousLinearMap.id ℝ _)
+    (hΦ : LipschitzOnWith KΦ Φ s) (hTl : LipschitzOnWith KT T s) (hTL : ∀ x ∈ s, ‖T x‖ ≤ L)
+    (hJ : LipschitzOnWith KJ (fun x => |(fderiv ℝ Φ x).det|) s)
+    (hJb : ∀ x ∈ s, |(fderiv ℝ Φ x).det| ≤ J)
+    (ha : LipschitzOnWith Ka (fun y => matrixBilinearForm (a y)) t)
+    (haM : ∀ y ∈ t, ‖matrixBilinearForm (a y)‖ ≤ M) :
+    ∃ K, LipschitzOnWith K (fun x => matrixBilinearForm (pullbackPrincipal Φ a x)) s := by
+  -- The coefficient is `g(|det DΦ|, a ∘ Φ, T*)` for the smooth map `g(j, B, S) = B(j S ·, S ·)`.
+  -- The argument is Lipschitz on `s` with values in a closed ball, on which `g` is Lipschitz.
+  have hg : ContDiff ℝ 1 fun p : ℝ × (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) ×
+      (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) => p.2.1.bilinearComp (p.1 • p.2.2) p.2.2 :=
+    contDiffOn_univ.1 ((contDiff_fst.comp contDiff_snd).contDiffOn.clm_bilinearComp
+      (contDiff_fst.smul (contDiff_snd.comp contDiff_snd)).contDiffOn
+      (contDiff_snd.comp contDiff_snd).contDiffOn)
+  set R := max J (max M L)
+  obtain ⟨Kg, hKg⟩ := (hg.contDiffOn (s := Metric.closedBall 0 R)).exists_lipschitzOnWith
+    one_ne_zero (convex_closedBall 0 R) (isCompact_closedBall 0 R)
+  have hh := hJ.prodMk ((ha.comp hΦ hmaps).prodMk
+    ((ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := EuclideanSpace ℝ ι)
+      (F := EuclideanSpace ℝ ι)).isometry.lipschitzWith.comp_lipschitzOnWith hTl))
+  have hmapsh : MapsTo (fun x => (|(fderiv ℝ Φ x).det|, matrixBilinearForm (a (Φ x)),
+      (T x).adjoint)) s (Metric.closedBall 0 R) := fun x hx => by
+    refine (mem_closedBall_zero_iff (E := ℝ ×
+      (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) ×
+        (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι))).2 ?_
+    simp only [norm_prod_le_iff, Real.norm_eq_abs, abs_abs, LinearIsometryEquiv.norm_map]
+    exact ⟨(hJb x hx).trans (le_max_left _ _),
+      (haM _ (hmaps hx)).trans ((le_max_left _ _).trans (le_max_right _ _)),
+      (hTL x hx).trans ((le_max_right _ _).trans (le_max_right _ _))⟩
+  have h (z : EuclideanSpace ℝ ι) (hz : z ∈ s) :
+      matrixBilinearForm (pullbackPrincipal Φ a z) = (matrixBilinearForm (a (Φ z))).bilinearComp
+        (|(fderiv ℝ Φ z).det| • (T z).adjoint) (T z).adjoint := by
+    rw [matrixBilinearForm_pullbackPrincipal_eq_bilinearComp a (hT z hz)]
+    ext η ξ
+    simp
+  refine ⟨Kg * max KJ (max (Ka * KΦ) (1 * KT)), fun x hx y hy => ?_⟩
+  dsimp only
+  rw [h x hx, h y hy]
+  exact hKg.comp hh hmapsh hx hy
+
+end Lipschitz
 
 /-! ### The energy form and weak solutions under a change of variables -/
 
