@@ -21,7 +21,8 @@ HOMFLY. Our normalization assigns the quantum dimension `∑ a, jimboWeight q a`
 to the one-strand unknot, rather than one. The normalized trace satisfies the
 oriented HOMFLY skein relation with `a = q ^ N` and `z = q - q⁻¹`.
 No invertibility of that sum is assumed, so the construction works over arbitrary
-commutative rings and at `q = 1`.
+commutative rings and at `q = 1`. Moreover, the normalized trace of every braid closure is
+divisible by the quantum dimension (`MarkovBraid.sum_jimboWeight_dvd_jimboTrace`).
 No geometric-to-diagram or Markov classification theorem is asserted here.
 
 ## References
@@ -169,6 +170,13 @@ theorem map_jimboTrace {S : Type*} [CommRing S] (β : MarkovBraid)
   · intro m b
     simp [smul_eq_mul]
   · simp [hsum]
+
+/-- Over any commutative ring `R` and at any unit parameter `q : Rˣ`, the writhe-normalized
+`N`-colour Jimbo trace is divisible by the quantum dimension `[N]_q`. -/
+theorem sum_jimboWeight_dvd_jimboTrace (β : MarkovBraid) (q : Rˣ) :
+    (∑ a : Fin N, jimboWeight q a) ∣ β.jimboTrace (N := N) q := by
+  rw [jimboTrace_def]
+  exact dvd_mul_of_dvd_right (sum_jimboWeight_dvd_jimboWeightedTrace q β.braid) _
 
 end MarkovBraid
 

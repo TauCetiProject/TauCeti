@@ -254,6 +254,7 @@ theorem jimboWeightedTrace_strandIncl_mul_T_last (x : TypeAHeckeAlgebra R q (n +
 /-- **Negative Markov stabilization on the Hecke algebra**: multiplying an element of the
 `(n + 1)`-strand stage by the inverse of the last generator multiplies the weighted trace by
 `(q⁻¹) ^ N`. -/
+@[simp↓]
 theorem jimboWeightedTrace_strandIncl_mul_inv_unitT_last (x : TypeAHeckeAlgebra R q (n + 1)) :
     jimboWeightedTrace N q (n + 2)
         (strandIncl R q (n + 1) x *
@@ -295,6 +296,7 @@ theorem jimboWeightedTrace_T (i : Fin (n - 1)) :
 
 /-- Every inverse generator `↑(unitT q i)⁻¹` on `n` strands has weighted trace
 `(q⁻¹) ^ N * [N]_q ^ (n - 1)`. -/
+@[simp↓]
 theorem jimboWeightedTrace_val_inv_unitT (i : Fin (n - 1)) :
     jimboWeightedTrace N q n (↑(unitT q i)⁻¹ : TypeAHeckeAlgebra R q n) =
       ↑((q⁻¹) ^ N) * (∑ a : Fin N, KnotTheory.jimboWeight q a) ^ (n - 1) := by

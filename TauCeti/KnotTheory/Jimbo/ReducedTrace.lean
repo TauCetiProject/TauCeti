@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Polynomial.Laurent.Basic
+public import TauCeti.KnotTheory.Jimbo.Enhancement.Laurent
 public import TauCeti.KnotTheory.Jimbo.Normalization
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 import TauCeti.KnotTheory.Markov.Skein
@@ -172,103 +172,7 @@ end MarkovBraid
 
 /-! ### Universal Laurent polynomial quotient and specializations -/
 
-namespace KnotTheory
-
-/-- For positive `N` over a nontrivial semiring, the generic quantum dimension `[N]_T` in
-`R[T;T⁻¹]` is nonzero. -/
-theorem jimboWeight_sum_genericUnit_ne_zero (R : Type*) [Semiring R] [Nontrivial R]
-    (N : ℕ) [NeZero N] :
-    (∑ a : Fin N, jimboWeight (LaurentPolynomial.genericUnit R) a) ≠ 0 := by
-  intro h
-  have hc := congrArg (fun p : LaurentPolynomial R ↦ p.coeff ((N : ℤ) - 1)) h
-  simp only [jimboWeight_def, LaurentPolynomial.genericUnit_zpow_val,
-    AddMonoidAlgebra.coeff_sum, AddMonoidAlgebra.coeff_zero,
-    Finset.sum_apply', Finsupp.zero_apply] at hc
-  have hterm : ∀ a : Fin N,
-      (LaurentPolynomial.T ((N : ℤ) - 1 - 2 * (a : ℕ)) : LaurentPolynomial R).coeff
-        ((N : ℤ) - 1) = if a = 0 then 1 else 0 := by
-    intro a
-    rw [LaurentPolynomial.T_apply]
-    have hiff : (N : ℤ) - 1 - 2 * (a : ℕ) = (N : ℤ) - 1 ↔ a = 0 := by
-      constructor
-      · intro heq
-        exact Fin.ext (by simp only [Fin.val_zero]; omega)
-      · rintro rfl
-        simp
-    simp [hiff]
-  simp_rw [hterm] at hc
-  simp at hc
-
-/-- Evaluating a generic-unit Jimbo weight at a unit `q` along any ring homomorphism gives the
-Jimbo weight at `q`. -/
-theorem eval₂_jimboWeight_genericUnit {R S : Type*} [CommSemiring R] [CommSemiring S]
-    (f : R →+* S) (q : Sˣ) (a : Fin N) :
-    LaurentPolynomial.eval₂ f q (jimboWeight (LaurentPolynomial.genericUnit R) a) =
-      jimboWeight q a := by
-  simp [jimboWeight_def]
-
-/-- Evaluating the generic quantum dimension `[N]_T` at a unit `q` along any ring homomorphism
-recovers `[N]_q`. -/
-theorem eval₂_sum_jimboWeight_genericUnit {R S : Type*} [CommSemiring R] [CommSemiring S]
-    (f : R →+* S) (q : Sˣ) (N : ℕ) :
-    LaurentPolynomial.eval₂ f q (∑ a : Fin N, jimboWeight (LaurentPolynomial.genericUnit R) a) =
-      ∑ a : Fin N, jimboWeight q a := by
-  simp only [map_sum, eval₂_jimboWeight_genericUnit]
-
-/-- Over any commutative ring `R`, the unnormalized weighted Jimbo trace of a nonempty braid at
-`LaurentPolynomial.genericUnit R` is divisible by the generic quantum dimension `[N]_T`. -/
-private theorem sum_jimboWeight_dvd_jimboWeightedTrace {R : Type*} [CommRing R] (N : ℕ) :
-    ∀ {m : ℕ} (b : BraidGroup (m + 1)),
-      (∑ a : Fin N, jimboWeight (LaurentPolynomial.genericUnit R) a) ∣
-        jimboWeightedTrace (N := N) (LaurentPolynomial.genericUnit R) b := by
-  let q₀ := LaurentPolynomial.genericUnit R
-  let δ : LaurentPolynomial R := ∑ a : Fin N, jimboWeight q₀ a
-  let z₀ : LaurentPolynomial R := (q₀ : LaurentPolynomial R) - ↑q₀⁻¹
-  intro m
-  induction m with
-  | zero =>
-    intro b
-    rw [BraidGroup.eq_one_of_le_one le_rfl b, jimboWeightedTrace_one, pow_one]
-  | succ m ih =>
-    let φ : MonoidAlgebra (LaurentPolynomial R) (BraidGroup (m + 2)) →ₗ[LaurentPolynomial R]
-        LaurentPolynomial R :=
-      Finsupp.linearCombination (LaurentPolynomial R) (jimboWeightedTrace (N := N) q₀) ∘ₗ
-        (MonoidAlgebra.coeffLinearEquiv (LaurentPolynomial R)).toLinearMap
-    have hφ (g : BraidGroup (m + 2)) (r : LaurentPolynomial R) :
-        φ (MonoidAlgebra.single g r) = r * jimboWeightedTrace (N := N) q₀ g := by
-      simp [φ, MonoidAlgebra.coeffLinearEquiv_apply, MonoidAlgebra.coeff_single]
-    have hle : BraidGroup.strandSpan (LaurentPolynomial R) m ⊔
-        BraidGroup.heckeSkein (LaurentPolynomial R) z₀ (m + 2) ≤
-        Submodule.comap φ (Ideal.span {δ}) := by
-      refine sup_le ((BraidGroup.strandSpan_le_iff _).mpr ⟨fun d ↦ ?_, fun d e ↦ ?_⟩)
-        ((BraidGroup.heckeSkein_le_iff _ _).mpr fun b c i ↦ ?_) <;>
-        simp only [Submodule.mem_comap, Ideal.mem_span_singleton]
-      · rw [hφ, one_mul, jimboWeightedTrace_strandIncl]
-        exact dvd_mul_left δ _
-      · rw [hφ, one_mul, jimboWeightedTrace_mul_comm, ← mul_assoc, ← map_mul,
-          jimboWeightedTrace_stabilize]
-        exact dvd_mul_of_dvd_right (ih (e * d)) _
-      · rw [BraidGroup.heckeRelator_def, map_sub, map_sub, hφ, hφ, hφ,
-          one_mul, one_mul, jimboWeightedTrace_skein]
-        simp [z₀]
-    rw [BraidGroup.strandSpan_sup_heckeSkein_eq_top, top_le_iff] at hle
-    intro b
-    have hb : MonoidAlgebra.single b 1 ∈ Submodule.comap φ (Ideal.span {δ}) :=
-      hle ▸ Submodule.mem_top
-    simpa only [Submodule.mem_comap, Ideal.mem_span_singleton, hφ, one_mul] using hb
-
-end KnotTheory
-
 namespace MarkovBraid
-
-/-- Over any commutative ring `R`, the writhe-normalized `N`-colour Jimbo trace at the generic
-Laurent unit `T` is divisible in `R[T;T⁻¹]` by the generic quantum dimension `[N]_T`. -/
-theorem sum_jimboWeight_dvd_jimboTrace_genericUnit {R : Type*} [CommRing R] (β : MarkovBraid)
-    (N : ℕ) :
-    (∑ a : Fin N, jimboWeight (LaurentPolynomial.genericUnit R) a) ∣
-      β.jimboTrace (N := N) (LaurentPolynomial.genericUnit R) := by
-  rw [jimboTrace_def]
-  exact dvd_mul_of_dvd_right (sum_jimboWeight_dvd_jimboWeightedTrace N β.braid) _
 
 /-- The universal reduced `N`-colour Jimbo invariant of a braid closure in `ℤ[T;T⁻¹]`, chosen as
 a Laurent polynomial quotient of `jimboTrace` at `T` by `[N]_T` (unique when `N ≠ 0`, see
@@ -277,7 +181,7 @@ the reduced invariant without dividing by `[N]_q`, so zero-factor specialization
 and quantum roots of unity remain regular. -/
 noncomputable def jimboReducedLaurent (β : MarkovBraid) (N : ℕ) :
     LaurentPolynomial ℤ :=
-  (β.sum_jimboWeight_dvd_jimboTrace_genericUnit (R := ℤ) N).choose
+  (β.sum_jimboWeight_dvd_jimboTrace (N := N) (LaurentPolynomial.genericUnit ℤ)).choose
 
 /-- Multiplying `jimboReducedLaurent` by the generic quantum dimension recovers `jimboTrace` at
 `LaurentPolynomial.genericUnit ℤ`. -/
@@ -286,7 +190,8 @@ theorem jimboReducedLaurent_mul_sum (β : MarkovBraid) (N : ℕ) :
     β.jimboReducedLaurent N *
         (∑ a : Fin N, jimboWeight (LaurentPolynomial.genericUnit ℤ) a) =
       β.jimboTrace (N := N) (LaurentPolynomial.genericUnit ℤ) :=
-  (mul_comm _ _).trans (β.sum_jimboWeight_dvd_jimboTrace_genericUnit (R := ℤ) N).choose_spec.symm
+  (mul_comm _ _).trans
+    (β.sum_jimboWeight_dvd_jimboTrace (N := N) (LaurentPolynomial.genericUnit ℤ)).choose_spec.symm
 
 /-- A Laurent polynomial equals `β.jimboReducedLaurent N` if and only if its product with the
 generic quantum dimension is `β.jimboTrace` at `LaurentPolynomial.genericUnit ℤ`. -/
