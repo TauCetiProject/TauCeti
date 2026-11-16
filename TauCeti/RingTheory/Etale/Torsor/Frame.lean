@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.Etale.FiniteEtaleSplit.ConstantRank
 public import TauCeti.RingTheory.Etale.Torsor.Descent
 public import TauCeti.RingTheory.Unramified.Frame
 import Mathlib.Algebra.Algebra.Shrink
-import Mathlib.Data.Fintype.EquivFin
 import Mathlib.RingTheory.Finiteness.Prod
 import Mathlib.RingTheory.Finiteness.Small
 
@@ -146,9 +145,7 @@ theorem universalFrameEquiv_tmul (h : Module.rankAtStalk (R := R) S = Fintype.ca
 constant rank `Fintype.card ι` split in the sense of `Algebra.IsFiniteSplit`. -/
 theorem isFiniteSplit_tensorProduct (h : Module.rankAtStalk (R := R) S = Fintype.card ι) :
     Algebra.IsFiniteSplit (FrameAlgebra R S ι) (FrameAlgebra R S ι ⊗[R] S) :=
-  ⟨Fintype.card ι, ⟨(universalFrameEquiv h).trans
-    (AlgEquiv.piCongrLeft' (FrameAlgebra R S ι) (fun _ ↦ FrameAlgebra R S ι)
-      (Fintype.equivFin ι))⟩⟩
+  .of_algEquiv (universalFrameEquiv h).symm
 
 /-- Base change to `TauCeti.Algebra.FrameAlgebra R S ι` makes a finite étale `R`-algebra `S` of
 constant rank `Fintype.card ι` totally split. -/
@@ -190,7 +187,6 @@ private theorem exists_isFiniteEtaleTorsor_isTotallySplit_aux.{v}
   have : Small.{u} S := Module.Finite.small A S
   let eS : Shrink.{u} S ≃ₐ[A] S := Shrink.algEquiv A S
   have : Algebra.Etale A (Shrink.{u} S) := .of_equiv eS.symm
-  have : Module.Finite A (Shrink.{u} S) := .equiv eS.symm.toLinearEquiv
   obtain ⟨n, e, -, _, hrank⟩ := exists_etale_rankAtStalk_prod_pi_quotient_eq A (Shrink.{u} S)
   obtain ⟨P, _, _, _, _, htor, hsplit⟩ :=
     exists_isFiniteEtaleTorsor_isTotallySplit_of_rankAtStalk_eq

@@ -324,8 +324,7 @@ theorem slot_apply (i : ι) (s : S) :
 theorem mk_tprod (x : ι → S) :
     Ideal.Quotient.mk (Ideal.span {1 - distinctIdempotent R S ι}) (tprod R x) =
       ∏ i, slot R S i (x i) := by
-  rw [tprod_eq_prod_singleAlgHom, map_prod]
-  rfl
+  simp_rw [tprod_eq_prod_singleAlgHom, map_prod, slot_apply]
 
 /-- Two `R`-algebra maps out of the frame algebra agree if and only if they agree on every slot
 inclusion `TauCeti.Algebra.FrameAlgebra.slot`. -/
@@ -565,12 +564,8 @@ theorem FrameAlgebra.baseChangeEquiv_map_permAlgEquiv (σ : Equiv.Perm ι)
 theorem FrameAlgebra.baseChangeEquiv_tmul_slot (t : T) (i : ι) (s : S) :
     FrameAlgebra.baseChangeEquiv R S T ι (t ⊗ₜ slot R S i s) =
       slot T (T ⊗[R] S) i (t ⊗ₜ s) := by
-  have h1 : t ⊗ₜ[R] slot R S (ι := ι) i s = t • ((1 : T) ⊗ₜ[R] slot R S i s) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  have h2 : t ⊗ₜ[R] s = t • ((1 : T) ⊗ₜ[R] s) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [h1, map_smul, slot_apply, baseChangeEquiv_tmul_mk, baseChangeAlgEquiv_one_tmul_singleAlgHom,
-    ← slot_apply, ← map_smul, ← h2]
+  rw [slot_apply, baseChangeEquiv_tmul_mk, slot_apply,
+    ← baseChangeAlgEquiv_symm_singleAlgHom (A := fun _ : ι ↦ S), AlgEquiv.apply_symm_apply]
 
 end BaseChange
 
@@ -862,7 +857,7 @@ theorem bijective_universalFrame_baseChange_iff (T : Type*) [CommRing T] [Algebr
       Algebra.TensorProduct.map (AlgHom.id R T) ((universalFrame R S ι).restrictScalars R) =
         (Algebra.TensorProduct.map (AlgHom.id T T)
           ((universalFrame R S ι).restrictScalars R)).restrictScalars R :=
-    Algebra.TensorProduct.ext' fun _ _ ↦ rfl
+    Algebra.TensorProduct.ext' fun _ _ ↦ by simp
   have hcomp : ⇑(universalFrame T (T ⊗[R] S) ι) ∘ ⇑d = ⇑c ∘ ⇑(γ.lTensor T) := by
     funext z
     ext i
@@ -872,7 +867,7 @@ theorem bijective_universalFrame_baseChange_iff (T : Type*) [CommRing T] [Algebr
   rw [← Function.Bijective.of_comp_iff _ d.bijective, hcomp,
     Function.Bijective.of_comp_iff' c.bijective,
     Module.FaithfullyFlat.lTensor_bijective_iff_bijective]
-  rfl
+  simp [γ]
 
 end BaseChange
 

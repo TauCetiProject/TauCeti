@@ -92,9 +92,7 @@ example (p : PrimeSpectrum ℚ) :
   have : Module.Free ℚ (AdjoinRoot f) := .of_basis pb.basis
   have hrank : Module.rankAtStalk (R := ℚ) (AdjoinRoot f) = Fintype.card (Fin 3) := by
     ext q
-    rw [Module.rankAtStalk_eq_finrank_of_free, pb.finrank, AdjoinRoot.powerBasis'_dim,
-      natDegree_X_pow_sub_C]
-    rfl
+    simp [Module.rankAtStalk_eq_finrank_of_free, pb.finrank, pb, f]
   have htor := FrameAlgebra.isFiniteEtaleTorsor hrank
   refine ⟨inferInstance, inferInstance, htor, ?_, ⟨FrameAlgebra.universalFrameEquiv hrank⟩⟩
   rw [IsFiniteEtaleTorsor.rankAtStalk_eq_card (G := Equiv.Perm (Fin 3)), Nat.card_eq_fintype_card,
@@ -113,10 +111,7 @@ example :
   intro f
   have hdeg : f.natDegree = 2 := by unfold f; compute_degree!
   have hf : f.Monic := by rw [Monic.def, leadingCoeff, hdeg]; unfold f; compute_degree!
-  have hderiv : derivative f = 1 := by
-    simp only [f, derivative_add, derivative_X_pow, derivative_X, derivative_one,
-      Nat.cast_ofNat, add_zero]
-    rw [show (2 : ZMod 2) = 0 from rfl, map_zero, zero_mul, zero_add]
+  have hderiv : derivative f = 1 := by simp [f, CharTwo.add_self_eq_zero]
   have hs : f.Separable :=
     separable_iff_isUnit_mk_derivative.mpr (by rw [hderiv, map_one]; exact isUnit_one)
   have : Algebra.Etale (ZMod 2) (AdjoinRoot f) := hf.etale_adjoinRoot_iff.mpr hs
@@ -145,9 +140,7 @@ example (K₁ K₂ : Type) [Field K₁] [Field K₂] :
     ∀ (T : Type) [CommRing T] [Algebra A T] [Module.FaithfullyFlat A T],
       ¬ Algebra.IsFiniteSplit T (T ⊗[A] S) := by
   intro A e S
-  have he : IsIdempotentElem e := by
-    change ((1 : K₁), (0 : K₂)) * (1, 0) = (1, 0)
-    rw [Prod.mk_mul_mk, mul_one, mul_zero]
+  have he : IsIdempotentElem e := by simp [isIdempotentElem_iff, A, e]
   have : Algebra.Etale A S := Etale.quotient_span_singleton he.one_sub
   refine ⟨exists_isFiniteEtaleTorsor_isTotallySplit A S, ?_⟩
   rintro T _ _ _ ⟨m, ⟨φ⟩⟩
@@ -164,8 +157,8 @@ example (K₁ K₂ : Type) [Field K₁] [Field K₂] :
     have h2 := congrFun (Module.rankAtStalk_eq_of_equiv φlin) q
     rw [Module.rankAtStalk_fin_fun] at h2
     exact h1.symm.trans h2
-  have hp₁ : e ∉ p₁.asIdeal := fun h ↦ one_ne_zero (Ideal.mem_bot.mp h)
-  have hp₂ : e ∈ p₂.asIdeal := Ideal.mem_bot.mpr rfl
+  have hp₁ : e ∉ p₁.asIdeal := by simp [p₁, A, e]
+  have hp₂ : e ∈ p₂.asIdeal := by simp [p₂, A, e]
   have hr₁ : Module.rankAtStalk (R := A) S p₁ = 1 := by
     simp [S, Module.rankAtStalk_quotient_span_one_sub he, hp₁]
   have hr₂ : Module.rankAtStalk (R := A) S p₂ = 0 := by

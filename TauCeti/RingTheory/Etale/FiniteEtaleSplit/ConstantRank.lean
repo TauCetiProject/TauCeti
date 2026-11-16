@@ -94,7 +94,6 @@ theorem exists_faithfullyFlat_etale_algEquiv_pi {ι : Type*} [Fintype ι]
   have : Small.{u} S := Module.Finite.small R S
   let eS : Shrink.{u} S ≃ₐ[R] S := Shrink.algEquiv R S
   have : Algebra.Etale R (Shrink.{u} S) := .of_equiv eS.symm
-  have : Module.Finite R (Shrink.{u} S) := .equiv eS.symm.toLinearEquiv
   have h₀ : Module.rankAtStalk (R := R) (Shrink.{u} S) = Fintype.card ι :=
     (Module.rankAtStalk_eq_of_equiv eS.toLinearEquiv).trans h
   obtain ⟨T, _, _, hT, hfin, het, _⟩ := Algebra.IsFiniteSplit.exists_tensorProduct_of_etale h₀
@@ -118,7 +117,8 @@ theorem exists_faithfullyFlat_etale_isTotallySplit_tensorProduct :
   -- Split the padded algebra of constant rank `n`, and keep its factor `T ⊗[R] S`.
   obtain ⟨T, _, _, hT, hfin, het, ⟨f⟩⟩ :=
     exists_faithfullyFlat_etale_algEquiv_pi (ι := Fin n) (by simpa using hrank)
-  have : Algebra.IsFiniteSplit T (T ⊗[R] (S × Π j, R ⧸ Ideal.span {1 - e j})) := ⟨n, ⟨f⟩⟩
+  have : Algebra.IsFiniteSplit T (T ⊗[R] (S × Π j, R ⧸ Ideal.span {1 - e j})) :=
+    .of_algEquiv f.symm
   have h : IsTotallySplit T (T ⊗[R] (S × Π j, R ⧸ Ideal.span {1 - e j})) := .of_isFiniteSplit
   exact ⟨T, _, _, hT, hfin, het,
     (h.of_algEquiv (Algebra.TensorProduct.prodRight R T T _ _)).of_prod_fst⟩
