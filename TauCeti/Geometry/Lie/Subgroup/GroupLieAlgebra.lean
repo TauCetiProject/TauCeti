@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
-public import TauCeti.Geometry.Lie.Subgroup.Differential
+public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
 import TauCeti.Geometry.Lie.Adjoint.Derivation
+import TauCeti.Geometry.Lie.Subgroup.Differential
 
 /-!
 # The Lie algebra of a subgroup in the tangent Lie algebra
@@ -17,7 +18,7 @@ The Lie algebra `TauCeti.Lie.lieSubalgebraOfSubgroup K` of a subgroup `K` of a L
 in the left-invariant derivations of `G`. Moment maps, the adjoint and coadjoint representations and
 the differentials of homomorphisms are stated on the tangent Lie algebra `𝔤 = GroupLieAlgebra I G`
 at the identity instead. This file transports the Lie algebra of `K` along evaluation at the
-identity (`TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra`) to a Lie subalgebra
+identity (`leftInvariantDerivationLieEquivGroupLieAlgebra`) to a Lie subalgebra
 `𝔨 ⊆ 𝔤`, `TauCeti.Lie.groupLieSubalgebraOfSubgroup K`, and records its properties there.
 
 * For a closed subgroup, `ξ ∈ 𝔨` exactly when the one-parameter subgroup `t ↦ exp (t ξ)` stays in
@@ -27,7 +28,7 @@ identity (`TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra`) to a Lie
 * For a closed normal subgroup `N` and `n ∈ N`, `Ad_n ξ - ξ ∈ 𝔫` for every `ξ ∈ 𝔤`, so `N` acts
   trivially on `𝔤 ⧸ 𝔫`.
 * For an embedded Lie subgroup, `𝔨` is the range of the differential at the identity of the
-  inclusion `K → G`, for any finite-dimensional model of `K`. This identifies the restriction
+  inclusion `K → G`, for any model of `K`. This identifies the restriction
   `μ ∘ dι` of a moment map to `K` with the restriction of `μ` to `𝔨`.
 
 ## Main definitions
@@ -37,6 +38,8 @@ identity (`TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra`) to a Lie
 
 ## Main results
 
+* `TauCeti.Lie.lieExp_tangentToLeftInvariantDerivation`: the exponential of the left-invariant
+  derivation of `ξ` is `exp ξ`.
 * `TauCeti.Lie.mem_groupLieSubalgebraOfSubgroup`: for a closed subgroup, membership is the
   one-parameter subgroup condition.
 * `TauCeti.Lie.groupLieSubalgebraOfSubgroup_le_iff`: for any subgroup, the universal property of
@@ -103,6 +106,14 @@ theorem mem_groupLieSubalgebraOfSubgroup_iff {K : Subgroup G} {ξ : GroupLieAlge
     rwa [LieEquiv.coe_toLieHom, LieEquiv.symm_apply_apply]
   · exact fun h ↦ ⟨_, h, LieEquiv.apply_symm_apply _ _⟩
 
+/-- The exponential of the left-invariant derivation of a tangent vector `ξ` at the identity is the
+tangent-space exponential of `ξ`. -/
+theorem lieExp_tangentToLeftInvariantDerivation (ξ : GroupLieAlgebra I G) :
+    lieExp (I := I) (tangentToLeftInvariantDerivation ξ) = mulInvariantExp (I := I) ξ := by
+  rw [lieExp_eq_mulInvariantExp, ← leftInvariantDerivationEquivGroupLieAlgebra_symm_apply
+      (BoundarylessManifold.isInteriorPoint (I := I) (x := (1 : G))),
+    LinearEquiv.apply_symm_apply]
+
 /-- A tangent vector whose one-parameter subgroup lies in `K` lies in the Lie algebra of `K`. This
 direction needs no hypothesis on `K`. -/
 theorem mem_groupLieSubalgebraOfSubgroup_of_forall {K : Subgroup G} {ξ : GroupLieAlgebra I G}
@@ -110,11 +121,8 @@ theorem mem_groupLieSubalgebraOfSubgroup_of_forall {K : Subgroup G} {ξ : GroupL
     ξ ∈ groupLieSubalgebraOfSubgroup (I := I) K := by
   rw [mem_groupLieSubalgebraOfSubgroup_iff]
   refine mem_lieSubalgebraOfSubgroup_of_forall fun t ↦ ?_
-  -- `lieExp` of the derivation of `ξ` is `mulInvariantExp ξ`, through the evaluation equivalence.
-  simpa only [lieExp_eq_mulInvariantExp, map_smul,
-    ← leftInvariantDerivationEquivGroupLieAlgebra_symm_apply
-      (BoundarylessManifold.isInteriorPoint (I := I) (x := (1 : G))),
-    LinearEquiv.apply_symm_apply] using hξ t
+  rw [← map_smul, lieExp_tangentToLeftInvariantDerivation]
+  exact hξ t
 
 /-- **The universal property of the Lie algebra of a subgroup**, in the tangent Lie algebra: it is
 the least Lie subalgebra containing every `ξ` whose one-parameter subgroup lies in `K`. No
@@ -140,11 +148,7 @@ theorem mem_groupLieSubalgebraOfSubgroup {K : Subgroup G} (hK : IsClosed (K : Se
     ξ ∈ groupLieSubalgebraOfSubgroup (I := I) K ↔
       ∀ t : ℝ, mulInvariantExp (I := I) (t • ξ) ∈ K := by
   rw [mem_groupLieSubalgebraOfSubgroup_iff, mem_lieSubalgebraOfSubgroup hK]
-  -- `lieExp` of the derivation of `ξ` is `mulInvariantExp ξ`, through the evaluation equivalence.
-  simp only [lieExp_eq_mulInvariantExp, map_smul,
-    ← leftInvariantDerivationEquivGroupLieAlgebra_symm_apply
-      (BoundarylessManifold.isInteriorPoint (I := I) (x := (1 : G))),
-    LinearEquiv.apply_symm_apply]
+  simp only [← map_smul, lieExp_tangentToLeftInvariantDerivation]
 
 /-- **The Lie algebra of `K` is invariant under the adjoint action of the normalizer of `K`.** -/
 theorem adjointRepresentation_apply_mem_groupLieSubalgebraOfSubgroup {K : Subgroup G} {g : G}
@@ -152,7 +156,12 @@ theorem adjointRepresentation_apply_mem_groupLieSubalgebraOfSubgroup {K : Subgro
     (hξ : ξ ∈ groupLieSubalgebraOfSubgroup (I := I) K) :
     adjointRepresentation ℝ I G g ξ ∈ groupLieSubalgebraOfSubgroup (I := I) K := by
   rw [mem_groupLieSubalgebraOfSubgroup_iff] at hξ ⊢
-  rw [adjointRepresentation_apply, ← tangentAd_apply, tangentToLeftInvariantDerivation_tangentAd]
+  -- The inverse of evaluation at the identity intertwines `Ad_g` on `𝔤` with `Ad g` on derivations.
+  rw [← leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)),
+    adjointRepresentation_apply, adjointContinuousLinearMap_apply,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply]
   exact Ad_mem_lieSubalgebraOfSubgroup hg hξ
 
 /-- The Lie algebra of a normal subgroup is a subrepresentation of the adjoint representation, in
@@ -169,23 +178,29 @@ theorem groupLieSubalgebraOfSubgroup_le_comap_adjointRepresentation {N : Subgrou
 theorem adjointRepresentation_apply_sub_mem_groupLieSubalgebraOfSubgroup {N : Subgroup G}
     [N.Normal] (hN : IsClosed (N : Set G)) {n : G} (hn : n ∈ N) (ξ : GroupLieAlgebra I G) :
     adjointRepresentation ℝ I G n ξ - ξ ∈ groupLieSubalgebraOfSubgroup (I := I) N := by
-  rw [mem_groupLieSubalgebraOfSubgroup_iff, map_sub, adjointRepresentation_apply,
-    ← tangentAd_apply, tangentToLeftInvariantDerivation_tangentAd]
+  rw [mem_groupLieSubalgebraOfSubgroup_iff,
+    ← leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)),
+    map_sub, adjointRepresentation_apply, adjointContinuousLinearMap_apply,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply]
   exact Ad_sub_mem_lieSubalgebraOfSubgroup hN hn _
 
 namespace EmbeddedLieSubgroupData
 
 variable {K : Subgroup G} {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-  [FiniteDimensional ℝ E']
 
 /-- **The differential of an embedded inclusion has range the Lie algebra of the subgroup.** For
-any finite-dimensional model of an embedded Lie subgroup `K`, the differential at the identity of
+any model of an embedded Lie subgroup `K`, the differential at the identity of
 the inclusion `K → G` has range `TauCeti.Lie.groupLieSubalgebraOfSubgroup K`. -/
 theorem range_groupLieAlgebraMap_subtype (d : EmbeddedLieSubgroupData I K E') :
     let _ : ChartedSpace E' K := d.chartedSpace
     LinearMap.range (K.subtype.groupLieAlgebraMap 𝓘(ℝ, E') I).toLinearMap =
       (groupLieSubalgebraOfSubgroup (I := I) K).toSubmodule := by
   let _ : ChartedSpace E' K := d.chartedSpace
+  -- The model of `K` embeds into that of `G` through the injective differential of the inclusion.
+  have : FiniteDimensional ℝ E' := FiniteDimensional.of_injective
+    (mfderiv 𝓘(ℝ, E') I (fun x : K ↦ (x : G)) 1).toLinearMap (d.injective_mfderiv_subtypeVal 1)
   let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
   dsimp only
   -- Local names for the evaluation-at-the-identity equivalences of `K` and `G`.

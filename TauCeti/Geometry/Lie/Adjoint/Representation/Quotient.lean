@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.GroupLieAlgebra
-public import TauCeti.RepresentationTheory.Dual
-public import TauCeti.RepresentationTheory.Quotient
+import TauCeti.RepresentationTheory.Dual
+import TauCeti.RepresentationTheory.Quotient
 
 /-!
 # The adjoint action of `G ⧸ N` and the coadjoint action on the annihilator of `𝔫`
@@ -97,8 +97,9 @@ def quotientAdjointRepresentation (N : Subgroup G) [N.Normal] (hN : IsClosed (N 
 theorem quotientAdjointRepresentation_mk_apply_mk {N : Subgroup G} [N.Normal]
     (hN : IsClosed (N : Set G)) (g : G) (ξ : GroupLieAlgebra I G) :
     quotientAdjointRepresentation (I := I) N hN g (Submodule.Quotient.mk ξ) =
-      Submodule.Quotient.mk (adjointRepresentation ℝ I G g ξ) :=
-  (rfl)
+      Submodule.Quotient.mk (adjointRepresentation ℝ I G g ξ) := by
+  rw [quotientAdjointRepresentation, Representation.ofQuotient_coe_apply,
+    Representation.quotient_apply, Submodule.mapQ_apply]
 
 /-- The dual action of `G ⧸ N` on `(𝔤 ⧸ 𝔫)*`: `([g] · φ) [ξ] = φ [Ad_{g⁻¹} ξ]`. Not a `simp`
 lemma, since `Representation.dual_apply` already rewrites its left-hand side. -/

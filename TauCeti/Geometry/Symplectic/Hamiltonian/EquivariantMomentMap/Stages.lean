@@ -49,8 +49,8 @@ Everything here lives on `Z`, before passing to the first reduced space.
 * `TauCeti.residualMomentMapLift_eq_zero_iff`: the map vanishes exactly where `μ` does.
 * `TauCeti.residualMomentMapLift_smul`: the map is `G ⧸ N`-equivariant.
 * `TauCeti.residualMomentMapLift_subgroup_smul`: the map is `N`-invariant.
-* `TauCeti.SmoothTwoForm.IsMomentMap.contMDiff_residualMomentMapLift_apply_mk`: its components
-  are smooth along a smooth level.
+* `TauCeti.contMDiff_residualMomentMapLift_apply`: its components are of class `C^n` along a
+  `C^n` level map, when the components of `μ` are.
 * `TauCeti.SmoothTwoForm.IsMomentMap.mvfderiv_residualMomentMapLift_apply_mk`: the moment map
   equation of the map along the level.
 
@@ -114,8 +114,10 @@ theorem residualMomentMapLift_def
 theorem residualMomentMapLift_apply_mk
     (hi : ∀ z, μ (i z) ∈ (groupLieSubalgebraOfSubgroup (I := I) N).toSubmodule.dualAnnihilator)
     (z : Z) (ξ : GroupLieAlgebra I G) :
-    residualMomentMapLift μ N i hi z (Submodule.Quotient.mk ξ) = μ (i z) ξ :=
-  (rfl)
+    residualMomentMapLift μ N i hi z (Submodule.Quotient.mk ξ) = μ (i z) ξ := by
+  rw [residualMomentMapLift_def, Submodule.dualQuotEquivDualAnnihilator_symm_apply_mk]
+  -- The coercion of `⟨μ (i z), hi z⟩ : 𝔫⁰` to a function is `μ (i z)` by definition.
+  rfl
 
 /-- Under the identification `(𝔤 ⧸ 𝔫)* ≃ 𝔫⁰`, the lifted residual moment map is `μ ∘ i`. -/
 @[simp]
@@ -165,16 +167,27 @@ theorem residualMomentMapLift_subgroup_smul [SMul G M] [SMul N Z] [N.Normal]
   exact coadjointRepresentation_apply_eq_self_of_mem_dualAnnihilator_groupLieSubalgebraOfSubgroup
     hN n.2 (hi z)
 
-/-- **The lifted residual moment map is `N`-invariant**, for an action of `G` on `Z`:
-`μ_res (n • z) = μ_res z` for `n ∈ N`. -/
-theorem residualMomentMapLift_smul_of_mem [SMul G M] [SMul G Z] [N.Normal]
-    (hN : IsClosed (N : Set G))
-    (hμ : ∀ (g : G) (x : M), μ (g • x) = coadjointRepresentation ℝ I G g (μ x))
-    (hiG : ∀ (g : G) (z : Z), i (g • z) = g • i z)
+section Regularity
+
+variable {E' H' E₀ H₀ : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M] [ChartedSpace H' M]
+  [NormedAddCommGroup E₀] [NormedSpace ℝ E₀] [TopologicalSpace H₀] {I₀ : ModelWithCorners ℝ E₀ H₀}
+  [TopologicalSpace Z] [ChartedSpace H₀ Z]
+
+/-- **The components of the lifted residual moment map are of class `C^n`** along a level map `i`
+of class `C^n`, when the components `⟨μ, ξ⟩` of `μ` are: on the class of `ξ` the component is
+`⟨μ, ξ⟩ ∘ i`. -/
+theorem contMDiff_residualMomentMapLift_apply {n : WithTop ℕ∞}
+    (hμ : ∀ ξ : GroupLieAlgebra I G, ContMDiff I' 𝓘(ℝ) n fun x ↦ μ x ξ)
     (hi : ∀ z, μ (i z) ∈ (groupLieSubalgebraOfSubgroup (I := I) N).toSubmodule.dualAnnihilator)
-    {n : G} (hn : n ∈ N) (z : Z) :
-    residualMomentMapLift μ N i hi (n • z) = residualMomentMapLift μ N i hi z :=
-  residualMomentMapLift_subgroup_smul hN (fun n ↦ hμ n) (fun n ↦ hiG n) hi ⟨n, hn⟩ z
+    (hi' : ContMDiff I₀ I' n i)
+    (q : GroupLieAlgebra I G ⧸ (groupLieSubalgebraOfSubgroup (I := I) N).toSubmodule) :
+    ContMDiff I₀ 𝓘(ℝ) n fun z ↦ residualMomentMapLift μ N i hi z q := by
+  obtain ⟨ξ, rfl⟩ := Submodule.Quotient.mk_surjective _ q
+  simp only [residualMomentMapLift_apply_mk]
+  exact (hμ ξ).comp hi'
+
+end Regularity
 
 namespace SmoothTwoForm.IsMomentMap
 
@@ -183,15 +196,6 @@ variable {E' H' E₀ H₀ : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] 
   [NormedAddCommGroup E₀] [NormedSpace ℝ E₀] [TopologicalSpace H₀] {I₀ : ModelWithCorners ℝ E₀ H₀}
   [TopologicalSpace Z] [ChartedSpace H₀ Z]
   {σ : SmoothTwoForm I' M} {a : InfinitesimalAction (GroupLieAlgebra I G) I' M}
-
-/-- **The components of the lifted residual moment map are smooth** along a level map `i` of
-class `C^n`, `n ≤ ∞`, since each is the component `⟨μ, ξ⟩` of the moment map composed with `i`. -/
-theorem contMDiff_residualMomentMapLift_apply_mk (h : σ.IsMomentMap a μ)
-    (hi : ∀ z, μ (i z) ∈ (groupLieSubalgebraOfSubgroup (I := I) N).toSubmodule.dualAnnihilator)
-    (ξ : GroupLieAlgebra I G) {n : WithTop ℕ∞} (hn : n ≤ ∞) (hi' : ContMDiff I₀ I' n i) :
-    ContMDiff I₀ 𝓘(ℝ) n fun z ↦ residualMomentMapLift μ N i hi z (Submodule.Quotient.mk ξ) := by
-  simp only [residualMomentMapLift_apply_mk]
-  exact ((h.contMDiff ξ).of_le hn).comp hi'
 
 /-- **The moment map equation of the lifted residual moment map along the level.** If `μ` is a
 moment map for `σ` and the generated vector fields `ξ_M`, and `i : Z → M` is differentiable at

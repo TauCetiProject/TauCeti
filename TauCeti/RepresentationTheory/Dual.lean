@@ -61,8 +61,8 @@ are the intertwiners into `ρ.dual`, so counting them is counting invariants of 
   an element of `W` fixes the annihilator `W⁰` pointwise.
 * `Representation.dualQuotEquivDualAnnihilator_symm_dual_apply`: under `(V ⧸ W)* ≃ W⁰`, the dual
   representation on `W⁰` is the dual of the quotient representation on `V ⧸ W`.
-* `Representation.dual_ofQuotient_coe_apply`: descending through a normal subgroup commutes with
-  taking duals.
+* `Representation.dual_ofQuotient_coe_apply`: the dual of `ρ.ofQuotient S` acts on the coset of
+  `g` by `ρ.dual g`.
 * `Representation.dual_comp`: restricting along a group homomorphism commutes with taking duals.
 * `Representation.dual_apply_eq_one_iff`: over a field, `g` acts trivially on the dual exactly
   when it acts trivially on the space, so `Representation.dual_injective_iff`: the dual is
@@ -188,15 +188,15 @@ theorem dualAnnihilator_le_comap_dual [CommSemiring k] [AddCommMonoid V] [Module
   rw [dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply]
   exact (Submodule.mem_dualAnnihilator φ).1 hφ _ (hW hw)
 
-/-- Descending a representation through a normal subgroup commutes with taking duals:
-`(ρ.ofQuotient S).dual [g] = ρ.dual g`. -/
+/-- The dual of the representation `ρ.ofQuotient S` descended through a normal subgroup `S` acts on
+the coset `[g]` by `ρ.dual g`: `(ρ.ofQuotient S).dual [g] = ρ.dual g`. -/
 theorem dual_ofQuotient_coe_apply [CommSemiring k] [AddCommMonoid V] [Module k V]
     (ρ : Representation k G V) (S : Subgroup G) [S.Normal] [IsTrivial (ρ.comp S.subtype)] (g : G)
     (φ : Module.Dual k V) :
     (ρ.ofQuotient S).dual (g : G ⧸ S) φ = ρ.dual g φ := by
+  ext v
   rw [dual_apply, dual_apply, ← QuotientGroup.mk_inv]
-  -- `ρ.ofQuotient S [g⁻¹]` is `ρ g⁻¹` by definition (`Representation.ofQuotient_coe_apply`).
-  rfl
+  simp only [Module.Dual.transpose_apply, LinearMap.comp_apply, ofQuotient_coe_apply]
 
 variable [CommRing k] [AddCommGroup V] [Module k V] {ρ : Representation k G V}
   {W : Submodule k V} {g : G}
@@ -220,10 +220,12 @@ theorem dualQuotEquivDualAnnihilator_symm_dual_apply (hW : ∀ g, W ≤ W.comap 
     W.dualQuotEquivDualAnnihilator.symm
         ⟨ρ.dual g φ, ρ.dualAnnihilator_le_comap_dual (hW g⁻¹) hφ⟩ =
       (ρ.quotient W hW).dual g (W.dualQuotEquivDualAnnihilator.symm ⟨φ, hφ⟩) := by
+  -- Mathlib has no evaluation lemma for the coercion of `W.dualAnnihilator` to functions; it is the
+  -- underlying linear form by definition.
+  have hcoe (ψ : Module.Dual k V) (hψ : ψ ∈ W.dualAnnihilator) (x : V) :
+      (⟨ψ, hψ⟩ : W.dualAnnihilator) x = ψ x := rfl
   ext v
-  -- Both sides evaluate to `φ (ρ g⁻¹ v)`, through `Submodule.mapQ_apply` and
-  -- `Submodule.dualQuotEquivDualAnnihilator_symm_apply_mk`.
-  rfl
+  simp [hcoe, Module.Dual.transpose_apply]
 
 end Annihilator
 
