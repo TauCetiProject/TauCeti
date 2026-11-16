@@ -610,8 +610,9 @@ theorem stripDensityNormalization_one_add_snd (x y : ℝ) :
   have ha : annulusArea (fun p ↦ 1 + p.2) = 3 / 2 := by simp [annulusArea_def, hs]
   ext
   · simp [stripAreaFraction_def, hs, ha]
-  · simp [stripDensityNormalization_snd, hs,
-      integral_add intervalIntegrable_const intervalIntegrable_id, integral_id]
+  · simp only [stripDensityNormalization_snd, hs,
+      integral_add intervalIntegrable_const intervalIntegrable_id, integral_const, integral_id,
+      smul_eq_mul]
     ring
 
 end TauCeti
