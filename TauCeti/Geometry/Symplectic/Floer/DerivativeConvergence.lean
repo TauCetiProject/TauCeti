@@ -348,35 +348,31 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_floer_of_tendsto {J : P → ℂ × V
       ∀ y ∈ Ω, fderiv ℝ v y I - X p₀ (y, v y) I =
         J p₀ (y, v y) (fderiv ℝ v y 1 - X p₀ (y, v y) 1) := by
   -- Adjoin the parameter to the target as the constant coordinate `(p n, 0)`.
-  set u' : ℕ → ℂ → WithLp 2 (WithLp 2 (P × P) × V) :=
-    fun n y ↦ WithLp.toLp 2 (WithLp.toLp 2 (p n, 0), u n y)
-  set v' : ℂ → WithLp 2 (WithLp 2 (P × P) × V) :=
-    fun y ↦ WithLp.toLp 2 (WithLp.toLp 2 (p₀, 0), v y)
-  have hcont := WithLp.prod_continuous_toLp 2 (WithLp 2 (P × P)) V
+  set u' : ℕ → ℂ → WithLp 2 (WithLp 2 (P × P) × V) := fun n y ↦ parameterLift (p n, u n y)
+  set v' : ℂ → WithLp 2 (WithLp 2 (P × P) × V) := fun y ↦ parameterLift (p₀, v y)
   obtain ⟨hv', hconv', heq'⟩ := tendstoLocallyUniformlyOn_fderiv_of_floer
     (J := parameterJ J) (X := parameterX X) (W := parameterPoint ⁻¹' W)
     (hW.preimage (parameterPoint (P := P) (V := V)).continuous) (contDiffOn_parameterJ hJ)
     (contDiffOn_parameterX hX) hΩ (u := u') (v := v') (fun y hy ↦ by simpa [v'] using hvW y hy)
-    (fun n ↦ WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_const.prodMk (hu n)))
-    (fun n y hy w ↦ by
-      simp [u', WithLp.ext_iff, Prod.ext_iff, hJsq n y hy])
+    (fun n ↦ contDiff_parameterLift.comp_contDiffOn (contDiffOn_const.prodMk (hu n)))
+    (fun n y hy ↦ parameterJ_parameterJ (by simpa [u'] using hJsq n y hy))
     (fun n y hy ↦ by simp [u', WithLp.ext_iff, hCR n y hy])
     (fun C hC hCΩ ↦ by
       obtain ⟨M, hM⟩ := hbd C hC hCΩ
       refine ⟨M, fun n y hy ↦
         (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun w ↦ ?_).trans (hM n y hy)⟩
       simpa [u', WithLp.norm_toLp_snd] using (fderiv ℝ (u n) y).le_opNorm w)
-    (fun y hy ↦ (hcont.tendsto _).comp ((((WithLp.prod_continuous_toLp 2 P P).tendsto _).comp
-      (hp.prodMk_nhds tendsto_const_nhds)).prodMk_nhds (hlim y hy)))
+    (fun y hy ↦ (continuous_parameterLift.tendsto _).comp (hp.prodMk_nhds (hlim y hy)))
   -- Read the conclusions off the second component.
   set S := WithLp.sndL 2 ℝ (WithLp 2 (P × P)) V
+  have hSv : S ∘ v' = v := funext fun y ↦ by simp [S, v']
   have hdv (y : ℂ) (hy : y ∈ Ω) : fderiv ℝ v y = S ∘L fderiv ℝ v' y :=
-    (S.hasFDerivAt.comp y ((hv'.differentiableOn one_ne_zero y hy).differentiableAt
+    hSv ▸ (S.hasFDerivAt.comp y ((hv'.differentiableOn one_ne_zero y hy).differentiableAt
       (hΩ.mem_nhds hy)).hasFDerivAt).fderiv
   have hdu (n : ℕ) (y : ℂ) : fderiv ℝ (u n) y = S ∘L fderiv ℝ (u' n) y := by
     ext w
     simp [S, u']
-  refine ⟨S.contDiff.comp_contDiffOn hv', ?_, fun y hy ↦ ?_⟩
+  refine ⟨hSv ▸ S.contDiff.comp_contDiffOn hv', ?_, fun y hy ↦ ?_⟩
   · exact (((ContinuousLinearMap.compL ℝ ℂ _ V S).uniformContinuous
       |>.comp_tendstoLocallyUniformlyOn hconv').congr fun n y _ ↦
         (hdu n y).symm).congr_right fun y hy ↦ (hdv y hy).symm

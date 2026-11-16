@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.AlmostComplex
 
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 
 /-!
 # Adjoining a parameter to the target of the Floer equation
@@ -20,12 +21,12 @@ In local coordinates `z ∈ ℂ` on the domain and `x ∈ V` on the target, the 
 `∂ₜu - X(z, u) i = J(z, u) (∂ₛu - X(z, u) 1)`. Let the data `J_p` and `X_p` depend on a parameter
 `p` in a real normed space `P`. Adjoin the parameter to the target as a constant coordinate: a
 solution `u` for the parameter `p` is the second component of the map `z ↦ ((p, 0), u z)` into the
-Euclidean product `(P × P) × V`, and this map solves the Floer equation for the structure
-`(a, b) ↦ (-b, a)` on the parameter block (`TauCeti.Floer.parameterStructure`), the structure
-`J_p` on `V`, and the one-form `X_p` with values in `V` (`TauCeti.Floer.parameterJ` and
-`TauCeti.Floer.parameterX`). The parameter block has zero derivative, so it solves its equation
-trivially, and in the Euclidean product it does not change the energy density. It is doubled only
-so that it carries a linear complex structure.
+Euclidean product `(P × P) × V` (`TauCeti.Floer.parameterLift`), and this map solves the Floer
+equation for the structure `(a, b) ↦ (-b, a)` on the parameter block
+(`TauCeti.Floer.parameterStructure`), the structure `J_p` on `V`, and the one-form `X_p` with
+values in `V` (`TauCeti.Floer.parameterJ` and `TauCeti.Floer.parameterX`). The parameter block
+has zero derivative, so it solves its equation trivially, and in the Euclidean product it does not
+change the energy density. It is doubled only so that it carries a linear complex structure.
 
 The data adjoining the parameter are as smooth as the data themselves
 (`TauCeti.Floer.contDiffOn_parameterJ`, `TauCeti.Floer.contDiffOn_parameterX`), so theorems for a
@@ -57,6 +58,26 @@ theorem parameterStructure_parameterStructure (ζ : WithLp 2 (P × P)) :
     parameterStructure (parameterStructure ζ) = -ζ := by
   rw [parameterStructure_apply, parameterStructure_apply, WithLp.ofLp_toLp,
     AlmostComplexStructure.apply_apply, WithLp.toLp_neg, WithLp.toLp_ofLp]
+
+/-- The point `((p, 0), x)` of `(P × P) × V` adjoining the parameter `p` to the target point
+`x`. -/
+noncomputable def parameterLift (a : P × V) : WithLp 2 (WithLp 2 (P × P) × V) :=
+  WithLp.toLp 2 (WithLp.toLp 2 (a.1, 0), a.2)
+
+omit [NormedSpace ℝ P] [NormedAddCommGroup V] [NormedSpace ℝ V] in
+@[simp]
+theorem parameterLift_apply (p : P) (x : V) :
+    parameterLift (p, x) = WithLp.toLp 2 (WithLp.toLp 2 (p, 0), x) :=
+  (rfl)
+
+@[fun_prop]
+theorem contDiff_parameterLift {n : WithTop ℕ∞} : ContDiff ℝ n (parameterLift (P := P) (V := V)) :=
+  WithLp.contDiff_toLp.comp ((WithLp.contDiff_toLp.comp (contDiff_fst.prodMk contDiff_const)).prodMk
+    contDiff_snd)
+
+@[fun_prop]
+theorem continuous_parameterLift : Continuous (parameterLift (P := P) (V := V)) :=
+  (contDiff_parameterLift (n := 0)).continuous
 
 /-- The point of `P × (ℂ × V)` read off from a point of `ℂ × ((P × P) × V)`: the first parameter
 coordinate, the domain point and the target point. -/
@@ -100,6 +121,13 @@ theorem parameterX_apply (X : P → ℂ × V → ℂ →L[ℝ] V)
     (q : ℂ × WithLp 2 (WithLp 2 (P × P) × V)) (ξ : ℂ) :
     parameterX X q ξ = WithLp.toLp 2 (0, uncurry X (parameterPoint q) ξ) := by
   simp [parameterX]
+
+/-- The structure adjoining the parameter squares to `-1` where `J` does. -/
+theorem parameterJ_parameterJ {J : P → ℂ × V → V →L[ℝ] V}
+    {q : ℂ × WithLp 2 (WithLp 2 (P × P) × V)}
+    (hJ : ∀ w, uncurry J (parameterPoint q) (uncurry J (parameterPoint q) w) = -w)
+    (ζ : WithLp 2 (WithLp 2 (P × P) × V)) : parameterJ J q (parameterJ J q ζ) = -ζ := by
+  simp [WithLp.ext_iff, Prod.ext_iff, hJ]
 
 theorem contDiffOn_parameterJ {n : WithTop ℕ∞} {J : P → ℂ × V → V →L[ℝ] V}
     {W : Set (P × (ℂ × V))} (hJ : ContDiffOn ℝ n (uncurry J) W) :

@@ -296,11 +296,6 @@ open Function
 
 variable {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P]
 
-/-- The point `((p, 0), x)` of `(P × P) × V` adjoining the parameter `p` to the target point
-`x`. -/
-private noncomputable def parameterLift (a : P × V) : WithLp 2 (WithLp 2 (P × P) × V) :=
-  WithLp.toLp 2 (WithLp.toLp 2 (a.1, 0), a.2)
-
 /-- The data adjoining the parameter satisfy the hypotheses of the theorems for a single datum,
 on `D` and the compact image of `C × K` under `parameterLift`. -/
 private theorem parameterData {J : P → ℂ × V → V →L[ℝ] V} {X : P → ℂ × V → ℂ →L[ℝ] V}
@@ -315,11 +310,11 @@ private theorem parameterData {J : P → ℂ × V → V →L[ℝ] V} {X : P → 
       ∀ z ∈ D, ∀ y ∈ parameterLift '' (C ×ˢ K), ∀ ζ,
         parameterJ J (z, y) (parameterJ J (z, y) ζ) = -ζ := by
   refine ⟨hW.preimage (parameterPoint (P := P) (V := V)).continuous, contDiffOn_parameterJ hJ,
-    contDiffOn_parameterX hX, (hC.prod hK).image (by unfold parameterLift; fun_prop), ?_, ?_⟩
+    contDiffOn_parameterX hX, (hC.prod hK).image continuous_parameterLift, ?_, ?_⟩
   · rintro ⟨z, _⟩ ⟨hz, ⟨a, x⟩, ⟨ha, hx⟩, rfl⟩
-    exact hCDKW (by simpa [parameterLift] using ⟨ha, hz, hx⟩)
+    exact hCDKW (by simpa using ⟨ha, hz, hx⟩)
   · rintro z hz _ ⟨⟨a, x⟩, ⟨ha, hx⟩, rfl⟩ ζ
-    simp [parameterLift, WithLp.ext_iff, Prod.ext_iff, hJsq a ha z hz x hx]
+    exact parameterJ_parameterJ (by simpa using hJsq a ha z hz x hx) ζ
 
 /-- **The mean-value inequality over a compact parameter window.** Let `J_p` and `X_p` depend on
 a parameter `p` in a real inner product space `P`, jointly `C²` on an open set
@@ -352,16 +347,17 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy_pa
   refine ⟨δ, hδ, fun p u z₀ r hp hr hrD hu hu' hCR huK hE ↦ ?_⟩
   -- The constant parameter coordinate does not change the energy density.
   have hint : ∫ y in ball z₀ r,
-      ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p, (0 : P)), u w)) y 1‖ ^ 2 =
+      ‖fderiv ℝ (fun w ↦ parameterLift (p, u w)) y 1‖ ^ 2 =
       ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
-    simp only [fderiv_toLp_const_prodMk_apply, WithLp.norm_toLp_snd]
-  have h := hmean (u := fun w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p, 0), u w)) hr hrD
-    (WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_const.prodMk hu))
+    simp only [parameterLift_apply, fderiv_toLp_const_prodMk_apply, WithLp.norm_toLp_snd]
+  have h := hmean (u := fun w ↦ parameterLift (p, u w)) hr hrD
+    (contDiff_parameterLift.comp_contDiffOn (contDiffOn_const.prodMk hu))
     (((WithLp.prod_continuous_toLp 2 (WithLp 2 (P × P)) V).comp_continuousOn
       ((continuousOn_const (c := 0)).prodMk hu')).congr fun y _ ↦ by simp)
     (fun y hy ↦ by simp [WithLp.ext_iff, hCR y hy])
     (fun y hy ↦ ⟨(p, u y), ⟨hp, huK y hy⟩, rfl⟩) (by rwa [hint])
-  rwa [hint, fderiv_toLp_const_prodMk_apply, WithLp.norm_toLp_snd] at h
+  simp only [parameterLift_apply, fderiv_toLp_const_prodMk_apply, WithLp.norm_toLp_snd] at h
+  exact h
 
 /-- **Floer solutions over a compact parameter window converge off finitely many bubbling
 points.** Let `J_p` and `X_p` depend on a parameter `p` in a real inner product space `P`, jointly
@@ -404,7 +400,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
   refine ⟨δ, hδ, fun Ω p u E hΩ hΩD hpC hu hCR huK hint hE ↦ ?_⟩
   obtain ⟨p₀, hp₀, ψ, hψ, hlim⟩ := hC.tendsto_subseq hpC
   set g : ℕ → ℂ → WithLp 2 (WithLp 2 (P × P) × V) :=
-    fun k w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p (ψ k), 0), u (ψ k) w) with hg
+    fun k w ↦ parameterLift (p (ψ k), u (ψ k) w) with hg
   -- The constant parameter coordinate does not change the energy density.
   have hnorm : ∀ k, ∀ y ∈ Ω,
       ‖fderiv ℝ (g k) y 1‖ ^ 2 = ‖fderiv ℝ (u (ψ k)) y 1‖ ^ 2 := fun k y _ ↦ by
@@ -413,7 +409,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
       ∫ y in S, ‖fderiv ℝ (g k) y 1‖ ^ 2 = ∫ y in S, ‖fderiv ℝ (u (ψ k)) y 1‖ ^ 2 :=
     fun k S hSΩ hS ↦ setIntegral_congr_fun hS fun y hy ↦ hnorm k y (hSΩ hy)
   obtain ⟨φ, Z, w, hφ, hZΩ, hcard, hconc, hbd, hwcont, hwK, hwlim⟩ := hconv hΩ hΩD
-    (u := g) (fun k ↦ WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_const.prodMk (hu (ψ k))))
+    (u := g) (fun k ↦ contDiff_parameterLift.comp_contDiffOn (contDiffOn_const.prodMk (hu (ψ k))))
     (fun k y hy ↦ by
       simp [hg, WithLp.ext_iff, hCR (ψ k) y hy])
     (fun k y hy ↦ ⟨(p (ψ k), u (ψ k) y), ⟨hpC _, huK _ hy⟩, rfl⟩)
@@ -424,10 +420,11 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     (WithLp.sndL 2 ℝ _ V).continuous.comp_continuousOn hwcont, fun z hz ↦ ?_, ?_⟩
   · rwa [hint' _ _ inter_subset_right (measurableSet_ball.inter hΩ.measurableSet)] at hn
   · obtain ⟨M, hM⟩ := hbd C' hC' hC'Z
+    simp only [hg, parameterLift_apply] at hM
     exact ⟨M, fun n y hy ↦ (norm_fderiv_le_norm_fderiv_toLp_prodMk_right
       (differentiableAt_const _)).trans (hM n y hy)⟩
   · obtain ⟨⟨a, x⟩, ⟨-, hx⟩, hax⟩ := hwK hz
-    simpa [← hax, parameterLift] using hx
+    simpa [← hax] using hx
   · simpa [Function.comp_def, g] using
       (WithLp.sndL 2 ℝ _ V).uniformContinuous.comp_tendstoLocallyUniformlyOn hwlim
 
