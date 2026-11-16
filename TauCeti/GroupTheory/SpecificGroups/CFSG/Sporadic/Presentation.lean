@@ -183,4 +183,10 @@ theorem SporadicName.presentation_McL : SporadicName.McL.presentation = Sporadic
 theorem SporadicName.presentation_J2 : SporadicName.J2.presentation = Sporadic.j2Presentation :=
   (rfl)
 
+/-- The presentation selected for `Co₃` is Djoković's transcribed presentation
+`TauCeti.Sporadic.co3Presentation`. -/
+@[simp]
+theorem SporadicName.presentation_Co3 : SporadicName.Co3.presentation = Sporadic.co3Presentation :=
+  (rfl)
+
 end TauCeti
