@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Hermitian
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Wedge
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Liouville.Linear
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
@@ -19,6 +20,7 @@ import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.AlternatingForm
+import TauCeti.Analysis.Normed.Group.CompactSupport
 import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Uncurry
 
 /-!
@@ -54,12 +56,15 @@ nonincreasing on `[0, ∞)` (`TauCeti.integral_mul_inner_kahlerForm_le`),
 
 For the real curvature `F = i F_a` of a large-parameter Seiberg–Witten solution in a flat chart,
 `⟪ω, F⟫ / 2` is `(r / 8) (1 - |α|² + |β|²)` up to the forcing term
-(`TauCeti.SeibergWitten.inner_div_two_eq_of_add_hodgeStar_eq`), and Taubes's coarse bounds give
-`‖F⁻‖ / √2 ≤ (r / 8) (1 + C r^(-1/2)) w₊ + C`. With these inputs the inequality is the cutoff form
-of Taubes's differential inequality `E(σ) ≤ (σ / 2) (1 + C r^(-1/2)) E'(σ) + C σ⁴` for the defect
-energy `E(σ)` of the balls `B_σ`, the hypothesis of
-`TauCeti.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le`. The passage from cutoffs to
-balls is not made here.
+(`TauCeti.SeibergWitten.inner_div_two_eq_of_add_hodgeStar_eq`). Taubes's coarse estimates for
+the anti-self-dual part `F⁻`, which are not formalized here, then bound the right side by the
+defect energy. The resulting differential inequality for the defect energy `E(σ)` of the balls
+`B_σ` is the hypothesis
+`E(σ) ≤ (σ / 2) (1 + C σ) (1 + C₁ r^(-1/2)) E'(σ) + K σ⁴`
+of `TauCeti.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le`, where the factor
+`1 + C σ` accounts for the curvature of the metric. This file proves the flat-chart (`C = 0`)
+cutoff analogue of that inequality before the anti-self-dual estimates are applied; neither those
+estimates nor the passage from cutoffs to balls is made here.
 
 Integrals are against the volume of `V`; the orientation of `V` is the one of a positively
 oriented unitary frame `e`, `J e₀ = e₁`, `J e₂ = e₃`.
@@ -83,15 +88,6 @@ noncomputable section
 open Module exteriorPower MeasureTheory ContinuousAlternatingMap Filter
 open scoped RealInnerProductSpace
 
-/-- A function of `‖x‖²` built from a compactly supported function on `ℝ` is compactly supported
-on a proper normed group. -/
-theorem HasCompactSupport.comp_norm_sq {E M : Type*} [NormedAddCommGroup E] [ProperSpace E]
-    [Zero M] {f : ℝ → M} (hf : HasCompactSupport f) :
-    HasCompactSupport fun x : E ↦ f (‖x‖ ^ 2) := by
-  rw [hasCompactSupport_iff_eventuallyEq, coclosedCompact_eq_cocompact] at hf ⊢
-  exact ((tendsto_pow_atTop two_ne_zero).comp tendsto_norm_cocompact_atTop).eventually
-    (hf.filter_mono atTop_le_cocompact)
-
 namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -106,7 +102,7 @@ theorem extDeriv_liouvilleFormCLM_symplecticForm {J : AlmostComplexStructure V}
       (J.symplecticForm hJ).toBilinForm.toContinuousBilinearMap) x =
         alternatingFormEquiv V 2 J.kahlerForm := by
   ext v
-  have hv : v = ![v 0, v 1] := by ext i; fin_cases i <;> rfl
+  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
   rw [ContinuousLinearMap.extDeriv_liouvilleFormCLM_apply_of_skew _ two_ne_zero
     (fun v w ↦ by simp [real_inner_comm w, inner_apply_left hJ]) x v,
     alternatingFormEquiv_apply, hv, inner_kahlerForm_ιMulti hJ]
@@ -118,46 +114,6 @@ variable [Fact (finrank ℝ V = 4)]
   {e : OrthonormalBasis (Fin 4) ℝ V} {J : AlmostComplexStructure V} {o : Orientation ℝ V (Fin 4)}
   (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (hkl : 2 + 2 = finrank ℝ V)
   (he : e.toBasis.orientation = o)
-
-namespace AlmostComplexStructure
-
-include h₀ h₂ he in
-/-- **`ω ∧ β = ⟪ω, β⟫ vol`**: the wedge of the Kähler form with a two-form `β`, evaluated on a
-positively oriented unitary frame, is the inner product of `ω` with `β`. -/
-theorem wedge_alternatingFormEquiv_kahlerForm_apply (β : V [⋀^Fin 2]→L[ℝ] ℝ) :
-    wedge (alternatingFormEquiv V 2 J.kahlerForm) β (e ∘ finCongr (hkl.trans Fact.out)) =
-      ⟪J.kahlerForm, (alternatingFormEquiv V 2).symm β⟫ := by
-  rw [o.wedge_apply_orthonormalBasis even_two hkl e he,
-    ← o.alternatingFormInner_formHodgeStar_left even_two, o.formHodgeStar_alternatingFormEquiv,
-    hodgeStar_kahlerForm h₀ h₂ hkl he, alternatingFormInner_apply, LinearEquiv.symm_apply_apply]
-
-include h₀ h₂ he in
-/-- **`(J x)^♭ ∧ x^♭ ∧ β = (β(x, J x) - ‖x‖² ⟪ω, β⟫) vol`**: the wedge of the covectors of `J x`
-and `x` with a two-form `β`, evaluated on a positively oriented unitary frame. Here
-`β(x, J x) - ‖x‖² ⟪ω, β⟫ = -⟪⋆(x ∧ J x), β⟫`. -/
-theorem wedge_wedge_ofSubsingleton_innerSL_apply (x : V) (β : V [⋀^Fin 2]→L[ℝ] ℝ) :
-    wedge (wedge (ofSubsingleton ℝ V ℝ (0 : Fin 1) (innerSL ℝ (J x)))
-      (ofSubsingleton ℝ V ℝ (0 : Fin 1) (innerSL ℝ x))) β (e ∘ finCongr (hkl.trans Fact.out)) =
-      β ![x, J x] - ‖x‖ ^ 2 * ⟪J.kahlerForm, (alternatingFormEquiv V 2).symm β⟫ := by
-  have hw : wedge (ofSubsingleton ℝ V ℝ (0 : Fin 1) (innerSL ℝ (J x)))
-      (ofSubsingleton ℝ V ℝ (0 : Fin 1) (innerSL ℝ x)) =
-        alternatingFormEquiv V 2 (-ιMulti ℝ 2 ![x, J x]) := by
-    ext v
-    have hv : v = ![v 0, v 1] := by ext i; fin_cases i <;> rfl
-    rw [hv, wedge_apply_one_one, alternatingFormEquiv_apply, inner_neg_left, inner_ιMulti_two]
-    simp
-    ring
-  set β₂ := (alternatingFormEquiv V 2).symm β with hβ₂
-  have hβ : β = alternatingFormEquiv V 2 β₂ := by rw [hβ₂, LinearEquiv.apply_symm_apply]
-  have hsym (y z : ⋀[ℝ]^2 V) : ⟪y, o.hodgeStar hkl z⟫ = ⟪o.hodgeStar hkl y, z⟫ :=
-    (o.isSymmetric_hodgeStar_of_even even_two hkl y z).symm
-  rw [hw, o.wedge_apply_orthonormalBasis even_two hkl e he, hβ,
-    o.formHodgeStar_alternatingFormEquiv, alternatingFormInner_alternatingFormEquiv, hsym, map_neg,
-    hodgeStar_ιMulti_apply h₀ h₂ hkl he, alternatingFormEquiv_apply, inner_neg_left,
-    inner_sub_left, real_inner_smul_left, real_inner_comm β₂, real_inner_comm β₂]
-  ring
-
-end AlmostComplexStructure
 
 open AlmostComplexStructure
 
@@ -193,18 +149,18 @@ theorem integral_mul_inner_kahlerForm_eq {F : V → V [⋀^Fin 2]→L[ℝ] ℝ} 
         (hasStrictFDerivAt_norm_sq x).hasFDerivAt
     rw [hd.fderiv]
     ext v
-    have hv : v = ![v 0, v 1] := by ext i; fin_cases i <;> rfl
-    rw [hv]
-    simp [lam, hB]
+    rw [show v = ![v 0, v 1] from (FinVec.etaExpand_eq v).symm]
+    simp only [wedge_apply_one_one, ContinuousLinearMap.liouvilleFormCLM_apply, hB, lam,
+      ofSubsingleton_apply_apply, _root_.smul_apply, coe_innerSL_apply, smul_eq_mul, nsmul_eq_mul,
+      Matrix.cons_val_fin_one, Nat.cast_ofNat, coe_smul, Pi.smul_apply]
     ring
   -- Integration by parts, `∫ dλ ∧ g F = ∫ λ ∧ d(g F)`, with `d(g F) = dg ∧ F` as `dF = 0`.
   have h := e.toBasis.integral_extDeriv_wedge_eq_integral_wedge_extDeriv (k := 1) (l := 2)
     (φ := lam) (ψ := g • F) (by norm_num) lam.contDiff (hg.smul hF)
     (hφc.comp_norm_sq).smul_right
   rw [OrthonormalBasis.addHaar_eq_volume] at h
-  have hc (h' : 4 = 2 + 2) : (⇑e.toBasis ∘ Fin.cast h') = e ∘ finCongr (hkl.trans Fact.out) := by
-    funext i
-    simp
+  have hc (h' : 4 = 2 + 2) : (⇑e.toBasis ∘ Fin.cast h') = e ∘ finCongr (hkl.trans Fact.out) :=
+    funext fun _ ↦ by simp
   rw [pow_one, neg_neg, one_mul] at h
   refine (integral_congr_ae (Eventually.of_forall fun x ↦ ?_)).trans
     (h.trans (integral_congr_ae (Eventually.of_forall fun x ↦ ?_)))
@@ -221,10 +177,11 @@ theorem integral_mul_inner_kahlerForm_eq {F : V → V [⋀^Fin 2]→L[ℝ] ℝ} 
       congr 2
     have hassoc := wedge_assoc (lam x) (ofSubsingleton ℝ V ℝ (0 : Fin 1) (fderiv ℝ g x)) (F x)
       (e ∘ finCongr (hkl.trans Fact.out))
-    rw [hc, hA, show (e ∘ finCongr (hkl.trans Fact.out) : Fin (1 + (1 + 2)) → V) =
-        (e ∘ finCongr (hkl.trans Fact.out)) ∘ Fin.cast (Nat.add_assoc 1 1 2).symm from rfl,
-      ← hassoc, hdg, wedge_smul_left, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
-      wedge_wedge_ofSubsingleton_innerSL_apply h₀ h₂ hkl he]
+    have hcast : (e ∘ finCongr (hkl.trans Fact.out) : Fin (1 + (1 + 2)) → V) =
+        (e ∘ finCongr (hkl.trans Fact.out)) ∘ Fin.cast (Nat.add_assoc 1 1 2).symm :=
+      funext fun _ ↦ by simp
+    rw [hc, hA, hcast, ← hassoc, hdg, wedge_smul_left, ContinuousAlternatingMap.smul_apply,
+      smul_eq_mul, wedge_wedge_ofSubsingleton_innerSL_apply h₀ h₂ hkl he]
 
 include h₀ h₂ hkl he in
 /-- **The monotonicity inequality.** For a closed `C¹` two-form `F` on a Hermitian four-space and
