@@ -41,8 +41,9 @@ times those of `D`.
 
 On a finite-dimensional real vector space `E` with an additive Haar measure, every differential
 operator has a formal transpose: writing it as a coordinate expression `∑_α c_α ∂^α`, its transpose
-is `∑_α (-1) ^ |α| ∂^α ∘ c_α`. For instance the transpose of `a ∂ᵥ` is `-a ∂ᵥ - ∂ᵥ a`, so the
-zeroth-order term `-∂ᵥ a` is not seen by the principal symbol.
+is `∑_α (-1) ^ |α| ∂^α ∘ c_α`. For instance the transpose of `a ∂ᵥ` is `-a ∂ᵥ - (∂ᵥ a)`, where
+`(∂ᵥ a)` is multiplication by the derivative of `a`, so this zeroth-order term is not seen by the
+principal symbol.
 
 ## Main definitions
 
@@ -68,12 +69,13 @@ zeroth-order term `-∂ᵥ a` is not seen by the principal symbol.
 * `LinearMap.exists_isFormalTranspose`: there, every differential operator of order at most `m`
   has a formal transpose of order at most `m`.
 * `LinearMap.isFormalTranspose_lsmul_comp_lineDerivation`: the transpose of `a ∂ᵥ` is
-  `-a ∂ᵥ - ∂ᵥ a`.
+  `-a ∂ᵥ - (∂ᵥ a)`.
 
 ## References
 
-* I. Kolář, P. W. Michor, J. Slovák, *Natural Operations in Differential Geometry*, Springer,
-  1993, §19.
+* L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, Springer, 1983, for
+  transposes of differential operators and the extension of differential operators to
+  distributions.
 * A. Grothendieck, *Éléments de géométrie algébrique IV*, Quatrième partie, §16.8.
 -/
 
@@ -89,34 +91,6 @@ namespace LinearMap
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- Multiplication by a smooth function is an operator of order zero. -/
-private theorem lsmul_mem_differentialOperators_zero (a : C^∞⟮I, M; ℝ⟯) :
-    Algebra.lsmul ℝ ℝ C^∞⟮I, M; ℝ⟯ a ∈
-      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ 0 :=
-  mem_differentialOperators_zero_iff.2 fun b f ↦ smul_comm a b f
-
-/-- A commutator with a multiplication operator does not raise the order. -/
-private theorem smulCommutator_mem_differentialOperators_self
-    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯} {k : ℕ}
-    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ k)
-    (a : C^∞⟮I, M; ℝ⟯) :
-    TauCeti.smulCommutator ℝ a D ∈
-      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ k :=
-  smulCommutator_mem_differentialOperators (differentialOperators_le_succ k hD) a
-
-/-- An iterated commutator with a multiplication operator does not raise the order. -/
-private theorem smulCommutator_pow_mem_differentialOperators_self
-    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯} {k : ℕ}
-    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ k)
-    (a : C^∞⟮I, M; ℝ⟯) (j : ℕ) :
-    (TauCeti.smulCommutator ℝ a ^ j) D ∈
-      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ k := by
-  induction j with
-  | zero => simpa using hD
-  | succ j ih =>
-    rw [pow_succ', mul_apply_eq_comp]
-    exact smulCommutator_mem_differentialOperators_self ih a
 
 variable [MeasurableSpace M]
 
@@ -234,7 +208,7 @@ theorem smulCommutator {k k' : ℕ} (h : D.IsFormalTranspose D' μ)
     (hD' : D' ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ k')
     (a : C^∞⟮I, M; ℝ⟯) :
     (TauCeti.smulCommutator ℝ a D).IsFormalTranspose (-TauCeti.smulCommutator ℝ a D') μ := by
-  have ha := lsmul_mem_differentialOperators_zero a
+  have ha := lsmul_mem_differentialOperators_zero (R := ℝ) a
   have h' := (h.comp (isFormalTranspose_lsmul a) ha hD').sub
     ((isFormalTranspose_lsmul a).comp h hD ha)
   convert h' using 1 <;> ext f x <;> simp [sub_eq_neg_add]
@@ -250,8 +224,11 @@ theorem smulCommutator_pow {k k' : ℕ} (h : D.IsFormalTranspose D' μ)
   induction j with
   | zero => simpa using h
   | succ j ih =>
-    have h' := ih.smulCommutator (smulCommutator_pow_mem_differentialOperators_self hD a j)
-      (Submodule.smul_mem _ _ (smulCommutator_pow_mem_differentialOperators_self hD' a j)) a
+    have h' := ih.smulCommutator
+      (smulCommutator_pow_mem_differentialOperators (differentialOperators_mono
+        (Nat.le_add_right k j) hD) a)
+      (Submodule.smul_mem _ _ (smulCommutator_pow_mem_differentialOperators
+        (differentialOperators_mono (Nat.le_add_right k' j) hD') a)) a
     rw [pow_succ', mul_apply_eq_comp, mul_apply_eq_comp]
     convert h' using 1
     ext f x
@@ -295,7 +272,8 @@ theorem unique {k₁ k₂ : ℕ} (h₁ : D.IsFormalTranspose D₁ μ) (h₂ : D.
     exact χ.hasCompactSupport.mono (Function.support_mul_subset_left _ _)
   have hloc : ((ψ * g : C^∞⟮I, M; ℝ⟯) : M → ℝ) =ᶠ[𝓝 x] g :=
     χ.eventuallyEq_one.mono fun y hy ↦ by
-      rw [ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.coeFn_mk, hy, Pi.one_apply, one_mul]
+      rw [ContMDiffMap.coe_mul]
+      simp [ψ, hy]
   rw [← differentialOperators_apply_eq_of_eventuallyEq hD₁ BoundarylessManifold.isInteriorPoint
       hloc, ← differentialOperators_apply_eq_of_eventuallyEq hD₂
       BoundarylessManifold.isInteriorPoint hloc, apply_eq_of_hasCompactSupport h₁ h₂ hψ]
@@ -313,7 +291,7 @@ theorem mem_differentialOperators {m k : ℕ} (h : D.IsFormalTranspose D' μ)
     refine mem_differentialOperators_succ_iff.2 fun a ↦ ?_
     simpa using neg_mem <| ih (h.smulCommutator (differentialOperators_le_succ _ hD) hD' a)
       (smulCommutator_mem_differentialOperators hD a)
-      (neg_mem (smulCommutator_mem_differentialOperators_self hD' a))
+      (neg_mem (smulCommutator_mem_differentialOperators (differentialOperators_le_succ _ hD') a))
 
 /-- **The principal symbol of a formal transpose.** If `D'` is a formal transpose of `D`, both
 differential operators of order at most `m`, then `σ(D')(ξ) = (-1) ^ m σ(D)(ξ)`. -/
@@ -335,7 +313,8 @@ theorem smoothPrincipalSymbol_eq {m : ℕ}
     (Submodule.smul_mem _ _ (hm D')) (hm D)
   have heq' : (TauCeti.smulCommutator ℝ f ^ m) (D' : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) =
       (-1 : ℝ) ^ m • (TauCeti.smulCommutator ℝ f ^ m) (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) := by
-    rw [← heq, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
+    rw [← heq, smul_smul, ← mul_pow]
+    simp
   rw [smoothPrincipalSymbol_mvfderiv, smoothPrincipalSymbol_mvfderiv, heq']
   simp only [LinearMap.smul_apply, ContMDiffMap.coe_smul, Pi.smul_apply, smul_eq_mul]
   ring
@@ -414,18 +393,8 @@ theorem exists_isFormalTranspose {m : ℕ}
       isFormalTranspose_lsmul c⟩
   have hα (α : Fin (Module.finrank ℝ E) → ℕ) :
       multiIndexDeriv (fun i ↦ TauCeti.lineDerivation ℝ (b i))
-        (fun i j ↦ TauCeti.commute_lineDerivation (b i) (b j)) α ∈ transposable ν := by
-    have key : ∀ s : Finset (Fin (Module.finrank ℝ E)),
-        multiIndexDeriv (fun i ↦ TauCeti.lineDerivation ℝ (b i))
-          (fun i j ↦ TauCeti.commute_lineDerivation (b i) (b j))
-          (∑ i ∈ s, Pi.single i (α i)) ∈ transposable ν := by
-      intro s
-      induction s using Finset.induction_on with
-      | empty => simp
-      | insert j s hj ih =>
-        rw [Finset.sum_insert hj, multiIndexDeriv_add, multiIndexDeriv_single]
-        exact mul_mem (pow_mem (hder j) _) ih
-    simpa [Finset.univ_sum_single] using key Finset.univ
+        (fun i j ↦ TauCeti.commute_lineDerivation (b i) (b j)) α ∈ transposable ν :=
+    multiIndexDeriv_mem (S := (transposable ν).toSubmonoid) _ _ hder α
   have hP_eq : P = ∑ k ∈ Finset.range (m + 1), ∑ α ∈ Finset.univ.piAntidiag k,
       Algebra.lsmul ℝ ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ (coordinateCoeff b.smoothCoord P α) *
         multiIndexDeriv (fun i ↦ TauCeti.lineDerivation ℝ (b i))
