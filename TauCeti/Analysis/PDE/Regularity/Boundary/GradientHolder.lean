@@ -12,7 +12,7 @@ public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder
 # Hölder continuity of the gradient up to a flat boundary
 
 Let `H = {x | c₀ < ⟪x, ν⟫}` be an open half-space in `ℝ^{n+1}`, let `ρ` be the reflection in its
-boundary hyperplane, with linear part `R`, and let `U` be an open set with `ρ U ⊆ U`, such as a
+boundary hyperplane, with linear part `T`, and let `U` be an open set with `ρ U ⊆ U`, such as a
 ball centred on the hyperplane. Let `u ∈ H¹(U)` vanish on `U ∖ H` and solve
 
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `U ∩ H`
@@ -21,12 +21,12 @@ weakly, with `f ∈ L^q(U ∩ H)`. So `u` is a weak solution on `U ∩ H` with z
 the flat part `U ∩ ∂H` of the boundary. This file proves that `∇u` is Hölder continuous up to that
 flat part, with every exponent `β < 1` allowed by the interior estimate, `β ≤ α` and
 `β ≤ 1 - (n + 1) / q`, when the coefficients are `α`-Hölder and **invariant under the
-reflection**, `a(ρ x) = R a(x) R`
-(`exists_holderOnWith_preciseRepresentative_gradient_sub_compHyperplaneReflectionL`, in the
-`TauCeti.PDE` namespace, as are the other declarations of this file). The main case is Poisson's
-equation `-Δu = f`, `a = 1`
-(`exists_holderOnWith_preciseRepresentative_gradient_sub_compHyperplaneReflectionL_one`). This is
-the `C^{1,β}` estimate up to a flat boundary on which the solution vanishes.
+reflection**, `a(ρ x) = T a(x) T`
+(`exists_holderOnWith_preciseRepresentative_gradient_sub_compHyperplaneReflectionL_of_holderOnWith`,
+in the `TauCeti.PDE` namespace, as are the other declarations of this file). The main case is
+Poisson's equation `-Δu = f`, `a = 1`
+(`exists_holderOnWith_preciseRepresentative_gradient_sub_compHyperplaneReflectionL`). This is the
+`C^{1,β}` estimate up to a flat boundary on which the solution vanishes.
 
 More precisely, the precise representative of the gradient of the odd reflection
 `w = u - u ∘ ρ` is `β`-Hölder on every set `S` whose open `R`-thickening lies in `U`, with
@@ -52,7 +52,7 @@ applies to `w` on `U`.
 
 The invariance is what the reflection needs. For coefficients given on the closed half-space, it
 defines `a` on the other side, and the extended field is continuous across the hyperplane exactly
-when `a(x)` commutes with `R` at the points `x` of the hyperplane; for symmetric `a(x)` this says
+when `a(x)` commutes with `T` at the points `x` of the hyperplane; for symmetric `a(x)` this says
 that the conormal `a(x) ν` is normal there. Otherwise the reflected coefficient jumps across the
 hyperplane. The datum must be
 a scalar `f`: the odd reflection of a vector field `G` in a datum `-div G` is Hölder continuous
@@ -82,9 +82,9 @@ variable {n : ℕ}
 /-- **Hölder continuity of the gradient up to a flat boundary.** Let `0 < β < 1` with `β ≤ α`,
 `2 ≤ q` and `β ≤ 1 - (n + 1) / q`. There is a constant `C`, depending only on `n`, `α`, `β`, `q`,
 `λ`, `Λ` and `M`, such that the following holds. Let `H = {x | c₀ < ⟪x, ν⟫}` with `ν ≠ 0`, let `ρ`
-be the reflection in the hyperplane `∂H`, with linear part `R`, and let `U` be open with
+be the reflection in the hyperplane `∂H`, with linear part `T`, and let `U` be open with
 `ρ U ⊆ U`. Let `a` be measurable on `U ∩ H`, uniformly elliptic with constants `λ, Λ` on `U` and
-invariant under the reflection, `a(ρ x) = R a(x) R` on `U`, and let `f ∈ L²(U ∩ H) ∩ L^q(U ∩ H)`.
+invariant under the reflection, `a(ρ x) = T a(x) T` on `U`, and let `f ∈ L²(U ∩ H) ∩ L^q(U ∩ H)`.
 Let `u ∈ H¹(U)` vanish on `U ∖ H` and let its restriction to `U ∩ H` be a weak solution of
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f`, that is `a(u, v) = ∫_{U ∩ H} f v` for every `v ∈ H¹₀(U ∩ H)`. If the open
 `R`-thickening of a set `S` lies in `U` and `a` is `α`-Hölder there with constant `K_a`, where
@@ -97,7 +97,8 @@ The gradient `∇w` agrees with `∇u` almost everywhere on `U ∩ H`
 (`TauCeti.W1p.gradient_sub_compHyperplaneReflectionL_ae`), and `S` may meet the hyperplane: this
 is the `C^{1,β}` estimate up to the flat part of the boundary of `U ∩ H`, on which `u` vanishes.
 -/
-theorem exists_holderOnWith_preciseRepresentative_gradient_sub_compHyperplaneReflectionL
+theorem
+    exists_holderOnWith_preciseRepresentative_gradient_sub_compHyperplaneReflectionL_of_holderOnWith
     {α β : ℝ≥0} (hβ : 0 < β) (hβ1 : β < 1) (hβα : β ≤ α) {q : ℝ≥0∞} (hq : 2 ≤ q)
     (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal) {lam Lam M : ℝ} :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {U H : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
@@ -190,9 +191,9 @@ with `∇u` almost everywhere on `U ∩ H`, is `β`-Hölder on `S`, with constan
 `C (R^(1 - (n + 1)/q - β) ‖f‖_{L^q(U ∩ H)} + R^(-(n + 1)/2 - β) ‖∇w‖_{L²(U)})`.
 
 This is the case `a = 1` of
-`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_gradient_sub_compHyperplaneReflectionL`:
+`exists_holderOnWith_preciseRepresentative_gradient_sub_compHyperplaneReflectionL_of_holderOnWith`:
 the identity matrix is invariant under every reflection. -/
-theorem exists_holderOnWith_preciseRepresentative_gradient_sub_compHyperplaneReflectionL_one
+theorem exists_holderOnWith_preciseRepresentative_gradient_sub_compHyperplaneReflectionL
     {β : ℝ≥0} (hβ : 0 < β) (hβ1 : β < 1) {q : ℝ≥0∞} (hq : 2 ≤ q)
     (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {U H : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
@@ -216,7 +217,7 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_sub_compHyperplaneRef
             (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) :
               EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))) S := by
   obtain ⟨C, hC, h⟩ :=
-    exists_holderOnWith_preciseRepresentative_gradient_sub_compHyperplaneReflectionL
+    exists_holderOnWith_preciseRepresentative_gradient_sub_compHyperplaneReflectionL_of_holderOnWith
       (n := n) (α := β) hβ hβ1 le_rfl hq hβq (lam := 1) (Lam := 1) (M := 0)
   refine ⟨C, hC, ?_⟩
   intro U H ν c₀ f u S R hν hH hU hf2 hfq hu0 hu hR hRS
