@@ -117,6 +117,7 @@ theorem spectralPVM_def :
         (Complex.measurable_inverseCayleyCoord.comp measurable_subtype_coe) := (rfl)
 
 /-- Its projection of a Borel set is the Cayley spectral projection of the inverse image. -/
+@[simp]
 theorem spectralPVM_proj (B : Set ℝ) (hB : MeasurableSet B) :
     (spectralPVM hA).proj B hB =
       (ProjValMeasure.ofRepresentation (cfcHom hA.isStarNormal_cayley)).proj
@@ -125,6 +126,7 @@ theorem spectralPVM_proj (B : Set ℝ) (hB : MeasurableSet B) :
   rw [spectralPVM_def, ProjValMeasure.map_proj]
 
 /-- The diagonal scalar measures are the pushforwards of the Cayley representation measures. -/
+@[simp]
 theorem spectralPVM_diag (ξ : H) :
     (spectralPVM hA).diag ξ =
       Measure.map (Complex.inverseCayleyCoord ∘ Subtype.val)
