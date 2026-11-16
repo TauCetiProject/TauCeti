@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Basic
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Map
+import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 
 /-!
 # The spectral measure of a self-adjoint partial linear map
@@ -26,20 +27,23 @@ eigenvalue of `U`, so the spectral measure of `U` assigns no mass to `{1}`. At e
 of the spectrum of `U`, the inverse Cayley image `i (1 + w) / (1 - w)` lies in the spectrum of `A`,
 which is real, so there `κ` is the inverse Cayley transform itself.
 
-The spectral measure is pinned down by the resolvents of `A`. At a resolvent point `z` the
-resolvent is the continuous function `(1 - w) / ((z - i) - (z + i) w)` of `U`, which is
-`(z - κ(w))⁻¹` away from `w = 1`. Its diagonal matrix elements are therefore the Cauchy–Stieltjes
-transforms of the diagonal measures of `P_A`: `⟪ξ, R(z) ξ⟫ = ∫ (z - s)⁻¹ dμ_ξ(s)`.
+The spectral measure represents the resolvents of `A`. At a resolvent point `z` the resolvent is
+the continuous function `(1 - w) / ((z - i) - (z + i) w)` of `U`
+(`IsSelfAdjoint.resolvent_eq_cfc_cayley`), which is `(z - κ(w))⁻¹` away from `w = 1`. Its
+diagonal matrix elements are therefore the Cauchy–Stieltjes transforms of the diagonal measures of
+`P_A`: `⟪ξ, R(z) ξ⟫ = ∫ (z - s)⁻¹ dμ_ξ(s)`.
 
-The spectral projections commute with `U`, so they intertwine `A` with itself: they preserve the
-domain of `A`, commute with `A` on it, and commute with every resolvent of `A`. Moreover `P_A` lives
-on the spectrum of `A`: the spectral projection of a Borel set of resolvent points vanishes.
+The spectral projections commute with `U`, and so does every bounded Borel function of `P_A`.
+Hence these operators intertwine `A` with itself: they preserve the domain of `A`, commute with `A`
+on it, and commute with every resolvent of `A`. Moreover `P_A` lives on the spectrum of `A`: the
+spectral projection of a Borel set of resolvent points vanishes.
 
 Finally, spectral support controls the quadratic form of `A`. Every `x ∈ dom A` is `v - U v`,
 and then `re ⟪A x, x⟫ = ∫ κ(w) ‖1 - w‖² dμ_v(w)` and `‖x‖² = ∫ ‖1 - w‖² dμ_v(w)` for the
-diagonal measure `μ_v` of `U`. So if `P_A` vanishes on `(-∞, c)`, then `c ‖x‖² ≤ re ⟪A x, x⟫`
-on `dom A`, and similarly for upper bounds and for vectors in the range of a spectral
-projection `P_A(B)`.
+diagonal measure `μ_v` of `U`. So if `P_A(B)` vanishes off `[β, ∞)`, then
+`β ‖x‖² ≤ re ⟪A x, x⟫` for every `x ∈ dom A` in its range, and similarly for upper bounds. In
+particular `P_A` vanishes on `(-∞, c)` exactly when `c ‖x‖² ≤ re ⟪A x, x⟫` on `dom A`: a nonzero
+`P_A((-∞, c - ε])` would contain a nonzero vector `w - U w` of the domain violating this bound.
 
 ## Main declarations
 
@@ -47,20 +51,21 @@ projection `P_A(B)`.
   projection-valued measure on `ℝ`.
 * `IsSelfAdjoint.diagMeasure_cayley_preimage_singleton_one_eq_zero`: the diagonal measures of the
   Cayley transform assign no mass to the point `1`.
-* `IsSelfAdjoint.resolvent_eq_cfc_cayley`: the resolvent `R(z)` is a continuous function of the
-  Cayley transform.
 * `IsSelfAdjoint.inner_resolvent_apply_eq_integral`: the resolvent formula
   `⟪ξ, R(z) ξ⟫ = ∫ (z - s)⁻¹ dμ_ξ(s)`.
-* `IsSelfAdjoint.intertwines_spectralPVM_proj`: spectral projections preserve the domain of `A`
-  and commute with `A` on it.
-* `IsSelfAdjoint.commute_spectralPVM_proj_resolvent`: spectral projections commute with the
-  resolvents.
-* `IsSelfAdjoint.spectralPVM_proj_eq_zero`: the spectral projection of a Borel set of resolvent
-  points vanishes.
-* `IsSelfAdjoint.mul_norm_sq_le_re_inner_of_proj_Iio_eq_zero`,
-  `IsSelfAdjoint.re_inner_le_mul_norm_sq_of_proj_Ioi_eq_zero`: form bounds from spectral support.
-* `IsSelfAdjoint.mul_norm_sq_le_re_inner_of_mem_range_proj`,
-  `IsSelfAdjoint.re_inner_le_mul_norm_sq_of_mem_range_proj`: form bounds on a spectral range.
+* `IsSelfAdjoint.intertwines_spectralPVM_integral`, `IsSelfAdjoint.intertwines_spectralPVM_proj`:
+  bounded Borel functions of `P_A`, in particular spectral projections, preserve the domain of
+  `A` and commute with `A` on it.
+* `IsSelfAdjoint.commute_spectralPVM_integral_resolvent`,
+  `IsSelfAdjoint.commute_spectralPVM_proj_resolvent`: they commute with the resolvents.
+* `IsSelfAdjoint.spectralPVM_proj_eq_zero_of_forall_mem_resolventSet`: the spectral projection of
+  a Borel set of resolvent points vanishes.
+* `IsSelfAdjoint.mul_norm_sq_le_re_inner_of_mem_range_spectralPVM_proj`,
+  `IsSelfAdjoint.re_inner_le_mul_norm_sq_of_mem_range_spectralPVM_proj`: form bounds on a
+  spectral range.
+* `IsSelfAdjoint.spectralPVM_proj_Iio_eq_zero_iff`,
+  `IsSelfAdjoint.spectralPVM_proj_Ioi_eq_zero_iff`: the spectral measure vanishes on a half-line
+  exactly when the corresponding form bound holds.
 
 ## References
 
@@ -114,16 +119,10 @@ theorem _root_.IsSelfAdjoint.diagMeasure_cayley_preimage_singleton_one_eq_zero
     haveI := hA.isStarNormal_cayley
     A.cayley.diagMeasure ξ (Subtype.val ⁻¹' {1}) = 0 := by
   have := hA.isStarNormal_cayley
-  have h := A.cayley.spectralPVM_proj_preimage_singleton_eq_zero (z := 1) fun x hx =>
+  have h := (A.cayley.spectralPVM_proj_preimage_singleton_eq_zero_iff 1).mpr fun x hx =>
     (cayley_apply_eq_self_iff hA.neg_I_mem_resolventSet).mp (by simpa using hx)
   rw [ProjValMeasure.proj_eq_zero_iff_forall_diag_apply_eq_zero] at h
   simpa using h ξ
-
-/-- The spectrum of the Cayley transform of a self-adjoint partial linear map lies on the unit
-circle, since the Cayley transform is unitary. -/
-private theorem norm_eq_one_of_mem_spectrum_cayley (hA : IsSelfAdjoint A) {w : ℂ}
-    (hw : w ∈ _root_.spectrum ℂ A.cayley) : ‖w‖ = 1 :=
-  mem_sphere_zero_iff_norm.mp (spectrum.subset_circle_of_unitary hA.cayley_mem_unitary hw)
 
 /-- Away from `1`, a point `w` of the spectrum of the Cayley transform has a real inverse Cayley
 image `i (1 + w) / (1 - w)`, which lies in the spectrum of `A`. -/
@@ -134,69 +133,6 @@ private theorem ofReal_re_inverseCayley_eq_and_mem_spectrum (hA : IsSelfAdjoint 
   have hmem := (mem_spectrum_cayley_iff hA.neg_I_mem_resolventSet h1).mp hw
   exact ⟨Complex.ext (by simp) (by simpa using (hA.spectrum_subset_im_eq_zero hmem).symm), hmem⟩
 
-/-- At a resolvent point `z`, the denominator `(z - i) - (z + i) w` of the resolvent symbol does
-not vanish on the spectrum of the Cayley transform: at `w = 1` it is `-2i`, and otherwise its
-vanishing would make `z = i (1 + w) / (1 - w)` a point of the spectrum of `A`. -/
-private theorem sub_I_sub_add_I_mul_ne_zero (hA : IsSelfAdjoint A) {z w : ℂ}
-    (hz : z ∈ A.resolventSet) (hw : w ∈ _root_.spectrum ℂ A.cayley) :
-    z - I - (z + I) * w ≠ 0 := by
-  intro h
-  by_cases h1 : w = 1
-  · have h2 : (2 : ℂ) * I = 0 := by linear_combination -h - (z + I) * h1
-    simp at h2
-  · refine (A.mem_spectrum_iff z).mp ?_ hz
-    convert (ofReal_re_inverseCayley_eq_and_mem_spectrum hA hw h1).2 using 1
-    rw [eq_div_iff (sub_ne_zero.mpr (Ne.symm h1))]
-    linear_combination h
-
-/-- **The resolvent as a function of the Cayley transform.** At every resolvent point `z`, the
-resolvent of a self-adjoint partial linear map is `R(z) = (1 - U) ((z - i) - (z + i) U)⁻¹`, the
-continuous functional calculus of the Cayley transform `U` at
-`w ↦ (1 - w) / ((z - i) - (z + i) w)`. -/
-theorem _root_.IsSelfAdjoint.resolvent_eq_cfc_cayley (hA : IsSelfAdjoint A) {z : ℂ}
-    (hz : z ∈ A.resolventSet) :
-    A.resolvent z = cfc (fun w => (1 - w) / (z - I - (z + I) * w)) A.cayley := by
-  have := hA.isStarNormal_cayley
-  have hd : ∀ w ∈ _root_.spectrum ℂ A.cayley, z - I - (z + I) * w ≠ 0 := fun _ hw =>
-    sub_I_sub_add_I_mul_ne_zero hA hz hw
-  set U := A.cayley with hU
-  -- `K = ((z - i) - (z + i) U)⁻¹`, a two-sided inverse of `D = (z - i) - (z + i) U`.
-  set K := cfc (fun w => (z - I - (z + I) * w)⁻¹) U with hK
-  have hcd : ContinuousOn (fun w => z - I - (z + I) * w) (_root_.spectrum ℂ U) := by fun_prop
-  have hci : ContinuousOn (fun w => (z - I - (z + I) * w)⁻¹) (_root_.spectrum ℂ U) :=
-    hcd.inv₀ hd
-  have hD : cfc (fun w => z - I - (z + I) * w) U = (z - I) • 1 - (z + I) • U := by
-    rw [cfc_sub (fun _ => z - I) (fun w => (z + I) * w) U, cfc_const (z - I) U,
-      cfc_const_mul (z + I) (fun w => w) U, cfc_id' ℂ U, Algebra.algebraMap_eq_smul_one]
-  have hDK : ((z - I) • 1 - (z + I) • U) * K = 1 := by
-    rw [← hD, hK, ← cfc_mul _ _ U hcd hci, ← cfc_one ℂ U]
-    exact cfc_congr fun w hw => mul_inv_cancel₀ (hd w hw)
-  have hKD : K * ((z - I) • 1 - (z + I) • U) = 1 := by
-    rw [← hD, hK, ← cfc_mul _ _ U hci hcd, ← cfc_one ℂ U]
-    exact cfc_congr fun w hw => inv_mul_cancel₀ (hd w hw)
-  have hG : cfc (fun w => (1 - w) / (z - I - (z + I) * w)) U = (1 - U) * K := by
-    simp_rw [div_eq_mul_inv]
-    rw [cfc_mul (fun w => 1 - w) _ U (by fun_prop) hci, cfc_sub (fun _ => 1) (fun w => w) U,
-      cfc_const_one ℂ U, cfc_id' ℂ U]
-  rw [hG]
-  have hm := hA.neg_I_mem_resolventSet
-  -- The graph of `A` is `{(x - U x, i (x + U x))}`, on which `z • p.1 - p.2 = D x`.
-  refine resolvent_eq_of_isResolventAt (isResolventAt_iff_forall_mem_graph.mpr ⟨fun y => ?_, ?_⟩)
-  · have hy : (z - I) • K y - (z + I) • U (K y) = y := by
-      simpa using congrArg (· y) hDK
-    refine (mem_graph_iff_exists_cayley hm).mpr ⟨K y, ?_⟩
-    simp only [mul_apply_eq_comp, _root_.sub_apply, one_apply_eq_self]
-    generalize K y = x at hy ⊢
-    subst hy
-    rw [← hU, Prod.mk.injEq]
-    exact ⟨rfl, by module⟩
-  · rintro p hp
-    obtain ⟨x, rfl⟩ := (mem_graph_iff_exists_cayley hm).mp hp
-    have hx : K ((z - I) • x - (z + I) • U x) = x := by
-      simpa using congrArg (· x) hKD
-    simp only [mul_apply_eq_comp, _root_.sub_apply, one_apply_eq_self]
-    rw [← hU, show z • (x - U x) - I • (x + U x) = (z - I) • x - (z + I) • U x by module, hx]
-
 /-- **The resolvent formula.** At every resolvent point `z`, in particular at every nonreal `z`,
 the diagonal matrix elements of the resolvent of a self-adjoint partial linear map are the
 Cauchy–Stieltjes transforms of the diagonal measures of its spectral measure:
@@ -206,11 +142,10 @@ theorem _root_.IsSelfAdjoint.inner_resolvent_apply_eq_integral (hA : IsSelfAdjoi
     ⟪ξ, A.resolvent z ξ⟫_ℂ = ∫ s : ℝ, (z - s)⁻¹ ∂(A.spectralPVM hA).diag ξ := by
   have := hA.isStarNormal_cayley
   have hmeas : Measurable fun s : ℝ => (z - s)⁻¹ := by fun_prop
-  have hd : ∀ w ∈ _root_.spectrum ℂ A.cayley, z - I - (z + I) * w ≠ 0 := fun _ hw =>
-    sub_I_sub_add_I_mul_ne_zero hA hz hw
   rw [hA.spectralPVM_diag, integral_map (by fun_prop) hmeas.aestronglyMeasurable,
     hA.resolvent_eq_cfc_cayley hz, ← ContinuousLinearMap.integral_diagMeasure_eq_inner_cfc _ _
-      (fun w => (1 - w) / (z - I - (z + I) * w)) (ContinuousOn.div (by fun_prop) (by fun_prop) hd)]
+      (fun w => (1 - w) / (z - I - (z + I) * w))
+      (continuousOn_one_sub_div_sub_I_sub_add_I_mul hA.neg_I_mem_resolventSet hz)]
   -- Away from the null point `1`, the two symbols agree.
   have h1 : ∀ᵐ w : _root_.spectrum ℂ A.cayley ∂(A.cayley.diagMeasure ξ), (w : ℂ) ≠ 1 := by
     refine ae_iff.mpr ?_
@@ -231,27 +166,51 @@ theorem _root_.IsSelfAdjoint.commute_cayley_spectralPVM_proj (hA : IsSelfAdjoint
   rw [hA.spectralPVM_eq_map, ProjValMeasure.map_proj]
   exact (A.cayley.forall_commute_spectralPVM_proj_iff A.cayley).2 (Commute.refl _) _ _
 
+/-- Every bounded Borel function of the spectral measure of a self-adjoint partial linear map
+commutes with its Cayley transform. -/
+theorem _root_.IsSelfAdjoint.commute_cayley_spectralPVM_integral (hA : IsSelfAdjoint A)
+    (f : BoundedBorelFunction ℝ) : Commute A.cayley ((A.spectralPVM hA).integral f) :=
+  ((A.spectralPVM hA).forall_commute_integral_iff A.cayley).mpr
+    hA.commute_cayley_spectralPVM_proj f
+
+/-- **Bounded Borel functions of the spectral measure reduce the operator.** The integral `T` of a
+bounded Borel function against the spectral measure of a self-adjoint partial linear map `A` maps
+the domain of `A` into itself and satisfies `T (A x) = A (T x)` there: it intertwines `A` with
+itself. -/
+theorem _root_.IsSelfAdjoint.intertwines_spectralPVM_integral (hA : IsSelfAdjoint A)
+    (f : BoundedBorelFunction ℝ) : A.Intertwines A ((A.spectralPVM hA).integral f) := by
+  rw [intertwines_iff_comp_cayley_eq hA.neg_I_mem_resolventSet hA.neg_I_mem_resolventSet,
+    ← ContinuousLinearMap.mul_def, ← ContinuousLinearMap.mul_def]
+  exact (hA.commute_cayley_spectralPVM_integral f).eq.symm
+
 /-- **Spectral projections reduce the operator.** A spectral projection `P` of a self-adjoint
 partial linear map `A` maps the domain of `A` into itself and satisfies `P (A x) = A (P x)` there:
 it intertwines `A` with itself. -/
 theorem _root_.IsSelfAdjoint.intertwines_spectralPVM_proj (hA : IsSelfAdjoint A) (B : Set ℝ)
     (hB : MeasurableSet B) : A.Intertwines A ((A.spectralPVM hA).proj B hB) := by
-  rw [intertwines_iff_comp_cayley_eq hA.neg_I_mem_resolventSet hA.neg_I_mem_resolventSet,
-    ← ContinuousLinearMap.mul_def, ← ContinuousLinearMap.mul_def]
-  exact (hA.commute_cayley_spectralPVM_proj B hB).eq.symm
+  simpa using hA.intertwines_spectralPVM_integral (BoundedBorelFunction.indicator B hB 1)
+
+/-- Every bounded Borel function of the spectral measure of a self-adjoint partial linear map
+commutes with its resolvent at every resolvent point. -/
+theorem _root_.IsSelfAdjoint.commute_spectralPVM_integral_resolvent (hA : IsSelfAdjoint A)
+    (f : BoundedBorelFunction ℝ) {z : ℂ} (hz : z ∈ A.resolventSet) :
+    Commute ((A.spectralPVM hA).integral f) (A.resolvent z) := by
+  have h := (intertwines_iff_comp_resolvent_eq hz hz).mp (hA.intertwines_spectralPVM_integral f)
+  rwa [← ContinuousLinearMap.mul_def, ← ContinuousLinearMap.mul_def] at h
 
 /-- The spectral projections of a self-adjoint partial linear map commute with its resolvent at
 every resolvent point. -/
 theorem _root_.IsSelfAdjoint.commute_spectralPVM_proj_resolvent (hA : IsSelfAdjoint A)
     (B : Set ℝ) (hB : MeasurableSet B) {z : ℂ} (hz : z ∈ A.resolventSet) :
     Commute ((A.spectralPVM hA).proj B hB) (A.resolvent z) := by
-  have h := (intertwines_iff_comp_resolvent_eq hz hz).mp (hA.intertwines_spectralPVM_proj B hB)
-  rwa [← ContinuousLinearMap.mul_def, ← ContinuousLinearMap.mul_def] at h
+  simpa using
+    hA.commute_spectralPVM_integral_resolvent (BoundedBorelFunction.indicator B hB 1) hz
 
 /-- **The spectral measure lives on the spectrum.** The spectral projection of a Borel set of real
 resolvent points of a self-adjoint partial linear map vanishes. -/
-theorem _root_.IsSelfAdjoint.spectralPVM_proj_eq_zero (hA : IsSelfAdjoint A) {B : Set ℝ}
-    (hB : MeasurableSet B) (hBA : ∀ s ∈ B, (s : ℂ) ∈ A.resolventSet) :
+theorem _root_.IsSelfAdjoint.spectralPVM_proj_eq_zero_of_forall_mem_resolventSet
+    (hA : IsSelfAdjoint A) {B : Set ℝ} (hB : MeasurableSet B)
+    (hBA : ∀ s ∈ B, (s : ℂ) ∈ A.resolventSet) :
     (A.spectralPVM hA).proj B hB = 0 := by
   have := hA.isStarNormal_cayley
   rw [ProjValMeasure.proj_eq_zero_iff_forall_diag_apply_eq_zero]
@@ -264,53 +223,26 @@ theorem _root_.IsSelfAdjoint.spectralPVM_proj_eq_zero (hA : IsSelfAdjoint A) {B 
   obtain ⟨hre, hmem⟩ := ofReal_re_inverseCayley_eq_and_mem_spectrum hA w.2 h1
   exact (A.mem_spectrum_iff _).mp hmem (hre ▸ hBA _ hw)
 
-/-- On the unit circle, `re (i (1 + w) / (1 - w)) * ‖1 - w‖² = -2 im w`. -/
-private theorem re_inverseCayley_mul_eq {w : ℂ} (hw : ‖w‖ = 1) :
-    (I * (1 + w) / (1 - w)).re * (2 - 2 * w.re) = -2 * w.im := by
-  have h : w.re ^ 2 + w.im ^ 2 = 1 := by
-    rw [← sq_eq_sq₀ (norm_nonneg _) zero_le_one, one_pow, Complex.sq_norm, normSq_apply] at hw
-    linarith
-  by_cases h1 : w = 1
-  · subst h1
-    simp
-  have hn : normSq (1 - w) = 2 - 2 * w.re := by
-    simp only [normSq_apply, sub_re, one_re, sub_im, one_im]
-    nlinarith
-  have hn0 : normSq (1 - w) ≠ 0 := normSq_eq_zero.not.mpr (sub_ne_zero.mpr (Ne.symm h1))
-  rw [← hn, div_re]
-  simp only [mul_re, mul_im, I_re, I_im, add_re, add_im, one_re, one_im, sub_re, sub_im]
-  field_simp
-  nlinarith [h]
-
-/-- The coordinate function is integrable for the diagonal measures of the Cayley transform. -/
-private theorem integrable_diagMeasure_cayley (hA : IsSelfAdjoint A) (v : H) :
-    haveI := hA.isStarNormal_cayley
-    Integrable (fun w : _root_.spectrum ℂ A.cayley => (w : ℂ)) (A.cayley.diagMeasure v) := by
-  have := hA.isStarNormal_cayley
-  exact .of_bound (by fun_prop) 1
-    (Filter.Eventually.of_forall fun w => (norm_eq_one_of_mem_spectrum_cayley hA w.2).le)
-
 /-- For `x = v - U v` in the domain, the quadratic form is `re ⟪A x, x⟫ = -2 im ⟪v, U v⟫` and
-`‖x‖² = 2 ‖v‖² - 2 re ⟪v, U v⟫`, both integrals against the diagonal measure of `v`. -/
+`‖x‖² = ‖(1 - U) v‖²`, both integrals against the diagonal measure of `v`. -/
 private theorem re_inner_eq_integral_and_norm_sq_eq_integral (hA : IsSelfAdjoint A)
     {x : A.domain} {v : H} (hx : (x : H) = v - A.cayley v) :
     haveI := hA.isStarNormal_cayley
     re ⟪A x, x⟫_ℂ = ∫ w, -2 * (w : ℂ).im ∂A.cayley.diagMeasure v ∧
-      ‖(x : H)‖ ^ 2 = ∫ w, (2 - 2 * (w : ℂ).re) ∂A.cayley.diagMeasure v := by
+      ‖(x : H)‖ ^ 2 = ∫ w, ‖1 - (w : ℂ)‖ ^ 2 ∂A.cayley.diagMeasure v := by
   have := hA.isStarNormal_cayley
   have hm := hA.neg_I_mem_resolventSet
   have hAx : A x = I • (v + A.cayley v) :=
     A.mem_graph_snd_inj (A.mem_graph x) ((mem_graph_iff_exists_cayley hm).mpr ⟨v, rfl⟩) hx
-  have hUv : ‖A.cayley v‖ = ‖v‖ := hA.norm_cayley_apply v
-  have hint := integrable_diagMeasure_cayley hA v
   have hUint : ∫ w, (w : ℂ) ∂A.cayley.diagMeasure v = ⟪v, A.cayley v⟫_ℂ := by
     rw [A.cayley.integral_diagMeasure_eq_inner_cfc v (fun w => w), cfc_id' ℂ A.cayley]
+  have hint : Integrable (fun w : _root_.spectrum ℂ A.cayley => (w : ℂ))
+      (A.cayley.diagMeasure v) :=
+    continuous_subtype_val.integrable_of_hasCompactSupport (.of_compactSpace _)
   have him : ∫ w, (w : ℂ).im ∂A.cayley.diagMeasure v = (⟪v, A.cayley v⟫_ℂ).im := by
     simpa [hUint] using integral_im hint
-  have hre : ∫ w, (w : ℂ).re ∂A.cayley.diagMeasure v = (⟪v, A.cayley v⟫_ℂ).re := by
-    simpa [hUint] using integral_re hint
   have hself : ⟪A.cayley v, A.cayley v⟫_ℂ = ⟪v, v⟫_ℂ := by
-    rw [inner_self_eq_norm_sq_to_K, inner_self_eq_norm_sq_to_K, hUv]
+    rw [inner_self_eq_norm_sq_to_K, inner_self_eq_norm_sq_to_K, hA.norm_cayley_apply v]
   constructor
   · rw [integral_const_mul, him, hAx, hx, inner_smul_left, inner_add_left,
       inner_sub_right, inner_sub_right, hself]
@@ -318,40 +250,30 @@ private theorem re_inner_eq_integral_and_norm_sq_eq_integral (hA : IsSelfAdjoint
     rw [← inner_conj_symm (A.cayley v) v]
     simp only [add_im, sub_im, conj_im]
     ring
-  · have hint_re : Integrable (fun w : _root_.spectrum ℂ A.cayley => (w : ℂ).re)
-        (A.cayley.diagMeasure v) := by simpa using hint.re
-    rw [integral_sub (integrable_const _) (hint_re.const_mul 2), integral_const_mul,
-      integral_const, hre, hx, norm_sub_sq (𝕜 := ℂ), hUv]
-    simp
-    ring
+  · -- `x = (1 - U) v` is the continuous functional calculus of `w ↦ 1 - w` at `v`.
+    have h := A.cayley.integral_norm_sq_diagMeasure v
+      (1 - (ContinuousMap.id ℂ).restrict (_root_.spectrum ℂ A.cayley))
+    simpa [hx, cfcHom_id] using h.symm
 
 /-- The **quadratic form through the Cayley transform**: at `x = v - U v`,
 `re ⟪A x, x⟫ - c ‖x‖² = ∫ (κ(w) - c) ‖1 - w‖² dμ_v(w)`, where `κ` is the real inverse Cayley
-coordinate and `‖1 - w‖² = 2 - 2 re w` on the unit circle. -/
+coordinate. -/
 private theorem re_inner_sub_mul_norm_sq_eq_integral (hA : IsSelfAdjoint A) (c : ℝ)
     {x : A.domain} {v : H} (hx : (x : H) = v - A.cayley v) :
     haveI := hA.isStarNormal_cayley
     re ⟪A x, x⟫_ℂ - c * ‖(x : H)‖ ^ 2 =
-      ∫ w, ((I * (1 + (w : ℂ)) / (1 - w)).re - c) * (2 - 2 * (w : ℂ).re)
+      ∫ w, ((I * (1 + (w : ℂ)) / (1 - w)).re - c) * ‖1 - (w : ℂ)‖ ^ 2
         ∂A.cayley.diagMeasure v := by
   have := hA.isStarNormal_cayley
   obtain ⟨hre, hnorm⟩ := re_inner_eq_integral_and_norm_sq_eq_integral hA hx
-  have hint := integrable_diagMeasure_cayley hA v
-  have hint_re : Integrable (fun w : _root_.spectrum ℂ A.cayley => (w : ℂ).re)
-      (A.cayley.diagMeasure v) := by simpa using hint.re
-  have hint_im : Integrable (fun w : _root_.spectrum ℂ A.cayley => (w : ℂ).im)
-      (A.cayley.diagMeasure v) := by simpa using hint.im
-  have hint_norm : Integrable (fun w : _root_.spectrum ℂ A.cayley => c * (2 - 2 * (w : ℂ).re))
-      (A.cayley.diagMeasure v) := ((integrable_const 2).sub (hint_re.const_mul 2)).const_mul c
-  rw [hre, hnorm, ← integral_const_mul, ← integral_sub (hint_im.const_mul (-2)) hint_norm]
+  have hint (f : _root_.spectrum ℂ A.cayley → ℝ) (hf : Continuous f) :
+      Integrable f (A.cayley.diagMeasure v) :=
+    hf.integrable_of_hasCompactSupport (.of_compactSpace f)
+  rw [hre, hnorm, ← integral_const_mul, ← integral_sub (hint _ (by fun_prop))
+    (hint (fun w => c * ‖1 - (w : ℂ)‖ ^ 2) (by fun_prop))]
   refine integral_congr_ae (Filter.Eventually.of_forall fun w => ?_)
   dsimp only
-  rw [sub_mul, re_inverseCayley_mul_eq (norm_eq_one_of_mem_spectrum_cayley hA w.2)]
-
-/-- On the spectrum of the Cayley transform, `‖1 - w‖² = 2 - 2 re w` is nonnegative. -/
-private theorem two_sub_two_mul_re_nonneg (hA : IsSelfAdjoint A)
-    (w : _root_.spectrum ℂ A.cayley) : 0 ≤ 2 - 2 * (w : ℂ).re := by
-  linarith [(re_le_norm (w : ℂ)).trans (norm_eq_one_of_mem_spectrum_cayley hA w.2).le]
+  rw [sub_mul, re_I_mul_one_add_div_one_sub_mul_norm_one_sub_sq]
 
 /-- If the spectral measure of `v` vanishes on `(-∞, c)`, then `c ‖x‖² ≤ re ⟪A x, x⟫` at
 `x = v - U v`. -/
@@ -368,7 +290,7 @@ private theorem mul_norm_sq_le_re_inner_of_diag_Iio (hA : IsSelfAdjoint A) {c : 
   rw [← sub_nonneg, re_inner_sub_mul_norm_sq_eq_integral hA c hx]
   refine integral_nonneg_of_ae ?_
   filter_upwards [ae_of_ae_map (by fun_prop) h] with w hw
-  exact mul_nonneg (sub_nonneg.mpr hw) (two_sub_two_mul_re_nonneg hA w)
+  exact mul_nonneg (sub_nonneg.mpr hw) (sq_nonneg _)
 
 /-- If the spectral measure of `v` vanishes on `(c, ∞)`, then `re ⟪A x, x⟫ ≤ c ‖x‖²` at
 `x = v - U v`. -/
@@ -385,25 +307,7 @@ private theorem re_inner_le_mul_norm_sq_of_diag_Ioi (hA : IsSelfAdjoint A) {c : 
   rw [← sub_nonpos, re_inner_sub_mul_norm_sq_eq_integral hA c hx]
   refine integral_nonpos_of_ae ?_
   filter_upwards [ae_of_ae_map (by fun_prop) h] with w hw
-  exact mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.mpr hw) (two_sub_two_mul_re_nonneg hA w)
-
-/-- **Lower form bound from spectral support.** If the spectral measure of a self-adjoint partial
-linear map `A` vanishes on `(-∞, c)`, then `c ‖x‖² ≤ re ⟪A x, x⟫` for every `x ∈ dom A`. -/
-theorem _root_.IsSelfAdjoint.mul_norm_sq_le_re_inner_of_proj_Iio_eq_zero (hA : IsSelfAdjoint A)
-    {c : ℝ} (h : (A.spectralPVM hA).proj (Set.Iio c) measurableSet_Iio = 0) (x : A.domain) :
-    c * ‖(x : H)‖ ^ 2 ≤ re ⟪A x, x⟫_ℂ := by
-  obtain ⟨v, hv⟩ := (mem_graph_iff_exists_cayley hA.neg_I_mem_resolventSet).mp (A.mem_graph x)
-  exact mul_norm_sq_le_re_inner_of_diag_Iio hA (congrArg Prod.fst hv).symm
-    ((ProjValMeasure.proj_eq_zero_iff_forall_diag_apply_eq_zero _ _ _).mp h v)
-
-/-- **Upper form bound from spectral support.** If the spectral measure of a self-adjoint partial
-linear map `A` vanishes on `(c, ∞)`, then `re ⟪A x, x⟫ ≤ c ‖x‖²` for every `x ∈ dom A`. -/
-theorem _root_.IsSelfAdjoint.re_inner_le_mul_norm_sq_of_proj_Ioi_eq_zero (hA : IsSelfAdjoint A)
-    {c : ℝ} (h : (A.spectralPVM hA).proj (Set.Ioi c) measurableSet_Ioi = 0) (x : A.domain) :
-    re ⟪A x, x⟫_ℂ ≤ c * ‖(x : H)‖ ^ 2 := by
-  obtain ⟨v, hv⟩ := (mem_graph_iff_exists_cayley hA.neg_I_mem_resolventSet).mp (A.mem_graph x)
-  exact re_inner_le_mul_norm_sq_of_diag_Ioi hA (congrArg Prod.fst hv).symm
-    ((ProjValMeasure.proj_eq_zero_iff_forall_diag_apply_eq_zero _ _ _).mp h v)
+  exact mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.mpr hw) (sq_nonneg _)
 
 /-- A domain vector `x` in the range of the spectral projection `P(B)` is `v - U v` for a vector
 `v` whose spectral measure vanishes off `B`: take `v = P(B) v₀` for any `v₀` with `x = v₀ - U v₀`,
@@ -428,9 +332,9 @@ private theorem exists_eq_sub_cayley_diag_compl_eq_zero (hA : IsSelfAdjoint A) {
 
 /-- **Lower form bound on a spectral range.** If `B ⊆ [β, ∞)`, then `β ‖x‖² ≤ re ⟪A x, x⟫` for
 every `x ∈ dom A` in the range of the spectral projection `P(B)`. -/
-theorem _root_.IsSelfAdjoint.mul_norm_sq_le_re_inner_of_mem_range_proj (hA : IsSelfAdjoint A)
-    {B : Set ℝ} (hB : MeasurableSet B) {β : ℝ} (hβ : B ⊆ Set.Ici β) {x : A.domain}
-    (hx : (x : H) ∈ ((A.spectralPVM hA).proj B hB).range) :
+theorem _root_.IsSelfAdjoint.mul_norm_sq_le_re_inner_of_mem_range_spectralPVM_proj
+    (hA : IsSelfAdjoint A) {B : Set ℝ} (hB : MeasurableSet B) {β : ℝ} (hβ : B ⊆ Set.Ici β)
+    {x : A.domain} (hx : (x : H) ∈ ((A.spectralPVM hA).proj B hB).range) :
     β * ‖(x : H)‖ ^ 2 ≤ re ⟪A x, x⟫_ℂ := by
   obtain ⟨v, hxv, hv⟩ := exists_eq_sub_cayley_diag_compl_eq_zero hA hB hx
   have hsub : Set.Iio β ⊆ Bᶜ := fun s hs hsB => not_le.mpr hs (Set.mem_Ici.mp (hβ hsB))
@@ -438,12 +342,80 @@ theorem _root_.IsSelfAdjoint.mul_norm_sq_le_re_inner_of_mem_range_proj (hA : IsS
 
 /-- **Upper form bound on a spectral range.** If `B ⊆ (-∞, α]`, then `re ⟪A x, x⟫ ≤ α ‖x‖²` for
 every `x ∈ dom A` in the range of the spectral projection `P(B)`. -/
-theorem _root_.IsSelfAdjoint.re_inner_le_mul_norm_sq_of_mem_range_proj (hA : IsSelfAdjoint A)
-    {B : Set ℝ} (hB : MeasurableSet B) {α : ℝ} (hα : B ⊆ Set.Iic α) {x : A.domain}
-    (hx : (x : H) ∈ ((A.spectralPVM hA).proj B hB).range) :
+theorem _root_.IsSelfAdjoint.re_inner_le_mul_norm_sq_of_mem_range_spectralPVM_proj
+    (hA : IsSelfAdjoint A) {B : Set ℝ} (hB : MeasurableSet B) {α : ℝ} (hα : B ⊆ Set.Iic α)
+    {x : A.domain} (hx : (x : H) ∈ ((A.spectralPVM hA).proj B hB).range) :
     re ⟪A x, x⟫_ℂ ≤ α * ‖(x : H)‖ ^ 2 := by
   obtain ⟨v, hxv, hv⟩ := exists_eq_sub_cayley_diag_compl_eq_zero hA hB hx
   have hsub : Set.Ioi α ⊆ Bᶜ := fun s hs hsB => not_le.mpr hs (Set.mem_Iic.mp (hα hsB))
   exact re_inner_le_mul_norm_sq_of_diag_Ioi hA hxv (measure_mono_null hsub hv)
+
+/-- A nonzero spectral projection `P(B)` has a nonzero vector of the domain in its range: for
+`P(B) v ≠ 0`, the vector `x = P(B) v - U P(B) v = P(B) (v - U v)`, which is nonzero because `1` is
+not an eigenvalue of `U`. -/
+private theorem exists_ne_zero_mem_range_spectralPVM_proj (hA : IsSelfAdjoint A) {B : Set ℝ}
+    (hB : MeasurableSet B) (h : (A.spectralPVM hA).proj B hB ≠ 0) :
+    ∃ x : A.domain, (x : H) ≠ 0 ∧ (x : H) ∈ ((A.spectralPVM hA).proj B hB).range := by
+  set P := (A.spectralPVM hA).proj B hB
+  have hm := hA.neg_I_mem_resolventSet
+  obtain ⟨v, hv⟩ : ∃ v, P v ≠ 0 := by
+    by_contra! h'
+    exact h (ContinuousLinearMap.ext h')
+  have hUP : A.cayley (P v) = P (A.cayley v) := by
+    simpa using congr($((hA.commute_cayley_spectralPVM_proj B hB).eq) v)
+  refine ⟨⟨P v - A.cayley (P v),
+    mem_domain_of_mem_graph ((mem_graph_iff_exists_cayley hm).mpr ⟨P v, rfl⟩)⟩, fun h0 => ?_,
+    v - A.cayley v, by simp [hUP]⟩
+  exact hv ((cayley_apply_eq_self_iff hm).mp (sub_eq_zero.mp h0).symm)
+
+/-- **Spectral support above `c` and the lower form bound.** The spectral measure of a
+self-adjoint partial linear map `A` vanishes on `(-∞, c)` exactly when `c ‖x‖² ≤ re ⟪A x, x⟫` for
+every `x ∈ dom A`. -/
+theorem _root_.IsSelfAdjoint.spectralPVM_proj_Iio_eq_zero_iff (hA : IsSelfAdjoint A) (c : ℝ) :
+    (A.spectralPVM hA).proj (Set.Iio c) measurableSet_Iio = 0 ↔
+      ∀ x : A.domain, c * ‖(x : H)‖ ^ 2 ≤ re ⟪A x, x⟫_ℂ := by
+  refine ⟨fun h x => ?_, fun h => ?_⟩
+  · obtain ⟨v, hv⟩ := (mem_graph_iff_exists_cayley hA.neg_I_mem_resolventSet).mp (A.mem_graph x)
+    exact mul_norm_sq_le_re_inner_of_diag_Iio hA (congrArg Prod.fst hv).symm
+      ((ProjValMeasure.proj_eq_zero_iff_forall_diag_apply_eq_zero _ _ _).mp h v)
+  -- Conversely, a nonzero `P((-∞, c - ε])` would contain a domain vector violating the bound.
+  have hε (n : ℕ) :
+      (A.spectralPVM hA).proj (Set.Iic (c - 1 / ((n : ℝ) + 1))) measurableSet_Iic = 0 := by
+    by_contra hne
+    obtain ⟨x, hx0, hx⟩ := exists_ne_zero_mem_range_spectralPVM_proj hA measurableSet_Iic hne
+    have h1 := hA.re_inner_le_mul_norm_sq_of_mem_range_spectralPVM_proj _ subset_rfl hx
+    have h2 : 0 < ‖(x : H)‖ ^ 2 := pow_pos (norm_pos_iff.mpr hx0) 2
+    have h3 : 0 < 1 / ((n : ℝ) + 1) := by positivity
+    nlinarith [h x]
+  refine (A.spectralPVM hA).proj_eq_zero_of_subset (fun s hs => ?_) measurableSet_Iio
+    (MeasurableSet.iUnion fun _ => measurableSet_Iic)
+    ((A.spectralPVM hA).proj_iUnion_eq_zero _ _ hε)
+  obtain ⟨n, hn⟩ := exists_nat_one_div_lt (sub_pos.mpr (Set.mem_Iio.mp hs))
+  exact Set.mem_iUnion.mpr ⟨n, Set.mem_Iic.mpr (by linarith)⟩
+
+/-- **Spectral support below `c` and the upper form bound.** The spectral measure of a
+self-adjoint partial linear map `A` vanishes on `(c, ∞)` exactly when `re ⟪A x, x⟫ ≤ c ‖x‖²` for
+every `x ∈ dom A`. -/
+theorem _root_.IsSelfAdjoint.spectralPVM_proj_Ioi_eq_zero_iff (hA : IsSelfAdjoint A) (c : ℝ) :
+    (A.spectralPVM hA).proj (Set.Ioi c) measurableSet_Ioi = 0 ↔
+      ∀ x : A.domain, re ⟪A x, x⟫_ℂ ≤ c * ‖(x : H)‖ ^ 2 := by
+  refine ⟨fun h x => ?_, fun h => ?_⟩
+  · obtain ⟨v, hv⟩ := (mem_graph_iff_exists_cayley hA.neg_I_mem_resolventSet).mp (A.mem_graph x)
+    exact re_inner_le_mul_norm_sq_of_diag_Ioi hA (congrArg Prod.fst hv).symm
+      ((ProjValMeasure.proj_eq_zero_iff_forall_diag_apply_eq_zero _ _ _).mp h v)
+  -- Conversely, a nonzero `P([c + ε, ∞))` would contain a domain vector violating the bound.
+  have hε (n : ℕ) :
+      (A.spectralPVM hA).proj (Set.Ici (c + 1 / ((n : ℝ) + 1))) measurableSet_Ici = 0 := by
+    by_contra hne
+    obtain ⟨x, hx0, hx⟩ := exists_ne_zero_mem_range_spectralPVM_proj hA measurableSet_Ici hne
+    have h1 := hA.mul_norm_sq_le_re_inner_of_mem_range_spectralPVM_proj _ subset_rfl hx
+    have h2 : 0 < ‖(x : H)‖ ^ 2 := pow_pos (norm_pos_iff.mpr hx0) 2
+    have h3 : 0 < 1 / ((n : ℝ) + 1) := by positivity
+    nlinarith [h x]
+  refine (A.spectralPVM hA).proj_eq_zero_of_subset (fun s hs => ?_) measurableSet_Ioi
+    (MeasurableSet.iUnion fun _ => measurableSet_Ici)
+    ((A.spectralPVM hA).proj_iUnion_eq_zero _ _ hε)
+  obtain ⟨n, hn⟩ := exists_nat_one_div_lt (sub_pos.mpr (Set.mem_Ioi.mp hs))
+  exact Set.mem_iUnion.mpr ⟨n, Set.mem_Ici.mpr (by linarith)⟩
 
 end LinearPMap

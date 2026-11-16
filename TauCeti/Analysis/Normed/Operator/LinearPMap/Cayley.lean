@@ -23,7 +23,9 @@ consists of the pairs `(x - U x, i (x + U x))` (`LinearPMap.mem_graph_iff_exists
 is the operator identity `A = i (1 + U) (1 - U)⁻¹`. In particular `1` is not an eigenvalue of `U`.
 Away from `1`, a scalar `z` lies in the spectrum of `U` exactly when `i (1 + z) / (1 - z)` lies in
 the spectrum of `A`; this is the spectral mapping theorem for the Cayley transform, and it follows
-from spectral mapping for the resolvent.
+from spectral mapping for the resolvent. Consequently, at a resolvent point `z` the denominator
+`(z - i) - (z + i) w` of the symbol `w ↦ (1 - w) / ((z - i) - (z + i) w)` vanishes nowhere on the
+spectrum of `U`.
 If both `i` and `-i` are resolvent points, the Cayley transform is surjective. A bounded operator
 intertwines two partial linear maps having `-i` as a resolvent point exactly when it intertwines
 their Cayley transforms.
@@ -43,6 +45,9 @@ The isometry and unitarity of the Cayley transform of a symmetric or self-adjoin
 * `LinearPMap.cayley_apply_eq_self_iff`: `1` is not an eigenvalue of `U`.
 * `LinearPMap.mem_spectrum_cayley_iff`: for `z ≠ 1`, `z ∈ σ(U)` exactly when
   `i (1 + z) / (1 - z) ∈ σ(A)`.
+* `LinearPMap.sub_I_sub_add_I_mul_ne_zero_of_mem_spectrum_cayley`,
+  `LinearPMap.continuousOn_one_sub_div_sub_I_sub_add_I_mul`: at a resolvent point `z`, the symbol
+  `w ↦ (1 - w) / ((z - i) - (z + i) w)` has no pole on the spectrum of `U`.
 * `LinearPMap.cayley_surjective`: `U` is surjective when `±i` are resolvent points.
 * `LinearPMap.intertwines_iff_comp_cayley_eq`: `X A ⊆ B X` exactly when `X U_A = U_B X`.
 
@@ -137,6 +142,29 @@ theorem mem_spectrum_cayley_iff (h : -I ∈ A.resolventSet) {z : ℂ} (hz : z �
   rw [← hinv]
   simpa [LinearPMap.mem_spectrum_iff] using
     (TauCeti.LinearPMap.notMem_spectrum_resolvent_iff h hw).not
+
+/-- At a resolvent point `z`, the denominator `(z - i) - (z + i) w` of the resolvent symbol of the
+Cayley transform does not vanish on its spectrum: at `w = 1` it is `-2i`, and otherwise its
+vanishing would make `z = i (1 + w) / (1 - w)` a point of the spectrum of `A`. -/
+theorem sub_I_sub_add_I_mul_ne_zero_of_mem_spectrum_cayley (h : -I ∈ A.resolventSet) {z w : ℂ}
+    (hz : z ∈ A.resolventSet) (hw : w ∈ _root_.spectrum ℂ A.cayley) :
+    z - I - (z + I) * w ≠ 0 := by
+  intro h0
+  by_cases h1 : w = 1
+  · have h2 : (2 : ℂ) * I = 0 := by linear_combination -h0 - (z + I) * h1
+    simp at h2
+  · refine (A.mem_spectrum_iff z).mp ?_ hz
+    convert (mem_spectrum_cayley_iff h h1).mp hw using 1
+    rw [eq_div_iff (sub_ne_zero.mpr (Ne.symm h1))]
+    linear_combination h0
+
+/-- At a resolvent point `z`, the resolvent symbol `w ↦ (1 - w) / ((z - i) - (z + i) w)` is
+continuous on the spectrum of the Cayley transform. -/
+theorem continuousOn_one_sub_div_sub_I_sub_add_I_mul (h : -I ∈ A.resolventSet) {z : ℂ}
+    (hz : z ∈ A.resolventSet) :
+    ContinuousOn (fun w => (1 - w) / (z - I - (z + I) * w)) (_root_.spectrum ℂ A.cayley) :=
+  ContinuousOn.div (by fun_prop) (by fun_prop) fun _ hw =>
+    sub_I_sub_add_I_mul_ne_zero_of_mem_spectrum_cayley h hz hw
 
 /-- The Cayley transform is surjective when both `i` and `-i` are resolvent points. -/
 theorem cayley_surjective (hp : I ∈ A.resolventSet) (hm : -I ∈ A.resolventSet) :

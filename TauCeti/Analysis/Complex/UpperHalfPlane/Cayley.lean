@@ -51,6 +51,8 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 * `TauCeti.logDeriv_deriv_I_mul_one_add_div_one_sub`: its pre-Schwarzian.
 * `TauCeti.cayley_simple_fraction`: transport of a real-boundary simple fraction.
 * `TauCeti.I_mul_one_add_sub_I_div_add_I_div_one_sub`: the inverse identity.
+* `TauCeti.re_I_mul_one_add_div_one_sub_mul_norm_one_sub_sq`: the real part of the inverse
+  transform, `re (i (1 + w) / (1 - w)) ‖1 - w‖² = -2 im w`.
 * `TauCeti.boundaryCayley`: the boundary Cayley map from `ℝ` to `Circle`.
 * `TauCeti.tendsto_sub_I_div_add_I_cobounded`: the transform tends to `1` at infinity.
 * `TauCeti.tendsto_I_mul_one_add_div_one_sub_nhdsNE_one`: its inverse tends to infinity at `1`,
@@ -163,6 +165,19 @@ private theorem sub_I_div_add_I_inverse {w : ℂ} (hw : w ≠ 1) :
 /-- The inverse Cayley transform takes the Cayley image of a point back to that point. -/
 theorem I_mul_one_add_sub_I_div_add_I_div_one_sub {z : ℂ} (hz : z + I ≠ 0) :
     I * (1 + (z - I) / (z + I)) / (1 - (z - I) / (z + I)) = z := by
+  field_simp
+  ring
+
+/-- The real part of the inverse Cayley transform `i (1 + w) / (1 - w)`, weighted by
+`‖1 - w‖²`, is `-2 im w`: the identity `re (i (1 + w) / (1 - w)) ‖1 - w‖² = -2 im w`. At the pole
+`w = 1` both sides vanish, by the convention `x / 0 = 0`. -/
+theorem re_I_mul_one_add_div_one_sub_mul_norm_one_sub_sq (w : ℂ) :
+    (I * (1 + w) / (1 - w)).re * ‖1 - w‖ ^ 2 = -2 * w.im := by
+  rcases eq_or_ne w 1 with rfl | h1
+  · simp
+  have hn0 : normSq (1 - w) ≠ 0 := normSq_eq_zero.not.mpr (sub_ne_zero.mpr h1.symm)
+  rw [Complex.sq_norm, div_re]
+  simp only [mul_re, mul_im, I_re, I_im, add_re, add_im, one_re, one_im, sub_re, sub_im]
   field_simp
   ring
 
