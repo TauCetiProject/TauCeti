@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Polar.Smooth
 public import TauCeti.Analysis.Pseudodifferential.Elliptic
+public import TauCeti.Analysis.Pseudodifferential.StrictlyPositive
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
@@ -44,7 +45,9 @@ symbols of degree `m`.
 ## Main declarations
 
 * `TauCeti.HomogeneousSymbol.modulus`: the modulus `|a| = √(a† a)` of an elliptic symbol, a
-  homogeneous symbol of the same degree with strictly positive values at nonzero frequencies.
+  homogeneous symbol of the same degree, strictly positive in the sense of
+  `HomogeneousSymbol.IsStrictlyPositive`
+  (`HomogeneousSymbol.IsElliptic.isStrictlyPositive_modulus`).
 * `TauCeti.HomogeneousSymbol.polarFactor`: its polar factor, of degree `0`, unitary at nonzero
   frequencies and `0` at the zero frequency, with `HomogeneousSymbol.polarFactor_comp_modulus`:
   `a = U ∘ |a|`.
@@ -113,8 +116,13 @@ theorem coefficient_modulus (p : X × E) :
 
 /-- At a nonzero frequency, the modulus of an elliptic symbol is strictly positive. -/
 theorem isStrictlyPositive_coefficient_modulus {x : X} {ξ : E} (hξ : ξ ≠ 0) :
-    IsStrictlyPositive ((a.modulus ha).coefficient (x, ξ)) :=
+    _root_.IsStrictlyPositive ((a.modulus ha).coefficient (x, ξ)) :=
   ContinuousLinearMap.isStrictlyPositive_modulus_of_isInvertible (isElliptic_iff.mp ha x ξ hξ)
+
+variable {a} in
+/-- The modulus `|a|` of an elliptic symbol is strictly positive. -/
+theorem IsElliptic.isStrictlyPositive_modulus : (a.modulus ha).IsStrictlyPositive :=
+  isStrictlyPositive_iff.mpr fun _ _ hξ ↦ a.isStrictlyPositive_coefficient_modulus ha hξ
 
 /-- The modulus of an elliptic symbol is elliptic. -/
 theorem isElliptic_modulus : (a.modulus ha).IsElliptic := isElliptic_iff.mpr fun _ _ hξ ↦
@@ -244,14 +252,12 @@ theorem isElliptic_lineMap_normalize {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) :
   refine isElliptic_iff.mpr fun x ξ hξ ↦ ?_
   set U := (a.coefficient (x, ξ)).polarFactor
   set P := (a.coefficient (x, ξ)).modulus
-  have hP : IsStrictlyPositive P := a.isStrictlyPositive_coefficient_modulus ha hξ
-  have hc : 0 < ‖ξ‖ ^ m := Real.rpow_pos_of_pos (norm_pos_iff.mpr hξ) m
   -- The positive factor `(1 - s) |a| + s ‖ξ‖ ^ m` is strictly positive.
-  have hQ : IsStrictlyPositive ((1 - s) • P + (s * ‖ξ‖ ^ m) • (1 : V →L[ℂ] V)) := by
-    rcases hs.2.lt_or_eq with hs1 | rfl
-    · exact IsStrictlyPositive.add_nonneg (hP.smul (sub_pos.mpr hs1))
-        (smul_nonneg (mul_nonneg hs.1 hc.le) zero_le_one)
-    · simpa using isStrictlyPositive_one.smul hc
+  have hQ : _root_.IsStrictlyPositive ((1 - s) • P + (s * ‖ξ‖ ^ m) • (1 : V →L[ℂ] V)) := by
+    simpa [AffineMap.lineMap_apply_module, coefficient_normRpow_of_ne_zero _ _ _ hξ,
+      ← ContinuousLinearMap.one_def, smul_smul, P] using
+      isStrictlyPositive_iff.mp
+        (ha.isStrictlyPositive_modulus.lineMap (isStrictlyPositive_normRpow X V m) hs) x ξ hξ
   have hdecomp : (AffineMap.lineMap a (a.normalize ha) s).coefficient (x, ξ) =
       U ∘L ((1 - s) • P + (s * ‖ξ‖ ^ m) • (1 : V →L[ℂ] V)) := by
     ext v
