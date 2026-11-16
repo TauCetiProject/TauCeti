@@ -26,7 +26,7 @@ hypotheses on random vectors are usually stated, together with the special case 
 form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function. Likewise the weighted
 squared norm `V² ‖g‖²` of a square-integrable `g` against an essentially bounded weight `V` is
 integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`), and the `L²` seminorm of `V • g` is
-the square root of `∫⁻ V² ‖g‖²` (`MeasureTheory.eLpNorm_two_smul_eq_lintegral_ofReal_rpow`), so a
+the square root of `∫⁻ V² ‖g‖²` (`TauCeti.eLpNorm_two_smul_eq_lintegral_ofReal_rpow`), so a
 bound `∫⁻ V² ‖g‖² ≤ K ∫ ‖g‖²` gives `‖V • g‖₂ ≤ √K ‖g‖₂`
 (`MeasureTheory.MemLp.eLpNorm_two_smul_le_of_lintegral_le`).
 For counting measure, singleton-supported vectors separate L² functions and determine
@@ -100,8 +100,9 @@ theorem MemLp.integrable_sq_mul_norm_sq {F : Type*} [NormedAddCommGroup F] {g : 
 
 /-- The `L²` seminorm of `V • g` for a real weight `V` is the square root of
 `∫⁻ V² ‖g‖²`. -/
-theorem eLpNorm_two_smul_eq_lintegral_ofReal_rpow {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {V : α → ℝ} {g : α → F} (hVg : AEStronglyMeasurable (fun x ↦ V x • g x) μ) :
+theorem _root_.TauCeti.eLpNorm_two_smul_eq_lintegral_ofReal_rpow {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {V : α → ℝ} {g : α → F}
+    (hVg : AEStronglyMeasurable (fun x ↦ V x • g x) μ) :
     eLpNorm (fun x ↦ V x • g x) 2 μ =
       (∫⁻ x, ENNReal.ofReal (V x ^ 2 * ‖g x‖ ^ 2) ∂μ) ^ (1 / 2 : ℝ) := by
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hVg,
@@ -118,7 +119,7 @@ theorem MemLp.eLpNorm_two_smul_le_of_lintegral_le {F : Type*} [NormedAddCommGrou
     (hVg : AEStronglyMeasurable (fun x ↦ V x • g x) μ) {K : ℝ} (hK : 0 ≤ K)
     (h : ∫⁻ x, ENNReal.ofReal (V x ^ 2 * ‖g x‖ ^ 2) ∂μ ≤ ENNReal.ofReal (K * ∫ x, ‖g x‖ ^ 2 ∂μ)) :
     eLpNorm (fun x ↦ V x • g x) 2 μ ≤ ENNReal.ofReal √K * eLpNorm g 2 μ := by
-  rw [eLpNorm_two_smul_eq_lintegral_ofReal_rpow hVg]
+  rw [TauCeti.eLpNorm_two_smul_eq_lintegral_ofReal_rpow hVg]
   refine (ENNReal.rpow_le_rpow h (by norm_num)).trans_eq ?_
   rw [hg.eLpNorm_two_eq_ofReal_sqrt_integral,
     ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num), ← Real.sqrt_eq_rpow,
