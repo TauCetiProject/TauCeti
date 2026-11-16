@@ -847,11 +847,7 @@ theorem fderiv_triangleBaseOrbitParameter_apply_eq
     fderiv ℝ triangleBaseOrbitParameter (γ s) (ξ s) =
       fderiv ℝ triangleBaseOrbitParameter (γ r) (ξ r) := by
   obtain ⟨hu, hv⟩ := isIntegralCurve_triangleBasePotential_iff.1 hγ
-  -- The coordinates of `γ` solve `x' = C x (1 - x²)`, and those of `ξ` the scalar linearized
-  -- equations along them.
-  have hx {x : ℝ → ℝ} (hx : IsIntegralCurve x (fun _ t ↦ -∇ (intervalBasePotential C) t)) (s : ℝ) :
-      HasDerivAt x (C * x s * (1 - x s ^ 2)) s :=
-    (hx s).congr_deriv (by simp only [gradient_intervalBasePotential]; ring)
+  -- The coordinates of `ξ` solve the scalar linearized equations along those of `γ`.
   have hw₁ (s : ℝ) :
       HasDerivAt (fun s ↦ (ξ s).fst) (-(C * (3 * (γ s).fst ^ 2 - 1) * (ξ s).fst)) s := by
     refine ((WithLp.fstL 2 ℝ ℝ ℝ).hasFDerivAt.comp_hasDerivAt s (hξ s)).congr_deriv ?_
@@ -862,8 +858,10 @@ theorem fderiv_triangleBaseOrbitParameter_apply_eq
     simp
   rw [fderiv_triangleBaseOrbitParameter_apply (hγI s).1 (hγI s).2,
     fderiv_triangleBaseOrbitParameter_apply (hγI r).1 (hγI r).2,
-    mul_one_sub_sq_inv_mul_eq (hx hu) (fun s ↦ (hγI s).1) hw₁ s r,
-    mul_one_sub_sq_inv_mul_eq (hx hv) (fun s ↦ (hγI s).2) hw₂ s r]
+    mul_one_sub_sq_inv_mul_eq (hasDerivAt_of_isIntegralCurve_intervalBasePotential hu)
+      (fun s ↦ (hγI s).1) hw₁ s r,
+    mul_one_sub_sq_inv_mul_eq (hasDerivAt_of_isIntegralCurve_intervalBasePotential hv)
+      (fun s ↦ (hγI s).2) hw₂ s r]
 
 /-- **The positive normal kernel ray of the diagonal.** For `C > 0`, let `γ` be a trajectory of
 the triangle base from the source `(0, 0)` to the sink `(1, 1)` along the diagonal `u = v`. Every

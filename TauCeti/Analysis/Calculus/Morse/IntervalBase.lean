@@ -697,7 +697,7 @@ theorem intervalBaseFlow_eq_intervalBaseOrbit (C s : ℝ) {t : ℝ} (ht : t ∈ 
 /-! ### Trajectories with prescribed limits -/
 
 /-- A negative gradient trajectory of the base potential solves `γ' = C γ (1 - γ²)`. -/
-private theorem hasDerivAt_of_isIntegralCurve_intervalBasePotential {γ : ℝ → ℝ}
+theorem hasDerivAt_of_isIntegralCurve_intervalBasePotential {γ : ℝ → ℝ}
     (hγ : IsIntegralCurve γ (fun _ t ↦ -∇ (intervalBasePotential C) t)) (s : ℝ) :
     HasDerivAt γ (C * γ s * (1 - γ s ^ 2)) s :=
   (hγ s).congr_deriv (by simp only [gradient_intervalBasePotential]; ring)
