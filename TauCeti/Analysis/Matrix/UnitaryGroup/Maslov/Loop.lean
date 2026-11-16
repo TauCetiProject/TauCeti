@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Lagrangian
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Path
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Orthogonal.Unitary
 
 /-!
 # The Maslov index of paths of unitary frames and of loops of Lagrangian subspaces
@@ -43,9 +44,10 @@ read off the same loop `t ↦ det (γ t γ tᵀ)` of the circle:
   endpoints, the relative Maslov index of their paths of Lagrangians is the difference of their
   Souriau indices (`Matrix.UnitaryGroup.relativeMaslovIndex_realImagePath`): the angle terms
   differ by the degree of the loop of quotients, and the spectral terms cancel.
-* **Every loop of maximal totally real subspaces.** Every loop of maximal totally real subspaces
-  of `ℂⁿ` has the native Maslov index of Souriau's index of some path of unitary frames whose
-  Souriau maps close up (`TauCeti.TotallyRealLoop.exists_maslovIndex_eq_maslovIndex_path`). This
+* **Every loop of maximal totally real subspaces.** The native Maslov index of every loop of
+  maximal totally real subspaces of `ℂⁿ` equals Souriau's index of some path `γ : Path U V` of
+  unitary frames with `U Uᵀ = V Vᵀ`, whose loop of Lagrangians `t ↦ γ t ℝⁿ` has the same native
+  Maslov index (`TauCeti.TotallyRealLoop.exists_maslovIndex_eq_unitaryGroup_maslovIndex`). This
   combines the loop comparison with the deformation of a totally real loop to a Lagrangian one,
   `TauCeti.TotallyRealLoop.exists_unitary_maslovIndex_eq`.
 
@@ -63,8 +65,9 @@ the determinant of a frame.
   the loop `t ↦ γ t ℝⁿ` of Lagrangians framed by a path `γ` of unitary frames.
 * `Matrix.UnitaryGroup.maslovIndex_realImageLoop`: the loop comparison.
 * `Matrix.UnitaryGroup.relativeMaslovIndex_realImagePath`: the path comparison.
-* `TauCeti.TotallyRealLoop.exists_maslovIndex_eq_maslovIndex_path`: every loop of maximal totally
-  real subspaces of `ℂⁿ`.
+* `TauCeti.TotallyRealLoop.exists_maslovIndex_eq_unitaryGroup_maslovIndex`: the native Maslov
+  index of every loop of maximal totally real subspaces of `ℂⁿ` equals Souriau's index of some
+  path `γ : Path U V` of unitary frames with `U Uᵀ = V Vᵀ`.
 
 ## References
 
@@ -86,29 +89,6 @@ namespace Matrix.UnitaryGroup
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- A unitary matrix `O` with `O Oᵀ = 1` is real: it is the complex image of the real matrix of
-its real parts, which is orthogonal. -/
-theorem exists_mem_orthogonalGroup_eq_map_ofReal {O : unitaryGroup n ℂ}
-    (hO : (O : Matrix n n ℂ) * (O : Matrix n n ℂ)ᵀ = 1) :
-    ∃ N ∈ orthogonalGroup n ℝ, (O : Matrix n n ℂ) = N.map ((↑) : ℝ → ℂ) := by
-  -- `Oᵀ` and `Oᴴ` are both inverses of `O`, so they agree, and the entries of `O` are real.
-  have hT : (O : Matrix n n ℂ)ᵀ = (O : Matrix n n ℂ)ᴴ := by
-    rw [← star_eq_conjTranspose, ← Matrix.one_mul (O : Matrix n n ℂ)ᵀ,
-      ← Unitary.star_mul_self_of_mem O.2, Matrix.mul_assoc, hO, Matrix.mul_one]
-  have hreal (i j : n) : ((O : Matrix n n ℂ) i j).im = 0 := by
-    have h := congrFun (congrFun hT j) i
-    rw [transpose_apply, conjTranspose_apply, RCLike.star_def] at h
-    exact Complex.conj_eq_iff_im.1 h.symm
-  set N := (O : Matrix n n ℂ).map Complex.re
-  have hmap : N.map ((↑) : ℝ → ℂ) = O := by
-    ext i j
-    exact Complex.ext rfl (by simp [N, hreal i j])
-  refine ⟨N, ?_, hmap.symm⟩
-  have h : (N * Nᵀ).map ((↑) : ℝ → ℂ) = (1 : Matrix n n ℝ).map ((↑) : ℝ → ℂ) := by
-    rw [Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one, ← hO, ← hmap, ← transpose_map]
-    exact map_mul Complex.ofRealHom.mapMatrix N Nᵀ
-  exact (mem_orthogonalGroup_iff _ _).2 (Matrix.map_injective Complex.ofReal_injective h)
-
 /-- **Unitary frames of the same Lagrangian are the frames with the same Souriau map.** For
 unitary `U` and `V`, the Lagrangians `U ℝⁿ` and `V ℝⁿ` agree exactly when `U Uᵀ = V Vᵀ`. -/
 theorem realImage_eq_realImage_iff_souriau_eq {U V : unitaryGroup n ℂ} :
@@ -121,12 +101,8 @@ theorem realImage_eq_realImage_iff_souriau_eq {U V : unitaryGroup n ℂ} :
         Matrix.map_one _ Complex.zero_re Complex.one_re]
     obtain ⟨N, hN, hVN⟩ := exists_mem_orthogonalGroup_eq_mul_map_ofReal
       (M := Unitary.toUnits U) (M' := Unitary.toUnits V) h (hgram U) (hgram V)
-    have hNT : N.map ((↑) : ℝ → ℂ) * (N.map ((↑) : ℝ → ℂ))ᵀ = 1 := by
-      rw [← transpose_map]
-      exact (map_mul Complex.ofRealHom.mapMatrix _ _).symm.trans
-        ((congrArg _ ((mem_orthogonalGroup_iff _ _).1 hN)).trans (map_one _))
     rw [show V = U * ⟨_, map_ofReal_mem_unitaryGroup hN⟩ from Subtype.ext hVN,
-      souriau_mul_of_mul_transpose_eq_one U _ hNT]
+      souriau_mul_of_mul_transpose_eq_one U _ (map_ofReal_mul_transpose_eq_one hN)]
   · -- If `U Uᵀ = V Vᵀ`, then `V⁻¹ U` is a real orthogonal matrix.
     intro h
     have hs : souriau (V⁻¹ * U) = 1 := by
@@ -136,9 +112,19 @@ theorem realImage_eq_realImage_iff_souriau_eq {U V : unitaryGroup n ℂ} :
     have hO : ((V⁻¹ * U : unitaryGroup n ℂ) : Matrix n n ℂ) *
         ((V⁻¹ * U : unitaryGroup n ℂ) : Matrix n n ℂ)ᵀ = 1 := by
       simpa only [coe_souriau, OneMemClass.coe_one] using congrArg Subtype.val hs
-    obtain ⟨N, hN, hON⟩ := exists_mem_orthogonalGroup_eq_map_ofReal hO
+    -- A unitary matrix with `O Oᵀ = 1` lies in `O(n, ℂ) ∩ U(n) = O(n)`.
+    have hOU : (unitarySubgroupUnitsEquiv.symm (V⁻¹ * U) : GL n ℂ) ∈
+        TauCeti.GLOrthogonal n ℂ ⊓ unitarySubgroup (GL n ℂ) :=
+      ⟨TauCeti.GLOrthogonal.mem_iff'.2 hO, (unitarySubgroupUnitsEquiv.symm (V⁻¹ * U)).2⟩
+    rw [TauCeti.GLOrthogonal.inf_unitarySubgroup_eq_map_real] at hOU
+    obtain ⟨B, hB, hBO⟩ := hOU
+    have hN := TauCeti.GLOrthogonal.mem_iff_mem_orthogonalGroup.1 hB
+    set N := (B : Matrix n n ℝ)
+    have hON : N.map ((↑) : ℝ → ℂ) = ((V⁻¹ * U : unitaryGroup n ℂ) : Matrix n n ℂ) := by
+      ext i j
+      simpa [N] using congrArg (fun A : GL n ℂ ↦ (A : Matrix n n ℂ) i j) hBO
     have hU : (U : Matrix n n ℂ) = V * N.map ((↑) : ℝ → ℂ) := by
-      rw [← hON, ← Submonoid.coe_mul, mul_inv_cancel_left]
+      rw [hON, ← Submonoid.coe_mul, mul_inv_cancel_left]
     rw [hU, realImage_mul_map_ofReal _ ((isUnit_iff_isUnit_det _).2
       (isUnit_det_of_right_inverse ((mem_orthogonalGroup_iff _ _).1 hN)))]
 
@@ -251,16 +237,15 @@ theorem relativeMaslovIndex_realImagePath {U V U' V' : unitaryGroup n ℂ} (γ :
   have hdeg : Circle.angleChange (detSouriauPath γ) - Circle.angleChange (detSouriauPath δ) =
       Circle.degree ρ * (2 * Real.pi) := by
     rw [← Circle.angleChange_eq_degree_mul,
-      Circle.angleChange_congr ρ ((detSouriauPath γ).mul (detSouriauPath δ).inv) fun _ ↦ rfl,
+      Circle.angleChange_congr ρ ((detSouriauPath γ).mul (detSouriauPath δ).inv)
+        fun t ↦ congrFun (Path.cast_coe _ _ _) t,
       Circle.angleChange_mul, Circle.angleChange_inv, sub_eq_add_neg]
-  have hU : spectralAngleSum (souriau U : Matrix n n ℂ) =
-      spectralAngleSum (souriau U' : Matrix n n ℂ) := by
-    rw [hs₀]
-  have hV : spectralAngleSum (souriau V : Matrix n n ℂ) =
-      spectralAngleSum (souriau V' : Matrix n n ℂ) := by
-    rw [hs₁]
+  -- `simp only` rewrites the spectral terms without touching the endpoints of the determinant
+  -- paths, which depend on `souriau U` and `souriau V`.
   rw [TauCeti.TotallyRealPath.relativeMaslovIndex_eq_degree _ _ h₀ h₁ ρ hρ, maslovIndex_def,
-    maslovIndex_def, hU, hV, (eq_div_iff (by positivity : (2 * Real.pi) ≠ 0)).2 hdeg.symm]
+    maslovIndex_def]
+  simp only [hs₀, hs₁]
+  rw [(eq_div_iff (by positivity : (2 * Real.pi) ≠ 0)).2 hdeg.symm]
   ring
 
 end Matrix.UnitaryGroup
@@ -271,20 +256,24 @@ open Matrix Matrix.UnitaryGroup
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- **Every loop of maximal totally real subspaces of `ℂⁿ` has a Souriau index.** Its native Maslov
-index is Souriau's index of a path of unitary frames whose Souriau maps close up. -/
-theorem exists_maslovIndex_eq_maslovIndex_path (Λ : TotallyRealLoop (EuclideanSpace ℂ n)) :
-    ∃ (U V : unitaryGroup n ℂ) (γ : Path U V), souriau U = souriau V ∧
-      (Λ.maslovIndex : ℝ) = Matrix.UnitaryGroup.maslovIndex γ := by
+/-- **Every loop of maximal totally real subspaces of `ℂⁿ` has a Souriau index.** There is a
+path `γ` of unitary frames whose Souriau maps close up such that the loop of Lagrangians
+`t ↦ γ t ℝⁿ` has the native Maslov index of `Λ`, and that index is Souriau's index of `γ`.
+The proof takes for `γ` the unitary frames of the Lagrangian loop to which `Λ` deforms
+(`TauCeti.TotallyRealLoop.exists_unitary_maslovIndex_eq`). -/
+theorem exists_maslovIndex_eq_unitaryGroup_maslovIndex
+    (Λ : TotallyRealLoop (EuclideanSpace ℂ n)) :
+    ∃ (U V : unitaryGroup n ℂ) (γ : Path U V) (h : souriau U = souriau V),
+      (realImageLoop γ h).maslovIndex = Λ.maslovIndex ∧
+        (Λ.maslovIndex : ℝ) = Matrix.UnitaryGroup.maslovIndex γ := by
   -- Deform `Λ` to a loop of Lagrangians `t ↦ W t ℝⁿ` with unitary frames `W`.
   obtain ⟨W, hW, Λ', hΛ', hμ⟩ := Λ.exists_unitary_maslovIndex_eq
   let γ : Path (W 0) (W 1) := ⟨⟨W, hW⟩, rfl, rfl⟩
   have h : souriau (W 0) = souriau (W 1) := by
     rw [← realImage_eq_realImage_iff_souriau_eq, ← hΛ', ← hΛ']
     exact Λ'.toFun_zero_eq_toFun_one
-  refine ⟨W 0, W 1, γ, h, ?_⟩
-  rw [← hμ, ← maslovIndex_realImageLoop γ h]
-  congr 2
-  exact ext fun t ↦ (hΛ' t).trans (realImageLoop_apply γ h t).symm
+  have hΛγ : Λ' = realImageLoop γ h := ext fun t ↦ (hΛ' t).trans (realImageLoop_apply γ h t).symm
+  refine ⟨W 0, W 1, γ, h, hΛγ ▸ hμ, ?_⟩
+  rw [← hμ, ← maslovIndex_realImageLoop γ h, hΛγ]
 
 end TauCeti.TotallyRealLoop
