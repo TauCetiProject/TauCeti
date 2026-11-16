@@ -55,7 +55,9 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 * `ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm`: a smooth map which agrees outside a
   ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
 * `ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear`: the Leibniz bound for
-  `x ↦ B (f x) (g x)` when the derivatives of `f` and `g` have uniform bounds.
+  `x ↦ B (f x) (g x)` when the derivatives of `f` and `g` have uniform bounds;
+  `norm_iteratedFDeriv_mul_le_of_tsupport_subset` is the version for a product `f g` where `f` is
+  only controlled near the support of `g`.
 * `ContDiff.norm_iteratedFDeriv_comp_const_smul_le`: rescaling the variable by `c` with
   `1 ≤ ‖c‖` multiplies uniform derivative bounds of order at most `N` by at most `‖c‖ ^ N`.
 * `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear`: along any filter, if the derivatives of
@@ -261,6 +263,40 @@ theorem ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear
         rw [← Finset.sum_mul, ← Finset.sum_mul]
         push_cast [← Nat.cast_sum, Nat.sum_range_choose]
         ring
+
+/-- **Leibniz bound with uniform constants on a support.** Let `g` be `C^N` with topological
+support in `K`, and let `f` be `C^N` on an open set `W ⊇ K`. If the derivatives of order at most
+`n ≤ N` of `f` are bounded by `C ≥ 0` on `K` and those of `g` by `D` everywhere, then those of
+`f g` are bounded by `2 ^ n * C * D` everywhere; the values of `f` outside `W` do not matter. -/
+theorem norm_iteratedFDeriv_mul_le_of_tsupport_subset {A : Type*} [NormedRing A]
+    [NormedAlgebra 𝕜 A] {f g : E → A} {K W : Set E} (hW : IsOpen W) (hKW : K ⊆ W) {N : WithTop ℕ∞}
+    (hf : ContDiffOn 𝕜 N f W) (hg : ContDiff 𝕜 N g) (hgK : tsupport g ⊆ K) {n : ℕ}
+    (hn : n ≤ N) {C D : ℝ} (hC0 : 0 ≤ C)
+    (hfC : ∀ i ≤ n, ∀ y ∈ K, ‖iteratedFDeriv 𝕜 i f y‖ ≤ C)
+    (hgD : ∀ i ≤ n, ∀ y, ‖iteratedFDeriv 𝕜 i g y‖ ≤ D) (y : E) :
+    ‖iteratedFDeriv 𝕜 n (fun z ↦ f z * g z) y‖ ≤ 2 ^ n * C * D := by
+  by_cases hy : y ∈ tsupport g
+  · have hyW := hKW (hgK hy)
+    have h := norm_iteratedFDerivWithin_mul_le hf hg.contDiffOn hW.uniqueDiffOn hyW hn
+    simp_rw [iteratedFDerivWithin_of_isOpen _ hW hyW] at h
+    refine h.trans ?_
+    calc ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * ‖iteratedFDeriv 𝕜 i f y‖ *
+          ‖iteratedFDeriv 𝕜 (n - i) g y‖
+        ≤ ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * C * D := by
+          gcongr with i hi
+          · exact hfC i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)) y (hgK hy)
+          · exact hgD _ (Nat.sub_le n i) y
+      _ = 2 ^ n * C * D := by
+          rw [← Finset.sum_mul, ← Finset.sum_mul]
+          congr 2
+          exact_mod_cast Nat.sum_range_choose n
+  · have h0 : (fun z ↦ f z * g z) =ᶠ[nhds y] 0 := by
+      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hy] with z hz
+      simp [hz]
+    rw [(h0.iteratedFDeriv (𝕜 := 𝕜) n).self_of_nhds, iteratedFDeriv_zero, Pi.zero_apply,
+      norm_zero]
+    have hD0 : 0 ≤ D := (norm_nonneg _).trans (hgD 0 (Nat.zero_le _) y)
+    positivity
 
 /-- Rescaling the variable by `c` with `1 ≤ ‖c‖` multiplies uniform bounds for the derivatives
 of order at most `N` by at most `‖c‖ ^ N`. -/

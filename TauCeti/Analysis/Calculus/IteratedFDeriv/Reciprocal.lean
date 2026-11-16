@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 public import Mathlib.Analysis.Calculus.Deriv.ZPow
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.Analysis.RCLike.Basic
@@ -25,9 +26,9 @@ in `c` is at most `k! / ε^(k+1)` (`TauCeti.norm_iteratedDeriv_const_div_le`,
 of its derivatives of order at least two in `c` vanish
 (`TauCeti.iteratedDeriv_add_two_iteratedDeriv_const_div`).
 
-For a real function `p` of class `C^k` with `ε ≤ p x`, `0 < ε ≤ 1` and `‖D^i p x‖ ≤ C` for
-`1 ≤ i ≤ k`, where `1 ≤ C`, Faà di Bruno's bound (Mathlib's `norm_iteratedFDerivWithin_comp_le`,
-applied on the open set where `p` is positive) gives
+For a real or complex function `p` of class `C^k` with `ε ≤ ‖p x‖`, `0 < ε ≤ 1` and
+`‖D^i p x‖ ≤ C` for `1 ≤ i ≤ k`, where `1 ≤ C`, Faà di Bruno's bound (Mathlib's
+`norm_iteratedFDerivWithin_comp_le`, applied on the open set where `p` does not vanish) gives
 `‖D^k (p⁻¹) x‖ ≤ (k!)^2 C^k / ε^(k+1)` (`TauCeti.norm_iteratedFDeriv_inv_comp_le`).
 
 ## References
@@ -121,34 +122,40 @@ section Reciprocal
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- **Derivative bounds for the reciprocal of a function.** Let `p : E → ℝ` be a function of
-class `C^k`. If `ε ≤ p x` with `0 < ε ≤ 1`, and `‖D^i p x‖ ≤ C` for `1 ≤ i ≤ k` with `1 ≤ C`, then
-`‖D^k (p⁻¹) x‖ ≤ (k!)^2 C^k / ε^(k+1)`. -/
-theorem norm_iteratedFDeriv_inv_comp_le {p : E → ℝ} {k : ℕ} (hp : ContDiff ℝ k p) {x : E}
-    {ε C : ℝ} (hε : 0 < ε) (hε₁ : ε ≤ 1) (hx : ε ≤ p x) (hC : 1 ≤ C)
-    (hD : ∀ i, 1 ≤ i → i ≤ k → ‖iteratedFDeriv ℝ i p x‖ ≤ C) :
+/-- The `k`-th real iterated derivative of `z ↦ z⁻¹` on `𝕜 = ℝ` or `ℂ` has norm `k! / ‖z‖^(k+1)`
+away from `0`: it is the `k`-th complex derivative with the scalars restricted to `ℝ`. -/
+theorem norm_iteratedFDeriv_real_inv {𝕜 : Type*} [RCLike 𝕜] (k : ℕ) {z : 𝕜} (hz : z ≠ 0) :
+    ‖iteratedFDeriv ℝ k (fun y : 𝕜 ↦ y⁻¹) z‖ = k ! / ‖z‖ ^ (k + 1) := by
+  rw [← ContDiffAt.restrictScalars_iteratedFDeriv (𝕜 := ℝ) (contDiffAt_inv 𝕜 hz (n := k)),
+    Function.comp_apply, ContinuousMultilinearMap.norm_restrictScalars, norm_iteratedFDeriv_inv]
+
+/-- **Derivative bounds for the reciprocal of a function.** Let `p : E → 𝕜`, with `𝕜 = ℝ` or `ℂ`,
+be a function of class `C^k`. If `ε ≤ ‖p x‖` with `0 < ε ≤ 1`, and `‖D^i p x‖ ≤ C` for
+`1 ≤ i ≤ k` with `1 ≤ C`, then `‖D^k (p⁻¹) x‖ ≤ (k!)^2 C^k / ε^(k+1)`. -/
+theorem norm_iteratedFDeriv_inv_comp_le {𝕜 : Type*} [RCLike 𝕜] {p : E → 𝕜} {k : ℕ}
+    (hp : ContDiff ℝ k p) {x : E} {ε C : ℝ} (hε : 0 < ε) (hε₁ : ε ≤ 1) (hx : ε ≤ ‖p x‖)
+    (hC : 1 ≤ C) (hD : ∀ i, 1 ≤ i → i ≤ k → ‖iteratedFDeriv ℝ i p x‖ ≤ C) :
     ‖iteratedFDeriv ℝ k (fun y ↦ (p y)⁻¹) x‖ ≤ (k ! : ℝ) ^ 2 * C ^ k / ε ^ (k + 1) := by
-  -- Work on the open set where `p` is positive, which contains `x`.
-  set s : Set E := p ⁻¹' Set.Ioi 0
-  have hsopen : IsOpen s := isOpen_Ioi.preimage hp.continuous
-  have hxs : x ∈ s := lt_of_lt_of_le hε hx
-  have hinv : ContDiffOn ℝ k (fun y : ℝ ↦ y⁻¹) (Set.Ioi 0) :=
-    contDiffOn_id.inv fun y hy ↦ (Set.mem_Ioi.mp hy).ne'
+  -- Work on the open set where `p` does not vanish, which contains `x`.
+  set s : Set E := p ⁻¹' {0}ᶜ
+  have hsopen : IsOpen s := isOpen_compl_singleton.preimage hp.continuous
+  have hpx : 0 < ‖p x‖ := hε.trans_le hx
+  have hxs : x ∈ s := norm_pos_iff.1 hpx
+  have hinv : ContDiffOn ℝ k (fun y : 𝕜 ↦ y⁻¹) {0}ᶜ := contDiffOn_inv ℝ
   have hbound : ∀ i, i ≤ k →
-      ‖iteratedFDerivWithin ℝ i (fun y : ℝ ↦ y⁻¹) (Set.Ioi 0) (p x)‖ ≤
-        (k ! : ℝ) / ε ^ (k + 1) := by
+      ‖iteratedFDerivWithin ℝ i (fun y : 𝕜 ↦ y⁻¹) {0}ᶜ (p x)‖ ≤ (k ! : ℝ) / ε ^ (k + 1) := by
     intro i hi
-    rw [iteratedFDerivWithin_of_isOpen i isOpen_Ioi hxs, norm_iteratedFDeriv_inv,
-      Real.norm_of_nonneg (le_of_lt hxs)]
-    calc (i ! : ℝ) / p x ^ (i + 1) ≤ i ! / ε ^ (i + 1) := by gcongr
+    rw [iteratedFDerivWithin_of_isOpen i isOpen_compl_singleton hxs,
+      norm_iteratedFDeriv_real_inv i hxs]
+    calc (i ! : ℝ) / ‖p x‖ ^ (i + 1) ≤ i ! / ε ^ (i + 1) := by gcongr
       _ ≤ k ! / ε ^ (i + 1) := by gcongr
       _ ≤ k ! / ε ^ (k + 1) := div_le_div_of_nonneg_left (by positivity) (by positivity)
         (pow_le_pow_of_le_one hε.le hε₁ (by omega))
   have hpow : ∀ i, 1 ≤ i → i ≤ k → ‖iteratedFDerivWithin ℝ i p s x‖ ≤ C ^ i := fun i hi₁ hi ↦ by
     rw [iteratedFDerivWithin_of_isOpen i hsopen hxs]
     exact (hD i hi₁ hi).trans (le_self_pow₀ hC (by omega))
-  have h := norm_iteratedFDerivWithin_comp_le hinv hp.contDiffOn le_rfl (uniqueDiffOn_Ioi 0)
-    hsopen.uniqueDiffOn (fun y hy ↦ hy) hxs hbound hpow
+  have h := norm_iteratedFDerivWithin_comp_le hinv hp.contDiffOn le_rfl
+    isOpen_compl_singleton.uniqueDiffOn hsopen.uniqueDiffOn (fun y hy ↦ hy) hxs hbound hpow
   rw [iteratedFDerivWithin_of_isOpen k hsopen hxs] at h
   calc ‖iteratedFDeriv ℝ k (fun y ↦ (p y)⁻¹) x‖ ≤ k ! * (k ! / ε ^ (k + 1)) * C ^ k := h
     _ = (k ! : ℝ) ^ 2 * C ^ k / ε ^ (k + 1) := by ring
