@@ -62,7 +62,9 @@ private theorem measurePreserving_subtype_coe_setOf_forall_mem_Ioc [Fintype d] :
   rw [← setOf_forall_mem_Ioc_eq_pi]
   exact measurePreserving_subtype_coe measurableSet_setOf_forall_mem_Ioc
 
-private theorem measurableEmbedding_coe_measurableEquivPiIoc [Countable d] :
+/-- The map from the torus to the half-open cube `(0, 1]ᵈ`, read in `d → ℝ`, is a measurable
+embedding. -/
+theorem measurableEmbedding_coe_measurableEquivPiIoc [Countable d] :
     MeasurableEmbedding fun x : UnitAddTorus d ↦ ((measurableEquivPiIoc 0 x : _) : d → ℝ) :=
   (MeasurableEmbedding.subtype_coe measurableSet_setOf_forall_mem_Ioc).comp
     (measurableEquivPiIoc 0).measurableEmbedding
@@ -70,8 +72,9 @@ private theorem measurableEmbedding_coe_measurableEquivPiIoc [Countable d] :
 variable [Fintype d]
 
 /-- The map from the torus to the half-open cube `(0, 1]ᵈ`, read in `d → ℝ`, preserves measure
-onto the closed unit cube. -/
-private theorem measurePreserving_coe_measurableEquivPiIoc :
+onto the closed unit cube. The torus carries the product of the Haar probability measures on its
+circle factors, the measure on which Mathlib's `mFourierBasis` is defined. -/
+theorem measurePreserving_coe_measurableEquivPiIoc :
     MeasurePreserving (fun x : UnitAddTorus d ↦ ((measurableEquivPiIoc 0 x : _) : d → ℝ)) volume
       ((volume : Measure (d → ℝ)).restrict (univ.pi fun _ ↦ Icc (0 : ℝ) 1)) := by
   have h := measurePreserving_subtype_coe_setOf_forall_mem_Ioc.comp

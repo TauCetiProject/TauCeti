@@ -8,9 +8,6 @@ module
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Complex.Wirtinger.FlatTorus.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.Calculus.Deriv.Comp
-import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import TauCeti.Analysis.Fourier.Torus.UnitCube
@@ -18,7 +15,6 @@ import TauCeti.Analysis.InnerProductSpace.WeakSolution
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # The inverse of the Cauchy–Riemann operator on a nontrivial flat line over a torus
@@ -126,13 +122,13 @@ theorem setIntegral_conjWirtingerDeriv_mul_conj_eq_neg_setIntegral_mul_conj_wirt
         u (p.1 * ω₁ + p.2 * ω₂) * conj (wirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) := by
   have hcont {g : ℂ → ℂ} (hg : Continuous g) :
       IntegrableOn (fun p : ℝ × ℝ ↦ g (p.1 * ω₁ + p.2 * ω₂)) (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) :=
-    (hg.comp continuous_latticeCoord).continuousOn.integrableOn_compact
+    (hg.comp continuous_ofReal_fst_mul_add_ofReal_snd_mul).continuousOn.integrableOn_compact
       (isCompact_Icc.prod isCompact_Icc)
   have hint₁ := setIntegral_fderiv_mul_conj_add_mul_conj_fderiv_eq_zero (ω₂ := ω₂) hu hφ hχ₁ hu₁
     hφ₁
   have hint₂ := setIntegral_fderiv_mul_conj_add_mul_conj_fderiv_eq_zero (ω₂ := ω₁) hu hφ hχ₂ hu₂
     hφ₂
-  rw [setIntegral_comp_latticeCoord_swap (fun z ↦
+  rw [setIntegral_comp_ofReal_fst_mul_add_ofReal_snd_mul_swap (fun z ↦
     fderiv ℝ u z ω₂ * conj (φ z) + u z * conj (fderiv ℝ φ z ω₂))] at hint₂
   -- The integral of `∂bar u conj φ + u conj ∂φ` is `(2 i D)⁻¹ (ω₂ ∫ F₁ - ω₁ ∫ F₂) = 0`.
   have h := integral_sub
@@ -171,8 +167,9 @@ domain. -/
 private theorem memLp_comp_latticeCoord {g : ℂ → ℂ} (hg : Continuous g) :
     MemLp (fun p : ℝ × ℝ ↦ g (p.1 * ω₁ + p.2 * ω₂)) 2
       ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)) :=
-  (hg.comp continuous_latticeCoord).continuousOn.memLp_restrict_of_subset_isCompact
-    (isCompact_Icc.prod isCompact_Icc) (measurableSet_Icc.prod measurableSet_Icc) subset_rfl 2
+  (hg.comp continuous_ofReal_fst_mul_add_ofReal_snd_mul).continuousOn
+    |>.memLp_restrict_of_subset_isCompact (isCompact_Icc.prod isCompact_Icc)
+      (measurableSet_Icc.prod measurableSet_Icc) subset_rfl 2
 
 /-- The inclusion of the test sections into `L²` of the fundamental domain. -/
 private noncomputable def sectionToLp (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :

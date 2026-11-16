@@ -108,7 +108,7 @@ private theorem hasDerivAt_latticeCoord_snd (s t : ℝ) :
   simpa using ((hasDerivAt_id t).ofReal_comp.mul_const ω₂).const_add ((s : ℂ) * ω₁)
 
 /-- The lattice coordinate map `(s, t) ↦ s ω₁ + t ω₂` is continuous. -/
-theorem continuous_latticeCoord :
+theorem continuous_ofReal_fst_mul_add_ofReal_snd_mul :
     Continuous fun p : ℝ × ℝ ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂ :=
   ((continuous_ofReal.comp continuous_fst).mul continuous_const).add
     ((continuous_ofReal.comp continuous_snd).mul continuous_const)
@@ -127,13 +127,13 @@ private theorem mul_setIntegral_norm_sq_le_snd (hu : ContDiff ℝ 1 u)
   have hFi : Integrable (fun p : ℝ × ℝ ↦ ‖u (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2)
       ((volume.restrict (Icc (0 : ℝ) 1)).prod (volume.restrict (Icc (0 : ℝ) 1))) := by
     rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
-    exact ((hu.continuous.comp continuous_latticeCoord).norm.pow 2).continuousOn
-      |>.integrableOn_compact hR
+    exact ((hu.continuous.comp continuous_ofReal_fst_mul_add_ofReal_snd_mul).norm.pow 2)
+      |>.continuousOn.integrableOn_compact hR
   have hGi : Integrable (fun p : ℝ × ℝ ↦ ‖fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) ω₂‖ ^ 2)
       ((volume.restrict (Icc (0 : ℝ) 1)).prod (volume.restrict (Icc (0 : ℝ) 1))) := by
     rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
-    exact (((hdc.comp continuous_latticeCoord).clm_apply continuous_const).norm.pow 2).continuousOn
-      |>.integrableOn_compact hR
+    exact ((hdc.comp continuous_ofReal_fst_mul_add_ofReal_snd_mul).clm_apply continuous_const)
+      |>.norm.pow 2 |>.continuousOn.integrableOn_compact hR
   rw [Measure.volume_eq_prod, ← Measure.prod_restrict, integral_prod _ hFi, integral_prod _ hGi,
     ← integral_const_mul]
   refine integral_mono (hFi.integral_prod_left.const_mul _) hGi.integral_prod_left fun s ↦ ?_
@@ -159,8 +159,8 @@ private theorem mul_setIntegral_norm_sq_le_snd (hu : ContDiff ℝ 1 u)
 
 /-- Exchanging the two lattice vectors and the two lattice coordinates leaves integrals over the
 fundamental domain unchanged. -/
-theorem setIntegral_comp_latticeCoord_swap {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (F : ℂ → E) :
+theorem setIntegral_comp_ofReal_fst_mul_add_ofReal_snd_mul_swap {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (F : ℂ → E) :
     ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, F (p.1 * ω₂ + p.2 * ω₁) =
       ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, F (p.1 * ω₁ + p.2 * ω₂) := by
   rw [Measure.volume_eq_prod, ← setIntegral_prod_swap]
@@ -174,8 +174,8 @@ private theorem mul_setIntegral_norm_sq_le_fst (hu : ContDiff ℝ 1 u)
         ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖u (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2 ≤
       ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) ω₁‖ ^ 2 := by
   have h := mul_setIntegral_norm_sq_le_snd (ω₁ := ω₂) hu h₁
-  rwa [setIntegral_comp_latticeCoord_swap (fun z ↦ ‖u z‖ ^ 2),
-    setIntegral_comp_latticeCoord_swap (fun z ↦ ‖fderiv ℝ u z ω₁‖ ^ 2)] at h
+  rwa [setIntegral_comp_ofReal_fst_mul_add_ofReal_snd_mul_swap (fun z ↦ ‖u z‖ ^ 2),
+    setIntegral_comp_ofReal_fst_mul_add_ofReal_snd_mul_swap (fun z ↦ ‖fderiv ℝ u z ω₁‖ ^ 2)] at h
 
 end Lines
 
@@ -213,7 +213,8 @@ theorem setIntegral_fderiv_mul_conj_add_mul_conj_fderiv_eq_zero {φ : ℂ → �
     simp
   have hL₁ (t : ℝ) : L (1, t) = L (0, t) + ω₁ := by simp only [hL]; push_cast; ring
   refine setIntegral_rect_eq_zero_of_hasDerivAt_fst
-    ((continuous_fderiv_mul_conj_add_mul_conj_fderiv hu hφ ω₁).comp continuous_latticeCoord)
+    ((continuous_fderiv_mul_conj_add_mul_conj_fderiv hu hφ ω₁).comp
+      continuous_ofReal_fst_mul_add_ofReal_snd_mul)
     (Φ := fun p ↦ u (L p) * conj (φ (L p))) (fun s t ↦ (hu' s t).mul (hφ' s t)) fun t ↦ ?_
   simp only [hL₁, hu₁, hφ₁, map_mul]
   linear_combination (u (L (0, t)) * conj (φ (L (0, t)))) * hconj
@@ -255,9 +256,11 @@ private theorem setIntegral_im_mul_conj_eq_zero (hu : ContDiff ℝ 2 u) (hχ₁ 
       conj (fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) ω₂)).im = 0 := by
   have hint₁ := setIntegral_potential_eq_zero (ω₂ := ω₂) hu hχ₁ h₁ ω₂
   have hint₂ := setIntegral_potential_eq_zero (ω₂ := ω₁) hu hχ₂ h₂ ω₁
-  rw [setIntegral_comp_latticeCoord_swap (fun z ↦ fderiv ℝ u z ω₂ * conj (fderiv ℝ u z ω₁) +
-    u z * conj (fderiv ℝ (fderiv ℝ u) z ω₂ ω₁))] at hint₂
-  have hc : Continuous fun p : ℝ × ℝ ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂ := continuous_latticeCoord
+  rw [setIntegral_comp_ofReal_fst_mul_add_ofReal_snd_mul_swap
+    (fun z ↦ fderiv ℝ u z ω₂ * conj (fderiv ℝ u z ω₁) +
+      u z * conj (fderiv ℝ (fderiv ℝ u) z ω₂ ω₁))] at hint₂
+  have hc : Continuous fun p : ℝ × ℝ ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂ :=
+    continuous_ofReal_fst_mul_add_ofReal_snd_mul
   have hdc : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by norm_num)
   have huc : Continuous u := hu.continuous
   set F₁ : ℂ → ℂ := fun z ↦ fderiv ℝ u z ω₁ * conj (fderiv ℝ u z ω₂) +
@@ -376,7 +379,7 @@ private theorem mul_setIntegral_le_setIntegral_sub (hu : ContDiff ℝ 1 u)
             conj (fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) ω₂)).re) := by
   set L : ℝ × ℝ → ℂ := fun p ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂
   set D := (conj ω₁ * ω₂).im
-  have hLc : Continuous L := continuous_latticeCoord
+  have hLc : Continuous L := continuous_ofReal_fst_mul_add_ofReal_snd_mul
   have hR : IsCompact (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
   have hW₁ := mul_setIntegral_norm_sq_le_fst (ω₂ := ω₂) hu h₁
   have hW₂ := mul_setIntegral_norm_sq_le_snd (ω₁ := ω₁) hu h₂
@@ -451,7 +454,7 @@ private theorem mul_setIntegral_norm_sq_le_of_four_mul_sq_mul_norm_sq_eq (hu : C
   set L : ℝ × ℝ → ℂ := fun p ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂
   have hu1 : ContDiff ℝ 1 u := hu.of_le (by norm_num)
   have hR : IsCompact (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  have hLc : Continuous L := continuous_latticeCoord
+  have hLc : Continuous L := continuous_ofReal_fst_mul_add_ofReal_snd_mul
   have hGc : Continuous fun p ↦ ‖ω₂‖ ^ 2 * ‖fderiv ℝ u (L p) ω₁‖ ^ 2 +
       ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (L p) ω₂‖ ^ 2 -
       2 * (conj ω₁ * ω₂).re * (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).re := by
