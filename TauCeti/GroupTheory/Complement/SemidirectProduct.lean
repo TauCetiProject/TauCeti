@@ -219,7 +219,7 @@ projection on `⊤`. -/
 theorem mulEquivSubgroup_symm_left_eq_leftProjection (g : G) :
     ((SemidirectProduct.mulEquivSubgroup h).symm g).left =
       (isLocalComplement_top_iff.mpr h).leftProjection ⟨g, mem_top g⟩ :=
-  (SemidirectProduct.mulEquivSubgroup_symm_left h g).trans
+  (SemidirectProduct.mulEquivSubgroup_symm_apply_left h g).trans
     ((isLocalComplement_top_iff.mpr h).leftProjection_top ⟨g, mem_top g⟩).symm
 
 /-- The right component of `(SemidirectProduct.mulEquivSubgroup h).symm` is the local right
@@ -227,14 +227,15 @@ projection on `⊤`. -/
 theorem mulEquivSubgroup_symm_right_eq_rightProjection (g : G) :
     ((SemidirectProduct.mulEquivSubgroup h).symm g).right =
       (isLocalComplement_top_iff.mpr h).rightProjection ⟨g, mem_top g⟩ :=
-  (SemidirectProduct.mulEquivSubgroup_symm_right h g).trans
+  (SemidirectProduct.mulEquivSubgroup_symm_apply_right h g).trans
     ((isLocalComplement_top_iff.mpr h).rightProjection_top ⟨g, mem_top g⟩).symm
 
 /-- The right component of `(SemidirectProduct.mulEquivSubgroup h).symm` is given by the quotient
 isomorphism `Subgroup.IsComplement'.QuotientMulEquiv`. -/
 theorem mulEquivSubgroup_symm_right_eq_quotientMulEquiv (g : G) :
     ((SemidirectProduct.mulEquivSubgroup h).symm g).right = h.symm.QuotientMulEquiv g :=
-  (SemidirectProduct.mulEquivSubgroup_symm_right h g).trans (h.equiv_snd_eq_quotientMulEquiv g)
+  (SemidirectProduct.mulEquivSubgroup_symm_apply_right h g).trans
+    (h.equiv_snd_eq_quotientMulEquiv g)
 
 end IsComplement'
 

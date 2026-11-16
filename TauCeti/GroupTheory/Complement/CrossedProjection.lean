@@ -73,7 +73,7 @@ theorem crossedProjection_apply (g : G) : h.crossedProjection g = (h.equiv g).1 
 /-- The left component of `(SemidirectProduct.mulEquivSubgroup h).symm` is `h.crossedProjection`. -/
 theorem mulEquivSubgroup_symm_left_eq_crossedProjection (g : G) :
     ((SemidirectProduct.mulEquivSubgroup h).symm g).left = h.crossedProjection g :=
-  SemidirectProduct.mulEquivSubgroup_symm_left h g
+  SemidirectProduct.mulEquivSubgroup_symm_apply_left h g
 
 omit [N.Normal] in
 /-- The projection of a product of the two factors is its normal component. -/

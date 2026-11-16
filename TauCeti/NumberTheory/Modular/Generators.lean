@@ -126,6 +126,13 @@ theorem coe_S_mul_coe_R_inv_mul_coe_S_inv :
   apply QuotientGroup.eq.mpr
   simp [SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
 
+/-- Projectively, `R` is conjugate to the inverse of `U` by `S`. -/
+theorem coe_S_mul_coe_U_inv_mul_coe_S :
+    (S : PSL(2, ℤ)) * (U : PSL(2, ℤ))⁻¹ * S = R := by
+  rw [R_def, U_def, QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv,
+    _root_.mul_inv_rev, inv_inv, coe_S_inv, ← mul_assoc (S : PSL(2, ℤ)) T S,
+    _root_.Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S]
+
 /-- The projective class of `R` has exact order three. -/
 @[simp]
 theorem orderOf_coe_R : orderOf (R : PSL(2, ℤ)) = 3 := by
