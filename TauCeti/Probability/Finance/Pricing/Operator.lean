@@ -157,73 +157,61 @@ theorem weightedLogSpotPricingOperatorL_apply (v : ParabolicC2HolderSpace α ℝ
 private theorem norm_apply_one_le : ‖apply ℝ ℝ (1 : ℝ)‖ ≤ 1 :=
   opNorm_le_bound _ zero_le_one fun L ↦ by simpa using L.le_opNorm (1 : ℝ)
 
-private theorem norm_apply_one_comp_apply_one_le :
-    ‖(apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ))‖ ≤ 1 := by
+private theorem norm_secondOrder_compHolder₂_le (a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
+    ‖(lsmul ℝ ℝ).compHolder₂ a
+      (HolderSpace.const ((apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ))))‖ ≤ ‖a‖ := by
   have h₂ : ‖apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)‖ ≤ 1 :=
     opNorm_le_bound _ zero_le_one fun L ↦ by simpa using L.le_opNorm (1 : ℝ)
-  exact (opNorm_comp_le _ _).trans
-    ((mul_le_mul norm_apply_one_le h₂ (norm_nonneg _) zero_le_one).trans_eq (one_mul 1))
+  have h11 : ‖(apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ))‖ ≤ 1 :=
+    (opNorm_comp_le _ _).trans
+      ((mul_le_mul norm_apply_one_le h₂ (norm_nonneg _) zero_le_one).trans_eq (one_mul 1))
+  exact (norm_lsmul_compHolder₂_const_le a _).trans (mul_le_of_le_one_right (norm_nonneg a) h11)
 
 /-- Norm bound on `weightedLogSpotFirstOrderCoeff`: `‖B_w‖ ≤ 5 ‖a‖ + ‖r‖`. -/
 theorem norm_weightedLogSpotFirstOrderCoeff_le :
     ‖weightedLogSpotFirstOrderCoeff hα a r‖ ≤ 5 * ‖a‖ + ‖r‖ := by
-  have hA : ‖(lsmul ℝ ℝ).compHolder₂ a
-      (HolderSpace.const ((apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ))))‖ ≤ ‖a‖ :=
-    (norm_lsmul_compHolder₂_const_le a _).trans
-      (mul_le_of_le_one_right (norm_nonneg a) norm_apply_one_comp_apply_one_le)
+  have hA := norm_secondOrder_compHolder₂_le a
   have hB : ‖(lsmul ℝ ℝ).compHolder₂ (r - a) (HolderSpace.const (apply ℝ ℝ (1 : ℝ)))‖ ≤
       ‖r‖ + ‖a‖ :=
     ((norm_lsmul_compHolder₂_const_le (r - a) _).trans
       (mul_le_of_le_one_right (norm_nonneg _) norm_apply_one_le)).trans (norm_sub_le r a)
-  have hℓ := norm_logOneAddExpGrad_le hα
   have hw := norm_weightFirstOrderCoeff_le
     (A := (lsmul ℝ ℝ).compHolder₂ a
       (HolderSpace.const ((apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)))))
     (B := (lsmul ℝ ℝ).compHolder₂ (r - a) (HolderSpace.const (apply ℝ ℝ (1 : ℝ))))
     (ℓ := logOneAddExpGrad hα)
   rw [weightedLogSpotFirstOrderCoeff]
-  nlinarith [norm_nonneg a, norm_nonneg (logOneAddExpGrad hα),
+  nlinarith [norm_logOneAddExpGrad_le hα, norm_nonneg a, norm_nonneg (logOneAddExpGrad hα),
     norm_nonneg ((lsmul ℝ ℝ).compHolder₂ a
       (HolderSpace.const ((apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)))))]
 
 /-- Norm bound on `weightedLogSpotZerothOrderCoeff`: `‖C_w‖ ≤ 3 ‖r‖`. -/
 theorem norm_weightedLogSpotZerothOrderCoeff_le :
     ‖weightedLogSpotZerothOrderCoeff hα r‖ ≤ 3 * ‖r‖ := by
-  have hid : ‖(HolderSpace.const (ContinuousLinearMap.id ℝ ℝ) :
-      HolderSpace α (slab (E := ℝ) t₀ t₁) (ℝ →L[ℝ] ℝ))‖ ≤ 1 :=
-    (HolderSpace.norm_const_le _).trans ContinuousLinearMap.norm_id_le
-  have hsig₀ : ‖HolderSpace.compSlabSpaceL (a := t₀) (b := t₁) (logOneAddExpGrad hα)‖ ≤
-      ‖logOneAddExpGrad hα‖ := by
-    simpa using (HolderSpace.compSlabSpaceL (a := t₀) (b := t₁)).le_of_opNorm_le
-      HolderSpace.norm_compSlabSpaceL_le_one (logOneAddExpGrad hα)
   have hsig : ‖HolderSpace.compSlabSpaceL (a := t₀) (b := t₁) (logOneAddExpGrad hα)‖ ≤ 2 :=
-    hsig₀.trans (norm_logOneAddExpGrad_le hα)
+    ((HolderSpace.compSlabSpaceL (a := t₀) (b := t₁)).le_of_opNorm_le
+      HolderSpace.norm_compSlabSpaceL_le_one _).trans
+      ((one_mul _).trans_le (norm_logOneAddExpGrad_le hα))
   have hsub : ‖HolderSpace.const (ContinuousLinearMap.id ℝ ℝ) -
       HolderSpace.compSlabSpaceL (a := t₀) (b := t₁) (logOneAddExpGrad hα)‖ ≤ 3 :=
-    (norm_sub_le _ _).trans (by linarith)
+    (norm_sub_le _ _).trans (by
+      linarith [(HolderSpace.norm_const_le (α := α) (X := slab (E := ℝ) t₀ t₁)
+        (ContinuousLinearMap.id ℝ ℝ)).trans ContinuousLinearMap.norm_id_le])
   rw [weightedLogSpotZerothOrderCoeff]
   refine (norm_compHolder₂_apply_le _ (-r) _).trans ?_
   rw [norm_neg]
-  have hlsmul : ‖(lsmul ℝ ℝ : ℝ →L[ℝ] (ℝ →L[ℝ] ℝ) →L[ℝ] (ℝ →L[ℝ] ℝ))‖ * ‖r‖ ≤ ‖r‖ :=
-    mul_le_of_le_one_left (norm_nonneg r) opNorm_lsmul_le
-  exact (mul_le_mul hlsmul hsub (norm_nonneg _) (norm_nonneg r)).trans_eq (mul_comm _ _)
+  exact (mul_le_mul (mul_le_of_le_one_left (norm_nonneg r) opNorm_lsmul_le) hsub
+    (norm_nonneg _) (norm_nonneg r)).trans_eq (mul_comm _ _)
 
 /-- **Operator-norm bound for `weightedLogSpotPricingOperatorL`.** -/
 theorem norm_weightedLogSpotPricingOperatorL_le :
     ‖weightedLogSpotPricingOperatorL (ht := ht) hα a r‖ ≤ 1 + 121 * ‖a‖ + 96 * ‖r‖ := by
   rw [weightedLogSpotPricingOperatorL_def]
-  have hA : ‖(lsmul ℝ ℝ).compHolder₂ a
-      (HolderSpace.const ((apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ))))‖ ≤ ‖a‖ :=
-    (norm_lsmul_compHolder₂_const_le a _).trans
-      (mul_le_of_le_one_right (norm_nonneg a) norm_apply_one_comp_apply_one_le)
-  have hB := norm_weightedLogSpotFirstOrderCoeff_le hα a r
-  have hC := norm_weightedLogSpotZerothOrderCoeff_le hα r
-  have hP := norm_backwardParabolicOperatorL_le (ht := ht) hα
-    (A := (lsmul ℝ ℝ).compHolder₂ a
-      (HolderSpace.const ((apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)))))
-    (B := weightedLogSpotFirstOrderCoeff hα a r)
-    (C := weightedLogSpotZerothOrderCoeff hα r)
-  linarith
+  linarith [norm_secondOrder_compHolder₂_le a, norm_weightedLogSpotFirstOrderCoeff_le hα a r,
+    norm_weightedLogSpotZerothOrderCoeff_le hα r, norm_backwardParabolicOperatorL_le (ht := ht) hα
+      (A := (lsmul ℝ ℝ).compHolder₂ a
+        (HolderSpace.const ((apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)))))
+      (B := weightedLogSpotFirstOrderCoeff hα a r) (C := weightedLogSpotZerothOrderCoeff hα r)]
 
 /-- **Lipschitz dependence of `weightedLogSpotPricingOperatorL` on `(a, r)`.** -/
 theorem norm_weightedLogSpotPricingOperatorL_sub_le
@@ -233,34 +221,21 @@ theorem norm_weightedLogSpotPricingOperatorL_sub_le
       121 * ‖a - a'‖ + 96 * ‖r - r'‖ := by
   let c₂ : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) :=
     HolderSpace.const ((apply ℝ ℝ (1 : ℝ)).comp (apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)))
-  have hAsub : (lsmul ℝ ℝ).compHolder₂ a c₂ - (lsmul ℝ ℝ).compHolder₂ a' c₂ =
-      (lsmul ℝ ℝ).compHolder₂ (a - a') c₂ := by
-    ext p H
-    simp [c₂]
-  have hBsub : weightedLogSpotFirstOrderCoeff hα a r - weightedLogSpotFirstOrderCoeff hα a' r' =
-      weightedLogSpotFirstOrderCoeff hα (a - a') (r - r') := by
-    ext p D
-    simp
-    ring
-  have hCsub : weightedLogSpotZerothOrderCoeff hα r - weightedLogSpotZerothOrderCoeff hα r' =
-      weightedLogSpotZerothOrderCoeff hα (r - r') := by
-    refine HolderSpace.ext fun p ↦ ContinuousLinearMap.ext fun v ↦ ?_
-    simp
-    ring
   have hP := norm_backwardParabolicOperatorL_sub_le (ht := ht) hα
     (A := (lsmul ℝ ℝ).compHolder₂ a c₂) (A' := (lsmul ℝ ℝ).compHolder₂ a' c₂)
-    (B := weightedLogSpotFirstOrderCoeff hα a r)
-    (B' := weightedLogSpotFirstOrderCoeff hα a' r')
-    (C := weightedLogSpotZerothOrderCoeff hα r)
-    (C' := weightedLogSpotZerothOrderCoeff hα r')
+    (B := weightedLogSpotFirstOrderCoeff hα a r) (B' := weightedLogSpotFirstOrderCoeff hα a' r')
+    (C := weightedLogSpotZerothOrderCoeff hα r) (C' := weightedLogSpotZerothOrderCoeff hα r')
+  rw [show (lsmul ℝ ℝ).compHolder₂ a c₂ - (lsmul ℝ ℝ).compHolder₂ a' c₂ =
+      (lsmul ℝ ℝ).compHolder₂ (a - a') c₂ by ext p H; simp [c₂],
+    show weightedLogSpotFirstOrderCoeff hα a r - weightedLogSpotFirstOrderCoeff hα a' r' =
+      weightedLogSpotFirstOrderCoeff hα (a - a') (r - r') by ext p D; simp; ring,
+    show weightedLogSpotZerothOrderCoeff hα r - weightedLogSpotZerothOrderCoeff hα r' =
+      weightedLogSpotZerothOrderCoeff hα (r - r') from
+      HolderSpace.ext fun p ↦ ContinuousLinearMap.ext fun v ↦ by simp; ring] at hP
   rw [weightedLogSpotPricingOperatorL_def, weightedLogSpotPricingOperatorL_def]
-  rw [hAsub, hBsub, hCsub] at hP
-  have hA : ‖(lsmul ℝ ℝ).compHolder₂ (a - a') c₂‖ ≤ ‖a - a'‖ :=
-    (norm_lsmul_compHolder₂_const_le (a - a') _).trans
-      (mul_le_of_le_one_right (norm_nonneg _) norm_apply_one_comp_apply_one_le)
-  have hB := norm_weightedLogSpotFirstOrderCoeff_le hα (a - a') (r - r')
-  have hC := norm_weightedLogSpotZerothOrderCoeff_le hα (r - r')
-  linarith
+  linarith [hP, norm_secondOrder_compHolder₂_le (a - a'),
+    norm_weightedLogSpotFirstOrderCoeff_le hα (a - a') (r - r'),
+    norm_weightedLogSpotZerothOrderCoeff_le hα (r - r')]
 
 /-- The bounded weighted operator is the classical backward log-spot pricing operator
 on `(1 + exp y) v`, divided by the weight. Within time derivatives include the endpoints. -/
