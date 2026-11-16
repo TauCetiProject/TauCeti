@@ -41,7 +41,8 @@ gives the closed broken geodesic, a free Moore loop
 approximation of the free loop space by broken geodesics. It sends constant tuples to constant
 loops of length zero, and because the segment of length zero is a strict unit, it is strictly
 compatible with the embedding `ιⁿ : 𝓛ⁿM → 𝓛ⁿ⁺¹M` repeating the first vertex
-(`TauCeti.Manifold.cyclicDistanceCutBrokenGeodesic_repeatFirst`): `geoⁿ⁺¹ ∘ ιⁿ = geoⁿ`.
+(`TauCeti.Manifold.cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirst`):
+`geoⁿ⁺¹ ∘ ιⁿ = geoⁿ`.
 
 ## Main definitions
 
@@ -59,7 +60,8 @@ compatible with the embedding `ιⁿ : 𝓛ⁿM → 𝓛ⁿ⁺¹M` repeating the
 * `TauCeti.Manifold.length_brokenGeodesic`, `TauCeti.Manifold.length_brokenGeodesicLoop`: the
   length of a broken geodesic is the sum of the distances between consecutive vertices.
 * `TauCeti.Manifold.brokenGeodesicLoop_const`: a constant tuple gives the constant loop.
-* `TauCeti.Manifold.cyclicDistanceCutBrokenGeodesic_repeatFirst`: `geoⁿ⁺¹ ∘ ιⁿ = geoⁿ`.
+* `TauCeti.Manifold.cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirst`:
+  `geoⁿ⁺¹ ∘ ιⁿ = geoⁿ`.
 
 ## References
 
@@ -469,7 +471,7 @@ theorem cyclicDistanceCutBrokenGeodesic_apply {n : ℕ} {δ : Fin (n + 1) → �
 /-- **`geoⁿ⁺¹ ∘ ιⁿ = geoⁿ`.** The broken geodesics through a tuple of a distance cut and through
 the tuple obtained by repeating its first vertex (`TauCeti.cyclicDistanceCutRepeatFirst`) are equal
 free Moore loops. -/
-theorem cyclicDistanceCutBrokenGeodesic_repeatFirst {n : ℕ} {δ : Fin (n + 1) → ℝ}
+theorem cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirst {n : ℕ} {δ : Fin (n + 1) → ℝ}
     {δ' : Fin (n + 2) → ℝ} (hδ : ∀ i, δ i < r) (hδ' : ∀ i, δ' i < r) (h₀ : δ 0 ≤ δ' 0)
     (h₁ : 0 ≤ δ' 1) (h : ∀ i : Fin n, δ i.succ ≤ δ' i.succ.succ)
     (q : cyclicDistanceCut (X := M) δ) :
