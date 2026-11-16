@@ -17,6 +17,11 @@ import TauCeti.Topology.Separation.InvFunOn
 
 General lemmas about compact and σ-compact subsets of topological spaces, and limits along
 ultrafilters of families eventually in a compact set.
+
+A continuous injection on a compact set `K` restricts to a closed embedding of `K`
+(`IsCompact.isClosedEmbedding_domRestrict`), so neighbourhoods of a point of `K`
+(`IsCompact.exists_mem_nhds_inter_preimage_subset`) and convergence to a point of `K` of a family
+eventually in `K` (`IsCompact.tendsto_nhds_of_tendsto_comp`) can be read through it.
 -/
 
 public section
@@ -74,6 +79,43 @@ theorem _root_.IsCompact.image_connectedComponentIn {Y : Type*} [TopologicalSpac
     simpa only [hgf (hA hwA)] using hg (mem_image_of_mem _ hv)
   · have hfx : f x ∉ f '' A := fun ⟨w, hwA, hw⟩ => hxA (hinj (hA hwA) hx hw ▸ hwA)
     rw [connectedComponentIn_eq_empty hxA, connectedComponentIn_eq_empty hfx, image_empty]
+
+/-- **A continuous injection on a compact set embeds it.** If `f` is continuous and injective on
+a compact set `K` with values in a Hausdorff space, then its restriction to `K` is a closed
+embedding. -/
+theorem _root_.IsCompact.isClosedEmbedding_domRestrict {Y : Type*} [TopologicalSpace Y] [T2Space Y]
+    {K : Set X} {f : X → Y} (hK : IsCompact K) (hf : ContinuousOn f K) (hinj : InjOn f K) :
+    IsClosedEmbedding (K.domRestrict f) :=
+  have := isCompact_iff_compactSpace.1 hK
+  hf.domRestrict.isClosedEmbedding hinj.injective
+
+/-- **Neighbourhoods in a compact set are read through a continuous injection.** Let `f` be
+continuous and injective on a compact set `K` with values in a Hausdorff space. For `x ∈ K` and a
+neighbourhood `s` of `x`, there is a neighbourhood `t` of `f x` such that every point of `K` that
+`f` maps into `t` lies in `s`. -/
+theorem _root_.IsCompact.exists_mem_nhds_inter_preimage_subset {Y : Type*} [TopologicalSpace Y]
+    [T2Space Y] {K : Set X} {f : X → Y} (hK : IsCompact K) (hf : ContinuousOn f K)
+    (hinj : InjOn f K) {x : X} (hx : x ∈ K) {s : Set X} (hs : s ∈ 𝓝 x) :
+    ∃ t ∈ 𝓝 (f x), K ∩ f ⁻¹' t ⊆ s := by
+  -- Inside `K`, the neighbourhoods of `x` are read through `f`.
+  have hs' := continuous_subtype_val.continuousAt (x := (⟨x, hx⟩ : K)).preimage_mem_nhds hs
+  rw [(hK.isClosedEmbedding_domRestrict hf hinj).isInducing.nhds_eq_comap, mem_comap] at hs'
+  obtain ⟨t, ht, hts⟩ := hs'
+  refine ⟨t, ht, fun p ⟨hpK, hpt⟩ ↦ hts (a := ⟨p, hpK⟩) ?_⟩
+  rwa [mem_preimage, domRestrict_apply]
+
+/-- **Convergence in a compact set is read through a continuous injection.** Let `f` be continuous
+and injective on a compact set `K` with values in a Hausdorff space, and let `g` eventually take
+values in `K`. If `f ∘ g` tends to `f x` for some `x ∈ K`, then `g` tends to `x`. -/
+theorem _root_.IsCompact.tendsto_nhds_of_tendsto_comp {Y ι : Type*} [TopologicalSpace Y]
+    [T2Space Y] {K : Set X} {f : X → Y} (hK : IsCompact K) (hf : ContinuousOn f K)
+    (hinj : InjOn f K) {l : Filter ι} {g : ι → X} (hg : ∀ᶠ i in l, g i ∈ K) {x : X} (hx : x ∈ K)
+    (h : Tendsto (f ∘ g) l (𝓝 (f x))) : Tendsto g l (𝓝 x) := by
+  intro s hs
+  obtain ⟨t, ht, hts⟩ := hK.exists_mem_nhds_inter_preimage_subset hf hinj hx hs
+  have hgt : ∀ᶠ i in l, f (g i) ∈ t := by
+    simpa only [Function.comp_apply] using h.eventually_mem ht
+  exact (hg.and hgt).mono fun i hi ↦ hts ⟨hi.1, hi.2⟩
 
 /-- A family that eventually lies in a compact set `s` along an ultrafilter converges along it to
 a point of `s`. -/
