@@ -7,8 +7,10 @@ module
 
 public import TauCeti.RingTheory.Jacobson.Basic
 public import Mathlib.RingTheory.Finiteness.Basic
-import Mathlib.RingTheory.Nakayama
+public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
+import Mathlib.RingTheory.Artinian.Ring
 import Mathlib.RingTheory.FiniteType
+import Mathlib.RingTheory.Nakayama
 
 /-!
 # The Jacobson radical of a module-finite algebra
@@ -20,10 +22,17 @@ endomorphism of `A` that is the identity modulo `r A`, so it is surjective by Na
 then bijective, a surjective endomorphism of a finite module over a commutative ring being
 injective. Hence `1 + y r` is a unit.
 
+When `R` is local with maximal ideal `𝔪` and `O` is a commutative module-finite `R`-algebra, the
+quotient `O ⧸ 𝔪 O` is a finite-dimensional algebra over the residue field `R ⧸ 𝔪`, hence Artinian;
+its Jacobson radical is therefore nilpotent, giving a positive `k` with `Ring.jacobson O ^ k ≤ 𝔪 O`
+(`TauCeti.Ring.exists_jacobson_pow_le_map_maximalIdeal`).
+
 ## Main results
 
 * `TauCeti.Ring.algebraMap_mem_jacobson`: the image of an element of the Jacobson radical of `R`
   lies in the Jacobson radical of a module-finite `R`-algebra.
+* `TauCeti.Ring.exists_jacobson_pow_le_map_maximalIdeal`: for a commutative module-finite algebra
+  `O` over a local ring `R`, some positive power of `Ring.jacobson O` lies in `𝔪_R O`.
 
 ## References
 
@@ -60,6 +69,49 @@ theorem algebraMap_mem_jacobson {r : R} (hr : r ∈ Ring.jacobson R) :
   have hbij : Function.Bijective (Algebra.lmul R A u) :=
     ⟨OrzechProperty.injective_of_surjective_endomorphism _ hsurj, hsurj⟩
   exact Algebra.lmul_isUnit_iff.mp ((Module.End.isUnit_iff _).mpr hbij)
+
+/-- For a module-finite commutative algebra `O` over a local ring `R`, some positive power of the
+Jacobson radical of `O` lies in the extension of the maximal ideal of `R`. -/
+theorem exists_jacobson_pow_le_map_maximalIdeal (R O : Type*) [CommRing R] [IsLocalRing R]
+    [CommRing O] [Algebra R O] [Module.Finite R O] :
+    ∃ k : ℕ, 0 < k ∧
+      _root_.Ring.jacobson O ^ k ≤ (IsLocalRing.maximalIdeal R).map (algebraMap R O) := by
+  set I : Ideal O := (IsLocalRing.maximalIdeal R).map (algebraMap R O)
+  let q : O →+* O ⧸ I := Ideal.Quotient.mk I
+  -- `O ⧸ I` is a finite algebra over the residue field `R ⧸ 𝔪_R`, hence Artinian.
+  let := Ideal.Quotient.field (IsLocalRing.maximalIdeal R)
+  let := Ideal.Quotient.algebraQuotientOfLEComap (R := R) (P := I) fun r hr ↦ by
+    rw [Ideal.mem_comap]
+    exact Ideal.mem_map_of_mem (algebraMap R O) hr
+  have : IsScalarTower R (R ⧸ IsLocalRing.maximalIdeal R) (O ⧸ I) := .of_algebraMap_eq' rfl
+  have : Module.Finite R (O ⧸ I) :=
+    .of_surjective (Ideal.Quotient.mkₐ R I).toLinearMap Ideal.Quotient.mk_surjective
+  have : Module.Finite (R ⧸ IsLocalRing.maximalIdeal R) (O ⧸ I) := .of_restrictScalars_finite R _ _
+  have : IsArtinianRing (O ⧸ I) := .of_finite (R ⧸ IsLocalRing.maximalIdeal R) (O ⧸ I)
+  obtain ⟨k, hk⟩ := IsArtinianRing.isNilpotent_jacobson (O ⧸ I)
+  -- The quotient map sends `Ring.jacobson O` into `Ring.jacobson (O ⧸ I)`.
+  have hmap : (_root_.Ring.jacobson O).map q ≤ _root_.Ring.jacobson (O ⧸ I) := by
+    rw [Ideal.map_le_iff_le_comap]
+    intro x hx
+    rw [Ideal.mem_comap, mem_jacobson_iff_isUnit_one_add_mul_left]
+    intro y
+    obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective y
+    have hu : IsUnit (1 + z * x) :=
+      mem_jacobson_iff_isUnit_one_add_mul_left.mp hx z
+    simpa [q] using hu.map q
+  have hpow : (_root_.Ring.jacobson O ^ k).map q = ⊥ := by
+    rw [Ideal.map_pow, eq_bot_iff]
+    exact (pow_le_pow_left' hmap k).trans (by rw [hk]; exact le_rfl)
+  have hle : _root_.Ring.jacobson O ^ k ≤ I := by
+    intro x hx
+    rw [← Ideal.Quotient.eq_zero_iff_mem]
+    have hmem : q x ∈ (⊥ : Ideal (O ⧸ I)) := hpow ▸ Ideal.mem_map_of_mem q hx
+    exact Ideal.mem_bot.mp hmem
+  rcases Nat.eq_zero_or_pos k with rfl | hkpos
+  · refine ⟨1, one_pos, ?_⟩
+    rw [pow_zero, Ideal.one_eq_top] at hle
+    exact le_top.trans hle
+  · exact ⟨k, hkpos, hle⟩
 
 end Ring
 

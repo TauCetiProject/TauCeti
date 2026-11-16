@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Idempotents.Projective
 public import TauCeti.Algebra.Module.Projective.Local
 public import TauCeti.RingTheory.Idempotents.Conjugate
 public import TauCeti.Algebra.Group.Idempotent
+import TauCeti.RingTheory.Idempotents.Quotient.Basic
 
 /-!
 # Semiperfect rings and local idempotents
@@ -55,6 +56,8 @@ to an idempotent lifting `x`.
 * `TauCeti.IsSemiperfectRing.of_isLocalRing_corner`: **such a ring is semiperfect.**
 * `TauCeti.isSemiperfectRing_iff_exists_completeOrthogonalIdempotents_isLocalRing_corner`: Lam's
   characterization.
+* `TauCeti.IsSemiperfectRing.exists_completeOrthogonalIdempotents_isLocalRing_quotient`: for a
+  commutative semiperfect ring `O`, the local factors may be taken as `O ⧸ (1 - eᵢ)`.
 
 ## References
 
@@ -276,5 +279,17 @@ theorem isSemiperfectRing_iff_exists_completeOrthogonalIdempotents_isLocalRing_c
       ∀ i, IsLocalRing (hf.idem i).Corner :=
   ⟨fun _ ↦ IsSemiperfectRing.exists_completeOrthogonalIdempotents_isLocalRing_corner,
     fun ⟨_, _, hf, hloc⟩ ↦ IsSemiperfectRing.of_isLocalRing_corner hf hloc⟩
+
+/-- Every commutative semiperfect ring admits a complete orthogonal family of idempotents whose
+quotient factors `O ⧸ (1 - eᵢ)` are local rings. -/
+theorem IsSemiperfectRing.exists_completeOrthogonalIdempotents_isLocalRing_quotient
+    (O : Type*) [CommRing O] [IsSemiperfectRing O] :
+    ∃ (n : ℕ) (e : Fin n → O) (_ : CompleteOrthogonalIdempotents e),
+      ∀ i, IsLocalRing (O ⧸ Ideal.span {1 - e i}) := by
+  obtain ⟨n, e, he, hloc⟩ :=
+    IsSemiperfectRing.exists_completeOrthogonalIdempotents_isLocalRing_corner (A := O)
+  refine ⟨n, e, he, fun i ↦ ?_⟩
+  have := hloc i
+  exact (he.idem i).cornerRingEquivQuotient.isLocalRing
 
 end TauCeti
