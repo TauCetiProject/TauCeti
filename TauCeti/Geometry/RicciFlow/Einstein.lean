@@ -203,10 +203,8 @@ theorem scalarCurvature_eq_of_inner_eq_smul
 omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
 /-- Times `τ < (2 c)⁻¹` lie in the positive-scale interval `2 c τ < 1` when `c > 0`. -/
 private theorem two_mul_mul_lt_one_of_lt_inv {τ : ℝ} (hc : 0 < c) (hτ : τ < (2 * c)⁻¹) :
-    2 * c * τ < 1 := by
-  have h2c : 0 < 2 * c := by positivity
-  calc 2 * c * τ < 2 * c * (2 * c)⁻¹ := by gcongr
-    _ = 1 := mul_inv_cancel₀ h2c.ne'
+    2 * c * τ < 1 :=
+  (lt_inv_mul_iff₀ (by positivity)).1 (by rwa [mul_one])
 
 /-- **Extinction of an Einstein solution.** Let `Ric(g₀) = c g₀` at `x` with `c > 0`, in positive
 dimension, and let `g τ = (1 - 2 c τ) g₀` on a time set `s` containing a left neighbourhood of
