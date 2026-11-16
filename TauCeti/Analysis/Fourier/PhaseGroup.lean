@@ -245,6 +245,19 @@ theorem phasePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (vol
     Lp.coeFn_lpSMul (r := ∞) m ((memLp_phaseSymbol ω t).toLp _)] with ξ h₁ h₂
   rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', smul_eq_mul, smul_eq_mul, mul_comm]
 
+/-- `exp(itω(D)) T_m` is the multiplier with any symbol `σ` equal almost everywhere to
+`exp(i t ω(ξ)) m(ξ)`. -/
+theorem phasePropagator_fourierMultiplierCLM_apply_of_ae_eq (t : ℝ)
+    {m σ : Lp ℂ ∞ (volume : Measure E)} (h : σ =ᵐ[volume] fun ξ ↦ phaseSymbol ω t ξ * m ξ)
+    (f : Lp F 2 (volume : Measure E)) :
+    phasePropagator F ω t (Lp.fourierMultiplierCLM F m f) = Lp.fourierMultiplierCLM F σ f := by
+  rw [phasePropagator_def, Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
+  congr 2
+  apply Lp.ext
+  filter_upwards [Lp.coeFn_lpSMul (r := ∞) ((memLp_phaseSymbol ω t).toLp _) m,
+    (memLp_phaseSymbol ω t).coeFn_toLp, h] with ξ h₁ h₂ h₃
+  rw [h₁, Pi.smul_apply', h₂, h₃, smul_eq_mul]
+
 /-- **Strong continuity**: `t ↦ exp(itω(D)) f` is continuous for every `f ∈ L²`. -/
 theorem continuous_phasePropagator_apply (f : Lp F 2 (volume : Measure E)) :
     Continuous fun t ↦ phasePropagator F ω t f := by

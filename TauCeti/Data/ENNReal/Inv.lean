@@ -29,6 +29,7 @@ is at most `2 b`.
   is nonnegative.
 * `ENNReal.one_div_toReal_sub_one_div_toReal_nonneg`: for `0 < p ≤ q`, the exponent
   `1 / p.toReal - 1 / q.toReal` is nonnegative.
+* `ENNReal.two_le_of_toReal_inv_le`: an exponent `r ≠ 0` with `1 / r ≤ 1 / 2` satisfies `2 ≤ r`.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
 * `ENNReal.inv_le_inv_mul_add_and_inv_mul_le_inv`: for `n ≤ (j + 1) p`, the exponent
   `q = (j + 1) p` satisfies `1/p ≤ 1/q + j/n` and `1/q ≤ 1/p`.
@@ -97,6 +98,13 @@ theorem one_div_toReal_sub_one_div_toReal_nonneg {p q : ℝ≥0∞} (hp : p ≠ 
     0 ≤ 1 / p.toReal - 1 / q.toReal := by
   simpa only [one_div, toReal_inv, sub_nonneg] using
     toReal_mono (inv_ne_top.2 hp) (ENNReal.inv_le_inv.2 hpq)
+
+/-- An exponent `r ≠ 0` with `1 / r ≤ 1 / 2` satisfies `2 ≤ r`. Along a Strichartz admissible
+pair this is the fact that the space exponent `r` lies on the `L^r` side of `L²`. -/
+theorem two_le_of_toReal_inv_le {r : ℝ≥0∞} (hr : r ≠ 0) (h : (r⁻¹).toReal ≤ 2⁻¹) : 2 ≤ r := by
+  rw [← ENNReal.inv_le_inv, ← ofReal_toReal (inv_ne_top.2 hr),
+    ← ofReal_toReal (a := 2⁻¹) (by simp)]
+  exact ofReal_le_ofReal (h.trans_eq (by simp))
 
 /-- **Absorption**: a finite quantity bounded by `b` plus half of itself is at most `2 b`. -/
 theorem le_mul_two_of_le_add_div_two {a b : ℝ≥0∞} (ha : a ≠ ∞) (h : a ≤ b + a / 2) :

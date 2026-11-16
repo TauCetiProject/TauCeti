@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Schrodinger.Dispersive
 public import TauCeti.Analysis.PDE.Strichartz.TTStar
+import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Strichartz estimates for the Schrödinger equation
@@ -163,12 +165,8 @@ private theorem eLpNorm_schrodingerPropagator_adjoint_le (hq : 2 < q)
   have hst' : s - t ≠ 0 := sub_ne_zero.2 hst
   have hq0 : (0 : ℝ) < 2 / q := div_pos two_pos (by exact_mod_cast zero_lt_two.trans hq)
   -- Admissibility with `2 < q` forces `n > 0`, hence `1 / r < 1 / 2`, so `2 ≤ r`.
-  have hr : 2 ≤ r := by
-    have hlt : (r⁻¹).toReal < 2⁻¹ := by nlinarith
-    rw [← ENNReal.inv_le_inv,
-      ← ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 (ENNReal.HolderConjugate.ne_zero r r')),
-      ← ENNReal.ofReal_toReal (a := 2⁻¹) (by simp)]
-    exact ENNReal.ofReal_le_ofReal (hlt.le.trans_eq (by simp))
+  have hr : 2 ≤ r :=
+    ENNReal.two_le_of_toReal_inv_le (ENNReal.HolderConjugate.ne_zero r r') (by nlinarith)
   have hk : ENNReal.ofReal ((4 * Real.pi) ^ (-(2 / q : ℝ))) * ‖s - t‖ₑ ^ (-(2 / q : ℝ)) =
       ENNReal.ofReal ((4 * Real.pi * |s - t|) ^
         (-(Module.finrank ℝ E : ℝ) * (1 / 2 - (r⁻¹).toReal))) := by
@@ -239,14 +237,8 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
           eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
   obtain ⟨C, hC⟩ :=
     exists_lintegral_lintegral_enorm_inner_schrodingerPropagator_sub_le (r' := r') hq hpq hqr
-  refine ⟨C, fun F G hF hG => ?_⟩
-  calc _ ≤ ∫⁻ t, ‖∫ s in Set.Iio t, ⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ‖ₑ :=
-        eNorm_integral_le_lintegral_eNorm _
-    _ ≤ ∫⁻ t, ∫⁻ s in Set.Iio t, ‖⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ‖ₑ :=
-        lintegral_mono fun t ↦ eNorm_integral_le_lintegral_eNorm _
-    _ ≤ ∫⁻ t, ∫⁻ s, ‖⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ‖ₑ :=
-        lintegral_mono fun t ↦ setLIntegral_le_lintegral _ _
-    _ ≤ _ := hC F G hF hG
+  exact ⟨C, fun F G hF hG =>
+    (enorm_integral_setIntegral_le_lintegral_lintegral _).trans (hC F G hF hG)⟩
 
 /-- **The dual Strichartz estimate for the Schrödinger equation** in every dimension `n`, at a
 non-endpoint admissible pair: `2 < q < ∞` and `2 / q + n / r = n / 2`, with `p` and `r'` the
