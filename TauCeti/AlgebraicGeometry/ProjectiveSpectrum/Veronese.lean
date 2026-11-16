@@ -303,8 +303,10 @@ theorem veroneseIso_inv_preimage_basicOpen (f : veronese 𝒜 d) :
 `Proj A^{(d)}` corresponding to a point `x` of `Proj A` if and only if it lies in that of `x`. -/
 @[simp]
 theorem mem_asHomogeneousIdeal_veroneseIso_inv (x : Proj 𝒜) (f : veronese 𝒜 d) :
-    f ∈ ((veroneseIso 𝒜 d).inv x).asHomogeneousIdeal ↔ (f : A) ∈ x.asHomogeneousIdeal :=
-  not_iff_not.mp (congrArg (x ∈ ·) (veroneseIso_inv_preimage_basicOpen 𝒜 d f)).to_iff
+    f ∈ ((veroneseIso 𝒜 d).inv x).asHomogeneousIdeal ↔ (f : A) ∈ x.asHomogeneousIdeal := by
+  have := SetLike.ext_iff.mp (veroneseIso_inv_preimage_basicOpen 𝒜 d f) x
+  rw [Scheme.Hom.mem_preimage, mem_basicOpen, mem_basicOpen] at this
+  exact not_iff_not.mp this
 
 /-- The homogeneous prime ideal of the point of `Proj A^{(d)}` corresponding to a point `x` of
 `Proj A` is the contraction of that of `x` to `A^{(d)}`. -/
@@ -318,16 +320,18 @@ corresponding to a point `y` of `Proj A^{(d)}` if and only if it lies in that of
 @[simp]
 theorem coe_mem_asHomogeneousIdeal_veroneseIso_hom (y : Proj (veroneseGrading 𝒜 d))
     (f : veronese 𝒜 d) :
-    (f : A) ∈ ((veroneseIso 𝒜 d).hom y).asHomogeneousIdeal ↔ f ∈ y.asHomogeneousIdeal :=
-  not_iff_not.mp (congrArg (y ∈ ·) (veroneseIso_hom_preimage_basicOpen 𝒜 d f)).to_iff
+    (f : A) ∈ ((veroneseIso 𝒜 d).hom y).asHomogeneousIdeal ↔ f ∈ y.asHomogeneousIdeal := by
+  have := SetLike.ext_iff.mp (veroneseIso_hom_preimage_basicOpen 𝒜 d f) y
+  rw [Scheme.Hom.mem_preimage, mem_basicOpen, mem_basicOpen] at this
+  exact not_iff_not.mp this
 
 section Map
 
 variable {𝒜} {R' : Type*} {B : Type u} [CommRing R'] [CommRing B] [Algebra R' B]
   {ℬ : ℕ → Submodule R' B} [GradedAlgebra ℬ]
 
-/-- The isomorphism `Proj A^{(d)} ≅ Proj A` is natural in graded ring homomorphisms `f : A → B`
-inducing morphisms `Proj B ⟶ Proj A`. -/
+/-- The isomorphism `Proj A^{(d)} ≅ Proj A` is natural with respect to `Proj.map`, for graded ring
+homomorphisms `f : A → B` with `ℬ₊ ≤ 𝒜₊.map f`. -/
 @[reassoc]
 theorem map_veroneseMap_comp_veroneseIso_hom (f : 𝒜 →+*ᵍ ℬ)
     (hf : HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map f) :
@@ -351,8 +355,8 @@ theorem map_veroneseMap_comp_veroneseIso_hom (f : 𝒜 →+*ᵍ ℬ)
   exact (mapAffineOpenCover _ (irrelevant_le_map_veroneseMap d f hf)).openCover.hom_ext _ _
     fun i ↦ this _ _ i.2.2 i.1.pos
 
-/-- The inverse isomorphism `Proj A ≅ Proj A^{(d)}` is natural in graded ring homomorphisms
-`f : A → B` inducing morphisms `Proj B ⟶ Proj A`. -/
+/-- The inverse isomorphism `Proj A ≅ Proj A^{(d)}` is natural with respect to `Proj.map`, for
+graded ring homomorphisms `f : A → B` with `ℬ₊ ≤ 𝒜₊.map f`. -/
 @[reassoc]
 theorem map_comp_veroneseIso_inv (f : 𝒜 →+*ᵍ ℬ)
     (hf : HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map f) :
