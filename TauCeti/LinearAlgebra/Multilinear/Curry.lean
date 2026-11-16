@@ -81,36 +81,58 @@ theorem multilinearCurryFirstEquiv_symm_apply
 end TauCeti
 
 namespace MultilinearMap
-
 variable {R R₂ : Type*} [Semiring R] [Semiring R₂] {σ : R →+* R₂}
   {n : ℕ} {M : Fin (n + 1) → Type*} {N : Type*}
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] [AddCommMonoid N] [Module R₂ N]
 
-/-- Fix argument `p` of a multilinear map `f` in `n + 1` variables to `x : M p` over any scalar
-semiring. -/
+/-- Fix argument `p` of a multilinear map `f` in `n + 1` variables to `x : M p`. -/
 def compInsertNth (f : (Π i, M i) →ₘₛₗ[σ] N) (p : Fin (n + 1)) (x : M p) :
     (Π i, M (p.succAbove i)) →ₘₛₗ[σ] N :=
   MultilinearMap.mk' (fun m ↦ f (p.insertNth x m))
     (fun m i u v ↦ by simp_rw [Fin.insertNth_update, f.map_update_add])
     (fun m i c u ↦ by simp_rw [Fin.insertNth_update, f.map_update_smul])
-
 /-- Evaluating `f.compInsertNth p x` on `m` inserts `x` at index `p` of `m`. -/
-@[simp]
-theorem compInsertNth_apply (f : (Π i, M i) →ₘₛₗ[σ] N) (p : Fin (n + 1)) (x : M p)
+@[simp] theorem compInsertNth_apply (f : (Π i, M i) →ₘₛₗ[σ] N) (p : Fin (n + 1)) (x : M p)
     (m : Π i, M (p.succAbove i)) : f.compInsertNth p x m = f (p.insertNth x m) := (rfl)
+/-- Fixing argument `p` to `0` yields the zero multilinear map. -/
+@[simp] theorem compInsertNth_zero (f : (Π i, M i) →ₘₛₗ[σ] N) (p : Fin (n + 1)) :
+    f.compInsertNth p 0 = 0 := by ext m; exact f.map_coord_zero p (by simp)
+/-- `compInsertNth` is additive in the inserted entry. -/
+@[simp] theorem compInsertNth_add (f : (Π i, M i) →ₘₛₗ[σ] N) (p : Fin (n + 1)) (x y : M p) :
+    f.compInsertNth p (x + y) = f.compInsertNth p x + f.compInsertNth p y := by
+  ext m; exact f.map_insertNth_add p m x y
+/-- `compInsertNth` is `σ`-homogeneous in the inserted entry. -/
+@[simp] theorem compInsertNth_smul [SMulCommClass R₂ R₂ N] (f : (Π i, M i) →ₘₛₗ[σ] N)
+    (p : Fin (n + 1)) (c : R) (x : M p) : f.compInsertNth p (c • x) = σ c • f.compInsertNth p x :=
+  by ext m; exact f.map_insertNth_smul p m c x
+/-- Fixing an argument of the zero multilinear map yields zero. -/
+@[simp] theorem zero_compInsertNth (p : Fin (n + 1)) (x : M p) :
+    (0 : (Π i, M i) →ₘₛₗ[σ] N).compInsertNth p x = 0 := (rfl)
+/-- `compInsertNth` is additive in the multilinear map. -/
+@[simp] theorem add_compInsertNth (f g : (Π i, M i) →ₘₛₗ[σ] N) (p : Fin (n + 1)) (x : M p) :
+    (f + g).compInsertNth p x = f.compInsertNth p x + g.compInsertNth p x := (rfl)
+/-- `compInsertNth` commutes with scalar multiplication of the multilinear map. -/
+@[simp] theorem smul_compInsertNth {S : Type*} [DistribSMul S N] [SMulCommClass R₂ S N] (c : S)
+    (f : (Π i, M i) →ₘₛₗ[σ] N) (p : Fin (n + 1)) (x : M p) :
+    (c • f).compInsertNth p x = c • f.compInsertNth p x := (rfl)
+
+section Linear
+variable (S : Type*) [Semiring S] [Module S N] [SMulCommClass R₂ S N] (p : Fin (n + 1))
 
 /-- `MultilinearMap.compInsertNth` as an `S`-linear map in the multilinear map `f`. -/
-def compInsertNthLinearMap (S : Type*) [Semiring S] [Module S N] [SMulCommClass R₂ S N]
-    (p : Fin (n + 1)) (x : M p) :
-    ((Π i, M i) →ₘₛₗ[σ] N) →ₗ[S] (Π i, M (p.succAbove i)) →ₘₛₗ[σ] N where
-  toFun f := f.compInsertNth p x
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
+def compInsertNthLinearMap (x : M p) :
+    ((Π i, M i) →ₘₛₗ[σ] N) →ₗ[S] (Π i, M (p.succAbove i)) →ₘₛₗ[σ] N :=
+  { toFun := (·.compInsertNth p x), map_add' _ _ := rfl, map_smul' _ _ := rfl }
 /-- `MultilinearMap.compInsertNthLinearMap` acts by `MultilinearMap.compInsertNth`. -/
-@[simp]
-theorem compInsertNthLinearMap_apply (S : Type*) [Semiring S] [Module S N] [SMulCommClass R₂ S N]
-    (p : Fin (n + 1)) (x : M p) (f : (Π i, M i) →ₘₛₗ[σ] N) :
+@[simp] theorem compInsertNthLinearMap_apply (x : M p) (f : (Π i, M i) →ₘₛₗ[σ] N) :
     compInsertNthLinearMap S p x f = f.compInsertNth p x := (rfl)
-
+/-- Fixing argument `p` to `0` yields the zero linear map on multilinear maps. -/
+@[simp] theorem compInsertNthLinearMap_zero :
+    compInsertNthLinearMap (R := R) (R₂ := R₂) (σ := σ) (M := M) (N := N) S p 0 = 0 := by
+  ext f; simp
+/-- `compInsertNthLinearMap` is additive in the inserted entry. -/
+@[simp] theorem compInsertNthLinearMap_add (x y : M p) :
+    compInsertNthLinearMap (R := R) (R₂ := R₂) (σ := σ) (M := M) (N := N) S p (x + y) =
+      compInsertNthLinearMap S p x + compInsertNthLinearMap S p y := by ext f; simp
+end Linear
 end MultilinearMap
