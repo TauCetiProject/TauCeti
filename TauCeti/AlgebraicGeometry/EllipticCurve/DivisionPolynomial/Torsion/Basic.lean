@@ -148,7 +148,7 @@ theorem isInteger_x_of_even_torsion_of_squarefree {x y : K}
     (hsf : Squarefree ((n / 2 : ℤ) : R)) :
     IsLocalization.IsInteger R x := by
   have := IsDomain.of_faithfulSMul R K
-  have hpreΨ := eval_preΨ_eq_zero_of_zsmul_eq_zero_of_even (W.baseChange K) heven hns htors h2ne
+  have hpreΨ := eval_preΨ_eq_zero_of_zsmul_eq_zero (W.baseChange K) hns htors h2ne
   have hmap : (W.baseChange K).preΨ n = (W.preΨ n).map (algebraMap R K) :=
     WeierstrassCurve.map_preΨ ..
   rw [hmap, eval_map, ← aeval_def] at hpreΨ

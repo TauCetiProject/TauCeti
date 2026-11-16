@@ -156,7 +156,7 @@ private theorem separable_preΨ_of_even_of_isAlgClosed {n : ℤ} (heven : Even n
     obtain ⟨hPT, hP2⟩ := Finset.mem_filter.mp hP
     rcases hQ : P with _ | ⟨x, y, hns⟩
     · exact absurd (hQ ▸ (by simp : (2 : ℤ) • (0 : (W⁄F).toAffine.Point) = 0)) hP2
-    · exact ⟨x, y, hns, rfl, eval_preΨ_eq_zero_of_zsmul_eq_zero_of_even (W⁄F) heven hns
+    · exact ⟨x, y, hns, rfl, eval_preΨ_eq_zero_of_zsmul_eq_zero (W⁄F) hns
         (zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero.mpr (hQ ▸ (hTmem P).mp hPT))
         (mt zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero.mp (hQ ▸ hP2))⟩
   have hcount : #s ≤ 2 * #(S.image (fun x : F ↦ ![x, 1])) :=
