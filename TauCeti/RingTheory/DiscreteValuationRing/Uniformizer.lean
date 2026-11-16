@@ -22,9 +22,11 @@ piece `(1 + 𝔪^(n+1)) / (1 + 𝔪^(n+2))` with the additive residue field by s
 to the residue of `(u - 1) / π ^ (n + 1)`.  This file constructs these identifications explicitly
 and computes how they change when the uniformizer is replaced.
 
-If `π' = π * a` for a unit `a` of `R`, then the identification for `π'` is the identification
-for `π` precomposed with multiplication by the residue of `a ^ m`.  Thus it is independent of
-the uniformizer up to multiplication by a unit of the residue field.
+If `π' = π * a` for a unit `a` of `R`, then the identification `k ≃ 𝔪^m / 𝔪^(m+1)` for `π'` is the
+identification for `π` precomposed with multiplication by `residue R a ^ m`, while in the opposite
+direction the `(n + 1)`-st principal-unit residue coordinate `(1 + 𝔪^(n+1)) / (1 + 𝔪^(n+2)) ≃+ k`
+for `π` equals `residue R a ^ (n + 1)` times that for `π'`.  Thus both identifications are
+independent of the uniformizer up to multiplication by a unit of the residue field.
 
 The explicit principal-power equivalence below follows the construction of Mathlib's
 `Ideal.quotEquivPowQuotPowSucc`, retaining a specified generator in order to expose the
