@@ -96,6 +96,11 @@ theorem moreauYosida_le (φ : X → EReal) (τ : ℝ≥0) {x y : X} (h : edist x
     moreauYosida φ τ x ≤ φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) :=
   iInf₂_le (f := fun y (_ : edist x y ≠ ⊤) ↦ φ y + ((edist x y ^ 2 / (2 * τ) : ℝ≥0∞) : EReal)) y h
 
+/-- If the Moreau–Yosida approximation at `x` is not `⊥`, then neither is the energy at any point
+at finite distance from `x`: a coercive energy never takes the value `⊥` there. -/
+theorem apply_ne_bot_of_moreauYosida_ne_bot (h : edist x y ≠ ⊤) (h₀ : moreauYosida φ τ x ≠ ⊥) :
+    φ y ≠ ⊥ := fun hy ↦ h₀ (le_bot_iff.1 (by simpa [hy] using moreauYosida_le φ τ h))
+
 /-- A lower bound for the Moreau–Yosida approximation is a lower bound for the penalized energy
 at every point at finite distance from `x`. -/
 theorem le_moreauYosida_iff {c : EReal} :
