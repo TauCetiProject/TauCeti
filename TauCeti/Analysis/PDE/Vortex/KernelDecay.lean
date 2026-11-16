@@ -7,9 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FiniteKernel
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.PDE.Vortex.RightInverse
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 
 /-!
 # Exponential decay of the kernel of the gauge-fixed vortex operator
@@ -43,8 +44,8 @@ the bounded weights `V = W / (1 + ε W)`, `W = exp(c ρ)`, whose logarithmic gra
 `c` (for `c ≥ 0`; negative rates follow from `c = 0`). Then `|dχ|² ≤ c² χ² + K₀`, where `K₀`
 collects the terms carrying `db`, which live on the disc of radius `2 R`. Since `c < c₁`, the term
 `c² χ²` is absorbed on the left, leaving a bound on `∫ V² |y|²` that is uniform in `ε`, and
-Fatou's lemma (`TauCeti.Vortex.lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le`)
-lets `ε → 0`.
+Fatou's lemma (`TauCeti.lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le`) lets
+`ε → 0`.
 
 The constant `K` depends only on `c` and on the radius of the exterior estimate of the vortex.
 Nothing here is uniform over the noncompact moduli space of vortices.
@@ -120,6 +121,14 @@ private theorem sq_le_two_mul_sq_add_two_mul_sq {β v E : ℝ} (hβ0 : 0 ≤ β)
 
 /-! ### The weighted estimate -/
 
+/-- `|χ y|²` is integrable for a kernel element `y` and a continuous weight with `χ² ≤ C`. -/
+private theorem integrable_norm_smul_sq_of_mem_gaugeFixedKernel {χ : ℂ → ℝ} (hχ : Continuous χ)
+    {C : ℝ} (hχC : ∀ z, χ z ^ 2 ≤ C) {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hyK : y ∈ gaugeFixedKernel x) : Integrable fun z ↦ ‖χ z • y z‖ ^ 2 :=
+  ((mem_gaugeFixedKernel.1 hyK).2.1.integrable_sq_mul_norm_sq hχ.aestronglyMeasurable
+    (ae_of_all _ hχC)).congr (ae_of_all _ fun z ↦ by
+      simp only [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs])
+
 /-- **Agmon's absorption.** If `L_x` satisfies the exterior estimate with mass `c₁` outside the
 disc of radius `R`, a kernel element `y` and a bounded `C²` weight `χ` vanishing on that disc,
 with `|dχ|² ≤ d² χ² + K₀` and `d² < c₁²`, satisfy `(c₁² - d²) ∫ |χ y|² ≤ K₀ ∫ |y|²`. -/
@@ -131,16 +140,10 @@ private theorem sub_mul_integral_norm_sq_smul_le (hx : Continuous x) {c₁ R d K
     (hχ' : ∀ z, ‖χ' z‖ ^ 2 ≤ d ^ 2 * χ z ^ 2 + K₀) {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hyK : y ∈ gaugeFixedKernel x) :
     (c₁ ^ 2 - d ^ 2) * ∫ z, ‖χ z • y z‖ ^ 2 ≤ K₀ * ∫ z, ‖y z‖ ^ 2 := by
-  obtain ⟨hy, hy₂, -⟩ := mem_gaugeFixedKernel.1 hyK
   have hn : Integrable fun z ↦ ‖y z‖ ^ 2 :=
-    (memLp_two_iff_integrable_sq_norm hy₂.aestronglyMeasurable).mp hy₂
+    (mem_gaugeFixedKernel.1 hyK).2.1.integrable_norm_pow two_ne_zero
   have hχ2 (z : ℂ) : χ z ^ 2 ≤ M ^ 2 := sq_le_sq' (abs_le.1 (hχM z)).1 (abs_le.1 (hχM z)).2
-  have hχy : Integrable fun z ↦ ‖χ z • y z‖ ^ 2 :=
-    Integrable.mono' (hn.const_mul (M ^ 2))
-      (((hχ.continuous.smul hy.continuous).norm.pow 2).aestronglyMeasurable)
-      (.of_forall fun z ↦ by
-        rw [Real.norm_of_nonneg (sq_nonneg _), norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
-        exact mul_le_mul_of_nonneg_right (hχ2 z) (sq_nonneg _))
+  have hχy := integrable_norm_smul_sq_of_mem_gaugeFixedKernel hχ.continuous hχ2 hyK
   have hB : Integrable fun z ↦ ‖χ' z‖ ^ 2 * ‖y z‖ ^ 2 :=
     Integrable.mono' (hn.const_mul (d ^ 2 * M ^ 2 + K₀))
       ((hχ'c.norm.pow 2).aestronglyMeasurable.mul hn.aestronglyMeasurable)
@@ -209,25 +212,18 @@ private theorem lintegral_ofReal_sq_mul_norm_sq_le (hx : Continuous x) {c₁ R d
     (hyK : y ∈ gaugeFixedKernel x) :
     ∫⁻ z, ENNReal.ofReal (V z ^ 2 * ‖y z‖ ^ 2) ≤ ENNReal.ofReal
       ((2 * ((2 * d * a + a ^ 2) * E ^ 2 / (c₁ ^ 2 - d ^ 2)) + 2 * E ^ 2) * ∫ z, ‖y z‖ ^ 2) := by
-  obtain ⟨hy, hy₂, -⟩ := mem_gaugeFixedKernel.1 hyK
-  have hn : Integrable fun z ↦ ‖y z‖ ^ 2 :=
-    (memLp_two_iff_integrable_sq_norm hy₂.aestronglyMeasurable).mp hy₂
+  have hy₂ := (mem_gaugeFixedKernel.1 hyK).2.1
+  have hn : Integrable fun z ↦ ‖y z‖ ^ 2 := hy₂.integrable_norm_pow two_ne_zero
   have hgap : 0 < c₁ ^ 2 - d ^ 2 := by nlinarith
   have hχ := sub_mul_integral_norm_sq_cutoff_smul_le hx hR hd hb hb01 hb1 hb0 hbd hbb hV hV0
     hVB hdV hVE hyK
-  have hχy : Integrable fun z ↦ ‖((1 - b z) * V z) • y z‖ ^ 2 :=
-    Integrable.mono' (hn.const_mul (B ^ 2)) (((((continuous_const.sub hb.continuous).mul
-      hV.continuous).smul hy.continuous).norm.pow 2).aestronglyMeasurable) (.of_forall fun z ↦ by
-        rw [Real.norm_of_nonneg (sq_nonneg _), norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
-        refine mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (mul_nonneg (by linarith [hb01 z])
-          (hV0 z)) ((mul_le_of_le_one_left (hV0 z) (by linarith [hb01 z])).trans (hVB z)) 2)
-          (sq_nonneg _))
+  have hχy := integrable_norm_smul_sq_of_mem_gaugeFixedKernel (χ := fun z ↦ (1 - b z) * V z)
+    ((continuous_const.sub hb.continuous).mul hV.continuous) (fun z ↦ pow_le_pow_left₀
+      (mul_nonneg (by linarith [hb01 z]) (hV0 z))
+      ((mul_le_of_le_one_left (hV0 z) (by linarith [hb01 z])).trans (hVB z)) 2) hyK
   have hVy : Integrable fun z ↦ V z ^ 2 * ‖y z‖ ^ 2 :=
-    Integrable.mono' (hn.const_mul (B ^ 2))
-      ((hV.continuous.pow 2).aestronglyMeasurable.mul hn.aestronglyMeasurable)
-      (.of_forall fun z ↦ by
-        rw [Real.norm_of_nonneg (by positivity)]
-        exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (hV0 z) (hVB z) 2) (sq_nonneg _))
+    hy₂.integrable_sq_mul_norm_sq hV.continuous.aestronglyMeasurable
+      (ae_of_all _ fun z ↦ pow_le_pow_left₀ (hV0 z) (hVB z) 2)
   rw [← ofReal_integral_eq_lintegral_ofReal hVy (.of_forall fun z ↦ by positivity)]
   refine ENNReal.ofReal_le_ofReal ?_
   -- `V² ≤ 2 ((1 - b) V)² + 2 E²`, since `b V ≤ E`.
@@ -245,23 +241,6 @@ private theorem lintegral_ofReal_sq_mul_norm_sq_le (hx : Continuous x) {c₁ R d
       have := mul_le_mul_of_nonneg_left hχ (inv_nonneg.2 hgap.le)
       rw [← mul_assoc, inv_mul_cancel₀ hgap.ne', one_mul] at this
       nlinarith
-
-/-- An `L²` form of a bound on `∫ W² |y|²`. -/
-private theorem eLpNorm_smul_le_of_lintegral_le {w : ℂ → ℝ} (hw : Continuous w)
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : Continuous y) (hy₂ : MemLp y 2) {K : ℝ} (hK : 0 ≤ K)
-    (h : ∫⁻ z, ENNReal.ofReal (w z ^ 2 * ‖y z‖ ^ 2) ≤ ENNReal.ofReal (K * ∫ z, ‖y z‖ ^ 2)) :
-    eLpNorm (fun z ↦ w z • y z) 2 ≤ ENNReal.ofReal √K * eLpNorm y 2 := by
-  have hsm : AEStronglyMeasurable (fun z ↦ w z • y z) := (hw.smul hy).aestronglyMeasurable
-  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hsm]
-  have henorm (z : ℂ) :
-      ‖w z • y z‖ₑ ^ (2 : ℝ≥0∞).toReal = ENNReal.ofReal (w z ^ 2 * ‖y z‖ ^ 2) := by
-    rw [← ofReal_norm, ENNReal.toReal_ofNat, ENNReal.ofReal_rpow_of_nonneg
-      (norm_nonneg _) zero_le_two, norm_smul, Real.norm_eq_abs, Real.rpow_two, mul_pow, sq_abs]
-  simp_rw [henorm]
-  refine (ENNReal.rpow_le_rpow h (by norm_num)).trans_eq ?_
-  rw [hy₂.eLpNorm_two_eq_ofReal_sqrt_integral, ENNReal.toReal_ofNat,
-    ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num), ← Real.sqrt_eq_rpow,
-    Real.sqrt_mul hK, ENNReal.ofReal_mul (Real.sqrt_nonneg _)]
 
 /-! ### Exponential decay of the kernel -/
 
@@ -315,8 +294,9 @@ theorem exists_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel (hx : ContDiff �
     (contDiff_exp_mul_sqrt_add_norm_sq (n := 0) d one_pos).continuous.aemeasurable
     (hy.continuous.norm.pow 2).aemeasurable hVn
   -- The weight `exp(c ρ)` is at most `W`.
-  refine (eLpNorm_smul_le_of_lintegral_le
-    (contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c one_pos).continuous hy.continuous hy₂ hK
+  refine (hy₂.eLpNorm_two_smul_le_of_lintegral_le
+    ((contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c one_pos).continuous.smul
+      hy.continuous).aestronglyMeasurable hK
     ((lintegral_mono fun z ↦ ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_right
       (pow_le_pow_left₀ (Real.exp_pos _).le (Real.exp_le_exp.2
         (mul_le_mul_of_nonneg_right (le_max_left c 0) (Real.sqrt_nonneg _))) 2)

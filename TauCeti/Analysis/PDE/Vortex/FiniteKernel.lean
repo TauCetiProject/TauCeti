@@ -105,8 +105,7 @@ private theorem mul_integral_norm_sq_mul_smul_le (hx : Continuous x) {c R : ℝ}
   obtain ⟨hy, hy₂, hLy⟩ := mem_gaugeFixedKernel.1 hy
   have hM : 0 ≤ M := (abs_nonneg _).trans (hχM 0)
   have hMe : 0 ≤ M * e := mul_nonneg hM ((norm_nonneg _).trans (hψb 0))
-  have hn : Integrable fun z ↦ ‖y z‖ ^ 2 :=
-    (memLp_two_iff_integrable_sq_norm hy₂.aestronglyMeasurable).mp hy₂
+  have hn : Integrable fun z ↦ ‖y z‖ ^ 2 := hy₂.integrable_norm_pow two_ne_zero
   have hwd (z : ℂ) : HasFDerivAt (fun z ↦ ψ z * χ z) (ψ z • χ' z + χ z • ψ' z) z :=
     (hψd z).mul (hχd z)
   have hu : ContDiff ℝ 2 fun z ↦ (ψ z * χ z) • y z := (hψ.mul hχ).smul hy
@@ -161,8 +160,7 @@ theorem mul_integral_norm_sq_smul_le_of_mem_gaugeFixedKernel (hx : Continuous x)
   obtain ⟨A, -, hcut⟩ := exists_cutoff_fderiv_bound (E := ℂ)
   -- `ψ n` is one on the disc of radius `n + 1`, with derivative at most `A / (n + 1)`.
   choose ψ ψ' hψ hψ01 hψ1 hψ0 hψd hψb using fun n : ℕ ↦ hcut 0 ((n : ℝ) + 1) (by positivity)
-  have hn : Integrable fun z ↦ ‖y z‖ ^ 2 :=
-    (memLp_two_iff_integrable_sq_norm hy₂.aestronglyMeasurable).mp hy₂
+  have hn : Integrable fun z ↦ ‖y z‖ ^ 2 := hy₂.integrable_norm_pow two_ne_zero
   have hineq (n : ℕ) := mul_integral_norm_sq_mul_smul_le hx hR hχ hχM hχ0 hχd (hψ n 2)
     (HasCompactSupport.intro (isCompact_closedBall 0 (2 * ((n : ℝ) + 1))) fun z hz ↦
       hψ0 n z (by simpa using hz)) (hψ01 n) (hψd n) (hψb n) hy hB
@@ -206,8 +204,7 @@ theorem exists_integral_norm_sq_le_mul_setIntegral_closedBall (hx : ContDiff ℝ
   obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb⟩ := hcut 0 R hR0
   refine ⟨2 * R, 1 + 16 * (A * R⁻¹) ^ 2, fun y hyK ↦ ?_⟩
   have hy₂ : MemLp y 2 := memLp_of_mem_gaugeFixedKernel hyK
-  have hn : Integrable fun z ↦ ‖y z‖ ^ 2 :=
-    (memLp_two_iff_integrable_sq_norm hy₂.aestronglyMeasurable).mp hy₂
+  have hn : Integrable fun z ↦ ‖y z‖ ^ 2 := hy₂.integrable_norm_pow two_ne_zero
   have hb'c : Continuous b' := by
     have h : b' = fderiv ℝ b := funext fun z ↦ (hbd z).fderiv.symm
     exact h ▸ (hb 1).continuous_fderiv one_ne_zero
@@ -283,10 +280,9 @@ private theorem totallyBounded_setOf_ae_eq_smul (hx : ContDiff ℝ 1 x)
       exact mul_le_of_le_one_left (norm_nonneg _) (hb01 z).2
     have hu₂ : MemLp (fun z ↦ b z • y z) 2 :=
       hy₂.of_le hu.continuous.aestronglyMeasurable (.of_forall hnorm)
-    have hn : Integrable fun z ↦ ‖y z‖ ^ 2 :=
-      (memLp_two_iff_integrable_sq_norm hy₂.aestronglyMeasurable).mp hy₂
+    have hn : Integrable fun z ↦ ‖y z‖ ^ 2 := hy₂.integrable_norm_pow two_ne_zero
     have hun : Integrable fun z ↦ ‖b z • y z‖ ^ 2 :=
-      (memLp_two_iff_integrable_sq_norm hu₂.aestronglyMeasurable).mp hu₂
+      hu₂.integrable_norm_pow two_ne_zero
     have hL (z : ℂ) : ‖gaugeFixedOperator x (fun z ↦ b z • y z) z‖ ^ 2 ≤ A ^ 2 * ‖y z‖ ^ 2 := by
       rw [gaugeFixedOperator_fun_smul x (hbd z).differentiableAt
         (hy.differentiable two_ne_zero z), hLy z, smul_zero, zero_add,
@@ -337,9 +333,9 @@ private theorem totallyBounded_setOf_ae_eq_smul (hx : ContDiff ℝ 1 x)
     refine ENNReal.ofReal_le_ofReal (Real.sqrt_le_iff.mpr ⟨abs_nonneg _, ?_⟩)
     rw [sq_abs]
     refine le_trans (integral_mono ?_ ?_ fun z ↦ ?_) hyR
-    · exact (memLp_two_iff_integrable_sq_norm hu₂.aestronglyMeasurable).mp hu₂
+    · exact hu₂.integrable_norm_pow two_ne_zero
     · have hy₂ := memLp_of_mem_gaugeFixedKernel hy
-      exact (memLp_two_iff_integrable_sq_norm hy₂.aestronglyMeasurable).mp hy₂
+      exact hy₂.integrable_norm_pow two_ne_zero
     · refine pow_le_pow_left₀ (norm_nonneg _) ?_ 2
       rw [norm_smul, Real.norm_of_nonneg (hb01 z).1]
       exact mul_le_of_le_one_left (norm_nonneg _) (hb01 z).2

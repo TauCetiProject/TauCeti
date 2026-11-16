@@ -14,6 +14,7 @@ public import TauCeti.MeasureTheory.Integral.PiSystem
 import Mathlib.Analysis.Normed.Affine.MazurUlam
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Algebra.Order.Ring.PosPart.Sq
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Inner products of square-integrable functions
@@ -24,7 +25,10 @@ this file gives the form for functions satisfying `MemLp f 2 μ`, which is how s
 hypotheses on random vectors are usually stated, together with the special case of a quadratic
 form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function. Likewise the weighted
 squared norm `V² ‖g‖²` of a square-integrable `g` against an essentially bounded weight `V` is
-integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`).
+integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`), and the `L²` seminorm of `V • g` is
+the square root of `∫⁻ V² ‖g‖²` (`MeasureTheory.eLpNorm_two_smul_eq_lintegral_ofReal_rpow`), so a
+bound `∫⁻ V² ‖g‖² ≤ K ∫ ‖g‖²` gives `‖V • g‖₂ ≤ √K ‖g‖₂`
+(`MeasureTheory.MemLp.eLpNorm_two_smul_le_of_lintegral_le`).
 For counting measure, singleton-supported vectors separate L² functions and determine
 continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
 L² function with a continuous function is an integral
@@ -93,6 +97,32 @@ theorem MemLp.integrable_sq_mul_norm_sq {F : Type*} [NormedAddCommGroup F] {g : 
     Integrable (fun x ↦ V x ^ 2 * ‖g x‖ ^ 2) μ :=
   hg.norm.integrable_sq.bdd_mul (hV.pow 2)
     (hVC.mono fun _ hx ↦ (Real.norm_of_nonneg (sq_nonneg _)).trans_le hx)
+
+/-- The `L²` seminorm of `V • g` for a real weight `V` is the square root of
+`∫⁻ V² ‖g‖²`. -/
+theorem eLpNorm_two_smul_eq_lintegral_ofReal_rpow {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {V : α → ℝ} {g : α → F} (hVg : AEStronglyMeasurable (fun x ↦ V x • g x) μ) :
+    eLpNorm (fun x ↦ V x • g x) 2 μ =
+      (∫⁻ x, ENNReal.ofReal (V x ^ 2 * ‖g x‖ ^ 2) ∂μ) ^ (1 / 2 : ℝ) := by
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hVg,
+    ENNReal.toReal_ofNat]
+  congr 1
+  refine lintegral_congr fun x ↦ ?_
+  rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two, norm_smul,
+    Real.norm_eq_abs, Real.rpow_two, mul_pow, sq_abs]
+
+/-- **A weighted `L²` bound from a weighted integral bound.** If `g ∈ L²` and
+`∫⁻ V² ‖g‖² ≤ K ∫ ‖g‖²`, then `‖V • g‖₂ ≤ √K ‖g‖₂`. -/
+theorem MemLp.eLpNorm_two_smul_le_of_lintegral_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {g : α → F} (hg : MemLp g 2 μ) {V : α → ℝ}
+    (hVg : AEStronglyMeasurable (fun x ↦ V x • g x) μ) {K : ℝ} (hK : 0 ≤ K)
+    (h : ∫⁻ x, ENNReal.ofReal (V x ^ 2 * ‖g x‖ ^ 2) ∂μ ≤ ENNReal.ofReal (K * ∫ x, ‖g x‖ ^ 2 ∂μ)) :
+    eLpNorm (fun x ↦ V x • g x) 2 μ ≤ ENNReal.ofReal √K * eLpNorm g 2 μ := by
+  rw [eLpNorm_two_smul_eq_lintegral_ofReal_rpow hVg]
+  refine (ENNReal.rpow_le_rpow h (by norm_num)).trans_eq ?_
+  rw [hg.eLpNorm_two_eq_ofReal_sqrt_integral,
+    ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num), ← Real.sqrt_eq_rpow,
+    Real.sqrt_mul hK, ENNReal.ofReal_mul (Real.sqrt_nonneg _)]
 
 /-- A counting-measure L² function orthogonal to every singleton-supported vector is zero.
 No countability of the underlying measurable space is needed. -/
