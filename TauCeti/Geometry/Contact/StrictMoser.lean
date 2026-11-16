@@ -742,13 +742,13 @@ theorem mpullback_strictMoserPartialDiffeomorph_apply_of_forall_mem_uIcc {s t : 
   have hφ (u : ℝ) : ⇑(strictMoserPartialDiffeomorph hc hh s u) =
       timeDependentFlowOf (α.strictMoserVectorField h) s u :=
     funext (strictMoserPartialDiffeomorph_apply hc hh s u)
-  have h := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc_of_mem
+  have hpull := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc_of_mem
     (contMDiff_strictMoserVectorField hc (n := 2) (by norm_num) (hh.of_le (by simp)))
     ((mem_strictMoserPartialDiffeomorph_source_iff hc hh).1 hx)
     (fun _ _ ↦ (α.contMDiff.of_le (by simp)).contMDiffAt)
     (fun u hu ↦ mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_strictMoserVectorField_apply hc
       (hh.of_le (by simp)) (by simpa only [hφ] using hR u hu))
-  simpa only [coe_mpullback, hφ] using h
+  simpa only [coe_mpullback, hφ] using hpull
 
 include hR in
 /-- **The strict Moser theorem along the domain of the flow.** On a manifold without boundary, let
@@ -808,12 +808,11 @@ theorem exists_partialDiffeomorph_mpullback_eq {K : Set M}
       ∀ x ∈ φ.source, TauCeti.mpullback I I φ
           (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x =
         (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x := by
+  have hX := contMDiff_strictMoserVectorField hc (n := 1) (by simp) (hh.of_le (by simp))
   set W := {x | ∀ u ∈ Set.uIcc s t,
     ((s, u), x) ∈ timeDependentFlowDomain (α.strictMoserVectorField h) ∧
       (u, timeDependentFlowOf (α.strictMoserVectorField h) s u x) ∈ U}
-  have hW : IsOpen W := isOpen_setOf_forall_timeDependentFlowOf_mem
-    (contMDiff_strictMoserVectorField hc (n := 1) (by simp) (hh.of_le (by simp))) isCompact_uIcc
-    hU s
+  have hW : IsOpen W := isOpen_setOf_forall_timeDependentFlowOf_mem hX isCompact_uIcc hU s
   -- The points of `K` stay put, so their trajectories stay in `U`.
   have hKW (x : M) (hx : x ∈ K) : x ∈ W := fun u hu ↦
     ⟨mem_timeDependentFlowDomain_of_forall_eq_zero (hK x hx) s u, by
@@ -825,8 +824,8 @@ theorem exists_partialDiffeomorph_mpullback_eq {K : Set M}
   · rw [PartialDiffeomorph.restrOpen_source]
     exact ⟨mem_strictMoserPartialDiffeomorph_source hc hh (hK x hx) s t, hKW x hx⟩
   · rw [PartialDiffeomorph.restrOpen_target, Set.mem_inter_iff, Set.mem_preimage,
-      strictMoserPartialDiffeomorph_symm_apply, timeDependentFlowOf_eq_self_of_forall_eq_zero
-        (contMDiff_strictMoserVectorField hc (n := 1) (by simp) (hh.of_le (by simp))) (hK x hx)]
+      strictMoserPartialDiffeomorph_symm_apply,
+      timeDependentFlowOf_eq_self_of_forall_eq_zero hX (hK x hx)]
     exact ⟨mem_strictMoserPartialDiffeomorph_target hc hh (hK x hx) s t, hKW x hx⟩
   · rw [PartialDiffeomorph.coe_restrOpen]
     exact strictMoserPartialDiffeomorph_apply_eq_self hc hh (hK x hx) s t
