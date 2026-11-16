@@ -80,12 +80,6 @@ namespace TauCeti
 
 /-! ### The budgets -/
 
-/-- A function bounded by a positive power of `h` is eventually below every positive bound as
-`h → 0⁺`. -/
-private lemma eventually_lt_of_isBigO_rpow {f : ℝ → ℝ} {c : ℝ} (hc : 0 < c)
-    (hf : f =O[𝓝[>] 0] fun h ↦ h ^ c) {η : ℝ} (hη : 0 < η) : ∀ᶠ h in 𝓝[>] 0, f h < η :=
-  (hf.trans_tendsto (tendsto_rpow_nhdsGT_zero hc)).eventually (gt_mem_nhds hη)
-
 /-- **The contraction budget.** If `C = O(h^(-q))`, `L = O(h^(-l))`, `δ⁻¹ = O(h^(-a))` and
 `ε = O(h^s)` with `2 q + l < s` and `q + a < s`, and `δ > 0` for small `h`, then for small `h`
 the residual bound `ε` satisfies both hypotheses `2 C ε ≤ δ` and `2 C² L ε < 1` of the fixed-point
@@ -127,20 +121,20 @@ private lemma eventually_recovery_budget {C L δ ε K : ℝ → ℝ} {q l a s b 
 
 /-! ### The corrections for all small `h` -/
 
-variable {P : Type*} [TopologicalSpace P] {E F G : ℝ → Type*}
+variable {P : Type*} [TopologicalSpace P] {E : ℝ → Type*} {F G : ℝ → P → Type*}
   [∀ h, NormedAddCommGroup (E h)] [∀ h, CompleteSpace (E h)]
-  [∀ h, SeminormedAddCommGroup (F h)] [∀ h, FunLike (G h) (F h) (E h)]
-  [∀ h, AddMonoidHomClass (G h) (F h) (E h)]
-  {Q : ∀ h, P → G h} {D N : ∀ h, P → E h → F h} {e : ∀ h, P → F h}
+  [∀ h p, SeminormedAddCommGroup (F h p)] [∀ h p, FunLike (G h p) (F h p) (E h)]
+  [∀ h p, AddMonoidHomClass (G h p) (F h p) (E h)]
+  {Q : ∀ h p, G h p} {D N : ∀ h p, E h → F h p} {e : ∀ h p, F h p}
   {C L : ℝ → ℝ≥0} {δ ε : ℝ → ℝ} {q l a s : ℝ}
 
 /-- **The quadratic correction for all small `h`.** Let `e_h(p) + D_h(p) x + N_h(p) x = 0` be
 equations in a complete space `E_h`, indexed by a scale `h > 0` and a parameter `p`, with additive
 right inverses `Q_h(p)` of `D_h(p)` of norm at most `C_h`, and remainders `N_h(p)` vanishing at
 the origin and quadratic with constant `L_h` on the ball of radius `δ_h > 0`; all constants are
-uniform in `p`. Suppose that the residuals are bounded by `ε_h`, uniformly in `p`, and that
-`p ↦ Q_h(p) (e_h(p) + N_h(p) z)` is continuous for each `z` of norm at most `δ_h`. If, as
-`h → 0⁺`,
+uniform in `p`, and the target of `D_h(p)` may depend on `p`. Suppose that the residuals are
+bounded by `ε_h`, uniformly in `p`, and that `p ↦ Q_h(p) (e_h(p) + N_h(p) z)` is continuous for
+each `z` of norm at most `δ_h`. If, as `h → 0⁺`,
 
 `C_h = O(h^(-q))`,  `L_h = O(h^(-l))`,  `δ_h⁻¹ = O(h^(-a))`,  `ε_h = O(h^s)`
 
@@ -173,7 +167,7 @@ theorem eventually_exists_continuous_forall_add_add_eq_zero
   -- The radius `r = 2 C ε` is below `δ`, and `C L r = 2 C² L ε < 1`.
   have hr : (C h : ℝ) * L h * (2 * C h * ε h) < 1 := by nlinarith
   have hre (p : P) : 2 * C h * ‖e h p‖ ≤ 2 * C h * ε h := by gcongr; exact he p
-  obtain ⟨x, hx, hxsol⟩ := exists_continuous_forall_add_add_eq_zero (P := P) (F := fun _ ↦ F h)
+  obtain ⟨x, hx, hxsol⟩ := exists_continuous_forall_add_add_eq_zero (P := P) (F := F h)
     hDQ hQ hN hN0 hεδ hr hre fun z hz ↦ hT z (closedBall_subset_closedBall hεδ hz)
   refine ⟨x, hx, fun p ↦ ⟨(hxsol p).1, (hxsol p).2.1, (hxsol p).2.2, ?_⟩⟩
   intro y hyQ hye hyδ hyL

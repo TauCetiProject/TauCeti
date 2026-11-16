@@ -32,10 +32,10 @@ These are the comparisons behind the order of growth of an entire function.
 
 ## Positive powers near zero
 
-As `h → 0⁺`, a positive power `h ^ θ` tends to zero, so every multiple `A * h ^ θ` falls below
-any positive constant. This is how polynomial rates in a small scale `h` become inequalities for
-all small `h`. Power laws multiply: if `f = O(h ^ a)` and `g = O(h ^ b)` as `h → 0⁺`, then
-`f * g = O(h ^ (a + b))`.
+As `h → 0⁺`, a positive power `h ^ θ` tends to zero, so every function `f = O(h ^ θ)`, in
+particular every multiple `A * h ^ θ`, falls below any positive constant. This is how polynomial
+rates in a small scale `h` become inequalities for all small `h`. Power laws multiply: if
+`f = O(h ^ a)` and `g = O(h ^ b)` as `h → 0⁺`, then `f * g = O(h ^ (a + b))`.
 
 ## Families bounded by integer powers
 
@@ -105,12 +105,16 @@ theorem tendsto_rpow_nhdsGT_zero {θ : ℝ} (hθ : 0 < θ) :
   rw [Real.zero_rpow hθ.ne'] at ht
   exact ht.mono_left nhdsWithin_le_nhds
 
+/-- A function bounded by a positive power of `h` is eventually below every positive bound as
+`h → 0⁺`. -/
+theorem eventually_lt_of_isBigO_rpow {f : ℝ → ℝ} {θ : ℝ} (hθ : 0 < θ)
+    (hf : f =O[𝓝[>] 0] fun h ↦ h ^ θ) {c : ℝ} (hc : 0 < c) : ∀ᶠ h in 𝓝[>] 0, f h < c :=
+  (hf.trans_tendsto (tendsto_rpow_nhdsGT_zero hθ)).eventually (gt_mem_nhds hc)
+
 /-- Near `0⁺`, a positive power of `h` with any coefficient is below any positive constant. -/
 theorem eventually_mul_rpow_lt_nhdsGT_zero {θ : ℝ} (hθ : 0 < θ) (A : ℝ) {c : ℝ} (hc : 0 < c) :
-    ∀ᶠ h in 𝓝[>] (0 : ℝ), A * h ^ θ < c := by
-  have ht := (tendsto_rpow_nhdsGT_zero hθ).const_mul A
-  rw [mul_zero] at ht
-  exact ht.eventually (gt_mem_nhds hc)
+    ∀ᶠ h in 𝓝[>] (0 : ℝ), A * h ^ θ < c :=
+  eventually_lt_of_isBigO_rpow hθ (isBigO_const_mul_self A _ _) hc
 
 variable {E : Type*} [SeminormedAddCommGroup E]
 
