@@ -175,7 +175,7 @@ theorem value_transferL_ae_congr {i j : Fin A.n} {P Q : Opens E}
     (m : Fin (finrank ℝ F)) :
     (Wkp.value k (A.transferL μ q k hq i j hPc hPD hPQ u m) : E → ℝ) =ᵐ[μ.restrict P]
       Wkp.value k' (A.transferL μ r k' hr i j hPc hPD hPQ v m) := by
-  set h := (A.exists_isChangeOfVariables_chart_symm_trans k hPc hPD hPQ).choose_spec.choose_spec
+  obtain ⟨_, _, h⟩ := A.exists_isChangeOfVariables_chart_symm_trans k hPc hPD hPQ
   filter_upwards [A.value_transferL_ae μ q k hq i j hPc hPD hPQ u m,
     A.value_transferL_ae μ r k' hr i j hPc hPD hPQ v m,
     h.ae_comp (ae_all_iff.2 huv)] with y hu hv hy

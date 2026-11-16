@@ -160,12 +160,8 @@ private theorem exists_sobolevEmbeddingL (hpstar : pstar ≠ ⊤)
     rw [ContinuousLinearMap.coe_codRestrict_apply]
     exact hD w i m⟩
   obtain ⟨s, hs⟩ := A.sectionChartData.exists_section μ p (k + 1) w
-  refine (A.sectionChartData.mem_sobolevSections_iff μ pstar k).2 ⟨s, fun i ↦ ?_⟩
-  filter_upwards [A.sectionChartData.chartValueL_apply_ae μ pstar k i (D w),
-    A.sectionChartData.chartValueL_apply_ae μ p (k + 1) i w,
-    ae_all_iff.2 fun m ↦ hD w i m, hs i] with y h₁ h₂ h₃ h₄
-  rw [h₁, ← h₄, h₂]
-  exact Finset.sum_congr rfl fun m _ ↦ by rw [h₃ m]
+  exact (A.sectionChartData.mem_sobolevSections_iff μ pstar k).2
+    ⟨s, fun i ↦ (SectionChartData.chartValueL_ae_congr (hD w i)).trans (hs i)⟩
 
 /-- **The Sobolev embedding for sections of a vector bundle.** On a compact manifold without
 boundary, given by a finite bundle atlas of a Hausdorff manifold of dimension `n`, if `1 ≤ p` and
@@ -195,13 +191,8 @@ theorem chartValueL_sobolevEmbeddingL_ae (hpstar : pstar ≠ ⊤)
     (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (w : SobolevSection A μ p (k + 1))
     (i : Fin A.n) :
     A.sectionChartData.chartValueL μ pstar k i (sobolevEmbeddingL A μ k hpstar hexp w)
-      =ᵐ[μ.restrict (A.image i)] A.sectionChartData.chartValueL μ p (k + 1) i w := by
-  filter_upwards [A.sectionChartData.chartValueL_apply_ae μ pstar k i
-      (sobolevEmbeddingL A μ k hpstar hexp w),
-    A.sectionChartData.chartValueL_apply_ae μ p (k + 1) i w,
-    ae_all_iff.2 fun m ↦ value_sobolevEmbeddingL_ae hpstar hexp w i m] with y h₁ h₂ h₃
-  rw [h₁, h₂]
-  exact Finset.sum_congr rfl fun m _ ↦ by rw [h₃ m]
+      =ᵐ[μ.restrict (A.image i)] A.sectionChartData.chartValueL μ p (k + 1) i w :=
+  SectionChartData.chartValueL_ae_congr (value_sobolevEmbeddingL_ae hpstar hexp w i)
 
 /-- **Characterization of the Sobolev embedding.** An element of `W^{k,p⋆}(V)` is the image of
 `w ∈ W^{k+1,p}(V)` exactly when its chart components have the values of those of `w`. -/
