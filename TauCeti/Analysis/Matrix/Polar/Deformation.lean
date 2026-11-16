@@ -85,7 +85,7 @@ theorem continuous_toUnits_polarUnitary :
 /-- The unitary polar factor depends continuously on the invertible matrix. -/
 theorem continuous_polarUnitary :
     Continuous (Units.polarUnitary : GL n 𝕜 → unitaryGroup n 𝕜) :=
-  (Units.continuous_val.comp continuous_toUnits_polarUnitary).subtype_mk _
+  (contMDiff_coe_polarUnitary (n := n) (𝕜 := 𝕜) (k := 0)).continuous.subtype_mk _
 
 /-- Contract the positive factor in `A = P U` by `P ^ (1 - t) U`. It is defined for every real
 time, and stays invertible even outside the homotopy interval. -/

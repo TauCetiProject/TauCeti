@@ -120,15 +120,15 @@ omit [Fintype ι] in
 @[simp]
 theorem posSemidef_map_algebraMap_iff [Finite ι] {S : Matrix ι ι ℝ} :
     (S.map (algebraMap ℝ 𝕜)).PosSemidef ↔ S.PosSemidef := by
-  refine ⟨fun h => ⟨?_, fun x => ?_⟩, PosSemidef.map_algebraMap⟩
-  · refine (Matrix.map_injective (algebraMap ℝ 𝕜).injective) ?_
-    dsimp only
-    rw [conjTranspose_map (algebraMap ℝ 𝕜) algebraMap_star_comm, h.isHermitian.eq]
-  · have hx := h.2 (x.mapRange (algebraMap ℝ 𝕜) (map_zero _))
-    simp only [Finsupp.sum, Finsupp.support_mapRange_of_injective (map_zero _) x
-      (algebraMap ℝ 𝕜).injective, Finsupp.mapRange_apply, map_apply,
-      ← algebraMap_star_comm, ← map_mul, ← map_sum] at hx
-    simpa [Finsupp.sum] using (RCLike.ofReal_nonneg (K := 𝕜)).1 hx
+  have := Fintype.ofFinite ι
+  refine ⟨fun h => .of_dotProduct_mulVec_nonneg ?_ fun x => ?_, PosSemidef.map_algebraMap⟩
+  · exact (isHermitian_map_iff algebraMap_star_comm (algebraMap ℝ 𝕜).injective).1 h.isHermitian
+  · have hx := h.dotProduct_mulVec_nonneg (algebraMap ℝ 𝕜 ∘ x)
+    rw [star_trivial, ← RCLike.ofReal_nonneg (K := 𝕜), ← RCLike.algebraMap_eq_ofReal,
+      RingHom.map_dotProduct]
+    convert hx using 2
+    · ext i; simp
+    · ext i; exact RingHom.map_mulVec _ _ _ i
 
 open scoped Classical in
 /-- The square root of a real matrix, read over `𝕜`, is the square root of the matrix read over
