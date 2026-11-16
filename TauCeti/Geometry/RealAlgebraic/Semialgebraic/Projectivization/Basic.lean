@@ -58,6 +58,10 @@ equivalent to local chart semialgebraicity at every point:
 * `TauCeti.isMultiprojectiveSemialgebraic_iff_forall_exists_semialgebraicAt` and
   `TauCeti.isMultiprojectiveSemialgebraic_iff_forall_semialgebraicAt`: over `ℝ`, equivalence with
   local semialgebraicity at every point in the standard product affine charts.
+* `TauCeti.IsSemialgebraicOn.isMultiprojectiveSemialgebraic_image`,
+  `TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_preimage_multiprojective`, and
+  `TauCeti.isSemialgebraicOn_piProjectorCoords_comp_of_rightInvOn`: image, preimage, and
+  right-inverse projector transport between affine coordinate spaces and multiprojective spaces.
 
 ## References
 
@@ -681,7 +685,112 @@ theorem isMultiprojectiveSemialgebraic_iff_isSemialgebraic_image_piProjectorCoor
       simpa [D, dotProduct] using lt_of_le_of_ne (dotProduct_self_nonneg fun r ↦ v ⟨q.1, r⟩)
         (Ne.symm (dotProduct_self_eq_zero.not.mpr (hv q.1)))
 
+/-- If `piProjectorCoords ∘ f` is semialgebraic on a finite-coordinate affine set `s`, then
+`f '' s` is multiprojective semialgebraic. -/
+theorem IsSemialgebraicOn.isMultiprojectiveSemialgebraic_image {σ : Type*}
+    [Finite ι] [HasSemialgebraicProjections K] [Finite σ]
+    {f : (σ → K) → ((i : ι) → ℙ K (κ i → K))} {s : Set (σ → K)}
+    (hf : IsSemialgebraicOn (piProjectorCoords ∘ f) s) :
+    IsMultiprojectiveSemialgebraic (f '' s) := by
+  rw [isMultiprojectiveSemialgebraic_iff_isSemialgebraic_image_piProjectorCoords, ← image_comp]
+  exact hf.isSemialgebraic_image
+
+/-- If `piProjectorCoords ∘ f` is semialgebraic on `s`, then the preimage in `s` of every
+multiprojective semialgebraic subset `T` is semialgebraic. -/
+theorem IsSemialgebraicOn.isSemialgebraic_inter_preimage_multiprojective {σ : Type*}
+    [Finite ι] [HasSemialgebraicProjections K]
+    {f : (σ → K) → ((i : ι) → ℙ K (κ i → K))} {s : Set (σ → K)}
+    (hf : IsSemialgebraicOn (piProjectorCoords ∘ f) s)
+    {T : Set ((i : ι) → ℙ K (κ i → K))} (hT : IsMultiprojectiveSemialgebraic T) :
+    IsSemialgebraic (s ∩ f ⁻¹' T) := by
+  cases nonempty_fintype ι
+  have hT' := isMultiprojectiveSemialgebraic_iff_isSemialgebraic_image_piProjectorCoords.1 hT
+  have hpre : s ∩ f ⁻¹' T = s ∩ (piProjectorCoords ∘ f) ⁻¹' (piProjectorCoords '' T) := by
+    ext x
+    simp [piProjectorCoords_injective.mem_set_image]
+  rw [hpre]
+  exact hf.isSemialgebraic_inter_preimage hT'
+
 end ProductProjector
+
+section RightInverse
+
+variable {ι : Type*} {κ : ι → Type*} [∀ i, Fintype (κ i)]
+  {K : Type*} [Field K] [LinearOrder K]
+
+omit [LinearOrder K] in
+private theorem projector_apply_eq_one_of_forall_eq {α : Type*} [Fintype α]
+    (q : ℙ K (α → K)) {a₀ : α} (ha₀ : ∀ b : α, b = a₀) :
+    projector q a₀ a₀ = 1 := by
+  induction q using ind with
+  | h w hw =>
+    have hw₀ : w a₀ ≠ 0 := by
+      obtain ⟨b, hb⟩ := Function.ne_iff.1 hw
+      rwa [ha₀ b] at hb
+    have hsum : (∑ r : α, w r * w r) = w a₀ * w a₀ :=
+      Finset.sum_eq_single a₀ (fun b _ hb ↦ (hb (ha₀ b)).elim)
+        (fun h ↦ (h (Finset.mem_univ a₀)).elim)
+    rw [projector_mk, rankOneProjector_apply, dotProduct, hsum,
+      div_self (mul_ne_zero hw₀ hw₀)]
+
+private theorem eq_empty_of_infinite_of_rightInvOn [Infinite ι]
+    {τ : ((Σ i, κ i × κ i) → K) → ((i : ι) → ℙ K (κ i → K))}
+    {s : Set ((Σ i, κ i × κ i) → K)} (hs : IsSemialgebraic s)
+    (hτ : ∀ x ∈ s, piProjectorCoords (τ x) = x) :
+    s = ∅ := by
+  classical
+  obtain ⟨F, hF⟩ := hs.exists_finset_mem_iff_of_eqOn
+  obtain ⟨i₀, hi₀⟩ := Infinite.exists_notMem_finset (F.image Sigma.fst)
+  have hnotMem (a b : κ i₀) : (⟨i₀, a, b⟩ : Σ i, κ i × κ i) ∉ F :=
+    fun h ↦ hi₀ (Finset.mem_image.2 ⟨⟨i₀, a, b⟩, h, rfl⟩)
+  ext x
+  simp only [mem_empty_iff_false, iff_false]
+  intro hx
+  obtain ⟨a₀, _⟩ := Function.ne_iff.1 (τ x i₀).rep_ne_zero
+  by_cases hsub : ∃ b₀ : κ i₀, b₀ ≠ a₀
+  · obtain ⟨b₀, hb₀⟩ := hsub
+    let y := Function.update (Function.update x ⟨i₀, a₀, b₀⟩ 1) ⟨i₀, b₀, a₀⟩ 0
+    have hy : y ∈ s := (hF x y fun q hq ↦ by
+      have h1 : q ≠ ⟨i₀, b₀, a₀⟩ := fun h ↦ hnotMem b₀ a₀ (h ▸ hq)
+      have h2 : q ≠ ⟨i₀, a₀, b₀⟩ := fun h ↦ hnotMem a₀ b₀ (h ▸ hq)
+      simp [y, h1, h2]).1 hx
+    have hne : (⟨i₀, a₀, b₀⟩ : Σ i, κ i × κ i) ≠ ⟨i₀, b₀, a₀⟩ := by
+      simp [hb₀.symm]
+    have hsymm : projector (τ y i₀) a₀ b₀ = projector (τ y i₀) b₀ a₀ := by
+      induction (τ y i₀) using ind with
+      | h w hw => rw [projector_mk, rankOneProjector_apply, rankOneProjector_apply, mul_comm]
+    have hya : projector (τ y i₀) a₀ b₀ = 1 := by
+      simpa [y, hne] using congr_fun (hτ y hy) ⟨i₀, a₀, b₀⟩
+    have hyb : projector (τ y i₀) b₀ a₀ = 0 := by
+      simpa [y] using congr_fun (hτ y hy) ⟨i₀, b₀, a₀⟩
+    exact one_ne_zero (hya.symm.trans (hsymm.trans hyb))
+  · push Not at hsub
+    let y := Function.update x ⟨i₀, a₀, a₀⟩ 0
+    have hy : y ∈ s := (hF x y fun q hq ↦ by
+      have h1 : q ≠ ⟨i₀, a₀, a₀⟩ := fun h ↦ hnotMem a₀ a₀ (h ▸ hq)
+      simp [y, h1]).1 hx
+    have hy0 : projector (τ y i₀) a₀ a₀ = 0 := by
+      simpa [y] using congr_fun (hτ y hy) ⟨i₀, a₀, a₀⟩
+    exact one_ne_zero ((projector_apply_eq_one_of_forall_eq (τ y i₀) hsub).symm.trans hy0)
+
+/-- **Inverse projector transport on semialgebraic subsets of the flattened product projector
+locus.** Any map `τ : ((Σ i, κ i × κ i) → K) → (i : ι) → ℙ K (κ i → K)` that is a right inverse of
+`piProjectorCoords` on a semialgebraic set `s` satisfies
+`IsSemialgebraicOn (piProjectorCoords ∘ τ) s`, so `τ` pushes semialgebraic subsets of `s` forward to
+multiprojective semialgebraic sets and pulls multiprojective semialgebraic sets back to
+semialgebraic subsets of `s`. -/
+theorem isSemialgebraicOn_piProjectorCoords_comp_of_rightInvOn
+    {τ : ((Σ i, κ i × κ i) → K) → ((i : ι) → ℙ K (κ i → K))}
+    {s : Set ((Σ i, κ i × κ i) → K)} (hs : IsSemialgebraic s)
+    (hτ : ∀ x ∈ s, piProjectorCoords (τ x) = x) :
+    IsSemialgebraicOn (piProjectorCoords ∘ τ) s := by
+  by_cases hι : Finite ι
+  · exact (isSemialgebraicMap_id.isSemialgebraicOn hs).congr fun x hx ↦ (hτ x hx).symm
+  · have : Infinite ι := not_finite_iff_infinite.1 hι
+    rw [eq_empty_of_infinite_of_rightInvOn hs hτ]
+    exact isSemialgebraicOn_empty _
+
+end RightInverse
 
 /-! ### Standard product affine charts and local-to-global semialgebraicity -/
 
