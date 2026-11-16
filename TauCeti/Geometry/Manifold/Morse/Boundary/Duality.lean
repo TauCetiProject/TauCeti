@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Boundary.ChainComplex
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Opposite
 public import TauCeti.Algebra.Homology.Kronecker
-import Mathlib.Algebra.Category.ModuleCat.Injective
-import Mathlib.RingTheory.SimpleModule.InjectiveProjective
+import TauCeti.Algebra.Category.ModuleCat.Injective.Semisimple
+import TauCeti.LinearAlgebra.Finsupp.LSum
 
 /-!
 # The mod-two Morse cochain complex and duality for the opposite function
@@ -119,12 +119,6 @@ theorem morseCochainComplex_d_apply (i : ℕ)
     (a : (h.morseComplex hf).X i ⟶ ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2))) :
     (h.morseCochainComplex hf).d i (i + 1) a = (h.morseComplex hf).d (i + 1) i ≫ a :=
   (rfl)
-
-/-- Every module over the field `ZMod 2` is injective, in particular the coefficients of the Morse
-cochains. -/
-private instance : Injective (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2))) :=
-  haveI := Module.injective_of_isSemisimpleRing (ZMod 2) (ULift.{u} (ZMod 2))
-  Module.injective_object_of_injective_module (ZMod 2) (ULift.{u} (ZMod 2))
 
 /-- **Morse cohomology is dual to Morse homology.** The Kronecker pairing identifies the mod-two
 Morse cohomology in degree `i` with the space of linear forms on the mod-two Morse homology in
@@ -245,16 +239,6 @@ theorem bijective_morseCochainToNegChain {i k : ℕ} (hik : i + k = finrank ℝ 
           (Finsupp.single (hf.morseIndexNegEquiv hik q) 1)).down := rfl
       _ = c q := by simp
 
-/-- A linear form on a free module is determined by its values on the basis vectors
-(`Finsupp.llift`). This is stated for plain `Finsupp`s, since the instances on the terms of the
-Morse complex keep the `Finsupp.llift` lemmas from rewriting there directly. -/
-private theorem down_linearForm_apply_eq_sum {R A : Type*} [CommSemiring R]
-    (g : (A →₀ R) →ₗ[R] ULift.{u} R) (x : A →₀ R) :
-    (g x).down = x.sum fun p c ↦ c * (g (Finsupp.single p 1)).down := by
-  rw [← LinearEquiv.apply_symm_apply (Finsupp.llift _ R R A) g, Finsupp.llift_apply,
-    Finsupp.lift_apply, ← ULift.moduleEquiv_apply (R := R), map_finsuppSum]
-  simp
-
 /-- **The coboundary of `f` is the boundary of `-f`.** Reading cochains of `f` as chains of `-f`
 carries the Morse coboundary `a ↦ a ∘ ∂` of `f` from index `i` to index `i + 1` to the mod-two
 Morse boundary of `-f` from index `k + 1` to index `k`. Both count, modulo two, the trajectories of
@@ -279,10 +263,13 @@ theorem morseCochainToNegChain_d_comp (i k : ℕ)
       omega
     refine (congrArg ULift.down (ModuleCat.comp_apply _ _ _)).trans ?_
     rw [morseComplex_d_apply]
-    refine (down_linearForm_apply_eq_sum a.hom _).trans ?_
-    rw [Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
+    -- Expand `a` on the basis of the chains of index `i`.
+    refine (congrArg ULift.down (a.hom.apply_eq_finsuppSum_smul _)).trans ?_
+    rw [← ULift.moduleEquiv_apply (R := ZMod 2), map_finsuppSum,
+      Finsupp.sum_fintype _ _ fun _ ↦ by simp]
     refine Fintype.sum_equiv (hf.morseIndexNegEquiv hik).symm _ _ fun p ↦ ?_
-    rw [morseBoundaryAt_single_apply, one_mul, morseCochainToNegChain_apply_of_add_eq h hf hik,
+    rw [map_smul, RingHom.id_apply, ULift.moduleEquiv_apply, smul_eq_mul,
+      morseBoundaryAt_single_apply, one_mul, morseCochainToNegChain_apply_of_add_eq h hf hik,
       Equiv.apply_symm_apply, h.morseBoundaryCoeff_neg hf, mul_comm,
       IsMorse.coe_morseIndexNegEquiv_symm_apply, Equiv.apply_symm_apply]
     -- Both sides read `q` as the same critical point `Set.equivOfEq criticalPoints_neg q` of `f`.
