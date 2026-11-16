@@ -613,36 +613,6 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le [Nonempty ι] {r : ℝ�
     (hstamp (Omega := B) (c := 0) (gamma := 0) hBfin hBell hBmeas aestronglyMeasurable_const
       (fun _ _ => by simp) (fun _ _ => le_rfl) hf hw)
 
-omit [DecidableEq ι] in
-/-- A function bounded by `B` on the ball `B(x₀, ρ)` has `Lʳ` norm there at most
-`|B(x₀, ρ)|^(1/r) B = ρ^(n/r) |B(0, 1)|^(1/r) B`, so the splitting error
-`ρ^(2 - n/r) ‖f‖_{Lʳ(B(x₀, ρ))}` is at most `|B(0, 1)|^(1/r) ρ² B`. -/
-private theorem rpow_mul_toReal_eLpNorm_ball_le_of_ae_norm_le {f : EuclideanSpace ℝ ι → ℝ}
-    {x₀ : EuclideanSpace ℝ ι} {ρ B : ℝ} {r : ℝ≥0} (hρ : 0 < ρ) (hB : 0 ≤ B)
-    (hf : AEStronglyMeasurable f (mu.restrict (ball x₀ ρ)))
-    (hfB : ∀ᵐ x ∂mu.restrict (ball x₀ ρ), ‖f x‖ ≤ B) :
-    ρ ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal ≤
-      mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ (r : ℝ)⁻¹ * ρ ^ 2 * B := by
-  have hle := eLpNorm_le_of_ae_bound (p := (r : ℝ≥0∞)) hf hfB
-  rw [Measure.restrict_apply_univ, ENNReal.coe_toReal] at hle
-  have hnorm : (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal ≤
-      mu.real (ball x₀ ρ) ^ (r : ℝ)⁻¹ * B := by
-    refine (ENNReal.toReal_mono (by finiteness) hle).trans_eq ?_
-    rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal hB, measureReal_def]
-  -- `|B(x₀, ρ)|^(1/r) = ρ^(n/r) |B(0, 1)|^(1/r)` and `ρ^(2 - n/r) ρ^(n/r) = ρ²`.
-  have hpow : ρ ^ (2 - (Fintype.card ι : ℝ) / r) * ρ ^ ((Fintype.card ι : ℝ) * (r : ℝ)⁻¹) =
-      ρ ^ 2 := by
-    rw [← Real.rpow_add hρ, ← Real.rpow_natCast ρ 2]
-    congr 1
-    push_cast
-    ring
-  calc ρ ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal
-      ≤ ρ ^ (2 - (Fintype.card ι : ℝ) / r) * (mu.real (ball x₀ ρ) ^ (r : ℝ)⁻¹ * B) := by
-        gcongr
-    _ = _ := by
-        rw [Measure.addHaar_real_ball_rpow _ _ hρ, finrank_euclideanSpace, ← hpow]
-        ring
-
 /-- **Splitting off a bounded right-hand side on a ball.** Let `n ≥ 1` be the dimension. There is
 `K > 0`, depending only on `n` and the normalization of `mu`, such that the following holds. Let
 `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a
@@ -684,17 +654,21 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_of_ae_norm_le [Nonempty
   refine ⟨K₀ * ω ^ (r : ℝ)⁻¹, mul_pos hK₀ (Real.rpow_pos_of_pos hω _), ?_⟩
   intro Omega a lam Lam f u x₀ ρ B h ha hf hfB hu hρ hball
   have hlam : 0 < lam := h.pos
-  have hB : 0 ≤ B := nonneg_of_ae_restrict_abs_le (measure_ball_pos mu x₀ hρ).ne'
-    (hfB.mono fun x hx => (Real.norm_eq_abs _).symm.trans_le hx)
   have : IsFiniteMeasure (mu.restrict (ball x₀ ρ)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   obtain ⟨g, hg, hug⟩ := hsplit h ha (MemLp.of_bound hf _ hfB) hu hρ hball
   refine ⟨g, hg, hug.mono fun x hx => hx.trans ?_⟩
-  have hnorm := rpow_mul_toReal_eLpNorm_ball_le_of_ae_norm_le (r := r) hρ hB hf hfB
+  -- The scale-invariant `Lʳ` bound on the ball, with `ρ^(2 - n/r) = ρ² ρ^(-n/r)`.
+  have hnorm := Measure.rpow_neg_mul_toReal_eLpNorm_ball_le_of_ae_norm_le mu (p := r) hρ hf hfB
+  rw [finrank_euclideanSpace, ENNReal.ofReal_coe_nnreal, one_div] at hnorm
+  have hpow : ρ ^ (2 - n / r) = ρ ^ 2 * ρ ^ (-(n / r)) := by
+    rw [← Real.rpow_natCast ρ 2, ← Real.rpow_add hρ]
+    push_cast
+    ring_nf
   calc K₀ * ρ ^ (2 - n / r) * (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam
-      = K₀ * (ρ ^ (2 - n / r) * (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal) / lam := by
-        ring
-    _ ≤ K₀ * (ω ^ (r : ℝ)⁻¹ * ρ ^ 2 * B) / lam := by gcongr
+      = K₀ * ρ ^ 2 * (ρ ^ (-(n / r)) * (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal) / lam := by
+        rw [hpow]; ring
+    _ ≤ K₀ * ρ ^ 2 * (ω ^ (r : ℝ)⁻¹ * B) / lam := by gcongr
     _ = K₀ * ω ^ (r : ℝ)⁻¹ * ρ ^ 2 * B / lam := by ring
 
 /-- **Local boundedness of weak solutions with a right-hand side.** Let `n ≥ 1` be the dimension
