@@ -96,6 +96,7 @@ end Pullback
 variable [Field k]
 variable [Finite G] [IsAlgClosed k] [Invertible (orderOf s : k)]
 
+omit [Finite G] in
 /-- **The `p`-section indicator, scaled by the order of `s`, is an `A`-combination of characters
 of the `p`-elementary subgroup**, for every subring `A` of `k` containing the roots of unity of
 order dividing `orderOf s`. On `⟨s⟩` the scaled indicator of `s` is `∑ χ, χ(s⁻¹) χ` over the

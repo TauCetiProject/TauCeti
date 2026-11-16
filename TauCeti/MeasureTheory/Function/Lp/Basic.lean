@@ -18,14 +18,14 @@ This file records basic identities on `MeasureTheory.Lp` that complement
   `MeasureTheory.Lp.coeFn_finsetSum`, `MeasureTheory.memLp_finsetSum`, and
   `MeasureTheory.memLp_finsetSum'`).
 * Evaluation and functoriality identities for `ContinuousLinearMap.compLp` and
-  `ContinuousLinearMap.compLpL`.
+  `ContinuousLinearMap.compLpL`, including agreement of `L.compLpL p μ f` with `L.compLp f`.
 
 ## Main declarations
 
 * `MeasureTheory.MemLp.toLp_finsetSum'`: `hsum.toLp (∑ i ∈ s, f i) = ∑ i ∈ s, (hf i).toLp (f i)`.
 * `MeasureTheory.MemLp.toLp_finsetSum`:
   `hsum.toLp (fun x ↦ ∑ i ∈ s, f i x) = ∑ i ∈ s, (hf i).toLp (f i)`.
-* `ContinuousLinearMap.compLpL_apply`: `L.compLpL p μ f = L.compLp f`.
+* `ContinuousLinearMap.compLpL_apply`: the bundled composition applied to `f` is `L.compLp f`.
 * `ContinuousLinearMap.id_compLp`: `(ContinuousLinearMap.id 𝕜 E).compLp f = f`.
 * `ContinuousLinearMap.comp_compLp`: `(L₂.comp L₁).compLp f = L₂.compLp (L₁.compLp f)`.
 * `ContinuousLinearMap.id_compLpL`:
@@ -63,17 +63,27 @@ namespace ContinuousLinearMap
 
 open MeasureTheory
 
+section Apply
+
+variable {α E F 𝕜 𝕜' : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] {σ : 𝕜 →+* 𝕜'} [RingHomIsometric σ]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜' F]
+
+/-- The bundled composition `L.compLpL p μ` applied to `f` is the composition `L.compLp f`. -/
+@[simp]
+theorem compLpL_apply [Fact (1 ≤ p)] (L : E →SL[σ] F) (f : Lp E p μ) :
+    L.compLpL p μ f = L.compLp f :=
+  rfl
+
+end Apply
+
+section Functoriality
+
 variable {α 𝕜 𝕜₂ 𝕜₃ E F G : Type*} {_ : MeasurableSpace α} {p : ℝ≥0∞} {μ : Measure α}
   [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G]
   [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂] [NontriviallyNormedField 𝕜₃]
   [NormedSpace 𝕜 E] [NormedSpace 𝕜₂ F] [NormedSpace 𝕜₃ G]
-  {σ : 𝕜 →+* 𝕜₂} {σ₁₂ : 𝕜 →+* 𝕜₂} {σ₂₃ : 𝕜₂ →+* 𝕜₃} {σ₁₃ : 𝕜 →+* 𝕜₃}
-
-/-- Evaluating `L.compLpL p μ` at `f` is `L.compLp f`. -/
-@[simp]
-theorem compLpL_apply [RingHomIsometric σ] [Fact (1 ≤ p)] (L : E →SL[σ] F) (f : Lp E p μ) :
-    L.compLpL p μ f = L.compLp f :=
-  rfl
+  {σ₁₂ : 𝕜 →+* 𝕜₂} {σ₂₃ : 𝕜₂ →+* 𝕜₃} {σ₁₃ : 𝕜 →+* 𝕜₃}
 
 /-- Postcomposing an `Lᵖ` class with the identity continuous linear map leaves it unchanged. -/
 @[simp]
@@ -106,5 +116,7 @@ theorem comp_compLpL [RingHomCompTriple σ₁₂ σ₂₃ σ₁₃]
     (L₂.comp L₁).compLpL p μ = (L₂.compLpL p μ).comp (L₁.compLpL p μ) := by
   ext1 f
   exact comp_compLp L₂ L₁ f
+
+end Functoriality
 
 end ContinuousLinearMap
