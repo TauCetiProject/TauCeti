@@ -34,9 +34,9 @@ finite computation or by counting transfer to the gauge distance and the Cheeger
 `TauCeti.Cochain`.
 
 `Sym3.cost_ge_of_forall_cons_one` reduces a lower bound for every gauge to the gauges pinned to `1`
-at vertex `0`, which is what `decide +kernel` checks for the `k = 4` seed. `Sym3.cost_rep_ge` and
-`Sym3.defect_rep` are the two counts of balanced replication that the upper bound
-`h1 (complete V) (movedNorm (Fin 3)) ≤ card V / 3` needs.
+at vertex `0` (`Cochain.le_gaugeDist_iff_apply_eq_one`), which is what `decide +kernel` checks for
+the `k = 4` seed. `Sym3.cost_rep_ge` and `Sym3.defect_rep` are the two counts of balanced
+replication that the upper bound `h1 (complete V) (movedNorm (Fin 3)) ≤ card V / 3` needs.
 
 ## References
 
@@ -173,20 +173,6 @@ theorem defect_ofLt (α : Fin k → Fin k → S3) :
 
 /-! ### Pinned gauges -/
 
-private theorem moved_conj (c x : S3) : moved (c⁻¹ * x * c) = moved x := by
-  have h := Perm.movedNorm_conj c⁻¹ x
-  rw [inv_inv, ← moved_eq_movedNorm, ← moved_eq_movedNorm] at h
-  exact_mod_cast h
-
-private theorem cost_mul_const (α : Fin k → Fin k → S3) (β : Fin k → S3) (c : S3) :
-    cost α (fun v => β v * c) = cost α β := by
-  unfold cost
-  congr 1
-  refine List.map_congr_left fun e _ => ?_
-  have : (β e.1 * c)⁻¹ * α e.1 e.2 * (β e.2 * c) = c⁻¹ * ((β e.1)⁻¹ * α e.1 e.2 * β e.2) * c := by
-    group
-  rw [this, moved_conj]
-
 /-- Every function `Fin n → Sym(3)`, as a list. -/
 def funs : (n : ℕ) → List (Fin n → S3)
   | 0 => [Fin.elim0]
@@ -198,17 +184,23 @@ private theorem mem_funs : ∀ (n : ℕ) (f : Fin n → S3), f ∈ funs n
     simp only [funs, List.mem_flatMap, List.mem_map]
     exact ⟨f 0, mem_S3list _, Fin.tail f, mem_funs n _, Fin.cons_self_tail f⟩
 
-/-- If every gauge pinned to `1` at vertex `0` costs at least `D`, every gauge does: right
-multiplication by a constant conjugates every edge term. -/
+/-- If every gauge pinned to `1` at vertex `0` costs at least `D`, every gauge does: the pinned
+bound is a lower bound for the gauge distance of `Cochain.ofLt` by
+`Cochain.le_gaugeDist_iff_apply_eq_one`, and the gauge distance is at most every cost
+(`Cochain.gaugeDist_le_cost`). -/
 theorem cost_ge_of_forall_cons_one {m : ℕ} (α : Fin (m + 1) → Fin (m + 1) → S3) (D : ℕ)
     (h : (funs m).all (fun t => decide (D ≤ cost α (Fin.cons 1 t))) = true) (β : Fin (m + 1) → S3) :
     D ≤ cost α β := by
-  rw [← cost_mul_const α β (β 0)⁻¹]
-  set β' : Fin (m + 1) → S3 := fun v => β v * (β 0)⁻¹ with hβ'
-  have hcons : β' = Fin.cons 1 (Fin.tail β') := by
-    rw [← show β' 0 = 1 by simp [hβ']]; exact (Fin.cons_self_tail β').symm
-  rw [hcons]
-  simpa using List.all_eq_true.mp h (Fin.tail β') (mem_funs m _)
+  set c := Cochain.ofLt (TwoComplex.complete (Fin (m + 1))) α
+  have hD : (D : ℝ) ≤ c.gaugeDist (Perm.movedNorm (Fin 3)) :=
+    (c.le_gaugeDist_iff_apply_eq_one Perm.isConjInvariant_movedNorm 0).mpr fun β' h0 => by
+      have hcons : β' = Fin.cons 1 (Fin.tail β') := by
+        rw [← h0]; exact (Fin.cons_self_tail β').symm
+      rw [cost_ofLt, hcons]
+      exact_mod_cast of_decide_eq_true (List.all_eq_true.mp h (Fin.tail β') (mem_funs m _))
+  have hβ := hD.trans (c.gaugeDist_le_cost _ β)
+  rw [cost_ofLt] at hβ
+  exact_mod_cast hβ
 
 /-! ### Balanced replication
 
