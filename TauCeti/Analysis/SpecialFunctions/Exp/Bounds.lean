@@ -30,6 +30,8 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exists_rpow_mul_exp_neg_mul_le`: `x ^ σ exp (-c x)` is bounded on `x ≥ 0`, for `0 ≤ σ`,
   `0 < c`.
 * `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
+* `TauCeti.exp_neg_mul_abs_sub_le_abs_exp_sub_exp`: `exp (-M) |a - b| ≤ |exp a - exp b|` for
+  `a, b ≥ -M`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
 -/
@@ -113,6 +115,24 @@ theorem abs_exp_sub_one_le_mul_exp_abs (t : ℝ) : |exp t - 1| ≤ |t| * exp |t|
     div_one, pow_one] at h
   rwa [← Complex.ofReal_exp, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
     Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs] at h
+
+/-- The exponential expands distances on `[-M, ∞)` by at least `exp (-M)`:
+`exp (-M) |a - b| ≤ |exp a - exp b|` for `a, b ≥ -M`. -/
+theorem exp_neg_mul_abs_sub_le_abs_exp_sub_exp {M a b : ℝ} (ha : -M ≤ a) (hb : -M ≤ b) :
+    exp (-M) * |a - b| ≤ |exp a - exp b| := by
+  wlog hab : b ≤ a generalizing a b
+  · rw [abs_sub_comm a, abs_sub_comm (exp a)]
+    exact this hb ha (le_of_not_ge hab)
+  -- `exp a - exp b = exp b (exp (a - b) - 1) ≥ exp b (a - b) ≥ exp (-M) (a - b) ≥ 0`.
+  have h1 : exp b * (a - b) ≤ exp a - exp b := by
+    have h := mul_le_mul_of_nonneg_left (add_one_le_exp (a - b)) (exp_pos b).le
+    rw [← exp_add, add_sub_cancel] at h
+    linarith
+  have h2 : exp (-M) * (a - b) ≤ exp b * (a - b) :=
+    mul_le_mul_of_nonneg_right (exp_le_exp.2 hb) (by linarith)
+  rw [abs_of_nonneg (by linarith : 0 ≤ a - b),
+    abs_of_nonneg (by linarith [mul_nonneg (exp_pos (-M)).le (by linarith : 0 ≤ a - b)])]
+  linarith
 
 /-- `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real `t`. The right-hand side is the power series
 `∑ 2 · 4ⁿ t ^ (2n + 2) / (2n)!`, so this bounds `(exp t - 1)²` by a series of even powers. -/

@@ -650,6 +650,11 @@ theorem W1p.integral_value_sq_eq_norm_value_sq (u : W1p mu Omega 2) :
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [Real.norm_eq_abs, sq_abs])
 
+/-- On the whole space, the integral of the squared Sobolev value is its squared `L²` norm. -/
+theorem W1p.integral_value_sq_eq_norm_value_sq_top (u : W1p mu ⊤ 2) :
+    ∫ x, (W1p.value u x) ^ 2 ∂mu = ‖W1p.value u‖ ^ 2 := by
+  simpa using W1p.integral_value_sq_eq_norm_value_sq u
+
 /-- The `L²` pairing of the value components of two Sobolev functions, as an integral over `Ω`. -/
 theorem W1p.inner_value_eq_setIntegral (u v : W1p mu Omega 2) :
     ⟪W1p.value u, W1p.value v⟫_ℝ = ∫ x in Omega, W1p.value u x * W1p.value v x ∂mu := by
