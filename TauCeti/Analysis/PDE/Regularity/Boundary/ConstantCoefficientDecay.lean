@@ -305,10 +305,7 @@ private theorem energyFormH1_pullback_boundaryShear (h : ⟪ν, conormalShearVec
   have hA : pullbackPrincipal (boundaryShear A ν c₀ h) (fun _ => A) =
       fun _ => pullbackPrincipal (boundaryShear A ν c₀ h) (fun _ => A) z := by
     funext y; simp only [pullbackPrincipal_apply, fderiv_boundaryShear]
-  have hb : pullbackDrift (boundaryShear A ν c₀ h) 0 = 0 := by funext y; simp [pullbackDrift_apply]
-  have hc : pullbackDensity (boundaryShear A ν c₀ h) 0 = 0 := by
-    funext y; simp [pullbackDensity_apply]
-  rw [hA, hb, hc]
+  rw [hA, pullbackDrift_zero, pullbackDensity_zero]
 
 /-- Precomposition with the shear, `W^{1,2}(V) → W^{1,2}(U)`, for open `U` mapped into `V` and a
 bound `κ` on the norm of its linear part. -/
@@ -510,10 +507,7 @@ private theorem energyIntegrand_reflectPrincipal_pullbackPrincipal
     have h := energyIntegrand_pullback_hyperplaneReflection (ν := ν) (c₀ := c₀) (x := x)
       (a := fun _ => pullbackPrincipal (boundaryShear A ν c₀ hs) (fun _ => A) z) (b := 0) (c := 0)
       W W'
-    have hb : pullbackDrift (hyperplaneReflection ν c₀) 0 x = 0 := by simp [pullbackDrift_apply]
-    have hc : pullbackDensity (hyperplaneReflection ν c₀) 0 x = 0 := by
-      simp [pullbackDensity_apply]
-    rw [hb, hc] at h
+    rw [pullbackDrift_zero, pullbackDensity_zero, Pi.zero_apply, Pi.zero_apply] at h
     rw [h]
     simp only [energyIntegrand_apply, Pi.zero_apply, driftForm_apply, inner_zero_left,
       matrixBilinearForm_pullbackPrincipal_reflection hν hq hAs hs]

@@ -318,10 +318,11 @@ theorem setAverage_eq_inner_div_smul_of_ae_comp_hyperplaneReflection [CompleteSp
   rw [integral_congr_ae hG, integral_neg, hR] at hcv
   have hRm : (ℝ ∙ ν)ᗮ.reflection m = -m := by
     simp only [m, setAverage_eq, map_smul, neg_eq_iff_eq_neg.1 hcv, smul_neg]
-  rw [reflection_orthogonal_singleton_apply_div_norm_sq, sub_eq_iff_eq_add, ← sub_eq_iff_eq_add',
-    sub_neg_eq_add, ← two_smul ℝ m, ← smul_smul] at hRm
-  rw [real_inner_comm m ν] at hRm
-  exact smul_right_injective F (two_ne_zero' ℝ) hRm
+  -- Writing `R m = m - 2 p` with `p` the projection of `m` onto `ν`, this says `2 m = 2 p`.
+  have h2 : (2 : ℝ) • m = (2 : ℝ) • ((⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν) := by
+    rw [reflection_orthogonal_singleton_apply_div_norm_sq, real_inner_comm m ν] at hRm
+    linear_combination (norm := module) hRm
+  exact smul_right_injective F (two_ne_zero' ℝ) h2
 
 end OddReflection
 
