@@ -25,6 +25,8 @@ independent of any choice of basis.
 
 * `TauCeti.bilinFormTrace_eq_sum`: in an orthonormal basis, the metric trace is the sum of the
   diagonal values.
+* `TauCeti.sum_apply_apply_eq_of_orthonormalBasis`: the diagonal sum of a vector-valued bilinear
+  map over an orthonormal basis does not depend on the basis.
 * `TauCeti.bilinFormTrace_eq_sum_inv_gram`: in an arbitrary basis, the metric trace contracts the
   form against the inverse Gram matrix of the basis.
 * `TauCeti.bilinFormTrace_inner`: the metric trace of the inner product is the real dimension.
@@ -55,6 +57,18 @@ theorem bilinFormTrace_eq_sum {i : Type*} [Fintype i] (B : BilinForm ℝ W)
     (b : OrthonormalBasis i ℝ W) : bilinFormTrace B = ∑ j, B (b j) (b j) := by
   rw [bilinFormTrace_apply, InnerProductSpace.canonicalCovariantTensor_eq_sum W b, map_sum]
   simp only [TensorProduct.lift.tmul]
+
+/-- The diagonal sum `∑ₖ B eₖ eₖ` of a bilinear map with values in any real module over an
+orthonormal basis `e` does not depend on the basis: both sums are the contraction of `B` against
+the canonical covariant tensor. -/
+theorem sum_apply_apply_eq_of_orthonormalBasis {M : Type*} [AddCommGroup M] [Module ℝ M]
+    {i i' : Type*} [Fintype i] [Fintype i'] (B : W →ₗ[ℝ] W →ₗ[ℝ] M)
+    (b : OrthonormalBasis i ℝ W) (b' : OrthonormalBasis i' ℝ W) :
+    ∑ j, B (b j) (b j) = ∑ j, B (b' j) (b' j) := by
+  have h := congrArg (TensorProduct.lift B)
+    ((InnerProductSpace.canonicalCovariantTensor_eq_sum W b).symm.trans
+      (InnerProductSpace.canonicalCovariantTensor_eq_sum W b'))
+  simpa only [map_sum, TensorProduct.lift.tmul] using h
 
 /-- In an arbitrary basis `b`, the metric trace contracts the form against the inverse Gram
 matrix of `b`: `tr_g B = ∑ i j, (G⁻¹)ᵢⱼ B(bᵢ, bⱼ)` with `Gᵢⱼ = ⟪bᵢ, bⱼ⟫`. This is the classical

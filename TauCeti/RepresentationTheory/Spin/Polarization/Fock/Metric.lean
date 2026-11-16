@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.HermitianMetric
 public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Basic
 public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
 # The Hermitian metric of the normalized Fock module
@@ -349,9 +350,6 @@ theorem exists_basis_polar_tmulConj (hQ : ∀ v, Q v = -‖v‖ ^ 2) (ℓ : ℕ)
     have h := hQJ v
     rw [hQ, hQ, neg_inj] at h
     exact (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).mp h
-  have hpolar (a c : V) : polar Q a c = -(2 * ⟪a, c⟫) := by
-    rw [polar, hQ, hQ, hQ, norm_add_sq_real]
-    ring
   obtain ⟨u, hu⟩ := J.exists_adapted_orthonormalBasis hJ ℓ hdim
   have hinner (a c : Fin (2 * ℓ)) : ⟪u a, u c⟫ = if a = c then 1 else 0 :=
     orthonormal_iff_ite.mp u.orthonormal a c
@@ -364,8 +362,8 @@ theorem exists_basis_polar_tmulConj (hQ : ∀ v, Q v = -‖v‖ ^ 2) (ℓ : ℕ)
       rw [← Complex.ofReal_mul, Real.mul_self_sqrt zero_le_two, Complex.ofReal_ofNat]
     simp only [w, Submodule.coe_smul, map_smulₛₗ, Complex.conj_ofReal, tmulConj_holomorphicPart,
       polar_smul_left, polar_smul_right, smul_eq_mul]
-    rw [polar_comm, J.polar_holomorphicPart_antiholomorphicPart hQJ, ← hu i, hpolar, hpolar,
-      hinner, hinner]
+    rw [polar_comm, J.polar_holomorphicPart_antiholomorphicPart hQJ, ← hu i,
+      polar_eq_neg_two_inner hQ, polar_eq_neg_two_inner hQ, hinner, hinner]
     -- The basis vectors `u (2 j)` and `u (2 i + 1)` are distinct, and `u (2 j) = u (2 i)` only
     -- for `i = j`.
     have h₁ : (⟨2 * j, by omega⟩ : Fin (2 * ℓ)) = ⟨2 * i + 1, by omega⟩ ↔ False := by

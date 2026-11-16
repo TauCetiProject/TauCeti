@@ -84,16 +84,14 @@ include hQJ hQ in
 Kähler form of `J`, acts on generators by `⁅∑ₖ c(e_k) c(J e_k), c(v)⁆ = 4 c(J v)`. -/
 theorem sum_ι_mul_ι_lie_ι (v : V) :
     ⁅∑ k, ι Q (b k) * ι Q (J (b k)), ι Q v⁆ = ι Q ((4 : ℝ) • J v) := by
-  have hpolar (x y : V) : polar Q x y = -2 * ⟪x, y⟫ := by
-    simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
-    ring
   have h₁ : ∑ k, polar Q (J (b k)) v • b k = (2 : ℝ) • J v := by
-    simp_rw [J.polar_apply_left_eq_neg_polar_apply_right hQJ, hpolar, neg_mul, neg_neg, mul_smul,
+    simp_rw [J.polar_apply_left_eq_neg_polar_apply_right hQJ,
+      QuadraticMap.polar_eq_neg_two_inner hQ, neg_mul, neg_neg, mul_smul,
       ← Finset.smul_sum, b.sum_repr']
   have h₂ : ∑ k, polar Q (b k) v • J (b k) = (-2 : ℝ) • J v := by
     have h := congrArg J.toLinearMap (b.sum_repr' v)
     simp_rw [map_sum, map_smul] at h
-    simp_rw [hpolar, mul_smul, ← Finset.smul_sum]
+    simp_rw [QuadraticMap.polar_eq_neg_two_inner hQ, mul_smul, ← Finset.smul_sum]
     exact congrArg _ h
   have hlie (u w : V) : ι Q u * ι Q w * ι Q v - ι Q v * (ι Q u * ι Q w) =
       ι Q (polar Q w v • u - polar Q u v • w) := by
