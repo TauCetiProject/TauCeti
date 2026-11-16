@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
+public import TauCeti.NumberTheory.LocalField.Unramified.ZHat
 import Mathlib.FieldTheory.Galois.Infinite
 
 /-!
@@ -26,11 +27,22 @@ unramified exactly when inertia fixes it. This is the form in which unramifiedne
 cut out by a Galois module over `Kˢ`, such as the field of `m`-torsion points of an elliptic
 curve, is read off the action of inertia on that module.
 
+Transporting the isomorphism `Gal(K^{alg}/K) ⧸ I_K ≃ₜ* Gal(K^{ur}/K) ≃ₜ* zHat` along
+`TauCeti.absoluteGaloisGroupRestrictEquiv K` identifies the unramified quotient of
+`Gal(Kˢ/K)` with `zHat` (`TauCeti.quotientMapInertiaSubgroupEquivZHat`), sending the class
+`TauCeti.unramifiedQuotientFrobenius K` of arithmetic Frobenius to `zHat.gen`.
+
 For an extension `L/K` of nonarchimedean local fields, a `K`-embedding `τ : Kˢ → Lˢ` of separable
 closures induces `TauCeti.absoluteGaloisGroupMap τ : Gal(Lˢ/L) → Gal(Kˢ/K)`, and this map sends
 inertia into inertia: `τ` carries `K^{ur}` into `L^{ur}`, so an automorphism of `Lˢ` fixing `L^{ur}`
 induces one of `Kˢ` fixing `K^{ur}`. This is what makes a Galois cohomology class of `K` vanishing
 on inertia restrict to a class of `L` vanishing on inertia.
+
+## Main definitions
+
+* `TauCeti.quotientMapInertiaSubgroupEquivZHat`: the topological group isomorphism
+  `Gal(Kˢ/K) ⧸ I_K ≃ₜ* zHat` sending arithmetic Frobenius to `zHat.gen`.
+* `TauCeti.unramifiedQuotientFrobenius`: the arithmetic Frobenius element of `Gal(Kˢ/K) ⧸ I_K`.
 
 ## Main results
 
@@ -38,6 +50,10 @@ on inertia restrict to a class of `L` vanishing on inertia.
   `Gal(Kˢ/K)` is the fixing subgroup of the maximal unramified extension of `K` inside `Kˢ`.
 * `TauCeti.map_inertiaSubgroup_le_fixingSubgroup_iff`: a finite subextension of `Kˢ/K` is
   unramified exactly when the image of `I_K` fixes it.
+* `TauCeti.quotientMapInertiaSubgroupEquivZHat_mk`,
+  `TauCeti.unramifiedQuotientFrobenius_eq_mk_of_isArithFrobeniusLift`: compatibility of the
+  `zHat`-identification and `unramifiedQuotientFrobenius` with restriction to `K^{ur}` and
+  arithmetic Frobenius lifts.
 * `AlgHom.map_absoluteGaloisGroupMap_inertiaSubgroup_le`: for an extension `L/K` of local
   fields, the map `Gal(Lˢ/L) → Gal(Kˢ/K)` along an embedding of separable closures sends the
   inertia subgroup of `L` into that of `K`.
@@ -56,7 +72,9 @@ open ValuativeRel IntermediateField
 
 namespace TauCeti
 
-variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+universe u
+
+variable {K : Type u} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
 variable (K) in
 /-- **Inertia in the Galois group of the separable closure.** The image of the inertia subgroup
@@ -106,6 +124,124 @@ theorem map_inertiaSubgroup_le_fixingSubgroup_iff (E : IntermediateField K (Sepa
   rw [← InfiniteGalois.fixedField_fixingSubgroup E,
     ← InfiniteGalois.fixedField_fixingSubgroup (maximalUnramifiedExtension K (SeparableClosure K))]
   exact fixedField_antitone h
+
+section QuotientZHat
+
+variable (K)
+
+/-- **Inertia in `AbsoluteGaloisGroup K` is normal**, as the image of `inertiaSubgroup K` under the
+surjective isomorphism `absoluteGaloisGroupRestrictEquiv K`. -/
+instance normal_map_inertiaSubgroup_absoluteGaloisGroupRestrictEquiv :
+    ((inertiaSubgroup K).map
+      ((absoluteGaloisGroupRestrictEquiv K :
+          Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
+        Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)).Normal :=
+  Subgroup.Normal.map (inertiaSubgroup_normal K) _ (absoluteGaloisGroupRestrictEquiv K).surjective
+
+/-- **The unramified quotient of `AbsoluteGaloisGroup K` is `zHat`.** Transporting from
+`Field.absoluteGaloisGroup K ⧸ inertiaSubgroup K` through `TauCeti.quotientInertiaSubgroupEquiv`
+and `TauCeti.maximalUnramifiedGaloisGroupEquivZHat` sends arithmetic Frobenius lifts to
+`zHat.gen`. -/
+def quotientMapInertiaSubgroupEquivZHat :
+    (AbsoluteGaloisGroup K ⧸
+      (inertiaSubgroup K).map
+        ((absoluteGaloisGroupRestrictEquiv K :
+            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
+          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) ≃ₜ* zHat.{u} :=
+  ((absoluteGaloisGroupRestrictEquiv K).quotientCongr (inertiaSubgroup K)
+      ((inertiaSubgroup K).map
+        ((absoluteGaloisGroupRestrictEquiv K :
+            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
+          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
+      (by
+        rw [ContinuousMulEquiv.toMulEquiv_eq_coe, MulEquiv.toMonoidHom_eq_coe] :
+        (inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMulEquiv.toMonoidHom =
+          (inertiaSubgroup K).map
+            ((absoluteGaloisGroupRestrictEquiv K :
+                Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
+              Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))).symm.trans
+    ((quotientInertiaSubgroupEquiv K).trans
+      (maximalUnramifiedGaloisGroupEquivZHat K (AlgebraicClosure K)))
+
+/-- `quotientMapInertiaSubgroupEquivZHat K` evaluates on the coset of `σ` via restriction to the
+maximal unramified extension and `maximalUnramifiedGaloisGroupEquivZHat`. -/
+@[simp]
+theorem quotientMapInertiaSubgroupEquivZHat_mk (σ : Field.absoluteGaloisGroup K) :
+    quotientMapInertiaSubgroupEquivZHat K
+        (absoluteGaloisGroupRestrictEquiv K σ :
+          AbsoluteGaloisGroup K ⧸
+            (inertiaSubgroup K).map
+              ((absoluteGaloisGroupRestrictEquiv K :
+                  Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
+                Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) =
+      maximalUnramifiedGaloisGroupEquivZHat K (AlgebraicClosure K)
+        (restrictMaximalUnramifiedHom K σ) := by
+  rw [quotientMapInertiaSubgroupEquivZHat, ContinuousMulEquiv.trans_apply,
+    ContinuousMulEquiv.trans_apply, ContinuousMulEquiv.quotientCongr_symm_mk,
+    ContinuousMulEquiv.symm_apply_apply, ← unramifiedDegree_apply,
+    quotientInertiaSubgroupEquiv_unramifiedDegree]
+
+variable {K} in
+/-- **An arithmetic Frobenius lift maps to `zHat.gen` in the unramified quotient.** -/
+theorem quotientMapInertiaSubgroupEquivZHat_mk_of_isArithFrobeniusLift
+    {σ : Field.absoluteGaloisGroup K} (hσ : IsArithFrobeniusLift K σ) :
+    quotientMapInertiaSubgroupEquivZHat K
+        (absoluteGaloisGroupRestrictEquiv K σ :
+          AbsoluteGaloisGroup K ⧸
+            (inertiaSubgroup K).map
+              ((absoluteGaloisGroupRestrictEquiv K :
+                  Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
+                Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) =
+      zHat.gen := by
+  rw [quotientMapInertiaSubgroupEquivZHat_mk, isArithFrobeniusLift_def.mp hσ,
+    maximalUnramifiedGaloisGroupEquivZHat_apply_frobenius]
+
+/-- **The arithmetic Frobenius element of the unramified quotient** of `AbsoluteGaloisGroup K`,
+corresponding to `zHat.gen` under `quotientMapInertiaSubgroupEquivZHat K`. -/
+def unramifiedQuotientFrobenius :
+    AbsoluteGaloisGroup K ⧸
+      (inertiaSubgroup K).map
+        ((absoluteGaloisGroupRestrictEquiv K :
+            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
+          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K) :=
+  (quotientMapInertiaSubgroupEquivZHat K).symm zHat.gen
+
+/-- `unramifiedQuotientFrobenius K` is the preimage of `zHat.gen` under
+`quotientMapInertiaSubgroupEquivZHat K`. -/
+theorem unramifiedQuotientFrobenius_def :
+    unramifiedQuotientFrobenius K = (quotientMapInertiaSubgroupEquivZHat K).symm zHat.gen :=
+  (rfl)
+
+/-- The inverse of `quotientMapInertiaSubgroupEquivZHat K` sends `zHat.gen` to
+`unramifiedQuotientFrobenius K`. -/
+@[simp]
+theorem quotientMapInertiaSubgroupEquivZHat_symm_gen :
+    (quotientMapInertiaSubgroupEquivZHat K).symm zHat.gen = unramifiedQuotientFrobenius K :=
+  (rfl)
+
+/-- `quotientMapInertiaSubgroupEquivZHat K` sends `unramifiedQuotientFrobenius K` to `zHat.gen`. -/
+@[simp]
+theorem quotientMapInertiaSubgroupEquivZHat_unramifiedQuotientFrobenius :
+    quotientMapInertiaSubgroupEquivZHat K (unramifiedQuotientFrobenius K) = zHat.gen :=
+  (quotientMapInertiaSubgroupEquivZHat K).apply_symm_apply zHat.gen
+
+variable {K} in
+/-- `unramifiedQuotientFrobenius K` is the coset of the restriction to `Kˢ` of any arithmetic
+Frobenius lift. -/
+theorem unramifiedQuotientFrobenius_eq_mk_of_isArithFrobeniusLift {σ : Field.absoluteGaloisGroup K}
+    (hσ : IsArithFrobeniusLift K σ) :
+    unramifiedQuotientFrobenius K =
+      (absoluteGaloisGroupRestrictEquiv K σ :
+        AbsoluteGaloisGroup K ⧸
+          (inertiaSubgroup K).map
+            ((absoluteGaloisGroupRestrictEquiv K :
+                Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
+              Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) := by
+  apply (quotientMapInertiaSubgroupEquivZHat K).injective
+  rw [quotientMapInertiaSubgroupEquivZHat_unramifiedQuotientFrobenius,
+    quotientMapInertiaSubgroupEquivZHat_mk_of_isArithFrobeniusLift hσ]
+
+end QuotientZHat
 
 variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
