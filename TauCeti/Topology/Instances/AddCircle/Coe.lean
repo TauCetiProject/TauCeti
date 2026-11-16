@@ -14,12 +14,14 @@ public import Mathlib.Topology.Instances.AddCircle.Real
 
 A function `g` on `AddCircle d` gives the function `t ↦ g t` on `ℝ` by composing with the quotient
 map `ℝ → AddCircle d`. This file records that this function is `d`-periodic, and continuous when
-`g` is.
+`g` is, and that continuous maps on `AddCircle d` agreeing at every real number are equal.
 
 ## Main results
 
 * `TauCeti.AddCircle.periodic_comp_coe`: `t ↦ g t` is `d`-periodic.
 * `TauCeti.AddCircle.continuous_comp_coe`: `t ↦ g t` is continuous for a continuous `g`.
+* `TauCeti.AddCircle.continuousMap_ext_coe`: continuous maps on `AddCircle d` are determined by
+  their values at real numbers.
 -/
 
 public section
@@ -36,5 +38,10 @@ theorem periodic_comp_coe (g : AddCircle d → Y) : Function.Periodic (fun t : �
 theorem continuous_comp_coe [TopologicalSpace Y] (g : C(AddCircle d, Y)) :
     Continuous fun t : ℝ => g t :=
   g.continuous.comp (AddCircle.continuous_mk' d)
+
+/-- Two continuous maps on `AddCircle d` are equal if they agree at every real number. -/
+theorem continuousMap_ext_coe [TopologicalSpace Y] {g g' : C(AddCircle d, Y)}
+    (h : ∀ t : ℝ, g t = g' t) : g = g' :=
+  ContinuousMap.ext <| QuotientAddGroup.mk_surjective.forall.2 h
 
 end TauCeti.AddCircle

@@ -198,18 +198,15 @@ variable (X d) in
 `d`, are the continuous loops on `AddCircle d`. -/
 def twistedContinuousOneEquiv : twistedContinuous X d 1 ≃ₗ[ℝ] C(AddCircle d, X) where
   toFun f := ⟨(periodic_of_mem_twistedContinuous f.2).lift, continuous_coinduced_dom.2 f.2.1⟩
-  map_add' f g := ContinuousMap.ext fun θ => by
-    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+  map_add' f g := AddCircle.continuousMap_ext_coe fun t => by
     simp only [ContinuousMap.coe_mk, ContinuousMap.add_apply, Function.Periodic.lift_coe,
       Submodule.coe_add, Pi.add_apply]
-  map_smul' c f := ContinuousMap.ext fun θ => by
-    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+  map_smul' c f := AddCircle.continuousMap_ext_coe fun t => by
     simp only [ContinuousMap.coe_mk, ContinuousMap.smul_apply, Function.Periodic.lift_coe,
       Submodule.coe_smul, Pi.smul_apply, RingHom.id_apply]
   invFun g := ⟨fun t => g t, coe_continuousMap_mem_twistedContinuous g⟩
   left_inv _ := rfl
-  right_inv g := ContinuousMap.ext fun θ => by
-    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+  right_inv g := AddCircle.continuousMap_ext_coe fun t => by
     simp only [ContinuousMap.coe_mk, Function.Periodic.lift_coe]
 
 @[simp]

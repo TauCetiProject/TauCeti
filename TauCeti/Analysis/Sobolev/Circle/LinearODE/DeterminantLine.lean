@@ -128,28 +128,23 @@ private theorem exists_toContinuousMap_eq (w : twistedContDiff E T 1) :
     simp only [twistedContinuousOneEquiv_apply, Submodule.coe_inclusion]
     exact ((mem_twistedContDiff.1 w.2).1.differentiable one_ne_zero x).hasDerivAt
 
-private theorem toContinuousMap_choose (w : twistedContDiff E T 1) :
-    toContinuousMap T (by norm_num) (exists_toContinuousMap_eq T w).choose =
-      twistedContinuousOneEquiv E T (Submodule.inclusion twistedContDiff_le_twistedContinuous w) :=
-  (exists_toContinuousMap_eq T w).choose_spec.1
-
 variable (E) in
 /-- A `C¹` periodic map, as an element of `H¹(E)`. -/
 private def toH1 : twistedContDiff E T 1 →ₗ[ℝ] CircleSobolev 1 E where
   toFun w := (exists_toContinuousMap_eq T w).choose
   map_add' w v := toContinuousMap_injective T (by norm_num) <| by
-    rw [toContinuousMap_choose]
+    have h (w : twistedContDiff E T 1) := (exists_toContinuousMap_eq T w).choose_spec.1
+    rw [h]
     simp only [map_add]
-    rw [toContinuousMap_choose, toContinuousMap_choose]
+    rw [h, h]
   map_smul' c w := toContinuousMap_injective T (by norm_num) <| by
-    rw [RingHom.id_apply, ContinuousLinearMap.map_smul_of_tower, toContinuousMap_choose,
-      toContinuousMap_choose, map_smul, map_smul]
+    have h (w : twistedContDiff E T 1) := (exists_toContinuousMap_eq T w).choose_spec.1
+    rw [RingHom.id_apply, ContinuousLinearMap.map_smul_of_tower, h, h, map_smul, map_smul]
 
-/-- `TauCeti.CircleSobolev.toContinuousMap_choose`, stated for `toH1`. -/
 private theorem toContinuousMap_toH1 (w : twistedContDiff E T 1) :
     toContinuousMap T (by norm_num) (toH1 E T w) =
       twistedContinuousOneEquiv E T (Submodule.inclusion twistedContDiff_le_twistedContinuous w) :=
-  toContinuousMap_choose T w
+  (exists_toContinuousMap_eq T w).choose_spec.1
 
 private theorem derivative_toH1 (w : twistedContDiff E T 1) :
     derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) (toH1 E T w) =
@@ -170,8 +165,7 @@ private theorem toH0_comp_twistedLinearOperator :
   simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, loopOperator_apply,
     mulLoop_apply, toH0_apply, derivative_toH1, toContinuousMap_toH1, ← map_sub]
   congr 1
-  ext θ
-  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+  refine AddCircle.continuousMap_ext_coe fun t ↦ ?_
   simp only [ContinuousMap.sub_apply, twistedContinuousOneEquiv_apply,
     ContinuousMap.applyContinuousLinearMap_apply, twistedLinearOperator_apply,
     Submodule.coe_inclusion]
@@ -198,8 +192,7 @@ private theorem mem_range_toH1 (a : CircleSobolev 1 E)
     · exact (mem_twistedContinuous.1 (coe_continuousMap_mem_twistedContinuous u)).2 t
   refine ⟨⟨_, hu⟩, toContinuousMap_injective T (by norm_num) ?_⟩
   rw [toContinuousMap_toH1]
-  ext θ
-  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+  refine AddCircle.continuousMap_ext_coe fun t ↦ ?_
   simp only [twistedContinuousOneEquiv_apply, Submodule.coe_inclusion, u]
 
 private theorem finrank_quotient_range_loopOperator_le :
