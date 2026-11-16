@@ -150,7 +150,6 @@ theorem d_p (k : ℕ) : I.d k (k + 1) ≫ tI.p (k + 1) = 0 := by
 
 /-- The conflation `Zᵏ ↣ Iᵏ ↠ Zᵏ⁺¹` as an injective presentation of `Zᵏ`, when `Iᵏ` is
 injective. -/
-@[expose, simps]
 def injectivePresentation (k : ℕ) (hI : E.isInjective (I.X k)) :
     E.InjectivePresentation (tI.Z k) where
   I := I.X k
@@ -161,9 +160,28 @@ def injectivePresentation (k : ℕ) (hI : E.isInjective (I.X k)) :
   conflation := tI.conflation k
   isInjective := hI
 
+@[simp]
+theorem injectivePresentation_I (k : ℕ) (hI : E.isInjective (I.X k)) :
+    (tI.injectivePresentation k hI).I = I.X k :=
+  (rfl)
+
+@[simp]
+theorem injectivePresentation_K (k : ℕ) (hI : E.isInjective (I.X k)) :
+    (tI.injectivePresentation k hI).K = tI.Z (k + 1) :=
+  (rfl)
+
+@[simp]
+theorem injectivePresentation_i (k : ℕ) (hI : E.isInjective (I.X k)) :
+    HEq (tI.injectivePresentation k hI).i (tI.i k) :=
+  (HEq.rfl)
+
+@[simp]
+theorem injectivePresentation_p (k : ℕ) (hI : E.isInjective (I.X k)) :
+    HEq (tI.injectivePresentation k hI).p (tI.p k) :=
+  (HEq.rfl)
+
 /-- The conflation `Zᵏ ↣ Iᵏ ↠ Zᵏ⁺¹` as a projective presentation of `Zᵏ⁺¹`, when `Iᵏ` is
 projective. -/
-@[expose, simps]
 def projectivePresentation (k : ℕ) (hI : E.isProjective (I.X k)) :
     E.ProjectivePresentation (tI.Z (k + 1)) where
   K := tI.Z k
@@ -173,6 +191,26 @@ def projectivePresentation (k : ℕ) (hI : E.isProjective (I.X k)) :
   zero := tI.zero k
   conflation := tI.conflation k
   isProjective := hI
+
+@[simp]
+theorem projectivePresentation_K (k : ℕ) (hI : E.isProjective (I.X k)) :
+    (tI.projectivePresentation k hI).K = tI.Z k :=
+  (rfl)
+
+@[simp]
+theorem projectivePresentation_P (k : ℕ) (hI : E.isProjective (I.X k)) :
+    (tI.projectivePresentation k hI).P = I.X k :=
+  (rfl)
+
+@[simp]
+theorem projectivePresentation_i (k : ℕ) (hI : E.isProjective (I.X k)) :
+    HEq (tI.projectivePresentation k hI).i (tI.i k) :=
+  (HEq.rfl)
+
+@[simp]
+theorem projectivePresentation_p (k : ℕ) (hI : E.isProjective (I.X k)) :
+    HEq (tI.projectivePresentation k hI).p (tI.p k) :=
+  (HEq.rfl)
 
 variable (φ : I ⟶ J)
 

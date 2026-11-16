@@ -86,6 +86,12 @@ private noncomputable abbrev stalkPresentation (k : ℕ) : E.InjectivePresentati
 private noncomputable def stalkP (k : ℕ) : (stalkPresentation hE M k).I ⟶ stalkZ hE M (k + 1) :=
   (stalkPresentation hE M k).p
 
+/-- The inflation of the chosen presentation followed by `stalkP` is zero. -/
+@[reassoc]
+private theorem i_comp_stalkP (k : ℕ) : (stalkPresentation hE M k).i ≫ stalkP hE M k = 0 :=
+  -- `stalkP` is the deflation of the presentation, with its target written as `Zᵏ⁺¹`.
+  (stalkPresentation hE M k).zero
+
 /-- The terms of the resolution, zero in negative degrees. -/
 private noncomputable def stalkX : ℤ → C
   | Int.ofNat k => (stalkPresentation hE M k).I
@@ -103,9 +109,7 @@ private theorem stalkD_comp_stalkD (n : ℤ) : stalkD hE M n ≫ stalkD hE M (n 
     -- `Int.ofNat (k + 1)` only by evaluation, so `change` states the two differentials.
     change (stalkP hE M k ≫ (stalkPresentation hE M (k + 1)).i) ≫
       stalkP hE M (k + 1) ≫ (stalkPresentation hE M (k + 1 + 1)).i = 0
-    rw [Category.assoc, ← Category.assoc (stalkPresentation hE M (k + 1)).i,
-      show (stalkPresentation hE M (k + 1)).i ≫ stalkP hE M (k + 1) = 0 from
-        (stalkPresentation hE M (k + 1)).zero, zero_comp, comp_zero]
+    rw [Category.assoc, i_comp_stalkP_assoc, zero_comp, comp_zero]
   | Int.negSucc _ => zero_comp
 
 /-- The **injective resolution** of `M`: the complex `I⁰ → I¹ → ⋯` of the chosen injective
@@ -172,10 +176,12 @@ theorem single_map_stalkTailDataZZeroIso_hom_comp_stalkResolutionι :
 @[simp]
 theorem stalkResolutionι_f_zero :
     (hE.stalkResolutionι M).f 0 = (HomologicalComplex.singleObjXSelf (.up ℤ) 0 M).hom ≫
-      (hE.stalkTailDataZZeroIso M).inv ≫ (hE.stalkTailData M).i 0 :=
-  (hE.stalkTailData M).ι_f_zero.trans
-    (congrArg (CategoryStruct.comp (HomologicalComplex.singleObjXSelf (.up ℤ) 0 M).hom)
-      (Category.id_comp ((hE.stalkTailData M).i 0)).symm)
+      (hE.stalkTailDataZZeroIso M).inv ≫ (hE.stalkTailData M).i 0 := by
+  rw [← Iso.inv_hom_id_assoc ((HomologicalComplex.single C (.up ℤ) 0).mapIso
+      (hE.stalkTailDataZZeroIso M)) (hE.stalkResolutionι M), Functor.mapIso_hom,
+    single_map_stalkTailDataZZeroIso_hom_comp_stalkResolutionι, Functor.mapIso_inv,
+    HomologicalComplex.comp_f, TailData.ι_f_zero, HomologicalComplex.single_map_f_self,
+    Category.assoc, Category.assoc, Iso.inv_hom_id_assoc]
 
 @[simp]
 theorem stalkResolutionι_f_of_ne {n : ℤ} (hn : n ≠ 0) : (hE.stalkResolutionι M).f n = 0 :=

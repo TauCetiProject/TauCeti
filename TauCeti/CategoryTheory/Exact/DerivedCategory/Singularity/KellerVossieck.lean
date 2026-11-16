@@ -467,7 +467,7 @@ theorem singleToSingularity_map_surjective (M N : C) :
   have key := Q_map_comp_inv_comp_eq hE (sR k) (hsR k) (sT k) _ (resHom hF N) _
     (toPlus_map_comp_resHom hF (hTb k) (r' k) (j k) (hr'j k) Φ _ rfl) h (by rw [hgJ, hg])
   have : IsIso ((SingularityCategory.Q E).map ((BoundedDerivedCategory.Q E).map (sT k))) :=
-    Localization.inverts _ _ _ (boundedProjective_trW_Q_map_mkMap_ιTop (T k) _ (hTb k) (hTproj k))
+    Localization.inverts _ _ _ (boundedProjective_trW_Q_map_ιTop (T k) _ (hTb k) (hTproj k))
   have : IsIso ((SingularityCategory.Q E).map (δ k)) := by
     simp only [δ, Functor.map_comp, Functor.map_inv]
     infer_instance
@@ -512,22 +512,18 @@ private noncomputable abbrev sg (E : ExactStructure C) (a : ℤ) (X : C) : E.Sin
   (SingularityCategory.Q E).obj ((BoundedDerivedCategory.Q E).obj
     ((HomotopyCategory.Bounded.singleFunctor C a).obj X))
 
-/-- Shifting an object placed in degree `a'` by `n` places it in degree `a`, when `n + a = a'`. -/
-private noncomputable def sgShiftIso (n a a' : ℤ) (h : n + a = a') (X : C) :
-    (sg E a' X)⟦n⟧ ≅ sg E a X :=
-  ((BoundedDerivedCategory.Q E ⋙ SingularityCategory.Q E).commShiftIso n).symm.app _ ≪≫
-    (BoundedDerivedCategory.Q E ⋙ SingularityCategory.Q E).mapIso
-      (((HomotopyCategory.Bounded.singleFunctors C).shiftIso n a a' h).app X)
-
 /-- Objects isomorphic in the stable category are isomorphic in the singularity category in every
 degree. -/
 private noncomputable def sgIsoOfStableIso (a : ℤ) {X Y : C}
     (e : E.projectiveStableFunctor.obj X ≅ E.projectiveStableFunctor.obj Y) :
     sg E a X ≅ sg E a Y :=
+  -- The single functors `C ⥤ D_sg(E)`, with their shift isomorphisms.
+  let S := (HomotopyCategory.Bounded.singleFunctors C).postcomp
+    (BoundedDerivedCategory.Q E ⋙ SingularityCategory.Q E)
   (shiftEquiv E.SingularityCategory a).fullyFaithfulFunctor.preimageIso
-    (sgShiftIso a 0 a (add_zero a) X ≪≫ (E.stableToSingularityObjIso X).symm ≪≫
+    ((S.shiftIso a 0 a (add_zero a)).app X ≪≫ (E.stableToSingularityObjIso X).symm ≪≫
       E.stableToSingularity.mapIso e ≪≫ E.stableToSingularityObjIso Y ≪≫
-        (sgShiftIso a 0 a (add_zero a) Y).symm)
+        ((S.shiftIso a 0 a (add_zero a)).app Y).symm)
 
 /-- Let `r : L ⟶ T` be a map of bounded complexes with acyclic mapping cone, where `T` vanishes
 above degree `n` and its terms below `n` are projective. Then `L` is isomorphic in the singularity
@@ -542,7 +538,7 @@ private noncomputable def sgIsoOfTruncation {L T : CochainComplex C ℤ}
       (mkMap (T.ιTop n) : HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single n (T.X n)) ⟶
         HomotopyCategory.Bounded.mk T hT))) :=
     Localization.inverts _ E.boundedProjective.trW _
-      (boundedProjective_trW_Q_map_mkMap_ιTop T n hT hP)
+      (boundedProjective_trW_Q_map_ιTop T n hT hP)
   have : IsIso ((BoundedDerivedCategory.Q E).map
       (mkMap r : HomotopyCategory.Bounded.mk L hL ⟶ HomotopyCategory.Bounded.mk T hT)) :=
     Localization.inverts _ E.acyclicBounded.trW _ (E.acyclicBounded_trW_homMk_quotient_map
@@ -581,13 +577,14 @@ private theorem exists_Z_iso (t : ℕ) (Z : C) : ∃ M : C,
     exact ⟨Z, ⟨E.projectiveStableFunctor.mapIso (hF.enoughInjectives.stalkTailDataZZeroIso Z)⟩⟩
   | succ t ih =>
     obtain ⟨M, ⟨e⟩⟩ := ih (hF.enoughProjectives.loopObj Z)
-    exact ⟨M, ⟨hF.projectiveStableIsoSuspensionObj
+    have e' := hF.projectiveStableIsoSuspensionObj
       ((hF.enoughInjectives.stalkTailData M).injectivePresentation t
-        (hF.enoughInjectives.isInjective_stalkResolution_X M t)) ≪≫
-        eqToIso (hF.stableSuspension_obj_projectiveStableFunctor_obj _).symm ≪≫
-          hF.stableSuspension.mapIso (e ≪≫ eqToIso
-            (hF.enoughProjectives.stableLoop_obj_projectiveStableFunctor_obj Z).symm) ≪≫
-            hF.stableLoopCompStableSuspensionIso.app _⟩⟩
+        (hF.enoughInjectives.isInjective_stalkResolution_X M t))
+    rw [TailData.injectivePresentation_K] at e'
+    exact ⟨M, ⟨e' ≪≫ eqToIso (hF.stableSuspension_obj_projectiveStableFunctor_obj _).symm ≪≫
+      hF.stableSuspension.mapIso (e ≪≫ eqToIso
+        (hF.enoughProjectives.stableLoop_obj_projectiveStableFunctor_obj Z).symm) ≪≫
+        hF.stableLoopCompStableSuspensionIso.app _⟩⟩
 
 include hF in
 /-- In the singularity category, a bounded complex is isomorphic to an object placed in a positive

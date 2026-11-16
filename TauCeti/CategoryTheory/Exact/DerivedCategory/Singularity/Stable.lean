@@ -140,20 +140,21 @@ noncomputable def stableToSingularityObjIso (X : C) :
     E.stableToSingularity.obj (E.projectiveStableFunctor.obj X) ≅
       (SingularityCategory.Q E).obj ((BoundedDerivedCategory.Q E).obj
         ((HomotopyCategory.Bounded.singleFunctor C 0).obj X)) :=
-  Iso.refl _
+  eqToIso ((E.stableToSingularity_obj_projectiveStableFunctor_obj X).trans
+    (E.singleToSingularity_obj X))
 
 @[simp]
 theorem stableToSingularityObjIso_hom (X : C) :
-    (E.stableToSingularityObjIso X).hom = eqToHom (by
-      rw [stableToSingularity_obj_projectiveStableFunctor_obj, singleToSingularity_eq]
-      rfl) :=
+    (E.stableToSingularityObjIso X).hom = eqToHom
+      ((E.stableToSingularity_obj_projectiveStableFunctor_obj X).trans
+        (E.singleToSingularity_obj X)) :=
   (rfl)
 
 @[simp]
 theorem stableToSingularityObjIso_inv (X : C) :
-    (E.stableToSingularityObjIso X).inv = eqToHom (by
-      rw [stableToSingularity_obj_projectiveStableFunctor_obj, singleToSingularity_eq]
-      rfl) :=
+    (E.stableToSingularityObjIso X).inv = eqToHom
+      ((E.stableToSingularity_obj_projectiveStableFunctor_obj X).trans
+        (E.singleToSingularity_obj X)).symm :=
   (rfl)
 
 /-- The identification `stableToSingularityObjIso` is natural. -/
