@@ -184,7 +184,7 @@ theorem contactFlat_apply_eq_iff {x : M} {v : TangentSpace I x} :
 finite-dimensional manifold. -/
 theorem isInvertible_contactFlat [FiniteDimensional ℝ E] (x : M) :
     (α.contactFlat x).IsInvertible :=
-  ContinuousLinearMap.isInvertible_of_separatingLeft (E := E) fun (v : TangentSpace I x) hv ↦
+  ContinuousLinearMap.isInvertible_of_separatingLeft fun (v : TangentSpace I x) hv ↦
     (isContactForm_def.1 hα x).separatingLeft_add_smulRight (isAlt_bilinFormAt _ x) v fun w ↦ by
       rw [LinearMap.add_apply, LinearMap.add_apply, LinearMap.smulRight_apply,
         LinearMap.smul_apply, ← mextDeriv_eq_bilinFormAt, degreeOneEquiv_coe_apply,
