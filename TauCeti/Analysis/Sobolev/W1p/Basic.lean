@@ -1032,13 +1032,13 @@ def W1p.ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) : W1p mu Omega p :=
         Sobolev1JetLp.gradient_ofExponentLEL, Lp.coeFn_ofExponentLEL] using
         (mem_w1pSubmodule_iff (u : Sobolev1JetLp mu Omega q)).1 u.2⟩
 
-/-- The underlying ambient `Lᵖ` jet of `W1p.ofExponentLE` is the canonical subtype inclusion of the
-underlying `L^q` jet via `Lp.antitone`. -/
+/-- The underlying ambient `Lᵖ` jet of `W1p.ofExponentLE` is the exponent-lowered copy
+`Lp.ofExponentLEL` of the underlying `L^q` jet. -/
 @[simp]
 theorem W1p.coe_ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) :
     (W1p.ofExponentLE hpq u : Sobolev1JetLp mu Omega p) =
-      ⟨(u : Sobolev1JetLp mu Omega q).1, Lp.antitone hpq (u : Sobolev1JetLp mu Omega q).2⟩ :=
-  (rfl)
+      Lp.ofExponentLEL ℝ (Sobolev1Jet E) hpq (u : Sobolev1JetLp mu Omega q) :=
+  (Lp.ofExponentLEL_apply hpq _).symm
 
 /-- Lowering the exponent sends zero to zero. -/
 @[simp]
@@ -1082,7 +1082,7 @@ def W1p.ofExponentLEL (hpq : p ≤ q) : W1p mu Omega q →L[ℝ] W1p mu Omega p 
       map_smul' := W1p.ofExponentLE_smul hpq }
     (mu Omega ^ (1 / p.toReal - 1 / q.toReal)).toReal fun u => by
       rw [LinearMap.coe_mk, AddHom.coe_mk, ← Submodule.norm_coe, ← Submodule.norm_coe u,
-        W1p.coe_ofExponentLE, ← Lp.ofExponentLEL_apply (𝕜 := ℝ), ← Measure.restrict_apply_univ]
+        W1p.coe_ofExponentLE, ← Measure.restrict_apply_univ]
       exact Lp.norm_ofExponentLEL_apply_le hpq _
 
 /-- The continuous inclusion `TauCeti.W1p.ofExponentLEL` applies `TauCeti.W1p.ofExponentLE`. -/
@@ -1095,14 +1095,14 @@ theorem W1p.ofExponentLEL_apply (hpq : p ≤ q) (u : W1p mu Omega q) :
 theorem W1p.value_ofExponentLEL (hpq : p ≤ q) (u : W1p mu Omega q) :
     W1p.value (W1p.ofExponentLEL hpq u) = Lp.ofExponentLEL ℝ ℝ hpq (W1p.value u) := by
   rw [W1p.ofExponentLEL_apply, W1p.value_coe, W1p.value_coe, W1p.coe_ofExponentLE,
-    ← Lp.ofExponentLEL_apply (𝕜 := ℝ) hpq, Sobolev1JetLp.value_ofExponentLEL]
+    Sobolev1JetLp.value_ofExponentLEL]
 
 /-- The weak gradient of the image of a Sobolev function is the `Lᵖ` copy of its weak gradient. -/
 @[simp]
 theorem W1p.gradient_ofExponentLEL (hpq : p ≤ q) (u : W1p mu Omega q) :
     W1p.gradient (W1p.ofExponentLEL hpq u) = Lp.ofExponentLEL ℝ E hpq (W1p.gradient u) := by
   rw [W1p.ofExponentLEL_apply, W1p.gradient_coe, W1p.gradient_coe, W1p.coe_ofExponentLE,
-    ← Lp.ofExponentLEL_apply (𝕜 := ℝ) hpq, Sobolev1JetLp.gradient_ofExponentLEL]
+    Sobolev1JetLp.gradient_ofExponentLEL]
 
 /-- Lowering the exponent does not change the value of a Sobolev function, as a function. -/
 @[simp]
@@ -1121,8 +1121,8 @@ theorem W1p.coeFn_gradient_ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) :
 theorem W1p.ofExponentLEL_injective (hpq : p ≤ q) :
     Function.Injective (W1p.ofExponentLEL (mu := mu) (Omega := Omega) hpq) := fun u v h =>
   Subtype.ext <| Lp.ofExponentLEL_injective (𝕜 := ℝ) hpq <| by
-    rw [Lp.ofExponentLEL_apply, Lp.ofExponentLEL_apply, ← W1p.coe_ofExponentLE hpq,
-      ← W1p.coe_ofExponentLE hpq, ← W1p.ofExponentLEL_apply hpq, ← W1p.ofExponentLEL_apply hpq, h]
+    rw [← W1p.coe_ofExponentLE hpq, ← W1p.coe_ofExponentLE hpq, ← W1p.ofExponentLEL_apply hpq,
+      ← W1p.ofExponentLEL_apply hpq, h]
 
 /-- The operator norm of `W^{1,q}(Ω) → W^{1,p}(Ω)` is at most `μ(Ω) ^ (1/p - 1/q)`. -/
 theorem W1p.opNorm_ofExponentLEL_le (hpq : p ≤ q) :
