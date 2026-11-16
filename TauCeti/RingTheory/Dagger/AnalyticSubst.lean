@@ -221,7 +221,8 @@ theorem eq_analyticSubst (ψ : washnitzerAlgebra (Fin k) R →ₐ[R] washnitzerA
     (continuous_analyticSubst g hg) (funext (DFunLike.congr_fun hp)))
 
 /-- Analytic substitution on `W` agrees via `ofRestricted` with `restrictedAnalyticSubst` between
-any finite polyradii `r, s > 1` on which `‖g₀ i‖_s ≤ r i` and `‖g₀ i‖₁ ≤ 1`. -/
+any polyradii `r : Fin k → ℝ` and `s : τ → ℝ` bounded below by `ρr, ρs > 1` on which
+`‖g₀ i‖_s ≤ r i` and `‖g₀ i‖₁ ≤ 1`. -/
 theorem analyticSubst_ofRestricted {r : Fin k → ℝ} {s : τ → ℝ} [∀ j, Fact (0 < s j)]
     {ρr ρs : ℝ} (hρr : 1 < ρr) (hr : ∀ i, ρr ≤ r i) (hρs : 1 < ρs) (hs : ∀ j, ρs ≤ s j)
     (g₀ : Fin k → IsRestricted.subring (R := R) s) (hg₀ : ∀ i, ‖g₀ i‖ ≤ r i)
