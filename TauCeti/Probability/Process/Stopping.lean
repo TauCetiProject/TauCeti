@@ -11,8 +11,9 @@ public import Mathlib.Probability.Process.Stopping
 # Stopping times and stopped paths
 
 A stopping time remains a stopping time for a larger filtration. This transports stopping
-arguments and localizing sequences when augmenting a filtration. Finite suprema preserve
-the stopping-time property.
+arguments and localizing sequences when augmenting a filtration. Finite suprema, forward shifts
+by a constant in canonically ordered time with ordered subtraction, and piecewise combinations
+`if σ ω ≤ η ω then σ ω else σ ω ⊔ c` preserve the stopping-time property.
 
 Stopping preserves right continuity at each time, including when the stopping time is infinite.
 This pathwise fact requires no measurability or stopping-time hypothesis and lets local-martingale
@@ -33,6 +34,54 @@ theorem mono_filtration {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
     {ℱ 𝒢 : Filtration ι mΩ} {τ : Ω → WithTop ι}
     (hτ : IsStoppingTime ℱ τ) (h : ℱ ≤ 𝒢) : IsStoppingTime 𝒢 τ :=
   fun t => h t _ (hτ.measurableSet_le t)
+
+/-- Shifting a stopping time forward by a constant `c` preserves the stopping-time property in any
+canonically ordered cancellative linear order with ordered subtraction. -/
+theorem add_const_of_orderedSub {ι Ω : Type*} [AddCommMonoid ι] [LinearOrder ι]
+    [CanonicallyOrderedAdd ι] [AddLeftReflectLE ι] [Sub ι] [OrderedSub ι]
+    {mΩ : MeasurableSpace Ω} {ℱ : Filtration ι mΩ} {τ : Ω → WithTop ι}
+    (hτ : IsStoppingTime ℱ τ) (c : ι) :
+    IsStoppingTime ℱ (fun ω ↦ τ ω + c) := by
+  intro t
+  by_cases hct : c ≤ t
+  · have heq : {ω | τ ω + c ≤ t} = {ω | τ ω ≤ ((t - c : ι) : WithTop ι)} := by
+      ext ω
+      simp only [Set.mem_ofPred_eq]
+      cases τ ω with
+      | top => simp [WithTop.top_add]
+      | coe u => exact_mod_cast (le_tsub_iff_right hct).symm
+    rw [heq]
+    exact ℱ.mono tsub_le_self _ (hτ.measurableSet_le (t - c))
+  · have hemp : {ω | τ ω + c ≤ t} = ∅ := by
+      ext ω
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      exact (WithTop.coe_lt_coe.mpr (lt_of_not_ge hct)).trans_le le_add_self
+    rw [hemp]
+    exact @MeasurableSet.empty _ (ℱ t)
+
+/-- Keeping a stopping time `σ` where `σ ≤ η` and raising it to `σ ⊔ c` otherwise produces a
+stopping time. -/
+theorem ite_le_sup_const {ι Ω : Type*} [LinearOrder ι] [TopologicalSpace ι]
+    [SecondCountableTopology ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {σ η : Ω → WithTop ι} [DecidablePred fun ω ↦ σ ω ≤ η ω]
+    (hσ : IsStoppingTime ℱ σ) (hη : IsStoppingTime ℱ η) (c : ι) :
+    IsStoppingTime ℱ (fun ω ↦ if σ ω ≤ η ω then σ ω else σ ω ⊔ c) := by
+  intro t
+  by_cases htc : t < c
+  · have heq : {ω | (if σ ω ≤ η ω then σ ω else σ ω ⊔ c) ≤ t} =
+        {ω | σ ω ≤ η ω} ∩ {ω | σ ω ≤ t} := by
+      ext ω
+      by_cases hle : σ ω ≤ η ω
+      · simp [hle]
+      · simp [hle, not_le.mpr (WithTop.coe_lt_coe.mpr htc)]
+    rw [heq]
+    exact (hσ.measurableSet_le_stopping_time hη).2 t
+  · have hct : (c : WithTop ι) ≤ t := WithTop.coe_le_coe.mpr (le_of_not_gt htc)
+    have heq : {ω | (if σ ω ≤ η ω then σ ω else σ ω ⊔ c) ≤ t} = {ω | σ ω ≤ t} := by
+      ext ω
+      by_cases hle : σ ω ≤ η ω <;> simp [hle, sup_le_iff, hct]
+    rw [heq]
+    exact hσ.measurableSet_le t
 
 end MeasureTheory.IsStoppingTime
 

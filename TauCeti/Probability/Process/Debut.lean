@@ -20,10 +20,9 @@ the fiber. Its strict sublevel events are projections of the set restricted to a
 time interval, while its finite-debut event is the full sample-space projection.
 
 When time fibers are compact, the debut is attained on every nonempty fiber, closed debut
-sublevels have fiber witnesses, and decreasing countable intersections commute both with
-sample-space projection and with debut formation (`debut (⋂ n, e n) = ⨆ n, debut (e n)`).
-These topological fiber identities supply the predictable and measurable section theorems
-without completing the sample space.
+sublevels have fiber witnesses, and decreasing countable intersections commute with debut
+formation (`debut (⋂ n, e n) = ⨆ n, debut (e n)`). These compact-fiber debut identities
+supply the predictable section theorem without completing the sample space.
 
 For standard Borel time with measurable open sets and a closed order, a progressive set's
 strict debut sublevels at time `t` are null-measurable with respect to `P.trim (ℱ.le t)`
@@ -169,30 +168,6 @@ theorem debut_eq (τ : Ω → WithTop ι) :
   simp [heq]
 
 section CompactFiber
-
-/-- For an antitone sequence of sets in `X × Ω` whose fibers over `Ω` are compact in a Hausdorff
-space `X`, projection onto `Ω` commutes with the countable intersection. -/
-theorem image_snd_iInter_eq_of_isCompact {X Ω : Type*} [TopologicalSpace X] [T2Space X]
-    {e : ℕ → Set (X × Ω)} (hanti : Antitone e)
-    (hK : ∀ n ω, IsCompact {x : X | (x, ω) ∈ e n}) :
-    Prod.snd '' (⋂ n, e n) = ⋂ n, Prod.snd '' (e n) := by
-  refine subset_antisymm (image_iInter_subset _ _) fun ω hω ↦ ?_
-  let C : ℕ → Set X := fun n ↦ {x | (x, ω) ∈ e n}
-  have hne (n : ℕ) : (C n).Nonempty := by
-    obtain ⟨⟨x, _⟩, hx, rfl⟩ := mem_iInter.mp hω n
-    exact ⟨x, hx⟩
-  obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed C
-    (fun n _ h ↦ hanti (Nat.le_succ n) h) hne (hK 0 ω) fun n ↦ (hK n ω).isClosed
-  exact ⟨(x, ω), mem_iInter.mpr fun n ↦ mem_iInter.mp hx n, rfl⟩
-
-/-- A countable intersection of sets in `X × Ω` with compact fibers in a Hausdorff space `X` again
-has compact fibers. -/
-theorem isCompact_fiber_iInter {X Ω : Type*} [TopologicalSpace X] [T2Space X]
-    {e : ℕ → Set (X × Ω)} {ω : Ω} (hK : ∀ n, IsCompact {x : X | (x, ω) ∈ e n}) :
-    IsCompact {x : X | (x, ω) ∈ ⋂ n, e n} := by
-  have heq : {x : X | (x, ω) ∈ ⋂ n, e n} = ⋂ n, {x : X | (x, ω) ∈ e n} := by ext; simp
-  rw [heq]
-  exact (hK 0).of_isClosed_subset (isClosed_iInter fun n ↦ (hK n).isClosed) (iInter_subset _ 0)
 
 variable [TopologicalSpace ι] [ClosedIicTopology ι]
 

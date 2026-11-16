@@ -10,9 +10,9 @@ public import Mathlib.Data.List.OfFn
 public import Mathlib.Data.Nat.Pairing
 public import Mathlib.Data.Set.Lattice.Indexed
 public import Mathlib.MeasureTheory.MeasurableSpace.Defs
-import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Fintype.Pi
 import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.Order.SupClosed
 import Mathlib.Topology.Compactness.Compact
 import Mathlib.Topology.Constructions
 import Mathlib.Topology.Order.Basic
@@ -33,10 +33,10 @@ The empty prefix is deliberately ignored; its value can be any member of the ori
 If the family is nonempty and complements of its generators are Souslin over it,
 every set in the generated sigma algebra is also Souslin over it.
 
-When the generating family `E` is closed under binary unions and intersections and `I` is a
-monotone `ℝ≥0∞`-valued set function continuous along increasing countable unions, any strict
-lower bound `r < I s` on a set `s ∈ souslinClosure E` is witnessed by an antitone sequence
-`e : ℕ → Set α` in `E` whose intersection is contained in `s` and whose values satisfy
+When the generating family `E` is closed under binary unions and intersections and `I` is an
+`ℝ≥0∞`-valued set function upward continuous along increasing countable unions (hence monotone),
+any strict lower bound `r < I s` on a set `s ∈ souslinClosure E` is witnessed by an antitone
+sequence `e : ℕ → Set α` in `E` whose intersection is contained in `s` and whose values satisfy
 `r < ⨅ k, I (e k)` (`TauCeti.exists_antitone_mem_of_lt_of_mem_souslinClosure`). No topology or
 measurability structure on the carrier is assumed.
 
@@ -320,25 +320,15 @@ private def prefixBox (N : ℕ → ℕ) (k : ℕ) : Finset (Fin (k + 1) → ℕ)
 private lemma prefixBox_nonempty (N : ℕ → ℕ) (k : ℕ) : (prefixBox N k).Nonempty :=
   ⟨fun _ ↦ 0, Fintype.mem_piFinset.mpr fun _ ↦ Finset.mem_Iic.mpr (Nat.zero_le _)⟩
 
-private lemma biUnion_mem_of_nonempty {ι : Type*} {E : Set (Set α)}
-    (hunion : ∀ u ∈ E, ∀ v ∈ E, u ∪ v ∈ E) {s : Finset ι} (hs : s.Nonempty)
-    {g : ι → Set α} (hg : ∀ i ∈ s, g i ∈ E) : (⋃ i ∈ s, g i) ∈ E := by
-  classical
-  induction hs using Finset.Nonempty.cons_induction with
-  | singleton a => simpa using hg a (Finset.mem_singleton_self a)
-  | cons a t hat _ ih =>
-    have heq : (⋃ i ∈ t.cons a hat, g i) = g a ∪ ⋃ i ∈ t, g i := by ext; simp
-    rw [heq]
-    exact hunion _ (hg a (Finset.mem_cons_self a t)) _
-      (ih fun i hi ↦ hg i (Finset.mem_cons_of_mem hi))
-
 private def prunedSet (f : List ℕ → Set α) (N : ℕ → ℕ) (k : ℕ) : Set α :=
   ⋃ w ∈ prefixBox N k, prefixInter f k w
 
 private lemma prunedSet_mem {E : Set (Set α)} (hunion : ∀ u ∈ E, ∀ v ∈ E, u ∪ v ∈ E)
     (hinter : ∀ u ∈ E, ∀ v ∈ E, u ∩ v ∈ E) {f : List ℕ → Set α} (hf : ∀ l, f l ∈ E)
-    (N : ℕ → ℕ) (k : ℕ) : prunedSet f N k ∈ E :=
-  biUnion_mem_of_nonempty hunion (prefixBox_nonempty N k) fun w _ ↦ prefixInter_mem hinter hf k w
+    (N : ℕ → ℕ) (k : ℕ) : prunedSet f N k ∈ E := by
+  rw [prunedSet, ← Finset.sup_set_eq_biUnion]
+  exact SupClosed.finsetSup_mem (s := E) hunion (prefixBox_nonempty N k)
+    fun w _ ↦ prefixInter_mem hinter hf k w
 
 private lemma prunedSet_anti (f : List ℕ → Set α) (N : ℕ → ℕ) : Antitone (prunedSet f N) := by
   refine antitone_nat_of_succ_le fun k x hx ↦ ?_
@@ -393,29 +383,59 @@ private lemma exists_coord_bound_of_lt {I : Set α → ℝ≥0∞}
     exact ⟨M, fun _ ↦ hM.le⟩
   · exact ⟨0, fun h ↦ (hT h).elim⟩
 
+-- Recursively prune branch space coordinate by coordinate using chosen bounds `Mof n (F n)`.
+private def prunedBranches (Mof : ℕ → Set (ℕ → ℕ) → ℕ) : ℕ → Set (ℕ → ℕ)
+  | 0 => univ
+  | n + 1 =>
+    let Fn := prunedBranches Mof n
+    Fn ∩ {β | β n ≤ Mof n Fn}
+
+@[simp]
+private lemma prunedBranches_zero (Mof : ℕ → Set (ℕ → ℕ) → ℕ) :
+    prunedBranches Mof 0 = univ := rfl
+
+@[simp]
+private lemma prunedBranches_succ (Mof : ℕ → Set (ℕ → ℕ) → ℕ) (n : ℕ) :
+    prunedBranches Mof (n + 1) =
+      prunedBranches Mof n ∩ {β | β n ≤ Mof n (prunedBranches Mof n)} := rfl
+
 /-- **Strict capacity approximation of Souslin sets over a paving** (Theodorakopoulos, Theorem 2.5).
-If `E` is closed under binary unions and intersections and `I : Set α → ℝ≥0∞` is monotone and
-upward continuous along increasing countable unions, then for every `s ∈ souslinClosure E` and
+If `E` is closed under binary unions and intersections and `I : Set α → ℝ≥0∞` is upward continuous
+along increasing countable unions (hence monotone), then for every `s ∈ souslinClosure E` and
 `r < I s` there exists an antitone sequence `e : ℕ → Set α` in `E` with `(⋂ k, e k) ⊆ s` and
 `r < ⨅ k, I (e k)`. No topology, measurability, or finiteness assumption on `α` or `I` is needed. -/
 theorem exists_antitone_mem_of_lt_of_mem_souslinClosure {E : Set (Set α)}
     (hunion : ∀ u ∈ E, ∀ v ∈ E, u ∪ v ∈ E) (hinter : ∀ u ∈ E, ∀ v ∈ E, u ∩ v ∈ E)
-    {I : Set α → ℝ≥0∞} (hmono : Monotone I)
+    {I : Set α → ℝ≥0∞}
     (hiUnion : ∀ A : ℕ → Set α, Monotone A → I (⋃ n, A n) = ⨆ n, I (A n))
     {s : Set α} (hs : s ∈ souslinClosure E) {r : ℝ≥0∞} (hr : r < I s) :
     ∃ e : ℕ → Set α, Antitone e ∧ (∀ k, e k ∈ E) ∧ (⋂ k, e k) ⊆ s ∧ r < ⨅ k, I (e k) := by
+  -- Upward continuity along `u, v, v, …` implies monotonicity of `I`.
+  have hmono : Monotone I := fun u v huv ↦ by
+    let A : ℕ → Set α := fun n ↦ if n = 0 then u else v
+    have hA_mono : Monotone A := fun i j hij ↦ by
+      by_cases hj : j = 0
+      · simp [A, hj, Nat.eq_zero_of_le_zero (hj ▸ hij)]
+      · by_cases hi : i = 0 <;> simp [A, hi, hj, huv]
+    have hA_union : (⋃ n, A n) = v := subset_antisymm
+      (iUnion_subset fun n ↦ by dsimp only [A]; split_ifs <;> [exact huv; exact Subset.rfl])
+      (subset_iUnion_of_subset 1 Subset.rfl)
+    simpa only [A, ↓reduceIte] using
+      (le_iSup (fun n ↦ I (A n)) 0).trans_eq ((hiUnion A hA_mono).symm.trans (congrArg I hA_union))
   obtain ⟨f, hf, rfl⟩ := hs
   obtain ⟨p, hrp, hp⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hr
   obtain ⟨q, hpq, hq⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hp
   let a : ℕ → ℝ≥0 := fun n ↦ p + (q - p) / 2 ^ n
   have ha_lt (n : ℕ) : ((a (n + 1) : ℝ≥0) : ℝ≥0∞) < (a n : ℝ≥0) := by
     refine ENNReal.coe_lt_coe.mpr (add_lt_add_right ?_ p)
-    exact div_lt_div_of_pos_left (tsub_pos_of_lt (ENNReal.coe_lt_coe.mp hpq)) (by positivity)
-      (pow_lt_pow_right₀ one_lt_two (Nat.lt_succ_self n))
+    exact div_lt_div_of_pos_left (tsub_pos_of_lt (ENNReal.coe_lt_coe.mp hpq))
+      (pow_pos zero_lt_two n) (pow_lt_pow_right₀ one_lt_two (Nat.lt_succ_self n))
   let S : Set (ℕ → ℕ) → Set α := fun T ↦
     ⋃ β ∈ T, ⋂ m : ℕ, f (List.ofFn fun i : Fin (m + 1) ↦ β i)
   choose Mof hMof using fun n T ↦ exists_coord_bound_of_lt hiUnion f (ha_lt n) n T
-  let F : ℕ → Set (ℕ → ℕ) := fun n ↦ Nat.rec univ (fun n Fn ↦ Fn ∩ {β | β n ≤ Mof n Fn}) n
+  -- Invariant: `F n` restricts the first `n` branch coordinates (`β k ≤ N k` for `k < n`)
+  -- while maintaining the capacity lower bound `a n ≤ I (S (F n))`.
+  let F : ℕ → Set (ℕ → ℕ) := prunedBranches Mof
   let N : ℕ → ℕ := fun n ↦ Mof n (F n)
   have hF_mem : ∀ n (β : ℕ → ℕ), β ∈ F n → ∀ k < n, β k ≤ N k := by
     intro n

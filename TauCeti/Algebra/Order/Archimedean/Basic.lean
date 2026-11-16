@@ -27,6 +27,8 @@ Hölder inequality is iterated.
   there is `M > 0` with `s / r ^ M < p` and `s / r ^ M * r ^ k < 1` for all `k < M`.
 * `TauCeti.exists_nat_ge_and_div_le`: for `0 < δ` and `n₀ : ℕ` there are `n ≥ n₀` and `N > 0`
   with `1 / (N + 1) ≤ δ` and `2 * n / N ≤ δ`.
+* `TauCeti.iUnion_Iic_natCast`: natural-number downward rays `Iic (m : R)` cover any Archimedean
+  ordered semiring.
 -/
 
 public section
@@ -69,5 +71,11 @@ theorem exists_nat_ge_and_div_le {δ : K} (hδ : 0 < δ) (n₀ : ℕ) :
         one_div_le_one_div_of_le (Nat.cast_pos.2 hNpos) (le_add_of_nonneg_right zero_le_one)
     _ ≤ 2 * ((n₀ + 1 : ℕ) : K) / N := by gcongr; norm_cast; omega
     _ ≤ δ := h2.le
+
+/-- Closed downward rays at natural-number bounds cover any Archimedean ordered semiring. -/
+@[simp]
+theorem iUnion_Iic_natCast {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+    [Archimedean R] : (⋃ m : ℕ, Set.Iic (m : R)) = Set.univ :=
+  Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.mpr (exists_nat_ge x)
 
 end TauCeti

@@ -6,28 +6,35 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Process.StochasticInterval
-import Mathlib.Analysis.SpecificLimits.Basic
+public import TauCeti.Probability.Process.Stopping
 import Mathlib.Topology.Order.MonotoneConvergence
+import TauCeti.Topology.Instances.NNReal
 
 /-!
-# Pointwise announcing sequences
+# Pointwise and almost-sure announcing sequences
 
-A predictable time is announced by increasing, everywhere finite stopping times which are
-strictly smaller on its positive-time event. All requirements here are pointwise, including
-convergence to infinity; these are not almost-sure announcing sequences. No probability measure,
-completion, or right continuity of the filtration is assumed.
+A pointwise predictable time (`TauCeti.IsPredictableTime`) is announced by an increasing sequence of
+everywhere finite stopping times (`TauCeti.IsAnnouncingSequence`) which are strictly smaller on its
+positive-time event. These requirements hold on every outcome, including convergence to infinity,
+without assuming a probability measure, completion, or right continuity of the filtration.
 
-Announced times are stopping times. Deterministic times, including zero and infinity, are
+Pointwise announced times are stopping times. Deterministic times, including zero and infinity, are
 predictable. Positive deterministic delays of stopping times, finite minima, finite maxima,
 countable suprema, pasting along `ℱ 0`-measurable events, and restricting a predictable time to
-`{τ ≤ η}` for a stopping time `η` all preserve pointwise predictability. Announcing sequences
-make the closed stochastic ray `{(t, ω) | τ ω ≤ t}` predictable, and these closed rays generate
-the full predictable sigma-algebra without completeness or right continuity of the filtration.
+`{τ ≤ η}` for a stopping time `η` all preserve pointwise predictability. Announcing sequences make
+the closed stochastic ray `{(t, ω) | τ ω ≤ t}` predictable, and these closed rays generate the full
+predictable sigma-algebra without completeness or right continuity of the filtration.
+
+We also define almost-sure announcing sequences (`TauCeti.IsAEAnnouncingSequence`) with respect to a
+measure `P` and upgrade them to pointwise announcing sequences when `ℱ` is `P`-complete or when
+every ambient-measurable `P`-null set belongs to `ℱ 0`.
 
 ## References
 
 * S. Theodorakopoulos, *New proofs to measurable, predictable and optional section theorems*,
   arXiv:2310.13086v2, §4.
+* C. Dellacherie and P.-A. Meyer, *Probabilities and Potential*, North-Holland, 1978,
+  Chapter IV, §2.
 -/
 
 public section
@@ -132,11 +139,8 @@ theorem iSup {θ : ℕ → Ω → WithTop ℝ≥0} {a : ℕ → ℕ → Ω → W
       (Finset.le_sup (f := fun i ↦ a i k ω)
         (Finset.mem_range.mpr ((Finset.mem_range.mp hi).trans_le
           (Nat.add_le_add_right hnk 1))))
-  refine ⟨?_, hm, ?_, ?_⟩
-  · intro n t
-    simpa only [Finset.sup_le_iff, ofPred_forall] using
-      MeasurableSet.iInter (fun i ↦ MeasurableSet.iInter
-        (fun (_ : i ∈ Finset.range (n + 1)) ↦ (ha i).isStoppingTime n t))
+  refine ⟨fun n ↦ (Finset.range (n + 1)).isStoppingTime_sup fun i _ ↦ (ha i).isStoppingTime n,
+    hm, ?_, ?_⟩
   · intro ω
     -- Every row is eventually included, and its entries increase along the diagonal.
     have he : (⨆ n, (Finset.range (n + 1)).sup (fun i ↦ a i n ω)) = ⨆ i, θ i ω := by
@@ -162,32 +166,22 @@ theorem iSup {θ : ℕ → Ω → WithTop ℝ≥0} {a : ℕ → ℕ → Ω → W
 /-- The deterministic times approaching `t` from below announce the finite constant time `t`. -/
 theorem _root_.NNReal.isAnnouncingSequence_const (t : ℝ≥0) :
     IsAnnouncingSequence ℱ (fun n _ ↦ (t - 1 / (n + 1 : ℝ≥0) : ℝ≥0))
-      (fun _ ↦ (t : WithTop ℝ≥0)) := by
-  refine ⟨fun n ↦ isStoppingTime_const ℱ (t - 1 / (n + 1)), ?_, ?_, ?_⟩
-  · intro _ n k hnk
-    apply WithTop.coe_le_coe.mpr
-    exact tsub_le_tsub_left (one_div_le_one_div_of_le (by positivity)
-      (by exact_mod_cast Nat.add_le_add_right hnk 1)) t
-  · intro _
-    have hi : Tendsto (fun n : ℕ ↦ (1 : ℝ≥0) / (n + 1)) atTop (𝓝 0) :=
-      tendsto_one_div_add_atTop_nhds_zero_nat
-    have hl : Tendsto (fun n : ℕ ↦ t - 1 / (n + 1 : ℝ≥0)) atTop (𝓝 t) := by
-      simpa using tendsto_const_nhds.sub hi
-    exact WithTop.continuous_coe.continuousAt.tendsto.comp hl
-  · intro n _ ht
-    exact WithTop.coe_lt_coe.mpr (tsub_lt_self (WithTop.coe_lt_coe.mp ht) (by positivity))
+      (fun _ ↦ (t : WithTop ℝ≥0)) where
+  isStoppingTime n := isStoppingTime_const ℱ (t - 1 / (n + 1))
+  monotone _ _ _ hnk := WithTop.coe_le_coe.mpr (NNReal.monotone_tsub_one_div_add_one t hnk)
+  tendsto _ := NNReal.tendsto_coe_tsub_one_div_add_one t
+  lt _ _ ht := WithTop.coe_lt_coe.mpr (tsub_lt_self (WithTop.coe_lt_coe.mp ht) (by positivity))
 
 /-- The constant zero sequence announces time zero. -/
 theorem zero : IsAnnouncingSequence ℱ (fun _ _ ↦ 0) (fun _ ↦ 0) := by
   simpa using NNReal.isAnnouncingSequence_const (ℱ := ℱ) 0
 
 /-- The deterministic integer times announce infinity. -/
-theorem top : IsAnnouncingSequence ℱ (fun n _ ↦ (n : ℝ≥0)) (fun _ ↦ ⊤) := by
-  refine ⟨fun n ↦ isStoppingTime_const ℱ n, ?_, ?_, by simp⟩
-  · intro _ n k hnk
-    exact WithTop.coe_le_coe.mpr (Nat.cast_le.mpr hnk)
-  · intro _
-    exact WithTop.tendsto_coe_atTop.comp tendsto_natCast_atTop_atTop
+theorem top : IsAnnouncingSequence ℱ (fun n _ ↦ (n : ℝ≥0)) (fun _ ↦ ⊤) where
+  isStoppingTime n := isStoppingTime_const ℱ n
+  monotone _ _ _ hnk := WithTop.coe_le_coe.mpr (Nat.cast_le.mpr hnk)
+  tendsto _ := WithTop.tendsto_coe_natCast_atTop
+  lt := by simp
 
 /-- Pasting announcing sequences along an event known at time zero announces the pasted time. -/
 theorem piecewise (hσ : IsAnnouncingSequence ℱ σ τ) (hρ : IsAnnouncingSequence ℱ ρ η)
@@ -357,32 +351,22 @@ theorem measurableSet_predictable_Ico (hτ : IsPredictableTime ℱ τ)
       {p : ℝ≥0 × Ω | τ p.2 ≤ p.1 ∧ (p.1 : WithTop ℝ≥0) < η p.2} :=
   hτ.measurableSet_predictable_le.inter hη.measurableSet_predictable_gt
 
-end TauCeti.IsPredictableTime
+/-- Every `ℱ 0`-measurable event `A` gives a pointwise predictable `0`/`⊤`-valued time whose
+closed upper ray is `univ ×ˢ A`. -/
+theorem exists_setOf_le_eq_univ_prod {A : Set Ω} (hA : MeasurableSet[ℱ 0] A) :
+    ∃ τ : Ω → WithTop ℝ≥0,
+      IsPredictableTime ℱ τ ∧ {p : ℝ≥0 × Ω | τ p.2 ≤ p.1} = univ ×ˢ A := by
+  classical
+  refine ⟨A.piecewise (fun _ ↦ 0) (fun _ ↦ ⊤),
+    IsPredictableTime.zero.piecewise IsPredictableTime.top hA, ?_⟩
+  ext ⟨t, ω⟩
+  by_cases hω : ω ∈ A
+  · simp only [hω, piecewise_eq_of_mem, mem_ofPred_eq, mem_prod, mem_univ, true_and, iff_true]
+    exact bot_le
+  · simp only [hω, not_false_eq_true, piecewise_eq_of_notMem, mem_ofPred_eq, top_le_iff,
+      WithTop.coe_ne_top, mem_prod, mem_univ, true_and]
 
-/-- Shifting a stopping time in nonnegative real time forward by a deterministic constant yields
-a stopping time. -/
-theorem MeasureTheory.IsStoppingTime.add_const_nnreal
-    {Ω : Type*} {m : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 m}
-    {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ) (c : ℝ≥0) :
-    IsStoppingTime ℱ (fun ω ↦ τ ω + (c : WithTop ℝ≥0)) := by
-  intro t
-  by_cases hct : c ≤ t
-  · have heq : {ω | τ ω + (c : WithTop ℝ≥0) ≤ t} = {ω | τ ω ≤ (t - c : ℝ≥0)} := by
-      ext ω
-      simp only [mem_ofPred_eq]
-      cases τ ω with
-      | top => simp only [WithTop.top_add, top_le_iff, WithTop.coe_ne_top]
-      | coe a => exact_mod_cast (le_tsub_iff_right hct).symm
-    rw [heq]
-    exact ℱ.mono tsub_le_self _ (hτ (t - c))
-  · have heq : {ω | τ ω + (c : WithTop ℝ≥0) ≤ t} = ∅ := by
-      ext ω
-      simp only [mem_ofPred_eq, mem_empty_iff_false, iff_false]
-      cases τ ω with
-      | top => simp only [WithTop.top_add, top_le_iff, WithTop.coe_ne_top, not_false_eq_true]
-      | coe a => exact_mod_cast not_le_of_gt ((lt_of_not_ge hct).trans_le le_add_self)
-    rw [heq]
-    exact @MeasurableSet.empty _ (ℱ t)
+end TauCeti.IsPredictableTime
 
 namespace TauCeti
 
@@ -397,15 +381,13 @@ theorem _root_.MeasureTheory.IsStoppingTime.isAnnouncingSequence_add_const
       (fun n ω ↦ min ((n : ℝ≥0) : WithTop ℝ≥0)
         (τ ω + ((c - 1 / (n + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0)))
       (fun ω ↦ τ ω + (c : WithTop ℝ≥0)) := by
-  refine ⟨fun n ↦ (isStoppingTime_const ℱ n).min (hτ.add_const_nnreal _), ?_, ?_, ?_⟩
+  refine ⟨fun n ↦ (isStoppingTime_const ℱ n).min (hτ.add_const_of_orderedSub _), ?_, ?_, ?_⟩
   · intro ω n k hnk
     refine min_le_min (WithTop.coe_le_coe.mpr (Nat.cast_le.mpr hnk)) ?_
     cases τ ω with
     | top => simp
     | coe a =>
-      exact_mod_cast add_le_add_right (tsub_le_tsub_left
-        (one_div_le_one_div_of_le (by positivity)
-          (by exact_mod_cast Nat.add_le_add_right hnk 1)) c) a
+      exact_mod_cast add_le_add_right (NNReal.monotone_tsub_one_div_add_one c hnk) a
   · intro ω
     have hg : Tendsto (fun n : ℕ ↦ τ ω + ((c - 1 / (n + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0))
         atTop (𝓝 (τ ω + (c : WithTop ℝ≥0))) := by
@@ -414,12 +396,10 @@ theorem _root_.MeasureTheory.IsStoppingTime.isAnnouncingSequence_add_const
         simp only [WithTop.top_add]
         exact tendsto_const_nhds
       | coe a =>
-        have hi : Tendsto (fun n : ℕ ↦ (1 : ℝ≥0) / (n + 1)) atTop (𝓝 0) :=
-          tendsto_one_div_add_atTop_nhds_zero_nat
-        have hl : Tendsto (fun n : ℕ ↦ a + (c - 1 / (n + 1 : ℝ≥0))) atTop (𝓝 (a + c)) := by
-          simpa using tendsto_const_nhds.add (tendsto_const_nhds.sub hi)
-        exact_mod_cast WithTop.continuous_coe.continuousAt.tendsto.comp hl
-    simpa [min_top_left] using (IsAnnouncingSequence.top (ℱ := ℱ).tendsto ω).min hg
+        have hl : Tendsto (fun n : ℕ ↦ a + (c - 1 / (n + 1 : ℝ≥0))) atTop (𝓝 (a + c)) :=
+          tendsto_const_nhds.add (NNReal.tendsto_tsub_one_div_add_one c)
+        exact_mod_cast (WithTop.continuous_coe.tendsto (a + c)).comp hl
+    simpa [min_top_left] using WithTop.tendsto_coe_natCast_atTop.min hg
   · intro n ω _
     cases τ ω with
     | top => exact (min_le_left _ _).trans_lt (WithTop.coe_lt_top _)
@@ -441,56 +421,38 @@ theorem IsAnnouncingSequence.ite_le (hσ : IsAnnouncingSequence ℱ σ τ)
     IsAnnouncingSequence ℱ
       (fun n ω ↦ if σ n ω ≤ η ω then σ n ω else σ n ω ⊔ ((n : ℝ≥0) : WithTop ℝ≥0))
       (fun ω ↦ if τ ω ≤ η ω then τ ω else ⊤) := by
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · intro n t
-    by_cases hnt : (n : ℝ≥0) ≤ t
-    · have heq : {ω | (if σ n ω ≤ η ω then σ n ω
-          else σ n ω ⊔ ((n : ℝ≥0) : WithTop ℝ≥0)) ≤ t} = {ω | σ n ω ≤ t} := by
-        ext ω
-        simp only [mem_ofPred_eq]
-        split_ifs with hle
-        · rfl
-        · exact sup_le_iff.trans (and_iff_left (WithTop.coe_le_coe.mpr hnt))
-      rw [heq]
-      exact hσ.isStoppingTime n t
-    · have heq : {ω | (if σ n ω ≤ η ω then σ n ω
-          else σ n ω ⊔ ((n : ℝ≥0) : WithTop ℝ≥0)) ≤ t} =
-          {ω | σ n ω ≤ η ω} ∩ {ω | σ n ω ≤ t} := by
-        ext ω
-        simp only [mem_ofPred_eq, mem_inter_iff]
-        split_ifs with hle
-        · simp [hle]
-        · have hgt : (t : WithTop ℝ≥0) < (n : ℝ≥0) := WithTop.coe_lt_coe.mpr (lt_of_not_ge hnt)
-          exact ⟨fun h ↦ absurd (le_sup_right.trans h) (not_le_of_gt hgt), fun h ↦ absurd h.1 hle⟩
-      rw [heq]
-      exact ((hσ.isStoppingTime n).measurableSet_le_stopping_time hη).2 t
+  refine ⟨fun n ↦ (hσ.isStoppingTime n).ite_le_sup_const hη n, ?_, ?_, ?_⟩
   · intro ω n k hnk
     have hsnk := hσ.monotone ω hnk
-    dsimp only
-    split_ifs with hn hk hk
-    · exact hsnk
-    · exact hsnk.trans le_sup_left
-    · exact (hn (hsnk.trans hk)).elim
-    · exact sup_le_sup hsnk (WithTop.coe_le_coe.mpr (Nat.cast_le.mpr hnk))
+    by_cases hn : σ n ω ≤ η ω
+    · by_cases hk : σ k ω ≤ η ω
+      · simpa only [hn, hk, ↓reduceIte] using hsnk
+      · simpa only [hn, hk, ↓reduceIte] using hsnk.trans le_sup_left
+    · have hk : ¬ σ k ω ≤ η ω := fun hk ↦ hn (hsnk.trans hk)
+      simpa only [hn, hk, ↓reduceIte] using
+        sup_le_sup hsnk (WithTop.coe_le_coe.mpr (Nat.cast_le.mpr hnk))
   · intro ω
-    split_ifs with hle
+    by_cases hle : τ ω ≤ η ω
     · have heq : (fun n ↦ if σ n ω ≤ η ω then σ n ω
           else σ n ω ⊔ ((n : ℝ≥0) : WithTop ℝ≥0)) = fun n ↦ σ n ω :=
         funext fun n ↦ ite_eq_left ((hσ.le n ω).trans hle)
-      exact heq ▸ hσ.tendsto ω
+      simpa only [hle, ↓reduceIte, heq] using hσ.tendsto ω
     · have hev : ∀ᶠ n in atTop, η ω < σ n ω :=
         (hσ.tendsto ω).eventually (isOpen_Ioi.mem_nhds (lt_of_not_ge hle))
-      refine tendsto_nhds_top_mono (IsAnnouncingSequence.top (ℱ := ℱ).tendsto ω) ?_
+      simp only [hle, ↓reduceIte]
+      refine tendsto_nhds_top_mono WithTop.tendsto_coe_natCast_atTop ?_
       filter_upwards [hev] with n hn
       rw [ite_eq_right (not_le_of_gt hn)]
       exact le_sup_right
   · intro n ω hpos
-    split_ifs with h1 h2 h2
-    · rw [ite_eq_left h2] at hpos
-      exact hσ.lt n ω hpos
-    · exact (hσ.ne_top n ω).lt_top
-    · exact (h1 ((hσ.le n ω).trans h2)).elim
-    · exact sup_lt_iff.mpr ⟨(hσ.ne_top n ω).lt_top, WithTop.coe_lt_top _⟩
+    by_cases hle : τ ω ≤ η ω
+    · have hn : σ n ω ≤ η ω := (hσ.le n ω).trans hle
+      rw [ite_eq_left hle] at hpos
+      simpa only [hn, hle, ↓reduceIte] using hσ.lt n ω hpos
+    · by_cases hn : σ n ω ≤ η ω
+      · simpa only [hn, hle, ↓reduceIte] using (hσ.ne_top n ω).lt_top
+      · simpa only [hn, hle, ↓reduceIte] using
+          sup_lt_iff.mpr ⟨(hσ.ne_top n ω).lt_top, WithTop.coe_lt_top _⟩
 
 /-- Restricting a pointwise predictable time `τ` to `{τ ≤ η}` for a stopping time `η` (with `⊤`
 outside that event) yields a pointwise predictable time, without completeness or right
@@ -529,32 +491,22 @@ private lemma singleton_zero_prod_mem_generateFrom {Ω : Type*} {m : MeasurableS
     MeasurableSet[MeasurableSpace.generateFrom
       {u : Set (ℝ≥0 × Ω) | ∃ τ, TauCeti.IsPredictableTime ℱ τ ∧ u = {p | τ p.2 ≤ p.1}}]
       ({(0 : ℝ≥0)} ×ˢ A) := by
-  classical
   let G := MeasurableSpace.generateFrom
     {u : Set (ℝ≥0 × Ω) | ∃ τ, TauCeti.IsPredictableTime ℱ τ ∧ u = {p | τ p.2 ≤ p.1}}
   have hray {τ : Ω → WithTop ℝ≥0} (hτ : TauCeti.IsPredictableTime ℱ τ) :
       MeasurableSet[G] {p : ℝ≥0 × Ω | τ p.2 ≤ p.1} :=
     MeasurableSpace.measurableSet_generateFrom ⟨τ, hτ, rfl⟩
-  have hA_ray : MeasurableSet[G] (univ ×ˢ A) := by
-    have heq : (univ : Set ℝ≥0) ×ˢ A =
-        {p : ℝ≥0 × Ω | A.piecewise (fun _ ↦ (0 : WithTop ℝ≥0)) (fun _ ↦ ⊤) p.2 ≤ p.1} := by
-      ext ⟨t, ω⟩
-      simp only [mem_prod, mem_univ, true_and, mem_ofPred_eq]
-      by_cases hω : ω ∈ A
-      · simp only [hω, piecewise_eq_of_mem, true_iff]
-        exact bot_le
-      · simp only [hω, not_false_eq_true, piecewise_eq_of_notMem, top_le_iff, WithTop.coe_ne_top]
-    rw [heq]
-    exact hray (TauCeti.IsPredictableTime.zero.piecewise TauCeti.IsPredictableTime.top hA)
+  obtain ⟨τA, hτA, hτA_eq⟩ := TauCeti.IsPredictableTime.exists_setOf_le_eq_univ_prod hA
+  have hA_ray : MeasurableSet[G] (univ ×ˢ A) := hτA_eq ▸ hray hτA
   have h0 : MeasurableSet[G] ({(0 : ℝ≥0)} ×ˢ (univ : Set Ω)) := by
     have heq : ({(0 : ℝ≥0)} ×ˢ (univ : Set Ω)) =
         (⋃ k : ℕ, {p : ℝ≥0 × Ω | ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) ≤ p.1})ᶜ := by
       ext ⟨t, _⟩
+      have hlt := @NNReal.lt_coe_iff_exists_add_one_div_add_one_le 0 t
+      simp_rw [zero_add, ← WithTop.coe_zero, WithTop.coe_lt_coe, pos_iff_ne_zero] at hlt
       simp only [mem_prod, mem_singleton_iff, mem_univ, and_true, compl_iUnion, mem_iInter,
-        mem_compl_iff, mem_ofPred_eq, WithTop.coe_le_coe, not_le]
-      refine ⟨fun ht k ↦ ht ▸ by positivity, fun h ↦ by_contra fun ht ↦ ?_⟩
-      obtain ⟨k, hk⟩ := exists_nat_one_div_lt (NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr ht))
-      exact asymm (h k) (by exact_mod_cast hk)
+        mem_compl_iff, mem_ofPred_eq]
+      exact not_not.symm.trans (hlt.not.trans not_exists)
     rw [heq]
     exact (MeasurableSet.iUnion fun _ ↦ hray TauCeti.IsPredictableTime.const).compl
   have hinter : ({(0 : ℝ≥0)} ×ˢ (univ : Set Ω)) ∩ (univ ×ˢ A) = {(0 : ℝ≥0)} ×ˢ A := by
@@ -575,14 +527,12 @@ private lemma Ioi_prod_mem_generateFrom {Ω : Type*} {m : MeasurableSpace Ω}
   have heq : Ioi s ×ˢ A =
       ⋃ k : ℕ, {p : ℝ≥0 × Ω | η p.2 + ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) ≤ p.1} := by
     ext ⟨t, ω⟩
+    rw [mem_iUnion]
+    simp only [mem_ofPred_eq, ← NNReal.lt_coe_iff_exists_add_one_div_add_one_le]
     by_cases hω : ω ∈ A
-    · simp only [η, hω, piecewise_eq_of_mem, mem_prod, mem_Ioi, and_true, mem_iUnion,
-        mem_ofPred_eq, ← WithTop.coe_add, WithTop.coe_le_coe]
-      refine ⟨fun hst ↦ ?_, fun ⟨k, hk⟩ ↦ (lt_add_of_pos_right s (by positivity)).trans_le hk⟩
-      obtain ⟨k, hk⟩ := exists_nat_one_div_lt (sub_pos.mpr (NNReal.coe_lt_coe.mpr hst))
-      exact ⟨k, by exact_mod_cast (lt_sub_iff_add_lt'.mp hk).le⟩
+    · simp only [η, hω, piecewise_eq_of_mem, mem_prod, mem_Ioi, and_true, WithTop.coe_lt_coe]
     · simp only [η, hω, not_false_eq_true, piecewise_eq_of_notMem, mem_prod, mem_Ioi, and_false,
-        mem_iUnion, mem_ofPred_eq, WithTop.top_add, top_le_iff, WithTop.coe_ne_top, exists_false]
+        not_top_lt]
   rw [heq]
   exact MeasurableSet.iUnion fun k ↦ MeasurableSpace.measurableSet_generateFrom
     ⟨_, hη.isPredictableTime_add_const (by positivity), rfl⟩
@@ -602,3 +552,190 @@ theorem MeasureTheory.Filtration.predictable_eq_generateFrom_isPredictableTime_l
     exact hτ.measurableSet_predictable_le
 
 end GenerateFromPredictableRays
+
+namespace TauCeti
+
+section AEAnnouncingSequence
+
+variable {Ω : Type*} {m : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 m}
+  {P : Measure Ω} {σ : ℕ → Ω → WithTop ℝ≥0} {τ : Ω → WithTop ℝ≥0}
+
+/-- An almost-sure announcing sequence consists of `ℱ`-stopping times that almost surely increase
+to `τ` (including at infinity) and are almost surely strictly smaller than `τ` wherever `0 < τ`. -/
+structure IsAEAnnouncingSequence (ℱ : Filtration ℝ≥0 m) (P : Measure Ω)
+    (σ : ℕ → Ω → WithTop ℝ≥0) (τ : Ω → WithTop ℝ≥0) : Prop where
+  /-- Every approximant is a stopping time of the filtration. -/
+  isStoppingTime : ∀ n, IsStoppingTime ℱ (σ n)
+  /-- The approximants increase almost surely. -/
+  monotone : ∀ᵐ ω ∂P, Monotone (fun n ↦ σ n ω)
+  /-- The approximants converge to `τ` almost surely, including on `{τ = ⊤}`. -/
+  tendsto : ∀ᵐ ω ∂P, Tendsto (fun n ↦ σ n ω) atTop (𝓝 (τ ω))
+  /-- Strict announcement holds almost surely wherever `τ` is positive. -/
+  lt : ∀ᵐ ω ∂P, ∀ n, 0 < τ ω → σ n ω < τ ω
+
+/-- Every pointwise announcing sequence is an almost-sure announcing sequence for every measure. -/
+theorem IsAnnouncingSequence.isAEAnnouncingSequence (h : IsAnnouncingSequence ℱ σ τ)
+    (P : Measure Ω) : IsAEAnnouncingSequence ℱ P σ τ where
+  isStoppingTime := h.isStoppingTime
+  monotone := Eventually.of_forall h.monotone
+  tendsto := Eventually.of_forall h.tendsto
+  lt := Eventually.of_forall fun ω n hpos ↦ h.lt n ω hpos
+
+namespace IsAEAnnouncingSequence
+
+/-- Almost surely, every approximant of an almost-sure announcing sequence is at most `τ`. -/
+theorem ae_le (h : IsAEAnnouncingSequence ℱ P σ τ) : ∀ᵐ ω ∂P, ∀ n, σ n ω ≤ τ ω := by
+  filter_upwards [h.monotone, h.tendsto] with ω hmono htend n
+  exact hmono.ge_of_tendsto htend n
+
+/-- Almost surely, every approximant of an almost-sure announcing sequence is finite. -/
+theorem ae_ne_top (h : IsAEAnnouncingSequence ℱ P σ τ) : ∀ᵐ ω ∂P, ∀ n, σ n ω ≠ ⊤ := by
+  filter_upwards [h.ae_le, h.lt] with ω hle hlt n
+  by_cases hpos : 0 < τ ω
+  · exact ne_top_of_lt (hlt n hpos)
+  · exact ne_top_of_le_ne_top WithTop.zero_ne_top ((hle n).trans (not_lt.mp hpos))
+
+/-- Almost surely, `τ` is the supremum of its almost-sure announcing sequence. -/
+theorem ae_iSup_eq (h : IsAEAnnouncingSequence ℱ P σ τ) :
+    ∀ᵐ ω ∂P, (⨆ n, σ n ω) = τ ω := by
+  filter_upwards [h.monotone, h.tendsto] with ω hmono htend
+  exact iSup_eq_of_tendsto hmono htend
+
+-- Pointwise fallback approximants used on the exceptional null set when upgrading to a pointwise
+-- announcing sequence: `(τ - 1 / (n + 1))^+ ∧ n` on finite values and `n` at infinity.
+private def fallbackStep (n : ℕ) : WithTop ℝ≥0 → WithTop ℝ≥0
+  | ⊤ => (n : ℝ≥0)
+  | (t : ℝ≥0) => min ((n : ℝ≥0) : WithTop ℝ≥0) ((t - 1 / (n + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0)
+
+private theorem fallbackStep_properties (x : WithTop ℝ≥0) :
+    Monotone (fun n ↦ fallbackStep n x) ∧
+      Tendsto (fun n ↦ fallbackStep n x) atTop (𝓝 x) ∧
+      (∀ n, 0 < x → fallbackStep n x < x) := by
+  cases x with
+  | top =>
+    exact ⟨fun _ _ hnk ↦ WithTop.coe_le_coe.mpr (Nat.cast_le.mpr hnk),
+      WithTop.tendsto_coe_natCast_atTop, fun n _ ↦ WithTop.coe_lt_top (n : ℝ≥0)⟩
+  | coe t =>
+    refine ⟨fun _ _ hnk ↦ min_le_min (WithTop.coe_le_coe.mpr (Nat.cast_le.mpr hnk))
+        (WithTop.coe_le_coe.mpr (NNReal.monotone_tsub_one_div_add_one t hnk)),
+      by simpa only [fallbackStep, min_top_left] using
+        WithTop.tendsto_coe_natCast_atTop.min (NNReal.tendsto_coe_tsub_one_div_add_one t),
+      fun n ht ↦ (min_le_right _ _).trans_lt
+        (WithTop.coe_lt_coe.mpr (tsub_lt_self (WithTop.coe_lt_coe.mp ht) (by positivity)))⟩
+
+private theorem measurableSet_fallbackStep_le (hτ : IsStoppingTime ℱ τ) (n : ℕ) (t : ℝ≥0) :
+    MeasurableSet {ω | fallbackStep n (τ ω) ≤ t} := by
+  by_cases hnt : (n : ℝ≥0) ≤ t
+  · have heq : {ω | fallbackStep n (τ ω) ≤ t} = univ := by
+      ext ω
+      simp only [mem_ofPred_eq, mem_univ, iff_true]
+      cases τ ω with
+      | top => exact WithTop.coe_le_coe.mpr hnt
+      | coe s => exact (min_le_left _ _).trans (WithTop.coe_le_coe.mpr hnt)
+    exact heq ▸ MeasurableSet.univ
+  · have heq : {ω | fallbackStep n (τ ω) ≤ t} =
+        {ω | τ ω ≤ ((t + 1 / (n + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0)} := by
+      ext ω
+      simp only [mem_ofPred_eq]
+      cases τ ω with
+      | top =>
+        simp only [fallbackStep, WithTop.coe_le_coe, hnt, top_le_iff, WithTop.coe_ne_top]
+      | coe s =>
+        simp only [fallbackStep, min_le_iff, WithTop.coe_le_coe, hnt, false_or]
+        exact tsub_le_iff_right
+    rw [heq]
+    exact ℱ.le _ _ (hτ _)
+
+-- The full-measure event on which `σ` satisfies the three pathwise announcement conditions for `τ`.
+private def goodSet (σ : ℕ → Ω → WithTop ℝ≥0) (τ : Ω → WithTop ℝ≥0) : Set Ω :=
+  {ω | Monotone (fun n ↦ σ n ω) ∧
+    Tendsto (fun n ↦ σ n ω) atTop (𝓝 (τ ω)) ∧ (∀ n, 0 < τ ω → σ n ω < τ ω)}
+
+private theorem measure_compl_goodSet_eq_zero (h : IsAEAnnouncingSequence ℱ P σ τ) :
+    P (goodSet σ τ)ᶜ = 0 := by
+  rw [← mem_ae_iff]
+  filter_upwards [h.monotone, h.tendsto, h.lt] with ω h1 h2 h3
+  exact ⟨h1, h2, h3⟩
+
+-- Shared piecewise upgrade replacing `σ` with `fallbackStep · (τ ·)` outside a subset `s` of
+-- `goodSet σ τ`.
+private theorem isAnnouncingSequence_piecewise_fallbackStep {s : Set Ω} [DecidablePred (· ∈ s)]
+    (hs : s ⊆ goodSet σ τ)
+    (hstop : ∀ n t, MeasurableSet[ℱ t] (s ∩ {ω | σ n ω ≤ t}))
+    (hfall : ∀ n t, MeasurableSet[ℱ t] (sᶜ ∩ {ω | fallbackStep n (τ ω) ≤ t})) :
+    IsAnnouncingSequence ℱ (fun n ↦ s.piecewise (σ n) (fun ω ↦ fallbackStep n (τ ω))) τ where
+  isStoppingTime n t := by
+    have heq : {ω | s.piecewise (σ n) (fun ω ↦ fallbackStep n (τ ω)) ω ≤ t} =
+        (s ∩ {ω | σ n ω ≤ t}) ∪ (sᶜ ∩ {ω | fallbackStep n (τ ω) ≤ t}) := by
+      ext ω
+      by_cases hω : ω ∈ s <;> simp [hω]
+    exact heq ▸ (hstop n t).union (hfall n t)
+  monotone ω := by
+    by_cases hω : ω ∈ s
+    · simpa [hω] using (hs hω).1
+    · simpa [hω] using (fallbackStep_properties (τ ω)).1
+  tendsto ω := by
+    by_cases hω : ω ∈ s
+    · simpa [hω] using (hs hω).2.1
+    · simpa [hω] using (fallbackStep_properties (τ ω)).2.1
+  lt n ω hpos := by
+    by_cases hω : ω ∈ s
+    · simpa [hω] using (hs hω).2.2 n hpos
+    · simpa [hω] using (fallbackStep_properties (τ ω)).2.2 n hpos
+
+/-- If `τ` is a stopping time and every ambient-measurable `P`-null set belongs to `ℱ 0` (for
+instance on `ℱ.ambientNullAugmentation P`), any random time admitting an almost-sure announcing
+sequence also admits a pointwise announcing sequence. -/
+theorem exists_isAnnouncingSequence_of_null (h : IsAEAnnouncingSequence ℱ P σ τ)
+    (hτ : IsStoppingTime ℱ τ)
+    (hnull : ∀ s : Set Ω, MeasurableSet s → P s = 0 → MeasurableSet[ℱ 0] s) :
+    ∃ σ', IsAnnouncingSequence ℱ σ' τ := by
+  classical
+  let N : Set Ω := toMeasurable P (goodSet σ τ)ᶜ
+  have hN_meas : MeasurableSet N := measurableSet_toMeasurable P _
+  have hN_null : P N = 0 := by rw [measure_toMeasurable, h.measure_compl_goodSet_eq_zero]
+  have hN_F0 : MeasurableSet[ℱ 0] N := hnull N hN_meas hN_null
+  refine ⟨_, isAnnouncingSequence_piecewise_fallbackStep (s := Nᶜ)
+    (compl_subset_comm.mp (subset_toMeasurable P _))
+    (fun n t ↦ (ℱ.mono bot_le _ hN_F0.compl).inter (h.isStoppingTime n t))
+    fun n t ↦ ?_⟩
+  rw [compl_compl]
+  exact ℱ.mono bot_le _ (hnull _ (hN_meas.inter (measurableSet_fallbackStep_le hτ n t))
+    (measure_mono_null inter_subset_left hN_null))
+
+/-- On a `P`-complete filtration, any random time admitting an almost-sure announcing sequence also
+admits a pointwise announcing sequence (without assuming a priori that `τ` is measurable or a
+stopping time). -/
+theorem exists_isAnnouncingSequence [ℱ.IsComplete P] (h : IsAEAnnouncingSequence ℱ P σ τ) :
+    ∃ σ', IsAnnouncingSequence ℱ σ' τ := by
+  classical
+  have hG_null : P (goodSet σ τ)ᶜ = 0 := h.measure_compl_goodSet_eq_zero
+  refine ⟨_, isAnnouncingSequence_piecewise_fallbackStep (s := goodSet σ τ) subset_rfl
+    (fun n t ↦ ?_) fun n t ↦
+      Filtration.IsComplete.measurableSet_of_null (measure_mono_null inter_subset_left hG_null) t⟩
+  have hG_meas : MeasurableSet[ℱ t] (goodSet σ τ) :=
+    compl_compl (goodSet σ τ) ▸ (Filtration.IsComplete.measurableSet_of_null hG_null t).compl
+  exact hG_meas.inter (h.isStoppingTime n t)
+
+/-- On a `P`-complete filtration, every time admitting an almost-sure announcing sequence is
+pointwise predictable. -/
+theorem isPredictableTime [ℱ.IsComplete P] (h : IsAEAnnouncingSequence ℱ P σ τ) :
+    IsPredictableTime ℱ τ := by
+  obtain ⟨σ', hσ'⟩ := h.exists_isAnnouncingSequence
+  exact hσ'.isPredictableTime
+
+end IsAEAnnouncingSequence
+
+/-- On a `P`-complete filtration, a random time is pointwise predictable if and only if it admits an
+almost-sure announcing sequence. -/
+theorem isPredictableTime_iff_exists_isAEAnnouncingSequence
+    (P : Measure Ω) [ℱ.IsComplete P] :
+    IsPredictableTime ℱ τ ↔ ∃ σ, IsAEAnnouncingSequence ℱ P σ τ :=
+  ⟨fun h ↦ let ⟨σ, hσ⟩ := isPredictableTime_iff.mp h; ⟨σ, hσ.isAEAnnouncingSequence P⟩,
+    fun ⟨_, hσ⟩ ↦ hσ.isPredictableTime⟩
+
+end AEAnnouncingSequence
+
+end TauCeti
+
+end
