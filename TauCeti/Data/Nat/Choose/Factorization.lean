@@ -18,7 +18,7 @@ Rewriting Kummer's carry condition (`Nat.factorization_choose`) at digit `i` as
 
 * `Nat.factorization_choose_eq_card_lt_mod`: `(n.choose k).factorization p` counts `i ∈ Ico 1 b`
   with `n % p ^ i < k % p ^ i`.
-* `Nat.factorization_choose_pow_le_choose_pow_mul`: for `p` prime, `¬ p ∣ u`, and `p ^ r * u ≤ n`,
+* `Nat.factorization_choose_pow_le_choose_pow_mul`: for `¬ p ∣ u` and `p ^ r * u ≤ n`,
   `(n.choose (p ^ r)).factorization p ≤ (n.choose (p ^ r * u)).factorization p`.
 * `Nat.not_dvd_choose_pow_factorization` and `Nat.dvd_choose_of_lt_pow_factorization`: divisibility
   of `n.choose i` by `p` at and below `p ^ (n.factorization p)`.
@@ -52,27 +52,35 @@ theorem factorization_choose_eq_card_lt_mod {p n k b : ℕ} (hp : p.Prime) (hkn 
   · rw [mod_eq_of_lt hlt] at hmod; omega
   · rw [mod_eq_sub_mod hge, mod_eq_of_lt (by omega)] at hmod; omega
 
-/-- If `p` is prime and `¬ p ∣ u`, then `(p ^ r) % p ^ i ≤ (p ^ r * u) % p ^ i`. -/
-theorem pow_mod_pow_le_pow_mul_mod_pow {p r u i : ℕ} (hp : p.Prime) (hpu : ¬ p ∣ u) :
+/-- If `¬ p ∣ u`, then `(p ^ r) % p ^ i ≤ (p ^ r * u) % p ^ i`. -/
+theorem pow_mod_pow_le_pow_mul_mod_pow {p r u i : ℕ} (hpu : ¬ p ∣ u) :
     p ^ r % p ^ i ≤ (p ^ r * u) % p ^ i := by
-  rcases le_or_gt i r with hir | hri
-  · simp [mod_eq_zero_of_dvd (pow_dvd_pow p hir)]
-  · obtain ⟨d, hd0, rfl⟩ : ∃ d, 0 < d ∧ i = r + d := ⟨i - r, by omega, by omega⟩
-    rw [mod_eq_of_lt (Nat.pow_lt_pow_right hp.one_lt (by omega)), pow_add, mul_mod_mul_left]
-    exact Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero fun h0 ↦
-      hpu ((dvd_pow_self p hd0.ne').trans (dvd_of_mod_eq_zero h0)))
+  rcases le_or_gt p 1 with hp1 | hp1
+  · interval_cases p
+    · simp only [zero_dvd_iff] at hpu
+      rcases eq_or_ne r 0 with rfl | hr0 <;> rcases eq_or_ne i 0 with rfl | hi0 <;>
+        simp [Nat.one_le_iff_ne_zero.mpr hpu, zero_pow, *]
+    · exact absurd (one_dvd u) hpu
+  · rcases le_or_gt i r with hir | hri
+    · simp [mod_eq_zero_of_dvd (pow_dvd_pow p hir)]
+    · obtain ⟨d, hd0, rfl⟩ : ∃ d, 0 < d ∧ i = r + d := ⟨i - r, by omega, by omega⟩
+      rw [mod_eq_of_lt (Nat.pow_lt_pow_right hp1 (by omega)), pow_add, mul_mod_mul_left]
+      exact Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero fun h0 ↦
+        hpu ((dvd_pow_self p hd0.ne').trans (dvd_of_mod_eq_zero h0)))
 
-/-- **Greve–Pauli, Lemma 4.1.** For `p` prime, `¬ p ∣ u`, and `p ^ r * u ≤ n`,
+/-- **Greve–Pauli, Lemma 4.1.** For `¬ p ∣ u` and `p ^ r * u ≤ n`,
 `(n.choose (p ^ r)).factorization p ≤ (n.choose (p ^ r * u)).factorization p`. -/
-theorem factorization_choose_pow_le_choose_pow_mul {p r u n : ℕ} (hp : p.Prime) (hpu : ¬ p ∣ u)
+theorem factorization_choose_pow_le_choose_pow_mul {p r u n : ℕ} (hpu : ¬ p ∣ u)
     (hle : p ^ r * u ≤ n) :
     (n.choose (p ^ r)).factorization p ≤ (n.choose (p ^ r * u)).factorization p := by
-  have hpr : p ^ r ≤ n := (Nat.le_mul_of_pos_right _
-    (Nat.pos_of_ne_zero fun h : u = 0 ↦ hpu (h ▸ dvd_zero p))).trans hle
-  rw [factorization_choose_eq_card_lt_mod hp hpr (lt_succ_self _),
-    factorization_choose_eq_card_lt_mod hp hle (lt_succ_self _)]
-  exact card_le_card fun i hi ↦ by
-    rw [mem_filter] at hi ⊢; exact ⟨hi.1, hi.2.trans_le (pow_mod_pow_le_pow_mul_mod_pow hp hpu)⟩
+  by_cases hp : p.Prime
+  · have hpr : p ^ r ≤ n := (Nat.le_mul_of_pos_right _
+      (Nat.pos_of_ne_zero fun h : u = 0 ↦ hpu (h ▸ dvd_zero p))).trans hle
+    rw [factorization_choose_eq_card_lt_mod hp hpr (lt_succ_self _),
+      factorization_choose_eq_card_lt_mod hp hle (lt_succ_self _)]
+    exact card_le_card fun i hi ↦ by
+      rw [mem_filter] at hi ⊢; exact ⟨hi.1, hi.2.trans_le (pow_mod_pow_le_pow_mul_mod_pow hpu)⟩
+  · simp [factorization_eq_zero_of_not_prime _ hp]
 
 /-- For `p` prime and `n ≠ 0`, `¬ p ∣ n.choose (p ^ (n.factorization p))`. -/
 theorem not_dvd_choose_pow_factorization {p n : ℕ} (hp : p.Prime) (hn : n ≠ 0) :
@@ -83,16 +91,18 @@ theorem not_dvd_choose_pow_factorization {p n : ℕ} (hp : p.Prime) (hn : n ≠ 
   rw [ordProj_mul_ordCompl_eq_self, mul_one, choose_one_right] at hmod
   exact fun hdvd ↦ not_dvd_ordCompl hp hn (hmod.dvd_iff dvd_rfl |>.mp hdvd)
 
-/-- For `p` prime and `1 ≤ i < p ^ (n.factorization p)`, `p ∣ n.choose i`. -/
-theorem dvd_choose_of_lt_pow_factorization {p n i : ℕ} (hp : p.Prime) (hi0 : 1 ≤ i)
+/-- For `1 ≤ i < p ^ (n.factorization p)`, `p ∣ n.choose i`. -/
+theorem dvd_choose_of_lt_pow_factorization {p n i : ℕ} (hi0 : 1 ≤ i)
     (hilt : i < p ^ (n.factorization p)) :
     p ∣ n.choose i := by
-  rcases eq_or_ne n 0 with rfl | hn0
-  · simp at hilt; omega
-  have hle : i ≤ n := hilt.le.trans (le_of_dvd (Nat.pos_of_ne_zero hn0) (ordProj_dvd n p))
-  have hifac : i.factorization p < n.factorization p := not_le.mp fun hge ↦
-    hilt.not_ge (le_of_dvd hi0 ((pow_dvd_pow p hge).trans (ordProj_dvd i p)))
-  have := factorization_le_factorization_choose_add (p := p) hle (by omega)
-  exact hp.dvd_iff_one_le_factorization (choose_pos hle).ne' |>.mpr (by omega)
+  by_cases hp : p.Prime
+  · rcases eq_or_ne n 0 with rfl | hn0
+    · simp at hilt; omega
+    have hle : i ≤ n := hilt.le.trans (le_of_dvd (Nat.pos_of_ne_zero hn0) (ordProj_dvd n p))
+    have hifac : i.factorization p < n.factorization p := not_le.mp fun hge ↦
+      hilt.not_ge (le_of_dvd hi0 ((pow_dvd_pow p hge).trans (ordProj_dvd i p)))
+    have := factorization_le_factorization_choose_add (p := p) hle (by omega)
+    exact hp.dvd_iff_one_le_factorization (choose_pos hle).ne' |>.mpr (by omega)
+  · simp [factorization_eq_zero_of_not_prime _ hp] at hilt; omega
 
 end Nat

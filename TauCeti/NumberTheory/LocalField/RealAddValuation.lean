@@ -31,8 +31,9 @@ units of `𝒪[K]` have valuation `0`.
 * `TauCeti.realAddValuation_irreducible`, `TauCeti.realAddValuation_coe_integer`,
   `TauCeti.realAddValuation_natCast` and `TauCeti.realAddValuation_natCast_eq_nsmul`: values at
   uniformizers, integers and natural-number casts.
-* `TauCeti.realAddValuation_algebraMap`, `AlgHom.normalizedValuationWithZero_apply` and
-  `AlgHom.realAddValuation_apply`: ramification-index scaling along `algebraMap` and `K`-embeddings.
+* `TauCeti.realAddValuation_algebraMap`, `AlgHom.realAddValuation_apply` and
+  `AlgEquiv.realAddValuation_apply`: ramification-index scaling along `algebraMap`, `K`-embeddings,
+  and invariance under `K`-isomorphisms.
 
 ## References
 
@@ -118,13 +119,24 @@ theorem realAddValuation_irreducible {π : 𝒪[K]} (hπ : Irreducible π) :
   simpa [normalizedValuation_irreducible hπ] using
     realAddValuation_coe_unit (Units.mk0 (π : K) fun h ↦ hπ.ne_zero (Subtype.ext h))
 
+/-- An element of `𝒪[K]` is a unit if and only if its `realAddValuation` is `0`. -/
+theorem isUnit_iff_realAddValuation_eq_zero {a : 𝒪[K]} :
+    IsUnit a ↔ realAddValuation K (a : K) = 0 := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  · rw [isUnit_iff_normalizedValuationWithZero_eq_one,
+      realAddValuation_of_ne_zero fun h ↦ ha (Subtype.ext h), ← WithTop.coe_zero,
+      WithTop.coe_eq_coe, Int.cast_eq_zero]
+    have h0 : normalizedValuationWithZero K (a : K) ≠ 0 :=
+      (normalizedValuationWithZero_eq_zero_iff (a : K)).not.mpr fun h ↦ ha (Subtype.ext h)
+    exact ⟨fun h ↦ by simp [h], fun h ↦ by
+      rw [← WithZero.exp_log h0, h, WithZero.exp_zero]⟩
+
 /-- A unit of `𝒪[K]` has `realAddValuation` equal to `0`. -/
 @[simp]
 theorem realAddValuation_coe_integer_unit (u : 𝒪[K]ˣ) :
-    realAddValuation K ((u : 𝒪[K]) : K) = 0 := by
-  rw [realAddValuation_of_ne_zero fun h ↦ u.ne_zero (Subtype.ext h),
-    (isUnit_iff_normalizedValuationWithZero_eq_one (u := (u : 𝒪[K]))).mp u.isUnit,
-    WithZero.log_one, Int.cast_zero, WithTop.coe_zero]
+    realAddValuation K ((u : 𝒪[K]) : K) = 0 :=
+  isUnit_iff_realAddValuation_eq_zero.mp u.isUnit
 
 /-- An element of `K` lies in `𝒪[K]` if and only if its `realAddValuation` is nonnegative. -/
 theorem mem_integer_iff_realAddValuation_nonneg {x : K} :
@@ -162,12 +174,8 @@ theorem mem_maximalIdeal_iff_one_le_realAddValuation {a : 𝒪[K]} :
 /-- An element of `𝒪[K]` lies in `𝓂[K]` if and only if its `realAddValuation` is positive. -/
 theorem mem_maximalIdeal_iff_realAddValuation_pos {a : 𝒪[K]} :
     a ∈ 𝓂[K] ↔ 0 < realAddValuation K (a : K) := by
-  rw [mem_maximalIdeal_iff_one_le_realAddValuation, realAddValuation_coe_integer]
-  cases IsDiscreteValuationRing.addVal 𝒪[K] a using ENat.recTopCoe with
-  | top => simp [← WithTop.coe_zero]
-  | coe n =>
-    simp only [ENat.recTopCoe_natCast, ← WithTop.coe_one, ← WithTop.coe_zero, WithTop.coe_le_coe,
-      WithTop.coe_lt_coe, Nat.cast_pos, Nat.one_le_cast]; omega
+  rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, isUnit_iff_realAddValuation_eq_zero,
+    lt_iff_le_and_ne, and_iff_right (mem_integer_iff_realAddValuation_nonneg.mp a.2), ne_comm]
 
 /-- At a nonzero natural-number cast in `K`, `realAddValuation` equals `natCastValuation`. -/
 theorem realAddValuation_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
@@ -184,11 +192,8 @@ theorem one_le_realAddValuation_natCast_iff_dvd {n : ℕ} :
 /-- A natural-number cast in `K` has `realAddValuation` equal to `0` iff `¬ ringChar 𝓀[K] ∣ n`. -/
 theorem realAddValuation_natCast_eq_zero_iff_not_dvd {n : ℕ} :
     realAddValuation K (n : K) = 0 ↔ ¬ ringChar 𝓀[K] ∣ n := by
-  refine ⟨fun h0 hdvd ↦ absurd (h0 ▸ one_le_realAddValuation_natCast_iff_dvd (K := K).mpr hdvd)
-    (by simp), fun hndvd ↦ ?_⟩
-  obtain ⟨u, hu⟩ := (IsLocalRing.isUnit_natCast_iff_not_dvd (R := 𝒪[K])).mpr hndvd
-  rw [show (n : K) = ((u : 𝒪[K]) : K) from congrArg Subtype.val hu.symm,
-    realAddValuation_coe_integer_unit]
+  rw [← Subring.coe_natCast, ← isUnit_iff_realAddValuation_eq_zero,
+    IsLocalRing.isUnit_natCast_iff_not_dvd]
 
 /-- For nonzero `n : ℕ`, `realAddValuation K n` scales `v_K(ringChar 𝓀[K])` by `n.factorization`. -/
 theorem realAddValuation_natCast_eq_nsmul {n : ℕ} (hn : n ≠ 0) :
@@ -239,43 +244,18 @@ variable {K L M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
   [Algebra K M] [ValuativeExtension K M]
 
-private theorem normalizedValuationWithZero_apply_of_mul_eq (σ : L →ₐ[K] M) {e : ℕ}
-    (he : ramificationIndex K L * e = ramificationIndex K M) (x : L) :
-    normalizedValuationWithZero M (σ x) = normalizedValuationWithZero L x ^ e := by
+/-- In a tower `M/L/K`, any `K`-embedding `σ : L →ₐ[K] M` scales `realAddValuation` by `e(M/L)`. -/
+theorem realAddValuation_apply [Algebra L M] [IsScalarTower K L M] (σ : L →ₐ[K] M) (x : L) :
+    realAddValuation M (σ x) = (realAddValuation L x).map ((ramificationIndex L M : ℝ) * ·) := by
   have : Module.Finite K L := finite_of_valuativeExtension K L
+  have : ValuativeExtension L M := ValuativeExtension.of_isScalarTower (K := K) (M := L) (N := M)
+  have he := ramificationIndex_tower (K := K) (L := L) M
   let _ : Algebra L M := σ.toAlgebra
   have : IsScalarTower K L M := IsScalarTower.of_algebraMap_eq' σ.comp_algebraMap.symm
   have : ValuativeExtension L M := σ.valuativeExtension
   rw [← Nat.eq_of_mul_eq_mul_left (ramificationIndex_pos (K := K) (L := L))
-    ((ramificationIndex_tower (K := K) (L := L) M).symm.trans he.symm)]
-  exact normalizedValuationWithZero_algebraMap (K := L) (L := M) x
-
-/-- Every `K`-embedding `σ : L →ₐ[K] M` raises `normalizedValuationWithZero L x` to `e(M/L)`. -/
-theorem normalizedValuationWithZero_apply [Algebra L M] [IsScalarTower K L M]
-    (σ : L →ₐ[K] M) (x : L) :
-    normalizedValuationWithZero M (σ x) =
-      normalizedValuationWithZero L x ^ ramificationIndex L M := by
-  have : Module.Finite K L := finite_of_valuativeExtension K L
-  have : ValuativeExtension L M := ValuativeExtension.of_isScalarTower (K := K) (M := L) (N := M)
-  exact σ.normalizedValuationWithZero_apply_of_mul_eq
-    (ramificationIndex_tower (K := K) (L := L) M).symm x
-
-/-- In a tower `M/L/K`, `σ : L →ₐ[K] M` agrees with `algebraMap L M` under `|·|_M`. -/
-theorem normalizedValuationWithZero_apply_eq_algebraMap [Algebra L M] [IsScalarTower K L M]
-    (σ : L →ₐ[K] M) (x : L) :
-    normalizedValuationWithZero M (σ x) = normalizedValuationWithZero M (algebraMap L M x) := by
-  have : Module.Finite K L := finite_of_valuativeExtension K L
-  have : ValuativeExtension L M := ValuativeExtension.of_isScalarTower (K := K) (M := L) (N := M)
-  rw [σ.normalizedValuationWithZero_apply, normalizedValuationWithZero_algebraMap]
-
-/-- In a tower `M/L/K`, any `K`-embedding `σ : L →ₐ[K] M` scales `realAddValuation` by `e(M/L)`. -/
-theorem realAddValuation_apply [Algebra L M] [IsScalarTower K L M] (σ : L →ₐ[K] M) (x : L) :
-    realAddValuation M (σ x) = (realAddValuation L x).map ((ramificationIndex L M : ℝ) * ·) := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  · rw [realAddValuation_of_ne_zero ((map_ne_zero σ).mpr hx), realAddValuation_of_ne_zero hx,
-      σ.normalizedValuationWithZero_apply, WithTop.map_coe, WithZero.log_pow, nsmul_eq_mul]
-    push_cast; rfl
+    ((ramificationIndex_tower (K := K) (L := L) M).symm.trans he)]
+  exact realAddValuation_algebraMap (K := L) (L := M) x
 
 end AlgHom
 
@@ -283,16 +263,25 @@ namespace AlgEquiv
 
 open TauCeti
 
-variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+variable {K L M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+  [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
+  [Algebra K M] [ValuativeExtension K M]
 
-/-- Every `K`-automorphism of `L` preserves `realAddValuation L`. -/
+/-- Every `K`-isomorphism `σ : L ≃ₐ[K] M` preserves `realAddValuation`. -/
 @[simp]
-theorem realAddValuation_apply (σ : L ≃ₐ[K] L) (x : L) :
-    realAddValuation L (σ x) = realAddValuation L x := by
-  have h := σ.toAlgHom.realAddValuation_apply (M := L) x
-  have he : ramificationIndex L L = 1 := ramificationIndex_eq_iff.mpr fun _ ↦ by simp
-  cases hx : realAddValuation L x <;> simpa [hx, he] using h
+theorem realAddValuation_apply (σ : L ≃ₐ[K] M) (x : L) :
+    realAddValuation M (σ x) = realAddValuation L x := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
+  let _ : Algebra L M := σ.toAlgHom.toAlgebra
+  have : ValuativeExtension L M := σ.toAlgHom.valuativeExtension
+  have he : ramificationIndex L M = 1 := by
+    rw [ramificationIndex_def, MonoidHom.range_eq_top.mpr
+      (normalizedValuation_surjective.comp (Units.mapEquiv σ.toMulEquiv).surjective :
+        Function.Surjective ((normalizedValuation M).comp (Units.map (algebraMap L M : L →* M)))),
+      Subgroup.index_top]
+  change realAddValuation M (algebraMap L M x) = realAddValuation L x
+  simpa [he, show (fun r : ℝ ↦ r) = id from rfl] using realAddValuation_algebraMap (L := M) x
 
 end AlgEquiv
