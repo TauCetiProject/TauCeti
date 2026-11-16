@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 # Surjectivity of induced maps on quotient modules
 
 A surjective linear map `f : M → M₂` sending `p` into `q` induces a surjective map
-`M ⧸ p → M₂ ⧸ q`. This is the module counterpart of `LieSubmodule.mapQ_surjective`.
+`M ⧸ p → M₂ ⧸ q`.
 -/
 
 public section

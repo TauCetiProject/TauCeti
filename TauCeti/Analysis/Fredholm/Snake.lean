@@ -27,8 +27,8 @@ Only algebraic exactness of the rows is assumed: no topological splitting of the
 completeness of the spaces carrying the two given Fredholm maps. The snake lemma
 (`TauCeti.Algebra.Module.SnakeLemma`) shows that the kernel and cokernel of the third map are
 finite dimensional, and between Banach spaces over `ℝ` or `ℂ` this already makes it Fredholm
-(`ContinuousLinearMap.IsFredholm.of_finite_ker_coker`). The index formula needs no completeness
-at all.
+(`ContinuousLinearMap.IsFredholm.of_finite_ker_coker`). The index formula needs neither
+completeness nor norms: it holds for Fredholm maps between topological vector spaces.
 
 Some exactness hypotheses are not needed in each two-out-of-three statement and are omitted: for
 example, the middle map is Fredholm without injectivity of `f₁` or surjectivity of `g₂`.
@@ -53,17 +53,16 @@ open Function LinearMap
 
 namespace ContinuousLinearMap
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E₁ E₂ E₃ F₁ F₂ F₃ : Type*}
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E₁ E₂ E₃ F₁ F₂ F₃ : Type*}
+
+section IsRCLikeNormedField
+
+variable [IsRCLikeNormedField 𝕜]
   [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁] [NormedAddCommGroup E₂] [NormedSpace 𝕜 E₂]
   [NormedAddCommGroup E₃] [NormedSpace 𝕜 E₃] [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
   [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
   {f₁ : E₁ →L[𝕜] E₂} {f₂ : E₂ →L[𝕜] E₃} {g₁ : F₁ →L[𝕜] F₂} {g₂ : F₂ →L[𝕜] F₃}
   {i₁ : E₁ →L[𝕜] F₁} {i₂ : E₂ →L[𝕜] F₂} {i₃ : E₃ →L[𝕜] F₃}
-
-section IsRCLikeNormedField
-
-variable [IsRCLikeNormedField 𝕜]
 
 /-- **Two out of three, middle.** In a commutative diagram with exact rows, `f₂` surjective and
 `g₁` injective, if the outer vertical maps are Fredholm, then so is the middle one, provided its
@@ -117,6 +116,17 @@ theorem IsFredholm.isFredholm₁_of_exact [CompleteSpace E₁] [CompleteSpace F�
 
 end IsRCLikeNormedField
 
+section TVS
+
+variable [AddCommGroup E₁] [Module 𝕜 E₁] [TopologicalSpace E₁]
+  [AddCommGroup E₂] [Module 𝕜 E₂] [TopologicalSpace E₂]
+  [AddCommGroup E₃] [Module 𝕜 E₃] [TopologicalSpace E₃]
+  [AddCommGroup F₁] [Module 𝕜 F₁] [TopologicalSpace F₁]
+  [AddCommGroup F₂] [Module 𝕜 F₂] [TopologicalSpace F₂]
+  [AddCommGroup F₃] [Module 𝕜 F₃] [TopologicalSpace F₃]
+  {f₁ : E₁ →L[𝕜] E₂} {f₂ : E₂ →L[𝕜] E₃} {g₁ : F₁ →L[𝕜] F₂} {g₂ : F₂ →L[𝕜] F₃}
+  {i₁ : E₁ →L[𝕜] F₁} {i₂ : E₂ →L[𝕜] F₂} {i₃ : E₃ →L[𝕜] F₃}
+
 /-- **Additivity of the index along a map of short exact sequences.** In a commutative diagram
 with short exact rows, if the outer vertical maps are Fredholm, then
 `index i₂ = index i₁ + index i₃`. No completeness is needed; between Banach spaces over `ℝ` or
@@ -133,5 +143,7 @@ theorem IsFredholm.index_eq_add_of_exact (hi₁ : i₁.IsFredholm) (hi₃ : i₃
   rw [index_def, index_def, index_def]
   exact LinearMap.index_eq_add_of_exact hf hg hf₁ hf₂ hg₁ hg₂ (toLinearMap_comp_eq h₁)
     (toLinearMap_comp_eq h₂)
+
+end TVS
 
 end ContinuousLinearMap
