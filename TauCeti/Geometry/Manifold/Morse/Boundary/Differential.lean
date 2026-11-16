@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Gluing
-import TauCeti.Geometry.Manifold.Boundary.OneDimensional
+import TauCeti.Geometry.Manifold.Boundary.LocalModels
 
 /-!
 # The mod-two Morse boundary squares to zero
