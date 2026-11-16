@@ -1,0 +1,519 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic
+import TauCeti.Algebra.Homology.ModuleCat.Finrank
+import TauCeti.LinearAlgebra.Determinant.Cons
+
+/-!
+# Cancelling a pair of generators of a based two-periodic complex
+
+Let `C` be a two-periodic complex of vector spaces over a field `F` with ordered bases `c`, and
+let `i` and `i' = i + 1` be its two degrees. Suppose that the entry `a` of the matrix of the
+differential `d : Cᵢ → Cᵢ'` at the first basis vectors `z⁺ = c i 0` and `z⁻ = c i' 0` is nonzero.
+Writing this matrix in the block form `[[a, v], [w, N]]`, Gaussian elimination cancels the pair
+`(z⁺, z⁻)`: the reduced complex `D` keeps the remaining basis vectors, and its differential
+`Dᵢ → Dᵢ'` is the Schur complement `N - w a⁻¹ v`. This is how the based Floer and Morse–Novikov
+complexes change when two generators are born or die in a generic one-parameter family, the
+return trajectories between them making up the entry `a`.
+
+The reduced complex is described here by a chain map `φ : D ⟶ C` with bases `e` of `D`, sending
+`e i l` to `c i l.succ` up to a multiple of `z⁺` and `e i' l` to `c i' l.succ` up to a multiple of
+`d z⁺` (the hypotheses `hφ` and `hφ'` below). Then:
+
+* `C` is acyclic exactly when `D` is (`HomologicalComplex.acyclic_iff_of_cancel`);
+* the matrix of `D.d i i'` in the bases `e` is the Schur complement of `a` in the matrix of
+  `C.d i i'` in the bases `c` (`HomologicalComplex.toMatrix_d_eq_of_cancel`);
+* the torsions differ by the factor `a`, inverted when the pair is joined by the odd-to-even
+  differential, and by the sign `(-1) ^ q`, where `q` is the dimension of the image of the other
+  differential `D.d i' i` (`HomologicalComplex.parityTorsion_eq_of_cancel_one_zero` and
+  `HomologicalComplex.parityTorsion_eq_of_cancel_zero_one`). So
+  `τ(C) = (-1) ^ q · a⁻¹ · τ(D)` when `z⁺` is odd, and `τ(C) = (-1) ^ q · a · τ(D)` when `z⁺` is
+  even, both sides vanishing when the complexes are not acyclic.
+
+The proof changes the bases `c` by unitriangular matrices, which do not change the torsion, into
+bases in which `C` is the direct sum of `D` and the elementary complex `z⁺ ↦ a • z⁻`. Its brackets
+are then those of `D`, times `a` in the degree of `z⁻` and times the sign of moving `z⁺` past the
+boundaries in its own degree.
+
+## References
+
+* M. Hutchings, *Reidemeister torsion in generalized Morse theory*, Forum Math. 14 (2002),
+  209–244, §3.
+* Y.-J. Lee, *Reidemeister torsion in Floer–Novikov theory and counting pseudo-holomorphic tori,
+  I*, J. Symplectic Geom. 3 (2005), 221–311.
+* J. Milnor, *Whitehead torsion*, Bull. Amer. Math. Soc. 72 (1966), §3.
+-/
+
+public section
+
+noncomputable section
+
+open CategoryTheory Module
+
+namespace HomologicalComplex
+
+variable {F : Type*} [Field F]
+  {C D : HomologicalComplex (ModuleCat F) (ComplexShape.up (ZMod 2))} {n : ZMod 2 → ℕ}
+  {c : ∀ k, Basis (Fin (n k + 1)) F (C.X k)} {e : ∀ k, Basis (Fin (n k)) F (D.X k)} {φ : D ⟶ C}
+
+/-- The family of a bracket in the degree of `b 0 = z⁻`: a multiple of `b 0` and images of
+boundaries, followed by images of lifts. -/
+private theorem det_append_cons_smul_comp {M N : Type*} [AddCommGroup M] [Module F M]
+    [AddCommGroup N] [Module F N] {m : ℕ} (b : Basis (Fin (m + 1)) F M) (b' : Basis (Fin m) F N)
+    {f : N →ₗ[F] M} (hb : ∀ l, b l.succ = f (b' l)) (a : F) {p q : ℕ} (u : Fin p → N)
+    (v : Fin q → N) (h : m + 1 = p + 1 + q) (h' : m = p + q) :
+    b.det (Fin.append (Fin.cons (a • b 0) (f ∘ u)) (f ∘ v) ∘ Fin.cast h) =
+      a * b'.det (Fin.append u v ∘ Fin.cast h') := by
+  have key : Fin.append (Fin.cons (a • b 0) (f ∘ u)) (f ∘ v) ∘ Fin.cast h =
+      Fin.cons (a • b 0) (f ∘ (Fin.append u v ∘ Fin.cast h')) := by
+    funext k
+    induction k using Fin.cases with
+    | zero =>
+      have : Fin.cast h 0 = Fin.castAdd q 0 := Fin.ext rfl
+      simp only [Function.comp_apply, this, Fin.append_left, Fin.cons_zero]
+    | succ k =>
+      by_cases hk : (k : ℕ) < p
+      · have h₁ : Fin.cast h k.succ = Fin.castAdd q (Fin.succ ⟨k, hk⟩) := Fin.ext rfl
+        have h₂ : Fin.cast h' k = Fin.castAdd q ⟨k, hk⟩ := Fin.ext rfl
+        simp only [Function.comp_apply, h₁, h₂, Fin.append_left, Fin.cons_succ]
+      · have h₁ : Fin.cast h k.succ = Fin.natAdd (p + 1) ⟨k - p, by omega⟩ :=
+          Fin.ext (by simp; omega)
+        have h₂ : Fin.cast h' k = Fin.natAdd p ⟨k - p, by omega⟩ := Fin.ext (by simp; omega)
+        simp only [Function.comp_apply, h₁, h₂, Fin.append_right, Fin.cons_succ]
+  rw [key, b.det_cons_smul_comp b' hb]
+
+/-- The family of a bracket in the degree of `b 0 = z⁺`: images of boundaries, followed by `b 0`
+and images of lifts. Moving `b 0` to the front costs the sign `(-1) ^ q`. -/
+private theorem det_append_cons_comp {M N : Type*} [AddCommGroup M] [Module F M]
+    [AddCommGroup N] [Module F N] {m : ℕ} (b : Basis (Fin (m + 1)) F M) (b' : Basis (Fin m) F N)
+    {f : N →ₗ[F] M} (hb : ∀ l, b l.succ = f (b' l)) {p q : ℕ} (u : Fin q → N) (v : Fin p → N)
+    (h : m + 1 = q + (p + 1)) (h' : m = q + p) :
+    b.det (Fin.append (f ∘ u) (Fin.cons (b 0) (f ∘ v)) ∘ Fin.cast h) =
+      (-1) ^ q * b'.det (Fin.append u v ∘ Fin.cast h') := by
+  have key : Fin.append (f ∘ u) (Fin.cons (b 0) (f ∘ v)) ∘ Fin.cast h =
+      (⟨q, by omega⟩ : Fin (m + 1)).insertNth (b 0) (f ∘ (Fin.append u v ∘ Fin.cast h')) := by
+    funext k
+    induction k using Fin.succAboveCases (⟨q, by omega⟩ : Fin (m + 1)) with
+    | x =>
+      have : Fin.cast h ⟨q, by omega⟩ = Fin.natAdd q 0 := Fin.ext (by simp)
+      simp [this]
+    | p i =>
+      rw [Fin.insertNth_apply_succAbove]
+      by_cases hi : (i : ℕ) < q
+      · have h₁ : Fin.cast h ((⟨q, by omega⟩ : Fin (m + 1)).succAbove i) =
+            Fin.castAdd (p + 1) ⟨i, hi⟩ := Fin.ext (by simp [Fin.succAbove, Fin.lt_def, hi])
+        have h₂ : Fin.cast h' i = Fin.castAdd p ⟨i, hi⟩ := Fin.ext (by simp)
+        simp only [Function.comp_apply, h₁, h₂, Fin.append_left]
+      · have h₁ : Fin.cast h ((⟨q, by omega⟩ : Fin (m + 1)).succAbove i) =
+            Fin.natAdd q (Fin.succ ⟨i - q, by omega⟩) :=
+          Fin.ext (by simp [Fin.succAbove, Fin.lt_def, hi]; omega)
+        have h₂ : Fin.cast h' i = Fin.natAdd q ⟨i - q, by omega⟩ := Fin.ext (by simp; omega)
+        simp only [Function.comp_apply, h₁, h₂, Fin.append_right, Fin.cons_succ]
+  rw [key, b.det_insertNth_comp b' hb]
+
+/-- The span of a basis of a submodule, read in the ambient module, is the submodule. -/
+private theorem span_range_coe {M : Type*} [AddCommGroup M] [Module F M] {S : Submodule F M}
+    {ι : Type*} (b : Basis ι F S) : Submodule.span F (Set.range fun l ↦ (b l : M)) = S := by
+  have h := congrArg (Submodule.map S.subtype) b.span_eq
+  rwa [Submodule.map_span, Submodule.map_subtype_top, ← Set.range_comp] at h
+
+/-- A basis of a submodule `S` made of a linearly independent family spanning `S`. -/
+private def basisOfSpanEq {M : Type*} [AddCommGroup M] [Module F M] {S : Submodule F M}
+    {ι : Type*} {v : ι → M} (hv : LinearIndependent F v) (h : Submodule.span F (Set.range v) = S) :
+    Basis ι F S :=
+  (Basis.span hv).map (LinearEquiv.ofEq _ _ h)
+
+@[simp]
+private theorem coe_basisOfSpanEq {M : Type*} [AddCommGroup M] [Module F M] {S : Submodule F M}
+    {ι : Type*} {v : ι → M} (hv : LinearIndependent F v)
+    (h : Submodule.span F (Set.range v) = S) (l : ι) : (basisOfSpanEq hv h l : M) = v l := by
+  simp [basisOfSpanEq, Basis.span_apply]
+
+/-- The span of the image under `φ` of a basis of the boundaries of `D` is the image of the
+boundaries. -/
+private theorem span_image {k k' : ZMod 2} {p : ℕ}
+    (bD : Basis (Fin p) F (LinearMap.range (D.d k k').hom)) :
+    Submodule.span F (Set.range fun l ↦ (φ.f k').hom (bD l)) =
+      (LinearMap.range (D.d k k').hom).map (φ.f k').hom := by
+  have h := congrArg (Submodule.map (φ.f k').hom) (span_range_coe bD)
+  rwa [Submodule.map_span, ← Set.range_comp] at h
+
+section Block
+
+variable (hc : ∀ k l, c k l.succ = (φ.f k).hom (e k l))
+include hc
+
+private theorem injective_f (k : ZMod 2) : Function.Injective (φ.f k).hom :=
+  LinearMap.injective_of_linearIndependent (e k).span_eq <| by
+    convert (c k).linearIndependent.comp _ (Fin.succ_injective _) using 1
+    ext l
+    simp [hc]
+
+/-- The image of the differential of `C` out of degree `k` is spanned by the image of `c k 0` and
+the image under `φ` of the image of the differential of `D`. -/
+private theorem range_d_eq (k k' : ZMod 2) :
+    LinearMap.range (C.d k k').hom =
+      F ∙ (C.d k k').hom (c k 0) ⊔ (LinearMap.range (D.d k k').hom).map (φ.f k').hom := by
+  have hC : LinearMap.range (C.d k k').hom =
+      Submodule.span F (Set.range ((C.d k k').hom ∘ c k)) := by
+    rw [LinearMap.range_eq_map, ← (c k).span_eq, Submodule.map_span, ← Set.range_comp]
+  have hD : LinearMap.range (D.d k k').hom =
+      Submodule.span F (Set.range ((D.d k k').hom ∘ e k)) := by
+    rw [LinearMap.range_eq_map, ← (e k).span_eq, Submodule.map_span, ← Set.range_comp]
+  rw [hC, hD, Submodule.map_span, ← Set.range_comp, ← Submodule.span_insert, ← Fin.range_cons]
+  congr 2
+  ext l
+  induction l using Fin.cases <;> simp [hc, Hom.comm_apply]
+
+/-- The vector `c k 0` does not lie in the image of `φ`. -/
+private theorem notMem_range_f (k : ZMod 2) : c k 0 ∉ LinearMap.range (φ.f k).hom := by
+  have h := (c k).linearIndependent
+  rw [← Fin.cons_self_tail ⇑(c k), linearIndependent_finCons] at h
+  have hr : LinearMap.range (φ.f k).hom = Submodule.span F (Set.range (Fin.tail ⇑(c k))) := by
+    rw [LinearMap.range_eq_map, ← (e k).span_eq, Submodule.map_span, ← Set.range_comp]
+    congr 2
+    ext l
+    simp [Fin.tail, hc]
+  rw [hr]
+  exact h.2
+
+variable {i i' : ZMod 2} {a : F} (ha : a ≠ 0) (hd : (C.d i i').hom (c i 0) = a • c i' 0)
+include ha hd
+
+omit hc in
+private theorem d_apply_eq_zero : (C.d i' i).hom (c i' 0) = 0 := by
+  have h := d_comp_d_apply C i i' i (c i 0)
+  rw [hd, map_smul] at h
+  exact (smul_eq_zero.1 h).resolve_left ha
+
+omit ha hd in
+private theorem linearIndependent_image {k k' : ZMod 2} {p : ℕ}
+    (bD : Basis (Fin p) F (LinearMap.range (D.d k k').hom)) :
+    LinearIndependent F fun l ↦ (φ.f k').hom (bD l) :=
+  (bD.linearIndependent.map' _ (Submodule.ker_subtype _)).map' _
+    (LinearMap.ker_eq_bot.2 (injective_f hc k'))
+
+omit ha in
+/-- The boundaries of `C` into the degree of `c i' 0`: the image of the pair differential is
+spanned by `a • c i' 0` and the image under `φ` of the boundaries of `D`. -/
+private theorem span_cons_eq_range {p : ℕ}
+    (bD : Basis (Fin p) F (LinearMap.range (D.d i i').hom)) :
+    Submodule.span F (Set.range (Fin.cons (a • c i' 0) fun l ↦ (φ.f i').hom (bD l))) =
+      LinearMap.range (C.d i i').hom := by
+  rw [Fin.range_cons, Submodule.span_insert, span_image, range_d_eq hc, hd]
+
+omit hd in
+private theorem linearIndependent_cons {p : ℕ}
+    (bD : Basis (Fin p) F (LinearMap.range (D.d i i').hom)) :
+    LinearIndependent F (Fin.cons (a • c i' 0) fun l ↦ (φ.f i').hom (bD l)) := by
+  refine linearIndependent_finCons.2 ⟨linearIndependent_image hc bD, fun h ↦ ?_⟩
+  have hle : Submodule.span F (Set.range fun l ↦ (φ.f i').hom (bD l)) ≤
+      LinearMap.range (φ.f i').hom :=
+    Submodule.span_le.2 (Set.range_subset_iff.2 fun l ↦ LinearMap.mem_range_self _ _)
+  have := Submodule.smul_mem _ a⁻¹ (hle h)
+  rw [inv_smul_smul₀ ha] at this
+  exact notMem_range_f hc i' this
+
+/-- The boundaries of `C` into the degree of `c i 0` are the image under `φ` of those of `D`. -/
+private theorem span_image_eq_range {p : ℕ}
+    (bD : Basis (Fin p) F (LinearMap.range (D.d i' i).hom)) :
+    Submodule.span F (Set.range fun l ↦ (φ.f i).hom (bD l)) = LinearMap.range (C.d i' i).hom := by
+  rw [span_image, range_d_eq hc, d_apply_eq_zero ha hd, Submodule.span_singleton_eq_bot.2 rfl,
+    bot_sup_eq]
+
+omit ha hd in
+/-- The bracket in the degree `i'` of `c i' 0`: the boundaries there are spanned by `a • c i' 0`
+and the image of those of `D`, and the bracket is `a` times that of `D`. -/
+private theorem torsionBracket_cons (hi : (ComplexShape.up (ZMod 2)).prev i' = i)
+    (hk : (ComplexShape.up (ZMod 2)).next i' = i) (hC : C.ExactAt i') (hD : D.ExactAt i')
+    {p q : ℕ} (bD₁ : Basis (Fin p) F (LinearMap.range (D.d i i').hom))
+    (bD₀ : Basis (Fin q) F (LinearMap.range (D.d i' i).hom)) (sD : Fin q → D.X i')
+    (hsD : ∀ l, (D.d i' i).hom (sD l) = bD₀ l)
+    (b₁ : Basis (Fin (p + 1)) F (LinearMap.range (C.d i i').hom))
+    (hb₁ : ∀ l, (b₁ l : C.X i') =
+      (Fin.cons (a • c i' 0) (fun l ↦ (φ.f i').hom (bD₁ l)) : Fin (p + 1) → C.X i') l)
+    (b₀ : Basis (Fin q) F (LinearMap.range (C.d i' i).hom))
+    (hs : ∀ l, (C.d i' i).hom ((φ.f i').hom (sD l)) = b₀ l) :
+    torsionBracket c hi hk hC b₁ b₀ (fun l ↦ (φ.f i').hom (sD l)) hs =
+      a * torsionBracket e hi hk hD bD₁ bD₀ sD hsD := by
+  have hn' := eq_add_of_exactAt e hi hk hD bD₁ bD₀
+  rw [torsionBracket_eq_det_append c hi hk hC _ _ _ _ (by omega : n i' + 1 = p + 1 + q),
+    torsionBracket_eq_det_append e hi hk hD _ _ _ _ hn', ← det_append_cons_smul_comp
+      (c i') (e i') (hc i') a _ _ (by omega) hn']
+  rw [show (fun l ↦ (b₁ l : C.X i')) = _ from funext hb₁]
+  rfl
+
+omit ha hd in
+/-- The bracket in the degree `i` of `c i 0`: the lifts there are `c i 0` followed by the image
+of lifts in `D`, and the bracket is `(-1) ^ q` times that of `D`, `q` being the dimension of the
+boundaries. -/
+private theorem torsionBracket_image (hi : (ComplexShape.up (ZMod 2)).prev i = i')
+    (hk : (ComplexShape.up (ZMod 2)).next i = i') (hC : C.ExactAt i) (hD : D.ExactAt i)
+    {p q : ℕ} (bD₀ : Basis (Fin q) F (LinearMap.range (D.d i' i).hom))
+    (bD₁ : Basis (Fin p) F (LinearMap.range (D.d i i').hom)) (sD : Fin p → D.X i)
+    (hsD : ∀ l, (D.d i i').hom (sD l) = bD₁ l)
+    (b₀ : Basis (Fin q) F (LinearMap.range (C.d i' i).hom))
+    (hb₀ : ∀ l, (b₀ l : C.X i) = (φ.f i).hom (bD₀ l))
+    (b₁ : Basis (Fin (p + 1)) F (LinearMap.range (C.d i i').hom))
+    (hs : ∀ l, (C.d i i').hom
+      ((Fin.cons (c i 0) (fun l ↦ (φ.f i).hom (sD l)) : Fin (p + 1) → C.X i) l) = b₁ l) :
+    torsionBracket c hi hk hC b₀ b₁ (Fin.cons (c i 0) fun l ↦ (φ.f i).hom (sD l)) hs =
+      (-1) ^ q * torsionBracket e hi hk hD bD₀ bD₁ sD hsD := by
+  have hn' := eq_add_of_exactAt e hi hk hD bD₀ bD₁
+  rw [torsionBracket_eq_det_append c hi hk hC _ _ _ _ (by omega : n i + 1 = q + (p + 1)),
+    torsionBracket_eq_det_append e hi hk hD _ _ _ _ hn', ← det_append_cons_comp
+      (c i) (e i) (hc i) _ _ (by omega) hn']
+  rw [show (fun l ↦ (b₀ l : C.X i)) = _ from funext hb₀]
+  rfl
+
+private theorem acyclic_iff_of_block (hii' : i + 1 = i') : C.Acyclic ↔ D.Acyclic := by
+  have h₁ : finrank F (LinearMap.range (C.d i i').hom) =
+      finrank F (LinearMap.range (D.d i i').hom) + 1 := by
+    rw [← span_cons_eq_range hc hd (chosenBoundaryBasis D e i i'),
+      finrank_span_eq_card (linearIndependent_cons hc ha _), Fintype.card_fin]
+  have h₂ : finrank F (LinearMap.range (C.d i' i).hom) =
+      finrank F (LinearMap.range (D.d i' i).hom) := by
+    rw [← span_image_eq_range hc ha hd (chosenBoundaryBasis D e i' i),
+      finrank_span_eq_card (linearIndependent_image hc _), Fintype.card_fin]
+  have hii : i' + 1 = i := by rw [← hii', add_assoc, CharTwo.add_self_eq_zero, add_zero]
+  have := Module.Finite.of_basis (c i)
+  have := Module.Finite.of_basis (e i)
+  have := Module.Finite.of_basis (c i')
+  have := Module.Finite.of_basis (e i')
+  refine forall_congr' fun j ↦ ?_
+  obtain h | h : j = i ∨ j = i' :=
+    hii' ▸ (by decide : ∀ x j : ZMod 2, j = x ∨ j = x + 1) i j
+  · rw [h, exactAt_iff_finrank_add_finrank C ((ComplexShape.up _).prev_eq' hii)
+      ((ComplexShape.up _).next_eq' hii'), exactAt_iff_finrank_add_finrank D
+      ((ComplexShape.up _).prev_eq' hii) ((ComplexShape.up _).next_eq' hii'), h₁, h₂,
+      finrank_eq_card_basis (c i), finrank_eq_card_basis (e i), Fintype.card_fin, Fintype.card_fin]
+    omega
+  · rw [h, exactAt_iff_finrank_add_finrank C ((ComplexShape.up _).prev_eq' hii')
+      ((ComplexShape.up _).next_eq' hii), exactAt_iff_finrank_add_finrank D
+      ((ComplexShape.up _).prev_eq' hii') ((ComplexShape.up _).next_eq' hii), h₁, h₂,
+      finrank_eq_card_basis (c i'), finrank_eq_card_basis (e i'), Fintype.card_fin,
+      Fintype.card_fin]
+    omega
+
+end Block
+
+section BlockOneZero
+
+variable (hc : ∀ k l, c k l.succ = (φ.f k).hom (e k l)) {a : F} (ha : a ≠ 0)
+  (hd : (C.d 1 0).hom (c 1 0) = a • c 0 0)
+include hc ha hd
+
+private theorem parityTorsion_eq_of_block_one_zero :
+    C.parityTorsion c =
+      (-1) ^ finrank F (LinearMap.range (D.d 0 1).hom) * a⁻¹ * D.parityTorsion e := by
+  have hii' : (1 : ZMod 2) + 1 = 0 := by decide
+  by_cases hD : D.Acyclic
+  swap
+  · rw [parityTorsion_of_not_acyclic D e hD, parityTorsion_of_not_acyclic C c
+      (by rwa [acyclic_iff_of_block hc ha hd hii']), mul_zero]
+  have hC := (acyclic_iff_of_block hc ha hd hii').2 hD
+  let bD₀ := chosenBoundaryBasis D e 1 0
+  let bD₁ := chosenBoundaryBasis D e 0 1
+  let sD₀ := chosenBoundaryLift D e 0 1
+  let sD₁ := chosenBoundaryLift D e 1 0
+  let b₀ := basisOfSpanEq (linearIndependent_cons hc ha bD₀) (span_cons_eq_range hc hd bD₀)
+  let b₁ := basisOfSpanEq (linearIndependent_image hc bD₁) (span_image_eq_range hc ha hd bD₁)
+  have hs₀ (l) : (C.d 0 1).hom ((φ.f 0).hom (sD₀ l)) = b₁ l := by
+    simp [b₁, sD₀, bD₁, Hom.comm_apply]
+  have hs₁ (l) : (C.d 1 0).hom ((Fin.cons (c 1 0) fun l ↦ (φ.f 1).hom (sD₁ l) :
+      Fin _ → C.X 1) l) = b₀ l := by
+    induction l using Fin.cases <;> simp [b₀, sD₁, bD₀, hd, Hom.comm_apply]
+  rw [parityTorsion_eq hC b₀ b₁ _ hs₀ _ hs₁,
+    parityTorsion_eq hD bD₀ bD₁ sD₀ (chosenBoundaryLift_spec D e 0 1) sD₁
+      (chosenBoundaryLift_spec D e 1 0),
+    torsionBracket_image hc _ _ _ (hD 1) bD₁ bD₀ sD₁ (chosenBoundaryLift_spec D e 1 0) b₁
+      (fun l ↦ by simp [b₁]),
+    torsionBracket_cons hc (a := a) _ _ _ (hD 0) bD₀ bD₁ sD₀ (chosenBoundaryLift_spec D e 0 1) b₀
+      (fun l ↦ by simp [b₀]), mul_inv]
+  ring
+
+end BlockOneZero
+
+section BlockZeroOne
+
+variable (hc : ∀ k l, c k l.succ = (φ.f k).hom (e k l)) {a : F} (ha : a ≠ 0)
+  (hd : (C.d 0 1).hom (c 0 0) = a • c 1 0)
+include hc ha hd
+
+private theorem parityTorsion_eq_of_block_zero_one :
+    C.parityTorsion c =
+      (-1) ^ finrank F (LinearMap.range (D.d 1 0).hom) * a * D.parityTorsion e := by
+  have hii' : (0 : ZMod 2) + 1 = 1 := by decide
+  by_cases hD : D.Acyclic
+  swap
+  · rw [parityTorsion_of_not_acyclic D e hD, parityTorsion_of_not_acyclic C c
+      (by rwa [acyclic_iff_of_block hc ha hd hii']), mul_zero]
+  have hC := (acyclic_iff_of_block hc ha hd hii').2 hD
+  let bD₀ := chosenBoundaryBasis D e 1 0
+  let bD₁ := chosenBoundaryBasis D e 0 1
+  let sD₀ := chosenBoundaryLift D e 0 1
+  let sD₁ := chosenBoundaryLift D e 1 0
+  let b₀ := basisOfSpanEq (linearIndependent_image hc bD₀) (span_image_eq_range hc ha hd bD₀)
+  let b₁ := basisOfSpanEq (linearIndependent_cons hc ha bD₁) (span_cons_eq_range hc hd bD₁)
+  have hs₀ (l) : (C.d 0 1).hom ((Fin.cons (c 0 0) fun l ↦ (φ.f 0).hom (sD₀ l) :
+      Fin _ → C.X 0) l) = b₁ l := by
+    induction l using Fin.cases <;> simp [b₁, sD₀, bD₁, hd, Hom.comm_apply]
+  have hs₁ (l) : (C.d 1 0).hom ((φ.f 1).hom (sD₁ l)) = b₀ l := by
+    simp [b₀, sD₁, bD₀, Hom.comm_apply]
+  rw [parityTorsion_eq hC b₀ b₁ _ hs₀ _ hs₁,
+    parityTorsion_eq hD bD₀ bD₁ sD₀ (chosenBoundaryLift_spec D e 0 1) sD₁
+      (chosenBoundaryLift_spec D e 1 0),
+    torsionBracket_cons hc (a := a) _ _ _ (hD 1) bD₁ bD₀ sD₁ (chosenBoundaryLift_spec D e 1 0) b₁
+      (fun l ↦ by simp [b₁]),
+    torsionBracket_image hc _ _ _ (hD 0) bD₀ bD₁ sD₀ (chosenBoundaryLift_spec D e 0 1) b₀
+      (fun l ↦ by simp [b₀]), mul_inv, ← inv_pow, inv_neg_one]
+  ring
+
+end BlockZeroOne
+
+section Cancel
+
+variable {i i' : ZMod 2}
+  (hφ : ∀ l, (φ.f i).hom (e i l) - c i l.succ ∈ F ∙ c i 0)
+  (hφ' : ∀ l, (φ.f i').hom (e i' l) - c i' l.succ ∈ F ∙ (C.d i i').hom (c i 0))
+  (ha : (c i').repr ((C.d i i').hom (c i 0)) 0 ≠ 0)
+include hφ hφ' ha
+
+/-- The bases adapted to the cancellation: `c i 0` and `a⁻¹ • d (c i 0)` followed by the images
+of the bases `e`. They differ from `c` by unitriangular changes of basis. -/
+private theorem exists_adapted (hii' : i + 1 = i') : ∃ c' : ∀ k, Basis (Fin (n k + 1)) F (C.X k),
+    (∀ k l, c' k l.succ = (φ.f k).hom (e k l)) ∧
+      (C.d i i').hom (c' i 0) = (c i').repr ((C.d i i').hom (c i 0)) 0 • c' i' 0 ∧
+      ∀ k, (c k).det (c' k) = 1 := by
+  set a := (c i').repr ((C.d i i').hom (c i 0)) 0
+  set x := a⁻¹ • (C.d i i').hom (c i 0)
+  choose t ht using fun l ↦ Submodule.mem_span_singleton.1 (hφ l)
+  choose s hs using fun l ↦ Submodule.mem_span_singleton.1 (hφ' l)
+  have hdet : (c i).det (Fin.cons (c i 0) fun l ↦ (φ.f i).hom (e i l)) = 1 := by
+    have : (fun l ↦ (φ.f i).hom (e i l)) = fun l ↦ c i l.succ + t l • c i 0 := by
+      ext l; rw [ht]; abel
+    rw [this, Module.Basis.det_cons_add_smul]
+    simp
+  have hdet' : (c i').det (Fin.cons x fun l ↦ (φ.f i').hom (e i' l)) = 1 := by
+    have : (fun l ↦ (φ.f i').hom (e i' l)) = fun l ↦ c i' l.succ + (s l * a) • x := by
+      ext l; rw [mul_smul, smul_inv_smul₀ ha, hs]; abel
+    rw [this, Module.Basis.det_cons_add_smul, map_smul, Finsupp.smul_apply, smul_eq_mul,
+      inv_mul_cancel₀ ha]
+  let β := Basis.mk ((c i).is_basis_iff_det.2 (hdet ▸ isUnit_one)).1
+    ((c i).is_basis_iff_det.2 (hdet ▸ isUnit_one)).2.ge
+  let β' := Basis.mk ((c i').is_basis_iff_det.2 (hdet' ▸ isUnit_one)).1
+    ((c i').is_basis_iff_det.2 (hdet' ▸ isUnit_one)).2.ge
+  have hne : i ≠ i' := hii' ▸ (by decide : ∀ x : ZMod 2, x ≠ x + 1) i
+  have hβ : Function.update (Function.update c i β) i' β' i = β := by
+    rw [Function.update_of_ne hne, Function.update_self]
+  have hβ' : Function.update (Function.update c i β) i' β' i' = β' := Function.update_self ..
+  refine ⟨Function.update (Function.update c i β) i' β', fun k l ↦ ?_, ?_, fun k ↦ ?_⟩
+  · obtain rfl | rfl : i = k ∨ i' = k :=
+      hii' ▸ (by decide : ∀ x j : ZMod 2, x = j ∨ x + 1 = j) i k
+    · simp [hβ, β]
+    · simp [β']
+  · rw [hβ, hβ']
+    simp [β, β', x, smul_inv_smul₀ ha]
+  · obtain rfl | rfl : i = k ∨ i' = k :=
+      hii' ▸ (by decide : ∀ x j : ZMod 2, x = j ∨ x + 1 = j) i k
+    · rw [hβ, Basis.coe_mk, hdet]
+    · rw [hβ', Basis.coe_mk, hdet']
+
+/-- **Cancelling a pair of generators preserves acyclicity.** Let `φ : D ⟶ C` send each basis
+vector `e i l` to `c i l.succ` up to a multiple of `c i 0`, and each `e i' l` to `c i' l.succ` up
+to a multiple of `d (c i 0)`, where the coordinate of `d (c i 0)` along `c i' 0` is nonzero. Then
+`C` is acyclic exactly when `D` is. -/
+theorem acyclic_iff_of_cancel : C.Acyclic ↔ D.Acyclic := by
+  have hii' : i + 1 = i' := by
+    by_contra h
+    exact ha (by rw [C.shape i i' h]; simp)
+  obtain ⟨c', hc', hd', -⟩ := exists_adapted hφ hφ' ha hii'
+  exact acyclic_iff_of_block hc' ha hd' hii'
+
+omit hφ in
+/-- In the degree `i'`, the coordinates of a vector of `D` in the basis `e i'` are read off the
+coordinates of its image under `φ`, corrected along `d (c i 0)`. -/
+private theorem repr_eq_of_cancel (y : D.X i') (r : Fin (n i')) :
+    (e i').repr y r = (c i').repr ((φ.f i').hom y) r.succ -
+      (c i').repr ((C.d i i').hom (c i 0)) r.succ *
+        ((c i').repr ((C.d i i').hom (c i 0)) 0)⁻¹ * (c i').repr ((φ.f i').hom y) 0 := by
+  choose s hs using fun l ↦ Submodule.mem_span_singleton.1 (hφ' l)
+  set A := (c i').repr ((C.d i i').hom (c i 0)) 0
+  set X := (c i').repr ((C.d i i').hom (c i 0)) r.succ
+  have h := (e i').ext (f₁ := (e i').coord r) (f₂ := (c i').coord r.succ ∘ₗ (φ.f i').hom -
+    (X * A⁻¹) • (c i').coord 0 ∘ₗ (φ.f i').hom) fun l ↦ by
+    have hφe : (φ.f i').hom (e i' l) = c i' l.succ + s l • (C.d i i').hom (c i 0) := by
+      rw [hs]; abel
+    have h₀ : (c i').repr (c i' l.succ) 0 = 0 := by simp
+    have h₁ : (c i').repr (c i' l.succ) r.succ = (e i').repr (e i' l) r := by
+      simp [Finsupp.single_apply, Fin.succ_inj]
+    simp only [LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.comp_apply, Basis.coord_apply,
+      hφe, map_add, map_smul, smul_eq_mul, h₀, h₁]
+    field_simp
+    ring
+  simpa [mul_assoc] using LinearMap.congr_fun h y
+
+/-- **The cancelled differential is the Schur complement.** In the bases `e`, the matrix of the
+differential `D.d i i'` is the Schur complement `N - w a⁻¹ v` of the entry `a` of the matrix of
+`C.d i i'` in the bases `c` at the pair `(c i 0, c i' 0)`, where `v` is the rest of its row, `w`
+the rest of its column and `N` the remaining block. Here `φ` and the bases are as in
+`HomologicalComplex.acyclic_iff_of_cancel`. -/
+theorem toMatrix_d_eq_of_cancel :
+    LinearMap.toMatrix (e i) (e i') (D.d i i').hom = Matrix.of fun r k ↦
+      LinearMap.toMatrix (c i) (c i') (C.d i i').hom r.succ k.succ -
+        LinearMap.toMatrix (c i) (c i') (C.d i i').hom r.succ 0 *
+          (LinearMap.toMatrix (c i) (c i') (C.d i i').hom 0 0)⁻¹ *
+            LinearMap.toMatrix (c i) (c i') (C.d i i').hom 0 k.succ := by
+  choose t ht using fun l ↦ Submodule.mem_span_singleton.1 (hφ l)
+  refine Matrix.ext fun r k ↦ ?_
+  have hφe : (φ.f i).hom (e i k) = c i k.succ + t k • c i 0 := by rw [ht]; abel
+  have h := repr_eq_of_cancel hφ' ha ((D.d i i').hom (e i k)) r
+  have hcomm : (φ.f i').hom ((D.d i i').hom (e i k)) = (C.d i i').hom ((φ.f i).hom (e i k)) := by
+    have := congr($(φ.comm i i').hom (e i k))
+    rw [ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply] at this
+    exact this.symm
+  rw [hcomm, hφe] at h
+  simp only [LinearMap.toMatrix_apply, Matrix.of_apply, h, map_add, map_smul, Finsupp.add_apply,
+    Finsupp.smul_apply, smul_eq_mul]
+  set A := (c i').repr ((C.d i i').hom (c i 0)) 0
+  field_simp
+  ring
+
+end Cancel
+
+/-- **The torsion after cancelling a pair joined by the odd-to-even differential.** Let `φ : D ⟶ C`
+send each `e 1 l` to `c 1 l.succ` up to a multiple of `c 1 0`, and each `e 0 l` to `c 0 l.succ` up
+to a multiple of `d (c 1 0)`, and let the coordinate `a` of `d (c 1 0)` along `c 0 0` be nonzero.
+Then `τ(C) = (-1) ^ q · a⁻¹ · τ(D)`, where `q` is the dimension of the image of the even-to-odd
+differential of `D`. Both sides vanish when the complexes are not acyclic. -/
+theorem parityTorsion_eq_of_cancel_one_zero
+    (hφ : ∀ l, (φ.f 1).hom (e 1 l) - c 1 l.succ ∈ F ∙ c 1 0)
+    (hφ' : ∀ l, (φ.f 0).hom (e 0 l) - c 0 l.succ ∈ F ∙ (C.d 1 0).hom (c 1 0))
+    (ha : (c 0).repr ((C.d 1 0).hom (c 1 0)) 0 ≠ 0) :
+    C.parityTorsion c = (-1) ^ finrank F (LinearMap.range (D.d 0 1).hom) *
+      ((c 0).repr ((C.d 1 0).hom (c 1 0)) 0)⁻¹ * D.parityTorsion e := by
+  obtain ⟨c', hc', hd', hdet⟩ := exists_adapted hφ hφ' ha (by decide : (1 : ZMod 2) + 1 = 0)
+  rw [← parityTorsion_eq_of_block_one_zero hc' ha hd', parityTorsion_eq_mul_det c c', hdet, hdet]
+  simp
+
+/-- **The torsion after cancelling a pair joined by the even-to-odd differential.** Let `φ : D ⟶ C`
+send each `e 0 l` to `c 0 l.succ` up to a multiple of `c 0 0`, and each `e 1 l` to `c 1 l.succ` up
+to a multiple of `d (c 0 0)`, and let the coordinate `a` of `d (c 0 0)` along `c 1 0` be nonzero.
+Then `τ(C) = (-1) ^ q · a · τ(D)`, where `q` is the dimension of the image of the odd-to-even
+differential of `D`. Both sides vanish when the complexes are not acyclic. -/
+theorem parityTorsion_eq_of_cancel_zero_one
+    (hφ : ∀ l, (φ.f 0).hom (e 0 l) - c 0 l.succ ∈ F ∙ c 0 0)
+    (hφ' : ∀ l, (φ.f 1).hom (e 1 l) - c 1 l.succ ∈ F ∙ (C.d 0 1).hom (c 0 0))
+    (ha : (c 1).repr ((C.d 0 1).hom (c 0 0)) 0 ≠ 0) :
+    C.parityTorsion c = (-1) ^ finrank F (LinearMap.range (D.d 1 0).hom) *
+      (c 1).repr ((C.d 0 1).hom (c 0 0)) 0 * D.parityTorsion e := by
+  obtain ⟨c', hc', hd', hdet⟩ := exists_adapted hφ hφ' ha (by decide : (0 : ZMod 2) + 1 = 1)
+  rw [← parityTorsion_eq_of_block_zero_one hc' ha hd', parityTorsion_eq_mul_det c c', hdet, hdet]
+  simp
+
+end HomologicalComplex
