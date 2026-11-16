@@ -48,6 +48,9 @@ An isometric inclusion also identifies the operator algebra of its source isomet
 an orthogonal corner in the target's operator algebra: extend by zero using `e T e†`.
 Compression is its inverse on this corner, and extension preserves composition and adjoints.
 
+The unitary group of a Hilbert space, its orthogonal group in the real case, acts on it by
+isometries (`Unitary.instIsIsometricSMul`).
+
 ## Main definitions
 
 * `ContinuousLinearMap.compression A X`: the compression `X† A X` of `A` along `X`.
@@ -632,3 +635,15 @@ instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
     exact (star_comm_self (x := T)).map (Module.End.toContinuousLinearMap (𝕜 := 𝕜) E)
 
 end LinearMap
+
+section UnitaryAction
+
+variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
+
+/-- The unitary group of a Hilbert space acts on it by isometries. -/
+instance Unitary.instIsIsometricSMul : IsIsometricSMul (unitary (H →L[𝕜] H)) H :=
+  ⟨fun u ↦ Isometry.of_dist_eq fun x y ↦ by
+    simp only [dist_eq_norm, Submonoid.smul_def, ContinuousLinearMap.smul_def, ← map_sub,
+      Unitary.norm_map]⟩
+
+end UnitaryAction
