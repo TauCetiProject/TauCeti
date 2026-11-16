@@ -19,6 +19,7 @@ import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # Hives, gauge symmetries, and dominant-weight boundaries
@@ -46,6 +47,7 @@ weakly along each side (`Hive.boundary_antitone`), making each side of an intege
 * `TauCeti.Hive n R`, `TauCeti.IntegerHive n`, `TauCeti.RealHive n`: normalized hives.
 * `TauCeti.Hive.rhombusSlack`, `TauCeti.Hive.IsRhombusConcave`, `TauCeti.Hive.ofRhombusConcave`:
   unit-rhombus slacks, unnormalized concavity, and corner normalization.
+* `TauCeti.Hive.gtChart`: a lattice function read in the chart `(i, j) ↦ (n - j, j - i, i)`.
 * `TauCeti.Hive.barycentricLinear`, `TauCeti.Hive.affine`, `TauCeti.Hive.subtriangle`,
   `TauCeti.Hive.pointedCone`: affine gauge maps, affine hives, subtriangles, and the hive cone.
 * `TauCeti.Hive.boundaryLinear`, `TauCeti.Hive.boundary`, `TauCeti.Hive.boundaryWeight`,
@@ -57,6 +59,8 @@ weakly along each side (`Hive.boundary_antitone`), making each side of an intege
 ## Main results
 
 * `TauCeti.Hive.rhombusSlack_add_barycentricLinear`, `TauCeti.Hive.ofRhombusConcave_eq_iff`.
+* `TauCeti.Hive.isRhombusConcave_chart_iff`: rhombus concavity in terms of the three families of
+  unit rhombi in the chart `(i, j)`.
 * `TauCeti.Hive.mixedDiff_nonpos_of_isUnitStep`,
   `TauCeti.Hive.counterexampleSeven_nonunit_mixedDiff_pos`.
 * `TauCeti.Hive.sum_boundary`, `TauCeti.Hive.boundary_antitone`.
@@ -263,6 +267,145 @@ theorem ofRhombusConcave_eq_iff {f₁ f₂ : Vertex n → R}
 end Ordered
 
 end Gauge
+
+/-! ### Lattice functions in the chart `(i, j) ↦ (n - j, j - i, i)` -/
+
+section Chart
+
+variable {n : ℕ} {R : Type*}
+
+/-- The value of `f` at the chart point `(i, j)`, the lattice vertex `(n - j, j - i, i)`, when
+`i ≤ j ≤ n`, and `0` off the chart. -/
+def gtChart [Zero R] (f : Vertex n → R) (i j : ℕ) : R :=
+  if h : i ≤ j ∧ j ≤ n then f (Vertex.ofYZ n (j - i) i (by omega)) else 0
+
+theorem gtChart_of_le [Zero R] (f : Vertex n → R) {i j : ℕ} (hij : i ≤ j) (hj : j ≤ n) :
+    gtChart f i j = f (Vertex.ofYZ n (j - i) i (by omega)) := by
+  simp only [gtChart, hij, hj, and_self, ↓reduceDIte]
+
+theorem gtChart_eq_zero_of_lt [Zero R] (f : Vertex n → R) {i j : ℕ} (hj : n < j) :
+    gtChart f i j = 0 := by
+  simp only [gtChart, show ¬j ≤ n by omega, and_false, ↓reduceDIte]
+
+theorem gtChart_eq_zero_of_lt_left [Zero R] (f : Vertex n → R) {i j : ℕ} (hji : j < i) :
+    gtChart f i j = 0 := by
+  simp only [gtChart, show ¬i ≤ j by omega, false_and, ↓reduceDIte]
+
+/-- Every lattice vertex `v` is the chart point `(v.z, n - v.x)`. -/
+@[simp]
+theorem gtChart_z_sub_x [Zero R] (f : Vertex n → R) (v : Vertex n) :
+    gtChart f v.z (n - v.x) = f v := by
+  have := v.sum_eq
+  rw [gtChart_of_le f (by omega) (by omega)]
+  congr 1
+  ext <;> simp <;> omega
+
+/-- The chart side `i = 0` is the side `A → B`. -/
+theorem gtChart_zero_left [Zero R] (f : Vertex n → R) {j : ℕ} (hj : j ≤ n) :
+    gtChart f 0 j = f (Vertex.edgePoint n 0 ⟨j, by omega⟩) := by
+  rw [gtChart_of_le f (Nat.zero_le j) hj]
+  exact congrArg f (Vertex.ofYZ_zero_right n j hj)
+
+/-- The chart side `j = n` is the side `B → C`. -/
+theorem gtChart_right [Zero R] (f : Vertex n → R) {i : ℕ} (hi : i ≤ n) :
+    gtChart f i n = f (Vertex.edgePoint n 1 ⟨i, by omega⟩) := by
+  rw [gtChart_of_le f hi le_rfl]
+  exact congrArg f (Vertex.ofYZ_sub_left n i hi)
+
+/-- The chart diagonal `i = j` is the side `C → A`. -/
+theorem gtChart_self [Zero R] (f : Vertex n → R) {j : ℕ} (hj : j ≤ n) :
+    gtChart f j j = f (Vertex.edgePoint n 2 ⟨n - j, by omega⟩) := by
+  rw [gtChart_of_le f le_rfl hj]
+  simp only [Nat.sub_self]
+  exact congrArg f (Vertex.ofYZ_zero_left n j hj)
+
+/-- The chart value of the vertex `(n - j, j - i, i)` is the value at `(i, j)`. -/
+private theorem apply_ofYZ (g : ℕ → ℕ → R) {i j : ℕ} (hij : i ≤ j) (h : j - i + i ≤ n) :
+    g (Vertex.ofYZ n (j - i) i h).z (n - (Vertex.ofYZ n (j - i) i h).x) = g i j := by
+  rw [Vertex.ofYZ_z, Vertex.ofYZ_x, show n - (n - (j - i) - i) = j by omega]
+
+section Ordered
+
+variable [AddCommGroup R] [Preorder R] (g : ℕ → ℕ → R)
+
+private theorem ChartRhombus₁.le
+    (h₁ : ∀ i j, i < j → j < n → g (i + 1) j + g i (j + 1) ≤ g i j + g (i + 1) (j + 1))
+    {o₁ a₁ o₂ a₂ : Vertex n} (H : ChartRhombus₁ o₁ a₁ o₂ a₂) :
+    g a₁.z (n - a₁.x) + g a₂.z (n - a₂.x) ≤ g o₁.z (n - o₁.x) + g o₂.z (n - o₂.x) := by
+  obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆⟩ := chartRhombus₁_iff.mp H
+  have := a₁.sum_eq
+  rw [show a₁.z = o₁.z + 1 by omega, show n - a₁.x = n - o₁.x by omega, e₆,
+    show n - a₂.x = n - o₁.x + 1 by omega, e₄, show n - o₂.x = n - o₁.x + 1 by omega]
+  exact h₁ _ _ (by omega) (by omega)
+
+private theorem ChartRhombus₂.le
+    (h₂ : ∀ i j, i < j → j < n → g i j + g (i + 2) (j + 1) ≤ g (i + 1) j + g (i + 1) (j + 1))
+    {o₁ a₁ o₂ a₂ : Vertex n} (H : ChartRhombus₂ o₁ a₁ o₂ a₂) :
+    g a₁.z (n - a₁.x) + g a₂.z (n - a₂.x) ≤ g o₁.z (n - o₁.x) + g o₂.z (n - o₂.x) := by
+  obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆⟩ := chartRhombus₂_iff.mp H
+  have := o₁.sum_eq
+  rw [e₆, show n - a₂.x = n - a₁.x + 1 by omega, e₂, e₁, e₄,
+    show n - o₂.x = n - a₁.x + 1 by omega]
+  exact h₂ _ _ (by omega) (by omega)
+
+private theorem ChartRhombus₃.le
+    (h₃ : ∀ i j, i ≤ j → j + 2 ≤ n →
+      g i j + g (i + 1) (j + 2) ≤ g i (j + 1) + g (i + 1) (j + 1))
+    {o₁ a₁ o₂ a₂ : Vertex n} (H : ChartRhombus₃ o₁ a₁ o₂ a₂) :
+    g a₁.z (n - a₁.x) + g a₂.z (n - a₂.x) ≤ g o₁.z (n - o₁.x) + g o₂.z (n - o₂.x) := by
+  obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆⟩ := chartRhombus₃_iff.mp H
+  have := a₁.sum_eq
+  rw [e₆, show n - a₂.x = n - a₁.x + 2 by omega, e₂, show n - o₁.x = n - a₁.x + 1 by omega, e₄,
+    show n - o₂.x = n - a₁.x + 1 by omega]
+  exact h₃ _ _ (by omega) (by omega)
+
+/-- **Rhombus concavity in the chart.** A lattice function read in the chart `(i, j)` through
+`g` is rhombus-concave iff `g` satisfies the inequalities of the three families of unit rhombi:
+`g(i+1, j) + g(i, j+1) ≤ g(i, j) + g(i+1, j+1)` and
+`g(i, j) + g(i+2, j+1) ≤ g(i+1, j) + g(i+1, j+1)` for `i < j < n`, and
+`g(i, j) + g(i+1, j+2) ≤ g(i, j+1) + g(i+1, j+1)` for `i ≤ j` and `j + 2 ≤ n`. -/
+theorem isRhombusConcave_chart_iff :
+    IsRhombusConcave (fun v : Vertex n => g v.z (n - v.x)) ↔
+      (∀ i j, i < j → j < n → g (i + 1) j + g i (j + 1) ≤ g i j + g (i + 1) (j + 1)) ∧
+      (∀ i j, i < j → j < n → g i j + g (i + 2) (j + 1) ≤ g (i + 1) j + g (i + 1) (j + 1)) ∧
+      (∀ i j, i ≤ j → j + 2 ≤ n →
+        g i j + g (i + 1) (j + 2) ≤ g i (j + 1) + g (i + 1) (j + 1)) := by
+  rw [isRhombusConcave_def]
+  constructor
+  · intro hf
+    refine ⟨fun i j hij hj => ?_, fun i j hij hj => ?_, fun i j hij hj => ?_⟩
+    · have := hf (ChartRhombus₁.isRhombus (n := n) (o₁ := Vertex.ofYZ n (j - i) i (by omega))
+        (a₁ := Vertex.ofYZ n (j - (i + 1)) (i + 1) (by omega))
+        (o₂ := Vertex.ofYZ n (j + 1 - (i + 1)) (i + 1) (by omega))
+        (a₂ := Vertex.ofYZ n (j + 1 - i) i (by omega)) (chartRhombus₁_iff.mpr (by simp; omega)))
+      rwa [apply_ofYZ g (by omega), apply_ofYZ g (by omega), apply_ofYZ g (by omega),
+        apply_ofYZ g (by omega)] at this
+    · have := hf (ChartRhombus₂.isRhombus (n := n)
+        (o₁ := Vertex.ofYZ n (j - (i + 1)) (i + 1) (by omega))
+        (a₁ := Vertex.ofYZ n (j - i) i (by omega))
+        (o₂ := Vertex.ofYZ n (j + 1 - (i + 1)) (i + 1) (by omega))
+        (a₂ := Vertex.ofYZ n (j + 1 - (i + 2)) (i + 2) (by omega))
+        (chartRhombus₂_iff.mpr (by simp; omega)))
+      rwa [apply_ofYZ g (by omega), apply_ofYZ g (by omega), apply_ofYZ g (by omega),
+        apply_ofYZ g (by omega)] at this
+    · have := hf (isRhombus_ofYZ_step (n := n) (y := j - i) (z := i) (by omega))
+      simp only [Vertex.ofYZ_z, Vertex.ofYZ_x] at this
+      rwa [show n - (n - (j - i) - i) = j by omega,
+        show n - (n - (j - i + 1) - (i + 1)) = j + 2 by omega,
+        show n - (n - (j - i + 1) - i) = j + 1 by omega,
+        show n - (n - (j - i) - (i + 1)) = j + 1 by omega] at this
+  · rintro ⟨h₁, h₂, h₃⟩ a b c d hr
+    -- Each rhombus is one of the three families, with its obtuse and acute pairs in some order.
+    rcases hr.chartRhombus with (H | H | H | H) | (H | H | H | H) | (H | H | H | H)
+    all_goals first
+      | have key := H.le g h₁
+      | have key := H.le g h₂
+      | have key := H.le g h₃
+    all_goals simpa only [add_comm] using key
+
+end Ordered
+
+end Chart
 
 /-! ### Monoid structure, nonnegative scaling, affine hives, and subtriangle restriction -/
 
@@ -512,13 +655,9 @@ theorem sum_boundaryLinear_lt [AddCommGroup R] (f : Vertex n → R) (s : Fin 3) 
   induction k with
   | zero => simp
   | succ m ih =>
-    have hsplit : ({i : Fin n | i.val < m + 1} : Finset (Fin n)) =
-        insert ⟨m, by omega⟩ ({i : Fin n | i.val < m} : Finset (Fin n)) := by
-      ext i; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-        Fin.ext_iff]; omega
-    have hnm : (⟨m, by omega⟩ : Fin n) ∉ ({i : Fin n | i.val < m} : Finset (Fin n)) := by simp
-    rw [hsplit, Finset.sum_insert hnm, ih (by omega), boundaryLinear_apply, Fin.succ_mk,
-      Fin.castSucc_mk]; abel
+    have hsplit := prefixSum_succ (by omega : m < n) (boundaryLinear ℤ n R f s)
+    rw [prefixSum_def, prefixSum_def] at hsplit
+    rw [hsplit, ih (by omega), boundaryLinear_apply, Fin.succ_mk, Fin.castSucc_mk]; abel
 
 /-- Along side `s`, the `n` edge differences telescope to the difference of its two corners. -/
 theorem sum_boundaryLinear_side [AddCommGroup R] (f : Vertex n → R) (s : Fin 3) :
