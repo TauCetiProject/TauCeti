@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Analytic.ChangeOrigin
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.CauchyKernel
 public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Basic
-import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 import TauCeti.Analysis.Contour.Cycle.Winding
+import TauCeti.Analysis.Normed.Algebra.GelfandRadius
 
 /-!
 # Uniqueness, rational functions, and power series in the holomorphic functional calculus
@@ -28,9 +28,10 @@ sending the coordinate germ to `a` whose restriction to every open neighbourhood
 is continuous for the compact-open topology.
 
 Furthermore, if `f` has a formal power series `p : FormalMultilinearSeries ℂ ℂ ℂ` on an open
-extended ball `Metric.eball z₀ r` containing `spectrum ℂ a`, Gelfand's spectral radius formula
-ensures absolute convergence of `∑ p.coeff n • (a - z₀)^n` in `A`, and continuity of
-`holomorphicCalculusOn` identifies `holomorphicCalculus a` of `f` with that unconditional sum.
+extended ball `Metric.eball z₀ r` containing `spectrum ℂ a`,
+`TauCeti.summable_norm_smul_sub_pow_of_le_radius` ensures absolute convergence of
+`∑ p.coeff n • (a - z₀)^n` in `A`, and continuity of `holomorphicCalculusOn` identifies
+`holomorphicCalculus a` of `f` with that unconditional sum.
 
 ## Main results
 
@@ -39,8 +40,7 @@ ensures absolute convergence of `∑ p.coeff n • (a - z₀)^n` in `A`, and con
 * `TauCeti.isUnit_aeval_of_forall_eval_ne_zero`, `TauCeti.holomorphicCalculusOn_div_polynomial`,
   `TauCeti.holomorphicCalculus_div_polynomial`: invertibility of polynomial denominators
   nonvanishing on the spectrum and compatibility with rational functions `p / q`.
-* `TauCeti.summable_norm_smul_sub_pow_of_le_radius`,
-  `HasFPowerSeriesOnBall.hasSum_holomorphicCalculus`,
+* `HasFPowerSeriesOnBall.hasSum_holomorphicCalculus`,
   `HasFPowerSeriesOnBall.holomorphicCalculus_eq_tsum`,
   `HasFPowerSeriesOnBall.hasSum_holomorphicCalculus_zero`: unconditional norm-convergent
   power-series evaluation when `spectrum ℂ a ⊆ Metric.eball z₀ r`.
@@ -58,7 +58,7 @@ ensures absolute convergence of `∑ p.coeff n • (a - z₀)^n` in `A`, and con
 public noncomputable section
 
 open Complex Filter Set TopologicalSpace Topology
-open scoped ENNReal NNReal Real
+open scoped ENNReal Real
 
 namespace TauCeti
 
@@ -77,32 +77,22 @@ theorem holomorphicCalculusOn_cauchyKernel (a : A) (U : Opens ℂ) (ha : spectru
   map_cauchyKernel_eq_resolvent (holomorphicCalculusOn a U ha)
     (holomorphicCalculusOn_id a U ha) hw
 
-omit [CompleteSpace A] in
-private theorem mem_resolventSet_of_analyticOnNhd_inv_const_sub (a : A) {w : ℂ}
-    (hf : AnalyticOnNhd ℂ (fun z => (w - z)⁻¹) (spectrum ℂ a)) :
-    w ∈ resolventSet ℂ a := by
-  rw [spectrum.mem_resolventSet_iff, ← spectrum.notMem_iff]
-  intro hw
-  have h0 : Tendsto (fun z => (w - z) * (w - z)⁻¹) (𝓝[≠] w) (𝓝 0) := by
-    have hmul : ContinuousAt (fun z => (w - z) * (w - z)⁻¹) w :=
-      (continuousAt_const.sub continuousAt_id).mul (hf w hw).continuousAt
-    simpa only [sub_self, zero_mul] using hmul.tendsto.mono_left nhdsWithin_le_nhds
-  have h1 : Tendsto (fun z => (w - z) * (w - z)⁻¹) (𝓝[≠] w) (𝓝 1) := by
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [self_mem_nhdsWithin] with z hz
-    exact (mul_inv_cancel₀ (sub_ne_zero.mpr (Ne.symm hz))).symm
-  exact zero_ne_one (tendsto_nhds_unique h0 h1)
-
 /-- The germ calculus sends `(w - ·)⁻¹` to `resolvent a w` whenever `(w - ·)⁻¹` is analytic on
 `spectrum ℂ a`. -/
 @[simp]
 theorem holomorphicCalculus_inv_const_sub_id (a : A) {w : ℂ}
     (hf : AnalyticOnNhd ℂ (fun z => (w - z)⁻¹) (spectrum ℂ a)) :
     holomorphicCalculus a (holomorphicGerms.ofFun (fun z => (w - z)⁻¹) hf) = resolvent a w := by
-  have hw : w ∈ resolventSet ℂ a := mem_resolventSet_of_analyticOnNhd_inv_const_sub a hf
   let U : Opens ℂ := ⟨{w}ᶜ, isOpen_compl_singleton⟩
-  have haU : spectrum ℂ a ⊆ U := fun _ hz hzw =>
-    spectrum.notMem_iff.mpr hw ((mem_singleton_iff.mp hzw) ▸ hz)
+  have haU : spectrum ℂ a ⊆ U := fun z hz hzw => by
+    have hzw' : z = w := mem_singleton_iff.mp hzw
+    subst hzw'
+    have hinv : ContinuousAt (Inv.inv : ℂ → ℂ) 0 := by
+      have hcomp := (hf z hz).continuousAt.comp_of_eq
+        (continuousAt_const.sub continuousAt_id : ContinuousAt (fun t : ℂ => z - t) 0)
+        (sub_zero z)
+      simpa only [Function.comp_def, Pi.sub_apply, sub_sub_cancel] using hcomp
+    exact NormedField.continuousAt_inv.mp hinv rfl
   have hwU : w ∉ (U : Set ℂ) := not_not_intro (mem_singleton w)
   rw [← toGerm_eq_ofFun haU (cauchyKernel U w hwU) _ hf (cauchyKernel_apply U w hwU),
     holomorphicCalculus_toGerm, holomorphicCalculusOn_cauchyKernel]
@@ -163,36 +153,6 @@ theorem holomorphicCalculus_div_polynomial (a : A) (p q : Polynomial ℂ)
     holomorphicCalculus_toGerm, holomorphicCalculusOn_div_polynomial a U haU p q hqU]
 
 /-! ### Power-series evaluation -/
-
-/-- If `spectrum ℂ a` lies in the open extended ball `Metric.eball z₀ r` and `r` does not exceed
-the convergence radius of a formal power series `p : FormalMultilinearSeries ℂ ℂ ℂ`, then
-`∑ ‖p.coeff n • (a - z₀)^n‖` converges. -/
-theorem summable_norm_smul_sub_pow_of_le_radius (a : A) {p : FormalMultilinearSeries ℂ ℂ ℂ}
-    {z₀ : ℂ} {r : ℝ≥0∞} (ha : spectrum ℂ a ⊆ Metric.eball z₀ r) (hr : r ≤ p.radius) :
-    Summable fun n => ‖p.coeff n • (a - algebraMap ℂ A z₀) ^ n‖ := by
-  let b := a - algebraMap ℂ A z₀
-  rcases subsingleton_or_nontrivial A with hsub | hnt
-  · exact summable_zero.congr fun n => by
-      rw [Subsingleton.elim (p.coeff n • b ^ n) 0, norm_zero]
-  · obtain ⟨w, hw, hw_eq⟩ := spectrum.exists_nnNorm_eq_spectralRadius b
-    have hzw : z₀ + w ∈ spectrum ℂ a :=
-      (add_comm z₀ w).symm ▸ spectrum.add_mem_iff.mpr (by simpa [b, neg_add_eq_sub] using hw)
-    have hw_lt : (‖w‖₊ : ℝ≥0∞) < r := by
-      have hmem := ha hzw
-      rwa [Metric.mem_eball, edist_nndist, nnDist_eq_nnNorm, add_sub_cancel_left] at hmem
-    have hspec : spectralRadius ℂ b < r := hw_eq ▸ hw_lt
-    obtain ⟨ρ, hρ_gt, hρ_lt⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hspec
-    rw [spectrum.spectralRadius_eq_gelfandRadius,
-      ENNReal.ofReal_lt_coe_iff (gelfandRadius_nonneg b)] at hρ_gt
-    obtain ⟨C, _, hC⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt b hρ_gt
-    have hpsum : Summable fun n => ‖p.coeff n‖ * (ρ : ℝ) ^ n := by
-      simpa only [FormalMultilinearSeries.norm_apply_eq_norm_coef] using
-        p.summable_norm_mul_pow (hρ_lt.trans_le hr)
-    refine Summable.of_nonneg_of_le (fun _ => norm_nonneg _) (fun n => ?_) (hpsum.mul_left C)
-    rw [norm_smul]
-    calc ‖p.coeff n‖ * ‖b ^ n‖
-        ≤ ‖p.coeff n‖ * (C * (ρ : ℝ) ^ n) := mul_le_mul_of_nonneg_left (hC n) (norm_nonneg _)
-      _ = C * (‖p.coeff n‖ * (ρ : ℝ) ^ n) := by ring
 
 /-- **Power-series evaluation for the holomorphic functional calculus.** If `f` has formal power
 series `p` on `Metric.eball z₀ r` and `spectrum ℂ a ⊆ Metric.eball z₀ r`, then the series

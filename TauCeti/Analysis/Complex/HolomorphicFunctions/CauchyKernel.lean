@@ -102,23 +102,16 @@ agrees with polynomial evaluation `Polynomial.aeval b`. -/
 theorem map_of_eval_polynomial (Φ : F) {b : B}
     (hid : Φ (of V id differentiableOn_id) = b) (p : Polynomial ℂ) :
     Φ (of V (fun z => p.eval z) p.differentiable.differentiableOn) = Polynomial.aeval b p := by
-  induction p using Polynomial.induction_on' with
-  | add p q ihp ihq =>
-    have hadd : of V (fun z => (p + q).eval z) (p + q).differentiable.differentiableOn =
-        of V (fun z => p.eval z) p.differentiable.differentiableOn +
-          of V (fun z => q.eval z) q.differentiable.differentiableOn := by
-      apply Subtype.ext
-      ext z
-      simp
-    rw [hadd, map_add, ihp, ihq, map_add]
-  | monomial n c =>
-    have hmon : of V (fun z => (Polynomial.monomial n c).eval z)
-        (Polynomial.monomial n c).differentiable.differentiableOn =
-        c • (of V id differentiableOn_id) ^ n := by
-      apply Subtype.ext
-      ext z
-      simp [Polynomial.eval_monomial]
-    rw [hmon, map_smul, map_pow, hid, Polynomial.aeval_monomial, Algebra.smul_def]
+  have hp : of V (fun z => p.eval z) p.differentiable.differentiableOn =
+      Polynomial.aeval (of V id differentiableOn_id) p := by
+    apply Subtype.ext
+    ext z
+    have hev := Polynomial.aeval_algHom_apply
+      ((ContinuousMap.evalAlgHom ℂ ℂ z).comp (holomorphicFunctions V).val)
+      (of V id differentiableOn_id) p
+    simpa only [AlgHom.comp_apply, Subalgebra.val_apply, ContinuousMap.evalAlgHom_apply,
+      of_apply, id_eq, Polynomial.coe_aeval_eq_eval] using hev
+  rw [hp, ← Polynomial.aeval_algHom_apply, hid]
 
 /-- If a unital `ℂ`-algebra homomorphism out of `holomorphicFunctions V` sends `id` to `b` and a
 polynomial `q` does not vanish on `V`, then `Polynomial.aeval b q` is a unit. -/
@@ -435,14 +428,10 @@ theorem map_cauchyIntegralRiemannSum_eq {E F₁ F₂ : Type*} [AddCommMonoid E] 
     (n : ℕ) :
     Φ₁ (cauchyIntegralRiemannSum f Γ V hdisj n) =
       Φ₂ (cauchyIntegralRiemannSum f Γ V hdisj n) := by
-  refine Submodule.span_induction ?_ ?_ ?_ ?_ (cauchyIntegralRiemannSum_mem_span f Γ V hdisj n)
-  · rintro _ ⟨w, hw, rfl⟩
-    exact hker w hw
-  · rw [map_zero, map_zero]
-  · intro x y _ _ hx hy
-    rw [map_add, map_add, hx, hy]
-  · intro c x _ hx
-    rw [map_smul, map_smul, hx]
+  simpa only [LinearMap.coe_ofClass] using
+    LinearMap.eqOn_span (f := LinearMap.ofClass Φ₁) (g := LinearMap.ofClass Φ₂)
+      (by rintro _ ⟨w, hw, rfl⟩; simpa only [LinearMap.coe_ofClass] using hker w hw)
+      (cauchyIntegralRiemannSum_mem_span f Γ V hdisj n)
 
 /-- If `Γ` is a null-homologous cycle in `U` avoiding an open subset `V ≤ U` and winding once
 around every point of `V`, the Riemann–Stieltjes sums `cauchyIntegralRiemannSum f Γ V hdisj n`

@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Composition
 public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Basic
 public import TauCeti.Analysis.Normed.Algebra.Unitization.Basic
-import Mathlib.Analysis.Complex.RemovableSingularity
 import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Uniqueness
 
 /-!
@@ -221,29 +220,6 @@ section ScalarAndUnitization
 
 variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 
-/-- Factor `extend f z₀ - f(z)` as `(z₀ - z) * dslope (extend f) z₀ z` inside
-`holomorphicFunctions U`. -/
-private theorem add_sub_mul_dslope_eq_algebraMap {U : Opens ℂ} (f : holomorphicFunctions U)
-    {z₀ : ℂ} (hz₀ : z₀ ∈ U) :
-    f + of U (fun z => (Polynomial.C z₀ - Polynomial.X).eval z)
-        (Polynomial.C z₀ - Polynomial.X).differentiable.differentiableOn *
-      of U (dslope (extend f) z₀)
-        ((Complex.differentiableOn_dslope (U.isOpen.mem_nhds hz₀)).mpr
-          (differentiableOn_extend f)) =
-      algebraMap ℂ (holomorphicFunctions U) (extend f z₀) := by
-  apply Subtype.ext
-  ext z
-  have hd := sub_smul_dslope (extend f) z₀ z
-  rw [smul_eq_mul] at hd
-  simp only [Polynomial.eval_sub, Polynomial.eval_C, Polynomial.eval_X, AddMemClass.coe_add,
-    MulMemClass.coe_mul, ContinuousMap.add_apply, ContinuousMap.mul_apply, of_apply,
-    SubalgebraClass.coe_algebraMap, algebraMap_apply, smul_eq_mul, mul_one]
-  rw [← extend_apply f z]
-  calc extend f z + (z₀ - (z : ℂ)) * dslope (extend f) z₀ z
-      = extend f z - ((z : ℂ) - z₀) * dslope (extend f) z₀ z := by ring
-    _ = extend f z - (extend f z - extend f z₀) := by rw [hd]
-    _ = extend f z₀ := by ring
-
 /-- Evaluating `holomorphicCalculusOn` at a scalar multiple `algebraMap ℂ A z` gives
 `algebraMap ℂ A (extend f z)`, without assuming `Nontrivial A` or `NormOneClass A`. -/
 @[simp]
@@ -255,9 +231,10 @@ theorem holomorphicCalculusOn_algebraMap (z : ℂ) (U : Opens ℂ)
   · have hz_mem : z ∈ spectrum ℂ (algebraMap ℂ A z) :=
       (spectrum.scalar_eq (A := A) z).symm ▸ mem_singleton z
     have h := congrArg (holomorphicCalculusOn (algebraMap ℂ A z) U hz)
-      (add_sub_mul_dslope_eq_algebraMap f (hz hz_mem))
-    simpa only [map_add, map_mul, holomorphicCalculusOn_polynomial, AlgHom.commutes, map_sub,
-      Polynomial.aeval_C, Polynomial.aeval_X, sub_self, zero_mul, add_zero] using h
+      (algebraMap_sub_id_mul_of_dslope f (hz hz_mem))
+    simp only [map_mul, map_sub (holomorphicCalculusOn (algebraMap ℂ A z) U hz),
+      AlgHom.commutes, holomorphicCalculusOn_id, sub_self, zero_mul] at h
+    exact (sub_eq_zero.mp h.symm).symm
 
 /-- On `ℂ`, `holomorphicCalculusOn` at `z` is evaluation at `z`. -/
 @[simp]
@@ -390,17 +367,15 @@ theorem spectrum_holomorphicCalculus (a : A) (g : holomorphicGerms (spectrum ℂ
   let hU : holomorphicFunctions U := of U (dslope (extend f) z₀)
     ((Complex.differentiableOn_dslope (U.isOpen.mem_nhds (ha hz₀))).mpr (differentiableOn_extend f))
   have hfac := congrArg (holomorphicCalculusOn a U ha)
-    (add_sub_mul_dslope_eq_algebraMap f (ha hz₀))
-  rw [hc_eq, map_add, map_mul, holomorphicCalculusOn_polynomial, AlgHom.commutes,
-    ← holomorphicCalculus_toGerm, map_sub, Polynomial.aeval_C, Polynomial.aeval_X] at hfac
-  have hsub : algebraMap ℂ A c - holomorphicCalculus a (toGerm ha f) =
-      (algebraMap ℂ A z₀ - a) * holomorphicCalculusOn a U ha hU :=
-    sub_eq_of_eq_add' hfac.symm
+    (algebraMap_sub_id_mul_of_dslope f (ha hz₀))
+  rw [hc_eq, map_mul, map_sub (holomorphicCalculusOn a U ha),
+    map_sub (holomorphicCalculusOn a U ha), AlgHom.commutes, holomorphicCalculusOn_id,
+    AlgHom.commutes, ← holomorphicCalculus_toGerm a U ha f] at hfac
   have hcomm : Commute (algebraMap ℂ A z₀ - a) (holomorphicCalculusOn a U ha hU) :=
     (Algebra.commute_algebraMap_left z₀ _).sub_left
       ((Commute.refl a).holomorphicCalculusOn_right U ha hU)
   rw [spectrum.mem_iff]
-  exact fun hu => hz₀ (hcomm.isUnit_mul_iff.mp (hsub ▸ hu)).1
+  exact fun hu => hz₀ (hcomm.isUnit_mul_iff.mp (hfac.symm ▸ hu)).1
 
 /-- **Spectral mapping theorem on an open domain.** For `f : holomorphicFunctions U` with
 `spectrum ℂ a ⊆ U`, `spectrum ℂ (holomorphicCalculusOn a U ha f) = extend f '' spectrum ℂ a`. -/
