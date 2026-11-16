@@ -89,23 +89,17 @@ instance : DecidableEq PrefixRow :=
 instance : Countable PrefixRow :=
   Function.Injective.countable (f := PrefixRow.word) fun _ _ h => PrefixRow.ext h
 
-instance : Infinite PrefixRow := by
-  let f : ℕ → PrefixRow := fun k =>
-    ⟨List.replicate k 0,
-      List.pairwise_replicate.mpr (Or.inr le_rfl),
-      fun i => by simp⟩
-  refine Infinite.of_injective f fun a b h => ?_
-  have hlen := congrArg (fun p : PrefixRow => p.word.length) h
-  simpa [f] using hlen
+instance : Infinite PrefixRow :=
+  Infinite.of_injective (fun k => ⟨List.replicate k 0,
+      List.pairwise_replicate.mpr (Or.inr le_rfl), fun _ => by simp⟩)
+    fun _ _ h => by simpa using congrArg (fun p : PrefixRow => p.word.length) h
 
 /-- Every nonempty prefix `τ` of a `PrefixRow` satisfies `τ.getLast + 1 ≤ τ.length`. -/
 private theorem getLast_add_one_le_length_of_prefix {p : PrefixRow} {τ : Label ℕ}
     (h : τ.1 <+: p.word) : τ.1.getLast τ.2 + 1 ≤ τ.1.length := by
   obtain ⟨t, ht⟩ := h
   have hpos : 0 < τ.1.length := List.length_pos_of_ne_nil τ.2
-  have hlen : τ.1.length - 1 < p.word.length := by
-    have : p.word.length = τ.1.length + t.length := by rw [← ht, List.length_append]
-    omega
+  have hlen : τ.1.length - 1 < p.word.length := by rw [← ht, List.length_append]; omega
   rw [List.getLast_eq_getElem]
   have hget : τ.1[τ.1.length - 1] = p.word[τ.1.length - 1] := by
     simp only [← ht, List.getElem_append_left (by omega : τ.1.length - 1 < τ.1.length)]
@@ -122,21 +116,15 @@ instance (p : PrefixRow) (τ : Label ℕ) : Language.empty.Structure (prefixFibe
   Language.emptyStructure
 
 instance (p : PrefixRow) (τ : Label ℕ) : Countable (prefixFiber p τ) := by
-  unfold prefixFiber
-  split_ifs <;> infer_instance
+  unfold prefixFiber; split_ifs <;> infer_instance
 
 private theorem enatCard_prefixFiber_of_prefix {p : PrefixRow} {τ : Label ℕ}
-    (h : τ.1 <+: p.word) :
-    ENat.card (prefixFiber p τ) = (τ.1.getLast τ.2 + 1 : ℕ) := by
-  unfold prefixFiber
-  simp only [h, ite_true, ENat.card_eq_coe_fintype_card, Fintype.card_fin]
+    (h : τ.1 <+: p.word) : ENat.card (prefixFiber p τ) = (τ.1.getLast τ.2 + 1 : ℕ) := by
+  simp [prefixFiber, h]
 
 private theorem enatCard_prefixFiber_of_not_prefix {p : PrefixRow} {τ : Label ℕ}
-    (h : ¬ τ.1 <+: p.word) :
-    ENat.card (prefixFiber p τ) = ⊤ := by
-  unfold prefixFiber
-  simp only [h, ite_false]
-  exact ENat.card_eq_top_of_infinite
+    (h : ¬ τ.1 <+: p.word) : ENat.card (prefixFiber p τ) = ⊤ := by
+  simp [prefixFiber, h, ENat.card_eq_top_of_infinite]
 
 /-- The base row assembly of internal Scott rank `ω`. -/
 abbrev OmegaWitness : Type := Carrier PrefixRow prefixFiber
@@ -168,27 +156,18 @@ theorem prefixRow_eq_of_bfEquiv {p q : PrefixRow}
     · by_contra hnp
       have hle := le_length_of_bfEquiv_of_prefix_of_not_prefix h
         (τ := ⟨p.word, hp⟩) List.prefix_rfl hnp
-      dsimp only at hle
-      omega
+      dsimp only at hle; omega
   have hlen : q.word.length ≤ p.word.length := by
     by_contra hlt
     let w := q.word.take (p.word.length + 1)
     have hwlen : w.length = p.word.length + 1 := by
       simp [w, Nat.min_eq_left (Nat.succ_le_of_lt (lt_of_not_ge hlt))]
-    have hwne : w ≠ [] := fun hempty => by
-      have : w.length = 0 := by simp [hempty]
-      omega
-    have hτp : ¬ w <+: p.word := fun hpre => by
-      have := hpre.length_le
-      omega
     have hle := le_length_of_bfEquiv_of_prefix_of_not_prefix h.symm
-      (τ := ⟨w, hwne⟩) (List.take_prefix _ _) hτp
-    dsimp only at hle
-    omega
+      (τ := ⟨w, List.ne_nil_of_length_pos (by omega)⟩) (List.take_prefix _ _)
+      (fun hpre => by have := hpre.length_le; dsimp only at this; omega)
+    dsimp only at hle; omega
   obtain ⟨t, ht⟩ := hpref
-  have htlen : t.length = 0 := by
-    have : p.word.length + t.length = q.word.length := by rw [← List.length_append, ht]
-    omega
+  have htlen : t.length = 0 := by have := congrArg List.length ht; simp at this; omega
   exact PrefixRow.ext (by simpa [List.eq_nil_of_length_eq_zero htlen] using ht)
 
 /-- Every finite tuple of `OmegaWitness` has finite orbit rank. -/
@@ -201,34 +180,25 @@ theorem orbitRank_omegaWitness_lt_omega0 {n : ℕ} (a : Fin n → OmegaWitness) 
     intro b hab
     have hrow_eq (i : Fin n) : (a i).ownerRow = (b i).ownerRow := by
       have hab' : BFEquiv (L := lang ℕ Language.empty)
-          (((r + 2 : ℕ) : Ordinal.{0}) + (n : ℕ)) n a b := by
-        simpa only [Nat.cast_add] using hab
-      have hown := bfEquiv_ownerRow_of_bfEquiv_add hab' i
+          (((r + 2 : ℕ) : Ordinal.{0}) + (n : ℕ)) n a b := by simpa only [Nat.cast_add] using hab
       have hri : (a i).ownerRow.word.length ≤ r :=
         Finset.le_sup (f := fun j : Fin n => (a j).ownerRow.word.length) (Finset.mem_univ i)
-      exact prefixRow_eq_of_bfEquiv
-        (hown.mono (Nat.cast_le.mpr (by omega : (a i).ownerRow.word.length + 2 ≤ r + 2)))
+      exact prefixRow_eq_of_bfEquiv ((bfEquiv_ownerRow_of_bfEquiv_add hab' i).mono
+        (Nat.cast_le.mpr (by omega : (a i).ownerRow.word.length + 2 ≤ r + 2)))
     have hslot (i : Fin n) : (a i).slot = (b i).slot := by
       cases hai : a i with
       | row p =>
-        have hrow := (hab.sameAtomicType.rel_iff (.row : Sym ℕ Language.empty 1) ![i]).mp
+        obtain ⟨q, hbi⟩ := (hab.sameAtomicType.rel_iff (.row : Sym ℕ Language.empty 1) ![i]).mp
           ⟨p, by simp [hai]⟩
-        simp only [relMap_row_iff, Function.comp_apply, Matrix.cons_val_zero] at hrow
-        obtain ⟨q, hbi⟩ := hrow
-        have hpq : p = q := by
-          have := hrow_eq i
-          simpa [hai, hbi] using this
+        simp only [Function.comp_apply, Matrix.cons_val_zero] at hbi
+        have hpq : p = q := by simpa [hai, hbi] using hrow_eq i
         rw [hbi, hpq]
       | pt p τ x =>
-        have hlab := (hab.sameAtomicType.rel_iff (.lab τ : Sym ℕ Language.empty 1) ![i]).mp
+        obtain ⟨q, _, hbi⟩ := (hab.sameAtomicType.rel_iff (.lab τ : Sym ℕ Language.empty 1) ![i]).mp
           ⟨p, x, by simp [hai]⟩
-        simp only [relMap_lab_iff, Function.comp_apply, Matrix.cons_val_zero] at hlab
-        obtain ⟨q, y, hbi⟩ := hlab
-        have hpq : p = q := by
-          have := hrow_eq i
-          simpa [hai, hbi] using this
-        rw [hbi]
-        simp [hpq]
+        simp only [Function.comp_apply, Matrix.cons_val_zero] at hbi
+        have hpq : p = q := by simpa [hai, hbi] using hrow_eq i
+        simp [hbi, hpq]
     obtain ⟨σ, hσslot, hσab⟩ := exists_perm_apply_eq_of_eq_iff Carrier.slot
       (fun i j => hab.sameAtomicType.eq_iff i j) hslot
     exact ⟨equivOfSlotPerm σ hσslot,
@@ -246,47 +216,30 @@ private def staircaseRow (k : ℕ) : PrefixRow where
 /-- The extended staircase word `[0, 1, …, k, k]`, of length `k + 2`. -/
 private def extendedStaircaseRow (k : ℕ) : PrefixRow where
   word := List.range (k + 1) ++ [k]
-  pairwise_le := by
-    rw [List.pairwise_append]
-    refine ⟨List.pairwise_lt_range.imp fun h => h.le, List.pairwise_singleton _ _, ?_⟩
-    intro a ha b hb
-    simp only [List.mem_range] at ha
-    simp only [List.mem_singleton] at hb
-    omega
+  pairwise_le := List.pairwise_append.mpr
+    ⟨List.pairwise_lt_range.imp fun h => h.le, List.pairwise_singleton _ _,
+      fun a ha b hb => by simp at ha hb; omega⟩
   getElem_le i := by
     dsimp only [Fin.getElem_fin]
     by_cases hi : i.1 < k + 1
-    · rw [List.getElem_append_left (by simp only [List.length_range]; exact hi)]
-      simp
-    · have hlen : (List.range (k + 1) ++ [k]).length = k + 2 := by simp
-      have hieq : i.1 = k + 1 := by have := i.2; omega
-      rw [List.getElem_append_right (by simp only [List.length_range]; omega)]
-      simp [hieq]
+    · rw [List.getElem_append_left (by simp [hi])]; simp
+    · have hieq : i.1 = k + 1 := by have := i.2; simp at this; omega
+      rw [List.getElem_append_right (by simp; omega)]; simp [hieq]
 
 /-- Every proper prefix of `extendedStaircaseRow k` is a prefix of `staircaseRow k`. -/
 private theorem prefix_staircaseRow_iff_of_ne (k : ℕ) {w : List ℕ}
     (hne : w ≠ (extendedStaircaseRow k).word) :
     w <+: (staircaseRow k).word ↔ w <+: (extendedStaircaseRow k).word := by
-  constructor
-  · intro h
-    exact h.trans (List.prefix_append _ _)
-  · intro h
-    obtain ⟨t, ht⟩ := h
-    have hne_nil : t ≠ [] := by
-      intro hnil
-      exact hne (by simpa [hnil] using ht)
-    have hlen : w.length ≤ (staircaseRow k).word.length := by
-      have htpos : 0 < t.length := List.length_pos_of_ne_nil hne_nil
-      have hsum : w.length + t.length = (staircaseRow k).word.length + 1 := by
-        have := congrArg List.length ht
-        simpa [staircaseRow, extendedStaircaseRow] using this
-      omega
-    have htake : w = (staircaseRow k).word.take w.length := by
-      calc w = (w ++ t).take w.length := by simp
-        _ = ((staircaseRow k).word ++ [k]).take w.length := by rw [ht]; rfl
-        _ = (staircaseRow k).word.take w.length := List.take_append_of_le_length hlen
-    rw [htake]
-    exact List.take_prefix _ _
+  refine ⟨fun h => h.trans (List.prefix_append _ _), fun ⟨t, ht⟩ => ?_⟩
+  have hne_nil : t ≠ [] := fun hnil => hne (by simpa [hnil] using ht)
+  have hlen : w.length ≤ (staircaseRow k).word.length := by
+    have htpos : 0 < t.length := List.length_pos_of_ne_nil hne_nil
+    have := congrArg List.length ht; simp [staircaseRow, extendedStaircaseRow] at this ⊢; omega
+  have htake : w = (staircaseRow k).word.take w.length := by
+    calc w = (w ++ t).take w.length := by simp
+      _ = ((staircaseRow k).word ++ [k]).take w.length := by rw [ht]; rfl
+      _ = (staircaseRow k).word.take w.length := List.take_append_of_le_length hlen
+  exact htake ▸ List.take_prefix _ _
 
 /-- The fibers of `staircaseRow k` and `extendedStaircaseRow k` are `BFEquiv k`-equivalent. -/
 private theorem bfEquiv_staircase_fibers (k : ℕ) (τ : Label ℕ) :
@@ -295,14 +248,10 @@ private theorem bfEquiv_staircase_fibers (k : ℕ) (τ : Label ℕ) :
       (Fin.elim0 : Fin 0 → prefixFiber (extendedStaircaseRow k) τ) := by
   rw [bfEquiv_empty_elim0_natCast_iff]
   by_cases hτ : τ.1 = (extendedStaircaseRow k).word
-  · have hnp : ¬ τ.1 <+: (staircaseRow k).word := by
-      intro hpre
-      have hlen := hpre.length_le
-      simp [hτ, staircaseRow, extendedStaircaseRow] at hlen
+  · have hnp : ¬ τ.1 <+: (staircaseRow k).word := fun hpre => by
+      have := hpre.length_le; simp [hτ, staircaseRow, extendedStaircaseRow] at this
     have hp : τ.1 <+: (extendedStaircaseRow k).word := hτ ▸ List.prefix_rfl
-    have hlast : τ.1.getLast τ.2 = k := by
-      have hlast' : (List.range (k + 1) ++ [k]).getLast (by simp) = k := List.getLast_concat
-      simp only [hτ, extendedStaircaseRow, hlast']
+    have hlast : τ.1.getLast τ.2 = k := by simp [hτ, extendedStaircaseRow]
     rw [enatCard_prefixFiber_of_not_prefix hnp, enatCard_prefixFiber_of_prefix hp, hlast,
       min_top_left, eq_comm, min_eq_right_iff]
     exact Nat.cast_le.mpr (Nat.le_succ k)
@@ -321,28 +270,16 @@ private theorem bfEquiv_staircaseRow (k : ℕ) :
   let eR := Equiv.swap (staircaseRow k) (extendedStaircaseRow k)
   have hF (p : PrefixRow) (τ : Label ℕ) :
       BFEquiv (L := Language.empty) (k : Ordinal.{0}) 0
-        (Fin.elim0 : Fin 0 → prefixFiber p τ)
-        (Fin.elim0 : Fin 0 → prefixFiber (eR p) τ) := by
+        (Fin.elim0 : Fin 0 → prefixFiber p τ) (Fin.elim0 : Fin 0 → prefixFiber (eR p) τ) := by
     by_cases hp1 : p = staircaseRow k
-    · subst hp1
-      have hswap : eR (staircaseRow k) = extendedStaircaseRow k := Equiv.swap_apply_left _ _
-      rw [hswap]
+    · subst hp1; rw [show eR _ = _ from Equiv.swap_apply_left _ _]
       exact bfEquiv_staircase_fibers k τ
     · by_cases hp2 : p = extendedStaircaseRow k
-      · subst hp2
-        have hswap : eR (extendedStaircaseRow k) = staircaseRow k := Equiv.swap_apply_right _ _
-        rw [hswap]
+      · subst hp2; rw [show eR _ = _ from Equiv.swap_apply_right _ _]
         exact (bfEquiv_staircase_fibers k τ).symm
-      · have hfix : eR p = p := Equiv.swap_apply_of_ne_of_ne hp1 hp2
-        rw [hfix]
-  have hrows := bfEquiv_rows_of_rowEquiv eR hF ![staircaseRow k]
-  have ha : (fun i : Fin 1 => (Carrier.row (![staircaseRow k] i) : OmegaWitness)) =
-      ![Carrier.row (staircaseRow k)] := by
-    ext t; rw [Subsingleton.elim t 0]; simp
-  have hb : (fun i : Fin 1 => (Carrier.row (eR (![staircaseRow k] i)) : OmegaWitness)) =
-      ![Carrier.row (extendedStaircaseRow k)] := by
-    ext t; rw [Subsingleton.elim t 0]; simp [eR]
-  simpa only [ha, hb] using hrows
+      · rw [show eR p = p from Equiv.swap_apply_of_ne_of_ne hp1 hp2]
+  convert bfEquiv_rows_of_rowEquiv eR hF ![staircaseRow k] using 1 <;>
+    (ext t; simp [Subsingleton.elim t 0, eR])
 
 /-- No automorphism of `OmegaWitness` sends `staircaseRow k` to `extendedStaircaseRow k`. -/
 private theorem not_aut_staircaseRow (k : ℕ) :
@@ -350,17 +287,14 @@ private theorem not_aut_staircaseRow (k : ℕ) :
         σ ∘ (![Carrier.row (staircaseRow k)] : Fin 1 → OmegaWitness) =
           ![Carrier.row (extendedStaircaseRow k)] := by
   rintro ⟨σ, hσ⟩
-  have h0 : σ (.row (staircaseRow k)) = .row (extendedStaircaseRow k) := by
-    simpa using congrFun hσ 0
-  rw [apply_row] at h0
-  have hrow : rowEquiv σ (staircaseRow k) = extendedStaircaseRow k := Carrier.row.inj h0
+  have hrow : rowEquiv σ (staircaseRow k) = extendedStaircaseRow k := by
+    have h0 := congrFun hσ 0
+    simpa [apply_row] using h0
   let τ : Label ℕ := ⟨(extendedStaircaseRow k).word, by simp [extendedStaircaseRow]⟩
   have hcard := ENat.card_congr (fiberEquiv σ (staircaseRow k) τ).toEquiv
   rw [hrow] at hcard
-  have hnp : ¬ τ.1 <+: (staircaseRow k).word := by
-    intro hpre
-    have hlen := hpre.length_le
-    simp [τ, staircaseRow, extendedStaircaseRow] at hlen
+  have hnp : ¬ τ.1 <+: (staircaseRow k).word := fun hpre => by
+    have := hpre.length_le; simp [τ, staircaseRow, extendedStaircaseRow] at this
   rw [enatCard_prefixFiber_of_not_prefix hnp,
     enatCard_prefixFiber_of_prefix List.prefix_rfl] at hcard
   exact ENat.natCast_ne_top _ hcard.symm
@@ -369,19 +303,18 @@ private theorem not_aut_staircaseRow (k : ℕ) :
 private theorem k_lt_orbitRank_staircaseRow (k : ℕ) :
     (k : Ordinal.{0}) <
       orbitRank (L := lang ℕ Language.empty)
-        (![Carrier.row (staircaseRow k)] : Fin 1 → OmegaWitness) := by
-  refine lt_of_not_ge fun hle => not_aut_staircaseRow k ?_
-  have hst := (orbitRank_le_iff _ _).mp hle
-  exact (mem_orbitStable_iff_of_countable _ _).mp hst _ (bfEquiv_staircaseRow k)
+        (![Carrier.row (staircaseRow k)] : Fin 1 → OmegaWitness) :=
+  lt_of_not_ge fun hle => not_aut_staircaseRow k <|
+    (mem_orbitStable_iff_of_countable _ _).mp ((orbitRank_le_iff _ _).mp hle) _
+      (bfEquiv_staircaseRow k)
 
 /-- The internal Scott rank of `OmegaWitness` is `ω`. -/
 theorem internalScottRank_omegaWitness :
-    internalScottRank (L := lang ℕ Language.empty) OmegaWitness = Ordinal.omega0 := by
-  apply le_antisymm
-  · rw [internalScottRank_le_iff]
-    exact fun _ a => orbitRank_omegaWitness_lt_omega0 a
-  · refine Ordinal.omega0_le.mpr fun k => ?_
-    exact ((k_lt_orbitRank_staircaseRow k).trans (orbitRank_lt_internalScottRank _)).le
+    internalScottRank (L := lang ℕ Language.empty) OmegaWitness = Ordinal.omega0 :=
+  le_antisymm
+    (by rw [internalScottRank_le_iff]; exact fun _ a => orbitRank_omegaWitness_lt_omega0 a)
+    (Ordinal.omega0_le.mpr fun k =>
+      ((k_lt_orbitRank_staircaseRow k).trans (orbitRank_lt_internalScottRank _)).le)
 
 /-! ### The Cantor family of companions in the level-`ω` class -/
 
@@ -397,43 +330,36 @@ theorem companionPath_two_mul (z : ℕ → Bool) (n : ℕ) : companionPath z (2 
 @[simp]
 theorem companionPath_two_mul_add_one (z : ℕ → Bool) (n : ℕ) :
     companionPath z (2 * n + 1) = n + (z n).toNat := by
-  simp only [companionPath]
-  have hdiv : (2 * n + 1) / 2 = n := by omega
-  have hmod : (2 * n + 1) % 2 = 1 := by omega
-  simp [hdiv, hmod]
+  unfold companionPath
+  rw [show (2 * n + 1) / 2 = n by omega, show (2 * n + 1) % 2 = 1 by omega]
+  simp
 
 /-- Every entry of `companionPath z` is bounded by its index. -/
 theorem companionPath_le_self (z : ℕ → Bool) (i : ℕ) : companionPath z i ≤ i := by
-  unfold companionPath
-  split_ifs <;> cases z (i / 2) <;> simp <;> omega
+  unfold companionPath; split_ifs <;> cases z (i / 2) <;> simp <;> omega
 
 /-- `companionPath z` is nondecreasing. -/
 theorem companionPath_mono (z : ℕ → Bool) : Monotone (companionPath z) := by
   intro i j hij
   unfold companionPath
   by_cases hdiv : i / 2 = j / 2
-  · rw [hdiv]
-    split_ifs <;> omega
+  · rw [hdiv]; split_ifs <;> omega
   · have hlt : i / 2 < j / 2 := Nat.lt_of_le_of_ne (Nat.div_le_div_right hij) hdiv
     have hb1 : (z (i / 2)).toNat ≤ 1 := by cases z (i / 2) <;> decide
     split_ifs <;> omega
 
 /-- Distinct binary sequences induce distinct companion paths. -/
-theorem companionPath_injective : Function.Injective companionPath := by
-  intro z z' h
-  funext n
-  have hval := congrFun h (2 * n + 1)
-  simp only [companionPath_two_mul_add_one, add_right_inj] at hval
-  cases hz : z n <;> cases hz' : z' n <;> simp_all
+theorem companionPath_injective : Function.Injective companionPath :=
+  fun z z' h => funext fun n => by
+    have hval := congrFun h (2 * n + 1)
+    simp only [companionPath_two_mul_add_one, add_right_inj] at hval
+    cases hz : z n <;> cases hz' : z' n <;> simp_all
 
 /-- The length-`k` initial prefix of `companionPath z`, as a `PrefixRow`. -/
 def pathPrefix (z : ℕ → Bool) (k : ℕ) : PrefixRow where
   word := List.ofFn fun i : Fin k => companionPath z i.1
-  pairwise_le := by
-    rw [List.pairwise_iff_getElem]
-    intro i j hi hj hij
-    simp only [List.getElem_ofFn]
-    exact companionPath_mono z hij.le
+  pairwise_le := List.pairwise_iff_getElem.mpr fun _ _ _ _ hij => by
+    simp only [List.getElem_ofFn]; exact companionPath_mono z hij.le
   getElem_le i := by
     simp only [Fin.getElem_fin, List.getElem_ofFn]
     exact companionPath_le_self z i.1
@@ -449,23 +375,15 @@ theorem pathPrefix_getElem (z : ℕ → Bool) (k i : ℕ) (hi : i < (pathPrefix 
 
 private theorem isPrefix_pathPrefix_iff (z : ℕ → Bool) (w : List ℕ) (k : ℕ) :
     w <+: (pathPrefix z k).word ↔ w.length ≤ k ∧ w = (pathPrefix z w.length).word := by
-  constructor
-  · intro h
-    obtain ⟨t, ht⟩ := h
-    have hlen : w.length ≤ k := by
-      have := congrArg List.length ht
-      simp only [List.length_append, pathPrefix_length] at this
-      omega
-    refine ⟨hlen, List.ext_getElem (by simp) fun i hi₁ hi₂ => ?_⟩
+  refine ⟨fun ⟨t, ht⟩ => ?_, fun ⟨hlen, hw⟩ => ?_⟩
+  · have hlen : w.length ≤ k := by have := congrArg List.length ht; simp at this; omega
+    refine ⟨hlen, List.ext_getElem (by simp) fun i hi₁ _ => ?_⟩
     have hget : w[i] = (pathPrefix z k).word[i]'(by simp; omega) := by
       simp only [← ht, List.getElem_append_left hi₁]
     simp [hget]
-  · rintro ⟨hlen, hw⟩
-    have htake : (pathPrefix z w.length).word = (pathPrefix z k).word.take w.length := by
-      refine List.ext_getElem (by simp [Nat.min_eq_left hlen]) fun i hi₁ hi₂ => ?_
-      simp [List.getElem_take]
-    rw [hw, htake]
-    exact List.take_prefix _ _
+  · have htake : (pathPrefix z w.length).word = (pathPrefix z k).word.take w.length :=
+      List.ext_getElem (by simp [Nat.min_eq_left hlen]) fun i _ _ => by simp [List.getElem_take]
+    exact hw ▸ htake ▸ List.take_prefix _ _
 
 private theorem getLast_pathPrefix (z : ℕ → Bool) {τ : Label ℕ}
     (h : τ.1 = (pathPrefix z τ.1.length).word) :
@@ -493,24 +411,17 @@ instance (z : ℕ → Bool) (r : Option PrefixRow) (τ : Label ℕ) :
     Countable (companionFiber z r τ) := by
   cases r with
   | some p => exact inferInstanceAs (Countable (prefixFiber p τ))
-  | none =>
-    dsimp only [companionFiber]
-    split_ifs <;> infer_instance
+  | none => dsimp only [companionFiber]; split_ifs <;> infer_instance
 
 private theorem enatCard_companionFiber_none_of_eq {z : ℕ → Bool} {τ : Label ℕ}
     (h : τ.1 = (pathPrefix z τ.1.length).word) :
     ENat.card (companionFiber z none τ) = (τ.1.getLast τ.2 + 1 : ℕ) := by
-  dsimp only [companionFiber]
-  split_ifs
-  simp only [ENat.card_eq_coe_fintype_card, Fintype.card_fin]
+  dsimp only [companionFiber]; split_ifs; simp
 
 private theorem enatCard_companionFiber_none_of_ne {z : ℕ → Bool} {τ : Label ℕ}
     (h : τ.1 ≠ (pathPrefix z τ.1.length).word) :
     ENat.card (companionFiber z none τ) = ⊤ := by
-  dsimp only [companionFiber]
-  split_ifs with hc
-  · exact (h hc).elim
-  · exact ENat.card_eq_top_of_infinite
+  simp [companionFiber, h, ENat.card_eq_top_of_infinite]
 
 /-- The companion row assembly associated to `z : ℕ → Bool`. -/
 abbrev OmegaCompanion (z : ℕ → Bool) : Type := Carrier (Option PrefixRow) (companionFiber z)
@@ -537,35 +448,24 @@ private def shiftInv (z : ℕ → Bool) (m : ℕ) (p : PrefixRow) : Option Prefi
 private def shiftEquiv (z : ℕ → Bool) (m : ℕ) : Option PrefixRow ≃ PrefixRow where
   toFun := shiftFun z m
   invFun := shiftInv z m
-  left_inv r := by
-    cases r with
-    | none => simp [shiftFun, shiftInv]
-    | some p =>
+  left_inv
+    | none => by simp [shiftFun, shiftInv]
+    | some p => by
       dsimp only [shiftFun, shiftInv]
       split_ifs with h1 h2 h3
-      · simp only [pathPrefix_length] at h3
-        omega
-      · simp only [pathPrefix_length, Nat.add_sub_cancel]
-        exact congrArg some h1.2.symm
-      · exfalso
-        exact h2 ⟨by simp; omega, by simp⟩
+      · simp only [pathPrefix_length] at h3; omega
+      · simpa only [pathPrefix_length, Nat.add_sub_cancel] using congrArg some h1.2.symm
+      · exact (h2 ⟨by simp; omega, by simp⟩).elim
       · rfl
   right_inv p := by
     dsimp only [shiftFun, shiftInv]
     split_ifs with h1 h2
-    · simp only [← h2]
-      exact h1.2.symm
-    · dsimp only
-      split_ifs with hcond
-      · simp only [pathPrefix_length]
-        have hsub : p.word.length - 1 + 1 = p.word.length := by omega
-        rw [hsub]
-        exact h1.2.symm
-      · exfalso
-        exact hcond ⟨by simp; omega, by simp⟩
-    · dsimp only
-      split_ifs
-      rfl
+    · simpa only [← h2] using h1.2.symm
+    · dsimp only; split_ifs with hcond
+      · simpa only [pathPrefix_length, show p.word.length - 1 + 1 = p.word.length by omega] using
+          h1.2.symm
+      · exact (hcond ⟨by simp; omega, by simp⟩).elim
+    · dsimp only; split_ifs; rfl
 
 /-- Every prefix of `companionPath z` of length strictly greater than `2 * m` has last entry at
 least `m`. -/
@@ -574,8 +474,7 @@ private theorem le_getLast_add_one_of_two_mul_lt (z : ℕ → Bool) {m : ℕ} {�
     m ≤ τ.1.getLast τ.2 + 1 := by
   rw [getLast_pathPrefix z hτ]
   have hmono := companionPath_mono z (by omega : 2 * m ≤ τ.1.length - 1)
-  rw [companionPath_two_mul] at hmono
-  omega
+  rw [companionPath_two_mul] at hmono; omega
 
 /-- Fiber matching at the extra path row `none` under `shiftEquiv z m`. -/
 private theorem bfEquiv_shiftEquiv_fibers_none (z : ℕ → Bool) (m : ℕ) (τ : Label ℕ) :
@@ -583,18 +482,15 @@ private theorem bfEquiv_shiftEquiv_fibers_none (z : ℕ → Bool) (m : ℕ) (τ 
       min (ENat.card (prefixFiber (pathPrefix z (2 * m)) τ)) (m : ℕ∞) := by
   by_cases hτ : τ.1 = (pathPrefix z τ.1.length).word
   · by_cases hlen : τ.1.length ≤ 2 * m
-    · have hp : τ.1 <+: (pathPrefix z (2 * m)).word :=
-        (isPrefix_pathPrefix_iff z τ.1 (2 * m)).mpr ⟨hlen, hτ⟩
-      rw [enatCard_companionFiber_none_of_eq hτ, enatCard_prefixFiber_of_prefix hp]
+    · rw [enatCard_companionFiber_none_of_eq hτ,
+        enatCard_prefixFiber_of_prefix ((isPrefix_pathPrefix_iff z τ.1 (2 * m)).mpr ⟨hlen, hτ⟩)]
     · have hnp : ¬ τ.1 <+: (pathPrefix z (2 * m)).word := by
-        rw [isPrefix_pathPrefix_iff]
-        exact fun ⟨h1, _⟩ => hlen h1
+        rw [isPrefix_pathPrefix_iff]; exact fun ⟨h1, _⟩ => hlen h1
       rw [enatCard_companionFiber_none_of_eq hτ, enatCard_prefixFiber_of_not_prefix hnp,
         min_top_left, min_eq_right_iff]
       exact Nat.cast_le.mpr (le_getLast_add_one_of_two_mul_lt z hτ (by omega))
   · have hnp : ¬ τ.1 <+: (pathPrefix z (2 * m)).word := by
-      rw [isPrefix_pathPrefix_iff]
-      exact fun ⟨_, h2⟩ => hτ h2
+      rw [isPrefix_pathPrefix_iff]; exact fun ⟨_, h2⟩ => hτ h2
     rw [enatCard_companionFiber_none_of_ne hτ, enatCard_prefixFiber_of_not_prefix hnp]
 
 /-- Fiber matching along shifted tail prefixes `pathPrefix z k ↦ pathPrefix z (k + 1)` for
@@ -604,9 +500,7 @@ private theorem bfEquiv_shiftEquiv_fibers_tail (z : ℕ → Bool) {m k : ℕ} (h
     min (ENat.card (prefixFiber (pathPrefix z k) τ)) (m : ℕ∞) =
       min (ENat.card (prefixFiber (pathPrefix z (k + 1)) τ)) (m : ℕ∞) := by
   by_cases hmatch : τ.1.length = k + 1 ∧ τ.1 = (pathPrefix z τ.1.length).word
-  · have hnp : ¬ τ.1 <+: (pathPrefix z k).word := by
-      rw [isPrefix_pathPrefix_iff]
-      omega
+  · have hnp : ¬ τ.1 <+: (pathPrefix z k).word := by rw [isPrefix_pathPrefix_iff]; omega
     have hpr : τ.1 <+: (pathPrefix z (k + 1)).word :=
       (isPrefix_pathPrefix_iff z τ.1 (k + 1)).mpr ⟨by omega, hmatch.2⟩
     rw [enatCard_prefixFiber_of_not_prefix hnp, enatCard_prefixFiber_of_prefix hpr,
@@ -634,9 +528,8 @@ private theorem bfEquiv_shiftEquiv_fibers (z : ℕ → Bool) (m : ℕ)
     dsimp only [shiftEquiv, Equiv.coe_fn_mk, shiftFun]
     split_ifs with hp
     · rcases hp with ⟨hlen, hpeq⟩
-      have h1 : companionFiber z (some p) τ = prefixFiber (pathPrefix z p.word.length) τ := by
-        simp [companionFiber, ← hpeq]
-      rw [h1]
+      rw [show companionFiber z (some p) τ = prefixFiber (pathPrefix z p.word.length) τ from
+        congrArg (fun r => prefixFiber r τ) hpeq]
       exact bfEquiv_shiftEquiv_fibers_tail z hlen τ
     · rfl
 
@@ -654,69 +547,51 @@ theorem bfEquiv_omega0_omegaCompanion_omegaWitness (z : ℕ → Bool) :
 private theorem false_of_fiberEquiv_none_some (z : ℕ → Bool) (p : PrefixRow)
     (hF : ∀ τ,
       Nonempty (companionFiber z none τ ≃[Language.empty] prefixFiber p τ)) : False := by
-  let τ : Label ℕ := ⟨(pathPrefix z (p.word.length + 1)).word, by
-    intro hnil
-    have hlen := congrArg List.length hnil
-    simp at hlen⟩
-  have hτeq : τ.1 = (pathPrefix z τ.1.length).word := by simp [τ]
-  have hτnp : ¬ τ.1 <+: p.word := by
-    intro hpre
-    have hlen := hpre.length_le
-    simp [τ] at hlen
+  let τ : Label ℕ := ⟨(pathPrefix z (p.word.length + 1)).word, List.ne_nil_of_length_pos (by simp)⟩
+  have hτnp : ¬ τ.1 <+: p.word := fun hpre => by have := hpre.length_le; simp [τ] at this
   obtain ⟨e⟩ := hF τ
   have hcard := ENat.card_congr e.toEquiv
-  rw [enatCard_companionFiber_none_of_eq hτeq, enatCard_prefixFiber_of_not_prefix hτnp] at hcard
+  rw [enatCard_companionFiber_none_of_eq (by simp [τ]),
+    enatCard_prefixFiber_of_not_prefix hτnp] at hcard
   exact ENat.natCast_ne_top _ hcard
 
 /-- No companion `OmegaCompanion z` is isomorphic to `OmegaWitness`. -/
 theorem isEmpty_equiv_omegaCompanion_omegaWitness (z : ℕ → Bool) :
     IsEmpty (OmegaCompanion z ≃[lang ℕ Language.empty] OmegaWitness) :=
-  ⟨fun e =>
-    false_of_fiberEquiv_none_some z (rowEquiv e none) fun τ => ⟨fiberEquiv e none τ⟩⟩
+  ⟨fun e => false_of_fiberEquiv_none_some z (rowEquiv e none) fun τ => ⟨fiberEquiv e none τ⟩⟩
 
 /-- Distinct sequences `z ≠ z'` produce non-isomorphic companions. -/
 theorem isEmpty_equiv_omegaCompanion {z z' : ℕ → Bool} (hz : z ≠ z') :
-    IsEmpty (OmegaCompanion z ≃[lang ℕ Language.empty] OmegaCompanion z') := by
-  refine ⟨fun e => ?_⟩
+    IsEmpty (OmegaCompanion z ≃[lang ℕ Language.empty] OmegaCompanion z') := ⟨fun e => by
   cases hrow : rowEquiv e none with
   | some p =>
-    refine false_of_fiberEquiv_none_some z p fun τ => ?_
-    have hfib := fiberEquiv e none τ
-    rw [hrow] at hfib
-    exact ⟨hfib⟩
+    exact false_of_fiberEquiv_none_some z p fun τ => by
+      have he := fiberEquiv e none τ; rw [hrow] at he; exact ⟨he⟩
   | none =>
-    have hne_path : companionPath z ≠ companionPath z' := fun h => hz (companionPath_injective h)
-    have hex : ∃ n, companionPath z n ≠ companionPath z' n := Function.ne_iff.mp hne_path
-    obtain ⟨n, hn⟩ := hex
-    let τ : Label ℕ := ⟨(pathPrefix z (n + 1)).word, by
-      intro hnil
-      have hlen := congrArg List.length hnil
-      simp at hlen⟩
-    have hτz : τ.1 = (pathPrefix z τ.1.length).word := by simp [τ]
-    have hτz' : τ.1 ≠ (pathPrefix z' τ.1.length).word := by
-      intro heq
-      have hlen : τ.1.length = n + 1 := by simp [τ]
+    obtain ⟨n, hn⟩ := Function.ne_iff.mp (companionPath_injective.ne hz)
+    let τ : Label ℕ := ⟨(pathPrefix z (n + 1)).word, List.ne_nil_of_length_pos (by simp)⟩
+    have hτz' : τ.1 ≠ (pathPrefix z' τ.1.length).word := fun heq => by
       have hget := congrArg (fun l : List ℕ => l[n]?) heq
-      simp only [τ, hlen,
+      simp only [τ, pathPrefix_length,
         List.getElem?_eq_getElem (by simp : n < (pathPrefix z (n + 1)).word.length),
         List.getElem?_eq_getElem (by simp : n < (pathPrefix z' (n + 1)).word.length),
         pathPrefix_getElem, Option.some.injEq] at hget
       exact hn hget
-    have hfib := fiberEquiv e none τ
-    rw [hrow] at hfib
-    have hcard := ENat.card_congr hfib.toEquiv
-    rw [enatCard_companionFiber_none_of_eq hτz,
+    have he := fiberEquiv e none τ
+    rw [hrow] at he
+    have hcard := ENat.card_congr he.toEquiv
+    rw [enatCard_companionFiber_none_of_eq (by simp [τ]),
       enatCard_companionFiber_none_of_ne hτz'] at hcard
-    exact ENat.natCast_ne_top _ hcard
+    exact ENat.natCast_ne_top _ hcard⟩
 
 /-- The Scott height of `OmegaWitness` strictly exceeds `ω`, even though its internal Scott rank
 is `ω`. -/
 theorem omega0_lt_scottHeight_omegaWitness :
-    Ordinal.omega0 < scottHeight (L := lang ℕ Language.empty) OmegaWitness := by
-  refine lt_of_not_ge fun hle => ?_
-  obtain ⟨e⟩ := nonempty_equiv_of_bfEquiv_of_scottHeight_le hle
-    (bfEquiv_omega0_omegaCompanion_omegaWitness (fun _ => false)).symm
-  exact (isEmpty_equiv_omegaCompanion_omegaWitness (fun _ => false)).false e.symm
+    Ordinal.omega0 < scottHeight (L := lang ℕ Language.empty) OmegaWitness :=
+  lt_of_not_ge fun hle =>
+    let ⟨e⟩ := nonempty_equiv_of_bfEquiv_of_scottHeight_le hle
+      (bfEquiv_omega0_omegaCompanion_omegaWitness (fun _ => false)).symm
+    (isEmpty_equiv_omegaCompanion_omegaWitness (fun _ => false)).false e.symm
 
 /-- The Scott height of `OmegaWitness` is at most `ω + ω`. -/
 theorem scottHeight_omegaWitness_le :

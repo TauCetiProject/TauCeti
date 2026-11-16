@@ -234,43 +234,30 @@ private theorem mem_orbitStable_comp_of_mem {n : ℕ} {a : Fin n → M} {α : Or
     α ∈ orbitStable (L := L) (e ∘ a) := by
   rw [mem_orbitStable_iff] at h ⊢
   intro b hab β
-  have hb : BFEquiv (L := L) α n a (e.symm ∘ b) :=
-    (e.bfEquiv α a).trans (hab.trans (e.symm.bfEquiv α b))
-  have hb' := h (e.symm ∘ b) hb β
-  have hcomp : e ∘ (e.symm ∘ b) = b := by
-    ext i
-    exact e.apply_symm_apply (b i)
+  have hb' := h (e.symm ∘ b) ((e.bfEquiv α a).trans (hab.trans (e.symm.bfEquiv α b))) β
+  have hcomp : e ∘ (e.symm ∘ b) = b := funext fun i => e.apply_symm_apply (b i)
   simpa only [hcomp] using (e.bfEquiv β a).symm.trans (hb'.trans (e.bfEquiv β (e.symm ∘ b)))
 
 /-- Orbit stability of a tuple is invariant under isomorphism. -/
 theorem mem_orbitStable_comp_iff (e : M ≃[L] N) {n : ℕ} (a : Fin n → M) {α : Ordinal.{w}} :
-    α ∈ orbitStable (L := L) (e ∘ a) ↔ α ∈ orbitStable (L := L) a := by
-  refine ⟨fun h => ?_, fun h => mem_orbitStable_comp_of_mem h e⟩
-  have hcomp : e.symm ∘ (e ∘ a) = a := by
-    ext i
-    exact e.symm_apply_apply (a i)
-  simpa only [hcomp] using mem_orbitStable_comp_of_mem h e.symm
+    α ∈ orbitStable (L := L) (e ∘ a) ↔ α ∈ orbitStable (L := L) a :=
+  ⟨fun h => by
+      have hcomp : e.symm ∘ (e ∘ a) = a := funext fun i => e.symm_apply_apply (a i)
+      simpa only [hcomp] using mem_orbitStable_comp_of_mem h e.symm,
+    fun h => mem_orbitStable_comp_of_mem h e⟩
 
 /-- The orbit rank of a tuple is invariant under isomorphism. -/
 @[simp]
 theorem orbitRank_comp (e : M ≃[L] N) {n : ℕ} (a : Fin n → M) :
     orbitRank (L := L) (e ∘ a) = orbitRank (L := L) a := by
-  simp only [orbitRank_def]
-  congr 1
-  ext α
-  exact e.mem_orbitStable_comp_iff a
+  simp only [orbitRank_def, Set.ext_iff.mpr fun _ => e.mem_orbitStable_comp_iff a]
 
 /-- The internal Scott rank is an isomorphism invariant. -/
 theorem internalScottRank_eq (e : M ≃[L] N) :
     internalScottRank (L := L) M = internalScottRank (L := L) N := by
-  apply le_antisymm
-  · rw [internalScottRank_le_iff]
-    intro n a
-    rw [← e.orbitRank_comp a]
-    exact orbitRank_lt_internalScottRank (e ∘ a)
-  · rw [internalScottRank_le_iff]
-    intro n b
-    rw [← e.symm.orbitRank_comp b]
-    exact orbitRank_lt_internalScottRank (e.symm ∘ b)
+  apply le_antisymm <;> rw [internalScottRank_le_iff]
+  · exact fun _ a => by rw [← e.orbitRank_comp a]; exact orbitRank_lt_internalScottRank (e ∘ a)
+  · exact fun _ b => by
+      rw [← e.symm.orbitRank_comp b]; exact orbitRank_lt_internalScottRank (e.symm ∘ b)
 
 end FirstOrder.Language.Equiv

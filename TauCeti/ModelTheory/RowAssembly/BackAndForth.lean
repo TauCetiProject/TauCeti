@@ -98,17 +98,10 @@ variable {a : Fin n → Carrier R₁ C₁} {b : Fin n → Carrier R₂ C₂}
 /-- Fiberwise matching is symmetric along the inverse row bijection. -/
 theorem symm (h : MatchedAlong (Lc := Lc) eR α a b) :
     MatchedAlong (Lc := Lc) eR.symm α b a where
-  slot_eq i := by
-    rw [h.slot_eq i]
-    cases (a i).slot with
-    | inl r => simp
-    | inr p =>
-      rcases p with ⟨r, τ⟩
-      simp
+  slot_eq i := by rw [h.slot_eq i]; rcases (a i).slot with r | ⟨r, τ⟩ <;> simp
   fiber_bfEquiv r₂ τ m idx y x hy hx := by
     generalize hr : eR.symm r₂ = r₁ at x hx
-    have hr' : r₂ = eR r₁ := by rw [← hr, eR.apply_symm_apply]
-    subst hr'
+    obtain rfl : r₂ = eR r₁ := by rw [← hr, eR.apply_symm_apply]
     exact (h.fiber_bfEquiv r₁ τ m idx x y hx hy).symm
 
 /-- Fiberwise matching descends to every lower back-and-forth level. -/
@@ -132,9 +125,7 @@ private theorem exists_pt_of_eq_pt (h : MatchedAlong (Lc := Lc) eR α a b) {i : 
 private theorem eq_imp (h : MatchedAlong (Lc := Lc) eR (0 : Ordinal.{o}) a b)
     {i j : Fin n} (hij : a i = a j) : b i = b j := by
   cases hai : a i with
-  | row r =>
-    have haj : a j = .row r := hij.symm.trans hai
-    rw [h.eq_row_of_eq_row hai, h.eq_row_of_eq_row haj]
+  | row r => rw [h.eq_row_of_eq_row hai, h.eq_row_of_eq_row (hij.symm.trans hai)]
   | pt r τ x =>
     have haj : a j = .pt r τ x := hij.symm.trans hai
     obtain ⟨y₁, hy₁⟩ := h.exists_pt_of_eq_pt hai
@@ -151,27 +142,24 @@ private theorem rel_imp (h : MatchedAlong (Lc := Lc) eR (0 : Ordinal.{o}) a b)
     {k : ℕ} (s : Sym U Lc k) (f : Fin k → Fin n)
     (hs : RelMap (L := lang U Lc) s (a ∘ f)) : RelMap (L := lang U Lc) s (b ∘ f) := by
   cases s with
-  | row =>
-    obtain ⟨r, hr⟩ := (relMap_row_iff _).mp hs
-    exact ⟨eR r, h.eq_row_of_eq_row hr⟩
+  | row => obtain ⟨r, hr⟩ := hs; exact ⟨eR r, h.eq_row_of_eq_row hr⟩
   | own =>
-    obtain ⟨r, τ, x, h0, h1⟩ := (relMap_own_iff _).mp hs
+    obtain ⟨r, τ, _, h0, h1⟩ := hs
     obtain ⟨y, hy⟩ := h.exists_pt_of_eq_pt h0
     exact ⟨eR r, τ, y, hy, h.eq_row_of_eq_row h1⟩
   | lab τ =>
-    obtain ⟨r, x, h0⟩ := (relMap_lab_iff _ _).mp hs
+    obtain ⟨r, _, h0⟩ := hs
     obtain ⟨y, hy⟩ := h.exists_pt_of_eq_pt h0
     exact ⟨eR r, y, hy⟩
   | lift R =>
-    obtain ⟨r, τ, x, hx, hR⟩ := (relMap_lift_iff _ _).mp hs
-    have hy_ex (i : Fin _) : ∃ y : C₂ (eR r) τ, b (f i) = .pt (eR r) τ y :=
-      h.exists_pt_of_eq_pt (hx i)
-    let y : Fin _ → C₂ (eR r) τ := fun i => (hy_ex i).choose
-    have hy (i : Fin _) : b (f i) = .pt (eR r) τ (y i) := (hy_ex i).choose_spec
-    have hbf := h.fiber_bfEquiv r τ _ f x y hx hy
-    exact ⟨eR r, τ, y, hy, (hbf.sameAtomicType.rel_iff R id).mp hR⟩
+    obtain ⟨r, τ, x, hx, hR⟩ := hs
+    let hy_ex i := h.exists_pt_of_eq_pt (hx i)
+    have hbf := h.fiber_bfEquiv r τ _ f x (fun i => (hy_ex i).choose) hx
+      (fun i => (hy_ex i).choose_spec)
+    exact ⟨eR r, τ, fun i => (hy_ex i).choose, fun i => (hy_ex i).choose_spec,
+      (hbf.sameAtomicType.rel_iff R id).mp hR⟩
   | lift0 R τ =>
-    obtain ⟨r, h0, hR⟩ := (relMap_lift0_iff _ _ _).mp hs
+    obtain ⟨r, h0, hR⟩ := hs
     have hbf := h.fiber_bfEquiv r τ 0 Fin.elim0 Fin.elim0 Fin.elim0
       (fun j => j.elim0) (fun j => j.elim0)
     have hrel := hbf.sameAtomicType.rel_iff R Fin.elim0
@@ -183,8 +171,7 @@ private theorem rel_imp (h : MatchedAlong (Lc := Lc) eR (0 : Ordinal.{o}) a b)
 theorem sameAtomicType (h : MatchedAlong (Lc := Lc) eR (0 : Ordinal.{o}) a b) :
     SameAtomicType (L := lang U Lc) a b :=
   (sameAtomicType_iff a b).mpr
-    ⟨fun _ _ => ⟨h.eq_imp, h.symm.eq_imp⟩,
-      fun s f => ⟨h.rel_imp s f, h.symm.rel_imp s f⟩⟩
+    ⟨fun _ _ => ⟨h.eq_imp, h.symm.eq_imp⟩, fun s f => ⟨h.rel_imp s f, h.symm.rel_imp s f⟩⟩
 
 /-- Any subtuple of `snoc a p` / `snoc b q` whose indices avoid `Fin.last n` inherits fiberwise
 `BFEquiv`-equivalence from `MatchedAlong`. -/
@@ -195,28 +182,18 @@ private theorem fiber_bfEquiv_snoc_of_ne_last (h : MatchedAlong (Lc := Lc) eR α
     (hx : ∀ j, (snoc a p : Fin (n + 1) → Carrier R₁ C₁) (idx j) = Carrier.pt r τ (x j))
     (hy : ∀ j,
       (snoc b q : Fin (n + 1) → Carrier R₂ C₂) (idx j) = Carrier.pt (eR r) τ (y j)) :
-    BFEquiv (L := Lc) α m x y := by
-  let idx' : Fin m → Fin n := fun j => (idx j).castPred (hne j)
-  have hx' (j : Fin m) : a (idx' j) = .pt r τ (x j) := by
-    have := hx j
-    rwa [← castSucc_castPred (idx j) (hne j), snoc_castSucc] at this
-  have hy' (j : Fin m) : b (idx' j) = .pt (eR r) τ (y j) := by
-    have := hy j
-    rwa [← castSucc_castPred (idx j) (hne j), snoc_castSucc] at this
-  exact h.fiber_bfEquiv r τ m idx' x y hx' hy'
+    BFEquiv (L := Lc) α m x y :=
+  h.fiber_bfEquiv r τ m (fun j => (idx j).castPred (hne j)) x y
+    (fun j => by have := hx j; rwa [← castSucc_castPred (idx j) (hne j), snoc_castSucc] at this)
+    (fun j => by have := hy j; rwa [← castSucc_castPred (idx j) (hne j), snoc_castSucc] at this)
 
 /-- Forth extension of fiberwise matching by a row marker. -/
 private theorem exists_forth_row (h : MatchedAlong (Lc := Lc) eR (α + 1) a b) (r₀ : R₁) :
     MatchedAlong (Lc := Lc) eR α (snoc a (.row r₀)) (snoc b (.row (eR r₀))) where
-  slot_eq i := by
-    refine Fin.lastCases ?_ (fun j => ?_) i
-    · simp
-    · simpa using h.slot_eq j
-  fiber_bfEquiv r τ m idx x y hx hy := by
-    refine (h.mono le_self_add).fiber_bfEquiv_snoc_of_ne_last (fun j hlast => ?_) hx hy
-    have h0 := hx j
-    rw [hlast, snoc_last] at h0
-    cases h0
+  slot_eq i := Fin.lastCases (by simp) (fun j => by simpa using h.slot_eq j) i
+  fiber_bfEquiv _ _ _ _ _ _ hx hy :=
+    (h.mono le_self_add).fiber_bfEquiv_snoc_of_ne_last (fun j hlast => by
+      have h0 := hx j; rw [hlast, snoc_last] at h0; cases h0) hx hy
 
 /-- Reindexing a subtuple landing in the extended fiber `(r₀, τ₀)` through the enumerated
 existing points of `(r₀, τ₀)` together with the newly appended point. -/
@@ -237,33 +214,25 @@ private theorem fiber_bfEquiv_snoc_same_fiber {r₀ : R₁} {τ₀ : Label U}
     BFEquiv (L := Lc) α m x y := by
   have hcast {j : Fin m} (hj : idx j ≠ Fin.last n) :
       a ((idx j).castPred hj) = .pt r₀ τ₀ (x j) := by
-    have := hx j
-    rwa [← castSucc_castPred (idx j) hj, snoc_castSucc] at this
+    have := hx j; rwa [← castSucc_castPred (idx j) hj, snoc_castSucc] at this
   have hcast_b {j : Fin m} (hj : idx j ≠ Fin.last n) :
       b ((idx j).castPred hj) = .pt (eR r₀) τ₀ (y j) := by
-    have := hy j
-    rwa [← castSucc_castPred (idx j) hj, snoc_castSucc] at this
+    have := hy j; rwa [← castSucc_castPred (idx j) hj, snoc_castSucc] at this
   let g : Fin m → Fin (k + 1) := fun j =>
     if hj : idx j = Fin.last n then Fin.last k
     else (eS ⟨(idx j).castPred hj, x j, hcast hj⟩).castSucc
-  have hxg : snoc xS x₀ ∘ g = x := by
-    funext j
+  have hxg : snoc xS x₀ ∘ g = x := funext fun j => by
     dsimp only [Function.comp_apply, g]
     split_ifs with hj
-    · have := hx j
-      rw [hj, snoc_last] at this
-      simpa using Carrier.pt_inj_iff.mp this
+    · have := hx j; rw [hj, snoc_last] at this; rw [snoc_last]; exact Carrier.pt_inj_iff.mp this
     · rw [snoc_castSucc]
       have h1 := hxS (eS ⟨(idx j).castPred hj, x j, hcast hj⟩)
       rw [Equiv.symm_apply_apply] at h1
       exact Carrier.pt_inj_iff.mp (h1.symm.trans (hcast hj))
-  have hyg : snoc yS y₀ ∘ g = y := by
-    funext j
+  have hyg : snoc yS y₀ ∘ g = y := funext fun j => by
     dsimp only [Function.comp_apply, g]
     split_ifs with hj
-    · have := hy j
-      rw [hj, snoc_last] at this
-      simpa using Carrier.pt_inj_iff.mp this
+    · have := hy j; rw [hj, snoc_last] at this; rw [snoc_last]; exact Carrier.pt_inj_iff.mp this
     · rw [snoc_castSucc]
       have h1 := hyS (eS ⟨(idx j).castPred hj, x j, hcast hj⟩)
       rw [Equiv.symm_apply_apply] at h1
@@ -279,30 +248,25 @@ private theorem exists_forth_pt (h : MatchedAlong (Lc := Lc) eR (α + 1) a b)
   classical
   -- Collect all entries of `a` lying in fiber `(r₀, τ₀)` and take one forth step there.
   let S := {i : Fin n // ∃ x : C₁ r₀ τ₀, a i = .pt r₀ τ₀ x}
-  let k := Fintype.card S
-  let eS : S ≃ Fin k := Fintype.equivFin S
-  let xS : Fin k → C₁ r₀ τ₀ := fun j => (eS.symm j).2.choose
-  have hxS (j : Fin k) : a (eS.symm j).1 = .pt r₀ τ₀ (xS j) := (eS.symm j).2.choose_spec
-  have hyS_ex (j : Fin k) : ∃ y : C₂ (eR r₀) τ₀, b (eS.symm j).1 = .pt (eR r₀) τ₀ y :=
-    Carrier.exists_pt_of_slot_eq_inr ((h.slot_eq (eS.symm j).1).trans (by simp [hxS j]))
-  let yS : Fin k → C₂ (eR r₀) τ₀ := fun j => (hyS_ex j).choose
-  have hyS (j : Fin k) : b (eS.symm j).1 = .pt (eR r₀) τ₀ (yS j) := (hyS_ex j).choose_spec
-  have hS := h.fiber_bfEquiv r₀ τ₀ k (fun j => (eS.symm j).1) xS yS hxS hyS
+  let eS : S ≃ Fin (Fintype.card S) := Fintype.equivFin S
+  let xS j := (eS.symm j).2.choose
+  have hxS j : a (eS.symm j).1 = .pt r₀ τ₀ (xS j) := (eS.symm j).2.choose_spec
+  let hyS_ex j := Carrier.exists_pt_of_slot_eq_inr (r := eR r₀) (τ := τ₀)
+    ((h.slot_eq (eS.symm j).1).trans (by simp [hxS j]))
+  let yS j := (hyS_ex j).choose
+  have hyS j : b (eS.symm j).1 = .pt (eR r₀) τ₀ (yS j) := (hyS_ex j).choose_spec
+  have hS := h.fiber_bfEquiv r₀ τ₀ _ (fun j => (eS.symm j).1) xS yS hxS hyS
   obtain ⟨y₀, hxy₀⟩ := ((BFEquiv.add_one α xS yS).mp hS).2.1 x₀
-  refine ⟨y₀, ?_, ?_⟩
-  · intro i
-    refine Fin.lastCases ?_ (fun j => ?_) i
-    · simp
-    · simpa using h.slot_eq j
-  · intro r τ m idx x y hx hy
-    by_cases hrt : r = r₀ ∧ τ = τ₀
-    · rcases hrt with ⟨rfl, rfl⟩
-      exact fiber_bfEquiv_snoc_same_fiber hxS hyS hxy₀ idx x y hx hy
-    · refine (h.mono le_self_add).fiber_bfEquiv_snoc_of_ne_last (fun j hlast => ?_) hx hy
-      have hslot := congrArg Carrier.slot (hx j)
-      rw [hlast, snoc_last] at hslot
-      simp only [Carrier.slot_pt, Sum.inr.injEq, Prod.mk.injEq] at hslot
-      exact hrt ⟨hslot.1.symm, hslot.2.symm⟩
+  refine ⟨y₀, fun i => Fin.lastCases (by simp) (fun j => by simpa using h.slot_eq j) i,
+    fun r τ m idx x y hx hy => ?_⟩
+  by_cases hrt : r = r₀ ∧ τ = τ₀
+  · rcases hrt with ⟨rfl, rfl⟩
+    exact fiber_bfEquiv_snoc_same_fiber hxS hyS hxy₀ idx x y hx hy
+  · refine (h.mono le_self_add).fiber_bfEquiv_snoc_of_ne_last (fun j hlast => ?_) hx hy
+    have hslot := congrArg Carrier.slot (hx j)
+    rw [hlast, snoc_last] at hslot
+    simp only [Carrier.slot_pt, Sum.inr.injEq, Prod.mk.injEq] at hslot
+    exact hrt ⟨hslot.1.symm, hslot.2.symm⟩
 
 /-- One forth step for `MatchedAlong` at a successor level. -/
 private theorem exists_forth (h : MatchedAlong (Lc := Lc) eR (α + 1) a b)
@@ -323,10 +287,8 @@ theorem bfEquiv (h : MatchedAlong (Lc := Lc) eR α a b) :
   | zero => exact BFEquiv.zero.mpr h.sameAtomicType
   | add_one α ih =>
     refine (BFEquiv.add_one α a b).mpr ⟨ih (h.mono le_self_add), fun p => ?_, fun q => ?_⟩
-    · obtain ⟨q, hq⟩ := h.exists_forth p
-      exact ⟨q, ih hq⟩
-    · obtain ⟨p, hp⟩ := h.symm.exists_forth q
-      exact ⟨p, ih hp.symm⟩
+    · obtain ⟨q, hq⟩ := h.exists_forth p; exact ⟨q, ih hq⟩
+    · obtain ⟨p, hp⟩ := h.symm.exists_forth q; exact ⟨p, ih hp.symm⟩
   | limit α hα ih =>
     exact (BFEquiv.limit hα a b).mpr fun β hβ => ih β hβ (h.mono hβ.le)
 
@@ -338,12 +300,11 @@ theorem bfEquiv_elim0_of_rowEquiv (eR : R₁ ≃ R₂) {α : Ordinal.{o}}
     (hF : ∀ r τ, BFEquiv (L := Lc) α 0
       (Fin.elim0 : Fin 0 → C₁ r τ) (Fin.elim0 : Fin 0 → C₂ (eR r) τ)) :
     BFEquiv (L := lang U Lc) α 0
-      (Fin.elim0 : Fin 0 → Carrier R₁ C₁) (Fin.elim0 : Fin 0 → Carrier R₂ C₂) := by
-  refine MatchedAlong.bfEquiv (eR := eR) ⟨fun i => i.elim0, fun r τ m idx x y _ _ => ?_⟩
-  cases m with
-  | zero =>
-    simpa only [Subsingleton.elim x Fin.elim0, Subsingleton.elim y Fin.elim0] using hF r τ
-  | succ _ => exact (idx 0).elim0
+      (Fin.elim0 : Fin 0 → Carrier R₁ C₁) (Fin.elim0 : Fin 0 → Carrier R₂ C₂) :=
+  MatchedAlong.bfEquiv (eR := eR) ⟨fun i => i.elim0, fun r τ m idx x y _ _ => by
+    cases m with
+    | zero => simpa only [Subsingleton.elim x Fin.elim0, Subsingleton.elim y Fin.elim0] using hF r τ
+    | succ _ => exact (idx 0).elim0⟩
 
 /-- If a bijection of rows matches all fibers at depth `α` on empty tuples, then any tuple of row
 markers is `BFEquiv`-equivalent at depth `α` to its image under `eR`. -/
@@ -353,12 +314,11 @@ theorem bfEquiv_rows_of_rowEquiv (eR : R₁ ≃ R₂) {α : Ordinal.{o}}
     {n : ℕ} (rs : Fin n → R₁) :
     BFEquiv (L := lang U Lc) α n
       (fun i => (Carrier.row (rs i) : Carrier R₁ C₁))
-      (fun i => (Carrier.row (eR (rs i)) : Carrier R₂ C₂)) := by
-  refine MatchedAlong.bfEquiv (eR := eR) ⟨fun i => by simp, fun r τ m idx x y hx _ => ?_⟩
-  cases m with
-  | zero =>
-    simpa only [Subsingleton.elim x Fin.elim0, Subsingleton.elim y Fin.elim0] using hF r τ
-  | succ _ => exact nomatch hx 0
+      (fun i => (Carrier.row (eR (rs i)) : Carrier R₂ C₂)) :=
+  MatchedAlong.bfEquiv (eR := eR) ⟨fun _ => by simp, fun r τ m _ x y hx _ => by
+    cases m with
+    | zero => simpa only [Subsingleton.elim x Fin.elim0, Subsingleton.elim y Fin.elim0] using hF r τ
+    | succ _ => exact nomatch hx 0⟩
 
 end Assembly
 
@@ -382,20 +342,17 @@ private theorem sameAtomicType_fiber_of_sameAtomicType [Lc.IsRelational] {n : �
     | zero =>
       have hrel := h₀.rel_iff (.lift0 R τ : Sym U Lc 1) ![i₀]
       have ha : a ∘ ![i₀] = ![Carrier.row (C := C₁) r₁] := by
-        ext t; rw [Subsingleton.elim t 0]; simp [hr₁]
+        ext t; simp [Subsingleton.elim t 0, hr₁]
       have hb : b ∘ ![i₀] = ![Carrier.row (C := C₂) r₂] := by
-        ext t; rw [Subsingleton.elim t 0]; simp [hr₂]
+        ext t; simp [Subsingleton.elim t 0, hr₂]
       rw [ha, hb, relMap_lift0_row_iff, relMap_lift0_row_iff] at hrel
       simpa only [Subsingleton.elim (x ∘ f) Fin.elim0, Subsingleton.elim (y ∘ f) Fin.elim0]
         using hrel
     | succ l =>
       have hrel := h₀.rel_iff (.lift R : Sym U Lc (l + 1)) (idx ∘ f)
-      have ha : a ∘ (idx ∘ f) = fun t => Carrier.pt r₁ τ (x (f t)) :=
-        funext fun t => hx (f t)
-      have hb : b ∘ (idx ∘ f) = fun t => Carrier.pt r₂ τ (y (f t)) :=
-        funext fun t => hy (f t)
-      rw [ha, hb, relMap_lift_pt_iff, relMap_lift_pt_iff] at hrel
-      exact hrel
+      have ha : a ∘ (idx ∘ f) = fun t => Carrier.pt r₁ τ (x (f t)) := funext fun t => hx (f t)
+      have hb : b ∘ (idx ∘ f) = fun t => Carrier.pt r₂ τ (y (f t)) := funext fun t => hy (f t)
+      rwa [ha, hb, relMap_lift_pt_iff, relMap_lift_pt_iff] at hrel
 
 /-- One forth step of pointed fiber restriction: a point in fiber `(r₁, τ)` matches a point in
 fiber `(r₂, τ)`. -/
@@ -416,10 +373,8 @@ private theorem exists_fiber_forth {α : Ordinal.{o}} {n : ℕ}
   obtain rfl : r₂ = r' := Carrier.row.inj hrow
   have hlab := hq.sameAtomicType.rel_iff (.lab τ : Sym U Lc 1) ![Fin.last n]
   simp only [relMap_lab_iff, Function.comp_apply, Matrix.cons_val_zero, snoc_last, hqpt] at hlab
-  obtain ⟨r'', y', heq⟩ := hlab.mp ⟨r₁, x₀, rfl⟩
-  have hslot := congrArg Carrier.slot heq
-  simp only [Carrier.slot_pt, Sum.inr.injEq, Prod.mk.injEq] at hslot
-  obtain rfl : τ' = τ := hslot.2
+  obtain ⟨_, _, heq⟩ := hlab.mp ⟨r₁, x₀, rfl⟩
+  obtain rfl : τ' = τ := by cases heq; rfl
   exact ⟨y₀, hqpt ▸ hq⟩
 
 /-- **Pointed fiber restriction.** If `a` and `b` are `BFEquiv`-equivalent at depth `α` and
@@ -440,19 +395,17 @@ theorem bfEquiv_fiber_of_bfEquiv [Lc.IsRelational] {α : Ordinal.{o}} {n : ℕ}
       (BFEquiv.zero.mp h) hr₁ hr₂ τ idx x y hx hy)
   | add_one α ih =>
     refine (BFEquiv.add_one α x y).mpr
-      ⟨ih ((BFEquiv.add_one α a b).mp h).1 hr₁ hr₂ idx x y hx hy,
-        fun x₀ => ?_, fun y₀ => ?_⟩
+      ⟨ih ((BFEquiv.add_one α a b).mp h).1 hr₁ hr₂ idx x y hx hy, fun x₀ => ?_, fun y₀ => ?_⟩
     · obtain ⟨y₀, hy₀⟩ := exists_fiber_forth h hr₁ hr₂ τ x₀
-      refine ⟨y₀, ih hy₀ (i₀ := i₀.castSucc) (by simpa using hr₁) (by simpa using hr₂)
-        (snoc (castSucc ∘ idx) (Fin.last n)) (snoc x x₀) (snoc y y₀) ?_ ?_⟩
-      · intro j; exact Fin.lastCases (by simp) (fun t => by simpa using hx t) j
-      · intro j; exact Fin.lastCases (by simp) (fun t => by simpa using hy t) j
+      exact ⟨y₀, ih hy₀ (i₀ := i₀.castSucc) (by simpa using hr₁) (by simpa using hr₂)
+        (snoc (castSucc ∘ idx) (Fin.last n)) (snoc x x₀) (snoc y y₀)
+        (Fin.lastCases (by simp) fun t => by simpa using hx t)
+        (Fin.lastCases (by simp) fun t => by simpa using hy t)⟩
     · obtain ⟨x₀, hx₀⟩ := exists_fiber_forth h.symm hr₂ hr₁ τ y₀
-      refine ⟨x₀, ih hx₀.symm (i₀ := i₀.castSucc)
-        (by simpa using hr₁) (by simpa using hr₂)
-        (snoc (castSucc ∘ idx) (Fin.last n)) (snoc x x₀) (snoc y y₀) ?_ ?_⟩
-      · intro j; exact Fin.lastCases (by simp) (fun t => by simpa using hx t) j
-      · intro j; exact Fin.lastCases (by simp) (fun t => by simpa using hy t) j
+      exact ⟨x₀, ih hx₀.symm (i₀ := i₀.castSucc) (by simpa using hr₁) (by simpa using hr₂)
+        (snoc (castSucc ∘ idx) (Fin.last n)) (snoc x x₀) (snoc y y₀)
+        (Fin.lastCases (by simp) fun t => by simpa using hx t)
+        (Fin.lastCases (by simp) fun t => by simpa using hy t)⟩
   | limit α hα ih =>
     exact (BFEquiv.limit hα x y).mpr fun β hβ =>
       ih β hβ ((BFEquiv.limit hα a b).mp h β hβ) hr₁ hr₂ idx x y hx hy
@@ -479,8 +432,7 @@ theorem bfEquiv_append_ownerRow {β : Ordinal.{o}} {n : ℕ}
       (Fin.append a fun i => .row (a i).ownerRow)
       (Fin.append b fun i => .row (b i).ownerRow) := by
   obtain ⟨y, hy⟩ := h.exists_bfEquiv_append n fun i => .row (a i).ownerRow
-  have hy_eq : y = fun i => .row (b i).ownerRow := by
-    funext i
+  have hy_eq : y = fun i => .row (b i).ownerRow := funext fun i => by
     cases hai : a i with
     | row r =>
       have heq := (hy.sameAtomicType.eq_iff (Fin.castAdd n i) (Fin.natAdd n i)).mp
@@ -493,8 +445,7 @@ theorem bfEquiv_append_ownerRow {β : Ordinal.{o}} {n : ℕ}
       rw [← heq, hbi, Carrier.ownerRow_row]
     | pt r τ x =>
       have hown := (hy.sameAtomicType.rel_iff (.own : Sym U Lc 2)
-        ![Fin.castAdd n i, Fin.natAdd n i]).mp
-        ⟨r, τ, x,
+        ![Fin.castAdd n i, Fin.natAdd n i]).mp ⟨r, τ, x,
           by simp only [Function.comp_apply, Matrix.cons_val_zero, append_left, hai],
           by simp only [Function.comp_apply, Matrix.cons_val_one, Matrix.cons_val_fin_one,
             append_right, hai, Carrier.ownerRow_pt]⟩
@@ -512,19 +463,8 @@ theorem bfEquiv_ownerRow_of_bfEquiv_add {β : Ordinal.{o}} {n : ℕ}
     BFEquiv (L := lang U Lc) β 1
       (![Carrier.row (a i).ownerRow] : Fin 1 → Carrier R₁ C₁)
       (![Carrier.row (b i).ownerRow] : Fin 1 → Carrier R₂ C₂) := by
-  have hcomp := (bfEquiv_append_ownerRow h).comp (fun _ : Fin 1 => Fin.natAdd n i)
-  have ha : (Fin.append a fun j => Carrier.row (a j).ownerRow) ∘
-      (fun _ : Fin 1 => Fin.natAdd n i) =
-      (![Carrier.row (a i).ownerRow] : Fin 1 → Carrier R₁ C₁) := by
-    ext t
-    rw [Subsingleton.elim t 0]
-    simp only [Function.comp_apply, append_right, Matrix.cons_val_zero]
-  have hb : (Fin.append b fun j => Carrier.row (b j).ownerRow) ∘
-      (fun _ : Fin 1 => Fin.natAdd n i) =
-      (![Carrier.row (b i).ownerRow] : Fin 1 → Carrier R₂ C₂) := by
-    ext t
-    rw [Subsingleton.elim t 0]
-    simp only [Function.comp_apply, append_right, Matrix.cons_val_zero]
-  simpa only [ha, hb] using hcomp
+  convert (bfEquiv_append_ownerRow h).comp (fun _ : Fin 1 => Fin.natAdd n i) using 1 <;>
+    (ext t; rw [Subsingleton.elim t 0]; simp only [Function.comp_apply, append_right,
+      Matrix.cons_val_zero])
 
 end TauCeti.RowAssembly

@@ -97,35 +97,28 @@ theorem bfEquivSetoid_omega0_witnessCode_companionCode (z : ℕ → Bool) :
 theorem not_isoSetoid_witnessCode_companionCode (z : ℕ → Bool) :
     ¬ isoSetoid (lang ℕ Language.empty) ℕ witnessCode (companionCode z) := by
   rw [witnessCode, companionCode, Equiv.isoSetoid_encodeVia_iff]
-  rintro ⟨e⟩
-  exact (isEmpty_equiv_omegaCompanion_omegaWitness z).false e.symm
+  exact fun ⟨e⟩ => (isEmpty_equiv_omegaCompanion_omegaWitness z).false e.symm
 
 /-- Distinct binary sequences yield non-isomorphic companion codes. -/
 theorem not_isoSetoid_companionCode_of_ne {z z' : ℕ → Bool} (hz : z ≠ z') :
     ¬ isoSetoid (lang ℕ Language.empty) ℕ (companionCode z) (companionCode z') := by
   rw [companionCode, companionCode, Equiv.isoSetoid_encodeVia_iff]
-  rintro ⟨e⟩
-  exact (isEmpty_equiv_omegaCompanion hz).false e
+  exact fun ⟨e⟩ => (isEmpty_equiv_omegaCompanion hz).false e
 
 /-- **The internal Scott rank is not an isolating rank.** Evaluated on relational configurations
 on `ℕ` in `lang ℕ Language.empty`, `internalScottRank` fails `IsIsolatingRank`. -/
 theorem not_isIsolatingRank_internalScottRank :
     ¬ IsIsolatingRank (L := lang ℕ Language.empty)
-        (fun c => @internalScottRank (lang ℕ Language.empty) _ ℕ c.toStructure) := by
-  intro h
-  have hbf : bfEquivSetoid (lang ℕ Language.empty) ℕ
-      (@internalScottRank (lang ℕ Language.empty) _ ℕ witnessCode.toStructure)
-      witnessCode (companionCode fun _ => false) := by
+        (fun c => @internalScottRank (lang ℕ Language.empty) _ ℕ c.toStructure) := fun h =>
+  not_isoSetoid_witnessCode_companionCode (fun _ => false) <| h.isolates <| by
     rw [internalScottRank_witnessCode]
     exact bfEquivSetoid_omega0_witnessCode_companionCode (fun _ => false)
-  exact not_isoSetoid_witnessCode_companionCode (fun _ => false) (h.isolates hbf)
 
 /-- Every isolating rank strictly exceeds `ω` at `witnessCode`. -/
 theorem omega0_lt_of_isIsolatingRank
     {ρ : RelationalConfiguration (lang ℕ Language.empty) ℕ → Ordinal.{0}}
-    (hρ : IsIsolatingRank ρ) : Ordinal.omega0 < ρ witnessCode := by
-  refine lt_of_not_ge fun hle => ?_
-  exact not_isoSetoid_witnessCode_companionCode (fun _ => false)
+    (hρ : IsIsolatingRank ρ) : Ordinal.omega0 < ρ witnessCode :=
+  lt_of_not_ge fun hle => not_isoSetoid_witnessCode_companionCode (fun _ => false)
     (hρ.isolates_of_le hle (bfEquivSetoid_omega0_witnessCode_companionCode (fun _ => false)))
 
 /-- The single `bfEquivSetoid ω`-class of `witnessCode` meets continuum many isomorphism
@@ -138,22 +131,14 @@ theorem mk_isoClasses_bfEquivSetoid_omega0_witnessCode :
   let K : Set (RelationalConfiguration (lang ℕ Language.empty) ℕ) :=
     {d | bfEquivSetoid (lang ℕ Language.empty) ℕ Ordinal.omega0.{0} witnessCode d}
   refine le_antisymm ?_ ?_
-  · calc
-      #(Quotient ((isoSetoid (lang ℕ Language.empty) ℕ).comap (Subtype.val : K → _)))
-          ≤ #K := Cardinal.mk_quotient_le
-      _ ≤ #(RelationalConfiguration (lang ℕ Language.empty) ℕ) := Cardinal.mk_set_le K
-      _ ≤ 𝔠 := RelationalConfiguration.mk_le_continuum (lang ℕ Language.empty) ℕ
+  · exact Cardinal.mk_quotient_le.trans <| (Cardinal.mk_set_le K).trans
+      (RelationalConfiguration.mk_le_continuum (lang ℕ Language.empty) ℕ)
   · let f : (ℕ → Bool) →
         Quotient ((isoSetoid (lang ℕ Language.empty) ℕ).comap (Subtype.val : K → _)) :=
       fun z => Quotient.mk _ ⟨companionCode z, bfEquivSetoid_omega0_witnessCode_companionCode z⟩
-    have hf : Function.Injective f := by
-      intro z z' heq
-      by_contra hne
-      have hiso : isoSetoid (lang ℕ Language.empty) ℕ (companionCode z) (companionCode z') :=
-        Quotient.exact
-          (s := (isoSetoid (lang ℕ Language.empty) ℕ).comap (Subtype.val : K → _)) heq
-      exact not_isoSetoid_companionCode_of_ne hne hiso
-    have hcantor : #(ℕ → Bool) = 𝔠 := by simp
-    exact hcantor ▸ Cardinal.mk_le_of_injective hf
+    have hf : Function.Injective f := fun z z' heq => by_contra fun hne =>
+      not_isoSetoid_companionCode_of_ne hne <| Quotient.exact
+        (s := (isoSetoid (lang ℕ Language.empty) ℕ).comap (Subtype.val : K → _)) heq
+    exact (by simp : #(ℕ → Bool) = 𝔠) ▸ Cardinal.mk_le_of_injective hf
 
 end TauCeti.RowAssembly
