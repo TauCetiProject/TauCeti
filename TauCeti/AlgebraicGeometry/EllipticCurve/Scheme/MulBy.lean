@@ -17,7 +17,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Integral
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Smooth
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ZeroSection
-import TauCeti.AlgebraicGeometry.Morphisms.Finite.FlatDegree
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Flat.Degree
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Dominant
 import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
 import TauCeti.AlgebraicGeometry.ResidueField
