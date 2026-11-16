@@ -90,23 +90,25 @@ open scoped BesselPotentialSpace SchwartzMap ZeroAtInfty
 
 variable {s : ℝ}
 
+/-- The imaginary part of the inclusion `H^s(ℂ) ⊆ L²(ℂ)`, whose kernel is `realPhaseSpace`. -/
+private def imInclusionCLM (hs : 1 < s) : H^{s}(ℂ) →L[ℝ] Lp ℝ 2 (volume : Measure ℂ) :=
+  (imCLM.compLpL 2 (volume : Measure ℂ)).comp
+    ((inclusionLp (zero_le_one.trans hs.le) : H^{s}(ℂ) →L[ℂ] _).restrictScalars ℝ)
+
 /-- **The real phases `H^s(ℂ; ℝ)`**, `s > 1`: the elements of `H^s(ℂ)` whose `L²` function is
 real almost everywhere (`mem_realPhaseSpace`). It is the kernel of the imaginary part of the
 inclusion `H^s(ℂ) ⊆ L²(ℂ)`, so it is a closed real subspace (`isClosed_realPhaseSpace`), and a
 real Banach space. It is the model space of the charts of the Sobolev framed gauge group `G_s`
 (`gaugeChart`), whence the order condition `s > 1`. -/
 def realPhaseSpace (hs : 1 < s) : Submodule ℝ H^{s}(ℂ) :=
-  LinearMap.ker (((imCLM.compLpL 2 (volume : Measure ℂ)).comp
-    ((inclusionLp (zero_le_one.trans hs.le) : H^{s}(ℂ) →L[ℂ] _).restrictScalars ℝ) :
-      H^{s}(ℂ) →L[ℝ] Lp ℝ 2 (volume : Measure ℂ)) :
-    H^{s}(ℂ) →ₗ[ℝ] Lp ℝ 2 (volume : Measure ℂ))
+  LinearMap.ker (imInclusionCLM hs : H^{s}(ℂ) →ₗ[ℝ] Lp ℝ 2 (volume : Measure ℂ))
 
 /-- An element of `H^s(ℂ)` is a real phase exactly when its `L²` function is real almost
 everywhere. -/
 theorem mem_realPhaseSpace {hs : 1 < s} {F : H^{s}(ℂ)} :
     F ∈ realPhaseSpace hs ↔
       ∀ᵐ z ∂volume, ((inclusion (zero_le_one.trans hs.le) F).toLp z).im = 0 := by
-  rw [realPhaseSpace, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
+  rw [realPhaseSpace, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, imInclusionCLM,
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars', toLp_inclusion,
     Lp.eq_zero_iff_ae_eq_zero]
   have him := imCLM.coeFn_compLpL (p := 2) (μ := volume) (inclusionLp (zero_le_one.trans hs.le) F)
@@ -120,8 +122,7 @@ theorem mem_realPhaseSpace {hs : 1 < s} {F : H^{s}(ℂ)} :
 
 /-- The real phases form a closed subspace of `H^s(ℂ)`. -/
 theorem isClosed_realPhaseSpace (hs : 1 < s) : IsClosed (realPhaseSpace hs : Set H^{s}(ℂ)) :=
-  ContinuousLinearMap.isClosed_ker ((imCLM.compLpL 2 (volume : Measure ℂ)).comp
-    ((inclusionLp (zero_le_one.trans hs.le) : H^{s}(ℂ) →L[ℂ] _).restrictScalars ℝ))
+  ContinuousLinearMap.isClosed_ker (imInclusionCLM hs)
 
 instance instCompleteSpaceRealPhaseSpace (hs : 1 < s) : CompleteSpace (realPhaseSpace hs) :=
   (isClosed_realPhaseSpace hs).completeSpace_coe
@@ -303,10 +304,7 @@ theorem exists_norm_subOne_expGauge_sub_le :
       filter_upwards [coeFn_toLp_inclusion_subOne h₀ (expGauge hs G)] with z hz
       rw [hz, expGauge_apply])
     (memSobolev_toLp_inclusion h₀ _) (memSobolev_toLp_inclusion h₀ _)
-  rw [toBesselPotentialSpace_memSobolev_toLp_inclusion,
-    toBesselPotentialSpace_memSobolev_toLp_inclusion,
-    toBesselPotentialSpace_memSobolev_toLp_inclusion,
-    toBesselPotentialSpace_memSobolev_toLp_inclusion] at key
+  simp only [toBesselPotentialSpace_memSobolev_toLp_inclusion] at key
   exact key
 
 /-- **The exponential is continuous** from the real phases to `G_s` with its Sobolev topology. -/
@@ -324,18 +322,6 @@ theorem continuous_expGauge : Continuous (expGauge hs) := by
     (by simpa using hd.const_mul (Real.exp (C * (‖F‖ + 1))))
   filter_upwards [hR] with G hG
   exact hlip hG (le_add_of_nonneg_right zero_le_one)
-
-/-- On the unit circle, a point within distance `1` of `1` lies in the slit plane. -/
-private theorem mem_slitPlane_of_norm_sub_one_le {w : Circle} (hw : ‖(w : ℂ) - 1‖ ≤ 1) :
-    (w : ℂ) ∈ slitPlane := by
-  refine mem_slitPlane_iff.2 (Or.inl ?_)
-  have h₁ : ‖(w : ℂ)‖ = 1 := Circle.norm_coe w
-  have h₂ : ‖(w : ℂ) - 1‖ ^ 2 ≤ 1 := by nlinarith [norm_nonneg ((w : ℂ) - 1)]
-  rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply] at h₂
-  have h₃ : ‖(w : ℂ)‖ ^ 2 = 1 := by rw [h₁, one_pow]
-  rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply] at h₃
-  simp only [sub_re, one_re, sub_im, one_im, sub_zero] at h₂
-  nlinarith
 
 /-- **The phase of a gauge near the identity.** There is `C ≥ 0` such that for every `u ∈ G_s`
 with `C ‖u - 1‖_{H^s} < 1`, the phase `arg u` is almost everywhere an `L²` function in `H^s`, of
@@ -385,12 +371,9 @@ theorem exists_expGauge_eq_and_norm_le :
     have := mul_lt_mul_of_pos_left hu (by positivity : (0 : ℝ) < 2 * C + C₂ + 1)
     rwa [mul_inv_cancel₀ (by positivity)] at this
   -- The gauge is within distance `1` of `1` everywhere, so `arg u` is continuous.
-  have hg : Continuous fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) :=
-    continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs u).2).1
   have hcont : Continuous fun z ↦ arg ((toSubgroup hs u : ℂ → Circle) z : ℂ) :=
-    continuous_iff_continuousAt.2 fun z ↦
-      (continuousAt_arg (mem_slitPlane_of_norm_sub_one_le ((hsup u z).trans (by nlinarith)))).comp
-        (f := fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ)) hg.continuousAt
+    continuousOn_arg.comp_continuous (continuous_coe_toSubgroup u) fun z ↦ by
+      simpa using mem_slitPlane_of_norm_lt_one ((hsup u z).trans_lt (by nlinarith))
   -- The phase `arg u` is a real phase with norm at most `2 ‖u - 1‖`.
   obtain ⟨F, hFu, hF, hbound⟩ := harg u (by nlinarith)
   have hFmem : hF.toBesselPotentialSpace ∈ realPhaseSpace hs := by
@@ -460,6 +443,17 @@ theorem source_gaugeChart (u : SobolevTopologicalGaugeGroup hs) :
   simp [gaugeChart]
 
 @[simp]
+theorem target_gaugeChart (u : SobolevTopologicalGaugeGroup hs) :
+    (gaugeChart hs u).target = Set.univ := by
+  simp [gaugeChart]
+
+/-- On its source, the chart at `u` sends `v` to the phase of `u⁻¹ v`. -/
+theorem expGauge_gaugeChart {u v : SobolevTopologicalGaugeGroup hs}
+    (hv : v ∈ (gaugeChart hs u).source) : expGauge hs (gaugeChart hs u v) = u⁻¹ * v := by
+  rw [source_gaugeChart] at hv
+  simpa [gaugeChart] using isOpenEmbedding_expGauge.toOpenPartialHomeomorph_right_inv _ hv
+
+@[simp]
 theorem gaugeChart_symm_apply (u : SobolevTopologicalGaugeGroup hs) (F : realPhaseSpace hs) :
     (gaugeChart hs u).symm F = u * expGauge hs F := by
   simp [gaugeChart, Homeomorph.mulLeft_symm]
@@ -488,6 +482,7 @@ instance : ChartedSpace (realPhaseSpace hs) (SobolevTopologicalGaugeGroup hs) wh
     exact ⟨0, expGauge_zero⟩
   chart_mem_atlas u := ⟨u, rfl⟩
 
+@[simp]
 theorem chartAt_eq_gaugeChart (u : SobolevTopologicalGaugeGroup hs) :
     chartAt (realPhaseSpace hs) u = gaugeChart hs u :=
   (rfl)

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # The Sobolev topology on the framed gauge group of plane vortices
@@ -109,6 +110,11 @@ variable (hs) in
 `sobolevGaugeGroup hs` of `ℂ → Circle`. -/
 def toSubgroup : SobolevTopologicalGaugeGroup hs ≃* sobolevGaugeGroup hs := MulEquiv.refl _
 
+/-- A Sobolev gauge is continuous as a complex-valued function on the plane. -/
+theorem continuous_coe_toSubgroup (u : SobolevTopologicalGaugeGroup hs) :
+    Continuous fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) :=
+  continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs u).2).1
+
 /-- **The element `u - 1` of `H^s(ℂ)`** of a Sobolev gauge `u ∈ G_s`: its `L²` function is `u - 1`
 (`SobolevTopologicalGaugeGroup.coeFn_toLp_inclusion_subOne`). -/
 def subOne (u : SobolevTopologicalGaugeGroup hs) : H^{s}(ℂ) :=
@@ -143,8 +149,7 @@ theorem subOne_injective :
   -- Both gauges are continuous, so almost everywhere equality is equality.
   have hcont (w : SobolevTopologicalGaugeGroup hs) :
       Continuous fun z ↦ ((toSubgroup hs w : ℂ → Circle) z : ℂ) - 1 :=
-    (continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs w).2).1).sub
-      continuous_const
+    (continuous_coe_toSubgroup w).sub continuous_const
   have heq := (hcont u).ae_eq_iff_eq volume (hcont v) |>.1 hae
   apply (toSubgroup hs).injective
   refine Subtype.ext (funext fun z ↦ Subtype.ext ?_)
@@ -169,19 +174,15 @@ theorem exists_norm_coe_sub_one_le_mul_norm_subOne :
   have h := nonneg hs
   obtain ⟨C, hC, hsup⟩ := exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace (E := ℂ)
     (F := ℂ) (finrank_real_complex_lt_two_mul hs)
-  refine ⟨C, hC, fun u z ↦ ?_⟩
-  have hcont : Continuous fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) - 1 :=
-    (continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs u).2).1).sub
-      continuous_const
-  have hae : ∀ᵐ z ∂volume, ‖((toSubgroup hs u : ℂ → Circle) z : ℂ) - 1‖ ≤ C * ‖subOne u‖ := by
-    filter_upwards [hsup (memSobolev_toLp_inclusion h (subOne u)),
-      coeFn_toLp_inclusion_subOne h u] with z h₁ h₂
-    rw [← h₂]
-    rwa [toBesselPotentialSpace_memSobolev_toLp_inclusion] at h₁
-  -- A closed set of full measure is the whole plane.
-  have hd := (Measure.dense_of_ae hae).closure_eq
-  rw [(isClosed_le hcont.norm continuous_const).closure_eq] at hd
-  exact Set.eq_univ_iff_forall.1 hd z
+  refine ⟨C, hC, fun u ↦ ?_⟩
+  -- The bound holds almost everywhere, hence everywhere since `u` is continuous.
+  refine (Continuous.ae_le_iff_le volume
+    (f := fun z ↦ ‖((toSubgroup hs u : ℂ → Circle) z : ℂ) - 1‖)
+    ((continuous_coe_toSubgroup u).sub continuous_const).norm continuous_const).1 ?_
+  filter_upwards [hsup (memSobolev_toLp_inclusion h (subOne u)),
+    coeFn_toLp_inclusion_subOne h u] with z h₁ h₂
+  rw [← h₂]
+  rwa [toBesselPotentialSpace_memSobolev_toLp_inclusion] at h₁
 
 /-- **The product law in `H^s(ℂ)`:** `(u v) - 1 = (u - 1) + (v - 1) + (u - 1) (v - 1)`. -/
 theorem subOne_mul (u v : SobolevTopologicalGaugeGroup hs) :
