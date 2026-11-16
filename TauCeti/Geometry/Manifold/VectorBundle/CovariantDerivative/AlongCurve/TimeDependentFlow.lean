@@ -109,8 +109,7 @@ theorem alongCurve_mfderiv_timeDependentFlowOf
         (hopen.mem_nhds h)
     filter_upwards [hdom] with u hu
     have hφ : MDifferentiableAt I I (timeDependentFlowOf X s u) (c 0) :=
-      (((hflow.contMDiffAt (hopen.mem_nhds hu)).comp (c 0)
-        (contMDiffAt_const.prodMk contMDiffAt_id)).mdifferentiableAt (by norm_num))
+      mdifferentiableAt_timeDependentFlowOf hX₁ hu
     have hmap := curveVelocityWithin_map hφ uniqueDiffWithinAt_univ
       (hc.mdifferentiableAt (by norm_num)).mdifferentiableWithinAt
     rw [curveVelocityWithin_univ, curveVelocityWithin_univ, hcv] at hmap
