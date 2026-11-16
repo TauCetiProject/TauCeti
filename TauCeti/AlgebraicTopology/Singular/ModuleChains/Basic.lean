@@ -36,6 +36,8 @@ and vanishing on boundaries.
 
 ## Main results
 
+* `TauCeti.singularHomologyFunctor_obj_obj`: singular homology with coefficients in `k` is the
+  homology of `singularChains k`.
 * `TauCeti.subsingleton_singularChains_homology_iff_of_isIso`: a homology isomorphism identifies
   the vanishing of the homology of the chains of its source and target.
 * `TauCeti.singularChains_linearMap_ext`, `TauCeti.singularChains_addMonoidHom_ext`: linear maps,
@@ -61,14 +63,21 @@ variable (k : Type u) [Ring k]
 abbrev singularChains : TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} k) ℕ :=
   (singularChainComplexFunctor (ModuleCat.{u} k)).obj (ModuleCat.of k k)
 
+/-- Singular homology with coefficients in `k` is, by definition, the homology of the simplicial
+singular chains `singularChains k`. -/
+theorem singularHomologyFunctor_obj_obj (X : TopCat.{u}) (i : ℕ) :
+    ((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).obj X =
+      ((singularChains k).obj X).homology i :=
+  rfl
+
 /-- A map inducing an isomorphism on singular homology with coefficients in `k` in degree `i`
 identifies the vanishing of the degree-`i` homology of the chains of its source and target. -/
 theorem subsingleton_singularChains_homology_iff_of_isIso {X Y : TopCat.{u}} (f : X ⟶ Y) (i : ℕ)
     [IsIso (((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).map f)] :
     Subsingleton (((singularChains k).obj X).homology i) ↔
-      Subsingleton (((singularChains k).obj Y).homology i) :=
-  -- Singular homology is, by definition, the homology of `singularChains k`.
-  (asIso (((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).map f))
+      Subsingleton (((singularChains k).obj Y).homology i) := by
+  rw [← singularHomologyFunctor_obj_obj, ← singularHomologyFunctor_obj_obj]
+  exact (asIso (((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).map f))
     |>.toLinearEquiv.toEquiv.subsingleton_congr
 
 section Singular

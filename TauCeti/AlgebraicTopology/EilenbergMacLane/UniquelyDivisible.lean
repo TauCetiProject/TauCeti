@@ -80,7 +80,7 @@ private theorem isIso_singularHomologyMap_of_fiber {G : Type} [Group G] {n : ℕ
   TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber hp k i
     (fun b ↦ (hfib b).choose_spec.pathConnectedSpace) fun b q hq0 _ ↦ by
       obtain ⟨q, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq0
-      -- Singular homology is, by definition, the homology of `singularChains k`.
+      rw [singularHomologyFunctor_obj_obj]
       exact ModuleCat.isZero_iff_subsingleton.2 (hK (hfib b).choose_spec q)
 
 /-- The induction on the degree, through the based path fibration. The degree is written `j + 1`
@@ -108,9 +108,9 @@ private theorem subsingleton_singularHomology_of_bijective_zsmul_succ (hmk : (m 
       hX.exists_fiber_mappingPathFiberProj (ContinuousMap.id X) x b
     have := isIso_singularHomologyMap_of_fiber k hp hfib ih (i + 1)
     -- The total space is contractible, so its positive-degree homology vanishes.
-    exact (subsingleton_singularChains_homology_iff_of_isIso k p (i + 1)).1 <|
-      ModuleCat.isZero_iff_subsingleton.1 <|
-        isZero_singularHomologyFunctor_of_contractibleSpace _ _ (Nat.succ_ne_zero i)
+    rw [← subsingleton_singularChains_homology_iff_of_isIso k p (i + 1),
+      ← singularHomologyFunctor_obj_obj]
+    infer_instance
 
 /-- **`K(A, n)` spaces of uniquely `m`-divisible groups are acyclic modulo `m`.** If
 multiplication by the integer `m` is a bijection of the abelian group `A`, then every `K(A, n)`

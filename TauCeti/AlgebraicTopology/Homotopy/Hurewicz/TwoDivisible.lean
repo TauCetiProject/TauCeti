@@ -78,9 +78,9 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two
     (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
     (hn : Subsingleton (((singularChains (ZMod 2)).obj (TopCat.of X)).homology (n + 2)))
     (hn' : Subsingleton (((singularChains (ZMod 2)).obj (TopCat.of X)).homology (n + 3))) :
-    IsUniquelyTwoDivisible (Additive (HomotopyGroup (Fin (n + 2)) X x)) :=
-  -- Singular homology is, by definition, the homology of `singularChains (ZMod 2)`.
-  isUniquelyTwoDivisible_homotopyGroup_of_isZero_mod_two hX
+    IsUniquelyTwoDivisible (Additive (HomotopyGroup (Fin (n + 2)) X x)) := by
+  rw [← singularHomologyFunctor_obj_obj] at hn hn'
+  exact isUniquelyTwoDivisible_homotopyGroup_of_isZero_mod_two hX
     (((TopCat.of X).isZero_singularHomology_modTwo_iff' _).2
       (ModuleCat.isZero_iff_subsingleton.2 hn))
     (((TopCat.of X).isZero_singularHomology_modTwo_iff' _).2
