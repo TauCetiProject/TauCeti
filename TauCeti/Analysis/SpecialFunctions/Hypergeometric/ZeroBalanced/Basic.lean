@@ -21,7 +21,7 @@ import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.Complex.SlitPlane
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order

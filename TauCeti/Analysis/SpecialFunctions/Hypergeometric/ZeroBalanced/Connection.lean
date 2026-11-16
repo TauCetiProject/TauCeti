@@ -17,7 +17,7 @@ import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Algebra.InfiniteSum.Order
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
