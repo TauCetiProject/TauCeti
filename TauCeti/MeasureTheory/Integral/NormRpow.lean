@@ -51,8 +51,8 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.memLp_div_pow_compl_closedBall_iff` and
   `TauCeti.memLp_div_sub_pow_compl_closedBall_iff`: `a / (z - c) ^ m` is in `Lᵖ` off a disc
   centred at `c` exactly when `2 < m p`.
-* `IsCompact.memLp_norm_inv_restrict`, `TauCeti.not_memLp_norm_inv_closedBall`: `‖x‖⁻¹` is
-  `Lʳ` on compact sets for `r < dim E`, and not near the origin for `r ≥ dim E`.
+* `Bornology.IsBounded.memLp_norm_inv_restrict`, `TauCeti.not_memLp_norm_inv_closedBall`:
+  `‖x‖⁻¹` is `Lʳ` on bounded sets for `r < dim E`, and not near the origin for `r ≥ dim E`.
 * `Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top`: for `e ∈ ℂ` and `s > -1`,
   `∫⁻ x in closedBall c R, ‖(x : ℂ) - e‖ₑ ^ s < ∞` over the real line.
 
@@ -337,14 +337,15 @@ theorem _root_.Bornology.IsBounded.memLp_of_norm_le_mul_norm_rpow {F : Type*}
   ((hK.memLp_norm_rpow_restrict hr hs).const_mul C).of_le hf <|
     Filter.Eventually.of_forall fun x => (hle x).trans (Real.le_norm_self _)
 
-/-- On a compact set, `‖x‖⁻¹` is `Lʳ` for every exponent `r < dim E`. -/
-theorem _root_.IsCompact.memLp_norm_inv_restrict {K : Set E} (hK : IsCompact K) {r : ℝ≥0∞}
+/-- On a bounded set, `‖x‖⁻¹` is `Lʳ` for every exponent `r < dim E`. -/
+theorem _root_.Bornology.IsBounded.memLp_norm_inv_restrict {K : Set E}
+    (hK : Bornology.IsBounded K) {r : ℝ≥0∞}
     (hr : r < Module.finrank ℝ E) : MemLp (fun x : E => ‖x‖⁻¹) r (mu.restrict K) := by
   have hrtop : r ≠ ∞ := (hr.trans_le le_top).ne
   have hlt : r.toReal < Module.finrank ℝ E := by
     simpa using (ENNReal.toReal_lt_toReal hrtop (by simp)).2 hr
   simpa only [Real.rpow_neg_one] using
-    hK.isBounded.memLp_norm_rpow_restrict (mu := mu) (s := -1) hrtop (by linarith)
+    hK.memLp_norm_rpow_restrict (mu := mu) (s := -1) hrtop (by linarith)
 
 /-- On a nontrivial space, `‖x‖⁻¹` is not `Lʳ` on a closed ball of positive radius about the
 origin when `dim E ≤ r`. -/

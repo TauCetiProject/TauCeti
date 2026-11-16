@@ -76,18 +76,26 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {s : ℝ}
 private def regPow (s t : ℝ) (x : E) : ℝ :=
   (‖x‖ ^ 2 + t) ^ (s / 2)
 
+/-- The regularization `(‖x‖ ^ 2 + t) ^ (s / 2) ⟪x, v⟫` of `‖x‖ ^ s ⟪x, v⟫`. -/
+private def regMulInner (s : ℝ) (v : E) (t : ℝ) (x : E) : ℝ :=
+  regPow s t x * ⟪x, v⟫
+
 /-- The derivative of the regularized norm power in the direction `v`. -/
 private def regPowDeriv (s : ℝ) (v : E) (t : ℝ) (x : E) : ℝ :=
-  s * (‖x‖ ^ 2 + t) ^ (s / 2 - 1) * ⟪x, v⟫
+  s * regMulInner (s - 2) v t x
 
 omit [InnerProductSpace ℝ E] in
 private lemma regPow_zero (s : ℝ) (x : E) : regPow s 0 x = ‖x‖ ^ s := by
   rw [regPow, add_zero, Real.sq_rpow_div_two (norm_nonneg x)]
 
+private lemma regMulInner_zero (s : ℝ) (v : E) :
+    regMulInner s v 0 = fun x ↦ ‖x‖ ^ s * ⟪x, v⟫ := by
+  funext x
+  rw [regMulInner, regPow_zero]
+
 private lemma regPowDeriv_zero (s : ℝ) (v : E) (x : E) :
     regPowDeriv s v 0 x = ((s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) v := by
-  have hs : s / 2 - 1 = (s - 2) / 2 := by ring
-  rw [regPowDeriv, add_zero, hs, Real.sq_rpow_div_two (norm_nonneg x)]
+  rw [regPowDeriv, regMulInner_zero]
   simp [mul_assoc]
 
 private lemma hasLineDerivAt_regPow (s : ℝ) (v : E) {t : ℝ} (ht : 0 < t) (x : E) :
@@ -96,22 +104,29 @@ private lemma hasLineDerivAt_regPow (s : ℝ) (v : E) {t : ℝ} (ht : 0 < t) (x 
   have h := ((hasStrictFDerivAt_norm_sq x).hasFDerivAt.add_const t).rpow_const
     (p := s / 2) (Or.inl hpos.ne')
   refine (h.hasLineDerivAt v).congr_deriv ?_
-  rw [regPowDeriv, smul_apply, smul_apply,
-    innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul]
+  rw [regPowDeriv, regMulInner, regPow, show (s - 2) / 2 = s / 2 - 1 by ring, smul_apply,
+    smul_apply, innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul]
   ring
 
 omit [InnerProductSpace ℝ E] in
 private lemma continuous_regPow (s : ℝ) {t : ℝ} (ht : 0 < t) : Continuous (regPow (E := E) s t) :=
   continuous_norm_sq_add_rpow ht _
 
+private lemma continuous_regMulInner (s : ℝ) (v : E) {t : ℝ} (ht : 0 < t) :
+    Continuous (regMulInner s v t) :=
+  (continuous_regPow s ht).mul (continuous_id.inner continuous_const)
+
 private lemma continuous_regPowDeriv (s : ℝ) (v : E) {t : ℝ} (ht : 0 < t) :
     Continuous (regPowDeriv s v t) :=
-  (continuous_const.mul (continuous_norm_sq_add_rpow ht _)).mul
-    (continuous_id.inner continuous_const)
+  continuous_const.mul (continuous_regMulInner (s - 2) v ht)
+
+private lemma tendsto_regMulInner (s : ℝ) (v : E) {x : E} (hx : x ≠ 0) :
+    Tendsto (fun t ↦ regMulInner s v t x) (𝓝[>] 0) (𝓝 (regMulInner s v 0 x)) :=
+  (tendsto_sq_add_rpow (norm_ne_zero_iff.mpr hx) _).mul_const _
 
 private lemma tendsto_regPowDeriv (s : ℝ) (v : E) {x : E} (hx : x ≠ 0) :
     Tendsto (fun t ↦ regPowDeriv s v t x) (𝓝[>] 0) (𝓝 (regPowDeriv s v 0 x)) :=
-  ((tendsto_sq_add_rpow (norm_ne_zero_iff.mpr hx) _).const_mul _).mul_const _
+  (tendsto_regMulInner (s - 2) v hx).const_mul s
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
   [μ.IsAddHaarMeasure]
@@ -140,16 +155,20 @@ private lemma abs_regPow_le (hs : s ≤ 0) {t : ℝ} (ht : 0 ≤ t) {x : E} (hx 
   exact norm_sq_add_rpow_div_two_le ht hx hs
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- For `s ≤ 0`, the regularizations of `‖x‖ ^ s ⟪x, v⟫` are dominated by the regularization at
+`t = 0` away from the origin. -/
+private lemma abs_regMulInner_le (hs : s ≤ 0) (v : E) {t : ℝ} (ht : 0 ≤ t) {x : E}
+    (hx : x ≠ 0) : |regMulInner s v t x| ≤ |regMulInner s v 0 x| := by
+  rw [regMulInner, regMulInner, abs_mul, abs_mul]
+  exact mul_le_mul_of_nonneg_right (abs_regPow_le hs ht hx) (abs_nonneg _)
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- For `s ≤ 2`, the derivatives of the regularized powers are dominated by the regularization at
 `t = 0` away from the origin. -/
 private lemma abs_regPowDeriv_le (hs : s ≤ 2) (v : E) {t : ℝ} (ht : 0 ≤ t) {x : E}
     (hx : x ≠ 0) : |regPowDeriv s v t x| ≤ |regPowDeriv s v 0 x| := by
-  simp only [regPowDeriv, abs_mul,
-    abs_of_nonneg (Real.rpow_nonneg (add_nonneg (sq_nonneg ‖x‖) ht) _),
-    abs_of_nonneg (Real.rpow_nonneg (add_nonneg (sq_nonneg ‖x‖) le_rfl) _)]
-  gcongr ?_ * _
-  exact mul_le_mul_of_nonneg_left (sq_add_rpow_le (norm_ne_zero_iff.mpr hx) ht (by linarith))
-    (abs_nonneg s)
+  rw [regPowDeriv, regPowDeriv, abs_mul, abs_mul]
+  exact mul_le_mul_of_nonneg_left (abs_regMulInner_le (by linarith) v ht hx) (abs_nonneg s)
 
 /-- **Integration by parts against a singular norm power.** For `1 - dim E < s ≤ 0` and a `C¹`
 function `g` with compact support, `∫ ‖x‖ ^ s ∂ᵥg = -∫ s ‖x‖ ^ (s - 2) ⟪x, v⟫ g`, although for
@@ -237,19 +256,10 @@ section RpowMulInner
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-/-- The regularization `(‖x‖ ^ 2 + t) ^ (s / 2) ⟪x, v⟫` of `‖x‖ ^ s ⟪x, v⟫`. -/
-private def regMulInner (s : ℝ) (v : E) (t : ℝ) (x : E) : ℝ :=
-  (‖x‖ ^ 2 + t) ^ (s / 2) * ⟪x, v⟫
-
 /-- The derivative of `regMulInner s v t`. -/
 private def regMulInnerDeriv (s : ℝ) (v : E) (t : ℝ) (x : E) : E →L[ℝ] ℝ :=
   (‖x‖ ^ 2 + t) ^ (s / 2) • innerSL ℝ v +
     (s * (‖x‖ ^ 2 + t) ^ (s / 2 - 1) * ⟪x, v⟫) • innerSL ℝ x
-
-private lemma regMulInner_zero (s : ℝ) (v : E) :
-    regMulInner s v 0 = fun x ↦ ‖x‖ ^ s * ⟪x, v⟫ := by
-  funext x
-  rw [regMulInner, add_zero, Real.sq_rpow_div_two (norm_nonneg x)]
 
 private lemma regMulInnerDeriv_zero (s : ℝ) (v x : E) :
     regMulInnerDeriv s v 0 x =
@@ -265,27 +275,18 @@ private lemma hasFDerivAt_regMulInner (s : ℝ) (v : E) {t : ℝ} {x : E}
     (p := s / 2) (Or.inl hx.ne')).mul (innerSL ℝ v).hasFDerivAt
   convert h using 1
   · funext y
-    rw [regMulInner, Pi.mul_apply, innerSL_apply_apply, real_inner_comm]
+    rw [regMulInner, regPow, Pi.mul_apply, innerSL_apply_apply, real_inner_comm]
   · ext w
     simp only [regMulInnerDeriv, add_apply, smul_apply, smul_eq_mul, innerSL_apply_apply,
       nsmul_eq_mul]
     rw [real_inner_comm v x]
     ring
 
-private lemma continuous_regMulInner (s : ℝ) (v : E) {t : ℝ} (ht : 0 < t) :
-    Continuous (regMulInner s v t) :=
-  (continuous_norm_sq_add_rpow ht _).mul (continuous_id.inner continuous_const)
-
 private lemma continuous_regMulInnerDeriv (s : ℝ) (v : E) {t : ℝ} (ht : 0 < t) :
     Continuous (regMulInnerDeriv s v t) :=
   ((continuous_norm_sq_add_rpow ht _).smul continuous_const).add
     (((continuous_const.mul (continuous_norm_sq_add_rpow ht _)).mul
       (continuous_id.inner continuous_const)).smul (innerSL ℝ (E := E)).continuous)
-
-private lemma tendsto_regMulInner (s : ℝ) (v : E) {x : E} (hx : x ≠ 0) :
-    Tendsto (fun t ↦ regMulInner s v t x) (𝓝[>] 0) (𝓝 (regMulInner s v 0 x)) :=
-  ((continuousAt_sq_add_rpow (norm_ne_zero_iff.2 hx) _).mul continuousAt_const).tendsto.mono_left
-    nhdsWithin_le_nhds
 
 private lemma tendsto_regMulInnerDeriv (s : ℝ) (v : E) {x : E} (hx : x ≠ 0) :
     Tendsto (fun t ↦ regMulInnerDeriv s v t x) (𝓝[>] 0) (𝓝 (regMulInnerDeriv s v 0 x)) :=
@@ -323,16 +324,6 @@ theorem norm_norm_rpow_smul_innerSL_add_le (s : ℝ) (v x : E) :
   calc _ ≤ ‖x‖ ^ s * ‖v‖ + |s| * ‖x‖ ^ (s - 2) * (‖x‖ * ‖v‖) * ‖x‖ := by
         gcongr; exact abs_real_inner_le_norm x v
     _ = (1 + |s|) * ‖v‖ * ‖x‖ ^ s := by rw [← h2]; ring
-
-/-- For `s ≤ 0`, the regularizations of `‖x‖ ^ s ⟪x, v⟫` are dominated by `‖v‖ ‖x‖ ^ (s + 1)`
-away from the origin. -/
-private lemma abs_regMulInner_le {s : ℝ} (hs : s ≤ 0) (v : E) {t : ℝ} (ht : 0 ≤ t) {x : E}
-    (hx : x ≠ 0) : |regMulInner s v t x| ≤ ‖v‖ * ‖x‖ ^ (s + 1) := by
-  refine le_trans ?_ (abs_norm_rpow_mul_inner_le s v x)
-  rw [regMulInner, abs_mul, abs_mul, abs_of_nonneg (by positivity),
-    abs_of_nonneg (by positivity : (0 : ℝ) ≤ ‖x‖ ^ s)]
-  gcongr
-  exact norm_sq_add_rpow_div_two_le ht hx hs
 
 /-- For `s ≤ 0`, the derivatives of the regularizations are dominated by
 `(1 + |s|) ‖v‖ ‖x‖ ^ s` away from the origin. -/
@@ -380,9 +371,8 @@ private lemma hasWeakFDerivOn_regMulInner_ball {s : ℝ} (hs0 : s ≤ 0)
   have hloc : LocallyIntegrable (fun x : E ↦ ‖x‖ ^ s * ⟪x, v⟫) μ := by
     refine ((locallyIntegrable_norm_sub_rpow (mu := μ) hs1 0).smul ‖v‖).mono
       (by fun_prop : Measurable _).aestronglyMeasurable (Eventually.of_forall fun x ↦ ?_)
-    rw [Pi.smul_apply, zero_sub, norm_neg, smul_eq_mul]
-    simp only [Real.norm_eq_abs]
-    rw [abs_of_nonneg (by positivity : (0 : ℝ) ≤ ‖v‖ * ‖x‖ ^ (s + 1))]
+    rw [Pi.smul_apply, zero_sub, norm_neg, smul_eq_mul,
+      Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ ‖v‖ * ‖x‖ ^ (s + 1))]
     exact abs_norm_rpow_mul_inner_le s v x
   refine hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub (l := atTop)
     (u := fun n ↦ regMulInner s v (c n)) (U := fun n ↦ regMulInnerDeriv s v (c n))
@@ -403,7 +393,8 @@ private lemma hasWeakFDerivOn_regMulInner_ball {s : ℝ} (hs0 : s ≤ 0)
         ((integrableOn_norm_rpow_ball (mu := μ) hs1).const_mul ‖v‖).hasFiniteIntegral
         (fun n ↦ ae_restrict_of_ae <| by
           filter_upwards [μ.ae_ne 0] with x hx
-          exact abs_regMulInner_le hs0 v (hc0 n).le hx)
+          exact (abs_regMulInner_le hs0 v (hc0 n).le hx).trans
+            (by simpa only [regMulInner_zero] using abs_norm_rpow_mul_inner_le s v x))
         (ae_restrict_of_ae <| by
           filter_upwards [μ.ae_ne 0] with x hx
           simpa only [regMulInner_zero, Function.comp_def] using

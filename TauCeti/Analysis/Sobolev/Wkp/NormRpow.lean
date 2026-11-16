@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.MeasureTheory.Integral.NormRpow
@@ -20,8 +21,8 @@ let `s` be real. Away from the origin the power `u(x) = ‖x‖ ^ s` has the Hes
 
 of size comparable to `‖x‖ ^ (s - 2)`: its trace is `s (d + s - 2) ‖x‖ ^ (s - 2)`. This file
 shows that for `s > 2 - d` the classical Hessian is the weak Hessian across the origin
-(`TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_norm_rpow`), and that on a bounded open
-set `Ω` containing the origin, `u` lies in `W^{2,p}(Ω)`, `1 ≤ p < ∞`, exactly when
+(`TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_norm_rpow`), and that for `s ≠ 0`, on a
+bounded open set `Ω` containing the origin, `u` lies in `W^{2,p}(Ω)`, `1 ≤ p < ∞`, exactly when
 `(s - 2) p > -d` (`TauCeti.exists_wkp_two_value_ae_eq_norm_rpow_iff`). For `s < 2` this is the
 range `p < d / (2 - s)`.
 
@@ -89,7 +90,7 @@ theorem Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_norm_rpow
       ((hasWeakFDerivOn_norm_rpow_mul_inner (μ := μ) (s := s - 2) (by linarith) v Ω).const_smul s)
     filter_upwards [hdg w, hgrad] with x h1 h2
     rw [← h1, inner_normRpowHessian_apply, ← innerSL_apply_apply ℝ (W1p.gradient d x) w, h2]
-    rfl
+    simp only [Pi.smul_apply, smul_apply, smul_eq_mul]
   -- Entries in an orthonormal basis determine the operator.
   set b := stdOrthonormalBasis ℝ E
   have hall := ae_all_iff.2 fun i => ae_all_iff.2 fun j => hentry (b i) (b j)
@@ -112,24 +113,18 @@ private theorem le_norm_normRpowHessian (hs : 2 - (Module.finrank ℝ E : ℝ) <
   have : Nontrivial E := ⟨⟨x, 0, hx⟩⟩
   set b := stdOrthonormalBasis ℝ E
   have hd : (0 : ℝ) < Module.finrank ℝ E := Nat.cast_pos.2 Module.finrank_pos
-  have h42 : ‖x‖ ^ (s - 4) * ‖x‖ ^ 2 = ‖x‖ ^ (s - 2) := by
-    rw [← Real.rpow_natCast, ← Real.rpow_add (norm_pos_iff.2 hx)]
-    congr 1
-    ring
-  -- The trace of `H`, computed in the basis `b`.
+  -- The trace of `H` is the Laplacian of `‖x‖ ^ s`.
   have htr : ∑ i, ⟪H (b i), b i⟫ = s * (Module.finrank ℝ E + s - 2) * ‖x‖ ^ (s - 2) := by
-    have hsum : ∑ i, ⟪x, b i⟫ * ⟪x, b i⟫ = ‖x‖ ^ 2 := by
-      simpa only [real_inner_comm (b _) x, real_inner_self_eq_norm_sq] using
-        b.sum_inner_mul_inner x x
-    have hterm : ∀ i, ⟪H (b i), b i⟫ =
-        s * ‖x‖ ^ (s - 2) + s * (s - 2) * ‖x‖ ^ (s - 4) * (⟪x, b i⟫ * ⟪x, b i⟫) := by
+    have hterm : ∀ i, ⟪H (b i), b i⟫ = iteratedFDeriv ℝ 2 (fun y : E => ‖y‖ ^ s) x ![b i, b i] := by
       intro i
+      rw [iteratedFDeriv_two_norm_rpow_apply s hx]
       simp only [H, add_apply, smul_apply, ContinuousLinearMap.id_apply,
         ContinuousLinearMap.smulRight_apply, innerSL_apply_apply, inner_add_left,
-        real_inner_smul_left, b.inner_eq_one]
+        real_inner_smul_left]
       ring
-    rw [Finset.sum_congr rfl fun i _ => hterm i, Finset.sum_add_distrib, Finset.sum_const,
-      ← Finset.mul_sum, hsum, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, ← h42]
+    rw [Finset.sum_congr rfl fun i _ => hterm i,
+      ← congrFun (InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis _ b) x,
+      laplacian_norm_rpow_of_ne s hx]
     ring
   have hle : |s * (Module.finrank ℝ E + s - 2) * ‖x‖ ^ (s - 2)| ≤ Module.finrank ℝ E * ‖H‖ := by
     rw [← htr]

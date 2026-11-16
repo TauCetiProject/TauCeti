@@ -183,7 +183,7 @@ private theorem memWkpLoc_one_norm_rpow_neg_one_mul_inner (hp : p < 2) (e : ℂ)
     exact MemLp.of_bound (by fun_prop : Measurable _).aestronglyMeasurable ‖e‖
       (Eventually.of_forall fun z => by simpa using abs_norm_rpow_mul_inner_le (-1) e z)
   · have hker : MemLp (fun z : ℂ => ‖z‖⁻¹) p (volume.restrict K) :=
-      hK.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using hp)
+      hK.isBounded.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using hp)
     refine (hker.const_mul ((1 + |(-1 : ℝ)|) * ‖e‖)).of_le
       (by fun_prop : Measurable _).aestronglyMeasurable (Eventually.of_forall fun z => ?_)
     rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_neg_one]
@@ -453,7 +453,7 @@ theorem memWkpLoc_sqrt_im_ball_inter_im_pos :
 theorem memLpLoc_norm_inv_iff (hU : U ∈ 𝓝 0) :
     MemLpLoc p U (fun z : ℂ => ‖z‖⁻¹) ↔ p < 2 := by
   refine ⟨fun h => ?_, fun h => memLpLoc_iff.2 fun K _ hK =>
-    hK.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using h)⟩
+    hK.isBounded.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using h)⟩
   by_contra! hp2
   obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 hU
   exact not_memLp_norm_inv_closedBall hε (by simpa [Complex.finrank_real_complex] using hp2)
