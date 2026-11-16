@@ -142,6 +142,13 @@ to importing modules, so this equation is how they reach it. -/
 theorem SporadicName.presentation_M11 : SporadicName.M11.presentation = Sporadic.m11Presentation :=
   (rfl)
 
+/-- The presentation selected for `Suz` is the transcribed presentation
+`TauCeti.Sporadic.suzPresentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_Suz : SporadicName.Suz.presentation = Sporadic.suzPresentation :=
+  (rfl)
+
 /-- The presentation selected for `M₁₂` is the transcribed presentation
 `TauCeti.Sporadic.m12Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
 to importing modules, so this equation is how they reach it. -/
