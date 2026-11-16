@@ -344,6 +344,11 @@ theorem coinvariantsEquivOfIsTrivial_mk [ρ.IsTrivial] (v : V) :
     coinvariantsEquivOfIsTrivial ρ (Coinvariants.mk ρ v) = v :=
   Submodule.quotEquivOfEqBot_apply_mk _ _ v
 
+@[simp]
+theorem coinvariantsEquivOfIsTrivial_symm_apply [ρ.IsTrivial] (v : V) :
+    (coinvariantsEquivOfIsTrivial ρ).symm v = Coinvariants.mk ρ v :=
+  (LinearEquiv.symm_apply_eq _).2 (coinvariantsEquivOfIsTrivial_mk v).symm
+
 /-- If every element of `G` acts by `1` or by `-1`, and some element acts by `-1`, the coinvariants
 are `V ⧸ 2 V`. -/
 def coinvariantsEquivQuotientTwo (h : ∀ g, ρ g = 1 ∨ ρ g = -1) {g₀ : G} (hg₀ : ρ g₀ = -1) :
@@ -355,6 +360,12 @@ theorem coinvariantsEquivQuotientTwo_mk (h : ∀ g, ρ g = 1 ∨ ρ g = -1) {g�
     (hg₀ : ρ g₀ = -1) (v : V) :
     coinvariantsEquivQuotientTwo h hg₀ (Coinvariants.mk ρ v) = Submodule.Quotient.mk v :=
   Submodule.quotEquivOfEq_mk _ _ _ v
+
+@[simp]
+theorem coinvariantsEquivQuotientTwo_symm_mk (h : ∀ g, ρ g = 1 ∨ ρ g = -1) {g₀ : G}
+    (hg₀ : ρ g₀ = -1) (v : V) :
+    (coinvariantsEquivQuotientTwo h hg₀).symm (Submodule.Quotient.mk v) = Coinvariants.mk ρ v :=
+  (LinearEquiv.symm_apply_eq _).2 (coinvariantsEquivQuotientTwo_mk h hg₀ v).symm
 
 end Sign
 
