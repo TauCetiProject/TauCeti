@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Fourier.LpSpace
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Convolution
+import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Fourier.LpSpace
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
@@ -82,6 +83,7 @@ public section
 noncomputable section
 
 open scoped ENNReal FourierTransform ComplexInnerProductSpace SchwartzMap InnerProduct Topology
+  Convolution
 open FourierTransform ContinuousLinearMap Filter
 
 namespace MeasureTheory.Lp
@@ -324,6 +326,24 @@ theorem _root_.SchwartzMap.coeFn_fourierMultiplierCLM_toLp (σ : 𝓢(E, ℂ))
   exact ((((lsmul ℂ ℂ).lpPairing volume 2 2 ((hK x).toLp _)).continuous.tendsto f).comp hu).comp
     hns.tendsto_atTop
 
+/-- **`Lᵖ` bound for an `L²` multiplier with Schwartz symbol.** For a Schwartz symbol `σ`, every
+`f ∈ L²` and every `1 ≤ p ≤ ∞`, `‖T_σ f‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p`: `T_σ f` is the convolution of `f`
+with `𝓕⁻ σ`, and Young's inequality applies. Neither side is assumed finite, so `T_σ` maps
+`L² ∩ Lᵖ` into `Lᵖ`. On Schwartz functions this is `SchwartzMap.eLpNorm_fourierMultiplierCLM_le`. -/
+theorem _root_.SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le (σ : 𝓢(E, ℂ))
+    (f : Lp F 2 (volume : Measure E)) {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    eLpNorm (fourierMultiplierCLM F (σ.toLp ∞) f) p volume ≤
+      eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 volume * eLpNorm f p volume := by
+  have hconv : fourierMultiplierCLM F (σ.toLp ∞) f =ᵐ[volume]
+      (𝓕⁻ (σ : E → ℂ) ⋆[lsmul ℂ ℂ, volume] (f : E → F)) := by
+    filter_upwards [σ.coeFn_fourierMultiplierCLM_toLp f] with x hx
+    rw [hx, convolution_lsmul, ← integral_sub_left_eq_self _ volume x]
+    simp_rw [sub_sub_cancel, SchwartzMap.fourierInv_coe]
+  rw [eLpNorm_congr_ae hconv, ← SchwartzMap.fourierInv_coe]
+  refine (eLpNorm_convolution_le _ (𝓕⁻ σ).continuous.aestronglyMeasurable
+    (Lp.aestronglyMeasurable f) hp).trans ?_
+  grw [opENorm_lsmul_le, one_mul]
+
 /-- If the symbols `m i` are eventually bounded in `L^∞` uniformly in `i` along a countably
 generated filter `l` and converge to `m₀` almost everywhere along `l`, then
 `T_{m i} f → T_{m₀} f` in `L²` along `l` for every `f ∈ L²`. -/
@@ -366,7 +386,6 @@ end MeasureTheory.Lp
 namespace TauCeti
 
 open MeasureTheory
-open scoped Convolution
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]

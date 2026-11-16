@@ -239,14 +239,8 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
           eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
   obtain ⟨C, hC⟩ :=
     exists_lintegral_lintegral_enorm_inner_schrodingerPropagator_sub_le (r' := r') hq hpq hqr
-  refine ⟨C, fun F G hF hG => ?_⟩
-  calc _ ≤ ∫⁻ t, ‖∫ s in Set.Iio t, ⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ‖ₑ :=
-        eNorm_integral_le_lintegral_eNorm _
-    _ ≤ ∫⁻ t, ∫⁻ s in Set.Iio t, ‖⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ‖ₑ :=
-        lintegral_mono fun t ↦ eNorm_integral_le_lintegral_eNorm _
-    _ ≤ ∫⁻ t, ∫⁻ s, ‖⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ‖ₑ :=
-        lintegral_mono fun t ↦ setLIntegral_le_lintegral _ _
-    _ ≤ _ := hC F G hF hG
+  exact ⟨C, fun F G hF hG =>
+    (enorm_integral_setIntegral_Iio_le_lintegral_lintegral_enorm _).trans (hC F G hF hG)⟩
 
 /-- **The dual Strichartz estimate for the Schrödinger equation** in every dimension `n`, at a
 non-endpoint admissible pair: `2 < q < ∞` and `2 / q + n / r = n / 2`, with `p` and `r'` the

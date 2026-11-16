@@ -13,6 +13,7 @@ import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Star
@@ -81,6 +82,14 @@ which Cauchy–Schwarz for the banded double sum (`ENNReal.tsum_sum_Ico_mul_le`)
 (`MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`), and Hölder's
 inequality and the first inequality at the exponent `q` give
 `|⟪f, g⟫| ≤ 2 L C_q ‖S f‖_p ‖g‖_q`.
+
+## Homogeneous blocks
+
+The last section bounds a single block of the homogeneous partition
+(`ContDiffBump.littlewoodPaley`, `j ∈ ℤ`), the `L²` multiplier `Pⱼ` with symbol `ψⱼ`, on every
+`Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in the scale: `‖Pⱼ f‖_p ≤ ‖𝓕⁻ ψ₀‖₁ ‖f‖_p` for `f ∈ L²`
+(`ContDiffBump.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le`), and `‖Pⱼ‖ ≤ 1` on `L²`
+(`ContDiffBump.norm_fourierMultiplierCLM_littlewoodPaley_le`).
 
 ## References
 
@@ -807,3 +816,61 @@ theorem exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow [N
         ring
 
 end TauCeti
+
+/-! ### Homogeneous Littlewood–Paley blocks on `Lᵖ` -/
+
+namespace ContDiffBump
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  (φ : ContDiffBump (0 : V))
+
+variable [MeasurableSpace V] [BorelSpace V]
+
+/-- Every symbol in `L^∞` almost everywhere equal to `ψⱼ` is the class of the Schwartz
+cutoff. -/
+private theorem eq_toLp_littlewoodPaleySchwartz {j : ℤ} {m : Lp ℂ ∞ (volume : Measure V)}
+    (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
+    m = (littlewoodPaleySchwartz φ j).toLp ∞ :=
+  Lp.ext <| hm.trans <| by
+    filter_upwards [(littlewoodPaleySchwartz φ j).coeFn_toLp ∞ volume] with ξ h
+    rw [h, coe_littlewoodPaleySchwartz]
+
+/-- The kernel `𝓕⁻ ψⱼ` of a homogeneous Littlewood–Paley block is a Schwartz function, so it lies
+in every `Lᵖ`. -/
+theorem memLp_fourierInv_littlewoodPaley (j : ℤ) (p : ℝ≥0∞) :
+    MemLp (𝓕⁻ (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))) p volume := by
+  rw [← coe_littlewoodPaleySchwartz, ← SchwartzMap.fourierInv_coe]
+  exact (𝓕⁻ (littlewoodPaleySchwartz φ j)).memLp p volume
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- **The homogeneous Littlewood–Paley blocks are bounded on `Lᵖ` uniformly in the scale.** For
+every symbol `m ∈ L^∞` almost everywhere equal to `ψⱼ`, `j ∈ ℤ`, every `f ∈ L²(V, F)` and every
+`1 ≤ p ≤ ∞`, `‖Pⱼ f‖_p ≤ ‖𝓕⁻ ψ₀‖₁ ‖f‖_p`, where `Pⱼ` is the `L²` Fourier multiplier with symbol
+`m`: `Pⱼ` is convolution with `𝓕⁻ ψⱼ`, a dilate of `𝓕⁻ ψ₀` with the same `L¹` norm. -/
+theorem eLpNorm_fourierMultiplierCLM_littlewoodPaley_le {j : ℤ}
+    {m : Lp ℂ ∞ (volume : Measure V)} (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))
+    (f : Lp F 2 (volume : Measure V)) {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    eLpNorm (Lp.fourierMultiplierCLM F m f) p volume ≤
+      eLpNorm (𝓕⁻ (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ))) 1 volume * eLpNorm f p volume := by
+  rw [eq_toLp_littlewoodPaleySchwartz φ hm]
+  refine ((littlewoodPaleySchwartz φ j).eLpNorm_fourierMultiplierCLM_toLp_le f hp).trans_eq ?_
+  have h : (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) =
+      fun ξ ↦ (fun η ↦ (φ.littlewoodPaley 0 η : ℂ)) (((2 : ℝ) ^ j)⁻¹ • ξ) :=
+    funext fun ξ ↦ by rw [littlewoodPaley_apply_eq_littlewoodPaley_zero_apply]
+  rw [coe_littlewoodPaleySchwartz, h, TauCeti.eLpNorm_fourierInv_comp_inv_smul
+    (fun η ↦ (φ.littlewoodPaley 0 η : ℂ)) (zpow_pos two_pos j)]
+  simp
+
+/-- The homogeneous Littlewood–Paley block `Pⱼ` has norm at most `1` on `L²`. -/
+theorem norm_fourierMultiplierCLM_littlewoodPaley_le {j : ℤ}
+    {m : Lp ℂ ∞ (volume : Measure V)} (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
+    ‖Lp.fourierMultiplierCLM (E := V) F m‖ ≤ 1 := by
+  refine (Lp.norm_fourierMultiplierCLM_le m).trans ?_
+  rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable m)]
+  exact ENNReal.toReal_le_of_le_ofReal zero_le_one (eLpNormEssSup_le_of_ae_bound
+    (hm.mono fun ξ h ↦ by
+      rw [h, Complex.norm_real, Real.norm_eq_abs]
+      exact φ.abs_littlewoodPaley_le_one j ξ))
+
+end ContDiffBump

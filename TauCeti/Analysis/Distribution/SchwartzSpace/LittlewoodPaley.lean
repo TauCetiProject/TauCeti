@@ -45,6 +45,8 @@ partial sums of the Fourier multipliers `𝓕⁻ (ψⱼ • 𝓕 f)` are the low
 
 * `ContDiffBump.littlewoodPaleyPiece`: the Schwartz function `ψⱼ • m`.
 * `ContDiffBump.hasSum_littlewoodPaleyPiece`: the pieces sum to `m` away from the origin.
+* `ContDiffBump.littlewoodPaleySchwartz`: the homogeneous cutoff `ψⱼ`, as a complex Schwartz
+  function.
 * `ContDiffBump.inhomogeneousLittlewoodPaleySchwartz`: the piece `ψⱼ` of the inhomogeneous
   partition, as a complex Schwartz function.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le`: the scale-invariant
@@ -236,6 +238,23 @@ theorem inhomogeneousLittlewoodPaleySchwartz_apply (j : ℕ) (ξ : E) :
 theorem coe_inhomogeneousLittlewoodPaleySchwartz (j : ℕ) :
     ⇑(φ.inhomogeneousLittlewoodPaleySchwartz j) =
       fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
+  (rfl)
+
+/-- The homogeneous Littlewood–Paley cutoff `ψⱼ`, `j ∈ ℤ`, as a complex Schwartz function: it is
+smooth and compactly supported. -/
+noncomputable def littlewoodPaleySchwartz (j : ℤ) : 𝓢(E, ℂ) :=
+  ((φ.hasCompactSupport_littlewoodPaley j).comp_left Complex.ofReal_zero).toSchwartzMap
+    (Complex.ofRealCLM.contDiff.comp (φ.contDiff_littlewoodPaley j))
+
+/-- The values of the Schwartz function `ψⱼ`. -/
+@[simp]
+theorem littlewoodPaleySchwartz_apply (j : ℤ) (ξ : E) :
+    φ.littlewoodPaleySchwartz j ξ = (φ.littlewoodPaley j ξ : ℂ) :=
+  (rfl)
+
+/-- The Schwartz function `ψⱼ`, as a function. -/
+theorem coe_littlewoodPaleySchwartz (j : ℤ) :
+    ⇑(φ.littlewoodPaleySchwartz j) = fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) :=
   (rfl)
 
 end FiniteDimensional
