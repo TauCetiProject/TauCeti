@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import TauCeti.Topology.Homotopy.Lifting.Basic
+import TauCeti.Topology.Path.Map
 
 /-!
 # Monodromy on the path components of the fibres of a map that lifts homotopies of paths
@@ -87,6 +88,12 @@ points of the fibre.
 * A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, §4.2, Theorem 4.41 and the
   action of `π₁(B)` on the fibre that follows it.
 * G. W. Whitehead, *Elements of Homotopy Theory*, GTM 61, Springer, 1978, Chapter IV.8.
+* The API follows Junyan Xu's monodromy of covering maps in Mathlib's
+  `Mathlib/Topology/Homotopy/Lifting.lean` (`IsCoveringMap.monodromy`,
+  `IsCoveringMap.fundamentalGroupMulAction`, `IsCoveringMap.monodromyFunctor`) and the stabiliser
+  results of `TauCeti.Topology.Homotopy.Monodromy.Basic`
+  (`IsCoveringMap.monodromy_eq_self_iff_mem_range`, `IsCoveringMap.fiberEquivQuotientRange`).
+  No Mathlib proof is vendored.
 -/
 
 public noncomputable section
@@ -105,17 +112,6 @@ variable {E : Type u} {B : Type v} [TopologicalSpace E] [TopologicalSpace B] {p 
 private theorem joined_of_forall_eq {b : B} (c : C(I, E)) (hc : ∀ s, p (c s) = b)
     {y y' : p ⁻¹' {b}} (h₀ : c 0 = y) (h₁ : c 1 = y') : Joined y y' :=
   ⟨⟨⟨fun s ↦ ⟨c s, hc s⟩, by fun_prop⟩, Subtype.ext h₀, Subtype.ext h₁⟩⟩
-
-/-- The projection of the concatenation of a path over `γ` and a path over `γ'` is `γ.trans γ'`. -/
-private theorem comp_trans_eq {e₀ e₁ e₂ : E} {x y z : B} {Γ : Path e₀ e₁} {Γ' : Path e₁ e₂}
-    {γ : Path x y} {γ' : Path y z} (hΓ : p ∘ Γ = γ) (hΓ' : p ∘ Γ' = γ') :
-    p ∘ Γ.trans Γ' = γ.trans γ' := by
-  obtain rfl : p e₀ = x := by rw [← Γ.source, ← γ.source]; exact congrFun hΓ 0
-  obtain rfl : p e₁ = y := by rw [← Γ.target, ← γ.target]; exact congrFun hΓ 1
-  obtain rfl : p e₂ = z := by rw [← Γ'.target, ← γ'.target]; exact congrFun hΓ' 1
-  obtain rfl : Γ.map p.continuous = γ := Path.ext hΓ
-  obtain rfl : Γ'.map p.continuous = γ' := Path.ext hΓ'
-  rw [← Path.map_trans, Path.map_coe]
 
 /-- A path `δ` of `E` between two points of the fibre over `b`, whose projection is homotopic,
 relative to its ends, to the constant path at `b`, joins them inside the fibre. -/
@@ -141,7 +137,8 @@ private theorem joined_of_lifts_of_eq (hp : HasHomotopyLiftingProperty p I) {x y
   let δ : Path (Γ 1) (Γ' 1) :=
     (Path.mk Γ rfl rfl : Path (Γ 0) (Γ 1)).symm.trans (Path.mk Γ' h₀.symm rfl)
   let F := (Path.Homotopy.reflSymmTrans γ).symm
-  have hδ : p ∘ δ = γ.symm.trans γ := comp_trans_eq (funext fun t ↦ congrFun hΓ (σ t)) hΓ'
+  have hδ : p ∘ δ = γ.symm.trans γ :=
+    Path.comp_trans_eq_of_comp_eq (funext fun t ↦ congrFun hΓ (σ t)) hΓ'
   exact joined_of_homotopy_const hp δ F (fun t ↦ (F.apply_zero t).trans (congrFun hδ t).symm)
     (fun t ↦ F.apply_one t) (fun s ↦ F.source s) (fun s ↦ F.target s) (δ.source.trans hw)
     (δ.target.trans hw')
@@ -254,7 +251,7 @@ theorem fiberMonodromy_trans_apply (hp : HasHomotopyLiftingProperty p I) {x y z 
   set Γ' := lift hp γ' ⟨Γ 1, hΓy⟩
   have hΓz : p (Γ' 1) = z := (congrFun hΓ' 1).trans γ'.target
   let Γ'' : Path (Γ 0) (Γ' 1) := (Path.mk Γ rfl rfl : Path (Γ 0) (Γ 1)).trans (Path.mk Γ' he' rfl)
-  have hΓ'' : p ∘ Γ'' = γ.trans γ' := comp_trans_eq hΓ hΓ'
+  have hΓ'' : p ∘ Γ'' = γ.trans γ' := Path.comp_trans_eq_of_comp_eq hΓ hΓ'
   rw [← Path.Homotopic.Quotient.mk_trans, fiberMonodromy_mk hp _ hΓ'' (Γ''.source.trans he)
     (w := ⟨Γ' 1, hΓz⟩) Γ''.target, fiberMonodromy_mk hp γ hΓ he (w := ⟨Γ 1, hΓy⟩) rfl,
     fiberMonodromy_mk hp γ' hΓ' he' (w := ⟨Γ' 1, hΓz⟩) rfl]
@@ -340,7 +337,7 @@ theorem fiberMonodromy_eq_mk_iff (hp : HasHomotopyLiftingProperty p I) {x y : B}
     obtain ⟨α⟩ := (Quotient.exact hγ : Joined (⟨Γ 1, hΓy⟩ : p ⁻¹' {y}) w)
     let δ : Path (z : E) w := (Path.mk Γ hz rfl).trans (α.map continuous_subtype_val)
     have hδ : (δ.map p.continuous).cast z.2.symm w.2.symm = γ.trans (Path.refl y) :=
-      Path.ext (comp_trans_eq hΓ (funext fun t ↦ (α t).2))
+      Path.ext (Path.comp_trans_eq_of_comp_eq hΓ (funext fun t ↦ (α t).2))
     refine ⟨.mk δ, ?_⟩
     rw [← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_cast, hδ,
       Path.Homotopic.Quotient.eq]
