@@ -148,7 +148,8 @@ theorem lineDerivOp_quantizeTempered (a : Symbol n ℂ ℂ m) (ha : a.IsUniform)
       quantizeTempered F a ha (∂_{EuclideanSpace.single j (1 : ℝ)} T) +
         quantizeTempered F (spatialDeriv j a) (ha.spatialDeriv j) T := by
   ext φ
-  simp [transposeUniformCLM_lineDerivOp, map_sub]
+  simp only [TemperedDistribution.lineDerivOp_apply_apply, quantizeTempered_apply_apply, map_neg,
+    transposeUniformCLM_lineDerivOp, neg_sub, map_sub, add_apply]
   abel
 
 /-- **Composition with a derivative on the right.** `Op(a) (∂_v T) = i Op(a ⟪ξ, v⟫) T` for every

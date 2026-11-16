@@ -39,6 +39,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
+* `SchwartzMap.conjCLM`: pointwise conjugation of scalar Schwartz functions, a real-linear
+  continuous map.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
   integral of its squared norm does, for a measure charging every nonempty open set.
 * `IsOpen.eqOn_of_integral_clm_apply_eq`: two operator families continuous on an open set `U`
@@ -260,6 +262,27 @@ theorem smulLeftCLM_of_not_hasTemperateGrowth {g : E → 𝕜} (hg : ¬g.HasTemp
   simp [smulLeftCLM, hg]
 
 end Smul
+
+section Conj
+
+open ComplexConjugate
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Pointwise complex conjugation of the values, as a real-linear map on Schwartz space. -/
+noncomputable def conjCLM : 𝓢(E, 𝕜) →L[ℝ] 𝓢(E, 𝕜) :=
+  postcompCLM (RCLike.conjCLE : 𝕜 ≃L[ℝ] 𝕜).toContinuousLinearMap
+
+@[simp]
+theorem conjCLM_apply (f : 𝓢(E, 𝕜)) (x : E) : conjCLM f x = conj (f x) :=
+  (rfl)
+
+/-- Conjugation is antilinear: `conj (c • f) = conj c • conj f`. -/
+theorem conjCLM_smul (c : 𝕜) (f : 𝓢(E, 𝕜)) : conjCLM (c • f) = conj c • conjCLM f := by
+  ext x
+  simp
+
+end Conj
 
 end SchwartzMap
 

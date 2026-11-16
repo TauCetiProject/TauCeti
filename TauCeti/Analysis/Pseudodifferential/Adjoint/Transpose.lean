@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Adjoint.Basic
 public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
-import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+public import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 
 /-!
 # The transpose of a quantization
@@ -62,19 +62,6 @@ variable {n : ℕ} {m m' : ℝ}
 
 section Transpose
 
-/-- Conjugation of the values, as a real-linear map on Schwartz space. -/
-private def conjSchwartz : 𝓢(CoordinateSpace n, ℂ) →L[ℝ] 𝓢(CoordinateSpace n, ℂ) :=
-  SchwartzMap.postcompCLM conjCLE.toContinuousLinearMap
-
-private theorem conjSchwartz_apply (φ : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n) :
-    conjSchwartz φ x = conj (φ x) :=
-  (rfl)
-
-private theorem conjSchwartz_smul (c : ℂ) (φ : 𝓢(CoordinateSpace n, ℂ)) :
-    conjSchwartz (c • φ) = conj c • conjSchwartz φ := by
-  ext x
-  simp [conjSchwartz_apply]
-
 variable (a : Symbol n ℂ ℂ m) (ha : a.IsUniform)
 
 /-- **The transpose of a uniform quantization.** For a scalar symbol `a` whose estimates are
@@ -84,37 +71,38 @@ uniform in the position, the transpose `Op(a)ᵗ` of its quantization for the bi
 formal adjoint `Op_R(ā)` with conjugated input and output, `Op(a)ᵗ φ = conj (Op_R(ā) (conj φ))`
 (`TauCeti.Symbol.transposeUniformCLM_apply`). -/
 def transposeUniformCLM : 𝓢(CoordinateSpace n, ℂ) →L[ℂ] 𝓢(CoordinateSpace n, ℂ) where
-  toFun φ := conjSchwartz
-    (quantizeRightUniformCLM (a.map adjointRealCLM) (ha.map _) (conjSchwartz φ))
+  toFun φ := SchwartzMap.conjCLM
+    (quantizeRightUniformCLM (a.map adjointRealCLM) (ha.map _) (SchwartzMap.conjCLM φ))
   map_add' φ ψ := by simp
   map_smul' c φ := by
-    rw [conjSchwartz_smul, map_smul, conjSchwartz_smul, conj_conj, RingHom.id_apply]
-  cont := conjSchwartz.continuous.comp
-    ((quantizeRightUniformCLM _ (ha.map _)).continuous.comp conjSchwartz.continuous)
+    rw [SchwartzMap.conjCLM_smul, map_smul, SchwartzMap.conjCLM_smul, conj_conj,
+      RingHom.id_apply]
+  cont := SchwartzMap.conjCLM.continuous.comp
+    ((quantizeRightUniformCLM _ (ha.map _)).continuous.comp SchwartzMap.conjCLM.continuous)
 
 /-- `Op(a)ᵗ φ = conj (Op_R(ā) (conj φ))`, where `ā` is the pointwise adjoint of the symbol. -/
 theorem transposeUniformCLM_apply (φ : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n) :
     transposeUniformCLM a ha φ x = conj (quantizeRightUniformCLM (a.map adjointRealCLM)
-      (ha.map _) (SchwartzMap.postcompCLM conjCLE.toContinuousLinearMap φ) x) :=
-  (rfl)
+      (ha.map _) (SchwartzMap.conjCLM φ) x) :=
+  SchwartzMap.conjCLM_apply _ _
 
 /-- **The transpose identity.** `∫ φ · Op(a) u = ∫ Op(a)ᵗ φ · u` for all Schwartz functions `u`
 and `φ`. -/
 theorem integral_mul_quantizeUniformCLM (u φ : 𝓢(CoordinateSpace n, ℂ)) :
     ∫ x, φ x * quantizeUniformCLM a ha u x = ∫ x, transposeUniformCLM a ha φ x * u x := by
   -- Conjugate the adjoint identity `∫ ⟪Op(a) u, conj φ⟫ = ∫ ⟪u, Op_R(ā) (conj φ)⟫`.
-  have h := integral_inner_quantizeUniformCLM a ha u (conjSchwartz φ)
-  simp only [conjSchwartz_apply, RCLike.inner_apply] at h
+  have h := integral_inner_quantizeUniformCLM a ha u (SchwartzMap.conjCLM φ)
+  simp only [SchwartzMap.conjCLM_apply, RCLike.inner_apply] at h
   calc ∫ x, φ x * quantizeUniformCLM a ha u x
       = conj (∫ x, conj (φ x) * conj (quantizeUniformCLM a ha u x)) := by
         rw [← integral_conj]
         simp
     _ = conj (∫ x, quantizeRightUniformCLM (a.map adjointRealCLM)
-          (ha.map _) (conjSchwartz φ) x * conj (u x)) := by
+          (ha.map _) (SchwartzMap.conjCLM φ) x * conj (u x)) := by
         rw [h]
     _ = ∫ x, transposeUniformCLM a ha φ x * u x := by
         rw [← integral_conj]
-        simp [transposeUniformCLM_apply, conjSchwartz]
+        simp [transposeUniformCLM_apply]
 
 variable {a ha} in
 /-- **Uniqueness of the transpose.** An operator `B` on Schwartz space with
@@ -171,7 +159,8 @@ theorem transposeUniformCLM_const (T : ℂ →L[ℂ] ℂ) :
     rw [quantizeUniformCLM_const]
     simp only [SchwartzMap.postcompCLM_apply, smul_apply,
       ContinuousLinearMap.id_apply, smul_eq_mul]
-    rw [← mul_one (u x), ← smul_eq_mul (u x), T.map_smul, smul_eq_mul]
+    have hT : T (u x) = u x * T 1 := by simpa using T.map_smul (u x) 1
+    rw [hT]
     ring).symm
 
 /-- **The transpose of a commutator with a derivative.** Transposing
