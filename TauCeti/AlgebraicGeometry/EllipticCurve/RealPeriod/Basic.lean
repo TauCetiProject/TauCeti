@@ -231,8 +231,8 @@ private theorem setLIntegral_closedBall_lt_top {e₁ e₂ e₃ : ℂ} (h₁₂ :
           simp only [← ofReal_norm]
           rw [hfac, ← ENNReal.ofReal_mul (norm_nonneg _), ← ENNReal.ofReal_mul (by positivity)]
           exact ENNReal.ofReal_le_ofReal (by linarith)
-        · rw [ENNReal.mul_rpow_of_ne_top (ENNReal.mul_ne_top enorm_ne_top enorm_ne_top)
-            enorm_ne_top, ENNReal.mul_rpow_of_ne_top enorm_ne_top enorm_ne_top]
+        · rw [ENNReal.mul_rpow_of_ne_top (ENNReal.mul_ne_top eNorm_ne_top eNorm_ne_top)
+            eNorm_ne_top, ENNReal.mul_rpow_of_ne_top eNorm_ne_top eNorm_ne_top]
           exact hle x
     _ = K * ((∫⁻ x : ℝ in Metric.closedBall 0 R, ‖(x : ℂ) - e₁‖ₑ ^ (-2⁻¹ : ℝ)) +
           (∫⁻ x : ℝ in Metric.closedBall 0 R, ‖(x : ℂ) - e₂‖ₑ ^ (-2⁻¹ : ℝ)) +
@@ -359,22 +359,49 @@ private theorem ofReal_abs_mul_inv_sqrt_eq_normDet_fderiv_mul {r : ℝ → ℝ} 
   have hnormDet : (fderiv ℝ r x).normDet = |c * sx| := by
     rw [hd.hasFDerivAt.fderiv, LinearMap.normDet_eq_norm_apply_one]
     simp
-  have hsx' : 0 < |sx| := abs_pos.mpr hsx
-  have hΨx : 0 < √a := Real.sqrt_pos.mpr ha
   rw [hnormDet, hΨ, ← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (abs_nonneg _),
     Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs, abs_mul]
   congr 1
   field_simp
 
+/-- If `r` has zero derivative on the set where `Ψ₂Sq > 0`, away from a countable set `Z`, then the
+fibre-weighted integral of the substitution formula vanishes: by Sard's lemma the image of `r` is
+null, so almost no fibre over a point outside the image meets `{Ψ₂Sq > 0}`. -/
+private theorem setLIntegral_encard_fibre_eq_zero_of_hasDerivAt_zero {W' : WeierstrassCurve ℝ}
+    {r : ℝ → ℝ} {Z : Set ℝ} (hZ : Z.Countable)
+    (hr : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → HasDerivAt r 0 x) :
+    ∫⁻ y in {y | 0 < W'.Ψ₂Sq.eval y},
+        ({x | 0 < W.Ψ₂Sq.eval x} ∩ r ⁻¹' {y}).encard * ENNReal.ofReal (√(W'.Ψ₂Sq.eval y))⁻¹ =
+      0 := by
+  have hnull : volume (r '' ({x | 0 < W.Ψ₂Sq.eval x} \ Z)) = 0 :=
+    addHaar_image_eq_zero_of_det_fderivWithin_eq_zero (μ := volume) (f' := fun _ ↦ 0)
+      (fun x hx ↦ (by simpa using (hr x hx.1 hx.2).hasFDerivAt : HasFDerivAt r _ x)
+        |>.hasFDerivWithinAt)
+      (fun x _ ↦ by simp)
+  have hae : ∀ᵐ y : ℝ, y ∉ r '' ({x | 0 < W.Ψ₂Sq.eval x} \ Z) ∪ r '' Z :=
+    measure_eq_zero_iff_ae_notMem.1 (measure_union_null hnull ((hZ.image r).measure_zero _))
+  refine le_antisymm ?_ zero_le
+  calc ∫⁻ y in {y | 0 < W'.Ψ₂Sq.eval y},
+        ({x | 0 < W.Ψ₂Sq.eval x} ∩ r ⁻¹' {y}).encard * ENNReal.ofReal (√(W'.Ψ₂Sq.eval y))⁻¹
+      ≤ ∫⁻ _ in {y | 0 < W'.Ψ₂Sq.eval y}, 0 := by
+        refine lintegral_mono_ae (ae_restrict_of_ae (hae.mono fun y hy ↦ ?_))
+        have : {x | 0 < W.Ψ₂Sq.eval x} ∩ r ⁻¹' {y} = ∅ := by
+          refine Set.eq_empty_of_forall_notMem fun x hx ↦ hy ?_
+          by_cases hxZ : x ∈ Z
+          · exact .inr ⟨x, hxZ, hx.2⟩
+          · exact .inl ⟨x, ⟨hx.1, hxZ⟩, hx.2⟩
+        simp [this]
+    _ = 0 := by simp
+
 /-- **The real period integral under a substitution `x' = r(x)`, counting fibres.** Suppose that on
 the set where `Ψ₂Sq(x) > 0`, away from a countable set `Z`, the function `r` has derivative
-`r'(x) = c s(x)` with `c ≠ 0` and `s(x) ≠ 0`, and `Ψ₂Sq'(r(x)) = s(x)² Ψ₂Sq(x)`, where `Ψ₂Sq'` is
+`r'(x) = c s(x)` with `s(x) ≠ 0`, and `Ψ₂Sq'(r(x)) = s(x)² Ψ₂Sq(x)`, where `Ψ₂Sq'` is
 that of a second curve `W'`. Then `|c|` times the real period integral of `W` is the integral over
 `Ψ₂Sq'(x') > 0` of `dx' / √Ψ₂Sq'(x')`, weighted by the number of `x` with `Ψ₂Sq(x) > 0` and
 `r(x) = x'`. The hypotheses are those of a map `(x, y) ↦ (r(x), …)` sending `2y + a₁x + a₃` to
 `s(x) (2y + a₁x + a₃)` and pulling the invariant differential back to `c ω`. -/
 theorem ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard {W' : WeierstrassCurve ℝ}
-    {r s : ℝ → ℝ} {c : ℝ} {Z : Set ℝ} (hc : c ≠ 0) (hZ : Z.Countable)
+    {r s : ℝ → ℝ} {c : ℝ} {Z : Set ℝ} (hZ : Z.Countable)
     (hr : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → HasDerivAt r (c * s x) x)
     (hs : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → s x ≠ 0)
     (hΨ : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → W'.Ψ₂Sq.eval (r x) = s x ^ 2 * W.Ψ₂Sq.eval x) :
@@ -382,6 +409,12 @@ theorem ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard {W' : Weierstr
       ∫⁻ y in {y | 0 < W'.Ψ₂Sq.eval y},
         ({x | 0 < W.Ψ₂Sq.eval x} ∩ r ⁻¹' {y}).encard * ENNReal.ofReal (√(W'.Ψ₂Sq.eval y))⁻¹ := by
   classical
+  by_cases hc : c = 0
+  · -- `r` has zero derivative off `Z`, so the fibre-weighted integral vanishes
+    subst hc
+    rw [abs_zero, ENNReal.ofReal_zero, zero_mul]
+    exact (setLIntegral_encard_fibre_eq_zero_of_hasDerivAt_zero (W := W) hZ
+      fun x hx hxZ ↦ by simpa using hr x hx hxZ).symm
   set U := {x | 0 < W.Ψ₂Sq.eval x}
   set S := U \ Z
   set g : ℝ → ℝ≥0∞ := fun y ↦ ENNReal.ofReal (√(W'.Ψ₂Sq.eval y))⁻¹ with g_def
@@ -439,13 +472,13 @@ hypotheses of `WeierstrassCurve.ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegr
 almost every `x'` with `Ψ₂Sq'(x') > 0` is `r(x)` for exactly `n` values `x` with `Ψ₂Sq(x) > 0`,
 then `|c|` times the real period integral of `W` is `n` times that of `W'`. -/
 theorem ofReal_abs_mul_realPeriodLIntegral_eq_of_ae_encard_eq {W' : WeierstrassCurve ℝ}
-    {r s : ℝ → ℝ} {c : ℝ} {Z : Set ℝ} (hc : c ≠ 0) (hZ : Z.Countable)
+    {r s : ℝ → ℝ} {c : ℝ} {Z : Set ℝ} (hZ : Z.Countable)
     (hr : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → HasDerivAt r (c * s x) x)
     (hs : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → s x ≠ 0)
     (hΨ : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → W'.Ψ₂Sq.eval (r x) = s x ^ 2 * W.Ψ₂Sq.eval x)
     {n : ℕ} (hn : ∀ᵐ y, 0 < W'.Ψ₂Sq.eval y → ({x | 0 < W.Ψ₂Sq.eval x} ∩ r ⁻¹' {y}).encard = n) :
     ENNReal.ofReal |c| * W.realPeriodLIntegral = n * W'.realPeriodLIntegral := by
-  rw [W.ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard hc hZ hr hs hΨ,
+  rw [W.ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard hZ hr hs hΨ,
     realPeriodLIntegral_def, ← lintegral_const_mul' _ _ (ENNReal.natCast_ne_top n)]
   refine setLIntegral_congr_fun_ae
     (measurableSet_lt measurable_const W'.Ψ₂Sq.continuous.measurable) ?_
@@ -455,14 +488,14 @@ theorem ofReal_abs_mul_realPeriodLIntegral_eq_of_ae_encard_eq {W' : WeierstrassC
 /-- **The real period under a substitution with constant fibre count**: `|c| Ω(W) = n Ω(W')`, under
 the hypotheses of `WeierstrassCurve.ofReal_abs_mul_realPeriodLIntegral_eq_of_ae_encard_eq`. -/
 theorem abs_mul_realPeriod_eq_of_ae_encard_eq {W' : WeierstrassCurve ℝ}
-    {r s : ℝ → ℝ} {c : ℝ} {Z : Set ℝ} (hc : c ≠ 0) (hZ : Z.Countable)
+    {r s : ℝ → ℝ} {c : ℝ} {Z : Set ℝ} (hZ : Z.Countable)
     (hr : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → HasDerivAt r (c * s x) x)
     (hs : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → s x ≠ 0)
     (hΨ : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → W'.Ψ₂Sq.eval (r x) = s x ^ 2 * W.Ψ₂Sq.eval x)
     {n : ℕ} (hn : ∀ᵐ y, 0 < W'.Ψ₂Sq.eval y → ({x | 0 < W.Ψ₂Sq.eval x} ∩ r ⁻¹' {y}).encard = n) :
     |c| * W.realPeriod = n * W'.realPeriod := by
   have h := congrArg ENNReal.toReal
-    (W.ofReal_abs_mul_realPeriodLIntegral_eq_of_ae_encard_eq hc hZ hr hs hΨ hn)
+    (W.ofReal_abs_mul_realPeriodLIntegral_eq_of_ae_encard_eq hZ hr hs hΨ hn)
   rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (abs_nonneg c), ENNReal.toReal_mul,
     ENNReal.toReal_natCast] at h
   rw [realPeriod, realPeriod, mul_left_comm, h, mul_left_comm]
@@ -486,10 +519,7 @@ theorem setLIntegral_Ioo_eq_setLIntegral_Ioi {e₁ e₂ e₃ : ℝ} (h₁₂ : e
     have hx₁ : x - e₁ ≠ 0 := by rw [mem_Ioi] at hx; linarith
     have hd := (((hasDerivAt_id x).sub_const e₁).inv hx₁).const_mul k |>.const_add e₁
     exact (hd.congr_deriv (by simp only [id_eq]; field_simp)).hasDerivWithinAt
-  have hinj : InjOn f (Ioi e₃) := fun a ha b hb hab ↦ by
-    rw [mem_Ioi] at ha hb
-    have ha₁ : a - e₁ ≠ 0 := by linarith
-    have hb₁ : b - e₁ ≠ 0 := by linarith
+  have hinj : InjOn f (Ioi e₃) := fun a _ b _ hab ↦ by
     simp only [f, add_right_inj, mul_right_inj' hk.ne', inv_inj, sub_left_inj] at hab
     exact hab
   have himage : f '' Ioi e₃ = Ioo e₁ e₂ := by

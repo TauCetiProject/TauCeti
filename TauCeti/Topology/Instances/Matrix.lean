@@ -15,6 +15,7 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.UniformSpace.Matrix
 public import Mathlib.Topology.Metrizable.Basic
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
+public import TauCeti.LinearAlgebra.Matrix.Trace.Partial
 public import TauCeti.Topology.Algebra.IsOpenUnits
 
 /-!
@@ -55,7 +56,8 @@ Each characteristic coefficient is continuous over a commutative topological rin
 `Matrix.charpoly.univ`, whose coefficients are multivariate polynomials in the matrix entries.
 
 The Kronecker product of two continuously varying matrices is continuous in the product topology.
-In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous.
+In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous. So are
+both partial traces of a continuously varying matrix on a product index.
 
 The matrices with nonnegative diagonal form a closed set
 (`Matrix.isClosed_setOfPred_nonneg_diag`).
@@ -211,6 +213,31 @@ theorem Continuous.matrix_kronecker {X R l m n p : Type*} [TopologicalSpace X]
   intro i j
   simp only [Matrix.kroneckerMap_apply]
   exact (hA.matrix_elem i.1 j.1).mul (hB.matrix_elem i.2 j.2)
+
+section PartialTrace
+
+variable {X R m n : Type*} [TopologicalSpace X] [TopologicalSpace R] [AddCommMonoid R]
+  [ContinuousAdd R] {A : X → Matrix (m × n) (m × n) R}
+
+/-- The partial trace over the second factor of a continuous matrix-valued function is
+continuous. -/
+@[continuity, fun_prop]
+theorem Continuous.matrix_partialTraceRight [Fintype n] (hA : Continuous A) :
+    Continuous fun x ↦ (A x).partialTraceRight :=
+  continuous_matrix fun i j ↦ by
+    simpa only [Matrix.partialTraceRight_apply] using
+      continuous_finsetSum _ fun k _ ↦ hA.matrix_elem (i, k) (j, k)
+
+/-- The partial trace over the first factor of a continuous matrix-valued function is
+continuous. -/
+@[continuity, fun_prop]
+theorem Continuous.matrix_partialTraceLeft [Fintype m] (hA : Continuous A) :
+    Continuous fun x ↦ (A x).partialTraceLeft :=
+  continuous_matrix fun i j ↦ by
+    simpa only [Matrix.partialTraceLeft_apply] using
+      continuous_finsetSum _ fun k _ ↦ hA.matrix_elem (k, i) (k, j)
+
+end PartialTrace
 
 namespace Matrix
 

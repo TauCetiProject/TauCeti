@@ -93,15 +93,15 @@ on the left-hand factor of the composite; `FGModuleCat.dualMap_negDualMap` is th
 calculation with the minus sign on the right-hand factor. -/
 theorem negDualMap_comp_dualMap {M N : FGModuleCat.{u} R} [Module.Projective R M]
     [Module.Projective R N] (w : R) (f : M ⟶ N) (g : N ⟶ M) (h : f ≫ g = w • 𝟙 M) :
-    ((-FGModuleCat.dualMap g) ≫ FGModuleCat.dualMap f) = -w • 𝟙 (FGModuleCat.dual R M) := by
-  calc (-FGModuleCat.dualMap g) ≫ FGModuleCat.dualMap f
-      = -(FGModuleCat.dualMap g ≫ FGModuleCat.dualMap f) := by simp only [neg_comp]
-    _ = -FGModuleCat.dualMap (f ≫ g) := by
-      rw [FGModuleCat.dualMap_comp (f := f) (g := g)]
-    _ = -FGModuleCat.dualMap (w • 𝟙 M) := by rw [h]
-    _ = -(w • FGModuleCat.dualMap (𝟙 M)) := by rw [FGModuleCat.dualMap_smul]
-    _ = -(w • 𝟙 (FGModuleCat.dual R M)) := by rw [FGModuleCat.dualMap_id]
-    _ = -w • 𝟙 (FGModuleCat.dual R M) := by rw [neg_smul]
+    ((-dualMap g) ≫ dualMap f) = -w • 𝟙 (dual R M) := by
+  calc (-dualMap g) ≫ dualMap f
+      = -(dualMap g ≫ dualMap f) := by simp only [neg_comp]
+    _ = -dualMap (f ≫ g) := by
+      rw [dualMap_comp (f := f) (g := g)]
+    _ = -dualMap (w • 𝟙 M) := by rw [h]
+    _ = -(w • dualMap (𝟙 M)) := by rw [dualMap_smul]
+    _ = -(w • 𝟙 (dual R M)) := by rw [dualMap_id]
+    _ = -w • 𝟙 (dual R M) := by rw [neg_smul]
 
 /-- The other placement of the minus sign: for a curved pair of maps `f` and `g` with
 `f ≫ g = w • 𝟙`, the composite of the transpose of `g` with the negated transpose of `f` is
@@ -111,8 +111,8 @@ composite. It is `FGModuleCat.negDualMap_comp_dualMap` read the other way round,
 either factor of a composite negates the composite. -/
 theorem dualMap_negDualMap {M N : FGModuleCat.{u} R} [Module.Projective R M]
     [Module.Projective R N] (w : R) (f : M ⟶ N) (g : N ⟶ M) (h : f ≫ g = w • 𝟙 M) :
-    (FGModuleCat.dualMap g ≫ (-FGModuleCat.dualMap f)) = -w • 𝟙 (FGModuleCat.dual R M) := by
-  rw [Preadditive.comp_neg, ← Preadditive.neg_comp, negDualMap_comp_dualMap (R := R) w f g h]
+    (dualMap g ≫ (-dualMap f)) = -w • 𝟙 (dual R M) := by
+  rw [comp_neg, ← neg_comp, negDualMap_comp_dualMap (R := R) w f g h]
 
 /-- The same computation one dual further: the composite of the two negated double transposes of
 a curved pair of maps is multiplication by the original `w` on the double dual. This is the
@@ -121,21 +121,16 @@ has the same curvature as its source. -/
 theorem negDualMap_dualMap_comp_negDualMap_dualMap {M N : FGModuleCat.{u} R}
     [Module.Projective R M] [Module.Projective R N] (w : R) (f : M ⟶ N) (g : N ⟶ M)
     (h : f ≫ g = w • 𝟙 M) :
-    ((-FGModuleCat.dualMap (FGModuleCat.dualMap f)) ≫
-      (-FGModuleCat.dualMap (FGModuleCat.dualMap g)))
-      = w • 𝟙 (FGModuleCat.dual R (FGModuleCat.dual R M)) := by
-  calc (-FGModuleCat.dualMap (FGModuleCat.dualMap f)) ≫
-        (-FGModuleCat.dualMap (FGModuleCat.dualMap g))
-      = FGModuleCat.dualMap (FGModuleCat.dualMap f) ≫
-          FGModuleCat.dualMap (FGModuleCat.dualMap g) := by
-            rw [Preadditive.neg_comp_neg]
-    _ = FGModuleCat.dualMap (FGModuleCat.dualMap (f ≫ g)) := by
-      rw [← FGModuleCat.dualMap_comp, ← FGModuleCat.dualMap_comp]
-    _ = FGModuleCat.dualMap (FGModuleCat.dualMap (w • 𝟙 M)) := by rw [h]
-    _ = w • FGModuleCat.dualMap (FGModuleCat.dualMap (𝟙 M)) := by
-      simp only [FGModuleCat.dualMap_smul]
-    _ = w • 𝟙 (FGModuleCat.dual R (FGModuleCat.dual R M)) := by
-      rw [FGModuleCat.dualMap_id, FGModuleCat.dualMap_id]
+    ((-dualMap (dualMap f)) ≫ (-dualMap (dualMap g))) = w • 𝟙 (dual R (dual R M)) := by
+  calc (-dualMap (dualMap f)) ≫ (-dualMap (dualMap g))
+      = dualMap (dualMap f) ≫ dualMap (dualMap g) := by rw [Preadditive.neg_comp_neg]
+    _ = dualMap (dualMap (f ≫ g)) := by
+      rw [← dualMap_comp, ← dualMap_comp]
+    _ = dualMap (dualMap (w • 𝟙 M)) := by rw [h]
+    _ = w • dualMap (dualMap (𝟙 M)) := by
+      simp only [dualMap_smul]
+    _ = w • 𝟙 (dual R (dual R M)) := by
+      rw [dualMap_id, dualMap_id]
 
 end FGModuleCat
 
@@ -206,8 +201,8 @@ is the identity of its dual. -/
 @[simp] theorem dualMap_id (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] :
     dualMap (𝟙 X) = 𝟙 X.dual :=
-  hom_ext ((CurvedDuplex.dualMap_f₀ (𝟙 X)).trans (by simp))
-    ((CurvedDuplex.dualMap_f₁ (𝟙 X)).trans (by simp))
+  hom_ext ((dualMap_f₀ (𝟙 X)).trans (by simp))
+    ((dualMap_f₁ (𝟙 X)).trans (by simp))
 
 /-- Dualization is contravariant on morphisms: the dual of a composite is the composite of
 the duals in the opposite order. -/
@@ -328,7 +323,6 @@ isomorphism. -/
 @[simp] theorem doubleDualIso_inv_f₁ (X : CurvedDuplex (FGModuleCat.{u} S) w)
     [Module.Projective S X.X₀] [Module.Projective S X.X₁] :
     (X.doubleDualIso).inv.f₁ = (FGModuleCat.dualEvalIso X.X₁).inv := (rfl)
-
 
 end CurvedDuplex
 

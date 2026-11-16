@@ -157,7 +157,7 @@ private theorem burkholderConst_sign (hp : 2 ≤ p) {s : ℝ} (hs₀ : 0 ≤ s) 
 `((p - 1) ^ (p - 1) / p ^ (p - 2)) (p s - 1) ≤ (p - 1) ^ p s ^ p - (1 - s) ^ p`. -/
 private theorem burkholderConst_mul_le (hp : 2 ≤ p) {s : ℝ} (hs₀ : 0 ≤ s) (hs₁ : s ≤ 1) :
     (p - 1) ^ (p - 1) / p ^ (p - 2) * (p * s - 1) ≤ (p - 1) ^ p * s ^ p - (1 - s) ^ p := by
-  set c := (p - 1) ^ (p - 1) / p ^ (p - 2) with hc
+  set c := (p - 1) ^ (p - 1) / p ^ (p - 2)
   have hp₀ : 0 < p := by linarith
   have hp₁ : 0 < p - 1 := by linarith
   -- `F(s) = (p - 1) ^ p s ^ p - (1 - s) ^ p - c (p s - 1)` has derivative `p (k(s) - c)`, with `k`

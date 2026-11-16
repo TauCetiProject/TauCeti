@@ -30,9 +30,6 @@ the character pairing.
 ## References
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, Part II, §9.1.
-
-This is the injectivity target in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`.
 -/
 
 public section

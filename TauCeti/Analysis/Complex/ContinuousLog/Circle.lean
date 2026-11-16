@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.ContinuousLog.Basic
 import Mathlib.MeasureTheory.Integral.CircleIntegral
+import TauCeti.Analysis.Complex.SlitPlane
 
 /-!
 # Continuous logarithms on circles
@@ -21,6 +22,9 @@ This file collects the facts about `TauCeti.HasContinuousLogOn` on circles in `�
 * `TauCeti.exists_forall_hasContinuousLogOn_sphere`: a function continuous off the origin and
   tending to one at infinity has its principal logarithm on every large enough circle about the
   origin.
+* `TauCeti.hasContinuousLogOn_prod_pow_div_pow_sphere`: on a circle about `c` avoiding a finite
+  set `s`, the product `∏ z ∈ s, (w - z) ^ n z` is `(w - c) ^ N` times a function with a
+  continuous logarithm, where `N` counts the factors whose zero lies inside the circle.
 -/
 
 public section
@@ -95,6 +99,53 @@ theorem exists_forall_hasContinuousLogOn_sphere {F : ℂ → ℂ}
     linarith [le_max_right R 0]
   exact hasContinuousLogOn_of_mapsTo_slitPlane
     (fun w hw ↦ (hc w (hS w hw).2).continuousWithinAt) fun w hw ↦ hR (hS w hw).1
+
+/-! ### The winding of a product of linear factors around a circle -/
+
+/-- **Winding of a product around a circle.** On a circle about `c` that avoids the finite set
+`s`, the product `∏ z ∈ s, (w - z) ^ n z` is `(w - c) ^ N` times a function with a continuous
+logarithm, where `N = ∑ n z` over the points `z ∈ s` inside the circle. -/
+theorem hasContinuousLogOn_prod_pow_div_pow_sphere (s : Finset ℂ) (n : ℂ → ℕ) {c : ℂ} {r : ℝ}
+    (hs : ∀ z ∈ s, dist z c ≠ r) :
+    HasContinuousLogOn
+      (fun w ↦ (∏ z ∈ s, (w - z) ^ n z) / (w - c) ^ (∑ z ∈ s with dist z c < r, n z))
+      (sphere c r) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using hasContinuousLogOn_const (S := sphere c r) one_ne_zero
+  | insert a s ha ih =>
+    have ih := ih fun z hz ↦ hs z (Finset.mem_insert_of_mem hz)
+    rcases (hs a (Finset.mem_insert_self a s)).lt_or_gt with hlt | hgt
+    · -- `a` is inside the circle: the factor `(w - a) / (w - c)` has a logarithm
+      have hfac : HasContinuousLogOn (fun w ↦ ((w - a) / (w - c)) ^ n a) (sphere c r) :=
+        (hasContinuousLogOn_sub_div_sub_of_norm_lt fun w hw ↦ by
+          rw [← dist_eq_norm, ← dist_eq_norm, mem_sphere.1 hw]
+          exact hlt).pow (n a)
+      refine (hfac.mul ih).congr fun w hw ↦ ?_
+      have hw0 : w - c ≠ 0 := by
+        rw [← norm_ne_zero_iff, ← dist_eq_norm, mem_sphere.1 hw]
+        exact (dist_nonneg.trans_lt hlt).ne'
+      simp only [Finset.filter_insert, hlt, ↓reduceIte]
+      rw [Finset.prod_insert ha, Finset.sum_insert (by simp [ha]), div_pow, pow_add]
+      field_simp
+    · -- `a` is outside the circle: the factor `w - a` itself has a logarithm
+      rcases eq_or_ne c a with rfl | hca
+      · -- then the radius is negative and the circle is empty
+        have hempty : sphere c r = ∅ :=
+          sphere_eq_empty_of_neg (by simpa using hgt)
+        rw [hempty]
+        exact hasContinuousLogOn_iff.2 ⟨0, continuousOn_empty _, fun _ h ↦ h.elim⟩
+      have hca : c - a ≠ 0 := sub_ne_zero.2 hca
+      have hlog : HasContinuousLogOn (fun w ↦ (w - a) / (c - a)) (sphere c r) :=
+        hasContinuousLogOn_of_mapsTo_slitPlane (by fun_prop) fun w hw ↦
+          div_sub_mem_slitPlane_of_dist_lt_dist (by rw [mem_sphere.1 hw, dist_comm]; exact hgt)
+      have hfac : HasContinuousLogOn (fun w ↦ (w - a) ^ n a) (sphere c r) :=
+        ((hlog.mul (hasContinuousLogOn_const hca)).congr fun w _ ↦ by
+          field_simp).pow (n a)
+      refine (hfac.mul ih).congr fun w _ ↦ ?_
+      simp only [Finset.filter_insert, not_lt.2 hgt.le, ↓reduceIte]
+      rw [Finset.prod_insert ha]
+      ring
 
 end TauCeti
 

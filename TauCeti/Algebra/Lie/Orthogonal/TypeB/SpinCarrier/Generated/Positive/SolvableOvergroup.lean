@@ -107,7 +107,7 @@ theorem quotient_genericMatrix_eq_zero_of_raisingPath
       clear hne
       induction hpath with
       | refl => exact id
-      | @tail b c hpath hstep ih =>
+      | @tail b c _ hstep ih =>
         obtain ⟨i, hi⟩ := hstep
         obtain ⟨hneg, href⟩ := basisReflection_eq_of_weight_sub n i hi
         exact fun ha ↦ by

@@ -124,7 +124,7 @@ theorem isFG_coextendScalars [Module.Finite k R]
           (map_smul _ _ _) }
   -- `S` is a direct summand of some `R^n`, so `Hom_R(S, M)` is a quotient of `Hom_R(R^n, M)`,
   -- which is finitely generated over `k` because `M` is.
-  obtain ⟨n, π, σ, hπ, -, hσ⟩ := Module.Finite.exists_comp_eq_id_of_projective R S'
+  obtain ⟨n, π, σ, _, -, hσ⟩ := Module.Finite.exists_comp_eq_id_of_projective R S'
   have : Module.Finite k (S' →ₗ[R] M) := .of_surjective (LinearMap.lcomp k M σ) fun ψ ↦
     ⟨ψ ∘ₗ π, by rw [LinearMap.lcomp_apply', LinearMap.comp_assoc, hσ, LinearMap.comp_id]⟩
   have : Module.Finite k X := .equiv e.symm

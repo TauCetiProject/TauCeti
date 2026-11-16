@@ -150,14 +150,14 @@ theorem exists_mass_curvatureCurrent_le (o : Orientation ℝ E (Fin (1 + 1 + l))
     simp only [N]
     gcongr
     exact le_max_left B 0
-  rw [curvatureCurrent_def, FunLike.coe_smul, mass_smul, enorm_neg]
+  rw [curvatureCurrent_def, FunLike.coe_smul, mass_smul, eNorm_neg]
   calc ‖(2 * π)⁻¹‖ₑ * mass (o.formCurrent Ω (extDeriv b) : 𝓓^{n}(Ω, _) →L[ℝ] ℝ)
       ≤ ‖(2 * π)⁻¹‖ₑ * (K * ∫⁻ x in Ω, ‖extDeriv b x‖ₑ ∂μ) := by gcongr; exact hK _
     _ ≤ ‖(2 * π)⁻¹‖ₑ * (K * ENNReal.ofReal N) := by
         gcongr
         exact hint.trans (ENNReal.ofReal_le_ofReal hN)
     _ = ((‖(2 * π)⁻¹‖₊ * K * N.toNNReal : ℝ≥0) : ℝ≥0∞) := by
-        rw [ENNReal.ofReal, enorm_eq_nnnorm]
+        rw [ENNReal.ofReal, eNorm_eq_nnNorm]
         push_cast
         ring
 
@@ -203,8 +203,6 @@ theorem exists_mapClusterPt_curvatureCurrent {k : ℕ}
       ‖extDeriv (b i) x‖ ≤ A * r i * max (1 - ‖α i x‖ ^ 2) 0 + 2 * C := by
     have hr₁ : 1 ≤ r i := le_of_max_le_left (hr i)
     have hsq : C / √(r i) ≤ C := div_le_self hC (by simpa using Real.sqrt_le_sqrt hr₁)
-    have hw : 0 ≤ max (1 - ‖α i x‖ ^ 2) 0 := le_max_right _ _
-    have hq : 0 ≤ r i / (4 * √2) := by positivity
     calc ‖extDeriv (b i) x‖ = ‖Fp i x + Fm i x‖ := by rw [← hsplit i x hx, norm_neg]
       _ ≤ ‖Fp i x‖ + ‖Fm i x‖ := norm_add_le _ _
       _ ≤ r i / (4 * √2) * max (1 - ‖α i x‖ ^ 2) 0 + C +

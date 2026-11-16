@@ -136,9 +136,6 @@ private lemma det_normalized {n : ℕ} {f : Fin n → F} (hf : ∀ j, f j ≠ 0)
   have := P.isSeparable_residueField_of_degree_eq_one hP
   generalize hNdef : (of fun i j : Fin n ↦ t ^ (i : ℕ) *
       ((f j)⁻¹ * (⇑(derivativeOfSeparating htr))^[i] (f j))) = N
-  have ht0 : t ≠ 0 := by
-    rintro rfl
-    simp at ht
   let c : Matrix (Fin n) (Fin n) ℤ := of fun i j ↦ (descPochhammer ℤ i).eval (P.ord (f j))
   -- Each normalized entry is congruent to the integer `(ord f_j)(ord f_j - 1)⋯` modulo `𝔪_P`.
   have hentry (i j : Fin n) : N i j - (c i j : F) ∈ P.filtration 1 := by

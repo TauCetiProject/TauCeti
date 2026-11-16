@@ -126,7 +126,6 @@ theorem cubicalChainModuleHomotopy_spec (e : Y ≃ₕ Y') (x : cubicalChainModul
       x + cubicalChainModuleDifferential Y G R (cubicalChainModuleHomotopy R e x) +
         cubicalChainModuleHomotopy R e (cubicalChainModuleDifferential Y G R x) := by
   induction x using cubicalChainModule.induction_on with
-  | zero => simp only [map_zero, add_zero]
   | add x x' hx hx' =>
     rw [map_add, map_add, hx, hx', map_add, map_add, map_add, map_add]
     abel

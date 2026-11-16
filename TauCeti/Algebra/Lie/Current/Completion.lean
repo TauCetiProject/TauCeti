@@ -97,6 +97,8 @@ completion of `U(ĝ_κ₀) / (K - k)`.
   the classes of `b`.
 * `TauCeti.CurrentAlgebra.exists_forall_mul_mem_completedOrderLeftIdeal`: the right-shift estimate
   in `Û`.
+* `TauCeti.CurrentAlgebra.tendsto_toCompletedEnveloping_envelopingι_ofLoop_trunc`: in `Û`, a
+  current is the limit of its truncations.
 * `TauCeti.CurrentAlgebra.eq_completedEnvelopingMap`: uniqueness of continuous extensions.
 * `TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv_mem_completedOrderLeftIdeal_iff`: the
   completed level comparison matches the kernels of the projections to `U / I_n`.
@@ -333,6 +335,21 @@ theorem isOpen_completedOrderLeftIdeal (n : ℕ) :
     IsOpen (completedOrderLeftIdeal Φ hΦ hΦs a n : Set (CompletedEnveloping Φ hΦ hΦs a)) :=
   (orderQuotientTower Φ hΦ hΦs a).isOpen_ker_limπ n
 
+/-- **A current is the limit of its truncations in `Û`**: the images of the truncations
+`trunc N u` converge to the image of `u`. This is the completed counterpart of
+`TauCeti.CurrentAlgebra.tendsto_ofLoop_trunc`. -/
+theorem tendsto_toCompletedEnveloping_envelopingι_ofLoop_trunc (u : currentAlgebra R L) :
+    Filter.Tendsto (fun N : ℕ ↦ toCompletedEnveloping Φ hΦ hΦs a
+        (envelopingι (twoCocycleOfBilinear R L Φ hΦ hΦs) a (ofLoop R L (trunc R L N u))))
+      Filter.atTop (𝓝 (toCompletedEnveloping Φ hΦ hΦs a
+        (envelopingι (twoCocycleOfBilinear R L Φ hΦ hΦs) a u))) := by
+  rw [← tendsto_sub_nhds_zero_iff,
+    (hasBasis_nhds_zero_completedOrderLeftIdeal Φ hΦ hΦs a).tendsto_right_iff]
+  refine fun N _ ↦ Filter.eventually_atTop.2 ⟨N, fun M hM ↦ ?_⟩
+  rw [← map_sub, ← map_sub, SetLike.mem_coe, toCompletedEnveloping_mem_completedOrderLeftIdeal_iff]
+  exact orderLeftIdeal_natCast_antitone Φ hΦ hΦs a hM
+    (envelopingι_mem_orderLeftIdeal (ofLoop_trunc_sub_mem_orderSubmodule R L M u))
+
 end Completion
 
 /-! ### Functoriality -/
@@ -496,22 +513,21 @@ variable (e : CentralQuotient R (centralElement (twoCocycleOfBilinear R L Ψ hΨ
     e.symm (envelopingι (twoCocycleOfBilinear R L Φ hΦ hΦs) a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n)
 
 /-- The extension of `e` is the extension `TauCeti.CurrentAlgebra.completedEnvelopingMap` of the
-underlying algebra morphism of `e`. The continuity hypothesis `hg` is an argument, so this is
-stated for `rw` rather than `simp`. -/
-theorem completedEnvelopingEquiv_toAlgHom
-    (hg : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      (e : UΨ →ₐ[R] UΦ) (envelopingι cΨ b u) ∈ orderLeftIdeal Φ hΦ hΦs a n) :
+underlying algebra morphism of `e`. -/
+@[simp]
+theorem completedEnvelopingEquiv_toAlgHom :
     (completedEnvelopingEquiv e he he' : CompletedEnveloping Ψ hΨ hΨs b →ₐ[R]
-      CompletedEnveloping Φ hΦ hΦs a) = completedEnvelopingMap (e : UΨ →ₐ[R] UΦ) hg :=
+      CompletedEnveloping Φ hΦ hΦs a) =
+      completedEnvelopingMap (e : UΨ →ₐ[R] UΦ) (by simpa using he) :=
   AlgHom.ext fun _ ↦ rfl
 
 /-- The inverse of the extension of `e` is the extension
 `TauCeti.CurrentAlgebra.completedEnvelopingMap` of the underlying algebra morphism of `e⁻¹`. -/
-theorem completedEnvelopingEquiv_symm_toAlgHom
-    (hg : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      (e.symm : UΦ →ₐ[R] UΨ) (envelopingι cΦ a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n) :
+@[simp]
+theorem completedEnvelopingEquiv_symm_toAlgHom :
     ((completedEnvelopingEquiv e he he').symm : CompletedEnveloping Φ hΦ hΦs a →ₐ[R]
-      CompletedEnveloping Ψ hΨ hΨs b) = completedEnvelopingMap (e.symm : UΦ →ₐ[R] UΨ) hg :=
+      CompletedEnveloping Ψ hΨ hΨs b) =
+      completedEnvelopingMap (e.symm : UΦ →ₐ[R] UΨ) (by simpa using he') :=
   AlgHom.ext fun _ ↦ rfl
 
 /-- The extension of `e` to the completions extends `e`. -/

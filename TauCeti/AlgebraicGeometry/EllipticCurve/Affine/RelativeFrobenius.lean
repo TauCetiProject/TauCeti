@@ -34,10 +34,8 @@ powers and factors the absolute Frobenius through Mathlib's base-change map.
 * `iterateRelativeFrobenius_comp_map`: the iterated coefficient Frobenius followed by the
   iterated relative Frobenius is the `p ^ n`-power map.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 1**, the relative Frobenius milestone. This is
-the coordinate-ring construction underlying the function-field pullback and isogeny.
+This is the coordinate-ring construction underlying the relative Frobenius function-field pullback
+and isogeny.
 
 ## Provenance
 

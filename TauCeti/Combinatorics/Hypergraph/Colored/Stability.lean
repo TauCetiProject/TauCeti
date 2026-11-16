@@ -62,7 +62,7 @@ theorem card_comap_ne_le (H H' : Colored3Graph κ V) {W : Type*} [Fintype W] :
     calc
       _ ≤ ∑ t ∈ edits, 6 * Fintype.card V ^ (Fintype.card W - 3) := by
         apply sum_le_sum
-        intro t ht
+        intro t _
         calc
           _ ≤ #{f : W ↪ V | Set.powersetCard.map 3 f s = t} :=
             card_le_card (by
@@ -176,7 +176,6 @@ theorem inducedCopyCount_edit_transfer (H H' : Colored3Graph κ V)
   · have hk₀ : 0 < F.k := by omega
     simp [inducedCopyCount_eq_zero_of_card_lt _ _ (by omega : Fintype.card V < F.k),
       hn, hk₀.ne']
-  have hn' : (Fintype.card V : ℝ) ≠ 0 := by exact_mod_cast hn
   convert H.abs_inducedCopyCount_sub_le_edits H' F using 1
   rw [editDiscrepancy3_def]
   push_cast

@@ -88,7 +88,7 @@ theorem LocallyIntegrableOn.variationMeasure_absolutelyContinuous_of_unifIntegra
       rw [Measure.restrict_apply W.isOpen.measurableSet, inter_eq_left.mpr hWΩ]
       exact (measure_mono inter_subset_left).trans hVδ.le)
     rwa [Measure.restrict_restrict_of_subset hWΩ,
-      eLpNorm_one_eq_lintegral_enorm
+      eLpNorm_one_eq_lintegral_eNorm
         ((hv i).locallyIntegrableOn_deriv.aestronglyMeasurable.mono_measure
           (Measure.restrict_mono_set μ hWΩ))] at hbound
 
@@ -125,9 +125,11 @@ theorem LocallyIntegrableOn.exists_hasWeakFDerivOn_integrableOn_of_uniformIntegr
       (∫⁻ x in Ω, ‖g x‖ₑ ∂μ) ≤ liminf (fun i => ∫⁻ x in Ω, ‖U i x‖ₑ ∂μ) l := by
   have hlsc := totalVariationOn_le_liminf
     (.of_forall fun i => (hv i).locallyIntegrableOn) hu hconv
-  obtain ⟨C, hC⟩ := hUI.2
+  obtain ⟨C, hC⟩ : ∃ C : NNReal, ∀ i, eLpNorm (U i) 1 (μ.restrict Ω) ≤ C :=
+    ⟨_, fun i ↦ (le_iSup (fun i ↦ eLpNorm (U i) 1 (μ.restrict Ω)) i).trans_eq
+      (ENNReal.coe_toNNReal hUI.iSup_eLpNorm_lt.ne).symm⟩
   have hnorm (i : ι) : (∫⁻ x in Ω, ‖U i x‖ₑ ∂μ) ≤ C := by
-    simpa only [eLpNorm_one_eq_lintegral_enorm
+    simpa only [eLpNorm_one_eq_lintegral_eNorm
       (hv i).locallyIntegrableOn_deriv.aestronglyMeasurable] using hC i
   have htv : totalVariationOn μ Ω u ≤ C := hlsc.trans
     (liminf_le_of_frequently_le' (.of_forall fun i =>

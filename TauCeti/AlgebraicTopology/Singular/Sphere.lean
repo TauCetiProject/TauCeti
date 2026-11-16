@@ -115,9 +115,18 @@ Coefficients are an object `R` of an abelian category with coproducts.
   of its antipodal map `TauCeti.diskBoundaryNeg`, and
   `TauCeti.reducedSingularHomologyFunctor_map_diskBoundaryMap`: an orthogonal map acts on the
   homology of `TopCat.sphere n` by the sign of its determinant.
+* `TauCeti.singularHomology_topCatSphere_eq_smul_generator`: with coefficients in a ring, the top
+  homology of `TopCat.sphere (m + 1)` is spanned by the standard generator.
+* `TauCeti.isZero_singularHomologyFunctor_topCatSphere_of_ne`: the ordinary homology of
+  `TopCat.sphere n` vanishes in positive degrees other than `n`.
+* `TauCeti.singularHomologyTopCatSphereGenerator` and
+  `TauCeti.exists_eq_smul_singularHomologyTopCatSphereGenerator`: with coefficients in a ring `k`,
+  the standard generator of `Hₙ₊₁(TopCat.sphere (n + 1); k)`, of which every class is a multiple.
 * `ModuleCat.finrank_singularHomology_sphere`: with coefficients in a free module `M` of finite
   rank, `H_q(Sᵈ; M)` is free of rank `rank M` for `q = 0` and for `q = d` (of rank `2 rank M`
   when `d = q = 0`), and vanishes otherwise.
+  `ModuleCat.finrank_singularHomology_sphere_of_finrank_eq_succ` gives the same ranks for the unit
+  sphere of a real normed space of dimension `d + 1`.
 
 ## References
 
@@ -349,7 +358,7 @@ private def zerothHomotopyComplUnique :
   uniq := by
     rintro ⟨c, hc⟩
     obtain ⟨y, rfl⟩ := ZerothHomotopy.mk_surjective c
-    exact Subtype.ext ((zerothHomotopy_mk_eq_or_eq_neg_of_finrank_eq_two hE hx y).resolve_left hc)
+    exact Subtype.ext ((zerothHomotopy_mk_eq_or_eq_neg hx y).resolve_left hc)
 
 /-- **The first homology of a circle through its Mayer–Vietoris sequence.** For a point `p` of
 the unit circle `S` of a two-dimensional real inner product space, the Mayer–Vietoris connecting
@@ -755,6 +764,13 @@ theorem isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne {n k : ℕ} (hk
   (isZero_reducedSingularHomologyFunctor_sphere_of_ne R (finrank_euclideanSpace_ulift_fin (n + 1))
     hk).of_iso ((diskBoundaryHomeomorph (n + 1)).toHomotopyEquiv.reducedSingularHomologyIso R k)
 
+/-- **The homology of `TopCat.sphere n` vanishes in positive degrees other than `n`.** -/
+theorem isZero_singularHomologyFunctor_topCatSphere_of_ne {n q : ℕ} (hq : q + 1 ≠ n) :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor C (q + 1)).obj R).obj
+      (TopCat.sphere.{w} n)) :=
+  (isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne R hq).of_iso
+    ((reducedSingularHomologySuccIso R q).app _).symm
+
 /-- **The standard generator of the reduced homology of `TopCat.sphere n`.**  The reduced
 homology of `TopCat.sphere n` in degree `n` is one copy of the coefficient object, through the
 homeomorphism `TauCeti.diskBoundaryHomeomorph` with the unit sphere of
@@ -854,7 +870,58 @@ theorem reducedSingularHomologyFunctor_map_diskBoundaryMap {n : ℕ}
     reducedSingularHomologyFunctor_map_unitSphereMap R (finrank_euclideanSpace_ulift_fin (n + 1)),
     hdet, Preadditive.comp_zsmul, Preadditive.zsmul_comp, Category.comp_id, Category.id_comp]
 
+/-- With coefficients in a ring `k`, the top homology of `TopCat.sphere (m + 1)` is spanned by the
+standard generator: every `z ∈ H_{m+1}(S^{m+1}; k)` is `r • ι(g)`, where `g` is the standard
+generator of `TauCeti.reducedSingularHomologyTopCatSphereIso` and `r` is the coordinate of `z`. -/
+theorem singularHomology_topCatSphere_eq_smul_generator {k : Type w} [Ring k] (m : ℕ)
+    (z : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k) (m + 1)).obj
+      (ModuleCat.of k k)).obj (TopCat.sphere.{w} (m + 1))) :
+    z = (reducedSingularHomologyTopCatSphereIso (ModuleCat.of k k) (m + 1)).hom
+        (((reducedSingularHomologySuccIso (ModuleCat.of k k) m).app _).inv z) •
+      (reducedSingularHomologyι (ModuleCat.of k k) (m + 1)).app _
+        ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of k k) (m + 1)).inv (1 : k)) := by
+  rw [← map_smul, ← map_smul, smul_eq_mul, mul_one, Iso.hom_inv_id_apply,
+    ← reducedSingularHomologySuccIso_hom]
+  exact (Iso.inv_hom_id_apply ((reducedSingularHomologySuccIso _ m).app _) z).symm
+
 end TopCatSphere
+
+section TopCatSphereGenerator
+
+variable (k : Type w) [Ring k]
+
+/-- **The standard generator of `Hₙ₊₁(TopCat.sphere (n + 1); k)`**: the standard generator
+`TauCeti.reducedSingularHomologyTopCatSphereIso` of the reduced homology, included in ordinary
+homology. -/
+def singularHomologyTopCatSphereGenerator (n : ℕ) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k) (n + 1)).obj
+      (ModuleCat.of k k)).obj (TopCat.sphere.{w} (n + 1)) :=
+  (reducedSingularHomologyι (ModuleCat.of k k) (n + 1)).app (TopCat.sphere (n + 1))
+    ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of k k) (n + 1)).inv 1)
+
+lemma singularHomologyTopCatSphereGenerator_def (n : ℕ) :
+    singularHomologyTopCatSphereGenerator k n =
+      (reducedSingularHomologyι (ModuleCat.of k k) (n + 1)).app (TopCat.sphere (n + 1))
+        ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of k k) (n + 1)).inv 1) :=
+  (rfl)
+
+/-- **Every class of `Hₙ₊₁(TopCat.sphere (n + 1); k)` is a multiple of the standard
+generator.** -/
+theorem exists_eq_smul_singularHomologyTopCatSphereGenerator (n : ℕ)
+    (x : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k) (n + 1)).obj
+      (ModuleCat.of k k)).obj (TopCat.sphere.{w} (n + 1))) :
+    ∃ r : k, x = r • singularHomologyTopCatSphereGenerator k n := by
+  let E := ((reducedSingularHomologySuccIso (ModuleCat.of k k) n).app
+      (TopCat.sphere.{w} (n + 1))).symm ≪≫
+    reducedSingularHomologyTopCatSphereIso (ModuleCat.of k k) (n + 1)
+  refine ⟨E.hom x, ?_⟩
+  have h1 : E.inv (E.hom x) = x := by simp
+  have h2 : E.hom x = (E.hom x : k) • (1 : k) := by rw [smul_eq_mul, mul_one]
+  rw [h2, map_smul] at h1
+  refine h1.symm.trans (congrArg (E.hom x • ·) ?_)
+  simp [E, singularHomologyTopCatSphereGenerator]
+
+end TopCatSphereGenerator
 
 end TauCeti
 
@@ -947,6 +1014,22 @@ theorem finrank_singularHomology_sphere [StrongRankCondition k] [Module.Free k M
       (if q = d then Module.finrank k M else 0) + if q = 0 then Module.finrank k M else 0 := by
   rw [finrank_singularHomology_eq_finrank_reducedSingularHomology_add,
     finrank_reducedSingularHomology_sphere]
+
+/-- **The homology of the unit sphere of a normed space.** If the real normed space `E` has
+dimension `d + 1`, then with coefficients in a free module `M` of finite rank, `H_q(S(E); M)` has
+rank `rank M` in degree `d`, plus `rank M` in degree zero, as for `TopCat.sphere d`
+(`ModuleCat.finrank_singularHomology_sphere`). -/
+theorem finrank_singularHomology_sphere_of_finrank_eq_succ [StrongRankCondition k]
+    [Module.Free k M] [Module.Finite k M] {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {d : ℕ} (hE : Module.finrank ℝ E = d + 1) (q : ℕ) :
+    Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj
+      (TopCat.of (Metric.sphere (0 : E) 1))) =
+      (if q = d then Module.finrank k M else 0) + if q = 0 then Module.finrank k M else 0 := by
+  rw [← finrank_singularHomology_sphere M d q]
+  exact (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).mapIso (TopCat.isoOfHomeo
+    ((sphereHomeomorphOfFinrankEq
+        (hE.trans (finrank_euclideanSpace_ulift_fin.{w} (d + 1)).symm)).trans
+      (diskBoundaryHomeomorph (d + 1)).symm))).toLinearEquiv.finrank_eq
 
 end Free
 

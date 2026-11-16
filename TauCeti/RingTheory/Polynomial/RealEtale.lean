@@ -267,7 +267,7 @@ theorem etaleEvalHom_injective (hsq : Squarefree f) :
       exact minpoly.dvd ℝ _ hq
   -- The distinct factors are pairwise coprime, so their product divides `q`; and squarefreeness
   -- makes that product `f` up to a unit.
-  exact (Factors.associated_prod hf hsq).symm.dvd.trans
+  exact (Factors.associated_prod hsq).symm.dvd.trans
     (Fintype.prod_dvd_of_coprime (fun _ _ hne ↦ Factors.isCoprime hne) hfac)
 
 end Polynomial

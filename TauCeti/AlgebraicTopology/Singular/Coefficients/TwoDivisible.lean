@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
 public import TauCeti.AlgebraicTopology.Singular.Basic
 public import TauCeti.Algebra.Module.LocalizedModule.TwoDivisible
-public import TauCeti.Algebra.Category.ModuleCat.ModTwo
+public import TauCeti.Algebra.Category.ModuleCat.ZModCoefficientSequence
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 import TauCeti.AlgebraicTopology.Singular.Coefficients.ModTwo
 
@@ -26,7 +26,7 @@ multiplication by two is injective in degree n
 (`TopCat.surjective_singularHomologyReductionModTwo_succ_iff`). It requires no connectivity or
 finite-generation assumptions. The coefficients are universe-lifted so that the space can live
 in any universe. The reusable coefficient sequence and its exactness are
-`TauCeti.modTwoCoefficientSequence` and `TauCeti.modTwoCoefficientSequence_shortExact`.
+`TauCeti.zmodCoefficientSequence 2` and `TauCeti.zmodCoefficientSequence_shortExact`.
 
 ## References
 

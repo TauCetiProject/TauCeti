@@ -10,10 +10,10 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the Mathieu group `M₂₄`
 
-This file carries the `M₂₄` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records the ATLAS version 3 presentation `M24G1-P1` of
-the Mathieu group `M₂₄` on its standard generators `a` and `b` as a `TauCeti.GroupPresentation`,
-together with the source, the generator convention, transcription notes, and the expected counts.
+This file carries the `M₂₄` row of the sporadic presentation data. It records the ATLAS version 3
+presentation `M24G1-P1` of the Mathieu group `M₂₄` on its standard generators `a` and `b` as a
+`TauCeti.GroupPresentation`, together with the source, the generator convention, transcription
+notes, and the expected counts.
 
 Writing `s₁ = ab` and `s₋₁ = ab⁻¹` for the two syllables that occur, the seven transcribed relators
 are
@@ -54,8 +54,7 @@ with `a` in class `2A` and `b` in class `3B`, and on those the last three relato
 Both computations are provenance for the
 transcription, not Lean theorems: this file asserts no order, finiteness, simplicity, or
 identification result. The cross-check against the `M24` of the
-[FiniteSimpleGroups](https://github.com/KitaKen1/finite-simple-groups-lean) development, which
-`TauCetiRoadmap/CFSGStatement/README.md` asks for on the names that development covers, is still
+[FiniteSimpleGroups](https://github.com/KitaKen1/finite-simple-groups-lean) development is still
 recorded below.
 
 ## Independent source-to-Lean read-through
@@ -80,7 +79,7 @@ commented line `[x,y⁻¹xyxy]⁵` labelled redundant but useful. Because the co
 it outside `Group<x,y | ...>`, omitting it from the seven-relator row is exact, and the ATLAS
 presentation page independently displays those same seven active words. This checks every source
 relator and the only commented-word boundary independently of the original transcription and
-closes this row's S1 source-to-Lean read-through.
+closes this row's source-to-Lean read-through.
 
 ## Independent comparison with `FiniteSimpleGroups`
 
@@ -106,7 +105,7 @@ belongs to `⟨a,b⟩`; the two generated groups have the common order `24482304
 The check used Python 3.14.6 and SymPy 1.14.0. Concatenating the forward image tables for `a` and
 then `b`, with each image stored as one byte, has SHA-256
 `c70cde4a6f85093e9226c6d884942312ef316f50eaddada2f13105735329add0`. This is the independent
-comparison artifact required by S1; no external code or permutation data is imported into Tau Ceti.
+comparison artifact; no external code or permutation data is imported into Tau Ceti.
 
 The row is a sealed definition, so it publishes an equation for each of its fields: the transcribed
 relator expressions with their generator indices written out, and the provenance a manifest row

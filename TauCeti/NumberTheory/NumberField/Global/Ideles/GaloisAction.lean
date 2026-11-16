@@ -432,12 +432,10 @@ theorem exists_mem_sIdeles_mk_eq
     ∃ x ∈ sIdeles L S, (x : IdeleClassGroup (𝓞 L) L) = c :=
   IdeleClassGroup.exists_valued_ideleFiniteCoord_eq_one_and_mk_eq hS c
 
-variable [NumberField K]
-
 /-- The valuation of a component of `σ • x` is the valuation of the component of `x` at the place
 `w'` with `σ w' = w`. This is read off the semi-local components above the place of `K` below
 `w`, on which `σ` acts by `id ⊗ σ`. -/
-private theorem valued_ideleFiniteCoord_smul (σ : L ≃ₐ[K] L)
+private theorem valued_ideleFiniteCoord_smul [NumberField K] (σ : L ≃ₐ[K] L)
     (x : IdeleGroup (𝓞 L) L) {v : HeightOneSpectrum (𝓞 K)}
     (w w' : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal})
     (h : w.1.asIdeal = σ • w'.1.asIdeal) :
@@ -461,6 +459,12 @@ the places of `L` not above `S` are permuted by `Aut(L/K)`. -/
 theorem smul_mem_sIdeles (σ : L ≃ₐ[K] L) {x : IdeleGroup (𝓞 L) L}
     (hx : x ∈ sIdeles L S) :
     σ • x ∈ sIdeles L S := by
+  -- `K` embeds in the number field `L`, so it is a number field
+  have : CharZero K := (algebraMap K L).charZero
+  have : FiniteDimensional ℚ K :=
+    Module.Finite.of_injective (algebraMap K L).toRatAlgHom.toLinearMap
+      (algebraMap K L).injective
+  have : NumberField K := ⟨⟩
   intro w hw
   set v := w.under (𝓞 K)
   let w₀ : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal} := ⟨w, inferInstance⟩

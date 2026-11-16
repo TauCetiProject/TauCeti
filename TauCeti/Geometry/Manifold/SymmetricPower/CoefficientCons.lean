@@ -17,7 +17,7 @@ import TauCeti.Topology.Sym.Cons
 
 Adjoining a fixed root `a` embeds complex coefficient `n`-space into coefficient `(n + 1)`-space.
 The image consists of the monic polynomials vanishing at `a`, an affine hyperplane by
-`TauCeti.Sym.mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero`. The map is a closed topological
+`Sym.mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero`. The map is a closed topological
 embedding by `Sym.isClosedEmbedding_cons` and an analytic immersion by the coefficient
 calculation in `TauCeti/Analysis/Polynomial/SymmetricPower/Cons.lean`. In particular, the
 immersion does not fail when the tuple already contains `a`.
@@ -31,7 +31,7 @@ public section
 open Topology Manifold
 open scoped ContDiff Manifold
 
-namespace TauCeti.Sym
+namespace Sym
 
 variable {n : ℕ}
 
@@ -51,4 +51,4 @@ theorem isSmoothEmbedding_coeffEquiv_cons_coeffEquiv_symm (a : ℂ) :
     simpa only [Function.comp_def, coeffHomeomorph_apply, coeffHomeomorph_symm_apply] using
       h.isEmbedding
 
-end TauCeti.Sym
+end Sym

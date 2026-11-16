@@ -93,7 +93,6 @@ theorem Scheme.Hom.coheight_eq_coheight_add_coheight_preimage [IsLocallyNoetheri
   have : Q.IsPrime := x'.isPrime
   have : q.IsPrime := (Spec.map φ x').isPrime
   have : Q.LiesOver q := ⟨rfl⟩
-  let I : Ideal S := q.map (algebraMap R S)
   have hheight := Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown q Q
   rw [idealHeight_eq_coheight, idealHeight_eq_coheight, ← coheight_eq_of_isOpenImmersion
     hV.fromSpec, hx', ← coheight_eq_of_isOpenImmersion hU.fromSpec, hcomm_apply, hx'] at hheight

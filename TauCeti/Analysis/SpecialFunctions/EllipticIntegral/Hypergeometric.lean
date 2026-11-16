@@ -68,7 +68,7 @@ theorem integral_one_sub_mul_sin_sq_rpow_neg_eq_ordinaryHypergeometric {a m : ‚Ñ
         fun n => Ring.choose (a + n - 1) n).radius := by
       refine Metric.eball_subset_eball
         (Real.one_div_one_sub_rpow_hasFPowerSeriesOnBall_zero a).r_le ?_
-      simpa [edist_dist, Real.dist_0_eq_abs, enorm_eq_nnnorm] using hm
+      simpa [edist_dist, Real.dist_0_eq_abs, eNorm_eq_nnNorm] using hm
     simpa [FormalMultilinearSeries.ofScalars_apply_eq, norm_smul, ‚Üê Ring.multichoose_eq,
       mul_comm] using FormalMultilinearSeries.summable_norm_apply _ hmem
   -- integrate the binomial series term by term, dominated by its absolute series at `|m|`

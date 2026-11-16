@@ -56,6 +56,11 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.restrict`: the place of `F / k` that a place of `F' / k'` lies over.
 * `TauCeti.Place.ramificationIdx`: the ramification index `e(P' | P)`.
 * `TauCeti.Place.relativeDegree`: the relative degree `f(P' | P) = [F'_{P'} : F_P]`.
+* `TauCeti.Place.ramificationIdxIn`: the ramification index of a place `P` of the base in an
+  algebraic extension, computed at an arbitrary chosen place above `P` and zero when there is
+  none. Without the Galois hypothesis the places above `P` need not share one ramification
+  index; in a finite Galois extension they do
+  (`TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`).
 
 ## Main results
 
@@ -492,6 +497,37 @@ theorem ramificationIdx_eq_of_forall_ord_eq {e : ℕ}
   rw [ord_algebraMap_restrict k F P' f, hf] at h1
   exact_mod_cast by omega
 
+/-- **The local model `𝒪'_P` of `F' / k'` at `P'` consists of functions regular at `P'`**: its
+elements are integral over `𝒪_P`, whose functions are regular at `P'`. -/
+theorem algebraMap_mem_integers_of_mem_integralClosure
+    (b : integralClosure ((P'.restrict k F).integers) F') :
+    algebraMap (integralClosure ((P'.restrict k F).integers) F') F' b ∈ P'.integers := by
+  rw [Subalgebra.algebraMap_eq]
+  exact P'.mem_integers_of_isIntegral (R := ((P'.restrict k F).integers))
+    (fun a ↦ (mem_integers_restrict_iff k F P' (a : F)).mp a.2) b.2
+
+variable {k F} in
+/-- An element of the local model `𝒪'_P` times one vanishing to order `a` at a place `Q'` over `P`
+vanishes to order `a` at `Q'`. -/
+theorem mul_mem_filtration_of_mem_integralClosure
+    {P : Place k F} {Q' : Place k' F'} (hQ' : Q'.restrict k F = P) {a : ℤ} {y : F'}
+    (hy : y ∈ Q'.filtration a) (s : integralClosure P.integers F') :
+    y * s ∈ Q'.filtration a := by
+  subst hQ'
+  simpa using Q'.mul_mem_filtration hy
+    (Q'.mem_filtration_zero_iff.mpr (algebraMap_mem_integers_of_mem_integralClosure k F Q' s))
+
+/-- A function of `F` that vanishes to order `m` at the place below `P'` does so at `P'`, since
+the ramification index `e(P' ∣ P)` is positive. -/
+theorem algebraMap_mem_filtration {r : F} {m : ℕ}
+    (hr : r ∈ (P'.restrict k F).filtration m) : algebraMap F F' r ∈ P'.filtration m := by
+  rcases eq_or_ne r 0 with rfl | h0
+  · simp
+  rw [mem_filtration_iff_le_ord _ h0] at hr
+  rw [mem_filtration_iff_le_ord _ ((map_ne_zero _).mpr h0), ord_algebraMap_restrict k F P']
+  have he : (1 : ℤ) ≤ ramificationIdx F P' := mod_cast ramificationIdx_pos F P'
+  nlinarith
+
 end Restrict
 
 section RestrictMap
@@ -567,8 +603,8 @@ instance isAlgebraic_residueField_restrict :
   obtain ⟨q, hq⟩ := hlift
   rw [coe_mapRingHom] at hq
   refine ⟨q.map (algebraMap _ (P'.restrict k F).ResidueField), fun h ↦ ?_, ?_⟩
-  · have hc := congrArg (coeff · i₀) h
-    have hc' := congrArg (coeff · i₀) hq
+  · have hc := congrArg (fun r : (P'.restrict k F).ResidueField[X] ↦ r.coeff i₀) h
+    have hc' := congrArg (fun r : F[X] ↦ r.coeff i₀) hq
     simp only [coeff_map, coeff_zero, IsLocalRing.ResidueField.algebraMap_eq,
       IsLocalRing.residue_eq_zero_iff] at hc
     simp only [coeff_map, coeff_C_mul, inv_mul_cancel₀ hi₀] at hc'
@@ -1060,7 +1096,7 @@ private theorem linearIndependent_of_ord_neg_of_restrict_eq_finite {ι : Type*} 
     (fun i ↦ P₁.ord (c i)) ⟨i₁, by simpa using hi₁⟩
   simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hmS hmin
   -- The index at whose place the sum is tested: a minimizer other than `i₀` if there is one.
-  obtain ⟨j, hcj, hjmin, hlt⟩ : ∃ j, c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m) ∧
+  obtain ⟨j, hcj, _, hlt⟩ : ∃ j, c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m) ∧
       ∀ i, i ≠ j → c i ≠ 0 →
         (P j).ord (c j • z j) < (P j).ord (c i • z i) := by
     by_cases hA : ∃ j, j ≠ i₀ ∧ c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m)
@@ -1223,6 +1259,43 @@ theorem ramificationIdx_self : ramificationIdx F P = 1 := by
     Valuation.ordIndex_eq_one_of_surjective _ P.valuation_surjective]
 
 end Self
+
+section RamificationIdxIn
+
+variable [Algebra.IsIntegral F F']
+
+open scoped Classical in
+/-- **The ramification index of a place of the base in an algebraic extension**: the ramification
+index `e(P' ∣ P)` of a place `P'` of `F'` over `P`, where `P'` is an arbitrary choice among the
+places over `P`. It is `0` when no place of `F'` lies over `P`, which does not happen for an
+extension of function fields (`TauCeti.Place.ramificationIdxIn_pos`). Without
+the Galois hypothesis the places over `P` may have different ramification indices, so this value
+need not be common to them; for a finite Galois extension it is
+(`TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`). This is the analogue for places of
+Mathlib's `Ideal.ramificationIdxIn`. -/
+noncomputable def ramificationIdxIn (P : Place k F) (F' : Type v') [Field F'] [Algebra F F']
+    [Algebra k F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] : ℕ :=
+  if h : ∃ P' : Place k F', P'.restrict k F = P then ramificationIdx F h.choose else 0
+
+/-- If some place of `F'` lies over `P`, the ramification index of `P` in `F'` is that of the
+chosen such place. -/
+theorem ramificationIdxIn_of_exists {P : Place k F} (h : ∃ P' : Place k F', P'.restrict k F = P) :
+    P.ramificationIdxIn F' = ramificationIdx F h.choose :=
+  dite_eq_left h
+
+/-- The ramification index of a place of the base vanishes exactly when no place lies above it. -/
+@[simp]
+theorem ramificationIdxIn_eq_zero_iff {P : Place k F} :
+    P.ramificationIdxIn F' = 0 ↔ ∀ P' : Place k F', P'.restrict k F ≠ P := by
+  constructor
+  · intro h P' hP'
+    rw [ramificationIdxIn, dite_eq_left ⟨P', hP'⟩] at h
+    exact absurd h (ramificationIdx_pos F _).ne'
+  · intro h
+    rw [ramificationIdxIn, dite_eq_right]
+    exact fun ⟨P', hP'⟩ ↦ h P' hP'
+
+end RamificationIdxIn
 
 end Place
 

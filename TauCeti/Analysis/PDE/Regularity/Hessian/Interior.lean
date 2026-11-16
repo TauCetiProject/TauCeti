@@ -16,7 +16,7 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 /-!
 # The interior Calderón–Zygmund estimate on balls
 
-Let `0 < n` and `1 < p < ∞`. This file proves the interior `W^{2,p}` estimate on a ball for strong
+Let `1 < p < ∞`. This file proves the interior `W^{2,p}` estimate on a ball for strong
 solutions of a non-divergence-form equation `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu + ⟪b, ∇u⟫ + c u = f` whose principal
 coefficients have small oscillation and whose lower-order coefficients are bounded
 (`TauCeti.PDE.exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_add_mul_eq`).
@@ -82,7 +82,7 @@ variable {n : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 localized Calderón–Zygmund estimate on `B_t` to a cutoff between `B_s` and `B_t` bounds `D²u` on
 `B_s` by `f` and `∇u` on `B_t` and by `u` on `B_R`, with the explicit dependence on `t - s` coming
 from the derivatives of the cutoff. -/
-private theorem exists_lpNorm_iteratedGradient_ball_le_of_lt (hn : 0 < n) (hp : 1 < p)
+private theorem exists_lpNorm_iteratedGradient_ball_le_of_lt (hp : 1 < p)
     (hp_top : p ≠ ⊤) :
     ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧ ∃ c : ℝ, 0 ≤ c ∧ ∀ {A : Matrix (Fin n) (Fin n) ℝ} {lam : ℝ},
       0 < lam → (∀ ξ : EuclideanSpace ℝ (Fin n), lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
@@ -105,7 +105,7 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_of_lt (hn : 0 < n) (hp : 
                 (volume.restrict (ball x₀ t)) +
               c / (t - s) ^ 2 * lpNorm (Wkp.value 2 u) p (volume.restrict (ball x₀ R))) := by
   obtain ⟨C, δ, hδ, hloc⟩ :=
-    exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le hn hp hp_top
+    exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le hp hp_top
   obtain ⟨c, hc0, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ (Fin n))
   refine ⟨C, δ, hδ, 4 * c, by positivity, fun {A lam} hlam hA {Omega x₀ R} hR {a ε Λ} ha hε
     haA hΛ haΛ u f hf heq s t hs hst htR => ?_⟩
@@ -241,7 +241,7 @@ private theorem memLp_inner_add_mul_and_lpNorm_le {Omega : Opens (EuclideanSpace
     (lpNorm_le_mul_lpNorm_of_ae_le_mul hzm hV hzle)
 
 /-- **The interior Calderón–Zygmund estimate on balls for coefficients of small oscillation.**
-Let `0 < n` and `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on `n` and `p`,
+Let `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on `n` and `p`,
 with the following property. Let `A` be a matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `0 < λ`, let `Ω` be
 open, and let `B_ρ` denote the ball `B(x₀, ρ)`. Let `r < R` with `B_R ⊆ Ω`, let `a` be a
 measurable matrix-valued coefficient with `|aᵢⱼ(x) - Aᵢⱼ| ≤ ε` and `|aᵢⱼ(x)| ≤ Λ` for almost
@@ -258,7 +258,7 @@ are assumed, and `f` is not assumed to be in `Lᵖ`: the equation and the coeffi
 it. Unlike `TauCeti.PDE.exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le`,
 the right side does not involve the gradient of `u`, even when `b ≠ 0`. -/
 theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_add_mul_eq
-    (hn : 0 < n) (hp : 1 < p) (hp_top : p ≠ ⊤) :
+    (hp : 1 < p) (hp_top : p ≠ ⊤) :
     ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧ ∀ {A : Matrix (Fin n) (Fin n) ℝ} {lam : ℝ}, 0 < lam →
       (∀ ξ : EuclideanSpace ℝ (Fin n), lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
       ∀ {Omega : Opens (EuclideanSpace ℝ (Fin n))} {x₀ : EuclideanSpace ℝ (Fin n)} {r R : ℝ},
@@ -284,7 +284,20 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_ad
           C * (R ^ 2 / lam * lpNorm f p (volume.restrict (ball x₀ R)) +
             (1 + (Λ + β * R + γ * R ^ 2) / lam) ^ 2 *
               lpNorm (Wkp.value 2 u) p (volume.restrict (ball x₀ R))) := by
-  obtain ⟨C, δ, hδ, cA, hcA, hstepA⟩ := exists_lpNorm_iteratedGradient_ball_le_of_lt hn hp hp_top
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · -- In dimension zero the weak Hessian lives in a zero space, so the left side vanishes.
+    refine ⟨0, 1, one_pos, fun {A lam} _ _ {Omega x₀ r R} _ _ {a b c ε Λ β γ} _ _ _ _ _ _ _ _
+      u f _ => ?_⟩
+    have hz : lpNorm (Wkp.iteratedGradient 1 u) p (volume.restrict (ball x₀ r)) = 0 := by
+      have h : lpNorm (Wkp.iteratedGradient 1 u) p (volume.restrict (ball x₀ r)) =
+          lpNorm (fun _ => (0 : IteratedGradient (EuclideanSpace ℝ (Fin 0)) 1)) p
+            (volume.restrict (ball x₀ r)) :=
+        congrArg (fun g => lpNorm g p (volume.restrict (ball x₀ r)))
+          (funext fun x => Subsingleton.elim _ _)
+      rw [h]
+      simp [lpNorm]
+    rw [hz, mul_zero, NNReal.coe_zero, zero_mul]
+  obtain ⟨C, δ, hδ, cA, hcA, hstepA⟩ := exists_lpNorm_iteratedGradient_ball_le_of_lt hp hp_top
   obtain ⟨cB, hcB, hstepB⟩ :=
     Wkp.exists_lpNorm_gradient_ball_le (E := EuclideanSpace ℝ (Fin n)) (mu := volume) hp_top
   set D : ℝ := C * n ^ 2 + C + 1 with hD
@@ -384,7 +397,7 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_ad
     fun {s t} hs hst htR {η} hη => by
       simpa only [finrank_euclideanSpace_fin] using
         hstepB u hs hst ((ball_subset_ball htR).trans hR) hη
-  have hΦ := sq_mul_le_of_forall_le (k := k) (h := h) (y := y) hR0 hz0
+  have hΦ := sq_mul_le_of_forall_le (k := k) (h := h) (y := y) hR0
     (by positivity : 0 ≤ C / lam * F) (by linarith : 1 ≤ K + Q) (by linarith : 0 ≤ cA + 1) hcB
     (by positivity : (0 : ℝ) ≤ n ^ 2) (fun _ => lpNorm_nonneg) (fun _ => lpNorm_nonneg)
     (fun σ hσ => hmono (Wkp.iteratedGradient 1 u) hσ.2.le) (fun σ hσ => hmono G hσ.2.le)
@@ -405,8 +418,6 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_ad
     generalize Λ / lam = u₁ at h1 ⊢
     generalize (β * R + γ * R ^ 2) / lam = u₂ at h2 ⊢
     generalize (C : ℝ) * n ^ 2 = m at hn2 ⊢
-    have hexp : (m + C + 1) * (1 + (u₁ + u₂)) =
-        m * u₁ + C * u₂ + 1 + (m + C + (C + 1) * u₁ + (m + 1) * u₂) := by ring
     linarith [mul_nonneg (by linarith : (0 : ℝ) ≤ C + 1) h1,
       mul_nonneg (by linarith : 0 ≤ m + 1) h2]
   set X := R ^ 2 / lam * F with hX

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 
@@ -57,6 +58,41 @@ theorem coe_S_sq : (S : PSL(2, ℤ)) ^ 2 = 1 := by
   rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff,
     SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
   exact Or.inr (by decide +kernel)
+
+/-- The projective involution `S` has exact order two. -/
+@[simp]
+theorem orderOf_coe_S : orderOf (S : PSL(2, ℤ)) = 2 := by
+  apply orderOf_eq_prime coe_S_sq
+  rw [ne_eq, QuotientGroup.eq_one_iff,
+    SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
+  decide
+
+/-- A projective translation is the identity exactly when its integer exponent is zero. -/
+@[simp]
+theorem coe_T_zpow_eq_one_iff (n : ℤ) : (T : PSL(2, ℤ)) ^ n = 1 ↔ n = 0 := by
+  constructor
+  · intro h
+    rw [← QuotientGroup.mk_zpow, QuotientGroup.eq_one_iff,
+      SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one] at h
+    rcases h with h | h <;>
+      simpa [coe_T_zpow] using congrArg (fun g : SL(2, ℤ) ↦ g 0 1) h
+  · rintro rfl
+    simp
+
+/-- The projective cusp translation has infinite order, encoded by `orderOf = 0`. -/
+@[simp]
+theorem orderOf_coe_T : orderOf (T : PSL(2, ℤ)) = 0 := by
+  apply orderOf_eq_zero_iff'.mpr
+  intro n hn h
+  have hz : (T : PSL(2, ℤ)) ^ (n : ℤ) = 1 := by simpa using h
+  exact (Nat.ne_of_gt hn) (Int.natCast_eq_zero.mp ((coe_T_zpow_eq_one_iff _).mp hz))
+
+/-- The standard classes of `S` and `T` generate the projective modular group. -/
+theorem closure_coe_S_coe_T : Subgroup.closure {(S : PSL(2, ℤ)), (T : PSL(2, ℤ))} = ⊤ := by
+  have h := congrArg (Subgroup.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))))
+    _root_.SpecialLinearGroup.SL2Z_generators
+  rwa [MonoidHom.map_closure, Set.image_pair,
+    Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective _)] at h
 
 /-- The class of `S` is its own inverse in `PSL(2, ℤ)`. -/
 @[simp]

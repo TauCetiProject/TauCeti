@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Module.LinearMap.DivisionRing
 # Composition with linear functionals on division semirings
 
 A nonzero linear functional with values in a division semiring is surjective. Consequently,
-composing it, after restriction of scalars, with any nonzero linear map gives a nonzero map.
+composing it, after restriction of scalars, with any nonzero semilinear map gives a nonzero map.
 This applies in particular to compositions of transfer functionals in a tower of field extensions.
 -/
 
@@ -19,16 +19,15 @@ public section
 
 namespace LinearMap
 
-variable {K L E M : Type*} [Semiring K] [DivisionSemiring L]
+variable {K K' L E M : Type*} [Semiring K] [Semiring K'] [DivisionSemiring L]
   [AddCommMonoid E] [AddCommMonoid M] [Module K L] [Module K E] [Module L E]
-  [Module K M] [CompatibleSMul E L K L]
+  [Module K' M] [CompatibleSMul E L K L] {σ : K →+* K'}
 
-/-- Composing a nonzero linear map with a nonzero linear functional on a division semiring,
+/-- Composing a nonzero semilinear map with a nonzero linear functional on a division semiring,
 after restricting scalars, gives a nonzero map. -/
-theorem comp_restrictScalars_ne_zero (s : L →ₗ[K] M) (t : E →ₗ[L] L)
+theorem comp_restrictScalars_ne_zero (s : L →ₛₗ[σ] M) (t : E →ₗ[L] L)
     (hs : s ≠ 0) (ht : t ≠ 0) : s.comp (t.restrictScalars K) ≠ 0 := by
-  intro hcomp
-  exact hs ((t.surjective ht).injective_linearMapComp_right
-    (g := t.restrictScalars K) (by simpa using hcomp))
+  simpa using (Function.Surjective.injective_linearMapComp_right (g := t.restrictScalars K)
+    (t.surjective ht)).ne hs
 
 end LinearMap

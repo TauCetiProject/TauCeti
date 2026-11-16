@@ -92,7 +92,7 @@ theorem tsum_prime_pow_eq_tsum_neg_log_one_sub
         -log (1 - χ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s) :=
   tsum_taylorSeries_neg_log
     (r := fun P : HeightOneSpectrum (𝓞 K) ↦ χ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s)
-    (χ.summable_div_of_summable_idealTerm hs) (χ.norm_div_lt_one_of_summable_idealTerm hs)
+    (χ.norm_div_lt_one_of_summable_idealTerm hs)
 
 /-- **The Euler product expanded over prime powers.**  The `L`-series is the exponential of the
 sum over pairs `(P, e)` of a prime and an exponent.  The caveat above applies unchanged: `exp` is

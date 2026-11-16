@@ -102,7 +102,6 @@ lemma hasLiftingProperty_pullbackObjObjπ
   have hfst := congrArg Under.Hom.right P.π_fst
   have hsnd := congrArg Under.Hom.right P.π_snd
   simp only [Under.comp_right] at hfst hsnd
-  let hP := P.isPullback.map (Under.forget (Δ[0] : SSet.{u}))
   constructor
   intro a b sq
   -- Include both prescribed based families into the unpointed corner.

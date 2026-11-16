@@ -25,9 +25,6 @@ and the vanishing of every sheaf of modules over a sheaf of rings whose sections
   underlying presheaf, naturally (`SheafOfModules.sheafificationIso_inv_naturality`);
 * `SheafOfModules.unit_comp_val_sheafification_map_comp_sheafificationIso_hom`: the
   sheafification of a morphism to a sheaf restricts to that morphism along the sheafification map.
-
-This supports `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible sheaves on a
-scheme; the Picard group `Pic X` under `⊗`".
 -/
 
 public section
@@ -82,8 +79,7 @@ def sheafificationIso (R : Sheaf J RingCat.{u}) (M : SheafOfModules.{v} R) :
 theorem sheafificationIso_hom (R : Sheaf J RingCat.{u}) (M : SheafOfModules.{v} R) :
     (sheafificationIso R M).hom =
       (PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).counit.app M := by
-  simp only [sheafificationIso]
-  rfl
+  rw [sheafificationIso, Iso.app_hom, asIso_hom]
 
 /-- `sheafificationIso` is natural: its inverse intertwines a morphism of sheaves of modules with
 the sheafification of the underlying morphism of presheaves of modules. -/
@@ -101,9 +97,8 @@ theorem sheafificationIso_hom_naturality {R : Sheaf J RingCat.{u}} {M N : SheafO
     (f : M ⟶ N) :
     (PresheafOfModules.sheafification (𝟙 R.obj)).map f.val ≫ (sheafificationIso R N).hom =
       (sheafificationIso R M).hom ≫ f := by
-  rw [← cancel_epi (sheafificationIso R M).inv, Iso.inv_hom_id_assoc,
-    ← Category.assoc, ← sheafificationIso_inv_naturality, Category.assoc,
-    Iso.inv_hom_id, Category.comp_id]
+  rw [sheafificationIso_hom, sheafificationIso_hom]
+  exact (PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).counit.naturality f
 
 /-- On the sheafification map of a presheaf of modules `P`, the sheafification of a morphism
 `g : P ⟶ M` to a sheaf, followed by `sheafificationIso`, is `g`. -/

@@ -66,9 +66,9 @@ theorem GraphSubdivision.piecewiseGraphArc {d : Coordinate} {U : Set ℂ} {γ : 
     {c : BoundaryChain} (h : GraphSubdivision d U γ c) : PiecewiseGraphArc d U γ := by
   induction h with
   | single hγ => exact hγ
-  | join hγ hδ ihγ ihδ => exact ihγ.trans ihδ
-  | symm hγ ih => exact ih.symm
-  | reparam hδ θ hθ hdθ hdδ hfib hmap h0 h1 he ih =>
+  | join _ _ ihγ ihδ => exact ihγ.trans ihδ
+  | symm _ ih => exact ih.symm
+  | reparam _ θ hθ hdθ hdδ hfib hmap h0 h1 he ih =>
     exact ih.reparam θ ⟨hθ, hdθ, hdδ, hfib, hmap, h0, h1, he⟩
 
 /-- Constructive finite subdivision gives the geometric null-chain certificate comparing

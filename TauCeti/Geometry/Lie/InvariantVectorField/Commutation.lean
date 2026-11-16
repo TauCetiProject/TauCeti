@@ -18,9 +18,6 @@ This file proves that left- and right-invariant differentiation commute. The pro
 symmetry for a smooth scalar function evaluated on two multiplied exponential lines, then uses
 the tangent-vector/point-derivation equivalence to identify the vector-field bracket.
 
-This supplies a prerequisite for Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
-
 ## Main results
 
 * `contDiff_comp_mulInvariantExp_mul_mulInvariantExp`: a vector-valued function on two exponential
@@ -34,11 +31,6 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
   vector-field bracket vanishes everywhere.
 * `mlieBracket_mulInvariantVectorField_mulRightInvariantVectorField`: the same vanishing result
   with the bracket arguments reversed.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The infinitesimal adjoint".
 -/
 
 public section

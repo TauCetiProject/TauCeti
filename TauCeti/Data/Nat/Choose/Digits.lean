@@ -126,13 +126,13 @@ theorem forall_not_dvd_choose_add_mul_iff {q r : ℕ} (hr : r < p) :
         omega
       refine h (r + 1 + p * 0) (by simpa using hle) ?_
       exact (dvd_choose_add_mul_iff hr hrp).mpr (Or.inl (lt_succ_self r))
-    · have := h (0 + p * b) (by have := Nat.mul_le_mul_left p hb; omega)
+    · have := h (0 + p * b) (by have := mul_le_mul_left p hb; omega)
       rwa [dvd_choose_add_mul_iff hr hp0, not_or, and_iff_right (by omega)] at this
   · rintro ⟨hrq, h⟩ k hk
     rw [← mod_add_div k p, dvd_choose_add_mul_iff hr (mod_lt _ hp0), not_or, not_lt]
     have hkq : k / p ≤ q := by
       have : k < (q + 1) * p := by rw [add_one_mul, mul_comm q p]; omega
-      exact Nat.lt_add_one_iff.mp ((Nat.div_lt_iff_lt_mul hp0).mpr this)
+      exact Nat.lt_add_one_iff.mp ((div_lt_iff_lt_mul hp0).mpr this)
     refine ⟨?_, h _ hkq⟩
     rcases hrq with rfl | hrp
     · rw [mul_zero, add_zero] at hk

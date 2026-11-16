@@ -13,8 +13,8 @@ import TauCeti.NumberTheory.QuadraticForm.Global.ProductFormula
 /-!
 # Realizing ternary global invariants
 
-Every admissible rank-three invariant system over a number field is realized by a regular
-ternary form. The construction is a scaled pure quaternion norm form
+Every admissible rank-three invariant system over a number field in any universe is realized by
+a regular ternary form. The construction is a scaled pure quaternion norm form
 `d⟨-a, -b, ab⟩`, where `d` represents the prescribed plain discriminant. Its finite Hasse sign is
 `(a,b) · (-1,-d)`. Hilbert sign prescription supplies `a,b`; at real places the discriminant
 and Hasse sign distinguish the four possible signatures of a ternary form.
@@ -36,7 +36,7 @@ open IsDedekindDomain NumberField NumberField.InfinitePlace QuadraticMap TauCeti
 
 namespace TauCeti.NumberField.QuadraticForm.GlobalFormInvariants
 
-variable {K : Type} [Field K] [NumberField K]
+variable {K : Type*} [Field K] [NumberField K]
 
 private abbrev ternaryPresentation (d a b : Kˣ) : RegularFormPresentation K :=
   ⟨3, fun i => d * ![-a, -b, a * b] i⟩
@@ -173,7 +173,7 @@ private theorem realPositiveIndex_ternaryPresentation (I : GlobalFormInvariants 
     exact zero_add (squareClass (-1 : ℝˣ))
   have hcube : (-1 : ℤˣ) ^ 3 = -1 := by decide
   -- In rank three the determinant sign and Hasse sign distinguish all four signatures.
-  interval_cases h : I.realPositiveIndex w <;>
+  interval_cases I.realPositiveIndex w <;>
     rcases lt_or_gt_of_ne hda with hdsgn | hdsgn <;>
     rcases lt_or_gt_of_ne haa with hasgn | hasgn <;>
     rcases lt_or_gt_of_ne hba with hbsgn | hbsgn <;>

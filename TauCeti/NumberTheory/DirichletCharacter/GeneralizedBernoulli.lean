@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.BernoulliPolynomials
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
+public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
 import TauCeti.Data.ZMod.Count
 
 /-!
@@ -40,11 +41,15 @@ terms used in Eisenstein series with character.
   `DirichletCharacter.generalizedBernoulli_one` reduce the first two degrees to character sums.
 * `DirichletCharacter.generalizedBernoulli_zero_of_ne_one` gives `B₀,χ = 0` for a nontrivial
   character, while `DirichletCharacter.generalizedBernoulli_zero_one` evaluates the trivial one.
+* `DirichletCharacter.generalizedBernoulli_one_kroneckerChar_neg_three` evaluates `B₁,χ₋₃`
+  as the image of `-1 / 3` in any rational coefficient algebra.
 * `DirichletCharacter.generalizedBernoulli_one_of_ne_one` and
   `DirichletCharacter.natCast_mul_generalizedBernoulli_one_of_ne_one` give the two useful forms
   of `B₁,χ` for a nontrivial character, and
   `DirichletCharacter.natCast_mul_generalizedBernoulli_one_of_dvd` computes it from the
   representatives modulo any multiple of the modulus.
+* `DirichletCharacter.generalizedBernoulli_eq_pow_mul_sum_bernoulli_eval` recomputes `Bₖ,χ` for
+  `k ≥ 2` from the representatives in `{0, …, N - 1}`, since `Bₖ(0) = Bₖ(1)`.
 * `DirichletCharacter.generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg` gives `Bₖ,χ = 0` when
   the parities of `χ` and `k` differ, except for `k = 1` at modulus one.
 
@@ -149,6 +154,33 @@ theorem generalizedBernoulli_one [NeZero N] (χ : DirichletCharacter R N) :
     Polynomial.bernoulli_one, eval_sub, eval_X, eval_C, map_sub, mul_sub,
     Finset.sum_sub_distrib, Finset.sum_mul, mul_comm (algebraMap ℚ R 2⁻¹)]
 
+section KroneckerNegThree
+
+local instance : NeZero (-3 : ℤ).natAbs := ⟨by decide⟩
+
+/-- The first generalized Bernoulli number for the quadratic character `(-3 / ·)` is the
+image of `-1 / 3` in the coefficient ring. -/
+@[simp]
+theorem generalizedBernoulli_one_kroneckerChar_neg_three :
+    (TauCeti.kroneckerChar R (-3) (by decide) (by decide)).generalizedBernoulli 1 =
+      algebraMap ℚ R (-1 / 3) := by
+  have hU : (Finset.univ : Finset (ZMod (-3 : ℤ).natAbs)) = {0, 1, 2} := by decide
+  rw [generalizedBernoulli_one, hU]
+  have h1 : (1 : ZMod (-3 : ℤ).natAbs) ≠ 2 := by decide
+  have h01 : (0 : ZMod (-3 : ℤ).natAbs) ≠ 1 := by decide
+  have h02 : (0 : ZMod (-3 : ℤ).natAbs) ≠ 2 := by decide
+  simp only [Finset.sum_insert, Finset.sum_singleton, Finset.mem_insert, Finset.mem_singleton,
+    h1, h01, h02, or_self, not_false_eq_true]
+  have hv1 : (1 : ZMod (-3 : ℤ).natAbs).val = 1 := by decide
+  have hv2 : (2 : ZMod (-3 : ℤ).natAbs).val = 2 := by decide
+  have h8 : ZMod.χ₈ (-3 : ZMod 8) = -1 := by decide
+  norm_num [TauCeti.kroneckerChar_apply, h01.symm, h02.symm, hv1, hv2,
+    TauCeti.kroneckerSym_two_right, h8]
+  rw [← sub_eq_add_neg, ← map_sub]
+  norm_num
+
+end KroneckerNegThree
+
 /-- For a nontrivial character, `B₁,χ` is the character-weighted sum of the rational residues
 `a / N`; the constant term of the first Bernoulli polynomial cancels. -/
 theorem generalizedBernoulli_one_of_ne_one [IsDomain R] [NeZero N]
@@ -237,5 +269,29 @@ theorem generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg [NeZero N]
   have : HasUniqueDiv R := .of_module_rat R
   rw [generalizedBernoulli_def]
   exact mul_eq_zero_of_right _ hodd.sum_eq_zero
+
+/-- For `k ≥ 2`, `B_{k,χ}` equals `N^(k-1) ∑ₐ χ(a) B_k(a.val / N)`, computed with representatives in
+`{0, …, N-1}`. This is allowed because `B_k(0) = B_k(1)`. -/
+theorem generalizedBernoulli_eq_pow_mul_sum_bernoulli_eval [NeZero N]
+    (χ : DirichletCharacter R N) {k : ℕ} (hk : 2 ≤ k) :
+    χ.generalizedBernoulli k =
+      (N : R) ^ (k - 1) *
+        ∑ a : ZMod N, χ a * algebraMap ℚ R ((Polynomial.bernoulli k).eval ((a.val : ℚ) / N)) := by
+  classical
+  rw [generalizedBernoulli_def]
+  have hexp : (k : ℤ) - 1 = ((k - 1 : ℕ) : ℤ) := by omega
+  rw [hexp, zpow_natCast, map_pow, map_natCast]
+  congr 1
+  apply Finset.sum_congr rfl
+  intro a _
+  congr 2
+  by_cases ha : a = 0
+  · subst a
+    simp only [ite_true, div_self (Nat.cast_ne_zero.mpr (NeZero.ne N) : (N : ℚ) ≠ 0),
+      ZMod.val_zero, Nat.cast_zero, zero_div]
+    have h1 := Polynomial.bernoulli_eval_one_add k 0
+    rw [add_zero, zero_pow (by omega : k - 1 ≠ 0), mul_zero, add_zero] at h1
+    simp [h1]
+  · simp [ha]
 
 end DirichletCharacter

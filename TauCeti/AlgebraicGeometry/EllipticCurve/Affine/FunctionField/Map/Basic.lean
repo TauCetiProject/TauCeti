@@ -75,12 +75,9 @@ statements here. A single map covers both readings, and neither is built in.
   disjoint over `F` inside `K(W.map f)`, that is, `F`-linearly independent functions stay
   `K`-linearly independent. This is what makes base change preserve degrees of isogenies.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 0.5** (README:369), whose first milestone
-(README:376-378) asks for "base change of Weierstrass equations, coordinate rings, function
-fields, points, and isogenies". This is the function-field entry of that list; the isogeny entry
-is `Isogeny/BaseChange.lean`, which is what consumes everything here.
+This is the function-field part of base change for Weierstrass curves, alongside their equations,
+coordinate rings, points and isogenies; the isogeny part is `Isogeny/BaseChange/Basic.lean`, the
+main consumer of everything here.
 -/
 
 public section

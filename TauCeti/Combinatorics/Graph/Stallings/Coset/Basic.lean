@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Stallings.Complete
 public import TauCeti.Combinatorics.Graph.Stallings.Core
 public import Mathlib.GroupTheory.GroupAction.Quotient
 
@@ -12,14 +13,15 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 # The based coset graph of a free-group subgroup
 
 The coset graph of a subgroup has a vertex for each left coset and one outgoing dart
-for each signed basis letter. Its based core is a folded labelled graph accepting exactly
-that subgroup. This construction supplies the existence side of the Stallings correspondence,
-including for subgroups that are not finitely generated.
+for each signed basis letter, so it is folded and complete. Its based core is a folded labelled
+graph accepting exactly that subgroup, and it has no darts exactly when the subgroup is trivial.
+This construction supplies the existence side of the Stallings correspondence, including for
+subgroups that are not finitely generated.
 
 ## References
 
 * I. Kapovich and A. Myasnikov, *Stallings foldings and subgroups of free groups*,
-  Section 5, Theorem 5.1.
+  Section 5, Theorem 5.1, and Section 8, Definition 8.1 for completeness.
 * Mathlib's `Quiver.SchreierGraph` gives the corresponding directed action graph;
   here signed letters and edge reversal present it as a Serre graph.
 -/
@@ -109,6 +111,10 @@ theorem cosetGraph_isFolded : (cosetGraph H).IsFolded := by
   apply (cosetGraph H).isFolded_def.mpr
   intro e f hs hl
   exact Prod.ext hs hl
+
+/-- The coset graph is complete: every signed letter leaves every coset. -/
+theorem cosetGraph_isComplete : (cosetGraph H).IsComplete :=
+  (cosetGraph H).isComplete_def.mpr fun q l => ⟨(q, l), rfl, rfl⟩
 
 /-- A path in the coset graph ends at the coset obtained by following its reading. -/
 theorem cosetGraph_path_endpoint {q r : (cosetGraph H).graph.V}
@@ -220,5 +226,21 @@ theorem subgroupGraph_isCore :
 /-- The canonical subgroup graph is connected, including when the subgroup is trivial. -/
 theorem subgroupGraph_connected : (subgroupGraph H).graph.Connected := by
   exact (subgroupGraph_isCore H).connected
+
+/-- The canonical graph of a subgroup has no darts exactly when the subgroup is trivial. -/
+@[simp] theorem isEmpty_dart_subgroupGraph_iff : IsEmpty H.subgroupGraph.graph.E ↔ H = ⊥ := by
+  rw [H.subgroupGraph_isFolded.isEmpty_dart_iff_subgroup_eq_bot H.subgroupGraph_isCore,
+    subgroupGraph_subgroup]
+
+/-- The canonical graph of the trivial subgroup has no darts. -/
+instance subgroupGraph_bot_isEmpty_dart :
+    IsEmpty (⊥ : Subgroup (FreeGroup α)).subgroupGraph.graph.E :=
+  (isEmpty_dart_subgroupGraph_iff ⊥).mpr rfl
+
+/-- The canonical graph of the trivial subgroup has only its base vertex. -/
+noncomputable instance : Unique (⊥ : Subgroup (FreeGroup α)).subgroupGraph.graph.V :=
+  haveI : Subsingleton (⊥ : Subgroup (FreeGroup α)).subgroupGraph.graph.V :=
+    ((SerreGraph.connected_iff _).mp (subgroupGraph_connected ⊥)).2.subsingleton_of_isEmpty
+  uniqueOfSubsingleton (subgroupGraph _).base
 
 end Subgroup

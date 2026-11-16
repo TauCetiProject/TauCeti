@@ -38,11 +38,6 @@ totalized coordinate by coordinate.
 * `TauCeti.covarianceBilin_eq_smul_innerSL` shows that a law invariant under every linear
   isometry has covariance equal to its second moment divided by the dimension, times the inner
   product.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 1,
-  **Covariance matrices**.
 -/
 
 public section

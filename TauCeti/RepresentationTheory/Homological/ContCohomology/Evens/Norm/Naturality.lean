@@ -348,7 +348,7 @@ private theorem coeffComparison_trivialF2Iso :
     -- Absorb the scalar into one factor, so that the pure-tensor case applies.
     obtain ⟨i⟩ := (inferInstance : Nonempty (G ⧸ U.toSubgroup))
     have hr := (PiTensorProduct.tprod ℤ).map_update_smul m i r (m i)
-    rw [Function.update_eq_self] at hr
+    rw [Function.update_eq_self, RingHom.id_apply] at hr
     rw [← hr]
     exact htprod _
   | add x y hx hy =>

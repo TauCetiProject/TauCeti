@@ -57,7 +57,7 @@ theorem
   have hWfin : finrank K P.W = 2 :=
     P.finrank_W_eq_of_finrank_eq_two_mul (l := 2) (by omega)
   have hW : P.W ≠ ⊥ := Submodule.finrank_eq_zero.not.1 (by omega)
-  have hplus : finrank K (spinPlus Q P) = 2 := by simp [finrank_spinPlus P hW, hWfin]
+  have hplus : finrank K (spinPlus Q P) = 2 := by simp [finrank_spinPlus P, hWfin]
   have hminus : finrank K (spinMinus Q P) = 2 := by simp [finrank_spinMinus P hW, hWfin]
   let bplus := Module.finBasisOfFinrankEq K (spinPlus Q P) hplus
   let bminus := Module.finBasisOfFinrankEq K (spinMinus Q P) hminus

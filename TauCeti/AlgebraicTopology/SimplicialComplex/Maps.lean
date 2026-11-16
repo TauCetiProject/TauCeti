@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Set.Monotone
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Cell
 
 /-!
 # Maps of abstract simplicial complexes
@@ -13,11 +15,15 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 This file bundles simplicial maps between pre-abstract simplicial complexes. A simplicial map is
 a map of ambient vertex types which sends every face to a face. The file supplies the identity,
 composition, restriction to subcomplexes, and extension to a larger complex, together with the
-connection to Mathlib's image complex `PreAbstractSimplicialComplex.map`.
+connection to Mathlib's image complex `PreAbstractSimplicialComplex.map`. A simplicial map
+injective on the vertices of a cell sends it to an image cell of the same dimension
+(`AbstractSimplicialComplex.RealizationCell.map`); when the map is also increasing on those
+vertices, it carries the increasing enumeration and the deleted-vertex faces of the cell to those
+of the image cell.
 
-These maps are basic infrastructure for subdivision and geometric realization in the geometric
-topology roadmap. We work with `PreAbstractSimplicialComplex`, since constructions such as links
-and elementary collapses naturally change the set of vertices represented by singleton faces.
+These maps are basic infrastructure for subdivision and geometric realization. We work with
+`PreAbstractSimplicialComplex`, since constructions such as links and elementary collapses
+naturally change the set of vertices represented by singleton faces.
 -/
 
 public section
@@ -58,6 +64,12 @@ theorem coe_mk (f : α → β) (hf) : ⇑(SimplicialMap.mk f hf : SimplicialMap 
 theorem map_face (f : SimplicialMap K L) {σ : Finset α} (hσ : σ ∈ K) :
     σ.image f ∈ L :=
   f.map_face' hσ
+
+/-- A simplicial map sends a vertex tuple spanning a face to a vertex tuple spanning a face. -/
+theorem image_comp_mem [DecidableEq α] {m : Type*} [Fintype m] (f : SimplicialMap K L)
+    {g : m → α} (hg : Finset.univ.image g ∈ K) : Finset.univ.image (f ∘ g) ∈ L := by
+  rw [← Finset.image_image]
+  exact f.map_face hg
 
 /-- A vertex map is simplicial exactly when its image complex is a subcomplex of the codomain. -/
 theorem map_le_iff (f : α → β) :
@@ -234,3 +246,104 @@ theorem faceOrderHom_comp [DecidableEq β] [DecidableEq γ]
   exact faceOrderHom_comp_apply g f σ
 
 end TauCeti.PreAbstractSimplicialComplex.SimplicialMap
+
+namespace AbstractSimplicialComplex.RealizationCell
+
+variable {α β : Type*}
+  {K : AbstractSimplicialComplex α} {L : AbstractSimplicialComplex β} {n : ℕ}
+
+section Map
+
+variable [DecidableEq β]
+
+/-- The image cell of a simplicial cell under a map injective on that cell's vertices. -/
+def map (c : RealizationCell K n)
+    (f : PreAbstractSimplicialComplex.SimplicialMap
+      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (hf : Set.InjOn f (↑c.1.1 : Set α)) : RealizationCell L n :=
+  ⟨TauCeti.PreAbstractSimplicialComplex.SimplicialMap.faceOrderHom f c.1, by
+    rw [TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply,
+      Finset.card_image_of_injOn hf, c.2]⟩
+
+/-- The face underlying the image cell is the image of the original face. -/
+@[simp]
+theorem map_face (c : RealizationCell K n)
+    (f : PreAbstractSimplicialComplex.SimplicialMap
+      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (hf : Set.InjOn f (↑c.1.1 : Set α)) :
+    (c.map f hf).1 =
+      TauCeti.PreAbstractSimplicialComplex.SimplicialMap.faceOrderHom f c.1 :=
+  (rfl)
+
+/-- The vertices of the image cell form the image of the original vertex set. -/
+theorem coe_map_face (c : RealizationCell K n)
+    (f : PreAbstractSimplicialComplex.SimplicialMap
+      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (hf : Set.InjOn f (↑c.1.1 : Set α)) :
+    (↑(c.map f hf).1.1 : Set β) = f '' (↑c.1.1 : Set α) := by
+  simp [map_face,
+    TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply]
+
+/-- The identity simplicial map fixes each cell. -/
+@[simp]
+theorem map_id [DecidableEq α] (c : RealizationCell K n) :
+    c.map (PreAbstractSimplicialComplex.SimplicialMap.id K.toPreAbstractSimplicialComplex)
+      (by simp) = c := by
+  apply Subtype.ext
+  simp
+
+/-- Mapping a cell successively agrees with mapping it along the composite simplicial map. -/
+theorem map_map {γ : Type*} [DecidableEq γ] {P : AbstractSimplicialComplex γ}
+    (c : RealizationCell K n)
+    (f : PreAbstractSimplicialComplex.SimplicialMap
+      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (hf : Set.InjOn f (↑c.1.1 : Set α))
+    (g : PreAbstractSimplicialComplex.SimplicialMap
+      L.toPreAbstractSimplicialComplex P.toPreAbstractSimplicialComplex)
+    (hg : Set.InjOn g (↑(c.1.1.image f) : Set β)) :
+    (c.map f hf).map g (by simpa using hg) =
+      c.map (g.comp f) (by
+        simpa using hg.comp hf (fun _ ha => Finset.mem_image_of_mem f ha)) := by
+  apply Subtype.ext
+  simp [TauCeti.PreAbstractSimplicialComplex.SimplicialMap.faceOrderHom_comp]
+
+end Map
+
+variable [LinearOrder α] [LinearOrder β]
+
+/-- A vertex map increasing on a cell carries its increasing enumeration to the increasing
+enumeration of the image cell. -/
+theorem vertexEmbedding_map (c : RealizationCell K n)
+    (f : PreAbstractSimplicialComplex.SimplicialMap
+      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (hf : StrictMonoOn f (↑c.1.1 : Set α)) :
+    ⇑(c.map f hf.injOn).vertexEmbedding = f ∘ c.vertexEmbedding := by
+  have hmono : StrictMono (f ∘ c.vertexEmbedding) := fun i j hij =>
+    hf (c.vertexEmbedding_mem i) (c.vertexEmbedding_mem j) (c.strictMono_vertexEmbedding hij)
+  symm
+  apply (hmono.range_inj_of_wellFoundedLT
+    (c.map f hf.injOn).strictMono_vertexEmbedding).mp
+  have himage : Finset.univ.image (f ∘ c.vertexEmbedding) =
+      Finset.univ.image (c.map f hf.injOn).vertexEmbedding := by
+    simp [← Finset.image_image]
+  simpa only [Finset.coe_image, Finset.coe_univ, Set.image_univ] using
+    congrArg (fun s : Finset β => (s : Set β)) himage
+
+/-- A vertex map increasing on a cell carries its `j`-th deleted-vertex face to the `j`-th
+deleted-vertex face of the image cell. -/
+theorem face_map (c : RealizationCell K (n + 1))
+    (f : PreAbstractSimplicialComplex.SimplicialMap
+      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (hf : StrictMonoOn f (↑c.1.1 : Set α)) (j : Fin (n + 2)) :
+    (c.face j).map f (hf.mono (by simp)).injOn = (c.map f hf.injOn).face j := by
+  have hj : StrictMonoOn f (↑(c.face j).1.1 : Set α) := hf.mono (by simp)
+  have h : ⇑((c.face j).map f hj.injOn).vertexEmbedding =
+      ⇑((c.map f hf.injOn).face j).vertexEmbedding := by
+    rw [vertexEmbedding_map _ f hj, vertexEmbedding_face, vertexEmbedding_face,
+      vertexEmbedding_map _ f hf]
+    rfl
+  apply Subtype.ext
+  apply Subtype.ext
+  rw [← image_vertexEmbedding ((c.face j).map f hj.injOn), h, image_vertexEmbedding]
+
+end AbstractSimplicialComplex.RealizationCell

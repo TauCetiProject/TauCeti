@@ -10,15 +10,15 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The Sobolev space `W^{1,p}_0(Ω)`
 
 This file builds `W^{1,p}_0(Ω)`, the closure of the test functions `C_c^∞(Ω)` inside the weak
-Sobolev space `W^{1,p}(Ω)` of `TauCeti/Analysis/Sobolev/W1p/Basic.lean`. This is the
-`C_c^∞(Ω)`-closure half of Lane A.2 of `TauCetiRoadmap/PDE/README.md`; Meyers--Serrin density is
-not proved here.
+Sobolev space `W^{1,p}(Ω)` of `TauCeti/Analysis/Sobolev/W1p/Basic.lean`. Meyers--Serrin density
+is not proved here.
 
 ## Test functions as Sobolev functions
 
@@ -57,8 +57,7 @@ subspace under a suitable geometric hypothesis but not on all of `W^{1,p}(Ω)`.
 
 ## References
 
-The `C_c^∞(Ω)`-closure half of Lane A.2 of `TauCetiRoadmap/PDE/README.md`; L. C. Evans,
-*Partial Differential Equations*, Section 5.2.
+L. C. Evans, *Partial Differential Equations*, Section 5.2.
 -/
 
 public section
@@ -115,6 +114,40 @@ theorem W1p.value_ofTestFunctionₗ_ae (phi : 𝓓(Omega, ℝ)) :
 theorem W1p.gradient_ofTestFunctionₗ (phi : 𝓓(Omega, ℝ)) :
     W1p.gradient (W1p.ofTestFunctionₗ mu Omega p phi) = gradientTestFunctionLp p phi :=
   W1p.gradient_mk _ _ _
+
+/-- On the whole space, the value of an embedded test function agrees `μ`-almost everywhere with
+the test function itself. -/
+theorem W1p.value_ofTestFunctionₗ_top_ae (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    W1p.value (W1p.ofTestFunctionₗ mu ⊤ p phi) =ᵐ[mu] phi := by
+  simpa only [Opens.coe_top, Measure.restrict_univ] using
+    W1p.value_ofTestFunctionₗ_ae (mu := mu) (Omega := ⊤) (p := p) phi
+
+/-- On the whole space, the gradient of an embedded test function agrees `μ`-almost everywhere
+with the gradient of the test function itself. -/
+theorem W1p.gradient_ofTestFunctionₗ_top_ae (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ p phi) =ᵐ[mu] _root_.gradient (phi : E → ℝ) := by
+  rw [W1p.gradient_ofTestFunctionₗ]
+  have h := gradientTestFunctionLp_apply_ae (mu := mu) (Omega := ⊤) p phi
+  simp only [Opens.coe_top, Measure.restrict_univ] at h
+  exact h
+
+/-- On the whole space, the squared `L²` norm of the value of an embedded test function is
+`∫ φ²`. -/
+theorem W1p.norm_value_ofTestFunctionₗ_top_sq (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    ‖W1p.value (W1p.ofTestFunctionₗ mu ⊤ 2 phi)‖ ^ 2 = ∫ x, phi x ^ 2 ∂mu := by
+  rw [← W1p.integral_value_sq_eq_norm_value_sq]
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  exact integral_congr_ae ((W1p.value_ofTestFunctionₗ_top_ae (p := 2) phi).mono fun x hx ↦ by
+    simp only [hx])
+
+/-- On the whole space, the squared `L²` norm of the gradient of an embedded test function is
+`∫ ‖Dφ‖²`. -/
+theorem W1p.norm_gradient_ofTestFunctionₗ_top_sq (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    ‖W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ 2 phi)‖ ^ 2 = ∫ x, ‖fderiv ℝ phi x‖ ^ 2 ∂mu := by
+  rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  exact integral_congr_ae ((W1p.gradient_ofTestFunctionₗ_top_ae (p := 2) phi).mono fun x hx ↦ by
+    simp only [hx, norm_gradient_eq_norm_fderiv])
 
 /-- The embedding of the test functions is **injective**: two test functions with the same jet
 agree almost everywhere on `Ω`, hence everywhere, being continuous, supported in `Ω`, and measured

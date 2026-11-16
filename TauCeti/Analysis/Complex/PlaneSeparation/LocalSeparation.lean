@@ -163,7 +163,6 @@ private theorem IsJordanCurve.notMem_model_connectedComponentIn_of_locally_eq_li
     (hline : ∀ z ∈ ball p r, z ∈ C ↔ (v * (z - p)).im = 0) (hs : 0 < s) (hsr : s < r * ‖v‖) :
     p - I * s / v ∉ connectedComponentIn Cᶜ (p + I * s / v) := by
   let d : ℂ := -(I / v)
-  have hd : d ≠ 0 := neg_ne_zero.mpr (div_ne_zero I_ne_zero hv)
   have hcoord (t : ℝ) : v * (d * (t : ℂ) + p - p) = -(I * t) := by
     dsimp [d]
     field_simp [hv]
@@ -202,7 +201,7 @@ private theorem IsJordanCurve.notMem_model_connectedComponentIn_of_locally_eq_li
       closure (C ∩ {q | ((q - (d * (0 : ℂ) + p)) / d).im < 0}) := by
     simpa only [mul_zero, zero_add] using hright
   have hsep := Contour.notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton
-    hC.isClosed hd hzero hseg hpre hleft' hright'
+    hC.isClosed hzero hseg hpre hleft' hright'
   simpa only [mul_zero, zero_add, hstart, hend] using hsep
 
 /-- **A Jordan curve separates the two sides of a straight piece.** If a Jordan curve `C` agrees

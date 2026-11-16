@@ -29,10 +29,8 @@ theorem term_star (f : ℕ → ℂ) (s : ℂ) (n : ℕ) :
     LSeries.term (star f) ((starRingEnd ℂ) s) n = star (LSeries.term f s n) := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  have hpow := Complex.cpow_conj (n : ℂ) s
-    (by simpa only [Complex.natCast_arg] using Real.pi_pos.ne)
-  simpa only [LSeries.term_of_ne_zero hn, Pi.star_apply, star_div₀,
-    Complex.star_def, Complex.conj_natCast] using congrArg (fun z ↦ star (f n) / z) hpow
+  · simp [LSeries.term_of_ne_zero hn,
+      Complex.cpow_conj (n : ℂ) s (by simp [Real.pi_ne_zero.symm])]
 
 /-- Reflection preserves absolute convergence of a Dirichlet series. -/
 @[simp]
@@ -60,10 +58,6 @@ theorem LSeries_star (f : ℕ → ℂ) (s : ℂ) :
 @[simp]
 theorem abscissaOfAbsConv_star (f : ℕ → ℂ) :
     LSeries.abscissaOfAbsConv (star f) = LSeries.abscissaOfAbsConv f := by
-  simp only [LSeries.abscissaOfAbsConv]
-  congr 2
-  ext x
-  simpa only [Set.mem_ofPred_eq, Complex.star_def, Complex.conj_ofReal] using
-    LSeriesSummable_star_iff f x
+  simp only [LSeries.abscissaOfAbsConv, ← LSeriesSummable_star_iff f, Complex.conj_ofReal]
 
 end TauCeti.LSeries

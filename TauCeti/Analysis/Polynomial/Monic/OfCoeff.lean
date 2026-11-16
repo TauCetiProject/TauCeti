@@ -35,9 +35,9 @@ theorem norm_lt_of_isRoot_monicOfCoeff {K : Type*} [NormedField K] {d : ℕ}
     refine Finset.sup_le fun i hi => ?_
     rw [Finset.mem_range] at hi
     rw [coeff_monicOfCoeff c ⟨i, hi⟩]
-    exact nnnorm_le_pi_nnnorm c ⟨i, hi⟩
+    exact nnNorm_le_pi_nnNorm c ⟨i, hi⟩
   have hb : (monicOfCoeff c).cauchyBound ≤ ‖c‖₊ + 1 := by
-    rw [cauchyBound, (monic_monicOfCoeff c).leadingCoeff, nnnorm_one, div_one,
+    rw [cauchyBound, (monic_monicOfCoeff c).leadingCoeff, nnNorm_one, div_one,
       natDegree_monicOfCoeff]
     exact add_le_add hsup le_rfl
   exact_mod_cast (hz.norm_lt_cauchyBound (monic_monicOfCoeff c).ne_zero).trans_le hb

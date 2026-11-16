@@ -11,6 +11,8 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.LinearAlgebra.SymplecticGroup
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Order.Prod.Lex.Basic
+import Mathlib.Logic.Equiv.Prod
 import TauCeti.LinearAlgebra.Complex.Determinant
 
 /-!
@@ -40,6 +42,9 @@ either `ℝ`, where the realification is block diagonal, or isomorphic to `ℂ` 
 * `Matrix.realify`: the real matrix of the `ℝ`-linear map a matrix over `𝕜` induces.
 * `Matrix.realifyLinearMap`: realification, as an `ℝ`-linear map.
 * `Matrix.realifyAlgHom`: realification of square matrices, as an `ℝ`-algebra homomorphism.
+* `Matrix.interleavedRealifyAlgHom`: realification with adjacent real and imaginary coordinates.
+* `Matrix.interleavedRealifyAlgHom_injective` and `Matrix.interleavedRealifyAlgHom_apply`:
+  injectivity and the entry formula for interleaved realification.
 * `Matrix.GeneralLinearGroup.realify`: the injective group homomorphism `GL n 𝕜 →* GL (n ⊕ n) ℝ`
   that realification induces on invertible matrices.
 * `TauCeti.realifyReflection`: the reflection of `ℝ^ι ⊕ ℝ^ι` negating the second summand, which
@@ -61,6 +66,13 @@ either `ℝ`, where the realification is block diagonal, or isomorphic to `ℂ` 
 * `Matrix.commute_J_realify`: realifications commute with `Matrix.J`.
 * `Matrix.realify_mem_orthogonalGroup_iff` and `Matrix.realify_mem_symplecticGroup_iff`: a matrix
   is unitary exactly when its realification is orthogonal, and exactly when it is symplectic.
+
+## References
+
+* For the interleaved realification used in split solvability: A. W. Knapp,
+  *Lie Groups Beyond an Introduction*, first edition (1996), Chapter I, §5,
+  Corollary 1.30, p.22.
+
 -/
 
 public section
@@ -283,6 +295,38 @@ def realifyAlgHom [Fintype ι] [DecidableEq ι] :
 theorem realifyAlgHom_apply [Fintype ι] [DecidableEq ι]
     (A : Matrix ι ι 𝕜) : realifyAlgHom ι 𝕜 A = A.realify :=
   (rfl)
+
+noncomputable section Interleaved
+variable [Fintype ι] [DecidableEq ι]
+
+private def interleaveIndex : (ι ⊕ ι) ≃ (ι ×ₗ Bool) :=
+  ((Equiv.boolProdEquivSum ι).symm.trans (Equiv.prodComm Bool ι)).trans toLex
+
+/-- Realification with adjacent real (`false`) and imaginary (`true`) coordinates.
+For linearly ordered `ι`, the lexicographic order on `ι ×ₗ Bool` preserves
+upper triangularity of matrices with real diagonal entries. -/
+def interleavedRealifyAlgHom : Matrix ι ι 𝕜 →ₐ[ℝ] Matrix (ι ×ₗ Bool) (ι ×ₗ Bool) ℝ :=
+  (Matrix.reindexAlgEquiv ℝ ℝ interleaveIndex).toAlgHom.comp (Matrix.realifyAlgHom ι 𝕜)
+
+/-- Interleaved realification is injective. -/
+theorem interleavedRealifyAlgHom_injective :
+    Function.Injective (interleavedRealifyAlgHom (ι := ι) (𝕜 := 𝕜)) := by
+  intro A B h
+  have he : Matrix.realifyAlgHom ι 𝕜 A = Matrix.realifyAlgHom ι 𝕜 B :=
+    (Matrix.reindexAlgEquiv ℝ ℝ interleaveIndex).injective h
+  exact Matrix.realify_injective ((Matrix.realifyAlgHom_apply A).symm.trans
+    (he.trans (Matrix.realifyAlgHom_apply B)))
+
+/-- The entries of interleaved realification. -/
+@[simp]
+theorem interleavedRealifyAlgHom_apply (X : Matrix ι ι 𝕜) (i j : ι) (a b : Bool) :
+    interleavedRealifyAlgHom X (toLex (i, a)) (toLex (j, b)) =
+      if a then (if b then RCLike.re (X i j) else RCLike.im (X i j))
+      else (if b then -RCLike.im (X i j) else RCLike.re (X i j)) := by
+  cases a <;> cases b <;>
+    simp [interleavedRealifyAlgHom, Matrix.reindex, Matrix.submatrix, interleaveIndex]
+
+end Interleaved
 
 /-- Realifications commute with the standard alternating matrix `J`. -/
 theorem commute_J_realify [Fintype ι] [DecidableEq ι]

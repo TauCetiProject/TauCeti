@@ -229,7 +229,7 @@ theorem absoluteGaloisGroupProP_two_marked_of_degree_even_principal
     rwa [demushkinCharacter_absoluteGaloisGroupProP, hrank] at hmarked
   · exact absurd (hrange ▸ (range_localCyclotomicCharacter_of_odd_finrank K
       (Nat.not_even_iff_odd.mp heven) ▸ Subgroup.mem_top _))
-      (neg_one_notMem_topologicalClosure_zpowers_two hk (neg_mem_unitsPrincipal_two_of_val_eq hu)
+      (neg_one_notMem_topologicalClosure_zpowers_two (neg_mem_unitsPrincipal_two_of_val_eq hu)
         (neg_notMem_unitsPrincipal_two_succ_of_val_eq hu))
 
 /-- **`G_K(2)` in even degree is an even-rank dyadic Demushkin group.** Let `K` be a finite

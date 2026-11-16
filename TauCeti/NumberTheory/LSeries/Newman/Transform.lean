@@ -94,13 +94,12 @@ theorem norm_intervalIntegral_mul_kernel_le_of_re_neg
 /-- **Cauchy's formula for a truncated transform.** For `R > 0`, the integral of the truncated
 Laplace transform against Newman's kernel `exp (T z) (1 + z² / R²) / z` over the circle
 `‖z‖ = R` is `2πi` times its value at `0`, namely `2πi ∫ t in 0..T, f t`. -/
-theorem circleIntegral_intervalIntegral_mul_kernel (hf : IntervalIntegrable f volume 0 T)
-    {R : ℝ} (hR : 0 < R) :
+theorem circleIntegral_intervalIntegral_mul_kernel {R : ℝ} (hR : 0 < R) :
     (∮ z in C(0, R), (∫ t in (0 : ℝ)..T, f t * cexp (-z * t)) * cexp (T * z) *
         (1 + z ^ 2 / (R : ℂ) ^ 2) / z) = 2 * π * Complex.I * ∫ t in (0 : ℝ)..T, f t := by
   have hd : Differentiable ℂ fun z : ℂ ↦
       (∫ t in (0 : ℝ)..T, f t * cexp (-z * t)) * cexp (T * z) * (1 + z ^ 2 / (R : ℂ) ^ 2) :=
-    ((differentiable_intervalIntegral_mul_cexp_neg_mul hf).mul (by fun_prop)).mul (by fun_prop)
+    ((differentiable_intervalIntegral_mul_cexp_neg_mul).mul (by fun_prop)).mul (by fun_prop)
   have h := hd.differentiableOn.circleIntegral_sub_inv_smul (c := 0) (R := R)
     (w := 0) (mem_ball_self hR)
   simp only [sub_zero, smul_eq_mul, neg_zero, zero_mul, Complex.exp_zero, mul_one, ne_eq,

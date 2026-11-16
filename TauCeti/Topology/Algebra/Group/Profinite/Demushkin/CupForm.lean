@@ -209,10 +209,13 @@ include hG
 /-- **A non-alternating cup form at `p = 2` has an orthonormal basis**: `H¹(G, 𝔽₂)` has a basis in
 which the matrix of the cup form is the identity. -/
 theorem exists_basis_toMatrix_cupForm_eq_one_of_not_isAlt {φ : cohomFp 2 G 2 →ₗ[ZMod 2] ZMod 2}
-    (hφ : φ ≠ 0) (h : ¬ φ.cupForm.IsAlt) :
+    (h : ¬ φ.cupForm.IsAlt) :
     ∃ b : Basis (Fin (finrank (ZMod 2) (cohomFp 2 G 1))) (ZMod 2) (cohomFp 2 G 1),
       LinearMap.BilinForm.toMatrix b φ.cupForm = 1 := by
   have := hG.finite_cohomFp_one
+  have hφ : φ ≠ 0 := by
+    rintro rfl
+    exact h fun a => by simp
   exact φ.isSymm_cupForm_two.exists_basis_toMatrix_eq_one (fun a => isSquare_of_charTwo' a)
     (hG.nondegenerate_cupForm_of_ne_zero hφ) fun h' => (h h').elim
 

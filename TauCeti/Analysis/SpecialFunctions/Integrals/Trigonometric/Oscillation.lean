@@ -66,7 +66,6 @@ theorem eventually_integral_sin_sub_sin_sq_ge {a b : ℝ} (hab : a < b) (c : ℝ
     linarith
   have hba : 0 < b - a := sub_pos.2 hab
   have hd : 0 < (n : ℝ) - m := by linarith [(Nat.cast_nonneg N : (0 : ℝ) ≤ N)]
-  have hm0 : (0 : ℝ) ≤ m := Nat.cast_nonneg m
   have hn0 : 0 < (n : ℝ) := by linarith
   -- Pointwise lower bound after discarding `sin (m * x + c) ^ 2 ≥ 0`.
   have hpt : ∀ x, 1 / 2 - cos ((2 * n) * x + 2 * c) / 2 - cos ((n - m) * x + 0) +

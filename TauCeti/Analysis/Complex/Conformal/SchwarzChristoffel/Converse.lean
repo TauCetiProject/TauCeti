@@ -66,8 +66,6 @@ theorem exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff (a e : ι → 
       EqOn (logDeriv (deriv f))
         (fun z => ∑ i, (e i : ℂ) / (z - (a i : ℂ))) upperHalfPlaneSet := by
   let F := schwarzChristoffelPrimitive a e z₀
-  have hF : DifferentiableOn ℂ F upperHalfPlaneSet :=
-    differentiableOn_schwarzChristoffelPrimitive a e z₀
   have hnF : ∀ z ∈ upperHalfPlaneSet, deriv F z ≠ 0 := by
     intro z hz
     rw [deriv_schwarzChristoffelPrimitive a e z₀ hz]

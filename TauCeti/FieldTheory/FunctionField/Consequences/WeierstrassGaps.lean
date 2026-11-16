@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Order.Interval.Finset.Nat
 public import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
+-- Proof-only: a rational place forces the constant field to be exact.
+import TauCeti.FieldTheory.FunctionField.Place.ConstantField
 
 /-!
 # Weierstrass gaps
@@ -298,9 +300,9 @@ theorem mem_weierstrassGaps_iff_isGap (hF : IsFunctionField k F)
 
 /-- **Weierstrass gap theorem** (Stichtenoth, Theorem 1.6.8): at a rational place of a function
 field with integrally closed constants and genus `g`, there are exactly `g` gaps. -/
-theorem card_weierstrassGaps (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) {P : Place k F} (hP : P.degree = 1) :
+theorem card_weierstrassGaps (hF : IsFunctionField k F) {P : Place k F} (hP : P.degree = 1) :
     P.weierstrassGaps.card = genus k F := by
+  have hex := P.isIntegrallyClosedIn_of_degree_eq_one hP
   have hcount := P.card_gapNumbersUpTo_add_dim hF hex hP (2 * genus k F - 1)
   have hdim := Divisor.dim_eq_degree_add_one_sub_genus_of_two_mul_genus_sub_one_le_degree
     hF hex (D := ((2 * genus k F - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P) (by
@@ -330,21 +332,22 @@ theorem one_mem_weierstrassGaps (hF : IsFunctionField k F)
     simp only [mem_weierstrassGaps_iff, Finset.notMem_empty, iff_false, not_and]
     intro _ _
     simpa only [isGap_iff_not_isPoleNumber, not_not] using hall n
-  have hcard := P.card_weierstrassGaps hF hex hP
+  have hcard := P.card_weierstrassGaps hF hP
   rw [hempty, Finset.card_empty] at hcard
   omega
 
 /-! ### Gaps and the canonical divisor -/
 
 /-- **Gaps are the jumps of the canonical filtration**: if `W` satisfies the Riemann--Roch
-identity, then a positive integer `n` is a gap at a rational place `P` exactly when
-`ℓ(W - nP) < ℓ(W - (n - 1)P)`. -/
+identity, then `n` is a gap at a rational place `P` exactly when
+`ℓ(W - nP) < ℓ(W - (n - 1)P)`. For `n = 0` both sides are false. -/
 theorem isGap_iff_dim_sub_lt (hF : IsFunctionField k F) {W : Divisor k F} {g₀ : ℕ}
-    (hW : W.IsRiemannRochDivisor g₀) {P : Place k F} (hP : P.degree = 1) {n : ℕ}
-    (hn : 0 < n) :
+    (hW : W.IsRiemannRochDivisor g₀) {P : Place k F} (hP : P.degree = 1) {n : ℕ} :
     P.IsGap n ↔
       Divisor.dim (W - (n : ℤ) • WeilDivisor.ofPoint P) <
         Divisor.dim (W - ((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
   have h₁ := Divisor.isRiemannRochDivisor_iff.mp hW ((n : ℤ) • WeilDivisor.ofPoint P)
   have h₂ := Divisor.isRiemannRochDivisor_iff.mp hW (((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P)
   simp only [Divisor.degree_zsmul, Divisor.degree_ofPoint, hP, Nat.cast_one, mul_one] at h₁ h₂
@@ -357,14 +360,21 @@ theorem isGap_iff_dim_sub_lt (hF : IsFunctionField k F) {W : Divisor k F} {g₀ 
   omega
 
 /-- **Gaps are the orders of canonical sections** (Farkas--Kra, Section III.5, in the
-divisor language of `L(W)`): if `W` satisfies the Riemann--Roch identity, then a positive integer
+divisor language of `L(W)`): if `W` satisfies the Riemann--Roch identity, then a natural number
 `n` is a gap at a rational place `P` exactly when some nonzero `f ∈ L(W)` has order
 `n - 1 - W(P)` at `P`. For `W` the divisor of a Weil differential `ω`, these `f` correspond to
 the regular differentials `f ω` with a zero of order `n - 1` at `P`. -/
 theorem isGap_iff_exists_mem_riemannRochSpace_ord_eq (hF : IsFunctionField k F)
     {W : Divisor k F} {g₀ : ℕ} (hW : W.IsRiemannRochDivisor g₀) {P : Place k F}
-    (hP : P.degree = 1) {n : ℕ} (hn : 0 < n) :
+    (hP : P.degree = 1) {n : ℕ} :
     P.IsGap n ↔ ∃ f ∈ riemannRochSpace W, f ≠ 0 ∧ P.ord f = n - 1 - W.coeff P := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · -- Both sides are false: `0` is not a gap, and no `f ∈ L(W)` has order `-1 - W(P)`.
+    refine iff_of_false P.not_isGap_zero ?_
+    rintro ⟨f, hfW, hf0, hford⟩
+    have := (mem_riemannRochSpace_iff_neg_le_ord hf0).mp hfW P
+    simp only [Nat.cast_zero] at hford
+    omega
   set E : Divisor k F := W - ((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P with hE
   have hP0 : (0 : Divisor k F) ≤ WeilDivisor.ofPoint P :=
     WeilDivisor.ofPoint_nonneg P
@@ -380,7 +390,7 @@ theorem isGap_iff_exists_mem_riemannRochSpace_ord_eq (hF : IsFunctionField k F)
   have hle : riemannRochSpace (E - WeilDivisor.ofPoint P) ≤ riemannRochSpace E :=
     riemannRochSpace_mono (sub_le_self _ hP0)
   have := finiteDimensional_riemannRochSpace hF E
-  rw [P.isGap_iff_dim_sub_lt hF hW hP hn, hsub, Divisor.dim_def, Divisor.dim_def]
+  rw [P.isGap_iff_dim_sub_lt hF hW hP, hsub, Divisor.dim_def, Divisor.dim_def]
   constructor
   · intro hlt
     obtain ⟨f, hfE, hfnot⟩ :=
@@ -471,7 +481,7 @@ private theorem choose_two_add_sum_gapNumbersUpTo_le (P : Place k F) {N M : ℕ}
       ((P.gapNumbersUpTo N).card + 1).choose 2 + ∑ n ∈ P.gapNumbersUpTo M, n := by
   induction M, hNM using Nat.le_induction with
   | base => exact le_rfl
-  | succ M hNM ih =>
+  | succ M _ ih =>
     by_cases h : P.IsGap (M + 1)
     · have hM := card_gapNumbersUpTo_le P M
       rw [gapNumbersUpTo_succ_of_isGap h,
@@ -490,7 +500,7 @@ private theorem sq_add_sum_gapNumbersUpTo_le (P : Place k F) {N M : ℕ} (hNM : 
       (P.gapNumbersUpTo M).card ^ 2 + ∑ n ∈ P.gapNumbersUpTo N, n := by
   induction M, hNM using Nat.le_induction with
   | base => exact le_rfl
-  | succ M hNM ih =>
+  | succ M _ ih =>
     by_cases h : P.IsGap (M + 1)
     · have hM := h.sub_one_le_two_mul_card_gapNumbersUpTo
       rw [Nat.add_sub_cancel] at hM
@@ -579,9 +589,9 @@ theorem weierstrassWeight_le_card_choose_two (P : Place k F) :
 /-- **The Weierstrass weight of a rational place is at most `g (g - 1) / 2`**, for a function field
 of genus `g` with exact constants. -/
 theorem weierstrassWeight_le_genus_choose_two (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) {P : Place k F} (hP : P.degree = 1) :
+    {P : Place k F} (hP : P.degree = 1) :
     P.weierstrassWeight ≤ (genus k F).choose 2 :=
-  P.card_weierstrassGaps hF hex hP ▸ P.weierstrassWeight_le_card_choose_two
+  P.card_weierstrassGaps hF hP ▸ P.weierstrassWeight_le_card_choose_two
 
 /-- **A place has Weierstrass weight zero exactly when its gaps are `1, …, c`**, for the number
 `c` of gaps. -/
@@ -600,16 +610,15 @@ theorem weierstrassWeight_eq_zero_iff_card (P : Place k F) :
 /-- **A rational place has Weierstrass weight zero exactly when its gaps are `1, …, g`**, for a
 function field of genus `g` with exact constants. -/
 theorem weierstrassWeight_eq_zero_iff (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) {P : Place k F} (hP : P.degree = 1) :
+    {P : Place k F} (hP : P.degree = 1) :
     P.weierstrassWeight = 0 ↔ P.weierstrassGaps = Finset.Icc 1 (genus k F) := by
-  rw [weierstrassWeight_eq_zero_iff_card, P.card_weierstrassGaps hF hex hP]
+  rw [weierstrassWeight_eq_zero_iff_card, P.card_weierstrassGaps hF hP]
 
 /-- **The gaps at a rational place where `2` is a pole number are `1, 3, …, 2g - 1`**, for a
 function field of genus `g` with exact constants: every even number is then a pole number, and the
 gap theorem leaves exactly `g` gaps below `2g`. -/
 theorem weierstrassGaps_eq_image_range_of_isPoleNumber_two (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) {P : Place k F} (hP : P.degree = 1)
-    (h2 : P.IsPoleNumber 2) :
+    {P : Place k F} (hP : P.degree = 1) (h2 : P.IsPoleNumber 2) :
     P.weierstrassGaps = (Finset.range (genus k F)).image fun i ↦ 2 * i + 1 := by
   have heven : ∀ j : ℕ, P.IsPoleNumber (2 * j) := by
     intro j
@@ -623,7 +632,7 @@ theorem weierstrassGaps_eq_image_range_of_isPoleNumber_two (hF : IsFunctionField
     obtain ⟨i, rfl | rfl⟩ := Nat.even_or_odd' n
     · exact absurd (heven i) ((P.isGap_iff_not_isPoleNumber _).mp hgap)
     · exact Finset.mem_image.mpr ⟨i, Finset.mem_range.mpr (by omega), rfl⟩
-  · rw [card_weierstrassGaps hF hex hP, Finset.card_image_of_injective _
+  · rw [card_weierstrassGaps hF hP, Finset.card_image_of_injective _
       (fun a b h ↦ by simpa using h), Finset.card_range]
 
 /-- **A rational place has the maximal Weierstrass weight `g (g - 1) / 2` exactly when `2` is a
@@ -631,10 +640,11 @@ pole number there**, for a function field of genus `g` with exact constants; the
 `1, 3, …, 2g - 1`. For `g ≥ 2` such a place makes the function field hyperelliptic, see
 `TauCeti.isHyperellipticFunctionField_of_isPoleNumber_two`. -/
 theorem weierstrassWeight_eq_genus_choose_two_iff (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) {P : Place k F} (hP : P.degree = 1) :
+    {P : Place k F} (hP : P.degree = 1) :
     P.weierstrassWeight = (genus k F).choose 2 ↔ P.IsPoleNumber 2 := by
+  have hex := P.isIntegrallyClosedIn_of_degree_eq_one hP
   have hsq := P.weierstrassWeight_add_sq
-  rw [P.card_weierstrassGaps hF hex hP] at hsq
+  rw [P.card_weierstrassGaps hF hP] at hsq
   constructor
   · -- If `2` is a gap, so is `1`, and the gaps `1, 2` up to `2` already sum to less than `2²`.
     intro hw
@@ -643,13 +653,13 @@ theorem weierstrassWeight_eq_genus_choose_two_iff (hF : IsFunctionField k F)
     have hmem := (P.mem_weierstrassGaps_iff_isGap hF hex 2).mpr h2
     have hle : 2 ≤ 2 * genus k F - 1 := ((P.mem_weierstrassGaps_iff 2).mp hmem).2.1
     have hmono := sq_add_sum_gapNumbersUpTo_le P hle
-    rw [← weierstrassGaps, P.card_weierstrassGaps hF hex hP,
+    rw [← weierstrassGaps, P.card_weierstrassGaps hF hP,
       gapNumbersUpTo_succ_of_isGap (N := 1) h2, gapNumbersUpTo_succ_of_isGap (N := 0) h1,
       gapNumbersUpTo_zero] at hmono
     simp at hmono
     omega
   · intro h2
-    rw [weierstrassGaps_eq_image_range_of_isPoleNumber_two hF hex hP h2,
+    rw [weierstrassGaps_eq_image_range_of_isPoleNumber_two hF hP h2,
       Finset.sum_image fun a _ b _ h ↦ by simpa using h] at hsq
     have hodd : ∀ c : ℕ, ∑ i ∈ Finset.range c, (2 * i + 1) = c ^ 2 := fun c ↦ by
       induction c with

@@ -61,6 +61,9 @@ L-function `Grossencharacter.lFunctionC` is the canonical meromorphic continuati
 
 * `TauCeti.LFunctions.Grossencharacter.ext`: a presentation is determined by its Hecke character.
 * `TauCeti.LFunctions.Grossencharacter.isAlgebraic`: the presented Hecke character is algebraic.
+* `TauCeti.LFunctions.Grossencharacter.conductorExponent_le_exponent` and
+  `TauCeti.LFunctions.Grossencharacter.finiteConductor_dvd_finitePart`: the finite conductor of
+  the presented character divides the finite part of the modulus.
 * `TauCeti.LFunctions.Grossencharacter.toHeckeCharacter_primeIdele`: the value at a prime idele.
 * `TauCeti.LFunctions.Grossencharacter.lFunctionC_ofRayClassCharacter`: the presented L-function
   of a ray class character is its Hecke L-function.
@@ -164,6 +167,30 @@ theorem ext {χ ψ : Grossencharacter K 𝔪} (h : χ.toHeckeCharacter = ψ.toHe
 theorem toHeckeCharacter_injective :
     Function.Injective (toHeckeCharacter : Grossencharacter K 𝔪 → HeckeCharacter K) :=
   fun _ _ ↦ ext
+
+/-! ### The finite conductor of a presentation -/
+
+/-- **The conductor exponents of a presentation are bounded by its modulus**: at every finite
+place `v`, the conductor exponent of the presented character is at most the exponent of `v` in
+`𝔪`, that is, the character is trivial on `U(K_v, 𝔪.exponent v)`. -/
+theorem conductorExponent_le_exponent (χ : Grossencharacter K 𝔪)
+    (v : HeightOneSpectrum (𝓞 K)) :
+    χ.toHeckeCharacter.conductorExponent v ≤ 𝔪.exponent v :=
+  (χ.toHeckeCharacter.conductorExponent_le_iff v _).mpr fun u hu ↦ by
+    rw [HeckeCharacter.finiteComponent_apply, IdeleClassGroup.ofAdicCompletion_apply]
+    exact χ.eq_one_of_mem _ (ofAdicCompletion_mem_ideleCongruenceSubgroup_iff.mpr hu)
+      fun w ↦ InfinitePlace.ideleInfiniteCoord_ofAdicCompletion w v u
+
+/-- **The finite conductor of a presentation divides the finite part of its modulus.** -/
+theorem finiteConductor_dvd_finitePart (χ : Grossencharacter K 𝔪) :
+    χ.toHeckeCharacter.finiteConductor ∣ 𝔪.finitePart := by
+  rw [Ideal.dvd_iff_le]
+  refine (le_iInf fun v ↦ ?_).trans
+    (Ideal.iInf_maxPowDividing_eq χ.toHeckeCharacter.finiteConductor_ne_bot).le
+  -- `maxPowDividing` is the prime power recorded by the conductor exponent.
+  rw [HeightOneSpectrum.maxPowDividing, χ.toHeckeCharacter.count_finiteConductor]
+  exact (Ideal.dvd_iff_le.mp (𝔪.pow_exponent_dvd_finitePart v)).trans
+    (Ideal.pow_le_pow_right (χ.conductorExponent_le_exponent v))
 
 /-! ### The shift -/
 

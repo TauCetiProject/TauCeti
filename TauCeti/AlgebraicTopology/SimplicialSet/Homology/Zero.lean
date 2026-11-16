@@ -42,6 +42,16 @@ lemma ιHomology₀_def (x : X _⦋0⦌) :
       (X.chainComplex R).homologyπ 0 := by
   rw [ιHomology₀]
 
+/-- A vertex, viewed as a degree-zero chain, has as homology class the vertex class. -/
+@[reassoc]
+lemma ιChainComplex_cycles₀Iso_inv_homologyπ (x : X _⦋0⦌) :
+    X.ιChainComplex x ≫ (X.chainComplex R).cycles₀Iso.inv ≫ (X.chainComplex R).homologyπ 0 =
+      ιHomology₀ R x := by
+  rw [ιHomology₀, ← Category.assoc]
+  congr 1
+  apply (cancel_mono ((X.chainComplex R).iCycles 0)).1
+  simp
+
 /-- A vertex class corresponds to the coproduct inclusion indexed by its connected component. -/
 @[reassoc (attr := simp)]
 lemma ιHomology₀_homology₀Iso_hom (x : X _⦋0⦌) :
@@ -57,11 +67,7 @@ lemma homology₀_hom_ext {T : C} {f g : X.homology R 0 ⟶ T}
   apply (cancel_epi ((X.chainComplex R).cycles₀Iso.inv)).1
   apply chainComplex_hom_ext
   intro x
-  have hx : X.ιChainComplex x ≫ (X.chainComplex R).cycles₀Iso.inv =
-      (X.chainComplex R).liftCycles (X.ιChainComplex x) 0 (by simp) (by simp) := by
-    apply (cancel_mono ((X.chainComplex R).iCycles 0)).1
-    simp
-  simpa only [ιHomology₀, Category.assoc, ← hx] using h x
+  simpa only [Category.assoc, ιChainComplex_cycles₀Iso_inv_homologyπ_assoc] using h x
 
 /-- The homology map of a simplicial map sends a vertex class to the class of its image. -/
 @[reassoc (attr := simp)]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.MaximalProP
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # The maximal pro-`p` quotient of the topological abelianization
@@ -28,7 +29,7 @@ namespace TauCeti
 
 variable {p : ℕ} {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {A : Type*} [CommGroup A] [TopologicalSpace A] [IsTopologicalGroup A]
-  [T1Space A] [CompactSpace A] [TotallyDisconnectedSpace A]
+  [CompactSpace A] [TotallyDisconnectedSpace A]
 
 /-- Every continuous homomorphism from `G` to a commutative pro-`p` group kills the elements
 that die in the maximal pro-`p` quotient of the topological abelianization of `G`. -/

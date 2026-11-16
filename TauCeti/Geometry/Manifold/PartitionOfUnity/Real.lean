@@ -69,7 +69,7 @@ theorem Continuous.exists_contDiff_pos_le_abs_deriv_le_one {δ : ℝ → ℝ} (h
   have hw0' (k : ℤ) : (0 : ℝ) < w k := NNReal.coe_pos.2 (hw0 k)
   have hs1' : (s : ℝ) ≤ 1 := by exact_mod_cast hs1.le
   -- The coefficients `c k ≤ m k` are small enough that `|c k * ρ' k| ≤ w k`.
-  set c : ℤ → ℝ := fun k ↦ min (m k) (w k / (|B k| + 1)) with hc
+  set c : ℤ → ℝ := fun k ↦ min (m k) (w k / (|B k| + 1))
   have hc0 (k : ℤ) : 0 < c k := lt_min (hm0 k) (div_pos (hw0' k) (by positivity))
   have hcB (k : ℤ) (y : ℝ) : |c k * deriv (ρ k) y| ≤ w k := by
     rw [abs_mul, abs_of_pos (hc0 k)]

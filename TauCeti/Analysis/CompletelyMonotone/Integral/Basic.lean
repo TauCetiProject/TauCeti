@@ -36,9 +36,6 @@ for the first derivative within `[0, ∞)`.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem
-  milestone).
-
 * D. V. Widder, *The Laplace Transform* (Princeton, 1941), Ch. IV.
 * D. Chafaï, *Aspects of the Bernstein theorem* (2013).
 -/

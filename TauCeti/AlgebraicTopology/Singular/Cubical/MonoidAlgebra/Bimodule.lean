@@ -249,7 +249,6 @@ theorem cubicalChainLeftActBilin_one (m : cubicalChainModule Y H R) :
     rfl
   rw [h1]
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | lof n c =>
     rw [cubicalChainLeftActBilin_lof_lof, ← cubicalChainModuleLof_cast (Nat.zero_add n),
       one_leftAct]
@@ -261,7 +260,6 @@ theorem cubicalChainLeftActBilin_mul (a b : normalizedCubicalChainAlgebra G R)
     cubicalChainLeftActBilin G Y H R (a * b) m =
       cubicalChainLeftActBilin G Y H R a (cubicalChainLeftActBilin G Y H R b m) := by
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | add m m' hm hm' => simp only [map_add, hm, hm']
   | lof r c =>
     induction a using DirectSum.induction_on with
@@ -387,7 +385,6 @@ theorem cubicalChainModule_isDGLeftModule :
     · simp
     obtain rfl : p = -(n : ℤ) := by omega
     induction m using cubicalChainModule.induction_on with
-    | zero => simp
     | lof q c => exact cubicalChainModuleDifferential_lof_smul x c
     | add m m' hm hm' =>
       rw [smul_add, map_add, hm, hm', map_add, smul_add, smul_add, smul_add]
@@ -409,7 +406,6 @@ theorem cubicalChainModuleLinearMap_smul (f : C(Y, Y'))
     (x : cubicalChainModule Y H R) :
     cubicalChainModuleLinearMap R f (a • x) = a • cubicalChainModuleLinearMap R f x := by
   induction x using cubicalChainModule.induction_on with
-  | zero => rw [smul_zero, map_zero, smul_zero]
   | add x x' hx hx' => rw [smul_add, map_add, hx, hx', map_add, smul_add]
   | lof q c =>
     induction a using DirectSum.induction_on with
@@ -421,6 +417,20 @@ theorem cubicalChainModuleLinearMap_smul (f : C(Y, Y'))
         lof_smul_cubicalChainModuleLof, map_leftAct f hf]
 
 end LeftMap
+
+section Self
+
+variable {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] {R : Type*} [CommRing R]
+
+/-- For a topological magma acting on itself by left multiplication, the left action of chains is
+the Pontryagin product. -/
+theorem NormalizedCubicalChain.leftAct_eq_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
+    (b : NormalizedCubicalChain G R q) : leftAct G G R p q a b = mul G R p q a b := by
+  have h : leftActMap G G = mulMap G :=
+    ContinuousMap.ext fun x ↦ by rw [leftActMap_apply, mulMap_apply, smul_eq_mul]
+  rw [leftAct_def, mul_def, h]
+
+end Self
 
 section Bimodule
 
@@ -434,7 +444,6 @@ instance : SMulCommClass (normalizedCubicalChainAlgebra G R) (normalizedCubicalC
   smul_comm a b m := by
     rw [← op_unop b]
     induction m using cubicalChainModule.induction_on with
-    | zero => simp only [smul_zero]
     | add m m' hm hm' => simp only [smul_add, hm, hm']
     | lof q c =>
       induction a using DirectSum.induction_on with

@@ -143,8 +143,8 @@ theorem tensorPower_mem_symplecticHarmonicTensors
       LinearMap.congr_fun
         (LinearMap.congr_fun (stdSymplecticBilinForm_comp_stdSymplecticRep k n g) v) w
   have h := LinearMap.congr_fun
-    ((stdSymplecticBilinForm k n).contractTensorPair_comp_map i j hij
-      (stdSymplecticRep k n g) hform) x
+    ((stdSymplecticBilinForm k n).contractTensorPair_comp_map (stdSymplecticBilinForm k n)
+      i j hij (stdSymplecticRep k n g) hform) x
   simpa only [Representation.tensorPower_apply, LinearMap.comp_apply,
     mem_symplecticHarmonicTensors.mp hx i j hij, map_zero] using h
 

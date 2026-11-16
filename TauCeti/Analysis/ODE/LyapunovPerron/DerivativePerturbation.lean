@@ -132,7 +132,6 @@ theorem norm_fderiv_lyapunovPerronSolution_sub_le {d : ℝ}
         (lipschitzWith_lyapunovPerronSolution hs hu hα hM hsmall')
   have hq : 0 < 1 - 2 * (K : ℝ) * ε / α :=
     sub_pos.mpr ((div_lt_one (by exact_mod_cast hα)).2 (by exact_mod_cast hsmall))
-  have hEnonneg := (norm_nonneg E).trans hEnorm
   have hbound : ‖D - E‖ ≤ 2 * K / α * ε * ‖D - E‖ +
       2 * K / α * d * (K / (1 - 2 * K * ε' / α)) := by
     calc

@@ -258,7 +258,6 @@ private theorem stickelberger_aux [IsDomain R] (hω : ∀ x, Ideal.Quotient.mk P
     | zero => simpa [mul_comm p] using hy
     | succ j ihj =>
       have hjp : j + 1 < p := lt_of_le_of_lt hj (Nat.mod_lt _ hp.out.pos)
-      have hxa : j + 1 + p * y ≤ a := by omega
       have hq : 2 < Fintype.card F := by omega
       have hrel := jacobiSum_mul_nontrivial (χ := ω⁻¹) (φ := ω⁻¹ ^ (j + p * y))
         (by rw [← pow_succ']; exact inv_pow_ne_one hω (by omega) (by omega)) ψ

@@ -17,8 +17,8 @@ probability mass function on the dependent product whose coordinate pushforwards
 This file packages that finite model, its independent product coupling, its real-valued cost, and
 the bridge to the measure-theoretic `TauCeti.MultiCoupling` API.
 
-These definitions supply the finite coupling infrastructure used by the multi-marginal duality
-development in Layer 2, item 6 of the optimal-transport roadmap.
+These definitions supply the finite coupling infrastructure used by the finite multi-marginal
+duality in `TauCeti.MeasureTheory.OptimalTransport.MultiMarginal.Finite.Duality`.
 -/
 
 public section

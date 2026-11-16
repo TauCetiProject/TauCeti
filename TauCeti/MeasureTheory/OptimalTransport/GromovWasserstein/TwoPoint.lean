@@ -61,7 +61,7 @@ theorem eLpNorm_twoPointKernel_edist (a b : ℝ) {p : ℝ≥0∞} (hp : p ≠ 0)
     by_cases hq : q.1 = q.2 <;> simp [twoPointKernel, hq]
   rw [h, eLpNorm_indicator_const' (Set.toFinite _).measurableSet.nullMeasurableSet
     (by rw [Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal]; norm_num) hp,
-    enorm_eq_self, Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal, ENNReal.inv_rpow,
+    eNorm_eq_self, Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal, ENNReal.inv_rpow,
     ← ENNReal.rpow_neg]
   simp [edist_dist, Real.dist_eq, neg_div, mul_comm]
 

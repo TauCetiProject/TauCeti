@@ -74,26 +74,18 @@ theorem exists_continuousLinearMap_inner_apply_eq_of_mul_norm_le (S : D →ₗ[�
   have hb (η : D) : ‖ι η‖ ≤ c⁻¹ * ‖S η‖ := by
     rw [le_inv_mul_iff₀ hc]
     exact h η
-  let T : range S →L[𝕜] G := ι.compLeftInverse S
-  have hT (η : D) : T ⟨S η, mem_range_self S η⟩ = ι η :=
-    compLeftInverse_apply_of_bdd ι S ⟨c⁻¹, hb⟩ η _ rfl
-  have hTb (y : range S) : ‖T y‖ ≤ c⁻¹ * ‖(range S).subtypeL y‖ := by
-    obtain ⟨_, η, rfl⟩ := y
-    rw [hT]
-    exact hb η
   -- Its canonical factor `V : H → G` through the inclusion of the range sends `S η` to `ι η`
   -- and vanishes on `(range S)ᗮ`; the weak right inverse is its Hilbert adjoint.
-  let V : H →L[𝕜] G := T.factorThru (range S).subtypeL
-  have hV (η : D) : V (S η) = ι η := by
-    rw [← hT]
-    exact ContinuousLinearMap.factorThru_apply_apply ⟨c⁻¹, hTb⟩ ⟨S η, mem_range_self S η⟩
+  let V : H →L[𝕜] G := (ι.compLeftInverse S).factorThru (range S).subtypeL
   refine ⟨ContinuousLinearMap.adjoint V, ?_, fun f ↦ ?_, fun f η ↦ ?_⟩
   · rw [LinearIsometryEquiv.norm_map]
-    exact ContinuousLinearMap.norm_factorThru_le (inv_nonneg.2 hc.le) hTb
+    exact ContinuousLinearMap.norm_factorThru_le (inv_nonneg.2 hc.le)
+      (norm_compLeftInverse_apply_le hb)
   · refine orthogonal_le (fun y hy ↦ ?_) (V.adjoint_apply_mem_orthogonal_ker f)
     refine ContinuousLinearMap.factorThru_apply_of_mem_orthogonal ?_
     rwa [Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
-  · rw [ContinuousLinearMap.adjoint_inner_left, hV]
+  · rw [ContinuousLinearMap.adjoint_inner_left,
+      ContinuousLinearMap.factorThru_compLeftInverse_apply ⟨c⁻¹, hb⟩]
 
 omit [CompleteSpace H] in
 /-- **Uniqueness of weak solutions orthogonal to the weak kernel.** If `y` and `y'` both lie in

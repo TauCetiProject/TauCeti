@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Green.WindingWeight.Basic
 public import TauCeti.Analysis.Complex.CauchyKernel
 public import TauCeti.MeasureTheory.Function.MetricDerivative.Variation
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Trace
-import TauCeti.MeasureTheory.Integral.KernelPotential
+import TauCeti.MeasureTheory.Integral.Kernel.Potential
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!

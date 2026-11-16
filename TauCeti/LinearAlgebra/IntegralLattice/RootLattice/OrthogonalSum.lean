@@ -120,12 +120,11 @@ theorem discriminantGroupPiEquiv_glueWordIsometry (hv : ∀ i, (t i).Valid)
   rw [glueWordIsometry]
   exact discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry _ _ w i
 
-/-- The module of glue words of a finite family of valid simply-laced components is
-nondegenerate. -/
-theorem isNondegenerate_pi_glueAlphabet (hv : ∀ i, (t i).Valid) :
+/-- The module of glue words of a finite family of simply-laced components is nondegenerate. -/
+theorem isNondegenerate_pi_glueAlphabet :
     (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).IsNondegenerate :=
   (FiniteQuadraticModule.isNondegenerate_pi_iff _).mpr fun i ↦
-    (t i).isNondegenerate_glueAlphabet (hv i) (ht i)
+    (t i).isNondegenerate_glueAlphabet (ht i)
 
 /-- The module of glue words of a finite family of valid simply-laced components has order
 `∏ i, |det (t i).cartanMatrix|`, the discriminant of the orthogonal sum of root lattices. -/

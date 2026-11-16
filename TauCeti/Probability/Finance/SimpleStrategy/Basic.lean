@@ -143,11 +143,8 @@ theorem simpleHolding_of_mem_Ioc (hτ : MonotoneOn τ (Set.Iic n)) (hj : j < n)
     (ht : t ∈ Set.Ioc (τ j) (τ (j + 1))) (ω : Ω) : simpleHolding τ n a t ω = a j ω := by
   rw [simpleHolding_def, sum_eq_single_of_mem j (mem_range.2 hj), Set.indicator_of_mem ht]
   intro i hi hij
-  refine Set.indicator_of_notMem (fun hit ↦ ?_) _
-  -- Intervals with different indices are disjoint.
-  rcases lt_or_gt_of_ne hij with hij | hij
-  · exact (hit.2.trans (hτ (hij.trans hj) hj.le hij)).not_gt ht.1
-  · exact (ht.2.trans (hτ (hij.trans (mem_range.1 hi)) (mem_range.1 hi).le hij)).not_gt hit.1
+  exact Set.indicator_of_notMem
+    (hτ.notMem_Ioc_of_mem_Ioc_of_ne (mem_range.1 hi) hj hij ht) _
 
 /-- Outside `(τ 0, τ n]` a simple strategy over a partition monotone up to `n` holds nothing. -/
 @[simp]
@@ -426,7 +423,7 @@ theorem isSelfFinancing_iff :
 /-- Holdings that are constant across trading dates are self-financing. -/
 theorem isSelfFinancing_const (a b : Ω → ℝ) :
     IsSelfFinancing τ n (fun _ ↦ a) (fun _ ↦ b) S β := by
-  intro j hj ω
+  intro j _ ω
   rfl
 
 /-- Self-financing strategies are closed under addition. -/

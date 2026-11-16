@@ -29,7 +29,7 @@ namespace TauCeti.Green
 local notation "E" => EuclideanSpace ℝ (Fin 1)
 
 variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N]
-  [IsManifold 𝓘(ℝ, E) 1 N] [CompactSpace N]
+  [IsManifold 𝓘(ℝ, E) 1 N]
 
 /-- The canonical integral over an actual oriented manifold agrees with index-one Green on
 its parametrized image. In particular, the induced outward-first boundary orientation may be

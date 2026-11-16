@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorField.MappingTorus.Orbit
 public import TauCeti.Geometry.Symplectic.Manifold.Harmonic
+public import TauCeti.Geometry.Symplectic.Manifold.Suspension.PeriodicTorus
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.VerticalArea
+public import TauCeti.Geometry.Symplectic.Manifold.TorusCover
 
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
@@ -58,8 +60,15 @@ Cauchy–Riemann equation says `dτ (j e) = dσ e`. So `τ` is a harmonic functi
 surface `C`, whose conjugate differential is the closed one-form `dσ`. Hence `τ` is constant
 (`TauCeti.SmoothAlmostComplexStructure.mvfderiv_eq_zero_of_isClosed`), then `dσ = dτ ∘ j = 0`,
 and `u` is constant. A nonconstant curve therefore lies over a primitive closed orbit of least
-period `d > 0`, and it lifts to a smooth map `v` into the orbit torus `(ℝ / ℤ) × (ℝ / dℤ)`. Whether
-`v` is surjective, and with which degree it covers the torus, is not decided here.
+period `d > 0`, and it lifts to a smooth map `v` into the orbit torus `(ℝ / ℤ) × (ℝ / dℤ)`.
+
+That lift covers the orbit torus. The orbit torus is a pseudoholomorphic immersion for the standard
+almost complex structure of `(ℝ / ℤ) × (ℝ / dℤ)`, so `v` is pseudoholomorphic too
+(`TauCeti.IsPseudoholomorphicAt.of_comp`), and it is not constant. A nonconstant pseudoholomorphic
+map from a compact surface to the torus has positive area and is therefore onto
+(`TauCeti.surjective_of_isPseudoholomorphicAt_addCircleProd`). So the image of every nonconstant
+horizontal curve, critical points allowed, is the whole torus `(ℝ / ℤ) × γ`. The degree with which
+`v` covers the torus is not computed here.
 
 ## Main results
 
@@ -89,8 +98,16 @@ All declarations are in the namespace `TauCeti.SmoothMappingTorus`.
   pseudoholomorphic curve of zero vertical area, that leaf lies over a closed orbit.
 * `minimalPeriod_pos_of_integralTopForm_eq_zero_of_mfderiv_ne_zero`: the same for every
   nonconstant curve of zero vertical area, without the immersion hypothesis.
-* `range_eq_range_orbitTorus_of_integralTopForm_eq_zero`: the image of such a curve is exactly
-  the orbit torus `(ℝ / ℤ) × γ` over that primitive closed orbit.
+* `range_eq_range_orbitTorus_of_integralTopForm_eq_zero`: the image of a compact connected
+  immersed curve of zero vertical area is exactly the orbit torus `(ℝ / ℤ) × γ` over that
+  primitive closed orbit.
+* `exists_surjective_orbitTorus_comp_eq_of_isPseudoholomorphicAt`: a nonconstant compact connected
+  pseudoholomorphic horizontal curve factors through its orbit torus by a surjective
+  pseudoholomorphic map.
+* `range_eq_range_orbitTorus_of_mfderiv_ne_zero_of_isPseudoholomorphicAt`,
+  `range_eq_range_orbitTorus_of_integralTopForm_eq_zero_of_mfderiv_ne_zero`: the image of a
+  nonconstant horizontal curve, and of a nonconstant curve of zero vertical area, is exactly the
+  orbit torus, without the immersion hypothesis.
 
 ## References
 
@@ -448,6 +465,90 @@ theorem minimalPeriod_pos_of_mfderiv_ne_zero_of_isPseudoholomorphicAt [I'.Bounda
   Nat.pos_of_ne_zero fun hx ↦
     hne (mfderiv_eq_zero_of_minimalPeriod_eq_zero hu ho hhol hS hH hc hx c₀)
 
+/-- **Nonconstant pseudoholomorphic horizontal curves cover their orbit torus.** Let `u` be a smooth
+pseudoholomorphic map from a compact connected boundaryless surface `C`, oriented so that the
+frames `(e, j e)` are positive, into `X_φ` with an almost complex structure satisfying `J ∂_s = T`
+along the image of `u`, and let every tangent image of `u` lie in the horizontal plane
+`span(∂_s, T)`. Suppose the differential of `u` is nonzero somewhere, and let `(s, [t, x])` be a
+value of `u`, where `x` has least period `d`. Then `u = τ ∘ v` for the orbit torus
+`τ : (ℝ / ℤ) × (ℝ / dℤ) → X_φ`, `(s, θ) ↦ (s, [θ, x])`, and a smooth map `v` that is
+pseudoholomorphic for the standard structure of the torus and onto. Unlike
+`exists_isLocalDiffeomorph_orbitTorus_comp_eq_of_mfderiv_mem_suspensionHorizontalSubspace`, `u`
+may have critical points, and then `v` need not be a local diffeomorphism. -/
+theorem exists_surjective_orbitTorus_comp_eq_of_isPseudoholomorphicAt [I.Boundaryless]
+    [FiniteDimensional ℝ E] [I'.Boundaryless] [T2Space C] [CompactSpace C] [PreconnectedSpace C]
+    (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
+    (ho : ∀ c (b : Module.Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
+      b.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j J u c)
+    (hS : ∀ c, J (u c) ((Manifold.tangentSpaceProdEquiv (u c)).symm ((1 : ℝ), 0)) =
+      (Manifold.tangentSpaceProdEquiv (u c)).symm ((0 : ℝ), timeVectorField φ (u c).2))
+    (hH : ∀ c (e : TangentSpace I' c),
+      mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e ∈ suspensionHorizontalSubspace φ (u c))
+    {c₀ : C} (hne : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c₀ ≠ 0)
+    {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) {d : ℕ} [Fact (0 < (d : ℝ))]
+    (h : IsPeriodicPt φ d x) (hd : minimalPeriod φ x = d) :
+    ∃ v : C → UnitAddCircle × AddCircle (d : ℝ), ContMDiff I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v ∧
+      (∀ c, IsPseudoholomorphicAt j (SmoothAlmostComplexStructure.addCircleProd 1 d) v c) ∧
+      Surjective v ∧ orbitTorus φ h ∘ v = u := by
+  obtain ⟨v, hv, hτv⟩ :=
+    exists_contMDiff_orbitTorus_comp_eq_of_mfderiv_mem_suspensionHorizontalSubspace hu hH hc h hd
+  have hchain (c' : C) : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c' =
+      (mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ h) (v c')).comp
+        (mfderiv I' (𝓘(ℝ).prod 𝓘(ℝ)) v c') := by
+    rw [← hτv]
+    exact mfderiv_comp c' ((contMDiff_orbitTorus h).mdifferentiableAt (by simp))
+      (hv.mdifferentiableAt (by simp))
+  -- The orbit torus is a pseudoholomorphic immersion, so the Cauchy–Riemann equation of `u`
+  -- lifts to `v`. The orbit torus is the periodic torus `periodicTorus φ h`.
+  have hPO := periodicTorus_eq_orbitTorus h
+  have hvhol (c' : C) :
+      IsPseudoholomorphicAt j (SmoothAlmostComplexStructure.addCircleProd 1 d) v c' := by
+    have hP : IsPseudoholomorphicAt (SmoothAlmostComplexStructure.addCircleProd 1 d) J
+        (orbitTorus φ h) (v c') := by
+      rw [← hPO]
+      refine (isPseudoholomorphicAt_periodicTorus_iff h (v c')).2 ?_
+      have hS' := hS c'
+      rw [← hτv, ← hPO] at hS'
+      exact hS'
+    have huv : IsPseudoholomorphicAt j J (orbitTorus φ h ∘ v) c' := by
+      rw [hτv]
+      exact hhol c'
+    exact huv.of_comp hP (hPO ▸ injective_mfderiv_periodicTorus h (v c'))
+      (hv.mdifferentiableAt (by simp))
+  have hvne : mfderiv I' (𝓘(ℝ).prod 𝓘(ℝ)) v c₀ ≠ 0 := fun h0 ↦
+    -- The two sides are the zero map, written with different forms of the tangent spaces.
+    hne (by rw [hchain, h0, ContinuousLinearMap.comp_zero]; rfl)
+  exact ⟨v, hv, hvhol, surjective_of_isPseudoholomorphicAt_addCircleProd ho hv hvhol hvne, hτv⟩
+
+/-- **Nonconstant pseudoholomorphic horizontal curves fill one leaf.** Let `u` be a smooth
+pseudoholomorphic map from a compact connected boundaryless surface `C`, oriented so that the
+frames `(e, j e)` are positive, into `X_φ` with an almost complex structure satisfying `J ∂_s = T`
+along the image of `u`, and let every tangent image of `u` lie in the horizontal plane
+`span(∂_s, T)`. If the differential of `u` is nonzero somewhere, then for every value
+`(s, [t, x])` of `u`, the image of `u` is exactly the image `(ℝ / ℤ) × γ` of the orbit torus of the
+primitive closed orbit `γ` through `[0, x]`. Unlike
+`range_eq_range_orbitTorus_of_mfderiv_mem_suspensionHorizontalSubspace`, `u` may have critical
+points. -/
+theorem range_eq_range_orbitTorus_of_mfderiv_ne_zero_of_isPseudoholomorphicAt [I.Boundaryless]
+    [FiniteDimensional ℝ E] [I'.Boundaryless] [T2Space C] [CompactSpace C] [PreconnectedSpace C]
+    (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
+    (ho : ∀ c (b : Module.Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
+      b.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j J u c)
+    (hS : ∀ c, J (u c) ((Manifold.tangentSpaceProdEquiv (u c)).symm ((1 : ℝ), 0)) =
+      (Manifold.tangentSpaceProdEquiv (u c)).symm ((0 : ℝ), timeVectorField φ (u c).2))
+    (hH : ∀ c (e : TangentSpace I' c),
+      mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e ∈ suspensionHorizontalSubspace φ (u c))
+    {c₀ : C} (hne : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c₀ ≠ 0)
+    {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) :
+    range u = range (orbitTorus φ (isPeriodicPt_minimalPeriod φ x)) := by
+  have hpos := minimalPeriod_pos_of_mfderiv_ne_zero_of_isPseudoholomorphicAt hu ho hhol hS hH hne hc
+  have : Fact (0 < (minimalPeriod φ x : ℝ)) := ⟨Nat.cast_pos.2 hpos⟩
+  obtain ⟨v, -, -, hsurj, hτv⟩ := exists_surjective_orbitTorus_comp_eq_of_isPseudoholomorphicAt hu
+    ho hhol hS hH hne hc (isPeriodicPt_minimalPeriod φ x) rfl
+  rw [← hτv, range_comp, hsurj.range_eq, image_univ]
+
 /-- **Curves of zero vertical area lie in one leaf.** Let `u` be a smooth pseudoholomorphic map
 from a compact connected surface `C`, oriented so that the frames `(e, j e)` are positive, into
 `X_φ` with an almost complex structure of block form along the image of `u` whose vertical
@@ -558,6 +659,35 @@ theorem range_eq_range_orbitTorus_of_integralTopForm_eq_zero [I.Boundaryless]
     (by rw [← o.card_eq, Fintype.card_fin]) hu
     ((integralTopForm_mpullback_mpullback_snd_fiberForm_eq_zero_iff hu ho hhol hS hV htame).1 h0)
     hinj hc
+
+/-- **Nonconstant curves of zero vertical area fill one leaf.** Let `u` be a smooth
+pseudoholomorphic map from a compact connected boundaryless surface `C`, oriented so that the
+frames `(e, j e)` are positive, into `X_φ` with an almost complex structure of block form along the
+image of `u` whose vertical restriction is tamed by `ω_v`. If the vertical area `∫_C u^* ω_v`
+vanishes and `u` is not constant, then for every value `(s, [t, x])` of `u`, the image of `u` is
+exactly the image `(ℝ / ℤ) × γ` of the orbit torus of the primitive closed orbit `γ` through
+`[0, x]`. No immersion hypothesis is needed. -/
+theorem range_eq_range_orbitTorus_of_integralTopForm_eq_zero_of_mfderiv_ne_zero [I.Boundaryless]
+    [FiniteDimensional ℝ E] [I'.Boundaryless] [T2Space C] [CompactSpace C] [PreconnectedSpace C]
+    (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
+    (ho : ∀ c (b : Module.Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
+      b.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j J u c)
+    (hS : ∀ c, J (u c) ((Manifold.tangentSpaceProdEquiv (u c)).symm ((1 : ℝ), 0)) =
+      (Manifold.tangentSpaceProdEquiv (u c)).symm ((0 : ℝ), timeVectorField φ (u c).2))
+    (hV : ∀ c, ∀ v ∈ suspensionVerticalSubspace φ (u c),
+      J (u c) v ∈ suspensionVerticalSubspace φ (u c))
+    (htame : ∀ c, ∀ v ∈ suspensionVerticalSubspace φ (u c), v ≠ 0 →
+      0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
+        (fiberForm φ σ hσ)) (u c) v (J (u c) v))
+    (h0 : integralTopForm o (SmoothForm.mpullback u hu
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+    {c₀ : C} (hne : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c₀ ≠ 0)
+    {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) :
+    range u = range (orbitTorus φ (isPeriodicPt_minimalPeriod φ x)) :=
+  range_eq_range_orbitTorus_of_mfderiv_ne_zero_of_isPseudoholomorphicAt hu ho hhol hS
+    ((integralTopForm_mpullback_mpullback_snd_fiberForm_eq_zero_iff hu ho hhol hS hV htame).1 h0)
+    hne hc
 
 end SmoothMappingTorus
 

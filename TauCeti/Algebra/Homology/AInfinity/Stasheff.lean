@@ -229,7 +229,7 @@ theorem sum_stasheff_reflect {M : Type*} [AddCommMonoid M] (n : ℕ)
 section Stasheff
 
 variable [Ring R] [AddCommMonoid A] [Module R A]
-variable (m : ∀ k : ℕ, MultilinearMap R (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
+variable (m : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
 
 /-- The `(p, s, t)` term of the unsuspended Stasheff identity in arity `p + s + t`: the arity-`s`
 operation is substituted into the `p`-th slot of the arity-`p + 1 + t` operation.  Its sign is the
@@ -340,7 +340,7 @@ theorem stasheffSum_four_eq_zero_of_m_three_eq_zero_of_m_four_eq_zero
 /-- **Naturality of the Stasheff sums.** A linear map which intertwines two families of
 operations intertwines their Stasheff sums. -/
 theorem map_stasheffSum {B : Type*} [AddCommMonoid B] [Module R B] (f : A →ₗ[R] B)
-    (m' : ∀ k : ℕ, MultilinearMap R (fun _ : Fin k ↦ B) B)
+    (m' : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ B) B)
     (hf : ∀ (k : ℕ) (y : Fin k → A), f (m k y) = m' k fun i ↦ f (y i)) (n : ℕ) :
     f (stasheffSum m d x n) = stasheffSum m' d (fun i ↦ f (x i)) n := by
   simp only [stasheffSum_def, stasheffTerm_def, _root_.map_sum, map_smul, evalNat_def, hf,
@@ -351,7 +351,7 @@ end Stasheff
 section SuspendedStasheff
 
 variable [CommRing R] [AddCommMonoid A] [Module R A]
-variable (m : ∀ k : ℕ, MultilinearMap R (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
+variable (m : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
 
 /-- Up to the structural coefficient `(-1) ^ (p + s * t)`, a Stasheff term is the existing signed
 one-slot substitution evaluated after the canonical reindexing of its three input blocks. -/
@@ -474,7 +474,7 @@ end SuspendedStasheff
 section LowArity
 
 variable [Ring R] [AddCommGroup A] [Module R A]
-variable (m : ∀ k : ℕ, MultilinearMap R (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
+variable (m : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
 
 /- Expand the finite sums before normalizing their tuples and signs. The insertion API evaluates
 each operation and collapses its block; the integer sign character computes the constant signs. -/
@@ -549,7 +549,7 @@ variable {σ : Type*} [SetLike σ A] (𝒜 : ℤ → σ)
 
 /-- `TauCeti.AInfinity.blockDeg` is the degree of the value of an operation of degree `2 - s` on a
 block of homogeneous inputs. -/
-theorem evalNat_mem_blockDeg {s : ℕ} (f : MultilinearMap R (fun _ : Fin s ↦ A) A)
+theorem evalNat_mem_blockDeg {s : ℕ} (f : MultilinearMap (RingHom.id R) (fun _ : Fin s ↦ A) A)
     {d : ℕ → ℤ} {x : ℕ → A}
     (hf : MultilinearMap.IsHomogeneous f (fun _ ↦ 𝒜) 𝒜 (2 - s))
     (p : ℕ) (hx : ∀ j < s, x (p + j) ∈ 𝒜 (d (p + j))) :

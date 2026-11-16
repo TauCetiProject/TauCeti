@@ -41,10 +41,9 @@ division-polynomial point, and `Isogeny/BaseChange.lean` carries a pullback alon
 field by carrying its point. The identity and Frobenius pullbacks instead come directly from their
 underlying ring maps.
 
-This is the opening milestone of Layer 1 of the elliptic-curves roadmap. The definition is the
-coordinate-ring form of D. Angdinata's function-field definition of an isogeny. The geometric
-interpretation follows Silverman, *The Arithmetic of Elliptic Curves*, II.2.4. No ellipticity or
-normality assumption is needed to state the data.
+The definition is the coordinate-ring form of D. Angdinata's function-field definition of an
+isogeny. The geometric interpretation follows Silverman, *The Arithmetic of Elliptic Curves*,
+II.2.4. No ellipticity or normality assumption is needed to state the data.
 -/
 
 public section

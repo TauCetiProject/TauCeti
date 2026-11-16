@@ -18,10 +18,10 @@ For an endomorphism `F` of a group `G` this file composes the two constructions 
 FixedPointCandidate F = [H, H] / Z([H, H]),  where  H = fixedSubgroup F,
 ```
 
-the group the classification's Lie-type lane attaches to a Steinberg endomorphism of a pinned
-algebraic group. Nothing here asserts that the result is finite or simple, and no ambient group is
-involved: the composite is a carrier-independent prerequisite for the later family-by-family
-construction.
+the group that the standard construction of the finite groups of Lie type attaches to a Steinberg
+endomorphism of a pinned algebraic group. Nothing here asserts that the result is finite or simple,
+and no ambient group is involved: the composite is carrier-independent, and the individual families
+of Lie type apply it to their own Steinberg endomorphisms.
 
 Both steps of the recipe transport along an isomorphism, so the composite does too:
 `TauCeti.FixedPointCandidate.congr` turns an isomorphism `ψ : G ≃* G'` intertwining `F` with an
@@ -37,11 +37,8 @@ depends only on the isomorphism class of the *pair* `(G, F)`, which is what lets
 
 ## References
 
-This is the composite prescribed by milestone L3 of `TauCetiRoadmap/CFSGStatement/README.md`, which
-fixes `H_d = fixedSubgroup d.steinberg` and `d.Group = [H_d, H_d] / Z([H_d, H_d])`, with the centre
-read as the centre of the derived subgroup rather than of `H_d`. The construction is standard; see
-R. W. Carter, *Simple Groups of Lie Type*, and D. Gorenstein, R. Lyons and R. Solomon, *The
-Classification of the Finite Simple Groups*.
+The construction is standard; see R. W. Carter, *Simple Groups of Lie Type*, and D. Gorenstein,
+R. Lyons and R. Solomon, *The Classification of the Finite Simple Groups*.
 -/
 
 public section
@@ -53,7 +50,7 @@ variable {G : Type*} [Group G]
 /-- The candidate simple group attached to an endomorphism `F` of a group: the derived subgroup of
 the fixed points of `F`, modulo the centre of that derived subgroup.
 
-For the Steinberg endomorphisms constructed by the roadmap, this is the corresponding finite group
+For a Steinberg endomorphism of a pinned algebraic group, this is the corresponding finite group
 of Lie type outside the small parameters excluded by `LieTypeIndex.InStandardRange`; at those
 parameters it can be trivial, nonsimple, a duplicate, or the separately indexed Tits group. None of
 these properties is asserted here. -/
@@ -64,7 +61,7 @@ abbrev FixedPointCandidate (F : G →* G) : Type _ :=
 derived subgroup of a finite group is finite, and so is a quotient of it by the centre. This is the
 finiteness step of the recipe, and it is what transfers a finiteness proof for the fixed points of a
 Steinberg endomorphism to the candidate group attached to them. -/
-instance finiteFixedPointCandidate {F : G →* G} [h : Finite ↥(fixedSubgroup F)] :
+instance finiteFixedPointCandidate {F : G →* G} [_h : Finite ↥(fixedSubgroup F)] :
     Finite (FixedPointCandidate F) :=
   inferInstance
 

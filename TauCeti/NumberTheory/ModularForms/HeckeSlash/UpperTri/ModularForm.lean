@@ -21,7 +21,7 @@ and of `CuspForm ((Gamma1 N).map (mapGL ℝ)) k`. Nebentypus preservation and th
 recurrence for the canonical `heckeTNat` operator are recorded at every level-supported index in
 `HeckeSlash/LevelSupported.lean`.
 
-This is Layer 2(b) of the ModularForms roadmap at a level divisible by `p`. When `p` is prime,
+This is the Hecke operator at a level divisible by `p`. When `p` is prime,
 the classical `Tₚ` for `p ∤ N` needs one further coset representative and is not built here;
 at `p ∣ N` the classical `Tₚ` *is* this operator, which is why the corresponding prime Hecke
 recurrence carries no `χ(p) p^{k-1}` term. Following Miyake, Diamond–Shurman and Shimura, no

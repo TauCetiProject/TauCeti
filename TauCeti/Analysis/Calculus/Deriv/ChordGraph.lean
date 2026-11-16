@@ -362,7 +362,7 @@ theorem exists_graph_over_chord (hγ : ContDiff ℝ 1 γ) (hderiv : ∀ t, deriv
       ∃ g : C(ℝ, LinearMap.ker (φ : E →ₗ[ℝ] ℝ)), (∀ ξ ∉ Ioo 0 1, g ξ = 0) ∧
         (∀ ξ ∈ Icc 0 1, ‖g ξ‖ ≤ ε * ‖γ b - γ a‖ * min ξ (1 - ξ)) ∧
         ∀ t ∈ Icc a b, γ t = γ a + φ (γ t - γ a) • (γ b - γ a) + (g (φ (γ t - γ a)) : E) := by
-  set θ := min (1 / 2) (ε / 4) with hθ_def
+  set θ := min (1 / 2) (ε / 4)
   have hθ : 0 < θ := by positivity
   have hθ2 : θ ≤ 1 / 2 := min_le_left _ _
   have hθε : θ ≤ ε / 4 := min_le_right _ _

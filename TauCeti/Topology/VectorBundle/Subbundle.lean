@@ -292,12 +292,15 @@ theorem trivOperator_apply {y₀ y : B} (hy : y ∈ (trivializationAt F E y₀).
   simp only [trivOperator, FunLike.coe_sum, Finset.sum_apply,
     ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.proj_apply, ← h, map_sum, map_smul]
 
-omit [VectorBundle 𝕜 F E] in
-private theorem continuousAt_trivOperator (hX : IsSubbundleFrameOn F V X U) (hU : IsOpen U)
-    {y₀ : B} (hy₀ : y₀ ∈ U) : ContinuousAt (trivOperator 𝕜 F X y₀) y₀ := by
+omit [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)] [VectorBundle 𝕜 F E] in
+/-- A family of sections `X i` of `E` that are continuous at `y₀`, read in the trivialization of
+`E` at `y₀`, is an operator `c ↦ ∑ i, c i • X i` depending continuously on the base point at
+`y₀`. -/
+theorem continuousAt_trivOperator {y₀ : B}
+    (hX : ∀ i, ContinuousAt (fun x ↦ TotalSpace.mk' F x (X i x)) y₀) :
+    ContinuousAt (trivOperator 𝕜 F X y₀) y₀ := by
   refine tendsto_finsetSum _ fun i _ ↦ ?_
-  have h := ((FiberBundle.continuousAt_totalSpace F _).mp
-    ((hX.continuousOn i).continuousAt (hU.mem_nhds hy₀))).2
+  have h := ((FiberBundle.continuousAt_totalSpace F _).mp (hX i)).2
   exact ((ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) F
     (ContinuousLinearMap.proj i)).continuous.continuousAt).comp h
 
@@ -337,7 +340,8 @@ private theorem exists_coords_eq [IsRCLikeNormedField 𝕜] (hX : IsSubbundleFra
   have : CompleteSpace 𝕜 := by
     let _ := IsRCLikeNormedField.rclike 𝕜
     infer_instance
-  obtain ⟨L, hL, hLinv⟩ := (continuousAt_trivOperator hX hU hy₀).exists_continuousAt_leftInverse
+  obtain ⟨L, hL, hLinv⟩ := (continuousAt_trivOperator fun i ↦
+    (hX.continuousOn i).continuousAt (hU.mem_nhds hy₀)).exists_continuousAt_leftInverse
     (.of_injective_of_finiteDimensional_domain (injective_trivOperator hX hy₀))
   refine ⟨L, hL, ?_⟩
   filter_upwards [hLinv, hU.mem_nhds hy₀,
@@ -379,8 +383,9 @@ private theorem continuousAt_vec (hX : IsSubbundleFrameOn F V X U) (hU : IsOpen 
   let := Fintype.ofFinite ι
   rw [(isEmbedding_totalSpace_subbundle F _ V).continuousAt_iff,
     FiberBundle.continuousAt_totalSpace]
-  refine ⟨continuousAt_fst, (((continuousAt_trivOperator hX hU hq).comp continuousAt_fst).clm_apply
-    continuousAt_snd).congr ?_⟩
+  have hA := continuousAt_trivOperator (𝕜 := 𝕜) fun i ↦
+    (hX.continuousOn i).continuousAt (hU.mem_nhds hq)
+  refine ⟨continuousAt_fst, ((hA.comp continuousAt_fst).clm_apply continuousAt_snd).congr ?_⟩
   filter_upwards [continuousAt_fst.preimage_mem_nhds (hU.mem_nhds hq),
     continuousAt_fst.preimage_mem_nhds
       ((trivializationAt F E q.1).open_baseSet.mem_nhds

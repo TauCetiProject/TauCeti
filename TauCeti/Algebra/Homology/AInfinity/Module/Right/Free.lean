@@ -82,7 +82,7 @@ private theorem lift_prepend_taylor_tmul_subword {n : ℕ} (x : A) (a : Fin n �
   have h0 := prepend_subword (R := R) (Fin.cons x a : Fin (n + 1) → A) (Nat.succ_pos n) k
   rw [Fin.zero_eta, Fin.cons_zero] at h0
   have hsplice := prepend_subword_eq_splice (R := R) (Fin.cons x a : Fin (n + 1) → A) (a := 0)
-    (b := n + 1) (Nat.succ_pos k) (by omega) (by omega)
+    (b := n + 1) (Nat.succ_pos k) (by omega)
     (AA.taylor (ReducedTensorWords.subword R (Fin.cons x a : Fin (n + 1) → A) 0 (k + 1)))
   rw [Nat.zero_add, Nat.add_sub_add_right] at hsplice
   rw [TensorProduct.lift.tmul, LinearMap.comp_apply, TensorProduct.lift.tmul,

@@ -277,7 +277,7 @@ private theorem pow_mul_apply_eq_prod {K : Type*} [Field K] {d : ℕ} (hd : d �
   have hsingle : Pi.single i (d - 1) + Pi.single i 1 = Pi.single (M := fun _ ↦ ℕ) i d := by
     rw [← Pi.single_add, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hd)]
   refine Pi.induction_on_single_of_sum_eq (P := fun α ↦ Y (Pi.single i d) ^ (d - 1) * Y α =
-    ∏ j, Y (Pi.single i (d - 1) + Pi.single j 1) ^ α j) i ?_ (fun β j hji hβ ih ↦ ?_) hα
+    ∏ j, Y (Pi.single i (d - 1) + Pi.single j 1) ^ α j) i ?_ (fun β j _ hβ ih ↦ ?_) hα
   · rw [Fintype.prod_pow_pi_single, hsingle, ← pow_succ,
       Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hd)]
   have hrel := hY (β + Pi.single j 1) (Pi.single i d) (β + Pi.single i 1)

@@ -14,6 +14,10 @@ Let `H` and `K` be subgroups of a group `G` with `K ≤ Subgroup.normalizer H`. 
 carries the external semidirect product `H ⋊ K` into `G` (`SemidirectProduct.monoidHomSubgroup`),
 and its image is the join `H ⊔ K`. The corresponding elementwise normal form of `H ⊔ K` is
 `Subgroup.mem_sup_of_right_le_normalizer_left` in `TauCeti.Algebra.Group.Subgroup.Pointwise`.
+An invariant normal subgroup of the first factor is normal in the full semidirect product
+(`Subgroup.normal_map_inl`). When `D` is a complement of the normal subgroup `N`, the inverse
+of Mathlib's isomorphism `SemidirectProduct.mulEquivSubgroup : N ⋊ D ≃* G` is the unique
+decomposition `g = n * d` of `Subgroup.IsComplement.equiv`.
 
 ## Main results
 
@@ -26,11 +30,31 @@ and its image is the join `H ⊔ K`. The corresponding elementwise normal form o
 * `SemidirectProduct.mem_ker_monoidHomSubgroup_iff`: its kernel consists of antidiagonal pairs.
 * `SemidirectProduct.ker_monoidHomSubgroup_le_ker_lift_iff`: an external lift kills this kernel
   exactly when the two maps agree on the intersection.
+* `SemidirectProduct.mulEquivSubgroup_symm_trans_equivProd`: for a complement `D` of a normal
+  subgroup `N`, the inverse of `N ⋊ D ≃* G` followed by `SemidirectProduct.equivProd` is the
+  complement decomposition `G ≃ N × D`.
 -/
 
 public section
 
 variable {G : Type*} [Group G] {H K : Subgroup G}
+
+namespace Subgroup
+
+open SemidirectProduct
+
+/-- A normal subgroup of the first factor remains normal in the semidirect product if the
+acting group preserves it. -/
+theorem normal_map_inl {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N}
+    (S : Subgroup N) [S.Normal] (hS : ∀ q n, n ∈ S → φ q n ∈ S) :
+    (S.map (inl : N →* N ⋊[φ] Q)).Normal := by
+  constructor
+  rintro _ ⟨n, hn, rfl⟩ x
+  refine ⟨x.left * φ x.right n * x.left⁻¹,
+    ‹S.Normal›.conj_mem _ (hS _ _ hn) _, ?_⟩
+  ext <;> simp [mul_assoc]
+
+end Subgroup
 
 namespace SemidirectProduct
 
@@ -65,6 +89,38 @@ theorem ker_rightHom_sup_range_inr {N Q : Type*} [Group N] [Group Q] {φ : Q →
   refine top_unique fun x _ ↦ ?_
   rw [← inl_left_mul_inr_right x]
   exact Subgroup.mul_mem_sup (by rw [← range_inl_eq_ker_rightHom]; exact ⟨_, rfl⟩) ⟨_, rfl⟩
+
+section mulEquivSubgroup
+
+variable {N : Subgroup G} [N.Normal] {D : Subgroup G} (h : N.IsComplement' D)
+
+/-- The inverse of `mulEquivSubgroup h` sends `g` to its complement decomposition `g = n * d`,
+read as a pair in the semidirect product. -/
+theorem mulEquivSubgroup_symm_apply_eq (g : G) :
+    (mulEquivSubgroup h).symm g = equivProd.symm (h.equiv g) := by
+  apply (mulEquivSubgroup h).injective
+  rw [MulEquiv.apply_symm_apply, mulEquivSubgroup_apply]
+  exact (h.equiv_fst_mul_equiv_snd g).symm
+
+/-- The normal component of `(mulEquivSubgroup h).symm g` is the `N`-factor of `g = n * d`. -/
+theorem mulEquivSubgroup_symm_apply_left (g : G) :
+    ((mulEquivSubgroup h).symm g).left = (h.equiv g).1 := by
+  rw [mulEquivSubgroup_symm_apply_eq, equivProd_symm_apply_left]
+
+/-- The acting component of `(mulEquivSubgroup h).symm g` is the `D`-factor of `g = n * d`. -/
+theorem mulEquivSubgroup_symm_apply_right (g : G) :
+    ((mulEquivSubgroup h).symm g).right = (h.equiv g).2 := by
+  rw [mulEquivSubgroup_symm_apply_eq, equivProd_symm_apply_right]
+
+/-- The isomorphism `N ⋊ D ≃* G` of complementary subgroups is inverse to the complement
+decomposition: its inverse, followed by the identification of `N ⋊ D` with `N × D` as types, is
+`Subgroup.IsComplement.equiv`. -/
+theorem mulEquivSubgroup_symm_trans_equivProd :
+    (mulEquivSubgroup h).symm.toEquiv.trans equivProd = h.equiv :=
+  Equiv.ext fun g =>
+    (congrArg equivProd (mulEquivSubgroup_symm_apply_eq h g)).trans (equivProd.apply_symm_apply _)
+
+end mulEquivSubgroup
 
 variable {D : Type*} [Group D]
 variable (hLE : K ≤ Subgroup.normalizer (H : Set G))

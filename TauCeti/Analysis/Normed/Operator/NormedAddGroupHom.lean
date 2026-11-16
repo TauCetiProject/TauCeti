@@ -22,14 +22,13 @@ namespace ContinuousLinearMap
 
 variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
   [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
-  [NormedSpace 𝕜 E] [NormedSpace 𝕜₂ F] {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ]
+  [NormedSpace 𝕜 E] [NormedSpace 𝕜₂ F] {σ : 𝕜 →+* 𝕜₂}
 
 /-- A continuous semilinear map and a bounded additive homomorphism with the same values have
 the same operator norm. -/
 theorem norm_eq_normedAddGroupHom (f : E →SL[σ] F) (g : NormedAddGroupHom E F)
     (h : ∀ x, f x = g x) : ‖f‖ = ‖g‖ := by
-  apply le_antisymm
-  · exact f.opNorm_le_bound (norm_nonneg g) fun x => by rw [h]; exact g.le_opNorm x
-  · exact g.opNorm_le_bound (norm_nonneg f) fun x => by rw [← h]; exact f.le_opNorm x
+  rw [norm_def, NormedAddGroupHom.norm_def]
+  simp only [h]
 
 end ContinuousLinearMap

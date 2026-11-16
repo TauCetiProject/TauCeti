@@ -183,8 +183,8 @@ private lemma integral_prod_poissonMass_gammaMeasure {r p₀ : ℝ} (hr : 0 < r)
   rw [integral_gammaMeasure_eq_integral_Ioi hr hp₀]
   simp only [smul_eq_mul]
   -- Collect the Poisson factors; normalization of the weights makes the combined rate one.
-  have hcollect := fun x (hx : x ∈ Ioi (0 : ℝ)) =>
-    Real.gammaKernel_mul_prod_exp_mul_pow_div_factorial p₀ r (fun i => (p i : ℝ)) k hx.ne'
+  have hcollect := fun x (_ : x ∈ Ioi (0 : ℝ)) =>
+    Real.gammaKernel_mul_prod_exp_mul_pow_div_factorial p₀ r (fun i => (p i : ℝ)) k x
   rw [setIntegral_congr_fun measurableSet_Ioi hcollect, integral_const_mul,
     hp]
   -- Euler's Gamma integral evaluates the shifted shape, leaving the mass constants.

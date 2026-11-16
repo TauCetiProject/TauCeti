@@ -10,7 +10,10 @@ public import Mathlib.LinearAlgebra.LinearPMap
 /-!
 # Domain-defined perturbations of partial linear maps
 
-Adding a linear map defined on the domain of a partial map preserves that domain.
+Adding a (semi)linear map defined on the domain of a partial (semi)linear map
+`A : E →ₛₗ.[σ] F` gives a partial map `A.perturb V` with the same domain, acting by
+`A x + V x`. Unlike Mathlib's `f +ᵥ A`, the perturbation `V : A.domain →ₛₗ[σ] F` need only
+be defined on the domain of `A`.
 
 ## Provenance
 
@@ -26,22 +29,23 @@ namespace LinearPMap
 
 section Algebraic
 
-variable {R E F : Type*} [Ring R]
-variable [AddCommGroup E] [AddCommGroup F] [Module R E] [Module R F]
+variable {R S E F : Type*} [Ring R] [Ring S] {σ : R →+* S}
+variable [AddCommGroup E] [AddCommGroup F] [Module R E] [Module S F]
 
 /-- Add a map defined on `dom A` to `A`, keeping the domain unchanged. -/
-def perturb (A : E →ₗ.[R] F) (V : A.domain →ₗ[R] F) : E →ₗ.[R] F where
+def perturb (A : E →ₛₗ.[σ] F) (V : A.domain →ₛₗ[σ] F) : E →ₛₗ.[σ] F where
   domain := A.domain
   toFun := A.toFun + V
 
 /-- Perturbing leaves the domain alone — that is the point of `perturb`, and
 what lets a perturbed operator be compared with the original on the nose. -/
-@[simp] theorem perturb_domain (A : E →ₗ.[R] F) (V : A.domain →ₗ[R] F) :
+@[simp] theorem perturb_domain (A : E →ₛₗ.[σ] F) (V : A.domain →ₛₗ[σ] F) :
     (perturb A V).domain = A.domain := (rfl)
+
 /-- The perturbed map acts by `A + V` pointwise on the shared domain. -/
-@[simp] theorem perturb_apply (A : E →ₗ.[R] F) (V : A.domain →ₗ[R] F)
-    (ψ : A.domain) :
-    perturb A V ⟨(ψ : E), (perturb_domain A V).symm ▸ ψ.property⟩ = A ψ + V ψ := by
+@[simp] theorem perturb_apply (A : E →ₛₗ.[σ] F) (V : A.domain →ₛₗ[σ] F)
+    (x : (perturb A V).domain) :
+    perturb A V x = A ⟨x, perturb_domain A V ▸ x.2⟩ + V ⟨x, perturb_domain A V ▸ x.2⟩ := by
   rfl
 
 end Algebraic

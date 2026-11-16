@@ -42,14 +42,15 @@ theorem memLp_coe_uniformSphereMeasure (p : ℝ≥0∞) :
     MemLp ((↑) : sphere (0 : E) 1 → E) p (uniformSphereMeasure E) := by
   exact MemLp.of_bound (by fun_prop) 1 (by filter_upwards with x; simp)
 
-variable [Nontrivial E]
-
 /-- The covariance of the embedded uniform sphere law is the inner product divided by the
 dimension. -/
 @[simp]
 theorem covarianceBilin_map_coe_uniformSphereMeasure :
     covarianceBilin ((uniformSphereMeasure E).map ((↑) : sphere (0 : E) 1 → E)) =
       (1 / (finrank ℝ E : ℝ)) • innerSL ℝ := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have hzero : uniformSphereMeasure E = 0 := Subsingleton.elim _ _
+    simp [hzero, Module.finrank_zero_of_subsingleton]
   have hinv (f : E ≃ₗᵢ[ℝ] E) :
       ((uniformSphereMeasure E).map ((↑) : sphere (0 : E) 1 → E)).map f =
         (uniformSphereMeasure E).map ((↑) : sphere (0 : E) 1 → E) := by
@@ -91,6 +92,9 @@ product divided by the dimension. -/
 theorem integral_inner_mul_inner_uniformSphereMeasure (u v : E) :
     ∫ x : sphere (0 : E) 1, ⟪u, (x : E)⟫ * ⟪v, (x : E)⟫ ∂uniformSphereMeasure E =
       ⟪u, v⟫ / (finrank ℝ E : ℝ) := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have hzero : uniformSphereMeasure E = 0 := Subsingleton.elim _ _
+    simp [hzero, Subsingleton.elim u 0]
   have hmean (w : E) : ∫ x : sphere (0 : E) 1, ⟪w, (x : E)⟫ ∂uniformSphereMeasure E = 0 := by
     rw [integral_inner ((memLp_coe_uniformSphereMeasure 1).integrable le_rfl),
       integral_coe_uniformSphereMeasure, inner_zero_right]
@@ -143,8 +147,7 @@ theorem variance_inner_uniformSphereMeasure (u : E) :
 /-- The covariance matrix of an embedded uniform unit vector is the identity matrix divided
 by the number of coordinates. -/
 @[simp]
-theorem covMatrix_map_coe_uniformSphereMeasure {ι : Type*} [Fintype ι] [DecidableEq ι]
-    [Nonempty ι] :
+theorem covMatrix_map_coe_uniformSphereMeasure {ι : Type*} [Fintype ι] [DecidableEq ι] :
     covMatrix ((uniformSphereMeasure (EuclideanSpace ℝ ι)).map
       ((↑) : sphere (0 : EuclideanSpace ℝ ι) 1 → EuclideanSpace ℝ ι)) =
       (1 / (Fintype.card ι : ℝ)) • (1 : Matrix ι ι ℝ) := by
@@ -163,7 +166,7 @@ namespace ProbabilityTheory
 open TauCeti.Probability
 
 variable {E Ω : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [Nontrivial E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → sphere (0 : E) 1}
 
 /-- Linear observables of a uniform random unit vector have covariance equal to their inner

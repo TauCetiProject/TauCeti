@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+import TauCeti.Analysis.Normed.Operator.RingOpNorm
 import TauCeti.Analysis.Normed.Operator.NormedAddGroupHom
 
 /-!
@@ -25,6 +26,9 @@ has a chosen bounded nonlinear right inverse with public bound constant two
 
 The quotient module also inherits a contractive action of a possibly noncommutative
 seminormed ring. In particular, this applies to quotients of a normed ring by left ideals.
+Over such a ring, every linear map out of a quotient of a finite free module with the maximum
+norm is bounded for the quotient norm (`LinearMap.exists_bound_of_pi_quotient`), by descending
+the coordinate bound `LinearMap.norm_pi_apply_le_sum`. The submodule need not be closed.
 
 The estimates reuse Mathlib's quotient norm and quotient lift for bounded additive homomorphisms.
 -/
@@ -79,10 +83,36 @@ theorem norm_liftQL (S : Submodule 𝕜 E) (f : E →SL[σ] F) (h : S ≤ f.ker)
   have heq : (S.liftQL f h).comp S.mkQL = f := by ext x; simp
   rw [← S.norm_comp_mkQL (S.liftQL f h), heq]
 
+/-- The norm of a quotient class is its distance to the submodule. -/
+theorem norm_mkQL_apply (S : Submodule 𝕜 E) (x : E) :
+    ‖S.mkQL x‖ = Metric.infDist x (S : Set E) :=
+  QuotientAddGroup.norm_mk x
+
 /-- The quotient projection has operator norm at most one. -/
 theorem norm_mkQL_le (S : Submodule 𝕜 E) : ‖S.mkQL‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by
     simpa using Submodule.Quotient.norm_mk_le S x
+
+/-- Postcomposition with a quotient projection does not increase the operator norm. -/
+theorem norm_mkQL_comp_le (S : Submodule 𝕜₂ F) (f : E →SL[σ] F) :
+    ‖S.mkQL.comp f‖ ≤ ‖f‖ :=
+  (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_of_le_one_left (norm_nonneg f) S.norm_mkQL_le)
+
+/-- Postcomposition with a quotient projection does not increase the nonnegative operator norm. -/
+theorem nnnorm_mkQL_comp_le (S : Submodule 𝕜₂ F) (f : E →SL[σ] F) :
+    ‖S.mkQL.comp f‖₊ ≤ ‖f‖₊ := by
+  exact_mod_cast S.norm_mkQL_comp_le f
+
+/-- The quotient projection has norm one when the submodule is not dense. -/
+theorem norm_mkQL (S : Submodule 𝕜 E) (hS : ¬ Dense (S : Set E)) : ‖S.mkQL‖ = 1 := by
+  -- Both quotient projections send a representative to its class via QuotientAddGroup.mk.
+  rw [S.mkQL.norm_eq_normedAddGroupHom S.toAddSubgroup.normedMk (fun _ ↦ rfl)]
+  apply S.toAddSubgroup.norm_normedMk
+  intro h
+  apply hS
+  apply dense_iff_closure_eq.mpr
+  simpa only [AddSubgroup.topologicalClosure_coe, Submodule.coe_toAddSubgroup] using h
 
 /-- The quotient projection lifts every vector of norm less than `r` to a vector of norm less
 than `r`. With `Submodule.norm_mkQL_le`, this says that it is a metric quotient map. -/
@@ -118,6 +148,28 @@ instance isBoundedSMul (S : Submodule R E) : IsBoundedSMul R (E ⧸ S) :=
 
 end Submodule.Quotient
 
+namespace LinearMap
+
+variable {R M ι : Type*} [SeminormedRing R] [SeminormedAddCommGroup M]
+  [Module R M] [IsBoundedSMul R M] [Fintype ι]
+
+/-- A linear map out of a quotient of a finite free module is bounded for the quotient norm of
+the maximum norm. The submodule need not be closed. -/
+theorem exists_bound_of_pi_quotient {N : Submodule R (ι → R)} (f : ((ι → R) ⧸ N) →ₗ[R] M) :
+    ∃ C > 0, ∀ x, ‖f x‖ ≤ C * ‖x‖ := by
+  classical
+  set C := ∑ i, ‖(f ∘ₗ N.mkQ) (Pi.single i 1)‖ + 1
+  have hC : 0 < C := add_pos_of_nonneg_of_pos (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _) one_pos
+  have hbound (a : ι → R) : ‖f (Submodule.Quotient.mk a)‖ ≤ C * ‖a‖ :=
+    ((f ∘ₗ N.mkQ).norm_pi_apply_le_sum a).trans
+      (mul_le_mul_of_nonneg_right (le_add_of_nonneg_right zero_le_one) (norm_nonneg a))
+  refine ⟨C, hC, fun x ↦ (div_le_iff₀' hC).mp ?_⟩
+  apply QuotientAddGroup.le_norm_iff.mpr
+  intro a ha
+  exact (div_le_iff₀' hC).mpr (ha ▸ hbound a)
+
+end LinearMap
+
 public section
 
 namespace Submodule
@@ -140,7 +192,7 @@ noncomputable def quotientRightInverse (W : Submodule 𝕜 F) [IsClosed (W : Set
 /-- The chosen quotient lift has the public uniform bound constant two. -/
 @[simp]
 theorem quotientRightInverse_nnnorm (W : Submodule 𝕜 F) [IsClosed (W : Set F)] :
-    W.quotientRightInverse.nnnorm = 2 := by
+    W.quotientRightInverse.nnNorm = 2 := by
   simp only [quotientRightInverse]
 
 end Submodule

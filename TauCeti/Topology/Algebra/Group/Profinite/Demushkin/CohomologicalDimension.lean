@@ -65,7 +65,7 @@ theorem IsDemushkin.cohomologicalDimensionAt_eq_two [CompactSpace G] [TotallyDis
   have : ContinuousSMul G (ZMod p) := ⟨continuous_snd.congr fun x ↦ (htriv x.1 x.2).symm⟩
   exact le_antisymm
     (hG.isProP.cohomologicalDimensionAt_le_two_of_forall_dualityMap2_bijective (ZMod p)
-      fun M _ _ _ _ _ _ hM ↦ hG.dualityMap2_bijective htriv M hM)
+      fun M _ _ _ _ _ _ hM ↦ hG.dualityMap2_bijective M hM)
     hG.two_le_cohomologicalDimensionAt
 
 end TauCeti

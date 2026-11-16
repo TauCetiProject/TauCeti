@@ -158,7 +158,7 @@ noncomputable def taylorExp : L ≃ₗ⁅R⁆ L :=
       set N := max n m
       have hxy : D^[N + N] ⁅x, y⁆ = 0 := by
         rw [iterate_apply_lie']
-        refine sum_eq_zero fun i hi => ?_
+        refine sum_eq_zero fun i _ => ?_
         rcases le_or_gt N i with h | h
         · rw [TauCeti.iterate_map_eq_zero_of_le D hx' h, zero_lie, smul_zero]
         · rw [TauCeti.iterate_map_eq_zero_of_le D hy' (by omega), lie_zero, smul_zero]

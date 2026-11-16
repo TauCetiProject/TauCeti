@@ -88,11 +88,6 @@ here.
 
 ## References
 
-This implements the "`Pᵢ = ` projective cover of `Sᵢ`" clause of the "projective covers and
-injective envelopes" bullet of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, for a vertex simple at a
-vertex carrying no nontrivial closed path — in particular for every vertex of an acyclic quiver.
-
 * I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
   Algebras, Vol. 1*, LMS Student Texts 65, CUP (2006), I.5 and III.2.
 -/

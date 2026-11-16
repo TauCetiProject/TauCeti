@@ -115,7 +115,7 @@ theorem abs_integral_sub_integral_le {μ ν : Measure ℝ} [IsFiniteMeasure μ]
       (∫ t, (g t - T t) ∂μ) - ∫ t, (g t - T t) ∂ν := by
     rw [integral_sub hgμ (hPint μ hμ), integral_sub hgν (hPint ν hν), hPeq]
     ring
-  have hb : ∀ (ρ : Measure ℝ) (h : Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) ρ),
+  have hb : ∀ (ρ : Measure ℝ), Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) ρ →
       |∫ t, (g t - T t) ∂ρ| ≤ M / (r + 1)! * ∫ t, |t| ^ (r + 1) ∂ρ :=
     fun ρ h ↦ by
       have := norm_integral_le_of_norm_le (h.const_mul (M / (r + 1)!))

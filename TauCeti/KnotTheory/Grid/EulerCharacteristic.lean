@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Bigraded.Basic
 public import TauCeti.KnotTheory.Grid.Determinant
 public import TauCeti.KnotTheory.Grid.Grading.Complex
 import Mathlib.Algebra.MonoidAlgebra.MapDomain
+import Mathlib.LinearAlgebra.Dimension.Finite
 
 /-!
 # The graded Euler characteristic of the grid chain module
@@ -67,11 +68,10 @@ characteristic of its homology remains a separate step.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.4, "Euler
-characteristic = Alexander polynomial, via the grid determinant formula", by supplying the Euler
-characteristic side of that equation; the grid determinant side is `Determinant.lean`. The
-conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.3 and
-Chapter 4.
+This is the Euler characteristic side of the identification of the graded Euler characteristic of
+grid homology with the Alexander polynomial via the grid determinant formula; the grid determinant
+side is `Determinant.lean`. The conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for
+Knots and Links*, Chapter 3.3 and Chapter 4.
 -/
 
 public section
@@ -181,10 +181,27 @@ theorem alexanderEulerChar_eq_sum_states (R : Type*) [Ring R] [StrongRankConditi
 
 /-- In an unoccupied Alexander degree the Euler characteristic vanishes. -/
 @[simp]
-theorem alexanderEulerChar_eq_zero_of_notMem (R : Type*) [Ring R] [StrongRankCondition R] {a : ℤ}
+theorem alexanderEulerChar_eq_zero_of_notMem (R : Type*) [Ring R] {a : ℤ}
     (ha : a ∉ G.alexanderSupport) : G.alexanderEulerChar R a = 0 := by
-  rw [G.alexanderEulerChar_eq_sum_states R a, Finset.filter_eq_empty_iff.2, Finset.sum_empty]
-  exact fun x _ hx => ha ((G.mem_alexanderSupport_iff a).2 ⟨x, hx⟩)
+  rw [alexanderEulerChar, GradedObject.eulerChar]
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · -- Over the zero ring every summand is `±1`, so the support is infinite.
+    refine finsum_of_infinite_support ?_
+    have hsupp : Function.support (fun m : ℤ =>
+        ((ComplexShape.down ℤ).χ m : ℤ) * Module.finrank R (G.alexanderGradedObject R a m)) =
+        Set.univ := by
+      refine Set.eq_univ_of_forall fun m => ?_
+      simp [Module.finrank, rank_subsingleton]
+    rw [hsupp]
+    exact Set.infinite_univ
+  · refine finsum_eq_zero_of_forall_eq_zero fun m => ?_
+    have hsub : Subsingleton (G.BigradedChainPiece R (m, a)) :=
+      ⟨fun x y => DFinsupp.ext fun i => (ha ((G.mem_alexanderSupport_iff a).2
+        ⟨i.1, by rw [← G.bidegree_snd i.1, i.2]⟩)).elim⟩
+    have hzero : Module.finrank R (G.alexanderGradedObject R a m) = 0 := by
+      rw [G.alexanderGradedObject_apply]
+      exact Module.finrank_zero_of_subsingleton
+    rw [hzero, Nat.cast_zero, mul_zero]
 
 /-! ### The graded Euler characteristic -/
 
@@ -319,12 +336,14 @@ theorem coeff_gradedEulerChar (R : Type*) [Ring R] [StrongRankCondition R] (k : 
 root of the Alexander variable, and the Alexander gradings of an odd-component diagram are
 integers. -/
 @[simp]
-theorem coeff_gradedEulerChar_of_odd (R : Type*) [Ring R] [StrongRankCondition R] {k : ℤ}
+theorem coeff_gradedEulerChar_of_odd (R : Type*) [Semiring R] {k : ℤ}
     (hk : Odd k) : (G.gradedEulerChar R).coeff k = 0 := by
-  rw [G.coeff_gradedEulerChar R k]
-  refine Finset.sum_eq_zero fun a _ => ?_
-  rw [ite_eq_right_iff]
-  exact fun h => ((Int.not_even_iff_odd.mpr hk) ⟨a, by omega⟩).elim
+  rw [gradedEulerChar, doubleExponents, AddMonoidAlgebra.mapDomainRingHom_apply]
+  refine Finsupp.mapDomain_of_notMem_range _ _ ?_
+  rintro ⟨j, hj⟩
+  obtain ⟨m, hm⟩ := hk
+  simp only [nsmulAddMonoidHom_apply, nsmul_eq_mul, Nat.cast_ofNat] at hj
+  omega
 
 /-- The graded Euler characteristic loses nothing: its coefficient in exponent `2a` is the Euler
 characteristic of Alexander degree `a`. -/

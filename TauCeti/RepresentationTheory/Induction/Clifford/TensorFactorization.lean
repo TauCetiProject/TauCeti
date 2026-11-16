@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Induction.Clifford.Obstruction
+public import TauCeti.RepresentationTheory.Induction.Clifford.Obstruction.Basic
 public import TauCeti.RepresentationTheory.Intertwining
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 import TauCeti.RepresentationTheory.Irreducible

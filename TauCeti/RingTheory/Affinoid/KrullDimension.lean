@@ -15,6 +15,7 @@ import TauCeti.RingTheory.Affinoid.FiniteQuotient
 import TauCeti.RingTheory.KrullDimension.Basic
 import TauCeti.RingTheory.KrullDimension.Fiber
 import TauCeti.RingTheory.KrullDimension.Quotient
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniqueFactorization
 
 /-!

@@ -37,9 +37,9 @@ private noncomputable def actionUnits : G →* (ZMod (Nat.card (Multiplicative A
 
 /-- The units-valued form of the action has the kernel of the action itself. -/
 private theorem ker_actionUnits : (actionUnits G A).ker = (MulAction.toPermHom G A).ker := by
+  rw [actionUnits, MonoidHom.ker_comp_of_injective _ _ (MulEquiv.injective _)]
   ext g
-  simp only [actionUnits, MonoidHom.mem_ker, MonoidHom.coe_comp, Function.comp_apply,
-    MulEquiv.coe_toMonoidHom, MulEquiv.map_eq_one_iff, Equiv.ext_iff]
+  simp only [MonoidHom.mem_ker, Equiv.ext_iff]
   -- `Multiplicative.toAdd` is the identity on the underlying automorphism `x ↦ g • x`, which
   -- `simp` does not see through, so both directions are closed up to that unfolding.
   constructor
@@ -49,25 +49,23 @@ private theorem ker_actionUnits : (actionUnits G A).ker = (MulAction.toPermHom G
     exact Multiplicative.toAdd.injective (AddEquiv.ext h)
 
 /-- **The kernel of an action on a cyclic group has index dividing `φ (Nat.card A)`**: the action
-factors through the automorphism group of `A`, which has `φ (Nat.card A)` elements. For an
-infinite cyclic `A` the statement is empty, `φ 0 = 0`. -/
+factors through the automorphism group of `A`, which has `φ (Nat.card A)` elements when `A` is
+finite. For an infinite cyclic `A` the divisibility is trivial: `Nat.card A = 0` and `φ 0 = 0`. -/
 theorem index_ker_toPermHom_dvd_totient :
     (MulAction.toPermHom G A).ker.index ∣ (Nat.card A).totient := by
   rcases finite_or_infinite A with hA | hA
-  · have : Finite (Multiplicative A) := hA
+  · have : Finite (Multiplicative A) := .of_equiv A Multiplicative.ofAdd
     rw [← ker_actionUnits, Subgroup.index_ker]
     refine (Subgroup.card_subgroup_dvd_card (actionUnits G A).range).trans (dvd_of_eq ?_)
     rw [← Nat.card_congr (IsCyclic.mulAutMulEquiv (Multiplicative A)).toEquiv,
-      IsCyclic.card_mulAut]
-    rfl
-  · rw [Nat.card_eq_zero_of_infinite, Nat.totient_zero]
-    exact dvd_zero _
+      IsCyclic.card_mulAut, Nat.card_congr Multiplicative.toAdd]
+  · simp [Nat.card_eq_zero_of_infinite]
 
 /-- **The quotient by the kernel of an action on a cyclic group is commutative**: it embeds into
 the automorphism group of `A`, the units of `ZMod (Nat.card A)`. -/
 theorem isMulCommutative_quotient_ker_toPermHom :
-    IsMulCommutative (G ⧸ (MulAction.toPermHom G A).ker) := by
-  exact Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr
-    (ker_actionUnits G A ▸ Abelianization.commutator_le_ker (actionUnits G A))
+    IsMulCommutative (G ⧸ (MulAction.toPermHom G A).ker) :=
+  Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr
+    (ker_actionUnits G A ▸ Group.Abelianization.commutator_le_ker (actionUnits G A))
 
 end TauCeti

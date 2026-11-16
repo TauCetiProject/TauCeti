@@ -157,7 +157,6 @@ private theorem maslovOℤ_swapColumns_sub_sub_swapColumns (G : GridDiagram n) {
         if u.swapColumns i j (finRotate n a) ∈
             Grid.cIco (finRotate n (G.O a)) (finRotate n (G.O (finRotate n a))) then 1 else 0) := by
   set b := finRotate n a with hb
-  have hOab : G.O a ≠ G.O b := G.O.toPerm.injective.ne ha
   let R := GridRectangleBetween.ofSwapColumns u (u.swapColumns i j) i j hij rfl
   have hR : ∀ p : Fin n × Fin n, p ∈ R.toGridRectangle.coveredSquares ↔
       p.1 ∈ Grid.cIco i j ∧ p.2 ∈ Grid.cIco (u i) (u j) := by
@@ -165,8 +164,8 @@ private theorem maslovOℤ_swapColumns_sub_sub_swapColumns (G : GridDiagram n) {
     simp [R, GridRectangle.mem_coveredSquares]
   rw [G.maslovOℤ_swapColumns_sub_sub a b R, G.card_OSet_inter_sub_card_swapColumns_OSet_inter ha]
   simp only [hR, GridState.swapColumns_apply]
-  have hcross :=
-    Grid.ite_mem_cIco_finRotate_sub_ite_mem_cIco_finRotate (u.toPerm.injective.ne hij) hOab
+  have hcross := Grid.ite_mem_cIco_finRotate_sub_ite_mem_cIco_finRotate
+    (p := u i) (q := u j) (α := G.O a) (β := G.O b)
   -- Only a rectangle with a side on the grid line `b` moves the point on that line; it covers
   -- exactly one of the columns `a` and `b`.
   by_cases hbj : b = j

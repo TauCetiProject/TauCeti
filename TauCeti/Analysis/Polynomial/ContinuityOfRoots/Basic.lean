@@ -20,8 +20,8 @@ root of `g` going elsewhere. This file proves the multiplicity-sensitive stateme
 algebraically closed normed field, `ℂ` being the case of interest: the roots of `g`, counted with
 multiplicity, can be **matched bijectively** with those of `f` so that matched roots are close.
 
-The input is `TauCeti.Sym.eventually_exists_ofFn_eq_coeffEquiv_symm`, the continuity of the inverse
-of the elementary symmetric chart `TauCeti.Sym.coeffHomeomorph`, which comes from Cauchy's bound
+The input is `Sym.eventually_exists_ofFn_eq_coeffEquiv_symm`, the continuity of the inverse
+of the elementary symmetric chart `Sym.coeffHomeomorph`, which comes from Cauchy's bound
 `Polynomial.cauchyBound` through properness of the coefficient map. Nothing here chooses a
 continuous labelling of the roots; the matching is made separately for each nearby polynomial.
 

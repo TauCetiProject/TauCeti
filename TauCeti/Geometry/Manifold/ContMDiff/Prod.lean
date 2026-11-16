@@ -28,6 +28,10 @@ compact slice `{x} × K` is `C^n` on a product of open neighbourhoods of `x` and
   for the product of the self-models if and only if it is `C^n` for the self-model of the product.
 * `contMDiffOn_prod_modelWithCornersSelf_iff`, `contMDiffAt_prod_modelWithCornersSelf_iff`: the
   same bridge for `C^n` maps on a set and at a point.
+* `TauCeti.contMDiff_prod_prod_modelWithCornersSelf_iff`,
+  `TauCeti.contMDiffOn_prod_prod_modelWithCornersSelf_iff`,
+  `TauCeti.contMDiffAt_prod_prod_modelWithCornersSelf_iff`: the same bridge on the left factor of
+  a product `(E₁ × E₂) × N₃` with an arbitrary manifold `N₃`.
 * `TauCeti.exists_isOpen_prod_contMDiffOn`: the tube lemma for maps from a product which are
   `C^n` along a compact slice.
 
@@ -68,6 +72,34 @@ theorem contMDiffAt_prod_modelWithCornersSelf_iff {x : E₁ × E₂} :
   rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
 
 namespace TauCeti
+
+section NestedProd
+
+variable {E₃ H₃ N₃ : Type*} [NormedAddCommGroup E₃] [NormedSpace 𝕜 E₃] [TopologicalSpace H₃]
+  {J₃ : ModelWithCorners 𝕜 E₃ H₃} [TopologicalSpace N₃] [ChartedSpace H₃ N₃]
+  {g : (E₁ × E₂) × N₃ → M} {t : Set ((E₁ × E₂) × N₃)}
+
+/-- A map from a product `(E₁ × E₂) × N₃`, whose left factor is a product of model vector spaces,
+is `C^n` for the product of the self-models on the left factor if and only if it is `C^n` for the
+self-model of `E₁ × E₂` on the left factor. -/
+theorem contMDiff_prod_prod_modelWithCornersSelf_iff :
+    ContMDiff ((𝓘(𝕜, E₁).prod 𝓘(𝕜, E₂)).prod J₃) I' n g ↔
+      ContMDiff (𝓘(𝕜, E₁ × E₂).prod J₃) I' n g := by
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+
+/-- The bridge `contMDiff_prod_prod_modelWithCornersSelf_iff` for `C^n` maps on a set. -/
+theorem contMDiffOn_prod_prod_modelWithCornersSelf_iff :
+    ContMDiffOn ((𝓘(𝕜, E₁).prod 𝓘(𝕜, E₂)).prod J₃) I' n g t ↔
+      ContMDiffOn (𝓘(𝕜, E₁ × E₂).prod J₃) I' n g t := by
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+
+/-- The bridge `contMDiff_prod_prod_modelWithCornersSelf_iff` for `C^n` maps at a point. -/
+theorem contMDiffAt_prod_prod_modelWithCornersSelf_iff {x : (E₁ × E₂) × N₃} :
+    ContMDiffAt ((𝓘(𝕜, E₁).prod 𝓘(𝕜, E₂)).prod J₃) I' n g x ↔
+      ContMDiffAt (𝓘(𝕜, E₁ × E₂).prod J₃) I' n g x := by
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+
+end NestedProd
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] [ChartedSpace H' (X × Y)]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]

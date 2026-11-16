@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AbelianVariety.End.Basic
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom.BaseChange
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
 # Isogenies of abelian varieties
@@ -28,11 +29,10 @@ a homomorphism.
   ground field;
 * `AbelianVariety.isIsogeny_mulBy_neg_one` supplies the multiplication-by-negative-one isogeny.
 
-This is the property-level prerequisite for `TauCetiRoadmap/JacobianChallenge/README.md`, Layer E,
-item "`[n]` as an isogeny". The general theorem for nonzero `n` requires the later torsion theory
-and is not asserted here. No external formalization is vendored. The definition and closure proofs
-reuse Mathlib's `AlgebraicGeometry.IsFinite` and `AlgebraicGeometry.Surjective` morphism properties,
-including their stability under composition, isomorphism, and base change.
+That multiplication by every nonzero integer `n` is an isogeny requires torsion theory that is
+not formalized here, and is not asserted. No external formalization is vendored. The definition
+and closure proofs reuse Mathlib's `AlgebraicGeometry.IsFinite` and `AlgebraicGeometry.Surjective`
+morphism properties, including their stability under composition, isomorphism, and base change.
 -/
 
 public section
@@ -67,9 +67,6 @@ surjective. -/
 lemma isIsogeny_iff {A B : AbelianVariety K} (f : A ⟶ B) :
     IsIsogeny f ↔ IsFinite (Hom.toSchemeHom f) ∧ Surjective (Hom.toSchemeHom f) :=
   by
-    let : MorphismProperty.RespectsIso (@IsFinite : MorphismProperty Scheme) :=
-      MorphismProperty.respectsIso_of_isStableUnderComposition
-        (fun _ _ g (_ : IsIso g) ↦ inferInstance)
     have hcancel (P : MorphismProperty Scheme) [P.RespectsIso] :
         P (eqToHom (Hom.toSchemeFunctor_obj A) ≫ Hom.toSchemeHom f ≫
           eqToHom (Hom.toSchemeFunctor_obj B).symm) ↔ P (Hom.toSchemeHom f) := by

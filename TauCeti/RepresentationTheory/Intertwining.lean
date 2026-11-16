@@ -43,6 +43,8 @@ taking invariants under it.
   intertwining map of the attached representations over `ℤ`.
 * `Representation.Equiv.tprod`: the tensor product of two equivalences of representations.
 * `Representation.Equiv.dual`: the dual of an equivalence of representations.
+* `Representation.Equiv.intertwiningMapCongr`: transport of intertwining maps along equivalences
+  of the source and of the target.
 * `Representation.Equiv.ofBasisAction`: build an equivalence from matching coordinate actions.
 
 ## Main results
@@ -76,10 +78,6 @@ theorem prod_ext {A G V W U : Type*} [Semiring A] [Monoid G]
   · exact congrArg IntertwiningMap.toLinearMap hl
   · exact congrArg IntertwiningMap.toLinearMap hr
 
-variable {A G V W : Type*} [CommSemiring A] [Monoid G]
-  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
-  {ρ : Representation A G V} {σ : Representation A G W}
-
 /-- **Evaluation of the `k[G]`-linear map attached to an intertwining map.** The map
 `Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f` is `f` itself on the underlying
 types, so it too may be erased from an application. -/
@@ -91,6 +89,12 @@ theorem equivLinearMapAsModule_apply
     (f : IntertwiningMap ρ σ) (x : ρ.asModule) :
     equivLinearMapAsModule ρ σ f x = (f (x : V) : W) :=
   (rfl)
+
+section codRestrict
+
+variable {A G V W : Type*} [Semiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
 
 /-- Corestrict an intertwining map to a subrepresentation of the target containing its image. -/
 def codRestrict (f : IntertwiningMap ρ σ) (P : Subrepresentation σ)
@@ -105,6 +109,12 @@ theorem codRestrict_apply_coe (f : IntertwiningMap ρ σ) (P : Subrepresentation
     (hP : ∀ v, f v ∈ P.toSubmodule) (v : V) :
     ((f.codRestrict P hP v : P.toSubmodule) : W) = f v := by
   rfl
+
+end codRestrict
+
+variable {A G V W : Type*} [CommSemiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
 
 /-- **An injective intertwining map is an isomorphism onto its image**, here onto any
 subrepresentation `P` that the image fills. -/
@@ -154,7 +164,7 @@ end lcomp
 
 section Restriction
 
-variable {A G H V W U : Type*} [CommSemiring A] [Monoid G] [Monoid H]
+variable {A G H V W U : Type*} [Semiring A] [Monoid G] [Monoid H]
   [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [AddCommMonoid U] [Module A U]
   {ρ : Representation A G V} {σ : Representation A G W} {τ : Representation A G U}
 
@@ -233,7 +243,7 @@ end Basis
 
 section Restriction
 
-variable {A G H V W U : Type*} [CommSemiring A] [Monoid G] [Monoid H]
+variable {A G H V W U : Type*} [Semiring A] [Monoid G] [Monoid H]
   [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [AddCommMonoid U] [Module A U]
   {ρ : Representation A G V} {σ : Representation A G W} {τ : Representation A G U}
 
@@ -313,6 +323,40 @@ theorem dual_apply_apply (e : Equiv ρ σ) (f : Module.Dual A V) (w : W) :
   (rfl)
 
 end Dual
+
+section Congr
+
+variable {A G V V' W W' : Type*} [CommSemiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid V'] [Module A V']
+  [AddCommMonoid W] [Module A W] [AddCommMonoid W'] [Module A W']
+  {ρ : Representation A G V} {ρ' : Representation A G V'}
+  {σ : Representation A G W} {σ' : Representation A G W'}
+
+/-- **Transport of intertwining maps along equivalences**: equivalences `e₁ : ρ ≃ ρ'` and
+`e₂ : σ ≃ σ'` identify the intertwining maps `ρ → σ` with the intertwining maps `ρ' → σ'` by
+`f ↦ e₂ ∘ f ∘ e₁⁻¹`. This is the unbundled form of `CategoryTheory.Iso.homCongr`, as a linear
+equivalence. -/
+def intertwiningMapCongr (e₁ : Equiv ρ ρ') (e₂ : Equiv σ σ') :
+    IntertwiningMap ρ σ ≃ₗ[A] IntertwiningMap ρ' σ' where
+  toFun f := e₂.toIntertwiningMap.comp (f.comp e₁.symm.toIntertwiningMap)
+  invFun f := e₂.symm.toIntertwiningMap.comp (f.comp e₁.toIntertwiningMap)
+  map_add' f g := IntertwiningMap.ext <| LinearMap.ext fun v => by simp
+  map_smul' c f := IntertwiningMap.ext <| LinearMap.ext fun v => by simp
+  left_inv f := IntertwiningMap.ext <| LinearMap.ext fun v => by simp
+  right_inv f := IntertwiningMap.ext <| LinearMap.ext fun v => by simp
+
+@[simp]
+theorem intertwiningMapCongr_apply (e₁ : Equiv ρ ρ') (e₂ : Equiv σ σ') (f : IntertwiningMap ρ σ)
+    (v : V') : intertwiningMapCongr e₁ e₂ f v = e₂ (f (e₁.symm v)) :=
+  (rfl)
+
+@[simp]
+theorem intertwiningMapCongr_symm_apply (e₁ : Equiv ρ ρ') (e₂ : Equiv σ σ')
+    (f : IntertwiningMap ρ' σ') (v : V) :
+    (intertwiningMapCongr e₁ e₂).symm f v = e₂.symm (f (e₁ v)) :=
+  (rfl)
+
+end Congr
 
 end Representation.Equiv
 

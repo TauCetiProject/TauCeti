@@ -103,9 +103,9 @@ that does want it.
 
 ## Provenance
 
-Not a port. The pinned sources of this roadmap build only the **absolute** `q`-power Frobenius of
-a curve over a finite field (AINTLIB's `HasseWeil/FrobeniusIsogeny.lean`, already migrated as
-`TauCeti.Isogeny.frobeniusIsogeny` and
+Not a port. The external sources this library draws on build only the **absolute** `q`-power
+Frobenius of a curve over a finite field (AINTLIB's `HasseWeil/FrobeniusIsogeny.lean`, already
+migrated as `TauCeti.Isogeny.frobeniusIsogeny` and
 `WeierstrassCurve.Affine.finrank_fieldRange_frobeniusAlgHom`); the relative Frobenius over
 an arbitrary base, and the twist it maps to, appear in none of them.
 The degree computation reuses the migrated tower argument of

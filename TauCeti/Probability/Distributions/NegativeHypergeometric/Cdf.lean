@@ -40,7 +40,7 @@ variable {N K r k : ℕ}
 
 /-- The cumulative mass is the finite sum of the explicit negative hypergeometric masses.
 The support guard keeps natural subtraction from introducing spurious terms. -/
-theorem negativeHypergeometricMeasure_real_Iic_eq_sum (hr : r ≤ K) (hK : K ≤ N) (k : ℕ) :
+theorem negativeHypergeometricMeasure_real_Iic_eq_sum (hr : r ≤ K) (k : ℕ) :
     (negativeHypergeometricMeasure N K r).real (Iic k) =
       ∑ j ∈ Finset.range (k + 1),
         if j ≤ N - K then
@@ -52,7 +52,7 @@ theorem negativeHypergeometricMeasure_real_Iic_eq_sum (hr : r ≤ K) (hK : K ≤
     simp
   rw [hset, ← sum_measureReal_singleton]
   exact Finset.sum_congr rfl fun j _ ↦
-    negativeHypergeometricMeasure_real_singleton hr hK j
+    negativeHypergeometricMeasure_real_singleton hr j
 
 /-- Once the cutoff includes every possible failure count, the cumulative mass is one.
 This includes waiting for zero successes. -/
@@ -85,7 +85,7 @@ private theorem negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail_of
       (∑ i ∈ Finset.range (k + 1),
         ((i + r - 1).choose i : ℝ) * ((N - r - i).choose (K - r) : ℝ)) /
         (N.choose K : ℝ) := by
-    rw [negativeHypergeometricMeasure_real_Iic_eq_sum hrK hK, Finset.sum_div]
+    rw [negativeHypergeometricMeasure_real_Iic_eq_sum hrK, Finset.sum_div]
     refine Finset.sum_congr rfl fun i hi ↦ ?_
     by_cases hiK : i ≤ N - K
     · simp [hiK]
@@ -116,10 +116,23 @@ private theorem negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail_of
 /-- The probability of at most `k` failures before success `r` is the probability of at least
 `r` successes in the first `min N (k + r)` draws. The cap handles cutoffs past the population,
 and the identity includes the boundary `r = 0`. -/
-theorem negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail
-    (hr : r ≤ K) (hK : K ≤ N) (k : ℕ) :
+theorem negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail (k : ℕ) :
     (negativeHypergeometricMeasure N K r).real (Iic k) =
       (hypergeometricMeasure N K (min N (k + r))).real (Ici r) := by
+  by_cases hK : K ≤ N
+  swap
+  · rw [negativeHypergeometricMeasure_eq_zero_of_invalid (by omega),
+      hypergeometricMeasure_eq_zero_of_invalid (by omega), measureReal_zero_apply,
+      measureReal_zero_apply]
+  by_cases hr : r ≤ K
+  swap
+  · rw [negativeHypergeometricMeasure_eq_zero_of_invalid (by omega), measureReal_zero_apply,
+      measureReal_def,
+      (measure_eq_zero_iff_ae_notMem).2 (ae_iff_of_countable.2 fun j hj ↦ ?_)]
+    · simp
+    have := ((hypergeometricMeasure_singleton_ne_zero_iff hK j).mp hj).1
+    simp only [mem_Ici, not_le]
+    omega
   by_cases hk : k + r ≤ N
   · rw [min_eq_right hk]
     exact negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail_of_le hr hK hk
@@ -139,24 +152,24 @@ theorem cdf_map_cast_negativeHypergeometricMeasure (hr : r ≤ K) (hK : K ≤ N)
         else 0 := by
   let _ := isProbabilityMeasure_negativeHypergeometricMeasure hr hK
   rw [Measure.cdf_map_natCast _ hx]
-  exact negativeHypergeometricMeasure_real_Iic_eq_sum hr hK _
+  exact negativeHypergeometricMeasure_real_Iic_eq_sum hr _
 
 /-- The real cast negative hypergeometric law has no mass below zero. -/
-theorem cdf_map_cast_negativeHypergeometricMeasure_of_neg (hr : r ≤ K) (hK : K ≤ N)
-    {x : ℝ} (hx : x < 0) :
+theorem cdf_map_cast_negativeHypergeometricMeasure_of_neg {x : ℝ} (hx : x < 0) :
     cdf ((negativeHypergeometricMeasure N K r).map (Nat.cast : ℕ → ℝ)) x = 0 := by
-  let _ := isProbabilityMeasure_negativeHypergeometricMeasure hr hK
-  exact Measure.cdf_map_natCast_of_neg _ hx
+  by_cases h : r ≤ K ∧ K ≤ N
+  · let _ := isProbabilityMeasure_negativeHypergeometricMeasure h.1 h.2
+    exact Measure.cdf_map_natCast_of_neg _ hx
+  · simp [negativeHypergeometricMeasure_eq_zero_of_invalid h, not_le.mpr hx]
 
 /-- A native natural-valued random variable with a negative hypergeometric law has its
 cumulative probabilities given by hypergeometric sampling tails. -/
 theorem measureReal_le_of_hasLaw_negativeHypergeometricMeasure
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℕ}
-    (hr : r ≤ K) (hK : K ≤ N) (hX : HasLaw X (negativeHypergeometricMeasure N K r) P)
-    (k : ℕ) :
+    (hX : HasLaw X (negativeHypergeometricMeasure N K r) P) (k : ℕ) :
     P.real {ω | X ω ≤ k} =
       (hypergeometricMeasure N K (min N (k + r))).real (Ici r) := by
   rw [hX.measureReal_eq (p := fun j ↦ j ≤ k) measurableSet_Iic]
-  exact negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail hr hK k
+  exact negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail k
 
 end TauCeti.Probability

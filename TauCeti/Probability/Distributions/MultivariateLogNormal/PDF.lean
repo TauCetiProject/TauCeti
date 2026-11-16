@@ -152,7 +152,7 @@ theorem multivariateLogNormalPDFReal_eq_abs_det_fderiv_log (m : EuclideanSpace �
       |(fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦
           WithLp.toLp 2 (fun i ↦ Real.log (y i))) x).det| *
         multivariateGaussianPDFReal m S (WithLp.toLp 2 (fun i ↦ Real.log (x i))) := by
-  rw [multivariateLogNormalPDFReal_of_pos m S hx, PiLp.det_fderiv_log x (fun i ↦ (hx i).ne'),
+  rw [multivariateLogNormalPDFReal_of_pos m S hx, PiLp.det_fderiv_log x,
     abs_of_pos (inv_pos.mpr (Finset.prod_pos fun i _ ↦ hx i)), div_eq_mul_inv, mul_comm]
 
 private lemma exp_jacobian_mul_pdf (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
@@ -180,7 +180,7 @@ theorem multivariateLogNormalMeasure_eq_withDensity (m : EuclideanSpace ℝ ι)
     MeasurableSet.univ.nullMeasurableSet
     (fun x _ ↦ (PiLp.hasFDerivAt_exp x).hasFDerivWithinAt) (PiLp.exp_injective 2).injOn
   simp only [Measure.restrict_univ, Matrix.det_toEuclideanCLM_diagonal,
-    abs_of_pos (Finset.prod_pos fun i _ ↦ Real.exp_pos _)] at hjac
+    abs_of_pos (Finset.prod_pos fun _ _ ↦ Real.exp_pos _)] at hjac
   rw [Set.image_univ, PiLp.range_exp] at hjac
   have hmap := Measure.map_withDensity_eq_withDensity he (by fun_prop)
     (measurable_multivariateLogNormalPDF m S) hjac

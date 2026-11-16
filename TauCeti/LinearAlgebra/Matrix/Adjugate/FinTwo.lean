@@ -33,34 +33,34 @@ variable {K : Type*} [CommRing K]
 /-- The adjugate of a two-by-two matrix is its trace times the identity minus itself. -/
 @[simp]
 theorem adjugate_fin_two_eq_trace_smul_one_sub (A : Matrix (Fin 2) (Fin 2) K) :
-    Matrix.adjugate A = Matrix.trace A • 1 - A := by
-  rw [Matrix.adjugate_fin_two, Matrix.trace_fin_two]
+    adjugate A = trace A • 1 - A := by
+  rw [adjugate_fin_two, trace_fin_two]
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
 /-- The adjugate as a linear map on `2 × 2` matrices over a commutative ring. -/
 noncomputable def adjugateFinTwoLinearMap :
     Matrix (Fin 2) (Fin 2) K →ₗ[K] Matrix (Fin 2) (Fin 2) K :=
-  (Matrix.traceLinearMap (Fin 2) K K).smulRight (1 : Matrix (Fin 2) (Fin 2) K) -
+  (traceLinearMap (Fin 2) K K).smulRight (1 : Matrix (Fin 2) (Fin 2) K) -
     LinearMap.id
 
 /-- Applying `adjugateFinTwoLinearMap` computes the ordinary matrix adjugate. -/
 @[simp] theorem adjugateFinTwoLinearMap_apply (A : Matrix (Fin 2) (Fin 2) K) :
-    adjugateFinTwoLinearMap A = Matrix.adjugate A := by
+    adjugateFinTwoLinearMap A = adjugate A := by
   simp [adjugateFinTwoLinearMap, adjugate_fin_two_eq_trace_smul_one_sub]
 
 /-- Adjugation followed by conjugate transpose, as a real-algebra endomorphism of complex
 `2 × 2` matrices. -/
 noncomputable def starAdjugateFinTwoAlgHom :
     Matrix (Fin 2) (Fin 2) ℂ →ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℂ where
-  toFun A := star (Matrix.adjugate A)
+  toFun A := star (adjugate A)
   map_zero' := by
-    rw [← Matrix.adjugateFinTwoLinearMap_apply, map_zero, star_zero]
+    rw [← adjugateFinTwoLinearMap_apply, map_zero, star_zero]
   map_add' A B := by
-    rw [← Matrix.adjugateFinTwoLinearMap_apply, map_add,
-      Matrix.adjugateFinTwoLinearMap_apply, Matrix.adjugateFinTwoLinearMap_apply, star_add]
+    rw [← adjugateFinTwoLinearMap_apply, map_add,
+      adjugateFinTwoLinearMap_apply, adjugateFinTwoLinearMap_apply, star_add]
   map_one' := by simp
-  map_mul' A B := by simp [Matrix.adjugate_mul_distrib, star_mul]
+  map_mul' A B := by simp [adjugate_mul_distrib, star_mul]
   commutes' r := by
     ext i j
     fin_cases i <;> fin_cases j <;>
@@ -68,7 +68,7 @@ noncomputable def starAdjugateFinTwoAlgHom :
 
 /-- Applying `starAdjugateFinTwoAlgHom` computes the conjugate transpose of the adjugate. -/
 theorem starAdjugateFinTwoAlgHom_apply (A : Matrix (Fin 2) (Fin 2) ℂ) :
-    starAdjugateFinTwoAlgHom A = star (Matrix.adjugate A) := by rfl
+    starAdjugateFinTwoAlgHom A = star (adjugate A) := by rfl
 
 /-- An anti-multiplicative function with scalar translates sends an off-diagonal unit
 to its negative. -/
@@ -77,14 +77,14 @@ private theorem map_single_eq_neg_of_ne {R : Type*} [NonAssocRing R]
     (hmul : ∀ A B, f (A * B) = f B * f A)
     (hscalar : ∀ A, ∃ r : R, A + f A = r • 1)
     (i j : Fin 2) (hij : i ≠ j) :
-    f (Matrix.single i j 1) = -(Matrix.single i j 1) := by
-  obtain ⟨r, hr⟩ := hscalar (Matrix.single i j 1)
-  obtain ⟨s, hs⟩ := hscalar (Matrix.single j i 1)
-  obtain ⟨t, ht⟩ := hscalar (Matrix.single i i 1)
+    f (single i j 1) = -(single i j 1) := by
+  obtain ⟨r, hr⟩ := hscalar (single i j 1)
+  obtain ⟨s, hs⟩ := hscalar (single j i 1)
+  obtain ⟨t, ht⟩ := hscalar (single i i 1)
   have hf := eq_sub_of_add_eq' hr
   have hg := eq_sub_of_add_eq' hs
   have hd := eq_sub_of_add_eq' ht
-  have hp := hmul (Matrix.single i j 1) (Matrix.single j i 1)
+  have hp := hmul (single i j 1) (single j i 1)
   simp only [single_mul_single_same, mul_one] at hp
   rw [hf, hg, hd] at hp
   have hr0 : r = 0 := by
@@ -101,8 +101,8 @@ theorem eq_adjugate_of_antimultiplicative_of_exists_add_eq_smul_one
     (A : Matrix (Fin 2) (Fin 2) K) : f A = adjugate A := by
   obtain ⟨r, hr⟩ := hscalar A
   have hf := eq_sub_of_add_eq' hr
-  obtain ⟨s, hs⟩ := hscalar (A * Matrix.single 0 1 1)
-  have hp := hmul A (Matrix.single 0 1 1)
+  obtain ⟨s, hs⟩ := hscalar (A * single 0 1 1)
+  have hp := hmul A (single 0 1 1)
   rw [map_single_eq_neg_of_ne f hmul hscalar 0 1 (by decide),
     eq_sub_of_add_eq' hs, hf] at hp
   have h : -A 0 0 = -r + A 1 1 := by

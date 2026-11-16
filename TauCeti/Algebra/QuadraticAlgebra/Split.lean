@@ -18,7 +18,9 @@ The construction reuses Mathlib's change of generator and the elementary splitti
 
 When `2` is invertible and `a` is the square of a unit `u`, the roots of
 `QuadraticAlgebra R a 0` are `u` and `-u`. Its inverse splitting uses the half-sum and
-rescaled half-difference. None of these maps requires a field hypothesis on `R`.
+rescaled half-difference. None of these maps requires a field hypothesis on `R`. Under this
+splitting the norm and trace become the product and sum of the two coordinates, and the
+quadratic involution exchanges them.
 -/
 
 public section
@@ -105,5 +107,26 @@ theorem algEquivProdOfSq_symm_apply [Invertible (2 : R)] {a : R} (u : Rˣ)
   ext <;> simp only [mul_assoc, Units.mul_inv_cancel_left]
   · linear_combination -z.1 * invOf_mul_self (2 : R)
   · linear_combination -z.2 * invOf_mul_self (2 : R)
+
+/-- In the unit-square splitting, the norm is the product of the two coordinates. -/
+theorem norm_eq_fst_mul_snd_algEquivProdOfSq [Invertible (2 : R)] {a : R} (u : Rˣ)
+    (ha : a = (u : R) ^ 2) (z : QuadraticAlgebra R a 0) :
+    norm z = (algEquivProdOfSq u ha z).1 * (algEquivProdOfSq u ha z).2 := by
+  rw [algEquivProdOfSq_apply, norm_def]
+  linear_combination (-z.im * z.im) * ha
+
+/-- In the unit-square splitting, the trace is the sum of the two coordinates. -/
+theorem trace_eq_fst_add_snd_algEquivProdOfSq [Invertible (2 : R)] {a : R} (u : Rˣ)
+    (ha : a = (u : R) ^ 2) (z : QuadraticAlgebra R a 0) :
+    trace z = (algEquivProdOfSq u ha z).1 + (algEquivProdOfSq u ha z).2 := by
+  rw [algEquivProdOfSq_apply, trace_def]
+  ring
+
+/-- The unit-square splitting turns the quadratic involution into the exchange of the two
+factors. -/
+theorem algEquivProdOfSq_star [Invertible (2 : R)] {a : R} (u : Rˣ)
+    (ha : a = (u : R) ^ 2) (z : QuadraticAlgebra R a 0) :
+    algEquivProdOfSq u ha (star z) = (algEquivProdOfSq u ha z).swap := by
+  ext <;> simp [sub_eq_add_neg]
 
 end QuadraticAlgebra

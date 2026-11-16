@@ -109,7 +109,7 @@ variable (p : ℕ) (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
 modulo `p ^ m`-th powers. -/
 def padicCompletionUnitsNormResidue (m : ℕ) :
     Additive ↑(padicCompletionUnits p K) →+
-      Additive (powerClassQuotient (Abelianization Gal(L/K)) (p ^ m)) :=
+      Additive (powerClassQuotient (Group.Abelianization Gal(L/K)) (p ^ m)) :=
   MonoidHom.toAdditive <|
     (powerClassMap (p ^ m)
       ((normResidue K L).toMonoidHom.comp (QuotientGroup.mk' (normGroup K L)))).comp <|
@@ -123,7 +123,7 @@ theorem padicCompletionUnitsNormResidue_eq {m : ℕ} {x : Additive ↑(padicComp
     {u : Kˣ} (hu : x.toMul.1 m = QuotientGroup.mk u) :
     padicCompletionUnitsNormResidue p K L m x =
       Additive.ofMul (QuotientGroup.mk (normResidue K L (QuotientGroup.mk u)) :
-        powerClassQuotient (Abelianization Gal(L/K)) (p ^ m)) := by
+        powerClassQuotient (Group.Abelianization Gal(L/K)) (p ^ m)) := by
   simp [padicCompletionUnitsNormResidue, hu]
 
 /-- On the class of a unit `u ∈ Kˣ`, the completed norm residue map is the norm residue symbol of
@@ -132,7 +132,7 @@ theorem padicCompletionUnitsNormResidue_eq {m : ℕ} {x : Additive ↑(padicComp
 theorem padicCompletionUnitsNormResidue_of (m : ℕ) (u : Kˣ) :
     padicCompletionUnitsNormResidue p K L m (Additive.ofMul (padicCompletionUnitsOf p K u)) =
       Additive.ofMul (QuotientGroup.mk (normResidue K L (QuotientGroup.mk u)) :
-        powerClassQuotient (Abelianization Gal(L/K)) (p ^ m)) :=
+        powerClassQuotient (Group.Abelianization Gal(L/K)) (p ^ m)) :=
   padicCompletionUnitsNormResidue_eq p K L
     (by rw [toMul_ofMul, padicCompletionUnitsOf_apply, QuotientGroup.mk'_apply])
 
@@ -170,11 +170,11 @@ theorem padicCompletionUnitsNormResidue_padicCompletionUnitsNorm [Fact p.Prime] 
 `p ^ m`-multiple in `A(K)` is a completed norm. -/
 private theorem pow_smul_mem_range_padicCompletionUnitsNorm [Fact p.Prime] (hpK : (p : K) ≠ 0)
     {m : ℕ}
-    (hm : (Nat.card (Abelianization Gal(L/K))).factorization p ≤ m)
+    (hm : (Nat.card (Group.Abelianization Gal(L/K))).factorization p ≤ m)
     (y : Additive ↑(padicCompletionUnits p K)) :
     (p : ℤ_[p]) ^ m • y ∈ LinearMap.range (padicCompletionUnitsNorm p K L) := by
   have := finiteIndex_range_powMonoidHom hpK
-  set n := Nat.card (Abelianization Gal(L/K))
+  set n := Nat.card (Group.Abelianization Gal(L/K))
   have hn0 : n ≠ 0 := Nat.card_pos.ne'
   -- Write `p ^ m = n * (p ^ (m - v) * b⁻¹)` with `n = p ^ v * b` and `b` a `p`-adic unit.
   set b := ordCompl[p] n
@@ -194,7 +194,7 @@ private theorem pow_smul_mem_range_padicCompletionUnitsNorm [Fact p.Prime] (hpK 
 `TauCeti.padicCompletionUnitsNormResidue_surjective`, this identifies the cokernel of
 `A(L) → A(K)` with the maximal `p`-quotient of `Gal(L/K)^ab`. -/
 theorem ker_padicCompletionUnitsNormResidue [Fact p.Prime] (hpK : (p : K) ≠ 0) {m : ℕ}
-    (hm : (Nat.card (Abelianization Gal(L/K))).factorization p ≤ m) :
+    (hm : (Nat.card (Group.Abelianization Gal(L/K))).factorization p ≤ m) :
     (padicCompletionUnitsNormResidue p K L m).ker =
       (LinearMap.range (padicCompletionUnitsNorm p K L)).toAddSubgroup := by
   have := finiteIndex_range_powMonoidHom hpK
@@ -225,10 +225,10 @@ the maximal `p`-quotient of `Gal(L/K)^ab`, once `p ^ m` contains the full power 
 `#Gal(L/K)^ab`. The isomorphism is induced by the completed norm residue map
 (`TauCeti.padicCompletionUnitsNormCokernelEquiv_mk`). -/
 def padicCompletionUnitsNormCokernelEquiv [Fact p.Prime] (hpK : (p : K) ≠ 0) {m : ℕ}
-    (hm : (Nat.card (Abelianization Gal(L/K))).factorization p ≤ m) :
+    (hm : (Nat.card (Group.Abelianization Gal(L/K))).factorization p ≤ m) :
     Additive ↑(padicCompletionUnits p K) ⧸
         (LinearMap.range (padicCompletionUnitsNorm p K L)).toAddSubgroup ≃+
-      Additive (powerClassQuotient (Abelianization Gal(L/K)) (p ^ m)) :=
+      Additive (powerClassQuotient (Group.Abelianization Gal(L/K)) (p ^ m)) :=
   (QuotientAddGroup.quotientAddEquivOfEq
     (ker_padicCompletionUnitsNormResidue p K L hpK hm).symm).trans
     (QuotientAddGroup.quotientKerEquivOfSurjective _
@@ -238,7 +238,7 @@ def padicCompletionUnitsNormCokernelEquiv [Fact p.Prime] (hpK : (p : K) ≠ 0) {
 completed norm residue. -/
 @[simp]
 theorem padicCompletionUnitsNormCokernelEquiv_mk [Fact p.Prime] (hpK : (p : K) ≠ 0) {m : ℕ}
-    (hm : (Nat.card (Abelianization Gal(L/K))).factorization p ≤ m)
+    (hm : (Nat.card (Group.Abelianization Gal(L/K))).factorization p ≤ m)
     (x : Additive ↑(padicCompletionUnits p K)) :
     padicCompletionUnitsNormCokernelEquiv p K L hpK hm (QuotientAddGroup.mk x) =
       padicCompletionUnitsNormResidue p K L m x := by
@@ -251,7 +251,7 @@ dividing `#Gal(L/K)^ab = [Kˣ : N_{L/K}(Lˣ)]`. -/
 theorem natCard_quotient_range_padicCompletionUnitsNorm [Fact p.Prime] (hpK : (p : K) ≠ 0) :
     Nat.card (Additive ↑(padicCompletionUnits p K) ⧸
         (LinearMap.range (padicCompletionUnitsNorm p K L)).toAddSubgroup) =
-      p ^ (Nat.card (Abelianization Gal(L/K))).factorization p := by
+      p ^ (Nat.card (Group.Abelianization Gal(L/K))).factorization p := by
   rw [Nat.card_congr (padicCompletionUnitsNormCokernelEquiv p K L hpK le_rfl).toEquiv,
     Nat.card_congr Additive.toMul, natCard_powerClassQuotient_prime_pow _ le_rfl]
 

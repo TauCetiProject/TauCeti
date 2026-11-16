@@ -681,6 +681,12 @@ lemma hurewiczHom_apply (a : Additive (HomotopyGroup (Fin (n + 1)) X x)) :
     hurewiczHom R n a = hurewicz R n a.toMul :=
   (rfl)
 
+/-- The Hurewicz map sends the `k`-th power of a class to `k` times its Hurewicz class. -/
+@[simp]
+theorem hurewicz_pow (a : HomotopyGroup (Fin (n + 1)) X x) (k : ℕ) :
+    hurewicz R n (a ^ k) = k • hurewicz R n a := by
+  simpa using map_nsmul (hurewiczHom R n) k (Additive.ofMul a)
+
 /-- **The integral Hurewicz homomorphism** `πₙ₊₁(X, x) → Hₙ₊₁(X; ℤ)`, `[p] ↦ p_*[Iⁿ⁺¹]`: the
 Hurewicz homomorphism `HomotopyGroup.hurewiczHom` with integer coefficients, evaluated at
 `1 : ℤ`. -/
@@ -696,6 +702,16 @@ lemma hurewiczIntHom_apply (X : Type) [TopologicalSpace X] (x : X) (n : ℕ)
     (a : Additive (HomotopyGroup (Fin (n + 1)) X x)) :
     hurewiczIntHom X x n a = (hurewicz (ModuleCat.of ℤ ℤ) n a.toMul).hom 1 :=
   congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewiczHom_apply _ n a)
+
+/-- The integral Hurewicz class of the class of a generalized loop `p` is `p_*[Iⁿ⁺¹]`, the value at
+`1` of `GenLoop.hurewicz`. -/
+@[simp]
+lemma hurewiczIntHom_mk {X : Type} [TopologicalSpace X] {x : X} {n : ℕ}
+    (p : Ω^ (Fin (n + 1)) X x) :
+    hurewiczIntHom X x n (Additive.ofMul (⟦p⟧ : HomotopyGroup (Fin (n + 1)) X x)) =
+      (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 :=
+  (hurewiczIntHom_apply X x n _).trans
+    (congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewicz_mk (ModuleCat.of ℤ ℤ) n p))
 
 /-- **Naturality of the integral Hurewicz homomorphism**: for a based map `f : (X, x) → (Y, y)`,
 the Hurewicz class of `f_* a` is the image of the Hurewicz class of `a` under

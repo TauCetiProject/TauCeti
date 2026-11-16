@@ -36,11 +36,8 @@ integrality from `x` to `y`.
   integrally closed in `K`, if `n • P = P'` and `P'` has integral `x`-coordinate, both
   coordinates of `P` are integral.
 
-## Roadmap
-
-New mathematics: `TauCetiRoadmap/EllipticCurves/README.md:821` — "**The torsion subgroup and
-Nagell–Lutz**", route "division polynomials" (`:830`–`:831`). This is the descent half of that
-route; it is a prerequisite of the roadmap's stated theorem rather than the theorem itself.
+This is the descent half of the division-polynomial proof of the Nagell–Lutz theorem; it is a
+prerequisite of that theorem rather than the theorem itself.
 
 ## Provenance
 
@@ -48,8 +45,7 @@ Ported from J. Xu and D. K. Angdinata's
 `projects/NagellLutz/LutzNagell/LutzNagellTheorem/PIDIntegralMultiple.lean` in AINTLIB
 (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, `main @ 1c1c74664e40071c2c2165bc55ca2616a67ccd6b`):
 `x_coord_nsmul_eq` (`:48`) and `isInteger_of_nsmul_isInteger` (`:93`). The file is byte-identical
-at `9fec8eba7652`, the revision the roadmap pins for this project (`README:1072`), verified by
-blob hash, so the citations hold at either.
+at `dev/modular-curves @ 9fec8eba7652`, verified by blob hash, so the citations hold at either.
 
 The source's intermediate `x_isInteger_of_nsmul_x_isInteger` (`:73`) is **not ported**: it is the
 composition of the coordinate identity above with the integral-root argument, and this repository

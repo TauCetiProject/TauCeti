@@ -12,6 +12,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.PairSubst
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Unit
 import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.ThirdPoint
+import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
 
 /-!
 # The chord group law over the fraction field of the series ring
@@ -247,8 +248,7 @@ private theorem subst_subst_formalInverse_eq_zero {σ' : Type*}
 
 /-! ### The parametrized point -/
 
-variable [IsDomain O]
-
+variable [IsDomain O] in
 /-- Over a domain the `w`-expansion at a nonzero parameter with vanishing constant coefficient is
 itself nonzero: it factors as `q ^ 3 * u(q)`, and `u` has constant coefficient `1`. -/
 private theorem subst_formalW_ne_zero {q : MvPowerSeries σ O} (hq : constantCoeff q = 0)
@@ -277,8 +277,10 @@ Every parametrized point of this file needs its `w`-coordinate invertible in `KK
 form `subst_formalW_ne_zero` is actually used in. -/
 theorem algebraMap_subst_formalW_ne_zero {q : MvPowerSeries σ O}
     (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
-    algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) ≠ 0 := fun h ↦
-  W.subst_formalW_ne_zero hq hq0
+    algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) ≠ 0 := fun h ↦ by
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
+  exact W.subst_formalW_ne_zero hq hq0
     (IsFractionRing.injective (MvPowerSeries σ O) KK (by rw [h, map_zero]))
 
 /-- The point of the base-changed curve carried by the parameter `q`: the solution `(q, w(q))` of
@@ -323,6 +325,8 @@ private theorem thetaPoint_add_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
           algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst Tp (formalW W))) /
         algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst Tp (formalW W))),
       W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = Affine.Point.some _ _ h₃ := by
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   classical
   set ρ := algebraMap (MvPowerSeries σ O) KK
   have hinj : Function.Injective ρ := IsFractionRing.injective (MvPowerSeries σ O) KK
@@ -379,7 +383,7 @@ private theorem thetaPoint_add_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
   have hns₁ := chord_point_nonsingular (fracCurve W σ KK) hwq₁ hw₁0 hΔ
   have hns₂ := chord_point_nonsingular (fracCurve W σ KK) hwq₂ hw₂0 hΔ
   obtain ⟨h₃, hadd⟩ := chord_point_add (fracCurve W σ KK) hwq₁ hwq₂ hslope hNint hT₃ hwTeq hA
-    hw₁0 hw₂0 hwT0 hxρ hns₁ hns₂
+    hwT0 hxρ hns₁ hns₂
   rw [W.thetaPoint_eq_some hΔ h₁ hq₁0 hns₁, W.thetaPoint_eq_some hΔ h₂ hq₂0 hns₂]
   exact ⟨h₃, hadd⟩
 
@@ -536,6 +540,8 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
     (hne₂ : q₁ ≠ PowerSeries.subst q₂ (formalInverse W)) :
     subst (pairSubstitution q₁ q₂)
       (formalIntercept W) ≠ 0 := by
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   classical
   intro h0
   set ρ := algebraMap (MvPowerSeries σ O) KK
@@ -585,6 +591,8 @@ private theorem thetaPoint_add_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     (hF0 : subst (pairSubstitution q₁ q₂)
       (formalAdd W) ≠ 0) :
     W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 := by
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   have hN := W.pair_intercept_ne_zero_of_ne hΔ h₁ h₂ hq₁0 hq₂0 hne₁ hne₂
   refine W.thetaPoint_add hΔ h₁ h₂ hq₁0 hq₂0 hN ?_ hF hF0
   rw [subst_pair_formalIntercept_mul_sub W h₁ h₂]
@@ -606,13 +614,14 @@ theorem thetaPoint_add_of_subst_separates (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     (hF : constantCoeff (subst (pairSubstitution q₁ q₂) (formalAdd W)) = 0)
     (hF0 : subst (pairSubstitution q₁ q₂)
       (formalAdd W) ≠ 0) :
-    W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 :=
-  W.thetaPoint_add_of_ne hΔ h₁ h₂ hq₁0 hq₂0 (ne_of_subst_eq_X_of_subst_eq_zero hg₁ hg₂)
+    W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 := by
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
+  exact W.thetaPoint_add_of_ne hΔ h₁ h₂ hq₁0 hq₂0 (ne_of_subst_eq_X_of_subst_eq_zero hg₁ hg₂)
     (ne_of_subst_eq_X_of_subst_eq_zero hg₁ (subst_subst_formalInverse_eq_zero W hg h₂ hg₂)) hF hF0
 
 /-! ### Associativity -/
 
-omit [IsDomain O] in
 /-- A curve with nonzero discriminant stays nonsingular over a fraction field of its series ring:
 `Δ` is carried there by the injective maps `C` and `algebraMap (MvPowerSeries σ O) KK`. -/
 theorem fracCurve_Δ_ne_zero (hΔ : W.Δ ≠ 0) : (fracCurve W σ KK).Δ ≠ 0 := by
@@ -635,6 +644,8 @@ private theorem subst_formalAdd_assoc_of_subst_separates (hΔ : (fracCurve W σ 
     (hg'2 : subst g' q₂ = PowerSeries.X) (hg'3 : subst g' q₃ = 0) :
     subst (pairSubstitution (subst (pairSubstitution q₁ q₂) (formalAdd W)) q₃) (formalAdd W) =
       subst (pairSubstitution q₁ (subst (pairSubstitution q₂ q₃) (formalAdd W))) (formalAdd W) := by
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   classical
   -- the two inner sums
   set F₁₂ := subst (pairSubstitution q₁ q₂) (formalAdd W)
@@ -707,7 +718,6 @@ private theorem assoc_formalAdd_universal :
     (hasSubst_coordSpecialize _) (constantCoeff_X _) (constantCoeff_X _) (constantCoeff_X _)
     h10 h20 h30 hχ1 hχ2 hχ3 hχ'2 hχ'3
 
-omit [IsDomain O] in
 /-- **Associativity of the chord addition series**, for every Weierstrass curve over every
 commutative ring: `F(F(t₁, t₂), t₃) = F(t₁, F(t₂, t₃))`.
 

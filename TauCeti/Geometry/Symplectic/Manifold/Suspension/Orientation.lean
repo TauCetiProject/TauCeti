@@ -110,8 +110,7 @@ theorem mfderiv_apply_almostComplex_eq_of_orbitTorus_comp_eq
     {e : TangentSpace I' c} (he : mfderiv I' (𝓘(ℝ).prod 𝓘(ℝ)) v c e = ((1 : ℝ), (0 : ℝ))) :
     mfderiv I' (𝓘(ℝ).prod 𝓘(ℝ)) v c (j c e) = ((0 : ℝ), (1 : ℝ)) := by
   subst hτv
-  have hτ : orbitTorus φ h = periodicTorus φ h :=
-    funext fun p ↦ by rw [orbitTorus_apply, periodicTorus_apply]
+  have hτ : orbitTorus φ h = periodicTorus φ h := (periodicTorus_eq_orbitTorus h).symm
   -- The differential of the orbit torus is `dτ (a, b) = a ∂_s + b T`.
   have hdτ (w : ℝ × ℝ) :
       mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ h) (v c) w =

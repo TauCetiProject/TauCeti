@@ -91,7 +91,7 @@ theorem parabolic_inf_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R)
     simp only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply] at hevalh
     rw [hc] at hevalh
     have hzero : ((conjugate A l g).ofConv h).coeff 0 = g.ofConv h := by
-      simpa only [e, AlgHom.restrictScalars_apply, laurentEval_C,
+      simpa only [e, AlgHom.restrictScalars_apply, AlgHom.apply_laurentPolynomial_C,
         Algebra.algebraMap_self, RingHom.id_apply] using hevalh
     rw [constPoint_apply]
     exact (hc h).trans (congrArg LaurentPolynomial.C hzero)

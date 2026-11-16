@@ -45,7 +45,6 @@ group is unchanged, while both its bilinear and quadratic forms are negated.
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layers 2 and 3.
 -/
 
 public section

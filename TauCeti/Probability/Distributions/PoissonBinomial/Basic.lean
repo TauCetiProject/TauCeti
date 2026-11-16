@@ -116,7 +116,7 @@ theorem poissonBinomialMeasure_apply (p : ι → unitInterval) (S : Set ℕ) :
     Set.indicator, Pi.one_apply]
   rw [Finset.sum_filter]
   apply Finset.sum_congr rfl
-  intro s hs
+  intro s _
   by_cases hcard : s.card ∈ S <;> simp [hcard]
 
 /-- The Poisson-binomial law is a probability measure. -/
@@ -164,7 +164,7 @@ theorem poissonBinomialMeasure_real_singleton (p : ι → unitInterval) (k : ℕ
   rw [measureReal_def, poissonBinomialMeasure_singleton]
   rw [ENNReal.toReal_sum]
   · simp only [ENNReal.coe_toReal]
-  · intro s hs
+  · intro s _
     simp
 
 open Classical in
@@ -220,7 +220,7 @@ theorem poissonBinomialMeasure_Iic_card (p : ι → unitInterval) :
   rw [Finset.filter_eq_self.2]
   · norm_cast
     exact sum_poissonBinomialWeight p
-  · intro s hs
+  · intro s _
     exact s.card_le_univ
 
 /-- The probability-generating function of a Poisson-binomial law is the product of the
@@ -252,7 +252,7 @@ theorem pgf_poissonBinomialMeasure (p : ι → unitInterval) (z : ℝ) :
         intro i
         simp only [unitInterval.coe_symm_eq]
         ring
-  · intro s hs
+  · intro s _
     exact (integrable_dirac (by simp)).smul_measure_nnreal
 
 end Probability
@@ -322,7 +322,7 @@ theorem map_sum_natCast_pi_bernoulliMeasure (p : ι → unitInterval) :
 theorem poissonBinomialMeasure_of_isEmpty [IsEmpty ι] (p : ι → unitInterval) :
     poissonBinomialMeasure p = Measure.dirac 0 := by
   apply measure_eq_of_pgf_eqOn
-  intro z hz
+  intro z _
   rw [pgf_poissonBinomialMeasure]
   simp [pgf_def]
 
@@ -331,7 +331,7 @@ theorem poissonBinomialMeasure_of_isEmpty [IsEmpty ι] (p : ι → unitInterval)
 theorem poissonBinomialMeasure_const (p : unitInterval) :
     poissonBinomialMeasure (fun _ : ι ↦ p) = binomial (Fintype.card ι) p := by
   apply measure_eq_of_pgf_eqOn
-  intro z hz
+  intro z _
   simp [pgf_poissonBinomialMeasure, pgf_binomial]
 
 /-- Adjoining one trial convolves the previous Poisson-binomial law with its Bernoulli law. -/

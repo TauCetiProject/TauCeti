@@ -69,11 +69,10 @@ every result below.
 
 ## References
 
-This is the "concluding by Weyl alternation" step of the Weyl character formula route fixed by
-Layer 6 ("the Weyl character, dimension, and Kostant formulas") of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`. As with `TauCeti.weylNumerator`
-and `TauCeti.weylDenominator`, nothing here needs a Lie algebra, so it is stated for an abstract
-root pairing and the Lie-algebra statement is a specialization rather than a rebuild.
+This is the Weyl-alternation step that concludes the proof of the Weyl character formula. As with
+`TauCeti.weylNumerator` and `TauCeti.weylDenominator`, nothing here needs a Lie algebra, so it is
+stated for an abstract root pairing and the Lie-algebra statement is a specialization rather than a
+rebuild.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. VI, §24.2.
 * J.-P. Serre, *Complex Semisimple Lie Algebras*, Ch. VII, §7.
@@ -221,7 +220,7 @@ variable [Invertible (2 : R)] [P.IsCrystallographic] [P.IsReduced]
 
 section Numerator
 
-variable [P.flip.IsReduced] [Fintype P.weylGroup]
+variable [Fintype P.weylGroup]
 
 /-- **The numerator of a weight of the open dot chamber vanishes at every other weight of that
 chamber**: the chamber meets each dot orbit at most once. -/
@@ -229,6 +228,7 @@ chamber**: the chamber meets each dot orbit at most once. -/
 theorem coeff_weylNumerator_eq_zero_of_mem_openDotDominantChamber {lam nu : M}
     (hlam : lam ∈ openDotDominantChamber P b) (hnu : nu ∈ openDotDominantChamber P b)
     (hne : lam ≠ nu) : (weylNumerator P b lam).coeff nu = 0 :=
+  have := P.flip_isReduced
   coeff_weylNumerator_eq_zero P b fun _ hw ↦
     hne (eq_of_dotAction_eq_of_mem_openDotDominantChamber P b hlam hnu hw).symm
 
@@ -283,7 +283,7 @@ end Determination
 
 section Basis
 
-variable [P.flip.IsReduced] [P.IsRootSystem] [Fintype P.weylGroup]
+variable [P.IsRootSystem] [Fintype P.weylGroup]
 
 open scoped Classical in
 /-- **An alternating element is the combination of the Weyl numerators of the weights of the open

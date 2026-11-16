@@ -264,7 +264,7 @@ theorem formalPoint_eq_some {I : Ideal O} (hI : IsAdic I) {t s : O} (ht : t ∈ 
   have hkey : s = W.formalWEval t := by
     refine W.eq_formalWEval_of_wEquation hI ht hs (FaithfulSMul.algebraMap_injective O K ?_)
     rw [W.algebraMap_wEquationRHS (B := K) t s, hT, hS]
-    exact W.wEquation_of_equation hns.left hy
+    exact W.wEquation_of_equation hns.left
   have ht0 : t ≠ 0 := by
     rintro rfl
     rw [W.formalWEval_zero] at hkey

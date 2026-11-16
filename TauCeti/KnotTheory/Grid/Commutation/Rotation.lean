@@ -31,9 +31,7 @@ sends these arcs to the reversed images of the corresponding arcs in the marking
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane
-G.5, "Invariance over 𝔽₂. Grid moves = commutation + (de)stabilization", where commutation maps
-are built from the row and column marking arcs. The orientation convention follows
+Commutation maps are built from the row and column marking arcs. The orientation convention follows
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 -/
 

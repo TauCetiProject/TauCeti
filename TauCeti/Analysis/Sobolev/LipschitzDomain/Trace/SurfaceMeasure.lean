@@ -85,7 +85,7 @@ theorem W1p.lipschitzChartTrace_comp_snd_ae_of_continuousOn (hp : p ≠ (∞ : �
       (normalGraphEmbedding phi ⁻¹' normalCylinder a b) := by
     rw [h.image_boundaryParametrization]
     exact hx.1
-  obtain ⟨y, hy, rfl⟩ := hximage
+  obtain ⟨y, _, rfl⟩ := hximage
   refine ⟨y, ?_, rfl⟩
   simpa only [bad, mem_ofPred_eq, e.apply_symm_apply, normalGraphEmbedding_snd] using hx.2
 

@@ -396,7 +396,7 @@ theorem doubleCoset_natDiagGL_eq_iUnion_rightCosets_of_prime (hp : p.Prime)
     | some b =>
       exact ⟨mapGL ℚ (ModularGroup.T ^ (b : ℤ)),
         Subgroup.mem_map_of_mem _ (T_zpow_mem_Gamma1 N _), by
-        rw [primeRep_some, natDiagGL_mul_mapGL_T_zpow hp.pos b]⟩
+        rw [primeRep_some, natDiagGL_mul_mapGL_T_zpow b]⟩
 
 /-- The decomposition of `doubleCoset_natDiagGL_eq_iUnion_rightCosets_of_prime`, read at the
 chosen representative `D.out` of `diagCosetGamma1 N p` — the shape the slash-sum machinery of

@@ -54,7 +54,7 @@ instance isIntegral_valuationSubring_baseChange {K L : Type*} [Field K] [Valuati
     [IsIntegral (valuation K).integer W] :
     IsIntegral (valuation L).valuationSubring (W.baseChange L) :=
   IsIntegral.baseChange (R := (valuation K).integer) (S := (valuation L).integer)
-    (RingHom.ext fun x ↦ TauCeti.coe_algebraMap_integerRing x) W
+    (RingHom.ext fun x ↦ Valuation.HasExtension.val_algebraMap (vA := valuation L) x) W
 
 section MaximalPrime
 

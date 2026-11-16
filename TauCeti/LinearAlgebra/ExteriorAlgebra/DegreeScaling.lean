@@ -93,7 +93,7 @@ theorem degreeScaling_of_mem_exteriorPower (r : Rˣ) {n : ℕ} {x : ExteriorAlge
   induction hx using Submodule.pow_induction_on_left' with
   | algebraMap s => rw [AlgEquiv.commutes, pow_zero, one_smul]
   | add x y i hx hy ihx ihy => rw [map_add, ihx, ihy, smul_add]
-  | mem_mul m hm i x hx ih =>
+  | mem_mul m hm i x _ ih =>
     obtain ⟨v, rfl⟩ := hm
     rw [map_mul, ih, degreeScaling_ι, smul_mul_smul_comm, pow_succ']
 

@@ -10,14 +10,14 @@ public import Mathlib.Topology.Order.ProjIcc
 /-!
 # Continuous extension from a closed interval
 
-A function continuous on a nonempty closed interval `[a, b]` of a linear order with the order
+A function continuous on a closed interval `[a, b]` of a linear order with the order
 topology agrees on `[a, b]` with a continuous function on the whole space: extend it by its
 endpoint values with `Set.IccExtend`. This extension also preserves right continuity within
 the interval, without requiring continuity beyond the right endpoint.
 
 ## Main results
 
-* `ContinuousOn.exists_continuous_eqOn_Icc`: a function continuous on `[a, b]`, with `a ≤ b`,
+* `ContinuousOn.exists_continuous_eqOn_Icc`: a function continuous on `[a, b]`
   agrees on `[a, b]` with a continuous function.
 * `TauCeti.continuousWithinAt_IccExtend_Ici`: constant extension preserves right continuity
   within the interval and is right-continuous outside `[a, b)` without further assumptions.
@@ -31,12 +31,15 @@ open scoped Topology
 variable {α β : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
   [TopologicalSpace β] {a b : α} {f : α → β}
 
-/-- A function continuous on a nonempty closed interval `[a, b]` agrees there with a continuous
-function, namely its extension `Set.IccExtend` by the endpoint values. -/
-theorem ContinuousOn.exists_continuous_eqOn_Icc (hf : ContinuousOn f (Icc a b)) (hab : a ≤ b) :
-    ∃ g : α → β, Continuous g ∧ EqOn g f (Icc a b) :=
-  ⟨IccExtend hab ((Icc a b).domRestrict f), hf.domRestrict.Icc_extend',
-    fun _ hx ↦ IccExtend_of_mem _ _ hx⟩
+/-- A function continuous on a closed interval `[a, b]` agrees there with a continuous
+function, namely its extension `Set.IccExtend` by the endpoint values (a constant when the
+interval is empty). -/
+theorem ContinuousOn.exists_continuous_eqOn_Icc (hf : ContinuousOn f (Icc a b)) :
+    ∃ g : α → β, Continuous g ∧ EqOn g f (Icc a b) := by
+  by_cases hab : a ≤ b
+  · exact ⟨IccExtend hab ((Icc a b).domRestrict f), hf.domRestrict.Icc_extend',
+      fun _ hx ↦ IccExtend_of_mem _ _ hx⟩
+  · exact ⟨fun _ ↦ f a, continuous_const, by simp [Icc_eq_empty hab]⟩
 
 /-- Constant extension is right-continuous wherever the original function is right-continuous
 within the interval. Outside `[a,b)` no continuity assumption is needed. -/

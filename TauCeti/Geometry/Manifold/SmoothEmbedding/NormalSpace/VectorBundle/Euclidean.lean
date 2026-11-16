@@ -99,7 +99,7 @@ instance instIsLinearOrthogonalNormalSpaceTrivialization
     (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E) (x₀ : M) :
     (f.orthogonalNormalSpaceTrivialization hn hdim x₀).IsLinear ℝ where
-  linear x hx := by
+  linear x _ := by
     constructor <;> intros <;>
       simp [normalBundleTrivialization_apply, normalBundleHomeomorphOrthogonal_apply]
 

@@ -27,9 +27,8 @@ points in `K`:
 `∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atTop (𝓝 p)`.
 
 This is the statement that makes the moduli spaces of the Morse complex — the trajectories running
-from one critical point to another — well defined objects at all, and it is where Lane M of the
-analytic Heegaard Floer roadmap turns the dynamical facts of
-`TauCeti/Analysis/Calculus/Morse/GradientFlow.lean` into the beginnings of a chain complex.
+from one critical point to another — well defined objects at all. It builds on the dynamical
+facts of `TauCeti/Analysis/Calculus/Morse/GradientFlow.lean`.
 
 Some hypothesis beyond compactness is needed to pin the limit down. For a merely smooth `f` a
 negative gradient trajectory can spiral forever towards a circle of critical points, its ω-limit
@@ -67,6 +66,8 @@ and a map into a compact set with a unique cluster point converges to it
   to `0`.
 * `IsIntegralCurveOn.gradient_eq_zero_of_mapClusterPt`: every point of the ω-limit set is
   a critical point.
+* `IsIntegralCurveOn.gradient_eq_zero_of_tendsto`: a convergent trajectory along which `f` is
+  bounded below ends at a critical point, wherever the gradient is continuous at the limit.
 * `IsIntegralCurveOn.exists_tendsto_atTop`: **a confined negative gradient trajectory
   converges to a critical point**, when the critical points in the confining compact set are
   finite in number.
@@ -81,8 +82,6 @@ and a map into a compact set with a unique cluster point converges to it
 * M. Audin, M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014, Chapter 2.
 * S. Łojasiewicz, *Ensembles semi-analytiques*, IHÉS, 1965, for the gradient inequality that
   replaces the finiteness hypothesis used here when `f` is analytic.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section
@@ -249,6 +248,39 @@ theorem gradient_eq_zero_of_mapClusterPt
   linarith [hmemx.2]
 
 /-! ### Convergence -/
+
+/-- **A convergent negative gradient trajectory ends at a critical point.** If a forward
+negative gradient trajectory converges to `p`, the gradient is continuous at `p`, and `f` stays
+bounded below along the trajectory, then `p` is a critical point of `f`: otherwise the speed
+would stay above `‖∇ f p‖ / 2` for all large times, and `f` would drop without bound. No
+compactness or finiteness of the critical locus is needed once the limit is known to exist. -/
+theorem gradient_eq_zero_of_tendsto {t₀ b : ℝ} {p : E}
+    (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Ici t₀))
+    (hf : ∀ t ∈ Ici t₀, DifferentiableAt ℝ f (γ t)) (hb : ∀ t ∈ Ici t₀, b ≤ f (γ t))
+    (hp : Tendsto γ atTop (𝓝 p)) (hgrad : ContinuousAt (∇ f) p) :
+    ∇ f p = 0 := by
+  by_contra hne
+  set δ := ‖∇ f p‖ / 2
+  have hδpos : 0 < δ := half_pos (norm_pos_iff.mpr hne)
+  obtain ⟨T₀, hT₀⟩ := eventually_atTop.mp ((eventually_ge_atTop t₀).and
+    (((hgrad.tendsto.comp hp).norm).eventually (lt_mem_nhds (half_lt_self
+      (norm_pos_iff.mpr hne)))))
+  have hT₀t₀ : t₀ ≤ T₀ := (hT₀ T₀ le_rfl).1
+  set T := T₀ + (f (γ T₀) - b) / δ ^ 2 + 1 with hT
+  have hTT₀ : T₀ ≤ T := by
+    have : 0 ≤ (f (γ T₀) - b) / δ ^ 2 :=
+      div_nonneg (sub_nonneg.mpr (hb T₀ hT₀t₀)) (sq_nonneg _)
+    linarith
+  have hdrop := mul_sq_le_sub_of_le_norm_gradient hTT₀ hγ
+    (fun t ht ↦ mem_Ici.mpr (hT₀t₀.trans ht.1)) (fun t ht ↦ hf t (hT₀t₀.trans ht.1)) hδpos.le
+    (fun t ht ↦ (hT₀ t ht.1).2.le)
+  have hlow := hb T (hT₀t₀.trans hTT₀)
+  have hkey : (T - T₀) * δ ^ 2 = f (γ T₀) - b + δ ^ 2 := by
+    rw [hT]
+    field_simp
+    ring
+  nlinarith [sq_pos_of_pos hδpos]
+
 
 /-- **A negative gradient trajectory that never leaves a compact set converges to a critical point
 of `f` in it**, provided `f` has only finitely many critical points there.

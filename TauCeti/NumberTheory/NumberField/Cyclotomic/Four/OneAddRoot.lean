@@ -41,9 +41,8 @@ open NumberField Ideal IsCyclotomicExtension.Rat
 namespace IsPrimitiveRoot
 
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
-  [HasEnoughRootsOfUnity (𝓞 K) 4] {ζ : K}
+  {ζ : K}
 
-omit [IsCyclotomicExtension {4} ℚ K] in
 private theorem symbol_one_add_pair (hζ : IsPrimitiveRoot ζ 4) (I : Ideal (𝓞 K))
     (hu : IsUnit (Ideal.Quotient.mk I (1 - hζ.toInteger))) :
     powerResidueSymbolIdeal I 4 (Ideal.Quotient.mk I (1 - hζ.toInteger)) ^ 3 *
@@ -138,7 +137,7 @@ private theorem symbol_one_add_inert (hζ : IsPrimitiveRoot ζ 4) {q : ℕ}
       Nat.mul_div_cancel_left _ (by decide : 0 < 4)]
   -- Raise the Frobenius identity to `(q + 1) / 4`, then uniquely lift the residue.
   rw [powerResidueSymbolIdeal_of_isMaximal]
-  refine (powerResidueSymbol_eq_iff ?_ (by simpa only [map_add, map_one] using hn)
+  refine (powerResidueSymbol_eq_iff ?_
     (by
       have hneg : (-hζ.toInteger) ^ 4 = 1 := by
         linear_combination hζ.toInteger_isPrimitiveRoot.pow_eq_one

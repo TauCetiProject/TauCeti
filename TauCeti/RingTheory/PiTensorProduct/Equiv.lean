@@ -8,7 +8,9 @@ module
 public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.RingTheory.PiTensorProduct
 public import Mathlib.RingTheory.TensorProduct.Basic
+public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.LinearAlgebra.PiTensorProduct.Option
+public import TauCeti.RingTheory.PiTensorProduct.FiberwiseMul
 import Mathlib.LinearAlgebra.PiTensorProduct.Finsupp
 
 /-!
@@ -24,10 +26,18 @@ These constructions upgrade Mathlib's `PiTensorProduct.reindex` and
 gives the action of `Equiv.Perm ι` on a tensor power by algebra automorphisms
 (`PiTensorProduct.permAlgEquiv`).
 
+Applying algebra equivalences factorwise gives `PiTensorProduct.congrAlgEquiv`, the algebra
+version of Mathlib's `PiTensorProduct.congr`.
+
 For finite index types, the tensor product of the split algebras `κ i → R` is the split algebra
 of functions on `Π i, κ i` (`PiTensorProduct.piScalarAlgEquiv`), built from Mathlib's
 `PiTensorProduct.ofFinsuppEquiv'`. On a tensor power of `κ → R`, permuting the factors becomes
 precomposition on functions on `ι → κ`.
+
+A finite tensor product of commutative algebras commutes with base change: for a commutative
+`R`-algebra `T`, `T ⊗[R] ⨂[R] i, A i ≃ₐ[T] ⨂[T] i, T ⊗[R] A i`
+(`PiTensorProduct.baseChangeAlgEquiv`), compatibly with permutations of the factors of a tensor
+power. Its inverse is built from the coproduct property `PiTensorProduct.productMap`.
 -/
 
 public section
@@ -67,6 +77,59 @@ theorem reindexAlgEquiv_symm_tprod {ι κ : Type*} (A : ι → Type*)
     (reindexAlgEquiv (R := R) A e).symm (tprod R (fun j ↦ a (e.symm j))) = tprod R a := by
   rw [AlgEquiv.symm_apply_eq, reindexAlgEquiv_tprod]
 
+/-- Reindexing along `e` moves the factor inclusion at `i` to the factor inclusion at `e i`. It is
+a pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite the factor inclusion first. -/
+@[simp↓]
+theorem reindexAlgEquiv_singleAlgHom {ι κ : Type*} [DecidableEq ι] [DecidableEq κ] {A : Type*}
+    [Semiring A] [Algebra R A] (e : ι ≃ κ) (i : ι) (a : A) :
+    reindexAlgEquiv (R := R) (fun _ ↦ A) e (singleAlgHom i a) = singleAlgHom (e i) a := by
+  rw [singleAlgHom_apply, singleAlgHom_apply, reindexAlgEquiv_tprod, MonoidHom.mulSingle_apply,
+    MonoidHom.mulSingle_apply]
+  have := Pi.mulSingle_comp_equiv e.symm i a
+  rw [Equiv.symm_symm] at this
+  exact congrArg (tprod R) this
+
+section Congr
+
+variable {ι : Type*} {A B : ι → Type*} [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
+  [∀ i, Semiring (B i)] [∀ i, Algebra R (B i)]
+
+/-- The tensor product of a family of algebra equivalences `A i ≃ₐ[R] B i`, as an algebra
+equivalence. This upgrades Mathlib's `PiTensorProduct.congr`. -/
+noncomputable def congrAlgEquiv (e : ∀ i, A i ≃ₐ[R] B i) : (⨂[R] i, A i) ≃ₐ[R] ⨂[R] i, B i :=
+  AlgEquiv.ofLinearEquiv (congr fun i ↦ (e i).toLinearEquiv)
+    (by simp [one_def, congr_tprod, Pi.one_def]) <|
+    LinearMap.map_mul_iff _ |>.mpr <| by
+      ext a b
+      simp [tprod_mul_tprod, congr_tprod, Pi.mul_def]
+
+/-- The underlying linear equivalence of `PiTensorProduct.congrAlgEquiv` is
+`PiTensorProduct.congr`. -/
+@[simp]
+theorem congrAlgEquiv_toLinearEquiv (e : ∀ i, A i ≃ₐ[R] B i) :
+    (congrAlgEquiv e).toLinearEquiv = congr fun i ↦ (e i).toLinearEquiv := (rfl)
+
+/-- `PiTensorProduct.congrAlgEquiv e` applies `e i` to the factor in slot `i` of a pure tensor. -/
+@[simp]
+theorem congrAlgEquiv_tprod (e : ∀ i, A i ≃ₐ[R] B i) (a : ∀ i, A i) :
+    congrAlgEquiv e (tprod R a) = tprod R fun i ↦ e i (a i) :=
+  congr_tprod _ a
+
+/-- `PiTensorProduct.congrAlgEquiv e` sends `a` in the slot `i` to `e i a` in the slot `i`. It is
+a pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite the factor inclusion first. -/
+@[simp↓]
+theorem congrAlgEquiv_singleAlgHom [DecidableEq ι] (e : ∀ i, A i ≃ₐ[R] B i) (i : ι) (a : A i) :
+    congrAlgEquiv e (singleAlgHom i a) = singleAlgHom i (e i a) := by
+  rw [singleAlgHom_apply, congrAlgEquiv_tprod, singleAlgHom_apply]
+  congr 1
+  ext j
+  by_cases h : j = i
+  · subst h
+    simp
+  · simp [MonoidHom.mulSingle_apply, Pi.mulSingle_eq_of_ne h]
+
+end Congr
+
 section Perm
 
 variable {ι : Type*} (A : Type*) [Semiring A] [Algebra R A]
@@ -99,13 +162,21 @@ theorem permAlgEquiv_tprod (σ : Equiv.Perm ι) (x : ι → A) :
     permAlgEquiv (R := R) A σ (tprod R x) = tprod R (x ∘ σ.symm) :=
   reindexAlgEquiv_tprod (fun _ ↦ A) σ x
 
-/-- A permutation `σ` moves the factor inclusion at `i` to the factor inclusion at `σ i`. It is
-a pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite the factor inclusion first. -/
+/-- A permutation `σ` moves the factor inclusion at `i` to the factor inclusion at `σ i`. -/
 @[simp↓]
 theorem permAlgEquiv_singleAlgHom [DecidableEq ι] (σ : Equiv.Perm ι) (i : ι) (a : A) :
-    permAlgEquiv (R := R) A σ (singleAlgHom i a) = singleAlgHom (σ i) a := by
-  rw [singleAlgHom_apply, singleAlgHom_apply, permAlgEquiv_tprod, MonoidHom.mulSingle_apply,
-    MonoidHom.mulSingle_apply, Pi.mulSingle_comp_equiv, Equiv.symm_symm]
+    permAlgEquiv (R := R) A σ (singleAlgHom i a) = singleAlgHom (σ i) a :=
+  reindexAlgEquiv_singleAlgHom σ i a
+
+/-- Permuting the factors of a tensor power commutes with applying the same algebra equivalence
+to every factor. -/
+theorem congrAlgEquiv_permAlgEquiv {B : Type*} [Semiring B] [Algebra R B] (e : A ≃ₐ[R] B)
+    (σ : Equiv.Perm ι) (x : ⨂[R] _ : ι, A) :
+    congrAlgEquiv (fun _ ↦ e) (permAlgEquiv A σ x) =
+      permAlgEquiv B σ (congrAlgEquiv (fun _ ↦ e) x) := by
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r x => simp [Function.comp_def]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end Perm
 
@@ -234,5 +305,76 @@ theorem piScalarAlgEquiv_permAlgEquiv {κ : Type*} [Finite κ] (σ : Equiv.Perm 
     simp only [map_add, Pi.add_apply, hx, hy]
 
 end PiScalar
+
+section BaseChange
+
+variable (T : Type*) [CommSemiring T] [Algebra R T] {ι : Type*} [Fintype ι] [DecidableEq ι]
+  (A : ι → Type*) [∀ i, CommSemiring (A i)] [∀ i, Algebra R (A i)]
+
+/-- Base change of a finite tensor product of commutative algebras: for a commutative
+`R`-algebra `T`, the `T`-algebra `T ⊗[R] ⨂[R] i, A i` is the tensor product over `T` of the base
+changes `T ⊗[R] A i`. It sends `t ⊗ ⨂ₜ aᵢ` to `t • ⨂ₜ (1 ⊗ aᵢ)`
+(`PiTensorProduct.baseChangeAlgEquiv_tmul_tprod`). -/
+noncomputable def baseChangeAlgEquiv : T ⊗[R] (⨂[R] i, A i) ≃ₐ[T] ⨂[T] i, T ⊗[R] A i :=
+  AlgEquiv.ofAlgHom
+    (Algebra.TensorProduct.lift (Algebra.ofId T _)
+      (productMap fun i ↦ ((singleAlgHom (R := T) (A := fun i ↦ T ⊗[R] A i) i).restrictScalars
+        R).comp Algebra.TensorProduct.includeRight) fun _ _ ↦ .all _ _)
+    (productMap fun i ↦ Algebra.TensorProduct.map (AlgHom.id T T) (singleAlgHom i))
+    (algHom_ext fun i ↦ Algebra.TensorProduct.ext' fun t a ↦ by
+      simp only [AlgHom.comp_apply, productMap_singleAlgHom, Algebra.TensorProduct.map_tmul,
+        AlgHom.id_apply, Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply,
+        AlgHom.restrictScalars_apply, Algebra.TensorProduct.includeRight_apply]
+      -- `t ⊗ a = t • (1 ⊗ a)` returns to the slot `i` it came from.
+      rw [← Algebra.smul_def, ← map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one])
+    (Algebra.TensorProduct.ext (Subsingleton.elim _ _) (algHom_ext fun i ↦ AlgHom.ext fun a ↦ by
+      simp [-singleAlgHom_apply, Algebra.TensorProduct.lift_tmul]))
+
+variable {T A}
+
+/-- `PiTensorProduct.baseChangeAlgEquiv` sends `t ⊗ ⨂ₜ aᵢ` to `t • ⨂ₜ (1 ⊗ aᵢ)`. -/
+@[simp]
+theorem baseChangeAlgEquiv_tmul_tprod (t : T) (a : ∀ i, A i) :
+    baseChangeAlgEquiv T A (t ⊗ₜ tprod R a) = t • tprod T fun i ↦ (1 : T) ⊗ₜ[R] a i := by
+  rw [baseChangeAlgEquiv, AlgEquiv.ofAlgHom_apply, Algebra.TensorProduct.lift_tmul,
+    productMap_tprod, Algebra.ofId_apply, ← Algebra.smul_def, tprod_eq_prod_singleAlgHom (R := T)]
+  rfl
+
+/-- `PiTensorProduct.baseChangeAlgEquiv` sends `1 ⊗ a`, for `a` in the slot `i`, to `1 ⊗ a` in
+the slot `i`. It is a pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite the factor
+inclusion first. -/
+@[simp↓]
+theorem baseChangeAlgEquiv_one_tmul_singleAlgHom (i : ι) (a : A i) :
+    baseChangeAlgEquiv T A (1 ⊗ₜ[R] singleAlgHom i a) = singleAlgHom i ((1 : T) ⊗ₜ[R] a) := by
+  rw [baseChangeAlgEquiv, AlgEquiv.ofAlgHom_apply, Algebra.TensorProduct.lift_tmul, map_one,
+    one_mul, productMap_singleAlgHom]
+  rfl
+
+/-- The inverse of `PiTensorProduct.baseChangeAlgEquiv` sends `t ⊗ a` in the slot `i` to
+`t ⊗ a`, with `a` in the slot `i`. It is a pre-simp lemma since `singleAlgHom_apply` would
+otherwise rewrite the factor inclusion first. -/
+@[simp↓]
+theorem baseChangeAlgEquiv_symm_singleAlgHom (i : ι) (t : T) (a : A i) :
+    (baseChangeAlgEquiv T A).symm (singleAlgHom (A := fun i ↦ T ⊗[R] A i) i (t ⊗ₜ[R] a)) =
+      t ⊗ₜ[R] singleAlgHom i a := by
+  rw [baseChangeAlgEquiv, AlgEquiv.ofAlgHom_symm_apply, productMap_singleAlgHom,
+    Algebra.TensorProduct.map_tmul, AlgHom.id_apply]
+
+/-- Base change of tensor powers commutes with permuting the factors: on
+`T ⊗[R] ⨂[R] _ : ι, B` a permutation `σ` acts through the right factor. -/
+theorem baseChangeAlgEquiv_map_permAlgEquiv {B : Type*} [CommSemiring B] [Algebra R B]
+    (σ : Equiv.Perm ι) (x : T ⊗[R] (⨂[R] _ : ι, B)) :
+    baseChangeAlgEquiv T (fun _ ↦ B)
+        (Algebra.TensorProduct.map (AlgHom.id T T) (permAlgEquiv B σ).toAlgHom x) =
+      permAlgEquiv (T ⊗[R] B) σ (baseChangeAlgEquiv T (fun _ ↦ B) x) := by
+  suffices h : (baseChangeAlgEquiv (R := R) T fun _ : ι ↦ B).toAlgHom.comp
+      (Algebra.TensorProduct.map (AlgHom.id T T) (permAlgEquiv B σ).toAlgHom) =
+      (permAlgEquiv (T ⊗[R] B) σ).toAlgHom.comp (baseChangeAlgEquiv T fun _ ↦ B).toAlgHom from
+    DFunLike.congr_fun h x
+  refine Algebra.TensorProduct.ext (Subsingleton.elim _ _)
+    (algHom_ext fun i ↦ AlgHom.ext fun b ↦ ?_)
+  simp [-singleAlgHom_apply]
+
+end BaseChange
 
 end PiTensorProduct

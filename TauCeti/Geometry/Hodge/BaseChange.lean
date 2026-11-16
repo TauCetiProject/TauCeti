@@ -75,16 +75,6 @@ therefore determined by its values on rational vectors. The equivalence
 construction manipulates the concrete
 tensor product `ℂ ⊗[ℚ] Vℚ` as data, as the complexification of a rational subspace does. On purely
 rational vectors the two agree, by `rationalToComplexLinearEquiv_one_tmul`.
-
-## References
-
-The signatures are adapted from the proposed definitions in
-[`HodgeStructures/Suggested.lean`](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/HodgeStructures/Suggested.lean),
-whose definitive mathematical specification is the accompanying Hodge structures roadmap. In
-particular the statements of `latticeConj_rationalToComplexLinearEquiv_one_tmul` and
-`rationalToComplexSubmodule_conj` are that file's `rationalToComplexLinearEquiv_one_tmul_fixed` and
-`rationalToComplexSubmodule_conj`; the proofs given here are different, being run against the
-abstract base-change interface rather than the concrete tensor model.
 -/
 
 public section

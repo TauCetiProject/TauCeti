@@ -125,6 +125,12 @@ theorem coeFn_algebraMap (c : 𝕜) :
   filter_upwards [coeFn_smul c (1 : Lp R ∞ μ), coeFn_one (E := R) (μ := μ)] with x h₁ h₂
   simp [h₁, h₂, Algebra.algebraMap_eq_smul_one]
 
+/-- The scalar embedding into L∞ is the class of the corresponding constant function. -/
+theorem algebraMap_eq_const [IsFiniteMeasure μ] (c : 𝕜) :
+    algebraMap 𝕜 (Lp R ∞ μ) c = Lp.const ∞ μ (algebraMap 𝕜 R c) := by
+  ext
+  exact (coeFn_algebraMap c).trans (coeFn_const ∞ μ (algebraMap 𝕜 R c)).symm
+
 instance inftyNormedAlgebra : NormedAlgebra 𝕜 (Lp R ∞ μ) where
   norm_smul_le := norm_smul_le
 

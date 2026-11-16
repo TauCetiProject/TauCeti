@@ -83,10 +83,6 @@ theorem one_lt_valuation_xCoord_add (P : TauCeti.Place F K) {Q₁ Q₂ : (W⁄K)
     ((algebraMap F (u.adicCompletion K)).codRestrict _ hF).toAlgebra
   have : IsScalarTower F (u.adicCompletionIntegers K) (u.adicCompletion K) :=
     IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  have : IsLinearTopology (u.adicCompletionIntegers K) (u.adicCompletionIntegers K) :=
-    u.isAdic_maximalIdeal_adicCompletionIntegers (K := K) ▸ Ideal.isLinearTopology _
-  have : Fact (IsAdic (IsLocalRing.maximalIdeal (u.adicCompletionIntegers K))) :=
-    ⟨u.isAdic_maximalIdeal_adicCompletionIntegers (K := K)⟩
   -- The model over the integers of the completion; its base change back to the completion is `W`
   -- over the completion.
   set C : WeierstrassCurve (u.adicCompletionIntegers K) := W⁄(u.adicCompletionIntegers K)

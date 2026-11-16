@@ -34,26 +34,25 @@ rationalization construction.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §25.2.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 
-This is the generic-fibre step for the Chevalley integral form used in Layer 9 of the
-`ReductiveGroups` roadmap. That pinned Chevalley--Demazure construction is consumed by milestone
-L0 of the `CFSGStatement` roadmap.
+This is the generic-fibre step for the Chevalley integral form used in the pinned
+Chevalley--Demazure construction.
 -/
 
 public section
 
 open scoped TensorProduct
 
-namespace TauCeti
+namespace LieSubalgebra
 
 section
 
 universe u v w
 
 variable {R : Type u} {K : Type v} {L : Type w}
-  [CommRing R] [IsDomain R] [Field K] [Algebra R K] [IsFractionRing R K]
+  [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
   [LieRing L] [LieAlgebra R L] [LieAlgebra K L] [IsScalarTower R K L]
 
-private theorem _root_.LieSubalgebra.rationalizationEquiv_map_lie (M : LieSubalgebra R L)
+private theorem rationalizationEquiv_map_lie (M : LieSubalgebra R L)
     [Module.Free R M] [M.toSubmodule.IsLattice K] (x y : K ⊗[R] M) :
     Submodule.rationalizationEquiv M.toSubmodule ⁅x, y⁆ =
       ⁅Submodule.rationalizationEquiv M.toSubmodule x,
@@ -79,7 +78,7 @@ equivalence.
 
 The underlying linear equivalence is `Submodule.rationalizationEquiv`. The bracket on its
 source is Mathlib's scalar-extension bracket on `K ⊗[R] M`. -/
-noncomputable def _root_.LieSubalgebra.rationalizationEquiv (M : LieSubalgebra R L)
+noncomputable def rationalizationEquiv (M : LieSubalgebra R L)
     [Module.Free R M] [M.toSubmodule.IsLattice K] :
     K ⊗[R] M ≃ₗ⁅K⁆ L where
   __ := Submodule.rationalizationEquiv M.toSubmodule
@@ -94,18 +93,18 @@ noncomputable def _root_.LieSubalgebra.rationalizationEquiv (M : LieSubalgebra R
 /-- Rationalization sends a pure tensor to scalar multiplication of the embedded integral
 element. -/
 @[simp]
-theorem _root_.LieSubalgebra.rationalizationEquiv_tmul (M : LieSubalgebra R L)
+theorem rationalizationEquiv_tmul (M : LieSubalgebra R L)
     [Module.Free R M] [M.toSubmodule.IsLattice K] (q : K) (x : M) :
     LieSubalgebra.rationalizationEquiv M (q ⊗ₜ[R] x) = q • (x : L) :=
   Submodule.rationalizationEquiv_tmul M.toSubmodule q x
 
 /-- The inverse rationalization sends an embedded integral element to its unit pure tensor. -/
 @[simp]
-theorem _root_.LieSubalgebra.rationalizationEquiv_symm_coe (M : LieSubalgebra R L)
+theorem rationalizationEquiv_symm_coe (M : LieSubalgebra R L)
     [Module.Free R M] [M.toSubmodule.IsLattice K] (x : M) :
     (LieSubalgebra.rationalizationEquiv M).symm (x : L) = 1 ⊗ₜ[R] x :=
   Submodule.rationalizationEquiv_symm_coe M.toSubmodule x
 
 end
 
-end TauCeti
+end LieSubalgebra

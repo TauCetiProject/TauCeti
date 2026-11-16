@@ -18,6 +18,8 @@ to the tensor square of the ambient algebra, together with its range and basic m
 ## Main definitions and results
 
 * `Subring.tensorSquareMap`: the canonical map from the integral tensor square.
+* `Subring.tensorSquareMap_injective_of_flat`: the canonical map is injective when the subring is
+  flat over `ℤ` and the base ring acts compatibly on the integral tensor square.
 * `Subring.tensorSquareMap_injective`: over a rational algebra, the canonical map is
   injective.
 * `Subring.tensorSquareRange`: the range of the canonical map.
@@ -56,61 +58,38 @@ theorem _root_.Subring.tensorSquareMap_tmul (S : Subring A) (x y : S) :
     Subring.tensorSquareMap R S (x ⊗ₜ[ℤ] y) = (x : A) ⊗ₜ[R] (y : A) := by
   simp [Subring.tensorSquareMap]
 
+/-- If a subring `S` of an `R`-algebra `A` is flat over `ℤ`, and `R`-scalars can be moved across
+`A ⊗[ℤ] A`, then the canonical map from the integral tensor square of `S` to `A ⊗[R] A` is
+injective. The second condition holds when `R` is `ℤ` or `ℚ`, and for a localization of `ℤ` by
+`IsLocalization.tensorProduct_compatibleSMul`. -/
+-- Composing with the canonical map `A ⊗[R] A → A ⊗[ℤ] A` gives the tensor square of the
+-- inclusion of `S`, which is injective because `S` is flat over the domain `ℤ`.
+theorem _root_.Subring.tensorSquareMap_injective_of_flat {R : Type u} [CommRing R] [Algebra R A]
+    [TensorProduct.CompatibleSMul ℤ R A A] (S : Subring A) [Module.Flat ℤ S] :
+    Function.Injective (Subring.tensorSquareMap R S) := by
+  let f : S →ₗ[ℤ] A := S.subtype.toIntAlgHom.toLinearMap
+  have hcomp : TensorProduct.mapOfCompatibleSMul ℤ R ℤ A A ∘ₗ
+      (Subring.tensorSquareMap R S).toLinearMap = TensorProduct.map f f :=
+    TensorProduct.ext' fun x y => by simp [f]
+  refine .of_comp (f := TensorProduct.mapOfCompatibleSMul ℤ R ℤ A A) ?_
+  rw [← AlgHom.coe_toLinearMap, ← LinearMap.coe_comp, hcomp]
+  exact TensorProduct.map_injective_of_flat_flat_of_isDomain f f
+    S.subtype_injective S.subtype_injective
+
 section Rational
 
 variable {A : Type v} [Ring A] [Algebra ℚ A]
 
--- Since the two factors are rational vector spaces, imposing rational balancing on their integer
--- tensor product adds no relations. Mathlib proves this as the compatibility of the two scalar
--- actions; naming the resulting equivalence keeps that implementation out of the injectivity
--- argument below.
-private noncomputable def _root_.Subring.intTensorToRatTensor : A ⊗[ℤ] A ≃ₐ[ℚ] A ⊗[ℚ] A :=
-  (Algebra.TensorProduct.equivOfCompatibleSMul ℤ ℚ ℚ A A).symm
-
-@[simp]
-private theorem _root_.Subring.intTensorToRatTensor_tmul (x y : A) :
-    Subring.intTensorToRatTensor (A := A) (x ⊗ₜ[ℤ] y) = x ⊗ₜ[ℚ] y := by
-  rw [Subring.intTensorToRatTensor, AlgEquiv.symm_apply_eq]
-  exact (Algebra.TensorProduct.mapOfCompatibleSMul_tmul
-    (R := ℤ) (S := ℚ) (T := ℚ) (A := A) (B := A) x y).symm
-
-private theorem _root_.Subring.tensorSquareMap_eq_intTensorToRatTensor (S : Subring A) :
-    Subring.tensorSquareMap ℚ S =
-      ((Subring.intTensorToRatTensor (A := A)).toAlgHom.restrictScalars ℤ).comp
-        (Algebra.TensorProduct.map (R := ℤ) (S := ℤ)
-          S.subtype.toIntAlgHom S.subtype.toIntAlgHom) := by
-  ext x <;> simp
-
 /-- The canonical map from the integer tensor square of a subring of a rational algebra to the
 rational tensor square of the ambient algebra is injective. -/
 -- The subring is torsion-free as an abelian group because it embeds in a rational vector space,
--- hence flat over `ℤ`. Therefore tensoring its inclusion with itself is injective. The target
--- of that map is initially `A ⊗[ℤ] A`; the canonical equivalence `A ⊗[ℤ] A ≃ A ⊗[ℚ] A` then
--- gives the stated map.
+-- hence flat over `ℤ`.
 theorem _root_.Subring.tensorSquareMap_injective (S : Subring A) :
     Function.Injective (Subring.tensorSquareMap ℚ S) := by
-  let : HasUniqueDiv A := .of_module_rat A
-  let : HasUniqueDiv S :=
+  have : HasUniqueDiv A := .of_module_rat A
+  have : HasUniqueDiv S :=
     Function.Injective.hasUniqueDiv S.subtype.toAddMonoidHom S.subtype_injective
-  let : Module.Flat ℤ S := inferInstance
-  let f : S →ₗ[ℤ] A := S.subtype.toIntAlgHom.toLinearMap
-  have hinjective : Function.Injective (TensorProduct.map f f) :=
-    TensorProduct.map_injective_of_flat_flat_of_isDomain
-      (R := ℤ) f f S.subtype_injective S.subtype_injective
-  intro x y hxy
-  apply hinjective
-  have hmap :
-      Algebra.TensorProduct.map (R := ℤ) (S := ℤ)
-        S.subtype.toIntAlgHom S.subtype.toIntAlgHom x =
-      Algebra.TensorProduct.map (R := ℤ) (S := ℤ)
-        S.subtype.toIntAlgHom S.subtype.toIntAlgHom y := by
-    apply (Subring.intTensorToRatTensor (A := A)).injective
-    rw [Subring.tensorSquareMap_eq_intTensorToRatTensor] at hxy
-    exact hxy
-  rw [← AlgHom.toLinearMap_apply, ← AlgHom.toLinearMap_apply,
-      Algebra.TensorProduct.toLinearMap_map,
-      TensorProduct.AlgebraTensorModule.map_eq] at hmap
-  exact hmap
+  exact S.tensorSquareMap_injective_of_flat
 
 end Rational
 

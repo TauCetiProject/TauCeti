@@ -62,6 +62,8 @@ injective on sections, and functorial in the divisor.
   their values outside a closed discrete set.
 * `TauCeti.RiemannSurface.divisorSheafMapOfLE_app_injective`, `divisorSheafMapOfLE_refl` and
   `divisorSheafMapOfLE_comp`: the inclusions are injective and functorial.
+* `TauCeti.RiemannSurface.finrank_divisorSheaf_zero`: `h⁰(0) = 1` on a compact connected
+  Riemann surface.
 
 ## References
 
@@ -131,7 +133,7 @@ theorem add (hf : IsDivisorSectionAt D f x) (hg : IsDivisorSectionAt D g x) :
     IsDivisorSectionAt D (f + g) x where
   meromorphicAt := hf.meromorphicAt.add hg.meromorphicAt
   neg_le_meromorphicOrderAt := (le_min hf.neg_le_meromorphicOrderAt
-    hg.neg_le_meromorphicOrderAt).trans (meromorphicOrderAt_add hf.meromorphicAt hg.meromorphicAt)
+    hg.neg_le_meromorphicOrderAt).trans (meromorphicOrderAt_add hg.meromorphicAt)
   contMDiffAt hD := (hf.contMDiffAt hD).add (hg.contMDiffAt hD)
   apply_eq_zero hD := by simp [hf.apply_eq_zero hD, hg.apply_eq_zero hD]
 
@@ -181,7 +183,7 @@ theorem isDivisorSectionAt_iff_of_eq_zero {D : WeilDivisor X} {f : X → ℂ} {x
   exact
   { meromorphicAt := meromorphicAt_of_eventually_mdifferentiableAt hev
     neg_le_meromorphicOrderAt := by
-      simpa [hD] using meromorphicOrderAt_nonneg_of_eventually_mdifferentiableAt hev
+      simpa [hD] using meromorphicOrderAt_nonneg_of_continuousAt hf.continuousAt
     contMDiffAt := fun _ ↦ hf
     apply_eq_zero := fun h ↦ absurd hD h.ne' }
 
@@ -521,6 +523,15 @@ theorem divisorSheafZeroIso_inv_app_apply (U : Opens X)
     (no_index (divisorSheafSectionsEquiv 0 U ((divisorSheafZeroIso X).inv.hom.app (op U) s))).1 =
       s :=
   (rfl)
+
+/-- **`h⁰(0) = 1`.** On a compact connected Riemann surface the global sections of `𝒪_0` form a
+one-dimensional complex vector space. -/
+@[simp]
+theorem finrank_divisorSheaf_zero [CompactSpace X] [ConnectedSpace X] :
+    Module.finrank ℂ ((divisorSheaf (0 : WeilDivisor X)).obj.obj (op ⊤)) = 1 :=
+  (((sheafToPresheaf _ _).mapIso (divisorSheafZeroIso X)).app
+    (op ⊤)).toLinearEquiv.finrank_eq.trans
+      (holomorphicStructureSheafModules.finrank_globalSections 𝓘(ℂ) X)
 
 end Zero
 

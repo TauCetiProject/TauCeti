@@ -68,8 +68,7 @@ means here.
 
 The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters
 4--6*, Plate V, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section
-12.1. This is the `E₆` branch of the target "a named datum per valid type" in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.
+12.1.
 -/
 
 public section
@@ -548,7 +547,8 @@ private lemma linearIndepOn_e6Root :
   have hcomp : e6Root ∘ e6SimpleIndex = fun i => CartanMatrix.E 6 i :=
     funext root_e6SimpleIndex
   rw [hcomp]
-  exact Matrix.linearIndependent_rows_of_det_ne_zero (by rw [CartanMatrix.E₆_det]; norm_num)
+  exact Matrix.linearIndependent_rows_of_det_ne_zero (A := CartanMatrix.E 6)
+    (by rw [CartanMatrix.E₆_det]; norm_num)
 
 private lemma linearIndepOn_e6Coroot :
     LinearIndepOn ℤ e6Coroot (e6SimpleSupport : Set (Fin 72)) := by

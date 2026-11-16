@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 /-!
 # Relative Maslov index of paths of totally real subspaces
 
-In a finite-dimensional complex normed space, for two paths `Λ`, `Γ` of maximal totally real
+In a complex normed space, for two paths `Λ`, `Γ` of maximal totally real
 subspaces with the same endpoints, the Maslov phases `t ↦ ρ(Γ t, Λ t)` form a loop in the circle
 based at `1`. Its degree is the **relative Maslov index** `μ(Λ, Γ)`, an integer measuring the
 relative homotopy class detected by the Maslov phases; the crossing-form index for a single path
@@ -39,10 +39,12 @@ The relative index has the formal properties of the Robbin--Salamon Maslov index
 
 The paths are given, like loops, by continuous frames of complex-linear automorphisms acting on
 one maximal totally real subspace; reversal (`TauCeti.TotallyRealPath.symm`), catenation
-(`TauCeti.TotallyRealPath.trans`) and the pointwise image under a path of automorphisms
+(`TauCeti.TotallyRealPath.trans`), restriction to a segment of times
+(`TauCeti.TotallyRealPath.subpath`) and the pointwise image under a path of automorphisms
 (`TauCeti.TotallyRealPath.map`) are constructed on such frames. These basic path constructions
-are defined for complex seminormed spaces; the Maslov phase and index theory below uses
-finite-dimensional complex normed spaces.
+are defined for complex seminormed spaces; the Maslov phase and index theory below is for complex
+normed spaces. In an infinite-dimensional space every Maslov phase is `1` and every Maslov index
+vanishes (`TauCeti.TotallyRealPath.relativeMaslovIndex_of_not_finite`).
 
 The Maslov phase and its loop degree follow McDuff--Salamon, *J-holomorphic Curves and Symplectic
 Topology*, 2nd ed., Appendix C.3. The relative path viewpoint and the naturality, catenation,
@@ -52,8 +54,10 @@ homotopy and direct-sum properties are those of the Robbin--Salamon Maslov index
 
 * `TauCeti.TotallyRealPath`: paths of maximal totally real subspaces.
 * `TauCeti.TotallyRealPath.symm`, `TauCeti.TotallyRealPath.trans`: reversal and catenation.
+* `TauCeti.TotallyRealPath.subpath`: the restriction of a path to the segment between two times.
 * `TauCeti.TotallyRealPath.map`: the pointwise image under a path of automorphisms.
 * `TauCeti.TotallyRealLoop.toTotallyRealPath`: a loop, read as a path.
+* `TauCeti.TotallyRealPath.toTotallyRealLoop`: a path with equal endpoints, read as a loop.
 * `TauCeti.TotallyRealPath.relativeMaslovPhasePath`: the loop `t ↦ ρ(Γ t, Λ t)`.
 * `TauCeti.TotallyRealPath.relativeMaslovIndex`: its degree.
 * `TauCeti.TotallyRealPath.relativeMaslovIndex_eq_degree`: the relative index is the degree of
@@ -132,7 +136,7 @@ noncomputable def trans (Λ Γ : TotallyRealPath E) (h : Λ 1 = Γ 0) : TotallyR
     else Γ ⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 ht).le, t.2.2⟩⟩
   exists_frame := by
     obtain ⟨L₀, hL₀, A, hAc, hA⟩ := Λ.exists_frame
-    obtain ⟨L₁, hL₁, B, hBc, hB⟩ := Γ.exists_frame
+    obtain ⟨L₁, _, B, hBc, hB⟩ := Γ.exists_frame
     -- After `Λ`, follow the frame `C s = B s ∘ (B 0)⁻¹ ∘ A 1`, which starts at `A 1` and carries
     -- `L₀` along `Γ`.
     let C (s : I) : E ≃L[ℂ] E := (A 1).trans ((B 0).symm.trans (B s))
@@ -194,6 +198,29 @@ theorem trans_one (Λ Γ : TotallyRealPath E) (h : Λ 1 = Γ 0) : Λ.trans Γ h 
     ext
     norm_num
 
+/-- The restriction of a path of maximal totally real subspaces to the segment from time `a` to
+time `b`, reparametrized by `[0, 1]`: `t ↦ Λ ((1 - t) a + t b)`. -/
+def subpath (Λ : TotallyRealPath E) (a b : I) : TotallyRealPath E where
+  toFun t := Λ (Set.Icc.convexComb a b t)
+  exists_frame := by
+    obtain ⟨L₀, hL₀, A, hAc, hA⟩ := Λ.exists_frame
+    exact ⟨L₀, hL₀, fun t => A (Set.Icc.convexComb a b t),
+      hAc.comp (Set.Icc.continuous_convexComb a b), fun t => hA (Set.Icc.convexComb a b t)⟩
+
+theorem subpath_apply (Λ : TotallyRealPath E) (a b t : I) :
+    Λ.subpath a b t = Λ (Set.Icc.convexComb a b t) :=
+  (rfl)
+
+/-- The restriction of a path to `[a, b]` starts at `Λ a`. -/
+@[simp]
+theorem subpath_zero (Λ : TotallyRealPath E) (a b : I) : Λ.subpath a b 0 = Λ a :=
+  congrArg Λ (Set.Icc.convexComb_zero a b)
+
+/-- The restriction of a path to `[a, b]` ends at `Λ b`. -/
+@[simp]
+theorem subpath_one (Λ : TotallyRealPath E) (a b : I) : Λ.subpath a b 1 = Λ b :=
+  congrArg Λ (Set.Icc.convexComb_one a b)
+
 /-- The pointwise image `t ↦ B t (Λ t)` of a path of maximal totally real subspaces under a
 continuous path `B` of complex-linear automorphisms. -/
 noncomputable def map (Λ : TotallyRealPath E) (B : I → E ≃L[ℂ] E)
@@ -213,7 +240,7 @@ end
 
 namespace TotallyRealPath
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- The Maslov phase along a path, relative to a fixed maximal totally real subspace, is
 continuous. -/
@@ -299,6 +326,13 @@ theorem relativeMaslovIndex_self (Λ : TotallyRealPath E) :
     relativeMaslovIndex Λ Λ rfl rfl = 0 := by
   rw [relativeMaslovIndex_eq_degree Λ Λ rfl rfl (Path.refl 1) fun t => by simp]
   exact Circle.degree_refl _
+
+/-- In an infinite-dimensional space every relative Maslov index is `0`. -/
+@[simp]
+theorem relativeMaslovIndex_of_not_finite (h : ¬ Module.Finite ℂ E) (Λ Γ : TotallyRealPath E)
+    (h₀ : Λ 0 = Γ 0) (h₁ : Λ 1 = Γ 1) : relativeMaslovIndex Λ Γ h₀ h₁ = 0 :=
+  (relativeMaslovIndex_eq_degree Λ Γ h₀ h₁ (Path.refl 1)
+    fun t ↦ by simp [h]).trans (Circle.degree_refl _)
 
 /-- **Antisymmetry of the relative Maslov index:** `μ(Γ, Λ) = -μ(Λ, Γ)`. -/
 theorem relativeMaslovIndex_swap (Λ Γ : TotallyRealPath E)
@@ -461,7 +495,39 @@ theorem toTotallyRealPath_apply (Λ : TotallyRealLoop E) (t : I) : Λ.toTotallyR
 
 end
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+end TotallyRealLoop
+
+namespace TotallyRealPath
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- A path of maximal totally real subspaces whose endpoints agree, read as a loop. -/
+def toTotallyRealLoop (Λ : TotallyRealPath E) (h : Λ 0 = Λ 1) : TotallyRealLoop E :=
+  ⟨Λ.toFun, Λ.exists_frame, h⟩
+
+@[simp]
+theorem toTotallyRealLoop_apply (Λ : TotallyRealPath E) (h : Λ 0 = Λ 1) (t : I) :
+    Λ.toTotallyRealLoop h t = Λ t :=
+  (rfl)
+
+/-- Reading a loop as a path and back gives the loop. -/
+@[simp]
+theorem _root_.TauCeti.TotallyRealLoop.toTotallyRealPath_toTotallyRealLoop
+    (Λ : TotallyRealLoop E) :
+    Λ.toTotallyRealPath.toTotallyRealLoop (by simpa using Λ.toFun_zero_eq_toFun_one) = Λ :=
+  TotallyRealLoop.ext fun t => by simp
+
+/-- Reading a closed path as a loop and back gives the path. -/
+@[simp]
+theorem toTotallyRealLoop_toTotallyRealPath (Λ : TotallyRealPath E) (h : Λ 0 = Λ 1) :
+    (Λ.toTotallyRealLoop h).toTotallyRealPath = Λ :=
+  ext fun t => by simp
+
+end TotallyRealPath
+
+namespace TotallyRealLoop
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- For two loops of maximal totally real subspaces with the same base subspace, the relative
 Maslov index is the difference of their Maslov indices: `μ(Λ, Γ) = μ(Λ) - μ(Γ)`. -/

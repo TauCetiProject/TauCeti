@@ -62,8 +62,8 @@ private theorem comp_circleExp (K : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) n Circ
   exact ⟨(contMDiff_iff_contDiff.1 (K.contMDiff.comp contMDiff_circleExp)).of_le hn,
     fun t ↦ by simp only [comp_apply, Circle.periodic_exp t],
     fun s t hst ↦ Circle.exp_eq_exp.1 (K.isEmbedding.injective hst), fun t ↦
-    (deriv_comp_circleExp_ne_zero_and_range_mfderiv (K.contMDiff.of_le hn)
-      (K.isImmersion.mfderiv_injective hn0) t).1⟩
+    (deriv_comp_circleExp_ne_zero_and_range_mfderiv
+      (K.isImmersion.mfderiv_injective hn0 _)).1⟩
 
 /-- **Inscribed polygons of a smooth knot are eventually simple.** For a `C^n` embedding
 `K : S¹ → E`, `n ≥ 1`, of the circle into a real normed space, read through `Circle.exp` as a loop
@@ -106,7 +106,6 @@ theorem exists_combinatoriallyEquivalent_inscribed_of_smoothIsotopic
   -- Run through the isotopy along the smooth step `σ` from time `0` to time `1`.
   set σ : ℝ → unitInterval := fun t ↦
     ⟨Real.smoothTransition t, Real.smoothTransition.nonneg t, Real.smoothTransition.le_one t⟩
-    with hσ
   set Γ : ℝ → ℝ → E := fun t s ↦ F (σ t, Circle.exp s) with hΓ_def
   have hΓ : ContDiff ℝ 1 (uncurry Γ) := by
     have hpair : ContMDiff 𝓘(ℝ, ℝ × ℝ) ((𝓡∂ 1).prod (𝓡 1)) 1

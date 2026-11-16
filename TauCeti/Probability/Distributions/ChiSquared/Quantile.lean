@@ -54,7 +54,7 @@ theorem quantile_chiSquaredMeasure (hk : 0 ≤ k) (hu : u ∈ Ioo 0 1) :
   · rw [chiSquaredMeasure_zero, Measure.quantile_dirac 0 hu.1 hu.2.le]
     simp
   · rw [chiSquaredMeasure_eq_gammaMeasure hk,
-      quantile_gammaMeasure (half_pos hk) one_half_pos hu]
+      quantile_gammaMeasure (half_pos hk) one_half_pos]
     ring
 
 /-- Chi-squared quantiles approach the lower support endpoint zero as the level tends to zero

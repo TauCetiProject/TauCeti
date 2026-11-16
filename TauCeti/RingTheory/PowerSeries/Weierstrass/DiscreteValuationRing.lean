@@ -242,7 +242,7 @@ theorem exists_pow_mul_distinguished_mul_unit [IsAdicComplete (maximalIdeal O) O
 /-- **Uniqueness in Weierstrass preparation with a uniformiser power.** For a fixed uniformiser
 `π`, the exponent, the unit and the distinguished polynomial of a factorisation
 `C (π ^ m) * u * P` are determined by the product. -/
-theorem C_pow_mul_unit_mul_inj [IsHausdorff (maximalIdeal O) O] {π : O} (hπ : Irreducible π)
+theorem C_pow_mul_unit_mul_inj {π : O} (hπ : Irreducible π)
     {m m' : ℕ} {u u' : O⟦X⟧ˣ} {P P' : Polynomial O} (hP : P.IsDistinguishedAt (maximalIdeal O))
     (hP' : P'.IsDistinguishedAt (maximalIdeal O)) :
     C (π ^ m) * u * P = C (π ^ m') * u' * P' ↔ m = m' ∧ u = u' ∧ P = P' := by

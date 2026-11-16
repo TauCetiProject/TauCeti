@@ -106,7 +106,7 @@ theorem invMap_characterCarryCocycle (χ : Additive Gal(E/F) →+ AddCircle (1 :
   have hn : (n : ℚ) ≠ 0 := Nat.cast_ne_zero.2 Module.finrank_pos.ne'
   -- `χ(φ)` is killed by `n`, so it is `k / n` for an integer `k`, and `χ = k • χ₀` for the
   -- Frobenius character `χ₀`, read on `Gal(E/F)`.
-  set χ₀ := (frobeniusCharacter F E).comp (Abelianization.of (G := Gal(E/F))).toAdditive
+  set χ₀ := (frobeniusCharacter F E).comp (Group.Abelianization.of (G := Gal(E/F))).toAdditive
   have hχ₀ : χ₀ (.ofMul φ) = ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
     rw [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul]
     exact frobeniusCharacter_frobenius F E

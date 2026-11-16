@@ -99,7 +99,7 @@ theorem integrable_exp_mul_stableMeasure (hβ : |β| = 1) (s : ℝ≥0) (m : ℝ
   rcases hα.2.eq_or_lt with rfl | hα2
   · rw [stableMeasure_two hβ.le]
     exact integrable_exp_mul_gaussianReal t
-  rcases eq_zero_or_pos s with rfl | hs
+  rcases eq_zero_or_pos s with rfl | _
   · rw [stableMeasure_zero_scale hα hβ.le]
     exact integrable_dirac' (by fun_prop) (by simp)
   suffices h : t ∈ integrableExpSet id (stableMeasure α β s m) by

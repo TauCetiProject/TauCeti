@@ -47,8 +47,6 @@ rather than reading them off its argument.
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 1.1.
 * [B. E. Sagan, *The Symmetric Group*][sagan2001], Section 3.10, where the corner recursion opens
   the proof of the hook-length formula.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 5, whose `hookLengthFormula` milestone is the induction this recursion drives.
 -/
 
 public section

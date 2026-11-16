@@ -191,7 +191,7 @@ theorem test_gaussian_two (hv : (2 : ℤ) ∈ v.asIdeal) {i : L} (hi : i ^ 2 = -
     rw [AlgHom.map_adjoin, Set.image_singleton, Algebra.map_top, Subalgebra.range_val]
     simp [β, B]
   have := FaithfulSMul.trans A ℚ L
-  have := hf.isDiscreteValuationRing_of_adjoin_eq_top hmo hx hadj
+  have := hf.isDiscreteValuationRing_of_adjoin_eq_top hx hadj
   have : Algebra.IsIntegral A B :=
     have := Algebra.finite_adjoin_simple_of_isIntegral (R := A) (x := 1 + i) ⟨f, hmo, hroot⟩
     inferInstance
@@ -200,7 +200,7 @@ theorem test_gaussian_two (hv : (2 : ℤ) ∈ v.asIdeal) {i : L} (hi : i ^ 2 = -
     rw [eq_top_iff, ← hgen, adjoin_simple_le_iff]
     simpa using sub_mem (mem_adjoin_simple_self ℚ (1 + i)) (one_mem ℚ⟮1 + i⟯)
   have he (P : Ideal B) [P.IsMaximal] : P.ramificationIdx A = 2 :=
-    hdeg ▸ hf.ramificationIdx_eq_natDegree hmo hx hadj P
+    hdeg ▸ hf.ramificationIdx_eq_natDegree hx hadj P
   refine ⟨inferInstance, inferInstance, he, fun h ↦ ?_⟩
   -- The ramification index `2` is the uniformizer of `A`, so it vanishes in the residue field.
   have : (maximalIdeal B).LiesOver (maximalIdeal A) :=
@@ -242,12 +242,11 @@ theorem test_cyclotomic_three (hv : (3 : ℤ) ∈ v.asIdeal) {ζ : L} (hζ : IsP
       (Ideal.Quotient.mk (maximalIdeal A))
     norm_num at this ⊢
     exact this
-  exact ⟨(IsDiscreteValuationRing.isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible (K := ℚ) hπ
-      two_ne_zero hα hgen').mpr h2,
-    IsDiscreteValuationRing.isTotallyRamifiedWRT_of_pow_eq_of_irreducible (K := ℚ) hπ
-      two_ne_zero hα hgen',
-    fun P _ ↦ IsDiscreteValuationRing.ramificationIdx_eq_of_pow_eq_of_irreducible (K := ℚ) hπ
-      two_ne_zero hα hgen' P⟩
+  exact ⟨(IsDiscreteValuationRing.isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible (K := ℚ) hπ hα
+      hgen').mpr h2,
+    IsDiscreteValuationRing.isTotallyRamifiedWRT_of_pow_eq_of_irreducible (K := ℚ) hπ hα hgen',
+    fun P _ ↦ IsDiscreteValuationRing.ramificationIdx_eq_of_pow_eq_of_irreducible (K := ℚ) hπ hα
+      hgen' P⟩
 
 /-- *test_gaussian_five*: `ℚ(i)` is unramified with respect to `A = ℤ_(5)`, and the integral closure
 of `A` in `ℚ(i)` has exactly two maximal ideals. -/

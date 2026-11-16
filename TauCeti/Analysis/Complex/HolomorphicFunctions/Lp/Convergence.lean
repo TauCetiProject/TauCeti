@@ -40,7 +40,6 @@ theorem uniformCauchySeqOn_of_cauchySeq
   obtain ⟨r, hr, hrU⟩ := hK.exists_cthickening_subset_open U.isOpen hKU
   let C := (volume.real (ball (0 : ℂ) r))⁻¹ *
     ((volume (ball (0 : ℂ) r)) ^ (1 / 2 : ℝ)).toReal
-  have hC : 0 ≤ C := by positivity
   refine Metric.uniformCauchySeqOn_iff.2 fun ε hε ↦ ?_
   obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.1 hc (ε / (C + 1))
     (div_pos hε (by positivity))

@@ -67,12 +67,23 @@ theorem apply_sum_le_pow_mul {v : AbsoluteValue R S} {c : S} (hc : 1 ≤ c)
 
 /-- One elimination step: if the pivot `q` maximizes `v (·) / s` in its column, then subtracting
 `p / q` times that column from a column bounded by `M` (in units of the row weights `s`, `t`)
-keeps it bounded by `c * M`, for an absolute value satisfying `v (a + b) ≤ c * max (v a) (v b)`. -/
+keeps it bounded by `c * M`, for an absolute value satisfying `v (a + b) ≤ c * max (v a) (v b)`.
+The constant `c` is then at least `1`, and the pivot `q` may be `0`, when nothing is subtracted. -/
 theorem apply_sub_div_mul_le {K F : Type*} [DivisionRing K] [Field F] [LinearOrder F]
-    [IsStrictOrderedRing F] {v : AbsoluteValue K F} {c : F} (hc : 0 ≤ c)
+    [IsStrictOrderedRing F] {v : AbsoluteValue K F} {c : F}
     (hv : ∀ a b, v (a + b) ≤ c * max (v a) (v b)) {a b p q : K} {s t M : F} (hs : 0 < s)
-    (ht : 0 < t) (hq : 0 < v q) (ha : v a ≤ s * M) (hp : v p ≤ t * M)
-    (hb : v b / s ≤ v q / t) : v (a - p / q * b) ≤ c * (s * M) := by
+    (ha : v a ≤ s * M) (hp : v p ≤ t * M) (hb : v b / s ≤ v q / t) :
+    v (a - p / q * b) ≤ c * (s * M) := by
+  have hc : 1 ≤ c := by simpa using hv 1 0
+  by_cases hbq : b = 0 ∨ q = 0
+  · have h0 : p / q * b = 0 := by rcases hbq with rfl | rfl <;> simp
+    rw [h0, sub_zero]
+    exact ha.trans (le_mul_of_one_le_left ((v.nonneg a).trans ha) hc)
+  rw [not_or] at hbq
+  have hq : 0 < v q := v.pos hbq.2
+  have ht : 0 < t := by
+    have : 0 < v q / t := lt_of_lt_of_le (div_pos (v.pos hbq.1) hs) hb
+    exact (div_pos_iff_of_pos_left hq).mp this
   have hM : 0 ≤ M := (mul_nonneg_iff_of_pos_left ht).mp ((v.nonneg _).trans hp)
   have hratio : v b / v q ≤ s / t := by
     rw [div_le_div_iff₀ hs ht] at hb
@@ -88,7 +99,7 @@ theorem apply_sub_div_mul_le {K F : Type*} [DivisionRing K] [Field F] [LinearOrd
         exact hv _ _
     _ ≤ c * (s * M) := by
         rw [map_neg_eq_map]
-        exact mul_le_mul_of_nonneg_left (max_le ha hsub) hc
+        exact mul_le_mul_of_nonneg_left (max_le ha hsub) (zero_le_one.trans hc)
 
 /-- **The growth factor of one addition**: `v (a + b) ≤ 2 * max (v a) (v b)`. At a nonarchimedean
 absolute value the factor `2` can be replaced by `1` (`IsNonarchimedean`). -/

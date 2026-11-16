@@ -38,6 +38,10 @@ The count is additive on finite disjoint unions. A nullhomotopy of the inclusion
 of a categorical open set to a single point, so such a set meets at most one summand, and the
 count of the whole union is the sum of the counts of the summands. On a manifold with several
 components, this lets the critical-point bound be computed one component at a time.
+Conversely, in a path-connected space the union of pairwise disjoint categorical open sets is
+categorical (`TauCeti.nullhomotopic_subtypeVal_iUnion`): the nullhomotopies of the pieces are
+continued along paths to a common point and glued. This is how the open cells of one dimension of
+a cell structure, thickened disjointly, make up a single member of a categorical cover.
 
 Compact subsets of locally contractible spaces have finite categorical-cover count, even on
 an open neighborhood. Here local contractibility has Mathlib's meaning: small neighborhoods
@@ -46,6 +50,9 @@ its attainment give actual finite categorical covers of compact locally contract
 
 ## Main declarations
 
+* `TauCeti.nullhomotopic_subtypeVal_iUnion`: in a path-connected space, a union of pairwise
+  disjoint open sets with nullhomotopic inclusions has nullhomotopic inclusion, and
+  `ContinuousMap.Nullhomotopic.pi`: a product of nullhomotopic maps is nullhomotopic.
 * `TauCeti.LSCategoricalCover X A n`: a cover of `A` by `n` open subsets of `X` with nullhomotopic
   inclusions, with restriction `mono`, concatenation `append`, padding by empty opens `pad`,
   pullback `comap`, and pushforward `map` along open embeddings.
@@ -134,6 +141,46 @@ theorem exists_subset_singleton_of_nullhomotopic [DiscreteTopology X] {U : Set X
   · obtain ⟨x, -⟩ := h
     exact ⟨x, empty_subset _⟩
   · exact ⟨u, subset_of_nullhomotopic_of_isClopen h (isClopen_discrete _) ⟨u, hu, rfl⟩⟩
+
+/-- A family of nullhomotopic maps into the factors of a product defines a nullhomotopic map into
+the product: the nullhomotopies of the factors run simultaneously. -/
+theorem _root_.ContinuousMap.Nullhomotopic.pi {ι : Type*} {Y : ι → Type*}
+    [∀ i, TopologicalSpace (Y i)] {f : ∀ i, C(X, Y i)} (hf : ∀ i, (f i).Nullhomotopic) :
+    (ContinuousMap.pi f).Nullhomotopic := by
+  choose y hy using hf
+  exact ⟨y, ⟨(Homotopy.pi fun i ↦ (hy i).some).cast rfl (ContinuousMap.ext fun _ ↦ rfl)⟩⟩
+
+/-- In a path-connected space, the inclusion of a union of pairwise disjoint open sets is
+nullhomotopic as soon as the inclusion of each of them is. The nullhomotopies of the pieces can be
+continued along paths to a common point, and they glue since the pieces are open and disjoint. -/
+theorem nullhomotopic_subtypeVal_iUnion [PathConnectedSpace X] {ι : Type*} {U : ι → Set X}
+    (hU : ∀ i, IsOpen (U i)) (hd : Pairwise (Disjoint on U))
+    (h : ∀ i, (subtypeVal (U i)).Nullhomotopic) : (subtypeVal (⋃ i, U i)).Nullhomotopic := by
+  obtain ⟨x₀⟩ := PathConnectedSpace.nonempty (X := X)
+  -- Each nullhomotopy is continued along a path to the constant map at `x₀`.
+  have hG (i : ι) : (subtypeVal (U i)).Homotopic (const (U i) x₀) := by
+    obtain ⟨y, hy⟩ := h i
+    exact hy.trans ⟨(PathConnectedSpace.somePath y x₀).toHomotopyConst⟩
+  let G (i : ι) := (hG i).some
+  let S (i : ι) : Set (unitInterval × ↥(⋃ i, U i)) := {q | (q.2 : X) ∈ U i}
+  let φ (i : ι) : C(S i, X) :=
+    ⟨fun q ↦ G i (q.1.1, ⟨q.1.2, q.2⟩), (G i).continuous.comp (by fun_prop)⟩
+  have hφ (i j : ι) (q : unitInterval × ↥(⋃ i, U i)) (hi : q ∈ S i) (hj : q ∈ S j) :
+      φ i ⟨q, hi⟩ = φ j ⟨q, hj⟩ := by
+    obtain rfl : i = j := by_contra fun hij ↦ disjoint_left.1 (hd hij) hi hj
+    rfl
+  have hS (q : unitInterval × ↥(⋃ i, U i)) : ∃ i, S i ∈ 𝓝 q := by
+    obtain ⟨i, hi⟩ := mem_iUnion.1 q.2.2
+    exact ⟨i, ((hU i).preimage (by fun_prop)).mem_nhds hi⟩
+  -- The glued homotopy starts at the inclusion and ends at the constant map at `x₀`.
+  have hglue (q : unitInterval × ↥(⋃ i, U i)) {i : ι} (hi : (q.2 : X) ∈ U i) :
+      liftCover S φ hφ hS q = G i (q.1, ⟨q.2, hi⟩) :=
+    liftCover_coe (i := i) ⟨q, hi⟩
+  refine ⟨x₀, ⟨⟨liftCover S φ hφ hS, fun x ↦ ?_, fun x ↦ ?_⟩⟩⟩
+  · obtain ⟨i, hi⟩ := mem_iUnion.1 x.2
+    exact (hglue (0, x) hi).trans ((G i).apply_zero _)
+  · obtain ⟨i, hi⟩ := mem_iUnion.1 x.2
+    exact (hglue (1, x) hi).trans ((G i).apply_one _)
 
 namespace LSCategoricalCover
 

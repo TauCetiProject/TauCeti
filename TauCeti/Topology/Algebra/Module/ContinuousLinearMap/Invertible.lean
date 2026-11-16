@@ -18,11 +18,17 @@ The totalized inverse of a continuous linear map is zero when the map is not inv
 Consequently, convergence of inverse maps to any nonzero map forces eventual invertibility.
 The inverse of an invertible map also suffices, including on trivial spaces. These results apply
 without completeness or continuity of the original family, and are useful when differentiating
-inverse families.
+inverse families. The difference of two inverses satisfies the resolvent identity, which
+controls variation of inverse operators by variation of the original operators.
 
-Over a field, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
+Over a semifield, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
 of `c • f` is `c⁻¹ • f.inverse`; this is how the inverse of a positively homogeneous family of
-maps is seen to be homogeneous of the opposite degree.
+maps is seen to be homogeneous of the opposite degree. Scaling the identity by a nonzero scalar `c`
+from a group with zero acting on the space, such as complex multiplication on `ℂ` viewed as a
+real-linear map, is invertible (`ContinuousLinearMap.isUnit_smul_id_of_ne_zero`).
+
+An endomorphism is invertible exactly when it is a unit of the endomorphism ring
+(`ContinuousLinearMap.isInvertible_iff_isUnit`).
 
 The file also records that the product `f.prodMap g` of two continuous linear maps is invertible
 exactly when both factors are, which is how block-diagonal second derivatives on a product space
@@ -45,6 +51,34 @@ open Filter
 open scoped Topology
 
 namespace ContinuousLinearMap
+
+section IsUnit
+
+variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+
+/-- An endomorphism is invertible, that is, a continuous linear equivalence, exactly when it is a
+unit of the ring of continuous endomorphisms. -/
+theorem isInvertible_iff_isUnit {f : M →L[R] M} : f.IsInvertible ↔ IsUnit f :=
+  ⟨fun ⟨e, he⟩ ↦ he ▸ ((ContinuousLinearEquiv.unitsEquiv R M).symm e).isUnit,
+    fun ⟨u, hu⟩ ↦ ⟨ContinuousLinearEquiv.unitsEquiv R M u, hu ▸ rfl⟩⟩
+
+end IsUnit
+
+section Sub
+
+variable {R E F : Type*} [Ring R]
+  [TopologicalSpace E] [AddCommGroup E] [Module R E] [IsTopologicalAddGroup E]
+  [TopologicalSpace F] [AddCommGroup F] [Module R F] [IsTopologicalAddGroup F]
+
+/-- The difference of two inverse operators is obtained by composing their difference
+in reverse order with their inverses (the resolvent identity). -/
+theorem IsInvertible.inverse_sub_inverse {f g : E →L[R] F}
+    (hf : f.IsInvertible) (hg : g.IsInvertible) :
+    f.inverse - g.inverse = f.inverse ∘L (g - f) ∘L g.inverse := by
+  ext v
+  simp [hf.inverse_apply_self, hg.self_apply_inverse]
+
+end Sub
 
 section CompleteSpace
 
@@ -91,7 +125,7 @@ theorem IsInvertible.eventually_of_tendsto_inverse {A : ι → E →L[𝕜] F} {
 
 section Smul
 
-variable {𝕜 M M₂ : Type*} [Field 𝕜]
+variable {𝕜 M M₂ : Type*} [Semifield 𝕜]
   [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M] [ContinuousConstSMul 𝕜 M]
   [TopologicalSpace M₂] [AddCommMonoid M₂] [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂]
 
@@ -119,6 +153,22 @@ theorem inverse_smul (c : 𝕜) (f : M →L[𝕜] M₂) : (c • f).inverse = c�
     map_smul, smul_apply]
 
 end Smul
+
+section SMulId
+
+variable {R S M : Type*} [Semiring R] [GroupWithZero S] [TopologicalSpace M] [AddCommMonoid M]
+  [Module R M] [DistribMulAction S M] [SMulCommClass R S M] [ContinuousConstSMul S M]
+
+/-- Scaling the identity by a nonzero scalar `c` is invertible, with inverse scaling by `c⁻¹`. The
+scalars need not commute with operators: for example, multiplication by a nonzero complex number
+is an invertible real-linear map of `ℂ`. -/
+theorem isUnit_smul_id_of_ne_zero {c : S} (hc : c ≠ 0) :
+    IsUnit (c • ContinuousLinearMap.id R M) := by
+  have := SMulCommClass.symm R S M
+  convert (ContinuousLinearEquiv.smulLeft (Units.mk0 c hc) : M ≃L[R] M).toUnit.isUnit
+  ext; simp [ContinuousLinearEquiv.toUnit]
+
+end SMulId
 
 section ProdMap
 

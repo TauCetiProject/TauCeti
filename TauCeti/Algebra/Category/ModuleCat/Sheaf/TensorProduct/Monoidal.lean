@@ -145,6 +145,14 @@ theorem sheafification_ε :
       (sheafificationUnitIso R).inv :=
   rfl
 
+/-- The inverse sheafification identification at the unit is the monoidal unit comparison. -/
+theorem sheafificationIso_unit_inv :
+    (sheafificationIso (ringCatSheaf R) (_root_.SheafOfModules.unit (ringCatSheaf R))).inv =
+      Functor.LaxMonoidal.ε (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)) := by
+  rw [sheafification_ε]
+  exact (Iso.inv_eq_inv _ _).2 ((sheafificationIso_hom _ _).trans
+    (sheafificationUnitIso_hom R).symm)
+
 /-- The inverse unit comparison of the monoidal functor sheafification is
 `sheafificationUnitIso`. -/
 @[simp]

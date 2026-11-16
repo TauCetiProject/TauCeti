@@ -64,12 +64,19 @@ theorem hasCauchyPVAt_inv_sub_affine (h : HasCauchyPVAt γ a b κ[z₀] z₀ L) 
   congr 1
   ring
 
-/-- Existence form of `hasCauchyPVAt_inv_sub_affine`: affine coordinate changes with nonzero
-linear coefficient preserve existence of the index principal value. -/
-theorem cauchyPVExistsAt_inv_sub_affine (h : CauchyPVExistsAt γ a b κ[z₀] z₀) (hc : c ≠ 0) :
-    CauchyPVExistsAt (fun t => c * γ t + d) a b κ[c * z₀ + d] (c * z₀ + d) :=
-  let ⟨_, hL⟩ := cauchyPVExistsAt_iff.mp h
-  CauchyPVExistsAt.intro (hasCauchyPVAt_inv_sub_affine (d := d) hL hc)
+/-- Existence form of `hasCauchyPVAt_inv_sub_affine`: affine coordinate changes preserve existence
+of the index principal value. For `c = 0` the image curve is constant, so every truncated integrand
+vanishes. -/
+theorem cauchyPVExistsAt_inv_sub_affine (h : CauchyPVExistsAt γ a b κ[z₀] z₀) :
+    CauchyPVExistsAt (fun t => c * γ t + d) a b κ[c * z₀ + d] (c * z₀ + d) := by
+  by_cases hc : c = 0
+  · subst hc
+    refine CauchyPVExistsAt.intro (L := 0)
+      (HasCauchyPVAt.of_tendsto (F := fun _ => 0) tendsto_const_nhds ?_)
+    filter_upwards [self_mem_nhdsWithin] with ε hε
+    simp [not_lt.mpr (le_of_lt (Set.mem_Ioi.mp hε))]
+  · obtain ⟨_, hL⟩ := cauchyPVExistsAt_iff.mp h
+    exact CauchyPVExistsAt.intro (hasCauchyPVAt_inv_sub_affine (d := d) hL hc)
 
 /-- The generalized winding number is invariant under simultaneous affine coordinate change of
 the curve and base point, provided the linear coefficient is nonzero. -/
@@ -96,11 +103,14 @@ theorem windingNumber_affine_preimage (hc : c ≠ 0) :
     _ = windingNumber γ a b (c⁻¹ * (z - d)) :=
       windingNumber_affine (γ := γ) (a := a) (b := b) (z₀ := c⁻¹ * (z - d)) hc
 
-/-- Null-homology is preserved by affine coordinate change of the curve and ambient set, provided
-the linear coefficient is nonzero. -/
-theorem IsNullHomologous.affine (h : IsNullHomologous γ a b Ω) (hc : c ≠ 0) :
+/-- Null-homology is preserved by affine coordinate change of the curve and ambient set. For
+`c = 0` the image curve is constant, hence null-homologous in any set. -/
+theorem IsNullHomologous.affine (h : IsNullHomologous γ a b Ω) :
     IsNullHomologous (fun t => c * γ t + d) a b ((fun z => c * z + d) '' Ω) := by
-  simpa [Set.image_image, Function.comp_def] using (h.const_mul hc).translate d
+  by_cases hc : c = 0
+  · subst hc
+    simp [isNullHomologous_iff, windingNumber_const]
+  · simpa [Set.image_image, Function.comp_def] using (h.const_mul hc).translate d
 
 /-- If the affine image of a curve is null-homologous in the affine image of a set, then the
 original curve is null-homologous in the original set. -/
@@ -121,7 +131,7 @@ theorem IsNullHomologous.of_affine
 theorem isNullHomologous_affine_iff (hc : c ≠ 0) :
     IsNullHomologous (fun t => c * γ t + d) a b ((fun z => c * z + d) '' Ω)
       ↔ IsNullHomologous γ a b Ω :=
-  ⟨fun h => h.of_affine hc, fun h => h.affine hc⟩
+  ⟨fun h => h.of_affine hc, fun h => h.affine⟩
 
 end TauCeti.Contour
 

@@ -13,9 +13,8 @@ public import TauCeti.Geometry.Manifold.IntegralCurve.Energy
 
 Let `X` be a pseudo-gradient field adapted to a function `f` on a compact boundaryless manifold,
 and let `γ t = φ_t p` be an orbit of its flow converging to `x` as `t → -∞` and to `y` as
-`t → +∞`. Suppose that `f` is differentiable along the orbit and continuous at `x` and `y`. The
-**energy** of the orbit, the integral over the whole line of the rate `-df(X)(γ t) ≥ 0` at which `f`
-decreases, is finite and equals the drop `f x - f y`.
+`t → +∞`. The **energy** of the orbit, the integral over the whole line of the rate
+`-df(X)(γ t) ≥ 0` at which `f` decreases, is finite and equals the drop `f x - f y`.
 
 For a gradient flow the energy is `∫ ‖∇f(γ t)‖²`. For a pseudo-gradient it is `∫ -df(X)(γ t)`,
 which is the quantity that the flow actually controls.
@@ -50,26 +49,25 @@ namespace IsAdaptedPseudoGradient
 variable [CompactSpace M] [T2Space M] (hX : IsAdaptedPseudoGradient f X) {x y p : M}
 
 /-- **The rate of decrease of `f` along a connecting orbit is integrable.** If the orbit of `p`
-converges to `x` as `t → -∞` and to `y` as `t → +∞`, `f` is differentiable along it and continuous
-at `x` and `y`, then `t ↦ df(X)(φ_t p)` is integrable on the real line. -/
+converges to `x` as `t → -∞` and to `y` as `t → +∞`, then `t ↦ df(X)(φ_t p)` is integrable on the
+real line. -/
 theorem integrable_mvfderiv_apply_flow_of_mem_unstableSet_inter_stableSet
-    (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (hX.flow t p)) (hfx : ContinuousAt f x)
-    (hfy : ContinuousAt f y) (hp : p ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet y) :
+    (hp : p ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet y) :
     Integrable fun t ↦ mvfderiv 𝓘(ℝ, E) f (hX.flow t p) (X (hX.flow t p)) :=
-  IsMIntegralCurve.integrable_mvfderiv_apply_of_tendsto (hX.isMIntegralCurve_flow p) hf
-    (fun _ ↦ hX.mvfderiv_apply_nonpos _) (hfx.tendsto.comp (Flow.mem_unstableSet.1 hp.1))
-    (hfy.tendsto.comp (Flow.mem_stableSet.1 hp.2))
+  IsMIntegralCurve.integrable_mvfderiv_apply_of_tendsto (hX.isMIntegralCurve_flow p)
+    (fun _ ↦ hX.mdifferentiable _) (fun _ ↦ hX.mvfderiv_apply_nonpos _)
+    (hX.mdifferentiable.continuous.continuousAt.tendsto.comp (Flow.mem_unstableSet.1 hp.1))
+    (hX.mdifferentiable.continuous.continuousAt.tendsto.comp (Flow.mem_stableSet.1 hp.2))
 
 /-- **The energy identity for a connecting orbit.** If the orbit of `p` converges to `x` as
-`t → -∞` and to `y` as `t → +∞`, `f` is differentiable along it and continuous at `x` and `y`, its
-energy `∫ -df(X)(φ_t p) dt` is the drop `f x - f y`. -/
+`t → -∞` and to `y` as `t → +∞`, its energy `∫ -df(X)(φ_t p) dt` is the drop `f x - f y`. -/
 theorem integral_neg_mvfderiv_apply_flow_eq_sub_of_mem_unstableSet_inter_stableSet
-    (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (hX.flow t p)) (hfx : ContinuousAt f x)
-    (hfy : ContinuousAt f y) (hp : p ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet y) :
+    (hp : p ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet y) :
     ∫ t, -mvfderiv 𝓘(ℝ, E) f (hX.flow t p) (X (hX.flow t p)) = f x - f y :=
-  IsMIntegralCurve.integral_neg_mvfderiv_apply_eq_sub_of_tendsto (hX.isMIntegralCurve_flow p) hf
-    (fun _ ↦ hX.mvfderiv_apply_nonpos _) (hfx.tendsto.comp (Flow.mem_unstableSet.1 hp.1))
-    (hfy.tendsto.comp (Flow.mem_stableSet.1 hp.2))
+  IsMIntegralCurve.integral_neg_mvfderiv_apply_eq_sub_of_tendsto (hX.isMIntegralCurve_flow p)
+    (fun _ ↦ hX.mdifferentiable _) (fun _ ↦ hX.mvfderiv_apply_nonpos _)
+    (hX.mdifferentiable.continuous.continuousAt.tendsto.comp (Flow.mem_unstableSet.1 hp.1))
+    (hX.mdifferentiable.continuous.continuousAt.tendsto.comp (Flow.mem_stableSet.1 hp.2))
 
 end IsAdaptedPseudoGradient
 

@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+-- Access the body of `IsLocalDiffeomorphAt` to lower the regularity of its witness.
+import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 /-!
 # Constructions of partial diffeomorphisms
@@ -20,11 +22,17 @@ coordinate gives a local change of parameters intertwining those charts. The fil
 that the coordinate axes of a partial diffeomorphism into a real Euclidean space, centred at a
 point, pull back to curves through that point.
 
+It also records the source, target, forward map and inverse map of Mathlib's composition
+`PartialDiffeomorph.trans`, so that callers need not unfold it through `OpenPartialHomeomorph`.
+
 ## Main definitions
 
 * `PartialDiffeomorph.ofLE`: a `C^n` partial diffeomorphism as a `C^m` one, for `m ≤ n`.
 * `ContinuousLinearEquiv.toPartialDiffeomorph`: a continuous linear equivalence as a `C^n` partial
   diffeomorphism defined everywhere, for any `n`.
+* `PartialDiffeomorph.trans_source`, `PartialDiffeomorph.trans_target`,
+  `PartialDiffeomorph.coe_trans`, `PartialDiffeomorph.coe_trans_symm`: the composition of partial
+  diffeomorphisms, computed componentwise.
 
 ## Main results
 
@@ -66,6 +74,33 @@ def ofLE (Φ : PartialDiffeomorph I J M N n) (hmn : m ≤ n) : PartialDiffeomorp
 theorem ofLE_toPartialEquiv (Φ : PartialDiffeomorph I J M N n) (hmn : m ≤ n) :
     (Φ.ofLE hmn).toPartialEquiv = Φ.toPartialEquiv :=
   (rfl)
+
+section Trans
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 F' H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+  (Φ : PartialDiffeomorph I J M N n) (Ψ : PartialDiffeomorph J K N P n)
+
+/-- The source of a composition of partial diffeomorphisms. -/
+theorem trans_source : (Φ.trans Ψ).source = Φ.source ∩ Φ ⁻¹' Ψ.source :=
+  (rfl)
+
+/-- The target of a composition of partial diffeomorphisms. -/
+theorem trans_target : (Φ.trans Ψ).target = Ψ.target ∩ Ψ.symm ⁻¹' Φ.target :=
+  (rfl)
+
+/-- The forward map of a composition of partial diffeomorphisms is the composition of the forward
+maps. -/
+theorem coe_trans : ⇑(Φ.trans Ψ) = Ψ ∘ Φ :=
+  (rfl)
+
+/-- The inverse map of a composition of partial diffeomorphisms is the composition of the inverse
+maps, in the opposite order. -/
+theorem coe_trans_symm : ⇑(Φ.trans Ψ).symm = Φ.symm ∘ Ψ.symm :=
+  (rfl)
+
+end Trans
 
 open Set
 
@@ -142,6 +177,17 @@ theorem exists_curve_single_axis {x : M}
 end Axis
 
 end PartialDiffeomorph
+
+/-- A `C^n` local diffeomorphism at a point is a `C^m` one, for `m ≤ n`. -/
+theorem IsLocalDiffeomorphAt.of_le {f : M → N} {x : M} (hf : IsLocalDiffeomorphAt I J n f x)
+    (hmn : m ≤ n) : IsLocalDiffeomorphAt I J m f x := by
+  obtain ⟨Φ, hxΦ, hfΦ⟩ := hf
+  exact ⟨Φ.ofLE hmn, by simpa using hxΦ, by simpa using hfΦ⟩
+
+/-- A `C^n` local diffeomorphism is a `C^m` one, for `m ≤ n`. -/
+theorem IsLocalDiffeomorph.of_le {f : M → N} (hf : IsLocalDiffeomorph I J n f) (hmn : m ≤ n) :
+    IsLocalDiffeomorph I J m f :=
+  fun x ↦ (hf x).of_le hmn
 
 namespace ContinuousLinearEquiv
 

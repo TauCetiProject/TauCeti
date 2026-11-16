@@ -117,7 +117,8 @@ public section
 noncomputable section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField NumberField.InfinitePlace
-open scoped TensorProduct AdicCompletionExtension NumberField.LiesOver Pointwise
+open scoped TensorProduct AdicCompletionExtension Pointwise
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -265,7 +266,7 @@ theorem ideleClassNormMap_fixedField_surjective_of_isArithFrobAt_mem [IsGalois K
       Ideal.stabilizer_le_of_forall_isArithFrobAt_mem w.1.asIdeal w.1.ne_bot hw
 
 /-- **Every idele class is a norm when `S`-units control the local power classes at `T`**
-(Milne, *Class Field Theory*, VII, Proposition 6.10). Let `S` and `T` be disjoint finite sets of
+(Milne, *Class Field Theory*, VII, Proposition 6.10). Let `S` and `T` be finite sets of
 finite places of `K`, with the classes of the primes of `S` generating the ideal class group, and
 let `[L : K]` divide `n`. Suppose that
 
@@ -276,7 +277,7 @@ let `[L : K]` divide `n`. Suppose that
 
 Then the norm map `C_L → C_K` is surjective. -/
 theorem ideleClassNormMap_surjective_of_forall_exists_mem_unit
-    (S T : Finset (HeightOneSpectrum (𝓞 K))) (hST : Disjoint S T) {n : ℕ}
+    (S T : Finset (HeightOneSpectrum (𝓞 K))) {n : ℕ}
     (hn : Module.finrank K L ∣ n)
     (hcl : Subgroup.closure
       (HeightOneSpectrum.classGroupMk '' (S : Set (HeightOneSpectrum (𝓞 K)))) = ⊤)
@@ -299,8 +300,12 @@ theorem ideleClassNormMap_surjective_of_forall_exists_mem_unit
   -- A representative `x * a` of the class that is a unit at every finite place outside `S`.
   obtain ⟨a, ha⟩ := IdeleGroup.exists_valued_ideleFiniteCoord_mul_unitEmbedding_eq_one hcl x
   set x' := x * IdeleGroup.unitEmbedding (𝓞 K) K a with hx'
-  obtain ⟨u, huS, hu⟩ := hT (fun v ↦ v.1.ideleFiniteCoord x')
-    fun v ↦ ha v.1 fun hv ↦ Finset.disjoint_left.mp hST hv v.2
+  -- At a place of `S ∩ T` the family is `1`: the local norm condition there comes from `hS`.
+  obtain ⟨u, huS, hu⟩ := hT (fun v ↦ if v.1 ∈ S then 1 else v.1.ideleFiniteCoord x')
+    fun v ↦ by
+      by_cases hv : v.1 ∈ S
+      · simp [hv]
+      · simpa [hv] using ha v.1 hv
   have hu' := (IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff
     (R := 𝓞 K) (T := (S : Set (HeightOneSpectrum (𝓞 K)))) u).mpr huS
   set z := x' * IdeleGroup.unitEmbedding (𝓞 K) K u⁻¹ with hz
@@ -318,7 +323,7 @@ theorem ideleClassNormMap_surjective_of_forall_exists_mem_unit
     · simp [hS v hvS]
     by_cases hvT : v ∈ T
     · rw [hzcoord]
-      exact hpow (hu ⟨v, hvT⟩)
+      simpa [hvS] using hpow (hu ⟨v, hvT⟩)
     -- Outside `S ∪ T` the coordinate is a unit, and units are norms from an unramified place.
     have hval : Valued.v (v.ideleFiniteCoord z : v.adicCompletion K) = 1 := by
       rw [hzcoord, Units.val_mul, map_mul, ha v hvS, mul_one]

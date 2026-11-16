@@ -33,6 +33,8 @@ is still defined at that time.
   endpoint of the maximal interval.
 * `TauCeti.Manifold.eventually_notMem_nhdsGT_maximalGeodesic`: the escape lemma at a finite left
   endpoint.
+* `TauCeti.Manifold.mem_geodesicInterval_of_isCompact_of_mapsTo_Ico`: a maximal geodesic that
+  stays in a compact set on `[0, τ)`, as long as it is defined, is defined at time `τ`.
 
 ## References
 
@@ -86,8 +88,7 @@ theorem eventually_notMem_nhdsLT_maximalGeodesic {b : ℝ}
     (V := fun x : M ↦ TangentSpace I x)
   obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_geodesicInterval_of_isLUB hb
   rw [← maximalIntegralCurveInterval_geodesicSpray] at hb
-  filter_upwards [eventually_notMem_nhdsLT_maximalIntegralCurve contMDiff_one_geodesicSpray
-    ((maximalIntegralCurveInterval_geodesicSpray p v).symm ▸ zero_mem_geodesicInterval) hb
+  filter_upwards [eventually_notMem_nhdsLT_maximalIntegralCurve contMDiff_one_geodesicSpray hb
     (hK.norm_le_bundle ‖v‖), Ioo_mem_nhdsLT (ha.trans hb0)] with t hnot ht hmem
   exact hnot (maximalIntegralCurve_geodesicSpray_mem_norm_le (hsub ht) hmem)
 
@@ -101,10 +102,25 @@ theorem eventually_notMem_nhdsGT_maximalGeodesic {a : ℝ}
     (V := fun x : M ↦ TangentSpace I x)
   obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_geodesicInterval_of_isGLB ha
   rw [← maximalIntegralCurveInterval_geodesicSpray] at ha
-  filter_upwards [eventually_notMem_nhdsGT_maximalIntegralCurve contMDiff_one_geodesicSpray
-    ((maximalIntegralCurveInterval_geodesicSpray p v).symm ▸ zero_mem_geodesicInterval) ha
+  filter_upwards [eventually_notMem_nhdsGT_maximalIntegralCurve contMDiff_one_geodesicSpray ha
     (hK.norm_le_bundle ‖v‖), Ioo_mem_nhdsGT (ha0.trans hb)] with t hnot ht hmem
   exact hnot (maximalIntegralCurve_geodesicSpray_mem_norm_le (hsub ht) hmem)
+
+/-- **A maximal geodesic that stays in a compact set is defined at the next time.** Let `τ ≥ 0`. If
+the maximal geodesic with initial data `(p, v)` lies in a compact set `K` at every time of `[0, τ)`
+at which it is defined, then it is defined at time `τ`. -/
+theorem mem_geodesicInterval_of_isCompact_of_mapsTo_Ico {K : Set M} (hK : IsCompact K) {τ : ℝ}
+    (hτ : 0 ≤ τ)
+    (h : MapsTo (maximalGeodesic I M p v) (Ico 0 τ ∩ geodesicInterval I M p v) K) :
+    τ ∈ geodesicInterval I M p v := by
+  by_contra hτJ
+  have hub : τ ∈ upperBounds (geodesicInterval I M p v) := fun s hs ↦ le_of_not_ge fun hτs ↦
+    hτJ (ordConnected_geodesicInterval.out zero_mem_geodesicInterval hs ⟨hτ, hτs⟩)
+  have hlub := isLUB_csSup ⟨0, zero_mem_geodesicInterval⟩ ⟨τ, hub⟩
+  obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_geodesicInterval_of_isLUB hlub
+  obtain ⟨t, htK, ht⟩ :=
+    ((eventually_notMem_nhdsLT_maximalGeodesic hlub hK).and (Ioo_mem_nhdsLT hb0)).exists
+  exact htK (h ⟨⟨ht.1.le, ht.2.trans_le (hlub.2 hub)⟩, hsub ⟨ha.trans ht.1, ht.2⟩⟩)
 
 end TauCeti.Manifold
 

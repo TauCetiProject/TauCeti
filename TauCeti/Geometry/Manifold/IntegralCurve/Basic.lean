@@ -51,8 +51,6 @@ the field.
   calculation is adapted by `IsMIntegralCurveAt.of_extChartAt_symm` in the reverse direction.
 * Mathlib's `isMIntegralCurveOn_Ioo_eqOn_of_contMDiff`, whose connectedness argument is followed by
   `IsMIntegralCurveOn.eqOn_of_contDiffOn_extChartAt`.
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The exponential map", and Layer 1, "The group adjoint".
 -/
 
 public section

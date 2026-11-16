@@ -238,8 +238,11 @@ between `s` and `t`, the metric speed and the upper gradient satisfy `|u'| ^ p =
 everywhere there. -/
 theorem ae_metricDerivative_rpow_eq (h : IsCurveOfMaximalSlope p q φ g u I)
     (hg : IsStrongUpperGradient φ g) (hpq : p.HolderConjugate q) (hs : s ∈ I) (ht : t ∈ I)
-    (hst : s ≤ t) (hgu : AEMeasurable (fun r ↦ g (u r)) (volume.restrict (Ι s t))) :
+    (hgu : AEMeasurable (fun r ↦ g (u r)) (volume.restrict (Ι s t))) :
     ∀ᵐ r ∂volume.restrict (Ι s t), metricDerivative u r ^ p = g (u r) ^ q := by
+  wlog hst : s ≤ t generalizing s t
+  · rw [Set.uIoc_comm] at hgu ⊢
+    exact this ht hs hgu (le_of_not_ge hst)
   have hu := (h.2 hs ht hst).1
   have heq := h.apply_eq_add_dissipation hg hpq hs ht hst
   set D := dissipation p q g u s t
@@ -288,7 +291,7 @@ theorem apply_eq_add_curveAction (h : IsCurveOfMaximalSlope p q φ g u I)
     φ (u s) = φ (u t) + curveAction p u s t := by
   have hA : curveAction p u s t = ∫⁻ r in Ι s t, g (u r) ^ q :=
     (curveAction_def p u s t).trans <|
-      lintegral_congr_ae (h.ae_metricDerivative_rpow_eq hg hpq hs ht hst hgu)
+      lintegral_congr_ae (h.ae_metricDerivative_rpow_eq hg hpq hs ht hgu)
   rw [h.apply_eq_add_dissipation hg hpq hs ht hst, dissipation_def, ← hA,
     hpq.div_add_div_ennreal]
 
@@ -300,7 +303,7 @@ theorem apply_eq_add_lintegral_rpow (h : IsCurveOfMaximalSlope p q φ g u I)
     (hst : s ≤ t) (hgu : AEMeasurable (fun r ↦ g (u r)) (volume.restrict (Ι s t))) :
     φ (u s) = φ (u t) + ∫⁻ r in Ι s t, g (u r) ^ q := by
   rw [h.apply_eq_add_curveAction hg hpq hs ht hst hgu, curveAction_def,
-    lintegral_congr_ae (h.ae_metricDerivative_rpow_eq hg hpq hs ht hst hgu)]
+    lintegral_congr_ae (h.ae_metricDerivative_rpow_eq hg hpq hs ht hgu)]
 
 end IsCurveOfMaximalSlope
 
@@ -385,9 +388,9 @@ theorem isCurveOfMaximalSlope_of_hasGradientAt {f : E → ℝ} {u G : ℝ → E}
   obtain ⟨C, hC⟩ := isCompact_uIcc.exists_bound_of_continuousOn (hG.mono hsub)
   have hAC : AbsolutelyContinuousOnInterval u s t :=
     LipschitzOnWith.absolutelyContinuousOnInterval (K := C.toNNReal) <|
-      (convex_uIcc s t).lipschitzOnWith_of_nnnorm_hasDerivWithin_le
+      (convex_uIcc s t).lipschitzOnWith_of_nnNorm_hasDerivWithin_le
         (fun r hr ↦ (hu r (hsub hr)).hasDerivWithinAt) fun r hr ↦ by
-          rw [nnnorm_neg, ← NNReal.coe_le_coe, coe_nnnorm, Real.coe_toNNReal']
+          rw [nnNorm_neg, ← NNReal.coe_le_coe, coe_nnNorm, Real.coe_toNNReal']
           exact (hC r hr).trans (le_max_left _ _)
   refine ⟨hAC, ?_⟩
   -- The energy decreases at rate `‖G‖²`.
@@ -408,7 +411,7 @@ theorem isCurveOfMaximalSlope_of_hasGradientAt {f : E → ℝ} {u G : ℝ → E}
     refine setLIntegral_congr_fun measurableSet_uIoc fun r hr ↦ ?_
     have hr' := hsub (uIoc_subset_uIcc hr)
     rw [(hu r hr').metricDerivative_eq, (hf r hr').hasFDerivAt.descendingSlope_eq,
-      LinearIsometryEquiv.enorm_map, enorm_neg, Real.HolderConjugate.two_two.div_add_div_ennreal,
+      LinearIsometryEquiv.eNorm_map, eNorm_neg, Real.HolderConjugate.two_two.div_add_div_ennreal,
       ← ofReal_norm,
       ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two]
     norm_cast

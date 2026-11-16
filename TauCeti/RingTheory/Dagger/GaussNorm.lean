@@ -78,11 +78,11 @@ theorem norm_coeff_le (f : washnitzerAlgebra σ R) (t : σ →₀ ℕ) :
   simpa [Finsupp.prod_pow_eq_pow_degree] using
     MvPowerSeries.norm_coeff_mul_prod_le (toTate σ R f) t
 
-/-- A nonnegative bound on the Gauss norm is equivalent to the same bound on all coefficients. -/
-theorem norm_le_iff {f : washnitzerAlgebra σ R} {r : ℝ} (hr : 0 ≤ r) :
+/-- A bound on the Gauss norm is equivalent to the same bound on all coefficients. -/
+theorem norm_le_iff {f : washnitzerAlgebra σ R} {r : ℝ} :
     ‖f‖ ≤ r ↔ ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ ≤ r := by
   simpa [Finsupp.prod_pow_eq_pow_degree] using
-    (MvPowerSeries.norm_le_iff (f := toTate σ R f) hr)
+    (MvPowerSeries.norm_le_iff (f := toTate σ R f))
 
 /-- A strict bound on the Gauss norm is equivalent to a strict bound on all coefficients. -/
 theorem norm_lt_iff {f : washnitzerAlgebra σ R} {r : ℝ} :

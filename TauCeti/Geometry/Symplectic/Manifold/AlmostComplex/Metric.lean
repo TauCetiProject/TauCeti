@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.ComplexStructure
-public import TauCeti.Geometry.Manifold.Riemannian.HodgeStar
+public import TauCeti.Geometry.Manifold.Riemannian.AlmostComplex
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+public import TauCeti.Geometry.Symplectic.Orientation
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Musical
+import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 import TauCeti.Geometry.Symplectic.Manifold.Flat
 
 /-!
@@ -47,6 +49,9 @@ symplectic form on an oriented four-manifold, these are exactly the metrics of t
   four-manifold, such a `J` exists if and only if `⋆σ = ±σ` and `|σ|² = 2` at every point.
 * `TauCeti.SmoothTwoForm.exists_smoothAlmostComplexStructure_inner_eq_iff_of_pos`: for the
   symplectic orientation, it exists if and only if `⋆σ = σ` and `|σ|² = 2` at every point.
+* `TauCeti.SmoothAlmostComplexStructure.isCompatibleOrientation_of_symplectic`: when `σ` is
+  nondegenerate, `g(u, v) = σ(u, J v)`, and `o` agrees fibrewise with the symplectic orientation of
+  `σ`, `J` satisfies `IsCompatibleOrientation`.
 
 ## References
 
@@ -295,5 +300,31 @@ theorem exists_smoothAlmostComplexStructure_inner_eq_iff_of_pos
     exact h x v
 
 end SmoothTwoForm
+
+namespace SmoothAlmostComplexStructure
+
+/-- **Any nondegenerate two-form `σ` on an oriented Riemannian four-manifold whose associated
+bilinear form `σ(·, J ·)` is the bundle metric and whose symplectic orientation agrees with `o`
+satisfies `J.IsCompatibleOrientation o`.** -/
+theorem isCompatibleOrientation_of_symplectic {J : SmoothAlmostComplexStructure I M}
+    (o : Manifold.Orientation I M (Fin 4)) {σ : SmoothTwoForm I M} (hσ : σ.IsNondegenerate)
+    (hg : ∀ (x : M) (v w : TangentSpace I x), ⟪v, w⟫ = σ.eval₂ x v (J x w))
+    (ho : ∀ x : M,
+      (letI : Fact (finrank ℝ (TangentSpace I x) = 4) := o.fact_finrank_tangentSpace x
+       (hσ.symplecticFormAt x).orientation Fact.out) = o.orientationAt x) :
+    J.IsCompatibleOrientation o := by
+  rw [isCompatibleOrientation_iff]
+  intro x
+  let _ : Fact (finrank ℝ (TangentSpace I x) = 4) := o.fact_finrank_tangentSpace x
+  have hg' : ∀ v w : TangentSpace I x,
+      ⟪v, w⟫ = (hσ.symplecticFormAt x) v (J.almostComplexStructureAt x w) := fun v w ↦ by
+    rw [almostComplexStructureAt_apply, hσ.symplecticFormAt_apply, hg x v w]
+  obtain ⟨e, he, h₀, h₂⟩ :=
+    AlmostComplexStructure.exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation
+      hg'
+  rw [almostComplexStructureAt_apply] at h₀ h₂
+  exact ⟨e, he.trans (ho x), h₀, h₂⟩
+
+end SmoothAlmostComplexStructure
 
 end TauCeti

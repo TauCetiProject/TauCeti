@@ -5,18 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import Mathlib.AlgebraicTopology.SingularHomology.Basic
-public import Mathlib.Data.ENat.Lattice
 public import TauCeti.AlgebraicTopology.Singular.SurfaceGenus
 public import TauCeti.Geometry.Manifold.Instances.Cylinder
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
 public import TauCeti.KnotTheory.SmoothCircle
 
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
-import TauCeti.AlgebraicTopology.Singular.Torus.Exterior
+import TauCeti.AlgebraicTopology.Singular.Sphere
+import TauCeti.Geometry.Sphere.Circle
 import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
@@ -25,7 +21,11 @@ import TauCeti.Topology.Homotopy.HomotopyEquiv
 Two knots `K₀`, `K₁ ⊆ S³` are related by a **cobordism of genus `g`** when they cobound a compact,
 connected, orientable surface of genus `g` smoothly and properly embedded in `S³ × [0, 1]`, with
 `K₀` in `S³ × {0}` and `K₁` in `S³ × {1}`. The least such genus is the **cobordism distance**
-between the two knots. A concordance, an embedded annulus, is a cobordism of genus `0`. Classically,
+between the two knots. The orientations of the knots play no role: the surface is orientable, but no
+compatibility is asked between an orientation of it and the orientations that the parametrizations
+induce on the two boundary circles, so this is the cobordism distance between unoriented knots (the
+smaller of the oriented distances from `K₀` to `K₁` and to the reverse of `K₁`). A concordance, an
+embedded annulus, is a cobordism of genus `0`. Classically,
 capping off with a disc shows that the cobordism distance from `K` to the unknot is the slice genus
 of `K`; that comparison needs gluing surfaces and is not formalized here.
 
@@ -55,8 +55,11 @@ boundary circles, so `H₁(S; ℚ) ≅ ℚ²ᵍ⁺¹` and the genus is `⌊dim H
 (`TauCeti.KnotCobordism.genus_ofConcordance`). The cobordism distance
 (`TauCeti.cobordismDistance K₀ K₁`) is the infimum of the genera of the knot cobordisms from `K₀`
 to `K₁`, valued in `ℕ∞` so that it is `⊤` when there is none; it vanishes on concordant knots
-(`TauCeti.SmoothEmbedding.Concordant.cobordismDistance_eq_zero`). The converse, that a cobordism of
-genus `0` is an annulus, needs the classification of compact surfaces and is not proved here.
+(`TauCeti.SmoothEmbedding.Concordant.cobordismDistance_eq_zero`). Distance `0` does not give a
+concordance in return: a knot and its reverse are at distance `0` (their images agree), although
+they need not be concordant. That a cobordism of genus `0` is an annulus, which would give a
+concordance only up to reversing one end, needs the classification of compact surfaces and is not
+proved here.
 
 Two operations keep the surface and move only its embedding, so they keep the genus. Reflecting
 the heights by `t ↦ 1 - t` reverses a cobordism from `K₀` to `K₁` into one from `K₁` to `K₀`
@@ -125,9 +128,11 @@ inequality also needs the genus of the stacked surface, which is not computed.
 ## References
 
 * C. Livingston, *A survey of classical knot concordance*, in *Handbook of Knot Theory* (2005),
-  Section 2, for knot cobordisms in `S³ × [0, 1]` and the four-ball genus.
+  Section 1 for the annulus in `S³ × [0, 1]` that defines concordance and Section 9.5 for the
+  four-ball genus (the survey does not treat cobordisms of higher genus).
 * S. Baader, *Scissor equivalence for torus links*, Bull. Lond. Math. Soc. 44 (2012), 1068–1078,
-  for the cobordism distance of knots.
+  for the cobordism distance of oriented links, of which the distance here is the unoriented
+  variant.
 * W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997), Chapter 8.
 -/
 
@@ -135,7 +140,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory AlgebraicTopology Manifold Metric Module Set
+open Manifold Metric Module Set
 open scoped Manifold ContDiff
 
 namespace TauCeti
@@ -144,7 +149,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
 /-- A smooth **knot cobordism** from the knot `K₀` to the knot `K₁` in the unit sphere `Sⁿ` of `E`,
-in collared form: a connected, orientable smooth surface, modelled on `ℝ¹ × ℝ`, with a smooth
+between the images of the knots only, so without any compatibility with their orientations, in
+collared form: a connected, orientable smooth surface, modelled on `ℝ¹ × ℝ`, with a smooth
 embedding into `Sⁿ × ℝ` which is proper over the slab `Sⁿ × [0, 1]` and whose image is the
 cylinder over `K₀` at heights at most `ε` and the cylinder over `K₁` at heights at least `1 - ε`,
 for some `ε > 0`. -/
@@ -189,6 +195,15 @@ def genus (S : KnotCobordism K₀ K₁) : ℕ :=
 /-- The genus of a knot cobordism is the genus `TauCeti.surfaceGenus` of its carrier. -/
 theorem genus_def (S : KnotCobordism K₀ K₁) : S.genus = surfaceGenus S.carrier :=
   (rfl)
+
+/-- The surface of a knot cobordism is Hausdorff, as it embeds in `Sⁿ × ℝ`. -/
+instance (S : KnotCobordism K₀ K₁) : T2Space S.carrier :=
+  S.isSmoothEmbedding.isEmbedding.t2Space
+
+/-- The surface of a knot cobordism is second countable, as it embeds in `Sⁿ × ℝ`. -/
+instance (S : KnotCobordism K₀ K₁) : SecondCountableTopology S.carrier :=
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  S.isSmoothEmbedding.isEmbedding.isInducing.secondCountableTopology
 
 /-- A knot cobordism from `K₀` to `K₁` is one between any knots with the same images. -/
 def congrRange (S : KnotCobordism K₀ K₁) (h₀ : range K₀ = range K₀')
@@ -250,13 +265,14 @@ one copy of `ℚ`. -/
 @[simp]
 theorem genus_ofConcordance (F : SmoothEmbedding.Concordance K₀ K₁) :
     (ofConcordance F).genus = 0 := by
-  -- The cylinder `S¹ × ℝ` is homotopy equivalent to the one-circle torus `Unit → S¹`.
+  -- The cylinder `S¹ × ℝ` is homotopy equivalent to the circle, that is the sphere `S¹`.
   let e := ContinuousMap.HomotopyEquiv.prodContractible Circle ℝ
-  have h := ((e.trans (Homeomorph.ulift.symm.trans
-      (Homeomorph.funUnique Unit (ULift.{0} Circle)).symm).toHomotopyEquiv).singularHomologyIso
+  let e' : Circle ≃ₜ TopCat.sphere.{0} 1 :=
+    Homeomorph.ulift.symm.trans sphereOneHomeomorphCircle.symm
+  have h := ((e.trans e'.toHomotopyEquiv).singularHomologyIso
     (ModuleCat.of ℚ ℚ) 1).toLinearEquiv.finrank_eq
-  rw [finrank_singularHomology_pi_circle] at h
-  simp only [Nat.card_unique, Nat.choose_self, finrank_self, mul_one] at h
+  rw [ModuleCat.finrank_singularHomology_sphere] at h
+  simp only [ite_true, one_ne_zero, ite_false, finrank_self, add_zero] at h
   -- The first homology of the cobordism is, by definition, that of the cylinder `S¹ × ℝ`.
   rw [genus_def, surfaceGenus_def]
   exact (congrArg (· / 2) h).trans (by norm_num)
@@ -334,8 +350,7 @@ def transDiffeomorph (S : KnotCobordism K₀ K₁)
     obtain ⟨ε, hε, h⟩ := S.exists_pos_range_inter_snd_le
     refine ⟨ε, hε, Set.ext fun p ↦ ?_⟩
     have hp := Set.ext_iff.1 h (Ψ.symm p.1, p.2)
-    have e (y) : Ψ y = p.1 ↔ y = Ψ.symm p.1 :=
-      ⟨fun h ↦ h ▸ (Ψ.symm_apply_apply y).symm, fun h ↦ h ▸ Ψ.apply_symm_apply p.1⟩
+    have e (y) : Ψ y = p.1 ↔ y = Ψ.symm p.1 := Ψ.toEquiv.eq_symm_apply.symm
     simp only [mem_inter_iff, mem_range, mem_ofPred_eq, mem_prod, mem_Iic, Prod.ext_iff,
       SmoothEmbedding.coe_transDiffeomorph, Function.comp_apply, e] at hp ⊢
     exact hp
@@ -343,8 +358,7 @@ def transDiffeomorph (S : KnotCobordism K₀ K₁)
     obtain ⟨ε, hε, h⟩ := S.exists_pos_range_inter_le_snd
     refine ⟨ε, hε, Set.ext fun p ↦ ?_⟩
     have hp := Set.ext_iff.1 h (Ψ.symm p.1, p.2)
-    have e (y) : Ψ y = p.1 ↔ y = Ψ.symm p.1 :=
-      ⟨fun h ↦ h ▸ (Ψ.symm_apply_apply y).symm, fun h ↦ h ▸ Ψ.apply_symm_apply p.1⟩
+    have e (y) : Ψ y = p.1 ↔ y = Ψ.symm p.1 := Ψ.toEquiv.eq_symm_apply.symm
     simp only [mem_inter_iff, mem_range, mem_ofPred_eq, mem_prod, mem_Ici, Prod.ext_iff,
       SmoothEmbedding.coe_transDiffeomorph, Function.comp_apply, e] at hp ⊢
     exact hp
@@ -530,12 +544,12 @@ private theorem mem_range_glueFun_of_pos (hc : 0 < c)
 
 /-- Gluing in the concordance keeps the heights above `1 - c` above `1 - c`, and those below it
 below it. -/
-private theorem lt_snd_glueFun_iff (hc : 0 < c)
-    (hS : IsCylinderFrom S (1 - 2 * c)) (x : S.carrier) :
+private theorem lt_snd_glueFun_iff (hc : 0 < c) (x : S.carrier) :
     1 - c < (glueFun C S hc x).2 ↔ 1 - c < (S.toFun x).2 := by
-  by_cases hx : (S.toFun x).2 ≤ 1 - c
-  · rw [glueFun_of_le C hc hx]
-  · rw [glueFun_of_le_snd C hc hS (by linarith), collarParam, lt_snd_rescale_iff]
+  unfold glueFun
+  split_ifs
+  · rfl
+  · exact lt_snd_rescale_iff C hc _ _
 
 private theorem isImmersionAt_glueFun (hc : 0 < c)
     (hS : IsCylinderFrom S (1 - 2 * c)) (x : S.carrier) :
@@ -561,13 +575,44 @@ private theorem isImmersionAt_glueFun (hc : 0 < c)
   exact himm.congr_of_eventuallyEq <| eventuallyEq_of_mem (hU.mem_nhds hx') fun y hy ↦
     (glueFun_of_le_snd C hc hS hy.le).symm
 
+/-- Over the open slab above height `1 - 2 c`, the glued map is the rescaled concordance composed
+with the parameters of the cylinder over `K₁`, hence an embedding. -/
+private theorem isEmbedding_glueFun_comp_subtypeVal_upper (hc : 0 < c)
+    (hS : IsCylinderFrom S (1 - 2 * c)) :
+    IsEmbedding (glueFun C S hc ∘
+      (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) := by
+  have heq : glueFun C S hc ∘ (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier) =
+      rescale C hc ∘ (collarParam S ∘ Subtype.val) :=
+    funext fun y ↦ glueFun_of_le_snd C hc hS (le_of_lt y.2)
+  have hP : Continuous (collarParam S ∘
+      (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) :=
+    continuous_iff_continuousAt.2 fun y ↦
+      (contMDiffAt_collarParam hS y.2).continuousAt.comp continuous_subtype_val.continuousAt
+  have hK : Continuous (Prod.map K₁ (id : ℝ → ℝ)) :=
+    K₁.isEmbedding.continuous.prodMap continuous_id
+  have hPK : Prod.map K₁ id ∘ (collarParam S ∘
+      (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) = S.toFun ∘ Subtype.val :=
+    funext fun y ↦ prodMap_collarParam (fst_mem_range_of_le hS (le_of_lt y.2))
+  rw [heq]
+  refine (rescale C hc).isEmbedding.comp (IsEmbedding.of_comp hP hK ?_)
+  rw [hPK]
+  exact S.isSmoothEmbedding.isEmbedding.comp IsEmbedding.subtypeVal
+
+/-- A point of the surface whose glued image lies above height `1 - 2 c` also lies above height
+`1 - 2 c` in the original surface `S`. -/
+private theorem lt_snd_toFun_of_lt_snd_glueFun (hc : 0 < c) (y : S.carrier)
+    (hy : 1 - 2 * c < (glueFun C S hc y).2) :
+    1 - 2 * c < (S.toFun y).2 := by
+  by_cases hle : (S.toFun y).2 ≤ 1 - c
+  · rwa [glueFun_of_le C hc hle] at hy
+  · linarith
+
 /-- The glued map is a topological embedding: the open slabs below height `1 - c` and above height
 `1 - 2 c` cover `Sⁿ × ℝ`, and over them it is the embedding of `S`, respectively the rescaled
 concordance composed with the parameters of the cylinder over `K₁`. -/
 private theorem isEmbedding_glueFun (hc : 0 < c)
     (hS : IsCylinderFrom S (1 - 2 * c)) :
     IsEmbedding (glueFun C S hc) := by
-  have hΦ := S.isSmoothEmbedding
   have hglue : Continuous (glueFun C S hc) := continuous_iff_continuousAt.2 fun x ↦
     (isImmersionAt_glueFun C hc hS x).continuousAt
   let U : Bool → TopologicalSpace.Opens (sphere (0 : E) 1 × ℝ) := fun b ↦ bif b
@@ -586,45 +631,26 @@ private theorem isEmbedding_glueFun (hc : 0 < c)
   -- A point mapped into a slab lies in the matching slab of the surface.
   · rintro (_ | _) y hy
     · have hle : (S.toFun y).2 ≤ 1 - c :=
-        not_lt.1 fun h ↦ (not_lt.2 (le_of_lt hy)) ((lt_snd_glueFun_iff C hc hS y).2 h)
+        not_lt.1 fun h ↦ (not_lt.2 (le_of_lt hy)) ((lt_snd_glueFun_iff C hc y).2 h)
       refine ⟨⟨y, ?_⟩, rfl⟩
       have hy' : (glueFun C S hc y).2 < 1 - c := hy
       rwa [glueFun_of_le C hc hle] at hy'
-    · have hy' : 1 - 2 * c < (glueFun C S hc y).2 := hy
-      have hlt : 1 - 2 * c < (S.toFun y).2 := by
-        by_cases hle : (S.toFun y).2 ≤ 1 - c
-        · rwa [glueFun_of_le C hc hle] at hy'
-        · linarith
-      exact ⟨⟨y, hlt⟩, rfl⟩
+    · exact ⟨⟨y, lt_snd_toFun_of_lt_snd_glueFun C hc y hy⟩, rfl⟩
   -- On each slab of the surface the glued map is an embedding.
   · rintro (_ | _)
     · have heq : glueFun C S hc ∘ (Subtype.val : W false → S.carrier) =
           S.toFun ∘ Subtype.val :=
         funext fun y ↦ glueFun_of_le C hc (le_of_lt y.2)
       rw [heq]
-      exact hΦ.isEmbedding.comp IsEmbedding.subtypeVal
-    · have heq : glueFun C S hc ∘ (Subtype.val : W true → S.carrier) =
-          rescale C hc ∘ (collarParam S ∘ Subtype.val) :=
-        funext fun y ↦ glueFun_of_le_snd C hc hS (le_of_lt y.2)
-      have hP : Continuous (collarParam S ∘ (Subtype.val : W true → S.carrier)) :=
-        continuous_iff_continuousAt.2 fun y ↦
-          (contMDiffAt_collarParam hS y.2).continuousAt.comp continuous_subtype_val.continuousAt
-      have hK : Continuous (Prod.map K₁ (id : ℝ → ℝ)) :=
-        K₁.isEmbedding.continuous.prodMap continuous_id
-      have hPK : Prod.map K₁ id ∘ (collarParam S ∘ (Subtype.val : W true → S.carrier)) =
-          S.toFun ∘ Subtype.val :=
-        funext fun y ↦ prodMap_collarParam (fst_mem_range_of_le hS (le_of_lt y.2))
-      rw [heq]
-      refine (rescale C hc).isEmbedding.comp (IsEmbedding.of_comp hP hK ?_)
-      rw [hPK]
-      exact hΦ.isEmbedding.comp IsEmbedding.subtypeVal
+      exact S.isSmoothEmbedding.isEmbedding.comp IsEmbedding.subtypeVal
+    · exact isEmbedding_glueFun_comp_subtypeVal_upper C hc hS
 
 /-- The part of the glued surface over the slab `Sⁿ × [0, 1]` is compact. -/
 private theorem isCompact_preimage_Icc_glueFun (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
     (hS : IsCylinderFrom S (1 - 2 * c)) :
     IsCompact {x | (glueFun C S hc x).2 ∈ Icc (0 : ℝ) 1} := by
-  -- Gluing in `C` only moves the points of `S` above height `1 - c`, and keeps those above
-  -- height `1` fixed, so a point of the new surface over `[0, 1]` lies over `[0, 1]` in `S`.
+  -- Gluing in `C` only changes the points of `S` above height `1 - c`, and keeps their heights
+  -- above `1` above `1`, so a point of the new surface over `[0, 1]` lies over `[0, 1]` in `S`.
   refine S.isCompact_preimage_Icc.of_isClosed_subset (isClosed_Icc.preimage
     (continuous_snd.comp (isEmbedding_glueFun C hc hS).continuous)) fun x hx ↦ ?_
   by_cases hle : (S.toFun x).2 ≤ 1 - c
@@ -638,8 +664,7 @@ private theorem isCompact_preimage_Icc_glueFun (hc : 0 < c) (hc₂ : c ≤ 1 / 2
     exact not_le.2 h₁ hx'
 
 /-- Near height `0` the glued surface is the cylinder over `K₀`. -/
-private theorem exists_pos_range_glueFun_inter_snd_le (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
-    (hS : IsCylinderFrom S (1 - 2 * c)) :
+private theorem exists_pos_range_glueFun_inter_snd_le (hc : 0 < c) (hc₂ : c ≤ 1 / 2) :
     ∃ ε > 0, range (glueFun C S hc) ∩ {p | p.2 ≤ ε} = range K₀ ×ˢ Iic ε := by
   -- Below height `1 / 2 ≤ 1 - c` the new surface is that of `S`.
   obtain ⟨ε, hε, h⟩ := S.exists_pos_range_inter_snd_le
@@ -649,7 +674,7 @@ private theorem exists_pos_range_glueFun_inter_snd_le (hc : 0 < c) (hc₂ : c �
   constructor
   · rintro ⟨⟨x, rfl⟩, hle⟩
     have hx : (S.toFun x).2 ≤ 1 - c := not_lt.1 fun h' ↦ by
-      linarith [(lt_snd_glueFun_iff C hc hS x).2 h', min_le_right ε (1 / 2)]
+      linarith [(lt_snd_glueFun_iff C hc x).2 h', min_le_right ε (1 / 2)]
     rw [glueFun_of_le C hc hx] at hle hp ⊢
     exact ⟨(hp.1 ⟨mem_range_self x, hle.trans (min_le_left _ _)⟩).1, hle⟩
   · rintro ⟨hK, hle⟩
@@ -672,7 +697,7 @@ private theorem exists_pos_range_glueFun_inter_le_snd (hc : 0 < c)
   constructor
   · rintro ⟨⟨x, rfl⟩, hle⟩
     have hx : 1 - c < (S.toFun x).2 :=
-      (lt_snd_glueFun_iff C hc hS x).1 (by nlinarith)
+      (lt_snd_glueFun_iff C hc x).1 (by nlinarith)
     rw [glueFun_of_le_snd C hc hS (by linarith), collarParam, rescale_apply] at hle ⊢
     refine ⟨((Set.ext_iff.1 h _).1 ⟨mem_range_self _, ?_⟩).1, hle⟩
     simp only [mem_ofPred_eq]
@@ -703,7 +728,7 @@ private def transConcordanceOfWidth (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
   isSmoothEmbedding := ⟨isImmersion_iff_forall_isImmersionAt.2 (isImmersionAt_glueFun C hc hS),
     isEmbedding_glueFun C hc hS⟩
   isCompact_preimage_Icc := isCompact_preimage_Icc_glueFun C hc hc₂ hS
-  exists_pos_range_inter_snd_le := exists_pos_range_glueFun_inter_snd_le C hc hc₂ hS
+  exists_pos_range_inter_snd_le := exists_pos_range_glueFun_inter_snd_le C hc hc₂
   exists_pos_range_inter_le_snd := exists_pos_range_glueFun_inter_le_snd C hc hS
 
 variable (S) in
@@ -729,7 +754,13 @@ private theorem mem_range_toFun_iff_of_width (p : sphere (0 : E) 1 × ℝ)
   have hp' : 1 - S.exists_pos_range_inter_le_snd.choose ≤ p.2 := by rw [width] at hp; linarith
   exact ⟨fun hr ↦ (h.1 ⟨hr, hp'⟩).1, fun hK ↦ (h.2 ⟨hK, hp'⟩).1⟩
 
-variable (S) in
+end Concordance
+
+section TransConcordance
+
+variable {K₂ : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
+  (S : KnotCobordism K₀ K₁) (C : SmoothEmbedding.Concordance K₁ K₂)
+
 /-- **Composing a knot cobordism with a concordance**: a knot cobordism `S` from `K₀` to `K₁`
 followed by a concordance `C` from `K₁` to `K₂` is a knot cobordism from `K₀` to `K₂` on the same
 surface. Up to a height `1 - c` close to `1` the surface is embedded as by `S`; above it, where `S`
@@ -738,24 +769,20 @@ interval `[1 - c, 1]`. -/
 def transConcordance : KnotCobordism K₀ K₂ :=
   transConcordanceOfWidth C (width_pos (S := S)) width_le mem_range_toFun_iff_of_width
 
-variable (S) in
 /-- The embedding of the composite of `S` and `C` is the gluing of `S` with the rescaled `C`. -/
 private theorem toFun_transConcordance :
     (S.transConcordance C).toFun = glueFun C S (width_pos (S := S)) :=
   rfl
 
-variable (S) in
 /-- Composing a knot cobordism with a concordance keeps its surface. -/
 theorem carrier_transConcordance : (S.transConcordance C).carrier = S.carrier :=
   (rfl)
 
-variable (S) in
 /-- Composing a knot cobordism with a concordance keeps its genus. -/
 @[simp]
 theorem genus_transConcordance : (S.transConcordance C).genus = S.genus :=
   (rfl)
 
-variable (S) in
 /-- **The embedded surface of the composite of `S` and `C`**: for some width `c ∈ (0, 1/2]`, it is
 the part of the surface of `S` up to height `1 - c`, together with the part of the annulus of `C`
 over the times `s > 0`, its heights `h` rescaled to `1 - c + c * h`. -/
@@ -782,7 +809,7 @@ theorem exists_range_toFun_transConcordance :
     · exact ⟨x, glueFun_of_le C width_pos hx⟩
     · exact mem_range_glueFun_of_pos C width_pos mem_range_toFun_iff_of_width z hs
 
-end Concordance
+end TransConcordance
 
 end KnotCobordism
 
@@ -850,7 +877,8 @@ end SmoothEmbedding.Concordance
 open KnotCobordism
 
 /-- The **cobordism distance** between the knots `K₀` and `K₁`: the least genus of a knot cobordism
-from `K₀` to `K₁`, or `⊤` if there is none. -/
+from `K₀` to `K₁`, or `⊤` if there is none. Only the images of the knots enter, so this is the
+distance between unoriented knots: a knot and its reverse are at distance `0`. -/
 def cobordismDistance (K₀ K₁ : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) : ℕ∞ :=
   ⨅ S : KnotCobordism K₀ K₁, (S.genus : ℕ∞)
 
@@ -865,7 +893,7 @@ theorem cobordismDistance_def :
 theorem cobordismDistance_le_genus (S : KnotCobordism K₀ K₁) : cobordismDistance K₀ K₁ ≤ S.genus :=
   iInf_le _ S
 
-/-- A lower bound for the cobordism distance is a lower bound for the genus of every knot
+/-- A number is at most the cobordism distance exactly when it is at most the genus of every knot
 cobordism. -/
 @[simp]
 theorem le_cobordismDistance_iff {m : ℕ∞} :

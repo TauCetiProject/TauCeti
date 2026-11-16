@@ -22,9 +22,9 @@ an even unimodular lattice. The unit-homomorphism used for modular forms with ch
 `MulChar.equivToUnitHom (hL.thetaCharacter hE)`.
 
 The evaluated Gauss-sum transformation law is expressed in terms of this character at the
-lower-right matrix entry, for matrices in `Γ₀(level L)` with positive lower-left and positive odd
-upper-left entries. This identifies the arithmetic scalar needed for the general theta
-transformation law.
+lower-right matrix entry, for matrices in `Γ₀(level L)` whose lower-left entry is a natural number
+(a multiple of the level, possibly `0`) and whose upper-left entry is an odd natural number. This
+identifies the arithmetic scalar needed for the general theta transformation law.
 
 ## References
 
@@ -107,12 +107,12 @@ theorem thetaCharacter_eq_one_of_isUnimodular (hL : IsEven L) (hE : Even (finran
   rw [hL.signedDiscr_eq_one_of_isUnimodular hU]
   exact IsSquare.one
 
-/-- For a matrix in `Γ₀(level L)` with positive lower-left and positive odd upper-left entries,
-the theta transformation scalar is the theta character evaluated at the lower-right entry.
+/-- For a matrix in `Γ₀(level L)` with natural-number lower-left and odd natural-number upper-left
+entries, the theta transformation scalar is the theta character evaluated at the lower-right entry.
 The subgroup condition means that the level divides the lower-left entry. -/
-theorem thetaSeries_slash_eq_thetaCharacter_smul_of_pos_odd
+theorem thetaSeries_slash_eq_thetaCharacter_smul_of_odd
     [MeasurableSpace E] [BorelSpace E] (hL : IsEven L) (hE : Even (finrank ℝ E)) {k : ℕ}
-    (hk : finrank ℝ E = 2 * k) (A : SL(2, ℤ)) {a c : ℕ} [NeZero c]
+    (hk : finrank ℝ E = 2 * k) (A : SL(2, ℤ)) {a c : ℕ}
     (ha : A 0 0 = a) (hc : A 1 0 = c) (haodd : Odd a) (hN : level L ∣ c) :
     thetaSeries L ∣[(k : ℤ)] A =
       hL.thetaCharacter hE (A 1 1 : ℤ) • thetaSeries L := by

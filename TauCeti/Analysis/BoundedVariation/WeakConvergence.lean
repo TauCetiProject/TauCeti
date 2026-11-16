@@ -71,7 +71,6 @@ theorem tendsto_integral_inner_polarDensity_of_tendsto_integral
   have hfK : tsupport f ⊆ K := self_subset_cthickening _
   obtain ⟨C, hC⟩ := hbound K hK hδΩ
   let M := max C 0 + (variationMeasure μ Ω u).real (((↑) : Ω → E) ⁻¹' K) + 1
-  have hM : 0 < M := by positivity
   refine Metric.tendsto_nhds.2 fun ε hε => ?_
   let η := ε / (M + 1)
   have hη : 0 < η := div_pos hε (by positivity)

@@ -73,7 +73,7 @@ theorem exp_yosidaApproximation_uniformCauchySeqOn_compact_of_norm_resolvent_pow
     (hres : ∀ lambda : ℝ, 0 < lambda → lambda ∈ LinearPMap.resolventSet A)
     (hpow : ∀ n : ℕ, 1 ≤ n → ∀ lambda : ℝ, 0 < lambda →
       ‖LinearPMap.resolvent A lambda ^ n‖ ≤ M / lambda ^ n)
-    (hdense : Dense (A.domain : Set X)) (x : X) {T : ℝ} (hT : 0 ≤ T) :
+    (hdense : Dense (A.domain : Set X)) (x : X) {T : ℝ} :
     UniformCauchySeqOn
       (fun lambda t : ℝ => exp (t • yosidaApproximation A lambda) x)
       Filter.atTop (Set.Icc 0 T) :=
@@ -81,7 +81,7 @@ theorem exp_yosidaApproximation_uniformCauchySeqOn_compact_of_norm_resolvent_pow
     (fun lambda hlambda => by simpa using hpow 1 le_rfl lambda hlambda)
     (fun lambda hlambda _ hs =>
       norm_exp_smul_yosidaApproximation_le hM hlambda hs fun n hn => hpow n hn lambda hlambda)
-    hdense x hT
+    hdense x
 
 end TauCeti.Semigroups
 

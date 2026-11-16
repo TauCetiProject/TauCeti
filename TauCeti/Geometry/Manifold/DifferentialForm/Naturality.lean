@@ -224,6 +224,19 @@ theorem mextDerivₗ_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (k : �
     (isSmoothBundleForm_def 1 φ.1).mpr (φ.contMDiff.of_le (by simp))
   exact (TauCeti.mpullback_mextDeriv (hf.of_le (by simp)) hφ).symm
 
+/-- The exterior derivative of the smooth pullback of a one-form, evaluated on tangent vectors
+`v` and `w`, is the exterior derivative of the form evaluated on their images under the
+differential. -/
+theorem mextDeriv_mpullback_apply_two (f : M → M') (hf : ContMDiff I I' ∞ f)
+    (φ : SmoothForm I' M' F 1) (x : M) (v w : TangentSpace I x) :
+    mextDeriv (mpullback f hf φ).1 x ![v, w] =
+      mextDeriv φ.1 (f x) ![mfderiv I I' f x v, mfderiv I I' f x w] := by
+  rw [coe_mpullback, ← mpullback_mextDeriv_at ((hf x).of_le (by simp))
+    ((φ.contMDiff (f x)).of_le (by simp)), TauCeti.mpullback_apply]
+  congr 1
+  ext i
+  fin_cases i <;> rfl
+
 end SmoothForm
 
 end TauCeti

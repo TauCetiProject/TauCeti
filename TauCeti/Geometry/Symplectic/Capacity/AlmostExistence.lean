@@ -105,7 +105,7 @@ private theorem exists_isCompleteVectorField_eq_hamiltonianVectorField (hσ : σ
       ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) ∧
         IsCompleteVectorField v ∧ (∀ x, F x ≤ m → v x = σ.hamiltonianVectorField F x) ∧
           ∀ x, ∃ a : ℝ, v x = a • σ.hamiltonianVectorField F x := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   set ψ : M → ℝ := fun x ↦ Real.smoothTransition ((b - F x) / (b - m))
   have hψ : ContMDiff I 𝓘(ℝ) 1 ψ :=
     (Real.smoothTransition.contDiff.comp ((contDiff_const.sub contDiff_id).div_const _)
@@ -148,7 +148,7 @@ private theorem apply_globalFlow_eq (hσ : σ.IsNondegenerate) (hF : MDifferenti
     (hvX : ∀ x, ∃ a : ℝ, v x = a • σ.hamiltonianVectorField F x) (t : ℝ) (x : M) :
     F (globalFlow v hv hcomplete t x) = F x := by
   have h := ((isMIntegralCurve_globalFlow hv hcomplete x).isMIntegralCurveOn univ)
-    |>.apply_eq_of_mvfderiv_apply_eq_zero isOpen_univ isPreconnected_univ (fun u _ ↦ hF _)
+    |>.apply_eq_of_mvfderiv_apply_eq_zero isPreconnected_univ (fun u _ ↦ hF _)
       (fun u _ ↦ by
         obtain ⟨a, ha⟩ := hvX (globalFlow v hv hcomplete u x)
         rw [ha, map_smul,
@@ -184,7 +184,7 @@ theorem hasContractibleClosedCharacteristicOfPeriodLE_of_frequently (hσ : σ.Is
   set u := Ultrafilter.of l
   have hul : (u : Filter {c // P c}) ≤ l := Ultrafilter.of_le l
   have hc : Tendsto (fun c : {c // P c} ↦ (c : ℝ)) u (𝓝 s) := tendsto_comap.mono_left hul
-  choose T γ hT hTK hγ hper hne hlev g hg hgγ using
+  choose T γ hT hTK hγ hper _ hlev g hg hgγ using
     fun c : {c // P c} ↦ hasContractibleClosedCharacteristicOfPeriodLE_iff.1 c.2.1
   -- The orbits are orbits of `ϕ`, which return to their base points.
   have hϕγ (c : {c // P c}) (t : ℝ) : ϕ t (γ c 0) = γ c t :=

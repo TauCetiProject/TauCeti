@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Sort
+public import TauCeti.Algebra.Order.BigOperators.Dominance
 public import TauCeti.Combinatorics.Young.OfRowLens
 
 /-!
@@ -42,8 +43,13 @@ for a nonempty weight (`TauCeti.DominantWeight.detShift_shift`).
 
 ## Main definitions
 
-* `TauCeti.DominantWeight`: the weakly decreasing sequences `Fin n → ℤ`.
+* `TauCeti.DominantWeight`: the weakly decreasing sequences `Fin n → ℤ`, forming an additive
+  commutative monoid under pointwise addition.
 * `TauCeti.DominantWeight.shift`: translating a weight by an integer multiple of `(1, …, 1)`.
+* `TauCeti.DominantWeight.dual`: the contragredient weight `λ*ᵢ = -λₙ₋₁₋ᵢ`.
+* `TauCeti.DominantWeight.Dominates`: the `GL n` dominance partial-sum order (`μ` dominates `ν` when
+  `TauCeti.Dominates ν.1 μ.1`, i.e., they have the same total degree and every leading partial sum
+  of `ν` is at most that of `μ`).
 * `TauCeti.DominantWeight.detShift`: the last entry `λₙ`, the determinant-twist exponent.
 * `TauCeti.DominantWeight.IsPolynomial`: having nonnegative entries.
 * `TauCeti.DominantWeight.shape` and `TauCeti.weightOfShape`: the two directions of the
@@ -108,6 +114,103 @@ theorem shift_zero (l : DominantWeight n) : l.shift 0 = l := by
 theorem shift_shift (l : DominantWeight n) (m m' : ℤ) :
     (l.shift m).shift m' = l.shift (m + m') := by
   ext i; simp [add_assoc]
+
+/-- The **contragredient** (or **dual**) dominant weight `λ*ᵢ = -λₙ₋₁₋ᵢ`: negating and reversing
+an antitone integer sequence keeps it antitone. On representations this is passing to the dual
+module. -/
+def dual (l : DominantWeight n) : DominantWeight n :=
+  ⟨fun i => -l.1 i.rev, fun _ _ h => Int.neg_le_neg (l.antitone (Fin.rev_le_rev.mpr h))⟩
+
+@[simp] theorem dual_apply (l : DominantWeight n) (i : Fin n) : l.dual.1 i = -l.1 i.rev := (rfl)
+
+/-- Contragredient duality is an involution on dominant weights. -/
+@[simp] theorem dual_dual (l : DominantWeight n) : l.dual.dual = l := by ext i; simp
+
+theorem dual_involutive : Function.Involutive (dual (n := n)) := dual_dual
+theorem dual_injective : Function.Injective (dual (n := n)) := dual_involutive.injective
+
+@[simp] theorem dual_shift (l : DominantWeight n) (m : ℤ) :
+    (l.shift m).dual = l.dual.shift (-m) := by ext i; simp [neg_add_rev, add_comm]
+
+/-- The entries of `λ*` sum to the negative of the entries of `λ`. -/
+theorem sum_dual (l : DominantWeight n) : (∑ i, l.dual.1 i) = -∑ i, l.1 i := by
+  rw [← Finset.sum_neg_distrib]; exact Equiv.sum_comp Fin.revPerm fun i => -l.1 i
+
+instance : Zero (DominantWeight n) := ⟨⟨0, fun _ _ _ => le_rfl⟩⟩
+instance : Add (DominantWeight n) :=
+  ⟨fun l₁ l₂ => ⟨l₁.1 + l₂.1, fun _ _ h => Int.add_le_add (l₁.antitone h) (l₂.antitone h)⟩⟩
+instance : SMul ℕ (DominantWeight n) :=
+  ⟨fun k l => ⟨k • l.1, fun _ _ h => nsmul_le_nsmul_right (l.antitone h) k⟩⟩
+instance : AddCommMonoid (DominantWeight n) :=
+  Subtype.coe_injective.addCommMonoid Subtype.val rfl (fun _ _ => rfl) fun _ _ => rfl
+
+@[simp] theorem zero_apply (i : Fin n) : (0 : DominantWeight n).1 i = 0 := (rfl)
+@[simp] theorem add_apply (l₁ l₂ : DominantWeight n) (i : Fin n) :
+    (l₁ + l₂).1 i = l₁.1 i + l₂.1 i := (rfl)
+@[simp] theorem nsmul_apply (k : ℕ) (l : DominantWeight n) (i : Fin n) :
+    (k • l).1 i = k • l.1 i := (rfl)
+@[simp] theorem dual_zero : (0 : DominantWeight n).dual = 0 := by ext i; simp
+@[simp] theorem dual_add (l₁ l₂ : DominantWeight n) : (l₁ + l₂).dual = l₁.dual + l₂.dual := by
+  ext i; simp [neg_add_rev, add_comm]
+
+/-- A dominant weight `μ` **dominates** `ν` (`ν ≤ μ` in the `GL n` dominance order) when `μ` and `ν`
+have the same total sum and every leading partial sum of `ν` is at most that of `μ`. Since
+dominant weights are antitone while `TauCeti.Dominates` is oriented so the dominated vector has
+larger leading partial sums, this is `TauCeti.Dominates ν.1 μ.1`. -/
+def Dominates (μ ν : DominantWeight n) : Prop :=
+  TauCeti.Dominates ν.1 μ.1
+
+/-- Unfold `DominantWeight.Dominates` to `TauCeti.Dominates` on the underlying sequences (with
+arguments reversed). -/
+theorem dominates_def {μ ν : DominantWeight n} :
+    μ.Dominates ν ↔ TauCeti.Dominates ν.1 μ.1 := Iff.rfl
+
+/-- Leading partial sums stabilize at index `n`, so `Dominates` only needs to test `k : Fin (n + 1)`
+and is decidable. -/
+theorem dominates_iff_forall_fin {μ ν : DominantWeight n} :
+    μ.Dominates ν ↔ (∑ i, ν.1 i) = (∑ i, μ.1 i) ∧ ∀ k : Fin (n + 1),
+      (∑ i : Fin n with i.val < k.val, ν.1 i) ≤ ∑ i : Fin n with i.val < k.val, μ.1 i := by
+  rw [dominates_def, TauCeti.dominates_def, eq_comm]
+  have hpre (f : Fin n → ℤ) {k : ℕ} (hk : k ≤ n) :
+      (∑ i : Fin n with i.val < k, f i) = ∑ j : Fin k, f (Fin.castLE hk j) := by
+    rw [show ({i : Fin n | i.val < k} : Finset (Fin n)) = Finset.univ.map (Fin.castLEEmb hk) by
+      ext i; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_map,
+        Fin.castLEEmb_apply]
+      exact ⟨fun hi => ⟨⟨i.val, hi⟩, Fin.ext rfl⟩, fun ⟨j, hj⟩ => hj ▸ j.isLt⟩, Finset.sum_map]
+    rfl
+  refine Iff.and Iff.rfl ⟨fun h k => ?_, fun h k hk => ?_⟩
+  · simpa only [hpre _ (Nat.lt_succ_iff.mp k.isLt)] using h k.val (Nat.lt_succ_iff.mp k.isLt)
+  · simpa only [hpre _ hk] using h ⟨k, Nat.lt_succ_of_le hk⟩
+
+/-- Partial-sum characterization of `Dominates` over all filtered prefixes
+`{i : Fin n | i.val < k}`. -/
+theorem dominates_iff {μ ν : DominantWeight n} :
+    μ.Dominates ν ↔ (∑ i, ν.1 i) = (∑ i, μ.1 i) ∧
+      ∀ k : ℕ, (∑ i : Fin n with i.val < k, ν.1 i) ≤ ∑ i : Fin n with i.val < k, μ.1 i := by
+  rw [dominates_iff_forall_fin]
+  refine and_congr_right fun hsum => ⟨fun h k => ?_, fun h k => h k.val⟩
+  rcases le_or_gt k n with hk | hk
+  · exact h ⟨k, Nat.lt_succ_of_le hk⟩
+  · have hall : ({i : Fin n | i.val < k} : Finset (Fin n)) = Finset.univ := by
+      ext i; simp [i.isLt.trans hk]
+    rw [hall, hsum]
+
+instance (μ ν : DominantWeight n) : Decidable (μ.Dominates ν) :=
+  decidable_of_iff _ dominates_iff_forall_fin.symm
+
+/-- Every dominant weight dominates itself. -/
+@[simp, refl] theorem dominates_refl (μ : DominantWeight n) : μ.Dominates μ :=
+  TauCeti.Dominates.refl μ.1
+
+/-- Dominance on dominant weights is transitive. -/
+@[trans] theorem Dominates.trans {μ ν ξ : DominantWeight n}
+    (hμν : μ.Dominates ν) (hνξ : ν.Dominates ξ) : μ.Dominates ξ :=
+  TauCeti.Dominates.trans hνξ hμν
+
+/-- Dominance on dominant weights is antisymmetric. -/
+theorem Dominates.antisymm {μ ν : DominantWeight n} (hμν : μ.Dominates ν) (hνμ : ν.Dominates μ) :
+    μ = ν :=
+  Subtype.ext (TauCeti.Dominates.antisymm hνμ hμν)
 
 /-- The **determinant-twist exponent** of a dominant weight: its last entry `λₙ`, and `0` for the
 empty weight. -/

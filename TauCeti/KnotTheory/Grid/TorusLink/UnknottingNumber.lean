@@ -150,7 +150,6 @@ private theorem stabilizeX_stabilizeX_torusLink_one :
       simp only [apply_ite Fin.val, Fin.ext_iff, Fin.val_last, h0, h1]
       split_ifs <;> first | omega | contradiction
     | cast j =>
-      have hj := j.isLt
       rw [← Fin.succAbove_last_apply, GridState.insertPoint_apply_succAbove,
         Fin.succAbove_last_apply, Fin.val_castSucc, stabilizeX_torusLink_one_O_val]
       simp only [apply_ite Fin.val, Fin.ext_iff, Fin.val_castSucc, Fin.succAbove_last_apply, h0,

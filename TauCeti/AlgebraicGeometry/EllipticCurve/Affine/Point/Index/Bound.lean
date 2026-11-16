@@ -114,7 +114,7 @@ private theorem index_nonsingularReduction_bounds_of_isTateTerminal_IStar_zero
   have hprime : Prime ϖ := by
     rw [← Ideal.span_singleton_prime hϖ0, ← hϖ]
     infer_instance
-  have hcard := h.natCard_tateCubicRoots_le hprime
+  have hcard := natCard_tateCubicRoots_le hprime (W := integralModel v.valuationSubring W)
   rw [natCard_tateCubicRoots_eq hϖ hϖ0 h₂ h₄ h₆] at hcard
   refine ⟨by omega, ?_, fun _ ↦ by omega⟩
   simp only [TauCeti.ReductionSymbol.componentCount_IStar]

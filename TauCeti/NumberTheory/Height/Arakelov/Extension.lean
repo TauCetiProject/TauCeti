@@ -64,8 +64,8 @@ private theorem arakelovMulHeight_algebraMap_coe (y : ι → 𝓞 K) :
   have hyz (i : ι) : (z i : L) = algebraMap K L (y i) := by
     simp [z, ← IsScalarTower.algebraMap_apply]
   refine mul_right_cancel₀ hN₀ ?_
-  rw [← funext hyz, arakelovMulHeight_mul_absNorm_span_range hz, hN, Nat.cast_pow,
-    ← mul_pow, arakelovMulHeight_mul_absNorm_span_range hy]
+  rw [← funext hyz, arakelovMulHeight_mul_absNorm_span_range z, hN, Nat.cast_pow,
+    ← mul_pow, arakelovMulHeight_mul_absNorm_span_range y]
   simp_rw [hyz, InfinitePlace.norm_embedding_eq, ← InfinitePlace.comap_apply,
     Real.rpow_div_two_eq_sqrt _ (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _),
     Real.rpow_natCast,

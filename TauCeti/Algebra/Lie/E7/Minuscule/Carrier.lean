@@ -26,8 +26,7 @@ weight torus, matrix-valued points over every commutative ring, and the scheme-l
 equation. Every ingredient is explicit data from
 `TauCeti.Algebra.Lie.E7.Minuscule.AdmissibleLattice`; no carrier is selected from an existence
 theorem. Nothing here asserts reductivity, identifies the root datum of the carrier, or constructs
-root subgroups for nonsimple roots. Those remain type-`E₇` tasks in Layer 9 of the ReductiveGroups
-roadmap before milestone L0 of the CFSGStatement roadmap can use this carrier.
+root subgroups for nonsimple roots.
 
 ## Main definitions
 

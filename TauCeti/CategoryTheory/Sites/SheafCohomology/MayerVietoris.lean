@@ -59,7 +59,7 @@ theorem epi_δ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁)
 /-- If the degree `n₀` cohomology of `F` vanishes on `S.X₁` and its degree `n₁ = n₀ + 1`
 cohomology vanishes on `S.X₂` and on `S.X₃`, then its degree `n₁` cohomology vanishes on `S.X₄`. -/
 theorem subsingleton_H'_X₄ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁)
-    (h₁ : Subsingleton (F.H' n₀ S.X₁))
+    (_ : Subsingleton (F.H' n₀ S.X₁))
     (h₂ : Subsingleton (F.H' n₁ S.X₂)) (h₃ : Subsingleton (F.H' n₁ S.X₃)) :
     Subsingleton (F.H' n₁ S.X₄) :=
   ((AddCommGrpCat.epi_iff_surjective _).mp (S.epi_δ F n₀ n₁ h h₂ h₃)).subsingleton

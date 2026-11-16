@@ -46,6 +46,9 @@ defined here in positive degrees.
 
 * `TauCeti.exists_homotopicWith_relGenLoop`: a map of pairs out of the cube `I × Iⁿ` is homotopic
   through maps of pairs to a relative cube.
+* `TauCeti.exists_homotopyWith_relGenLoop_of_openBox`: the same, by a homotopy that follows a
+  prescribed contraction of the open box `{1} × Iⁿ ∪ I × ∂Iⁿ`, so that maps sharing a face of the
+  cube can be deformed compatibly.
 * `TauCeti.exists_homotopicRel_range_subset_of_subsingleton`: maps of disk pairs compress into `B`
   when the relative homotopy sets vanish.
 * `TauCeti.exists_homotopicRel_range_subset_of_relHomotopyGroup`: **the compression lemma**, with
@@ -73,31 +76,33 @@ namespace TauCeti
 
 variable {N : Type v} [Finite N] {Y : TopCat.{u}} {B : Set Y}
 
-/-- A map of pairs `g : (I × I^N, ∂(I × I^N)) → (Y, B)`, restricted to the boundary of the cube, is
-homotopic through maps into `B` to a map that is constant on the open box `{1} × I^N ∪ I × ∂I^N`,
-with value `g` at the centre of the top face. -/
-private theorem exists_boundaryHomotopy (g : C(I × I^N, Y))
-    (hg : MapsTo g (Cube.prodBoundary N) B) :
+/-- Let `R` be a deformation of the open box `{1} × I^N ∪ I × ∂I^N` of `I × I^N` inside the
+boundary of the cube, starting at the identity. A map of pairs
+`g : (I × I^N, ∂(I × I^N)) → (Y, B)`, restricted to the boundary of the cube, is homotopic through
+maps into `B` to a map that agrees with `g ∘ R 1` on the open box, by a homotopy that is `g ∘ R t`
+on the open box at every time `t`. -/
+private theorem exists_boundaryHomotopy (R : I → I × (I^N) → I × (I^N))
+    (hR : Continuous fun q : I × (I × I^N) ↦ R q.1 q.2) (hR₀ : ∀ z, R 0 z = z)
+    (hRJ : ∀ {z : I × I^N}, (z.1 = 1 ∨ z.2 ∈ Cube.boundary N) → ∀ t, R t z ∈ Cube.prodBoundary N)
+    (g : C(I × I^N, Y)) (hg : MapsTo g (Cube.prodBoundary N) B) :
     ∃ h : C(I × Cube.prodBoundary N, Y), (∀ z, h (0, z) = g z) ∧ (∀ t z, h (t, z) ∈ B) ∧
-      ∀ z : Cube.prodBoundary N, ((z : I × I^N).1 = 1 ∨ (z : I × I^N).2 ∈ Cube.boundary N) →
-        h (1, z) = g (1, cubeCenter) := by
+      ∀ t (z : Cube.prodBoundary N), ((z : I × I^N).1 = 1 ∨ (z : I × I^N).2 ∈ Cube.boundary N) →
+        h (t, z) = g (R t z) := by
   classical
-  -- On the open box, `h` is `g` composed with the contraction of the open box. On the face
-  -- `{0} × I^N`, where the contraction is already prescribed on the boundary, it is the extension
-  -- `K` with values in `B` provided by the homotopy extension property of `∂I^N`.
+  -- On the open box, `h` is `g` composed with the deformation `R`. On the face `{0} × I^N`, where
+  -- the deformation is already prescribed on the boundary, it is the extension `K` with values in
+  -- `B` provided by the homotopy extension property of `∂I^N`.
   have hbd := hasHomotopyExtensionProperty_cubeBoundary (N := N)
   obtain ⟨K, hK₀, hK⟩ := hbd.exists_extension_of_isClosed hbd.isClosed
     (⟨fun y ↦ ⟨g (0, y), hg (Cube.mk_zero_mem_prodBoundary y)⟩, by fun_prop⟩ : C(I^N, B))
-    ⟨fun q ↦ ⟨g (openBoxContraction q.1 (0, q.2)),
-        hg (openBoxContraction_mem_prodBoundary (.inr q.2.2) _)⟩,
-      (g.continuous.comp (continuous_openBoxContraction.comp
-        (continuous_fst.prodMk (continuous_const.prodMk
-          (continuous_subtype_val.comp continuous_snd))))).subtype_mk _⟩
-    fun a ↦ by simp [openBoxContraction_zero]
+    ⟨fun q ↦ ⟨g (R q.1 (0, q.2)), hg (hRJ (.inr q.2.2) _)⟩,
+      (g.continuous.comp (hR.comp (continuous_fst.prodMk (continuous_const.prodMk
+        (continuous_subtype_val.comp continuous_snd))))).subtype_mk _⟩
+    fun a ↦ by simp [hR₀]
   let h : I × (I × I^N) → Y := fun q ↦
-    if q.2.1 = 0 then (K (q.1, q.2.2) : Y) else g (openBoxContraction q.1 q.2)
+    if q.2.1 = 0 then (K (q.1, q.2.2) : Y) else g (R q.1 q.2)
   let S : Set (I × (I × I^N)) := {q | q.2.1 = 1 ∨ q.2.2 ∈ Cube.boundary N}
-  have hS : EqOn h (fun q ↦ g (openBoxContraction q.1 q.2)) S := by
+  have hS : EqOn h (fun q ↦ g (R q.1 q.2)) S := by
     rintro ⟨t, s, y⟩ hq
     by_cases hs : s = 0
     · subst hs
@@ -113,7 +118,7 @@ private theorem exists_boundaryHomotopy (g : C(I × I^N, Y))
         (continuous_fst.prodMk (continuous_snd.comp continuous_snd)))).continuousOn.congr ?_
       intro q hq
       simp [h, show q.2.1 = 0 from hq]
-    · exact (g.continuous.comp continuous_openBoxContraction).continuousOn.congr hS
+    · exact (g.continuous.comp hR).continuousOn.congr hS
   have hmem (q : I × Cube.prodBoundary N) : (q.1, (q.2 : I × I^N)) ∈ {q | q.2.1 = 0} ∪ S := by
     rcases Cube.mem_prodBoundary_iff.1 q.2.2 with (hs | hs) | hy
     exacts [.inl hs, .inr (.inl hs), .inr (.inr hy)]
@@ -121,18 +126,53 @@ private theorem exists_boundaryHomotopy (g : C(I × I^N, Y))
       z.1 = 1 ∨ z.2 ∈ Cube.boundary N :=
     (Cube.mem_prodBoundary_iff.1 hz).imp_left (·.resolve_left hs)
   refine ⟨⟨fun q ↦ h (q.1, q.2), hcont.comp_continuous (by fun_prop) hmem⟩, fun z ↦ ?_,
-    fun t z ↦ ?_, fun z hz ↦ ?_⟩
+    fun t z ↦ ?_, fun t z hz ↦ hS (show (t, (z : I × I^N)) ∈ S from hz)⟩
   · by_cases hz : (z : I × I^N).1 = 0
     · simp only [ContinuousMap.coe_mk, h, hz, ite_true, hK₀]
       exact congrArg g (Prod.ext hz.symm rfl)
-    · simp [h, hz, openBoxContraction_zero]
+    · simp [h, hz, hR₀]
   · by_cases hs : (z : I × I^N).1 = 0
     · simp only [ContinuousMap.coe_mk, h, hs, ite_true]
       exact (K (t, (z : I × I^N).2)).2
     · rw [ContinuousMap.coe_mk, hS (show (t, (z : I × I^N)) ∈ S from hS' z.2 hs)]
-      exact hg (openBoxContraction_mem_prodBoundary (hS' z.2 hs) t)
-  · exact (hS (show ((1 : I), (z : I × I^N)) ∈ S from hz)).trans
-      (congrArg g (openBoxContraction_one _))
+      exact hg (hRJ (hS' z.2 hs) t)
+
+/-- **A map of pairs is homotopic to a relative cube along a contraction of the open box.** Let
+`R` be a deformation of the open box `{1} × I^N ∪ I × ∂I^N` of `I × I^N` inside the boundary of the
+cube, starting at the identity and ending at the constant map to a point `v`. Every map of pairs
+`g : (I × I^N, ∂(I × I^N)) → (Y, B)` is homotopic, through maps of pairs, to a relative cube at
+`g v`, by a homotopy that is `g ∘ R t` on the open box at every time `t`. -/
+theorem exists_homotopyWith_relGenLoop_of_openBox (R : I → I × (I^N) → I × (I^N))
+    (hR : Continuous fun q : I × (I × I^N) ↦ R q.1 q.2) (hR₀ : ∀ z, R 0 z = z)
+    (hRJ : ∀ {z : I × I^N}, (z.1 = 1 ∨ z.2 ∈ Cube.boundary N) → ∀ t, R t z ∈ Cube.prodBoundary N)
+    {v : I × I^N} (hR₁ : ∀ {z : I × I^N}, (z.1 = 1 ∨ z.2 ∈ Cube.boundary N) → R 1 z = v)
+    (g : C(I × I^N, Y)) (hg : MapsTo g (Cube.prodBoundary N) B) :
+    ∃ b : B, (b : Y) = g v ∧ ∃ p : RelGenLoop N ⟨TopPair.ofSubset B, b⟩,
+      ∃ G : g.HomotopyWith p.1 fun f ↦ MapsTo f (Cube.prodBoundary N) B,
+        ∀ t {z : I × I^N}, (z.1 = 1 ∨ z.2 ∈ Cube.boundary N) →
+          G.toContinuousMap (t, z) = g (R t z) := by
+  -- Extend the homotopy of `g` on the boundary of the cube over the whole cube.
+  obtain ⟨h, h₀, hB, hJ⟩ := exists_boundaryHomotopy R hR hR₀ hRJ g hg
+  have hbd := hasHomotopyExtensionProperty_prodBoundary (N := N)
+  obtain ⟨G, hG₀, hG⟩ := hbd.exists_extension_of_isClosed hbd.isClosed g h h₀
+  have hGJ (t : I) {z : I × I^N} (hz : z.1 = 1 ∨ z.2 ∈ Cube.boundary N) : G (t, z) = g (R t z) :=
+    (hG t ⟨z, Cube.mk_mem_prodBoundary hz⟩).trans (hJ t ⟨z, _⟩ hz)
+  -- At time `1` the extension is a relative cube.
+  have hface (t : I^N) : G (1, (0, t)) ∈ range (TopPair.ofSubset B).map := by
+    rw [TopPair.range_ofSubset_map, hG 1 ⟨(0, t), Cube.mk_zero_mem_prodBoundary t⟩]
+    exact hB 1 _
+  let c : C(I × I^N, Y) := ⟨fun z ↦ G (1, z), G.continuous.comp (continuous_const.prodMk
+    continuous_id)⟩
+  have hv : g v ∈ B := by
+    simpa only [hR₁ (z := (1, fun _ ↦ 0)) (.inl rfl)] using
+      hg (hRJ (z := (1, fun _ ↦ 0)) (.inl rfl) 1)
+  refine ⟨⟨g v, hv⟩, rfl, RelGenLoop.mk c hface fun s t hst ↦
+      (hGJ 1 hst).trans (congrArg g (hR₁ hst)),
+    { toFun := G
+      map_zero_left := hG₀
+      map_one_left z := (DFunLike.congr_fun
+        (RelGenLoop.coe_mk (X := ⟨TopPair.ofSubset B, ⟨g v, hv⟩⟩) c hface _) z).symm
+      prop' t z hz := (hG t ⟨z, hz⟩).symm ▸ hB t ⟨z, hz⟩ }, fun t z hz ↦ hGJ t hz⟩
 
 /-- **A map of pairs `(I × I^N, ∂(I × I^N)) → (Y, B)` is homotopic, through maps of pairs, to a
 relative cube.** Its basepoint `b ∈ B` is the value of the given map at the centre of the face
@@ -140,26 +180,11 @@ relative cube.** Its basepoint `b ∈ B` is the value of the given map at the ce
 theorem exists_homotopicWith_relGenLoop (g : C(I × I^N, Y))
     (hg : MapsTo g (Cube.prodBoundary N) B) :
     ∃ b : B, (b : Y) = g (1, cubeCenter) ∧ ∃ p : RelGenLoop N ⟨TopPair.ofSubset B, b⟩,
-      g.HomotopicWith p.1 fun f ↦ MapsTo f (Cube.prodBoundary N) B := by
-  -- Extend the homotopy of `g` on the boundary of the cube over the whole cube.
-  obtain ⟨h, h₀, hB, h₁⟩ := exists_boundaryHomotopy g hg
-  have hbd := hasHomotopyExtensionProperty_prodBoundary (N := N)
-  obtain ⟨G, hG₀, hG⟩ := hbd.exists_extension_of_isClosed hbd.isClosed g h h₀
-  -- At time `1` the extension is a relative cube.
-  have hface (t : I^N) : G (1, (0, t)) ∈ range (TopPair.ofSubset B).map := by
-    rw [TopPair.range_ofSubset_map, hG 1 ⟨(0, t), Cube.mk_zero_mem_prodBoundary t⟩]
-    exact hB 1 _
-  let c : C(I × I^N, Y) := ⟨fun z ↦ G (1, z), G.continuous.comp (continuous_const.prodMk
-    continuous_id)⟩
-  obtain ⟨b, hb⟩ : ∃ b : B, (b : Y) = g (1, cubeCenter) :=
-    ⟨⟨_, hg (Cube.mk_mem_prodBoundary (.inl rfl))⟩, rfl⟩
-  refine ⟨b, hb, RelGenLoop.mk c hface fun s t hst ↦
-      (hG 1 ⟨(s, t), Cube.mk_mem_prodBoundary hst⟩).trans ((h₁ _ hst).trans hb.symm),
-    ⟨{ toFun := G
-       map_zero_left := hG₀
-       map_one_left z := (DFunLike.congr_fun
-         (RelGenLoop.coe_mk (X := ⟨TopPair.ofSubset B, b⟩) c hface _) z).symm
-       prop' t z hz := (hG t ⟨z, hz⟩).symm ▸ hB t ⟨z, hz⟩ }⟩⟩
+      g.HomotopicWith p.1 fun f ↦ MapsTo f (Cube.prodBoundary N) B :=
+  let ⟨b, hb, p, G, _⟩ := exists_homotopyWith_relGenLoop_of_openBox openBoxContraction
+    continuous_openBoxContraction openBoxContraction_zero
+    (fun hz t ↦ openBoxContraction_mem_prodBoundary hz t) (fun _ ↦ openBoxContraction_one _) g hg
+  ⟨b, hb, p, ⟨G⟩⟩
 
 /-! ### Compressing maps of disk pairs -/
 

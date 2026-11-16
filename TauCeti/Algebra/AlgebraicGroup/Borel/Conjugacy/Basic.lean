@@ -61,8 +61,6 @@ theorem exists_conjugate_eq_of_isBorelOverAlgClosed_of_quotient
   simpa only [comapOfSurjective_map_mkBialgHom hPI,
     comapOfSurjective_map_mkBialgHom hPJ] using h
 
-variable [IsAlgClosed k]
-
 /-- **Borel conjugacy reduces to smooth connected affine groups.** Over an algebraically
 closed field, a conjugacy theorem for all smooth geometrically connected finite-type affine
 groups implies conjugacy for every finite-type affine group, including nonreduced and
@@ -75,6 +73,7 @@ theorem exists_conjugate_eq_of_isBorelOverAlgClosed_of_smooth_connected
     {I J : HopfIdeal k H}
     (hI : IsBorelOverAlgClosed k H I) (hJ : IsBorelOverAlgClosed k H J) :
     ∃ g : WithConv (H →ₐ[k] k), I.conjugate g = J := by
+  have := ((isBorelOverAlgClosed_iff _ _ _).mp hI).1
   let N := reduction k H
   let P := N.identityComponent
   let _ : Algebra.Smooth k (FiniteTypeCommHopfAlgCat.quotient H N) :=

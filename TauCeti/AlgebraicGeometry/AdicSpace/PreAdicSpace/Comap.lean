@@ -235,14 +235,9 @@ theorem comap_map_rationalLocalizationPoint (φ : A →+* B) (hφ : Continuous �
   have hmem : comap (completionLocRingHom g) w.1 ∈
       spa (completedPlusSubring P Aplus p.num p.den _ p.hasDenominatorPower) := by
     refine comap_mem_spa_completedPlusSubring P Aplus p.num p.den _ p.hasDenominatorPower _
-      (continuous_completionLocRingHom g) ((mem_spa_iff _ _).mp w.2).1
-      (fun a ha ↦ ?_) ?_
-    · rw [← RingHom.comp_apply, hcomp, RingHom.comp_apply]
-      exact ((mem_spa_iff _ _).mp w.2).2 _
-        (toCompletionLoc_mem_completedPlusSubring P' Bplus q.num q.den _
-          q.hasDenominatorPower (hplus a ha))
-    · rw [hcomap]
-      exact mem_spaBasicOpen.mp hy
+      (continuous_completionLocRingHom g) ((mem_spa_iff _ _).mp w.2).1 ?_
+    rw [hcomap]
+    exact mem_spaBasicOpen.mp hy
   have hpt :
       (spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _
         p.hasDenominatorPower).symm ⟨y, mem_spaBasicOpen.mp hy⟩ =

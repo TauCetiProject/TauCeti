@@ -103,13 +103,14 @@ probability measures if and only if it is an infinite product `P^{⊗ℕ}` for s
 measure `P` on `α`: extremality is ergodicity of the finitary permutation action, which is
 triviality of the exchangeable σ-algebra, which is the i.i.d. property. -/
 theorem exchangeable_extreme_iff_iid [StandardBorelSpace α]
-    {ρ : Measure (ℕ → α)} [IsProbabilityMeasure ρ] :
+    {ρ : Measure (ℕ → α)} :
     ρ ∈ extremePoints ℝ≥0∞
         (exchangeableProbabilityMeasures α) ↔
       ∃ P : ProbabilityMeasure α,
         ρ = Measure.infinitePi fun _ : ℕ => (P : Measure α) := by
   constructor
   · intro h
+    have : IsProbabilityMeasure ρ := h.1.2
     have hexch : ExchangeableLaw ρ := h.1.1
     rw [exchangeableProbabilityMeasures_eq, ← ErgodicSMul.iff_mem_extremePoints] at h
     exact (exchangeableSigma_trivial_iff_iid hexch).1

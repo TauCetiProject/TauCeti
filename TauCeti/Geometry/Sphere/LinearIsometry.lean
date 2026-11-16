@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Topology.MetricSpace.IsometricSMul
+public import TauCeti.Analysis.InnerProductSpace.Reflection
 public import TauCeti.Analysis.Normed.Module.Ball.Action
 
 /-!
@@ -30,8 +30,8 @@ This file develops that restriction independently of the manifold structure on s
   spheres is the action of the isometry.
 * `LinearIsometryEquiv.instMulActionUnitSphere`: the action of the linear isometry group of `E`
   on the unit sphere of `E`, which is by isometries.
-* `LinearIsometryEquiv.isPretransitive_unitSphere`: for a real inner product space this action is
-  transitive.
+* `LinearIsometryEquiv.isPretransitive_unitSphere`: for an inner product space over `ℝ` or `ℂ`
+  this action is transitive.
 * `LinearIsometryEquiv.instSMulCommClassUnitSphere`: over a normed field `𝕜`, this action commutes
   with the action of the unit scalars of `𝕜` on the unit sphere.
 
@@ -43,13 +43,16 @@ This file develops that restriction independently of the manifold structure on s
 * `LinearIsometryEquiv.isometry_unitSphereEquiv`: the restriction is an isometry.
 * `TauCeti.LinearMap.eq_of_eqOn_unitSphere`: a real linear map is determined by its
   values on the unit sphere.
+* `TauCeti.Sphere.exists_homeomorph_apply_eq`: a homeomorphism of the unit sphere of a real
+  inner product space moves any point to any other.
 
 ## Implementation notes
 
 The declarations extending `LinearIsometry` and `LinearIsometryEquiv` live in the root-level
 `LinearIsometry` and `LinearIsometryEquiv` namespaces, so receiver notation elaborates. The
 separate linear-map lemma remains in `TauCeti.LinearMap`; it has no explicit `LinearMap` receiver
-for dot notation.
+for dot notation. Likewise the homogeneity of the sphere, whose explicit arguments are points of
+the sphere, lives in `TauCeti.Sphere`.
 -/
 
 public section
@@ -216,15 +219,34 @@ end NormedField
 
 section InnerProduct
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+open ComplexConjugate
 
-/-- The linear isometry group of a real inner product space acts transitively on its unit sphere:
-the reflection in the hyperplane orthogonal to `x - y` exchanges `x` and `y`. -/
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- The linear isometry group of an inner product space over `ℝ` or `ℂ` acts transitively on its
+unit sphere: after multiplying `x` by a unit scalar making its inner product with `y` real, the
+reflection in the hyperplane orthogonal to the difference sends it to `y`. -/
 instance isPretransitive_unitSphere :
-    MulAction.IsPretransitive (E ≃ₗᵢ[ℝ] E) (sphere (0 : E) 1) where
-  exists_smul_eq x y := ⟨(ℝ ∙ ((x : E) - y))ᗮ.reflection, Subtype.ext <| by
-    rw [coe_smul_unitSphere]
-    exact Submodule.reflection_sub (by simp)⟩
+    MulAction.IsPretransitive (E ≃ₗᵢ[𝕜] E) (sphere (0 : E) 1) where
+  exists_smul_eq x y := by
+    -- A unit scalar `α` such that the inner product of `α • x` with `y` is real.
+    obtain ⟨α, hα⟩ : ∃ α : unitary 𝕜,
+        conj (α : 𝕜) * inner 𝕜 (x : E) y = α * conj (inner 𝕜 (x : E) y) := by
+      by_cases ha : inner 𝕜 (x : E) y = 0
+      · exact ⟨1, by simp [ha]⟩
+      have hn : (‖inner 𝕜 (x : E) y‖ : 𝕜) ≠ 0 := by simpa using ha
+      have hu : star (inner 𝕜 (x : E) y / ‖inner 𝕜 (x : E) y‖) *
+          (inner 𝕜 (x : E) y / ‖inner 𝕜 (x : E) y‖) = 1 := by
+        rw [RCLike.star_def, map_div₀, RCLike.conj_ofReal, div_mul_div_comm, RCLike.conj_mul]
+        field_simp
+      refine ⟨⟨_, Unitary.mem_iff_star_mul_self.2 hu⟩, ?_⟩
+      simp only [map_div₀, RCLike.conj_ofReal]
+      ring
+    refine ⟨α • (𝕜 ∙ ((α : 𝕜) • (x : E) - y))ᗮ.reflection, Subtype.ext ?_⟩
+    rw [coe_smul_unitSphere, smul_apply, ← map_smul]
+    refine Submodule.reflection_sub_of_inner_comm
+      (by simp [norm_smul, CStarRing.norm_coe_unitary]) ?_
+    rw [inner_smul_left, inner_smul_right, hα, ← inner_conj_symm (y : E)]
 
 end InnerProduct
 
@@ -255,5 +277,19 @@ theorem eq_of_eqOn_unitSphere {f g : E →ₗ[ℝ] F} (h : Set.EqOn f g (sphere 
 end Normed
 
 end LinearMap
+
+namespace Sphere
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- **The unit sphere is homogeneous.** Any point `x` of the unit sphere of a real inner product
+space is moved to any other point `y` by a homeomorphism of the sphere, namely the
+restriction of a linear isometry equivalence (`LinearIsometryEquiv.isPretransitive_unitSphere`). -/
+theorem exists_homeomorph_apply_eq (x y : sphere (0 : E) 1) :
+    ∃ e : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1, e x = y := by
+  obtain ⟨e, he⟩ := MulAction.exists_smul_eq (E ≃ₗᵢ[ℝ] E) x y
+  exact ⟨e.unitSphereIsometryEquiv.toHomeomorph, by simpa using he⟩
+
+end Sphere
 
 end TauCeti

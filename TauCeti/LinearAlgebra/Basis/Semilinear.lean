@@ -23,6 +23,11 @@ the matrix of a linear map `f` in the bases `b` is intertwined with `f`, and the
 of the image of a family is `σ` of its determinant in `b`. This is how invariants computed from
 matrices, such as the torsion of a based chain complex, are compared along a homomorphism of fields.
 
+When `σ` is invertible, a `σ`-semilinear equivalence `f : M ≃ₛₗ[σ] M'` carries a basis `b` of `M`
+to the basis `f ∘ b` of `M'` (`Module.Basis.mapₛₗ`), and so preserves `finrank`
+(`LinearEquiv.finrank_eqₛₗ`). For instance, a conjugate-linear equivalence of complex vector spaces
+carries complex bases to complex bases.
+
 ## Main declarations
 
 * `Module.Basis.semilinearMap`: the `σ`-semilinear map sending each `b k` to `b' k`.
@@ -32,6 +37,8 @@ matrices, such as the torsion of a based chain complex, are compared along a hom
   matrices correspond under `σ`.
 * `Module.Basis.det_comp_semilinearMap`: the determinant of the image of a family is the image of
   its determinant.
+* `Module.Basis.mapₛₗ`: the image of a basis under a semilinear equivalence.
+* `LinearEquiv.finrank_eqₛₗ`: semilinear equivalences along ring isomorphisms preserve `finrank`.
 -/
 
 public section
@@ -107,4 +114,42 @@ theorem det_comp_semilinearMap (b : Basis ι R M) (b' : Basis ι S M') (v : ι �
 
 end CommRing
 
+section Map
+
+variable {ι R S M M' : Type*} [Semiring R] [Semiring S] {σ : R →+* S} {σ' : S →+* R}
+  [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module S M']
+
+/-- The image `f ∘ b` of a basis `b` under a `σ`-semilinear equivalence `f`, a basis over the
+target scalars. This is the semilinear version of `Module.Basis.map`. -/
+def mapₛₗ (b : Basis ι R M) (f : M ≃ₛₗ[σ] M') : Basis ι S M' :=
+  .mk (v := f ∘ b)
+    (b.linearIndependent.map_of_injective_injectiveₛ σ' f.toAddEquiv.toAddMonoidHom
+      (fun r s h ↦ by simpa using congrArg σ h) f.injective fun r x ↦ by
+        simp [map_smulₛₗ])
+    (by
+      rw [Set.range_comp, ← LinearEquiv.coe_coe, ← Submodule.map_span, b.span_eq,
+        Submodule.map_top, LinearEquiv.range])
+
+@[simp]
+theorem mapₛₗ_apply (b : Basis ι R M) (f : M ≃ₛₗ[σ] M') (i : ι) : b.mapₛₗ f i = f (b i) :=
+  mk_apply _ _ _
+
+end Map
+
 end Module.Basis
+
+namespace LinearEquiv
+
+variable {R S M M' : Type*} [Semiring R] [Semiring S] {σ : R →+* S} {σ' : S →+* R}
+  [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module S M']
+
+/-- A semilinear equivalence along a ring isomorphism preserves `finrank`. This is the semilinear
+version of `LinearEquiv.finrank_eq`. -/
+theorem finrank_eqₛₗ (f : M ≃ₛₗ[σ] M') : Module.finrank R M = Module.finrank S M' := by
+  have := lift_rank_eq_of_equiv_equiv σ f.toAddEquiv
+    ⟨fun r s h ↦ by simpa using congrArg σ' h, fun r ↦ ⟨σ' r, by simp⟩⟩ (map_smulₛₗ f)
+  simpa [Module.finrank] using congrArg Cardinal.toNat this
+
+end LinearEquiv

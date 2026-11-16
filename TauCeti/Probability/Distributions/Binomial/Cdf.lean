@@ -41,7 +41,7 @@ theorem binomial_real_Iic (n k : ℕ) (p : unitInterval) :
   · rw [ite_eq_left hnk]
     have hfull : Iic k =ᵐ[Bin(n, p)] (Set.univ : Set ℕ) := by
       filter_upwards [ae_le_of_hasLaw_binomial (P := Bin(n, p)) HasLaw.id] with j hj
-      exact propext ⟨fun _ ↦ trivial, fun _ ↦ hj.trans hnk⟩
+      exact ⟨fun _ ↦ trivial, fun _ ↦ hj.trans hnk⟩
     rw [measureReal_congr hfull, probReal_univ]
   · rw [ite_eq_right hnk]
     exact binomial_cumulative_eq_regularizedIncompleteBeta (Nat.le_of_lt (lt_of_not_ge hnk)) p
@@ -64,7 +64,6 @@ theorem cdf_map_cast_binomial (n : ℕ) (p : unitInterval) (x : ℝ) :
       have hnfloor : n ≤ ⌊x⌋₊ := (Nat.le_floor_iff hx0).2 hn
       have hfull : Iic ⌊x⌋₊ =ᵐ[Bin(n, p)] (univ : Set ℕ) := by
         filter_upwards [ae_le_of_hasLaw_binomial (P := Bin(n, p)) HasLaw.id] with k hk
-        apply propext
         simp only [mem_Iic, mem_univ, iff_true]
         exact hk.trans hnfloor
       rw [measureReal_congr hfull, probReal_univ]

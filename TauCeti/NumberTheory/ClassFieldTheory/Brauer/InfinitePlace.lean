@@ -66,22 +66,26 @@ theorem brCompletion_eq_zero_of_isComplex (w : InfinitePlace K) (hw : w.IsComple
   exact e.injective (Subsingleton.elim (e x) (e 0))
 
 open scoped Classical in
-/-- The real-place invariant is zero on the zero class and `1/2` on every nonzero class. -/
-theorem infiniteInvMap_apply_of_isReal (w : InfinitePlace K) (hw : w.IsReal)
-    (x : Br w.Completion) :
+/-- The invariant is zero on the zero class and `1/2` on every nonzero class: at a real place by
+the real Brauer group, at a complex place because the Brauer group is trivial. -/
+theorem infiniteInvMap_apply_eq_ite (w : InfinitePlace K) (x : Br w.Completion) :
     infiniteInvMap w x = if x = 0 then 0 else ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
-  rw [infiniteInvMap_of_isReal w hw, AddMonoidHom.comp_apply, realInv_apply]
-  simp only [AddEquiv.coe_toAddMonoidHom, EmbeddingLike.map_eq_zero_iff]
+  rcases w.isReal_or_isComplex with hw | hw
+  · rw [infiniteInvMap_of_isReal w hw, AddMonoidHom.comp_apply, realInv_apply]
+    simp only [AddEquiv.coe_toAddMonoidHom, EmbeddingLike.map_eq_zero_iff]
+  · rw [brCompletion_eq_zero_of_isComplex w hw x, map_zero]
+    simp
 
-/-- At a real place, every additive identification with the real Brauer group gives the same
-normalized invariant. In particular, changing the lift of a field isomorphism to separable
+/-- Every additive identification with the real Brauer group gives the same normalized invariant
+(at a complex place there is no such identification, since the Brauer group is trivial). In
+particular, changing the lift of a field isomorphism to separable
 closures does not change the invariant. -/
-theorem infiniteInvMap_eq_realInv_comp (w : InfinitePlace K) (hw : w.IsReal)
+theorem infiniteInvMap_eq_realInv_comp (w : InfinitePlace K)
     (e : Br w.Completion ≃+ Br ℝ) :
     infiniteInvMap w = realInv.comp e.toAddMonoidHom := by
   classical
   ext x
-  rw [infiniteInvMap_apply_of_isReal w hw, AddMonoidHom.comp_apply, realInv_apply]
+  rw [infiniteInvMap_apply_eq_ite w, AddMonoidHom.comp_apply, realInv_apply]
   by_cases hx : x = 0
   · subst x
     simp

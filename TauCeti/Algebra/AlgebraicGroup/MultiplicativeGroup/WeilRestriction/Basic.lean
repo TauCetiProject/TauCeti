@@ -39,6 +39,8 @@ these two properties is proved in this file.
   to a unit classifies evaluation at that unit.
 * `TauCeti.Algebra.WeilRestriction.multiplicativeGroupPoints_naturality`: the isomorphism is
   natural in `T`.
+* `TauCeti.Algebra.WeilRestriction.sum_tmul_universalCoefficient_T`: in a finite basis `b` of `B`,
+  the universal point is `∑ᵢ bᵢ ⊗ cᵢ`, where the `cᵢ` are the universal coefficients of `T`.
 
 ## References
 
@@ -75,6 +77,18 @@ theorem multiplicativeGroupPoints_apply (f : WithConv (WeilRestriction A B B[T;T
     (multiplicativeGroupPoints A B T f : B ⊗[A] T) =
       homEquiv A B B[T;T⁻¹] T f.ofConv (LaurentPolynomial.T 1) := by
   simp [multiplicativeGroupPoints]
+
+variable (A B) in
+/-- **The coordinates of the universal point.** The universal point of `Res_{B/A} 𝔾ₘ`, a unit of
+`B ⊗[A] Res_{B/A} 𝔾ₘ`, is `∑ᵢ bᵢ ⊗ cᵢ` for a finite basis `b` of `B`, where `cᵢ` is the universal
+coefficient of the coordinate `T` of `𝔾ₘ` extracted by the `i`-th coordinate functional of `b`. -/
+theorem sum_tmul_universalCoefficient_T {ι : Type*} [Fintype ι] (b : Module.Basis ι A B) :
+    ∑ i, b i ⊗ₜ[A] universalCoefficient (b.coord i) (LaurentPolynomial.T 1 : B[T;T⁻¹]) =
+      (multiplicativeGroupPoints A B _ (toConv (AlgHom.id A (WeilRestriction A B B[T;T⁻¹]))) :
+        B ⊗[A] WeilRestriction A B B[T;T⁻¹]) := by
+  rw [b.sum_tmul_universalCoefficient, multiplicativeGroupPoints_apply, ofConv_toConv,
+    homEquiv_apply, AlgHom.comp_apply]
+  simp
 
 /-- The point of `Res_{B/A} 𝔾ₘ` attached to a unit `u` of `B ⊗[A] T` is the one classifying
 evaluation of Laurent polynomials at `u`. -/

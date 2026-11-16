@@ -17,7 +17,8 @@ import Mathlib.Analysis.Calculus.FDeriv.Mul
 # Integrating derivatives with countably many exceptional points
 
 A continuous, compactly supported map whose derivative exists outside a countable set has
-zero integral of each directional derivative, provided that derivative is integrable. The
+zero integral of each directional derivative (trivially so when that derivative is not
+integrable, as the integral is then zero by convention). The
 candidate derivative may take arbitrary values at the exceptional points. This permits
 integration by parts across isolated singularities without assuming differentiability there.
 
@@ -84,13 +85,15 @@ private theorem integral_apply_eq_zero_of_hasFDerivAt_off_countable_pi {n : ℕ}
     sub_self, Finset.sum_const_zero] using hdiv
 
 /-- The integral of a directional derivative of a continuous compactly supported map is zero,
-even if the derivative fails to exist on a countable set. Only the derivative in the chosen
-direction must be integrable. -/
+even if the derivative fails to exist on a countable set. The integral of a non-integrable
+function is zero by convention, so no integrability hypothesis is needed. -/
 theorem integral_apply_eq_zero_of_hasFDerivAt_off_countable
     {f : E → F} {D : E → E →L[ℝ] F} {s : Set E} (hs : s.Countable)
     (hf : Continuous f) (hfc : HasCompactSupport f)
-    (hd : ∀ x ∉ s, HasFDerivAt f (D x) x) (v : E)
-    (hD : Integrable (fun x ↦ D x v) μ) : (∫ x, D x v ∂μ) = 0 := by
+    (hd : ∀ x ∉ s, HasFDerivAt f (D x) x) (v : E) : (∫ x, D x v ∂μ) = 0 := by
+  by_cases hD : Integrable (fun x ↦ D x v) μ
+  swap
+  · exact integral_undef hD
   by_cases hv : v = 0
   · simp [hv]
   have : Nontrivial E := nontrivial_iff.2 ⟨v, 0, hv⟩

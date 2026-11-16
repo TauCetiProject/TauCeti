@@ -33,6 +33,8 @@ transport. The underlying form transport reuses Mathlib's `LinearMap.BilinForm.c
   form, `(ω.transport e)(e v, e w) = ω(v, w)`.
 * `TauCeti.SymplecticForm.IsSymplectomorphism`: a linear equivalence `e` with
   `ω₂(e v, e w) = ω₁(v, w)`, together with its pointwise and transport characterizations.
+* `TauCeti.SymplecticForm.IsSymplectomorphism.exists_iff_of_forall_apply_eq`: endomorphisms
+  conjugate by a symplectomorphism have Hamiltonians `v ↦ ω(A v, v)` with the same values.
 * `TauCeti.SymplecticForm.Invariant.transport`, `Tames.transport`, `Compatible.transport`:
   invariance, tameness, and compatibility of a pair `(ω, J)` transport along `e` to the pair
   `(ω.transport e, J.transport e)`.
@@ -165,6 +167,14 @@ lemma IsSymplectomorphism.trans {e : V ≃ₗ[ℝ] W} {f : W ≃ₗ[ℝ] X}
     IsSymplectomorphism ω₁ ω₃ (e.trans f) := by
   intro v w
   rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply, h₂ (e v) (e w), h₁ v w]
+
+/-- Endomorphisms conjugate by a linear symplectomorphism have Hamiltonians `v ↦ ω₁(A v, v)` and
+`w ↦ ω₂(B w, w)` with the same values. -/
+theorem IsSymplectomorphism.exists_iff_of_forall_apply_eq {A : Module.End ℝ V}
+    {B : Module.End ℝ W} {e : V ≃ₗ[ℝ] W} (he : IsSymplectomorphism ω₁ ω₂ e)
+    (hAB : ∀ v, e (A v) = B (e v)) (P : ℝ → Prop) : (∃ v, P (ω₁ (A v) v)) ↔ ∃ w, P (ω₂ (B w) w) :=
+  ⟨fun ⟨v, hv⟩ ↦ ⟨e v, by rwa [← hAB, he.apply]⟩,
+    fun ⟨w, hw⟩ ↦ ⟨e.symm w, by rwa [← he.apply, hAB, e.apply_symm_apply]⟩⟩
 
 section Compatible
 

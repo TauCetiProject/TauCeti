@@ -74,7 +74,7 @@ namespace normalizedHochschildChains
 
 /-- The universal normalized multilinear tensor. -/
 def tensor (n : ℕ) :
-    MultilinearMap R (fun _ : Fin (n + 1) ↦ A) (normalizedHochschildChains R A n) :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) (normalizedHochschildChains R A n) :=
   (degenerateHochschildChains R A n).mkQ.compMultilinearMap (tprod R)
 
 /-- A tensor with a noninitial unit is zero in normalized chains. -/

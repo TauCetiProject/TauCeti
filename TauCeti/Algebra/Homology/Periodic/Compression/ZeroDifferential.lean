@@ -82,7 +82,7 @@ private noncomputable def compressionBoundedGradedLiftXIso (E : ZMod n → C) (r
   let K := (boundedGradedLift E).obj
   let e := boundedGradedLiftXIso E r
   have hr : ((r.val : ℤ) : ZMod n) = r := by simp
-  let f : (compression n K).X r ⟶ E r := compressionDesc n K fun i hi ↦
+  let f : (compression n K).X r ⟶ E r := compressionDesc n K fun i _ ↦
     if h : i = (r.val : ℤ) then (K.XIsoOfEq h).hom ≫ e.hom else 0
   refine ⟨f, e.inv ≫ ιCompression n K r.val r hr, ?_, ?_⟩
   · apply compression_hom_ext

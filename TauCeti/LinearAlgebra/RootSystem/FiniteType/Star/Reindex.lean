@@ -39,8 +39,8 @@ and `E` branch of the finite-type Cartan-matrix classification.
 
 ## References
 
-This is the reindexing step in the "classification of finite-type Cartan matrices" target of
-Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See J. E. Humphreys,
+This is the reindexing step in the classification of finite-type Cartan matrices. See
+J. E. Humphreys,
 *Introduction to Lie Algebras and Representation Theory*, Section 11.4, and Bourbaki, *Lie Groups
 and Lie Algebras, Chapters 4--6*, Chapter VI, Section 4.
 -/

@@ -31,10 +31,18 @@ independent pairs, that is, on the pairs spanning a plane, since both sides vani
 pairs. This is how the sectional curvatures of a Riemannian manifold determine its curvature
 tensor.
 
+There is also a mixed-difference formula requiring no division. With
+`B(x, w; y, z) = k(x + w, y + z) - k(x + w, y - z)`
+`    - k(x - w, y + z) + k(x - w, y - z)`, it reads
+`24 T(x, y, z, w) = B(x, w; y, z) - B(y, w; x, z)`.
+It holds over every commutative ring, including rings where `2` or `3` is a zero divisor.
+
 ## Main declarations
 
 * `LinearMap.six_mul_apply_eq_of_cyclic_eq_zero`: the polarization identity, expressing `6 T`
   through the values `T(x, y, y, x)`.
+* `LinearMap.twentyFour_mul_apply_eq_of_cyclic_eq_zero`: the mixed-difference polarization,
+  expressing `24 T` through eight such values.
 * `LinearMap.eq_of_cyclic_eq_zero`: two curvature-type tensors with the same values
   `T(x, y, y, x)` are equal when multiplication by `6` is injective.
 * `LinearMap.apply_apply_apply_apply_eq_zero_of_not_linearIndependent`: `T(x, y, y, x) = 0` on
@@ -46,6 +54,11 @@ tensor.
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018),
   Chapter 8, Proposition 8.31.
+* B. Andrews, *Lectures on Differential Geometry*,
+  [Lecture 16: Curvature](https://maths-people.anu.edu.au/andrews/DG/DG_chap16.pdf),
+  Proposition 16.2.1, p. 154.
+  The mixed-difference formula uses `T(x, y, y, x)` rather than Andrews's slot order
+  `T(x, y, x, y)` for the sectional-curvature numerator.
 -/
 
 public section
@@ -76,6 +89,40 @@ theorem six_mul_apply_eq_of_cyclic_eq_zero
     h₂ x z y w - h₃ x z w y + 2 * h₁ x w y z - h₂ x w y z + h₁ x w z y - 2 * h₂ y z x w +
     2 * h₁ y z w x + 2 * h₂ y w x z - h₁ y w z x - h₃ y w z x + h₁ z w z w +
     h₂ z w x y - h₂ z w z w
+
+/-- The mixed-difference polarization identity for a curvature-type quadrilinear form.
+Writing `Q(a, b) = T(a, b, b, a)` and
+`B(x, w; y, z) = Q(x + w, y + z) - Q(x + w, y - z)`
+`    - Q(x - w, y + z) + Q(x - w, y - z)`, the identity is
+`24 T(x, y, z, w) = B(x, w; y, z) - B(y, w; x, z)`.
+
+Only the two skew symmetries and the first Bianchi identity are needed. In particular this
+formula holds without cancelling `2`, `3`, or `24`, and all its arguments may be dependent. -/
+theorem twentyFour_mul_apply_eq_of_cyclic_eq_zero
+    (h₁ : ∀ x y z w, T x y z w = -T y x z w) (h₂ : ∀ x y z w, T x y z w = -T x y w z)
+    (h₃ : ∀ x y z w, T x y z w + T y z x w + T z x y w = 0) (x y z w : M) :
+    24 * T x y z w =
+      (T (x + w) (y + z) (y + z) (x + w) -
+          T (x + w) (y - z) (y - z) (x + w) -
+        T (x - w) (y + z) (y + z) (x - w) +
+          T (x - w) (y - z) (y - z) (x - w)) -
+      (T (y + w) (x + z) (x + z) (y + w) -
+          T (y + w) (x - z) (x - z) (y + w) -
+        T (y - w) (x + z) (x + z) (y - w) +
+          T (y - w) (x - z) (x - z) (y - w)) := by
+  -- Expand the mixed differences by multilinearity before using the curvature symmetries.
+  -- As in the sixfold identity, opaque scalar atoms keep polynomial normalization small.
+  obtain ⟨t, ht⟩ : ∃ t : M → M → M → M → R, ∀ a b c d, T a b c d = t a b c d :=
+    ⟨fun a b c d ↦ T a b c d, fun _ _ _ _ ↦ rfl⟩
+  -- Scalar multiplication expands negatives using the existing module instances on the maps.
+  simp only [sub_eq_add_neg, ← neg_one_smul R w, ← neg_one_smul R z]
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul]
+  simp only [ht] at h₁ h₂ h₃ ⊢
+  linear_combination 4 * h₁ x y z w + 8 * h₂ x y z w + 8 * h₃ x y z w -
+    8 * h₃ x y w z - 8 * h₁ x z y w + 4 * h₂ x z y w - 4 * h₁ x z w y +
+    8 * h₁ x w y z - 8 * h₂ x w y z + 4 * h₁ x w z y + 4 * h₃ x w z y -
+    4 * h₂ y z x w + 4 * h₁ y z w x + 8 * h₂ y w x z - 4 * h₁ y w z x -
+    4 * h₃ y w z x
 
 /-- Two quadrilinear forms antisymmetric in their first and in their last pair of arguments and
 satisfying the first Bianchi identity are equal as soon as `T₁(x, y, y, x) = T₂(x, y, y, x)` for

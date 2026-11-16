@@ -53,10 +53,6 @@ theorem card_arrows_of_almostSplit_right_eq_left (hS : S.IsAlmostSplit)
     {X : QuiverRep.{u, v, w, t} k Q} (hX : IsFinDim k Q X) (hI : Indecomposable X) :
     Nat.card (of k hX hI ⟶ of k hC hS.isRightAlmostSplit_g.indecomposable) =
       Nat.card (of k hA hS.isLeftAlmostSplit_f.indecomposable ⟶ of k hX hI) := by
-  have : IsLocalRing (End S.X₁) :=
-    (QuiverRep.indecomposable_iff_isLocalRing_end hA).mp hS.isLeftAlmostSplit_f.indecomposable
-  have : IsLocalRing (End S.X₃) :=
-    (QuiverRep.indecomposable_iff_isLocalRing_end hC).mp hS.isRightAlmostSplit_g.indecomposable
   have hB : IsFinDim k Q S.X₂ :=
     (isExtensionClosed_pointwiseFiniteDimensionalQuiverRepresentations k Q).prop_X₂
       ((ExactStructure.abelian_conflation _).mpr hS.shortExact) hA hC

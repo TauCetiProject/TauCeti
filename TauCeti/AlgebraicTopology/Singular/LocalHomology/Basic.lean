@@ -440,25 +440,12 @@ theorem isIso_singularHomologyMap_compl_of_starConvex (hK : StarConvex ℝ y K) 
       TopCat.ofHom e₁.toFun
     let g₂ : TopCat.of (sphere y r) ⟶ (TopPair.ofSubset ({y}ᶜ : Set (TopCat.of E))).snd :=
       TopCat.ofHom e₂.toFun
-    have hfac : g₁ ≫ TopPair.Hom.snd f = g₂ := by
-      ext z
-      rw [ConcreteCategory.comp_apply]
-      exact Subtype.ext <| (TopPair.ofSubsetMap_snd_apply _ _ _).trans <|
-        (hK.coe_complSphereHomotopyEquiv_apply hy hKr z).trans
-          ((starConvex_singleton y).coe_complSphereHomotopyEquiv_apply rfl _ z).symm
-    -- `((singularHomologyFunctor A n).obj R).map g` is `SSet.homologyMap (TopCat.toSSet.map g) R n`
-    -- by definition of `singularChainComplexFunctor`, so the homotopy equivalences give
-    -- isomorphisms in the latter form.
-    have h₁ : IsIso (SSet.homologyMap (TopCat.toSSet.map g₁) R n) := by
-      have := (e₁.singularHomologyIso R n).isIso_hom
-      rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom] at this
-      exact this
+    have hfac : g₁ ≫ TopPair.Hom.snd f = g₂ := hK.ofHom_complSphereHomotopyEquiv_comp_snd hy hKr
+    have h₁ : IsIso (SSet.homologyMap (TopCat.toSSet.map g₁) R n) := e₁.isIso_homologyMap R n
     have h₂ : IsIso (SSet.homologyMap (TopCat.toSSet.map g₁) R n ≫
         SSet.homologyMap (TopCat.toSSet.map (TopPair.Hom.snd f)) R n) := by
       rw [← SSet.homologyMap_comp, ← Functor.map_comp, hfac]
-      have := (e₂.singularHomologyIso R n).isIso_hom
-      rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom] at this
-      exact this
+      exact e₂.isIso_homologyMap R n
     exact IsIso.of_isIso_comp_left (SSet.homologyMap (TopCat.toSSet.map g₁) R n) _
   exact TopPair.isIso_singularHomologyMap_of_isIso R f k (hfst k) (hsnd k) (fun m _ ↦ hfst m)
     fun m _ ↦ hsnd m
@@ -472,10 +459,11 @@ lemma _root_.OpenPartialHomeomorph.mapsTo_id_compl_symm_image (hx : x ∈ φ.sou
     (hxK : φ x ∈ K) : Set.MapsTo (𝟙 (TopCat.of M)) (φ.symm '' K)ᶜ {x}ᶜ :=
   Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 ⟨φ x, hxK, φ.left_inv hx⟩)
 
+omit [T1Space M] in
 /-- **Local homology is constant along a closed bounded star-convex set in a chart.** Let
-`φ : M → E` be an open partial homeomorphism from a T₁ space to a real normed space, such as a
-chart of a topological manifold, and let `K ⊆ φ.target` be closed, bounded and star-convex about
-`φ x`, where `x ∈ φ.source` and `φ x ∈ K`, such that `φ.symm '' K` is closed in `M`. Then the
+`φ : M → E` be an open partial homeomorphism from a topological space to a real normed space, such
+as a chart of a topological manifold, and let `K ⊆ φ.target` be closed, bounded and star-convex
+about `φ x`, where `x ∈ φ.source` and `φ x ∈ K`, such that `φ.symm '' K` is closed in `M`. Then the
 inclusion `(M, M ∖ φ.symm '' K) ⟶ (M, M ∖ {x})` induces isomorphisms on relative singular
 homology. By excision onto the source and the target of `φ`, this reduces to the inclusion
 `(E, E ∖ K) ⟶ (E, E ∖ {φ x})` (`TauCeti.isIso_singularHomologyMap_compl_of_starConvex`).
@@ -502,13 +490,13 @@ theorem isIso_singularHomologyMap_compl_of_chart (hx : x ∈ φ.source) (hK : St
   -- those are invertible by excision in `E`.
   have hxL : x ∈ φ.symm '' K := ⟨φ x, hxK, φ.left_inv hx⟩
   rw [← TopPair.isIso_singularHomologyMap_ofSubsetMap_compl_iff R (X := TopCat.of M)
-    φ.open_source hLc isClosed_singleton hLs (Set.singleton_subset_iff.2 hxL)]
+    φ.open_source (hLc.closure_eq.trans_le hLs) (Set.singleton_subset_iff.2 hxL)]
   let fT := TopPair.ofSubsetMap (𝟙 (TopCat.of φ.target)) (B := Subtype.val ⁻¹' Kᶜ)
     (B' := Subtype.val ⁻¹' {φ x}ᶜ)
     fun _ hz ↦ Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 hxK) hz
   have hT : IsIso (TopPair.singularHomologyMap fT R k) :=
     (TopPair.isIso_singularHomologyMap_ofSubsetMap_compl_iff R (X := TopCat.of E) φ.open_target
-    hKc isClosed_singleton hKφ (Set.singleton_subset_iff.2 hxK) k).2
+    (hKc.closure_eq.trans_le hKφ) (Set.singleton_subset_iff.2 hxK) k).2
     (isIso_singularHomologyMap_compl_of_starConvex R hK hxK hKb k)
   refine IsIso.of_isIso_fac_right (f := TopPair.singularHomologyMap
     (TopPair.ofSubsetIso (X := TopCat.of φ.source) (Y := TopCat.of φ.target)

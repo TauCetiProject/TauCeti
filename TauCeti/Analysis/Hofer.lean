@@ -36,6 +36,12 @@ rescaled balls `c i + ε i • closedBall 0 (R i)` shrink to the point of blow-u
 McDuff–Salamon, Section 4.2. Extracting a convergent subsequence of the rescaled maps needs
 elliptic estimates for the equation they solve and is not part of this file.
 
+The same rescaling applies to any function `e i` that scales by `ε ^ 2` under `w ↦ c + ε • w`,
+such as the energy density of a map into a manifold, which needs no norm on the target. Applying
+Hofer's lemma to `√(e i)` gives centres and scales for which `ε i ^ 2 * e i (c i) = 1` and
+`ε i ^ 2 * e i ≤ 4` on the rescaled balls of radii `R i → ∞`
+(`TauCeti.exists_tendsto_sq_mul_rescale_le`).
+
 ## Main results
 
 * `TauCeti.hofer_of_continuousOn_closedBall`: Hofer's lemma for a function continuous on a closed
@@ -44,6 +50,8 @@ elliptic estimates for the equation they solve and is not part of this file.
   point.
 * `TauCeti.exists_tendsto_norm_fderiv_rescale_le`: rescaling maps whose derivatives blow up at a
   point to maps with derivatives of norm one at the origin and at most two on growing balls.
+* `TauCeti.exists_tendsto_sq_mul_rescale_le`: the same normalization for a function blowing up at
+  a point, read as a density scaling by `ε ^ 2`.
 
 ## References
 
@@ -150,6 +158,58 @@ section Rescale
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} {l : Filter ι}
 
+/-- **Rescaling where a quadratic density blows up.** Let the functions `e i` be continuous on a
+closed ball about `z₀`, and let `e i (z i) → ∞` along points `z i → z₀`. Then there are centres
+`c i → z₀`, scales `ε i > 0` with `ε i → 0` and radii `R i → ∞` with `ε i * R i → 0`, such that
+eventually `ε i ^ 2 * e i (c i) = 1` and `ε i ^ 2 * e i (c i + ε i • w) ≤ 4` whenever
+`‖w‖ ≤ R i`.
+
+A density which scales by `ε ^ 2` under the rescaling `w ↦ c + ε • w`, such as the energy density
+of a map from the plane, is therefore equal to one at the origin for the rescaled maps and at most
+four on the closed balls of radius `R i`. No sign condition on `e i` is needed. -/
+theorem exists_tendsto_sq_mul_rescale_le {e : ι → E → ℝ} {z : ι → E} {z₀ : E} {r : ℝ}
+    (hr : 0 < r) (he : ∀ i, ContinuousOn (e i) (closedBall z₀ r))
+    (hz : Tendsto z l (𝓝 z₀)) (hblow : Tendsto (fun i ↦ e i (z i)) l atTop) :
+    ∃ (c : ι → E) (ε R : ι → ℝ), (∀ i, 0 < ε i) ∧ Tendsto c l (𝓝 z₀) ∧ Tendsto ε l (𝓝 0) ∧
+      Tendsto R l atTop ∧ Tendsto (fun i ↦ ε i * R i) l (𝓝 0) ∧
+      ∀ᶠ i in l, ε i ^ 2 * e i (c i) = 1 ∧
+        ∀ w, ‖w‖ ≤ R i → ε i ^ 2 * e i (c i + ε i • w) ≤ 4 := by
+  -- Hofer's lemma applies to the nonnegative continuous functions `√(e i)`.
+  have hsqrt : Tendsto (fun i ↦ √(e i (z i))) l atTop := Real.tendsto_sqrt_atTop.comp hblow
+  obtain ⟨c, ρ, hρ, hc, hρ0, hρN, hball⟩ := exists_tendsto_hofer hr
+    (fun i ↦ Real.continuous_sqrt.comp_continuousOn (he i)) (fun _ _ _ ↦ Real.sqrt_nonneg _) hz
+    hsqrt
+  -- Rescale by the inverse of `N i = √(e i (c i))`, which tends to infinity, over the radius
+  -- `R i = ρ i * N i`.
+  set N : ι → ℝ := fun i ↦ max 1 √(e i (c i))
+  have hN (i : ι) : 0 < N i := lt_max_of_lt_left one_pos
+  have hNc : Tendsto (fun i ↦ √(e i (c i))) l atTop :=
+    tendsto_atTop_mono' l (hball.mono fun i hi ↦ hi.1) hsqrt
+  have hNtop : Tendsto N l atTop := tendsto_atTop_mono (fun i ↦ le_max_right _ _) hNc
+  refine ⟨c, fun i ↦ (N i)⁻¹, fun i ↦ ρ i * N i, fun i ↦ inv_pos.2 (hN i), hc,
+    tendsto_inv_atTop_zero.comp hNtop,
+    tendsto_atTop_mono (fun i ↦ mul_le_mul_of_nonneg_left (le_max_right _ _) (hρ i).le) hρN,
+    hρ0.congr fun i ↦ by field_simp [(hN i).ne'], ?_⟩
+  filter_upwards [hball, hNc.eventually_ge_atTop 1] with i hi hNi
+  have hNeq : N i = √(e i (c i)) := max_eq_right hNi
+  have hsq : N i ^ 2 = e i (c i) := by
+    rw [hNeq, Real.sq_sqrt (zero_le_one.trans (Real.one_le_sqrt.1 hNi))]
+  have hN2 : (N i ^ 2)⁻¹ * (N i ^ 2) = 1 := inv_mul_cancel₀ (pow_ne_zero 2 (hN i).ne')
+  refine ⟨by rw [inv_pow, ← hsq, hN2], fun w hw ↦ ?_⟩
+  -- The point `c i + (N i)⁻¹ • w` lies within `ρ i` of `c i`, where `√(e i) ≤ 2 N i`.
+  have hy : dist (c i) (c i + (N i)⁻¹ • w) ≤ ρ i := by
+    rw [dist_self_add_right, norm_smul, Real.norm_of_nonneg (inv_pos.2 (hN i)).le,
+      inv_mul_le_iff₀ (hN i)]
+    linarith
+  have hle : e i (c i + (N i)⁻¹ • w) ≤ 4 * N i ^ 2 := by
+    have h2 : √(e i (c i + (N i)⁻¹ • w)) ≤ 2 * N i := by
+      simpa only [Function.comp_apply, hNeq] using hi.2 _ hy
+    linarith [(Real.sqrt_le_iff.1 h2).2]
+  rw [inv_pow]
+  calc (N i ^ 2)⁻¹ * e i (c i + (N i)⁻¹ • w) ≤ (N i ^ 2)⁻¹ * (4 * N i ^ 2) :=
+        mul_le_mul_of_nonneg_left hle (by positivity)
+    _ = 4 := by rw [mul_left_comm, hN2, mul_one]
+
 /-- **Rescaling where derivatives blow up.** Let the derivatives of maps `u i` be continuous on a
 closed ball about `z₀`, and let `‖du i (z i)‖ → ∞` along points `z i → z₀`. Then there are centres
 `c i → z₀`, scales `ε i > 0` with `ε i → 0` and radii `R i → ∞` with `ε i * R i → 0`, such that
@@ -162,31 +222,19 @@ theorem exists_tendsto_norm_fderiv_rescale_le {u : ι → E → F} {z : ι → E
       Tendsto R l atTop ∧ Tendsto (fun i ↦ ε i * R i) l (𝓝 0) ∧
       ∀ᶠ i in l, ‖fderiv ℝ (fun w ↦ u i (c i + ε i • w)) 0‖ = 1 ∧
         ∀ w, ‖w‖ ≤ R i → ‖fderiv ℝ (fun w ↦ u i (c i + ε i • w)) w‖ ≤ 2 := by
-  obtain ⟨c, ρ, hρ, hc, hρ0, hρN, hball⟩ := exists_tendsto_hofer hr
-    (fun i ↦ (hu i).norm) (fun _ _ _ ↦ norm_nonneg _) hz hblow
-  -- Rescale by the inverse of `N i = ‖du i (c i)‖`, which tends to infinity, over the radius
-  -- `R i = ρ i * N i`.
-  set N : ι → ℝ := fun i ↦ max 1 ‖fderiv ℝ (u i) (c i)‖
-  have hN (i : ι) : 0 < N i := lt_max_of_lt_left one_pos
-  have hNc : Tendsto (fun i ↦ ‖fderiv ℝ (u i) (c i)‖) l atTop :=
-    tendsto_atTop_mono' l (hball.mono fun i hi ↦ hi.1) hblow
-  have hNtop : Tendsto N l atTop := tendsto_atTop_mono (fun i ↦ le_max_right _ _) hNc
-  refine ⟨c, fun i ↦ (N i)⁻¹, fun i ↦ ρ i * N i, fun i ↦ inv_pos.2 (hN i), hc,
-    tendsto_inv_atTop_zero.comp hNtop,
-    tendsto_atTop_mono (fun i ↦ mul_le_mul_of_nonneg_left (le_max_right _ _) (hρ i).le) hρN,
-    hρ0.congr fun i ↦ by field_simp [(hN i).ne'], ?_⟩
-  filter_upwards [hball, hNc.eventually_ge_atTop 1] with i hi hNi
-  have hNeq : N i = ‖fderiv ℝ (u i) (c i)‖ := max_eq_right hNi
-  have hNinv : ‖(N i)⁻¹‖ = (N i)⁻¹ := Real.norm_of_nonneg (inv_pos.2 (hN i)).le
-  refine ⟨?_, fun w hw ↦ ?_⟩
-  · rw [fderiv_comp_add_smul, smul_zero, add_zero, norm_smul, hNinv, ← hNeq,
-      inv_mul_cancel₀ (hN i).ne']
-  · -- The point `c i + (N i)⁻¹ • w` lies within `ρ i` of `c i`, where `‖du i‖ ≤ 2 N i`.
-    have hy : dist (c i) (c i + (N i)⁻¹ • w) ≤ ρ i := by
-      rw [dist_self_add_right, norm_smul, hNinv, inv_mul_le_iff₀ (hN i)]
-      linarith
-    rw [fderiv_comp_add_smul, norm_smul, hNinv, inv_mul_le_iff₀ (hN i)]
-    linarith [hi.2 _ hy]
+  -- Apply the rescaling to the squared norms `‖du i‖ ^ 2`, which scale by `ε ^ 2`.
+  obtain ⟨c, ε, R, hε, hc, hε0, hR, hεR, hev⟩ :=
+    exists_tendsto_sq_mul_rescale_le (e := fun i y ↦ ‖fderiv ℝ (u i) y‖ ^ 2) hr
+      (fun i ↦ (hu i).norm.pow 2) hz ((tendsto_pow_atTop two_ne_zero).comp hblow)
+  refine ⟨c, ε, R, hε, hc, hε0, hR, hεR, hev.mono fun i hi ↦ ⟨?_, fun w hw ↦ ?_⟩⟩
+  · rw [fderiv_comp_add_smul, smul_zero, add_zero, norm_smul, Real.norm_of_nonneg (hε i).le]
+    refine (pow_eq_one_iff_of_nonneg (mul_nonneg (hε i).le (norm_nonneg _)) two_ne_zero).1 ?_
+    rw [mul_pow]
+    exact hi.1
+  · rw [fderiv_comp_add_smul, norm_smul, Real.norm_of_nonneg (hε i).le]
+    have h := hi.2 w hw
+    rw [← mul_pow] at h
+    nlinarith [mul_nonneg (hε i).le (norm_nonneg (fderiv ℝ (u i) (c i + ε i • w)))]
 
 end Rescale
 

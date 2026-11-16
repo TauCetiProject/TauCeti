@@ -31,6 +31,9 @@ compatibly with its structure over `k`. Its weight is `wᵢ = [κᵢ : k]` and t
   `[κ : k]` times the intersection number over `κ`.
 * `LineBundleClass.finrank_dvd_intersectionNumber`: `[κ : k]` divides every intersection number
   with a curve over `κ`.
+* `LineBundleClass.finrank_cohomology_zero_trivial_dvd_intersectionNumber`: when the global
+  functions `κ = H⁰(C, 𝒪_C)` of the curve form a field, `[κ : k] = dim_k H⁰(C, 𝒪_C)` divides every
+  intersection number with `C`.
 
 ## References
 
@@ -79,6 +82,18 @@ theorem finrank_dvd_intersectionNumber
       (C ↘ Spec (.of k))) (a : LineBundleClass X) :
     (finrank k κ : ℤ) ∣ intersectionNumber k ι a :=
   ⟨_, intersectionNumber_eq_finrank_mul ι h a⟩
+
+variable (k) in
+/-- **The weight of a curve divides its intersection numbers**, stated with the constant field.
+If the global functions of the curve `C` over `k` form a field `κ = H⁰(C, 𝒪_C)`, then
+`[κ : k] = dim_k H⁰(C, 𝒪_C)` divides the intersection number over `k` of every line-bundle class
+with `ι : C ⟶ X`. No structure of `C` over `Spec κ` has to be chosen. -/
+theorem finrank_cohomology_zero_trivial_dvd_intersectionNumber (hC : IsField Γ(C, ⊤))
+    (a : LineBundleClass X) :
+    (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial C).obj 0) : ℤ) ∣
+      intersectionNumber k ι a := by
+  rw [intersectionNumber_def]
+  exact finrank_cohomology_zero_trivial_dvd_eulerDegree k hC _
 
 end IntersectionNumber
 

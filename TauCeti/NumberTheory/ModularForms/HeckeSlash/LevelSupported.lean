@@ -27,10 +27,9 @@ sum exactly once each, so
 
 `T_n T_m = T_{n m}`  for `n` and `m` supported on the level,
 
-with **`T_{p^r} = T_p ^ r` at `p ∣ N`** as the special case the ModularForms roadmap names. In
-the vocabulary of modern papers the operator at `p ∣ N` is `U_p`
-(`heckeUNat`, an alias of `T_p` by `heckeUNat_eq_heckeTNat`), so the same statement reads
-`T_{p^r} = U_p ^ r`; no second operator is introduced.
+with **`T_{p^r} = T_p ^ r` at `p ∣ N`** as a special case. In the vocabulary of modern papers the
+operator at `p ∣ N` is `U_p` (`heckeUNat`, an alias of `T_p` by `heckeUNat_eq_heckeTNat`), so the
+same statement reads `T_{p^r} = U_p ^ r`; no second operator is introduced.
 
 ⚠ This does not supply multiplicativity for arbitrary coprime indices: it applies when each
 index is supported on the level, whether or not the two indices are coprime. An index with a
@@ -66,8 +65,8 @@ the function-level recurrence in `UpperTri/QExpansion.lean`.
 
 ## Provenance
 
-No code is transcribed. The prime-power statement is the ModularForms roadmap's Layer 2(b)
-milestone, carried in the AINTLIB `LeanModularForms` project (Chris Birkbeck, Apache-2.0) as
+No code is transcribed. The prime-power statement is carried in the AINTLIB `LeanModularForms`
+project (Chris Birkbeck, Apache-2.0) as
 `heckeT_ppow_eq_pow_of_not_coprime` (`LeanModularForms/HeckeRIngs/GL2/MultiplicationTable.lean`);
 there it is a statement about a family of operators assembled prime by prime, while here it
 falls out of the composition law for the coset representatives, which holds at every pair of
@@ -195,7 +194,7 @@ theorem heckeTCuspNat_pow_of_primeFactors_subset {n : ℕ} [NeZero n]
 
 /-- **`T_{p^r} = T_p ^ r` at a divisor `p ∣ N`**, on `M_k(Γ₁(N))`.
 
-The roadmap's prime case is the degenerate case of the prime-power recurrence
+For prime `p` this is the degenerate case of the prime-power recurrence
 `T_{p^{r+2}} = T_p T_{p^{r+1}} − p^{k−1} ⟨p⟩ T_{p^r}`: the zero-extended diamond `⟨p⟩` vanishes
 at a prime `p ∣ N`, leaving `T_{p^{r+1}} = T_p T_{p^r}`. In that case, read through
 `heckeUNat_eq_heckeTNat`, the statement is `T_{p^r} = U_p ^ r`; there is no second operator. -/
@@ -221,8 +220,7 @@ section Nebentypus
 variable (χ : (ZMod N)ˣ →* ℂˣ)
 
 /-- **`T_n` preserves the nebentypus at every index supported on the level**: it maps
-`M_k(N, χ)` into itself. Not an assumption but a theorem, as the ModularForms roadmap asks of
-the Hecke action. -/
+`M_k(N, χ)` into itself. -/
 theorem heckeTNat_mem_modFormCharSpace_of_primeFactors_subset (n : ℕ) [NeZero n]
     (hn : n.primeFactors ⊆ N.primeFactors)
     {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :

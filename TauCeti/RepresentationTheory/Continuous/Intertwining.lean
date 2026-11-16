@@ -26,6 +26,9 @@ side.
   algebraic intertwiners.
 * `ContRepresentation.nonempty_equiv_iff`: continuous and algebraic representation equivalence
   agree.
+
+The file also records that continuous intertwiners between finite-dimensional representations form
+a finite-dimensional space, over any field and without completeness.
 -/
 
 public section
@@ -43,6 +46,25 @@ continuity does not change the map. -/
 theorem toIntertwiningMap_apply (f : ContIntertwiningMap π ρ) (v : V) :
     f.toIntertwiningMap v = f v :=
   (rfl)
+
+end ContIntertwiningMap
+
+namespace ContIntertwiningMap
+
+variable {𝕜 G V W : Type*} [Field 𝕜] [Monoid G]
+  [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [IsTopologicalAddGroup V]
+  [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W] [IsTopologicalAddGroup W]
+  [ContinuousConstSMul 𝕜 W] {π : ContRepresentation 𝕜 G V} {ρ : ContRepresentation 𝕜 G W}
+
+/-- Continuous intertwiners between finite-dimensional representations form a finite-dimensional
+space: forgetting the intertwining condition and continuity embeds them into the linear maps. -/
+instance [FiniteDimensional 𝕜 V] [FiniteDimensional 𝕜 W] :
+    FiniteDimensional 𝕜 (ContIntertwiningMap π ρ) :=
+  FiniteDimensional.of_injective
+    { toFun f := (f.toContinuousLinearMap : V →ₗ[𝕜] W)
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl }
+    fun _ _ h ↦ ContIntertwiningMap.ext (ContinuousLinearMap.coe_injective h)
 
 end ContIntertwiningMap
 

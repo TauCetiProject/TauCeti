@@ -65,8 +65,6 @@ parameters and the frequency, including invalid shapes and scale zero. -/
 theorem measurable_uncurry_charFun_stableMeasure :
     Measurable fun p : ℝ × ℝ × ℝ≥0 × ℝ × ℝ ↦
       charFun (stableMeasure p.1 p.2.1 p.2.2.1 p.2.2.2.1) p.2.2.2.2 := by
-  have he : Measurable fun p : ℝ × ℝ × ℝ≥0 × ℝ × ℝ ↦
-      stableCharacteristicExponent p.1 p.2.1 (p.2.2.1 * p.2.2.2.2) := by fun_prop
   have hm : Measurable fun p : ℝ × ℝ × ℝ≥0 × ℝ × ℝ ↦
       if p.1 ∈ Ioc 0 2 ∧ |p.2.1| ≤ 1 then
         cexp ((p.2.2.2.1 * p.2.2.2.2 : ℝ) * I +

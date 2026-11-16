@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive
 public import TauCeti.Geometry.Symplectic.Lagrangian.SymplecticTangent
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 
+import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -111,11 +112,15 @@ theorem isFirstIntegral_self (f : M → ℝ) : σ.IsFirstIntegral f f :=
 theorem isFirstIntegral_const (f : M → ℝ) (c : ℝ) : σ.IsFirstIntegral f fun _ ↦ c :=
   fun x ↦ poissonBracket_const_left σ c f x
 
-/-- A sum of differentiable first integrals is a first integral. -/
+/-- The sum of a first integral and a differentiable first integral is a first integral. -/
 theorem IsFirstIntegral.add (hg : σ.IsFirstIntegral f g) (hk : σ.IsFirstIntegral f k)
-    (hg' : MDifferentiable I 𝓘(ℝ) g) (hk' : MDifferentiable I 𝓘(ℝ) k) :
-    σ.IsFirstIntegral f (g + k) := fun x ↦ by
-  rw [poissonBracket_add_left (hg' x) (hk' x), hg x, hk x, add_zero]
+    (hk' : MDifferentiable I 𝓘(ℝ) k) : σ.IsFirstIntegral f (g + k) := fun x ↦ by
+  by_cases hgx : MDifferentiableAt I 𝓘(ℝ) g x
+  · rw [poissonBracket_add_left hgx (hk' x), hg x, hk x, add_zero]
+  · -- `g + k` is not differentiable at `x`, so its Hamiltonian vector field vanishes there.
+    have h : ¬MDifferentiableAt I 𝓘(ℝ) (g + k) x := fun h ↦ hgx (by simpa using h.sub (hk' x))
+    rw [poissonBracket_def, hamiltonianVectorField_eq_zero_of_not_mdifferentiableAt h,
+      SmoothBundleForm.eval₂_zero_left]
 
 /-- The negative of a first integral is a first integral. -/
 theorem IsFirstIntegral.neg (hg : σ.IsFirstIntegral f g) : σ.IsFirstIntegral f (-g) := fun x ↦ by
@@ -137,14 +142,14 @@ theorem IsNondegenerate.isFirstIntegral_iff_mvfderiv :
   simp only [isFirstIntegral_iff, hσ.poissonBracket_eq_mvfderiv]
 
 /-- **Conservation of first integrals.** A first integral `g` of `f`, differentiable along an
-integral curve of the Hamiltonian vector field of `f` on an open interval of times (or any open
+integral curve of the Hamiltonian vector field of `f` on an interval of times (or any
 preconnected set of times), is constant along that curve. -/
 theorem IsFirstIntegral.apply_eq_of_isMIntegralCurveOn (hg : σ.IsFirstIntegral f g) {γ : ℝ → M}
-    {s : Set ℝ} (hs : IsOpen s) (hs' : IsPreconnected s)
+    {s : Set ℝ} (hs' : IsPreconnected s)
     (hγ : IsMIntegralCurveOn γ (σ.hamiltonianVectorField f) s)
     (hgγ : ∀ t ∈ s, MDifferentiableAt I 𝓘(ℝ) g (γ t)) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     g (γ t) = g (γ t₀) :=
-  hγ.apply_eq_of_mvfderiv_apply_eq_zero hs hs' hgγ
+  hγ.apply_eq_of_mvfderiv_apply_eq_zero hs' hgγ
     (fun u _ ↦ hσ.isFirstIntegral_iff_mvfderiv.1 hg (γ u)) ht₀ ht
 
 /-- **Conservation of first integrals** along a global integral curve: a first integral of `f`,
@@ -154,7 +159,7 @@ theorem IsFirstIntegral.apply_eq_of_isMIntegralCurve (hg : σ.IsFirstIntegral f 
     (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField f))
     (hgγ : ∀ t, MDifferentiableAt I 𝓘(ℝ) g (γ t)) (s t : ℝ) :
     g (γ t) = g (γ s) :=
-  hg.apply_eq_of_isMIntegralCurveOn hσ isOpen_univ isPreconnected_univ (hγ.isMIntegralCurveOn _)
+  hg.apply_eq_of_isMIntegralCurveOn hσ isPreconnected_univ (hγ.isMIntegralCurveOn _)
     (fun t _ ↦ hgγ t) (Set.mem_univ s) (Set.mem_univ t)
 
 end Nondegenerate
@@ -332,7 +337,7 @@ theorem comp_left (h : σ.IsIntegrableSystem F) (hσ : σ.IsNondegenerate) (hU :
       refine (mvfderiv_comp_apply_of_differentiableAt hψc hF v).trans ?_
       rw [mvfderiv_apply_eq_mfderiv_apply, hv]
       exact (fderiv ℝ (fun z ↦ ψ z c) (F x)).map_zero
-    exact hσ.poissonBracket_eq_zero_of_ker_le hF (h.poissonBracket_eq_zero · · x) (hker a)
+    exact hσ.poissonBracket_eq_zero_of_ker_le (h.poissonBracket_eq_zero · · x) (hker a)
       (hker b)
   dense_setOf_isRegularPoint := by
     refine h.dense_setOf_isRegularPoint.mono fun x hx ↦ ?_

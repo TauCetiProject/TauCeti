@@ -37,6 +37,8 @@ single faithfully flat map of affine schemes
 
 * `AlgebraicGeometry.Scheme.Modules.isSheaf_bigPresheaf_fpqcTopology`: `bigPresheaf F` is a
   sheaf for the fpqc topology on `Over S`.
+* `AlgebraicGeometry.Scheme.Modules.isSheaf_bigPresheaf_comp_forget_fpqcTopology`: the same for
+  the underlying presheaf of sets, as a `Presieve.IsSheaf` statement.
 * `AlgebraicGeometry.Scheme.Modules.isSheaf_bigPresheaf_of_le`: the same for every topology
   coarser than the fpqc topology.
 * `AlgebraicGeometry.Scheme.Modules.bigSheaf`: the module `F^a` on the big fpqc site of `S`, an
@@ -89,12 +91,12 @@ private lemma isSheafFor_sigmaPresheaf_bigPresheaf_singleton {R R' : CommRingCat
     have : Surjective g.left := inferInstanceAs (Surjective (Spec.map f))
     exact isSheafFor_bigPresheaf_singleton_of_flat_of_surjective F g
 
-/-- **fpqc descent of sections of quasi-coherent modules.** For a quasi-coherent `𝒪_S`-module `F`,
-the presheaf `(T, h) ↦ Γ(T, h^* F)` underlying `bigPresheaf F` is a sheaf for the fpqc topology on
-the big site `Over S` (Stacks, Lemma 35.8.1). -/
-theorem isSheaf_bigPresheaf_fpqcTopology :
-    Presheaf.IsSheaf (fpqcTopology.over S) F.bigPresheaf.presheaf := by
-  refine Presheaf.isSheaf_of_isSheaf_comp _ _ (CategoryTheory.forget AddCommGrpCat.{u}) ?_
+/-- For a quasi-coherent `𝒪_S`-module `F`, the presheaf of sets `(T, h) ↦ Γ(T, h^* F)` underlying
+`bigPresheaf F` satisfies the sheaf condition for every fpqc covering sieve of the big site
+`Over S`. -/
+theorem isSheaf_bigPresheaf_comp_forget_fpqcTopology :
+    Presieve.IsSheaf (fpqcTopology.over S)
+      (F.bigPresheaf.presheaf ⋙ CategoryTheory.forget AddCommGrpCat.{u}) := by
   have hS (J : GrothendieckTopology Scheme.{u}) [J.Subcanonical] :
       Presieve.IsSheaf J (yoneda.obj S) :=
     GrothendieckTopology.Subcanonical.isSheaf_of_isRepresentable _
@@ -102,7 +104,7 @@ theorem isSheaf_bigPresheaf_fpqcTopology :
   -- apply that existing instance explicitly rather than declaring a specialized copy for `Flat`.
   have : IsZariskiLocalAtSource @Flat.{u} :=
     HasRingHomProperty.instIsZariskiLocalAtSource (Q := @RingHom.Flat)
-  rw [isSheaf_iff_isSheaf_of_type, Over.isSheaf_over_iff_isSheaf_sigmaPresheaf _ (hS _)]
+  rw [Over.isSheaf_over_iff_isSheaf_sigmaPresheaf _ (hS _)]
   -- Rewrite the topology of the sheaf condition on `Scheme`, leaving `fpqcTopology` inside
   -- `bigPresheaf` unchanged: its module coefficients use the existing big structure sheaf.
   -- Rewriting those implicit occurrences makes the motive for `bigRingCatSheaf.obj` ill-typed.
@@ -112,6 +114,14 @@ theorem isSheaf_bigPresheaf_fpqcTopology :
     exact Presheaf.isSheaf_comp_of_isSheaf _ _ _ (isSheaf_bigPresheaf_zariskiTopology F)
   · have : Flat (Spec.map f) := hf
     exact isSheafFor_sigmaPresheaf_bigPresheaf_singleton F f
+
+/-- **fpqc descent of sections of quasi-coherent modules.** For a quasi-coherent `𝒪_S`-module `F`,
+the presheaf `(T, h) ↦ Γ(T, h^* F)` underlying `bigPresheaf F` is a sheaf for the fpqc topology on
+the big site `Over S` (Stacks, Lemma 35.8.1). -/
+theorem isSheaf_bigPresheaf_fpqcTopology :
+    Presheaf.IsSheaf (fpqcTopology.over S) F.bigPresheaf.presheaf :=
+  Presheaf.isSheaf_of_isSheaf_comp _ _ (CategoryTheory.forget AddCommGrpCat.{u})
+    ((isSheaf_iff_isSheaf_of_type _ _).2 (isSheaf_bigPresheaf_comp_forget_fpqcTopology F))
 
 /-- For a quasi-coherent `𝒪_S`-module `F`, the presheaf `(T, h) ↦ Γ(T, h^* F)` underlying
 `bigPresheaf F` is a sheaf for every topology on schemes coarser than the fpqc topology, such as

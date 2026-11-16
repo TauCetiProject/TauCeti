@@ -16,6 +16,8 @@ import Mathlib.Algebra.MvPolynomial.CommRing
 -- Proof-only: substitution commutes with change of coefficients.
 import Mathlib.Algebra.MvPolynomial.Monad
 import Mathlib.Tactic.LinearCombination
+-- Proof-only: Fermat's little theorem, for `d_(n+1) ∣ k^(n + 1) - k`.
+import Mathlib.FieldTheory.Finite.Basic
 -- Proof-only: Bézout's identity and faithfulness of scalars, for uniqueness of the multiple.
 import TauCeti.Algebra.GCDMonoid.Finset
 import TauCeti.Algebra.MvPolynomial.Coeff
@@ -75,6 +77,7 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`
   a unit in `A`.
 * `Nat.Prime.exists_not_dvd_choose`: if `n ≠ 0` is not a power of the prime `p`, then `p` does not
   divide some `n.choose i` with `0 < i < n`.
+* `TauCeti.lazardGcd_dvd_pow_succ_sub`: `d_(n+1)` divides `k^(n + 1) - k`.
 * `TauCeti.gcd_choose_div_lazardGcd_eq_one`: for `n ≥ 2`, the coefficients `n.choose i / d_n`
   have greatest common divisor `1`.
 * `TauCeti.coeff_lazardCocycle`: the coefficient of `XⁱYʲ` in `C_n` is
@@ -278,6 +281,19 @@ theorem lazardGcd_dvd_self {n : ℕ} (hn : n ≠ 1) : lazardGcd n ∣ n := by
     exact dvd_zero _
   · simpa using lazardGcd_dvd_choose one_pos h
 
+/-- `d_(n+1)` divides `k^(n + 1) - k` for every `k`: if `n + 1 = pʲ` then `d_(n+1) = p` and this
+is Fermat's little theorem, and otherwise `d_(n+1) = 1`. -/
+theorem lazardGcd_dvd_pow_succ_sub (k : ℕ) (n : ℕ+) :
+    (lazardGcd ((n : ℕ) + 1) : ℤ) ∣ (k : ℤ) ^ ((n : ℕ) + 1) - k := by
+  by_cases h : IsPrimePow ((n : ℕ) + 1)
+  · obtain ⟨p, j, hp, hj, hpj⟩ := (isPrimePow_nat_iff _).1 h
+    have := Fact.mk hp
+    rw [← hpj, lazardGcd_prime_pow hp hj.ne', ← ZMod.intCast_zmod_eq_zero_iff_dvd]
+    push_cast
+    rw [ZMod.pow_card_pow, sub_self]
+  · rw [lazardGcd_eq_one_of_not_isPrimePow (by simp) h, Nat.cast_one]
+    exact one_dvd _
+
 /-- For `n ≥ 2`, the numbers `n.choose i / d_n`, `0 < i < n`, have greatest common divisor `1`. -/
 theorem gcd_choose_div_lazardGcd_eq_one {n : ℕ} (hn : 2 ≤ n) :
     (Icc 1 (n - 1)).gcd (fun i => n.choose i / lazardGcd n) = 1 :=
@@ -419,7 +435,7 @@ theorem sum_aeval_natCast_mul_lazardCocycle {p : ℕ} (hp : p.Prime) {A : Type*}
     have hy : ![(j : A), 1] = algebraMap ℤ A ∘ ![(j : ℤ), 1] := by
       ext i
       fin_cases i <;> simp
-    rw [hx, (isHomogeneous_lazardCocycle (R := R) n).aeval_smul,
+    rw [hx, (isHomogeneous_lazardCocycle (R := R) n).aeval_smul_of_algebra,
       ← map_lazardCocycle (Int.castRingHom R), ← algebraMap_int_eq, aeval_map_algebraMap, hy,
       aeval_algebraMap_apply, smul_eq_mul, mul_comm, eq_intCast]
   -- `p ∑_{j < p} C_n(j, 1) = pⁿ - p`
@@ -486,7 +502,7 @@ theorem smul_lazardCocycle_eq_zero_iff {n : ℕ} (hn : 2 ≤ n) {r : R} :
     r • lazardCocycle n R = 0 ↔ r = 0 := by
   refine ⟨fun h => ?_, fun h => by rw [h, zero_smul]⟩
   obtain ⟨c, hc⟩ :=
-    Finset.exists_sum_natCast_mul_eq_one_of_gcd_eq_one (gcd_choose_div_lazardGcd_eq_one hn)
+    Finset.gcd_eq_one_iff_exists_sum_natCast_mul_eq_one.1 (gcd_choose_div_lazardGcd_eq_one hn)
   refine eq_zero_of_smul_eq_zero_of_sum_coeff_mul_eq_one (Icc 1 (n - 1))
     (fun i => Finsupp.single 0 i + Finsupp.single 1 (n - i)) (fun i => (c i : R)) ?_ h
   rw [← Int.cast_one, ← hc, Int.cast_sum]

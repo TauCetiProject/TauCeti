@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
@@ -25,9 +26,14 @@ projection is a submersion by `Bundle.isSubmersion_proj`, the zero section is sm
 `Bundle.contMDiff_zeroSection`, and the fibrewise addition and scalar multiplication are the vector
 space structures of the fibres.
 
-This file computes the charts in coordinates. The preferred chart at a covector over `x₀` sends a
-covector `p` at `x` to `(φ₀ x, p ∘ d(φ₀⁻¹))`, where `φ₀` is the extended chart of `M` at `x₀`
-(`TauCeti.CotangentBundle.extChartAt_apply`, `TauCeti.CotangentBundle.extChartAt_symm_apply`).
+This file computes the trivializations and charts in coordinates. The canonical trivialization at
+`x` reads a covector `p` at `y` as `p ∘ (dφ_y)⁻¹`, where `φ` is the extended chart at `x`
+(`TauCeti.CotangentBundle.trivializationAt_mk_snd`), and it is the identity over `x` itself
+(`TauCeti.CotangentBundle.continuousLinearMapAt_trivializationAt_self`,
+`TauCeti.CotangentBundle.symmL_trivializationAt_self`). The preferred chart at a covector over
+`x₀` sends a covector `p` at `x` to `(φ₀ x, p ∘ d(φ₀⁻¹))`, where `φ₀` is the extended chart of `M`
+at `x₀` (`TauCeti.CotangentBundle.extChartAt_apply`,
+`TauCeti.CotangentBundle.extChartAt_symm_apply`).
 Consequently, a change of base chart `φ = φ₁ ∘ φ₀⁻¹` acts on cotangent coordinates by
 
 `(q, p) ↦ (φ q, p ∘ (dφ_q)⁻¹)`,
@@ -47,6 +53,10 @@ the differential does. It gives the smoothness of the cotangent lift of a diffeo
 (`Diffeomorph.cotangent`). The map may also vary smoothly with the parameter
 (`TauCeti.CotangentBundle.contMDiffAt_mk_comp_mfderiv_uncurry`), as the slice inclusions of a
 product manifold do.
+
+Pairing a covector field along a map `u` with the image of a tangent field under a section `B` of
+`End(TM)` is continuous wherever both fields are continuous into their bundles
+(`ContMDiffSection.continuousAt_apply_apply`).
 
 The construction follows the Zulip discussion `Cotangent Bundle as a Manifold` in the channel
 `Is there code for X?`, which observed that Mathlib's continuous-linear-map bundle operations
@@ -88,6 +98,41 @@ theorem ext {z w : CotangentBundle I M} (hproj : z.proj = w.proj)
   exact congrArg (TotalSpace.mk' (E →L[𝕜] 𝕜) x) (ContinuousLinearMap.ext h)
 
 variable [IsManifold I 1 M]
+
+/-- Read in the canonical trivialization at `x`, a covector at `x` itself is its own coordinate
+covector, as tangent vectors at `x` are in the tangent trivialization at `x`. -/
+@[simp]
+theorem continuousLinearMapAt_trivializationAt_self (x : M) (p : TangentSpace I x →L[𝕜] 𝕜) :
+    (trivializationAt (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x).continuousLinearMapAt
+      𝕜 x p = p := by
+  refine (Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _
+    (FiberBundle.mem_baseSet_trivializationAt (E →L[𝕜] 𝕜)
+      (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x) p).trans ?_
+  ext v
+  simp only [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
+    Trivial.fiberBundle_trivializationAt', Trivial.continuousLinearMapAt_trivialization,
+    ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_apply]
+  exact congrArg p (Manifold.symmL_trivializationAt_self x v)
+
+/-- The canonical trivialization at `x` reads a covector at `y` as its precomposition with the
+inverse of the tangent trivialization at `x`, from model vectors to tangent vectors at `y`. -/
+theorem trivializationAt_mk_snd (x y : M) (p : TangentSpace I y →L[𝕜] 𝕜) :
+    (trivializationAt (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x ⟨y, p⟩).2 =
+      p ∘L (trivializationAt E (TangentSpace I) x).symmL 𝕜 y := by
+  ext v
+  simp only [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
+    Trivial.fiberBundle_trivializationAt', Trivial.continuousLinearMapAt_trivialization,
+    ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_apply]
+
+/-- The inverse of the canonical trivialization at `x` sends a model covector to itself, read as
+a covector at `x`. -/
+theorem symmL_trivializationAt_self (x : M) (p : E →L[𝕜] 𝕜) :
+    (trivializationAt (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x).symmL 𝕜 x p = p :=
+  -- `p` is read as a covector at `x`, whose coordinates at `x` are itself.
+  (congrArg _ (continuousLinearMapAt_trivializationAt_self (I := I) x p).symm).trans
+    (Trivialization.symmL_continuousLinearMapAt (R := 𝕜) _
+      (FiberBundle.mem_baseSet_trivializationAt (E →L[𝕜] 𝕜)
+        (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) x) p)
 
 /-- The preferred chart of the cotangent bundle at `z₀` sends a covector `z` to the chart image of
 its base point and to the covector precomposed with the inverse of the tangent chart at `z₀`. -/
@@ -309,3 +354,28 @@ end Pullback
 end CotangentBundle
 
 end TauCeti
+
+namespace ContMDiffSection
+
+open TauCeti
+
+variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I 1 M] {n : WithTop ℕ∞} {S : Type*} [TopologicalSpace S]
+  {u : S → M} {w : (z : S) → TangentSpace I (u z)} {η : (z : S) → TangentSpace I (u z) →L[𝕜] 𝕜}
+
+/-- A section `B` of `End(TM)`, evaluated along `u` on a tangent field `w` and paired with a
+covector field `η`, is continuous wherever both fields are continuous into their bundles. -/
+theorem continuousAt_apply_apply
+    (B : Cₛ^n⟮I; E →L[𝕜] E, fun x : M ↦ TangentSpace I x →L[𝕜] TangentSpace I x⟯) {z : S}
+    (hw : ContinuousAt (fun z ↦ (⟨u z, w z⟩ : TangentBundle I M)) z)
+    (hη : ContinuousAt (fun z ↦ (⟨u z, η z⟩ : CotangentBundle I M)) z) :
+    ContinuousAt (fun z ↦ η z (B (u z) (w z))) z := by
+  have hu : ContinuousAt u z :=
+    (FiberBundle.continuous_proj E (TangentSpace I)).continuousAt.comp hw
+  have hBw := (B.contMDiff.continuous.continuousAt.comp hu).clm_bundle_apply hw
+  have h := ContinuousAt.clm_bundle_apply (E₂ := Bundle.Trivial M 𝕜) hη hBw
+  exact continuous_snd.continuousAt.comp
+    ((Bundle.Trivial.homeomorphProd M 𝕜).continuous.continuousAt.comp h)
+
+end ContMDiffSection

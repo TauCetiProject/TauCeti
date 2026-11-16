@@ -85,7 +85,6 @@ theorem exists_seq_dual_triangular_of_not_surjective_inclusionInDoubleDual [Comp
     obtain ⟨g, hg, htests⟩ := Φ.exists_norm_lt_and_forall_apply_eq tests (by norm_num : (0 : ℝ) < 1)
     let f : StrongDual 𝕜 E := (2 : 𝕜)⁻¹ • g
     have hfn : ‖f‖ ≤ 1 := by
-      have hgn : ‖g‖ < 2 := hg.trans_le (by linarith)
       simp only [f, norm_smul, norm_inv, RCLike.norm_ofNat]
       linarith
     have hfg : φ f = (d : 𝕜) := by

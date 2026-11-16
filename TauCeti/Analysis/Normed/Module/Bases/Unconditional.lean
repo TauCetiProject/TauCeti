@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Normed.Module.BoundedCoefficients
 
 An unconditional basis stays a basis under every rearrangement of its index type:
 `UnconditionalSchauderBasis.reindex` transports it along an equivalence, keeping its finite
-projections and its basis constant `nnnormProjBound`. For an unconditional basis indexed by `ℕ`
+projections and its basis constant `nnNormProjBound`. For an unconditional basis indexed by `ℕ`
 and a permutation `π` of `ℕ`, `(b.reindex π).toSchauderBasis` is the rearranged classical
 Schauder basis.
 
@@ -25,12 +25,12 @@ coefficients and `4 * t * C` for scalar coefficients of norm at most `t`. In par
 bound on finite coordinate projections is equivalent to one on signed coordinate multipliers
 (`GeneralSchauderBasis.exists_forall_norm_proj_le_iff`). These finite estimates hold for any
 summation filter; for an unconditional basis of a Banach space the bound `C` is supplied by
-`UnconditionalSchauderBasis.nnnormProjBound`.
+`UnconditionalSchauderBasis.nnNormProjBound`.
 
 In a Banach space every bounded scalar family `a ∈ ℓ^∞(β, 𝕜)` then defines the multiplier
 `x ↦ ∑' i, a i • b.coord i x • b i`, whose series converges unconditionally
 (`UnconditionalSchauderBasis.hasSum_multiplier`). This is the continuous bilinear map
-`UnconditionalSchauderBasis.multiplier`, of norm at most `4 * b.nnnormProjBound`; it acts on
+`UnconditionalSchauderBasis.multiplier`, of norm at most `4 * b.nnNormProjBound`; it acts on
 each basis vector by its coefficient and is multiplicative, sending `1` to the identity.
 
 ## References
@@ -83,8 +83,8 @@ theorem proj_reindex (e : β ≃ γ) (A : Finset γ) :
 /-- Rearranging an unconditional basis preserves its basis constant. -/
 @[simp]
 theorem nnnormProjBound_reindex (e : β ≃ γ) :
-    (b.reindex e).nnnormProjBound = b.nnnormProjBound := by
-  simp only [nnnormProjBound, proj_reindex, ← Equiv.finsetCongr_apply]
+    (b.reindex e).nnNormProjBound = b.nnNormProjBound := by
+  simp only [nnNormProjBound, proj_reindex, ← Equiv.finsetCongr_apply]
   exact e.symm.finsetCongr.iSup_comp (g := fun A ↦ ‖b.proj A‖₊)
 
 end Reindex
@@ -165,13 +165,13 @@ theorem summable_smul_coord_smul (a : ℓ^∞(β, 𝕜)) (x : X) :
 /-- The coordinate multiplier series of a bounded scalar family is bounded by `4` times the
 basis constant, the norm of the family and the norm of the vector. -/
 private theorem norm_tsum_smul_coord_smul_le (a : ℓ^∞(β, 𝕜)) (x : X) :
-    ‖∑' i, a i • b.coord i x • b i‖ ≤ 4 * b.nnnormProjBound * ‖a‖ * ‖x‖ := by
+    ‖∑' i, a i • b.coord i x • b i‖ ≤ 4 * b.nnNormProjBound * ‖a‖ * ‖x‖ := by
   refine le_of_tendsto' (b.summable_smul_coord_smul a x).hasSum.norm fun A ↦ ?_
   calc
-    ‖∑ i ∈ A, a i • b.coord i x • b i‖ ≤ 4 * ‖a‖ * b.nnnormProjBound * ‖x‖ :=
-      b.norm_sum_smul_coord_smul_le b.norm_proj_le_nnnormProjBound A (norm_nonneg a)
+    ‖∑ i ∈ A, a i • b.coord i x • b i‖ ≤ 4 * ‖a‖ * b.nnNormProjBound * ‖x‖ :=
+      b.norm_sum_smul_coord_smul_le b.norm_proj_le_nnNormProjBound A (norm_nonneg a)
         (fun i _ ↦ lp.norm_apply_le_norm ENNReal.top_ne_zero a i) x
-    _ = 4 * b.nnnormProjBound * ‖a‖ * ‖x‖ := by ring
+    _ = 4 * b.nnNormProjBound * ‖a‖ * ‖x‖ := by ring
 
 /-- The coordinate multiplier of an unconditional basis of a Banach space: a bounded scalar family
 `a` acts by `x ↦ ∑' i, a i • b.coord i x • b i`. -/
@@ -190,7 +190,7 @@ def multiplier : ℓ^∞(β, 𝕜) →L[𝕜] X →L[𝕜] X :=
       (fun c a x ↦ by
         simp only [map_smul, smul_eq_mul, mul_smul, smul_comm (a _) c]
         exact (b.summable_smul_coord_smul a x).tsum_const_smul c))
-    (4 * b.nnnormProjBound) b.norm_tsum_smul_coord_smul_le
+    (4 * b.nnNormProjBound) b.norm_tsum_smul_coord_smul_le
 
 /-- The coordinate multiplier series converges unconditionally to the multiplier. -/
 theorem hasSum_multiplier (a : ℓ^∞(β, 𝕜)) (x : X) :
@@ -205,11 +205,11 @@ theorem multiplier_apply (a : ℓ^∞(β, 𝕜)) (x : X) :
 /-- The coordinate multiplier has norm at most `4` times the basis constant and the norm of the
 coefficient family. -/
 theorem norm_multiplier_le (a : ℓ^∞(β, 𝕜)) :
-    ‖b.multiplier a‖ ≤ 4 * b.nnnormProjBound * ‖a‖ :=
+    ‖b.multiplier a‖ ≤ 4 * b.nnNormProjBound * ‖a‖ :=
   (b.multiplier a).opNorm_le_bound (by positivity) (b.norm_tsum_smul_coord_smul_le a)
 
 /-- The coordinate multiplier map has norm at most `4` times the basis constant. -/
-theorem norm_multiplier_le' : ‖b.multiplier‖ ≤ 4 * b.nnnormProjBound :=
+theorem norm_multiplier_le' : ‖b.multiplier‖ ≤ 4 * b.nnNormProjBound :=
   b.multiplier.opNorm_le_bound (by positivity) b.norm_multiplier_le
 
 /-- Coordinates of a multiplied vector are multiplied by the coefficients. -/

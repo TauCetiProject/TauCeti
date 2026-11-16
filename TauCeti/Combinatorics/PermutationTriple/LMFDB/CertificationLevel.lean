@@ -38,7 +38,8 @@ map rows carrying the passport label, and `maxdegbf` is the largest stored orbit
 The stored orbit sizes count stored embedding entries rather than isomorphism classes, so their sum
 is not asserted to be the passport size: the stored triples of these rows represent at most as many
 classes as there are stored entries, and at most as many as the passport has, and either bound can
-be strict.
+be strict. When the stored triples are pairwise non-isomorphic, the sum is the passport size
+exactly when the stored entries represent every class of the passport.
 
 ## The classification tables
 
@@ -74,6 +75,9 @@ and is carrier only.
   and `TauCeti.PermutationTriple.LMFDB.PassportRecord.IsValidAt.card_mapRowClasses_le_passSize`:
   the classes stored in the map rows of a passport are at most the stored embedding entries, and
   at most the passport size.
+* `TauCeti.PermutationTriple.LMFDB.PassportRecord.IsValidAt.sum_orbitSize_eq_passSize_iff`: for
+  map rows storing pairwise non-isomorphic triples, the stored orbit sizes sum to the passport size
+  exactly when the rows represent every class of the passport.
 
 ## References
 
@@ -262,6 +266,9 @@ theorem isValidAt_congr {r r' : PassportRecord n}
 def mapRows (r : PassportRecord n) (rows : List (BelyiRecord n)) : List (BelyiRecord n) :=
   rows.filter fun q ↦ q.plabel = r.plabel
 
+theorem mapRows_def (r : PassportRecord n) (rows : List (BelyiRecord n)) :
+    r.mapRows rows = rows.filter fun q ↦ q.plabel = r.plabel := (rfl)
+
 @[simp] theorem mem_mapRows {r : PassportRecord n} {rows : List (BelyiRecord n)}
     {q : BelyiRecord n} : q ∈ r.mapRows rows ↔ q ∈ rows ∧ q.plabel = r.plabel := by
   simp [mapRows]
@@ -314,6 +321,17 @@ noncomputable def mapRowClasses (r : PassportRecord n) (rows : List (BelyiRecord
   · rintro ⟨q, hq, s, hs, rfl⟩
     exact ⟨s, ⟨q, hq, hs⟩, rfl⟩
 
+/-- The map rows of a passport store as many triples in total as they have stored embedding
+entries. -/
+private theorem length_flatMap_triples_mapRows (r : PassportRecord n)
+    (rows : List (BelyiRecord n)) :
+    ((r.mapRows rows).flatMap BelyiRecord.triples).length =
+      ((r.mapRows rows).map BelyiRecord.storedEmbeddingCount).sum := by
+  rw [List.length_flatMap]
+  congr 1
+  refine List.map_congr_left fun q _ ↦ ?_
+  rw [BelyiRecord.storedEmbeddingCount_def, BelyiRecord.storedEmbeddingCount_eq_triplesLength]
+
 /-- The stored triples of the map rows of a passport represent at most as many isomorphism classes
 as the rows have stored embedding entries in total. The inequality is strict when two stored
 entries are simultaneously conjugate, so the sum of the stored orbit sizes is not a count of
@@ -324,10 +342,34 @@ theorem card_mapRowClasses_le_sum_storedEmbeddingCount (r : PassportRecord n)
       ((r.mapRows rows).map BelyiRecord.storedEmbeddingCount).sum := by
   classical
   refine (List.toFinset_card_le _).trans_eq ?_
-  rw [List.length_map, List.length_flatMap]
-  congr 1
-  refine List.map_congr_left fun q _ ↦ ?_
-  rw [BelyiRecord.storedEmbeddingCount_def, BelyiRecord.storedEmbeddingCount_eq_triplesLength]
+  rw [List.length_map, length_flatMap_triples_mapRows]
+
+/-- If the stored triples of the map rows of a passport are pairwise non-isomorphic, then they
+represent exactly as many isomorphism classes as the rows have stored embedding entries in
+total. -/
+theorem card_mapRowClasses_eq_sum_storedEmbeddingCount (r : PassportRecord n)
+    (rows : List (BelyiRecord n))
+    (hdistinct : ((r.mapRows rows).flatMap BelyiRecord.triples).Pairwise
+      fun s s' ↦ ¬ s.toTriple.Equivalent s'.toTriple) :
+    (r.mapRowClasses rows).card =
+      ((r.mapRows rows).map BelyiRecord.storedEmbeddingCount).sum := by
+  classical
+  have hnodup : (((r.mapRows rows).flatMap BelyiRecord.triples).map
+      fun s ↦ IsoClass.mk s.toTriple).Nodup :=
+    List.pairwise_map.mpr (hdistinct.imp fun h h' ↦ h (IsoClass.mk_eq_mk_iff.mp h'))
+  rw [mapRowClasses, List.toFinset_card_of_nodup hnodup, List.length_map,
+    length_flatMap_triples_mapRows]
+
+open scoped Classical in
+/-- If every map row carrying the label of `r` is valid for the passport `P`, then the stored
+triples of these map rows represent classes of `P`. -/
+theorem mapRowClasses_subset_image_forget {r : PassportRecord n} {rows : List (BelyiRecord n)}
+    {P : PassportSpec n} (hrows : ∀ q ∈ r.mapRows rows, q.IsValidFor P) :
+    r.mapRowClasses rows ⊆ P.classSet.image ConnectedIsoClass.forget := by
+  intro c hc
+  obtain ⟨q, hq, hc⟩ := mem_mapRowClasses.mp hc
+  obtain ⟨d, hd, rfl⟩ := (hrows q hq).exists_mem_classSet_of_mem_storedClasses hc
+  exact Finset.mem_image_of_mem ConnectedIsoClass.forget hd
 
 /-- If the passport row `r` is valid at `t` and every map row carrying its label is valid for a
 passport containing `t`, then the stored triples of these map rows represent at most `pass_size`
@@ -340,11 +382,32 @@ theorem IsValidAt.card_mapRowClasses_le_passSize {r : PassportRecord n}
     (r.mapRowClasses rows).card ≤ r.passSize := by
   classical
   rw [hr.passSize_eq_passportSize hP, PassportSpec.passportSize_def]
-  refine (Finset.card_le_card fun c hc ↦ ?_).trans
-    (Finset.card_image_le (f := ConnectedIsoClass.forget))
-  obtain ⟨q, hq, hc⟩ := mem_mapRowClasses.mp hc
-  obtain ⟨d, hd, rfl⟩ := (hrows q hq).exists_mem_classSet_of_mem_storedClasses hc
-  exact Finset.mem_image_of_mem ConnectedIsoClass.forget hd
+  exact (Finset.card_le_card (mapRowClasses_subset_image_forget hrows)).trans Finset.card_image_le
+
+open scoped Classical in
+/-- **The sum formula, under a distinctness certificate.** Let the passport row `r` be valid at
+`t`, let every map row carrying its label be valid for a passport `P` containing `t`, and let the
+stored triples of these map rows be pairwise non-isomorphic. Then the stored
+orbit sizes of the map rows sum to `pass_size` exactly when the stored triples represent every
+class of `P`.
+
+Neither hypothesis is asserted by the rows: distinctness fails when two stored entries are
+simultaneously conjugate, and coverage fails when the table omits a class of the passport. -/
+theorem IsValidAt.sum_orbitSize_eq_passSize_iff {r : PassportRecord n}
+    {rows : List (BelyiRecord n)} {t : ConnectedTriple n} {P : PassportSpec n}
+    (hr : r.IsValidAt t) (hP : PassportSpec.HasPassport t P)
+    (hrows : ∀ q ∈ r.mapRows rows, q.IsValidFor P)
+    (hdistinct : ((r.mapRows rows).flatMap BelyiRecord.triples).Pairwise
+      fun s s' ↦ ¬ s.toTriple.Equivalent s'.toTriple) :
+    ((r.mapRows rows).map BelyiRecord.orbitSize).sum = r.passSize ↔
+      r.mapRowClasses rows = P.classSet.image ConnectedIsoClass.forget := by
+  have hsum : ((r.mapRows rows).map BelyiRecord.orbitSize).sum = (r.mapRowClasses rows).card := by
+    rw [card_mapRowClasses_eq_sum_storedEmbeddingCount r rows hdistinct]
+    exact congrArg List.sum (List.map_congr_left fun q hq ↦ (hrows q hq).orbitSize_eq)
+  rw [hsum, hr.passSize_eq_passportSize hP, PassportSpec.passportSize_def,
+    ← Finset.card_image_of_injective _ ConnectedIsoClass.forget_injective]
+  have hsub := mapRowClasses_subset_image_forget hrows
+  exact ⟨fun h ↦ Finset.eq_of_subset_of_card_le hsub h.ge, fun h ↦ h ▸ rfl⟩
 
 end PassportRecord
 

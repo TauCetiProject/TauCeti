@@ -33,7 +33,10 @@ bound with constants that depend only on the constants of the differential inequ
 
 * `TauCeti.coveringNumber_le_of_mul_sq_le_measure_closedBall_of_sq_le`: the quadratic
   large-parameter covering bound, valid for `r ≥ (2 c₀ / σ) ²`.
-* `TauCeti.exists_forall_coveringNumber_le_of_ae_le`: the same bound with the quadratic lower
+* `TauCeti.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le`: the quadratic lower
+  bound, with constants independent of `r`, from Taubes's differential inequality and the
+  smallest-scale lower bound.
+* `TauCeti.exists_forall_coveringNumber_le_of_ae_le`: the covering bound with the quadratic lower
   bound supplied by Taubes's differential inequality and the smallest-scale lower bound at each
   point of `A`.
 
@@ -77,35 +80,28 @@ theorem coveringNumber_le_of_mul_sq_le_measure_closedBall_of_sq_le {c c₀ ρ₀
   convert coveringNumber_le_of_mul_pow_le_measure_closedBall (d := 2) hc hA hσ hlow hσρ₀ using 4
   norm_num
 
-/-- **Covering the zero set from the monotonicity inequality.** Fix `C, C₁, K ≥ 0` and
+omit [OpensMeasurableSpace X] in
+/-- **Quadratic lower bound from the monotonicity inequality.** Fix `C, C₁, K ≥ 0` and
 `c₀, c₁, σ₀ > 0`. There are constants `c > 0` and `ρ₀ > 0` with the following property. Let
-`r ≥ 1`, let `μ` be a measure and `A` a set, and suppose that for every `x ∈ A` the ball
-`closedBall x σ₀` has finite measure, the function `E(σ) = μ (closedBall x σ)` satisfies Taubes's
-differential inequality `E(σ) ≤ (σ / 2) (1 + C σ) (1 + C₁ r^(-1/2)) E'(σ) + K σ⁴` at almost every
-`σ ∈ (c₀ r^(-1/2), σ₀)`, and `E(c₀ r^(-1/2)) ≥ c₁ / r`. Then for every `σ > 0` with `σ ≤ 2 ρ₀`,
-as soon as `r ≥ (2 c₀ / σ) ^ 2`, the set `A` is covered by at most
-`4 μ (cthickening (σ / 2) A) / (c σ ^ 2)` closed balls of radius `σ` centred in `A`. The
-constants `c` and `ρ₀` depend neither on `r` nor on `μ` and `A`. -/
-theorem exists_forall_coveringNumber_le_of_ae_le {C C₁ K c₀ c₁ σ₀ : ℝ} (hC : 0 ≤ C)
-    (hC₁ : 0 ≤ C₁) (hK : 0 ≤ K) (hc₀ : 0 < c₀) (hc₁ : 0 < c₁) (hσ₀ : 0 < σ₀) :
-    ∃ c > 0, ∃ ρ₀ > 0, ∀ r, 1 ≤ r → ∀ (μ : Measure X) (A : Set X),
-      (∀ x ∈ A, μ (closedBall x σ₀) ≠ ∞ ∧
-        (∀ᵐ σ, σ ∈ Ioo (c₀ / √r) σ₀ →
-          (μ (closedBall x σ)).toReal ≤ σ / 2 * (1 + C * σ) * (1 + C₁ / √r) *
-            deriv (fun σ ↦ (μ (closedBall x σ)).toReal) σ + K * σ ^ 4) ∧
-        c₁ / r ≤ (μ (closedBall x (c₀ / √r))).toReal) →
-      ∀ σ : ℝ≥0, σ ≠ 0 → (σ : ℝ) ≤ 2 * ρ₀ → (2 * c₀ / σ) ^ 2 ≤ r →
-        (coveringNumber σ A : ℝ≥0∞) ≤
-          ENNReal.ofReal (4 / (c * σ ^ 2)) * μ (cthickening (σ / 2) A) := by
+`r ≥ 1`, let `μ` be a measure and `x` a point such that the ball `closedBall x σ₀` has finite
+measure, the function `E(σ) = μ (closedBall x σ)` satisfies Taubes's differential inequality
+`E(σ) ≤ (σ / 2) (1 + C σ) (1 + C₁ r^(-1/2)) E'(σ) + K σ⁴` at almost every
+`σ ∈ (c₀ r^(-1/2), σ₀)`, and `E(c₀ r^(-1/2)) ≥ c₁ / r`. Then `μ (closedBall x ρ) ≥ c ρ ^ 2` for
+every radius `c₀ r^(-1/2) ≤ ρ ≤ ρ₀`. The constants `c` and `ρ₀` depend neither on `r` nor on `μ`
+and `x`. -/
+theorem exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le {C C₁ K c₀ c₁ σ₀ : ℝ}
+    (hC : 0 ≤ C) (hC₁ : 0 ≤ C₁) (hK : 0 ≤ K) (hc₀ : 0 < c₀) (hc₁ : 0 < c₁) (hσ₀ : 0 < σ₀) :
+    ∃ c > 0, ∃ ρ₀ > 0, ∀ r, 1 ≤ r → ∀ (μ : Measure X) (x : X), μ (closedBall x σ₀) ≠ ∞ →
+      (∀ᵐ σ, σ ∈ Ioo (c₀ / √r) σ₀ →
+        (μ (closedBall x σ)).toReal ≤ σ / 2 * (1 + C * σ) * (1 + C₁ / √r) *
+          deriv (fun σ ↦ (μ (closedBall x σ)).toReal) σ + K * σ ^ 4) →
+      c₁ / r ≤ (μ (closedBall x (c₀ / √r))).toReal →
+      ∀ ρ, c₀ / √r ≤ ρ → ρ ≤ ρ₀ → ENNReal.ofReal (c * ρ ^ 2) ≤ μ (closedBall x ρ) := by
   set m := c₁ / (c₀ ^ 2 * (1 + C) ^ 2 * Real.exp (2 * C₁ * (1 + |Real.log c₀|)))
-  have hm : 0 < m := by positivity
   -- Below the radius `ρ₀` the error term `K ρ ^ 4` is absorbed into `m ρ ^ 2 / 2`.
   set ρ₀ := min σ₀ (min 1 √(m / (2 * (K + 1))))
   have hρ₀ : 0 < ρ₀ := lt_min hσ₀ (lt_min one_pos (by positivity))
-  refine ⟨m / 2, by positivity, ρ₀, hρ₀, fun r hr μ A hA σ hσ hσρ₀ hrσ ↦ ?_⟩
-  refine coveringNumber_le_of_mul_sq_le_measure_closedBall_of_sq_le (by positivity)
-    (fun x hx ρ hρ hρρ₀ ↦ ?_) hσ hσρ₀ hrσ
-  obtain ⟨hfin, hle, hbase⟩ := hA x hx
+  refine ⟨m / 2, by positivity, ρ₀, hρ₀, fun r hr μ x hfin hle hbase ρ hρ hρρ₀ ↦ ?_⟩
   -- Apply the real-variable lower bound with `h = r^(-1/2)`.
   have hs : 0 < √r := Real.sqrt_pos.2 (by linarith)
   set h := (√r)⁻¹
@@ -135,5 +131,31 @@ theorem exists_forall_coveringNumber_le_of_ae_le {C C₁ K c₀ c₁ σ₀ : ℝ
   exact ENNReal.ofReal_le_of_le_toReal <| mul_sq_le_of_le_mul_deriv_add hC (by positivity) hK
     hc₀ (inv_pos.2 hs) (inv_le_one_of_one_le₀ (Real.one_le_sqrt.2 hr)) (div_eq_mul_inv _ _).le
     (hch ▸ hρ) hρ1 hmono hc₁.le hfm hf' hKρ
+
+/-- **Covering the zero set from the monotonicity inequality.** Fix `C, C₁, K ≥ 0` and
+`c₀, c₁, σ₀ > 0`. There are constants `c > 0` and `ρ₀ > 0` with the following property. Let
+`r ≥ 1`, let `μ` be a measure and `A` a set, and suppose that for every `x ∈ A` the ball
+`closedBall x σ₀` has finite measure, the function `E(σ) = μ (closedBall x σ)` satisfies Taubes's
+differential inequality `E(σ) ≤ (σ / 2) (1 + C σ) (1 + C₁ r^(-1/2)) E'(σ) + K σ⁴` at almost every
+`σ ∈ (c₀ r^(-1/2), σ₀)`, and `E(c₀ r^(-1/2)) ≥ c₁ / r`. Then for every `σ > 0` with `σ ≤ 2 ρ₀`,
+as soon as `r ≥ (2 c₀ / σ) ^ 2`, the set `A` is covered by at most
+`4 μ (cthickening (σ / 2) A) / (c σ ^ 2)` closed balls of radius `σ` centred in `A`. The
+constants `c` and `ρ₀` depend neither on `r` nor on `μ` and `A`. -/
+theorem exists_forall_coveringNumber_le_of_ae_le {C C₁ K c₀ c₁ σ₀ : ℝ} (hC : 0 ≤ C)
+    (hC₁ : 0 ≤ C₁) (hK : 0 ≤ K) (hc₀ : 0 < c₀) (hc₁ : 0 < c₁) (hσ₀ : 0 < σ₀) :
+    ∃ c > 0, ∃ ρ₀ > 0, ∀ r, 1 ≤ r → ∀ (μ : Measure X) (A : Set X),
+      (∀ x ∈ A, μ (closedBall x σ₀) ≠ ∞ ∧
+        (∀ᵐ σ, σ ∈ Ioo (c₀ / √r) σ₀ →
+          (μ (closedBall x σ)).toReal ≤ σ / 2 * (1 + C * σ) * (1 + C₁ / √r) *
+            deriv (fun σ ↦ (μ (closedBall x σ)).toReal) σ + K * σ ^ 4) ∧
+        c₁ / r ≤ (μ (closedBall x (c₀ / √r))).toReal) →
+      ∀ σ : ℝ≥0, σ ≠ 0 → (σ : ℝ) ≤ 2 * ρ₀ → (2 * c₀ / σ) ^ 2 ≤ r →
+        (coveringNumber σ A : ℝ≥0∞) ≤
+          ENNReal.ofReal (4 / (c * σ ^ 2)) * μ (cthickening (σ / 2) A) := by
+  obtain ⟨c, hc, ρ₀, hρ₀, hdens⟩ :=
+    exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le (X := X) hC hC₁ hK hc₀ hc₁ hσ₀
+  refine ⟨c, hc, ρ₀, hρ₀, fun r hr μ A hA σ hσ hσρ₀ hrσ ↦ ?_⟩
+  exact coveringNumber_le_of_mul_sq_le_measure_closedBall_of_sq_le hc
+    (fun x hx ↦ hdens r hr μ x (hA x hx).1 (hA x hx).2.1 (hA x hx).2.2) hσ hσρ₀ hrσ
 
 end TauCeti

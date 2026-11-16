@@ -125,7 +125,7 @@ lemma ιHomology₁_hom_one_eq_H₁AddEquivHomology_loopClass (p : Ω^ (Fin 1) X
       (δ_zero_simplex₁_eq_δ_one_simplex₁ p)).hom 1 =
       HurewiczOne.H₁AddEquivHomology (TopCat.of X)
         (HurewiczOne.loopClass (genLoopEquivOfUnique (Fin 1) p)) := by
-  rw [SSet.ιHomology₁_eq]
+  rw [SSet.ιHomology₁_def]
   refine (HurewiczOne.H₁AddEquivHomology_loopClass _ _ ?_).symm
   refine (congr($(HomologicalComplex.liftCycles_i
     ((pairSSet x).chainComplex (ModuleCat.of ℤ ℤ)) ((pairSSet x).ιChainComplex (simplex₁ p)) 0
@@ -177,7 +177,7 @@ evaluated at `1 : ℤ`, is **minus** the Hurewicz isomorphism
 theorem hurewiczHom_hom_one_eq_neg_hurewiczHomologyAddEquiv [PathConnectedSpace X]
     (a : Additive (HomotopyGroup (Fin 1) X x)) :
     (hurewiczHom (ModuleCat.of ℤ ℤ) 0 a).hom 1 =
-      -hurewiczHomologyAddEquiv (X := TopCat.of X) x (Additive.ofMul (Abelianization.of
+      -hurewiczHomologyAddEquiv (X := TopCat.of X) x (Additive.ofMul (Group.Abelianization.of
         (homotopyGroupOfUniqueMulEquivFundamentalGroup (Fin 1) a.toMul))) := by
   refine (hurewiczHom_hom_one_eq_neg_hurewicz₁ a).trans (congrArg Neg.neg ?_)
   exact (congrArg (H₁AddEquivHomology (TopCat.of X)) (hurewiczAb_ofMul_of x _).symm).trans

@@ -46,9 +46,7 @@ theory feeds Deligne's bigrading and the strictness theorem.
 
 ## References
 
-Deligne, *Théorie de Hodge II*, §2.3; Peters–Steenbrink, *Mixed Hodge Structures*, Ch. 3. The
-morphism convention — a single rational map with the complex action derived — is the one
-specified for Layer L2 of the Hodge structures roadmap.
+Deligne, *Théorie de Hodge II*, §2.3; Peters–Steenbrink, *Mixed Hodge Structures*, Ch. 3.
 -/
 
 public section

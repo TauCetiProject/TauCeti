@@ -52,7 +52,7 @@ theorem injOn_naturalParameterization_Ico
   have hs : ContinuousOn s (Icc a b) := fun t ht ↦
     (hγ.continuousWithinAt_variationOnFromTo_iff ha ht).mpr (hcont t ht)
   have hm : StrictMonoOn s (Icc a b) :=
-    hγ.locallyBoundedVariationOn.strictMonoOn_variationOnFromTo_of_injOn_Ioo ha
+    hγ.locallyBoundedVariationOn.strictMonoOn_variationOnFromTo_of_injOn_Ioo
       (hinj.mono Ioo_subset_Ico_self)
   have himageco : s '' Ico a b = Ico 0 (eVariationOn γ (Icc a b)).toReal := by
     rw [hs.image_Ico_of_strictMonoOn hab hm]
@@ -84,7 +84,6 @@ theorem exists_simple_closed_arclength_parametrization
   let s := variationOnFromTo γ (Icc a b) a
   let L := (eVariationOn γ (Icc a b)).toReal
   have ha : a ∈ Icc a b := left_mem_Icc.mpr hab
-  have hb : b ∈ Icc a b := right_mem_Icc.mpr hab
   have himage : s '' Icc a b = Icc 0 L := hγ.image_variationOnFromTo_Icc hcont hab
   let g := naturalParameterization γ (Icc a b) a
   have hunit : HasUnitSpeedOn g (Icc 0 L) := by

@@ -43,9 +43,7 @@ theorem coeff_smulGradedDimension_zigzagAlgebraGradedProjective (i j : V) (d : �
       else if G.Adj i j ∧ d = 1 then 1 else 0 := by
   let _ := zigzagAlgebraIntegerGradedAlgebra k G
   rw [GradedModuleCat.coeff_smulGradedDimension_ofIdeal_span_singleton
-    (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
     (zigzagAlgebraBasis_inl_mem_integerGrade_zero k G i)
-    (isIdempotentElem_zigzagAlgebraBasis_inl k G j)
     (isHomogeneous_span_zigzagAlgebraBasis_inl k G j)]
   simpa only [Nat.cast_ite, Nat.cast_one, Nat.cast_zero] using
     congrArg (Nat.cast : ℕ → ℤ)

@@ -281,7 +281,7 @@ theorem freeCumulantSeries_smul (φ : A →ₗ[R] R) (c : R) (a : A) :
   ext n
   have h := (freeCumulantMultilinear (α := Fin n) φ).map_smul_univ (fun _ => c) fun _ => a
   rw [freeCumulantMultilinear_apply, freeCumulantMultilinear_apply, prod_const, card_univ,
-    Fintype.card_fin, smul_eq_mul] at h
+    Fintype.card_fin, smul_eq_mul, RingHom.id_apply] at h
   rw [coeff_freeCumulantSeries, coeff_rescale, coeff_freeCumulantSeries, h]
 
 /-- For a normalised `φ`, adding the scalar `c` to `a` adds the constant `c` to its R-series:

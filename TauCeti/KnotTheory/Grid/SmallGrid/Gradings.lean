@@ -39,10 +39,8 @@ gradings in this concrete diagram, and package the diagram with its odd-componen
 
 ## References
 
-This supplies a small prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`,
-Lane G.3, "The complexes and `∂² = 0`", and the acceptance criterion that grid homology
-compute on the `2 × 2` unknot grid with its bigradings. The grid and grading conventions
-follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 3 and 4.
+The grid and grading conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
+Links*, Chapters 3 and 4.
 -/
 
 public section

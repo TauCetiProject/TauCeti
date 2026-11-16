@@ -27,7 +27,8 @@ henselian pair have at most one lift, without any completeness or nilpotence hyp
 The complementary idempotent, Mathlib's `Algebra.FormallyUnramified.elem`, is characterised by
 the two properties defining it: it annihilates every `1 ⊗ s - s ⊗ 1` and multiplies to `1`
 (`TauCeti.Algebra.FormallyUnramified.eq_elem`). This makes it computable in examples, and shows
-that it is invariant under the swap of the two tensor factors. For the split algebra `κ → R` it is
+that it is invariant under the swap of the two tensor factors and compatible with base change
+(`TauCeti.Algebra.FormallyUnramified.productMap_elem`). For the split algebra `κ → R` it is
 `∑ₖ eₖ ⊗ eₖ`, the indicator of the diagonal of `κ × κ`.
 
 For an unramified quotient `S = W ⧸ I` over `R`, Mathlib's diagonal element of `S ⊗[R] S` lifts to
@@ -151,6 +152,46 @@ theorem comm_elem (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
         (Algebra.TensorProduct.comm R S S).toAlgHom = Algebra.TensorProduct.lmul' R :=
       Algebra.TensorProduct.ext' fun a b ↦ by simp [mul_comm]
     exact (DFunLike.congr_fun hcomm _).trans Algebra.FormallyUnramified.lmul_elem
+
+/-- The diagonal idempotent is compatible with base change and with surjections. Let `S'` be an
+essentially finite type, formally unramified `T`-algebra, for an `R`-algebra `T`, and let
+`f : S → S'` be an `R`-algebra map whose image spans `S'` over `T`, such as the inclusion
+`S → T ⊗[R] S` or a surjection `S → S'` of `R`-algebras. Then `f ⊗ f` sends the diagonal idempotent
+of `S ⊗[R] S` to that of `S' ⊗[T] S'`. -/
+theorem productMap_elem {R S T S' : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    [Algebra.EssFiniteType R S] [Algebra.FormallyUnramified R S] [CommRing T] [Algebra R T]
+    [CommRing S'] [Algebra T S'] [Algebra R S'] [IsScalarTower R T S']
+    [Algebra.EssFiniteType T S'] [Algebra.FormallyUnramified T S'] (f : S →ₐ[R] S')
+    (hf : Submodule.span T (Set.range f) = ⊤) :
+    Algebra.TensorProduct.productMap
+        ((Algebra.TensorProduct.includeLeft (R := T) (S := R) (B := S')).comp f)
+        (((Algebra.TensorProduct.includeRight (R := T) (A := S')).restrictScalars R).comp f)
+        (Algebra.FormallyUnramified.elem R S) =
+      Algebra.FormallyUnramified.elem T S' := by
+  set κ := Algebra.TensorProduct.productMap
+    ((Algebra.TensorProduct.includeLeft (R := T) (S := R) (B := S')).comp f)
+    (((Algebra.TensorProduct.includeRight (R := T) (A := S')).restrictScalars R).comp f)
+  refine eq_elem (fun s ↦ ?_) ?_
+  · -- The elements `s` with `(1 ⊗ s - s ⊗ 1) * κ (elem R S) = 0` form a `T`-submodule
+    -- containing the image of `f`.
+    have hs : s ∈ Submodule.span T (Set.range f) := hf ▸ Submodule.mem_top
+    induction hs using Submodule.span_induction with
+    | mem x hx =>
+      obtain ⟨s, rfl⟩ := hx
+      have h := congrArg κ (Algebra.FormallyUnramified.one_tmul_sub_tmul_one_mul_elem (R := R) s)
+      simpa [κ] using h
+    | zero => simp
+    | add x y _ _ hx hy =>
+      rw [TensorProduct.tmul_add, TensorProduct.add_tmul, add_sub_add_comm, add_mul, hx, hy,
+        add_zero]
+    | smul t x _ hx =>
+      rw [TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', ← smul_sub, smul_mul_assoc, hx,
+        smul_zero]
+  · have h : ((Algebra.TensorProduct.lmul' T).restrictScalars R).comp κ =
+        f.comp (Algebra.TensorProduct.lmul' R) :=
+      Algebra.TensorProduct.ext' fun a b ↦ by simp [κ]
+    simpa [Algebra.FormallyUnramified.lmul_elem] using
+      DFunLike.congr_fun h (Algebra.FormallyUnramified.elem R S)
 
 /-- The diagonal idempotent of the split algebra `κ → R` is `∑ₖ eₖ ⊗ eₖ`, for the standard
 idempotents `eₖ` of `κ → R`. -/

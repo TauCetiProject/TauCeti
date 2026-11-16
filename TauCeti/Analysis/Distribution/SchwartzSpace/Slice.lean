@@ -22,7 +22,7 @@ coordinate by coordinate. To slice a function on a Euclidean space, first use
 coordinates and the remaining coordinate. The bounds here are uniform in the frozen
 coordinates, including when either factor has dimension zero.
 
-The derivative calculation uses `ContDiff.iteratedFDeriv_prod_right`: the derivatives of a slice
+The derivative calculation uses `ContDiffAt.iteratedFDeriv_prod_right`: the derivatives of a slice
 are restrictions of the total derivatives to directions in the second factor. The product norm
 dominates both coordinate norms, which gives the mixed decay estimate without a loss of constants.
 
@@ -51,12 +51,12 @@ theorem norm_pow_mul_norm_iteratedFDeriv_prod_right_le (f : 𝓢(P × E, F))
     (l k n : ℕ) (p : P) (x : E) :
     ‖p‖ ^ l * (‖x‖ ^ k * ‖iteratedFDeriv ℝ n (fun y ↦ f (p, y)) x‖) ≤
       SchwartzMap.seminorm 𝕜 (l + k) n f := by
-  have hderiv := _root_.ContDiff.norm_iteratedFDeriv_prod_right_le (f.smooth ⊤) n (by simp) p x
   calc
     _ ≤ ‖(p, x)‖ ^ l * (‖(p, x)‖ ^ k * ‖iteratedFDeriv ℝ n f (p, x)‖) := by
       gcongr
       · exact norm_fst_le (p, x)
       · exact norm_snd_le (p, x)
+      · exact (f.smooth ⊤).contDiffAt.norm_iteratedFDeriv_prod_right_le n (by simp)
     _ = ‖(p, x)‖ ^ (l + k) * ‖iteratedFDeriv ℝ n f (p, x)‖ := by rw [pow_add]; ring
     _ ≤ _ := f.le_seminorm 𝕜 (l + k) n (p, x)
 
@@ -86,7 +86,7 @@ theorem iteratedFDeriv_sliceRightCLM (f : 𝓢(P × E, F)) (p : P) (n : ℕ) (x 
       (iteratedFDeriv ℝ n f (p, x)).compContinuousLinearMap
         (fun _ ↦ ContinuousLinearMap.inr ℝ P E) := by
   rw [coe_sliceRightCLM]
-  exact _root_.ContDiff.iteratedFDeriv_prod_right (f.smooth ⊤) n (by simp) p x
+  exact (f.smooth ⊤).contDiffAt.iteratedFDeriv_prod_right n (by simp)
 
 /-- Every Schwartz seminorm of a coordinate slice decays faster than any power in the frozen
 variable. The bound uses a single seminorm of the original function. -/

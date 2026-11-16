@@ -123,7 +123,7 @@ private theorem single_mem_of_raising_path
   intro N a b h
   induction h with
   | refl => exact id
-  | tail h hstep ih =>
+  | tail _ hstep ih =>
     obtain ⟨i, hi, rfl⟩ := (d4TripledRaisingStep_iff _ _).mp hstep
     exact fun ha ↦ single_reflection_mem I hI N i _ hi (ih ha)
 

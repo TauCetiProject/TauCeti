@@ -15,7 +15,8 @@ import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 This file identifies the Riemannian geodesics of a finite-dimensional real inner-product space.
 Its standard Riemannian metric is constant, so the Levi-Civita connection has vanishing
-Christoffel map, and the geodesic equation says that the acceleration vanishes.  On every interval
+Christoffel map: the covariant acceleration of a curve is its second derivative, and the geodesic
+equation says that the second derivative vanishes.  On every interval
 the geodesics are therefore exactly the affine segments.  Consequently the maximal intervals are
 all of `ℝ`, and the chosen maximal geodesic with initial point `p` and velocity `v` is
 `t ↦ p + t • v`.
@@ -36,6 +37,8 @@ exponential map, normal domains, and the logarithm can be checked.
 
 * `TauCeti.Manifold.christoffelMap_leviCivita_model_space`: the Christoffel map of the standard
   Riemannian metric vanishes.
+* `TauCeti.Manifold.acceleration_model_space`: the covariant acceleration of a curve is its
+  second derivative.
 * `TauCeti.Manifold.isGeodesicCurve_add_smul`: an affine line is an all-time geodesic.
 * `TauCeti.Manifold.isGeodesicCurveOn_iff_model_space`: the geodesic equation is the vanishing of
   the acceleration.
@@ -138,6 +141,24 @@ theorem christoffelMap_leviCivita_model_space (x : F) :
   ext v u
   rw [christoffelMap_model_space, leviCivitaConnection_const_model_space]
   -- The zero map on tangent vectors, evaluated at `u`.
+  rfl
+
+/-- **The covariant acceleration in an inner-product space is the second derivative.** Since the
+Christoffel map of the standard Riemannian metric vanishes, the acceleration at `t` of a curve
+which is `C²` at `t` is `γ''(t)`. -/
+theorem acceleration_model_space {γ : ℝ → F} {t : ℝ} (hγ : ContDiffAt ℝ 2 γ t) :
+    acceleration (leviCivitaConnection 𝓘(ℝ, F) F) γ t = deriv (deriv γ) t := by
+  obtain ⟨u, hu, hγu⟩ := hγ.contDiffOn le_rfl (by simp)
+  have hs : IsOpen (interior u) := isOpen_interior
+  have ht : t ∈ interior u := mem_interior_iff_mem_nhds.mpr hu
+  have hderiv : derivWithin γ (interior u) =ᶠ[𝓝 t] deriv γ := by
+    filter_upwards [hs.mem_nhds ht] with r hr using derivWithin_of_isOpen hs hr
+  rw [← accelerationWithin_of_mem_nhds _ γ (hs.mem_nhds ht),
+    accelerationWithin_eq_symmL _ γ hs.uniqueDiffOn (hγu.mono interior_subset).contMDiffOn ht
+      (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace 𝓘(ℝ, F)) (γ t))]
+  simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id_comp,
+    christoffelMap_leviCivita_model_space, zero_apply, add_zero, TangentBundle.symmL_model_space,
+    derivWithin_of_isOpen hs ht, hderiv.deriv_eq]
   rfl
 
 /-- Every affine line in a finite-dimensional real inner-product space is a geodesic for the

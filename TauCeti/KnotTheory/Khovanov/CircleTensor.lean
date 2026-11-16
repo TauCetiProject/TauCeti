@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import TauCeti.KnotTheory.Khovanov.EnhancedState
 public import TauCeti.KnotTheory.Khovanov.QuantumGrading
+public import TauCeti.RingTheory.PiTensorProduct.Equiv
 public import TauCeti.RingTheory.PiTensorProduct.FiberwiseMul
 
 /-!
@@ -189,7 +190,7 @@ variable {σ τ : Type*} [Fintype σ] [DecidableEq τ]
 
 /-- The merge map along `f` sends the basis vector of a labelling `l` to the pure tensor carrying,
 on each circle `j`, the power of `ε` counting the `X`-labels of `l` on the fibre of `j`. -/
-theorem fiberwiseMul_circleBasis_eq_tprod [Finite τ] (f : σ → τ) (l : σ → Bool) :
+theorem fiberwiseMul_circleBasis_eq_tprod (f : σ → τ) (l : σ → Bool) :
     fiberwiseMul (R := R) (A := fun _ ↦ R[ε]) f (circleBasis R σ l) =
       ⨂ₜ[R] j, (ε : R[ε]) ^ #{i | f i = j ∧ l i = true} := by
   rw [circleBasis_apply, fiberwiseMul_tprod_eq_tprod_prod]
@@ -268,13 +269,11 @@ theorem fiberwiseMul_circleX [Fintype σ] (f : σ → τ) (i : σ) (x : CircleTe
   rw [circleX_apply, circleX_apply, map_mul, fiberwiseMul_singleAlgHom]
 
 /-- Reindexing along `e` carries `X` on the circle `i` to `X` on the circle `e i`. -/
-theorem reindex_circleX [Finite σ] (e : σ ≃ τ) (i : σ) (x : CircleTensor R σ) :
+theorem reindex_circleX (e : σ ≃ τ) (i : σ) (x : CircleTensor R σ) :
     reindex R (fun _ ↦ R[ε]) e (circleX R i x) =
       circleX R (e i) (reindex R (fun _ ↦ R[ε]) e x) := by
-  have := Fintype.ofFinite σ
-  have h := toLinearMap_fiberwiseMul_equiv (R := R) (B := R[ε]) e
-  rw [← LinearEquiv.coe_coe, ← h, AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply,
-    fiberwiseMul_circleX]
+  simp only [← reindexAlgEquiv_toLinearEquiv, AlgEquiv.toLinearEquiv_apply, circleX_apply,
+    map_mul, reindexAlgEquiv_singleAlgHom]
 
 end X
 
@@ -287,7 +286,7 @@ variable (R : Type u) [CommRing R] (ι : Type*) [Fintype ι]
 /-- The **quantum grading** of the circle tensor: the basis vector of a labelling `l` spans its
 degree `TauCeti.Khovanov.labelingQuantumDegree ι l`. It is the grading of the free module on the
 labellings, transported along `TauCeti.Khovanov.circleBasis`. -/
-noncomputable def circleQuantumGrading : InternalGrading R (CircleTensor R ι) :=
+noncomputable def circleQuantumGrading : InternalGrading R (CircleTensor R ι) ℤ :=
   (InternalGrading.finsupp R (labelingQuantumDegree ι)).map (circleBasis R ι).repr.symm
 
 variable {R ι}

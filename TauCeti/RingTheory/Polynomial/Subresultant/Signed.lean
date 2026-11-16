@@ -197,7 +197,7 @@ theorem signedPsc_eq_coeff_pow_mul_of_right_degree_drop
 /-- Lowering the left bound contributes the normalization-gap sign as well as
 the power of the coefficient at the right bound. Terminal indices are included. -/
 theorem signedPsc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop
-    {p q : R[X]} {m M n j : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
+    {p q : R[X]} {m M n j : ℕ} (hm : p.natDegree ≤ m)
     (hM : m ≤ M) (hjm : j ≤ m) (hjn : j ≤ n) :
     signedPsc p q M n j =
       (-1) ^ ((M - m).choose 2 + (M - m) * (m + n - 2 * j)) *
@@ -205,7 +205,7 @@ theorem signedPsc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop
   have hgap : M - j = (M - m) + (m - j) := by omega
   have hsize : m + n - 2 * j = (m - j) + (n - j) := by omega
   rw [signedPsc_of_le p q (by omega), signedPsc_of_le p q (by omega),
-    psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hm hn hM hjm hjn,
+    psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hm hM hjm hjn,
     hgap, Nat.add_choose_two, hsize]
   simp only [mul_add, pow_add]
   ring
@@ -235,7 +235,7 @@ theorem map_signedPsc_of_right_degree_drop [CommRing S]
 is performed over the original coefficient ring. -/
 theorem map_signedPsc_of_left_degree_drop [CommRing S]
     (f : R →+* S) {p q : R[X]} {m M n j : ℕ}
-    (hm : (p.map f).natDegree ≤ m) (hn : (q.map f).natDegree ≤ n)
+    (hm : (p.map f).natDegree ≤ m)
     (hM : m ≤ M) (hjm : j ≤ m) (hjn : j ≤ n) :
     f (signedPsc p q M n j) =
       (-1) ^ ((M - m).choose 2 + (M - m) * (m + n - 2 * j)) *
@@ -245,6 +245,6 @@ theorem map_signedPsc_of_left_degree_drop [CommRing S]
     rw [← reductum_map]
     exact reductum_eq_self (by omega)
   rw [htrunc, ← signedPsc_map_map,
-    signedPsc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hm hn hM hjm hjn, coeff_map]
+    signedPsc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hm hM hjm hjn, coeff_map]
 
 end Polynomial

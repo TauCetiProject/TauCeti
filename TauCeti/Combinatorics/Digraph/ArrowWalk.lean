@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.PUnit
 public import Mathlib.Combinatorics.Digraph.Orientation
 public import TauCeti.Combinatorics.Digraph.Basic
 public import TauCeti.Combinatorics.Network.Walk
@@ -33,6 +34,8 @@ which define the weakly connected components, are the walks of the simple graph
 ## Main definitions
 
 * `Digraph.AdjHom D`: the adjacency arrow family of `D`.
+* `Digraph.toNetwork`: `D` viewed as a `Unit`-capacitated `Network Unit V` with arrow family
+  `D.AdjHom`.
 * `Digraph.sigmaAdjHomEquiv`: the arrows of the family are the ordered pairs of adjacent vertices.
 * `Digraph.arrowWalkEquiv`: the walks from `s` to `t` are the lists of vertices from `s` to `t` in
   which consecutive vertices are adjacent.
@@ -65,6 +68,15 @@ variable {V : Type u} (D : Digraph V)
 `D.Adj v w`. -/
 abbrev AdjHom (v w : V) : Type :=
   PLift (D.Adj v w)
+
+/-- A digraph viewed as a `Unit`-capacitated directed network whose arrow family is `D.AdjHom`.
+
+This definition is exposed and reducible so that its arrow family reduces to `D.AdjHom`, inheriting
+`Network.ofCapacity`'s projection lemmas as well as the `Subsingleton` and `Finite` instances on
+`D.AdjHom`. -/
+@[expose, reducible]
+def toNetwork : Network Unit V :=
+  Network.ofCapacity D.AdjHom (fun _ _ _ ↦ ()) fun _ ↦ le_rfl
 
 variable {D} {s t v w : V}
 
@@ -242,6 +254,17 @@ theorem underlyingGraph_adjHom :
     @TauCeti.Quiver.underlyingGraph V ⟨D.AdjHom⟩ = D.toSimpleGraphInclusive := by
   ext v w
   simp [toSimpleGraphInclusive, TauCeti.Quiver.underlyingGraph_adj]
+
+/-- Weak connectivity of the adjacency arrow family is preconnectivity of the simple graph
+obtained by forgetting the directions of the digraph. -/
+theorem isStronglyConnected_symmetrify_adjHom_iff :
+    @Quiver.IsStronglyConnected (Quiver.Symmetrify V)
+        (@Quiver.symmetrifyQuiver V ⟨D.AdjHom⟩) ↔
+      D.toSimpleGraphInclusive.Preconnected := by
+  rw [Quiver.isStronglyConnected_iff]
+  refine forall_congr' fun v ↦ forall_congr' fun w ↦ ?_
+  rw [@TauCeti.Quiver.nonempty_path_symmetrify_iff_reachable V ⟨D.AdjHom⟩ v w,
+    underlyingGraph_adjHom]
 
 /-- Two vertices lie in the same weakly connected component of the adjacency arrow family exactly
 when they are reachable in the simple graph obtained from `D` by forgetting orientations. -/

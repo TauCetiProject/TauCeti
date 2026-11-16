@@ -174,7 +174,7 @@ private theorem norm_xCoeff_le_one {q : Kˣ} (hq : ‖(q : K)‖ < 1) (k : ℤ) 
   · simp [xCoeff]
   rw [xCoeff, norm_div]
   exact div_le_one_of_le₀ ((IsUltrametricDist.norm_intCast_le_one K k).trans
-    (one_le_norm_one_sub_of_norm_ne_one (norm_zpow_ne_one hq hk))) (norm_nonneg _)
+    (one_le_norm_one_sub_of_norm_ne_one (norm_zpow_ne_one hq.ne hk))) (norm_nonneg _)
 
 variable [CompleteSpace K]
 
@@ -212,7 +212,7 @@ private theorem tateXCoeff_add_two (q : Kˣ) (hq : ‖(q : K)‖ < 1) (n : ℤ) 
   rw [show n + 2 - k = n - k + 2 by ring, tateThetaProductCoeff_add_two]
   rcases eq_or_ne k 0 with rfl | hk
   · simp [xCoeff]
-  have h₁ := one_sub_zpow_ne_zero hq hk
+  have h₁ := one_sub_zpow_ne_zero hq.ne hk
   simp only [xCoeff, zpow_sub₀ q.ne_zero, zpow_neg]
   field_simp
   ring
@@ -236,7 +236,7 @@ private theorem hasSum_yCoeff (q u : Kˣ) (hq : ‖(q : K)‖ < 1) (hu₁ : ‖(
     HasSum (fun k ↦ yCoeff q k * (u : K) ^ k)
       (tateUniformizationX q u + 2 * divisorSumAt 1 (q : K) - u / (1 - u) ^ 2) := by
   have hne (k : ℕ) : 1 - (q : K) ^ (k + 1) ≠ 0 := by
-    simpa only [zpow_natCast] using one_sub_zpow_ne_zero hq (k := ((k + 1 : ℕ) : ℤ)) (by omega)
+    simpa only [zpow_natCast] using one_sub_zpow_ne_zero hq.ne (k := ((k + 1 : ℕ) : ℤ)) (by omega)
   have hnat : HasSum (fun n : ℕ ↦ yCoeff q n * (u : K) ^ (n : ℤ))
       (∑' n : ℕ, (q : K) ^ (n + 1) * u / (1 - (q : K) ^ (n + 1) * u) ^ 2) := by
     rw [← hasSum_nat_add_iff' 1]
@@ -415,7 +415,7 @@ private theorem exists_tateUniformizationX_ne (q : Kˣ) (hq : ‖(q : K)‖ < 1)
       rw [h, norm_zero] at hnorm
       exact zero_ne_one hnorm
     have hne₁ : 1 + (q : K) ^ n ≠ 1 := by simp [q.ne_zero]
-    refine ⟨Units.mk0 _ hne, notMem_zpowers_of_norm_eq_one hq (by simpa using hnorm)
+    refine ⟨Units.mk0 _ hne, notMem_zpowers_of_norm_eq_one hq.ne (by simpa using hnorm)
       (fun h ↦ hne₁ (by simpa using congrArg Units.val h)), by simpa using hnorm,
       by simp [q.ne_zero], by simp [norm_pow]⟩
   obtain ⟨u, hu, hu₁, hu₂, hnu⟩ := hmk 1 one_ne_zero

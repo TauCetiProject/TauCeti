@@ -39,12 +39,16 @@ variable {μ lam t : ℝ}
 
 /-- Exponential reweighting of an inverse Gaussian density is a reweighted Lévy density:
 `f_IG(x) e^{tx} = e^{lam / μ} f_Lévy(x) e^{(t - lam / (2 μ²)) x}`, where the Lévy law has location
-`0` and scale `lam`. -/
+`0` and scale `lam`. For `lam ≤ 0` both sides vanish. -/
 theorem inverseGaussianPDFReal_mul_exp_eq_levyPDFReal_mul_exp
-    (hμ : 0 < μ) (hlam : 0 < lam) (t x : ℝ) :
+    (hμ : 0 < μ) (t x : ℝ) :
     inverseGaussianPDFReal μ lam x * exp (t * x) =
       exp (lam / μ) * (levyPDFReal 0 lam x *
         exp ((t - lam / (2 * μ ^ 2)) * x)) := by
+  by_cases hlam : 0 < lam
+  swap
+  · simp [inverseGaussianPDFReal_of_not_pos (fun h ↦ hlam h.2),
+      levyPDFReal_of_nonpos (not_lt.mp hlam)]
   by_cases hx : 0 < x
   · rw [inverseGaussianPDFReal_of_pos hμ hlam hx, levyPDFReal_of_lt hx,
       sub_zero]
@@ -82,7 +86,7 @@ theorem integrableExpSet_id_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < la
     (ae_of_all _ (levyPDFReal_nonneg 0 lam))] at htransfer
   simp only [integrableExpSet, mem_ofPred_eq, id_eq, mem_Iic]
   rw [integrable_inverseGaussianMeasure_iff]
-  simp only [smul_eq_mul, inverseGaussianPDFReal_mul_exp_eq_levyPDFReal_mul_exp hμ hlam]
+  simp only [smul_eq_mul, inverseGaussianPDFReal_mul_exp_eq_levyPDFReal_mul_exp hμ]
   rw [integrable_const_mul_iff (isUnit_iff_ne_zero.mpr (exp_ne_zero _))]
   simpa only [smul_eq_mul, sub_nonpos] using htransfer
 
@@ -130,7 +134,7 @@ theorem mgf_id_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < lam)
   rcases ht.eq_or_lt with ht | ht
   · rw [ht, mgf, integral_inverseGaussianMeasure_eq]
     simp only [id_eq, smul_eq_mul,
-      inverseGaussianPDFReal_mul_exp_eq_levyPDFReal_mul_exp hμ hlam, sub_self, zero_mul,
+      inverseGaussianPDFReal_mul_exp_eq_levyPDFReal_mul_exp hμ, sub_self, zero_mul,
       exp_zero, mul_one, integral_const_mul, integral_levyPDFReal_eq_one hlam, mul_one]
     congr 1
     have : 1 - 2 * μ ^ 2 * (lam / (2 * μ ^ 2)) / lam = 0 := by

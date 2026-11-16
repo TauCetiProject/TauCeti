@@ -22,11 +22,13 @@ when `u` solves the regularized scalar equation
 
 (`TauCeti.Vortex.equation_amplitudeField_eq_zero_iff`,
 `TauCeti.Vortex.tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_log`, for `C²` amplitudes
-`u`). Bringing an arbitrary vortex with zero divisor `P` into this form is a gauge choice that is
-not treated here. For `m ≥ 1` the solution `u` grows like `-m log |z|`, so it is not square
-integrable on `ℂ` and in particular does not lie in the unweighted space `H¹(ℂ)`. Following
-Taubes, this file subtracts an explicit smooth background with the same growth. Here the
-background is
+`u`). Conversely, every smooth vortex with this end framing and zero divisor `P` is a framed gauge
+transform of such an amplitude field
+(`TauCeti.Vortex.exists_framedGaugeGroup_smul_amplitudeField_eq`, in
+`TauCeti.Analysis.PDE.Vortex.AmplitudeForm`). For `m ≥ 1` the solution `u` grows like
+`-m log |z|`, so it is not square integrable on `ℂ` and in particular does not lie in the
+unweighted space `H¹(ℂ)`. Following Taubes, this file subtracts an explicit smooth background with
+the same growth. Here the background is
 
 `u₀ = -log (1 + |P|²) / 2`    (`TauCeti.Vortex.backgroundAmplitude`),
 
@@ -117,11 +119,25 @@ theorem backgroundWeight_nonneg (f : ℂ → ℂ) (z : ℂ) : 0 ≤ backgroundWe
   rw [backgroundWeight_def]
   positivity
 
+/-- The coefficient `h = ‖f‖² / (1 + ‖f‖²)` is less than one: its defect `1 - h` is
+`(1 + ‖f‖²)⁻¹`. -/
+theorem backgroundWeight_lt_one (f : ℂ → ℂ) (z : ℂ) : backgroundWeight f z < 1 := by
+  rw [backgroundWeight_def, div_lt_one (by positivity)]
+  exact lt_one_add _
+
 theorem continuous_backgroundWeight (hf : Continuous f) : Continuous (backgroundWeight f) := by
   have hh : backgroundWeight f = fun z ↦ ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) :=
     funext (backgroundWeight_def f)
   rw [hh]
   exact (hf.norm.pow 2).div (continuous_const.add (hf.norm.pow 2)) fun z ↦ by positivity
+
+/-- The coefficient `h = ‖f‖² / (1 + ‖f‖²)` is as smooth as `f`. -/
+theorem contDiff_backgroundWeight {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) :
+    ContDiff ℝ n (backgroundWeight f) := by
+  have hh : backgroundWeight f = fun z ↦ ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) :=
+    funext (backgroundWeight_def f)
+  rw [hh]
+  exact (hf.norm_sq ℝ).div (contDiff_const.add (hf.norm_sq ℝ)) fun z ↦ by positivity
 
 /-- The background amplitude is as smooth as `f`, including at the zeros of `f`. -/
 theorem contDiff_backgroundAmplitude {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) :
@@ -201,7 +217,6 @@ theorem tendsto_backgroundAmplitude_add_natDegree_mul_log {P : Polynomial ℂ} (
   simp only [Real.log_one, zero_div] at hlog
   refine hlog.congr' ?_
   filter_upwards [hz] with z hz
-  have hz' : 0 < ‖z‖ := norm_pos_iff.mpr hz
   have hsplit : (‖z‖ ^ (2 * m))⁻¹ + ‖P.eval z / z ^ m‖ ^ 2 =
       (1 + ‖P.eval z‖ ^ 2) / ‖z‖ ^ (2 * m) := by
     rw [norm_div, norm_pow, div_pow, ← pow_mul, mul_comm m 2]

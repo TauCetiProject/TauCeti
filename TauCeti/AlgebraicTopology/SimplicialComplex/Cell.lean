@@ -5,19 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Fin.Tuple.Sort
 public import Mathlib.Data.Finset.Sort
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
+import TauCeti.Data.Fin.Tuple.Sort
 
 /-!
 # Cells of an abstract simplicial complex
 
 An `n`-cell of an abstract simplicial complex is a face with `n + 1` vertices.  For a linearly
-ordered vertex type, every cell has a canonical increasing enumeration.  This file also defines
-the codimension-one cell obtained by deleting an enumerated vertex and proves the semisimplicial
-face identity.  The codimension-one cells are classified by the vertex deleted from the original
-face.  Finally, a cell whose vertices all precede a vertex `v`, and to which `v` can be adjoined,
-has a cone with `v` as its last vertex; its faces are the original cell and the cones on the
-faces of the original cell.
+ordered vertex type, every cell has a canonical increasing enumeration, and every tuple of
+distinct vertices spanning a face permutes the increasing enumeration of that face's cell.  This
+file also defines the codimension-one cell obtained by deleting an enumerated vertex and proves
+the semisimplicial face identity.  The codimension-one cells are classified by the vertex deleted
+from the original face.  Finally, a cell whose vertices all precede a vertex `v`, and to which `v`
+can be adjoined, has a cone with `v` as its last vertex; its faces are the original cell and the
+cones on the faces of the original cell.
 
 ## Main definitions
 
@@ -41,6 +44,11 @@ abbrev RealizationCell (K : AbstractSimplicialComplex ι) (n : ℕ) :=
   {σ : TauCeti.SetLike.Face K // σ.1.card = n + 1}
 
 namespace RealizationCell
+
+/-- Cells with the same vertex set are equal. -/
+theorem ext {K : AbstractSimplicialComplex ι} {n : ℕ} {c d : RealizationCell K n}
+    (h : c.1.1 = d.1.1) : c = d :=
+  Subtype.ext (Subtype.ext h)
 
 section Vertex
 
@@ -87,8 +95,21 @@ theorem vertexEmbedding_vertex (v : ι) (i : Fin 1) : (vertex K v).vertexEmbeddi
 
 /-- Every `0`-cell is the `0`-cell of its only vertex. -/
 theorem eq_vertex (c : RealizationCell K 0) : c = vertex K (c.vertexEmbedding 0) :=
-  Subtype.ext (Subtype.ext (Finset.eq_singleton_iff_unique_mem.mpr ⟨c.vertexEmbedding_mem 0,
-    fun _ hw ↦ Finset.card_le_one.mp c.2.le _ hw _ (c.vertexEmbedding_mem 0)⟩))
+  ext (Finset.eq_singleton_iff_unique_mem.mpr ⟨c.vertexEmbedding_mem 0,
+    fun _ hw ↦ Finset.card_le_one.mp c.2.le _ hw _ (c.vertexEmbedding_mem 0)⟩)
+
+/-- A tuple of distinct vertices spanning a face is a permuted increasing enumeration of the
+cell it spans. -/
+theorem exists_eq_vertexEmbedding_comp {g : Fin (n + 1) → ι} (hg : Function.Injective g)
+    (hK : Finset.univ.image g ∈ K) :
+    ∃ (c : RealizationCell K n) (σ : Equiv.Perm (Fin (n + 1))), g = c.vertexEmbedding ∘ σ := by
+  let c : RealizationCell K n :=
+    ⟨⟨Finset.univ.image g, hK⟩, by simp [Finset.card_image_of_injective _ hg]⟩
+  have hsort : g ∘ Tuple.sort g = c.vertexEmbedding := Tuple.comp_sort_eq_orderEmbOfFin hg
+  refine ⟨c, (Tuple.sort g).symm, ?_⟩
+  rw [← hsort]
+  ext i
+  simp
 
 /-- The codimension-one face obtained by deleting the `j`-th vertex in the increasing
 enumeration of a simplicial cell. -/
@@ -143,7 +164,7 @@ theorem exists_face_eq_iff_subset (c : RealizationCell K (n + 1)) (d : Realizati
         simp only [d.2, c.2] at hcard
         omega⟩
     obtain ⟨j, hdj⟩ := (c.exists_subset_face_iff_ssubset d.1.1).mpr hdc'
-    refine ⟨j, Subtype.ext (Subtype.ext ?_)⟩
+    refine ⟨j, ext ?_⟩
     exact (Finset.eq_of_subset_of_card_le hdj (by
       simp only [d.2, (c.face j).2]
       omega)).symm
@@ -164,8 +185,7 @@ theorem vertexEmbedding_face (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) :
 the first deletion.  This is the semisimplicial face identity. -/
 theorem face_face (c : RealizationCell K (n + 2)) (i : Fin (n + 3)) (j : Fin (n + 2)) :
     (c.face i).face j = (c.face (i.succAbove j)).face (j.predAbove i) := by
-  apply Subtype.ext
-  apply Subtype.ext
+  apply ext
   rw [face_val, face_val, face_val, face_val]
   rw [congrFun (vertexEmbedding_face c i) j,
     congrFun (vertexEmbedding_face c (i.succAbove j)) (j.predAbove i)]
@@ -212,7 +232,7 @@ theorem vertexEmbedding_cone (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈
 @[simp]
 theorem face_cone_last (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
     (hK : insert v c.1.1 ∈ K) : (c.cone v hlt hK).face (Fin.last (n + 1)) = c := by
-  refine Subtype.ext (Subtype.ext ?_)
+  refine ext ?_
   rw [face_val, congrFun (vertexEmbedding_cone c v hlt hK), Fin.lastCases_last, cone_val,
     Finset.erase_insert fun hv ↦ (hlt v hv).false]
 
@@ -236,7 +256,7 @@ theorem face_cone_castSucc (c : RealizationCell K (n + 1)) (v : ι) (hlt : ∀ w
     (hK : insert v c.1.1 ∈ K) (j : Fin (n + 2)) :
     (c.cone v hlt hK).face j.castSucc =
       (c.face j).cone v (fun w hw ↦ hlt w (c.face_val_subset j hw)) (c.insert_face_mem j hK) := by
-  refine Subtype.ext (Subtype.ext ?_)
+  refine ext ?_
   rw [face_val, congrFun (vertexEmbedding_cone c v hlt hK), Fin.lastCases_castSucc, cone_val,
     cone_val, face_val, Finset.erase_insert_of_ne (hlt _ (c.vertexEmbedding_mem j)).ne']
 
@@ -244,7 +264,7 @@ theorem face_cone_castSucc (c : RealizationCell K (n + 1)) (v : ι) (hlt : ∀ w
 @[simp]
 theorem face_cone_zero (c : RealizationCell K 0) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
     (hK : insert v c.1.1 ∈ K) : (c.cone v hlt hK).face 0 = vertex K v := by
-  refine Subtype.ext (Subtype.ext ?_)
+  refine ext ?_
   have hc : c.1.1 = {c.vertexEmbedding 0} := congrArg (fun d ↦ d.1.1) c.eq_vertex
   rw [face_val, ← Fin.castSucc_zero, congrFun (vertexEmbedding_cone c v hlt hK),
     Fin.lastCases_castSucc, cone_val, hc]

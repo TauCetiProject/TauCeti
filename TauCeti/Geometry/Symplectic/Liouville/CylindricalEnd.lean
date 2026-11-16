@@ -91,7 +91,7 @@ theorem contMDiffAt_log_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω 
       rw [hfront]
       exact h₁.2.trans hy₀
     have := h.liouvilleRadialCoordinate_flowOf hZ hfr (neg_nonneg.2 h₂.le)
-    rw [h.flowOf_flowOf hZ, neg_add_cancel, h.flowOf_zero hZ] at this
+    rw [h.flowOf_flowOf hZ, neg_add_cancel, flowOf_zero Z] at this
     rw [this, Real.log_exp]
   exact (contDiff_neg.contMDiff.contMDiffAt.comp x hT).congr_of_eventuallyEq heq
 
@@ -120,11 +120,11 @@ theorem mvfderiv_liouvilleRadialCoordinate_apply (h : IsLiouvilleCompletion ω �
   -- `s > -t`, a neighbourhood of `0`.
   obtain ⟨⟨y, t⟩, ⟨hy, ht, hyx⟩, -⟩ := h.existsUnique_flowOf_eq hZ hx
   have hr : MDifferentiableAt I 𝓘(ℝ) (liouvilleRadialCoordinate Z W) (flowOf Z 0 x) := by
-    rw [h.flowOf_zero hZ]
+    rw [flowOf_zero Z]
     exact (h.contMDiffAt_liouvilleRadialCoordinate hZ hx).mdifferentiableAt (by simp)
   have hcurve := hasDerivAt_comp_flowOf ((h.contMDiff_of_interior_eq hZ).of_le (by simp))
     ((h.isCompleteVectorField hZ).mem_flowDomain 0 x) hr
-  rw [h.flowOf_zero hZ] at hcurve
+  rw [flowOf_zero Z] at hcurve
   have heq : (liouvilleRadialCoordinate Z W ∘ fun s ↦ flowOf Z s x) =ᶠ[𝓝 0]
       fun s ↦ Real.exp s * liouvilleRadialCoordinate Z W x := by
     filter_upwards [Ioi_mem_nhds (neg_lt_zero.2 ht)] with s hs

@@ -12,7 +12,7 @@ import TauCeti.NumberTheory.Multiquadratic.RelativeDegree
 /-!
 # The relative degree of the prime-discriminant compositum over its quadratic base
 
-The genus-field layer builds the candidate genus field of `ℚ(√d)` as the compositum
+The candidate genus field of `ℚ(√d)` is built as the compositum
 `M = ℚ(√(radicand P) : P)` of the quadratic fields attached to the prime discriminants `P`
 dividing the discriminant of `ℚ(√d)`. `Prime/Discriminant/Independence` records its **absolute**
 degree, `[M : ℚ] = 2ᵗ` (`finrank_adjoin_roots_primeDiscriminantRadicands`). This file records the
@@ -24,14 +24,14 @@ complementary **relative** degree of `M` over the quadratic subfield generated b
 That product root squares to the product `∏ radicand P` of the radicands, which for the
 prime-discriminant factorization of a fundamental discriminant is (a square times) the radicand `d`
 itself; so the base `ℚ(∏ root)` is the copy of `ℚ(√d)` inside the candidate genus field, and this is
-the relative degree `[K_gen : ℚ(√d)] = 2 ^ (t - 1)` the roadmap's genus-field examples read off.
+the relative degree `[K_gen : ℚ(√d)] = 2 ^ (t - 1)`.
 
 The proof is the general subfield-lattice relative-degree theorem
 `finrank_top_over_intermediateField_of_finrank_eq_two` — `M` has degree `2 ^ (n - 1)` over any of
 its quadratic subfields — applied to the product-of-all-roots subfield
 (`quadraticSubfieldOfFinset` on `Finset.univ`, whose degree over `ℚ` is `2`), fed the prime-
 discriminant square-class independence
-`not_isSquare_prod_primeDiscriminantRadicands_of_forall_isEvenPrimeDiscriminant_eq`. The roadmap's
+`not_isSquare_prod_primeDiscriminantRadicands_of_forall_isEvenPrimeDiscriminant_eq`. The
 `ℚ(√-5)` and `ℚ(√-21)` examples establish the analogous relative degree for their concrete
 subfields.
 

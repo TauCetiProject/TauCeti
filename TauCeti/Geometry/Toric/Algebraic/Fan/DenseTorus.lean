@@ -123,7 +123,6 @@ theorem denseTorusι_comp_algebraicMap (f : FanHom Φ Ψ) (hΦ₀ : Nonempty Φ.
   have hΦ : (⊥ : PointedCone ℝ V) ∈ Φ.cones := Φ.bot_mem hΦ₀.some.2
   have hΨ : (⊥ : PointedCone ℝ V') ∈ Ψ.cones := Ψ.bot_mem (f.leastCone_mem hΦ₀.some.2)
   rw [Φ.denseTorusι_eq_affineToricChartι hΦ₀ hΦ, Ψ.denseTorusι_eq_affineToricChartι _ hΨ]
-  exact f.affineToricChartι_comp_algebraicMap_of_leastCone_eq ⟨⊥, hΦ⟩ ⟨⊥, hΨ⟩
-    (le_antisymm (f.leastCone_le hΦ hΨ (Submodule.map_bot _).le) bot_le) (by simp [Set.MapsTo])
+  exact f.affineToricChartι_comp_algebraicMap_of_mapsTo ⟨⊥, hΦ⟩ ⟨⊥, hΨ⟩ (by simp [Set.MapsTo])
 
 end TauCeti.Toric.FanHom

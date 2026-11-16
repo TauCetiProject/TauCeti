@@ -316,17 +316,19 @@ theorem ofIsHodgeBigrading_deligneSplittingFamily (mhs : MixedHodgeStructure h�
 
 /-- **A pair of bounded filtrations is a mixed Hodge structure exactly when it admits a Hodge
 bigrading.** Precisely: the purity axiom holds for a bounded increasing rational weight filtration
-and a bounded decreasing Hodge filtration if and only if the two filtrations have a Hodge
-bigrading. -/
+and a decreasing Hodge filtration that is the whole space at some step if and only if the two
+filtrations have a Hodge bigrading. That the Hodge filtration is zero at some step follows from the
+purity axiom. -/
 theorem exists_isHodgeBigrading_iff (hWQ : Monotone WQ) (hW_top : ∃ k, WQ k = ⊤)
-    (hW_bot : ∃ k, WQ k = ⊥) (hF_anti : Antitone F) (hF_top : ∃ p, F p = ⊤)
-    (hF_bot : ∃ p, F p = ⊥) :
+    (hW_bot : ∃ k, WQ k = ⊥) (hF_anti : Antitone F) (hF_top : ∃ p, F p = ⊤) :
     (∃ I, IsHodgeBigrading hℚ hℂ WQ F I) ↔
       ∀ k, ∃ hs : HodgeStructure (isBaseChange_ratTensorMap ℂ (weightGradedRat WQ k)) k,
         hs.F = gradedF hℚ hℂ WQ hWQ F k :=
   ⟨fun ⟨_, h⟩ ↦ h.exists_hodgeStructure_F_eq_gradedF hF_top, fun hpure ↦
     ⟨_, isHodgeBigrading_deligneSplittingFamily ⟨WQ, hWQ, hW_top, hW_bot, F, hF_anti, hF_top,
-      hF_bot, hpure⟩⟩⟩
+      exists_eq_bot_of_forall_gradedF_eq_bot hℚ hℂ WQ hWQ F hF_anti hW_top hW_bot fun k ↦
+        let ⟨hs, hsF⟩ := hpure k
+        hsF ▸ hs.F_bot, hpure⟩⟩⟩
 
 end MixedHodgeStructure
 

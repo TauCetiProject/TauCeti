@@ -32,7 +32,8 @@ public section
 noncomputable section
 
 open NumberField NumberField.InfinitePlace
-open scoped TensorProduct NumberField.LiesOver InfiniteAdeleExtension
+open scoped TensorProduct InfiniteAdeleExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -74,14 +75,14 @@ below it and the local embedding of the field element. -/
 theorem infiniteAdeleBaseChangeHom_tmul_apply (a : InfiniteAdeleRing K) (x : L)
     (w : InfinitePlace L) :
     infiniteAdeleBaseChangeHom K L (a ⊗ₜ x) w =
-      LiesOver.completionMap _ w (a (w.comap (algebraMap K L))) *
+      AbsoluteValue.Completion.map _ w.1 (a (w.comap (algebraMap K L))) *
         algebraMap L w.Completion x := by
   rw [infiniteAdeleBaseChangeHom_tmul]
   -- Evaluate multiplication in the infinite-adele type synonym before rewriting its factors.
   change (infiniteAdeleExtension K L a) w *
     (algebraMap L (InfiniteAdeleRing L) x) w = _
   rw [infiniteAdeleExtension_apply, InfiniteAdeleRing.algebraMap_apply]
-  rw [InfinitePlace.Completion.algebraMap_apply]
+  rw [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
 
 /-- **Infinite adeles grouped by places of the base field.** The infinite adeles of `L` are the
 product over the infinite places `v` of `K` of the families of components at the places of `L`
@@ -119,17 +120,19 @@ theorem infiniteAdelePiLiesOverEquiv_symm_apply
       a (w.comap (algebraMap K L)) ⟨w, inferInstance⟩ :=
   (rfl)
 
-variable [NumberField K] [NumberField L]
+section
+
+variable [NumberField L]
 
 open scoped Classical in
-private def baseChangeLinearEquiv :
+private def baseChangeLinearEquiv [NumberField K] :
     InfiniteAdeleRing K ⊗[K] L ≃ₗ[K] InfiniteAdeleRing L :=
   (TensorProduct.piLeft K L (fun v : InfinitePlace K ↦ v.Completion)).trans
     ((LinearEquiv.piCongrRight fun v ↦
       (infiniteSemilocalEquiv L v).toLinearEquiv.restrictScalars K).trans
         ((infiniteAdelePiLiesOverEquiv K L).toAddEquiv.toLinearEquiv fun _ _ ↦ rfl).symm)
 
-private theorem baseChangeLinearEquiv_apply (t : InfiniteAdeleRing K ⊗[K] L) :
+private theorem baseChangeLinearEquiv_apply [NumberField K] (t : InfiniteAdeleRing K ⊗[K] L) :
     baseChangeLinearEquiv K L t = infiniteAdeleBaseChangeHom K L t := by
   induction t using TensorProduct.inductionOn with
   | tmul a x =>
@@ -144,12 +147,19 @@ private theorem baseChangeLinearEquiv_apply (t : InfiniteAdeleRing K ⊗[K] L) :
     change _ = (infiniteAdeleExtension K L a) w *
       (algebraMap L (InfiniteAdeleRing L) x) w
     rw [infiniteAdeleExtension_apply, InfiniteAdeleRing.algebraMap_apply]
-    rw [InfinitePlace.Completion.algebraMap_apply, RingHom.algebraMap_toAlgebra]
+    rw [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe,
+      AbsoluteValue.Completion.algebraMap_apply_of_liesOver]
   | add t u ht hu => simp [ht, hu]
 
 /-- The archimedean semilocal decompositions assemble to a bijective base-change map. -/
 theorem infiniteAdeleBaseChangeHom_bijective :
     Function.Bijective (infiniteAdeleBaseChangeHom K L) := by
+  -- `K` embeds in the number field `L`, so it is a number field
+  have : CharZero K := (algebraMap K L).charZero
+  have : FiniteDimensional ℚ K :=
+    Module.Finite.of_injective (algebraMap K L).toRatAlgHom.toLinearMap
+      (algebraMap K L).injective
+  have : NumberField K := ⟨⟩
   have h : ⇑(baseChangeLinearEquiv K L) = ⇑(infiniteAdeleBaseChangeHom K L) :=
     funext (baseChangeLinearEquiv_apply K L)
   rw [← h]
@@ -176,7 +186,9 @@ theorem infiniteAdeleBaseChangeAlgEquiv_symm_algebraMap (x : L) :
   apply (infiniteAdeleBaseChangeAlgEquiv K L).injective
   simp [infiniteAdeleBaseChangeAlgEquiv]
 
-variable [TopologicalSpace (InfiniteAdeleRing K ⊗[K] L)]
+end
+
+variable [NumberField K] [NumberField L] [TopologicalSpace (InfiniteAdeleRing K ⊗[K] L)]
   [IsModuleTopology (InfiniteAdeleRing K) (InfiniteAdeleRing K ⊗[K] L)]
 
 /-- Base change of infinite adeles is a continuous algebra equivalence over the infinite adele
@@ -230,7 +242,7 @@ map from the place below it and the local embedding of the field element. -/
 theorem infiniteAdeleBaseChangeEquiv_tmul_apply (a : InfiniteAdeleRing K) (x : L)
     (w : InfinitePlace L) :
     infiniteAdeleBaseChangeEquiv K L (a ⊗ₜ x) w =
-      LiesOver.completionMap _ w (a (w.comap (algebraMap K L))) *
+      AbsoluteValue.Completion.map _ w.1 (a (w.comap (algebraMap K L))) *
         algebraMap L w.Completion x := by
   have h : (infiniteAdeleBaseChangeEquiv K L).toAlgHom =
       infiniteAdeleBaseChangeHom K L := by simp

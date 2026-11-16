@@ -249,7 +249,6 @@ double coset. -/
 theorem ramificationIdx_mul_inertiaDeg_under_smul_mul_card (sigma : G) :
     ((sigma • Q).under C).ramificationIdx A * ((sigma • Q).under C).inertiaDeg A * Nat.card H =
       Nat.card (DoubleCoset.doubleCoset sigma (H : Set G) (stabilizer G Q : Set G)) := by
-  have := IsGaloisGroup.finite G A B
   rw [Q.ramificationIdx_mul_inertiaDeg_under_smul_eq_relIndex H C,
     TauCeti.card_doubleCoset_eq_card_mul_relIndex, mul_comm]
 

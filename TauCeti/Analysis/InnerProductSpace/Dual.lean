@@ -9,13 +9,16 @@ public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+-- Private: the norms of `re` and `im` are used only in proofs.
+import Mathlib.Analysis.Complex.OperatorNorm
 
 /-!
 # The Riesz isomorphism and the positive dual metric
 
 On a Hilbert space `E`, the Riesz isomorphism `InnerProductSpace.toDual 𝕜 E` is the map
 `innerSL 𝕜 : E →L⋆[𝕜] StrongDual 𝕜 E`, upgraded to a conjugate-linear isometric equivalence. So its
-inverse undoes `innerSL` on either side.
+inverse undoes `innerSL` on either side. Over `ℝ`, the Riesz representatives of the real and
+imaginary parts of a complex-valued covector are its two gradients.
 
 The Riesz operator `InnerProductSpace.continuousLinearMapOfBilin B` of a sesquilinear form `B`
 depends continuously on `B`. Over `ℝ`, the Riesz operator of a bilinear form `k` is natural:
@@ -56,6 +59,9 @@ No inner product instance on the algebraic dual is installed.
   symmetric form is symmetric.
 * `ContinuousLinearMap.continuousLinearMapOfBilin_bilinearComp`: pulling a real bilinear form back
   along a linear isometry equivalence conjugates its Riesz operator.
+* `ContinuousLinearMap.reGradient P`, `ContinuousLinearMap.imGradient P`: the vectors
+  representing the real and imaginary parts of a complex-valued covector `P`, with
+  `⟪P.reGradient, v⟫ = Re (P v)`, `⟪P.imGradient, v⟫ = Im (P v)` and norms at most `‖P‖`.
 * `InnerProductSpace.dualMetric`: the Hermitian form on the algebraic dual transported by Riesz.
 * `InnerProductSpace.dualMetric_innerₛₗ`: its value on Riesz functionals is `⟪y, x⟫`.
 * `InnerProductSpace.isPosSemidef_dualMetric`: the dual metric is Hermitian and
@@ -201,7 +207,7 @@ section FiniteDimensional
 
 variable (𝕜 E) [FiniteDimensional 𝕜 E]
 
-local instance : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+local instance : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
 
 /-- The Hermitian metric on the algebraic dual transported through the conjugate-linear Riesz
 isomorphism. Its value on `⟪x, ·⟫` and `⟪y, ·⟫` is `⟪y, x⟫`. -/
@@ -273,7 +279,7 @@ theorem dualMetric_self_eq_zero_iff (φ : Module.Dual 𝕜 E) :
 variable {𝕜 E} {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
   [FiniteDimensional 𝕜 F]
 
-local instance : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+local instance : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
 
 /-- The transpose of an operator acts on Riesz functionals through its Hermitian adjoint. -/
 @[simp]
@@ -298,6 +304,7 @@ end InnerProductSpace
 namespace ContinuousLinearMap
 
 open InnerProductSpace
+open scoped RealInnerProductSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
@@ -314,5 +321,35 @@ theorem continuousLinearMapOfBilin_bilinearComp (e : E ≃ₗᵢ[ℝ] F) (k : F 
     ← LinearIsometryEquiv.inner_map_map e, e.apply_symm_apply, continuousLinearMapOfBilin_apply]
   -- Only the coercion of `e` to a continuous linear map remains to be unfolded.
   simp
+
+/-- The vector representing the real part of a complex-valued covector `P`:
+`⟪P.reGradient, v⟫ = Re (P v)`. -/
+noncomputable def reGradient (P : E →L[ℝ] ℂ) : E :=
+  (InnerProductSpace.toDual ℝ E).symm (Complex.reCLM.comp P)
+
+/-- The vector representing the imaginary part of a complex-valued covector `P`:
+`⟪P.imGradient, v⟫ = Im (P v)`. -/
+noncomputable def imGradient (P : E →L[ℝ] ℂ) : E :=
+  (InnerProductSpace.toDual ℝ E).symm (Complex.imCLM.comp P)
+
+/-- `⟪p₁, v⟫ = Re (P v)` for the gradient `p₁` of the real part of `P`. -/
+@[simp]
+theorem inner_reGradient (P : E →L[ℝ] ℂ) (v : E) : ⟪P.reGradient, v⟫ = (P v).re := by
+  simp [reGradient, InnerProductSpace.toDual_symm_apply]
+
+/-- `⟪p₂, v⟫ = Im (P v)` for the gradient `p₂` of the imaginary part of `P`. -/
+@[simp]
+theorem inner_imGradient (P : E →L[ℝ] ℂ) (v : E) : ⟪P.imGradient, v⟫ = (P v).im := by
+  simp [imGradient, InnerProductSpace.toDual_symm_apply]
+
+/-- The gradient of the real part of `P` has norm at most `‖P‖`. -/
+theorem norm_reGradient_le (P : E →L[ℝ] ℂ) : ‖P.reGradient‖ ≤ ‖P‖ := by
+  rw [reGradient, LinearIsometryEquiv.norm_map]
+  exact (Complex.reCLM.opNorm_comp_le P).trans (by rw [Complex.reCLM_norm, one_mul])
+
+/-- The gradient of the imaginary part of `P` has norm at most `‖P‖`. -/
+theorem norm_imGradient_le (P : E →L[ℝ] ℂ) : ‖P.imGradient‖ ≤ ‖P‖ := by
+  rw [imGradient, LinearIsometryEquiv.norm_map]
+  exact (Complex.imCLM.opNorm_comp_le P).trans (by rw [Complex.imCLM_norm, one_mul])
 
 end ContinuousLinearMap

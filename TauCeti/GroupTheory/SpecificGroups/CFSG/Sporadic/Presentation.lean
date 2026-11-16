@@ -41,9 +41,7 @@ total function `TauCeti.SporadicName.presentation`. Each branch is the explicit,
 `TauCeti.SporadicName.Group` is the concrete group defined by the
 selected presentation.
 
-This is milestone S1 of `TauCetiRoadmap/CFSGStatement/README.md`. The dispatcher and its interface
-follow the target signatures in the human-authored roadmap's `CFSGStatement/Suggested.lean`; the
-mathematical and bibliographic sources for each presentation are recorded in the corresponding
+The mathematical and bibliographic sources for each presentation are recorded in the corresponding
 imported module.
 
 ## Main definitions
@@ -155,6 +153,12 @@ theorem SporadicName.presentation_M12 : SporadicName.M12.presentation = Sporadic
 `TauCeti.Sporadic.m22Presentation`. -/
 @[simp]
 theorem SporadicName.presentation_M22 : SporadicName.M22.presentation = Sporadic.m22Presentation :=
+  (rfl)
+
+/-- The presentation selected for `M₂₃` is the transcribed ATLAS presentation
+`TauCeti.Sporadic.m23Presentation`. -/
+@[simp]
+theorem SporadicName.presentation_M23 : SporadicName.M23.presentation = Sporadic.m23Presentation :=
   (rfl)
 
 /-- The sporadic group concretely defined by its selected finite presentation. -/

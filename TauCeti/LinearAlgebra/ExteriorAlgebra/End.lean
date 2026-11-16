@@ -19,10 +19,6 @@ the full endomorphism algebra of its exterior algebra.
 
 * `TauCeti.ExteriorAlgebra.creation_contraction_adjoin_eq_top`: creation and contraction generate
   every endomorphism.
-
-## References
-
-* [Spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md)
 -/
 
 public section

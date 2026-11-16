@@ -36,13 +36,12 @@ a.e. equal to `g`.
 * `fixedSpace_eq_lpMeas_invariants` — the `Lᵖ` fixed space is exactly Mathlib's `lpMeas` subspace
   for the invariant σ-algebra.
 
-The construction and proof are adapted from
-`cameronfreer/exchangeability`, `Exchangeability/Ergodic/ShiftInvariantRepresentatives.lean` and
+The construction and proof are adapted from `cameronfreer/exchangeability`,
+`Exchangeability/Ergodic/ShiftInvariantRepresentatives.lean` and
 `Exchangeability/Ergodic/InvariantSigma.lean`, at commit
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`.  This version is generalized from the path-space shift
 to an arbitrary nonsingular endomorphism at the function level (and a measure-preserving one on
-`Lᵖ`) and uses
-`MeasurableSpace.invariants` directly, as required by the Exchangeability roadmap.
+`Lᵖ`) and uses `MeasurableSpace.invariants` directly.
 -/
 
 public section
@@ -110,7 +109,7 @@ function has a representative measurable for Mathlib's invariant σ-algebra.
 
 The nonsingular endomorphism is arbitrary: path-space shift is the specialization used by the
 Koopman route to de Finetti's theorem. -/
-theorem aestronglyMeasurable_invariants_of_comp_ae_eq {T : Ω → Ω}
+theorem aestronglyMeasurable_invariants_of_comp_ae_eq {T : Ω → Ω} (hTm : Measurable T)
     (hT : QuasiMeasurePreserving T μ μ) {f : Ω → ℝ} (hf : AEStronglyMeasurable f μ)
     (hfix : f ∘ T =ᵐ[μ] f) :
     AEStronglyMeasurable[MeasurableSpace.invariants T] f μ := by
@@ -120,7 +119,7 @@ theorem aestronglyMeasurable_invariants_of_comp_ae_eq {T : Ω → Ω}
   have hg_fix : g ∘ T =ᵐ[μ] g :=
     (hT.ae_eq_comp hg_eq).trans (hfix.trans hg_eq.symm)
   let g' := invariantRepresentative T g
-  have hg'_meas : Measurable g' := measurable_invariantRepresentative hT.measurable hg_meas
+  have hg'_meas : Measurable g' := measurable_invariantRepresentative hTm hg_meas
   have hg'_inv : g' ∘ T = g' := invariantRepresentative_comp T g
   have hg'_meas_inv : Measurable[MeasurableSpace.invariants T] g' :=
     (MeasurableSpace.measurable_invariants_dom.mpr
@@ -147,11 +146,11 @@ theorem AEStronglyMeasurable.comp_ae_eq_of_invariants {T : Ω → Ω}
 almost-everywhere strong measurability for the invariant σ-algebra is equivalent to
 almost-everywhere invariance under composition. -/
 @[simp]
-theorem aestronglyMeasurable_invariants_iff_comp_ae_eq {T : Ω → Ω}
+theorem aestronglyMeasurable_invariants_iff_comp_ae_eq {T : Ω → Ω} (hTm : Measurable T)
     (hT : QuasiMeasurePreserving T μ μ) {f : Ω → ℝ} (hf : AEStronglyMeasurable f μ) :
     AEStronglyMeasurable[MeasurableSpace.invariants T] f μ ↔ f ∘ T =ᵐ[μ] f :=
   ⟨fun h => AEStronglyMeasurable.comp_ae_eq_of_invariants hT h,
-    aestronglyMeasurable_invariants_of_comp_ae_eq hT hf⟩
+    aestronglyMeasurable_invariants_of_comp_ae_eq hTm hT hf⟩
 
 /-! ## The invariant subspace of `Lᵖ` -/
 
@@ -165,7 +164,7 @@ theorem mem_fixedSpace_iff_aestronglyMeasurable_invariants {T : Ω → Ω}
       AEStronglyMeasurable[MeasurableSpace.invariants T] f μ := by
   rw [mem_fixedSpace_iff, compMeasurePreserving_eq_self_iff]
   exact
-    (aestronglyMeasurable_invariants_iff_comp_ae_eq hT.quasiMeasurePreserving
+    (aestronglyMeasurable_invariants_iff_comp_ae_eq hT.measurable hT.quasiMeasurePreserving
       (Lp.aestronglyMeasurable f)).symm
 
 /-- The `Lᵖ` fixed space of a measure-preserving endomorphism is the subspace of functions

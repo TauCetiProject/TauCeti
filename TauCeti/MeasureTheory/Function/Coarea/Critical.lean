@@ -60,7 +60,7 @@ private theorem exists_measurable_majorant_of_hasFDerivWithinAt_zero
     exists_partition_approximatesLinearOn_of_hasFDerivWithinAt f s (fun _ ↦ 0) hf
       (fun _ ↦ ε) (fun _ ↦ hε)
   have hLip (n : ℕ) : LipschitzOnWith ε f (s ∩ u n) := by
-    obtain ⟨x, hx, hAx⟩ := hA hs n
+    obtain ⟨x, _, hAx⟩ := hA hs n
     have h := (happ n).lipschitzOnWith
     simpa [hAx] using h
   choose G hGm hGle hGint using fun n ↦

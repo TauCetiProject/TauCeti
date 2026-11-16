@@ -11,15 +11,13 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.WithinZpow
 /-!
 # Reciprocal building blocks are completely monotone
 
-This file adds a second family of concrete completely monotone functions to the
-`OneParameterSemigroups` roadmap, alongside the exponentials `t ↦ e^{-x t}` already in
-`TauCeti.Analysis.CompletelyMonotone.Basic`: the **reciprocals of affine functions**
-`t ↦ (a + t)⁻¹` with `a > 0`.
+This file adds a second family of concrete completely monotone functions, alongside the
+exponentials `t ↦ e^{-x t}` already in `TauCeti.Analysis.CompletelyMonotone.Basic`: the
+**reciprocals of affine functions** `t ↦ (a + t)⁻¹` with `a > 0`.
 
-These are the resolvent kernels `t ↦ (λ + t)⁻¹` that Part A of the roadmap builds a semigroup
-theory around, and they are among the basic Stieltjes (resolvent) kernels appearing in Stieltjes
-representations. The acceptance example `t ↦ 1/(1 + t)` named in Part B of the roadmap is the
-special case `a = 1`; its representing measure `e^{-x} dx` is the exponential distribution.
+These are the resolvent kernels `t ↦ (λ + t)⁻¹` of semigroup theory, and they are among the basic
+Stieltjes (resolvent) kernels appearing in Stieltjes representations. The function `t ↦ 1/(1 + t)`
+is the special case `a = 1`; its representing measure `e^{-x} dx` is the exponential distribution.
 
 ## Main declarations
 
@@ -27,8 +25,7 @@ special case `a = 1`; its representing measure `e^{-x} dx` is the exponential di
   completely monotone.
 * `TauCeti.isCompletelyMonotone_one_div_const_add`: the `t ↦ 1 / (a + t)` phrasing of the same
   resolvent kernel.
-* `TauCeti.isCompletelyMonotone_one_div_one_add`: the roadmap acceptance example
-  `t ↦ 1 / (1 + t)`.
+* `TauCeti.isCompletelyMonotone_one_div_one_add`: the special case `t ↦ 1 / (1 + t)`.
 
 ## References
 
@@ -44,7 +41,7 @@ open scoped ContDiff Nat
 namespace TauCeti
 
 /-- For `a > 0`, the reciprocal `t ↦ (a + t)⁻¹` is completely monotone. This is the resolvent
-kernel `t ↦ (λ + t)⁻¹` of the roadmap's semigroup theory. -/
+kernel `t ↦ (λ + t)⁻¹` of semigroup theory. -/
 theorem isCompletelyMonotone_inv_const_add {a : ℝ} (ha : 0 < a) :
     IsCompletelyMonotone (fun t => (a + t)⁻¹) := by
   have hpos : ∀ t : ℝ, 0 ≤ t → 0 < a + t := fun t ht => by linarith
@@ -87,7 +84,7 @@ theorem isCompletelyMonotone_one_div_const_add {a : ℝ} (ha : 0 < a) :
     IsCompletelyMonotone (fun t => 1 / (a + t)) := by
   simpa only [one_div] using isCompletelyMonotone_inv_const_add ha
 
-/-- The roadmap acceptance example: `t ↦ 1 / (1 + t)` is completely monotone. Its representing
+/-- The function `t ↦ 1 / (1 + t)` is completely monotone. Its representing
 measure under Bernstein's theorem is the exponential distribution `e^{-x} dx`. -/
 theorem isCompletelyMonotone_one_div_one_add :
     IsCompletelyMonotone (fun t => 1 / (1 + t)) :=

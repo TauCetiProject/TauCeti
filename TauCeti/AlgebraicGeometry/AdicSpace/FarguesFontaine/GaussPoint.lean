@@ -174,19 +174,27 @@ theorem isRadiusUpperBound_gaussPoint_iff (hv : v.Integers O) (hρ : ρ < 1) (ϖ
   simp
 
 /-- **The lower radius bound on a Gauss point is a real ratio inequality.** When the coefficient
-norm of `ϖ` is positive and the Gauss radius lies in `(0, 1)`, the order-theoretic condition
-`q ≤ κ(η_ρ)` is equivalent to `(q : ℝ) ≤ Real.logb ρ (v(ϖ))`. This is the real-valued
+norm of `ϖ` is positive, the order-theoretic condition `q ≤ κ(η_ρ)` is equivalent to
+`(q : ℝ) ≤ Real.logb ρ (v(ϖ))`. For `ρ = 0` both sides say `q = 0`. This is the real-valued
 form of the radius dictionary used for interval rings. -/
-theorem isRadiusLowerBound_gaussPoint_iff_le_logb (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1)
+theorem isRadiusLowerBound_gaussPoint_iff_le_logb (hv : v.Integers O) (hρ : ρ < 1)
     (ϖ : O) (hϖ₀ : 0 < v (algebraMap O K ϖ)) (q : ℚ≥0) :
     IsRadiusLowerBound p ϖ q (gaussPoint p hv ρ hρ) ↔
       (q : ℝ) ≤ Real.logb (ρ : ℝ) (v (algebraMap O K ϖ)) := by
-  rw [isRadiusLowerBound_gaussPoint_iff hv hρ ϖ q, ← NNReal.coe_le_coe, NNRat.cast_def]
+  rw [isRadiusLowerBound_gaussPoint_iff hv hρ ϖ q]
+  rcases eq_or_ne ρ 0 with rfl | hρ₀
+  · -- For `ρ = 0` both sides say `q = 0`, as `v ϖ ≤ 1` and `logb 0 _ = 0`.
+    rcases eq_or_ne q 0 with rfl | hq
+    · simpa using hv.map_le_one ϖ
+    · have hq' : q.num ≠ 0 := NNRat.num_ne_zero.mpr hq
+      simp [hq, hq', (pow_pos hϖ₀ q.den).not_ge]
+  rw [← NNReal.coe_le_coe, NNRat.cast_def]
   push_cast
-  exact Real.pow_le_pow_iff_div_le_logb_of_base_lt_one hρ₀ hρ hϖ₀ q.den_pos
+  have hρ₀' : 0 < ρ := pos_iff_ne_zero.2 hρ₀
+  exact Real.pow_le_pow_iff_div_le_logb_of_base_lt_one hρ₀' hρ hϖ₀ q.den_pos
 
-/-- **The upper radius bound on a Gauss point is a real ratio inequality.** Under the same
-positivity hypotheses, `κ(η_ρ) ≤ q` is equivalent to
+/-- **The upper radius bound on a Gauss point is a real ratio inequality.** When the coefficient
+norm of `ϖ` is positive and the Gauss radius lies in `(0, 1)`, `κ(η_ρ) ≤ q` is equivalent to
 `Real.logb ρ (v(ϖ)) ≤ (q : ℝ)`. -/
 theorem isRadiusUpperBound_gaussPoint_iff_logb_le (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1)
     (ϖ : O) (hϖ₀ : 0 < v (algebraMap O K ϖ)) (q : ℚ≥0) :

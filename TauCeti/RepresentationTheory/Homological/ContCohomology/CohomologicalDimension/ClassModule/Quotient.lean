@@ -17,10 +17,10 @@ subgroup (`TauCeti.abelianizationProPExtensionKernel_le_ker`). When `V` is norma
 homomorphism therefore factors through the class-module extension `G / ker(V → Vᵃᵇ(p))`.
 
 The two instances used are a profinite extension whose kernel is an abelian pro-`p` group, into
-which a free presentation maps its relation subgroup, and a finite quotient `G/U` in which the
-image of `V` is an abelian `p`-group
+which a free presentation maps its relation subgroup, and a discrete quotient `G/U` (for instance
+a finite one) in which the image of `V` is an abelian `p`-group
 (`TauCeti.abelianizationProPExtensionKernel_le_of_isPGroup_map`). The latter permits a generating
-family of the class-module extension to be read in the finite quotient.
+family of the class-module extension to be read in that quotient.
 
 ## References
 
@@ -53,11 +53,11 @@ theorem abelianizationProPExtensionKernel_le_ker (p : ℕ) (V : Subgroup G) {E :
   exact congrArg Subtype.val (eq_one_of_maximalProPQuotient_mk_eq_one hpro f hzero)
 
 
-/-- A finite quotient in which the image of `V` is an abelian `p`-group kills the kernel
+/-- A discrete quotient in which the image of `V` is an abelian `p`-group kills the kernel
 of `V → Vᵃᵇ(p)`. For normal `V`, this is the inclusion needed by `QuotientGroup.mapOfLE`
 to factor the quotient through the pro-`p` class-module extension. -/
 theorem abelianizationProPExtensionKernel_le_of_isPGroup_map (p : ℕ)
-    (V : Subgroup G) (U : OpenNormalSubgroup G) [U.toSubgroup.FiniteIndex]
+    (V : Subgroup G) (U : OpenNormalSubgroup G)
     (hpro : IsPGroup p (V.map (QuotientGroup.mk' U.toSubgroup)))
     (hcomm : ⁅V, V⁆ ≤ U.toSubgroup) :
     abelianizationProPExtensionKernel p G V ≤ U.toSubgroup := by
@@ -67,11 +67,22 @@ theorem abelianizationProPExtensionKernel_le_of_isPGroup_map (p : ℕ)
     rw [← Subgroup.map_commutator]
     exact (Subgroup.map_eq_bot_iff _).mpr (by simpa using hcomm)
   have : IsMulCommutative H := Subgroup.commutator_self_eq_bot_iff.mp hHcomm
-  have h := abelianizationProPExtensionKernel_le_ker p V
-    (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup) H (isClosed_discrete _)
-    (isProP_iff_isPGroup.mpr hpro) (by
-      simpa only [Subgroup.coe_quotientMkContinuousMonoidHom] using
-        Subgroup.le_comap_map (QuotientGroup.mk' U.toSubgroup) V)
-  rwa [Subgroup.coe_quotientMkContinuousMonoidHom, QuotientGroup.ker_mk'] at h
+  let f : V →ₜ* H :=
+    ⟨((QuotientGroup.mk' U.toSubgroup).comp V.subtype).codRestrict H fun v ↦ ⟨v, v.2, rfl⟩,
+      ((continuous_quotient_mk'.comp continuous_subtype_val).subtype_mk _)⟩
+  let fab := TopologicalAbelianization.lift f
+  let N : OpenNormalSubgroup (TopologicalAbelianization V) :=
+    ⟨⟨(fab : TopologicalAbelianization V →* H).ker,
+      (isOpen_discrete {(1 : H)}).preimage fab.continuous⟩, inferInstance⟩
+  have hN : IsPGroup p (TopologicalAbelianization V ⧸ N.toSubgroup) :=
+    (hpro.to_subgroup (fab : TopologicalAbelianization V →* H).range).of_equiv
+      (QuotientGroup.quotientKerEquivRange _).symm
+  intro x hx
+  obtain ⟨hv, hzero⟩ := (mem_abelianizationProPExtensionKernel_iff p G V x).mp hx
+  rw [abelianizationProPMk_apply] at hzero
+  have h2 : ((⟨x, hv⟩ : V) : TopologicalAbelianization V) ∈ N.toSubgroup :=
+    proPKernel_le hN ((QuotientGroup.eq_one_iff _).mp hzero)
+  have h3 : f ⟨x, hv⟩ = 1 := (TopologicalAbelianization.lift_mk f ⟨x, hv⟩).symm.trans h2
+  exact (QuotientGroup.eq_one_iff x).mp (congrArg Subtype.val h3)
 
 end TauCeti

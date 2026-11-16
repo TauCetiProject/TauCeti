@@ -60,7 +60,7 @@ theorem exact_of_isBasis (hB : Opens.IsBasis B)
   change ∀ y, (Presheaf.stalkFunctor _ x).map S.g.hom y = 0 →
     ∃ z, (Presheaf.stalkFunctor _ x).map S.f.hom z = y
   intro y hy
-  obtain ⟨U, hxU, hU, s, rfl⟩ := Presheaf.exists_mem_germ_eq_of_isBasis hB S.X₂.obj x y
+  obtain ⟨U, hxU, _, s, rfl⟩ := Presheaf.exists_mem_germ_eq_of_isBasis hB S.X₂.obj x y
   -- the image of `s` in `F₃` has zero germ at `x`, so it vanishes on a basic neighbourhood `W`
   have hgs : Presheaf.germ S.X₃.obj U x hxU (S.g.hom.app (op U) s) =
       Presheaf.germ S.X₃.obj U x hxU 0 := by

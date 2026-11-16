@@ -24,10 +24,7 @@ namespace Complex
 `2π`. -/
 theorem re_inv_two_pi_I_mul (w : ℂ) :
     ((2 * (Real.pi : ℂ) * I)⁻¹ * w).re = w.im / (2 * Real.pi) := by
-  have he : 2 * (Real.pi : ℂ) * I = ((2 * Real.pi : ℝ) : ℂ) * I := by norm_cast
-  rw [he, mul_inv_rev, inv_I]
-  simp [Complex.mul_re, Complex.mul_im, div_eq_mul_inv]
-  ring
+  simp [div_eq_inv_mul]
 
 /-- Integer multiples of `2πi` determine their integer. -/
 theorem intCast_mul_two_pi_I_injective :

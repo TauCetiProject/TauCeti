@@ -16,7 +16,7 @@ divergence.
 
 ## Main results
 
-* `MeasureTheory.Measure.llr_eq_log_real_div_real_singleton`: on a measurable singleton of
+* `MeasureTheory.Measure.llr_eq_log_real_div_real_singleton`: on a singleton of
   nonzero finite reference mass, the log-likelihood ratio is the logarithm of the quotient of
   the two real singleton masses.
 -/
@@ -28,9 +28,9 @@ open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
-variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
+variable {α : Type*} [MeasurableSpace α]
 
-/-- On a measurable singleton of nonzero finite reference mass, the log-likelihood ratio is the
+/-- On a singleton of nonzero finite reference mass, the log-likelihood ratio is the
 logarithm of the quotient of the two real singleton masses. -/
 theorem llr_eq_log_real_div_real_singleton (π R : Measure α) [π.HaveLebesgueDecomposition R]
     (x : α)

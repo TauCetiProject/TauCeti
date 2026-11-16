@@ -83,7 +83,7 @@ theorem norm_testFunctionLp (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
 the function vanishes outside `Omega`, so the restriction may be dropped. -/
 theorem enorm_testFunctionLp_eq_eLpNorm (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
     ‖testFunctionLp (mu := mu) q phi‖ₑ = eLpNorm (phi : E → ℝ) q mu := by
-  rw [Lp.enorm_def, eLpNorm_congr_ae (testFunctionLp_apply_ae q phi),
+  rw [Lp.eNorm_def, eLpNorm_congr_ae (testFunctionLp_apply_ae q phi),
     eLpNorm_restrict_eq_of_support_subset phi.continuous.aestronglyMeasurable
       ((subset_tsupport _).trans phi.tsupport_subset)]
 
@@ -168,7 +168,7 @@ theorem exists_dual_norm_le_of_abs_integral_lineDeriv_mul_le_eLpNorm {q : ℝ≥
   let T := testFunctionLpₗ mu Omega q
   have hnorm (phi : 𝓓(Omega, ℝ)) :
       ‖T phi‖ = (eLpNorm (phi : E → ℝ) q mu).toReal := by
-    rw [testFunctionLpₗ_apply, ← toReal_enorm]
+    rw [testFunctionLpₗ_apply, ← toReal_eNorm]
     exact congrArg ENNReal.toReal (enorm_testFunctionLp_eq_eLpNorm q phi)
   have hker : LinearMap.ker T.rangeRestrict ≤ LinearMap.ker ℓ.toLinearMap := by
     rw [LinearMap.ker_rangeRestrict]
@@ -193,6 +193,43 @@ theorem exists_dual_norm_le_of_abs_integral_lineDeriv_mul_le_eLpNorm {q : ℝ≥
   refine ⟨Λ, hΛnorm.trans_le (LinearMap.mkContinuous_norm_le _ hC hf₀), fun phi ↦ ?_⟩
   have h := hΛ (T.rangeRestrict phi)
   simpa only [hcoe, LinearMap.mkContinuous_apply, hf₀_apply, hℓ] using h
+
+omit [IsFiniteMeasureOnCompacts mu] in
+/-- The Riesz representation step of the `L²` weak-derivative criterion:
+a functional on `L²(Omega)` of norm at most `C` that integrates a test function against `u` and
+the directional derivative of the test function is represented by a weak directional derivative of
+`u` in `L²(Omega)` of norm at most `C`. -/
+private theorem exists_norm_le_hasWeakLineDerivOn_of_dual {u : E → ℝ}
+    [IsFiniteMeasureOnCompacts (mu.restrict Omega)]
+    (hu : LocallyIntegrableOn u Omega mu) (v : E)
+    (hld : ∀ phi : 𝓓(Omega, ℝ), ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu.restrict Omega =
+      ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu)
+    {C : ℝ} {Λ : StrongDual ℝ (Lp ℝ 2 ((mu.restrict Omega).restrict Omega))} (hΛnorm : ‖Λ‖ ≤ C)
+    (hΛphi : ∀ phi : 𝓓(Omega, ℝ), Λ (testFunctionLp (mu := mu.restrict Omega) 2 phi) =
+      ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu.restrict Omega) :
+    ∃ g : Lp ℝ 2 ((mu.restrict Omega).restrict Omega),
+      ‖g‖ ≤ C ∧ HasWeakLineDerivOn mu Omega u g v := by
+  have hres : (mu.restrict Omega).restrict Omega = mu.restrict Omega :=
+    Measure.restrict_restrict_of_subset subset_rfl
+  let g := (InnerProductSpace.toDual ℝ (Lp ℝ 2 ((mu.restrict Omega).restrict Omega))).symm (-Λ)
+  refine ⟨g, ?_, ?_⟩
+  · simpa only [g, LinearIsometryEquiv.norm_map, norm_neg] using hΛnorm
+  · have hg : LocallyIntegrableOn g Omega mu :=
+      locallyIntegrableOn_of_locallyIntegrable_restrict
+        (((Lp.memLp g).locallyIntegrable (by norm_num)).mono_measure hres.ge)
+    refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hu, hg, fun phi => ?_⟩
+    have hinner : ⟪g, testFunctionLp (mu := mu.restrict Omega) 2 phi⟫_ℝ =
+        ∫ x, (phi : E → ℝ) x • g x ∂mu := by
+      rw [L2.inner_def, ← setIntegral_smul_eq_integral_smul (w := (g : E → ℝ)) phi]
+      have hrestrict (F : E → ℝ) :
+          ∫ x in Omega, F x ∂mu.restrict Omega = ∫ x in Omega, F x ∂mu := by
+        rw [hres]
+      refine Eq.trans ?_ (hrestrict fun x => phi x • g x)
+      refine integral_congr_ae ?_
+      filter_upwards [testFunctionLp_apply_ae (mu := mu.restrict Omega) 2 phi] with x hx
+      simp [hx]
+    rw [← hinner, InnerProductSpace.toDual_symm_apply, neg_apply, hΛphi, neg_neg, hld]
+    simp only [smul_eq_mul]
 
 omit [IsFiniteMeasureOnCompacts mu] in
 /-- **An `L²`-bounded distributional derivative is an `L²` weak derivative.** Let `u` be locally
@@ -221,26 +258,8 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le {u : 
         exact hbound phi
   have hres : (mu.restrict Omega).restrict Omega = mu.restrict Omega :=
     Measure.restrict_restrict_of_subset subset_rfl
-  let g := (InnerProductSpace.toDual ℝ (Lp ℝ 2 ((mu.restrict Omega).restrict Omega))).symm (-Λ)
   rw [← hres]
-  refine ⟨g, ?_, ?_⟩
-  · simpa only [g, LinearIsometryEquiv.norm_map, norm_neg] using hΛnorm
-  · have hg : LocallyIntegrableOn g Omega mu :=
-      locallyIntegrableOn_of_locallyIntegrable_restrict
-        (((Lp.memLp g).locallyIntegrable (by norm_num)).mono_measure hres.ge)
-    refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hu, hg, fun phi => ?_⟩
-    have hinner : ⟪g, testFunctionLp (mu := mu.restrict Omega) 2 phi⟫_ℝ =
-        ∫ x, (phi : E → ℝ) x • g x ∂mu := by
-      rw [L2.inner_def, ← setIntegral_smul_eq_integral_smul (w := (g : E → ℝ)) phi]
-      have hrestrict (F : E → ℝ) :
-          ∫ x in Omega, F x ∂mu.restrict Omega = ∫ x in Omega, F x ∂mu := by
-        rw [hres]
-      refine Eq.trans ?_ (hrestrict fun x => phi x • g x)
-      refine integral_congr_ae ?_
-      filter_upwards [testFunctionLp_apply_ae (mu := mu.restrict Omega) 2 phi] with x hx
-      simp [hx]
-    rw [← hinner, InnerProductSpace.toDual_symm_apply, neg_apply, hΛphi, neg_neg, hld]
-    simp only [smul_eq_mul]
+  exact exists_norm_le_hasWeakLineDerivOn_of_dual hu v hld hΛnorm hΛphi
 
 end Representation
 
@@ -264,7 +283,7 @@ theorem _root_.ContDiffOn.enorm_integral_lineDeriv_smul_le {u : E → F}
   have hw : HasWeakFDerivOn mu Omega u (fderiv ℝ u) := hasWeakFDerivOn_of_differentiableOn
     (hD.locallyIntegrableOn Omega.isOpen.measurableSet) (fun x hx =>
       (hu.differentiableOn one_ne_zero x hx).differentiableAt (Omega.isOpen.mem_nhds hx))
-  rw [(hw.hasWeakLineDerivOn v).integral_lineDeriv_smul_eq_neg_integral_smul phi, enorm_neg,
+  rw [(hw.hasWeakLineDerivOn v).integral_lineDeriv_smul_eq_neg_integral_smul phi, eNorm_neg,
     ← setIntegral_smul_eq_integral_smul phi]
   have hmeas : AEStronglyMeasurable (fun x => fderiv ℝ u x v) (mu.restrict Omega) :=
     (hD.clm_apply continuousOn_const).aestronglyMeasurable Omega.isOpen.measurableSet
@@ -345,7 +364,7 @@ theorem enorm_gradientTestFunctionLp_eq_eLpNorm_fderiv (q : ENNReal) (phi : 𝓓
     ((contDiff_infty_iff_fderiv.mp phi.contDiff).2.continuous
       |>.stronglyMeasurable_of_hasCompactSupport
         (phi.hasCompactSupport.fderiv ℝ)).aestronglyMeasurable
-  rw [Lp.enorm_def, eLpNorm_congr_ae (gradientTestFunctionLp_apply_ae q phi),
+  rw [Lp.eNorm_def, eLpNorm_congr_ae (gradientTestFunctionLp_apply_ae q phi),
     eLpNorm_restrict_eq_of_support_subset hgrad (support_gradient_testFunction_subset phi),
     eLpNorm_congr_norm_ae hgrad hfderiv
       (ae_of_all _ fun x => norm_gradient_eq_norm_fderiv (𝕜 := ℝ) (phi : E → ℝ) x)]

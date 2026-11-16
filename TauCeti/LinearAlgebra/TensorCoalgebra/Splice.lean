@@ -188,16 +188,23 @@ theorem splice_smul {n : ℕ} (x : Fin n → M) (a b p d : ℕ) (c : R) (e : M) 
         simp [i]
       · have hjp : j.1 ≠ p := fun h ↦ hj (Fin.ext h)
         simp [Function.update_of_ne hj, hjp]
-    rw [hupd (c • e), (PiTensorProduct.tprod R).map_update_smul, ← hupd e]
+    rw [hupd (c • e), (PiTensorProduct.tprod R).map_update_smul, ← hupd e, RingHom.id_apply]
   · rw [splice_eq_zero R x _ h, splice_eq_zero R x e h, smul_zero]
 
 /-- A letter outside the collapsed block survives in a spliced word: the spliced word is a pure
 tensor word one of whose letters is that letter. -/
-theorem exists_splice_eq_of_tprod {n : ℕ} (x : Fin n → M) {p d : ℕ} (hd : 0 < d)
+theorem exists_splice_eq_of_tprod {n : ℕ} (x : Fin n → M) {p d : ℕ}
     (hpd : p + d ≤ n) (e : M) {i : Fin n} (hi : ¬(p ≤ i.1 ∧ i.1 < p + d)) :
     ∃ y : Fin (n + 1 - d) → M, (∃ j, y j = x i) ∧
       splice R x 0 n p d e = of R M ⟨n + 1 - d, by omega⟩ (PiTensorProduct.tprod R y) := by
   have hin := i.isLt
+  rcases Nat.eq_zero_or_pos d with rfl | hd
+  · refine ⟨fun j : Fin (n + 1 - 0) ↦ if j.1 = 0 then 0 else x i,
+      ⟨⟨i.1 + 1, by omega⟩, by simp⟩, ?_⟩
+    have h0 : PiTensorProduct.tprod R (fun j : Fin (n + 1 - 0) ↦ if j.1 = 0 then (0 : M) else x i)
+        = 0 :=
+      (PiTensorProduct.tprod R).map_coord_zero (⟨0, by omega⟩ : Fin (n + 1 - 0)) (by simp)
+    rw [splice_zero_length, h0, map_zero]
   refine ⟨_, ?_, splice_eq_of_tprod R x e hd hpd (by omega)⟩
   by_cases hip : i.1 < p
   · exact ⟨⟨i.1, by omega⟩, by simp [hip]⟩
@@ -240,9 +247,10 @@ theorem splice_two_succ_eq_subword {n p : ℕ} (hn : 0 < n) (hp : p = 0)
 
 /-- Collapsing the two letters at positions `p` and `p + 1` to the first deletes position `p + 1`;
 for `p + 1 = n` this leaves the first `n` letters. -/
-theorem splice_two_pred_eq_subword {n p : ℕ} (hn : 0 < n) (hp : p + 1 = n)
+theorem splice_two_pred_eq_subword {n p : ℕ} (hp : p + 1 = n)
     (x : Fin (n + 1) → M) :
     splice R x 0 (n + 1) p 2 (x ⟨p, by omega⟩) = subword R x 0 n := by
+  have hn : 0 < n := by omega
   rw [splice_eq_of_tprod R x _ two_pos (by omega) (by omega),
     subword_eq_of_tprod R x hn (by omega)]
   refine of_tprod_congr R M _ (by omega) fun i ↦ ?_

@@ -30,7 +30,7 @@ rational algebraic integer is an integer, so `χ(1)` divides `|G|`.
 
 * `TauCeti.Representation.finrank_mul_sum_centralCharacter_eq_card`: the division-free identity
   `χ(1) · ∑_C ωᵪ(K_C) χ(g_C⁻¹) = |G|`.
-* `TauCeti.Representation.finrank_dvd_card` and `FDRep.finrank_dvd_card`: the degree of an
+* `Representation.finrank_dvd_card` and `FDRep.finrank_dvd_card`: the degree of an
   irreducible representation divides the order of the group.
 
 ## Implementation notes
@@ -77,7 +77,7 @@ Collecting first orthogonality one conjugacy class at a time and substituting
 `ωᵪ(K_C) · χ(1) = |C| · χ(g_C)` gives `χ(1) · ∑_C ωᵪ(K_C) χ(g_C⁻¹) = |G|`, where `g_C` is any
 element of the class `C` and the value `χ(g_C⁻¹)` is read off the character of the dual
 representation. Both factors of each summand are algebraic integers, which is what makes this the
-divisibility statement `TauCeti.Representation.finrank_dvd_card`. -/
+divisibility statement `Representation.finrank_dvd_card`. -/
 theorem finrank_mul_sum_centralCharacter_eq_card [Invertible (Nat.card G : k)] :
     (finrank k V : k) * ∑ C : ConjClasses G, centralCharacter ρ (classSumCenter C) *
         ClassFunction.toConjClasses (ClassFunction.ofCharacter ρ.dual) C = Nat.card G := by
@@ -106,17 +106,23 @@ end Divisibility
 
 section Dvd
 
-variable [Finite G] [IsAlgClosed k] [CharZero k] [FiniteDimensional k V]
+variable [IsAlgClosed k] [CharZero k]
   (ρ : Representation k G V) [ρ.IsIrreducible]
 
 include ρ in
 /-- **The degree of an irreducible character divides the order of the group.**
 
 Over an algebraically closed field of characteristic zero, the dimension of an irreducible
-representation of a finite group `G` divides `|G|`. -/
-theorem finrank_dvd_card : finrank k V ∣ Nat.card G := by
+representation of a finite group `G` divides `|G|`. For an infinite group `Nat.card G = 0` and the
+statement is trivial. -/
+theorem _root_.Representation.finrank_dvd_card : finrank k V ∣ Nat.card G := by
   classical
+  rcases finite_or_infinite G with hG | hG
+  swap
+  · rw [Nat.card_eq_zero_of_infinite]
+    exact dvd_zero _
   let _ : Fintype G := Fintype.ofFinite G
+  have : FiniteDimensional k V := ρ.asModuleEquiv.finiteDimensional
   have hcard : (Nat.card G : k) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   have : Invertible (Nat.card G : k) := invertibleOfNonzero hcard
   refine IsIntegral.dvd_of_natCast_mul_eq (k := k) ?_
@@ -133,13 +139,13 @@ end Representation
 
 namespace FDRep
 
-variable {k G : Type*} [Field k] [IsAlgClosed k] [CharZero k] [Group G] [Finite G]
+variable {k G : Type*} [Field k] [IsAlgClosed k] [CharZero k] [Group G]
 
 /-- **The degree of an irreducible character divides the order of the group**, for a bundled
 finite-dimensional representation. -/
 theorem _root_.FDRep.finrank_dvd_card (X : FDRep k G) [_root_.Representation.IsIrreducible X.ρ] :
     finrank k X ∣ Nat.card G :=
-  Representation.finrank_dvd_card X.ρ
+  _root_.Representation.finrank_dvd_card X.ρ
 
 end FDRep
 

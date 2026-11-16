@@ -150,12 +150,10 @@ theorem BadlyApproximable.not_liouville {ξ : ℝ} (h : BadlyApproximable ξ) : 
 theorem BadlyApproximable.add_ratCast {ξ : ℝ} (h : BadlyApproximable ξ) (s : ℚ) :
     BadlyApproximable (ξ + s) := by
   obtain ⟨c, hc, hξ⟩ := badlyApproximable_iff_forall_ratCast.mp h
-  have hs : (0 : ℝ) < s.den := by exact_mod_cast s.den_pos
   refine badlyApproximable_iff_forall_ratCast.mpr ⟨c / (s.den : ℝ) ^ 2, by positivity, fun r ↦ ?_⟩
   -- `ξ + s - r = ξ - (r - s)` and `den (r - s) ≤ den r * den s`.
   have hden : ((r - s).den : ℝ) ≤ r.den * s.den := by
     exact_mod_cast Nat.le_of_dvd (by positivity) (Rat.sub_den_dvd r s)
-  have hden' : (0 : ℝ) < (r - s).den := by exact_mod_cast Rat.den_pos _
   have := hξ (r - s)
   rw [Rat.cast_sub, sub_sub_eq_add_sub] at this
   refine le_trans ?_ this
@@ -167,7 +165,6 @@ theorem BadlyApproximable.ratCast_mul {ξ : ℝ} (h : BadlyApproximable ξ) {s :
     BadlyApproximable (s * ξ) := by
   obtain ⟨c, hc, hξ⟩ := badlyApproximable_iff_forall_ratCast.mp h
   have hs' : (0 : ℝ) < |(s : ℝ)| := by positivity
-  have hnum : (0 : ℝ) < |(s.num : ℝ)| := by positivity
   refine badlyApproximable_iff_forall_ratCast.mpr
     ⟨|(s : ℝ)| * c / (s.num : ℝ) ^ 2, by positivity, fun r ↦ ?_⟩
   -- `s ξ - r = s (ξ - r / s)` and `den (r / s) ≤ den r * |num s|`.
@@ -176,7 +173,6 @@ theorem BadlyApproximable.ratCast_mul {ξ : ℝ} (h : BadlyApproximable ξ) {s :
     rw [Rat.den_inv_of_ne_zero hs] at this
     rw [← Int.cast_abs, Int.abs_eq_natAbs, Int.cast_natCast, div_eq_mul_inv]
     exact_mod_cast this
-  have hden' : (0 : ℝ) < (r / s).den := by exact_mod_cast Rat.den_pos _
   have hsξ : (s : ℝ) * ξ - r = s * (ξ - (r / s : ℚ)) := by
     push_cast
     field_simp
@@ -298,7 +294,8 @@ example : simultaneousExponent ![√2, √3] ≤ 1 := by
 
 example : BadlyApproximable Real.goldenRatio :=
   Real.goldenRatio_irrational.badlyApproximable_of_aeval_eq_zero (f := X ^ 2 - X - 1)
-    (by intro h; simpa [coeff_X, coeff_one] using congr_arg (coeff · 2) h) (by compute_degree!)
+    (by intro h; simpa [coeff_X, coeff_one] using congr_arg (AddMonoidAlgebra.coeff · 2) h)
+    (by compute_degree!)
     (by simp [Real.goldenRatio_sq])
 
 example : ¬BadlyApproximable (liouvilleNumber 10) := fun h ↦

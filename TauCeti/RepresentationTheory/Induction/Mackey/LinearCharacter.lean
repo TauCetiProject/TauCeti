@@ -36,8 +36,8 @@ of `N` in `G` is contained in `N`.  This is the form the classical examples are 
 `A₃ ◁ S₃` in `TauCeti.RepresentationTheory.Induction.Mackey.SymmetricThree.Basic`, and the rotation
 subgroup of a dihedral group -- where the ambient group is visibly nonabelian on `N`.
 
-The whole file is the normal-subgroup half of the roadmap's dichotomy: nothing induced from the
-*non-normal* point stabilizer of `S₃` is irreducible
+The whole file is the normal-subgroup half of a dichotomy already visible in `S₃`: nothing induced
+from the *non-normal* point stabilizer of `S₃` is irreducible
 (`TauCeti.not_simple_indFDRep_stabilizer_perm_fin_three`), while a faithful character of the
 normal subgroup `A₃` does induce irreducibly.
 
@@ -53,11 +53,6 @@ normal subgroup `A₃` does induce irreducibly.
   `C_G(N) ≤ N`.
 
 ## References
-
-The Layer 4 "normal-subgroup corollary" of
-[the induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md),
-read on a linear character, as its "Mackey on a small group" and "`D₄` dihedral induction" worked
-examples require.
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, Chapter 7.4, Proposition 23 and its
   corollary for a normal subgroup.

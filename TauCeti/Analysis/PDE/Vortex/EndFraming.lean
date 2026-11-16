@@ -91,6 +91,13 @@ theorem tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_log
     have hh := Real.continuous_exp.continuousAt.tendsto.comp h
     simpa only [Real.exp_zero] using (tendsto_congr' he).mp hh
 
+/-- The inverse degree-`m` phase `((z / |z|) ^ m)⁻¹` has unit modulus away from the origin, so in
+particular eventually at infinity. -/
+theorem eventually_norm_inv_phase_eq_one (m : ℕ) :
+    ∀ᶠ z : ℂ in cocompact ℂ, ‖((z / (‖z‖ : ℂ)) ^ m)⁻¹‖ = 1 := by
+  filter_upwards [(isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact] with z hz
+  simp [norm_inv, norm_pow, norm_ne_zero_iff.mpr hz]
+
 /-- For a reconstructed monic polynomial section, unit modulus at infinity already fixes
 its degree-`m` end phase. The scalar ansatz has no independent phase ambiguity. -/
 theorem tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_norm
@@ -106,8 +113,8 @@ theorem tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_norm
     have hh := h.norm
     simp only [norm_one] at hh
     apply hh.congr'
-    filter_upwards [hz] with z hz
-    simp [norm_inv, norm_pow, norm_ne_zero_iff.mpr hz]
+    filter_upwards [eventually_norm_inv_phase_eq_one P.natDegree] with z hz
+    rw [norm_mul, hz, mul_one]
   · intro h
     rw [tendsto_sectionValue_amplitudeField_mul_inv_phase_iff hP]
     obtain ⟨q, hq, hfactor⟩ := exists_amplitudeField_end_factor hP u

@@ -92,7 +92,7 @@ private theorem neg_one_lt_sub_two_div_two (hα : 0 < α) : -1 < ((α : ℝ) - 2
 
 /-- Off the diagonal `σ = s`, the slice `σ ↦ u_s(σ - s, x)` has derivative `laplacianSlice`. -/
 private theorem hasDerivAt_heatCauchyPotential_sub {s σ : ℝ}
-    (hg : AEStronglyMeasurable (f s)) (hM : ∀ᵐ y, ‖f s y‖ ≤ M) (hσ : σ ≠ s) (x : E) :
+    (hM : ∀ᵐ y, ‖f s y‖ ≤ M) (hσ : σ ≠ s) (x : E) :
     HasDerivAt (fun σ => heatCauchyPotential (f s) (σ - s) x) (laplacianSlice f x s σ) σ := by
   rcases hσ.lt_or_gt with hσ | hσ
   · simp only [laplacianSlice, hσ.not_gt, ↓reduceIte]
@@ -100,33 +100,33 @@ private theorem hasDerivAt_heatCauchyPotential_sub {s σ : ℝ}
     filter_upwards [eventually_lt_nhds hσ] with σ' hσ'
     exact heatCauchyPotential_of_nonpos _ (by linarith) x
   · simp only [laplacianSlice, hσ, ↓reduceIte]
-    refine ((hasDerivAt_heatKernel_convolution (sub_pos.2 hσ) hg hM x).comp_sub_const σ s
+    refine ((hasDerivAt_heatKernel_convolution (sub_pos.2 hσ) hM x).comp_sub_const σ s
       ).congr_of_eventuallyEq ?_
     filter_upwards [eventually_gt_nhds hσ] with σ' hσ'
     exact heatCauchyPotential_eq_convolution _ (sub_pos.2 hσ') x
 
 /-- For a bounded `α`-Hölder slice, `laplacianSlice` is interval integrable in its time variable
 on every interval: it is `O(H (σ - s)^((α - 2)/2))` for `σ > s` and vanishes for `σ ≤ s`. -/
-private theorem intervalIntegrable_laplacianSlice {s : ℝ} (hg : AEStronglyMeasurable (f s))
+private theorem intervalIntegrable_laplacianSlice {s : ℝ}
     (hM : ∀ᵐ y, ‖f s y‖ ≤ M) (hH : HolderWith H α (f s)) (hα : 0 < α) (x : E) (a b : ℝ) :
     IntervalIntegrable (laplacianSlice f x s) volume a b := by
-  obtain ⟨C, hC₀, hC⟩ := exists_norm_laplacian_heatKernel_convolution_le (E := E) (F := F) (α := α)
+  obtain ⟨C, _, hC⟩ := exists_norm_laplacian_heatKernel_convolution_le (E := E) (F := F) (α := α)
   refine ((intervalIntegrable_sub_const_rpow (neg_one_lt_sub_two_div_two hα) s a b).const_mul
     (C * H)).mono_fun ?_
     (ae_of_all _ fun σ => ?_)
   · refine (stronglyMeasurable_deriv
       (fun σ => heatCauchyPotential (f s) (σ - s) x)).aestronglyMeasurable.congr ?_
     filter_upwards [ae_restrict_of_ae ((countable_singleton s).ae_notMem volume)] with σ hσ
-    exact (hasDerivAt_heatCauchyPotential_sub hg hM hσ x).deriv
+    exact (hasDerivAt_heatCauchyPotential_sub hM hσ x).deriv
   · simp only [laplacianSlice]
     split_ifs with h
-    · exact (hC hg hM hH (sub_pos.2 h) x).trans (le_abs_self _)
+    · exact (hC hM hH (sub_pos.2 h) x).trans (le_abs_self _)
     · rw [norm_zero]
       exact norm_nonneg _
 
 /-- **The fundamental theorem of calculus for a slice.** For a bounded `α`-Hölder slice,
 `∫ₐᵇ laplacianSlice f x s σ dσ = u_s(b - s, x) - u_s(a - s, x)`. -/
-private theorem integral_laplacianSlice {s : ℝ} (hg : AEStronglyMeasurable (f s))
+private theorem integral_laplacianSlice {s : ℝ}
     (hM : ∀ᵐ y, ‖f s y‖ ≤ M) (hH : HolderWith H α (f s)) (hα : 0 < α) {a b : ℝ} (hab : a ≤ b)
     (x : E) :
     ∫ σ in a..b, laplacianSlice f x s σ =
@@ -140,8 +140,8 @@ private theorem integral_laplacianSlice {s : ℝ} (hg : AEStronglyMeasurable (f 
   have hc : Continuous fun σ => heatCauchyPotential (f s) (σ - s) x :=
     (continuousOn_univ.1 (hhol.continuousOn (by positivity))).comp (continuous_sub_right s)
   exact integral_eq_of_hasDerivAt_off_countable_of_le _ _ hab (countable_singleton s)
-    hc.continuousOn (fun σ hσ => hasDerivAt_heatCauchyPotential_sub hg hM hσ.2 x)
-    (intervalIntegrable_laplacianSlice hg hM hH hα x a b)
+    hc.continuousOn (fun σ hσ => hasDerivAt_heatCauchyPotential_sub hM hσ.2 x)
+    (intervalIntegrable_laplacianSlice hM hH hα x a b)
 
 omit [CompleteSpace F] in
 /-- `laplacianSlice f x` is jointly measurable, up to the null set of first coordinates `s` at
@@ -173,20 +173,18 @@ private theorem integrable_laplacianSlice (hf : StronglyMeasurable (Function.unc
     Integrable (Function.uncurry (laplacianSlice f x))
       ((volume.restrict (Ioo 0 t)).prod (volume.restrict (Ioo 0 t))) := by
   obtain ⟨C, hC₀, hC⟩ := exists_norm_laplacian_heatKernel_convolution_le (E := E) (F := F) (α := α)
-  set p : ℝ := ((α : ℝ) - 2) / 2 with hp_def
+  set p : ℝ := ((α : ℝ) - 2) / 2
   have hp : -1 < p := neg_one_lt_sub_two_div_two hα
   have hp1 : 0 < p + 1 := by linarith
-  have hfs (s : ℝ) : AEStronglyMeasurable (f s) :=
-    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable
   have hmeas := aestronglyMeasurable_laplacianSlice (ν := volume.restrict (Ioo 0 t)) hf hfM x
   rw [integrable_prod_iff hmeas]
   refine ⟨?_, (integrable_const (C * H * t ^ (p + 1) / (p + 1))).mono'
     hmeas.norm.integral_prod_right' ?_⟩
   · filter_upwards [hfM, hH] with s hsM hsH
-    exact (intervalIntegrable_laplacianSlice (hfs s) hsM hsH hα x 0 t).1.mono_set
+    exact (intervalIntegrable_laplacianSlice hsM hsH hα x 0 t).1.mono_set
       Ioo_subset_Ioc_self
   filter_upwards [ae_restrict_mem measurableSet_Ioo, hfM, hH] with s hs hsM hsH
-  have hint := intervalIntegrable_laplacianSlice (hfs s) hsM hsH hα x
+  have hint := intervalIntegrable_laplacianSlice hsM hsH hα x
   rw [Real.norm_of_nonneg (integral_nonneg fun _ => norm_nonneg _)]
   -- The slice vanishes for `σ ≤ s`, and is `O(H (σ - s)^p)` for `σ > s`.
   have h₀ : ∫ σ in 0..s, ‖laplacianSlice f x s σ‖ = 0 := by
@@ -199,7 +197,7 @@ private theorem integrable_laplacianSlice (hf : StronglyMeasurable (Function.unc
       ((intervalIntegrable_sub_const_rpow hp s s t).const_mul _) fun σ hσ => ?_
     simp only [laplacianSlice]
     split_ifs with h
-    · exact hC (hfs s) hsM hsH (sub_pos.2 h) x
+    · exact hC hsM hsH (sub_pos.2 h) x
     · rw [norm_zero]
       have := rpow_nonneg (sub_nonneg.2 hσ.1) p
       positivity
@@ -245,8 +243,6 @@ private theorem heatDuhamelPotential_eq_integral_add_integral
         (∫ σ in 0..t, Δ (heatDuhamelPotential f σ) x) + ∫ σ in 0..t, f σ x := by
   rcases ht.eq_or_lt with rfl | ht
   · simp
-  have hfs (s : ℝ) : AEStronglyMeasurable (f s) :=
-    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable
   have hG := integrable_laplacianSlice hf hfM hH hα x
   -- Integrating `laplacianSlice` in `s` gives the Laplacian of the potential.
   have hΔ : ∀ σ ∈ Ioo 0 t,
@@ -266,7 +262,7 @@ private theorem heatDuhamelPotential_eq_integral_add_integral
       ∫ σ in Ioo 0 t, laplacianSlice f x s σ = (heatKernel (t - s) ⋆ f s) x - f s x := by
     filter_upwards [ae_restrict_mem measurableSet_Ioo, hfM, hH] with s hs hsM hsH
     rw [← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le ht.le,
-      integral_laplacianSlice (hfs s) hsM hsH hα ht.le,
+      integral_laplacianSlice hsM hsH hα ht.le,
       heatCauchyPotential_eq_convolution _ (sub_pos.2 hs.2),
       heatCauchyPotential_of_nonpos _ (by linarith [hs.1])]
   -- A continuous function essentially bounded by `M` is bounded by `M`.
@@ -305,6 +301,7 @@ theorem heatDuhamelPotential_eq_integral (hf : StronglyMeasurable (Function.uncu
   obtain ⟨h₁, h₂, h⟩ := heatDuhamelPotential_eq_integral_add_integral hf hfM hH hα ht x
   rw [intervalIntegral.integral_add h₁ h₂, h]
 
+omit [CompleteSpace F] in
 /-- **Time continuity of the Laplacian of the Duhamel potential.** Let `f` be jointly measurable
 and essentially bounded on `(0, T) × E`, with `f(s, ·)` `α`-Hölder for almost every `0 < s < T`,
 where `0 < α < 2`. Then `σ ↦ Δw(σ, x)` is continuous on `[0, T]`. -/

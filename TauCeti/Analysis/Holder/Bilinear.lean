@@ -85,7 +85,7 @@ private theorem norm_holderBilinear_le (B : E →L[ℝ] F →L[ℝ] G)
       gcongr
       · simpa using f.toBoundedContinuousFunction.norm_coe_le_norm x
       · simpa using g.toBoundedContinuousFunction.norm_coe_le_norm x)
-  · simp only [HolderSpace.norm_def, NNReal.coe_mul, NNReal.coe_add, coe_nnnorm,
+  · simp only [HolderSpace.norm_def, NNReal.coe_mul, NNReal.coe_add, coe_nnNorm,
       HolderSpace.coe_toBoundedContinuousFunction]
     nlinarith [mul_nonneg (norm_nonneg B)
       (mul_nonneg (NNReal.coe_nonneg (nnHolderNorm α (f : X → E)))
@@ -131,6 +131,13 @@ theorem norm_id_compHolder₂_apply_le (f : HolderSpace α X (F →L[ℝ] G)) (g
     ‖(ContinuousLinearMap.id ℝ (F →L[ℝ] G)).compHolder₂ f g‖ ≤ ‖f‖ * ‖g‖ :=
   (norm_compHolder₂_apply_le _ f g).trans (mul_le_mul_of_nonneg_right
     (mul_le_of_le_one_left (norm_nonneg f) ContinuousLinearMap.norm_id_le) (norm_nonneg g))
+
+/-- A scalar Hölder function times a constant vector is bounded by the product of their norms. -/
+theorem norm_lsmul_compHolder₂_const_le (f : HolderSpace α X ℝ) (c : F) :
+    ‖(ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ f (HolderSpace.const c)‖ ≤ ‖f‖ * ‖c‖ :=
+  (norm_compHolder₂_apply_le _ f _).trans (mul_le_mul
+    (mul_le_of_le_one_left (norm_nonneg f) ContinuousLinearMap.opNorm_lsmul_le)
+    (HolderSpace.norm_const_le c) (norm_nonneg _) (norm_nonneg f))
 
 /-- If `g` vanishes off a set `s` on which `‖f‖ ≤ δ`, then `f` enters the norm of the product only
 through `δ` and its Hölder seminorm: `‖B (f, g)‖ ≤ ‖B‖ (δ ‖g‖ + [f]_α ‖g‖_∞)`. This is the
@@ -308,7 +315,7 @@ private theorem norm_compHolder₂ExtendByZeroFun_le (B : E →L[ℝ] F →L[ℝ
   · rw [compHolder₂ExtendByZeroFun_apply]
     exact norm_comp₂_extendByZeroFun_le B f g x
   · rw [← Submodule.norm_coe]
-    simp only [HolderSpace.norm_def, NNReal.coe_mul, NNReal.coe_add, coe_nnnorm,
+    simp only [HolderSpace.norm_def, NNReal.coe_mul, NNReal.coe_add, coe_nnNorm,
       HolderSpace.coe_toBoundedContinuousFunction]
     nlinarith [mul_nonneg (norm_nonneg B)
       (mul_nonneg (NNReal.coe_nonneg (nnHolderNorm α (f' : X → F)))

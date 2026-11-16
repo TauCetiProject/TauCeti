@@ -267,7 +267,7 @@ private theorem exists_affine_transport_with_infty
   refine (logDeriv_deriv_comp (hFdiff.analyticAt (isOpen_upperHalfPlaneSet.mem_nhds (hmaps hζ)))
     (hcdiff.analyticAt (isOpen_ball.mem_nhds hζ)) (hFn _ (hmaps hζ))).trans ?_
   rw [logDeriv_deriv_schwarzChristoffelPrimitive a e z₀ (hmaps hζ), (hcd ζ hζ).deriv,
-    logDeriv_deriv_I_mul_one_add_div_one_sub (hne ζ hζ),
+    logDeriv_deriv_I_mul_one_add_div_one_sub,
     logDeriv_deriv_schwarzChristoffelDiscPrimitive w (Option.elim' (-∑ i, e i - 2) e) hζ]
   -- The pole at `1` records the half-plane's point at infinity instead of requiring
   -- a closing condition on the finite exponents.

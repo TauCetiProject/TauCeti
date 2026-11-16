@@ -86,7 +86,7 @@ theorem exists_eLpNorm_le_hasWeakLineDerivOn_of_enorm_integral_lineDeriv_smul_le
         M * eLpNorm (φ : E → ℝ) q μ) →
       ∃ g : E → G, HasWeakLineDerivOn μ Ω u g v ∧ eLpNorm g p (μ.restrict Ω) ≤ C * M := by
   classical
-  have := FiniteDimensional.complete ℝ G
+  have := FiniteDimensional.completeSpace ℝ G
   let b := Module.finBasis ℝ G
   let c : Fin (Module.finrank ℝ G) → G →L[ℝ] ℝ := fun i => LinearMap.toContinuousLinearMap
     (b.coord i)
@@ -105,7 +105,7 @@ theorem exists_eLpNorm_le_hasWeakLineDerivOn_of_enorm_integral_lineDeriv_smul_le
       simp only [map_smul, smul_eq_mul]
     have hreal : ‖∫ z, lineDeriv ℝ (φ : E → ℝ) z v • u z ∂μ‖ ≤
         M.toReal * (eLpNorm (φ : E → ℝ) q μ).toReal := by
-      rw [← ENNReal.toReal_mul, ← toReal_enorm]
+      rw [← ENNReal.toReal_mul, ← toReal_eNorm]
       exact ENNReal.toReal_mono (ENNReal.mul_ne_top hM hφ) (hbound φ)
     rw [hint, ← Real.norm_eq_abs, mul_assoc]
     exact ((c i).le_opNorm _).trans (mul_le_mul_of_nonneg_left hreal (norm_nonneg _))
@@ -129,13 +129,13 @@ theorem exists_eLpNorm_le_hasWeakLineDerivOn_of_enorm_integral_lineDeriv_smul_le
     calc eLpNorm (fun z => (g i : E → ℝ) z • b i) p (μ.restrict (Ω : Set E))
         ≤ ‖b i‖₊ * eLpNorm (g i : E → ℝ) p (μ.restrict (Ω : Set E)) :=
           eLpNorm_le_mul_eLpNorm_of_ae_le_mul' hmeas
-            (Eventually.of_forall fun z => by rw [enorm_smul, mul_comm, enorm_eq_nnnorm]) p
+            (Eventually.of_forall fun z => by rw [eNorm_smul, mul_comm, eNorm_eq_nnNorm]) p
       _ ≤ ‖b i‖₊ * (‖c i‖₊ * M) := by
           gcongr
           calc eLpNorm (g i : E → ℝ) p (μ.restrict (Ω : Set E))
-              = ENNReal.ofReal ‖g i‖ := by simp [← Lp.enorm_def]
+              = ENNReal.ofReal ‖g i‖ := by simp [← Lp.eNorm_def]
             _ ≤ ENNReal.ofReal (‖c i‖ * M.toReal) := ENNReal.ofReal_le_ofReal (hgn i)
-            _ = ‖c i‖₊ * M := by simp [ENNReal.ofReal_mul, hM, enorm_eq_nnnorm]
+            _ = ‖c i‖₊ * M := by simp [ENNReal.ofReal_mul, hM, eNorm_eq_nnNorm]
       _ = ↑(‖c i‖₊ * ‖b i‖₊) * M := by push_cast; ring
 
 end TauCeti

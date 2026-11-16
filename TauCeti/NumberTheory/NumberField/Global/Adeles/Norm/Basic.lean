@@ -62,7 +62,8 @@ public section
 noncomputable section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace
-open scoped AdicCompletionExtension NumberField.LiesOver
+open scoped AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -197,9 +198,17 @@ of the norm of an infinite adele `x` of `L` at an infinite place `v` of `K` is
 `z ↦ |z|²`. -/
 def infiniteAdeleNorm : InfiniteAdeleRing L →* InfiniteAdeleRing K where
   toFun x v := ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion (x w.1)
-  map_one' := funext fun _ ↦ (congrArg finprod (funext fun _ ↦ map_one _)).trans finprod_one
-  map_mul' _ _ := funext fun _ ↦ (congrArg finprod (funext fun _ ↦ map_mul _ _ _)).trans
-    (finprod_mul_distrib (Set.toFinite _) (Set.toFinite _))
+  map_one' := funext fun v ↦ by
+    -- Unfold the pointwise product of local norms at `v` so that `simp` can see the `finprod`.
+    change ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion 1 = 1
+    simp
+  map_mul' x y := funext fun v ↦ by
+    -- As for `map_one'`, unfold the pointwise product of local norms at `v`.
+    change ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion (x w.1 * y w.1) =
+      (∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion (x w.1)) *
+        ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion (y w.1)
+    simp only [map_mul]
+    exact finprod_mul_distrib (Set.toFinite _) (Set.toFinite _)
 
 omit [NumberField K] in
 variable {K L} in
@@ -211,6 +220,7 @@ theorem infiniteAdeleNorm_apply (x : InfiniteAdeleRing L) (v : InfinitePlace K) 
       ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion (x w.1) :=
   (rfl)
 
+omit [NumberField K] in
 /-- The infinite adele norm extends the norm of `L / K` along the diagonal embeddings. -/
 @[simp]
 theorem infiniteAdeleNorm_algebraMap (x : L) :
@@ -222,6 +232,7 @@ theorem infiniteAdeleNorm_algebraMap (x : L) :
   -- The diagonal components are the images of `x` and `N_{L/K}(x)` in the completions.
   exact (algebraMap_norm_eq_prod_norm_infiniteCompletion L v x).symm
 
+omit [NumberField K] in
 /-- The norm of an infinite adele extended from `K` is its `[L : K]`-th power. -/
 @[simp]
 theorem infiniteAdeleNorm_infiniteAdeleExtension (a : InfiniteAdeleRing K) :
@@ -233,7 +244,7 @@ theorem infiniteAdeleNorm_infiniteAdeleExtension (a : InfiniteAdeleRing K) :
         a v ^ Module.finrank v.Completion w.1.Completion := by
     obtain ⟨w, hw⟩ := w
     obtain rfl : w.comap (algebraMap K L) = v := InfinitePlace.LiesOver.comap_eq w v
-    rw [infiniteAdeleExtension_apply]
+    rw [infiniteAdeleExtension_apply, ← AbsoluteValue.Completion.algebraMap_apply_of_liesOver]
     exact Algebra.norm_algebraMap _
   rw [infiniteAdeleNorm_apply, finprod_eq_prod_of_fintype, Finset.prod_congr rfl fun w _ ↦ h w,
     Finset.prod_pow_eq_pow_sum, sum_finrank_infiniteCompletion_eq_finrank]
@@ -266,9 +277,9 @@ theorem infiniteAdeleNorm_comp (M : Type*) [Field M] [NumberField M] [Algebra L 
   rw [show e p = ⟨p.2.1, inferInstance⟩ from
     Subtype.ext (InfinitePlace.liesOverTowerEquiv_apply v p)]
   refine @Algebra.norm_norm _ _ _ _ _ _ _ _ _ _ ?_ _ _
-  exact IsScalarTower.of_algebraMap_eq fun y ↦
-    (RingHom.congr_fun (LiesOver.completionMap_comp (v := v) (w := p.1.1)
-      (u := p.2.1)) y).symm
+  exact IsScalarTower.of_algebraMap_eq fun y ↦ by
+    simp only [AbsoluteValue.Completion.algebraMap_apply_of_liesOver,
+      AbsoluteValue.Completion.map_map]
 
 /-! ### Adeles -/
 

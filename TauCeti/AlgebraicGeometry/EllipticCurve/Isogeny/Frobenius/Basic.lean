@@ -58,13 +58,9 @@ transported along the identification of `fieldPullback` with the `q`-power map o
 identification is `Isogeny.fieldPullback_unique`: both maps restrict to `x ↦ x ^ q` on the
 coordinate ring, and only one extension to the fraction field exists.
 
-This is the `frobeniusIsogeny` seed of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, where
-it is described as "`f ↦ f ^ q` out of the coordinate ring into the function field … whose
-`MapsInfinity` is the integrality of the coordinates over their `q`-th powers". The seed follows
-Silverman, *The Arithmetic of Elliptic Curves*, II.2.11: part (a) identifies the pullback image
-with the `q`-th powers, part (b) proves pure inseparability, and part (c) computes the degree. The
-roadmap's `Suggested.lean` states the pullback and degree with `sorry`; the formal proofs here are
-original.
+The results follow Silverman, *The Arithmetic of Elliptic Curves*, II.2.11: part (a) identifies
+the pullback image with the `q`-th powers, part (b) proves pure inseparability, and part (c)
+computes the degree. The formal proofs here are original.
 
 ## References
 

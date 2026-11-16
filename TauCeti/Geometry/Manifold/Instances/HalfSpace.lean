@@ -6,13 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
+public import TauCeti.Analysis.Convex.Polyhedron.Basic
 
 /-!
 # A product half-space model
 
 The closed half-space in `E × ℝ`, with the last coordinate nonnegative, is a model with
 corners. Its inverse clips the last coordinate at zero. Keeping the tangential space
-explicit allows polyhedral boundary charts to use product coordinates directly.
+explicit allows polyhedral boundary charts to use product coordinates directly. The range of
+the model is a convex polyhedron
+(`TauCeti.isConvexPolyhedron_range_modelWithCornersHalfSpace`), which is what results on PL
+manifolds modelled on it, such as the PL inverse theorem `TauCeti.IsPLMap.symm`, require.
 
 Restricted to the points of positive height, the model is an open partial homeomorphism
 onto the open half-space in `E × ℝ`. Its inverse turns a chart with values of positive last
@@ -67,6 +71,16 @@ theorem coe_modelWithCornersHalfSpace_symm_apply {q : E × ℝ} (hq : 0 ≤ q.2)
 @[simp] theorem range_modelWithCornersHalfSpace :
     range (modelWithCornersHalfSpace E) = {q : E × ℝ | 0 ≤ q.2} :=
   Subtype.range_val
+
+/-- The range of the model, the closed half-space, is a convex polyhedron: it is cut out by the
+single inequality `-q.2 ≤ 0`. -/
+theorem isConvexPolyhedron_range_modelWithCornersHalfSpace :
+    IsConvexPolyhedron (range (modelWithCornersHalfSpace E)) := by
+  rw [range_modelWithCornersHalfSpace]
+  convert isConvexPolyhedron_setOf_le (-(ContinuousLinearMap.snd ℝ E ℝ).toContinuousAffineMap)
+    using 1
+  ext q
+  simp
 
 /-- The model of the half-space, restricted to the points of positive height: an open partial
 homeomorphism onto the open half-space `{q | 0 < q.2}` in `E × ℝ`. -/

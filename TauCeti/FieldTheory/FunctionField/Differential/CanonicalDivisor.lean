@@ -298,8 +298,8 @@ noncomputable def canonicalClass (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) : (Place.orderSystem hF).ClassGroup :=
   (Place.orderSystem hF).divisorClass
     (weilDifferentialDivisor hF hex
-      ((Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)).choose_spec.1
-      ((Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)).choose_spec.2)
+      ((Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF)).choose_spec.1
+      ((Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF)).choose_spec.2)
 
 /-- Every nonzero Weil differential represents the canonical class. -/
 @[simp]
@@ -455,7 +455,7 @@ theorem degree_weilDifferentialDivisor (hF : IsFunctionField k F)
 @[simp]
 theorem degreeClass_canonicalClass (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) :
     Divisor.degreeClass hF (canonicalClass hF hex) = 2 * genus k F - 2 := by
-  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
+  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF)
   rw [← divisorClass_weilDifferentialDivisor hF hex hωmem hω0, Divisor.degreeClass_divisorClass,
     degree_weilDifferentialDivisor]
 
@@ -466,7 +466,7 @@ nonzero Weil differential, whose dimension and degree are recorded by
 theorem exists_isRiemannRochDivisor (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) :
     ∃ W : Divisor k F, W.IsRiemannRochDivisor (genus k F) := by
-  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
+  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF)
   exact ⟨weilDifferentialDivisor hF hex hωmem hω0,
     isRiemannRochDivisor_weilDifferentialDivisor hF hex hωmem hω0⟩
 
@@ -490,7 +490,7 @@ theorem isRiemannRochDivisor_of_divisorClass_eq_canonicalClass (hF : IsFunctionF
     D.IsRiemannRochDivisor (genus k F) := by
   -- Such a `D` is linearly equivalent to the divisor of a nonzero Weil differential, and being a
   -- Riemann–Roch divisor depends only on the divisor class.
-  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
+  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF)
   refine (isRiemannRochDivisor_weilDifferentialDivisor hF hex hωmem hω0).of_linearlyEquivalent hF
     ((Place.orderSystem hF).divisorClass_eq_iff.mp ?_)
   rw [divisorClass_weilDifferentialDivisor hF hex hωmem hω0, hD]
@@ -505,7 +505,7 @@ theorem exists_isGreatest_of_divisorClass_eq_canonicalClass (hF : IsFunctionFiel
       IsGreatest {E : Divisor k F | ω ∈ weilDifferentialFiltration E} D := by
   -- Multiplying a differential by a function `z` with `div z = D - (ω)` moves its divisor onto
   -- `D`, by the transformation law `weilDifferentialDivisor_repartitionDualMul`.
-  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
+  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF)
   have hclass : (Place.orderSystem hF).divisorClass
       (D - weilDifferentialDivisor hF hex hωmem hω0) = 0 := by
     rw [map_sub, divisorClass_weilDifferentialDivisor hF hex hωmem hω0, hD, sub_self]
@@ -531,7 +531,7 @@ theorem divisorClass_eq_canonicalClass_iff (hF : IsFunctionField k F)
   -- `ℓ(D) ≥ g` forces `ℓ(W - D) ≥ 1`; as `W - D` has degree zero it is then principal, that is,
   -- `D` has the class of `W`.  Conversely such a `D` is itself a Riemann–Roch divisor, whose
   -- degree and dimension are `2g - 2` and `g` by Corollary 1.5.16.
-  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
+  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF)
   refine ⟨fun hD ↦ ?_, fun ⟨hdeg, _⟩ ↦ ?_⟩
   · have hRR := isRiemannRochDivisor_of_divisorClass_eq_canonicalClass hF hex hD
     exact ⟨hRR.degree_eq hF hex, (hRR.dim_eq hF hex).ge⟩

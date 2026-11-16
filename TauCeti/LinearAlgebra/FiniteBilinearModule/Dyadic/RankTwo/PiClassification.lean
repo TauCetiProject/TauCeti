@@ -122,7 +122,7 @@ theorem nonempty_isometry_pi_dyadicU_prod_pi_dyadicV_iff (k : ℕ) [NeZero k]
       (neg_one_pow_eq_pow_mod_two b).symm.trans (hp.trans (neg_one_pow_eq_pow_mod_two d))
     have hb := Nat.mod_lt b (by decide : 0 < 2)
     have hd := Nat.mod_lt d (by decide : 0 < 2)
-    interval_cases hbm : b % 2 <;> interval_cases hdm : d % 2 <;> norm_num at hp' <;> rfl
+    interval_cases _ : b % 2 <;> interval_cases _ : d % 2 <;> norm_num at hp' <;> rfl
   · rintro ⟨hn, hp⟩
     obtain ⟨e⟩ := nonempty_isometry_pi_dyadicU_prod_pi_dyadicV_normal_form k a b
     obtain ⟨f⟩ := nonempty_isometry_pi_dyadicU_prod_pi_dyadicV_normal_form k c d

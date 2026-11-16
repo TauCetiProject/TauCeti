@@ -51,7 +51,7 @@ branches are distinct and give a complete factorization with the original leadin
 No behavior at the puncture is assumed or asserted. -/
 theorem exists_analyticOnNhd_eq_C_mul_prod_X_sub_C_powerSubstitution [CompleteSpace E]
     [SimplyConnectedSpace U]
-    (hU : IsOpen U) (hR' : 0 < R') (hn : n ≠ 0) (hR : R' ^ n ≤ R)
+    (hU : IsOpen U) (hn : n ≠ 0) (hR : R' ^ n ≤ R)
     (hdvd : d.factorial ∣ n)
     (hF : ∀ i ≤ d, AnalyticOnNhd ℂ (fun b ↦ (F b).coeff i)
       (U ×ˢ (ball 0 R \ {0})))
@@ -77,7 +77,7 @@ theorem exists_analyticOnNhd_eq_C_mul_prod_X_sub_C_powerSubstitution [CompleteSp
     exact mul_ne_zero (pow_ne_zero _ (leadingCoeff_ne_zero.2 (hsep b hb).ne_zero))
       ((discr_ne_zero_iff (hsep b hb).ne_zero).mpr (hsep b hb))
   obtain ⟨s, hsa, hs⟩ := exists_analyticOnNhd_eq_prod_X_sub_C_powerSubstitution
-    hU hR' hn hR hdvd (fun i _ ↦ hQa i) (fun b _ ↦ (hQ b).1)
+    hU hn hR hdvd (fun i _ ↦ hQa i) (fun b _ ↦ (hQ b).1)
     (fun b _ ↦ (hQ b).2) hQsep
   let l : E × ℂ → ℂ := fun b ↦ (F (q b)).coeff d
   let r : Fin d → E × ℂ → ℂ := fun i b ↦ s i b / l b
@@ -92,7 +92,7 @@ theorem exists_analyticOnNhd_eq_C_mul_prod_X_sub_C_powerSubstitution [CompleteSp
   refine ⟨r, fun i ↦ (hsa i).div hl hl0, fun b hb ↦ ?_⟩
   -- Divide the normalized roots by the leading coefficient and recover the original factors.
   have hinj : Injective (fun i ↦ r i b) := fun i j hij ↦ (hs b hb).1
-    ((div_left_inj' (hl0 b hb)).mp hij)
+    ((div_left_inj₀ (hl0 b hb)).mp hij)
   have hroot : ∀ i, (F (q b)).IsRoot (r i b) := by
     intro i
     rw [← (F (q b)).isRoot_integralNormalization_mul_iff,
@@ -122,7 +122,7 @@ vanish or coincide at `t = 0`; the original fibers there may have smaller degree
 Degree zero is included. -/
 theorem exists_analyticOnNhd_nonmonic_powerSubstitution [FiniteDimensional ℂ E]
     [SimplyConnectedSpace U]
-    (hU : IsOpen U) (hR' : 0 < R') (hn : n ≠ 0) (hR : R' ^ n ≤ R)
+    (hU : IsOpen U) (hn : n ≠ 0) (hR : R' ^ n ≤ R)
     (hdvd : d.factorial ∣ n)
     (hF : ∀ i ≤ d, AnalyticOnNhd ℂ (fun b ↦ (F b).coeff i) (U ×ˢ ball 0 R))
     (hdeg : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), (F b).natDegree = d)
@@ -144,9 +144,9 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution [FiniteDimensional ℂ E
       exact mul_ne_zero (pow_ne_zero _ hb.2.2)
         (hu0 b (prod_mono subset_rfl sdiff_subset hb))
     exact hc (by simp [hz])
-  let : CompleteSpace E := FiniteDimensional.complete ℂ E
+  let : CompleteSpace E := FiniteDimensional.completeSpace ℂ E
   obtain ⟨r, hra, hr⟩ := exists_analyticOnNhd_eq_C_mul_prod_X_sub_C_powerSubstitution
-    hU hR' hn hR hdvd (fun i hi ↦ (hF i hi).mono (prod_mono subset_rfl sdiff_subset))
+    hU hn hR hdvd (fun i hi ↦ (hF i hi).mono (prod_mono subset_rfl sdiff_subset))
     hdeg (fun b hb ↦ (discr_ne_zero_iff (hne b hb)).mp (hdiscr b hb))
   let q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ n)
   have hq : AnalyticOnNhd ℂ q (U ×ˢ ball 0 R') := fun _ _ ↦

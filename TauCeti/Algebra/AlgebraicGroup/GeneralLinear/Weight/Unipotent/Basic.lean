@@ -37,9 +37,9 @@ inverse of a block-unitriangular matrix is block unitriangular.
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-This advances the dynamic-unipotent route in Layer 7, "Structure theory", of the
-ReductiveGroups roadmap by constructing the scheme-level unipotent subgroup attached to a weight
-cocharacter.
+This is the scheme-level unipotent subgroup attached to a weight cocharacter;
+`TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Unipotent.Basic` identifies it with
+the dynamic unipotent subgroup of that cocharacter.
 -/
 
 public section

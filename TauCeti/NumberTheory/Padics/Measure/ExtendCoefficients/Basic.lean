@@ -414,6 +414,7 @@ theorem mem_range_extendCoefficients_iff (hje : Topology.IsEmbedding j)
   · obtain ⟨μ, hμ⟩ := exists_apply_comp_eq_of_norm_le_one hj hje hjr hν
     exact ⟨μ, (eq_extendCoefficients_of_apply_comp j μ hj hje.continuous hμ).symm⟩
 
+omit [T2Space X] [TotallyDisconnectedSpace X] [CompleteSpace K] in
 include hj in
 /-- If `j` is a topological embedding onto the closed unit ball of `K`, a `K`-valued measure `ν`
 has operator norm at most `1` exactly when there is a unique `O`-valued measure `μ` with
@@ -422,8 +423,40 @@ theorem existsUnique_apply_comp_eq_iff_norm_le_one (hje : Topology.IsEmbedding j
     (hjr : Metric.closedBall 0 1 ⊆ Set.range j) (ν : D(X, K)) :
     (∃! μ : D(X, O), ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) = j (μ f)) ↔
       ‖toCLMEquiv ν‖ ≤ 1 := by
-  refine ⟨fun ⟨μ, hμ, _⟩ ↦ (mem_range_extendCoefficients_iff hj hje hjr).mp
-    ⟨μ, (eq_extendCoefficients_of_apply_comp j μ hj hje.continuous hμ).symm⟩, fun hν ↦ ?_⟩
+  refine ⟨fun ⟨μ, hμ, _⟩ ↦ ?_, fun hν ↦ ?_⟩
+  · -- a test function of norm at most `1` factors through `j`, so `ν` does not increase it
+    have hunit (g : C(X, K)) (hg : ‖g‖ ≤ 1) : ‖ν g‖ ≤ 1 := by
+      have hmem (x : X) : g x ∈ Set.range j := hjr <| by
+        rw [mem_closedBall_zero_iff]
+        exact (ContinuousMap.norm_coe_le_norm g x).trans hg
+      choose h hh using hmem
+      have hcont : Continuous h := hje.continuous_iff.mpr <| by
+        have : j ∘ h = g := funext hh
+        rw [this]; exact g.continuous
+      have hg' : g = (⟨j, hje.continuous⟩ : C(O, K)).comp ⟨h, hcont⟩ := by ext x; exact (hh x).symm
+      rw [hg', hμ]
+      exact hj _
+    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun g ↦ ?_
+    rw [coe_toCLMEquiv, one_mul]
+    -- rescale by a value of `g` of maximal norm
+    rcases isEmpty_or_nonempty X with hX | hX
+    · have : g = 0 := Subsingleton.elim _ _
+      simp [this]
+    obtain ⟨t, -, ht⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty
+      (continuous_norm.comp g.continuous).continuousOn
+    have hgt : ‖g t‖ = ‖g‖ := le_antisymm (ContinuousMap.norm_coe_le_norm g t)
+      ((ContinuousMap.norm_le _ (norm_nonneg _)).2 fun x ↦ ht (Set.mem_univ x))
+    rcases eq_or_ne (g t) 0 with h0 | h0
+    · have : g = 0 := by
+        rw [← norm_eq_zero, ← hgt, h0, norm_zero]
+      simp [this]
+    have hnorm : ‖(g t)⁻¹ • g‖ ≤ 1 := by
+      rw [norm_smul, norm_inv, hgt, ← hgt]
+      exact (inv_mul_cancel₀ (norm_ne_zero_iff.2 h0)).le
+    have := hunit _ hnorm
+    rw [map_smul, smul_eq_mul, norm_mul, norm_inv] at this
+    rw [← hgt]
+    rwa [inv_mul_le_iff₀ (norm_pos_iff.2 h0), mul_one] at this
   · obtain ⟨μ, hμ⟩ := exists_apply_comp_eq_of_norm_le_one hj hje hjr hν
     exact ⟨μ, hμ, fun μ' hμ' ↦ ext fun f ↦ hje.injective ((hμ' f).symm.trans (hμ f))⟩
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
+import TauCeti.Topology.Algebra.Ring.Ideal
 import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
 
 /-!
@@ -112,10 +113,13 @@ theorem IsTopologicallyFiniteType.isClosed_ideal (hφ : IsTopologicallyFiniteTyp
 omit [IsTopologicalRing B] in
 /-- **An algebra topologically of finite type over a strongly noetherian Tate ring is Hausdorff**
 (Wedhorn, Proposition 5.58, over a field): `{0}` is closed in it, because it is the zero ideal
-(`IsTopologicallyFiniteType.isClosed_ideal`). Only the additive group of `B` need be
-topological. -/
-theorem IsTopologicallyFiniteType.t2Space [IsTopologicalAddGroup B]
-    (hφ : IsTopologicallyFiniteType φ) : T2Space B := by
+(`IsTopologicallyFiniteType.isClosed_ideal`). No compatibility of the topology of `B` with its
+ring structure is assumed: its addition is continuous, because `B` is an open quotient of a
+topological ring. -/
+theorem IsTopologicallyFiniteType.t2Space (hφ : IsTopologicallyFiniteType φ) : T2Space B := by
+  obtain ⟨k, T, -, hT, π, hπ, -⟩ := isTopologicallyFiniteType_iff.mp hφ
+  -- `B` is a topological ring, as an open quotient of one; `{0}` closed makes it `T1`, hence `T2`
+  have := hπ.isTopologicalRing
   have : T1Space B := IsTopologicalAddGroup.t1Space B (by simpa using hφ.isClosed_ideal ⊥)
   infer_instance
 

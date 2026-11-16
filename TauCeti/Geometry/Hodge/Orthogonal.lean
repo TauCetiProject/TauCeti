@@ -34,8 +34,8 @@ the compatibility of the two scalar extensions of the integral form; the reverse
 subspaces complement the substructure, the rational one by Mathlib's
 `LinearMap.BilinForm.isCompl_orthogonal_iff_disjoint` applied over `ℚ`.
 
-This is Layer L1 of `TauCetiRoadmap/HodgeStructures/README.md`, following Voisin, *Hodge Theory and
-Complex Algebraic Geometry I*, §7.1.2, and Peters–Steenbrink, *Mixed Hodge Structures*, §2.
+The treatment follows Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.1.2, and
+Peters–Steenbrink, *Mixed Hodge Structures*, §2.
 
 ## Main declarations
 
@@ -182,16 +182,9 @@ theorem rationalToComplexSubmodule_orthogonal_le :
   intro w hw
   simpa using hker hw
 
-variable [Module.Finite ℚ Vℚ]
-
-/-- **A polarization splits a rational Hodge substructure off over `ℚ`.** Stated for the
-orthogonal complement as a plain subspace; `isCompl_WQ_orthogonal_WQ` is the same statement for
-the rational Hodge substructure `orthogonal P W`, which is only available once the complement has
-been shown to be one. -/
-private theorem isCompl_orthogonal_WQ :
-    IsCompl W.WQ (LinearMap.BilinForm.orthogonal (bilinForm hℚ P.Qint) W.WQ) := by
-  refine (LinearMap.BilinForm.isCompl_orthogonal_iff_disjoint
-    (isRefl_bilinForm P)).2 ?_
+/-- A rational Hodge substructure meets its rational orthogonal complement trivially. -/
+private theorem disjoint_WQ_orthogonal_WQ :
+    Disjoint W.WQ (LinearMap.BilinForm.orthogonal (bilinForm hℚ P.Qint) W.WQ) := by
   rw [disjoint_iff]
   have hbot : rationalToComplexSubmodule hℚ hℂ (W.WQ ⊓
       LinearMap.BilinForm.orthogonal (bilinForm hℚ P.Qint) W.WQ) = ⊥ := by
@@ -201,6 +194,17 @@ private theorem isCompl_orthogonal_WQ :
     · exact (rationalToComplexSubmodule_mono hℚ hℂ inf_le_right).trans
         (rationalToComplexSubmodule_orthogonal_le P W)
   exact (rationalToComplexSubmodule_eq_bot_iff hℚ hℂ _).1 hbot
+
+variable [Module.Finite ℚ Vℚ]
+
+/-- **A polarization splits a rational Hodge substructure off over `ℚ`.** Stated for the
+orthogonal complement as a plain subspace; `isCompl_WQ_orthogonal_WQ` is the same statement for
+the rational Hodge substructure `orthogonal P W`, which is only available once the complement has
+been shown to be one. -/
+private theorem isCompl_orthogonal_WQ :
+    IsCompl W.WQ (LinearMap.BilinForm.orthogonal (bilinForm hℚ P.Qint) W.WQ) :=
+  (LinearMap.BilinForm.isCompl_orthogonal_iff_disjoint (isRefl_bilinForm P)).2
+    (disjoint_WQ_orthogonal_WQ P W)
 
 /-- The complexification of the rational orthogonal complement is a complement of the
 complexified substructure. -/
@@ -260,12 +264,13 @@ theorem isCompl_WC_orthogonal_WC : IsCompl W.WC (orthogonal P W).WC := by
   rw [orthogonal_WC, ← rationalToComplexSubmodule_orthogonal P W]
   exact isCompl_WC_rationalToComplexSubmodule_orthogonal P W
 
+omit [Module.Finite ℚ Vℚ] in
 /-- The rationalified polarizing form is nondegenerate: only zero is orthogonal to the whole
 rational space. -/
 theorem bilinForm_orthogonal_top_eq_bot :
     LinearMap.BilinForm.orthogonal (bilinForm hℚ P.Qint)
       (⊤ : Submodule ℚ Vℚ) = ⊥ := by
-  have h := (isCompl_orthogonal_WQ P (⊤ : RationalHodgeSubstructure hℚ hs)).disjoint
+  have h := disjoint_WQ_orthogonal_WQ P (⊤ : RationalHodgeSubstructure hℚ hs)
   rw [top_WQ] at h
   exact disjoint_top.1 h.symm
 

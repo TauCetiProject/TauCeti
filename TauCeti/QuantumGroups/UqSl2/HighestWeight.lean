@@ -75,7 +75,7 @@ theorem exists_eq_sign_mul_pow_of_highest_weight_vector [FiniteDimensional ℂ V
   have hcomm : (quantumInteger q (m + 1) * (q - q⁻¹)⁻¹ * (q⁻¹ ^ m * μ - q ^ m * μ⁻¹)) •
       f q ^ m • v = 0 := by
     have hf (c : ℂ) (w : V) : f q ^ m • c • w = c • f q ^ m • w := smul_comm _ _ _
-    have h := congrArg (· • v) (e_mul_f_pow hq.sub_inv_ne_zero (m + 1))
+    have h := congrArg (· • v) (e_mul_f_pow (q := q) (m + 1))
     simp only [mul_smul, hN, hev, smul_zero, add_smul, zero_add, smul_assoc,
       sub_smul, mem_weightSpace_iff.mp hv, hkInv, Nat.add_sub_cancel, Nat.cast_add,
       Nat.cast_one, smul_sub, hf] at h
@@ -104,7 +104,7 @@ variable {m : ℕ} {ε : ℤˣ}
 private theorem f_pow_smul_k_smul_sub_kInv_smul (hq : IsGenericQuantumParameter q) {r : ℕ}
     {w : V} (he : e q • w = 0) (hf : f q ^ (r + 1) • w = 0) :
     f q ^ r • (q⁻¹ ^ r • k q • w - q ^ r • kInv q • w) = 0 := by
-  have h := congrArg (· • w) (e_mul_f_pow hq.sub_inv_ne_zero (r + 1))
+  have h := congrArg (· • w) (e_mul_f_pow (q := q) (r + 1))
   simp only [mul_smul, add_smul, smul_assoc, hf, he, smul_zero, zero_add, Nat.add_sub_cancel,
     sub_smul, smul_sub] at h
   have hc : quantumInteger q ((r + 1 : ℕ) : ℤ) * (q - q⁻¹)⁻¹ ≠ 0 :=
@@ -180,8 +180,8 @@ private theorem f_pow_smul_eq_zero_of_f_pow_succ_smul_eq_zero (hq : IsGenericQua
 variable (hq : IsGenericQuantumParameter q)
 include hq
 
-/-- A generalized weight vector of weight `ε q^m` killed by `E` and by `F^r` for some `r ≤ m`
-is zero: `F^r` is injective on such vectors. -/
+/-- At a generic parameter, a generalized weight vector of weight `ε q^m` killed by `E` and by
+`F^r` for some `r ≤ m` is zero: `F^r` is injective on such vectors. -/
 theorem eq_zero_of_f_pow_smul_eq_zero {r : ℕ} (hr : r ≤ m) {w : V}
     (hw : w ∈ genWeightSpace q V (ε * q ^ m)) (he : e q • w = 0) (hf : f q ^ r • w = 0) :
     w = 0 := by

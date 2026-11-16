@@ -64,7 +64,7 @@ theorem isHomogeneous_preprojectiveRightProjective (i : Symmetrify Q) :
 
 /-- The internal grading on `e_i Π`, restricted from the actual preprojective algebra. -/
 noncomputable def preprojectiveRightProjectiveGrading (i : Symmetrify Q) :
-    InternalGrading k (preprojectiveRightProjective k i) :=
+    InternalGrading k (preprojectiveRightProjective k i) ℤ :=
   (preprojectiveInternalGrading k (Q := Q)).submodule
     ((preprojectiveRightProjective k i).restrictScalars k)
     ((InternalGrading.isHomogeneous_ofDecomposition_piece_iff _ _).2
@@ -111,7 +111,7 @@ theorem isGeneratedInDegree_preprojectiveRightProjectiveGrading (i : Symmetrify 
 
 /-- The middle Koszul term with the componentwise path grading. -/
 noncomputable def preprojectiveKoszulMiddleGrading (v : Q) :
-    InternalGrading k (preprojectiveKoszulMiddle k v) :=
+    InternalGrading k (preprojectiveKoszulMiddle k v) ℤ :=
   ((InternalGrading.directSum fun i : Symmetrify Q =>
     (InternalGrading.directSum fun _ : i ⟶ Symmetrify.of.obj v =>
       preprojectiveRightProjectiveGrading k i).map

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.FiniteMeasure
-import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 
 /-!
@@ -74,8 +73,7 @@ family the integral of a continuous function can only drop in the limit. -/
 private theorem eventually_lt_lintegral (hg : Continuous g) (h : Tendsto μs L (𝓝 μ))
     {a : ℝ≥0∞} (ha : a < ∫⁻ x, g x ∂(μ : Measure Ω)) :
     ∀ᶠ i in L, a < ∫⁻ x, g x ∂(μs i : Measure Ω) := by
-  obtain ⟨R, hR⟩ := ((tendsto_lintegral_min_atTop
-    hg.measurable.coe_nnreal_ennreal.aemeasurable).eventually (lt_mem_nhds ha)).exists
+  obtain ⟨R, hR⟩ := (tendsto_lintegral_min_atTop.eventually (lt_mem_nhds ha)).exists
   filter_upwards [(tendsto_lintegral_min hg h R).eventually (lt_mem_nhds hR)] with i hi
   exact hi.trans_le (lintegral_mono fun x ↦ min_le_left _ _)
 
@@ -121,8 +119,8 @@ theorem exists_setLIntegral_le_of_tendsto_lintegral (hg : Continuous g) (h : Ten
     ∃ R : ℝ≥0, ∀ᶠ i in L, ∫⁻ x in {x | R ≤ g x}, g x ∂(μs i : Measure Ω) ≤ ε := by
   -- Against the limit, the excess integral vanishes as the level grows. Along the family, it is
   -- the difference of the integral of `g` and of its truncation, so it converges.
-  obtain ⟨R, hR⟩ := ((tendsto_lintegral_tsub_atTop hg.measurable.coe_nnreal_ennreal.aemeasurable
-    hμ).eventually (gt_mem_nhds (ENNReal.half_pos hε.ne'))).exists
+  obtain ⟨R, hR⟩ := ((tendsto_lintegral_tsub_atTop hμ).eventually
+    (gt_mem_nhds (ENNReal.half_pos hε.ne'))).exists
   have hsub (ν : FiniteMeasure Ω) (R : ℝ≥0) :
       ∫⁻ x, g x ∂(ν : Measure Ω) - ∫⁻ x, min (g x : ℝ≥0∞) R ∂(ν : Measure Ω) =
         ∫⁻ x, (g x : ℝ≥0∞) - R ∂(ν : Measure Ω) := by

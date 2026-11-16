@@ -88,6 +88,11 @@ theorem signBasis_neg (o : Orientation R E ι) (b : Module.Basis ι R E) :
     rw [neg_neg b.orientation]
     simp [signBasis, (Module.Ray.ne_neg_self b.orientation).symm]
 
+/-- The relative basis sign squares to one in the scalar ring. -/
+theorem signBasis_cast_mul_self (o : Orientation R E ι) (b : Module.Basis ι R E) :
+    (signBasis o b : R) * signBasis o b = 1 := by
+  exact_mod_cast Int.isUnit_mul_self (signBasis o b).isUnit
+
 /-- Reversing the basis orientation reverses its relative sign. -/
 theorem signBasis_eq_neg_of_orientation_eq_neg (o : Orientation R E ι)
     (b b' : Module.Basis ι R E) (h : b'.orientation = -b.orientation) :
@@ -110,8 +115,7 @@ theorem signBasis_reindex {ι' : Type*} [Fintype ι'] [DecidableEq ι'] (o : Ori
 theorem signBasis_mul_det_mul_pos (o : Orientation R E ι)
     (b b' : Module.Basis ι R E) :
     0 < (signBasis o b : R) * b.det b' * (signBasis o b' : R) := by
-  have hsign : (signBasis o b : R) * (signBasis o b : R) = 1 := by
-    exact_mod_cast Int.isUnit_mul_self (signBasis o b).isUnit
+  have hsign := signBasis_cast_mul_self o b
   rcases lt_or_gt_of_ne (b.isUnit_det b').ne_zero with hneg | hpos
   · have h := (b.orientation_ne_iff_eq_neg b'.orientation).mp fun h ↦
       (not_lt_of_gt hneg) ((b.orientation_eq_iff_det_pos b').mp h.symm)
@@ -166,8 +170,7 @@ theorem signBasis_mul_det_div_abs (o : Orientation R E ι) (b b' : Module.Basis 
     rcases Int.units_eq_one_or u with rfl | rfl <;> norm_num
   have ha : |b.det b'| = (signBasis o b : R) * b.det b' * (signBasis o b' : R) := by
     rw [← abs_of_pos hp, abs_mul, abs_mul, hu, hu, one_mul, mul_one]
-  have hs : (signBasis o b : R) * (signBasis o b : R) = 1 := by
-    exact_mod_cast Int.isUnit_mul_self (signBasis o b).isUnit
+  have hs := signBasis_cast_mul_self o b
   rw [ha]
   field_simp [hp.ne']
   simpa only [pow_two, div_self (b.isUnit_det b').ne_zero] using hs.symm

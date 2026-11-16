@@ -55,8 +55,7 @@ swap-invariance of `formalThirdRoot` already proved in `Chord.lean`.
 ## Provenance
 
 Adapted from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at `66889eada51a`),
 `EllipticCurves/WeierstrassFormalGroup/Chord.lean` — declarations `addSeries`,
 `hasSubst_thirdRootSeries`, `constantCoeff_addSeries`, `rename_swap_addSeries` and
 `map_addSeries`.

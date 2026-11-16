@@ -70,18 +70,16 @@ section Split
 private def Splits {X : C} (e : X ⟶ X) : Prop :=
   ∃ (Y : C) (i : Y ⟶ X) (r : X ⟶ Y), i ≫ r = 𝟙 Y ∧ r ≫ i = e
 
-/-- **The splitting step.** Let `X = P ⊞ X'` be a biproduct decomposition, given by `i₀, r₀, j, s`,
-in which every idempotent of `X'` splits. If an idempotent `g` of `X` kills a map `α : P ⟶ X` whose
+/-- **The splitting step.** Suppose `r₀ ≫ i₀ + s ≫ j = 𝟙 X` and every idempotent of `X'`
+splits. If an idempotent `g` of `X` kills a map `α : P ⟶ X` whose
 composite with the projection to `P` is invertible, then `g` splits. -/
 private theorem splits_of_comp_eq_zero {X P X' : C} {i₀ : P ⟶ X} {r₀ : X ⟶ P} {j : X' ⟶ X}
-    {s : X ⟶ X'} (hj : j ≫ s = 𝟙 X') (hjr : j ≫ r₀ = 0)
+    {s : X ⟶ X'}
     (htot : r₀ ≫ i₀ + s ≫ j = 𝟙 X) (hX' : ∀ d : X' ⟶ X', d ≫ d = d → Splits d)
     {α : P ⟶ X} [IsIso (α ≫ r₀)] {g : X ⟶ X} (hg : g ≫ g = g) (hαg : α ≫ g = 0) :
     Splits g := by
   -- A new projection `s'` onto `X'`, vanishing on `α`, gives the decomposition `X = α(P) ⊞ X'`.
   set s' := s - r₀ ≫ inv (α ≫ r₀) ≫ α ≫ s with hs'
-  have hjs' : j ≫ s' = 𝟙 X' := by
-    rw [hs', Preadditive.comp_sub, hj, reassoc_of% hjr, zero_comp, sub_zero]
   have htot' : r₀ ≫ inv (α ≫ r₀) ≫ α + s' ≫ j = 𝟙 X := by
     have h : 𝟙 X - s ≫ j = r₀ ≫ i₀ := by rw [← htot]; abel
     have h' : r₀ ≫ inv (α ≫ r₀) ≫ α ≫ r₀ ≫ i₀ = r₀ ≫ i₀ := by
@@ -96,7 +94,7 @@ private theorem splits_of_comp_eq_zero {X P X' : C} {i₀ : P ⟶ X} {r₀ : X �
   have hg' : g = s' ≫ j ≫ g := by
     conv_lhs => rw [← Category.id_comp g, ← htot']
     simp only [Preadditive.add_comp, Category.assoc, hαg, comp_zero, zero_add]
-  set h := j ≫ g with hhdef
+  set h := j ≫ g
   have hh : h ≫ s' ≫ h = h := by
     calc (j ≫ g) ≫ s' ≫ (j ≫ g) = j ≫ (g ≫ (s' ≫ j ≫ g)) := by simp only [Category.assoc]
       _ = j ≫ g := by rw [← hg', hg]
@@ -110,8 +108,8 @@ private theorem splits_of_comp_eq_zero {X P X' : C} {i₀ : P ⟶ X} {r₀ : X �
 /-- **Peeling off a summand with local endomorphism ring.** Let `X = P ⊞ X'` with `End P` local, and
 suppose every idempotent of `X'` splits. Then every idempotent of `X` splits. -/
 private theorem splits_of_isLocalRing [HasBinaryBiproducts C] {X P X' : C} {i₀ : P ⟶ X}
-    {r₀ : X ⟶ P} {j : X' ⟶ X} {s : X ⟶ X'} (hi₀ : i₀ ≫ r₀ = 𝟙 P) (hj : j ≫ s = 𝟙 X')
-    (hjr : j ≫ r₀ = 0) (htot : r₀ ≫ i₀ + s ≫ j = 𝟙 X) [IsLocalRing (End P)]
+    {r₀ : X ⟶ P} {j : X' ⟶ X} {s : X ⟶ X'} (hi₀ : i₀ ≫ r₀ = 𝟙 P)
+    (htot : r₀ ≫ i₀ + s ≫ j = 𝟙 X) [IsLocalRing (End P)]
     (hX' : ∀ d : X' ⟶ X', d ≫ d = d → Splits d) {e : X ⟶ X} (he : e ≫ e = e) : Splits e := by
   rcases IsLocalRing.isUnit_or_isUnit_one_sub_self (End.of (i₀ ≫ e ≫ r₀)) with hc | hc
   · -- `P` is a summand of the image of `e`, split off by `q = β ≫ α`.
@@ -130,7 +128,7 @@ private theorem splits_of_isLocalRing [HasBinaryBiproducts C] {X P X' : C} {i₀
       simp only [Preadditive.sub_comp, Preadditive.comp_sub, he, Category.assoc, hαe,
         reassoc_of% heβ, reassoc_of% hαβ]
       abel
-    have hsplit := splits_of_comp_eq_zero hj hjr htot hX' hg (α := α)
+    have hsplit := splits_of_comp_eq_zero htot hX' hg (α := α)
       (by simp only [Preadditive.comp_sub, hαe, reassoc_of% hαβ, sub_self])
     simpa [Splits] using exists_split_add_of_comp_eq_zero hq hsplit
       (by simp only [Preadditive.comp_sub, Category.assoc, hαe, reassoc_of% hαβ, sub_self])
@@ -142,7 +140,7 @@ private theorem splits_of_isLocalRing [HasBinaryBiproducts C] {X P X' : C} {i₀
       convert hc using 1
       ext
       simp [hi₀]
-    exact splits_of_comp_eq_zero hj hjr htot hX' he (α := i₀ ≫ (𝟙 X - e)) (by simp [he])
+    exact splits_of_comp_eq_zero htot hX' he (α := i₀ ≫ (𝟙 X - e)) (by simp [he])
 
 variable [HasFiniteBiproducts C]
 
@@ -167,8 +165,7 @@ private theorem splits_of_biproduct (n : ℕ) : ∀ {ι : Type} [Fintype ι]
     let p : ι → Prop := (· ≠ i₀)
     refine splits_of_isLocalRing (i₀ := biproduct.ι P i₀) (r₀ := biproduct.π P i₀)
       (j := biproduct.fromSubtype P p) (s := biproduct.toSubtype P p) (by simp)
-      (biproduct.fromSubtype_toSubtype P p) ?_ ?_ (fun d hd ↦ ?_) he
-    · ext; simp [biproduct.fromSubtype_π, p]
+      ?_ (fun d hd ↦ ?_) he
     · ext a b
       by_cases hab : b = a
       · subst hab

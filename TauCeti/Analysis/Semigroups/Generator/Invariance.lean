@@ -80,23 +80,24 @@ theorem generator_map (S : StronglyContinuousSemigroup X) (s : ℝ≥0) (x : S.d
   exact S.tendsto_genQuot_apply s (S.generator_tendsto x)
 
 omit [CompleteSpace X] in
-/-- Real-time form of domain invariance at nonnegative times. -/
-theorem realOperator_mem_domain (S : StronglyContinuousSemigroup X) {s : ℝ} (hs : 0 ≤ s)
+/-- Real-time form of domain invariance. At negative times the real-time operator is the
+identity. -/
+theorem realOperator_mem_domain (S : StronglyContinuousSemigroup X) {s : ℝ}
     {x : X} (hx : x ∈ S.domain) :
     S.realOperator s x ∈ S.domain := by
-  rw [← Real.coe_toNNReal s hs, S.realOperator_coe]
+  rw [S.realOperator_def]
   exact S.map_mem_domain s.toNNReal hx
 
 omit [CompleteSpace X] in
-/-- Real-time form of generator commutation at nonnegative times. -/
-theorem realOperator_generator_map (S : StronglyContinuousSemigroup X) {s : ℝ} (hs : 0 ≤ s)
+/-- Real-time form of generator commutation. At negative times the real-time operator is the
+identity. -/
+theorem realOperator_generator_map (S : StronglyContinuousSemigroup X) {s : ℝ}
     (x : S.domain) :
     S.generator ⟨S.realOperator s x, by
       rw [S.generator_domain]
-      exact S.realOperator_mem_domain hs x.property⟩ =
+      exact S.realOperator_mem_domain x.property⟩ =
       S.realOperator s (S.generator ⟨x, by rw [S.generator_domain]; exact x.property⟩) := by
-  have hop : S.realOperator s = S s.toNNReal := by
-    rw [← S.realOperator_coe, Real.coe_toNNReal s hs]
+  have hop : S.realOperator s = S s.toNNReal := S.realOperator_def s
   calc
     _ = S.generator ⟨S s.toNNReal x, by
         rw [S.generator_domain]

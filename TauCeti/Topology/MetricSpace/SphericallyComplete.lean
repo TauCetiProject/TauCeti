@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Field.Power
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.Order.MonotoneConvergence
 public import Mathlib.Topology.MetricSpace.Cauchy
@@ -74,7 +75,7 @@ of `A n` is within `r n` of some point of `A (n + 1)`. If the radii decrease and
 nonempty, the sets `A n` have a common point. -/
 theorem SphericallyCompleteSpace.exists_forall_mem_of_dist_le {X ι : Type*} [PseudoMetricSpace X]
     [IsUltrametricDist X] [SphericallyCompleteSpace X] {A : ℕ → Set (ι → X)} {r : ℕ → ℝ}
-    (hr : Antitone r) (hr0 : ∀ n, 0 ≤ r n) (h0 : (A 0).Nonempty)
+    (hr : Antitone r) (h0 : (A 0).Nonempty)
     (hstep : ∀ n, ∀ c ∈ A n, ∃ c' ∈ A (n + 1), ∀ i, dist (c' i) (c i) ≤ r n)
     (hball : ∀ n, ∀ c ∈ A n, ∀ t : ι → X, (∀ i, dist (t i) (c i) ≤ r n) → t ∈ A n) :
     ∃ t : ι → X, ∀ n, t ∈ A n := by
@@ -86,6 +87,9 @@ theorem SphericallyCompleteSpace.exists_forall_mem_of_dist_le {X ι : Type*} [Ps
     induction n with
     | zero => exact hc₀
     | succ n ih => exact hgA n (c n) ih
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
+  · exact ⟨c 0, fun n ↦ by rw [Subsingleton.elim (c 0) (c n)]; exact hcA n⟩
+  have hr0 (n : ℕ) : 0 ≤ r n := (dist_nonneg).trans (hg n (c n) (hcA n) i₀)
   have hball' (i : ι) : (⋂ n, closedBall (c n i) (r n)).Nonempty := by
     refine SphericallyCompleteSpace.nonempty_iInter_closedBall hr0
       (antitone_nat_of_succ_le fun n ↦ ?_)
@@ -96,11 +100,32 @@ theorem SphericallyCompleteSpace.exists_forall_mem_of_dist_le {X ι : Type*} [Ps
   exact ⟨t, fun n ↦ hball n (c n) (hcA n) t fun i ↦ Set.mem_iInter.1 (ht i) n⟩
 
 /-- A complete ultrapseudometric space whose nonzero distances are integer powers of a fixed
-real number greater than one is spherically complete. No local compactness is required. -/
+real number is spherically complete. No local compactness is required. -/
 theorem sphericallyCompleteSpace_of_dist_eq_zpow {X : Type*} [PseudoMetricSpace X]
-    [IsUltrametricDist X] [CompleteSpace X] {b : ℝ} (hb : 1 < b)
+    [IsUltrametricDist X] [CompleteSpace X] {b : ℝ}
     (hdiscrete : ∀ x y : X, dist x y ≠ 0 → ∃ k : ℤ, dist x y = b ^ k) :
     SphericallyCompleteSpace X := by
+  obtain ⟨b, hb, hdiscrete⟩ :
+      ∃ b : ℝ, 1 < b ∧ ∀ x y : X, dist x y ≠ 0 → ∃ k : ℤ, dist x y = b ^ k := by
+    have habs (x y : X) (h : dist x y ≠ 0) : ∃ k : ℤ, dist x y = |b| ^ k := by
+      obtain ⟨k, hk⟩ := hdiscrete x y h
+      exact ⟨k, by rw [← abs_zpow, ← hk, abs_of_nonneg dist_nonneg]⟩
+    rcases lt_trichotomy |b| 1 with h | h | h
+    · rcases (abs_nonneg b).eq_or_lt with h0 | h0
+      · refine ⟨2, one_lt_two, fun x y hxy ↦ ?_⟩
+        obtain ⟨k, hk⟩ := habs x y hxy
+        rw [← h0] at hk
+        obtain rfl : k = 0 := by
+          by_contra hk0
+          exact hxy (hk.trans (zero_zpow _ hk0))
+        exact ⟨0, by simpa using hk⟩
+      · refine ⟨|b|⁻¹, one_lt_inv₀ h0 |>.2 h, fun x y hxy ↦ ?_⟩
+        obtain ⟨k, hk⟩ := habs x y hxy
+        exact ⟨-k, by rw [hk, zpow_neg, inv_zpow, inv_inv]⟩
+    · refine ⟨2, one_lt_two, fun x y hxy ↦ ?_⟩
+      obtain ⟨k, hk⟩ := habs x y hxy
+      exact ⟨0, by simpa [h] using hk⟩
+    · exact ⟨|b|, h, habs⟩
   refine ⟨fun {c r} hr hballs ↦ ?_⟩
   -- Replace the radii by their running minima without changing the intersection.
   let s : ℕ → ℝ := fun n ↦ (Finset.range (n + 1)).inf' (by simp) r

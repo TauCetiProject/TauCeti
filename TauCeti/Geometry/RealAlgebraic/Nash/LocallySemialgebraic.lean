@@ -331,6 +331,6 @@ theorem semialgebraicAt_iff_exists_isNashBooleanCombination {s : Set (σ → ℝ
     filter_upwards [hU] with y hy
     have := Set.ext_iff.mp hst y
     simp only [mem_inter_iff, hy, and_true] at this
-    exact propext this.symm
+    exact this.symm
 
 end TauCeti

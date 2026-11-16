@@ -17,8 +17,8 @@ For a sequence of chosen square roots `root : ℕ → L` over a base field `K`, 
 element `y` whose square is `r : K` lies in `sqrtTower root n`, then `r` is a square times
 a subset product of the corresponding radicands. The descent is proved for the roots indexed
 by an arbitrary finite set, and specialized to the tower and to a finite index type. The
-rational-real specialization only
-requires the nonnegativity hypotheses needed for `Real.sqrt` to supply the chosen roots.
+rational-real specialization only requires `0 ≤ r`, with no sign hypothesis on the radicands
+`c j`, since `Real.sqrt` sends negative inputs to `0`.
 
 This is the engine behind the degree computation
 `[K(√d₀, …, √dₙ₋₁) : K] = 2ⁿ` for square-class-independent radicands, and hence behind
@@ -199,14 +199,22 @@ theorem squareClass_of_sq_mem_fintype {ι : Type*} [Finite ι] (d : ι → K) (r
   exact ⟨T, s, hs⟩
 
 /-- **Square-class descent for real rational square roots.** If `r` is a nonnegative
-rational with `√r ∈ ℚ(√c₀, …, √cₙ₋₁)` and every `c j` with `j < n` is nonnegative, then
-`r` is a rational square times a subset product of the `c j`. -/
-theorem squareClass_of_sqrt_mem (c : ℕ → ℚ) {n : ℕ} (hc : ∀ j < n, 0 ≤ c j) {r : ℚ} (hr : 0 ≤ r)
+rational with `√r ∈ ℚ(√c₀, …, √cₙ₋₁)`, then `r` is a rational square times a subset product of the
+`c j` with `j < n`. No sign hypothesis on the `c j` is needed: `Real.sqrt` sends a negative `c j`
+to `0`, whereas `0 ≤ r` is needed so that `(√r)² = r`. -/
+theorem squareClass_of_sqrt_mem (c : ℕ → ℚ) {n : ℕ} {r : ℚ} (hr : 0 ≤ r)
     (hmem : (Real.sqrt r : ℝ) ∈ sqrtTower (K := ℚ) (fun j => Real.sqrt (c j)) n) :
-    ∃ (T : Finset ℕ) (s : ℚ), ↑T ⊆ Set.Iio n ∧ r = s ^ 2 * ∏ j ∈ T, c j :=
-  squareClass_of_sq_mem c _
-    (fun j hj => by simpa using Real.sq_sqrt (Rat.cast_nonneg.mpr (hc j hj)))
+    ∃ (T : Finset ℕ) (s : ℚ), ↑T ⊆ Set.Iio n ∧ r = s ^ 2 * ∏ j ∈ T, c j := by
+  obtain ⟨T, s, hT, hs⟩ := squareClass_of_sq_mem (fun j => max (c j) 0) (fun j => Real.sqrt (c j))
+    (fun j _ => by simpa using Real.sq_sqrt' (x := (c j : ℝ)))
     (by simpa using Real.sq_sqrt (Rat.cast_nonneg.mpr hr)) hmem
+  by_cases hT0 : ∀ j ∈ T, 0 ≤ c j
+  · exact ⟨T, s, hT, by rw [hs]; exact congrArg _ (Finset.prod_congr rfl fun j hj =>
+      max_eq_left (hT0 j hj))⟩
+  · obtain ⟨j, hjT, hj⟩ := not_forall₂.mp hT0
+    have hprod : ∏ i ∈ T, max (c i) 0 = 0 :=
+      Finset.prod_eq_zero hjT (max_eq_right (not_le.mp hj).le)
+    exact ⟨T, 0, hT, by simp [hs, hprod]⟩
 
 /-- The real square root of a nonnegative integer squares back to its rational value, in the form
 `(√n)² = algebraMap ℚ ℝ n`. This supplies the `hroot` hypothesis of the degree theorem for the real

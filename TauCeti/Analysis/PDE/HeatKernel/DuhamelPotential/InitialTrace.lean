@@ -87,7 +87,7 @@ theorem norm_heatDuhamelPotential_sub_smul_le
           L * t ^ ((α : ℝ) / 2) := by
         gcongr <;> linarith [hs.1, hs.2]
       _ = (H * heatKernelMoment E α + L) * t ^ ((α : ℝ) / 2) := by ring
-  have hconst : t • f 0 x = ∫ s in 0..t, f 0 x := by simp
+  have hconst : t • f 0 x = ∫ _ in 0..t, f 0 x := by simp
   rw [heatDuhamelPotential_def, hconst,
     ← intervalIntegral.integral_sub hi intervalIntegrable_const]
   refine (intervalIntegral.norm_integral_le_of_norm_le
