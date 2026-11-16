@@ -247,15 +247,23 @@ variable {B : Type w} [TopologicalSpace B]
 
 open MonoidalCategory CartesianMonoidalCategory
 
+/-- The punctured product `B × (F ∖ {0})` is `B × (F ∖ {0})` as a product of spaces. -/
+private def prodThomPairPuncturedHomeomorphProd :
+    (prodThomPair B F).snd ≃ₜ B × ({0}ᶜ : Set F) where
+  toFun p := (p.1.1, ⟨p.1.2, p.2⟩)
+  invFun q := ⟨(q.1, q.2), q.2.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := (continuous_subtype_val.fst).prodMk
+    (continuous_subtype_val.snd.subtype_mk _)
+  continuous_invFun :=
+    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)).subtype_mk _
+
 /-- In the coordinates `e`, the punctured product `B × (F ∖ {0})` is `B × (ℝᵈ⁺¹ ∖ {0})`. -/
 private def prodThomPairPuncturedHomeomorph (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1))) :
-    (prodThomPair B F).snd ≃ₜ B × ({0}ᶜ : Set (EuclideanSpace ℝ (Fin (d + 1)))) where
-  toFun p := (p.1.1, ⟨e p.1.2, by simpa using p.2⟩)
-  invFun q := ⟨(q.1, e.symm q.2), fun h ↦ q.2.2 (by simpa using congrArg e h)⟩
-  left_inv p := Subtype.ext (by simp)
-  right_inv q := Prod.ext rfl (Subtype.ext (by simp))
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
+    (prodThomPair B F).snd ≃ₜ B × ({0}ᶜ : Set (EuclideanSpace ℝ (Fin (d + 1)))) :=
+  prodThomPairPuncturedHomeomorphProd.trans
+    ((Homeomorph.refl B).prodCongr (e.toHomeomorph.subtype fun x ↦ by simp))
 
 variable (B) in
 /-- `B × (E ∖ {0})` is homotopy equivalent to `S × B`, for `S` the unit sphere of a real normed
@@ -309,18 +317,6 @@ end Punctured
 section PuncturedSphere
 
 variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- The punctured product `B × (F ∖ {0})` is `B × (F ∖ {0})` as a product of spaces. -/
-private def prodThomPairPuncturedHomeomorphProd :
-    (prodThomPair B F).snd ≃ₜ B × ({0}ᶜ : Set F) where
-  toFun p := (p.1.1, ⟨p.1.2, p.2⟩)
-  invFun q := ⟨(q.1, q.2), q.2.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  continuous_toFun := (continuous_subtype_val.fst).prodMk
-    (continuous_subtype_val.snd.subtype_mk _)
-  continuous_invFun :=
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)).subtype_mk _
 
 variable (B F) in
 /-- **The punctured product bundle is homotopy equivalent to a product with the unit sphere**:

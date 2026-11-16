@@ -235,12 +235,10 @@ private theorem injective_singularCohomologyMap_prodThomPairPuncturedProj
       (M := M) (prodThomPairPuncturedProj B F) m) := by
   let v : F := e.symm (EuclideanSpace.single 0 1)
   have hv : v ≠ 0 := by simp [v]
-  let s : TopCat.of B ⟶ (prodThomPair B F).snd :=
-    TopCat.ofHom ⟨fun b ↦ ⟨(b, v), hv⟩, by fun_prop⟩
-  have hs : s ≫ prodThomPairPuncturedProj B F = 𝟙 _ :=
-    TopCat.ext fun b ↦ prodThomPairPuncturedProj_apply F (s b)
-  refine Function.LeftInverse.injective (g := TopCat.singularCohomologyMap s m) fun b ↦ ?_
-  rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hs,
+  refine Function.LeftInverse.injective
+    (g := TopCat.singularCohomologyMap (prodThomPairPuncturedSection B v hv) m) fun b ↦ ?_
+  rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp,
+    prodThomPairPuncturedSection_comp_prodThomPairPuncturedProj,
     TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
 
 /-- The classes `π^* b` of the decomposition `TauCeti.prodThomPairPuncturedSingularCohomologyEquiv`
