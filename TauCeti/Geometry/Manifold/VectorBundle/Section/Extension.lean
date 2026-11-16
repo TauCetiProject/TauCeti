@@ -83,8 +83,7 @@ theorem eventually_contMDiffExtend_eq_extend [∀ x, MulAction ℝ (V x)] {x : M
   filter_upwards [ρ.eventuallyEq_one] with y hy
   simp [hρ, hy]
 
-/-- `FiberBundle.contMDiffExtend I F` is injective: the section through `v` takes the value `v` at
-the base point of `v`. -/
+/-- `FiberBundle.contMDiffExtend I F` is injective on each fibre `V x`. -/
 theorem contMDiffExtend_injective [∀ x, MulAction ℝ (V x)] {x : M} :
     Function.Injective (contMDiffExtend I F : V x → Π y : M, V y) := fun v w h ↦ by
   simpa using congr_fun h x
@@ -130,8 +129,7 @@ section Linear
 
 variable (V) in
 /-- At each point `y`, `FiberBundle.contMDiffExtend I F v y` is a continuous `ℝ`-linear function
-of `v`: off the base set of the trivialization at the base point the cut-off vanishes, and on it
-`FiberBundle.extend` is the continuous linear inverse of the trivialization. -/
+of `v`. -/
 private theorem exists_continuousLinearMap_contMDiffExtend_apply (x y : M) :
     ∃ L : V x →L[ℝ] V y, ∀ v, contMDiffExtend I F v y = L v := by
   obtain ⟨ρ, hρs, hρ⟩ := exists_contMDiffExtend_eq_smul I F V x
