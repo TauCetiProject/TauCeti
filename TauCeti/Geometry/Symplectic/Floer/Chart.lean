@@ -33,13 +33,20 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   trivialization `trivializationAt E (TangentSpace I) α`). The structure in the chart squares to
   `-1` on the chart target (`TauCeti.Floer.almostComplexInChartAt_apply_apply`). For a jointly
   `Cⁿ` family it is the coordinate expression `ContMDiffAlmostComplexStructureFamily.inChart`
-  (`TauCeti.Floer.almostComplexInChartAt_eq_inChart`), which is `Cⁿ` on the chart target.
+  (`TauCeti.Floer.almostComplexInChartAt_eq_inChart`), which is `Cⁿ` on the chart target. More
+  generally, jointly continuous or `Cⁿ` parametrized families of almost complex structures or
+  Hamiltonian vector fields have jointly continuous or `Cⁿ` chart expressions
+  (`TauCeti.Floer.continuousOn_almostComplexInChartAt`,
+  `TauCeti.Floer.contDiffOn_almostComplexInChartAt`,
+  `TauCeti.SmoothTwoForm.continuousOn_hamiltonianVectorFieldInChartAt`,
+  `TauCeti.SmoothTwoForm.contDiffOn_hamiltonianVectorFieldInChartAt`).
 * For a map `u` into the chart source, with coordinate expression `v = extChartAt I α ∘ u`, the
   perturbed derivative `du - X_K` in tangent coordinates is `dv` minus the Hamiltonian vector
   fields in the chart (`TauCeti.SmoothTwoForm.continuousLinearMapAt_perturbedMFDeriv_apply`).
-  So if `u` solves the Floer equation, `v` solves `∂ₜv - X_{K_t} = J (∂ₛv - X_{K_s})` with the
-  data read in the chart
-  (`TauCeti.SmoothTwoForm.fderiv_extChartAt_comp_stdComplexLineImag_sub`).
+  Thus `u` solves the Floer equation if and only if `v` solves
+  `∂ₜv - X_{K_t} = J (∂ₛv - X_{K_s})` with the data read in the chart
+  (`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp`,
+  forward implication `TauCeti.SmoothTwoForm.fderiv_extChartAt_comp_stdComplexLineImag_sub`).
 
 Compactness of solutions with values in one chart, of either kind, is
 `TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`.
@@ -164,6 +171,88 @@ theorem almostComplexInChartAt_eq_inChart {n : ℕ∞}
   -- The two sides apply the same endomorphism, once through its underlying linear map.
   rfl
 
+/-- **Chart continuity of a parametrized family of almost complex structures.** If `J` is jointly
+continuous on a set `W ⊆ P × ((ℝ × ℝ) × M)` as a map into the tangent endomorphism bundle for a
+topological parameter space `P`, then its coordinate expression in the chart at `α` is jointly
+continuous on the preimage of `W` in `P × ((ℝ × ℝ) × (extChartAt I α).target)`. -/
+theorem continuousOn_almostComplexInChartAt {P : Type*} [TopologicalSpace P] (α : M)
+    {J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    {W : Set (P × ((ℝ × ℝ) × M))}
+    (hJ : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
+      (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2.2
+      (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap) W) :
+    ContinuousOn (fun q : P × ((ℝ × ℝ) × E) ↦ almostComplexInChartAt I α (J q.1) q.2)
+      {q | q.2.2 ∈ (extChartAt I α).target ∧ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)) ∈ W} := by
+  let e := trivializationAt E (TangentSpace I) α
+  let eh := trivializationAt (E →L[ℝ] E)
+    (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) α
+  have hG : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦
+      inCoordinates E (TangentSpace I) E (TangentSpace I) α q.2.2 α q.2.2
+        (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap)
+      (W ∩ {q | q.2.2 ∈ e.baseSet}) :=
+    continuous_snd.comp_continuousOn (eh.continuousOn_toFun.comp (hJ.mono inter_subset_left)
+      fun _ hq ↦ eh.mem_source.2 ⟨hq.2, hq.2⟩)
+  let ψ : P × ((ℝ × ℝ) × E) → P × ((ℝ × ℝ) × M) :=
+    fun q ↦ (q.1, (q.2.1, (extChartAt I α).symm q.2.2))
+  have hψ : ContinuousOn ψ {q | q.2.2 ∈ (extChartAt I α).target ∧ ψ q ∈ W} :=
+    continuousOn_fst.prodMk ((continuous_fst.comp continuous_snd).continuousOn.prodMk
+      ((continuousOn_extChartAt_symm α).comp (continuous_snd.comp continuous_snd).continuousOn
+        fun _ hq ↦ hq.1))
+  exact hG.comp hψ fun _ hq ↦
+    ⟨hq.2, TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hq.1⟩
+
+/-- **Chart regularity of a parametrized family of almost complex structures.** If `J` is jointly
+`Cⁿ` on a set `W ⊆ P × ((ℝ × ℝ) × M)` as a map into the tangent endomorphism bundle, then its
+coordinate expression in the chart at `α` is jointly `Cⁿ` on the preimage of `W` in
+`P × ((ℝ × ℝ) × (extChartAt I α).target)`. -/
+theorem contDiffOn_almostComplexInChartAt {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {n : WithTop ℕ∞} (hn : n ≤ (⊤ : ℕ∞)) (α : M)
+    {J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    {W : Set (P × ((ℝ × ℝ) × M))}
+    (hJ : ContMDiffOn (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun q : P × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2.2
+        (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap) W) :
+    ContDiffOn ℝ n (fun q : P × ((ℝ × ℝ) × E) ↦ almostComplexInChartAt I α (J q.1) q.2)
+      {q | q.2.2 ∈ (extChartAt I α).target ∧ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)) ∈ W} := by
+  have : ContMDiffVectorBundle n (E →L[ℝ] E)
+      (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) I :=
+    ContMDiffVectorBundle.of_le (B := M) (n := (⊤ : ℕ∞)) hn
+  let e := trivializationAt E (TangentSpace I) α
+  let eh := trivializationAt (E →L[ℝ] E)
+    (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) α
+  have hG : ContMDiffOn (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, E →L[ℝ] E) n
+      (fun q : P × ((ℝ × ℝ) × M) ↦
+        inCoordinates E (TangentSpace I) E (TangentSpace I) α q.2.2 α q.2.2
+          (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap)
+      (W ∩ {q | q.2.2 ∈ e.baseSet}) := by
+    have h := (eh.contMDiffOn_iff (IM := 𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) (n := n)
+      (f := fun q : P × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2.2
+        (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap)
+      (s := W ∩ {q | q.2.2 ∈ e.baseSet})
+      (fun q hq ↦ eh.mem_source.2 ⟨hq.2, hq.2⟩)).1 (hJ.mono inter_subset_left)
+    exact h.2
+  set ψ : P × ((ℝ × ℝ) × E) → P × ((ℝ × ℝ) × M) :=
+    fun q ↦ (q.1, (q.2.1, (extChartAt I α).symm q.2.2))
+  have hψeq : (extChartAt (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I))
+      ((0 : P), ((0 : ℝ × ℝ), α))).symm = ψ := by
+    funext q
+    rw [extChartAt_prod_symm_apply, extChartAt_prod_symm_apply]
+    simp [ψ]
+  have hψ : ContMDiffOn 𝓘(ℝ, P × ((ℝ × ℝ) × E)) (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) n ψ
+      {q | q.2.2 ∈ (extChartAt I α).target ∧ ψ q ∈ W} := by
+    rw [← hψeq]
+    refine ((contMDiffOn_extChartAt_symm (I := 𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I))
+      ((0 : P), ((0 : ℝ × ℝ), α))).of_le hn).mono fun q hq ↦ ?_
+    simp only [extChartAt_prod_target, extChartAt_model_space_eq_id, PartialEquiv.refl_target,
+      mem_prod, mem_univ, true_and]
+    exact hq.1
+  have hmaps : MapsTo ψ {q | q.2.2 ∈ (extChartAt I α).target ∧ ψ q ∈ W}
+      (W ∩ {q | q.2.2 ∈ e.baseSet}) := fun q hq ↦
+    ⟨hq.2, TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hq.1⟩
+  exact contMDiffOn_iff_contDiffOn.1 (hG.comp hψ hmaps)
+
 end Floer
 
 namespace SmoothTwoForm
@@ -189,6 +278,80 @@ theorem hamiltonianVectorFieldInChartAt_apply (ω : SmoothTwoForm I M) (α : M)
   (rfl)
 
 omit [FiniteDimensional ℝ E] in
+/-- **Chart continuity of a parametrized family of Hamiltonian vector fields.** If the Hamiltonian
+vector fields of `K` form a jointly continuous map into `TangentBundle I M` on
+`W ⊆ P × ((ℝ × ℝ) × M)` for a topological parameter space `P`, then their coordinate expressions in
+the chart at `α` are jointly continuous on the preimage of `W` in
+`P × ((ℝ × ℝ) × (extChartAt I α).target)`. -/
+theorem continuousOn_hamiltonianVectorFieldInChartAt {P : Type*} [TopologicalSpace P]
+    (ω : SmoothTwoForm I M) (α : M) {K : P → ℝ × ℝ → M → ℝ} {W : Set (P × ((ℝ × ℝ) × M))}
+    (hX : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦
+      (⟨q.2.2, ω.hamiltonianVectorField (K q.1 q.2.1) q.2.2⟩ : TangentBundle I M)) W) :
+    ContinuousOn (fun q : P × ((ℝ × ℝ) × E) ↦ ω.hamiltonianVectorFieldInChartAt α (K q.1) q.2)
+      {q | q.2.2 ∈ (extChartAt I α).target ∧ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)) ∈ W} := by
+  let e := trivializationAt E (TangentSpace I) α
+  have hG : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦
+      e.continuousLinearMapAt ℝ q.2.2 (ω.hamiltonianVectorField (K q.1 q.2.1) q.2.2))
+      (W ∩ {q | q.2.2 ∈ e.baseSet}) :=
+    (continuous_snd.comp_continuousOn (e.continuousOn_toFun.comp (hX.mono inter_subset_left)
+      fun _ hq ↦ e.mem_source.2 hq.2)).congr fun _ hq ↦
+        e.continuousLinearMapAt_apply_of_mem (R := ℝ) hq.2 _
+  let ψ : P × ((ℝ × ℝ) × E) → P × ((ℝ × ℝ) × M) :=
+    fun q ↦ (q.1, (q.2.1, (extChartAt I α).symm q.2.2))
+  have hψ : ContinuousOn ψ {q | q.2.2 ∈ (extChartAt I α).target ∧ ψ q ∈ W} :=
+    continuousOn_fst.prodMk ((continuous_fst.comp continuous_snd).continuousOn.prodMk
+      ((continuousOn_extChartAt_symm α).comp (continuous_snd.comp continuous_snd).continuousOn
+        fun _ hq ↦ hq.1))
+  exact hG.comp hψ fun _ hq ↦
+    ⟨hq.2, TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hq.1⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- **Chart regularity of a parametrized family of Hamiltonian vector fields.** If the Hamiltonian
+vector fields of `K` form a jointly `Cⁿ` map into `TangentBundle I M` on `W ⊆ P × ((ℝ × ℝ) × M)`,
+then their coordinate expressions in the chart at `α` are jointly `Cⁿ` on the preimage of `W` in
+`P × ((ℝ × ℝ) × (extChartAt I α).target)`. -/
+theorem contDiffOn_hamiltonianVectorFieldInChartAt {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {n : WithTop ℕ∞} (hn : n ≤ (⊤ : ℕ∞)) (ω : SmoothTwoForm I M) (α : M)
+    {K : P → ℝ × ℝ → M → ℝ} {W : Set (P × ((ℝ × ℝ) × M))}
+    (hX : ContMDiffOn (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) I.tangent n
+      (fun q : P × ((ℝ × ℝ) × M) ↦
+        (⟨q.2.2, ω.hamiltonianVectorField (K q.1 q.2.1) q.2.2⟩ : TangentBundle I M)) W) :
+    ContDiffOn ℝ n (fun q : P × ((ℝ × ℝ) × E) ↦ ω.hamiltonianVectorFieldInChartAt α (K q.1) q.2)
+      {q | q.2.2 ∈ (extChartAt I α).target ∧ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)) ∈ W} := by
+  have : ContMDiffVectorBundle n E (TangentSpace I) I :=
+    ContMDiffVectorBundle.of_le (B := M) (n := (⊤ : ℕ∞)) hn
+  let e := trivializationAt E (TangentSpace I) α
+  have hG : ContMDiffOn (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, E) n
+      (fun q : P × ((ℝ × ℝ) × M) ↦
+        e.continuousLinearMapAt ℝ q.2.2 (ω.hamiltonianVectorField (K q.1 q.2.1) q.2.2))
+      (W ∩ {q | q.2.2 ∈ e.baseSet}) := by
+    have h := (e.contMDiffOn_iff (IM := 𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) (n := n)
+      (f := fun q : P × ((ℝ × ℝ) × M) ↦
+        (⟨q.2.2, ω.hamiltonianVectorField (K q.1 q.2.1) q.2.2⟩ : TangentBundle I M))
+      (s := W ∩ {q | q.2.2 ∈ e.baseSet})
+      (fun q hq ↦ e.mem_source.2 hq.2)).1 (hX.mono inter_subset_left)
+    exact h.2.congr fun q hq ↦ e.continuousLinearMapAt_apply_of_mem (R := ℝ) hq.2 _
+  set ψ : P × ((ℝ × ℝ) × E) → P × ((ℝ × ℝ) × M) :=
+    fun q ↦ (q.1, (q.2.1, (extChartAt I α).symm q.2.2))
+  have hψeq : (extChartAt (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I))
+      ((0 : P), ((0 : ℝ × ℝ), α))).symm = ψ := by
+    funext q
+    rw [extChartAt_prod_symm_apply, extChartAt_prod_symm_apply]
+    simp [ψ]
+  have hψ : ContMDiffOn 𝓘(ℝ, P × ((ℝ × ℝ) × E)) (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) n ψ
+      {q | q.2.2 ∈ (extChartAt I α).target ∧ ψ q ∈ W} := by
+    rw [← hψeq]
+    refine ((contMDiffOn_extChartAt_symm (I := 𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I))
+      ((0 : P), ((0 : ℝ × ℝ), α))).of_le hn).mono fun q hq ↦ ?_
+    simp only [extChartAt_prod_target, extChartAt_model_space_eq_id, PartialEquiv.refl_target,
+      mem_prod, mem_univ, true_and]
+    exact hq.1
+  have hmaps : MapsTo ψ {q | q.2.2 ∈ (extChartAt I α).target ∧ ψ q ∈ W}
+      (W ∩ {q | q.2.2 ∈ e.baseSet}) := fun q hq ↦
+    ⟨hq.2, TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hq.1⟩
+  exact contMDiffOn_iff_contDiffOn.1 (hG.comp hψ hmaps)
+
+omit [FiniteDimensional ℝ E] in
 /-- **The perturbed derivative in a chart.** In the tangent coordinates of the chart at `α`, the
 perturbed derivative `du - X_K` of a map `u` into the chart source is the derivative of its
 coordinate expression `extChartAt I α ∘ u` minus the Hamiltonian vector fields read in the
@@ -208,6 +371,35 @@ theorem continuousLinearMapAt_perturbedMFDeriv_apply (ω : SmoothTwoForm I M)
   -- The two sides differ only in the identification of `TangentSpace 𝓘(ℝ, E)` with `E`.
   rfl
 
+/-- **The Floer equation in a chart (equivalence).** For a map `u` differentiable at `z` with
+`u z` in the source of the chart at `α`, `u` solves the intrinsic Floer equation
+`(du - X_K)^{0,1} = 0` at `z` if and only if its coordinate expression `v = extChartAt I α ∘ u`
+solves `∂ₜv - X_{K_t} = J (∂ₛv - X_{K_s})` at `z`, where `J` and the Hamiltonian vector fields
+are read in the chart. -/
+theorem isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp (ω : SmoothTwoForm I M)
+    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z) (hz : u z ∈ (extChartAt I α).source) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedMFDeriv Ks Kt u z).toLinearMap ↔
+      fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineImag -
+          ω.hamiltonianVectorFieldInChartAt α Kt (z, extChartAt I α (u z)) =
+        Floer.almostComplexInChartAt I α J (z, extChartAt I α (u z))
+          (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
+            ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z))) := by
+  set T := trivializationAt E (TangentSpace I) α
+  have hb : u z ∈ T.baseSet := by
+    rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+  have hre := ω.continuousLinearMapAt_perturbedMFDeriv_apply (Ks := Ks) (Kt := Kt) hu hz
+    stdComplexLineReal
+  have him := ω.continuousLinearMapAt_perturbedMFDeriv_apply (Ks := Ks) (Kt := Kt) hu hz
+    stdComplexLineImag
+  simp only [stdComplexLineReal_fst, stdComplexLineReal_snd, stdComplexLineImag_fst,
+    stdComplexLineImag_snd, zero_smul, one_smul, sub_zero] at hre him
+  rw [← hre, ← him, Floer.almostComplexInChartAt_apply, (extChartAt I α).left_inv hz,
+    Trivialization.symmL_continuousLinearMapAt _ hb, isComplexLinearMap_stdComplexLine_iff]
+  simp only [ContinuousLinearMap.coe_coe]
+  rw [← T.coe_continuousLinearEquivAt_eq hb]
+  exact (T.continuousLinearEquivAt ℝ (u z) hb).injective.eq_iff.symm
+
 /-- **The Floer equation in a chart.** Let `u` solve the Floer equation
 `∂ₛu - X_{K_s} + J (∂ₜu - X_{K_t}) = 0` at `z`, with `u z` in the source of the chart at `α`.
 Then its coordinate expression `v = extChartAt I α ∘ u` solves the coordinate Floer equation
@@ -221,19 +413,8 @@ theorem fderiv_extChartAt_comp_stdComplexLineImag_sub (ω : SmoothTwoForm I M)
         ω.hamiltonianVectorFieldInChartAt α Kt (z, extChartAt I α (u z)) =
       Floer.almostComplexInChartAt I α J (z, extChartAt I α (u z))
         (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
-          ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z))) := by
-  have hb : u z ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
-    rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
-  have hre := ω.continuousLinearMapAt_perturbedMFDeriv_apply (Ks := Ks) (Kt := Kt) hu hz
-    stdComplexLineReal
-  have him := ω.continuousLinearMapAt_perturbedMFDeriv_apply (Ks := Ks) (Kt := Kt) hu hz
-    stdComplexLineImag
-  simp only [stdComplexLineReal_fst, stdComplexLineReal_snd, stdComplexLineImag_fst,
-    stdComplexLineImag_snd, zero_smul, one_smul, sub_zero] at hre him
-  have h' := h.apply_stdComplexLineImag
-  simp only [ContinuousLinearMap.coe_coe] at h'
-  rw [← hre, ← him, h', Floer.almostComplexInChartAt_apply, (extChartAt I α).left_inv hz,
-    Trivialization.symmL_continuousLinearMapAt _ hb]
+          ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z))) :=
+  (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp hu hz).1 h
 
 end SmoothTwoForm
 

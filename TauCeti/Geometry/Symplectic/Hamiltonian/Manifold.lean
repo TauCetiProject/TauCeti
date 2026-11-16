@@ -119,9 +119,12 @@ Hamiltonian vector fields and Poisson brackets restrict to open submanifolds, fo
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isHamiltonianVectorField_iff_eq`: existence and
   uniqueness of the Hamiltonian vector field.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField`: a `C^(n+1)`
-  Hamiltonian has a `C^n` Hamiltonian vector field, with the version
+  Hamiltonian has a `C^n` Hamiltonian vector field, with the parametrized versions
+  `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiffAt_hamiltonianVectorField_uncurry`,
+  `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiffOn_hamiltonianVectorField_uncurry`,
+  `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiffOn_hamiltonianVectorField_prod`, and
   `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField_uncurry` for jointly
-  `C^(n+1)` families of Hamiltonians, such as time-dependent ones.
+  `C^(n+1)` families of Hamiltonians, such as time- or parameter-dependent ones.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`: `X^{cσ}_f = c⁻¹ X^σ_f`.
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
   of energy along integral curves on preconnected sets of times, with the global case
@@ -533,6 +536,61 @@ theorem contMDiff_hamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
   ((σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).of_le hn).clm_bundle_apply
     hf.contMDiff_totalSpaceMk_mvfderiv
 
+/-- **Joint regularity of Hamiltonian vector fields of a family at a point.** For a nondegenerate
+two-form on a finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is
+jointly `C^(n+1)` at `q = (p, x)`, the Hamiltonian vector fields `(p', x') ↦ X_{H p'}(x')` are
+jointly `C^n` at `q`, for `n ≤ ∞`. -/
+theorem contMDiffAt_hamiltonianVectorField_uncurry {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] [IsManifold J 1 N] {n : WithTop ℕ∞} (hn : n ≤ ∞) {H : N → M → ℝ}
+    {q : N × M} (hH : ContMDiffAt (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H) q) :
+    ContMDiffAt (J.prod I) I.tangent n
+      (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) q :=
+  ((((σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).of_le hn) q.2).comp q
+    contMDiffAt_snd).clm_bundle_apply hH.contMDiffAt_totalSpaceMk_mvfderiv_uncurry
+
+/-- **Joint regularity of Hamiltonian vector fields of a family on an open set.** For a
+nondegenerate two-form on a finite-dimensional manifold and a family of Hamiltonians
+`H : N → M → ℝ` which is jointly `C^(n+1)` on an open set `W ⊆ N × M`, the Hamiltonian vector
+fields `(p, x) ↦ X_{H p}(x)` are jointly `C^n` on `W`, for `n ≤ ∞`. -/
+theorem contMDiffOn_hamiltonianVectorField_uncurry {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] [IsManifold J 1 N] {n : WithTop ℕ∞} (hn : n ≤ ∞) {H : N → M → ℝ}
+    {W : Set (N × M)} (hW : IsOpen W)
+    (hH : ContMDiffOn (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H) W) :
+    ContMDiffOn (J.prod I) I.tangent n
+      (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) W :=
+  fun _ hq ↦ (h.contMDiffAt_hamiltonianVectorField_uncurry hn
+    (hH.contMDiffAt (hW.mem_nhds hq))).contMDiffWithinAt
+
+/-- **Joint regularity of Hamiltonian vector fields of a doubly parametrized family on an open
+set.** Reassociated form of `contMDiffOn_hamiltonianVectorField_uncurry` for a family
+`H : P → Q → M → ℝ` on an open set `W ⊆ P × (Q × M)`. -/
+theorem contMDiffOn_hamiltonianVectorField_prod {E₁ H₁ P E₂ H₂ Q : Type*}
+    [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [TopologicalSpace H₁] {J₁ : ModelWithCorners ℝ E₁ H₁}
+    [TopologicalSpace P] [ChartedSpace H₁ P] [IsManifold J₁ 1 P]
+    [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂] {J₂ : ModelWithCorners ℝ E₂ H₂}
+    [TopologicalSpace Q] [ChartedSpace H₂ Q] [IsManifold J₂ 1 Q]
+    {n : WithTop ℕ∞} (hn : n ≤ ∞) {H : P → Q → M → ℝ} {W : Set (P × (Q × M))} (hW : IsOpen W)
+    (hH : ContMDiffOn (J₁.prod (J₂.prod I)) 𝓘(ℝ) (n + 1)
+      (fun q : P × (Q × M) ↦ H q.1 q.2.1 q.2.2) W) :
+    ContMDiffOn (J₁.prod (J₂.prod I)) I.tangent n
+      (fun q : P × (Q × M) ↦
+        (⟨q.2.2, σ.hamiltonianVectorField (H q.1 q.2.1) q.2.2⟩ : TangentBundle I M)) W := by
+  let a₁ : (P × Q) × M → P × (Q × M) := fun q ↦ (q.1.1, (q.1.2, q.2))
+  let a₂ : P × (Q × M) → (P × Q) × M := fun q ↦ ((q.1, q.2.1), q.2.2)
+  have ha₁ : ContMDiff ((J₁.prod J₂).prod I) (J₁.prod (J₂.prod I)) (n + 1) a₁ :=
+    (contMDiff_fst.comp contMDiff_fst).prodMk ((contMDiff_snd.comp contMDiff_fst).prodMk
+      contMDiff_snd)
+  have ha₂ : ContMDiff (J₁.prod (J₂.prod I)) ((J₁.prod J₂).prod I) n a₂ :=
+    (contMDiff_fst.prodMk (contMDiff_fst.comp contMDiff_snd)).prodMk
+      (contMDiff_snd.comp contMDiff_snd)
+  have hH' : ContMDiffOn ((J₁.prod J₂).prod I) 𝓘(ℝ) (n + 1)
+      (Function.uncurry (fun pq : P × Q ↦ H pq.1 pq.2)) (a₁ ⁻¹' W) :=
+    hH.comp ha₁.contMDiffOn (Set.mapsTo_preimage _ _)
+  exact (h.contMDiffOn_hamiltonianVectorField_uncurry (J := J₁.prod J₂) hn
+    (hW.preimage ha₁.continuous) hH').comp ha₂.contMDiffOn fun _ hq ↦ hq
+
 /-- **Joint regularity of Hamiltonian vector fields of a family.** For a nondegenerate two-form on
 a finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is jointly
 `C^(n+1)` on `N × M`, the Hamiltonian vector fields `(p, x) ↦ X_{H p}(x)` are jointly `C^n`, for
@@ -544,8 +602,7 @@ theorem contMDiff_hamiltonianVectorField_uncurry {E' H' N : Type*} [NormedAddCom
     (hH : ContMDiff (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H)) :
     ContMDiff (J.prod I) I.tangent n
       (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) :=
-  (((σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).of_le hn).comp
-    contMDiff_snd).clm_bundle_apply hH.contMDiff_totalSpaceMk_mvfderiv_uncurry
+  fun q ↦ h.contMDiffAt_hamiltonianVectorField_uncurry hn (hH q)
 
 /-- The Hamiltonian vector field of a `C²` function is differentiable. -/
 theorem mdifferentiable_hamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f) :
