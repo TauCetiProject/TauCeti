@@ -100,8 +100,9 @@ variable (b₀ b₁ : CircleDeg1Lift)
 /-- The **boundary interpolation** `B_t(x, y) = ((1 - t) x + t ((1 - y) b₀(x) + y b₁(x)), y)` of
 the plane. It is the identity at `t = 0`, and at `t = 1` it restricts to the lifts `b₀` and `b₁` on
 the two boundary lines. When `b₀` and `b₁` are continuous and strictly increasing, for `t ∈ [0, 1]`
-it is a bijection of the strip `ℝ × [0, 1]` (`TauCeti.bijOn_stripBoundaryInterpolation`), so an
-isotopy of the strip from the identity. -/
+it is a bijection of the strip `ℝ × [0, 1]` (`TauCeti.bijOn_stripBoundaryInterpolation`). For `C^n`
+lifts with `b₀' > 0` and `b₁' > 0`, `TauCeti.stripBoundaryInterpolationPartialDiffeomorph` makes
+the family `B_t` an isotopy. -/
 def stripBoundaryInterpolation (t : ℝ) (p : ℝ × ℝ) : ℝ × ℝ :=
   ((1 - t) * p.1 + t * ((1 - p.2) * b₀ p.1 + p.2 * b₁ p.1), p.2)
 
@@ -203,30 +204,14 @@ theorem stripBoundaryInterpolationSlope_periodic (t y : ℝ) :
   simp [stripBoundaryInterpolationSlope_def, AddCircle.periodic_deriv_lift b₀.map_add_one x,
     AddCircle.periodic_deriv_lift b₁.map_add_one x]
 
-/-- For `t, y ∈ [0, 1]` the weights `1 - t`, `t (1 - y)` and `t y` are nonnegative and sum to `1`,
-so the corresponding convex combination of three positive numbers is positive. -/
-private theorem convexCombination_pos {t y a c d : ℝ} (ht : t ∈ Icc (0 : ℝ) 1)
-    (hy : y ∈ Icc (0 : ℝ) 1) (ha : 0 < a) (hc : 0 < c) (hd : 0 < d) :
-    0 < (1 - t) * a + t * ((1 - y) * c + y * d) := by
-  obtain ⟨ht₀, ht₁⟩ := ht
-  obtain ⟨hy₀, hy₁⟩ := hy
-  -- Bound each of the three numbers below by their minimum `m`.
-  set m := min a (min c d)
-  have hm : 0 < m := lt_min ha (lt_min hc hd)
-  have hma : m ≤ a := min_le_left _ _
-  have hmc : m ≤ c := (min_le_right _ _).trans (min_le_left _ _)
-  have hmd : m ≤ d := (min_le_right _ _).trans (min_le_right _ _)
-  nlinarith [mul_le_mul_of_nonneg_left hmc (mul_nonneg ht₀ (sub_nonneg.2 hy₁)),
-    mul_le_mul_of_nonneg_left hmd (mul_nonneg ht₀ hy₀),
-    mul_le_mul_of_nonneg_left hma (sub_nonneg.2 ht₁)]
-
 /-- For `t, y ∈ [0, 1]` the slope is a convex combination of `1`, `b₀'(x)` and `b₁'(x)`, so it is
 positive when the derivatives of `b₀` and `b₁` are. -/
 theorem stripBoundaryInterpolationSlope_pos (h₀ : ∀ x, 0 < deriv b₀ x)
     (h₁ : ∀ x, 0 < deriv b₁ x) {t y : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) (hy : y ∈ Icc (0 : ℝ) 1)
     (x : ℝ) : 0 < stripBoundaryInterpolationSlope b₀ b₁ t y x := by
+  have h := convex_Ioi (0 : ℝ) (h₀ x) (h₁ x) (sub_nonneg.2 hy.2) hy.1 (sub_add_cancel 1 y)
   simpa [stripBoundaryInterpolationSlope_def] using
-    convexCombination_pos ht hy one_pos (h₀ x) (h₁ x)
+    convex_Ioi (0 : ℝ) one_pos h (sub_nonneg.2 ht.2) ht.1 (sub_add_cancel 1 t)
 
 /-! ### The domain of positive slope -/
 
@@ -437,8 +422,7 @@ theorem stripBoundaryInterpolationPartialDiffeomorph_symm_mem {q : ℝ × ℝ ×
   simpa only [PartialDiffeomorph.symm_toPartialEquiv] using
     (stripBoundaryInterpolationPartialDiffeomorph b₀ b₁ hb₀ hb₁ hn).map_target hq
 
-/-- The inverse of the track agrees with the track's inverse wherever the track has been
-evaluated: `(t, p) ↦ (t, B_t(p))` is undone on the domain. -/
+/-- On the domain, the inverse of the track undoes the track: `symm (t, B_t p) = (t, p)`. -/
 theorem stripBoundaryInterpolationPartialDiffeomorph_symm_apply_apply {q : ℝ × ℝ × ℝ}
     (hq : q ∈ stripBoundaryInterpolationDomain b₀ b₁) :
     (stripBoundaryInterpolationPartialDiffeomorph b₀ b₁ hb₀ hb₁ hn).symm
@@ -519,7 +503,10 @@ strictly increasing when `b₀` and `b₁` are. -/
 theorem strictMono_stripBoundaryInterpolation_fst (h₀ : StrictMono b₀) (h₁ : StrictMono b₁)
     {t y : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) (hy : y ∈ Icc (0 : ℝ) 1) :
     StrictMono fun x ↦ (stripBoundaryInterpolation b₀ b₁ t (x, y)).1 := fun x x' hxx' ↦ by
-  have := convexCombination_pos ht hy (sub_pos.2 hxx') (sub_pos.2 (h₀ hxx')) (sub_pos.2 (h₁ hxx'))
+  have h := convex_Ioi (0 : ℝ) (sub_pos.2 (h₀ hxx')) (sub_pos.2 (h₁ hxx')) (sub_nonneg.2 hy.2)
+    hy.1 (sub_add_cancel 1 y)
+  have := convex_Ioi (0 : ℝ) (sub_pos.2 hxx') h (sub_nonneg.2 ht.2) ht.1 (sub_add_cancel 1 t)
+  simp only [mem_Ioi, smul_eq_mul] at this
   simp only [stripBoundaryInterpolation_fst]
   linarith
 
