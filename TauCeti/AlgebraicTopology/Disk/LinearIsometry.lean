@@ -165,6 +165,10 @@ theorem diskMapFamily_apply (q : P × TopCat.disk.{u} n) :
     diskMapFamily g hg q = (g q.1).diskMap q.2 :=
   (rfl)
 
+theorem coe_diskMapFamily_apply_down (p : P) (w : TopCat.disk.{u} n) :
+    ((diskMapFamily g hg (p, w)).down : EuclideanSpace ℝ (Fin n)) = g p w.down :=
+  (rfl)
+
 /-- Each disk map of the family is a map of pairs `(D^n, ∂D^n) → (D^n, ∂D^n)`. -/
 theorem mapsTo_diskMapFamily_range_diskBoundaryInclusion (p : P) :
     MapsTo (fun w ↦ diskMapFamily.{u} g hg (p, w)) (range (TopCat.diskBoundaryInclusion n))
