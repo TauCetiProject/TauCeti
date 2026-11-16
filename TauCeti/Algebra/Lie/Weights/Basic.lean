@@ -27,6 +27,8 @@ weight-space theory. The transport and finrank identities hold over any commutat
   weight space with the intersection of the target weight space and its range.
 * `LieModule.map_weightSpace_eq`: a Lie-module equivalence maps each weight space onto the
   corresponding weight space.
+* `LieModule.chainBotCoeff_eq_zero_of_genWeightSpace_sub_eq_bot`: a weight string has no lower
+  part as soon as one step down from its base is not a weight.
 * `LieModule.isTriangularizable_of_iSup_genWeightSpace_eq_top`: a module spanned by its
   generalized weight spaces is triangularizable, over any commutative ring and without finiteness.
 * `LieModuleHom.isTriangularizable_of_surjective`: triangularizability passes to the image of a
@@ -239,6 +241,20 @@ theorem genWeightSpace_le_posFittingComp_of_ne_zero {χ : L → K} (hχ : χ ≠
   exact ⟨n, by rw [← LieSubmodule.coe_toEnd_pow, hn]⟩
 
 end Fitting
+
+section Chain
+
+/-- If `β - α` is not a weight then the `α`-string through the weight `β` has no lower part. -/
+theorem chainBotCoeff_eq_zero_of_genWeightSpace_sub_eq_bot {R L M : Type*} [CommRing R]
+    [LieRing L] [LieAlgebra R L] [LieRing.IsNilpotent L] [AddCommGroup M] [Module R M]
+    [LieRingModule L M] [LieModule R L M] [HasUniqueDiv R] [IsDomain R] [Module.IsTorsionFree R M]
+    [IsNoetherian R M] {α : L → R} {β : Weight R L M} (hsub : genWeightSpace M (⇑β - α) = ⊥) :
+    chainBotCoeff α β = 0 := by
+  by_contra hne
+  refine genWeightSpace_neg_zsmul_add_ne_bot α β (n := 1) (by omega) ?_
+  rwa [Nat.cast_one, neg_one_zsmul, neg_add_eq_sub]
+
+end Chain
 
 end LieModule
 
