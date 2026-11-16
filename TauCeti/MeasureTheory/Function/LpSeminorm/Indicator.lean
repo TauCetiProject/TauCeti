@@ -22,6 +22,10 @@ in `ℝᴺ` their plain sum satisfies
 sets, and for `r = ∞` it is the bound of each piece by `‖g‖_∞`. Such sums arise when a function is
 cut into many pieces of comparable size, as in the dyadic decompositions behind the Christ–Kiselev
 lemma.
+
+The file also records that `1_s f` lies in `Lᵖ(t)` exactly when `f` lies in `Lᵖ(t ∩ s)`
+(`TauCeti.memLp_indicator_iff_restrict_inter`), the form in which a function given on one piece
+`t ∩ s` of a domain `t` is extended by zero to all of it.
 -/
 
 public section
@@ -30,6 +34,15 @@ open MeasureTheory
 open scoped ENNReal
 
 namespace TauCeti
+
+/-- A function `f` extended by zero off a measurable set `s` lies in `Lᵖ(t)` if and only if `f`
+lies in `Lᵖ(t ∩ s)`. -/
+theorem memLp_indicator_iff_restrict_inter {α E : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] {μ : Measure α} {p : ℝ≥0∞} {s t : Set α} {f : α → E}
+    (hs : MeasurableSet s) :
+    MemLp (s.indicator f) p (μ.restrict t) ↔ MemLp f p (μ.restrict (t ∩ s)) := by
+  rw [memLp_indicator_iff_restrict hs.nullMeasurableSet, Measure.restrict_restrict hs,
+    Set.inter_comm]
 
 /-- **Hölder's inequality for disjoint pieces.** For `1 ≤ r`, the `Lʳ` seminorms of the restrictions
 of `g` to the members of a finite family of `N` pairwise disjoint measurable sets add up to at most

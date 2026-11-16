@@ -260,26 +260,24 @@ theorem
     memLp_indicator_sub_indicator_comp_hyperplaneReflection (ℝ ∙ ν)ᗮ.reflection.isometry
       (map_zero _) hHm hUm hU hFq
   have hgf : (eLpNorm g r (mu.restrict U)).toReal ≤
-      2 * (eLpNorm f r (mu.restrict (U ⊓ H))).toReal := by
-    rw [← ENNReal.toReal_ofNat, ← ENNReal.toReal_mul]
-    exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hfr.eLpNorm_ne_top)
-      (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (L := id) isometry_id rfl
-        (by exact_mod_cast hr.le) hHm hUm hU)
+      2 * (eLpNorm f r (mu.restrict (U ⊓ H))).toReal :=
+    toReal_eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (L := id) isometry_id rfl
+      (by exact_mod_cast hr.le) hHm hUm hU hfr
   have hGF : (eLpNorm G q (mu.restrict U)).toReal ≤
-      2 * (eLpNorm F q (mu.restrict (U ⊓ H))).toReal := by
-    rw [← ENNReal.toReal_ofNat, ← ENNReal.toReal_mul]
-    exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hFq.eLpNorm_ne_top)
-      (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le
-        (ℝ ∙ ν)ᗮ.reflection.isometry (map_zero _) (by exact_mod_cast (one_lt_two.trans hq).le)
-        hHm hUm hU)
+      2 * (eLpNorm F q (mu.restrict (U ⊓ H))).toReal :=
+    toReal_eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le
+      (ℝ ∙ ν)ᗮ.reflection.isometry (map_zero _) (by exact_mod_cast (one_lt_two.trans hq).le)
+      hHm hUm hU hFq
+  have hw₀ := fun v : W1p0 mu U 2 =>
+    energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub_setIntegral_inner
+      hν hH hU (memLp_energyIntegrand_reflectPrincipal (b := 0) (c := 0) (beta := 0) (gamma := 0)
+        hν hH hU ha ham aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
+        (fun _ _ => by simp)) hu0 hf2 hF2 hu v
   have hw : ∀ v : W1p0 mu U 2, energyFormH1 (reflectPrincipal ν c₀ a) 0 0
       (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (v : W1p mu U 2) =
         ∫ x in U, g x * W1p.value (v : W1p mu U 2) x ∂mu -
           ∫ x in U, ⟪G x, W1p.gradient (v : W1p mu U 2) x⟫_ℝ ∂mu := fun v => by
-    have h := energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub_inner
-      hν hH hU (memLp_energyIntegrand_reflectPrincipal (b := 0) (c := 0) (beta := 0) (gamma := 0)
-        hν hH hU ha ham aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
-        (fun _ _ => by simp)) hu0 hf2 hF2 hu v
+    have h := hw₀ v
     rwa [reflectDrift_zero, reflectDensity_zero] at h
   refine (hhol ha' (aestronglyMeasurable_reflectPrincipal hν hH hU ham) hg hG hw hR
     hRK).mono_const (Real.toNNReal_le_toNNReal ?_)

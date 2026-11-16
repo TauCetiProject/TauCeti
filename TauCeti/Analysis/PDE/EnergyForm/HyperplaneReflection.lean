@@ -65,8 +65,9 @@ the restriction of `φ - φ ∘ ρ`, which lies in `H¹₀(U ∩ H)`; so it equa
 * `TauCeti.PDE.energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral`: the
   same for a right-hand side `f ∈ L²(U ∩ H)`, which is reflected oddly.
 * The same for a right-hand side `f + ∂ᵢFⁱ` with `f, F ∈ L²(U ∩ H)`, where the field `F` is
-  reflected oddly together with its direction, `x ↦ 1_H F x - R (1_H F (ρ x))`:
-  `TauCeti.PDE.energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub_inner`
+  reflected oddly together with its direction, `x ↦ 1_H F x - R (1_H F (ρ x))`: the theorem
+  `energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub_setIntegral_inner`
+  in the namespace `TauCeti.PDE`.
 * `TauCeti.PDE.UniformlyEllipticOn.reflectPrincipal`: the reflected principal coefficient is
   uniformly elliptic and bounded with the constants of `a`, and
   `TauCeti.PDE.norm_reflectDrift_le` and `TauCeti.PDE.norm_reflectDensity_le`: the reflected
@@ -481,7 +482,8 @@ coefficients are bounded on `U`, then the odd reflection `u - u ∘ ρ` is a wea
 the equation with the reflected coefficients, the odd reflection `x ↦ 1_H f x - 1_H f (ρ x)` of
 `f` as scalar datum and the odd reflection `x ↦ 1_H F x - R (1_H F (ρ x))` of the field `F` as
 divergence datum, tested against `H¹₀(U)`. -/
-theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub_inner
+theorem
+    energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub_setIntegral_inner
     (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c₀) U U)
     (hcoeff : MemLp (fun x => energyIntegrand (reflectPrincipal ν c₀ a x) (reflectDrift ν c₀ b x)
       (reflectDensity ν c₀ c x)) ⊤ (mu.restrict U))
@@ -529,9 +531,10 @@ theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegr
       ∫ x in U, ((H : Set (EuclideanSpace ℝ ι)).indicator f x -
         (H : Set (EuclideanSpace ℝ ι)).indicator f (hyperplaneReflection ν c₀ x)) *
           W1p.value (φ : W1p mu U 2) x ∂mu := by
-  have h := energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub_inner
-    hν hH hU hcoeff hu0 hf (F := 0) MemLp.zero
-    (fun v => by simp only [hu v, Pi.zero_apply, inner_zero_left, integral_zero, sub_zero]) φ
+  have h :=
+    energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub_setIntegral_inner
+      hν hH hU hcoeff hu0 hf (F := 0) MemLp.zero
+      (fun v => by simp only [hu v, Pi.zero_apply, inner_zero_left, integral_zero, sub_zero]) φ
   simpa only [Set.indicator_zero', Pi.zero_apply, map_zero, sub_zero, inner_zero_left,
     integral_zero] using h
 

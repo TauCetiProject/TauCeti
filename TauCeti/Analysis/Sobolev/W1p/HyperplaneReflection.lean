@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
+import TauCeti.MeasureTheory.Function.LpSeminorm.Indicator
 
 /-!
 # Sobolev functions under the reflection in a hyperplane
@@ -330,10 +331,7 @@ theorem W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL (hp : p 
   have hρ : MeasurePreserving ρ (mu.restrict U) (mu.restrict U) :=
     measurePreserving_restrict_hyperplaneReflection hU U.isOpen.measurableSet
   have hHm : MeasurableSet (H : Set E) := H.isOpen.measurableSet
-  have hg : MemLp g q (mu.restrict U) := by
-    rw [memLp_indicator_iff_restrict hHm.nullMeasurableSet, Measure.restrict_restrict hHm,
-      inter_comm]
-    exact hf
+  have hg : MemLp g q (mu.restrict U) := (memLp_indicator_iff_restrict_inter hHm).2 hf
   have hv : MemLp v p (mu.restrict U) := Lp.memLp _
   have hvρ : MemLp (v ∘ ρ) p (mu.restrict U) := hv.comp_measurePreserving hρ
   -- The value of the reflected difference is `v - v ∘ ρ` on `U ∩ H`.
@@ -394,10 +392,7 @@ theorem W1p0.setIntegral_inner_gradient_restrictSubCompHyperplaneReflectionL (hp
   have hρ : MeasurePreserving ρ (mu.restrict U) (mu.restrict U) :=
     measurePreserving_restrict_hyperplaneReflection hU U.isOpen.measurableSet
   have hHm : MeasurableSet (H : Set E) := H.isOpen.measurableSet
-  have hg : MemLp g q (mu.restrict U) := by
-    rw [memLp_indicator_iff_restrict hHm.nullMeasurableSet, Measure.restrict_restrict hHm,
-      inter_comm]
-    exact hG
+  have hg : MemLp g q (mu.restrict U) := (memLp_indicator_iff_restrict_inter hHm).2 hG
   have hv : MemLp v p (mu.restrict U) := Lp.memLp _
   have hint {g' v' : E → E} (hg' : MemLp g' q (mu.restrict U)) (hv' : MemLp v' p (mu.restrict U)) :
       Integrable (fun x => ⟪g' x, v' x⟫_ℝ) (mu.restrict U) :=
