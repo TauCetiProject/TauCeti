@@ -65,7 +65,7 @@ def toSchwartzMapCLM : 𝓓_{K}(E, F) →L[𝕜] 𝓢(E, F) :=
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
   { toLinearMap := Φ
-    cont := show Continuous Φ by
+    cont := by
       obtain ⟨R, hR, hKR⟩ : ∃ R, 0 ≤ R ∧ (K : Set E) ⊆ Metric.closedBall 0 R := by
         obtain ⟨R, hKR⟩ := K.isCompact.isBounded.subset_closedBall 0
         exact ⟨max R 0, le_max_right R 0,

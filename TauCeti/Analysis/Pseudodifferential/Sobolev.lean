@@ -335,8 +335,7 @@ theorem HasCompactSpatialSupport.exists_norm_fourier_slice_le (ha : a.HasCompact
   refine ⟨C, hC0, fun η ξ ↦ ?_⟩
   -- `⟨η⟩ ^ r ≤ (1 + ‖η‖) ^ ⌈r⌉₊`
   have hw : (1 + ‖η‖ ^ 2) ^ (r / 2) ≤ (1 + ‖η‖) ^ ⌈r⌉₊ :=
-    (Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖η‖])
-      (by linarith [Nat.le_ceil r])).trans (one_add_norm_sq_rpow_le_one_add_norm_pow η ⌈r⌉₊)
+    one_add_norm_sq_rpow_le_one_add_norm_pow_of_le η (Nat.le_ceil r)
   have hpos : 0 < (1 + ‖η‖ ^ 2) ^ (r / 2) := by positivity
   rw [show -r / 2 = -(r / 2) by ring, Real.rpow_neg (by positivity), ← div_eq_mul_inv,
     le_div_iff₀ hpos]

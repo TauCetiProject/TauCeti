@@ -20,9 +20,7 @@ instance about elements of Mathlib's Bessel-potential spaces `H^s` and the opera
 them, become statements about distributions on open sets, such as their wave front sets.
 
 The complex-linear extension of the restriction to complex test functions is `S` itself
-(`TemperedDistribution.complexPairing_toDistribution`), and the restriction of the tempered
-distribution `φ T` of a compactly supported distribution is `φ T`
-(`Distribution.toDistribution_cutoffTempered`).
+(`TemperedDistribution.complexPairing_toDistribution`).
 
 ## Main declarations
 

@@ -14,7 +14,8 @@ import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
-import TauCeti.Analysis.Sobolev.BesselPotential.Duality
+import TauCeti.Analysis.Pseudodifferential.OutputSupport.Sobolev
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.MeasureTheory.Integral.ConicDecay
 
 /-!
@@ -48,8 +49,8 @@ near `x₀` with `χ = 1` near the support `K` of `ψ`, and split `a = ψ a + (1
   (`TemperedDistribution.waveFrontSet_toDistribution_eq_empty`).
 * The Fourier transform of the compactly supported distribution `Op(b) (χ v)` is
   `∫ b̂(η - ζ, 2πζ) v (χ e_ζ) dζ`, where `b̂(θ, ξ)` is the Fourier transform of `b` in the position
-  (`TauCeti.Symbol.toDistr_quantizeSobolev_smulLeftCLM_modulateSchwartzMap`). On Schwartz functions
-  this is
+  (`TauCeti.Symbol.toDistr_quantizeSobolev_smulLeftCLM_fourierAtomMulSchwartzMap`). On Schwartz
+  functions this is
   `TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`, and it extends to `H^t`
   by dominated convergence, with the bound `‖v (χ e_ζ)‖ ≤ C ‖v‖ ⟨ζ⟩ ^ (-t)`. Since `b̂(θ, 2πζ)` is
   rapidly decreasing in `θ` with polynomial growth in `ζ`, this integral decays rapidly on a
@@ -57,11 +58,8 @@ near `x₀` with `χ = 1` near the support `K` of `ψ`, and split `a = ψ a + (1
 
 ## Main results
 
-* `TauCeti.Symbol.dsupport_toDistribution_quantizeSobolev_subset`: `Op(b) v` is supported in any
-  closed set outside which `b` vanishes.
-* `TauCeti.Symbol.toDistr_quantizeSobolev_smulLeftCLM_modulateSchwartzMap`: the localized Fourier
-  transform of
-  `Op(b) (χ v)`.
+* `TauCeti.Symbol.toDistr_quantizeSobolev_smulLeftCLM_fourierAtomMulSchwartzMap`: the localized
+  Fourier transform of `Op(b) (χ v)`.
 * `TauCeti.Symbol.waveFrontSet_toDistribution_quantizeSobolev_subset`: **microlocality**,
   `WF(Op(a) v) ⊆ WF(v)`.
 * `TauCeti.Symbol.singularSupport_toDistribution_quantizeSobolev_subset`: the singular support of
@@ -91,42 +89,7 @@ namespace Symbol
 
 variable {n : ℕ} {m : ℝ}
 
-/-! ### Output support -/
-
-/-- **Output support.** If the symbol `b` vanishes at the positions outside a closed set `K`, the
-distribution `Op(b) v` is supported in `K`, for every `v ∈ H^s`. -/
-theorem dsupport_toDistribution_quantizeSobolev_subset {V W : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℂ V] [CompleteSpace V] [NormedAddCommGroup W] [InnerProductSpace ℂ W]
-    [CompleteSpace W] {b : Symbol n V W m} (hb : b.HasCompactSpatialSupport)
-    {K : Set (CoordinateSpace n)} (hK : IsClosed K)
-    (hbK : ∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0) (s : ℝ) (v : H^{s}(CoordinateSpace n, V)) :
-    dsupport (toDistribution ⊤ (b.quantizeSobolev hb s v).toDistr) ⊆ K := by
-  have hvan : IsVanishingOn (toDistribution ⊤ (b.quantizeSobolev hb s v).toDistr) Kᶜ := by
-    intro φ hφ
-    rw [toDistribution_apply]
-    set g := toSchwartzMapCLM ℂ (postcompCLM (𝕜 := ℝ) ofRealCLM φ)
-    -- The value on `g` is continuous in `v` and vanishes on Schwartz functions.
-    have hzero : (fun u ↦ (b.quantizeSobolev hb s u).toDistr g) = fun _ ↦ 0 := by
-      refine (SchwartzMap.denseRange_toBesselPotentialSpaceCLM s (by norm_num)).equalizer
-        ((BesselPotentialSpace.continuous_toDistr_apply g).comp
-          (b.quantizeSobolev hb s).continuous) continuous_const (funext fun u ↦ ?_)
-      simp only [Function.comp_apply, toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply]
-      refine integral_eq_zero_of_ae (ae_of_all _ fun x ↦ ?_)
-      by_cases hx : x ∈ K
-      · have : φ x = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hφ h hx
-        simp [g, this]
-      · simp [quantizeSchwartzValue_def, hbK x hx]
-    exact congrFun hzero v
-  exact fun x hx ↦ (mem_dsupport_iff x).1 hx K hvan hK
-
 /-! ### The localized Fourier transform of `Op(b) (χ v)` -/
-
-/-- The weight `(1 + ‖x‖ ^ 2) ^ (s / 2)` is at most `(1 + ‖x‖) ^ ⌈|s|⌉₊`. -/
-private theorem one_add_norm_sq_rpow_le_pow_natCeil (s : ℝ) (x : CoordinateSpace n) :
-    (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ (1 + ‖x‖) ^ ⌈|s|⌉₊ :=
-  (Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖x‖])
-    (by gcongr; exact (le_abs_self s).trans (Nat.le_ceil _))).trans
-    (one_add_norm_sq_rpow_le_one_add_norm_pow x _)
 
 /-- The Fourier transform `b̂(θ, 2πζ)` of a symbol with compact spatial support in the position is
 rapidly decreasing in `θ`, with polynomial growth of degree `⌈|m|⌉₊` in `ζ`. -/
@@ -138,17 +101,15 @@ private theorem HasCompactSpatialSupport.exists_one_add_norm_pow_mul_norm_fourie
   obtain ⟨C, hC0, hC⟩ := hb.exists_one_add_norm_pow_mul_norm_fourier_le j
   obtain ⟨C', hC'⟩ := exists_one_add_norm_smul_sq_rpow_le (E := CoordinateSpace n)
     (c := 2 * Real.pi) (by positivity) (m / 2)
-  have hC'0 : 0 ≤ C' := by
-    have := hC' 0
-    simp only [smul_zero, norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow,
-      add_zero, Real.one_rpow, mul_one] at this
-    linarith
+  have hC'0 : 0 ≤ C' := zero_le_one.trans (by simpa using hC' 0)
   refine ⟨C * C', fun θ ζ ↦ ?_⟩
   calc (1 + ‖θ‖) ^ j * ‖𝓕 (fun x ↦ b.coefficient (x, (2 * Real.pi) • ζ)) θ‖
       ≤ C * (1 + ‖(2 * Real.pi) • ζ‖ ^ 2) ^ (m / 2) := hC θ _
     _ ≤ C * (C' * (1 + ‖ζ‖ ^ 2) ^ (m / 2)) := by gcongr; exact hC' ζ
     _ ≤ C * (C' * (1 + ‖ζ‖) ^ ⌈|m|⌉₊) := by
-        gcongr; exact one_add_norm_sq_rpow_le_pow_natCeil m ζ
+        gcongr
+        exact one_add_norm_sq_rpow_le_one_add_norm_pow_of_le ζ
+          ((le_abs_self m).trans (Nat.le_ceil _))
     _ = C * C' * (1 + ‖ζ‖) ^ ⌈|m|⌉₊ := by ring
 
 variable {b : Symbol n ℂ ℂ m} (hb : b.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)}
@@ -160,9 +121,10 @@ include hbK hθ in
 private theorem toDistr_quantizeSobolev_smulLeftCLM_toBesselPotentialSpaceCLM (t : ℝ)
     (u : 𝓢(CoordinateSpace n, ℂ)) (η : CoordinateSpace n) :
     (b.quantizeSobolev hb t (BesselPotentialSpace.smulLeftCLM t (toSchwartzMapCLM ℂ χ)
-      (SchwartzMap.toBesselPotentialSpaceCLM t 2 u))).toDistr (θ.modulateSchwartzMap η) =
+      (SchwartzMap.toBesselPotentialSpaceCLM t 2 u))).toDistr (θ.fourierAtomMulSchwartzMap η) =
       ∫ ζ, 𝓕 (fun x ↦ b.coefficient (x, (2 * Real.pi) • ζ)) (η - ζ)
-        ((SchwartzMap.toBesselPotentialSpaceCLM t 2 u).toDistr (χ.modulateSchwartzMap ζ)) := by
+        ((SchwartzMap.toBesselPotentialSpaceCLM t 2 u).toDistr
+          (χ.fourierAtomMulSchwartzMap ζ)) := by
   set w := SchwartzMap.smulLeftCLM ℂ (⇑(toSchwartzMapCLM ℂ χ)) u
   have hw : BesselPotentialSpace.smulLeftCLM t (toSchwartzMapCLM ℂ χ)
       (SchwartzMap.toBesselPotentialSpaceCLM t 2 u) = SchwartzMap.toBesselPotentialSpaceCLM t 2 w :=
@@ -172,20 +134,20 @@ private theorem toDistr_quantizeSobolev_smulLeftCLM_toBesselPotentialSpaceCLM (t
       exact smulLeftCLM_toTemperedDistributionCLM_eq u)
   -- `Op(b) w` vanishes outside `K`, where `θ = 1`, so testing on `θ e_η` is the Fourier transform.
   have hθw (x : CoordinateSpace n) :
-      θ.modulateSchwartzMap η x • quantizeSchwartzValue b.coefficient w x =
+      θ.fourierAtomMulSchwartzMap η x • quantizeSchwartzValue b.coefficient w x =
         𝐞 (-⟪x, η⟫) • quantizeSchwartzValue b.coefficient w x := by
     by_cases hx : x ∈ K
-    · rw [TestFunction.modulateSchwartzMap_apply, hθ x hx, one_mul,
+    · rw [TestFunction.fourierAtomMulSchwartzMap_apply, hθ x hx, one_mul,
         TauCeti.fourierAtom_eq_fourierChar, Circle.smul_def, smul_eq_mul]
     · simp [quantizeSchwartzValue_def, hbK x hx]
   have hwχ (ζ : CoordinateSpace n) : 𝓕 w ζ =
-      (SchwartzMap.toBesselPotentialSpaceCLM t 2 u).toDistr (χ.modulateSchwartzMap ζ) := by
+      (SchwartzMap.toBesselPotentialSpaceCLM t 2 u).toDistr (χ.fourierAtomMulSchwartzMap ζ) := by
     rw [SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
       SchwartzMap.toTemperedDistributionCLM_apply_apply volume, SchwartzMap.fourier_coe,
       Real.fourier_eq]
     refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
     simp only [w, SchwartzMap.smulLeftCLM_apply_apply (toSchwartzMapCLM ℂ χ).hasTemperateGrowth,
-      TestFunction.modulateSchwartzMap_apply, toSchwartzMapCLM_apply,
+      TestFunction.fourierAtomMulSchwartzMap_apply, toSchwartzMapCLM_apply,
       TauCeti.fourierAtom_eq_fourierChar,
       Circle.smul_def, smul_eq_mul]
     ring
@@ -197,39 +159,33 @@ private theorem toDistr_quantizeSobolev_smulLeftCLM_toBesselPotentialSpaceCLM (t
 include hb in
 /-- The integrand `b̂(η - ζ, 2πζ) w (χ e_ζ)` is bounded, uniformly over a ball of `H^t`, by an
 integrable function of `ζ`. -/
-private theorem exists_norm_fourier_apply_toDistr_modulateSchwartzMap_le (t : ℝ)
+private theorem exists_norm_fourier_apply_toDistr_fourierAtomMulSchwartzMap_le (t : ℝ)
     (η : CoordinateSpace n) :
     ∃ D, 0 ≤ D ∧ ∀ (w : H^{t}(CoordinateSpace n, ℂ)) (ζ : CoordinateSpace n),
       ‖𝓕 (fun x ↦ b.coefficient (x, (2 * Real.pi) • ζ)) (η - ζ)
-          (w.toDistr (χ.modulateSchwartzMap ζ))‖ ≤
+          (w.toDistr (χ.fourierAtomMulSchwartzMap ζ))‖ ≤
         D * ‖w‖ * (1 + ‖ζ - η‖) ^ (-((Module.finrank ℝ (CoordinateSpace n) + 1 : ℕ) : ℝ)) := by
-  obtain ⟨C, hC0, hC⟩ := exists_norm_toDistr_modulateSchwartzMap_le t χ
+  obtain ⟨C, hC0, hC⟩ := exists_norm_toDistr_fourierAtomMulSchwartzMap_le t χ
   set M := ⌈|m|⌉₊
   set p := ⌈|t|⌉₊
   set r := Module.finrank ℝ (CoordinateSpace n) + 1
   obtain ⟨A, hA⟩ := hb.exists_one_add_norm_pow_mul_norm_fourier_two_pi_le (r + M + p)
-  have hA0 : 0 ≤ A := by
-    have := hA 0 0
-    simp only [norm_zero, add_zero, one_pow, one_mul, mul_one] at this
-    exact (norm_nonneg _).trans this
+  have hA0 : 0 ≤ A := (norm_nonneg _).trans (by simpa using hA 0 0)
   refine ⟨A * C * (1 + ‖η‖) ^ (M + p), by positivity, fun w ζ ↦ ?_⟩
   set k := 𝓕 (fun x ↦ b.coefficient (x, (2 * Real.pi) • ζ)) (η - ζ)
   have hθpos : 0 < (1 + ‖ζ - η‖) ^ r := by positivity
-  have hrpow : (1 + ‖ζ - η‖) ^ (-(r : ℝ)) = ((1 + ‖ζ - η‖) ^ r)⁻¹ := by
-    rw [Real.rpow_neg (by positivity), Real.rpow_natCast]
   have hAζ : (1 + ‖ζ - η‖) ^ (r + M + p) * ‖k‖ ≤ A * (1 + ‖ζ‖) ^ M := by
     simpa only [norm_sub_rev η ζ] using hA (η - ζ) ζ
   have hζ : 1 + ‖ζ‖ ≤ (1 + ‖η‖) * (1 + ‖ζ - η‖) := by
-    have := norm_le_norm_add_norm_sub' ζ η
-    nlinarith [norm_nonneg η, norm_nonneg (ζ - η)]
-  have hmod : ‖w.toDistr (χ.modulateSchwartzMap ζ)‖ ≤ C * ‖w‖ * (1 + ‖ζ‖) ^ p :=
+    simpa only [add_sub_cancel] using one_add_norm_add_le η (ζ - η)
+  have hmod : ‖w.toDistr (χ.fourierAtomMulSchwartzMap ζ)‖ ≤ C * ‖w‖ * (1 + ‖ζ‖) ^ p :=
     (hC w ζ).trans (by
       gcongr
-      simpa only [neg_div, abs_neg] using one_add_norm_sq_rpow_le_pow_natCeil (-t) ζ)
+      exact one_add_norm_sq_rpow_le_one_add_norm_pow_of_le ζ ((neg_le_abs t).trans (Nat.le_ceil _)))
   have hpow : (1 + ‖ζ‖) ^ (M + p) ≤ (1 + ‖η‖) ^ (M + p) * (1 + ‖ζ - η‖) ^ (M + p) := by
     rw [← mul_pow]; gcongr
-  rw [hrpow, ← div_eq_mul_inv, le_div_iff₀ hθpos]
-  calc ‖k (w.toDistr (χ.modulateSchwartzMap ζ))‖ * (1 + ‖ζ - η‖) ^ r
+  rw [Real.rpow_neg_natCast, zpow_neg, zpow_natCast, ← div_eq_mul_inv, le_div_iff₀ hθpos]
+  calc ‖k (w.toDistr (χ.fourierAtomMulSchwartzMap ζ))‖ * (1 + ‖ζ - η‖) ^ r
       ≤ ‖k‖ * (C * ‖w‖ * (1 + ‖ζ‖) ^ p) * (1 + ‖ζ - η‖) ^ r := by
         gcongr
         exact (k.le_opNorm _).trans (by gcongr)
@@ -251,32 +207,32 @@ include hbK hθ in
 positions outside `K` and the cutoff `θ` equals `1` on `K`, then for every `v ∈ H^t`, testing
 `Op(b) (χ v)` on `θ e_η` gives `∫ b̂(η - ζ, 2πζ) v (χ e_ζ) dζ`, where `b̂(·, ξ)` is the Fourier
 transform of `b(·, ξ)` and `v (χ e_ζ)` is the localized Fourier transform of `v`. -/
-theorem toDistr_quantizeSobolev_smulLeftCLM_modulateSchwartzMap (t : ℝ)
+theorem toDistr_quantizeSobolev_smulLeftCLM_fourierAtomMulSchwartzMap (t : ℝ)
     (v : H^{t}(CoordinateSpace n, ℂ)) (η : CoordinateSpace n) :
     (b.quantizeSobolev hb t (BesselPotentialSpace.smulLeftCLM t (toSchwartzMapCLM ℂ χ) v)).toDistr
-        (θ.modulateSchwartzMap η) =
+        (θ.fourierAtomMulSchwartzMap η) =
       ∫ ζ, 𝓕 (fun x ↦ b.coefficient (x, (2 * Real.pi) • ζ)) (η - ζ)
-        (v.toDistr (χ.modulateSchwartzMap ζ)) := by
+        (v.toDistr (χ.fourierAtomMulSchwartzMap ζ)) := by
   -- Both sides are continuous at `v` and agree on Schwartz functions.
   have hLR (u : 𝓢(CoordinateSpace n, ℂ)) :=
     toDistr_quantizeSobolev_smulLeftCLM_toBesselPotentialSpaceCLM hb hbK hθ χ t u η
   have hL : Continuous fun w : H^{t}(CoordinateSpace n, ℂ) ↦
       (b.quantizeSobolev hb t (BesselPotentialSpace.smulLeftCLM t (toSchwartzMapCLM ℂ χ) w)).toDistr
-        (θ.modulateSchwartzMap η) :=
-    (BesselPotentialSpace.continuous_toDistr_apply _).comp
+        (θ.fourierAtomMulSchwartzMap η) :=
+    ((continuous_eval_const _).comp BesselPotentialSpace.continuous_toDistr).comp
       ((b.quantizeSobolev hb t).continuous.comp (BesselPotentialSpace.smulLeftCLM t _).continuous)
   -- The right side is continuous at `v`, by dominated convergence.
-  obtain ⟨D, hD0, hD⟩ := exists_norm_fourier_apply_toDistr_modulateSchwartzMap_le hb χ t η
+  obtain ⟨D, hD0, hD⟩ := exists_norm_fourier_apply_toDistr_fourierAtomMulSchwartzMap_le hb χ t η
   have hk : Continuous fun ζ : CoordinateSpace n ↦
       𝓕 (fun x ↦ b.coefficient (x, (2 * Real.pi) • ζ)) (η - ζ) :=
     hb.continuous_fourier_slice.comp (f := fun ζ ↦ (η - ζ, (2 * Real.pi) • ζ)) (by fun_prop)
   have hR : ContinuousAt (fun w : H^{t}(CoordinateSpace n, ℂ) ↦ ∫ ζ,
       𝓕 (fun x ↦ b.coefficient (x, (2 * Real.pi) • ζ)) (η - ζ)
-        (w.toDistr (χ.modulateSchwartzMap ζ))) v := by
+        (w.toDistr (χ.fourierAtomMulSchwartzMap ζ))) v := by
     refine MeasureTheory.continuousAt_of_dominated (bound := fun ζ ↦ D * (‖v‖ + 1) *
         (1 + ‖ζ - η‖) ^ (-((Module.finrank ℝ (CoordinateSpace n) + 1 : ℕ) : ℝ)))
       (Eventually.of_forall fun w ↦ ?_) ?_ ?_ (ae_of_all _ fun ζ ↦ ?_)
-    · have hF : Continuous fun ζ ↦ w.toDistr (χ.modulateSchwartzMap ζ) :=
+    · have hF : Continuous fun ζ ↦ w.toDistr (χ.fourierAtomMulSchwartzMap ζ) :=
         ((toDistribution ⊤ w.toDistr).continuous_localFourier χ).congr
           (localFourier_toDistribution _ χ)
       exact (hk.clm_apply hF).aestronglyMeasurable
@@ -289,9 +245,9 @@ theorem toDistr_quantizeSobolev_smulLeftCLM_modulateSchwartzMap (t : ℝ)
       gcongr
     · exact ((integrable_one_add_norm (μ := volume) (E := CoordinateSpace n)
         (by simp)).comp_sub_right η).const_mul _
-    · exact ((ContinuousLinearMap.continuous _).comp
-        (BesselPotentialSpace.continuous_toDistr_apply (E := CoordinateSpace n) (F := ℂ) (s := t)
-          (χ.modulateSchwartzMap ζ))).continuousAt
+    · exact ((ContinuousLinearMap.continuous _).comp ((continuous_eval_const
+        (χ.fourierAtomMulSchwartzMap ζ)).comp (BesselPotentialSpace.continuous_toDistr
+          (E := CoordinateSpace n) (G := ℂ) (s := t) (p := 2)))).continuousAt
   -- Pass to the limit along Schwartz functions converging to `v`.
   have hv : v ∈ closure (range (SchwartzMap.toBesselPotentialSpaceCLM
       (E := CoordinateSpace n) (F := ℂ) t (2 : ENNReal))) :=
@@ -314,7 +270,8 @@ private theorem isMicrolocallySmoothAt_toDistribution_quantizeSobolev_smulLeftCL
     {Γ Γ' : Set (CoordinateSpace n)} (hΓ'o : IsOpen Γ') (hξ : ξ ∈ Γ')
     (hcone : ∀ s : ℝ, 0 < s → ∀ η ∈ Γ', s • η ∈ Γ') {c : ℝ} (hc : 0 < c)
     (hΓ' : ∀ η ∈ Γ', closedBall η (c * ‖η‖) ⊆ Γ)
-    (hdecay : ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖v.toDistr (θ.modulateSchwartzMap η)‖ ≤ C) :
+    (hdecay : ∀ N : ℕ, ∃ C, ∀ η ∈ Γ,
+      (1 + ‖η‖) ^ N * ‖v.toDistr (θ.fourierAtomMulSchwartzMap η)‖ ≤ C) :
     (toDistribution ⊤ (b.quantizeSobolev hb t
       (BesselPotentialSpace.smulLeftCLM t (toSchwartzMapCLM ℂ θ) v)).toDistr).IsMicrolocallySmoothAt
         x₀ ξ := by
@@ -326,7 +283,7 @@ private theorem isMicrolocallySmoothAt_toDistribution_quantizeSobolev_smulLeftCL
     (hb.exists_one_add_norm_pow_mul_norm_fourier_two_pi_le) hC₀ hc hΓ' (hdecay _)
   refine ⟨C, fun η hη ↦ ?_⟩
   rw [localFourier_toDistribution,
-    toDistr_quantizeSobolev_smulLeftCLM_modulateSchwartzMap hb hbK hθ]
+    toDistr_quantizeSobolev_smulLeftCLM_fourierAtomMulSchwartzMap hb hbK hθ]
   exact hC η hη
 
 omit hb in
@@ -343,7 +300,8 @@ private theorem isMicrolocallySmoothAt_toDistribution_quantizeSobolev {a : Symbo
     (hξ0 : ξ ≠ 0) {Γ Γ' : Set (CoordinateSpace n)} (hΓ'o : IsOpen Γ') (hξ : ξ ∈ Γ')
     (hcone : ∀ s : ℝ, 0 < s → ∀ η ∈ Γ', s • η ∈ Γ') {c : ℝ} (hc : 0 < c)
     (hΓ' : ∀ η ∈ Γ', closedBall η (c * ‖η‖) ⊆ Γ)
-    (hdecay : ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖v.toDistr (χ.modulateSchwartzMap η)‖ ≤ C) :
+    (hdecay : ∀ N : ℕ, ∃ C, ∀ η ∈ Γ,
+      (1 + ‖η‖) ^ N * ‖v.toDistr (χ.fourierAtomMulSchwartzMap η)‖ ≤ C) :
     (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).IsMicrolocallySmoothAt x₀ ξ := by
   -- `b = ψ a` vanishes outside `K`, and `a - b` vanishes on `V₀`.
   have hψs : ContDiff ℝ ∞ fun x ↦ (ψ x : ℂ) • ContinuousLinearMap.id ℂ ℂ :=

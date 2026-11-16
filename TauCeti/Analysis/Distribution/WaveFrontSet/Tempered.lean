@@ -24,7 +24,7 @@ transform with a cutoff `φ` is the value `S (φ e_η)` of `S` on the modulated 
 For an element `u` of the Bessel-potential space `H^s` this value decays like `⟨η⟩ ^ (-s)`: the
 Fourier transform of `φ e_η` is the translate `𝓕 φ (· + η)`, so by Peetre's inequality the
 `H^{-s}` norm of `φ e_η` is at most a constant times `⟨η⟩ ^ (-s)`, and `u` pairs `H^s` with
-`H^{-s}` (`TemperedDistribution.exists_norm_toDistr_modulateSchwartzMap_le`). In particular a
+`H^{-s}` (`TemperedDistribution.exists_norm_toDistr_fourierAtomMulSchwartzMap_le`). In particular a
 tempered distribution lying in every `H^s` has empty wave front set
 (`TemperedDistribution.waveFrontSet_toDistribution_eq_empty`).
 
@@ -32,11 +32,12 @@ tempered distribution lying in every `H^s` has empty wave front set
 
 * `TemperedDistribution.localFourier_toDistribution`: the localized Fourier transform of the
   restriction of `S` is `η ↦ S (φ e_η)`, with `φ e_η` the Schwartz function
-  `TestFunction.modulateSchwartzMap`.
-* `TestFunction.fourier_modulateSchwartzMap`: the Fourier transform of `φ e_η` is `𝓕 φ (· + η)`.
-* `TestFunction.exists_norm_toBesselPotentialSpaceCLM_modulateSchwartzMap_le`:
+  `TestFunction.fourierAtomMulSchwartzMap`.
+* `TestFunction.fourier_fourierAtomMulSchwartzMap`: the Fourier transform of `φ e_η` is
+  `𝓕 φ (· + η)`.
+* `TestFunction.exists_norm_toBesselPotentialSpaceCLM_fourierAtomMulSchwartzMap_le`:
   `‖φ e_η‖_{H^{-s}} ≤ C ⟨η⟩ ^ (-s)`.
-* `TemperedDistribution.exists_norm_toDistr_modulateSchwartzMap_le`:
+* `TemperedDistribution.exists_norm_toDistr_fourierAtomMulSchwartzMap_le`:
   `‖u (φ e_η)‖ ≤ C ‖u‖_{H^s} ⟨η⟩ ^ (-s)`.
 * `TemperedDistribution.waveFrontSet_toDistribution_eq_empty`: a tempered distribution in every
   `H^s` has empty wave front set.
@@ -58,24 +59,25 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Open
 
 namespace TestFunction
 
-/-- The modulated cutoff `x ↦ φ x e_η x`, `e_η x = 𝐞 (-⟪x, η⟫)`, as a Schwartz function. Pairing
-a distribution with it is the localized Fourier transform `Distribution.localFourier`. -/
-def modulateSchwartzMap (φ : 𝓓(Ω, ℂ)) (η : E) : 𝓢(E, ℂ) :=
+/-- The modulated cutoff `x ↦ φ x e_η x`, the product of `φ` with the Fourier atom
+`e_η x = 𝐞 (-⟪x, η⟫)` (`TauCeti.fourierAtom η`), as a Schwartz function. Pairing a distribution
+with it is the localized Fourier transform `Distribution.localFourier`. -/
+def fourierAtomMulSchwartzMap (φ : 𝓓(Ω, ℂ)) (η : E) : 𝓢(E, ℂ) :=
   toSchwartzMapCLM ℂ (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ)
 
 @[simp]
-theorem modulateSchwartzMap_apply (φ : 𝓓(Ω, ℂ)) (η x : E) :
-    φ.modulateSchwartzMap η x = φ x * TauCeti.fourierAtom η x := by
-  simp [modulateSchwartzMap, bilinLeftCLM_apply]
+theorem fourierAtomMulSchwartzMap_apply (φ : 𝓓(Ω, ℂ)) (η x : E) :
+    φ.fourierAtomMulSchwartzMap η x = φ x * TauCeti.fourierAtom η x := by
+  simp [fourierAtomMulSchwartzMap, bilinLeftCLM_apply]
 
 /-- **Modulation is translation in frequency.** The Fourier transform of `φ e_η` is
 `ξ ↦ 𝓕 φ (ξ + η)`. -/
-theorem fourier_modulateSchwartzMap [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+theorem fourier_fourierAtomMulSchwartzMap [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
     (φ : 𝓓(Ω, ℂ)) (η ξ : E) :
-    𝓕 (φ.modulateSchwartzMap η) ξ = 𝓕 (toSchwartzMapCLM ℂ φ) (ξ + η) := by
+    𝓕 (φ.fourierAtomMulSchwartzMap η) ξ = 𝓕 (toSchwartzMapCLM ℂ φ) (ξ + η) := by
   rw [SchwartzMap.fourier_coe, SchwartzMap.fourier_coe, Real.fourier_eq, Real.fourier_eq]
   refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
-  simp only [modulateSchwartzMap_apply, toSchwartzMapCLM_apply,
+  simp only [fourierAtomMulSchwartzMap_apply, toSchwartzMapCLM_apply,
     TauCeti.fourierAtom_eq_fourierChar, Circle.smul_def, smul_eq_mul, inner_add_right, neg_add,
     AddChar.map_add_eq_mul, Circle.coe_mul]
   ring
@@ -87,8 +89,8 @@ namespace TemperedDistribution
 /-- **The localized Fourier transform of a restricted tempered distribution.** The localized
 Fourier transform of the restriction of `S` to `Ω`, with cutoff `φ`, is `η ↦ S (φ e_η)`. -/
 theorem localFourier_toDistribution (S : 𝓢'(E, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
-    (toDistribution Ω S).localFourier φ η = S (φ.modulateSchwartzMap η) := by
-  rw [Distribution.localFourier_def, complexPairing_toDistribution, modulateSchwartzMap]
+    (toDistribution Ω S).localFourier φ η = S (φ.fourierAtomMulSchwartzMap η) := by
+  rw [Distribution.localFourier_def, complexPairing_toDistribution, fourierAtomMulSchwartzMap]
 
 end TemperedDistribution
 
@@ -99,9 +101,9 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 /-- **The `H^{-s}` norm of a modulated cutoff.** For a cutoff `φ` and an order `s`, the norm of
 `φ e_η` in the Bessel-potential space `H^{-s}` is at most `C ⟨η⟩ ^ (-s)`, by Peetre's inequality,
 since the Fourier transform of `φ e_η` is a translate of that of `φ`. -/
-theorem exists_norm_toBesselPotentialSpaceCLM_modulateSchwartzMap_le (s : ℝ) (φ : 𝓓(Ω, ℂ)) :
+theorem exists_norm_toBesselPotentialSpaceCLM_fourierAtomMulSchwartzMap_le (s : ℝ) (φ : 𝓓(Ω, ℂ)) :
     ∃ C, 0 ≤ C ∧ ∀ η : E,
-      ‖SchwartzMap.toBesselPotentialSpaceCLM (-s) 2 (φ.modulateSchwartzMap η)‖ ≤
+      ‖SchwartzMap.toBesselPotentialSpaceCLM (-s) 2 (φ.fourierAtomMulSchwartzMap η)‖ ≤
         C * (1 + ‖η‖ ^ 2) ^ (-s / 2) := by
   set h : E → ℂ := fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (|s| / 2) : ℝ) : ℂ) • 𝓕 (toSchwartzMapCLM ℂ φ) ξ
   have hh : MemLp h 2 volume :=
@@ -110,11 +112,12 @@ theorem exists_norm_toBesselPotentialSpaceCLM_modulateSchwartzMap_le (s : ℝ) (
   rw [SchwartzMap.norm_toBesselPotentialSpaceCLM]
   set c : ℝ := 2 ^ (|s| / 2) * (1 + ‖η‖ ^ 2) ^ (-s / 2)
   -- Peetre's inequality `⟨ξ⟩ ^ (-s) ≤ 2 ^ (|s| / 2) ⟨ξ + η⟩ ^ |s| ⟨η⟩ ^ (-s)`.
-  have hpt (ξ : E) : ‖(((1 + ‖ξ‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ) • 𝓕 (φ.modulateSchwartzMap η) ξ‖ ≤
+  have hpt (ξ : E) : ‖(((1 + ‖ξ‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ) • 𝓕 (φ.fourierAtomMulSchwartzMap η) ξ‖ ≤
       ‖c • h (ξ + η)‖ := by
     have hP := TauCeti.one_add_norm_sq_rpow_le_mul_sub (-s) ξ (-η)
     rw [sub_neg_eq_add, norm_neg, abs_neg] at hP
-    simp only [fourier_modulateSchwartzMap, h, c, norm_smul, Complex.norm_real, Real.norm_eq_abs,
+    simp only [fourier_fourierAtomMulSchwartzMap, h, c, norm_smul, Complex.norm_real,
+      Real.norm_eq_abs,
       abs_of_nonneg (Real.rpow_nonneg (by positivity : (0 : ℝ) ≤ 1 + ‖ξ‖ ^ 2) _),
       abs_of_nonneg (Real.rpow_nonneg (by positivity : (0 : ℝ) ≤ 1 + ‖ξ + η‖ ^ 2) _),
       abs_of_nonneg (by positivity : (0 : ℝ) ≤ 2 ^ (|s| / 2) * (1 + ‖η‖ ^ 2) ^ (-s / 2))]
@@ -129,12 +132,12 @@ theorem exists_norm_toBesselPotentialSpaceCLM_modulateSchwartzMap_le (s : ℝ) (
   have hcs : eLpNorm (fun ξ ↦ c • h (ξ + η)) 2 volume = ‖c‖ₑ * eLpNorm h 2 volume := by
     have htr : eLpNorm (fun ξ ↦ h (ξ + η)) 2 volume = eLpNorm h 2 volume :=
       eLpNorm_comp_measurePreserving hh.aestronglyMeasurable (measurePreserving_add_right volume η)
-    rw [show (fun ξ ↦ c • h (ξ + η)) = c • fun ξ ↦ h (ξ + η) from rfl, eLpNorm_const_smul, htr]
-  calc (eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ) • 𝓕 (φ.modulateSchwartzMap η) ξ) 2
-        volume).toReal
+    exact (eLpNorm_const_smul c (fun ξ ↦ h (ξ + η)) 2 volume).trans (by rw [htr])
+  calc (eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ) • 𝓕 (φ.fourierAtomMulSchwartzMap η) ξ)
+        2 volume).toReal
       ≤ (eLpNorm (fun ξ ↦ c • h (ξ + η)) 2 volume).toReal := by
         refine ENNReal.toReal_mono ?_ (eLpNorm_mono
-          (SchwartzMap.memLp_one_add_norm_sq_rpow_smul_fourier (-s) (φ.modulateSchwartzMap η)
+          (SchwartzMap.memLp_one_add_norm_sq_rpow_smul_fourier (-s) (φ.fourierAtomMulSchwartzMap η)
             2).aestronglyMeasurable hpt)
         rw [hcs]
         exact ENNReal.mul_ne_top ENNReal.coe_ne_top hh.eLpNorm_lt_top.ne
@@ -151,16 +154,17 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 /-- **Decay of the localized Fourier transform on `H^s`.** For a cutoff `φ` and an order `s`
 there is a constant `C` with `‖u (φ e_η)‖ ≤ C ‖u‖ ⟨η⟩ ^ (-s)` for every `u ∈ H^s` and every
 frequency `η`. -/
-theorem exists_norm_toDistr_modulateSchwartzMap_le (s : ℝ) (φ : 𝓓(Ω, ℂ)) :
+theorem exists_norm_toDistr_fourierAtomMulSchwartzMap_le (s : ℝ) (φ : 𝓓(Ω, ℂ)) :
     ∃ C, 0 ≤ C ∧ ∀ (u : H^{s}(E, ℂ)) (η : E),
-      ‖u.toDistr (φ.modulateSchwartzMap η)‖ ≤ C * ‖u‖ * (1 + ‖η‖ ^ 2) ^ (-s / 2) := by
+      ‖u.toDistr (φ.fourierAtomMulSchwartzMap η)‖ ≤ C * ‖u‖ * (1 + ‖η‖ ^ 2) ^ (-s / 2) := by
   set B := (ContinuousLinearMap.lsmul ℂ ℂ : ℂ →L[ℂ] ℂ →L[ℂ] ℂ).flip
-  obtain ⟨C, hC0, hC⟩ := φ.exists_norm_toBesselPotentialSpaceCLM_modulateSchwartzMap_le s
+  obtain ⟨C, hC0, hC⟩ := φ.exists_norm_toBesselPotentialSpaceCLM_fourierAtomMulSchwartzMap_le s
   refine ⟨‖B‖ * C, by positivity, fun u η ↦ ?_⟩
   rw [BesselPotentialSpace.toDistr_apply_eq_besselPotentialPairing 2]
   calc ‖B.besselPotentialPairing s 2 2 u
-          (SchwartzMap.toBesselPotentialSpaceCLM (-s) 2 (φ.modulateSchwartzMap η))‖
-      ≤ ‖B‖ * ‖u‖ * ‖SchwartzMap.toBesselPotentialSpaceCLM (-s) 2 (φ.modulateSchwartzMap η)‖ :=
+          (SchwartzMap.toBesselPotentialSpaceCLM (-s) 2 (φ.fourierAtomMulSchwartzMap η))‖
+      ≤ ‖B‖ * ‖u‖ *
+          ‖SchwartzMap.toBesselPotentialSpaceCLM (-s) 2 (φ.fourierAtomMulSchwartzMap η)‖ :=
         B.norm_besselPotentialPairing_le s u _
     _ ≤ ‖B‖ * ‖u‖ * (C * (1 + ‖η‖ ^ 2) ^ (-s / 2)) := by gcongr; exact hC η
     _ = ‖B‖ * C * ‖u‖ * (1 + ‖η‖ ^ 2) ^ (-s / 2) := by ring
@@ -177,18 +181,17 @@ theorem waveFrontSet_toDistribution_eq_empty {S : 𝓢'(E, ℂ)} (hS : ∀ s : �
   refine Distribution.isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx])
     (fun N ↦ ?_) ξ
   -- Use the decay in `H^{2N}`, since `1 + ‖η‖ ≤ 2 (1 + ‖η‖ ^ 2)`.
-  obtain ⟨C, -, hdecay⟩ := exists_norm_toDistr_modulateSchwartzMap_le (2 * N) φ
+  obtain ⟨C, -, hdecay⟩ := exists_norm_toDistr_fourierAtomMulSchwartzMap_le (2 * N) φ
   set u := (hS (2 * N)).toBesselPotentialSpace
   refine ⟨2 ^ N * (C * ‖u‖), fun η ↦ ?_⟩
   have hu : u.toDistr = S := MemSobolev.toBesselPotentialSpace_toDistr _
-  have hη : 0 < 1 + ‖η‖ ^ 2 := by positivity
   have hpow : (1 + ‖η‖ ^ 2) ^ (-(2 * (N : ℝ)) / 2) = ((1 + ‖η‖ ^ 2) ^ N)⁻¹ := by
-    rw [neg_div, mul_div_cancel_left₀ _ two_ne_zero, Real.rpow_neg hη.le, Real.rpow_natCast]
+    rw [neg_div, mul_div_cancel_left₀ _ two_ne_zero, Real.rpow_neg_natCast, zpow_neg, zpow_natCast]
   have hle : (1 + ‖η‖) ^ N ≤ 2 ^ N * (1 + ‖η‖ ^ 2) ^ N := by
     rw [← mul_pow]
     exact pow_le_pow_left₀ (by positivity) (by nlinarith [norm_nonneg η]) N
   rw [localFourier_toDistribution, ← hu]
-  calc (1 + ‖η‖) ^ N * ‖u.toDistr (φ.modulateSchwartzMap η)‖
+  calc (1 + ‖η‖) ^ N * ‖u.toDistr (φ.fourierAtomMulSchwartzMap η)‖
       ≤ (2 ^ N * (1 + ‖η‖ ^ 2) ^ N) * (C * ‖u‖ * ((1 + ‖η‖ ^ 2) ^ N)⁻¹) := by
         rw [← hpow]
         exact mul_le_mul hle (hdecay u η) (norm_nonneg _) (by positivity)
