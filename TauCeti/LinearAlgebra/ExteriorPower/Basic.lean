@@ -64,6 +64,8 @@ and moving the remaining factors by vectors of that subspace does not change the
 * `TauCeti.ExteriorAlgebra.ιMulti_comp_cast`: an exterior product in the exterior algebra is
   unchanged by renumbering its factors along `Fin.cast`, and
   `TauCeti.ExteriorAlgebra.ιMulti_comp_append` splits the image of an appended family.
+* `TauCeti.ExteriorAlgebra.ιMulti_of_eq_zero`: an exterior product of a family indexed by `Fin n`
+  with `n = 0` is `1`.
 * `TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul`: exterior products of `i` and
   `j` vectors commute up to the scalar sign `(-1) ^ (j * i)`, and so do all elements of `⋀ⁱ M`
   and `⋀ʲ M` (`TauCeti.ExteriorAlgebra.mul_eq_neg_one_pow_smul_mul_of_mem`); elements of even
@@ -427,6 +429,13 @@ theorem ιMulti_comp_cast {n m : ℕ} (h : n = m) (v : Fin m → M) :
     _root_.ExteriorAlgebra.ιMulti R n (v ∘ Fin.cast h) = _root_.ExteriorAlgebra.ιMulti R m v := by
   subst h
   rfl
+
+/-- An exterior product with a number of factors equal to zero, but not definitionally `0`, is the
+empty product `1`. -/
+theorem ιMulti_of_eq_zero {n : ℕ} (h : n = 0) (v : Fin n → M) :
+    _root_.ExteriorAlgebra.ιMulti R n v = 1 := by
+  subst h
+  exact _root_.ExteriorAlgebra.ιMulti_zero_apply v
 
 /-- The exterior product of the image of an appended family under a linear map splits as the
 product of the exterior products of the images of the two parts. -/
