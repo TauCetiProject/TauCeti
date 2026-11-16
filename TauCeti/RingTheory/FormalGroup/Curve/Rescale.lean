@@ -144,14 +144,8 @@ theorem toPowerSeries_mapCurve_rescaleHom (F : FormalGroup R) (s : R)
 homothety `[s]` of the tautological curve of `F`. -/
 theorem mapCurve_rescaleHom_tautologicalCurve (F : FormalGroup R) (s : R) :
     (F.rescaleHom s).mapCurve (F.rescale s).tautologicalCurve =
-      F.rescaleCurve s F.tautologicalCurve := by
-  ext k
-  rw [toPowerSeries_mapCurve_rescaleHom, toPowerSeries_tautologicalCurve,
-    toPowerSeries_rescaleCurve, toPowerSeries_tautologicalCurve, PowerSeries.coeff_smul,
-    PowerSeries.coeff_rescale, PowerSeries.coeff_X, smul_eq_mul]
-  rcases eq_or_ne k 1 with rfl | hk
-  · simp
-  · rw [ite_eq_right hk, mul_zero, mul_zero]
+      F.rescaleCurve s F.tautologicalCurve :=
+  Curve.ext (by simp [PowerSeries.smul_eq_C_mul])
 
 /-- **Cartier's homothety–Verschiebung relation `[c] ∘ V_n = V_n ∘ [c^n]`** on curves of any
 formal group law. -/

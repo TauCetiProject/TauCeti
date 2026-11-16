@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.Curve.PTypical
 public import TauCeti.RingTheory.FormalGroup.Hazewinkel.Integral
+import TauCeti.RingTheory.FormalGroup.CoordinateChange.Graded
 
 /-!
 # `p`-typical formal group laws and canonical `p`-typicalization
@@ -119,14 +120,14 @@ theorem isPTypical_iff_frobeniusCurve_eq_zero_of_coprime (F : FormalGroup R) [F.
         F.frobeniusCurve n hn F.tautologicalCurve = 0 :=
   F.tautologicalCurve.isPTypical_iff_frobeniusCurve_eq_zero_of_coprime hp
 
-/-- When `p` is prime, `F` is `p`-typical if and only if `f_n` kills the tautological curve at every
-nonzero index `n` that is not a power of `p`. -/
+/-- `F` is `p`-typical if and only if `f_n` kills the tautological curve at every nonzero index `n`
+that is not a power of `p`. -/
 theorem isPTypical_iff_frobeniusCurve_eq_zero_of_forall_pow_ne (F : FormalGroup R) [F.IsComm]
-    {p : ℕ} (hp : p.Prime) :
+    (p : ℕ) :
     F.IsPTypical p ↔
       ∀ n : ℕ, ∀ hn : n ≠ 0, (∀ m : ℕ, p ^ m ≠ n) →
         F.frobeniusCurve n hn F.tautologicalCurve = 0 :=
-  F.tautologicalCurve.isPTypical_iff_frobeniusCurve_eq_zero_of_forall_pow_ne hp
+  F.tautologicalCurve.isPTypical_iff_frobeniusCurve_eq_zero_of_forall_pow_ne p
 
 /-- The additive formal group law `𝔾ₐ` is `p`-typical for every `p`. -/
 @[simp]
@@ -162,14 +163,14 @@ target. -/
 theorem _root_.TauCeti.FormalGroupHom.isPTypical_mapCurve_tautologicalCurve
     {F G : FormalGroup R} [F.IsComm] [G.IsComm] (f : TauCeti.FormalGroupHom F G) {p : ℕ}
     (hF : F.IsPTypical p) : (f.mapCurve F.tautologicalCurve).IsPTypical p :=
-  f.mapCurve_isPTypical hF
+  f.isPTypical_mapCurve hF
 
 /-- An isomorphism `e : F ≅ G` identifies `p`-typicality of `F` with `p`-typicality of `e` viewed as
 a curve on `G`. -/
 theorem _root_.TauCeti.FormalGroupIso.isPTypical_iff_isPTypical_mapCurve_tautologicalCurve
     {F G : FormalGroup R} [F.IsComm] [G.IsComm] (e : TauCeti.FormalGroupIso F G) {p : ℕ} :
     F.IsPTypical p ↔ (e.toHom.mapCurve F.tautologicalCurve).IsPTypical p := by
-  rw [isPTypical_def, ← e.curveEquiv_isPTypical_iff, e.curveEquiv_apply]
+  rw [isPTypical_def, ← e.isPTypical_curveEquiv_iff, e.curveEquiv_apply]
 
 /-- Transporting `F` along a formal coordinate `φ` gives a `p`-typical formal group law if and only
 if the inverse coordinate `φ⁻¹`, viewed as a curve on `F`, is `p`-typical. -/
@@ -177,14 +178,9 @@ theorem isPTypical_smul_iff (F : FormalGroup R) [F.IsComm] (φ : TauCeti.FormalC
     (p : ℕ) :
     (φ • F).IsPTypical p ↔
       (⟨φ⁻¹.toPowerSeries, φ⁻¹.constantCoeff_toPowerSeries⟩ : F.Curve).IsPTypical p := by
-  rw [isPTypical_def, ← (smulIso φ F).symm.curveEquiv_isPTypical_iff,
-    TauCeti.FormalGroupIso.curveEquiv_symm, TauCeti.FormalGroupIso.curveEquiv_symm_apply]
-  have hcurve : (smulIso φ F).invHom.mapCurve (φ • F).tautologicalCurve =
-      ⟨φ⁻¹.toPowerSeries, φ⁻¹.constantCoeff_toPowerSeries⟩ :=
-    Curve.ext <| by
-      rw [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, toPowerSeries_tautologicalCurve,
-        PowerSeries.X_subst, smulIso_invHom_toPowerSeries]
-  rw [hcurve]
+  rw [isPTypical_def, ← (smulIso φ F).isPTypical_mapCurve_invHom_iff,
+    show (smulIso φ F).invHom.mapCurve (φ • F).tautologicalCurve =
+      ⟨φ⁻¹.toPowerSeries, φ⁻¹.constantCoeff_toPowerSeries⟩ from Curve.ext (by simp)]
 
 /-- Transporting `F` along `ψ⁻¹` gives a `p`-typical formal group law if and only if `ψ`, viewed as
 a curve on `F`, is `p`-typical. -/
@@ -210,19 +206,20 @@ private theorem isPTypical_rescale_of_isLeftRegular {F : FormalGroup R} [F.IsCom
   rw [(F.rescaleHom s).mapCurve_frobeniusCurve, mapCurve_rescaleHom_tautologicalCurve,
     map_zero, h0]
 
+private theorem map_evalRingHom_rescale_X (L : FormalGroup R) (s : R) :
+    ((L.map Polynomial.C).rescale Polynomial.X).map (Polynomial.evalRingHom s) =
+      L.rescale s := by
+  rw [map_rescale, map_comp]
+  simp only [Polynomial.evalRingHom, Polynomial.eval₂RingHom_comp_C, map_id,
+    Polynomial.coe_eval₂RingHom, Polynomial.eval₂_X]
+
 /-- Rescaling a `p`-typical formal group law by any element `s : R` (zero divisor or not) preserves
 `p`-typicality. -/
 theorem IsPTypical.rescale {F : FormalGroup R} [F.IsComm] {p : ℕ} (hF : F.IsPTypical p) (s : R) :
     (F.rescale s).IsPTypical p := by
   have hgen : ((F.map Polynomial.C).rescale Polynomial.X).IsPTypical p :=
     isPTypical_rescale_of_isLeftRegular (hF.map Polynomial.C) Polynomial.isRegular_X.left
-  have heval := hgen.map (Polynomial.evalRingHom s)
-  have hlaw : ((F.map Polynomial.C).rescale Polynomial.X).map (Polynomial.evalRingHom s) =
-      F.rescale s := by
-    rw [map_rescale, map_comp]
-    simp only [Polynomial.evalRingHom, Polynomial.eval₂RingHom_comp_C, map_id,
-      Polynomial.coe_eval₂RingHom, Polynomial.eval₂_X]
-  exact (isPTypical_congr hlaw).mp heval
+  exact (isPTypical_congr (map_evalRingHom_rescale_X F s)).mp (hgen.map (Polynomial.evalRingHom s))
 
 /-- Changing coordinates by a homothety `X ↦ u X` preserves and reflects `p`-typicality. -/
 @[simp]
@@ -414,9 +411,7 @@ theorem mapCurve_invHom_pTypicalizeIso_tautologicalCurve (p : ℕ)
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
     (F.pTypicalizeIso p hunit).invHom.mapCurve (F.pTypicalize p hunit).tautologicalCurve =
       F.pTypicalProjectorCurve p hunit F.tautologicalCurve :=
-  Curve.ext <| by
-    rw [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, toPowerSeries_tautologicalCurve,
-      PowerSeries.X_subst, pTypicalizeIso_invHom_toPowerSeries]
+  Curve.ext (by simp)
 
 /-- Precomposing any homomorphism `f : F → G` with `(F.pTypicalizeIso p hunit)⁻¹` projects the
 corresponding curve on `G` by Cartier's `p`-typicalization projector. -/
@@ -503,23 +498,22 @@ theorem _root_.TauCeti.pTypicalize_hazewinkelIntegralFormalGroup (p : ℕ) [Fact
 
 /-- Base change commutes with `FormalGroup.pTypicalCoordinate`. -/
 theorem map_pTypicalCoordinate (φ : R →+* S) (p : ℕ)
-    (hR : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
-    (hS : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : S)) :
+    (hR : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
     TauCeti.FormalCoordinate.map φ (F.pTypicalCoordinate p hR) =
-      (F.map φ).pTypicalCoordinate p hS := by
+      (F.map φ).pTypicalCoordinate p (fun q hq hqp ↦ by simpa using (hR q hq hqp).map φ) := by
   apply inv_injective
   rw [← map_inv]
   apply TauCeti.FormalCoordinate.ext
   rw [TauCeti.FormalCoordinate.toPowerSeries_map, toPowerSeries_inv_pTypicalCoordinate,
     toPowerSeries_inv_pTypicalCoordinate, ← Curve.toPowerSeries_map,
-    F.map_pTypicalProjectorCurve φ p hR hS, F.map_tautologicalCurve]
+    F.map_pTypicalProjectorCurve φ p hR, F.map_tautologicalCurve]
 
 /-- Base change commutes with `FormalGroup.pTypicalize`. -/
 theorem map_pTypicalize (φ : R →+* S) (p : ℕ)
-    (hR : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
-    (hS : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : S)) :
-    (F.pTypicalize p hR).map φ = (F.map φ).pTypicalize p hS := by
-  rw [pTypicalize_def, pTypicalize_def, map_smul, F.map_pTypicalCoordinate φ p hR hS]
+    (hR : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
+    (F.pTypicalize p hR).map φ =
+      (F.map φ).pTypicalize p (fun q hq hqp ↦ by simpa using (hR q hq hqp).map φ) := by
+  rw [pTypicalize_def, pTypicalize_def, map_smul, F.map_pTypicalCoordinate φ p hR]
 
 private theorem toPowerSeries_inv_pTypicalCoordinate_rescale_of_isLeftRegular (p : ℕ)
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {s : R} (hs : IsLeftRegular s) :
@@ -585,37 +579,35 @@ private theorem toPowerSeries_pTypicalCoordinate_rescale_of_isLeftRegular (p : �
   exact congrArg TauCeti.FormalCoordinate.toPowerSeries
     (inv_injective (hinv_eq.trans (inv_eq_of_mul_eq_one_right hmul).symm))
 
+private theorem isUnit_polynomial_natCast_of_isUnit {B : Type*} [CommRing B] {p : ℕ}
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : B)) :
+    ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : Polynomial B) :=
+  fun q hq hqp ↦ by simpa only [map_natCast] using (hunit q hq hqp).map Polynomial.C
+
 /-- Rescaling `F` by any `s : R` rescales the canonical `p`-typicalizing isomorphism by `s`. -/
 theorem toPowerSeries_pTypicalCoordinate_rescale (p : ℕ)
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (s : R) :
     ((F.rescale s).pTypicalCoordinate p hunit).toPowerSeries =
       ((F.pTypicalizeIso p hunit).toHom.rescale s).toPowerSeries := by
-  have hPoly : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : Polynomial R) := fun q hq hqp ↦ by
-    simpa only [map_natCast] using (hunit q hq hqp).map Polynomial.C
+  let hPoly := isUnit_polynomial_natCast_of_isUnit hunit
   have hgen := toPowerSeries_pTypicalCoordinate_rescale_of_isLeftRegular (F.map Polynomial.C) p
     hPoly Polynomial.isRegular_X.left
   have heval := congrArg (PowerSeries.map (Polynomial.evalRingHom s)) hgen
-  have hlaw (L : FormalGroup R) :
-      ((L.map Polynomial.C).rescale Polynomial.X).map (Polynomial.evalRingHom s) =
-        L.rescale s := by
-    rw [map_rescale, map_comp]
-    simp only [Polynomial.evalRingHom, Polynomial.eval₂RingHom_comp_C, map_id,
-      Polynomial.coe_eval₂RingHom, Polynomial.eval₂_X]
   have hLHS : PowerSeries.map (Polynomial.evalRingHom s)
       (((F.map Polynomial.C).rescale Polynomial.X).pTypicalCoordinate p hPoly).toPowerSeries =
       ((F.rescale s).pTypicalCoordinate p hunit).toPowerSeries := by
     rw [← TauCeti.FormalCoordinate.toPowerSeries_map,
       map_pTypicalCoordinate ((F.map Polynomial.C).rescale Polynomial.X)
-        (Polynomial.evalRingHom s) p hPoly hunit]
+        (Polynomial.evalRingHom s) p hPoly]
     exact congrArg TauCeti.FormalCoordinate.toPowerSeries
-      (pTypicalCoordinate_congr (hlaw F) p hunit)
+      (pTypicalCoordinate_congr (map_evalRingHom_rescale_X F s) p hunit)
   have hRHS : PowerSeries.map (Polynomial.evalRingHom s)
       (((F.map Polynomial.C).pTypicalizeIso p hPoly).toHom.rescale Polynomial.X).toPowerSeries =
       ((F.pTypicalizeIso p hunit).toHom.rescale s).toPowerSeries := by
     ext n
     rw [PowerSeries.coeff_map, TauCeti.FormalGroupHom.coeff_rescale,
       TauCeti.FormalGroupHom.coeff_rescale, pTypicalizeIso_toHom_toPowerSeries,
-      pTypicalizeIso_toHom_toPowerSeries, ← F.map_pTypicalCoordinate Polynomial.C p hunit hPoly,
+      pTypicalizeIso_toHom_toPowerSeries, ← F.map_pTypicalCoordinate Polynomial.C p hunit,
       TauCeti.FormalCoordinate.toPowerSeries_map, map_mul, map_pow, PowerSeries.coeff_map,
       Polynomial.coe_evalRingHom, Polynomial.eval_X, Polynomial.eval_C]
   exact hLHS.symm.trans (heval.trans hRHS)
@@ -652,18 +644,17 @@ theorem coeff_pTypicalCoordinate_mem (F : FormalGroup A) [F.IsComm] (p : ℕ)
     (hF : ∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d F.toPowerSeries ∈ 𝒜 (w * (d.degree - 1)))
     (n : ℕ) :
     PowerSeries.coeff n (F.pTypicalCoordinate p hunit).toPowerSeries ∈ 𝒜 (w * (n - 1)) := by
-  have hPoly : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : Polynomial A) := fun q hq hqp ↦ by
-    simpa only [map_natCast] using (hunit q hq hqp).map Polynomial.C
+  let hPoly := isUnit_polynomial_natCast_of_isUnit hunit
   have hEq : F.map (toPolynomial 𝒜) = (F.map Polynomial.C).rescale (Polynomial.X ^ w) :=
     (map_toPolynomial_eq_rescale_iff F w).mpr hF
   have hcoord : TauCeti.FormalCoordinate.map (toPolynomial 𝒜) (F.pTypicalCoordinate p hunit) =
       ((F.map Polynomial.C).rescale (Polynomial.X ^ w)).pTypicalCoordinate p hPoly := by
-    rw [F.map_pTypicalCoordinate (toPolynomial 𝒜) p hunit hPoly]
+    rw [F.map_pTypicalCoordinate (toPolynomial 𝒜) p hunit]
     exact pTypicalCoordinate_congr hEq p hPoly
   have hn := congrArg (fun φ : TauCeti.FormalCoordinate (Polynomial A) ↦
     PowerSeries.coeff n φ.toPowerSeries) hcoord
   rw [TauCeti.FormalCoordinate.toPowerSeries_map, PowerSeries.coeff_map,
-    coeff_pTypicalCoordinate_rescale, ← F.map_pTypicalCoordinate Polynomial.C p hunit hPoly,
+    coeff_pTypicalCoordinate_rescale, ← F.map_pTypicalCoordinate Polynomial.C p hunit,
     TauCeti.FormalCoordinate.toPowerSeries_map, PowerSeries.coeff_map, ← pow_mul, mul_comm,
     Polynomial.C_mul_X_pow_eq_monomial] at hn
   exact toPolynomial_eq_monomial_iff.mp hn
@@ -673,21 +664,11 @@ theorem coeff_pTypicalize_mem (F : FormalGroup A) [F.IsComm] (p : ℕ)
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : A)) {w : ℕ}
     (hF : ∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d F.toPowerSeries ∈ 𝒜 (w * (d.degree - 1)))
     (d : Fin 2 →₀ ℕ) :
-    MvPowerSeries.coeff d (F.pTypicalize p hunit).toPowerSeries ∈ 𝒜 (w * (d.degree - 1)) := by
-  have hPoly : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : Polynomial A) := fun q hq hqp ↦ by
-    simpa only [map_natCast] using (hunit q hq hqp).map Polynomial.C
-  have hEq : F.map (toPolynomial 𝒜) = (F.map Polynomial.C).rescale (Polynomial.X ^ w) :=
-    (map_toPolynomial_eq_rescale_iff F w).mpr hF
-  apply (map_toPolynomial_eq_rescale_iff (F.pTypicalize p hunit) w).mp
-  calc (F.pTypicalize p hunit).map (toPolynomial 𝒜)
-      = (F.map (toPolynomial 𝒜)).pTypicalize p hPoly :=
-        F.map_pTypicalize (toPolynomial 𝒜) p hunit hPoly
-    _ = ((F.map Polynomial.C).rescale (Polynomial.X ^ w)).pTypicalize p hPoly :=
-        pTypicalize_congr hEq p hPoly
-    _ = ((F.map Polynomial.C).pTypicalize p hPoly).rescale (Polynomial.X ^ w) :=
-        pTypicalize_rescale _ p hPoly _
-    _ = ((F.pTypicalize p hunit).map Polynomial.C).rescale (Polynomial.X ^ w) := by
-        rw [F.map_pTypicalize Polynomial.C p hunit hPoly]
+    MvPowerSeries.coeff d (F.pTypicalize p hunit).toPowerSeries ∈ 𝒜 (w * (d.degree - 1)) :=
+  F.coeff_smul_mem w (F.pTypicalCoordinate p hunit)
+    ((TauCeti.FormalCoordinate.mem_gradedSubgroup 𝒜 w _).mpr
+      (F.coeff_pTypicalCoordinate_mem p hunit hF))
+    hF d
 
 end Graded
 
@@ -724,8 +705,8 @@ theorem coeff_pow_log_pTypicalize [Algebra ℚ R] {p : ℕ} (hp : p.Prime)
   rw [F.coeff_log_pTypicalize hp hunit (p ^ m),
     ite_eq_right (not_forall.mpr ⟨m, not_not.mpr rfl⟩)]
 
-/-- Over a `ℚ`-algebra, when `p` is prime, `F.pTypicalize p hunit` is Hazewinkel's formal group law
-for the unique family `v` whose Hazewinkel logarithm coefficients equal `coeff (p^m) F.log`. -/
+/-- Over a `ℚ`-algebra, when `p` is prime, `F.pTypicalize p hunit` equals
+`TauCeti.hazewinkelFormalGroup p v` for a unique family `v`. -/
 theorem existsUnique_pTypicalize_eq_hazewinkelFormalGroup [Algebra ℚ R] {p : ℕ} (hp : p.Prime)
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
     ∃! v : ℕ+ → R, F.pTypicalize p hunit = TauCeti.hazewinkelFormalGroup p v :=
