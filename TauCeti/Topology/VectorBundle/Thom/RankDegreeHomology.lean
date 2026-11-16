@@ -11,6 +11,7 @@ public import TauCeti.Topology.VectorBundle.Orientation.Basic
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.Algebra.Module.Equiv.SpanSingleton
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
+import TauCeti.Topology.Connected.PathConnected
 import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 
 /-!
@@ -214,18 +215,12 @@ private structure IsLocalFiberGenerator
 variable {g : ∀ b, ((TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))).singularHomology
     (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K)} {ε : B → B → Kˣ}
 
-/-- A function which, near each point of a path, agrees with its value at that point takes the
-same value at the two ends of the path. -/
-private theorem eq_of_path_of_eventually_eq {X α : Type*} [TopologicalSpace X] {f : X → α}
-    {x y : X} (γ : Path x y) (h : ∀ t, ∀ᶠ s in 𝓝 t, f (γ s) = f (γ t)) : f x = f y := by
-  simpa using ((IsLocallyConstant.iff_eventually_eq _).2 h).apply_eq_of_preconnectedSpace 0 1
-
 /-- The multipliers are constant along paths in the base set of the trivialization. -/
 private theorem IsLocalFiberGenerator.eq_of_path (hg : IsLocalFiberGenerator K F E g ε) (c : B)
     {X : Type*} [TopologicalSpace X] {φ : X → B} (hφ : Continuous φ)
     (hφc : ∀ x, φ x ∈ (trivializationAt F E c).baseSet) {x y : X} (γ : Path x y) :
     ε c (φ x) = ε c (φ y) :=
-  eq_of_path_of_eventually_eq (f := fun x ↦ ε c (φ x)) γ fun t ↦
+  γ.eq_of_eventually_eq (f := fun x ↦ ε c (φ x)) fun t ↦
     ((hφ.comp γ.continuous).tendsto t).eventually (hg.eventually_eq c _ (hφc (γ t)))
 
 variable (g) in
@@ -292,7 +287,7 @@ private theorem fiberClassOver_eq_of_path (hg : IsLocalFiberGenerator K F E g ε
     {x y : W} (γ : Path x y) : fiberClassOver g W x = fiberClassOver g W y := by
   have : LocallyPathConnectedSpace unitInterval :=
     Convex.locallyPathConnectedSpace ℝ (convex_Icc (0 : ℝ) 1)
-  refine eq_of_path_of_eventually_eq γ fun t ↦ ?_
+  refine γ.eq_of_eventually_eq fun t ↦ ?_
   have hγ : Continuous fun s ↦ ((γ s : W) : B) := continuous_subtype_val.comp γ.continuous
   have hc : ((γ t : W) : B) ∈ (trivializationAt F E (γ t : B)).baseSet :=
     mem_baseSet_trivializationAt F E _
@@ -350,20 +345,16 @@ private theorem isIso_thomPairOverSingularHomologyFinrankInv_of_subset
     IsIso (thomPairOverSingularHomologyFinrankInv hg W) := by
   have hu : ∀ ⦃x y : TopCat.of W⦄, Path x y → ε c x = ε c y := fun _ _ γ ↦
     hg.eq_of_path c continuous_subtype_val (fun x ↦ hW x.2) γ
-  have := isIso_singularHomology₀Desc_units_smul (ModuleCat.of K K)
-    (fun x : TopCat.of W ↦ ε c x) hu
   have h : thomPairOverSingularHomologyFinrankInv hg W ≫
       TopPair.singularHomologyMap ((trivializationAt F E c).thomPairOverIso ℝ hW).hom
         (ModuleCat.of K K) (finrank ℝ F) =
-      singularHomology₀Desc (ModuleCat.of K K) (X := TopCat.of W)
-          (fun x ↦ (ε c x : K) • singularHomology₀Section (ModuleCat.of K K) x)
-          (fun x y γ ↦ by rw [hu γ, singularHomology₀Section_eq_of_joined _ ⟨γ⟩]) ≫
+      singularHomology₀UnitsSmul (ModuleCat.of K K) (fun x : TopCat.of W ↦ ε c x) hu ≫
         (prodThomPairSingularHomologyIso (ModuleCat.of K K) W F 0 (finrank ℝ F)).inv := by
     refine singularHomology₀_hom_ext _ fun x ↦ ?_
     rw [singularHomology₀Section_thomPairOverSingularHomologyFinrankInv_assoc,
       ModuleCat.ofHom_toSpanSingleton_comp,
       singularHomologyMap_thomPairOverIso_fiberClassOver hg c hW,
-      singularHomology₀Section_singularHomology₀Desc_assoc, Linear.smul_comp]
+      singularHomology₀Section_singularHomology₀UnitsSmul_assoc, Linear.smul_comp]
     ext
     simp
   rw [(IsIso.eq_comp_inv _).2 h]

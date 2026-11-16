@@ -20,7 +20,9 @@ identifies the fibre pair `(E_b, E_b ∖ {0})` with `(F, F ∖ {0})`, and so rea
 the fibre pair. Two trivializations read `g` as classes differing by the sign of the determinant
 of their coordinate change at `b`
 (`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`), and this sign
-is `+1` exactly when they read the orientation `o b` as the same orientation of `F`. So the class
+is `+1` exactly when they read the orientation `o b` as the same orientation of `F`
+(`Bundle.Trivialization.sign_det_coordChangeL_eq_one_of_mapOrientation_eq`,
+`Bundle.Trivialization.sign_det_coordChangeL_eq_neg_one_of_mapOrientation_eq_neg`). So the class
 read off along any trivialization carrying `o b` to `ω`, or the negative of the class read off
 along one carrying `o b` to `-ω`, is a class of the fibre pair that depends only on `o b`.
 
@@ -132,6 +134,29 @@ variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [
 variable {ι : Type*} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F)
   {o : Orientation ℝ (E b) ι}
 
+omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+include hι in
+/-- Two linear trivializations reading an orientation of the fibre over `b` as the same
+orientation of the model fibre differ over `b` by a coordinate change of positive determinant. -/
+theorem sign_det_coordChangeL_eq_one_of_mapOrientation_eq
+    (h : e'.mapOrientation ι hb' o = e.mapOrientation ι hb o) :
+    SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det = 1 := by
+  rw [mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_iff_det_pos _ _ hι] at h
+  -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
+  exact sign_pos h
+
+omit [FiniteDimensional ℝ F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+include hι in
+/-- Two linear trivializations reading an orientation of the fibre over `b` as opposite
+orientations of the model fibre differ over `b` by a coordinate change of negative determinant. -/
+theorem sign_det_coordChangeL_eq_neg_one_of_mapOrientation_eq_neg
+    (h : e'.mapOrientation ι hb' o = -e.mapOrientation ι hb o) :
+    SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det = -1 := by
+  rw [mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_neg_iff_det_neg _ _ hι]
+    at h
+  -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
+  exact sign_neg h
+
 include hι in
 /-- Two linear trivializations reading an orientation of the fibre over `b` as the same
 orientation of the model fibre pull back every class of `Hⁿ(F, F ∖ {0})` to the same class of the
@@ -142,11 +167,8 @@ theorem singularCohomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq
     TopPair.singularCohomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom n g =
       TopPair.singularCohomologyMap
         (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom n g := by
-  rw [mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_iff_det_pos _ _ hι] at h
-  -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
-  have hd : 0 < (e.coordChangeL ℝ e' b : F →L[ℝ] F).det := h
-  rw [e.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb', sign_pos hd,
-    SignType.coe_one, one_smul]
+  rw [e.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb',
+    e.sign_det_coordChangeL_eq_one_of_mapOrientation_eq e' hb hb' hι h, SignType.coe_one, one_smul]
 
 include hι in
 /-- Two linear trivializations reading an orientation of the fibre over `b` as opposite
@@ -158,11 +180,8 @@ theorem singularCohomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_n
     TopPair.singularCohomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom n g =
       -TopPair.singularCohomologyMap
         (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom n g := by
-  rw [mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_neg_iff_det_neg _ _ hι]
-    at h
-  -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
-  have hd : (e.coordChangeL ℝ e' b : F →L[ℝ] F).det < 0 := h
-  rw [e.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb', sign_neg hd,
+  rw [e.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb',
+    e.sign_det_coordChangeL_eq_neg_one_of_mapOrientation_eq_neg e' hb hb' hι h,
     SignType.coe_neg_one, neg_one_smul]
 
 include hι in
@@ -198,11 +217,8 @@ theorem singularHomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq
     (h : e'.mapOrientation ι hb' o = e.mapOrientation ι hb o) (n : ℕ) :
     TopPair.singularHomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom R n =
       TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom R n := by
-  rw [mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_iff_det_pos _ _ hι] at h
-  -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
-  have hd : 0 < (e.coordChangeL ℝ e' b : F →L[ℝ] F).det := h
-  rw [e.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb', sign_pos hd,
-    SignType.coe_one, one_smul]
+  rw [e.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb',
+    e.sign_det_coordChangeL_eq_one_of_mapOrientation_eq e' hb hb' hι h, SignType.coe_one, one_smul]
 
 include hι in
 /-- Two linear trivializations reading an orientation of the fibre over `b` as opposite
@@ -214,11 +230,8 @@ theorem singularHomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_neg
     (h : e'.mapOrientation ι hb' o = -e.mapOrientation ι hb o) (n : ℕ) :
     TopPair.singularHomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom R n =
       -TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom R n := by
-  rw [mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_neg_iff_det_neg _ _ hι]
-    at h
-  -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
-  have hd : (e.coordChangeL ℝ e' b : F →L[ℝ] F).det < 0 := h
-  rw [e.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb', sign_neg hd,
+  rw [e.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb',
+    e.sign_det_coordChangeL_eq_neg_one_of_mapOrientation_eq_neg e' hb hb' hι h,
     SignType.coe_neg_one, neg_one_zsmul]
 
 end Bundle.Trivialization
