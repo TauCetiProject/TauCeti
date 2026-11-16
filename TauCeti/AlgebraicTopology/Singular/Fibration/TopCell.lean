@@ -441,18 +441,9 @@ theorem isIso_singularHomologyMap_preimageSkeletonPairToComplFiber (n : ℕ) [Un
   have hc := isColimitCofanSingularHomologyPreimageSkeletonPair C hp R n k
   -- The relative homology of the skeletal pair is the coproduct of a single summand.
   have : IsIso ((cellDiskPullbackPair p C n default).singularHomologyMap
-      (cellDiskPullbackPairMap p C n default) (ModuleCat.of R R) k) := by
-    let s := Cofan.mk ((cellDiskPullbackPair p C n default).singularHomology (ModuleCat.of R R) k)
-      fun i ↦ eqToHom (congrArg
-        (fun i ↦ (cellDiskPullbackPair p C n i).singularHomology (ModuleCat.of R R) k)
-        (Subsingleton.elim i default))
-    have h₁ : (cellDiskPullbackPair p C n default).singularHomologyMap
-        (cellDiskPullbackPairMap p C n default) (ModuleCat.of R R) k ≫ hc.desc s = 𝟙 _ := by
-      simpa [s] using hc.fac s ⟨default⟩
-    refine ⟨hc.desc s, h₁, Cofan.IsColimit.hom_ext hc _ _ fun i ↦ ?_⟩
-    obtain rfl := Subsingleton.elim i default
-    rw [cofan_mk_inj, ← Category.assoc, h₁]
-    simp
+      (cellDiskPullbackPairMap p C n default) (ModuleCat.of R R) k) :=
+    isIso_of_comp_hom_eq_id (hc.coconePointUniqueUpToIso (colimitCoconeOfUnique _).isColimit).hom
+      (hc.comp_coconePointUniqueUpToIso_hom _ ⟨default⟩)
   have := isIso_singularHomologyMap_cellDiskPullbackPairMap_comp_preimageSkeletonPairToComplFiber
     C n default hp R k
   rw [TopPair.singularHomologyMap_comp] at this
@@ -501,11 +492,11 @@ theorem isIso_singularHomologyMap_preimageSkeletonLTToComplFiber (k : ℕ) :
     infer_instance
   exact IsIso.of_isIso_comp_left (TopPair.singularHomologyMap i₁.hom (ModuleCat.of R R) k) _
 
-/-- **Living over the fundamental class through the skeletal quotient** (Barraud–Damian–Humilière–
-Oancea, Lemma 2.9). For a Serre fibration `p : E ⟶ B` and a relative CW complex `C ⊆ B` whose
-`n`-skeleton is all of `B` and which has a single `n`-cell, with centre `b`, a class
-`α ∈ Hₖ(E; R)` lives over the fundamental class at `b` exactly when its image in
-`Hₖ(E, p⁻¹(Xⁿ⁻¹); R)` is nonzero. -/
+/-- **Living over the fundamental class through the skeletal quotient**: the untwisted nonvanishing
+criterion corresponding to Lemma 2.9 of Barraud–Damian–Humilière–Oancea. For a Serre fibration
+`p : E ⟶ B` and a relative CW complex `C ⊆ B` whose `n`-skeleton is all of `B` and which has a
+single `n`-cell, with centre `b`, a class `α ∈ Hₖ(E; R)` lives over the fundamental class at `b`
+exactly when its image in `Hₖ(E, p⁻¹(Xⁿ⁻¹); R)` is nonzero. -/
 theorem livesOverFundamentalClass_iff_singularHomologyπ_ne_zero {k : ℕ}
     (α : ((_root_.TopCat.toSSet.obj E).homology (ModuleCat.of R R) k : ModuleCat.{u} R)) :
     LivesOverFundamentalClass (ModuleCat.of R R) p (map n (default : cell C n) 0) α ↔
@@ -522,11 +513,11 @@ theorem livesOverFundamentalClass_iff_singularHomologyπ_ne_zero {k : ℕ}
   exact (livesOverFundamentalClass_iff _ _ _ _).trans ((congrArg (· ≠ 0) key).symm.to_iff.trans
     (map_eq_zero_iff _ hinj).not)
 
-/-- **Living over the fundamental class and the skeletal filtration** (Barraud–Damian–Humilière–
-Oancea, Proposition 2.6). For a Serre fibration `p : E ⟶ B` and a relative CW complex `C ⊆ B`
-whose `n`-skeleton is all of `B` and which has a single `n`-cell, with centre `b`, a class
-`α ∈ Hₖ(E; R)` lives over the fundamental class at `b` exactly when it does not come from the
-homology of the part of `E` over the `(n - 1)`-skeleton. -/
+/-- **Living over the fundamental class and the skeletal filtration**: the skeletal-filtration form
+of Proposition 2.6 of Barraud–Damian–Humilière–Oancea. For a Serre fibration `p : E ⟶ B` and a
+relative CW complex `C ⊆ B` whose `n`-skeleton is all of `B` and which has a single `n`-cell, with
+centre `b`, a class `α ∈ Hₖ(E; R)` lives over the fundamental class at `b` exactly when it does not
+come from the homology of the part of `E` over the `(n - 1)`-skeleton. -/
 theorem livesOverFundamentalClass_iff_notMem_range {k : ℕ}
     (α : ((_root_.TopCat.toSSet.obj E).homology (ModuleCat.of R R) k : ModuleCat.{u} R)) :
     LivesOverFundamentalClass (ModuleCat.of R R) p (map n (default : cell C n) 0) α ↔
