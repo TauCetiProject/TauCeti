@@ -23,7 +23,7 @@ by `TauCeti.Huber.weightedEval`. This file proves the multivariable Newton–Hen
 series, with a Jacobian matrix that is only invertible up to a power of `ϖ`.
 
 The values of `F` at points of `A₀^N` lie in `A₀`
-(`TauCeti.Huber.weightedEval_mem_ringOfDefinition`). More precisely, Taylor's estimate holds
+(`TauCeti.Huber.weightedEval_mem`). More precisely, Taylor's estimate holds
 termwise: if
 `x ≡ t mod ϖᵃ` and `x' ≡ x mod ϖᵇ` with `a ≤ b`, then
 `F(x') - F(x) - ∑ⱼ ∂ⱼF(t) (x'ⱼ - xⱼ)` lies in `ϖ^(a + b) A₀`. Each term of this sum is a
@@ -121,29 +121,27 @@ variable {ϖ : P.ringOfDefinition} {F : Fin N → MvPowerSeries (Fin N) C}
 
 /-- The evaluation of `F` on `A₀^N`, as a map `A₀^N → A₀^N`. -/
 private noncomputable def evalOD
-    (hF : ∀ i, IsWeightedRestricted (fun _ : Fin N ↦ ({1} : Set C)) (F i))
     (hF₀ : ∀ i ν, MvPowerSeries.coeff ν (F i) ∈ P.ringOfDefinition)
     (x : Fin N → P.ringOfDefinition) (i : Fin N) : P.ringOfDefinition :=
   ⟨weightedEval (RingHom.id C) (fun l ↦ (x l : C)) (F i),
-    weightedEval_mem_ringOfDefinition P (hF i) (hF₀ i) x⟩
+    weightedEval_mem P.isClosed_ringOfDefinition (hF₀ i) fun l ↦ (x l).2⟩
 
+omit [IsUniformAddGroup C] [CompleteSpace C] in
 /-- `F` vanishes at `u ∈ A₀^N` exactly when its evaluation on `A₀^N` does. -/
 private theorem evalOD_eq_zero_iff
-    (hF : ∀ i, IsWeightedRestricted (fun _ : Fin N ↦ ({1} : Set C)) (F i))
     (hF₀ : ∀ i ν, MvPowerSeries.coeff ν (F i) ∈ P.ringOfDefinition)
-    (u : Fin N → P.ringOfDefinition) : evalOD P hF hF₀ u = 0 ↔
+    (u : Fin N → P.ringOfDefinition) : evalOD P hF₀ u = 0 ↔
       ∀ i, weightedEval (RingHom.id C) (fun l ↦ (u l : C)) (F i) = 0 := by
   simp [funext_iff, evalOD, Subtype.ext_iff]
 
 /-- The Jacobian matrix of `F` at `t`, as a matrix over `A₀`. -/
 private noncomputable def jacobianOD
-    (hF : ∀ i, IsWeightedRestricted (fun _ : Fin N ↦ ({1} : Set C)) (F i))
     (hF₀ : ∀ i ν, MvPowerSeries.coeff ν (F i) ∈ P.ringOfDefinition)
     (t : Fin N → P.ringOfDefinition) : Matrix (Fin N) (Fin N) P.ringOfDefinition :=
   Matrix.of fun i j ↦ ⟨weightedEval (RingHom.id C) (fun l ↦ (t l : C))
     (MvPowerSeries.pderiv j (F i)),
-    weightedEval_mem_ringOfDefinition P ((hF i).pderiv_one_weight j)
-      (MvPowerSeries.coeff_pderiv_mem (hF₀ i) j) t⟩
+    weightedEval_mem P.isClosed_ringOfDefinition (MvPowerSeries.coeff_pderiv_mem (hF₀ i) j)
+      fun l ↦ (t l).2⟩
 
 /-- Taylor's estimate on `A₀^N`, in the form of the linearisation hypothesis of the quantitative
 Newton method. -/
@@ -153,8 +151,8 @@ private theorem pow_dvd_evalOD_sub
     (hϖ : IsUnit (ϖ : C)) {t : Fin N → P.ringOfDefinition} {k : ℕ}
     (x x' : Fin N → P.ringOfDefinition) (hx : ∀ i, ϖ ^ (k + 1) ∣ x i - t i) (n : ℕ)
     (hn : k + 1 ≤ n) (hxx' : ∀ i, ϖ ^ n ∣ x' i - x i) (i : Fin N) :
-    ϖ ^ (n + k + 1) ∣ evalOD P hF hF₀ x' i - evalOD P hF hF₀ x i -
-      (jacobianOD P hF hF₀ t *ᵥ (x' - x)) i := by
+    ϖ ^ (n + k + 1) ∣ evalOD P hF₀ x' i - evalOD P hF₀ x i -
+      (jacobianOD P hF₀ t *ᵥ (x' - x)) i := by
   refine (SubsemiringClass.coe_mem_smul_iff_dvd P.ringOfDefinition).mp ?_
   convert weightedEval_sub_weightedEval_sub_sum_mem_pow_smul P hϖ (hF i) (hF₀ i) hn hx hxx'
     using 1
@@ -163,15 +161,15 @@ private theorem pow_dvd_evalOD_sub
     ring
   · simp [evalOD, jacobianOD, Matrix.mulVec, dotProduct]
 
+omit [IsUniformAddGroup C] [CompleteSpace C] in
 /-- The scaled inverse of the Jacobian matrix over `C` is one over `A₀`. -/
 private theorem mul_jacobianOD_eq
-    (hF : ∀ i, IsWeightedRestricted (fun _ : Fin N ↦ ({1} : Set C)) (F i))
     (hF₀ : ∀ i ν, MvPowerSeries.coeff ν (F i) ∈ P.ringOfDefinition)
     {t : Fin N → P.ringOfDefinition} {k : ℕ} {M : Matrix (Fin N) (Fin N) P.ringOfDefinition}
     (hM : M.map ((↑) : P.ringOfDefinition → C) * Matrix.of (fun i j ↦
       weightedEval (RingHom.id C) (fun l ↦ (t l : C)) (MvPowerSeries.pderiv j (F i))) =
         (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C)) :
-    M * jacobianOD P hF hF₀ t = ϖ ^ k • (1 : Matrix (Fin N) (Fin N) P.ringOfDefinition) := by
+    M * jacobianOD P hF₀ t = ϖ ^ k • (1 : Matrix (Fin N) (Fin N) P.ringOfDefinition) := by
   ext i j
   have h := congrFun (congrFun hM i) j
   simp only [Matrix.mul_apply, Matrix.map_apply, Matrix.of_apply, Matrix.smul_apply,
@@ -200,10 +198,10 @@ theorem pow_dvd_sub_of_weightedEval_eq_zero (hϖ : IsUnit (ϖ : C))
     ϖ ^ (e - k) ∣ u i - t i :=
   pow_dvd_sub_of_eq_zero_of_mul_eq_pow_smul
     (fun _ _ h ↦ Subtype.ext (hϖ.mul_left_cancel (congrArg Subtype.val h)))
-    (evalOD P hF hF₀) (mul_jacobianOD_eq P hF hF₀ hM) t
+    (evalOD P hF₀) (mul_jacobianOD_eq P hF₀ hM) t
     (fun x x' hx _ n hn hxx' ↦ pow_dvd_evalOD_sub P hF hF₀ hϖ x x' hx n hn hxx')
     (fun i ↦ (SubsemiringClass.coe_mem_smul_iff_dvd P.ringOfDefinition).mp (ht i)) hu
-    ((evalOD_eq_zero_iff P hF hF₀ u).mpr hFu) i
+    ((evalOD_eq_zero_iff P hF₀ u).mpr hFu) i
 
 /-- **Newton's method for restricted series with integral coefficients.** Let `C` be Hausdorff,
 let `ϖ ∈ A₀` be a pseudouniformiser, and let `M` be an integral matrix with `M J(t) = ϖᵏ`, where
@@ -223,7 +221,7 @@ theorem existsUnique_weightedEval_eq_zero [T0Space C] (hϖ : IsPseudoUniformizer
   have := P.isAdicComplete_span_singleton ϖ hϖ
   simpa only [evalOD_eq_zero_iff] using IsAdicComplete.existsUnique_eq_zero_of_mul_eq_pow_smul
     (fun _ _ h ↦ Subtype.ext (hϖ.isUnit.mul_left_cancel (congrArg Subtype.val h)))
-    (evalOD P hF hF₀) (mul_jacobianOD_eq P hF hF₀ hM) t
+    (evalOD P hF₀) (mul_jacobianOD_eq P hF₀ hM) t
     (fun i ↦ (SubsemiringClass.coe_mem_smul_iff_dvd P.ringOfDefinition).mp (ht i))
     fun x x' hx _ n hn hxx' ↦ pow_dvd_evalOD_sub P hF hF₀ hϖ.isUnit x x' hx n hn hxx'
 

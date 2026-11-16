@@ -192,7 +192,7 @@ theorem integrable_generalizedNormalPDFReal (m s p : ℝ) :
     exact integrable_zero _ _ _
 
 /-- For positive scale and shape the density integrates to `1`. -/
-theorem integral_generalizedNormalPDFReal (hs : 0 < s) (hp : 0 < p) (m : ℝ) :
+theorem integral_generalizedNormalPDFReal_eq_one (hs : 0 < s) (hp : 0 < p) (m : ℝ) :
     ∫ x, generalizedNormalPDFReal m s p x = 1 := by
   have h := integral_generalizedNormalPDFReal_mul_rpow_abs_sub (q := 0) hs hp (by norm_num) m
   simp only [Real.rpow_zero, mul_one, zero_add, one_div, one_mul] at h
@@ -204,7 +204,7 @@ theorem lintegral_generalizedNormalPDF_eq_one (hs : 0 < s) (hp : 0 < p) (m : ℝ
   simp_rw [generalizedNormalPDF_eq_ofReal]
   rw [← ofReal_integral_eq_lintegral_ofReal (integrable_generalizedNormalPDFReal m s p)
       (ae_of_all _ (generalizedNormalPDFReal_nonneg m s p)),
-    integral_generalizedNormalPDFReal hs hp m, ENNReal.ofReal_one]
+    integral_generalizedNormalPDFReal_eq_one hs hp m, ENNReal.ofReal_one]
 
 /-! ### The law -/
 

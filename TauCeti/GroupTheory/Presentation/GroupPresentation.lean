@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 public import Mathlib.GroupTheory.PresentedGroup
+public import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
 public import TauCeti.GroupTheory.Presentation.Relator
 
 /-!
@@ -150,12 +150,6 @@ theorem relatorsCyclicallyReduced_iff (P : GroupPresentation) :
     P.relatorsCyclicallyReduced ↔ ∀ w ∈ P.relators, FreeGroup.IsCyclicallyReduced w :=
   Iff.rfl
 
-/-- A word is cyclically reduced exactly when free reduction leaves it alone and its last letter
-does not cancel against its first, and both halves of that are decidable. -/
-instance {α : Type*} [DecidableEq α] (w : PresentationWord α) :
-    Decidable (FreeGroup.IsCyclicallyReduced w) :=
-  decidable_of_iff _ (and_congr_left' FreeGroup.isReduced_iff_reduce_eq).symm
-
 instance (P : GroupPresentation) : Decidable P.relatorsCyclicallyReduced :=
   decidable_of_iff _ (relatorsCyclicallyReduced_iff P).symm
 
@@ -222,6 +216,13 @@ theorem homEquiv_apply (P : GroupPresentation) {G : Type*} [_root_.Group G]
     (φ : P.Group →* G) :
     (P.homEquiv φ).1 = fun i ↦ φ (PresentedGroup.of i) := by
   rfl
+
+/-- Each transcribed relator evaluates to one on the canonical generators. -/
+theorem eval_of_eq_one (P : GroupPresentation) (t : Relator (Fin P.generatorCount))
+    (ht : t ∈ P.transcribed) :
+    t.eval (PresentedGroup.of : Fin P.generatorCount → P.Group) = 1 := by
+  simpa only [Relator.lift_toFreeGroup, homEquiv_apply, MonoidHom.id_apply] using
+    (P.homEquiv (MonoidHom.id _)).property t ht
 
 /-- Extending a satisfying assignment sends each generator to its assigned value. -/
 @[simp]
