@@ -51,6 +51,8 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
   interact.
 * `TauCeti.IsProConstructible.inter`, `.iInter`, `.sInter`, `.union`, `.iUnion` — the calculus of
   pro-constructible subsets. Arbitrary intersections and finite unions are allowed.
+* `TauCeti.isProConstructible_singleton` — singletons in a T₀ prespectral space are
+  pro-constructible.
 * `TauCeti.IsProConstructible.preimage` — pro-constructibility is stable under preimage along a
   spectral map; `TauCeti.IsProConstructible.prod` and `.pi` — and under products when the ambient
   factors complementary to each projection are quasi-compact.
@@ -187,6 +189,18 @@ theorem isProConstructible_setOfPred_specializes [PrespectralSpace X] (x : X) :
         (x := y) (y := x)
   rw [heq]
   exact IsProConstructible.sInter fun U hU ↦ hU.2.1.isProConstructible hU.1
+
+/-- Every singleton in a T₀ prespectral space is pro-constructible, because the constructible
+topology is T₁. -/
+theorem isProConstructible_singleton [PrespectralSpace X] [T0Space X] (x : X) :
+    IsProConstructible ({x} : Set X) := by
+  rw [IsProConstructible]
+  have heq : (WithTopology.ofTopology ⁻¹' ({x} : Set X) : Set (WithConstructibleTopology X)) =
+      {WithTopology.toTopology (constructibleTopology X) x} := by
+    ext y
+    exact ⟨fun h ↦ h ▸ rfl, fun h ↦ h ▸ rfl⟩
+  rw [heq]
+  exact isClosed_singleton
 
 /-! ### Functoriality -/
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.ContinuousMap.Defs
+import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
 # Quotients by setoids and fibre products of topological spaces
@@ -18,9 +19,15 @@ the topology of the fibre product `Function.Pullback f g`, a subspace of the pro
 
 * `Setoid.image_quotient_mk_compl`: if `s` identifies only points of `t`, the quotient map sends
   the complement of `t` onto the complement of the image of `t`.
+* `Setoid.preimage_image_quotient_mk`, `Setoid.image_snd_preimage_fst`: the `s`-saturation of a set
+  expressed via `Quotient.mk s` and via the two projections of the graph of `s`.
 * `Setoid.isOpen_image_quotient_mk`: the image of an open set closed under `s` is open.
 * `Setoid.isOpenEmbedding_domRestrict_quotient_mk_of_isOpen`: the quotient map restricted to an
   open set whose points are related only to themselves is an open embedding.
+* `Setoid.isOpenMap_fst_iff_snd`: by symmetry of `s`, the first projection from its graph is open
+  if and only if the second projection is open.
+* `Setoid.isOpenMap_quotient_mk_iff`: `Quotient.mk s` is an open map if and only if the first
+  projection from the graph of `s` is open.
 * `Function.Pullback.continuous_fst`, `Function.Pullback.continuous_snd`: the projections of the
   fibre product are continuous.
 * `Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp`: open maps are stable under
@@ -53,6 +60,29 @@ theorem image_quotient_mk_compl {t : Set X} (hst : ∀ ⦃x y⦄, s x y → x �
   · intro h
     exact ⟨y, fun hy => h y hy (s.refl y), s.refl y⟩
 
+/-- The preimage of the quotient image of `t` is its `s`-saturation. -/
+theorem preimage_image_quotient_mk (t : Set X) :
+    Quotient.mk s ⁻¹' (Quotient.mk s '' t) = {y | ∃ x ∈ t, s x y} := by
+  ext y
+  constructor
+  · rintro ⟨x, hxt, hxy⟩
+    exact ⟨x, hxt, Quotient.exact hxy⟩
+  · rintro ⟨x, hxt, hxy⟩
+    exact ⟨x, hxt, Quotient.sound hxy⟩
+
+/-- Pulling `t` back along the first projection of the graph of `s` and pushing forward along the
+second projection produces its `s`-saturation. -/
+theorem image_snd_preimage_fst (t : Set X) :
+    (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) ''
+        ((fun q : {q : X × X // s q.1 q.2} ↦ q.1.1) ⁻¹' t) =
+      {y | ∃ x ∈ t, s x y} := by
+  ext y
+  constructor
+  · rintro ⟨⟨⟨x, y'⟩, hxy⟩, hxt, rfl⟩
+    exact ⟨x, hxt, hxy⟩
+  · rintro ⟨x, hxt, hxy⟩
+    exact ⟨⟨(x, y), hxy⟩, hxt, rfl⟩
+
 variable [TopologicalSpace X]
 
 /-- The image in `Quotient s` of an open set closed under the relation `s` is open. -/
@@ -77,6 +107,15 @@ theorem isOpenEmbedding_domRestrict_quotient_mk_of_isOpen {U : Set X} (hU : IsOp
     refine isOpen_image_quotient_mk s (hU.isOpenMap_subtype_val W hW) ?_
     rintro _ y ⟨x, hx, rfl⟩ hxy
     exact hfix x.2 hxy ▸ mem_image_of_mem _ hx
+
+/-- By symmetry of `s`, the first projection from the graph of `s` is open if and only if the
+second projection is open. -/
+theorem isOpenMap_fst_iff_snd :
+    IsOpenMap (fun q : {q : X × X // s q.1 q.2} ↦ q.1.1) ↔
+      IsOpenMap (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) := by
+  let e : {q : X × X // s q.1 q.2} ≃ₜ {q : X × X // s q.1 q.2} :=
+    (Homeomorph.prodComm X X).subtype fun _ ↦ ⟨s.symm, s.symm⟩
+  exact ⟨fun h ↦ h.comp e.isOpenMap, fun h ↦ h.comp e.symm.isOpenMap⟩
 
 end Setoid
 
@@ -143,3 +182,39 @@ theorem ContinuousMap.coe_pullbackSnd : ⇑(pullbackSnd f g) = Function.Pullback
   (rfl)
 
 end Pullback
+
+/-- The quotient map `Quotient.mk s` is open if and only if the first projection from the graph of
+`s` is open. -/
+theorem Setoid.isOpenMap_quotient_mk_iff {X : Type*} [TopologicalSpace X] (s : Setoid X) :
+    IsOpenMap (Quotient.mk s) ↔
+      IsOpenMap (fun q : {q : X × X // s q.1 q.2} ↦ q.1.1) := by
+  constructor
+  · intro hq
+    refine s.isOpenMap_fst_iff_snd.mpr ?_
+    have hq_rf : IsOpenMap (rangeFactorization (Quotient.mk s)) := fun U hUo ↦
+      isOpen_induced_iff.mpr ⟨Quotient.mk s '' U, hq U hUo, by
+        ext ⟨y, _⟩
+        simp [rangeFactorization]⟩
+    have hrange : range (Subtype.val : {q : X × X // s q.1 q.2} → X × X) =
+        {p | Quotient.mk s p.1 = Quotient.mk s p.2} := by
+      ext ⟨x, y⟩
+      simp [Quotient.eq]
+    have hpb := IsEmbedding.subtypeVal.isInducing.isOpenMap_rangeFactorization_snd_comp
+      hrange hq_rf continuous_quotient_mk'
+    have hval_open : IsOpenMap
+        (Subtype.val : range (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) → X) := by
+      refine IsOpen.isOpenMap_subtype_val ?_
+      have huniv : range (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) = univ :=
+        eq_univ_iff_forall.mpr fun x ↦ ⟨⟨(x, x), s.refl x⟩, rfl⟩
+      rw [huniv]
+      exact isOpen_univ
+    exact hval_open.comp hpb
+  · intro hs U hUo
+    have ht : IsOpenMap (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) :=
+      s.isOpenMap_fst_iff_snd.mp hs
+    have heq : Quotient.mk' ⁻¹' (Quotient.mk s '' U) =
+        (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) ''
+          ((fun q : {q : X × X // s q.1 q.2} ↦ q.1.1) ⁻¹' U) :=
+      (s.preimage_image_quotient_mk U).trans (s.image_snd_preimage_fst U).symm
+    rw [isOpen_coinduced, heq]
+    exact ht _ (hUo.preimage (continuous_fst.comp continuous_subtype_val))
