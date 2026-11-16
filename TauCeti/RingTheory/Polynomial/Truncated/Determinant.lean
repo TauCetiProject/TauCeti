@@ -5,12 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import Mathlib.LinearAlgebra.Matrix.ToLin
+public import Mathlib.RingTheory.PowerBasis
 import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.RingTheory.Polynomial.DegreeLT
+import TauCeti.Algebra.Polynomial.Taylor
 
 /-!
 # Determinants of polynomial power expansions on a thickening `R[X] / ((X - c) ^ n)`
@@ -34,9 +39,11 @@ polynomial coefficient matrices of determinant `1` (`Matrix.det_matrixOfPolynomi
 into the lower-triangular matrix of coefficients of `(taylor c f - C (f.eval c)) ^ i` below degree
 `n`, whose `i`-th diagonal entry is `(f.derivative.eval c) ^ i`.
 
-In positive characteristic `p`, `(X - C c) ^ p = X ^ p - C (c ^ p)`, so this determinant computes
-the index `[S : R[α]]` when `S = R[π]` is a monogenic extension of valuation rings with `π ^ p ∈ R`
-and `α = f(π)`, the local determinant step in Tate's genus-change theorem.
+In exponential characteristic `p`, `(X - C c) ^ p ^ e = X ^ p ^ e - C (c ^ p ^ e)`, so for any
+power basis `pb` of `S` over `R` of dimension `pb.dim = p ^ e` with `pb.gen ^ pb.dim ∈ R`, the
+transition matrix from `pb.basis` to the powers of `aeval pb.gen f` has determinant
+`aeval pb.gen f.derivative ^ (pb.dim * (pb.dim - 1) / 2)` in `S`
+(`PowerBasis.det_toMatrix_aeval_pow`).
 
 ## Main results
 
@@ -45,6 +52,10 @@ and `α = f(π)`, the local determinant step in Tate's genus-change theorem.
   `f.derivative.eval c ^ (n * (n - 1) / 2)`.
 * `Polynomial.det_coeff_pow_modByMonic_X_sub_C_pow`: the closed form for the remainder matrix
   `((f ^ i) %ₘ ((X - C c) ^ n)).coeff j`.
+* `PowerBasis.det_toMatrix_aeval_pow`: for a power basis `pb` of dimension `p ^ e` in exponential
+  characteristic `p` with `pb.gen ^ pb.dim ∈ R`, the determinant of the transition matrix from
+  `pb.basis` to the powers of `aeval pb.gen f` equals
+  `aeval pb.gen f.derivative ^ (pb.dim * (pb.dim - 1) / 2)` in `S`.
 -/
 
 public section
@@ -54,12 +65,6 @@ open Polynomial
 namespace Matrix
 
 variable {R : Type*} [CommRing R] {n : ℕ}
-
-/-- If `X ^ n ∣ p`, then every coefficient of `p` below degree `n` vanishes. -/
-private theorem coeff_eq_zero_of_X_pow_dvd {p : R[X]} (hp : X ^ n ∣ p) (k : Fin n) :
-    p.coeff k = 0 := by
-  obtain ⟨q, rfl⟩ := hp
-  simp [coeff_X_pow_mul', not_le_of_gt k.2]
 
 /-- Shifting `f ^ i ≡ ∑_j A_{j,i} X^j (mod (X - c)^n)` by `taylor c` expresses the low-degree
 coefficients of `(taylor c f) ^ i` by multiplying `A` on the left by the monic shift matrix of
@@ -77,7 +82,7 @@ private theorem shift_mul_apply_of_X_sub_C_pow_dvd {f : R[X]} {c : R} {A : Matri
   have hzero : ((taylor c f) ^ (i : ℕ)).coeff k =
       (∑ j : Fin n, C (A j i) * (X + C c) ^ (j : ℕ)).coeff k := by
     rw [← sub_eq_zero, ← coeff_sub]
-    exact coeff_eq_zero_of_X_pow_dvd hdvd k
+    exact (X_pow_dvd_iff.mp hdvd) k k.isLt
   rw [hzero, finsetSum_coeff, Matrix.mul_apply]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [of_apply, coeff_C_mul, mul_comm]
@@ -106,30 +111,6 @@ private theorem shift_mul_shift_apply {f : R[X]} {c : R} {A : Matrix (Fin n) (Fi
   rw [← hcomp, hsum, finsetSum_coeff, ← Fin.sum_univ_eq_sum_range]
   refine Finset.sum_congr rfl fun m _ ↦ ?_
   rw [coeff_C_mul, mul_comm]
-
-/-- Since `taylor c f - C (f.eval c)` has zero constant term and linear coefficient
-`f.derivative.eval c`, its `i`-th power vanishes below degree `i` and has `i`-th coefficient
-`(f.derivative.eval c) ^ i`. -/
-private theorem coeff_taylor_sub_C_eval_pow_of_lt (f : R[X]) (c : R) {k i : ℕ} (hki : k < i) :
-    ((taylor c f - C (f.eval c)) ^ i).coeff k = 0 := by
-  set g := divX (taylor c f - C (f.eval c))
-  have hfg : taylor c f - C (f.eval c) = X * g := by
-    have h := X_mul_divX_add (taylor c f - C (f.eval c))
-    simpa [taylor_coeff_zero] using h.symm
-  rw [hfg, mul_pow]
-  simp [coeff_X_pow_mul', not_le_of_gt hki]
-
-private theorem coeff_taylor_sub_C_eval_pow_self (f : R[X]) (c : R) (i : ℕ) :
-    ((taylor c f - C (f.eval c)) ^ i).coeff i = f.derivative.eval c ^ i := by
-  set g := divX (taylor c f - C (f.eval c))
-  have hfg : taylor c f - C (f.eval c) = X * g := by
-    have h := X_mul_divX_add (taylor c f - C (f.eval c))
-    simpa [taylor_coeff_zero] using h.symm
-  have hg0 : g.coeff 0 = f.derivative.eval c := by
-    simp [g, coeff_divX, taylor_coeff_one]
-  rw [hfg, mul_pow]
-  simp only [coeff_X_pow_mul', le_refl, ↓reduceIte, tsub_self]
-  rw [coeff_zero_eq_eval_zero, eval_pow, ← coeff_zero_eq_eval_zero, hg0]
 
 /-- **Determinant of a polynomial power-expansion matrix modulo `(X - C c) ^ n`**: if each column
 `i` of `A : Matrix (Fin n) (Fin n) R` gives the coefficients of `f ^ i` modulo `(X - C c) ^ n`, then
@@ -193,3 +174,65 @@ theorem det_coeff_pow_modByMonic_X_sub_C_pow {R : Type*} [CommRing R] (n : ℕ) 
     sub_eq_of_eq_add' (modByMonic_add_div (f ^ (i : ℕ)) ((X - C c) ^ n)).symm⟩
 
 end Polynomial
+
+namespace PowerBasis
+
+/-- **Determinant of the power-expansion matrix in a purely inseparable power basis**: if `pb` is a
+power basis of `S` over `R` of dimension `pb.dim = p ^ e` in exponential characteristic `p` with
+`pb.gen ^ pb.dim = algebraMap R S b`, then the transition matrix from `pb.basis` to the powers
+`1, f(pb.gen), …, f(pb.gen) ^ (pb.dim - 1)` has determinant
+`f'(pb.gen) ^ (pb.dim * (pb.dim - 1) / 2)` in `S`. -/
+theorem det_toMatrix_aeval_pow {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    {p e : ℕ} [ExpChar S p] (pb : PowerBasis R S) (hdim : pb.dim = p ^ e)
+    {b : R} (hb : algebraMap R S b = pb.gen ^ pb.dim) (f : R[X]) :
+    algebraMap R S
+        (LinearMap.toMatrix pb.basis pb.basis
+          (pb.basis.constr R fun i : Fin pb.dim ↦ aeval pb.gen f ^ (i : ℕ))).det =
+      aeval pb.gen f.derivative ^ (pb.dim * (pb.dim - 1) / 2) := by
+  classical
+  nontriviality S
+  have : Nontrivial R := (algebraMap R S).domain_nontrivial
+  set ψ : S →ₗ[R] S := pb.basis.constr R fun i : Fin pb.dim ↦ aeval pb.gen f ^ (i : ℕ)
+  set A : Matrix (Fin pb.dim) (Fin pb.dim) R := LinearMap.toMatrix pb.basis pb.basis ψ
+  have hcol (i : Fin pb.dim) :
+      aeval pb.gen f ^ (i : ℕ) = ∑ j : Fin pb.dim, algebraMap R S (A j i) * pb.gen ^ (j : ℕ) := by
+    rw [← pb.basis.constr_basis R (fun m : Fin pb.dim ↦ aeval pb.gen f ^ (m : ℕ)) i,
+      ← pb.basis.sum_repr (ψ (pb.basis i))]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [← LinearMap.toMatrix_apply pb.basis pb.basis ψ j i, Algebra.smul_def, pb.basis_eq_pow]
+  have hdvd_R (i : Fin pb.dim) :
+      (X ^ pb.dim - C b) ∣ f ^ (i : ℕ) - ∑ j : Fin pb.dim, C (A j i) * X ^ (j : ℕ) := by
+    set q : R[X] := f ^ (i : ℕ) - ∑ j : Fin pb.dim, C (A j i) * X ^ (j : ℕ)
+    have hm : (X ^ pb.dim - C b).Monic := monic_X_pow_sub_C b pb.dim_pos.ne'
+    have hne1 : (X ^ pb.dim - C b : R[X]) ≠ 1 := fun h1 ↦
+      pb.dim_pos.ne' (by simpa [natDegree_X_pow_sub_C] using congrArg natDegree h1)
+    rw [← modByMonic_eq_zero_iff_dvd hm]
+    have hdeg : (q %ₘ (X ^ pb.dim - C b)).natDegree < pb.dim :=
+      (natDegree_modByMonic_lt q hm hne1).trans_eq (by rw [natDegree_X_pow_sub_C])
+    have haeval_mod : aeval pb.gen (q %ₘ (X ^ pb.dim - C b)) = 0 := by
+      have hq0 : aeval pb.gen q = 0 := by
+        simpa [q, map_sum] using sub_eq_zero.2 (hcol i)
+      have hmod0 : aeval pb.gen (X ^ pb.dim - C b) = 0 := by
+        rw [map_sub, map_pow, aeval_X, aeval_C, hb, sub_self]
+      have hdiv := congrArg (aeval pb.gen) (modByMonic_add_div q (X ^ pb.dim - C b))
+      rwa [map_add, map_mul, hmod0, zero_mul, add_zero, hq0] at hdiv
+    have hsum : ∑ j : Fin pb.dim, C ((q %ₘ (X ^ pb.dim - C b)).coeff j) * X ^ (j : ℕ) =
+        q %ₘ (X ^ pb.dim - C b) := by
+      rw [Fin.sum_univ_eq_sum_range (fun m ↦ C ((q %ₘ (X ^ pb.dim - C b)).coeff m) * X ^ m) pb.dim]
+      exact ((q %ₘ (X ^ pb.dim - C b)).as_sum_range_C_mul_X_pow' hdeg).symm
+    rw [← hsum] at haeval_mod ⊢
+    simp only [map_sum, map_mul, aeval_C, map_pow, aeval_X, ← pb.basis_eq_pow,
+      ← Algebra.smul_def] at haeval_mod
+    simp [(Fintype.linearIndependent_iff.1 pb.basis.linearIndependent) _ haeval_mod]
+  have hdvd_S (i : Fin pb.dim) : (X - C pb.gen) ^ pb.dim ∣
+      (f.map (algebraMap R S)) ^ (i : ℕ) -
+        ∑ j : Fin pb.dim, C (((algebraMap R S).mapMatrix A) j i) * X ^ (j : ℕ) := by
+    have hmap := Polynomial.map_dvd (algebraMap R S) (hdvd_R i)
+    have hfac : (X ^ pb.dim - C b).map (algebraMap R S) = (X - C pb.gen) ^ pb.dim := by
+      rw [Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X, Polynomial.map_C, hb, C_pow,
+        hdim, sub_pow_expChar_pow]
+    simpa [hfac, Polynomial.map_sum] using hmap
+  rw [RingHom.map_det (algebraMap R S), Matrix.det_of_X_sub_C_pow_dvd_pow_sub_sum hdvd_S,
+    Polynomial.derivative_map, Polynomial.eval_map, aeval_def]
+
+end PowerBasis

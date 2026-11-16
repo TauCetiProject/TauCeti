@@ -159,15 +159,6 @@ theorem singularityDegree_eq_zero_iff [FiniteDimensional k' (singularityQuotient
 
 end Place
 
-/-- Rank–nullity bound for a linear map into a finite dependent product. -/
-private theorem finrank_le_sum_finrank_add_finrank_ker {K M ι : Type*} [DivisionRing K]
-    [Fintype ι] [AddCommGroup M] [Module K M] [FiniteDimensional K M] {Q : ι → Type*}
-    [∀ i, AddCommGroup (Q i)] [∀ i, Module K (Q i)] [∀ i, FiniteDimensional K (Q i)]
-    (Φ : M →ₗ[K] (i : ι) → Q i) :
-    finrank K M ≤ ∑ i, finrank K (Q i) + finrank K (LinearMap.ker Φ) := by
-  rw [← LinearMap.finrank_range_add_finrank_ker Φ, add_le_add_iff_right]
-  exact (Submodule.finrank_le (LinearMap.range Φ)).trans (Module.finrank_pi_fintype K).le
-
 /-! ### The local comparison -/
 
 section Local
@@ -553,7 +544,7 @@ theorem finrank_le_finsum_singularityDegree_add_one (hn : finrank F F' = finrank
     ⟨_, rfl⟩
   have := finiteDimensional_riemannRochSpace hF' (Divisor.conorm k' F' (0 : Divisor k F))
   have (P : S) := (P : Place k F).finiteDimensional_singularityQuotient hF hex h hn
-  have hrn := finrank_le_sum_finrank_add_finrank_ker
+  have hrn := LinearMap.finrank_le_sum_finrank_add_finrank_ker
     (Q := fun P : S ↦ (P : Place k F).singularityQuotient k' F') Φ
   simp only [← Place.singularityDegree_def] at hrn
   rw [Finset.sum_coe_sort S fun P ↦ P.singularityDegree k' F'] at hrn
@@ -927,7 +918,8 @@ private theorem exists_finiteDimensional_isIntegrallyClosedIn_genus_eq_of_linear
   have hdimM := Divisor.dim_eq_degree_add_one_sub_genus_of_two_mul_genus_sub_one_le_degree hFFM hexM
     (D := l • BM) (by rw [map_nsmul, hdegBM, ← map_nsmul]; omega)
   rw [map_nsmul, hdegBM, ← map_nsmul] at hdimM
-  exact ⟨M, ‹_›, hexM, by change genus M FM = genus k' F'; omega⟩
+  have hgM_eq : genus M FM = genus k' F' := by omega
+  exact ⟨M, ‹_›, hexM, hgM_eq⟩
 
 /-- Strong induction on `[E : K(x)]`: either `E` and `k'` are already linearly disjoint over `K`,
 or a finite constant subextension strictly lowers `[E · M : M(x)]`. -/
