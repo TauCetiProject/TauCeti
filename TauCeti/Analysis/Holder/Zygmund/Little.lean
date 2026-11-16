@@ -8,11 +8,8 @@ module
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Little
 public import TauCeti.Analysis.Holder.Little
 public import TauCeti.Analysis.Holder.Zygmund.Equiv
-import Mathlib.Analysis.Calculus.BumpFunction.Convolution
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import Mathlib.Analysis.Calculus.ContDiff.Convolution
+import TauCeti.Analysis.Distribution.SchwartzSpace.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Little Hölder–Zygmund spaces and vanishing small-scale moduli
@@ -43,18 +40,19 @@ function representing `u`, for non-integer orders `k + α` (`k : ℕ`, `0 < α <
 ## The argument
 
 A bounded continuous function lies in the `L^∞` closure of the Schwartz functions exactly when it
-vanishes at infinity (`BoundedContinuousFunction.toLpTop_mem_closure_range_schwartz_toLp_top_iff`):
-uniform limits of Schwartz functions vanish at infinity, and conversely multiplying a function
-vanishing at infinity by a large smooth cutoff and mollifying produces a smooth compactly
-supported (hence Schwartz) uniform approximant.
+vanishes at infinity (`BoundedContinuousFunction.toLpTop_mem_closure_range_schwartz_toLp_top_iff`),
+and Littlewood–Paley blocks preserve this closure
+(`TemperedDistribution.littlewoodPaleyBlock_mem_closure_range_schwartz_toLp`).
 
 If a bounded continuous function `f` is little `α`-Hölder with `α < 1`, then for every `ε > 0`
 there is `δ > 0` such that the global increment bound
 `‖f (x - y) - f x‖ ≤ ε ‖y‖^α + (2 ‖f‖ / δ) ‖y‖` holds for all `x, y`. The kernel cancellation
-estimate `TauCeti.norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le` then bounds
+estimate `TemperedDistribution.norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le` then bounds
 `2^{α(j+1)} ‖Δ_{j+1} f‖_∞` by a constant times `ε` plus a multiple of `(2^{α - 1})^j`, which tends
-to zero because `α < 1`. For higher order `k`, reverse Bernstein transfers this decay from the
-directional `k`-th derivatives to `Δ_{j+1} f`.
+to zero because `α < 1`. For higher order `k`, weighted reverse Bernstein
+(`TauCeti.CkHolderSpace.exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_sum_directional`)
+transfers this decay from the directional `k`-th derivatives
+`CkHolderSpace.directionalIteratedFDeriv` to `Δ_{j+1} f`.
 
 Conversely, if `2^{(k+α)j} ‖Δⱼ u‖_∞ → 0` for `0 < α < 1`, then the low-pass truncations
 `S_N u = ∑_{j ≤ N} Δⱼ u` approximate `u` in `𝒞^{k+α}`
@@ -66,8 +64,6 @@ of `D^k f`.
 
 ## Main declarations
 
-* `BoundedContinuousFunction.toLpTop_mem_closure_range_schwartz_toLp_top_iff`: a bounded continuous
-  function lies in the `L^∞` closure of the Schwartz functions iff it vanishes at infinity.
 * `TauCeti.HolderSpace.tendsto_rpow_mul_norm_block_toBesovSpace` and
   `TauCeti.CkHolderSpace.tendsto_rpow_mul_norm_block_toBesovSpace`: little `α`-Hölder regularity of
   `D^k f` implies `2^{(k+α)j} ‖Δⱼ f‖_∞ → 0` for every `α < 1`.
@@ -98,100 +94,7 @@ public section
 noncomputable section
 
 open MeasureTheory FourierTransform TemperedDistribution BoundedContinuousFunction Module Filter
-open scoped ENNReal NNReal SchwartzMap Convolution Topology
-
-/-! ### Bounded continuous functions in the `L^∞` closure of Schwartz functions -/
-
-namespace BoundedContinuousFunction
-
-variable {E F 𝕜 : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [NormedRing 𝕜] [Module 𝕜 F] [IsBoundedSMul 𝕜 F]
-
-/-- The `L^∞` class of a Schwartz function agrees with `toLpTop` of its bounded continuous
-function. -/
-private theorem toLp_top_eq_toLpTop_schwartz {μ : Measure E} [μ.HasTemperateGrowth]
-    (g : 𝓢(E, F)) :
-    g.toLp ∞ μ = toLpTop μ 𝕜 g.toBoundedContinuousFunction :=
-  Lp.ext <| (g.coeFn_toLp ∞ μ).trans (coeFn_toLpTop (𝕜 := 𝕜) μ g.toBoundedContinuousFunction).symm
-
-/-- **The `L^∞` closure of the Schwartz functions on bounded continuous functions.** For any
-temperate measure `μ` that is positive on nonempty open sets, a bounded continuous function
-`f : E →ᵇ F` lies in the `L^∞(μ)` closure of the Schwartz functions exactly when `f` vanishes at
-infinity along `cocompact E`. -/
-theorem toLpTop_mem_closure_range_schwartz_toLp_top_iff [CompleteSpace F] {μ : Measure E}
-    [μ.HasTemperateGrowth] [μ.IsOpenPosMeasure] (f : E →ᵇ F) :
-    toLpTop μ 𝕜 f ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toLp ∞ μ) ↔
-      Tendsto f (cocompact E) (𝓝 0) := by
-  constructor
-  · intro hf
-    refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-    obtain ⟨_, ⟨g, rfl⟩, hfg⟩ := Metric.mem_closure_iff.1 hf (ε / 2) (half_pos hε)
-    have hnorm : ‖f - g.toBoundedContinuousFunction‖ < ε / 2 := by
-      dsimp only at hfg
-      rw [dist_eq_norm, toLp_top_eq_toLpTop_schwartz (𝕜 := 𝕜), ← map_sub, norm_toLpTop] at hfg
-      exact hfg
-    filter_upwards [Metric.tendsto_nhds.1 g.tendsto_cocompact (ε / 2) (half_pos hε)] with x hx
-    calc dist (f x) 0 ≤ dist (f x) (g x) + dist (g x) 0 := dist_triangle _ _ _
-      _ = ‖(f - g.toBoundedContinuousFunction) x‖ + dist (g x) 0 := by rw [dist_eq_norm]; rfl
-      _ ≤ ‖f - g.toBoundedContinuousFunction‖ + dist (g x) 0 :=
-          add_le_add ((f - g.toBoundedContinuousFunction).norm_coe_le_norm x) le_rfl
-      _ < ε / 2 + ε / 2 := add_lt_add hnorm hx
-      _ = ε := add_halves ε
-  · intro hf
-    refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
-    -- Outside a large ball of radius `R`, `‖f x‖ < ε / 3`.
-    obtain ⟨K, hK, hKε⟩ := hasBasis_cocompact.mem_iff.1
-      (Metric.tendsto_nhds.1 hf (ε / 3) (by positivity))
-    obtain ⟨R₀, hKR₀⟩ := hK.isBounded.subset_closedBall (0 : E)
-    set R : ℝ := max R₀ 1
-    have hR : 0 < R := lt_of_lt_of_le one_pos (le_max_right R₀ 1)
-    let χ : ContDiffBump (0 : E) := ⟨R, R + 1, hR, by linarith⟩
-    set fcut : E → F := fun x ↦ χ x • f x
-    have hfcut_cont : Continuous fcut := χ.continuous.smul f.continuous
-    have hfcut_supp : HasCompactSupport fcut := χ.hasCompactSupport.smul_right
-    have hfcut_dist : ∀ x, ‖f x - fcut x‖ ≤ ε / 3 := fun x ↦ by
-      rcases le_or_gt ‖x‖ R with hx | hx
-      · have h1 : χ x = 1 := χ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 hx)
-        simp only [fcut, h1, one_smul, sub_self, norm_zero]
-        positivity
-      · have hxK : x ∈ Kᶜ := fun hxK ↦ by
-          have hle : ‖x‖ ≤ R₀ := mem_closedBall_zero_iff.1 (hKR₀ hxK)
-          linarith [le_max_left R₀ 1]
-        have hfx : ‖f x‖ < ε / 3 := by simpa [dist_zero_right] using hKε hxK
-        have hsub : f x - fcut x = (1 - χ x) • f x := by
-          simp only [fcut, sub_smul, one_smul]
-        rw [hsub, norm_smul, Real.norm_of_nonneg (sub_nonneg.2 χ.le_one)]
-        exact (mul_le_of_le_one_left (norm_nonneg _) (by linarith [χ.nonneg' x])).trans hfx.le
-    -- Mollify `fcut` against a Haar measure at a scale `δ` where it oscillates by `< ε / 3`.
-    obtain ⟨δ, hδ, hδf⟩ := Metric.uniformContinuous_iff.1
-      (hfcut_supp.uniformContinuous_of_continuous hfcut_cont) (ε / 3) (by positivity)
-    let ν : Measure E := (Module.finBasis ℝ E).addHaar
-    let ρ : ContDiffBump (0 : E) := ⟨δ / 2, δ, half_pos hδ, half_lt_self hδ⟩
-    set g₀ : E → F := ρ.normed ν ⋆[ContinuousLinearMap.lsmul ℝ ℝ, ν] fcut
-    have hg₀_smooth : ContDiff ℝ (⊤ : ℕ∞) g₀ :=
-      ρ.hasCompactSupport_normed.contDiff_convolution_left (ContinuousLinearMap.lsmul ℝ ℝ)
-        ρ.contDiff_normed hfcut_cont.locallyIntegrable
-    have hg₀_supp : HasCompactSupport g₀ :=
-      ρ.hasCompactSupport_normed.convolution (ContinuousLinearMap.lsmul ℝ ℝ) hfcut_supp
-    set g : 𝓢(E, F) := hg₀_supp.toSchwartzMap hg₀_smooth
-    refine ⟨g.toLp ∞ μ, ⟨g, rfl⟩, ?_⟩
-    have hpt : ∀ x, ‖f x - g x‖ ≤ 2 * ε / 3 := fun x ↦ by
-      have hconv : dist (g x) (fcut x) ≤ ε / 3 :=
-        ρ.dist_normed_convolution_le (μ := ν) hfcut_cont.aestronglyMeasurable
-          fun y hy ↦ (hδf (Metric.mem_ball.1 hy)).le
-      calc ‖f x - g x‖ ≤ ‖f x - fcut x‖ + ‖fcut x - g x‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
-        _ = ‖f x - fcut x‖ + dist (g x) (fcut x) := by rw [dist_comm, dist_eq_norm]
-        _ ≤ ε / 3 + ε / 3 := add_le_add (hfcut_dist x) hconv
-        _ = 2 * ε / 3 := by ring
-    rw [dist_eq_norm]
-    refine (Lp.norm_top_le_of_ae_bound (c := 2 * ε / 3) (by positivity) ?_).trans_lt (by linarith)
-    filter_upwards [Lp.coeFn_sub (toLpTop μ 𝕜 f) (g.toLp ∞ μ),
-      coeFn_toLpTop (𝕜 := 𝕜) μ f, g.coeFn_toLp ∞ μ] with x hsub hf' hg'
-    rw [hsub, Pi.sub_apply, hf', hg']
-    exact hpt x
-
-end BoundedContinuousFunction
+open scoped ENNReal NNReal SchwartzMap Topology
 
 namespace TauCeti
 
@@ -244,8 +147,8 @@ private theorem tendsto_rpow_mul_norm_littlewoodPaleyBlock_of_memLittleHolder
   rw [Real.dist_0_eq_abs, abs_of_nonneg (by positivity)]
   have hNj := hN j hj
   rw [Real.dist_0_eq_abs, abs_of_nonneg (by positivity)] at hNj
-  have hblock := norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le φ hη.le (by positivity) hinc
-    (hv (j + 1))
+  have hblock := norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le φ α.coe_nonneg hη.le
+    (by positivity) hinc (hv (j + 1))
   have hpow : (2 : ℝ) ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) =
       2 ^ (α : ℝ) * 2 ^ ((α : ℝ) * j) := by
     rw [Nat.cast_add, Nat.cast_one, mul_add, mul_one, Real.rpow_add two_pos, mul_comm]
@@ -303,31 +206,23 @@ theorem tendsto_rpow_mul_norm_block_toBesovSpace (hα1 : α < 1) {f : CkHolderSp
   rw [← tendsto_add_atTop_iff_nat 1]
   obtain ⟨C₀, hC₀⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
   set b := stdOrthonormalBasis ℝ E
-  obtain ⟨Cr, _, hrev⟩ := exists_norm_littlewoodPaleyBlock_succ_le_sum_iteratedFDeriv
-    (F := F) φ b
+  obtain ⟨Cr, _, hrev⟩ :=
+    exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_sum_directional (F := F) φ b
   have hnorm_b : ∀ (i : Fin k → Fin (finrank ℝ E)), ∏ r, ‖b (i r)‖ = 1 := fun i ↦
     Finset.prod_eq_one fun r _ ↦ b.orthonormal.1 (i r)
-  set g : (Fin k → Fin (finrank ℝ E)) → E →ᵇ F := fun i ↦
-    ofNormedAddCommGroup (fun x ↦ _root_.iteratedFDeriv ℝ k f x (⇑b ∘ i))
-      (((ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ E) F (⇑b ∘ i)).continuous).comp
-        (f.contDiff.continuous_iteratedFDeriv le_rfl))
-      ‖f‖ fun x ↦ by
-        refine (ContinuousMultilinearMap.le_opNorm _ _).trans ?_
-        rw [Function.comp_def, hnorm_b i, mul_one]
-        exact f.norm_iteratedFDeriv_apply_le le_rfl x
-  choose w hw _ using fun i j ↦ hC₀ j (toLpTop volume ℂ (g i))
-  have hgLH (i : Fin k → Fin (finrank ℝ E)) : MemLittleHolder α (g i) := by
+  choose w hw _ using fun (i : Fin k → Fin (finrank ℝ E)) (j : ℕ) ↦
+    hC₀ j (toLpTop volume ℂ (f.directionalIteratedFDeriv (Fin.last k) (⇑b ∘ i)))
+  have hgLH (i : Fin k → Fin (finrank ℝ E)) :
+      MemLittleHolder α (f.directionalIteratedFDeriv (Fin.last k) (⇑b ∘ i)) := by
     rw [memLittleHolder_iff]
     intro ε hε
     obtain ⟨δ, hδ, hδf⟩ := memLittleHolder_iff.1 hf ε hε
     refine ⟨δ, hδ, fun x y hxy ↦ ?_⟩
     rw [dist_eq_norm]
-    have heval : g i x - g i y =
-        (_root_.iteratedFDeriv ℝ k f x - _root_.iteratedFDeriv ℝ k f y) (⇑b ∘ i) := rfl
-    rw [heval]
-    calc ‖(_root_.iteratedFDeriv ℝ k f x - _root_.iteratedFDeriv ℝ k f y) (⇑b ∘ i)‖
+    calc ‖f.directionalIteratedFDeriv (Fin.last k) (⇑b ∘ i) x -
+            f.directionalIteratedFDeriv (Fin.last k) (⇑b ∘ i) y‖
         ≤ ‖_root_.iteratedFDeriv ℝ k f x - _root_.iteratedFDeriv ℝ k f y‖ * ∏ r, ‖b (i r)‖ :=
-          ContinuousMultilinearMap.le_opNorm _ _
+          f.norm_directionalIteratedFDeriv_sub_le (Fin.last k) (⇑b ∘ i) x y
       _ = dist (_root_.iteratedFDeriv ℝ k f x) (_root_.iteratedFDeriv ℝ k f y) := by
           rw [hnorm_b i, mul_one, dist_eq_norm]
       _ ≤ ε * dist x y ^ (α : ℝ) := hδf x y hxy
@@ -336,36 +231,15 @@ theorem tendsto_rpow_mul_norm_block_toBesovSpace (hα1 : α < 1) {f : CkHolderSp
     (tendsto_add_atTop_iff_nat 1).2 <|
       tendsto_rpow_mul_norm_littlewoodPaleyBlock_of_memLittleHolder φ hα1 (hgLH i) (hw i)
   have hsum_tend :
-      Tendsto (fun j : ℕ ↦ (2 * Cr / φ.rIn) ^ k *
+      Tendsto (fun j : ℕ ↦ Cr ^ k *
         ∑ i : Fin k → Fin (finrank ℝ E), 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖w i (j + 1)‖)
         atTop (𝓝 0) := by
     simpa only [Finset.sum_const_zero, mul_zero] using
-      (tendsto_finsetSum Finset.univ fun i _ ↦ hwtend i).const_mul ((2 * Cr / φ.rIn) ^ k)
+      (tendsto_finsetSum Finset.univ fun i _ ↦ hwtend i).const_mul (Cr ^ k)
   refine squeeze_zero (fun j ↦ by positivity) (fun j ↦ ?_) hsum_tend
-  have hrev_j : ‖(toBesovSpace φ f).block (j + 1)‖ ≤
-      (Cr / (2 ^ j * φ.rIn)) ^ k * ∑ i, ‖w i (j + 1)‖ :=
-    hrev k f.toBoundedContinuousFunction g j ((toBesovSpace φ f).block (j + 1))
-      (fun i ↦ w i (j + 1))
-      (by simpa only [coe_toBoundedContinuousFunction] using f.contDiff)
-      (fun m hm ↦ ⟨‖f‖, fun x ↦ by
-        simpa only [coe_toBoundedContinuousFunction] using
-          f.norm_iteratedFDeriv_apply_le hm.le x⟩)
-      (fun i x ↦ by rw [coe_toBoundedContinuousFunction]; rfl)
-      (by rw [← toDistr_toBesovSpace, (toBesovSpace φ f).coe_block])
-      (fun i ↦ hw i (j + 1))
-  have hpow : (2 : ℝ) ^ (((k : ℝ) + α) * ((j + 1 : ℕ) : ℝ)) =
-      (2 ^ (j + 1)) ^ k * 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) := by
-    rw [add_mul, Real.rpow_add two_pos, mul_comm (k : ℝ), Real.rpow_mul_natCast zero_le_two,
-      Real.rpow_natCast]
-  calc 2 ^ (((k : ℝ) + α) * ((j + 1 : ℕ) : ℝ)) * ‖(toBesovSpace φ f).block (j + 1)‖
-      ≤ 2 ^ (((k : ℝ) + α) * ((j + 1 : ℕ) : ℝ)) *
-          ((Cr / (2 ^ j * φ.rIn)) ^ k * ∑ i, ‖w i (j + 1)‖) := by gcongr
-    _ = (2 * Cr / φ.rIn) ^ k *
-          ∑ i : Fin k → Fin (finrank ℝ E), 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖w i (j + 1)‖ := by
-        rw [hpow, ← Finset.mul_sum]
-        have hIn : φ.rIn ≠ 0 := φ.rIn_pos.ne'
-        simp only [pow_succ, div_pow, mul_pow]
-        field_simp
+  exact hrev k f (α : ℝ) j ((toBesovSpace φ f).block (j + 1)) (fun i ↦ w i (j + 1))
+    (by rw [← toDistr_toBesovSpace, (toBesovSpace φ f).coe_block])
+    (fun i ↦ hw i (j + 1))
 
 end CkHolderSpace
 
@@ -479,37 +353,6 @@ theorem tendsto_rpow_mul_norm_block_iff_mem_littleHolder (hα0 : 0 < α) (hα1 :
 
 /-! ### Characterisation of the little Hölder–Zygmund space `c^{k+α}` -/
 
-/-- A Littlewood–Paley block of an `L^∞` limit of Schwartz functions is again an `L^∞` limit of
-Schwartz functions. -/
-private theorem littlewoodPaleyBlock_mem_closure_range_schwartz_toLp_top
-    {f : Lp F ∞ (volume : Measure E)}
-    (hf : f ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toLp ∞ (volume : Measure E)))
-    {j : ℕ} {v : Lp F ∞ (volume : Measure E)}
-    (hv : littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = v) :
-    v ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toLp ∞ (volume : Measure E)) := by
-  obtain ⟨C, hC⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
-  refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
-  obtain ⟨_, ⟨g, rfl⟩, hfg⟩ := Metric.mem_closure_iff.1 hf (ε / (max C 0 + 1)) (by positivity)
-  set gj : 𝓢(E, F) := SchwartzMap.fourierMultiplierCLM F
-    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) g
-  refine ⟨gj.toLp ∞ (volume : Measure E), ⟨gj, rfl⟩, ?_⟩
-  obtain ⟨r, hr, hrnorm⟩ := hC j (f - g.toLp ∞ (volume : Measure E))
-  have hvr : v - gj.toLp ∞ (volume : Measure E) = r := Lp.toTemperedDistribution_injective <| by
-    dsimp only
-    rw [Lp.toTemperedDistribution_sub, ← hv, Lp.toTemperedDistribution_toLp_eq, ← hr,
-      Lp.toTemperedDistribution_sub, map_sub, Lp.toTemperedDistribution_toLp_eq,
-      littlewoodPaleyBlock_toTemperedDistributionCLM_eq]
-  rw [dist_eq_norm, hvr]
-  rw [dist_eq_norm] at hfg
-  calc ‖r‖ ≤ C * ‖f - g.toLp ∞ (volume : Measure E)‖ := hrnorm
-    _ ≤ max C 0 * ‖f - g.toLp ∞ (volume : Measure E)‖ :=
-        mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _)
-    _ ≤ max C 0 * (ε / (max C 0 + 1)) :=
-        mul_le_mul_of_nonneg_left hfg.le (le_max_right _ _)
-    _ < (max C 0 + 1) * (ε / (max C 0 + 1)) :=
-        mul_lt_mul_of_pos_right (lt_add_one _) (by positivity)
-    _ = ε := mul_div_cancel₀ ε (by positivity)
-
 /-- **Characterisation of the little Hölder–Zygmund space `c^{k+α}`.** For `k : ℕ` and
 `0 < α < 1`, an element `u ∈ 𝒞^{k+α}` lies in the little space `c^{k+α}` (the closure of the
 Schwartz functions in `𝒞^{k+α}`) exactly when the `k`-th derivative of its `C_b^{k,α}`
@@ -532,14 +375,14 @@ theorem mem_littleBesov_iff_memLittleHolder_and_tendsto_cocompact (k : ℕ) (hα
           CkHolderSpace.toBoundedContinuousFunctionCLM_apply, toLpTop_toCkHolderSpace,
           SchwartzMap.toDistr_toBesovSpaceCLM]
         rw [← Lp.toTemperedDistribution_toLp_eq (p := ∞) (μ := volume) g,
-          BoundedContinuousFunction.toLp_top_eq_toLpTop_schwartz (𝕜 := ℂ) g]
+          g.toLp_top_eq_toLpTop (𝕜 := ℂ)]
     rw [← SetLike.mem_coe, coe_littleBesov] at hu
     have hmem : Φ u ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toBoundedContinuousFunction) :=
       map_mem_closure Φ.continuous hu fun _ ⟨g, hg⟩ ↦ ⟨g, hg ▸ (hΦ_schwartz g).symm⟩
     have hLp : toLpTop (volume : Measure E) ℂ (Φ u) ∈
           closure (Set.range fun g : 𝓢(E, F) ↦ g.toLp ∞ (volume : Measure E)) :=
       map_mem_closure (toLpTop (volume : Measure E) ℂ).continuous hmem fun _ ⟨g, hg⟩ ↦
-        ⟨g, hg ▸ BoundedContinuousFunction.toLp_top_eq_toLpTop_schwartz (𝕜 := ℂ) g⟩
+        ⟨g, hg ▸ g.toLp_top_eq_toLpTop (𝕜 := ℂ)⟩
     simpa only [Φ, ContinuousLinearMap.comp_apply,
       CkHolderSpace.toBoundedContinuousFunctionCLM_apply,
       CkHolderSpace.coe_toBoundedContinuousFunction] using
@@ -553,7 +396,7 @@ theorem mem_littleBesov_iff_memLittleHolder_and_tendsto_cocompact (k : ℕ) (hα
       (toCkHolderSpace F φ k hα0 hα1 u).toBoundedContinuousFunction
         |>.toLpTop_mem_closure_range_schwartz_toLp_top_iff.2 (by
           simpa only [CkHolderSpace.coe_toBoundedContinuousFunction] using h0)
-    exact littlewoodPaleyBlock_mem_closure_range_schwartz_toLp_top φ hf_cl <| by
+    exact littlewoodPaleyBlock_mem_closure_range_schwartz_toLp φ hf_cl <| by
       rw [toLpTop_toCkHolderSpace, coe_block]
 
 /-- **Characterisation of the little Hölder–Zygmund space `c^α` at order `0 < α < 1`.** An element

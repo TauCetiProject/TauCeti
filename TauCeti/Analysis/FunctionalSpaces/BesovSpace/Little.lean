@@ -55,6 +55,8 @@ constant, depending on `N`, times `‖S_N u - g‖_p`.
   Schwartz functions (`TauCeti.BesovSpace.littleBesov_le`).
 * `TauCeti.BesovSpace.exists_toDistr_eq_sum_block_and_norm_sub_le`: when `2^{js} ‖Δⱼ u‖_p → 0`,
   the low-pass truncations `∑_{j ≤ N} Δⱼ u` approximate `u` in `B^s_{p,∞}`.
+* `TemperedDistribution.littlewoodPaleyBlock_mem_closure_range_schwartz_toLp`: Littlewood–Paley
+  blocks preserve the `Lᵖ` closure of the Schwartz functions.
 * `TauCeti.BesovSpace.mem_littleBesov_iff`: the characterisation by the blocks, assembled from
   `TauCeti.BesovSpace.tendsto_rpow_mul_norm_block_of_mem_littleBesov`,
   `TauCeti.BesovSpace.block_mem_closure_of_mem_littleBesov` and
@@ -84,6 +86,42 @@ open scoped ENNReal SchwartzMap
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+
+namespace TemperedDistribution
+
+/-- **Littlewood–Paley blocks preserve the `Lᵖ` closure of Schwartz functions.** If `f ∈ Lᵖ` lies in
+the `Lᵖ` closure of the Schwartz functions and its block `Δⱼ f` is represented by `v ∈ Lᵖ`, then
+`v` also lies in the `Lᵖ` closure of the Schwartz functions. -/
+theorem littlewoodPaleyBlock_mem_closure_range_schwartz_toLp (φ : ContDiffBump (0 : E))
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] {f : Lp F p (volume : Measure E)}
+    (hf : f ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toLp p)) {j : ℕ}
+    {v : Lp F p (volume : Measure E)}
+    (hv : littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = v) :
+    v ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toLp p) := by
+  obtain ⟨C, hC⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
+  refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
+  obtain ⟨_, ⟨g, rfl⟩, hfg⟩ := Metric.mem_closure_iff.1 hf (ε / (max C 0 + 1)) (by positivity)
+  set gj : 𝓢(E, F) := SchwartzMap.fourierMultiplierCLM F
+    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) g
+  refine ⟨gj.toLp p (volume : Measure E), ⟨gj, rfl⟩, ?_⟩
+  obtain ⟨r, hr, hrnorm⟩ := hC j (f - g.toLp p (volume : Measure E))
+  have hvr : v - gj.toLp p (volume : Measure E) = r := Lp.toTemperedDistribution_injective <| by
+    dsimp only
+    rw [Lp.toTemperedDistribution_sub, ← hv, Lp.toTemperedDistribution_toLp_eq, ← hr,
+      Lp.toTemperedDistribution_sub, map_sub, Lp.toTemperedDistribution_toLp_eq,
+      littlewoodPaleyBlock_toTemperedDistributionCLM_eq]
+  rw [dist_eq_norm, hvr]
+  rw [dist_eq_norm] at hfg
+  calc ‖r‖ ≤ C * ‖f - g.toLp p (volume : Measure E)‖ := hrnorm
+    _ ≤ max C 0 * ‖f - g.toLp p (volume : Measure E)‖ :=
+        mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _)
+    _ ≤ max C 0 * (ε / (max C 0 + 1)) :=
+        mul_le_mul_of_nonneg_left hfg.le (le_max_right _ _)
+    _ < (max C 0 + 1) * (ε / (max C 0 + 1)) :=
+        mul_lt_mul_of_pos_right (lt_add_one _) (by positivity)
+    _ = ε := mul_div_cancel₀ ε (by positivity)
+
+end TemperedDistribution
 
 namespace TauCeti
 

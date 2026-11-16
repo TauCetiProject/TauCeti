@@ -31,6 +31,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   for every real `r`.
 * `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
   against any measure of temperate growth.
+* `SchwartzMap.integrable_norm_rpow_mul_norm`: `‖x‖ ^ r ‖f x‖` is integrable for every `r ≥ 0`
+  against any measure of temperate growth.
 * `SchwartzMap.integrable_norm_iteratedFDeriv`: `‖D^k f x‖` is integrable.
 * `SchwartzMap.exists_integrable_norm_iteratedFDeriv_add_le`: `‖D^n f (z + h)‖` has an integrable
   envelope in `z`, uniformly for `‖h‖ ≤ 1`, so convolutions with `f` can be differentiated under
@@ -186,6 +188,22 @@ theorem integrable_one_add_norm_smul_sq_rpow_mul_norm (c m : ℝ) (f : 𝓢(E, F
     (.of_forall fun x ↦ by
       rw [Real.norm_of_nonneg (by positivity)]
       exact f.one_add_norm_smul_sq_rpow_mul_norm_le (𝕜 := ℝ) c m μ.integrablePower x)
+
+omit [SecondCountableTopology E] in
+/-- For a Schwartz function `f` and any `r ≥ 0`, the function `‖x‖ ^ r * ‖f x‖` is integrable
+against any measure of temperate growth. -/
+theorem integrable_norm_rpow_mul_norm (f : 𝓢(E, F)) {r : ℝ} (hr : 0 ≤ r) :
+    Integrable (fun x ↦ ‖x‖ ^ r * ‖f x‖) μ := by
+  refine (f.integrable_one_add_norm_smul_sq_rpow_mul_norm (μ := μ) 1 r).mono'
+    (((continuous_norm.rpow_const fun _ ↦ Or.inr hr).mul f.continuous.norm).aestronglyMeasurable)
+    (.of_forall fun x ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity), one_smul]
+  gcongr
+  calc ‖x‖ ^ r = (‖x‖ ^ (2 : ℝ)) ^ (r / 2) := by
+        rw [← Real.rpow_mul (norm_nonneg x), mul_div_cancel₀ r two_ne_zero]
+    _ = (‖x‖ ^ 2) ^ (r / 2) := by rw [Real.rpow_two]
+    _ ≤ (1 + ‖x‖ ^ 2) ^ (r / 2) :=
+        Real.rpow_le_rpow (sq_nonneg _) (by linarith) (by positivity)
 
 omit [SecondCountableTopology E] in
 /-- The norms of the derivatives of a Schwartz function are integrable. -/

@@ -47,11 +47,12 @@ conditions are closed under uniform convergence, which gives completeness.
   through order `k` and the `α`-Hölder seminorm of the `k`-th derivative.
 * `TauCeti.CkHolderSpace.norm_le_of_norm_iteratedFDeriv_le_of_holderWith`: the norm is controlled
   by uniform bounds on the derivatives and a Hölder constant of the `k`-th derivative.
-* `TauCeti.CkHolderSpace.toBoundedContinuousFunction` and `TauCeti.CkHolderSpace.fderivBCF`: the
-  underlying function and its curried derivative as bounded continuous fields, with the supremum
-  norms of the derivative fields of orders zero and one; and
-  `TauCeti.CkHolderSpace.toBoundedContinuousFunctionCLM`, the first as a continuous linear map of
-  operator norm at most one.
+* `TauCeti.CkHolderSpace.toBoundedContinuousFunction`, `TauCeti.CkHolderSpace.fderivBCF`, and
+  `TauCeti.CkHolderSpace.directionalIteratedFDeriv`: the underlying function, its curried
+  derivative, and its directional `i`-th derivatives as bounded continuous fields, together with
+  the increment bound `TauCeti.CkHolderSpace.norm_directionalIteratedFDeriv_sub_le` and the
+  continuous linear map `TauCeti.CkHolderSpace.toBoundedContinuousFunctionCLM` of operator norm at
+  most one.
 * `TauCeti.CkHolderSpace.norm_fderiv_le_iteratedFDeriv_one`,
   `TauCeti.CkHolderSpace.norm_fderiv_fderiv_le_iteratedFDeriv_two` and
   `TauCeti.CkHolderSpace.holderWith_fderiv_fderiv`: bounds on the curried derivatives `Df` and
@@ -506,6 +507,34 @@ theorem hasFDerivAt (f : CkHolderSpace (k + 1) α E F) (x : E) :
     HasFDerivAt f (f.fderivBCF x) x := by
   rw [coe_fderivBCF]
   exact ((f.contDiff.differentiable (by simp)) x).hasFDerivAt
+
+/-- The directional `i`-th derivative `x ↦ D^i f(x)(v)` of a bounded `C^{k,α}` map along
+`v : Fin i → E`, as a bounded continuous function obtained by postcomposing the `i`-th derivative
+field with evaluation at `v`. -/
+def directionalIteratedFDeriv (f : CkHolderSpace k α E F) (i : Fin (k + 1)) (v : Fin i → E) :
+    E →ᵇ F :=
+  (ContinuousMultilinearMap.apply ℝ (fun _ : Fin i ↦ E) F v).compLeftContinuousBounded E
+    (f.iteratedFDeriv i)
+
+/-- Pointwise evaluation of `CkHolderSpace.directionalIteratedFDeriv`. -/
+@[simp]
+theorem directionalIteratedFDeriv_apply (f : CkHolderSpace k α E F) (i : Fin (k + 1))
+    (v : Fin i → E) (x : E) :
+    f.directionalIteratedFDeriv i v x = _root_.iteratedFDeriv ℝ i f x v := by
+  simp only [directionalIteratedFDeriv, ContinuousLinearMap.compLeftContinuousBounded_apply,
+    ContinuousMultilinearMap.apply_apply, iteratedFDeriv_eq]
+
+/-- Increment bound for `CkHolderSpace.directionalIteratedFDeriv`:
+`‖D^i f(x)(v) - D^i f(y)(v)‖ ≤ ‖D^i f(x) - D^i f(y)‖ * ∏ r, ‖v r‖`. -/
+theorem norm_directionalIteratedFDeriv_sub_le (f : CkHolderSpace k α E F) (i : Fin (k + 1))
+    (v : Fin i → E) (x y : E) :
+    ‖f.directionalIteratedFDeriv i v x - f.directionalIteratedFDeriv i v y‖ ≤
+      ‖_root_.iteratedFDeriv ℝ i f x - _root_.iteratedFDeriv ℝ i f y‖ * ∏ r, ‖v r‖ := by
+  have heval : f.directionalIteratedFDeriv i v x - f.directionalIteratedFDeriv i v y =
+      (_root_.iteratedFDeriv ℝ i f x - _root_.iteratedFDeriv ℝ i f y) v := by
+    simp [directionalIteratedFDeriv_apply]
+  rw [heval]
+  exact ContinuousMultilinearMap.le_opNorm _ _
 
 /-- The `i`-th derivative field, as a continuous linear map to bounded continuous fields. It is
 bounded by the `C^{k,α}` norm pointwise, by `CkHolderSpace.norm_iteratedFDeriv_le`. -/
