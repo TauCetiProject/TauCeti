@@ -18,6 +18,7 @@ This file records elementary consequences of the quadratic-map axioms.
 * `QuadraticMap.nontrivial_of_ne_zero`: the source of a nonzero quadratic map is nontrivial.
 * `QuadraticMap.map_sum_of_pairwise_isOrtho`: a quadratic map is additive across a finite sum of
   pairwise `Q`-orthogonal vectors.
+* `QuadraticMap.isRefl_polarBilin`: the polar bilinear map of any quadratic map is reflexive.
 -/
 
 public section
@@ -57,5 +58,10 @@ theorem map_sum_of_pairwise_isOrtho {R M P ι : Type*} [CommRing R] [AddCommGrou
       exact (hu (hij_mem i (Sym2.mem_mk_left i j)) (hij_mem j (Sym2.mem_mk_right i j))
         hij_ne).polar_eq_zero
   rw [Q.map_sum, hcross, add_zero]
+
+/-- The polar bilinear map of any quadratic map is reflexive. -/
+theorem isRefl_polarBilin {R M P : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup P] [Module R P] (Q : QuadraticMap R M P) : Q.polarBilin.IsRefl :=
+  fun x y ↦ (polar_comm Q y x).trans
 
 end QuadraticMap

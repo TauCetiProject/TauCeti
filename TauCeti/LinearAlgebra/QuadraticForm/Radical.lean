@@ -14,6 +14,7 @@ import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 
 /-!
@@ -103,7 +104,6 @@ regular case.
   on a copy of the radical.
 * `QuadraticMap.ker_polarBilin_le_radical_iff`, `QuadraticMap.radical_eq_ker_polarBilin_iff`,
   `QuadraticMap.ker_polarBilin_lift`, `QuadraticMap.nondegenerate_polarBilin_lift_ker_polarBilin`,
-  `QuadraticMap.nondegenerate_lift_ker_polarBilin`,
   `QuadraticMap.nondegenerate_of_nondegenerate_polarBilin`: characteristic-free descent of `Q` to
   `M ⧸ Q.polarBilin.ker` with nondegenerate polar map when `Q` vanishes on `Q.polarBilin.ker`.
 -/
@@ -315,17 +315,9 @@ has nondegenerate polar bilinear map. -/
 theorem nondegenerate_polarBilin_lift_ker_polarBilin {Q : QuadraticMap R M P}
     (h : Q.polarBilin.ker ≤ Q.radical) :
     (Q.lift Q.polarBilin.ker h).polarBilin.Nondegenerate := by
-  have hrefl : (Q.lift Q.polarBilin.ker h).polarBilin.IsRefl :=
-    fun x y ↦ (polar_comm _ y x).trans
-  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl,
+  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft
+      (Q.lift Q.polarBilin.ker h).isRefl_polarBilin,
     LinearMap.separatingLeft_iff_ker_eq_bot, ker_polarBilin_lift_ker_polarBilin]
-
-/-- When `Q.polarBilin.ker ≤ Q.radical`, the quadratic map descended to `M ⧸ Q.polarBilin.ker` is
-nondegenerate. -/
-theorem nondegenerate_lift_ker_polarBilin {Q : QuadraticMap R M P}
-    (h : Q.polarBilin.ker ≤ Q.radical) :
-    (Q.lift Q.polarBilin.ker h).Nondegenerate :=
-  nondegenerate_of_ker_polarBilin_eq_bot (ker_polarBilin_lift_ker_polarBilin Q h)
 
 /-- A quadratic map whose polar bilinear map is nondegenerate is itself nondegenerate. The
 converse fails in characteristic two on odd-dimensional spaces. -/

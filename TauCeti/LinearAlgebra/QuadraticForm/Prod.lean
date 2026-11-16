@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.Prod
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
 # Structural isometries and special orthogonal groups of quadratic-map products
@@ -77,9 +78,10 @@ the two summands gives an orthogonal family of the orthogonal sum.
   `IsometryEquiv.prodComm`.
 * `QuadraticMap.isOrthoᵢ_associated_prod`: orthogonal families of the summands concatenate to an
   orthogonal family of `Q₁.prod Q₂`.
-* `QuadraticMap.nondegenerate_polarBilin_prod_iff`,
-  `QuadraticMap.nondegenerate_polarBilin_pi_iff`: the polar form of an orthogonal product or finite
-  orthogonal sum is nondegenerate precisely when every summand's polar form is.
+* `QuadraticMap.polar_pi_single_left`, `QuadraticMap.polar_pi_single_right`,
+  `QuadraticMap.nondegenerate_polarBilin_prod_iff`,
+  `QuadraticMap.nondegenerate_polarBilin_pi_iff`: single-summand polarization and nondegeneracy of
+  the polar form of an orthogonal product or finite orthogonal sum.
 
 ## References
 
@@ -767,19 +769,36 @@ section PolarNondegenerate
 variable {R M₁ M₂ P : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁]
   [AddCommGroup M₂] [Module R M₂] [AddCommGroup P] [Module R P]
 
+/-- Polarization of `QuadraticMap.pi Q` with a `Pi.single` vector on the left picks out the
+`i`-th summand. -/
+theorem polar_pi_single_left {ι : Type*} [Fintype ι] [DecidableEq ι] {M : ι → Type*}
+    [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P)
+    (i : ι) (x : M i) (y : ∀ i, M i) :
+    polar (QuadraticMap.pi Q) (Pi.single i x) y = polar (Q i) x (y i) := by
+  rw [QuadraticMap.Ring.polar_pi, Finset.sum_eq_single i]
+  · simp
+  · intro j _ hij
+    simp [Pi.single_eq_of_ne hij]
+  · intro hi
+    exact absurd (Finset.mem_univ i) hi
+
+/-- Polarization of `QuadraticMap.pi Q` with a `Pi.single` vector on the right picks out the
+`i`-th summand. -/
+theorem polar_pi_single_right {ι : Type*} [Fintype ι] [DecidableEq ι] {M : ι → Type*}
+    [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P)
+    (i : ι) (x : ∀ i, M i) (y : M i) :
+    polar (QuadraticMap.pi Q) x (Pi.single i y) = polar (Q i) (x i) y := by
+  rw [polar_comm, polar_pi_single_left, polar_comm]
+
 /-- The polar bilinear map of an orthogonal product is nondegenerate if and only if both factors
 have nondegenerate polar bilinear maps. -/
 theorem nondegenerate_polarBilin_prod_iff
     {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} :
     (Q₁.prod Q₂).polarBilin.Nondegenerate ↔
       Q₁.polarBilin.Nondegenerate ∧ Q₂.polarBilin.Nondegenerate := by
-  have hrefl : (Q₁.prod Q₂).polarBilin.IsRefl :=
-    fun x y ↦ (polar_comm (Q₁.prod Q₂) y x).trans
-  have hrefl₁ : Q₁.polarBilin.IsRefl := fun x y ↦ (polar_comm Q₁ y x).trans
-  have hrefl₂ : Q₂.polarBilin.IsRefl := fun x y ↦ (polar_comm Q₂ y x).trans
-  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl,
-    LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl₁,
-    LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl₂]
+  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft (Q₁.prod Q₂).isRefl_polarBilin,
+    LinearMap.IsRefl.nondegenerate_iff_separatingLeft Q₁.isRefl_polarBilin,
+    LinearMap.IsRefl.nondegenerate_iff_separatingLeft Q₂.isRefl_polarBilin]
   refine ⟨fun h ↦ ⟨fun x₁ hx₁ ↦ ?_, fun x₂ hx₂ ↦ ?_⟩, fun ⟨h₁, h₂⟩ p hp ↦ ?_⟩
   · have h0 := h (x₁, 0) fun q ↦ by
       simpa [polarBilin_apply_apply] using hx₁ q.1
@@ -798,28 +817,15 @@ theorem nondegenerate_polarBilin_pi_iff {ι : Type*} [Fintype ι] {M : ι → Ty
     (QuadraticMap.pi Q).polarBilin.Nondegenerate ↔
       ∀ i, (Q i).polarBilin.Nondegenerate := by
   classical
-  have hrefl : (QuadraticMap.pi Q).polarBilin.IsRefl :=
-    fun x y ↦ (polar_comm (QuadraticMap.pi Q) y x).trans
-  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl]
-  refine ⟨fun h i ↦ (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
-      (fun x y ↦ (polar_comm (Q i) y x).trans)).mpr fun x hx ↦ ?_,
-    fun h x hx ↦ funext fun i ↦ ((LinearMap.IsRefl.nondegenerate_iff_separatingLeft
-      (fun x y ↦ (polar_comm (Q i) y x).trans)).mp (h i)) (x i) fun y ↦ ?_⟩
+  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft (QuadraticMap.pi Q).isRefl_polarBilin]
+  simp_rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft (Q _).isRefl_polarBilin]
+  refine ⟨fun h i x hx ↦ ?_, fun h x hx ↦ funext fun i ↦ h i (x i) fun y ↦ ?_⟩
   · have h0 := h (Pi.single i x) fun y ↦ by
-      rw [polarBilin_apply_apply, QuadraticMap.Ring.polar_pi, Finset.sum_eq_single i]
-      · simpa [polarBilin_apply_apply] using hx (y i)
-      · intro j _ hij
-        simp [Pi.single_eq_of_ne hij]
-      · intro hi
-        exact absurd (Finset.mem_univ i) hi
+      rw [polarBilin_apply_apply, polar_pi_single_left, ← polarBilin_apply_apply]
+      exact hx (y i)
     simpa using congrFun h0 i
-  · have h0 := hx (Pi.single i y)
-    rw [polarBilin_apply_apply, QuadraticMap.Ring.polar_pi, Finset.sum_eq_single i] at h0
-    · simpa [polarBilin_apply_apply] using h0
-    · intro j _ hij
-      simp [Pi.single_eq_of_ne hij]
-    · intro hi
-      exact absurd (Finset.mem_univ i) hi
+  · rw [polarBilin_apply_apply, ← polar_pi_single_right, ← polarBilin_apply_apply]
+    exact hx (Pi.single i y)
 
 end PolarNondegenerate
 

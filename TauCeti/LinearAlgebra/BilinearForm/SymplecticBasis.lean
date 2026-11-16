@@ -55,6 +55,8 @@ hyperbolic pair `e, f` hold over any commutative ring and are stated at that lev
   `Matrix.J` witnesses `B.Nondegenerate`.
 * `LinearMap.BilinForm.basis_det_eq_one_of_toMatrix_eq_J`: two symplectic bases of the same form
   have relative determinant `1`.
+* `Module.finrank_eq_two_mul_card_of_basis_sum`: a module with a finite basis indexed by `ι ⊕ ι`
+  has `finrank` equal to `2 * Fintype.card ι`.
 * `LinearMap.BilinForm.IsAlt.even_finrank`: a space carrying a nondegenerate alternating form has
   even dimension.
 * `LinearMap.BilinForm.IsAlt.exists_basis_apply_eq_J_inl_zero_eq`: every nonzero vector is the
@@ -204,6 +206,14 @@ theorem basis_det_eq_one_of_toMatrix_eq_J {l : Type*} [Fintype l] [DecidableEq l
   rw [Basis.det_apply, SymplecticGroup.det_eq_one h]
 
 end Determinant
+
+/-- A module with a finite basis indexed by `ι ⊕ ι` has `finrank` equal to
+`2 * Fintype.card ι`. -/
+theorem _root_.Module.finrank_eq_two_mul_card_of_basis_sum {R M ι : Type*} [Semiring R]
+    [StrongRankCondition R] [AddCommMonoid M] [Module R M] [Fintype ι]
+    (b : Module.Basis (ι ⊕ ι) R M) :
+    Module.finrank R M = 2 * Fintype.card ι := by
+  rw [Module.finrank_eq_card_basis b, Fintype.card_sum, two_mul]
 
 section FinrankTwo
 
@@ -355,7 +365,8 @@ theorem IsAlt.exists_basis_toMatrix_eq_J :
 /-- A finite-dimensional space carrying a nondegenerate alternating form has even dimension. -/
 theorem IsAlt.even_finrank : Even (finrank K V) := by
   obtain ⟨m, b, -⟩ := hB.exists_basis_toMatrix_eq_J hnd
-  exact ⟨m, by rw [finrank_eq_card_basis b, Fintype.card_sum, Fintype.card_fin]⟩
+  rw [Module.finrank_eq_two_mul_card_of_basis_sum b]
+  exact even_two_mul _
 
 /-- **Every nonzero vector heads a symplectic basis.** For a nondegenerate alternating form on a
 finite-dimensional space and a nonzero vector `e`, there is a basis indexed by
