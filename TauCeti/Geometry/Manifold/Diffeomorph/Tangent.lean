@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 
 /-!
 # Tangent lifts of diffeomorphisms
@@ -195,32 +195,9 @@ instance instContMDiffSMul {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace 
     [TopologicalSpace HG] {IG : ModelWithCorners 𝕜 EG HG} [TopologicalSpace G]
     [ChartedSpace HG G] [IsManifold IG ∞ G] [ContMDiffSMul IG I ∞ G M] :
     ContMDiffSMul IG I.tangent ∞ G (TangentBundle I M) where
-  contMDiff_smul := by
-    have hA : ContMDiff (IG.prod I) I ∞ (fun p : G × M ↦ p.1 • p.2) :=
-      ContMDiffSMul.contMDiff_smul
-    have hT := (hA.contMDiff_tangentMap (m := ∞) le_rfl).comp
-      (contMDiff_equivTangentBundleProd_symm (I := IG) (M := G) (I' := I) (M' := M))
-    have hF : ContMDiff (IG.prod I.tangent) (IG.tangent.prod I.tangent) ∞
-        (fun p : G × TangentBundle I M ↦
-          ((⟨p.1, 0⟩ : TangentBundle IG G), p.2)) :=
-      ((contMDiff_zeroSection 𝕜 (TangentSpace IG : G → Type _)).comp contMDiff_fst).prodMk
-        contMDiff_snd
-    refine (hT.comp hF).congr fun p ↦ ?_
-    have hdiff : MDifferentiableAt (IG.prod I) I (fun q : G × M ↦ q.1 • q.2) (p.1, p.2.proj) :=
-      hA.mdifferentiableAt (by simp)
-    -- The tangent map of the action at `(g, x)` sends `(0, v)` to `dg_x v`, its partial derivative
-    -- in the `M`-direction.
-    have key : mfderiv (IG.prod I) I (fun q : G × M ↦ q.1 • q.2) (p.1, p.2.proj)
-        ((0, p.2.2) : EG × E) = mfderiv I I (fun x : M ↦ p.1 • x) p.2.proj p.2.2 := by
-      refine (mfderiv_prod_eq_add_apply (v := ((0, p.2.2) : EG × E)) hdiff).trans ?_
-      have h0 : mfderiv IG I (fun g : G ↦ g • p.2.proj) p.1 (0 : EG) = 0 :=
-        ContinuousLinearMap.map_zero _
-      dsimp only
-      rw [h0, zero_add]
-    simp +instances only [Function.comp_apply, tangentMap, equivTangentBundleProd,
-      Equiv.coe_fn_symm_mk]
-    rw [smul_eq_tangentMap, tangentMap]
-    exact congrArg (TotalSpace.mk' E (p.1 • p.2.proj)) key.symm
+  contMDiff_smul :=
+    (ContMDiffSMul.contMDiff_smul.contMDiff_tangentMap_family (f := fun (g : G) (x : M) ↦ g • x)
+      (n := ∞) (m := ∞) (by simp)).congr fun p ↦ smul_eq_tangentMap p.1 p.2
 
 end TangentBundle
 

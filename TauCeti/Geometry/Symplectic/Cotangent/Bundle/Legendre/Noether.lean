@@ -35,13 +35,13 @@ tangent-lifted action for `ω_L` (`TauCeti.isEquivariantMomentMap_momentMap_comp
 `d⟨J, ξ⟩ = ι_{ξ_{TM}} ω_L`.
 
 **Noether's theorem** (`TauCeti.momentMap_legendreMap_eq_of_isMIntegralCurveOn`) follows from the
-conservation law of moment maps
-(`TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn`): along an integral curve
-of a Lagrangian vector field `X`, that is `ι_X ω_L = dE_L`, the derivative of `⟨J, ξ⟩` is
-`ω_L(ξ_{TM}, X) = -dE_L(ξ_{TM})`, and this vanishes because `E_L` is invariant. So `J` is
-constant along every motion of the system. Neither regularity of `L` nor
-nondegeneracy of `ω_L` is used: when `L` is regular, `X` is the Lagrangian vector field and its
-integral curves are the velocity curves of the motions
+conservation law of moment maps under invariant Hamiltonians
+(`TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_map_smul`): along an
+integral curve of a Lagrangian vector field `X`, that is `ι_X ω_L = dE_L`, the derivative of
+`⟨J, ξ⟩` is `ω_L(ξ_{TM}, X) = -dE_L(ξ_{TM})`, and this vanishes because `E_L` is invariant. So
+`J` is constant along every motion of the system. Neither regularity of `L` nor nondegeneracy
+of `ω_L` is used: when `L` is regular, `X` is the Lagrangian vector field and its integral curves
+are the velocity curves of the motions
 (`TauCeti.IsRegularLagrangian.eq_curveVelocityLift_of_isMIntegralCurve`).
 
 For a hyperregular Lagrangian the Hamiltonian `H = E_L ∘ FL⁻¹` is invariant under the
@@ -147,17 +147,6 @@ variable {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [Topologic
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] [MulAction G M] [ContMDiffSMul IG I ∞ G M] [ContMDiffConstSMul I ∞ G M]
 
-/-- The fundamental vector field of the tangent-lifted action covers the fundamental vector field
-of the action on the base: `dπ(ξ_{TM}(v)) = ξ_M(π v)`. -/
-theorem _root_.TangentBundle.mfderiv_proj_fundamentalVectorField (ξ : GroupLieAlgebra IG G)
-    (v : TangentBundle I M) :
-    mfderiv I.tangent I (π E (TangentSpace I)) v (fundamentalVectorField I.tangent ξ v) =
-      fundamentalVectorField I ξ v.proj :=
-  mfderiv_fundamentalVectorField_of_map_smul
-    ((contMDiff_proj (n := 1) _).mdifferentiableAt one_ne_zero)
-    ((ContMDiffSMul.contMDiff_smul_const (n := ∞) v).mdifferentiableAt (by simp))
-    (fun g ↦ TangentBundle.proj_smul g v) ξ
-
 /-- **The Noether charge is the Cartan form on the symmetry.** The Cartan one-form `θ_L = FL^*λ`
 evaluated on the fundamental vector field `ξ_{TM}` of the tangent-lifted action is the Noether
 charge `⟨μ(FL v), ξ⟩ = FL(v)(ξ_M(π v))`. -/
@@ -212,13 +201,10 @@ theorem momentMap_legendreMap_eq_of_isMIntegralCurveOn (hL : ContMDiff I.tangent
     (hγ : IsMIntegralCurveOn γ X s) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     CotangentBundle.momentMap IG G (legendreMap L (γ t)) =
       CotangentBundle.momentMap IG G (legendreMap L (γ t₀)) :=
-  (isEquivariantMomentMap_momentMap_comp_legendreMap hL hLG).apply_eq_of_isMIntegralCurveOn hX hs hγ
-    (fun u _ ξ ↦ by
-      rw [InfinitesimalAction.fundamental_apply]
-      exact mvfderiv_fundamentalVectorField_eq_zero_of_map_smul
-        ((contMDiff_lagrangianEnergy hL (m := 1) (by simp)).mdifferentiableAt one_ne_zero)
-        ((ContMDiffSMul.contMDiff_smul_const (n := ∞) (γ u)).mdifferentiableAt (by simp))
-        (fun g ↦ lagrangianEnergy_smul (hLG g) (γ u)) ξ) ht₀ ht
+  (isEquivariantMomentMap_momentMap_comp_legendreMap hL hLG).toIsMomentMap
+    |>.apply_eq_of_isMIntegralCurveOn_of_map_smul
+    ((contMDiff_lagrangianEnergy hL (m := 1) (by simp)).mdifferentiable one_ne_zero)
+    (fun g ↦ lagrangianEnergy_smul (hLG g)) hX hs hγ ht₀ ht
 
 /-- **Noether's theorem** along a global integral curve: for a smooth Lagrangian `L` invariant
 under the tangent lift of a smooth action of `G`, the Noether charges are constant along every
@@ -244,14 +230,10 @@ theorem IsHyperregularLagrangian.momentMap_eq_of_isMIntegralCurveOn
     (hX : (CotangentBundle.symplecticForm I M).IsHamiltonianVectorField hLh.hamiltonian X)
     {γ : ℝ → CotangentBundle I M} {s : Set ℝ} (hs : IsPreconnected s)
     (hγ : IsMIntegralCurveOn γ X s) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
-    CotangentBundle.momentMap IG G (γ t) = CotangentBundle.momentMap IG G (γ t₀) := by
-  refine CotangentBundle.isEquivariantMomentMap_momentMap.apply_eq_of_isMIntegralCurveOn hX hs hγ
-    (fun u _ ξ ↦ ?_) ht₀ ht
-  rw [InfinitesimalAction.fundamental_apply]
-  exact mvfderiv_fundamentalVectorField_eq_zero_of_map_smul
-    ((hLh.contMDiff_hamiltonian hL).mdifferentiableAt (by simp))
-    ((ContMDiffSMul.contMDiff_smul_const (n := ∞) (γ u)).mdifferentiableAt (by simp))
-    (fun g ↦ hLh.hamiltonian_smul (hLG g) (γ u)) ξ
+    CotangentBundle.momentMap IG G (γ t) = CotangentBundle.momentMap IG G (γ t₀) :=
+  CotangentBundle.isEquivariantMomentMap_momentMap.apply_eq_of_isMIntegralCurveOn_of_map_smul
+    ((hLh.contMDiff_hamiltonian hL).mdifferentiable (by simp))
+    (fun g ↦ hLh.hamiltonian_smul (hLG g)) hX hs hγ ht₀ ht
 
 end Noether
 
