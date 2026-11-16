@@ -28,10 +28,14 @@ second derivative.
 Where a function `ζ` equals one on a neighbourhood of a point, every iterated derivative of
 `ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`). Bounded derivatives up
 to a finite order have a common bound
-(`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`), and such a
+(`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`, and for derivatives of positive
+order `TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_one_le`), and such a
 common bound is nonnegative and bounds the function itself
 (`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`). Adding a constant to a function does not
-change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`).
+change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`). The
+iterated derivatives of a constant `c` have norm at most `‖c‖`
+(`TauCeti.norm_iteratedFDeriv_const_le`), and those of positive order of the identity have norm at
+most one (`TauCeti.norm_iteratedFDeriv_id_le_one`).
 -/
 
 public section
@@ -162,6 +166,23 @@ theorem iteratedFDeriv_succ_add_const (f : E → F) (c : F) (n : ℕ) :
   funext x
   simp only [iteratedFDeriv_succ_eq_comp_right, fderiv_add_const]
 
+/-- The iterated derivatives of a constant function `c` have norm at most `‖c‖`. -/
+theorem norm_iteratedFDeriv_const_le (n : ℕ) (c : F) (x : E) :
+    ‖iteratedFDeriv 𝕜 n (fun _ : E ↦ c) x‖ ≤ ‖c‖ := by
+  rcases n with _ | n
+  · simp
+  · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero n)]
+
+/-- The iterated derivatives of positive order of the identity have norm at most one. -/
+theorem norm_iteratedFDeriv_id_le_one {n : ℕ} (hn : 1 ≤ n) (x : E) :
+    ‖iteratedFDeriv 𝕜 n (id : E → E) x‖ ≤ 1 := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  have hD : fderiv 𝕜 (id : E → E) = fun _ ↦ ContinuousLinearMap.id 𝕜 E := funext fun _ ↦ fderiv_id
+  rw [← norm_iteratedFDeriv_fderiv, hD]
+  rcases n with _ | n
+  · simpa using ContinuousLinearMap.norm_id_le
+  · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero n)]
+
 /-- Bounded derivatives up to order `N` have a common bound. -/
 theorem exists_forall_norm_iteratedFDeriv_le_of_forall_exists {f : E → F} {N : ℕ}
     (hbd : ∀ n ≤ N, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) :
@@ -171,6 +192,18 @@ theorem exists_forall_norm_iteratedFDeriv_le_of_forall_exists {f : E → F} {N :
   exact ⟨∑ n ∈ Finset.range (N + 1), max (C n) 0, fun n hn x ↦ (hC n hn x).trans
     ((le_max_left _ _).trans (Finset.single_le_sum (f := fun n ↦ max (C n) 0)
       (fun _ _ ↦ le_max_right _ _) (Finset.mem_range.2 (by omega))))⟩
+
+/-- Bounded derivatives of orders `1` to `N + 1` have a common bound. These are the derivatives of
+order at most `N` of `Df`. -/
+theorem exists_forall_norm_iteratedFDeriv_le_of_forall_one_le {f : E → F} {N : ℕ}
+    (hbd : ∀ n, 1 ≤ n → n ≤ N + 1 → ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) :
+    ∃ L, ∀ n, 1 ≤ n → n ≤ N + 1 → ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ L := by
+  obtain ⟨L, hL⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists (𝕜 := 𝕜)
+    (f := fderiv 𝕜 f) (N := N) fun n hn ↦ by
+      simpa only [norm_iteratedFDeriv_fderiv] using hbd (n + 1) (by omega) (by omega)
+  refine ⟨L, fun n h₁ h₂ x ↦ ?_⟩
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' h₁
+  simpa only [norm_iteratedFDeriv_fderiv] using hL n (by omega) x
 
 /-- A bound `G` on the derivatives of `f` of order at most `N` is nonnegative and bounds `f`. -/
 theorem nonneg_and_norm_le_of_norm_iteratedFDeriv_le {f : E → F} {N : ℕ} {G : ℝ}
