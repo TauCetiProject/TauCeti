@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Bott.DiscBundle
 public import TauCeti.Topology.Homotopy.Extension.Pushout
+import TauCeti.Geometry.Manifold.Morse.Deformation.Attachment
 import TauCeti.Topology.Homotopy.DeformationRetract
 import TauCeti.Topology.Homotopy.Extension.Ball
 import TauCeti.Topology.VectorBundle.Smul
@@ -37,7 +38,7 @@ band `f⁻¹[a, c - ε]`, which contains no critical point.
 The homotopy equivalence is the composite of three. First, `M_{c-ε} ∪ Θ(D_ε)` is the pushout of
 `S_ε → D_ε` along `Θ : S_ε → M_{c-ε}`, since it is covered by the closed set `M_{c-ε}` and the
 compact set `Θ(D_ε)` (`IsNondegenerateCriticalSubmanifold.isCompact_negativeDiscBundle`), which
-meet exactly in `Θ(S_ε)` (`CategoryTheory.IsPushout.of_isClosedEmbedding_of_union`). By the
+meet exactly in `Θ(S_ε)` (`TauCeti.TopCat.exists_isPushout_union_image`). By the
 attachment theorem it is a strong deformation retract of `M_{c+ε}`
 (`IsNondegenerateCriticalSubmanifold.exists_sublevel_union_negativeDiscBundle_deformation`).
 Second, the inclusion `M_{c+ε} → M_b` is a homotopy equivalence across the band `f⁻¹[c + ε, b]`
@@ -45,7 +46,9 @@ Second, the inclusion `M_{c+ε} → M_b` is a homotopy equivalence across the ba
 the inclusion, and attaching along a cofibration is homotopy invariant under a change of base
 (`ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_pushout`). The inclusion `S_ε → D_ε` is a
 cofibration because the cylinder over `D_ε` retracts radially onto its bottom and its part over
-`S_ε`, fibre by fibre (`TauCeti.hasHomotopyExtensionProperty_setOf_eq_one`).
+`S_ε`, fibre by fibre (`TauCeti.hasHomotopyExtensionProperty_setOf_eq_one`). The last two steps
+move the attachment across the regular collars `f⁻¹[a, c - ε]` and `f⁻¹[c + ε, b]`, as in the
+Morse case (`TauCeti.exists_homotopyEquiv_pushout_comp_sublevelRetraction`).
 
 This is the step by which the sublevels of a Morse–Bott function are built, one critical
 submanifold at a time, along a sequence of regular levels separating its critical values.
@@ -135,17 +138,12 @@ theorem hasHomotopyExtensionProperty_negativeSphereBundle
     refine eq_univ_of_forall fun x ↦ ⟨⟨x, ?_⟩, rfl⟩
     have hx := (IsCriticalSubmanifold.mem_negativeDiscBundle hn).1 x.2
     refine (IsCriticalSubmanifold.mem_negativeSphereBundle hn).2 ⟨hx.1, le_antisymm hx.2 ?_⟩
-    by_cases hv : (x : TotalSpace P fun s ↦ i.NormalSpace s hn).2 = 0
-    · simpa [hv] using hε
-    · linarith [h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn gR hx.1 hv]
+    linarith [h.normalHessian_apply_self_nonpos_of_mem_negativeNormalSpace hn gR hx.1]
   have hrange : range (ContinuousMap.inclusion
       (h.negativeSphereBundle_subset_negativeDiscBundle hn P gR ε)) =
       {x : h.negativeDiscBundle hn P gR ε | √(q x / ε) = 1} := by
+    refine (range_inclusion (h.negativeSphereBundle_subset_negativeDiscBundle hn P gR ε)).trans ?_
     ext x
-    rw [show range (ContinuousMap.inclusion
-      (h.negativeSphereBundle_subset_negativeDiscBundle hn P gR ε)) =
-        range (inclusion (h.negativeSphereBundle_subset_negativeDiscBundle hn P gR ε)) from rfl,
-      range_inclusion]
     refine (IsCriticalSubmanifold.mem_negativeSphereBundle hn).trans ?_
     rw [mem_ofPred_eq, Real.sqrt_eq_one, div_eq_one_iff_eq hε.ne']
     exact and_iff_right ((IsCriticalSubmanifold.mem_negativeDiscBundle hn).1 x.2).1
@@ -168,55 +166,6 @@ end IsNondegenerateCriticalSubmanifold
 
 end Adjunction
 
-section Pushout
-
-variable {X M : Type u} [TopologicalSpace X] [TopologicalSpace M] [T2Space M] {f : M → ℝ}
-  {d e : ℝ} {A D : Set X} {Θ : X → M}
-
-/-- Let `Θ` be continuous and injective on a compact set `D`, carrying it into `{f ≤ e}` and
-meeting the sublevel `{f ≤ d}`, `d ≤ e`, exactly in the image of `A ⊆ D`. Then the union of
-`{f ≤ d}` and `Θ(D)` is the pushout of the inclusion `A → D` along `Θ : A → {f ≤ d}`. -/
-private theorem isPushout_sublevel_union_image (hf : Continuous f) (hde : d ≤ e) (hAD : A ⊆ D)
-    (hD : IsCompact D) (hΘ : ContinuousOn Θ D) (hinj : InjOn Θ D) (hΘe : ∀ x ∈ D, f (Θ x) ≤ e)
-    (hΘA : ∀ x ∈ D, f (Θ x) ≤ d ↔ x ∈ A) :
-    ∃ (α : C(A, {y | f y ≤ d})) (χ : C(D, ↥({y | f y ≤ e} ∩ ({y | f y ≤ d} ∪ Θ '' D))))
-      (j : C({y | f y ≤ d}, ↥({y | f y ≤ e} ∩ ({y | f y ≤ d} ∪ Θ '' D)))),
-      (∀ x, (α x : M) = Θ x) ∧ (∀ y, (j y : M) = y) ∧
-      IsPushout (TopCat.ofHom (ContinuousMap.inclusion hAD)) (TopCat.ofHom α) (TopCat.ofHom χ)
-        (TopCat.ofHom j) := by
-  have : CompactSpace D := isCompact_iff_compactSpace.1 hD
-  have hΘc : Continuous fun x : D ↦ Θ x := hΘ.comp_continuous continuous_subtype_val Subtype.prop
-  let α : C(A, {y | f y ≤ d}) :=
-    ⟨fun x ↦ ⟨Θ x, (hΘA x (hAD x.2)).2 x.2⟩,
-      (hΘc.comp (continuous_inclusion hAD)).subtype_mk _⟩
-  let χ : C(D, ↥({y | f y ≤ e} ∩ ({y | f y ≤ d} ∪ Θ '' D))) :=
-    ⟨fun x ↦ ⟨Θ x, hΘe x x.2, Or.inr (mem_image_of_mem Θ x.2)⟩, hΘc.subtype_mk _⟩
-  let j : C({y | f y ≤ d}, ↥({y | f y ≤ e} ∩ ({y | f y ≤ d} ∪ Θ '' D))) :=
-    ⟨fun y ↦ ⟨y, (y.2 : f y ≤ d).trans hde, Or.inl y.2⟩, continuous_subtype_val.subtype_mk _⟩
-  refine ⟨α, χ, j, fun _ ↦ rfl, fun _ ↦ rfl, (IsPushout.of_isClosedEmbedding_of_union ?_ ?_ ?_ ?_
-    fun y x hyx ↦ ?_).flip⟩
-  · ext x
-    rfl
-  · -- The sublevel `{f ≤ d}` is closed.
-    refine ⟨(IsEmbedding.subtypeVal.of_comp_iff).1 IsEmbedding.subtypeVal, ?_⟩
-    convert isClosed_le (hf.comp continuous_subtype_val) continuous_const (f := fun y :
-      ↥({y | f y ≤ e} ∩ ({y | f y ≤ d} ∪ Θ '' D)) ↦ f y) (g := fun _ ↦ d) using 1
-    ext y
-    exact ⟨by rintro ⟨z, rfl⟩; exact z.2, fun hy ↦ ⟨⟨y, hy⟩, rfl⟩⟩
-  · -- `Θ` is injective on the compact set `D`.
-    exact χ.continuous.isClosedEmbedding fun x x' hxx' ↦
-      Subtype.ext (hinj x.2 x'.2 (congrArg Subtype.val hxx'))
-  · refine eq_univ_of_forall fun y ↦ ?_
-    obtain hy | ⟨x, hx, hxy⟩ := y.2.2
-    · exact Or.inl ⟨⟨y, hy⟩, rfl⟩
-    · exact Or.inr ⟨⟨x, hx⟩, Subtype.ext hxy⟩
-  · -- A point of `{f ≤ d}` in `Θ(D)` lies in `Θ(A)`.
-    have h : (y : M) = Θ x := congrArg Subtype.val hyx
-    have hxA : (x : X) ∈ A := (hΘA x x.2).1 (h ▸ y.2)
-    exact ⟨⟨x, hxA⟩, Subtype.ext h.symm, rfl⟩
-
-end Pushout
-
 section Attachment
 
 variable {E : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -228,19 +177,6 @@ variable {E : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Fi
   {i : SmoothEmbedding J I ∞ S M} (hn : (∞ : ℕ∞ω) ≠ 0)
 
 namespace IsNondegenerateCriticalSubmanifold
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
-  [FiniteDimensional ℝ E'] [IsManifold J ∞ S] in
-/-- If the critical points of `f` with values in `[a, b]` lie on `i`, on which `f = c`, then no
-point of a subband `f⁻¹[s, t]` of `f⁻¹[a, b]` missing the level `c` is critical. -/
-private theorem mfderiv_ne_zero_of_criticalPoints_subset_range {a b c s t : ℝ}
-    (hc : ∀ s, f (i s) = c) (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
-    (hs : a ≤ s) (ht : t ≤ b) (hst : t < c ∨ c < s) :
-    ∀ x, s ≤ f x → f x ≤ t → mfderiv I 𝓘(ℝ) f x ≠ 0 := fun x hsx hxt h0 ↦ by
-  obtain ⟨y, hy⟩ := hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 h0, by linarith, by linarith⟩
-  have := hc y
-  rw [hy] at this
-  rcases hst with hst | hst <;> linarith
 
 /-- Across a narrow band `f⁻¹[c - ε, c + ε]`, the output of the attachment theorem
 `IsNondegenerateCriticalSubmanifold.exists_sublevel_union_negativeDiscBundle_deformation` in
@@ -282,16 +218,20 @@ private theorem exists_homotopyEquiv_pushout_of_deformation [T2Space S] [Compact
     ring
   have hq0 {x} (hx : x ∈ h.negativeDiscBundle hn P gR ε) :
       0 ≤ -(2⁻¹ * h.normalHessian hn x.proj x.2 x.2) := by
-    by_cases hv : x.2 = 0
-    · simp [hv]
-    · linarith [h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn gR
-        ((IsCriticalSubmanifold.mem_negativeDiscBundle hn).1 hx).1 hv]
+    linarith [h.normalHessian_apply_self_nonpos_of_mem_negativeNormalSpace hn gR
+      ((IsCriticalSubmanifold.mem_negativeDiscBundle hn).1 hx).1]
   -- So `Θ(D_ε)` lies in `M_c` and meets `M_{c-ε}` in `Θ(S_ε)`.
-  obtain ⟨α, χ, j, hα, hj, sq⟩ := isPushout_sublevel_union_image hfs.continuous
-    (d := c - ε) (e := c + ε) (by linarith)
+  obtain ⟨α, χ, j, hα, hj, sq⟩ := TopCat.exists_isPushout_union_image
+    (F := {y | f y ≤ c - ε}) (U := {y | f y ≤ c + ε})
+    (isClosed_le hfs.continuous continuous_const) (fun y (hy : f y ≤ c - ε) ↦ by
+      change f y ≤ c + ε
+      linarith)
     (h.negativeSphereBundle_subset_negativeDiscBundle hn P gR ε)
     (h.isCompact_negativeDiscBundle hn hfs hdim g ε) (Θ.contMDiffOn.continuousOn.mono hD)
-    (Θ.toPartialEquiv.injOn.mono hD) (fun x hx ↦ by linarith [hfD hx, hq0 hx]) fun x hx ↦ by
+    (Θ.toPartialEquiv.injOn.mono hD) (fun x hx ↦ by
+      change f (Θ x) ≤ c + ε
+      linarith [hfD hx, hq0 hx]) fun x hx ↦ by
+      change f (Θ x) ≤ c - ε ↔ _
       rw [hfD hx, IsCriticalSubmanifold.mem_negativeSphereBundle]
       have := ((IsCriticalSubmanifold.mem_negativeDiscBundle hn).1 hx)
       exact ⟨fun h' ↦ ⟨this.1, le_antisymm this.2 (by linarith)⟩, fun h' ↦ by linarith [h'.2]⟩
@@ -376,33 +316,23 @@ theorem exists_homotopyEquiv_pushout_negativeDiscBundle [SecondCountableTopology
     fun x hx ↦ hcrit ⟨hx.1, Icc_subset_Icc (by linarith) (by linarith) hx.2⟩
   obtain ⟨α, hα, e₁, he₁⟩ :=
     h.exists_homotopyEquiv_pushout_of_deformation hn hfs hε hdim g Θ hΘf hD ρ hρ R
-  -- The retraction `r` of `M_{c-ε}` onto `M_a` across the band `f⁻¹[a, c - ε]`, which has no
-  -- critical points, is a homotopy equivalence with homotopy inverse the inclusion.
-  obtain ⟨r, hr, ⟨Rr⟩⟩ := exists_sublevelDeformation hfs hεa (hsub le_rfl (by linarith))
-    (mfderiv_ne_zero_of_criticalPoints_subset_range hc hcrit le_rfl (by linarith)
-      (Or.inl (by linarith)))
-  rw [sublevelInclusion_eq_inclusion] at hr Rr
-  set er := (ContinuousMap.HomotopyEquiv.ofRetraction _ r hr Rr.toHomotopy).symm
-  have her : TopCat.ofHom (r.comp α) = TopCat.ofHom α ≫ TopCat.ofHom er.toFun := by
-    rw [← TopCat.ofHom_comp]
-    exact congrArg _ (congrArg (ContinuousMap.comp · α) (ContinuousMap.ext
-      (ContinuousMap.HomotopyEquiv.coe_ofRetraction_symm_apply _ r hr Rr.toHomotopy)).symm)
-  -- The inclusion `M_{c+ε} → M_b` across the band `f⁻¹[c + ε, b]`.
-  obtain ⟨e₂, he₂⟩ := exists_sublevelHomotopyEquiv hfs hεb (hsub (by linarith) le_rfl)
-    (mfderiv_ne_zero_of_criticalPoints_subset_range hc hcrit (by linarith) le_rfl
-      (Or.inr (by linarith)))
-  -- Change the base of the attachment from `M_{c-ε}` to `M_a` along `r`.
-  obtain ⟨E, -, hE⟩ := er.exists_homotopyEquiv_pushout
+  -- Points of the two collars `f⁻¹[a, c - ε]` and `f⁻¹[c + ε, b]` are not critical.
+  have hreg {s t : ℝ} (hs : a ≤ s) (ht : t ≤ b) (hst : t < c ∨ c < s) :
+      ∀ x, s ≤ f x → f x ≤ t → mfderiv I 𝓘(ℝ) f x ≠ 0 := fun x hsx hxt h0 ↦ by
+    obtain ⟨y, hy⟩ :=
+      hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 h0, by linarith, by linarith⟩
+    have := hc y
+    rw [hy] at this
+    rcases hst with hst | hst <;> linarith
+  -- Move the attachment across the collars.
+  obtain ⟨r, hr, E, hE⟩ := exists_homotopyEquiv_pushout_comp_sublevelRetraction hfs hεa
+    (hsub le_rfl (by linarith)) (hreg le_rfl (by linarith) (Or.inl (by linarith))) hεb
+    (hsub (by linarith) le_rfl) (hreg (by linarith) le_rfl (Or.inr (by linarith)))
     (TopCat.ofHom (ContinuousMap.inclusion
       (h.negativeSphereBundle_subset_negativeDiscBundle hn P gR ε)))
     (IsEmbedding.inclusion (h.negativeSphereBundle_subset_negativeDiscBundle hn P gR ε))
-    (h.hasHomotopyExtensionProperty_negativeSphereBundle hn hfs hdim g ε) (TopCat.ofHom α)
-  refine ⟨ε, hε, hεa, hεb, hD, α, r, hα, fun y hy ↦ congrArg Subtype.val (hr ⟨y, hy⟩), ?_⟩
-  rw [her]
-  refine ⟨E.symm.trans (e₁.trans e₂), fun z ↦ ?_⟩
-  rw [ContinuousMap.HomotopyEquiv.trans_apply, ContinuousMap.HomotopyEquiv.trans_apply, he₂, hE,
-    he₁]
-  exact ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply _ r hr _ z
+    (h.hasHomotopyExtensionProperty_negativeSphereBundle hn hfs hdim g ε) (TopCat.ofHom α) e₁ he₁
+  exact ⟨ε, hε, hεa, hεb, hD, α, r, hα, hr, E, hE⟩
 
 end IsNondegenerateCriticalSubmanifold
 

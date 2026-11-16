@@ -31,6 +31,10 @@ map out of such a pushout which restricts to closed embeddings on `A` and on fin
 `B k`, any two of which meet only inside `A`, and meeting `A` only along the `S k`, is still a
 closed embedding.
 
+In a Hausdorff space, a closed set `F` together with the image `Θ(D)` of a compact set `D` under a
+continuous injective map, meeting `F` exactly in the image `Θ(A)` of a subset `A ⊆ D`, is the
+pushout of the inclusion `A → D` along `Θ : A → F`, since `Θ(D)` is closed.
+
 ## Main declarations
 
 * `CategoryTheory.IsPushout.continuousMap_ext`: continuous maps out of a pushout agree when they
@@ -55,6 +59,9 @@ closed embedding.
   `⨆ᵢ D i` along `⨆ᵢ A i` restricting to injective maps (resp. closed embeddings) on `L` and on
   the `D i`, with the images of any two `D i` meeting only inside the image of `L` and each
   meeting it only along `A i`, is injective (resp. a closed embedding).
+* `TauCeti.TopCat.exists_isPushout_union_image`: a closed set `F` together with the injective
+  image `Θ(D)` of a compact set, meeting `F` exactly in `Θ(A)`, is the pushout of `A → D` along
+  `Θ : A → F`.
 -/
 
 public section
@@ -422,5 +429,57 @@ theorem isClosedEmbedding_of_isPushout_sigma_of_comp [Finite ι] (hg : IsClosedE
       (hC.preimage (inr.hom.continuous.comp (Sigma.ι D i).hom.continuous)))
 
 end PushoutSigma
+
+section UnionImage
+
+open CategoryTheory Limits Set Topology
+
+universe u
+
+variable {X M : Type u} [TopologicalSpace X] [TopologicalSpace M] [T2Space M] {A D : Set X}
+  {F U : Set M} {Θ : X → M}
+
+/-- **Attaching the image of a compact set to a closed set.** Let `F` be a closed subset of a
+Hausdorff space `M`, and let `Θ` be continuous and injective on a compact set `D`, meeting `F`
+exactly in the image of a subset `A ⊆ D`. Then, inside any subspace `U` containing `F` and
+`Θ(D)`, the union `F ∪ Θ(D)` is the pushout of the inclusion `A → D` along `α = Θ : A → F`, with
+legs `χ = Θ : D → F ∪ Θ(D)` and the inclusion `j : F → F ∪ Θ(D)`. -/
+theorem exists_isPushout_union_image (hF : IsClosed F) (hFU : F ⊆ U) (hAD : A ⊆ D)
+    (hD : IsCompact D) (hΘ : ContinuousOn Θ D) (hinj : InjOn Θ D) (hΘU : MapsTo Θ D U)
+    (hΘF : ∀ x ∈ D, Θ x ∈ F ↔ x ∈ A) :
+    ∃ (α : C(A, F)) (χ : C(D, ↥(U ∩ (F ∪ Θ '' D)))) (j : C(F, ↥(U ∩ (F ∪ Θ '' D)))),
+      (∀ x, (α x : M) = Θ x) ∧ (∀ y, (j y : M) = y) ∧
+      IsPushout (TopCat.ofHom (ContinuousMap.inclusion hAD)) (TopCat.ofHom α) (TopCat.ofHom χ)
+        (TopCat.ofHom j) := by
+  have : CompactSpace D := isCompact_iff_compactSpace.1 hD
+  have hΘc : Continuous fun x : D ↦ Θ x := hΘ.comp_continuous continuous_subtype_val Subtype.prop
+  let α : C(A, F) :=
+    ⟨fun x ↦ ⟨Θ x, (hΘF x (hAD x.2)).2 x.2⟩, (hΘc.comp (continuous_inclusion hAD)).subtype_mk _⟩
+  let χ : C(D, ↥(U ∩ (F ∪ Θ '' D))) :=
+    ⟨fun x ↦ ⟨Θ x, hΘU x.2, Or.inr (mem_image_of_mem Θ x.2)⟩, hΘc.subtype_mk _⟩
+  let j : C(F, ↥(U ∩ (F ∪ Θ '' D))) :=
+    ⟨fun y ↦ ⟨y, hFU y.2, Or.inl y.2⟩, continuous_subtype_val.subtype_mk _⟩
+  refine ⟨α, χ, j, fun _ ↦ rfl, fun _ ↦ rfl, (IsPushout.of_isClosedEmbedding_of_union ?_ ?_ ?_ ?_
+    fun y x hyx ↦ ?_).flip⟩
+  · ext x
+    rfl
+  · -- `F` is closed.
+    refine ⟨(IsEmbedding.subtypeVal.of_comp_iff).1 IsEmbedding.subtypeVal, ?_⟩
+    convert hF.preimage (continuous_subtype_val (p := (· ∈ U ∩ (F ∪ Θ '' D)))) using 1
+    ext y
+    exact ⟨by rintro ⟨z, rfl⟩; exact z.2, fun hy ↦ ⟨⟨y, hy⟩, rfl⟩⟩
+  · -- `Θ` is injective on the compact set `D`.
+    exact χ.continuous.isClosedEmbedding fun x x' hxx' ↦
+      Subtype.ext (hinj x.2 x'.2 (congrArg Subtype.val hxx'))
+  · refine eq_univ_of_forall fun y ↦ ?_
+    obtain hy | ⟨x, hx, hxy⟩ := y.2.2
+    · exact Or.inl ⟨⟨y, hy⟩, rfl⟩
+    · exact Or.inr ⟨⟨x, hx⟩, Subtype.ext hxy⟩
+  · -- A point of `F` in `Θ(D)` lies in `Θ(A)`.
+    have h : (y : M) = Θ x := congrArg Subtype.val hyx
+    have hxA : (x : X) ∈ A := (hΘF x x.2).1 (h ▸ y.2)
+    exact ⟨⟨x, hxA⟩, Subtype.ext h.symm, rfl⟩
+
+end UnionImage
 
 end TauCeti.TopCat

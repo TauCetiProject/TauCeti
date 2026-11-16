@@ -202,16 +202,16 @@ on `D`. Then the level `{ρ = 1}` has the homotopy extension property in `D`.
 For a vector bundle with a fibre gauge `ρ` and the fibrewise scalar multiplication `φ`, this is the
 homotopy extension property of the sphere bundle `{ρ = 1}` in the disc bundle `{ρ ≤ 1}`; the closed
 unit ball of a normed space, with its norm, is the case of a single fibre
-(`TauCeti.hasHomotopyExtensionProperty_sphere_closedBall`). The cylinder `I × D` retracts onto
-`{0} × D ∪ I × {ρ = 1}` by the radial projection of the unit interval cylinder of `ℝ`
-(`TauCeti.ballRadialProjection`) read on `(t, ρ x)`: the height becomes the first coordinate of
-the projection, and `x` is rescaled by `φ` so that `ρ` becomes its second coordinate. -/
+(`TauCeti.hasHomotopyExtensionProperty_sphere_closedBall`). -/
 theorem hasHomotopyExtensionProperty_setOf_eq_one {D : Set X} {ρ : X → ℝ}
     (hρ : ContinuousOn ρ D) (hρD : ∀ x ∈ D, 0 ≤ ρ x ∧ ρ x ≤ 1) {φ : ℝ → X → X}
     (hφ : ContinuousOn (fun p : ℝ × X ↦ φ p.1 p.2) (Ici 0 ×ˢ D))
     (hφD : ∀ x ∈ D, ∀ c, 0 ≤ c → c * ρ x ≤ 1 → φ c x ∈ D ∧ ρ (φ c x) = c * ρ x)
     (hφ1 : ∀ x ∈ D, φ 1 x = x) :
     HasHomotopyExtensionProperty {x : D | ρ x = 1} := by
+  -- The cylinder `I × D` retracts onto `{0} × D ∪ I × {ρ = 1}` by the radial projection of the
+  -- unit interval cylinder of `ℝ` read on `(t, ρ x)`: the height becomes the first coordinate of
+  -- the projection, and `x` is rescaled by `φ` so that `ρ` becomes its second coordinate.
   -- The value of `ρ`, as a point of the closed unit ball of `ℝ`.
   have hmem (x : D) : ρ x ∈ closedBall (0 : ℝ) 1 := by
     rw [mem_closedBall_zero_iff, Real.norm_of_nonneg (hρD x x.2).1]
