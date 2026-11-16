@@ -52,12 +52,8 @@ theorem not_liesOver_infinitePlace_and_finitePlace (v : InfinitePlace K) (u : Fi
 nonarchimedean if and only if `v` is a finite place. -/
 theorem isNonarchimedean_iff_isFinitePlace_of_liesOver {v : AbsoluteValue K ℝ}
     (hv : IsInfinitePlace v ∨ IsFinitePlace v) (w : AbsoluteValue F ℝ) [w.LiesOver v] :
-    IsNonarchimedean w ↔ IsFinitePlace v := by
-  refine ⟨fun hna ↦ hv.resolve_left fun hinf ↦ ?_, fun hfin ↦ ?_⟩
-  · obtain ⟨v', rfl⟩ := (isInfinitePlace_iff v).mp hinf
-    exact not_isNonarchimedean_of_liesOver_infinitePlace v' w hna
-  · obtain ⟨u, rfl⟩ := (isFinitePlace_iff v).mp hfin
-    exact AbsoluteValue.isNonarchimedean_of_liesOver u.add_le
+    IsNonarchimedean w ↔ IsFinitePlace v :=
+  (AbsoluteValue.isNonarchimedean_iff_of_liesOver w v).trans (isNonarchimedean_iff_isFinitePlace hv)
 
 end Field
 
@@ -66,36 +62,21 @@ section NumberField
 variable {K F : Type*} [Field K] [Field F] [NumberField K] [NumberField F] [Algebra K F]
 
 variable (F) in
-/-- Over a finite place `v` of `K`, only finitely many absolute values of `F` lie over `v`. -/
-theorem finite_setOf_liesOver_finitePlace (v : FinitePlace K) :
-    {w : AbsoluteValue F ℝ | w.LiesOver v.1}.Finite := by
-  have hv : (FinitePlace.mk v.maximalIdeal).1 = v.1 :=
-    congrArg Subtype.val v.mk_maximalIdeal
-  simpa only [hv] using finite_setOf_liesOver_finitePlace_mk F v.maximalIdeal
-
-variable (F) in
-/-- Every finite place `v` of `K` has an absolute value of `F` lying over it. -/
-theorem nonempty_setOf_liesOver_finitePlace (v : FinitePlace K) :
-    {w : AbsoluteValue F ℝ | w.LiesOver v.1}.Nonempty := by
-  have hv : (FinitePlace.mk v.maximalIdeal).1 = v.1 :=
-    congrArg Subtype.val v.mk_maximalIdeal
-  simpa only [hv] using nonempty_setOf_liesOver_finitePlace_mk F v.maximalIdeal
-
-variable (F) in
-/-- Above any infinite or finite place of `K`, the extension `F` has only finitely many absolute
-values restricting to it. -/
+/-- For an extension `F / K` of number fields, only finitely many absolute values of `F` lie over
+any given infinite or finite place of `K`. -/
 theorem finite_setOf_liesOver {v : AbsoluteValue K ℝ}
     (hv : IsInfinitePlace v ∨ IsFinitePlace v) :
     {w : AbsoluteValue F ℝ | w.LiesOver v}.Finite := by
   rcases hv with hinf | hfin
   · obtain ⟨v', rfl⟩ := (isInfinitePlace_iff v).mp hinf
+    have : Module.Finite K F := Module.Finite.of_restrictScalars_finite ℚ K F
     exact finite_setOf_liesOver_infinitePlace F v'
   · obtain ⟨u, rfl⟩ := (isFinitePlace_iff v).mp hfin
     exact finite_setOf_liesOver_finitePlace F u
 
 variable (F) in
-/-- Above any infinite or finite place of `K`, there exists at least one absolute value of `F`
-restricting to it. -/
+/-- For an extension `F / K` of number fields, every infinite or finite place of `K` has an
+absolute value of `F` lying over it. -/
 theorem nonempty_setOf_liesOver {v : AbsoluteValue K ℝ}
     (hv : IsInfinitePlace v ∨ IsFinitePlace v) :
     {w : AbsoluteValue F ℝ | w.LiesOver v}.Nonempty := by

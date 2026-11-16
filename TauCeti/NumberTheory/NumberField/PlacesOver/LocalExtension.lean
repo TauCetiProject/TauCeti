@@ -13,15 +13,16 @@ public import TauCeti.NumberTheory.NumberField.PlacesOver.Relative
 /-!
 # The local extension formula for absolute values above a place
 
-Above a finite place `v`, the finite places of `F` correspond bijectively to the absolute values
-restricting to `v` on the nose (`NumberField.FinitePlace.placesOverEquivAbsValues`), by taking the
-local-degree root of each finite place. Above an infinite place `v`, the infinite places of `F`
-correspond bijectively to the absolute values restricting to `v` directly, without any root
+Above a finite place `v` of a number field `K` (in an extension `F / K` of number fields), the
+finite places of `F` correspond bijectively to the absolute values restricting to `v` on the nose
+(`NumberField.FinitePlace.placesOverEquivAbsValues`), by taking the local-degree root of each
+finite place. Above an infinite place `v` (in any field extension `F / K`), the infinite places of
+`F` correspond bijectively to the absolute values restricting to `v` directly, without any root
 (`NumberField.InfinitePlace.placesOverEquivAbsValues`).
 
-Products indexed by those absolute values carry local-degree weights at finite places and
-multiplicity weights `w.mult ∈ {1, 2}` at infinite places. At any element of the extension they
-agree with products over the places of `F` above `v`. At an element of the base the product is the
+When `F` is a number field, products indexed by those absolute values carry local-degree weights at
+finite places and multiplicity weights `w.mult ∈ {1, 2}` at infinite places. At any element of `F`
+they agree with products over the places of `F` above `v`. At an element of `K` the product is the
 normalized base value raised to the degree `[F : K]`
 (`NumberField.FinitePlace.prod_algebraMap_pow_localDegree`,
 `NumberField.InfinitePlace.prod_algebraMap_pow_mult`). No Galois hypothesis is required.
@@ -170,9 +171,17 @@ theorem placesOverEquivAbsValues_symm_apply_val (v : InfinitePlace K)
     ((placesOverEquivAbsValues F v).symm w).val.1 = w.val :=
   congrArg Subtype.val ((placesOverEquivAbsValues F v).apply_symm_apply w)
 
+/-- Applying the inverse correspondence to the underlying absolute value of an infinite place
+recovers that infinite place. -/
+@[simp]
+theorem placesOverEquivAbsValues_symm_mk (v : InfinitePlace K) (u : InfinitePlace F)
+    (hu : u.1.LiesOver v.1) :
+    ((placesOverEquivAbsValues F v).symm ⟨u.1, hu⟩).val = u :=
+  Subtype.ext (placesOverEquivAbsValues_symm_apply_val v ⟨u.1, hu⟩)
+
 /-- Evaluating the infinite place recovered by `(placesOverEquivAbsValues F v).symm` gives `w`. -/
 @[simp]
-theorem placesOverEquivAbsValues_symm_apply_coe (v : InfinitePlace K)
+theorem placesOverEquivAbsValues_symm_apply_val_apply (v : InfinitePlace K)
     (w : {w : AbsoluteValue F ℝ // w.LiesOver v.1}) (y : F) :
     ((placesOverEquivAbsValues F v).symm w).val y = w.val y :=
   congrArg (fun u : AbsoluteValue F ℝ ↦ u y) (placesOverEquivAbsValues_symm_apply_val v w)
@@ -187,25 +196,27 @@ variable {K F : Type*} [Field K] [Field F] [NumberField F] [Algebra K F]
 instance (v : InfinitePlace K) : Finite {w : AbsoluteValue F ℝ // w.LiesOver v.1} :=
   Finite.of_equiv _ (placesOverEquivAbsValues F v)
 
-attribute [local instance] Fintype.ofFinite
-
 open scoped Classical in
-/-- A multiplicity-weighted product over the absolute values above an infinite place `v` is the
-multiplicity-weighted product over the infinite places above `v`. -/
-theorem prod_apply_pow_mult (v : InfinitePlace K) (y : F) :
+/-- For a number field `F`, a multiplicity-weighted product over the absolute values of `F` above
+an infinite place `v` is the multiplicity-weighted product over the infinite places of `F` above
+`v`. -/
+theorem prod_apply_pow_mult (v : InfinitePlace K)
+    [Fintype {w : AbsoluteValue F ℝ // w.LiesOver v.1}] (y : F) :
     (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.1},
       w.val y ^ ((placesOverEquivAbsValues F v).symm w).val.mult) =
         ∏ w ∈ (v.placesOver F).toFinset, w y ^ w.mult := by
-  simp only [← placesOverEquivAbsValues_symm_apply_coe]
+  simp only [← placesOverEquivAbsValues_symm_apply_val_apply]
   exact ((placesOverEquivAbsValues F v).symm.prod_comp
     (fun w : v.placesOver F ↦ w.val y ^ w.val.mult)).trans
       (Finset.prod_set_coe (f := fun w : InfinitePlace F ↦ w y ^ w.mult) (v.placesOver F))
 
 open scoped Classical in
-/-- **The local extension formula at an infinite place.** On a base-field element, the product over
-all absolute values of `F` above an infinite place `v`, weighted by their multiplicities `w.mult`,
-equals the normalized base value `v x ^ v.mult` raised to `[F : K]`. -/
-theorem prod_algebraMap_pow_mult (v : InfinitePlace K) (x : K) :
+/-- **The local extension formula at an infinite place.** For a number field `F` and a base-field
+element `x : K`, the product over all absolute values of `F` above an infinite place `v`, weighted
+by their multiplicities `w.mult`, equals the normalized base value `v x ^ v.mult` raised to
+`[F : K]`. -/
+theorem prod_algebraMap_pow_mult (v : InfinitePlace K)
+    [Fintype {w : AbsoluteValue F ℝ // w.LiesOver v.1}] (x : K) :
     (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.1},
       w.val (algebraMap K F x) ^ ((placesOverEquivAbsValues F v).symm w).val.mult) =
         (v x ^ v.mult) ^ Module.finrank K F := by
@@ -222,7 +233,8 @@ theorem prod_algebraMap_pow_mult (v : InfinitePlace K) (x : K) :
 /-! At a ramified infinite place (`w` complex above `v` real), the normalized factor `w ^ w.mult`
 is the square of `v ^ v.mult` on the base, whereas `w` itself restricts to `v` without a power. -/
 
-example [NumberField K] (v : InfinitePlace K) :
+example [NumberField K] (v : InfinitePlace K)
+    [Fintype {w : AbsoluteValue F ℝ // w.LiesOver v.1}] :
     (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.1},
       w.val (algebraMap K F 0) ^
         ((placesOverEquivAbsValues F v).symm w).val.mult) = 0 := by

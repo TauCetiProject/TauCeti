@@ -41,13 +41,6 @@ open Height
 
 namespace NumberField
 
-private theorem max_inv_eq_inv_min {F : Type*} [Field F] (u : AbsoluteValue F ℝ)
-    {x : F} (hx : x ≠ 0) : max (u x⁻¹) 1 = (min 1 (u x))⁻¹ := by
-  rw [map_inv₀]
-  rcases le_total (u x) 1 with hle | hle
-  · rw [min_eq_right hle, max_eq_left ((one_le_inv₀ (u.pos hx)).mpr hle)]
-  · rw [min_eq_left hle, inv_one, max_eq_right ((inv_le_one₀ (u.pos hx)).mpr hle)]
-
 private theorem exists_finset_prod_max_apply_one_pow_mult_le
     {K F : Type*} [Field K] [Field F] [Algebra K F]
     (Sinf : Finset (InfinitePlace K)) (winf : InfinitePlace K → AbsoluteValue F ℝ)
@@ -88,7 +81,9 @@ theorem inv_mulHeight₁_le_prod_min_one_apply_pow_mult_of_liesOver
     (hw : ∀ v ∈ S, (w v).LiesOver v.1) {x : F} (hx : x ≠ 0) :
     (mulHeight₁ x)⁻¹ ≤ ∏ v ∈ S, min 1 (w v x) ^ v.mult := by
   have h := prod_max_apply_one_pow_mult_le_mulHeight₁_of_liesOver S w hw x⁻¹
-  simp only [max_inv_eq_inv_min _ hx, inv_pow, Finset.prod_inv_distrib, mulHeight₁_inv] at h
+  have hinv (u : AbsoluteValue F ℝ) : max (u x⁻¹) 1 = (min 1 (u x))⁻¹ := by
+    rw [map_inv₀, inv_antitoneOn_Ioi.map_min zero_lt_one (u.pos hx), inv_one, max_comm]
+  simp only [hinv, inv_pow, Finset.prod_inv_distrib, mulHeight₁_inv] at h
   exact (inv_le_comm₀ (Finset.prod_pos fun v _ ↦ pow_pos (lt_min zero_lt_one ((w v).pos hx)) _)
     (mulHeight₁_pos x)).mp h
 
@@ -166,8 +161,9 @@ theorem inv_mulHeight₁_le_prod_min_one_apply_pow_mult_mul_prod_of_liesOver
       (∏ v ∈ Sinf, min 1 (winf v x) ^ v.mult) * ∏ v ∈ Sfin, min 1 (wfin v x) := by
   have h := prod_max_apply_one_pow_mult_mul_prod_le_mulHeight₁_of_liesOver
     Sinf Sfin winf wfin hwinf hwfin x⁻¹
-  simp only [max_inv_eq_inv_min _ hx, inv_pow, Finset.prod_inv_distrib, ← mul_inv,
-    mulHeight₁_inv] at h
+  have hinv (u : AbsoluteValue F ℝ) : max (u x⁻¹) 1 = (min 1 (u x))⁻¹ := by
+    rw [map_inv₀, inv_antitoneOn_Ioi.map_min zero_lt_one (u.pos hx), inv_one, max_comm]
+  simp only [hinv, inv_pow, Finset.prod_inv_distrib, ← mul_inv, mulHeight₁_inv] at h
   have hpos : 0 < (∏ v ∈ Sinf, min 1 (winf v x) ^ v.mult) * ∏ v ∈ Sfin, min 1 (wfin v x) :=
     mul_pos (Finset.prod_pos fun v _ ↦ pow_pos (lt_min zero_lt_one ((winf v).pos hx)) _)
       (Finset.prod_pos fun v _ ↦ lt_min zero_lt_one ((wfin v).pos hx))

@@ -17,7 +17,8 @@ import TauCeti.Analysis.AbsoluteValue.FiniteOrder
 An absolute value on `ℂ` whose restriction to `ℝ` is `|·| ^ t` (with `t > 0`) equals `‖·‖ ^ t` on
 all of `ℂ` (`AbsoluteValue.eq_norm_rpow_of_apply_ofReal`). In particular, an absolute value on `ℂ`
 agreeing with `|·|` on `ℝ` is the complex norm (`AbsoluteValue.eq_norm_of_apply_ofReal`), so at
-most one absolute value on `ℂ` restricts to `|·|` on `ℝ` (`AbsoluteValue.ext_of_apply_ofReal`).
+most one absolute value on `ℂ` restricts to `|·|` on `ℝ`
+(`AbsoluteValue.eq_of_apply_ofReal_eq_abs`).
 
 Because `Complex.I` has multiplicative order `4`, every absolute value on `ℂ` takes the value `1`
 at `Complex.I` (`AbsoluteValue.map_I`). Writing `w = w.re + w.im * I` then bounds `v w` by
@@ -88,7 +89,7 @@ theorem eq_norm_of_apply_ofReal (v : AbsoluteValue ℂ ℝ) (hv : ∀ r : ℝ, v
     v.eq_norm_rpow_of_apply_ofReal one_pos (fun r ↦ by rw [hv, Real.rpow_one]) z
 
 /-- Two absolute values on `ℂ` agreeing with `|·|` on `ℝ` are equal. -/
-theorem ext_of_apply_ofReal {v w : AbsoluteValue ℂ ℝ}
+theorem eq_of_apply_ofReal_eq_abs {v w : AbsoluteValue ℂ ℝ}
     (hv : ∀ r : ℝ, v r = |r|) (hw : ∀ r : ℝ, w r = |r|) : v = w := by
   ext z
   rw [v.eq_norm_of_apply_ofReal hv, w.eq_norm_of_apply_ofReal hw]

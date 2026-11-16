@@ -44,8 +44,10 @@ a place of the base without passing to a completion.
   `NumberField.eq_of_liesOver_of_forall_apply_lt_one_iff`: the integers at which an absolute value
   `w` lying over `FinitePlace.mk 𝔭` is less than `1` form a prime over `𝔭`, and this prime
   determines `w`.
-* `NumberField.finite_setOf_liesOver_finitePlace_mk` and
-  `NumberField.nonempty_setOf_liesOver_finitePlace_mk`: the absolute values of `F` over a finite
+* `NumberField.finite_setOf_liesOver_finitePlace_mk`,
+  `NumberField.nonempty_setOf_liesOver_finitePlace_mk`,
+  `NumberField.finite_setOf_liesOver_finitePlace`, and
+  `NumberField.nonempty_setOf_liesOver_finitePlace`: the absolute values of `F` over a finite
   place of `K` form a finite nonempty set.
 
 ## Implementation notes
@@ -314,5 +316,21 @@ theorem nonempty_setOf_liesOver_finitePlace_mk :
   have : (FinitePlace.mk 𝔓).LiesOver (FinitePlace.mk (𝔓.under (𝓞 K))) :=
     (FinitePlace.mk_liesOver_mk_iff _ _).mpr inferInstance
   exact ⟨(FinitePlace.mk 𝔓).relativeAbsValue K, inferInstance⟩
+
+/-- A finite extension of number fields `F / K` has only finitely many absolute values lying over a
+given finite place `v` of `K`. -/
+theorem finite_setOf_liesOver_finitePlace (v : FinitePlace K) :
+    {w : AbsoluteValue F ℝ | w.LiesOver v.1}.Finite := by
+  have hv : (FinitePlace.mk v.maximalIdeal).1 = v.1 :=
+    congrArg Subtype.val v.mk_maximalIdeal
+  simpa only [hv] using finite_setOf_liesOver_finitePlace_mk F v.maximalIdeal
+
+/-- Every finite place `v` of `K` has an absolute value of a finite extension of number fields
+`F / K` lying over it. -/
+theorem nonempty_setOf_liesOver_finitePlace (v : FinitePlace K) :
+    {w : AbsoluteValue F ℝ | w.LiesOver v.1}.Nonempty := by
+  have hv : (FinitePlace.mk v.maximalIdeal).1 = v.1 :=
+    congrArg Subtype.val v.mk_maximalIdeal
+  simpa only [hv] using nonempty_setOf_liesOver_finitePlace_mk F v.maximalIdeal
 
 end NumberField
