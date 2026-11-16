@@ -10,23 +10,28 @@ public import Mathlib.CategoryTheory.Monoidal.Free.Basic
 /-!
 # Evaluation of formal tensor words
 
-Basic computation, extensionality, identity, and composition lemmas for
+Basic injectivity, computation, congruence, identity, and composition lemmas for
 `CategoryTheory.FreeMonoidalCategory.projectObj`, which evaluates formal parenthesized tensor words
 in an arbitrary (not necessarily strict) monoidal category.
 
 ## Main results
 
-* `CategoryTheory.FreeMonoidalCategory.of_injective`: the generator inclusion
-  `FreeMonoidalCategory.of` is injective.
+* `CategoryTheory.FreeMonoidalCategory.of_injective` and
+  `CategoryTheory.FreeMonoidalCategory.of_inj`: the generator inclusion `FreeMonoidalCategory.of`
+  is injective.
+* `CategoryTheory.FreeMonoidalCategory.tensor_injective` and
+  `CategoryTheory.FreeMonoidalCategory.tensorObj_inj`: formal tensor product of words is injective
+  in both factors.
 * `CategoryTheory.FreeMonoidalCategory.projectObj_of`,
   `CategoryTheory.FreeMonoidalCategory.projectObj_tensorUnit`,
   `CategoryTheory.FreeMonoidalCategory.projectObj_tensorObj`: `@[simp]` evaluation rules on
   generators, the monoidal unit, and tensor products.
-* `CategoryTheory.FreeMonoidalCategory.projectObj_of_eq`: evaluating along `FreeMonoidalCategory.of`
-  is the identity on formal tensor words.
-* `CategoryTheory.FreeMonoidalCategory.projectObj_projectObj`: evaluating a substituted tensor word
-  in a monoidal category `D` agrees with evaluating directly along the composite generator map,
-  without requiring strictness of `D`.
+* `CategoryTheory.FreeMonoidalCategory.projectObj_of_self`: evaluating along
+  `FreeMonoidalCategory.of` is the identity on formal tensor words.
+* `CategoryTheory.FreeMonoidalCategory.projectObj_projectObj` and
+  `CategoryTheory.FreeMonoidalCategory.projectObj_projectObj_of_comp`: evaluating a substituted
+  tensor word in a monoidal category `D` agrees with evaluating directly along the composite
+  generator map, without requiring strictness of `D`.
 -/
 
 public section
@@ -41,17 +46,26 @@ section Injectivity
 
 variable {C : Type u}
 
-/-- Extract the generator from a single-letter formal tensor word, returning `none` on the unit and
-compound tensor words. -/
-private def ofOption : FreeMonoidalCategory C → Option C
-  | .of a => some a
-  | .unit => none
-  | .tensor _ _ => none
-
 /-- The inclusion of generators into formal tensor words is injective. -/
 theorem of_injective : Function.Injective (@FreeMonoidalCategory.of C) := by
   intro a b h
-  exact Option.some.inj (congrArg ofOption h)
+  cases h
+  rfl
+
+@[simp]
+theorem of_inj {a b : C} : FreeMonoidalCategory.of a = FreeMonoidalCategory.of b ↔ a = b :=
+  of_injective.eq_iff
+
+/-- Formal tensor product of words is injective in both factors. -/
+theorem tensor_injective : Function.Injective2 (@FreeMonoidalCategory.tensor C) := by
+  intro X₁ Y₁ X₂ Y₂ h
+  cases h
+  exact ⟨rfl, rfl⟩
+
+@[simp]
+theorem tensorObj_inj {X₁ Y₁ X₂ Y₂ : FreeMonoidalCategory C} :
+    X₁ ⊗ Y₁ = X₂ ⊗ Y₂ ↔ X₁ = X₂ ∧ Y₁ = Y₂ :=
+  ⟨fun h ↦ tensor_injective h, fun ⟨hX, hY⟩ ↦ by rw [hX, hY]⟩
 
 end Injectivity
 
@@ -63,15 +77,8 @@ variable {C : Type u} {C' : Type u'} {D : Type u''} [Category.{v''} D] [Monoidal
 theorem projectObj_of (f : C → D) (a : C) : projectObj f (.of a) = f a :=
   rfl
 
-theorem projectObj_unit (f : C → D) : projectObj f .unit = 𝟙_ D :=
-  rfl
-
 @[simp]
 theorem projectObj_tensorUnit (f : C → D) : projectObj f (𝟙_ (FreeMonoidalCategory C)) = 𝟙_ D :=
-  rfl
-
-theorem projectObj_tensor (f : C → D) (X Y : FreeMonoidalCategory C) :
-    projectObj f (X.tensor Y) = projectObj f X ⊗ projectObj f Y :=
   rfl
 
 @[simp]
@@ -89,7 +96,7 @@ theorem projectObj_congr {f g : C → D} (h : ∀ a, f a = g a) (X : FreeMonoida
 
 /-- Evaluating a formal tensor word along `FreeMonoidalCategory.of` returns the same word. -/
 @[simp]
-theorem projectObj_of_eq (X : FreeMonoidalCategory C) :
+theorem projectObj_of_self (X : FreeMonoidalCategory C) :
     projectObj FreeMonoidalCategory.of X = X := by
   induction X with
   | of _ => rfl
@@ -108,7 +115,7 @@ theorem projectObj_projectObj (f : C' → D) (g : C → FreeMonoidalCategory C')
   | tensor _ _ ihX ihY => exact congrArg₂ (· ⊗ ·) ihX ihY
 
 /-- Evaluating after renaming generators by `h : C → C'` agrees with precomposing `f` with `h`. -/
-theorem projectObj_map_of (f : C' → D) (h : C → C') (X : FreeMonoidalCategory C) :
+theorem projectObj_projectObj_of_comp (f : C' → D) (h : C → C') (X : FreeMonoidalCategory C) :
     projectObj f (projectObj (.of ∘ h) X) = projectObj (f ∘ h) X :=
   projectObj_projectObj f (.of ∘ h) X
 
