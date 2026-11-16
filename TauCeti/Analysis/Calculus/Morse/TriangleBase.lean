@@ -704,8 +704,7 @@ line** `ℝ (1, 1)`, the tangent line of the diagonal face. -/
 theorem ker_fderiv_triangleBaseOrbitParameter_toLp {t : ℝ} (ht : t ∈ Ioo 0 1) :
     LinearMap.ker (fderiv ℝ triangleBaseOrbitParameter (WithLp.toLp 2 (t, t))).toLinearMap =
       ℝ ∙ WithLp.toLp 2 ((1 : ℝ), (1 : ℝ)) := by
-  have h1 : 0 < 1 - t ^ 2 := by nlinarith [ht.1, ht.2]
-  have hc : (t * (1 - t ^ 2))⁻¹ ≠ 0 := inv_ne_zero (mul_pos ht.1 h1).ne'
+  have hc : (t * (1 - t ^ 2))⁻¹ ≠ 0 := inv_ne_zero (mul_one_sub_sq_pos_of_mem_Ioo ht).ne'
   ext ξ
   rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
     fderiv_triangleBaseOrbitParameter_toLp_apply ht, mul_eq_zero, or_iff_right hc, sub_eq_zero,
@@ -780,9 +779,8 @@ the orbit parameter increases, at the rate `C`. -/
 theorem fderiv_triangleBaseOrbitParameter_toLp_apply_toLp (C : ℝ) {t : ℝ} (ht : t ∈ Ioo 0 1) :
     fderiv ℝ triangleBaseOrbitParameter (WithLp.toLp 2 (t, t))
       (WithLp.toLp 2 (C * t * (1 - t ^ 2), 0)) = C := by
-  have h1 : 0 < 1 - t ^ 2 := by nlinarith [ht.1, ht.2]
-  rw [fderiv_triangleBaseOrbitParameter_toLp_apply ht, WithLp.toLp_fst, WithLp.toLp_snd]
-  field_simp [ht.1.ne', h1.ne']
+  rw [fderiv_triangleBaseOrbitParameter_toLp_apply ht, WithLp.toLp_fst, WithLp.toLp_snd,
+    inv_mul_eq_iff_eq_mul₀ (mul_one_sub_sq_pos_of_mem_Ioo ht).ne']
   ring
 
 /-- **The source-to-sink trajectories.** For `C > 0`, the two coordinates of a trajectory of the
@@ -862,14 +860,10 @@ theorem fderiv_triangleBaseOrbitParameter_apply_eq
       HasDerivAt (fun s ↦ (ξ s).snd) (-(C * (3 * (γ s).snd ^ 2 - 1) * (ξ s).snd)) s := by
     refine ((WithLp.sndL 2 ℝ ℝ ℝ).hasFDerivAt.comp_hasDerivAt s (hξ s)).congr_deriv ?_
     simp
-  have h₁ := deriv_intervalBaseTimeCoordinate_mul_eq (hx hu) (fun s ↦ (hγI s).1) hw₁ s r
-  have h₂ := deriv_intervalBaseTimeCoordinate_mul_eq (hx hv) (fun s ↦ (hγI s).2) hw₂ s r
-  rw [deriv_intervalBaseTimeCoordinate (hγI s).1, deriv_intervalBaseTimeCoordinate (hγI r).1]
-    at h₁
-  rw [deriv_intervalBaseTimeCoordinate (hγI s).2, deriv_intervalBaseTimeCoordinate (hγI r).2]
-    at h₂
   rw [fderiv_triangleBaseOrbitParameter_apply (hγI s).1 (hγI s).2,
-    fderiv_triangleBaseOrbitParameter_apply (hγI r).1 (hγI r).2, h₁, h₂]
+    fderiv_triangleBaseOrbitParameter_apply (hγI r).1 (hγI r).2,
+    mul_one_sub_sq_inv_mul_eq (hx hu) (fun s ↦ (hγI s).1) hw₁ s r,
+    mul_one_sub_sq_inv_mul_eq (hx hv) (fun s ↦ (hγI s).2) hw₂ s r]
 
 /-- **The positive normal kernel ray of the diagonal.** For `C > 0`, let `γ` be a trajectory of
 the triangle base from the source `(0, 0)` to the sink `(1, 1)` along the diagonal `u = v`. Every
@@ -900,9 +894,8 @@ theorem sign_fst_sub_snd_eq_of_isIntegralCurve_triangleBasePotential (hC : 0 < C
       simpa using (fst_eq_snd_of_isIntegralCurve_triangleBasePotential hC hγ hbot htop hdiag s).symm
     conv_lhs => rw [hs]
     rw [fderiv_triangleBaseOrbitParameter_toLp_apply (hγI s).1]
-  have hpos (s : ℝ) : 0 < ((γ s).fst * (1 - (γ s).fst ^ 2))⁻¹ := by
-    have := hγI s
-    exact inv_pos.2 (mul_pos this.1.1 (by nlinarith [this.1.1, this.1.2]))
+  have hpos (s : ℝ) : 0 < ((γ s).fst * (1 - (γ s).fst ^ 2))⁻¹ :=
+    inv_pos.2 (mul_one_sub_sq_pos_of_mem_Ioo (hγI s).1)
   rw [hd, hd] at h
   have hsign := congrArg SignType.sign h
   rwa [sign_mul, sign_mul, sign_pos (hpos s), sign_pos (hpos r), one_mul, one_mul] at hsign

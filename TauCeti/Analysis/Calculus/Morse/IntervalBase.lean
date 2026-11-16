@@ -62,8 +62,8 @@ bijective.
   `0` to `1`, the flow line through `1 / √2` (`TauCeti.intervalBaseOrbit_eq_intervalBaseFlow`).
 * `TauCeti.intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`.
-* `TauCeti.deriv_intervalBaseTimeCoordinate_mul_eq`: the linearized flow along a solution in
-  `(0, 1)` preserves `U'(x) w`.
+* `TauCeti.mul_one_sub_sq_inv_mul_eq`: the linearized flow along a solution in `(0, 1)`
+  preserves `U'(x) w = w / (x (1 - x²))`.
 * `TauCeti.bijOn_intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseOrbit_one_intervalBaseTimeCoordinate`: `U` identifies `(0, 1)` with `ℝ`.
 * `TauCeti.intervalBaseFlow`, `TauCeti.isIntegralCurve_intervalBaseFlow` and
@@ -504,6 +504,10 @@ noncomputable def intervalBaseTimeCoordinate (t : ℝ) : ℝ :=
 theorem intervalBaseTimeCoordinate_apply (t : ℝ) :
     intervalBaseTimeCoordinate t = Real.log t - Real.log (1 - t ^ 2) / 2 := (rfl)
 
+/-- The factor `t (1 - t²)` of the vector field `C t (1 - t²)` is positive on `(0, 1)`. -/
+theorem mul_one_sub_sq_pos_of_mem_Ioo {t : ℝ} (ht : t ∈ Ioo 0 1) : 0 < t * (1 - t ^ 2) :=
+  mul_pos ht.1 (by nlinarith [ht.1, ht.2])
+
 /-- On `(0, 1)` the derivative of the time coordinate is `1 / (t (1 - t²))`. -/
 theorem hasDerivAt_intervalBaseTimeCoordinate {t : ℝ} (ht : t ∈ Ioo 0 1) :
     HasDerivAt intervalBaseTimeCoordinate (t * (1 - t ^ 2))⁻¹ t := by
@@ -529,19 +533,18 @@ theorem deriv_intervalBaseTimeCoordinate {t : ℝ} (ht : t ∈ Ioo 0 1) :
 
 /-- **The linearized flow carries the derivative of the time coordinate along.** Let `x` be a
 solution of `x' = C x (1 - x²)` with values in `(0, 1)`, and `w` a solution of the linearized
-equation `w' + C (3 x² - 1) w = 0` along it. Then `U'(x) w` does not depend on the time. Since the
-time coordinate `U` advances at the same rate `C` along every solution, this is the linearization
-of `U ∘ Φ_s = U + C s`. -/
-theorem deriv_intervalBaseTimeCoordinate_mul_eq {x w : ℝ → ℝ}
+equation `w' + C (3 x² - 1) w = 0` along it. Then `U'(x) w = w / (x (1 - x²))`
+(`TauCeti.deriv_intervalBaseTimeCoordinate`) does not depend on the time. Since the time
+coordinate `U` advances at the same rate `C` along every solution, this is the linearization of
+`U ∘ Φ_s = U + C s`. -/
+theorem mul_one_sub_sq_inv_mul_eq {x w : ℝ → ℝ}
     (hx : ∀ s, HasDerivAt x (C * x s * (1 - x s ^ 2)) s) (hxI : ∀ s, x s ∈ Ioo 0 1)
     (hw : ∀ s, HasDerivAt w (-(C * (3 * x s ^ 2 - 1) * w s)) s) (s r : ℝ) :
-    deriv intervalBaseTimeCoordinate (x s) * w s =
-      deriv intervalBaseTimeCoordinate (x r) * w r := by
+    (x s * (1 - x s ^ 2))⁻¹ * w s = (x r * (1 - x r ^ 2))⁻¹ * w r := by
   -- The product `w / (x (1 - x²))` has derivative zero: `x (1 - x²)` solves the same linearized
   -- equation as `w`, since it is `x' / C`.
   have hg (s : ℝ) : HasDerivAt (fun s ↦ (x s * (1 - x s ^ 2))⁻¹ * w s) 0 s := by
-    have h1 : 0 < 1 - x s ^ 2 := by nlinarith [(hxI s).1, (hxI s).2]
-    have hp : x s * (1 - x s ^ 2) ≠ 0 := (mul_pos (hxI s).1 h1).ne'
+    have hp : x s * (1 - x s ^ 2) ≠ 0 := (mul_one_sub_sq_pos_of_mem_Ioo (hxI s)).ne'
     have hdp : HasDerivAt (fun s ↦ x s * (1 - x s ^ 2))
         (C * x s * (1 - x s ^ 2) * (1 - 3 * x s ^ 2)) s :=
       ((hx s).mul (((hx s).pow 2).const_sub 1)).congr_deriv (by norm_num; ring)
@@ -549,7 +552,6 @@ theorem deriv_intervalBaseTimeCoordinate_mul_eq {x w : ℝ → ℝ}
     simp only [Pi.inv_apply]
     field_simp
     ring
-  rw [deriv_intervalBaseTimeCoordinate (hxI s), deriv_intervalBaseTimeCoordinate (hxI r)]
   exact is_const_of_deriv_eq_zero (fun s ↦ (hg s).differentiableAt) (fun s ↦ (hg s).deriv) s r
 
 /-- **The time coordinate advances at rate `C` along the flow.** -/
