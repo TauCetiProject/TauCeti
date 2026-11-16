@@ -50,15 +50,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   {Ω V : Opens E} {r : ℝ} {u : E → ℝ} {s : Set E}
 
-omit [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- In dimension zero the only test vector field is zero, so every set has perimeter zero, for
-every measure. -/
-private theorem perimeter_of_subsingleton [Subsingleton E] (U : Opens E) (t : Set E) :
-    perimeter μ U t = 0 := by
-  rw [perimeter_def]
-  refine nonpos_iff_eq_zero.1 (totalVariationOn_le_iff.2 fun φ _ => ?_)
-  simp [show φ = 0 from TestFunction.ext fun _ => Subsingleton.elim _ _]
-
 /-- Pullback by a dilation scales variation by at most its inverse surface factor when the dilated
 domain lies in the original domain. -/
 theorem totalVariationOn_comp_smul_le (hVO : MapsTo (fun x : E => r • x) V Ω) :
@@ -172,7 +163,7 @@ theorem perimeter_smul (hr : r ≠ 0)
     perimeter μ Ω (r • s) =
       ENNReal.ofReal (|r| ^ (Module.finrank ℝ E - 1)) * perimeter μ V s := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · simp [perimeter_of_subsingleton]
+  · simp
   have h := perimeter_preimage_smul (μ := μ) (s := s) hOV (by simpa only [inv_inv] using hVO)
   rw [preimage_smul_inv₀ hr] at h
   have hfactor : |r⁻¹| / |r⁻¹| ^ Module.finrank ℝ E = |r| ^ (Module.finrank ℝ E - 1) := by
@@ -218,7 +209,7 @@ theorem perimeter_ball_zero_preimage_add_smul_eq_div {x : E} (R : ℝ) :
   · rw [perimeter_congr_of_inter_eq (t := ∅) (by simp)]
     simp
   rcases subsingleton_or_nontrivial E with hE | hE
-  · simp [perimeter_of_subsingleton]
+  · simp
   obtain ⟨m, hm⟩ : ∃ m, Module.finrank ℝ E = m + 1 :=
     ⟨_, (Nat.sub_add_cancel Module.finrank_pos).symm⟩
   rw [ENNReal.div_eq_inv_mul, ← ENNReal.ofReal_inv_of_pos (by positivity)]
