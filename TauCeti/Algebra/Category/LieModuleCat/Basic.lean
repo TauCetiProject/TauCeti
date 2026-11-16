@@ -38,6 +38,13 @@ added.
   equivalences of Lie modules and categorical isomorphisms.
 * `TauCeti.LieModuleCat.binaryBicone`: the product bicone on `M × N`, a biproduct by
   `TauCeti.LieModuleCat.binaryBiconeIsBilimit`.
+* `TauCeti.LieModuleCat.biprodIsoProd` and `TauCeti.FGLieModuleCat.biprodLieModuleEquiv`: the
+  identifications of the chosen biproduct `M ⊞ N` with the product `M × N`, under which the
+  biproduct projections and inclusions are those of `M × N`
+  (`TauCeti.LieModuleCat.biprodIsoProd_inv_comp_fst`,
+  `TauCeti.LieModuleCat.inl_comp_biprodIsoProd_hom`,
+  `TauCeti.FGLieModuleCat.biprodLieModuleEquiv_apply`,
+  `TauCeti.FGLieModuleCat.biprodLieModuleEquiv_symm_apply`, ...).
 * `TauCeti.LieModuleCat.isFG` and `TauCeti.FGLieModuleCat`: the finiteness property and its full
   subcategory, with object constructor `FGLieModuleCat.of`.
 
@@ -247,6 +254,46 @@ variable (M N) in
 noncomputable def biprodIsoProd : M ⊞ N ≅ of R L (M × N) :=
   (biprod.uniqueUpToIso M N (binaryBiconeIsBilimit M N)).symm
 
+variable (M N) in
+/-- Under `biprodIsoProd`, the first biproduct projection is the first projection of `M × N`. -/
+@[simp]
+theorem biprodIsoProd_inv_comp_fst :
+    (biprodIsoProd M N).inv ≫ biprod.fst = ofHom (LieModuleHom.fst R L M N) :=
+  biprod.lift_fst _ _
+
+variable (M N) in
+/-- Under `biprodIsoProd`, the second biproduct projection is the second projection of
+`M × N`. -/
+@[simp]
+theorem biprodIsoProd_inv_comp_snd :
+    (biprodIsoProd M N).inv ≫ biprod.snd = ofHom (LieModuleHom.snd R L M N) :=
+  biprod.lift_snd _ _
+
+variable (M N) in
+/-- Under `biprodIsoProd`, the first biproduct inclusion is the first inclusion into `M × N`. -/
+@[simp]
+theorem inl_comp_biprodIsoProd_hom :
+    biprod.inl ≫ (biprodIsoProd M N).hom = ofHom (LieModuleHom.inl R L M N) :=
+  biprod.inl_desc _ _
+
+variable (M N) in
+/-- Under `biprodIsoProd`, the second biproduct inclusion is the second inclusion into
+`M × N`. -/
+@[simp]
+theorem inr_comp_biprodIsoProd_hom :
+    biprod.inr ≫ (biprodIsoProd M N).hom = ofHom (LieModuleHom.inr R L M N) :=
+  biprod.inr_desc _ _
+
+/-- The coordinates of `biprodIsoProd` are the two biproduct projections. -/
+@[simp]
+theorem biprodIsoProd_hom_apply (x : ↑(M ⊞ N)) :
+    (biprodIsoProd M N).hom.hom x =
+      ((biprod.fst : M ⊞ N ⟶ M).hom x, (biprod.snd : M ⊞ N ⟶ N).hom x) := by
+  have h₁ := (Iso.eq_inv_comp _).1 (biprodIsoProd_inv_comp_fst M N).symm
+  have h₂ := (Iso.eq_inv_comp _).1 (biprodIsoProd_inv_comp_snd M N).symm
+  exact Prod.ext (by simpa using congrArg (fun f ↦ f.hom x) h₁)
+    (by simpa using congrArg (fun f ↦ f.hom x) h₂)
+
 end LieModuleCat
 
 end TauCeti
@@ -396,6 +443,32 @@ noncomputable def biprodLieModuleEquiv (M N : FGLieModuleCat.{w} R L) :
   have := preservesBinaryBiproducts_of_preservesBiproducts (LieModuleCat.isFG.{w} R L).ι
   (((LieModuleCat.isFG R L).ι.mapBiprod M N).trans
     (LieModuleCat.biprodIsoProd M.obj N.obj)).toLieModuleEquiv
+
+/-- The coordinates of `biprodLieModuleEquiv` are the two biproduct projections. -/
+@[simp]
+theorem biprodLieModuleEquiv_apply (M N : FGLieModuleCat.{w} R L) (x : (M ⊞ N).obj) :
+    biprodLieModuleEquiv M N x =
+      ((biprod.fst : M ⊞ N ⟶ M).hom.hom x, (biprod.snd : M ⊞ N ⟶ N).hom.hom x) := by
+  have := preservesBinaryBiproducts_of_preservesBiproducts (LieModuleCat.isFG.{w} R L).ι
+  rw [biprodLieModuleEquiv, Iso.toLieModuleEquiv_apply, Iso.trans_hom, LieModuleCat.hom_comp,
+    LieModuleHom.comp_apply, LieModuleCat.biprodIsoProd_hom_apply, ← LieModuleHom.comp_apply,
+    ← LieModuleHom.comp_apply, ← LieModuleCat.hom_comp, ← LieModuleCat.hom_comp,
+    Functor.mapBiprod_hom]
+  exact Prod.ext (congrArg (fun f ↦ LieModuleCat.Hom.hom f x) (biprod.lift_fst _ _))
+    (congrArg (fun f ↦ LieModuleCat.Hom.hom f x) (biprod.lift_snd _ _))
+
+/-- The inverse of `biprodLieModuleEquiv` is the sum of the two biproduct inclusions. -/
+@[simp]
+theorem biprodLieModuleEquiv_symm_apply (M N : FGLieModuleCat.{w} R L) (p : M.obj × N.obj) :
+    (biprodLieModuleEquiv M N).symm p =
+      (biprod.inl : M ⟶ M ⊞ N).hom.hom p.1 + (biprod.inr : N ⟶ M ⊞ N).hom.hom p.2 := by
+  rw [LieModuleEquiv.symm_apply_eq, biprodLieModuleEquiv_apply]
+  simp only [map_add, ← LieModuleHom.comp_apply, ← LieModuleCat.hom_comp,
+    ← ObjectProperty.FullSubcategory.comp_hom, biprod.inl_fst, biprod.inl_snd, biprod.inr_fst,
+    biprod.inr_snd, ObjectProperty.FullSubcategory.id_hom, LieModuleCat.hom_id,
+    LieModuleHom.id_apply]
+  simp only [← ObjectProperty.ι_map, Functor.map_zero, LieModuleCat.hom_zero, zero_apply,
+    add_zero, zero_add]
 
 end FGLieModuleCat
 
