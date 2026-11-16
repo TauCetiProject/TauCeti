@@ -54,6 +54,8 @@ are not treated here.
 * `TauCeti.Vortex.SobolevFieldSpace f m s`: the continuous fields of `A_m^s`, with the topology
   of `A_m^s`.
 * `TauCeti.Vortex.SobolevFieldSpace.subRef`: the coordinates of `x - x_m` in `H^s(ℂ)`.
+* `TauCeti.Vortex.SobolevFieldSpace.toFramedFieldSpace`: a continuous field as an element of
+  `A_m^s`.
 
 ## References
 
@@ -79,7 +81,7 @@ of `A_m^s` as an affine Hilbert space (`SobolevFieldSpace.isEmbedding_subRef`). 
 field of `A_m^s` agrees almost everywhere with exactly one of them: with at most one since they
 are continuous, and with one by the Sobolev embedding
 (`TemperedDistribution.exists_contDiff_ae_eq_of_mem_realSobolevFunctions`, coordinate by
-coordinate). -/
+coordinate; `SobolevFieldSpace.exists_ae_eq`). -/
 structure SobolevFieldSpace (f : ContDiffBump (0 : ℝ)) (m : ℕ) (s : ℝ) : Type where
   /-- The field. -/
   toFun : ℂ → EuclideanSpace ℝ (Fin 4)
@@ -110,6 +112,37 @@ theorem ext {x y : SobolevFieldSpace f m s} (h : ⇑x = ⇑y) : x = y := by
   cases y
   cases h
   rfl
+
+/-- A field of `SobolevFieldSpace`, as an element of `A_m^s`. -/
+@[expose] def toFramedFieldSpace (x : SobolevFieldSpace f m s) : framedFieldSpace f m s :=
+  ⟨x, x.mem_framedFieldSpace⟩
+
+/-- The field underlying `x.toFramedFieldSpace` is `x`. -/
+@[simp]
+theorem coe_toFramedFieldSpace (x : SobolevFieldSpace f m s) :
+    (x.toFramedFieldSpace : ℂ → EuclideanSpace ℝ (Fin 4)) = x :=
+  rfl
+
+/-- For `s > 1`, every field of `A_m^s` agrees almost everywhere with a field of
+`SobolevFieldSpace`, by the Sobolev embedding applied to each coordinate of `x - x_m`. -/
+theorem exists_ae_eq (hs : 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : x ∈ framedFieldSpace f m s) : ∃ y : SobolevFieldSpace f m s, x =ᵐ[volume] ⇑y := by
+  have hfin : finrank ℝ ℂ + 2 * ((0 : ℕ) : ℝ) < 2 * s := by
+    simpa using finrank_real_complex_lt_two_mul hs
+  choose g hg hxg using fun j ↦ exists_contDiff_ae_eq_of_mem_realSobolevFunctions hfin
+    (mem_sobolevFields.1 (_root_.TauCeti.Vortex.mem_framedFieldSpace.1 hx) j)
+  set y : ℂ → EuclideanSpace ℝ (Fin 4) := referenceField f m + fun z ↦ WithLp.toLp 2 fun j ↦ g j z
+  have hxy : x =ᵐ[volume] y := by
+    filter_upwards [ae_all_iff.2 hxg] with z hz
+    ext j
+    simpa [y, sub_eq_iff_eq_add'] using hz j
+  have hy : y ∈ framedFieldSpace f m s := by
+    refine _root_.TauCeti.Vortex.mem_framedFieldSpace.2 (mem_sobolevFields_of_ae_eq
+      (_root_.TauCeti.Vortex.mem_framedFieldSpace.1 hx) ?_)
+    filter_upwards [hxy] with z hz
+    simp [hz]
+  refine ⟨⟨y, hy, (contDiff_referenceField f m).continuous.add ?_⟩, hxy⟩
+  exact (PiLp.continuous_toLp 2 _).comp (continuous_pi fun j ↦ (hg j).continuous)
 
 /-- The `j`-th coordinate of the difference `x - x_m` of a field from the reference field, as a
 real function. -/
@@ -256,9 +289,9 @@ theorem isClosed_setOf_exists_gaugeTransform_eq {k : ℕ} (hk : 2 < k) :
     (tendstoUniformly_of_tendsto hs ((hq.tendsto p).comp hl)).tendstoLocallyUniformly
   choose us hus hxy using fun i : S ↦ i.2
   obtain ⟨⟨v, hvG⟩, hv⟩ := mem_orbit_sobolevGaugeGroup_of_tendstoLocallyUniformly hk
-    (xs := fun i : S ↦ ⟨(i : S).1.1, (i : S).1.1.mem_framedFieldSpace⟩)
-    (ys := fun i : S ↦ ⟨(i : S).1.2, (i : S).1.2.mem_framedFieldSpace⟩)
-    (x := ⟨p.1, p.1.mem_framedFieldSpace⟩) (y := ⟨p.2, p.2.mem_framedFieldSpace⟩)
+    (xs := fun i : S ↦ (i : S).1.1.toFramedFieldSpace)
+    (ys := fun i : S ↦ (i : S).1.2.toFramedFieldSpace)
+    (x := p.1.toFramedFieldSpace) (y := p.2.toFramedFieldSpace)
     (fun i ↦ ⟨⟨us i, hus i⟩, Subtype.ext (hxy i)⟩)
     (hconv Prod.fst continuous_fst) (hconv Prod.snd continuous_snd) p.1.continuous p.2.continuous
   exact ⟨v, hvG, congrArg Subtype.val hv⟩
