@@ -459,6 +459,44 @@ theorem contMDiffAt_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
       (fun m ↦ (⟨b m, ⟨w m, hmem m⟩⟩ : TotalSpace (ι → 𝕜') fun x ↦ V x)) m₀ :=
   hV.contMDiffWithinAt_totalSpace_mk hk hw hmem
 
+/-- A map into the total space of `E` with values in a subbundle given by `C^n` local frames,
+which is `C^k` on `s` for some `k ≤ n`, is `C^k` on `s` as a map into the subbundle, with the
+structures `hV.fiberBundle` and `hV.vectorBundle` installed by `letI`. -/
+theorem contMDiffOn_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
+    {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+    {HM : Type*} [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace HM M] {k : ℕ∞ω}
+    (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) (hk : k ≤ n) {b : M → B}
+    {w : ∀ m, E (b m)} {s : Set M}
+    (hw : ContMDiffOn J (IB.prod 𝓘(𝕜, F)) k (fun m ↦ (⟨b m, w m⟩ : TotalSpace F E)) s)
+    (hmem : ∀ m, w m ∈ V (b m)) :
+    letI := subbundleTopology F (F' := ι → 𝕜') V
+    letI := hV.fiberBundle
+    letI := hV.vectorBundle
+    letI := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
+    ContMDiffOn J (IB.prod 𝓘(𝕜, ι → 𝕜')) k
+      (fun m ↦ (⟨b m, ⟨w m, hmem m⟩⟩ : TotalSpace (ι → 𝕜') fun x ↦ V x)) s :=
+  fun m₀ hm₀ ↦ hV.contMDiffWithinAt_totalSpace_mk hk (hw m₀ hm₀) hmem
+
+/-- A `C^k` map into the total space of `E` with values in a subbundle given by `C^n` local
+frames, for some `k ≤ n`, is `C^k` as a map into the subbundle, with the structures
+`hV.fiberBundle` and `hV.vectorBundle` installed by `letI`. -/
+theorem contMDiff_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
+    {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+    {HM : Type*} [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace HM M] {k : ℕ∞ω}
+    (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) (hk : k ≤ n) {b : M → B}
+    {w : ∀ m, E (b m)}
+    (hw : ContMDiff J (IB.prod 𝓘(𝕜, F)) k (fun m ↦ (⟨b m, w m⟩ : TotalSpace F E)))
+    (hmem : ∀ m, w m ∈ V (b m)) :
+    letI := subbundleTopology F (F' := ι → 𝕜') V
+    letI := hV.fiberBundle
+    letI := hV.vectorBundle
+    letI := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
+    ContMDiff J (IB.prod 𝓘(𝕜, ι → 𝕜')) k
+      (fun m ↦ (⟨b m, ⟨w m, hmem m⟩⟩ : TotalSpace (ι → 𝕜') fun x ↦ V x)) :=
+  fun m₀ ↦ hV.contMDiffAt_totalSpace_mk hk (hw m₀) hmem
+
 end HasLocalContMDiffSubbundleFrames
 
 end ContMDiffFrames

@@ -769,7 +769,7 @@ theorem isRegularLagrangian_mechanicalLagrangian [FiniteDimensional ℝ E]
     (hg : ∀ x v w, g x v w = g x w v) (hpos : ∀ x v, v ≠ 0 → 0 < g x v v) (V : M → ℝ) :
     IsRegularLagrangian (mechanicalLagrangian g V) :=
   (isRegularLagrangian_mechanicalLagrangian_iff hg V).2 fun x ↦
-    ContinuousLinearMap.isInvertible_of_pos (E := E) (hpos x)
+    ContinuousLinearMap.isInvertible_of_pos (hpos x)
 
 end Mechanical
 

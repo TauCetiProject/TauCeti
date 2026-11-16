@@ -219,9 +219,7 @@ theorem starProjection_orthogonalNormalSpace_eq_sub_mfderiv_inverse {f : M → N
     let a := (ContinuousLinearMap.precomp ℝ d).comp ((RiemannianBundle.g.inner (f x)).comp d)
     (orthogonalNormalSpace I J f x).starProjection v = v - d (a.inverse φ) := by
   intro d φ a
-  -- `TangentSpace I x` is by definition the model space `E`, whose norm
-  -- `ContinuousLinearMap.isInvertible_of_pos` uses; `TangentSpace` carries no norm of its own.
-  have ha : a.IsInvertible := ContinuousLinearMap.isInvertible_of_pos (E := E) fun w hw0 ↦
+  have ha : a.IsInvertible := ContinuousLinearMap.isInvertible_of_pos fun w hw0 ↦
     RiemannianBundle.g.pos (f x) (d w) ((map_ne_zero_iff d hinj).mpr hw0)
   refine Submodule.eq_starProjection_of_mem_orthogonal' (z := d (a.inverse φ)) ?_ ?_
     (sub_add_cancel _ _).symm
@@ -476,6 +474,38 @@ theorem contMDiffAt_orthogonalNormalSpace_mk_iff {r : ℕ} {f : K} (hf : ContMDi
         (fun z ↦ (⟨b z, w z⟩ : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) z₀ :=
   contMDiffWithinAt_orthogonalNormalSpace_mk_iff hf hinj hm hr hk hmem
 
+/-- **Universal property of `ν_f` in `f *ᵖ TN`.** For `k ≤ m`, a map with normal values is `C^k`
+on `s` into `ν_f` exactly when it is `C^k` on `s` into `f *ᵖ TN`. -/
+theorem contMDiffOn_orthogonalNormalSpace_mk_iff {r : ℕ} {f : K} (hf : ContMDiff I J n f)
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x))
+    (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r) (hk : k ≤ m) {b : X → M}
+    {w : ∀ z, TangentSpace J (f (b z))} {s : Set X}
+    (hmem : ∀ z, w z ∈ orthogonalNormalSpace I J f (b z)) :
+    letI := orthogonalNormalFiberBundle hf hinj hm hr
+    letI := orthogonalNormalVectorBundle hf hinj hm hr
+    ContMDiffOn IX (I.prod 𝓘(ℝ, Fin r → ℝ)) k
+        (fun z ↦ (⟨b z, ⟨w z, hmem z⟩⟩ :
+          TotalSpace (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) s ↔
+      ContMDiffOn IX (I.prod 𝓘(ℝ, V)) k
+        (fun z ↦ (⟨b z, w z⟩ : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) s :=
+  forall₂_congr fun _ _ ↦ contMDiffWithinAt_orthogonalNormalSpace_mk_iff hf hinj hm hr hk hmem
+
+/-- **Universal property of `ν_f` in `f *ᵖ TN`.** For `k ≤ m`, a map with normal values is `C^k`
+into `ν_f` exactly when it is `C^k` into `f *ᵖ TN`. -/
+theorem contMDiff_orthogonalNormalSpace_mk_iff {r : ℕ} {f : K} (hf : ContMDiff I J n f)
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x))
+    (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r) (hk : k ≤ m) {b : X → M}
+    {w : ∀ z, TangentSpace J (f (b z))}
+    (hmem : ∀ z, w z ∈ orthogonalNormalSpace I J f (b z)) :
+    letI := orthogonalNormalFiberBundle hf hinj hm hr
+    letI := orthogonalNormalVectorBundle hf hinj hm hr
+    ContMDiff IX (I.prod 𝓘(ℝ, Fin r → ℝ)) k
+        (fun z ↦ (⟨b z, ⟨w z, hmem z⟩⟩ :
+          TotalSpace (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) ↔
+      ContMDiff IX (I.prod 𝓘(ℝ, V)) k
+        (fun z ↦ (⟨b z, w z⟩ : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) :=
+  forall_congr' fun _ ↦ contMDiffAt_orthogonalNormalSpace_mk_iff hf hinj hm hr hk hmem
+
 /-- **Universal property of `ν_f` in `TN`.** For `k ≤ m`, a map with normal values is `C^k` within
 `s` at `z₀` into `ν_f` exactly when its base point is `C^k` within `s` at `z₀` and the
 corresponding map into the ambient tangent bundle `TN` is `C^k` within `s` at `z₀`. -/
@@ -512,6 +542,44 @@ theorem contMDiffAt_orthogonalNormalSpace_mk_iff_tangentBundle {r : ℕ} {f : K}
         ContMDiffAt IX (J.prod 𝓘(ℝ, V)) k
           (fun z ↦ (⟨f (b z), w z⟩ : TangentBundle J N)) z₀ :=
   contMDiffWithinAt_orthogonalNormalSpace_mk_iff_tangentBundle hf hinj hm hr hk hmem
+
+/-- **Universal property of `ν_f` in `TN`.** For `k ≤ m`, a map with normal values is `C^k` on `s`
+into `ν_f` exactly when its base point is `C^k` on `s` and the corresponding map into the ambient
+tangent bundle `TN` is `C^k` on `s`. -/
+theorem contMDiffOn_orthogonalNormalSpace_mk_iff_tangentBundle {r : ℕ} {f : K}
+    (hf : ContMDiff I J n f) (hinj : ∀ x, Function.Injective (mfderiv I J f x))
+    (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r) (hk : k ≤ m) {b : X → M}
+    {w : ∀ z, TangentSpace J (f (b z))} {s : Set X}
+    (hmem : ∀ z, w z ∈ orthogonalNormalSpace I J f (b z)) :
+    letI := orthogonalNormalFiberBundle hf hinj hm hr
+    letI := orthogonalNormalVectorBundle hf hinj hm hr
+    ContMDiffOn IX (I.prod 𝓘(ℝ, Fin r → ℝ)) k
+        (fun z ↦ (⟨b z, ⟨w z, hmem z⟩⟩ :
+          TotalSpace (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) s ↔
+      ContMDiffOn IX I k b s ∧
+        ContMDiffOn IX (J.prod 𝓘(ℝ, V)) k (fun z ↦ (⟨f (b z), w z⟩ : TangentBundle J N)) s :=
+  (forall₂_congr fun _ _ ↦
+    contMDiffWithinAt_orthogonalNormalSpace_mk_iff_tangentBundle hf hinj hm hr hk hmem).trans
+    forall₂_and
+
+/-- **Universal property of `ν_f` in `TN`.** For `k ≤ m`, a map with normal values is `C^k` into
+`ν_f` exactly when its base point is `C^k` and the corresponding map into the ambient tangent
+bundle `TN` is `C^k`. -/
+theorem contMDiff_orthogonalNormalSpace_mk_iff_tangentBundle {r : ℕ} {f : K}
+    (hf : ContMDiff I J n f) (hinj : ∀ x, Function.Injective (mfderiv I J f x))
+    (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r) (hk : k ≤ m) {b : X → M}
+    {w : ∀ z, TangentSpace J (f (b z))}
+    (hmem : ∀ z, w z ∈ orthogonalNormalSpace I J f (b z)) :
+    letI := orthogonalNormalFiberBundle hf hinj hm hr
+    letI := orthogonalNormalVectorBundle hf hinj hm hr
+    ContMDiff IX (I.prod 𝓘(ℝ, Fin r → ℝ)) k
+        (fun z ↦ (⟨b z, ⟨w z, hmem z⟩⟩ :
+          TotalSpace (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) ↔
+      ContMDiff IX I k b ∧
+        ContMDiff IX (J.prod 𝓘(ℝ, V)) k (fun z ↦ (⟨f (b z), w z⟩ : TangentBundle J N)) :=
+  (forall_congr' fun _ ↦
+    contMDiffAt_orthogonalNormalSpace_mk_iff_tangentBundle hf hinj hm hr hk hmem).trans
+    forall_and
 
 end UniversalProperty
 
