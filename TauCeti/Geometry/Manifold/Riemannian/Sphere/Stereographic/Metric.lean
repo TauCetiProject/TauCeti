@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Yangyang Li, Riccardo Brasca, The Tau Ceti contributors
 -/
 module
 
@@ -20,12 +20,18 @@ inner product. Scale one gives equatorial stereographic coordinates; scale two g
 Mathlib's coordinates. For `s ≠ 0`, this is the round unit-sphere metric pulled back by
 `y ↦ σ⁻¹((2 / s) • y)`, where `σ` is Mathlib's stereographic projection, up to the
 linear isometry identifying the coordinate space with the projection hyperplane.
-`metric_two_apply_eq_inner_mfderiv` identifies scale two with the inverse chart's pullback.
+`metric_apply_eq_inner_mfderiv` identifies every nonzero scale with this pullback.
 
 Its Christoffel bilinear map is
 `-2 / (s² + ‖x‖²) • (⟪x,v⟫u + ⟪x,u⟫v - ⟪u,v⟫x)`.
 This expresses the Levi-Civita connection in these coordinates for computations of
 geodesics and second fundamental forms on the sphere.
+
+## Formalization source
+
+Adapted from Yangyang Li's stereographic metric formalization, ported by Riccardo Brasca
+in [TauCetiProject/TauCeti, commit 9768616](https://github.com/TauCetiProject/TauCeti/commit/9768616463e4fdfaa0ff40318ac7d7b9f0717622)
+under the Apache 2.0 license.
 
 ## References
 
@@ -50,18 +56,19 @@ private theorem conformalFactor_ne_zero {s : ℝ} (hs : s ≠ 0) (x : E) :
 
 variable [InnerProductSpace ℝ E]
 
--- Cache the bilinear-space instance so typeclass search resolves bounded scalar multiplication
--- in the operator-valued differentiation and smoothness proofs below.
-/-- The canonical normed additive group of real bilinear forms, cached for metric regularity. -/
-local instance metricBilinearNormedAddCommGroup :
-    NormedAddCommGroup (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
-
-/-- The canonical normed space of real bilinear forms, cached for metric regularity. -/
-local instance metricBilinearNormedSpace : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
-
 /-- The spherical coordinate metric, with equatorial scale one and Mathlib scale two. -/
 def metric (s : ℝ) (x : E) : E →L[ℝ] E →L[ℝ] ℝ :=
   (2 * s / (s ^ 2 + ‖x‖ ^ 2)) ^ 2 • innerSL ℝ
+
+/-- The coordinate metric as a scalar multiple of the Euclidean bilinear form. -/
+theorem metric_def (s : ℝ) (x : E) :
+    metric s x = (2 * s / (s ^ 2 + ‖x‖ ^ 2)) ^ 2 • innerSL ℝ := (rfl)
+
+/-- The zero-scale coordinate metric vanishes. -/
+@[simp]
+theorem metric_zero_left (x : E) : metric (0 : ℝ) x = 0 := by
+  ext u v
+  simp [metric_def]
 
 /-- The coordinate metric evaluated on two vectors. -/
 @[simp]
@@ -104,8 +111,13 @@ private theorem hasFDerivAt_conformalFactor {s : ℝ} (hs : s ≠ 0) (x : E) :
 
 /-- The full stereographic metric has the displayed continuous linear differential. -/
 theorem hasFDerivAt_metric {s : ℝ} (hs : s ≠ 0) (x : E) :
+    letI : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] ℝ) :=
+      ContinuousLinearMap.toNormedAddCommGroup
+    letI : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) := ContinuousLinearMap.toNormedSpace
     HasFDerivAt (metric s)
       (((-16 * s ^ 2 / (s ^ 2 + ‖x‖ ^ 2) ^ 3) • innerSL ℝ x).smulRight (innerSL ℝ)) x := by
+  -- Keep canonical operator-space instances local, including in the regularity statement.
+  let : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
   unfold metric
   exact (hasFDerivAt_conformalFactor hs x).smul_const
     (F := E →L[ℝ] E →L[ℝ] ℝ) (innerSL ℝ)
@@ -113,17 +125,49 @@ theorem hasFDerivAt_metric {s : ℝ} (hs : s ≠ 0) (x : E) :
 /-- The stereographic coordinate metric is smooth at every nonzero scale. -/
 theorem contDiff_metric {s : ℝ} (hs : s ≠ 0) {n : WithTop ℕ∞} :
     ContDiff ℝ n (metric (E := E) s) := by
+  -- Cache the bilinear-space instance for bounded scalar multiplication.
+  let : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
   unfold metric
   exact ((contDiff_const.div (contDiff_const.add (contDiff_norm_sq ℝ))
     (denom_ne_zero hs)).pow 2).smul_const
       (F := E →L[ℝ] E →L[ℝ] ℝ) (innerSL ℝ)
 
 /-- The differential of the full coordinate metric, including its conformal factor. -/
-theorem fderiv_metric {s : ℝ} (hs : s ≠ 0) (x u v w : E) :
+theorem fderiv_metric_apply {s : ℝ} (hs : s ≠ 0) (x u v w : E) :
     fderiv ℝ (metric s) x u v w =
       (-16 * s ^ 2 / (s ^ 2 + ‖x‖ ^ 2) ^ 3) * inner ℝ x u * inner ℝ v w := by
+  -- Fix the canonical operator norms before extracting the derivative.
+  let : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
+  let : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
   rw [(hasFDerivAt_metric hs x).fderiv]
   simp [innerSL_apply_apply ℝ]
+
+/-- At every nonzero scale, the coordinate metric is the pullback of the round sphere metric
+by the appropriately rescaled inverse stereographic chart. -/
+theorem metric_apply_eq_inner_mfderiv {n : ℕ} [Fact (Module.finrank ℝ E = n + 1)]
+    (v : Metric.sphere (0 : E) 1) {s : ℝ} (hs : s ≠ 0)
+    (y a b : EuclideanSpace ℝ (Fin n)) :
+    metric s y a b =
+      inner ℝ (mfderiv (𝓡 n) (𝓡 n) (fun z ↦ (stereographic' n v).symm ((2 / s) • z)) y a)
+        (mfderiv (𝓡 n) (𝓡 n) (fun z ↦ (stereographic' n v).symm ((2 / s) • z)) y b) := by
+  have hsymm : MDifferentiableAt (𝓡 n) (𝓡 n) (stereographic' n v).symm ((2 / s) • y) :=
+    mdifferentiableAt_atlas_symm (e := stereographic' n v) (Exists.intro v rfl) (by simp)
+  have hscale :=
+    ((2 / s) • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin n))).hasFDerivAt (x := y)
+  have hd (a : TangentSpace (𝓡 n) y) :
+      mfderiv (𝓡 n) (𝓡 n) (fun z ↦ (stereographic' n v).symm ((2 / s) • z)) y a =
+        mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm ((2 / s) • y) ((2 / s) • a) := by
+    erw [mfderiv_comp_apply y hsymm hscale.differentiableAt.mdifferentiableAt,
+      mfderiv_eq_fderiv, hscale.fderiv]
+    -- The tangent-space identification of a model vector space is the identity.
+    rfl
+  -- Model tangent spaces are canonically identified with the model space.
+  erw [hd a, hd b, TauCeti.inner_mfderiv_stereographic'_symm v
+    ((2 / s) • y) ((2 / s) • a) ((2 / s) • b), metric_apply]
+  simp only [norm_smul, Real.norm_eq_abs, mul_pow, sq_abs,
+    real_inner_smul_left, real_inner_smul_right]
+  field_simp
+  ring
 
 /-- Scale two is the round sphere metric pulled back by Mathlib's inverse stereographic chart. -/
 theorem metric_two_apply_eq_inner_mfderiv {n : ℕ} [Fact (Module.finrank ℝ E = n + 1)]
@@ -135,13 +179,13 @@ theorem metric_two_apply_eq_inner_mfderiv {n : ℕ} [Fact (Module.finrank ℝ E 
   norm_num [add_comm]
 
 /-- The Christoffel bilinear map of the actual stereographic coordinate metric. -/
-theorem christoffelSecondKind_metric [FiniteDimensional ℝ E]
+theorem christoffelSecondKind_metric_apply [CompleteSpace E]
     {s : ℝ} (hs : s ≠ 0) (x u v : E) :
     christoffelSecondKind (metric s) x u v =
       (-2 / (s ^ 2 + ‖x‖ ^ 2)) •
         (inner ℝ x v • u + inner ℝ x u • v - inner ℝ u v • x) := by
   unfold metric
-  rw [christoffelSecondKind_smul_innerSL (hasFDerivAt_conformalFactor hs x).differentiableAt
+  rw [christoffelSecondKind_smul_innerSL_apply (hasFDerivAt_conformalFactor hs x).differentiableAt
     (conformalFactor_ne_zero hs x)]
   apply ext_inner_right ℝ
   intro w
