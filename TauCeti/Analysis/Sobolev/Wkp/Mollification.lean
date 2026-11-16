@@ -9,13 +9,15 @@ public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Analysis.Sobolev.Mollification.Interior
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
+import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.Analysis.Convolution.Basic
 
 /-!
 # Interior mollification of higher weak derivatives
 
 For a function in `W^{k+2,p}(Ω)`, the Fréchet derivative of the mollification of its
 order-`k+1` weak derivative is the mollification of its order-`k+2` weak derivative.
-The convolution uses zero extensions, but the identity holds only where the translated
+The convolution uses zero extensions, but the identity is guaranteed wherever the translated
 kernel support is contained in `Ω`; no regularity of the boundary is assumed.
 
 The result supplies the successive derivative identities needed to construct smooth
@@ -26,9 +28,11 @@ The interior mollification is packaged as `TauCeti.Wkp.smoothField`, the convolu
 normalized bump with the zero extension of a field in `Lᵖ(Ω)`. It is smooth on the whole space
 (`TauCeti.Wkp.contDiff_smoothField`); where the bump stays in `Ω`, its gradient and Hessian are the
 mollified weak gradient and weak Hessian (`TauCeti.Wkp.gradient_smoothField`,
-`TauCeti.Wkp.fderiv_gradient_smoothField_value`); and the mollification of a function agreeing
+`TauCeti.Wkp.fderiv_gradient_smoothField_value`). At arbitrary order, the same identification is
+`TauCeti.Wkp.iteratedGradientChain_smoothField_value`. The mollification of a function agreeing
 with a continuous `v` stays close to `v` where `v` varies little
-(`TauCeti.Wkp.dist_smoothField_le`).
+(`TauCeti.Wkp.dist_smoothField_le`). `TauCeti.Wkp.smoothField_eq_zero_of_notMem_add_closedBall`
+locates its support near the set off which the field vanishes.
 These are the inputs for passing estimates from smooth functions to strong `W^{2,p}` solutions.
 
 The classical argument is in L. C. Evans, *Partial Differential Equations*, §5.3.1.
@@ -41,7 +45,7 @@ noncomputable section
 namespace TauCeti.Wkp
 
 open Filter MeasureTheory Set TopologicalSpace
-open scoped ContDiff Convolution ENNReal Gradient Topology
+open scoped ContDiff Convolution ENNReal Gradient Pointwise Topology
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -210,6 +214,22 @@ theorem smoothField_def {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
       phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (Omega : Set E).indicator (f : E → F) := by
   rw [smoothField]
 
+/-- Mollifying a bounded field after zero extension preserves its essential supremum bound
+at every point of the ambient space. This is a bound on the field mollification, not on
+classical derivatives across the boundary of `Ω`. -/
+theorem norm_smoothField_top_le {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (phi : ContDiffBump (0 : E)) (f : Lp F ∞ (mu.restrict Omega)) (x : E) :
+    ‖smoothField phi f x‖ ≤ ‖f‖ := by
+  have hf := (memLp_indicator_iff_restrict Omega.isOpen.measurableSet.nullMeasurableSet).2
+    (Lp.memLp f)
+  rw [smoothField_def, convolution_congr (ContinuousLinearMap.lsmul ℝ ℝ)
+    (EventuallyEq.refl _ _) hf.coeFn_toLp.symm]
+  have h := norm_convolution_lsmul_le_integral_norm_mul_norm phi.integrable_normed
+    (hf.toLp _) x
+  simpa only [Real.norm_of_nonneg (phi.nonneg_normed _), phi.integral_normed,
+    one_mul, Lp.norm_toLp, eLpNorm_indicator_eq_eLpNorm_restrict
+      Omega.isOpen.measurableSet.nullMeasurableSet, ← Lp.norm_def] using h
+
 /-- The smooth convolution representative of a field in `Lᵖ(Ω)` is smooth on the whole space. -/
 theorem contDiff_smoothField {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     (phi : ContDiffBump (0 : E)) (f : Lp F p (mu.restrict Omega)) :
@@ -218,6 +238,31 @@ theorem contDiff_smoothField {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ
     (Lp.memLp f)
   exact phi.hasCompactSupport_normed.contDiff_convolution_left
     (ContinuousLinearMap.lsmul ℝ ℝ) phi.contDiff_normed (hmem.locallyIntegrable Fact.out)
+
+omit [Fact (1 ≤ p)] in
+/-- A mollified field vanishes at every point whose bump ball misses the set off which the field
+vanishes. -/
+theorem smoothField_eq_zero_of_notMem_add_closedBall {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F]
+    (phi : ContDiffBump (0 : E)) {K : Set E} (f : Lp F p (mu.restrict Omega))
+    (hf : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → f x = 0) {y : E}
+    (hy : y ∉ K + Metric.closedBall (0 : E) phi.rOut) :
+    smoothField phi f y = 0 := by
+  have hae : (Omega : Set E).indicator (f : E → F) =ᵐ[mu]
+      K.indicator ((Omega : Set E).indicator (f : E → F)) := by
+    filter_upwards [(ae_restrict_iff' Omega.isOpen.measurableSet).1 hf] with x hx
+    by_cases hxK : x ∈ K
+    · rw [indicator_of_mem hxK]
+    · rw [indicator_of_notMem hxK]
+      by_cases hxO : x ∈ (Omega : Set E)
+      · rw [indicator_of_mem hxO, hx hxO hxK]
+      · exact indicator_of_notMem hxO _
+  rw [smoothField_def, convolution_congr _ (EventuallyEq.refl _ _) hae]
+  refine Function.notMem_support.1 fun hmem => hy ?_
+  obtain ⟨a, ha, b, hb, rfl⟩ := support_convolution_subset _ hmem
+  rw [ContDiffBump.support_normed_eq] at ha
+  have hbK : b ∈ K := support_indicator_subset hb
+  exact ⟨b, hbK, a, Metric.ball_subset_closedBall ha, add_comm b a⟩
 
 /-- Where the bump stays in `Ω`, the derivative of the mollified order-`k+1` weak derivative of
 `u ∈ W^{k+2,p}(Ω)` is the mollified order-`k+2` weak derivative. -/
@@ -254,18 +299,68 @@ theorem gradient_smoothField (u : Wkp mu Omega p 1)
   filter_upwards with y
   by_cases hy : x - y ∈ Omega <;> simp [hy, ContinuousLinearMap.lsmul_apply]
 
-/-- Where every bump centred near `x` stays in `Ω`, the derivative at `x` of the gradient of the
+/-- For `u ∈ W^{k+1,p}(Ω)`, the classical order-`k+1` iterated gradient of
+`smoothField phi (value (k + 1) u)` equals the mollification of its highest weak derivative
+`iteratedGradient k u` wherever the closed bump ball lies in `Ω`, for `1 ≤ p ≤ ∞`. -/
+theorem iteratedGradientChain_smoothField_value (k : ℕ) (u : Wkp mu Omega p (k + 1))
+    (phi : ContDiffBump (0 : E)) (x : E)
+    (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
+    iteratedGradientChain (smoothField phi (value (k + 1) u)) k x =
+      smoothField phi (iteratedGradient k u) x := by
+  induction k generalizing x with
+  | zero =>
+    simpa only [iteratedGradientChain_zero] using gradient_smoothField u phi x hx
+  | succ k ih =>
+    have hnear : ∀ᶠ y in 𝓝 x, Metric.closedBall y phi.rOut ⊆ Omega := by
+      have h := (isCompact_closedBall (0 : E) phi.rOut).eventually_forall_of_forall_eventually
+        (P := fun y z ↦ y + z ∈ (Omega : Set E)) (x₀ := x) (fun z hz ↦
+          continuous_add.continuousAt.eventually (Omega.isOpen.mem_nhds (hx (by
+            simpa [Metric.mem_closedBall, dist_eq_norm] using hz))))
+      filter_upwards [h] with y hy z hz
+      simpa only [add_sub_cancel] using hy (z - y) (by
+        simpa only [Metric.mem_closedBall, dist_eq_norm, sub_zero] using hz)
+    have heq : iteratedGradientChain (smoothField phi (value (k + 2) u)) k =ᶠ[𝓝 x]
+        smoothField phi (iteratedGradient k (lowerOrder (k + 1) u)) := by
+      filter_upwards [hnear] with y hy
+      rw [value_succ]
+      exact ih (lowerOrder (k + 1) u) y hy
+    rw [iteratedGradientChain_succ, heq.fderiv_eq]
+    exact fderiv_smoothField k u phi x hx
+
+/-- Where the closed bump ball stays in `Ω`, the derivative at `x` of the gradient of the
 mollified value of `u ∈ W^{2,p}(Ω)`, its Hessian operator, is the mollified weak Hessian. -/
 theorem fderiv_gradient_smoothField_value (u : Wkp mu Omega p 2) (phi : ContDiffBump (0 : E))
-    {x : E} (hx : ∀ᶠ y in 𝓝 x, Metric.closedBall y phi.rOut ⊆ Omega) :
+    {x : E} (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
     fderiv ℝ (∇ (smoothField phi (value 2 u))) x = smoothField phi (iteratedGradient 1 u) x := by
-  have hgrad : ∇ (smoothField phi (value 2 u)) =ᶠ[𝓝 x]
-      smoothField phi (iteratedGradient 0 (lowerOrder 1 u)) := by
-    filter_upwards [hx] with y hy
-    rw [value_succ]
-    exact gradient_smoothField (lowerOrder 1 u) phi y hy
-  rw [hgrad.fderiv_eq]
-  exact fderiv_smoothField 0 u phi x hx.self_of_nhds
+  simpa only [iteratedGradientChain_succ, iteratedGradientChain_zero] using
+    iteratedGradientChain_smoothField_value 1 u phi x hx
+
+omit [Fact (1 ≤ p)] in
+/-- The classical order-`k+1` derivative of a mollified Sobolev function is bounded by the
+essential supremum of its weak derivative wherever the closed bump ball stays in `Ω`. -/
+theorem norm_iteratedGradientChain_smoothField_value_top_le (k : ℕ)
+    (u : Wkp mu Omega ∞ (k + 1)) (phi : ContDiffBump (0 : E)) (x : E)
+    (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
+    ‖iteratedGradientChain (smoothField phi (value (k + 1) u)) k x‖ ≤
+      ‖iteratedGradient k u‖ := by
+  rw [iteratedGradientChain_smoothField_value k u phi x hx]
+  exact norm_smoothField_top_le phi _ x
+
+/-- On any set `s` with a positive thickening contained in `Ω`, the classical order-`k+1`
+iterated gradient of `smoothField (phi i) (value (k + 1) u)` eventually agrees on `s` with
+`smoothField (phi i) (iteratedGradient k u)`, for `u ∈ W^{k+1,p}(Ω)`. -/
+theorem eventually_eqOn_iteratedGradientChain_smoothField_value
+    (k : ℕ) (u : Wkp mu Omega p (k + 1))
+    {I : Type*} {l : Filter I} {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (𝓝 0))
+    {s : Set E} {δ : ℝ} (hδ : 0 < δ) (hsO : Metric.thickening δ s ⊆ Omega) :
+    ∀ᶠ i in l, EqOn (iteratedGradientChain (smoothField (phi i) (value (k + 1) u)) k)
+      (smoothField (phi i) (iteratedGradient k u)) s := by
+  filter_upwards [hphi.eventually (gt_mem_nhds hδ)] with i hi x hx
+  apply iteratedGradientChain_smoothField_value k u (phi i) x
+  intro y hy
+  exact hsO (Metric.mem_thickening_iff.mpr
+    ⟨x, hx, (Metric.mem_closedBall.mp hy).trans_lt hi⟩)
 
 omit [Fact (1 ≤ p)] in
 /-- **Mollification of a continuous representative.** If `f ∈ Lᵖ(Ω)` agrees almost everywhere on

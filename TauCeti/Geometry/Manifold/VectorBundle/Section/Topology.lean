@@ -126,6 +126,30 @@ theorem isTopologicalAddGroup_frameTopology :
     IsTopologicalAddGroup Cₛ^n⟮I; F, V⟯ :=
   isTopologicalAddGroup_induced (frameJet (I := I) e U hU)
 
+/-- The additive uniformity compatible with the existing compact derivative frame topology.
+It is supplied explicitly because the frame system is a parameter. -/
+@[expose, instance_reducible]
+def frameUniformSpace : UniformSpace Cₛ^n⟮I; F, V⟯ :=
+  let _ := frameTopology (I := I) (n := n) e U hU
+  let _ := isTopologicalAddGroup_frameTopology (I := I) (n := n) e U hU
+  IsTopologicalAddGroup.rightUniformSpace _
+
+/-- The frame uniformity retains the original compact derivative topology on sections. -/
+@[simp]
+theorem frameUniformSpace_toTopologicalSpace :
+    (frameUniformSpace (I := I) (n := n) e U hU).toTopologicalSpace =
+      frameTopology (I := I) (n := n) e U hU :=
+  (rfl)
+
+/-- The frame uniformity makes sections a uniform additive group. -/
+theorem isUniformAddGroup_frameUniformSpace :
+    let _ := frameUniformSpace (I := I) (n := n) e U hU
+    IsUniformAddGroup Cₛ^n⟮I; F, V⟯ := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  let _ := isTopologicalAddGroup_frameTopology (I := I) (n := n) e U hU
+  let _ := frameUniformSpace (I := I) (n := n) e U hU
+  exact isUniformAddGroup_of_addCommGroup
+
 /-- Joint scalar multiplication is continuous for the frame topology. -/
 theorem continuousSMul_frameTopology :
     let _ := frameTopology (I := I) (n := n) e U hU

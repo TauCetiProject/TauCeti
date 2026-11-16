@@ -236,7 +236,7 @@ variable {K L K' L' : HomologicalComplex C c} [HasTensor K L] [HasTensor K' L'] 
   [∀ q, PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.cycles q))]
   [∀ q, PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.X (c.prev q)))]
   [GradedObject.HasTensor (fun p ↦ K.homology p) (fun q ↦ L.homology q)]
-  [∀ p, K'.HasHomology p] [∀ q, L'.HasHomology q] [(tensorObj K' L').HasHomology n]
+  [∀ p, K'.HasHomology p] [∀ q, L'.HasHomology q]
   [∀ p, PreservesColimitsOfShape WalkingParallelPair (tensorLeft (K'.homology p))]
   [∀ q, PreservesColimitsOfShape WalkingParallelPair (tensorRight (L'.cycles q))]
   [∀ q, PreservesColimitsOfShape WalkingParallelPair (tensorRight (L'.X (c.prev q)))]
@@ -247,8 +247,12 @@ differentials.**  Every chain complex of vector spaces over a field is of this k
 cycles and boundaries split off as direct summands. -/
 theorem isIso_homologyKunneth_of_homotopyEquiv_of_d_eq_zero (eK : HomotopyEquiv K K')
     (eL : HomotopyEquiv L L') (hK' : ∀ i j, K'.d i j = 0) (hL' : ∀ i j, L'.d i j = 0) :
-    IsIso (homologyKunneth K L n) :=
-  (isIso_homologyKunneth_iff_of_homotopyEquiv n eK eL).mpr
+    IsIso (homologyKunneth K L n) := by
+  -- a complex with zero differentials has homology everywhere
+  have : (tensorObj K' L').HasHomology n :=
+    ShortComplex.HasHomology.mk' (ShortComplex.HomologyData.ofZeros _
+      (tensorObj_d_eq_zero hK' hL' _ _) (tensorObj_d_eq_zero hK' hL' _ _))
+  exact (isIso_homologyKunneth_iff_of_homotopyEquiv n eK eL).mpr
     (isIso_homologyKunneth_of_d_eq_zero n hK' hL')
 
 end HomotopyEquiv

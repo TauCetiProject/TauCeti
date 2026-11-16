@@ -99,11 +99,11 @@ def ConvexPolygon.triangleInfty {p q : ℍ ⊕ OnePoint ℝ} (hp : p ≠ .inr �
         hlt
     have h₁ : p ∈ extLeftHalfPlane (geodesicFromTo q (.inr ∞)) := by
       refine (mem_extLeftHalfPlane_iff_sideForm_toComplex_neg hp).2 ?_
-      rw [(isGeodesicFromTo_geodesicFromTo hq).sideForm_eq_of_inr_infty_right hq]
+      rw [(isGeodesicFromTo_geodesicFromTo hq).sideForm_eq_of_inr_infty_right]
       linarith
     have h₂ : q ∈ extLeftHalfPlane (geodesicFromTo (.inr ∞) p) := by
       refine (mem_extLeftHalfPlane_iff_sideForm_toComplex_neg hq).2 ?_
-      rw [(isGeodesicFromTo_geodesicFromTo hp.symm).sideForm_eq_of_inr_infty_left hp]
+      rw [(isGeodesicFromTo_geodesicFromTo hp.symm).sideForm_eq_of_inr_infty_left]
       linarith
     fin_cases i <;> fin_cases j <;> simp [h₀, h₁, h₂] at hji hji' ⊢
 

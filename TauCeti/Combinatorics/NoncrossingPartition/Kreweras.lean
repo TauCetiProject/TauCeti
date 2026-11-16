@@ -160,10 +160,6 @@ theorem le_kreweras_iff :
     -- A chord of `Q` that separated `a` from `b` would cross the part of `P` through them.
     have hyx := mem_part_comm.1 hy
     have hba := mem_part_comm.1 hb
-    have h₁ := h x y hy a b hb
-    have h₂ := h x y hy b a hba
-    have h₃ := h y x hyx a b hb
-    have h₄ := h y x hyx b a hba
     simp only [Set.mem_uIoc] at ha ⊢
     grind
 

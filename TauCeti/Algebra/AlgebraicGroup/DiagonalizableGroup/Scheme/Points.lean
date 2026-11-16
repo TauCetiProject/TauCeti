@@ -464,6 +464,21 @@ theorem characterGroupSchemeMap_def (G : FGCommGrpCat.{u}) (g : G) :
       groupSchemeMap R (FGCommGrpCat.ofHom (uliftZPowersMulEquiv G g)) := by
   rfl
 
+/-- Over a nontrivial base ring, distinct group elements give distinct scheme-level characters. -/
+@[grind inj]
+theorem characterGroupSchemeMap_injective [Nontrivial R] (G : FGCommGrpCat.{u}) :
+    Function.Injective (characterGroupSchemeMap (R := R) G) := by
+  intro g g' h
+  have h' := groupSchemeMap_injective R (by simpa only [characterGroupSchemeMap_def] using h)
+  simpa only [FGCommGrpCat.hom_ext_iff, FGCommGrpCat.hom_hom_ofHom,
+    EmbeddingLike.apply_eq_iff_eq] using h'
+
+/-- Over a nontrivial base ring, `characterGroupSchemeMap` is injective, stated as an `iff`. -/
+@[simp]
+theorem characterGroupSchemeMap_inj [Nontrivial R] {G : FGCommGrpCat.{u}} {g g' : G} :
+    characterGroupSchemeMap (R := R) G g = characterGroupSchemeMap (R := R) G g' ↔ g = g' :=
+  (characterGroupSchemeMap_injective G).eq_iff
+
 /-- On scheme-valued points, the group-scheme character associated to `g` evaluates the
 corresponding `G`-character at `g`. -/
 @[simp high]
@@ -498,6 +513,24 @@ theorem cocharacterGroupSchemeMap_def (G : FGCommGrpCat.{u})
           ULift.{u} (Multiplicative ℤ)).toMonoidHom.comp psi)) := by
   rfl
 
+/-- Over a nontrivial base ring, distinct cocharacters give distinct scheme-level cocharacters. -/
+@[grind inj]
+theorem cocharacterGroupSchemeMap_injective [Nontrivial R] (G : FGCommGrpCat.{u}) :
+    Function.Injective (cocharacterGroupSchemeMap (R := R) G) := by
+  intro psi psi' h
+  have h' := groupSchemeMap_injective R (by simpa only [cocharacterGroupSchemeMap_def] using h)
+  rw [FGCommGrpCat.hom_ext_iff, FGCommGrpCat.hom_hom_ofHom, FGCommGrpCat.hom_hom_ofHom] at h'
+  ext g
+  simpa using congrArg (fun f ↦ f g) h'
+
+/-- Over a nontrivial base ring, `cocharacterGroupSchemeMap` is injective, stated as an `iff`. -/
+@[simp]
+theorem cocharacterGroupSchemeMap_inj [Nontrivial R] {G : FGCommGrpCat.{u}}
+    {psi psi' : G →* Multiplicative ℤ} :
+    cocharacterGroupSchemeMap (R := R) G psi = cocharacterGroupSchemeMap (R := R) G psi' ↔
+      psi = psi' :=
+  (cocharacterGroupSchemeMap_injective G).eq_iff
+
 /-- On scheme-valued points, a cocharacter raises the multiplicative-group unit to the
 ordinary integer obtained by evaluating the cocharacter. -/
 @[simp high]
@@ -526,6 +559,20 @@ theorem powEndGroupSchemeMap_def (n : ℤ) :
       characterGroupSchemeMap (R := R) multiplicativeCharacterGroup
         (ULift.up (Multiplicative.ofAdd n)) := by
   rfl
+
+/-- Over a nontrivial base ring, distinct exponents give distinct power endomorphisms of the
+multiplicative group scheme. -/
+@[grind inj]
+theorem powEndGroupSchemeMap_injective [Nontrivial R] :
+    Function.Injective (powEndGroupSchemeMap (R := R)) := fun m n h ↦
+  Multiplicative.ofAdd.injective <| ULift.up_injective <|
+    characterGroupSchemeMap_injective _ (by simpa only [powEndGroupSchemeMap_def] using h)
+
+/-- Over a nontrivial base ring, `powEndGroupSchemeMap` is injective, stated as an `iff`. -/
+@[simp]
+theorem powEndGroupSchemeMap_inj [Nontrivial R] {m n : ℤ} :
+    powEndGroupSchemeMap (R := R) m = powEndGroupSchemeMap (R := R) n ↔ m = n :=
+  powEndGroupSchemeMap_injective.eq_iff
 
 /-- The scheme-level `n`-th power endomorphism raises every scheme-valued point to the
 ordinary integer power `n`. -/

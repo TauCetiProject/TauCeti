@@ -206,7 +206,7 @@ theorem DistortedCurvatureDimension.dist_le (h : M.DistortedCurvatureDimension �
       · exact hzρ.ne h
     rw [sub_zero, hβ _ hzD, ENNReal.top_mul hne, top_add]
   rw [distortedRenyiEntropy_eq_bot_of_ae (IsProbabilityMeasure.ne_zero q) hae, le_bot_iff] at hle
-  exact (hμ₀ ▸ renyiEntropy_cond_ne_bot hN measurableSet_ball) hle
+  exact (hμ₀ ▸ renyiEntropy_cond_ne_bot measurableSet_ball) hle
 
 /-- **The Bonnet–Myers diameter bound** for the coefficients `β`: if `β_N^{(1)}(θ) = ∞` for every
 distance `θ > D ≥ 0`, the space has diameter at most `D`. -/

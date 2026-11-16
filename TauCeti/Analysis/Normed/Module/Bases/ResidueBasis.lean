@@ -123,28 +123,28 @@ theorem linearIndependent_mk_iff (hR : ∀ a : R, zpowCeil ‖(ϖ.unit : R)‖ �
   refine ⟨fun hli ↦ isOrthonormalFamily_def.2 fun s a ↦ le_antisymm ?_ ?_,
     linearIndependent_mk_of_isOrthonormalFamily⟩
   · -- The ultrametric upper bound.
-    refine (Finset.nnnorm_sum_le_sup_nnnorm _ _).trans (Finset.sup_mono_fun fun i _ ↦ ?_)
-    refine (nnnorm_smul_le _ _).trans (mul_le_of_le_one_right' ?_)
-    rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one]
+    refine (Finset.nnNorm_sum_le_sup_nnNorm _ _).trans (Finset.sup_mono_fun fun i _ ↦ ?_)
+    refine (nnNorm_smul_le _ _).trans (mul_le_of_le_one_right' ?_)
+    rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]
     exact mem_unitClosedBallSubmodule.mp (e i).2
   -- For the lower bound, rescale the coefficients so that their largest norm is one.
   classical
   rcases s.eq_empty_or_nonempty with rfl | hs
   · simp
   obtain ⟨j, hj, hjsup⟩ := Finset.exists_mem_eq_sup s hs fun i ↦ ‖a i‖₊
-  rw [hjsup, ← NNReal.coe_le_coe, coe_nnnorm, coe_nnnorm]
+  rw [hjsup, ← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
   rcases (norm_nonneg (a j)).eq_or_lt with h0 | hpos
   · rw [← h0]
     exact norm_nonneg _
   set c := ‖(ϖ.unit : R)‖
-  obtain ⟨n, hn⟩ := ((zpowCeil_eq_self_iff ϖ.norm_pos ϖ.norm_lt_one (norm_nonneg _)).mp
+  obtain ⟨n, hn⟩ := ((zpowCeil_eq_self_iff ϖ.norm_pos).mp
     (hR (a j))).resolve_left hpos.ne'
   -- The coefficients `b i = ϖ ^ (-n) * a i` lie in the unit ball, and `‖b j‖ = 1`.
   have hnorm_b (i : I) : ‖((ϖ.unit ^ (-n) : Rˣ) : R) * a i‖ = c ^ (-n) * ‖a i‖ := by
     rw [← smul_eq_mul, ϖ.norm_zpow_smul]
   have hb (i : I) (hi : i ∈ s) : ‖((ϖ.unit ^ (-n) : Rˣ) : R) * a i‖ ≤ 1 := by
     have hai : ‖a i‖ ≤ c ^ n := by
-      rw [hn, ← coe_nnnorm, ← coe_nnnorm, NNReal.coe_le_coe, ← hjsup]
+      rw [hn, ← coe_nnNorm, ← coe_nnNorm, NNReal.coe_le_coe, ← hjsup]
       exact Finset.le_sup (f := fun i ↦ ‖a i‖₊) hi
     rw [hnorm_b, zpow_neg]
     exact inv_mul_le_one_of_le₀ hai (zpow_nonneg ϖ.norm_pos.le n)
@@ -190,7 +190,7 @@ private theorem exists_mem_span_norm_sub_le (hM : ∀ m : M, zpowCeil ‖(ϖ.uni
       simp only [ha, Function.comp_apply]
     rw [mk_eq_mk_iff ϖ hM, Submodule.coe_sum] at heq
     simp only [Submodule.coe_smul, Subring.smul_def] at heq
-    exact le_of_zpowCeil_eq_self_of_lt_one ϖ.norm_pos ϖ.norm_lt_one (hM _) heq
+    exact le_of_zpowCeil_eq_self_of_lt_one ϖ.norm_pos (hM _) heq
   induction k with
   | zero => exact ⟨0, V.zero_mem, by simpa using hx⟩
   | succ k ih =>

@@ -118,7 +118,7 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_holder
   obtain ⟨R, hR, -, hscale⟩ := Real.exists_pos_le_one_mul_rpow_le
     (2 * (C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)) * ((n : ℝ) + 1) ^ 2 *
       ((1 + 2 ^ (α : ℝ)) * L)) (NNReal.coe_pos.2 hα) hlam
-  obtain ⟨C₁, hC₁⟩ := hball (L := L) (M := Lam.toNNReal) hlam hR
+  obtain ⟨C₁, hC₁⟩ := hball (L := L) (M := Lam.toNNReal) hlam
     (by simpa only [mul_assoc] using hscale) (half_lt_self hR)
   set δ : ℝ≥0 := ⟨R / 2, by positivity⟩
   have hδ : 0 < δ := by rw [← NNReal.coe_pos]; exact half_pos hR
@@ -178,7 +178,6 @@ theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fder
   set c : ℝ := 34 / ε + 32 / ε ^ 2
   have hc : 0 ≤ c := by positivity
   set A : ℝ := 2 * C₁ * (1 + c)
-  have hA : 0 ≤ A := by positivity
   refine ⟨(3 * A + c).toNNReal, fun {a} hEll hL {u N K} hu hN hbdd hmem hK => ?_⟩
   -- The Hölder norm `H` of `D²u` and the interpolation inequalities at scale `ε`.
   set H := nnHolderNorm α (iteratedFDeriv ℝ 2 u)
@@ -204,7 +203,6 @@ theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fder
       rwa [NNReal.coe_mul, NNReal.coe_add, Real.coe_toNNReal _ hN₁] at this
     have habs : 4 * C₁ * ε ^ (α : ℝ) * H ≤ 1 / 2 * H :=
       mul_le_mul_of_nonneg_right hεC H.coe_nonneg
-    have hKN : 0 ≤ (C₁ : ℝ) * (1 + c) * N := by positivity
     have hK0 : 0 ≤ (C₁ : ℝ) * K := by positivity
     simp only [A, N₁] at h ⊢
     nlinarith
@@ -212,7 +210,6 @@ theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fder
   have hC : (3 * A + c) * (K + N) ≤ ((3 * A + c).toNNReal : ℝ) * (K + N) :=
     mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) hKN
   have hHε' : (H : ℝ) * ε ^ (α : ℝ) ≤ H := mul_le_of_le_one_right H.coe_nonneg hεα
-  have hA' : 0 ≤ A * (K + N) := mul_nonneg hA hKN
   have hcK : 0 ≤ c * K := mul_nonneg hc K.coe_nonneg
   refine ⟨hH.mono ?_, fun x => (h1 x).trans ?_, fun x => (h2 x).trans ?_⟩
   · rw [← NNReal.coe_le_coe]

@@ -205,7 +205,7 @@ theorem prod_prod_range_le_prod_pow_upRank {N : ℕ}
       (fun c hc ↦ by simp at hc ⊢; omega) (fun i hi ↦ by simp at hi; omega)
       (fun c hc ↦ by simp at hc; omega) fun i hi ↦ by simp at hi; congr 1; omega
   have hr (x : Fin L) :
-      ρ (upRank σ x) ^ ((σ x : ℕ) - x) = ∏ c ∈ Ioc (x : ℕ) (σ x), ρ (upRank σ x) := by
+      ρ (upRank σ x) ^ ((σ x : ℕ) - x) = ∏ _ ∈ Ioc (x : ℕ) (σ x), ρ (upRank σ x) := by
     rw [prod_const, Nat.card_Ioc]
   simp_rw [hl, hr]
   rw [prod_comm' (t' := range (L + 1)) (s' := fun c ↦ {x : Fin L | (σ x : ℕ) < c ∧ c ≤ x})

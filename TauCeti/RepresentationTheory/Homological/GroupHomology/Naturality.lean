@@ -41,7 +41,7 @@ namespace TauCeti.groupHomology
 
 open _root_.groupHomology
 
-variable {k G : Type u} [CommRing k] [Group G] [DecidableEq G]
+variable {k G : Type u} [CommRing k] [Group G]
   {A B : Rep.{u} k G}
 
 /-- The inhomogeneous-to-bar chain comparison commutes with coefficient morphisms. -/

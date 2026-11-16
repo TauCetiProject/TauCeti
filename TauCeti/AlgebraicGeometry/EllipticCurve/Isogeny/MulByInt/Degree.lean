@@ -74,7 +74,7 @@ theorem degree_mulByIntIsogeny [W.IsElliptic] {n : ℤ} (hn : psiFunctionField W
 nonsingularity as in `mulByIntIsogenyOfNeZero`. -/
 -- Not `@[simp]`: `mulByIntIsogenyOfNeZero` is an `abbrev`, so `simp` sees through it to
 -- `degree_mulByIntIsogeny` and `simpNF` rejects the pair as duplicates. It is stated anyway
--- because this is the form the roadmap result takes, and a caller holding `n ≠ 0` should not
+-- because this is the classical form of the result, and a caller holding `n ≠ 0` should not
 -- have to unfold an abbreviation to find it.
 theorem degree_mulByIntIsogenyOfNeZero [W.IsElliptic] {n : ℤ} (hn : n ≠ 0) :
     (mulByIntIsogenyOfNeZero W hn).degree = n.natAbs ^ 2 :=

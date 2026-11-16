@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Analysis.Convex.Combination
-import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Field
 import Mathlib.Tactic.Module
 
 /-!
@@ -67,15 +67,11 @@ variable [CharZero R]
 /-- The sum of a finite family is its size times its mean. -/
 theorem sum_eq_card_smul_finiteMean (z : ι → E) :
     ∑ i, z i = (Fintype.card ι : R) • finiteMean R z := by
-  rw [finiteMean_eq_inv_smul_sum, smul_smul]
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · simp
-  · rw [mul_inv_cancel₀ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero), one_smul]
+  rcases isEmpty_or_nonempty ι <;> simp [finiteMean_eq_inv_smul_sum]
 
 /-- The deviations of a finite family from its mean sum to zero. -/
 theorem sum_sub_finiteMean (z : ι → E) : ∑ i, (z i - finiteMean R z) = 0 := by
-  rw [sum_sub_distrib, sum_const, card_univ, ← Nat.cast_smul_eq_nsmul R,
-    ← sum_eq_card_smul_finiteMean, sub_self]
+  simp [← Nat.cast_smul_eq_nsmul R, ← sum_eq_card_smul_finiteMean]
 
 /-- Subtracting a constant from every member of a nonempty family subtracts it from the mean. -/
 theorem finiteMean_sub_const [Nonempty ι] (z : ι → E) (c : E) :
@@ -89,12 +85,9 @@ mean by `(n + 1)⁻¹ • (y - m)`. For `n = 0` this says that the mean of the s
 theorem finiteMean_snoc {n : ℕ} (z : Fin n → E) (y : E) :
     finiteMean R (Fin.snoc z y : Fin (n + 1) → E) =
       finiteMean R z + ((n : R) + 1)⁻¹ • (y - finiteMean R z) := by
-  have hn : (n : R) + 1 ≠ 0 := Nat.cast_add_one_ne_zero n
   rw [finiteMean_eq_inv_smul_sum, Fintype.card_fin, Fin.sum_univ_castSucc]
   simp only [Fin.snoc_castSucc, Fin.snoc_last]
   rw [sum_eq_card_smul_finiteMean (R := R), Fintype.card_fin]
-  push_cast
-  have h : ((n : R) + 1)⁻¹ * ((n : R) + 1) = 1 := inv_mul_cancel₀ hn
-  linear_combination (norm := module) h • finiteMean R z
+  match_scalars <;> field
 
 end TauCeti

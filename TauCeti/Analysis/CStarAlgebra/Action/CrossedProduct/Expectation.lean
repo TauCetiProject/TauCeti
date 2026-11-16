@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Fourier
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Indicator
 
 /-!
 # Positivity and faithfulness of the identity Fourier coefficient
@@ -18,9 +18,10 @@ product is positive and faithful. Its quadratic form on `x* x` is the squared no
 without a countability assumption on the group or nondegeneracy of the faithful inducing
 representation. Coefficients may be nonunital.
 
-The identity coefficient `RegularCrossedProduct.fourierCoeff α ρ hρ 1` is the candidate
-for the canonical conditional expectation from the regular crossed product to `A`;
-these are its positivity and faithfulness properties.
+The identity coefficient `RegularCrossedProduct.fourierCoeff α ρ hρ 1` is the canonical
+conditional expectation from the regular crossed product to `A`. Its retraction and bimodule
+laws over `RegularCrossedProduct.coefficient` are established in `CrossedProduct.Coefficient`;
+here we prove positivity and faithfulness.
 
 ## References
 
@@ -66,7 +67,8 @@ theorem fourierCoeff_one_star_mul_self_eq_zero_iff
     fourierCoeff α ρ hρ 1 (star x * x) = 0 ↔ x = 0 := by
   refine ⟨fun hx => ?_, ?_⟩
   · apply Subtype.ext
-    apply ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp_singleton
+    refine ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp_singleton
+      ENNReal.ofNat_ne_top _ ?_
     intro s v
     have h := inner_fourierCoeff_one_star_mul_self α ρ hρ x s v
     rw [hx, map_zero, map_zero, zero_apply, inner_zero_right] at h

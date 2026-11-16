@@ -144,13 +144,13 @@ variable {K E : Type*} [Field K] [NumberField K] [Field E] [Algebra K E]
   [(powMonoidHom n : Kˣ →* Kˣ).range.IsFiniteRelIndex Δ]
 
 /-- **Idele classes are norms from a Kummer field of local powers, with an auxiliary set `T`.**
-Let `S` and `T` be disjoint finite sets of finite places of `K`, with `S` containing the places
+Let `S` and `T` be finite sets of finite places of `K`, with `S` containing the places
 above `n` and generating the ideal class group. Let `Δ` consist of `S ∪ T`-units that are `n`-th
 powers in `K_v` at every `v ∈ S` and at every infinite place, and let `m` be a multiple of the
 degree of `M = K(Δ^{1/n})` such that the `S`-units surject onto `∏_{v ∈ T} U_v / U_v ^ m`. Then
 the norm map `C_M → C_K` of idele classes is surjective. -/
 theorem ideleClassNormMap_kummerField_surjective_of_forall_exists_mem_unit
-    (S T : Finset (HeightOneSpectrum (𝓞 K))) (hST : Disjoint S T)
+    (S T : Finset (HeightOneSpectrum (𝓞 K)))
     (hcl : Subgroup.closure
       (HeightOneSpectrum.classGroupMk '' (S : Set (HeightOneSpectrum (𝓞 K)))) = ⊤)
     (hnS : ∀ v : HeightOneSpectrum (𝓞 K), (n : 𝓞 K) ∈ v.asIdeal → v ∈ S)
@@ -171,7 +171,7 @@ theorem ideleClassNormMap_kummerField_surjective_of_forall_exists_mem_unit
     obtain ⟨P, hP, hPv⟩ :=
       Ideal.exists_maximal_ideal_liesOver_of_isIntegral (S := 𝓞 (kummerField E n Δ)) v.asIdeal
     exact ⟨⟨⟨P, hP.isPrime, Ideal.ne_bot_of_mem_primesOver v.ne_bot ⟨hP.isPrime, hPv⟩⟩, hPv⟩⟩
-  refine ideleClassNormMap_surjective_of_forall_exists_mem_unit S T hST hm hcl
+  refine ideleClassNormMap_surjective_of_forall_exists_mem_unit S T hm hcl
     (fun v hv ↦ eq_top_iff.mpr fun a _ ↦ ?_) (fun v ↦ eq_top_iff.mpr fun a _ ↦ ?_)
     (fun v hvS hvT ↦ ?_) hT
   · -- At a place of `S` the Kummer field splits completely.
@@ -204,7 +204,7 @@ theorem ideleClassNormMap_kummerField_surjective (S : Finset (HeightOneSpectrum 
   have hmem (a) (ha : a ∈ Δ) :=
     (mem_auxiliaryKummerIdeleSubgroup_iff S ∅ n _).mp (hΔ a ha)
   refine ideleClassNormMap_kummerField_surjective_of_forall_exists_mem_unit S ∅
-    (Finset.disjoint_empty_right S) hcl hnS (fun a ha ↦ ?_) (fun v hv a ha ↦ ?_)
+    hcl hnS (fun a ha ↦ ?_) (fun v hv a ha ↦ ?_)
     (fun w a ha ↦ ?_) dvd_rfl fun _ _ ↦ ⟨1, one_mem _, fun v ↦ (Finset.notMem_empty _ v.2).elim⟩
   · rw [Finset.coe_empty, Set.union_empty,
       ← IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff (R := 𝓞 K)]

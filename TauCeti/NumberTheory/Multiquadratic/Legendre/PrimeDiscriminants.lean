@@ -85,7 +85,7 @@ theorem legendreSym_primeDiscriminant_eq_one_iff {D : ℤ} (hD : IsPrimeDiscrimi
       ∃ p : ℕ, ∃ hp : p.Prime, Odd p ∧ D = oddPrimeDiscriminant p ∧
         @legendreSym p ⟨hp⟩ (q : ℤ) = 1 := by
   rcases isPrimeDiscriminant_iff.mp hD with hD | ⟨p, hp, hodd, rfl⟩
-  · rw [legendreSym_evenPrimeDiscriminant_eq_one_iff hD hq]
+  · rw [legendreSym_evenPrimeDiscriminant_eq_one_iff hD]
     constructor
     · intro h
       exact Or.inl ⟨hD, h⟩

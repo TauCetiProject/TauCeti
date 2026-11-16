@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.DotProduct
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Length
 
 /-!
@@ -29,9 +29,9 @@ twice multiplies both lattices by `3`, and the two exponents along each orbit mu
 
 These equations are the explicit `G₂` input for the root-datum special-isogeny construction, the
 odd characteristic beside the type `B₂` case of
-`TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/B/SpecialMap.lean`. They do not yet
-construct a group-scheme morphism; Layer 9 of the reductive-groups roadmap requires that later
-lift, together with its action on root subgroups, before the Suzuki--Ree lane can use it.
+`TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/B/SpecialMap.lean`. They do not
+construct a group-scheme morphism: that is a lift of these data, together with its action on root
+subgroups.
 
 ## Main definitions
 

@@ -31,7 +31,10 @@ normal return derivative are those of `DP_p` (`TauCeti.hasEigenvalue_normalRetur
 The derivative of the time-`0` transition to a section through `p` is the projection of `T_p M`
 onto `ker dg_p` along `v p` (`TauCeti.mfderiv_flowTransition_zero_apply`). It comes from the
 derivative `w ↦ w + dτ_p(w) • v p` of `z ↦ flowOf v (τ z) z` for a time `τ` vanishing at `p`
-(`TauCeti.hasMFDerivAt_flowOf_comp_of_eq_zero` in `TauCeti.Geometry.Manifold.Flow.Basic`).
+(`TauCeti.hasMFDerivAt_flowOf_comp_of_eq_zero` in `TauCeti.Geometry.Manifold.Flow.Basic`). For a
+general transition `h` at time `T`, differentiating `z ↦ flowOf v (τ z) z` with `τ` the hitting
+time gives `Dh w = dτ_p w • v + DΦ_T w` for the time-`T` map `Φ_T` of the flow
+(`TauCeti.mfderiv_flowTransition_apply`).
 
 Derivatives of transitions compose as the transitions do (`TauCeti.mfderiv_flowTransition_comp`).
 If the flow carries `p` to `q` at time `T`, the transition `h` from the section through `p` to a
@@ -49,7 +52,10 @@ derivative `DP_p`, and in particular whether `1` is an eigenvalue of `DP_p`
 base point on the orbit. Since the `k`-fold iterate of a return branch is the return branch at time
 `k * T₀`, the linearized return map at time `k * T₀` is the `k`-th power of the one at time `T₀`
 (`TauCeti.returnDerivative_natCast_mul`), so the same holds for every power
-(`TauCeti.charpoly_returnDerivative_pow_eq`).
+(`TauCeti.charpoly_returnDerivative_pow_eq`). Likewise the normal derivative of the time-`0`
+transition is the identity (`TauCeti.normalReturnDerivative_zero`), and that of the return branch
+at time `k * T₀` is the `k`-th power of the normal return derivative
+(`TauCeti.normalReturnDerivative_natCast_mul`).
 
 On the tangent space of the source section the derivative of the reverse transition is a left
 inverse of `Dh` (`TauCeti.mfderiv_flowTransition_neg_apply_mfderiv_flowTransition`). So `Dh`
@@ -81,6 +87,8 @@ return branch need not be the first return to the section.
 * `TauCeti.mvfderiv_comp_mfderiv_flowTransition`: the derivative of a transition lands in the
   tangent space of the target section; `TauCeti.range_returnDerivative_le_ker` is the same for the
   linearized return map.
+* `TauCeti.mfderiv_flowTransition_apply`: the derivative of a transition in terms of the hitting
+  time and the flow.
 * `TauCeti.mfderiv_flowTransition_comp`: derivatives of transitions compose.
 * `TauCeti.mfderiv_flowTransition_zero_apply`: the derivative of the time-`0` transition is the
   projection onto the tangent space of the section along the field.
@@ -107,6 +115,10 @@ return branch need not be the first return to the section.
   return derivative, and so its eigenvalue-one test, do not depend on the section or the base
   point.
 * `TauCeti.returnDerivative_natCast_mul`: the linearized return map of an iterate.
+* `TauCeti.normalReturnDerivative_zero`, `TauCeti.normalReturnDerivative_natCast_mul`: the normal
+  return derivative of the time-`0` transition and of an iterate.
+* `TauCeti.charpoly_normalReturnDerivative_pow_eq`: the characteristic polynomial of every power of
+  the normal return derivative is independent of the section and the base point.
 
 ## References
 
@@ -166,6 +178,14 @@ theorem coe_normalReturnDerivative_apply
     (normalReturnDerivative v g T₀ p h w : TangentSpace I p) = returnDerivative v g T₀ p w :=
   (rfl)
 
+/-- The normal return derivative is the restriction of the linearized return map to `ker dg_p`. -/
+theorem normalReturnDerivative_def
+    {h : LinearMap.range (returnDerivative v g T₀ p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} :
+    normalReturnDerivative v g T₀ p h =
+      (returnDerivative v g T₀ p).restrict fun w _ ↦ h (LinearMap.mem_range_self _ w) :=
+  (rfl)
+
 /-- **The normal return derivative has the nonzero eigenvalues of the linearized return map.** -/
 theorem hasEigenvalue_normalReturnDerivative_iff
     {h : LinearMap.range (returnDerivative v g T₀ p) ≤
@@ -191,21 +211,15 @@ theorem mfderiv_flowTransition_apply_eq_zero :
   have hconst : flowTransition v g T p ∘ (fun s ↦ flowOf v s p) =ᶠ[𝓝 0]
       fun _ ↦ flowOf v T p :=
     eventually_flowTransition_flowOf hv hT hg hgv
-  -- The tangent spaces at `x` and at `p` are both the model space, so this equation is well
-  -- typed; it holds by substituting `x = p`.
-  have hvp : ∀ x, x = p → v x = v p := by
-    rintro x rfl
-    rfl
   -- The velocity of the trajectory at time `0` is `v p`.
   have hvel : mfderiv 𝓘(ℝ) I (fun s ↦ flowOf v s p) 0 (1 : ℝ) = v p :=
-    Manifold.curveVelocity_apply.symm.trans <|
-      (curveVelocity_flowOf hv (mem_flowDomain_zero hv p)).trans (hvp _ (flowOf_zero hv p))
+    (mfderiv_flowOf_trajectory_zero_apply hv p 1).trans (one_smul ℝ (v p))
   have hzero : mfderiv 𝓘(ℝ) I (flowTransition v g T p ∘ fun s ↦ flowOf v s p) 0 (1 : ℝ) = 0 := by
     rw [hconst.mfderiv_eq, mfderiv_const, ContinuousLinearMap.comp_zero]
     exact zero_apply _
   rw [← hvel]
   exact (mfderiv_comp_apply_of_eq (0 : ℝ) (mdifferentiableAt_flowTransition hv hT hg hgv)
-    (mdifferentiableAt_flowOf hv (mem_flowDomain_zero hv p)) (flowOf_zero hv p) (1 : ℝ)).symm.trans
+    (mdifferentiableAt_flowOf hv (mem_flowDomain_zero hv p)) (flowOf_zero v p) (1 : ℝ)).symm.trans
     hzero
 
 /-- **The derivative of a transition lands in the tangent space of the section.** The transition
@@ -222,6 +236,33 @@ theorem mvfderiv_comp_mfderiv_flowTransition :
     simp [mvfderiv, hconst.mfderiv_eq]
   exact (mvfderiv_comp_apply_of_eq p (hg.mdifferentiableAt one_ne_zero)
     (mdifferentiableAt_flowTransition hv hT hg hgv) (flowTransition_self ..) w).symm.trans hzero
+
+/-- **The derivative of a transition.** The transition `z ↦ flowOf v (τ z) z` to a section
+through `flowOf v T p`, with `τ` the hitting time, has derivative
+`w ↦ dτ_p w • v (flowOf v T p) + DΦ_T w` at `p`, where `Φ_T = flowOf v T` is the time-`T` map. -/
+theorem mfderiv_flowTransition_apply (w : TangentSpace I p) :
+    mfderiv I I (flowTransition v g T p) p w =
+      mvfderiv I (flowHittingTime v g T p) p w • v (flowOf v T p) +
+        mfderiv I I (flowOf v T) p w := by
+  have hτ : MDifferentiableAt I 𝓘(ℝ) (flowHittingTime v g T p) p :=
+    (contMDiffAt_flowHittingTime le_rfl hv hT hg hgv).mdifferentiableAt one_ne_zero
+  have hF : MDifferentiableAt (𝓘(ℝ).prod I) I (fun q : ℝ × M ↦ flowOf v q.1 q.2) (T, p) :=
+    ((contMDiffOn_flowOf le_rfl hv).contMDiffAt
+      ((isOpen_flowDomain hv).mem_nhds hT)).mdifferentiableAt one_ne_zero
+  have hpair : MDifferentiableAt I (𝓘(ℝ).prod I) (fun z ↦ (flowHittingTime v g T p z, z)) p :=
+    hτ.prodMk mdifferentiableAt_id
+  -- The transition is the joint flow composed with `z ↦ (τ z, z)`; split the derivative of the
+  -- joint flow into its time and space parts.
+  have key := mfderiv_comp_apply_of_eq p hF hpair (by rw [flowHittingTime_self]) w
+  rw [mfderiv_prodMk (g := fun z ↦ z) hτ mdifferentiableAt_id] at key
+  rw [flowTransition_def]
+  refine key.trans <| (mfderiv_flowOf_comp_apply (f := fun z ↦ z) hv contMDiffAt_id hT _).trans ?_
+  congr 1
+  -- The second component of the derivative of `z ↦ (τ z, z)` is the identity.
+  -- `mfderiv_id` is stated for `id`, so first rewrite the identity function to `id`.
+  have hid : ∀ u : TangentSpace I p, mfderiv I I (fun z : M ↦ z) p u = u := fun u ↦ by
+    rw [show (fun z : M ↦ z) = id from rfl, mfderiv_id, ContinuousLinearMap.id_apply]
+  exact congrArg (mfderiv I I (flowOf v T) p) ((hid _).trans (hid w))
 
 end Transition
 
@@ -259,7 +300,7 @@ theorem mfderiv_flowTransition_zero_apply (hg : ContMDiffAt I 𝓘(ℝ) 1 g p)
     mfderiv I I (flowTransition v g 0 p) p w =
       w - (mvfderiv I g p w / mvfderiv I g p (v p)) • v p := by
   have h0 : ((0 : ℝ), p) ∈ flowDomain v := mem_flowDomain_zero hv p
-  have hp0 : flowOf v 0 p = p := flowOf_zero hv p
+  have hp0 : flowOf v 0 p = p := flowOf_zero v p
   have hg0 : ContMDiffAt I 𝓘(ℝ) 1 g (flowOf v 0 p) := by rwa [hp0]
   have hgv0 : mvfderiv I g (flowOf v 0 p) (v (flowOf v 0 p)) ≠ 0 := by rwa [hp0]
   have hτ := mdifferentiableAt_flowHittingTime hv h0 hg0 hgv0
@@ -374,6 +415,36 @@ theorem returnDerivative_natCast_mul (hP : (T₀, p) ∈ flowDomain v) (hp : flo
     rw [hmul, pow_succ', ← ih]
     exact LinearMap.ext fun w ↦ (DFunLike.congr_fun hcomp w).symm
 
+/-- **The time-`0` transition is the identity on the section to first order.** For a section
+through `p` transverse to `v`, the normal derivative of the time-`0` transition is the identity. -/
+theorem normalReturnDerivative_zero (hg : ContMDiffAt I 𝓘(ℝ) 1 g p)
+    (hgv : mvfderiv I g p (v p) ≠ 0)
+    {h : LinearMap.range (returnDerivative v g 0 p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} :
+    normalReturnDerivative v g 0 p h = 1 := by
+  ext w
+  rw [coe_normalReturnDerivative_apply, returnDerivative_apply, one_apply_eq_self]
+  exact mfderiv_flowTransition_zero_apply_of_mvfderiv_eq_zero hv hg hgv (LinearMap.mem_ker.1 w.2)
+
+/-- **The normal return derivative of an iterate.** The return branch at time `k * T₀` is the
+`k`-fold iterate of the return branch at time `T₀`, and its normal derivative is the `k`-th power
+of the normal return derivative. -/
+theorem normalReturnDerivative_natCast_mul (hP : (T₀, p) ∈ flowDomain v)
+    (hp : flowOf v T₀ p = p) (hg : ContMDiffAt I 𝓘(ℝ) 1 g p) (hgv : mvfderiv I g p (v p) ≠ 0)
+    (k : ℕ)
+    {h : LinearMap.range (returnDerivative v g T₀ p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)}
+    {hk : LinearMap.range (returnDerivative v g (k * T₀) p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} :
+    normalReturnDerivative v g (k * T₀) p hk = normalReturnDerivative v g T₀ p h ^ k := by
+  rcases eq_or_ne k 0 with rfl | hk0
+  · simp_rw [Nat.cast_zero, zero_mul, pow_zero]
+    exact normalReturnDerivative_zero hv hg hgv
+  ext w
+  rw [coe_normalReturnDerivative_apply, normalReturnDerivative_def (h := h),
+    Module.End.pow_restrict, LinearMap.coe_restrict_apply,
+    returnDerivative_natCast_mul hv hP hp hg hgv hk0]
+
 section Return
 
 variable (hT : (T, p) ∈ flowDomain v) (hq : flowOf v T p = q) (hP : (T₀, p) ∈ flowDomain v)
@@ -418,14 +489,14 @@ theorem charpoly_returnDerivative_eq :
     rw [mfderiv_flowTransition_comp hv hT hq hg' hg'v hTback hback hg hgv, add_neg_cancel]
   have hA : mfderiv I I (flowTransition v g 0 p) p ∘L mfderiv I I (flowTransition v g T₀ p) p =
       mfderiv I I (flowTransition v g T₀ p) p := by
-    rw [mfderiv_flowTransition_comp hv hP hp hg hgv (mem_flowDomain_zero hv p) (flowOf_zero hv p)
+    rw [mfderiv_flowTransition_comp hv hP hp hg hgv (mem_flowDomain_zero hv p) (flowOf_zero v p)
       hg hgv, add_zero]
   have hhh' : mfderiv I I (flowTransition v g' T p) p ∘L
       mfderiv I I (flowTransition v g (-T) q) q = mfderiv I I (flowTransition v g' 0 q) q := by
     rw [mfderiv_flowTransition_comp hv hTback hback hg hgv hT hq hg' hg'v, neg_add_cancel]
   have hB : mfderiv I I (flowTransition v g' T₀ q) q ∘L mfderiv I I (flowTransition v g' 0 q) q =
       mfderiv I I (flowTransition v g' T₀ q) q := by
-    rw [mfderiv_flowTransition_comp hv (mem_flowDomain_zero hv q) (flowOf_zero hv q) hg' hg'v hQ
+    rw [mfderiv_flowTransition_comp hv (mem_flowDomain_zero hv q) (flowOf_zero v q) hg' hg'v hQ
       hq' hg' hg'v, zero_add]
   have hAeq : mfderiv I I (flowTransition v g T₀ p) p =
       mfderiv I I (flowTransition v g (-T) q) q ∘L
@@ -541,6 +612,27 @@ theorem charpoly_normalReturnDerivative_eq
       rw [LinearEquiv.conj_apply_apply]
       simpa using (LinearMap.congr_fun he (e.symm u)).symm
   rw [← hconj, LinearEquiv.charpoly_conj]
+
+/-- **Iterates of the normal return derivative.** If the flow carries `p` to `q` at time `T` and
+`p` returns to itself at time `T₀`, then for every `k` the `k`-th powers of the normal return
+derivatives at time `T₀` of transverse sections through `p` and through `q` have the same
+characteristic polynomial. By `TauCeti.normalReturnDerivative_natCast_mul`, these are the normal
+derivatives of the `k`-fold iterates of the return branches. -/
+theorem charpoly_normalReturnDerivative_pow_eq (k : ℕ)
+    {h : LinearMap.range (returnDerivative v g T₀ p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)}
+    {h' : LinearMap.range (returnDerivative v g' T₀ q) ≤
+      LinearMap.ker (mvfderiv I g' q : TangentSpace I q →ₗ[ℝ] ℝ)} :
+    (normalReturnDerivative v g T₀ p h ^ k).charpoly =
+      (normalReturnDerivative v g' T₀ q h' ^ k).charpoly := by
+  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
+  obtain ⟨hkP, hkp⟩ := flowOf_natCast_mul_of_flowOf_eq hv hP hp k
+  obtain ⟨hkQ, hkq⟩ := flowOf_natCast_mul_of_flowOf_eq hv hQ hq' k
+  rw [← normalReturnDerivative_natCast_mul hv hP hp hg hgv k
+      (hk := range_returnDerivative_le_ker hv hkP hkp hg hgv),
+    ← normalReturnDerivative_natCast_mul hv hQ hq' hg' hg'v k
+      (hk := range_returnDerivative_le_ker hv hkQ hkq hg' hg'v)]
+  exact charpoly_normalReturnDerivative_eq hv hT hq hkP hkp hg hgv hg' hg'v
 
 /-- **The nonzero generalized eigenspaces of linearized return maps do not depend on the section or
 the base point.** If the flow carries `p` to `q` at time `T` and `p` returns to itself at time

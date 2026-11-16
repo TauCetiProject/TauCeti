@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Action
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 
 /-!
@@ -44,6 +44,9 @@ symplectic vector space, which caps the loop by the cone over it.
   term (`TauCeti.cappedLoopAction_rectangleTrans_sub_cappedLoopAction`). This is how the energy
   of a Floer cylinder becomes a difference of capped actions, in
   `TauCeti.Geometry.Symplectic.Floer.CylinderAction`.
+* **Normalization.** Adding a function `c` of time to the Hamiltonian adds `∫₀¹ c` to the
+  action (`TauCeti.cappedLoopAction_add_const`), as for the action of a loop in a vector space
+  (`TauCeti.SymplecticForm.hamiltonianAction_add_const`).
 * **Special cases.** The constant loop capped by the constant disc has action the time average
   of `H` (`TauCeti.cappedLoopAction_const`). For an exact form `ω = dθ` the action is
   `∫_γ θ + ∫₀¹ H(t, γ(t)) dt` for every disc (`TauCeti.cappedLoopAction_mextDeriv`). For a weakly
@@ -108,6 +111,16 @@ theorem cappedLoopAction_def (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) 
 theorem cappedLoopAction_const (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) (x : M) :
     cappedLoopAction ω H (fun _ ↦ x) (fun _ ↦ x) = ∫ t in 0..1, H t x := by
   rw [cappedLoopAction_def, rectangleIntegral_const, zero_add]
+
+/-- **Normalizing a Hamiltonian shifts the capped action.** Adding a function `c` of time to the
+Hamiltonian adds its time average `∫₀¹ c` to the action of every capped loop. -/
+theorem cappedLoopAction_add_const (ω : RoughForm I M ℝ 2) {H : ℝ → M → ℝ} {c : ℝ → ℝ}
+    {γ : ℝ → M} (D : ℝ × ℝ → M)
+    (hH : IntervalIntegrable (fun t ↦ H t (γ t)) MeasureTheory.volume 0 1)
+    (hc : IntervalIntegrable c MeasureTheory.volume 0 1) :
+    cappedLoopAction ω (fun t x ↦ H t x + c t) γ D =
+      cappedLoopAction ω H γ D + ∫ t in 0..1, c t := by
+  rw [cappedLoopAction_def, cappedLoopAction_def, intervalIntegral.integral_add hH hc, add_assoc]
 
 section Continuous
 

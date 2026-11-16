@@ -10,12 +10,13 @@ public import TauCeti.Topology.CategoryTheory.ComposableArrows
 public import TauCeti.Topology.CategoryTheory.FullSubcategory
 
 /-!
-# Nerves of open full subcategories
+# Nerves of open and closed full subcategories
 
-Full restriction to an open set of objects gives an open subspace in each degree of the
-topological nerve. Only continuity of source is needed: each vertex is the source of its
-identity arrow. The nerve topology and the full-subcategory arrow topology are the existing
-ones, so no extra continuity or separation condition is imposed on individual hom types.
+Full restriction to an open (respectively closed) set of objects gives an open (respectively
+closed) subspace in each degree of the topological nerve. Only continuity of source is needed:
+each vertex is the source of its identity arrow. The nerve topology and the full-subcategory
+arrow topology are the existing ones, so no extra continuity or separation condition is imposed
+on individual hom types.
 -/
 
 public section
@@ -40,5 +41,17 @@ theorem isOpenEmbedding_mapComposableArrows_ι
   rw [P.range_mapComposableArrows_ι]
   simp only [ofPred_forall]
   exact isOpen_iInter_of_finite fun i ↦ hP.preimage (ComposableArrows.continuous_obj hs i)
+
+/-- Restriction to a closed set of objects is levelwise a closed embedding on topological
+nerves. Saturation is not necessary for this levelwise assertion. -/
+theorem isClosedEmbedding_mapComposableArrows_ι
+    (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
+    (hP : IsClosed {x | P x}) (n : ℕ) :
+    IsClosedEmbedding (P.ι.mapComposableArrows n).obj := by
+  refine ⟨ComposableArrows.isEmbedding_mapComposableArrows_obj
+    TauCeti.isEmbedding_total_fullSubcategory, ?_⟩
+  rw [P.range_mapComposableArrows_ι]
+  simp only [ofPred_forall]
+  exact isClosed_iInter fun i ↦ hP.preimage (ComposableArrows.continuous_obj hs i)
 
 end CategoryTheory.ObjectProperty

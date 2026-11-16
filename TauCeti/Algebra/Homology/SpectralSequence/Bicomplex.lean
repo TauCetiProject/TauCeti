@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
-public import TauCeti.Algebra.Homology.TotalComplex
+public import TauCeti.Algebra.Homology.TotalComplex.Basic
 
 /-!
 # The spectral sequence of a first-quadrant bicomplex filtered by rows

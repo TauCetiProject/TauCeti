@@ -62,9 +62,9 @@ and the product of these is `1 + ε ∑ τ_α ad e_α` because `ε² = 0`.
 
 public section
 
-namespace TauCeti
+namespace LieSubalgebra
 
-open LieAlgebra LieAlgebra.IsKilling LieModule MvPolynomial Matrix List
+open TauCeti LieAlgebra LieAlgebra.IsKilling LieModule MvPolynomial Matrix List
   LinearMap.GeneralLinearGroup
 
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
@@ -80,7 +80,7 @@ polynomials in one variable for each root and one for each basis vector of `H`, 
 properties: its values, read in the coordinates of `b`, are all of the form `g h` with `g` in
 `Int(L)` and `h ∈ H`, and its Jacobian matrix is surjective at some point. The polynomials are the
 coordinates of `(t, h) ↦ ∏_α exp(t_α ad e_α) h` for chosen root vectors `e_α`. -/
-theorem _root_.LieSubalgebra.exists_rootExponentialPolynomialParametrization {ι κ : Type*}
+theorem exists_rootExponentialPolynomialParametrization {ι κ : Type*}
     [Finite ι] [Fintype κ] (b : Module.Basis ι K L) (bH : Module.Basis κ K H) :
     ∃ p : ι → MvPolynomial (H.root ⊕ κ) K,
       (∃ v, (jacobiMatrixAt p v).mulVec.Surjective) ∧
@@ -138,12 +138,14 @@ theorem _root_.LieSubalgebra.exists_rootExponentialPolynomialParametrization {ι
         exact b.toMatrixAlgEquiv_expAd (hd α) _ (hnil' α _)
       · simp [c, map_sum]
 
+omit [FiniteDimensional K L] in
 /-- **A polynomial vanishing on the conjugates of a Cartan subalgebra is zero.** In the coordinates
 of a basis `b` of `L`, a polynomial that vanishes at `g h` for every inner automorphism
 `g ∈ Int(L)` and every `h` in the splitting Cartan subalgebra `H` is the zero polynomial. -/
-theorem _root_.LieSubalgebra.polynomial_eq_zero_of_intCartan {ι : Type*} [Finite ι]
+theorem polynomial_eq_zero_of_intCartan {ι : Type*} [Finite ι]
     (b : Module.Basis ι K L) {q : MvPolynomial ι K}
     (hq : ∀ g ∈ intLieAlgebra K L, ∀ h ∈ H, eval (b.equivFun (g • h)) q = 0) : q = 0 := by
+  have := Module.Finite.of_basis b
   obtain ⟨p, ⟨v, hv⟩, hp⟩ :=
     H.exists_rootExponentialPolynomialParametrization b (Module.finBasis K H)
   refine eq_zero_of_forall_eval_eq_zero_of_mulVec_surjective_jacobiMatrixAt hv fun x ↦ ?_
@@ -151,13 +153,14 @@ theorem _root_.LieSubalgebra.polynomial_eq_zero_of_intCartan {ι : Type*} [Finit
   rw [← hgh]
   exact hq g hg h hh
 
+omit [FiniteDimensional K L] in
 /-- **Chevalley injectivity on polynomials.** In the coordinates of a basis `b` of `L`, a
 polynomial invariant under the inner automorphisms `Int(L)` that vanishes on the splitting Cartan
 subalgebra `H` is the zero polynomial. -/
-theorem _root_.LieSubalgebra.polynomial_eq_zero_of_invariant_of_cartan {ι : Type*} [Finite ι]
+theorem polynomial_eq_zero_of_invariant_of_cartan {ι : Type*} [Finite ι]
     (b : Module.Basis ι K L) {q : MvPolynomial ι K}
     (hinv : ∀ g ∈ intLieAlgebra K L, ∀ x : L, eval (b.equivFun (g • x)) q = eval (b.equivFun x) q)
     (hH : ∀ h ∈ H, eval (b.equivFun h) q = 0) : q = 0 :=
   H.polynomial_eq_zero_of_intCartan b fun g hg h hh ↦ (hinv g hg h).trans (hH h hh)
 
-end TauCeti
+end LieSubalgebra

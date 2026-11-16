@@ -19,6 +19,9 @@ Transfers are natural under these morphisms: after regrading, all source output 
 with the same image contribute to one target component. The sum is over the finite
 homogeneous support of the lifted input. Injective degree maps give componentwise
 naturality, in particular for comparisons preserving degrees such as truncations.
+Total lifts and total transfers, which vanish on inadmissible pieces, are natural once the
+comparison kills the images of inadmissible source pieces, in particular when it reflects
+admissible degrees.
 
 The component formulas use `DirectSum.decompose_map_eq_sum` and Tau Ceti's
 `DirectSum.map_decompose_shift` for arbitrary and injective regradings, respectively.
@@ -26,7 +29,7 @@ No additive structure on the degree types is needed for these linear constructio
 
 Adapted from `Mei/LinearAlgebra/GradedCorrespondence/Hom.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
-commit `bac6f02d25746bc1c2ec808601d4e9284911c475` (Apache 2.0).
+commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0).
 -/
 
 public section
@@ -184,6 +187,80 @@ transporting along the double-reversal equalities for its source and target. -/
 
 @[simp] theorem symm_comp (g : Hom D E σ' τ') (f : Hom C D σ τ) :
     (g.comp f).symm = g.symm.comp f.symm := by ext <;> rfl
+
+section TotalLift
+
+variable [DecidableEq ι] [DecidableEq ι']
+  [DirectSum.Decomposition 𝒰] [DirectSum.Decomposition 𝒰']
+
+/-- A correspondence morphism preserves the total lift exactly when target total
+lifts kill the images of inadmissible source pieces. This permits new admissible
+target degrees when their source decorations vanish under the comparison. -/
+theorem middle_comp_liftLeftTotal_iff (f : Hom C D σ τ) :
+    f.middle.comp C.liftLeftTotal = D.liftLeftTotal.comp f.left ↔
+      ∀ i, i ∉ I → ∀ a : 𝒰 i, D.liftLeftTotal (f.left a) = 0 := by
+  constructor
+  · intro h i hi a
+    have he := LinearMap.congr_fun h a
+    simpa only [LinearMap.comp_apply, C.liftLeftTotal_coe_of_not_mem a hi, map_zero]
+      using he.symm
+  · intro hzero
+    apply DirectSum.decompose_lhom_ext 𝒰
+    intro i
+    apply LinearMap.ext
+    intro a
+    simp only [LinearMap.comp_apply, Submodule.subtype_apply]
+    by_cases hi : i ∈ I
+    · rw [C.liftLeftTotal_coe ⟨i, hi⟩ a,
+        D.liftLeftTotal_coe ⟨σ i, f.admissible_left hi⟩
+          ⟨f.left a, f.left_mem i a a.property⟩]
+      exact f.middle_liftLeft ⟨i, hi⟩ a
+    · rw [C.liftLeftTotal_coe_of_not_mem a hi, map_zero, hzero i hi a]
+
+/-- Total lifts of mixed inputs commute with the comparison whenever target total
+lifts kill all images of inadmissible source pieces. -/
+theorem middle_liftLeftTotal (f : Hom C D σ τ)
+    (hzero : ∀ i, i ∉ I → ∀ a : 𝒰 i, D.liftLeftTotal (f.left a) = 0) (a : U) :
+    f.middle (C.liftLeftTotal a) = D.liftLeftTotal (f.left a) :=
+  LinearMap.congr_fun (f.middle_comp_liftLeftTotal_iff.mpr hzero) a
+
+/-- Reflecting admissible degrees is sufficient for naturality of total lifts.
+No injectivity of either degree map or coefficient map is required. Applying this
+to `f.symm` gives the right-lift comparison. -/
+theorem middle_comp_liftLeftTotal_of_reflects_admissible (f : Hom C D σ τ)
+    (hI : ∀ i, σ i ∈ I' → i ∈ I) :
+    f.middle.comp C.liftLeftTotal = D.liftLeftTotal.comp f.left := by
+  apply f.middle_comp_liftLeftTotal_iff.mpr
+  intro i hi a
+  exact D.liftLeftTotal_of_not_mem (fun h => hi (hI i h)) (f.left_mem i a a.property)
+
+/-- A morphism intertwines total transfers once target total transfers kill the images
+of inadmissible source pieces. The lifts of these images may be nonzero if they lie in the
+kernel of the right leg. -/
+theorem right_comp_totalTransfer (f : Hom C D σ τ)
+    (hzero : ∀ i, i ∉ I → ∀ a : 𝒰 i, D.totalTransfer (f.left a) = 0) :
+    f.right.comp C.totalTransfer = D.totalTransfer.comp f.left := by
+  apply DirectSum.decompose_lhom_ext 𝒰
+  intro i
+  apply LinearMap.ext
+  intro a
+  simp only [LinearMap.comp_apply, Submodule.subtype_apply]
+  by_cases hi : i ∈ I
+  · rw [totalTransfer_apply, C.liftLeftTotal_coe ⟨i, hi⟩ a, right_comm_apply,
+      f.middle_liftLeft ⟨i, hi⟩ a, totalTransfer_apply,
+      D.liftLeftTotal_coe ⟨σ i, f.admissible_left hi⟩ ⟨f.left a, f.left_mem i a a.property⟩]
+  · rw [totalTransfer_apply, C.liftLeftTotal_coe_of_not_mem a hi, map_zero, map_zero,
+      hzero i hi a]
+
+/-- Reflecting admissible degrees suffices for naturality of total transfers. -/
+theorem right_comp_totalTransfer_of_reflects_admissible (f : Hom C D σ τ)
+    (hI : ∀ i, σ i ∈ I' → i ∈ I) :
+    f.right.comp C.totalTransfer = D.totalTransfer.comp f.left :=
+  f.right_comp_totalTransfer fun i hi a => by
+    rw [totalTransfer_apply,
+      D.liftLeftTotal_of_not_mem (fun h => hi (hI i h)) (f.left_mem i a a.property), map_zero]
+
+end TotalLift
 
 section Transfer
 

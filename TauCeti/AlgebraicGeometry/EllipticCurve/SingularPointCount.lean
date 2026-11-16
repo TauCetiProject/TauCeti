@@ -188,7 +188,8 @@ private theorem card_equation_add_card_rootSet_of_isSingular_zero [Finite F]
   have hroot : Nat.card ((tangentQuadratic W).rootSet F) =
       Nat.card {t : F // t ^ 2 + W.a₁ * t - W.a₂ = 0} := by
     refine Nat.card_congr (Equiv.subtypeEquivRight fun t ↦ ?_)
-    have h0 : tangentQuadratic W ≠ 0 := fun h0 ↦ by simpa using congrArg (coeff · 2) h0
+    have h0 : tangentQuadratic W ≠ 0 := fun h0 ↦ by
+      simpa using congrArg (fun p : F[X] ↦ p.coeff 2) h0
     rw [mem_rootSet, and_iff_right h0]
     simp [sub_eq_add_neg]
   have h1 : Nat.card {p : S // p.1.1 = 0} = 1 :=
@@ -232,7 +233,7 @@ theorem _root_.WeierstrassCurve.frobeniusTrace_eq_zero_of_c₄_eq_zero [Finite F
     simpa [discrim, WeierstrassCurve.b₂] using
       (pow_eq_zero_iff two_ne_zero).1 (hb ▸ hc.trans hc₄)
   rw [htr, Nat.card_eq_fintype_card, card_rootSet_quadratic_of_discrim_eq_zero one_ne_zero
-    (splits_quadratic_of_discrim_eq_zero one_ne_zero hd0) hd0]
+    (splits_quadratic_of_discrim_eq_zero hd0) hd0]
   norm_num
 
 /-- **The Frobenius trace at a split node is `1`.** A singular model over a finite field with

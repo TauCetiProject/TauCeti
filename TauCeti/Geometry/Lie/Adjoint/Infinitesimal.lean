@@ -21,9 +21,6 @@ This file identifies the derivative of the tangent-space adjoint action at the i
 Mathlib's Lie-algebra adjoint map. This is the geometric prerequisite for transporting the result
 to the derivation-valued group adjoint representation.
 
-This advances Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
-
 ## Main results
 
 * `TauCeti.Lie.hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero`: at `t = 0`, the derivative
@@ -33,8 +30,6 @@ This advances Deliverable A, Layer 1 of
 
 ## References
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The infinitesimal adjoint".
 * The two-parameter Clairaut argument adapts
   `TauCeti.Lie.mvfderiv_mulRightInvariantVectorField_mulInvariantVectorField_commute`; its
   mixed-partial step uses `TauCeti.Analysis.Calculus.ParametricFDeriv`, which in turn adapts

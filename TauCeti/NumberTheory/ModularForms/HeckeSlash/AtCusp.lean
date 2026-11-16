@@ -199,7 +199,7 @@ private lemma exists_slash_heckeTNat_eq [NeZero N] (hp : p.Prime) (hpN : p.Copri
     rintro (_ | b)
     · exact exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none hp.pos hσ10 hσ11
     · exact ⟨ModularGroup.T ^ (b : ℤ), T_zpow_mem_Gamma1 N _,
-        (natDiagGL_mul_mapGL_T_zpow hp.pos b).trans (primeRep_some _ _ _).symm⟩
+        (natDiagGL_mul_mapGL_T_zpow b).trans (primeRep_some _ _ _).symm⟩
   choose ρ hρmem hρ using hρ
   choose ξ j hξ using fun i ↦ exists_natDiagGL_mul_eq_mul_shiftPrimeRep (N := N) hp hpN (ρ i * γ)
   have hrep : ∀ i, primeRep (gamma0Twist N p hpN) p i * mapGL ℚ γ =

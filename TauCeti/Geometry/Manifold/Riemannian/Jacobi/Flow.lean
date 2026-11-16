@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Variation
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
 

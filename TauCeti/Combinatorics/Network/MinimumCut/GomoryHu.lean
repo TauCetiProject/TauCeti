@@ -356,7 +356,6 @@ private theorem IsPartialCutTree.exists_insert (hf : IsSymmSubmodular f)
     ∃ T', IsPartialCutTree f (insert x R) T' := by
   obtain ⟨r, hrR, hx⟩ := hP.exists_adj_iff x hxR
   have hT := hP.isTree
-  have hbr := isAcyclic_iff_forall_adj_isBridge.mp hT.isAcyclic
   have hxr : T.Adj x r := (hx r).mpr rfl
   have hrx : r ≠ x := hxr.ne.symm
   -- Choose a minimum `r`–`x` cut `X` crossing none of the cuts of edges between representatives.

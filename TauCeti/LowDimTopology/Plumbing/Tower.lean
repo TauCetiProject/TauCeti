@@ -40,8 +40,9 @@ of the plumbed three-manifold.
 
 * `TauCeti.PlumbingGraph.latticeAugmentation_comp_latticeDifferential`: the augmentation kills
   boundaries.
-* `TauCeti.PlumbingGraph.exists_cycle_latticeAugmentation_eq_one`: a lattice point of minimal
-  characteristic weight is a cycle with augmentation `1`.
+* `TauCeti.PlumbingGraph.exists_cycle_latticeAugmentation_eq_one`: on every plumbing there is a
+  cycle with augmentation `1`, namely a lattice point of weight `sInfCharacteristicWeight` (a
+  minimum of the characteristic weight when it is bounded below, and the origin otherwise).
 * `TauCeti.PlumbingGraph.exists_cycle_eq_zero_of_smul_mem_range_latticeDifferential`: that cycle
   satisfies the chain-level nonboundary criterion for the `U`-tower.
 * `TauCeti.PlumbingGraph.exists_injective_latticeHomologyCycleMap`: the resulting map from
@@ -218,11 +219,13 @@ theorem latticeAugmentation_eq_zero_of_mem_range (P : PlumbingGraph V)
   obtain ⟨b, rfl⟩ := hc
   exact congrFun (congrArg DFunLike.coe (P.latticeAugmentation_comp_latticeDifferential h k)) b
 
-/-- A lattice point of minimal characteristic weight gives a cycle whose augmentation is `1`. -/
+/-- A lattice point of weight `sInfCharacteristicWeight` gives a cycle whose augmentation is `1`:
+such a point is a minimum of the characteristic weight when it is bounded below, and the origin
+otherwise. -/
 theorem exists_cycle_latticeAugmentation_eq_one (P : PlumbingGraph V)
-    (h : P.IsNegativeDefinite) (k : P.characteristicVectors) :
+    (k : P.characteristicVectors) :
     ∃ c : PlumbingChain V, P.latticeDifferential k c = 0 ∧ P.latticeAugmentation k c = 1 := by
-  obtain ⟨x, hx⟩ := P.exists_characteristicWeight_eq_sInfCharacteristicWeight h k
+  obtain ⟨x, hx⟩ := P.exists_characteristicWeight_eq_sInfCharacteristicWeight k
   refine ⟨Finsupp.single ({ base := x, directions := ∅ } : PlumbingCube V) 1, ?_, ?_⟩
   · rw [latticeDifferential_single,
       P.latticeDifferentialOnGenerator_eq_zero_of_directions_eq_empty k rfl, smul_zero]
@@ -237,7 +240,7 @@ theorem exists_cycle_eq_zero_of_smul_mem_range_latticeDifferential (P : Plumbing
     ∃ c : PlumbingChain V, P.latticeDifferential k c = 0 ∧
       ∀ a : PlumbingCoefficient,
         a • c ∈ LinearMap.range (P.latticeDifferential k) → a = 0 := by
-  obtain ⟨c, hcycle, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one h k
+  obtain ⟨c, hcycle, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one k
   refine ⟨c, hcycle, fun a ha => ?_⟩
   have := P.latticeAugmentation_eq_zero_of_mem_range h k ha
   rwa [map_smul, hone, smul_eq_mul, mul_one] at this
@@ -261,7 +264,7 @@ theorem exists_injective_latticeHomologyCycleMap (P : PlumbingGraph V)
     ∃ (c : PlumbingChain V) (hc : P.latticeDifferential k c = 0),
       P.latticeAugmentation k c = 1 ∧
         Function.Injective (P.latticeHomologyCycleMap k c hc) := by
-  obtain ⟨c, hc, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one h k
+  obtain ⟨c, hc, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one k
   exact ⟨c, hc, hone, P.latticeHomologyCycleMap_injective h k c hc hone⟩
 
 /-! ### Nonvanishing of lattice homology -/
@@ -270,7 +273,7 @@ theorem exists_injective_latticeHomologyCycleMap (P : PlumbingGraph V)
 minimal-weight lattice point is a cycle that is not a boundary. -/
 theorem not_exact_latticeShortComplex (P : PlumbingGraph V) (h : P.IsNegativeDefinite)
     (k : P.characteristicVectors) : ¬ (P.latticeShortComplex k).Exact := by
-  obtain ⟨c, hcycle, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one h k
+  obtain ⟨c, hcycle, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one k
   rw [P.latticeShortComplex_exact_iff_range_eq_ker k]
   intro hexact
   have hzero := P.latticeAugmentation_eq_zero_of_mem_range h k

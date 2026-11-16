@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Manifold.RegularValue
-import TauCeti.Analysis.Calculus.FDeriv.Det
+import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -47,7 +47,7 @@ open scoped Manifold Matrix
 
 namespace TauCeti
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
@@ -67,7 +67,7 @@ theorem mvfderiv_det_apply {A : M → Matrix n n 𝕜} {x : M}
   -- determinant as a function on that space through the identification `L` with matrices.
   let A' : M → n → n → 𝕜 := fun y ↦ Matrix.of.symm (A y)
   let L : (n → n → 𝕜) →L[𝕜] Matrix n n 𝕜 :=
-    LinearMap.toContinuousLinearMap (Matrix.ofLinearEquiv 𝕜).toLinearMap
+    (Matrix.ofContinuousLinearEquiv 𝕜).toContinuousLinearMap
   have hA'row (i : n) : MDifferentiableAt I 𝓘(𝕜, n → 𝕜) (fun y ↦ A' y i) x :=
     mdifferentiableAt_pi_space.2 fun j ↦ hA i j
   have hA' : MDifferentiableAt I 𝓘(𝕜, n → n → 𝕜) A' x := mdifferentiableAt_pi_space.2 hA'row
@@ -77,17 +77,22 @@ theorem mvfderiv_det_apply {A : M → Matrix n n 𝕜} {x : M}
     simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] at h₁ h₂
     rw [← h₁]
     exact h₂
+  -- `L` is the entrywise identification `Matrix.of`, as a continuous linear map.
+  have hL (B : n → n → 𝕜) : L B = Matrix.of B :=
+    congrFun (Matrix.coe_ofContinuousLinearEquiv 𝕜) B
   have hdet' : HasFDerivAt (fun B : n → n → 𝕜 ↦ (L B).det)
-      (((A x).det • (LinearMap.toContinuousLinearMap (Matrix.traceLinearMap n 𝕜 𝕜)).comp
-        (LinearMap.toContinuousLinearMap (LinearMap.mulLeft 𝕜 (A x)⁻¹))).comp L) (A' x) :=
-    (Matrix.hasFDerivAt_det hdet).comp (A' x) L.hasFDerivAt
-  have hLA : (fun y ↦ (L (A' y)).det) = fun y ↦ (A y).det := funext fun y ↦ by simp [L, A']
+      ((fderiv 𝕜 (Matrix.det : Matrix n n 𝕜 → 𝕜) (A x)).comp L) (A' x) := by
+    have h := (Matrix.differentiable_det (L (A' x))).hasFDerivAt.comp (A' x) L.hasFDerivAt
+    rwa [hL, Equiv.apply_symm_apply] at h
+  have hLA : (fun y ↦ (L (A' y)).det) = fun y ↦ (A y).det := funext fun y ↦ by
+    have hAy : Matrix.of (A y).row = A y := by ext; simp only [Matrix.of_apply, Matrix.row_apply]
+    simp [hL, A', hAy]
   have hcomp := mvfderiv_comp_apply_of_differentiableAt hdet'.differentiableAt hA' v
   rw [Function.comp_def, hLA] at hcomp
   rw [hcomp, hdet'.fderiv]
   simp only [hentry]
   generalize mvfderiv I A' x v = B
-  simp [L]
+  rw [ContinuousLinearMap.comp_apply, hL, Matrix.fderiv_det_apply hdet]
 
 end TauCeti
 

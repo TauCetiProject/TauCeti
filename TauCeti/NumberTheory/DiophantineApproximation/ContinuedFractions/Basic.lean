@@ -221,7 +221,7 @@ private theorem frequently_lt_log_div_log (hξ : Irrational ξ) {p : ℝ} (hp : 
   obtain ⟨h2, hlog2, hK⟩ := hN r.den hNr
   -- Legendre's theorem identifies `r` with a convergent `pₖ / qₖ`, with `k ≥ K`.
   obtain ⟨k, rfl⟩ := exists_rat_eq_convergent
-    (hr.trans_le (Real.rpow_neg_le_one_div_two_mul_sq (by positivity) h2))
+    (hr.trans_le (Real.rpow_neg_le_one_div_two_mul_sq h2))
   refine ⟨k, not_lt.mp fun hk ↦ (monotone_den_convergent ξ hk.le).not_gt hK, ?_⟩
   -- The two error bounds give `qₖ ^ p < qₖ (qₖ + qₖ₊₁)`.
   have hpow := (one_div_lt_abs_sub_convergent hξ k).trans hr

@@ -22,6 +22,13 @@ sense of `Manifold.IsSubmersion`, with the model fibre `F` as a complement. Smoo
 projection, Mathlib's `Bundle.contMDiff_proj`, is recovered from this by
 `Manifold.IsSubmersion.contMDiff`.
 
+The preferred charts are computed explicitly over the base set of the trivialization at their
+base point (`Bundle.mem_extChartAt_source_iff`, `Bundle.extChartAt_apply_of_mem_baseSet`,
+`Bundle.extChartAt_symm_apply_of_mem_baseSet` and
+`Bundle.extChartAt_symm_apply_extChartAt_of_mem_baseSet`). For a vector bundle, the preferred
+chart at a zero vector sends the zero vectors over that base set to the zero fibre coordinate
+(`Bundle.extChartAt_zeroSection_of_mem_baseSet`, `Bundle.extChartAt_zeroSection_self`).
+
 The same chart computation identifies the derivative of the projection: composed with the
 derivative of the inverse of a preferred chart of the total space, it is the derivative of the
 inverse base chart applied to the first coordinate
@@ -34,7 +41,8 @@ base commutes with the derivative of the projection
 inverse of the derivative of the projection, hence injective
 (`Bundle.mfderiv_injective_of_proj_comp_eq_id`).
 
-No linear structure on the fibres is used, and the regularity order `n` is arbitrary.
+Apart from the zero-section computations, no linear structure on the fibres is used, and the
+regularity order `n` is arbitrary.
 -/
 
 public section
@@ -69,6 +77,75 @@ theorem proj_extChartAt_symm (p : TotalSpace F V) {y : EB × F}
     PartialEquiv.prod_coe, PartialEquiv.refl_coe, Function.comp_apply, id]
   rw [OpenPartialHomeomorph.coe_toPartialEquiv_symm,
     (trivializationAt F V p.proj).proj_symm_apply' hy.1.2]
+
+/-- A point of the total space lies in the source of the preferred chart at `p` exactly when its
+base point lies in the base set of the trivialization at `p.proj` and in the source of the chart of
+the base at `p.proj`. -/
+theorem mem_extChartAt_source_iff (p x : TotalSpace F V) :
+    x ∈ (extChartAt (IB.prod 𝓘(𝕜, F)) p).source ↔
+      x.proj ∈ (trivializationAt F V p.proj).baseSet ∧ x.proj ∈ (extChartAt IB p.proj).source := by
+  rw [FiberBundle.extChartAt]
+  simp only [PartialEquiv.trans_source, mem_inter_iff, mem_preimage, PartialEquiv.prod_source,
+    PartialEquiv.refl_source, mem_prod, mem_univ, and_true, Trivialization.mem_source]
+  refine and_congr_right fun h ↦ ?_
+  simp [Trivialization.coe_fst' _ h]
+
+/-- In the preferred chart at `p`, a point over the base set of the trivialization at `p.proj` has
+coordinates its base point in the chart of the base and its fibre coordinate in that
+trivialization. -/
+theorem extChartAt_apply_of_mem_baseSet (p : TotalSpace F V) {x : TotalSpace F V}
+    (hx : x.proj ∈ (trivializationAt F V p.proj).baseSet) :
+    extChartAt (IB.prod 𝓘(𝕜, F)) p x =
+      (extChartAt IB p.proj x.proj, (trivializationAt F V p.proj x).2) := by
+  rw [FiberBundle.extChartAt]
+  simp [Trivialization.coe_fst' _ hx]
+
+/-- The inverse of the preferred chart at `p` sends `(y, w)`, with `y` over the base set of the
+trivialization at `p.proj`, to the vector over `(extChartAt IB p.proj).symm y` with fibre
+coordinate `w` in that trivialization. -/
+theorem extChartAt_symm_apply_of_mem_baseSet [∀ x, Zero (V x)] (p : TotalSpace F V) {y : EB}
+    (hy : (extChartAt IB p.proj).symm y ∈ (trivializationAt F V p.proj).baseSet) (w : F) :
+    (extChartAt (IB.prod 𝓘(𝕜, F)) p).symm (y, w) =
+      ⟨(extChartAt IB p.proj).symm y,
+        (trivializationAt F V p.proj).symm ((extChartAt IB p.proj).symm y) w⟩ := by
+  rw [FiberBundle.extChartAt]
+  simp only [PartialEquiv.trans_symm_eq_symm_trans_symm, PartialEquiv.coe_trans,
+    PartialEquiv.prod_symm, PartialEquiv.refl_symm, Function.comp_apply, PartialEquiv.prod_coe,
+    PartialEquiv.refl_coe, id_eq]
+  rw [OpenPartialHomeomorph.coe_toPartialEquiv_symm, Trivialization.mk_symm _ hy w]
+
+/-- The inverse of the preferred chart at `p` sends `(y, w)`, with `y` the coordinate of a base
+point `b` in the base set of the trivialization at `p.proj` and in the source of the chart of the
+base at `p.proj`, to the vector over `b` with fibre coordinate `w` in that trivialization. -/
+theorem extChartAt_symm_apply_extChartAt_of_mem_baseSet [∀ x, Zero (V x)] (p : TotalSpace F V)
+    {b : B} (hb : b ∈ (trivializationAt F V p.proj).baseSet)
+    (hb' : b ∈ (extChartAt IB p.proj).source) (w : F) :
+    (extChartAt (IB.prod 𝓘(𝕜, F)) p).symm (extChartAt IB p.proj b, w) =
+      ⟨b, (trivializationAt F V p.proj).symm b w⟩ := by
+  have h := (extChartAt IB p.proj).left_inv hb'
+  rw [extChartAt_symm_apply_of_mem_baseSet p (h.symm ▸ hb), h]
+
+section ZeroSection
+
+variable [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
+
+/-- In the preferred chart of a vector bundle at the zero vector `0_a`, a zero vector `0_b` over the
+base set of the trivialization at `a` has coordinates `b` in the chart of the base and `0`. -/
+theorem extChartAt_zeroSection_of_mem_baseSet (a : B) {b : B}
+    (hb : b ∈ (trivializationAt F V a).baseSet) :
+    extChartAt (IB.prod 𝓘(𝕜, F)) (zeroSection F V a) (zeroSection F V b) =
+      (extChartAt IB a b, 0) := by
+  rw [extChartAt_apply_of_mem_baseSet _ hb, zeroSection_proj, zeroSection_proj,
+    (trivializationAt F V a).zeroSection 𝕜 hb]
+
+/-- The preferred chart of a vector bundle at the zero vector `0_a` sends `0_a` to the coordinate
+of `a` in the chart of the base and `0`. -/
+theorem extChartAt_zeroSection_self (a : B) :
+    extChartAt (IB.prod 𝓘(𝕜, F)) (zeroSection F V a) (zeroSection F V a) =
+      (extChartAt IB a a, 0) :=
+  extChartAt_zeroSection_of_mem_baseSet a (mem_baseSet_trivializationAt F V a)
+
+end ZeroSection
 
 /-- The projection of a fibre bundle is a submersion, with the model fibre as complement: in the
 preferred charts of the total space and of the base, it is the first projection. -/
@@ -123,32 +200,25 @@ theorem mfderiv_proj_comp_mfderivWithin_extChartAt_symm [IsManifold IB 1 B]
 point `p` of the total space are read in the preferred chart at `p`, as pairs of a base and a fibre
 coordinate, and tangent vectors of the base in the chart at `p.proj`; in these coordinates the
 derivative of the projection keeps the base coordinate. -/
-theorem mfderiv_proj [IsManifold IB 1 B] [IsManifold (IB.prod 𝓘(𝕜, F)) 1 (TotalSpace F V)]
-    (p : TotalSpace F V) :
+theorem mfderiv_proj (p : TotalSpace F V) :
     mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F V) p = ContinuousLinearMap.fst 𝕜 EB F := by
-  have h := mfderiv_proj_comp_mfderivWithin_extChartAt_symm (IB := IB) p
-    (mem_extChartAt_target (I := IB.prod 𝓘(𝕜, F)) p)
-  -- Both chart derivatives are taken at the centres of their charts, where they are the identity.
-  have h1 : (extChartAt (IB.prod 𝓘(𝕜, F)) p p).1 = extChartAt IB p.proj p.proj := by
-    simp [FiberBundle.chartedSpace_chartAt]
-  rw [extChartAt_to_inv, mfderivWithin_range_extChartAt_symm, h1,
-    mfderivWithin_range_extChartAt_symm] at h
-  exact ContinuousLinearMap.ext fun u ↦ DFunLike.congr_fun h u
+  refine HasMFDerivAt.mfderiv ⟨(FiberBundle.continuous_proj F V).continuousAt, ?_⟩
+  have hy := mem_extChartAt_target (I := IB.prod 𝓘(𝕜, F)) p
+  -- In the preferred charts the projection is the first projection of the model.
+  refine (hasFDerivAt_fst (𝕜 := 𝕜) (E := EB) (F := F)).hasFDerivWithinAt.congr_of_eventuallyEq
+    ?_ ?_
+  · filter_upwards [extChartAt_target_mem_nhdsWithin_of_mem hy] with y hy
+    simp only [writtenInExtChartAt, Function.comp_apply, proj_extChartAt_symm p hy,
+      (extChartAt IB p.proj).right_inv (fst_mem_extChartAt_target p hy)]
+  · simp only [writtenInExtChartAt, Function.comp_apply, proj_extChartAt_symm p hy,
+      (extChartAt IB p.proj).right_inv (fst_mem_extChartAt_target p hy)]
 
 /-- The derivative of the projection of a fibre bundle is surjective at every point of the total
 space: every tangent vector of the base lifts to a tangent vector of the total space. -/
-theorem mfderiv_proj_surjective [IsManifold IB 1 B]
-    [IsManifold (IB.prod 𝓘(𝕜, F)) 1 (TotalSpace F V)] (p : TotalSpace F V) :
+theorem mfderiv_proj_surjective (p : TotalSpace F V) :
     Function.Surjective (mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F V) p) := by
-  intro v
-  have hy := mem_extChartAt_target (I := IB.prod 𝓘(𝕜, F)) p
-  -- In the preferred chart at `p` the projection is the first projection, and the inverse base
-  -- chart has invertible derivative.
-  obtain ⟨u, hu⟩ :=
-    (isInvertible_mfderivWithin_extChartAt_symm (fst_mem_extChartAt_target p hy)).surjective v
-  have h := DFunLike.congr_fun (mfderiv_proj_comp_mfderivWithin_extChartAt_symm p hy) (u, 0)
-  rw [extChartAt_to_inv] at h
-  exact ⟨_, h.trans hu⟩
+  rw [mfderiv_proj]
+  exact fun v ↦ ⟨(v, 0), rfl⟩
 
 /-- A self-map `g` of the total space covering the identity of the base commutes with the
 derivative of the projection: `dπ_{g z} ∘ dg_z = dπ_z`. -/

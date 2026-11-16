@@ -17,6 +17,7 @@ public import Mathlib.Data.Finsupp.SMulWithZero
 public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Data.Set.Finite.Lemmas
+public import TauCeti.Algebra.Order.Hom.Basic
 
 /-!
 # Novikov series
@@ -714,12 +715,7 @@ theorem ofFinsupp_surjective_iff [AddMonoid R] [Nontrivial R] :
     Surjective (ofFinsupp (R := R) (N := N)) ↔ N = 0 := by
   refine ⟨fun hsurj => ?_, fun hN a => ?_⟩
   · by_contra hN
-    obtain ⟨h, hh⟩ : ∃ h, 0 < N h := by
-      obtain ⟨g, hg⟩ := DFunLike.ne_iff.1 hN
-      simp only [AddMonoidHom.zero_apply] at hg
-      rcases hg.lt_or_gt with hg | hg
-      · exact ⟨-g, by simpa using hg⟩
-      · exact ⟨g, hg⟩
+    obtain ⟨h, hh⟩ := N.exists_pos_of_ne_zero hN
     obtain ⟨r, hr⟩ := exists_ne (0 : R)
     exact infinite_support_geometric hh hr
       (mem_range_ofFinsupp_iff.1 (hsurj (geometric N hh r)))

@@ -303,7 +303,6 @@ chord diagram with the two bands `{a, c}` and `{b, d}` has a single boundary cyc
 theorem orbitCount_finRotate_mul_swap_mul_swap {a b c d : Fin n} (hab : a < b) (hbc : b < c)
     (hcd : c < d) : orbitCount (finRotate n * swap a c * swap b d) = 1 := by
   rw [Fin.lt_def] at hab hbc hcd
-  have hd := d.isLt
   have hn : n ≠ 0 := by omega
   -- The band `{a, c}` cuts the boundary circle in two cycles.
   have hac : (finRotate n).SameCycle a c := by
@@ -429,7 +428,7 @@ theorem IsNoncrossingMatching.orbitCount_finRotate_mul_add_orbitCount [NeZero n]
     simp [orbitCount_finRotate, NeZero.ne n, add_comm]
   -- Delete an innermost chord `{a, σ a}`; it joins two points of one boundary cycle.
   obtain ⟨a, ha, hin⟩ := hσ.exists_forall_apply_eq_self hinv h1
-  set τ := swap a (σ a) * σ with hτ
+  set τ := swap a (σ a) * σ
   have hτσ : ∀ x, τ x = x ∨ τ x = σ x := fun x => by
     rcases hinv.swap_mul_apply_eq_self_or a x with ⟨-, hx⟩ | ⟨-, -, hx⟩
     exacts [Or.inl hx, Or.inr hx]

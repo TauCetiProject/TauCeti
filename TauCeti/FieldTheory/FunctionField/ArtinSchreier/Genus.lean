@@ -293,12 +293,17 @@ perfect constant field it applies to every Artin--Schreier extension. Perfectnes
 only through the perfectness of the residue fields
 (`TauCeti.Place.exists_reduced_artinSchreier_representative`). -/
 theorem exists_reduced_artinSchreier_representatives [PerfectField k] (hF : IsFunctionField k F)
-    (p : ℕ) [Fact p.Prime] [CharP F p] (u : F) :
+    (p : ℕ) [CharP F p] (u : F) :
     ∃ (S : Finset (Place k F)) (m : Place k F → ℕ),
       (∀ P ∈ S, ∃ w : F, P.ord (u - (w ^ p - w)) = -(m P : ℤ) ∧
         ¬ (p : ℤ) ∣ P.ord (u - (w ^ p - w))) ∧
       ∀ P ∉ S, ∃ w : F, u - (w ^ p - w) ∈ P.integers := by
   classical
+  -- In characteristic zero, `w = 1 - u` makes `u - (w ^ 0 - w)` vanish at every place.
+  obtain hp | rfl := CharP.char_is_prime_or_zero F p
+  swap
+  · exact ⟨∅, 0, by simp, fun P _ ↦ ⟨1 - u, by simp⟩⟩
+  have := Fact.mk hp
   -- Choose a reduced representative at every place; only the poles of `u` can need a pole.
   have hred (P : Place k F) : ∃ w : F, u - (w ^ p - w) ∈ P.integers ∨
       (P.ord (u - (w ^ p - w)) < 0 ∧ ¬ (p : ℤ) ∣ P.ord (u - (w ^ p - w))) :=

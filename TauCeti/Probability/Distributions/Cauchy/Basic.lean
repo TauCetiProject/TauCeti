@@ -136,8 +136,7 @@ theorem contDiff_cauchyPDFReal (x₀ : ℝ) (γ : ℝ≥0) {n : WithTop ℕ∞} 
   rcases eq_or_ne γ 0 with rfl | hγ
   · rw [cauchyPDFReal_scale_zero]
     exact contDiff_const
-  · have hpos : (0 : ℝ) < γ := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hγ)
-    have h : cauchyPDFReal x₀ γ = fun x ↦ Real.pi⁻¹ * γ * ((x - x₀) ^ 2 + (γ : ℝ) ^ 2)⁻¹ :=
+  · have h : cauchyPDFReal x₀ γ = fun x ↦ Real.pi⁻¹ * γ * ((x - x₀) ^ 2 + (γ : ℝ) ^ 2)⁻¹ :=
       funext (cauchyPDFReal_def x₀ γ)
     rw [h]
     exact contDiff_const.mul ((((contDiff_id.sub contDiff_const).pow 2).add contDiff_const).inv
@@ -187,7 +186,7 @@ theorem cdf_cauchyMeasure_of_scale_ne_zero (x₀ : ℝ) {γ : ℝ≥0} (hγ : γ
       1 / 2 + Real.arctan ((x - x₀) / (γ : ℝ)) / Real.pi := by
   rw [cdf_eq_real, cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ)]
   rw [measureReal_withDensity_ofReal (ae_of_all _ fun y ↦ (cauchyPDF_pos x₀ hγ y).le)
-    measurableSet_Iic (integrable_cauchyPDFReal x₀).integrableOn]
+    measurableSet_Iic (measurable_cauchyPDFReal x₀ γ).aemeasurable]
   exact integral_Iic_cauchyPDFReal x₀ hγ x
 
 /-- **The cumulative distribution function at zero scale.** Mathlib totalizes the Cauchy family

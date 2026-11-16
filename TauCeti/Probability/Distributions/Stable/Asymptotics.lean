@@ -50,7 +50,7 @@ private theorem tendsto_rpow_mul_standardStableMeasure_real_Ioi
   have hαtwo : ENNReal.ofReal α ≤ 2 := by
     exact_mod_cast hα.2.le
   have hsmall := (memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq
-    hα hβ zero_lt_one hμ).mono_exponent hαtwo
+    hα zero_lt_one hμ).mono_exponent hαtwo
   have hint := (TauCeti.memLp_id_ofReal_iff_integrable_abs_rpow hα.1 _).1 hsmall
   have htail := (stableCompensatedPoissonMeasure α β 1).tendsto_rpow_mul_conv_real_Ioi
     (μ : Measure ℝ) hα.1

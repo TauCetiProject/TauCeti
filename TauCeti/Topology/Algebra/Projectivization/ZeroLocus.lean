@@ -30,7 +30,7 @@ equations `c i`. It is closed in the product of the coefficient space with proje
 Since projective space is compact, the projection of the incidence variety to the coefficient
 space is a proper map; in particular it maps closed subsets to closed subsets.
 
-For a fixed finite family of homogeneous equations, the points of projective space at which the
+For a fixed family of homogeneous equations, the points of projective space at which the
 cone Jacobian is surjective form an open set, by lower semicontinuity of the rank, so the points of
 the zero locus where the Jacobian test fails form a closed set.
 
@@ -167,11 +167,11 @@ theorem isProperMap_complexProjectiveIncidence_fst (d : ι → ℕ) :
 
 /-! ### Full rank at a point -/
 
-/-- **Full rank is an open condition on the point.** For a finite family of homogeneous
+/-- **Full rank is an open condition on the point.** For a family of homogeneous
 equations, the points of projective space at which the cone Jacobian is surjective form an open
 set. In particular, the points of the zero locus where the cone Jacobian is not surjective form a
 closed set. -/
-theorem isOpen_setOfPred_mulVec_surjective_jacobiMatrixAt_rep [Finite ι]
+theorem isOpen_setOfPred_mulVec_surjective_jacobiMatrixAt_rep
     {p : ι → MvPolynomial (Fin N) ℂ} {d : ι → ℕ} (hp : ∀ i, (p i).IsHomogeneous (d i)) :
     IsOpen {L : ℙ ℂ (Fin N → ℂ) | (jacobiMatrixAt p L.rep).mulVec.Surjective} := by
   rw [← Projectivization.isQuotientMap_mk'.isOpen_preimage]
@@ -213,7 +213,7 @@ theorem complexProjectiveBadRankLocus_subset (d : ι → ℕ) :
 /-- A pair `(c, [v])` lies in the bad-rank locus exactly when every equation `c i` vanishes at
 `v` and the cone Jacobian of the equations at `v` is not surjective, for any representative
 `v`. -/
-theorem mk_mem_complexProjectiveBadRankLocus_iff [Finite ι]
+theorem mk_mem_complexProjectiveBadRankLocus_iff
     (c : ∀ i, homogeneousSubmodule (Fin N) ℂ (d i)) (v : Fin N → ℂ) (hv : v ≠ 0) :
     (c, Projectivization.mk ℂ v hv) ∈ complexProjectiveBadRankLocus N d ↔
       (∀ i, eval v (c i : MvPolynomial (Fin N) ℂ) = 0) ∧
@@ -225,7 +225,7 @@ theorem mk_mem_complexProjectiveBadRankLocus_iff [Finite ι]
 
 /-- The bad-rank locus is closed: the cone Jacobian depends continuously on the coefficients and
 the point, and full rank is an open condition. -/
-theorem isClosed_complexProjectiveBadRankLocus [Finite ι] (d : ι → ℕ) :
+theorem isClosed_complexProjectiveBadRankLocus (d : ι → ℕ) :
     IsClosed (complexProjectiveBadRankLocus N d) := by
   rw [← (IsOpenQuotientMap.id.prodMap
     Projectivization.isOpenQuotientMap_mk').isQuotientMap.isClosed_preimage]
@@ -242,14 +242,14 @@ theorem isClosed_complexProjectiveBadRankLocus [Finite ι] (d : ι → ℕ) :
     Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_compl_iff]
 
 /-- The projection of the bad-rank locus to the coefficient space is closed. -/
-theorem isClosed_image_fst_complexProjectiveBadRankLocus [Finite ι] (d : ι → ℕ) :
+theorem isClosed_image_fst_complexProjectiveBadRankLocus (d : ι → ℕ) :
     IsClosed (Prod.fst '' complexProjectiveBadRankLocus N d) :=
   isClosedMap_fst_of_compactSpace _ (isClosed_complexProjectiveBadRankLocus d)
 
 /-- **Full rank is an open condition on the equations.** The families `c` of homogeneous
 equations of degrees `d` whose cone Jacobian is surjective at every nonzero common zero form an
 open subset of the coefficient space. -/
-theorem isOpen_setOfPred_forall_mulVec_surjective_jacobiMatrixAt [Finite ι] (d : ι → ℕ) :
+theorem isOpen_setOfPred_forall_mulVec_surjective_jacobiMatrixAt (d : ι → ℕ) :
     IsOpen {c : ∀ i, homogeneousSubmodule (Fin N) ℂ (d i) | ∀ v : Fin N → ℂ, v ≠ 0 →
       (∀ i, eval v (c i : MvPolynomial (Fin N) ℂ) = 0) →
         (jacobiMatrixAt (fun i ↦ (c i : MvPolynomial (Fin N) ℂ)) v).mulVec.Surjective} := by

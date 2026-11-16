@@ -22,10 +22,11 @@ the final value. The explicit-partition induction follows the pattern of the Apa
 formalization, revision `24f32e4d600878bfaac6bc2f2f9324175571c321`, as used in
 `TauCeti/Geometry/Manifold/Riemannian/EDistComparison.lean`.
 
-Scaling a ray by a unit commutes with negating it (`Module.Ray.units_smul_neg`), complementing
-Mathlib's `Module.Ray.neg_units_smul`, and with transporting it along a linear equivalence
-(`Module.Ray.map_units_smul`). Over a linearly ordered ring, any map of rays commuting with negation
-also commutes with scaling by units (`Module.Ray.units_smul_of_map_neg`).
+Negating a ray twice gives it back (`Module.Ray.neg_neg`), in a form that `rw` and `simp` find on
+orientations. Scaling a ray by a unit commutes with negating it (`Module.Ray.units_smul_neg`),
+complementing Mathlib's `Module.Ray.neg_units_smul`, and with transporting it along a linear
+equivalence (`Module.Ray.map_units_smul`). Over a linearly ordered ring, any map of rays
+commuting with negation also commutes with scaling by units (`Module.Ray.units_smul_of_map_neg`).
 
 Two nonzero vectors in the same ray cannot cancel: their sum is again nonzero. This is the
 non-degeneracy needed to merge adjacent segments of a piecewise-linear path that point in the same
@@ -115,6 +116,12 @@ section Neg
 
 variable {R M : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R]
   [AddCommGroup M] [Module R M]
+
+/-- Negating a ray twice produces the original ray. This is Mathlib's `neg_neg` stated with the
+instance `Neg (Module.Ray R M)`, so that `rw` and `simp` also find it on orientations, where the
+generic lemma does not match. -/
+theorem Module.Ray.neg_neg (v : Module.Ray R M) : - -v = v :=
+  _root_.neg_neg v
 
 /-- Scaling a ray by a unit commutes with negating it. -/
 theorem Module.Ray.units_smul_neg (u : Rˣ) (v : Module.Ray R M) : u • -v = -(u • v) := by
@@ -236,6 +243,13 @@ theorem Set.Pairwise.eq_of_map_snd_eq_of_inv_smul_mem
       rw [List.forall_mem_cons] at hp hq
       rw [hS.eq_of_snd_eq_of_inv_smul_mem h0 hp.1 hq.1 h.1, ih hp.2 hq.2 h.2]
 
+end Duration
+
+section Velocity
+
+variable {R M : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommMonoid M]
+  [Module R M]
+
 omit [LinearOrder R] [IsStrictOrderedRing R] in
 /-- Rescaling a pair `(d, v)` by a nonzero factor does not change the velocity `d⁻¹ • v`. -/
 theorem Prod.inv_fst_smul_snd_smul {a : R} (ha : a ≠ 0) (z : R × M) :
@@ -248,9 +262,9 @@ theorem Prod.sameRay_iff_inv_fst_smul_snd_eq {y z : R × M} (hy : 0 < y.1) (hz :
     SameRay R y z ↔ y.1⁻¹ • y.2 = z.1⁻¹ • z.2 := by
   constructor
   · intro h
-    obtain ⟨r, hr, rfl⟩ := h.exists_pos_left (fun h0 ↦ hy.ne' (by simp [h0]))
+    obtain ⟨r₁, r₂, hr₁, hr₂, h⟩ := h.exists_pos (fun h0 ↦ hy.ne' (by simp [h0]))
       (fun h0 ↦ hz.ne' (by simp [h0]))
-    exact (inv_fst_smul_snd_smul hr.ne' y).symm
+    rw [← Prod.inv_fst_smul_snd_smul hr₁.ne' y, ← Prod.inv_fst_smul_snd_smul hr₂.ne' z, h]
   · intro h
     -- Both pairs are positive multiples of `(1, u)`, where `u` is their common velocity.
     have hy' : y = y.1 • ((1 : R), z.1⁻¹ • z.2) := by
@@ -261,4 +275,4 @@ theorem Prod.sameRay_iff_inv_fst_smul_snd_eq {y z : R × M} (hy : 0 < y.1) (hz :
       hy.le).nonneg_smul_right hz.le
     rwa [← hy', ← hz'] at h
 
-end Duration
+end Velocity

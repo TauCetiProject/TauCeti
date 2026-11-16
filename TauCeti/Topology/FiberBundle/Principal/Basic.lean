@@ -236,9 +236,10 @@ theorem division_eq_of_mem_baseSet {e : Trivialization G (π G P)} [e.IsEquivari
     (hb : b ∈ e.baseSet) (p q : P b) : division G p q = (e ⟨b, p⟩).2⁻¹ * (e ⟨b, q⟩).2 :=
   division_eq_iff.2 (e.op_inv_mul_smul hb p q)
 
+omit [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
 @[simp]
-theorem division_self (p : P b) : division G p p = 1 :=
-  division_eq_iff.2 (by simp)
+theorem division_self (p : P b) : division G p p = 1 := by
+  simp only [division, inv_mul_cancel]
 
 @[simp]
 theorem division_smul_right (p q : P b) (g : G) : division G p (op g • q) = division G p q * g :=
@@ -248,10 +249,12 @@ theorem division_smul_right (p q : P b) (g : G) : division G p (op g • q) = di
 theorem division_smul_left (p q : P b) (g : G) : division G (op g • p) q = g⁻¹ * division G p q :=
   division_eq_iff.2 (by rw [op_mul, mul_smul, op_inv, inv_smul_smul, smul_division])
 
+omit [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
 @[simp]
-theorem division_mul_division (p q r : P b) : division G p q * division G q r = division G p r :=
-  (division_eq_iff.2 (by rw [op_mul, mul_smul, smul_division, smul_division])).symm
+theorem division_mul_division (p q r : P b) : division G p q * division G q r = division G p r := by
+  simp only [division, mul_assoc, mul_inv_cancel_left]
 
+omit [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
 @[simp]
 theorem inv_division (p q : P b) : (division G p q)⁻¹ = division G q p := by
   rw [inv_eq_iff_mul_eq_one, division_mul_division, division_self]

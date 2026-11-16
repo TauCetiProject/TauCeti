@@ -117,7 +117,7 @@ theorem exists_eq_range_sectionSet_union_range_sectorSet [PreconnectedSpace X] [
   -- A cell that is not a graph is exactly one sector of the common stack.
   have hcellSector (B : Set (X × ℝ)) (hB : B ∈ 𝒜) (hBS : B ∉ range (sectionSet θ))
       (hBne : B.Nonempty) : ∃ j, sectorSet θ j = B := by
-    obtain ⟨hBo, hBc⟩ := hsector B hB hBS
+    obtain ⟨_, hBc⟩ := hsector B hB hBS
     obtain ⟨j, hj⟩ := hBc.exists_subset_sectorSet hc (fun x ↦ (hθ x).monotone) fun i ↦
       hdisj (hsection ▸ mem_range_self i).1 hB fun h ↦ hBS (h ▸ mem_range_self i)
     refine ⟨j, Subset.antisymm ?_ hj⟩

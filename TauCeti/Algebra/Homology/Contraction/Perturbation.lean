@@ -152,13 +152,18 @@ theorem perturbationSeries_apply_eq_sum_of_pow_apply_eq_zero {z : M} {k : ℕ}
         rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel _ hU, one_apply_eq_self]
     _ = ∑ j ∈ Finset.range k, ((-u) ^ j) (δ z) := LinearMap.sum_apply _ _ _
 
+omit hU in
 /-- **The perturbation operator preserves invariant subgroups.**  If `δ` and `h` preserve an
 additive subgroup `S`, such as a submodule, then the perturbation operator sends every `z ∈ S` with
 `(δ h)^k δ z = 0` back into `S`, being the finite geometric series `∑_{j < k} (-1)^j (δ h)^j δ`
-on `z`. -/
+on `z` when `1 + δ h` is a unit, and `0` otherwise. -/
 theorem perturbationSeries_mem {S : AddSubgroup M} (hδ : ∀ z ∈ S, δ z ∈ S)
     (hh : ∀ z ∈ S, c.homotopy z ∈ S) {z : M} (hz : z ∈ S) {k : ℕ}
     (hk : ((δ * c.homotopy) ^ k) (δ z) = 0) : c.perturbationSeries δ z ∈ S := by
+  by_cases hU : IsUnit (1 + δ * c.homotopy)
+  swap
+  · rw [perturbationSeries_def, Ring.inverse_non_unit _ hU, zero_mul]
+    exact S.zero_mem
   rw [c.perturbationSeries_apply_eq_sum_of_pow_apply_eq_zero δ hU hk]
   have key (j : ℕ) : ((-(δ * c.homotopy)) ^ j) (δ z) ∈ S := by
     induction j with
@@ -168,12 +173,15 @@ theorem perturbationSeries_mem {S : AddSubgroup M} (hδ : ∀ z ∈ S, δ z ∈ 
       exact S.neg_mem (hδ _ (hh _ ih))
   exact sum_mem fun j _ ↦ key j
 
+omit hU in
 /-- The perturbation operator satisfies the Maurer--Cartan-type identity
 `dM X + X dM + X i p X = 0`; this single identity drives every equation of the basic
-perturbation lemma. -/
+perturbation lemma. When `1 + δ h` is not a unit the operator is `0` and the identity is trivial. -/
 theorem perturbationSeries_maurerCartan (hδ : (dM + δ) ∘ₗ (dM + δ) = dM ∘ₗ dM) :
     dM ∘ₗ c.perturbationSeries δ + c.perturbationSeries δ ∘ₗ dM +
       c.perturbationSeries δ ∘ₗ c.incl ∘ₗ c.proj ∘ₗ c.perturbationSeries δ = 0 := by
+  by_cases hU : IsUnit (1 + δ * c.homotopy)
+  on_goal 2 => simp [perturbationSeries_def, Ring.inverse_non_unit _ hU]
   set X := c.perturbationSeries δ
   have hT : dM * δ + δ * dM + δ * δ = 0 := by
     calc dM * δ + δ * dM + δ * δ = (dM + δ) * (dM + δ) - dM * dM := by noncomm_ring
@@ -216,23 +224,25 @@ section Perturb
 variable (hδ : (dM + δ) ∘ₗ (dM + δ) = dM ∘ₗ dM) (hU : IsUnit (1 + δ * c.homotopy))
 include hδ hU
 
+omit hU in
 /-- The perturbed differential of the retract squares to the square of `dN`; in particular it is
 a differential whenever `dN` is. -/
 theorem perturbedDifferential_comp_perturbedDifferential :
     c.perturbedDifferential δ ∘ₗ c.perturbedDifferential δ = dN ∘ₗ dN := by
   have h1 : c.proj ∘ₗ (dM ∘ₗ c.perturbationSeries δ + c.perturbationSeries δ ∘ₗ dM +
       c.perturbationSeries δ ∘ₗ c.incl ∘ₗ c.proj ∘ₗ c.perturbationSeries δ) ∘ₗ c.incl = 0 := by
-    rw [c.perturbationSeries_maurerCartan δ hU hδ, LinearMap.zero_comp, LinearMap.comp_zero]
+    rw [c.perturbationSeries_maurerCartan δ hδ, LinearMap.zero_comp, LinearMap.comp_zero]
   rw [perturbedDifferential_def]
   simp only [LinearMap.comp_add, LinearMap.add_comp, LinearMap.comp_sub, LinearMap.sub_comp,
     LinearMap.comp_assoc, ← c.dM_comp_incl, ← c.proj_comp_dM_assoc,
     c.incl_comp_proj_assoc] at h1 ⊢
   linear_combination (norm := abel) h1
 
+omit hU in
 /-- If `dM` squares to zero, so does the perturbed differential of the retract. -/
 theorem perturbedDifferential_comp_perturbedDifferential_eq_zero (h : dM ∘ₗ dM = 0) :
     c.perturbedDifferential δ ∘ₗ c.perturbedDifferential δ = 0 := by
-  rw [c.perturbedDifferential_comp_perturbedDifferential δ hδ hU, c.dN_comp_dN_eq_zero h]
+  rw [c.perturbedDifferential_comp_perturbedDifferential δ hδ, c.dN_comp_dN_eq_zero h]
 
 /-- **The basic perturbation lemma.**  A special contraction of `(M, dM)` onto `(N, dN)` and a
 perturbation `δ` of `dM` with `1 + δ h` invertible yield a special contraction of `(M, dM + δ)`
@@ -248,7 +258,7 @@ noncomputable def perturb : LinearSpecialContraction (dM + δ) (c.perturbedDiffe
   dM_comp_incl := by
     have h1 : c.homotopy ∘ₗ (dM ∘ₗ c.perturbationSeries δ + c.perturbationSeries δ ∘ₗ dM +
         c.perturbationSeries δ ∘ₗ c.incl ∘ₗ c.proj ∘ₗ c.perturbationSeries δ) ∘ₗ c.incl = 0 := by
-      rw [c.perturbationSeries_maurerCartan δ hU hδ, LinearMap.zero_comp, LinearMap.comp_zero]
+      rw [c.perturbationSeries_maurerCartan δ hδ, LinearMap.zero_comp, LinearMap.comp_zero]
     rw [perturbedDifferential_def]
     simp only [LinearMap.comp_add, LinearMap.add_comp, LinearMap.comp_sub, LinearMap.sub_comp,
       LinearMap.comp_assoc, ← c.dM_comp_incl, c.incl_comp_proj_assoc,
@@ -258,7 +268,7 @@ noncomputable def perturb : LinearSpecialContraction (dM + δ) (c.perturbedDiffe
     have h1 : c.proj ∘ₗ (dM ∘ₗ c.perturbationSeries δ + c.perturbationSeries δ ∘ₗ dM +
         c.perturbationSeries δ ∘ₗ c.incl ∘ₗ c.proj ∘ₗ c.perturbationSeries δ) ∘ₗ
           c.homotopy = 0 := by
-      rw [c.perturbationSeries_maurerCartan δ hU hδ, LinearMap.zero_comp, LinearMap.comp_zero]
+      rw [c.perturbationSeries_maurerCartan δ hδ, LinearMap.zero_comp, LinearMap.comp_zero]
     rw [perturbedDifferential_def]
     simp only [LinearMap.comp_add, LinearMap.add_comp, LinearMap.comp_sub, LinearMap.sub_comp,
       LinearMap.comp_assoc, ← c.proj_comp_dM, ← c.proj_comp_dM_assoc, c.incl_comp_proj,
@@ -271,7 +281,7 @@ noncomputable def perturb : LinearSpecialContraction (dM + δ) (c.perturbedDiffe
     have h1 : c.homotopy ∘ₗ (dM ∘ₗ c.perturbationSeries δ + c.perturbationSeries δ ∘ₗ dM +
         c.perturbationSeries δ ∘ₗ c.incl ∘ₗ c.proj ∘ₗ c.perturbationSeries δ) ∘ₗ
           c.homotopy = 0 := by
-      rw [c.perturbationSeries_maurerCartan δ hU hδ, LinearMap.zero_comp, LinearMap.comp_zero]
+      rw [c.perturbationSeries_maurerCartan δ hδ, LinearMap.zero_comp, LinearMap.comp_zero]
     simp only [LinearMap.comp_add, LinearMap.add_comp, LinearMap.comp_sub, LinearMap.sub_comp,
       LinearMap.comp_assoc, c.incl_comp_proj, c.incl_comp_proj_assoc,
       c.comp_homotopy_comp_perturbationSeries_assoc δ hU,
