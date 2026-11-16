@@ -61,6 +61,7 @@ one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded 
   half-line.
 * `Real.smoothTransition.exists_forall_norm_deriv_le` and
   `Real.smoothTransition.exists_forall_norm_deriv_deriv_le`: the first two derivatives are bounded.
+* `Real.smoothTransition.differentiable_deriv`: the derivative is differentiable.
 * `Real.smoothTransition.abs_deriv_mul_mul_le`: `|ψ'(a t) (a y)| ≤ M C` when `M` bounds `ψ'`,
   `0 ≤ C` and `|y| ≤ C |t|`.
 * `Real.smoothTransition.integral_deriv`: the derivative has integral one.
@@ -81,6 +82,7 @@ one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded 
 * `Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_smul`: at a Lebesgue point `a` of `u`
   with value `v`, `∫ c ψ'(c (y - a)) u y dy → v` as `c → ∞`.
 * `HasFDerivAt.smoothTransition` and `HasDerivAt.smoothTransition`: the chain rule for `ψ ∘ f`.
+* `HasDerivAt.deriv_smoothTransition`: the chain rule for `ψ' ∘ f`.
 * `DifferentiableAt.enorm_fderiv_smoothTransition_mul_sub`: for `c ≥ 0`,
   `‖d(ψ(c (t - u)))‖ = c ψ'(c (t - u)) ‖du‖`.
 * `LocallyLipschitzOn.smoothTransition_mul_sub`: `ψ (c (u - t))` is locally Lipschitz on `s`
@@ -173,6 +175,10 @@ theorem exists_forall_norm_deriv_deriv_le :
     ∃ L : ℝ, ∀ τ, ‖deriv (deriv smoothTransition) τ‖ ≤ L :=
   (Real.smoothTransition.contDiff.iterate_deriv 2).continuous.bounded_above_of_compact_support
     hasCompactSupport_deriv.deriv
+
+/-- The derivative of the smooth transition function is differentiable. -/
+theorem differentiable_deriv : Differentiable ℝ (deriv smoothTransition) :=
+  (contDiff_infty_iff_deriv.1 smoothTransition.contDiff).2.differentiable (by simp)
 
 /-- A bound for the error term of a smooth transition rescaled by `a`: if `M` bounds the
 derivative of the smooth transition function `ψ`, `0 ≤ C` and `|y| ≤ C |t|`, then
@@ -450,6 +456,13 @@ theorem HasDerivAt.smoothTransition {f : ℝ → ℝ} {f' x : ℝ} (hf : HasDeri
       (_root_.deriv Real.smoothTransition (f x) * f') x :=
   (((Real.smoothTransition.contDiff (n := 1)).differentiable (by simp)
     (f x)).hasDerivAt).comp x hf
+
+/-- The chain rule for the derivative `ψ'` of the smooth transition function: if `f` has
+derivative `f'` at `x`, then `ψ' ∘ f` has derivative `ψ''(f x) * f'` there. -/
+theorem HasDerivAt.deriv_smoothTransition {f : ℝ → ℝ} {f' x : ℝ} (hf : HasDerivAt f f' x) :
+    HasDerivAt (fun y => _root_.deriv Real.smoothTransition (f y))
+      (_root_.deriv (_root_.deriv Real.smoothTransition) (f x) * f') x :=
+  (Real.smoothTransition.differentiable_deriv (f x)).hasDerivAt.comp x hf
 
 /-- If `u` is differentiable at `x` and `c ≥ 0`, the derivative of `y ↦ ψ(c (t - u y))` at `x`,
 for the smooth transition function `ψ`, has norm `c ψ'(c (t - u x)) ‖du x‖`. -/
