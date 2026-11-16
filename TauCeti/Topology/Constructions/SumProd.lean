@@ -19,7 +19,8 @@ assumptions on either factor.
 In particular, graphs with values in a space without isolated points have empty interior.
 
 The file also records the underlying function of the homeomorphism between functions on a
-sum type and pairs of functions.
+sum type and pairs of functions, and identifies a disjoint union of copies of one space, indexed by
+a discrete space, with a product (`Homeomorph.sigmaEquivProd`).
 -/
 
 public section
@@ -31,6 +32,29 @@ coordinate equivalence. -/
 theorem Homeomorph.coe_sumArrowHomeomorphProdArrow {X ι ι' : Type*} [TopologicalSpace X] :
     ⇑(sumArrowHomeomorphProdArrow (X := X) (ι := ι) (ι' := ι')) =
       ⇑(Equiv.sumArrowEquivProdArrow ι ι' X) := (rfl)
+
+/-- A disjoint union of copies of `X` indexed by a discrete space `ι` is homeomorphic to the
+product `ι × X`. -/
+def Homeomorph.sigmaEquivProd (ι X : Type*) [TopologicalSpace ι] [DiscreteTopology ι]
+    [TopologicalSpace X] : (Σ _ : ι, X) ≃ₜ ι × X where
+  toEquiv := Equiv.sigmaEquivProd ι X
+  continuous_toFun := continuous_sigma fun i ↦ Continuous.prodMk_right i
+  continuous_invFun := continuous_prod_of_discrete_left.2 fun i ↦
+    continuous_sigmaMk (σ := fun _ : ι ↦ X) (i := i)
+
+/-- `Homeomorph.sigmaEquivProd` sends the point `x` of the copy of index `i` to `(i, x)`. -/
+@[simp]
+theorem Homeomorph.sigmaEquivProd_apply {ι X : Type*} [TopologicalSpace ι] [DiscreteTopology ι]
+    [TopologicalSpace X] (p : Σ _ : ι, X) : Homeomorph.sigmaEquivProd ι X p = (p.1, p.2) :=
+  (rfl)
+
+/-- The inverse of `Homeomorph.sigmaEquivProd` sends `(i, x)` to the point `x` of the copy of
+index `i`. -/
+@[simp]
+theorem Homeomorph.sigmaEquivProd_symm_apply {ι X : Type*} [TopologicalSpace ι]
+    [DiscreteTopology ι] [TopologicalSpace X] (p : ι × X) :
+    (Homeomorph.sigmaEquivProd ι X).symm p = ⟨p.1, p.2⟩ :=
+  (rfl)
 
 namespace TauCeti
 

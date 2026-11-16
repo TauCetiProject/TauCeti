@@ -40,7 +40,7 @@ degree is constant (`TauCeti.HomologicalOrientation.localDegree_eq_of_homotopy_o
    `z ↦ f(r z / ‖z‖)` outside the disc;
 2. this map is a positive multiple of the cone `z ↦ ‖z‖ u(z / ‖z‖)` outside the disc;
 3. maps `S¹ → S¹` of the same degree are joined in `C(S¹, S¹)`
-   (`Circle.joined_iff_degree_toBasedLoop_eq`), so the cone over `u` is joined, through cones
+   (`Circle.joined_iff_circleDegree_eq`), so the cone over `u` is joined, through cones
    vanishing only at `0`, to the cone over `ζ ↦ ζⁿ`, `n = deg u`;
 4. that cone is a positive multiple of `z ↦ zⁿ` for `n ≥ 0`, and of `z ↦ conj (z^|n|)` for
    `n < 0`, away from `0`.
@@ -328,7 +328,9 @@ theorem localDegree_eq_degree_toBasedLoop {f : C(ℂ, ℂ)} {r : ℝ} (hr : 0 < 
     o.localDegree o finrank_real_complex f 0 = Circle.degree u.toBasedLoop := by
   rw [o.localDegree_eq_localDegree_cone hr hf hu,
     o.localDegree_cone_eq_of_joined (v := zpowMap (Circle.degree u.toBasedLoop))
-      (Circle.joined_iff_degree_toBasedLoop_eq.2 (Circle.degree_toBasedLoop_zpow _).symm),
+      (Circle.joined_iff_circleDegree_eq.2 <| by
+        rw [← Circle.degree_toBasedLoop]
+        exact (ContinuousMap.circleDegree_zpow _).symm),
     localDegree_cone_zpowMap]
 
 end HomologicalOrientation
