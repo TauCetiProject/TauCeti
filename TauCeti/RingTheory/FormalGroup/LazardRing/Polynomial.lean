@@ -159,7 +159,7 @@ theorem mvPolynomialEquiv_mem_grading_iff {p : MvPolynomial ℕ+ ℤ} {n : ℕ} 
   -- `φ` is `mvPolynomialEquiv` as a graded ring homomorphism, so injectivity reflects
   -- homogeneity; `φ p` unfolds to `mvPolynomialEquiv p` by construction of `φ`.
   exact (MvPolynomial.mem_weightedHomogeneousSubmodule ℤ w n p).1
-    (φ.mem_of_map_mem mvPolynomialEquiv.injective hp)
+    ((Graded.map_mem_iff_of_injective φ mvPolynomialEquiv.injective).1 hp)
 
 /-- Ring homomorphisms out of the Lazard ring lift along surjective ring homomorphisms: every
 `g : L →+* S` factors as `f.comp g'` through any surjection `f : R →+* S`. -/

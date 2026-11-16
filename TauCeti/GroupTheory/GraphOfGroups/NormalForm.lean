@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GraphOfGroups.Path
+public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
 public import Mathlib.GroupTheory.Complement
 
 /-!
@@ -25,19 +25,30 @@ defining relations of homotopy of `𝔸`-paths, so appending the letters of a pa
 gives a homotopy invariant `normalForm`. Since every normal word is its own normal form, every
 `𝔸`-path is homotopic to exactly one normal word. Consequently the elements of `π₁(𝔸, a)`
 correspond to the normal words of closed paths at `a`. The vertex group `A_a` embeds in
-`π₁(𝔸, a)`, and so does `A_b` for every vertex `b` joined to `a` by an `𝔸`-path.
+`π₁(𝔸, a)`, and so does `A_b` for every vertex `b` joined to `a` by an `𝔸`-path; through the
+isomorphism `π₁(𝔸, a) ≃* π₁(𝔸, T)`, every vertex group also embeds in `π₁(𝔸, T)` for a spanning
+tree `T`.
+
+The normal form of a reduced alternating path has the same darts as the path, and the normal form
+of any `𝔸`-path has at most as many darts as the path. Hence a reduced alternating path is not
+homotopic to an `𝔸`-path with fewer darts, and two homotopic reduced alternating paths have the
+same underlying edge path. In particular a reduced alternating path of positive length is not
+homotopic to a vertex group element, nor to the empty path.
 
 The construction follows the normal forms of Mathlib for amalgamated products and HNN extensions,
 `Monoid.PushoutI.NormalWord` and `HNNExtension.NormalWord`: choose transversals, let the
 generators act on normal words, and check the defining relations. Here `𝔸`-paths are built by
 appending letters on the right, so letters act on the right and the transversals are left
-transversals.
+transversals. For a loop, the statement about the edge paths of reduced paths is Mathlib's
+`HNNExtension.ReducedWord.map_fst_eq_and_of_prod_eq`, proved in the same way from
+`HNNExtension.ReducedWord.exists_normalWord_prod_eq`.
 
 ## Main definitions
 
 * `TauCeti.GraphOfGroups.Transversal`: a choice of left transversals of the edge group images.
 * `TauCeti.GraphOfGroups.AlternatingPath`: alternating `𝔸`-paths `g₀, e₁, g₁, …, e_k, g_k`.
 * `TauCeti.GraphOfGroups.AlternatingPath.IsReduced`: alternating paths without backtracking.
+* `TauCeti.GraphOfGroups.AlternatingPath.length`: the number of darts of an alternating path.
 * `TauCeti.GraphOfGroups.NormalWord`: normal words for a transversal.
 * `TauCeti.GraphOfGroups.NormalWord.appendPath`: appending an `𝔸`-path to a normal word.
 * `TauCeti.GraphOfGroups.normalForm`: the normal form of an `𝔸`-path.
@@ -54,11 +65,19 @@ transversals.
   not homotopic to the empty path.
 * `TauCeti.GraphOfGroups.π₁.vertexHom_injective`: the vertex group `A_b` embeds in `π₁(𝔸, a)`
   through `g ↦ p g p⁻¹`, for every `𝔸`-path `p` from `a` to `b`.
+* `TauCeti.GraphOfGroups.π₁Tree.of_injective`: given a spanning tree `T`, the vertex groups embed
+  in `π₁(𝔸, S)` for every set of darts `S ⊆ T`, in particular in `π₁(𝔸, T)`.
+* `TauCeti.GraphOfGroups.AlternatingPath.IsReduced.length_le_length_edgePath_of_homotopic`: a
+  reduced alternating path is not homotopic to an `𝔸`-path with fewer darts.
+* `TauCeti.GraphOfGroups.AlternatingPath.IsReduced.edgePath_toPath_eq_of_homotopic`: homotopic
+  reduced alternating paths have the same edge path.
+* `TauCeti.GraphOfGroups.AlternatingPath.IsReduced.toPath_homotopic_nil_iff`: a reduced
+  alternating closed path is homotopic to the empty path only when it is the element `1`.
 
 ## References
 
 * I. Kapovich, R. Weidmann, A. Myasnikov, *Foldings, graphs of groups and the membership problem*,
-  Internat. J. Algebra Comput. 15 (2005), §2, Definitions 2.2–2.3 and Proposition 2.4.
+  Internat. J. Algebra Comput. 15 (2005), §2, Definitions 2.2–2.3 and Proposition 2.4 (1), (2).
 * J.-P. Serre, *Trees*, Chapter I, §5.2, Theorem 11.
 -/
 
@@ -183,6 +202,142 @@ def setLast : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → 𝔸.vertexGroup b �
     (p.setLast g).setLast h = p.setLast h := by
   cases p <;> rfl
 
+/-- The length of an alternating path `g₀, e₁, g₁, …, e_k, g_k`: its number `k` of darts. -/
+def length : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → ℕ
+  | _, single _ => 0
+  | _, cons p _ _ => p.length + 1
+
+@[simp] theorem length_single (g : 𝔸.vertexGroup a) :
+    (single g : 𝔸.AlternatingPath a a).length = 0 :=
+  (rfl)
+
+@[simp] theorem length_cons {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
+    (g : 𝔸.vertexGroup c) : (cons p e g).length = p.length + 1 :=
+  (rfl)
+
+@[simp] theorem length_setLast {b : Γ.V} (p : 𝔸.AlternatingPath a b) (g : 𝔸.vertexGroup b) :
+    (p.setLast g).length = p.length := by
+  cases p <;> rfl
+
+/-- An alternating path of length zero starts and ends at the same vertex. -/
+theorem eq_of_length_zero {b : Γ.V} (p : 𝔸.AlternatingPath a b) (hp : p.length = 0) : a = b := by
+  cases p <;> simp_all
+
+/-- A closed alternating path has length zero exactly when it is a single vertex group
+element. -/
+theorem length_eq_zero_iff {p : 𝔸.AlternatingPath a a} : p.length = 0 ↔ p = single p.last := by
+  cases p <;> simp
+
+/-- An alternating path has positive length exactly when it ends with a dart and a vertex group
+element. -/
+theorem length_ne_zero_iff_eq_cons {b : Γ.V} {p : 𝔸.AlternatingPath a b} :
+    p.length ≠ 0 ↔ ∃ (c : Γ.V) (q : 𝔸.AlternatingPath a c) (e : c ⟶ b) (g : 𝔸.vertexGroup b),
+      p = cons q e g := by
+  cases p <;> simp
+
+/-- The vertex `c_j` at position `j` of an alternating path `g₀, e₁, g₁, …, e_k, g_k` from `a` to
+`b`: the start `c₀ = a` of the path and the end `c_j` of the dart `e_j` for `1 ≤ j ≤ k`, so that
+`c_k = b`; by convention it is `b` for `j > k`. -/
+@[expose] def vertex : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → ℕ → Γ.V
+  | _, single _, _ => a
+  | c, cons p _ _, j => if j ≤ p.length then p.vertex j else c
+
+@[simp] theorem vertex_single (g : 𝔸.vertexGroup a) (j : ℕ) :
+    (single g : 𝔸.AlternatingPath a a).vertex j = a :=
+  (rfl)
+
+theorem vertex_cons_of_le {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
+    (g : 𝔸.vertexGroup c) {j : ℕ} (hj : j ≤ p.length) : (cons p e g).vertex j = p.vertex j :=
+  ite_eq_left hj
+
+theorem vertex_cons_of_lt {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
+    (g : 𝔸.vertexGroup c) {j : ℕ} (hj : p.length < j) : (cons p e g).vertex j = c :=
+  ite_eq_right (not_le.2 hj)
+
+/-- An alternating path starts at its vertex at position `0`. -/
+@[simp] theorem vertex_zero {b : Γ.V} (p : 𝔸.AlternatingPath a b) : p.vertex 0 = a := by
+  induction p with
+  | single g => rfl
+  | cons p e g ih => rw [vertex_cons_of_le p e g (Nat.zero_le _), ih]
+
+/-- An alternating path of length `k` ends at its vertices at the positions `j ≥ k`. -/
+theorem vertex_of_length_le {b : Γ.V} (p : 𝔸.AlternatingPath a b) {j : ℕ} (hj : p.length ≤ j) :
+    p.vertex j = b := by
+  cases p with
+  | single g => rfl
+  | cons p e g => exact vertex_cons_of_lt p e g (Nat.lt_of_succ_le hj)
+
+@[simp] theorem vertex_length {b : Γ.V} (p : 𝔸.AlternatingPath a b) : p.vertex p.length = b :=
+  p.vertex_of_length_le le_rfl
+
+/-- The vertex group element `g_j ∈ A_{c_j}` at position `j` of an alternating path
+`g₀, e₁, g₁, …, e_k, g_k`; by convention it is `g_k` for `j > k`. -/
+def elem : ∀ {b : Γ.V} (p : 𝔸.AlternatingPath a b) (j : ℕ), 𝔸.vertexGroup (p.vertex j)
+  | _, single g, _ => g
+  | _, cons p e g, j =>
+    if hj : j ≤ p.length then
+      MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_cons_of_le p e g hj).symm (p.elem j)
+    else MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_cons_of_lt p e g (not_le.1 hj)).symm g
+
+@[simp] theorem elem_single (g : 𝔸.vertexGroup a) (j : ℕ) :
+    (single g : 𝔸.AlternatingPath a a).elem j = g :=
+  (rfl)
+
+theorem elem_cons_of_le {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
+    (g : 𝔸.vertexGroup c) {j : ℕ} (hj : j ≤ p.length) :
+    (cons p e g).elem j =
+      MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_cons_of_le p e g hj).symm (p.elem j) :=
+  dite_eq_left hj
+
+theorem elem_cons_of_lt {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
+    (g : 𝔸.vertexGroup c) {j : ℕ} (hj : p.length < j) :
+    (cons p e g).elem j = MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_cons_of_lt p e g hj).symm g :=
+  dite_eq_right (not_le.2 hj)
+
+/-- The element at a position `j ≥ k` of an alternating path `g₀, e₁, g₁, …, e_k, g_k` is its last
+element `g_k`. -/
+theorem elem_of_length_le {b : Γ.V} (p : 𝔸.AlternatingPath a b) {j : ℕ} (hj : p.length ≤ j) :
+    p.elem j = MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_of_length_le p hj).symm p.last := by
+  cases p with
+  | single g => rfl
+  | cons p e g => exact elem_cons_of_lt p e g (Nat.lt_of_succ_le hj)
+
+/-- The element at the last position `k` of an alternating path `g₀, e₁, g₁, …, e_k, g_k` is its
+last element `g_k`. -/
+theorem elem_length {b : Γ.V} (p : 𝔸.AlternatingPath a b) :
+    p.elem p.length = MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_length p).symm p.last :=
+  p.elem_of_length_le le_rfl
+
+/-- Replacing the last element of an alternating path does not change its vertices. -/
+@[simp] theorem vertex_setLast {b : Γ.V} (p : 𝔸.AlternatingPath a b) (g : 𝔸.vertexGroup b)
+    (j : ℕ) : (p.setLast g).vertex j = p.vertex j := by
+  cases p <;> rfl
+
+/-- Replacing the last element `g_k` of an alternating path `g₀, e₁, g₁, …, e_k, g_k` does not
+change its elements `g_j` with `j < k`. -/
+theorem elem_setLast_of_lt {b : Γ.V} (p : 𝔸.AlternatingPath a b) (g : 𝔸.vertexGroup b) {j : ℕ}
+    (hj : j < p.length) :
+    (p.setLast g).elem j =
+      MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_setLast p g j).symm (p.elem j) := by
+  cases p with
+  | single h => exact absurd hj (Nat.not_lt_zero j)
+  | cons p e h =>
+    have hj : j ≤ p.length := Nat.le_of_lt_succ hj
+    -- `(cons p e h).setLast g` is `cons p e g`, with the same vertices, by definition of `setLast`,
+    -- so both sides are `p.elem j` transported along equalities of the same vertices.
+    refine (elem_cons_of_le p e g hj).trans ?_
+    rw [elem_cons_of_le p e h hj]
+    rfl
+
+/-- Replacing the last element `g_k` of an alternating path `g₀, e₁, g₁, …, e_k, g_k` by `g` puts
+`g` at the positions `j ≥ k`. -/
+theorem elem_setLast_of_le {b : Γ.V} (p : 𝔸.AlternatingPath a b) (g : 𝔸.vertexGroup b) {j : ℕ}
+    (hj : p.length ≤ j) :
+    (p.setLast g).elem j = MulEquiv.cast (M := 𝔸.vertexGroup)
+      (vertex_of_length_le (p.setLast g) ((length_setLast p g).trans_le hj)).symm g :=
+  ((p.setLast g).elem_of_length_le ((length_setLast p g).trans_le hj)).trans
+    (congrArg (MulEquiv.cast (M := 𝔸.vertexGroup) _) (last_setLast p g))
+
 /-- The `𝔸`-path `g₀ e₁ g₁ ⋯ e_k g_k` spelled by an alternating path. -/
 def toPath : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → 𝔸.Path ⟨a⟩ ⟨b⟩
   | _, single g => Path.ofVertex g
@@ -197,6 +352,48 @@ def toPath : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → 𝔸.Path ⟨a⟩ ⟨b
     (cons p e g).toPath = (p.toPath.cons (Letter.dart e)).cons (Letter.vertex g) :=
   (rfl)
 
+/-- Changing the last element of an alternating path does not change its edge path. -/
+@[simp] theorem edgePath_toPath_setLast {b : Γ.V} (p : 𝔸.AlternatingPath a b)
+    (g : 𝔸.vertexGroup b) : (p.setLast g).toPath.edgePath = p.toPath.edgePath := by
+  cases p <;> simp
+
+/-- The edge path of an alternating path has as many darts as the path. -/
+@[simp] theorem length_edgePath_toPath {b : Γ.V} (p : 𝔸.AlternatingPath a b) :
+    p.toPath.edgePath.length = p.length := by
+  induction p <;> simp [*]
+
+/-- The dart `e_{j+1}` of an alternating path `g₀, e₁, g₁, …, e_k, g_k` starts at its vertex
+`c_j`. -/
+@[simp] theorem src_getElem_darts_edgePath_toPath {b : Γ.V} (p : 𝔸.AlternatingPath a b) (j : ℕ)
+    (hj : j < (SerreGraph.Path.darts Γ p.toPath.edgePath).length) :
+    Γ.src (SerreGraph.Path.darts Γ p.toPath.edgePath)[j] = p.vertex j := by
+  induction p with
+  | single g => simp at hj
+  | cons p e g ih =>
+    have hp : (SerreGraph.Path.darts Γ p.toPath.edgePath).length = p.length := by simp
+    simp only [toPath_cons, Path.edgePath_cons_vertex, Path.edgePath_cons_dart,
+      SerreGraph.Path.darts_cons, List.getElem_append, List.length_append,
+      List.length_singleton] at hj ⊢
+    split_ifs with h
+    · rw [ih h, vertex_cons_of_le p e g (hp ▸ h.le)]
+    · rw [List.getElem_singleton, e.2.1, vertex_cons_of_le p e g (by omega),
+        show j = p.length by omega, vertex_length]
+
+/-- The dart `e_{j+1}` of an alternating path `g₀, e₁, g₁, …, e_k, g_k` ends at its vertex
+`c_{j+1}`. -/
+@[simp] theorem tgt_getElem_darts_edgePath_toPath {b : Γ.V} (p : 𝔸.AlternatingPath a b) (j : ℕ)
+    (hj : j < (SerreGraph.Path.darts Γ p.toPath.edgePath).length) :
+    Γ.tgt (SerreGraph.Path.darts Γ p.toPath.edgePath)[j] = p.vertex (j + 1) := by
+  induction p with
+  | single g => simp at hj
+  | cons p e g ih =>
+    have hp : (SerreGraph.Path.darts Γ p.toPath.edgePath).length = p.length := by simp
+    simp only [toPath_cons, Path.edgePath_cons_vertex, Path.edgePath_cons_dart,
+      SerreGraph.Path.darts_cons, List.getElem_append] at hj ⊢
+    split_ifs with h
+    · rw [ih h, vertex_cons_of_le p e g (hp ▸ h)]
+    · rw [List.getElem_singleton, e.2.2, vertex_cons_of_lt p e g (by omega)]
+
 /-- Multiplying the last element of an alternating path by `g` amounts, up to homotopy, to
 appending the vertex group letter `g`. -/
 theorem toPath_setLast_mul_homotopic {b : Γ.V} (p : 𝔸.AlternatingPath a b)
@@ -205,6 +402,22 @@ theorem toPath_setLast_mul_homotopic {b : Γ.V} (p : 𝔸.AlternatingPath a b)
   cases p with
   | single h => simpa [Path.ofVertex_eq_nil_cons] using (Path.Homotopic.mul _ h g).symm
   | cons p e h => exact (Path.Homotopic.mul _ h g).symm
+
+/-- Reading an alternating path `p`, then a vertex group element `g` and a path `r`, is reading
+`p` with its last element multiplied by `g`, then `r`. -/
+theorem toPath_setLast_mul_comp_homotopic {b : Γ.V} {y : 𝔸.LetterVertex}
+    (p : 𝔸.AlternatingPath a b) (g : 𝔸.vertexGroup b) (r : 𝔸.Path ⟨b⟩ y) :
+    Path.Homotopic ((p.setLast (p.last * g)).toPath.comp r)
+      (p.toPath.comp ((Path.ofVertex g).comp r)) := by
+  rw [← Quiver.Path.comp_assoc, Path.comp_ofVertex]
+  exact (toPath_setLast_mul_homotopic p g).comp_right r
+
+/-- Reading `p` without its last element `g`, then `g` and a path `r`, is reading `p` and `r`. -/
+theorem toPath_setLast_one_comp_homotopic {b : Γ.V} {y : 𝔸.LetterVertex}
+    (p : 𝔸.AlternatingPath a b) (r : 𝔸.Path ⟨b⟩ y) :
+    Path.Homotopic ((p.setLast 1).toPath.comp ((Path.ofVertex p.last).comp r))
+      (p.toPath.comp r) := by
+  simpa using (toPath_setLast_mul_comp_homotopic (p.setLast 1) p.last r).symm
 
 /-- `p.Cancels e` says that `p` ends with the dart `rev e` followed by an element of `α_e(A_e)`,
 so that appending `e` creates the backtracking `rev e, α_e(c), e`. -/
@@ -419,6 +632,15 @@ theorem toPath_appendDart_homotopic {b c : Γ.V} (p : 𝔸.AlternatingPath a b) 
     simpa using ((p.setLast (d.rep e p.last)).toPath_setLast_mul_homotopic
       (𝔸.αArrow e (d.edgePart e p.last))).symm
 
+/-- Appending a dart and normalizing changes the length by one: the dart is either added or
+cancelled against the last dart. -/
+theorem length_appendDart {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c) :
+    (p.appendDart d e).length = p.length + 1 ∨ p.length = (p.appendDart d e).length + 1 := by
+  by_cases h : p.Cancels e
+  · obtain ⟨q, c₀, rfl⟩ := cancels_iff.1 h
+    simp [appendDart_cons_of_eq d q rfl rfl]
+  · simp [appendDart_of_not_cancels d h]
+
 end AlternatingPath
 
 variable {𝔸} in
@@ -495,6 +717,16 @@ noncomputable def appendDart {b c : Γ.V} (w : NormalWord d a b) (e : b ⟶ c) :
 @[simp] theorem toAlternatingPath_appendDart {b c : Γ.V} (w : NormalWord d a b) (e : b ⟶ c) :
     (w.appendDart e).toAlternatingPath = w.1.appendDart d e :=
   (rfl)
+
+/-- Multiplying the last vertex group element does not change the edge path. -/
+@[simp] theorem edgePath_toPath_mulLast {b : Γ.V} (w : NormalWord d a b) (g : 𝔸.vertexGroup b) :
+    (w.mulLast g).toPath.edgePath = w.toPath.edgePath := by
+  simp [toPath_def]
+
+/-- The edge path of a normal word has as many darts as the word. -/
+@[simp] theorem length_edgePath_toPath {b : Γ.V} (w : NormalWord d a b) :
+    w.toPath.edgePath.length = w.toAlternatingPath.length := by
+  simp [toPath_def]
 
 @[simp] theorem mulLast_mulLast {b : Γ.V} (w : NormalWord d a b) (g h : 𝔸.vertexGroup b) :
     (w.mulLast g).mulLast h = w.mulLast (g * h) := by
@@ -607,6 +839,20 @@ theorem toPath_appendPath_homotopic {x y : 𝔸.LetterVertex} (w : NormalWord d 
 theorem toPath_empty_homotopic : Path.Homotopic (empty d a).toPath Quiver.Path.nil :=
   Path.Homotopic.ofVertex_one
 
+/-- Appending an `𝔸`-path to a normal word adds at most as many darts as the path has. -/
+theorem length_appendPath_le {x y : 𝔸.LetterVertex} (w : NormalWord d a x.as) (p : 𝔸.Path x y) :
+    (w.appendPath p).toAlternatingPath.length ≤ w.toAlternatingPath.length + p.edgePath.length := by
+  induction p with
+  | nil => simp
+  | cons p l ih =>
+    cases l with
+    | vertex g => simpa using ih
+    | dart e =>
+      have := (w.appendPath p).1.length_appendDart d e
+      simp only [appendPath_cons, appendLetter_dart, toAlternatingPath_appendDart,
+        Path.edgePath_cons_dart, Quiver.Path.length_cons]
+      lia
+
 end NormalWord
 
 section normalForm
@@ -641,6 +887,11 @@ theorem normalForm_def (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
 @[simp] theorem normalForm_ofDart (e : a ⟶ b) :
     normalForm d (Path.ofDart e) = (NormalWord.empty d a).appendDart e :=
   NormalWord.appendPath_ofDart _ e
+
+/-- The normal form of an `𝔸`-path has at most as many darts as the path. -/
+theorem length_normalForm_le (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
+    (normalForm d p).toAlternatingPath.length ≤ p.edgePath.length := by
+  simpa [normalForm_def] using NormalWord.length_appendPath_le (NormalWord.empty d a) p
 
 /-- A path is homotopic to its normal form. -/
 theorem toPath_normalForm_homotopic (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
@@ -777,6 +1028,114 @@ theorem vertexHom_injective (p : 𝔸.Path ⟨a⟩ ⟨b⟩) : Function.Injective
   rw [← mk_nil, mk_eq_mk_iff, Path.ofVertex_homotopic_nil_iff]
 
 end π₁
+
+namespace π₁Tree
+
+variable {𝔸}
+
+/-- Given a spanning tree `T` of `Γ`, the vertex group `A_v` embeds in `π₁(𝔸, S)` for every set
+`S` of darts of `T`; in particular for all the darts of `T` and for `S = ∅`. -/
+theorem of_injective {S : Set Γ.E} (T : Γ.SpanningTree) (hS : S ⊆ T.darts) (v : Γ.V) :
+    Function.Injective (of S v : 𝔸.vertexGroup v →* π₁Tree 𝔸 S) := by
+  intro g g' hg
+  refine π₁.vertexHom_injective ((dartPrefunctor 𝔸).mapPath (T.path v v))
+    ((π₁Equiv 𝔸 v T).injective ?_)
+  rw [π₁Equiv_vertexHom_mapPath_path, π₁Equiv_vertexHom_mapPath_path]
+  -- Map `π₁(𝔸, S)` onto `π₁(𝔸, T)` by killing the remaining darts of `T`.
+  simpa using congrArg (lift (of T.darts) (edge T.darts) (fun _ he ↦ edge_eq_one (hS he))
+    edge_rev edge_mul_of_ω_mul_edge_inv) hg
+
+@[simp] theorem of_darts_inj (T : Γ.SpanningTree) {v : Γ.V} {g h : 𝔸.vertexGroup v} :
+    of T.darts v g = of T.darts v h ↔ g = h :=
+  (of_injective T subset_rfl v).eq_iff
+
+@[simp] theorem of_darts_eq_one_iff (T : Γ.SpanningTree) {v : Γ.V} {g : 𝔸.vertexGroup v} :
+    of T.darts v g = 1 ↔ g = 1 :=
+  map_eq_one_iff _ (of_injective T subset_rfl v)
+
+end π₁Tree
+
+/-! ### Reduced paths -/
+
+namespace AlternatingPath
+
+variable {𝔸} (d : 𝔸.Transversal) {a b : Γ.V}
+
+/-- Appending a dart `e` and an element `g` to an alternating path whose normal form does not
+backtrack with `e` appends them to the normal form, after normalizing its last element. -/
+theorem toAlternatingPath_normalForm_toPath_cons {c : Γ.V} (p : 𝔸.AlternatingPath a b)
+    (e : b ⟶ c) (g : 𝔸.vertexGroup c) (h : ¬ (normalForm d p.toPath).toAlternatingPath.Cancels e) :
+    (normalForm d (cons p e g).toPath).toAlternatingPath =
+      cons ((normalForm d p.toPath).toAlternatingPath.setLast
+          (d.rep e (normalForm d p.toPath).toAlternatingPath.last)) e
+        (𝔸.ωArrow e (d.edgePart e (normalForm d p.toPath).toAlternatingPath.last) * g) := by
+  simp [appendDart_of_not_cancels d h]
+
+namespace IsReduced
+
+variable {p : 𝔸.AlternatingPath a b}
+
+/-- The normal form of a reduced alternating path backtracks with a dart `e` exactly when the path
+does. -/
+theorem cancels_normalForm_iff (hp : p.IsReduced) {c : Γ.V} (e : b ⟶ c) :
+    (normalForm d p.toPath).toAlternatingPath.Cancels e ↔ p.Cancels e := by
+  induction p generalizing c with
+  | single g => simp
+  | cons p e' g ih =>
+    rw [toAlternatingPath_normalForm_toPath_cons d p e' g ((ih hp.1 e').not.2 hp.2),
+      cancels_cons_iff_ωArrow, cancels_cons_iff_ωArrow]
+    exact and_congr_right fun _ ↦ (𝔸.ωArrow e').range.mul_mem_cancel_left ⟨_, rfl⟩
+
+/-- The normal form of a reduced alternating path has the same edge path as the path. -/
+theorem edgePath_toPath_normalForm (hp : p.IsReduced) :
+    (normalForm d p.toPath).toPath.edgePath = p.toPath.edgePath := by
+  induction p with
+  | single g => simp
+  | cons p e g ih =>
+    rw [NormalWord.toPath_def, toAlternatingPath_normalForm_toPath_cons d p e g
+      ((hp.1.cancels_normalForm_iff d e).not.2 hp.2)]
+    simp [← ih hp.1, NormalWord.toPath_def]
+
+/-- The normal form of a reduced alternating path has the same length as the path. -/
+theorem length_normalForm (hp : p.IsReduced) :
+    (normalForm d p.toPath).toAlternatingPath.length = p.length := by
+  simpa using congrArg Quiver.Path.length (hp.edgePath_toPath_normalForm d)
+
+variable {d}
+
+/-- **Reduced paths are as short as possible**: an `𝔸`-path homotopic to a reduced alternating
+path `p` has at least as many darts as `p`. -/
+theorem length_le_length_edgePath_of_homotopic (hp : p.IsReduced) {q : 𝔸.Path ⟨a⟩ ⟨b⟩}
+    (h : p.toPath.Homotopic q) : p.length ≤ q.edgePath.length := by
+  rw [← hp.length_normalForm default, normalForm_eq_of_homotopic default h]
+  exact length_normalForm_le default q
+
+/-- Two homotopic reduced alternating paths have the same edge path. -/
+theorem edgePath_toPath_eq_of_homotopic (hp : p.IsReduced) {q : 𝔸.AlternatingPath a b}
+    (hq : q.IsReduced) (h : p.toPath.Homotopic q.toPath) :
+    p.toPath.edgePath = q.toPath.edgePath := by
+  rw [← hp.edgePath_toPath_normalForm default, ← hq.edgePath_toPath_normalForm default,
+    normalForm_eq_of_homotopic default h]
+
+/-- A reduced alternating closed path is homotopic to a vertex group element `g` only when it is
+`g`. -/
+theorem toPath_homotopic_ofVertex_iff {p : 𝔸.AlternatingPath a a} (hp : p.IsReduced)
+    {g : 𝔸.vertexGroup a} : p.toPath.Homotopic (Path.ofVertex g) ↔ p = single g := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ .refl _⟩
+  have h₀ : p.length = 0 := by simpa using hp.length_le_length_edgePath_of_homotopic h
+  rw [length_eq_zero_iff.1 h₀] at h ⊢
+  simpa using h
+
+/-- A reduced alternating closed path is homotopic to the empty path only when it is the
+element `1`. -/
+theorem toPath_homotopic_nil_iff {p : 𝔸.AlternatingPath a a} (hp : p.IsReduced) :
+    p.toPath.Homotopic Quiver.Path.nil ↔ p = single 1 := by
+  rw [← hp.toPath_homotopic_ofVertex_iff]
+  exact ⟨(·.trans Path.Homotopic.ofVertex_one.symm), (·.trans Path.Homotopic.ofVertex_one)⟩
+
+end IsReduced
+
+end AlternatingPath
 
 end GraphOfGroups
 
