@@ -102,10 +102,10 @@ private theorem hasDerivWithinAt_reverseField (f : ParabolicCkHolderSpace k α E
     ((hasDerivWithinAt_id (t : ℝ) (Icc a' b')).const_sub T)
     fun s hs ↦ sub_mem_Icc_of_eq_sub T ha hb hs).const_smul ((-1 : ℝ) ^ r)
   refine (hd.congr_of_mem (fun s hs ↦ ?_) t.2).congr_deriv ?_
-  · simp [ParabolicC2HolderSpace.timeExtension_def, reverseField_apply,
+  · simp [ParabolicC2HolderSpace.timeExtension_def, reverseField_apply, iccTimeReverse_apply,
       projIcc_of_mem (ha ▸ hb ▸ sub_lt_sub_left hab T).le hs,
       projIcc_of_mem hab.le (sub_mem_Icc_of_eq_sub T ha hb hs)]
-  · rw [reverseField_apply, slabTimeReverse_slabMk, smul_smul, ← pow_succ]
+  · rw [reverseField_apply, slabTimeReverse_slabMk, iccTimeReverse_apply, smul_smul, ← pow_succ]
 
 /-- The reversed fields of order `k - 1` have uniformly Hölder time slices, because the time
 reversal of the interval is an isometry. -/
@@ -173,6 +173,11 @@ private theorem mixedDerivHolderL_reverse (f : ParabolicCkHolderSpace k α E F h
       toBoundedContinuousFunction_mixedDerivHolderL _ h, mixedDerivL_reverse]
   · simp [mixedDerivHolderL_of_ne h]
 
+/-- The sign `(-1)^n` does not change norms. -/
+private theorem norm_neg_one_pow_smul {G : Type*} [SeminormedAddCommGroup G] [SMul ℝ G]
+    [NormSMulClass ℝ G] (n : ℕ) (y : G) : ‖(-1 : ℝ) ^ n • y‖ = ‖y‖ := by
+  simp [norm_smul]
+
 private theorem norm_reverse_le (f : ParabolicCkHolderSpace k α E F hab) :
     ‖reverse T ha hb f‖ ≤ ‖f‖ := by
   rw [norm_eq, norm_eq f]
@@ -184,13 +189,13 @@ private theorem norm_reverse_le (f : ParabolicCkHolderSpace k α E F hab) :
     (slabTimeReverse T ha hb).isometry.lipschitzWith
   refine add_le_add ?_ (add_le_add ?_ ?_)
   · refine (BoundedContinuousFunction.norm_le (norm_nonneg (mixedDerivL p.1 p.2 f))).2 fun q ↦ ?_
-    rw [mixedDerivL_reverse, norm_smul, norm_pow, norm_neg, norm_one, one_pow, one_mul]
+    rw [mixedDerivL_reverse, norm_neg_one_pow_smul]
     exact (mixedDerivL p.1 p.2 f).norm_coe_le_norm _
   · refine lp.norm_le_of_forall_le (norm_nonneg _) fun x ↦ ?_
-    rw [timeSliceL_reverse, norm_smul, norm_pow, norm_neg, norm_one, one_pow, one_mul]
+    rw [timeSliceL_reverse, norm_neg_one_pow_smul]
     exact ((HolderSpace.compLipschitzL _ _).le_of_opNorm_le hT _).trans
       ((one_mul _).trans_le (lp.norm_apply_le_norm ENNReal.top_ne_zero _ x))
-  · rw [mixedDerivHolderL_reverse, norm_smul, norm_pow, norm_neg, norm_one, one_pow, one_mul]
+  · rw [mixedDerivHolderL_reverse, norm_neg_one_pow_smul]
     exact ((HolderSpace.compLipschitzL _ _).le_of_opNorm_le hH _).trans (one_mul _).le
 
 /-- Time reversal about `T`: the map `u ↦ u ∘ R` with `R (x, s) = (x, T - s)`, from bounded

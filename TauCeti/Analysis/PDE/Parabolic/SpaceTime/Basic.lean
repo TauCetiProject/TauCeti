@@ -425,8 +425,14 @@ def slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T -
 @[simp]
 theorem slabTimeReverse_slabMk (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
     (x : E) (t : Icc a' b') :
-    slabTimeReverse T ha hb (slabMk x t) =
-      slabMk x ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ :=
+    slabTimeReverse T ha hb (slabMk x t) = slabMk x (iccTimeReverse T ha hb t) :=
+  (rfl)
+
+/-- The time component of time reversal between slabs is time reversal between intervals. -/
+@[simp]
+theorem slabTime_slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
+    (p : slab (E := E) a' b') :
+    slabTime (slabTimeReverse T ha hb p) = iccTimeReverse T ha hb (slabTime p) :=
   (rfl)
 
 @[simp]

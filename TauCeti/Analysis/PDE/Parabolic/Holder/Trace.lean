@@ -290,7 +290,7 @@ theorem spatialTrace_timeReverseLIE (f : ParabolicC2HolderSpace α E F hab) (t :
       subst ha hb
       constructor <;> linarith⟩ := by
   ext x
-  simp
+  simp [iccTimeReverse_apply]
 
 /-- The initial trace of the time reversal `u ∘ R`, at `T - b`, is the terminal trace of `u`
 at `b`. -/
@@ -466,7 +466,7 @@ theorem spatialTrace_timeReverseLIE (f : ParabolicC1HolderSpace α E F a b) (t :
       subst ha hb
       constructor <;> linarith⟩ := by
   ext x
-  simp
+  simp [iccTimeReverse_apply]
 
 /-- The initial trace of the time reversal `u ∘ R`, at `T - b`, is the terminal trace of `u`
 at `b`. -/

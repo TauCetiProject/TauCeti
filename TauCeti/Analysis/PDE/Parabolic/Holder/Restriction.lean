@@ -196,18 +196,22 @@ private def reverse (f : ParabolicC2HolderSpace α E F hab) :
       (spatialSecondFDerivL f))
     (-HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith (timeDerivL f))
     (fun t x ↦ by
-      simpa using f.hasSpatialFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ x)
+      simpa [iccTimeReverse_apply] using
+        f.hasSpatialFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ x)
     (fun t x ↦ by
-      simpa using f.hasSpatialSecondFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ x)
+      simpa [iccTimeReverse_apply] using
+        f.hasSpatialSecondFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ x)
     (fun x t ↦ by
       have h := HasDerivWithinAt.scomp (t : ℝ)
         (f.hasTimeDerivWithinAt x ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩)
         ((hasDerivWithinAt_id (t : ℝ) (Icc a' b')).const_sub T)
         (fun s hs ↦ sub_mem_Icc_of_eq_sub T ha hb hs)
       rw [neg_one_smul] at h
-      rw [HolderSpace.neg_apply, HolderSpace.compLipschitzL_apply, slabTimeReverse_slabMk]
+      rw [HolderSpace.neg_apply, HolderSpace.compLipschitzL_apply, slabTimeReverse_slabMk,
+        iccTimeReverse_apply]
       refine h.congr_of_mem (fun s hs ↦ ?_) t.2
-      simp [timeExtension_def, projIcc_of_mem (ha ▸ hb ▸ sub_lt_sub_left hab T).le hs,
+      simp [timeExtension_def, iccTimeReverse_apply,
+        projIcc_of_mem (ha ▸ hb ▸ sub_lt_sub_left hab T).le hs,
         projIcc_of_mem hab.le (sub_mem_Icc_of_eq_sub T ha hb hs)])
 
 private theorem reverse_apply (f : ParabolicC2HolderSpace α E F hab)
