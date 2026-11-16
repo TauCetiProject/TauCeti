@@ -200,7 +200,8 @@ theorem logBarnesG_add_one {z : ℂ} (hz : z ∈ slitPlane) :
   have he : ∀ w ∈ slitPlane, Complex.exp (L w) = barnesG w := by
     intro w hw
     rw [Complex.exp_sub, exp_logBarnesG (hshift hw), exp_logGamma hw,
-      barnesG_add_one (hpole hw), mul_div_cancel_left₀ _ (Complex.Gamma_ne_zero (hpole hw))]
+      barnesG_add_one (slitPlane_ne_zero hw),
+      mul_div_cancel_left₀ _ (Complex.Gamma_ne_zero (hpole hw))]
   have hlg1 : logGamma 1 = 0 := by
     simpa using logGamma_ofReal (x := 1) zero_lt_one
   have h11 : (1 : ℂ) + 1 = 2 := by ring
@@ -247,12 +248,7 @@ theorem deriv_logBarnesG_add_one {z : ℂ} (hz : z + 1 ∈ slitPlane) :
     rw [hzn] at hz
     have hneg := (Complex.neg_ofReal_mem_slitPlane (x := (n : ℝ))).mp (by simpa using hz)
     exact (Nat.cast_nonneg n).not_gt hneg
-  have hcomp : logDeriv (fun w : ℂ ↦ barnesG (w + 1)) z = logDeriv barnesG (z + 1) := by
-    have hc := logDeriv_comp (f := barnesG) (g := fun w : ℂ ↦ w + 1)
-      (differentiable_barnesG (z + 1)) ((differentiable_id.add_const (1 : ℂ)) z)
-    have hd1 : deriv (fun w : ℂ ↦ w + 1) z = 1 := by simp
-    simpa [Function.comp_def, hd1] using hc
-  rw [deriv_logBarnesG hz, ← hcomp, logDeriv_barnesG_add_one_of_ne_neg_succ hz_succ]
+  rw [deriv_logBarnesG hz, logDeriv_barnesG_add_one_of_ne_neg_succ hz_succ]
 
 /-- On `Complex.slitPlane`, `deriv logBarnesG (z + 1)` also takes the unshifted digamma form
 `log(2π) / 2 + 1 / 2 - z + z * digamma z`. -/

@@ -54,7 +54,7 @@ holds as an identity of entire functions on all of `ℂ`.
   `barnesG` at `1` and away from the nonpositive integers.
 * `TauCeti.barnesG_one`, `TauCeti.barnesG_two`, `TauCeti.inv_Gamma_mul_barnesG_add_one`,
   `TauCeti.barnesG_add_one`: normalization and the Gamma recurrence, both in pole-cleared entire
-  form on all of `ℂ` and in standard form away from nonpositive integers.
+  form on all of `ℂ` and in standard form for every nonzero `z : ℂ`.
 * `TauCeti.barnesG_natCast_add_two`, `TauCeti.barnesG_natCast_add_one`,
   `TauCeti.barnesG_natCast_of_two_le`: superfactorial values at positive integers.
 * `TauCeti.barnesG_conj`, `TauCeti.barnesG_ofReal_im`, `TauCeti.barnesG_ofReal_re_pos`: Schwarz
@@ -534,11 +534,15 @@ private theorem logDeriv_barnesPrefactor (w : ℂ) :
   rw [funext barnesPrefactor_eq_exp, logDeriv_apply, hd.cexp.deriv]
   exact mul_div_cancel_left₀ _ (Complex.exp_ne_zero _)
 
-/-- Logarithmic derivative of `w ↦ barnesG (w + 1)` away from the negative integers `-(n + 1)`;
+private theorem logDeriv_barnesG_comp_add_one (z : ℂ) :
+    logDeriv (fun w ↦ barnesG (w + 1)) z = logDeriv barnesG (z + 1) := by
+  rw [logDeriv_apply, logDeriv_apply, deriv_comp_add_const]
+
+/-- Logarithmic derivative of `barnesG` at `z + 1` away from the negative integers `-(n + 1)`;
 this formula holds at `z = 0` as well as at every non-integer complex point. -/
 theorem logDeriv_barnesG_add_one_of_ne_neg_succ {z : ℂ}
     (hz : ∀ n : ℕ, z ≠ -((n : ℂ) + 1)) :
-    logDeriv (fun w ↦ barnesG (w + 1)) z =
+    logDeriv barnesG (z + 1) =
       (Real.log (2 * Real.pi) : ℂ) / 2 - 1 / 2 - z + z * Complex.digamma (z + 1) := by
   have hz1 : ∀ m : ℕ, z + 1 ≠ -(m : ℂ) := fun m hm ↦ hz m (by linear_combination hm)
   have hprod_ne : (∏' k : ℕ, barnesFactor z k) ≠ 0 := by
@@ -566,7 +570,7 @@ theorem logDeriv_barnesG_add_one_of_ne_neg_succ {z : ℂ}
       congr 2; ring
     rw [hcongr, tsum_mul_left, Complex.digamma_eq_gaussSeries hz1]
     ring
-  rw [funext barnesG_add_one_eq_prefactor_mul_tprod,
+  rw [← logDeriv_barnesG_comp_add_one, funext barnesG_add_one_eq_prefactor_mul_tprod,
     logDeriv_fun_mul z (barnesPrefactor_ne_zero z) hprod_ne
       (differentiable_barnesPrefactor z) (differentiable_tprod_barnesFactor z),
     logDeriv_barnesPrefactor, htprod_ld, htsum_val]
@@ -577,13 +581,7 @@ theorem logDeriv_barnesG_one :
     logDeriv barnesG 1 = (Real.log (2 * Real.pi) : ℂ) / 2 - 1 / 2 := by
   have hz0 : ∀ n : ℕ, (0 : ℂ) ≠ -((n : ℂ) + 1) := fun n h ↦
     Nat.cast_add_one_ne_zero n (by linear_combination h)
-  have hld := logDeriv_barnesG_add_one_of_ne_neg_succ hz0
-  have hcomp : logDeriv (fun w : ℂ ↦ barnesG (w + 1)) 0 = logDeriv barnesG 1 := by
-    have hc := logDeriv_comp (f := barnesG) (g := fun w : ℂ ↦ w + 1)
-      (differentiable_barnesG (0 + 1)) ((differentiable_id.add_const (1 : ℂ)) 0)
-    simpa [Function.comp_def] using hc
-  rw [hcomp] at hld
-  simpa using hld
+  simpa using logDeriv_barnesG_add_one_of_ne_neg_succ hz0
 
 /-- The derivative of `barnesG` at `1` is `log(2π) / 2 - 1 / 2`. -/
 theorem deriv_barnesG_one :
@@ -599,12 +597,7 @@ theorem logDeriv_barnesG_add_one {z : ℂ} (hz : ∀ n : ℕ, z ≠ -(n : ℂ)) 
   have hz0 : z ≠ 0 := by simpa using hz 0
   have hz_succ : ∀ n : ℕ, z ≠ -((n : ℂ) + 1) := fun n ↦ by
     simpa [Nat.cast_add, Nat.cast_one, neg_add] using hz (n + 1)
-  have hcomp : logDeriv (fun w : ℂ ↦ barnesG (w + 1)) z = logDeriv barnesG (z + 1) := by
-    have hc := logDeriv_comp (f := barnesG) (g := fun w : ℂ ↦ w + 1)
-      (differentiable_barnesG (z + 1)) ((differentiable_id.add_const (1 : ℂ)) z)
-    have hd1 : deriv (fun w : ℂ ↦ w + 1) z = 1 := by simp
-    simpa [Function.comp_def, hd1] using hc
-  rw [← hcomp, logDeriv_barnesG_add_one_of_ne_neg_succ hz_succ,
+  rw [logDeriv_barnesG_add_one_of_ne_neg_succ hz_succ,
     Complex.digamma_apply_add_one z hz, mul_add, mul_inv_cancel₀ hz0]
   ring
 
@@ -710,20 +703,7 @@ private theorem inv_Gamma_mul_barnesG_add_one_of_re_pos {z : ℂ} (hz : 0 < z.re
       barnesG_ne_zero_of_re_pos (by simp only [add_re, one_re]; linarith)
     have hGw_ld : logDeriv barnesG w =
         (Real.log (2 * Real.pi) : ℂ) / 2 - 1 / 2 - (w - 1) + (w - 1) * Complex.digamma w := by
-      have hc := logDeriv_comp (f := barnesG) (g := fun u : ℂ ↦ u + 1)
-        (differentiable_barnesG ((w - 1) + 1)) ((differentiable_id.add_const (1 : ℂ)) (w - 1))
-      have hd1 : deriv (fun u : ℂ ↦ u + 1) (w - 1) = 1 := by simp
-      have hcomp : logDeriv (fun u : ℂ ↦ barnesG (u + 1)) (w - 1) = logDeriv barnesG w := by
-        simpa [Function.comp_def, sub_add_cancel, hd1] using hc
-      simpa [hcomp, sub_add_cancel] using logDeriv_barnesG_add_one_of_ne_neg_succ hw_sub_succ
-    have hGw1_ld : logDeriv (fun u : ℂ ↦ barnesG (u + 1)) w =
-        (Real.log (2 * Real.pi) : ℂ) / 2 + 1 / 2 - w + w * Complex.digamma w := by
-      have hc := logDeriv_comp (f := barnesG) (g := fun u : ℂ ↦ u + 1)
-        (differentiable_barnesG (w + 1)) ((differentiable_id.add_const (1 : ℂ)) w)
-      have hd1 : deriv (fun u : ℂ ↦ u + 1) w = 1 := by simp
-      have hc' : logDeriv (fun u : ℂ ↦ barnesG (u + 1)) w = logDeriv barnesG (w + 1) := by
-        simpa [Function.comp_def, hd1] using hc
-      exact hc'.trans (logDeriv_barnesG_add_one hp)
+      simpa [sub_add_cancel] using logDeriv_barnesG_add_one_of_ne_neg_succ hw_sub_succ
     have hQ_ld : logDeriv Q w = 0 := by
       have hd1 : DifferentiableAt ℂ (fun u ↦ barnesG (u + 1)) w :=
         (differentiable_barnesG.comp (differentiable_id.add_const 1)) w
@@ -734,7 +714,8 @@ private theorem inv_Gamma_mul_barnesG_add_one_of_re_pos {z : ℂ} (hz : 0 < z.re
         (hdΓ.mul hdG)
       have hmul := logDeriv_fun_mul (f := Complex.Gamma) (g := barnesG) w hΓ_ne hGw_ne hdΓ hdG
       dsimp only [Q]
-      rw [hdiv, hmul, hGw1_ld, hGw_ld, ← Complex.digamma_def]
+      rw [hdiv, hmul, logDeriv_barnesG_comp_add_one, logDeriv_barnesG_add_one hp, hGw_ld,
+        ← Complex.digamma_def]
       ring
     rw [logDeriv_apply] at hQ_ld
     exact (div_eq_zero_iff.mp hQ_ld).resolve_right
@@ -768,22 +749,30 @@ theorem inv_Gamma_mul_barnesG_add_one (z : ℂ) :
   exact hF_an.eqOn_of_preconnected_of_eventuallyEq analyticOnNhd_barnesG
     isPreconnected_univ (mem_univ (1 : ℂ)) hev (mem_univ z)
 
-/-- **Gamma recurrence for the Barnes `G`-function**: away from the nonpositive integers,
-`barnesG (z + 1) = Complex.Gamma z * barnesG z`. -/
-theorem barnesG_add_one {z : ℂ} (hz : ∀ n : ℕ, z ≠ -(n : ℂ)) :
+/-- **Gamma recurrence for the Barnes `G`-function**: for every nonzero complex number `z`,
+`barnesG (z + 1) = Complex.Gamma z * barnesG z`. At negative integers both sides vanish. -/
+theorem barnesG_add_one {z : ℂ} (hz : z ≠ 0) :
     barnesG (z + 1) = Complex.Gamma z * barnesG z := by
-  have hΓ : Complex.Gamma z ≠ 0 := Complex.Gamma_ne_zero hz
-  rw [← inv_Gamma_mul_barnesG_add_one z, mul_inv_cancel_left₀ hΓ]
+  by_cases hneg : ∃ n : ℕ, z = -(n : ℂ)
+  · rcases hneg with ⟨_ | m, rfl⟩
+    · exact absurd (by simp) hz
+    · have hm : -(((m + 1 : ℕ) : ℂ)) + 1 = -(m : ℂ) := by push_cast; ring
+      rw [hm, barnesG_neg_natCast, barnesG_neg_natCast, mul_zero]
+  · have hΓ : Complex.Gamma z ≠ 0 := Complex.Gamma_ne_zero (not_exists.mp hneg)
+    rw [← inv_Gamma_mul_barnesG_add_one z, mul_inv_cancel_left₀ hΓ]
 
-/-- Iterated Gamma recurrence for `barnesG` along natural shifts away from nonpositive integers. -/
-theorem barnesG_add_natCast {z : ℂ} (hz : ∀ k : ℕ, z ≠ -(k : ℂ)) (n : ℕ) :
+/-- Iterated Gamma recurrence for `barnesG` along natural shifts `n` avoiding `0` at every
+intermediate argument `z + j` (`j < n`). -/
+theorem barnesG_add_natCast {z : ℂ} {n : ℕ} (hz : ∀ j ∈ Finset.range n, z + j ≠ 0) :
     barnesG (z + n) = (∏ j ∈ Finset.range n, Complex.Gamma (z + j)) * barnesG z := by
   induction n with
   | zero => simp
   | succ n ih =>
-    have hzn : ∀ k : ℕ, z + n ≠ -(k : ℂ) := fun k hk ↦
-      hz (k + n) (by push_cast; linear_combination hk)
-    rw [Nat.cast_add, Nat.cast_one, ← add_assoc, barnesG_add_one hzn, ih, Finset.prod_range_succ]
+    have hprev : ∀ j ∈ Finset.range n, z + j ≠ 0 := fun j hj ↦
+      hz j (Finset.mem_range.mpr (Nat.lt_succ_of_lt (Finset.mem_range.mp hj)))
+    have hzn : z + n ≠ 0 := hz n (Finset.self_mem_range_succ n)
+    rw [Nat.cast_add, Nat.cast_one, ← add_assoc, barnesG_add_one hzn, ih hprev,
+      Finset.prod_range_succ]
     ring
 
 /-- **Superfactorial values**: for every `n : ℕ`, `barnesG (n + 1) = ∏ k ∈ range n, k!`. -/
@@ -792,12 +781,7 @@ theorem barnesG_natCast_add_one (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih =>
-    have hn : ∀ m : ℕ, ((n : ℂ) + 1) ≠ -(m : ℂ) := by
-      intro m h
-      have hre := congrArg Complex.re h
-      simp only [add_re, natCast_re, one_re, neg_re] at hre
-      linarith [Nat.cast_nonneg (α := ℝ) n, Nat.cast_nonneg (α := ℝ) m]
-    rw [Nat.cast_succ, barnesG_add_one hn, ih, Finset.prod_range_succ,
+    rw [Nat.cast_succ, barnesG_add_one (Nat.cast_add_one_ne_zero n), ih, Finset.prod_range_succ,
       Complex.Gamma_nat_eq_factorial]
     ring
 
@@ -856,9 +840,8 @@ theorem barnesG_conj (z : ℂ) :
   have hp : HasProd (fun k : ℕ ↦ barnesFactor (z - 1) k)
       (∏' k : ℕ, barnesFactor (z - 1) k) := hlu.hasProd (mem_univ (z - 1))
   have hp_conj : HasProd (fun k : ℕ ↦ starRingEnd ℂ (barnesFactor (z - 1) k))
-      (starRingEnd ℂ (∏' k : ℕ, barnesFactor (z - 1) k)) := by
-    refine ((Complex.continuous_conj.tendsto _).comp hp).congr fun s ↦ ?_
-    simp [map_prod]
+      (starRingEnd ℂ (∏' k : ℕ, barnesFactor (z - 1) k)) :=
+    hp.map (starRingEnd ℂ) Complex.continuous_conj
   simp_rw [← barnesFactor_conj] at hp_conj
   exact hp_conj.tprod_eq
 
