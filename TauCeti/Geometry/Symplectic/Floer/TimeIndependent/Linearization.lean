@@ -20,8 +20,9 @@ Let `(V, ω)` be a symplectic vector space whose inner product is the metric `g 
 constant compatible almost complex structure `J`, and let `H : V → ℝ` be an autonomous
 Hamiltonian. A map `(s, t) ↦ γ(s)` solves the Floer equation of `K = H dt` exactly when
 `γ' = J X_H(γ)`, that is, when `γ` is a gradient line of `H`
-(`TauCeti.SymplecticForm.Invariant.isComplexLinearMap_perturbedFDeriv_comp_fst_iff`), and for a
-small Hamiltonian every Floer cylinder is of this form
+(`TauCeti.SymplecticForm.Invariant.isComplexLinearMap_perturbedFDeriv_comp_fst_iff`). Conversely,
+if `H` is `C³` with `‖dX_H‖ ≤ a < 2π` and `‖d²X_H‖ ≤ c`, then a `C³` Floer cylinder `u` of period
+one in `t` with `‖du‖ ≤ M`, where `c M < 2 (2π - a)²`, is of this form
 (`TauCeti.SymplecticForm.eq_comp_fst_of_isComplexLinearMap_perturbedFDeriv`). This file studies the
 linearized Floer operator along such a time-independent cylinder `u(s, t) = γ(s)`,
 
