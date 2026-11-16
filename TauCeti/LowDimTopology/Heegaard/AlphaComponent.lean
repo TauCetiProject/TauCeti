@@ -153,7 +153,7 @@ theorem sameAlphaComponent_betaLeft_betaRight (p : Point) :
 are the two sides of the `β`-arc through the point separating them. -/
 theorem sameAlphaComponent_alphaLeft_alphaNext_symm (q : Point) :
     H.SameAlphaComponent (H.alphaLeft q) (H.alphaLeft (H.alphaNext.symm q)) := by
-  rcases H.crossingCompatible q with ⟨h₁, -, h₃, -⟩ | ⟨h₁, -, h₃, -⟩
+  rcases isCrossingCompatible_iff.1 (H.crossingCompatible q) with ⟨h₁, -, h₃, -⟩ | ⟨h₁, -, h₃, -⟩
   · rw [h₁, h₃]
     exact (H.sameAlphaComponent_betaLeft_betaRight q).symm
   · rw [h₁, h₃]
@@ -162,7 +162,7 @@ theorem sameAlphaComponent_alphaLeft_alphaNext_symm (q : Point) :
 /-- The regions to the right of consecutive `α`-arcs lie in the same component of `Σ - α`. -/
 theorem sameAlphaComponent_alphaRight_alphaNext_symm (q : Point) :
     H.SameAlphaComponent (H.alphaRight q) (H.alphaRight (H.alphaNext.symm q)) := by
-  rcases H.crossingCompatible q with ⟨-, h₂, -, h₄⟩ | ⟨-, h₂, -, h₄⟩
+  rcases isCrossingCompatible_iff.1 (H.crossingCompatible q) with ⟨-, h₂, -, h₄⟩ | ⟨-, h₂, -, h₄⟩
   · rw [h₂, h₄]
     exact (H.sameAlphaComponent_betaLeft_betaRight _).symm
   · rw [h₂, h₄]
