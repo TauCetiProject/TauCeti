@@ -72,7 +72,7 @@ elliptic regularity argument provides it, assembles into membership of a Bessel-
   `TemperedDistribution.MemSobolev.sobolevSingularSupport_toDistribution`,
   `TemperedDistribution.MemSobolev.sobolevWaveFrontSet_toDistribution`: local Sobolev regularity
   of tempered distributions, and of elements of `H^s`.
-* `TemperedDistribution.memSobolev_of_isCompact_dsupport`,
+* `TemperedDistribution.memSobolev_of_isCompact_dsupport_of_forall_isLocallySobolevAt`,
   `TemperedDistribution.memSobolev_iff_sobolevSingularSupport_toDistribution_eq_empty`: a tempered
   distribution with compact support lies in `H^s` exactly when it is `H^s` near every point.
 
@@ -310,7 +310,7 @@ theorem MemSobolev.sobolevWaveFrontSet_toDistribution (hu : MemSobolev s 2 u) :
 
 /-- **From local to global regularity for tempered distributions.** A tempered distribution with
 compact support which is `H^s` near every point of its support lies in `H^s`. -/
-theorem memSobolev_of_isCompact_dsupport (hu : IsCompact (dsupport u))
+theorem memSobolev_of_isCompact_dsupport_of_forall_isLocallySobolevAt (hu : IsCompact (dsupport u))
     (h : ∀ x ∈ dsupport u, (toDistribution ⊤ u).IsLocallySobolevAt s x) : MemSobolev s 2 u := by
   set T := toDistribution (⊤ : Opens E) u
   -- `u` is the cut-off distribution `χ T` for a cutoff `χ` equal to `1` near its support.
@@ -321,13 +321,10 @@ theorem memSobolev_of_isCompact_dsupport (hu : IsCompact (dsupport u))
       simp [χ', postcompCLM_apply, hy]
   have hu' : u = T.cutoffTempered χ' := eq_cutoffTempered_of_forall T χ' fun ψ ψ' hψ hψ' ↦ by
     -- `ψ` is a test function, and `ψ' = χ' ψ` agrees with it near the support of `T`.
-    let ψt : 𝓓((⊤ : Opens E), ℂ) := ⟨ψ.postcompCLM ofRealCLM, (ψ.postcompCLM ofRealCLM).smooth ⊤,
-      by
-        rw [show ⇑(ψ.postcompCLM ofRealCLM) = ofRealCLM ∘ ψ from funext fun y ↦ by simp]
-        exact hψ.comp_left (map_zero _), subset_univ _⟩
+    let ψt : 𝓓((⊤ : Opens E), ℂ) := postcompCLM ofRealCLM (ψ.toTestFunction hψ (subset_univ _))
     have hψt : toSchwartzMapCLM ℝ ψt = ψ.postcompCLM ofRealCLM := by
       ext y
-      simp [ψt]
+      simp [ψt, postcompCLM_apply]
     rw [← hψt, ← complexPairing_toDistribution]
     exact complexPairing_eq_of_eventuallyEq T (hχ'.mono fun y hy ↦ by simp [ψt, hψ' y, hy])
   rw [hu']
@@ -343,7 +340,7 @@ theorem memSobolev_iff_sobolevSingularSupport_toDistribution_eq_empty
     (hu : IsCompact (dsupport u)) :
     MemSobolev s 2 u ↔ (toDistribution ⊤ u).sobolevSingularSupport s = ∅ :=
   ⟨MemSobolev.sobolevSingularSupport_toDistribution, fun h ↦
-    memSobolev_of_isCompact_dsupport hu fun x _ ↦
+    memSobolev_of_isCompact_dsupport_of_forall_isLocallySobolevAt hu fun x _ ↦
       (notMem_sobolevSingularSupport_iff (mem_univ x)).1 (h ▸ notMem_empty x)⟩
 
 end TemperedDistribution

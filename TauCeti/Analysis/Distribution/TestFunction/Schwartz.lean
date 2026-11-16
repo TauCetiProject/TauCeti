@@ -31,6 +31,8 @@ compared with distributions on open sets.
 * `TestFunction.toSchwartzMapCLM`: test functions on an open set as Schwartz functions, as a
   continuous linear map, with `TestFunction.coe_toSchwartzMapCLM`; it commutes with directional
   derivatives (`TestFunction.toSchwartzMapCLM_lineDerivOp`).
+* `SchwartzMap.toTestFunction`: a compactly supported Schwartz function as a test function, sent
+  back to itself by `TestFunction.toSchwartzMapCLM` (`SchwartzMap.toSchwartzMapCLM_toTestFunction`).
 
 ## References
 
@@ -130,3 +132,26 @@ theorem toSchwartzMapCLM_lineDerivOp (v : E) (φ : 𝓓(Ω, F)) :
   simp [lineDerivOp_eq_lineDerivCLM ℝ, SchwartzMap.lineDerivOp_apply]
 
 end TestFunction
+
+namespace SchwartzMap
+
+variable {Ω : Opens E}
+
+/-- A compactly supported Schwartz function whose support lies in the open set `Ω` is a test
+function on `Ω`. -/
+def toTestFunction (f : 𝓢(E, F)) (hf : HasCompactSupport f) (hΩ : tsupport f ⊆ Ω) :
+    𝓓(Ω, F) :=
+  ⟨f, f.smooth ⊤, hf, hΩ⟩
+
+@[simp]
+theorem coe_toTestFunction (f : 𝓢(E, F)) (hf : HasCompactSupport f) (hΩ : tsupport f ⊆ Ω) :
+    ⇑(f.toTestFunction hf hΩ) = f :=
+  (rfl)
+
+variable [Algebra ℝ 𝕜] [IsScalarTower ℝ 𝕜 F] in
+@[simp]
+theorem toSchwartzMapCLM_toTestFunction (f : 𝓢(E, F)) (hf : HasCompactSupport f)
+    (hΩ : tsupport f ⊆ Ω) : TestFunction.toSchwartzMapCLM 𝕜 (f.toTestFunction hf hΩ) = f :=
+  (rfl)
+
+end SchwartzMap

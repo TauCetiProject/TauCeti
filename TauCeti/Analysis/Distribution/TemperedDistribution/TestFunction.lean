@@ -117,7 +117,7 @@ theorem toDistribution_injective [FiniteDimensional ℝ E] [T2Space F] :
     Function.Injective (toDistribution (⊤ : Opens E) : 𝓢'(E, F) → 𝓓'(⊤, F)) := by
   intro u v h
   refine ext_real fun φ hφ ↦ ?_
-  let φ' : 𝓓((⊤ : Opens E), ℝ) := ⟨φ, φ.smooth ⊤, hφ, Set.subset_univ _⟩
+  let φ' : 𝓓((⊤ : Opens E), ℝ) := φ.toTestFunction hφ (Set.subset_univ _)
   have hφ' : TestFunction.toSchwartzMapCLM ℝ (TestFunction.postcompCLM Complex.ofRealCLM φ') =
       φ.postcompCLM Complex.ofRealCLM := by
     ext x
@@ -135,6 +135,7 @@ theorem toDistribution_lineDerivOp [ContinuousSMul ℝ F] {Ω : Opens E} (u : �
 
 /-- **Functions as distributions.** The restriction of the tempered distribution given by an `Lᵖ`
 function `f` is the distribution of `f` on `Ω`. -/
+@[simp]
 theorem toDistribution_toTemperedDistribution {G : Type*} [NormedAddCommGroup G]
     [NormedSpace ℂ G] [CompleteSpace G] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
     [μ.HasTemperateGrowth] [IsLocallyFiniteMeasure μ] {p : ENNReal} [Fact (1 ≤ p)]
