@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.Pick.Nevanlinna
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
-public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+import TauCeti.Basic.Complex.OfRealSub
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Expansion
-import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
@@ -21,7 +20,8 @@ import Mathlib.Tactic.Positivity
 A holomorphic function `F` on the upper half-plane `{z : ℂ | 0 < z.im}` is the resolvent transform
 `m_μ(z) = ∫ (x - z)⁻¹ dμ(x)` of a finite Borel measure `μ` on `ℝ` if and only if `0 ≤ Im F(z)` on
 the upper half-plane and `y ‖F(iy)‖` is bounded at infinity along the imaginary axis. It is the
-resolvent transform of a probability measure if and only if `iy F(iy) → -1` as `y → ∞`.
+resolvent transform of a probability measure if and only if `0 ≤ Im F(z)` on the upper half-plane
+and `iy F(iy) → -1` as `y → ∞`.
 
 The proof passes through the Nevanlinna representation
 `F(z) = b z + ∫ (1 + x z) / (x - z) dρ(x) + Re F(i)`
@@ -44,6 +44,9 @@ We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, n
   resolvent transforms of finite measures on `ℝ`.
 * `MeasureTheory.exists_isFiniteMeasure_resolventTransform_eq_of_tendsto`: existence with
   prescribed total mass `c` when `iy F(iy) → -c`.
+* `MeasureTheory.exists_isFiniteMeasure_measureReal_univ_eq_and_resolventTransform_eq_iff`:
+  analytic characterization of resolvent transforms of finite measures on `ℝ` with prescribed total
+  mass `c`.
 * `MeasureTheory.exists_isProbabilityMeasure_resolventTransform_eq_iff`: analytic characterization
   of resolvent transforms of probability measures on `ℝ`.
 
@@ -79,8 +82,8 @@ end TauCeti
 
 namespace MeasureTheory
 
-/-- Along the positive imaginary axis, the imaginary part of a Nevanlinna representation splits
-into `b y` and a positive rational integral. -/
+/-- Along the positive imaginary axis, `y * (F (y * I)).im` for a Nevanlinna representation splits
+into `b y²` and a nonnegative rational integral. -/
 private lemma mul_im_nevanlinna_rep {ρ : Measure ℝ} [IsFiniteMeasure ρ] {F : ℂ → ℂ} {b c y : ℝ}
     (hy : 0 < y)
     (hrep : F (y * I) = (b : ℂ) * (y * I) + ∫ x, TauCeti.nevanlinnaKernel (y * I) x ∂ρ + c) :
@@ -185,7 +188,6 @@ private lemma integral_nevanlinnaKernel_eq_resolventTransform_withDensity_sub {�
     refine hint1.mono' (by fun_prop) (ae_of_all _ fun x ↦ ?_)
     rw [norm_real, Real.norm_eq_abs]
     nlinarith [sq_abs x, sq_nonneg (|x| - 1)]
-  have hxz (x : ℝ) : (x : ℂ) - z ≠ 0 := fun h ↦ hz.ne' (by simpa using (congrArg im h).symm)
   have hres_int : Integrable (fun x : ℝ ↦ ((1 + x ^ 2 : ℝ) : ℂ) * resolvent z x) ρ := by
     refine (hint1.mul_const |z.im|⁻¹).mono' (by fun_prop) (ae_of_all _ fun x ↦ ?_)
     rw [norm_mul, norm_real, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
@@ -200,7 +202,8 @@ private lemma integral_nevanlinnaKernel_eq_resolventTransform_withDensity_sub {�
     simp [ENNReal.toReal_ofReal (by positivity : 0 ≤ 1 + x ^ 2), real_smul]
   rw [hμz, ← integral_sub hres_int hintx]
   exact integral_congr_ae (ae_of_all _ fun x ↦
-    TauCeti.nevanlinnaKernel_eq_one_add_sq_mul_resolvent_sub (hxz x))
+    TauCeti.nevanlinnaKernel_eq_one_add_sq_mul_resolvent_sub
+      (Complex.ofReal_sub_ne_zero_of_im_ne_zero hz.ne' x))
 
 /-- A nonnegative real `b` satisfying `b y² ≤ C` for all sufficiently large `y ≥ 1` vanishes. -/
 private lemma eq_zero_of_mul_sq_le {b y₀ C : ℝ} (hb0 : 0 ≤ b) (hy₀1 : 1 ≤ y₀)
@@ -287,24 +290,22 @@ theorem exists_isFiniteMeasure_resolventTransform_eq_iff {F : ℂ → ℂ} :
   refine ⟨?_, fun ⟨hF, him, hbdd⟩ ↦ exists_isFiniteMeasure_resolventTransform_eq hF him hbdd⟩
   rintro ⟨μ, hμ, hF⟩
   let _ := hμ
-  have hU : {z : ℂ | 0 < z.im} ⊆ (algebraMap ℝ ℂ '' μ.support)ᶜ := by
-    rintro z (hz : 0 < z.im) ⟨x, -, rfl⟩
-    simp at hz
+  have hU : {z : ℂ | 0 < z.im} ⊆ (algebraMap ℝ ℂ '' μ.support)ᶜ := fun z (hz : 0 < z.im) ↦ by
+    simpa using Complex.notMem_image_ofReal_of_im_ne_zero hz.ne'
   refine ⟨((analyticOn_resolventTransform.mono hU).differentiableOn).congr fun z hz ↦ hF z hz,
-    fun z hz ↦ ?_, μ.real univ, ?_⟩
-  · rw [hF z hz, im_resolventTransform]
-    exact integral_nonneg fun x ↦ div_nonneg hz.le (by positivity)
-  · filter_upwards [eventually_gt_atTop 0] with y hy
-    have hz : 0 < (y * I : ℂ).im := by simpa using hy
-    rw [hF (y * I) hz]
-    calc y * ‖resolventTransform μ (y * I)‖
-        ≤ y * (|(y * I : ℂ).im|⁻¹ * μ.real univ) :=
-          mul_le_mul_of_nonneg_left (norm_resolventTransform_le hz.ne') hy.le
-      _ = μ.real univ := by simp [abs_of_pos hy, hy.ne']
+    fun z hz ↦ hF z hz ▸ im_resolventTransform_nonneg hz.le, μ.real univ, ?_⟩
+  filter_upwards [eventually_gt_atTop 0] with y hy
+  have hz : 0 < (y * I : ℂ).im := by simpa using hy
+  rw [hF (y * I) hz]
+  calc y * ‖resolventTransform μ (y * I)‖
+      ≤ y * (|(y * I : ℂ).im|⁻¹ * μ.real univ) :=
+        mul_le_mul_of_nonneg_left (norm_resolventTransform_le hz.ne') hy.le
+    _ = μ.real univ := by simp [abs_of_pos hy, hy.ne']
 
 /-- **Existence of a representing finite measure with prescribed total mass.** If `F` is
 holomorphic on the upper half-plane with nonnegative imaginary part and `iy F(iy) → -c` as
-`y → ∞`, then `F` is the resolvent transform of a finite measure on `ℝ` of total mass `c`. -/
+`y → ∞`, then `F` agrees on the upper half-plane with the resolvent transform of a finite measure
+on `ℝ` of total mass `c`. -/
 theorem exists_isFiniteMeasure_resolventTransform_eq_of_tendsto {F : ℂ → ℂ} {c : ℝ}
     (hF : DifferentiableOn ℂ F {z : ℂ | 0 < z.im})
     (him : ∀ z : ℂ, 0 < z.im → 0 ≤ (F z).im)
@@ -330,6 +331,26 @@ theorem exists_isFiniteMeasure_resolventTransform_eq_of_tendsto {F : ℂ → ℂ
     exact_mod_cast this
   exact ⟨μ, hμ, hmass, hFμ⟩
 
+/-- **Analytic characterization of resolvent transforms of finite measures with prescribed total
+mass.** A function on `ℂ` agrees on the upper half-plane with the resolvent transform of a finite
+Borel measure on `ℝ` of total mass `c` if and only if it is holomorphic there, has nonnegative
+imaginary part there, and satisfies `iy F(iy) → -c` as `y → ∞`. -/
+theorem exists_isFiniteMeasure_measureReal_univ_eq_and_resolventTransform_eq_iff {F : ℂ → ℂ}
+    {c : ℝ} :
+    (∃ μ : Measure ℝ, IsFiniteMeasure μ ∧ μ.real univ = c ∧
+        ∀ z : ℂ, 0 < z.im → F z = resolventTransform μ z) ↔
+      DifferentiableOn ℂ F {z : ℂ | 0 < z.im} ∧
+        (∀ z : ℂ, 0 < z.im → 0 ≤ (F z).im) ∧
+        Tendsto (fun y : ℝ ↦ (y : ℂ) * I * F (y * I)) atTop (𝓝 (-(c : ℂ))) := by
+  refine ⟨?_, fun ⟨hF, him, hlim⟩ ↦
+    exists_isFiniteMeasure_resolventTransform_eq_of_tendsto hF him hlim⟩
+  rintro ⟨μ, hμ, rfl, hF⟩
+  let _ := hμ
+  obtain ⟨hdiff, him, -⟩ := exists_isFiniteMeasure_resolventTransform_eq_iff.1 ⟨μ, hμ, hF⟩
+  refine ⟨hdiff, him, (tendsto_mul_I_mul_resolventTransform (μ := μ)).congr' ?_⟩
+  filter_upwards [eventually_gt_atTop 0] with y hy
+  exact congrArg ((y : ℂ) * I * ·) (hF (y * I) (by simpa using hy)).symm
+
 /-- **Analytic characterization of resolvent transforms of probability measures.** A function on
 `ℂ` agrees on the upper half-plane with the resolvent transform of a probability measure on `ℝ` if
 and only if it is holomorphic there, has nonnegative imaginary part there, and satisfies
@@ -339,23 +360,10 @@ theorem exists_isProbabilityMeasure_resolventTransform_eq_iff {F : ℂ → ℂ} 
       DifferentiableOn ℂ F {z : ℂ | 0 < z.im} ∧
         (∀ z : ℂ, 0 < z.im → 0 ≤ (F z).im) ∧
         Tendsto (fun y : ℝ ↦ (y : ℂ) * I * F (y * I)) atTop (𝓝 (-1)) := by
-  refine ⟨?_, fun ⟨hF, him, hlim⟩ ↦ ?_⟩
-  · rintro ⟨μ, hμ, hF⟩
-    let _ := hμ
-    obtain ⟨hdiff, him, -⟩ :=
-      exists_isFiniteMeasure_resolventTransform_eq_iff.1 ⟨μ, inferInstance, hF⟩
-    have hlim1 : Tendsto (fun y : ℝ ↦ (y : ℂ) * I * resolventTransform μ (y * I))
-        atTop (𝓝 (-1)) := by
-      simpa using tendsto_mul_I_mul_resolventTransform (μ := μ)
-    refine ⟨hdiff, him, hlim1.congr' ?_⟩
-    filter_upwards [eventually_gt_atTop 0] with y hy
-    exact congrArg ((y : ℂ) * I * ·) (hF (y * I) (by simpa using hy)).symm
-  · obtain ⟨μ, hμ, hmass, hFμ⟩ :=
-      exists_isFiniteMeasure_resolventTransform_eq_of_tendsto (c := 1) hF him (by simpa using hlim)
-    let _ := hμ
-    have hprob : IsProbabilityMeasure μ :=
-      ⟨by rw [← ENNReal.ofReal_one, ← hmass, ofReal_measureReal]⟩
-    exact ⟨μ, hprob, hFμ⟩
+  rw [← ofReal_one, ← exists_isFiniteMeasure_measureReal_univ_eq_and_resolventTransform_eq_iff]
+  exact exists_congr fun μ ↦
+    ⟨fun ⟨hμ, hF⟩ ↦ by let _ := hμ; exact ⟨inferInstance, probReal_univ, hF⟩,
+      fun ⟨_, hm, hF⟩ ↦ ⟨isProbabilityMeasure_iff_real.2 hm, hF⟩⟩
 
 end MeasureTheory
 
