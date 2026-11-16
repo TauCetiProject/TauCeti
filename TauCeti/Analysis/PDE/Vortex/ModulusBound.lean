@@ -50,14 +50,15 @@ says `u ≥ v` for the comparison function
 
 since `exp(2v) |f|² = ∏ ‖z - a‖² / (‖z - a‖² + C)`
 (`TauCeti.Vortex.prod_div_le_exp_two_mul_mul_norm_prod_sq`). Both `v + m log |z|` and
-`u + m log |z|` tend to zero, so if `v - u` were positive somewhere it would have a positive
-maximum, where `Δv ≤ Δu`. With `tₐ = C / (‖z - a‖² + C) ∈ (0, 1]`,
+`u + m log |z|` tend to zero, so `v - u` tends to zero at infinity, and by the whole-plane maximum
+principle `TauCeti.nonpos_of_tendsto_cocompact_of_laplacian_nonneg` it suffices that `Δu < Δv`
+wherever `u < v`. With `tₐ = C / (‖z - a‖² + C) ∈ (0, 1]`,
 
 `Δv = -(2 / C) ∑ tₐ²`,    `Δu ≤ (∏ (1 - tₐ) - 1) / 8`
 
-there, since `u < v`. Each `tₐ` is at most `1 - ∏ (1 - t_b)`, so `∑ tₐ² ≤ m (1 - ∏ (1 - tₐ))`,
-and `C > 16 m` turns these into `Δv > Δu`, a contradiction. (When `f` vanishes at the maximum
-`Δu = -1 / 8`, while `Δv ≥ -2 m / C > -1 / 8`.)
+at such a point. Each `tₐ` is at most `1 - ∏ (1 - t_b)`, so `∑ tₐ² ≤ m (1 - ∏ (1 - tₐ))`, and
+`C > 16 m` turns these into `Δu < Δv`. (Where `f` vanishes `Δu = -1 / 8`, while
+`Δv ≥ -2 m / C > -1 / 8`.)
 
 ## References
 
@@ -169,7 +170,9 @@ private theorem rhs_lt_neg_half_mul_sum {D : Multiset ℂ} {C : ℝ}
   have h01 := mem_Icc_of_mem_map_div_norm_sub_sq_add hC₀ D z
   have hP₀ := Multiset.prod_map_nonneg (f := fun t : ℝ ↦ 1 - t) fun t ht ↦
     sub_nonneg.2 (h01 t ht).2
-  have hP₁ := Multiset.prod_map_one_sub_le_one (fun t ht ↦ (h01 t ht).1) fun t ht ↦ (h01 t ht).2
+  have hP₁ : ((D.map fun a ↦ C / (‖z - a‖ ^ 2 + C)).map fun t ↦ 1 - t).prod ≤ 1 :=
+    (Multiset.prod_map_le_prod_map₀ _ (fun _ ↦ 1) (fun t ht ↦ sub_nonneg.2 (h01 t ht).2)
+      fun t ht ↦ sub_le_self _ (h01 t ht).1).trans_eq (by simp)
   have hS := Multiset.sum_map_sq_le_card_mul_one_sub_prod_map_one_sub (fun t ht ↦ (h01 t ht).1)
     fun t ht ↦ (h01 t ht).2
   rw [Multiset.card_map] at hS
@@ -228,26 +231,20 @@ theorem prod_div_le_exp_two_mul_mul_norm_prod_sq {D : Multiset ℂ} {u : ℂ →
           rw [hvz, show 2 * (-(1 / 2) * F z) = -F z by ring]
           exact (exp_neg_sum_log_mul_norm_prod_sq hC₀ D z).symm
       _ ≤ _ := mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 (by linarith [hle z])) (sq_nonneg _)
-  by_contra! hlt
-  obtain ⟨w₀, hw₀⟩ := hlt
-  set g : ℂ → ℝ := v - u with hg
   have hvd : ContDiff ℝ 2 v := hFd.const_smul (-(1 / 2) : ℝ)
-  have hgd : ContDiff ℝ 2 g := hvd.sub hu
-  -- `g = v - u` tends to zero at infinity, so it attains a positive maximum.
-  have hglim : Tendsto g (cocompact ℂ) (𝓝 0) := by
+  -- `v - u` tends to zero at infinity and is subharmonic where positive, so it is nonpositive.
+  have hglim : Tendsto (v - u) (cocompact ℂ) (𝓝 0) := by
     have h := (tendsto_neg_half_mul_sum_log_add_card_mul_log hC₀ D).sub hbc
     rw [sub_zero] at h
     refine h.congr fun w ↦ ?_
-    simp only [hg, Pi.sub_apply, hvz, hF]
+    simp only [Pi.sub_apply, hvz, hF]
     ring
-  obtain ⟨z₁, hz₁⟩ := hgd.continuous.exists_forall_ge' w₀
-    ((hglim.eventually (gt_mem_nhds (sub_pos.2 hw₀))).mono fun _ h ↦ h.le)
-  have hlt₁ : u z₁ < v z₁ := sub_pos.1 ((sub_pos.2 hw₀).trans_le (hz₁ w₀))
-  -- At the maximum `Δv ≤ Δu`, against the comparison step.
-  have hΔg := laplacian_nonpos_of_isLocalMax hgd.contDiffAt (Eventually.of_forall hz₁)
-  rw [hg, hvd.contDiffAt.laplacian_sub hu.contDiffAt, hv,
-    laplacian_smul _ hFd.contDiffAt, smul_eq_mul, hFΔ, hΔ] at hΔg
-  have := rhs_lt_neg_half_mul_sum hC (z := z₁) hlt₁
+  refine fun w ↦ sub_nonpos.1 <| nonpos_of_tendsto_cocompact_of_laplacian_nonneg (f := v - u)
+    (hvd.sub hu) (fun y hy ↦ ?_) hglim w
+  -- Where `u < v`, the comparison step gives `Δu < Δv`.
+  rw [hvd.contDiffAt.laplacian_sub hu.contDiffAt, hv, laplacian_smul _ hFd.contDiffAt,
+    smul_eq_mul, hFΔ, hΔ]
+  have := rhs_lt_neg_half_mul_sum hC (z := y) ((sub_pos.1 hy).trans_eq (hvz y))
   linarith
 
 /-! ### Plane vortices -/
