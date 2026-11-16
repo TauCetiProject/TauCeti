@@ -155,25 +155,15 @@ theorem detLineChartEquiv_detLineEquivOfBijective_symm_one
     LinearMap.finrank_quotient_range_eq_zero_of_surjective hT.2
   have hB : finrank 𝕜 (LinearMap.ker ((T.coprod D₂ : E × Λ →L[𝕜] F) : E × Λ →ₗ[𝕜] F)) = 0 :=
     (kerEquivOfProd _ q h).toLinearEquiv.finrank_eq.symm.trans finrank_zero_of_subsingleton
-  have hrange : finrank 𝕜 (LinearMap.range (parameterProj T D₂ :
-      LinearMap.ker ((T.coprod D₂ : E × Λ →L[𝕜] F) : E × Λ →ₗ[𝕜] F) →ₗ[𝕜] Λ)) = 0 :=
-    Nat.eq_zero_of_le_zero ((Submodule.finrank_le _).trans hΛ.le)
+  have hsign : (-1 : 𝕜) ^ (finrank 𝕜 (F ⧸ (T : E →ₗ[𝕜] F).range) * finrank 𝕜 Λ) = 1 := by
+    simp [hΛ]
   -- All the spaces of the exact sequence `0 → ker T → ker (T.coprod D₂) → Λ → coker T → 0` are
   -- zero, so the stabilization isomorphism matches the empty exterior products.
   rw [← LinearEquiv.eq_symm_apply, detLineChartEquiv_symm_tmul, detLineStabilizationEquiv_apply,
-    show ((-1 : 𝕜) ^ (finrank 𝕜 (F ⧸ (T : E →ₗ[𝕜] F).range) * finrank 𝕜 Λ)) = 1 by simp [hΛ],
-    one_smul, detLineCoprodEquiv_def, LinearEquiv.detLineCongr_ιMulti,
-    TauCeti.detLineFourTermEquiv_tmul_eq_smul_tmul _ _ _ _ 0 0 0
-      (ξ := (TauCeti.detLineEquivOfFinrankEqZero hcoker).toLinearMap)
-      (γ := exteriorPower.ιMulti 𝕜 _ 0) ?_ ?_ _
-      (TauCeti.detLineEquivOfFinrankEqZero_ιMulti hcoker _),
-    LinearEquiv.coe_coe, TauCeti.detLineEquivOfFinrankEqZero_ιMulti, one_smul,
+    hsign, one_smul, detLineCoprodEquiv_def, LinearEquiv.detLineCongr_ιMulti,
+    TauCeti.detLineFourTermEquiv_ιMulti_tmul_of_finrank_eq_zero _ _ _ _ hker hB hΛ hcoker 0,
     LinearMap.detLineEquivOfBijective_symm_one hT 0 _ 0
       (TauCeti.detLineEquivOfFinrankEqZero_ιMulti hcoker _)]
-  · rw [exteriorPower.ιMulti_apply_coe, TauCeti.ExteriorAlgebra.ιMulti_of_eq_zero hB,
-      TauCeti.ExteriorAlgebra.ιMulti_of_eq_zero (by rw [hker, hrange])]
-  · rw [exteriorPower.ιMulti_apply_coe, TauCeti.ExteriorAlgebra.ιMulti_of_eq_zero hΛ,
-      TauCeti.ExteriorAlgebra.ιMulti_of_eq_zero (by rw [hrange, hcoker])]
 
 end Subsingleton
 
