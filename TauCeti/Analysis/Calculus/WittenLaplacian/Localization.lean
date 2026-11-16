@@ -306,8 +306,6 @@ theorem integral_mul_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul {f : (�
         |t| * ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)|) *
           ∑ s, φ x s ^ 2 ≤
       ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
-  have hφ₂ : Continuous (fderiv ℝ (fderiv ℝ φ)) :=
-    (hφ.fderiv_right (m := 1) (by norm_num)).continuous_fderiv one_ne_zero
   -- The second-order part of the pairing, `K = ∑ᵢ ⟨-∂ᵢ²φ, φ⟩`, and the potential `V`.
   set K : (ι → ℝ) → ℝ := fun x ↦
     ∑ i, ∑ s, -fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s * φ x s
@@ -317,7 +315,7 @@ theorem integral_mul_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul {f : (�
   have hKint : ∀ i ∈ (Finset.univ : Finset ι), Integrable fun x ↦
       ∑ s, -fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s * φ x s := fun i _ ↦
     hφ.continuous.integrable_sum_mul_of_continuousOn hφc (Set.subset_univ _)
-      ((hφ₂.clm_apply continuous_const).clm_apply continuous_const).neg.continuousOn
+      (hφ.continuous_fderiv_fderiv_apply le_rfl _ _).neg.continuousOn
   have hKi : Integrable K := integrable_finsetSum _ hKint
   have hK : 0 ≤ ∫ x, K x := by
     rw [integral_finsetSum _ hKint]
