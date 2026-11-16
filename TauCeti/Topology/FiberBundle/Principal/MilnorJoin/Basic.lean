@@ -329,12 +329,6 @@ theorem continuousOn_label (i : ℕ) :
     ContinuousOn (label i : MilnorTotalSpace G → G) (coordSet G i) :=
   (continuous_iff.mp continuous_id).2 i
 
-theorem Continuous.continuousAt_label_comp {Z : Type*} [TopologicalSpace Z]
-    {f : Z → MilnorTotalSpace G} (hf : Continuous f) {i : ℕ} {z : Z} (hz : 0 < weight i (f z)) :
-    ContinuousAt (fun x ↦ label i (f x)) z :=
-  ((continuous_iff.mp hf).2 i).continuousAt
-    ((isOpen_lt continuous_const ((continuous_iff.mp hf).1 i)).mem_nhds hz)
-
 @[fun_prop, continuity]
 theorem continuous_vertex (i : ℕ) : Continuous (vertex i : G → MilnorTotalSpace G) := by
   rw [continuous_iff]
@@ -558,6 +552,21 @@ theorem weakToMilnorTotalSpace_inv_smul {G : Type u} [Group G] [TopologicalSpace
   MilnorTotalSpace.invEquiv_smul g x
 
 end TauCeti
+
+namespace Continuous
+
+open TauCeti
+
+/-- For a continuous map `f : Z → MilnorTotalSpace G`, `MilnorTotalSpace.label i ∘ f` is
+continuous at every point where `0 < MilnorTotalSpace.weight i (f z)`. -/
+theorem continuousAt_milnorTotalSpace_label_comp {G : Type u} [TopologicalSpace G]
+    {Z : Type*} [TopologicalSpace Z] {f : Z → MilnorTotalSpace G} (hf : Continuous f)
+    {i : ℕ} {z : Z} (hz : 0 < MilnorTotalSpace.weight i (f z)) :
+    ContinuousAt (fun x ↦ MilnorTotalSpace.label i (f x)) z :=
+  ((MilnorTotalSpace.continuous_iff.mp hf).2 i).continuousAt
+    ((isOpen_lt continuous_const ((MilnorTotalSpace.continuous_iff.mp hf).1 i)).mem_nhds hz)
+
+end Continuous
 
 namespace MonoidHom
 
