@@ -11,24 +11,16 @@ public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Basic
 /-!
 # Smooth and holomorphic finite-rank cores from model-fibre coordinates
 
-Presenting a `C^n` vector bundle `V` with model fibre `F` through a continuous linear equivalence
-`e : F ≃L[𝕜] (Fin r → 𝕜)` produces a `C^n` finite-rank core (`isContMDiff_ofLinearEquiv`), because
-its transitions are the chart transitions of `V` conjugated by the continuous linear equivalence
-`e.arrowCongr e`. Over a complex manifold (`I = 𝓘(ℂ, EB)`, `n = ∞`), this equips any holomorphic
-vector bundle with model fibre `F` with a holomorphic finite-rank core.
+Presenting a `C^n` vector bundle `V` with model fibre `F` through `e : F ≃L[𝕜] (Fin r → 𝕜)` yields
+a `C^n` finite-rank core (`isContMDiff_ofLinearEquiv`; holomorphic when `I = 𝓘(ℂ, EB)` and
+`n = ∞`), and upgrades the topological comparisons of
+`TauCeti.Topology.VectorBundle.FiniteRank.LinearEquiv` to `C^n` diffeomorphisms over `B`:
 
-All topological comparisons from `TauCeti.Topology.VectorBundle.FiniteRank.LinearEquiv` upgrade to
-`C^n` diffeomorphisms over the identity of `B`, without any smoothness hypothesis on the base or on
-`V`:
-
-* `FiniteRankBundleCore.ofLinearEquivTotalSpaceDiffeomorph` identifies the reconstructed total space
-  of `ofLinearEquiv e V` with `TotalSpace F V`;
-* `FiniteRankBundleCore.ofLinearEquivChangeDiffeomorph` upgrades the change-of-coordinates
-  isomorphism `ofLinearEquivChangeIso e₁ e₂ V` to a `C^n` diffeomorphism commuting with
+* `ofLinearEquivTotalSpaceDiffeomorph` identifies `(ofLinearEquiv e V).core.TotalSpace` with
+  `TotalSpace F V`;
+* `ofLinearEquivChangeDiffeomorph` upgrades `ofLinearEquivChangeIso e₁ e₂ V`, commuting with
   `ofLinearEquivTotalSpaceDiffeomorph`;
-* over a complete scalar field, `FiniteRankBundleCore.ofLinearEquivDualDiffeomorph` upgrades
-  `ofLinearEquivDualIso e V` to a `C^n` diffeomorphism between `(ofLinearEquiv e V).dual` and the
-  core of Mathlib's dual bundle `fun x ↦ V x →L[𝕜] 𝕜` in `dualCoords e`.
+* over a complete field, `ofLinearEquivDualDiffeomorph` upgrades `ofLinearEquivDualIso e V`.
 -/
 
 public section
@@ -49,7 +41,7 @@ variable {𝕜 : Type v} [NontriviallyNormedField 𝕜]
   {F : Type w} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- If `V` is a `C^n` vector bundle with model fibre `F`, then `ofLinearEquiv e V` is a `C^n`
-finite-rank core. For complex scalars at regularity `∞`, this is the holomorphic core structure. -/
+finite-rank core (holomorphic when `𝕜 = ℂ` and `n = ∞`). -/
 instance isContMDiff_ofLinearEquiv {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (V : B → Type z)
     [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
     [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
@@ -57,10 +49,10 @@ instance isContMDiff_ofLinearEquiv {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜))
     (ofLinearEquiv e V).core.IsContMDiff I n where
   contMDiffOn_coordChange b c := by
     rw [baseSet_ofLinearEquiv, baseSet_ofLinearEquiv]
-    refine ((e.arrowCongr e).contDiff.contMDiff.comp_contMDiffOn
+    exact ((e.arrowCongr e).contDiff.contMDiff.comp_contMDiffOn
       (contMDiffOn_coordChangeL (IB := I) (n := n)
-        (trivializationAt F V b) (trivializationAt F V c))).congr fun x _ ↦ ?_
-    exact coordChange_ofLinearEquiv e V b c x
+        (trivializationAt F V b) (trivializationAt F V c))).congr fun x _ ↦
+      coordChange_ofLinearEquiv e V b c x
 
 section TotalSpace
 
@@ -69,25 +61,24 @@ variable {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (V : B → Type z)
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle 𝕜 F V]
 
-/-- The forward map of `ofLinearEquivTotalSpaceHomeomorph` is `C^n` at every order, without any
-smoothness hypothesis on `B` or `V`. -/
+/-- The forward map of `ofLinearEquivTotalSpaceHomeomorph` is `C^n` at every order, without
+smoothness hypotheses on `B` or `V`. -/
 theorem contMDiff_ofLinearEquivTotalSpaceHomeomorph :
     ContMDiff (I.prod 𝓘(𝕜, Fin (ofLinearEquiv e V).rank → 𝕜)) (I.prod 𝓘(𝕜, F)) n
       (ofLinearEquivTotalSpaceHomeomorph e V) := by
   intro p₀
   rw [Bundle.contMDiffAt_totalSpace_iff, ofLinearEquivTotalSpaceHomeomorph_apply]
   refine ⟨((contMDiff_proj (ofLinearEquiv e V).core.Fiber).congr fun p ↦ by simp).contMDiffAt, ?_⟩
-  have hp₀ : p₀ ∈ ((ofLinearEquiv e V).core.localTriv p₀.proj).source :=
-    (ofLinearEquiv e V).core.mem_source_at p₀.proj p₀.2
-  have hU := ((ofLinearEquiv e V).core.localTriv p₀.proj).open_source.mem_nhds hp₀
-  refine (e.symm.contDiff.comp_contMDiffAt
-    ((ofLinearEquiv e V).contMDiffAt_localTriv_snd p₀)).congr_of_eventuallyEq ?_
-  filter_upwards [hU] with q hq
-  exact congrArg Prod.snd (trivializationAt_ofLinearEquivTotalSpaceHomeomorph e V p₀.proj q
-    (((ofLinearEquiv e V).core.localTriv p₀.proj).mem_source.1 hq))
+  have hU := ((ofLinearEquiv e V).core.localTriv p₀.proj).open_source.mem_nhds
+    ((ofLinearEquiv e V).core.mem_source_at p₀.proj p₀.2)
+  exact (e.symm.contDiff.comp_contMDiffAt
+    ((ofLinearEquiv e V).contMDiffAt_localTriv_snd p₀)).congr_of_eventuallyEq
+      (Filter.eventually_of_mem hU fun q hq ↦ congrArg Prod.snd
+        (trivializationAt_ofLinearEquivTotalSpaceHomeomorph e V p₀.proj q
+          (((ofLinearEquiv e V).core.localTriv p₀.proj).mem_source.1 hq)))
 
-/-- The inverse map of `ofLinearEquivTotalSpaceHomeomorph` is `C^n` at every order, without any
-smoothness hypothesis on `B` or `V`. -/
+/-- The inverse map of `ofLinearEquivTotalSpaceHomeomorph` is `C^n` at every order, without
+smoothness hypotheses on `B` or `V`. -/
 theorem contMDiff_ofLinearEquivTotalSpaceHomeomorph_symm :
     ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, Fin (ofLinearEquiv e V).rank → 𝕜)) n
       (ofLinearEquivTotalSpaceHomeomorph e V).symm := by
@@ -96,8 +87,8 @@ theorem contMDiff_ofLinearEquivTotalSpaceHomeomorph_symm :
   have hproj : ((ofLinearEquivTotalSpaceHomeomorph e V).symm p₀).proj = p₀.proj := by simp
   rw [hproj]
   refine ⟨((contMDiff_proj V).congr fun p ↦ by simp).contMDiffAt, ?_⟩
-  have hp₀ := FiberBundle.mem_trivializationAt_proj_source (x := p₀)
-  have hU := (trivializationAt F V p₀.proj).open_source.mem_nhds hp₀
+  have hU := (trivializationAt F V p₀.proj).open_source.mem_nhds
+    (FiberBundle.mem_trivializationAt_proj_source (x := p₀))
   refine (e.contDiff.comp_contMDiffAt
     (p₀.contMDiffAt_trivializationAt_snd (IB := I) (n := n))).congr_of_eventuallyEq ?_
   filter_upwards [hU] with q hq
@@ -138,14 +129,16 @@ end TotalSpace
 
 /-! ### Smooth change of model coordinates -/
 
+section Change
+
+variable {r₁ r₂ : ℕ} (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F ≃L[𝕜] (Fin r₂ → 𝕜)) (V : B → Type z)
+  [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+
 /-- Changing the model-fibre coordinate equivalence from `e₁` to `e₂` induces a `C^n` diffeomorphism
 of reconstructed total spaces, upgrading `ofLinearEquivChangeIso e₁ e₂ V`. -/
-noncomputable def ofLinearEquivChangeDiffeomorph {r₁ r₂ : ℕ}
-    (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F ≃L[𝕜] (Fin r₂ → 𝕜)) (V : B → Type z)
-    [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
-    [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-    [FiberBundle F V] [VectorBundle 𝕜 F V]
-    (I : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) :
+noncomputable def ofLinearEquivChangeDiffeomorph (I : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) :
     (ofLinearEquiv e₁ V).core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin (ofLinearEquiv e₁ V).rank → 𝕜),
       I.prod 𝓘(𝕜, Fin (ofLinearEquiv e₂ V).rank → 𝕜)⟯ (ofLinearEquiv e₂ V).core.TotalSpace :=
   CoordinateHom.toDiffeomorphOfInv
@@ -164,20 +157,12 @@ noncomputable def ofLinearEquivChangeDiffeomorph {r₁ r₂ : ℕ}
           (trivializationAt F V b) x w)) (e₁.symm_apply_apply (e₂.symm v))).trans
           (congrArg e₁ (e₂.symm_apply_apply _)).symm)
 
-@[simp] theorem coe_ofLinearEquivChangeDiffeomorph {r₁ r₂ : ℕ}
-    (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F ≃L[𝕜] (Fin r₂ → 𝕜)) (V : B → Type z)
-    [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
-    [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-    [FiberBundle F V] [VectorBundle 𝕜 F V] :
+@[simp] theorem coe_ofLinearEquivChangeDiffeomorph :
     ⇑(ofLinearEquivChangeDiffeomorph e₁ e₂ V I n) =
       (ofLinearEquivChangeIso e₁ e₂ V).hom.totalSpaceMap :=
   CoordinateHom.coe_toDiffeomorphOfInv _ _ _ _ _ _
 
-@[simp] theorem coe_ofLinearEquivChangeDiffeomorph_symm {r₁ r₂ : ℕ}
-    (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F ≃L[𝕜] (Fin r₂ → 𝕜)) (V : B → Type z)
-    [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
-    [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-    [FiberBundle F V] [VectorBundle 𝕜 F V] :
+@[simp] theorem coe_ofLinearEquivChangeDiffeomorph_symm :
     ⇑(ofLinearEquivChangeDiffeomorph e₁ e₂ V I n).symm =
       (ofLinearEquivChangeIso e₁ e₂ V).inv.totalSpaceMap :=
   CoordinateHom.coe_toDiffeomorphOfInv_symm _ _ _ _ _ _
@@ -185,11 +170,7 @@ noncomputable def ofLinearEquivChangeDiffeomorph {r₁ r₂ : ℕ}
 /-- The change-of-coordinates diffeomorphism `ofLinearEquivChangeDiffeomorph e₁ e₂ V I n` commutes
 with the two reconstruction diffeomorphisms `ofLinearEquivTotalSpaceDiffeomorph e₁ V I n` and
 `ofLinearEquivTotalSpaceDiffeomorph e₂ V I n` onto `TotalSpace F V`. -/
-theorem ofLinearEquivTotalSpaceDiffeomorph_changeDiffeomorph {r₁ r₂ : ℕ}
-    (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F ≃L[𝕜] (Fin r₂ → 𝕜)) (V : B → Type z)
-    [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
-    [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-    [FiberBundle F V] [VectorBundle 𝕜 F V]
+theorem ofLinearEquivTotalSpaceDiffeomorph_changeDiffeomorph
     (p : (ofLinearEquiv e₁ V).core.TotalSpace) :
     ofLinearEquivTotalSpaceDiffeomorph e₂ V I n
         (ofLinearEquivChangeDiffeomorph e₁ e₂ V I n p) =
@@ -197,6 +178,8 @@ theorem ofLinearEquivTotalSpaceDiffeomorph_changeDiffeomorph {r₁ r₂ : ℕ}
   rw [ofLinearEquivTotalSpaceDiffeomorph_apply, ofLinearEquivTotalSpaceDiffeomorph_apply,
     ← ofLinearEquivTotalSpaceHomeomorph_apply, ← ofLinearEquivTotalSpaceHomeomorph_apply,
     coe_ofLinearEquivChangeDiffeomorph, ofLinearEquivTotalSpaceHomeomorph_changeIso_hom]
+
+end Change
 
 end General
 
@@ -217,8 +200,7 @@ variable {𝕜 : Type v} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 /-- Over a complete scalar field, `(ofLinearEquiv e V).dual` is `C^n` diffeomorphic on total spaces
 to `ofLinearEquiv (dualCoords e) (fun x ↦ V x →L[𝕜] 𝕜)` by the identity on every coordinate fibre,
 upgrading `ofLinearEquivDualIso e V`. -/
-noncomputable def ofLinearEquivDualDiffeomorph
-    (I : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) :
+noncomputable def ofLinearEquivDualDiffeomorph (I : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) :
     (ofLinearEquiv e V).dual.core.TotalSpace ≃ₘ^n⟮
       I.prod 𝓘(𝕜, Fin (ofLinearEquiv e V).dual.rank → 𝕜),
       I.prod 𝓘(𝕜, Fin (ofLinearEquiv (dualCoords e) (fun y ↦ V y →L[𝕜] 𝕜)).rank → 𝕜)⟯
@@ -228,16 +210,13 @@ noncomputable def ofLinearEquivDualDiffeomorph
     (ofLinearEquivDualIso e V).hom_inv_id (ofLinearEquivDualIso e V).inv_hom_id
     (contMDiff_totalSpaceMap_of_mem_baseSet _ (ContinuousLinearMap.id 𝕜 (Fin r → 𝕜))
       fun x b hb v ↦ by
-        have hx : x ∈ (trivializationAt F V x).baseSet := mem_baseSet_trivializationAt F V x
-        have hb' : x ∈ (trivializationAt F V b).baseSet := hb
-        rw [fiberMap_ofLinearEquivDualIso_hom, coordChange_ofLinearEquiv_dualCoords e V hx hb']
-        rfl)
+        rw [fiberMap_ofLinearEquivDualIso_hom,
+          coordChange_ofLinearEquiv_dualCoords e V (mem_baseSet_trivializationAt F V x) hb]; rfl)
     (contMDiff_totalSpaceMap_of_mem_baseSet _ (ContinuousLinearMap.id 𝕜 (Fin r → 𝕜))
       fun x b hb v ↦ by
-        have hx : x ∈ (trivializationAt F V x).baseSet := mem_baseSet_trivializationAt F V x
-        have hb' : x ∈ (trivializationAt F V b).baseSet := by simpa using hb
-        rw [fiberMap_ofLinearEquivDualIso_inv, coordChange_ofLinearEquiv_dualCoords e V hx hb']
-        rfl)
+        rw [fiberMap_ofLinearEquivDualIso_inv,
+          coordChange_ofLinearEquiv_dualCoords e V (mem_baseSet_trivializationAt F V x)
+            (by simpa using hb)]; rfl)
 
 @[simp] theorem coe_ofLinearEquivDualDiffeomorph :
     ⇑(ofLinearEquivDualDiffeomorph e V I n) =
