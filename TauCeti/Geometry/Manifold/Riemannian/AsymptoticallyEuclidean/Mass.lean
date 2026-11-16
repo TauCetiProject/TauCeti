@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Euclidean.Volume.Sphere
-public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Conformal
+public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Basic
 
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.InnerProductSpace.NormPow
@@ -18,9 +18,10 @@ On a coordinate end `ℝⁿ \ B_R` with metric coefficients `g_ij`, the Arnowitt
 flux integrand through the Euclidean coordinate sphere `{x : ‖x‖ = r}` is
 `Σ_j (Σ_i (∂_i g_ij - ∂_j g_ii)) (x_j / r)`, integrated against `(n - 1)`-dimensional Euclidean
 Hausdorff measure and normalized by `2 (n - 1) |S^(n - 1)|` (Cecchini-Zeidler, equation (2.1);
-Lee-Parker, Definition 8.2 and Section 9). Because both the coordinate sphere of radius `r` and the
-unit sphere in the denominator are measured with the same Hausdorff measure `μHE[n - 1]`, any
-overall normalization of Hausdorff measure cancels in `normalizedCoordinateFlux`.
+Lee-Parker, Definition 8.2 uses the same flux integral normalized by `|S^(n - 1)|` alone). Because
+both the coordinate sphere of radius `r` and the unit sphere in the denominator are measured with
+the same Hausdorff measure `μHE[n - 1]`, any overall normalization of Hausdorff measure cancels in
+`normalizedCoordinateFlux`.
 
 When `g_ij = w δ_ij` is conformally flat, the integrand collapses without any differentiability
 hypothesis to `-((n - 1) / r) Dw_x(x)`. For a radial conformal factor `w(y) = F(‖y‖)` with
@@ -29,9 +30,8 @@ hypothesis to `-((n - 1) / r) Dw_x(x)`. For a radial conformal factor `w(y) = F(
 standard test families:
 
 * flat `ℝⁿ` has identically zero flux for `1 < r`, hence mass `0`;
-* the model conformal family `(1 + c ‖x‖ ^ (2 - n)) ^ (4 / (n - 2)) δ_ij` (`3 ≤ n`) has mass `2 c`
-  (both on raw coefficients and on the smooth manifold end `schwarzschildModelEnd`), and spatial
-  Schwarzschild (`c = m / 2`) has mass `m`;
+* the model conformal family `(1 + c ‖x‖ ^ (2 - n)) ^ (4 / (n - 2)) δ_ij` (`3 ≤ n`) has mass `2 c`,
+  and spatial Schwarzschild (`c = m / 2`) has mass `m`;
 * the non-conformal radial perturbation `δ_ij + ε x_i x_j ‖x‖ ^ (-n)` (`2 ≤ n`) has constant
   normalized flux `ε / 2` at every `r > 0`, confirming sensitivity to off-diagonal derivatives;
 * in dimension `3`, `(1 + (1 + ‖x‖ ^ 2) ^ (-3 / 8)) ^ 4 δ_ij` (decay order `t = 3 / 4 > 1 / 2` with
@@ -48,10 +48,9 @@ standard test families:
 * `TauCeti.coordinateFluxIntegrand_conformal`,
   `TauCeti.normalizedCoordinateFlux_radial_conformal`: reduction of the ADM flux for general and
   radial conformally flat metrics.
-* `TauCeti.tendsto_normalizedCoordinateFlux_conformal_rpow`,
-  `TauCeti.tendsto_normalizedCoordinateFlux_schwarzschildCoeff`, and
-  `TauCeti.tendsto_normalizedCoordinateFlux_schwarzschildModelEnd`: limits `2 c` and `m` for the
-  conformal `r ^ (2 - n)` family, spatial Schwarzschild, and `schwarzschildModelEnd` (`3 ≤ n`).
+* `TauCeti.tendsto_normalizedCoordinateFlux_conformal_rpow` and
+  `TauCeti.tendsto_normalizedCoordinateFlux_schwarzschildCoeff`: limits `2 c` and `m` for the
+  conformal `r ^ (2 - n)` family and spatial Schwarzschild (`3 ≤ n`).
 * `TauCeti.normalizedCoordinateFlux_radialTensor`: exact value `ε / 2` for the non-conformal
   perturbation `δ_ij + ε x_i x_j ‖x‖ ^ (-n)`.
 * `TauCeti.tendsto_normalizedCoordinateFlux_slowConformalThree_atTop`: divergence of the ADM flux
@@ -63,8 +62,9 @@ standard test families:
   relativity*, Phys. Rev. 122 (1961), 997-1006.
 * R. Bartnik, *The mass of an asymptotically flat manifold*, Comm. Pure Appl. Math. 39 (1986),
   661-693.
-* S. Cecchini and R. Zeidler, *Scalar and mean curvature comparison via the Dirac operator*,
-  Geom. Topol. 28 (2024), 1167-1212, Section 2 (equation (2.1) and Example 2.2).
+* S. Cecchini and R. Zeidler, *The positive mass theorem and distance estimates in the spin
+  setting*, Trans. Amer. Math. Soc. 377 (2024), 5271-5288 (arXiv:2108.11972), Section 2
+  (equation (2.1) and Example 2.2).
 * J. M. Lee and T. H. Parker, *The Yamabe problem*, Bull. Amer. Math. Soc. 17 (1987), 37-91,
   Sections 8 and 9.
 -/
@@ -125,18 +125,6 @@ theorem normalizedCoordinateFlux_def (n : ℕ) (g : EuclideanSpace ℝ (Fin n) �
             (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).toReal) :=
   (rfl)
 
-/-- In positive dimension `1 ≤ n`, the `(n - 1)`-dimensional Euclidean Hausdorff measure of the
-unit sphere in `ℝⁿ` equals `TauCeti.roundSphereVolume (n - 1)`. -/
-theorem toReal_euclideanHausdorffMeasure_unitSphere {n : ℕ} (hn : 1 ≤ n) :
-    ((μHE[n - 1] : Measure (EuclideanSpace ℝ (Fin n)))
-        (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).toReal =
-      roundSphereVolume (n - 1) := by
-  have hfin : finrank ℝ (EuclideanSpace ℝ (Fin n)) = (n - 1) + 1 := by
-    rw [finrank_euclideanSpace_fin]
-    omega
-  rw [euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume hfin,
-    ENNReal.toReal_ofReal (roundSphereVolume_pos (n - 1)).le]
-
 /-- Rewriting `normalizedCoordinateFlux` in terms of `TauCeti.roundSphereVolume (n - 1)`. -/
 theorem normalizedCoordinateFlux_eq_div_roundSphereVolume {n : ℕ} (hn : 1 ≤ n)
     (g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ) (r : ℝ) :
@@ -146,19 +134,18 @@ theorem normalizedCoordinateFlux_eq_div_roundSphereVolume {n : ℕ} (hn : 1 ≤ 
         (2 * ((n : ℝ) - 1) * roundSphereVolume (n - 1)) := by
   rw [normalizedCoordinateFlux_def, toReal_euclideanHausdorffMeasure_unitSphere hn]
 
-/-- When `coordinateFluxIntegrand n g r` takes a constant value `C` on `sphere 0 r` (`2 ≤ n`,
+/-- When `coordinateFluxIntegrand n g r` takes a constant value `C` on `sphere 0 r` (`1 ≤ n`,
 `0 < r`), the unit-sphere area `roundSphereVolume (n - 1)` cancels out of
 `normalizedCoordinateFlux`. -/
-theorem normalizedCoordinateFlux_eq_of_eqOn_sphere {n : ℕ} (hn : 2 ≤ n)
+theorem normalizedCoordinateFlux_eq_of_forall_mem_sphere_eq {n : ℕ} (hn : 1 ≤ n)
     {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {r C : ℝ} (hr : 0 < r)
     (hC : ∀ x ∈ sphere (0 : EuclideanSpace ℝ (Fin n)) r, coordinateFluxIntegrand n g r x = C) :
     normalizedCoordinateFlux n g r = r ^ (n - 1) * C / (2 * ((n : ℝ) - 1)) := by
-  have hn1 : 1 ≤ n := by omega
   have hvol : roundSphereVolume (n - 1) ≠ 0 := (roundSphereVolume_pos (n - 1)).ne'
-  rw [normalizedCoordinateFlux_eq_div_roundSphereVolume hn1,
+  rw [normalizedCoordinateFlux_eq_div_roundSphereVolume hn,
     setIntegral_congr_fun isClosed_sphere.measurableSet hC,
     setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one (n - 1) 0 hr (fun _ ↦ C),
-    setIntegral_const, Measure.real, toReal_euclideanHausdorffMeasure_unitSphere hn1,
+    setIntegral_const, Measure.real, toReal_euclideanHausdorffMeasure_unitSphere hn,
     smul_eq_mul, smul_eq_mul]
   calc (r ^ (n - 1) * (roundSphereVolume (n - 1) * C)) /
         (2 * ((n : ℝ) - 1) * roundSphereVolume (n - 1))
@@ -179,6 +166,18 @@ theorem coordinateFluxIntegrand_congr_nhds {n : ℕ}
     Finset.sum_congr rfl fun i _ ↦ ?_
   rw [(h i j).fderiv_eq, (h i i).fderiv_eq]
 
+/-- If `g₁` and `g₂` have the same germ at every point of `sphere 0 r`, then their normalized
+coordinate fluxes at radius `r` agree. -/
+theorem normalizedCoordinateFlux_congr_nhds {n : ℕ}
+    {g₁ g₂ : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {r : ℝ}
+    (h : ∀ x ∈ sphere (0 : EuclideanSpace ℝ (Fin n)) r,
+      ∀ i j, (fun y ↦ g₁ y i j) =ᶠ[𝓝 x] (fun y ↦ g₂ y i j)) :
+    normalizedCoordinateFlux n g₁ r = normalizedCoordinateFlux n g₂ r := by
+  rw [normalizedCoordinateFlux_def, normalizedCoordinateFlux_def]
+  congr 1
+  exact setIntegral_congr_fun isClosed_sphere.measurableSet fun x hx ↦
+    coordinateFluxIntegrand_congr_nhds (h x hx)
+
 /-- If `g₁` and `g₂` agree on an open exterior `{x | R < ‖x‖}`, then their normalized coordinate
 fluxes agree at every radius `r > R`. -/
 theorem normalizedCoordinateFlux_congr_exterior {n : ℕ}
@@ -187,14 +186,11 @@ theorem normalizedCoordinateFlux_congr_exterior {n : ℕ}
     normalizedCoordinateFlux n g₁ r = normalizedCoordinateFlux n g₂ r := by
   have hU : IsOpen {x : EuclideanSpace ℝ (Fin n) | R < ‖x‖} :=
     isOpen_lt continuous_const continuous_norm
-  rw [normalizedCoordinateFlux_def, normalizedCoordinateFlux_def]
-  congr 1
-  refine setIntegral_congr_fun isClosed_sphere.measurableSet fun x hx ↦ ?_
+  refine normalizedCoordinateFlux_congr_nhds fun x hx i j ↦ ?_
   have hxU : x ∈ {y : EuclideanSpace ℝ (Fin n) | R < ‖y‖} := by
     simp only [mem_ofPred_eq]
     rwa [mem_sphere_zero_iff_norm.1 hx]
-  exact coordinateFluxIntegrand_congr_nhds fun i j ↦
-    Filter.eventuallyEq_of_mem (hU.mem_nhds hxU) fun y hy ↦ h y hy i j
+  exact Filter.eventuallyEq_of_mem (hU.mem_nhds hxU) fun y hy ↦ h y hy i j
 
 /-- Two metric-coefficient families agreeing outside a ball have the same ADM mass limit behavior as
 `r → ∞`. -/
@@ -290,13 +286,8 @@ every radius `r > 1`. -/
 theorem normalizedCoordinateFlux_euclidean_eq_zero {n : ℕ} (t : ℝ) {r : ℝ} (hr : 1 < r) :
     normalizedCoordinateFlux n
       (pullbackMetricCoeff (AsymptoticallyEuclideanEnd.euclidean n t).toFun) r = 0 := by
-  have hU : IsOpen {x : EuclideanSpace ℝ (Fin n) | (1 : ℝ) < ‖x‖} :=
-    isOpen_lt continuous_const continuous_norm
-  have heq : EqOn (AsymptoticallyEuclideanEnd.euclidean n t).toFun id {x | (1 : ℝ) < ‖x‖} :=
-    fun _ hx ↦ AsymptoticallyEuclideanEnd.euclidean_toFun_of_lt t hx
-  rw [normalizedCoordinateFlux_congr_exterior hr fun x hx i j ↦
-    ((pullbackMetricCoeff_eventuallyEq_of_eqOn_open hU heq hx i j).eq_of_nhds).trans
-      (pullbackMetricCoeff_id x i j)]
+  rw [normalizedCoordinateFlux_congr_exterior hr fun _ hx i j ↦
+    AsymptoticallyEuclideanEnd.euclidean_pullbackMetricCoeff_of_lt t hx i j]
   exact normalizedCoordinateFlux_const _ r
 
 /-- **Flat Euclidean mass check.** Flat `ℝⁿ` has ADM mass `0`. -/
@@ -381,7 +372,7 @@ theorem normalizedCoordinateFlux_radial_conformal {n : ℕ} (hn : 2 ≤ n) {F : 
   have hn1 : ((n : ℝ) - 1) ≠ 0 := by
     have : (2 : ℝ) ≤ n := Nat.ofNat_le_cast.2 hn
     linarith
-  rw [normalizedCoordinateFlux_eq_of_eqOn_sphere hn hr fun x hx ↦
+  rw [normalizedCoordinateFlux_eq_of_forall_mem_sphere_eq (by omega) hr fun x hx ↦
     coordinateFluxIntegrand_radial_conformal hr hF hx]
   field_simp [hn1]
 
@@ -503,51 +494,23 @@ private theorem sum_fderiv_radialTensor_basis {n : ℕ} {r : ℝ} (hr : 0 < r)
         (EuclideanSpace.basisFun (Fin n) ℝ j)) =
       ((n : ℝ) - 1) * x j * r ^ (-(n : ℝ)) := by
   have hx0 : x ≠ 0 := norm_pos_iff.1 (hnorm.symm ▸ hr)
-  have hsq : ∑ k : Fin n, x k ^ 2 = r ^ 2 := by
-    rw [← hnorm, EuclideanSpace.norm_sq_eq]; simp [Real.norm_eq_abs, sq_abs]
-  have hpow : r ^ (-(n : ℝ) - 2) * r ^ 2 = r ^ (-(n : ℝ)) := by
-    rw [← Real.rpow_natCast, ← Real.rpow_add hr]; congr 1; norm_num
   have hterm : ∀ i : Fin n,
       fderiv ℝ (fun y : EuclideanSpace ℝ (Fin n) ↦ y i * y j * ‖y‖ ^ (-(n : ℝ))) x
           (EuclideanSpace.basisFun (Fin n) ℝ i) -
         fderiv ℝ (fun y : EuclideanSpace ℝ (Fin n) ↦ y i * y i * ‖y‖ ^ (-(n : ℝ))) x
           (EuclideanSpace.basisFun (Fin n) ℝ j) =
-      (r ^ (-(n : ℝ)) * (x j * 1 + x i * if j = i then 1 else 0) +
-          x i * x j * (-(n : ℝ) * r ^ (-(n : ℝ) - 2)) * x i) -
-        (r ^ (-(n : ℝ)) * (x i * (if i = j then 1 else 0) + x i * (if i = j then 1 else 0)) +
-          x i * x i * (-(n : ℝ) * r ^ (-(n : ℝ) - 2)) * x j) := by
+      r ^ (-(n : ℝ)) * (x j - x i * if i = j then 1 else 0) := by
     intro i
     rw [(hasFDerivAt_coord_mul_coord_mul_norm_rpow i j hx0).fderiv,
       (hasFDerivAt_coord_mul_coord_mul_norm_rpow i i hx0).fderiv]
-    simp only [add_apply, smul_apply, coe_innerSL_apply, smul_eq_mul, hnorm]
-    simp only [(EuclideanSpace.basisFun (Fin n) ℝ).inner_eq_ite, ↓reduceIte]
-    simp only [EuclideanSpace.inner_basisFun_real]
-  rw [Finset.sum_congr rfl fun i _ ↦ hterm i, Finset.sum_sub_distrib]
-  have hsq_sum : ∑ i : Fin n, x i ^ 2 * (-(n : ℝ) * r ^ (-(n : ℝ) - 2)) * x j =
-      -(n : ℝ) * x j * r ^ (-(n : ℝ)) := by
-    calc _ = -(n : ℝ) * x j * r ^ (-(n : ℝ) - 2) * ∑ i : Fin n, x i ^ 2 := by
-          rw [Finset.mul_sum]; refine Finset.sum_congr rfl fun i _ ↦ by ring
-      _ = -(n : ℝ) * x j * r ^ (-(n : ℝ)) := by
-          rw [hsq]; linear_combination -(n : ℝ) * x j * hpow
-  have h1 : ∑ i : Fin n,
-      (r ^ (-(n : ℝ)) * (x j * 1 + x i * if j = i then 1 else 0) +
-        x i * x j * (-(n : ℝ) * r ^ (-(n : ℝ) - 2)) * x i) =
-      x j * r ^ (-(n : ℝ)) := by
-    have hb : ∑ i : Fin n, x i * x j * (-(n : ℝ) * r ^ (-(n : ℝ) - 2)) * x i =
-        -(n : ℝ) * x j * r ^ (-(n : ℝ)) :=
-      (Finset.sum_congr rfl fun i _ ↦ by ring).trans hsq_sum
-    simp only [Finset.sum_add_distrib, ← Finset.mul_sum, hb]
-    simp; ring
-  have h2 : ∑ i : Fin n,
-      (r ^ (-(n : ℝ)) * (x i * (if i = j then 1 else 0) + x i * (if i = j then 1 else 0)) +
-        x i * x i * (-(n : ℝ) * r ^ (-(n : ℝ) - 2)) * x j) =
-      (2 - (n : ℝ)) * x j * r ^ (-(n : ℝ)) := by
-    have hc : ∑ i : Fin n, x i * (if i = j then (1 : ℝ) else 0) = x j := by simp
-    have hd : ∑ i : Fin n, x i * x i * (-(n : ℝ) * r ^ (-(n : ℝ) - 2)) * x j =
-        -(n : ℝ) * x j * r ^ (-(n : ℝ)) :=
-      (Finset.sum_congr rfl fun i _ ↦ by ring).trans hsq_sum
-    simp only [Finset.sum_add_distrib, ← Finset.mul_sum, hc, hd]; ring
-  rw [h1, h2]; ring
+    simp only [add_apply, smul_apply, coe_innerSL_apply, smul_eq_mul, hnorm,
+      (EuclideanSpace.basisFun (Fin n) ℝ).inner_eq_ite, ↓reduceIte,
+      EuclideanSpace.inner_basisFun_real, @eq_comm _ j i]
+    ring
+  rw [Finset.sum_congr rfl fun i _ ↦ hterm i, ← Finset.mul_sum]
+  simp only [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+    nsmul_eq_mul, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
+  ring
 
 private theorem coordinateFluxIntegrand_radialTensor_sphere {n : ℕ} (ε : ℝ) {r : ℝ} (hr : 0 < r)
     {x : EuclideanSpace ℝ (Fin n)} (hx : x ∈ sphere (0 : EuclideanSpace ℝ (Fin n)) r) :
@@ -590,7 +553,7 @@ theorem normalizedCoordinateFlux_radialTensor {n : ℕ} (hn : 2 ≤ n) (ε : ℝ
     have hcast : ((n - 1 : ℕ) : ℝ) = (n : ℝ) - 1 := by rw [Nat.cast_sub hn_le, Nat.cast_one]
     rw [← Real.rpow_natCast, hcast, ← Real.rpow_add hr]
     simp
-  rw [normalizedCoordinateFlux_eq_of_eqOn_sphere hn hr fun x hx ↦
+  rw [normalizedCoordinateFlux_eq_of_forall_mem_sphere_eq (by omega) hr fun x hx ↦
     coordinateFluxIntegrand_radialTensor_sphere ε hr hx]
   calc r ^ (n - 1) * (ε * ((n : ℝ) - 1) * r ^ (1 - (n : ℝ))) / (2 * ((n : ℝ) - 1))
       = ε * ((n : ℝ) - 1) * (r ^ (n - 1) * r ^ (1 - (n : ℝ))) / (2 * ((n : ℝ) - 1)) := by ring
@@ -668,15 +631,5 @@ theorem tendsto_normalizedCoordinateFlux_slowConformalThree_atTop :
           have h1 := mul_le_mul_of_nonneg_left hcube (by positivity : 0 ≤ (3 / 2 : ℝ))
           have h2 := mul_le_mul_of_nonneg_right h1 (pow_nonneg hr0.le 3)
           exact mul_le_mul h2 hrpow (by positivity) (by positivity)
-
-/-- **Non-flat manifold ADM mass check.** For every `3 ≤ n` and `c : ℝ`, the smooth conformally
-Euclidean end `schwarzschildModelEnd hn c` of order `n - 2` has ADM mass `2 c`. -/
-theorem tendsto_normalizedCoordinateFlux_schwarzschildModelEnd {n : ℕ} (hn : 3 ≤ n) (c : ℝ) :
-    Tendsto
-      (normalizedCoordinateFlux n (pullbackMetricCoeff (schwarzschildModelEnd hn c).toFun))
-      atTop (𝓝 (2 * c)) :=
-  (tendsto_normalizedCoordinateFlux_iff_of_eqOn_exterior fun _ hx ↦
-    pullbackMetricCoeff_schwarzschildModelEnd hn c hx).2
-    (tendsto_normalizedCoordinateFlux_conformal_rpow hn c)
 
 end TauCeti
