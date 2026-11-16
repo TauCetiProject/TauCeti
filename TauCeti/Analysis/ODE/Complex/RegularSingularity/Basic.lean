@@ -18,16 +18,14 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Normed.Group.Basic
-import TauCeti.Analysis.ODE.Wronskian
 
 /-!
-# Convergent series solutions and Wronskian at a regular singularity
+# Convergent series solutions at a regular singularity
 
 Let `f` and `g` be complex functions around `z₀` such that `(z - z₀) f(z) = ∑ f_s (z - z₀)^s`
 and `(z - z₀)² g(z) = ∑ g_s (z - z₀)^s` converge on a punctured disc `0 < ‖z - z₀‖ < r`, and let
@@ -35,35 +33,25 @@ and `(z - z₀)² g(z) = ∑ g_s (z - z₀)^s` converge on a punctured disc `0 <
 indicial polynomial with roots ordered so that `Re α₂ ≤ Re α₁`. On the slit punctured disc
 `{z | z - z₀ ∈ Complex.slitPlane ∧ ‖z - z₀‖ < r}`, using principal complex powers and the principal
 logarithm:
+* `TauCeti.hasDerivAt_cpow_mul_tsum` differentiates `(z - z₀)^σ ∑ c_s (z - z₀)^s` on the slit disc,
+  and `TauCeti.eq_zero_of_cpow_mul_tsum_eq_zero` gives branch-cut power-series uniqueness.
 * For any root `ρ` of `Q` and any sequence `a` satisfying the two-coefficient indicial convolution
-  recursion, the power series `∑ a_s (z - z₀)^s` converges on the full open disc `‖z - z₀‖ < r`,
-  and `w(z) = (z - z₀)^ρ ∑ a_s (z - z₀)^s` is a holomorphic solution of `w'' + f w' + g w = 0` on
-  the slit punctured disc (`TauCeti.regularSingular_solution`). Whenever `Q(ρ + s) ≠ 0` for all
-  `s ≥ 1` (which always holds for `ρ = α₁`, and holds for `ρ = α₂` whenever `α₁ - α₂ ∉ ℕ`), this
-  applies to the canonical normalized sequence `TauCeti.regularSingularCoeff` with `a₀ = 1`
-  (`TauCeti.regularSingularCoeff_solution`), which is uniquely determined by the differential
-  equation (`TauCeti.eq_regularSingularCoeff_of_solution`, via branch-cut power-series uniqueness
-  `TauCeti.eq_zero_of_cpow_mul_tsum_eq_zero`).
+  recursion, `∑ a_s (z - z₀)^s` converges on the full open disc `‖z - z₀‖ < r`, and
+  `w(z) = (z - z₀)^ρ ∑ a_s (z - z₀)^s` is a holomorphic solution of `w'' + f w' + g w = 0` on the
+  slit punctured disc (`TauCeti.regularSingular_solution`). Whenever `Q(ρ + s) ≠ 0` for all `s ≥ 1`,
+  this applies to `TauCeti.regularSingularCoeff` (`TauCeti.regularSingularCoeff_solution`), which is
+  uniquely determined by the equation (`TauCeti.eq_regularSingularCoeff_of_solution`).
 * When `α₁ - α₂ = N ∈ ℕ`, there is a second holomorphic solution
   `w₂(z) = (z - z₀)^{α₂} ∑ b_s (z - z₀)^s + c w₁(z) log(z - z₀)` with `b_N = 0`, normalized by
-  `c = 1` when `N = 0` and by `b₀ = 1` when `N ≥ 1`, where `∑ b_s (z - z₀)^s` converges on the
-  whole disc `‖z - z₀‖ < r` (`TauCeti.regularSingular_second_solution`), and both `b` and `c`
-  are uniquely determined by the differential equation
-  (`TauCeti.eq_regularSingularSecondCoeff_of_solution`).
-* Using the termwise integrated exponent `H(u) = ∑_{s ≥ 1} (fs s / s) u^s`
-  (`FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_div_natCast`,
-  `HasFPowerSeriesOnBall.hasDerivAt_tsum_div_natCast`), the weighted Wronskian
-  `(z - z₀)^{fs 0} exp(H(z - z₀)) W(w₁, w₂)(z)` is constant on the slit punctured disc for any
-  two holomorphic solutions `w₁`, `w₂` (`TauCeti.cpow_mul_exp_mul_wronskian_eq`).
-* In both the non-resonant and resonant regimes, the Wronskian `w₁ w₂' - w₁' w₂` is given by an
-  explicit Abel–Liouville formula (`TauCeti.wronskian_regularSingular_eq`,
-  `TauCeti.wronskian_regularSingular_second_eq`) and never vanishes on the slit punctured disc
-  (`TauCeti.wronskian_regularSingular_ne_zero`, `TauCeti.wronskian_regularSingular_second_ne_zero`),
-  yielding a fundamental pair at every regular singularity
-  (`TauCeti.exists_regularSingular_fundamental_pair`).
+  `c = 1` when `N = 0` and `b₀ = 1` when `N ≥ 1`, where `∑ b_s (z - z₀)^s` converges on the whole
+  disc `‖z - z₀‖ < r` (`TauCeti.regularSingular_second_solution`), and both `b` and `c` are
+  uniquely determined (`TauCeti.eq_regularSingularSecondCoeff_of_solution`).
 * A worked example at the end verifies the Euler–Cauchy equation `w'' - 2 z⁻² w = 0` at `z₀ = 0`,
-  where the indicial roots are `2` and `-1` (`N = 3`), the logarithmic multiplier `c` vanishes,
-  and the canonical solutions reduce to `z²` and `z⁻¹`.
+  where the indicial roots are `2` and `-1` (`N = 3`), `c = 0`, and the canonical solutions reduce
+  to `z²` and `z⁻¹`.
+
+Abel–Liouville Wronskian formulas, nonvanishing, and fundamental pair existence are proved in
+`TauCeti.Analysis.ODE.Complex.RegularSingularity.Wronskian`.
 
 ## References
 
@@ -80,11 +68,6 @@ open scoped Topology ENNReal NNReal
 namespace TauCeti
 
 /-! ### Internal analytic and majorant helpers -/
-
-private theorem tsum_mul_zero_pow (c : ℕ → ℂ) : (∑' s : ℕ, c s * (0 : ℂ) ^ s) = c 0 := by
-  rw [tsum_eq_single 0]
-  · simp
-  · intro s hs; simp [zero_pow hs]
 
 private theorem cpow_eq_cpow_sub_one_mul {u : ℂ} (hu : u ≠ 0) (σ : ℂ) :
     u ^ σ = u ^ (σ - 1) * u := by
@@ -121,16 +104,11 @@ private theorem exists_norm_mul_pow_le_of_punctured {z₀ : ℂ} {r ρ : ℝ} (h
 private theorem sum_range_succ_mul_pow (p q : ℕ → ℂ) (u : ℂ) (s : ℕ) :
     (∑ k ∈ range (s + 1), (p k * u ^ k) * (q (s - k) * u ^ (s - k))) =
       ((∑ k ∈ range s, p k * q (s - k)) + p s * q 0) * u ^ s := by
-  rw [sum_range_succ, Nat.sub_self, pow_zero, mul_one]
-  conv_rhs => rw [add_mul, Finset.sum_mul]
-  congr 1
-  · refine sum_congr rfl fun k hk => ?_
-    have hpow : u ^ k * u ^ (s - k) = u ^ s := by
-      rw [← pow_add, Nat.add_sub_of_le (mem_range.mp hk).le]
-    calc (p k * u ^ k) * (q (s - k) * u ^ (s - k))
-        = p k * q (s - k) * (u ^ k * u ^ (s - k)) := by ring
-      _ = p k * q (s - k) * u ^ s := by rw [hpow]
-  · ring
+  rw [sum_range_succ, Nat.sub_self, pow_zero, mul_one, add_mul, Finset.sum_mul]
+  refine congrArg₂ (· + ·) (sum_congr rfl fun k hk => ?_) (by ring)
+  have hpow : u ^ k * u ^ (s - k) = u ^ s := by
+    rw [← pow_add, Nat.add_sub_of_le (mem_range.mp hk).le]
+  linear_combination p k * q (s - k) * hpow
 
 /-- Lower bound `s² / 2 ≤ ‖indicialPoly f₀ g₀ (σ + s)‖` for sufficiently large `s : ℕ`. -/
 private theorem exists_sq_div_two_le_norm_indicialPoly (f₀ g₀ σ : ℂ) :
@@ -140,21 +118,16 @@ private theorem exists_sq_div_two_le_norm_indicialPoly (f₀ g₀ σ : ℂ) :
   refine ⟨max N 1, le_max_right _ _, fun s hs => ?_⟩
   have hs1 : (1 : ℝ) ≤ s := by exact_mod_cast (le_max_right N 1).trans hs
   have hNs : (N : ℝ) ≤ s := by exact_mod_cast (le_max_left N 1).trans hs
-  have hdecomp : (s : ℂ) ^ 2 =
-      indicialPoly f₀ g₀ (σ + s) - ((2 * σ + f₀ - 1) * s + indicialPoly f₀ g₀ σ) := by
-    rw [indicialPoly_add]; ring
   have htri : (s : ℝ) ^ 2 ≤ ‖indicialPoly f₀ g₀ (σ + s)‖ +
       ‖(2 * σ + f₀ - 1) * (s : ℂ) + indicialPoly f₀ g₀ σ‖ := by
-    have h := norm_add_le (indicialPoly f₀ g₀ (σ + s))
-      (-((2 * σ + f₀ - 1) * (s : ℂ) + indicialPoly f₀ g₀ σ))
-    rwa [norm_neg, ← sub_eq_add_neg, ← hdecomp, norm_pow, Complex.norm_natCast] at h
+    have h := norm_sub_le (indicialPoly f₀ g₀ (σ + s))
+      ((2 * σ + f₀ - 1) * (s : ℂ) + indicialPoly f₀ g₀ σ)
+    rwa [show indicialPoly f₀ g₀ (σ + s) - ((2 * σ + f₀ - 1) * (s : ℂ) + indicialPoly f₀ g₀ σ) =
+      (s : ℂ) ^ 2 by rw [indicialPoly_add]; ring, norm_pow, Complex.norm_natCast] at h
   have hrem : ‖(2 * σ + f₀ - 1) * (s : ℂ) + indicialPoly f₀ g₀ σ‖ ≤ B * s := by
-    calc ‖(2 * σ + f₀ - 1) * (s : ℂ) + indicialPoly f₀ g₀ σ‖
-        ≤ ‖2 * σ + f₀ - 1‖ * ‖(s : ℂ)‖ + ‖indicialPoly f₀ g₀ σ‖ * 1 := by
-          simpa using norm_add_le ((2 * σ + f₀ - 1) * (s : ℂ)) (indicialPoly f₀ g₀ σ)
-      _ ≤ ‖2 * σ + f₀ - 1‖ * s + ‖indicialPoly f₀ g₀ σ‖ * s := by
-          rw [Complex.norm_natCast]; gcongr
-      _ = B * s := by simp [B, add_mul]
+    have h := norm_add_le ((2 * σ + f₀ - 1) * (s : ℂ)) (indicialPoly f₀ g₀ σ)
+    rw [norm_mul, Complex.norm_natCast] at h
+    nlinarith [norm_nonneg (indicialPoly f₀ g₀ σ)]
   nlinarith [hs1, hNs, hN, htri, hrem]
 
 /-- Discrete Grönwall polynomial-growth bound: if `μ s ≥ 0` and
@@ -170,27 +143,19 @@ private theorem discrete_gronwall_poly_bound {μ : ℕ → ℝ} {s₀ K : ℕ} (
   intro s hs
   induction s, hs using Nat.le_induction with
   | base =>
-    have h1 : (1 : ℝ) ≤ (s₀ : ℝ) ^ K := one_le_pow₀ (by exact_mod_cast hs₀1)
-    nlinarith [hS_pos s₀, h1]
+    nlinarith [hS_pos s₀, one_le_pow₀ (n := K) (show (1 : ℝ) ≤ s₀ by exact_mod_cast hs₀1)]
   | succ s hs ih =>
     have hs_pos : (0 : ℝ) < s := by exact_mod_cast (hs₀1.trans hs)
-    have hbern : 1 + (K : ℝ) * (s : ℝ)⁻¹ ≤ (1 + (s : ℝ)⁻¹) ^ K :=
-      one_add_mul_le_pow (by linarith [inv_nonneg.mpr hs_pos.le]) K
     have hpow_step : (s : ℝ) ^ K * (1 + (K : ℝ) / s) ≤ ((s + 1 : ℕ) : ℝ) ^ K := by
-      calc (s : ℝ) ^ K * (1 + (K : ℝ) / s)
-          = (s : ℝ) ^ K * (1 + (K : ℝ) * (s : ℝ)⁻¹) := by rw [div_eq_mul_inv]
-        _ ≤ (s : ℝ) ^ K * (1 + (s : ℝ)⁻¹) ^ K :=
-            mul_le_mul_of_nonneg_left hbern (pow_nonneg hs_pos.le K)
-        _ = ((s : ℝ) * (1 + (s : ℝ)⁻¹)) ^ K := (mul_pow _ _ _).symm
-        _ = ((s + 1 : ℕ) : ℝ) ^ K := by
-            push_cast; rw [mul_add, mul_one, mul_inv_cancel₀ hs_pos.ne']
+      rw [div_eq_mul_inv]
+      refine (mul_le_mul_of_nonneg_left
+        (one_add_mul_le_pow (by linarith [inv_nonneg.mpr hs_pos.le]) K) (by positivity)).trans_eq ?_
+      rw [← mul_pow]; push_cast; rw [mul_add, mul_one, mul_inv_cancel₀ hs_pos.ne']
     have hSs : S (s + 1) = S s + μ s := by simp [S, sum_range_succ, add_assoc]
     calc S (s + 1) ≤ S s * (1 + (K : ℝ) / s) := by linarith [hSs, hstep s hs]
-      _ ≤ (S s₀ * (s : ℝ) ^ K) * (1 + (K : ℝ) / s) :=
-          mul_le_mul_of_nonneg_right ih (by positivity)
-      _ = S s₀ * ((s : ℝ) ^ K * (1 + (K : ℝ) / s)) := by ring
-      _ ≤ S s₀ * ((s + 1 : ℕ) : ℝ) ^ K :=
-          mul_le_mul_of_nonneg_left hpow_step (by linarith [hS_pos s₀])
+      _ ≤ (S s₀ * (s : ℝ) ^ K) * (1 + (K : ℝ) / s) := mul_le_mul_of_nonneg_right ih (by positivity)
+      _ ≤ S s₀ * ((s + 1 : ℕ) : ℝ) ^ K := by
+          rw [mul_assoc]; exact mul_le_mul_of_nonneg_left hpow_step (by linarith [hS_pos s₀])
 
 /-- One-step majorant inequality for a perturbed indicial convolution recursion at radius
 `ρ > 0`. -/
@@ -203,37 +168,30 @@ private theorem indicial_rec_step_bound {σ : ℂ} {ρ Mf Mg CE : ℝ} {fs gs d 
     (hds : indicialPoly (fs 0) (gs 0) (σ + s) * d s =
       -(∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * d k) + E s) :
     ‖d s‖ * ρ ^ s ≤ (K : ℝ) / s * (1 + ∑ k ∈ range s, ‖d k‖ * ρ ^ k) := by
-  set C₁ : ℝ := (Mf + Mg) * (‖σ‖ + 1)
-  set μ : ℕ → ℝ := fun k => ‖d k‖ * ρ ^ k
+  set C₁ : ℝ := (Mf + Mg) * (‖σ‖ + 1); set μ : ℕ → ℝ := fun k => ‖d k‖ * ρ ^ k
   set S : ℝ := 1 + ∑ k ∈ range s, μ k
   have hs_pos : (0 : ℝ) < s := by exact_mod_cast hs1
   have hs_ge1 : (1 : ℝ) ≤ s := by exact_mod_cast hs1
   have hμ_nn : ∀ k, 0 ≤ μ k := fun _ => by positivity
-  have hS_pos : 1 ≤ S := by dsimp [S]; linarith [sum_nonneg fun k (_ : k ∈ range s) => hμ_nn k]
-  -- Bound each convolution summand by `(C₁ * s) * μ k`.
+  have hsum_nn : 0 ≤ ∑ k ∈ range s, μ k := sum_nonneg fun k _ => hμ_nn k
   have hconv : (∑ k ∈ range s, ‖((σ + k) * fs (s - k) + gs (s - k)) * d k‖ * ρ ^ s) ≤
       (C₁ * s) * ∑ k ∈ range s, μ k := by
-    rw [mul_sum]
-    refine Finset.sum_le_sum fun k hk => ?_
-    have hk_lt : k < s := mem_range.mp hk
+    rw [mul_sum]; refine Finset.sum_le_sum fun k hk => ?_
+    have hk_lt := mem_range.mp hk
     have hks : (k : ℝ) ≤ s := by exact_mod_cast hk_lt.le
     have hpow : ρ ^ s = ρ ^ (s - k) * ρ ^ k := by rw [← pow_add, Nat.sub_add_cancel hk_lt.le]
-    have htri : ‖(σ + k) * fs (s - k) + gs (s - k)‖ ≤
-        (‖σ‖ + k) * ‖fs (s - k)‖ + ‖gs (s - k)‖ := by
+    have htri : ‖(σ + k) * fs (s - k) + gs (s - k)‖ ≤ (‖σ‖ + k) * ‖fs (s - k)‖ + ‖gs (s - k)‖ := by
       have h1 := norm_add_le ((σ + k) * fs (s - k)) (gs (s - k))
       have h2 := norm_add_le σ (k : ℂ)
       rw [norm_mul] at h1; rw [Complex.norm_natCast] at h2
       nlinarith [norm_nonneg (fs (s - k))]
     have hfgk : ‖(σ + k) * fs (s - k) + gs (s - k)‖ * ρ ^ (s - k) ≤ C₁ * s := by
       have hm := mul_le_mul_of_nonneg_right htri (pow_nonneg hρ_pos.le (s - k))
-      have hσs : ‖σ‖ ≤ ‖σ‖ * s := le_mul_of_one_le_right (norm_nonneg σ) hs_ge1
       have hMf' := hMf (s - k); have hMg' := hMg (s - k)
-      dsimp only [C₁]; nlinarith [norm_nonneg σ]
-    rw [norm_mul, hpow]
-    calc ‖(σ + k) * fs (s - k) + gs (s - k)‖ * ‖d k‖ * (ρ ^ (s - k) * ρ ^ k)
-        = (‖(σ + k) * fs (s - k) + gs (s - k)‖ * ρ ^ (s - k)) * μ k := by dsimp [μ]; ring
-      _ ≤ (C₁ * s) * μ k := mul_le_mul_of_nonneg_right hfgk (hμ_nn k)
-  -- Combine the convolution and perturbation bounds, then divide by `‖Q(σ + s)‖ ≥ s² / 2`.
+      dsimp only [C₁]; nlinarith [norm_nonneg σ, le_mul_of_one_le_right (norm_nonneg σ) hs_ge1]
+    rw [norm_mul, hpow, show ‖(σ + k) * fs (s - k) + gs (s - k)‖ * ‖d k‖ * (ρ ^ (s - k) * ρ ^ k) =
+      (‖(σ + k) * fs (s - k) + gs (s - k)‖ * ρ ^ (s - k)) * μ k by dsimp [μ]; ring]
+    exact mul_le_mul_of_nonneg_right hfgk (hμ_nn k)
   have hrec : ‖indicialPoly (fs 0) (gs 0) (σ + s)‖ * μ s =
       ‖-(∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * d k) + E s‖ * ρ ^ s := by
     simpa [μ, norm_mul, mul_assoc] using congrArg (fun w => ‖w‖ * ρ ^ s) hds
@@ -244,20 +202,17 @@ private theorem indicial_rec_step_bound {σ : ℂ} {ρ Mf Mg CE : ℝ} {fs gs d 
   have hnorm_sum : ‖∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * d k‖ * ρ ^ s ≤
       ∑ k ∈ range s, ‖((σ + k) * fs (s - k) + gs (s - k)) * d k‖ * ρ ^ s := by
     rw [← Finset.sum_mul]; exact mul_le_mul_of_nonneg_right (norm_sum_le _ _) (by positivity)
-  have hsum_nn : 0 ≤ ∑ k ∈ range s, μ k := sum_nonneg fun k _ => hμ_nn k
-  have hC₁0 : 0 ≤ C₁ := by positivity
   have hsum_le : C₁ * s * (∑ k ∈ range s, μ k) + CE * (s + 1) ≤ (C₁ + 2 * CE) * s * S := by
     dsimp only [S]
-    nlinarith [mul_nonneg hC₁0 hs_pos.le, mul_nonneg hCE0 (mul_nonneg hs_pos.le hsum_nn),
+    nlinarith [show 0 ≤ C₁ by positivity, mul_nonneg hCE0 (mul_nonneg hs_pos.le hsum_nn),
       mul_le_mul_of_nonneg_left hs_ge1 hCE0]
   have hprod_le : ((s : ℝ) ^ 2 / 2) * μ s ≤ ((K : ℝ) / 2 * s) * S := by
     have h1 := (mul_le_mul_of_nonneg_right hQs (hμ_nn s)).trans_eq hrec
     have hK' : (C₁ + 2 * CE) * s * S ≤ ((K : ℝ) / 2 * s) * S :=
-      mul_le_mul_of_nonneg_right
-        (mul_le_mul_of_nonneg_right (by linarith) hs_pos.le) (by linarith)
+      mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (by linarith) hs_pos.le)
+        (by dsimp [S]; linarith)
     linarith [h1, htri_tot, hnorm_sum, hconv, hCE, hsum_le, hK']
-  rw [div_mul_eq_mul_div, le_div_iff₀ hs_pos]
-  nlinarith [hprod_le, hs_pos]
+  rw [div_mul_eq_mul_div, le_div_iff₀ hs_pos]; nlinarith [hprod_le, hs_pos]
 
 /-- Perturbed indicial majorant convergence: if `Q(σ + s) d_s = -∑_{k < s} ((σ + k) f_{s - k} +
 g_{s - k}) d_k + E_s` for `s ≥ s₁`, where `‖E_s‖ ρ^s` grows at most linearly in `s` on every
@@ -273,24 +228,21 @@ private theorem summable_of_perturbed_indicial_rec {z₀ σ : ℂ} {r : ℝ}
   intro z hz
   set ρ : ℝ := (‖z - z₀‖ + r) / 2
   have hρ_gt : ‖z - z₀‖ < ρ := by dsimp [ρ]; linarith
-  have hρ_pos : 0 < ρ := (norm_nonneg (z - z₀)).trans_lt hρ_gt
+  have hρ_pos : 0 < ρ := (norm_nonneg _).trans_lt hρ_gt
   have hρ_lt : ρ < r := by dsimp [ρ]; linarith
   obtain ⟨Mf, hMf_pos, hMf⟩ := exists_norm_mul_pow_le_of_punctured hρ_pos hρ_lt fs hf
   obtain ⟨Mg, hMg_pos, hMg⟩ := exists_norm_mul_pow_le_of_punctured hρ_pos hρ_lt gs hg
   obtain ⟨CE, hCE0, hCE⟩ := hE ρ hρ_pos hρ_lt
   obtain ⟨s₂, hs₂1, hQ⟩ := exists_sq_div_two_le_norm_indicialPoly (fs 0) (gs 0) σ
-  set s₀ : ℕ := max s₁ s₂
-  have hs₀1 : 1 ≤ s₀ := hs₂1.trans (le_max_right _ _)
+  set s₀ : ℕ := max s₁ s₂; have hs₀1 : 1 ≤ s₀ := hs₂1.trans (le_max_right _ _)
   obtain ⟨K, hK⟩ := exists_nat_gt (2 * ((Mf + Mg) * (‖σ‖ + 1) + 2 * CE))
-  set μ : ℕ → ℝ := fun s => ‖d s‖ * ρ ^ s
-  set S₀ : ℝ := 1 + ∑ k ∈ range s₀, μ k
+  set μ : ℕ → ℝ := fun s => ‖d s‖ * ρ ^ s; set S₀ : ℝ := 1 + ∑ k ∈ range s₀, μ k
   have hμ0 : ∀ s, 0 ≤ μ s := fun _ => by positivity
   have hS₀_pos : 1 ≤ S₀ := by dsimp [S₀]; linarith [sum_nonneg fun k (_ : k ∈ range s₀) => hμ0 k]
   have hpoly := discrete_gronwall_poly_bound hs₀1 hμ0 fun s hs =>
     indicial_rec_step_bound hρ_pos hMf_pos hMg_pos hCE0 (hs₀1.trans hs) hMf hMg (hCE s) hK
       (hQ s ((le_max_right _ _).trans hs)) (hd s ((le_max_left _ _).trans hs))
-  set q : ℝ := ‖z - z₀‖ / ρ
-  have hq0 : 0 ≤ q := div_nonneg (norm_nonneg _) hρ_pos.le
+  set q : ℝ := ‖z - z₀‖ / ρ; have hq0 : 0 ≤ q := div_nonneg (norm_nonneg _) hρ_pos.le
   have hq1 : ‖q‖ < 1 := by rw [Real.norm_of_nonneg hq0, div_lt_one hρ_pos]; exact hρ_gt
   refine Summable.of_norm_bounded_eventually_nat (f := fun s => d s * (z - z₀) ^ s)
     ((summable_pow_mul_geometric_of_norm_lt_one K hq1).mul_left (S₀ * 2 ^ K)) ?_
@@ -298,24 +250,22 @@ private theorem summable_of_perturbed_indicial_rec {z₀ σ : ℂ} {r : ℝ}
   have hs1 : (1 : ℝ) ≤ s := by exact_mod_cast (hs₀1.trans hs)
   have h2s : ((s + 1 : ℕ) : ℝ) ^ K ≤ 2 ^ K * (s : ℝ) ^ K := by
     rw [← mul_pow]; exact pow_le_pow_left₀ (by positivity) (by push_cast; linarith) K
-  have hμ_le : μ s ≤ S₀ * (2 ^ K * (s : ℝ) ^ K) := by
-    have h1 : μ s ≤ 1 + ∑ k ∈ range (s + 1), μ k := by
-      rw [sum_range_succ]; linarith [sum_nonneg fun k (_ : k ∈ range s) => hμ0 k]
-    exact (h1.trans (hpoly (s + 1) (hs.trans (Nat.le_succ s)))).trans
+  have hμ_le : μ s ≤ S₀ * (2 ^ K * (s : ℝ) ^ K) :=
+    ((show μ s ≤ 1 + ∑ k ∈ range (s + 1), μ k by
+        rw [sum_range_succ]; linarith [sum_nonneg fun k (_ : k ∈ range s) => hμ0 k]).trans
+      (hpoly (s + 1) (hs.trans (Nat.le_succ s)))).trans
       (mul_le_mul_of_nonneg_left h2s (by linarith))
-  have hpow_z : ‖z - z₀‖ ^ s = ρ ^ s * q ^ s := by
-    rw [← mul_pow, mul_div_cancel₀ _ hρ_pos.ne']
-  calc ‖d s * (z - z₀) ^ s‖
-      = μ s * q ^ s := by rw [norm_mul, norm_pow, hpow_z, ← mul_assoc]
-    _ ≤ (S₀ * (2 ^ K * (s : ℝ) ^ K)) * q ^ s :=
+  have hpow_z : ‖z - z₀‖ ^ s = ρ ^ s * q ^ s := by rw [← mul_pow, mul_div_cancel₀ _ hρ_pos.ne']
+  rw [norm_mul, norm_pow, hpow_z, ← mul_assoc]
+  calc μ s * q ^ s ≤ S₀ * (2 ^ K * (s : ℝ) ^ K) * q ^ s :=
         mul_le_mul_of_nonneg_right hμ_le (pow_nonneg hq0 s)
-    _ = (S₀ * 2 ^ K) * ((s : ℝ) ^ K * q ^ s) := by ring
+    _ = S₀ * 2 ^ K * ((s : ℝ) ^ K * q ^ s) := by ring
 
 /-! ### Differential operator on `(z - z₀)^σ ∑ c_s (z - z₀)^s` and `w₁(z) log(z - z₀)` -/
 
-/-- First derivative of `ψ(z) = (z - z₀)^σ ∑' s, c s * (z - z₀)^s` on the slit punctured disc,
+/-- First derivative of `(z - z₀)^σ ∑' s, c s * (z - z₀)^s` on the slit punctured disc,
 requiring only convergence of `∑ c_s (z - z₀)^s` on `‖z - z₀‖ < r`. -/
-private theorem hasDerivAt_cpow_mul_tsum {z₀ σ : ℂ} {r : ℝ} {c : ℕ → ℂ}
+theorem hasDerivAt_cpow_mul_tsum {z₀ σ : ℂ} {r : ℝ} {c : ℕ → ℂ}
     (hc : ∀ z, ‖z - z₀‖ < r → Summable fun s => c s * (z - z₀) ^ s)
     {z : ℂ} (hzs : z - z₀ ∈ slitPlane) (hzb : ‖z - z₀‖ < r) :
     let A : ℂ → ℂ := fun u => ∑' s, c s * u ^ s
@@ -323,15 +273,11 @@ private theorem hasDerivAt_cpow_mul_tsum {z₀ σ : ℂ} {r : ℝ} {c : ℕ → 
       ((z - z₀) ^ (σ - 1) * (σ * A (z - z₀) + (z - z₀) * deriv A (z - z₀))) z := by
   intro A
   have hr : 0 < r := (norm_nonneg _).trans_lt hzb
-  have hA_diff : DifferentiableAt ℂ A (z - z₀) :=
-    (analyticOnNhd_tsum_of_summable hr c hc (z - z₀) (mem_ball_zero_iff.mpr hzb)).differentiableAt
-  have hsub : HasDerivAt (fun w : ℂ => w - z₀) 1 z := (hasDerivAt_id z).sub_const z₀
-  have hpow := hsub.cpow_const (c := σ) hzs
-  have hAcomp : HasDerivAt (fun w : ℂ => A (w - z₀)) (deriv A (z - z₀)) z :=
-    hA_diff.hasDerivAt.comp_sub_const z z₀
-  refine (hpow.mul hAcomp).congr_deriv ?_
-  rw [cpow_eq_cpow_sub_one_mul (Complex.slitPlane_ne_zero hzs) σ]
-  ring
+  have hA_diff := (analyticOnNhd_tsum_of_summable hr c hc (z - z₀)
+    (mem_ball_zero_iff.mpr hzb)).differentiableAt
+  have hpow := ((hasDerivAt_id z).sub_const z₀).cpow_const (c := σ) hzs
+  refine (hpow.mul (hA_diff.hasDerivAt.comp_sub_const z z₀)).congr_deriv ?_
+  dsimp only [id]; rw [cpow_eq_cpow_sub_one_mul (Complex.slitPlane_ne_zero hzs) σ]; ring
 
 /-- Power-series identity for the indicial operator applied to `A(u) = ∑' s, c s * u ^ s` on
 `‖u‖ < r`. -/
@@ -352,7 +298,6 @@ private theorem hasSum_operator_cpow_series {z₀ σ : ℂ} {r : ℝ} {fs gs c :
   have hpA := hasFPowerSeriesOnBall_of_punctured hr c fun z _ hzr => hc z hzr
   have hpF := hasFPowerSeriesOnBall_of_punctured hr fs hf
   have hpG := hasFPowerSeriesOnBall_of_punctured hr gs hg
-  -- Absolute summability of the differentiated series for Cauchy products.
   have hc_norm : Summable fun s : ℕ => ‖c s * u ^ s‖ := by
     simpa using FormalMultilinearSeries.summable_norm_descFactorial_mul_pow_of_lt_ofScalars_radius
       c (hue.trans_le hpA.r_le) 0
@@ -365,7 +310,6 @@ private theorem hasSum_operator_cpow_series {z₀ σ : ℂ} {r : ℝ} {fs gs c :
   have hg_norm : Summable fun s : ℕ => ‖gs s * u ^ s‖ := by
     simpa using FormalMultilinearSeries.summable_norm_descFactorial_mul_pow_of_lt_ofScalars_radius
       gs (hue.trans_le hpG.r_le) 0
-  -- Termwise series for `A`, `u A'`, and `u² A''`.
   have hA0 : HasSum (fun s : ℕ => c s * u ^ s) (A u) := by
     simpa using hpA.hasSum_descFactorial_mul_pow_eq_pow_mul_iteratedDeriv hue 0
   have hA1 : HasSum (fun s : ℕ => (s : ℂ) * c s * u ^ s) (u * deriv A u) := by
@@ -379,30 +323,23 @@ private theorem hasSum_operator_cpow_series {z₀ σ : ℂ} {r : ℝ} {fs gs c :
     · simp
     · simp only [Nat.descFactorial_succ, Nat.add_sub_cancel, Nat.descFactorial_zero, mul_one]
       push_cast; ring
-  have hσc_norm : Summable fun s : ℕ => ‖((σ + s) * c s) * u ^ s‖ := by
-    refine Summable.of_nonneg_of_le (fun _ => norm_nonneg _) (fun s => ?_)
-      ((hc_norm.mul_left ‖σ‖).add hsc_norm)
-    calc ‖((σ + s) * c s) * u ^ s‖
-        = ‖σ * (c s * u ^ s) + (s : ℂ) * c s * u ^ s‖ := by congr 1; ring
-      _ ≤ ‖σ‖ * ‖c s * u ^ s‖ + ‖(s : ℂ) * c s * u ^ s‖ := by
-          rw [← norm_mul]; exact norm_add_le _ _
-  -- Combine the leading Euler-operator series with the Cauchy products against `fs` and `gs`.
+  have hσc_norm : Summable fun s : ℕ => ‖((σ + s) * c s) * u ^ s‖ :=
+    Summable.of_nonneg_of_le (fun _ => norm_nonneg _) (fun s => by
+      rw [show ((σ + s) * c s) * u ^ s = σ * (c s * u ^ s) + (s : ℂ) * c s * u ^ s by ring]
+      exact (norm_add_le _ _).trans_eq (by rw [norm_mul])) ((hc_norm.mul_left ‖σ‖).add hsc_norm)
   have hlead : HasSum (fun s : ℕ => (σ + s) * (σ + s - 1) * c s * u ^ s)
       (u ^ 2 * deriv (deriv A) u + 2 * σ * (u * deriv A u) + σ * (σ - 1) * A u) :=
-    (((hA2.add (hA1.mul_left (2 * σ))).add (hA0.mul_left (σ * (σ - 1)))).congr_fun
-      fun s => by ring)
+    (((hA2.add (hA1.mul_left (2 * σ))).add (hA0.mul_left (σ * (σ - 1)))).congr_fun fun _ => by ring)
   have hP_prod := hasSum_sum_range_mul_of_summable_norm hσc_norm hf_norm
-  rw [((hA1.add (hA0.mul_left σ)).congr_fun fun s => by ring).tsum_eq] at hP_prod
-  have hR_prod := hasSum_sum_range_mul_of_summable_norm hc_norm hg_norm
-  refine ((hlead.add hP_prod).add hR_prod).congr_fun fun s => ?_
+  rw [((hA1.add (hA0.mul_left σ)).congr_fun fun _ => by ring).tsum_eq] at hP_prod
+  refine ((hlead.add hP_prod).add (hasSum_sum_range_mul_of_summable_norm hc_norm hg_norm)).congr_fun
+    fun s => ?_
   rw [sum_range_succ_mul_pow (fun k => (σ + k) * c k) fs u s, sum_range_succ_mul_pow c gs u s]
   have hsum_add : (∑ k ∈ range s, (σ + k) * c k * fs (s - k)) * u ^ s +
       (∑ k ∈ range s, c k * gs (s - k)) * u ^ s =
       (∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * c k) * u ^ s := by
-    rw [← add_mul, ← sum_add_distrib]
-    congr 1; exact sum_congr rfl fun _ _ => by ring
-  rw [indicialPoly_def]
-  linear_combination -hsum_add
+    rw [← add_mul, ← sum_add_distrib]; exact congrArg (· * u ^ s) (sum_congr rfl fun _ _ => by ring)
+  rw [indicialPoly_def]; linear_combination -hsum_add
 
 /-- Operator evaluation for `ψ(z) = (z - z₀)^σ ∑' s, c s * (z - z₀)^s` on the slit punctured
 disc `{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}`. -/
@@ -419,61 +356,48 @@ private theorem operator_cpow_mul_tsum_eq {z₀ σ : ℂ} {r : ℝ} {f g : ℂ �
         (indicialPoly (fs 0) (gs 0) (σ + s) * c s +
           ∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * c k) * (z - z₀) ^ s := by
   intro ψ
-  set A : ℂ → ℂ := fun u => ∑' s, c s * u ^ s
-  set u : ℂ := z - z₀
+  set A : ℂ → ℂ := fun u => ∑' s, c s * u ^ s; set u : ℂ := z - z₀
   have hr : 0 < r := (norm_nonneg u).trans_lt hzb
   have hu0 : u ≠ 0 := Complex.slitPlane_ne_zero hzs
-  have hopen : IsOpen {w : ℂ | w - z₀ ∈ slitPlane ∧ ‖w - z₀‖ < r} :=
-    isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r
   have han := analyticOnNhd_tsum_of_summable hr c hc
-  have hA_diff : DifferentiableAt ℂ A u := (han u (mem_ball_zero_iff.mpr hzb)).differentiableAt
-  have hA'_diff : DifferentiableAt ℂ (deriv A) u :=
-    (han.deriv u (mem_ball_zero_iff.mpr hzb)).differentiableAt
+  have hA_diff := (han u (mem_ball_zero_iff.mpr hzb)).differentiableAt
+  have hA'_diff := (han.deriv u (mem_ball_zero_iff.mpr hzb)).differentiableAt
   have hsub : HasDerivAt (fun w : ℂ => w - z₀) 1 z := (hasDerivAt_id z).sub_const z₀
-  have hpow2 := hsub.cpow_const (c := σ - 1) hzs
   have hinner := ((hA_diff.hasDerivAt.comp_sub_const z z₀).const_mul σ).add
     (hsub.mul (hA'_diff.hasDerivAt.comp_sub_const z z₀))
-  have hev : deriv ψ =ᶠ[𝓝 z]
-      ((fun w : ℂ => (w - z₀) ^ (σ - 1)) *
-        ((fun w : ℂ => σ * A (w - z₀)) +
-          (fun w : ℂ => w - z₀) * fun w : ℂ => deriv A (w - z₀))) := by
-    filter_upwards [hopen.mem_nhds ⟨hzs, hzb⟩] with w hw
+  have hev : deriv ψ =ᶠ[𝓝 z] ((fun w : ℂ => (w - z₀) ^ (σ - 1)) *
+      ((fun w : ℂ => σ * A (w - z₀)) + (fun w : ℂ => w - z₀) * fun w : ℂ => deriv A (w - z₀))) := by
+    filter_upwards [(isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r).mem_nhds ⟨hzs, hzb⟩]
+      with w hw
     exact (hasDerivAt_cpow_mul_tsum hc hw.1 hw.2).deriv
   have hcpow1 : u ^ (σ - 1) = u ^ (σ - 2) * u := by
     simpa [show σ - 1 - 1 = σ - 2 by ring] using cpow_eq_cpow_sub_one_mul hu0 (σ - 1)
   have hcpow2 : u ^ σ = u ^ (σ - 2) * u ^ 2 := cpow_eq_cpow_sub_two_mul_sq hu0 σ
   have hderiv2 : deriv (deriv ψ) z =
       u ^ (σ - 2) * (u ^ 2 * deriv (deriv A) u + 2 * σ * (u * deriv A u) + σ * (σ - 1) * A u) := by
-    rw [((hpow2.mul hinner).congr_of_eventuallyEq hev).deriv]
-    simp only [Pi.add_apply, Pi.mul_apply]
-    dsimp only [u] at hcpow1 ⊢
-    rw [show σ - 1 - 1 = σ - 2 by ring, hcpow1]
-    ring
-  have hop := hasSum_operator_cpow_series (σ := σ)
-    (fun w hw0 hwr => (hf w hw0 hwr).summable)
+    rw [(((hsub.cpow_const (c := σ - 1) hzs).mul hinner).congr_of_eventuallyEq hev).deriv]
+    simp only [Pi.add_apply, Pi.mul_apply]; dsimp only [u] at hcpow1 ⊢
+    rw [show σ - 1 - 1 = σ - 2 by ring, hcpow1]; ring
+  have hop := hasSum_operator_cpow_series (σ := σ) (fun w hw0 hwr => (hf w hw0 hwr).summable)
     (fun w hw0 hwr => (hg w hw0 hwr).summable) hc hzb
   rw [hop.tsum_eq, (hf z (norm_pos_iff.mpr hu0) hzb).tsum_eq,
     (hg z (norm_pos_iff.mpr hu0) hzb).tsum_eq, hderiv2, (hasDerivAt_cpow_mul_tsum hc hzs hzb).deriv]
-  dsimp only [ψ, A, u]
-  rw [hcpow1, hcpow2]
-  ring
+  dsimp only [ψ, A, u]; rw [hcpow1, hcpow2]; ring
 
 /-- Open-set linearity of first and second derivatives for `ψ + c * Φ`. -/
 private theorem deriv_deriv_add_const_mul {U : Set ℂ} (hU : IsOpen U) {ψ Φ : ℂ → ℂ} (c : ℂ)
     (hψ : DifferentiableOn ℂ ψ U) (hΦ : DifferentiableOn ℂ Φ U) {z : ℂ} (hz : z ∈ U) :
     deriv (fun w => ψ w + c * Φ w) z = deriv ψ z + c * deriv Φ z ∧
       deriv (deriv (fun w => ψ w + c * Φ w)) z = deriv (deriv ψ) z + c * deriv (deriv Φ) z := by
-  have hmem : U ∈ 𝓝 z := hU.mem_nhds hz
+  have hmem := hU.mem_nhds hz
   have hd1_ev : deriv (fun w => ψ w + c * Φ w) =ᶠ[𝓝 z] (deriv ψ + fun w => c * deriv Φ w) := by
     filter_upwards [hmem] with w hw
     exact ((hψ.differentiableAt (hU.mem_nhds hw)).hasDerivAt.add
       ((hΦ.differentiableAt (hU.mem_nhds hw)).hasDerivAt.const_mul c)).deriv
-  have hd2 : deriv (deriv (fun w => ψ w + c * Φ w)) z =
-      deriv (deriv ψ) z + c * deriv (deriv Φ) z := by
-    have hdψ := (hψ.deriv hU).differentiableAt hmem
-    have hdΦ := (hΦ.deriv hU).differentiableAt hmem
-    rw [((hdψ.hasDerivAt.add (hdΦ.hasDerivAt.const_mul c)).congr_of_eventuallyEq hd1_ev).deriv]
-  exact ⟨hd1_ev.self_of_nhds, hd2⟩
+  exact ⟨hd1_ev.self_of_nhds,
+    ((((hψ.deriv hU).differentiableAt hmem).hasDerivAt.add
+      (((hΦ.deriv hU).differentiableAt hmem).hasDerivAt.const_mul c)).congr_of_eventuallyEq
+        hd1_ev).deriv⟩
 
 /-- Operator identity for `Φ(z) = w₁(z) log(z - z₀)` when `w₁` solves `w₁'' + f w₁' + g w₁ = 0` on
 the slit punctured disc. -/
@@ -491,38 +415,25 @@ private theorem hasDerivAt_and_operator_mul_log {z₀ : ℂ} {r : ℝ} {f g w₁
   have hopen : IsOpen U := isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r
   have hw₁_at : ∀ z ∈ U, DifferentiableAt ℂ w₁ z := fun z hz =>
     hw₁.differentiableAt (hopen.mem_nhds hz)
-  have hdw₁_on : DifferentiableOn ℂ (deriv w₁) U := hw₁.deriv hopen
   have hderiv1 : ∀ z ∈ U,
-      HasDerivAt Φ (deriv w₁ z * Complex.log (z - z₀) + (z - z₀)⁻¹ * w₁ z) z := by
-    rintro z ⟨hzs, hzb⟩
-    have hsub : HasDerivAt (fun w : ℂ => w - z₀) 1 z := (hasDerivAt_id z).sub_const z₀
-    exact ((hw₁_at z ⟨hzs, hzb⟩).hasDerivAt.mul (hsub.clog hzs)).congr_deriv (by
-      rw [one_div]; ring)
+      HasDerivAt Φ (deriv w₁ z * Complex.log (z - z₀) + (z - z₀)⁻¹ * w₁ z) z := fun z hz =>
+    ((hw₁_at z hz).hasDerivAt.mul (((hasDerivAt_id z).sub_const z₀).clog hz.1)).congr_deriv
+      (by dsimp only [id]; rw [one_div]; ring)
   refine ⟨fun z hz => (hderiv1 z hz).differentiableAt.differentiableWithinAt, hderiv1, ?_⟩
   rintro z ⟨hzs, hzb⟩
   have hzu0 : z - z₀ ≠ 0 := Complex.slitPlane_ne_zero hzs
   have hsub : HasDerivAt (fun w : ℂ => w - z₀) 1 z := (hasDerivAt_id z).sub_const z₀
-  have hlog := hsub.clog hzs
-  have hinv := hsub.inv hzu0
-  have hdw₁_at : HasDerivAt (deriv w₁) (deriv (deriv w₁) z) z :=
-    (hdw₁_on.differentiableAt (hopen.mem_nhds ⟨hzs, hzb⟩)).hasDerivAt
+  have hdw₁_at := ((hw₁.deriv hopen).differentiableAt (hopen.mem_nhds ⟨hzs, hzb⟩)).hasDerivAt
   have hev : deriv Φ =ᶠ[𝓝 z]
-      (deriv w₁ * (fun w : ℂ => Complex.log (w - z₀)) +
-        (fun w : ℂ => (w - z₀)⁻¹) * w₁) := by
-    filter_upwards [hopen.mem_nhds ⟨hzs, hzb⟩] with w hw
-    exact (hderiv1 w hw).deriv
-  have hd2 : deriv (deriv Φ) z =
-      deriv (deriv w₁) z * Complex.log (z - z₀) + 2 * (z - z₀)⁻¹ * deriv w₁ z -
-        ((z - z₀) ^ 2)⁻¹ * w₁ z := by
-    rw [(((hdw₁_at.mul hlog).add (hinv.mul (hw₁_at z ⟨hzs, hzb⟩).hasDerivAt)).congr_of_eventuallyEq
-      hev).deriv]
-    simp only [Pi.inv_apply]
-    field_simp [hzu0]
-    ring
-  rw [hd2, (hderiv1 z ⟨hzs, hzb⟩).deriv]
-  dsimp only [Φ]
-  have hode := hsol₁ z hzs hzb
-  field_simp [hzu0]
+      (deriv w₁ * (fun w : ℂ => Complex.log (w - z₀)) + (fun w : ℂ => (w - z₀)⁻¹) * w₁) := by
+    filter_upwards [hopen.mem_nhds ⟨hzs, hzb⟩] with w hw; exact (hderiv1 w hw).deriv
+  have hd2 : deriv (deriv Φ) z = deriv (deriv w₁) z * Complex.log (z - z₀) +
+      2 * (z - z₀)⁻¹ * deriv w₁ z - ((z - z₀) ^ 2)⁻¹ * w₁ z := by
+    rw [(((hdw₁_at.mul (hsub.clog hzs)).add
+      ((hsub.inv hzu0).mul (hw₁_at z ⟨hzs, hzb⟩).hasDerivAt)).congr_of_eventuallyEq hev).deriv]
+    simp only [Pi.inv_apply]; field_simp [hzu0]; ring
+  rw [hd2, (hderiv1 z ⟨hzs, hzb⟩).deriv]; dsimp only [Φ]
+  have hode := hsol₁ z hzs hzb; field_simp [hzu0]
   linear_combination (z - z₀) ^ 2 * Complex.log (z - z₀) * hode
 
 /-- Analytic uniqueness for branch-cut power series: if `∑' s, d s * u ^ s` converges on
@@ -538,19 +449,15 @@ theorem eq_zero_of_cpow_mul_tsum_eq_zero {z₀ α : ℂ} {d : ℕ → ℂ} {r : 
   set u₀ : ℂ := ((r / 2 : ℝ) : ℂ)
   have hu₀_ball : u₀ ∈ ball (0 : ℂ) r := by simp [u₀, abs_of_pos hr, half_lt_self hr]
   have hev : (fun u : ℂ => ∑' s, d s * u ^ s) =ᶠ[𝓝 u₀] 0 := by
-    have hopen : IsOpen (slitPlane ∩ ball (0 : ℂ) r) :=
-      Complex.isOpen_slitPlane.inter Metric.isOpen_ball
-    filter_upwards [hopen.mem_nhds ⟨Complex.ofReal_mem_slitPlane.mpr (half_pos hr), hu₀_ball⟩]
-      with u ⟨hus, hub⟩
+    filter_upwards [(Complex.isOpen_slitPlane.inter Metric.isOpen_ball).mem_nhds
+      ⟨Complex.ofReal_mem_slitPlane.mpr (half_pos hr), hu₀_ball⟩] with u ⟨hus, hub⟩
     have hz := hzero (z₀ + u) (by simpa using hus) (by simpa using hub)
     simp only [add_sub_cancel_left] at hz
     exact (mul_eq_zero.mp hz).resolve_left
       (Complex.cpow_ne_zero_iff.mpr (.inl (Complex.slitPlane_ne_zero hus)))
-  have hconn : IsPreconnected (Metric.eball (0 : ℂ) (ENNReal.ofReal r)) := by
-    rw [Metric.eball_ofReal]; exact (convex_ball (0 : ℂ) r).isPreconnected
-  have hd0 : d = 0 :=
-    hp.ofScalars_eq_zero_of_eventuallyEq_zero hconn (by rwa [Metric.eball_ofReal]) hev
-  exact fun s => congrFun hd0 s
+  exact congrFun (hp.ofScalars_eq_zero_of_eventuallyEq_zero
+    (Metric.eball_ofReal (x := (0 : ℂ)) (ε := r) ▸ (convex_ball (0 : ℂ) r).isPreconnected)
+    (by rwa [Metric.eball_ofReal]) hev)
 
 /-! ### Primary series solution at a regular singularity -/
 
@@ -573,18 +480,15 @@ theorem regularSingular_solution {z₀ ρ : ℂ} {r : ℝ} {f g : ℂ → ℂ} {
       DifferentiableOn ℂ w {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} ∧
       ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
         deriv (deriv w) z + f z * deriv w z + g z * w z = 0 := by
-  have hsum : ∀ z, ‖z - z₀‖ < r → Summable fun s => a s * (z - z₀) ^ s :=
-    summable_of_perturbed_indicial_rec (σ := ρ) (E := 0) (s₁ := 1)
-      (fun z hz0 hzr => (hf z hz0 hzr).summable)
-      (fun z hz0 hzr => (hg z hz0 hzr).summable)
-      (fun _ _ _ => ⟨0, le_rfl, fun _ => by simp⟩)
-      (fun s hs => by simp [ha s hs])
+  have hsum := summable_of_perturbed_indicial_rec (σ := ρ) (d := a) (E := 0) (s₁ := 1)
+    (fun z hz0 hzr => (hf z hz0 hzr).summable) (fun z hz0 hzr => (hg z hz0 hzr).summable)
+    (fun _ _ _ => ⟨0, le_rfl, fun _ => by simp⟩) (fun s hs => by simp [ha s hs])
   refine ⟨hsum, fun z hz =>
       (hasDerivAt_cpow_mul_tsum hsum hz.1 hz.2).differentiableAt.differentiableWithinAt,
     fun z hzs hzb => ?_⟩
   rw [operator_cpow_mul_tsum_eq hf hg hsum hzs hzb]
-  have hcoeff : ∀ s : ℕ, (indicialPoly (fs 0) (gs 0) (ρ + s) * a s +
-      ∑ k ∈ range s, ((ρ + k) * fs (s - k) + gs (s - k)) * a k) = 0 := fun s => by
+  have hcoeff : ∀ s : ℕ, indicialPoly (fs 0) (gs 0) (ρ + s) * a s +
+      ∑ k ∈ range s, ((ρ + k) * fs (s - k) + gs (s - k)) * a k = 0 := fun s => by
     rcases eq_or_ne s 0 with rfl | hs
     · simp [hρ]
     · rw [ha s (Nat.pos_of_ne_zero hs), neg_add_cancel]
@@ -626,13 +530,10 @@ theorem eq_regularSingularCoeff_of_solution {z₀ ρ : ℂ} {r : ℝ} {f g : ℂ
         f z * deriv (fun w => (w - z₀) ^ ρ * ∑' s, a s * (w - z₀) ^ s) z +
         g z * ((z - z₀) ^ ρ * ∑' s, a s * (z - z₀) ^ s) = 0) :
     a = regularSingularCoeff fs gs ρ := by
-  have hop_sum : ∀ u : ℂ, u ≠ 0 → ‖u‖ < r → Summable fun s : ℕ =>
-      (indicialPoly (fs 0) (gs 0) (ρ + s) * a s +
-        ∑ k ∈ range s, ((ρ + k) * fs (s - k) + gs (s - k)) * a k) * u ^ s := fun u _ hu =>
-    (hasSum_operator_cpow_series (σ := ρ)
+  have hall := eq_zero_of_cpow_mul_tsum_eq_zero (z₀ := z₀) (α := ρ - 2) hr
+    (fun u _ hu => (hasSum_operator_cpow_series (σ := ρ)
       (fun w hw0 hwr => (hf w hw0 hwr).summable)
-      (fun w hw0 hwr => (hg w hw0 hwr).summable) hsum hu).summable
-  have hall := eq_zero_of_cpow_mul_tsum_eq_zero (z₀ := z₀) (α := ρ - 2) hr hop_sum
+      (fun w hw0 hwr => (hg w hw0 hwr).summable) hsum hu).summable)
     fun z hzs hzb => (operator_cpow_mul_tsum_eq hf hg hsum hzs hzb).symm.trans (hsol z hzs hzb)
   exact eq_regularSingularCoeff_of_rec hres ha0 fun s _ => by linear_combination hall s
 
@@ -643,8 +544,7 @@ private def logForcingCoeff (fs a : ℕ → ℂ) (α₂ : ℂ) (N s : ℕ) : ℂ
   if s < N then 0
   else (2 * (α₂ + s) + fs 0 - 1) * a (s - N) + ∑ k ∈ range (s - N), fs (s - N - k) * a k
 
-/-- Sub-radius linear growth bound for the shifted logarithmic forcing sequence
-`logForcingCoeff fs a α₂ N`. -/
+/-- Sub-radius linear growth bound for `logForcingCoeff fs a α₂ N`. -/
 private theorem exists_norm_logForcingCoeff_mul_pow_le {z₀ α₂ : ℂ} {N : ℕ} {r ρ : ℝ}
     {fs a : ℕ → ℂ} (hρ0 : 0 < ρ) (hρr : ρ < r)
     (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun s => fs s * (z - z₀) ^ s)
@@ -654,48 +554,41 @@ private theorem exists_norm_logForcingCoeff_mul_pow_le {z₀ α₂ : ℂ} {N : �
   obtain ⟨Ma, _, hMa⟩ := exists_norm_mul_pow_le_of_punctured hρ0 hρr a fun z _ hzr => ha z hzr
   set C : ℝ := ρ ^ N * ((2 * ‖α₂‖ + ‖fs 0 - 1‖ + 2) * Ma + Mf * Ma)
   refine ⟨C, by positivity, fun s => ?_⟩
-  dsimp only [logForcingCoeff]
-  split_ifs with hsN
+  dsimp only [logForcingCoeff]; split_ifs with hsN
   · simp only [norm_zero, zero_mul]; positivity
   · have hsN' : N ≤ s := not_lt.mp hsN
     have hpow : ρ ^ s = ρ ^ N * ρ ^ (s - N) := by rw [← pow_add, Nat.add_sub_of_le hsN']
     have hcoef : ‖2 * (α₂ + s) + fs 0 - 1‖ ≤ (2 * ‖α₂‖ + ‖fs 0 - 1‖ + 2) * (s + 1) := by
       rw [show 2 * (α₂ + (s : ℂ)) + fs 0 - 1 = 2 * α₂ + (fs 0 - 1) + 2 * (s : ℂ) by ring]
-      have htri1 := norm_add_le (2 * α₂ + (fs 0 - 1)) (2 * (s : ℂ))
-      have htri2 := norm_add_le (2 * α₂) (fs 0 - 1)
-      rw [norm_mul, Complex.norm_ofNat] at htri2
-      have h2s : ‖(2 : ℂ) * (s : ℂ)‖ = 2 * (s : ℝ) := by simp
-      nlinarith [norm_nonneg α₂, norm_nonneg (fs 0 - 1), htri1, htri2, h2s]
+      have h1 := norm_add_le (2 * α₂ + (fs 0 - 1)) (2 * (s : ℂ))
+      have h2 := norm_add_le (2 * α₂) (fs 0 - 1); rw [norm_mul, Complex.norm_ofNat] at h2
+      nlinarith [norm_nonneg α₂, norm_nonneg (fs 0 - 1), h1, h2,
+        show ‖(2 : ℂ) * (s : ℂ)‖ = 2 * (s : ℝ) by simp]
     have h1 : ‖(2 * (α₂ + s) + fs 0 - 1) * a (s - N)‖ * ρ ^ (s - N) ≤
         (2 * ‖α₂‖ + ‖fs 0 - 1‖ + 2) * Ma * (s + 1) := by
       rw [norm_mul, mul_assoc]
       nlinarith [mul_le_mul hcoef (hMa (s - N)) (by positivity) (by positivity)]
-    have h2 : ‖∑ k ∈ range (s - N), fs (s - N - k) * a k‖ * ρ ^ (s - N) ≤
-        Mf * Ma * (s + 1) := by
+    have h2 : ‖∑ k ∈ range (s - N), fs (s - N - k) * a k‖ * ρ ^ (s - N) ≤ Mf * Ma * (s + 1) := by
       have hsum_le : (∑ k ∈ range (s - N), ‖fs (s - N - k) * a k‖ * ρ ^ (s - N)) ≤
           ∑ _k ∈ range (s - N), Mf * Ma := Finset.sum_le_sum fun k hk => by
-        have hp2 : ρ ^ (s - N) = ρ ^ (s - N - k) * ρ ^ k := by
-          rw [← pow_add, Nat.sub_add_cancel (mem_range.mp hk).le]
-        rw [norm_mul, hp2]
-        calc ‖fs (s - N - k)‖ * ‖a k‖ * (ρ ^ (s - N - k) * ρ ^ k)
-            = (‖fs (s - N - k)‖ * ρ ^ (s - N - k)) * (‖a k‖ * ρ ^ k) := by ring
-          _ ≤ Mf * Ma := mul_le_mul (hMf _) (hMa _) (by positivity) hMf_pos.le
-      have hle : ((s - N : ℕ) : ℝ) ≤ s + 1 := by
-        exact_mod_cast (Nat.sub_le s N).trans (Nat.le_succ s)
+        rw [norm_mul, show ρ ^ (s - N) = ρ ^ (s - N - k) * ρ ^ k by
+          rw [← pow_add, Nat.sub_add_cancel (mem_range.mp hk).le],
+          show ‖fs (s - N - k)‖ * ‖a k‖ * (ρ ^ (s - N - k) * ρ ^ k) =
+            (‖fs (s - N - k)‖ * ρ ^ (s - N - k)) * (‖a k‖ * ρ ^ k) by ring]
+        exact mul_le_mul (hMf _) (hMa _) (by positivity) hMf_pos.le
       calc ‖∑ k ∈ range (s - N), fs (s - N - k) * a k‖ * ρ ^ (s - N)
           ≤ ∑ k ∈ range (s - N), ‖fs (s - N - k) * a k‖ * ρ ^ (s - N) := by
             rw [← Finset.sum_mul]
             exact mul_le_mul_of_nonneg_right (norm_sum_le _ _) (by positivity)
-        _ ≤ ∑ _k ∈ range (s - N), Mf * Ma := hsum_le
-        _ = ((s - N : ℕ) : ℝ) * (Mf * Ma) := by simp
-        _ ≤ (s + 1) * (Mf * Ma) := mul_le_mul_of_nonneg_right hle (by positivity)
-        _ = Mf * Ma * (s + 1) := by ring
-    have htri := norm_add_le ((2 * (α₂ + s) + fs 0 - 1) * a (s - N))
-      (∑ k ∈ range (s - N), fs (s - N - k) * a k)
-    have htri_ρ := mul_le_mul_of_nonneg_right htri (pow_nonneg hρ0.le (s - N))
-    rw [hpow]
-    dsimp [C]
-    nlinarith [pow_nonneg hρ0.le N, htri_ρ, h1, h2]
+        _ ≤ ((s - N : ℕ) : ℝ) * (Mf * Ma) := by simpa using hsum_le
+        _ ≤ Mf * Ma * (s + 1) := by
+            rw [mul_comm (Mf * Ma)]
+            exact mul_le_mul_of_nonneg_right
+              (by exact_mod_cast (Nat.sub_le s N).trans (Nat.le_succ s)) (by positivity)
+    have htri_ρ := mul_le_mul_of_nonneg_right
+      (norm_add_le ((2 * (α₂ + s) + fs 0 - 1) * a (s - N))
+        (∑ k ∈ range (s - N), fs (s - N - k) * a k)) (pow_nonneg hρ0.le (s - N))
+    rw [hpow]; dsimp [C]; nlinarith [pow_nonneg hρ0.le N, htri_ρ, h1, h2]
 
 /-- Power-series expansion for the shifted logarithmic forcing terms
 `u ^ N * (2 u A₁'(u) + (2(α₂ + N) + P(u) - 1) A₁(u))` on `‖u‖ < r`. -/
@@ -722,9 +615,8 @@ private theorem hasSum_logForcingCoeff_mul_pow {z₀ α₂ : ℂ} {N : ℕ} {r :
     simpa using hpA.hasSum_descFactorial_mul_pow_eq_pow_mul_iteratedDeriv hue 0
   have hA1 : HasSum (fun s : ℕ => (s : ℂ) * a s * u ^ s) (u * deriv A₁ u) := by
     simpa [iteratedDeriv_one] using hpA.hasSum_descFactorial_mul_pow_eq_pow_mul_iteratedDeriv hue 1
-  have hprod := hasSum_sum_range_mul_of_summable_norm ha_norm hf_norm
-  have hA_val : ∑' s : ℕ, a s * u ^ s = A₁ u := rfl
-  rw [hA_val] at hprod
+  have hprod : HasSum (fun n => ∑ k ∈ range (n + 1), (a k * u ^ k) * (fs (n - k) * u ^ (n - k)))
+      (A₁ u * ∑' s, fs s * u ^ s) := hasSum_sum_range_mul_of_summable_norm ha_norm hf_norm
   have hunshifted : HasSum (fun m : ℕ =>
       ((2 * (α₂ + N + m) + fs 0 - 1) * a m + ∑ k ∈ range m, fs (m - k) * a k) * u ^ m)
       (2 * u * deriv A₁ u + (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) * A₁ u) := by
@@ -732,19 +624,15 @@ private theorem hasSum_logForcingCoeff_mul_pow {z₀ α₂ : ℂ} {N : ℕ} {r :
     rw [show 2 * (u * deriv A₁ u) + (2 * (α₂ + N) - 1) * A₁ u + A₁ u * ∑' s, fs s * u ^ s =
       2 * u * deriv A₁ u + (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) * A₁ u by ring] at htot
     refine htot.congr_fun fun m => ?_
-    rw [sum_range_succ_mul_pow a fs u m]
-    have hcomm : (∑ k ∈ range m, a k * fs (m - k)) = ∑ k ∈ range m, fs (m - k) * a k :=
-      sum_congr rfl fun _ _ => mul_comm _ _
-    rw [hcomm]; ring
+    rw [sum_range_succ_mul_pow a fs u m,
+      show (∑ k ∈ range m, a k * fs (m - k)) = ∑ k ∈ range m, fs (m - k) * a k from
+        sum_congr rfl fun _ _ => mul_comm _ _]; ring
   refine ((add_left_injective N).hasSum_iff fun s hs => ?_).mp
     ((hunshifted.mul_left (u ^ N)).congr_fun fun m => ?_)
-  · have hsN : s < N := by
-      by_contra hge
-      exact hs ⟨s - N, Nat.sub_add_cancel (not_lt.mp hge)⟩
-    simp [logForcingCoeff, hsN]
-  · have hnlt : ¬m + N < N := by omega
-    simp only [Function.comp_apply, logForcingCoeff, hnlt, ↓reduceIte, Nat.add_sub_cancel, pow_add]
-    push_cast; ring
+  · simp [logForcingCoeff,
+      show s < N by by_contra h; exact hs ⟨s - N, Nat.sub_add_cancel (not_lt.mp h)⟩]
+  · simp only [Function.comp_apply, logForcingCoeff, show ¬m + N < N by omega, ↓reduceIte,
+      Nat.add_sub_cancel, pow_add]; push_cast; ring
 
 /-- Shared operator formula for any second-solution candidate
 `w₂'(z) = (z - z₀)^{α₂} ∑ b' s * (z - z₀)^s + c' * w₁(z) * log(z - z₀)` when `α₁ = α₂ + N`. -/
@@ -770,60 +658,46 @@ private theorem operator_second_ansatz_eq {z₀ α₂ : ℂ} {N : ℕ} {r : ℝ}
       ∀ z ∈ U, deriv (deriv w₂') z + f z * deriv w₂' z + g z * w₂' z =
         (z - z₀) ^ (α₂ - 2) * ∑' s, D s * (z - z₀) ^ s := by
   intro a w₁ w₂' D U
-  have hre : α₂.re ≤ (α₂ + (N : ℂ)).re := by simp
-  have hρ₁ : indicialPoly (fs 0) (gs 0) (α₂ + N) = 0 := by simp [hfact]
-  have hres₁ : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₂ + N + s) ≠ 0 :=
-    fun s hs => indicialPoly_add_nat_ne_zero_of_re_le hfact hre hs
-  obtain ⟨ha_sum, hw₁_diff, hw₁_sol⟩ := regularSingularCoeff_solution hf hg hρ₁ hres₁
+  obtain ⟨ha_sum, hw₁_diff, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact])
+    fun s hs => indicialPoly_add_nat_ne_zero_of_re_le hfact (by simp) hs
   obtain ⟨hΦ_diff, _, hΦ_op⟩ := hasDerivAt_and_operator_mul_log hw₁_diff hw₁_sol
   set ψ : ℂ → ℂ := fun w => (w - z₀) ^ α₂ * ∑' s, b' s * (w - z₀) ^ s
   set Φ : ℂ → ℂ := fun w => w₁ w * Complex.log (w - z₀)
-  have hψ_diff : DifferentiableOn ℂ ψ U :=
-    fun w hw => (hasDerivAt_cpow_mul_tsum hb'_sum hw.1 hw.2).differentiableAt.differentiableWithinAt
+  have hψ_diff : DifferentiableOn ℂ ψ U := fun w hw =>
+    (hasDerivAt_cpow_mul_tsum hb'_sum hw.1 hw.2).differentiableAt.differentiableWithinAt
   have hw₂'_eq : w₂' = fun w => ψ w + c' * Φ w := by ext w; dsimp [w₂', ψ, Φ]; ring
-  have hw₂'_diff : DifferentiableOn ℂ w₂' U := by
-    rw [hw₂'_eq]; exact hψ_diff.add (hΦ_diff.const_mul c')
-  -- Combine the power series for `L[ψ]` and the shifted logarithmic forcing series.
   have hD_hasSum : ∀ u : ℂ, ‖u‖ < r → HasSum (fun s => D s * u ^ s)
       ((∑' s : ℕ, (indicialPoly (fs 0) (gs 0) (α₂ + s) * b' s +
           ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b' k) * u ^ s) +
         c' * (u ^ N * (2 * u * deriv (fun w => ∑' s, a s * w ^ s) u +
-          (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) * ∑' s, a s * u ^ s))) := fun u hu => by
-    have hψ_sum := (hasSum_operator_cpow_series (σ := α₂)
-      (fun w hw0 hwr => (hf w hw0 hwr).summable)
-      (fun w hw0 hwr => (hg w hw0 hwr).summable) hb'_sum hu).summable
-    have hF_sum := hasSum_logForcingCoeff_mul_pow (α₂ := α₂) (N := N)
-      (fun w hw0 hwr => (hf w hw0 hwr).summable) ha_sum hu
-    exact (hψ_sum.hasSum.add (hF_sum.mul_left c')).congr_fun fun s => by dsimp [D]; ring
-  refine ⟨hw₂'_diff, fun u hu => (hD_hasSum u hu).summable, ?_⟩
-  -- Evaluate `L[ψ + c' Φ]` pointwise and factor out `(z - z₀)^{α₂ - 2}`.
-  rintro z ⟨hzs, hzb⟩
-  have hopen : IsOpen U := isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r
-  obtain ⟨hd1, hd2⟩ := deriv_deriv_add_const_mul hopen c' hψ_diff hΦ_diff ⟨hzs, hzb⟩
-  rw [hw₂'_eq, hd1, hd2]
-  have hsplit : (deriv (deriv ψ) z + c' * deriv (deriv Φ) z) +
+          (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) * ∑' s, a s * u ^ s))) := fun u hu =>
+    (((hasSum_operator_cpow_series (σ := α₂) (fun w hw0 hwr => (hf w hw0 hwr).summable)
+        (fun w hw0 hwr => (hg w hw0 hwr).summable) hb'_sum hu).summable.hasSum).add
+      ((hasSum_logForcingCoeff_mul_pow (α₂ := α₂) (N := N)
+        (fun w hw0 hwr => (hf w hw0 hwr).summable) ha_sum hu).mul_left c')).congr_fun
+      fun _ => by dsimp [D]; ring
+  refine ⟨by rw [hw₂'_eq]; exact hψ_diff.add (hΦ_diff.const_mul c'),
+    fun u hu => (hD_hasSum u hu).summable, fun z ⟨hzs, hzb⟩ => ?_⟩
+  obtain ⟨hd1, hd2⟩ := deriv_deriv_add_const_mul
+    (isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r) c' hψ_diff hΦ_diff ⟨hzs, hzb⟩
+  rw [hw₂'_eq, hd1, hd2, show (deriv (deriv ψ) z + c' * deriv (deriv Φ) z) +
       f z * (deriv ψ z + c' * deriv Φ z) + g z * (ψ z + c' * Φ z) =
       (deriv (deriv ψ) z + f z * deriv ψ z + g z * ψ z) +
-        c' * (deriv (deriv Φ) z + f z * deriv Φ z + g z * Φ z) := by ring
-  rw [hsplit, operator_cpow_mul_tsum_eq (σ := α₂) hf hg hb'_sum hzs hzb,
+        c' * (deriv (deriv Φ) z + f z * deriv Φ z + g z * Φ z) by ring,
+    operator_cpow_mul_tsum_eq (σ := α₂) hf hg hb'_sum hzs hzb,
     hΦ_op z ⟨hzs, hzb⟩, (hD_hasSum (z - z₀) hzb).tsum_eq]
-  set u : ℂ := z - z₀
-  have hu0 : u ≠ 0 := Complex.slitPlane_ne_zero hzs
+  set u : ℂ := z - z₀; have hu0 : u ≠ 0 := Complex.slitPlane_ne_zero hzs
   set A₁ : ℂ → ℂ := fun w => ∑' s, a s * w ^ s
   have hdw₁ : deriv w₁ z = u ^ (α₂ + (N : ℂ) - 1) * ((α₂ + N) * A₁ u + u * deriv A₁ u) :=
     (hasDerivAt_cpow_mul_tsum ha_sum hzs hzb).deriv
-  have hPf : ∑' s, fs s * u ^ s = u * f z := (hf z (norm_pos_iff.mpr hu0) hzb).tsum_eq
   have hcpow_N : (u ^ 2)⁻¹ * u ^ (α₂ + (N : ℂ)) = u ^ (α₂ - 2) * u ^ N := by
     rw [Complex.cpow_add _ _ hu0, Complex.cpow_natCast, cpow_eq_cpow_sub_two_mul_sq hu0 α₂]
     field_simp [hu0]
-  have hcpow_N1 : u ^ (α₂ + (N : ℂ) - 1) * u = u ^ (α₂ + (N : ℂ)) :=
-    (cpow_eq_cpow_sub_one_mul hu0 (α₂ + (N : ℂ))).symm
-  rw [hPf]
-  dsimp only [w₁, A₁, u] at hdw₁ ⊢
-  rw [hdw₁]
+  rw [(hf z (norm_pos_iff.mpr hu0) hzb).tsum_eq]; dsimp only [w₁, A₁, u] at hdw₁ ⊢; rw [hdw₁]
   linear_combination
-    c' * (2 * (u ^ 2)⁻¹ * ((α₂ + ↑N) * A₁ u + u * deriv A₁ u)) * hcpow_N1 +
-      c' * (2 * u * deriv A₁ u + (2 * (α₂ + ↑N) + u * f z - 1) * A₁ u) * hcpow_N
+    c' * (2 * (u ^ 2)⁻¹ * ((α₂ + ↑N) * A₁ u + u * deriv A₁ u)) *
+      (cpow_eq_cpow_sub_one_mul hu0 (α₂ + (N : ℂ))).symm +
+    c' * (2 * u * deriv A₁ u + (2 * (α₂ + ↑N) + u * f z - 1) * A₁ u) * hcpow_N
 
 /-- **Logarithmic second solution at a regular singularity** (DLMF 2.7.6). When the indicial
 polynomial factors as `(α - α₁)(α - α₂)` with `α₁ - α₂ = N ∈ ℕ`, the series
@@ -850,36 +724,27 @@ theorem regularSingular_second_solution {z₀ α₁ α₂ : ℂ} {N : ℕ} {r : 
         deriv (deriv w₂) z + f z * deriv w₂ z + g z * w₂ z = 0 := by
   have hα₁ : α₁ = α₂ + N := by linear_combination hdiff
   subst hα₁
-  have hre : α₂.re ≤ (α₂ + (N : ℂ)).re := by simp
-  have hρ₁ : indicialPoly (fs 0) (gs 0) (α₂ + N) = 0 := by simp [hfact]
-  have hres₁ : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₂ + N + s) ≠ 0 :=
-    fun s hs => indicialPoly_add_nat_ne_zero_of_re_le hfact hre hs
-  obtain ⟨ha_sum, _, _⟩ := regularSingularCoeff_solution hf hg hρ₁ hres₁
+  obtain ⟨ha_sum, _, _⟩ := regularSingularCoeff_solution hf hg (by simp [hfact])
+    fun s hs => indicialPoly_add_nat_ne_zero_of_re_le hfact (by simp) hs
   set a := regularSingularCoeff fs gs (α₂ + N)
   set b := regularSingularSecondCoeff fs gs α₂ N
   set c := regularSingularLogMultiplier fs gs α₂ N
   have hb_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s => b s * (z - z₀) ^ s := by
     refine summable_of_perturbed_indicial_rec (σ := α₂)
       (E := fun s => -c * logForcingCoeff fs a α₂ N s) (s₁ := 0)
-      (fun z hz0 hzr => (hf z hz0 hzr).summable)
-      (fun z hz0 hzr => (hg z hz0 hzr).summable) (fun ρ hρ0 hρr => ?_) (fun s _ => ?_)
-    · obtain ⟨CF, _, hCF⟩ := exists_norm_logForcingCoeff_mul_pow_le (α₂ := α₂) (N := N) hρ0 hρr
-        (fun z hz0 hzr => (hf z hz0 hzr).summable) ha_sum
-      refine ⟨‖c‖ * CF, by positivity, fun s => ?_⟩
-      calc ‖-c * logForcingCoeff fs a α₂ N s‖ * ρ ^ s
-          = ‖c‖ * (‖logForcingCoeff fs a α₂ N s‖ * ρ ^ s) := by rw [norm_mul, norm_neg, mul_assoc]
-        _ ≤ ‖c‖ * (CF * (s + 1)) := mul_le_mul_of_nonneg_left (hCF s) (norm_nonneg c)
-        _ = (‖c‖ * CF) * (s + 1) := by ring
-    · dsimp only [logForcingCoeff]
-      linear_combination regularSingularSecondCoeff_rec hfact s
+      (fun z hz0 hzr => (hf z hz0 hzr).summable) (fun z hz0 hzr => (hg z hz0 hzr).summable)
+      (fun ρ hρ0 hρr => ?_) (fun s _ => by
+        dsimp only [logForcingCoeff]; linear_combination regularSingularSecondCoeff_rec hfact s)
+    obtain ⟨CF, _, hCF⟩ := exists_norm_logForcingCoeff_mul_pow_le (α₂ := α₂) (N := N) hρ0 hρr
+      (fun z hz0 hzr => (hf z hz0 hzr).summable) ha_sum
+    refine ⟨‖c‖ * CF, by positivity, fun s => ?_⟩
+    rw [norm_mul, norm_neg, mul_assoc, mul_assoc]
+    exact mul_le_mul_of_nonneg_left (hCF s) (norm_nonneg c)
   obtain ⟨hw₂_diff, _, hw₂_op⟩ := operator_second_ansatz_eq (c' := c) hf hg hfact hb_sum
   refine ⟨hb_sum, hw₂_diff, fun z hzs hzb => ?_⟩
   rw [hw₂_op z ⟨hzs, hzb⟩]
-  have htsum : (∑' s : ℕ, ((indicialPoly (fs 0) (gs 0) (α₂ + s) * b s +
-      ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k) +
-      c * logForcingCoeff fs a α₂ N s) * (z - z₀) ^ s) = 0 := by
-    simp only [a, b, c, logForcingCoeff, regularSingularSecondCoeff_rec hfact, zero_mul, tsum_zero]
-  exact mul_eq_zero_of_right _ htsum
+  simp only [b, c, logForcingCoeff, regularSingularSecondCoeff_rec hfact, zero_mul, tsum_zero,
+    mul_zero]
 
 /-- **Analytic uniqueness of the second solution's coefficients**: for `0 < r` and
 `α₁ - α₂ = N ∈ ℕ`, if `b' : ℕ → ℂ` and `c' : ℂ` satisfy `b' N = 0`, the normalization
@@ -909,361 +774,15 @@ theorem eq_regularSingularSecondCoeff_of_solution {z₀ α₁ α₂ : ℂ} {N : 
   have hα₁ : α₁ = α₂ + N := by linear_combination hdiff
   subst hα₁
   obtain ⟨_, hD_sum, hD_op⟩ := operator_second_ansatz_eq (c' := c') hf hg hfact hb'_sum
-  have hD0 := eq_zero_of_cpow_mul_tsum_eq_zero (z₀ := z₀) (α := α₂ - 2) hr
-    (fun u _ hu => hD_sum u hu)
-    fun z hzs hzb => (hD_op z ⟨hzs, hzb⟩).symm.trans (hsol z hzs hzb)
-  exact eq_regularSingularSecondCoeff_of_rec hfact hb'N hc'0 hb'0 hD0
-
-/-! ### Abel–Liouville Wronskian identity and nonvanishing -/
-
-/-- **Abel–Liouville Wronskian constancy at a regular singularity**: for any two holomorphic
-solutions `w₁`, `w₂` of `w'' + f w' + g w = 0` on `{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}`,
-where `(z - z₀) f(z) = ∑ fs s * (z - z₀)^s` on `0 < ‖z - z₀‖ < r`, the weighted Wronskian
-`(z - z₀)^{fs 0} exp(H(z - z₀)) (w₁ w₂' - w₁' w₂)` is constant on the slit punctured disc, where
-`H(u) = ∑' s, (if s = 0 then 0 else fs s / s) * u ^ s`. -/
-theorem cpow_mul_exp_mul_wronskian_eq {z₀ : ℂ} {r : ℝ} {f g w₁ w₂ : ℂ → ℂ} {fs : ℕ → ℂ}
-    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
-    (hw₁ : DifferentiableOn ℂ w₁ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r})
-    (hsol₁ : ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-      deriv (deriv w₁) z + f z * deriv w₁ z + g z * w₁ z = 0)
-    (hw₂ : DifferentiableOn ℂ w₂ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r})
-    (hsol₂ : ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-      deriv (deriv w₂) z + f z * deriv w₂ z + g z * w₂ z = 0) :
-    let H : ℂ → ℂ := fun u => ∑' s : ℕ, (if s = 0 then (0 : ℂ) else fs s / s) * u ^ s
-    let F : ℂ → ℂ := fun z =>
-      (z - z₀) ^ fs 0 * cexp (H (z - z₀)) * (w₁ z * deriv w₂ z - deriv w₁ z * w₂ z)
-    ∀ z₁ z₂, z₁ ∈ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} →
-      z₂ ∈ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} → F z₁ = F z₂ := by
-  intro H _ z₁ z₂ hz₁ hz₂
-  set U : Set ℂ := {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}
-  have hr : 0 < r := (norm_nonneg (z₁ - z₀)).trans_lt hz₁.2
-  have hopen : IsOpen U := isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r
-  have hconn : IsPreconnected U := isPreconnected_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r
-  have hpF := hasFPowerSeriesOnBall_of_punctured hr fs fun z hz0 hzr => (hf z hz0 hzr).summable
-  have hE : ∀ z ∈ U, HasDerivAt (fun w => (w - z₀) ^ fs 0 * cexp (H (w - z₀)))
-      (f z * ((z - z₀) ^ fs 0 * cexp (H (z - z₀)))) z := by
-    rintro z ⟨hzs, hzb⟩
-    have hzu0 : z - z₀ ≠ 0 := Complex.slitPlane_ne_zero hzs
-    have hH_at : HasDerivAt H (((∑' s, fs s * (z - z₀) ^ s) - fs 0) / (z - z₀)) (z - z₀) := by
-      simpa only [sub_zero, zero_add] using
-        hpF.hasDerivAt_tsum_div_natCast hzu0 (eNorm_lt_ofReal_iff.mpr hzb)
-    have hH_deriv : HasDerivAt (fun w => H (w - z₀)) (f z - fs 0 * (z - z₀)⁻¹) z :=
-      (hH_at.comp_sub_const z z₀).congr_deriv (by
-        rw [(hf z (norm_pos_iff.mpr hzu0) hzb).tsum_eq]; field_simp [hzu0])
-    have hpow := ((hasDerivAt_id z).sub_const z₀).cpow_const (c := fs 0) hzs
-    refine (hpow.mul hH_deriv.cexp).congr_deriv ?_
-    dsimp only [id]
-    rw [cpow_eq_cpow_sub_one_mul hzu0 (fs 0)]
-    field_simp [hzu0]
-    ring
-  exact mul_wronskian_eq_of_hasDerivAt (g := g) hopen hconn hE
-    (fun z hz => (hw₁.differentiableAt (hopen.mem_nhds hz)).hasDerivAt)
-    (fun z hz => ((hw₁.deriv hopen).differentiableAt (hopen.mem_nhds hz)).hasDerivAt.congr_deriv
-      (by linear_combination hsol₁ z hz.1 hz.2))
-    (fun z hz => (hw₂.differentiableAt (hopen.mem_nhds hz)).hasDerivAt)
-    (fun z hz => ((hw₂.deriv hopen).differentiableAt (hopen.mem_nhds hz)).hasDerivAt.congr_deriv
-      (by linear_combination hsol₂ z hz.1 hz.2))
-    hz₁ hz₂
-
-/-- Pointwise algebraic evaluation of the weighted Wronskian for the Frobenius ansatz at `z₀ + t`
-with `0 < t < r`. -/
-private theorem wronskian_ansatz_eval_of_pos {z₀ α₁ α₂ c : ℂ} {N : ℕ} {r t : ℝ}
-    {fs a b : ℕ → ℂ}
-    (hvieta : α₁ + α₂ = 1 - fs 0) (hcN : c = 0 ∨ α₁ - α₂ = N)
-    (ha_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s => a s * (z - z₀) ^ s)
-    (hb_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s => b s * (z - z₀) ^ s)
-    (ht0 : 0 < t) (htr : t < r) :
-    let A₁ : ℂ → ℂ := fun u => ∑' s, a s * u ^ s
-    let B : ℂ → ℂ := fun u => ∑' s, b s * u ^ s
-    let w₁ : ℂ → ℂ := fun z => (z - z₀) ^ α₁ * A₁ (z - z₀)
-    let w₂ : ℂ → ℂ := fun z => (z - z₀) ^ α₂ * B (z - z₀) + c * w₁ z * Complex.log (z - z₀)
-    let H : ℂ → ℂ := fun u => ∑' s : ℕ, (if s = 0 then (0 : ℂ) else fs s / s) * u ^ s
-    (t : ℂ) ^ fs 0 * cexp (H t) *
-        (w₁ (z₀ + t) * deriv w₂ (z₀ + t) - deriv w₁ (z₀ + t) * w₂ (z₀ + t)) =
-      cexp (H t) * ((α₂ - α₁) * A₁ t * B t + t * (A₁ t * deriv B t - deriv A₁ t * B t) +
-        c * (t : ℂ) ^ N * A₁ t ^ 2) := by
-  intro A₁ B w₁ w₂ H
-  have hts : ((t : ℝ) : ℂ) ∈ slitPlane := Complex.ofReal_mem_slitPlane.mpr ht0
-  have htb : ‖((t : ℝ) : ℂ)‖ < r := by simpa [abs_of_pos ht0] using htr
-  have ht_ne : ((t : ℝ) : ℂ) ≠ 0 := Complex.slitPlane_ne_zero hts
-  have hw₁_d1 := hasDerivAt_cpow_mul_tsum (σ := α₁) ha_sum (z := z₀ + t)
-    (by simpa using hts) (by simpa using htb)
-  have hψ_d1 := hasDerivAt_cpow_mul_tsum (σ := α₂) hb_sum (z := z₀ + t)
-    (by simpa using hts) (by simpa using htb)
-  have hlog := ((hasDerivAt_id (z₀ + (t : ℂ))).sub_const z₀).clog (by simpa using hts)
-  have hdw₁ : deriv w₁ (z₀ + t) = (t : ℂ) ^ (α₁ - 1) * (α₁ * A₁ t + t * deriv A₁ t) := by
-    simpa [w₁, A₁] using hw₁_d1.deriv
-  have hdw₂ : deriv w₂ (z₀ + t) =
-      (t : ℂ) ^ (α₂ - 1) * (α₂ * B t + t * deriv B t) +
-        c * (deriv w₁ (z₀ + t) * Complex.log t + (t : ℂ)⁻¹ * w₁ (z₀ + t)) := by
-    refine ((hψ_d1.add ((hw₁_d1.const_mul c).mul hlog)).congr_deriv ?_).deriv
-    rw [hdw₁]
-    simp only [w₁, A₁, B, id, add_sub_cancel_left, one_div]; ring
-  rw [hdw₂, hdw₁]
-  dsimp only [w₁, w₂, A₁, B]
-  simp only [add_sub_cancel_left]
-  have hp1 : (t : ℂ) ^ fs 0 * ((t : ℂ) ^ α₁ * (t : ℂ) ^ (α₂ - 1)) = 1 := by
-    rw [← Complex.cpow_add _ _ ht_ne, ← Complex.cpow_add _ _ ht_ne,
-      show fs 0 + (α₁ + (α₂ - 1)) = 0 by linear_combination hvieta, Complex.cpow_zero]
-  have hp2 : (t : ℂ) ^ fs 0 * ((t : ℂ) ^ (α₁ - 1) * (t : ℂ) ^ α₂) = 1 := by
-    rw [← Complex.cpow_add _ _ ht_ne, ← Complex.cpow_add _ _ ht_ne,
-      show fs 0 + (α₁ - 1 + α₂) = 0 by linear_combination hvieta, Complex.cpow_zero]
-  have hc_pow : c * ((t : ℂ) ^ fs 0 * ((t : ℂ)⁻¹ * ((t : ℂ) ^ α₁ * (t : ℂ) ^ α₁))) =
-      c * (t : ℂ) ^ N := by
-    rcases hcN with rfl | hdiff
-    · simp
-    · congr 1
-      rw [← Complex.cpow_neg_one, ← Complex.cpow_add _ _ ht_ne, ← Complex.cpow_add _ _ ht_ne,
-        ← Complex.cpow_add _ _ ht_ne, ← Complex.cpow_natCast]
-      congr 1; linear_combination hvieta + hdiff
-  linear_combination
-    cexp (H t) * (A₁ t * (α₂ * B t + t * deriv B t)) * hp1 -
-      cexp (H t) * ((α₁ * A₁ t + t * deriv A₁ t) * B t) * hp2 +
-      cexp (H t) * A₁ t ^ 2 * hc_pow
-
-/-- Unified Abel–Liouville Wronskian evaluation for any pair of solutions of the form
-`w₁(z) = (z - z₀)^{α₁} ∑ a_s (z - z₀)^s` and
-`w₂(z) = (z - z₀)^{α₂} ∑ b_s (z - z₀)^s + c * w₁(z) * log(z - z₀)` when `α₁ + α₂ = 1 - fs 0`
-and either `c = 0` or `α₁ - α₂ = N`. -/
-private theorem abel_liouville_wronskian_ansatz_eq {z₀ α₁ α₂ c : ℂ} {N : ℕ} {r : ℝ}
-    {f g : ℂ → ℂ} {fs a b : ℕ → ℂ}
-    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
-    (hvieta : α₁ + α₂ = 1 - fs 0)
-    (hcN : c = 0 ∨ α₁ - α₂ = N)
-    (ha_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s => a s * (z - z₀) ^ s)
-    (hb_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s => b s * (z - z₀) ^ s)
-    (hw₁_sol : ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-      let w₁ := fun w => (w - z₀) ^ α₁ * ∑' s, a s * (w - z₀) ^ s
-      deriv (deriv w₁) z + f z * deriv w₁ z + g z * w₁ z = 0)
-    (hw₂_sol : ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-      let w₁ := fun w => (w - z₀) ^ α₁ * ∑' s, a s * (w - z₀) ^ s
-      let w₂ := fun w =>
-        (w - z₀) ^ α₂ * (∑' s, b s * (w - z₀) ^ s) + c * w₁ w * Complex.log (w - z₀)
-      deriv (deriv w₂) z + f z * deriv w₂ z + g z * w₂ z = 0) :
-    let w₁ : ℂ → ℂ := fun z => (z - z₀) ^ α₁ * ∑' s, a s * (z - z₀) ^ s
-    let w₂ : ℂ → ℂ := fun z =>
-      (z - z₀) ^ α₂ * (∑' s, b s * (z - z₀) ^ s) + c * w₁ z * Complex.log (z - z₀)
-    let H : ℂ → ℂ := fun u => ∑' s : ℕ, (if s = 0 then (0 : ℂ) else fs s / s) * u ^ s
-    ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-      (z - z₀) ^ fs 0 * cexp (H (z - z₀)) * (w₁ z * deriv w₂ z - deriv w₁ z * w₂ z) =
-        (α₂ - α₁) * a 0 * b 0 + c * (0 : ℂ) ^ N * a 0 ^ 2 := by
-  intro w₁ w₂ H z hzs hzb
-  have hr : 0 < r := (norm_nonneg (z - z₀)).trans_lt hzb
-  have hw₁_diff : DifferentiableOn ℂ w₁ {w | w - z₀ ∈ slitPlane ∧ ‖w - z₀‖ < r} :=
-    fun w hw => (hasDerivAt_cpow_mul_tsum ha_sum hw.1 hw.2).differentiableAt.differentiableWithinAt
-  have hw₂_diff : DifferentiableOn ℂ w₂ {w | w - z₀ ∈ slitPlane ∧ ‖w - z₀‖ < r} := fun w hw => by
-    have hψ := hasDerivAt_cpow_mul_tsum (σ := α₂) hb_sum hw.1 hw.2
-    have h1 := hasDerivAt_cpow_mul_tsum (σ := α₁) ha_sum hw.1 hw.2
-    have hlog := ((hasDerivAt_id w).sub_const z₀).clog hw.1
-    exact (hψ.add ((h1.const_mul c).mul hlog)).differentiableAt.differentiableWithinAt
-  have hconst := cpow_mul_exp_mul_wronskian_eq hf hw₁_diff hw₁_sol hw₂_diff hw₂_sol
-  -- Establish continuity at `0` of the desingularized radial Wronskian `G`.
-  have hpF := hasFPowerSeriesOnBall_of_punctured hr fs fun w hw0 hwr => (hf w hw0 hwr).summable
-  have hH_cont : ContinuousAt H 0 := by
-    have hpH := FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_div_natCast
-      fs 0 (ENNReal.ofReal_pos.mpr hr) hpF.r_le
-    simpa only [sub_zero] using hpH.analyticAt.continuousAt
-  set A₁ : ℂ → ℂ := fun u => ∑' s, a s * u ^ s
-  set B : ℂ → ℂ := fun u => ∑' s, b s * u ^ s
-  have hA₁_an := analyticOnNhd_tsum_of_summable hr a ha_sum
-  have hB_an := analyticOnNhd_tsum_of_summable hr b hb_sum
-  have h0_mem : (0 : ℂ) ∈ ball (0 : ℂ) r := mem_ball_self hr
-  have hA₁_cont : ContinuousAt A₁ 0 := (hA₁_an 0 h0_mem).continuousAt
-  have hB_cont : ContinuousAt B 0 := (hB_an 0 h0_mem).continuousAt
-  have hA₁'_cont : ContinuousAt (deriv A₁) 0 := (hA₁_an.deriv 0 h0_mem).continuousAt
-  have hB'_cont : ContinuousAt (deriv B) 0 := (hB_an.deriv 0 h0_mem).continuousAt
-  set G : ℂ → ℂ := fun u =>
-    cexp (H u) * ((α₂ - α₁) * A₁ u * B u + u * (A₁ u * deriv B u - deriv A₁ u * B u) +
-      c * u ^ N * A₁ u ^ 2)
-  have hG_cont0 : ContinuousAt G 0 := by fun_prop
-  have hH0 : H 0 = 0 := by
-    simpa [H] using tsum_mul_zero_pow (fun s => if s = 0 then (0 : ℂ) else fs s / s)
-  have hA₁0 : A₁ 0 = a 0 := tsum_mul_zero_pow a
-  have hB0 : B 0 = b 0 := tsum_mul_zero_pow b
-  have hG0 : G 0 = (α₂ - α₁) * a 0 * b 0 + c * (0 : ℂ) ^ N * a 0 ^ 2 := by
-    simp [G, hH0, hA₁0, hB0]
-  -- Evaluate the constant weighted Wronskian along `z₀ + t` and take `t → 0⁺`.
-  have hFG : ∀ t ∈ Ioo (0 : ℝ) r,
-      (z - z₀) ^ fs 0 * cexp (H (z - z₀)) * (w₁ z * deriv w₂ z - deriv w₁ z * w₂ z) =
-        G (t : ℂ) := by
-    rintro t ⟨ht0, htr⟩
-    have hpt : z₀ + (t : ℂ) ∈ {w | w - z₀ ∈ slitPlane ∧ ‖w - z₀‖ < r} :=
-      ⟨by simpa using Complex.ofReal_mem_slitPlane.mpr ht0,
-        by simpa [abs_of_pos ht0] using htr⟩
-    refine (hconst z (z₀ + t) ⟨hzs, hzb⟩ hpt).trans ?_
-    simpa only [G, H, w₁, w₂, A₁, B, add_sub_cancel_left] using
-      wronskian_ansatz_eval_of_pos (fs := fs) hvieta hcN ha_sum hb_sum ht0 htr
-  exact tendsto_nhds_unique
-    (tendsto_const_nhds.congr' (by filter_upwards [Ioo_mem_nhdsGT hr] with t ht; exact hFG t ht))
-    (hG0 ▸ hG_cont0.tendsto.comp
-      ((Complex.continuous_ofReal.tendsto 0).mono_left nhdsWithin_le_nhds))
-
-private theorem eq_mul_cpow_neg_mul_cexp_neg_of_mul_eq {u p h w c : ℂ} (hu : u ≠ 0)
-    (heq : u ^ p * cexp h * w = c) : w = c * u ^ (-p) * cexp (-h) := by
-  have h1 : u ^ (-p) * u ^ p = 1 := by
-    rw [← Complex.cpow_add _ _ hu, neg_add_cancel, Complex.cpow_zero]
-  have h2 : cexp (-h) * cexp h = 1 := by rw [← Complex.exp_add, neg_add_cancel, Complex.exp_zero]
-  linear_combination (u ^ (-p) * cexp (-h)) * heq - w * cexp (-h) * cexp h * h1 - w * h2
-
-/-- **Abel–Liouville Wronskian formula** in the non-resonant case: for the normalized solutions
-`w₁`, `w₂` attached to the two indicial roots `α₁`, `α₂`,
-`w₁ z * deriv w₂ z - deriv w₁ z * w₂ z = (α₂ - α₁) * (z - z₀)^{-fs 0} * exp(-H(z - z₀))` at every
-point of the slit punctured disc, where `H(u) = ∑_{s ≥ 1} (fs s / s) u^s`. -/
-theorem wronskian_regularSingular_eq {z₀ α₁ α₂ : ℂ} {r : ℝ} {f g : ℂ → ℂ} {fs gs : ℕ → ℂ}
-    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
-    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
-    (hfact : ∀ α, indicialPoly (fs 0) (gs 0) α = (α - α₁) * (α - α₂))
-    (hres₁ : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₁ + s) ≠ 0)
-    (hres₂ : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₂ + s) ≠ 0) :
-    let w₁ : ℂ → ℂ := fun z =>
-      (z - z₀) ^ α₁ * ∑' s, regularSingularCoeff fs gs α₁ s * (z - z₀) ^ s
-    let w₂ : ℂ → ℂ := fun z =>
-      (z - z₀) ^ α₂ * ∑' s, regularSingularCoeff fs gs α₂ s * (z - z₀) ^ s
-    let H : ℂ → ℂ := fun u => ∑' s : ℕ, (if s = 0 then (0 : ℂ) else fs s / s) * u ^ s
-    ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-      w₁ z * deriv w₂ z - deriv w₁ z * w₂ z =
-        (α₂ - α₁) * (z - z₀) ^ (-fs 0) * cexp (-H (z - z₀)) := by
-  intro w₁ w₂ H z hzs hzb
-  obtain ⟨ha₁_sum, _, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact]) hres₁
-  obtain ⟨ha₂_sum, _, hw₂_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact]) hres₂
-  have hId := abel_liouville_wronskian_ansatz_eq (c := 0) (N := 1) hf
-    (forall_indicialPoly_eq_sub_mul_sub_iff.mp hfact).1 (Or.inl rfl) ha₁_sum ha₂_sum hw₁_sol
-    (fun w hws hwb => by simpa using hw₂_sol w hws hwb) z hzs hzb
-  exact eq_mul_cpow_neg_mul_cexp_neg_of_mul_eq (Complex.slitPlane_ne_zero hzs)
-    (by simpa [w₁, w₂, H] using hId)
-
-/-- For two distinct indicial roots `α₁ ≠ α₂` that are both non-resonant (`Q(αᵢ + s) ≠ 0` for all
-`s ≥ 1`), the two canonical series solutions attached to `α₁` and `α₂` have nowhere-vanishing
-Wronskian on `{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}`. -/
-theorem wronskian_regularSingular_ne_zero {z₀ α₁ α₂ : ℂ} {r : ℝ} {f g : ℂ → ℂ} {fs gs : ℕ → ℂ}
-    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
-    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
-    (hfact : ∀ α, indicialPoly (fs 0) (gs 0) α = (α - α₁) * (α - α₂))
-    (hres₁ : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₁ + s) ≠ 0)
-    (hres₂ : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₂ + s) ≠ 0)
-    (hne : α₁ ≠ α₂) :
-    let w₁ : ℂ → ℂ := fun z =>
-      (z - z₀) ^ α₁ * ∑' s, regularSingularCoeff fs gs α₁ s * (z - z₀) ^ s
-    let w₂ : ℂ → ℂ := fun z =>
-      (z - z₀) ^ α₂ * ∑' s, regularSingularCoeff fs gs α₂ s * (z - z₀) ^ s
-    ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-      w₁ z * deriv w₂ z - deriv w₁ z * w₂ z ≠ 0 := by
-  intro w₁ w₂ z hzs hzb
-  rw [wronskian_regularSingular_eq hf hg hfact hres₁ hres₂ z hzs hzb]
-  exact mul_ne_zero (mul_ne_zero (sub_ne_zero.mpr hne.symm)
-    (Complex.cpow_ne_zero_iff.mpr (.inl (Complex.slitPlane_ne_zero hzs)))) (Complex.exp_ne_zero _)
-
-/-- **Abel–Liouville Wronskian formula** in the resonant/logarithmic case `α₁ - α₂ = N ∈ ℕ`:
-`w₁ z * deriv w₂ z - deriv w₁ z * w₂ z` equals
-`(if N = 0 then 1 else -N) * (z - z₀)^{-fs 0} * exp(-H(z - z₀))` on the slit punctured disc,
-where `H(u) = ∑_{s ≥ 1} (fs s / s) u^s`. -/
-theorem wronskian_regularSingular_second_eq {z₀ α₁ α₂ : ℂ} {N : ℕ} {r : ℝ} {f g : ℂ → ℂ}
-    {fs gs : ℕ → ℂ}
-    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
-    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
-    (hfact : ∀ α, indicialPoly (fs 0) (gs 0) α = (α - α₁) * (α - α₂))
-    (hdiff : α₁ - α₂ = N) :
-    let a := regularSingularCoeff fs gs α₁
-    let b := regularSingularSecondCoeff fs gs α₂ N
-    let c := regularSingularLogMultiplier fs gs α₂ N
-    let w₁ : ℂ → ℂ := fun z => (z - z₀) ^ α₁ * ∑' s, a s * (z - z₀) ^ s
-    let w₂ : ℂ → ℂ := fun z =>
-      (z - z₀) ^ α₂ * (∑' s, b s * (z - z₀) ^ s) + c * w₁ z * Complex.log (z - z₀)
-    let H : ℂ → ℂ := fun u => ∑' s : ℕ, (if s = 0 then (0 : ℂ) else fs s / s) * u ^ s
-    ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-      w₁ z * deriv w₂ z - deriv w₁ z * w₂ z =
-        (if N = 0 then (1 : ℂ) else -(N : ℂ)) * (z - z₀) ^ (-fs 0) * cexp (-H (z - z₀)) := by
-  intro a b c w₁ w₂ H z hzs hzb
-  have hre : α₂.re ≤ α₁.re := by
-    rw [show α₁ = α₂ + N by linear_combination hdiff]; simp
-  obtain ⟨ha_sum, _, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact])
-    fun s hs => indicialPoly_add_nat_ne_zero_of_re_le hfact hre hs
-  obtain ⟨hb_sum, _, hw₂_sol⟩ := regularSingular_second_solution hf hg hfact hdiff
-  have hId := abel_liouville_wronskian_ansatz_eq (c := c) (N := N) hf
-    (forall_indicialPoly_eq_sub_mul_sub_iff.mp hfact).1 (Or.inr hdiff) ha_sum hb_sum hw₁_sol
-    hw₂_sol z hzs hzb
-  rw [show α₂ - α₁ = -(N : ℂ) by linear_combination -hdiff] at hId
-  refine eq_mul_cpow_neg_mul_cexp_neg_of_mul_eq (Complex.slitPlane_ne_zero hzs) ?_
-  rcases eq_or_ne N 0 with rfl | hN0
-  · simpa [a, b, c, w₁, w₂, H] using hId
-  · simpa [a, b, c, w₁, w₂, H, hN0,
-      regularSingularSecondCoeff_zero_of_pos fs gs α₂ (Nat.pos_of_ne_zero hN0),
-      zero_pow hN0] using hId
-
-/-- When `α₁ - α₂ = N ∈ ℕ`, the primary series solution `w₁` and the second solution `w₂` have
-nowhere-vanishing Wronskian on `{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}`. -/
-theorem wronskian_regularSingular_second_ne_zero {z₀ α₁ α₂ : ℂ} {N : ℕ} {r : ℝ} {f g : ℂ → ℂ}
-    {fs gs : ℕ → ℂ}
-    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
-    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
-    (hfact : ∀ α, indicialPoly (fs 0) (gs 0) α = (α - α₁) * (α - α₂))
-    (hdiff : α₁ - α₂ = N) :
-    let a := regularSingularCoeff fs gs α₁
-    let b := regularSingularSecondCoeff fs gs α₂ N
-    let c := regularSingularLogMultiplier fs gs α₂ N
-    let w₁ : ℂ → ℂ := fun z => (z - z₀) ^ α₁ * ∑' s, a s * (z - z₀) ^ s
-    let w₂ : ℂ → ℂ := fun z =>
-      (z - z₀) ^ α₂ * (∑' s, b s * (z - z₀) ^ s) + c * w₁ z * Complex.log (z - z₀)
-    ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-      w₁ z * deriv w₂ z - deriv w₁ z * w₂ z ≠ 0 := by
-  intro a b c w₁ w₂ z hzs hzb
-  rw [wronskian_regularSingular_second_eq hf hg hfact hdiff z hzs hzb]
-  refine mul_ne_zero (mul_ne_zero ?_
-    (Complex.cpow_ne_zero_iff.mpr (.inl (Complex.slitPlane_ne_zero hzs)))) (Complex.exp_ne_zero _)
-  split_ifs with hN0
-  · exact one_ne_zero
-  · exact neg_ne_zero.mpr (Nat.cast_ne_zero.mpr hN0)
-
-/-- **Existence of a fundamental pair at every regular singularity**: on
-`{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}`, `w'' + f w' + g w = 0` always possesses two holomorphic
-solutions with nowhere-vanishing Wronskian. -/
-theorem exists_regularSingular_fundamental_pair {z₀ : ℂ} {r : ℝ} {f g : ℂ → ℂ} {fs gs : ℕ → ℂ}
-    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
-    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z)) :
-    ∃ w₁ w₂ : ℂ → ℂ,
-      DifferentiableOn ℂ w₁ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} ∧
-      DifferentiableOn ℂ w₂ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} ∧
-      (∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-        deriv (deriv w₁) z + f z * deriv w₁ z + g z * w₁ z = 0) ∧
-      (∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-        deriv (deriv w₂) z + f z * deriv w₂ z + g z * w₂ z = 0) ∧
-      ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-        w₁ z * deriv w₂ z - deriv w₁ z * w₂ z ≠ 0 := by
-  obtain ⟨α₁, α₂, hre, hfact⟩ := exists_indicialPoly_roots (fs 0) (gs 0)
-  have hres₁ : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₁ + s) ≠ 0 :=
-    fun _ hs => indicialPoly_add_nat_ne_zero_of_re_le hfact hre hs
-  obtain ⟨_, hw₁_diff, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact]) hres₁
-  by_cases hnat : ∃ N : ℕ, α₁ - α₂ = N
-  · obtain ⟨N, hN⟩ := hnat
-    obtain ⟨_, hw₂_diff, hw₂_sol⟩ := regularSingular_second_solution hf hg hfact hN
-    exact ⟨_, _, hw₁_diff, hw₂_diff, hw₁_sol, hw₂_sol,
-      wronskian_regularSingular_second_ne_zero hf hg hfact hN⟩
-  · have hnat' : ∀ N : ℕ, α₁ - α₂ ≠ N := not_exists.mp hnat
-    have hres₂ : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (α₂ + s) ≠ 0 := fun s hs =>
-      (indicialPoly_add_nat_ne_zero_iff hfact).mpr ⟨by omega, hnat' s⟩
-    have hne : α₁ ≠ α₂ := fun h => hnat' 0 (by simp [h])
-    obtain ⟨_, hw₂_diff, hw₂_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact]) hres₂
-    exact ⟨_, _, hw₁_diff, hw₂_diff, hw₁_sol, hw₂_sol,
-      wronskian_regularSingular_ne_zero hf hg hfact hres₁ hres₂ hne⟩
+  exact eq_regularSingularSecondCoeff_of_rec hfact hb'N hc'0 hb'0 <|
+    eq_zero_of_cpow_mul_tsum_eq_zero (z₀ := z₀) (α := α₂ - 2) hr (fun u _ hu => hD_sum u hu)
+      fun z hzs hzb => (hD_op z ⟨hzs, hzb⟩).symm.trans (hsol z hzs hzb)
 
 /-! ### Worked example: Euler–Cauchy equation `w'' - 2 z⁻² w = 0` at `z₀ = 0` -/
 
 -- For `f = 0` and `g(z) = -2 z⁻²` at `z₀ = 0` (`f₀ = 0`, `g₀ = -2`), the indicial polynomial
 -- factors as `(α - 2)(α + 1)` with roots `2` and `-1` differing by `N = 3`, all higher series
--- coefficients vanish, the logarithmic multiplier `c` is `0`, the primary solution on `slitPlane`
--- is `z²`, and the second solution is `z⁻¹`.
+-- coefficients vanish, `c = 0`, and the canonical solutions on `slitPlane` are `z²` and `z⁻¹`.
 example :
     let fs : ℕ → ℂ := 0
     let gs : ℕ → ℂ := Pi.single 0 (-2)
@@ -1284,31 +803,25 @@ example :
   have hconv0 (σ : ℂ) (d : ℕ → ℂ) (m : ℕ) :
       (∑ k ∈ range m, ((σ + (k : ℂ)) * fs (m - k) + gs (m - k)) * d k) = 0 :=
     sum_eq_zero fun k hk => by
-      have hmk : m - k ≠ 0 := by have := mem_range.mp hk; omega
-      simp [fs, gs, Pi.single_eq_of_ne hmk]
+      simp [fs, gs, Pi.single_eq_of_ne (show m - k ≠ 0 by have := mem_range.mp hk; omega)]
   have ha_zero : ∀ s : ℕ, 1 ≤ s → regularSingularCoeff fs gs 2 s = 0 := fun s hs => by
     rw [regularSingularCoeff_of_ne_zero fs gs 2 (by omega), hconv0, mul_zero]
   have hc_zero : regularSingularLogMultiplier fs gs (-1) 3 = 0 := by
     rw [regularSingularLogMultiplier_of_ne_zero fs gs (-1) (by decide), hconv0, mul_zero]
-  have hb_zero : ∀ s : ℕ, 1 ≤ s → regularSingularSecondCoeff fs gs (-1) 3 s = 0 := by
-    intro s hs
+  have hb_zero : ∀ s : ℕ, 1 ≤ s → regularSingularSecondCoeff fs gs (-1) 3 s = 0 := fun s hs => by
     rcases lt_trichotomy s 3 with hs3 | rfl | hs3
     · rw [regularSingularSecondCoeff_eq_regularSingularCoeff_of_lt fs gs (-1) hs3,
         regularSingularCoeff_of_ne_zero fs gs (-1) (by omega), hconv0, mul_zero]
     · exact regularSingularSecondCoeff_self fs gs (-1) 3
-    · have hfact' : ∀ α, indicialPoly (fs 0) (gs 0) α = (α - (-1 + (3 : ℕ))) * (α - (-1)) :=
-        fun α => by push_cast; simpa [show (-1 : ℂ) + 3 = 2 by norm_num] using hfact α
-      have hQ := indicialPoly_add_nat_ne_zero_of_ne hfact' (by omega) hs3.ne'
-      apply mul_left_cancel₀ hQ
-      simp [indicialPoly_mul_regularSingularSecondCoeff_of_gt hs3 hQ, hc_zero, hconv0]
+    · have hQ := indicialPoly_add_nat_ne_zero_of_ne (α₂ := -1) (N := 3)
+        (fun α => by push_cast; simpa [show (-1 : ℂ) + 3 = 2 by norm_num] using hfact α)
+        (by omega) hs3.ne'
+      exact mul_left_cancel₀ hQ (by
+        simp [indicialPoly_mul_regularSingularSecondCoeff_of_gt hs3 hQ, hc_zero, hconv0])
   refine ⟨hfact, ha_zero, hc_zero, hb_zero, fun z _ => ?_, fun z _ => ?_⟩
-  · have htsum : (∑' s, regularSingularCoeff fs gs 2 s * z ^ s) = 1 := by
-      rw [tsum_eq_single 0]; · simp
-      · intro s hs; simp [ha_zero s (Nat.pos_of_ne_zero hs)]
-    rw [htsum, mul_one]; exact Complex.cpow_natCast z 2
-  · have htsum : (∑' s, regularSingularSecondCoeff fs gs (-1) 3 s * z ^ s) = 1 := by
-      rw [tsum_eq_single 0]; · simp
-      · intro s hs; simp [hb_zero s (Nat.pos_of_ne_zero hs)]
-    simp [htsum, hc_zero, Complex.cpow_neg_one]
+  · rw [tsum_eq_single 0 fun s hs => by simp [ha_zero s (Nat.pos_of_ne_zero hs)]]
+    simp
+  · rw [tsum_eq_single 0 fun s hs => by simp [hb_zero s (Nat.pos_of_ne_zero hs)]]
+    simp [hc_zero, Complex.cpow_neg_one]
 
 end TauCeti
