@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
+public import TauCeti.Geometry.Manifold.VectorBundle.ZeroSection
 
 /-!
 # Graphs of one-forms in a cotangent bundle
@@ -32,7 +33,11 @@ tangent-image predicates of `TauCeti.Geometry.Symplectic.Lagrangian.Manifold`:
 
 In particular the zero section of `T*M` is a Lagrangian map
 (`TauCeti.CotangentBundle.isLagrangianMap_zeroSection`), and so is the graph of the differential
-`df` of a smooth function (`TauCeti.CotangentBundle.isLagrangianMap_section_mextDerivₗ`).
+`df` of a smooth function (`TauCeti.CotangentBundle.isLagrangianMap_section_mextDerivₗ`). Along
+the zero section, the tangent space of `T*M` at the zero covector over `x` splits as
+`T_x M × T*_x M` (`TauCeti.Bundle.zeroSectionTangentEquiv`), and in this splitting
+`ω((u, α), (u', α')) = α'(u) - α(u')`
+(`TauCeti.CotangentBundle.eval₂_symplecticForm_zeroSection`).
 
 Since `s_α^*λ = α`, the graph of `α` is an exact Lagrangian map for the primitive `λ` of `ω`, with
 primitive `h`, exactly when `α = dh` (`TauCeti.CotangentBundle.isExactLagrangianMap_section_iff`).
@@ -48,6 +53,8 @@ Lagrangian with primitive `0` (`TauCeti.CotangentBundle.isExactLagrangianMap_zer
 * `TauCeti.CotangentBundle.isLagrangianMap_section_iff`: the graph of `α` is Lagrangian iff
   `dα = 0`.
 * `TauCeti.CotangentBundle.isLagrangianMap_zeroSection`: the zero section is Lagrangian.
+* `TauCeti.CotangentBundle.eval₂_symplecticForm_zeroSection`: the canonical form along the zero
+  section.
 * `TauCeti.CotangentBundle.isLagrangianMap_section_mextDerivₗ`: the graph of `df` is Lagrangian.
 * `TauCeti.CotangentBundle.isExactLagrangianMap_section_iff`: the graph of `α` is exact Lagrangian
   with primitive `h` iff `α = dh`.
@@ -98,6 +105,20 @@ theorem isIsotropicMap_section_iff (α : SmoothForm I M ℝ 1) :
   rw [SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff_mpullback_eq_zero
       (SmoothForm.degreeOneEquiv α).contMDiff, mpullback_symplecticForm, neg_eq_zero,
     SmoothForm.isClosed_iff_mextDerivₗ_eq_zero]
+
+/-- **The canonical symplectic form along the zero section.** In the splitting
+`T_x M × T*_x M` of the tangent space of `T*M` at the zero covector over `x` into horizontal and
+vertical parts, the canonical form is `ω((u, α), (u', α')) = α'(u) - α(u')`. -/
+theorem eval₂_symplecticForm_zeroSection (x : M) (u u' : TangentSpace I x)
+    (α α' : TangentSpace I x →L[ℝ] ℝ) :
+    SmoothBundleForm.eval₂ (symplecticForm I M)
+        (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) x)
+        ((Bundle.zeroSectionTangentEquiv (I := I) x).symm (u, α))
+        ((Bundle.zeroSectionTangentEquiv (I := I) x).symm (u', α')) = α' u - α u' := by
+  rw [eval₂_symplecticForm, Bundle.zeroSectionTangentEquiv_symm_apply,
+    Bundle.zeroSectionTangentEquiv_symm_apply]
+  simp only [continuousLinearMapAt_trivializationAt_self]
+  exact strongDualCotangentSymplecticForm_apply (V := E) (u, α) (u', α')
 
 variable [FiniteDimensional ℝ E]
 
