@@ -23,16 +23,18 @@ Contracting the tail removes the component `X v` and its node:
 
 * `FlagPairData.deleteComponent d v` is the flag-pair data on the components other than `v`, with
   the flag pairs having no branch on `v`. The attaching point is not a flag point of it, so in the
-  contracted curve it becomes a smooth point.
+  contracted curve it is not a node.
 * `Marking.contractTail` moves a mark lying on the tail to the attaching point and keeps the other
-  marks. At most one mark may lie on the tail, as for a rational tail in the stable range.
+  marks. At most one mark may lie on the tail, as for a rational tail which becomes unstable after
+  forgetting a mark.
 * `contractTailMap` is the continuous map from the glued curve to the contracted curve that
   collapses the whole tail onto the attaching point and is the identity elsewhere.
 
-The normalization of the contracted curve is the normalization of `d` with the component `X v`
-removed, so the contraction does not change the complex structure of the other components. The
-genus labels of the components are an input, as in `NodalGluing.dualGraph`; the contraction is
-the stabilization step when the tail is labelled by genus zero.
+This file treats only the flag-pair data, the topological quotient `GluedCurve` and the dual
+graph, not the complex structure sheaf. The normalization of the contracted curve is the
+normalization of `d` with the component `X v` removed. The genus labels of the components are an
+input, as in `NodalGluing.dualGraph`; the contraction is the stabilization step when the tail is
+labelled by genus zero.
 
 Forgetting the mark `none` of marks labelled by `Option L` is relabelling them along
 `Function.Embedding.some` (`Marking.reindex`); on dual graphs it is `DualGraph.reindex`
@@ -56,12 +58,13 @@ Forgetting the mark `none` of marks labelled by `Option L` is relabelling them a
 * `NodalGluing.isQuotientMap_contractTailMap`: the contracted curve is the quotient of the curve
   collapsing the tail.
 * `NodalGluing.contractTailMap_mk_point`: the contraction carries the marks to the marks.
-* `NodalGluing.mk_attachPoint_notMem_nodeSet_deleteComponent`: the node of the tail becomes a
-  smooth point.
+* `NodalGluing.mk_attachPoint_notMem_nodeSet_deleteComponent`: the image of the tail is not a node
+  of the contracted curve.
 * `NodalGluing.arithmeticGenus_dualGraph_contractTail`: contracting a tail lowers the arithmetic
   genus by the genus of the tail.
-* `NodalGluing.isStable_dualGraph_contractTail_reindex_some`: forgetting the mark `none` of a stable
-  curve and contracting the rational tail carrying it gives a stable curve.
+* `NodalGluing.isStable_dualGraph_contractTail_reindex_some`: if the dual graph is stable,
+  forgetting the mark `none` and contracting a genus-zero tail carrying at most one remaining mark
+  gives a curve with stable dual graph.
 
 ## References
 
@@ -127,7 +130,7 @@ theorem FlagPairData.snd_deleteComponent (f : {f : Flag // d.fst f ≠ v ∧ d.s
   (rfl)
 
 /-- The normalization of the deleted data is a part of the normalization of `d`. -/
-private theorem injective_sigmaMap_val (v : ι) :
+private theorem sigmaMap_val_injective (v : ι) :
     Function.Injective (Sigma.map Subtype.val fun (i : {i // i ≠ v}) ↦ (id : X i → X i)) :=
   Subtype.val_injective.sigma_map fun _ ↦ Function.injective_id
 
@@ -150,7 +153,7 @@ theorem flagRel_deleteComponent_iff (x y : Σ i : {i // i ≠ v}, X i) :
     flagRel (d.deleteComponent v) x y ↔
       flagRel d (Sigma.map Subtype.val (fun _ ↦ id) x)
         (Sigma.map Subtype.val (fun _ ↦ id) y) := by
-  have hinj := injective_sigmaMap_val (X := X) v
+  have hinj := sigmaMap_val_injective (X := X) v
   have hoff (z : Σ i : {i // i ≠ v}, X i) (w : Σ i, X i)
       (h : Sigma.map Subtype.val (fun _ ↦ id) z = w) : w.1 ≠ v := by
     subst h
@@ -181,7 +184,7 @@ theorem gluedRel_deleteComponent_iff (x y : Σ i : {i // i ≠ v}, X i) :
       gluedRel d (Sigma.map Subtype.val (fun _ ↦ id) x)
         (Sigma.map Subtype.val (fun _ ↦ id) y) := by
   rw [gluedRel_def, gluedRel_def, flagRel_deleteComponent_iff,
-    (injective_sigmaMap_val (X := X) v).eq_iff]
+    (sigmaMap_val_injective (X := X) v).eq_iff]
 
 end Delete
 
@@ -227,8 +230,14 @@ theorem sigmaMap_attachPoint :
     Sigma.map Subtype.val (fun _ ↦ id) (attachPoint d htail) = flagPoint d (p₀.1, !p₀.2) :=
   (rfl)
 
-/-- **The node of a tail becomes a smooth point.** The attaching point is not a flag point of the
-contracted curve. -/
+/-- The attaching point lies on the component of the other branch of the node of the tail. -/
+@[simp]
+theorem fst_attachPoint :
+    (attachPoint d htail).1 = ⟨(flagPoint d (p₀.1, !p₀.2)).1, fst_flagPoint_ne_of_tail htail⟩ :=
+  (rfl)
+
+/-- **The node of a tail disappears.** The attaching point is not a flag point of the contracted
+curve. -/
 theorem attachPoint_notMem_flagPointSet_deleteComponent :
     attachPoint d htail ∉ flagPointSet (d.deleteComponent v) := by
   rw [flagPointSet_eq_range]
@@ -286,8 +295,7 @@ private theorem mk_collapse_fstPoint_eq (f : Flag) :
     subst hf
     obtain ⟨f, b⟩ := p₀
     have hq : collapse htail (flagPoint d (f, !b)) = attachPoint d htail := by
-      rw [collapse, dite_eq_right (fst_flagPoint_ne_of_tail htail)]
-      rfl
+      rw [← sigmaMap_attachPoint htail, collapse_sigmaMap]
     cases b
     · simp only [Bool.not_false, flagPoint_true] at hq
       rw [hq, collapse_of_fst_eq htail (by simpa using hp₀)]
@@ -319,6 +327,7 @@ theorem contractTailMap_mk_sigmaMap (y : Σ i : {i // i ≠ v}, X i) :
   rw [contractTailMap, GluedCurve.lift_mk, collapse_sigmaMap]
 
 /-- The contraction sends every point of the tail to the attaching point. -/
+@[simp]
 theorem contractTailMap_mk_of_fst_eq {x : Σ i, X i} (hx : x.1 = v) :
     contractTailMap d htail (Quotient.mk _ x) = Quotient.mk _ (attachPoint d htail) := by
   rw [contractTailMap, GluedCurve.lift_mk, collapse_of_fst_eq htail hx]
@@ -329,13 +338,13 @@ theorem continuous_contractTailMap [∀ i, TopologicalSpace (X i)] :
   GluedCurve.continuous_lift _ _ _ (continuous_quotient_mk'.comp (continuous_collapse htail))
 
 /-- The contraction is surjective. -/
-theorem surjective_contractTailMap : Function.Surjective (contractTailMap d htail) := by
+theorem contractTailMap_surjective : Function.Surjective (contractTailMap d htail) := by
   rintro ⟨y⟩
   exact ⟨Quotient.mk _ (Sigma.map Subtype.val (fun _ ↦ id) y),
     contractTailMap_mk_sigmaMap htail y⟩
 
-/-- **The node of a tail becomes a smooth point.** The image of the tail is not a node of the
-contracted curve. -/
+/-- **The node of a tail disappears.** The image of the tail is not a node of the contracted
+curve. -/
 theorem mk_attachPoint_notMem_nodeSet_deleteComponent :
     Quotient.mk _ (attachPoint d htail) ∉ nodeSet (d.deleteComponent v) := by
   rw [← mem_preimage, preimage_nodeSet]
@@ -345,12 +354,12 @@ include htail in
 /-- **Contracting a tail of a connected curve gives a connected curve.** -/
 theorem connectedSpace_gluedCurve_deleteComponent_of_tail [∀ i, TopologicalSpace (X i)]
     [ConnectedSpace (GluedCurve d)] : ConnectedSpace (GluedCurve (d.deleteComponent v)) :=
-  (surjective_contractTailMap htail).connectedSpace (continuous_contractTailMap htail)
+  (contractTailMap_surjective htail).connectedSpace (continuous_contractTailMap htail)
 
 include htail in
 /-- A point of the normalization lies over the image of the tail in the glued curve exactly when
 it lies on the tail or is the attaching point. -/
-theorem mk_mem_range_tail_iff (x : Σ i, X i) :
+theorem mk_mem_range_iff_of_tail (x : Σ i, X i) :
     Quotient.mk (gluedRelSetoid d) x ∈ range (fun y : X v ↦ Quotient.mk _ ⟨v, y⟩) ↔
       x.1 = v ∨ x = flagPoint d (p₀.1, !p₀.2) := by
   have hp₀ := (htail p₀).mpr rfl
@@ -375,42 +384,17 @@ theorem mk_mem_range_tail_iff (x : Σ i, X i) :
       exact .inr (by rw [(flagRel_flagPoint_iff d _ _).mp h])
   · rintro (h | rfl)
     · exact hmem x h
-    · rw [show Quotient.mk (gluedRelSetoid d) (flagPoint d (p₀.1, !p₀.2)) =
-          Quotient.mk _ (flagPoint d p₀) by simp]
-      exact hmem _ hp₀
+    · simpa only [mk_flagPoint] using hmem (flagPoint d p₀) hp₀
 
 /-- A point lies over the image of the tail exactly when `collapse` sends it to the attaching
 point. -/
-private theorem mk_mem_range_tail_iff_sigmaMap_collapse (z : Σ i, X i) :
+private theorem mk_mem_range_iff_sigmaMap_collapse (z : Σ i, X i) :
     Quotient.mk (gluedRelSetoid d) z ∈ range (fun y : X v ↦ Quotient.mk _ ⟨v, y⟩) ↔
       Sigma.map Subtype.val (fun _ ↦ id) (collapse htail z) = flagPoint d (p₀.1, !p₀.2) := by
-  rw [mk_mem_range_tail_iff htail]
+  rw [mk_mem_range_iff_of_tail htail]
   by_cases h : z.1 = v
   · simp [h, sigmaMap_collapse_of_fst_eq htail h]
   · simp [h, sigmaMap_collapse_of_fst_ne htail h]
-
-/-- A point which `collapse` does not send to the attaching point is not moved by it. -/
-private theorem sigmaMap_collapse_eq_self {z : Σ i, X i}
-    (hz : Sigma.map Subtype.val (fun _ ↦ id) (collapse htail z) ≠
-      flagPoint d (p₀.1, !p₀.2)) :
-    Sigma.map Subtype.val (fun _ ↦ id) (collapse htail z) = z := by
-  by_cases h : z.1 = v
-  · exact absurd (sigmaMap_collapse_of_fst_eq htail h) hz
-  · exact sigmaMap_collapse_of_fst_ne htail h
-
-include htail in
-/-- The attaching point of a tail is glued to no other point off the tail. -/
-private theorem mk_attach_eq_mk_iff {z : Σ i, X i} (hz : z.1 ≠ v) :
-    Quotient.mk (gluedRelSetoid d) (flagPoint d (p₀.1, !p₀.2)) = Quotient.mk _ z ↔
-      z = flagPoint d (p₀.1, !p₀.2) := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
-  rcases (gluedRel_def d _ _).mp ((gluedRelSetoid_r d _ _).mp (Quotient.exact h)) with h | h
-  · exact h.symm
-  · have hz' := (mem_flagPointSet_iff_exists_flagRel d _).mpr ⟨_, flagRel_symm d h⟩
-    rw [flagPointSet_eq_range] at hz'
-    obtain ⟨p, rfl⟩ := hz'
-    rw [(flagRel_flagPoint_iff d _ _).mp h] at hz
-    simp [(htail p₀).mpr rfl] at hz
 
 /-- **The contraction collapses exactly the tail.** Two points of the glued curve have the same
 image exactly when they are equal or both lie on the tail. -/
@@ -421,28 +405,23 @@ theorem contractTailMap_eq_contractTailMap_iff (a b : GluedCurve d) :
   induction a using Quotient.inductionOn with | _ x => ?_
   induction b using Quotient.inductionOn with | _ y => ?_
   set K := range (fun y : X v ↦ Quotient.mk (gluedRelSetoid d) ⟨v, y⟩)
-  have hK := mk_mem_range_tail_iff_sigmaMap_collapse htail
+  have hK := mk_mem_range_iff_sigmaMap_collapse htail
   have hoff (z : Σ i, X i) (hz : Quotient.mk _ z ∉ K) :
       Sigma.map Subtype.val (fun _ ↦ id) (collapse htail z) = z :=
-    sigmaMap_collapse_eq_self htail ((hK z).not.mp hz)
-  -- A point off the tail is sent to itself, which lies off the tail.
-  have hv (z : Σ i, X i) (hz : Quotient.mk _ z ∉ K) : z.1 ≠ v :=
-    hoff z hz ▸ (collapse htail z).1.2
+    sigmaMap_collapse_of_fst_ne htail fun h ↦ hz ((mk_mem_range_iff_of_tail htail z).mpr (.inl h))
+  have hatt : Quotient.mk (gluedRelSetoid d) (flagPoint d (p₀.1, !p₀.2)) ∈ K :=
+    (mk_mem_range_iff_of_tail htail _).mpr (.inr rfl)
   rw [contractTailMap, GluedCurve.lift_mk, GluedCurve.lift_mk, Quotient.eq, gluedRelSetoid_r,
     gluedRel_deleteComponent_iff, ← gluedRelSetoid_r, ← Quotient.eq]
   by_cases hx : Quotient.mk (gluedRelSetoid d) x ∈ K <;>
     by_cases hy : Quotient.mk (gluedRelSetoid d) y ∈ K
   · simp [(hK x).mp hx, (hK y).mp hy, hx, hy]
   · -- Only `x` lies over the tail: `y` is not glued to the attaching point.
-    rw [(hK x).mp hx, hoff y hy, mk_attach_eq_mk_iff htail (hv y hy)]
-    refine ⟨fun h ↦ absurd (h ▸ hoff y hy) ((hK y).not.mp hy), fun h ↦ ?_⟩
-    rcases h with h | h
-    exacts [absurd (h ▸ hx) hy, absurd h.2 hy]
+    rw [(hK x).mp hx, hoff y hy]
+    exact iff_of_false (fun h ↦ hy (h ▸ hatt)) fun h ↦ h.elim (fun h ↦ hy (h ▸ hx)) fun h ↦ hy h.2
   · -- Only `y` lies over the tail.
-    rw [(hK y).mp hy, hoff x hx, eq_comm, mk_attach_eq_mk_iff htail (hv x hx)]
-    refine ⟨fun h ↦ absurd (h ▸ hoff x hx) ((hK x).not.mp hx), fun h ↦ ?_⟩
-    rcases h with h | h
-    exacts [absurd (h ▸ hy) hx, absurd h.1 hx]
+    rw [(hK y).mp hy, hoff x hx]
+    exact iff_of_false (fun h ↦ hx (h ▸ hatt)) fun h ↦ h.elim (fun h ↦ hx (h ▸ hy)) fun h ↦ hx h.1
   · rw [hoff x hx, hoff y hy]
     simp [hx]
 
@@ -495,14 +474,21 @@ private theorem point_contractTail (l : L) :
   rfl
 
 /-- A mark on the tail moves to the attaching point. -/
+@[simp]
 theorem Marking.point_contractTail_of_fst_eq {l : L} (hl : (m.point l).1 = v) :
     (m.contractTail htail hm).point l = attachPoint d htail := by
   rw [point_contractTail, collapse_of_fst_eq htail hl]
 
 /-- A mark off the tail stays where it is. -/
+@[simp]
 theorem Marking.sigmaMap_point_contractTail_of_fst_ne {l : L} (hl : (m.point l).1 ≠ v) :
     Sigma.map Subtype.val (fun _ ↦ id) ((m.contractTail htail hm).point l) = m.point l := by
   rw [point_contractTail, sigmaMap_collapse_of_fst_ne htail hl]
+
+/-- A mark off the tail stays where it is, as a point of the contracted normalization. -/
+theorem Marking.point_contractTail_of_fst_ne {l : L} (hl : (m.point l).1 ≠ v) :
+    (m.contractTail htail hm).point l = ⟨⟨(m.point l).1, hl⟩, (m.point l).2⟩ := by
+  rw [point_contractTail, collapse, dite_eq_right hl]
 
 /-- **The contraction carries the marks to the marks.** -/
 @[simp]
@@ -529,18 +515,13 @@ variable {v : ι} {p₀ : Flag × Bool} (htail : ∀ p, (flagPoint d p).1 = v �
 include htail in
 /-- **A tail has valence one** in the dual graph. -/
 theorem valence_dualGraph_of_tail : (dualGraph g m).valence v = 1 := by
-  obtain rfl := (htail p₀).mpr rfl
-  rw [valence_dualGraph, ncard_eq_one]
-  rw [flagPointSet_eq_range]
-  refine ⟨(flagPoint d p₀).2,
-    Set.ext fun x ↦ ⟨fun ⟨p, hp⟩ ↦ ?_, fun hx ↦ ⟨p₀, ?_⟩⟩⟩
-  · obtain rfl := (htail p).mp (by rw [hp])
-    exact sigma_mk_injective (hp.symm.trans (Sigma.eta _).symm)
-  · rw [mem_singleton_iff.mp hx]
+  rw [valence_dualGraph, flagPointSet_eq_range,
+    ncard_preimage_sigmaMk_range (flagPoint_injective d)]
+  simp [htail]
 
 /-- The tail is the endpoint of its node selected by its branch, and the attaching point lies on
 the other endpoint. -/
-private theorem attachment_dualGraph_of_tail :
+theorem attachment_dualGraph_of_tail :
     (dualGraph g m).attachment (valence_dualGraph_of_tail g m htail) =
       (flagPoint d (p₀.1, !p₀.2)).1 := by
   have hp₀ := (htail p₀).mpr rfl
@@ -581,9 +562,17 @@ theorem dualGraphContractTailIso_vertexEquiv (hm : {l | (m.point l).1 = v}.Subsi
 
 /-- The comparison of dual graphs is the identity on the remaining flag pairs. -/
 @[simp]
-theorem coe_dualGraphContractTailIso_edgeEquiv (hm : {l | (m.point l).1 = v}.Subsingleton)
+theorem coe_dualGraphContractTailIso_edgeEquiv_apply (hm : {l | (m.point l).1 = v}.Subsingleton)
     (f : {f : Flag // d.fst f ≠ v ∧ d.snd f ≠ v}) :
     ((dualGraphContractTailIso g m htail hm).edgeEquiv f : Flag) = f :=
+  (rfl)
+
+/-- The inverse comparison of dual graphs is the identity on the remaining flag pairs. -/
+@[simp]
+theorem coe_dualGraphContractTailIso_edgeEquiv_symm_apply
+    (hm : {l | (m.point l).1 = v}.Subsingleton)
+    (e : ((dualGraph g m).contractTail (valence_dualGraph_of_tail g m htail)).Edge) :
+    ((dualGraphContractTailIso g m htail hm).edgeEquiv.symm e : Flag) = e :=
   (rfl)
 
 /-- **Contracting a tail lowers the arithmetic genus by the genus of the tail.** -/
@@ -594,9 +583,10 @@ theorem arithmeticGenus_dualGraph_contractTail (hm : {l | (m.point l).1 = v}.Sub
   rw [(dualGraphContractTailIso g m htail hm).arithmeticGenus_eq]
   exact DualGraph.arithmeticGenus_contractTail _
 
-/-- **Forgetting a mark and contracting the rational tail carrying it gives a stable curve.** If
+/-- **Forgetting a mark and contracting a rational tail preserves stability.** If the dual graph of
 the curve with marks labelled by `Option L` is stable, forgetting the mark `none` and contracting a
-tail of genus zero carrying at most one of the remaining marks gives a stable curve. -/
+tail of genus label zero carrying at most one of the remaining marks gives a curve whose dual graph,
+with the restricted genus labels, is stable. -/
 theorem isStable_dualGraph_contractTail_reindex_some [Fintype L] {m : Marking d (Option L)}
     (hG : (dualGraph g m).IsStable) (hg : g v = 0)
     (hm : {l | ((m.reindex .some).point l).1 = v}.Subsingleton) :
@@ -611,7 +601,7 @@ theorem isStable_dualGraph_contractTail_reindex_some [Fintype L] {m : Marking d 
     (DualGraph.isRationalTail_iff _).mpr ⟨hg, by simpa using valence_dualGraph_of_tail g m htail⟩
   -- The dual graph of the curve with `none` forgotten is the dual graph with `none` forgotten.
   convert hG.isStable_of_stabilizationStep_reindex_some (.contractTail _ hv hnum) using 2
-  exact dualGraph_reindex g m _
+  rw [dualGraph_reindex, Function.Embedding.some_apply]
 
 end DualGraph
 
