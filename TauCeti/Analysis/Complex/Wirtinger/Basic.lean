@@ -9,11 +9,13 @@ public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Complex.Exponential
 public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
@@ -79,6 +81,9 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 * `TauCeti.conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line`: `\bar∂g(x) v` is the
   one-variable conjugate Wirtinger derivative of the restriction of `g` to the complex line
   `t ↦ x + t • v`.
+* `TauCeti.wirtingerDeriv_cexp_mul_sub_conj_mul_conj`,
+  `TauCeti.conjWirtingerDeriv_cexp_mul_sub_conj_mul_conj`: the twisted exponential
+  `exp (a z - conj a conj z)` has `∂ = a ·` and `\bar∂ = -conj a ·`.
 * `TauCeti.fderiv_eq_wirtingerPartsCLM`, `TauCeti.wirtingerPartsCLM_inj`: in one variable the
   real derivative is `wirtingerPartsCLM` of its two Wirtinger parts, which it determines; the
   Wirtinger parts of `wirtingerPartsCLM a b` are `a` and `b`
@@ -490,6 +495,61 @@ theorem conjWirtingerDeriv_eq_zero_iff_apply_one_eq_zero {f : ℂ → W} {x : �
   · intro h
     ext v
     rw [conjWirtingerDeriv_apply_eq_conj_smul_apply_one, h, smul_zero, zero_apply]
+
+/-! ### The twisted exponentials `exp (a z - conj a conj z)` -/
+
+section TwistedExp
+
+variable (a : ℂ)
+
+/-- The derivative of the twisted exponential `z ↦ exp (a z - conj a conj z) = exp (2i Im (a z))`,
+of modulus one. -/
+theorem hasFDerivAt_cexp_mul_sub_conj_mul_conj (z : ℂ) :
+    HasFDerivAt (fun z ↦ cexp (a * z - conj a * conj z))
+      (cexp (a * z - conj a * conj z) •
+        (a • ContinuousLinearMap.id ℝ ℂ - conj a • (conjCLE : ℂ →L[ℝ] ℂ))) z :=
+  (((hasFDerivAt_id z).const_mul a).sub
+    ((conjCLE : ℂ →L[ℝ] ℂ).hasFDerivAt.const_mul (conj a))).cexp
+
+/-- The twisted exponential `exp (a z - conj a conj z)` is smooth. -/
+theorem contDiff_cexp_mul_sub_conj_mul_conj {n : WithTop ℕ∞} :
+    ContDiff ℝ n fun z ↦ cexp (a * z - conj a * conj z) :=
+  ((contDiff_const.mul contDiff_id).sub
+    (contDiff_const.mul (conjCLE : ℂ →L[ℝ] ℂ).contDiff)).cexp
+
+/-- The twisted exponential `exp (a z - conj a conj z)` is an eigenfunction of `∂` with
+eigenvalue `a`. -/
+@[simp]
+theorem wirtingerDeriv_cexp_mul_sub_conj_mul_conj (z : ℂ) :
+    wirtingerDeriv (fun z ↦ cexp (a * z - conj a * conj z)) z 1 =
+      a * cexp (a * z - conj a * conj z) := by
+  rw [wirtingerDeriv_apply, (hasFDerivAt_cexp_mul_sub_conj_mul_conj a z).fderiv]
+  simp only [smul_apply, sub_apply,
+    ContinuousLinearMap.id_apply, ContinuousLinearEquiv.coe_coe, conjCLE_apply, smul_eq_mul,
+    map_one, mul_one, conj_I]
+  linear_combination (-(cexp (a * z - conj a * conj z) * (a + conj a) / 2)) * I_sq
+
+/-- The twisted exponential `exp (a z - conj a conj z)` is an eigenfunction of `\bar∂` with
+eigenvalue `-conj a`. -/
+@[simp]
+theorem conjWirtingerDeriv_cexp_mul_sub_conj_mul_conj (z : ℂ) :
+    conjWirtingerDeriv (fun z ↦ cexp (a * z - conj a * conj z)) z 1 =
+      -conj a * cexp (a * z - conj a * conj z) := by
+  rw [conjWirtingerDeriv_apply, (hasFDerivAt_cexp_mul_sub_conj_mul_conj a z).fderiv]
+  simp only [smul_apply, sub_apply,
+    ContinuousLinearMap.id_apply, ContinuousLinearEquiv.coe_coe, conjCLE_apply, smul_eq_mul,
+    map_one, mul_one, conj_I]
+  linear_combination (cexp (a * z - conj a * conj z) * (a + conj a) / 2) * I_sq
+
+/-- Under translation by `w`, the twisted exponential `exp (a z - conj a conj z)` is multiplied by
+the unit complex number `exp (2i Im (a w))`. -/
+theorem cexp_mul_add_sub_conj_mul_conj_add (z w : ℂ) :
+    cexp (a * (z + w) - conj a * conj (z + w)) =
+      cexp (((2 * (a * w).im : ℝ) : ℂ) * I) * cexp (a * z - conj a * conj z) := by
+  rw [← sub_conj, map_mul, ← Complex.exp_add, map_add]
+  ring_nf
+
+end TwistedExp
 
 /-! ### Real-linear maps through their Wirtinger parts -/
 

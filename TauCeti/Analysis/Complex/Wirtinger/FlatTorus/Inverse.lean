@@ -7,8 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Complex.Wirtinger.FlatTorus.Basic
-import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import TauCeti.Analysis.Fourier.Torus.UnitCube
 import TauCeti.Analysis.InnerProductSpace.WeakSolution
@@ -42,7 +40,8 @@ When the holonomy is nontrivial, the coercivity estimate
 with `C = π² / 2 · (‖θ₁‖ℤ² / |ω₁|² + ‖θ₂‖ℤ² / |ω₂|²) > 0`, bounds the formal adjoint below. This
 gives a bounded operator `Q` on `L²([0, 1]²)` of norm at most `C^(-1/2)` such that `Q f` is a weak
 solution of `∂bar y = f` for every `f`
-(`TauCeti.exists_continuousLinearMap_setIntegral_mul_conj_wirtingerDeriv_eq`). Since the
+(`TauCeti.exists_continuousLinearMap_setIntegral_mul_conj_wirtingerDeriv_eq`), chosen as
+`TauCeti.flatLineCRInverse`. Since the
 twisted exponentials `exp (2πi ((k₁ + θ₁) s + (k₂ + θ₂) t))`, `k ∈ ℤ²`, are smooth sections whose
 `∂` is a nonzero multiple of themselves, and span a dense subspace of `L²([0, 1]²)`
 (`TauCeti.UnitAddTorus.ae_eq_zero_of_forall_setIntegral_cexp_mul_eq_zero`), the weak kernel of
@@ -59,6 +58,13 @@ of Seiberg–Witten solutions near a square-zero pseudoholomorphic torus whose n
 with irrational holonomy, where the leading operator acts on the divisor bundle
 `N ⊕ N² ⊕ ⋯ ⊕ Nᵐ` of the normal line `N`.
 
+## Main definitions
+
+* `TauCeti.flatLineTestSections`: the `C²` sections of a flat line, the test sections of the weak
+  formulation.
+* `TauCeti.flatLineCRInverse`: the inverse of `∂bar` on square-integrable sections of a flat line
+  with nontrivial holonomy.
+
 ## Main results
 
 * `TauCeti.setIntegral_conjWirtingerDeriv_mul_conj_eq_neg_setIntegral_mul_conj_wirtingerDeriv`:
@@ -67,6 +73,10 @@ with irrational holonomy, where the leading operator acts on the divisor bundle
   inverse of `∂bar` on a flat line with nontrivial holonomy.
 * `TauCeti.eq_zero_of_forall_setIntegral_mul_conj_wirtingerDeriv_eq_zero`: uniqueness of weak
   solutions.
+* `TauCeti.norm_flatLineCRInverse_le`, `TauCeti.flatLineCRInverse_apply_eq_iff`: the inverse of
+  `∂bar` is bounded and sends `f` to the unique weak solution of `∂bar y = f`.
+* `TauCeti.flatLineCRInverse_ae_eq_of_ae_eq_conjWirtingerDeriv`: it inverts `∂bar` on `C¹`
+  sections.
 
 ## References
 
@@ -150,7 +160,7 @@ section WeakInverse
 
 /-- The `C²` sections of the flat line with holonomy `exp (2πiθ₁)`, `exp (2πiθ₂)` along `ω₁`,
 `ω₂`: the test sections of the weak formulation. -/
-private def flatSections (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) : Submodule ℂ (ℂ → ℂ) where
+def flatLineTestSections (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) : Submodule ℂ (ℂ → ℂ) where
   carrier := {u | ContDiff ℝ 2 u ∧ (∀ z, u (z + ω₁) = exp (2 * π * θ₁ * I) * u z) ∧
     ∀ z, u (z + ω₂) = exp (2 * π * θ₂ * I) * u z}
   add_mem' := by
@@ -161,6 +171,13 @@ private def flatSections (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) : Submodule ℂ
     rintro c u ⟨hu, hu₁, hu₂⟩
     exact ⟨hu.const_smul c, fun z ↦ by simp [hu₁, mul_left_comm],
       fun z ↦ by simp [hu₂, mul_left_comm]⟩
+
+@[simp]
+theorem mem_flatLineTestSections_iff :
+    u ∈ flatLineTestSections ω₁ ω₂ θ₁ θ₂ ↔ ContDiff ℝ 2 u ∧
+      (∀ z, u (z + ω₁) = exp (2 * π * θ₁ * I) * u z) ∧
+        ∀ z, u (z + ω₂) = exp (2 * π * θ₂ * I) * u z :=
+  Iff.rfl
 
 /-- A continuous function read in lattice coordinates is square integrable over the fundamental
 domain. -/
@@ -173,7 +190,7 @@ private theorem memLp_comp_latticeCoord {g : ℂ → ℂ} (hg : Continuous g) :
 
 /-- The inclusion of the test sections into `L²` of the fundamental domain. -/
 private noncomputable def sectionToLp (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
-    flatSections ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ]
+    flatLineTestSections ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ]
       Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)) where
   toFun u := (memLp_comp_latticeCoord (ω₁ := ω₁) (ω₂ := ω₂) u.2.1.continuous).toLp _
   map_add' u v := by
@@ -183,7 +200,7 @@ private noncomputable def sectionToLp (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
     rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
     exact MemLp.toLp_congr _ _ (ae_of_all _ fun p ↦ by simp)
 
-private theorem sectionToLp_apply (u : flatSections ω₁ ω₂ θ₁ θ₂) :
+private theorem sectionToLp_apply (u : flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
     sectionToLp ω₁ ω₂ θ₁ θ₂ u = (memLp_comp_latticeCoord u.2.1.continuous).toLp
       (fun p : ℝ × ℝ ↦ (u : ℂ → ℂ) (p.1 * ω₁ + p.2 * ω₂)) :=
   rfl
@@ -191,7 +208,7 @@ private theorem sectionToLp_apply (u : flatSections ω₁ ω₂ θ₁ θ₂) :
 /-- The formal adjoint `-∂` of `∂bar` on test sections, with values in `L²` of the fundamental
 domain. -/
 private noncomputable def negWirtingerToLp (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
-    flatSections ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ]
+    flatLineTestSections ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ]
       Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)) where
   toFun u := (memLp_comp_latticeCoord (ω₁ := ω₁) (ω₂ := ω₂)
     ((u.2.1.of_le one_le_two).continuous_wirtingerDeriv_apply 1).neg).toLp _
@@ -204,7 +221,7 @@ private noncomputable def negWirtingerToLp (ω₁ ω₂ : ℂ) (θ₁ θ₂ : �
     rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
     exact MemLp.toLp_congr _ _ (ae_of_all _ fun p ↦ by simp [wirtingerDeriv_const_smul])
 
-private theorem negWirtingerToLp_apply (u : flatSections ω₁ ω₂ θ₁ θ₂) :
+private theorem negWirtingerToLp_apply (u : flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
     negWirtingerToLp ω₁ ω₂ θ₁ θ₂ u = (memLp_comp_latticeCoord
       ((u.2.1.of_le one_le_two).continuous_wirtingerDeriv_apply 1).neg).toLp
       (fun p : ℝ × ℝ ↦ -wirtingerDeriv (u : ℂ → ℂ) (p.1 * ω₁ + p.2 * ω₂) 1) :=
@@ -212,7 +229,7 @@ private theorem negWirtingerToLp_apply (u : flatSections ω₁ ω₂ θ₁ θ₂
 
 /-- The coercivity estimate of `∂` in `L²` of the fundamental domain. -/
 private theorem sqrt_mul_norm_sectionToLp_le (hω : (conj ω₁ * ω₂).im ≠ 0)
-    (u : flatSections ω₁ ω₂ θ₁ θ₂) :
+    (u : flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
     √(π ^ 2 / 2 * (|θ₁ - round θ₁| ^ 2 / ‖ω₁‖ ^ 2 + |θ₂ - round θ₂| ^ 2 / ‖ω₂‖ ^ 2)) *
         ‖sectionToLp ω₁ ω₂ θ₁ θ₂ u‖ ≤ ‖negWirtingerToLp ω₁ ω₂ θ₁ θ₂ u‖ := by
   refine le_of_sq_le_sq ?_ (norm_nonneg _)
@@ -259,37 +276,6 @@ end WeakInverse
 
 section Uniqueness
 
-/-- The twisted exponential `z ↦ exp (a z - conj a conj z) = exp (2i Im (a z))`, of modulus one. -/
-private noncomputable def twistedExp (a z : ℂ) : ℂ := cexp (a * z - conj a * conj z)
-
-private theorem hasFDerivAt_twistedExp (a z : ℂ) :
-    HasFDerivAt (twistedExp a)
-      (twistedExp a z • (a • ContinuousLinearMap.id ℝ ℂ - conj a • (conjCLE : ℂ →L[ℝ] ℂ))) z := by
-  have h₁ : HasFDerivAt (fun z : ℂ ↦ a * z) (a • ContinuousLinearMap.id ℝ ℂ) z :=
-    (hasFDerivAt_id z).const_mul a
-  have h₂ : HasFDerivAt (fun z : ℂ ↦ conj a * conj z) (conj a • (conjCLE : ℂ →L[ℝ] ℂ)) z :=
-    (conjCLE : ℂ →L[ℝ] ℂ).hasFDerivAt.const_mul (conj a)
-  exact (h₁.sub h₂).cexp
-
-private theorem wirtingerDeriv_twistedExp (a z : ℂ) :
-    wirtingerDeriv (twistedExp a) z 1 = a * twistedExp a z := by
-  rw [wirtingerDeriv_apply, (hasFDerivAt_twistedExp a z).fderiv]
-  simp only [smul_apply, sub_apply, ContinuousLinearMap.id_apply, ContinuousLinearEquiv.coe_coe,
-    conjCLE_apply, smul_eq_mul, map_one, mul_one, conj_I]
-  linear_combination (-(twistedExp a z * (a + conj a) / 2)) * I_sq
-
-private theorem contDiff_twistedExp (a : ℂ) : ContDiff ℝ 2 (twistedExp a) :=
-  ((contDiff_const.mul contDiff_id).sub
-    (contDiff_const.mul (conjCLE : ℂ →L[ℝ] ℂ).contDiff)).cexp
-
-/-- The twisted exponential is multiplied by `exp (2i Im (a w))` under translation by `w`. -/
-private theorem twistedExp_add (a z w : ℂ) :
-    twistedExp a (z + w) = cexp (((2 * (a * w).im : ℝ) : ℂ) * I) * twistedExp a z := by
-  rw [twistedExp, twistedExp, ← sub_conj, map_mul, ← Complex.exp_add]
-  congr 1
-  rw [map_add]
-  ring
-
 /-- The coefficient `a` of the twisted exponential with `Im (a ω₁) = π c₁` and
 `Im (a ω₂) = π c₂`. -/
 private noncomputable def dualCoeff (ω₁ ω₂ : ℂ) (c₁ c₂ : ℝ) : ℂ :=
@@ -307,25 +293,27 @@ private theorem im_dualCoeff_mul (hω : (conj ω₁ * ω₂).im ≠ 0) (c₁ c�
   constructor <;> field_simp
 
 /-- In lattice coordinates the twisted exponential is `exp (2πi (c₁ s + c₂ t))`. -/
-private theorem twistedExp_dualCoeff_latticeCoord (hω : (conj ω₁ * ω₂).im ≠ 0) (c₁ c₂ : ℝ)
-    (p : ℝ × ℝ) :
-    twistedExp (dualCoeff ω₁ ω₂ c₁ c₂) (p.1 * ω₁ + p.2 * ω₂) =
+private theorem cexp_dualCoeff_mul_sub_conj_mul_conj_latticeCoord (hω : (conj ω₁ * ω₂).im ≠ 0)
+    (c₁ c₂ : ℝ) (p : ℝ × ℝ) :
+    cexp (dualCoeff ω₁ ω₂ c₁ c₂ * (p.1 * ω₁ + p.2 * ω₂) -
+        conj (dualCoeff ω₁ ω₂ c₁ c₂) * conj (p.1 * ω₁ + p.2 * ω₂)) =
       cexp (2 * π * I * (c₁ * p.1 + c₂ * p.2)) := by
   obtain ⟨h₁, h₂⟩ := im_dualCoeff_mul hω c₁ c₂
   have him : (dualCoeff ω₁ ω₂ c₁ c₂ * (p.1 * ω₁ + p.2 * ω₂)).im =
       p.1 * (π * c₁) + p.2 * (π * c₂) := by
     rw [← h₁, ← h₂, mul_add, add_im, mul_left_comm, mul_left_comm _ (p.2 : ℂ), im_ofReal_mul,
       im_ofReal_mul]
-  rw [twistedExp, ← map_mul, sub_conj, him]
+  rw [← map_mul, sub_conj, him]
   push_cast
   ring_nf
 
 /-- A twisted exponential with `Im (a ω_j) = π (k_j + θ_j)` is a section of the flat line with
 holonomy `exp (2πiθ_j)` along `ω_j`. -/
-private theorem twistedExp_add_of_im_mul_eq {a ω : ℂ} {θ : ℝ} {k : ℤ}
+private theorem cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq {a ω : ℂ} {θ : ℝ} {k : ℤ}
     (h : (a * ω).im = π * (k + θ)) (z : ℂ) :
-    twistedExp a (z + ω) = cexp (2 * π * θ * I) * twistedExp a z := by
-  rw [twistedExp_add, h]
+    cexp (a * (z + ω) - conj a * conj (z + ω)) =
+      cexp (2 * π * θ * I) * cexp (a * z - conj a * conj z) := by
+  rw [cexp_mul_add_sub_conj_mul_conj_add, h]
   congr 1
   push_cast
   rw [show (2 * (π * (k + θ)) * I : ℂ) = k * (2 * π * I) + 2 * π * θ * I by ring, Complex.exp_add,
@@ -362,15 +350,16 @@ theorem eq_zero_of_forall_setIntegral_mul_conj_wirtingerDeriv_eq_zero
       rcases hθ with h | h
       · exact h ⟨-k₁, by push_cast; linarith⟩
       · exact h ⟨-k₂, by push_cast; linarith⟩
-    have h := hy _ (contDiff_twistedExp _) (twistedExp_add_of_im_mul_eq ha₁)
-      (twistedExp_add_of_im_mul_eq ha₂)
-    simp only [wirtingerDeriv_twistedExp, map_mul, mul_left_comm (y _) (conj _),
+    have h := hy _ (contDiff_cexp_mul_sub_conj_mul_conj _)
+      (cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq ha₁)
+      (cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq ha₂)
+    simp only [wirtingerDeriv_cexp_mul_sub_conj_mul_conj, map_mul, mul_left_comm (y _) (conj _),
       integral_const_mul, mul_eq_zero, map_eq_zero, ha, false_or] at h
     rw [← h]
     refine integral_congr_ae (ae_of_all _ fun p ↦ ?_)
     dsimp only
-    rw [twistedExp_dualCoeff_latticeCoord hω, ← exp_conj, ← mul_assoc, ← Complex.exp_add,
-      mul_comm]
+    rw [cexp_dualCoeff_mul_sub_conj_mul_conj_latticeCoord hω, ← exp_conj, ← mul_assoc,
+      ← Complex.exp_add, mul_comm]
     congr 2
     simp only [map_mul, map_add, conj_ofReal, conj_I, map_ofNat]
     push_cast
@@ -380,5 +369,110 @@ theorem eq_zero_of_forall_setIntegral_mul_conj_wirtingerDeriv_eq_zero
   exact (mul_eq_zero.1 hp).resolve_left (Complex.exp_ne_zero _)
 
 end Uniqueness
+
+section Inverse
+
+/-- Against a continuous section read in lattice coordinates, the integral over the fundamental
+domain is an `L²` inner product. -/
+private theorem setIntegral_mul_conj_comp_latticeCoord_eq_inner {g : ℂ → ℂ} (hg : Continuous g)
+    (y : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1))) :
+    ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, y p * conj (g (p.1 * ω₁ + p.2 * ω₂)) =
+      inner ℂ ((memLp_comp_latticeCoord hg).toLp fun p : ℝ × ℝ ↦ g (p.1 * ω₁ + p.2 * ω₂)) y := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [(memLp_comp_latticeCoord hg).coeFn_toLp] with p hp
+  rw [hp, RCLike.inner_apply, mul_comm]
+
+open scoped Classical in
+/-- **The inverse of `∂bar` on a flat line over a torus.** When `ω₁, ω₂` are linearly independent
+over `ℝ` and `θ₁` or `θ₂` is not an integer, this is the bounded operator on `L²([0, 1]²)`, the
+square-integrable sections in lattice coordinates of the flat line with holonomy `exp (2πiθ₁)`,
+`exp (2πiθ₂)` along `ω₁`, `ω₂`, sending `f` to the unique weak solution of `∂bar y = f`
+(`TauCeti.flatLineCRInverse_apply_eq_iff`). Otherwise it is `0`. -/
+noncomputable def flatLineCRInverse (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
+    Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)) →L[ℂ]
+      Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)) :=
+  if h : (conj ω₁ * ω₂).im ≠ 0 ∧ (θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ)) then
+    (exists_continuousLinearMap_setIntegral_mul_conj_wirtingerDeriv_eq h.1 h.2).choose
+  else 0
+
+/-- The inverse of `∂bar` on a flat line with nontrivial holonomy has norm at most `C^(-1/2)`, for
+`C = π² / 2 · (‖θ₁‖ℤ² / |ω₁|² + ‖θ₂‖ℤ² / |ω₂|²)`. -/
+theorem norm_flatLineCRInverse_le (hω : (conj ω₁ * ω₂).im ≠ 0)
+    (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ)) :
+    ‖flatLineCRInverse ω₁ ω₂ θ₁ θ₂‖ ≤
+      (√(π ^ 2 / 2 * (|θ₁ - round θ₁| ^ 2 / ‖ω₁‖ ^ 2 + |θ₂ - round θ₂| ^ 2 / ‖ω₂‖ ^ 2)))⁻¹ := by
+  rw [flatLineCRInverse, dite_eq_left_of_eq_true (eq_true ⟨hω, hθ⟩)]
+  exact (exists_continuousLinearMap_setIntegral_mul_conj_wirtingerDeriv_eq hω hθ).choose_spec.1
+
+/-- On a flat line with nontrivial holonomy, `flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f` is a weak solution of
+`∂bar y = f`: `∫ y · conj (∂φ) = -∫ f · conj φ` for every `C²` section `φ`. -/
+theorem setIntegral_flatLineCRInverse_mul_conj_wirtingerDeriv (hω : (conj ω₁ * ω₂).im ≠ 0)
+    (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
+    (f : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)))
+    (hφ : ContDiff ℝ 2 φ) (hφ₁ : ∀ z, φ (z + ω₁) = exp (2 * π * θ₁ * I) * φ z)
+    (hφ₂ : ∀ z, φ (z + ω₂) = exp (2 * π * θ₂ * I) * φ z) :
+    ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
+        flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f p * conj (wirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) =
+      -∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, f p * conj (φ (p.1 * ω₁ + p.2 * ω₂)) := by
+  rw [flatLineCRInverse, dite_eq_left_of_eq_true (eq_true ⟨hω, hθ⟩)]
+  exact (exists_continuousLinearMap_setIntegral_mul_conj_wirtingerDeriv_eq hω hθ).choose_spec.2
+    f φ hφ hφ₁ hφ₂
+
+/-- **Characterization of the inverse of `∂bar`.** On a flat line with nontrivial holonomy,
+`flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f = y` exactly when `y` is a weak solution of `∂bar y = f`, that is,
+`∫ y · conj (∂φ) = -∫ f · conj φ` for every `C²` section `φ`. -/
+theorem flatLineCRInverse_apply_eq_iff (hω : (conj ω₁ * ω₂).im ≠ 0)
+    (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
+    {f y : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1))} :
+    flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f = y ↔ ∀ φ : ℂ → ℂ, ContDiff ℝ 2 φ →
+      (∀ z, φ (z + ω₁) = exp (2 * π * θ₁ * I) * φ z) →
+      (∀ z, φ (z + ω₂) = exp (2 * π * θ₂ * I) * φ z) →
+      ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
+          y p * conj (wirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) =
+        -∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, f p * conj (φ (p.1 * ω₁ + p.2 * ω₂)) := by
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro rfl φ hφ hφ₁ hφ₂
+    exact setIntegral_flatLineCRInverse_mul_conj_wirtingerDeriv hω hθ f hφ hφ₁ hφ₂
+  rw [← sub_eq_zero]
+  refine eq_zero_of_forall_setIntegral_mul_conj_wirtingerDeriv_eq_zero hω hθ
+    fun φ hφ hφ₁ hφ₂ ↦ ?_
+  have hg := (hφ.of_le one_le_two).continuous_wirtingerDeriv_apply 1
+  rw [setIntegral_mul_conj_comp_latticeCoord_eq_inner hg, inner_sub_right,
+    ← setIntegral_mul_conj_comp_latticeCoord_eq_inner hg,
+    ← setIntegral_mul_conj_comp_latticeCoord_eq_inner hg,
+    setIntegral_flatLineCRInverse_mul_conj_wirtingerDeriv hω hθ f hφ hφ₁ hφ₂, h φ hφ hφ₁ hφ₂,
+    sub_self]
+
+/-- **The inverse of `∂bar` inverts `∂bar` on `C¹` sections.** On a flat line with nontrivial
+holonomy, if `u` is a `C¹` section and `f` represents `∂bar u` in lattice coordinates, then
+`flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f` represents `u`. -/
+theorem flatLineCRInverse_ae_eq_of_ae_eq_conjWirtingerDeriv (hω : (conj ω₁ * ω₂).im ≠ 0)
+    (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ)) (hu : ContDiff ℝ 1 u)
+    (hu₁ : ∀ z, u (z + ω₁) = exp (2 * π * θ₁ * I) * u z)
+    (hu₂ : ∀ z, u (z + ω₂) = exp (2 * π * θ₂ * I) * u z)
+    {f : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1))}
+    (hf : f =ᵐ[(volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)]
+      fun p ↦ conjWirtingerDeriv u (p.1 * ω₁ + p.2 * ω₂) 1) :
+    flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f =ᵐ[(volume : Measure (ℝ × ℝ)).restrict
+      (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)] fun p ↦ u (p.1 * ω₁ + p.2 * ω₂) := by
+  have hmem := memLp_comp_latticeCoord (ω₁ := ω₁) (ω₂ := ω₂) hu.continuous
+  have hχ (θ : ℝ) : ‖exp (2 * π * θ * I)‖ = 1 := by
+    simpa using norm_exp_ofReal_mul_I (2 * π * θ)
+  rw [(flatLineCRInverse_apply_eq_iff hω hθ).2 fun φ hφ hφ₁ hφ₂ ↦ ?_]
+  · exact hmem.coeFn_toLp
+  have h₁ : ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
+      hmem.toLp _ p * conj (wirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) =
+        ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
+          u (p.1 * ω₁ + p.2 * ω₂) * conj (wirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) :=
+    integral_congr_ae (by filter_upwards [hmem.coeFn_toLp] with p hp; rw [hp])
+  have h₂ : ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, f p * conj (φ (p.1 * ω₁ + p.2 * ω₂)) =
+      ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
+        conjWirtingerDeriv u (p.1 * ω₁ + p.2 * ω₂) 1 * conj (φ (p.1 * ω₁ + p.2 * ω₂)) :=
+    integral_congr_ae (by filter_upwards [hf] with p hp; rw [hp])
+  rw [h₁, h₂, setIntegral_conjWirtingerDeriv_mul_conj_eq_neg_setIntegral_mul_conj_wirtingerDeriv hu
+    (hφ.of_le one_le_two) hω (hχ θ₁) (hχ θ₂) hu₁ hu₂ hφ₁ hφ₂, neg_neg]
+
+end Inverse
 
 end TauCeti
