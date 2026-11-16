@@ -1,0 +1,640 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Analysis.Normed.Group.Constructions
+public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.Dynamics.MarkoffHurwitz.Simplex
+import Mathlib.Algebra.BigOperators.Field
+import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Calculus.FDeriv.Add
+import Mathlib.Analysis.Calculus.FDeriv.Linear
+import Mathlib.Analysis.Calculus.FDeriv.Mul
+import Mathlib.Analysis.SpecialFunctions.Complex.Log
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Ring
+
+/-!
+# Accelerated projective Markoff–Hurwitz branches
+
+For `n = d + 2`, the unaccelerated Markoff–Hurwitz linear generators `γ_j` (`j : Fin (d + 1)`,
+implemented as `TauCeti.MarkoffHurwitz.hurwitzGen`) act on homogeneous coordinates
+`y : Fin (d + 2) → ℝ` by deleting `y_j` and appending the sum of the remaining `d + 1` coordinates
+(including `y_{d+1}`). Accelerating runs of the top generator `γ_d` yields the countable alphabet
+`a = (A, j) : ℕ × Fin d` of linear maps `γ_d^A ∘ γ_j` (`TauCeti.MarkoffHurwitz.branchLinearMap`),
+whose projective action on `orderedSimplex d` has denominator
+`branchDenom a x = 1 + (A + 1) (1 - x_j)`, rational map `branchMap a x`, and roof delay
+`branchDelay a x = log (branchDenom a x)`.
+
+This file establishes the algebraic and analytic API of the accelerated branches:
+
+* preservation of `orderedConeHyperplane d` and `orderedCone d` by `hurwitzGen` and
+  `branchLinearMap`, together with the homogeneous cocycle relation
+  `branchLinearMap a y = (y_{d+1} * branchDenom a (orderedConeProject y)) •
+    orderedSimplexLift (branchMap a (orderedConeProject y))`;
+* invariance `MapsTo (branchMap a) (orderedSimplex d) (orderedSimplex d)` and smoothness
+  `ContDiffOn ℝ n` of `branchMap a` and `branchDelay a` on the open neighborhood
+  `{x | 0 < branchDenom a x}` of `orderedSimplex d`;
+* sharp denominator and delay enclosures `(A + 3) / 2 ≤ branchDenom a x ≤ A + 2` and
+  `log (3 / 2) ≤ branchDelay a x ≤ log (A + 2)` on `orderedSimplex d`;
+* the exact Fréchet derivative of `branchDelay a`, vanishing of off-slot partial derivatives, and
+  uniform logarithmic-derivative bound `‖fderivWithin ℝ (branchDelay a) (orderedSimplex d) x‖ < 2`;
+* positive-base complex weight identities `(branchDenom a x : ℂ) ^ (-s) =
+  Complex.exp (-s * branchDelay a x)` and
+  `‖(branchDenom a x : ℂ) ^ (-s)‖ = branchDenom a x ^ (-s.re)`.
+
+## References
+
+* A. Gamburd, M. Magee, and R. Ronan, *An asymptotic formula for integer points on
+  Markoff–Hurwitz varieties*, Annals of Mathematics 190 (2019), 751–809, Lemma 33, (4.3)–(4.7).
+-/
+
+public noncomputable section
+
+open Set Topology
+
+namespace TauCeti.MarkoffHurwitz
+
+/-! ### Unaccelerated and accelerated homogeneous linear generators -/
+
+/-- The `j`-th unaccelerated Markoff–Hurwitz linear generator `γ_j` on `Fin (d + 2) → ℝ`: delete
+coordinate `Fin.castSucc j` and append the sum of the remaining `d + 1` coordinates
+(Gamburd–Magee–Ronan 2019, (1.6) and §4.1). -/
+def hurwitzGen {d : ℕ} (j : Fin (d + 1)) : (Fin (d + 2) → ℝ) →ₗ[ℝ] (Fin (d + 2) → ℝ) where
+  toFun y := Fin.snoc (fun k : Fin (d + 1) => y ((Fin.castSucc j).succAbove k))
+    (∑ k : Fin (d + 1), y ((Fin.castSucc j).succAbove k))
+  map_add' x y := by
+    ext i
+    refine Fin.lastCases ?_ (fun k => ?_) i <;> simp [Finset.sum_add_distrib]
+  map_smul' c x := by
+    ext i
+    refine Fin.lastCases ?_ (fun k => ?_) i <;> simp [Finset.mul_sum]
+
+/-- First `d + 1` coordinates of `hurwitzGen j y`. -/
+@[simp]
+theorem hurwitzGen_castSucc {d : ℕ} (j k : Fin (d + 1)) (y : Fin (d + 2) → ℝ) :
+    hurwitzGen j y (Fin.castSucc k) = y ((Fin.castSucc j).succAbove k) := by
+  simp [hurwitzGen]
+
+/-- Last coordinate of `hurwitzGen j y`. -/
+@[simp]
+theorem hurwitzGen_last {d : ℕ} (j : Fin (d + 1)) (y : Fin (d + 2) → ℝ) :
+    hurwitzGen j y (Fin.last (d + 1)) = ∑ k : Fin (d + 1), y ((Fin.castSucc j).succAbove k) := by
+  simp [hurwitzGen]
+
+/-- The `(d + 1)`-th coordinate (`Fin.castSucc (Fin.last d)`) of `hurwitzGen j y` is always the
+previous last coordinate `y (Fin.last (d + 1))`. -/
+theorem hurwitzGen_castSucc_last {d : ℕ} (j : Fin (d + 1)) (y : Fin (d + 2) → ℝ) :
+    hurwitzGen j y (Fin.castSucc (Fin.last d)) = y (Fin.last (d + 1)) := by
+  simp
+
+/-- For `i : Fin d`, the `i`-th coordinate of `hurwitzGen j y` deletes `j` within `Fin (d + 1)`. -/
+theorem hurwitzGen_castSucc_castSucc {d : ℕ} (j : Fin (d + 1)) (i : Fin d)
+    (y : Fin (d + 2) → ℝ) :
+    hurwitzGen j y (Fin.castSucc (Fin.castSucc i)) = y (Fin.castSucc (j.succAbove i)) := by
+  rw [hurwitzGen_castSucc]
+  congr 1
+  by_cases hlt : Fin.castSucc i < j
+  · rw [Fin.succAbove_of_castSucc_lt _ _ (Fin.castSucc_lt_castSucc_iff.mpr hlt),
+      Fin.succAbove_of_castSucc_lt _ _ hlt]
+  · have hle : j ≤ Fin.castSucc i := not_lt.mp hlt
+    rw [Fin.succAbove_of_le_castSucc _ _ (Fin.castSucc_le_castSucc_iff.mpr hle),
+      Fin.succAbove_of_le_castSucc _ _ hle, Fin.succ_castSucc]
+
+/-- Every output of `hurwitzGen j` lies on `orderedConeHyperplane d`. -/
+theorem hurwitzGen_mem_hyperplane {d : ℕ} (j : Fin (d + 1)) (y : Fin (d + 2) → ℝ) :
+    hurwitzGen j y ∈ orderedConeHyperplane d := by
+  simp
+
+/-- On `orderedConeHyperplane d`, the last coordinate of `hurwitzGen j y` equals
+`2 * y_{d+1} - y_j`. -/
+theorem hurwitzGen_last_of_mem_hyperplane {d : ℕ} (j : Fin (d + 1)) {y : Fin (d + 2) → ℝ}
+    (hy : y ∈ orderedConeHyperplane d) :
+    hurwitzGen j y (Fin.last (d + 1)) = 2 * y (Fin.last (d + 1)) - y (Fin.castSucc j) := by
+  have htot : ∑ m : Fin (d + 2), y m = 2 * y (Fin.last (d + 1)) := by
+    rw [Fin.sum_univ_castSucc, mem_orderedConeHyperplane_iff.mp hy]
+    ring
+  have hsplit := Fin.sum_univ_succAbove y (Fin.castSucc j)
+  linarith [hurwitzGen_last j y]
+
+/-- Every generator `hurwitzGen j` maps `orderedCone d` into itself. -/
+theorem hurwitzGen_mem_orderedCone {d : ℕ} (j : Fin (d + 1)) {y : Fin (d + 2) → ℝ}
+    (hy : y ∈ orderedCone d) : hurwitzGen j y ∈ orderedCone d := by
+  have hylast := last_pos_of_mem_orderedCone hy
+  rw [mem_orderedCone_iff] at hy ⊢
+  refine ⟨fun h0 => ?_, ?_, ?_, mem_orderedConeHyperplane_iff.mp (hurwitzGen_mem_hyperplane j y)⟩
+  · have : y (Fin.last (d + 1)) = 0 := by
+      simpa using congrFun h0 (Fin.castSucc (Fin.last d))
+    linarith
+  · refine Fin.lastCases ?_ fun k => ?_
+    · rw [hurwitzGen_last]
+      exact Finset.sum_nonneg fun k _ => hy.2.1 _
+    · rw [hurwitzGen_castSucc]
+      exact hy.2.1 _
+  · intro a b hab
+    induction b using Fin.lastCases with
+    | last =>
+      induction a using Fin.lastCases with
+      | last => exact le_rfl
+      | cast a' =>
+        rw [hurwitzGen_castSucc, hurwitzGen_last]
+        exact Finset.single_le_sum (fun k _ => hy.2.1 _) (Finset.mem_univ a')
+    | cast b' =>
+      induction a using Fin.lastCases with
+      | last => exact absurd hab (not_le_of_gt (Fin.castSucc_lt_last b'))
+      | cast a' =>
+        rw [hurwitzGen_castSucc, hurwitzGen_castSucc]
+        exact hy.2.2.1 ((Fin.strictMono_succAbove (Fin.castSucc j)).monotone
+          (Fin.castSucc_le_castSucc_iff.mp hab))
+
+/-- Iterating the top generator `hurwitzGen (Fin.last d)` `A` times on `orderedConeHyperplane d`
+fixes the first `d` coordinates and advances the last two by arithmetic progression with step
+`z_{d+1} - z_d`. -/
+theorem hurwitzGen_last_pow_of_mem_hyperplane {d : ℕ} (A : ℕ) {z : Fin (d + 2) → ℝ}
+    (hz : z ∈ orderedConeHyperplane d) :
+    ((hurwitzGen (Fin.last d) ^ A) z =
+      Fin.snoc
+        (Fin.snoc (fun i : Fin d => z (Fin.castSucc (Fin.castSucc i)))
+          (z (Fin.castSucc (Fin.last d)) +
+            (A : ℝ) * (z (Fin.last (d + 1)) - z (Fin.castSucc (Fin.last d)))))
+        (z (Fin.castSucc (Fin.last d)) +
+          ((A : ℝ) + 1) * (z (Fin.last (d + 1)) - z (Fin.castSucc (Fin.last d))))) := by
+  induction A with
+  | zero =>
+    ext m
+    induction m using Fin.lastCases with
+    | last =>
+      simp only [pow_zero, one_apply_eq_self, Fin.snoc_last, CharP.cast_eq_zero, zero_add, one_mul]
+      linarith
+    | cast k =>
+      induction k using Fin.lastCases with
+      | last => simp
+      | cast i => simp
+  | succ A ih =>
+    have hmem : (hurwitzGen (Fin.last d) ^ A) z ∈ orderedConeHyperplane d := by
+      cases A with
+      | zero => simpa using hz
+      | succ B =>
+        rw [pow_succ']
+        exact hurwitzGen_mem_hyperplane _ _
+    rw [pow_succ', mul_apply_eq_comp]
+    ext m
+    induction m using Fin.lastCases with
+    | last =>
+      rw [hurwitzGen_last_of_mem_hyperplane _ hmem, ih]
+      simp only [Fin.snoc_last, Fin.snoc_castSucc, Nat.cast_add, Nat.cast_one]
+      ring
+    | cast k =>
+      induction k using Fin.lastCases with
+      | last =>
+        rw [hurwitzGen_castSucc_last, ih]
+        simp [Nat.cast_add]
+      | cast i =>
+        rw [hurwitzGen_castSucc_castSucc, ih]
+        have hsucc : (Fin.last d).succAbove i = Fin.castSucc i :=
+          Fin.succAbove_of_castSucc_lt _ _ (Fin.castSucc_lt_last i)
+        simp [hsucc]
+
+/-- The accelerated Markoff–Hurwitz linear branch `γ_d^A ∘ γ_j` associated to the letter
+`a = (A, j) : ℕ × Fin d` (Gamburd–Magee–Ronan 2019, §4.1). -/
+def branchLinearMap {d : ℕ} (a : ℕ × Fin d) : (Fin (d + 2) → ℝ) →ₗ[ℝ] (Fin (d + 2) → ℝ) :=
+  (hurwitzGen (Fin.last d) ^ a.1) ∘ₗ hurwitzGen (Fin.castSucc a.2)
+
+/-- Evaluation of `branchLinearMap a` as `(hurwitzGen (Fin.last d) ^ a.1)` after
+`hurwitzGen (Fin.castSucc a.2)`. -/
+theorem branchLinearMap_apply {d : ℕ} (a : ℕ × Fin d) (y : Fin (d + 2) → ℝ) :
+    branchLinearMap a y = (hurwitzGen (Fin.last d) ^ a.1) (hurwitzGen (Fin.castSucc a.2) y) :=
+  (rfl)
+
+/-- Every output of `branchLinearMap a` lies on `orderedConeHyperplane d`. -/
+theorem branchLinearMap_mem_hyperplane {d : ℕ} (a : ℕ × Fin d) (y : Fin (d + 2) → ℝ) :
+    branchLinearMap a y ∈ orderedConeHyperplane d := by
+  rw [branchLinearMap_apply]
+  cases a.1 with
+  | zero => simp
+  | succ B =>
+    rw [pow_succ']
+    exact hurwitzGen_mem_hyperplane _ _
+
+/-- Every accelerated linear branch `branchLinearMap a` maps `orderedCone d` into itself. -/
+theorem branchLinearMap_mem_orderedCone {d : ℕ} (a : ℕ × Fin d) {y : Fin (d + 2) → ℝ}
+    (hy : y ∈ orderedCone d) : branchLinearMap a y ∈ orderedCone d := by
+  rw [branchLinearMap_apply]
+  have h0 : hurwitzGen (Fin.castSucc a.2) y ∈ orderedCone d :=
+    hurwitzGen_mem_orderedCone (Fin.castSucc a.2) hy
+  induction a.1 with
+  | zero => simpa using h0
+  | succ B ih =>
+    rw [pow_succ']
+    exact hurwitzGen_mem_orderedCone (Fin.last d) ih
+
+/-! ### Projective denominator, branch map, and homogeneous cocycle identity -/
+
+/-- The denominator `q_a(w) = 1 + (A + 1) (1 - w_j)` of the accelerated branch `a = (A, j)`
+(Gamburd–Magee–Ronan 2019, Lemma 33, (4.6)). -/
+def branchDenom {d : ℕ} (a : ℕ × Fin d) (x : Fin d → ℝ) : ℝ :=
+  1 + ((a.1 : ℝ) + 1) * (1 - x a.2)
+
+/-- Coordinate formula for `branchDenom a x`. -/
+theorem branchDenom_apply {d : ℕ} (a : ℕ × Fin d) (x : Fin d → ℝ) :
+    branchDenom a x = 1 + ((a.1 : ℝ) + 1) * (1 - x a.2) :=
+  (rfl)
+
+/-- The accelerated projective branch `F_a` in chart coordinates: delete `w_j` from
+`(w₁, …, w_{d+1})` and divide by `branchDenom a x` (Gamburd–Magee–Ronan 2019, Lemma 33, (4.5)). -/
+def branchMap {d : ℕ} (a : ℕ × Fin d) (x : Fin d → ℝ) : Fin d → ℝ :=
+  fun i => (Fin.snoc (α := fun _ => ℝ) x (1 - ∑ k, x k) ((Fin.castSucc a.2).succAbove i)) /
+    branchDenom a x
+
+/-- Unfolded formula for `branchMap a x`. -/
+theorem branchMap_def {d : ℕ} (a : ℕ × Fin d) (x : Fin d → ℝ) :
+    branchMap a x = fun i =>
+      (Fin.snoc (α := fun _ => ℝ) x (1 - ∑ k, x k) ((Fin.castSucc a.2).succAbove i)) /
+        branchDenom a x :=
+  (rfl)
+
+/-- Coordinate formula for `branchMap a x` in terms of `chartToSimplex x`. -/
+theorem branchMap_apply {d : ℕ} (a : ℕ × Fin d) (x : Fin d → ℝ) (i : Fin d) :
+    branchMap a x i = chartToSimplex x ((Fin.castSucc a.2).succAbove i) / branchDenom a x := by
+  rw [branchMap_def, ← chartToSimplex_def]
+
+/-- Explicit coordinate formula for `branchLinearMap a (orderedSimplexLift x)` at every
+`x : Fin d → ℝ` (Gamburd–Magee–Ronan 2019, Lemma 33). -/
+theorem branchLinearMap_orderedSimplexLift_eq {d : ℕ} (a : ℕ × Fin d) (x : Fin d → ℝ) :
+    branchLinearMap a (orderedSimplexLift x) =
+      Fin.snoc
+        (Fin.snoc (fun i : Fin d => chartToSimplex x ((Fin.castSucc a.2).succAbove i))
+          (1 + (a.1 : ℝ) * (1 - x a.2)))
+        (branchDenom a x) := by
+  let z := hurwitzGen (Fin.castSucc a.2) (orderedSimplexLift x)
+  have hz : z ∈ orderedConeHyperplane d := hurwitzGen_mem_hyperplane _ _
+  have hz_last : z (Fin.last (d + 1)) = 2 - x a.2 := by
+    have hhyp : orderedSimplexLift x ∈ orderedConeHyperplane d :=
+      mem_orderedConeHyperplane_iff.mpr (sum_castSucc_orderedSimplexLift x)
+    simpa [z] using hurwitzGen_last_of_mem_hyperplane (Fin.castSucc a.2) hhyp
+  have hz_sub : z (Fin.castSucc (Fin.last d)) = 1 := by
+    simp [z]
+  have hz_first : ∀ i : Fin d,
+      z (Fin.castSucc (Fin.castSucc i)) = chartToSimplex x ((Fin.castSucc a.2).succAbove i) := by
+    intro i
+    dsimp only [z]
+    rw [hurwitzGen_castSucc_castSucc, orderedSimplexLift_castSucc]
+  rw [branchLinearMap_apply, hurwitzGen_last_pow_of_mem_hyperplane a.1 hz]
+  simp only [hz_first, hz_sub, hz_last, branchDenom_apply]
+  congr 1
+  · congr 1
+    ring
+  · ring
+
+/-- The last coordinate of `branchLinearMap a (orderedSimplexLift x)` is `branchDenom a x`. -/
+@[simp]
+theorem branchLinearMap_orderedSimplexLift_last {d : ℕ} (a : ℕ × Fin d) (x : Fin d → ℝ) :
+    branchLinearMap a (orderedSimplexLift x) (Fin.last (d + 1)) = branchDenom a x := by
+  rw [branchLinearMap_orderedSimplexLift_eq, Fin.snoc_last]
+
+/-- Whenever `branchDenom a x ≠ 0`, the non-chart top simplex coordinate of `branchMap a x` is
+`(1 + A (1 - x_j)) / branchDenom a x` (Gamburd–Magee–Ronan 2019, (4.5)). -/
+theorem one_sub_sum_branchMap {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hq : branchDenom a x ≠ 0) :
+    1 - ∑ i : Fin d, branchMap a x i = (1 + (a.1 : ℝ) * (1 - x a.2)) / branchDenom a x := by
+  have hmem := mem_orderedConeHyperplane_iff.mp
+    (branchLinearMap_mem_hyperplane a (orderedSimplexLift x))
+  rw [branchLinearMap_orderedSimplexLift_eq, Fin.snoc_last] at hmem
+  have hsplit : (∑ i : Fin d, chartToSimplex x ((Fin.castSucc a.2).succAbove i)) +
+      (1 + (a.1 : ℝ) * (1 - x a.2)) = branchDenom a x := by
+    simpa [Fin.sum_univ_castSucc] using hmem
+  have hsum : ∑ i : Fin d, branchMap a x i =
+      (∑ i : Fin d, chartToSimplex x ((Fin.castSucc a.2).succAbove i)) / branchDenom a x := by
+    simp [branchMap_apply, ← Finset.sum_div]
+  rw [hsum]
+  field_simp
+  linarith
+
+/-- Whenever `branchDenom a x ≠ 0`, `branchLinearMap a` scales `orderedSimplexLift x` into
+`orderedSimplexLift (branchMap a x)` with factor `branchDenom a x`. -/
+theorem branchLinearMap_orderedSimplexLift {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hq : branchDenom a x ≠ 0) :
+    branchLinearMap a (orderedSimplexLift x) =
+      branchDenom a x • orderedSimplexLift (branchMap a x) := by
+  rw [branchLinearMap_orderedSimplexLift_eq]
+  ext m
+  induction m using Fin.lastCases with
+  | last => simp
+  | cast k =>
+    induction k using Fin.lastCases with
+    | last =>
+      simp [one_sub_sum_branchMap a hq, mul_div_cancel₀ _ hq]
+    | cast i =>
+      simp [branchMap_apply, mul_div_cancel₀ _ hq]
+
+/-- On `orderedSimplex d`, `branchDenom a x` is at least `(A + 3) / 2`. -/
+theorem le_branchDenom_of_mem_orderedSimplex {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hx : x ∈ orderedSimplex d) : ((a.1 : ℝ) + 3) / 2 ≤ branchDenom a x := by
+  have hxj : x a.2 ≤ 1 / 2 := apply_le_half_of_mem_orderedSimplex hx a.2
+  have : (0 : ℝ) ≤ a.1 := a.1.cast_nonneg
+  rw [branchDenom_apply]
+  nlinarith
+
+/-- On `orderedSimplex d`, `branchDenom a x` is at most `A + 2`. -/
+theorem branchDenom_le_of_mem_orderedSimplex {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hx : x ∈ orderedSimplex d) : branchDenom a x ≤ (a.1 : ℝ) + 2 := by
+  have hxj : 0 ≤ x a.2 := apply_nonneg_of_mem_orderedSimplex hx a.2
+  have : (0 : ℝ) ≤ a.1 := a.1.cast_nonneg
+  rw [branchDenom_apply]
+  nlinarith
+
+/-- On `orderedSimplex d`, `branchDenom a x` is at least `3 / 2`. -/
+theorem three_div_two_le_branchDenom_of_mem_orderedSimplex {d : ℕ} (a : ℕ × Fin d)
+    {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) : (3 : ℝ) / 2 ≤ branchDenom a x := by
+  have : (0 : ℝ) ≤ a.1 := a.1.cast_nonneg
+  have hA : (3 : ℝ) / 2 ≤ ((a.1 : ℝ) + 3) / 2 := by linarith
+  exact hA.trans (le_branchDenom_of_mem_orderedSimplex a hx)
+
+/-- On `orderedSimplex d`, `branchDenom a x > 1`. -/
+theorem one_lt_branchDenom_of_mem_orderedSimplex {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hx : x ∈ orderedSimplex d) : 1 < branchDenom a x :=
+  lt_of_lt_of_le (by norm_num) (three_div_two_le_branchDenom_of_mem_orderedSimplex a hx)
+
+/-- On `orderedSimplex d`, `branchDenom a x > 0`. -/
+theorem branchDenom_pos_of_mem_orderedSimplex {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hx : x ∈ orderedSimplex d) : 0 < branchDenom a x :=
+  lt_trans zero_lt_one (one_lt_branchDenom_of_mem_orderedSimplex a hx)
+
+/-- Homogeneous cocycle relation on `orderedCone d`: `branchLinearMap a y` equals
+`y_{d+1} * branchDenom a (orderedConeProject y)` times the lifted image point
+`orderedSimplexLift (branchMap a (orderedConeProject y))`
+(Gamburd–Magee–Ronan 2019, Lemma 33). -/
+theorem branchLinearMap_eq_smul_orderedSimplexLift {d : ℕ} (a : ℕ × Fin d) {y : Fin (d + 2) → ℝ}
+    (hy : y ∈ orderedCone d) :
+    branchLinearMap a y =
+      (y (Fin.last (d + 1)) * branchDenom a (orderedConeProject y)) •
+        orderedSimplexLift (branchMap a (orderedConeProject y)) := by
+  have hx : orderedConeProject y ∈ orderedSimplex d := orderedConeProject_mem_orderedSimplex hy
+  have hq : branchDenom a (orderedConeProject y) ≠ 0 :=
+    (branchDenom_pos_of_mem_orderedSimplex a hx).ne'
+  calc
+    branchLinearMap a y
+        = branchLinearMap a (y (Fin.last (d + 1)) • orderedSimplexLift (orderedConeProject y)) := by
+          rw [last_smul_orderedSimplexLift_orderedConeProject hy]
+    _ = y (Fin.last (d + 1)) • branchLinearMap a (orderedSimplexLift (orderedConeProject y)) :=
+          map_smul _ _ _
+    _ = (y (Fin.last (d + 1)) * branchDenom a (orderedConeProject y)) •
+          orderedSimplexLift (branchMap a (orderedConeProject y)) := by
+          rw [branchLinearMap_orderedSimplexLift a hq, smul_smul]
+
+/-- For `y ∈ orderedCone d`, the last coordinate of `branchLinearMap a y` is
+`y_{d+1} * branchDenom a (orderedConeProject y)`. -/
+theorem branchLinearMap_last_of_mem_orderedCone {d : ℕ} (a : ℕ × Fin d) {y : Fin (d + 2) → ℝ}
+    (hy : y ∈ orderedCone d) :
+    branchLinearMap a y (Fin.last (d + 1)) =
+      y (Fin.last (d + 1)) * branchDenom a (orderedConeProject y) := by
+  rw [branchLinearMap_eq_smul_orderedSimplexLift a hy]
+  simp
+
+/-- Projective equivariance on `orderedCone d`: `orderedConeProject` intertwines `branchLinearMap a`
+with `branchMap a`. -/
+theorem orderedConeProject_branchLinearMap {d : ℕ} (a : ℕ × Fin d) {y : Fin (d + 2) → ℝ}
+    (hy : y ∈ orderedCone d) :
+    orderedConeProject (branchLinearMap a y) = branchMap a (orderedConeProject y) := by
+  have hypos := last_pos_of_mem_orderedCone hy
+  have hqpos := branchDenom_pos_of_mem_orderedSimplex a (orderedConeProject_mem_orderedSimplex hy)
+  rw [branchLinearMap_eq_smul_orderedSimplexLift a hy,
+    orderedConeProject_smul (mul_pos hypos hqpos).ne', orderedConeProject_orderedSimplexLift]
+
+/-- Every accelerated branch `branchMap a` maps `orderedSimplex d` into itself. -/
+theorem mapsTo_branchMap_orderedSimplex {d : ℕ} (a : ℕ × Fin d) :
+    MapsTo (branchMap a) (orderedSimplex d) (orderedSimplex d) := by
+  intro x hx
+  have hy : orderedSimplexLift x ∈ orderedCone d := orderedSimplexLift_mem_orderedCone_iff.mpr hx
+  have hproj := orderedConeProject_branchLinearMap a hy
+  rw [orderedConeProject_orderedSimplexLift] at hproj
+  rw [← hproj]
+  exact orderedConeProject_mem_orderedSimplex (branchLinearMap_mem_orderedCone a hy)
+
+/-- Pointwise form of `mapsTo_branchMap_orderedSimplex`. -/
+theorem branchMap_mem_orderedSimplex {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hx : x ∈ orderedSimplex d) : branchMap a x ∈ orderedSimplex d :=
+  mapsTo_branchMap_orderedSimplex a hx
+
+/-! ### Open domain, smoothness, and delay calculus -/
+
+/-- The positivity locus `{x | 0 < branchDenom a x}` is an open subset of `Fin d → ℝ`. -/
+theorem isOpen_branchDenom_pos {d : ℕ} (a : ℕ × Fin d) :
+    IsOpen {x : Fin d → ℝ | 0 < branchDenom a x} := by
+  refine isOpen_lt continuous_const ?_
+  unfold branchDenom
+  fun_prop
+
+/-- `orderedSimplex d` is contained in the open set `{x | 0 < branchDenom a x}`. -/
+theorem orderedSimplex_subset_branchDenom_pos {d : ℕ} (a : ℕ × Fin d) :
+    orderedSimplex d ⊆ {x : Fin d → ℝ | 0 < branchDenom a x} :=
+  fun _ hx => branchDenom_pos_of_mem_orderedSimplex a hx
+
+/-- `branchDenom a` is smooth (`ContDiff ℝ n` for every `n : WithTop ℕ∞`, including `∞` and `ω`)
+on all of `Fin d → ℝ`. -/
+theorem contDiff_branchDenom {d : ℕ} {n : WithTop ℕ∞} (a : ℕ × Fin d) :
+    ContDiff ℝ n (branchDenom a) := by
+  unfold branchDenom
+  fun_prop
+
+/-- `branchMap a` is `ContDiffOn ℝ n` (for every `n : WithTop ℕ∞`) on
+`{x | 0 < branchDenom a x}`. -/
+theorem contDiffOn_branchMap_branchDenom_pos {d : ℕ} {n : WithTop ℕ∞} (a : ℕ × Fin d) :
+    ContDiffOn ℝ n (branchMap a) {x : Fin d → ℝ | 0 < branchDenom a x} := by
+  rw [contDiffOn_pi]
+  intro i
+  have hnum : ContDiff ℝ n
+      (fun x : Fin d → ℝ => Fin.snoc (α := fun _ => ℝ) x (1 - ∑ k, x k)
+        ((Fin.castSucc a.2).succAbove i)) := by
+    refine Fin.lastCases ?_ (fun m => ?_) ((Fin.castSucc a.2).succAbove i)
+    · simp only [Fin.snoc_last]
+      fun_prop
+    · simp only [Fin.snoc_castSucc]
+      exact contDiff_apply ℝ (fun _ : Fin d => ℝ) m
+  exact hnum.contDiffOn.div (contDiff_branchDenom a).contDiffOn fun _ hx => ne_of_gt hx
+
+/-- `branchMap a` is `ContDiffOn ℝ n` on `orderedSimplex d` for every `n : WithTop ℕ∞`. -/
+theorem contDiffOn_branchMap_orderedSimplex {d : ℕ} {n : WithTop ℕ∞} (a : ℕ × Fin d) :
+    ContDiffOn ℝ n (branchMap a) (orderedSimplex d) :=
+  (contDiffOn_branchMap_branchDenom_pos a).mono (orderedSimplex_subset_branchDenom_pos a)
+
+/-- `branchMap a` is continuous on `orderedSimplex d`. -/
+theorem continuousOn_branchMap_orderedSimplex {d : ℕ} (a : ℕ × Fin d) :
+    ContinuousOn (branchMap a) (orderedSimplex d) :=
+  (contDiffOn_branchMap_orderedSimplex (n := 0) a).continuousOn
+
+/-- The roof delay `τ_a(w) = log q_a(w)` of the accelerated branch `a`
+(Gamburd–Magee–Ronan 2019, §4.1). -/
+def branchDelay {d : ℕ} (a : ℕ × Fin d) (x : Fin d → ℝ) : ℝ :=
+  Real.log (branchDenom a x)
+
+/-- Unfolded formula for `branchDelay a x`. -/
+theorem branchDelay_apply {d : ℕ} (a : ℕ × Fin d) (x : Fin d → ℝ) :
+    branchDelay a x = Real.log (branchDenom a x) :=
+  (rfl)
+
+/-- Exponential of `branchDelay a x` where `0 < branchDenom a x`. -/
+theorem exp_branchDelay {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ} (hq : 0 < branchDenom a x) :
+    Real.exp (branchDelay a x) = branchDenom a x :=
+  Real.exp_log hq
+
+/-- On `orderedSimplex d`, `branchDelay a x` is at least `log ((A + 3) / 2)`. -/
+theorem log_add_three_div_two_le_branchDelay_of_mem_orderedSimplex {d : ℕ} (a : ℕ × Fin d)
+    {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
+    Real.log (((a.1 : ℝ) + 3) / 2) ≤ branchDelay a x :=
+  Real.log_le_log (by positivity) (le_branchDenom_of_mem_orderedSimplex a hx)
+
+/-- Uniform spectral-floor bound on `orderedSimplex d`: `log (3 / 2) ≤ branchDelay a x`. -/
+theorem log_three_div_two_le_branchDelay_of_mem_orderedSimplex {d : ℕ} (a : ℕ × Fin d)
+    {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
+    Real.log (3 / 2) ≤ branchDelay a x :=
+  Real.log_le_log (by norm_num) (three_div_two_le_branchDenom_of_mem_orderedSimplex a hx)
+
+/-- On `orderedSimplex d`, `branchDelay a x` is at most `log (A + 2)`. -/
+theorem branchDelay_le_log_add_two_of_mem_orderedSimplex {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hx : x ∈ orderedSimplex d) : branchDelay a x ≤ Real.log ((a.1 : ℝ) + 2) :=
+  Real.log_le_log (branchDenom_pos_of_mem_orderedSimplex a hx)
+    (branchDenom_le_of_mem_orderedSimplex a hx)
+
+/-- `branchDelay a x` is strictly positive at every point of `orderedSimplex d`. -/
+theorem branchDelay_pos_of_mem_orderedSimplex {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hx : x ∈ orderedSimplex d) : 0 < branchDelay a x :=
+  Real.log_pos (one_lt_branchDenom_of_mem_orderedSimplex a hx)
+
+/-- `branchDelay a` is `ContDiffOn ℝ n` on `{x | 0 < branchDenom a x}` for every
+`n : WithTop ℕ∞`. -/
+theorem contDiffOn_branchDelay_branchDenom_pos {d : ℕ} {n : WithTop ℕ∞} (a : ℕ × Fin d) :
+    ContDiffOn ℝ n (branchDelay a) {x : Fin d → ℝ | 0 < branchDenom a x} :=
+  (contDiff_branchDenom a).contDiffOn.log fun _ hx => ne_of_gt hx
+
+/-- `branchDelay a` is `ContDiffOn ℝ n` on `orderedSimplex d` for every `n : WithTop ℕ∞`. -/
+theorem contDiffOn_branchDelay_orderedSimplex {d : ℕ} {n : WithTop ℕ∞} (a : ℕ × Fin d) :
+    ContDiffOn ℝ n (branchDelay a) (orderedSimplex d) :=
+  (contDiffOn_branchDelay_branchDenom_pos a).mono (orderedSimplex_subset_branchDenom_pos a)
+
+/-- Exact Fréchet derivative of `branchDenom a` at any `x : Fin d → ℝ`. -/
+theorem hasFDerivAt_branchDenom {d : ℕ} (a : ℕ × Fin d) (x : Fin d → ℝ) :
+    HasFDerivAt (branchDenom a)
+      (-(((a.1 : ℝ) + 1) • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin d => ℝ) a.2)) x := by
+  have hproj :=
+    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin d => ℝ) a.2).hasFDerivAt (x := x)
+  have hmul := (hproj.const_sub (1 : ℝ)).const_mul ((a.1 : ℝ) + 1)
+  rw [smul_neg] at hmul
+  exact hmul.const_add (1 : ℝ)
+
+/-- Exact Fréchet derivative of `branchDelay a = log ∘ branchDenom a` wherever
+`branchDenom a x ≠ 0`. -/
+theorem hasFDerivAt_branchDelay {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hq : branchDenom a x ≠ 0) :
+    HasFDerivAt (branchDelay a)
+      (-((((a.1 : ℝ) + 1) / branchDenom a x) •
+        ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin d => ℝ) a.2)) x := by
+  unfold branchDelay
+  convert (hasFDerivAt_branchDenom a x).log hq using 1
+  ext v
+  simp [div_eq_inv_mul]
+  ring
+
+/-- Partial derivatives of `branchDelay a` along the coordinate directions `Pi.single k 1`:
+`-(A + 1) / branchDenom a x` in slot `a.2`, and `0` in all other slots. -/
+theorem fderiv_branchDelay_apply_single {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hq : branchDenom a x ≠ 0) (k : Fin d) :
+    fderiv ℝ (branchDelay a) x (Pi.single k 1) =
+      if k = a.2 then -(((a.1 : ℝ) + 1) / branchDenom a x) else 0 := by
+  rw [(hasFDerivAt_branchDelay a hq).fderiv]
+  by_cases hk : k = a.2
+  · subst hk
+    simp
+  · simp [hk]
+
+/-- Exact operator norm of `fderiv ℝ (branchDelay a) x` with respect to the sup norm on `Fin d → ℝ`
+wherever `0 < branchDenom a x`. -/
+theorem norm_fderiv_branchDelay {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hq : 0 < branchDenom a x) :
+    ‖fderiv ℝ (branchDelay a) x‖ = ((a.1 : ℝ) + 1) / branchDenom a x := by
+  have hc : 0 ≤ ((a.1 : ℝ) + 1) / branchDenom a x := div_nonneg (by positivity) hq.le
+  rw [(hasFDerivAt_branchDelay a hq.ne').fderiv, norm_neg]
+  refine le_antisymm ?_ ?_
+  · refine ContinuousLinearMap.opNorm_le_bound _ hc fun v => ?_
+    rw [smul_apply, ContinuousLinearMap.proj_apply, norm_smul, Real.norm_of_nonneg hc]
+    exact mul_le_mul_of_nonneg_left (norm_le_pi_norm v a.2) hc
+  · have : Nonempty (Fin d) := ⟨a.2⟩
+    have hbound := ((((a.1 : ℝ) + 1) / branchDenom a x) •
+      ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin d => ℝ) a.2).le_opNorm (fun _ => 1)
+    simpa [Real.norm_of_nonneg hc] using hbound
+
+/-- On `orderedSimplex d`, `fderivWithin ℝ (branchDelay a) (orderedSimplex d) x` agrees with the
+ambient derivative `fderiv ℝ (branchDelay a) x`. -/
+theorem fderivWithin_branchDelay_orderedSimplex {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hx : x ∈ orderedSimplex d) :
+    fderivWithin ℝ (branchDelay a) (orderedSimplex d) x = fderiv ℝ (branchDelay a) x := by
+  have hq := (branchDenom_pos_of_mem_orderedSimplex a hx).ne'
+  rw [(hasFDerivAt_branchDelay a hq).fderiv]
+  exact (hasFDerivAt_branchDelay a hq).hasFDerivWithinAt.fderivWithin
+    (uniqueDiffOn_orderedSimplex d x hx)
+
+/-- On `orderedSimplex d`, the logarithmic derivative satisfies
+`‖fderivWithin ℝ (branchDelay a) (orderedSimplex d) x‖ ≤ 2 (A + 1) / (A + 3)`. -/
+theorem norm_fderivWithin_branchDelay_le_of_mem_orderedSimplex {d : ℕ} (a : ℕ × Fin d)
+    {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
+    ‖fderivWithin ℝ (branchDelay a) (orderedSimplex d) x‖ ≤
+      2 * ((a.1 : ℝ) + 1) / ((a.1 : ℝ) + 3) := by
+  have hq := branchDenom_pos_of_mem_orderedSimplex a hx
+  have hqle := le_branchDenom_of_mem_orderedSimplex a hx
+  rw [fderivWithin_branchDelay_orderedSimplex a hx, norm_fderiv_branchDelay a hq]
+  have hdiv : ((a.1 : ℝ) + 1) / branchDenom a x ≤
+      ((a.1 : ℝ) + 1) / (((a.1 : ℝ) + 3) / 2) :=
+    div_le_div_of_nonneg_left (by positivity) (by positivity) hqle
+  refine hdiv.trans_eq ?_
+  field_simp
+
+/-- Uniform logarithmic-derivative bound `< 2` across all letters `a` and points `x` in
+`orderedSimplex d` (Gamburd–Magee–Ronan 2019, §4.2). -/
+theorem norm_fderivWithin_branchDelay_lt_two_of_mem_orderedSimplex {d : ℕ} (a : ℕ × Fin d)
+    {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
+    ‖fderivWithin ℝ (branchDelay a) (orderedSimplex d) x‖ < 2 := by
+  refine (norm_fderivWithin_branchDelay_le_of_mem_orderedSimplex a hx).trans_lt ?_
+  rw [div_lt_iff₀ (by positivity)]
+  linarith
+
+/-! ### Complex branch weights `q_a^{-s}` -/
+
+/-- Wherever `0 < branchDenom a x`, the complex power `(branchDenom a x : ℂ) ^ (-s)` equals
+`Complex.exp (-s * branchDelay a x)`. -/
+theorem branchDenom_cpow_neg_eq_exp {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hq : 0 < branchDenom a x) (s : ℂ) :
+    (branchDenom a x : ℂ) ^ (-s) = Complex.exp (-s * (branchDelay a x : ℂ)) := by
+  rw [Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr hq.ne'), branchDelay_apply,
+    Complex.ofReal_log hq.le, mul_comm]
+
+/-- Wherever `0 < branchDenom a x`, the norm of `(branchDenom a x : ℂ) ^ (-s)` is the real power
+`branchDenom a x ^ (-s.re)`. -/
+theorem norm_branchDenom_cpow_neg {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hq : 0 < branchDenom a x) (s : ℂ) :
+    ‖(branchDenom a x : ℂ) ^ (-s)‖ = branchDenom a x ^ (-s.re) := by
+  simpa using Complex.norm_cpow_eq_rpow_re_of_pos hq (-s)
+
+/-- At a real parameter `σ : ℝ` and nonnegative denominator, `(branchDenom a x : ℂ) ^ (-σ)` agrees
+with the real power `branchDenom a x ^ (-σ)` coerced to `ℂ`. -/
+theorem branchDenom_cpow_neg_ofReal {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hq : 0 ≤ branchDenom a x) (σ : ℝ) :
+    (branchDenom a x : ℂ) ^ (-(σ : ℂ)) = ((branchDenom a x ^ (-σ) : ℝ) : ℂ) := by
+  rw [← Complex.ofReal_neg, ← Complex.ofReal_cpow hq]
+
+/-- At a real parameter `σ : ℝ` and positive denominator, the real branch weight
+`branchDenom a x ^ (-σ)` is strictly positive. -/
+theorem branchDenom_rpow_neg_pos {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hq : 0 < branchDenom a x) (σ : ℝ) :
+    0 < branchDenom a x ^ (-σ) :=
+  Real.rpow_pos_of_pos hq (-σ)
+
+end TauCeti.MarkoffHurwitz
