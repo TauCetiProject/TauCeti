@@ -28,7 +28,9 @@ to a finite order have a common bound
 (`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`), and such a
 common bound is nonnegative and bounds the function itself
 (`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`). Adding a constant to a function does not
-change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`).
+change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`), and
+the iterated derivatives of a constant function `c` have norm at most `‖c‖`
+(`TauCeti.norm_iteratedFDeriv_const_le`).
 -/
 
 public section
@@ -142,6 +144,14 @@ theorem iteratedFDeriv_succ_add_const (f : E → F) (c : F) (n : ℕ) :
     iteratedFDeriv 𝕜 (n + 1) (fun x ↦ f x + c) = iteratedFDeriv 𝕜 (n + 1) f := by
   funext x
   simp only [iteratedFDeriv_succ_eq_comp_right, fderiv_add_const]
+
+/-- The iterated derivatives of a constant function `c` have norm at most `‖c‖`: the derivative of
+order zero is `c` and the others vanish. -/
+theorem norm_iteratedFDeriv_const_le (c : F) (n : ℕ) (x : E) :
+    ‖iteratedFDeriv 𝕜 n (fun _ : E ↦ c) x‖ ≤ ‖c‖ := by
+  rcases n with _ | n
+  · simp
+  · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero n)]
 
 /-- Bounded derivatives up to order `N` have a common bound. -/
 theorem exists_forall_norm_iteratedFDeriv_le_of_forall_exists {f : E → F} {N : ℕ}

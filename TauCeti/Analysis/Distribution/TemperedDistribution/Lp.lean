@@ -53,7 +53,8 @@ function by a function of temperate growth multiplies the function pointwise
 * `MeasureTheory.Lp.ae_eq_of_toTemperedDistribution_apply_eq`: an `Lᵖ` function whose pairings
   with Schwartz functions agree with those of a locally integrable `g` is almost everywhere
   equal to `g`.
-* `MeasureTheory.Lp.toTemperedDistribution_compLp_apply`: applying a continuous linear map to the
+* `MeasureTheory.Lp.toTemperedDistribution_compLp_apply`,
+  `MeasureTheory.Lp.toTemperedDistribution_compLp`: applying a continuous linear map to the
   values of an `Lᵖ` function applies it to its tempered distribution.
 * `MeasureTheory.Lp.toTemperedDistribution_ofRealCLM_compLp_apply`: the complex tempered
   distribution of a real `Lᵖ` function `u` is integration against `u`.
@@ -199,6 +200,17 @@ theorem toTemperedDistribution_compLp_apply {G : Type*} [NormedAddCommGroup G] [
   rw [Lp.toTemperedDistribution_apply, Lp.toTemperedDistribution_apply, ← L.integral_comp_comm hφu]
   refine integral_congr_ae ((L.coeFn_compLp u).mono fun x hx ↦ ?_)
   simp only [hx, map_smul]
+
+omit [FiniteDimensional ℝ E] in
+/-- The tempered distribution of the `Lᵖ` function `L ∘ u` is obtained by applying `L` to the
+values of the tempered distribution of `u`. -/
+theorem toTemperedDistribution_compLp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    [CompleteSpace G] {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal} [Fact (1 ≤ p)]
+    (L : F →L[ℂ] G) (u : Lp F p μ) :
+    ((L.compLp u : Lp G p μ) : 𝓢'(E, G)) =
+      PointwiseConvergenceCLM.postcomp _ L (u : 𝓢'(E, F)) := by
+  ext φ
+  exact toTemperedDistribution_compLp_apply L u φ
 
 omit [FiniteDimensional ℝ E] in
 /-- The complex tempered distribution of a real `Lᵖ` function `u` is integration against `u`. -/

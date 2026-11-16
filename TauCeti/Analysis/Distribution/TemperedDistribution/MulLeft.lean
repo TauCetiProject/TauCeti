@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.FourierMultiplier
+public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -30,12 +30,15 @@ scalar functions `c i` of temperate growth and fixed operators `L i : F →L[ℂ
 `A u = ∑ i ∈ s, L i (c i u)`
 
 (`TemperedDistribution.mulLeftCLM_eq_sum`), where `L i` acts on the values of the distribution
-`c i u`. The definition uses the coordinates of `A` in a basis of the finite-dimensional space
-`F →L[ℂ] G`, and this formula shows that the result does not depend on the basis. It reduces
+`c i u`. The definition uses the coordinates of `A` in the basis `Module.finBasis ℂ (F →L[ℂ] G)`
+(`TemperedDistribution.mulLeftCoordCLM`), and this formula shows that the result does not depend
+on the basis. It reduces
 statements about `A u` to the scalar multiplication and to constant operators.
 
 ## Main declarations
 
+* `TemperedDistribution.mulLeftCoordCLM F G k`: the `k`-th coordinate in the basis
+  `Module.finBasis ℂ (F →L[ℂ] G)`, as a continuous real-linear functional.
 * `TemperedDistribution.mulLeftCLM A`: multiplication by `A`, a continuous linear map
   `𝓢'(E, F) →L[ℂ] 𝓢'(E, G)`.
 * `TemperedDistribution.mulLeftCLM_apply_apply_of_eq_sum`, `TemperedDistribution.mulLeftCLM_eq_sum`:
@@ -64,53 +67,44 @@ variable {E F G H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedAddCommGroup G] [NormedSpace ℂ G]
   [NormedAddCommGroup H] [NormedSpace ℂ H]
 
-/-- Applying a continuous linear map `L` to the values of a tempered distribution `u` applies `L`
-to its pairings: `(L u) φ = L (u φ)`. -/
-theorem postcomp_apply_apply (L : F →L[ℂ] G) (u : 𝓢'(E, F)) (φ : 𝓢(E, ℂ)) :
-    PointwiseConvergenceCLM.postcomp _ L u φ = L (u φ) :=
-  (rfl)
-
-/-- Applying a continuous linear map `L` to the values of `u` commutes with the multiplication by
-a scalar function. -/
-theorem postcomp_smulLeftCLM (L : F →L[ℂ] G) (g : E → ℂ) (u : 𝓢'(E, F)) :
-    PointwiseConvergenceCLM.postcomp _ L (smulLeftCLM F g u) =
-      smulLeftCLM G g (PointwiseConvergenceCLM.postcomp _ L u) := by
-  ext φ
-  simp only [postcomp_apply_apply, smulLeftCLM_apply_apply]
-
 variable [FiniteDimensional ℂ F] [FiniteDimensional ℂ G]
 
-/-- The coordinate function `x ↦ b.equivFun (A x) k` of `A` in the standard basis of
-`F →L[ℂ] G`. -/
-private abbrev coord (A : E → F →L[ℂ] G) (k : Fin (Module.finrank ℂ (F →L[ℂ] G))) : E → ℂ :=
-  fun x ↦ (Module.finBasis ℂ (F →L[ℂ] G)).equivFun (A x) k
+variable (F G) in
+/-- The `k`-th coordinate in the basis `Module.finBasis ℂ (F →L[ℂ] G)`, as a continuous real-linear
+functional. `TemperedDistribution.mulLeftCLM A` is defined through the coordinates
+`mulLeftCoordCLM F G k ∘ A` of `A`. -/
+def mulLeftCoordCLM (k : Fin (Module.finrank ℂ (F →L[ℂ] G))) : (F →L[ℂ] G) →L[ℝ] ℂ :=
+  ((ContinuousLinearMap.proj k).comp
+    (Module.finBasis ℂ (F →L[ℂ] G)).equivFunL.toContinuousLinearMap).restrictScalars ℝ
 
-/-- The coordinates of a function of temperate growth are of temperate growth. -/
-private theorem hasTemperateGrowth_coord {A : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth)
-    (k : Fin (Module.finrank ℂ (F →L[ℂ] G))) : (coord A k).HasTemperateGrowth :=
-  (((ContinuousLinearMap.proj k).comp
-    (Module.finBasis ℂ (F →L[ℂ] G)).equivFunL.toContinuousLinearMap).restrictScalars
-      ℝ).hasTemperateGrowth.comp hA
+@[simp]
+theorem mulLeftCoordCLM_apply (k : Fin (Module.finrank ℂ (F →L[ℂ] G))) (L : F →L[ℂ] G) :
+    mulLeftCoordCLM F G k L = (Module.finBasis ℂ (F →L[ℂ] G)).equivFun L k :=
+  (rfl)
 
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
-/-- A function is the combination of the basis of `F →L[ℂ] G` with its coordinates. -/
-private theorem eq_sum_coord (A : E → F →L[ℂ] G) (x : E) :
-    A x = ∑ k, coord A k x • Module.finBasis ℂ (F →L[ℂ] G) k := by
-  simp [coord]
+/-- An operator is the combination of the basis `Module.finBasis ℂ (F →L[ℂ] G)` with its
+coordinates. -/
+theorem sum_mulLeftCoordCLM_smul (L : F →L[ℂ] G) :
+    ∑ k, mulLeftCoordCLM F G k L • Module.finBasis ℂ (F →L[ℂ] G) k = L := by
+  simp
 
-/-- **Multiplication by a matrix-valued function.** For `A : E → (F →L[ℂ] G)`, the product `A u`
-of an `F`-valued tempered distribution `u` with `A`, a `G`-valued tempered distribution. If
+/-- **Multiplication by a matrix-valued function.** For `A : E → (F →L[ℂ] G)` of temperate growth,
+the product `A u` of an `F`-valued tempered distribution `u` with `A`, a `G`-valued tempered
+distribution. It is defined as `∑ k, L k (c k u)` over the basis `L k` of
+`Module.finBasis ℂ (F →L[ℂ] G)` and the coordinates `c k = mulLeftCoordCLM F G k ∘ A`. If `A` does
+not have temperate growth, this is a junk value that may depend on the basis, since
+`TemperedDistribution.smulLeftCLM` is `0` for coordinates without temperate growth. If
 `A x = ∑ i ∈ s, c i x • L i` with scalar functions `c i` of temperate growth, then
 `A u = ∑ i ∈ s, L i (c i u)` (`TemperedDistribution.mulLeftCLM_eq_sum`); on Schwartz functions it
 is the pointwise product (`TemperedDistribution.mulLeftCLM_toTemperedDistributionCLM_eq`). -/
 def mulLeftCLM (A : E → F →L[ℂ] G) : 𝓢'(E, F) →L[ℂ] 𝓢'(E, G) :=
   ∑ k, PointwiseConvergenceCLM.postcomp _ (Module.finBasis ℂ (F →L[ℂ] G) k) ∘L
-    smulLeftCLM F (coord A k)
+    smulLeftCLM F (mulLeftCoordCLM F G k ∘ A)
 
 /-- The action of the product `A u` on a test function, through the basis coordinates. -/
 private theorem mulLeftCLM_apply_apply (A : E → F →L[ℂ] G) (u : 𝓢'(E, F)) (φ : 𝓢(E, ℂ)) :
     mulLeftCLM A u φ = ∑ k, Module.finBasis ℂ (F →L[ℂ] G) k
-      (u (SchwartzMap.smulLeftCLM ℂ (coord A k) φ)) := by
+      (u (SchwartzMap.smulLeftCLM ℂ (mulLeftCoordCLM F G k ∘ A) φ)) := by
   simp only [mulLeftCLM, sum_apply, ContinuousLinearMap.comp_apply, postcomp_apply_apply,
     smulLeftCLM_apply_apply]
 
@@ -123,14 +117,14 @@ theorem mulLeftCLM_apply_apply_of_eq_sum {ι : Type*} (s : Finset ι) {c : ι �
     mulLeftCLM A u φ = ∑ i ∈ s, L i (u (SchwartzMap.smulLeftCLM ℂ (c i) φ)) := by
   set b := Module.finBasis ℂ (F →L[ℂ] G)
   -- The coordinates of `A` are combinations of the `c i` with constant coefficients.
-  have hcoord (k) : SchwartzMap.smulLeftCLM ℂ (coord A k) φ =
+  have hcoord (k) : SchwartzMap.smulLeftCLM ℂ (mulLeftCoordCLM F G k ∘ A) φ =
       ∑ i ∈ s, b.equivFun (L i) k • SchwartzMap.smulLeftCLM ℂ (c i) φ := by
-    have hk : coord A k = fun x ↦ ∑ i ∈ s, b.equivFun (L i) k * c i x := by
+    have hk : mulLeftCoordCLM F G k ∘ A = fun x ↦ ∑ i ∈ s, b.equivFun (L i) k * c i x := by
       ext x
-      simp [coord, hA x, map_sum, map_smul, b, mul_comm]
+      simp [hA x, map_sum, map_smul, b, mul_comm]
     have ht : ∀ i ∈ s, (fun x ↦ b.equivFun (L i) k * c i x).HasTemperateGrowth :=
       fun i hi ↦ (Function.HasTemperateGrowth.const _).mul (hc i hi)
-    have htk : (coord A k).HasTemperateGrowth := by
+    have htk : (mulLeftCoordCLM F G k ∘ A).HasTemperateGrowth := by
       rw [hk]
       simpa only [← Finset.sum_apply] using Function.HasTemperateGrowth.sum ht
     ext x
@@ -186,13 +180,16 @@ theorem mulLeftCLM_smul_id {g : E → ℂ} (hg : g.HasTemperateGrowth) :
 theorem mulLeftCLM_add {A B : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth)
     (hB : B.HasTemperateGrowth) :
     mulLeftCLM (A + B) = mulLeftCLM A + mulLeftCLM B := by
-  have hcoord {C : E → F →L[ℂ] G} (hC : C.HasTemperateGrowth) := hasTemperateGrowth_coord hC
-  have hdec := eq_sum_coord (E := E) (F := F) (G := G)
+  have hcoord {C : E → F →L[ℂ] G} (hC : C.HasTemperateGrowth) (k) :=
+    (mulLeftCoordCLM F G k).hasTemperateGrowth.comp hC
+  have hdec (C : E → F →L[ℂ] G) (x : E) := (sum_mulLeftCoordCLM_smul (C x)).symm
   set b := Module.finBasis ℂ (F →L[ℂ] G)
   ext u φ
-  rw [mulLeftCLM_apply_apply_of_eq_sum Finset.univ (c := fun k ↦ coord A k + coord B k)
+  rw [mulLeftCLM_apply_apply_of_eq_sum Finset.univ
+      (c := fun k ↦ mulLeftCoordCLM F G k ∘ A + mulLeftCoordCLM F G k ∘ B)
       (fun k _ ↦ (hcoord hA k).add (hcoord hB k)) b
-      (fun x ↦ by simp [hdec A x, hdec B x, add_smul, Finset.sum_add_distrib]),
+      (fun x ↦ by simp only [Pi.add_apply, Function.comp_apply, add_smul,
+        Finset.sum_add_distrib, b, sum_mulLeftCoordCLM_smul]),
     add_apply, add_apply,
     mulLeftCLM_apply_apply_of_eq_sum Finset.univ (fun k _ ↦ hcoord hA k) b (hdec A),
     mulLeftCLM_apply_apply_of_eq_sum Finset.univ (fun k _ ↦ hcoord hB k) b (hdec B),
@@ -206,19 +203,19 @@ theorem mulLeftCLM_add {A B : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth)
 theorem mulLeftCLM_comp_mulLeftCLM [FiniteDimensional ℂ H] {A : E → F →L[ℂ] G}
     {B : E → G →L[ℂ] H} (hA : A.HasTemperateGrowth) (hB : B.HasTemperateGrowth) :
     mulLeftCLM B ∘L mulLeftCLM A = mulLeftCLM (fun x ↦ (B x).comp (A x)) := by
-  have hca := hasTemperateGrowth_coord hA
-  have hcb := hasTemperateGrowth_coord hB
-  have hdecA := eq_sum_coord A
-  have hdecB := eq_sum_coord B
+  have hca (k) := (mulLeftCoordCLM F G k).hasTemperateGrowth.comp hA
+  have hcb (l) := (mulLeftCoordCLM G H l).hasTemperateGrowth.comp hB
+  have hdecA (x : E) := (sum_mulLeftCoordCLM_smul (A x)).symm
+  have hdecB (x : E) := (sum_mulLeftCoordCLM_smul (B x)).symm
   set a := Module.finBasis ℂ (F →L[ℂ] G)
   set b := Module.finBasis ℂ (G →L[ℂ] H)
   ext u φ
   rw [mulLeftCLM_apply_apply_of_eq_sum (Finset.univ : Finset (_ × _))
-      (c := fun lk ↦ fun x ↦ coord B lk.1 x * coord A lk.2 x)
+      (c := fun lk x ↦ mulLeftCoordCLM G H lk.1 (B x) * mulLeftCoordCLM F G lk.2 (A x))
       (fun lk _ ↦ (hcb lk.1).mul (hca lk.2)) (fun lk ↦ (b lk.1).comp (a lk.2))
       (fun x ↦ by
         ext v
-        rw [hdecA x, hdecB x]
+        conv_lhs => rw [hdecA x, hdecB x]
         simp only [ContinuousLinearMap.comp_apply, sum_apply, smul_apply, map_sum, map_smul,
           Finset.smul_sum, smul_smul, Fintype.sum_prod_type]
         rw [Finset.sum_comm]
@@ -233,21 +230,14 @@ theorem mulLeftCLM_comp_mulLeftCLM [FiniteDimensional ℂ H] {A : E → F →L[�
   congr 3
   ext x
   rw [SchwartzMap.smulLeftCLM_apply_apply (hca k), SchwartzMap.smulLeftCLM_apply_apply (hcb l),
-    SchwartzMap.smulLeftCLM_apply_apply (g := fun x ↦ coord B l x * coord A k x)
-      ((hcb l).mul (hca k)), smul_smul, mul_comm]
+    SchwartzMap.smulLeftCLM_apply_apply
+      (g := fun x ↦ mulLeftCoordCLM G H l (B x) * mulLeftCoordCLM F G k (A x))
+      ((hcb l).mul (hca k)), smul_smul, mul_comm, Function.comp_apply, Function.comp_apply]
 
 section InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] [CompleteSpace G]
-
-omit [FiniteDimensional ℂ F] [FiniteDimensional ℂ G] [CompleteSpace F] [CompleteSpace G] in
-/-- Applying a continuous linear map `L` to the values of `u` commutes with Fourier multipliers. -/
-theorem postcomp_fourierMultiplierCLM (L : F →L[ℂ] G) (g : E → ℂ) (u : 𝓢'(E, F)) :
-    PointwiseConvergenceCLM.postcomp _ L (fourierMultiplierCLM F g u) =
-      fourierMultiplierCLM G g (PointwiseConvergenceCLM.postcomp _ L u) := by
-  ext φ
-  simp only [postcomp_apply_apply, fourierMultiplierCLM_apply_apply]
 
 /-- **Products of Schwartz functions.** On the tempered distribution of a Schwartz function `f`,
 multiplication by `A` is the tempered distribution of the pointwise product `x ↦ A x (f x)`. -/
@@ -255,13 +245,13 @@ theorem mulLeftCLM_toTemperedDistributionCLM_eq {A : E → F →L[ℂ] G}
     (hA : A.HasTemperateGrowth) (f : 𝓢(E, F)) :
     mulLeftCLM A (f : 𝓢'(E, F)) =
       ((SchwartzMap.bilinLeftCLM (ContinuousLinearMap.apply ℂ G) hA f : 𝓢(E, G)) : 𝓢'(E, G)) := by
-  have hc := hasTemperateGrowth_coord hA
-  have hdec := eq_sum_coord A
+  have hc (k) := (mulLeftCoordCLM F G k).hasTemperateGrowth.comp hA
+  have hdec (x : E) := (sum_mulLeftCoordCLM_smul (A x)).symm
   set b := Module.finBasis ℂ (F →L[ℂ] G)
   ext φ
   rw [mulLeftCLM_apply_apply_of_eq_sum Finset.univ (fun k _ ↦ hc k) b hdec]
-  have hφ (k) : (f : 𝓢'(E, F)) (SchwartzMap.smulLeftCLM ℂ (coord A k) φ) =
-      ((SchwartzMap.smulLeftCLM F (coord A k) f : 𝓢(E, F)) : 𝓢'(E, F)) φ := by
+  have hφ (k) : (f : 𝓢'(E, F)) (SchwartzMap.smulLeftCLM ℂ (mulLeftCoordCLM F G k ∘ A) φ) =
+      ((SchwartzMap.smulLeftCLM F (mulLeftCoordCLM F G k ∘ A) f : 𝓢(E, F)) : 𝓢'(E, F)) φ := by
     rw [← smulLeftCLM_apply_apply, smulLeftCLM_toTemperedDistributionCLM_eq]
   simp_rw [hφ, ← SchwartzMap.toTemperedDistributionCLM_postcompCLM_apply]
   rw [← sum_apply, ← map_sum]

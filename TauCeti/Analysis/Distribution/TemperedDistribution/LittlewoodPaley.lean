@@ -92,6 +92,8 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.littlewoodPaleyBlock_lineDerivOp`,
   `TemperedDistribution.littlewoodPaleyBlock_iteratedLineDerivOp`: the blocks commute with
   derivatives.
+* `TemperedDistribution.littlewoodPaleyBlock_postcomp`: the blocks commute with applying a
+  continuous linear map to the values.
 * `TemperedDistribution.littlewoodPaleyBlock_eq_zero_of_isVanishingOn`,
   `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_closedBall`,
   `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_ball`,
@@ -255,6 +257,14 @@ theorem littlewoodPaleyBlock_apply (j : ℕ) (u : 𝓢'(E, F)) :
     littlewoodPaleyBlock F φ j u =
       fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) u :=
   (rfl)
+
+/-- Applying a continuous linear map `L` to the values of `u` commutes with the Littlewood–Paley
+blocks. -/
+theorem littlewoodPaleyBlock_postcomp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    (L : F →L[ℂ] G) (j : ℕ) (u : 𝓢'(E, F)) :
+    littlewoodPaleyBlock G φ j (PointwiseConvergenceCLM.postcomp _ L u) =
+      PointwiseConvergenceCLM.postcomp _ L (littlewoodPaleyBlock F φ j u) := by
+  simp only [littlewoodPaleyBlock_eq_fourierMultiplierCLM, postcomp_fourierMultiplierCLM]
 
 /-- The partial sums of the Littlewood–Paley blocks are the low-pass truncations:
 `∑_{j ≤ N} Δⱼ = 𝓕⁻ (φ (2^{-N} ·) • 𝓕 ·)`. -/

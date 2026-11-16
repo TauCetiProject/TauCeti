@@ -33,6 +33,8 @@ a function of temperate growth. By duality this is the Leibniz rule for Schwartz
   tempered distributions extends multiplication by `g` on Schwartz functions.
 * `TemperedDistribution.lineDerivOp_smulLeftCLM`: the Leibniz rule for the product of a tempered
   distribution with a function of temperate growth.
+* `TemperedDistribution.postcomp_smulLeftCLM`: applying a continuous linear map to the values of a
+  tempered distribution commutes with multiplication by a scalar function.
 -/
 
 public section
@@ -72,6 +74,27 @@ theorem lineDerivOp_smulLeftCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) (f :
   simp [SchwartzMap.lineDerivOp_smulLeftCLM hg, ← map_add]
 
 end Deriv
+
+section Postcomp
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℂ F] [NormedAddCommGroup G] [NormedSpace ℂ G]
+
+/-- Applying a continuous linear map `L` to the values of a tempered distribution `u` applies `L`
+to its pairings: `(L u) φ = L (u φ)`. -/
+theorem postcomp_apply_apply (L : F →L[ℂ] G) (u : 𝓢'(E, F)) (φ : 𝓢(E, ℂ)) :
+    PointwiseConvergenceCLM.postcomp _ L u φ = L (u φ) :=
+  (rfl)
+
+/-- Applying a continuous linear map `L` to the values of `u` commutes with the multiplication by
+a scalar function. -/
+theorem postcomp_smulLeftCLM (L : F →L[ℂ] G) (g : E → ℂ) (u : 𝓢'(E, F)) :
+    PointwiseConvergenceCLM.postcomp _ L (smulLeftCLM F g u) =
+      smulLeftCLM G g (PointwiseConvergenceCLM.postcomp _ L u) := by
+  ext φ
+  simp only [postcomp_apply_apply, smulLeftCLM_apply_apply]
+
+end Postcomp
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℂ F]

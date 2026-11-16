@@ -29,6 +29,8 @@ the starting point of Bernstein's inequalities.
 ## Main results
 
 * `TemperedDistribution.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
+* `TemperedDistribution.postcomp_fourierMultiplierCLM`: applying a continuous linear map to the
+  values of a tempered distribution commutes with Fourier multipliers.
 * `TemperedDistribution.lineDerivOp_fourierMultiplierCLM`: directional derivatives commute with
   Fourier multipliers.
 * `TemperedDistribution.fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth`: the multiplier of
@@ -149,5 +151,13 @@ theorem fourierMultiplierCLM_eq_zero_of_isVanishingOn {u : 𝓢'(E, F)} {s : Set
     exact hu _ ((SchwartzMap.tsupport_smulLeftCLM_subset g ψ).trans
       (Set.inter_subset_right.trans hgs))
   rw [fourierMultiplierCLM_apply, h, FourierTransform.fourierInv_zero]
+
+/-- Applying a continuous linear map `L` to the values of `u` commutes with Fourier multipliers. -/
+theorem postcomp_fourierMultiplierCLM {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    (L : F →L[ℂ] G) (g : E → ℂ) (u : 𝓢'(E, F)) :
+    PointwiseConvergenceCLM.postcomp _ L (fourierMultiplierCLM F g u) =
+      fourierMultiplierCLM G g (PointwiseConvergenceCLM.postcomp _ L u) := by
+  ext φ
+  simp only [postcomp_apply_apply, fourierMultiplierCLM_apply_apply]
 
 end TemperedDistribution
