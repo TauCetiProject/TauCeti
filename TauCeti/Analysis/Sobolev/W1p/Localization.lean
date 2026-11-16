@@ -71,9 +71,9 @@ private theorem localize_mem (hU : U ≤ Ω) (hψ : ContDiff ℝ ∞ ψ) (hM : 0
     simp [w, hx, image_eq_zero_of_notMem_tsupport hxs, hgrad]
   have hw := (W1p.hasWeakFDerivOn w).indicator_of_isClosed (isClosed_tsupport ψ) hs hv hg
   rw [mem_w1pSubmodule_iff_hasWeakFDerivOn]
-  have hvalue := coeFn_extendByZeroLpₗᵢ ℝ U.isOpen.measurableSet
+  have hvalue := coeFn_extendByZeroLpₗᵢ ℝ U.isOpen.nullMeasurableSet
     (SetLike.coe_subset_coe.mpr hU) (W1p.value w)
-  have hgradient := coeFn_extendByZeroLpₗᵢ ℝ U.isOpen.measurableSet
+  have hgradient := coeFn_extendByZeroLpₗᵢ ℝ U.isOpen.nullMeasurableSet
     (SetLike.coe_subset_coe.mpr hU) (W1p.gradient w)
   simp only [Sobolev1JetLp.value_extendByZeroₗᵢ, ← W1p.value_coe]
   refine (hw.congr_ae hvalue.symm).congr_ae_deriv ?_
@@ -117,7 +117,7 @@ theorem W1p.value_localizeL_ae (hU : U ≤ Ω) (hψ : ContDiff ℝ ∞ ψ) (hM :
     W1p.value (W1p.localizeL hU ψ hψ hM hψM hgM hs u) =ᵐ[μ.restrict Ω]
       (U : Set E).indicator (fun x => ψ x • W1p.value u x) := by
   rw [W1p.value_coe, W1p.coe_localizeL, Sobolev1JetLp.value_extendByZeroₗᵢ, ← W1p.value_coe]
-  exact (coeFn_extendByZeroLpₗᵢ ℝ U.isOpen.measurableSet _ _).trans
+  exact (coeFn_extendByZeroLpₗᵢ ℝ U.isOpen.nullMeasurableSet _ _).trans
     (ae_restrict_of_ae ((ae_eq_restrict_iff_indicator_ae_eq U.isOpen.measurableSet).1
       (W1p.value_contDiffSMul_ae hψ hM hψM hgM u)))
 
@@ -129,7 +129,7 @@ theorem W1p.gradient_localizeL_ae (hU : U ≤ Ω) (hψ : ContDiff ℝ ∞ ψ) (h
       (U : Set E).indicator (fun x => ψ x • W1p.gradient u x + W1p.value u x • ∇ ψ x) := by
   rw [W1p.gradient_coe, W1p.coe_localizeL, Sobolev1JetLp.gradient_extendByZeroₗᵢ,
     ← W1p.gradient_coe]
-  exact (coeFn_extendByZeroLpₗᵢ ℝ U.isOpen.measurableSet _ _).trans
+  exact (coeFn_extendByZeroLpₗᵢ ℝ U.isOpen.nullMeasurableSet _ _).trans
     (ae_restrict_of_ae ((ae_eq_restrict_iff_indicator_ae_eq U.isOpen.measurableSet).1
       (W1p.gradient_contDiffSMul_ae hψ hM hψM hgM u)))
 
@@ -167,7 +167,7 @@ theorem W1p.restrictL_localizeL (hU : U ≤ Ω) (hψ : ContDiff ℝ ∞ ψ) (hM 
   apply Lp.ext
   refine (W1p.value_restrictL_ae hU _).trans ?_
   rw [W1p.value_coe, W1p.coe_localizeL, Sobolev1JetLp.value_extendByZeroₗᵢ, ← W1p.value_coe]
-  exact coeFn_extendByZeroLpₗᵢ_restrict ℝ U.isOpen.measurableSet _ _
+  exact coeFn_extendByZeroLpₗᵢ_restrict ℝ U.isOpen.nullMeasurableSet _ _
 
 /-- Localizing the restriction of a Sobolev function equals its cutoff product on `Ω`. -/
 @[simp]
@@ -281,7 +281,7 @@ theorem W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact {V : Opens E} {K : Set E}
   suffices w = (w₀ : W1p μ V p) from this ▸ w₀.2
   refine W1p.ext_value (Lp.ext ?_)
   rw [W1p0.value_extendByZeroL]
-  filter_upwards [hw, coeFn_extendByZeroLpₗᵢ ℝ (Ω ⊓ U).isOpen.measurableSet
+  filter_upwards [hw, coeFn_extendByZeroLpₗᵢ ℝ (Ω ⊓ U).isOpen.nullMeasurableSet
       (SetLike.coe_subset_coe.mpr hsub) (W1p.value (W1p.restrictL inf_le_left u : W1p μ _ p)),
     ae_restrict_of_ae ((ae_restrict_iff' (Ω ⊓ U).isOpen.measurableSet).1
       (W1p.value_restrictL_ae (inf_le_left : Ω ⊓ U ≤ Ω) u)),
