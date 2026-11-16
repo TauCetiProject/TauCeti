@@ -128,6 +128,30 @@ private theorem lintegral_hardyKernel_left {θ s : ℝ} (hθ : 0 < θ) (hs : 0 <
     ring_nf
   · simp only [hardyKernel, indicator_of_notMem (mt hmem.1 hx), indicator_of_notMem hx]
 
+/-- For `t > 0`, the weighted average `t ^ (-θ) ∫₀ᵗ f(s) ds / s` is the integral operator with
+kernel `hardyKernel θ` applied to `s ↦ s ^ (-θ) f(s)`. -/
+private theorem ofReal_rpow_neg_mul_setLIntegral_Iic_eq_hardyKernel (f : ℝ → ℝ≥0∞) (θ : ℝ)
+    {t : ℝ} (ht : 0 < t) :
+    ENNReal.ofReal (t ^ (-θ)) * ∫⁻ s in Iic t, f s ∂multHaar =
+      ∫⁻ s, hardyKernel θ t s * (ENNReal.ofReal (s ^ (-θ)) * f s) ∂multHaar := by
+  have hset : Iic t =ᵐ[multHaar] Ioc 0 t := by
+    filter_upwards [ae_pos_multHaar] with s hs
+    simp [hs]
+  rw [Measure.restrict_congr_set hset, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+    ← lintegral_indicator measurableSet_Ioc]
+  refine lintegral_congr fun s ↦ ?_
+  by_cases hs : s ∈ Ioc 0 t
+  · simp only [indicator_of_mem hs, hardyKernel]
+    rw [← mul_assoc, ← ENNReal.ofReal_mul (Real.rpow_nonneg (div_nonneg hs.1.le ht.le) _)]
+    congr 2
+    symm
+    calc (s / t) ^ θ * s ^ (-θ)
+        = (s ^ θ * s ^ (-θ)) * t ^ (-θ) := by
+          rw [Real.div_rpow hs.1.le ht.le, div_eq_mul_inv, Real.rpow_neg ht.le]
+          ring
+      _ = t ^ (-θ) := by rw [← Real.rpow_add hs.1, add_neg_cancel, Real.rpow_zero, one_mul]
+  · simp [hardyKernel, indicator_of_notMem hs]
+
 /-- **Forward weighted Hardy inequality on `dt / t`.** For `θ > 0` and `1 ≤ q ≤ ∞`,
 `‖t ↦ t ^ (-θ) ∫₀ᵗ f(s) ds / s‖_{L^q(dt / t)} ≤ θ⁻¹ ‖t ↦ t ^ (-θ) f(t)‖_{L^q(dt / t)}`. -/
 theorem eLpNorm_rpow_neg_mul_setLIntegral_Iic_multHaar_le {f : ℝ → ℝ≥0∞} {θ : ℝ} (hθ : 0 < θ)
@@ -139,20 +163,8 @@ theorem eLpNorm_rpow_neg_mul_setLIntegral_Iic_multHaar_le {f : ℝ → ℝ≥0�
   by_cases hg : AEStronglyMeasurable g multHaar
   · have hcongr :
         (fun t : ℝ ↦ ENNReal.ofReal (t ^ (-θ)) * ∫⁻ s in Iic t, f s ∂multHaar) =ᵐ[multHaar]
-          fun t : ℝ ↦ ∫⁻ s, hardyKernel θ t s * g s ∂multHaar := by
-      filter_upwards [ae_pos_multHaar] with t ht
-      have hset : Iic t =ᵐ[multHaar] Ioc 0 t := by
-        filter_upwards [ae_pos_multHaar] with s hs
-        simp [hs]
-      rw [Measure.restrict_congr_set hset, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
-        ← lintegral_indicator measurableSet_Ioc]
-      refine lintegral_congr fun s ↦ ?_
-      by_cases hs : s ∈ Ioc 0 t
-      · rw [indicator_of_mem hs, hardyKernel, indicator_of_mem hs, ← mul_assoc,
-          ← ENNReal.ofReal_mul (Real.rpow_nonneg (div_nonneg hs.1.le ht.le) _),
-          Real.div_rpow hs.1.le ht.le, div_eq_mul_inv, mul_right_comm, ← Real.rpow_add hs.1,
-          add_neg_cancel, Real.rpow_zero, one_mul, Real.rpow_neg ht.le]
-      · simp [hardyKernel, indicator_of_notMem hs]
+          fun t : ℝ ↦ ∫⁻ s, hardyKernel θ t s * g s ∂multHaar :=
+      ae_pos_multHaar.mono fun t ht ↦ ofReal_rpow_neg_mul_setLIntegral_Iic_eq_hardyKernel f θ ht
     have hrow : ∀ᵐ t ∂multHaar, ∫⁻ s, hardyKernel θ t s ∂multHaar ≤ ENNReal.ofReal θ⁻¹ :=
       ae_pos_multHaar.mono fun t ht ↦ (lintegral_hardyKernel_right hθ ht).le
     have hcol : ∀ᵐ s ∂multHaar, ∫⁻ t, hardyKernel θ t s ∂multHaar ≤ ENNReal.ofReal θ⁻¹ :=
@@ -171,6 +183,34 @@ theorem eLpNorm_rpow_neg_mul_setLIntegral_Iic_multHaar_le {f : ℝ → ℝ≥0�
       ENNReal.mul_top (ENNReal.ofReal_pos.2 (inv_pos.2 hθ)).ne']
     exact le_top
 
+/-- Inversion preserves `L^q(dt / t)` seminorms without measurability hypotheses. -/
+private theorem eLpNorm_comp_inv_multHaar (g : ℝ → ℝ≥0∞) (q : ℝ≥0∞) :
+    eLpNorm (g ∘ Inv.inv) q multHaar = eLpNorm g q multHaar := by
+  have hmp : MeasurePreserving Inv.inv multHaar multHaar := ⟨measurable_inv, map_multHaar_inv⟩
+  by_cases hg : AEStronglyMeasurable g multHaar
+  · exact eLpNorm_comp_measurePreserving hg hmp
+  · have hgi : ¬ AEStronglyMeasurable (g ∘ Inv.inv) multHaar := fun h ↦ hg <| by
+      exact (h.comp_measurePreserving hmp).congr (ae_of_all _ fun t ↦ by simp [Function.comp_apply])
+    rw [eLpNorm_of_not_aestronglyMeasurable hgi, eLpNorm_of_not_aestronglyMeasurable hg]
+
+/-- Inversion exchanges `dt / t`-integrals over `(-∞, t]` and `[t⁻¹, ∞)` for `t > 0`. -/
+private theorem setLIntegral_Iic_comp_inv_multHaar (f : ℝ → ℝ≥0∞) {t : ℝ} (ht : 0 < t) :
+    ∫⁻ s in Iic t, f s⁻¹ ∂multHaar = ∫⁻ s in Ici t⁻¹, f s ∂multHaar := by
+  have hmp : MeasurePreserving Inv.inv multHaar multHaar := ⟨measurable_inv, map_multHaar_inv⟩
+  have hemb : MeasurableEmbedding (Inv.inv : ℝ → ℝ) :=
+    ⟨inv_injective, measurable_inv, fun _ hs ↦ by
+      rw [Set.image_eq_preimage_of_inverse inv_inv inv_inv]
+      exact measurable_inv hs⟩
+  rw [← lintegral_indicator measurableSet_Iic, ← lintegral_indicator measurableSet_Ici,
+    ← hmp.lintegral_comp_emb hemb]
+  refine lintegral_congr_ae ?_
+  filter_upwards [ae_pos_multHaar] with s hs
+  have hmem : s⁻¹ ∈ Iic t ↔ s ∈ Ici t⁻¹ := by
+    simp only [mem_Iic, mem_Ici, inv_le_comm₀ hs ht]
+  by_cases hst : s⁻¹ ∈ Iic t
+  · simp only [indicator_of_mem hst, indicator_of_mem (hmem.1 hst), inv_inv]
+  · simp only [indicator_of_notMem hst, indicator_of_notMem (mt hmem.2 hst)]
+
 /-- **Backward weighted Hardy inequality on `dt / t`.** For `θ > 0` and `1 ≤ q ≤ ∞`,
 `‖t ↦ t ^ θ ∫_t^∞ f(s) ds / s‖_{L^q(dt / t)} ≤ θ⁻¹ ‖t ↦ t ^ θ f(t)‖_{L^q(dt / t)}`. -/
 theorem eLpNorm_rpow_mul_setLIntegral_Ici_multHaar_le {f : ℝ → ℝ≥0∞} {θ : ℝ} (hθ : 0 < θ)
@@ -178,40 +218,18 @@ theorem eLpNorm_rpow_mul_setLIntegral_Ici_multHaar_le {f : ℝ → ℝ≥0∞} {
     eLpNorm (fun t : ℝ ↦ ENNReal.ofReal (t ^ θ) * ∫⁻ s in Ici t, f s ∂multHaar) q multHaar ≤
       ENNReal.ofReal θ⁻¹ *
         eLpNorm (fun t : ℝ ↦ ENNReal.ofReal (t ^ θ) * f t) q multHaar := by
-  have hmp : MeasurePreserving Inv.inv multHaar multHaar := ⟨measurable_inv, map_multHaar_inv⟩
-  have hemb : MeasurableEmbedding (Inv.inv : ℝ → ℝ) :=
-    ⟨inv_injective, measurable_inv, fun _ hs ↦ by
-      rw [Set.image_eq_preimage_of_inverse inv_inv inv_inv]
-      exact measurable_inv hs⟩
-  have hcomp_eq : ∀ g : ℝ → ℝ≥0∞, eLpNorm (g ∘ Inv.inv) q multHaar = eLpNorm g q multHaar := by
-    intro g
-    by_cases hg : AEStronglyMeasurable g multHaar
-    · exact eLpNorm_comp_measurePreserving hg hmp
-    · have hgi : ¬ AEStronglyMeasurable (g ∘ Inv.inv) multHaar := fun h ↦ hg <| by
-        have h' := h.comp_measurePreserving hmp
-        exact h'.congr (ae_of_all _ fun t ↦ by simp [Function.comp_apply])
-      rw [eLpNorm_of_not_aestronglyMeasurable hgi, eLpNorm_of_not_aestronglyMeasurable hg]
   have hL : (fun t : ℝ ↦ ENNReal.ofReal (t ^ (-θ)) * ∫⁻ s in Iic t, f s⁻¹ ∂multHaar) =ᵐ[multHaar]
       (fun t : ℝ ↦ ENNReal.ofReal (t ^ θ) * ∫⁻ s in Ici t, f s ∂multHaar) ∘ Inv.inv := by
     filter_upwards [ae_pos_multHaar] with t ht
     simp only [Function.comp_apply, Real.inv_rpow ht.le, ← Real.rpow_neg ht.le]
-    congr 1
-    rw [← lintegral_indicator measurableSet_Iic, ← lintegral_indicator measurableSet_Ici,
-      ← hmp.lintegral_comp_emb hemb]
-    refine lintegral_congr_ae ?_
-    filter_upwards [ae_pos_multHaar] with s hs
-    have hmem : s⁻¹ ∈ Iic t ↔ s ∈ Ici t⁻¹ := by
-      simp only [mem_Iic, mem_Ici, inv_le_comm₀ hs ht]
-    by_cases hst : s⁻¹ ∈ Iic t
-    · simp only [indicator_of_mem hst, indicator_of_mem (hmem.1 hst), inv_inv]
-    · simp only [indicator_of_notMem hst, indicator_of_notMem (mt hmem.2 hst)]
+    rw [setLIntegral_Iic_comp_inv_multHaar f ht]
   have hR : (fun t : ℝ ↦ ENNReal.ofReal (t ^ (-θ)) * f t⁻¹) =ᵐ[multHaar]
       (fun t : ℝ ↦ ENNReal.ofReal (t ^ θ) * f t) ∘ Inv.inv := by
     filter_upwards [ae_pos_multHaar] with t ht
     simp [Function.comp_apply, Real.inv_rpow ht.le, ← Real.rpow_neg ht.le]
   calc eLpNorm (fun t : ℝ ↦ ENNReal.ofReal (t ^ θ) * ∫⁻ s in Ici t, f s ∂multHaar) q multHaar
       = eLpNorm ((fun t : ℝ ↦ ENNReal.ofReal (t ^ θ) * ∫⁻ s in Ici t, f s ∂multHaar) ∘ Inv.inv)
-          q multHaar := (hcomp_eq _).symm
+          q multHaar := (eLpNorm_comp_inv_multHaar _ q).symm
     _ = eLpNorm (fun t : ℝ ↦ ENNReal.ofReal (t ^ (-θ)) * ∫⁻ s in Iic t, f s⁻¹ ∂multHaar)
           q multHaar := (eLpNorm_congr_ae hL).symm
     _ ≤ ENNReal.ofReal θ⁻¹ *
@@ -221,7 +239,7 @@ theorem eLpNorm_rpow_mul_setLIntegral_Ici_multHaar_le {f : ℝ → ℝ≥0∞} {
           eLpNorm ((fun t : ℝ ↦ ENNReal.ofReal (t ^ θ) * f t) ∘ Inv.inv) q multHaar := by
         rw [eLpNorm_congr_ae hR]
     _ = ENNReal.ofReal θ⁻¹ * eLpNorm (fun t : ℝ ↦ ENNReal.ofReal (t ^ θ) * f t) q multHaar := by
-        rw [hcomp_eq]
+        rw [eLpNorm_comp_inv_multHaar]
 
 /-- **Forward weighted Hardy inequality for Lebesgue integrals in `L^q(dt / t)`.** For `θ > 0` and
 `1 ≤ q ≤ ∞`, `‖t ↦ t ^ (-θ) ∫₀ᵗ f(s) ds‖_{L^q(dt / t)} ≤ θ⁻¹ ‖t ↦ t ^ (1 - θ) f(t)‖_{L^q(dt / t)}`.

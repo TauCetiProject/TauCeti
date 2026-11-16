@@ -384,6 +384,7 @@ theorem eLpNorm_ofReal_rpow_inv_mul_multHaar (f : ℝ → ℝ≥0∞) (p : ℝ�
   · have hwf : AEStronglyMeasurable
         (fun t : ℝ ↦ ENNReal.ofReal (t ^ p.toReal⁻¹) * f t) multHaar :=
       (aestronglyMeasurable_ofReal_rpow_mul_multHaar_iff f _).2 hf
+    -- Trivial and `p = ∞` endpoints
     rcases eq_or_ne p 0 with rfl | hp0
     · rw [eLpNorm_exponent_zero hwf, eLpNorm_exponent_zero hf]
     rcases eq_or_ne p ∞ with rfl | hp_top
@@ -392,6 +393,7 @@ theorem eLpNorm_ofReal_rpow_inv_mul_multHaar (f : ℝ → ℝ≥0∞) (p : ℝ�
       refine Filter.limsup_congr ?_
       filter_upwards [ae_restrict_mem measurableSet_Ioi] with t _
       simp
+    -- Finite positive `p`: raising `t ^ (1 / p)` to the `p`-th power cancels the `t⁻¹` density
     have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp_top
     rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hwf,
       eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hf]
@@ -399,11 +401,14 @@ theorem eLpNorm_ofReal_rpow_inv_mul_multHaar (f : ℝ → ℝ≥0∞) (p : ℝ�
     congr 1
     rw [lintegral_multHaar_eq_setLIntegral]
     refine setLIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
-    rw [ENNReal.mul_rpow_of_nonneg _ _ hr.le,
-      ENNReal.ofReal_rpow_of_pos (Real.rpow_pos_of_pos ht _),
-      ← Real.rpow_mul ht.le, inv_mul_cancel₀ hr.ne', Real.rpow_one, ← mul_assoc,
-      ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le), inv_mul_cancel₀ ht.ne', ENNReal.ofReal_one,
-      one_mul]
+    calc ENNReal.ofReal t⁻¹ * (ENNReal.ofReal (t ^ p.toReal⁻¹) * f t) ^ p.toReal
+        = ENNReal.ofReal t⁻¹ * (ENNReal.ofReal t * f t ^ p.toReal) := by
+          rw [ENNReal.mul_rpow_of_nonneg _ _ hr.le,
+            ENNReal.ofReal_rpow_of_pos (Real.rpow_pos_of_pos ht _),
+            ← Real.rpow_mul ht.le, inv_mul_cancel₀ hr.ne', Real.rpow_one]
+      _ = f t ^ p.toReal := by
+          rw [← mul_assoc, ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le),
+            inv_mul_cancel₀ ht.ne', ENNReal.ofReal_one, one_mul]
   · rw [eLpNorm_of_not_aestronglyMeasurable
         (mt (aestronglyMeasurable_ofReal_rpow_mul_multHaar_iff f _).1 hf),
       eLpNorm_of_not_aestronglyMeasurable hf]
@@ -428,6 +433,29 @@ theorem setLIntegral_multHaar_ofReal_lt_rpow {α : ℝ} (hα : 0 < α) (m : ℝ�
     lintegral_indicator_ofReal_rpow_Ioi (by linarith) one_pos m]
   simp [sub_add_cancel, Real.one_rpow, one_div]
 
+/-- For every `β > 0`, the power function `t ↦ t ^ β` has infinite `L^∞(dt / t)` seminorm. -/
+private theorem eLpNorm_rpow_top_multHaar_eq_top {β : ℝ} (hβ : 0 < β) :
+    eLpNorm (fun t : ℝ ↦ t ^ β) ∞ multHaar = ∞ := by
+  have hmβ : AEStronglyMeasurable (fun t : ℝ ↦ t ^ β) multHaar :=
+    (ContinuousOn.rpow_const continuousOn_id fun _ ht ↦ Or.inl (ne_of_gt ht))
+      |>.aestronglyMeasurable_multHaar
+  rw [eLpNorm_exponent_top hmβ, eLpNormEssSup]
+  refine top_le_iff.1 (le_of_tendsto
+    (ENNReal.tendsto_ofReal_atTop.comp (tendsto_rpow_atTop hβ)) ?_)
+  -- On each `[t, 2t)` of positive `dt / t`-measure, some point satisfies `t ^ β ≤ u ^ β ≤ essSup`
+  filter_upwards [Filter.eventually_gt_atTop (0 : ℝ)] with t ht
+  have hpos_m : multHaar (Ico t (2 * t)) ≠ 0 := by
+    rw [multHaar_Ico ht (by linarith)]
+    exact (ENNReal.ofReal_pos.2 (sub_pos.2 (Real.log_lt_log ht (by linarith)))).ne'
+  have hex : ∃ u ∈ Ico t (2 * t), ‖u ^ β‖ₑ ≤ essSup (fun u : ℝ ↦ ‖u ^ β‖ₑ) multHaar := by
+    by_contra! hgt
+    exact hpos_m (measure_mono_null (fun u hu ↦ not_le.2 (hgt u hu))
+      (ae_iff.1 (ae_le_essSup (f := fun u : ℝ ↦ ‖u ^ β‖ₑ) (μ := multHaar))))
+  obtain ⟨u, hu, hle⟩ := hex
+  have hu0 : 0 < u := ht.trans_le hu.1
+  refine (ENNReal.ofReal_le_ofReal (Real.rpow_le_rpow ht.le hu.1 hβ.le)).trans ?_
+  rwa [← Real.eNorm_of_nonneg (Real.rpow_nonneg hu0.le _)]
+
 /-- For every `α ≠ 0` and `q ≠ 0`, the power function `t ↦ t ^ α` has infinite `L^q(dt / t)`
 seminorm. -/
 theorem eLpNorm_rpow_multHaar_eq_top {α : ℝ} (hα : α ≠ 0) {q : ℝ≥0∞} (hq0 : q ≠ 0) :
@@ -436,44 +464,28 @@ theorem eLpNorm_rpow_multHaar_eq_top {α : ℝ} (hα : α ≠ 0) {q : ℝ≥0∞
     (ContinuousOn.rpow_const continuousOn_id fun _ ht ↦ Or.inl (ne_of_gt ht))
       |>.aestronglyMeasurable_multHaar
   rcases eq_or_ne q ∞ with rfl | hq
-  · suffices hpos : ∀ {β : ℝ}, 0 < β → eLpNorm (fun t : ℝ ↦ t ^ β) ∞ multHaar = ∞ by
-      rcases hα.lt_or_gt with hlt | hgt
-      · have hmp : MeasurePreserving Inv.inv multHaar multHaar := ⟨measurable_inv, map_multHaar_inv⟩
-        have hcongr : (fun t : ℝ ↦ t ^ (-α)) =ᵐ[multHaar] (fun t : ℝ ↦ t ^ α) ∘ Inv.inv := by
-          filter_upwards [ae_pos_multHaar] with t ht
-          simp [Function.comp_apply, Real.inv_rpow ht.le, Real.rpow_neg ht.le]
-        rw [← eLpNorm_comp_measurePreserving hm hmp, ← eLpNorm_congr_ae hcongr]
-        exact hpos (neg_pos.2 hlt)
-      · exact hpos hgt
-    intro β hβ
-    have hmβ : AEStronglyMeasurable (fun t : ℝ ↦ t ^ β) multHaar :=
-      (ContinuousOn.rpow_const continuousOn_id fun _ ht ↦ Or.inl (ne_of_gt ht))
-        |>.aestronglyMeasurable_multHaar
-    rw [eLpNorm_exponent_top hmβ, eLpNormEssSup]
-    refine top_le_iff.1 (le_of_tendsto
-      (ENNReal.tendsto_ofReal_atTop.comp (tendsto_rpow_atTop hβ)) ?_)
-    filter_upwards [Filter.eventually_gt_atTop (0 : ℝ)] with t ht
-    have hpos_m : multHaar (Ico t (2 * t)) ≠ 0 := by
-      rw [multHaar_Ico ht (by linarith)]
-      exact (ENNReal.ofReal_pos.2 (sub_pos.2 (Real.log_lt_log ht (by linarith)))).ne'
-    have hex : ∃ u ∈ Ico t (2 * t), ‖u ^ β‖ₑ ≤ essSup (fun u : ℝ ↦ ‖u ^ β‖ₑ) multHaar := by
-      by_contra! hgt
-      exact hpos_m (measure_mono_null (fun u hu ↦ not_le.2 (hgt u hu))
-        (ae_iff.1 (ae_le_essSup (f := fun u : ℝ ↦ ‖u ^ β‖ₑ) (μ := multHaar))))
-    obtain ⟨u, hu, hle⟩ := hex
-    have hu0 : 0 < u := ht.trans_le hu.1
-    refine (ENNReal.ofReal_le_ofReal (Real.rpow_le_rpow ht.le hu.1 hβ.le)).trans ?_
-    rwa [← Real.eNorm_of_nonneg (Real.rpow_nonneg hu0.le _)]
-  · have hqr : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
+  · -- `q = ∞`: reduce negative exponents to positive ones via inversion invariance
+    rcases hα.lt_or_gt with hlt | hgt
+    · have hmp : MeasurePreserving Inv.inv multHaar multHaar := ⟨measurable_inv, map_multHaar_inv⟩
+      have hcongr : (fun t : ℝ ↦ t ^ (-α)) =ᵐ[multHaar] (fun t : ℝ ↦ t ^ α) ∘ Inv.inv := by
+        filter_upwards [ae_pos_multHaar] with t ht
+        simp [Function.comp_apply, Real.inv_rpow ht.le, Real.rpow_neg ht.le]
+      rw [← eLpNorm_comp_measurePreserving hm hmp, ← eLpNorm_congr_ae hcongr]
+      exact eLpNorm_rpow_top_multHaar_eq_top (neg_pos.2 hlt)
+    · exact eLpNorm_rpow_top_multHaar_eq_top hgt
+  · -- Finite `q > 0`: rewrite as `∫₀^∞ t ^ (α q - 1) dt = ∞`
+    have hqr : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
     rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq hm, one_div,
       lintegral_multHaar_eq_setLIntegral]
     have hcongr : EqOn (fun t : ℝ ↦ ENNReal.ofReal t⁻¹ * ‖t ^ α‖ₑ ^ q.toReal)
         (fun t : ℝ ↦ ENNReal.ofReal (t ^ (α * q.toReal - 1))) (Ioi 0) := fun t (ht : 0 < t) ↦ by
-      dsimp only
-      rw [Real.eNorm_of_nonneg (Real.rpow_nonneg ht.le _),
-        ENNReal.ofReal_rpow_of_pos (Real.rpow_pos_of_pos ht _), ← Real.rpow_mul ht.le,
-        ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le), ← Real.rpow_neg_one t, ← Real.rpow_add ht,
-        neg_add_eq_sub]
+      calc ENNReal.ofReal t⁻¹ * ‖t ^ α‖ₑ ^ q.toReal
+          = ENNReal.ofReal t⁻¹ * ENNReal.ofReal (t ^ (α * q.toReal)) := by
+            rw [Real.eNorm_of_nonneg (Real.rpow_nonneg ht.le _),
+              ENNReal.ofReal_rpow_of_pos (Real.rpow_pos_of_pos ht _), ← Real.rpow_mul ht.le]
+        _ = ENNReal.ofReal (t ^ (α * q.toReal - 1)) := by
+            rw [← ENNReal.ofReal_mul (inv_nonneg.2 ht.le), ← Real.rpow_neg_one t,
+              ← Real.rpow_add ht, neg_add_eq_sub]
     rw [setLIntegral_congr_fun measurableSet_Ioi hcongr, lintegral_ofReal_rpow_Ioi,
       ENNReal.top_rpow_of_pos (inv_pos.2 hqr)]
 

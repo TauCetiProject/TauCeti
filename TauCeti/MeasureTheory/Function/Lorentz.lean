@@ -28,19 +28,20 @@ almost everywhere strongly measurable function and every `p ∈ [0, ∞]`
 
 The Lorentz gauges satisfy absolute homogeneity (`TauCeti.eLorentzNorm_const_smul`),
 definiteness for `q ≠ 0` (`TauCeti.eLorentzNorm_eq_zero_iff`), the quasi-triangle inequality with
-constant `2 ^ (1 / p)` for `1 ≤ q` (`TauCeti.eLorentzNorm_add_le`), and sharp monotonicity in the
+constant `2 ^ (1 / p)` for `1 ≤ q` (`TauCeti.eLorentzNorm_add_le`), and monotonicity in the
 secondary exponent `q`: for `0 < p < ∞` and `0 < q₀ ≤ q₁ ≤ ∞`,
 
 `‖f‖_{p, q₁} ≤ (q₀ / p) ^ (1 / q₀ - 1 / q₁) ‖f‖_{p, q₀}`
 
-(`TauCeti.eLorentzNorm_le_of_le`). The constant is attained on every indicator `c 1_A` of positive
-finite measure, whose Lorentz gauge is `(p / q) ^ (1 / q) ‖c‖ (μ A) ^ (1 / p)`
-(`TauCeti.eLorentzNorm_indicator`). For `1 < p < ∞` and `q ≠ 0`, finiteness of `‖f‖_{p,q}` implies
-local integrability of the decreasing rearrangement (`∫₀ᵗ ‖f‖* < ∞`,
-`TauCeti.lintegral_decreasingRearrangement_lt_top_of_eLorentzNorm_lt_top`), placing every function
-of finite Lorentz gauge in `L¹ + L^∞`. Finally, on `(0, ∞)` with Lebesgue measure, the power
-function `t ↦ t ^ (-1 / p)` has `‖f‖_{p, ∞} = 1` and `‖f‖_{p, q} = ∞` for every finite `q > 0`
-(`TauCeti.eLorentzNorm_ofReal_rpow_neg_inv_top`,
+(`TauCeti.eLorentzNorm_le_of_le`). At the weak endpoint `q₁ = ∞`
+(`TauCeti.eLorentzNorm_top_le_mul_eLorentzNorm`), the constant `(q₀ / p) ^ (1 / q₀)` is sharp and
+attained on every indicator `c 1_A` of positive finite measure, whose Lorentz gauge is
+`(p / q) ^ (1 / q) ‖c‖ (μ A) ^ (1 / p)` (`TauCeti.eLorentzNorm_indicator`). For `1 < p < ∞` and
+`q ≠ 0`, finiteness of `‖f‖_{p,q}` implies local integrability of the decreasing rearrangement
+(`∫₀ᵗ ‖f‖* < ∞`, `TauCeti.lintegral_decreasingRearrangement_lt_top_of_eLorentzNorm_lt_top`),
+placing every function of finite Lorentz gauge in `L¹ + L^∞`. Finally, on `(0, ∞)` with Lebesgue
+measure, the power function `t ↦ t ^ (-1 / p)` has `‖f‖_{p, ∞} = 1` and `‖f‖_{p, q} = ∞` for every
+finite `q > 0` (`TauCeti.eLorentzNorm_ofReal_rpow_neg_inv_top`,
 `TauCeti.eLorentzNorm_ofReal_rpow_neg_inv_eq_top`), witnessing the strict inclusion
 `L^{p, q} ⊊ L^{p, ∞}` (in particular `Lᵖ ⊊ L^{p, ∞}`).
 
@@ -54,8 +55,8 @@ function `t ↦ t ^ (-1 / p)` has `‖f‖_{p, ∞} = 1` and `‖f‖_{p, q} = �
   `TauCeti.eLorentzNorm_eq_zero_iff`: quasi-seminorm properties.
 * `TauCeti.eLorentzNorm_indicator`, `TauCeti.eLorentzNorm_indicator_top`: exact evaluation on
   indicators.
-* `TauCeti.eLorentzNorm_top_le_mul_eLorentzNorm`, `TauCeti.eLorentzNorm_le_of_le`: sharp
-  monotonicity in the secondary exponent `q`.
+* `TauCeti.eLorentzNorm_top_le_mul_eLorentzNorm`, `TauCeti.eLorentzNorm_le_of_le`: monotonicity
+  in the secondary exponent `q` (sharp at `q₁ = ∞`).
 * `TauCeti.lintegral_decreasingRearrangement_le_mul_eLorentzNorm_top`,
   `TauCeti.lintegral_decreasingRearrangement_lt_top_of_eLorentzNorm_lt_top`: bounding `∫₀ᵗ ‖f‖*`
   by the Lorentz gauge for `1 < p < ∞`.
@@ -99,6 +100,16 @@ private theorem measurable_eLorentzNorm_integrand [ENorm ε] (f : α → ε) (p 
     Measurable fun t : ℝ ↦
       ENNReal.ofReal (t ^ p.toReal⁻¹) * μ.decreasingRearrangement (‖f ·‖ₑ) t := by
   fun_prop
+
+/-- Any `dt / t`-almost everywhere property holds at some point of every nondegenerate positive
+interval `[a, b)`. -/
+private theorem exists_mem_Ico_of_ae_multHaar {P : ℝ → Prop} (hP : ∀ᵐ u ∂multHaar, P u)
+    {a b : ℝ} (ha : 0 < a) (hab : a < b) : ∃ u ∈ Ico a b, P u := by
+  have hpos : multHaar (Ico a b) ≠ 0 := by
+    rw [multHaar_Ico ha hab.le]
+    exact (ENNReal.ofReal_pos.2 (sub_pos.2 (Real.log_lt_log ha hab))).ne'
+  by_contra! hne
+  exact hpos <| measure_mono_null (fun u hu ↦ hne u hu) (ae_iff.1 hP)
 
 section Basic
 
@@ -173,20 +184,14 @@ theorem eLorentzNorm_eq_zero_iff_ae_eNorm_eq_zero (hq : q ≠ 0) :
   constructor
   · intro h0
     rw [eLorentzNorm_def, eLpNorm_eq_zero_iff hq] at h0
+    -- By antitonicity, `‖f‖*` vanishes identically on `(0, ∞)`
     have hstar : ∀ s > (0 : ℝ), μ.decreasingRearrangement (‖f ·‖ₑ) s = 0 := fun s hs ↦ by
-      have hpos : multHaar (Ico (s / 2) s) ≠ 0 := by
-        rw [multHaar_Ico (half_pos hs) (half_le_self hs.le)]
-        exact (ENNReal.ofReal_pos.2 (sub_pos.2 (Real.log_lt_log (half_pos hs)
-          (half_lt_self hs)))).ne'
-      have hex : ∃ t ∈ Ico (s / 2) s,
-          ENNReal.ofReal (t ^ p.toReal⁻¹) * μ.decreasingRearrangement (‖f ·‖ₑ) t = 0 := by
-        by_contra! hne
-        exact hpos <| measure_mono_null (fun t ht ↦ hne t ht) (ae_iff.1 h0)
-      obtain ⟨t, ht, htz⟩ := hex
+      obtain ⟨t, ht, htz⟩ := exists_mem_Ico_of_ae_multHaar h0 (half_pos hs) (half_lt_self hs)
       have hft0 : μ.decreasingRearrangement (‖f ·‖ₑ) t = 0 := by
         simpa [(ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos ((half_pos hs).trans_le ht.1) _)).ne']
           using htz
       exact le_antisymm ((μ.antitone_decreasingRearrangement _ ht.2.le).trans_eq hft0) zero_le
+    -- Hence `{‖f‖ > 0}` has measure zero
     rw [ae_iff]
     by_contra hne
     have hpos : (0 : ℝ≥0∞) < μ {y | 0 < ‖f y‖ₑ} := by
@@ -234,6 +239,36 @@ theorem eLorentzNorm_eq_zero_iff {ε : Type*} [TopologicalSpace ε] [ENormedAddM
   rw [eLorentzNorm_eq_zero_iff_ae_eNorm_eq_zero hq]
   exact Filter.eventually_congr (ae_of_all _ fun x ↦ eNorm_eq_zero)
 
+/-- Pointwise quasi-subadditivity of the Lorentz integrand at `t > 0`, obtained by splitting
+`t = t / 2 + t / 2` in `decreasingRearrangement_add_le`. -/
+private theorem eLorentzNorm_integrand_add_le {ε : Type*} [TopologicalSpace ε]
+    [ESeminormedAddMonoid ε] (f g : α → ε) (p : ℝ≥0∞) (μ : Measure α) {t : ℝ} (ht : 0 < t) :
+    ENNReal.ofReal (t ^ p.toReal⁻¹) * μ.decreasingRearrangement (‖(f + g) ·‖ₑ) t ≤
+      ENNReal.ofReal (2 ^ p.toReal⁻¹) *
+        (ENNReal.ofReal ((2⁻¹ * t) ^ p.toReal⁻¹) * μ.decreasingRearrangement (‖f ·‖ₑ) (2⁻¹ * t) +
+         ENNReal.ofReal ((2⁻¹ * t) ^ p.toReal⁻¹) *
+           μ.decreasingRearrangement (‖g ·‖ₑ) (2⁻¹ * t)) := by
+  have hsplit : t = 2⁻¹ * t + 2⁻¹ * t := by ring
+  have hrearr : μ.decreasingRearrangement (‖(f + g) ·‖ₑ) t ≤
+      μ.decreasingRearrangement (‖f ·‖ₑ) (2⁻¹ * t) +
+        μ.decreasingRearrangement (‖g ·‖ₑ) (2⁻¹ * t) := by
+    calc μ.decreasingRearrangement (‖(f + g) ·‖ₑ) t
+        ≤ μ.decreasingRearrangement ((‖f ·‖ₑ) + (‖g ·‖ₑ)) (2⁻¹ * t + 2⁻¹ * t) := by
+          rw [← hsplit]
+          exact μ.decreasingRearrangement_mono (fun y ↦ eNorm_add_le (f y) (g y)) t
+      _ ≤ _ := μ.decreasingRearrangement_add_le _ _ (by positivity) (by positivity)
+  have hpow : ENNReal.ofReal (t ^ p.toReal⁻¹) =
+      ENNReal.ofReal (2 ^ p.toReal⁻¹) * ENNReal.ofReal ((2⁻¹ * t) ^ p.toReal⁻¹) := by
+    rw [← ENNReal.ofReal_mul (by positivity), ← Real.mul_rpow (by positivity) (by positivity)]
+    congr 2
+    ring
+  calc ENNReal.ofReal (t ^ p.toReal⁻¹) * μ.decreasingRearrangement (‖(f + g) ·‖ₑ) t
+      ≤ ENNReal.ofReal (t ^ p.toReal⁻¹) *
+          (μ.decreasingRearrangement (‖f ·‖ₑ) (2⁻¹ * t) +
+            μ.decreasingRearrangement (‖g ·‖ₑ) (2⁻¹ * t)) :=
+        mul_le_mul_of_nonneg_left hrearr zero_le
+    _ = _ := by rw [hpow]; ring
+
 /-- **Quasi-triangle inequality for Lorentz gauges.** For `1 ≤ q ≤ ∞` and every `p ∈ [0, ∞]`,
 `‖f + g‖_{p,q} ≤ 2 ^ (1 / p) (‖f‖_{p,q} + ‖g‖_{p,q})`. -/
 theorem eLorentzNorm_add_le {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε]
@@ -252,30 +287,7 @@ theorem eLorentzNorm_add_le {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMo
       ‖ENNReal.ofReal (t ^ p.toReal⁻¹) * μ.decreasingRearrangement (‖(f + g) ·‖ₑ) t‖ₑ ≤
         ‖ENNReal.ofReal (2 ^ p.toReal⁻¹) * (F (2⁻¹ * t) + G (2⁻¹ * t))‖ₑ := by
     filter_upwards [ae_pos_multHaar] with t ht
-    simp only [eNorm_eq_self]
-    have hsplit : t = 2⁻¹ * t + 2⁻¹ * t := by ring
-    have hrearr : μ.decreasingRearrangement (‖(f + g) ·‖ₑ) t ≤
-        μ.decreasingRearrangement (‖f ·‖ₑ) (2⁻¹ * t) +
-          μ.decreasingRearrangement (‖g ·‖ₑ) (2⁻¹ * t) := by
-      calc μ.decreasingRearrangement (‖(f + g) ·‖ₑ) t
-          ≤ μ.decreasingRearrangement ((‖f ·‖ₑ) + (‖g ·‖ₑ)) (2⁻¹ * t + 2⁻¹ * t) := by
-            rw [← hsplit]
-            exact μ.decreasingRearrangement_mono (fun y ↦ eNorm_add_le (f y) (g y)) t
-        _ ≤ _ := μ.decreasingRearrangement_add_le _ _ (by positivity) (by positivity)
-    have hpow : ENNReal.ofReal (t ^ p.toReal⁻¹) =
-        ENNReal.ofReal (2 ^ p.toReal⁻¹) * ENNReal.ofReal ((2⁻¹ * t) ^ p.toReal⁻¹) := by
-      rw [← ENNReal.ofReal_mul (by positivity), ← Real.mul_rpow (by positivity) (by positivity)]
-      congr 2
-      ring
-    calc ENNReal.ofReal (t ^ p.toReal⁻¹) * μ.decreasingRearrangement (‖(f + g) ·‖ₑ) t
-        ≤ ENNReal.ofReal (t ^ p.toReal⁻¹) *
-            (μ.decreasingRearrangement (‖f ·‖ₑ) (2⁻¹ * t) +
-              μ.decreasingRearrangement (‖g ·‖ₑ) (2⁻¹ * t)) :=
-          mul_le_mul_of_nonneg_left hrearr zero_le
-      _ = ENNReal.ofReal (2 ^ p.toReal⁻¹) * (F (2⁻¹ * t) + G (2⁻¹ * t)) := by
-          rw [hpow]
-          simp only [F, G]
-          ring
+    simpa only [eNorm_eq_self] using eLorentzNorm_integrand_add_le f g p μ ht
   calc eLorentzNorm (f + g) p q μ
       ≤ eLpNorm (fun t ↦ ENNReal.ofReal (2 ^ p.toReal⁻¹) * (F (2⁻¹ * t) + G (2⁻¹ * t)))
           q multHaar :=
@@ -314,7 +326,8 @@ theorem eLorentzNorm_top_eq_iSup (f : α → ε) (p : ℝ≥0∞) (μ : Measure 
   refine le_antisymm (essSup_le_of_ae_le _ ?_) (iSup₂_le fun t (ht : 0 < t) ↦ ?_)
   · filter_upwards [ae_pos_multHaar] with t ht
     exact le_iSup₂_of_le t ht le_rfl
-  · have hcont : ContinuousAt (fun s : ℝ ↦ ENNReal.ofReal (s ^ p.toReal⁻¹)) t :=
+  · -- Approximate `g t` from the left via continuity of `s ↦ s ^ (1 / p)` and antitonicity
+    have hcont : ContinuousAt (fun s : ℝ ↦ ENNReal.ofReal (s ^ p.toReal⁻¹)) t :=
       ENNReal.continuous_ofReal.continuousAt.comp
         (Real.continuousAt_rpow_const t _ (Or.inl ht.ne'))
     have htend : Tendsto
@@ -323,14 +336,8 @@ theorem eLorentzNorm_top_eq_iSup (f : α → ε) (p : ℝ≥0∞) (μ : Measure 
       ENNReal.Tendsto.mul_const (hcont.tendsto.mono_left nhdsWithin_le_nhds)
         (Or.inl (ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos ht _)).ne')
     refine le_of_tendsto htend <| eventually_of_mem (Ioo_mem_nhdsLT ht) fun s ⟨hs0, hst⟩ ↦ ?_
-    have hpos : multHaar (Ico s t) ≠ 0 := by
-      rw [multHaar_Ico hs0 hst.le]
-      exact (ENNReal.ofReal_pos.2 (sub_pos.2 (Real.log_lt_log hs0 hst))).ne'
-    have hex : ∃ u ∈ Ico s t, g u ≤ essSup g multHaar := by
-      by_contra! hgt
-      exact hpos <| measure_mono_null (fun u hu ↦ not_le.2 (hgt u hu))
-        (ae_iff.1 (ae_le_essSup (f := g) (μ := multHaar)))
-    obtain ⟨u, hu, hle⟩ := hex
+    obtain ⟨u, hu, hle⟩ := exists_mem_Ico_of_ae_multHaar (ae_le_essSup (f := g) (μ := multHaar))
+      hs0 hst
     have hpow : ENNReal.ofReal (s ^ p.toReal⁻¹) ≤ ENNReal.ofReal (u ^ p.toReal⁻¹) :=
       ENNReal.ofReal_le_ofReal (Real.rpow_le_rpow hs0.le hu.1 (inv_nonneg.2 ENNReal.toReal_nonneg))
     exact (mul_le_mul' hpow (μ.antitone_decreasingRearrangement _ hu.2.le)).trans hle
@@ -362,61 +369,68 @@ theorem eLorentzNorm_top_top (f : α → ε) (μ : Measure α) :
   exact ((μ.lt_decreasingRearrangement_iff (f := (‖f ·‖ₑ)) (s := r.toReal) (c := c)).2 hlt).trans_le
     (le_iSup₂_of_le r.toReal (ENNReal.toReal_pos hr0.ne' hrm.ne_top) le_rfl)
 
+/-- Distributional lower bound `c μ {‖f‖ > c} ^ (1 / p) ≤ ‖f‖_{p,∞}` at each level `c`. -/
+private theorem mul_measure_lt_rpow_le_eLorentzNorm_top (f : α → ε) {p : ℝ≥0∞}
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ : Measure α) (c : ℝ≥0∞) :
+    c * μ {y | c < ‖f y‖ₑ} ^ p.toReal⁻¹ ≤ eLorentzNorm f p ∞ μ := by
+  have hr : 0 < p.toReal⁻¹ := inv_pos.2 (ENNReal.toReal_pos hp0 hp)
+  have hstep {t : ℝ} (ht : 0 < t) (hlt : ENNReal.ofReal t < μ {y | c < ‖f y‖ₑ}) :
+      ENNReal.ofReal (t ^ p.toReal⁻¹) * c ≤ eLorentzNorm f p ∞ μ :=
+    (mul_le_mul_of_nonneg_left
+      ((μ.lt_decreasingRearrangement_iff (f := (‖f ·‖ₑ)) (s := t) (c := c)).2 hlt).le zero_le).trans
+      (eLorentzNorm_top_le_iff.1 le_rfl t ht)
+  -- Degenerate levels `c = 0` or `μ {‖f‖ > c} = 0`
+  rcases eq_or_ne c 0 with rfl | hc0
+  · simp
+  rcases eq_or_ne (μ {y | c < ‖f y‖ₑ}) 0 with hm0 | hm0
+  · simp [hm0, ENNReal.zero_rpow_of_pos hr]
+  -- Infinite superlevel measure: let `t → ∞`
+  rcases eq_or_ne (μ {y | c < ‖f y‖ₑ}) ∞ with hm_top | hm_top
+  · rw [hm_top, ENNReal.top_rpow_of_pos hr, ENNReal.mul_top hc0]
+    have htend : Tendsto (fun t : ℝ ↦ ENNReal.ofReal (t ^ p.toReal⁻¹) * c) atTop (𝓝 ∞) := by
+      simpa only [Function.comp_def, ENNReal.top_mul hc0] using
+        ENNReal.Tendsto.mul_const (b := c)
+          (ENNReal.tendsto_ofReal_atTop.comp (tendsto_rpow_atTop hr))
+          (Or.inl ENNReal.top_ne_zero)
+    refine le_of_tendsto htend ?_
+    filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
+    exact hstep ht (hm_top ▸ ENNReal.ofReal_lt_top)
+  -- Positive finite superlevel measure: let `t ↑ μ {‖f‖ > c}`
+  · have hmpos : 0 < (μ {y | c < ‖f y‖ₑ}).toReal := ENNReal.toReal_pos hm0 hm_top
+    have hcont :
+        ContinuousAt (fun t : ℝ ↦ ENNReal.ofReal (t ^ p.toReal⁻¹)) (μ {y | c < ‖f y‖ₑ}).toReal :=
+      ENNReal.continuous_ofReal.continuousAt.comp
+        (Real.continuousAt_rpow_const _ _ (Or.inl hmpos.ne'))
+    have htend : Tendsto (fun t : ℝ ↦ ENNReal.ofReal (t ^ p.toReal⁻¹) * c)
+        (𝓝[<] (μ {y | c < ‖f y‖ₑ}).toReal)
+        (𝓝 (ENNReal.ofReal ((μ {y | c < ‖f y‖ₑ}).toReal ^ p.toReal⁻¹) * c)) :=
+      ENNReal.Tendsto.mul_const (hcont.tendsto.mono_left nhdsWithin_le_nhds)
+        (Or.inl (ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos hmpos _)).ne')
+    have hbound : ENNReal.ofReal ((μ {y | c < ‖f y‖ₑ}).toReal ^ p.toReal⁻¹) * c ≤
+        eLorentzNorm f p ∞ μ :=
+      le_of_tendsto htend <| eventually_of_mem (Ioo_mem_nhdsLT hmpos) fun t ht ↦
+        hstep ht.1 ((ENNReal.ofReal_lt_iff_lt_toReal ht.1.le hm_top).2 ht.2)
+    rwa [← ENNReal.ofReal_rpow_of_pos hmpos, ENNReal.ofReal_toReal hm_top, mul_comm] at hbound
+
 /-- **Distributional form of the weak-`Lᵖ` quasi-seminorm.** For `0 < p < ∞`,
 `‖f‖_{p,∞} = sup_{c ≥ 0} c μ {‖f‖ > c} ^ (1 / p)`. -/
 theorem eLorentzNorm_top_eq_iSup_measure_lt (f : α → ε) {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞)
     (μ : Measure α) :
     eLorentzNorm f p ∞ μ = ⨆ c : ℝ≥0∞, c * μ {y | c < ‖f y‖ₑ} ^ p.toReal⁻¹ := by
   have hr : 0 < p.toReal⁻¹ := inv_pos.2 (ENNReal.toReal_pos hp0 hp)
-  refine le_antisymm ?_ (iSup_le fun c ↦ ?_)
-  · rw [eLorentzNorm_top_le_iff]
-    intro t ht
-    rw [μ.decreasingRearrangement_def, ENNReal.mul_iSup]
-    refine iSup_le fun c ↦ ?_
-    rw [ENNReal.mul_iSup]
-    refine iSup_le fun hct ↦ ?_
-    calc ENNReal.ofReal (t ^ p.toReal⁻¹) * c
-        = c * ENNReal.ofReal t ^ p.toReal⁻¹ := by
-          rw [mul_comm, ENNReal.ofReal_rpow_of_pos ht]
-      _ ≤ c * μ {y | c < ‖f y‖ₑ} ^ p.toReal⁻¹ := by gcongr
-      _ ≤ ⨆ c : ℝ≥0∞, c * μ {y | c < ‖f y‖ₑ} ^ p.toReal⁻¹ :=
-          le_iSup (fun c : ℝ≥0∞ ↦ c * μ {y | c < ‖f y‖ₑ} ^ p.toReal⁻¹) c
-  · rcases eq_or_ne c 0 with rfl | hc0
-    · simp
-    rcases eq_or_ne (μ {y | c < ‖f y‖ₑ}) 0 with hm0 | hm0
-    · simp [hm0, ENNReal.zero_rpow_of_pos hr]
-    rcases eq_or_ne (μ {y | c < ‖f y‖ₑ}) ∞ with hm_top | hm_top
-    · rw [hm_top, ENNReal.top_rpow_of_pos hr, ENNReal.mul_top hc0]
-      have htend : Tendsto (fun t : ℝ ↦ ENNReal.ofReal (t ^ p.toReal⁻¹) * c) atTop (𝓝 ∞) := by
-        simpa only [Function.comp_def, ENNReal.top_mul hc0] using
-          ENNReal.Tendsto.mul_const (b := c)
-            (ENNReal.tendsto_ofReal_atTop.comp (tendsto_rpow_atTop hr))
-            (Or.inl ENNReal.top_ne_zero)
-      refine le_of_tendsto htend ?_
-      filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
-      have hct : c ≤ μ.decreasingRearrangement (‖f ·‖ₑ) t :=
-        ((μ.lt_decreasingRearrangement_iff (f := (‖f ·‖ₑ)) (s := t) (c := c)).2
-          (hm_top ▸ ENNReal.ofReal_lt_top)).le
-      exact (mul_le_mul_of_nonneg_left hct zero_le).trans (eLorentzNorm_top_le_iff.1 le_rfl t ht)
-    · have hmpos : 0 < (μ {y | c < ‖f y‖ₑ}).toReal := ENNReal.toReal_pos hm0 hm_top
-      have hcont :
-          ContinuousAt (fun t : ℝ ↦ ENNReal.ofReal (t ^ p.toReal⁻¹)) (μ {y | c < ‖f y‖ₑ}).toReal :=
-        ENNReal.continuous_ofReal.continuousAt.comp
-          (Real.continuousAt_rpow_const _ _ (Or.inl hmpos.ne'))
-      have htend : Tendsto (fun t : ℝ ↦ ENNReal.ofReal (t ^ p.toReal⁻¹) * c)
-          (𝓝[<] (μ {y | c < ‖f y‖ₑ}).toReal)
-          (𝓝 (ENNReal.ofReal ((μ {y | c < ‖f y‖ₑ}).toReal ^ p.toReal⁻¹) * c)) :=
-        ENNReal.Tendsto.mul_const (hcont.tendsto.mono_left nhdsWithin_le_nhds)
-          (Or.inl (ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos hmpos _)).ne')
-      have hbound : ENNReal.ofReal ((μ {y | c < ‖f y‖ₑ}).toReal ^ p.toReal⁻¹) * c ≤
-          eLorentzNorm f p ∞ μ :=
-        le_of_tendsto htend <| eventually_of_mem (Ioo_mem_nhdsLT hmpos) fun t ht ↦ by
-          have hct : c ≤ μ.decreasingRearrangement (‖f ·‖ₑ) t :=
-            ((μ.lt_decreasingRearrangement_iff (f := (‖f ·‖ₑ)) (s := t) (c := c)).2
-              ((ENNReal.ofReal_lt_iff_lt_toReal ht.1.le hm_top).2 ht.2)).le
-          exact (mul_le_mul_of_nonneg_left hct zero_le).trans
-            (eLorentzNorm_top_le_iff.1 le_rfl t ht.1)
-      rwa [← ENNReal.ofReal_rpow_of_pos hmpos, ENNReal.ofReal_toReal hm_top, mul_comm] at hbound
+  refine le_antisymm ?_ (iSup_le (mul_measure_lt_rpow_le_eLorentzNorm_top f hp0 hp μ))
+  rw [eLorentzNorm_top_le_iff]
+  intro t ht
+  rw [μ.decreasingRearrangement_def, ENNReal.mul_iSup]
+  refine iSup_le fun c ↦ ?_
+  rw [ENNReal.mul_iSup]
+  refine iSup_le fun hct ↦ ?_
+  calc ENNReal.ofReal (t ^ p.toReal⁻¹) * c
+      = c * ENNReal.ofReal t ^ p.toReal⁻¹ := by
+        rw [mul_comm, ENNReal.ofReal_rpow_of_pos ht]
+    _ ≤ c * μ {y | c < ‖f y‖ₑ} ^ p.toReal⁻¹ := by gcongr
+    _ ≤ ⨆ c : ℝ≥0∞, c * μ {y | c < ‖f y‖ₑ} ^ p.toReal⁻¹ :=
+        le_iSup (fun c : ℝ≥0∞ ↦ c * μ {y | c < ‖f y‖ₑ} ^ p.toReal⁻¹) c
 
 end WeakLp
 
@@ -452,6 +466,32 @@ theorem eLorentzNorm_indicator_top {ε : Type*} [TopologicalSpace ε] [ESeminorm
     obtain ⟨⟨r, hr⟩, hbr⟩ := hb
     exact hbr.trans_le (le_iSup_of_le r (by simp [hr]))
 
+/-- For `s > 0` and `r ≥ 0`, `(s ^ (1 / p) * c) ^ r = c ^ r * s ^ (r / p)`. -/
+private theorem ofReal_rpow_inv_mul_rpow {p : ℝ≥0∞} {r : ℝ} (hr : 0 ≤ r) (c : ℝ≥0∞)
+    {s : ℝ} (hs : 0 < s) :
+    (ENNReal.ofReal (s ^ p.toReal⁻¹) * c) ^ r =
+      c ^ r * ENNReal.ofReal (s ^ (r / p.toReal)) := by
+  rw [ENNReal.mul_rpow_of_nonneg _ _ hr,
+    ENNReal.ofReal_rpow_of_pos (Real.rpow_pos_of_pos hs _), ← Real.rpow_mul hs.le,
+    inv_mul_eq_div, mul_comm]
+
+/-- Integrating `(s ^ (1 / p) * c) ^ q` against `dt / t` over `{s | ofReal s < m}` equals
+`(p / q) * c ^ q * m ^ (q / p)` for `0 < p, q < ∞`. -/
+private theorem setLIntegral_ofReal_rpow_inv_mul_rpow_multHaar {p q : ℝ≥0∞}
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (hq0 : q ≠ 0) (hq : q ≠ ∞) (c m : ℝ≥0∞) :
+    ∫⁻ s in {s : ℝ | ENNReal.ofReal s < m},
+      (ENNReal.ofReal (s ^ p.toReal⁻¹) * c) ^ q.toReal ∂multHaar =
+      ENNReal.ofReal (p.toReal / q.toReal) * c ^ q.toReal * m ^ (q.toReal / p.toReal) := by
+  have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  have hqr : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
+  have hcongr : (fun s : ℝ ↦ (ENNReal.ofReal (s ^ p.toReal⁻¹) * c) ^ q.toReal) =ᵐ[multHaar]
+      fun s : ℝ ↦ c ^ q.toReal * ENNReal.ofReal (s ^ (q.toReal / p.toReal)) :=
+    ae_pos_multHaar.mono fun _ hs ↦ ofReal_rpow_inv_mul_rpow hqr.le c hs
+  rw [lintegral_congr_ae (ae_restrict_of_ae hcongr),
+    lintegral_const_mul _ (by fun_prop),
+    setLIntegral_multHaar_ofReal_lt_rpow (div_pos hqr hpr) m, inv_div]
+  ring
+
 /-- **Lorentz gauge of an indicator.** For `0 < p < ∞` and `q ≠ 0`,
 `‖c 1_A‖_{p,q} = (p / q) ^ (1 / q) ‖c‖ (μ A) ^ (1 / p)` (with the factor equal to `1` when
 `q = ∞`). -/
@@ -463,34 +503,35 @@ theorem eLorentzNorm_indicator {ε : Type*} [TopologicalSpace ε] [ESeminormedAd
   · simpa using eLorentzNorm_indicator_top A c hp0 hp μ
   have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   have hqr : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
-  have hqp : 0 < q.toReal / p.toReal := div_pos hqr hpr
   have hind : (fun y ↦ ‖A.indicator (fun _ ↦ c) y‖ₑ) = A.indicator (fun _ ↦ ‖c‖ₑ) := by
     ext y
     by_cases hy : y ∈ A <;> simp [hy]
-  rw [eLorentzNorm_eq_lintegral _ _ hq0 hq, hind]
-  simp_rw [μ.decreasingRearrangement_indicator]
   have hS : MeasurableSet {t : ℝ | ENNReal.ofReal t < μ A} :=
     measurableSet_lt ENNReal.measurable_ofReal measurable_const
-  have hcongr : (fun t : ℝ ↦ (ENNReal.ofReal (t ^ p.toReal⁻¹) *
-      if ENNReal.ofReal t < μ A then ‖c‖ₑ else 0) ^ q.toReal) =ᵐ[multHaar]
-      fun t : ℝ ↦ ‖c‖ₑ ^ q.toReal *
-        {t : ℝ | ENNReal.ofReal t < μ A}.indicator
-          (fun t ↦ ENNReal.ofReal (t ^ (q.toReal / p.toReal))) t := by
-    filter_upwards [ae_pos_multHaar] with t ht
+  have hfun : (fun t : ℝ ↦ (ENNReal.ofReal (t ^ p.toReal⁻¹) *
+      if ENNReal.ofReal t < μ A then ‖c‖ₑ else 0) ^ q.toReal) =
+      {t : ℝ | ENNReal.ofReal t < μ A}.indicator
+        (fun t ↦ (ENNReal.ofReal (t ^ p.toReal⁻¹) * ‖c‖ₑ) ^ q.toReal) := by
+    ext t
     by_cases hlt : ENNReal.ofReal t < μ A
-    · have htS : t ∈ {t : ℝ | ENNReal.ofReal t < μ A} := hlt
-      simp only [hlt, ↓reduceIte, indicator_of_mem htS,
-        ENNReal.mul_rpow_of_nonneg _ _ hqr.le,
-        ENNReal.ofReal_rpow_of_pos (Real.rpow_pos_of_pos ht _),
-        ← Real.rpow_mul ht.le, mul_comm (‖c‖ₑ ^ q.toReal), inv_mul_eq_div]
+    · simp [hlt]
     · simp [hlt, ENNReal.zero_rpow_of_pos hqr]
   have hcancel : q.toReal / p.toReal * q.toReal⁻¹ = p.toReal⁻¹ := by field_simp
-  rw [lintegral_congr_ae hcongr, lintegral_const_mul _ (by fun_prop),
-    lintegral_indicator hS, setLIntegral_multHaar_ofReal_lt_rpow hqp (μ A),
-    inv_div, ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hqr.le),
-    ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hqr.le),
-    ← ENNReal.rpow_mul, ← ENNReal.rpow_mul, mul_inv_cancel₀ hqr.ne', ENNReal.rpow_one,
-    hcancel, ENNReal.ofReal_rpow_of_pos (div_pos hpr hqr), mul_left_comm, mul_assoc]
+  rw [eLorentzNorm_eq_lintegral _ _ hq0 hq, hind]
+  simp_rw [μ.decreasingRearrangement_indicator]
+  calc (∫⁻ t, (ENNReal.ofReal (t ^ p.toReal⁻¹) *
+          if ENNReal.ofReal t < μ A then ‖c‖ₑ else 0) ^ q.toReal ∂multHaar) ^ q.toReal⁻¹
+      = (ENNReal.ofReal (p.toReal / q.toReal) * ‖c‖ₑ ^ q.toReal *
+          μ A ^ (q.toReal / p.toReal)) ^ q.toReal⁻¹ := by
+        rw [hfun, lintegral_indicator hS,
+          setLIntegral_ofReal_rpow_inv_mul_rpow_multHaar hp0 hp hq0 hq ‖c‖ₑ (μ A)]
+    _ = ENNReal.ofReal (p.toReal / q.toReal) ^ q.toReal⁻¹ *
+          (‖c‖ₑ ^ q.toReal) ^ q.toReal⁻¹ * (μ A ^ (q.toReal / p.toReal)) ^ q.toReal⁻¹ := by
+        rw [ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hqr.le),
+          ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hqr.le)]
+    _ = ENNReal.ofReal ((p.toReal / q.toReal) ^ q.toReal⁻¹) * ‖c‖ₑ * μ A ^ p.toReal⁻¹ := by
+        rw [ENNReal.ofReal_rpow_of_pos (div_pos hpr hqr), ← ENNReal.rpow_mul,
+          mul_inv_cancel₀ hqr.ne', ENNReal.rpow_one, ← ENNReal.rpow_mul, hcancel]
 
 variable [ENorm ε] {f : α → ε} {p q q₀ q₁ : ℝ≥0∞}
 
@@ -508,30 +549,23 @@ theorem eLorentzNorm_top_le_mul_eLorentzNorm (hp0 : p ≠ 0) (hp : p ≠ ∞) (h
   rw [eLorentzNorm_top_le_iff]
   intro t ht
   set c := μ.decreasingRearrangement (‖f ·‖ₑ) t
-  have hsub : ∫⁻ s in {s : ℝ | ENNReal.ofReal s < ENNReal.ofReal t},
-      (ENNReal.ofReal (s ^ p.toReal⁻¹) * c) ^ q.toReal ∂multHaar ≤
+  -- Antitonicity of `‖f‖*` bounds the constant-level integral over `(0, t)` by the full integral
+  have hsub : ENNReal.ofReal (p.toReal / q.toReal) *
+      (ENNReal.ofReal (t ^ p.toReal⁻¹) * c) ^ q.toReal ≤
       ∫⁻ s, (ENNReal.ofReal (s ^ p.toReal⁻¹) * μ.decreasingRearrangement (‖f ·‖ₑ) s) ^ q.toReal
         ∂multHaar := by
+    have hlhs : ∫⁻ s in {s : ℝ | ENNReal.ofReal s < ENNReal.ofReal t},
+        (ENNReal.ofReal (s ^ p.toReal⁻¹) * c) ^ q.toReal ∂multHaar =
+        ENNReal.ofReal (p.toReal / q.toReal) *
+          (ENNReal.ofReal (t ^ p.toReal⁻¹) * c) ^ q.toReal := by
+      rw [setLIntegral_ofReal_rpow_inv_mul_rpow_multHaar hp0 hp hq0 hq c (ENNReal.ofReal t),
+        ofReal_rpow_inv_mul_rpow hqr.le c ht, ENNReal.ofReal_rpow_of_pos ht, mul_assoc]
+    rw [← hlhs]
     refine (setLIntegral_mono_ae (by fun_prop) ?_).trans (setLIntegral_le_lintegral _ _)
     filter_upwards [ae_pos_multHaar] with s _ hlt
     gcongr
     exact μ.antitone_decreasingRearrangement _ ((ENNReal.ofReal_lt_ofReal_iff ht).1 hlt).le
-  have hlhs : ∫⁻ s in {s : ℝ | ENNReal.ofReal s < ENNReal.ofReal t},
-      (ENNReal.ofReal (s ^ p.toReal⁻¹) * c) ^ q.toReal ∂multHaar =
-      ENNReal.ofReal (p.toReal / q.toReal) * (ENNReal.ofReal (t ^ p.toReal⁻¹) * c) ^ q.toReal := by
-    have hcongr : (fun s : ℝ ↦ (ENNReal.ofReal (s ^ p.toReal⁻¹) * c) ^ q.toReal) =ᵐ[multHaar]
-        fun s : ℝ ↦ c ^ q.toReal * ENNReal.ofReal (s ^ (q.toReal / p.toReal)) := by
-      filter_upwards [ae_pos_multHaar] with s hs
-      rw [ENNReal.mul_rpow_of_nonneg _ _ hqr.le,
-        ENNReal.ofReal_rpow_of_pos (Real.rpow_pos_of_pos hs _), ← Real.rpow_mul hs.le,
-        inv_mul_eq_div, mul_comm]
-    rw [lintegral_congr_ae (ae_restrict_of_ae hcongr),
-      lintegral_const_mul _ (by fun_prop), setLIntegral_multHaar_ofReal_lt_rpow hqp, inv_div,
-      ENNReal.mul_rpow_of_nonneg _ _ hqr.le,
-      ENNReal.ofReal_rpow_of_pos (Real.rpow_pos_of_pos ht _),
-      ← Real.rpow_mul ht.le, inv_mul_eq_div, ENNReal.ofReal_rpow_of_pos ht]
-    ring
-  rw [hlhs] at hsub
+  -- Multiply by `q / p` and take the `(1 / q)`-th root
   have hinv : q.toReal / p.toReal * (p.toReal / q.toReal) = 1 := by field_simp
   have hmul : (ENNReal.ofReal (t ^ p.toReal⁻¹) * c) ^ q.toReal ≤
       ENNReal.ofReal (q.toReal / p.toReal) *
@@ -548,21 +582,17 @@ theorem eLorentzNorm_top_le_mul_eLorentzNorm (hp0 : p ≠ 0) (hp : p ≠ ∞) (h
     ENNReal.ofReal_rpow_of_pos hqp, ← eLorentzNorm_eq_lintegral f p hq0 hq μ] at hrpow
   exact hrpow
 
-/-- **Sharp monotonicity of Lorentz gauges in the secondary exponent.** For `0 < p < ∞` and
-`0 < q₀ ≤ q₁ ≤ ∞`, `‖f‖_{p, q₁} ≤ (q₀ / p) ^ (1 / q₀ - 1 / q₁) ‖f‖_{p, q₀}`. -/
-theorem eLorentzNorm_le_of_le (hp0 : p ≠ 0) (hp : p ≠ ∞) (hq₀ : q₀ ≠ 0) (hq : q₀ ≤ q₁) :
+/-- Log-convexity bound between `L^{p, q₀}` and weak `Lᵖ`: for `0 < q₀ ≤ q₁ < ∞`,
+`‖f‖_{p, q₁} ≤ ‖f‖_{p, ∞} ^ (1 - q₀ / q₁) * ‖f‖_{p, q₀} ^ (q₀ / q₁)`. -/
+private theorem eLorentzNorm_le_top_rpow_mul_rpow (hq₀ : q₀ ≠ 0) (hq₁_top : q₁ ≠ ∞) (hq : q₀ ≤ q₁) :
     eLorentzNorm f p q₁ μ ≤
-      ENNReal.ofReal ((q₀.toReal / p.toReal) ^ (q₀.toReal⁻¹ - q₁.toReal⁻¹)) *
-        eLorentzNorm f p q₀ μ := by
-  rcases eq_or_ne q₁ ∞ with rfl | hq₁_top
-  · simpa using eLorentzNorm_top_le_mul_eLorentzNorm (f := f) (μ := μ) hp0 hp hq₀
+      eLorentzNorm f p ∞ μ ^ (1 - q₀.toReal / q₁.toReal) *
+        eLorentzNorm f p q₀ μ ^ (q₀.toReal / q₁.toReal) := by
   have hq₀_top : q₀ ≠ ∞ := ne_top_of_le_ne_top hq₁_top hq
   have hq₁ : q₁ ≠ 0 := (pos_iff_ne_zero.2 hq₀).trans_le hq |>.ne'
-  have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   have hr₀ : 0 < q₀.toReal := ENNReal.toReal_pos hq₀ hq₀_top
   have hr₁ : 0 < q₁.toReal := ENNReal.toReal_pos hq₁ hq₁_top
-  have hrle : q₀.toReal ≤ q₁.toReal := ENNReal.toReal_mono hq₁_top hq
-  have hdiff : 0 ≤ q₁.toReal - q₀.toReal := sub_nonneg.2 hrle
+  have hdiff : 0 ≤ q₁.toReal - q₀.toReal := sub_nonneg.2 (ENNReal.toReal_mono hq₁_top hq)
   set g : ℝ → ℝ≥0∞ :=
     fun t ↦ ENNReal.ofReal (t ^ p.toReal⁻¹) * μ.decreasingRearrangement (‖f ·‖ₑ) t
   have hpt : ∀ᵐ t ∂multHaar, g t ^ q₁.toReal ≤
@@ -577,10 +607,7 @@ theorem eLorentzNorm_le_of_le (hp0 : p ≠ 0) (hp : p ≠ ∞) (hq₀ : q₀ ≠
       eLorentzNorm f p ∞ μ ^ (q₁.toReal - q₀.toReal) * ∫⁻ t, g t ^ q₀.toReal ∂multHaar :=
     (lintegral_mono_ae hpt).trans_eq <|
       lintegral_const_mul _ ((measurable_eLorentzNorm_integrand f p μ).pow_const _)
-  have hq01 : 0 ≤ 1 - q₀.toReal / q₁.toReal := sub_nonneg.2 ((div_le_one hr₁).2 hrle)
   have hexp1 : (q₁.toReal - q₀.toReal) * q₁.toReal⁻¹ = 1 - q₀.toReal / q₁.toReal := by field_simp
-  have hexp2 : q₀.toReal⁻¹ * (1 - q₀.toReal / q₁.toReal) = q₀.toReal⁻¹ - q₁.toReal⁻¹ := by
-    field_simp
   have hexp3 : q₀.toReal⁻¹ * (q₀.toReal / q₁.toReal) = q₁.toReal⁻¹ := by field_simp
   calc eLorentzNorm f p q₁ μ
       = (∫⁻ t, g t ^ q₁.toReal ∂multHaar) ^ q₁.toReal⁻¹ :=
@@ -592,17 +619,42 @@ theorem eLorentzNorm_le_of_le (hp0 : p ≠ 0) (hp : p ≠ ∞) (hq₀ : q₀ ≠
           eLorentzNorm f p q₀ μ ^ (q₀.toReal / q₁.toReal) := by
         rw [ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hr₁.le), ← ENNReal.rpow_mul, hexp1,
           eLorentzNorm_eq_lintegral f p hq₀ hq₀_top μ, ← ENNReal.rpow_mul, hexp3]
+
+/-- **Monotonicity of Lorentz gauges in the secondary exponent.** For `0 < p < ∞` and
+`0 < q₀ ≤ q₁ ≤ ∞`, `‖f‖_{p, q₁} ≤ (q₀ / p) ^ (1 / q₀ - 1 / q₁) ‖f‖_{p, q₀}`. -/
+theorem eLorentzNorm_le_of_le (hp0 : p ≠ 0) (hp : p ≠ ∞) (hq₀ : q₀ ≠ 0) (hq : q₀ ≤ q₁) :
+    eLorentzNorm f p q₁ μ ≤
+      ENNReal.ofReal ((q₀.toReal / p.toReal) ^ (q₀.toReal⁻¹ - q₁.toReal⁻¹)) *
+        eLorentzNorm f p q₀ μ := by
+  rcases eq_or_ne q₁ ∞ with rfl | hq₁_top
+  · simpa using eLorentzNorm_top_le_mul_eLorentzNorm (f := f) (μ := μ) hp0 hp hq₀
+  have hq₀_top : q₀ ≠ ∞ := ne_top_of_le_ne_top hq₁_top hq
+  have hq₁ : q₁ ≠ 0 := (pos_iff_ne_zero.2 hq₀).trans_le hq |>.ne'
+  have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  have hr₀ : 0 < q₀.toReal := ENNReal.toReal_pos hq₀ hq₀_top
+  have hr₁ : 0 < q₁.toReal := ENNReal.toReal_pos hq₁ hq₁_top
+  have hq01 : 0 ≤ 1 - q₀.toReal / q₁.toReal :=
+    sub_nonneg.2 ((div_le_one hr₁).2 (ENNReal.toReal_mono hq₁_top hq))
+  have hexp : q₀.toReal⁻¹ * (1 - q₀.toReal / q₁.toReal) = q₀.toReal⁻¹ - q₁.toReal⁻¹ := by
+    field_simp
+  calc eLorentzNorm f p q₁ μ
+      ≤ eLorentzNorm f p ∞ μ ^ (1 - q₀.toReal / q₁.toReal) *
+          eLorentzNorm f p q₀ μ ^ (q₀.toReal / q₁.toReal) :=
+        eLorentzNorm_le_top_rpow_mul_rpow hq₀ hq₁_top hq
     _ ≤ (ENNReal.ofReal ((q₀.toReal / p.toReal) ^ q₀.toReal⁻¹) * eLorentzNorm f p q₀ μ) ^
             (1 - q₀.toReal / q₁.toReal) *
           eLorentzNorm f p q₀ μ ^ (q₀.toReal / q₁.toReal) := by
         gcongr
         exact eLorentzNorm_top_le_mul_eLorentzNorm hp0 hp hq₀
-    _ = ENNReal.ofReal ((q₀.toReal / p.toReal) ^ (q₀.toReal⁻¹ - q₁.toReal⁻¹)) *
+    _ = ENNReal.ofReal ((q₀.toReal / p.toReal) ^ q₀.toReal⁻¹) ^ (1 - q₀.toReal / q₁.toReal) *
           eLorentzNorm f p q₀ μ := by
         rw [ENNReal.mul_rpow_of_nonneg _ _ hq01, mul_assoc,
           ← ENNReal.rpow_add_of_nonneg _ _ hq01 (div_nonneg hr₀.le hr₁.le), sub_add_cancel,
-          ENNReal.rpow_one, ENNReal.ofReal_rpow_of_pos (Real.rpow_pos_of_pos (div_pos hr₀ hpr) _),
-          ← Real.rpow_mul (div_nonneg hr₀.le hpr.le), hexp2]
+          ENNReal.rpow_one]
+    _ = ENNReal.ofReal ((q₀.toReal / p.toReal) ^ (q₀.toReal⁻¹ - q₁.toReal⁻¹)) *
+          eLorentzNorm f p q₀ μ := by
+        rw [ENNReal.ofReal_rpow_of_pos (Real.rpow_pos_of_pos (div_pos hr₀ hpr) _),
+          ← Real.rpow_mul (div_nonneg hr₀.le hpr.le), hexp]
 
 end IndicatorAndMonotonicity
 
@@ -658,6 +710,19 @@ end Truncation
 
 section PowerExample
 
+/-- For positive reals `p, c, t`, `c < t ^ (-p⁻¹)` iff `t < c ^ (-p)`. -/
+private theorem lt_rpow_neg_inv_iff {p c t : ℝ} (hp : 0 < p) (hc : 0 < c) (ht : 0 < t) :
+    c < t ^ (-p⁻¹) ↔ t < c ^ (-p) := by
+  constructor
+  · intro hlt
+    calc t = (t ^ (-p⁻¹)) ^ (-p) := by
+          rw [← Real.rpow_mul ht.le, neg_mul_neg, inv_mul_cancel₀ hp.ne', Real.rpow_one]
+      _ < c ^ (-p) := Real.rpow_lt_rpow_of_neg hc hlt (neg_lt_zero.2 hp)
+  · intro hlt
+    calc c = (c ^ (-p)) ^ (-p⁻¹) := by
+          rw [← Real.rpow_mul hc.le, neg_mul_neg, mul_inv_cancel₀ hp.ne', Real.rpow_one]
+      _ < t ^ (-p⁻¹) := Real.rpow_lt_rpow_of_neg ht hlt (neg_lt_zero.2 (inv_pos.2 hp))
+
 /-- On `(0, ∞)` with Lebesgue measure, the decreasing rearrangement of `t ↦ t ^ (-1 / p)` is
 itself for `0 < p < ∞` and `s > 0`. -/
 theorem decreasingRearrangement_ofReal_rpow_neg_inv {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞)
@@ -668,6 +733,7 @@ theorem decreasingRearrangement_ofReal_rpow_neg_inv {p : ℝ≥0∞} (hp0 : p �
   have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   refine eq_of_forall_lt_iff fun c ↦ ?_
   rw [Measure.lt_decreasingRearrangement_iff]
+  -- Boundary levels `c = 0` and `c = ∞`
   rcases eq_or_ne c 0 with rfl | hc0
   · have hsub : {t : ℝ | 0 < ENNReal.ofReal (t ^ (-p.toReal⁻¹))} ∩ Ioi 0 = Ioi 0 := by
       refine inter_eq_right.2 fun t (ht : 0 < t) ↦ ?_
@@ -677,36 +743,25 @@ theorem decreasingRearrangement_ofReal_rpow_neg_inv {p : ℝ≥0∞} (hp0 : p �
     simp [Real.rpow_pos_of_pos hs]
   rcases eq_or_ne c ∞ with rfl | hc_top
   · simp
+  -- Positive finite level `c`: `{t > 0 | c < t ^ (-1 / p)} = (0, c ^ (-p))`
   have hcpos : 0 < c.toReal := ENNReal.toReal_pos hc0 hc_top
-  have hiff (t : ℝ) (ht : 0 < t) :
-      c.toReal < t ^ (-p.toReal⁻¹) ↔ t < c.toReal ^ (-p.toReal) := by
-    constructor
-    · intro hlt
-      calc t = (t ^ (-p.toReal⁻¹)) ^ (-p.toReal) := by
-            rw [← Real.rpow_mul ht.le, neg_mul_neg, inv_mul_cancel₀ hpr.ne', Real.rpow_one]
-        _ < c.toReal ^ (-p.toReal) :=
-            Real.rpow_lt_rpow_of_neg hcpos hlt (neg_lt_zero.2 hpr)
-    · intro hlt
-      calc c.toReal = (c.toReal ^ (-p.toReal)) ^ (-p.toReal⁻¹) := by
-            rw [← Real.rpow_mul hcpos.le, neg_mul_neg, mul_inv_cancel₀ hpr.ne', Real.rpow_one]
-        _ < t ^ (-p.toReal⁻¹) :=
-            Real.rpow_lt_rpow_of_neg ht hlt (neg_lt_zero.2 (inv_pos.2 hpr))
   have hset : {t : ℝ | c < ENNReal.ofReal (t ^ (-p.toReal⁻¹))} ∩ Ioi (0 : ℝ) =
       Ioo 0 (c.toReal ^ (-p.toReal)) := by
     ext t
     simp only [mem_inter_iff, mem_ofPred_eq, mem_Ioi, mem_Ioo]
-    refine ⟨fun ⟨hlt, ht⟩ ↦ ⟨ht, (hiff t ht).1 ?_⟩, fun ⟨ht, hlt⟩ ↦ ⟨?_, ht⟩⟩
+    refine ⟨fun ⟨hlt, ht⟩ ↦ ⟨ht, (lt_rpow_neg_inv_iff hpr hcpos ht).1 ?_⟩,
+      fun ⟨ht, hlt⟩ ↦ ⟨?_, ht⟩⟩
     · rwa [← ENNReal.ofReal_toReal hc_top,
         ENNReal.ofReal_lt_ofReal_iff (Real.rpow_pos_of_pos ht _)] at hlt
     · rw [← ENNReal.ofReal_toReal hc_top,
         ENNReal.ofReal_lt_ofReal_iff (Real.rpow_pos_of_pos ht _)]
-      exact (hiff t ht).2 hlt
+      exact (lt_rpow_neg_inv_iff hpr hcpos ht).2 hlt
   rw [Measure.restrict_apply (measurableSet_lt measurable_const (by fun_prop)), hset,
     Real.volume_Ioo, sub_zero, ENNReal.ofReal_lt_ofReal_iff (Real.rpow_pos_of_pos hcpos _)]
   conv_rhs =>
     rw [← ENNReal.ofReal_toReal hc_top,
       ENNReal.ofReal_lt_ofReal_iff (Real.rpow_pos_of_pos hs _)]
-  exact (hiff s hs).symm
+  exact (lt_rpow_neg_inv_iff hpr hcpos hs).symm
 
 /-- On `(0, ∞)` with Lebesgue measure, `t ↦ t ^ (-1 / p)` has weak-`Lᵖ` quasi-seminorm `1`, for
 every `0 < p < ∞`. -/
