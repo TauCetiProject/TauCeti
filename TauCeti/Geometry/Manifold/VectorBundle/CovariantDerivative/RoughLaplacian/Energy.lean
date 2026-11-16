@@ -10,7 +10,9 @@ public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian.Codifferential
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.HilbertSchmidt
 
 /-!
 # Formal adjunction, Green's identities, and harmonic sections for the rough Laplacian
@@ -77,79 +79,6 @@ open scoped ContDiff Manifold RealInnerProductSpace Topology
 
 noncomputable section
 
-/-! ### Smoothness of the fibrewise Hilbert–Schmidt inner product and Riesz pairing field -/
-
-section Smoothness
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
-  [IsManifold I 1 M] [IsManifold I (n + 1) M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
-  [FiberBundle F V] [VectorBundle ℝ F V]
-  [IsContMDiffRiemannianBundle I n F V]
-
-/-- The fibrewise Hilbert–Schmidt inner product of two `C^n` sections of `Hom(TM, V)` is `C^n`. -/
-theorem ContMDiff.hilbertSchmidtInner {η₁ η₂ : Π y : M, TangentSpace I y →L[ℝ] V y}
-    (hη₁ : CMDiff n
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η₁ y)))
-    (hη₂ : CMDiff n
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η₂ y))) :
-    ContMDiff I 𝓘(ℝ) n
-      (fun y ↦ ContinuousLinearMap.hilbertSchmidtInner (η₁ y) (η₂ y)) := by
-  intro x
-  have hGinv (i j : Fin (Module.finrank ℝ E)) :
-      ContMDiffOn I 𝓘(ℝ) n (fun y ↦ chartInvGramMatrix (I := I) x y i j)
-        (chartAt H x).source := by
-    simpa only [TangentBundle.trivializationAt_baseSet] using
-      contMDiffOn_chartInvGramMatrix_entry (I := I) (n := n) x i j
-  have hframe (i : Fin (Module.finrank ℝ E)) :
-      CMDiff[(chartAt H x).source] n (T% (chartLocalFrame (I := I) x i)) := by
-    simpa only [TangentBundle.trivializationAt_baseSet] using
-      contMDiffOn_chartLocalFrame (I := I) (n := n) x i
-  have hsum : ContMDiffOn I 𝓘(ℝ) n (fun y ↦
-      ∑ i, ∑ j, chartInvGramMatrix (I := I) x y i j *
-        ⟪η₁ y (chartLocalFrame (I := I) x i y), η₂ y (chartLocalFrame (I := I) x j y)⟫)
-      (chartAt H x).source :=
-    contMDiffOn_finsetSum fun i _ ↦ contMDiffOn_finsetSum fun j _ ↦
-      (hGinv i j).mul ((hη₁.contMDiffOn.clm_bundle_apply (hframe i)).inner_bundle
-        (hη₂.contMDiffOn.clm_bundle_apply (hframe j)))
-  refine (hsum.congr fun y hy ↦ ?_).contMDiffAt
-    ((chartAt H x).open_source.mem_nhds (mem_chart_source H x))
-  let b := (trivializationAt E (TangentSpace I) x).basisAt (Module.finBasis ℝ E)
-    (by simpa only [TangentBundle.trivializationAt_baseSet] using hy)
-  have hb (k : Fin (Module.finrank ℝ E)) : b k = chartLocalFrame (I := I) x k y := by
-    simpa only [b] using (chartLocalFrame_apply_of_mem_chart_source (I := I) x hy k).symm
-  have hgram : Matrix.gram ℝ b = chartGramMatrix (I := I) x y := by
-    ext i j; rw [Matrix.gram_apply, hb i, hb j, chartGramMatrix_apply]
-  rw [ContinuousLinearMap.hilbertSchmidtInner_eq_sum_inv_gram (η₁ y) (η₂ y) b, hgram,
-    ← chartInvGramMatrix_def]
-  simp only [hb]
-
-/-- For a `C^n` section `η` of `Hom(TM, V)` and a `C^n` section `τ` of `V`, the tangent vector
-field fibrewise Riesz-dual to `v ↦ ⟪τ, η v⟫` is `C^n`. -/
-theorem ContMDiff.rieszDual_innerSL_comp {η : Π y : M, TangentSpace I y →L[ℝ] V y}
-    {τ : Π y : M, V y}
-    (hη : CMDiff n
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y)))
-    (hτ : CMDiff n (T% τ)) :
-    ContMDiff I I.tangent n
-      (T% fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))) := by
-  intro x
-  refine contMDiffAt_rieszDual x (mem_chart_source H x) fun j ↦ ?_
-  have hframe : CMDiffAt n (T% (chartLocalFrame (I := I) x j)) x := by
-    have hOn : CMDiff[(chartAt H x).source] n (T% (chartLocalFrame (I := I) x j)) := by
-      simpa only [TangentBundle.trivializationAt_baseSet] using
-        contMDiffOn_chartLocalFrame (I := I) (n := n) x j
-    exact hOn.contMDiffAt ((chartAt H x).open_source.mem_nhds (mem_chart_source H x))
-  exact (hτ x).inner_bundle ((hη x).clm_bundle_apply hframe)
-
-end Smoothness
-
 namespace CovariantDerivative
 
 /-! ### Pointwise divergence identity for a metric connection -/
@@ -168,44 +97,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [IsContMDiffRiemannianBundle I 1 F V]
   {cov : CovariantDerivative I F V}
 
-omit [FiniteDimensional ℝ F] [ContMDiffVectorBundle 1 F V I] in
-/-- Differentiability at `x` of the tangent vector field fibrewise Riesz-dual to `v ↦ ⟪τ, η v⟫`. -/
-private theorem mdifferentiableAt_rieszDual_innerSL_comp
-    {η : Π y : M, TangentSpace I y →L[ℝ] V y} {τ : Π y : M, V y} {x : M}
-    (hη : MDiffAt
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y)) x)
-    (hτ : MDiffAt (T% τ) x) :
-    MDiffAt (T% fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))) x := by
-  have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
-  have hmem : (chartAt H x).source ∈ 𝓝 x :=
-    (chartAt H x).open_source.mem_nhds (mem_chart_source H x)
-  have hGinv (i j : Fin (Module.finrank ℝ E)) :
-      MDiffAt (fun y ↦ chartInvGramMatrix (I := I) x y i j) x := by
-    have hOn : ContMDiffOn I 𝓘(ℝ) 1
-        (fun y ↦ chartInvGramMatrix (I := I) x y i j) (chartAt H x).source := by
-      simpa only [TangentBundle.trivializationAt_baseSet] using
-        contMDiffOn_chartInvGramMatrix_entry (I := I) (n := 1) x i j
-    exact (hOn.contMDiffAt hmem).mdifferentiableAt one_ne_zero
-  have hframe (i : Fin (Module.finrank ℝ E)) :
-      MDiffAt (T% (chartLocalFrame (I := I) x i)) x := by
-    have hOn : CMDiff[(chartAt H x).source] 1 (T% (chartLocalFrame (I := I) x i)) := by
-      simpa only [TangentBundle.trivializationAt_baseSet] using
-        contMDiffOn_chartLocalFrame (I := I) (n := 1) x i
-    exact (hOn.contMDiffAt hmem).mdifferentiableAt one_ne_zero
-  have hc (i : Fin (Module.finrank ℝ E)) : MDiffAt (fun y ↦
-      ∑ j, chartInvGramMatrix (I := I) x y i j *
-        ⟪τ y, η y (chartLocalFrame (I := I) x j y)⟫) x := by
-    simpa only [Finset.sum_fn, Pi.mul_apply] using MDifferentiableAt.sum (t := Finset.univ)
-      fun j _ ↦ (hGinv i j).mul (hτ.inner_bundle (hη.clm_bundle_apply (hframe j)))
-  have hsum : MDiffAt (T% fun y ↦
-      ∑ i, (∑ j, chartInvGramMatrix (I := I) x y i j *
-        ⟪τ y, η y (chartLocalFrame (I := I) x j y)⟫) • chartLocalFrame (I := I) x i y) x :=
-    MDifferentiableAt.sum_section fun i _ ↦ (hc i).smul_section (hframe i)
-  refine hsum.congr_of_eventuallyEq (Filter.eventually_of_mem hmem fun y hy ↦ ?_)
-  simpa only [Matrix.mulVec, dotProduct, ContinuousLinearMap.comp_apply, innerSL_apply_apply] using
-    congrArg (TotalSpace.mk' E y)
-      (rieszDual_eq_sum_chartLocalFrame (I := I) x hy ((innerSL ℝ (τ y)).comp (η y)))
-
 /-- **Pointwise divergence identity for the covariant codifferential.** For a metric-compatible
 connection `∇` on `V`, a section `η` of `Hom(TM, V)` and a section `τ` of `V` differentiable at `x`,
 the divergence of the vector field dual to `v ↦ ⟪τ, η v⟫` equals `⟨η, ∇τ⟩_{HS} - ⟪∇* η, τ⟫`. -/
@@ -221,7 +112,7 @@ theorem IsMetricCompatible.divergence_rieszDual_innerSL_comp (hcov : cov.IsMetri
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
   let X : Π y : M, TangentSpace I y :=
     fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))
-  have hX : MDiffAt (T% X) x := mdifferentiableAt_rieszDual_innerSL_comp hη hτ
+  have hX : MDiffAt (T% X) x := hη.rieszDual_innerSL_comp hτ
   have hLC := (isLeviCivitaConnection_leviCivitaConnection (I := I) (M := M)).isMetricCompatible
   have hterm (i : Fin (Module.finrank ℝ (TangentSpace I x))) :
       ⟪leviCivitaConnection I M X x (b i), b i⟫ =
@@ -310,26 +201,6 @@ private theorem contMDiff_cov {σ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) :
   contMDiffOn_univ.mp
     (ContMDiffCovariantDerivative.contMDiff.contMDiff (by simpa using hσ.contMDiffOn))
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [IsManifold I ∞ M]
-  [MeasurableSpace M] [BorelSpace M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-  [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
-  [IsContMDiffRiemannianBundle I ∞ F V] [ContMDiffCovariantDerivative cov ∞] in
-/-- A covariant derivative vanishes off the closure of a section's nonzero locus. -/
-private theorem covariantDerivative_eq_zero_of_notMem_closure {σ : Π y : M, V y} {x : M}
-    (hx : x ∉ closure {y | σ y ≠ 0}) : cov σ x = 0 := by
-  have hzero : ∀ᶠ y in 𝓝 x, σ y = (0 : Π z, V z) y :=
-    Filter.eventually_of_mem (isClosed_closure.isOpen_compl.mem_nhds hx) fun y hy ↦
-      by_contra fun h ↦ hy (subset_closure h)
-  have h0 : MDiffAt (T% (0 : Π z, V z)) x := mdifferentiableAt_zeroSection ..
-  have hT : (T% σ) =ᶠ[𝓝 x] (T% (0 : Π z, V z)) :=
-    hzero.mono fun y hy ↦ congrArg (TotalSpace.mk' F y) hy
-  rw [cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq
-    (h0.congr_of_eventuallyEq hT) h0 Filter.univ_mem hzero,
-    cov.isCovariantDerivativeOnUniv.zero]
-
 omit [I.Boundaryless] [MeasurableSpace M] [BorelSpace M]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
@@ -358,7 +229,7 @@ private theorem hasCompactSupport_divergence_terms
       HasCompactSupport.intro hτc fun x hx ↦ ?_⟩
     · have h0 : τ x = 0 := by_contra fun h ↦ hx (subset_closure h)
       exact (rieszDual (I := I) x).map_eq_zero_iff.mpr (by simp [h0])
-    · rw [covariantDerivative_eq_zero_of_notMem_closure (cov := cov) hx, map_zero]
+    · rw [cov.covariantDerivative_eq_zero_of_notMem_closure hx, map_zero]
     · have h0 : τ x = 0 := by_contra fun h ↦ hx (subset_closure h)
       simp [h0]
 
@@ -433,7 +304,7 @@ theorem IsMetricCompatible.integral_roughLaplacian_inner [SigmaCompactSpace M]
   have hsupp' : IsCompact (closure {y | cov σ y ≠ 0}) ∨ IsCompact (closure {y | τ y ≠ 0}) := by
     refine hsupp.imp (fun hσc ↦ hσc.of_isClosed_subset isClosed_closure ?_) id
     exact closure_minimal
-      (fun x hx ↦ by_contra fun h ↦ hx (covariantDerivative_eq_zero_of_notMem_closure h))
+      (fun x hx ↦ by_contra fun h ↦ hx (cov.covariantDerivative_eq_zero_of_notMem_closure h))
       isClosed_closure
   have hadj := hcov.integral_codifferential_inner (contMDiff_cov hσ) hτ hsupp'
   refine (integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)).trans hadj
@@ -546,7 +417,7 @@ theorem IsMetricCompatible.roughLaplacian_eq_zero_iff [SigmaCompactSpace M]
       (ContMDiff.hilbertSchmidtInner (n := ∞) (contMDiff_cov hσ) (contMDiff_cov hσ)).continuous
     have hg_supp : HasCompactSupport g :=
       HasCompactSupport.intro hσc fun y hy ↦ by
-        simp [g, covariantDerivative_eq_zero_of_notMem_closure (cov := cov) hy]
+        simp [g, cov.covariantDerivative_eq_zero_of_notMem_closure hy]
     have hzero : ∫ y, g y ∂TauCeti.riemannianVolume I M = 0 := by
       have h := (hcov.integral_roughLaplacian_inner hσ hσ (Or.inl hσc)).symm
       simpa only [g, hΔ, inner_zero_left, integral_zero] using h
@@ -555,8 +426,9 @@ theorem IsMetricCompatible.roughLaplacian_eq_zero_iff [SigmaCompactSpace M]
       (hg_cont.integrable_of_hasCompactSupport hg_supp)).mp hzero
     exact ContinuousLinearMap.hilbertSchmidtInner_self_eq_zero.mp
       (congrFun ((hg_cont.ae_eq_iff_eq _ continuous_zero).mp hae) x)
-  · rw [← codifferential_covariantDerivative cov (leviCivitaConnection I M) hσ x,
-      show cov σ = 0 from funext hpar, codifferential_zero]
+  · have hcov_zero : cov σ = 0 := funext hpar
+    rw [← codifferential_covariantDerivative cov (leviCivitaConnection I M) hσ x, hcov_zero,
+      codifferential_zero]
 
 /-- **Characterization of rough-harmonic sections on a closed manifold.** On a compact boundaryless
 Riemannian manifold, a smooth section satisfies `∇*∇σ = 0` everywhere if and only if it is

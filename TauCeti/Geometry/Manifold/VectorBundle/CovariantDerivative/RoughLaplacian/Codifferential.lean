@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative.Hom
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Section
 public import TauCeti.RingTheory.Derivation.DifferentialOperator
 import TauCeti.Analysis.InnerProductSpace.CanonicalTensor
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
@@ -47,18 +47,17 @@ coordinate expressions on a chart domain `(chartAt H α).source` with chart fram
 * **Volume-density divergence formula** (when `∇ᵀ` is the Levi-Civita connection):
   `ρ (∇* η) = -∑ₖ ∇_{eₖ} (ρ η(eₖ♯))` and `ρ (∇*∇ σ) = -∑ₖ ∇_{eₖ} (ρ ∇_{eₖ♯} σ)`.
 
-Finally, for smooth connections, `∇`, `∇*`, and `∇*∇` are bundled as real-linear maps on
-`ContMDiffSection`, shown to preserve closed and compact supports, and placed in Grothendieck's
-order filtration `TauCeti.differentialOperators` (`∇` and `∇*` of order at most `1`, `∇*∇ = ∇* ∘ ∇`
-of order at most `2`).
+Finally, combining with `CovariantDerivative.smoothCovariantDerivative`
+(`CovariantDerivative.Section`), for smooth connections `∇*` and `∇*∇` are bundled as real-linear
+maps on `ContMDiffSection`, shown to preserve closed and compact supports, and placed in
+Grothendieck's order filtration `TauCeti.differentialOperators` (`∇*` of order at most `1`,
+`∇*∇ = ∇* ∘ ∇` of order at most `2`).
 
 ## Main definitions
 
 * `CovariantDerivative.codifferential`: the covariant codifferential `∇* η` at a point.
-* `CovariantDerivative.smoothCovariantDerivative`,
-  `CovariantDerivative.smoothCodifferential`, and
-  `CovariantDerivative.smoothRoughLaplacian`: `∇`, `∇*`, and `∇*∇` as linear maps on smooth
-  sections.
+* `CovariantDerivative.smoothCodifferential` and `CovariantDerivative.smoothRoughLaplacian`: `∇*`
+  and `∇*∇` as linear maps on smooth sections.
 
 ## Main results
 
@@ -73,8 +72,7 @@ of order at most `2`).
   expressions weighted by `ρ = √det g`.
 * `CovariantDerivative.contMDiff_codifferential` and `CovariantDerivative.contMDiff_roughLaplacian`:
   smoothness of `∇* η` and `∇*∇ σ`.
-* `CovariantDerivative.smoothCovariantDerivative_mem_differentialOperators_one`,
-  `CovariantDerivative.smoothCodifferential_mem_differentialOperators_one`, and
+* `CovariantDerivative.smoothCodifferential_mem_differentialOperators_one` and
   `CovariantDerivative.smoothRoughLaplacian_mem_differentialOperators_two`: placement in
   `TauCeti.differentialOperators`.
 
@@ -217,11 +215,8 @@ theorem codifferential_congr_of_eventuallyEq {η₁ η₂ : Π y : M, TangentSpa
 theorem codifferential_eq_zero_of_notMem_closure {η : Π y : M, TangentSpace I y →L[ℝ] V y} {x : M}
     (hx : x ∉ closure {y | η y ≠ 0}) :
     cov.codifferential covT η x = 0 := by
-  have hzero : ∀ᶠ y in 𝓝 x, η y = (0 : Π z : M, TangentSpace I z →L[ℝ] V z) y := by
-    filter_upwards [isClosed_closure.isOpen_compl.mem_nhds hx] with y hy
-    by_contra hne
-    exact hy (subset_closure hne)
-  rw [codifferential_congr_of_eventuallyEq cov covT hzero, codifferential_zero]
+  simp [codifferential_eq_sum cov covT _ x (stdOrthonormalBasis ℝ (TangentSpace I x)),
+    (covT.hom cov).covariantDerivative_eq_zero_of_notMem_closure hx]
 
 /-- **Leibniz rule for the covariant codifferential.** For `f` and `η` differentiable at `x`,
 `∇* (f • η) = f • ∇* η - η (grad f)`. -/
@@ -309,19 +304,10 @@ theorem roughLaplacian_eq_zero_of_notMem_closure
     cov.roughLaplacian covT σ x = 0 := by
   by_cases hσ : CMDiff ∞ (T% σ)
   · rw [← codifferential_covariantDerivative cov covT hσ]
-    apply codifferential_eq_zero_of_notMem_closure cov covT
-    have hsub : {y | cov σ y ≠ 0} ⊆ closure {z | σ z ≠ 0} := fun y hy ↦ by
-      by_contra hy'
-      have hzero : ∀ᶠ z in 𝓝 y, σ z = (0 : Π w : M, V w) z := by
-        filter_upwards [isClosed_closure.isOpen_compl.mem_nhds hy'] with z hz
-        by_contra hne
-        exact hz (subset_closure hne)
-      have h0diff : MDiffAt (T% (0 : Π z : M, V z)) y := by
-        simpa only [zero_smul] using (hσ.mdifferentiableAt (by simp)).const_smul_section (0 : ℝ)
-      exact hy <| (cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq
-        (hσ.mdifferentiableAt (by simp)) h0diff Filter.univ_mem hzero).trans
-        cov.isCovariantDerivativeOnUniv.zero
-    exact fun hx' ↦ hx (closure_minimal hsub isClosed_closure hx')
+    have hsub : {z | cov σ z ≠ 0} ⊆ closure {z | σ z ≠ 0} := fun y hy ↦
+      by_contra fun hy' ↦ hy (cov.covariantDerivative_eq_zero_of_notMem_closure hy')
+    exact codifferential_eq_zero_of_notMem_closure cov covT
+      fun hx' ↦ hx (closure_minimal hsub isClosed_closure hx')
   · exact roughLaplacian_of_not_contMDiff cov covT hσ x
 
 /-- **Local inverse-Gram formula for the rough Laplacian.** On the domain of the chart at `α`,
@@ -359,91 +345,6 @@ theorem roughLaplacian_eq_sum_chartDualFrame
   simp only [chartDualFrame_apply, map_sum, map_smul]
 
 end RoughLaplacian
-
-/-! ### Bundled covariant derivative on smooth sections -/
-
-section SmoothCovariantDerivative
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
-  [∀ x, ContinuousSMul ℝ (V x)]
-  [FiberBundle F V] [VectorBundle ℝ F V]
-
-section Basic
-
-variable (cov : _root_.CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
-
-/-- The covariant derivative `∇` as a real-linear map from smooth sections of `V` to smooth
-sections of `Hom(TM, V)`. -/
-def smoothCovariantDerivative :
-    Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; E →L[ℝ] F, fun x ↦ TangentSpace I x →L[ℝ] V x⟯ where
-  toFun σ := ⟨cov σ, contMDiffOn_univ.mp
-    (ContMDiffCovariantDerivative.contMDiff.contMDiff (by simpa using σ.contMDiff.contMDiffOn))⟩
-  map_add' σ τ := ContMDiffSection.ext fun x ↦
-    cov.isCovariantDerivativeOnUniv.add
-      (σ.contMDiff.mdifferentiableAt (by simp)) (τ.contMDiff.mdifferentiableAt (by simp))
-  map_smul' c σ := ContMDiffSection.ext fun x ↦
-    cov.isCovariantDerivativeOnUniv.smul_const c
-      (σ.contMDiff.mdifferentiableAt (by simp))
-
-@[simp]
-theorem smoothCovariantDerivative_apply (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
-    cov.smoothCovariantDerivative σ x = cov σ x :=
-  (rfl)
-
-/-- Covariant differentiation does not enlarge the closed support of a smooth section. -/
-theorem tsupport_smoothCovariantDerivative_subset (σ : Cₛ^∞⟮I; F, V⟯) :
-    (cov.smoothCovariantDerivative σ).tsupport ⊆ σ.tsupport := by
-  refine (ContMDiffSection.tsupport_subset_iff σ.isClosed_tsupport).2 fun x hx ↦ ?_
-  have hzero : ∀ᶠ y in 𝓝 x, (σ : Π z, V z) y = (0 : Cₛ^∞⟮I; F, V⟯) y :=
-    Filter.eventually_of_mem (σ.isClosed_tsupport.isOpen_compl.mem_nhds hx) fun y hy ↦ by
-      simp [σ.eq_zero_of_notMem_tsupport hy]
-  rw [smoothCovariantDerivative_apply,
-    cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq
-      (σ.contMDiff.mdifferentiableAt (by simp))
-      ((0 : Cₛ^∞⟮I; F, V⟯).contMDiff.mdifferentiableAt (by simp)) Filter.univ_mem hzero,
-    ContMDiffSection.coe_zero, cov.isCovariantDerivativeOnUniv.zero]
-
-/-- Covariant differentiation preserves compactly supported smooth sections. -/
-theorem smoothCovariantDerivative_mem_compactlySupported {σ : Cₛ^∞⟮I; F, V⟯}
-    (hσ : σ ∈ ContMDiffSection.compactlySupported I F ∞ V) :
-    cov.smoothCovariantDerivative σ ∈
-      ContMDiffSection.compactlySupported I (E →L[ℝ] F) ∞ (fun x ↦ TangentSpace I x →L[ℝ] V x) := by
-  rw [ContMDiffSection.mem_compactlySupported] at hσ ⊢
-  exact hσ.of_isClosed_subset (ContMDiffSection.isClosed_tsupport _)
-    (cov.tsupport_smoothCovariantDerivative_subset σ)
-
-/-- The commutator `[∇, f] σ` acts on `v` by `df(v) • σ x`: the principal symbol of `∇`. -/
-theorem smulCommutator_smoothCovariantDerivative_apply
-    (f : C^∞⟮I, M; ℝ⟯) (σ : Cₛ^∞⟮I; F, V⟯) (x : M) (v : TangentSpace I x) :
-    TauCeti.smulCommutator ℝ f cov.smoothCovariantDerivative σ x v = d% f x v • σ x := by
-  have hcoe : (⇑(f • σ) : Π y, V y) = (f : M → ℝ) • (σ : Π y, V y) :=
-    funext fun y ↦ ContMDiffSection.smul_apply f σ y
-  simp only [TauCeti.smulCommutator_apply_apply, ContMDiffSection.coe_sub, Pi.sub_apply,
-    sub_apply, ContMDiffSection.smul_apply, smul_apply,
-    smoothCovariantDerivative_apply, hcoe,
-    cov.covariantDerivative_smul_section_apply (f.contMDiff.mdifferentiableAt (by simp))
-      (σ.contMDiff.mdifferentiableAt (by simp)), add_sub_cancel_left]
-
-/-- A smooth covariant derivative has differential-operator order at most `1`. -/
-theorem smoothCovariantDerivative_mem_differentialOperators_one :
-    cov.smoothCovariantDerivative ∈
-      TauCeti.differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯
-        Cₛ^∞⟮I; E →L[ℝ] F, fun x ↦ TangentSpace I x →L[ℝ] V x⟯ 1 := by
-  refine TauCeti.mem_differentialOperators_succ_iff.2 fun f ↦
-    TauCeti.mem_differentialOperators_zero_iff.2 fun g σ ↦ ContMDiffSection.ext fun x ↦ ?_
-  ext v
-  simp only [ContMDiffSection.smul_apply, smul_apply,
-    smulCommutator_smoothCovariantDerivative_apply, smul_comm (d% f x v) (g x)]
-
-end Basic
-
-end SmoothCovariantDerivative
 
 /-! ### Smoothness and local volume-density divergence formulas -/
 
@@ -703,20 +604,21 @@ theorem smoothRoughLaplacian_apply (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
 @[simp]
 theorem smoothCodifferential_comp_smoothCovariantDerivative :
     (cov.smoothCodifferential covT).comp cov.smoothCovariantDerivative =
-      cov.smoothRoughLaplacian covT :=
-  LinearMap.ext fun σ ↦ ContMDiffSection.ext fun x ↦
-    codifferential_covariantDerivative cov covT σ.contMDiff x
+      cov.smoothRoughLaplacian covT := by
+  ext σ x
+  have hcoe : (⇑(cov.smoothCovariantDerivative σ) : Π y, TangentSpace I y →L[ℝ] V y) = cov σ :=
+    funext fun y ↦ cov.smoothCovariantDerivative_apply σ y
+  simp only [LinearMap.comp_apply, smoothCodifferential_apply, hcoe, smoothRoughLaplacian_apply,
+    codifferential_covariantDerivative cov covT σ.contMDiff x]
 
 /-- The covariant codifferential does not enlarge the closed support of a smooth one-form. -/
 theorem tsupport_smoothCodifferential_subset
     (η : Cₛ^∞⟮I; E →L[ℝ] F, fun x ↦ TangentSpace I x →L[ℝ] V x⟯) :
     (cov.smoothCodifferential covT η).tsupport ⊆ η.tsupport := by
   refine (ContMDiffSection.tsupport_subset_iff η.isClosed_tsupport).2 fun x hx ↦ ?_
-  have hzero : ∀ᶠ y in 𝓝 x, η y = (0 : Π z : M, TangentSpace I z →L[ℝ] V z) y :=
-    Filter.eventually_of_mem (η.isClosed_tsupport.isOpen_compl.mem_nhds hx) fun y hy ↦
-      η.eq_zero_of_notMem_tsupport hy
-  rw [smoothCodifferential_apply, codifferential_congr_of_eventuallyEq cov covT hzero,
-    codifferential_zero]
+  rw [ContMDiffSection.tsupport_def] at hx
+  rw [smoothCodifferential_apply]
+  exact cov.codifferential_eq_zero_of_notMem_closure covT hx
 
 /-- The rough Laplacian does not enlarge the closed support of a smooth section. -/
 theorem tsupport_smoothRoughLaplacian_subset (σ : Cₛ^∞⟮I; F, V⟯) :
