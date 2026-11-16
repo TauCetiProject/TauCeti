@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
+public import Mathlib.MeasureTheory.Measure.WithDensity
 
 /-!
 # Operations on the base of a composition-product
@@ -17,7 +18,9 @@ information carried by the points of the source. It can when `κ` itself factors
 that case is the main content of this file. It is the base-side counterpart of Mathlib's
 `MeasureTheory.Measure.compProd_map`, which pushes the kernel side forward instead.
 
-Restricting the base, by contrast, always commutes with the composition-product.
+Restricting the base, by contrast, always commutes with the composition-product, and projecting
+a measurable restriction of `μ ⊗ₘ κ` onto the base weights `μ` by the kernel masses of its
+vertical sections.
 
 ## Main statements
 
@@ -25,6 +28,9 @@ Restricting the base, by contrast, always commutes with the composition-product.
   `κ : Kernel Y Z`, `(μ ⊗ₘ κ.comap f hf).map (Prod.map f id) = μ.map f ⊗ₘ κ`.
 * `MeasureTheory.Measure.compProd_restrict_left` — restricting the base to `s` restricts the
   composition-product to `s ×ˢ univ`.
+* `MeasureTheory.Measure.map_fst_restrict_compProd_eq_withDensity` — projecting
+  `(μ ⊗ₘ κ).restrict A` onto the first coordinate gives
+  `μ.withDensity fun x => κ x (Prod.mk x ⁻¹' A)`.
 -/
 
 public section
@@ -62,5 +68,18 @@ theorem compProd_restrict_left (μ : Measure W) [SFinite μ] (κ : Kernel W Z)
   · simp [compProd_of_not_isSFiniteKernel _ _ hκ]
   rw [compProd, compProd, ← Kernel.restrict_const hs, ← Kernel.restrict_apply _ (hs.prod .univ),
     Kernel.compProd_restrict_left]
+
+/-- Projecting a measurable restriction of a composition-product `μ ⊗ₘ κ` onto the first
+factor weights `μ` by the kernel masses of the vertical sections. -/
+theorem map_fst_restrict_compProd_eq_withDensity (μ : Measure W) [SFinite μ]
+    (κ : Kernel W Z) [IsSFiniteKernel κ] {A : Set (W × Z)} (hA : MeasurableSet A) :
+    ((μ ⊗ₘ κ).restrict A).map Prod.fst =
+      μ.withDensity fun x => κ x (Prod.mk x ⁻¹' A) := by
+  ext s hs
+  rw [map_apply measurable_fst hs, restrict_apply (measurable_fst hs),
+    compProd_apply ((measurable_fst hs).inter hA), withDensity_apply _ hs,
+    ← lintegral_indicator hs]
+  refine lintegral_congr fun x => ?_
+  by_cases hx : x ∈ s <;> simp [Set.preimage, hx]
 
 end MeasureTheory.Measure

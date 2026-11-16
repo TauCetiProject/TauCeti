@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.IntegerValued.Enumeration.Basic
+public import TauCeti.MeasureTheory.MeasurableSpace.CountablyGenerated
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Probability.Kernel.Basic
 public import Mathlib.Topology.Compactness.SigmaCompact
@@ -23,6 +24,12 @@ The construction enumerates the finite restrictions to the disjoint pieces of th
 interleaves their enumerations. Consequently `none` can occur between actual occurrences;
 it is not a signal that the enumeration has ended. This representation supplies the locations
 for attaching independent marks to an infinite locally finite configuration.
+
+For a fixed countable measurable cover, the locus of integer-valued measures finite on every
+cover piece is itself measurable in `Measure X` on any countably generated space, so on a
+standard Borel space there is a total measurable occurrence enumeration
+`Measure X → ℕ → Option X` reconstructing every measure in that locus and returning `none`
+outside it.
 
 ## References
 
@@ -82,3 +89,84 @@ theorem Measurable.exists_occurrence_enumeration_of_isFiniteMeasureOnCompacts
     (fun a n => by
       have := hfinite a
       exact (isCompact_compactCovering X n).measure_ne_top)
+
+namespace MeasureTheory.Measure
+
+/-- On a countably generated measurable space, the set of integer-valued measures giving finite
+mass to every set in a countable measurable cover is measurable for the Giry σ-algebra. -/
+theorem measurableSet_isIntegerValued_and_forall_ne_top
+    {X : Type*} [MeasurableSpace X] [MeasurableSpace.CountablyGenerated X]
+    {s : ℕ → Set X} (hs : ∀ n, MeasurableSet (s n)) (hcover : ⋃ n, s n = univ) :
+    MeasurableSet {μ : Measure X | μ.IsIntegerValued ∧ ∀ n, μ (s n) ≠ ∞} := by
+  classical
+  obtain ⟨C, hcount, hpi, huniv, hgen⟩ :=
+    MeasurableSpace.exists_countable_isPiSystem_generateFrom (α := X)
+  have hCmeas : ∀ A ∈ C, MeasurableSet A := fun A hA => by
+    rw [hgen]
+    exact MeasurableSpace.measurableSet_generateFrom hA
+  have heq : {μ : Measure X | μ.IsIntegerValued ∧ ∀ n, μ (s n) ≠ ∞} =
+      ⋂ n : ℕ, ⋂ A ∈ C, ⋃ k : ℕ, {μ : Measure X | μ (A ∩ s n) = k} := by
+    ext μ
+    simp only [mem_ofPred_eq, mem_iInter, mem_iUnion]
+    constructor
+    · rintro ⟨hint, hfin⟩ n A hA
+      exact hint.exists_eq_natCast ((hCmeas A hA).inter (hs n))
+        ((measure_mono inter_subset_right).trans_lt (lt_top_iff_ne_top.mpr (hfin n)))
+    · intro h
+      refine ⟨isIntegerValued_of_restrict hcover fun n => ?_, fun n => ?_⟩
+      · refine isIntegerValued_of_isPiSystem hgen hpi (fun A hA => ?_) ?_
+        · simpa only [Measure.restrict_apply (hCmeas A hA)] using h n A hA
+        · simpa only [Measure.restrict_apply MeasurableSet.univ, univ_inter] using h n univ huniv
+      · obtain ⟨k, hk⟩ := h n univ huniv
+        rw [univ_inter] at hk
+        simp [hk]
+  rw [heq]
+  refine MeasurableSet.iInter fun n => MeasurableSet.biInter hcount fun A hA =>
+    MeasurableSet.iUnion fun k => ?_
+  exact measurableSet_eq_fun (Measure.measurable_coe ((hCmeas A hA).inter (hs n))) measurable_const
+
+/-- On a standard Borel space, every countable measurable cover admits a total measurable
+occurrence enumeration of `Measure X` that reconstructs every integer-valued measure finite on
+the cover and returns `none` at every index outside that locus. -/
+theorem exists_occurrence_enumeration_of_cover
+    {X : Type*} [MeasurableSpace X] [StandardBorelSpace X]
+    {s : ℕ → Set X} (hs : ∀ n, MeasurableSet (s n)) (hcover : ⋃ n, s n = univ) :
+    ∃ e : Measure X → ℕ → Option X, Measurable e ∧
+      (∀ μ : Measure X, μ.IsIntegerValued → (∀ n, μ (s n) ≠ ∞) →
+        μ = Measure.sum fun n => (e μ n).elim 0 Measure.dirac) ∧
+      (∀ μ : Measure X, ¬ (μ.IsIntegerValued ∧ ∀ n, μ (s n) ≠ ∞) →
+        ∀ n, e μ n = none) := by
+  classical
+  let S : Set (Measure X) := {μ : Measure X | μ.IsIntegerValued ∧ ∀ n, μ (s n) ≠ ∞}
+  have hS : MeasurableSet S := measurableSet_isIntegerValued_and_forall_ne_top hs hcover
+  let clean : Measure X → Measure X := fun μ => if μ ∈ S then μ else 0
+  have hclean_meas : Measurable clean := Measurable.ite hS measurable_id measurable_const
+  have hclean_int : ∀ μ, (clean μ).IsIntegerValued := fun μ => by
+    dsimp [clean]
+    split_ifs with h
+    · exact h.1
+    · exact isIntegerValued_zero
+  have hclean_fin : ∀ μ n, clean μ (s n) ≠ ∞ := fun μ n => by
+    dsimp [clean]
+    split_ifs with h
+    · exact h.2 n
+    · simp
+  obtain ⟨e, he, hrec⟩ :=
+    hclean_meas.exists_occurrence_enumeration_of_cover hclean_int s hs hcover hclean_fin
+  refine ⟨e, he, fun μ hμ hfin => ?_, fun μ hnot n => ?_⟩
+  · have hmem : μ ∈ S := ⟨hμ, hfin⟩
+    simpa only [clean, ite_eq_left hmem] using hrec μ
+  · have hnot' : μ ∉ S := hnot
+    have hzero : (0 : Measure X) = Measure.sum fun k => (e μ k).elim 0 Measure.dirac := by
+      simpa only [clean, ite_eq_right hnot'] using hrec μ
+    by_contra hne
+    obtain ⟨a, ha⟩ := Option.ne_none_iff_exists'.mp hne
+    have h1 : (1 : ℝ≥0∞) ≤ (0 : Measure X) univ := by
+      rw [hzero, Measure.sum_apply _ MeasurableSet.univ]
+      calc
+        (1 : ℝ≥0∞) = ((e μ n).elim 0 Measure.dirac) univ := by simp [ha]
+        _ ≤ ∑' k, ((e μ k).elim 0 Measure.dirac) univ :=
+          le_tsum (fun k => ((e μ k).elim 0 Measure.dirac) univ) n
+    simp at h1
+
+end MeasureTheory.Measure

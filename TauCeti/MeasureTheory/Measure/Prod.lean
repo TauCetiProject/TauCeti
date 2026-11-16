@@ -27,9 +27,10 @@ For a probability measure `μ`, the pairs with a coordinate in a set `s` have `�
 at most `2 * μ s` (`MeasureTheory.Measure.prod_self_union_le_two_mul`). Weighting by a function
 of the first coordinate commutes with taking the first marginal (`fst_withDensity`).
 Projecting a measurable restriction of a product weights the first factor by the masses of
-its vertical sections (`map_fst_restrict_prod_eq_withDensity`). Rectangle bounds also give
-finite interval-selection masses and a local-finiteness criterion for projected restrictions
-away from an initial endpoint.
+its vertical sections (`map_fst_restrict_prod_eq_withDensity`), and splitting along a measurable
+second-coordinate set and its complement recovers the first marginal as a sum
+(`map_fst_restrict_univ_prod_add_compl`). Rectangle bounds also give finite interval-selection
+masses and a local-finiteness criterion for projected restrictions away from an initial endpoint.
 
 If the pushforward of a product `(μ.map Z).prod ρ` along `(z, t) ↦ (z, f z t)` is the joint law of
 `(Z, X)` for a nonzero finite `μ`, then `ρ` is a probability measure
@@ -141,6 +142,19 @@ theorem map_fst_restrict_prod_eq_withDensity {α β : Type*} [MeasurableSpace α
   apply lintegral_congr
   intro x
   by_cases hx : x ∈ s <;> simp [Set.preimage, hx]
+
+/-- Splitting any measure on a product along a measurable second-coordinate set and its complement
+and projecting to the first coordinate recovers the first marginal as a sum. -/
+theorem map_fst_restrict_univ_prod_add_compl {α β : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] (μ : Measure (α × β)) {A : Set β} (hA : MeasurableSet A) :
+    ((μ.restrict (Set.univ ×ˢ A)).map Prod.fst) +
+        ((μ.restrict (Set.univ ×ˢ Aᶜ)).map Prod.fst) =
+      μ.map Prod.fst := by
+  have hpart : (Set.univ ×ˢ A) ∪ (Set.univ ×ˢ Aᶜ) = (Set.univ : Set (α × β)) := by
+    rw [← Set.prod_union, Set.union_compl_self, Set.univ_prod_univ]
+  rw [← Measure.map_add _ _ measurable_fst,
+    ← Measure.restrict_union (Set.Disjoint.set_prod_right disjoint_compl_right Set.univ Set.univ)
+      (MeasurableSet.univ.prod hA.compl), hpart, Measure.restrict_univ]
 
 /-- Weighting a joint measure by a function of its first coordinate weights its first marginal
 by the same function. The weight only needs to be almost everywhere measurable for the first
