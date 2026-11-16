@@ -104,6 +104,54 @@ def linearHomComplexPrecompHomotopy {φ φ' : F₁ ⟶ F₂} (h : Homotopy φ φ
       Cochain.sub_comp, Int.negOnePow_succ, smul_add, smul_smul, Int.units_mul_self]
     simp⟩
 
+/-- A homotopy equivalence in the target induces a homotopy equivalence on linear Hom complexes. -/
+def linearHomComplexPostcompHomotopyEquiv (F : CochainComplex C ℤ) (e : HomotopyEquiv G₁ G₂) :
+    HomotopyEquiv (linearHomComplex R F G₁) (linearHomComplex R F G₂) where
+  hom := linearHomComplexPostcomp R F e.hom
+  inv := linearHomComplexPostcomp R F e.inv
+  homotopyHomInvId := (Homotopy.ofEq (linearHomComplexPostcomp_comp R F e.hom e.inv).symm).trans <|
+    (linearHomComplexPostcompHomotopy R F e.homotopyHomInvId).trans
+      (Homotopy.ofEq (linearHomComplexPostcomp_id R F G₁))
+  homotopyInvHomId := (Homotopy.ofEq (linearHomComplexPostcomp_comp R F e.inv e.hom).symm).trans <|
+    (linearHomComplexPostcompHomotopy R F e.homotopyInvHomId).trans
+      (Homotopy.ofEq (linearHomComplexPostcomp_id R F G₂))
+
+@[simp]
+lemma linearHomComplexPostcompHomotopyEquiv_hom (F : CochainComplex C ℤ)
+    (e : HomotopyEquiv G₁ G₂) :
+    (linearHomComplexPostcompHomotopyEquiv R F e).hom = linearHomComplexPostcomp R F e.hom := by
+  rfl
+
+@[simp]
+lemma linearHomComplexPostcompHomotopyEquiv_inv (F : CochainComplex C ℤ)
+    (e : HomotopyEquiv G₁ G₂) :
+    (linearHomComplexPostcompHomotopyEquiv R F e).inv = linearHomComplexPostcomp R F e.inv := by
+  rfl
+
+/-- A homotopy equivalence in the source induces a homotopy equivalence on linear Hom complexes. -/
+def linearHomComplexPrecompHomotopyEquiv (e : HomotopyEquiv F₁ F₂) (G : CochainComplex C ℤ) :
+    HomotopyEquiv (linearHomComplex R F₂ G) (linearHomComplex R F₁ G) where
+  hom := linearHomComplexPrecomp R e.hom G
+  inv := linearHomComplexPrecomp R e.inv G
+  homotopyHomInvId := (Homotopy.ofEq (linearHomComplexPrecomp_comp R e.inv e.hom G).symm).trans <|
+    (linearHomComplexPrecompHomotopy R e.homotopyInvHomId G).trans
+      (Homotopy.ofEq (linearHomComplexPrecomp_id R F₂ G))
+  homotopyInvHomId := (Homotopy.ofEq (linearHomComplexPrecomp_comp R e.hom e.inv G).symm).trans <|
+    (linearHomComplexPrecompHomotopy R e.homotopyHomInvId G).trans
+      (Homotopy.ofEq (linearHomComplexPrecomp_id R F₁ G))
+
+@[simp]
+lemma linearHomComplexPrecompHomotopyEquiv_hom (e : HomotopyEquiv F₁ F₂)
+    (G : CochainComplex C ℤ) :
+    (linearHomComplexPrecompHomotopyEquiv R e G).hom = linearHomComplexPrecomp R e.hom G := by
+  rfl
+
+@[simp]
+lemma linearHomComplexPrecompHomotopyEquiv_inv (e : HomotopyEquiv F₁ F₂)
+    (G : CochainComplex C ℤ) :
+    (linearHomComplexPrecompHomotopyEquiv R e G).inv = linearHomComplexPrecomp R e.inv G := by
+  rfl
+
 end Homotopy
 
 variable (C) in

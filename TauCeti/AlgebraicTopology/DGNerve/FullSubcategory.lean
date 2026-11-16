@@ -199,6 +199,47 @@ instance isFullyFaithful_mapDGNerve_inclusion :
   rw [← dgNerveIso_hom_ι R P]
   infer_instance
 
+/-- Applying `inclusionOfLE` followed by the ambient `inclusion` to a dg simplex recovers the
+action of the smaller ambient `inclusion`. -/
+@[simp]
+lemma mapDGNerveSimplex_inclusion_mapDGNerveSimplex_inclusionOfLE {P Q : C → Prop}
+    (h : ∀ X, P X → Q X) {n : ℕ} (x : DGNerve.Simplex R (DGFullSubcategory P) n) :
+    (inclusion (R := R) (P := Q)).mapDGNerveSimplex
+      ((inclusionOfLE R h).mapDGNerveSimplex x) =
+        (inclusion (R := R) (P := P)).mapDGNerveSimplex x := by
+  refine DGNerve.Simplex.ext (by ext i; simp) fun i j S d hij hS hd ↦ ?_
+  rw [CategoryTheory.EnrichedFunctor.mapDGNerveSimplex_coh,
+    CategoryTheory.EnrichedFunctor.mapDGNerveSimplex_coh,
+    CategoryTheory.EnrichedFunctor.mapDGNerveSimplex_coh]
+  exact (inclusion_dgMap_heq R _).trans
+    ((inclusionOfLE_dgMap_heq R h _).trans (inclusion_dgMap_heq R _).symm)
+
+/-- Composing the dg nerve of `inclusionOfLE` with the ambient inclusion recovers the ambient
+inclusion of the smaller full dg subcategory. -/
+@[reassoc (attr := simp)]
+lemma mapDGNerve_inclusionOfLE_comp_inclusion {P Q : C → Prop} (h : ∀ X, P X → Q X) :
+    (inclusionOfLE R h).mapDGNerve ≫ (inclusion (R := R) (P := Q)).mapDGNerve =
+      (inclusion (R := R) (P := P)).mapDGNerve := by
+  rw [← CategoryTheory.EnrichedFunctor.comp_mapDGNerve]
+  ext Δ x
+  change ((inclusionOfLE R h).comp (CochainComplex (ModuleCat.{v} R) ℤ)
+    (inclusion (R := R) (P := Q))).mapDGNerve.app Δ x =
+      (inclusion (R := R) (P := P)).mapDGNerve.app Δ x
+  exact ((CategoryTheory.EnrichedFunctor.mapDGNerve_app _ x).trans
+    (CategoryTheory.EnrichedFunctor.comp_mapDGNerveSimplex _ _ _)).trans
+    ((mapDGNerveSimplex_inclusion_mapDGNerveSimplex_inclusionOfLE R h _).trans
+      (CategoryTheory.EnrichedFunctor.mapDGNerve_app _ x).symm)
+
+/-- The dg nerve of a full inclusion between nested full dg subcategories is fully faithful on
+right mapping spaces. -/
+instance isFullyFaithful_mapDGNerve_inclusionOfLE {P Q : C → Prop} (h : ∀ X, P X → Q X) :
+    SSet.IsFullyFaithful (inclusionOfLE R h).mapDGNerve := by
+  have : SSet.IsFullyFaithful
+      ((inclusionOfLE R h).mapDGNerve ≫ (inclusion (R := R) (P := Q)).mapDGNerve) := by
+    rw [mapDGNerve_inclusionOfLE_comp_inclusion]
+    infer_instance
+  exact SSet.IsFullyFaithful.of_comp _ (inclusion (R := R) (P := Q)).mapDGNerve
+
 end DGFullSubcategory
 
 end
