@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 
+import TauCeti.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.Normed.Module.FiniteSpan
+
 /-!
 # Compressible and incompressible vectors
 
@@ -26,7 +29,7 @@ other columns.
 
 public section
 
-open Finset
+open Finset Metric Set
 
 namespace TauCeti
 
@@ -145,7 +148,7 @@ theorem isIncompressibleVector_iff_sum_compl_gt [DecidableEq ι] (hρ : 0 ≤ ρ
 
 /-- At radius zero, compressibility means that the unit vector itself has at most `k` nonzero
 coordinates. -/
-theorem isCompressibleVector_zero_iff :
+theorem isCompressibleVector_zero_right_iff :
     IsCompressibleVector k 0 x ↔ ‖x‖ = 1 ∧ ∃ s : Finset ι, s.card ≤ k ∧ ∀ i ∉ s, x i = 0 := by
   constructor
   · rintro ⟨hn, s, hs, y, hy, hd⟩
@@ -155,10 +158,10 @@ theorem isCompressibleVector_zero_iff :
     exact ⟨hn, s, hs, x, hx, by simp⟩
 
 /-- At radius zero, an incompressible unit vector has more than `k` nonzero coordinates. -/
-theorem isIncompressibleVector_zero_iff :
+theorem isIncompressibleVector_zero_right_iff :
     IsIncompressibleVector k 0 x ↔ ‖x‖ = 1 ∧
       ∀ s : Finset ι, s.card ≤ k → ∃ i ∉ s, x i ≠ 0 := by
-  rw [isIncompressibleVector_iff, isCompressibleVector_zero_iff]
+  rw [isIncompressibleVector_iff, isCompressibleVector_zero_right_iff]
   push Not
   tauto
 
@@ -205,27 +208,6 @@ theorem not_isIncompressibleVector_of_one_le (hρ : 1 ≤ ρ) :
     ¬IsIncompressibleVector k ρ x :=
   fun hx ↦ hx.not_isCompressibleVector (isCompressibleVector_of_one_le hx.norm_eq_one hρ)
 
-/-- More than `k` coordinates of an incompressible vector exceed a threshold whose total
-squared mass is at most `ρ²`. -/
-theorem IsIncompressibleVector.lt_card_filter_norm (hx : IsIncompressibleVector k ρ x) (hρ : 0 ≤ ρ)
-    {a : ℝ} (haρ : (Fintype.card ι : ℝ) * a ^ 2 ≤ ρ ^ 2) :
-    k < (univ.filter fun i ↦ a < ‖x i‖).card := by
-  classical
-  by_contra h
-  let s := univ.filter fun i ↦ a < ‖x i‖
-  have hs : s.card ≤ k := Nat.le_of_not_gt h
-  have htail := (isIncompressibleVector_iff_sum_compl_gt hρ).mp hx |>.2 s hs
-  have hbound : ∑ i ∈ sᶜ, ‖x i‖ ^ 2 ≤ (Fintype.card ι : ℝ) * a ^ 2 := by
-    calc
-      ∑ i ∈ sᶜ, ‖x i‖ ^ 2 ≤ ∑ i ∈ sᶜ, a ^ 2 := by
-        apply sum_le_sum
-        intro i hi
-        have hi' : ‖x i‖ ≤ a := by simpa [s] using mem_compl.mp hi
-        exact pow_le_pow_left₀ (norm_nonneg _) hi' 2
-      _ ≤ (Fintype.card ι : ℝ) * a ^ 2 := by
-        simpa using sum_le_univ_sum_of_nonneg (s := sᶜ) (fun _ ↦ sq_nonneg a)
-  linarith
-
 /-- An incompressible vector is spread: the coordinates between `a` and `b` carry squared mass
 greater than `ρ² - n a²`, provided at most `k` coordinates exceed `b`. -/
 theorem IsIncompressibleVector.lt_sum_filter_norm (hx : IsIncompressibleVector k ρ x) (hρ : 0 ≤ ρ)
@@ -257,26 +239,16 @@ theorem IsIncompressibleVector.lt_sum_filter_norm (hx : IsIncompressibleVector k
       _ = _ := by rw [sum_add_distrib]; simp [sum_filter]
   linarith
 
-/-- A unit vector has at most `k` coordinates with norm greater than `1 / √(k + 1)`. -/
-theorem _root_.EuclideanSpace.card_filter_inv_sqrt_lt_norm_le (hn : ‖x‖ = 1) (k : ℕ) :
-    (univ.filter fun i ↦ 1 / Real.sqrt (k + 1) < ‖x i‖).card ≤ k := by
+/-- More than `k` coordinates of an incompressible vector exceed a threshold whose total
+squared mass is at most `ρ²`. -/
+theorem IsIncompressibleVector.lt_card_filter_norm (hx : IsIncompressibleVector k ρ x) (hρ : 0 ≤ ρ)
+    {a : ℝ} (haρ : (Fintype.card ι : ℝ) * a ^ 2 ≤ ρ ^ 2) :
+    k < (univ.filter fun i ↦ a < ‖x i‖).card := by
   classical
-  have hkp : (0 : ℝ) < k + 1 := by positivity
-  have hsqrt : (Real.sqrt (k + 1 : ℝ)) ^ 2 = k + 1 := Real.sq_sqrt hkp.le
   by_contra h
-  let s := univ.filter fun i ↦ 1 / Real.sqrt (k + 1) < ‖x i‖
-  have hcard : k + 1 ≤ s.card := Nat.succ_le_of_lt (Nat.lt_of_not_ge h)
-  have hsum : (s.card : ℝ) * (1 / (k + 1 : ℝ)) < ∑ i ∈ s, ‖x i‖ ^ 2 := by
-    calc
-      _ = ∑ _i ∈ s, (1 / Real.sqrt (k + 1 : ℝ)) ^ 2 := by simp [hsqrt]
-      _ < _ := sum_lt_sum_of_nonempty (Finset.card_pos.mp (by omega)) fun i hi ↦
-        pow_lt_pow_left₀ ((mem_filter.mp hi).2) (by positivity) (by norm_num : 2 ≠ 0)
-  have htotal : ∑ i ∈ s, ‖x i‖ ^ 2 ≤ 1 := by
-    calc _ ≤ ∑ i, ‖x i‖ ^ 2 := sum_le_univ_sum_of_nonneg fun _ ↦ sq_nonneg _
-         _ = 1 := by rw [← EuclideanSpace.norm_sq_eq, hn]; norm_num
-  have : (s.card : ℝ) < k + 1 := by nlinarith [(div_lt_iff₀ hkp).mp (by
-    simpa [div_eq_mul_inv] using hsum.trans_le htotal)]
-  exact (by exact_mod_cast hcard : (k + 1 : ℝ) ≤ s.card).not_gt this
+  have hsum := hx.lt_sum_filter_norm hρ (a := a) (b := a) (Nat.le_of_not_gt h)
+  rw [Finset.filter_eq_empty_iff.mpr (fun _ _ hi ↦ hi.1.not_ge hi.2), sum_empty] at hsum
+  linarith
 
 /-- An incompressible vector has more than `(k + 1) ρ² / 2` coordinates with norms between
 `ρ / √(2n)` and `1 / √(k + 1)`, where `n` is the number of coordinates.
@@ -294,7 +266,10 @@ theorem IsIncompressibleVector.exists_finset_lt_card_and_forall_norm
   have hsqrt : (Real.sqrt (k + 1 : ℝ)) ^ 2 = k + 1 := Real.sq_sqrt hkp.le
   -- Remove the small coordinates from the mass outside the large coordinates.
   have hmass := hx.lt_sum_filter_norm hρ (a := ρ / Real.sqrt (2 * Fintype.card ι))
-    (EuclideanSpace.card_filter_inv_sqrt_lt_norm_le hx.norm_eq_one k)
+    (EuclideanSpace.card_filter_lt_norm_le (k := k) (t := 1 / Real.sqrt (k + 1))
+      (by positivity) (by
+      rw [hx.norm_eq_one, div_pow, one_pow, hsqrt]
+      exact (mul_one_div_cancel (ne_of_gt hkp)).ge))
   have hsmall : (Fintype.card ι : ℝ) * (ρ / Real.sqrt (2 * Fintype.card ι)) ^ 2 =
       ρ ^ 2 / 2 := by
     have hn : (Fintype.card ι : ℝ) ≠ 0 := by
@@ -310,6 +285,27 @@ theorem IsIncompressibleVector.exists_finset_lt_card_and_forall_norm
         sum_le_sum fun i hi ↦ pow_le_pow_left₀ (norm_nonneg _) (mem_filter.mp hi).2.2 2
       _ = _ := by simp [hsqrt, div_eq_mul_inv]
   have hfinal := (lt_div_iff₀ hkp).mp (hmass.trans_le hbound)
+  nlinarith
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] in
+/-- A small linear combination with incompressible coefficients forces more than `k` column
+distances to be small. The threshold `a` may be any nonnegative number with `n a² ≤ ρ²`. -/
+theorem IsIncompressibleVector.lt_card_filter_infDist_span_range_ne
+    {k : ℕ} {ρ a ε : ℝ} {x : EuclideanSpace 𝕜 ι} (hx : IsIncompressibleVector k ρ x)
+    (hρ : 0 ≤ ρ) (ha : 0 ≤ a) (haρ : (Fintype.card ι : ℝ) * a ^ 2 ≤ ρ ^ 2)
+    (v : ι → E) (hv : ‖∑ i, x i • v i‖ < a * ε) :
+    k < (univ.filter fun i ↦ infDist (v i)
+      (Submodule.span 𝕜 (range fun j : {j // j ≠ i} ↦ v j) : Set E) < ε).card := by
+  apply (hx.lt_card_filter_norm hρ haρ).trans_le
+  apply Finset.card_le_card
+  intro i hi
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢
+  have hd := norm_mul_infDist_span_range_ne_le v (fun j ↦ x j) i
+  have he : 0 < ε := by nlinarith [norm_nonneg (∑ j, x j • v j)]
+  by_contra h
+  have hεd : ε ≤ infDist (v i)
+      (Submodule.span 𝕜 (range fun j : {j // j ≠ i} ↦ v j) : Set E) := le_of_not_gt h
+  have hm := mul_le_mul_of_nonneg_left hεd (norm_nonneg (x i))
   nlinarith
 
 end TauCeti

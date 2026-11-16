@@ -16,7 +16,6 @@ Distance to a span is the infimum of the errors of its finitely supported linear
 As the family and the point vary, this distance is upper semicontinuous, hence measurable.
 Continuity need not hold when the rank drops. For any finite linear combination, `‖c i‖` times
 the distance of `v i` from the span of the remaining vectors is bounded by `‖∑ j, c j • v j‖`.
-Having a small linear combination with coefficients in any fixed set is open in the family.
 -/
 
 public section
@@ -35,31 +34,15 @@ variable [Semiring 𝕜] [Module 𝕜 E]
 theorem infDist_span_range_eq_iInf_finsupp (v : ι → E) (x : E) :
     infDist x (Submodule.span 𝕜 (range v) : Set E) =
       ⨅ c : ι →₀ 𝕜, ‖x - c.sum fun i r ↦ r • v i‖ := by
-  apply le_antisymm
-  · apply le_ciInf
-    intro c
-    simpa only [dist_eq_norm] using infDist_le_dist_of_mem
-      (Finsupp.mem_span_range_iff_exists_finsupp.mpr ⟨c, rfl⟩ :
-        (c.sum fun i r ↦ r • v i) ∈ Submodule.span 𝕜 (range v))
-  · apply (le_infDist ⟨0, Submodule.zero_mem _⟩).mpr
-    intro y hy
-    obtain ⟨c, rfl⟩ := Finsupp.mem_span_range_iff_exists_finsupp.mp hy
-    simpa only [dist_eq_norm] using
-      (ciInf_le (f := fun c : ι →₀ 𝕜 ↦ ‖x - c.sum fun i r ↦ r • v i‖)
-        ⟨0, by rintro _ ⟨d, rfl⟩; positivity⟩ c)
+  rw [← Finsupp.range_linearCombination, LinearMap.coe_range, infDist_eq_iInf, iInf_range']
+  simp only [dist_eq_norm, Finsupp.linearCombination_apply]
 
 /-- Distance to a finite span is the infimum of the linear-combination errors. -/
 theorem infDist_span_range_eq_iInf [Fintype ι] (v : ι → E) (x : E) :
     infDist x (Submodule.span 𝕜 (range v) : Set E) =
       ⨅ c : ι → 𝕜, ‖x - ∑ i, c i • v i‖ := by
-  classical
-  rw [infDist_span_range_eq_iInf_finsupp]
-  calc
-    _ = ⨅ c : ι →₀ 𝕜, ‖x - ∑ i, c i • v i‖ :=
-      iInf_congr fun c ↦ congrArg (fun y : E ↦ ‖x - y‖)
-        (Finsupp.sum_fintype c (fun i r ↦ r • v i) (fun i ↦ zero_smul 𝕜 (v i)))
-    _ = _ := (Finsupp.equivFunOnFinite : (ι →₀ 𝕜) ≃ (ι → 𝕜)).iInf_comp
-      (g := fun c : ι → 𝕜 ↦ ‖x - ∑ i, c i • v i‖)
+  rw [← Fintype.range_linearCombination, LinearMap.coe_range, infDist_eq_iInf, iInf_range']
+  simp only [dist_eq_norm, Fintype.linearCombination_apply]
 
 /-- Distance to the span of a varying family is upper semicontinuous, including at
 rank drops. The point and the family may vary together. -/
@@ -73,20 +56,6 @@ theorem upperSemicontinuous_infDist_span_range [ContinuousConstSMul 𝕜 E]
   intro c
   exact (hx.sub (continuous_finsetSum c.support fun i _ ↦
     (hv i).const_smul (c i))).norm.upperSemicontinuous
-
-/-- Having a small linear combination with coefficients in any fixed set is an open condition
-on a finite family of vectors. -/
-theorem isOpen_exists_mem_norm_sum_lt [ContinuousConstSMul 𝕜 E] [Fintype ι]
-    (S : Set (ι → 𝕜)) (t : ℝ) :
-    IsOpen {v : ι → E | ∃ c ∈ S, ‖∑ i, c i • v i‖ < t} := by
-  simp only [Set.ofPred_exists]
-  apply isOpen_iUnion
-  intro c
-  by_cases hc : c ∈ S
-  · simp only [hc, true_and]
-    exact isOpen_lt (continuous_finsetSum _ fun i _ ↦
-      (continuous_apply i).const_smul (c i)).norm continuous_const
-  · simp [hc]
 
 end Semiring
 

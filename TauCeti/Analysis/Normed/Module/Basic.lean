@@ -41,6 +41,15 @@ instance RingHomIsometric.intCastRingHom {R : Type*} [SeminormedRing R]
 
 namespace TauCeti
 
+/-- Having a small linear combination with coefficients in any fixed set is an open condition
+on a finite family of vectors. -/
+theorem isOpen_exists_mem_norm_sum_lt {𝕜 E ι : Type*} [SeminormedAddCommGroup E]
+    [SMul 𝕜 E] [ContinuousConstSMul 𝕜 E] [Fintype ι] (S : Set (ι → 𝕜)) (t : ℝ) :
+    IsOpen {v : ι → E | ∃ c ∈ S, ‖∑ i, c i • v i‖ < t} := by
+  simp only [← exists_prop, Set.ofPred_exists]
+  exact isOpen_biUnion fun c _ ↦ isOpen_lt (continuous_finsetSum _ fun i _ ↦
+    (continuous_apply i).const_smul (c i)).norm continuous_const
+
 /-- If scalar coefficients `a i` satisfy `‖a i‖ * r i ≤ b` against positive weights `r i`, then
 `‖∑ i ∈ s, a i • u i‖ ≤ (∑ i ∈ s, ‖u i‖ / r i) * b`. -/
 theorem norm_sum_smul_le_sum_div_mul {ι A E : Type*} [SeminormedAddGroup A]
