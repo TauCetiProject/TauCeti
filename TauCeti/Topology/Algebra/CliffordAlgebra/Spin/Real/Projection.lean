@@ -37,6 +37,9 @@ groups.
 * `TauCeti.CliffordAlgebra.realCliffordSpinContinuousMulEquivUnitsRange` specializes
   `CliffordAlgebra.spinGroupContinuousMulEquivUnitsRange` to identify the compact real Spin group
   with its unit-range carrier as a topological group.
+* `TauCeti.CliffordAlgebra.realCliffordSpecialOrthogonalContinuousMulEquivRange` specializes
+  `QuadraticMap.specialOrthogonalContinuousMulEquivRange` to identify the compact special
+  orthogonal group `SO(n)` with its matrix-range carrier in `GL(n, ℝ)`.
 * `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalRange` specializes
   `CliffordAlgebra.spinToSpecialOrthogonalUnitsRange` to the closed real Spin and
   special-orthogonal carriers.
@@ -88,6 +91,35 @@ theorem realCliffordSpinContinuousMulEquivUnitsRange_symm_apply
     (realCliffordSpinContinuousMulEquivUnitsRange n).symm
         ⟨spinGroup.toUnits x, ⟨x, rfl⟩⟩ = x :=
   spinGroupContinuousMulEquivUnitsRange_symm_apply (realCliffordForm n 0) x
+
+/-- The coordinate special orthogonal group `SO(n)` is topologically isomorphic to its range in
+`GL(n, ℝ)`. -/
+def realCliffordSpecialOrthogonalContinuousMulEquivRange (n : ℕ) :
+    QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ≃ₜ*
+      MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
+        (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) :=
+  (show QuadraticForm ℝ (Fin n → ℝ) from
+    realCliffordForm n 0).specialOrthogonalContinuousMulEquivRange
+
+/-- The topological equivalence with the range sends an element of `SO(n)` to its matrix. -/
+@[simp]
+theorem realCliffordSpecialOrthogonalContinuousMulEquivRange_apply (n : ℕ)
+    (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) :
+    realCliffordSpecialOrthogonalContinuousMulEquivRange n g =
+      ⟨QuadraticMap.specialOrthogonalToGeneralLinear
+        (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0) g, ⟨g, rfl⟩⟩ :=
+  QuadraticMap.specialOrthogonalContinuousMulEquivRange_apply
+    (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0) g
+
+/-- The inverse topological equivalence sends the matrix of an element of `SO(n)` back to it. -/
+@[simp]
+theorem realCliffordSpecialOrthogonalContinuousMulEquivRange_symm_apply (n : ℕ)
+    (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) :
+    (realCliffordSpecialOrthogonalContinuousMulEquivRange n).symm
+        ⟨QuadraticMap.specialOrthogonalToGeneralLinear
+          (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0) g, ⟨g, rfl⟩⟩ = g :=
+  QuadraticMap.specialOrthogonalContinuousMulEquivRange_symm_apply
+    (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0) g
 
 /-- The compact real Spin projection as a continuous homomorphism between the two closed range
 carriers in the Clifford and matrix unit groups. -/
@@ -164,16 +196,14 @@ theorem isCoveringMap_realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
     exact .of_discreteTopology _
   have : NeZero n := ⟨hn.ne'⟩
   have h : ⇑(realCliffordSpinToSpecialOrthogonalRange n) =
-      (show QuadraticForm ℝ (Fin n → ℝ) from
-          realCliffordForm n 0).specialOrthogonalContinuousMulEquivRange ∘
+      realCliffordSpecialOrthogonalContinuousMulEquivRange n ∘
         realCliffordSpinProjectionZero n ∘
         (realCliffordSpinContinuousMulEquivUnitsRange n).symm := by
     funext x
     simp [realCliffordSpinProjectionZero_apply]
   rw [h]
   exact ((isCoveringMap_realCliffordSpinProjectionZero n).homeomorph_comp
-    (show QuadraticForm ℝ (Fin n → ℝ) from
-        realCliffordForm n 0).specialOrthogonalContinuousMulEquivRange.toHomeomorph).comp_homeomorph
+    (realCliffordSpecialOrthogonalContinuousMulEquivRange n).toHomeomorph).comp_homeomorph
       (realCliffordSpinContinuousMulEquivUnitsRange n).symm.toHomeomorph
 
 end
