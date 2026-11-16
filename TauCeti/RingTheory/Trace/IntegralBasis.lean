@@ -45,14 +45,14 @@ variable {A K B L ι : Type*} [CommRing A] [Field K]
   [Algebra K L] [Algebra A L] [IsScalarTower A K L] [IsScalarTower A B L]
   [IsFractionRing A K]
   [IsLocalization (Algebra.algebraMapSubmonoid B A⁰) L]
-  [FiniteDimensional K L] [Algebra.IsSeparable K L] [DecidableEq ι]
+  [Algebra.IsSeparable K L] [DecidableEq ι]
 
 section Finite
 
 variable [Finite ι] (b : Basis ι A B)
 
 /-- The complementary module is spanned over the base ring by the field trace-dual basis. -/
-theorem dualSubmodule_one_eq_span_traceDual :
+theorem dualSubmodule_one_eq_span_traceDual [FiniteDimensional K L] :
     (Algebra.traceForm K L).dualSubmodule ((1 : Submodule B L).restrictScalars A) =
       Submodule.span A (Set.range (b.localizationLocalization K A⁰ L).traceDual) := by
   have hspan : (1 : Submodule B L).restrictScalars A =
@@ -68,13 +68,14 @@ theorem dualSubmodule_one_eq_span_traceDual :
 noncomputable def traceDualIntegralBasis :
     Basis ι A ((Algebra.traceForm K L).dualSubmodule
       ((1 : Submodule B L).restrictScalars A)) :=
-  (have : IsDomain A := .of_faithfulSMul A K;
-    (b.localizationLocalization K A⁰ L).traceDual.restrictScalars A).map
+  have : IsDomain A := .of_faithfulSMul A K
+  have : FiniteDimensional K L := .of_basis (b.localizationLocalization K A⁰ L)
+  ((b.localizationLocalization K A⁰ L).traceDual.restrictScalars A).map
     (LinearEquiv.ofEq _ _ b.dualSubmodule_one_eq_span_traceDual.symm)
 
 /-- The vectors of the complementary-module basis are the field trace-dual vectors. -/
 @[simp]
-theorem coe_traceDualIntegralBasis (i : ι) :
+theorem coe_traceDualIntegralBasis [FiniteDimensional K L] (i : ι) :
     (b.traceDualIntegralBasis (K := K) (L := L) i : L) =
       (b.localizationLocalization K A⁰ L).traceDual i := by
   have : IsDomain A := .of_faithfulSMul A K
@@ -90,6 +91,7 @@ theorem algebraMap_traceDualIntegralBasis_repr
       Algebra.trace K L ((x : L) * algebraMap B L (b i)) := by
   classical
   have : IsDomain A := .of_faithfulSMul A K
+  have : FiniteDimensional K L := .of_basis (b.localizationLocalization K A⁰ L)
   simp only [traceDualIntegralBasis, Basis.map_repr, LinearEquiv.trans_apply,
     Basis.restrictScalars_repr_apply, Basis.traceDual_repr_apply,
     Algebra.traceForm_apply, Basis.localizationLocalization_apply,
@@ -112,14 +114,14 @@ noncomputable def algebraToTraceDual :
     ← map_mul, Algebra.trace_localization A A⁰]
   exact Submodule.mem_one.mpr ⟨Algebra.trace A B (x * y), rfl⟩
 
-omit [FiniteDimensional K L] [Algebra.IsSeparable K L] [DecidableEq ι] in
+omit [Algebra.IsSeparable K L] [DecidableEq ι] in
 /-- The inclusion into the complementary module is the usual embedding in `L`. -/
 @[simp]
 theorem coe_algebraToTraceDual (x : B) :
     (b.algebraToTraceDual (K := K) (L := L) x : L) = algebraMap B L x :=
   (rfl)
 
-omit [FiniteDimensional K L] [Algebra.IsSeparable K L] [DecidableEq ι] in
+omit [Algebra.IsSeparable K L] [DecidableEq ι] in
 /-- The inclusion of a finite free algebra in its trace dual is injective. -/
 theorem algebraToTraceDual_injective :
     Function.Injective (b.algebraToTraceDual (K := K) (L := L)) := by
