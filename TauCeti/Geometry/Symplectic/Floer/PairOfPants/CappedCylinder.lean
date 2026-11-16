@@ -856,11 +856,9 @@ theorem setIntegral_floerEnergyDensity_cappedCylinderComponent_le (ω : Symplect
   have hn' : Icc a b ×ˢ Icc (0 : ℝ) 1 ⊆ Icc (-n) n ×ˢ Icc 0 1 :=
     prod_mono (Icc_subset_Icc (by linarith [le_max_left (-a) b])
       (by linarith [le_max_right (-a) b])) subset_rfl
-  refine (setIntegral_mono_set ((hEc.mono (hsub.trans hRU)).integrableOn_compact
-    (isCompact_Icc.prod isCompact_Icc))
-    (ae_restrict_of_forall_mem (measurableSet_Icc.prod measurableSet_Icc) fun z hz ↦
-      ω.floerEnergyDensity_nonneg (hJ z (hsub hz)) (hfloer z (hsub hz)))
-    (Eventually.of_forall fun _ hx ↦ hn' hx)).trans ?_
+  refine (ω.setIntegral_floerEnergyDensity_mono_set hn' (measurableSet_Icc.prod measurableSet_Icc)
+    ((hEc.mono (hsub.trans hRU)).integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
+    (fun z hz ↦ hJ z (hsub hz)) fun z hz ↦ hfloer z (hsub hz)).trans ?_
   linarith [(abs_le.1 (abs_integral_floerEnergyDensity_cappedCylinderComponent_sub_le ω hHb hHbs
     hL hBb hU hu (a := -n) (b := n) (by linarith) (by linarith) (hsub.trans hRU)
     fun s _ ↦ hper s)).2]
@@ -996,23 +994,20 @@ theorem setIntegral_floerEnergyDensity_plumbedPerturbation_single_inf_le (ω : S
     prod_mono subset_rfl Ico_subset_Icc_self
   -- The energy over `D` is at most the energy over the image of the band, which is the energy of
   -- the capped cylinder over the band, at most its energy over `[-N, N] × [0, 1]`.
-  refine (setIntegral_mono_set (((ω.continuousOn_floerEnergyDensity_plumbedPerturbation_single_inf
-      hHb hHbs hL (hu.of_le one_le_two)).mono
-        (image_subset_iff.2 fun ζ _ ↦ hφS ζ)).integrableOn_compact hcpt)
-    (ae_restrict_of_forall_mem hcpt.isClosed.measurableSet ?_)
-    (Eventually.of_forall fun _ hx ↦ hDR hx)).trans ?_
-  · rintro _ ⟨ζ, -, rfl⟩
-    exact ω.floerEnergyDensity_nonneg (hJ _ (hφS ζ)) (hfloer _ (hφS ζ))
+  have hRS : endChart zero '' (Icc (-N) N ×ˢ Ico 0 1) ⊆ S := image_subset_iff.2 fun ζ _ ↦ hφS ζ
+  refine (ω.setIntegral_floerEnergyDensity_mono_set hDR hcpt.isClosed.measurableSet
+    (((ω.continuousOn_floerEnergyDensity_plumbedPerturbation_single_inf hHb hHbs hL
+      (hu.of_le one_le_two)).mono hRS).integrableOn_compact hcpt)
+    (fun z hz ↦ hJ z (hRS hz)) fun z hz ↦ hfloer z (hRS hz)).trans ?_
   rw [ω.integral_floerEnergyDensity_image_endChart_zero_plumbedPerturbation hHb hHbs hL
     (measurableSet_Icc.prod measurableSet_Ico) (t₀ := 0)
     (prod_mono (subset_univ _) (by rw [zero_add])) fun ζ _ ↦ hud ζ]
-  refine (setIntegral_mono_set (((ω.continuousOn_floerEnergyDensity isOpen_univ
-      (hw.of_le one_le_two).contDiffOn
+  refine (ω.setIntegral_floerEnergyDensity_mono_set hR (measurableSet_Icc.prod measurableSet_Icc)
+    (((ω.continuousOn_floerEnergyDensity isOpen_univ (hw.of_le one_le_two).contDiffOn
       (contDiff_uncurry_cappedCylinderComponent hHb hHbs hL 1).contDiffOn
       (contDiff_uncurry_cappedCylinderComponent hHb hHbs hL Complex.I).contDiffOn).mono
         (subset_univ _)).integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
-    (Eventually.of_forall fun ζ ↦ ω.floerEnergyDensity_nonneg (hJ _ (hφS ζ)) (hfl ζ))
-    (Eventually.of_forall fun _ hx ↦ hR hx)).trans ?_
+    (fun ζ _ ↦ hJ _ (hφS ζ)) fun ζ _ ↦ hfl ζ).trans ?_
   exact setIntegral_floerEnergyDensity_cappedCylinderComponent_le ω hHb hHbs hL hBb isOpen_univ
     hw.contDiffOn (subset_univ _) (fun s ↦ by simpa using congrArg u (endChart_add_one zero s 0))
     (fun ζ _ ↦ hJ _ (hφS ζ)) (fun ζ _ ↦ hfl ζ) h₀ hinf (-N) N

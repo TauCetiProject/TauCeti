@@ -175,9 +175,8 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
   have hE := setIntegral_floerEnergyDensity_plumbedPerturbation_single_inf_le ω hHb
     (fun r ↦ (hHbs r).of_le (by norm_num)) (hC₄ (hLC k)) hBb ((hu k).of_le (by norm_num))
     (fun z hz ↦ hJt _ (hLC k) z hz _) (hfl k) (h₀ k) (hinf k) hD hDS
-  refine (setIntegral_mono_set (hintD k) (ae_restrict_of_forall_mem hD.isClosed.measurableSet
-    fun z hz ↦ ω.floerEnergyDensity_nonneg (hJt _ (hLC k) z (hDS z hz) _)
-      (hfl k z (hDS z hz))) (Eventually.of_forall fun _ hx ↦ hΩD hx)).trans ?_
+  refine (ω.setIntegral_floerEnergyDensity_mono_set hΩD hD.isClosed.measurableSet (hintD k)
+    (fun z hz ↦ hJt _ (hLC k) z (hDS z hz) _) fun z hz ↦ hfl k z (hDS z hz)).trans ?_
   linarith [hA k]
 
 /-- **Solutions of the capping family converge off finitely many bubbling points**, for the
