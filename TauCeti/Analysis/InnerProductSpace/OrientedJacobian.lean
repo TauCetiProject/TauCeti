@@ -51,15 +51,16 @@ sign needed for degree formulas and pullback of top-degree differential forms.
   `Orientation.orientedJacobian_eq_det_toMatrix_mul_div`,
   `Orientation.orientedJacobian_eq_det_toMatrix`: evaluation in arbitrary bases and in oriented
   orthonormal frames.
-* `Orientation.orientedJacobian_fin_zero_eq_ite`, `Orientation.abs_orientedJacobian_fin_zero`,
-  `Orientation.orientedJacobian_fin_one_eq_inner`, `Orientation.areaForm_comp_eq`: explicit
-  formulas in dimensions `0`, `1`, and `2`.
+* `Orientation.orientedJacobian_fin_zero_eq_ite`, `Orientation.orientedJacobian_fin_zero_self`,
+  `Orientation.abs_orientedJacobian_fin_zero`, `Orientation.orientedJacobian_fin_one_eq_inner`,
+  `Orientation.areaForm_comp_eq`: explicit formulas in dimensions `0`, `1`, and `2`.
 * `Orientation.orientedJacobian_comp`, `Orientation.orientedJacobian_id`,
   `Orientation.orientedJacobian_neg_left`, `Orientation.orientedJacobian_neg_right`,
   `Orientation.orientedJacobian_smul`: multiplicativity under composition, reversal of either
   orientation, and homogeneity of degree `n`.
 * `Orientation.orientedJacobian_self`, `Orientation.orientedJacobian_eq_neg_det_of_ne`,
   `Orientation.orientedJacobian_eq_det_comp_mul_div_volumeForm`,
+  `Orientation.orientedJacobian_eq_det_comp_mul_div_abs_volumeForm_of_map_eq_of_linearIndependent`,
   `Orientation.orientedJacobian_eq_det_comp_mul_div_abs_volumeForm_of_map_eq`,
   `Orientation.orientedJacobian_eq_det_comp_mul_div`,
   `Orientation.orientedJacobian_comp_eq_div_mul_of_volumeForm_compLinearMap`: recovery of
@@ -109,11 +110,6 @@ open Module
 open scoped ContDiff RealInnerProductSpace
 
 namespace Orientation
-
-private theorem eq_neg_of_ne {E : Type*} [AddCommGroup E] [Module ℝ E] {n : ℕ}
-    [Fact (finrank ℝ E = n)] {o₁ o₂ : Orientation ℝ E (Fin n)} (h : o₁ ≠ o₂) :
-    o₁ = -o₂ :=
-  (eq_or_eq_neg_of_card_eq_finrank o₁ o₂ (by simp [Fact.out (p := finrank ℝ E = n)])).resolve_left h
 
 /-! ### Definition and volume-form characterization -/
 
@@ -245,12 +241,8 @@ theorem orientedJacobian_eq_det_toMatrix_mul_div (oV : Orientation ℝ V (Fin n)
   have hW : oW.volumeForm (A ∘ bV) = oW.volumeForm bW * bW.det (A ∘ bV) := by
     simpa only [smul_apply, smul_eq_mul] using
       congrArg (· (A ∘ bV)) (oW.volumeForm.eq_smul_basis_det bW)
-  have hmat : bW.det (A ∘ bV) = (A.toMatrix bV bW).det := by
-    rw [Basis.det_apply]
-    congr 1
-    ext i j
-    simp [LinearMap.toMatrix_apply, Basis.toMatrix_apply]
-  rw [oV.orientedJacobian_eq_div oW A bV, hW, hmat]
+  rw [oV.orientedJacobian_eq_div oW A bV, hW, Basis.det_apply,
+    ← LinearMap.toMatrix_eq_basisToMatrix]
   ring
 
 /-- In positively oriented orthonormal bases `bV` of `V` and `bW` of `W`, the oriented Jacobian of
@@ -336,6 +328,14 @@ theorem orientedJacobian_fin_zero_eq_ite' (o₁ o₂ : Orientation ℝ V (Fin 0)
       rcases o₂.eq_or_eq_neg_of_isEmpty with rfl | rfl <;>
       simp_all [(Module.Ray.ne_neg_self _).symm],
     fun h ↦ h ▸ Iff.rfl⟩
+
+/-- For a single orientation on a zero-dimensional space, the oriented Jacobian of any endomorphism
+is `1`. -/
+@[simp]
+theorem orientedJacobian_fin_zero_self (o : Orientation ℝ V (Fin 0)) (A : V →ₗ[ℝ] V) :
+    o.orientedJacobian o A = 1 := by
+  rw [o.orientedJacobian_fin_zero_eq_ite' o A]
+  simp only [↓reduceIte]
 
 end ZeroDim
 
@@ -452,16 +452,11 @@ theorem orientedJacobian_zero_of_pos (oV : Orientation ℝ V (Fin n)) (oW : Orie
 
 /-- For a single orientation on `V`, the oriented Jacobian of an endomorphism `A` is
 `LinearMap.det A`. -/
-@[simp]
+@[simp low]
 theorem orientedJacobian_self (oV : Orientation ℝ V (Fin n)) (A : V →ₗ[ℝ] V) :
     oV.orientedJacobian oV A = A.det := by
   rcases n with - | m
-  · rw [oV.orientedJacobian_fin_zero_eq_ite' oV A]
-    simp only [↓reduceIte]
-    by_cases hfd : FiniteDimensional ℝ V
-    · have : Subsingleton V := (finrank_zero_iff (R := ℝ) (M := V)).mp Fact.out
-      exact (LinearMap.det_eq_one_of_subsingleton A).symm
-    · exact (LinearMap.det_eq_one_of_not_module_finite hfd A).symm
+  · rw [oV.orientedJacobian_fin_zero_self A, LinearMap.det_eq_one_of_finrank_eq_zero Fact.out A]
   · let b := oV.finOrthonormalBasis m.succ_pos Fact.out
     have hb : b.toBasis.orientation = oV := oV.finOrthonormalBasis_orientation m.succ_pos Fact.out
     rw [oV.orientedJacobian_eq_det_toMatrix oV A b hb b hb, LinearMap.det_toMatrix]
@@ -476,7 +471,8 @@ theorem orientedJacobian_id (oV : Orientation ℝ V (Fin n)) :
 theorem orientedJacobian_eq_neg_det_of_ne (o₁ o₂ : Orientation ℝ V (Fin n)) (h : o₁ ≠ o₂)
     (A : V →ₗ[ℝ] V) :
     o₁.orientedJacobian o₂ A = -A.det := by
-  rw [eq_neg_of_ne h.symm]
+  have hcard : Fintype.card (Fin n) = finrank ℝ V := (Fintype.card_fin n).trans (Eq.symm Fact.out)
+  rw [(o₂.ne_iff_eq_neg_of_card_eq_finrank o₁ hcard).mp h.symm]
   simp
 
 /-- For two distinct orientations on `V`, the identity map has oriented Jacobian `-1`. -/
@@ -525,12 +521,9 @@ theorem orientedJacobian_eq_det_comp_mul_div_volumeForm
     oV.orientedJacobian oW A =
       (eW.toLinearMap ∘ₗ A ∘ₗ eV.symm.toLinearMap).det *
         (oW.volumeForm (b.map eW.symm) / oV.volumeForm (b.map eV.symm)) := by
-  have hmat : A.toMatrix (b.map eV.symm) (b.map eW.symm) =
-      (eW.toLinearMap ∘ₗ A ∘ₗ eV.symm.toLinearMap).toMatrix b b := by
-    ext i j
-    simp [LinearMap.toMatrix_apply, Basis.map_repr]
   rw [oV.orientedJacobian_eq_det_toMatrix_mul_div oW A (b.map eV.symm) (b.map eW.symm),
-    hmat, LinearMap.det_toMatrix]
+    LinearMap.toMatrix_map_left, LinearMap.toMatrix_map_right, LinearEquiv.symm_symm,
+    LinearMap.det_toMatrix]
 
 /-- **Coordinate expression of the oriented Jacobian on any linearly independent tuple**: given
 linear equivalences `eV : V ≃ₗ[ℝ] U` and `eW : W ≃ₗ[ℝ] U` to a common real vector space `U` and a
@@ -545,13 +538,8 @@ theorem orientedJacobian_eq_det_comp_mul_div_volumeForm_of_linearIndependent
       (eW.toLinearMap ∘ₗ A ∘ₗ eV.symm.toLinearMap).det *
         (oW.volumeForm (eW.symm ∘ v) / oV.volumeForm (eV.symm ∘ v)) := by
   rcases n with - | m
-  · have hdet : (eW.toLinearMap ∘ₗ A ∘ₗ eV.symm.toLinearMap).det = 1 := by
-      by_cases hfd : FiniteDimensional ℝ U
-      · have : FiniteDimensional ℝ V := Module.Finite.equiv eV.symm
-        have hU0 : finrank ℝ U = 0 := eV.finrank_eq.symm.trans Fact.out
-        have : Subsingleton U := (finrank_zero_iff (R := ℝ) (M := U)).mp hU0
-        exact LinearMap.det_eq_one_of_subsingleton _
-      · exact LinearMap.det_eq_one_of_not_module_finite hfd _
+  · have hdet : (eW.toLinearMap ∘ₗ A ∘ₗ eV.symm.toLinearMap).det = 1 :=
+      LinearMap.det_eq_one_of_finrank_eq_zero (eV.finrank_eq.symm.trans Fact.out) _
     rw [hdet, one_mul, Subsingleton.elim (eW.symm ∘ v) 0, Subsingleton.elim (eV.symm ∘ v) 0,
       oV.orientedJacobian_eq_div_of_linearIndependent oW A linearIndependent_empty_type,
       Subsingleton.elim (A ∘ ![]) 0, Subsingleton.elim (![] : Fin 0 → V) 0]
@@ -560,9 +548,43 @@ theorem orientedJacobian_eq_det_comp_mul_div_volumeForm_of_linearIndependent
       rw [Fintype.card_fin, ← eV.finrank_eq, Fact.out (p := finrank ℝ V = m + 1)]
     let b := basisOfLinearIndependentOfCardEqFinrank hv hcard
     have hb : ⇑b = v := coe_basisOfLinearIndependentOfCardEqFinrank hv hcard
-    have hV : ⇑(b.map eV.symm) = eV.symm ∘ v := by ext i; simp [hb]
-    have hW : ⇑(b.map eW.symm) = eW.symm ∘ v := by ext i; simp [hb]
-    rw [oV.orientedJacobian_eq_det_comp_mul_div_volumeForm oW b eV eW A, hV, hW]
+    rw [oV.orientedJacobian_eq_det_comp_mul_div_volumeForm oW b eV eW A, b.coe_map, b.coe_map, hb]
+
+/-- When `eV : V ≃ₗ[ℝ] U` and `eW : W ≃ₗ[ℝ] U` transport `oV` and `oW` to the same orientation on
+`U`, the signs of the coordinate volume forms cancel on any linearly independent `n`-tuple
+`v : Fin n → U`, and `oV.orientedJacobian oW A` equals
+`(eW ∘ A ∘ eV⁻¹).det * (|oW.volumeForm (eW⁻¹ ∘ v)| / |oV.volumeForm (eV⁻¹ ∘ v)|)`. -/
+theorem orientedJacobian_eq_det_comp_mul_div_abs_volumeForm_of_map_eq_of_linearIndependent
+    {U : Type*} [AddCommGroup U] [Module ℝ U]
+    (oV : Orientation ℝ V (Fin n)) (oW : Orientation ℝ W (Fin n))
+    (eV : V ≃ₗ[ℝ] U) (eW : W ≃ₗ[ℝ] U)
+    (h : Orientation.map (Fin n) eV oV = Orientation.map (Fin n) eW oW)
+    (A : V →ₗ[ℝ] W) {v : Fin n → U} (hv : LinearIndependent ℝ v) :
+    oV.orientedJacobian oW A =
+      (eW.toLinearMap ∘ₗ A ∘ₗ eV.symm.toLinearMap).det *
+        (|oW.volumeForm (eW.symm ∘ v)| / |oV.volumeForm (eV.symm ∘ v)|) := by
+  rw [oV.orientedJacobian_eq_det_comp_mul_div_volumeForm_of_linearIndependent oW eV eW A hv]
+  congr 1
+  have hmap : Orientation.map (Fin n) (eV.trans eW.symm) oV = oW := by
+    rw [Orientation.map_trans, h, ← Orientation.map_symm, Equiv.symm_apply_apply]
+  have hcomp : (eV.trans eW.symm) ∘ (eV.symm ∘ v) = eW.symm ∘ v := by
+    ext i
+    simp
+  have hpos : 0 < oW.volumeForm (eW.symm ∘ v) ↔ 0 < oV.volumeForm (eV.symm ∘ v) := by
+    simpa only [hmap, hcomp] using oV.volumeForm_map_comp_pos_iff (eV.trans eW.symm) (eV.symm ∘ v)
+  have hWne : oW.volumeForm (eW.symm ∘ v) ≠ 0 :=
+    oW.volumeForm_apply_ne_zero_iff.mpr
+      (by simpa only [LinearEquiv.coe_coe] using hv.map' eW.symm.toLinearMap eW.symm.ker)
+  have hVne : oV.volumeForm (eV.symm ∘ v) ≠ 0 :=
+    oV.volumeForm_apply_ne_zero_iff.mpr
+      (by simpa only [LinearEquiv.coe_coe] using hv.map' eV.symm.toLinearMap eV.symm.ker)
+  by_cases hWpos : 0 < oW.volumeForm (eW.symm ∘ v)
+  · rw [abs_of_pos hWpos, abs_of_pos (hpos.mp hWpos)]
+  · have hWneg : oW.volumeForm (eW.symm ∘ v) < 0 :=
+      lt_of_le_of_ne (not_lt.mp hWpos) hWne
+    have hVneg : oV.volumeForm (eV.symm ∘ v) < 0 :=
+      lt_of_le_of_ne (not_lt.mp (mt hpos.mpr hWpos)) hVne
+    rw [abs_of_neg hWneg, abs_of_neg hVneg, neg_div_neg_eq]
 
 /-- When `eV : V ≃ₗ[ℝ] U` and `eW : W ≃ₗ[ℝ] U` transport `oV` and `oW` to the same orientation on
 `U`, the signs of the coordinate volume forms cancel and `oV.orientedJacobian oW A` equals
@@ -576,24 +598,9 @@ theorem orientedJacobian_eq_det_comp_mul_div_abs_volumeForm_of_map_eq
     oV.orientedJacobian oW A =
       (eW.toLinearMap ∘ₗ A ∘ₗ eV.symm.toLinearMap).det *
         (|oW.volumeForm (b.map eW.symm)| / |oV.volumeForm (b.map eV.symm)|) := by
-  rw [oV.orientedJacobian_eq_det_comp_mul_div_volumeForm oW b eV eW A]
-  congr 1
-  have hpos : 0 < oW.volumeForm (b.map eW.symm) ↔ 0 < oV.volumeForm (b.map eV.symm) := by
-    rw [oW.volumeForm_apply_pos_iff, oV.volumeForm_apply_pos_iff,
-      Basis.orientation_map, Basis.orientation_map,
-      ← Orientation.map_symm, ← Orientation.map_symm,
-      Equiv.symm_apply_eq, Equiv.symm_apply_eq, h]
-  have hWne : oW.volumeForm (b.map eW.symm) ≠ 0 :=
-    oW.volumeForm_apply_ne_zero_iff.mpr (b.map eW.symm).linearIndependent
-  have hVne : oV.volumeForm (b.map eV.symm) ≠ 0 :=
-    oV.volumeForm_apply_ne_zero_iff.mpr (b.map eV.symm).linearIndependent
-  by_cases hWpos : 0 < oW.volumeForm (b.map eW.symm)
-  · rw [abs_of_pos hWpos, abs_of_pos (hpos.mp hWpos)]
-  · have hWneg : oW.volumeForm (b.map eW.symm) < 0 :=
-      lt_of_le_of_ne (not_lt.mp hWpos) hWne
-    have hVneg : oV.volumeForm (b.map eV.symm) < 0 :=
-      lt_of_le_of_ne (not_lt.mp (mt hpos.mpr hWpos)) hVne
-    rw [abs_of_neg hWneg, abs_of_neg hVneg, neg_div_neg_eq]
+  rw [b.coe_map eW.symm, b.coe_map eV.symm]
+  exact oV.orientedJacobian_eq_det_comp_mul_div_abs_volumeForm_of_map_eq_of_linearIndependent
+    oW eV eW h A b.linearIndependent
 
 end TwoSpacesOps
 
@@ -634,27 +641,31 @@ variable {V V' W W' : Type*}
   {n : ℕ} [Fact (finrank ℝ V = n)] [Fact (finrank ℝ V' = n)]
   [Fact (finrank ℝ W = n)] [Fact (finrank ℝ W' = n)]
 
-/-- **Metric-rescaling formula**: if a linear equivalence `iV : V' ≃ₗ[ℝ] V` and a linear map
-`jW : W →ₗ[ℝ] W'` rescale volume forms by `ρV` and `ρW` (`(iV⁻¹)^* vol_{oV'} = ρV • vol_{oV}` and
+/-- **Metric-rescaling formula**: if linear maps `iV : V' →ₗ[ℝ] V` and `jW : W →ₗ[ℝ] W'` rescale
+volume forms by `ρV` and `ρW` (`vol_{oV'} = ρV • iV^* vol_{oV}` and
 `jW^* vol_{oW'} = ρW • vol_{oW}`), then the oriented Jacobian of `jW ∘ A ∘ iV` equals
 `(ρW / ρV) * oV.orientedJacobian oW A`. -/
 theorem orientedJacobian_comp_eq_div_mul_of_volumeForm_compLinearMap
     (oV : Orientation ℝ V (Fin n)) (oW : Orientation ℝ W (Fin n))
     (oV' : Orientation ℝ V' (Fin n)) (oW' : Orientation ℝ W' (Fin n))
-    (iV : V' ≃ₗ[ℝ] V) (jW : W →ₗ[ℝ] W') {ρV ρW : ℝ}
-    (hV : oV'.volumeForm.compLinearMap iV.symm.toLinearMap = ρV • oV.volumeForm)
+    (iV : V' →ₗ[ℝ] V) (jW : W →ₗ[ℝ] W') {ρV ρW : ℝ}
+    (hV : oV'.volumeForm = ρV • oV.volumeForm.compLinearMap iV)
     (hW : oW'.volumeForm.compLinearMap jW = ρW • oW.volumeForm)
     (A : V →ₗ[ℝ] W) :
-    oV'.orientedJacobian oW' (jW ∘ₗ A ∘ₗ iV.toLinearMap) =
+    oV'.orientedJacobian oW' (jW ∘ₗ A ∘ₗ iV) =
       (ρW / ρV) * oV.orientedJacobian oW A := by
-  have hρV : ρV = oV.orientedJacobian oV' iV.symm.toLinearMap :=
-    oV.eq_orientedJacobian_of_volumeForm_compLinearMap oV' iV.symm.toLinearMap hV
   have hρW : ρW = oW.orientedJacobian oW' jW :=
     oW.eq_orientedJacobian_of_volumeForm_compLinearMap oW' jW hW
-  have hiV : oV'.orientedJacobian oV iV.toLinearMap = ρV⁻¹ := by
-    simpa only [LinearEquiv.symm_symm, hρV] using oV.orientedJacobian_symm oV' iV.symm
-  rw [oV'.orientedJacobian_comp oW oW' (A ∘ₗ iV.toLinearMap) jW,
-    oV'.orientedJacobian_comp oV oW iV.toLinearMap A, hiV, ← hρW, div_eq_mul_inv]
+  have hid : oV'.volumeForm.compLinearMap LinearMap.id =
+      (ρV * oV'.orientedJacobian oV iV) • oV'.volumeForm := by
+    rw [AlternatingMap.compLinearMap_id]
+    simpa only [oV'.volumeForm_compLinearMap oV iV, smul_smul] using hV
+  have hmul : ρV * oV'.orientedJacobian oV iV = 1 :=
+    (oV'.eq_orientedJacobian_of_volumeForm_compLinearMap oV' LinearMap.id hid).trans
+      oV'.orientedJacobian_id
+  have hiV : oV'.orientedJacobian oV iV = ρV⁻¹ := eq_inv_of_mul_eq_one_right hmul
+  rw [oV'.orientedJacobian_comp oW oW' (A ∘ₗ iV) jW,
+    oV'.orientedJacobian_comp oV oW iV A, hiV, ← hρW, div_eq_mul_inv]
   ring
 
 end MetricRescaling
@@ -750,7 +761,8 @@ theorem orientedJacobian_linearIsometryEquiv_of_map_ne (oV : Orientation ℝ V (
     (oW : Orientation ℝ W (Fin n)) (φ : V ≃ₗᵢ[ℝ] W)
     (h : Orientation.map (Fin n) φ.toLinearEquiv oV ≠ oW) :
     oV.orientedJacobian oW φ.toLinearMap = -1 := by
-  rw [eq_neg_of_ne h.symm]
+  have hcard : Fintype.card (Fin n) = finrank ℝ W := (Fintype.card_fin n).trans (Eq.symm Fact.out)
+  rw [(oW.ne_iff_eq_neg_of_card_eq_finrank _ hcard).mp h.symm]
   simp
 
 /-- **Basis-wise Hadamard inequality**: on any orthonormal basis `b` of `V`,
@@ -880,8 +892,10 @@ theorem orientedJacobian_linearEquiv_eq_neg_normDet [FiniteDimensional ℝ V]
     (oV : Orientation ℝ V (Fin n)) (oW : Orientation ℝ W (Fin n)) (e : V ≃ₗ[ℝ] W)
     (h : Orientation.map (Fin n) e oV ≠ oW) :
     oV.orientedJacobian oW e.toLinearMap = -e.toLinearMap.normDet := by
+  have hcard : Fintype.card (Fin n) = finrank ℝ W := (Fintype.card_fin n).trans (Eq.symm Fact.out)
   rw [← oV.abs_orientedJacobian oW e.toLinearMap,
-    abs_of_neg ((oV.orientedJacobian_linearEquiv_neg_iff oW e).mpr (eq_neg_of_ne h)), neg_neg]
+    abs_of_neg ((oV.orientedJacobian_linearEquiv_neg_iff oW e).mpr
+      ((ne_iff_eq_neg_of_card_eq_finrank _ _ hcard).mp h)), neg_neg]
 
 /-- Between finite-dimensional real inner product spaces of the same dimension `n`, the oriented
 Jacobian vanishes if and only if `A` is not bijective. -/
