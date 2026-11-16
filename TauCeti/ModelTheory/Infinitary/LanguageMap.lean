@@ -52,7 +52,8 @@ equivalence of formula types, so that translating along it loses no formula.
   bound positions as free variables; along the way it commutes with `⊥`, `⊤`, negation, the binary
   connectives `⊓`, `⊔` and `iff`, existential quantification, the quantifier closures `alls`, `exs`
   and `exsLast`, and the coded connectives `iInfAlong` and `iSupAlong`, and preserves atomicity
-  (`FirstOrder.Language.LHom.isAtomic_onBoundedFormulaInf`).
+  (`FirstOrder.Language.LHom.isAtomic_onBoundedFormulaInf`,
+  `FirstOrder.Language.BoundedFormulaInf.IsAtomic.onBoundedFormulaInf`).
 * `FirstOrder.Language.LHom.Injective.onBoundedFormulaInf_injective`: an injective language map
   acts injectively on infinitary formulas.
 * `FirstOrder.Language.LEquiv.onBoundedFormulaInf_refl` and

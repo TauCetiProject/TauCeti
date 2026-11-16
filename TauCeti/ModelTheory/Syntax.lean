@@ -37,8 +37,8 @@ injective on function symbols acts injectively on terms. Constructor equations f
   `FirstOrder.Language.LHom.addConstants_onTerm_varsToConstants`,
   `FirstOrder.Language.Term.constantsToVars_lhomWithConstants_onTerm` and
   `FirstOrder.Language.Term.constantsToVars_lhomWithConstantsMap_onTerm` (with matching forms for
-  `Term.constantsVarsEquivLeft`): constant abstraction on terms commutes with `LHom.addConstants`,
-  `lhomWithConstants` and `lhomWithConstantsMap`.
+  `Term.constantsVarsEquivLeft`): constant abstraction on terms commutes with `LHom.addConstants`
+  and translates `lhomWithConstants` and `lhomWithConstantsMap` into variable relabellings.
 -/
 
 public section
@@ -162,15 +162,11 @@ theorem constantsToVars_addConstants_onTerm (g : L →ᴸ L') {γ α : Type*} (t
   induction t with
   | var => rfl
   | @func n F ts ih =>
-    cases n with
-    | zero =>
-      rcases F with F | c
-      · simp only [LHom.onTerm, Term.constantsToVars, ih]; rfl
-      · rfl
-    | succ n =>
-      rcases F with F | c
-      · simp only [LHom.onTerm, Term.constantsToVars, ih]; rfl
-      · exact isEmptyElim c
+    cases n <;> rcases F with F | c
+    · simp only [LHom.onTerm, Term.constantsToVars, ih]; simp [LHom.addConstants]
+    · rfl
+    · simp only [LHom.onTerm, Term.constantsToVars, ih]; simp [LHom.addConstants]
+    · exact isEmptyElim c
 
 /-- Restoring constants from variables commutes with extending a language map by `addConstants`. -/
 @[simp]
@@ -185,7 +181,8 @@ theorem addConstants_onTerm_varsToConstants (g : L →ᴸ L') {γ α : Type*}
       exact funext fun i => i.elim0
     · rfl
   | func F ts ih =>
-    simp only [LHom.onTerm, Term.varsToConstants, ih]; rfl
+    simp only [LHom.onTerm, Term.varsToConstants, ih]
+    simp [LHom.addConstants]
 
 /-- Left constant abstraction on terms commutes with `LHom.addConstants`. -/
 theorem constantsVarsEquivLeft_addConstants_onTerm (g : L →ᴸ L') {γ α β : Type*}
@@ -214,7 +211,7 @@ theorem constantsToVars_lhomWithConstants_onTerm {L : Language} {γ α : Type*} 
   induction t with
   | var => rfl
   | @func n F ts ih =>
-    cases n <;> (simp only [LHom.onTerm, Term.constantsToVars, Term.relabel, ih]; rfl)
+    cases n <;> simp [LHom.onTerm, Term.constantsToVars, Term.relabel, ih]
 
 /-- Left constant abstraction on a term coming from `L` relabels its left variables into the right
 part of the left summand. -/
@@ -236,15 +233,11 @@ theorem constantsToVars_lhomWithConstantsMap_onTerm {L : Language} {γ δ α : T
   induction t with
   | var => rfl
   | @func n F ts ih =>
-    cases n with
-    | zero =>
-      rcases F with F | c
-      · simp only [LHom.onTerm, Term.constantsToVars, Term.relabel, ih]; rfl
-      · rfl
-    | succ n =>
-      rcases F with F | c
-      · simp only [LHom.onTerm, Term.constantsToVars, Term.relabel, ih]; rfl
-      · exact isEmptyElim c
+    cases n <;> rcases F with F | c
+    · simp only [LHom.onTerm, Term.constantsToVars, Term.relabel, ih]; simp [lhomWithConstantsMap]
+    · rfl
+    · simp only [LHom.onTerm, Term.constantsToVars, Term.relabel, ih]; simp [lhomWithConstantsMap]
+    · exact isEmptyElim c
 
 /-- Left constant abstraction after mapping constants along `f` relabels the constant summand by
 `f`. -/

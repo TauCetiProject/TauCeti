@@ -26,9 +26,11 @@ module, through public statements only:
 * a language map between languages in arbitrary universes commutes with substituting function
   terms into a formula built with the binary connectives and closed by `alls`;
 * language maps and language equivalences commute with mixed free/bound `relabel`, `exs`,
-  `exsLast`, `toFormula` and `inst`, preserve atomicity, quantifier rank and free-variable support,
-  and commute via `addConstants` and `lhomWithConstantsMap` with constant support and constant
-  abstraction (`constantsVarsEquiv` and `abstractConst`).
+  `exsLast`, `toFormula` and `inst`, and preserve atomicity, quantifier rank and free-variable
+  support;
+* `addConstants` preserves `constantSupport` and commutes with `constantsVarsEquiv` and
+  `abstractConst`, while `lhomWithConstantsMap` maps `constantSupport` to its image and translates
+  `constantsVarsEquiv` into variable substitution.
 -/
 
 universe u v u' v' uι w
@@ -126,6 +128,9 @@ example {L : Language.{u, v}} {L' : Language.{u', v'}} (g : L →ᴸ L') {ι : T
         f '' φ.constantSupport ∧
       BoundedFormulaInf.constantsVarsEquiv ((g.addConstants ℕ).onBoundedFormulaInf φ) =
         g.onBoundedFormulaInf (BoundedFormulaInf.constantsVarsEquiv φ) ∧
+      BoundedFormulaInf.constantsVarsEquiv ((L.lhomWithConstantsMap f).onBoundedFormulaInf φ) =
+        TauCeti.BoundedFormulaInf.subst (BoundedFormulaInf.constantsVarsEquiv φ)
+          (Term.var ∘ Sum.map f id) ∧
       (g.addConstants ℕ).onBoundedFormulaInf (BoundedFormulaInf.abstractConst c φ) =
         BoundedFormulaInf.abstractConst c ((g.addConstants ℕ).onBoundedFormulaInf φ) := by
   simp

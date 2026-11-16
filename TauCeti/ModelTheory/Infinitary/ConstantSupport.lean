@@ -39,7 +39,9 @@ constants. A term mentions only finitely many (`Term.finite_constantSupport`).
 * `FirstOrder.Language.BoundedFormulaInf.constantSupport_onBoundedFormulaInf`,
   `FirstOrder.Language.BoundedFormulaInf.constantSupport_eq_empty_iff`: a formula of `L[[γ]]` has
   empty support precisely when it comes from `L`.
-* `FirstOrder.Language.LHom.constantSupport_addConstants_onBoundedFormulaInf` and
+* `FirstOrder.Language.LHom.constantSupport_addConstants_onTerm`,
+  `FirstOrder.Language.LHom.constantSupport_addConstants_onBoundedFormulaInf`,
+  `FirstOrder.Language.Term.constantSupport_lhomWithConstantsMap_onTerm` and
   `FirstOrder.Language.BoundedFormulaInf.constantSupport_lhomWithConstantsMap_onBoundedFormulaInf`:
   changing the base language preserves the constant support, and mapping the constants sends the
   constant support to its image.
@@ -383,17 +385,14 @@ theorem constantSupport_lhomWithConstantsMap_onBoundedFormulaInf {δ : Type*}
     (φ : L[[γ]].BoundedFormulaInf ι α n) (f : γ → δ) :
     ((L.lhomWithConstantsMap f).onBoundedFormulaInf φ).constantSupport =
       f '' φ.constantSupport := by
-  ext d
-  simp only [mem_constantSupport, LHom.functionsIn_onBoundedFormulaInf, Set.mem_image]
-  constructor
-  · rintro ⟨⟨k, g | c⟩, hs, hm⟩
-    · obtain ⟨rfl, heq⟩ := Sigma.mk.inj_iff.1 hm
-      exact (Sum.inl_ne_inr (eq_of_heq heq)).elim
-    · cases k with
-      | zero => exact ⟨c, hs, Sum.inr_injective (eq_of_heq (Sigma.mk.inj hm).2)⟩
-      | succ _ => exact isEmptyElim c
-  · rintro ⟨c, hc, rfl⟩
-    exact ⟨⟨0, L.con c⟩, hc, rfl⟩
+  induction φ with
+  | falsum => simp
+  | equal => simp [Set.image_union]
+  | rel => simp [Set.image_iUnion]
+  | imp _ _ ihφ ihψ => simp [ihφ, ihψ, Set.image_union]
+  | all _ ih => simp [ih]
+  | iSup _ ih => simp [ih, Set.image_iUnion]
+  | iInf _ ih => simp [ih, Set.image_iUnion]
 
 end BoundedFormulaInf
 
@@ -422,17 +421,14 @@ formula; no injectivity on symbols is required. -/
 theorem constantSupport_addConstants_onBoundedFormulaInf {L' : Language} (g : L →ᴸ L')
     (φ : L[[γ]].BoundedFormulaInf ι α n) :
     ((g.addConstants γ).onBoundedFormulaInf φ).constantSupport = φ.constantSupport := by
-  ext c
-  simp only [BoundedFormulaInf.mem_constantSupport, functionsIn_onBoundedFormulaInf,
-    Set.mem_image]
-  constructor
-  · rintro ⟨⟨k, f | d⟩, hs, hm⟩
-    · obtain ⟨rfl, heq⟩ := Sigma.mk.inj_iff.1 hm
-      exact (Sum.inl_ne_inr (eq_of_heq heq)).elim
-    · cases k with
-      | zero => exact Sum.inr_injective (eq_of_heq (Sigma.mk.inj hm).2) ▸ hs
-      | succ _ => exact isEmptyElim d
-  · exact fun hc => ⟨⟨0, L.con c⟩, hc, rfl⟩
+  induction φ with
+  | falsum => simp
+  | equal => simp
+  | rel => simp
+  | imp _ _ ihφ ihψ => simp [ihφ, ihψ]
+  | all _ ih => simp [ih]
+  | iSup _ ih => simp [ih]
+  | iInf _ ih => simp [ih]
 
 end LHom
 

@@ -703,7 +703,8 @@ theorem constantsVarsEquiv_lhomWithConstants_onBoundedFormulaInf
   | rel R ts =>
     simp only [LHom.onBoundedFormulaInf_rel, constantsVarsEquiv_rel, hatom,
       TauCeti.BoundedFormulaInf.subst_rel]
-    rfl
+    exact congrArg (fun R' => rel R' _)
+      ((L.lhomWithConstants_injective γ).onRelation (lhomWithConstants_onRelation_sumEmpty _))
   | imp _ _ ihφ ihψ => simp [ihφ, ihψ]
   | all _ ih => simp [ih]
   | iSup _ ih => simp [ih]
@@ -744,7 +745,7 @@ theorem constantsVarsEquiv_lhomWithConstantsMap_onBoundedFormulaInf {δ : Type*}
   | iInf _ ih => simp [ih]
 
 /-- Mapping constants along `f` after restoring constants from free variables restores constants
-after relabelling the left free-variable summand by `f`. -/
+after substituting `Term.var ∘ Sum.map f id` for the free variables. -/
 @[simp]
 theorem lhomWithConstantsMap_onBoundedFormulaInf_constantsVarsEquiv_symm {δ : Type*}
     (φ : L.BoundedFormulaInf ι (γ ⊕ α) n) (f : γ → δ) :
