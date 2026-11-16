@@ -199,11 +199,6 @@ theorem apply_eq_zero_iff_not_isGood (χ : MultiplicativeIdealWeight K) (I : Ide
     χ I = 0 ↔ ¬ χ.IsGood I := by
   rw [← not_ne_iff, χ.apply_ne_zero_iff_isGood]
 
-/-- The absolute norm of a nonzero ideal is nonzero, as a complex number. -/
-theorem natCast_absNorm_ne_zero {I : Ideal (𝓞 K)} (hI : I ≠ ⊥) :
-    ((Ideal.absNorm I : ℕ) : ℂ) ≠ 0 :=
-  Nat.cast_ne_zero.mpr (Ideal.absNorm_eq_zero_iff.not.mpr hI)
-
 /-!
 ### Constructors and operations
 -/
@@ -461,8 +456,8 @@ theorem normTwist_normTwist (z w : ℂ) (χ : MultiplicativeIdealWeight K) :
   ext I
   rcases eq_or_ne I ⊥ with rfl | hI
   · simp
-  · have h := natCast_absNorm_ne_zero hI
-    rw [normTwist_apply, normTwist_apply, normTwist_apply, neg_add, Complex.cpow_add _ _ h]
+  · rw [normTwist_apply, normTwist_apply, normTwist_apply, neg_add,
+      Complex.cpow_add _ _ (Ideal.natCast_absNorm_ne_zero hI)]
     ring
 
 /-- The pointwise product of two norm twists is the twist of the product by the sum of the
@@ -473,10 +468,9 @@ theorem normTwist_mul_normTwist (z w : ℂ) (χ ψ : MultiplicativeIdealWeight K
   ext I
   rcases eq_or_ne I ⊥ with rfl | hI
   · simp
-  · have h := natCast_absNorm_ne_zero hI
-    rw [TauCeti.MultiplicativeIdealWeight.mul_apply, normTwist_apply, normTwist_apply,
+  · rw [TauCeti.MultiplicativeIdealWeight.mul_apply, normTwist_apply, normTwist_apply,
       normTwist_apply, TauCeti.MultiplicativeIdealWeight.mul_apply, neg_add,
-      Complex.cpow_add _ _ h]
+      Complex.cpow_add _ _ (Ideal.natCast_absNorm_ne_zero hI)]
     ring
 
 /-- **The `n`-th power of a norm twist** is the twist of the `n`-th power by `n` times the
@@ -564,8 +558,8 @@ theorem IsNormTwistOnGood.normTwist {χ : MultiplicativeIdealWeight K} {u : ℝ}
       (u + v) := by
   intro I hI
   have hI' : χ.IsGood I := hI.mono (by rw [badPrimes_normTwist])
-  have hN := natCast_absNorm_ne_zero hI'.ne_bot
-  rw [normTwist_apply, h I hI', neg_neg, ← Complex.cpow_add _ _ hN]
+  rw [normTwist_apply, h I hI', neg_neg,
+    ← Complex.cpow_add _ _ (Ideal.natCast_absNorm_ne_zero hI'.ne_bot)]
   congr 1
   push_cast
   ring
@@ -603,8 +597,8 @@ theorem IsNormTwistOnGood.mul {χ ψ : MultiplicativeIdealWeight K} {u v : ℝ}
   intro I hI
   have hχI : χ.IsGood I := hI.mono (by rw [badPrimes_mul]; exact Set.subset_union_left)
   have hψI : ψ.IsGood I := hI.mono (by rw [badPrimes_mul]; exact Set.subset_union_right)
-  have hN := natCast_absNorm_ne_zero hχI.ne_bot
-  rw [TauCeti.MultiplicativeIdealWeight.mul_apply, hχ I hχI, hψ I hψI, ← Complex.cpow_add _ _ hN]
+  rw [TauCeti.MultiplicativeIdealWeight.mul_apply, hχ I hχI, hψ I hψI,
+    ← Complex.cpow_add _ _ (Ideal.natCast_absNorm_ne_zero hχI.ne_bot)]
   congr 1
   push_cast
   ring

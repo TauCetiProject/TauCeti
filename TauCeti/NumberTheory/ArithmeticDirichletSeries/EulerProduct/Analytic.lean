@@ -78,7 +78,7 @@ variable {K : Type*} [Field K] [NumberField K]
 /-- The absolute norm of a height-one prime, cast to `ℂ`, is nonzero. -/
 theorem natCast_absNorm_ne_zero (P : HeightOneSpectrum (𝓞 K)) :
     (Ideal.absNorm P.asIdeal : ℂ) ≠ 0 :=
-  Nat.cast_ne_zero.mpr (NumberField.HeightOneSpectrum.one_lt_absNorm P).ne_bot
+  Ideal.natCast_absNorm_ne_zero P.ne_bot
 
 /-- On `Re s > 0`, `N(𝔭) ^ s` lies outside the closed unit disc. -/
 theorem one_lt_norm_absNorm_cpow (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
