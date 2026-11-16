@@ -490,7 +490,10 @@ theorem orthogonalGroupCongr_prod_orthogonalGroupProd
   apply LinearEquiv.ext
   intro m
   obtain ⟨⟨x₁, x₂⟩, rfl⟩ := (e₁.prod e₂).toLinearEquiv.surjective m
-  simp
+  have h : (e₁.prod e₂).symm (e₁ x₁, e₂ x₂) = (x₁, x₂) := by
+    have := (e₁.prod e₂).symm_apply_apply (x₁, x₂)
+    rwa [IsometryEquiv.prod_apply] at this
+  simp [h]
 
 /-- Deleting a trivial left summand along `IsometryEquiv.uniqueProd` sends an orthogonal sum of
 orthogonal transformations to its second factor. -/
@@ -502,8 +505,7 @@ theorem orthogonalGroupCongr_uniqueProd_orthogonalGroupProd [Unique M₁]
   apply LinearEquiv.ext
   intro m
   obtain ⟨x, rfl⟩ := (IsometryEquiv.uniqueProd Q₁ Q₂).toLinearEquiv.surjective m
-  rw [IsometryEquiv.coe_orthogonalGroupCongr_apply, LinearEquiv.symm_apply_apply]
-  simp [IsometryEquiv.coe_toLinearEquiv]
+  simp
 
 /-- Deleting a trivial right summand along `IsometryEquiv.prodUnique` sends an orthogonal sum of
 orthogonal transformations to its first factor. -/
@@ -515,8 +517,7 @@ theorem orthogonalGroupCongr_prodUnique_orthogonalGroupProd [Unique M₂]
   apply LinearEquiv.ext
   intro m
   obtain ⟨x, rfl⟩ := (IsometryEquiv.prodUnique Q₁ Q₂).toLinearEquiv.surjective m
-  rw [IsometryEquiv.coe_orthogonalGroupCongr_apply, LinearEquiv.symm_apply_apply]
-  simp [IsometryEquiv.coe_toLinearEquiv]
+  simp
 
 /-- `orthogonalGroupProd` is associative up to transport along `IsometryEquiv.prodAssoc`. -/
 @[simp]
@@ -530,8 +531,7 @@ theorem orthogonalGroupCongr_prodAssoc_orthogonalGroupProd
   apply LinearEquiv.ext
   intro m
   obtain ⟨x, rfl⟩ := (IsometryEquiv.prodAssoc Q₁ Q₂ Q₃).toLinearEquiv.surjective m
-  rw [IsometryEquiv.coe_orthogonalGroupCongr_apply, LinearEquiv.symm_apply_apply]
-  simp [IsometryEquiv.coe_toLinearEquiv]
+  simp
 
 /-- Swapping the two summands along `IsometryEquiv.prodComm` swaps the two factors of
 `orthogonalGroupProd`. -/
@@ -544,8 +544,9 @@ theorem orthogonalGroupCongr_prodComm_orthogonalGroupProd
   apply LinearEquiv.ext
   intro m
   obtain ⟨x, rfl⟩ := (IsometryEquiv.prodComm Q₁ Q₂).toLinearEquiv.surjective m
-  rw [IsometryEquiv.coe_orthogonalGroupCongr_apply, LinearEquiv.symm_apply_apply]
-  simp [IsometryEquiv.coe_toLinearEquiv]
+  have h : (IsometryEquiv.prodComm Q₁ Q₂).symm x.swap = x :=
+    (IsometryEquiv.prodComm Q₁ Q₂).symm_apply_apply x
+  simp [h]
 
 end OrthogonalGroup
 
