@@ -55,6 +55,7 @@ contains `0`.
 * `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
 * `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
   is nonnegative.
+* `TauCeti.eNorm_lt_ofReal_iff` -- `‖x‖ₑ < ENNReal.ofReal r ↔ ‖x‖ < r`.
 -/
 
 public section
@@ -144,5 +145,11 @@ theorem nonneg_of_forall_norm_lt {E F 𝓕 : Type*} [SeminormedAddGroup E] [Semi
     [FunLike 𝓕 E F] (f : 𝓕) {δ B : ℝ} (hδ : 0 < δ) (hf : ∀ x : E, ‖x‖ < δ → ‖f x‖ ≤ B) :
     0 ≤ B :=
   (norm_nonneg _).trans <| hf 0 (by simpa using hδ)
+
+/-- The extended norm `‖x‖ₑ` is strictly less than `ENNReal.ofReal r` iff `‖x‖ < r`. -/
+@[simp]
+theorem eNorm_lt_ofReal_iff {E : Type*} [SeminormedAddGroup E] {x : E} {r : ℝ} :
+    ‖x‖ₑ < ENNReal.ofReal r ↔ ‖x‖ < r := by
+  rw [eNorm_eq_nnNorm, ENNReal.coe_lt_ofReal, coe_nnNorm]
 
 end TauCeti

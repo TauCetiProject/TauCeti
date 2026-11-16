@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Basic.Complex.Basic
+public import Mathlib.Data.Finset.Range
 
+import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 
 /-!
@@ -76,7 +78,7 @@ theorem indicialPoly_add (f₀ g₀ α β : ℂ) :
 
 /-- Factorization of `indicialPoly f₀ g₀` into `(α - α₁)(α - α₂)` is equivalent to Vieta's
 relations `α₁ + α₂ = 1 - f₀` and `α₁ α₂ = g₀`. -/
-theorem indicialPoly_eq_mul_sub_iff {f₀ g₀ α₁ α₂ : ℂ} :
+theorem forall_indicialPoly_eq_sub_mul_sub_iff {f₀ g₀ α₁ α₂ : ℂ} :
     (∀ α, indicialPoly f₀ g₀ α = (α - α₁) * (α - α₂)) ↔
       α₁ + α₂ = 1 - f₀ ∧ α₁ * α₂ = g₀ := by
   refine ⟨fun h => ?_, fun ⟨hsum, hprod⟩ α => ?_⟩
@@ -91,21 +93,24 @@ theorem indicialPoly_eq_mul_sub_iff {f₀ g₀ α₁ α₂ : ℂ} :
 /-- Every complex indicial polynomial factors as `(α - α₁)(α - α₂)` with `Re α₂ ≤ Re α₁`. -/
 theorem exists_indicialPoly_roots (f₀ g₀ : ℂ) :
     ∃ α₁ α₂ : ℂ, α₂.re ≤ α₁.re ∧ ∀ α, indicialPoly f₀ g₀ α = (α - α₁) * (α - α₂) := by
-  set Δ : ℂ := (1 - f₀) ^ 2 - 4 * g₀
-  obtain ⟨d, hd⟩ : ∃ d : ℂ, d ^ 2 = Δ := by
-    rcases eq_or_ne Δ 0 with h0 | hne
-    · exact ⟨0, by simp [h0]⟩
-    · refine ⟨Δ ^ (1 / 2 : ℂ), ?_⟩
-      rw [sq, ← Complex.cpow_add _ _ hne]
-      norm_num
+  obtain ⟨d, hd⟩ := Complex.isSquare ((1 - f₀) ^ 2 - 4 * g₀)
   set r₁ : ℂ := (1 - f₀ + d) / 2
   set r₂ : ℂ := (1 - f₀ - d) / 2
   have hfact : ∀ α, indicialPoly f₀ g₀ α = (α - r₁) * (α - r₂) := fun α => by
     simp only [indicialPoly, r₁, r₂]
-    linear_combination (1 / 4 : ℂ) * hd
+    linear_combination -(1 / 4 : ℂ) * hd
   rcases le_total r₂.re r₁.re with hle | hle
   · exact ⟨r₁, r₂, hle, hfact⟩
   · exact ⟨r₂, r₁, hle, fun α => by rw [mul_comm]; exact hfact α⟩
+
+/-- For a factored indicial polynomial `Q(α) = (α - α₁)(α - α₂)`, the shifted value `Q(α₂ + s)`
+is nonzero iff `s ≠ 0` and `α₁ - α₂ ≠ s`. -/
+theorem indicialPoly_add_nat_ne_zero_iff {f₀ g₀ α₁ α₂ : ℂ}
+    (hfact : ∀ α, indicialPoly f₀ g₀ α = (α - α₁) * (α - α₂)) {s : ℕ} :
+    indicialPoly f₀ g₀ (α₂ + s) ≠ 0 ↔ s ≠ 0 ∧ α₁ - α₂ ≠ s := by
+  rw [hfact, mul_ne_zero_iff, sub_ne_zero, add_sub_cancel_left, Nat.cast_ne_zero, and_comm]
+  exact and_congr_right fun _ ↦
+    ⟨fun h heq ↦ h (by linear_combination -heq), fun h heq ↦ h (by linear_combination -heq)⟩
 
 /-- For the root `α₁` of `indicialPoly` with `Re α₂ ≤ Re α₁`, no positive integer shift `α₁ + s`
 is a root of `indicialPoly`. -/
@@ -113,40 +118,21 @@ theorem indicialPoly_add_nat_ne_zero_of_re_le {f₀ g₀ α₁ α₂ : ℂ}
     (hfact : ∀ α, indicialPoly f₀ g₀ α = (α - α₁) * (α - α₂)) (hre : α₂.re ≤ α₁.re)
     {s : ℕ} (hs : 1 ≤ s) :
     indicialPoly f₀ g₀ (α₁ + s) ≠ 0 := by
-  rw [hfact]
-  have hs0 : (s : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
-  have hdiff : α₁ + (s : ℂ) - α₂ ≠ 0 := by
-    intro h
-    have hre0 := congrArg Complex.re h
-    simp only [add_re, sub_re, natCast_re, zero_re] at hre0
-    have hs_pos : (1 : ℝ) ≤ s := by exact_mod_cast hs
-    linarith
-  simpa [add_sub_cancel_left] using mul_ne_zero hs0 hdiff
-
-/-- If `α₁ - α₂` is never a natural number, then no positive integer shift `α₂ + s` is a root
-of `indicialPoly`. -/
-theorem indicialPoly_add_nat_ne_zero_of_sub_ne_nat {f₀ g₀ α₁ α₂ : ℂ}
-    (hfact : ∀ α, indicialPoly f₀ g₀ α = (α - α₁) * (α - α₂)) (hnat : ∀ N : ℕ, α₁ - α₂ ≠ N)
-    {s : ℕ} (hs : 1 ≤ s) :
-    indicialPoly f₀ g₀ (α₂ + s) ≠ 0 := by
-  rw [hfact]
-  have hs0 : (s : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
-  have hdiff : α₂ + (s : ℂ) - α₁ ≠ 0 := fun h => hnat s (by linear_combination -h)
-  simpa [add_sub_cancel_left] using mul_ne_zero hdiff hs0
+  refine (indicialPoly_add_nat_ne_zero_iff (fun α ↦ by rw [hfact, mul_comm])).mpr
+    ⟨by omega, fun h ↦ ?_⟩
+  have hre0 := congrArg Complex.re h
+  simp only [sub_re, natCast_re] at hre0
+  have hs_pos : (1 : ℝ) ≤ s := by exact_mod_cast hs
+  linarith
 
 /-- In the resonant case `α₁ = α₂ + N`, `indicialPoly f₀ g₀ (α₂ + s) ≠ 0` whenever `s ≠ 0` and
 `s ≠ N`. -/
 theorem indicialPoly_add_nat_ne_zero_of_ne {f₀ g₀ α₂ : ℂ} {N s : ℕ}
     (hfact : ∀ α, indicialPoly f₀ g₀ α = (α - (α₂ + N)) * (α - α₂))
     (hs0 : s ≠ 0) (hsN : s ≠ N) :
-    indicialPoly f₀ g₀ (α₂ + s) ≠ 0 := by
-  rw [hfact]
-  have h1 : α₂ + (s : ℂ) - (α₂ + (N : ℂ)) ≠ 0 := by
-    have hne : (s : ℂ) ≠ (N : ℂ) := by exact_mod_cast hsN
-    exact fun h => hne (by linear_combination h)
-  have h2 : α₂ + (s : ℂ) - α₂ ≠ 0 := by
-    simpa using (Nat.cast_ne_zero.mpr hs0 : (s : ℂ) ≠ 0)
-  exact mul_ne_zero h1 h2
+    indicialPoly f₀ g₀ (α₂ + s) ≠ 0 :=
+  (indicialPoly_add_nat_ne_zero_iff hfact).mpr
+    ⟨hs0, by simpa [add_sub_cancel_left] using (by exact_mod_cast hsN.symm : (N : ℂ) ≠ s)⟩
 
 /-! ### Recursive coefficient sequences -/
 
@@ -294,13 +280,12 @@ theorem indicialPoly_mul_regularSingularSecondCoeff_of_lt {fs gs : ℕ → ℂ} 
     indicialPoly (fs 0) (gs 0) (α₂ + s) * regularSingularSecondCoeff fs gs α₂ N s =
       -∑ k ∈ range s,
         ((α₂ + k) * fs (s - k) + gs (s - k)) * regularSingularSecondCoeff fs gs α₂ N k := by
-  conv_lhs => rw [regularSingularSecondCoeff]
-  have hne : s ≠ N := by omega
-  have hs0 : s ≠ 0 := by omega
-  simp only [hne, hs0, hsN, ↓reduceIte]
-  rw [Finset.sum_attach (range s) fun k =>
-    ((α₂ + (k : ℂ)) * fs (s - k) + gs (s - k)) * regularSingularSecondCoeff fs gs α₂ N k]
-  field_simp [hQ]
+  rw [regularSingularSecondCoeff_eq_regularSingularCoeff_of_lt fs gs α₂ hsN,
+    indicialPoly_mul_regularSingularCoeff hs1 hQ]
+  congr 1
+  exact sum_congr rfl fun k hk => by
+    rw [regularSingularSecondCoeff_eq_regularSingularCoeff_of_lt fs gs α₂
+      ((mem_range.mp hk).trans hsN)]
 
 /-- Unfolding formula for `regularSingularSecondCoeff` above the resonant index `N < s`. -/
 theorem regularSingularSecondCoeff_of_gt (fs gs : ℕ → ℂ) (α₂ : ℂ) {N s : ℕ} (hsN : N < s) :
@@ -332,6 +317,50 @@ theorem indicialPoly_mul_regularSingularSecondCoeff_of_gt {fs gs : ℕ → ℂ} 
   field_simp [hQ]
   ring
 
+/-- The canonical resonant pair `(regularSingularSecondCoeff, regularSingularLogMultiplier)`
+satisfies the unified resonant indicial recursion for every `s : ℕ`. -/
+theorem regularSingularSecondCoeff_rec {fs gs : ℕ → ℂ} {α₂ : ℂ} {N : ℕ}
+    (hfact : ∀ α, indicialPoly (fs 0) (gs 0) α = (α - (α₂ + N)) * (α - α₂)) (s : ℕ) :
+    (indicialPoly (fs 0) (gs 0) (α₂ + s) * regularSingularSecondCoeff fs gs α₂ N s +
+      ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) *
+        regularSingularSecondCoeff fs gs α₂ N k) +
+    regularSingularLogMultiplier fs gs α₂ N * (if s < N then 0
+      else (2 * (α₂ + s) + fs 0 - 1) * regularSingularCoeff fs gs (α₂ + N) (s - N) +
+        ∑ k ∈ range (s - N),
+          fs (s - N - k) * regularSingularCoeff fs gs (α₂ + N) k) = 0 := by
+  rcases lt_trichotomy s N with hsN | hsN | hsN
+  · rcases eq_or_ne s 0 with rfl | hs0
+    · simp [hsN, hfact]
+    · have hQ := indicialPoly_add_nat_ne_zero_of_ne hfact hs0 hsN.ne
+      have h := indicialPoly_mul_regularSingularSecondCoeff_of_lt (Nat.pos_of_ne_zero hs0) hsN hQ
+      simp only [hsN, ↓reduceIte, mul_zero, add_zero]
+      linear_combination h
+  · subst hsN
+    have h2N : 2 * (α₂ + (s : ℂ)) + fs 0 - 1 = s := by
+      linear_combination (forall_indicialPoly_eq_sub_mul_sub_iff.mp hfact).1
+    rcases eq_or_ne s 0 with rfl | hs0
+    · simpa using h2N
+    · have hQN : indicialPoly (fs 0) (gs 0) (α₂ + s) = 0 := by simp [hfact]
+      have hsum_eq :
+          (∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) *
+              regularSingularSecondCoeff fs gs α₂ s k) =
+            ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) *
+              regularSingularCoeff fs gs α₂ k :=
+        sum_congr rfl fun k hk => by
+          rw [regularSingularSecondCoeff_eq_regularSingularCoeff_of_lt fs gs α₂ (mem_range.mp hk)]
+      have hterm :
+          (∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) *
+              regularSingularCoeff fs gs α₂ k) +
+            regularSingularLogMultiplier fs gs α₂ s * (s : ℂ) = 0 := by
+        linear_combination
+          natCast_mul_regularSingularLogMultiplier fs gs α₂ (Nat.pos_of_ne_zero hs0)
+      simpa [hQN, h2N, hsum_eq] using hterm
+  · have hQ := indicialPoly_add_nat_ne_zero_of_ne hfact (by omega) hsN.ne'
+    have h := indicialPoly_mul_regularSingularSecondCoeff_of_gt hsN hQ
+    have hnlt : ¬s < N := by omega
+    simp only [hnlt, ↓reduceIte]
+    linear_combination h
+
 /-- Any pair `(b', c')` satisfying `b' N = 0`, the normalization `(N = 0 → c' = 1)`,
 `(1 ≤ N → b' 0 = 1)`, and the resonant indicial recursion coincides with
 `(regularSingularSecondCoeff fs gs α₂ N, regularSingularLogMultiplier fs gs α₂ N)`. -/
@@ -348,59 +377,50 @@ theorem eq_regularSingularSecondCoeff_of_rec {fs gs b' : ℕ → ℂ} {α₂ c' 
           ∑ k ∈ range (s - N), fs (s - N - k) * regularSingularCoeff fs gs (α₂ + N) k) = 0) :
     b' = regularSingularSecondCoeff fs gs α₂ N ∧
       c' = regularSingularLogMultiplier fs gs α₂ N := by
-  set a := regularSingularCoeff fs gs (α₂ + N)
-  have hb'_lt : ∀ s < N, b' s = regularSingularCoeff fs gs α₂ s := by
+  set b := regularSingularSecondCoeff fs gs α₂ N
+  set c := regularSingularLogMultiplier fs gs α₂ N
+  -- Stage 1: match `b'` with `b` below the resonant index `N`.
+  have hb'_lt : ∀ s < N, b' s = b s := by
     intro s hs
     induction s using Nat.strong_induction_on with
     | ind s ih =>
       rcases eq_or_ne s 0 with rfl | hs0
-      · simp [hb'0 hs]
+      · simp [b, hb'0 hs, hs]
       · have hQ := indicialPoly_add_nat_ne_zero_of_ne hfact hs0 hs.ne
-        have hDs := hrec s
-        simp only [hs, ↓reduceIte, mul_zero, add_zero] at hDs
-        apply mul_left_cancel₀ hQ
-        rw [indicialPoly_mul_regularSingularCoeff (Nat.pos_of_ne_zero hs0) hQ]
+        have hdiff := sub_eq_zero.mpr ((hrec s).trans (regularSingularSecondCoeff_rec hfact s).symm)
         have hsum_eq : (∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b' k) =
-            ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) *
-              regularSingularCoeff fs gs α₂ k :=
+            ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k :=
           sum_congr rfl fun k hk => by rw [ih k (mem_range.mp hk) ((mem_range.mp hk).trans hs)]
-        linear_combination hDs - hsum_eq
-  have hc'_eq : c' = regularSingularLogMultiplier fs gs α₂ N := by
+        simp only [hs, ↓reduceIte, mul_zero, add_zero, hsum_eq] at hdiff
+        exact mul_left_cancel₀ hQ (by linear_combination hdiff)
+  -- Stage 2: match `c'` with `c` at the resonant index `s = N`.
+  have hc'_eq : c' = c := by
     rcases eq_or_ne N 0 with rfl | hN0
-    · simp [hc'0 rfl]
-    · have hDN := hrec N
-      have hQN : indicialPoly (fs 0) (gs 0) (α₂ + N) = 0 := by simp [hfact]
-      have ha0_eq : a 0 = 1 := regularSingularCoeff_zero fs gs (α₂ + N)
-      have hvieta := (indicialPoly_eq_mul_sub_iff.mp hfact).1
-      have h2N : 2 * (α₂ + (N : ℂ)) + fs 0 - 1 = N := by linear_combination hvieta
-      simp only [lt_irrefl, ↓reduceIte, Nat.sub_self, Finset.range_zero, Finset.sum_empty,
-        add_zero, hQN, zero_mul, zero_add, ha0_eq, mul_one, h2N] at hDN
+    · simp [c, hc'0 rfl]
+    · have hQN : indicialPoly (fs 0) (gs 0) (α₂ + N) = 0 := by simp [hfact]
+      have h2N : 2 * (α₂ + (N : ℂ)) + fs 0 - 1 = N := by
+        linear_combination (forall_indicialPoly_eq_sub_mul_sub_iff.mp hfact).1
       have hsum_eq : (∑ k ∈ range N, ((α₂ + k) * fs (N - k) + gs (N - k)) * b' k) =
-          ∑ k ∈ range N, ((α₂ + k) * fs (N - k) + gs (N - k)) *
-            regularSingularCoeff fs gs α₂ k :=
+          ∑ k ∈ range N, ((α₂ + k) * fs (N - k) + gs (N - k)) * b k :=
         sum_congr rfl fun k hk => by rw [hb'_lt k (mem_range.mp hk)]
-      rw [hsum_eq] at hDN
-      apply mul_left_cancel₀ (Nat.cast_ne_zero.mpr hN0 : (N : ℂ) ≠ 0)
-      rw [natCast_mul_regularSingularLogMultiplier fs gs α₂ (Nat.pos_of_ne_zero hN0)]
-      linear_combination hDN
+      have hEq : c' * (N : ℂ) = c * (N : ℂ) := by
+        simpa [b, c, hQN, h2N, hsum_eq] using
+          (hrec N).trans (regularSingularSecondCoeff_rec hfact N).symm
+      exact mul_right_cancel₀ (Nat.cast_ne_zero.mpr hN0) hEq
+  -- Stage 3: match `b'` with `b` for all `s` (cancelling the shared forcing term for `N < s`).
   refine ⟨?_, hc'_eq⟩
   ext s
   induction s using Nat.strong_induction_on with
   | ind s ih =>
     rcases lt_trichotomy s N with hsN | rfl | hsN
-    · rw [hb'_lt s hsN, regularSingularSecondCoeff_eq_regularSingularCoeff_of_lt fs gs α₂ hsN]
-    · simp [hb'N]
+    · exact hb'_lt s hsN
+    · simp [b, hb'N]
     · have hQ := indicialPoly_add_nat_ne_zero_of_ne hfact (by omega) hsN.ne'
-      have hDs := hrec s
-      have hnlt : ¬s < N := by omega
-      simp only [hnlt, ↓reduceIte] at hDs
-      rw [hc'_eq] at hDs
-      apply mul_left_cancel₀ hQ
-      rw [indicialPoly_mul_regularSingularSecondCoeff_of_gt hsN hQ]
+      have hdiff := sub_eq_zero.mpr ((hrec s).trans (regularSingularSecondCoeff_rec hfact s).symm)
       have hsum_eq : (∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b' k) =
-          ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) *
-            regularSingularSecondCoeff fs gs α₂ N k :=
+          ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k :=
         sum_congr rfl fun k hk => by rw [ih k (mem_range.mp hk)]
-      linear_combination hDs - hsum_eq
+      rw [hc'_eq, hsum_eq] at hdiff
+      exact mul_left_cancel₀ hQ (by linear_combination hdiff)
 
 end TauCeti
