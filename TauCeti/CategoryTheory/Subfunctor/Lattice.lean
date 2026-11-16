@@ -8,11 +8,12 @@ module
 public import Mathlib.CategoryTheory.Subfunctor.Basic
 
 /-!
-# The lattice of subfunctors is distributive
+# The lattice of subfunctors is completely distributive
 
-Suprema and infima of subfunctors are computed objectwise as unions and intersections of sets, so
-the lattice of subfunctors of a functor `F : C ⥤ Type w` is distributive. This applies in
-particular to the subcomplexes of a simplicial set.
+Arbitrary suprema and infima of subfunctors are computed objectwise as unions and intersections
+of sets, so the lattice of subfunctors of a functor `F : C ⥤ Type w` is completely distributive.
+In particular it is a frame, a coframe and a distributive lattice. This applies to the
+subcomplexes of a simplicial set.
 -/
 
 public section
@@ -23,9 +24,11 @@ universe w v u
 
 variable {C : Type u} [Category.{v} C] {F : C ⥤ Type w}
 
-instance instDistribLattice : DistribLattice (Subfunctor F) :=
-  DistribLattice.ofInfSupLe fun S T T' ↦ (le_def _ _).2 fun U ↦ by
-    rw [min_obj, max_obj, max_obj, min_obj, min_obj]
-    exact (inf_sup_left _ _ _).le
+instance instCompletelyDistribLattice : CompletelyDistribLattice (Subfunctor F) :=
+  .ofMinimalAxioms
+    { iInf_iSup_eq := fun f ↦ Subfunctor.ext <| funext fun U ↦ by
+        simp only [iInf_obj, iSup_obj]
+        -- `⋂` and `⋃` are `⨅` and `⨆` in the completely distributive lattice `Set (F.obj U)`.
+        exact iInf_iSup_eq }
 
 end CategoryTheory.Subfunctor
