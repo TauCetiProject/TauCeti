@@ -40,8 +40,8 @@ API does not expose.
   on `[a, b]`, for a curve continuous there and avoiding `w`, plus a monotone partition witness.
 * `TauCeti.Contour.exists_continuousOn_eq_norm_mul_exp` and
   `TauCeti.Contour.sub_eq_sub_of_eq_norm_mul_exp` — a curve continuous and nowhere zero on
-  `[a, b]` has a continuous argument there, and any two continuous arguments have the same
-  variation from `a` to `b`.
+  `[a, b]` has a continuous argument there, and any two continuous arguments of a nowhere-zero
+  function on a preconnected set have the same variation between two of its points.
 * `TauCeti.Contour.segRatio` and its evaluation lemmas — the segment-ratio building block used to
   assemble the index integral downstream; `TauCeti.Contour.sum_im_log_segRatio_eq_zero_of_le` and
   `TauCeti.Contour.sum_im_log_segRatio_eq_sum_of_le` evaluate the lift's segment sum before and
@@ -492,7 +492,7 @@ section ContinuousArgument
 
 open Complex
 
-variable {c : ℝ → ℂ} {a b : ℝ} {θ θ' : ℝ → ℝ}
+variable {c : ℝ → ℂ} {a b : ℝ}
 
 /-- **Continuous arguments exist.** A curve continuous and nowhere zero on `[a, b]` has an
 argument `θ` continuous on `[a, b]`: `c t = ‖c t‖ · exp (i θ t)` for every `t ∈ [a, b]`. -/
@@ -506,22 +506,24 @@ theorem exists_continuousOn_eq_norm_mul_exp (hc : ContinuousOn c (Icc a b))
   · exact ⟨0, continuousOn_const, fun t ht ↦ absurd ht (by simp [Icc_eq_empty_of_lt hab])⟩
 
 /-- **The variation of a continuous argument is well defined.** Two continuous arguments `θ` and
-`θ'` of a curve nowhere zero on `[a, b]` change by the same amount from `a` to `b`. -/
-theorem sub_eq_sub_of_eq_norm_mul_exp (hab : a ≤ b) (hne : ∀ t ∈ Icc a b, c t ≠ 0)
-    (hθ : ContinuousOn θ (Icc a b)) (hθ' : ContinuousOn θ' (Icc a b))
-    (hcθ : ∀ t ∈ Icc a b, c t = ‖c t‖ * exp (I * θ t))
-    (hcθ' : ∀ t ∈ Icc a b, c t = ‖c t‖ * exp (I * θ' t)) :
-    θ b - θ a = θ' b - θ' a := by
-  have : PreconnectedSpace (Icc a b) := Subtype.preconnectedSpace isPreconnected_Icc
-  -- Both arguments lift the same map `[a, b] → Circle`, so they differ by a constant.
-  obtain ⟨k, hk⟩ := Circle.exists_forall_eq_add_of_exp_eq (A := Icc a b)
-    hθ.domRestrict hθ'.domRestrict fun t ↦ by
+`θ'` of a function nowhere zero on a preconnected set `s` change by the same amount between any
+two points `a` and `b` of `s`. -/
+theorem sub_eq_sub_of_eq_norm_mul_exp {X : Type*} [TopologicalSpace X] {s : Set X} {f : X → ℂ}
+    {φ φ' : X → ℝ} {x y : X} (hs : IsPreconnected s) (hx : x ∈ s) (hy : y ∈ s)
+    (hne : ∀ p ∈ s, f p ≠ 0) (hφ : ContinuousOn φ s) (hφ' : ContinuousOn φ' s)
+    (hfφ : ∀ p ∈ s, f p = ‖f p‖ * exp (I * φ p))
+    (hfφ' : ∀ p ∈ s, f p = ‖f p‖ * exp (I * φ' p)) :
+    φ y - φ x = φ' y - φ' x := by
+  have : PreconnectedSpace s := Subtype.preconnectedSpace hs
+  -- Both arguments lift the same map `s → Circle`, so they differ by a constant.
+  obtain ⟨k, hk⟩ := Circle.exists_forall_eq_add_of_exp_eq (A := s)
+    hφ.domRestrict hφ'.domRestrict fun p ↦ by
       apply Subtype.ext
-      have hn : (‖c t‖ : ℂ) ≠ 0 := ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr (hne t t.2))
+      have hn : (‖f p‖ : ℂ) ≠ 0 := ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr (hne p p.2))
       rw [Circle.coe_exp, Circle.coe_exp, mul_comm _ I, mul_comm _ I]
-      exact mul_left_cancel₀ hn ((hcθ t t.2).symm.trans (hcθ' t t.2))
-  have ha := hk ⟨a, left_mem_Icc.mpr hab⟩
-  have hb := hk ⟨b, right_mem_Icc.mpr hab⟩
+      exact mul_left_cancel₀ hn ((hfφ p p.2).symm.trans (hfφ' p p.2))
+  have ha := hk ⟨x, hx⟩
+  have hb := hk ⟨y, hy⟩
   simp only [domRestrict_apply] at ha hb
   linarith
 

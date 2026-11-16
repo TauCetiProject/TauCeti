@@ -51,6 +51,10 @@ noncomputable def riemannZetaSPath (T t : ℝ) : ℂ :=
 
 variable {T t : ℝ}
 
+/-- The path is `2 + tTi` up to time `1` and `2 - 3(t - 1)/2 + Ti` after it. -/
+theorem riemannZetaSPath_def (T t : ℝ) :
+    riemannZetaSPath T t = if t ≤ 1 then 2 + t * T * I else 2 - 3 / 2 * (t - 1) + T * I := (rfl)
+
 /-- On `[0, 1]` the path runs up the vertical segment from `2` to `2 + iT`. -/
 theorem riemannZetaSPath_of_le_one (ht : t ≤ 1) : riemannZetaSPath T t = 2 + t * T * I := by
   simp [riemannZetaSPath, ht]
@@ -67,6 +71,11 @@ theorem riemannZetaSPath_of_one_le (ht : 1 ≤ t) :
 theorem riemannZetaSPath_zero : riemannZetaSPath T 0 = 2 := by
   simp [riemannZetaSPath_of_le_one zero_le_one]
 
+/-- At time `1` the path is at the corner `2 + iT`. -/
+@[simp]
+theorem riemannZetaSPath_one : riemannZetaSPath T 1 = 2 + T * I := by
+  simp [riemannZetaSPath_of_le_one le_rfl]
+
 /-- The path ends at `1/2 + iT`. -/
 @[simp]
 theorem riemannZetaSPath_two : riemannZetaSPath T 2 = 1 / 2 + T * I := by
@@ -81,6 +90,24 @@ theorem isPiecewiseC1On_riemannZetaSPath (T : ℝ) : IsPiecewiseC1On (riemannZet
   have h₂ : IsPiecewiseC1On (fun t : ℝ ↦ 2 - 3 / 2 * (t - 1) + T * I) 1 2 :=
     .of_contDiffOn (by fun_prop)
   exact h₁.if_le h₂ zero_le_one one_le_two (by push_cast; ring)
+
+/-- Before time `1` the path moves up the vertical segment with velocity `iT`. -/
+theorem deriv_riemannZetaSPath_of_lt_one (ht : t < 1) : deriv (riemannZetaSPath T) t = T * I := by
+  have h : HasDerivAt (fun s : ℝ ↦ 2 + (s : ℂ) * (T * I)) (T * I) t := by
+    simpa using (hasDerivAt_id t).ofReal_comp.mul_const (T * I : ℂ) |>.const_add 2
+  refine (h.congr_of_eventuallyEq ?_).deriv
+  filter_upwards [eventually_le_nhds ht] with s hs
+  rw [riemannZetaSPath_of_le_one hs, mul_assoc]
+
+/-- After time `1` the path moves left along the horizontal segment with velocity `-3/2`. -/
+theorem deriv_riemannZetaSPath_of_one_lt (ht : 1 < t) : deriv (riemannZetaSPath T) t = -3 / 2 := by
+  have h : HasDerivAt (fun s : ℝ ↦ 2 - 3 / 2 * ((s : ℂ) - 1) + T * I) (-3 / 2) t := by
+    simpa [neg_div] using
+      (((hasDerivAt_id t).ofReal_comp.sub_const 1).const_mul (3 / 2 : ℂ)).const_sub 2
+        |>.add_const (T * I : ℂ)
+  refine (h.congr_of_eventuallyEq ?_).deriv
+  filter_upwards [eventually_gt_nhds ht] with s hs
+  rw [riemannZetaSPath_of_one_le hs.le]
 
 /-- Away from height `0` the path avoids the pole of `ζ` at `1`. -/
 theorem riemannZetaSPath_ne_one (hT : T ≠ 0) (t : ℝ) : riemannZetaSPath T t ≠ 1 := by
@@ -185,10 +212,11 @@ theorem riemannZetaS_eq_sub_div_pi
     riemannZetaS T = (θ 2 - θ 0) / π := by
   rcases eq_or_ne T 0 with rfl | hT0
   · exact absurd ⟨θ, hθ, hlift⟩ not_exists_continuousOn_arg_riemannZetaSPath_zero
+  have hu : uIcc (0 : ℝ) 2 = Icc 0 2 := uIcc_of_le zero_le_two
   rw [riemannZetaS_def, TauCeti.Contour.integral_deriv_smul_logDeriv_eq_log_norm_add_I_mul_sub
-    zero_le_two (isPiecewiseC1On_riemannZetaSPath T)
+    (isPiecewiseC1On_riemannZetaSPath T)
     (fun t _ ↦ analyticOn_riemannZeta _ (riemannZetaSPath_ne_one hT0 t))
-    (fun t ht ↦ riemannZeta_riemannZetaSPath_ne_zero hT ht) hθ hlift]
+    (fun t ht ↦ riemannZeta_riemannZetaSPath_ne_zero hT (hu ▸ ht)) (hu ▸ hθ) (hu ▸ hlift)]
   simp [div_eq_inv_mul]
 
 /-- **`S(T)` from the argument of `ζ` started at `ζ(2)`.** If `T ≠ 0` and `ζ` has no zero at height
