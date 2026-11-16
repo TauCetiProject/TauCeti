@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Relative
+public import TauCeti.Geometry.Manifold.DifferentialForm.Relative.Basic
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Existence
 
 /-!

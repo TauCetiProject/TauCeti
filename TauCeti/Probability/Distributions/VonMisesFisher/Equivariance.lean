@@ -58,7 +58,8 @@ theorem map_vonMisesFisherNaturalMeasure (f : E ≃ₗᵢ[ℝ] F) (η : E) :
   refine Measure.map_withDensity_eq_withDensity (jac := fun _ ↦ 1) hg measurable_const
     (by fun_prop) (by simpa using f.map_uniformSphereMeasure) ?_
   filter_upwards with x
-  simp only [one_mul, Subtype.map_coe, f.inner_map_map, hZ]
+  simp only [vonMisesFisherNaturalPDF_def, vonMisesFisherNaturalPDFReal_def, one_mul,
+    Subtype.map_coe, f.inner_map_map, hZ]
 
 /-- Orthogonal transport changes the unit direction and retains the concentration, including
 zero and invalid negative concentrations. -/
