@@ -111,14 +111,14 @@ observations. -/
 theorem topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_dyadicNatural
     (hW : IsPreBrownianReal W P) (hmeas : ∀ t, Measurable (W t)) (hT : 0 < T) (n : ℕ) :
     (Submodule.span ℝ (range (HasLaw.gaussianVectorHermite
-      (hW.hasLaw_normalizedBrownianIncrements (strictMono_dyadicTime hT n))
+      (hW.hasLaw_normalizedBrownianIncrements (dyadicTime_strictMono hT n))
       (measurable_normalizedBrownianIncrements fun i ↦
         hmeas (dyadicTime T n i))))).topologicalClosure =
       lpMeas ℝ ℝ (Filtration.dyadicNatural W hmeas T n) 2 P := by
   rw [Filtration.dyadicNatural_eq_iSup]
   exact hW.topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_iSup_comap
     (fun i ↦ hmeas (dyadicTime T n i))
-    (strictMono_dyadicTime hT n) (dyadicTime_zero T n)
+    (dyadicTime_strictMono hT n) (dyadicTime_zero T n)
 
 end IsPreBrownianReal
 
@@ -132,7 +132,7 @@ theorem mem_topologicalClosure_span_gaussianVectorHermite (hW : IsBrownianReal W
     (hmeas : ∀ t, StronglyMeasurable (W t)) (hT : 0 < T) {ξ : Lp ℝ 2 P}
     (hξ : AEStronglyMeasurable[((Filtration.natural W hmeas).nullAugment P).rightCont T] ξ P) :
     ξ ∈ (Submodule.span ℝ (⋃ n, range (HasLaw.gaussianVectorHermite
-      (hW.hasLaw_normalizedBrownianIncrements (strictMono_dyadicTime hT n))
+      (hW.hasLaw_normalizedBrownianIncrements (dyadicTime_strictMono hT n))
       (measurable_normalizedBrownianIncrements fun i ↦
         (hmeas (dyadicTime T n i)).measurable)))).topologicalClosure := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
@@ -162,7 +162,7 @@ space of square-integrable claims measurable for the natural filtration at `T`. 
 theorem topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_natural (hW : IsBrownianReal W P)
     (hmeas : ∀ t, StronglyMeasurable (W t)) (hT : 0 < T) :
     (Submodule.span ℝ (⋃ n, range (HasLaw.gaussianVectorHermite
-      (hW.hasLaw_normalizedBrownianIncrements (strictMono_dyadicTime hT n))
+      (hW.hasLaw_normalizedBrownianIncrements (dyadicTime_strictMono hT n))
       (measurable_normalizedBrownianIncrements fun i ↦
         (hmeas (dyadicTime T n i)).measurable)))).topologicalClosure =
       lpMeas ℝ ℝ (Filtration.natural W hmeas T) 2 P := by

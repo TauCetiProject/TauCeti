@@ -145,7 +145,7 @@ theorem dyadicTime_last (T : ℝ≥0) (n : ℕ) : dyadicTime T n (Fin.last (2 ^ 
   exact mul_div_cancel₀ _ (by positivity)
 
 /-- The dyadic times of each level are nondecreasing, including at a zero horizon. -/
-theorem monotone_dyadicTime (T : ℝ≥0) (n : ℕ) : Monotone (dyadicTime T n) := by
+theorem dyadicTime_monotone (T : ℝ≥0) (n : ℕ) : Monotone (dyadicTime T n) := by
   intro i j hij
   rw [dyadicTime_def, dyadicTime_def]
   exact mul_le_mul_of_nonneg_right (by exact_mod_cast hij) (by positivity)
@@ -155,7 +155,7 @@ theorem dyadicTime_le (T : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) : dyadicTime
   NNReal.coe_le_coe.1 (dyadicPoint T.coe_nonneg n k).2.2
 
 /-- For a positive horizon, the dyadic times of each level are strictly increasing. -/
-theorem strictMono_dyadicTime {T : ℝ≥0} (hT : 0 < T) (n : ℕ) :
+theorem dyadicTime_strictMono {T : ℝ≥0} (hT : 0 < T) (n : ℕ) :
     StrictMono (dyadicTime T n) := by
   intro i j hij
   rw [← NNReal.coe_lt_coe, coe_dyadicTime, coe_dyadicTime]
