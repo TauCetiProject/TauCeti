@@ -29,8 +29,8 @@ a characterization of permutations with a unique fixed point, functions constant
 orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
 periodic orbit, a function whose difference `z ↦ c (σ⁻¹ z) - c z` joins points in the same orbit
 (`Equiv.Perm.SameCycle.exists_comp_symm_sub_eq`, `Equiv.Perm.exists_comp_symm_sub_eq_sum`), a
-transposition forming one cycle on a `Fin 2` fibre over `Fin 1`, a
-permutation transported along an injection, the combination of two
+transposition of the only two points of a type forming one cycle on each fibre over a
+subsingleton, a permutation transported along an injection, the combination of two
 permutations transported along injections with disjoint ranges, a fiber-preserving permutation
 carrying one finite family to another with the same equality pattern
 (`TauCeti.exists_perm_apply_eq_of_eq_iff`), the fact that a permutation
@@ -178,12 +178,14 @@ end Equiv.Perm.SameCycle
 
 namespace TauCeti
 
-/-- The transposition of `Fin 2` is one cycle on every fibre of a map to `Fin 1`. -/
-theorem isCycleOn_swap_fin_two_fiber (f : Fin 2 → Fin 1) (i : Fin 1) :
-    (Equiv.swap (0 : Fin 2) 1).IsCycleOn {p | f p = i} := by
-  convert Equiv.Perm.isCycleOn_swap (a := (0 : Fin 2)) (b := 1) using 1
+/-- The transposition of the only two points of a type is one cycle on every fibre of a map to a
+subsingleton. -/
+theorem isCycleOn_swap_fiber {α β : Type*} [DecidableEq α] [Subsingleton β] {a b : α}
+    (hα : ∀ p, p = a ∨ p = b) (f : α → β) (i : β) :
+    (Equiv.swap a b).IsCycleOn {p | f p = i} := by
+  convert Equiv.Perm.isCycleOn_swap (a := a) (b := b) using 1
   ext p
-  fin_cases p <;> simp [Subsingleton.elim (f _) i]
+  rcases hα p with rfl | rfl <;> simp [Subsingleton.elim (f _) i]
 
 end TauCeti
 

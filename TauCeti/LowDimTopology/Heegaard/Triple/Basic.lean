@@ -62,8 +62,6 @@ implies the spin^c-wise conditions of Ozsváth and Szabó.
 
 ## Main definitions
 
-* `TauCeti.HeegaardTripleRegionSystem.IsCrossingCompatible`: the four region labels at a
-  transverse crossing of two oriented curves agree.
 * `TauCeti.HeegaardTripleRegionSystem`: the incidence data of a pointed Heegaard triple diagram.
 * `TauCeti.HeegaardTripleRegionSystem.IsTriangleDomain`: `D` is a domain of a triangle with
   corners `x`, `y`, `w`.
@@ -118,43 +116,6 @@ namespace TauCeti
 
 universe u₁ u₂ u₃ v w
 
-/-- Two oriented curves `a` and `b` cross transversally at a point, which is the start of the arc
-of `a` labelled `a₀` and of the arc of `b` labelled `b₀`; the arcs ending there are the
-predecessors `aNext.symm a₀` and `bNext.symm b₀`. The crossing is *compatible* with the region
-labels on the two sides of these four arcs when the four corner regions agree, for one of the two
-local orientations of the crossing. -/
-def HeegaardTripleRegionSystem.IsCrossingCompatible {A B R : Type*} (aNext : Equiv.Perm A)
-    (aLeft aRight : A → R) (bNext : Equiv.Perm B) (bLeft bRight : B → R) (a₀ : A) (b₀ : B) : Prop :=
-  (aLeft (aNext.symm a₀) = bLeft b₀ ∧ aRight (aNext.symm a₀) = bLeft (bNext.symm b₀) ∧
-      aLeft a₀ = bRight b₀ ∧ aRight a₀ = bRight (bNext.symm b₀)) ∨
-    (aLeft (aNext.symm a₀) = bRight (bNext.symm b₀) ∧ aRight (aNext.symm a₀) = bRight b₀ ∧
-      aLeft a₀ = bLeft (bNext.symm b₀) ∧ aRight a₀ = bLeft b₀)
-
-/-- A crossing is compatible exactly when the four corner regions agree for one of the two local
-orientations of the crossing. -/
-theorem HeegaardTripleRegionSystem.isCrossingCompatible_iff {A B R : Type*}
-    {aNext : Equiv.Perm A} {aLeft aRight : A → R} {bNext : Equiv.Perm B} {bLeft bRight : B → R}
-    {a₀ : A} {b₀ : B} :
-    HeegaardTripleRegionSystem.IsCrossingCompatible aNext aLeft aRight bNext bLeft bRight a₀ b₀ ↔
-      (aLeft (aNext.symm a₀) = bLeft b₀ ∧ aRight (aNext.symm a₀) = bLeft (bNext.symm b₀) ∧
-          aLeft a₀ = bRight b₀ ∧ aRight a₀ = bRight (bNext.symm b₀)) ∨
-        (aLeft (aNext.symm a₀) = bRight (bNext.symm b₀) ∧ aRight (aNext.symm a₀) = bRight b₀ ∧
-          aLeft a₀ = bLeft (bNext.symm b₀) ∧ aRight a₀ = bLeft b₀) :=
-  Iff.rfl
-
-/-- At a compatible crossing, the boundaries along the two curves of every region chain cancel:
-the `a`-boundary of the `a`-part of `∂D` and the `b`-boundary of its `b`-part sum to zero there. -/
-theorem HeegaardTripleRegionSystem.IsCrossingCompatible.sum_eq_zero {A B R : Type*}
-    {aNext : Equiv.Perm A} {aLeft aRight : A → R} {bNext : Equiv.Perm B} {bLeft bRight : B → R}
-    {a₀ : A} {b₀ : B}
-    (h : HeegaardTripleRegionSystem.IsCrossingCompatible aNext aLeft aRight bNext bLeft bRight
-      a₀ b₀)
-    (D : R → ℤ) :
-    (D (aLeft (aNext.symm a₀)) - D (aRight (aNext.symm a₀)) - (D (aLeft a₀) - D (aRight a₀))) +
-      (D (bLeft (bNext.symm b₀)) - D (bRight (bNext.symm b₀)) - (D (bLeft b₀) - D (bRight b₀))) =
-      0 := by
-  rcases h with ⟨h₁, h₂, h₃, h₄⟩ | ⟨h₁, h₂, h₃, h₄⟩ <;> rw [h₁, h₂, h₃, h₄] <;> abel
-
 /-- The incidence data of a pointed Heegaard triple diagram `(Σ, α, β, γ, z)` needed for triangle
 domains. The intersection points of the three kinds are recorded by three intersection systems:
 `alphaBeta` labels each point of `α ∩ β` by its `α`- and `β`-curve, `betaGamma` labels each point of
@@ -203,15 +164,15 @@ structure HeegaardTripleRegionSystem (n : ℕ) (PointAB : Type u₁) (PointBC : 
   gammaRight : PointBC ⊕ PointAC → Region
   /-- The region labels agree around each crossing of an `α`- and a `β`-curve. -/
   crossing_alphaBeta (p : PointAB) :
-    HeegaardTripleRegionSystem.IsCrossingCompatible alphaNext alphaLeft alphaRight betaNext
+    HeegaardRegionSystem.IsCrossingCompatible alphaNext alphaLeft alphaRight betaNext
       betaLeft betaRight (.inl p) (.inl p)
   /-- The region labels agree around each crossing of a `β`- and a `γ`-curve. -/
   crossing_betaGamma (p : PointBC) :
-    HeegaardTripleRegionSystem.IsCrossingCompatible betaNext betaLeft betaRight gammaNext
+    HeegaardRegionSystem.IsCrossingCompatible betaNext betaLeft betaRight gammaNext
       gammaLeft gammaRight (.inr p) (.inl p)
   /-- The region labels agree around each crossing of an `α`- and a `γ`-curve. -/
   crossing_alphaGamma (p : PointAC) :
-    HeegaardTripleRegionSystem.IsCrossingCompatible alphaNext alphaLeft alphaRight gammaNext
+    HeegaardRegionSystem.IsCrossingCompatible alphaNext alphaLeft alphaRight gammaNext
       gammaLeft gammaRight (.inr p) (.inr p)
   /-- The region containing a basepoint. -/
   basepoint : Basepoint → Region
