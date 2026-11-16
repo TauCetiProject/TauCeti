@@ -73,8 +73,6 @@ the linear algebra itself is standard.
   is not finite, by the `finrank = 0` convention).
 * `TauCeti.instInvertibleDetLine`: the determinant line of a finite free module is an invertible
   module.
-* `TauCeti.ExteriorAlgebra.ιMulti_of_eq_zero`: an exterior product of a family indexed by `Fin n`
-  with `n = 0` is `1`.
 * `LinearEquiv.detLineCongr_refl`, `LinearEquiv.detLineCongr_trans`,
   `LinearEquiv.detLineCongr_symm`: the induced isomorphisms are functorial.
 * `LinearEquiv.detLineCongr_apply_eq_det_smul`: an automorphism acts on the determinant line by
@@ -198,13 +196,6 @@ end LinearEquiv
 namespace TauCeti
 
 variable {R : Type*} [CommRing R] {V : Type*} [AddCommGroup V] [Module R V]
-
-/-- An exterior product with a number of factors equal to zero, but not definitionally `0`, is the
-empty product `1`. -/
-theorem ExteriorAlgebra.ιMulti_of_eq_zero {n : ℕ} (h : n = 0) (v : Fin n → V) :
-    ExteriorAlgebra.ιMulti R n v = 1 := by
-  subst h
-  exact ExteriorAlgebra.ιMulti_zero_apply v
 
 /-- The determinant line of a module of rank zero is `R`: the empty exterior product goes to `1`
 (`TauCeti.detLineEquivOfFinrankEqZero_ιMulti`). -/
