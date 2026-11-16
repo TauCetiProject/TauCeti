@@ -91,8 +91,6 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   second derivatives along an orthonormal basis sum to the squared `L²` norm of the Laplacian.
 * `SchwartzMap.iteratedFDeriv_fourier_zero_apply`: the moments of a Schwartz function are the
   derivatives of its Fourier transform at the origin.
-* `SchwartzMap.integrable_smul_apply`: a Schwartz function times a homogeneous polynomial is
-  integrable.
 * `SchwartzMap.integral_smul_apply_eq_zero_of_iteratedFDeriv_fourier_eq_zero`: a Schwartz function
   whose Fourier transform has vanishing `n`-th derivative at the origin annihilates the
   homogeneous polynomials of degree `n`.
@@ -480,18 +478,6 @@ theorem iteratedFDeriv_fourier_zero_apply (K : 𝓢(E, ℂ)) (n : ℕ) (m : Fin 
   -- The factors are `innerSL ℝ y (m i)`, which is `⟪y, m i⟫` by definition; `innerSL_apply_apply`
   -- does not rewrite them because `innerSL ℝ` appears here as a map `E →L[ℝ] E →L[ℝ] ℝ`.
   congr 3 with i
-
-/-- A Schwartz function times a homogeneous polynomial, `y ↦ K y • A (y, …, y)` for a continuous
-multilinear map `A`, is integrable. -/
-theorem integrable_smul_apply (K : 𝓢(E, ℂ)) {n : ℕ} (A : E [×n]→L[ℝ] F) :
-    Integrable (fun y ↦ K y • A (fun _ ↦ y)) :=
-  ((K.integrable_pow_mul volume n).const_mul ‖A‖).mono'
-    (K.continuous.smul (A.coe_continuous.comp
-      (continuous_pi fun _ ↦ continuous_id))).aestronglyMeasurable
-    (.of_forall fun y ↦ by
-      rw [norm_smul, mul_comm, ← mul_assoc]
-      refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
-      simpa using A.le_opNorm (fun _ ↦ y))
 
 /-- **Vanishing moments.** If the `n`-th derivative of the Fourier transform of a Schwartz function
 `K` vanishes at the origin, then `K` annihilates every homogeneous polynomial of degree `n`:

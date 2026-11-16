@@ -33,6 +33,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
   against any measure of temperate growth.
 * `SchwartzMap.integrable_norm_iteratedFDeriv`: `‖D^k f x‖` is integrable.
+* `SchwartzMap.integrable_smul_apply`: a Schwartz function times a homogeneous polynomial
+  `A (x, …, x)` is integrable.
 * `SchwartzMap.exists_integrable_norm_iteratedFDeriv_add_le`: `‖D^n f (z + h)‖` has an integrable
   envelope in `z`, uniformly for `‖h‖ ≤ 1`, so convolutions with `f` can be differentiated under
   the integral.
@@ -268,6 +270,26 @@ theorem smulLeftCLM_of_not_hasTemperateGrowth {g : E → 𝕜} (hg : ¬g.HasTemp
   simp [smulLeftCLM, hg]
 
 end Smul
+
+section Polynomial
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {μ : Measure E} [μ.HasTemperateGrowth]
+
+/-- A Schwartz function times a homogeneous polynomial, `y ↦ K y • A (y, …, y)` for a continuous
+multilinear map `A`, is integrable. -/
+theorem integrable_smul_apply (K : 𝓢(E, ℂ)) {n : ℕ} (A : E [×n]→L[ℝ] F) :
+    Integrable (fun y ↦ K y • A (fun _ ↦ y)) μ :=
+  ((K.integrable_pow_mul μ n).const_mul ‖A‖).mono'
+    (K.continuous.smul (A.coe_continuous.comp
+      (continuous_pi fun _ ↦ continuous_id))).aestronglyMeasurable
+    (.of_forall fun y ↦ by
+      rw [norm_smul, mul_comm, ← mul_assoc]
+      refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
+      simpa using A.le_opNorm (fun _ ↦ y))
+
+end Polynomial
 
 end SchwartzMap
 
