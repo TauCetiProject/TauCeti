@@ -40,6 +40,10 @@ function itself, read in the chart of `M` (`TauCeti.comp_extChartAt_symm_prodMk_
 `TauCeti.comp_extChartAt_symm_prodMk_right`), and local independence of the last coordinate
 passes to coordinate expressions (`TauCeti.eventually_comp_extChartAt_symm_eq`).
 
+For `s ⊆ E` with `s ∩ range I` inside the target of the extended chart at `x`, that chart maps
+`(chartAt H x).source ∩ (extChartAt I x)⁻¹' s` onto `s ∩ range I`
+(`TauCeti.extChartAt_image_chartAt_source_inter_preimage`).
+
 Coordinate changes transport images of subsets of chart overlaps and are injective there,
 without differentiability assumptions, and they take values in the range of the model; for a
 boundaryless model, their domains are open. A compact coordinate set of a chart is covered by
@@ -240,6 +244,20 @@ theorem mem_extChartAt_source_and_mem_of_mem_preimage {x y : M} {s : Set E}
   rw [extChartAt_source]
   exact ⟨hy.1, hy.2, extChartAt_target_subset_range x ((extChartAt I x).map_source
     (by rw [extChartAt_source]; exact hy.1))⟩
+
+/-- If `s ∩ range I` lies in the target of the extended chart at `x`, the extended chart maps
+`(chartAt H x).source ∩ (extChartAt I x)⁻¹' s` onto `s ∩ range I`. -/
+theorem extChartAt_image_chartAt_source_inter_preimage (x : M) {s : Set E}
+    (hst : s ∩ Set.range I ⊆ (extChartAt I x).target) :
+    extChartAt I x '' ((chartAt H x).source ∩ extChartAt I x ⁻¹' s) = s ∩ Set.range I := by
+  refine Set.Subset.antisymm ?_ fun z hz ↦ ⟨(extChartAt I x).symm z, ⟨?_, ?_⟩,
+    (extChartAt I x).right_inv (hst hz)⟩
+  · rintro _ ⟨y, hy, rfl⟩
+    exact (mem_extChartAt_source_and_mem_of_mem_preimage hy).2
+  · rw [← extChartAt_source I]
+    exact (extChartAt I x).map_target (hst hz)
+  · rw [Set.mem_preimage, (extChartAt I x).right_inv (hst hz)]
+    exact hz.1
 
 /-- Changing extended coordinates transports the coordinate image of a subset of the overlap
 onto its image in the second chart. No differentiability assumption is needed. -/

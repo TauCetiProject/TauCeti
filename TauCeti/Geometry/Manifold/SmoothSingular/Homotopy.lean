@@ -11,12 +11,10 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Homotopy.TopCat.ToSSet
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
-public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+public import TauCeti.Geometry.Manifold.ContMDiff.Contraction
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
 public import TauCeti.Topology.Homotopy.Real
-public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-public import Mathlib.Geometry.Manifold.Algebra.LieGroup
-public import Mathlib.Geometry.Manifold.Algebra.SMul
 
 /-!
 # Homotopy invariance of smooth singular homology
@@ -48,24 +46,23 @@ homotopy is required to be smooth on all of `ℝ × M`, not merely on `[0, 1] ×
 is locally the restriction of a smooth map on an open subset of `ℝⁿ`, and the affine coordinate
 `t_α` takes values outside `[0, 1]` off the simplex.
 
-Every nonempty *star-convex chart domain* is smoothly contractible: if an open `U` lies in the
-source of a chart `e` of the maximal smooth atlas and `e.extend I '' U` is star-convex about `c`,
-the straight-line contraction `(t, y) ↦ c + (1 - ψ t) • (e.extend I y - c)`, read back through the
-chart, is smooth (`TauCeti.exists_contMDiff_contraction_of_starConvex`). Here `ψ : ℝ → [0, 1]` is
-smooth with `ψ 0 = 0` and `ψ 1 = 1`. The contraction stays in `range I`, so boundary and corners
-are allowed. In particular every star-convex open subset of a real normed space has vanishing
-positive-degree smooth singular homology
-(`TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`).
-
-On such a manifold the inclusion of smooth singular chains into singular chains is a chain
-homotopy equivalence (`TauCeti.smoothSingularChainHomotopyEquivOfContMDiff`), hence a
+Let `M` be smoothly contractible, through a smooth map `F : ℝ × M → M` from the identity to the
+constant map at a point `c : M`. Then the inclusion of smooth singular chains into singular chains
+is a chain homotopy equivalence (`TauCeti.smoothSingularChainHomotopyEquivOfContMDiff`), hence a
 quasi-isomorphism (`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff`).
 Both complexes retract onto the chains of a point: a homotopy inverse sends every singular simplex
 to the constant simplex at `c`, and the two composites are joined to the identities by the smooth
 prism operator of `F` and by the singular prism operator of the continuous homotopy underlying `F`.
 The inclusion is also a quasi-isomorphism on the empty manifold, where both complexes vanish
-(`TauCeti.smoothSingularSubcomplex_eq_top`). Together these cover every star-convex chart domain
-(`TauCeti.smoothSingularChainHomotopyEquivOfStarConvex`) and, in particular, the domains
+(`TauCeti.smoothSingularSubcomplex_eq_top`).
+
+A *star-convex chart domain* is an open `U` in the source of a chart `e` of the maximal smooth
+atlas whose image `e.extend I '' U` is star-convex; boundary and corners are allowed. If nonempty,
+it is smoothly contractible (`TauCeti.exists_contMDiff_contraction_of_starConvex`). So its smooth
+singular homology vanishes in positive degrees
+(`TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`), and the inclusion of its smooth
+singular chains into singular chains is a chain homotopy equivalence
+(`TauCeti.smoothSingularChainHomotopyEquivOfStarConvex`). In particular this holds on the domains
 `(chartAt H x).source ∩ (extChartAt I x)⁻¹' s` of the preferred charts, for an open `s ⊆ E` with
 `s ∩ range I` star-convex and contained in the target of the extended chart at `x`
 (`TauCeti.smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex`).
@@ -85,10 +82,8 @@ comparison of smooth with continuous singular homology by a Mayer–Vietoris ind
   on smooth singular homology.
 * `TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`: a smoothly contractible manifold
   has no smooth singular homology in positive degrees.
-* `TauCeti.exists_contMDiff_contraction_of_starConvex`: a nonempty star-convex chart domain is
-  smoothly contractible.
-* `TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`: a star-convex open subset of a
-  normed space has no smooth singular homology in positive degrees.
+* `TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`: a star-convex chart domain
+  has no smooth singular homology in positive degrees.
 * `TauCeti.smoothSingularChainHomotopyEquivOfContMDiff`,
   `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff`: on a smoothly
   contractible manifold, smooth singular chains include into singular chains by a chain homotopy
@@ -367,65 +362,22 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff [Categ
 
 /-! ### Star-convex chart domains -/
 
-/-- **A star-convex chart domain is smoothly contractible.** Let `U` be a nonempty open subset of
-the source of a chart `e` in the maximal smooth atlas of `M`, whose image under the extended chart
-`e.extend I` is star-convex about `c`. The straight-line contraction
-`(t, y) ↦ c + (1 - ψ t) • (e.extend I y - c)` of that image, read back through the chart, is a
-smooth map `ℝ × U → U` from the identity to a constant map, where `ψ` is the smooth transition
-function from `0` to `1`. The contraction stays in the image of the extended chart, which lies in
-`range I`, so boundary and corners are allowed. -/
-theorem exists_contMDiff_contraction_of_starConvex {e : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I ∞ M) {U : TopologicalSpace.Opens M} [Nonempty U]
-    (hUe : (U : Set M) ⊆ e.source) {c : E} (hUc : StarConvex ℝ c (e.extend I '' U)) :
-    ∃ (F : ℝ × U → U) (c' : U), ContMDiff (𝓘(ℝ).prod I) I ∞ F ∧ (∀ y, F (0, y) = y) ∧
-      ∀ y, F (1, y) = c' := by
-  let G : ℝ × U → E := fun p ↦ c + (1 - Real.smoothTransition p.1) • (e.extend I p.2 - c)
-  have hG : ∀ p, ∃ u ∈ (U : Set M), e.extend I u = G p := fun p ↦
-    hUc.add_smul_sub_mem (mem_image_of_mem _ p.2.2) (by linarith [Real.smoothTransition.le_one p.1])
-      (by linarith [Real.smoothTransition.nonneg p.1])
-  have hGU : ∀ p, (e.extend I).symm (G p) ∈ (U : Set M) := fun p ↦ by
-    obtain ⟨u, hu, hGu⟩ := hG p
-    rwa [← hGu, e.extend_left_inv (I := I) (hUe hu)]
-  have hGt : ∀ p, G p ∈ I '' e.target := fun p ↦ by
-    obtain ⟨u, hu, hGu⟩ := hG p
-    rw [← hGu, ← e.extend_target' (I := I)]
-    exact (e.extend I).map_source (by rw [e.extend_source]; exact hUe hu)
-  refine ⟨fun p ↦ ⟨(e.extend I).symm (G p), hGU p⟩, ⟨(e.extend I).symm c, ?_⟩, ?_,
-    fun y ↦ Subtype.ext ?_, fun y ↦ Subtype.ext ?_⟩
-  · simpa [G, Real.smoothTransition.one] using hGU (1, Classical.arbitrary U)
-  · rw [← ContMDiff.subtypeVal_comp_iff]
-    have hφ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) ∞ fun p : ℝ × U ↦ e.extend I p.2 :=
-      (e.contMDiffOn_extend he).comp_contMDiff (contMDiff_subtype_val.comp contMDiff_snd)
-        fun p ↦ hUe p.2.2
-    have hψ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) ∞ fun p : ℝ × U ↦ Real.smoothTransition p.1 :=
-      Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
-    exact (contMDiffOn_extend_symm he).comp_contMDiff
-      (contMDiff_const.add ((contMDiff_const.sub hψ).smul (hφ.sub contMDiff_const))) hGt
-  · simp only [G, Real.smoothTransition.zero, sub_zero, one_smul, add_sub_cancel]
-    exact e.extend_left_inv (I := I) (hUe y.2)
-  · simp [G, Real.smoothTransition.one]
-
-/-- **A star-convex open subset has vanishing positive-degree smooth singular homology.**
-The smooth contraction `(t, x) ↦ c + (1 - ψ t) • (x - c)` towards the centre `c`, with `ψ` the
-smooth transition function from `0` to `1`, stays in the subset, so its smooth singular homology
+/-- **A star-convex chart domain has vanishing positive-degree smooth singular homology.** Let
+`U` be an open subset of the source of a chart `e` in the maximal smooth atlas of `M`, whose image
+under the extended chart `e.extend I` is star-convex. Then the smooth singular homology of `U`
 vanishes in every positive degree. -/
-theorem isZero_homology_smoothSingularSubcomplex_of_starConvex
-    [CategoryWithHomology C]
-    {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] {U : TopologicalSpace.Opens V} {c : V}
-    (hU : StarConvex ℝ c (U : Set V)) {n : ℕ} (hn : n ≠ 0) :
-    IsZero ((smoothSingularSubcomplex 𝓘(ℝ, V) U : SSet).homology R n) := by
-  rcases (U : Set V).eq_empty_or_nonempty with hempty | ⟨y, hy⟩
-  · -- An empty open set has no smooth simplices at all.
-    have : IsEmpty U := Set.isEmpty_coe_sort.2 hempty
-    let e := (SSet.homologyFunctor R n).mapIso
-      (asIso (smoothSingularSubcomplex 𝓘(ℝ, V) U).ι)
+theorem isZero_homology_smoothSingularSubcomplex_of_starConvex [CategoryWithHomology C]
+    {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I ∞ M)
+    {U : TopologicalSpace.Opens M} (hUe : (U : Set M) ⊆ e.source) {c : E}
+    (hUc : StarConvex ℝ c (e.extend I '' U)) {n : ℕ} (hn : n ≠ 0) :
+    IsZero ((smoothSingularSubcomplex I U : SSet).homology R n) := by
+  rcases isEmpty_or_nonempty U with hU | hU
+  · -- An empty open set is totally disconnected, so all of its simplices are smooth.
     exact IsZero.of_iso
       (AlgebraicTopology.isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C n R
-        (TopCat.of U) hn) e
-  have : Nonempty U := ⟨⟨y, hy⟩⟩
-  -- The model space is its own chart, and the extended chart is the identity.
-  obtain ⟨F, c', hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex
-    (IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, V)) (0 : V)) (by simp) (by simpa using hU)
+        (TopCat.of U) hn)
+      ((SSet.homologyFunctor R n).mapIso (asIso (smoothSingularSubcomplex I U).ι))
+  obtain ⟨F, c', hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex he hUe hUc
   exact isZero_homology_smoothSingularSubcomplex_of_contMDiff R hF c' h₀ h₁ hn
 
 /-- **Smooth singular chains of a star-convex chart domain.** Let `U` be an open subset of the
@@ -501,21 +453,6 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_convex [Category
   infer_instance
 
 /-! ### Chart domains of the preferred charts -/
-
-/-- If `s ∩ range I` lies in the target of the extended chart at `x`, the extended chart maps
-`(chartAt H x).source ∩ (extChartAt I x)⁻¹' s` onto `s ∩ range I`. -/
-private theorem extChartAt_image_chartAt_source_inter_preimage (x : M) {s : Set E}
-    (hst : s ∩ range I ⊆ (extChartAt I x).target) :
-    extChartAt I x '' ((chartAt H x).source ∩ extChartAt I x ⁻¹' s) = s ∩ range I := by
-  refine Subset.antisymm ?_ fun z hz ↦ ⟨(extChartAt I x).symm z, ⟨?_, ?_⟩,
-    (extChartAt I x).right_inv (hst hz)⟩
-  · rintro _ ⟨y, hy, rfl⟩
-    exact ⟨hy.2, extChartAt_target_subset_range x
-      ((extChartAt I x).map_source (by rw [extChartAt_source]; exact hy.1))⟩
-  · rw [← extChartAt_source I]
-    exact (extChartAt I x).map_target (hst hz)
-  · rw [mem_preimage, (extChartAt I x).right_inv (hst hz)]
-    exact hz.1
 
 section ChartAt
 
