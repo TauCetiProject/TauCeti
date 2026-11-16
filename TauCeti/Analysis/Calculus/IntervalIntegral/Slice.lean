@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 
 /-!
 # Interval integrals along the slices of a map of two variables

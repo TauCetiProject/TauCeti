@@ -248,7 +248,7 @@ def cyclicModuleRootPowProjectiveResolution :
     ProjectiveResolution (ModuleCat.of (AdjoinRoot (X ^ n : R[X]))ᵐᵒᵖ
       ((AdjoinRoot (X ^ n : R[X]))ᵐᵒᵖ ⧸ Ideal.span {op (AdjoinRoot.root (X ^ n : R[X]) ^ i)})) :=
   cyclicModuleProjectiveResolution AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff
-    AdjoinRoot.root_X_pow_sub_pow_mul_eq_zero_iff
+    AdjoinRoot.root_X_pow_pow_sub_mul_eq_zero_iff
 
 /-- The complex of `TauCeti.cyclicModuleRootPowProjectiveResolution` is the general cyclic-module
 resolution complex specialized to `x ^ i` and `x ^ (n - i)`. -/
@@ -257,7 +257,7 @@ theorem cyclicModuleRootPowProjectiveResolution_complex :
     (cyclicModuleRootPowProjectiveResolution R n i).complex =
       (cyclicModuleProjectiveResolution
         (AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff (n := n) (i := i))
-        (AdjoinRoot.root_X_pow_sub_pow_mul_eq_zero_iff (n := n) (i := i))).complex :=
+        (AdjoinRoot.root_X_pow_pow_sub_mul_eq_zero_iff (n := n) (i := i))).complex :=
   (rfl)
 
 /-- Every term of `TauCeti.cyclicModuleRootPowProjectiveResolution` is the free module

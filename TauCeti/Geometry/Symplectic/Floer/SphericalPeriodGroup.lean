@@ -152,6 +152,39 @@ theorem subsingleton_of_isAspherical {x : X} (h : IsAspherical X x) :
     Subsingleton (SphericalPeriodGroup ω c) :=
   subsingleton_of_forall_subsingleton fun y => (h.of_basepoint y).subsingleton_homotopyGroup 0
 
+section SingularHomology
+
+variable (h : sphericalClasses X 1 = ⊤)
+
+variable (ω c) in
+/-- The class in the period group of a class of `H₂(X; ℤ)`, when every class of `H₂(X; ℤ)` is
+spherical, as on the two-sphere (`TauCeti.sphericalClasses_sphere_eq_top`). It is the class
+projection of the coefficient comparison `q^A ↦ e^(-[A])` for Gromov–Witten series indexed by
+`H₂(X; ℤ)`. -/
+def ofSingularHomology :
+    ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj (TopCat.of X) →+
+      SphericalPeriodGroup ω c :=
+  (QuotientAddGroup.mk' _).comp ((AddMonoidHom.id _).codRestrict _ fun A => by simp [h])
+
+/-- The area of the class of `A ∈ H₂(X; ℤ)` is `ω A`. -/
+@[simp]
+theorem area_ofSingularHomology (A) : PeriodGroup.area _ _ (ofSingularHomology ω c h A) = ω A := by
+  simp [ofSingularHomology]
+
+/-- The first Chern number of the class of `A ∈ H₂(X; ℤ)` is `c A`. -/
+@[simp]
+theorem chern_ofSingularHomology (A) :
+    PeriodGroup.chern _ _ (ofSingularHomology ω c h A) = c A := by
+  simp [ofSingularHomology]
+
+/-- Every class of the period group is the class of a class of `H₂(X; ℤ)`. -/
+theorem ofSingularHomology_surjective : Function.Surjective (ofSingularHomology ω c h) := by
+  intro γ
+  induction γ using QuotientAddGroup.induction_on with
+  | H s => exact ⟨s, PeriodGroup.ext (by simp) (by simp)⟩
+
+end SingularHomology
+
 section Map
 
 variable {ω' : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj

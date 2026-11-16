@@ -30,9 +30,10 @@ Requiring `meromorphicOrderAt f z = 0` on the boundary does double duty:
   counted on the compact region `K`) accounts for every such point.
 * It rules out order `⊤`. This matters because `(⊤ : WithTop ℤ).untop₀ = 0`, so at a point where `f`
   vanishes identically the divisor reads `0` while the order does not, and the exhaustiveness
-  obligation would fail. Because the disc (respectively a thickening of a preconnected compact set
-  `K`) is preconnected, `MeromorphicOn.meromorphicOrderAt_ne_top_of_isPreconnected` propagates the
-  finite order at a boundary point to the whole region.
+  obligation would fail. Because `closedBall c R` is convex (hence preconnected, with nonempty
+  sphere for `0 ≤ R`) and a thickening of a preconnected compact set `K` is preconnected (with
+  nonempty frontier visited by `γ`), `MeromorphicOn.meromorphicOrderAt_ne_top_of_isPreconnected`
+  propagates the finite order at a boundary point to the whole region.
 
 For a general piecewise-`C¹` boundary curve (`argumentPrinciple_nullHomologous_divisor`), the chosen
 representative must also be analytic on `frontier K`: changing an isolated value of a meromorphic
@@ -69,7 +70,7 @@ derivative is `2πi` times the sum of `MeromorphicOn.divisor` over the open disc
 
 This is `TauCeti.Contour.argumentPrinciple` with the finite set and the order function supplied by
 Mathlib's divisor API rather than by the caller. -/
-theorem argumentPrinciple_divisor {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 < R)
+theorem argumentPrinciple_divisor {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 ≤ R)
     (hf : MeromorphicOn f (closedBall c R))
     (hsphere : ∀ z ∈ sphere c R, meromorphicOrderAt f z = 0) :
     circleIntegral (logDeriv f) c R
@@ -78,7 +79,7 @@ theorem argumentPrinciple_divisor {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 
   have hfb : MeromorphicOn f (ball c R) := hf.mono_set ball_subset_closedBall
   set S := (MeromorphicOn.divisor_ball_support_finite hf).toFinset
   rw [finsum_eq_finsetSum_of_support_subset _ (s := S) fun z hz => by simpa [S] using hz]
-  have hxs : c + (R : ℂ) ∈ sphere c R := by simp [abs_of_pos hR]
+  have hxs : c + (R : ℂ) ∈ sphere c R := by simp [abs_of_nonneg hR]
   have htop : ∀ z ∈ closedBall c R, meromorphicOrderAt f z ≠ ⊤ := fun z hz =>
     hf.meromorphicOrderAt_ne_top_of_isPreconnected (convex_closedBall c R).isPreconnected
       (sphere_subset_closedBall hxs) hz (by simp [hsphere _ hxs])
