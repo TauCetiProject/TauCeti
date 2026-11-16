@@ -94,23 +94,6 @@ abbrev circleLocalSystem : LocalCoefficientSystem k (TopCat.of Circle) :=
   (pullback (TopCat.ofHom circleHomotopyEquivClassifyingSpace.toFun).hom).obj
     (classifyingSpaceLocalSystem k A)
 
-/-- Transport in a pulled back system along a loop at `x` is transport in the original system along
-the image loop at `y`, after identifying the fibres at `f x = y`. -/
-private theorem pullback_obj_map_comp_eqToHom {X Y : TopCat.{0}} (f : C(X, Y)) {x : X} {y : Y}
-    (h : f x = y) (L : LocalCoefficientSystem k Y) (γ : FundamentalGroup X x) {Z : ModuleCat k}
-    (φ : L.obj (FundamentalGroupoid.mk y) ⟶ Z) :
-    ((pullback f).obj L).map γ.asHom ≫
-        eqToHom (congrArg L.obj (congrArg FundamentalGroupoid.mk h)) ≫ φ =
-      eqToHom (congrArg L.obj (congrArg FundamentalGroupoid.mk h)) ≫
-        L.map (FundamentalGroup.mapOfEq f h γ).asHom ≫ φ := by
-  simp only [pullback_obj_obj, pullback_obj_map, FundamentalGroupoid.map_map,
-    FundamentalGroup.mapOfEq, MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_comp,
-    MonoidHom.coe_ofClass, Function.comp_apply, Iso.conj_apply_asHom, eqToIso.inv,
-    FundamentalGroup.map_apply_asHom, eqToIso.hom, Functor.map_comp, eqToHom_map, Category.assoc,
-    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  -- The two remaining `eqToHom`s have the same source and target, written differently.
-  rfl
-
 /-- Identify the fibre of `circleLocalSystem A` at the base point `1` with `A`: the circle's base
 point goes to the base point of the classifying space, whose fibre is `A` by
 `TauCeti.classifyingSpaceLocalSystemBasepointIso`. -/
@@ -134,12 +117,8 @@ theorem circleLocalSystem_map_comp_basepointIso (γ : FundamentalGroup Circle 1)
       classifyingSpaceBasepoint (Multiplicative ℤ) := by
     simp
   rw [circleLocalSystemBasepointIso, Iso.trans_hom, eqToIso.hom,
-    pullback_obj_map_comp_eqToHom _ h, classifyingSpaceLocalSystem_map_comp_basepointIso,
-    Category.assoc]
-  simp only [TopCat.hom_ofHom, circleHomotopyEquivClassifyingSpace_toFun,
-    classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_circleToClassifyingSpace]
-  -- The two `eqToHom`s are proofs of the same equality of fibres, written differently.
-  rfl
+    pullback_obj_map_comp_eqToHom_assoc _ h, classifyingSpaceLocalSystem_map_comp_basepointIso]
+  simp [classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_circleToClassifyingSpace]
 
 /-- **The homology of the circle with local coefficients is the group homology of `ℤ`**: the map
 induced by the homotopy equivalence with the classifying space of `ℤ`, followed by
@@ -152,7 +131,8 @@ def circleTwistedHomologyIsoGroupHomology (n : ℕ) :
     (classifyingSpaceLocalSystem k A) n) ≪≫ classifyingSpaceTwistedHomologyIsoGroupHomology k A n
 
 /-- **The zeroth homology of the circle with local coefficients** in a representation `A` of `ℤ`
-is the module of coinvariants `A / (T - 𝟙) A` of the monodromy `T = ρ(1)`. -/
+is the module of coinvariants `A / (T - 𝟙) A` of the monodromy
+`T = A.ρ (Multiplicative.ofAdd 1)`. -/
 def circleTwistedHomologyIso₀ :
     twistedHomology (circleLocalSystem A) 0 ≅
       ModuleCat.of k (A ⧸ LinearMap.range (A.ρ (Multiplicative.ofAdd 1) - LinearMap.id)) :=
@@ -160,7 +140,8 @@ def circleTwistedHomologyIso₀ :
     Rep.InfiniteCyclicGroup.groupHomologyIso₀ A Int.mem_zpowers_ofAdd_one
 
 /-- **The first homology of the circle with local coefficients** in a representation `A` of `ℤ`
-is the module of invariants `ker (T - 𝟙)` of the monodromy `T = ρ(1)`. -/
+is the module of invariants `ker (T - 𝟙)` of the monodromy
+`T = A.ρ (Multiplicative.ofAdd 1)`. -/
 def circleTwistedHomologyIso₁ :
     twistedHomology (circleLocalSystem A) 1 ≅
       ModuleCat.of k (LinearMap.ker (A.ρ (Multiplicative.ofAdd 1) - LinearMap.id)) :=
