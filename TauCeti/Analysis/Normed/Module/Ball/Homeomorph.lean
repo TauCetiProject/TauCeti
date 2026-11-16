@@ -73,26 +73,28 @@ theorem Homeomorph.unitBall_symm_apply_coe (y : ball (0 : W) 1) :
       (OpenPartialHomeomorph.univUnitBall (E := W)) y).trans
       (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
 
+variable {P : Type*} [PseudoMetricSpace P] [NormedAddTorsor W P]
+
 /-- Mathlib's radial map `OpenPartialHomeomorph.univBall c r` of `W` onto the ball of radius
-`r > 0` about `c`, in explicit coordinates: `x ↦ c + r x / √(1 + ‖x‖²)`. -/
-theorem OpenPartialHomeomorph.univBall_apply {r : ℝ} (hr : 0 < r) (c x : W) :
-    univBall c r x = (r / √(1 + ‖x‖ ^ 2)) • x + c := by
+`r > 0` about `c`, in explicit coordinates: `x ↦ r x / √(1 + ‖x‖²) +ᵥ c`. -/
+theorem OpenPartialHomeomorph.univBall_apply {r : ℝ} (hr : 0 < r) (c : P) (x : W) :
+    univBall c r x = (r / √(1 + ‖x‖ ^ 2)) • x +ᵥ c := by
   rw [univBall, dite_eq_left_of_eq_true (eq_true hr)]
   -- `trans'` has no `apply` lemma: by definition it applies `univUnitBall`, then `unitBallBall`.
   change unitBallBall c r hr (univUnitBall x) = _
-  rw [unitBallBall_apply, univUnitBall_apply, vadd_eq_add, smul_smul, div_eq_mul_inv]
+  rw [unitBallBall_apply, univUnitBall_apply, smul_smul, div_eq_mul_inv]
 
 /-- The inverse of the radial map `OpenPartialHomeomorph.univBall c r` onto the ball of radius
-`r > 0` about `c`, in explicit coordinates: `y ↦ (y - c) / √(r² - ‖y - c‖²)`. -/
-theorem OpenPartialHomeomorph.univBall_symm_apply {r : ℝ} (hr : 0 < r) (c y : W) :
-    (univBall c r).symm y = (√(r ^ 2 - ‖y - c‖ ^ 2))⁻¹ • (y - c) := by
+`r > 0` about `c`, in explicit coordinates: `y ↦ (y -ᵥ c) / √(r² - dist y c ²)`. -/
+theorem OpenPartialHomeomorph.univBall_symm_apply {r : ℝ} (hr : 0 < r) (c y : P) :
+    (univBall c r).symm y = (√(r ^ 2 - dist y c ^ 2))⁻¹ • (y -ᵥ c) := by
   rw [univBall, dite_eq_left_of_eq_true (eq_true hr)]
   -- `trans'` has no `symm_apply` lemma: by definition its inverse applies the inverse of
   -- `unitBallBall`, then that of `univUnitBall`.
   change univUnitBall.symm ((unitBallBall c r hr).symm y) = _
-  have hsq : √(r ^ 2 - ‖y - c‖ ^ 2) = r * √(1 - ‖r⁻¹ • (y - c)‖ ^ 2) := by
-    have h : r ^ 2 - ‖y - c‖ ^ 2 = r ^ 2 * (1 - ‖r⁻¹ • (y - c)‖ ^ 2) := by
-      simp [norm_smul, abs_of_pos hr]
+  have hsq : √(r ^ 2 - dist y c ^ 2) = r * √(1 - ‖r⁻¹ • (y -ᵥ c)‖ ^ 2) := by
+    have h : r ^ 2 - dist y c ^ 2 = r ^ 2 * (1 - ‖r⁻¹ • (y -ᵥ c)‖ ^ 2) := by
+      simp [norm_smul, abs_of_pos hr, dist_eq_norm_vsub W]
       field_simp
     rw [h, Real.sqrt_mul (sq_nonneg r), Real.sqrt_sq hr.le]
   simp [unitBallBall_symm_apply, univUnitBall_symm_apply, smul_smul, hsq, mul_comm]

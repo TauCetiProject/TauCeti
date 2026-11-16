@@ -100,8 +100,8 @@ after the affine normalization `y ↦ r⁻¹ • toEuclidean (y - c)`, where `κ
 theorem toEuclidean_radialContraction_eq_univBall (c y : E) {r : ℝ} (hr : 0 < r) :
     toEuclidean (radialContraction c (r⁻¹ ^ 2) y) =
       univBall (toEuclidean c) r (r⁻¹ • toEuclidean (y - c)) := by
-  rw [univBall_apply hr, toEuclidean_radialContraction, norm_smul, Real.norm_eq_abs, abs_inv,
-    abs_of_pos hr, smul_smul, mul_pow, add_comm (toEuclidean c)]
+  rw [univBall_apply hr, vadd_eq_add, toEuclidean_radialContraction, norm_smul, Real.norm_eq_abs,
+    abs_inv, abs_of_pos hr, smul_smul, mul_pow, add_comm (toEuclidean c)]
   congr 2
   field_simp
 

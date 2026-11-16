@@ -104,7 +104,8 @@ theorem OpenPartialHomeomorph.hasFDerivAt_univBall {r : ℝ} (hr : 0 < r) (c x :
         (r / √(1 + ‖x‖ ^ 2) ^ 3) • (innerSL ℝ x).smulRight x) x := by
   convert ((hasFDerivAt_univUnitBall x).const_smul r).add_const c using 1
   · funext y
-    rw [univBall_apply hr, Pi.smul_apply, univUnitBall_apply, smul_smul, div_eq_mul_inv]
+    rw [univBall_apply hr, vadd_eq_add, Pi.smul_apply, univUnitBall_apply, smul_smul,
+      div_eq_mul_inv]
   · rw [smul_sub, smul_smul, smul_smul, div_eq_mul_inv, div_eq_mul_inv, inv_pow]
 
 end UnitBall

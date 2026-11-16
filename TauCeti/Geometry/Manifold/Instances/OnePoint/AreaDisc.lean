@@ -158,14 +158,15 @@ theorem volume_areaDiscChart_target {a : ℝ} (ha : 0 < a) :
 theorem areaDiscChart_coe {a : ℝ} (ha : 0 < a) (z : ℂ) :
     areaDiscChart a z = (√(a / Real.pi) / √(1 + ‖z‖ ^ 2)) • z := by
   rw [areaDiscChart_apply, affineChart_coe,
-    OpenPartialHomeomorph.univBall_apply (sqrt_div_pi_pos ha), add_zero]
+    OpenPartialHomeomorph.univBall_apply (sqrt_div_pi_pos ha), vadd_eq_add, add_zero]
 
 /-- The inverse of the disc chart: `y ↦ y / √(a / π - |y|²)`, a point of the affine part of the
 sphere when `|y| < √(a / π)`. -/
 theorem areaDiscChart_symm_apply {a : ℝ} (ha : 0 < a) (y : ℂ) :
     (areaDiscChart a).symm y = (((√(a / Real.pi - ‖y‖ ^ 2))⁻¹ • y : ℂ) : OnePoint ℂ) := by
   rw [areaDiscChart_symm_apply_eq_coe,
-    OpenPartialHomeomorph.univBall_symm_apply (sqrt_div_pi_pos ha), sub_zero,
+    OpenPartialHomeomorph.univBall_symm_apply (sqrt_div_pi_pos ha), vsub_eq_sub, sub_zero,
+    dist_zero_right,
     Real.sq_sqrt (div_pos ha Real.pi_pos).le]
 
 /-- **The derivative of the disc chart** at a finite point `z`:
