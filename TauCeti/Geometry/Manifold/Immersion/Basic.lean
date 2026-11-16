@@ -12,7 +12,7 @@ public import Mathlib.Geometry.Manifold.Immersion
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 import TauCeti.Geometry.Manifold.PullbackGroupoid
-import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
+import TauCeti.Geometry.Manifold.MFDeriv.OfCompLeft
 
 /-!
 # Composing immersions with diffeomorphisms, and immersions into finite dimensions
@@ -63,7 +63,7 @@ both sides, in order to apply the rule to `e.symm` as well.
 * `Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend_eq`: in the charts of
   immersion data, a point `b` of the source chart is sent by `f` to the point read as
   `h.equiv (b, 0)` in the target chart.
-* `MDifferentiableAt.iff_comp_isDiffImmersionAt`: a map is differentiable at `x` exactly when it
+* `IsDiffImmersionAt.mdifferentiableAt_iff_comp`: a map is differentiable at `x` exactly when it
   is continuous at `x` and its composite with a map whose differential at the image point has a
   continuous left inverse, such as an immersion of positive order, is differentiable at `x`.
 
@@ -439,8 +439,6 @@ theorem _root_.Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend
 
 section Lift
 
-open Filter Set Topology
-
 variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] {G' : Type*}
   [TopologicalSpace G'] {J' : ModelWithCorners 𝕜 E'' G'} {N' : Type*} [TopologicalSpace N']
   [ChartedSpace G' N'] {φ : N → N'} {x : M}
@@ -451,38 +449,14 @@ and `φ ∘ f` is differentiable at `x`. This is the differentiable counterpart 
 `ContMDiffAt.iff_comp_isImmersionAt`; only the differential of `φ` at the single point `f x` is
 used, so it applies to any immersion of positive order (`Manifold.IsImmersion.isDiffImmersionAt`).
 Continuity cannot be dropped: without it `f` could jump between points with the same image. -/
-theorem _root_.MDifferentiableAt.iff_comp_isDiffImmersionAt
+theorem _root_.IsDiffImmersionAt.mdifferentiableAt_iff_comp
     (hφ : IsDiffImmersionAt J J' φ (f x)) :
     MDifferentiableAt I J f x ↔ ContinuousAt f x ∧ MDifferentiableAt I J' (φ ∘ f) x := by
   refine ⟨fun h ↦ ⟨h.continuousAt, hφ.mdifferentiableAt.comp x h⟩, fun ⟨hf, h⟩ ↦ ?_⟩
-  have hφd := hφ.mdifferentiableAt
   obtain ⟨L, hL⟩ := isDiffImmersionAt_iff.1 hφ
-  -- In the extended charts at `x`, `f x` and `φ (f x)`, the map `φ ∘ f` read in charts is `φ` read
-  -- in charts after `f` read in charts, near the base point within the range of `I`; Mathlib's
-  -- easy half of the inverse function theorem then differentiates `f` read in charts.
-  set a := extChartAt I x x
-  have hfa : Tendsto (f ∘ (extChartAt I x).symm) (𝓝[range I] a) (𝓝 (f x)) :=
-    hf.tendsto.comp (map_extChartAt_symm_nhdsWithin_range x).le
-  have ha : writtenInExtChartAt I J x f a = extChartAt J (f x) (f x) :=
-    writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)
-  have hst : Tendsto (writtenInExtChartAt I J x f) (𝓝[range I] a)
-      (𝓝[range J] (writtenInExtChartAt I J x f a)) := by
-    rw [ha]
-    refine tendsto_nhdsWithin_iff.2 ⟨(continuousAt_extChartAt (f x)).tendsto.comp hfa,
-      Eventually.of_forall fun y ↦ ?_⟩
-    rw [writtenInExtChartAt, Function.comp_apply, extChartAt_coe]
-    exact mem_range_self _
-  have hcomp : writtenInExtChartAt J J' (f x) φ ∘ writtenInExtChartAt I J x f =ᶠ[𝓝[range I] a]
-      writtenInExtChartAt I J' x (φ ∘ f) := by
-    simpa only [preimage_univ, univ_inter] using
-      (writtenInExtChartAt_comp (s := univ) hf.continuousWithinAt).symm
-  have hΦ : HasFDerivWithinAt (writtenInExtChartAt J J' (f x) φ) (mfderiv J J' φ (f x)) (range J)
-      (writtenInExtChartAt I J x f a) := by
-    rw [ha, hφd.mfderiv_abuse]
-    exact hφd.differentiableWithinAt_writtenInExtChartAt.hasFDerivWithinAt
-  exact (mdifferentiableAt_iff _ _).2 ⟨hf, (hΦ.of_comp_of_leftInverse hst
-    h.differentiableWithinAt_writtenInExtChartAt.hasFDerivWithinAt hcomp hL
-    (mem_range_self _)).differentiableWithinAt⟩
+  exact (hasMFDerivWithinAt_univ.1 (HasMFDerivWithinAt.of_comp_of_leftInverse
+    hφ.mdifferentiableAt.hasMFDerivAt hf.continuousWithinAt h.hasMFDerivAt.hasMFDerivWithinAt
+    hL)).mdifferentiableAt
 
 end Lift
 
