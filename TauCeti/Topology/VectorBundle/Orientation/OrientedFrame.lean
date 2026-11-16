@@ -427,10 +427,11 @@ private def orientedTrivialization
     rw [coe_orientedTrivializationInv (q := (p.1.proj, _)) hT hr p₀ hp,
       coe_toSpecialOrthogonal hm, inv_mul_cancel_left]
     exact T.symm_apply_mk_proj (T.mem_source.2 hp)
-  right_inv' q hq := by
+  right_inv' := by
+    rintro ⟨y, g⟩ hq
     rw [Prod.mk.injEq, coe_orientedTrivializationInv hT hr p₀ hq.1,
       T.proj_symm_apply' hq.1, T.apply_symm_apply' hq.1, mul_inv_cancel_left]
-    exact ⟨rfl, Subtype.ext (coe_toSpecialOrthogonal q.2.2)⟩
+    exact ⟨rfl, Subtype.ext (coe_toSpecialOrthogonal g.2)⟩
   open_source := T.open_baseSet.preimage (continuous_proj.comp continuous_subtype_val)
   open_target := T.open_baseSet.prod isOpen_univ
   continuousOn_toFun :=

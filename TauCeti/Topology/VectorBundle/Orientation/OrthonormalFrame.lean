@@ -205,6 +205,10 @@ private theorem eventually_mapOrientation_eq (hι : Fintype.card ι = finrank �
   -- varies continuously near `p₀`.
   let L (q : OrthonormalFrameBundle ℝ F E V) (hq : q.proj ∈ e.baseSet) : V ≃L[ℝ] F :=
     q.frame.toContinuousLinearEquiv.trans (e.continuousLinearEquivAt ℝ q.proj hq)
+  -- As a linear equivalence, `L q` is the composite read off by `mapOrientation`.
+  have hL {q : OrthonormalFrameBundle ℝ F E V} (hq : q.proj ∈ e.baseSet) :
+      (L q hq).toLinearEquiv = q.frame.toLinearEquiv.trans (e.linearEquivAt ℝ q.proj hq) :=
+    rfl
   have hcoord {q : OrthonormalFrameBundle ℝ F E V} (hq : q.proj ∈ e.baseSet) :
       (L q hq : V →L[ℝ] F) = coord e q := by
     ext v
@@ -212,7 +216,7 @@ private theorem eventually_mapOrientation_eq (hι : Fintype.card ι = finrank �
   filter_upwards [hU, Orientation.eventually_map_eq_map_of_continuousAt hι o
     (fun _ ↦ (continuousOn_coord e).continuousAt hU) (hcoord h₀).symm] with q hq h
   refine ⟨hq, ?_⟩
-  simp only [Trivialization.mapOrientation_apply, ← Orientation.map_trans]
+  simp only [Trivialization.mapOrientation_apply, ← Orientation.map_trans, ← hL]
   exact h (L q hq) (hcoord hq)
 
 /-- The map from the orthonormal frame bundle to the orientation double cover is continuous. -/
