@@ -47,6 +47,11 @@ freeness, so its centre criterion holds for every Lie algebra over a commutative
 
 * J. Dixmier, *Enveloping Algebras*, §2.4.
 * P. Etingof, *Representations of Lie groups*, proof of Theorem 13.5.
+
+The word-level commutator computation behind `IsPBWSymmetrization.map_lie` follows the proof of
+`TauCeti.UniversalEnvelopingAlgebra.lie_ι_pbwSymmetrization_tprod` in
+`TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Basic` (#33009), the degreewise
+version for the canonical symmetrization.
 -/
 
 public section
@@ -87,6 +92,7 @@ variable {e : SymmetricAlgebra R L →ₗ[R] _root_.UniversalEnvelopingAlgebra R
 include he
 
 /-- A PBW symmetrization fixes pure powers: `e (x ^ n) = ι x ^ n`. -/
+@[simp high] -- Normalize pure powers before expanding the permutation sum.
 theorem apply_ι_pow (x : L) (n : ℕ) : e (SymmetricAlgebra.ι R L x ^ n) = ι x ^ n := by
   have h := he.apply_prod_ι n fun _ ↦ x
   have hn : (n.factorial : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr n.factorial_ne_zero
@@ -213,6 +219,7 @@ private theorem eq_zero_of_mem_pbwFiltrationPrevious [Module.Free R L] {n : ℕ}
 
 /-- **Two-sided filtration of PBW symmetrization**: for `L` free over `R`, a symmetric tensor has
 degree at most `k` exactly when its symmetrization has PBW degree at most `k`. -/
+@[simp]
 theorem mem_pbwFiltration_iff [Module.Free R L] {k : ℕ} {p : SymmetricAlgebra R L} :
     e p ∈ pbwFiltration R L k ↔ p ∈ F k := by
   refine ⟨fun h ↦ ?_, he.mem_pbwFiltration⟩
