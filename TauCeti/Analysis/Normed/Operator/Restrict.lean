@@ -12,7 +12,8 @@ public import Mathlib.Analysis.Normed.Operator.Bilinear
 
 The restriction of a bounded operator `T` to a submodule `M` is `T ∘L M.subtypeL`. Its norm
 decreases as the submodule shrinks, and passing to the topological closure of `M` does not
-change it, since the bound `‖T x‖ ≤ C ‖x‖` cuts out a closed set.
+change it, since the bound `‖T x‖ ≤ C ‖x‖` cuts out a closed set. Over a densely normed field,
+the norm of the restriction is the supremum of `‖T x‖` over the vectors `x ∈ M` with `‖x‖ ≤ 1`.
 
 A bounded bilinear action preserving a submodule restricts to a bounded action on that
 submodule, with operator norm at most that of the original action.
@@ -47,6 +48,25 @@ theorem nnnorm_comp_subtypeL_topologicalClosure (T : E →L[𝕜] F) (M : Submod
   exact closure_minimal (fun y hy ↦ (T ∘L M.subtypeL).le_opNNNorm ⟨y, hy⟩) hclosed hx
 
 end Subspace
+
+section DenselyNormed
+
+variable {𝕜 E F : Type*} [DenselyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+open Metric in
+/-- **Closed-unit-ball form of the restricted norm.** Over a densely normed field, the norm of
+the restriction of `T` to a submodule `M` is the supremum of `‖T x‖` over the vectors `x ∈ M` with
+`‖x‖ ≤ 1`, read in the ambient space. -/
+theorem sSup_image_inter_unitClosedBall_eq_nnNorm_comp_subtypeL (T : E →L[𝕜] F)
+    (M : Submodule 𝕜 E) :
+    sSup ((fun x ↦ ‖T x‖₊) '' ((M : Set E) ∩ closedBall 0 1)) = ‖T ∘L M.subtypeL‖₊ := by
+  have hM : (M : Set E) ∩ closedBall 0 1 = (↑) '' closedBall (0 : M) 1 := by
+    simp [Set.inter_comm]
+  rw [hM, Set.image_image, ← (T ∘L M.subtypeL).sSup_unitClosedBall_eq_nnNorm]
+  simp
+
+end DenselyNormed
 
 /-- Restrict a bounded bilinear action to a submodule that it preserves. -/
 noncomputable def restrictAction (M : B →L[𝕜] E →L[𝕜] E) (p : Submodule 𝕜 E)
