@@ -62,9 +62,8 @@ Lipschitz test function.
   `TauCeti.integrable_mul_sq_of_hasCompactSupport` and
   `TauCeti.integrable_sq_of_hasCompactSupport` record the integrability of `-L (∂_w ∂_v u) * L u`
   and of the weighted squares `g · (L u) ^ 2`.
-* `TauCeti.integral_mul_fderiv_fderiv_apply_eq_integral_fderiv_fderiv_apply_mul`: the second
-  directional derivative moves across a product, `∫ f ∂ᵥ²g = ∫ (∂ᵥ²f) g`, for compactly supported
-  `g`.
+* `TauCeti.integral_bilinear_fderiv_fderiv_apply_eq_integral_fderiv_fderiv_apply`: integration
+  by parts twice, `∫ B f (∂_v ∂_w g) = ∫ B (∂_w ∂_v f) g`, for compactly supported `g`.
   `TauCeti.integrable_mul_of_forall_notMem_tsupport_eq_zero` records the integrability of a
   product of continuous functions one of which vanishes off a compact support.
 * `TauCeti.integral_bilinear_fderiv_apply_comm`: the integral of `B (∂_v u) (∂_w u)` is symmetric
@@ -195,53 +194,53 @@ theorem integrable_mul_of_forall_notMem_tsupport_eq_zero {R α : Type*} [NormedR
   (hp.mul hq).integrable_of_hasCompactSupport <| HasCompactSupport.mul_left <|
     hgc.mono' fun x hx ↦ by_contra fun h ↦ hx (hq0 x h)
 
-/-- **Integration by parts twice in one direction.** For a compactly supported `C²` function
-`g` and a function `f` that is `C²` at every point of the support of `g`, the second directional
-derivative can be moved from `g` to `f`: `∫ f ∂ᵥ²g = ∫ (∂ᵥ²f) g`. Nothing is assumed about `f`
-away from the support of `g`. -/
-theorem integral_mul_fderiv_fderiv_apply_eq_integral_fderiv_fderiv_apply_mul {f g : E → ℝ}
-    (hf : ∀ x ∈ tsupport g, ContDiffAt ℝ 2 f x) (hg : ContDiff ℝ 2 g)
-    (hgc : HasCompactSupport g) (v : E) :
-    ∫ x, f x * fderiv ℝ (fderiv ℝ g) x v v ∂μ = ∫ x, fderiv ℝ (fderiv ℝ f) x v v * g x ∂μ := by
-  -- A globally `C²` function `F` agreeing with `f` near the support of `g`.
+/-- **Integration by parts twice.** For a continuous bilinear map `B`, a compactly supported `C²`
+map `g` and a map `f` that is `C²` at every point of the support of `g`, the second derivative
+can be moved from `g` to `f`: `∫ B f (∂_v ∂_w g) = ∫ B (∂_w ∂_v f) g`. Nothing is assumed about
+`f` away from the support of `g`. -/
+theorem integral_bilinear_fderiv_fderiv_apply_eq_integral_fderiv_fderiv_apply {V' : Type*}
+    [NormedAddCommGroup V'] [NormedSpace ℝ V'] (B : V →L[ℝ] V' →L[ℝ] W) {f : E → V}
+    {g : E → V'} (hf : ∀ x ∈ tsupport g, ContDiffAt ℝ 2 f x) (hg : ContDiff ℝ 2 g)
+    (hgc : HasCompactSupport g) (v w : E) :
+    ∫ x, B (f x) (fderiv ℝ (fderiv ℝ g) x v w) ∂μ =
+      ∫ x, B (fderiv ℝ (fderiv ℝ f) x w v) (g x) ∂μ := by
+  -- A globally `C²` map `F` agreeing with `f` near the support of `g`.
   obtain ⟨F, hF, -, hFf⟩ := hgc.isCompact.exists_contDiff_eventuallyEq 2 hf
-  have h₁ : ∀ x, f x * fderiv ℝ (fderiv ℝ g) x v v = F x * fderiv ℝ (fderiv ℝ g) x v v :=
-    fun x ↦ by
-      by_cases hx : x ∈ tsupport g
-      · rw [(hFf x hx).eq_of_nhds]
-      · simp [fderiv_fderiv_of_notMem_tsupport hx]
-  have h₂ : ∀ x, fderiv ℝ (fderiv ℝ f) x v v * g x = fderiv ℝ (fderiv ℝ F) x v v * g x :=
-    fun x ↦ by
-      by_cases hx : x ∈ tsupport g
-      · rw [(hFf x hx).fderiv.fderiv_eq]
-      · simp [image_eq_zero_of_notMem_tsupport hx]
+  have h₁ : ∀ x, B (f x) (fderiv ℝ (fderiv ℝ g) x v w) =
+      B (F x) (fderiv ℝ (fderiv ℝ g) x v w) := fun x ↦ by
+    by_cases hx : x ∈ tsupport g
+    · rw [(hFf x hx).eq_of_nhds]
+    · simp [fderiv_fderiv_of_notMem_tsupport hx]
+  have h₂ : ∀ x, B (fderiv ℝ (fderiv ℝ f) x w v) (g x) =
+      B (fderiv ℝ (fderiv ℝ F) x w v) (g x) := fun x ↦ by
+    by_cases hx : x ∈ tsupport g
+    · rw [(hFf x hx).fderiv.fderiv_eq]
+    · simp [image_eq_zero_of_notMem_tsupport hx]
   simp only [h₁, h₂]
-  have hg₁ : ContDiff ℝ 1 fun x ↦ fderiv ℝ g x v :=
+  have hg₁ : ContDiff ℝ 1 fun x ↦ fderiv ℝ g x w :=
     (hg.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const
-  have hsnd : ∀ x, fderiv ℝ (fun y ↦ fderiv ℝ g y v) x v = fderiv ℝ (fderiv ℝ g) x v v := by
-    intro x
-    rw [fderiv_clm_apply ((hg.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero x)
-      (differentiableAt_const v)]
-    simp
-  have hDg : ∀ x, x ∉ tsupport g → fderiv ℝ g x v = 0 := fun x hx ↦ by
+  have hsnd : ∀ x, fderiv ℝ (fun y ↦ fderiv ℝ g y w) x v = fderiv ℝ (fderiv ℝ g) x v w :=
+    fun x ↦ by simp [(hg.contDiffAt.hasFDerivAt_fderiv_apply le_rfl w).fderiv]
+  have hDg : ∀ x, x ∉ tsupport g → fderiv ℝ g x w = 0 := fun x hx ↦ by
     simp [fderiv_of_notMem_tsupport ℝ hx]
-  have hcF : Continuous fun x ↦ fderiv ℝ F x v :=
-    (hF.continuous_fderiv (by norm_num)).clm_apply continuous_const
-  -- every integrand has a factor vanishing off the support of `g`
-  have hFg₂ : Integrable (fun x ↦ F x * fderiv ℝ (fun y ↦ fderiv ℝ g y v) x v) μ := by
-    simp only [hsnd]
-    exact integrable_mul_of_forall_notMem_tsupport_eq_zero hgc hF.continuous
-      (hg.continuous_fderiv_fderiv_apply v v) fun x hx ↦ by
-        simp [fderiv_fderiv_of_notMem_tsupport hx]
-  -- `∫ F ∂ᵥ²g = -∫ ∂ᵥF ∂ᵥg`, then `∫ ∂ᵥF ∂ᵥg = -∫ ∂ᵥ²F g`
-  have h₃ := integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable (μ := μ) (f := F)
-    (g := fun x ↦ fderiv ℝ g x v) (v := v)
-    (integrable_mul_of_forall_notMem_tsupport_eq_zero hgc hcF hg₁.continuous hDg) hFg₂
-    (integrable_mul_of_forall_notMem_tsupport_eq_zero hgc hF.continuous hg₁.continuous hDg)
+  -- every integrand pairs a continuous map with one vanishing off the support of `g`
+  have hint : ∀ {P : E → V} {Q : E → V'}, Continuous P → Continuous Q →
+      (∀ x, x ∉ tsupport g → Q x = 0) → Integrable (fun x ↦ B (P x) (Q x)) μ :=
+    fun hP hQ hQ0 ↦ ((B.continuous.comp hP).clm_apply hQ).integrable_of_hasCompactSupport <|
+      hgc.mono' fun x hx ↦ by_contra fun h ↦ hx (by simp [hQ0 x h])
+  -- `∫ B F (∂_v ∂_w g) = -∫ B (∂_v F) (∂_w g)`, then `∫ B (∂_v F) (∂_w g) = -∫ B (∂_w ∂_v F) g`
+  have h₃ := integral_bilinear_fderiv_right_eq_neg_left_of_integrable (μ := μ) (B := B)
+    (f := F) (g := fun x ↦ fderiv ℝ g x w) (v := v)
+    (hint ((hF.continuous_fderiv (by norm_num)).clm_apply continuous_const) hg₁.continuous hDg)
+    (by
+      simp only [hsnd]
+      exact hint hF.continuous (hg.continuous_fderiv_fderiv_apply le_rfl v w) fun x hx ↦ by
+        simp [fderiv_fderiv_of_notMem_tsupport hx])
+    (hint hF.continuous hg₁.continuous hDg)
     (fun x _ ↦ hF.differentiable (by norm_num) x) (fun x _ ↦ hg₁.differentiable one_ne_zero x)
-  have h₄ := integral_bilinear_fderiv_apply_eq_neg_integral_fderiv_fderiv_apply (μ := μ)
-    (ContinuousLinearMap.mul ℝ ℝ) (fun x _ ↦ hF.contDiffAt) (hg.of_le (by norm_num)) hgc v v
-  simp only [hsnd, ContinuousLinearMap.mul_apply'] at h₃ h₄
+  have h₄ := integral_bilinear_fderiv_apply_eq_neg_integral_fderiv_fderiv_apply (μ := μ) B
+    (fun x _ ↦ hF.contDiffAt) (hg.of_le (by norm_num)) hgc v w
+  simp only [hsnd] at h₃
   rw [h₃, h₄, neg_neg]
 
 /-- Exchanging the two differentiation directions does not change the integral of a continuous

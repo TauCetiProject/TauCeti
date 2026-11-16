@@ -111,8 +111,11 @@ theorem integral_comp_mul_pi {ι G : Type*} [Fintype ι] [NormedAddCommGroup G] 
     ∫ x, F (fun i ↦ c i * x i) ∂μ = |∏ i, c i|⁻¹ • ∫ y, F y ∂μ := by
   let e : (ι → ℝ) ≃ᵐ (ι → ℝ) :=
     (Homeomorph.piCongrRight fun i ↦ Homeomorph.mulLeft₀ (c i) (hc i)).toMeasurableEquiv
+  have he : ⇑e = fun x i ↦ c i * x i := by
+    funext x i
+    simp [e]
   have h := integral_map_equiv (μ := μ) e F
-  rw [show ⇑e = fun x i ↦ c i * x i from rfl, map_mul_pi_addHaar_eq_smul μ hc,
+  rw [he, map_mul_pi_addHaar_eq_smul μ hc,
     integral_smul_measure, ENNReal.toReal_ofReal (by positivity)] at h
   exact h.symm
 

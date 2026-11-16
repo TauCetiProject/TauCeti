@@ -102,11 +102,12 @@ theorem integral_prod_hermiteFunction_comp_mul_mul_neg_fderiv_fderiv_add (c : ι
       fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
   have hPu2 : Integrable fun x ↦ P x * fderiv ℝ (fderiv ℝ u) x v v :=
     integrable_mul_of_forall_notMem_tsupport_eq_zero huc hP.continuous
-      (hu.continuous_fderiv_fderiv_apply v v)
+      (hu.continuous_fderiv_fderiv_apply le_rfl v v)
       fun x hx ↦ by simp [fderiv_fderiv_of_notMem_tsupport hx]
   have hP2u : Integrable fun x ↦ fderiv ℝ (fderiv ℝ P) x v v * u x :=
-    integrable_mul_of_forall_notMem_tsupport_eq_zero huc (hP.continuous_fderiv_fderiv_apply v v)
-      hu.continuous fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
+    integrable_mul_of_forall_notMem_tsupport_eq_zero huc
+      (hP.continuous_fderiv_fderiv_apply le_rfl v v) hu.continuous
+      fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
   have heig : ∀ x, fderiv ℝ (fderiv ℝ P) x v v =
       c i ^ 2 * ((c i * x i) ^ 2 - (2 * a i + 1)) * P x :=
     fun x ↦ fderiv_fderiv_prod_hermiteFunction_comp_mul_apply_single_single c a x i
@@ -114,9 +115,10 @@ theorem integral_prod_hermiteFunction_comp_mul_mul_neg_fderiv_fderiv_add (c : ι
       = ∫ x, (P x * (c i ^ 4 * x i ^ 2 * u x) - P x * fderiv ℝ (fderiv ℝ u) x v v) :=
         integral_congr_ae <| Filter.Eventually.of_forall fun x ↦ by ring
     _ = (∫ x, P x * (c i ^ 4 * x i ^ 2 * u x)) - ∫ x, fderiv ℝ (fderiv ℝ P) x v v * u x := by
-        rw [integral_sub hxPu hPu2,
-          integral_mul_fderiv_fderiv_apply_eq_integral_fderiv_fderiv_apply_mul
-            (fun x _ ↦ hP.contDiffAt) hu huc v]
+        have h := integral_bilinear_fderiv_fderiv_apply_eq_integral_fderiv_fderiv_apply
+          (μ := volume) (ContinuousLinearMap.mul ℝ ℝ) (fun x _ ↦ hP.contDiffAt) hu huc v v
+        simp only [ContinuousLinearMap.mul_apply'] at h
+        rw [integral_sub hxPu hPu2, h]
     _ = ∫ x, (P x * (c i ^ 4 * x i ^ 2 * u x) - fderiv ℝ (fderiv ℝ P) x v v * u x) :=
         (integral_sub hxPu hP2u).symm
     _ = c i ^ 2 * (2 * a i + 1) * ∫ x, P x * u x := by
@@ -139,7 +141,7 @@ theorem hasSum_mul_sq_integral_prod_hermiteFunction_comp_mul_mul {c : ι → ℝ
           u x) := by
   have hcont : Continuous fun x ↦
       -fderiv ℝ (fderiv ℝ u) x (Pi.single i 1) (Pi.single i 1) + c i ^ 4 * x i ^ 2 * u x :=
-    (hu.continuous_fderiv_fderiv_apply _ _).neg.add
+    (hu.continuous_fderiv_fderiv_apply le_rfl _ _).neg.add
       ((continuous_const.mul ((continuous_apply i).pow 2)).mul hu.continuous)
   have hsupp : HasCompactSupport fun x ↦
       -fderiv ℝ (fderiv ℝ u) x (Pi.single i 1) (Pi.single i 1) + c i ^ 4 * x i ^ 2 * u x := by
