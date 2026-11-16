@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import Mathlib.Analysis.Complex.Hadamard
+import TauCeti.Analysis.SpecialFunctions.Pow.PowSign
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
@@ -88,37 +89,6 @@ variable {α β γ ι : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace
   {mγ : MeasurableSpace γ} {μ : Measure α} {ν : Measure β} {ρ : Measure γ}
 
 namespace RieszThorin
-
-/-- `powSign w c = (c / |c|) |c| ^ w`, with `powSign w 0 = 0`. -/
-private noncomputable def powSign (w c : ℂ) : ℂ := c / (‖c‖ : ℂ) * exp (w * (Real.log ‖c‖ : ℂ))
-
-private theorem powSign_one (c : ℂ) : powSign 1 c = c := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp [powSign]
-  · have hpos : 0 < ‖c‖ := norm_pos_iff.2 hc
-    rw [powSign, one_mul, ← ofReal_exp, Real.exp_log hpos,
-      div_mul_cancel₀ _ (ofReal_ne_zero.2 hpos.ne')]
-
-private theorem powSign_zero_right (w : ℂ) : powSign w 0 = 0 := by simp [powSign]
-
-private theorem norm_powSign_le (w c : ℂ) : ‖powSign w c‖ ≤ ‖c‖ ^ w.re := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp [powSign_zero_right, Real.rpow_nonneg]
-  · have hpos : 0 < ‖c‖ := norm_pos_iff.2 hc
-    rw [powSign, norm_mul, norm_div, norm_exp, norm_real, Real.norm_of_nonneg hpos.le,
-      div_self hpos.ne', one_mul, Real.rpow_def_of_pos hpos]
-    simp [mul_comm]
-
-private theorem norm_powSign_le_exp (w c : ℂ) :
-    ‖powSign w c‖ ≤ Real.exp (|w.re| * |Real.log ‖c‖|) := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp [powSign_zero_right]
-  · have hpos : 0 < ‖c‖ := norm_pos_iff.2 hc
-    rw [powSign, norm_mul, norm_div, norm_exp, norm_real, Real.norm_of_nonneg hpos.le,
-      div_self hpos.ne', one_mul]
-    gcongr
-    simp only [mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]
-    exact (le_abs_self _).trans (abs_mul _ _).le
 
 /-- The slope `(a₁ - a₀) / a` of the exponent family, where `a = (1 - θ) a₀ + θ a₁`. -/
 private noncomputable def slope (a₀ a₁ θ : ℝ) : ℝ := (a₁ - a₀) / ((1 - θ) * a₀ + θ * a₁)
@@ -279,9 +249,7 @@ private theorem eLpNorm_map_powSign_le_one (u : SimpleFunc γ ℂ) {s t : ℝ≥
 analytic family through `u` is. -/
 private theorem memLp_fiberInd (u : SimpleFunc γ ℂ) {t : ℝ≥0∞} {w c : ℂ} (hc : c ≠ 0)
     (hu : MemLp (u.map (powSign w)) t ρ) : MemLp (fiberInd u c) t ρ := by
-  have hne : powSign w c ≠ 0 := by
-    have : (c / (‖c‖ : ℂ)) ≠ 0 := div_ne_zero hc (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hc))
-    simpa [powSign] using this
+  have hne : powSign w c ≠ 0 := powSign_ne_zero w hc
   refine hu.of_le_mul (fiberInd u c).aestronglyMeasurable (c := ‖powSign w c‖⁻¹)
     (ae_of_all _ fun x => ?_)
   rw [fiberInd_apply, SimpleFunc.map_apply]
@@ -383,7 +351,7 @@ private theorem norm_integral_mul_le_of_le_one (T : SimpleFunc α ℂ →ₗ[ℂ
   have hΦ : ∀ z, Φ z = ∫ y, T (f.map (powSign (P z))) y * g.map (powSign (Q z)) y ∂ν :=
     fun z => (integral_map_powSign_eq_sum T f g _ _ hint).symm
   have hdiff : Differentiable ℂ Φ := by
-    simp only [hΦ_def, hP, hQ, expo, powSign]
+    simp only [hΦ_def, hP, hQ, expo, powSign_def]
     fun_prop
   have hbdd : BddAbove ((norm ∘ Φ) '' Complex.HadamardThreeLines.verticalClosedStrip 0 1) := by
     refine ⟨∑ c ∈ f.range, ∑ d ∈ g.range,

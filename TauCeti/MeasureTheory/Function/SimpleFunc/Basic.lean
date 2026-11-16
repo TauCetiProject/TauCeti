@@ -17,7 +17,8 @@ A simple function `u : SimpleFunc α β` is the finite sum, over the values `c` 
 constant `c` restricted to the fibre `u ⁻¹' {c}`. More generally, for any `ψ : β → M` into an
 additive commutative monoid, `u.map ψ` is the sum of the constants `ψ c` restricted to the same
 fibres. This is the form in which an operator defined on simple functions is evaluated by
-linearity, as in the Riesz–Thorin theorem.
+linearity, as in the Riesz–Thorin theorem. Weighting the fibre pieces by coefficients `a c`
+gives `x ↦ a (u x) • u x` (`MeasureTheory.SimpleFunc.sum_smul_restrict_const_apply`).
 
 A finite family of simple functions is one simple function into the product,
 `MeasureTheory.SimpleFunc.pi`.
@@ -53,6 +54,24 @@ theorem map_eq_sum_restrict_const (u : SimpleFunc α β) (ψ : β → M) :
 theorem eq_sum_restrict_const [AddCommMonoid β] (u : SimpleFunc α β) :
     u = ∑ c ∈ u.range, (const α c).restrict (u ⁻¹' {c}) := by
   exact map_eq_sum_restrict_const u id
+
+/-- Weighting each fibre piece of `u` by a coefficient depending on its value gives, at `x`, the
+value `u x` weighted by the coefficient of `u x`. -/
+theorem sum_smul_restrict_const_apply {R : Type*} [AddCommMonoid β] [SMulZeroClass R β]
+    (u : SimpleFunc α β) (a : β → R) (x : α) :
+    ∑ c ∈ u.range, a c • (const α c).restrict (u ⁻¹' {c}) x = a (u x) • u x := by
+  rw [← map_apply (fun c => a c • c) u x, map_apply_eq_sum_restrict_const]
+  refine Finset.sum_congr rfl fun c _ => ?_
+  simp only [restrict_apply _ (u.measurableSet_fiber c), coe_const]
+  by_cases hx : x ∈ u ⁻¹' {c} <;> simp [hx]
+
+/-- The fibre piece of `u` over `c` takes a nonzero value `y` only where `u` does. -/
+theorem preimage_restrict_const_subset [Zero β] (u : SimpleFunc α β) (c : β) {y : β}
+    (hy : y ≠ 0) : (const α c).restrict (u ⁻¹' {c}) ⁻¹' {y} ⊆ u ⁻¹' {y} := by
+  rw [restrict_preimage_singleton _ (u.measurableSet_fiber c) hy]
+  rintro x ⟨hx, hcy⟩
+  simp only [Set.mem_preimage, Set.mem_singleton_iff, coe_const, Function.const_apply] at hx hcy ⊢
+  exact hx.trans hcy
 
 /-- The product of two simple functions constant on measurable sets `A` and `B` and zero
 elsewhere is constant on `A ∩ B` and zero elsewhere. -/
