@@ -193,7 +193,8 @@ instance instIsMulCommutativeQuotientPointsSubgroup
   Subgroup.range_isMulCommutative (quotientPointsHom H I A).hom
 
 /-- Membership in the subgroup of points cut out by a Hopf ideal is vanishing on that ideal. -/
-@[simp]
+-- Not `@[simp]`: `simp` dsimp-reduces the carrier of the membership first, so the lemma never
+-- fires; use it by name.
 lemma mem_quotientPointsSubgroup_iff (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R) (H := H) A) :
@@ -213,7 +214,8 @@ theorem eq_one_of_mem_quotientPointsSubgroup_augmentation (H : _root_.CommHopfAl
 
 /-- The subgroup of points cut out by the augmentation ideal consists exactly of the identity
 point. -/
-@[simp]
+-- Not `@[simp]`: `simp` dsimp-reduces the carrier of the membership first, so the lemma never
+-- fires; use it by name.
 theorem mem_quotientPointsSubgroup_augmentation_iff (H : _root_.CommHopfAlgCat.{v} R)
     (A : CommAlgCat.{w} R) (g : HopfAlgebra.points (R := R) (H := H) A) :
     g ∈ quotientPointsSubgroup H (HopfIdeal.augmentation R H) A ↔ g = 1 := by
@@ -224,7 +226,7 @@ theorem mem_quotientPointsSubgroup_augmentation_iff (H : _root_.CommHopfAlgCat.{
 
 /-- A point vanishes on a Hopf ideal mapped along a morphism exactly when its pullback along
 that morphism vanishes on the original ideal. -/
-@[simp]
+@[simp↓]
 theorem mem_quotientPointsSubgroup_map_iff
     {H K : _root_.CommHopfAlgCat.{v} R} (phi : H ⟶ K)
     (J : HopfIdeal R H) (A : CommAlgCat.{w} R)

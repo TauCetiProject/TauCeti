@@ -49,6 +49,8 @@ fields on a product manifold.
 * `TauCeti.mvfderiv_comp_snd_apply_eq_smul_deriv`: for a scalar second factor, the same in terms of
   the one-variable derivative `deriv`.
 * `TauCeti.mvfderiv_curry_right`: the derivative of a slice with fixed first coordinate.
+* `TauCeti.mvfderiv_diag_eq_add`: the derivative of `x ↦ S(x, x)` is the sum of the two
+  partial derivatives of `S` on the diagonal.
 * `TauCeti.mfderiv_inr_eq_zero_of_forall_apply_eq`: a map constant on a slice `{p} × N` has
   differential vanishing on the vectors tangent to that slice.
 * `HasDerivAt.mvfderiv_comp_fst_apply`: the derivative of a function of the scalar coordinate of
@@ -59,6 +61,8 @@ fields on a product manifold.
 * `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
   parameter-preserving map splits exactly when the differential of its slice splits.
 * `TauCeti.mfderiv_swap`: the derivative of the exchange of factors exchanges the components.
+* `MDifferentiableAt.curry_left` and `MDifferentiableAt.curry_right`: a curried function
+  differentiable jointly is differentiable in each variable separately.
 
 * `MDifferentiableAt.mfderiv_fst_apply` and `MDifferentiableAt.mfderiv_snd_apply`: the
   differential of a coordinate of a map into a product.
@@ -292,6 +296,24 @@ theorem mfderiv_inr_eq_zero_of_forall_apply_eq {f : M × N → M''} {p : M} {x :
     -- The zero map evaluates to zero; the product tangent space is the product of the factors.
     rfl
 
+/-- **The differential on the diagonal.** If `S` is differentiable at `(q, q)`, the differential
+of `ψ(x) = S(x, x)` at `q` is the sum `d₁S(q, q) + d₂S(q, q)` of the partial differentials. -/
+theorem mvfderiv_diag_eq_add {S : M × M → F} {q : M}
+    (hS : MDifferentiableAt (I.prod I) 𝓘(𝕜, F) S (q, q)) :
+    mvfderiv I (fun x ↦ S (x, x)) q =
+      mvfderiv I (fun x ↦ S (x, q)) q + mvfderiv I (fun x ↦ S (q, x)) q := by
+  have hdiag : MDifferentiableAt I (I.prod I) (fun x : M ↦ (x, x)) q :=
+    mdifferentiableAt_id.prodMk mdifferentiableAt_id
+  refine ContinuousLinearMap.ext fun v : E ↦ ?_
+  -- `ψ` is `S` composed with the diagonal, whose differential is `v ↦ (v, v)`.
+  refine (mvfderiv_comp_apply (g := S) (f := fun x : M ↦ (x, x)) q hS hdiag v).trans ?_
+  have hd : mfderiv I (I.prod I) (fun x : M ↦ (x, x)) q =
+      (mfderiv I I (@id M) q).prod (mfderiv I I (@id M) q) :=
+    mfderiv_prodMk (f := id) (g := id) mdifferentiableAt_id mdifferentiableAt_id
+  rw [hd, mfderiv_id]
+  -- `(id.prod id) v` is `(v, v)` in the product tangent space.
+  exact (hS.mvfderiv_prod_eq_add_apply (v, v)).trans (add_apply _ _ v).symm
+
 /-- The derivative of a function of the scalar coordinate of `𝕜 × N`, with derivative `g'` at
 `p.1`, sends a tangent vector `(s, v)` at `p` to `s • g'`. -/
 theorem _root_.HasDerivAt.mvfderiv_comp_fst_apply {g : 𝕜 → F} {g' : F} {p : 𝕜 × N}
@@ -390,6 +412,35 @@ theorem MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff
   exact (congrArg ContinuousLinearMap.HasLeftInverse hslice.symm).to_iff
 
 end ParameterPreserving
+
+section Curry
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H H' G : Type*} [TopologicalSpace H] [TopologicalSpace H'] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {I' : ModelWithCorners 𝕜 E' H'}
+  {J : ModelWithCorners 𝕜 F G}
+  {M M' N : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace M'] [ChartedSpace H' M'] [TopologicalSpace N] [ChartedSpace G N]
+  {f : M → M' → N} {x : M} {y : M'}
+
+/-- A curried function differentiable jointly at `(x, y)` is differentiable in the first variable
+at `x`. -/
+theorem MDifferentiableAt.curry_left
+    (hf : MDifferentiableAt (I.prod I') J (Function.uncurry f) (x, y)) :
+    MDifferentiableAt I J (fun x ↦ f x y) x :=
+  hf.comp (f := fun x' : M ↦ (x', y)) x (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
+
+/-- A curried function differentiable jointly at `(x, y)` is differentiable in the second variable
+at `y`. -/
+theorem MDifferentiableAt.curry_right
+    (hf : MDifferentiableAt (I.prod I') J (Function.uncurry f) (x, y)) :
+    MDifferentiableAt I' J (fun y ↦ f x y) y :=
+  hf.comp (f := fun y' : M' ↦ (x, y')) y (mdifferentiableAt_const.prodMk mdifferentiableAt_id)
+
+end Curry
 
 section Coordinates
 

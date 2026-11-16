@@ -59,6 +59,23 @@ theorem predictableMeasure_apply (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) (
     ℱ.predictableMeasure P T A = (timeMeasure T).prod P A := by
   rw [predictableMeasure_def, trim_measurableSet_eq _ hA]
 
+/-- Under a probability measure, the time projection of the predictable measure is
+the finite-horizon time measure. Its native `Lp` pullback embeds deterministic integrands
+isometrically into predictable integrands. -/
+theorem measurePreserving_fst_predictableMeasure (ℱ : Filtration ℝ≥0 m)
+    (P : Measure Ω) [IsProbabilityMeasure P] (T : ℝ≥0) :
+    @MeasurePreserving _ _ ℱ.predictable _ Prod.fst
+      (ℱ.predictableMeasure P T) (timeMeasure T) := by
+  have hprod (A : Set ℝ≥0) (hA : MeasurableSet A) :
+      (timeMeasure T).prod P (Prod.fst ⁻¹' A) = timeMeasure T A :=
+    (measurePreserving_fst (μ := timeMeasure T) (ν := P)).measure_preimage hA.nullMeasurableSet
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  refine ⟨ℱ.measurable_fst_predictable, ?_⟩
+  ext A hA
+  rw [Measure.map_apply ℱ.measurable_fst_predictable hA,
+    predictableMeasure_apply _ _ _ (hA.preimage ℱ.measurable_fst_predictable)]
+  exact hprod A hA
+
 /-- Predictable rectangles have time length times event probability, clipped at the horizon. -/
 @[simp]
 theorem predictableMeasure_Ioc_prod (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [SFinite P]
@@ -113,6 +130,22 @@ theorem predictableMeasure_restrict (ℱ : Filtration ℝ≥0 m) (P : Measure Ω
     measurableSet_predictable_Ioc_prod _ _ MeasurableSet.univ
   rw [predictableMeasure_def, restrict_trim ℱ.predictable_le_prod _ hS,
     ← Measure.restrict_prod_eq_prod_univ, timeMeasure_restrict, predictableMeasure_def]
+
+/-- The identity from a larger predictable sigma-algebra to a smaller one preserves
+finite-horizon time-product measure. Its native Lᵖ pullback embeds the smaller integrand space
+isometrically into the larger one. No finiteness assumption on the sample measure is needed. -/
+theorem measurePreserving_id_predictableMeasure {ℱ 𝒢 : Filtration ℝ≥0 m}
+    (h : ℱ ≤ 𝒢) (P : Measure Ω) (T : ℝ≥0) :
+    @MeasurePreserving (ℝ≥0 × Ω) (ℝ≥0 × Ω) 𝒢.predictable ℱ.predictable
+      id (𝒢.predictableMeasure P T) (ℱ.predictableMeasure P T) := by
+  have hm : @Measurable (ℝ≥0 × Ω) (ℝ≥0 × Ω) 𝒢.predictable ℱ.predictable id :=
+    measurable_id'' (predictable_mono h)
+  refine @MeasurePreserving.mk _ _ 𝒢.predictable ℱ.predictable _ _ _ hm ?_
+  apply @Measure.ext _ ℱ.predictable
+  intro A hA
+  rw [Measure.map_apply hm hA, Set.preimage_id,
+    𝒢.predictableMeasure_apply P T (predictable_mono h _ hA),
+    ℱ.predictableMeasure_apply P T hA]
 
 section Dictionary
 

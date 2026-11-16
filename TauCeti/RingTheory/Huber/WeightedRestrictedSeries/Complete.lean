@@ -79,6 +79,8 @@ specialisations are discharged with.
   `TauCeti.Huber.completeSpace_weightedRestrictedSubring_one_weight` : those four at the
   trivial weight family. The `T0Space` and `CompleteSpace` ones are the registered instances;
   the two coefficient-map results are theorems. This is the case the comparison needs.
+* `TauCeti.Huber.isClosed_weightedNhd_one_weight` : at the trivial weight family, `U⟨X⟩` is closed
+  in `A⟨X⟩` whenever `U` is closed in `A`.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv` : the comparison — `A⟨X₁,…,Xₖ⟩` is
   the plain restricted-series ring, whenever that ring is complete and Hausdorff.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionAlgEquiv` : the same comparison as an
@@ -160,6 +162,17 @@ theorem continuous_coeff_one_weight (ν : Fin k →₀ ℕ) :
     Continuous fun f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight ↦ MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A) :=
   isWeightFamily_one_weight.continuous_coeff (isBounded_weightPow_one_weight ν)
+
+/-- At the trivial weight family `U⟨X⟩` is closed in `A⟨X⟩` when `U` is closed in `A`: it is the
+set of series all of whose coefficients lie in `U`, an intersection of preimages of `U` under the
+continuous coefficient maps. -/
+theorem isClosed_weightedNhd_one_weight {U : AddSubgroup A} (hU : IsClosed (U : Set A)) :
+    IsClosed (weightedNhd (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight U :
+      Set (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+        isWeightFamily_one_weight)) := by
+  convert isClosed_iInter fun ν ↦ hU.preimage (continuous_coeff_one_weight ν) using 1
+  ext f
+  simp [weightMul_one_weight]
 
 /-- **Restricted series over a Hausdorff base are Hausdorff** (Wedhorn 5.49(2) at the trivial
 weight family), the case registered as an instance. -/

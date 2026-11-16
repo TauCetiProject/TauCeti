@@ -158,28 +158,15 @@ theorem exists_equiv_blockRepresentation :
       Nonempty ((blockRepresentation e i).Equiv (blockRepresentation e' (σ i))) := by
   have : ∀ i, (blockRepresentation e i).IsIrreducible := fun i =>
     isIrreducible_blockRepresentation e i
-  -- Match each block of `e` with the block of `e'` carrying an equivalent representation.
-  choose f hf using fun i =>
-    exists_nonempty_equiv_blockRepresentation e' (blockRepresentation e i)
-  -- Distinct blocks of `e` carry inequivalent representations, so the matching is injective.
-  have hinj : Function.Injective f := by
-    intro i j hij
-    by_contra hne
-    have hφ := hf i
-    rw [hij] at hφ
-    obtain ⟨φ⟩ := hφ
-    obtain ⟨ψ⟩ := hf j
-    exact (isEmpty_equiv_blockRepresentation e hne).elim (φ.trans ψ.symm)
-  let _ := Fintype.ofFinite ι
-  let _ := Fintype.ofFinite ι'
-  -- Both index sets have as many members as `G` has conjugacy classes, so it is a bijection.
-  have hcard : Fintype.card ι = Fintype.card ι' := by
-    simpa only [Nat.card_eq_fintype_card] using
-      e.card_eq_card_conjClasses_of_pi_matrix.trans
-        e'.card_eq_card_conjClasses_of_pi_matrix.symm
-  have hbij : Function.Bijective f := (Fintype.bijective_iff_injective_and_card f).2 ⟨hinj, hcard⟩
-  refine ⟨Equiv.ofBijective f hbij, fun i => ⟨?_, hf i⟩⟩
-  obtain ⟨φ⟩ := hf i
+  have : ∀ j, (blockRepresentation e' j).IsIrreducible := fun j =>
+    isIrreducible_blockRepresentation e' j
+  -- Both families are complete families of irreducibles, so they are relabellings of each other.
+  obtain ⟨σ, hσ⟩ := ClassFunction.exists_equiv_nonempty_equiv (blockRepresentation e)
+    (fun _ _ h => isEmpty_equiv_blockRepresentation e h) e.card_eq_card_conjClasses_of_pi_matrix
+    (blockRepresentation e') (fun _ _ h => isEmpty_equiv_blockRepresentation e' h)
+    e'.card_eq_card_conjClasses_of_pi_matrix
+  refine ⟨σ, fun i => ⟨?_, hσ i⟩⟩
+  obtain ⟨φ⟩ := hσ i
   have hrank := φ.toLinearEquiv.finrank_eq
   rwa [Module.finrank_fin_fun, Module.finrank_fin_fun] at hrank
 

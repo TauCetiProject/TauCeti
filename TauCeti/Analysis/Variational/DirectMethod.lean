@@ -57,7 +57,7 @@ theorem isCompact_toWeakSpace_sublevel
   have hclosed : IsClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
     rw [heq, hEC]
     exact hS.inter hC
-  simpa only [hclosed.closure_eq] using isCompact_closure_toWeakSpace hV hb
+  simpa only [hclosed.closure_eq] using isCompact_closure_toWeakSpace_of_isBounded hV hb
 
 /-- A single nonempty bounded sublevel suffices for the direct method on a weakly
 closed admissible set. -/

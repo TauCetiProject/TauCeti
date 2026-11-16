@@ -23,7 +23,7 @@ the marginals; making it visible is important when the finite law is later obtai
 an arbitrary probability carrier.
 
 The construction is deliberately at the `PMF` level.  It is not a second measure-level gluing
-theorem: `TauCeti.MeasureTheory.exists_glue_of_countable_middle` already provides that result,
+theorem: `MeasureTheory.Measure.exists_glue_of_countable_middle` already provides that result,
 and the triangle inequality for graphon cut distance, `TauCeti.DenseGraphLimits.cutDist_triangle`,
 is proved with it.  This finite API records the explicit matrix calculation.
 

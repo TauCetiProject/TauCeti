@@ -107,7 +107,7 @@ private lemma symmetricPower_map_pullbackSymmetricPowerComparison_app_val_app_un
               ((TopologicalSpace.Opens.map f.base).op.obj U))).symm
               (((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app M ≫
                 (Scheme.Modules.pushforward f).map ψ).val.app U)) n x)) := by
-  have hw := TauCeti.SheafOfModules.pullbackSymmetricPowerComparison_app_val_app_unit
+  have hw := SheafOfModules.pullbackSymmetricPowerComparison_app_val_app_unit
     (Scheme.Modules.pullbackPushforwardAdjunction f) n M U x
   rw [← Scheme.Modules.pullbackSymmetricPowerComparison_eq] at hw
   refine (congrArg (((SheafOfModules.symmetricPower X.sheaf n).map ψ).val.app

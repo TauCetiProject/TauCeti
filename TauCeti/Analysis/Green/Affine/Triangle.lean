@@ -116,8 +116,8 @@ theorem volume_convexHull_triangle (c p q : ℂ) :
   · rw [volume.addHaar_convexHull_triangle_eq_zero hdet, hdet, abs_zero, ENNReal.ofReal_zero,
       zero_mul]
   · rw [← affineMap_image_standardTriangle c p q hdet,
-      volume_affineMap_image _ _ isCompact_standardTriangle.measurableSet.nullMeasurableSet,
-      det_triangleCoordinates]
+      volume_affineMap_image _ _, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+      det_triangleCoordinates c p q hdet]
 
 /-- Area integration on an actual triangle agrees with the affine-coordinate integral. -/
 theorem integral_convexHull_triangle (c p q : ℂ) (hdet : triangleDet c p q ≠ 0) (f : ℂ → ℝ) :
@@ -125,7 +125,7 @@ theorem integral_convexHull_triangle (c p q : ℂ) (hdet : triangleDet c p q ≠
       ∫ z in standardTriangle,
         f (affineMap (triangleCoordinates c p q hdet).toContinuousLinearMap c z) := by
   rw [← affineMap_image_standardTriangle c p q hdet,
-    integral_affineMap_image _ _ isCompact_standardTriangle.measurableSet,
+    integral_affineMap_image _ _,
     det_triangleCoordinates]
 
 /-- Green's theorem on any nondegenerate ordered triangle. The sign of its orientation is

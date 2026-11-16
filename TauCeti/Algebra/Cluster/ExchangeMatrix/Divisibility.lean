@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.Word
 
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.FinCases
@@ -76,17 +76,17 @@ theorem matrixMutation_column_eq_zero_iff (k : K) :
 
 /-- Common column divisors are invariant along a finite word, evaluated in reading order. -/
 @[simp]
-theorem dvd_foldl_matrixMutation_iff (w : List K) :
-    (∀ i, d ∣ w.foldl (matrixMutation row) B i j) ↔ ∀ i, d ∣ B i j := by
+theorem dvd_matrixMutationWord_iff (w : List K) :
+    (∀ i, d ∣ matrixMutationWord row B w i j) ↔ ∀ i, d ∣ B i j := by
   induction w generalizing B with
-  | nil => rfl
-  | cons k w ih => simp only [List.foldl_cons, ih, dvd_matrixMutation_iff]
+  | nil => simp only [matrixMutationWord_nil]
+  | cons k w ih => simp only [matrixMutationWord_cons, ih, dvd_matrixMutation_iff]
 
 /-- The set of zero columns is invariant along every finite mutation word. -/
 @[simp]
-theorem foldl_matrixMutation_column_eq_zero_iff (w : List K) :
-    (∀ i, w.foldl (matrixMutation row) B i j = 0) ↔ ∀ i, B i j = 0 := by
-  simpa using (dvd_foldl_matrixMutation_iff (row := row) (B := B) (d := 0) (j := j) w)
+theorem matrixMutationWord_column_eq_zero_iff (w : List K) :
+    (∀ i, matrixMutationWord row B w i j = 0) ↔ ∀ i, B i j = 0 := by
+  simpa using (dvd_matrixMutationWord_iff (row := row) (B := B) (d := 0) (j := j) w)
 
 /-- Exact mutation of divided columns. If each column `j` is divisible by its positive degree
 `r j`, then the divided matrix mutates with the factor `r k` in direction `k`.
