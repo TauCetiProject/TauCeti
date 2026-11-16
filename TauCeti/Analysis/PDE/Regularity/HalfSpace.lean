@@ -8,9 +8,9 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
-import TauCeti.Analysis.Normed.Field.Lipschitz
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -203,19 +203,6 @@ private theorem hasWeakLineDerivOn_sum_smul_inner_gradient
   simp only [htan, Finset.sum_neg_distrib]
   ring
 
-omit [DecidableEq ι] in
-/-- The `L²(Ω)` norm of a directional derivative `∂_z u = ⟪∇u, z⟫` is at most `‖z‖ ‖∇u‖`. -/
-private theorem toReal_eLpNorm_inner_gradient_le (U : W1p mu Omega 2) (z : EuclideanSpace ℝ ι) :
-    (eLpNorm (fun x => ⟪W1p.gradient U x, z⟫_ℝ) 2 (mu.restrict Omega)).toReal ≤
-      ‖z‖ * ‖W1p.gradient U‖ := by
-  have hz : MemLp (fun x => ⟪W1p.gradient U x, z⟫_ℝ) 2 (mu.restrict Omega) :=
-    (Lp.memLp (W1p.gradient U)).inner_const z
-  rw [← Lp.norm_toLp _ hz]
-  refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-  filter_upwards [hz.coeFn_toLp] with x hx
-  rw [hx, mul_comm]
-  exact norm_inner_le_norm _ _
-
 /-- **A coefficient times a first derivative, with a bound.** Let `a` be uniformly elliptic and
 bounded on `Ω` with upper constant `Λ`, with `x ↦ a(x)` `K`-Lipschitz on `Ω` as a bilinear form.
 If `∂_z u` has a weak derivative of `L²(Ω)` norm at most `C` in the direction `v`, then so does
@@ -241,7 +228,7 @@ private theorem exists_norm_le_hasWeakLineDerivOn_matrixBilinearForm_smul
     mul_nonneg (mul_nonneg ha.upper_nonneg (norm_nonneg p)) (norm_nonneg q)
   have hK' : 0 ≤ (K : ℝ) * ‖p‖ * ‖q‖ * ‖v‖ := by positivity
   exact add_le_add (mul_le_mul_of_nonneg_left hG₀n hc)
-    (mul_le_mul_of_nonneg_left (toReal_eLpNorm_inner_gradient_le U z) hK')
+    (mul_le_mul_of_nonneg_left (Lp.toReal_eLpNorm_inner_const_le (W1p.gradient U) z) hK')
 
 /-- **Dividing by the normal coefficient.** Let `‖e‖ = 1` and let `a` be uniformly elliptic and
 bounded on `Ω` with constants `λ` and `Λ`, with `x ↦ a(x)` `K`-Lipschitz on `Ω` as a bilinear
@@ -275,33 +262,27 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_of_matrixBiline
     rw [hx, norm_mul]
     exact mul_le_mul (hβb x hxΩ) ((norm_inner_le_norm _ _).trans_eq (by rw [he, mul_one]))
       (norm_nonneg _) ha.upper_nonneg
-  -- Ellipticity: `⟪e, a e⟫ ≥ λ` on `Ω`, so its reciprocal is bounded by `λ⁻¹` and
-  -- `K / λ²`-Lipschitz.
-  have hcm : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), lam ≤ matrixBilinearForm (a x) e e :=
-    fun x hx => by simpa only [matrixBilinearForm_self, he, one_pow, mul_one] using
-      ha.lower_bound hx e
-  have hrL : LipschitzOnWith (K * ‖e‖₊ * ‖e‖₊ / lam.toNNReal ^ 2)
-      (fun x => (matrixBilinearForm (a x) e e)⁻¹) Omega :=
-    hβL.inv_of_le_norm (Real.toNNReal_pos.2 hlam) fun x hx => by
-      rw [Real.coe_toNNReal _ hlam.le]
-      exact (hcm x hx).trans (Real.le_norm_self _)
+  -- Ellipticity: the reciprocal of `⟪e, a e⟫` is bounded by `λ⁻¹` and `K / λ²`-Lipschitz on `Ω`.
+  have he0 : e ≠ 0 := norm_ne_zero_iff.1 (by rw [he]; exact one_ne_zero)
   have hrb : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)),
-      ‖(matrixBilinearForm (a x) e e)⁻¹‖ ≤ lam⁻¹ := fun x hx => by
-    rw [Real.norm_eq_abs, abs_inv, abs_of_pos (hlam.trans_le (hcm x hx))]
-    exact inv_anti₀ hlam (hcm x hx)
+      ‖(matrixBilinearForm (a x) e e)⁻¹‖ ≤ lam⁻¹ := fun x hx =>
+    (norm_inv_matrixBilinearForm_self_le ha hx e).trans_eq (by rw [he, one_pow, mul_one])
   -- Multiplying by `⟪e, a e⟫⁻¹` gives the normal second derivative.
-  obtain ⟨G, hGn, hG⟩ := hR.exists_norm_le_lipschitzOnWith_smul hrL hrb hQm (Lp.memLp R)
+  obtain ⟨G, hGn, hG⟩ := hR.exists_norm_le_lipschitzOnWith_smul
+    (lipschitzOnWith_inv_matrixBilinearForm_self ha hK he0) hrb hQm (Lp.memLp R)
   refine ⟨G, hGn.trans ?_, hG.congr_ae ?_⟩
-  · have hcoe : ((K * ‖e‖₊ * ‖e‖₊ / lam.toNNReal ^ 2 : ℝ≥0) : ℝ) = K / lam ^ 2 := by
+  · have hcoe : ((K * ‖e‖₊ * ‖e‖₊ / (lam * ‖e‖ ^ 2).toNNReal ^ 2 : ℝ≥0) : ℝ) =
+        K / lam ^ 2 := by
       push_cast
-      rw [Real.coe_toNNReal _ hlam.le, he, mul_one, mul_one]
+      rw [Real.coe_toNNReal _ (by positivity), he, one_pow, mul_one, mul_one, mul_one]
     rw [← Lp.norm_def, hcoe, he, mul_one]
     calc lam⁻¹ * ‖R‖ + K / lam ^ 2 * (eLpNorm (fun x => matrixBilinearForm (a x) e e *
           ⟪W1p.gradient U x, e⟫_ℝ) 2 (mu.restrict Omega)).toReal
         ≤ lam⁻¹ * ‖R‖ + K / lam ^ 2 * (Lam * ‖W1p.gradient U‖) := by gcongr
       _ = _ := by ring
   · filter_upwards [ae_restrict_mem hΩm] with x hx
-    have hne : matrixBilinearForm (a x) e e ≠ 0 := (hlam.trans_le (hcm x hx)).ne'
+    have hne : matrixBilinearForm (a x) e e ≠ 0 := (hlam.trans_le (by
+      simpa only [matrixBilinearForm_self, he, one_pow, mul_one] using ha.lower_bound hx e)).ne'
     simp only [smul_eq_mul, ← mul_assoc, inv_mul_cancel₀ hne, one_mul]
 
 omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
@@ -405,6 +386,16 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal
     exists_norm_le_hasWeakLineDerivOn_inner_gradient_of_matrixBilinearForm_mul he ha hK hR
   exact ⟨G', hG'n.trans (add_le_add_left (div_le_div_of_nonneg_right hRn ha.pos.le) _), hG'⟩
 
+omit [Fintype ι] [DecidableEq ι] [mu.IsAddHaarMeasure] in
+/-- The combination `t • G₁ + G₂` of elements of `L²(Ω)` has norm at most `‖t‖ ‖G₁‖ + ‖G₂‖`, and is
+represented by the pointwise combination. -/
+private theorem exists_norm_le_ae_eq_smul_add (t : ℝ) (G₁ G₂ : Lp ℝ 2 (mu.restrict Omega)) :
+    ∃ G : Lp ℝ 2 (mu.restrict Omega), ‖G‖ ≤ ‖t‖ * ‖G₁‖ + ‖G₂‖ ∧
+      (G : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] fun x => t • G₁ x + G₂ x := by
+  refine ⟨t • G₁ + G₂, (norm_add_le _ _).trans_eq (by rw [norm_smul]), ?_⟩
+  filter_upwards [Lp.coeFn_add (t • G₁) G₂, Lp.coeFn_smul t G₁] with x h1 h2
+  rw [h1, Pi.add_apply, h2, Pi.smul_apply]
+
 omit [DecidableEq ι] in
 /-- **Second derivatives from the normal and the tangential ones.** Let `‖e‖ = 1` and `0 ≤ M`.
 Suppose that `∂_e u` has a weak derivative of `L²(Ω)` norm at most `C` in the direction `e`, and
@@ -428,21 +419,16 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_normal_of_tange
       ⟪W1p.gradient U x, y⟫_ℝ := fun x => by
     conv_rhs => rw [hdec]
     rw [inner_add_right, real_inner_smul_right (W1p.gradient U x) e ⟪y, e⟫_ℝ]
-  refine ⟨⟪y, e⟫_ℝ • Gee + G₁, ?_, (((hGee.const_smul ⟪y, e⟫_ℝ).add
+  have hye : ‖⟪y, e⟫_ℝ‖ ≤ ‖y‖ := (norm_inner_le_norm y e).trans_eq (by rw [he, mul_one])
+  have h1 : ‖G₁‖ ≤ ‖y‖ * M := hG₁n.trans (by
+    rw [he, one_mul]
+    exact mul_le_mul_of_nonneg_right (norm_sub_div_norm_sq_smul_self_le y e) hM)
+  obtain ⟨G, hGn, hGae⟩ := exists_norm_le_ae_eq_smul_add ⟪y, e⟫_ℝ Gee G₁
+  refine ⟨G, hGn.trans ?_, (((hGee.const_smul ⟪y, e⟫_ℝ).add
     (W1p.hasWeakLineDerivOn_inner_gradient_comm hG₁)).congr_ae
-      (Eventually.of_forall hsplit)).congr_ae_deriv ?_⟩
-  · have hye : ‖⟪y, e⟫_ℝ‖ ≤ ‖y‖ := (norm_inner_le_norm y e).trans_eq (by rw [he, mul_one])
-    have h1 : ‖G₁‖ ≤ ‖y‖ * M := hG₁n.trans (by
-      rw [he, one_mul]
-      exact mul_le_mul_of_nonneg_right (norm_sub_div_norm_sq_smul_self_le y e) hM)
-    calc ‖⟪y, e⟫_ℝ • Gee + G₁‖ ≤ ‖⟪y, e⟫_ℝ‖ * ‖Gee‖ + ‖G₁‖ := by
-          refine (norm_add_le _ _).trans ?_
-          rw [norm_smul]
-      _ ≤ ‖y‖ * C + ‖y‖ * M := by gcongr
-      _ = _ := by ring
-  · filter_upwards [Lp.coeFn_add (⟪y, e⟫_ℝ • Gee) G₁, Lp.coeFn_smul ⟪y, e⟫_ℝ Gee] with x h1 h2
-    simp only [Pi.add_apply, Pi.smul_apply] at h1 h2 ⊢
-    rw [h1, h2]
+      (Eventually.of_forall hsplit)).congr_ae_deriv hGae.symm⟩
+  calc ‖⟪y, e⟫_ℝ‖ * ‖Gee‖ + ‖G₁‖ ≤ ‖y‖ * C + ‖y‖ * M := by gcongr
+    _ = _ := by ring
 
 omit [DecidableEq ι] in
 /-- **Second derivatives in every pair of directions.** Under the hypotheses of
@@ -466,18 +452,13 @@ private theorem exists_norm_le_hasWeakLineDerivOn_inner_gradient_of_normal_of_ta
   -- `∂_w = ⟪w, e⟫ ∂_e + ∂_{P w}`.
   have hw := (hG₁.smul_direction ⟪w, e⟫_ℝ).add_direction hG₂
   rw [hdec] at hw
-  refine ⟨⟪w, e⟫_ℝ • G₁ + G₂, ?_, hw.congr_ae_deriv ?_⟩
-  · have hwe : ‖⟪w, e⟫_ℝ‖ ≤ ‖w‖ := (norm_inner_le_norm w e).trans_eq (by rw [he, mul_one])
-    have h2 : ‖G₂‖ ≤ ‖y‖ * ‖w‖ * M :=
-      hG₂n.trans (by gcongr; exact norm_sub_div_norm_sq_smul_self_le w e)
-    calc ‖⟪w, e⟫_ℝ • G₁ + G₂‖ ≤ ‖⟪w, e⟫_ℝ‖ * ‖G₁‖ + ‖G₂‖ := by
-          refine (norm_add_le _ _).trans ?_
-          rw [norm_smul]
-      _ ≤ ‖w‖ * (‖y‖ * (C + M)) + ‖y‖ * ‖w‖ * M := by gcongr
-      _ = _ := by ring
-  · filter_upwards [Lp.coeFn_add (⟪w, e⟫_ℝ • G₁) G₂, Lp.coeFn_smul ⟪w, e⟫_ℝ G₁] with x h1 h2
-    simp only [Pi.add_apply, Pi.smul_apply] at h1 h2 ⊢
-    rw [h1, h2]
+  have hwe : ‖⟪w, e⟫_ℝ‖ ≤ ‖w‖ := (norm_inner_le_norm w e).trans_eq (by rw [he, mul_one])
+  have h2 : ‖G₂‖ ≤ ‖y‖ * ‖w‖ * M :=
+    hG₂n.trans (by gcongr; exact norm_sub_div_norm_sq_smul_self_le w e)
+  obtain ⟨G, hGn, hGae⟩ := exists_norm_le_ae_eq_smul_add ⟪w, e⟫_ℝ G₁ G₂
+  refine ⟨G, hGn.trans ?_, hw.congr_ae_deriv hGae.symm⟩
+  calc ‖⟪w, e⟫_ℝ‖ * ‖G₁‖ + ‖G₂‖ ≤ ‖w‖ * (‖y‖ * (C + M)) + ‖y‖ * ‖w‖ * M := by gcongr
+    _ = _ := by ring
 
 /-- The constant of the global `H²` estimate: with `M = (F + Kg) / λ`, the bound of the normal
 second derivative plus `2 M` is at most `(n + 2)² (1 + Λ / λ) M`. -/
