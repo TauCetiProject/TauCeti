@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVariables
 public import TauCeti.MeasureTheory.Measure.Glue
 public import Mathlib.MeasureTheory.Measure.OpenPos
+public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
@@ -53,6 +54,7 @@ this construction gives the Liouville measure of a symplectic manifold.
   finite.
 * `TauCeti.RoughForm.isOpenPosMeasure_measure`: the measure of a continuous nowhere-vanishing form
   is positive on nonempty open sets.
+* `TauCeti.RoughForm.nullSingletonClass_measure`: in positive dimension points are null.
 * `TauCeti.RoughForm.measure_eq_withDensity_addHaar`: on the model space `E`, `|φ|` is the Haar
   measure of a basis `b` with density `|φ(b)|`.
 * `Homeomorph.measurePreserving_measure_mpullback`: a differentiable homeomorphism `Φ` carries
@@ -300,6 +302,18 @@ theorem isOpenPosMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm 
   have hnull : ∀ᵐ y ∂b.addHaar, y ∉ e '' V :=
     ((ae_restrict_iff' hA).1 h).mono fun y hy hyA ↦ hpos y hyA (hy hyA)
   exact hApos.ne' (measure_eq_zero_iff_ae_notMem.2 hnull)
+
+/-- **In positive dimension points are null for the measure of a top form.** A point of a chart
+source has a single point as coordinate image, which is null for Lebesgue measure. -/
+instance nullSingletonClass_measure [Nontrivial E] (φ : RoughForm I M ℝ k) :
+    NullSingletonClass φ.measure where
+  measure_singleton x := by
+    have hsub : {x} ⊆ (extChartAt I x).source := singleton_subset_iff.2 (mem_extChartAt_source x)
+    -- A point is measurable, even without separation axioms: its chart image is.
+    have hx : MeasurableSet {x} :=
+      (measurableSet_image_extChartAt_iff x hsub).1 (image_singleton ▸ measurableSet_singleton _)
+    rw [φ.measure_apply_of_subset hx hsub, image_singleton]
+    exact setLIntegral_measure_zero _ _ (measure_singleton _)
 
 /-! ### Top forms on the model space -/
 
