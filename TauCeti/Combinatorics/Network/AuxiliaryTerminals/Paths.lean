@@ -64,14 +64,23 @@ theorem originalArrow_inj {e e' : Σ x y, Q x y} :
     originalArrow (A := A) (B := B) e = originalArrow e' ↔ e = e' :=
   originalArrow_injective.eq_iff
 
+/-- The inclusion of the original arrow family into the auxiliary-terminal family. -/
+private abbrev originalPrefunctor : @Prefunctor V ⟨Q⟩ (V ⊕ Bool) ⟨AuxTerminalHom Q A B⟩ :=
+  @Prefunctor.mk V ⟨Q⟩ (V ⊕ Bool) ⟨AuxTerminalHom Q A B⟩ inl fun e ↦ original e
+
 /-- An original walk preceded by the arrow from the fresh source. -/
-private def liftFromSource {a : V} (ha : a ∈ A) :
-    ∀ {w : V}, ArrowWalk Q a w →
-      ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl w)
-  | _, @Quiver.Path.nil _ .(_) _ =>
-      (ArrowWalk.nil _).cons (source (a := a) ha)
-  | _, @Quiver.Path.cons _ .(_) _ _ _ q e =>
-      (liftFromSource (a := a) ha q).cons (original e)
+private def liftFromSource {a w : V} (ha : a ∈ A) (q : ArrowWalk Q a w) :
+    ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl w) :=
+  ((ArrowWalk.nil _).cons (source ha)).comp
+    (@Prefunctor.mapPath V ⟨Q⟩ (V ⊕ Bool) ⟨AuxTerminalHom Q A B⟩ originalPrefunctor _ _ q)
+
+private theorem liftFromSource_nil {a : V} (ha : a ∈ A) :
+    liftFromSource (B := B) ha (ArrowWalk.nil (Q := Q) a) = (ArrowWalk.nil _).cons (source ha) :=
+  (rfl)
+
+private theorem liftFromSource_cons {a v w : V} (ha : a ∈ A) (q : ArrowWalk Q a v) (e : Q v w) :
+    liftFromSource (B := B) ha (q.cons e) = (liftFromSource ha q).cons (original e) :=
+  (rfl)
 
 /-- Lift a walk from `a ∈ A` to `b ∈ B` by adding the fresh-source arrow before it and the
 fresh-sink arrow after it. -/
@@ -82,17 +91,16 @@ def lift {a b : V} (ha : a ∈ A) (hb : b ∈ B) (q : ArrowWalk Q a b) :
 @[simp]
 private theorem vertices_liftFromSource {a w : V} (ha : a ∈ A) (q : ArrowWalk Q a w) :
     (liftFromSource (B := B) ha q).vertices = inr false :: q.vertices.map inl := by
-  induction q with
-  | nil => simp [liftFromSource]
-  | cons q e ih => simp [liftFromSource, ih]
+  rw [liftFromSource, ArrowWalk.vertices_nil_cons_comp, ArrowWalk.vertices,
+    @Prefunctor.vertices_mapPath V (V ⊕ Bool) ⟨Q⟩ ⟨AuxTerminalHom Q A B⟩]
 
 @[simp]
 private theorem arrows_liftFromSource {a w : V} (ha : a ∈ A) (q : ArrowWalk Q a w) :
     (liftFromSource (B := B) ha q).arrows =
       [⟨inr false, inl a, source ha⟩] ++ q.arrows.map originalArrow := by
-  induction q with
-  | nil => simp [liftFromSource]
-  | cons q e ih => simp [liftFromSource, ih]
+  rw [liftFromSource, ArrowWalk.arrows_comp, ArrowWalk.arrows_mapPath, ArrowWalk.arrows_cons,
+    ArrowWalk.arrows_nil, List.nil_append]
+  congr 1
 
 @[simp]
 theorem vertices_lift {a b : V} (ha : a ∈ A) (hb : b ∈ B) (q : ArrowWalk Q a b) :
@@ -162,11 +170,11 @@ private theorem exists_projection_to_inl {y : V ⊕ Bool}
     · obtain ⟨a, ha, q, h⟩ := ih rfl
       refine ⟨a, ha, q.cons (originalEquiv.symm e), ?_⟩
       rw [eq_of_heq h]
-      simp only [liftFromSource, original_originalEquiv_symm, heq_eq_eq]
+      rw [liftFromSource_cons, original_originalEquiv_symm]
     · have hp : p = ArrowWalk.nil _ := eq_nil_of_target_source p
       subst hp
       refine ⟨w, mem_of_source e, ArrowWalk.nil w, ?_⟩
-      rw [liftFromSource, ← eq_source e]
+      rw [liftFromSource_nil, ← eq_source e]
     · exact isEmptyElim (α := AuxTerminalHom Q A B (inr true) (inl w)) e
 
 /-- Every walk from the fresh source to the fresh sink has an exact projection to an original
