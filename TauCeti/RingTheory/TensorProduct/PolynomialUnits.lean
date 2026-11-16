@@ -47,7 +47,7 @@ private theorem Polynomial.Splits.exists_unit_factor_of_mul_eq_pow
 /-- Over a field `k`, a unit after base change of a localization at a split polynomial is
 one unit from the coefficient domain tensored with one from the polynomial localization.
 The statement applies to any model of the localization, including basic-open coordinate rings. -/
-theorem TauCeti.Algebra.TensorProduct.exists_units_eq_tmul_of_splits
+theorem Polynomial.Splits.exists_units_eq_tmul_of_splits
     {A B : Type*} [CommRing A] [IsDomain A] [Algebra k A]
     [CommRing B] [Algebra k B] [Algebra k[X] B] [IsScalarTower k k[X] B]
     {h : k[X]} [IsLocalization.Away h B] (hsplit : h.Splits) (u : (A ⊗[k] B)ˣ) :
