@@ -20,8 +20,12 @@ moment vanishes as its outer cutoff tends to zero. The factors therefore converg
 the point mass at zero.
 
 These results apply to any probability measure satisfying the convolution decomposition, so
-they require no choice of a distinguished small-jump law. They provide control of the limiting
-remainder in support and tail arguments, including shape one and both fully skewed cases.
+they require no choice of a distinguished small-jump law. The decomposition already forces a
+valid shape and skewness, since the stable measure is zero otherwise. The finite second moment
+holds at every shape; the approximation and concentration results exclude only shape two, where
+the Lévy measure vanishes and the factor is the Gaussian law itself. They provide control of the
+limiting remainder in support and tail arguments, including shape one and both fully skewed
+cases.
 
 ## Main results
 
@@ -48,9 +52,11 @@ namespace TauCeti.Probability
 variable {α β r : ℝ}
 
 /-- Removing the inner cutoff from compensated band laws recovers any probability factor in
-the stable large-jump decomposition. The cutoffs need not be monotone. -/
+the stable large-jump decomposition. The cutoffs need not be monotone. Shape two is excluded:
+there the Lévy measure vanishes, so the band laws are the point mass at zero while the factor is
+Gaussian. -/
 theorem tendsto_stableSmallJumpRemainderMeasure_of_conv_eq
-    (hα : α ∈ Ioo 0 2) {μ : ProbabilityMeasure ℝ}
+    (hα : α ≠ 2) {μ : ProbabilityMeasure ℝ}
     (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0)
     {ε : ℕ → ℝ} (hε : ∀ n, 0 < ε n) (hεr : ∀ n, ε n ≤ r)
     (hlim : Tendsto ε atTop (𝓝[>] 0)) :
@@ -58,8 +64,13 @@ theorem tendsto_stableSmallJumpRemainderMeasure_of_conv_eq
       isProbabilityMeasure_stableSmallJumpRemainderMeasure (hε n)⟩ :
         ℕ → ProbabilityMeasure ℝ) atTop (𝓝 μ) := by
   have hr : 0 < r := (hε 0).trans_le (hεr 0)
-  have hβ := (valid_of_conv_stableCompensatedPoissonMeasure_eq hμ).2
   let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
+  -- The decomposition forces valid parameters, since the stable measure is zero otherwise.
+  have hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1 := by
+    rw [← isProbabilityMeasure_stableMeasure_iff (s := 1) (m := 0), ← hμ]
+    infer_instance
+  replace hα : α ∈ Ioo 0 2 := ⟨hv.1.1, hv.1.2.lt_of_ne hα⟩
+  have hβ := hv.2
   apply ProbabilityMeasure.tendsto_of_tendsto_charFun
   intro t
   have hne : charFun (stableCompensatedPoissonMeasure α β r) t ≠ 0 := by
@@ -82,12 +93,17 @@ theorem tendsto_stableSmallJumpRemainderMeasure_of_conv_eq
     charFun_conv, mul_div_cancel_right₀ _ hne]
 
 private theorem lintegral_sq_le_of_conv_eq
-    (hα : α ∈ Ioo 0 2) (hr : 0 < r) {μ : ProbabilityMeasure ℝ}
+    (hα : α ≠ 2) (hr : 0 < r) {μ : ProbabilityMeasure ℝ}
     (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0) :
     let V := ∫ x in Metric.ball (0 : ℝ) r, x ^ 2 ∂stableLevyMeasure α β
     ∫⁻ x, ENNReal.ofReal (x ^ 2) ∂(μ : Measure ℝ) ≤
       ENNReal.ofReal (V + (r / 6 * V) ^ 2) := by
-  have hβ := (valid_of_conv_stableCompensatedPoissonMeasure_eq hμ).2
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
+  have hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1 := by
+    rw [← isProbabilityMeasure_stableMeasure_iff (s := 1) (m := 0), ← hμ]
+    infer_instance
+  have hα' : α ∈ Ioo 0 2 := ⟨hv.1.1, hv.1.2.lt_of_ne hα⟩
+  have hβ := hv.2
   let V := ∫ x in Metric.ball (0 : ℝ) r, x ^ 2 ∂stableLevyMeasure α β
   let ε (n : ℕ) := min r ((2 : ℝ)⁻¹ ^ n)
   have hε (n : ℕ) : 0 < ε n := lt_min hr (by positivity)
@@ -105,7 +121,7 @@ private theorem lintegral_sq_le_of_conv_eq
     tendsto_stableSmallJumpRemainderMeasure_of_conv_eq hα hμ hε hεr hεlim
   have hbound (n : ℕ) : ∫⁻ x, ENNReal.ofReal (x ^ 2) ∂(ρ n : Measure ℝ) ≤
       ENNReal.ofReal (V + (r / 6 * V) ^ 2) := by
-    have hmem := memLp_two_id_stableSmallJumpRemainderMeasure hα hβ (hε n) (hεr n)
+    have hmem := memLp_two_id_stableSmallJumpRemainderMeasure hα' hβ (hε n) (hεr n)
     have hint : Integrable (fun x : ℝ ↦ x ^ 2)
         (stableSmallJumpRemainderMeasure α β (ε n) r) := by
       simpa only [id_eq] using (memLp_two_iff_integrable_sq aestronglyMeasurable_id).1 hmem
@@ -113,9 +129,9 @@ private theorem lintegral_sq_le_of_conv_eq
     rw [← ofReal_integral_eq_lintegral_ofReal
       hint (ae_of_all _ fun x ↦ sq_nonneg x)]
     apply ENNReal.ofReal_le_ofReal
-    rw [integral_sq_stableSmallJumpRemainderMeasure hα hβ (hε n) (hεr n)]
-    have hv := variance_id_stableSmallJumpRemainderMeasure_le hα hβ (hε n) (hεr n)
-    have hm := abs_integral_id_stableSmallJumpRemainderMeasure_le hα hβ (hε n) (hεr n)
+    rw [integral_sq_stableSmallJumpRemainderMeasure hα' hβ (hε n) (hεr n)]
+    have hv := variance_id_stableSmallJumpRemainderMeasure_le hα' hβ (hε n) (hεr n)
+    have hm := abs_integral_id_stableSmallJumpRemainderMeasure_le hα' hβ (hε n) (hεr n)
     have hmean : |∫ x, x ∂stableSmallJumpRemainderMeasure α β (ε n) r| ≤ r / 6 * V :=
       hm.trans (mul_le_mul_of_nonneg_left hv (by positivity))
     have hsq := (sq_le_sq₀ (abs_nonneg _) (by positivity : 0 ≤ r / 6 * V)).2 hmean
@@ -126,19 +142,34 @@ private theorem lintegral_sq_le_of_conv_eq
     (ENNReal.continuous_ofReal.comp (by fun_prop)).lowerSemicontinuous hconv
   exact h.trans (liminf_le_of_frequently_le' (Frequently.of_forall hbound))
 
-/-- Every limiting small-jump probability factor has a finite second moment. -/
+/-- Every limiting small-jump probability factor has a finite second moment, at every shape.
+At shape two the Lévy measure vanishes, the compensated law is the point mass at zero, and the
+factor is the Gaussian law itself. -/
 theorem memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq
-    (hα : α ∈ Ioo 0 2) (hr : 0 < r) {μ : ProbabilityMeasure ℝ}
+    (hr : 0 < r) {μ : ProbabilityMeasure ℝ}
     (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0) :
     MemLp id 2 (μ : Measure ℝ) := by
+  rcases eq_or_ne α 2 with rfl | hα
+  · let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure 2 β r
+    have hv : (2 : ℝ) ∈ Ioc 0 2 ∧ |β| ≤ 1 := by
+      rw [← isProbabilityMeasure_stableMeasure_iff (s := 1) (m := 0), ← hμ]
+      infer_instance
+    rw [stableCompensatedPoissonMeasure_def, stableLevyMeasure_eq_zero_of_not (by norm_num),
+      stableMeasure_two hv.2] at hμ
+    simp only [FunLike.coe_zero, Pi.zero_apply, ENNReal.toNNReal_zero,
+      compoundPoissonMeasure_zero, Measure.restrict_zero, integral_zero_measure, sub_zero,
+      Measure.map_id', Measure.conv_dirac_zero] at hμ
+    rw [hμ]
+    exact memLp_id_gaussianReal' 2 (by norm_num)
   apply (memLp_two_iff_integrable_sq aestronglyMeasurable_id).2
   refine ⟨by fun_prop, (hasFiniteIntegral_iff_ofReal (ae_of_all _ fun x ↦ sq_nonneg x)).2 ?_⟩
   exact (lintegral_sq_le_of_conv_eq hα hr hμ).trans_lt ENNReal.ofReal_lt_top
 
 /-- The second moment of a limiting small-jump factor is controlled by the small-jump Lévy
-second moment `V`. The additional squared term accounts for sine compensation's nonzero mean. -/
+second moment `V`. The additional squared term accounts for sine compensation's nonzero mean.
+Shape two is excluded: there `V` is zero while the factor is Gaussian. -/
 theorem integral_sq_le_of_conv_stableCompensatedPoissonMeasure_eq
-    (hα : α ∈ Ioo 0 2) (hr : 0 < r) {μ : ProbabilityMeasure ℝ}
+    (hα : α ≠ 2) (hr : 0 < r) {μ : ProbabilityMeasure ℝ}
     (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0) :
     let V := ∫ x in Metric.ball (0 : ℝ) r, x ^ 2 ∂stableLevyMeasure α β
     ∫ x, x ^ 2 ∂(μ : Measure ℝ) ≤ V + (r / 6 * V) ^ 2 := by
@@ -146,14 +177,15 @@ theorem integral_sq_le_of_conv_stableCompensatedPoissonMeasure_eq
   dsimp only at h ⊢
   have hint : Integrable (fun x : ℝ ↦ x ^ 2) (μ : Measure ℝ) := by
     simpa only [id_eq] using (memLp_two_iff_integrable_sq aestronglyMeasurable_id).1
-      (memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq hα hr hμ)
+      (memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq hr hμ)
   rw [← ofReal_integral_eq_lintegral_ofReal
     hint (ae_of_all _ fun x ↦ sq_nonneg x)] at h
   exact (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 h
 
-/-- The second moments of the limiting small-jump factors tend to zero with their cutoffs. -/
+/-- The second moments of the limiting small-jump factors tend to zero with their cutoffs. Shape
+two is excluded, since there every factor is the same Gaussian law. -/
 theorem tendsto_integral_sq_smallJumpFactor_zero
-    (hα : α ∈ Ioo 0 2) {ι : Type*} {L : Filter ι}
+    (hα : α ≠ 2) {ι : Type*} {L : Filter ι}
     {r : ι → ℝ} (hlim : Tendsto r L (𝓝[>] 0))
     {μ : ι → ProbabilityMeasure ℝ}
     (hμ : ∀ i, (μ i : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β (r i) =
@@ -169,9 +201,10 @@ theorem tendsto_integral_sq_smallJumpFactor_zero
     (hr.mono fun i hi ↦ integral_sq_le_of_conv_stableCompensatedPoissonMeasure_eq hα hi (hμ i))
     hbound
 
-/-- Limiting small-jump factors concentrate weakly at zero as their cutoffs shrink. -/
+/-- Limiting small-jump factors concentrate weakly at zero as their cutoffs shrink. Shape two is
+excluded, since there every factor is the same Gaussian law. -/
 theorem tendsto_smallJumpFactor_dirac
-    (hα : α ∈ Ioo 0 2) {ι : Type*} {L : Filter ι}
+    (hα : α ≠ 2) {ι : Type*} {L : Filter ι}
     [L.IsCountablyGenerated] {r : ι → ℝ}
     (hlim : Tendsto r L (𝓝[>] 0)) {μ : ι → ProbabilityMeasure ℝ}
     (hμ : ∀ i, (μ i : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β (r i) =
@@ -181,7 +214,7 @@ theorem tendsto_smallJumpFactor_dirac
   apply ProbabilityMeasure.tendsto_dirac_of_eventually_integral_dist_sq_tendsto_zero
   · filter_upwards [hr] with i hi
     simpa only [Real.dist_eq, sub_zero, ← Real.norm_eq_abs, id_eq] using
-      (memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq hα hi (hμ i)).norm
+      (memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq hi (hμ i)).norm
   · simpa only [Real.dist_eq, sub_zero, sq_abs] using
       tendsto_integral_sq_smallJumpFactor_zero hα hlim hμ
 

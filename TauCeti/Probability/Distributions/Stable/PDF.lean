@@ -196,8 +196,9 @@ theorem norm_stablePDFReal_le_integral (α β : ℝ) (s : ℝ≥0) (m x : ℝ) :
 
 /-- **The stable density is bounded.** For `0 < α ≤ 2` and valid skewness it is at most
 `Γ(1/α) / (π α s)`, which is `(2π)⁻¹ ∫ |φ|` for positive scale. For invalid parameters the density
-vanishes and the right-hand side is nonnegative for `0 ≤ α`. At scale zero both sides vanish by
-the division-by-zero convention. -/
+vanishes and the right-hand side is nonnegative for `0 ≤ α`. At scale zero the density vanishes
+(`stablePDFReal_zero_scale`) and the right-hand side vanishes by the division-by-zero
+convention. -/
 theorem stablePDFReal_le (hα : 0 ≤ α) (β : ℝ) (s : ℝ≥0) (m x : ℝ) :
     stablePDFReal α β s m x ≤ Real.Gamma α⁻¹ / (π * α * s) := by
   by_cases hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1
