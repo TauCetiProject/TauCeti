@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Group.Subgroup.Conjugates
 public import TauCeti.FieldTheory.Galois.FixedField
 public import TauCeti.FieldTheory.IntermediateField.ConjugateFields
 import Mathlib.FieldTheory.Galois.Infinite
+import TauCeti.FieldTheory.IntermediateField.Isomorphic
 
 /-!
 # Conjugate intermediate fields
@@ -24,6 +25,10 @@ the ambient Galois extension are indexed by the cosets of `E.fixingSubgroup`, wh
 distinct images of those embeddings are indexed by the cosets of
 `E.fixingSubgroup.normalizer`.  The latter quotient can be strictly smaller.
 
+Inside a normal extension, two intermediate fields are `K`-isomorphic exactly when an ambient
+automorphism carries one onto the other; for fixed fields of finite subgroups this characterizes
+`K`-isomorphism by subgroup conjugacy.
+
 ## Main definitions
 
 * `IntermediateField.conjugateFieldsEquivConjugateSubgroups`: the Galois-correspondence
@@ -36,6 +41,8 @@ distinct images of those embeddings are indexed by the cosets of
 * `IntermediateField.stabilizer_eq_normalizer_fixingSubgroup`: the field stabilizer is the
   normalizer of its fixing subgroup.
 * `IntermediateField.ncard_conjugateFields`: the number of fields is the normalizer index.
+* `Subgroup.nonempty_fixedField_algEquiv_iff_exists_map_conj_eq`: inside a normal extension, the
+  fixed fields of two finite subgroups are `K`-isomorphic exactly when the subgroups are conjugate.
 -/
 
 public section
@@ -168,3 +175,25 @@ theorem ncard_conjugateFields (E : IntermediateField K L) :
 end Galois
 
 end IntermediateField
+
+namespace Subgroup
+
+/-- **Isomorphic fixed fields and conjugate subgroups.** Inside a normal extension `L / K`, the
+fixed fields of two finite subgroups of `Gal(L / K)` are `K`-isomorphic exactly when the subgroups
+are conjugate in `Gal(L / K)`. When `L / K` is finite, every subgroup of `Gal(L / K)` is finite,
+so the finiteness hypotheses are discharged by instance search. -/
+theorem nonempty_fixedField_algEquiv_iff_exists_map_conj_eq [_root_.Normal K L]
+    (H H' : Subgroup (L ≃ₐ[K] L)) [Finite H] [Finite H'] :
+    Nonempty (fixedField H ≃ₐ[K] fixedField H') ↔
+      ∃ g : L ≃ₐ[K] L, H.map (MulAut.conj g) = H' := by
+  rw [IntermediateField.nonempty_algEquiv_iff_exists_map_eq]
+  refine exists_congr fun g ↦ ?_
+  rw [← fixedField_map_conj]
+  refine ⟨fun h ↦ ?_, fun h ↦ congrArg fixedField h⟩
+  have := Finite.of_equiv H
+    (H.equivMapOfInjective (MulAut.conj g : (L ≃ₐ[K] L) →* (L ≃ₐ[K] L))
+      (MulAut.conj g).injective).toEquiv
+  have h' := congrArg fixingSubgroup h
+  rwa [fixingSubgroup_fixedField_of_finite, fixingSubgroup_fixedField_of_finite] at h'
+
+end Subgroup

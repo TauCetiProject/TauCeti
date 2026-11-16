@@ -39,6 +39,9 @@ of a local field inside a separable closure along their isomorphism classes.
   separable and `Ω` separably closed, the same product is `[E : K]`.
 * `IntermediateField.setOf_isomorphic_eq_singleton_of_normal`: a normal intermediate field
   is `K`-isomorphic to no other intermediate field.
+* `IntermediateField.nonempty_algEquiv_iff_exists_map_eq`: inside a normal extension, two
+  intermediate fields are `K`-isomorphic exactly when an ambient `K`-automorphism carries one onto
+  the other.
 -/
 
 public section
@@ -119,5 +122,24 @@ theorem setOf_isomorphic_eq_singleton_of_normal (L : IntermediateField K Ω) [No
   refine ⟨fun ⟨e⟩ ↦ ?_, fun h ↦ h ▸ ⟨AlgEquiv.refl⟩⟩
   rw [Set.mem_singleton_iff, ← ((algHomFieldRangeEquiv M).symm e).2]
   exact AlgHom.fieldRange_of_normal _
+
+/-- **Isomorphic intermediate fields inside a normal extension are conjugate.** Inside a normal
+extension `Ω / K`, two intermediate fields are `K`-isomorphic exactly when an ambient
+`K`-automorphism of `Ω` carries one onto the other. -/
+theorem nonempty_algEquiv_iff_exists_map_eq [Normal K Ω] (E₁ E₂ : IntermediateField K Ω) :
+    Nonempty (E₁ ≃ₐ[K] E₂) ↔ ∃ g : Ω ≃ₐ[K] Ω, E₁.map g.toAlgHom = E₂ := by
+  refine ⟨fun ⟨e⟩ ↦ ⟨e.liftNormal Ω, ?_⟩, fun ⟨g, hg⟩ ↦
+    ⟨(E₁.equivMap g.toAlgHom).trans (equivOfEq hg)⟩⟩
+  ext x
+  simp only [mem_map]
+  refine ⟨?_, fun hx ↦ ⟨e.symm ⟨x, hx⟩, (e.symm ⟨x, hx⟩).2, ?_⟩⟩
+  · rintro ⟨y, hy, rfl⟩
+    have h := e.liftNormal_commutes Ω ⟨y, hy⟩
+    rw [IntermediateField.algebraMap_apply, IntermediateField.algebraMap_apply] at h
+    exact h.symm ▸ (e ⟨y, hy⟩).2
+  · have h := e.liftNormal_commutes Ω (e.symm ⟨x, hx⟩)
+    rw [IntermediateField.algebraMap_apply, IntermediateField.algebraMap_apply,
+      AlgEquiv.apply_symm_apply] at h
+    exact h
 
 end IntermediateField
