@@ -17,7 +17,8 @@ when a Hom cocycle space is computed using an embedding into an injective module
 Equivalently, every functional on `V` vanishing on the inverse image of `S` is the
 pullback of a functional on the quotient `W ⧸ S`. Conversely, over any commutative ring, a
 functional factoring through a quotient `V ⧸ U` annihilates `U`
-(`Submodule.comp_mkQ_mem_dualAnnihilator`).
+(`Submodule.comp_mkQ_mem_dualAnnihilator`). An element `⟨φ, hφ⟩` of the annihilator evaluates as
+the functional `φ` (`Submodule.dualAnnihilator_mk_apply`).
 
 For complementary submodules `p` and `q`, over any commutative ring, restriction to `p`
 identifies the annihilator of `q` with the dual of `p`
@@ -36,6 +37,15 @@ its codomain, then some nonzero functional `f` makes `f ∘ DF` a pullback `g �
 public section
 
 namespace Submodule
+
+/-- A functional annihilating `W`, viewed as an element of `W.dualAnnihilator`, evaluates as the
+underlying functional. Mathlib's `FunLike` instance on `W.dualAnnihilator` is defined by
+`coe φ := φ.val` but has no evaluation lemma. -/
+@[simp]
+theorem dualAnnihilator_mk_apply {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
+    {W : Submodule R V} (φ : Module.Dual R V) (hφ : φ ∈ W.dualAnnihilator) (x : V) :
+    (⟨φ, hφ⟩ : W.dualAnnihilator) x = φ x :=
+  rfl
 
 /-- A functional factoring through the quotient `V ⧸ U` annihilates `U`. -/
 theorem comp_mkQ_mem_dualAnnihilator {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
@@ -62,11 +72,9 @@ theorem dualAnnihilatorEquivOfIsCompl_apply (h : IsCompl p q) (φ : q.dualAnnihi
   -- The inverse of the quotient map sends `x ∈ p` back to its class in `V ⧸ q`.
   have hx : (q.quotientEquivOfIsCompl p h.symm).symm x = Quotient.mk (x : V) :=
     (LinearEquiv.symm_apply_eq _).2 (quotientEquivOfIsCompl_apply_mk_right h.symm x).symm
+  obtain ⟨φ, hφ⟩ := φ
   rw [dualAnnihilatorEquivOfIsCompl, LinearEquiv.trans_apply, LinearEquiv.dualMap_apply, hx,
-    dualQuotEquivDualAnnihilator_symm_apply_mk]
-  -- Mathlib's `FunLike` instance on `q.dualAnnihilator` is defined by `coe φ := φ.val` and has
-  -- no evaluation lemma, so the remaining coercion step holds by that field.
-  rfl
+    dualQuotEquivDualAnnihilator_symm_apply_mk, dualAnnihilator_mk_apply]
 
 /-- The inverse of `Submodule.dualAnnihilatorEquivOfIsCompl` extends a functional on `p` by
 zero on `q`. -/

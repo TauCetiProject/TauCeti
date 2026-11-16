@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 public import TauCeti.RepresentationTheory.Invariants
 public import TauCeti.RingTheory.PicardGroup.Contraction
+import TauCeti.LinearAlgebra.Dual.Annihilator
 
 /-!
 # Invariants of the dual representation
@@ -220,12 +221,8 @@ theorem dualQuotEquivDualAnnihilator_symm_dual_apply (hW : ∀ g, W ≤ W.comap 
     W.dualQuotEquivDualAnnihilator.symm
         ⟨ρ.dual g φ, ρ.dualAnnihilator_le_comap_dual (hW g⁻¹) hφ⟩ =
       (ρ.quotient W hW).dual g (W.dualQuotEquivDualAnnihilator.symm ⟨φ, hφ⟩) := by
-  -- Mathlib has no evaluation lemma for the coercion of `W.dualAnnihilator` to functions; it is the
-  -- underlying linear form by definition.
-  have hcoe (ψ : Module.Dual k V) (hψ : ψ ∈ W.dualAnnihilator) (x : V) :
-      (⟨ψ, hψ⟩ : W.dualAnnihilator) x = ψ x := rfl
   ext v
-  simp [hcoe, Module.Dual.transpose_apply]
+  simp [Module.Dual.transpose_apply]
 
 end Annihilator
 

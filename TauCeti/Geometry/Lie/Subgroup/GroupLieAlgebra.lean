@@ -38,8 +38,6 @@ identity (`leftInvariantDerivationLieEquivGroupLieAlgebra`) to a Lie subalgebra
 
 ## Main results
 
-* `TauCeti.Lie.lieExp_tangentToLeftInvariantDerivation`: the exponential of the left-invariant
-  derivation of `ξ` is `exp ξ`.
 * `TauCeti.Lie.mem_groupLieSubalgebraOfSubgroup`: for a closed subgroup, membership is the
   one-parameter subgroup condition.
 * `TauCeti.Lie.groupLieSubalgebraOfSubgroup_le_iff`: for any subgroup, the universal property of
@@ -106,14 +104,6 @@ theorem mem_groupLieSubalgebraOfSubgroup_iff {K : Subgroup G} {ξ : GroupLieAlge
     rwa [LieEquiv.coe_toLieHom, LieEquiv.symm_apply_apply]
   · exact fun h ↦ ⟨_, h, LieEquiv.apply_symm_apply _ _⟩
 
-/-- The exponential of the left-invariant derivation of a tangent vector `ξ` at the identity is the
-tangent-space exponential of `ξ`. -/
-theorem lieExp_tangentToLeftInvariantDerivation (ξ : GroupLieAlgebra I G) :
-    lieExp (I := I) (tangentToLeftInvariantDerivation ξ) = mulInvariantExp (I := I) ξ := by
-  rw [lieExp_eq_mulInvariantExp, ← leftInvariantDerivationEquivGroupLieAlgebra_symm_apply
-      (BoundarylessManifold.isInteriorPoint (I := I) (x := (1 : G))),
-    LinearEquiv.apply_symm_apply]
-
 /-- A tangent vector whose one-parameter subgroup lies in `K` lies in the Lie algebra of `K`. This
 direction needs no hypothesis on `K`. -/
 theorem mem_groupLieSubalgebraOfSubgroup_of_forall {K : Subgroup G} {ξ : GroupLieAlgebra I G}
@@ -150,18 +140,26 @@ theorem mem_groupLieSubalgebraOfSubgroup {K : Subgroup G} (hK : IsClosed (K : Se
   rw [mem_groupLieSubalgebraOfSubgroup_iff, mem_lieSubalgebraOfSubgroup hK]
   simp only [← map_smul, lieExp_tangentToLeftInvariantDerivation]
 
+omit [T2Space G] in
+/-- The left-invariant derivation of a tangent vector intertwines `Ad_g` on `𝔤` with the adjoint
+action `Ad g` on derivations. -/
+private theorem tangentToLeftInvariantDerivation_adjointRepresentation_apply (g : G)
+    (ξ : GroupLieAlgebra I G) :
+    tangentToLeftInvariantDerivation (adjointRepresentation ℝ I G g ξ) =
+      Ad (I := I) g (tangentToLeftInvariantDerivation ξ) := by
+  rw [← leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)),
+    adjointRepresentation_apply, adjointContinuousLinearMap_apply,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply]
+
 /-- **The Lie algebra of `K` is invariant under the adjoint action of the normalizer of `K`.** -/
 theorem adjointRepresentation_apply_mem_groupLieSubalgebraOfSubgroup {K : Subgroup G} {g : G}
     (hg : g ∈ Subgroup.normalizer (K : Set G)) {ξ : GroupLieAlgebra I G}
     (hξ : ξ ∈ groupLieSubalgebraOfSubgroup (I := I) K) :
     adjointRepresentation ℝ I G g ξ ∈ groupLieSubalgebraOfSubgroup (I := I) K := by
   rw [mem_groupLieSubalgebraOfSubgroup_iff] at hξ ⊢
-  -- The inverse of evaluation at the identity intertwines `Ad_g` on `𝔤` with `Ad g` on derivations.
-  rw [← leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply
-      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)),
-    adjointRepresentation_apply, adjointContinuousLinearMap_apply,
-    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph,
-    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply]
+  rw [tangentToLeftInvariantDerivation_adjointRepresentation_apply]
   exact Ad_mem_lieSubalgebraOfSubgroup hg hξ
 
 /-- The Lie algebra of a normal subgroup is a subrepresentation of the adjoint representation, in
@@ -178,12 +176,8 @@ theorem groupLieSubalgebraOfSubgroup_le_comap_adjointRepresentation {N : Subgrou
 theorem adjointRepresentation_apply_sub_mem_groupLieSubalgebraOfSubgroup {N : Subgroup G}
     [N.Normal] (hN : IsClosed (N : Set G)) {n : G} (hn : n ∈ N) (ξ : GroupLieAlgebra I G) :
     adjointRepresentation ℝ I G n ξ - ξ ∈ groupLieSubalgebraOfSubgroup (I := I) N := by
-  rw [mem_groupLieSubalgebraOfSubgroup_iff,
-    ← leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply
-      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)),
-    map_sub, adjointRepresentation_apply, adjointContinuousLinearMap_apply,
-    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph,
-    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply]
+  rw [mem_groupLieSubalgebraOfSubgroup_iff, map_sub,
+    tangentToLeftInvariantDerivation_adjointRepresentation_apply]
   exact Ad_sub_mem_lieSubalgebraOfSubgroup hN hn _
 
 namespace EmbeddedLieSubgroupData
@@ -216,15 +210,9 @@ theorem range_groupLieAlgebraMap_subtype (d : EmbeddedLieSubgroupData I K E') :
     -- `eK` and `eG` unfold to the evaluation-at-the-identity equivalences of `K` and `G`.
     rfl
   ext ξ
-  constructor
-  · rintro ⟨v, rfl⟩
-    obtain ⟨D, rfl⟩ := eK.surjective v
-    exact (LieSubalgebra.mem_map _ _ _).2
-      ⟨_, d.lieMapSubtypeVal_mem_lieSubalgebraOfSubgroup D, (hmap D).symm⟩
-  · rintro ⟨X, hX, rfl⟩
-    rw [← d.range_lieMapSubtypeVal_eq] at hX
-    obtain ⟨D, rfl⟩ := hX
-    exact ⟨eK D, hmap D⟩
+  rw [LinearMap.mem_range, LieSubalgebra.mem_toSubmodule, groupLieSubalgebraOfSubgroup,
+    ← d.range_lieMapSubtypeVal_eq, LieSubalgebra.mem_map, (EquivLike.surjective eK).exists]
+  simp [hmap, eG]
 
 /-- **Restriction of a linear form to an embedded subgroup.** A linear form `ν` on `𝔤` vanishes
 along the differential `dι` of the inclusion of an embedded Lie subgroup `K` exactly when it

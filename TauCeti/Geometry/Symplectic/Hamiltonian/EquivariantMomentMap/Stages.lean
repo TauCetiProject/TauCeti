@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Quotient
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap
+import TauCeti.LinearAlgebra.Dual.Annihilator
 
 /-!
 # The residual moment map of reduction in stages, along the level
@@ -115,9 +116,8 @@ theorem residualMomentMapLift_apply_mk
     (hi : ∀ z, μ (i z) ∈ (groupLieSubalgebraOfSubgroup (I := I) N).toSubmodule.dualAnnihilator)
     (z : Z) (ξ : GroupLieAlgebra I G) :
     residualMomentMapLift μ N i hi z (Submodule.Quotient.mk ξ) = μ (i z) ξ := by
-  rw [residualMomentMapLift_def, Submodule.dualQuotEquivDualAnnihilator_symm_apply_mk]
-  -- The coercion of `⟨μ (i z), hi z⟩ : 𝔫⁰` to a function is `μ (i z)` by definition.
-  rfl
+  rw [residualMomentMapLift_def, Submodule.dualQuotEquivDualAnnihilator_symm_apply_mk,
+    Submodule.dualAnnihilator_mk_apply]
 
 /-- Under the identification `(𝔤 ⧸ 𝔫)* ≃ 𝔫⁰`, the lifted residual moment map is `μ ∘ i`. -/
 @[simp]
