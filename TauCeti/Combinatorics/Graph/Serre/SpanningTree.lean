@@ -21,10 +21,14 @@ allowed throughout, and no finiteness is assumed. A rose has exactly one spannin
 darts.
 
 Any two vertices are joined by a unique reduced path whose darts lie in a spanning tree `T`, the
-tree path `T.path a b`; a dart weight that is trivial on `T` is trivial along tree paths. The
-tree paths from a base vertex `v` give a free basis of the fundamental group of a graph: choose
-one dart `e` from each reversal pair outside `T`; the basis consists of the loops
-`T.path v (src e) · e · T.path (tgt e) v`.
+tree path `T.path a b`. Dart weights that agree on `T` agree along tree paths, so a weight that is
+trivial on `T` is trivial along them. For a group-valued weight compatible with reversal on `T`,
+the weights of the tree paths from `a` to `b` and from `b` to `c` multiply to the weight of the
+tree path from `a` to `c` (`weight_path_mul_weight_path`). The weights of the tree paths from `a`
+to the two ends of a dart of `T` differ by the weight of that dart, as soon as the weight is
+compatible with reversal at that dart (`weight_path_tgt`). The tree paths from a base vertex `v`
+give a free basis of the fundamental group of a graph: choose one dart `e` from each reversal pair
+outside `T`; the basis consists of the loops `T.path v (src e) · e · T.path (tgt e) v`.
 
 ## Main definitions
 
@@ -390,19 +394,51 @@ tree to the tree paths of the tree. -/
 
 end Restrict
 
+/-- Two dart weights that agree on the darts of a spanning tree agree along every tree path. -/
+theorem weight_path_congr {M : Type*} [Monoid M] {wt wt' : Γ.E → M}
+    (hwt : ∀ e ∈ T.darts, wt e = wt' e) (a b : Γ.V) :
+    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) =
+      (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt' e.1) :=
+  Path.weight_congr Γ _ fun _ he => hwt _ (T.mem_of_mem_darts_path he)
+
 /-- A dart weight that is trivial on the darts of a spanning tree is trivial along every tree
 path. -/
-theorem weight_path_eq_one {M : Type*} [Monoid M] {wt : Γ.E → M}
-    (hwt : ∀ e ∈ T.darts, wt e = 1) (a b : Γ.V) :
-    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) = 1 := by
-  have key {a b : Γ.V} (p : Γ.Path a b) (hp : ∀ e ∈ Path.darts Γ p, e ∈ T.darts) :
-      p.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) = 1 := by
-    induction p with
-    | nil => simp
-    | cons p e ih =>
-      simp only [Path.darts_cons, List.mem_append, List.mem_singleton] at hp
-      simp [ih fun d hd => hp d (Or.inl hd), hwt e.1 (hp e.1 (Or.inr rfl))]
-  exact key _ fun _ => T.mem_of_mem_darts_path
+theorem weight_path_eq_one {M : Type*} [Monoid M] {wt : Γ.E → M} (hwt : ∀ e ∈ T.darts, wt e = 1)
+    (a b : Γ.V) : (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) = 1 :=
+  Path.weight_eq_one Γ _ fun _ he => hwt _ (T.mem_of_mem_darts_path he)
+
+/-- For a dart weight compatible with reversal on the darts of a spanning tree, the weights of the
+tree paths from `a` to `b` and from `b` to `c` multiply to the weight of the tree path from `a` to
+`c`. -/
+theorem weight_path_mul_weight_path {G : Type*} [Group G] {wt : Γ.E → G}
+    (hwt : ∀ e ∈ T.darts, wt (Γ.rev e) = (wt e)⁻¹) (a b c : Γ.V) :
+    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) *
+        (T.path b c).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) =
+      (T.path a c).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) := by
+  classical
+  -- Extended by `1` off the tree, the weight is compatible with reversal on every dart.
+  have hrev (e : Γ.E) : (if Γ.rev e ∈ T.darts then wt (Γ.rev e) else 1) =
+      (if e ∈ T.darts then wt e else 1)⁻¹ := by
+    by_cases he : e ∈ T.darts
+    · simp [he, T.rev_mem e he, hwt e he]
+    · have hr : Γ.rev e ∉ T.darts := fun h => he (Γ.rev_rev e ▸ T.rev_mem _ h)
+      simp [he, hr]
+  have h (e : Γ.E) (he : e ∈ T.darts) : wt e = if e ∈ T.darts then wt e else 1 := by simp [he]
+  rw [T.weight_path_congr h, T.weight_path_congr h, T.weight_path_congr h,
+    ← Quiver.Path.weight_comp]
+  exact Path.Homotopic.weight_eq Γ (fun e => if e ∈ T.darts then wt e else 1) hrev
+    (T.homotopic_path_comp_path a b c)
+
+/-- For a dart weight compatible with reversal at a tree dart `e`, the weight of the tree path
+from `a` to the target of `e` is the weight of the tree path from `a` to its source times the
+weight of `e`. -/
+theorem weight_path_tgt {G : Type*} [Group G] {wt : Γ.E → G} (a : Γ.V) {e : Γ.E}
+    (he : e ∈ T.darts) (hwt : wt (Γ.rev e) = (wt e)⁻¹) :
+    (T.path a (Γ.tgt e)).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) =
+      (T.path a (Γ.src e)).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) * wt e := by
+  rcases T.path_eq_cons_or_path_eq_cons_reverse a (Γ.dart e) (by simpa using he) with h | h
+  · simp [h]
+  · simp [h, hwt]
 
 end SpanningTree
 
