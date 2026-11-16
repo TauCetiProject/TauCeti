@@ -19,10 +19,10 @@ independent parameter variations of `K` and `J`. Domain dependence of the coeffi
 allowed; the derivative is at a fixed domain point. Along a line `J + q Y` of endomorphism fields
 the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 
-`floerLinearization` is the map-direction operator with coefficients fixed. Conjugated by an
-exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`),
-and on a direction multiplied by a cutoff `β(s)` it acts as `β D ξ + β' ξ`
-(`floerLinearization_smul_fst`). Its value at a point depends only on the germ of the direction
+`floerLinearization` is the map-direction operator with coefficients fixed. On a direction
+multiplied by a cutoff `β(s)` it acts as `β D ξ + β' ξ` (`floerLinearization_smul_fst`); in
+particular, conjugated by an exponential weight `e^{δ s}` it becomes `floerLinearization - δ`
+(`floerLinearization_exp_smul`). Its value at a point depends only on the germ of the direction
 there (`floerLinearization_congr_of_eventuallyEq`). For `C¹` coefficients `J` and `C²`
 Hamiltonians it is continuous wherever the map and the direction are `C¹`
 (`continuousAt_floerLinearization`), and continuous everywhere when they are so everywhere
@@ -161,24 +161,6 @@ theorem floerLinearization_zero (ω : SymplecticForm V)
     ω.floerLinearization J Ks Kt u 0 z = 0 := by
   simp [floerLinearization_def]
 
-/-- **Conjugating the linearization by an exponential weight.** On maps of the form
-`e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: the weight only
-differentiates in the `s` direction, where the operator has the leading term `∂s`. -/
-theorem floerLinearization_exp_smul (ω : SymplecticForm V)
-    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
-    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} (δ : ℝ) (hξ : DifferentiableAt ℝ ξ z) :
-    ω.floerLinearization J Ks Kt u (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) z =
-      Real.exp (-(δ * z.1)) • (ω.floerLinearization J Ks Kt u ξ z - δ • ξ z) := by
-  have hc : HasFDerivAt (fun w : ℝ × ℝ ↦ Real.exp (-(δ * w.1)))
-      (Real.exp (-(δ * z.1)) • -(δ • ContinuousLinearMap.fst ℝ ℝ ℝ)) z := by
-    simpa using ((hasFDerivAt_fst (p := z)).const_smul δ).neg.exp
-  have hd : HasFDerivAt (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) _ z := hc.smul hξ.hasFDerivAt
-  rw [floerLinearization_def, hd.fderiv, floerLinearization_def]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, neg_apply,
-    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
-    smul_eq_mul, mul_zero, mul_one, neg_zero, zero_smul, add_zero, map_sub]
-  module
-
 /-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the linearization at
 `z = (s, t)` sends `β(s) ξ` to `β(s) D ξ + β' ξ`: the factor only differentiates in the `s`
 direction, where the operator has the leading term `∂s`. -/
@@ -194,6 +176,18 @@ theorem floerLinearization_smul_fst (ω : SymplecticForm V)
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, comp_apply,
     ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
     Function.comp_apply, toSpanSingleton_apply, one_smul, zero_smul, add_zero, map_sub]
+  module
+
+/-- **Conjugating the linearization by an exponential weight.** On maps of the form
+`e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: this is the case
+`β(s) = e^{-δ s}` of `floerLinearization_smul_fst`. -/
+theorem floerLinearization_exp_smul (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} (δ : ℝ) (hξ : DifferentiableAt ℝ ξ z) :
+    ω.floerLinearization J Ks Kt u (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) z =
+      Real.exp (-(δ * z.1)) • (ω.floerLinearization J Ks Kt u ξ z - δ • ξ z) := by
+  rw [floerLinearization_smul_fst ω J Ks Kt u ξ (β := fun s ↦ Real.exp (-(δ * s)))
+    ((hasDerivAt_id' z.1).const_mul δ).neg.exp hξ]
   module
 
 /-- The linearization at `z` depends only on the germ of the direction at `z`. -/
