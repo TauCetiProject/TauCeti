@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.NormResidueSymbol.Functoriality
-import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
-import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
+public import TauCeti.NumberTheory.LocalField.NormResidueSymbol.Basic
+import TauCeti.FieldTheory.Kummer.Norm
+import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
 # The Steinberg relation and skew symmetry of the norm-residue symbol
@@ -18,7 +18,7 @@ fundamental algebraic identities of `normResidueSymbol K n` beyond bimultiplicat
 * **The Steinberg relation** (`normResidueSymbol_eq_one_of_add_eq_one`,
   `normResidueSymbol_one_sub_left`, `normResidueSymbol_one_sub_right`): `(a, b)_{K, n} = 1`
   whenever `(a : K) + b = 1`; equivalently `(1 - a, a)_{K, n} = 1` and `(a, 1 - a)_{K, n} = 1`
-  for `(a : K) ≠ 1`.
+  for `(1 : K) - a ≠ 0`.
 * **Additive-inverse cancellation** (`normResidueSymbol_neg_self_left`,
   `normResidueSymbol_neg_self_right`): `(-a, a)_{K, n} = 1` and `(a, -a)_{K, n} = 1`, whence
   `(a, a)_{K, n} = (a, -1)_{K, n} = (-1, a)_{K, n}` (`normResidueSymbol_self_eq_neg_one_right`,
@@ -27,20 +27,19 @@ fundamental algebraic identities of `normResidueSymbol K n` beyond bimultiplicat
 * **Skew symmetry** (`normResidueSymbol_mul_swap`, `normResidueSymbol_swap`,
   `normResidueSymbolPairing_swap`): `(a, b)_{K, n} * (b, a)_{K, n} = 1`, equivalently
   `(b, a)_{K, n} = (a, b)_{K, n}⁻¹`, both on `Kˣ` and on `Kˣ ⧸ (Kˣ)ⁿ`.
-* **Norm functoriality in the radical argument**
-  (`restrictRootsOfUnity_normResidueSymbol_normUnits_right`): for a separable extension `L / K` of
-  nonarchimedean local fields with `a ∈ Kˣ` and `b ∈ Lˣ`, `(a, N_{L/K} b)_{K, n} = (a, b)_{L, n}`.
 
-Together with bimultiplicativity and degree/field functoriality, these identities supply the full
-algebraic calculus of the local norm-residue symbol used in nondegeneracy, the norm criterion, and
-power reciprocity.
+The Steinberg relation is deduced via `Submonoid.mem_of_add_eq_one_of_normUnits_mem` (factored from
+`TauCeti/FieldTheory/GaloisCohomology/Steinberg.lean`,
+`TauCeti.explicitCup11_kummerMap_eq_zero_of_add_eq_one`) together with local reciprocity for simple
+radical extensions `L = K(β)` (`βⁿ = b`). Together with bimultiplicativity and degree/field
+functoriality, these identities supply the full algebraic calculus of the local norm-residue symbol
+used in nondegeneracy, the norm criterion, and power reciprocity.
 
 ## References
 
 * I. B. Fesenko and S. V. Vostokov, *Local Fields and Their Extensions*, Chapter IV, §5,
   (5.1) Proposition (2)–(4), pp. 143–144.
 * J. S. Milne, *Class Field Theory*, Chapter III, §4, Theorem 4.4 (a)–(b), p. 113.
-* A. R. Shastri, *Reciprocity Laws*, §6.2, Theorem 6.2.1 (iii)–(iv), pp. 214–215.
 * J. Tate, *Relations between K₂ and Galois cohomology*, Invent. Math. 36 (1976), 257–274.
 -/
 
@@ -48,90 +47,56 @@ public section
 
 noncomputable section
 
+open IntermediateField
+
 namespace TauCeti
 
-open Polynomial
+open ClassFieldTheory
 
 variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
   {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity K n]
-
-/-- For a monic irreducible factor `f` of `X ^ n - b` with `(b : K) ≠ 1`, `f(1)` is a unit of `K`
-pairing trivially with `b` in the Artin argument. -/
-private theorem exists_eval_one_normResidueSymbol_eq_one {b : Kˣ} (hb : (b : K) ≠ 1) {f : K[X]}
-    (hirr : Irreducible f) (hmonic : f.Monic) (hdvd : f ∣ X ^ n - C (b : K)) :
-    ∃ c : Kˣ, (c : K) = f.eval 1 ∧ normResidueSymbol K n c b = 1 := by
-  -- In `K[X]/(f)`, the root `θ` satisfies `θ ^ n = b` and `f(1) = N_{K[X]/(f)/K}(1 - θ)`.
-  have := Fact.mk hirr
-  have : FiniteDimensional K (AdjoinRoot f) := (AdjoinRoot.powerBasis hirr.ne_zero).finite
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
-  have := hζ.neZero'
-  -- `f` divides the separable polynomial `X ^ n - b`, so `K[X]/(f) / K` is separable.
-  obtain ⟨x, hx⟩ := IsSepClosed.exists_aeval_eq_zero (SeparableClosure K) f
-    (degree_pos_of_irreducible hirr).ne'
-    ((separable_X_pow_sub_C (b : K) (NeZero.ne (n : K)) b.ne_zero).of_dvd hdvd)
-  let ι : AdjoinRoot f →ₐ[K] SeparableClosure K := AdjoinRoot.liftAlgHom f (Algebra.ofId K _) x
-    (by rw [Algebra.toRingHom_ofId, ← aeval_def]; exact hx)
-  have : Algebra.IsSeparable K (AdjoinRoot f) :=
-    Algebra.IsSeparable.of_algHom K (SeparableClosure K) ι
-  let _ := algebraicExtensionValuativeRel K (AdjoinRoot f)
-  let _ := algebraicExtensionNormedFieldTopology K (AdjoinRoot f)
-  have := finiteExtension_isNonarchimedeanLocalField K (AdjoinRoot f)
-  have := algebraicExtension_valuativeExtension K (AdjoinRoot f)
-  have : HasEnoughRootsOfUnity (AdjoinRoot f) n :=
-    .of_injective (algebraMap K (AdjoinRoot f)).injective
-  have hθ : AdjoinRoot.root f ^ n = AdjoinRoot.of f (b : K) := by
-    have h := AdjoinRoot.mk_eq_zero.2 hdvd
-    rw [← AdjoinRoot.aeval_eq, map_sub, map_pow, aeval_X, aeval_C] at h
-    exact sub_eq_zero.1 h
-  have hθ0 : AdjoinRoot.root f ≠ 0 := fun h ↦ by
-    rw [h, zero_pow (NeZero.ne n), eq_comm, map_eq_zero_iff _ (AdjoinRoot.of f).injective] at hθ
-    exact b.ne_zero hθ
-  have hθ1 : (1 : AdjoinRoot f) - AdjoinRoot.root f ≠ 0 := fun h ↦ by
-    rw [← sub_eq_zero.1 h, one_pow, eq_comm, map_eq_one_iff _ (AdjoinRoot.of f).injective] at hθ
-    exact hb hθ
-  refine ⟨Algebra.normUnits K (Units.mk0 (1 - AdjoinRoot.root f) hθ1), ?_, ?_⟩
-  · rw [Algebra.coe_normUnits, Units.val_mk0, ← map_one (AdjoinRoot.of f),
-      AdjoinRoot.norm_algebraMap_sub_root hmonic]
-  · apply restrictRootsOfUnity_injective (algebraMap K (AdjoinRoot f)) n
-      (algebraMap K (AdjoinRoot f)).injective
-    rw [map_one, restrictRootsOfUnity_normResidueSymbol_normUnits_left]
-    have hbL : Units.map (algebraMap K (AdjoinRoot f)).toMonoidHom b =
-        Units.mk0 (AdjoinRoot.root f) hθ0 ^ n :=
-      Units.ext (by simpa [AdjoinRoot.algebraMap_eq] using hθ.symm)
-    rw [hbL, normResidueSymbol_pow_right_eq_one]
 
 /-- **The Steinberg relation for the norm-residue symbol.** If `a, b ∈ Kˣ` satisfy
 `(a : K) + b = 1`, then `(a, b)_{K, n} = 1`. -/
 theorem normResidueSymbol_eq_one_of_add_eq_one {a b : Kˣ} (hab : (a : K) + b = 1) :
     normResidueSymbol K n a b = 1 := by
-  classical
-  have hb : (b : K) ≠ 1 := fun hb1 ↦ a.ne_zero (by linear_combination hab - hb1)
-  set p : K[X] := X ^ n - C (b : K) with hp
-  have hpmonic : p.Monic := monic_X_pow_sub_C (b : K) (NeZero.ne n)
-  -- `p(1) = 1 - b = a` is the product of `f(1)` over the monic irreducible factors `f` of `p`.
-  obtain ⟨c, hc, hc1⟩ : ∃ c : Kˣ, (c : K) = p.eval 1 ∧ normResidueSymbol K n c b = 1 := by
-    have hprod := leadingCoeff_mul_prod_normalizedFactors p
-    rw [hpmonic.leadingCoeff, C_1, one_mul] at hprod
-    rw [← hprod, eval_multiset_prod]
-    refine Multiset.prod_induction
-      (fun y ↦ ∃ c : Kˣ, (c : K) = y ∧ normResidueSymbol K n c b = 1) _ ?_
-      ⟨1, Units.val_one, normResidueSymbol_one_left b⟩ ?_
-    · rintro _ _ ⟨c₁, rfl, hc₁⟩ ⟨c₂, rfl, hc₂⟩
-      refine ⟨c₁ * c₂, Units.val_mul c₁ c₂, ?_⟩
-      rw [normResidueSymbol_mul_left, hc₁, hc₂, mul_one]
-    · intro y hy
-      obtain ⟨f, hf, rfl⟩ := Multiset.mem_map.1 hy
-      obtain ⟨hirr, hmonic, hdvd⟩ := (Polynomial.mem_normalizedFactors_iff hpmonic.ne_zero).1 hf
-      exact exists_eval_one_normResidueSymbol_eq_one hb hirr hmonic hdvd
-  have hca : c = a := Units.ext (by
-    rw [hc, hp, eval_sub, eval_pow, eval_X, eval_C, one_pow, ← hab, add_sub_cancel_right])
-  exact hca ▸ hc1
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
+  let S : Submonoid Kˣ :=
+    { carrier := {c : Kˣ | normResidueSymbol K n c b = 1}
+      one_mem' := normResidueSymbol_one_left b
+      mul_mem' := fun {c₁ c₂} hc₁ hc₂ ↦ by
+        simp only [Set.mem_ofPred_eq] at hc₁ hc₂ ⊢
+        rw [normResidueSymbol_mul_left, hc₁, hc₂, mul_one] }
+  refine S.mem_of_add_eq_one_of_normUnits_mem hζ.neZero'.out hab
+    fun L _ _ _ _ β hβ hgen c ↦ ?_
+  have hβ_val : (β : L) ^ n = algebraMap K L b := by
+    simpa [Units.coe_map] using congrArg Units.val hβ
+  have := isGalois_of_pow_eq_of_adjoin_eq_top hζ hβ_val hgen
+  have := isCyclic_of_pow_eq_of_adjoin_eq_top hζ hβ_val hgen
+  let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
+  obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (artinMap K (Algebra.normUnits K c))
+  -- Since `N_{L/K} c ∈ N_{L/K}(Lˣ)`, `Art_K(N_{L/K} c)` acts trivially on `L = K(β)`.
+  have hτ1 : ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) = 1 := by
+    have h0 := (localArtinMap_eq_zero_iff K L ι (Algebra.normUnits K c)).2
+      (normUnits_mem_normGroup K L c)
+    rwa [artinMap_restrict K L ι (Algebra.normUnits K c) σ hσ, ofMul_eq_zero,
+      ← map_one Group.Abelianization.of, Group.Abelianization.of_injective.eq_iff] at h0
+  have hfix : absoluteGaloisGroupRestrictEquiv K σ (ι β) = ι β := by
+    rw [← ι.restrictNormalHom_commutes, hτ1, AlgEquiv.one_apply]
+  have hspec := normResidueSymbol_spec_separableClosure (Algebra.normUnits K c) b σ hσ (β := ι β)
+    (by rw [← map_pow, hβ_val, ι.commutes])
+  have hval : algebraMap K (SeparableClosure K)
+      ((normResidueSymbol K n (Algebra.normUnits K c) b : Kˣ) : K) = 1 :=
+    mul_right_cancel₀ (map_ne_zero_iff ι ι.injective |>.2 β.ne_zero)
+      (by simpa [hfix] using hspec.symm)
+  exact Subtype.ext (Units.ext ((algebraMap K (SeparableClosure K)).injective
+    (by simpa using hval)))
 
-/-- **The Steinberg relation in `(1 - a, a)` form.** For `a ∈ Kˣ` with `(a : K) ≠ 1`,
+/-- **The Steinberg relation in `(1 - a, a)` form.** For `a ∈ Kˣ` with `(1 : K) - a ≠ 0`,
 `(1 - a, a)_{K, n} = 1`. -/
 @[simp]
-theorem normResidueSymbol_one_sub_left {a : Kˣ} (ha : (a : K) ≠ 1) :
-    normResidueSymbol K n (Units.mk0 (1 - (a : K)) (sub_ne_zero.2 ha.symm)) a = 1 :=
+theorem normResidueSymbol_one_sub_left (a : Kˣ) (h : (1 : K) - a ≠ 0) :
+    normResidueSymbol K n (Units.mk0 (1 - (a : K)) h) a = 1 :=
   normResidueSymbol_eq_one_of_add_eq_one (sub_add_cancel 1 (a : K))
 
 /-- **Additive-inverse cancellation in the Artin argument.** For every `a ∈ Kˣ`,
@@ -141,21 +106,22 @@ theorem normResidueSymbol_neg_self_left (a : Kˣ) : normResidueSymbol K n (-a) a
   by_cases ha1 : a = 1
   · subst ha1
     exact normResidueSymbol_one_right (-1)
-  have ha : (a : K) ≠ 1 := fun h ↦ ha1 (Units.ext h)
-  have hainv : ((a⁻¹ : Kˣ) : K) ≠ 1 := fun h ↦ ha1 (inv_eq_one.1 (Units.ext h))
-  set u₁ : Kˣ := Units.mk0 (1 - (a : K)) (sub_ne_zero.2 ha.symm)
-  set u₂ : Kˣ := Units.mk0 (1 - ((a⁻¹ : Kˣ) : K)) (sub_ne_zero.2 hainv.symm)
+  have h1 : (1 : K) - a ≠ 0 := sub_ne_zero.2 fun h ↦ ha1 (Units.ext h.symm)
+  have h2 : (1 : K) - (a⁻¹ : Kˣ) ≠ 0 :=
+    sub_ne_zero.2 fun h ↦ ha1 (inv_eq_one.1 (Units.ext h.symm))
+  set u₁ : Kˣ := Units.mk0 (1 - (a : K)) h1
+  set u₂ : Kˣ := Units.mk0 (1 - ((a⁻¹ : Kˣ) : K)) h2
   -- In `Kˣ`, `(-a) * (1 - a⁻¹) = 1 - a`, and both `1 - a` and `1 - a⁻¹` pair trivially with `a`.
   have hmul : -a * u₂ = u₁ := Units.ext <| by
     simp only [u₁, u₂, Units.val_mul, Units.val_neg, Units.val_mk0, Units.val_inv_eq_inv_val]
     rw [mul_sub, mul_one, neg_mul, mul_inv_cancel₀ a.ne_zero]
     ring
   have hu₂ : normResidueSymbol K n u₂ a = 1 := by
-    rw [← inv_inv a, normResidueSymbol_inv_right, normResidueSymbol_one_sub_left hainv, inv_one]
+    rw [← inv_inv a, normResidueSymbol_inv_right, normResidueSymbol_one_sub_left a⁻¹ h2, inv_one]
   have hprod : normResidueSymbol K n (-a) a * normResidueSymbol K n u₂ a =
       normResidueSymbol K n u₁ a := by
     rw [← normResidueSymbol_mul_left, hmul]
-  rwa [hu₂, mul_one, normResidueSymbol_one_sub_left ha] at hprod
+  rwa [hu₂, mul_one, normResidueSymbol_one_sub_left a h1] at hprod
 
 /-- **Skew symmetry of the norm-residue symbol, product form.** For all `a, b ∈ Kˣ`,
 `(a, b)_{K, n} * (b, a)_{K, n} = 1`. -/
@@ -189,12 +155,12 @@ theorem normResidueSymbol_swap (a b : Kˣ) :
 theorem normResidueSymbol_neg_self_right (a : Kˣ) : normResidueSymbol K n a (-a) = 1 := by
   rw [normResidueSymbol_swap, normResidueSymbol_neg_self_left, inv_one]
 
-/-- **The Steinberg relation in `(a, 1 - a)` form.** For `a ∈ Kˣ` with `(a : K) ≠ 1`,
+/-- **The Steinberg relation in `(a, 1 - a)` form.** For `a ∈ Kˣ` with `(1 : K) - a ≠ 0`,
 `(a, 1 - a)_{K, n} = 1`. -/
 @[simp]
-theorem normResidueSymbol_one_sub_right {a : Kˣ} (ha : (a : K) ≠ 1) :
-    normResidueSymbol K n a (Units.mk0 (1 - (a : K)) (sub_ne_zero.2 ha.symm)) = 1 := by
-  rw [normResidueSymbol_swap, normResidueSymbol_one_sub_left ha, inv_one]
+theorem normResidueSymbol_one_sub_right (a : Kˣ) (h : (1 : K) - a ≠ 0) :
+    normResidueSymbol K n a (Units.mk0 (1 - (a : K)) h) = 1 := by
+  rw [normResidueSymbol_swap, normResidueSymbol_one_sub_left a h, inv_one]
 
 /-- Pairing a unit with itself equals pairing it with `-1` in the radical argument. -/
 theorem normResidueSymbol_self_eq_neg_one_right (a : Kˣ) :
@@ -224,16 +190,5 @@ theorem normResidueSymbolPairing_swap (x y : powerClassQuotient Kˣ n) :
   obtain ⟨b, rfl⟩ := powerClassHom_surjective Kˣ n y
   simp only [powerClassHom_apply, normResidueSymbolPairing_mk]
   exact normResidueSymbol_swap a b
-
-/-- **Norm functoriality of the norm-residue symbol in the radical argument.** For a separable
-extension `L / K` of nonarchimedean local fields with `a ∈ Kˣ` and `b ∈ Lˣ`, the symbol
-`(a, N_{L/K} b)_{K, n}` mapped into `μ_n(L)` equals `(a, b)_{L, n}`. -/
-theorem restrictRootsOfUnity_normResidueSymbol_normUnits_right {L : Type} [Field L] [Algebra K L]
-    [Algebra.IsSeparable K L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
-    [ValuativeExtension K L] [HasEnoughRootsOfUnity L n] (a : Kˣ) (b : Lˣ) :
-    restrictRootsOfUnity (algebraMap K L) n (normResidueSymbol K n a (Algebra.normUnits K b)) =
-      normResidueSymbol L n (Units.map (algebraMap K L).toMonoidHom a) b := by
-  rw [normResidueSymbol_swap (n := n) (Algebra.normUnits K b) a, map_inv,
-    restrictRootsOfUnity_normResidueSymbol_normUnits_left, ← normResidueSymbol_swap]
 
 end TauCeti

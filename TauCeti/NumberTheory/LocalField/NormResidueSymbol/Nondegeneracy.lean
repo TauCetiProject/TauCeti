@@ -74,7 +74,7 @@ public section
 
 noncomputable section
 
-open IntermediateField Polynomial
+open IntermediateField
 
 namespace TauCeti
 
@@ -96,19 +96,13 @@ theorem normResidueSymbol_eq_one_iff_mem_normGroup_left {L : Type*} [Field L] [A
   let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
   obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (artinMap K a)
   set τ : Gal(L/K) := ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ)
-  set β : AlgebraicClosure K := (ι s).1
-  have hβ : β ^ n = algebraMap K (AlgebraicClosure K) b := by
-    rw [← IntermediateField.coe_pow, ← map_pow, hs, ι.commutes,
-      IntermediateField.coe_algebraMap_apply]
   -- Restricting a representative `σ` of `Art_K(a)` to `L` moves `s` by `(a, b)_{K, n}`.
   have hτ_apply : τ s = algebraMap K L ((normResidueSymbol K n a b : Kˣ) : K) * s := by
-    have hι : ι (τ s) = ι (algebraMap K L ((normResidueSymbol K n a b : Kˣ) : K) * s) := by
-      rw [map_mul, ι.commutes, ι.restrictNormalHom_commutes]
-      apply Subtype.ext
-      rw [coe_absoluteGaloisGroupRestrictEquiv_apply K σ (ι s),
-        normResidueSymbol_spec a b σ hσ hβ, IntermediateField.coe_mul,
-        IntermediateField.coe_algebraMap_apply]
-    exact ι.injective hι
+    apply ι.injective
+    rw [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, map_mul, ι.commutes,
+      ι.restrictNormalHom_commutes]
+    exact normResidueSymbol_spec_separableClosure a b σ hσ (β := ι s)
+      (by rw [← map_pow, hs, ι.commutes])
   have hs0 : s ≠ 0 := ne_zero_of_pow_eq_algebraMap hs
   have hsym : normResidueSymbol K n a b = 1 ↔ τ = 1 := by
     refine ⟨fun h1 ↦ TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top hgen ?_,
@@ -196,46 +190,27 @@ theorem normResidueSymbolPairing_injective :
   simpa only [powerClassHom_apply, normResidueSymbolPairing_mk, MonoidHom.one_apply] using
     DFunLike.congr_fun hx (QuotientGroup.mk b)
 
-/-- The right adjoint of the norm-residue pairing on `Kˣ ⧸ (Kˣ)ⁿ` is injective. -/
-theorem normResidueSymbolPairing_flip_injective :
-    Function.Injective (normResidueSymbolPairing (K := K) (n := n)).flip := by
-  rw [← MonoidHom.ker_eq_bot_iff, eq_bot_iff]
-  intro y hy
-  obtain ⟨b, rfl⟩ := powerClassHom_surjective Kˣ n y
-  rw [MonoidHom.mem_ker] at hy
-  rw [Subgroup.mem_bot, powerClassHom_apply, QuotientGroup.eq_one_iff,
-    ← forall_normResidueSymbol_eq_one_left_iff (K := K) (n := n)]
-  intro a
-  simpa only [MonoidHom.flip_apply, powerClassHom_apply, normResidueSymbolPairing_mk,
-    MonoidHom.one_apply] using DFunLike.congr_fun hy (QuotientGroup.mk a)
-
-/-- Any injective map from `Kˣ ⧸ (Kˣ)ⁿ` into `Hom(Kˣ ⧸ (Kˣ)ⁿ, μ_n(K))` is bijective. -/
-private theorem bijective_of_injective_monoidHom_rootsOfUnity
-    {f : powerClassQuotient Kˣ n → (powerClassQuotient Kˣ n →* rootsOfUnity n K)}
-    (hf : Function.Injective f) : Function.Bijective f := by
-  -- Post-composing with `μ_n(K) ↪ K` embeds the character group in `Hom(Kˣ ⧸ (Kˣ)ⁿ, K)`, whose
-  -- cardinality is at most `#(Kˣ ⧸ (Kˣ)ⁿ)` by Dedekind's bound.
-  let ι : rootsOfUnity n K →* K := (Units.coeHom K).comp (rootsOfUnity n K).subtype
-  have hι : Function.Injective ι := Units.val_injective.comp Subtype.val_injective
-  have hpost : Function.Injective
-      (fun g : powerClassQuotient Kˣ n →* rootsOfUnity n K ↦ ι.comp g) :=
-    fun g₁ g₂ h ↦ MonoidHom.ext fun x ↦ hι (DFunLike.congr_fun h x)
-  have : Finite (powerClassQuotient Kˣ n →* rootsOfUnity n K) := .of_injective _ hpost
-  have hle : Nat.card (powerClassQuotient Kˣ n →* rootsOfUnity n K) ≤
-      Nat.card (powerClassQuotient Kˣ n) :=
-    (Nat.card_le_card_of_injective _ hpost).trans (natCard_monoidHom_le _ K)
-  exact (Nat.bijective_iff_injective_and_card _).2
-    ⟨hf, le_antisymm (Nat.card_le_card_of_injective _ hf) hle⟩
-
 /-- **The norm-residue symbol induces a perfect pairing on `Kˣ ⧸ (Kˣ)ⁿ`** (left adjoint). -/
 theorem normResidueSymbolPairing_bijective :
     Function.Bijective (normResidueSymbolPairing (K := K) (n := n)) :=
-  bijective_of_injective_monoidHom_rootsOfUnity normResidueSymbolPairing_injective
+  bijective_of_injective_to_monoidHom
+    (ι := (Units.coeHom K).comp (rootsOfUnity n K).subtype)
+    (Units.val_injective.comp Subtype.val_injective)
+    normResidueSymbolPairing_injective
 
 /-- **The norm-residue symbol induces a perfect pairing on `Kˣ ⧸ (Kˣ)ⁿ`** (right adjoint). -/
 theorem normResidueSymbolPairing_flip_bijective :
-    Function.Bijective (normResidueSymbolPairing (K := K) (n := n)).flip :=
-  bijective_of_injective_monoidHom_rootsOfUnity normResidueSymbolPairing_flip_injective
+    Function.Bijective (normResidueSymbolPairing (K := K) (n := n)).flip := by
+  have hflip : ⇑(normResidueSymbolPairing (K := K) (n := n)).flip =
+      Inv.inv ∘ ⇑(normResidueSymbolPairing (K := K) (n := n)) :=
+    funext fun y ↦ MonoidHom.ext fun x ↦ normResidueSymbolPairing_swap y x
+  rw [hflip]
+  exact inv_involutive.bijective.comp normResidueSymbolPairing_bijective
+
+/-- The right adjoint of the norm-residue pairing on `Kˣ ⧸ (Kˣ)ⁿ` is injective. -/
+theorem normResidueSymbolPairing_flip_injective :
+    Function.Injective (normResidueSymbolPairing (K := K) (n := n)).flip :=
+  normResidueSymbolPairing_flip_bijective.injective
 
 variable (K n) in
 /-- **The perfect norm-residue pairing isomorphism**
@@ -249,12 +224,6 @@ def normResidueSymbolPairingEquiv :
 theorem normResidueSymbolPairingEquiv_apply (x : powerClassQuotient Kˣ n) :
     normResidueSymbolPairingEquiv K n x = normResidueSymbolPairing x :=
   (rfl)
-
-/-- On classes of units, `normResidueSymbolPairingEquiv` evaluates to the norm-residue symbol. -/
-theorem normResidueSymbolPairingEquiv_mk (a b : Kˣ) :
-    normResidueSymbolPairingEquiv K n (QuotientGroup.mk a) (QuotientGroup.mk b) =
-      normResidueSymbol K n a b :=
-  normResidueSymbolPairing_mk a b
 
 /-! ### Orthogonal subgroups and norm groups of Kummer extensions -/
 
@@ -291,8 +260,6 @@ theorem powerSubgroup_le_normResidueOrthogonal (A : Subgroup Kˣ) :
 /-- Every orthogonal subgroup `A^⊥` has finite index in `Kˣ`. -/
 instance instFiniteIndexNormResidueOrthogonal (A : Subgroup Kˣ) :
     (normResidueOrthogonal K n A).FiniteIndex :=
-  have : (powerSubgroup Kˣ n).FiniteIndex :=
-    powerSubgroup_eq_range_powMonoidHom Kˣ n ▸ inferInstance
   Subgroup.finiteIndex_of_le (powerSubgroup_le_normResidueOrthogonal A)
 
 /-- Orthogonality is symmetric as a relation between subgroups: `A ≤ B^⊥ ↔ B ≤ A^⊥`. -/
@@ -340,48 +307,38 @@ theorem normResidueOrthogonal_sup (A B : Subgroup Kˣ) :
   rw [le_normResidueOrthogonal_iff, sup_le_iff]
   exact ⟨le_normResidueOrthogonal_iff.2 inf_le_left, le_normResidueOrthogonal_iff.2 inf_le_right⟩
 
-/-- Over the algebraic closure, the norm group of the Kummer extension `K(B^{1/n})` equals `B^⊥`. -/
-private theorem normGroup_kummerField_algebraicClosure_eq_normResidueOrthogonal (B : Subgroup Kˣ) :
-    normGroup K (kummerField (AlgebraicClosure K) n B) = normResidueOrthogonal K n B := by
-  set M := kummerField (AlgebraicClosure K) n B
-  refine le_antisymm (fun a ha ↦ mem_normResidueOrthogonal_iff.2 fun b hb ↦ ?_) (fun a ha ↦ ?_)
-  · obtain ⟨β, hβ⟩ :=
-      IsAlgClosed.exists_pow_nat_eq (algebraMap K (AlgebraicClosure K) b) (NeZero.pos n)
-    have hle : K⟮β⟯ ≤ M := adjoin_simple_le_iff.2 (mem_kummerField_of_pow_eq hb hβ)
-    exact (normResidueSymbol_eq_one_iff_mem_normGroup_adjoin_left hβ).2
-      ((IntermediateField.inclusion hle).normGroup_le_normGroup ha)
-  · obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (artinMap K a)
-    let σ₀ : Gal(AlgebraicClosure K/K) := σ
-    refine mem_normGroup_of_mk_eq_artinMap_of_fixes K σ hσ M ?_
-    have heq : σ₀.toAlgHom.comp M.val = M.val := by
-      refine algHom_ext_of_eq_adjoin K kummerField_def fun β ⟨b, hb, hβ⟩ ↦ ?_
-      have h1 : normResidueSymbol K n a b = 1 := mem_normResidueOrthogonal_iff.1 ha b hb
-      simpa [AlgEquiv.coe_toAlgHom, h1] using normResidueSymbol_spec a b σ₀ hσ hβ
-    exact fun z ↦ AlgHom.congr_fun heq z
-
-/-- The index of `B^⊥` in `Kˣ` equals the relative index `[B : B ∩ (Kˣ)ⁿ]`. -/
-theorem index_normResidueOrthogonal (B : Subgroup Kˣ) :
-    (normResidueOrthogonal K n B).index = (powerSubgroup Kˣ n).relIndex B := by
-  rw [← normGroup_kummerField_algebraicClosure_eq_normResidueOrthogonal,
-    index_normGroup_of_isMulCommutative,
-    finrank_kummerField fun b _ ↦
-      IsAlgClosed.exists_pow_nat_eq (algebraMap K (AlgebraicClosure K) b) (NeZero.pos n),
-    powerSubgroup_eq_range_powMonoidHom]
-
 /-- **The norm group of a Kummer extension is the orthogonal subgroup.** Whenever every element of
 `B ≤ Kˣ` has an `n`-th root in `E`, `N_{K(B^{1/n})/K}(K(B^{1/n})ˣ) = B^⊥`. -/
 theorem normGroup_kummerField_eq_normResidueOrthogonal {E : Type*} [Field E] [Algebra K E]
     {B : Subgroup Kˣ} (hroots : ∀ b ∈ B, ∃ x : E, x ^ n = algebraMap K E b) :
     normGroup K (kummerField E n B) = normResidueOrthogonal K n B := by
   set M := kummerField E n B
-  have hle : normGroup K M ≤ normResidueOrthogonal K n B := fun a ha ↦
-    mem_normResidueOrthogonal_iff.2 fun b hb ↦ by
-      obtain ⟨y, hy⟩ := exists_pow_eq_kummerField hroots b hb
-      exact (normResidueSymbol_eq_one_iff_mem_normGroup_adjoin_left hy).2
-        (K⟮y⟯.val.normGroup_le_normGroup ha)
-  refine Subgroup.eq_of_index_dvd_index hle ?_
-  rw [index_normGroup_of_isMulCommutative, finrank_kummerField hroots,
-    index_normResidueOrthogonal, powerSubgroup_eq_range_powMonoidHom]
+  refine le_antisymm (fun a ha ↦ mem_normResidueOrthogonal_iff.2 fun b hb ↦ ?_) (fun a ha ↦ ?_)
+  · obtain ⟨y, hy⟩ := exists_pow_eq_kummerField hroots b hb
+    exact (normResidueSymbol_eq_one_iff_mem_normGroup_adjoin_left hy).2
+      (K⟮y⟯.val.normGroup_le_normGroup ha)
+  · let ι : M →ₐ[K] SeparableClosure K := IsSepClosed.lift
+    obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (artinMap K a)
+    rw [← localArtinMap_eq_zero_iff K M ι a, artinMap_restrict K M ι a σ hσ, ofMul_eq_zero,
+      ← map_one Group.Abelianization.of, Group.Abelianization.of_injective.eq_iff]
+    refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top
+      adjoin_pow_eq_algebraMap_kummerField_eq_top ?_
+    rintro y ⟨b, hb, hy⟩
+    apply ι.injective
+    rw [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, ι.restrictNormalHom_commutes,
+      normResidueSymbol_spec_separableClosure a b σ hσ (β := ι y)
+        (by rw [← map_pow, hy, ι.commutes]),
+      mem_normResidueOrthogonal_iff.1 ha b hb, Subgroup.coe_one, Units.val_one, map_one, one_mul]
+
+/-- The index of `B^⊥` in `Kˣ` equals the relative index `[B : B ∩ (Kˣ)ⁿ]`. -/
+theorem index_normResidueOrthogonal (B : Subgroup Kˣ) :
+    (normResidueOrthogonal K n B).index = (powerSubgroup Kˣ n).relIndex B := by
+  have hroots : ∀ b ∈ B, ∃ x : AlgebraicClosure K,
+      x ^ n = algebraMap K (AlgebraicClosure K) b :=
+    fun b _ ↦ IsAlgClosed.exists_pow_nat_eq (algebraMap K (AlgebraicClosure K) b) (NeZero.pos n)
+  rw [← normGroup_kummerField_eq_normResidueOrthogonal hroots,
+    index_normGroup_of_isMulCommutative, finrank_kummerField hroots,
+    powerSubgroup_eq_range_powMonoidHom]
 
 /-- In a separably closed extension `E` of `K` (such as `SeparableClosure K` or
 `AlgebraicClosure K`), the norm group of `K(B^{1/n})` is `B^⊥`. -/
@@ -390,21 +347,16 @@ theorem normGroup_kummerField_eq_normResidueOrthogonal_of_isSepClosed (E : Type*
     normGroup K (kummerField E n B) = normResidueOrthogonal K n B := by
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
   have := hζ.neZero'
-  refine normGroup_kummerField_eq_normResidueOrthogonal fun b _ ↦ ?_
-  obtain ⟨x, hx⟩ := IsSepClosed.exists_aeval_eq_zero E (X ^ n - C (b : K))
-    (by rw [degree_X_pow_sub_C (NeZero.pos n)]; exact mod_cast NeZero.ne n)
-    (separable_X_pow_sub_C (b : K) (NeZero.ne (n : K)) b.ne_zero)
-  exact ⟨x, sub_eq_zero.1 (by simpa using hx)⟩
+  have : NeZero (n : E) := .nat_of_injective (algebraMap K E).injective
+  exact normGroup_kummerField_eq_normResidueOrthogonal fun b _ ↦
+    IsSepClosed.exists_pow_nat_eq (algebraMap K E b) n
 
 /-- **Double-orthogonal theorem for subgroups containing `(Kˣ)ⁿ`.** If `(Kˣ)ⁿ ≤ A ≤ Kˣ`, then
 `(A^⊥)^⊥ = A`. -/
 theorem normResidueOrthogonal_normResidueOrthogonal {A : Subgroup Kˣ}
     (hA : powerSubgroup Kˣ n ≤ A) :
     normResidueOrthogonal K n (normResidueOrthogonal K n A) = A := by
-  set P := powerSubgroup Kˣ n
-  have hP : P = (powMonoidHom n : Kˣ →* Kˣ).range := powerSubgroup_eq_range_powMonoidHom Kˣ n
-  have : P.FiniteIndex := hP ▸ inferInstance
-  have : P.IsFiniteRelIndex A := hP ▸ inferInstance
+  have : (powerSubgroup Kˣ n).IsFiniteRelIndex A := Subgroup.isFiniteRelIndex_of_finiteIndex
   have : A.FiniteIndex := Subgroup.finiteIndex_of_le hA
   have hmul₁ := Subgroup.relIndex_mul_index hA
   have hmul₂ :=

@@ -18,8 +18,9 @@ For a nonarchimedean local field `K` containing the `n`-th roots of unity, the s
 moves an `n`-th root of `b`. Its value lies in `rootsOfUnity n K`, without choosing a primitive
 root as a coordinate. The first argument enters the Artin map; the second supplies the radical.
 
-The characterization `normResidueSymbol_spec` works with every radical and every representative
-of the absolute Artin symbol in the absolute Galois group. The symbol is bimultiplicative and
+The characterization `normResidueSymbol_spec` (and `normResidueSymbol_spec_separableClosure` for
+radicals in `SeparableClosure K`) works with every radical and every representative of the
+absolute Artin symbol in the absolute Galois group. The symbol is bimultiplicative and
 is trivial on `n`-th powers in either argument. `normResidueSymbolPairing` is the resulting
 bimultiplicative pairing on the existing power-class quotient `Kˣ ⧸ (Kˣ)ⁿ`.
 
@@ -137,6 +138,21 @@ theorem normResidueSymbol_spec (a b : Kˣ) (σ : Gal(AlgebraicClosure K/K))
       algebraMap K (AlgebraicClosure K) ((normResidueSymbol K n a b : Kˣ) : K) * β := by
   rw [algebraMap_normResidueSymbol a b σ hσ hβ,
     div_mul_cancel₀ _ (ne_zero_of_pow_eq_algebraMap hβ)]
+
+/-- **The Artin characterization of the norm-residue symbol in the separable closure.** Every
+representative `σ` of `Art_K(a)` acts on any `n`-th root `β ∈ SeparableClosure K` of `b` by
+multiplication by `(a, b)_{K, n}`. -/
+theorem normResidueSymbol_spec_separableClosure (a b : Kˣ) (σ : Gal(AlgebraicClosure K/K))
+    (hσ : (σ : TopologicalAbelianization Gal(AlgebraicClosure K/K)) = artinMap K a)
+    {β : SeparableClosure K} (hβ : β ^ n = algebraMap K (SeparableClosure K) (b : K)) :
+    absoluteGaloisGroupRestrictEquiv K σ β =
+      algebraMap K (SeparableClosure K) ((normResidueSymbol K n a b : Kˣ) : K) * β := by
+  apply Subtype.ext
+  rw [coe_absoluteGaloisGroupRestrictEquiv_apply K σ β,
+    normResidueSymbol_spec a b σ hσ (by
+      rw [← IntermediateField.algebraMap_apply, ← map_pow, hβ,
+        ← IsScalarTower.algebraMap_apply]),
+    IntermediateField.coe_mul, IntermediateField.coe_algebraMap_apply]
 
 /-- The norm-residue symbol is multiplicative in the Artin argument. -/
 theorem normResidueSymbol_mul_left (a a' b : Kˣ) :
