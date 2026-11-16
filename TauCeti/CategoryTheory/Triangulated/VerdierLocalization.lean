@@ -192,6 +192,21 @@ instance (h : P ≤ Q) : (trWLocalizerMorphismOfLE h).functor.CommShift ℤ :=
 instance (h : P ≤ Q) : (trWLocalizerMorphismOfLE h).functor.IsTriangulated :=
   inferInstanceAs (𝟭 C).IsTriangulated
 
+/-- When `Q.trW ≤ P.trW`, the comparison localizer morphism `trWLocalizerMorphismOfLE h` induces
+an equivalence between any localizations at `P.trW` and `Q.trW`. -/
+theorem isLocalizedEquivalence_trWLocalizerMorphismOfLE_of_trW_le (h : P ≤ Q)
+    (hW : Q.trW ≤ P.trW) : (trWLocalizerMorphismOfLE h).IsLocalizedEquivalence := by
+  have : (trWLocalizerMorphismOfLE h).functor.IsEquivalence :=
+    inferInstanceAs (𝟭 C).IsEquivalence
+  exact LocalizerMorphism.IsLocalizedEquivalence.of_equivalence _
+    (hW.trans P.trW.le_isoClosure)
+
+/-- When `Q ≤ P` as well as `P ≤ Q`, the comparison localizer morphism
+`trWLocalizerMorphismOfLE h` induces an equivalence between the Verdier localizations. -/
+theorem isLocalizedEquivalence_trWLocalizerMorphismOfLE (h : P ≤ Q) (hQP : Q ≤ P) :
+    (trWLocalizerMorphismOfLE h).IsLocalizedEquivalence :=
+  isLocalizedEquivalence_trWLocalizerMorphismOfLE_of_trW_le h (trW_monotone hQP)
+
 end ObjectProperty
 
 end CategoryTheory

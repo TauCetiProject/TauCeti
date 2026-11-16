@@ -20,9 +20,9 @@ projective and injective dimensions over `C` coincide.
 
 ## Main results
 
-* `CategoryTheory.forall_hasProjectiveDimensionLT_iff` and
-  `CategoryTheory.forall_hasProjectiveDimensionLE_iff`: uniform projective and injective dimension
-  bounds on an abelian category are equivalent.
+* `CategoryTheory.forall_hasProjectiveDimensionLT_iff_forall_hasInjectiveDimensionLT` and
+  `CategoryTheory.forall_hasProjectiveDimensionLE_iff_forall_hasInjectiveDimensionLE`: uniform
+  projective and injective dimension bounds on an abelian category are equivalent.
 * `CategoryTheory.iSup_projectiveDimension_eq_iSup_injectiveDimension`: the global projective and
   injective dimensions of an abelian category coincide.
 
@@ -42,7 +42,7 @@ variable (C : Type*) [Category* C] [Abelian C]
 /-- Every object of an abelian category has projective dimension `< n` if and only if every object
 has injective dimension `< n`: both conditions assert the vanishing of `Extⁱ(X, Y)` for all
 `i ≥ n` and all `X, Y : C`. -/
-theorem forall_hasProjectiveDimensionLT_iff (n : ℕ) :
+theorem forall_hasProjectiveDimensionLT_iff_forall_hasInjectiveDimensionLT (n : ℕ) :
     (∀ X : C, HasProjectiveDimensionLT X n) ↔ ∀ Y : C, HasInjectiveDimensionLT Y n := by
   let := HasExt.standard C
   simp only [hasProjectiveDimensionLT_iff, hasInjectiveDimensionLT_iff]
@@ -50,9 +50,9 @@ theorem forall_hasProjectiveDimensionLT_iff (n : ℕ) :
 
 /-- Every object of an abelian category has projective dimension `≤ n` if and only if every object
 has injective dimension `≤ n`. -/
-theorem forall_hasProjectiveDimensionLE_iff (n : ℕ) :
+theorem forall_hasProjectiveDimensionLE_iff_forall_hasInjectiveDimensionLE (n : ℕ) :
     (∀ X : C, HasProjectiveDimensionLE X n) ↔ ∀ Y : C, HasInjectiveDimensionLE Y n :=
-  forall_hasProjectiveDimensionLT_iff C (n + 1)
+  forall_hasProjectiveDimensionLT_iff_forall_hasInjectiveDimensionLT C (n + 1)
 
 /-- The supremum of projective dimensions over all objects of an abelian category equals the
 supremum of injective dimensions. -/
@@ -70,6 +70,6 @@ theorem iSup_projectiveDimension_eq_iSup_injectiveDimension :
     | coe n =>
       simp only [WithBot.coe_natCast, iSup_le_iff, projectiveDimension_le_iff,
         injectiveDimension_le_iff]
-      exact forall_hasProjectiveDimensionLE_iff C n
+      exact forall_hasProjectiveDimensionLE_iff_forall_hasInjectiveDimensionLE C n
 
 end CategoryTheory
