@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.HasGroupoid
+import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
 
 /-!
 # Euclidean charts on products
@@ -70,40 +71,6 @@ theorem prodEuclideanChartedSpace_extChartAt (x : M × N) :
   refine PartialEquiv.ext (fun _ ↦ rfl) (fun _ ↦ rfl) ?_
   simp
 
-/-- Conjugating a `C^r` local structomorphism of the product model `𝕜ⁿ × 𝕜ᵐ` by
-`EuclideanSpace.finAddEquivProd` produces a `C^r` local structomorphism of `𝕜ⁿ⁺ᵐ`. -/
-private theorem mem_contDiffGroupoid_conj_finAddEquivProd (r : ℕ∞ω)
-    {e : OpenPartialHomeomorph
-      (ModelProd (EuclideanSpace 𝕜 (Fin n)) (EuclideanSpace 𝕜 (Fin m)))
-      (ModelProd (EuclideanSpace 𝕜 (Fin n)) (EuclideanSpace 𝕜 (Fin m)))}
-    (he : e ∈ contDiffGroupoid r
-      (𝓘(𝕜, EuclideanSpace 𝕜 (Fin n)).prod 𝓘(𝕜, EuclideanSpace 𝕜 (Fin m)))) :
-    let ψ := (EuclideanSpace.finAddEquivProd (𝕜 := 𝕜) (n := n) (m := m)).symm.toHomeomorph
-      |>.toOpenPartialHomeomorph
-    ψ.symm ≫ₕ (e ≫ₕ ψ) ∈ contDiffGroupoid r 𝓘(𝕜, EuclideanSpace 𝕜 (Fin (n + m))) := by
-  set ψ := (EuclideanSpace.finAddEquivProd (𝕜 := 𝕜) (n := n) (m := m)).symm.toHomeomorph
-    |>.toOpenPartialHomeomorph
-  let I₁₂ := 𝓘(𝕜, EuclideanSpace 𝕜 (Fin n)).prod 𝓘(𝕜, EuclideanSpace 𝕜 (Fin m))
-  have hstep : ∀ {f : OpenPartialHomeomorph
-        (ModelProd (EuclideanSpace 𝕜 (Fin n)) (EuclideanSpace 𝕜 (Fin m)))
-        (ModelProd (EuclideanSpace 𝕜 (Fin n)) (EuclideanSpace 𝕜 (Fin m)))},
-      f ∈ contDiffGroupoid r I₁₂ →
-      ContDiffOn 𝕜 r (ψ ∘ f ∘ ψ.symm)
-        (ψ.symm ⁻¹' (f.source ∩ ↑f ⁻¹' ψ.source) ∩ ψ.symm ⁻¹' ψ.source) := by
-    intro f hf
-    refine (EuclideanSpace.finAddEquivProd (𝕜 := 𝕜) (n := n) (m := m)).symm.contDiff.contDiffOn
-      |>.comp (hf.1.comp ((EuclideanSpace.finAddEquivProd (𝕜 := 𝕜) (n := n) (m := m)).contDiff
-        |>.contDiffOn) fun x hx ↦ ?_) fun x _ ↦ Set.mem_univ _
-    simpa [I₁₂, ψ] using hx.1.1
-  constructor
-  · refine (hstep he).congr_mono (fun x _ ↦ ?_) fun x hx ↦ ?_
-    · simp [OpenPartialHomeomorph.coe_trans]
-    · simpa [OpenPartialHomeomorph.trans_source, ψ] using hx
-  · refine (hstep ((contDiffGroupoid r I₁₂).symm he)).congr_mono (fun x _ ↦ ?_) fun x hx ↦ ?_
-    · simp [OpenPartialHomeomorph.coe_trans, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm]
-    · simpa [OpenPartialHomeomorph.trans_source,
-        OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, ψ] using hx
-
 /-- When `M` and `N` are `C^r` manifolds modelled on `𝕜ⁿ` and `𝕜ᵐ`,
 `TauCeti.prodEuclideanChartedSpace` makes `M × N` a `C^r` manifold modelled on `𝕜ⁿ⁺ᵐ`. -/
 theorem isManifold_prodEuclideanChartedSpace (r : ℕ∞ω)
@@ -111,20 +78,18 @@ theorem isManifold_prodEuclideanChartedSpace (r : ℕ∞ω)
     [IsManifold 𝓘(𝕜, EuclideanSpace 𝕜 (Fin m)) r N] :
     letI := prodEuclideanChartedSpace (𝕜 := 𝕜) (n := n) (m := m) (M := M) (N := N)
     IsManifold 𝓘(𝕜, EuclideanSpace 𝕜 (Fin (n + m))) r (M × N) := by
-  let := prodEuclideanChartedSpace (𝕜 := 𝕜) (n := n) (m := m) (M := M) (N := N)
-  refine { compatible := ?_ }
-  -- Unpack both atlas charts as product charts followed by `finAddEquivProd.symm`.
-  rintro _ _ ⟨_, ⟨c₁, hc₁, c₂, hc₂, rfl⟩, φ, hφ, rfl⟩
-    ⟨_, ⟨c₁', hc₁', c₂', hc₂', rfl⟩, φ', hφ', rfl⟩
-  obtain rfl := OpenPartialHomeomorph.singletonChartedSpace_mem_atlas_eq _ _ φ hφ
-  obtain rfl := OpenPartialHomeomorph.singletonChartedSpace_mem_atlas_eq _ _ φ' hφ'
-  -- Reduce to the product transition map and conjugate by `finAddEquivProd`.
-  rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.trans_assoc,
-    ← OpenPartialHomeomorph.trans_assoc (c₁.prod c₂).symm]
-  refine mem_contDiffGroupoid_conj_finAddEquivProd r ?_
-  rw [OpenPartialHomeomorph.prod_symm, OpenPartialHomeomorph.prod_trans]
-  exact contDiffGroupoid_prod (HasGroupoid.compatible (G := contDiffGroupoid r _) hc₁ hc₁')
-    (HasGroupoid.compatible (G := contDiffGroupoid r _) hc₂ hc₂')
+  let Φ : ModelProd (EuclideanSpace 𝕜 (Fin n)) (EuclideanSpace 𝕜 (Fin m))
+      ≃ₘ^r⟮𝓘(𝕜, EuclideanSpace 𝕜 (Fin n)).prod 𝓘(𝕜, EuclideanSpace 𝕜 (Fin m)),
+        𝓘(𝕜, EuclideanSpace 𝕜 (Fin (n + m)))⟯
+      EuclideanSpace 𝕜 (Fin (n + m)) :=
+    { toEquiv := (EuclideanSpace.finAddEquivProd (𝕜 := 𝕜)).symm.toEquiv
+      contMDiff_toFun := by
+        rw [← modelWithCornersSelf_prod]
+        exact (EuclideanSpace.finAddEquivProd (𝕜 := 𝕜)).symm.contDiff.contMDiff
+      contMDiff_invFun := by
+        rw [← modelWithCornersSelf_prod]
+        exact (EuclideanSpace.finAddEquivProd (𝕜 := 𝕜)).contDiff.contMDiff }
+  exact Φ.isManifold_chartedSpaceComp (M × N)
 
 /-- The identity map of `M × N` is `C^r` from `TauCeti.prodEuclideanChartedSpace` to the product
 charted space. -/
