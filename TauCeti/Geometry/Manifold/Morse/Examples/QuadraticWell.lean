@@ -17,7 +17,7 @@ import TauCeti.Geometry.Manifold.Morse.Examples.ExponentialConvergence
 This file computes the negative gradient flow of `f(x) = x²` on `ℝ`, for the standard metric, and
 uses it to test the convergence and decay theorems for gradient trajectories of Morse functions
 (`TauCeti.IsMorse.exists_tendsto_of_isMIntegralCurveOn_neg_mgradient` and
-`TauCeti.IsMorse.exists_edist_le_exp_of_tendsto_neg_mgradient`).
+`TauCeti.IsMorse.exists_riemannianEDist_le_exp_of_tendsto_neg_mgradient`).
 
 * **The trajectories.** The function `x²` is a Morse function (`TauCeti.isMorse_sq_real`) whose
   only critical point is `0` (`TauCeti.criticalPoints_sq_real`). The trajectory of `-grad f`
