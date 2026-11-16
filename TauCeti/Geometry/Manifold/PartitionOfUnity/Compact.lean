@@ -24,7 +24,8 @@ form extend a vector field given near a compact set to a compactly supported one
 complete one. For the same reason a compact set has a smooth bump covering indexed by a finite type
 and subordinate to any given neighbourhoods of its points
 (`IsCompact.exists_smoothBumpCovering_isSubordinate`), the input of Mathlib's Whitney embedding
-`SmoothBumpCovering.embeddingPiTangent`.
+`SmoothBumpCovering.embeddingPiTangent`, as well as a finite smooth partition of unity on `K`
+subordinate to any open cover (`IsCompact.exists_finset_contMDiff_sum_eq_one_on`).
 
 The construction, smoothing a finite sum of bump functions by `Real.smoothTransition`, follows the
 bump cover in the proof of `TauCeti.exists_vectorField_mvfderiv_eq_neg_one`.
@@ -98,3 +99,57 @@ theorem IsCompact.exists_smoothBumpCovering_isSubordinate {K : Set M} (hK : IsCo
     locallyFinite_of_finite _, fun x hx ↦ ?_⟩, fun i ↦ (hρ i.1).2⟩
   obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 (ht hx)
   exact ⟨⟨i, hi⟩, mem_interior_iff_mem_nhds.1 hxi⟩
+
+variable (I) in
+/-- **A finite smooth partition of unity on a compact set subordinate to an open cover.**
+Given a compact set `K` covered by open sets `U j`, there exist a finite set of indices `s` and
+compactly supported smooth functions `η j : M → [0, 1]` with `tsupport (η j) ⊆ U j` whose sum over
+`s` equals `1` on `K` and is at most `1` everywhere. -/
+theorem IsCompact.exists_finset_contMDiff_sum_eq_one_on {K : Set M} (hK : IsCompact K)
+    {κ : Type*} {U : κ → Set M} (hUo : ∀ j, IsOpen (U j)) (hKcov : K ⊆ ⋃ j, U j) :
+    ∃ (s : Finset κ) (η : κ → C^∞⟮I, M; ℝ⟯),
+      (∀ j, tsupport (η j) ⊆ U j) ∧
+      (∀ j, HasCompactSupport (η j)) ∧
+      (∀ j x, η j x ∈ Icc 0 1) ∧
+      (∀ x ∈ K, ∑ j ∈ s, η j x = 1) ∧
+      ∀ x, ∑ j ∈ s, η j x ≤ 1 := by
+  classical
+  -- Step 1: Assign each point of `K` an open set `U (idx x)` and build a finite smooth bump cover.
+  choose idx hidx using fun x : K ↦ mem_iUnion.1 (hKcov x.2)
+  let W : M → Set M := fun x ↦ if hx : x ∈ K then U (idx ⟨x, hx⟩) else univ
+  have hW : ∀ x ∈ K, W x ∈ 𝓝 x := fun x hx ↦ by
+    simpa only [W, hx, ↓reduceDIte] using (hUo _).mem_nhds (hidx ⟨x, hx⟩)
+  obtain ⟨α, _, fs, hsub⟩ := hK.exists_smoothBumpCovering_isSubordinate I hW
+  let ρ : SmoothPartitionOfUnity α I M K := fs.toSmoothPartitionOfUnity
+  have hρsub : ∀ b : α, tsupport (ρ b) ⊆ U (idx ⟨fs.c b, fs.c_mem' b⟩) := fun b ↦ by
+    simpa only [W, fs.c_mem' b, ↓reduceDIte] using hsub.toSmoothPartitionOfUnity b
+  have hρcomp : ∀ b : α, HasCompactSupport (ρ b) := fun b ↦
+    (fs b).hasCompactSupport.of_isClosed_subset (isClosed_tsupport _)
+      (closure_mono (fs.support_toSmoothPartitionOfUnity_subset b))
+  -- Step 2: Regroup the finite partition of unity by the chosen cover index `idx (fs.c b)`.
+  let s : Finset κ := Finset.univ.image (fun b : α ↦ idx ⟨fs.c b, fs.c_mem' b⟩)
+  let fib : κ → Finset α :=
+    fun j ↦ Finset.univ.filter (fun b : α ↦ idx ⟨fs.c b, fs.c_mem' b⟩ = j)
+  let η : κ → C^∞⟮I, M; ℝ⟯ :=
+    fun j ↦ ⟨fun x ↦ ∑ b ∈ fib j, ρ b x, ContMDiff.sum fun b _ ↦ (ρ b).contMDiff⟩
+  have hη_supp : ∀ j, tsupport (η j) ⊆ ⋃ b ∈ fib j, tsupport (ρ b) := fun j ↦
+    closure_minimal (fun y hy ↦ by
+      by_contra hnot
+      exact Function.mem_support.1 hy <| Finset.sum_eq_zero fun b hb ↦
+        image_eq_zero_of_notMem_tsupport fun hmem ↦ hnot (mem_iUnion₂.2 ⟨b, hb, hmem⟩))
+      ((fib j).finite_toSet.isClosed_biUnion fun b _ ↦ isClosed_tsupport _)
+  have hsum : ∀ x, ∑ j ∈ s, η j x = ∑ᶠ b : α, ρ b x := fun x ↦
+    (Finset.sum_fiberwise_of_maps_to
+      (fun b _ ↦ Finset.mem_image_of_mem _ (Finset.mem_univ b)) (fun b ↦ ρ b x)).trans
+      (finsum_eq_sum_of_fintype _).symm
+  -- Step 3: Verify support subordination, compact support, `[0, 1]` bounds, and sum identities.
+  refine ⟨s, η, fun j ↦ (hη_supp j).trans (iUnion₂_subset fun b hb ↦ ?_),
+    fun j ↦ ((fib j).isCompact_biUnion fun b _ ↦ hρcomp b).of_isClosed_subset
+      (isClosed_tsupport _) (hη_supp j),
+    fun j x ↦ ⟨Finset.sum_nonneg fun b _ ↦ ρ.nonneg b x, ?_⟩,
+    fun x hx ↦ (hsum x).trans (ρ.sum_eq_one hx),
+    fun x ↦ (hsum x).trans_le (ρ.sum_le_one x)⟩
+  · simp only [fib, Finset.mem_filter] at hb
+    simpa only [hb.2] using hρsub b
+  · exact (Finset.sum_le_univ_sum_of_nonneg fun b ↦ ρ.nonneg b x).trans
+      ((finsum_eq_sum_of_fintype _).symm.trans_le (ρ.sum_le_one x))

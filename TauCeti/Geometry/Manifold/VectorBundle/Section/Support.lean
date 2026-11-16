@@ -288,4 +288,25 @@ theorem smul_function_eq_self (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯
   · simp [hf hx]
   · simp [s.eq_zero_of_notMem_tsupport hx]
 
+/-- Multiplication by a `C^n` scalar function as a linear endomorphism of a fixed-support stage. -/
+def smulSupportedIn (f : C^n⟮I, M; 𝕜⟯) (K : Set M) :
+    supportedIn I F n V K →ₗ[𝕜] supportedIn I F n V K :=
+  (smulLinearMap f).restrict fun _ hs ↦ smul_function_mem_supportedIn f hs
+
+/-- The underlying section of `smulSupportedIn f K s` is `f • s.1`. -/
+@[simp]
+theorem coe_smulSupportedIn (f : C^n⟮I, M; 𝕜⟯) (K : Set M) (s : supportedIn I F n V K) :
+    (smulSupportedIn f K s : Cₛ^n⟮I; F, V⟯) = f • s.1 := (rfl)
+
+/-- Multiplication by a `C^n` scalar function as a linear endomorphism of compactly supported
+sections. -/
+def smulCompactlySupported (f : C^n⟮I, M; 𝕜⟯) :
+    compactlySupported I F n V →ₗ[𝕜] compactlySupported I F n V :=
+  (smulLinearMap f).restrict fun _ hs ↦ smul_function_mem_compactlySupported f hs
+
+/-- The underlying section of `smulCompactlySupported f s` is `f • s.1`. -/
+@[simp]
+theorem coe_smulCompactlySupported (f : C^n⟮I, M; 𝕜⟯) (s : compactlySupported I F n V) :
+    (smulCompactlySupported f s : Cₛ^n⟮I; F, V⟯) = f • s.1 := (rfl)
+
 end ContMDiffSection

@@ -33,7 +33,9 @@ matrix, and both operations are continuous in the weak Whitney topology on coeff
 The topology is Hausdorff for a covering frame system, is independent of that frame cover,
 and on a compact base agrees with the compact derivative topology on all sections. In
 particular, taking the final topology does not discard the section values. Convergence in a
-single fixed-support stage implies convergence in the test topology.
+single fixed-support stage implies convergence in the test topology, and pointwise multiplication
+by a `C^n` scalar function is continuous both for `frameTopology` and for
+`compactlySupportedTopology` (`ContMDiffSection.smulCompactlySupportedCLM`).
 
 We reuse `TauCeti.finalLocallyConvexTopology`, rather than the final topology of topological
 spaces. No completeness or strict inductive-limit assertion is made.
@@ -65,6 +67,38 @@ compact derivative subspace topology. It is not defined as a subspace topology o
 def compactlySupportedTopology : TopologicalSpace (compactlySupported I F n V) :=
   letI := frameTopology (I := I) (n := n) e U hU
   TauCeti.finalLocallyConvexTopology (ofSupportedIn (I := I) (F := F) (V := V) (n := n))
+
+/-- Unfolding lemma expressing `compactlySupportedTopology` as the final locally convex topology of
+the fixed-compact support inclusions. -/
+theorem compactlySupportedTopology_eq_finalLocallyConvexTopology :
+    compactlySupportedTopology (I := I) (n := n) e U hU =
+      letI := frameTopology (I := I) (n := n) e U hU
+      TauCeti.finalLocallyConvexTopology (ofSupportedIn (I := I) (F := F) (V := V) (n := n)) :=
+  (rfl)
+
+/-- Addition and negation are continuous for `compactlySupportedTopology`. -/
+theorem isTopologicalAddGroup_compactlySupportedTopology :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    IsTopologicalAddGroup (compactlySupported I F n V) := by
+  unfold compactlySupportedTopology
+  let := frameTopology (I := I) (n := n) e U hU
+  exact inferInstance
+
+/-- Real scalar multiplication is continuous for `compactlySupportedTopology`. -/
+theorem continuousSMul_compactlySupportedTopology :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    ContinuousSMul ℝ (compactlySupported I F n V) := by
+  unfold compactlySupportedTopology
+  let := frameTopology (I := I) (n := n) e U hU
+  exact inferInstance
+
+/-- The fixed-compact inductive topology on compactly supported sections is locally convex. -/
+theorem locallyConvexSpace_compactlySupportedTopology :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    LocallyConvexSpace ℝ (compactlySupported I F n V) := by
+  unfold compactlySupportedTopology
+  let := frameTopology (I := I) (n := n) e U hU
+  exact inferInstance
 
 /-- Every fixed-compact support inclusion is continuous. -/
 theorem continuous_ofSupportedIn (K : Compacts M) :
@@ -173,6 +207,110 @@ theorem compactlySupportedTopology_eq_of_covers
   rw [frameTopology_eq_of_covers e U hU hcover e' U' hU' hcover']
 
 end Cover
+
+end ContMDiffSection
+
+namespace ContMDiffSection
+
+section SmulFrameTopology
+
+open scoped TauCeti.ManifoldWeakWhitney
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  {ι : Type*} (e : ι → Trivialization F (π F V))
+  [∀ i, MemTrivializationAtlas (e i)]
+  (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
+
+/-- Multiplication by a fixed `C^n` scalar function is continuous in the compact derivative
+frame topology. No local compactness or covering hypothesis is required. -/
+theorem continuous_smulLinearMap_frameTopology (f : C^n⟮I, M; 𝕜⟯) :
+    letI := frameTopology (I := I) (n := n) e U hU
+    Continuous (smulLinearMap (I := I) (F := F) (V := V) (n := n) f) := by
+  let := frameTopology (I := I) (n := n) e U hU
+  refine (continuous_frameTopology_iff_frameCoordinates e U hU).2 fun i ↦ ?_
+  let A : C^n⟮I, U i; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
+    ⟨fun x ↦ f x • ContinuousLinearMap.id 𝕜 F,
+      (f.contMDiff.comp contMDiff_subtype_val).smul contMDiff_const⟩
+  refine ((ContMDiffMap.continuous_clmApplyLinearMap A).comp
+    (continuous_frameCoordinates e U hU i)).congr fun s ↦ ?_
+  ext x
+  rw [Function.comp_apply, ContMDiffMap.clmApplyLinearMap_apply]
+  simp only [Trivialization.frameCoordinates_apply, smulLinearMap_eq_smul, smul_apply, A,
+    ContMDiffMap.coeFn_mk, _root_.smul_apply, ContinuousLinearMap.id_apply]
+  exact ((e i).linear 𝕜 (hU i x.2)).map_smul (f x) (s x) |>.symm
+
+/-- Multiplication by a `C^n` scalar function is continuous on every fixed-support stage. -/
+theorem continuous_smulSupportedIn_frameTopology (f : C^n⟮I, M; 𝕜⟯) (K : Set M) :
+    letI := frameTopology (I := I) (n := n) e U hU
+    Continuous (smulSupportedIn (I := I) (F := F) (V := V) (n := n) f K) := by
+  let := frameTopology (I := I) (n := n) e U hU
+  refine continuous_induced_rng.2 <|
+    ((continuous_smulLinearMap_frameTopology e U hU f).comp continuous_subtype_val).congr fun s ↦ ?_
+  exact (smulLinearMap_eq_smul f s.1).trans (coe_smulSupportedIn f K s).symm
+
+end SmulFrameTopology
+
+section SmulCompactlySupportedTopology
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  {ι : Type*} (e : ι → Trivialization F (π F V))
+  [∀ i, MemTrivializationAtlas (e i)]
+  (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
+
+/-- Multiplication by a fixed `C^n` scalar function is continuous for the fixed-compact inductive
+topology on compactly supported sections. -/
+theorem continuous_smulCompactlySupported (f : C^n⟮I, M; ℝ⟯) :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    Continuous (smulCompactlySupported (I := I) (F := F) (V := V) (n := n) f) := by
+  let := frameTopology (I := I) (n := n) e U hU
+  let := compactlySupportedTopology (I := I) (n := n) e U hU
+  let := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) e U hU
+  let := continuousSMul_compactlySupportedTopology (I := I) (n := n) e U hU
+  let := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n) e U hU
+  refine (continuous_compactlySupportedTopology_iff e U hU (smulCompactlySupported f)).2 fun K ↦ ?_
+  refine ((continuous_ofSupportedIn e U hU K).comp
+    (continuous_smulSupportedIn_frameTopology e U hU f K)).congr fun s ↦ ?_
+  apply Subtype.ext
+  rw [Function.comp_apply, Function.comp_apply, ofSupportedIn_apply, coe_smulSupportedIn,
+    coe_smulCompactlySupported, ofSupportedIn_apply]
+
+/-- Multiplication by a `C^n` scalar function on compactly supported sections, bundled as a
+continuous linear map. -/
+def smulCompactlySupportedCLM (f : C^n⟮I, M; ℝ⟯) :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    compactlySupported I F n V →L[ℝ] compactlySupported I F n V :=
+  letI := compactlySupportedTopology (I := I) (n := n) e U hU
+  ⟨smulCompactlySupported f, continuous_smulCompactlySupported e U hU f⟩
+
+/-- The underlying linear map of `smulCompactlySupportedCLM f` is `smulCompactlySupported f`. -/
+@[simp]
+theorem toLinearMap_smulCompactlySupportedCLM (f : C^n⟮I, M; ℝ⟯) :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    (smulCompactlySupportedCLM e U hU f).toLinearMap = smulCompactlySupported f := (rfl)
+
+/-- Applying `smulCompactlySupportedCLM f` multiplies the underlying section pointwise by `f`. -/
+@[simp]
+theorem coe_smulCompactlySupportedCLM (f : C^n⟮I, M; ℝ⟯) (s : compactlySupported I F n V) :
+    ((smulCompactlySupportedCLM e U hU f s : compactlySupported I F n V) : Cₛ^n⟮I; F, V⟯) =
+      f • s.1 :=
+  coe_smulCompactlySupported f s
+
+end SmulCompactlySupportedTopology
 
 end ContMDiffSection
 
