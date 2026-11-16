@@ -44,8 +44,10 @@ explicit upper bound on the integral norm.
   integrand of order `j + 2` is integrable on `(0, ∞)` if and only if `z ∈ slitPlane`.
 * `TauCeti.hasDerivAt_integral_fract_sub_fract_sq_div_add_pow`: differentiation under the integral
   sign for the periodic-quadratic Stieltjes family on `slitPlane`.
-* `TauCeti.norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le`: Nemes's explicit slit-plane bound
-  for the periodic-quadratic Stieltjes integral of order `j + 2`.
+* `TauCeti.norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le`,
+  `TauCeti.norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le_of_abs_arg_le`: Nemes's explicit
+  slit-plane and closed-sector bounds for the periodic-quadratic Stieltjes integral of order
+  `j + 2`.
 
 ## References
 
@@ -79,64 +81,19 @@ private theorem aestronglyMeasurable_stieltjesIntegrand {z : ℂ} (hz : z ∈ sl
     fun t ht ↦ pow_ne_zero _ (mem_slitPlane_iff_add_ofReal_ne_zero.mp hz t (mem_Ioi.mp ht).le))
       |>.aestronglyMeasurable measurableSet_Ioi)
 
-private theorem not_integrableOn_of_neg_nat (n j : ℕ) :
-    ¬ IntegrableOn
-      (fun t : ℝ ↦ (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / (-(n : ℂ) + t) ^ (j + 2))
-      (Ioi 0) := by
-  intro h
-  have hsub : Ioo (n : ℝ) (n + 1 / 2) ⊆ Ioi 0 :=
-    fun t ht ↦ mem_Ioi.mpr (lt_of_le_of_lt (Nat.cast_nonneg n) ht.1)
-  have hm1 : IntegrableOn (fun t : ℝ ↦ (1 / 4 : ℝ) * (t - n) ^ (-1 : ℝ))
-      (Ioo (n : ℝ) (n + 1 / 2)) := by
-    refine (h.mono_set hsub).re.mono' (((ContinuousOn.rpow_const
-      (s := Ioo (n : ℝ) (n + 1 / 2)) (f := fun t : ℝ ↦ t - n) (by fun_prop)
-      fun t ht ↦ Or.inl (by linarith [ht.1])).const_mul _).aestronglyMeasurable
-      measurableSet_Ioo) ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
-    set u : ℝ := t - n
-    have hu0 : 0 < u := by dsimp [u]; linarith [ht.1]
-    have huhalf : u < 1 / 2 := by dsimp [u]; linarith [ht.2]
-    have hfr : Int.fract t = u := by
-      have ht_eq : t = u + (n : ℤ) := by dsimp [u]; push_cast; ring
-      rw [ht_eq, Int.fract_add_intCast]
-      exact Int.fract_eq_self.mpr ⟨hu0.le, by linarith⟩
-    have hzn : -(n : ℂ) + (t : ℂ) = (u : ℂ) := by dsimp [u]; push_cast; ring
-    have hval : RCLike.re ((((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) /
-        (-(n : ℂ) + t) ^ (j + 2)) = (u - u ^ 2) / (2 * u ^ (j + 2)) := by
-      rw [RCLike.re_eq_complex_re, hzn, ← ofReal_pow, ← ofReal_div, ofReal_re, hfr, div_div]
-    rw [hval, Real.norm_of_nonneg (by positivity), rpow_neg_one]
-    have hpow : u ^ (j + 2) ≤ u ^ 2 := pow_le_pow_of_le_one hu0.le (by linarith) (by omega)
-    calc
-      (1 / 4 : ℝ) * u⁻¹ = (u / 2) / (2 * u ^ 2) := by field_simp; ring
-      _ ≤ (u - u ^ 2) / (2 * u ^ 2) := div_le_div_of_nonneg_right (by nlinarith) (by positivity)
-      _ ≤ (u - u ^ 2) / (2 * u ^ (j + 2)) :=
-        div_le_div_of_nonneg_left (by nlinarith) (by positivity) (by gcongr)
-  have hrpow : IntegrableOn (fun t : ℝ ↦ (t - (n : ℝ)) ^ (-1 : ℝ)) (Ioo (n : ℝ) (n + 1 / 2)) :=
-    IntegrableOn.congr_fun (hm1.const_mul 4) (fun t _ ↦ by ring) measurableSet_Ioo
-  linarith [(integrableOn_Ioo_sub_rpow_iff (by linarith : (n : ℝ) < n + 1 / 2)).mp hrpow]
-
-private theorem not_integrableOn_of_neg_nonint {x : ℝ} (hx : 0 ≤ x) (hnat : ∀ n : ℕ, x ≠ n)
-    (j : ℕ) :
+/-- For every `x ≥ 0` (integer or non-integer), the periodic-quadratic Stieltjes integrand at
+`z = -x` dominates `(r / 2) * (t - x)⁻¹` on `(x, x + r)` with `r = (1 - fract x) / 2`, so it fails
+to be integrable on `(0, ∞)`. -/
+private theorem not_integrableOn_of_neg_ofReal {x : ℝ} (hx : 0 ≤ x) (j : ℕ) :
     ¬ IntegrableOn
       (fun t : ℝ ↦ (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / (-(x : ℂ) + t) ^ (j + 2))
       (Ioi 0) := by
   intro h
-  have hfx0 : Int.fract x ≠ 0 := by
-    rw [ne_eq, Int.fract_eq_zero_iff]
-    rintro ⟨m, rfl⟩
-    have hm : 0 ≤ m := by exact_mod_cast hx
-    exact hnat m.toNat (by exact_mod_cast (Int.toNat_of_nonneg hm).symm)
-  have hfx_pos : 0 < Int.fract x := lt_of_le_of_ne (Int.fract_nonneg x) hfx0.symm
-  have hq_pos : 0 < fractQuad x := by dsimp [fractQuad]; nlinarith [Int.fract_lt_one x]
-  obtain ⟨δ, hδ_pos, hδ⟩ := Metric.continuousAt_iff.mp
-    ((Int.continuous_fract_sub_fract_sq.div_const 2).continuousAt (x := x))
-    (fractQuad x / 2) (half_pos hq_pos)
-  set r : ℝ := min δ 1
-  have hr_pos : 0 < r := lt_min hδ_pos one_pos
-  have hr1 : r ≤ 1 := min_le_right _ _
+  set r : ℝ := (1 - Int.fract x) / 2
+  have hr_pos : 0 < r := half_pos (sub_pos.mpr (Int.fract_lt_one x))
+  have hr_le : r ≤ 1 / 2 := by dsimp [r]; linarith [Int.fract_nonneg x]
   have hsub : Ioo x (x + r) ⊆ Ioi 0 := fun t ht ↦ mem_Ioi.mpr (lt_of_le_of_lt hx ht.1)
-  have hm1 : IntegrableOn (fun t : ℝ ↦ fractQuad x / 2 * (t - x) ^ (-1 : ℝ))
-      (Ioo x (x + r)) := by
+  have hm1 : IntegrableOn (fun t : ℝ ↦ (r / 2) * (t - x) ^ (-1 : ℝ)) (Ioo x (x + r)) := by
     refine (h.mono_set hsub).re.mono' (((ContinuousOn.rpow_const (s := Ioo x (x + r))
       (f := fun t : ℝ ↦ t - x) (by fun_prop)
       fun t ht ↦ Or.inl (by linarith [ht.1])).const_mul _).aestronglyMeasurable
@@ -144,29 +101,53 @@ private theorem not_integrableOn_of_neg_nonint {x : ℝ} (hx : 0 ≤ x) (hnat : 
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
     set u : ℝ := t - x
     have hu0 : 0 < u := by dsimp [u]; linarith [ht.1]
-    have hu1 : u ≤ 1 := by dsimp [u]; linarith [ht.2, hr1]
-    have hdist : dist t x < δ := by
-      rw [Real.dist_eq, abs_of_pos hu0]
-      exact lt_of_lt_of_le (by dsimp [u]; linarith [ht.2]) (min_le_left _ _)
-    have hqt : fractQuad x / 2 ≤ fractQuad t := by
-      have := abs_lt.mp (Real.dist_eq (fractQuad t) (fractQuad x) ▸ hδ hdist)
-      linarith
+    have hur : u < r := by dsimp [u]; linarith [ht.2]
+    -- On `(x, x + r)` we have `fract t = fract x + u`, giving `fractQuad t ≥ r * u / 2` and
+    -- `u ^ (j + 2) ≤ u ^ 2`, hence `fractQuad t / u ^ (j + 2) ≥ (r / 2) * u⁻¹`.
+    have hfr : Int.fract t = Int.fract x + u := by
+      have ht_eq : t = (Int.fract x + u) + (⌊x⌋ : ℤ) := by
+        dsimp [u]; linarith [Int.floor_add_fract x]
+      rw [ht_eq, Int.fract_add_intCast]
+      exact Int.fract_eq_self.mpr
+        ⟨by linarith [Int.fract_nonneg x], by dsimp [r] at hur; linarith [Int.fract_lt_one x]⟩
     have hzx : -(x : ℂ) + (t : ℂ) = (u : ℂ) := by dsimp [u]; push_cast; ring
     have hval : RCLike.re ((((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) /
         (-(x : ℂ) + t) ^ (j + 2)) = fractQuad t / u ^ (j + 2) := by
       rw [RCLike.re_eq_complex_re, hzx, ← ofReal_pow, ← ofReal_div, ofReal_re]
-    have hq_nn := fractQuad_nonneg t
+    have hq_lb : r * u / 2 ≤ fractQuad t := by
+      have h1 : r ≤ 1 - (Int.fract x + u) := by dsimp [r] at hur ⊢; linarith
+      have h2 : u ≤ Int.fract x + u := by linarith [Int.fract_nonneg x]
+      have hfac : fractQuad t = (Int.fract x + u) * (1 - (Int.fract x + u)) / 2 := by
+        dsimp [fractQuad]; rw [hfr]; ring
+      rw [hfac]
+      linarith [mul_le_mul h2 h1 hr_pos.le (by linarith [Int.fract_nonneg x])]
+    have hpow : u ^ (j + 2) ≤ u ^ 2 :=
+      pow_le_pow_of_le_one hu0.le (by linarith) (by omega)
     rw [hval, Real.norm_of_nonneg (by positivity), rpow_neg_one]
     calc
-      fractQuad x / 2 * u⁻¹ = (fractQuad x / 2) / u := div_eq_mul_inv _ _
-      _ ≤ fractQuad t / u := div_le_div_of_nonneg_right hqt hu0.le
+      (r / 2) * u⁻¹ = (r * u / 2) / u ^ 2 := by field_simp
+      _ ≤ fractQuad t / u ^ 2 := div_le_div_of_nonneg_right hq_lb (by positivity)
       _ ≤ fractQuad t / u ^ (j + 2) :=
-        div_le_div_of_nonneg_left hq_nn (pow_pos hu0 _)
-          (pow_le_of_le_one hu0.le hu1 (Nat.succ_ne_zero _))
+        div_le_div_of_nonneg_left (fractQuad_nonneg t) (by positivity) hpow
+  -- Rescale to contradict non-integrability of `(t - x) ^ (-1)` on `(x, x + r)`.
   have hrpow : IntegrableOn (fun t : ℝ ↦ (t - x) ^ (-1 : ℝ)) (Ioo x (x + r)) :=
-    IntegrableOn.congr_fun (hm1.const_mul (fractQuad x / 2)⁻¹)
-      (fun t _ ↦ inv_mul_cancel_left₀ (half_pos hq_pos).ne' _) measurableSet_Ioo
+    IntegrableOn.congr_fun (hm1.const_mul (r / 2)⁻¹)
+      (fun t _ ↦ inv_mul_cancel_left₀ (half_pos hr_pos).ne' _) measurableSet_Ioo
   linarith [(integrableOn_Ioo_sub_rpow_iff (by linarith : x < x + r)).mp hrpow]
+
+private theorem norm_stieltjesIntegrand_le {z : ℂ} {a c t : ℝ} (ha : 0 < a) (hc : 0 < c)
+    (ht : 0 ≤ t) (hden : c * (a + t) ≤ ‖z + t‖) (j : ℕ) :
+    ‖(((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / (z + t) ^ (j + 2)‖ ≤
+      (8 * c ^ (j + 2))⁻¹ * (1 / (a + t) ^ (j + 2)) := by
+  have hpow : (c * (a + t)) ^ (j + 2) ≤ ‖z + t‖ ^ (j + 2) :=
+    pow_le_pow_left₀ (by positivity) hden (j + 2)
+  rw [norm_div, norm_pow, Complex.norm_real, Real.norm_of_nonneg (fractQuad_nonneg t)]
+  calc
+    fractQuad t / ‖z + t‖ ^ (j + 2) ≤ (1 / 8) / (c * (a + t)) ^ (j + 2) :=
+      div_le_div₀ (by norm_num) (fractQuad_le t) (by positivity) hpow
+    _ = (8 * c ^ (j + 2))⁻¹ * (1 / (a + t) ^ (j + 2)) := by
+      rw [mul_pow]
+      field_simp
 
 /-- Every compact subset `K ⊆ slitPlane` admits a common integrable majorant on `(0, ∞)` for the
 periodic-quadratic Stieltjes kernel of order `j + 2`. -/
@@ -175,18 +156,10 @@ theorem exists_integrableOn_Ioi_majorant_fract_sub_fract_sq_div_add_pow {K : Set
     ∃ g : ℝ → ℝ, IntegrableOn g (Ioi 0) ∧ ∀ z ∈ K, ∀ t ∈ Ioi (0 : ℝ),
       ‖(((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / (z + t) ^ (j + 2)‖ ≤ g t := by
   obtain ⟨c, hc, hden⟩ := exists_pos_forall_mem_mul_one_add_le_norm_add_of_isCompact hK hsub
-  refine ⟨fun t ↦ (8 * c ^ (j + 2))⁻¹ * (1 / (1 + t) ^ (j + 2)),
-    (integrableOn_Ioi_one_div_add_pow_iff.mpr one_pos).const_mul _, fun z hz t ht ↦ ?_⟩
-  have ht0 : 0 ≤ t := (mem_Ioi.mp ht).le
-  have hpow : (c * (1 + t)) ^ (j + 2) ≤ ‖z + t‖ ^ (j + 2) :=
-    pow_le_pow_left₀ (by positivity) (hden z hz t ht0) (j + 2)
-  rw [norm_div, norm_pow, Complex.norm_real, Real.norm_of_nonneg (fractQuad_nonneg t)]
-  calc
-    fractQuad t / ‖z + t‖ ^ (j + 2) ≤ (1 / 8) / (c * (1 + t)) ^ (j + 2) :=
-      div_le_div₀ (by norm_num) (fractQuad_le t) (by positivity) hpow
-    _ = (8 * c ^ (j + 2))⁻¹ * (1 / (1 + t) ^ (j + 2)) := by
-      rw [mul_pow]
-      field_simp
+  exact ⟨fun t ↦ (8 * c ^ (j + 2))⁻¹ * (1 / (1 + t) ^ (j + 2)),
+    (integrableOn_Ioi_one_div_add_pow_iff.mpr one_pos).const_mul _,
+    fun z hz t ht ↦ norm_stieltjesIntegrand_le one_pos hc (mem_Ioi.mp ht).le
+      (hden z hz t (mem_Ioi.mp ht).le) j⟩
 
 /-- The periodic-quadratic Stieltjes integrand `((fract t - fract t ^ 2) / 2) / (z + t) ^ (j + 2)`
 is integrable on `(0, ∞)` if and only if `z ∈ slitPlane`. Even at nonpositive integers `z = -n`,
@@ -198,19 +171,11 @@ theorem integrableOn_Ioi_fract_sub_fract_sq_div_add_pow_iff {z : ℂ} {j : ℕ} 
       (Ioi 0) ↔ z ∈ slitPlane := by
   refine ⟨fun h ↦ ?_, fun hz ↦ ?_⟩
   · by_contra hz
-    have him : z.im = 0 := im_eq_zero_of_notMem_slitPlane hz
-    have hre : z.re ≤ 0 := le_of_not_gt fun hpos ↦ hz (mem_slitPlane_iff.mpr (Or.inl hpos))
-    set x : ℝ := -z.re
-    have hx : 0 ≤ x := by dsimp [x]; linarith
-    have hz_eq : z = -(x : ℂ) := by
-      apply Complex.ext <;> simp [x, him]
-    rw [hz_eq] at h
-    by_cases hnat : ∃ n : ℕ, x = n
-    · obtain ⟨n, hn⟩ := hnat
-      rw [hn] at h
-      exact not_integrableOn_of_neg_nat n j (by simpa using h)
-    · push Not at hnat
-      exact not_integrableOn_of_neg_nonint hx hnat j h
+    rw [mem_slitPlane_iff_add_ofReal_ne_zero] at hz
+    push Not at hz
+    obtain ⟨x, hx, hzx⟩ := hz
+    rw [eq_neg_of_add_eq_zero_left hzx] at h
+    exact not_integrableOn_of_neg_ofReal hx j h
   · obtain ⟨g, hg, hle⟩ := exists_integrableOn_Ioi_majorant_fract_sub_fract_sq_div_add_pow
       isCompact_singleton (singleton_subset_iff.mpr hz) j
     refine hg.mono' (aestronglyMeasurable_stieltjesIntegrand hz j) ?_
@@ -267,19 +232,8 @@ theorem norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le (j : ℕ) (z : ℂ) 
           ∫ t : ℝ in Ioi 0, g t := by
       refine MeasureTheory.norm_integral_le_of_norm_le hg_int ?_
       filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-      have ht0 : 0 ≤ t := (mem_Ioi.mp ht).le
-      have hden := cos_half_arg_mul_norm_add_le_norm_add_ofReal z t
-      have hpow : (Real.cos (z.arg / 2) * (‖z‖ + t)) ^ (j + 2) ≤ ‖z + t‖ ^ (j + 2) :=
-        pow_le_pow_left₀ (by positivity) hden (j + 2)
-      rw [norm_div, norm_pow, Complex.norm_real, Real.norm_of_nonneg (fractQuad_nonneg t)]
-      calc
-        fractQuad t / ‖z + t‖ ^ (j + 2)
-            ≤ (1 / 8) / (Real.cos (z.arg / 2) * (‖z‖ + t)) ^ (j + 2) :=
-          div_le_div₀ (by norm_num) (fractQuad_le t) (by positivity) hpow
-        _ = g t := by
-          dsimp [g]
-          rw [mul_pow]
-          field_simp
+      exact norm_stieltjesIntegrand_le hz0 hc (mem_Ioi.mp ht).le
+        (cos_half_arg_mul_norm_add_le_norm_add_ofReal z t) j
     refine hle.trans_eq ?_
     dsimp [g]
     rw [integral_const_mul, integral_Ioi_one_div_add_pow hz0.le j]
@@ -287,5 +241,25 @@ theorem norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le (j : ℕ) (z : ℂ) 
   · rw [integral_undef (mt integrableOn_Ioi_fract_sub_fract_sq_div_add_pow_iff.mp hz), norm_zero]
     have hcos : 0 ≤ Real.cos (z.arg / 2) := cos_half_arg_nonneg z
     positivity
+
+/-- Nemes's explicit closed-sector bound for the periodic-quadratic Stieltjes integral of order
+`j + 2`: for `0 < δ` and `|arg z| ≤ π - δ`,
+`‖∫_{t > 0} ((fract t - fract t ^ 2) / 2) / (z + t) ^ (j + 2) dt‖ ≤
+  1 / (8 * (j + 1) * sin (δ / 2) ^ (j + 2) * ‖z‖ ^ (j + 1))`. -/
+theorem norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le_of_abs_arg_le (j : ℕ) {z : ℂ} {δ : ℝ}
+    (hδ : 0 < δ) (hz : |z.arg| ≤ Real.pi - δ) :
+    ‖∫ t : ℝ in Ioi 0, (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / (z + t) ^ (j + 2)‖ ≤
+      1 / (8 * (j + 1 : ℝ) * Real.sin (δ / 2) ^ (j + 2) * ‖z‖ ^ (j + 1)) := by
+  rcases eq_or_ne z 0 with rfl | hz0
+  · rw [integral_undef
+      (mt (integrableOn_Ioi_fract_sub_fract_sq_div_add_pow_iff (z := 0) (j := j)).mp (by simp))]
+    simp
+  · have hδπ : δ ≤ Real.pi := by linarith [abs_nonneg z.arg]
+    have : 0 < Real.sin (δ / 2) :=
+      Real.sin_pos_of_pos_of_lt_pi (half_pos hδ) (by linarith [Real.pi_pos])
+    have : Real.sin (δ / 2) ≤ Real.cos (z.arg / 2) :=
+      sin_half_le_cos_half_arg_of_abs_arg_le hδ.le hz
+    have : 0 < ‖z‖ := norm_pos_iff.mpr hz0
+    exact (norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le j z).trans (by gcongr)
 
 end TauCeti

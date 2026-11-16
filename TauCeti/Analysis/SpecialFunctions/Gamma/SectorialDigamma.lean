@@ -36,7 +36,7 @@ the exact improper-integral representation
 (`Complex.digamma_sub_log_add_inv_two_mul_eq_integral`), Nemes's explicit slit-plane bound
 `‖digamma z - log z + 1 / (2z)‖ ≤ 1 / (8 * cos (arg z / 2) ^ 3 * ‖z‖ ^ 2)`
 (`Complex.norm_digamma_sub_log_add_inv_two_mul_le`), and the second-order sector bound
-`‖digamma s - log s + 1 / (2s)‖ ≤ 2 / ((1 - cos δ) ^ 3 ‖s‖ ^ 2)`
+`‖digamma s - log s + 1 / (2s)‖ ≤ 1 / (8 * sin (δ / 2) ^ 3 * ‖s‖ ^ 2)` for `0 < δ`
 (`Complex.norm_digamma_sub_log_add_inv_two_mul_le_of_abs_arg_le`). This is the input to Stirling's
 formula on sectors and to the Stieltjes representation of the Stirling remainder, corresponding to
 [DLMF 5.11.1](https://dlmf.nist.gov/5.11.E1) and [DLMF 5.11.2](https://dlmf.nist.gov/5.11.E2).
@@ -51,16 +51,8 @@ open Complex Real Filter Set Topology MeasureTheory intervalIntegral Asymptotics
 
 namespace Complex
 
-private theorem add_ofReal_mem_slitPlane {s : ℂ} (hs : s ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
-    s + t ∈ slitPlane := by
-  simpa only [add_comm] using TauCeti.ofReal_add_mem_slitPlane hs ht
-
-private theorem add_ofReal_ne_zero {s : ℂ} (hs : s ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
-    s + t ≠ 0 :=
-  mem_slitPlane_iff_add_ofReal_ne_zero.mp hs t ht
-
 private theorem add_natCast_ne_zero {s : ℂ} (hs : s ∈ slitPlane) (N : ℕ) : s + N ≠ 0 := by
-  simpa only [ofReal_natCast] using add_ofReal_ne_zero hs (Nat.cast_nonneg N)
+  simpa only [ofReal_natCast] using mem_slitPlane_iff_add_ofReal_ne_zero.mp hs _ (Nat.cast_nonneg N)
 
 private theorem nonpole_of_mem_slitPlane {s : ℂ} (hs : s ∈ slitPlane) :
     ∀ n : ℕ, s ≠ -(n : ℂ) := by
@@ -82,13 +74,13 @@ private theorem hasDerivAt_log_add_ofReal {s : ℂ} {t : ℝ} (hs : s + t ∈ sl
 private theorem continuousOn_inv_add_ofReal_sq {s : ℂ} (hs : s ∈ slitPlane) (N : ℕ) :
     ContinuousOn (fun t : ℝ ↦ ((s + (t : ℂ)) ^ 2)⁻¹) (Icc 0 (N : ℝ)) :=
   ((continuousOn_const.add continuous_ofReal.continuousOn).pow 2).inv₀
-    fun _ ht ↦ pow_ne_zero _ (add_ofReal_ne_zero hs ht.1)
+    fun _ ht ↦ pow_ne_zero _ (mem_slitPlane_iff_add_ofReal_ne_zero.mp hs _ ht.1)
 
 private theorem continuousOn_add_one_div_add_sq {s : ℂ} (hs : s ∈ slitPlane) (N : ℕ) :
     ContinuousOn (fun t : ℝ ↦ ((t : ℂ) + 1) / (s + t) ^ 2) (Icc 0 (N : ℝ)) :=
   (continuous_ofReal.continuousOn.add continuousOn_const).div
     ((continuousOn_const.add continuous_ofReal.continuousOn).pow 2)
-    fun _ ht ↦ pow_ne_zero _ (add_ofReal_ne_zero hs ht.1)
+    fun _ ht ↦ pow_ne_zero _ (mem_slitPlane_iff_add_ofReal_ne_zero.mp hs _ ht.1)
 
 private theorem intervalIntegrable_fract_div_add_sq {s : ℂ} (hs : s ∈ slitPlane) (N : ℕ) :
     IntervalIntegrable (fun t : ℝ ↦ ((Int.fract t : ℝ) : ℂ) / (s + t) ^ 2) volume 0 N := by
@@ -107,8 +99,9 @@ private theorem integral_add_one_div_add_sq {s : ℂ} (hs : s ∈ slitPlane) (N 
       HasDerivAt (fun u : ℝ ↦ Complex.log (s + (u : ℂ)) + (s - 1) / (s + u))
         (((t : ℂ) + 1) / (s + t) ^ 2) t := by
     rw [uIcc_of_le (Nat.cast_nonneg N)] at ht
-    have h := (hasDerivAt_log_add_ofReal (add_ofReal_mem_slitPlane hs ht.1)).add
-      ((hasDerivAt_inv_add_ofReal (add_ofReal_ne_zero hs ht.1)).const_mul (s - 1))
+    have h := (hasDerivAt_log_add_ofReal (TauCeti.add_ofReal_mem_slitPlane hs ht.1)).add
+      ((hasDerivAt_inv_add_ofReal (mem_slitPlane_iff_add_ofReal_ne_zero.mp hs _ ht.1)).const_mul
+        (s - 1))
     convert h using 1
     · ext u
       simp only [div_eq_mul_inv, Pi.add_apply]
@@ -125,7 +118,7 @@ private theorem sum_inv_add_eq_sub_integral_floor {s : ℂ} (hs : s ∈ slitPlan
       ∫ t in Ioc (0 : ℝ) N, -1 / (s + t) ^ 2 * ((⌊t⌋₊ : ℂ) + 1) := by
   let f : ℝ → ℂ := fun t ↦ (s + (t : ℂ))⁻¹
   have hd (t : ℝ) (ht : t ∈ Icc 0 (N : ℝ)) : HasDerivAt f (-1 / (s + t) ^ 2) t :=
-    hasDerivAt_inv_add_ofReal (add_ofReal_ne_zero hs ht.1)
+    hasDerivAt_inv_add_ofReal (mem_slitPlane_iff_add_ofReal_ne_zero.mp hs _ ht.1)
   have hc : ContinuousOn (fun t : ℝ ↦ -1 / (s + t) ^ 2) (Icc 0 (N : ℝ)) := by
     simpa only [div_eq_mul_inv] using (continuousOn_inv_add_ofReal_sq hs N).const_mul (-1)
   have hA := sum_mul_eq_sub_integral_mul' (fun _ : ℕ ↦ (1 : ℂ)) N
@@ -209,88 +202,6 @@ private theorem norm_integral_fract_div_add_sq_le {s : ℂ} (hs : s ∈ slitPlan
       exact sub_le_self _ hN
     _ = 1 / (c ^ 2 * ‖s‖) := by ring
 
-private theorem tendsto_log_add_natCast_sub_log (s : ℂ) :
-    Tendsto (fun N : ℕ ↦ Complex.log (s + N) - (Real.log ((N : ℝ) + 2) : ℂ))
-      atTop (𝓝 0) := by
-  have hiR : Tendsto (fun N : ℕ ↦ ((N : ℝ) + 2)⁻¹) atTop (𝓝 0) :=
-    tendsto_inv_atTop_zero.comp
-      (tendsto_atTop_add_const_right atTop 2 tendsto_natCast_atTop_atTop)
-  have hi : Tendsto (fun N : ℕ ↦ ((N : ℂ) + 2)⁻¹) atTop (𝓝 0) := by
-    simpa only [Function.comp_def, ofReal_inv, ofReal_add, ofReal_natCast, ofReal_ofNat,
-      ofReal_zero] using continuous_ofReal.continuousAt.tendsto.comp hiR
-  let z : ℕ → ℂ := fun N ↦ 1 + (s - 2) * ((N : ℂ) + 2)⁻¹
-  have hz : Tendsto z atTop (𝓝 (1 : ℂ)) := by
-    simpa only [z, mul_zero, add_zero] using (hi.const_mul (s - 2)).const_add 1
-  have hl : Tendsto (fun N : ℕ ↦ Complex.log (z N)) atTop (𝓝 0) := by
-    simpa [Function.comp_def] using
-      (Complex.hasDerivAt_log one_mem_slitPlane).continuousAt.tendsto.comp hz
-  have heq (N : ℕ) : s + N = z N * (((N : ℝ) + 2 : ℝ) : ℂ) := by
-    dsimp [z]
-    push_cast
-    have hn : (N : ℂ) + 2 ≠ 0 := by
-      intro hn
-      have h := congrArg Complex.re hn
-      norm_num at h
-      linarith [Nat.cast_nonneg (α := ℝ) N]
-    field_simp
-    ring
-  refine hl.congr' ?_
-  filter_upwards [hz.eventually_ne one_ne_zero] with N hnz
-  rw [heq N, Complex.log_mul_ofReal ((N : ℝ) + 2) (by positivity) (z N) hnz]
-  ring
-
-private theorem tendsto_sum_Icc_gaussSeries {s : ℂ} (hreg : ∀ n : ℕ, s ≠ -(n : ℂ)) :
-    Tendsto (fun N : ℕ ↦ ∑ n ∈ Finset.Icc 0 N, (1 / ((n : ℂ) + 1) - 1 / (s + n)))
-      atTop (𝓝 (digamma s + Real.eulerMascheroniConstant)) := by
-  have hsum : ∑' n : ℕ, (1 / ((n : ℂ) + 1) - 1 / (s + n)) =
-      digamma s + Real.eulerMascheroniConstant := by
-    linear_combination -(Complex.digamma_eq_gaussSeries hreg)
-  have ht := (Complex.summable_gaussSeries s).hasSum.tendsto_sum_nat.comp
-    (tendsto_add_atTop_nat 1)
-  rw [hsum] at ht
-  simpa only [Function.comp_def, Nat.range_succ_eq_Icc_zero] using ht
-
-private theorem tendsto_digamma_natCast_add_two_sub_log :
-    Tendsto (fun N : ℕ ↦ digamma ((N : ℝ) + 2) - (Real.log ((N : ℝ) + 2) : ℂ)) atTop (𝓝 0) := by
-  have hN : Tendsto (fun N : ℕ ↦ (N : ℝ) + 2) atTop atTop :=
-    tendsto_atTop_add_const_right atTop 2 tendsto_natCast_atTop_atTop
-  have h := (isBigO_digamma_ofReal_sub_log.trans_tendsto tendsto_inv_atTop_zero).comp hN
-  convert h using 1
-  ext N
-  dsimp only [Function.comp_apply]
-  rw [← ofReal_log (by positivity : 0 ≤ (N : ℝ) + 2)]
-  push_cast
-  rfl
-
-/-- The finite Gauss sum telescopes against the digamma recurrence from `1` to `N + 2`. -/
-private theorem sum_Icc_gaussSeries_eq (s : ℂ) (N : ℕ) :
-    ∑ n ∈ Finset.Icc 0 N, (1 / ((n : ℂ) + 1) - 1 / (s + n)) =
-      digamma ((N : ℝ) + 2) + Real.eulerMascheroniConstant -
-        ∑ k ∈ Finset.Icc 0 N, (s + k)⁻¹ := by
-  have h := digamma_apply_add_nat (nonpole_of_mem_slitPlane one_mem_slitPlane) (N + 1)
-  simp only [digamma_one, Nat.cast_add, Nat.cast_one] at h
-  rw [show (1 : ℂ) + (N + 1) = (N : ℂ) + 2 by ring] at h
-  simp only [Finset.sum_sub_distrib, ← Nat.range_succ_eq_Icc_zero, one_div]
-  push_cast
-  simp_rw [add_comm (1 : ℂ)] at h
-  linear_combination -h
-
-/-- Euler–Gauss limit representation of the digamma function: for every non-pole `s`
-(`∀ n : ℕ, s ≠ -n`), `log (s + N) - ∑_{k ≤ N} (s + k)⁻¹ → ψ(s)` as `N → ∞`. -/
-theorem tendsto_log_add_sub_sum_inv_add {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) :
-    Tendsto (fun N : ℕ ↦ Complex.log (s + N) - ∑ k ∈ Finset.Icc 0 N, (s + k)⁻¹)
-      atTop (𝓝 (digamma s)) := by
-  -- By `sum_Icc_gaussSeries_eq`, the sequence rewrites as
-  -- `(∑_{n ≤ N} (1 / (n + 1) - 1 / (s + n))) + (log (s + N) - log (N + 2))`
-  -- `- (ψ(N + 2) - log (N + 2)) - γ`.
-  have h := ((((tendsto_sum_Icc_gaussSeries hs).add (tendsto_log_add_natCast_sub_log s)).sub
-    tendsto_digamma_natCast_add_two_sub_log).sub_const (Real.eulerMascheroniConstant : ℂ))
-  convert h using 1
-  · ext N
-    rw [sum_Icc_gaussSeries_eq s N]
-    ring
-  · simp
-
 private theorem norm_digamma_sub_log_le_of_mul_norm_add_le {s : ℂ} (hs : s ∈ slitPlane) {c : ℝ}
     (hc : 0 < c) (hden : ∀ t : ℝ, 0 ≤ t → c * (‖s‖ + t) ≤ ‖s + t‖) :
     ‖digamma s - Complex.log s‖ ≤ (1 + (c ^ 2)⁻¹) / ‖s‖ := by
@@ -347,7 +258,8 @@ private theorem integral_inv_add_sq {s : ℂ} (hs : s ∈ slitPlane) (N : ℕ) :
   have hd (t : ℝ) (ht : t ∈ uIcc 0 (N : ℝ)) :
       HasDerivAt (fun u : ℝ ↦ -(s + (u : ℂ))⁻¹) (((s + (t : ℂ)) ^ 2)⁻¹) t := by
     rw [uIcc_of_le (Nat.cast_nonneg N)] at ht
-    convert (hasDerivAt_inv_add_ofReal (add_ofReal_ne_zero hs ht.1)).neg using 1
+    convert (hasDerivAt_inv_add_ofReal (mem_slitPlane_iff_add_ofReal_ne_zero.mp hs _ ht.1)).neg
+      using 1
     ring
   rw [integral_eq_sub_of_hasDerivAt hd
     ((continuousOn_inv_add_ofReal_sq hs N).intervalIntegrable_of_Icc (Nat.cast_nonneg N))]
@@ -363,7 +275,7 @@ private theorem integral_fract_sub_half_div_add_sq {s : ℂ} (hs : s ∈ slitPla
   let v : ℝ → ℂ := fun t ↦ ((s + (t : ℂ)) ^ 2)⁻¹
   have hN := Nat.cast_nonneg (α := ℝ) N
   have hvd (t : ℝ) (ht : 0 ≤ t) : HasDerivAt v (-2 / (s + t) ^ 3) t := by
-    have hne := add_ofReal_ne_zero hs ht
+    have hne := mem_slitPlane_iff_add_ofReal_ne_zero.mp hs _ ht
     have h := (((hasDerivAt_id (t : ℂ)).const_add s).pow 2).inv (pow_ne_zero 2 hne)
     refine HasDerivAt.congr_deriv (f := v) h.comp_ofReal ?_
     simp only [id, Pi.pow_apply]
@@ -371,7 +283,7 @@ private theorem integral_fract_sub_half_div_add_sq {s : ℂ} (hs : s ∈ slitPla
     ring
   have hcont3 : ContinuousOn (fun t : ℝ ↦ -2 / (s + (t : ℂ)) ^ 3) (Icc 0 (N : ℝ)) :=
     continuousOn_const.div ((continuousOn_const.add continuous_ofReal.continuousOn).pow 3)
-      fun t ht ↦ pow_ne_zero _ (add_ofReal_ne_zero hs ht.1)
+      fun _ ht ↦ pow_ne_zero _ (mem_slitPlane_iff_add_ofReal_ne_zero.mp hs _ ht.1)
   have hu'int : IntervalIntegrable (fun t : ℝ ↦ ((Int.fract t - 1 / 2 : ℝ) : ℂ)) volume 0 N := by
     refine (intervalIntegrable_iff_integrableOn_Icc_of_le hN).2 ?_
     refine Measure.integrableOn_of_bounded (μ := volume) (M := 1) measure_Icc_lt_top.ne
@@ -413,50 +325,6 @@ private theorem integral_fract_sub_half_div_add_sq {s : ℂ} (hs : s ∈ slitPla
   · exact (hcont3.intervalIntegrable_of_Icc hN).continuousOn_mul
       (continuous_ofReal.comp (Int.continuous_fract_sq_sub_fract.div_const 2)).continuousOn
 
-/-- The `P₂` remainder is `O(1 / ‖s‖²)` uniformly in the cutoff. -/
-private theorem norm_integral_fract_kernel_le {s : ℂ} (hs : s ∈ slitPlane) {c : ℝ}
-    (hc : 0 < c) (hden : ∀ t : ℝ, 0 ≤ t → c * (‖s‖ + t) ≤ ‖s + t‖) (N : ℕ) :
-    ‖∫ t : ℝ in 0..(N : ℝ), (((Int.fract t ^ 2 - Int.fract t) / 2 : ℝ) : ℂ) / (s + t) ^ 3‖ ≤
-      1 / (8 * c ^ 3 * ‖s‖ ^ 2) := by
-  have hs0 : 0 < ‖s‖ := norm_pos_iff.mpr (slitPlane_ne_zero hs)
-  have hN := Nat.cast_nonneg (α := ℝ) N
-  have hg : ContinuousOn (fun t : ℝ ↦ (8 * c ^ 3 * ‖s‖)⁻¹ * (1 / (‖s‖ + t) ^ 2))
-      (Icc 0 (N : ℝ)) :=
-    continuousOn_const.mul (continuousOn_const.div
-      ((continuousOn_const.add continuousOn_id).pow 2)
-      (fun t ht ↦ pow_ne_zero _ (by linarith [ht.1])))
-  have hnorm (t : ℝ) (ht : 0 ≤ t) :
-      ‖(((Int.fract t ^ 2 - Int.fract t) / 2 : ℝ) : ℂ) / (s + t) ^ 3‖ ≤
-        (8 * c ^ 3 * ‖s‖)⁻¹ * (1 / (‖s‖ + t) ^ 2) := by
-    rw [norm_div, norm_pow, Complex.norm_real, Real.norm_eq_abs]
-    have hcube : c ^ 3 * (‖s‖ + t) ^ 3 ≤ ‖s + t‖ ^ 3 := by
-      rw [← mul_pow]
-      exact pow_le_pow_left₀ (by positivity) (hden t ht) 3
-    have hpos : 0 < c ^ 3 * (‖s‖ + t) ^ 3 := by positivity
-    calc
-      _ ≤ (1 / 8) / (c ^ 3 * (‖s‖ + t) ^ 3) :=
-        div_le_div₀ (by norm_num)
-          (by rw [abs_div, abs_two]; linarith [Int.abs_fract_sq_sub_fract_le t]) hpos hcube
-      _ ≤ (8 * c ^ 3 * ‖s‖)⁻¹ * (1 / (‖s‖ + t) ^ 2) := by
-        rw [div_div, show c ^ 3 * (‖s‖ + t) ^ 3 = c ^ 3 * (‖s‖ + t) * (‖s‖ + t) ^ 2 by ring]
-        have h1 : c ^ 3 * ‖s‖ ≤ c ^ 3 * (‖s‖ + t) := by gcongr; linarith
-        calc
-          1 / (8 * (c ^ 3 * (‖s‖ + t) * (‖s‖ + t) ^ 2))
-              ≤ 1 / (8 * (c ^ 3 * ‖s‖ * (‖s‖ + t) ^ 2)) := by gcongr
-          _ = (8 * c ^ 3 * ‖s‖)⁻¹ * (1 / (‖s‖ + t) ^ 2) := by
-            field_simp
-  have hb := intervalIntegral.norm_integral_le_of_norm_le (μ := volume) hN
-    (Eventually.of_forall fun t ht ↦ hnorm t ht.1.le) (hg.intervalIntegrable_of_Icc hN)
-  refine hb.trans ?_
-  rw [intervalIntegral.integral_const_mul, Real.integral_one_div_add_sq hs0 hN]
-  have hN' : 0 ≤ (‖s‖ + (N : ℝ))⁻¹ := by positivity
-  calc
-    (8 * c ^ 3 * ‖s‖)⁻¹ * (‖s‖⁻¹ - (‖s‖ + (N : ℝ))⁻¹) ≤ (8 * c ^ 3 * ‖s‖)⁻¹ * ‖s‖⁻¹ := by
-      gcongr
-      exact sub_le_self _ hN'
-    _ = 1 / (8 * c ^ 3 * ‖s‖ ^ 2) := by
-      field_simp
-
 /-- The fractional-part remainder minus its mean `1 / (2s)` is the `P₂` remainder up to the
 boundary term `-1 / (2 (s + N))`. -/
 private theorem integral_fract_div_add_sq_sub_inv_two_mul {s : ℂ} (hs : s ∈ slitPlane) (N : ℕ) :
@@ -482,41 +350,6 @@ private theorem integral_fract_div_add_sq_sub_inv_two_mul {s : ℂ} (hs : s ∈ 
   rw [hsplit, integral_fract_sub_half_div_add_sq hs N, integral_inv_add_sq hs N]
   field_simp [slitPlane_ne_zero hs, add_natCast_ne_zero hs N]
   ring
-
-private theorem norm_digamma_sub_log_add_inv_two_mul_le_of_mul_norm_add_le {s : ℂ}
-    (hs : s ∈ slitPlane) {c : ℝ} (hc : 0 < c)
-    (hden : ∀ t : ℝ, 0 ≤ t → c * (‖s‖ + t) ≤ ‖s + t‖) :
-    ‖digamma s - Complex.log s + (2 * s)⁻¹‖ ≤ 1 / (4 * c ^ 3 * ‖s‖ ^ 2) := by
-  have hs0 : 0 < ‖s‖ := norm_pos_iff.mpr (slitPlane_ne_zero hs)
-  have hlim := (((tendsto_log_add_sub_sum_inv_add (nonpole_of_mem_slitPlane hs)).sub_const
-    (Complex.log s)).add_const (2 * s)⁻¹).norm
-  have hb : Tendsto (fun N : ℕ ↦ 1 / (4 * c ^ 3 * ‖s‖ ^ 2) + (2 * c * (‖s‖ + N))⁻¹) atTop
-      (𝓝 (1 / (4 * c ^ 3 * ‖s‖ ^ 2) + 0)) := by
-    refine tendsto_const_nhds.add (tendsto_inv_atTop_zero.comp ?_)
-    refine Tendsto.const_mul_atTop (by positivity) ?_
-    exact tendsto_atTop_add_const_left _ _ tendsto_natCast_atTop_atTop
-  rw [add_zero] at hb
-  refine le_of_tendsto_of_tendsto' hlim hb fun N ↦ ?_
-  have heq : Complex.log (s + N) - ∑ k ∈ Finset.Icc 0 N, (s + k)⁻¹ - Complex.log s +
-      (2 * s)⁻¹ = -(2 * (s + N))⁻¹ + 2 * ∫ t : ℝ in 0..(N : ℝ),
-        (((Int.fract t ^ 2 - Int.fract t) / 2 : ℝ) : ℂ) / (s + t) ^ 3 := by
-    rw [sum_inv_add_eq_log_sub_integral_fract hs N,
-      ← integral_fract_div_add_sq_sub_inv_two_mul hs N]
-    ring
-  rw [heq]
-  have hsN := hden N (Nat.cast_nonneg N)
-  calc
-    _ ≤ ‖(2 * (s + N))⁻¹‖ + 2 * (1 / (8 * c ^ 3 * ‖s‖ ^ 2)) := by
-      refine (norm_add_le _ _).trans ?_
-      rw [norm_neg, norm_mul, Complex.norm_two]
-      gcongr
-      exact norm_integral_fract_kernel_le hs hc hden N
-    _ ≤ (2 * c * (‖s‖ + N))⁻¹ + 2 * (1 / (8 * c ^ 3 * ‖s‖ ^ 2)) := by
-      gcongr
-      rw [norm_inv, norm_mul, Complex.norm_two, mul_assoc]
-      gcongr
-      simpa only [ofReal_natCast] using hsN
-    _ = _ := by ring
 
 /-- Exact `P₂` Stieltjes integral representation of `ψ(s) - log s + 1 / (2s)` for
 `s ∈ slitPlane ∪ {0}`:
@@ -575,24 +408,23 @@ theorem norm_digamma_sub_log_add_inv_two_mul_le {z : ℂ} (hz : z ∈ slitPlane 
   rw [digamma_sub_log_add_inv_two_mul_eq_integral hz, norm_mul, norm_neg, Complex.norm_two]
   refine (mul_le_mul_of_nonneg_left
     (TauCeti.norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le 1 z) zero_le_two).trans_eq ?_
-  rw [show 8 * ((1 : ℕ) + 1 : ℝ) * Real.cos (z.arg / 2) ^ (1 + 2) * ‖z‖ ^ (1 + 1) =
-      2 * (8 * Real.cos (z.arg / 2) ^ 3 * ‖z‖ ^ 2) by push_cast; ring,
-    one_div, mul_inv, ← mul_assoc, mul_inv_cancel₀ two_ne_zero, one_mul, inv_eq_one_div]
+  norm_num [one_div, mul_inv]
+  ring
 
-/-- The second-order sectorial digamma bound: on `|arg s| ≤ π - δ`,
-`‖ψ(s) - log s + 1 / (2s)‖ ≤ 2 / ((1 - cos δ) ^ 3 ‖s‖ ^ 2)`. -/
+/-- The second-order sectorial digamma bound: for `0 < δ` and `|arg s| ≤ π - δ`,
+`‖ψ(s) - log s + 1 / (2s)‖ ≤ 1 / (8 * sin (δ / 2) ^ 3 * ‖s‖ ^ 2)`. -/
 theorem norm_digamma_sub_log_add_inv_two_mul_le_of_abs_arg_le {s : ℂ} {δ : ℝ}
-    (hδ : 0 < δ) (hδπ : δ < Real.pi) (hs : |s.arg| ≤ Real.pi - δ) :
-    ‖digamma s - Complex.log s + (2 * s)⁻¹‖ ≤ 2 / ((1 - Real.cos δ) ^ 3 * ‖s‖ ^ 2) := by
+    (hδ : 0 < δ) (hs : |s.arg| ≤ Real.pi - δ) :
+    ‖digamma s - Complex.log s + (2 * s)⁻¹‖ ≤ 1 / (8 * Real.sin (δ / 2) ^ 3 * ‖s‖ ^ 2) := by
   rcases eq_or_ne s 0 with rfl | hs0
   · simp [digamma_def, logDeriv_apply]
-  have hslit := mem_slitPlane_of_abs_arg_le hδ hs hs0
-  have hc : 0 < (1 - Real.cos δ) / 2 :=
-    half_pos (TauCeti.one_sub_cos_pos hδ (by linarith [Real.pi_pos]))
-  have h := norm_digamma_sub_log_add_inv_two_mul_le_of_mul_norm_add_le hslit hc
-    (fun t ht ↦ mul_norm_add_le_norm_add_ofReal_of_abs_arg_le hδ hs ht)
-  convert h using 1
-  field_simp
-  ring
+  have hδπ : δ ≤ Real.pi := by linarith [abs_nonneg s.arg]
+  have : 0 < Real.sin (δ / 2) :=
+    Real.sin_pos_of_pos_of_lt_pi (half_pos hδ) (by linarith [Real.pi_pos])
+  have : Real.sin (δ / 2) ≤ Real.cos (s.arg / 2) :=
+    sin_half_le_cos_half_arg_of_abs_arg_le hδ.le hs
+  have : 0 < ‖s‖ := norm_pos_iff.mpr hs0
+  exact (norm_digamma_sub_log_add_inv_two_mul_le
+    (Or.inl (mem_slitPlane_of_abs_arg_le hδ hs hs0))).trans (by gcongr)
 
 end Complex

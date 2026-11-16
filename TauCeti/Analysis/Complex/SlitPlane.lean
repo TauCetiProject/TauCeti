@@ -49,7 +49,8 @@ is a principal logarithm.
 * `TauCeti.mul_mem_slitPlane_of_re_pos`
 * `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
 * `TauCeti.sub_mem_slitPlane_of_im_le_zero`
-* `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
+* `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.add_ofReal_mem_slitPlane`,
+  `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`,
   `TauCeti.exists_pos_forall_mem_mul_one_add_le_norm_add_of_isCompact`
@@ -194,6 +195,12 @@ theorem ofReal_add_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht 
   rw [add_re, ofReal_re]
   positivity
 
+/-- Translating a point of the slit plane on the right by a nonnegative real number keeps it in the
+slit plane. -/
+theorem add_ofReal_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
+    z + (t : ℂ) ∈ slitPlane := by
+  simpa only [add_comm] using ofReal_add_mem_slitPlane hz ht
+
 /-- Translating a point of `slitPlane ∪ {0}` by a positive real number lands in the slit
 plane. -/
 theorem ofReal_add_mem_slitPlane_of_mem_union {z : ℂ} (hz : z ∈ slitPlane ∪ {0}) {t : ℝ}
@@ -324,13 +331,12 @@ theorem conj_mem_slitPlane {z : ℂ} : (starRingEnd ℂ) z ∈ slitPlane ↔ z �
 vanishes. -/
 theorem mem_slitPlane_iff_add_ofReal_ne_zero {z : ℂ} :
     z ∈ slitPlane ↔ ∀ t : ℝ, 0 ≤ t → z + (t : ℂ) ≠ 0 := by
-  refine ⟨fun hz t ht ↦ ?_, fun h ↦ by_contra fun hz ↦ ?_⟩
-  · rw [add_comm]
-    exact slitPlane_ne_zero (TauCeti.ofReal_add_mem_slitPlane hz ht)
-  · have him : z.im = 0 := im_eq_zero_of_notMem_slitPlane hz
-    have hre : z.re ≤ 0 := le_of_not_gt fun hp ↦ hz (mem_slitPlane_iff.mpr (Or.inl hp))
-    refine h (-z.re) (neg_nonneg.mpr hre) ?_
-    apply Complex.ext <;> simp [him]
+  refine ⟨fun hz t ht ↦ slitPlane_ne_zero (TauCeti.add_ofReal_mem_slitPlane hz ht),
+    fun h ↦ by_contra fun hz ↦ ?_⟩
+  have him : z.im = 0 := im_eq_zero_of_notMem_slitPlane hz
+  have hre : z.re ≤ 0 := le_of_not_gt fun hp ↦ hz (mem_slitPlane_iff.mpr (Or.inl hp))
+  refine h (-z.re) (neg_nonneg.mpr hre) ?_
+  apply Complex.ext <;> simp [him]
 
 /-- Scaling `z` by a real number in `[0, 1]` preserves slit-plane membership of `1 - z`. -/
 theorem one_sub_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)

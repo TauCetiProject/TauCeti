@@ -25,9 +25,10 @@ particular, its value at `3` is `Real.log 2`, and its real part is `Real.log ‖
 The branch is constructed once on the whole slit plane, using
 `TauCeti.exists_differentiableOn_eqOn_exp_comp`; its restrictions to sectors therefore agree
 without further choices. Conversely, any continuous logarithm of `Gamma` on a preconnected subset
-of `slitPlane` — and in particular on any exterior sector `{z : ℂ | |arg z| < π - δ ∧ 1 < ‖z‖}` —
-differs from `logGamma` by an integer multiple of `2πi`, and coincides with `logGamma` once it
-agrees at a single point (such as `2` or `1`). This file makes no asymptotic assertion.
+of `slitPlane` — and in particular on any exterior sector `{z : ℂ | |arg z| < π - δ ∧ 1 < ‖z‖}`
+with `0 ≤ δ` — differs from `logGamma` by an integer multiple of `2πi`, and coincides with
+`logGamma` once it agrees at a single point of the subset (`2` or `1` on `slitPlane`, `2` on
+`{z : ℂ | |arg z| < π - δ ∧ 1 < ‖z‖}`). This file makes no asymptotic assertion.
 -/
 
 public section
@@ -168,9 +169,7 @@ theorem logGamma_conj {z : ℂ} (hz : z ∈ slitPlane) :
     continuous_conj.comp_continuousOn (differentiableOn_logGamma.continuousOn.comp
       continuous_conj.continuousOn fun _ hw ↦ conj_mem_slitPlane.mpr hw)
   have he : ∀ w ∈ slitPlane, Complex.exp (L w) = Complex.Gamma w := fun w hw ↦ by
-    dsimp [L]
-    rw [Complex.exp_conj, exp_logGamma (conj_mem_slitPlane.mpr hw), ← Complex.Gamma_conj,
-      RingHomCompTriple.comp_apply, RingHom.id_apply]
+    simp [L, Complex.exp_conj, exp_logGamma (conj_mem_slitPlane.mpr hw), ← Complex.Gamma_conj]
   have h1 : L 1 = 0 := by simp [L]
   simpa [L] using (eqOn_logGamma_of_one hL he h1 (conj_mem_slitPlane.mpr hz)).symm
 
@@ -178,7 +177,7 @@ theorem logGamma_conj {z : ℂ} (hz : z ∈ slitPlane) :
 theorem logGamma_add_one {z : ℂ} (hz : z ∈ slitPlane) :
     logGamma (z + 1) = logGamma z + Complex.log z := by
   have hadd {w : ℂ} (hw : w ∈ slitPlane) : w + 1 ∈ slitPlane := by
-    simpa [add_comm] using ofReal_add_mem_slitPlane hw zero_le_one
+    simpa using add_ofReal_mem_slitPlane hw zero_le_one
   let L : ℂ → ℂ := fun w ↦ logGamma (w + 1) - Complex.log w
   have hL : ContinuousOn L slitPlane :=
     (differentiableOn_logGamma.continuousOn.comp (continuousOn_id.add continuousOn_const)
