@@ -26,12 +26,12 @@ lies in an open set `U` (a *convexity chart*, `TauCeti.IsConvexChart f U`) such 
 * every fibre `U ∩ f ⁻¹' {v}` of `f` in `U` is preconnected.
 
 Then `f` is globally convex: its image is convex
-(`IsProperMap.convex_range_of_isConvexChart`) and all of its fibres are connected
-(`IsProperMap.isPreconnected_preimage_singleton_of_isConvexChart`). This is the local-to-global
-principle of Condevaux, Dazord and Molino and of Hilgert, Neeb and Plank, the global step of their
-proofs of the convexity theorems of Atiyah, Guillemin–Sternberg and Kirwan for moment maps: there,
-near each point, the moment map is open onto a convex cone with connected fibres, and then a
-neighbourhood of the point is a convexity chart
+(`IsProperMap.convex_range_of_isConvexChart`) and all of its fibres are preconnected, so connected
+over points of the image (`IsProperMap.isPreconnected_preimage_singleton_of_isConvexChart`).
+This is the local-to-global principle of Condevaux, Dazord and Molino and of Hilgert, Neeb and
+Plank, the global step of their proofs of the convexity theorems of Atiyah, Guillemin–Sternberg and
+Kirwan for moment maps: there, near each point, the moment map is open onto a convex cone with
+connected fibres, and then a neighbourhood of the point is a convexity chart
 (`TauCeti.exists_isConvexChart_inter_preimage_ball`). For a closed embedding `f` it is the theorem
 of Tietze and Nakajima that a closed connected locally convex subset of `ℝⁿ` is convex.
 
@@ -74,7 +74,8 @@ norm to a Euclidean one.
   point, with preconnected fibres there, has a convexity chart around that point.
 * `IsProperMap.convex_range_of_isConvexChart`: a proper locally convex map from a connected
   Hausdorff space has convex image.
-* `IsProperMap.isPreconnected_preimage_singleton_of_isConvexChart`: its fibres are connected.
+* `IsProperMap.isPreconnected_preimage_singleton_of_isConvexChart`: its fibres are preconnected,
+  so connected over points of the image.
 
 ## References
 
@@ -125,11 +126,12 @@ theorem isPreconnected_inter_preimage (hU : IsConvexChart f U) {S : Set E} (hS :
   -- `f '' (U ∩ u)` and `f '' (U ∩ v)` are disjoint on `S`.
   have hdisj : ∀ s ∈ S, s ∈ f '' (U ∩ u) → s ∉ f '' (U ∩ v) := by
     rintro s hs ⟨x, ⟨hxU, hxu⟩, rfl⟩ ⟨y, ⟨hyU, hyv⟩, hyx⟩
-    have hsub : U ∩ f ⁻¹' {f x} ⊆ u ∪ v := fun z ⟨hzU, hz⟩ ↦
-      hcover ⟨hzU, show f z ∈ S by rw [show f z = f x from hz]; exact hs⟩
-    obtain ⟨z, ⟨hzU, hz⟩, hzuv⟩ := hU.isPreconnected_inter_preimage_singleton (f x) u v hu hv hsub
-      ⟨x, ⟨hxU, rfl⟩, hxu⟩ ⟨y, ⟨hyU, hyx⟩, hyv⟩
-    exact hne ⟨z, ⟨hzU, show f z ∈ S by rw [show f z = f x from hz]; exact hs⟩, hzuv⟩
+    have hS' : U ∩ f ⁻¹' {f x} ⊆ U ∩ f ⁻¹' S := fun z ⟨hzU, hz⟩ ↦ by
+      rw [mem_preimage, mem_singleton_iff] at hz
+      exact ⟨hzU, by rwa [mem_preimage, hz]⟩
+    obtain ⟨z, hz, hzuv⟩ := hU.isPreconnected_inter_preimage_singleton (f x) u v hu hv
+      (hS'.trans hcover) ⟨x, ⟨hxU, rfl⟩, hxu⟩ ⟨y, ⟨hyU, hyx⟩, hyv⟩
+    exact hne ⟨z, hS' hz, hzuv⟩
   -- Relatively open pieces of `f '' U` give open sets in `E` with the same trace on `S`.
   have hopen : ∀ w : Set X, IsOpen w → ∀ s ∈ S, s ∈ f '' (U ∩ w) →
       s ∈ interior ((f '' U)ᶜ ∪ f '' (U ∩ w)) := by
@@ -180,6 +182,20 @@ theorem continuousLinearEquiv_comp {F : Type*} [NormedAddCommGroup F] [NormedSpa
 
 end IsConvexChart
 
+/-- Fibres of `f` in `V` over points outside `f '' V` are empty, so it suffices to check that the
+fibres over points of `f '' V` are preconnected. -/
+private theorem isPreconnected_inter_preimage_singleton_of_forall_mem_image {Y : Type*} {f : X → Y}
+    {V : Set X} (h : ∀ v ∈ f '' V, IsPreconnected (V ∩ f ⁻¹' {v})) (v : Y) :
+    IsPreconnected (V ∩ f ⁻¹' {v}) := by
+  by_cases hv : v ∈ f '' V
+  · exact h v hv
+  · convert isPreconnected_empty
+    ext x
+    simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, mem_empty_iff_false, iff_false,
+      not_and]
+    rintro hxV rfl
+    exact hv (mem_image_of_mem f hxV)
+
 /-- **Convexity charts from local convexity data.** Suppose that `f` maps an open set `U` into a
 convex set `C`, sending open subsets of `U` onto relative neighbourhoods in `C`, with preconnected
 fibres in `U`; for instance `C` may be a convex cone with vertex `f x`, as in a local normal form of
@@ -197,20 +213,18 @@ theorem exists_isConvexChart_inter_preimage_ball {f : X → E} (hf : Continuous 
       exact ⟨hyB, hUC (mem_image_of_mem f hyU)⟩
     · obtain ⟨y, hyU, rfl⟩ := hεU hv
       exact ⟨y, ⟨hyU, hv.1⟩, rfl⟩
-  refine ⟨ε, hε, hU.inter (isOpen_ball.preimage hf), ?_, fun W hW hWo y hy ↦ ?_, fun v ↦ ?_⟩
+  refine ⟨ε, hε, hU.inter (isOpen_ball.preimage hf), ?_, fun W hW hWo y hy ↦ ?_,
+    isPreconnected_inter_preimage_singleton_of_forall_mem_image fun v hv ↦ ?_⟩
   · rw [himage]
     exact (convex_ball _ _).inter hC
   · rw [himage]
     exact nhdsWithin_mono _ inter_subset_right
       (hopen W (hW.trans inter_subset_left) hWo y hy)
-  · by_cases hv : v ∈ ball (f x) ε
-    · convert hfib v using 1
-      ext y
-      simp only [mem_inter_iff, mem_preimage, mem_singleton_iff]
-      exact ⟨fun ⟨⟨hyU, _⟩, hyv⟩ ↦ ⟨hyU, hyv⟩, fun ⟨hyU, hyv⟩ ↦ ⟨⟨hyU, hyv ▸ hv⟩, hyv⟩⟩
-    · convert isPreconnected_empty
-      refine eq_empty_of_forall_notMem fun y ⟨⟨_, hyB⟩, hyv⟩ ↦ hv ?_
-      rwa [mem_preimage, show f y = v from hyv] at hyB
+  · rw [himage] at hv
+    convert hfib v using 1
+    ext y
+    simp only [mem_inter_iff, mem_preimage, mem_singleton_iff]
+    exact ⟨fun ⟨⟨hyU, _⟩, hyv⟩ ↦ ⟨hyU, hyv⟩, fun ⟨hyU, hyv⟩ ↦ ⟨⟨hyU, hyv ▸ hv.1⟩, hyv⟩⟩
 
 /-! ### Chains of linked points -/
 
@@ -400,6 +414,22 @@ section Proper
 
 variable [ProperSpace E] {f : X → E}
 
+omit [NormedSpace ℝ E] in
+/-- **Cluster points of nearly bounded sequences.** For a proper map `f`, a sequence `u` whose
+images satisfy `dist (f a) (f (u n)) ≤ C + 1 / (n + 1)` has a cluster point. -/
+private theorem exists_mapClusterPt_of_dist_le (hf : IsProperMap f) (a : X) {C : ℝ}
+    {u : ℕ → X} (hu : ∀ n : ℕ, dist (f a) (f (u n)) ≤ C + 1 / (n + 1)) :
+    ∃ x₀, MapClusterPt x₀ atTop u := by
+  have huK : ∀ n, u n ∈ f ⁻¹' closedBall (f a) (C + 1) := fun n ↦ by
+    have h₁ : 1 / ((n : ℝ) + 1) ≤ 1 := by
+      rw [div_le_one (by positivity)]
+      linarith [n.cast_nonneg (α := ℝ)]
+    rw [mem_preimage, mem_closedBall, dist_comm]
+    linarith [hu n]
+  obtain ⟨x₀, -, hx₀⟩ := (hf.isCompact_preimage (isCompact_closedBall (f a) (C + 1))
+    ).exists_mapClusterPt (f := atTop) (u := u) (tendsto_principal.2 (Eventually.of_forall huK))
+  exact ⟨x₀, hx₀⟩
+
 /-- **Midpoints.** For every `t ∈ [0, 1]` there is a point at chain distance `t ρ x y` from `x` and
 `(1 - t) ρ x y` from `y`. -/
 private theorem exists_chainDist_eq_mul (hf : IsProperMap f)
@@ -422,20 +452,11 @@ private theorem exists_chainDist_eq_mul (hf : IsProperMap f)
     rw [show ℓ - t * ℓ = (1 - t) * ℓ by ring]
     exact mul_le_mul_of_nonneg_left hℓ.le (sub_nonneg.2 ht.2)
   choose m hxm hmy using hseq
-  -- The splitting points lie in a compact set, so they have a cluster point.
-  have hK : IsCompact (f ⁻¹' closedBall (f x) (L + 1)) :=
-    hf.isCompact_preimage (isCompact_closedBall _ _)
-  have hmK : ∀ n, m n ∈ f ⁻¹' closedBall (f x) (L + 1) := fun n ↦ by
-    have h₁ : 1 / ((n : ℝ) + 1) ≤ 1 := by
-      rw [div_le_one (by positivity)]
-      linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]
-    rw [mem_preimage, mem_closedBall, dist_comm]
+  -- The splitting points have a cluster point.
+  obtain ⟨m₀, hm₀⟩ := exists_mapClusterPt_of_dist_le hf x fun n ↦
     calc dist (f x) (f (m n)) ≤ chainDist f x (m n) := dist_le_chainDist hR _ _
       _ ≤ t * (L + 1 / (n + 1)) := hxm n
-      _ ≤ 1 * (L + 1) := mul_le_mul ht.2 (by linarith) (by positivity) zero_le_one
-      _ = L + 1 := one_mul _
-  obtain ⟨m₀, -, hm₀⟩ :=
-    hK.exists_mapClusterPt (f := atTop) (u := m) (tendsto_principal.2 (Eventually.of_forall hmK))
+      _ ≤ L + 1 / (n + 1) := mul_le_of_le_one_left (by positivity) ht.2
   have hlim : ∀ s : ℝ, Tendsto (fun n : ℕ ↦ s * (L + 1 / ((n : ℝ) + 1))) atTop (𝓝 (s * L)) :=
     fun s ↦ by simpa using (tendsto_one_div_add_atTop_nhds_zero_nat.const_add L).const_mul s
   -- Bounds holding along the sequence up to errors tending to zero pass to the cluster point.
@@ -480,7 +501,8 @@ private theorem isConvexChart_biUnion {f : X → E} (hf : Continuous f) {T : Set
     rintro _ ⟨x, hx, rfl⟩
     obtain ⟨i, hi, hxU, hxB⟩ := mem_iUnion₂.1 hx
     exact ⟨hxB, hgerm i hi i₀ hi₀ ⟨hxB, mem_image_of_mem f hxU⟩⟩
-  refine ⟨isOpen_biUnion fun i hi ↦ (hU i hi).isOpen.inter (hBo.preimage hf), ?_, ?_, ?_⟩
+  refine ⟨isOpen_biUnion fun i hi ↦ (hU i hi).isOpen.inter (hBo.preimage hf), ?_, ?_,
+    isPreconnected_inter_preimage_singleton_of_forall_mem_image fun v hv ↦ ?_⟩
   · rw [himage]
     exact hBc.inter (hU i₀ hi₀).convex_image
   · intro W hW hWo x hx
@@ -490,28 +512,21 @@ private theorem isConvexChart_biUnion {f : X → E} (hf : Continuous f) {T : Set
     rw [himage]
     refine mem_of_superset (nhdsWithin_mono _ (fun v hv ↦ ?_) h) (image_mono inter_subset_left)
     exact hgerm i₀ hi₀ i hi hv
-  · intro v
-    by_cases hv : v ∈ B ∩ f '' U i₀
-    · have hfib : (⋃ i ∈ T, U i ∩ f ⁻¹' B) ∩ f ⁻¹' {v} = ⋃ i ∈ T, U i ∩ f ⁻¹' {v} := by
-        ext x
-        simp only [mem_inter_iff, mem_iUnion, mem_preimage, mem_singleton_iff, exists_prop]
-        constructor
-        · rintro ⟨⟨i, hi, hxU, -⟩, hxv⟩
-          exact ⟨i, hi, hxU, hxv⟩
-        · rintro ⟨i, hi, hxU, hxv⟩
-          exact ⟨⟨i, hi, hxU, hxv ▸ hv.1⟩, hxv⟩
-      rw [hfib]
-      refine IsPreconnected.biUnion_of_reflTransGen
-        (fun i hi ↦ (hU i hi).isPreconnected_inter_preimage_singleton v) fun i hi j hj ↦ ?_
-      refine Relation.ReflTransGen.mono (fun k l ⟨hk, _, hkl⟩ ↦ ⟨?_, hk⟩) _ _ (hchain i hi j hj)
-      obtain ⟨x, ⟨hxk, hxl⟩, hxv⟩ := hkl ⟨hv.1, hgerm i₀ hi₀ k hk hv⟩
-      exact ⟨x, ⟨hxk, hxv⟩, hxl, hxv⟩
-    · convert isPreconnected_empty
-      refine eq_empty_of_forall_notMem fun x ⟨hx, hxv⟩ ↦ hv ?_
-      obtain ⟨i, hi, hxU, hxB⟩ := mem_iUnion₂.1 hx
-      rw [mem_preimage, mem_singleton_iff] at hxv
-      subst hxv
-      exact ⟨hxB, hgerm i hi i₀ hi₀ ⟨hxB, mem_image_of_mem f hxU⟩⟩
+  · rw [himage] at hv
+    have hfib : (⋃ i ∈ T, U i ∩ f ⁻¹' B) ∩ f ⁻¹' {v} = ⋃ i ∈ T, U i ∩ f ⁻¹' {v} := by
+      ext x
+      simp only [mem_inter_iff, mem_iUnion, mem_preimage, mem_singleton_iff, exists_prop]
+      constructor
+      · rintro ⟨⟨i, hi, hxU, -⟩, hxv⟩
+        exact ⟨i, hi, hxU, hxv⟩
+      · rintro ⟨i, hi, hxU, hxv⟩
+        exact ⟨⟨i, hi, hxU, hxv ▸ hv.1⟩, hxv⟩
+    rw [hfib]
+    refine IsPreconnected.biUnion_of_reflTransGen
+      (fun i hi ↦ (hU i hi).isPreconnected_inter_preimage_singleton v) fun i hi j hj ↦ ?_
+    refine Relation.ReflTransGen.mono (fun k l ⟨hk, _, hkl⟩ ↦ ⟨?_, hk⟩) _ _ (hchain i hi j hj)
+    obtain ⟨x, ⟨hxk, hxl⟩, hxv⟩ := hkl ⟨hv.1, hgerm i₀ hi₀ k hk hv⟩
+    exact ⟨x, ⟨hxk, hxv⟩, hxl, hxv⟩
 
 /-- **The chart of a fibre component.** The convexity charts meeting the connected component `C` of
 `p` in its fibre glue, over a small ball around `f p`, to a single convexity chart containing `C`,
@@ -550,7 +565,7 @@ private theorem exists_isConvexChart_connectedComponentIn {f : X → E} (hf : Is
     fun i hi j hj ↦ Relation.ReflTransGen.mono (fun k l ⟨hk, hl, hkl⟩ ↦
       ⟨hk, hl, hε (k, l) ⟨hk, hl⟩ hkl⟩) _ _
       (isPreconnected_connectedComponentIn.reflTransGen_of_subset_biUnion
-        (fun i _ ↦ (hU i).isOpen) hcover (fun i hi ↦ ⟨i, hxU i, hTC hi⟩) hi hj)
+        (fun i _ ↦ (hU i).isOpen) hcover hi ⟨i, hxU i, hTC hi⟩ hj ⟨j, hxU j, hTC hj⟩)
   have hN := isConvexChart_biUnion hf.continuous (fun i _ ↦ hU i) isOpen_ball (convex_ball _ _)
     hi₀ hchain
   have hCN : C ⊆ ⋃ i ∈ T, U i ∩ f ⁻¹' ball (f p) ε := fun c hc ↦ by
@@ -593,11 +608,8 @@ private theorem exists_pos_forall_chainDist_lt_mem (hf : IsProperMap f)
     obtain ⟨s, hs, hsd⟩ := h.exists_mem_frontier hpO haO
     exact ⟨s, hs, hsd.trans hℓ.le⟩
   choose s hsO hsd using hseq
-  have hsK : ∀ n, s n ∈ f ⁻¹' closedBall (f p) 1 := fun n ↦ by
-    rw [mem_preimage, mem_closedBall, dist_comm]
-    exact (hsd n).trans (by rw [div_le_one (by positivity)]; linarith [n.cast_nonneg (α := ℝ)])
-  obtain ⟨s₀, -, hs₀⟩ := (hf.isCompact_preimage (isCompact_closedBall (f p) 1)
-    ).exists_mapClusterPt (f := atTop) (u := s) (tendsto_principal.2 (Eventually.of_forall hsK))
+  obtain ⟨s₀, hs₀⟩ := exists_mapClusterPt_of_dist_le hf p (C := 0) fun n ↦ (hsd n).trans_eq
+    (zero_add _).symm
   have hs₀O : s₀ ∈ frontier O := isClosed_frontier.mem_of_mapClusterPt hs₀ (.of_forall hsO)
   have hfs₀ : f s₀ = f p := by
     have hfc := hf.continuous
@@ -770,8 +782,8 @@ private theorem chainDist_eq_dist [StrictConvexSpace ℝ E] (hf : IsProperMap f)
     rw [← hfzn, ← hz0, ← Finset.sum_range_sub (fun i ↦ f (z i)),
       Finset.sum_congr rfl fun i hi ↦ hv₀ i (Finset.mem_range.1 hi), Finset.sum_const,
       Finset.card_range]
-  rw [dist_eq_norm', htel, ← Nat.cast_smul_eq_nsmul ℝ, norm_smul, Real.norm_natCast,
-    ← dist_eq_norm', hd 0 hn0, hLq]
+  rw [dist_eq_norm', htel, hLq, ← hd 0 hn0, dist_eq_norm']
+  simp [← Nat.cast_smul_eq_nsmul ℝ, norm_smul, v]
 
 end Rigidity
 
@@ -793,7 +805,8 @@ private theorem convex_range_of_strictConvexSpace (hf : IsProperMap f)
   rw [chainDist_eq_dist hf hloc hR, chainDist_eq_dist hf hloc hR] at hxm hmy
   exact ⟨m, eq_lineMap_of_dist_eq_mul_of_dist_eq_mul hxm hmy⟩
 
-/-- The local-to-global principle in a strictly convex proper space: the fibres are connected. -/
+/-- The local-to-global principle in a strictly convex proper space: the fibres are preconnected,
+so connected over points of the image. -/
 private theorem isPreconnected_preimage_singleton_of_strictConvexSpace (hf : IsProperMap f)
     (hloc : ∀ x, ∃ U, x ∈ U ∧ IsConvexChart f U) (v : E) : IsPreconnected (f ⁻¹' {v}) := by
   have hR := exists_reach hloc
@@ -805,7 +818,7 @@ private theorem isPreconnected_preimage_singleton_of_strictConvexSpace (hf : IsP
   obtain ⟨r, hr, hrN⟩ := exists_pos_forall_chainDist_lt_mem hf hR hN.isOpen p hCN hNC
   convert (isPreconnected_connectedComponentIn (F := f ⁻¹' {f p}) (x := p)) using 1
   refine Subset.antisymm (fun y hy ↦ hNC ⟨hrN y ?_, hy⟩) (connectedComponentIn_subset _ _)
-  rw [chainDist_eq_dist hf hloc hR, show f y = f p from hy, dist_self]
+  rw [chainDist_eq_dist hf hloc hR, mem_singleton_iff.1 hy, dist_self]
   exact hr
 
 end Main
@@ -834,7 +847,7 @@ theorem convex_range_of_isConvexChart (hf : IsProperMap f)
 
 /-- **The local-to-global principle for fibres.** A proper map from a connected Hausdorff space to
 a finite-dimensional real normed space, every point of which lies in a convexity chart, has
-connected fibres. -/
+preconnected fibres, so connected fibres over points of the image. -/
 theorem isPreconnected_preimage_singleton_of_isConvexChart (hf : IsProperMap f)
     (hloc : ∀ x, ∃ U, x ∈ U ∧ IsConvexChart f U) (v : E) : IsPreconnected (f ⁻¹' {v}) := by
   set e := toEuclidean (E := E)

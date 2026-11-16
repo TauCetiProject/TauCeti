@@ -208,22 +208,22 @@ theorem reflTransGen_inter_nonempty_of_isOpen_cover {t : Set ι} {V : ι → Set
     hVi₀ hVj).to_reflTransGen.lift Subtype.val (fun k l hkl ↦ ⟨k.2, l.2, hkl⟩)
 
 /-- **Chains of overlaps along a preconnected set.** If open sets `U i`, `i ∈ T`, cover a
-preconnected set `C` and each of them meets `C`, then any two of them are joined by a chain of
+preconnected set `C`, then any two members `U i` and `U j` meeting `C` are joined by a chain of
 members any two consecutive of which meet inside `C`. -/
 theorem _root_.IsPreconnected.reflTransGen_of_subset_biUnion {C : Set α} {T : Set ι}
     {U : ι → Set α} (hC : IsPreconnected C) (hU : ∀ i ∈ T, IsOpen (U i))
-    (hcover : C ⊆ ⋃ i ∈ T, U i) (hmeet : ∀ i ∈ T, (U i ∩ C).Nonempty) {i j : ι} (hi : i ∈ T)
-    (hj : j ∈ T) :
+    (hcover : C ⊆ ⋃ i ∈ T, U i) {i j : ι} (hi : i ∈ T) (hiC : (U i ∩ C).Nonempty) (hj : j ∈ T)
+    (hjC : (U j ∩ C).Nonempty) :
     Relation.ReflTransGen (fun i j ↦ i ∈ T ∧ j ∈ T ∧ (U i ∩ U j ∩ C).Nonempty) i j := by
   have := isPreconnected_iff_preconnectedSpace.1 hC
   have hunion : (⋃ k ∈ T, ((↑) : C → α) ⁻¹' U k) = univ :=
     eq_univ_of_forall fun c ↦ by simpa using hcover c.2
-  have hne : ∀ k ∈ T, (((↑) : C → α) ⁻¹' U k).Nonempty := fun k hk ↦
-    let ⟨c, hcU, hcC⟩ := hmeet k hk
+  have hne {k : ι} (hkC : (U k ∩ C).Nonempty) : (((↑) : C → α) ⁻¹' U k).Nonempty :=
+    let ⟨c, hcU, hcC⟩ := hkC
     ⟨⟨c, hcC⟩, hcU⟩
   refine Relation.ReflTransGen.mono ?_ _ _ (reflTransGen_inter_nonempty_of_isOpen_cover
     (hunion ▸ isPreconnected_univ) (fun k hk ↦ continuous_subtype_val.isOpen_preimage _ (hU k hk))
-    hi (hne i hi) hj (hne j hj))
+    hi (hne hiC) hj (hne hjC))
   rintro k l ⟨hk, hl, c, hck, hcl⟩
   exact ⟨hk, hl, c, ⟨hck, hcl⟩, c.2⟩
 
