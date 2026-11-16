@@ -51,6 +51,9 @@ known; it is a finite computation, run by `decide`.
   the points it names.
 * `TauCeti.CosetTable.smul_mem_range_point`: if the generators generate `G`, the named points
   contain the whole orbit of the base point.
+* `TauCeti.CosetTable.index_le_of_edges` and `TauCeti.CosetTable.finiteIndex_of_edges`: a
+  nonempty table on `k` points with sound generator edges on the cosets of a subgroup `H` shows
+  `H.index ≤ k`, however the edges were established.
 * `TauCeti.CosetTable.index_le` and `TauCeti.CosetTable.finiteIndex`: a certified table on `k`
   points for a subgroup `H` shows `H.index ≤ k`, and in particular that `H` has finite index.
 * `TauCeti.CosetTable.index_eq_iff_injective`: a certified table on `k` points gives the exact
@@ -259,16 +262,56 @@ theorem smul_mem_range_point {rels stab : List (List (Fin m))}
   have : NeZero k := ⟨Nat.ne_zero_of_lt i.isLt⟩
   exact smul_mem_range_point_of_edges (smul_point hT.2 hrels hstab) (hg ▸ Subgroup.mem_top x)
 
+/-- The cosets named by a nonempty table with sound generator edges are all the cosets of `H`,
+if the generators `g` generate `G`. No empty-word row or deduction certificate is required. -/
+theorem surjective_point_of_edges [NeZero k] {H : Subgroup G}
+    (hg : Subgroup.closure (Set.range g) = ⊤)
+    (hedges : ∀ t i,
+      g t • T.point g ((1 : G) : G ⧸ H) i = T.point g ((1 : G) : G ⧸ H) (T.act t i)) :
+    Function.Surjective (T.point g ((1 : G) : G ⧸ H)) := by
+  refine QuotientGroup.mk_surjective.forall.2 fun x ↦ ?_
+  simpa [MulAction.Quotient.smul_mk] using
+    smul_mem_range_point_of_edges hedges (hg ▸ Subgroup.mem_top x)
+
+/-- A nonempty table on `k` points with sound generator edges on the cosets of `H` shows that
+`H` has index at most `k`, if the generators `g` generate `G`. -/
+theorem index_le_of_edges [NeZero k] {H : Subgroup G} (hg : Subgroup.closure (Set.range g) = ⊤)
+    (hedges : ∀ t i,
+      g t • T.point g ((1 : G) : G ⧸ H) i = T.point g ((1 : G) : G ⧸ H) (T.act t i)) :
+    H.index ≤ k := by
+  rw [Subgroup.index_eq_card]
+  exact (Nat.card_le_card_of_surjective _ (surjective_point_of_edges hg hedges)).trans_eq
+    (Nat.card_fin k)
+
+/-- A subgroup `H` admitting a nonempty table with sound generator edges on its cosets has finite
+index, if the generators `g` generate `G`. -/
+theorem finiteIndex_of_edges [NeZero k] {H : Subgroup G} (hg : Subgroup.closure (Set.range g) = ⊤)
+    (hedges : ∀ t i,
+      g t • T.point g ((1 : G) : G ⧸ H) i = T.point g ((1 : G) : G ⧸ H) (T.act t i)) :
+    H.FiniteIndex :=
+  have : Finite (G ⧸ H) := Finite.of_surjective _ (surjective_point_of_edges hg hedges)
+  H.finiteIndex_of_finite_quotient
+
+/-- The edges of a table whose certificate checks for a subgroup `H` are sound on the cosets of
+`H`, and the table is nonempty. -/
+private theorem neZero_and_smul_point_mk {H : Subgroup G} {rels stab : List (List (Fin m))}
+    {cert : List (Fin k × List (Fin m))} (hT : T.check rels stab cert = true)
+    (hrels : ∀ r ∈ rels, (r.map g).prod = 1) (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) :
+    NeZero k ∧ ∀ t i,
+      g t • T.point g ((1 : G) : G ⧸ H) i = T.point g ((1 : G) : G ⧸ H) (T.act t i) := by
+  rw [check, Bool.and_eq_true] at hT
+  obtain ⟨i, -, -⟩ := List.any_eq_true.1 hT.1
+  exact ⟨⟨Nat.ne_zero_of_lt i.isLt⟩, smul_point hT.2 hrels fun r hr ↦ by
+    simpa [MulAction.Quotient.smul_mk, QuotientGroup.eq] using hstab r hr⟩
+
 /-- The cosets named by a certified coset table for a subgroup `H` are all the cosets of `H`. -/
 theorem surjective_point {H : Subgroup G} {rels stab : List (List (Fin m))}
     {cert : List (Fin k × List (Fin m))} (hg : Subgroup.closure (Set.range g) = ⊤)
     (hT : T.check rels stab cert = true) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
     (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) :
-    Function.Surjective (T.point g ((1 : G) : G ⧸ H)) := by
-  refine QuotientGroup.mk_surjective.forall.2 fun x ↦ ?_
-  have hstab' : ∀ r ∈ stab, (r.map g).prod • ((1 : G) : G ⧸ H) = ((1 : G) : G ⧸ H) :=
-    fun r hr ↦ by simpa [MulAction.Quotient.smul_mk, QuotientGroup.eq] using hstab r hr
-  simpa [MulAction.Quotient.smul_mk] using smul_mem_range_point hg hT hrels hstab' x
+    Function.Surjective (T.point g ((1 : G) : G ⧸ H)) :=
+  have ⟨_, hedges⟩ := neZero_and_smul_point_mk hT hrels hstab
+  surjective_point_of_edges hg hedges
 
 /-- Every element lies in the left coset of some representative word of a certified table. -/
 theorem exists_inv_word_mul_mem {H : Subgroup G} {rels stab : List (List (Fin m))}
@@ -286,10 +329,9 @@ whose certificate checks shows that `H` has index at most `k`. -/
 theorem index_le {H : Subgroup G} {rels stab : List (List (Fin m))}
     {cert : List (Fin k × List (Fin m))} (hg : Subgroup.closure (Set.range g) = ⊤)
     (hT : T.check rels stab cert = true) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
-    (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) : H.index ≤ k := by
-  rw [Subgroup.index_eq_card]
-  exact (Nat.card_le_card_of_surjective _ (surjective_point hg hT hrels hstab)).trans_eq
-    (Nat.card_fin k)
+    (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) : H.index ≤ k :=
+  have ⟨_, hedges⟩ := neZero_and_smul_point_mk hT hrels hstab
+  index_le_of_edges hg hedges
 
 /-- A certified coset table on `k` points for a subgroup `H` shows that `H` has index exactly `k`
 if and only if the cosets it names are distinct. -/
@@ -308,8 +350,8 @@ theorem finiteIndex {H : Subgroup G} {rels stab : List (List (Fin m))}
     {cert : List (Fin k × List (Fin m))} (hg : Subgroup.closure (Set.range g) = ⊤)
     (hT : T.check rels stab cert = true) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
     (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) : H.FiniteIndex :=
-  have : Finite (G ⧸ H) := Finite.of_surjective _ (surjective_point hg hT hrels hstab)
-  H.finiteIndex_of_finite_quotient
+  have ⟨_, hedges⟩ := neZero_and_smul_point_mk hT hrels hstab
+  finiteIndex_of_edges hg hedges
 
 end Group
 
