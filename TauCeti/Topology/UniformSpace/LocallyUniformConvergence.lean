@@ -38,6 +38,12 @@ uniformly in its first argument as the second tends to `q`
 (`TauCeti.tendstoLocallyUniformly_of_forall_continuousAt`), with no local compactness assumption
 on `α` or `δ`. For a flow, this gives locally uniform convergence of orbits from convergent
 initial points.
+
+Locally uniform limits on open sets glue: if `F` converges locally uniformly on each open set
+`G i` of a family, with values in a Hausdorff space, the limits agree on the overlaps and `F`
+converges locally uniformly on the union to the glued limit
+(`TauCeti.exists_tendstoLocallyUniformlyOn_iUnion`). This assembles a limit on a whole domain from
+limits on the windows of an exhaustion.
 -/
 
 public section
@@ -118,5 +124,22 @@ theorem tendstoLocallyUniformly_of_forall_continuousAt {δ γ : Type*} [Topologi
   have hlim := (hΦ x).tendsto.comp (hx.prodMk_nhds tendsto_const_nhds)
   have hfam := (hΦ x).tendsto.comp (hx.prodMk_nhds (hp.comp tendsto_fst))
   exact (hlim.prodMk_nhds hfam).mono_right (nhds_le_uniformity _)
+
+omit [PseudoMetricSpace β] in
+/-- **Gluing locally uniform limits.** If `F` converges locally uniformly to `v i` on each of the
+open sets `G i`, with values in a Hausdorff uniform space, then it converges locally uniformly on
+their union to one function, which agrees with every `v i` on `G i`. -/
+theorem exists_tendstoLocallyUniformlyOn_iUnion [UniformSpace β] [T2Space β] [l.NeBot]
+    {ι' : Type*} [Nonempty ι'] {G : ι' → Set α} (hG : ∀ i, IsOpen (G i)) {v : ι' → α → β}
+    (h : ∀ i, TendstoLocallyUniformlyOn F (v i) l (G i)) :
+    ∃ w : α → β, (∀ i, EqOn w (v i) (G i)) ∧ TendstoLocallyUniformlyOn F w l (⋃ i, G i) := by
+  classical
+  -- Limits are unique, so the `v i` agree on the overlaps of the `G i`.
+  set w : α → β := fun x ↦ if hx : ∃ i, x ∈ G i then v hx.choose x else v (Classical.arbitrary ι') x
+  have hw (i : ι') : EqOn w (v i) (G i) := fun x hx ↦ by
+    have hx' : ∃ i, x ∈ G i := ⟨i, hx⟩
+    simp only [w, hx', dite_true]
+    exact tendsto_nhds_unique ((h _).tendsto_at hx'.choose_spec) ((h i).tendsto_at hx)
+  exact ⟨w, hw, tendstoLocallyUniformlyOn_iUnion hG fun i ↦ (h i).congr_right (hw i).symm⟩
 
 end TauCeti
