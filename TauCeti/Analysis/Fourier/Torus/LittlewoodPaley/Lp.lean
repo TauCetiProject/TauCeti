@@ -14,6 +14,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
 import TauCeti.Analysis.Fourier.PoissonSummation
 import TauCeti.Analysis.Fourier.Torus.Convolution
 import TauCeti.Analysis.Fourier.Torus.Decay
+import TauCeti.MeasureTheory.Function.Lp.CompactConvolution
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
@@ -54,7 +55,7 @@ uniformly in `j`, since `𝓕⁻ ψ_{j+1}` is an `L¹`-normalised dilate of `�
 
 By Young's inequality `‖k ⋆ f‖_p ≤ ‖k‖₁ ‖f‖_p` (`MeasureTheory.eLpNorm_convolution_le`),
 convolution with a continuous kernel `k` is a bounded operator on `Lᵖ(𝕋ᵈ)` of norm at most `‖k‖₁`
-(`UnitAddTorus.convolutionLp`). The block `Δⱼ` is this operator for the kernel `kⱼ`
+(`ContinuousMap.convolutionLp`). The block `Δⱼ` is this operator for the kernel `kⱼ`
 (`TauCeti.UnitAddTorus.littlewoodPaleyBlockLp`,
 `TauCeti.UnitAddTorus.norm_littlewoodPaleyBlockLp_le`). It multiplies the Fourier coefficients by
 `ψⱼ(n)` (`TauCeti.UnitAddTorus.mFourierCoeff_littlewoodPaleyBlockLp`), so for `p = 2` it is the
@@ -200,6 +201,8 @@ theorem integral_norm_littlewoodPaleyKernel_le (j : ℕ) :
     integral_norm_eq_lintegral_eNorm K.continuous.aestronglyMeasurable]
   refine ENNReal.toReal_mono (K.integrable.hasFiniteIntegral.ne) ?_
   rw [littlewoodPaleyKernel_eq_periodize, ← hK]
+  -- In this file `volume` on the torus is the product of the local instance
+  -- `volume = haarAddCircle` on `UnitAddCircle`, which is the measure in `hper`.
   exact hper
 
 /-- **The kernels are bounded in `L¹` uniformly in `j`.** There is `C`, depending only on `φ`,
@@ -236,24 +239,24 @@ theorem littlewoodPaleyKernel_convolution (j : ℕ) {f : UnitAddTorus d → ℂ}
 variable (p : ℝ≥0∞) [Fact (1 ≤ p)]
 
 /-- The `j`-th **periodic Littlewood–Paley block on `Lᵖ(𝕋ᵈ)`**, `1 ≤ p ≤ ∞`: convolution with the
-kernel `kⱼ = ∑ₙ ψⱼ(n) e_n` (`UnitAddTorus.convolutionLp`). It multiplies the `n`-th Fourier
+kernel `kⱼ = ∑ₙ ψⱼ(n) e_n` (`ContinuousMap.convolutionLp`). It multiplies the `n`-th Fourier
 coefficient by `ψⱼ(n)` (`TauCeti.UnitAddTorus.mFourierCoeff_littlewoodPaleyBlockLp`), and for
 `p = 2` it is `TauCeti.UnitAddTorus.littlewoodPaleyBlock`
 (`TauCeti.UnitAddTorus.littlewoodPaleyBlockLp_two`). -/
 def littlewoodPaleyBlockLp (j : ℕ) :
     Lp ℂ p (volume : Measure (UnitAddTorus d)) →L[ℂ] Lp ℂ p (volume : Measure (UnitAddTorus d)) :=
-  convolutionLp volume p (littlewoodPaleyKernel φ j)
+  (littlewoodPaleyKernel φ j).convolutionLp volume p
 
 /-- The block `Δⱼ` on `Lᵖ(𝕋ᵈ)` is convolution with the kernel `kⱼ`. -/
 theorem coeFn_littlewoodPaleyBlockLp (j : ℕ) (f : Lp ℂ p (volume : Measure (UnitAddTorus d))) :
     littlewoodPaleyBlockLp φ p j f =ᵐ[volume]
       ⇑(littlewoodPaleyKernel φ j) ⋆[lsmul ℂ ℂ] (f : UnitAddTorus d → ℂ) :=
-  coeFn_convolutionLp (volume : Measure (UnitAddTorus d)) p _ f
+  (littlewoodPaleyKernel φ j).coeFn_convolutionLp volume f
 
 /-- The block `Δⱼ` on `Lᵖ(𝕋ᵈ)` has operator norm at most `‖kⱼ‖₁`. -/
 theorem norm_littlewoodPaleyBlockLp_le (j : ℕ) :
     ‖littlewoodPaleyBlockLp φ p j‖ ≤ ∫ z, ‖littlewoodPaleyKernel φ j z‖ :=
-  norm_convolutionLp_le (volume : Measure (UnitAddTorus d)) p _
+  (littlewoodPaleyKernel φ j).norm_convolutionLp_le volume p
 
 /-- **The periodic Littlewood–Paley blocks are bounded on `Lᵖ` uniformly in `j` and `p`.** There is
 `C`, depending only on `φ`, such that for every `1 ≤ p ≤ ∞` and every `j`, the block `Δⱼ` on

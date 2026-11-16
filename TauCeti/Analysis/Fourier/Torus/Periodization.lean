@@ -235,17 +235,15 @@ theorem lintegral_enorm_periodize_le {f : (d → ℝ) → ℂ} (hf : AEMeasurabl
   -- The unit cube `(0, 1]^d` and the fundamental domain `[0, 1)^d` agree up to a null set.
   have hcube : {x : d → ℝ | ∀ i, x i ∈ Ioc ((0 : d → ℝ) i) ((0 : d → ℝ) i + 1)} =ᵐ[volume]
       ZSpan.fundamentalDomain b := by
-    have h : ZSpan.fundamentalDomain b =
-        univ.pi fun i ↦ Ico ((0 : d → ℝ) i) ((0 : d → ℝ) i + 1) := by
-      ext x
-      simp [ZSpan.mem_fundamentalDomain, b]
-    rw [h]
-    exact TauCeti.UnitAddTorus.setOf_mem_Ioc_ae_eq_pi_Ico 0
+    rw [ZSpan.fundamentalDomain_pi_basisFun]
+    simpa only [Pi.zero_apply, zero_add] using TauCeti.UnitAddTorus.setOf_mem_Ioc_ae_eq_pi_Ico 0
   -- The integral over the torus is the integral over the unit cube.
   have hlift : ∫⁻ z, ‖periodize f z‖ₑ =
       ∫⁻ x in {x : d → ℝ | ∀ i, x i ∈ Ioc ((0 : d → ℝ) i) ((0 : d → ℝ) i + 1)},
         ‖periodize f fun i ↦ (x i : UnitAddCircle)‖ₑ := by
     rw [TauCeti.UnitAddTorus.volume_eq_pi_haarAddCircle]
+    -- Mathlib states `UnitAddTorus.lintegral_preimage` with its file-local normalization
+    -- `volume = haarAddCircle` on `UnitAddCircle`, whose product measure is the measure above.
     exact lintegral_preimage (fun z ↦ ‖periodize f z‖ₑ) 0
   rw [hlift, setLIntegral_congr hcube]
   simp_rw [periodize_coe]
