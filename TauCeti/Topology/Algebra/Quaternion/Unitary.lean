@@ -156,7 +156,7 @@ theorem coe_unitaryMatrixQuaternionUniqueHomeomorphSphere_apply
     (A : unitary (Matrix ι ι ℍ)) :
     (unitaryMatrixQuaternionUniqueHomeomorphSphere ι A : ℍ) = A.1 default default := by
   rw [unitaryMatrixQuaternionUniqueHomeomorphSphere, Homeomorph.trans_apply,
-    Quaternion.coe_unitaryHomeomorphSphere_apply]
+    Quaternion.coe_unitaryHomeomorphSphere_apply, ContinuousMulEquiv.toHomeomorph_eq_coe]
   exact Matrix.coe_unitaryUniqueContinuousMulEquiv_apply A
 
 @[simp]

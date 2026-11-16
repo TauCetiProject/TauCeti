@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.CornerBlock
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Topology of block-diagonal matrices `diag(c, B)` and unitary corner blocks
@@ -181,14 +182,15 @@ its image**: `unitary (Matrix (Fin m) (Fin m) α)` is homeomorphically and multi
 identified with `(Matrix.unitaryOneBlockSucc α m).range`. -/
 noncomputable def unitaryOneBlockSuccEquivRange :
     unitary (Matrix (Fin m) (Fin m) α) ≃ₜ* (unitaryOneBlockSucc α m).range :=
-  ContinuousMulEquiv.mk' (isEmbedding_unitaryOneBlockSucc (α := α) (m := m)).toHomeomorph
-    fun _ _ ↦ Subtype.ext (map_mul _ _ _)
+  (⟨unitaryOneBlockSucc α m, continuous_unitaryOneBlockSucc⟩ : _ →ₜ* _).equivRangeOfIsEmbedding
+    isEmbedding_unitaryOneBlockSucc
 
 @[simp]
 theorem coe_unitaryOneBlockSuccEquivRange_apply (B : unitary (Matrix (Fin m) (Fin m) α)) :
     (unitaryOneBlockSuccEquivRange α m B : unitary (Matrix (Fin (m + 1)) (Fin (m + 1)) α)) =
-      unitaryOneBlockSucc α m B :=
-  (isEmbedding_unitaryOneBlockSucc (α := α) (m := m)).toHomeomorph_apply_coe B
+      unitaryOneBlockSucc α m B := by
+  rw [unitaryOneBlockSuccEquivRange, ContinuousMonoidHom.equivRangeOfIsEmbedding_apply]
+  simp
 
 @[simp]
 theorem unitaryOneBlockSucc_unitaryOneBlockSuccEquivRange_symm_apply

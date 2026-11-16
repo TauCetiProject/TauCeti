@@ -9,10 +9,10 @@ public import TauCeti.Analysis.Quaternion.UnitaryMatrix
 public import TauCeti.Topology.Algebra.Group.Quotient.LocalSection
 public import TauCeti.Topology.Algebra.Matrix.CornerBlock
 public import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
-import TauCeti.Algebra.Quaternion.Basic
 import TauCeti.Algebra.Quaternion.NormForm
-import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Householder
+import TauCeti.Analysis.Quaternion.Basic
 import TauCeti.Topology.Algebra.GroupAction.Transitive
+import TauCeti.Topology.Homeomorph.Quotient
 
 /-!
 # The first-column fibration `Sp(n) → Sp(n + 1) → S^(4n + 3)`
@@ -39,9 +39,9 @@ explicit continuous local section over the open set `U = {x ∈ S^(4n + 3) | x�
 `e₀`:
 * for `x ∈ U`, the unit quaternion `u(x) = ‖x₀‖⁻¹ • star x₀` rotates `x` on the right to the unit
   vector `y(x) = x <• u(x)` whose `0`-th coordinate is the positive real number `‖x₀‖`;
-* the vector `w(x) = e₀ + y(x)` has Hermitian square `w(x)ᴴ w(x) = 2 (1 + ‖x₀‖) ≥ 2`, so the
-  quaternionic Householder reflection `H(x) = 1 - (2 / |w(x)|²) w(x) w(x)ᴴ` is non-singular on all
-  of `U` and satisfies `H(x) e₀ = -y(x)`;
+* the quaternionic Householder reflection `H(x) = TauCeti.quaternionHouseholder 0 (-y(x))` has
+  `(-y(x))₀ = -‖x₀‖ < 1`, so it is continuous and unitary on all of `U` and satisfies
+  `H(x) e₀ = -y(x)`;
 * multiplying on the right by the block-diagonal unitary matrix `diag(-star (u(x)), 1)` sends `e₀`
   to `(-y(x)) <• (-star (u(x))) = x`, depends continuously on `x ∈ U`, and evaluates to `1` at
   `e₀`.
@@ -77,7 +77,7 @@ fibre `Sp(n)` around every point of `S^(4n + 3)`
   (using Gram–Schmidt local sections) in `TauCeti.Topology.Grassmannian.StiefelFibration.Unitary`,
   the homogeneous-space quotient follows the homogeneous model of `ℍPⁿ` in
   `TauCeti.Topology.QuaternionicProjectiveSpace.Homogeneous`, and the quaternionic Householder
-  reflection follows `TauCeti.Analysis.Quaternion.UnitaryMatrix`.
+  reflection uses `TauCeti.quaternionHouseholder` from `TauCeti.Analysis.Quaternion.UnitaryMatrix`.
 -/
 
 public section
@@ -174,7 +174,7 @@ theorem quaternionUnitaryFirstColumn_eq_quaternionUnitaryFirstColumn_iff
 variable (n) in
 /-- **The stabilizer of `e₀` in `Sp(n + 1)` is `Sp(n)`**: it equals the range of the block-diagonal
 embedding `B ↦ diag(1, B)`. -/
-theorem range_unitaryOneBlockSucc_eq_stabilizer :
+theorem range_unitaryOneBlockSucc_eq_stabilizer_quaternionUnitaryFirstColumn_one :
     (Matrix.unitaryOneBlockSucc ℍ n).range =
       MulAction.stabilizer (unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ))
         (quaternionUnitaryFirstColumn n 1) := by
@@ -191,7 +191,7 @@ def quaternionUnitarySphereQuotientHomeomorph :
     unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ) ⧸ (Matrix.unitaryOneBlockSucc ℍ n).range ≃ₜ
       sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1 :=
   (Homeomorph.Quotient.congrRight fun _ _ ↦ by
-      rw [range_unitaryOneBlockSucc_eq_stabilizer]).trans
+      rw [range_unitaryOneBlockSucc_eq_stabilizer_quaternionUnitaryFirstColumn_one]).trans
     (quotientStabilizerHomeomorph _ (quaternionUnitaryFirstColumn n 1)
       (continuous_id.smul continuous_const))
 
@@ -199,10 +199,10 @@ def quaternionUnitarySphereQuotientHomeomorph :
 theorem quaternionUnitarySphereQuotientHomeomorph_mk
     (A : unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)) :
     quaternionUnitarySphereQuotientHomeomorph n (QuotientGroup.mk A) =
-      quaternionUnitaryFirstColumn n A :=
-  (quotientStabilizerHomeomorph_mk _ (quaternionUnitaryFirstColumn n 1)
-    (continuous_id.smul continuous_const) A).trans
-    (quaternionUnitaryFirstColumn_eq_smul_quaternionUnitaryFirstColumn_one A).symm
+      quaternionUnitaryFirstColumn n A := by
+  rw [quaternionUnitarySphereQuotientHomeomorph, Homeomorph.trans_apply,
+    Homeomorph.Quotient.congrRight_mk, quotientStabilizerHomeomorph_mk,
+    ← quaternionUnitaryFirstColumn_eq_smul_quaternionUnitaryFirstColumn_one]
 
 /-- The homeomorphism `Sp(n + 1) ⧸ Sp(n) ≃ₜ S^(4n + 3)` is equivariant for the left actions of
 `Sp(n + 1)`. -/
@@ -242,8 +242,8 @@ theorem coe_quaternionUnitaryFirstColumnFiberHomeomorph_apply
     (B : unitary (Matrix (Fin n) (Fin n) ℍ)) :
     (quaternionUnitaryFirstColumnFiberHomeomorph n B :
         unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)) =
-      Matrix.unitaryOneBlockSucc ℍ n B :=
-  Matrix.coe_unitaryOneBlockSuccEquivRange_apply B
+      Matrix.unitaryOneBlockSucc ℍ n B := by
+  simp [quaternionUnitaryFirstColumnFiberHomeomorph, ContinuousMulEquiv.toHomeomorph_eq_coe]
 
 @[simp]
 theorem unitaryOneBlockSucc_quaternionUnitaryFirstColumnFiberHomeomorph_symm_apply
@@ -305,30 +305,12 @@ private theorem firstColumnPhase_one :
   rw [firstColumnPhase, firstColumnCoord0_one]
   simp
 
-private theorem normSq_firstColumnPhase
-    {x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1}
-    (hx : x ∈ firstColumnSectionDomain n) :
-    normSq (firstColumnPhase x) = 1 := by
-  have hn : ‖firstColumnCoord0 x‖ ≠ 0 := norm_ne_zero_iff.2 hx
-  rw [firstColumnPhase, normSq_smul, normSq_star, normSq_eq_norm_mul_self]
-  field_simp
-
-private theorem firstColumnCoord0_mul_phase
-    {x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1} :
-    firstColumnCoord0 x * firstColumnPhase x = ((‖firstColumnCoord0 x‖ : ℝ) : ℍ) := by
-  by_cases hx : firstColumnCoord0 x = 0
-  · simp [firstColumnPhase, hx]
-  · have hn : ‖firstColumnCoord0 x‖ ≠ 0 := norm_ne_zero_iff.2 hx
-    rw [firstColumnPhase, mul_smul_comm, self_mul_star, normSq_eq_norm_mul_self]
-    ext <;> simp; field_simp
-
 private theorem neg_star_firstColumnPhase_mem_unitary
     {x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1}
     (hx : x ∈ firstColumnSectionDomain n) :
     -star (firstColumnPhase x) ∈ unitary ℍ := by
-  rw [mem_unitary_iff_normSq_eq_one, normSq_eq_norm_mul_self, norm_neg,
-    ← normSq_eq_norm_mul_self, normSq_star]
-  exact normSq_firstColumnPhase hx
+  rw [mem_unitary_iff_normSq_eq_one, normSq_neg, normSq_star, firstColumnPhase]
+  exact Quaternion.normSq_inv_norm_smul_star hx
 
 /-- The phase-aligned unit vector `y(x) = x <• u(x)` whose `0`-th coordinate is `‖x₀‖`. -/
 private def firstColumnAligned
@@ -337,8 +319,9 @@ private def firstColumnAligned
 
 private theorem firstColumnAligned_zero
     (x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) :
-    firstColumnAligned x 0 = ((‖firstColumnCoord0 x‖ : ℝ) : ℍ) :=
-  firstColumnCoord0_mul_phase
+    firstColumnAligned x 0 = ((‖firstColumnCoord0 x‖ : ℝ) : ℍ) := by
+  rw [firstColumnAligned, Pi.smul_apply, op_smul_eq_mul, firstColumnPhase, ← firstColumnCoord0,
+    Quaternion.mul_inv_norm_smul_star]
 
 private theorem firstColumnAligned_one :
     firstColumnAligned (quaternionUnitaryFirstColumn n 1) = Pi.single 0 1 := by
@@ -351,7 +334,9 @@ private theorem star_dotProduct_firstColumnAligned
     (hx : x ∈ firstColumnSectionDomain n) :
     star (firstColumnAligned x) ⬝ᵥ firstColumnAligned x = 1 := by
   have hnu : ‖firstColumnPhase x‖ = 1 := by
-    have h := normSq_firstColumnPhase hx
+    have h : normSq (firstColumnPhase x) = 1 := by
+      rw [firstColumnPhase]
+      exact Quaternion.normSq_inv_norm_smul_star hx
     rw [normSq_eq_norm_mul_self] at h
     nlinarith [norm_nonneg (firstColumnPhase x)]
   have hnorm : ‖(x : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) <• firstColumnPhase x‖ = 1 := by
@@ -359,84 +344,39 @@ private theorem star_dotProduct_firstColumnAligned
   simpa [firstColumnAligned, hnorm] using
     star_dotProduct_self_ofLp ((x : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) <• firstColumnPhase x)
 
-/-- The Householder reflection vector `w(x) = e₀ + y(x)` and its Hermitian square
-`s(x) = 2 (1 + ‖x₀‖) ≥ 2`. -/
-private def firstColumnHouseholderVec
-    (x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) : Fin (n + 1) → ℍ :=
-  Pi.single 0 1 + firstColumnAligned x
-
-private def firstColumnScale
-    (x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) : ℝ :=
-  2 * (1 + ‖firstColumnCoord0 x‖)
-
-private theorem firstColumnScale_pos
-    (x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) :
-    0 < firstColumnScale x := by
-  unfold firstColumnScale
-  positivity
-
-private theorem star_dotProduct_firstColumnHouseholderVec
-    {x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1}
-    (hx : x ∈ firstColumnSectionDomain n) :
-    star (firstColumnHouseholderVec x) ⬝ᵥ firstColumnHouseholderVec x =
-      ((firstColumnScale x : ℝ) : ℍ) := by
-  suffices (1 : ℍ) + ((‖firstColumnCoord0 x‖ : ℝ) : ℍ) + (((‖firstColumnCoord0 x‖ : ℝ) : ℍ) + 1) =
-      ((firstColumnScale x : ℝ) : ℍ) by
-    simpa [firstColumnHouseholderVec, add_dotProduct, dotProduct_add, firstColumnAligned_zero,
-      star_dotProduct_firstColumnAligned hx]
-  rw [firstColumnScale]
-  ext <;> simp; ring
-
-/-- The Householder reflection `H(x) = 1 - (2 / s(x)) w(x) w(x)ᴴ` sending `e₀` to `-y(x)`. -/
+/-- The Householder reflection `H(x) = quaternionHouseholder 0 (-y(x))` sending `e₀` to `-y(x)`. -/
 private def firstColumnHouseholder
     (x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) :
     Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ :=
-  1 - (2 / firstColumnScale x) •
-    Matrix.vecMulVec (firstColumnHouseholderVec x) (star (firstColumnHouseholderVec x))
+  quaternionHouseholder 0 (-firstColumnAligned x)
 
 private theorem firstColumnHouseholder_mem_unitary
     {x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1}
     (hx : x ∈ firstColumnSectionDomain n) :
     firstColumnHouseholder x ∈ unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ) := by
-  have hs : firstColumnScale x ≠ 0 := (firstColumnScale_pos x).ne'
-  have hcs : 2 / firstColumnScale x * (2 / firstColumnScale x) * firstColumnScale x =
-      2 * (2 / firstColumnScale x) := by field_simp
-  refine Matrix.one_sub_smul_vecMulVec_mem_unitary ?_ hcs
-  rw [star_dotProduct_firstColumnHouseholderVec hx, Quaternion.algebraMap_def]
+  refine quaternionHouseholder_mem_unitary (r := -‖firstColumnCoord0 x‖) ?_ ?_
+  · rw [star_neg, neg_dotProduct, dotProduct_neg, neg_neg, star_dotProduct_firstColumnAligned hx]
+  · rw [Pi.neg_apply, firstColumnAligned_zero, coe_neg]
 
 private theorem firstColumnHouseholder_mulVec_single
-    {x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1} :
+    {x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1}
+    (hx : x ∈ firstColumnSectionDomain n) :
     firstColumnHouseholder x *ᵥ Pi.single 0 1 = -firstColumnAligned x := by
-  have hw0 : star (firstColumnHouseholderVec x) ⬝ᵥ Pi.single 0 1 =
-      ((1 + ‖firstColumnCoord0 x‖ : ℝ) : ℍ) := by
-    simp [firstColumnHouseholderVec, dotProduct_single, firstColumnAligned_zero]
-  have hop : op ((1 + ‖firstColumnCoord0 x‖ : ℝ) : ℍ) • firstColumnHouseholderVec x =
-      (1 + ‖firstColumnCoord0 x‖) • firstColumnHouseholderVec x := by
-    funext i
-    rw [Pi.smul_apply, Pi.smul_apply, op_smul_eq_mul, mul_coe_eq_smul]
-  have hr : 1 + ‖firstColumnCoord0 x‖ ≠ 0 := by positivity
-  have hcancel : 2 / firstColumnScale x * (1 + ‖firstColumnCoord0 x‖) = 1 := by
-    unfold firstColumnScale
-    field_simp
-  rw [firstColumnHouseholder, Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec,
-    Matrix.vecMulVec_mulVec, hw0, hop]
-  simp [smul_smul, hcancel, firstColumnHouseholderVec]
+  refine quaternionHouseholder_mulVec_single_one (r := -‖firstColumnCoord0 x‖) ?_ ?_
+  · rw [star_neg, neg_dotProduct, dotProduct_neg, neg_neg, star_dotProduct_firstColumnAligned hx]
+  · rw [Pi.neg_apply, firstColumnAligned_zero, coe_neg]
 
 private theorem continuousOn_firstColumnHouseholder :
     ContinuousOn (firstColumnHouseholder (n := n)) (firstColumnSectionDomain n) := by
-  have hvec (i : Fin (n + 1)) :
-      ContinuousOn (fun x ↦ firstColumnHouseholderVec (n := n) x i)
-        (firstColumnSectionDomain n) :=
-    continuousOn_const.add <|
-      (((continuous_apply i).comp
+  have haligned : ContinuousOn (firstColumnAligned (n := n)) (firstColumnSectionDomain n) :=
+    continuousOn_pi.2 fun i ↦
+      ((((continuous_apply i).comp
         ((PiLp.continuous_ofLp 2 _).comp continuous_subtype_val)).continuousOn).mul
-        continuousOn_firstColumnPhase
-  have hscale : Continuous (firstColumnScale (n := n)) :=
-    continuous_const.mul (continuous_const.add (continuous_norm.comp continuous_firstColumnCoord0))
-  have hc : Continuous fun x ↦ (2 : ℝ) / firstColumnScale (n := n) x :=
-    continuous_const.div hscale fun x ↦ (firstColumnScale_pos x).ne'
-  refine continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦ ?_
-  exact continuousOn_const.sub (hc.continuousOn.smul ((hvec i).mul (hvec j).star))
+          continuousOn_firstColumnPhase).congr fun x _ ↦ by
+        simp [firstColumnAligned]
+  refine continuousOn_quaternionHouseholder haligned.neg fun x _ ↦ ?_
+  rw [Pi.neg_apply, firstColumnAligned_zero, re_neg, re_coe]
+  linarith [norm_nonneg (firstColumnCoord0 x)]
 
 /-- The raw matrix local section `H(x) * diag(-star (u(x)), 1)` sending `e₀` to `x`. -/
 private def firstColumnRawSection
@@ -468,32 +408,23 @@ private theorem firstColumnRawSection_mulVec_single
     rw [Matrix.mulVec_single_one, Pi.smul_apply, op_smul_eq_mul]
     refine Fin.cases ?_ (fun j ↦ ?_) i <;> simp
   have hu : firstColumnPhase x * star (firstColumnPhase x) = 1 := by
-    rw [self_mul_star, normSq_firstColumnPhase hx, coe_one]
+    rw [self_mul_star, firstColumnPhase, firstColumnCoord0,
+      Quaternion.normSq_inv_norm_smul_star hx, coe_one]
   rw [firstColumnRawSection, ← Matrix.mulVec_mulVec, hD0, Matrix.mulVec_smul,
-    firstColumnHouseholder_mulVec_single, firstColumnAligned]
+    firstColumnHouseholder_mulVec_single hx, firstColumnAligned]
   funext i
   simp [mul_assoc, hu]
 
 private theorem firstColumnRawSection_one :
     firstColumnRawSection (quaternionUnitaryFirstColumn n 1) = 1 := by
-  have hw : firstColumnHouseholderVec (quaternionUnitaryFirstColumn n 1) =
-      Pi.single 0 ((2 : ℝ) : ℍ) := by
-    rw [firstColumnHouseholderVec, firstColumnAligned_one]
-    funext i
-    by_cases hi : i = 0
-    · subst hi; ext <;> simp; norm_num
-    · simp [hi]
-  have hs : firstColumnScale (quaternionUnitaryFirstColumn n 1) = 4 := by
-    rw [firstColumnScale, firstColumnCoord0_one]
-    norm_num
   have hH : firstColumnHouseholder (quaternionUnitaryFirstColumn n 1) =
       Matrix.cornerBlockSucc (-1) 1 := by
-    rw [firstColumnHouseholder, hw, hs]
+    rw [firstColumnHouseholder, firstColumnAligned_one, quaternionHouseholder_neg_single_one]
     refine Matrix.ext_fin_succ ?_ (fun j ↦ ?_) (fun i ↦ ?_) fun i j ↦ ?_
-    · ext <;> simp [Matrix.vecMulVec_apply]; norm_num
-    · simp [Matrix.vecMulVec_apply, Fin.succ_ne_zero, (Fin.succ_ne_zero j).symm]
-    · simp [Matrix.vecMulVec_apply, Fin.succ_ne_zero]
-    · simp [Matrix.vecMulVec_apply, Fin.succ_ne_zero, Matrix.one_apply]
+    · simp
+    · simp [(Fin.succ_ne_zero j).symm]
+    · simp [Fin.succ_ne_zero]
+    · simp [Matrix.diagonal_apply, Fin.succ_ne_zero, Matrix.one_apply]
   rw [firstColumnRawSection, hH, firstColumnPhase_one, star_one,
     Matrix.cornerBlockSucc_mul_cornerBlockSucc]
   simp [Matrix.cornerBlockSucc_one]

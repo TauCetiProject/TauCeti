@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
-public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
 public import TauCeti.Topology.Algebra.Quaternion.Symplectic.FirstColumn
 public import TauCeti.Topology.Homotopy.SerreFibration.Connected
@@ -18,15 +17,15 @@ public import TauCeti.Topology.Homotopy.SerreFibration.TotalSpace
 The first-column projection `Sp(n + 1) → S^(4n + 3)` is locally trivial with fibre `Sp(n)`
 (`TauCeti.exists_trivialization_quaternionUnitaryFirstColumn`), and hence a Serre fibration
 (`TauCeti.quaternionUnitaryFirstColumn_mem_serreFibrations`). Every base sphere `S^(4n + 3)`
-(`n ≥ 0`) has real dimension at least `3`, so it is simply connected
-(`TauCeti.simplyConnectedSpace_sphere_piLp_quaternion`) and `2`-connected
+(`n ≥ 0`) has real dimension at least `3`, so it is `2`-connected
 (`TauCeti.subsingleton_homotopyGroup_sphere_piLp_quaternion`).
 
 Starting from the one-point group `Sp(0)`, induction along the fibration tower
 `Sp(0) → Sp(1) → Sp(2) → ⋯` shows that the compact symplectic group
-`Sp(ι) = unitary (Matrix ι ι ℍ)` is simply connected — and hence path-connected and connected — for
-every finite index type `ι` (`TauCeti.instSimplyConnectedSpaceUnitaryMatrixQuaternion`), and in
-fact `2`-connected (`TauCeti.subsingleton_homotopyGroup_unitary_matrix_quaternion`).
+`Sp(ι) = unitary (Matrix ι ι ℍ)` is `2`-connected for every finite index type `ι`
+(`TauCeti.subsingleton_homotopyGroup_unitary_matrix_quaternion`), and in particular simply
+connected — hence path-connected and connected
+(`TauCeti.instSimplyConnectedSpaceUnitaryMatrixQuaternion`).
 
 Furthermore, since `S^(4n + 3)` is `(4n + 2)`-connected, the long exact homotopy sequence of the
 first-column fibration implies that the block-diagonal embedding `Sp(n) → Sp(n + 1)`,
@@ -35,10 +34,10 @@ it induces bijections on `π_k` for `k < 4n + 2` and a surjection for `k = 4n + 
 
 ## Main results
 
-* `TauCeti.instSimplyConnectedSpaceUnitaryMatrixQuaternion`: `unitary (Matrix ι ι ℍ)` is simply
-  connected (and hence path-connected and connected) for every finite index type `ι`.
 * `TauCeti.subsingleton_homotopyGroup_unitary_matrix_quaternion`: `unitary (Matrix ι ι ℍ)` is
   `2`-connected (`π_N(Sp(ι), A)` is trivial whenever `Nat.card N ≤ 2`).
+* `TauCeti.instSimplyConnectedSpaceUnitaryMatrixQuaternion`: `unitary (Matrix ι ι ℍ)` is simply
+  connected (and hence path-connected and connected) for every finite index type `ι`.
 * `TauCeti.isNConnected_unitaryOneBlockSucc_quaternion`: the block-diagonal embedding
   `Sp(n) → Sp(n + 1)` is `(4n + 2)`-connected.
 
@@ -65,35 +64,16 @@ namespace TauCeti
 
 section Connectivity
 
-private theorem simplyConnectedSpace_unitary_matrix_fin_quaternion :
-    ∀ n : ℕ, SimplyConnectedSpace (unitary (Matrix (Fin n) (Fin n) ℍ))
-  | 0 => inferInstance
-  | n + 1 =>
-    let _ := simplyConnectedSpace_unitary_matrix_fin_quaternion n
-    let _ := simplyConnectedSpace_sphere_piLp_quaternion (p := 2) (ι := Fin (n + 1))
-    simplyConnectedSpace_of_exists_trivialization
-      exists_trivialization_quaternionUnitaryFirstColumn
-
-/-- **The compact symplectic group `Sp(ι)` is simply connected** (and therefore path-connected and
-connected) for every finite index type `ι`. -/
-instance instSimplyConnectedSpaceUnitaryMatrixQuaternion
-    {ι : Type*} [Fintype ι] [DecidableEq ι] :
-    SimplyConnectedSpace (unitary (Matrix ι ι ℍ)) :=
-  let _ := simplyConnectedSpace_unitary_matrix_fin_quaternion (Fintype.card ι)
-  (Matrix.unitaryReindexContinuousMulEquiv ℍ
-    (Fintype.equivFin ι)).toHomeomorph.toHomotopyEquiv.simplyConnectedSpace
-
-private theorem subsingleton_homotopyGroup_fin_unitary_matrix_fin_quaternion :
-    ∀ (n k : ℕ), k ≤ 2 → ∀ A : unitary (Matrix (Fin n) (Fin n) ℍ),
-      Subsingleton (π_ k (unitary (Matrix (Fin n) (Fin n) ℍ)) A)
-  | 0, _, _, _ => inferInstance
-  | n + 1, k, hk, A =>
-    forall_subsingleton_homotopyGroup_of_exists_trivialization (n := 2)
-      exists_trivialization_quaternionUnitaryFirstColumn
-      (quaternionUnitaryFirstColumn n 1)
-      (fun m hm ↦ subsingleton_homotopyGroup_sphere_piLp_quaternion (by simp; omega) _)
-      (fun m hm ↦ subsingleton_homotopyGroup_fin_unitary_matrix_fin_quaternion n m hm)
-      k hk A
+private theorem subsingleton_homotopyGroup_unitary_matrix_fin_quaternion
+    {N : Type*} [Finite N] (hN : Nat.card N ≤ 2) :
+    ∀ (n : ℕ) (A : unitary (Matrix (Fin n) (Fin n) ℍ)),
+      Subsingleton (HomotopyGroup N (unitary (Matrix (Fin n) (Fin n) ℍ)) A)
+  | 0, _ => inferInstance
+  | n + 1, A =>
+    subsingleton_homotopyGroup_of_exists_trivialization
+      exists_trivialization_quaternionUnitaryFirstColumn A
+      (subsingleton_homotopyGroup_sphere_piLp_quaternion (by simp; omega) _)
+      (subsingleton_homotopyGroup_unitary_matrix_fin_quaternion hN n)
 
 /-- **The compact symplectic group `Sp(ι)` is `2`-connected**: its homotopy set `π_N(Sp(ι), A)` is
 trivial whenever `Nat.card N ≤ 2` (in particular `π₀`, `π₁`, and `π₂` vanish at every basepoint). -/
@@ -105,14 +85,23 @@ theorem subsingleton_homotopyGroup_unitary_matrix_quaternion
   swap
   · have := not_finite_iff_infinite.1 hfin
     infer_instance
-  have := Fintype.ofFinite N
   let e := (Matrix.unitaryReindexContinuousMulEquiv ℍ (Fintype.equivFin ι)).toHomeomorph
-  have hcard : Fintype.card N ≤ 2 := by simpa using hN
-  have := subsingleton_homotopyGroup_fin_unitary_matrix_fin_quaternion
-    (Fintype.card ι) (Fintype.card N) hcard (e A)
-  have := (HomotopyGroup.congrEquiv (X := unitary (Matrix (Fin (Fintype.card ι))
-    (Fin (Fintype.card ι)) ℍ)) (x := e A) (Fintype.equivFin N)).subsingleton
+  have := subsingleton_homotopyGroup_unitary_matrix_fin_quaternion hN (Fintype.card ι) (e A)
   exact (HomotopyGroup.homeomorphEquiv (N := N) e A).subsingleton
+
+/-- **The compact symplectic group `Sp(ι)` is simply connected** (and therefore path-connected and
+connected) for every finite index type `ι`. -/
+instance instSimplyConnectedSpaceUnitaryMatrixQuaternion
+    {ι : Type*} [Fintype ι] [DecidableEq ι] :
+    SimplyConnectedSpace (unitary (Matrix ι ι ℍ)) := by
+  have : PathConnectedSpace (unitary (Matrix ι ι ℍ)) :=
+    (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (1 : unitary (Matrix ι ι ℍ))).2
+      (subsingleton_homotopyGroup_unitary_matrix_quaternion (by simp) 1)
+  have : Subsingleton (π_ 1 (unitary (Matrix ι ι ℍ)) 1) :=
+    subsingleton_homotopyGroup_unitary_matrix_quaternion (by simp) 1
+  have : Subsingleton (_root_.FundamentalGroup (unitary (Matrix ι ι ℍ)) 1) :=
+    HomotopyGroup.pi1EquivFundamentalGroup.symm.subsingleton
+  exact simplyConnectedSpace_of_subsingleton_fundamentalGroup (1 : unitary (Matrix ι ι ℍ))
 
 /-- **Homotopy stability of the compact symplectic groups.** The block-diagonal embedding
 `Sp(n) → Sp(n + 1)`, `B ↦ diag(1, B)`, is `(4n + 2)`-connected: it induces bijections on `π_k` for

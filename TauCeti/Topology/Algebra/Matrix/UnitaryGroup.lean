@@ -44,21 +44,24 @@ topological groups between `unitary (Matrix m m α)` and `unitary (Matrix n n α
 def unitaryReindexContinuousMulEquiv (e : m ≃ n) :
     unitary (Matrix m m α) ≃ₜ* unitary (Matrix n n α) where
   __ := (Unitary.mapEquiv (.ofClass (reindexStarAlgEquiv ℕ α e))).toMulEquiv
-  continuous_toFun := continuous_induced_rng.2 (continuous_subtype_val.matrix_reindex e e)
-  continuous_invFun :=
-    continuous_induced_rng.2 (continuous_subtype_val.matrix_reindex e.symm e.symm)
+  continuous_toFun := continuous_induced_rng.2 <|
+    (continuous_subtype_val.matrix_reindex e e).congr fun _ ↦ by
+      simp
+  continuous_invFun := continuous_induced_rng.2 <|
+    (continuous_subtype_val.matrix_reindex e.symm e.symm).congr fun _ ↦ by
+      simp [← StarMulEquiv.toMulEquiv_symm]
 
 variable {α} in
 @[simp]
 theorem coe_unitaryReindexContinuousMulEquiv_apply (e : m ≃ n) (A : unitary (Matrix m m α)) :
     (unitaryReindexContinuousMulEquiv α e A : Matrix n n α) = reindex e e A.1 := by
-  rfl
+  simp [unitaryReindexContinuousMulEquiv]
 
 variable {α} in
 @[simp]
-theorem unitaryReindexContinuousMulEquiv_symm (e : m ≃ n) :
+theorem symm_unitaryReindexContinuousMulEquiv (e : m ≃ n) :
     (unitaryReindexContinuousMulEquiv α e).symm = unitaryReindexContinuousMulEquiv α e.symm :=
-  ContinuousMulEquiv.ext fun _ ↦ Subtype.ext rfl
+  ContinuousMulEquiv.ext fun _ ↦ (ContinuousMulEquiv.symm_apply_eq _).2 (Subtype.ext (by simp))
 
 variable {α} in
 @[simp]
@@ -68,8 +71,8 @@ theorem unitaryReindexContinuousMulEquiv_refl :
 
 variable {α} in
 @[simp]
-theorem unitaryReindexContinuousMulEquiv_trans {o : Type*} [Fintype o] [DecidableEq o]
-    (e : m ≃ n) (e' : n ≃ o) :
+theorem unitaryReindexContinuousMulEquiv_trans_unitaryReindexContinuousMulEquiv
+    {o : Type*} [Fintype o] [DecidableEq o] (e : m ≃ n) (e' : n ≃ o) :
     (unitaryReindexContinuousMulEquiv α e).trans (unitaryReindexContinuousMulEquiv α e') =
       unitaryReindexContinuousMulEquiv α (e.trans e') :=
   ContinuousMulEquiv.ext fun _ ↦ Subtype.ext (by simp)
@@ -88,26 +91,27 @@ def unitaryUniqueContinuousMulEquiv : unitary (Matrix m m α) ≃ₜ* unitary α
   continuous_toFun := continuous_induced_rng.2 <| by
     have h : Continuous fun A : unitary (Matrix m m α) ↦ A.1 default default :=
       (continuous_apply default).comp ((continuous_apply default).comp continuous_subtype_val)
-    exact h.congr fun A ↦ (uniqueStarRingEquiv_apply A.1).symm
+    exact h.congr fun _ ↦ by simp
   continuous_invFun := continuous_induced_rng.2 <| by
     have h : Continuous fun u : unitary α ↦ Matrix.of fun _ _ : m ↦ (u : α) :=
       continuous_pi fun _ ↦ continuous_pi fun _ ↦ continuous_subtype_val
-    exact h.congr fun u ↦ (uniqueStarRingEquiv_symm_apply (m := m) u.1).symm
+    exact h.congr fun _ ↦ by simp [← StarMulEquiv.toMulEquiv_symm]
 
 variable {m α} in
 @[simp]
 theorem coe_unitaryUniqueContinuousMulEquiv_apply (A : unitary (Matrix m m α)) :
     (unitaryUniqueContinuousMulEquiv m α A : α) = A.1 default default := by
-  change uniqueStarRingEquiv A.1 = _
-  exact uniqueStarRingEquiv_apply A.1
+  simp [unitaryUniqueContinuousMulEquiv]
 
 variable {m α} in
 @[simp]
 theorem coe_unitaryUniqueContinuousMulEquiv_symm_apply (u : unitary α) :
     ((unitaryUniqueContinuousMulEquiv m α).symm u : Matrix m m α) =
       Matrix.of fun _ _ ↦ (u : α) := by
-  change (uniqueStarRingEquiv (m := m)).symm u.1 = _
-  exact uniqueStarRingEquiv_symm_apply u.1
+  ext i j
+  rw [Subsingleton.elim i default, Subsingleton.elim j default,
+    ← coe_unitaryUniqueContinuousMulEquiv_apply, ContinuousMulEquiv.apply_symm_apply,
+    Matrix.of_apply]
 
 end Unique
 
