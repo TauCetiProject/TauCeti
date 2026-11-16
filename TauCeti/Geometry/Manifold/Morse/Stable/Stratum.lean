@@ -144,16 +144,6 @@ private theorem mem_Ioo_of_apply_flow_ne {a b z : M}
   · exact hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hab
       (hX.flow.isInvariant_unstableSet_inter_stableSet a b t hz)
 
-/-- `f` decreases weakly along a chain of critical points joined by trajectories. -/
-private theorem antitone_apply_of_mem {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k → M}
-    (hz : ∀ j : Fin k, z j ∈ hX.flow.unstableSet (x j.castSucc) ∩ hX.flow.stableSet (x j.succ)) :
-    Antitone fun j ↦ f (x j) := by
-  refine Fin.antitone_iff_succ_le.2 fun j ↦ ?_
-  by_cases h : x j.castSucc = x j.succ
-  · rw [h]
-  · have h' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet h (hz j)
-    exact (h'.1.trans h'.2).le
-
 /-- In a record along a chain whose levels avoid the critical values of the chain, the point on a
 level strictly between `f (x (j + 1))` and `f (x j)` lies on the component from `x j` to
 `x (j + 1)`. -/
@@ -167,7 +157,8 @@ private theorem exists_flow_eq_of_mem_Ioo {k : ℕ} {x : Fin (k + 1) → M} {c :
   have h' : c i ∈ Ioo (f (x j'.succ)) (f (x j'.castSucc)) := by
     rw [← hwi, ← ht]
     exact hX.mem_Ioo_of_apply_flow_ne (hz j') t (by rw [ht, hwi]; exact (hreg i _).symm)
-  rw [Fin.eq_of_mem_Ioo_succ_castSucc (g := fun j ↦ f (x j)) (hX.antitone_apply_of_mem hz) hij h']
+  rw [Fin.eq_of_mem_Ioo_succ_castSucc (g := fun j ↦ f (x j))
+    (hX.antitone_apply_of_chain hz) hij h']
   exact ⟨t, ht⟩
 
 /-- **A stratum is the product of the trajectory spaces of its steps.** Let `x 0, …, x k` be a
@@ -215,7 +206,7 @@ theorem exists_homeomorph_morseBrokenTrajectoryStratum {k : ℕ} {x : Fin (k + 1
     fun w j i ↦ rfl⟩
   -- The step `J i` of a level `c i` of the step `j` is `j`, since `f` decreases along the chain.
   have hanti : Antitone fun j ↦ f (x j) :=
-    hX.antitone_apply_of_mem fun j ↦ (hX.mem_morseTrajectoryRecords.1 (v j).2).choose_spec.1
+    hX.antitone_apply_of_chain fun j ↦ (hX.mem_morseTrajectoryRecords.1 (v j).2).choose_spec.1
   have hJi : J i = j := Fin.eq_of_mem_Ioo_succ_castSucc (g := fun j ↦ f (x j)) hanti (hJ i) hi
   have key : ∀ (j' : Fin k) (_ : j' = j) (hi' : c i ∈ Ioo (f (x j'.succ)) (f (x j'.castSucc))),
       (v j').1 ⟨i, hi'⟩ = (v j).1 ⟨i, hi⟩ := by
