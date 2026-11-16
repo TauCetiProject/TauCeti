@@ -412,6 +412,13 @@ theorem connected_iff_toSimpleGraph_connected : G.Connected ↔ G.toSimpleGraph.
     exact mem_connectedComponentVertexSet_iff.mpr
       ⟨hy, SimpleGraph.ConnectedComponent.sound (hG ⟨y, hy⟩ vx)⟩
 
+/-- A simple graph is connected exactly when it is connected as a multigraph. This includes the
+case where the vertex type `α` is empty, when neither representation is connected. -/
+@[simp]
+theorem connected_ofSimpleGraph_iff (H : SimpleGraph α) :
+    (Graph.ofSimpleGraph H).Connected ↔ H.Connected :=
+  connected_iff_toSimpleGraph_connected.trans (toSimpleGraphOfSimpleGraphIso H).connected_iff
+
 /-- A multigraph is connected exactly when it has an actual vertex and any two actual vertices
 are reachable from each other. -/
 theorem connected_iff_forall_reachable :
