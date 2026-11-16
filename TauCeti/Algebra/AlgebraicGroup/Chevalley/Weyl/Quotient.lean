@@ -10,6 +10,7 @@ import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.DoubleBond
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Orthogonal
+import TauCeti.Algebra.Group.Pow
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient
 
@@ -66,67 +67,54 @@ private theorem simpleClass_mul_self (i : Fin t.rank) :
     (D.simpleCorootPoints_eq_torusPoints i A (-1)).symm.trans
       (D.weylElement_mul_self i A).symm⟩
 
+private theorem simpleClass_prod_eq (l l' : List (Fin t.rank))
+    (h : (l.map (fun i => D.weylElement (t.simpleIndex ht i) A 1)).prod =
+      (l'.map (fun i => D.weylElement (t.simpleIndex ht i) A 1)).prod) :
+    (l.map (D.simpleClass A)).prod = (l'.map (D.simpleClass A)).prod := by
+  have h' : (l.map (D.simpleLift A)).prod = (l'.map (D.simpleLift A)).prod := by
+    apply Subtype.ext
+    simpa only [Subgroup.val_list_prod, List.map_map, simpleLift, Function.comp_def] using h
+  unfold simpleClass
+  simpa only [map_list_prod, List.map_map, Function.comp_def, QuotientGroup.mk'_apply]
+    using congrArg (QuotientGroup.mk' H) h'
+
 private theorem simpleClass_commute (i j : Fin t.rank) (hij : t.cartanMatrix i j = 0) :
     Commute (D.simpleClass A i) (D.simpleClass A j) := by
-  have h : D.simpleLift A i * D.simpleLift A j = D.simpleLift A j * D.simpleLift A i := by
-    apply Subtype.ext
-    simpa only [Subgroup.coe_mul, simpleLift] using
-      (D.commute_weylElement_simpleIndex A i j hij 1 1).eq
-  simpa only [commute_iff_eq, simpleClass, map_mul, QuotientGroup.mk'_apply] using
-    congrArg (QuotientGroup.mk' H) h
+  simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one,
+    commute_iff_eq] using
+    D.simpleClass_prod_eq A [i, j] [j, i]
+      (by simpa using (D.commute_weylElement_simpleIndex A i j hij 1 1).eq)
 
 private theorem simpleClass_braid (i j : Fin t.rank)
     (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -1) :
     D.simpleClass A i * D.simpleClass A j * D.simpleClass A i =
       D.simpleClass A j * D.simpleClass A i * D.simpleClass A j := by
-  have h : D.simpleLift A i * D.simpleLift A j * D.simpleLift A i =
-      D.simpleLift A j * D.simpleLift A i * D.simpleLift A j := by
-    apply Subtype.ext
-    simpa only [Subgroup.coe_mul, simpleLift] using
-      D.weylElement_braid_of_cartanMatrix_eq_neg_one i j hij hji A
-  simpa only [simpleClass, map_mul, QuotientGroup.mk'_apply] using
-    congrArg (QuotientGroup.mk' H) h
+  simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one,
+    mul_assoc] using
+    D.simpleClass_prod_eq A [i, j, i] [j, i, j]
+      (by simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
+        mul_one, mul_assoc] using
+        D.weylElement_braid_of_cartanMatrix_eq_neg_one i j hij hji A)
 
 private theorem simpleClass_pow_three (i j : Fin t.rank)
     (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -1) :
     (D.simpleClass A i * D.simpleClass A j) ^ 3 = 1 := by
-  have hb := D.simpleClass_braid A i j hij hji
-  calc
-    _ = (D.simpleClass A i * D.simpleClass A j * D.simpleClass A i) *
-        (D.simpleClass A j * D.simpleClass A i * D.simpleClass A j) := by
-      simp only [pow_succ, pow_zero]
-      group
-    _ = D.simpleClass A j * D.simpleClass A i *
-        (D.simpleClass A j * D.simpleClass A j) *
-        D.simpleClass A i * D.simpleClass A j := by rw [hb]; group
-    _ = D.simpleClass A j * (D.simpleClass A i * D.simpleClass A i) *
-        D.simpleClass A j := by rw [D.simpleClass_mul_self]; group
-    _ = 1 := by rw [D.simpleClass_mul_self, mul_one, D.simpleClass_mul_self]
+  exact mul_pow_three_eq_one_of_braid (D.simpleClass_mul_self A i)
+    (D.simpleClass_mul_self A j) (D.simpleClass_braid A i j hij hji)
 
 private theorem simpleClass_pow_four (i j : Fin t.rank)
     (hji : t.cartanMatrix j i = -2) :
     (D.simpleClass A i * D.simpleClass A j) ^ 4 = 1 := by
   have hb : (D.simpleClass A i * D.simpleClass A j) ^ 2 =
       (D.simpleClass A j * D.simpleClass A i) ^ 2 := by
-    have h : D.simpleLift A i * D.simpleLift A j * D.simpleLift A i * D.simpleLift A j =
-        D.simpleLift A j * D.simpleLift A i * D.simpleLift A j * D.simpleLift A i := by
-      apply Subtype.ext
-      simpa only [Subgroup.coe_mul, simpleLift] using
-        D.weylElement_braid_of_cartanMatrix_eq_neg_two i j hji A
-    simpa only [simpleClass, map_mul, QuotientGroup.mk'_apply, pow_two, mul_assoc] using
-      congrArg (QuotientGroup.mk' H) h
-  have hinv (k : Fin t.rank) : (D.simpleClass A k)⁻¹ = D.simpleClass A k :=
-    inv_eq_of_mul_eq_one_left (D.simpleClass_mul_self A k)
-  calc
-    _ = (D.simpleClass A i * D.simpleClass A j) ^ 2 *
-        (D.simpleClass A i * D.simpleClass A j) ^ 2 := by group
-    _ = (D.simpleClass A j * D.simpleClass A i) ^ 2 *
-        (D.simpleClass A i * D.simpleClass A j) ^ 2 :=
-      congrArg (fun z => z * (D.simpleClass A i * D.simpleClass A j) ^ 2) hb
-    _ = ((D.simpleClass A i * D.simpleClass A j) ^ 2)⁻¹ *
-        (D.simpleClass A i * D.simpleClass A j) ^ 2 := by
-      rw [← inv_pow, mul_inv_rev, hinv, hinv]
-    _ = 1 := inv_mul_cancel _
+    simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one,
+      pow_two, mul_assoc] using
+      D.simpleClass_prod_eq A [i, j, i, j] [j, i, j, i]
+        (by simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
+          mul_one, mul_assoc] using
+          D.weylElement_braid_of_cartanMatrix_eq_neg_two i j hji A)
+  exact mul_pow_four_eq_one_of_sq_eq_sq (D.simpleClass_mul_self A i)
+    (D.simpleClass_mul_self A j) hb
 
 private theorem simpleClass_liftable (hs : t ≠ .G2) :
     (coxeterMatrixOfBase (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)).IsLiftable
@@ -153,12 +141,8 @@ private theorem simpleClass_liftable (hs : t ≠ .G2) :
   · simpa only [hij, hji, neg_mul_neg, one_mul, coxeterOrder_two] using
       D.simpleClass_pow_four A i j hji
   · simp only [hij, hji, neg_mul_neg, mul_one, coxeterOrder_two]
-    calc
-      _ = D.simpleClass A i * (D.simpleClass A j * D.simpleClass A i) ^ 4 *
-          (D.simpleClass A i)⁻¹ := by
-        simp only [pow_succ, pow_zero]
-        group
-      _ = 1 := by rw [D.simpleClass_pow_four A j i hij]; group
+    apply mul_right_cancel (b := D.simpleClass A i)
+    rw [one_mul, mul_pow_mul, D.simpleClass_pow_four A j i hij, mul_one]
 
 private def quotientSection (hs : t ≠ .G2) :
     (t.simplyConnectedRootDatum ht).weylGroup →* Q :=
@@ -208,49 +192,6 @@ private theorem quotientSection_surjective (hs : t ≠ .G2) :
   rw [Subgroup.mem_comap, MonoidHom.mem_range] at hg
   exact hg
 
-private theorem map_weylElement_one {B : Type*} [CommRing B] (f : A →+* B)
-    (i : Fin t.rank) :
-    (D.pointsPresentation A).map (D.pointsPresentation B) f
-        (D.weylElement (t.simpleIndex ht i) A 1) =
-      D.weylElement (t.simpleIndex ht i) B 1 := by
-  apply Subtype.ext
-  rw [GeneralLinear.IntegralPointsPresentation.coe_map]
-  simpa only [map_one] using D.map_weylElement f (t.simpleIndex ht i) 1
-
-private theorem weylSubgroup_le_comap {B : Type*} [CommRing B] (f : A →+* B) :
-    N ≤ (D.weylSubgroup B).comap
-      ((D.pointsPresentation A).map (D.pointsPresentation B) f) := by
-  rw [D.weylSubgroup_def, Subgroup.closure_le]
-  rintro x (⟨s, rfl⟩ | ⟨i, rfl⟩)
-  · rw [SetLike.mem_coe, Subgroup.mem_comap, D.map_torusPoints]
-    exact D.torusPoints_mem_weylSubgroup B _
-  · rw [SetLike.mem_coe, Subgroup.mem_comap, D.map_weylElement_one]
-    exact D.weylElement_mem_weylSubgroup B i
-
-private def weylSubgroupMap {B : Type*} [CommRing B] (f : A →+* B) :
-    N →* D.weylSubgroup B :=
-  (((D.pointsPresentation A).map (D.pointsPresentation B) f).comp
-    (D.weylSubgroup A).subtype).codRestrict _
-    (fun g => by
-      simpa only [Subgroup.mem_comap, MonoidHom.comp_apply, Subgroup.subtype_apply] using
-        D.weylSubgroup_le_comap A f g.property)
-
-private theorem weylSubgroupMap_torusPoints {B : Type*} [CommRing B] (f : A →+* B)
-    (s : Fin t.rank → Aˣ) (hx : D.torusPoints A s ∈ N) :
-    D.weylSubgroupMap A f ⟨D.torusPoints A s, hx⟩ =
-      ⟨D.torusPoints B (fun i => Units.map f.toMonoidHom (s i)),
-        D.torusPoints_mem_weylSubgroup B _⟩ := by
-  apply Subtype.ext
-  simp only [weylSubgroupMap, MonoidHom.codRestrict_apply, MonoidHom.comp_apply,
-    Subgroup.subtype_apply, D.map_torusPoints]
-
-private theorem weylSubgroupMap_simpleLift {B : Type*} [CommRing B] (f : A →+* B)
-    (i : Fin t.rank) :
-    D.weylSubgroupMap A f (D.simpleLift A i) = D.simpleLift B i := by
-  apply Subtype.ext
-  simp only [weylSubgroupMap, MonoidHom.codRestrict_apply, MonoidHom.comp_apply,
-    Subgroup.subtype_apply, simpleLift, D.map_weylElement_one]
-
 private theorem quotientSection_injective [Nontrivial A] (hs : t ≠ .G2) :
     Function.Injective (D.quotientSection A hs) := by
   -- A residue field detects the Weyl word, without requiring a projection over rings.
@@ -278,8 +219,7 @@ private theorem quotientSection_injective [Nontrivial A] (hs : t ≠ .G2) :
     simp only [MonoidHom.comp_apply, MonoidHom.id_apply, weylCoxeterSystem_simple,
       coe_simpleSupportEquivSimplyConnectedBase, D.quotientSection_simple,
       simpleClass, p, QuotientGroup.lift_mk']
-    rw [D.weylSubgroupMap_simpleLift]
-    simp only [simpleLift, D.weylProjection_weylElement]
+    rw [simpleLift, D.weylSubgroupMap_weylElement, D.weylProjection_weylElement]
   exact Function.LeftInverse.injective (g := p) fun w => by
     simpa only [MonoidHom.comp_apply, MonoidHom.id_apply] using DFunLike.congr_fun hp w
 

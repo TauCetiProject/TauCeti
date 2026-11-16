@@ -68,4 +68,24 @@ theorem pow_mul_mul_pow_mul_eq {α a : M} {n : ℕ} (hα : α ^ n = a) {m d p q 
   rw [← pow_add, Nat.add_eq_mod_add_carry hmd hp hq, pow_add, pow_mul, hα]
   split_ifs <;> simp
 
+/-- Two involutions satisfying the length-three braid relation have product of cube one. -/
+theorem mul_pow_three_eq_one_of_braid {G : Type*} [Monoid G] {a b : G}
+    (ha : a * a = 1) (hb : b * b = 1) (hab : a * b * a = b * a * b) :
+    (a * b) ^ 3 = 1 := by
+  calc
+    _ = (a * b * a) * (b * a * b) := by simp [pow_succ, mul_assoc]
+    _ = (b * a * b) * (b * a * b) := by rw [hab]
+    _ = 1 := by simp only [mul_assoc, ← mul_assoc b b, hb, one_mul,
+      ← mul_assoc a a, ha]
+
+/-- Two involutions satisfying the length-four braid relation have product of fourth power one. -/
+theorem mul_pow_four_eq_one_of_sq_eq_sq {G : Type*} [Monoid G] {a b : G}
+    (ha : a * a = 1) (hb : b * b = 1) (hab : (a * b) ^ 2 = (b * a) ^ 2) :
+    (a * b) ^ 4 = 1 := by
+  calc
+    _ = (a * b) ^ 2 * (a * b) ^ 2 := by rw [← pow_add]
+    _ = (b * a) ^ 2 * (a * b) ^ 2 := by rw [hab]
+    _ = 1 := pow_mul_pow_eq_one 2 (by
+      simp only [mul_assoc, ← mul_assoc a a, ha, one_mul, hb])
+
 end TauCeti
