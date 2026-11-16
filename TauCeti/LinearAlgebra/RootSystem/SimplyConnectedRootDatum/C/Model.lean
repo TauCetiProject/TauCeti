@@ -629,7 +629,7 @@ lemma signedReflection_involutive (p q : Signed n) : Involutive (signedReflectio
 lemma signedReflection_injective (p q : Signed n) : Injective (signedReflection p q) :=
   (signedReflection_involutive p q).injective
 
-lemma signedReflection_signedNeg (p q z : Signed n) :
+@[simp] lemma signedReflection_signedNeg (p q z : Signed n) :
     signedReflection p q (signedNeg z) = signedNeg (signedReflection p q z) := by
   refine signedWeight_injective ?_
   rw [signedWeight_signedReflection p q (signedNeg z),
