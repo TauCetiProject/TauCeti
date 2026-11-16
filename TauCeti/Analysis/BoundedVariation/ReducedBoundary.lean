@@ -11,7 +11,9 @@ public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.InnerProductSpace.CompleteSquare
+import TauCeti.MeasureTheory.Constructions.BorelSpace.RightContinuous
 import TauCeti.MeasureTheory.Covering.Besicovitch
+import TauCeti.MeasureTheory.Measure.InterBall
 
 /-!
 # The reduced boundary and the measure-theoretic outer normal
@@ -59,6 +61,9 @@ proves their basic properties.
   `⨍_{closedBall x r} ‖ν_s - ν_s x‖ d|Dχ_s| → 0`
   (`TauCeti.tendsto_setLIntegral_enorm_outerNormal_sub_div`). The averages of the unit vectors
   `ν_s` tend to the unit vector `ν_s x`, and for unit vectors `‖a - ν‖² = 2 (1 - ⟪a, ν⟫)`.
+* The reduced boundary is a Borel set (`TauCeti.measurableSet_reducedBoundary`), and the outer
+  normal extended by zero outside `∂*s` is Borel measurable
+  (`TauCeti.measurable_indicator_outerNormal`).
 * The reduced boundary and the outer normal only depend on `s` almost everywhere on `Ω`
   (`TauCeti.reducedBoundary_congr_ae`, `TauCeti.outerNormal_congr_ae`); in particular
   `∂*(s ∩ Ω) = ∂*s` (`TauCeti.reducedBoundary_inter_opens`). When `μ` is an additive
@@ -488,5 +493,96 @@ theorem outerNormal_compl [μ.IsAddHaarMeasure] (hx : x ∈ reducedBoundary μ �
   rw [outerNormal]
   simp only [setAverage_polarDensity_compl]
   rw [(tendsto_setAverage_polarDensity hx).neg.limUnder_eq, neg_neg]
+
+/-! ### Measurability -/
+
+/-- Inside any open ball `ball c ρ` whose double closed ball lies in `Ω`, the intersection with the
+reduced boundary is Borel measurable. -/
+private theorem measurableSet_reducedBoundary_inter_ball {c : E} {ρ : ℝ} (hρ : 0 < ρ)
+    (hball : closedBall c (2 * ρ) ⊆ Ω) :
+    MeasurableSet (reducedBoundary μ Ω s ∩ ball c ρ) := by
+  have := Ω.isOpen.locallyCompactSpace
+  set lam := variationMeasure μ Ω (s.indicator 1)
+  set avg : ℝ → E → E := fun r x =>
+    ⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x r, polarDensity μ Ω (s.indicator 1) y ∂lam
+  set s₀ : Set E := ball c ρ ∩
+    ⋂ (q : ℚ) (_ : 0 < (q : ℝ)) (_ : (q : ℝ) < ρ),
+      {x | lam (((↑) : Ω → E) ⁻¹' closedBall x q) ≠ 0}
+  have hs₀ : MeasurableSet s₀ :=
+    measurableSet_ball.inter <| MeasurableSet.iInter fun q => MeasurableSet.iInter fun _ =>
+      MeasurableSet.iInter fun _ =>
+        ((lam.measurable_preimage_closedBall measurable_subtype_coe.aemeasurable q)
+          (measurableSet_singleton 0)).compl
+  have hcomp {x : E} (hx : x ∈ ball c ρ) : IsCompact (((↑) : Ω → E) ⁻¹' closedBall x ρ) := by
+    refine Topology.IsInducing.subtypeVal.isCompact_preimage' (isCompact_closedBall x ρ) ?_
+    rw [Subtype.range_coe]
+    intro z hz
+    refine hball (mem_closedBall.2 ?_)
+    linarith [dist_triangle z x c, mem_ball.1 hx, mem_closedBall.1 hz]
+  have heq : reducedBoundary μ Ω s ∩ ball c ρ =
+      {x ∈ s₀ | ∃ ν ∈ sphere (0 : E) 1, Tendsto (fun t => avg t x) (𝓝[>] 0) (𝓝 ν)} := by
+    ext x
+    simp only [mem_inter_iff, mem_ofPred_eq, mem_reducedBoundary, mem_sphere_zero_iff_norm, s₀,
+      mem_iInter]
+    refine ⟨fun ⟨⟨hxΩ, ν, hν1, hν⟩, hx⟩ => ⟨⟨hx, fun q hq _ =>
+        variationMeasure_preimage_closedBall_ne_zero ⟨hxΩ, ν, hν1, hν⟩ hq⟩, ν, hν1, hν⟩,
+      fun ⟨⟨hx, _⟩, ν, hν1, hν⟩ => ⟨⟨hball (mem_closedBall.2 (by linarith [mem_ball.1 hx])),
+        ν, hν1, hν⟩, hx⟩⟩
+  rw [heq]
+  refine measurableSet_setOf_exists_mem_tendsto_nhdsGT hρ hs₀ isClosed_sphere.measurableSet
+    (fun q _ _ => (measurable_polarDensity.aestronglyMeasurable.setAverage_preimage_closedBall
+      measurable_subtype_coe.aemeasurable q).measurable) fun x hx r hr => ?_
+  simp only [mem_inter_iff, mem_iInter, mem_ofPred_eq, s₀] at hx
+  obtain ⟨q, hq0, hqr⟩ := exists_rat_btwn hr.1
+  have hpos : lam (((↑) : Ω → E) ⁻¹' closedBall x r) ≠ 0 := fun h0 =>
+    hx.2 q hq0 (hqr.trans hr.2)
+      (measure_mono_null (preimage_mono (closedBall_subset_closedBall hqr.le)) h0)
+  exact (locallyIntegrable_polarDensity.integrableOn_isCompact
+    (hcomp hx.1)).tendsto_setAverage_preimage_closedBall_nhdsGT measurable_subtype_coe.aemeasurable
+    hr.2 (hcomp hx.1).measure_lt_top.ne hpos
+
+/-- **The reduced boundary is a Borel set.** -/
+@[measurability]
+theorem measurableSet_reducedBoundary : MeasurableSet (reducedBoundary μ Ω s) := by
+  obtain ⟨D, hDc, hD⟩ := TopologicalSpace.exists_countable_dense E
+  have : Countable D := hDc.to_subtype
+  have hcov : reducedBoundary μ Ω s =
+      ⋃ (d : D) (q : ℚ) (_ : 0 < (q : ℝ)) (_ : closedBall (d : E) (2 * (q : ℝ)) ⊆ Ω),
+        reducedBoundary μ Ω s ∩ ball (d : E) (q : ℝ) := by
+    refine Subset.antisymm (fun x hx => ?_) (iUnion₂_subset fun _ _ => iUnion₂_subset fun _ _ =>
+      inter_subset_left)
+    obtain ⟨ε, hε, hεΩ⟩ :=
+      nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+    obtain ⟨q, hq0, hqε⟩ := exists_rat_btwn (div_pos hε (by norm_num : (0 : ℝ) < 3))
+    obtain ⟨d, hdD, hdx⟩ := Metric.mem_closure_iff.1 (hD x) (q : ℝ) hq0
+    refine mem_iUnion.2 ⟨⟨d, hdD⟩, mem_iUnion.2 ⟨q, mem_iUnion.2 ⟨hq0, mem_iUnion.2 ⟨?_, ?_⟩⟩⟩⟩
+    · intro z hz
+      exact hεΩ (mem_closedBall.2 (by linarith [dist_triangle_right z x d, mem_closedBall.1 hz]))
+    · exact ⟨hx, by rwa [mem_ball]⟩
+  rw [hcov]
+  exact MeasurableSet.iUnion fun d => MeasurableSet.iUnion fun q =>
+    MeasurableSet.iUnion fun hq => MeasurableSet.iUnion fun hball =>
+    measurableSet_reducedBoundary_inter_ball hq hball
+
+/-- The measure-theoretic outer normal, extended by zero outside the reduced boundary, is Borel
+measurable. -/
+theorem measurable_indicator_outerNormal :
+    Measurable ((reducedBoundary μ Ω s).indicator (outerNormal μ Ω s)) := by
+  have := Ω.isOpen.locallyCompactSpace
+  set lam := variationMeasure μ Ω (s.indicator 1)
+  set f : ℕ → E → E := fun n => (reducedBoundary μ Ω s).indicator fun x =>
+    -⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x (1 / ((n : ℝ) + 1)),
+      polarDensity μ Ω (s.indicator 1) y ∂lam
+  refine measurable_of_tendsto_metrizable (f := f) (fun n => ?_) (tendsto_pi_nhds.2 fun x => ?_)
+  · exact ((measurable_polarDensity.aestronglyMeasurable.setAverage_preimage_closedBall
+      measurable_subtype_coe.aemeasurable _).measurable.neg).indicator measurableSet_reducedBoundary
+  · by_cases hx : x ∈ reducedBoundary μ Ω s
+    · simp only [f, indicator_of_mem hx]
+      have hseq : Tendsto (fun n : ℕ => 1 / ((n : ℝ) + 1)) atTop (𝓝[>] 0) :=
+        tendsto_nhdsWithin_iff.2 ⟨tendsto_one_div_add_atTop_nhds_zero_nat,
+          .of_forall fun n => one_div_pos.2 (by positivity)⟩
+      simpa only [Function.comp_def, neg_neg, lam] using
+        ((tendsto_setAverage_polarDensity hx).comp hseq).neg
+    · simp [f, indicator_of_notMem hx]
 
 end TauCeti

@@ -7,12 +7,16 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
+public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.Topology.MetricSpace.ProperSpace
 
@@ -35,9 +39,20 @@ for radii arbitrarily close to `ρ` from the right holds at `ρ` when `f` is rig
 (`MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`).
 
 The balls about a point `z` have measures tending to `μ {z}` as the radius decreases to `0`,
-once one of them has finite measure (`TauCeti.tendsto_measure_ball_nhdsGT_zero`). Dually, the
-integrals of a function integrable on a ball over the concentric balls of smaller radius tend to
-its integral over the ball (`MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`).
+once one of them has finite measure (`TauCeti.tendsto_measure_ball_nhdsGT_zero`). More generally,
+as `ρ → r⁺` the measures, Bochner integrals, and averages over preimages `g ⁻¹' closedBall x ρ`
+are right-continuous in the radius
+(`MeasureTheory.Measure.tendsto_measure_preimage_closedBall_nhdsGT`,
+`MeasureTheory.IntegrableOn.tendsto_integral_preimage_closedBall_nhdsGT`,
+`MeasureTheory.IntegrableOn.tendsto_setAverage_preimage_closedBall_nhdsGT`). Dually, the integrals
+of a function integrable on an open ball over concentric balls of smaller radius tend to its
+integral over the ball (`MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`).
+
+When `X` is second-countable and `μ` is `s`-finite, the measure, Bochner integral, and average over
+`g ⁻¹' closedBall x r` are measurable (resp. strongly measurable) as functions of the centre `x`
+(`MeasureTheory.Measure.measurable_preimage_closedBall`,
+`MeasureTheory.AEStronglyMeasurable.integral_preimage_closedBall`,
+`MeasureTheory.AEStronglyMeasurable.setAverage_preimage_closedBall`).
 
 ## Main results
 
@@ -51,10 +66,22 @@ its integral over the ball (`MeasureTheory.IntegrableOn.tendsto_integral_ball_nh
   arbitrarily close to `ρ` from the right extends to `ρ` for a right-continuous gauge.
 * `MeasureTheory.Measure.measure_ball_le_of_forall_lt`: a bound on the measures of the open balls
   of radius less than `ρ` bounds the open ball of radius `ρ`.
+* `MeasureTheory.Measure.tendsto_measure_preimage_closedBall_nhdsGT` and
+  `MeasureTheory.Measure.tendsto_measure_closedBall_nhdsGT`: right-continuity of closed-ball
+  measures in the radius.
+* `MeasureTheory.Measure.measurable_preimage_closedBall` and
+  `MeasureTheory.Measure.measurable_closedBall`: measurability of closed-ball measures in the
+  centre.
 * `TauCeti.tendsto_measure_ball_nhdsGT_zero`: shrinking balls about `z` have measures tending to
   `μ {z}`.
 * `MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`: as `r → R⁻`, the integral over
   `ball x r` tends to the integral over `ball x R`.
+* `MeasureTheory.IntegrableOn.tendsto_integral_preimage_closedBall_nhdsGT` and
+  `MeasureTheory.IntegrableOn.tendsto_setAverage_preimage_closedBall_nhdsGT`: right-continuity of
+  closed-ball integrals and averages in the radius.
+* `MeasureTheory.AEStronglyMeasurable.integral_preimage_closedBall` and
+  `MeasureTheory.AEStronglyMeasurable.setAverage_preimage_closedBall`: strong measurability of
+  closed-ball integrals and averages in the centre.
 -/
 
 public section
@@ -154,6 +181,52 @@ theorem measure_ball_le_of_forall_lt (μ : Measure X) {x : X} {ρ : ℝ} {B : �
   rw [← hU, Monotone.measure_iUnion fun i j hij => ball_subset_ball (hr.monotone hij)]
   exact iSup_le fun n => h _ (hrρ n)
 
+/-- For an a.e.-measurable map `g : Y → X`, as `ρ → r⁺` the measures of `g ⁻¹' closedBall x ρ`
+tend to the measure of `g ⁻¹' closedBall x r`, provided some larger closed ball has finite
+preimage measure. -/
+theorem tendsto_measure_preimage_closedBall_nhdsGT {Y : Type*} [OpensMeasurableSpace X]
+    [MeasurableSpace Y] (μ : Measure Y) {g : Y → X} (hg : AEMeasurable g μ) {x : X} {r : ℝ}
+    (hfin : ∃ R > r, μ (g ⁻¹' closedBall x R) ≠ ∞) :
+    Tendsto (fun ρ => μ (g ⁻¹' closedBall x ρ)) (𝓝[>] r) (𝓝 (μ (g ⁻¹' closedBall x r))) := by
+  have hInter : (⋂ ρ > r, g ⁻¹' closedBall x ρ) = g ⁻¹' closedBall x r := by
+    ext y
+    simp only [mem_iInter, mem_preimage, mem_closedBall]
+    refine ⟨fun h => ?_, fun h _ hρ => h.trans hρ.le⟩
+    by_contra hlt
+    obtain ⟨ρ, hrρ, hρy⟩ := exists_between (not_le.1 hlt)
+    exact hρy.not_ge (h ρ hrρ)
+  rw [← hInter]
+  exact tendsto_measure_biInter_gt
+    (fun _ _ => hg.nullMeasurable measurableSet_closedBall)
+    (fun _ _ _ hij => preimage_mono (closedBall_subset_closedBall hij)) hfin
+
+/-- As `ρ → r⁺`, the measures of `closedBall x ρ` tend to the measure of `closedBall x r`,
+provided some larger closed ball has finite measure. -/
+theorem tendsto_measure_closedBall_nhdsGT [OpensMeasurableSpace X] (μ : Measure X) {x : X} {r : ℝ}
+    (hfin : ∃ R > r, μ (closedBall x R) ≠ ∞) :
+    Tendsto (fun ρ => μ (closedBall x ρ)) (𝓝[>] r) (𝓝 (μ (closedBall x r))) :=
+  μ.tendsto_measure_preimage_closedBall_nhdsGT aemeasurable_id hfin
+
+/-- For an `s`-finite measure `μ` and an a.e.-measurable map `g : Y → X` into a second-countable
+pseudometric space, the measure of `g ⁻¹' closedBall x r` is a measurable function of `x`. -/
+theorem measurable_preimage_closedBall {Y : Type*} [SecondCountableTopology X]
+    [OpensMeasurableSpace X] [MeasurableSpace Y] (μ : Measure Y) [SFinite μ] {g : Y → X}
+    (hg : AEMeasurable g μ) (r : ℝ) : Measurable fun x : X => μ (g ⁻¹' closedBall x r) := by
+  let S : Set (X × Y) := {p | dist (hg.mk g p.2) p.1 ≤ r}
+  have hS : MeasurableSet S :=
+    measurableSet_le ((hg.measurable_mk.comp measurable_snd).dist measurable_fst) measurable_const
+  have heq : (fun x : X => μ (g ⁻¹' closedBall x r)) =
+      fun x : X => μ (hg.mk g ⁻¹' closedBall x r) := funext fun x =>
+    measure_congr (hg.ae_eq_mk.mono fun y hy => by simp [hy])
+  rw [heq]
+  exact measurable_measure_prodMk_left hS
+
+/-- For an `s`-finite measure on a second-countable pseudometric space, the measure of
+`closedBall x r` is a measurable function of `x`. -/
+theorem measurable_closedBall [SecondCountableTopology X] [OpensMeasurableSpace X] (μ : Measure X)
+    [SFinite μ] (r : ℝ) : Measurable fun x : X => μ (closedBall x r) :=
+  μ.measurable_preimage_closedBall aemeasurable_id r
+
 end MeasureTheory.Measure
 
 namespace TauCeti
@@ -175,7 +248,7 @@ end TauCeti
 namespace MeasureTheory.IntegrableOn
 
 open Metric Filter Set
-open scoped Topology
+open scoped ENNReal Topology
 
 variable {X F : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure X}
@@ -209,4 +282,135 @@ theorem tendsto_integral_ball_nhdsLT {f : X → F} {x : X} {R : ℝ}
       filter_upwards [self_mem_nhdsWithin] with r hr
       rw [indicator_of_notMem fun h ↦ hz (ball_subset_ball (le_of_lt hr) h)]
 
+/-- For an a.e.-measurable map `g : Y → X` and a function `f` integrable on `g ⁻¹' closedBall x R`,
+the integrals of `f` over `g ⁻¹' closedBall x ρ` tend to its integral over `g ⁻¹' closedBall x r`
+as `ρ → r⁺`, for every `r < R`. -/
+theorem tendsto_integral_preimage_closedBall_nhdsGT {Y : Type*} [MeasurableSpace Y]
+    {μ : Measure Y} {g : Y → X} {f : Y → F} {x : X} {r R : ℝ}
+    (hf : IntegrableOn f (g ⁻¹' closedBall x R) μ) (hg : AEMeasurable g μ) (hrR : r < R) :
+    Tendsto (fun ρ => ∫ y in g ⁻¹' closedBall x ρ, f y ∂μ) (𝓝[>] r)
+      (𝓝 (∫ y in g ⁻¹' closedBall x r, f y ∂μ)) := by
+  have hset (ρ : ℝ) : g ⁻¹' closedBall x ρ =ᵐ[μ] hg.mk g ⁻¹' closedBall x ρ :=
+    hg.ae_eq_mk.mono fun y hy => by simp [hy]
+  have hf' : IntegrableOn f (hg.mk g ⁻¹' closedBall x R) μ := hf.congr_set_ae (hset R).symm
+  have hm (ρ : ℝ) : MeasurableSet (hg.mk g ⁻¹' closedBall x ρ) :=
+    measurableSet_closedBall.preimage hg.measurable_mk
+  simp_rw [setIntegral_congr_set (hset _), ← integral_indicator (hm _)]
+  refine tendsto_integral_filter_of_dominated_convergence
+    ((hg.mk g ⁻¹' closedBall x R).indicator fun y => ‖f y‖) ?_ ?_
+    (IntegrableOn.integrable_indicator hf'.norm (hm R)) ?_
+  · filter_upwards [Ioo_mem_nhdsGT hrR] with ρ hρ
+    exact ((hf'.mono_set
+      (preimage_mono (closedBall_subset_closedBall hρ.2.le))).integrable_indicator
+      (hm ρ)).aestronglyMeasurable
+  · filter_upwards [Ioo_mem_nhdsGT hrR] with ρ hρ
+    refine Eventually.of_forall fun y => ?_
+    rw [norm_indicator_eq_indicator_norm]
+    exact indicator_le_indicator_of_subset (preimage_mono (closedBall_subset_closedBall hρ.2.le))
+      (fun _ => norm_nonneg _) y
+  · refine Eventually.of_forall fun y => ?_
+    by_cases hy : y ∈ hg.mk g ⁻¹' closedBall x r
+    · rw [indicator_of_mem hy]
+      refine tendsto_const_nhds.congr' ?_
+      filter_upwards [self_mem_nhdsWithin] with ρ hρ
+      exact (indicator_of_mem
+        (preimage_mono (closedBall_subset_closedBall (le_of_lt hρ)) hy) f).symm
+    · rw [indicator_of_notMem hy]
+      refine tendsto_const_nhds.congr' ?_
+      have hlt : r < dist (hg.mk g y) x := not_le.1 hy
+      filter_upwards [Ioo_mem_nhdsGT hlt] with ρ hρ
+      exact (indicator_of_notMem (fun h => hρ.2.not_ge h) f).symm
+
+/-- For a function integrable on `closedBall x R`, its integrals over `closedBall x ρ` tend to its
+integral over `closedBall x r` as `ρ → r⁺`, for every `r < R`. -/
+theorem tendsto_integral_closedBall_nhdsGT {f : X → F} {x : X} {r R : ℝ}
+    (hf : IntegrableOn f (closedBall x R) μ) (hrR : r < R) :
+    Tendsto (fun ρ => ∫ y in closedBall x ρ, f y ∂μ) (𝓝[>] r)
+      (𝓝 (∫ y in closedBall x r, f y ∂μ)) :=
+  hf.tendsto_integral_preimage_closedBall_nhdsGT aemeasurable_id hrR
+
+/-- For an a.e.-measurable map `g : Y → X` and a function `f` integrable on `g ⁻¹' closedBall x R`
+where that preimage has finite measure and `g ⁻¹' closedBall x r` has positive measure, the
+averages of `f` over `g ⁻¹' closedBall x ρ` are right-continuous at `r` for `r < R`. -/
+theorem tendsto_setAverage_preimage_closedBall_nhdsGT {Y : Type*} [MeasurableSpace Y]
+    {μ : Measure Y} {g : Y → X} {f : Y → F} {x : X} {r R : ℝ}
+    (hf : IntegrableOn f (g ⁻¹' closedBall x R) μ) (hg : AEMeasurable g μ) (hrR : r < R)
+    (hfin : μ (g ⁻¹' closedBall x R) ≠ ∞) (hpos : μ (g ⁻¹' closedBall x r) ≠ 0) :
+    Tendsto (fun ρ => ⨍ y in g ⁻¹' closedBall x ρ, f y ∂μ) (𝓝[>] r)
+      (𝓝 (⨍ y in g ⁻¹' closedBall x r, f y ∂μ)) := by
+  have hfin_r : μ (g ⁻¹' closedBall x r) ≠ ∞ :=
+    measure_ne_top_of_subset (preimage_mono (closedBall_subset_closedBall hrR.le)) hfin
+  have hm : Tendsto (fun ρ => μ.real (g ⁻¹' closedBall x ρ)) (𝓝[>] r)
+      (𝓝 (μ.real (g ⁻¹' closedBall x r))) :=
+    (ENNReal.tendsto_toReal hfin_r).comp
+      (μ.tendsto_measure_preimage_closedBall_nhdsGT hg ⟨R, hrR, hfin⟩)
+  simp_rw [setAverage_eq]
+  exact (hm.inv₀ (ENNReal.toReal_ne_zero.2 ⟨hpos, hfin_r⟩)).smul
+    (hf.tendsto_integral_preimage_closedBall_nhdsGT hg hrR)
+
+/-- For a function integrable on `closedBall x R` of finite measure with `μ (closedBall x r) ≠ 0`,
+its averages over `closedBall x ρ` are right-continuous at `r` for `r < R`. -/
+theorem tendsto_setAverage_closedBall_nhdsGT {f : X → F} {x : X} {r R : ℝ}
+    (hf : IntegrableOn f (closedBall x R) μ) (hrR : r < R)
+    (hfin : μ (closedBall x R) ≠ ∞) (hpos : μ (closedBall x r) ≠ 0) :
+    Tendsto (fun ρ => ⨍ y in closedBall x ρ, f y ∂μ) (𝓝[>] r)
+      (𝓝 (⨍ y in closedBall x r, f y ∂μ)) :=
+  hf.tendsto_setAverage_preimage_closedBall_nhdsGT aemeasurable_id hrR hfin hpos
+
 end MeasureTheory.IntegrableOn
+
+namespace MeasureTheory.AEStronglyMeasurable
+
+open Metric Set
+
+variable {X Y F : Type*} [PseudoMetricSpace X] [SecondCountableTopology X] [MeasurableSpace X]
+  [OpensMeasurableSpace X] [MeasurableSpace Y] [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- For an `s`-finite measure `μ`, an a.e.-measurable map `g : Y → X` into a second-countable
+pseudometric space, and an a.e.-strongly measurable function `f`, the integral of `f` over
+`g ⁻¹' closedBall x r` is a strongly measurable function of `x`. -/
+theorem integral_preimage_closedBall {μ : Measure Y} [SFinite μ] {g : Y → X} {f : Y → F}
+    (hf : AEStronglyMeasurable f μ) (hg : AEMeasurable g μ) (r : ℝ) :
+    StronglyMeasurable fun x : X => ∫ y in g ⁻¹' closedBall x r, f y ∂μ := by
+  let S : Set (X × Y) := {p | dist (hg.mk g p.2) p.1 ≤ r}
+  have hS : MeasurableSet S :=
+    _root_.measurableSet_le ((hg.measurable_mk.comp measurable_snd).dist measurable_fst)
+      measurable_const
+  have heq : (fun x : X => ∫ y in g ⁻¹' closedBall x r, f y ∂μ) =
+      fun x : X => ∫ y in hg.mk g ⁻¹' closedBall x r, hf.mk f y ∂μ := funext fun x => by
+    have hset : g ⁻¹' closedBall x r =ᵐ[μ] hg.mk g ⁻¹' closedBall x r :=
+      hg.ae_eq_mk.mono fun y hy => by simp [hy]
+    rw [setIntegral_congr_set hset]
+    exact integral_congr_ae (ae_restrict_of_ae hf.ae_eq_mk)
+  rw [heq]
+  simp_rw [← integral_indicator (measurableSet_closedBall.preimage hg.measurable_mk)]
+  exact ((hf.stronglyMeasurable_mk.comp_measurable measurable_snd).indicator
+    hS).integral_prod_right'
+
+/-- For an `s`-finite measure on a second-countable pseudometric space and an a.e.-strongly
+measurable function `f`, the integral of `f` over `closedBall x r` is strongly measurable in
+`x`. -/
+theorem integral_closedBall {μ : Measure X} [SFinite μ] {f : X → F}
+    (hf : AEStronglyMeasurable f μ) (r : ℝ) :
+    StronglyMeasurable fun x : X => ∫ y in closedBall x r, f y ∂μ :=
+  hf.integral_preimage_closedBall aemeasurable_id r
+
+/-- For an `s`-finite measure `μ`, an a.e.-measurable map `g : Y → X` into a second-countable
+pseudometric space, and an a.e.-strongly measurable function `f`, the average of `f` over
+`g ⁻¹' closedBall x r` is a strongly measurable function of `x`. -/
+theorem setAverage_preimage_closedBall {μ : Measure Y} [SFinite μ] {g : Y → X} {f : Y → F}
+    (hf : AEStronglyMeasurable f μ) (hg : AEMeasurable g μ) (r : ℝ) :
+    StronglyMeasurable fun x : X => ⨍ y in g ⁻¹' closedBall x r, f y ∂μ := by
+  simp_rw [setAverage_eq]
+  exact ((μ.measurable_preimage_closedBall hg r).ennreal_toReal.inv.stronglyMeasurable).smul
+    (hf.integral_preimage_closedBall hg r)
+
+/-- For an `s`-finite measure on a second-countable pseudometric space and an a.e.-strongly
+measurable function `f`, the average of `f` over `closedBall x r` is strongly measurable in
+`x`. -/
+theorem setAverage_closedBall {μ : Measure X} [SFinite μ] {f : X → F}
+    (hf : AEStronglyMeasurable f μ) (r : ℝ) :
+    StronglyMeasurable fun x : X => ⨍ y in closedBall x r, f y ∂μ :=
+  hf.setAverage_preimage_closedBall aemeasurable_id r
+
+end MeasureTheory.AEStronglyMeasurable
