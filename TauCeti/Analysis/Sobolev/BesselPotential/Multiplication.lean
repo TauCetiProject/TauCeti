@@ -97,8 +97,8 @@ theorem fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM_neg (s : 
   have : ((fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) *
       fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ)) = fun _ ↦ 1 := by
     ext x
-    rw [Pi.mul_apply, ← Complex.ofReal_mul, ← Real.rpow_add (by positivity)]
-    simp [neg_div]
+    rw [Pi.mul_apply, ← Complex.ofReal_mul, mul_comm,
+      TauCeti.one_add_norm_sq_rpow_neg_mul_rpow, Complex.ofReal_one]
   rw [this, fourierMultiplierCLM_const]
   simp
 

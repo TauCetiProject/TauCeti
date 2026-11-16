@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.LpSpace
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Fourier.ChangeOfVariables
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Derivatives of Schwartz functions on the Fourier side
@@ -193,7 +194,7 @@ theorem fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM (t t' : �
       fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t' / 2) : ℝ) : ℂ)) =
       fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((t + t') / 2) : ℝ) : ℂ) := by
     ext x
-    rw [Pi.mul_apply, ← Complex.ofReal_mul, ← Real.rpow_add (by positivity), add_div]
+    rw [Pi.mul_apply, ← Complex.ofReal_mul, TauCeti.one_add_norm_sq_rpow_add]
   rw [fourierMultiplierCLM_fourierMultiplierCLM_apply (by fun_prop) (by fun_prop), h]
 
 /-- The Bessel multiplier of order `-t`, with symbol `⟨ξ⟩ ^ (-t)`, inverts the one of order `t` on

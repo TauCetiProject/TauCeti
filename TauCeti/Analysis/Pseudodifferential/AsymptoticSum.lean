@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Set.Finite.List
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Asymptotic summation of symbols
@@ -164,8 +165,7 @@ private theorem exists_norm_mixedDeriv_cutoff_smul_le_of_forall
           gcongr
           exact hB i t ht ξ
       _ = B i := by
-          rw [mul_assoc, ← Real.rpow_add (by positivity), neg_div, neg_add_cancel,
-            Real.rpow_zero, mul_one]
+          rw [mul_assoc, one_add_norm_sq_rpow_neg_mul_rpow, mul_one]
   have hweight : (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) ≤
       t ^ (m - m') * (1 + ‖ξ‖ ^ 2) ^ ((m' - k) / 2) := by
     simpa only [sub_sub_sub_cancel_right] using

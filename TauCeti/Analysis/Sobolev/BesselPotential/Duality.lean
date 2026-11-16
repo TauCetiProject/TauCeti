@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # The density pairing of the Bessel-potential spaces `H^{s,p}` and `H^{-s,q}`
@@ -301,9 +302,8 @@ theorem inner_toLp_toBesselPotentialSpaceCLM_neg (r : ℝ) (a b : 𝓢(E, F)) :
   congr 1
   funext ξ
   -- The weights `⟨ξ⟩ ^ (-r)` and `⟨ξ⟩ ^ r` multiply to `1`.
-  have hw : (1 + ‖ξ‖ ^ 2) ^ (-r / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) = 1 := by
-    rw [← Real.rpow_add (by positivity)]
-    simp [neg_div]
+  have hw : (1 + ‖ξ‖ ^ 2) ^ (-r / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) = 1 :=
+    TauCeti.one_add_norm_sq_rpow_neg_mul_rpow ξ r
   simp only [fourierMultiplierCLM_apply, fourier_fourierInv_eq]
   rw [smulLeftCLM_apply_apply (by fun_prop), smulLeftCLM_apply_apply (by fun_prop)]
   rw [inner_smul_left, inner_smul_right, ← mul_assoc]
