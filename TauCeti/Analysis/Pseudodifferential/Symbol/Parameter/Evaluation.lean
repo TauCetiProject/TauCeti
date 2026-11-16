@@ -191,6 +191,21 @@ theorem toSymbol_sub (a b : ParameterSymbol n Λ V W m) (z : ℂ) :
     (a - b).toSymbol z = a.toSymbol z - b.toSymbol z :=
   Symbol.ext <| funext fun q => by simp
 
+@[simp]
+theorem toSymbol_nsmul (k : ℕ) (a : ParameterSymbol n Λ V W m) (z : ℂ) :
+    (k • a).toSymbol z = k • a.toSymbol z :=
+  Symbol.ext <| funext fun q => by simp
+
+@[simp]
+theorem toSymbol_zsmul (k : ℤ) (a : ParameterSymbol n Λ V W m) (z : ℂ) :
+    (k • a).toSymbol z = k • a.toSymbol z :=
+  Symbol.ext <| funext fun q => by simp
+
+@[simp]
+theorem toSymbol_sum {ι : Type*} (s : Finset ι) (a : ι → ParameterSymbol n Λ V W m) (z : ℂ) :
+    (∑ i ∈ s, a i).toSymbol z = ∑ i ∈ s, (a i).toSymbol z :=
+  map_sum (AddMonoidHom.mk' (toSymbol · z) (toSymbol_add · · z)) a s
+
 /-- Evaluation at a spectral parameter commutes with the inclusion of orders. -/
 @[simp]
 theorem toSymbol_inclusion (h : m ≤ m') (a : ParameterSymbol n Λ V W m) (z : ℂ) :
