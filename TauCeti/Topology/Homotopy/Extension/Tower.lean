@@ -321,6 +321,21 @@ theorem cofibrationTowerHomotopyEquiv_toFun
     (cofibrationTowerHomotopyEquiv hX hXh hY hYh f hf hcX hcY).toFun = (hcX.map cY f).hom :=
   (rfl)
 
+/-- The homotopy inverse of `cofibrationTowerHomotopyEquiv` maps the image of each stage `Y k` into
+the image of the corresponding stage `X k`. -/
+theorem mapsTo_cofibrationTowerHomotopyEquiv_symm
+    (hX : ∀ n : ℕ, IsEmbedding (X.map (homOfLE n.le_succ)))
+    (hXh : ∀ n : ℕ, HasHomotopyExtensionProperty (range (X.map (homOfLE n.le_succ))))
+    (hY : ∀ n : ℕ, IsEmbedding (Y.map (homOfLE n.le_succ)))
+    (hYh : ∀ n : ℕ, HasHomotopyExtensionProperty (range (Y.map (homOfLE n.le_succ))))
+    (f : X ⟶ Y) (hf : ∀ n, ∃ e : X.obj n ≃ₕ Y.obj n, e.toFun = (f.app n).hom)
+    {cX : Cocone X} (hcX : IsColimit cX) {cY : Cocone Y} (hcY : IsColimit cY) (k : ℕ) :
+    MapsTo (cofibrationTowerHomotopyEquiv hX hXh hY hYh f hf hcX hcY).symm
+      (range (cY.ι.app k)) (range (cX.ι.app k)) := by
+  rintro _ ⟨y, rfl⟩
+  exact ⟨(exists_natTrans_homotopy_comp_id hX hXh hY hYh f hf).choose.app k y,
+    (ConcreteCategory.congr_hom (hcY.ι_map cX _ k) y).symm⟩
+
 end Colimit
 
 section ColimitUnion
@@ -363,7 +378,8 @@ a sequence whose bonding maps are embeddings with images having the homotopy ext
 Let `Y` be the union of an increasing sequence of subsets `A k`, each with the homotopy extension
 property in the next, carrying the topology coherent with them, and let `h k : F k ≃ₕ A k` be
 homotopy equivalences commuting with the inclusions. Then the colimit of `F` is homotopy equivalent
-to `Y` by a homotopy equivalence restricting to `h k` on every stage. -/
+to `Y` by a homotopy equivalence restricting to `h k` on every stage and whose homotopy inverse maps
+each `A k` into the range of `c.ι.app k`. -/
 theorem exists_homotopyEquiv_of_isColimit
     (hF : ∀ k : ℕ, IsEmbedding (F.map (homOfLE k.le_succ)))
     (hFh : ∀ k : ℕ, HasHomotopyExtensionProperty (range (F.map (homOfLE k.le_succ))))
@@ -372,7 +388,8 @@ theorem exists_homotopyEquiv_of_isColimit
     (hAH : ∀ k, HasHomotopyExtensionProperty ((↑) ⁻¹' A k : Set (A (k + 1))))
     (h : ∀ k, F.obj k ≃ₕ A k)
     (hh : ∀ k w, (h (k + 1) (F.map (homOfLE k.le_succ) w) : Y) = h k w) :
-    ∃ H : c.pt ≃ₕ Y, ∀ k w, H (c.ι.app k w) = (h k w : Y) := by
+    ∃ H : c.pt ≃ₕ Y, (∀ k w, H (c.ι.app k w) = (h k w : Y)) ∧
+      ∀ k, MapsTo H.symm (A k) (range (c.ι.app k)) := by
   -- `Y` is the colimit of the `A k`, the `h k` form a levelwise homotopy equivalence from `F` to
   -- the sequence of the `A k`, and the induced map of colimits is a homotopy equivalence.
   let hcY := TopCat.isColimitOfIsCoherentWith hA hAY hAc
@@ -380,10 +397,15 @@ theorem exists_homotopyEquiv_of_isColimit
     NatTrans.ofSequence (fun k ↦ TopCat.ofHom (h k).toFun) fun k ↦ by
       ext w
       exact Subtype.ext (hh k w)
-  refine ⟨cofibrationTowerHomotopyEquiv hF hFh (fun k ↦ .inclusion (hA k.le_succ)) (fun k ↦ by
-      rw [TopCat.range_subspaceDiagram_map]
-      exact hAH k) f (fun k ↦ ⟨h k, rfl⟩) hc hcY, fun k w ↦ ?_⟩
-  exact ConcreteCategory.congr_hom (hc.ι_map _ f k) w
+  have hYemb (k : ℕ) : IsEmbedding ((TopCat.subspaceDiagram hA).map (homOfLE k.le_succ)) :=
+    .inclusion (hA k.le_succ)
+  have hYh (k : ℕ) :
+      HasHomotopyExtensionProperty (range ((TopCat.subspaceDiagram hA).map (homOfLE k.le_succ))) :=
+    by rw [TopCat.range_subspaceDiagram_map]; exact hAH k
+  refine ⟨cofibrationTowerHomotopyEquiv hF hFh hYemb hYh f (fun k ↦ ⟨h k, rfl⟩) hc hcY,
+    fun k w ↦ ConcreteCategory.congr_hom (hc.ι_map _ f k) w, fun k y hy ↦
+      mapsTo_cofibrationTowerHomotopyEquiv_symm hF hFh hYemb hYh f (fun k ↦ ⟨h k, rfl⟩) hc hcY k
+        ⟨⟨y, hy⟩, rfl⟩⟩
 
 end ColimitUnion
 

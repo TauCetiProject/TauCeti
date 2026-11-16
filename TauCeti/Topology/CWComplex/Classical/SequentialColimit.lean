@@ -65,14 +65,21 @@ union.
 
 * `TauCeti.coe_map_cwComplexOfIsColimitCellEquiv_symm_inl` and
   `TauCeti.coe_map_cwComplexOfIsColimitCellEquiv_symm_inr`: the characteristic maps of the cells.
-* `TauCeti.finite_cwComplexOfIsColimitSubcomplex`: when `F k` is a finite CW complex, its image
-  subcomplex in a Hausdorff colimit is finite.
+* `TauCeti.monotone_cwComplexOfIsColimitSubcomplex`,
+  `TauCeti.iUnion_coe_cwComplexOfIsColimitSubcomplex`, and
+  `TauCeti.finite_cwComplexOfIsColimitSubcomplex`: the stage subcomplexes form an exhausting
+  increasing sequence, and are finite whenever the stages are finite in a Hausdorff colimit.
+* `TauCeti.coe_map_cwComplexOfIsColimitSubcomplexCellEquiv_symm` and
+  `TauCeti.coe_cwComplexOfIsColimitSubcomplexCellEquiv_symm_ι`: the characteristic maps and stage
+  compatibility of the stage subcomplex cells.
 * `TauCeti.hasHomotopyExtensionProperty_preimage_range_ι`: each stage has the homotopy extension
   property in the next one, inside the colimit.
 * `TauCeti.t2Space_of_isColimit_cwComplex`: a sequential colimit of Hausdorff CW complexes is
   Hausdorff.
-* `TauCeti.exists_homotopyEquiv_of_isColimit_cwComplex`: a space exhausted by a tower of
-  cofibrations with compatible CW models is homotopy equivalent to the colimit of the models.
+* `TauCeti.exists_homotopyEquiv_of_isColimit_cwComplex` and
+  `TauCeti.exists_homotopyEquiv_cwComplexOfIsColimitSubcomplex`: a space exhausted by a tower of
+  cofibrations with compatible CW models is homotopy equivalent to the colimit of the models,
+  compatibly on each stage subcomplex and with a stage-preserving homotopy inverse.
 
 ## References
 
@@ -222,6 +229,20 @@ private def newTowerCellEquiv (k n : ℕ) :
     (W := fun k ↦ (range (c.ι.app k) : Set c.pt)) (stageCellMap hF hc (ι := ι)) i).trans
     (newCellEquiv hF hc k n)
 
+/-- The `n`-cells of `cwComplexOfIsColimit`, identified with the new `n`-cells of the tower of
+ranges. -/
+private abbrev colimitToTowerCellEquiv (n : ℕ) :
+    letI := fun k ↦ stageCWComplex hF hc k
+    letI := cwComplexOfIsColimit hF hι hc
+    cell (univ : Set c.pt) n ≃
+      TowerNewCell (W := fun k ↦ (range (c.ι.app k) : Set c.pt))
+        (stageCellMap hF hc (ι := ι)) n :=
+  letI := fun k ↦ stageCWComplex hF hc k
+  letI := towerCWComplex hF hι hc
+  (IsClosedEmbedding.id.relCWComplexCellEquiv (image_id_iUnion_range hc) (image_empty _) n).trans
+    (cwSubcomplexTowerUnionCellEquiv (coe_map_stageCellMap hF hι hc)
+      (isClosed_of_forall_isClosed_inter_range hc) n)
+
 /-- **The cells of a sequential colimit of CW complexes.** The `n`-cells of the CW structure
 `TauCeti.cwComplexOfIsColimit` on the colimit are the `n`-cells of the first stage `F 0`, together
 with, for every `k`, the `n`-cells of `F (k + 1)` which are not images of cells of `F k`. -/
@@ -229,15 +250,11 @@ def cwComplexOfIsColimitCellEquiv (n : ℕ) :
     @cell c.pt _ univ ∅ (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc)) n ≃
       cell (univ : Set (F.obj 0)) n ⊕ Σ k, ↥(range (ι k n))ᶜ :=
   letI := fun k ↦ stageCWComplex hF hc k
-  letI := towerCWComplex hF hι hc
   -- The cells of the colimit are the new cells of the tower of ranges, indexed by their birth
   -- stage; every cell of the first stage is new.
-  (IsClosedEmbedding.id.relCWComplexCellEquiv (image_id_iUnion_range hc) (image_empty _) n).trans <|
-    (cwSubcomplexTowerUnionCellEquiv (coe_map_stageCellMap hF hι hc)
-      (isClosed_of_forall_isClosed_inter_range hc) n).trans <|
-    (Equiv.sigmaNatSucc _).trans <|
-      Equiv.sumCongr (firstCellEquiv hF hc n) (Equiv.sigmaCongrRight fun k ↦
-        newTowerCellEquiv hF hc k n)
+  (colimitToTowerCellEquiv hF hι hc n).trans <| (Equiv.sigmaNatSucc _).trans <|
+    Equiv.sumCongr (firstCellEquiv hF hc n) (Equiv.sigmaCongrRight fun k ↦
+      newTowerCellEquiv hF hc k n)
 
 /-- The characteristic maps of the colimit are those of the union of the ranges of the stages. -/
 private theorem coe_map_cwComplexOfIsColimit {n : ℕ}
@@ -301,31 +318,19 @@ Let `F` be a sequence of Hausdorff CW complexes whose bonding maps are closed em
 every cell onto a cell, and let `h k : F k ≃ₕ A k` be homotopy equivalences commuting with the
 inclusions. Then the colimit of `F`, a Hausdorff CW complex (`TauCeti.cwComplexOfIsColimit` and
 `TauCeti.t2Space_of_isColimit_cwComplex`), is homotopy equivalent to `Y` by a homotopy equivalence
-restricting to `h k` on every stage. This is `TauCeti.exists_homotopyEquiv_of_isColimit`, as the
-ranges of the bonding maps are subcomplexes. -/
+restricting to `h k` on every stage and whose homotopy inverse maps each `A k` into the range of
+`c.ι.app k`. This is `TauCeti.exists_homotopyEquiv_of_isColimit`, as the ranges of the bonding maps
+are subcomplexes. -/
 theorem exists_homotopyEquiv_of_isColimit_cwComplex [∀ k, T2Space (F.obj k)] {Y : Type u}
     [TopologicalSpace Y] {A : ℕ → Set Y} (hA : Monotone A) (hAY : ⋃ k, A k = univ)
     (hAc : IsCoherentWith (range A))
     (hAH : ∀ k, HasHomotopyExtensionProperty ((↑) ⁻¹' A k : Set (A (k + 1))))
     (h : ∀ k, F.obj k ≃ₕ A k)
     (hh : ∀ k w, (h (k + 1) (F.map (homOfLE k.le_succ) w) : Y) = h k w) :
-    ∃ H : c.pt ≃ₕ Y, ∀ k w, H (c.ι.app k w) = (h k w : Y) :=
+    ∃ H : c.pt ≃ₕ Y, (∀ k w, H (c.ι.app k w) = (h k w : Y)) ∧
+      ∀ k, MapsTo H.symm (A k) (range (c.ι.app k)) :=
   exists_homotopyEquiv_of_isColimit hc (fun k ↦ (hF k).isEmbedding)
     (fun k ↦ hasHomotopyExtensionProperty_range_of_coe_map_eq (ι k) (hι k)) hA hAY hAc hAH h hh
-
-/-- The `n`-cells of `cwComplexOfIsColimit`, identified with the new `n`-cells of the tower of
-ranges. -/
-private abbrev colimitToTowerCellEquiv (n : ℕ) :
-    letI := fun k ↦ stageCWComplex hF hc k
-    letI := cwComplexOfIsColimit hF hι hc
-    cell (univ : Set c.pt) n ≃
-      TowerNewCell (W := fun k ↦ (range (c.ι.app k) : Set c.pt))
-        (stageCellMap hF hc (ι := ι)) n :=
-  letI := fun k ↦ stageCWComplex hF hc k
-  letI := towerCWComplex hF hι hc
-  (IsClosedEmbedding.id.relCWComplexCellEquiv (image_id_iUnion_range hc) (image_empty _) n).trans
-    (cwSubcomplexTowerUnionCellEquiv (coe_map_stageCellMap hF hι hc)
-      (isClosed_of_forall_isClosed_inter_range hc) n)
 
 /-- **The stages of a sequential colimit are subcomplexes.** Inside the colimit CW structure
 `TauCeti.cwComplexOfIsColimit`, the range of stage `k` is the subcomplex consisting of the cells
@@ -339,34 +344,21 @@ def cwComplexOfIsColimitSubcomplex (k : ℕ) :
     closed' := (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).isClosed_range
     union' := by
       let := towerCWComplex hF hι hc
-      have hopen (n : ℕ) (j : cell (univ : Set c.pt) n) :
+      rw [empty_union, ← iUnion_openCell_cwSubcomplexTowerUnion_eq
+        (coe_map_stageCellMap hF hι hc) (isClosed_of_forall_isClosed_inter_range hc) k]
+      refine iUnion_congr fun n ↦ ?_
+      let e := IsClosedEmbedding.id.relCWComplexCellEquiv
+        (image_id_iUnion_range hc) (image_empty _) n
+      have hopen (j : cell (univ : Set c.pt) n) :
           openCell (C := (univ : Set c.pt)) n j =
-            openCell n (colimitToTowerCellEquiv hF hι hc n j).2.1 := by
-        have h₁ := IsClosedEmbedding.id.openCell_relCWComplex
-          (image_id_iUnion_range hc) (image_empty _) n j
-        rw [image_id] at h₁
-        exact h₁.trans <| by
-          rw [← (cwSubcomplexTowerUnionCellEquiv (coe_map_stageCellMap hF hι hc)
-            (isClosed_of_forall_isClosed_inter_range hc) n).symm_apply_apply
-              (IsClosedEmbedding.id.relCWComplexCellEquiv _ _ n j),
-            openCell_cwSubcomplexTowerUnionCellEquiv_symm]
-          rfl
-      rw [empty_union]
-      refine Subset.antisymm (iUnion₂_subset fun n j ↦ ?_) ?_
-      · rw [hopen n j]
-        exact (openCell_subset_complex n _).trans (TopCat.monotone_range_ι c j.2)
-      · conv_lhs => rw [← CWComplex.iUnion_openCell_eq_complex (C := range (c.ι.app k))]
-        refine iUnion₂_subset fun n i ↦ ?_
-        rw [← openCell_towerOrigin (W := fun m ↦ (range (c.ι.app m) : Set c.pt))
-          (coe_map_stageCellMap hF hι hc) k i]
-        let j₀ := (colimitToTowerCellEquiv hF hι hc n).symm
-          (towerOrigin (W := fun m ↦ (range (c.ι.app m) : Set c.pt))
-            (stageCellMap hF hc (ι := ι)) k i)
-        have hj₀ : (colimitToTowerCellEquiv hF hι hc n j₀).1 ≤ k := by
-          rw [Equiv.apply_symm_apply]
-          exact towerOrigin_fst_le (W := fun m ↦ (range (c.ι.app m) : Set c.pt)) _ k i
-        exact subset_iUnion₂_of_subset n ⟨j₀, hj₀⟩
-          (by rw [hopen n j₀, Equiv.apply_symm_apply]) }
+            openCell (C := ⋃ m, (range (c.ι.app m) : Set c.pt)) n (e j) := by
+        simpa only [image_id] using
+          IsClosedEmbedding.id.openCell_relCWComplex (image_id_iUnion_range hc) (image_empty _) n j
+      simp_rw [hopen, iUnion_subtype]
+      exact e.surjective.iUnion_comp (fun j ↦
+        ⋃ (_ : (cwSubcomplexTowerUnionCellEquiv (coe_map_stageCellMap hF hι hc)
+          (isClosed_of_forall_isClosed_inter_range hc) n j).1 ≤ k),
+          openCell (C := ⋃ m, (range (c.ι.app m) : Set c.pt)) n j) }
 
 /-- The carrier of `cwComplexOfIsColimitSubcomplex` is the range of `c.ι.app k`. -/
 @[simp]
@@ -375,6 +367,45 @@ theorem coe_cwComplexOfIsColimitSubcomplex (k : ℕ) :
       (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc))))
       (cwComplexOfIsColimitSubcomplex hF hι hc k)) = range (c.ι.app k) :=
   (rfl)
+
+/-- The stage subcomplexes of a sequential CW colimit form an increasing sequence. -/
+theorem monotone_cwComplexOfIsColimitSubcomplex :
+    @Monotone ℕ (@Subcomplex c.pt _ univ ∅
+      (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc))) _ _
+      (cwComplexOfIsColimitSubcomplex hF hι hc) := fun _ _ hkl ↦
+  let := cwComplexOfIsColimit hF hι hc
+  SetLike.coe_subset_coe.1 (TopCat.monotone_range_ι c hkl)
+
+/-- The stage subcomplexes of a sequential CW colimit cover the colimit. -/
+theorem iUnion_coe_cwComplexOfIsColimitSubcomplex :
+    (⋃ k, ((@SetLike.coe _ c.pt (@RelCWComplex.Subcomplex.instSetLike c.pt _ univ ∅
+      (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc))))
+      (cwComplexOfIsColimitSubcomplex hF hι hc k))) = univ :=
+  TopCat.iUnion_range_ι_of_isColimit hc
+
+/-- Every cell of the first stage `F 0` belongs to every stage subcomplex
+`cwComplexOfIsColimitSubcomplex hF hι hc k`. -/
+@[simp]
+theorem cwComplexOfIsColimitCellEquiv_symm_inl_mem_cwComplexOfIsColimitSubcomplex_I
+    (k : ℕ) {n : ℕ} (i : cell (univ : Set (F.obj 0)) n) :
+    (cwComplexOfIsColimitCellEquiv hF hι hc n).symm (.inl i) ∈
+      (@Subcomplex.I c.pt _ univ ∅
+        (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc))
+        (cwComplexOfIsColimitSubcomplex hF hι hc k)) n := by
+  simp [cwComplexOfIsColimitSubcomplex, cwComplexOfIsColimitCellEquiv, Equiv.sigmaNatSucc]
+
+/-- A new cell born at stage `p.1 + 1` belongs to `cwComplexOfIsColimitSubcomplex hF hι hc k` if
+and only if `p.1 < k`. -/
+@[simp]
+theorem cwComplexOfIsColimitCellEquiv_symm_inr_mem_cwComplexOfIsColimitSubcomplex_I_iff
+    (k : ℕ) {n : ℕ} (p : Σ m, ↥(range (ι m n))ᶜ) :
+    (cwComplexOfIsColimitCellEquiv hF hι hc n).symm (.inr p) ∈
+      (@Subcomplex.I c.pt _ univ ∅
+        (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc))
+        (cwComplexOfIsColimitSubcomplex hF hι hc k)) n ↔ p.1 < k := by
+  obtain ⟨m, i⟩ := p
+  simp [cwComplexOfIsColimitSubcomplex, cwComplexOfIsColimitCellEquiv, Equiv.sigmaNatSucc,
+    Equiv.sigmaCongrRight_symm, Sigma.map]
 
 /-- **The cells of a stage subcomplex.** In `cwComplexOfIsColimit`, the `n`-cells belonging to the
 subcomplex `cwComplexOfIsColimitSubcomplex hF hι hc k` correspond to the `n`-cells of stage
@@ -388,6 +419,54 @@ def cwComplexOfIsColimitSubcomplexCellEquiv (k n : ℕ) :
   (((Equiv.subtypeEquiv (colimitToTowerCellEquiv hF hι hc n) fun _ ↦ Iff.rfl).trans
     (towerStageCellEquiv (coe_map_stageCellMap hF hι hc) k n).symm).trans
     (stageCellEquiv hF hc k n))
+
+/-- Unfolding the underlying colimit cell of
+`(cwComplexOfIsColimitSubcomplexCellEquiv hF hι hc k n).symm i`. -/
+private theorem coe_cwComplexOfIsColimitSubcomplexCellEquiv_symm (k n : ℕ)
+    (i : cell (univ : Set (F.obj k)) n) :
+    letI := fun m ↦ stageCWComplex hF hc m
+    letI := cwComplexOfIsColimit hF hι hc
+    ((cwComplexOfIsColimitSubcomplexCellEquiv hF hι hc k n).symm i :
+      cell (univ : Set c.pt) n) =
+      (colimitToTowerCellEquiv hF hι hc n).symm
+        (towerStageCellEquiv (coe_map_stageCellMap hF hι hc) k n
+          ((stageCellEquiv hF hc k n).symm i)).1 :=
+  rfl
+
+/-- The characteristic map of a cell of stage `F k`, seen in `cwComplexOfIsColimit` via
+`cwComplexOfIsColimitSubcomplexCellEquiv`, is its characteristic map followed by `c.ι.app k`. -/
+@[simp]
+theorem coe_map_cwComplexOfIsColimitSubcomplexCellEquiv_symm (k : ℕ) {n : ℕ}
+    (i : cell (univ : Set (F.obj k)) n) :
+    ⇑(@map c.pt _ univ ∅ (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc)) n
+      ((cwComplexOfIsColimitSubcomplexCellEquiv hF hι hc k n).symm i :
+        @cell c.pt _ univ ∅
+          (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc)) n)) =
+      c.ι.app k ∘ map n i := by
+  let := fun m ↦ stageCWComplex hF hc m
+  rw [coe_cwComplexOfIsColimitSubcomplexCellEquiv_symm, coe_map_cwComplexOfIsColimit]
+  simp only [colimitToTowerCellEquiv, Equiv.symm_trans_apply, Equiv.apply_symm_apply,
+    map_cwSubcomplexTowerUnionCellEquiv_symm, coe_towerStageCellEquiv_apply, Function.id_comp]
+  rw [coe_map_towerOrigin (coe_map_stageCellMap hF hι hc), coe_map_stage, Equiv.apply_symm_apply]
+
+/-- A cell of stage `F k` and its image under `ι k n` in stage `F (k + 1)` correspond to the same
+cell of `cwComplexOfIsColimit`. -/
+@[simp]
+theorem coe_cwComplexOfIsColimitSubcomplexCellEquiv_symm_ι (k : ℕ) {n : ℕ}
+    (i : cell (univ : Set (F.obj k)) n) :
+    ((cwComplexOfIsColimitSubcomplexCellEquiv hF hι hc (k + 1) n).symm (ι k n i) :
+      @cell c.pt _ univ ∅
+        (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc)) n) =
+      ((cwComplexOfIsColimitSubcomplexCellEquiv hF hι hc k n).symm i :
+        @cell c.pt _ univ ∅
+          (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc)) n) := by
+  let := fun m ↦ stageCWComplex hF hc m
+  rw [coe_cwComplexOfIsColimitSubcomplexCellEquiv_symm,
+    coe_cwComplexOfIsColimitSubcomplexCellEquiv_symm]
+  have hst : (stageCellEquiv hF hc (k + 1) n).symm (ι k n i) =
+      stageCellMap hF hc (ι := ι) k n ((stageCellEquiv hF hc k n).symm i) := by
+    simp [stageCellMap]
+  rw [hst, towerStageCellEquiv_ι (coe_map_stageCellMap hF hι hc)]
 
 /-- When stage `F k` is a finite CW complex and the colimit is Hausdorff, the stage subcomplex
 `cwComplexOfIsColimitSubcomplex hF hι hc k` is a finite CW complex. -/
@@ -404,5 +483,36 @@ theorem finite_cwComplexOfIsColimitSubcomplex [T2Space c.pt] (k : ℕ)
   have := RelCWComplex.finite_cells_of_finite (C := (univ : Set (F.obj k)))
   exact RelCWComplex.finite_of_finite_cells (.of_equiv _
     (Equiv.sigmaCongrRight fun n ↦ (cwComplexOfIsColimitSubcomplexCellEquiv hF hι hc k n).symm))
+
+include hF hι hc in
+/-- **Subcomplex-compatible CW model of a tower.** Under the hypotheses of
+`TauCeti.exists_homotopyEquiv_of_isColimit_cwComplex`, the homotopy equivalence `H : c.pt ≃ₕ Y`
+restricts on each stage subcomplex `W k = cwComplexOfIsColimitSubcomplex hF hι hc k` to a homotopy
+equivalence `eW k : (W k : Set c.pt) ≃ₕ A k` compatible with `H`, and its homotopy inverse
+`H.symm` carries each `A k` into `W k`. -/
+theorem exists_homotopyEquiv_cwComplexOfIsColimitSubcomplex [∀ k, T2Space (F.obj k)] {Y : Type u}
+    [TopologicalSpace Y] {A : ℕ → Set Y} (hA : Monotone A) (hAY : ⋃ k, A k = univ)
+    (hAc : IsCoherentWith (range A))
+    (hAH : ∀ k, HasHomotopyExtensionProperty ((↑) ⁻¹' A k : Set (A (k + 1))))
+    (h : ∀ k, F.obj k ≃ₕ A k)
+    (hh : ∀ k w, (h (k + 1) (F.map (homOfLE k.le_succ) w) : Y) = h k w) :
+    ∃ (H : c.pt ≃ₕ Y)
+      (eW : ∀ k,
+        ((@SetLike.coe _ c.pt (@RelCWComplex.Subcomplex.instSetLike c.pt _ univ ∅
+          (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc))))
+          (cwComplexOfIsColimitSubcomplex hF hι hc k)) ≃ₕ A k),
+      (∀ k x, (eW k x : Y) = H x) ∧
+      ∀ k, MapsTo H.symm (A k)
+        ((@SetLike.coe _ c.pt (@RelCWComplex.Subcomplex.instSetLike c.pt _ univ ∅
+          (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc))))
+          (cwComplexOfIsColimitSubcomplex hF hι hc k)) := by
+  obtain ⟨H, hH, hsymm⟩ :=
+    exists_homotopyEquiv_of_isColimit_cwComplex hF hι hc hA hAY hAc hAH h hh
+  have hemb := TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc
+  let eW (k : ℕ) : (range (c.ι.app k) : Set c.pt) ≃ₕ A k :=
+    (hemb k).isEmbedding.toHomeomorph.symm.toHomotopyEquiv.trans (h k)
+  refine ⟨H, eW, fun k ⟨_, w, rfl⟩ ↦ ?_, hsymm⟩
+  exact (congrArg (fun y ↦ (h k y : Y))
+    ((hemb k).isEmbedding.toHomeomorph_symm_apply w)).trans (hH k w).symm
 
 end TauCeti
