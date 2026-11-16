@@ -21,7 +21,7 @@ of a unit vector `v`. The based Hopf product `j ⋆ Ωq : S¹ × ΩS²ⁿ⁺¹ �
 equivalence (`TauCeti.ComplexProjectiveSpace.exists_isWeakHomotopyEquivalence_hopfProduct`), and
 the homology of `ΩS²ⁿ⁺¹` is `R` in the degrees divisible by `2n` and zero in the others
 (`TauCeti.singularHomologyMooreLoopSpaceSphereIso` and
-`TauCeti.isZero_singularHomology_mooreLoopSpace_sphere_of_not_dvd`). This file reads off the
+`TauCeti.isZero_singularHomology_mooreLoopSpace_sphere`). This file reads off the
 homology of `ΩCPⁿ` from the homology of a product with a circle
 (`TauCeti.isIso_singularHomologyMap_prodMk_const_one_succ_iff`,
 `TauCeti.isZero_singularHomology_circle_prod_succ_iff` and
@@ -87,7 +87,7 @@ private lemma isZero_singularHomology_mooreLoopSpace_oddSphere (hn : n ≠ 0) (R
     [Ring R] {k : ℕ} (hk : ¬ 2 * n ∣ k) :
     IsZero (((singularHomologyFunctor (ModuleCat.{0} R) k).obj (ModuleCat.of R R)).obj
       (TopCat.of (MooreLoopSpace (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) v))) :=
-  isZero_singularHomology_mooreLoopSpace_sphere_of_not_dvd
+  isZero_singularHomology_mooreLoopSpace_sphere
     (finrank_real_euclideanSpace_complex n) (by omega) v R (by simpa using hk)
 
 /-- **The homology of `ΩCPⁿ` vanishes in the positive degrees that are not `0` or `1` modulo
@@ -202,7 +202,8 @@ private instance isIso_homologyMap_mooreLoopSpaceMap :
         rfl).toContinuousMap)) (2 * n + 2)) := by
   have h := isIso_singularHomologyMap_mooreLoopSpaceMap v n.succ_ne_zero ℤ (k := 2 * n + 1)
     (Nat.not_dvd_of_pos_of_lt (by omega) (by omega))
-  -- `singularHomologyFunctor` is by definition the homology of the singular chain complex.
+  -- `singularHomologyFunctor` is by definition the homology of the singular chain complex, and
+  -- the degree `2 * n + 1 + 1` of `h` reduces to `2 * n + 2` by `Nat` arithmetic.
   exact h
 
 /-- **`H_{2n+2}(ΩCPⁿ⁺¹; ℤ) ≅ π_{2n+3}(S²ⁿ⁺³)`**: the Hurewicz isomorphism

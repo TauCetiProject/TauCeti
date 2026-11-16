@@ -28,7 +28,7 @@ by `n - 1` and zero in every other degree:
 The same holds for the Moore loop space, which is homotopy equivalent to the loop space on the unit
 interval (`TauCeti.singularHomologyMooreLoopSpaceSphereShiftIso`,
 `TauCeti.singularHomologyMooreLoopSpaceSphereIso` and
-`TauCeti.isZero_singularHomology_mooreLoopSpace_sphere_of_not_dvd`).
+`TauCeti.isZero_singularHomology_mooreLoopSpace_sphere`).
 
 The computation is the Wang sequence of the path fibration. The paths in `Sⁿ` ending at the base
 point `x` form a contractible space `P`, and sending a path to its starting point is a Hurewicz
@@ -228,7 +228,7 @@ include hE hn in
 /-- **The homology of the Moore loop space of `Sⁿ` vanishes in the degrees not divisible by
 `n - 1`**, with coefficients in any ring, for the unit sphere `Sⁿ` of an `(n + 1)`-dimensional
 real normed space, `n ≥ 2`. -/
-theorem isZero_singularHomology_mooreLoopSpace_sphere_of_not_dvd {k : ℕ} (hk : ¬ (n - 1) ∣ k) :
+theorem isZero_singularHomology_mooreLoopSpace_sphere {k : ℕ} (hk : ¬ (n - 1) ∣ k) :
     IsZero (((singularHomologyFunctor (ModuleCat.{u} R) k).obj (ModuleCat.of R R)).obj
       (_root_.TopCat.of (MooreLoopSpace (sphere (0 : E) 1) x))) :=
   (isZero_singularHomology_loopSpace_sphere hE hn x R hk).of_iso
