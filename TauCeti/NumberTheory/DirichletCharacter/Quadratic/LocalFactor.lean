@@ -61,10 +61,6 @@ section SqEqOne
 
 variable {R : Type*} [CommMonoidWithZero R] {N : ℕ} {χ : DirichletCharacter R N}
 
-/-- The local factors of a character of order dividing `n` have order dividing `n`. -/
-theorem localFactor_pow_eq_one {n : ℕ} (hχ : χ ^ n = 1) (p : ℕ) : localFactor p χ ^ n = 1 := by
-  rw [← map_pow, hχ, map_one]
-
 /-- **The local conductor at an odd prime.** For an odd prime `p`, the local factor at `p` of a
 character of order dividing two has conductor `1` or `p`. -/
 theorem conductor_localFactor_eq_one_or_eq_prime_of_sq_eq_one (hχ : χ ^ 2 = 1) {p : ℕ}
