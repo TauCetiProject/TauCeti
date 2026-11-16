@@ -12,7 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Distributions.Gamma.PDF
-import TauCeti.Probability.Distributions.Gamma.Pi
+import TauCeti.Probability.Distributions.Sums
 
 /-!
 # Lebesgue measure on the positive orthant pushed forward by a positive linear form
@@ -29,8 +29,8 @@ linear form `x ↦ ∑ i, a i * x i` sends Lebesgue measure on the closed positi
 `s^(n-1) / (n-1)!` and the region is the simplex of size `c`, of volume `c^n / n!`.
 
 The proof tilts Lebesgue measure on the orthant by `exp (-∑ i, x i)`. The tilted measure is the
-product of `n` exponential distributions, that is of Gamma distributions of shape one, so its sum
-has the Gamma law of shape `n` (`TauCeti.Probability.map_sum_pi_gammaMeasure`). Since the tilt
+product of `n` exponential distributions, so its sum has the Gamma law of shape `n`
+(`TauCeti.Probability.map_sum_pi_expMeasure`). Since the tilt
 only depends on the sum, it can be removed after pushing forward, which turns the Gamma density
 `s^(n-1) e^(-s) / (n-1)!` into `s^(n-1) / (n-1)!`. Positive weights are reduced to unit weights
 by the diagonal linear change of variables `x ↦ (a i * x i)_i`, of determinant `∏ i, a i`.
@@ -57,21 +57,6 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
-/-- The Gamma density of shape `n + 1` and rate one, with its tilt `exp (-s)` removed, is the
-density `s^n / n!` on `[0, ∞)`. -/
-private theorem gammaPDF_mul_ofReal_exp (n : ℕ) (s : ℝ) :
-    gammaPDF (n + 1) 1 s * ENNReal.ofReal (Real.exp s) =
-      (Ici (0 : ℝ)).indicator (fun s ↦ ENNReal.ofReal (s ^ n / n.factorial)) s := by
-  by_cases hs : 0 ≤ s
-  · rw [gammaPDF_of_nonneg hs, indicator_of_mem (mem_Ici.mpr hs), ← ENNReal.ofReal_mul
-      (by positivity), Real.Gamma_nat_eq_factorial, add_sub_cancel_right, Real.rpow_natCast,
-      Real.one_rpow, one_mul]
-    congr 1
-    rw [Real.exp_neg]
-    field_simp
-  · rw [gammaPDF_of_neg (not_le.mp hs), zero_mul,
-      indicator_of_notMem (show s ∉ Ici 0 by simpa using hs)]
-
 /-- **The simplex law.** The sum of the coordinates sends Lebesgue measure on the closed positive
 orthant `[0, ∞)^ι`, for a nonempty finite type `ι` with `n` elements, to the measure on `[0, ∞)`
 with density `s^(n-1) / (n-1)!`. -/
@@ -88,9 +73,8 @@ theorem map_volume_restrict_pi_Ici_sum [Nonempty ι] :
   have hexp' : Measurable fun s : ℝ ↦ ENNReal.ofReal (Real.exp s) := by fun_prop
   -- Tilting by `exp (-s)` turns `ν` into the Gamma law of shape `m + 1`.
   have htilt : ν.withDensity (fun s ↦ ENNReal.ofReal (Real.exp (-s))) = gammaMeasure (m + 1) 1 := by
-    rw [← Measure.map_withDensity_comp hsum hexp, ← Probability.pi_gammaMeasure_one_one,
-      Probability.map_sum_pi_gammaMeasure (fun _ ↦ one_pos) one_pos]
-    simp [hm]
+    rw [← Measure.map_withDensity_comp hsum hexp, ← Probability.pi_expMeasure_one_eq_withDensity,
+      Probability.map_sum_pi_expMeasure one_pos, hm, Nat.cast_succ]
   -- Untilting by `exp s`, the inverse of `exp (-s)`, recovers `ν`.
   have hinv : (fun s ↦ (ENNReal.ofReal (Real.exp (-s)))⁻¹) =
       fun s ↦ ENNReal.ofReal (Real.exp s) := by
@@ -106,7 +90,7 @@ theorem map_volume_restrict_pi_Ici_sum [Nonempty ι] :
     ← withDensity_indicator measurableSet_Ici]
   congr 1
   funext s
-  rw [Pi.mul_apply, gammaPDF_mul_ofReal_exp]
+  rw [Pi.mul_apply, Probability.gammaPDF_mul_ofReal_exp]
 
 /-- The diagonal linear map `x ↦ (a i * x i)_i` with positive entries rescales Lebesgue measure on
 the closed positive orthant by `(∏ i, a i)⁻¹`. -/
