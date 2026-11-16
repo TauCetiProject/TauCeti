@@ -122,7 +122,7 @@ noncomputable abbrev unstableOrientationLine :
 
 /-- The number of orientation coordinates is the dimension of the space of coordinates of negative
 weight, so that its orientations are opposite to each other. -/
-theorem card_fin_morseIndex_eq_finrank :
+theorem card_fin_manifoldMorseIndex_eq_finrank :
     Fintype.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)) =
       finrank ℝ ({i // φ.weight i < 0} → ℝ) := by
   rw [Fintype.card_fin, φ.finrank_negativeWeight_fun]
@@ -174,7 +174,8 @@ noncomputable def orientationLineEquiv :
       (criticalPoints 𝓘(ℝ, E) f →₀ R) :=
   haveI := hf.finite_criticalPoints.to_subtype
   (LinearEquiv.piCongrRight fun p ↦ (𝔬.orientation p).orientationLineEquiv R
-    (𝔬.chart p).card_fin_morseIndex_eq_finrank).trans (Finsupp.linearEquivFunOnFinite R R _).symm
+    (𝔬.chart p).card_fin_manifoldMorseIndex_eq_finrank).trans
+      (Finsupp.linearEquivFunOnFinite R R _).symm
 
 variable {𝔬 hf R}
 
@@ -233,7 +234,7 @@ theorem trajectoryLineMap_apply (g : φp.unstableOrientationLine R)
       g.1 op * hX.signedTrajectoryCount φp φq op oq hpq := by
   simp only [trajectoryLineMap, LinearMap.coe_mk, AddHom.coe_mk]
   rcases (Module.finBasisOfFinrankEq ℝ _ φp.finrank_negativeWeight_fun).orientation
-    |>.eq_or_eq_neg_of_card_eq_finrank op φp.card_fin_morseIndex_eq_finrank with h | h <;>
+    |>.eq_or_eq_neg_of_card_eq_finrank op φp.card_fin_manifoldMorseIndex_eq_finrank with h | h <;>
     rw [h]
   simp
 
@@ -311,13 +312,12 @@ theorem orientationLineEquiv_orientationLineBoundary
 variable (hf) in
 /-- Chosen orientations conjugate the boundary on orientation lines to the integral Morse
 boundary. -/
-theorem orientationLineBoundary_eq_symm_comp_signedMorseBoundary_comp :
+theorem orientationLineBoundary_eq_symm_conjRingEquiv_signedMorseBoundary :
     hX.orientationLineBoundary 𝔬.chart R =
-      (𝔬.orientationLineEquiv hf R).symm.toLinearMap ∘ₗ hX.signedMorseBoundary 𝔬 hf R ∘ₗ
-        (𝔬.orientationLineEquiv hf R).toLinearMap := by
-  refine LinearMap.ext fun c ↦ ?_
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-    ← orientationLineEquiv_orientationLineBoundary, LinearEquiv.symm_apply_apply]
+      (𝔬.orientationLineEquiv hf R).symm.conjRingEquiv (hX.signedMorseBoundary 𝔬 hf R) :=
+  LinearMap.ext fun c ↦ by
+    rw [LinearEquiv.conjRingEquiv_apply_apply, LinearEquiv.symm_symm,
+      ← orientationLineEquiv_orientationLineBoundary, LinearEquiv.symm_apply_apply]
 
 variable (hf) in
 /-- **The boundary on orientation lines squares to zero if and only if the integral Morse boundary
@@ -325,11 +325,9 @@ does**, for any choice of orientations in the same Morse charts. -/
 theorem orientationLineBoundary_comp_self_eq_zero_iff :
     hX.orientationLineBoundary 𝔬.chart R ∘ₗ hX.orientationLineBoundary 𝔬.chart R = 0 ↔
       hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0 := by
-  rw [orientationLineBoundary_eq_symm_comp_signedMorseBoundary_comp hf]
-  set e := 𝔬.orientationLineEquiv hf R
-  constructor <;> intro h <;> refine LinearMap.ext fun c ↦ ?_
-  · simpa using congrArg e (LinearMap.congr_fun h (e.symm c))
-  · simpa using LinearMap.congr_fun h (e c)
+  rw [orientationLineBoundary_eq_symm_conjRingEquiv_signedMorseBoundary hf,
+    ← Module.End.mul_eq_comp, ← Module.End.mul_eq_comp, ← map_mul,
+    map_eq_zero_iff _ (RingEquiv.injective _)]
 
 end Orientation
 
@@ -361,7 +359,7 @@ theorem orientationLineChartEquiv_orientationLineBoundary (hf : IsMorse 𝓘(ℝ
   obtain ⟨o⟩ : Nonempty ((p : criticalPoints 𝓘(ℝ, E) f) →
       Orientation ℝ ({i // (φ p).weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p))) :=
     ⟨fun p ↦ (Module.finBasisOfFinrankEq ℝ _ (φ p).finrank_negativeWeight_fun).orientation⟩
-  refine orientationLine_ext (φ' q).card_fin_morseIndex_eq_finrank
+  refine orientationLine_ext (φ' q).card_fin_manifoldMorseIndex_eq_finrank
     (Orientation.map _ ((φ q).negativeChange (φ' q)) (o q)) ?_
   rw [orientationLineChartEquiv_apply, LinearEquiv.orientationLineCongr_apply_map,
     IsAdaptedPseudoGradient.orientationLineBoundary_apply hf c o q,

@@ -68,9 +68,9 @@ variable (R : Type*) [Ring R] (𝕜 : Type*) [CommRing 𝕜] [PartialOrder 𝕜]
   (M : Type*) [AddCommGroup M] [Module 𝕜 M] (ι : Type*)
 
 /-- The **orientation line** of `M` with coefficients in `R`: the functions `g` on the orientations
-of `M` with `g (-o) = -g o`. When `ι` has the dimension of `M` it is free of rank one over `R`,
-evaluation at either orientation being an isomorphism with `R`
-(`Orientation.orientationLineEquiv`). -/
+of `M` with `g (-o) = -g o`. When `𝕜` is a linearly ordered field and `ι` has the dimension of
+`M`, it is free of rank one over `R`, evaluation at either orientation being an isomorphism with
+`R` (`Orientation.orientationLineEquiv`). -/
 def orientationLine : Submodule R (Orientation 𝕜 M ι → R) where
   carrier := {g | Function.Odd g}
   add_mem' {g h} hg hh o := by simp [hg o, hh o, add_comm]
@@ -178,10 +178,8 @@ noncomputable def orientationLineCongr : orientationLine R 𝕜 M ι ≃ₗ[R] o
     simp [Orientation.map_neg]⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  left_inv g := Subtype.ext (funext fun o ↦ by
-    simp [← Orientation.map_symm])
-  right_inv g := Subtype.ext (funext fun o ↦ by
-    simp [← Orientation.map_symm])
+  left_inv g := Subtype.ext (funext fun o ↦ by simp)
+  right_inv g := Subtype.ext (funext fun o ↦ by simp)
 
 variable {e R}
 
@@ -196,7 +194,7 @@ original orientation. -/
 theorem orientationLineCongr_apply_map (g : orientationLine R 𝕜 M ι) (o : Orientation 𝕜 M ι) :
     (e.orientationLineCongr R g : Orientation 𝕜 N ι → R) (Orientation.map ι e o) =
       (g : Orientation 𝕜 M ι → R) o := by
-  rw [orientationLineCongr_apply, ← Orientation.map_symm, Equiv.symm_apply_apply]
+  rw [orientationLineCongr_apply, Orientation.map_symm_map]
 
 /-- Transport along the inverse isomorphism is the inverse transport. -/
 @[simp]
