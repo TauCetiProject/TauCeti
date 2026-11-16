@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Different.AlgEquiv
 public import TauCeti.NumberTheory.LocalField.Different.Wild
-public import TauCeti.NumberTheory.LocalField.MassFormula.Basic
+public import TauCeti.NumberTheory.LocalField.Discriminant.Basic
 
 /-!
 # The height and the mean of an extension of local fields
@@ -31,7 +31,8 @@ ramified extension, `IntermediateField.wildExponent`, to every finite separable 
 (`IntermediateField.wildExponent_eq_height`). It vanishes exactly in the tame case, is bounded by
 `v_L(e)` when `e` is nonzero in `L` (the upper half of Dedekind's different theorem), and both the
 height and the mean are invariants of the `K`-isomorphism class that are unchanged by passing to
-the totally ramified top step `L/L₀` of the canonical tower `K ⊆ L₀ ⊆ L`.
+the top step `M/L` of a tower `M/L/K` with `L/K` unramified, in particular to the totally ramified
+top step `L/L₀` of the canonical tower `K ⊆ L₀ ⊆ L`.
 
 ## Main definitions
 
@@ -47,16 +48,16 @@ the totally ramified top step `L/L₀` of the canonical tower `K ⊆ L₀ ⊆ L`
   its rational form `TauCeti.natCast_height`, `H = c / f - e + 1` in `ℚ`.
 * `TauCeti.height_eq_zero_iff`: the height vanishes exactly for tamely ramified extensions.
 * `TauCeti.height_le_natCastValuation`: `H ≤ v_L(e)` when `e` is nonzero in `L`.
-* `TauCeti.height_eq_of_algEquiv` and `TauCeti.height_unramifiedExtension_inertiaDegree`: the
-  height is a `K`-isomorphism invariant and is that of the totally ramified top step.
+* `TauCeti.height_eq_of_algEquiv`: the height is a `K`-isomorphism invariant.
+* `TauCeti.IsUnramified.height_tower_eq` and `TauCeti.height_unramifiedExtension_inertiaDegree`:
+  over an unramified base the height is that of the top step, in particular of the totally
+  ramified top step of the canonical tower.
 * `TauCeti.ramificationIndex_mul_mean` and
   `TauCeti.natCast_discriminantExponent_eq_inertiaDegree_mul_mean`: `e m = H` and
   `c = f (e - 1 + e m)`.
-* `TauCeti.mean_eq_zero_iff`, `TauCeti.mean_le_natCastValuation`, `TauCeti.mean_eq_of_algEquiv`
-  and `TauCeti.mean_unramifiedExtension_inertiaDegree`: the corresponding facts for the mean, the
-  bound reading `m ≤ v_K(e)`.
-* `IntermediateField.wildExponent_eq_height`: on a totally ramified subextension of
-  `SeparableClosure K`, Serre's wild exponent is the height.
+* `TauCeti.mean_eq_zero_iff`, `TauCeti.mean_le_natCastValuation`, `TauCeti.mean_eq_of_algEquiv`,
+  `TauCeti.IsUnramified.mean_tower_eq` and `TauCeti.mean_unramifiedExtension_inertiaDegree`: the
+  corresponding facts for the mean, the bound reading `m ≤ v_K(e)`.
 
 ## References
 
@@ -224,6 +225,34 @@ theorem mean_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M] [TopologicalS
     mean K L = mean K M := by
   rw [mean_def, mean_def, height_eq_of_algEquiv K L M e, ramificationIndex_eq_of_algEquiv K L M e]
 
+section Tower
+
+variable (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
+  [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
+  [ValuativeExtension L M] [ValuativeExtension K M] [Algebra.IsSeparable K M]
+
+omit [Algebra.IsSeparable K L] in
+/-- **The height over an unramified base.** In a tower `M/L/K` with `L/K` unramified,
+`H(M/L) = H(M/K)`. -/
+theorem IsUnramified.height_tower_eq [IsUnramified K L] :
+    haveI := Algebra.isSeparable_tower_top_of_isSeparable K L M
+    height L M = height K M := by
+  have := Algebra.isSeparable_tower_top_of_isSeparable K L M
+  rw [height_eq_differentExponent_add_one_sub, height_eq_differentExponent_add_one_sub,
+    IsUnramified.ramificationIndex_tower_eq K L M, ← IsUnramified.differentExponent_tower_eq K L M]
+
+omit [Algebra.IsSeparable K L] in
+/-- **The mean over an unramified base.** In a tower `M/L/K` with `L/K` unramified,
+`m(M/L) = m(M/K)`. -/
+theorem IsUnramified.mean_tower_eq [IsUnramified K L] :
+    haveI := Algebra.isSeparable_tower_top_of_isSeparable K L M
+    mean L M = mean K M := by
+  have := Algebra.isSeparable_tower_top_of_isSeparable K L M
+  rw [mean_def, mean_def, IsUnramified.height_tower_eq K L M,
+    IsUnramified.ramificationIndex_tower_eq K L M]
+
+end Tower
+
 section TotallyRamified
 
 variable [ValuativeRel (unramifiedExtension K L (inertiaDegree K L))]
@@ -235,48 +264,18 @@ variable [ValuativeRel (unramifiedExtension K L (inertiaDegree K L))]
 unramified subextension `L₀` of `L/K`, `H(L/L₀) = H(L/K)`. -/
 @[simp]
 theorem height_unramifiedExtension_inertiaDegree :
-    height (unramifiedExtension K L (inertiaDegree K L)) L = height K L := by
+    height (unramifiedExtension K L (inertiaDegree K L)) L = height K L :=
   have := isUnramified_unramifiedExtension_inertiaDegree K L
-  rw [height_eq_differentExponent_add_one_sub, height_eq_differentExponent_add_one_sub,
-    ramificationIndex_unramifiedExtension_inertiaDegree,
-    ← IsUnramified.differentExponent_tower_eq K _ L]
+  IsUnramified.height_tower_eq K _ L
 
 /-- **The mean is that of the totally ramified step of the canonical tower.** For the maximal
 unramified subextension `L₀` of `L/K`, `m(L/L₀) = m(L/K)`. -/
 @[simp]
 theorem mean_unramifiedExtension_inertiaDegree :
-    mean (unramifiedExtension K L (inertiaDegree K L)) L = mean K L := by
-  rw [mean_def, mean_def, height_unramifiedExtension_inertiaDegree,
-    ramificationIndex_unramifiedExtension_inertiaDegree]
+    mean (unramifiedExtension K L (inertiaDegree K L)) L = mean K L :=
+  have := isUnramified_unramifiedExtension_inertiaDegree K L
+  IsUnramified.mean_tower_eq K _ L
 
 end TotallyRamified
 
 end TauCeti
-
-namespace IntermediateField
-
-open TauCeti
-
-variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K]
-
-/-- **The height extends Serre's wild exponent.** On a totally ramified subextension `L` of
-`SeparableClosure K`, with its canonical local-field structure, the wild exponent
-`c(L) = d(L) + 1 - [L : K]` is the height `H(L/K)`. -/
-theorem wildExponent_eq_height (L : IntermediateField K (SeparableClosure K))
-    [Module.Finite K L] (h : L.IsTotallyRamified) :
-    L.wildExponent =
-      (letI := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
-      letI := finiteIntermediateFieldTopology K (SeparableClosure K) L
-      haveI := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
-      haveI := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
-      height K L) := by
-  let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
-  let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
-  have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
-  have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
-  have htr := L.isTotallyRamified_iff.1 h
-  rw [wildExponent_def, discriminantExponent_eq, height_def, htr.inertiaDegree_eq_one,
-    Nat.div_one, (isTotallyRamified_iff_ramificationIndex_eq_finrank K L).1 htr]
-
-end IntermediateField
