@@ -12,6 +12,8 @@ public import TauCeti.Geometry.Symplectic.Darboux.EuclideanBasis
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+
 /-!
 # The Liouville measure of a symplectic manifold
 
@@ -334,8 +336,11 @@ theorem SmoothTwoForm.liouvilleMeasure_const_continuousDet {b : Basis (Fin 2) �
   have hval (x : V) : (α.volumeForm 1).1 x b' = 1 := by
     have hb : ⇑b' = fun r ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 1) r)).2 := by
       funext r
-      rw [Module.Basis.reindex_apply]
-      fin_cases r <;> simp [finProdFinEquiv, Fin.modNat]
+      rw [Module.Basis.reindex_apply, finProdFinEquiv_symm_apply]
+      congr 1
+      -- An equation between two indices in `Fin 2`, checked on both values.
+      revert r
+      decide
     have h := ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv (α.1 x) (m := 1)
       (fun p ↦ b p.2) (fun _ _ ↦ ?_) (fun i j ↦ ?_)
     · rw [SmoothTwoForm.volumeForm_apply]
@@ -348,9 +353,9 @@ theorem SmoothTwoForm.liouvilleMeasure_const_continuousDet {b : Basis (Fin 2) �
       fin_cases j
       rw [SmoothForm.const_apply, Module.Basis.continuousDet_apply]
       convert b.det_self using 2
-      · -- `fromTangentSpace x` is the identity of `V`, seen from its tangent-space synonym.
-        funext k
-        fin_cases k <;> rfl
+      · funext k
+        rw [NormedSpace.fromTangentSpace_apply]
+        fin_cases k <;> simp
       · simp
   rw [SmoothTwoForm.liouvilleMeasure_def, RoughForm.measure_eq_smul_addHaar (c := 1) b' hval,
     abs_one, ENNReal.ofReal_one, one_smul, Module.Basis.addHaar_reindex]

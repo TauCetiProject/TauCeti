@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.Instances.Sphere
@@ -298,8 +299,9 @@ theorem mpullback_sphereLongitudeHeight_sphereAreaForm (a : ℝ) :
   simp only [Module.Basis.toMatrix_apply, Fin.isValue, ContinuousLinearEquiv.coe_coe,
     Manifold.tangentSpaceOpenEquiv_apply, cons_val, OrthonormalBasis.coe_toBasis_repr_apply,
     EuclideanSpace.basisFun_repr]
-  -- `fromTangentSpace` is the identity of `ℝ²`; only the order of one product differs.
-  exact congrArg₂ (· - ·) rfl (mul_comm _ _)
+  rw [NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) (y : ℝ²) (v 0),
+    NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) (y : ℝ²) (v 1)]
+  ring
 
 /-! ### The area measure in longitude–height coordinates -/
 
@@ -319,12 +321,6 @@ theorem map_volume_sphereLongitudeHeight (a : ℝ) :
 
 /-! ### The meridian is null -/
 
-/-- The coordinates of a point of the unit sphere satisfy `x₁² + x₂² + x₃² = 1`. -/
-private theorem coord_sq_add_coord_sq_add_coord_sq (x : S²) :
-    (x : ℝ³) 0 ^ 2 + (x : ℝ³) 1 ^ 2 + (x : ℝ³) 2 ^ 2 = 1 := by
-  have h : ‖(x : ℝ³)‖ ^ 2 = 1 := by rw [mem_sphere_zero_iff_norm.1 x.2, one_pow]
-  rwa [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three] at h
-
 /-- A point of the sphere off the vertical axis is covered by one of the strips starting at
 longitudes `0` and `-π`. -/
 private theorem mem_range_sphereLongitudeHeight_of_ne (x : S²)
@@ -335,7 +331,7 @@ private theorem mem_range_sphereLongitudeHeight_of_ne (x : S²)
     rcases hx with hx | hx
     · exact hx (congrArg Complex.re h)
     · exact hx (congrArg Complex.im h)
-  have hnorm := coord_sq_add_coord_sq_add_coord_sq x
+  have hnorm := EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere x.2
   -- `‖z‖ = √(1 - h²)` for the height `h` of `x`.
   have hz2 : ‖z‖ = √(1 - (x : ℝ³) 2 ^ 2) := by
     rw [Complex.norm_def, Complex.normSq_mk]
@@ -366,8 +362,9 @@ private theorem mem_range_sphereLongitudeHeight_zero (y : longitudeHeightStrip (
   have h0 := y.2.1
   have h1 := y.2.2
   rcases hy.lt_or_gt with hy | hy
-  · refine ⟨⟨WithLp.toLp 2 ![(y : ℝ²) 0 + 2 * π, (y : ℝ²) 1], ⟨by simp; linarith [h0.1],
-      by simp; linarith⟩, h1⟩, Subtype.ext ?_⟩
+  · refine ⟨⟨WithLp.toLp 2 ![(y : ℝ²) 0 + 2 * π, (y : ℝ²) 1],
+      ⟨by simp only [cons_val_zero]; linarith [h0.1], by simp only [cons_val_zero]; linarith⟩, h1⟩,
+      Subtype.ext ?_⟩
     ext i
     fin_cases i <;> simp [Real.cos_add_two_pi, Real.sin_add_two_pi]
   · refine ⟨⟨y, ⟨hy, by linarith [h0.2, Real.pi_pos]⟩, h1⟩, rfl⟩
@@ -379,7 +376,7 @@ private theorem liouvilleMeasure_poles :
   refine Set.Finite.of_finite_image (f := fun x : S² ↦ (x : ℝ³) 2)
     ((Set.finite_singleton 1).insert (-1) |>.subset ?_) ?_
   · rintro _ ⟨x, ⟨h0, h1⟩, rfl⟩
-    have hnorm := coord_sq_add_coord_sq_add_coord_sq x
+    have hnorm := EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere x.2
     rw [h0, h1] at hnorm
     have : ((x : ℝ³) 2 + 1) * ((x : ℝ³) 2 - 1) = 0 := by linear_combination hnorm
     rcases mul_eq_zero.1 this with h | h
