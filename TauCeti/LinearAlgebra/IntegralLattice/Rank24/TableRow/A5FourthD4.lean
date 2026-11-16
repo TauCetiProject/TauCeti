@@ -37,9 +37,9 @@ this action to an order-`3` self-isometry
 
 * `TauCeti.RootfulNiemeierType.a5FourthD4BlockPerm`: the order-`3` permutation of the five
   component positions indicated by `[2(024)0]`, fixing `0` and `4` and cycling `1 ↦ 2 ↦ 3 ↦ 1`.
-* `TauCeti.RootfulNiemeierType.a5FourthD4BlockTrialityGlueEquiv`: the induced self-isometry of
+* `TauCeti.RootfulNiemeierType.a5FourthD4BlockTrialityGlueIsometry`: the induced self-isometry of
   `a5FourthD4.glueModule`, permuting `a5FourthD4.glueGenerators` and preserving
-  `a5FourthD4.glueSubgroup` (`a5FourthD4BlockTrialityGlueEquiv_mem_glueSubgroup_iff`).
+  `a5FourthD4.glueSubgroup` (`a5FourthD4BlockTrialityGlueIsometry_mem_glueSubgroup_iff`).
 * `TauCeti.RootfulNiemeierType.a5FourthD4BlockTrialityIsometry`: the order-`3` self-isometry of
   `a5FourthD4.lattice` rotating the three marked `A₅` components and acting by `typeD4Triality` on
   the `D₄` component, with componentwise evaluation lemmas and
@@ -137,49 +137,12 @@ theorem a5FourthD4BlockPerm_eq_finSumPerm :
         (Equiv.Perm.finSumPerm
           (Equiv.Perm.finSumPerm (1 : Equiv.Perm (Fin [2].length)) (finRotate [0, 2, 4].length))
           (1 : Equiv.Perm (Fin [0].length))) := by
-  let e := finCongr length_cyclic_a5FourthD4
-  let g := Equiv.Perm.finSumPerm
-    (Equiv.Perm.finSumPerm (1 : Equiv.Perm (Fin [2].length)) (finRotate [0, 2, 4].length))
-    (1 : Equiv.Perm (Fin [0].length))
-  have h0 : (g (Fin.castAdd [0].length (Fin.castAdd [0, 2, 4].length ⟨0, by decide⟩))).val = 0 := by
-    rw [Equiv.Perm.finSumPerm_apply_castAdd, Equiv.Perm.finSumPerm_apply_castAdd]; decide
-  have h1 : (g (Fin.castAdd [0].length (Fin.natAdd [2].length ⟨0, by decide⟩))).val = 2 := by
-    rw [Equiv.Perm.finSumPerm_apply_castAdd, Equiv.Perm.finSumPerm_apply_natAdd]; decide
-  have h2 : (g (Fin.castAdd [0].length (Fin.natAdd [2].length ⟨1, by decide⟩))).val = 3 := by
-    rw [Equiv.Perm.finSumPerm_apply_castAdd, Equiv.Perm.finSumPerm_apply_natAdd]; decide
-  have h3 : (g (Fin.castAdd [0].length (Fin.natAdd [2].length ⟨2, by decide⟩))).val = 1 := by
-    rw [Equiv.Perm.finSumPerm_apply_castAdd, Equiv.Perm.finSumPerm_apply_natAdd]; decide
-  have h4 : (g (Fin.natAdd ([2].length + [0, 2, 4].length) ⟨0, by decide⟩)).val = 4 := by
-    rw [Equiv.Perm.finSumPerm_apply_natAdd]; decide
-  have hrhs (k : Fin a5FourthD4.components.length) :
-      (e.permCongr g k).val = (g (e.symm k)).val := rfl
-  refine Equiv.ext fun k ↦ Fin.ext (Eq.trans ?_ (hrhs k).symm)
-  fin_cases k
-  · have hk : e.symm 0 = Fin.castAdd [0].length (Fin.castAdd [0, 2, 4].length ⟨0, by decide⟩) :=
-      Fin.ext (by decide)
-    exact (congrArg Fin.val a5FourthD4BlockPerm_apply_zero).trans
-      ((by decide : (0 : Fin a5FourthD4.components.length).val = 0).trans
-        ((congrArg (fun x ↦ (g x).val) hk).trans h0).symm)
-  · have hk : e.symm 1 = Fin.castAdd [0].length (Fin.natAdd [2].length ⟨0, by decide⟩) :=
-      Fin.ext (by decide)
-    exact (congrArg Fin.val a5FourthD4BlockPerm_apply_one).trans
-      ((by decide : (2 : Fin a5FourthD4.components.length).val = 2).trans
-        ((congrArg (fun x ↦ (g x).val) hk).trans h1).symm)
-  · have hk : e.symm 2 = Fin.castAdd [0].length (Fin.natAdd [2].length ⟨1, by decide⟩) :=
-      Fin.ext (by decide)
-    exact (congrArg Fin.val a5FourthD4BlockPerm_apply_two).trans
-      ((by decide : (3 : Fin a5FourthD4.components.length).val = 3).trans
-        ((congrArg (fun x ↦ (g x).val) hk).trans h2).symm)
-  · have hk : e.symm 3 = Fin.castAdd [0].length (Fin.natAdd [2].length ⟨2, by decide⟩) :=
-      Fin.ext (by decide)
-    exact (congrArg Fin.val a5FourthD4BlockPerm_apply_three).trans
-      ((by decide : (1 : Fin a5FourthD4.components.length).val = 1).trans
-        ((congrArg (fun x ↦ (g x).val) hk).trans h3).symm)
-  · have hk : e.symm 4 = Fin.natAdd ([2].length + [0, 2, 4].length) ⟨0, by decide⟩ :=
-      Fin.ext (by decide)
-    exact (congrArg Fin.val a5FourthD4BlockPerm_apply_four).trans
-      ((by decide : (4 : Fin a5FourthD4.components.length).val = 4).trans
-        ((congrArg (fun x ↦ (g x).val) hk).trans h4).symm)
+  refine Equiv.ext fun k ↦
+    Eq.trans ?_ ((Equiv.permCongr_apply _ _ k).trans
+      (congrArg _ (Equiv.Perm.finSumPerm_apply _ _ _))).symm
+  rw [funext (Equiv.Perm.finSumPerm_apply _ _)]
+  revert k
+  decide
 
 /-- `a5FourthD4BlockPerm` preserves the component Dynkin types of `A₅⁴ D₄`. -/
 theorem componentType_a5FourthD4_a5FourthD4BlockPerm (k : Fin a5FourthD4.components.length) :
@@ -256,23 +219,23 @@ private theorem glueAlphabetIsometry_a5FourthD4TrialityGlueComponent
 /-- **The block-triality isometry on the glue module of `A₅⁴ D₄`**: it reads component `k` from
 `a5FourthD4BlockPerm⁻¹ k` and applies `typeD4GlueAlphabetTriality` on the `D₄` component at
 position `4`. -/
-noncomputable def a5FourthD4BlockTrialityGlueEquiv :
+noncomputable def a5FourthD4BlockTrialityGlueIsometry :
     FiniteQuadraticModule.Isometry a5FourthD4.glueModule a5FourthD4.glueModule :=
   (piGlueAlphabetCongr a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
       a5FourthD4BlockPerm⁻¹ componentType_a5FourthD4_a5FourthD4BlockPerm_inv
       (hs := a5FourthD4.isSimplyLaced_componentType)).trans
     (QuadraticMap.IsometryEquiv.pi a5FourthD4TrialityGlueComponent)
 
-private theorem a5FourthD4BlockTrialityGlueEquiv_apply_aux (w : a5FourthD4.glueModule)
+private theorem a5FourthD4BlockTrialityGlueIsometry_apply_aux (w : a5FourthD4.glueModule)
     (k : Fin a5FourthD4.components.length) :
-    a5FourthD4BlockTrialityGlueEquiv w k =
+    a5FourthD4BlockTrialityGlueIsometry w k =
       a5FourthD4TrialityGlueComponent k
         (FiniteQuadraticModule.Isometry.ofEq
           (glueAlphabet_congr (componentType_a5FourthD4_a5FourthD4BlockPerm_inv k)
             (a5FourthD4.isSimplyLaced_componentType (a5FourthD4BlockPerm⁻¹ k))
             (a5FourthD4.isSimplyLaced_componentType k))
           (w (a5FourthD4BlockPerm⁻¹ k))) := by
-  rw [a5FourthD4BlockTrialityGlueEquiv, QuadraticMap.IsometryEquiv.trans_apply,
+  rw [a5FourthD4BlockTrialityGlueIsometry, QuadraticMap.IsometryEquiv.trans_apply,
     ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv (QuadraticMap.IsometryEquiv.pi _),
     QuadraticMap.IsometryEquiv.pi_toLinearEquiv, LinearEquiv.piCongrRight_apply,
     QuadraticMap.IsometryEquiv.coe_toLinearEquiv, piGlueAlphabetCongr_apply]
@@ -288,90 +251,90 @@ private theorem ofEq_glueAlphabet_apply_eq (w : a5FourthD4.glueModule)
   subst hab
   rfl
 
-/-- `a5FourthD4BlockTrialityGlueEquiv` fixes the `A₅` glue label in position `0`. -/
+/-- `a5FourthD4BlockTrialityGlueIsometry` fixes the `A₅` glue label in position `0`. -/
 @[simp]
-theorem a5FourthD4BlockTrialityGlueEquiv_apply_zero (w : a5FourthD4.glueModule) :
-    a5FourthD4BlockTrialityGlueEquiv w 0 = w 0 := by
-  rw [a5FourthD4BlockTrialityGlueEquiv_apply_aux, a5FourthD4TrialityGlueComponent,
+theorem a5FourthD4BlockTrialityGlueIsometry_apply_zero (w : a5FourthD4.glueModule) :
+    a5FourthD4BlockTrialityGlueIsometry w 0 = w 0 := by
+  rw [a5FourthD4BlockTrialityGlueIsometry_apply_aux, a5FourthD4TrialityGlueComponent,
     dite_eq_right (by decide)]
   exact (ofEq_glueAlphabet_apply_eq w a5FourthD4BlockPerm_inv_apply_zero
     (componentType_a5FourthD4_a5FourthD4BlockPerm_inv 0) rfl).trans
     ((FiniteQuadraticModule.Isometry.ofEq_apply _ (w 0)).trans (cast_eq _ (w 0)))
 
-/-- `a5FourthD4BlockTrialityGlueEquiv` reads the `A₅` glue label in position `1` from
+/-- `a5FourthD4BlockTrialityGlueIsometry` reads the `A₅` glue label in position `1` from
 position `3`. -/
 @[simp]
-theorem a5FourthD4BlockTrialityGlueEquiv_apply_one (w : a5FourthD4.glueModule) :
-    a5FourthD4BlockTrialityGlueEquiv w 1 = w 3 := by
-  rw [a5FourthD4BlockTrialityGlueEquiv_apply_aux, a5FourthD4TrialityGlueComponent,
+theorem a5FourthD4BlockTrialityGlueIsometry_apply_one (w : a5FourthD4.glueModule) :
+    a5FourthD4BlockTrialityGlueIsometry w 1 = w 3 := by
+  rw [a5FourthD4BlockTrialityGlueIsometry_apply_aux, a5FourthD4TrialityGlueComponent,
     dite_eq_right (by decide)]
   exact (ofEq_glueAlphabet_apply_eq w a5FourthD4BlockPerm_inv_apply_one
     (componentType_a5FourthD4_a5FourthD4BlockPerm_inv 1) rfl).trans
     ((FiniteQuadraticModule.Isometry.ofEq_apply _ (w 3)).trans (cast_eq _ (w 3)))
 
-/-- `a5FourthD4BlockTrialityGlueEquiv` reads the `A₅` glue label in position `2` from
+/-- `a5FourthD4BlockTrialityGlueIsometry` reads the `A₅` glue label in position `2` from
 position `1`. -/
 @[simp]
-theorem a5FourthD4BlockTrialityGlueEquiv_apply_two (w : a5FourthD4.glueModule) :
-    a5FourthD4BlockTrialityGlueEquiv w 2 = w 1 := by
-  rw [a5FourthD4BlockTrialityGlueEquiv_apply_aux, a5FourthD4TrialityGlueComponent,
+theorem a5FourthD4BlockTrialityGlueIsometry_apply_two (w : a5FourthD4.glueModule) :
+    a5FourthD4BlockTrialityGlueIsometry w 2 = w 1 := by
+  rw [a5FourthD4BlockTrialityGlueIsometry_apply_aux, a5FourthD4TrialityGlueComponent,
     dite_eq_right (by decide)]
   exact (ofEq_glueAlphabet_apply_eq w a5FourthD4BlockPerm_inv_apply_two
     (componentType_a5FourthD4_a5FourthD4BlockPerm_inv 2) rfl).trans
     ((FiniteQuadraticModule.Isometry.ofEq_apply _ (w 1)).trans (cast_eq _ (w 1)))
 
-/-- `a5FourthD4BlockTrialityGlueEquiv` reads the `A₅` glue label in position `3` from
+/-- `a5FourthD4BlockTrialityGlueIsometry` reads the `A₅` glue label in position `3` from
 position `2`. -/
 @[simp]
-theorem a5FourthD4BlockTrialityGlueEquiv_apply_three (w : a5FourthD4.glueModule) :
-    a5FourthD4BlockTrialityGlueEquiv w 3 = w 2 := by
-  rw [a5FourthD4BlockTrialityGlueEquiv_apply_aux, a5FourthD4TrialityGlueComponent,
+theorem a5FourthD4BlockTrialityGlueIsometry_apply_three (w : a5FourthD4.glueModule) :
+    a5FourthD4BlockTrialityGlueIsometry w 3 = w 2 := by
+  rw [a5FourthD4BlockTrialityGlueIsometry_apply_aux, a5FourthD4TrialityGlueComponent,
     dite_eq_right (by decide)]
   exact (ofEq_glueAlphabet_apply_eq w a5FourthD4BlockPerm_inv_apply_three
     (componentType_a5FourthD4_a5FourthD4BlockPerm_inv 3) rfl).trans
     ((FiniteQuadraticModule.Isometry.ofEq_apply _ (w 2)).trans (cast_eq _ (w 2)))
 
-/-- On the `D₄` glue label in position `4`, `a5FourthD4BlockTrialityGlueEquiv` acts by
+/-- On the `D₄` glue label in position `4`, `a5FourthD4BlockTrialityGlueIsometry` acts by
 `typeD4GlueAlphabetTriality`. -/
 @[simp]
-theorem a5FourthD4BlockTrialityGlueEquiv_apply_four (w : a5FourthD4.glueModule) :
-    a5FourthD4BlockTrialityGlueEquiv w 4 =
+theorem a5FourthD4BlockTrialityGlueIsometry_apply_four (w : a5FourthD4.glueModule) :
+    a5FourthD4BlockTrialityGlueIsometry w 4 =
       typeD4GlueAlphabetTriality (a5FourthD4.isSimplyLaced_componentType 4) (w 4) := by
-  rw [a5FourthD4BlockTrialityGlueEquiv_apply_aux, a5FourthD4TrialityGlueComponent,
+  rw [a5FourthD4BlockTrialityGlueIsometry_apply_aux, a5FourthD4TrialityGlueComponent,
     dite_eq_left rfl]
   exact congrArg (typeD4GlueAlphabetTriality (a5FourthD4.isSimplyLaced_componentType 4))
     ((ofEq_glueAlphabet_apply_eq w a5FourthD4BlockPerm_inv_apply_four
       (componentType_a5FourthD4_a5FourthD4BlockPerm_inv 4) rfl).trans
       ((FiniteQuadraticModule.Isometry.ofEq_apply _ (w 4)).trans (cast_eq _ (w 4))))
 
-/-- Applying `a5FourthD4BlockTrialityGlueEquiv` three times fixes every glue word. -/
+/-- Applying `a5FourthD4BlockTrialityGlueIsometry` three times fixes every glue word. -/
 @[simp]
-theorem a5FourthD4BlockTrialityGlueEquiv_apply_apply_apply (w : a5FourthD4.glueModule) :
-    a5FourthD4BlockTrialityGlueEquiv
-        (a5FourthD4BlockTrialityGlueEquiv (a5FourthD4BlockTrialityGlueEquiv w)) = w := by
+theorem a5FourthD4BlockTrialityGlueIsometry_apply_apply_apply (w : a5FourthD4.glueModule) :
+    a5FourthD4BlockTrialityGlueIsometry
+        (a5FourthD4BlockTrialityGlueIsometry (a5FourthD4BlockTrialityGlueIsometry w)) = w := by
   funext k
   fin_cases k
-  · exact (a5FourthD4BlockTrialityGlueEquiv_apply_zero _).trans
-      ((a5FourthD4BlockTrialityGlueEquiv_apply_zero _).trans
-        (a5FourthD4BlockTrialityGlueEquiv_apply_zero w))
-  · exact (a5FourthD4BlockTrialityGlueEquiv_apply_one _).trans
-      ((a5FourthD4BlockTrialityGlueEquiv_apply_three _).trans
-        (a5FourthD4BlockTrialityGlueEquiv_apply_two w))
-  · exact (a5FourthD4BlockTrialityGlueEquiv_apply_two _).trans
-      ((a5FourthD4BlockTrialityGlueEquiv_apply_one _).trans
-        (a5FourthD4BlockTrialityGlueEquiv_apply_three w))
-  · exact (a5FourthD4BlockTrialityGlueEquiv_apply_three _).trans
-      ((a5FourthD4BlockTrialityGlueEquiv_apply_two _).trans
-        (a5FourthD4BlockTrialityGlueEquiv_apply_one w))
-  · exact (a5FourthD4BlockTrialityGlueEquiv_apply_four _).trans <|
+  · exact (a5FourthD4BlockTrialityGlueIsometry_apply_zero _).trans
+      ((a5FourthD4BlockTrialityGlueIsometry_apply_zero _).trans
+        (a5FourthD4BlockTrialityGlueIsometry_apply_zero w))
+  · exact (a5FourthD4BlockTrialityGlueIsometry_apply_one _).trans
+      ((a5FourthD4BlockTrialityGlueIsometry_apply_three _).trans
+        (a5FourthD4BlockTrialityGlueIsometry_apply_two w))
+  · exact (a5FourthD4BlockTrialityGlueIsometry_apply_two _).trans
+      ((a5FourthD4BlockTrialityGlueIsometry_apply_one _).trans
+        (a5FourthD4BlockTrialityGlueIsometry_apply_three w))
+  · exact (a5FourthD4BlockTrialityGlueIsometry_apply_three _).trans
+      ((a5FourthD4BlockTrialityGlueIsometry_apply_two _).trans
+        (a5FourthD4BlockTrialityGlueIsometry_apply_one w))
+  · exact (a5FourthD4BlockTrialityGlueIsometry_apply_four _).trans <|
       (congrArg (typeD4GlueAlphabetTriality (a5FourthD4.isSimplyLaced_componentType 4))
-        ((a5FourthD4BlockTrialityGlueEquiv_apply_four _).trans
+        ((a5FourthD4BlockTrialityGlueIsometry_apply_four _).trans
           (congrArg (typeD4GlueAlphabetTriality (a5FourthD4.isSimplyLaced_componentType 4))
-            (a5FourthD4BlockTrialityGlueEquiv_apply_four w)))).trans
+            (a5FourthD4BlockTrialityGlueIsometry_apply_four w)))).trans
       (typeD4GlueAlphabetTriality_apply_apply_apply
         (a5FourthD4.isSimplyLaced_componentType 4) (w 4))
 
-/-- The digit-word transformation corresponding to `a5FourthD4BlockTrialityGlueEquiv`: it cycles
+/-- The digit-word transformation corresponding to `a5FourthD4BlockTrialityGlueIsometry`: it cycles
 the three marked `A₅` digits `(d₁, d₂, d₃) ↦ (d₃, d₁, d₂)` and cycles the nonzero `D₄` digits
 `1 ↦ 2 ↦ 3 ↦ 1`. -/
 private def a5FourthD4BlockTrialityDigits (l : List ℕ) : List ℕ :=
@@ -394,9 +357,9 @@ theorem ofFn_fin_components_a5FourthD4 {α : Type*}
     congrArg h (Fin.ext (by simp [length_components_a5FourthD4])),
     congrArg h (Fin.ext (by simp [length_components_a5FourthD4]))⟩
 
-private theorem encodeGlueWord_a5FourthD4BlockTrialityGlueEquiv (w : a5FourthD4.glueModule) :
+private theorem encodeGlueWord_a5FourthD4BlockTrialityGlueIsometry (w : a5FourthD4.glueModule) :
     encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
-        (a5FourthD4BlockTrialityGlueEquiv w) =
+        (a5FourthD4BlockTrialityGlueIsometry w) =
       a5FourthD4BlockTrialityDigits
         (encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType w) := by
   set l := encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType w
@@ -409,24 +372,24 @@ private theorem encodeGlueWord_a5FourthD4BlockTrialityGlueEquiv (w : a5FourthD4.
   set f : Fin a5FourthD4.components.length → ℕ := fun i ↦
     (((a5FourthD4.componentType i).glueLabelEquiv
       (a5FourthD4.isSimplyLaced_componentType i)).symm
-      (a5FourthD4BlockTrialityGlueEquiv w i)).val
+      (a5FourthD4BlockTrialityGlueIsometry w i)).val
   rw [ofFn_fin_components_a5FourthD4, a5FourthD4BlockTrialityDigits]
   have hf0 : f 0 = l.getD 0 0 :=
     (congrArg
       (fun x ↦ (((A 5).glueLabelEquiv (a5FourthD4.isSimplyLaced_componentType 0)).symm x).val)
-      (a5FourthD4BlockTrialityGlueEquiv_apply_zero w)).trans (hl 0).symm
+      (a5FourthD4BlockTrialityGlueIsometry_apply_zero w)).trans (hl 0).symm
   have hf1 : f 1 = l.getD 3 0 :=
     (congrArg
       (fun x ↦ (((A 5).glueLabelEquiv (a5FourthD4.isSimplyLaced_componentType 1)).symm x).val)
-      (a5FourthD4BlockTrialityGlueEquiv_apply_one w)).trans (hl 3).symm
+      (a5FourthD4BlockTrialityGlueIsometry_apply_one w)).trans (hl 3).symm
   have hf2 : f 2 = l.getD 1 0 :=
     (congrArg
       (fun x ↦ (((A 5).glueLabelEquiv (a5FourthD4.isSimplyLaced_componentType 2)).symm x).val)
-      (a5FourthD4BlockTrialityGlueEquiv_apply_two w)).trans (hl 1).symm
+      (a5FourthD4BlockTrialityGlueIsometry_apply_two w)).trans (hl 1).symm
   have hf3 : f 3 = l.getD 2 0 :=
     (congrArg
       (fun x ↦ (((A 5).glueLabelEquiv (a5FourthD4.isSimplyLaced_componentType 3)).symm x).val)
-      (a5FourthD4BlockTrialityGlueEquiv_apply_three w)).trans (hl 2).symm
+      (a5FourthD4BlockTrialityGlueIsometry_apply_three w)).trans (hl 2).symm
   have hf4 : f 4 = (match l.getD 4 0 with | 1 => 2 | 2 => 3 | 3 => 1 | d => d) := by
     obtain ⟨j, hj⟩ :
         ∃ j : Fin 4,
@@ -436,7 +399,7 @@ private theorem encodeGlueWord_a5FourthD4BlockTrialityGlueEquiv (w : a5FourthD4.
       congrArg Fin.val <|
         (congrArg (((a5FourthD4.componentType 4).glueLabelEquiv
             (a5FourthD4.isSimplyLaced_componentType 4)).symm)
-          (a5FourthD4BlockTrialityGlueEquiv_apply_four w)).trans <|
+          (a5FourthD4BlockTrialityGlueIsometry_apply_four w)).trans <|
         (glueLabelEquiv_symm_typeD4GlueAlphabetTriality
           (a5FourthD4.isSimplyLaced_componentType 4) (w 4)).trans
           (congrArg trialityGlueLabelPerm hj)
@@ -449,24 +412,21 @@ private theorem a5FourthD4BlockTrialityDigits_mem_glueWords :
     ∀ l ∈ a5FourthD4.glueWords, a5FourthD4BlockTrialityDigits l ∈ a5FourthD4.glueWords := by
   decide
 
-/-- `a5FourthD4BlockTrialityGlueEquiv` maps `a5FourthD4.glueGenerators` into itself. -/
-theorem a5FourthD4BlockTrialityGlueEquiv_mem_glueGenerators {w : a5FourthD4.glueModule}
+/-- `a5FourthD4BlockTrialityGlueIsometry` maps `a5FourthD4.glueGenerators` into itself. -/
+theorem a5FourthD4BlockTrialityGlueIsometry_mem_glueGenerators {w : a5FourthD4.glueModule}
     (hw : w ∈ a5FourthD4.glueGenerators) :
-    a5FourthD4BlockTrialityGlueEquiv w ∈ a5FourthD4.glueGenerators := by
-  rw [mem_glueGenerators_iff, encodeGlueWord_a5FourthD4BlockTrialityGlueEquiv]
+    a5FourthD4BlockTrialityGlueIsometry w ∈ a5FourthD4.glueGenerators := by
+  rw [mem_glueGenerators_iff, encodeGlueWord_a5FourthD4BlockTrialityGlueIsometry]
   exact a5FourthD4BlockTrialityDigits_mem_glueWords _ (mem_glueGenerators_iff.mp hw)
 
-/-- **`a5FourthD4BlockTrialityGlueEquiv` preserves the glue subgroup of `A₅⁴ D₄`.** -/
+/-- **`a5FourthD4BlockTrialityGlueIsometry` preserves the glue subgroup of `A₅⁴ D₄`.** -/
 @[simp]
-theorem a5FourthD4BlockTrialityGlueEquiv_mem_glueSubgroup_iff (w : a5FourthD4.glueModule) :
-    a5FourthD4BlockTrialityGlueEquiv w ∈ a5FourthD4.glueSubgroup ↔ w ∈ a5FourthD4.glueSubgroup := by
-  refine a5FourthD4.apply_mem_glueSubgroup_iff_of_preimage_glueGenerators
-    a5FourthD4BlockTrialityGlueEquiv ?_ w
-  ext v
-  refine ⟨fun hv ↦ ?_, fun hv ↦ a5FourthD4BlockTrialityGlueEquiv_mem_glueGenerators hv⟩
-  have hv3 := a5FourthD4BlockTrialityGlueEquiv_mem_glueGenerators
-    (a5FourthD4BlockTrialityGlueEquiv_mem_glueGenerators hv)
-  rwa [a5FourthD4BlockTrialityGlueEquiv_apply_apply_apply] at hv3
+theorem a5FourthD4BlockTrialityGlueIsometry_mem_glueSubgroup_iff (w : a5FourthD4.glueModule) :
+    a5FourthD4BlockTrialityGlueIsometry w ∈ a5FourthD4.glueSubgroup ↔
+      w ∈ a5FourthD4.glueSubgroup :=
+  a5FourthD4.apply_mem_glueSubgroup_iff_of_mapsTo_glueGenerators
+    a5FourthD4BlockTrialityGlueIsometry
+    (fun _ ↦ a5FourthD4BlockTrialityGlueIsometry_mem_glueGenerators) w
 
 /-! ### The lifted self-isometry of `a5FourthD4.lattice` -/
 
@@ -541,8 +501,8 @@ noncomputable def a5FourthD4BlockTrialityIsometry :
       glueAlphabetIsometry_a5FourthD4BlockTrialityRootComponent
       fun w ↦
         (congrArg (· ∈ a5FourthD4.glueSubgroup)
-          (funext (a5FourthD4BlockTrialityGlueEquiv_apply_aux w)).symm).to_iff.trans
-          (a5FourthD4BlockTrialityGlueEquiv_mem_glueSubgroup_iff w)).trans
+          (funext (a5FourthD4BlockTrialityGlueIsometry_apply_aux w)).symm).to_iff.trans
+          (a5FourthD4BlockTrialityGlueIsometry_mem_glueSubgroup_iff w)).trans
     (Isometry.ofEq (lattice_def a5FourthD4).symm)
 
 private theorem a5FourthD4BlockTrialityIsometry_apply_aux

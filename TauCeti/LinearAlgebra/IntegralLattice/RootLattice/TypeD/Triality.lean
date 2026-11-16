@@ -52,7 +52,7 @@ act on a lattice glued from copies of `D₄`.
   the checkerboard discriminant group.
 * `TauCeti.DynkinType.typeD4Triality`: the triality isometry of the root lattice of type `D₄`,
   permuting the simple-root coordinates by `trialityPermD4` (`typeD4Triality_single`,
-  `typeD4Triality_apply_eq`), of order `3` (`orderOf_typeD4Triality`).
+  `typeD4Triality_apply_apply`), of order `3` (`orderOf_typeD4Triality`).
 * `TauCeti.DynkinType.typeD4GlueAlphabetTriality`, `TauCeti.DynkinType.trialityGlueLabelPerm`:
   the induced isometry of the `D₄` glue alphabet, cycling the Conway--Sloane labels
   `1 ↦ 2 ↦ 3 ↦ 1` (`typeD4GlueAlphabetTriality_glueLabelEquiv`) and compatible with
@@ -385,7 +385,7 @@ theorem typeD4Triality_single (i : Fin 4) :
 /-- **Simple-root coordinates of triality on `D₄`**: the `j`-th Bourbaki simple-root coordinate of
 `typeD4Triality ht x` is read from `trialityPermD4.symm j`. -/
 -- Not `@[simp]`: `simp` rewrites `(D 4).rank` inside `x` by `rank_D`.
-theorem typeD4Triality_apply_eq (x : Fin (D 4).rank → ℚ) (j : Fin 4) :
+theorem typeD4Triality_apply_apply (x : Fin (D 4).rank → ℚ) (j : Fin 4) :
     typeD4Triality ht x j = x (trialityPermD4.symm j) := by
   obtain ⟨k, rfl⟩ := trialityPermD4.surjective j
   have h1 : typeD4Triality ht x =

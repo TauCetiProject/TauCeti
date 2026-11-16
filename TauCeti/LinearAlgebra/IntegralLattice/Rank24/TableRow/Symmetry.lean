@@ -136,14 +136,12 @@ theorem mem_glueSymmetries_of_glueWords {g : Equiv.Perm (Fin r.components.length
     (hw : ∀ d : Fin r.components.length → ℕ,
       List.ofFn (d ∘ g) ∈ r.glueWords ↔ List.ofFn d ∈ r.glueWords) :
     g ∈ r.glueSymmetries := by
-  refine ⟨hg, r.apply_mem_glueSubgroup_iff_of_preimage_glueGenerators
+  refine ⟨hg, r.apply_mem_glueSubgroup_iff_of_mapsTo_glueGenerators
     (piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg
-      (hs := r.isSimplyLaced_componentType)) ?_⟩
-  ext v
-  rw [Set.mem_preimage, mem_glueGenerators_iff, mem_glueGenerators_iff,
-    encodeGlueWord_piGlueAlphabetCongr_eq_ofFn, encodeGlueWord_def]
-  exact hw fun i ↦ (((r.componentType i).glueLabelEquiv
-    (r.isSimplyLaced_componentType i)).symm (v i)).val
+      (hs := r.isSimplyLaced_componentType)) fun v hv ↦ ?_⟩
+  rw [mem_glueGenerators_iff, encodeGlueWord_piGlueAlphabetCongr_eq_ofFn]
+  rw [mem_glueGenerators_iff, encodeGlueWord_def] at hv
+  exact (hw _).mpr hv
 
 /-- **Glue symmetries from the patterns**: a permutation preserving the component types is a glue
 symmetry of a row as soon as the expansion of every pattern of the row is invariant under it. -/
@@ -337,18 +335,12 @@ private theorem exists_mem_glueSubgroup_of_mem_a5FourthD4WitnessPairs :
   · exact ⟨hd₁, hd₃⟩
 
 private theorem exists_a5FourthD4WitnessPairs_lt_four :
-    ∀ a b c d : Fin 4,
-      a ≠ b → a ≠ c → a ≠ d → b ≠ c → b ≠ d → c ≠ d →
-      ¬(a = 0 ∧ b = 1 ∧ c = 2 ∧ d = 3) →
+    ∀ g : Equiv.Perm (Fin a5FourthD4.components.length), g 4 = 4 → g ≠ 1 →
       ∃ p ∈ a5FourthD4WitnessPairs,
-        let l := [p.1.getD a.val 0, p.1.getD b.val 0, p.1.getD c.val 0, p.1.getD d.val 0,
-          p.1.getD 4 0]
+        let l := List.ofFn fun k ↦ p.1.getD (g k).val 0
         let s := glueWordAdd a5FourthD4.componentType l p.2
         s ≠ [0, 0, 0, 0, 0] ∧ glueWordMinimum a5FourthD4.componentType s < 4 := by
   decide +kernel
-
-private theorem val_four_a5FourthD4 : (4 : Fin a5FourthD4.components.length).val = 4 := by
-  simp [length_components_a5FourthD4]
 
 /-- Any pure-position glue symmetry of `A₅⁴ D₄` preserves component Dynkin types and therefore
 fixes the unique `D₄` component in position `4`. -/
@@ -363,58 +355,13 @@ private theorem apply_four_of_mem_glueSymmetries_a5FourthD4
     | rfl
     | exact absurd (htype.symm.trans (componentType_a5FourthD4_of_lt (by simp))) (fun h ↦ nomatch h)
 
-/-- Restricting a non-identity glue symmetry of `A₅⁴ D₄` to the four `A₅` positions `0, 1, 2, 3`
-gives a non-identity injection `Fin 4 → Fin 4` agreeing on `.val` with `g 0, g 1, g 2, g 3`. -/
-private theorem exists_fin_four_of_mem_glueSymmetries_a5FourthD4
-    {g : Equiv.Perm (Fin a5FourthD4.components.length)} (hg : g ∈ a5FourthD4.glueSymmetries)
-    (hg1 : g ≠ 1) :
-    ∃ f : Fin 4 → Fin 4, Function.Injective f ∧
-      ¬(f 0 = 0 ∧ f 1 = 1 ∧ f 2 = 2 ∧ f 3 = 3) ∧
-      (f 0).val = (g 0).val ∧ (f 1).val = (g 1).val ∧
-      (f 2).val = (g 2).val ∧ (f 3).val = (g 3).val := by
-  have hg4 : g 4 = 4 := apply_four_of_mem_glueSymmetries_a5FourthD4 hg
-  have hg_lt {i : Fin a5FourthD4.components.length} (hi : i ≠ 4) : (g i).val < 4 := by
-    have hgi4 : g i ≠ 4 := fun h ↦ hi (g.injective (h.trans hg4.symm))
-    have hval : (g i).val ≠ 4 := fun hv ↦ hgi4 (Fin.ext (hv.trans val_four_a5FourthD4.symm))
-    have hlt5 : (g i).val < 5 := (g i).isLt.trans_eq length_components_a5FourthD4
-    omega
-  have hi_lt (i : Fin 4) : i.val < a5FourthD4.components.length := by
-    rw [length_components_a5FourthD4]
-    exact Nat.lt_trans i.isLt (by decide)
-  let f (i : Fin 4) : Fin 4 :=
-    ⟨(g ⟨i.val, hi_lt i⟩).val,
-      hg_lt fun h ↦ by
-        have hv : i.val = 4 := (congrArg Fin.val h).trans val_four_a5FourthD4
-        exact absurd hv (Nat.ne_of_lt i.isLt)⟩
-  have hf_val (i : Fin 4) (k : Fin a5FourthD4.components.length) (hik : i.val = k.val) :
-      (f i).val = (g k).val :=
-    congrArg (fun x ↦ (g x).val) (Fin.ext hik)
-  have hfinj : Function.Injective f := fun i j hij ↦ by
-    have hgij : g ⟨i.val, hi_lt i⟩ = g ⟨j.val, hi_lt j⟩ := Fin.ext (congrArg (@Fin.val 4) hij)
-    exact Fin.ext (congrArg (@Fin.val a5FourthD4.components.length) (g.injective hgij))
-  have hf0 : (f 0).val = (g 0).val := hf_val 0 0 (by decide)
-  have hf1 : (f 1).val = (g 1).val := hf_val 1 1 (by decide)
-  have hf2 : (f 2).val = (g 2).val := hf_val 2 2 (by decide)
-  have hf3 : (f 3).val = (g 3).val := hf_val 3 3 (by decide)
-  refine ⟨f, hfinj, ?_, hf0, hf1, hf2, hf3⟩
-  rintro ⟨h0, h1, h2, h3⟩
-  apply hg1
-  refine Equiv.ext fun k ↦ ?_
-  fin_cases k
-  · exact Fin.ext ((hf0.symm.trans (congrArg Fin.val h0)).trans (by decide))
-  · exact Fin.ext ((hf1.symm.trans (congrArg Fin.val h1)).trans (by decide))
-  · exact Fin.ext ((hf2.symm.trans (congrArg Fin.val h2)).trans (by decide))
-  · exact Fin.ext ((hf3.symm.trans (congrArg Fin.val h3)).trans (by decide))
-  · exact hg4
-
 /-- For any glue symmetry `g` of `A₅⁴ D₄` and any witness pair `p ∈ a5FourthD4WitnessPairs`,
 reindexing the glue word for `p.1` along `g` and adding the glue word for `p.2` stays in
 `a5FourthD4.glueSubgroup`, so when nonzero its glue minimum cannot be strictly below `4`. -/
 private theorem not_glueWordMinimum_lt_four_of_mem_a5FourthD4WitnessPairs
     {g : Equiv.Perm (Fin a5FourthD4.components.length)} (hg : g ∈ a5FourthD4.glueSymmetries)
     {p : List ℕ × List ℕ} (hp : p ∈ a5FourthD4WitnessPairs) :
-    let l := [p.1.getD (g 0).val 0, p.1.getD (g 1).val 0, p.1.getD (g 2).val 0,
-      p.1.getD (g 3).val 0, p.1.getD 4 0]
+    let l := List.ofFn fun k ↦ p.1.getD (g k).val 0
     let s := glueWordAdd a5FourthD4.componentType l p.2
     s ≠ [0, 0, 0, 0, 0] → ¬ glueWordMinimum a5FourthD4.componentType s < 4 := by
   intro l s hs0 hslt
@@ -425,18 +372,12 @@ private theorem not_glueWordMinimum_lt_four_of_mem_a5FourthD4WitnessPairs
       (a5FourthD4.componentType_apply_of_mem_glueSymmetries hg) w
   have hwg : w_g ∈ a5FourthD4.glueSubgroup :=
     (a5FourthD4.piGlueAlphabetCongr_mem_glueSubgroup_iff hg w).mpr hw
-  have hg4 : (g 4).val = 4 :=
-    (congrArg Fin.val (apply_four_of_mem_glueSymmetries_a5FourthD4 hg)).trans val_four_a5FourthD4
   have henc_wg : encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
       w_g = l := by
     rw [encodeGlueWord_piGlueAlphabetCongr_eq_ofFn]
-    have hfun : (fun k : Fin a5FourthD4.components.length ↦
-        (((a5FourthD4.componentType (g k)).glueLabelEquiv
-          (a5FourthD4.isSimplyLaced_componentType (g k))).symm (w (g k))).val) =
-        fun k ↦ p.1.getD (g k).val 0 := by
-      funext k
-      rw [← hwl, List.getD_eq_getElem _ _ (by simp), getElem_encodeGlueWord]
-    rw [hfun, ofFn_fin_components_a5FourthD4, hg4]
+    congr 1
+    funext k
+    rw [← hwl, List.getD_eq_getElem _ _ (by simp), getElem_encodeGlueWord]
   have henc_sum : encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
       (w_g + w') = s := by
     rw [encodeGlueWord_add, henc_wg, hw'l]
@@ -455,14 +396,8 @@ theorem glueSymmetries_a5FourthD4_eq_bot : a5FourthD4.glueSymmetries = ⊥ := by
   rw [Subgroup.eq_bot_iff_forall]
   intro g hg
   by_contra hg1
-  -- Restrict `g` to a non-identity injection on the four `A₅` positions and eliminate it via
-  -- the finite witness table `a5FourthD4WitnessPairs`.
-  obtain ⟨f, hfinj, hf_not_id, hf0, hf1, hf2, hf3⟩ :=
-    exists_fin_four_of_mem_glueSymmetries_a5FourthD4 hg hg1
-  obtain ⟨p, hp, hs0, hslt⟩ := exists_a5FourthD4WitnessPairs_lt_four (f 0) (f 1) (f 2) (f 3)
-    (hfinj.ne (by decide)) (hfinj.ne (by decide)) (hfinj.ne (by decide))
-    (hfinj.ne (by decide)) (hfinj.ne (by decide)) (hfinj.ne (by decide)) hf_not_id
-  rw [hf0, hf1, hf2, hf3] at hs0 hslt
+  obtain ⟨p, hp, hs0, hslt⟩ := exists_a5FourthD4WitnessPairs_lt_four g
+    (apply_four_of_mem_glueSymmetries_a5FourthD4 hg) hg1
   exact not_glueWordMinimum_lt_four_of_mem_a5FourthD4WitnessPairs hg hp hs0 hslt
 
 /-- **Exactness of `mem_glueSymmetries_of_mem_symmetries`**: every indicated pattern symmetry of a
@@ -484,10 +419,11 @@ theorem forall_mem_glueSymmetries_of_mem_symmetries_iff {r : RootfulNiemeierType
   exact absurd hord (by decide)
 
 /-- **The indicated symmetries of every table pattern act on the lattice of its row.**  For every
-row other than `A₅⁴ D₄`, a pattern symmetry `g` acts purely on component positions, moving
-component `k` to position `g k` (`patternIsometryHom_apply_of_ne_a5FourthD4`).  For `A₅⁴ D₄`, the
-cyclic block rotation of `[2(024)0]` acts by rotating the three marked `A₅` components together
-with `D₄` triality on the last component (`patternIsometryHom_a5FourthD4`). -/
+row other than `A₅⁴ D₄`, a pattern symmetry `g` acts purely on component positions through
+`r.latticeIsometryHom` (`patternIsometryHom_of_ne_a5FourthD4`), moving component `k` to position
+`g k` (`patternIsometryHom_apply_of_ne_a5FourthD4`).  For `A₅⁴ D₄`, the cyclic block rotation of
+`[2(024)0]` acts by rotating the three marked `A₅` components together with `D₄` triality on the
+last component (`patternIsometryHom_a5FourthD4`). -/
 noncomputable def patternIsometryHom {r : RootfulNiemeierType}
     {p : GluePattern} (hp : p ∈ r.gluePatterns) :
     p.symmetries →* IntegralLattice.Isometry r.lattice r.lattice :=
@@ -505,6 +441,17 @@ theorem patternIsometryHom_a5FourthD4 {p : GluePattern} (hp : p ∈ a5FourthD4.g
     patternIsometryHom hp = a5FourthD4PatternIsometryHom hp :=
   dite_eq_left rfl
 
+/-- For every row other than `A₅⁴ D₄`, `patternIsometryHom` factors through `r.latticeIsometryHom`
+via the reindexing of pattern positions to the row's component positions. -/
+theorem patternIsometryHom_of_ne_a5FourthD4 {r : RootfulNiemeierType} (hr : r ≠ a5FourthD4)
+    {p : GluePattern} (hp : p ∈ r.gluePatterns) :
+    patternIsometryHom hp =
+      r.latticeIsometryHom.comp
+        (((finCongr (length_eq_of_mem_gluePatterns hp)).permCongrHom.toMonoidHom.comp
+          p.symmetries.subtype).codRestrict r.glueSymmetries fun g ↦
+            mem_glueSymmetries_of_mem_symmetries hr hp g.2) :=
+  dite_eq_right hr
+
 /-- For every row other than `A₅⁴ D₄`, the action of an indicated pattern symmetry `g` on `N_r`
 reads the component in position `k` from position `g⁻¹ k`, the positions of the pattern being
 those of the row. -/
@@ -517,7 +464,7 @@ theorem patternIsometryHom_apply_of_ne_a5FourthD4 {r : RootfulNiemeierType} (hr 
       x (((finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g)⁻¹ k)
         (Fin.cast (congrArg rank (r.componentType_apply_of_mem_glueSymmetries
           (inv_mem (mem_glueSymmetries_of_mem_symmetries hr hp g.2)) k)).symm j) := by
-  rw [patternIsometryHom, dite_eq_right hr]
+  rw [patternIsometryHom_of_ne_a5FourthD4 hr]
   exact r.latticeIsometryHom_apply _ x k j
 
 /-- On any literal pattern of any row, `patternIsometryHom` is trivial. -/
@@ -538,7 +485,7 @@ theorem patternIsometryHom_injective {r : RootfulNiemeierType} {p : GluePattern}
   · subst hr
     rw [patternIsometryHom_a5FourthD4]
     exact a5FourthD4PatternIsometryHom_injective hp
-  · rw [patternIsometryHom, dite_eq_right hr]
+  · rw [patternIsometryHom_of_ne_a5FourthD4 hr]
     refine r.latticeIsometryHom_injective.comp fun g h hgh ↦ ?_
     have hval : (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.1 =
         (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr h.1 :=
