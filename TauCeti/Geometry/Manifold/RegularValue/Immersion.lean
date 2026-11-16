@@ -125,10 +125,12 @@ private theorem eventually_mem_image_normedSpace
     isRegularValue_iff.mpr fun p _ ↦ (hUsub p p.property).2.comp (isRegularPoint_subtype_val p)
   have hinj' : Injective (mfderiv J I g' ⟨q₀, hVmem⟩) := by
     intro v w hvw
-    have h := congrArg (Manifold.tangentSpaceOpenEquiv (I := I) (g' ⟨q₀, hVmem⟩)) hvw
-    rw [Manifold.tangentSpaceOpenEquiv_mfderiv_apply ((hg' _).mdifferentiableAt one_ne_zero) rfl,
-      Manifold.tangentSpaceOpenEquiv_mfderiv_apply ((hg' _).mdifferentiableAt one_ne_zero) rfl] at h
-    exact (Manifold.tangentSpaceOpenEquiv (I := J) ⟨q₀, hVmem⟩).injective (hinj h)
+    apply hinj
+    rw [← Manifold.mfderiv_subtype_val_comp_apply (f := g'),
+      ← Manifold.mfderiv_subtype_val_comp_apply (f := g')] at hvw
+    change mfderiv J I (g ∘ (Subtype.val : V' → P)) ⟨q₀, hVmem⟩ v =
+      mfderiv J I (g ∘ (Subtype.val : V' → P)) ⟨q₀, hVmem⟩ w at hvw
+    simpa only [Manifold.mfderiv_comp_subtype_val_apply] using hvw
   have hmem := eventually_mem_range_of_isRegularValue hregU
     (fun p _ ↦ (hUsub p p.property).1.comp p (contMDiff_subtype_val p)) hdim hg'
     (fun q ↦ (hVsub q q.property).2.1) hinj'
