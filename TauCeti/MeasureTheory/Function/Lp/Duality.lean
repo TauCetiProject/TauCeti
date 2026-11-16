@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
+import Mathlib.Analysis.InnerProductSpace.LinearMap
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
@@ -135,42 +136,35 @@ namespace MemLp
 
 variable (𝕜) in
 /-- Integration against a fixed `G ∈ L^q`, `f ↦ ∫ ⟪G, f⟫`, as a continuous linear functional on
-the conjugate space `L^{q'}`. Its norm is at most `‖G‖_q` (`MemLp.norm_innerLpCLM_le`). -/
+the conjugate space `L^{q'}`: Mathlib's pairing `ContinuousLinearMap.lpPairing` of `L^{q'}` with
+the field `x ↦ ⟪G x, ·⟫` of functionals. Its norm is at most `‖G‖_q`
+(`MemLp.norm_innerLpCLM_le`). -/
 noncomputable def innerLpCLM {H : Type*} [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
-    {q q' : ℝ≥0∞} [Fact (1 ≤ q')] [q.HolderConjugate q'] {G : α → H} (hG : MemLp G q μ) :
+    {q q' : ℝ≥0∞} [Fact (1 ≤ q')] [hqq : q.HolderConjugate q'] {G : α → H} (hG : MemLp G q μ) :
     Lp H q' μ →L[𝕜] 𝕜 :=
-  LinearMap.mkContinuous
-    { toFun f := ∫ x, ⟪G x, f x⟫_𝕜 ∂μ
-      map_add' f f' := by
-        rw [← integral_add (hG.integrable_inner_of_holderConjugate (Lp.memLp f))
-          (hG.integrable_inner_of_holderConjugate (Lp.memLp f'))]
-        refine integral_congr_ae ?_
-        filter_upwards [Lp.coeFn_add f f'] with x hx
-        rw [hx, Pi.add_apply, inner_add_right]
-      map_smul' c f := by
-        rw [RingHom.id_apply, smul_eq_mul, ← integral_const_mul]
-        refine integral_congr_ae ?_
-        filter_upwards [Lp.coeFn_smul c f] with x hx
-        rw [hx, Pi.smul_apply, inner_smul_right] }
-    (eLpNorm G q μ).toReal fun f => by
-      have h := TauCeti.enorm_integral_inner_le (μ := μ) (𝕜 := 𝕜) (u := G) (v := f)
-        (p := q) (q := q')
-      simp only [LinearMap.coe_mk, AddHom.coe_mk, Lp.norm_def, ← ENNReal.toReal_mul]
-      rw [← toReal_eNorm]
-      exact ENNReal.toReal_mono (ENNReal.mul_ne_top hG.eLpNorm_ne_top (Lp.eLpNorm_ne_top f)) h
+  haveI : Fact (1 ≤ q) := ⟨hqq.one_le⟩
+  (ContinuousLinearMap.id 𝕜 (H →L[𝕜] 𝕜)).lpPairing μ q q'
+    ((hG.of_le ((innerSL 𝕜).continuous.comp_aestronglyMeasurable hG.aestronglyMeasurable)
+      (ae_of_all _ fun x => (innerSL_apply_norm 𝕜 (G x)).le)).toLp _)
 
 /-- The pairing functional of `G` sends `f` to `∫ ⟪G, f⟫`. -/
 @[simp]
 theorem innerLpCLM_apply {H : Type*} [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
     {q q' : ℝ≥0∞} [Fact (1 ≤ q')] [q.HolderConjugate q'] {G : α → H} (hG : MemLp G q μ)
-    (f : Lp H q' μ) : hG.innerLpCLM 𝕜 f = ∫ x, ⟪G x, f x⟫_𝕜 ∂μ :=
-  (rfl)
+    (f : Lp H q' μ) : hG.innerLpCLM 𝕜 f = ∫ x, ⟪G x, f x⟫_𝕜 ∂μ := by
+  rw [innerLpCLM, ContinuousLinearMap.lpPairing_eq_integral]
+  refine integral_congr_ae ?_
+  filter_upwards [MemLp.coeFn_toLp (f := fun x => innerSL 𝕜 (G x)) (p := q) (μ := μ) _] with x hx
+  rw [ContinuousLinearMap.id_apply, hx, innerSL_apply_apply]
 
 /-- **Hölder's inequality** for the pairing functional: `‖f ↦ ∫ ⟪G, f⟫‖ ≤ ‖G‖_q`. -/
 theorem norm_innerLpCLM_le {H : Type*} [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
     {q q' : ℝ≥0∞} [Fact (1 ≤ q')] [q.HolderConjugate q'] {G : α → H} (hG : MemLp G q μ) :
-    ‖hG.innerLpCLM 𝕜 (q' := q')‖ ≤ (eLpNorm G q μ).toReal :=
-  LinearMap.mkContinuous_norm_le _ ENNReal.toReal_nonneg _
+    ‖hG.innerLpCLM 𝕜 (q' := q')‖ ≤ (eLpNorm G q μ).toReal := by
+  refine ContinuousLinearMap.opNorm_le_bound _ ENNReal.toReal_nonneg fun f => ?_
+  rw [innerLpCLM_apply, Lp.norm_def, ← ENNReal.toReal_mul, ← toReal_eNorm]
+  exact ENNReal.toReal_mono (ENNReal.mul_ne_top hG.eLpNorm_ne_top (Lp.eLpNorm_ne_top f))
+    (TauCeti.enorm_integral_inner_le (p := q) (q := q'))
 
 end MemLp
 
