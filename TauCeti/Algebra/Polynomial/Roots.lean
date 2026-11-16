@@ -20,9 +20,7 @@ We also count the root zero: it occurs in `f.roots` with multiplicity the order 
 `f.natTrailingDegree`, so the roots satisfying a predicate that holds at zero number
 `f.natTrailingDegree` plus the nonzero roots satisfying it. Over any integral domain, summing
 `f.rootMultiplicity` over any finite set of points never exceeds `f.natDegree`
-(`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`. In particular, no positive
-power sends every nonzero element of an infinite commutative ring to `1`
-(`TauCeti.not_forall_pow_eq_one`).
+(`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`.
 -/
 
 public section
@@ -48,20 +46,6 @@ theorem eventually_rootMultiplicity_eq_of_roots_eq_map
     Multiset.count_map, Multiset.count_map]
   congr 1
   exact Multiset.filter_congr fun j hj ↦ hx i hi j (Finset.mem_val.mp hj)
-
-/-- No positive power sends every nonzero element of an infinite commutative ring to `1`. -/
-theorem not_forall_pow_eq_one {R : Type*} [CommRing R] [Infinite R] {n : ℕ} (hn : n ≠ 0) :
-    ¬ ∀ x : R, x ≠ 0 → x ^ n = 1 := fun h => by
-  have : Nontrivial R := Infinite.instNontrivial R
-  have : NoZeroDivisors R := ⟨fun {a b} hab => or_iff_not_imp_left.mpr fun ha => by
-    have h1 : a ^ (n - 1) * a = 1 := by
-      rw [← pow_succ, Nat.sub_add_cancel (Nat.pos_of_ne_zero hn)]; exact h a ha
-    rw [← one_mul b, ← h1, mul_assoc, hab, mul_zero]⟩
-  have : IsDomain R := NoZeroDivisors.to_isDomain R
-  exact mul_ne_zero (M₀ := R[X]) X_ne_zero
-    (fun h1 => by simpa [hn] using congrArg (eval (0 : R)) h1)
-    (Polynomial.zero_of_eval_zero (X * (X ^ n - 1) : R[X]) fun c => by
-      by_cases hc : c = 0 <;> simp [hc, h])
 
 end TauCeti
 

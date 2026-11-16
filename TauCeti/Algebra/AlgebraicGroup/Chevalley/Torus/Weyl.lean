@@ -181,9 +181,7 @@ end
 /-! ## The character map of a simple reflection on the actual weight lattice -/
 
 noncomputable section
-
 universe v
-
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
 /-- The `ℤ`-linear endomorphism of `Fin t.rank → ℤ` representing `s_i` in `D.weightLatticeBasis`. -/
@@ -197,33 +195,42 @@ theorem simpleReflectionCharacterMap_apply (i : Fin t.rank) (χ : Fin t.rank →
       χ - (D.weightLatticeEmbedding χ i) • D.coordinateRoot (t.simpleIndex ht i) := by
   simp [simpleReflectionCharacterMap]
 
-/-- Image of `D.simpleReflectionCharacterMap i` under `D.weightLatticeEmbedding`. -/
+/-- `D.weightLatticeEmbedding` intertwines `D.simpleReflectionCharacterMap i` with the simple
+reflection of `t.simplyConnectedRootDatum ht`. -/
 theorem weightLatticeEmbedding_simpleReflectionCharacterMap (i : Fin t.rank) (χ : Fin t.rank → ℤ) :
-    D.weightLatticeEmbedding (D.simpleReflectionCharacterMap i χ) = D.weightLatticeEmbedding χ -
-      (D.weightLatticeEmbedding χ i) •
-        (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) := by
+    D.weightLatticeEmbedding (D.simpleReflectionCharacterMap i χ) =
+      (t.simplyConnectedRootDatum ht).reflection (t.simpleIndex ht i)
+        (D.weightLatticeEmbedding χ) := by
   rw [simpleReflectionCharacterMap_apply, map_sub, map_smul,
-    D.weightLatticeEmbedding_coordinateRoot]
+    D.weightLatticeEmbedding_coordinateRoot, RootPairing.reflection_apply,
+    t.coroot'_simpleIndex_apply ht]
+
+/-- `D.simpleReflectionCharacterMap i` permutes coordinate roots by `reflectionPerm`. -/
+@[simp] theorem simpleReflectionCharacterMap_coordinateRoot (i : Fin t.rank) (γ : Fin t.numRoots) :
+    D.simpleReflectionCharacterMap i (D.coordinateRoot γ) =
+      D.coordinateRoot ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) :=
+  D.weightLatticeEmbedding_injective (by
+    rw [D.weightLatticeEmbedding_simpleReflectionCharacterMap,
+      D.weightLatticeEmbedding_coordinateRoot, D.weightLatticeEmbedding_coordinateRoot,
+      RootPairing.root_reflectionPerm])
 
 /-- The simple reflection character map negates its own simple coordinate root. -/
-@[simp] theorem simpleReflectionCharacterMap_coordinateRoot_simpleIndex (i : Fin t.rank) :
+theorem simpleReflectionCharacterMap_coordinateRoot_simpleIndex (i : Fin t.rank) :
     D.simpleReflectionCharacterMap i (D.coordinateRoot (t.simpleIndex ht i)) =
       -D.coordinateRoot (t.simpleIndex ht i) := by
-  have hp : (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) i = 2 := by simp
-  rw [simpleReflectionCharacterMap_apply, D.weightLatticeEmbedding_coordinateRoot, hp]; module
+  rw [D.simpleReflectionCharacterMap_coordinateRoot, D.coordinateRoot_reflectionPerm_self]
 
 /-- `D.simpleReflectionCharacterMap i` is an involutive `ℤ`-linear map. -/
 theorem simpleReflectionCharacterMap_involutive (i : Fin t.rank) :
-    Function.Involutive (D.simpleReflectionCharacterMap i) := fun χ => by
-  have hp : (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) i = 2 := by simp
-  rw [simpleReflectionCharacterMap_apply, D.weightLatticeEmbedding_simpleReflectionCharacterMap,
-    Pi.sub_apply, Pi.smul_apply, hp, smul_eq_mul, simpleReflectionCharacterMap_apply]; module
+    Function.Involutive (D.simpleReflectionCharacterMap i) := fun χ =>
+  D.weightLatticeEmbedding_injective (by
+    rw [D.weightLatticeEmbedding_simpleReflectionCharacterMap,
+      D.weightLatticeEmbedding_simpleReflectionCharacterMap, RootPairing.reflection_same])
 
 /-- Applying `D.simpleReflectionCharacterMap i` twice returns the original character. -/
 @[simp] theorem simpleReflectionCharacterMap_simpleReflectionCharacterMap (i : Fin t.rank)
-    (χ : Fin t.rank → ℤ) :
-    D.simpleReflectionCharacterMap i (D.simpleReflectionCharacterMap i χ) = χ :=
-  D.simpleReflectionCharacterMap_involutive i χ
+    (χ : Fin t.rank → ℤ) : D.simpleReflectionCharacterMap i (D.simpleReflectionCharacterMap i χ) =
+      χ := D.simpleReflectionCharacterMap_involutive i χ
 
 /-- Squaring `D.simpleReflectionCharacterMap i` in `Module.End ℤ (Fin t.rank → ℤ)` gives `1`. -/
 @[simp] theorem simpleReflectionCharacterMap_mul_self (i : Fin t.rank) :
@@ -244,33 +251,28 @@ theorem simpleReflectionCharacterMap_injective (i : Fin t.rank) :
 `D.simpleReflectionTorusParameter i A`**, over every commutative ring `A`. -/
 @[simp] theorem torusPointMap_simpleReflectionCharacterMap (i : Fin t.rank) (A : Type v)
     [CommRing A] : torusPointMap (R := A) (D.simpleReflectionCharacterMap i) =
-      D.simpleReflectionTorusParameter i A :=
-  MonoidHom.ext fun s => funext fun j => by
-    rw [torusPointMap_apply, simpleReflectionCharacterMap_apply, D.weightLatticeEmbedding_single,
-      torusCharacter_sub, torusCharacter_zsmul, torusCharacter_single, zpow_one,
-      D.simpleReflectionTorusParameter_apply]
+      D.simpleReflectionTorusParameter i A := MonoidHom.ext fun s => funext fun j => by
+  rw [torusPointMap_apply, simpleReflectionCharacterMap_apply, D.weightLatticeEmbedding_single,
+    torusCharacter_sub, torusCharacter_zsmul, torusCharacter_single, zpow_one,
+    D.simpleReflectionTorusParameter_apply]
 
-/-- **In rank one (`t.rank = 1`), `D.simpleReflectionCharacterMap i` is `-1`**, whether
-`D.weightLattice` is the full weight lattice (`SL₂`) or the root lattice (`PGL₂`), and regardless
-of the chosen basis `D.weightLatticeBasis`. -/
-theorem simpleReflectionCharacterMap_eq_neg_one_of_rank_eq_one (hr : t.rank = 1)
-    (i : Fin t.rank) : D.simpleReflectionCharacterMap i = -1 :=
+/-- **In rank one (`t.rank = 1`), `D.simpleReflectionCharacterMap i` is `-1`**, regardless of
+`D.weightLattice` or `D.weightLatticeBasis`. -/
+theorem simpleReflectionCharacterMap_eq_neg_one_of_rank_eq_one (hr : t.rank = 1) (i : Fin t.rank) :
+    D.simpleReflectionCharacterMap i = -1 :=
   LinearMap.ext fun χ => D.weightLatticeEmbedding_injective (funext fun j => by
     obtain rfl : j = i := Fin.ext (by omega)
-    have hp : (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht j) j = 2 := by simp
-    rw [D.weightLatticeEmbedding_simpleReflectionCharacterMap, Pi.sub_apply, Pi.smul_apply,
-      hp, smul_eq_mul, LinearMap.neg_apply, one_apply_eq_self, map_neg, Pi.neg_apply]; ring)
+    simp [D.weightLatticeEmbedding_simpleReflectionCharacterMap,
+      RootPairing.reflection_apply, t.coroot'_simpleIndex_apply ht]; ring)
 
 /-- Conjugation by `D.weylElement (t.simpleIndex ht i) A 1` has character map
 `D.simpleReflectionCharacterMap i` on `D.torusPoints A`. -/
 theorem isCharacterMap_conj_weylElement (i : Fin t.rank) (A : Type v) [CommRing A] :
     IsCharacterMap (D.torusPoints A)
       (MulAut.conj (D.weylElement (t.simpleIndex ht i) A 1) : D.points A →* D.points A)
-      (D.simpleReflectionCharacterMap i) :=
-  isCharacterMap_iff.mpr fun _ => by
-    rw [MonoidHom.coe_ofClass, MulAut.conj_apply,
-      D.weylElement_conj_torusPoints, D.torusPointMap_simpleReflectionCharacterMap]
+      (D.simpleReflectionCharacterMap i) := isCharacterMap_iff.mpr fun _ => by
+  rw [MonoidHom.coe_ofClass, MulAut.conj_apply, D.weylElement_conj_torusPoints,
+    D.torusPointMap_simpleReflectionCharacterMap]
 
 end
-
 end TauCeti.DynkinType.ChevalleyDatum

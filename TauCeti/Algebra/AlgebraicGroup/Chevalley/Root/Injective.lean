@@ -15,28 +15,24 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 # Injectivity and distinctness of root subgroups of a Chevalley datum
 
 For `TauCeti.DynkinType.scChevalleyDatum`, every root subgroup is a closed immersion over `ℤ`
-(`TauCeti.DynkinType.isClosedImmersion_rootSubgroup_scChevalleyDatum`). For an arbitrary
-`TauCeti.DynkinType.ChevalleyDatum`, this module proves root-subgroup faithfulness and separation:
-`rootSubgroupPoints_injective`, `rootSubgroupPoints_eq_iff`, `rootSubgroupPoints_eq_one_iff`, and
-`inf_range_rootSubgroupPoints_reflectionPerm_self_eq_bot` over every commutative ring `A`, and
+(`TauCeti.DynkinType.isClosedImmersion_rootSubgroup_scChevalleyDatum`). For any
+`TauCeti.DynkinType.ChevalleyDatum`, we prove root-subgroup faithfulness and separation:
+`rootSubgroupPoints_injective`, `rootSubgroupPoints_inj`, `rootSubgroupPoints_eq_one_iff`, and
+`inf_range_rootSubgroupPoints_reflectionPerm_self_eq_bot` over every commutative ring, and
 `range_rootSubgroupPoints_le_iff`, `range_rootSubgroupPoints_injective`, and
-`range_rootSubgroupPoints_eq_iff` over every nontrivial commutative ring `A`.
+`range_rootSubgroupPoints_inj` over every nontrivial commutative ring.
 
 ## References
 
-* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemmas 17–19.
-* R. Steinberg, *Endomorphisms of linear algebraic groups*, Mem. Amer. Math. Soc. **80** (1968),
-  §§10–11.
+* R. Steinberg, *Lectures on Chevalley Groups*, Ch. 3, Lemmas 17–19; *Endomorphisms of linear
+  algebraic groups*, Mem. Amer. Math. Soc. **80** (1968), §§10–11.
 -/
 
 public section
 
 namespace TauCeti.DynkinType.ChevalleyDatum
-
 open Multiplicative TauCeti.UniversalEnvelopingAlgebra
-
 universe v
-
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
 /-! ## Injectivity of root subgroups -/
@@ -50,8 +46,7 @@ private noncomputable def simpleDivPowEnd (i : Fin t.rank) (n : ℕ) : Module.En
       (t.lieBasis ht).h D.representation D.representation_mem_lattice (.inl i) n hv
 
 private noncomputable def simpleDivPowMat (i : Fin t.rank) (n : ℕ) :
-    Matrix (Fin D.dim) (Fin D.dim) ℤ :=
-  LinearMap.toMatrixAlgEquiv D.basis (D.simpleDivPowEnd i n)
+    Matrix (Fin D.dim) (Fin D.dim) ℤ := LinearMap.toMatrixAlgEquiv D.basis (D.simpleDivPowEnd i n)
 
 private theorem simpleDivPowMat_pow (i : Fin t.rank) (n : ℕ) :
     D.simpleDivPowMat i 1 ^ n = n.factorial • D.simpleDivPowMat i n := by
@@ -98,9 +93,9 @@ private theorem exists_bezout_simpleDivPowMat_one (i : Fin t.rank) :
   have hI : I = ⊤ := by_contra fun hne => by
     obtain ⟨p, hp, hdiv⟩ : ∃ p : ℕ, p.Prime ∧ ∀ r s, (p : ℤ) ∣ D.simpleDivPowMat i 1 r s := by
       let d := Submodule.IsPrincipal.generator I
-      have hdI : Ideal.span {d} = I := Submodule.IsPrincipal.span_singleton_generator I
-      have hd r s : d ∣ D.simpleDivPowMat i 1 r s :=
-        Ideal.mem_span_singleton.mp (hdI.symm ▸ Ideal.subset_span ⟨(r, s), rfl⟩)
+      have hd r s : d ∣ D.simpleDivPowMat i 1 r s := Ideal.mem_span_singleton.mp <| by
+        rw [show Ideal.span {d} = I from Submodule.IsPrincipal.span_singleton_generator I]
+        exact Ideal.subset_span ⟨(r, s), rfl⟩
       by_cases hd0 : d.natAbs = 0
       · exact ⟨2, Nat.prime_two, fun r s => by
           have h0 := hd r s; rw [Int.natAbs_eq_zero.mp hd0, zero_dvd_iff] at h0; simp [h0]⟩
@@ -132,10 +127,8 @@ private theorem exists_bezout_simpleDivPowMat_one (i : Fin t.rank) :
           (Int.cast : ℤ → ZMod p)) r s = 0 := Finset.sum_eq_zero fun k _ => by
       simpa only [one_pow, one_smul, Matrix.map_apply] using
         (ZMod.intCast_zmod_eq_zero_iff_dvd _ p).mpr (hdiv_all (k + 1) (Nat.succ_ne_zero k) r s)
-    simp only [Matrix.add_apply, Matrix.sum_apply, hsum0, zero_add, pow_zero, one_smul, hM0,
-      Matrix.map_one Int.cast Int.cast_zero Int.cast_one, Subgroup.coe_one, Units.val_one]
-  obtain ⟨c, hc⟩ := Ideal.mem_span_range_iff_exists_fun.mp
-    (hI.symm ▸ Submodule.mem_top : (1 : ℤ) ∈ I)
+    rw [Matrix.add_apply, Matrix.sum_apply, hsum0]; simp [hM0]
+  obtain ⟨c, hc⟩ := Ideal.mem_span_range_iff_exists_fun.mp (by rw [hI]; trivial : (1 : ℤ) ∈ I)
   exact ⟨c, by simpa only [smul_eq_mul] using hc⟩
 
 private theorem rootSubgroupPoints_simpleIndex_injective (A : Type v) [CommRing A]
@@ -168,11 +161,9 @@ private theorem rootSubgroupPoints_simpleIndex_injective (A : Type v) [CommRing 
         D.simpleDivPowMat_eq_zero_of_weight_ne i hne, Int.cast_zero, mul_zero]
     · exact fun habs => (habs (Finset.mem_range.mpr (by omega))).elim
   have hrecover (u : A) : ∑ pq ∈ S, (c pq : A) * mat u pq.1 pq.2 = u := by
-    calc ∑ pq ∈ S, (c pq : A) * mat u pq.1 pq.2
-      _ = u * ((∑ pq ∈ S, c pq * D.simpleDivPowMat i 1 pq.1 pq.2 : ℤ) : A) := by
-        rw [Int.cast_sum, Finset.mul_sum]
-        exact Finset.sum_congr rfl fun pq hpq => by rw [hentry u hpq, Int.cast_mul]; ring
-      _ = u := by rw [hcS, Int.cast_one, mul_one]
+    conv_rhs => rw [show u = u * ((∑ pq ∈ S, c pq * D.simpleDivPowMat i 1 pq.1 pq.2 : ℤ) : A) by
+      rw [hcS, Int.cast_one, mul_one], Int.cast_sum, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun pq hpq => by rw [hentry u hpq, Int.cast_mul]; ring
   intro u₁ u₂ h; refine toAdd.injective ?_
   rw [← hrecover (toAdd u₁), ← hrecover (toAdd u₂)]; simp only [mat, ofAdd_toAdd, h]
 
@@ -182,7 +173,7 @@ theorem rootSubgroupPoints_injective (A : Type v) [CommRing A] (γ : Fin t.numRo
   D.rootSubgroupPoints_injective_of_simple A (D.rootSubgroupPoints_simpleIndex_injective A) γ
 
 /-- Equality of elements in a root subgroup is equivalent to equality of their parameters. -/
-@[simp] theorem rootSubgroupPoints_eq_iff (A : Type v) [CommRing A] (γ : Fin t.numRoots)
+@[simp] theorem rootSubgroupPoints_inj (A : Type v) [CommRing A] (γ : Fin t.numRoots)
     {u v : Multiplicative A} : D.rootSubgroupPoints γ A u = D.rootSubgroupPoints γ A v ↔ u = v :=
   (D.rootSubgroupPoints_injective A γ).eq_iff
 
@@ -197,26 +188,21 @@ theorem rootSubgroupPoints_injective (A : Type v) [CommRing A] (γ : Fin t.numRo
 @[simp] theorem inf_range_rootSubgroupPoints_reflectionPerm_self_eq_bot (A : Type v) [CommRing A]
     (γ : Fin t.numRoots) : (D.rootSubgroupPoints γ A).range ⊓
       (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ) A).range = ⊥ := by
+  let P := t.simplyConnectedRootDatum ht
   have hpos {δ} (hd : δ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) {g : D.points A}
       (hg : g ∈ (D.rootSubgroupPoints δ A).range)
-      (hg' : g ∈ (D.rootSubgroupPoints
-        ((t.simplyConnectedRootDatum ht).reflectionPerm δ δ) A).range) : g = 1 := by
+      (hg' : g ∈ (D.rootSubgroupPoints (P.reflectionPerm δ δ) A).range) : g = 1 := by
     obtain ⟨u, rfl⟩ := hg; obtain ⟨v, hv⟩ := hg'
-    have hneg : (t.simplyConnectedRootDatum ht).reflectionPerm δ δ ∈
-        negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-      rw [← t.reflectionPerm_rationalRootSystem ht]
-      exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots _ _ _).mpr hd
-    exact hv ▸ (D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots A hneg v).mp
+    exact hv ▸ (D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots A
+      (by rw [← t.reflectionPerm_rationalRootSystem ht]
+          exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots _ _ _).mpr hd) v).mp
       (hv ▸ D.positivePoints_le_borelSubgroup A (D.rootSubgroupPoints_mem_positivePoints A hd u))
   rw [Subgroup.eq_bot_iff_forall]; rintro g ⟨hg, hg'⟩
   rcases mem_posRoots_or_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht) γ with h | h
   · exact hpos h hg hg'
-  · have hinv : (t.simplyConnectedRootDatum ht).reflectionPerm
-        ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ)
-        ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ) = γ :=
-      reflectionPerm_self_involutive _ γ
-    refine hpos (by rw [← t.reflectionPerm_rationalRootSystem ht,
-      reflectionPerm_self_mem_posRoots_iff_mem_negRoots]; exact h) hg' (by rwa [hinv])
+  · refine hpos (by rw [← t.reflectionPerm_rationalRootSystem ht,
+      reflectionPerm_self_mem_posRoots_iff_mem_negRoots]; exact h) hg'
+      (by have := reflectionPerm_self_involutive P γ; dsimp [P] at this; rwa [this])
 
 private theorem eq_of_rootSubgroupPoints_ofAdd_one_mem_range (K : Type v) [Field K] [Infinite K]
     {α β : Fin t.numRoots}
@@ -257,7 +243,7 @@ theorem range_rootSubgroupPoints_injective (A : Type v) [CommRing A] [Nontrivial
   fun _ _ h => (D.range_rootSubgroupPoints_le_iff A).mp h.le
 
 /-- Over any nontrivial commutative ring, two root subgroups coincide iff they share a root. -/
-@[simp] theorem range_rootSubgroupPoints_eq_iff (A : Type v) [CommRing A] [Nontrivial A]
+@[simp] theorem range_rootSubgroupPoints_inj (A : Type v) [CommRing A] [Nontrivial A]
     {α β : Fin t.numRoots} :
     (D.rootSubgroupPoints α A).range = (D.rootSubgroupPoints β A).range ↔ α = β :=
   (D.range_rootSubgroupPoints_injective A).eq_iff

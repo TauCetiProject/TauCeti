@@ -13,22 +13,22 @@ public import TauCeti.LinearAlgebra.RootSystem.Weyl.BasedAut
 # Based endo-isogenies of root pairings
 
 An endo-isogeny `f : RootPairingIsogeny P P` is *based* (`RootPairingIsogeny.IsBased b f`) relative
-to `b : P.Base` if `f.indexEquiv` maps `posRoots P b` into itself. Every based endo-isogeny
-permutes `posRoots P b` bijectively (`IsBased.image_posRoots`), is closed under `id`, `1`, `comp`,
-`*`, and `^`, includes every positive scaling `smulId P c` (`isBased_smulId`), and satisfies
+to `b : P.Base` if `f.indexEquiv` preserves `posRoots P b`, in which case it permutes `posRoots P b`
+bijectively (`IsBased.image_posRoots`). Based endo-isogenies are closed under `id`, `1`, `comp`,
+`*`, and `^`, contain `smulId P c` (`isBased_smulId`), and are invariant under right multiplication
+by `smulId P c` (`isBased_mul_smulId_iff`), while no reflection is based
+(`not_isBased_ofEquiv_reflection`). For finite crystallographic pairings over a char-zero domain,
 `(ofEquiv g).IsBased b ↔ g ∈ b.basedAut` (`isBased_ofEquiv_iff`).
 
 ## References
 
 * R. Steinberg, *Endomorphisms of Linear Algebraic Groups*, Mem. Amer. Math. Soc. **80** (1968),
-  §11.
-* Schémas en groupes (SGA 3), Exposé XXI, §6.8.
+  §11; Schémas en groupes (SGA 3), Exposé XXI, §6.8.
 -/
 
 public section
 
 namespace TauCeti.RootPairingIsogeny
-
 variable {ι R M N : Type*} [CommRing R] [CharZero R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] {P : RootPairing ι R M N}
 
@@ -50,7 +50,8 @@ theorem IsBased.indexEquiv_mem_posRoots {b : P.Base} {f : RootPairingIsogeny P P
   rw [isBased_def, id_indexEquiv]; exact Set.mapsTo_id _
 
 /-- The multiplicative unit `1 : RootPairingIsogeny P P` is based for every base `b`. -/
-@[simp] theorem isBased_one (b : P.Base) : (1 : RootPairingIsogeny P P).IsBased b := isBased_id b
+@[simp] theorem isBased_one (b : P.Base) : (1 : RootPairingIsogeny P P).IsBased b := by
+  rw [one_def]; exact isBased_id b
 
 /-- Based endo-isogenies are closed under `RootPairingIsogeny.comp`. -/
 theorem IsBased.comp {b : P.Base} {g f : RootPairingIsogeny P P} (hg : g.IsBased b)
@@ -59,11 +60,14 @@ theorem IsBased.comp {b : P.Base} {g f : RootPairingIsogeny P P} (hg : g.IsBased
 
 /-- Based endo-isogenies are closed under composition (`*`). -/
 theorem IsBased.mul {b : P.Base} {f g : RootPairingIsogeny P P} (hf : f.IsBased b)
-    (hg : g.IsBased b) : (f * g).IsBased b := hf.comp hg
+    (hg : g.IsBased b) : (f * g).IsBased b := by rw [mul_def]; exact hf.comp hg
 
 /-- Based endo-isogenies are closed under natural-number powers. -/
 theorem IsBased.pow {b : P.Base} {f : RootPairingIsogeny P P} (hf : f.IsBased b) (n : ℕ) :
-    (f ^ n).IsBased b := Nat.rec (isBased_one b) (fun _ ih => by rw [pow_succ']; exact hf.mul ih) n
+    (f ^ n).IsBased b := by
+  induction n with
+  | zero => rw [pow_zero]; exact isBased_one b
+  | succ n ih => rw [pow_succ']; exact hf.mul ih
 
 /-- Every based endo-isogeny maps `posRoots P b` bijectively onto itself. -/
 @[simp] theorem IsBased.image_posRoots {b : P.Base} {f : RootPairingIsogeny P P}
@@ -107,17 +111,35 @@ theorem isBased_ofEquiv_iff_mapsTo (b : P.Base) (g : P.Aut) :
     (ofEquiv g).IsBased b ↔ Set.MapsTo g.indexEquiv (posRoots P b) (posRoots P b) := by
   rw [isBased_def, ofEquiv_indexEquiv]
 
-/-- For a finite crystallographic root pairing over a characteristic-zero domain, `ofEquiv g` is
-based iff `g ∈ b.basedAut`. -/
+/-- **No reflection automorphism is based**, relative to any base `b`. -/
+@[simp] theorem not_isBased_ofEquiv_reflection (b : P.Base) (i : ι) :
+    ¬ (ofEquiv (RootPairing.Equiv.reflection P i)).IsBased b := fun h => by
+  by_cases hi : i ∈ posRoots P b
+  · exact reflectionPerm_self_notMem_posRoots P b hi (by simpa using h.indexEquiv_mem_posRoots hi)
+  · have hneg : P.reflectionPerm i i ∈ posRoots P b :=
+      (reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b i).mpr
+        ((not_mem_posRoots_iff_mem_negRoots P b i).mp hi)
+    exact hi (by simpa [P.reflectionPerm_self] using h.indexEquiv_mem_posRoots hneg)
+
+/-- For a finite crystallographic pairing over a char-zero domain, `ofEquiv g` is based iff
+`g ∈ b.basedAut`. -/
 @[simp] theorem isBased_ofEquiv_iff [Finite ι] [IsDomain R] [P.IsCrystallographic]
     (b : P.Base) (g : P.Aut) : (ofEquiv g).IsBased b ↔ g ∈ b.basedAut := by
   rw [isBased_iff_image_posRoots, ofEquiv_indexEquiv,
     RootPairing.Base.mem_basedAut_iff_image_posRoots]
 
-/-- Every positive integer scaling `smulId P c` is based for every base `b : P.Base`. -/
-@[simp] theorem isBased_smulId {ι M N : Type*} [AddCommGroup M] [Module.Free ℤ M]
-    [Module.Finite ℤ M] [AddCommGroup N] [Module.Free ℤ N] [Module.Finite ℤ N]
-    (P : RootPairing ι ℤ M N) (b : P.Base) (c : ℕ+) : (smulId P c).IsBased b := by
-  rw [isBased_def, smulId_indexEquiv]; exact Set.mapsTo_id _
+section Int
+variable {ι M N : Type*} [AddCommGroup M] [Module.Free ℤ M] [Module.Finite ℤ M]
+  [AddCommGroup N] [Module.Free ℤ N] [Module.Finite ℤ N]
 
+/-- Every positive integer scaling `smulId P c` is based for every base `b : P.Base`. -/
+@[simp] theorem isBased_smulId (P : RootPairing ι ℤ M N) (b : P.Base) (c : ℕ+) :
+    (smulId P c).IsBased b := by rw [isBased_def, smulId_indexEquiv]; exact Set.mapsTo_id _
+
+/-- Right multiplication by a positive integer scaling preserves basedness. -/
+@[simp] theorem isBased_mul_smulId_iff {P : RootPairing ι ℤ M N} (b : P.Base)
+    (f : RootPairingIsogeny P P) (c : ℕ+) : (f * smulId P c).IsBased b ↔ f.IsBased b := by
+  rw [isBased_def, isBased_def, indexEquiv_mul, smulId_indexEquiv, Equiv.refl_trans]
+
+end Int
 end TauCeti.RootPairingIsogeny

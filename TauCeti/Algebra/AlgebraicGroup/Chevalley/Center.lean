@@ -13,32 +13,27 @@ import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Toral
 /-!
 # Central integral points of a Chevalley datum
 
-An integral point `c : D.points ℤ` whose base change centralizes all positive/negative simple
-root subgroups and the torus over every commutative ring centralizes `D.points A` over every
-commutative ring `A` (`conj_eq_self_of_forall_conj_simpleRootSubgroup_and_torus`). In particular,
-integral torus points annihilating all simple coordinate roots are central
-(`torusPoints_map_algebraMap_conj_eq_self`), as is `D.simpleCorootPoints i A (-1)` when every
-simple root pairs evenly with `α_i^∨` (`simpleCorootPoints_neg_one_conj_eq_self`, and
-`simpleCorootPoints_neg_one_conj_eq_self_of_rank_eq_one` in rank one).
+An integral point `c : D.points ℤ` whose base change centralizes all positive/negative simple root
+subgroups and the torus over every commutative ring centralizes `D.points A` over every ring `A`
+(`conj_eq_self_of_forall_conj_simpleRootSubgroup_and_torus`). In particular, integral torus points
+annihilating all simple coordinate roots are central (`torusPoints_map_algebraMap_conj_eq_self`),
+as is `D.simpleCorootPoints i A (-1)` whenever every simple root pairs evenly with `α_i^∨`
+(`simpleCorootPoints_neg_one_conj_eq_self`, and in rank one
+`simpleCorootPoints_neg_one_conj_eq_self_of_rank_eq_one`).
 
 ## References
 
-* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3; J. C. Jantzen, *Representations of
-  Algebraic Groups*, II.1.
-* G. Malle and D. Testerman, *Linear Algebraic Groups and Finite Groups of Lie Type*, Cambridge
-  Univ. Press (2011), §9.2 and Example 22.3.
+* R. Steinberg, *Lectures on Chevalley Groups*, Ch. 3; J. C. Jantzen, *Representations of
+  Algebraic Groups*, II.1; G. Malle & D. Testerman, *Linear Algebraic Groups and Finite Groups of
+  Lie Type*, Cambridge Univ. Press (2011), §9.2 and Example 22.3.
 -/
 
 public section
 
 namespace TauCeti.DynkinType.ChevalleyDatum
-
 open Multiplicative
-
 noncomputable section
-
 universe v
-
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
 private theorem mem_equalizer_conj_iff (c : D.points ℤ) (B : Type*) [CommRing B] (x : D.points B) :
@@ -86,12 +81,11 @@ theorem conj_eq_self_of_forall_conj_simpleRootSubgroup_and_torus (c : D.points �
       D.representation_mem_lattice D.isNilpotent_representation_rootGenerator D.basis
       D.coordinateWeight _ 1 (fun B _ k q => by
         let u := AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := B) q
-        have hq := (MulEquiv.symm_apply_apply (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := B))
-          q).symm
+        have hq := (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := B)).symm_apply_apply q
         rcases k with m | m
-        · rw [hq, ← D.coe_rootSubgroupPoints_simpleIndex m B u]
+        · rw [← hq, ← D.coe_rootSubgroupPoints_simpleIndex m B u]
           exact (D.mem_equalizer_conj_iff c B _).mpr (hpos B m u)
-        · rw [hq, ← D.coe_rootSubgroupPoints_reflectionPerm_simpleIndex m B u]
+        · rw [← hq, ← D.coe_rootSubgroupPoints_reflectionPerm_simpleIndex m B u]
           exact (D.mem_equalizer_conj_iff c B _).mpr (hneg B m u))
       (fun B _ s => by
         rw [← D.coe_torusPoints B s]; exact (D.mem_equalizer_conj_iff c B _).mpr (htorus B s))
@@ -104,17 +98,17 @@ theorem torusPoints_map_algebraMap_conj_eq_self (s₀ : Fin t.rank → ℤˣ)
     (A : Type v) [CommRing A] (g : D.points A) :
     D.torusPoints A (fun j => Units.map (algebraMap ℤ A).toMonoidHom (s₀ j)) * g *
         (D.torusPoints A (fun j => Units.map (algebraMap ℤ A).toMonoidHom (s₀ j)))⁻¹ = g := by
+  let f (B : Type) [CommRing B] :=
+    (D.pointsPresentation ℤ).map (D.pointsPresentation B) (algebraMap ℤ B) (D.torusPoints ℤ s₀)
   have hconj (B : Type) [CommRing B] (γ : Fin t.numRoots)
       (hγ : torusCharacter s₀ (D.coordinateRoot γ) = 1) (u : Multiplicative B) :
-      (D.pointsPresentation ℤ).map (D.pointsPresentation B) (algebraMap ℤ B) (D.torusPoints ℤ s₀) *
-          D.rootSubgroupPoints γ B u * ((D.pointsPresentation ℤ).map (D.pointsPresentation B)
-            (algebraMap ℤ B) (D.torusPoints ℤ s₀))⁻¹ = D.rootSubgroupPoints γ B u := by
+      f B * D.rootSubgroupPoints γ B u * (f B)⁻¹ = D.rootSubgroupPoints γ B u := by
     have hmap : torusCharacter (fun j => Units.map (algebraMap ℤ B).toMonoidHom (s₀ j))
         (D.coordinateRoot γ) = 1 := by
       simpa only [RingHom.toMonoidHom_eq_coe, hγ, map_one] using
         (map_torusCharacter (algebraMap ℤ B) s₀ (D.coordinateRoot γ)).symm
-    rw [D.map_torusPoints, ← ofAdd_toAdd u, D.torusPoints_conj_rootSubgroupPoints, hmap,
-      Units.val_one, one_mul]
+    rw [show f B = _ from D.map_torusPoints _ _, ← ofAdd_toAdd u,
+      D.torusPoints_conj_rootSubgroupPoints, hmap, Units.val_one, one_mul]
   simpa only [D.map_torusPoints] using
     D.conj_eq_self_of_forall_conj_simpleRootSubgroup_and_torus (D.torusPoints ℤ s₀)
       (fun B _ m => hconj B _ (hs₀ m)) (fun B _ m => hconj B _ (by
@@ -143,5 +137,4 @@ theorem simpleCorootPoints_neg_one_conj_eq_self_of_rank_eq_one (hr : t.rank = 1)
     obtain rfl : m = i := Fin.ext (by omega); simp) A g
 
 end
-
 end TauCeti.DynkinType.ChevalleyDatum

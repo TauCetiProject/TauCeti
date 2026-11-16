@@ -428,13 +428,14 @@ theorem exists_nsmul_eq_zsmul_of_torusCharacter_eq_one_imp {K : Type*} [Field K]
       sub_ne_zero.mpr hi₁ (by simpa using congrFun h0 i₀)
     simp only [torusCharacter_single, torusCharacter_zero] at ht
     let s : κ → Kˣ := Pi.mulSingle i₀ (t i₀ ^ (-ξ i₁)) * Pi.mulSingle i₁ (t i₀ ^ (ξ i₀))
-    have hsξ : torusCharacter s ξ = 1 := by
+    have hs (μ : κ → ℤ) : torusCharacter s μ = t i₀ ^ (-ξ i₁ * μ i₀ + ξ i₀ * μ i₁) := by
       rw [torusCharacter_mul, torusCharacter_mulSingle, torusCharacter_mulSingle,
-        ← zpow_mul, ← zpow_mul, ← zpow_add, neg_mul, mul_comm (ξ i₁), neg_add_cancel, zpow_zero]
+        ← zpow_mul, ← zpow_mul, ← zpow_add]
+    have hsξ : torusCharacter s ξ = 1 := by
+      rw [hs, show -ξ i₁ * ξ i₀ + ξ i₀ * ξ i₁ = 0 by ring, zpow_zero]
     have hδ : -ξ i₁ * η i₀ + ξ i₀ * η i₁ = δ := by dsimp [δ]; ring
     have hsη := hker s hsξ
-    rw [torusCharacter_mul, torusCharacter_mulSingle, torusCharacter_mulSingle,
-      ← zpow_mul, ← zpow_mul, ← zpow_add, hδ] at hsη
+    rw [hs, hδ] at hsη
     exact ht hsη
   rcases lt_or_gt_of_ne hi₀ with hneg | hpos
   · refine ⟨(-ξ i₀).toNat, Int.lt_toNat.mpr (neg_pos.mpr hneg), -η i₀, ?_⟩

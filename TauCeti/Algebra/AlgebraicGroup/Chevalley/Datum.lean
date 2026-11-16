@@ -267,7 +267,7 @@ theorem coordinateRoot_injective : Function.Injective D.coordinateRoot := fun α
     rw [← D.sum_coordinateRoot_smul α, ← D.sum_coordinateRoot_smul β, h]
 
 /-- Equality of coordinate roots is equivalent to equality of root indices. -/
-@[simp] theorem coordinateRoot_eq_iff {α β : Fin t.numRoots} :
+@[simp] theorem coordinateRoot_inj {α β : Fin t.numRoots} :
     D.coordinateRoot α = D.coordinateRoot β ↔ α = β := D.coordinateRoot_injective.eq_iff
 
 /-- Every coordinate root of a Chevalley datum is nonzero. -/

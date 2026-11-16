@@ -14,61 +14,53 @@ import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 # Weyl-twisted Frobenius and non-based standard endomorphisms of Chevalley data
 
 `D.weylFrobenius i p k A` composes `D.frobenius p k A` with conjugation by
-`n_i = D.weylElement (t.simpleIndex ht i) A 1`, showing that being standard with a Frobenius square
-does not imply being based. Its character map is `(p ^ k : ℕ) • D.simpleReflectionCharacterMap i`
-(`isCharacterMap_weylFrobenius`); it is standard over every perfect ring
-(`isStandard_weylFrobenius`), and neither it nor simple Weyl conjugation is based over any
-nontrivial ring (`not_isBased_weylFrobenius`, `not_isBased_conj_weylElement`). Its square is
-`Int(α_i^∨(-1)) ∘ D.frobenius p (k + k) A` (`weylFrobenius_comp_weylFrobenius`), reducing to
-`D.frobenius p (k + k) A` whenever all simple roots pair evenly with `α_i^∨`
-(`weylFrobenius_comp_weylFrobenius_of_forall_even`), in particular in rank one
-(`weylFrobenius_comp_weylFrobenius_of_rank_eq_one`).
+`n_i = D.weylElement (t.simpleIndex ht i) A 1`. Its character map is
+`(p ^ k : ℕ) • D.simpleReflectionCharacterMap i` (`isCharacterMap_weylFrobenius`); it is standard
+over every perfect ring (`isStandard_weylFrobenius`), and neither it nor simple Weyl conjugation is
+based over any nontrivial ring (`not_isBased_weylFrobenius`, `not_isBased_conj_weylElement`). Its
+square is `Int(α_i^∨(-1)) ∘ D.frobenius p (k + k) A` (`weylFrobenius_comp_weylFrobenius`), which
+equals `D.frobenius p (k + k) A` whenever all simple roots pair evenly with `α_i^∨`
+(`weylFrobenius_comp_weylFrobenius_of_forall_even`, and in rank one
+`weylFrobenius_comp_weylFrobenius_of_rank_eq_one`).
 
 ## References
 
 * R. Steinberg, *Endomorphisms of Linear Algebraic Groups*, Mem. Amer. Math. Soc. **80** (1968),
-  §§10–11.
-* G. Malle and D. Testerman, *Linear Algebraic Groups and Finite Groups of Lie Type*, Cambridge
-  Univ. Press (2011), §21.1 and Example 22.3.
+  §§10–11; G. Malle & D. Testerman, *Linear Algebraic Groups and Finite Groups of Lie Type*,
+  Cambridge Univ. Press (2011), §21.1 and Example 22.3.
 -/
 
 public section
 
 open Multiplicative
-
 namespace TauCeti.DynkinType.ChevalleyDatum
-
 noncomputable section
-
 universe v v'
-
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
 /-! ## Simple Weyl conjugation as a standard non-based endomorphism -/
 
 section WeylConj
-
 variable (i : Fin t.rank) (A : Type v) [CommRing A]
 
 /-- Conjugation by a pinned simple Weyl representative is standard over every commutative ring. -/
-theorem isStandard_conj_weylElement : D.IsStandard
+@[simp] theorem isStandard_conj_weylElement : D.IsStandard
     (MulAut.conj (D.weylElement (t.simpleIndex ht i) A 1) : D.points A →* D.points A) :=
   (D.isStandard_def _).mpr ⟨⟨D.simpleReflectionCharacterMap i,
       D.simpleReflectionCharacterMap_injective i, D.isCharacterMap_conj_weylElement i A⟩,
     fun γ => ⟨_, D.map_range_rootSubgroupPoints_conj_weylElement i A γ⟩⟩
 
 /-- Over any nontrivial commutative ring, simple Weyl conjugation is not based. -/
-theorem not_isBased_conj_weylElement [Nontrivial A] : ¬ D.IsBased
+@[simp] theorem not_isBased_conj_weylElement [Nontrivial A] : ¬ D.IsBased
     (MulAut.conj (D.weylElement (t.simpleIndex ht i) A 1) : D.points A →* D.points A) :=
   fun hBased => let ⟨b, hb⟩ := D.exists_weylElement_conj_notMem_borelSubgroup A i
-    hb (hBased.map_borelSubgroup_le ⟨b.1, b.2, rfl⟩)
+    hb (hBased.map_borelSubgroup_le ⟨b.1, b.2, by rw [MonoidHom.coe_ofClass, MulAut.conj_apply]⟩)
 
 end WeylConj
 
 /-! ## Weyl-twisted Frobenius endomorphisms -/
 
 section WeylFrobenius
-
 variable (i : Fin t.rank) (p k : ℕ) (A : Type v) [CommRing A] [ExpChar A p]
 
 /-- **The Weyl-twisted Frobenius endomorphism `Int(n_i(1)) ∘ Frob_{p^k}` on `D.points A`.** -/
@@ -141,7 +133,8 @@ theorem isCharacterMap_weylFrobenius_of_rank_eq_one (hr : t.rank = 1) :
     D.map_range_rootSubgroupPoints_conj_weylElement]
 
 /-- **Over any perfect ring of exponential characteristic `p`, `D.weylFrobenius` is standard.** -/
-theorem isStandard_weylFrobenius [PerfectRing A p] : D.IsStandard (D.weylFrobenius i p k A) :=
+@[simp] theorem isStandard_weylFrobenius [PerfectRing A p] :
+    D.IsStandard (D.weylFrobenius i p k A) :=
   (D.isStandard_conj_weylElement i A).comp (D.isStandard_frobenius p k)
 
 /-- **Over any nontrivial ring, `D.weylFrobenius` does not preserve `D.borelSubgroup A`.** -/
@@ -156,7 +149,7 @@ theorem not_map_borelSubgroup_weylFrobenius_le [Nontrivial A] :
   exact D.rootSubgroupPoints_ofAdd_one_ne_one A (t.simpleIndex ht i) himg
 
 /-- **Over any nontrivial commutative ring, `D.weylFrobenius` is not based.** -/
-theorem not_isBased_weylFrobenius [Nontrivial A] : ¬ D.IsBased (D.weylFrobenius i p k A) :=
+@[simp] theorem not_isBased_weylFrobenius [Nontrivial A] : ¬ D.IsBased (D.weylFrobenius i p k A) :=
   fun h => D.not_map_borelSubgroup_weylFrobenius_le i p k A h.map_borelSubgroup_le
 
 /-- **Square of `D.weylFrobenius` in general rank**: `Int(α_i^∨(-1)) ∘ D.frobenius p (k + k) A`. -/
@@ -168,8 +161,7 @@ theorem weylFrobenius_comp_weylFrobenius :
     D.frobenius_weylElement, one_pow, MonoidHom.coe_ofClass, MulAut.conj_apply]
   rw [D.frobenius_add, MonoidHom.comp_apply, ← D.weylElement_mul_self i A]; group
 
-/-- **When every simple root pairs evenly with `α_i^∨`,
-`(D.weylFrobenius i p k A)² = D.frobenius p (k + k) A`.** -/
+/-- **When every simple root pairs evenly with `α_i^∨`, `(weylFrobenius)² = frobenius(2k)`.** -/
 theorem weylFrobenius_comp_weylFrobenius_of_forall_even
     (heven : ∀ m : Fin t.rank, Even ((t.simplyConnectedRootDatum ht).root (t.simpleIndex ht m) i)) :
     (D.weylFrobenius i p k A).comp (D.weylFrobenius i p k A) = D.frobenius p (k + k) A :=
@@ -180,8 +172,8 @@ theorem weylFrobenius_comp_weylFrobenius_of_forall_even
 /-- Pointwise form of `weylFrobenius_comp_weylFrobenius_of_forall_even`. -/
 theorem weylFrobenius_weylFrobenius_eq_frobenius_of_forall_even
     (heven : ∀ m : Fin t.rank, Even ((t.simplyConnectedRootDatum ht).root (t.simpleIndex ht m) i))
-    (g : D.points A) :
-    D.weylFrobenius i p k A (D.weylFrobenius i p k A g) = D.frobenius p (k + k) A g :=
+    (g : D.points A) : D.weylFrobenius i p k A (D.weylFrobenius i p k A g) =
+      D.frobenius p (k + k) A g :=
   DFunLike.congr_fun (D.weylFrobenius_comp_weylFrobenius_of_forall_even i p k A heven) g
 
 /-- **In rank one, `(D.weylFrobenius i p k A)² = D.frobenius p (k + k) A` on `D.points A`.** -/
@@ -191,13 +183,10 @@ theorem weylFrobenius_comp_weylFrobenius_of_rank_eq_one (hr : t.rank = 1) :
     obtain rfl : m = i := Fin.ext (by omega); simp
 
 /-- Pointwise form of `weylFrobenius_comp_weylFrobenius_of_rank_eq_one`. -/
-theorem weylFrobenius_weylFrobenius_eq_frobenius_of_rank_eq_one (hr : t.rank = 1)
-    (g : D.points A) :
+theorem weylFrobenius_weylFrobenius_eq_frobenius_of_rank_eq_one (hr : t.rank = 1) (g : D.points A) :
     D.weylFrobenius i p k A (D.weylFrobenius i p k A g) = D.frobenius p (k + k) A g :=
   DFunLike.congr_fun (D.weylFrobenius_comp_weylFrobenius_of_rank_eq_one i p k A hr) g
 
 end WeylFrobenius
-
 end
-
 end TauCeti.DynkinType.ChevalleyDatum

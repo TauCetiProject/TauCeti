@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Maps
+import Mathlib.Algebra.Ring.Int.Units
 import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
@@ -26,8 +27,9 @@ Linear maps conjugate under linear equivalences have linearly equivalent kernels
 `LinearMap.kerEquivOfComp` and `LinearMap.cokerEquivOfComp`.
 Coordinate relabelling of function modules (`LinearEquiv.funCongrLeft`) is injective in the
 coordinate equivalence over a nontrivial target module.
-Every `ℤ`-linear automorphism of a rank-one free `ℤ`-module `ι → ℤ` is either `LinearMap.id` or
-`-LinearMap.id` (`LinearEquiv.toLinearMap_eq_id_or_neg_of_unique`).
+Every `R`-linear automorphism of a rank-one free `R`-module `ι → R` over a commutative semiring `R`
+is scalar multiplication by a unit (`LinearEquiv.exists_eq_smulOfUnit_of_unique`), specializing over
+`ℤ` to `LinearMap.id` or `-LinearMap.id` (`LinearEquiv.toLinearMap_eq_id_or_neg_of_unique`).
 -/
 
 public section
@@ -106,23 +108,28 @@ theorem funCongrLeft_injective (R M : Type*) [Semiring R] [AddCommMonoid M] [Mod
     Pi.single_eq_same, Pi.single_eq_of_ne (Ne.symm hne)] at hj
   exact hm hj
 
-/-- Every `ℤ`-linear automorphism of a rank-one free `ℤ`-module `ι → ℤ` is either the identity or
-negation. -/
+/-- Every `R`-linear automorphism of a rank-one free `R`-module `ι → R` over a commutative semiring
+`R` is scalar multiplication by a unit of `R`. -/
+theorem exists_eq_smulOfUnit_of_unique {R ι : Type*} [CommSemiring R] [Unique ι]
+    (e : (ι → R) ≃ₗ[R] (ι → R)) : ∃ u : Rˣ, e = LinearEquiv.smulOfUnit u := by
+  have hscale (f : (ι → R) →ₗ[R] (ι → R)) (x : ι → R) : f x = f (fun _ => 1) default • x := by
+    have hx : x = x default • fun _ => 1 := funext fun i => by simp [Unique.eq_default i]
+    funext i; conv_lhs => rw [hx, LinearMap.map_smul]
+    simp [Unique.eq_default i, mul_comm]
+  refine ⟨⟨e (fun _ => 1) default, e.symm (fun _ => 1) default, ?_, ?_⟩, ?_⟩
+  · have h1 : e (e.symm (fun _ => 1)) default = 1 := by simp
+    rw [← coe_toLinearMap, hscale] at h1; simpa [mul_comm] using h1
+  · have h1 : e.symm (e (fun _ => 1)) default = 1 := by simp
+    rw [← coe_toLinearMap, hscale] at h1; simpa [mul_comm] using h1
+  · ext x i; conv_lhs => rw [← coe_toLinearMap, hscale]
+    simp [smulOfUnit]
+
+/-- Every `ℤ`-linear automorphism of `ι → ℤ` (`Unique ι`) is `id` or `-id`. -/
 theorem toLinearMap_eq_id_or_neg_of_unique {ι : Type*} [Unique ι] (e : (ι → ℤ) ≃ₗ[ℤ] (ι → ℤ)) :
     (e : (ι → ℤ) →ₗ[ℤ] (ι → ℤ)) = LinearMap.id ∨ (e : (ι → ℤ) →ₗ[ℤ] (ι → ℤ)) = -LinearMap.id := by
-  have hscale (f : (ι → ℤ) →ₗ[ℤ] (ι → ℤ)) (x : ι → ℤ) :
-      f x default = f (fun _ => 1) default * x default := by
-    have hx : x = x default • (fun _ : ι => (1 : ℤ)) :=
-      funext fun i => by simp [Unique.eq_default i]
-    conv_lhs => rw [hx, LinearMap.map_smul, Pi.smul_apply, smul_eq_mul, mul_comm]
-  have hprod : e (fun _ => 1) default * e.symm (fun _ => 1) default = 1 := by
-    have h1 : e (e.symm (fun _ => 1)) default = 1 := by simp
-    rwa [← coe_toLinearMap, hscale, ← coe_toLinearMap, hscale, mul_one] at h1
-  rcases Int.mul_eq_one_iff_eq_one_or_neg_one.mp hprod with ⟨h1, _⟩ | ⟨h1, _⟩
-  · exact Or.inl (LinearMap.ext fun x => funext fun i => by
-      rw [Unique.eq_default i, hscale (e : _ →ₗ[ℤ] _)]; simp [h1])
-  · exact Or.inr (LinearMap.ext fun x => funext fun i => by
-      rw [Unique.eq_default i, hscale (e : _ →ₗ[ℤ] _)]; simp [h1])
+  obtain ⟨u, rfl⟩ := e.exists_eq_smulOfUnit_of_unique
+  rcases Int.units_eq_one_or u with rfl | rfl <;>
+    [left; right] <;> exact LinearMap.ext fun x => by simp [smulOfUnit]
 
 end LinearEquiv
 
