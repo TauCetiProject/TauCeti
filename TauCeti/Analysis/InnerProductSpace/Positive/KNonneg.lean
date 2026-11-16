@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.KyFan
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
 import TauCeti.Analysis.InnerProductSpace.Trace.Projection
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.PartialSum
@@ -17,12 +18,12 @@ import TauCeti.Algebra.BigOperators.Finset.PartialSum
 An operator `T` on an inner product space is **`k`-nonnegative** (`LinearMap.IsKNonneg`) when
 its diagonal entries along any orthonormal family of `k` vectors have nonnegative sum,
 `0 ≤ ∑ᵢ re ⟪T wᵢ, wᵢ⟫`, and **`k`-positive** (`LinearMap.IsKPos`) when that sum is always
-positive. For `k = 1` and symmetric `T` this is ordinary positivity. Any operator `T` is
-`k`-nonnegative exactly when its compression to every `k`-dimensional subspace has trace with
-nonnegative real part (`LinearMap.isKNonneg_iff_forall_re_trace_nonneg`). The condition
-interpolates between positivity and nonnegativity of the trace: by Ky Fan's minimum principle a
-symmetric `T` on an `n`-dimensional space is `k`-nonnegative, for `k ≤ n`, exactly when the sum of
-its `k` smallest eigenvalues is nonnegative
+positive. For symmetric `T`, `1`-nonnegativity is ordinary positivity (`LinearMap.IsPositive`).
+Any operator `T` is `k`-nonnegative exactly when its compression to every `k`-dimensional
+subspace has trace with nonnegative real part (`LinearMap.isKNonneg_iff_forall_re_trace_nonneg`).
+The condition interpolates between positivity and nonnegativity of the trace: by Ky Fan's
+minimum principle a symmetric `T` on an `n`-dimensional space is `k`-nonnegative, for `k ≤ n`,
+exactly when the sum of its `k` smallest eigenvalues is nonnegative
 (`LinearMap.IsSymmetric.isKNonneg_iff_sum_eigenvalues_rev_nonneg`).
 
 The case `k = 2` is the curvature condition of Böhm and Wilking: a curvature operator on the
@@ -47,8 +48,7 @@ and `k`-nonnegativity implies `m`-nonnegativity for `1 ≤ k ≤ m`
   `LinearMap.IsSymmetric.isKPos_two_iff_eigenvalues_add_eigenvalues_pos`: their form for the two
   smallest eigenvalues.
 * `LinearMap.isKNonneg_iff_forall_re_trace_nonneg`,
-  `LinearMap.isKPos_iff_forall_re_trace_pos`: the characterizations by traces of compressions,
-  computed by `LinearMap.re_trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_re_inner`.
+  `LinearMap.isKPos_iff_forall_re_trace_pos`: the characterizations by traces of compressions.
 * `LinearMap.isKNonneg_conj_iff`, `LinearMap.isKPos_conj_iff`: invariance under conjugation by
   linear isometries.
 * `ContinuousLinearMap.isClosed_setOf_isKNonneg`: the `k`-nonnegative bounded operators form a
@@ -93,19 +93,21 @@ theorem isKPos_iff :
     T.IsKPos k ↔ ∀ w : Fin k → E, Orthonormal 𝕜 w → 0 < ∑ i, RCLike.re ⟪T (w i), w i⟫ :=
   Iff.rfl
 
-/-- A `k`-nonnegative operator has nonnegative diagonal sum along every orthonormal family indexed
-by a type with `k` elements. -/
+/-- A `k`-nonnegative operator has nonnegative real-part diagonal sum `∑ᵢ re ⟪T wᵢ, wᵢ⟫` along
+every orthonormal family `w` indexed by a type with `k` elements. -/
 theorem IsKNonneg.sum_re_inner_nonneg (h : T.IsKNonneg k) {ι : Type*} [Fintype ι]
     (hι : Fintype.card ι = k) {w : ι → E} (hw : Orthonormal 𝕜 w) :
     0 ≤ ∑ i, RCLike.re ⟪T (w i), w i⟫ :=
-  T.forall_orthonormal_fintype_of_fin (0 ≤ ·) h hι hw
+  hw.sum_of_forall_of_card_eq (hι.trans (Fintype.card_fin k).symm) (fun x ↦ RCLike.re ⟪T x, x⟫)
+    (0 ≤ ·) h
 
-/-- A `k`-positive operator has positive diagonal sum along every orthonormal family indexed by a
-type with `k` elements. -/
+/-- A `k`-positive operator has positive real-part diagonal sum `∑ᵢ re ⟪T wᵢ, wᵢ⟫` along every
+orthonormal family `w` indexed by a type with `k` elements. -/
 theorem IsKPos.sum_re_inner_pos (h : T.IsKPos k) {ι : Type*} [Fintype ι]
     (hι : Fintype.card ι = k) {w : ι → E} (hw : Orthonormal 𝕜 w) :
     0 < ∑ i, RCLike.re ⟪T (w i), w i⟫ :=
-  T.forall_orthonormal_fintype_of_fin (0 < ·) h hι hw
+  hw.sum_of_forall_of_card_eq (hι.trans (Fintype.card_fin k).symm) (fun x ↦ RCLike.re ⟪T x, x⟫)
+    (0 < ·) h
 
 /-- A `k`-positive operator is `k`-nonnegative. -/
 theorem IsKPos.isKNonneg (h : T.IsKPos k) : T.IsKNonneg k :=
@@ -227,13 +229,13 @@ theorem IsKPos.smul (hT : T.IsKPos k) {c : ℝ} (hc : 0 < c) : ((c : 𝕜) • T
 @[simp]
 theorem isKNonneg_conj_iff (U : E ≃ₗᵢ[𝕜] F) :
     (U.toLinearEquiv.conj T).IsKNonneg k ↔ T.IsKNonneg k :=
-  U.forall_orthonormal_conj_iff (0 ≤ ·)
+  U.forall_orthonormal_sum_re_inner_conj_iff (0 ≤ ·)
 
 /-- Conjugating by a linear isometry equivalence preserves `k`-positivity. -/
 @[simp]
 theorem isKPos_conj_iff (U : E ≃ₗᵢ[𝕜] F) :
     (U.toLinearEquiv.conj T).IsKPos k ↔ T.IsKPos k :=
-  U.forall_orthonormal_conj_iff (0 < ·)
+  U.forall_orthonormal_sum_re_inner_conj_iff (0 < ·)
 
 /-! ### Traces of compressions -/
 
@@ -242,14 +244,14 @@ trace with nonnegative real part. -/
 theorem isKNonneg_iff_forall_re_trace_nonneg :
     T.IsKNonneg k ↔ ∀ (W : Submodule 𝕜 E) [FiniteDimensional 𝕜 W], finrank 𝕜 W = k →
       0 ≤ RCLike.re (trace 𝕜 W ((W.orthogonalProjectionOnto : E →ₗ[𝕜] W) ∘ₗ T ∘ₗ W.subtype)) :=
-  T.forall_orthonormal_iff_forall_re_trace (0 ≤ ·)
+  T.forall_orthonormal_sum_re_inner_iff_forall_re_trace (0 ≤ ·)
 
 /-- `T` is `k`-positive exactly when its compression to every `k`-dimensional subspace has trace
 with positive real part. -/
 theorem isKPos_iff_forall_re_trace_pos :
     T.IsKPos k ↔ ∀ (W : Submodule 𝕜 E) [FiniteDimensional 𝕜 W], finrank 𝕜 W = k →
       0 < RCLike.re (trace 𝕜 W ((W.orthogonalProjectionOnto : E →ₗ[𝕜] W) ∘ₗ T ∘ₗ W.subtype)) :=
-  T.forall_orthonormal_iff_forall_re_trace (0 < ·)
+  T.forall_orthonormal_sum_re_inner_iff_forall_re_trace (0 < ·)
 
 /-! ### Eigenvalues -/
 

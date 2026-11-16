@@ -29,8 +29,8 @@ This file contains basic facts about finite partial sums.
 * `TauCeti.eq_of_forall_prefixSum_eq`, `TauCeti.monotone_prefixSum`: a tuple is determined by its
   prefix sums, which are monotone in the length for nonnegative tuples.
 * `TauCeti.prefixSum_eq_sum_castLE`: up to `n`, prefix sums are sums over the first indices.
-* `TauCeti.prefixSum_two_rev`: the prefix sum of length `2` of a reversed tuple is the sum of its
-  last two entries.
+* `TauCeti.prefixSum_two_rev`: for a tuple of length at least `2`, the prefix sum of length `2` of
+  its reversal is the sum of the last two entries of the original tuple.
 * `TauCeti.prefixSum_eq_sum_range`: prefix sums of a sequence restricted to `Fin n` are its
   partial sums over `range`, capped at `n`.
 * `TauCeti.map_prefixSum`, `TauCeti.prefixSum_smul`: additive monoid homomorphisms and

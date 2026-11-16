@@ -243,10 +243,17 @@ theorem inner_sub_apply_of_apply_eq_smul_of_apply_eq_smul {T S : E →ₗ[𝕜] 
 variable {n : ℕ} [FiniteDimensional 𝕜 E] {T : E →ₗ[𝕜] E}
 
 /-- On an eigenvector of the ordered eigenbasis, the diagonal pairing is its eigenvalue. -/
+theorem inner_apply_eigenvectorBasis (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
+    (j : Fin n) :
+    ⟪T (hT.eigenvectorBasis hn j), hT.eigenvectorBasis hn j⟫_𝕜 = hT.eigenvalues hn j := by
+  simp [hT.apply_eigenvectorBasis, inner_smul_left]
+
+/-- On an eigenvector of the ordered eigenbasis, the real part of the diagonal pairing is its
+eigenvalue. -/
 theorem re_inner_apply_eigenvectorBasis (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     (j : Fin n) :
     RCLike.re ⟪T (hT.eigenvectorBasis hn j), hT.eigenvectorBasis hn j⟫_𝕜 = hT.eigenvalues hn j := by
-  simp [hT.apply_eigenvectorBasis, inner_smul_left]
+  rw [hT.inner_apply_eigenvectorBasis hn j, RCLike.ofReal_re]
 
 /-! ### Finite-dimensional eigenvector spans -/
 

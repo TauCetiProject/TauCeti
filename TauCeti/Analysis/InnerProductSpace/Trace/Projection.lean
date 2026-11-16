@@ -15,17 +15,23 @@ The compression of an operator `T` on an inner product space `E` to a subspace `
 orthogonal projection is the operator `P_W ∘ T ∘ ι_W` on `W`. Along an orthonormal basis of `W`
 its trace is the sum of the diagonal entries of `T` along that basis.
 
+This lets conditions on the diagonal sums `∑ᵢ ⟪wᵢ, T wᵢ⟫` along orthonormal families of `k`
+vectors, such as `k`-nonnegativity and `k`-positivity of an operator, be restated as
+basis-independent conditions on the traces of the compressions of `T` to `k`-dimensional
+subspaces, without assuming that `E` itself is finite-dimensional.
+
 ## Main statements
 
 * `LinearMap.trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_inner`: the trace of the
   compression of `T` to `W` is its diagonal sum along an orthonormal basis of `W`.
 * `LinearMap.re_trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_re_inner`: the same
   identity for real parts, written with the diagonal entries `re ⟪T bᵢ, bᵢ⟫`.
-* `LinearMap.forall_orthonormal_iff_forall_re_trace`: a condition on the diagonal sums of `T`
-  along all orthonormal families of `k` vectors is the same condition on the real parts of the
-  traces of its compressions to all `k`-dimensional subspaces.
-* `LinearMap.forall_orthonormal_fintype_of_fin`: such a condition along all orthonormal families
-  indexed by `Fin k` holds along every orthonormal family indexed by a type with `k` elements.
+* `LinearMap.forall_orthonormal_sum_inner_iff_forall_trace`: a condition on the diagonal sums
+  `∑ᵢ ⟪wᵢ, T wᵢ⟫` along all orthonormal families of `k` vectors is the same condition on the
+  traces of the compressions of `T` to all `k`-dimensional subspaces.
+* `LinearMap.forall_orthonormal_sum_re_inner_iff_forall_re_trace`: the same statement for a
+  condition on the real parts `∑ᵢ re ⟪T wᵢ, wᵢ⟫` of the diagonal sums and the real parts of the
+  traces.
 -/
 
 public section
@@ -61,16 +67,16 @@ theorem re_trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_re_inner (T :
   rw [trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_inner T W b, map_sum]
   exact sum_congr rfl fun i _ ↦ inner_re_symm _ _
 
-/-- A condition on the diagonal sums of `T` along all orthonormal families of `k` vectors is the
-same condition on the real parts of the traces of the compressions of `T` to all `k`-dimensional
+/-- A condition on the diagonal sums `∑ᵢ ⟪wᵢ, T wᵢ⟫` of `T` along all orthonormal families of `k`
+vectors is the same condition on the traces of the compressions of `T` to all `k`-dimensional
 subspaces. -/
-theorem forall_orthonormal_iff_forall_re_trace (T : E →ₗ[𝕜] E) {k : ℕ} (P : ℝ → Prop) :
-    (∀ w : Fin k → E, Orthonormal 𝕜 w → P (∑ i, RCLike.re ⟪T (w i), w i⟫)) ↔
+theorem forall_orthonormal_sum_inner_iff_forall_trace (T : E →ₗ[𝕜] E) {k : ℕ} (P : 𝕜 → Prop) :
+    (∀ w : Fin k → E, Orthonormal 𝕜 w → P (∑ i, ⟪w i, T (w i)⟫)) ↔
       ∀ (W : Submodule 𝕜 E) [FiniteDimensional 𝕜 W], finrank 𝕜 W = k →
-        P (RCLike.re (trace 𝕜 W ((W.orthogonalProjectionOnto : E →ₗ[𝕜] W) ∘ₗ T ∘ₗ W.subtype))) := by
+        P (trace 𝕜 W ((W.orthogonalProjectionOnto : E →ₗ[𝕜] W) ∘ₗ T ∘ₗ W.subtype)) := by
   refine ⟨fun h W _ hW ↦ ?_, fun h w hw ↦ ?_⟩
   · let b := (stdOrthonormalBasis 𝕜 W).reindex (finCongr hW)
-    rw [re_trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_re_inner T W b]
+    rw [trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_inner T W b]
     exact h _ (b.orthonormal.comp_linearIsometry W.subtypeₗᵢ)
   · -- Test the hypothesis on the span of `w`, with the orthonormal basis given by `w`.
     set W := Submodule.span 𝕜 (Set.range w)
@@ -81,16 +87,21 @@ theorem forall_orthonormal_iff_forall_re_trace (T : E →ₗ[𝕜] E) {k : ℕ} 
       simp [Basis.span_apply])
     have hb (i : Fin k) : (b i : E) = w i := by simp [b, Basis.span_apply]
     have := h W ((finrank_span_eq_card hli).trans (Fintype.card_fin k))
-    simpa [re_trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_re_inner T W b, hb]
-      using this
+    simpa [trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_inner T W b, hb] using this
 
-/-- A condition on the diagonal sums of `T` along all orthonormal families of `k` vectors indexed
-by `Fin k` holds along every orthonormal family indexed by a type with `k` elements. -/
-theorem forall_orthonormal_fintype_of_fin (T : E →ₗ[𝕜] E) {k : ℕ} (P : ℝ → Prop)
-    (h : ∀ w : Fin k → E, Orthonormal 𝕜 w → P (∑ i, RCLike.re ⟪T (w i), w i⟫)) {ι : Type*}
-    [Fintype ι] (hι : Fintype.card ι = k) {w : ι → E} (hw : Orthonormal 𝕜 w) :
-    P (∑ i, RCLike.re ⟪T (w i), w i⟫) := by
-  let e := Fintype.equivFinOfCardEq hι
-  simpa [← e.symm.sum_comp] using h (w ∘ e.symm) (hw.comp _ e.symm.injective)
+/-- A condition on the real parts `∑ᵢ re ⟪T wᵢ, wᵢ⟫` of the diagonal sums of `T` along all
+orthonormal families of `k` vectors is the same condition on the real parts of the traces of the
+compressions of `T` to all `k`-dimensional subspaces. -/
+theorem forall_orthonormal_sum_re_inner_iff_forall_re_trace (T : E →ₗ[𝕜] E) {k : ℕ}
+    (P : ℝ → Prop) :
+    (∀ w : Fin k → E, Orthonormal 𝕜 w → P (∑ i, RCLike.re ⟪T (w i), w i⟫)) ↔
+      ∀ (W : Submodule 𝕜 E) [FiniteDimensional 𝕜 W], finrank 𝕜 W = k →
+        P (RCLike.re (trace 𝕜 W ((W.orthogonalProjectionOnto : E →ₗ[𝕜] W) ∘ₗ T ∘ₗ W.subtype))) := by
+  have h (w : Fin k → E) :
+      ∑ i, RCLike.re ⟪T (w i), w i⟫ = RCLike.re (∑ i, ⟪w i, T (w i)⟫) := by
+    rw [map_sum]
+    exact sum_congr rfl fun i _ ↦ inner_re_symm _ _
+  simp only [h]
+  exact T.forall_orthonormal_sum_inner_iff_forall_trace fun z ↦ P (RCLike.re z)
 
 end LinearMap
