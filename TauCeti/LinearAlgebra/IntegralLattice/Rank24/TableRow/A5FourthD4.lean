@@ -40,9 +40,10 @@ the induced map on glue words reads a digit word `[a b c d e]` as `[a d b c τ(e
 
 * `TauCeti.RootfulNiemeierType.a5FourthD4BlockRotation`: the rotation of the block marked in
   `[2(024)0]`, generating the indicated symmetries of that pattern
-  (`map_symmetries_cyclic_a5FourthD4`).  Its values are given by
-  `ofFn_comp_a5FourthD4BlockRotation` and `ofFn_comp_a5FourthD4BlockRotation_symm`, and it has
-  order three (`a5FourthD4BlockRotation_pow_three`).
+  (`map_symmetries_cyclic_a5FourthD4`), unfolded by `a5FourthD4BlockRotation_def`.  Its values
+  are given by `ofFn_comp_a5FourthD4BlockRotation` and `ofFn_comp_a5FourthD4BlockRotation_symm`, it
+  fixes the `D₄` position (`a5FourthD4BlockRotation_d4Index`), and it has order three
+  (`a5FourthD4BlockRotation_pow_three`).
 * `TauCeti.RootfulNiemeierType.a5FourthD4BlockRotation_notMem_glueSymmetries`: the rotation alone
   is not a glue symmetry.
 * `TauCeti.RootfulNiemeierType.a5FourthD4TrialityGlueIsometry`: the rotation combined with
@@ -80,6 +81,11 @@ It is the generator of the indicated symmetries of the pattern
 (`map_symmetries_cyclic_a5FourthD4`). -/
 def a5FourthD4BlockRotation : Equiv.Perm (Fin a5FourthD4.components.length) :=
   c[⟨1, by decide⟩, ⟨2, by decide⟩, ⟨3, by decide⟩]
+
+/-- The block rotation is the cycle `c[1, 2, 3]` on the component positions. -/
+theorem a5FourthD4BlockRotation_def :
+    a5FourthD4BlockRotation = c[⟨1, by decide⟩, ⟨2, by decide⟩, ⟨3, by decide⟩] :=
+  (rfl)
 
 /-- A function on the component positions of `A₅⁴ D₄` lists its five values. -/
 private theorem ofFn_a5FourthD4 {α : Type*} (f : Fin a5FourthD4.components.length → α) :
@@ -441,6 +447,12 @@ private theorem a5FourthD4TrialityIsometry_apply
     gluedLatticeIsometryOfEq_apply, gluedLatticePiIsometry_apply]
 
 /-- The block rotation fixes the position of the `D₄` component. -/
+@[simp]
+theorem a5FourthD4BlockRotation_d4Index :
+    a5FourthD4BlockRotation a5FourthD4D4Index = a5FourthD4D4Index := by
+  decide
+
+/-- The inverse block rotation fixes the position of the `D₄` component. -/
 @[simp]
 theorem a5FourthD4BlockRotation_symm_d4Index :
     a5FourthD4BlockRotation.symm a5FourthD4D4Index = a5FourthD4D4Index := by
