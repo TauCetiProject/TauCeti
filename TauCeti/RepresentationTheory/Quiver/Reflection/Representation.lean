@@ -753,10 +753,12 @@ theorem isZero_reflectRep {i : Q} (hi : IsSink i)
     ModuleCat.isZero_of_subsingleton _
 
 /-- **Reflection preserves finite-dimensionality.** The reflected space at the sink is a subspace
-of a finite product of vertex spaces of `M`, and away from the sink the vertex spaces are those of
-`M`; the vertex space of `M` at the sink itself plays no role. This is what carries the
-finite-dimensionality hypothesis of `TauCeti.dimVector_reflectRep` through a sequence of
-reflections. -/
+of the product of the vertex spaces of `M` at the sources of the arrows into the sink; none of
+these sources is the sink itself, because a sink carries no loop, so only vertex spaces away from
+the sink enter. The vertex space of `M` at the sink is merely the codomain of the map whose kernel
+is taken, so it need not be finite-dimensional. Away from the sink the vertex spaces are those of
+`M`. This is what carries the finite-dimensionality hypothesis of `TauCeti.dimVector_reflectRep`
+through a sequence of reflections. -/
 theorem finiteDimensional_reflectRep_obj {i : Q} (hi : IsSink i)
     (h : ∀ a : Q, a ≠ i → FiniteDimensional k (M.obj a)) (j : Q) :
     FiniteDimensional k ((reflectRep M hi).obj j) := by
