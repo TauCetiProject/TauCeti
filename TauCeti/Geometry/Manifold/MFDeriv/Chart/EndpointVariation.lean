@@ -25,9 +25,11 @@ at `σ s` whenever `σ s` lies in the chart. On a manifold without
 boundary it is as regular as `F`, `σ` and `β` along the central curve. If the velocity of `σ` at
 `0` is the variation field of `F` at `a`, the correction has the same variation field as `F`.
 
-Applied to the constant family at a curve `γ`, with a bump profile around `a`, this realizes
-every curve `σ` through `γ a` as the moving left endpoint of a variation of `γ` with fixed right
-endpoint. Only the regularity of `σ` at `0` is used, and no smooth extension of `σ` is needed.
+Applied to the constant family at a curve `γ`, with a bump profile around `a` vanishing at
+`b ≠ a`, this realizes every curve `σ` through `γ a` as the moving endpoint at `a` of a variation
+of `γ` with fixed endpoint at `b`. Since only `a ≠ b` is assumed, `a` may be either endpoint of
+the segment `uIcc a b`, so applying this at both ends prescribes both endpoints. Only the
+regularity of `σ` at `0` is used, and no smooth extension of `σ` is needed.
 
 The curves of these variations may leave a prescribed domain `D ⊆ M`. When a partial
 diffeomorphism `e` onto an open subset of a real normed space identifies `D` with a set stable
@@ -46,10 +48,10 @@ along `l`. These are the competitors of a curve constrained to `D`.
 * `TauCeti.Manifold.variationField_chartEndpointCorrection`: it preserves the variation field
   when the velocity of `σ` at `0` is the variation field of `F` at `a`.
 * `TauCeti.Manifold.exists_contMDiffAt_endpointVariation`: a `C^n` variation of a `C^n` curve
-  whose left endpoint follows a prescribed `C^n` curve and whose right endpoint is fixed.
+  whose endpoint at `a` follows a prescribed `C^n` curve and whose endpoint at `b ≠ a` is fixed.
 * `TauCeti.Manifold.exists_contMDiffAt_endpointCorrection`: a `C^n` family can be corrected to
-  have a prescribed moving left endpoint, with the same central curve, the same right endpoints
-  and the same variation field.
+  have a prescribed moving endpoint at `a`, with the same central curve, the same endpoints at
+  `b ≠ a` and the same variation field.
 * `TauCeti.Manifold.exists_contMDiffAt_endpointVariation_of_add_mem`: variations with a
   prescribed moving left endpoint and fixed right endpoint inside a domain that reads, in a
   partial diffeomorphism, as a set stable under translation by a convex cone.
@@ -221,22 +223,23 @@ theorem variationField_chartEndpointCorrection [IsManifold I 1 M] {t : ℝ}
   exact hleft.curveVelocity_eq.trans (hdc.trans hright.curveVelocity_eq)
 
 /-- **Variations with a prescribed moving endpoint.** On a `C^n` manifold without boundary, let
-`γ` be `C^n` on `[a, b]` with `a < b`, and let `σ` be a curve which is `C^n` at `0` with
-`σ 0 = γ a`. Then there is a `C^n` variation of `γ` whose curves start at `σ s` for `s` near
-`0` and all end at `γ b`. -/
+`γ` be `C^n` on the segment between `a` and `b ≠ a`, and let `σ` be a curve which is `C^n` at `0`
+with `σ 0 = γ a`. Then there is a `C^n` variation of `γ` whose curves pass through `σ s` at the
+parameter `a` for `s` near `0`, and all pass through `γ b` at the parameter `b`. Either `a < b`
+or `b < a` is allowed, so the moving endpoint may be the left or the right one. -/
 theorem exists_contMDiffAt_endpointVariation {n : ℕ∞} [IsManifold I n M] {γ : ℝ → M} {b : ℝ}
-    (hab : a < b) (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I n γ t)
+    (hab : a ≠ b) (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I n γ t)
     (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I n σ 0) (hbase : γ a = σ 0) :
     ∃ F : ℝ → ℝ → M, F 0 = γ ∧
       (∀ t ∈ uIcc a b,
         ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) ∧
       (∀ᶠ s in 𝓝 0, F s a = σ s) ∧ ∀ s, F s b = γ b := by
   obtain ⟨φ, hφs, -, hφ, -, hφa⟩ := exists_contDiff_tsupport_subset (n := n) (x := a)
-    (s := γ ⁻¹' (extChartAt I (γ a)).source ∩ Iio b) (inter_mem
+    (s := γ ⁻¹' (extChartAt I (γ a)).source ∩ {b}ᶜ) (inter_mem
       ((hγ a left_mem_uIcc).continuousAt.preimage_mem_nhds
         ((isOpen_extChartAt_source (γ a)).mem_nhds (mem_extChartAt_source (γ a))))
-      (isOpen_Iio.mem_nhds hab))
-  have hφb : φ b = 0 := image_eq_zero_of_notMem_tsupport fun hb ↦ lt_irrefl b (hφs hb).2
+      (isOpen_compl_singleton.mem_nhds hab))
+  have hφb : φ b = 0 := image_eq_zero_of_notMem_tsupport fun hb ↦ (hφs hb).2 rfl
   have ha : γ a ∈ (extChartAt I (γ a)).source := mem_extChartAt_source (γ a)
   have hγ₂ (t : ℝ) (ht : t ∈ uIcc a b) :
       ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ γ z.2) (0, t) :=
@@ -251,13 +254,14 @@ theorem exists_contMDiffAt_endpointVariation {n : ℕ∞} [IsManifold I n M] {γ
   exact chartEndpointCorrection_endpoint hφa hs
 
 /-- **Correcting the moving endpoint of a variation.** On a `C^n` manifold without boundary, with
-`1 ≤ n`, let `F` be a family which is `C^n` along its central curve on `[a, b]`, with `a < b`,
-and let `σ` be a curve which is `C^n` at `0`, with `σ 0 = F 0 a` and with velocity at `0` the
-variation field of `F` at `a`. Then there is a `C^n` family with the same central curve, whose
-curves start at `σ s` for `s` near `0` and end at `F s b`, and with the same variation field
-as `F` on `[a, b]`. -/
+`1 ≤ n`, let `F` be a family which is `C^n` along its central curve on the segment between `a`
+and `b ≠ a`, and let `σ` be a curve which is `C^n` at `0`, with `σ 0 = F 0 a` and with velocity
+at `0` the variation field of `F` at `a`. Then there is a `C^n` family with the same central
+curve, whose curves pass through `σ s` at the parameter `a` for `s` near `0` and through `F s b`
+at the parameter `b`, and with the same variation field as `F` on the segment. Either `a < b` or
+`b < a` is allowed. -/
 theorem exists_contMDiffAt_endpointCorrection {n : ℕ∞} [IsManifold I n M] (hn : 1 ≤ n) {b : ℝ}
-    (hab : a < b)
+    (hab : a ≠ b)
     (hF : ∀ t ∈ uIcc a b,
       ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
     (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I n σ 0) (hbase : F 0 a = σ 0)
@@ -274,11 +278,11 @@ theorem exists_contMDiffAt_endpointCorrection {n : ℕ∞} [IsManifold I n M] (h
     (hF t ht).comp 0 (contDiff_prodMk_left t).contMDiff.contMDiffAt
   have hFa := hF a left_mem_uIcc
   obtain ⟨φ, hφs, -, hφ, -, hφa⟩ := exists_contDiff_tsupport_subset (n := n) (x := a)
-    (s := F 0 ⁻¹' (extChartAt I (F 0 a)).source ∩ Iio b) (inter_mem
+    (s := F 0 ⁻¹' (extChartAt I (F 0 a)).source ∩ {b}ᶜ) (inter_mem
       ((hFa.comp a (contDiff_prodMk_right 0).contMDiff.contMDiffAt).continuousAt.preimage_mem_nhds
         ((isOpen_extChartAt_source (F 0 a)).mem_nhds (mem_extChartAt_source (F 0 a))))
-      (isOpen_Iio.mem_nhds hab))
-  have hφb : φ b = 0 := image_eq_zero_of_notMem_tsupport fun hb ↦ lt_irrefl b (hφs hb).2
+      (isOpen_compl_singleton.mem_nhds hab))
+  have hφb : φ b = 0 := image_eq_zero_of_notMem_tsupport fun hb ↦ (hφs hb).2 rfl
   have ha : F 0 a ∈ (extChartAt I (F 0 a)).source := mem_extChartAt_source (F 0 a)
   refine ⟨chartEndpointCorrection I F σ a (F 0 a) φ,
     chartEndpointCorrection_zero hbase fun t ht ↦ (hφs (subset_tsupport φ ht)).1,

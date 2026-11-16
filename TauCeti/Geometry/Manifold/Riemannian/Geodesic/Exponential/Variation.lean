@@ -53,7 +53,7 @@ follows the geodesic `s ↦ exp_(γ b) (s • V b)`, which is fixed when `V b = 
 * `TauCeti.Manifold.eventually_pos_on_initial_interval_comp_exponentialVariation`: its transverse
   geodesics from a zero set of `ρ` enter `{ρ > 0}` on a common initial interval.
 * `TauCeti.Manifold.exists_contMDiffAt_variationField_eq`: every `C^n` field along a curve is the
-  variation field of a `C^n` variation with a prescribed moving left endpoint.
+  variation field of a `C^n` variation with a prescribed moving endpoint at either end.
 
 ## References
 
@@ -223,12 +223,13 @@ theorem eventually_pos_on_initial_interval_comp_exponentialVariation {t : ℝ} {
   exact ⟨τ, hτ, h.mono fun u hu s hs ↦ hu s (by rwa [zero_add])⟩
 
 /-- **Realization of a field with a moving endpoint.** Let `V` be a field along `γ` whose lift to
-the tangent bundle is `C^n`, `1 ≤ n`, on `[a, b]`, with `a < b`, and let `σ` be a curve which is
-`C^n` at `0`, with `σ 0 = γ a` and velocity `V a` at `0`. Then there is a `C^n` variation of `γ`
-with variation field `V` on `[a, b]`, whose curves start at `σ s` for `s` near `0` and end at
-`exp_(γ b) (s • V b)`. In particular the right endpoint is fixed when `V b = 0`. -/
+the tangent bundle is `C^n`, `1 ≤ n`, on the segment between `a` and `b ≠ a`, and let `σ` be a
+curve which is `C^n` at `0`, with `σ 0 = γ a` and velocity `V a` at `0`. Then there is a `C^n`
+variation of `γ` with variation field `V` on the segment, whose curves pass through `σ s` at the
+parameter `a` for `s` near `0` and through `exp_(γ b) (s • V b)` at the parameter `b`. In
+particular the endpoint at `b` is fixed when `V b = 0`. -/
 theorem exists_contMDiffAt_variationField_eq {n : ℕ∞} (hn : 1 ≤ n) {σ : ℝ → M} {a b : ℝ}
-    (hab : a < b)
+    (hab : a ≠ b)
     (hV : ∀ t ∈ uIcc a b,
       ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (V t)) t)
     (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I n σ 0) (hbase : γ a = σ 0) (hvel : curveVelocity I σ 0 = V a) :
