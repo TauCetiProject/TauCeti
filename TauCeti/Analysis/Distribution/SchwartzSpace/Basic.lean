@@ -27,6 +27,7 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   supremum of Schwartz seminorms of `f` times `(1 + ‖x‖) ^ (-k)`.
 * `SchwartzMap.integrable_norm_pow_mul_norm_sq`: `‖x‖ ^ k ‖f x‖²` is integrable.
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
+* `SchwartzMap.integrable_mul`: `f x * g x` is integrable for scalar Schwartz functions.
 * `SchwartzMap.integrable_one_add_norm_sq_rpow_mul_norm`: `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is integrable
   for every real `r`.
 * `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
@@ -163,6 +164,11 @@ theorem integrable_inner {H : Type*} [NormedAddCommGroup H] [InnerProductSpace �
     (f.continuous.inner g.continuous).aestronglyMeasurable (.of_forall fun x ↦ ?_)
   rw [mul_comm]
   exact (norm_inner_le_norm _ _).trans (by gcongr; exact g.norm_le_seminorm ℝ x)
+
+/-- For scalar Schwartz functions `f` and `g`, the pointwise product `f x * g x` is integrable. -/
+theorem integrable_mul {𝕜 : Type*} [RCLike 𝕜] (f g : 𝓢(E, 𝕜)) :
+    Integrable (fun x ↦ f x * g x) μ :=
+  (pairing (ContinuousLinearMap.mul 𝕜 𝕜) f g).integrable
 
 /-- For a Schwartz function `f` and every real `r`, the function `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is
 integrable. With `r = s / 2` this is the Japanese bracket weight `⟨x⟩ ^ s ‖f x‖`. -/
@@ -311,10 +317,8 @@ theorem eq_of_forall_integral_mul_eq [μ.HasTemperateGrowth] {𝕜' : Type*} [RC
   ext x
   have h0 := eq_zero_of_forall_integral_apply_eq_zero (μ := μ)
     (g := fun y ↦ ContinuousLinearMap.mul 𝕜' 𝕜' (f y - g y)) (by fun_prop) (fun u ↦ by
-      have hi (v : 𝓢(E, 𝕜')) : Integrable (fun ζ ↦ v ζ * u ζ) μ :=
-        (SchwartzMap.pairing (ContinuousLinearMap.mul 𝕜' 𝕜') v u).integrable
       simp only [ContinuousLinearMap.mul_apply', sub_mul]
-      rw [integral_sub (hi f) (hi g), h u, sub_self]) x
+      rw [integral_sub (f.integrable_mul u) (g.integrable_mul u), h u, sub_self]) x
   simpa [sub_eq_zero] using congrArg (· 1) h0
 
 end TauCeti
