@@ -448,10 +448,11 @@ theorem subgroupComap_smul {H : Type*} [Group H] [TopologicalSpace H] (f : H →
 /-- The kernel of precomposition with the quotient projection contains the subgroup. -/
 theorem le_ker_comp_quotientMk {H : Type*} [Monoid H] [TopologicalSpace H]
     {N : Subgroup G} [N.Normal] (g : (G ⧸ N) →ₜ* H) :
-    N ≤ ((g.comp (Subgroup.quotientMkContinuousMonoidHom N) : G →* H)).ker :=
-  fun x hx => by
-    rw [MonoidHom.mem_ker, MonoidHom.coe_ofClass, ContinuousMonoidHom.coe_comp, Function.comp_apply,
-      Subgroup.quotientMkContinuousMonoidHom_apply, (QuotientGroup.eq_one_iff x).mpr hx, map_one]
+    N ≤ ((g.comp (Subgroup.quotientMkContinuousMonoidHom N) : G →* H)).ker := by
+  have hcomp : (g.comp (Subgroup.quotientMkContinuousMonoidHom N) : G →* H) =
+      (g : (G ⧸ N) →* H).comp (QuotientGroup.mk' N) := MonoidHom.ext fun _ => by simp
+  rw [hcomp, ← MonoidHom.comap_ker]
+  exact QuotientGroup.le_comap_mk' N _
 
 end ContinuousMonoidHom
 
