@@ -27,6 +27,12 @@ the chart coordinates, the change of variables has Jacobian `s ^ (card ι - 1)`,
 Gamma product density factors as the chart density times a Gamma density of shape `∑ i, a i` in
 `s`.  Integrating `s` out leaves the chart density.
 
+Projecting the Dirichlet law onto the remaining coordinates `{i // i ≠ i₀} → ℝ` identifies
+its Radon–Nikodym derivative and the canonical pdf of those coordinates. These density
+interfaces include the single-category simplex, whose remaining coordinate space has dimension
+zero. The chart-density formula requires positive shapes, but `HasPDF` also holds at invalid
+parameters, where the law is zero.
+
 ## Main definitions
 
 * `TauCeti.Probability.dirichletChart` reconstructs a point of `EuclideanSpace ℝ ι` from its
@@ -49,7 +55,14 @@ Gamma product density factors as the chart density times a Gamma density of shap
   Dirichlet law as the image, under the chart, of Lebesgue measure on the remaining coordinates
   weighted by `TauCeti.Probability.dirichletChartPDF`;
 * `TauCeti.Probability.lintegral_dirichletChartPDF_eq_one` records that this density has total
-  mass one.
+  mass one;
+* `TauCeti.Probability.map_coords_dirichletMeasure_eq_withDensity` and
+  `TauCeti.Probability.rnDeriv_map_coords_dirichletMeasure` identify the law of the remaining
+  coordinates and its Radon–Nikodym derivative;
+* `ProbabilityTheory.HasLaw.coords_dirichletMeasure`,
+  `ProbabilityTheory.HasLaw.hasPDF_coords_dirichletMeasure`, and
+  `ProbabilityTheory.HasLaw.pdf_coords_eq_dirichletChartPDF` give the coordinate law and density
+  interfaces for random vectors with the Dirichlet law.
 
 ## References
 
@@ -815,6 +828,66 @@ theorem integrable_dirichletChartPDFReal {a : ι → ℝ} (ha : ∀ i, 0 < a i) 
   simpa only [← dirichletChartPDF_eq_ofReal, lintegral_dirichletChartPDF_eq_one ha i₀] using
     (ENNReal.one_lt_top : (1 : ℝ≥0∞) < ∞)
 
+/-- Deleting one coordinate of a Dirichlet vector gives Lebesgue measure weighted by its
+simplex-chart density. -/
+theorem map_coords_dirichletMeasure_eq_withDensity {a : ι → ℝ} (ha : ∀ i, 0 < a i) (i₀ : ι) :
+    (dirichletMeasure a).map (fun x (j : {i // i ≠ i₀}) ↦ x j) =
+      volume.withDensity (dirichletChartPDF a i₀) := by
+  rw [dirichletMeasure_eq_map_withDensity_dirichletChartPDF ha i₀,
+    Measure.map_map (by fun_prop) measurable_dirichletChart]
+  have hcomp : (fun x (j : {i // i ≠ i₀}) ↦ x j) ∘ dirichletChart i₀ = id := by
+    ext x j
+    exact dirichletChart_apply_coe i₀ x j
+  rw [hcomp, Measure.map_id]
+
+/-- The Radon–Nikodym derivative of the law of the remaining coordinates is the Dirichlet
+chart density. -/
+theorem rnDeriv_map_coords_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i) (i₀ : ι) :
+    ((dirichletMeasure a).map fun x (j : {i // i ≠ i₀}) ↦ x j).rnDeriv volume
+      =ᵐ[volume] dirichletChartPDF a i₀ := by
+  rw [map_coords_dirichletMeasure_eq_withDensity ha i₀]
+  exact Measure.rnDeriv_withDensity _ (measurable_dirichletChartPDF a i₀)
+
 end Probability
 
 end TauCeti
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+variable {ι Ω : Type*} [Fintype ι] [DecidableEq ι] [MeasurableSpace Ω]
+  {P : Measure Ω} {X : Ω → EuclideanSpace ℝ ι} {a : ι → ℝ}
+
+/-- The coordinates away from a chosen category of a Dirichlet random vector have the
+chart-density law. -/
+theorem coords_dirichletMeasure (hX : HasLaw X (dirichletMeasure a) P)
+    (ha : ∀ i, 0 < a i) (i₀ : ι) :
+    HasLaw (fun ω (j : {i // i ≠ i₀}) ↦ X ω j)
+      (volume.withDensity (dirichletChartPDF a i₀)) P := by
+  rw [← map_coords_dirichletMeasure_eq_withDensity ha i₀]
+  exact HasLaw.comp ⟨(by fun_prop : Measurable fun (x : EuclideanSpace ℝ ι)
+    (j : {i // i ≠ i₀}) ↦ x j).aemeasurable, rfl⟩ hX
+
+/-- The remaining coordinates of a Dirichlet random vector admit a density against product
+Lebesgue measure, including at invalid shapes where the law is zero. -/
+theorem hasPDF_coords_dirichletMeasure (hX : HasLaw X (dirichletMeasure a) P) (i₀ : ι) :
+    HasPDF (fun ω (j : {i // i ≠ i₀}) ↦ X ω j) P := by
+  by_cases ha : ∀ i, 0 < a i
+  · exact hasPDF_of_hasLaw_withDensity (measurable_dirichletChartPDF a i₀).aemeasurable
+      (hX.coords_dirichletMeasure ha i₀)
+  · refine hasPDF_of_hasLaw_withDensity (f := 0) aemeasurable_const ?_
+    have hcoords := HasLaw.comp ⟨(by fun_prop : Measurable fun (x : EuclideanSpace ℝ ι)
+      (j : {i // i ≠ i₀}) ↦ x j).aemeasurable, rfl⟩ hX
+    simpa only [dirichletMeasure_eq_zero_of_invalid (fun h ↦ ha h.2), Measure.map_zero,
+      withDensity_zero, Function.comp_def] using hcoords
+
+/-- The canonical pdf of the remaining coordinates of a Dirichlet random vector agrees almost
+everywhere with the chart density. -/
+theorem pdf_coords_eq_dirichletChartPDF (hX : HasLaw X (dirichletMeasure a) P)
+    (ha : ∀ i, 0 < a i) (i₀ : ι) :
+    pdf (fun ω (j : {i // i ≠ i₀}) ↦ X ω j) P =ᵐ[volume] dirichletChartPDF a i₀ :=
+  pdf_eq_of_hasLaw_withDensity (measurable_dirichletChartPDF a i₀).aemeasurable
+    (hX.coords_dirichletMeasure ha i₀)
+
+end ProbabilityTheory.HasLaw
