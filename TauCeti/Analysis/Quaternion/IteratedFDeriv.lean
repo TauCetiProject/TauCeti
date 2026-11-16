@@ -44,7 +44,7 @@ right) Fueter regular on a set `Ω` containing `closedBall q₀ R` (`R > 0`) and
 ## Main results
 
 * `TauCeti.hasFTaylorSeriesUpToOn_integral_bilinear_cauchyFueterKernel`,
-  `TauCeti.contDiffOn_integral_bilinear_cauchyFueterKernel`,
+  `TauCeti.contDiffOn_integral_bilinear_cauchyFueterKernel_ball`,
   `TauCeti.iteratedFDeriv_integral_bilinear_cauchyFueterKernel`,
   `TauCeti.iteratedFDeriv_integral_cauchyFueterKernel_mul`,
   `TauCeti.iteratedFDeriv_integral_mul_cauchyFueterKernel`: formal Taylor series, smoothness on
@@ -192,7 +192,7 @@ theorem hasFTaylorSeriesUpToOn_integral_bilinear_cauchyFueterKernel
 /-- Smoothness (`C^n` for any `n : ℕ∞`) on `ball q₀ δ` of a bilinearly weighted Cauchy–Fueter
 kernel potential `q ↦ ∫ z, B (g z) (cauchyFueterKernel (φ z) q) ∂μ` when `φ` stays at distance at
 least `δ` from `q₀` almost everywhere. -/
-theorem contDiffOn_integral_bilinear_cauchyFueterKernel
+theorem contDiffOn_integral_bilinear_cauchyFueterKernel_ball
     (B : G →L[ℝ] ℍ →L[ℝ] E) {φ : X → ℍ} {g : X → G} {q₀ : ℍ} {δ : ℝ} {n : ℕ∞}
     (hφ : AEStronglyMeasurable φ μ) (hg : Integrable g μ)
     (hδ : ∀ᵐ z ∂μ, δ ≤ ‖φ z - q₀‖) :
@@ -218,7 +218,7 @@ theorem contDiffAt_integral_bilinear_cauchyFueterKernel
     (hφ : AEStronglyMeasurable φ μ) (hg : Integrable g μ)
     (hδ₀ : 0 < δ) (hδ : ∀ᵐ z ∂μ, δ ≤ ‖φ z - q₀‖) :
     ContDiffAt ℝ n (fun q ↦ ∫ z, B (g z) (cauchyFueterKernel (φ z) q) ∂μ) q₀ :=
-  (contDiffOn_integral_bilinear_cauchyFueterKernel B hφ hg hδ).contDiffAt
+  (contDiffOn_integral_bilinear_cauchyFueterKernel_ball B hφ hg hδ).contDiffAt
     (isOpen_ball.mem_nhds (mem_ball_self hδ₀))
 
 /-- **Iterated derivatives of a bilinearly weighted Cauchy–Fueter kernel potential on a ball.**
@@ -283,12 +283,12 @@ theorem exists_norm_iteratedFDeriv_integral_bilinear_cauchyFueterKernel_le
 
 /-- Smoothness on `ball q₀ δ` of a left Cauchy–Fueter kernel potential
 `q ↦ ∫ z, cauchyFueterKernel (φ z) q * g z ∂μ`. -/
-theorem contDiffOn_integral_cauchyFueterKernel_mul {φ g : X → ℍ}
+theorem contDiffOn_integral_cauchyFueterKernel_mul_ball {φ g : X → ℍ}
     {q₀ : ℍ} {δ : ℝ} {n : ℕ∞} (hφ : AEStronglyMeasurable φ μ) (hg : Integrable g μ)
     (hδ : ∀ᵐ z ∂μ, δ ≤ ‖φ z - q₀‖) :
     ContDiffOn ℝ n (fun q ↦ ∫ z, cauchyFueterKernel (φ z) q * g z ∂μ) (ball q₀ δ) := by
   simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply'] using
-    contDiffOn_integral_bilinear_cauchyFueterKernel (n := n)
+    contDiffOn_integral_bilinear_cauchyFueterKernel_ball (n := n)
       (ContinuousLinearMap.mul ℝ ℍ).flip hφ hg hδ
 
 /-- Smoothness at `q₀` of a left Cauchy–Fueter kernel potential
@@ -297,17 +297,17 @@ theorem contDiffAt_integral_cauchyFueterKernel_mul {φ g : X → ℍ}
     {q₀ : ℍ} {δ : ℝ} {n : ℕ∞} (hφ : AEStronglyMeasurable φ μ) (hg : Integrable g μ)
     (hδ₀ : 0 < δ) (hδ : ∀ᵐ z ∂μ, δ ≤ ‖φ z - q₀‖) :
     ContDiffAt ℝ n (fun q ↦ ∫ z, cauchyFueterKernel (φ z) q * g z ∂μ) q₀ :=
-  (contDiffOn_integral_cauchyFueterKernel_mul hφ hg hδ).contDiffAt
+  (contDiffOn_integral_cauchyFueterKernel_mul_ball hφ hg hδ).contDiffAt
     (isOpen_ball.mem_nhds (mem_ball_self hδ₀))
 
 /-- Smoothness on `ball q₀ δ` of a right Cauchy–Fueter kernel potential
 `q ↦ ∫ z, g z * cauchyFueterKernel (φ z) q ∂μ`. -/
-theorem contDiffOn_integral_mul_cauchyFueterKernel {φ g : X → ℍ}
+theorem contDiffOn_integral_mul_cauchyFueterKernel_ball {φ g : X → ℍ}
     {q₀ : ℍ} {δ : ℝ} {n : ℕ∞} (hφ : AEStronglyMeasurable φ μ) (hg : Integrable g μ)
     (hδ : ∀ᵐ z ∂μ, δ ≤ ‖φ z - q₀‖) :
     ContDiffOn ℝ n (fun q ↦ ∫ z, g z * cauchyFueterKernel (φ z) q ∂μ) (ball q₀ δ) := by
   simpa only [ContinuousLinearMap.mul_apply'] using
-    contDiffOn_integral_bilinear_cauchyFueterKernel (n := n)
+    contDiffOn_integral_bilinear_cauchyFueterKernel_ball (n := n)
       (ContinuousLinearMap.mul ℝ ℍ) hφ hg hδ
 
 /-- Smoothness at `q₀` of a right Cauchy–Fueter kernel potential
@@ -316,7 +316,7 @@ theorem contDiffAt_integral_mul_cauchyFueterKernel {φ g : X → ℍ}
     {q₀ : ℍ} {δ : ℝ} {n : ℕ∞} (hφ : AEStronglyMeasurable φ μ) (hg : Integrable g μ)
     (hδ₀ : 0 < δ) (hδ : ∀ᵐ z ∂μ, δ ≤ ‖φ z - q₀‖) :
     ContDiffAt ℝ n (fun q ↦ ∫ z, g z * cauchyFueterKernel (φ z) q ∂μ) q₀ :=
-  (contDiffOn_integral_mul_cauchyFueterKernel hφ hg hδ).contDiffAt
+  (contDiffOn_integral_mul_cauchyFueterKernel_ball hφ hg hδ).contDiffAt
     (isOpen_ball.mem_nhds (mem_ball_self hδ₀))
 
 /-- **Iterated derivatives of a left Cauchy–Fueter kernel potential on a ball.** Right
