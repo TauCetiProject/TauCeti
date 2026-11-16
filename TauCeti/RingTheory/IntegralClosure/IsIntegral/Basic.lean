@@ -43,8 +43,8 @@ without either being an algebra over the other.
   `b ≠ 0`, then `x` is integral over `ℚ`.
 * `TauCeti.isIntegral_of_pow_add_pow_eq_mul_pow`: integrality from a monic power relation
   with integral coefficients.
-* `Algebra.IsIntegral.of_finrank_pos`: a free algebra of positive finite rank over a nontrivial
-  commutative ring is integral.
+* `Algebra.IsIntegral.of_finrank_pos`: a free algebra of positive finite rank over a commutative
+  ring with the strong rank condition is integral.
 -/
 
 public section
@@ -205,10 +205,11 @@ theorem isIntegral_of_pow_add_pow_eq_mul_pow {R A : Type*} [CommRing R] [CommRin
 
 end TauCeti
 
-/-- **A positive finite rank forces integrality**: if `0 < Module.finrank K L` for a nontrivial
-commutative ring `K` and a free `K`-algebra `L` (automatic over a field), then `L` is integral
-over `K`. -/
+/-- **A positive finite rank forces integrality**: if `0 < Module.finrank K L` for a commutative
+ring `K` with the strong rank condition (for example a nontrivial commutative ring) and a free
+`K`-algebra `L` (automatic over a field), then `L` is integral over `K`. -/
 theorem Algebra.IsIntegral.of_finrank_pos {K L : Type*} [CommRing K] [Ring L] [Algebra K L]
-    [Nontrivial K] [Module.Free K L] (h : 0 < Module.finrank K L) : Algebra.IsIntegral K L :=
+    [StrongRankCondition K] [Module.Free K L] (h : 0 < Module.finrank K L) :
+    Algebra.IsIntegral K L :=
   haveI := Module.finite_of_finrank_pos h
   Algebra.IsIntegral.of_finite K L
