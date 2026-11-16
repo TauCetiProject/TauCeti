@@ -38,6 +38,9 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
 * `Matrix.UnitaryGroup.detCircle`: the determinant of a complex unitary matrix, as a continuous
   group morphism `U(n) →* Circle`. It is multiplicative on block-diagonal sums
   (`Matrix.UnitaryGroup.detCircle_sum`).
+* `Matrix.UnitaryGroup.detCircleEquivOfUnique`: for a one-element index type, the determinant is
+  an isomorphism of topological groups `U(1) ≃ₜ* Circle`, whose inverse sends `z` to the `1 × 1`
+  matrix `(z)`.
 -/
 
 public section
@@ -187,5 +190,53 @@ theorem detCircle_sum (p : unitaryGroup n ℂ × unitaryGroup m ℂ) :
   exact det_fromBlocks_zero₂₁ _ _ _
 
 end Sum
+
+section Unique
+
+variable [Unique n]
+
+private theorem diagonal_detCircle_of_unique (U : unitaryGroup n ℂ) :
+    diagonal (fun _ : n ↦ (detCircle U : ℂ)) = U := by
+  ext i j
+  rw [Subsingleton.elim i default, Subsingleton.elim j default, diagonal_apply_eq, coe_detCircle,
+    det_unique]
+
+omit [Unique n] in
+private theorem diagonal_circle_mem_unitaryGroup (z : Circle) :
+    diagonal (fun _ : n ↦ (z : ℂ)) ∈ unitaryGroup n ℂ :=
+  diagonal_mem_unitary.2 (Pi.mem_unitary_iff.2 fun _ ↦ z.coe_mem_unitary)
+
+private theorem detCircle_diagonal_of_unique (z : Circle) :
+    detCircle (⟨diagonal fun _ : n ↦ (z : ℂ), diagonal_circle_mem_unitaryGroup z⟩ :
+      unitaryGroup n ℂ) = z :=
+  Circle.ext (by simp [det_unique])
+
+variable (n) in
+/-- For a one-element index type, the determinant is an isomorphism of topological groups from
+the unitary group `U(1)` onto the unit circle. Its inverse sends `z` to the `1 × 1` matrix `(z)`
+(`Matrix.UnitaryGroup.coe_detCircleEquivOfUnique_symm_apply`). -/
+noncomputable def detCircleEquivOfUnique : unitaryGroup n ℂ ≃ₜ* Circle where
+  toFun := detCircle
+  invFun z := ⟨diagonal fun _ ↦ (z : ℂ), diagonal_circle_mem_unitaryGroup z⟩
+  left_inv U := Subtype.ext (diagonal_detCircle_of_unique U)
+  right_inv := detCircle_diagonal_of_unique
+  map_mul' := map_mul detCircle
+  continuous_toFun := continuous_detCircle
+  continuous_invFun := (continuous_pi fun _ ↦ continuous_subtype_val).matrix_diagonal.subtype_mk _
+
+@[simp]
+theorem detCircleEquivOfUnique_apply (U : unitaryGroup n ℂ) :
+    detCircleEquivOfUnique n U = detCircle U :=
+  (rfl)
+
+/-- The inverse of `Matrix.UnitaryGroup.detCircleEquivOfUnique` sends `z` to the diagonal
+`1 × 1` matrix `(z)`. -/
+@[simp]
+theorem coe_detCircleEquivOfUnique_symm_apply (z : Circle) :
+    (((detCircleEquivOfUnique n).symm z : unitaryGroup n ℂ) : Matrix n n ℂ) =
+      diagonal fun _ ↦ (z : ℂ) :=
+  (rfl)
+
+end Unique
 
 end Matrix.UnitaryGroup
