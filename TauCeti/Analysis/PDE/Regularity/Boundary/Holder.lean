@@ -32,8 +32,9 @@ with `α` and `C` depending also on `r`
 (`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp`).
 The divergence-form datum `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`, with `F ∈ L² ∩ L^q(U ∩ H; ℝⁿ)`, `q > 2` and
 `q > n`, is treated in
-`exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_add_divergence`, and
-`F` alone in `exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_divergence`
+`exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp_add_divergence`,
+and `F` alone in
+`exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp_divergence`
 (both in `TauCeti.PDE`). This is the datum that arises when nonzero boundary values `g` are
 subtracted: `u - g` solves the equation with `F` replaced by `F + a ∇g`.
 
@@ -176,91 +177,6 @@ theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL 
     hhol (beta := 0) hν hH hU ha ham aestronglyMeasurable_const (fun _ _ => by simp) hu0 hu hR hRK
       (by simp)⟩
 
-/-- **De Giorgi's theorem with a right-hand side up to a flat boundary.** Let `n ≥ 1` be the
-dimension and let `r > 1` with `r > n/2`. There are `α ∈ (0, 1]` and `C > 0`, depending only on
-`λ`, `Λ`, `n`, `r` and the normalization of the additive Haar measure `mu`, such that the following
-holds. Let `H = {x | c₀ < ⟪x, ν⟫}` with `ν ≠ 0`, let `ρ` be the reflection in the hyperplane
-`∂H` and let `U` be open with `ρ U ⊆ U`. Let `a` be measurable on `U ∩ H` and uniformly elliptic
-with constants `λ, Λ` on the part of `U` in the closed half-space `{x | c₀ ≤ ⟪x, ν⟫}`, and let
-`f ∈ L²(U ∩ H) ∩ Lʳ(U ∩ H)`. Let `u ∈ H¹(U)` vanish on `U ∖ H` and let its restriction to
-`U ∩ H` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f`, that is `a(u, v) = ∫_{U ∩ H} f v` for every
-`v ∈ H¹₀(U ∩ H)`. If the closed `R`-thickening of a set `K` lies in `U`, then the precise
-representative of the odd reflection `w = u - u ∘ ρ`, which agrees with `u` on `U ∩ H`, is Hölder
-continuous on `K` with exponent `α` and constant
-
-`C R^(-α) (R^(-n/2) ‖w‖_{L²(U)} + R^(2 - n/r) ‖f‖_{Lʳ(U ∩ H)} / λ)`.
-
-The set `K` may meet the hyperplane, so this is an estimate up to the flat part of the boundary
-of `U ∩ H`, on which `u` vanishes. -/
-theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp
-    [Nonempty ι] {lam Lam : ℝ} {r : ℝ≥0} (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r) :
-    ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {U H : Opens (EuclideanSpace ℝ ι)}
-      {ν : EuclideanSpace ℝ ι} {c₀ : ℝ} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-      {f : EuclideanSpace ℝ ι → ℝ} {u : W1p mu U 2} {K : Set (EuclideanSpace ℝ ι)} {R : ℝ},
-      ν ≠ 0 → (∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) → ∀ hU : MapsTo (hyperplaneReflection ν c₀) U U,
-      UniformlyEllipticOn {x | x ∈ U ∧ c₀ ≤ ⟪x, ν⟫_ℝ} a lam Lam →
-      AEStronglyMeasurable a (mu.restrict (U ⊓ H)) →
-      MemLp f 2 (mu.restrict (U ⊓ H)) → MemLp f r (mu.restrict (U ⊓ H)) →
-      (∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.value u x = 0) →
-      (∀ v : W1p0 mu (U ⊓ H) 2,
-        energyFormH1 a 0 0 (W1p.restrictL (inf_le_left : U ⊓ H ≤ U) u)
-          (v : W1p mu (U ⊓ H) 2) =
-            ∫ x in U ⊓ H, f x * W1p.value (v : W1p mu (U ⊓ H) 2) x ∂mu) →
-      0 < R → Metric.cthickening R K ⊆ (U : Set (EuclideanSpace ℝ ι)) →
-        HolderOnWith (C * R ^ (-(α : ℝ)) * (R ^ (-(Fintype.card ι : ℝ) / 2) *
-          √(∫ y in U, W1p.value (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU
-            u) y ^ 2 ∂mu) + R ^ (2 - (Fintype.card ι : ℝ) / r) *
-              (eLpNorm f r (mu.restrict (U ⊓ H))).toReal / lam)).toNNReal α
-          (preciseRepresentative mu
-            (W1p.value (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u))) K := by
-  obtain ⟨α, C, hα, hα1, hC, hhol⟩ :=
-    exists_holderOnWith_preciseRepresentative_of_memLp (mu := mu) (lam := lam) (Lam := Lam) hr hrn
-  refine ⟨α, 2 * C, hα, hα1, by positivity,
-    fun {U H ν c₀ a f u K R} hν hH hU ha ham hf2 hfr hu0 hu hR hRK => ?_⟩
-  have ha' : UniformlyEllipticOn (U : Set (EuclideanSpace ℝ ι)) (reflectPrincipal ν c₀ a) lam
-      Lam := ha.reflectPrincipal hν hU
-  have hlam := ha'.pos
-  -- The odd reflection `g` of `f` is the right-hand side of the reflected equation.
-  set g : EuclideanSpace ℝ ι → ℝ := fun x => (H : Set (EuclideanSpace ℝ ι)).indicator f x -
-    (H : Set (EuclideanSpace ℝ ι)).indicator f (hyperplaneReflection ν c₀ x)
-  have hg : MemLp g r (mu.restrict U) :=
-    memLp_indicator_sub_indicator_comp_hyperplaneReflection H.isOpen.measurableSet
-      U.isOpen.measurableSet hU hfr
-  have hgf : (eLpNorm g r (mu.restrict U)).toReal ≤
-      2 * (eLpNorm f r (mu.restrict (U ⊓ H))).toReal := by
-    rw [← ENNReal.toReal_ofNat, ← ENNReal.toReal_mul]
-    exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hfr.eLpNorm_ne_top)
-      (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le
-        (by exact_mod_cast hr.le) H.isOpen.measurableSet U.isOpen.measurableSet hU)
-  have hw : ∀ v : W1p0 mu U 2, energyFormH1 (reflectPrincipal ν c₀ a) 0 0
-      (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (v : W1p mu U 2) =
-        ∫ x in U, g x * W1p.value (v : W1p mu U 2) x ∂mu := fun v => by
-    have h := energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral hν hH hU
-      (memLp_energyIntegrand_reflectPrincipal (b := 0) (c := 0) (beta := 0) (gamma := 0) hν hH hU
-        ha ham aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
-        (fun _ _ => by simp)) hu0 hf2 hu v
-    rwa [reflectDrift_zero, reflectDensity_zero] at h
-  refine (hhol ha' (aestronglyMeasurable_reflectPrincipal hν hH hU ham) hg hw hR hRK).mono_const
-    (Real.toNNReal_le_toNNReal ?_)
-  -- The constant: `‖g‖_{Lʳ(U)} ≤ 2 ‖f‖_{Lʳ(U ∩ H)}` and the first summand is nonnegative.
-  set A := R ^ (-(Fintype.card ι : ℝ) / 2) *
-    √(∫ y in U, W1p.value (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU
-      u) y ^ 2 ∂mu)
-  have hA : 0 ≤ A := by positivity
-  have hB : R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm g r (mu.restrict U)).toReal / lam ≤
-      2 * (R ^ (2 - (Fintype.card ι : ℝ) / r) *
-        (eLpNorm f r (mu.restrict (U ⊓ H))).toReal / lam) := by
-    rw [mul_div_assoc', mul_left_comm]
-    gcongr
-  have hCR : 0 ≤ C * R ^ (-(α : ℝ)) := by positivity
-  calc C * R ^ (-(α : ℝ)) * (A + R ^ (2 - (Fintype.card ι : ℝ) / r) *
-        (eLpNorm g r (mu.restrict U)).toReal / lam)
-      ≤ C * R ^ (-(α : ℝ)) * (2 * (A + R ^ (2 - (Fintype.card ι : ℝ) / r) *
-          (eLpNorm f r (mu.restrict (U ⊓ H))).toReal / lam)) :=
-        mul_le_mul_of_nonneg_left (by linarith) hCR
-    _ = 2 * C * R ^ (-(α : ℝ)) * (A + R ^ (2 - (Fintype.card ι : ℝ) / r) *
-          (eLpNorm f r (mu.restrict (U ⊓ H))).toReal / lam) := by ring
-
 /-- The constant of the reflected estimate: bounding two data norms `x₁, x₂` by twice `y₁, y₂`
 at most doubles a constant of the form `C t (A + (s₁ x₁ + s₂ x₂) / λ)`. -/
 private theorem mul_add_add_div_le_two_mul {C t A s₁ s₂ x₁ x₂ y₁ y₂ lam : ℝ} (hCt : 0 ≤ C * t)
@@ -294,7 +210,8 @@ and constant
 
 The set `K` may meet the hyperplane, so this is an estimate up to the flat part of the boundary
 of `U ∩ H`, on which `u` vanishes. -/
-theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_add_divergence
+theorem
+    exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp_add_divergence
     [Nonempty ι] {lam Lam : ℝ} {r q : ℝ≥0} (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r)
     (hq : 2 < (q : ℝ)) (hqn : (Fintype.card ι : ℝ) < q) :
     ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {U H : Opens (EuclideanSpace ℝ ι)}
@@ -337,21 +254,24 @@ theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_
     (H : Set (EuclideanSpace ℝ ι)).indicator F x - (ℝ ∙ ν)ᗮ.reflection
       ((H : Set (EuclideanSpace ℝ ι)).indicator F (hyperplaneReflection ν c₀ x))
   have hg : MemLp g r (mu.restrict U) :=
-    memLp_indicator_sub_indicator_comp_hyperplaneReflection hHm hUm hU hfr
+    memLp_indicator_sub_indicator_comp_hyperplaneReflection (L := id) isometry_id rfl hHm hUm hU
+      hfr
   have hG : MemLp G q (mu.restrict U) :=
-    memLp_indicator_sub_reflection_indicator_comp_hyperplaneReflection hHm hUm hU hFq
+    memLp_indicator_sub_indicator_comp_hyperplaneReflection (ℝ ∙ ν)ᗮ.reflection.isometry
+      (map_zero _) hHm hUm hU hFq
   have hgf : (eLpNorm g r (mu.restrict U)).toReal ≤
       2 * (eLpNorm f r (mu.restrict (U ⊓ H))).toReal := by
     rw [← ENNReal.toReal_ofNat, ← ENNReal.toReal_mul]
     exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hfr.eLpNorm_ne_top)
-      (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le
+      (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (L := id) isometry_id rfl
         (by exact_mod_cast hr.le) hHm hUm hU)
   have hGF : (eLpNorm G q (mu.restrict U)).toReal ≤
       2 * (eLpNorm F q (mu.restrict (U ⊓ H))).toReal := by
     rw [← ENNReal.toReal_ofNat, ← ENNReal.toReal_mul]
     exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hFq.eLpNorm_ne_top)
-      (eLpNorm_indicator_sub_reflection_indicator_comp_hyperplaneReflection_le
-        (by exact_mod_cast (one_lt_two.trans hq).le) hHm hUm hU)
+      (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le
+        (ℝ ∙ ν)ᗮ.reflection.isometry (map_zero _) (by exact_mod_cast (one_lt_two.trans hq).le)
+        hHm hUm hU)
   have hw : ∀ v : W1p0 mu U 2, energyFormH1 (reflectPrincipal ν c₀ a) 0 0
       (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (v : W1p mu U 2) =
         ∫ x in U, g x * W1p.value (v : W1p mu U 2) x ∂mu -
@@ -366,6 +286,55 @@ theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_
   -- The constant: the reflected data have at most twice the norms of `f` and `F`.
   exact mul_add_add_div_le_two_mul (by positivity) (by positivity) (by positivity)
     (by positivity) hlam hgf hGF
+
+/-- **De Giorgi's theorem with a right-hand side up to a flat boundary.** Let `n ≥ 1` be the
+dimension and let `r > 1` with `r > n/2`. There are `α ∈ (0, 1]` and `C > 0`, depending only on
+`λ`, `Λ`, `n`, `r` and the normalization of the additive Haar measure `mu`, such that the following
+holds. Let `H = {x | c₀ < ⟪x, ν⟫}` with `ν ≠ 0`, let `ρ` be the reflection in the hyperplane
+`∂H` and let `U` be open with `ρ U ⊆ U`. Let `a` be measurable on `U ∩ H` and uniformly elliptic
+with constants `λ, Λ` on the part of `U` in the closed half-space `{x | c₀ ≤ ⟪x, ν⟫}`, and let
+`f ∈ L²(U ∩ H) ∩ Lʳ(U ∩ H)`. Let `u ∈ H¹(U)` vanish on `U ∖ H` and let its restriction to
+`U ∩ H` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f`, that is `a(u, v) = ∫_{U ∩ H} f v` for every
+`v ∈ H¹₀(U ∩ H)`. If the closed `R`-thickening of a set `K` lies in `U`, then the precise
+representative of the odd reflection `w = u - u ∘ ρ`, which agrees with `u` on `U ∩ H`, is Hölder
+continuous on `K` with exponent `α` and constant
+
+`C R^(-α) (R^(-n/2) ‖w‖_{L²(U)} + R^(2 - n/r) ‖f‖_{Lʳ(U ∩ H)} / λ)`.
+
+The set `K` may meet the hyperplane, so this is an estimate up to the flat part of the boundary
+of `U ∩ H`, on which `u` vanishes. This is the case `F = 0` of
+`exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp_add_divergence`.
+-/
+theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp
+    [Nonempty ι] {lam Lam : ℝ} {r : ℝ≥0} (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r) :
+    ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {U H : Opens (EuclideanSpace ℝ ι)}
+      {ν : EuclideanSpace ℝ ι} {c₀ : ℝ} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+      {f : EuclideanSpace ℝ ι → ℝ} {u : W1p mu U 2} {K : Set (EuclideanSpace ℝ ι)} {R : ℝ},
+      ν ≠ 0 → (∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) → ∀ hU : MapsTo (hyperplaneReflection ν c₀) U U,
+      UniformlyEllipticOn {x | x ∈ U ∧ c₀ ≤ ⟪x, ν⟫_ℝ} a lam Lam →
+      AEStronglyMeasurable a (mu.restrict (U ⊓ H)) →
+      MemLp f 2 (mu.restrict (U ⊓ H)) → MemLp f r (mu.restrict (U ⊓ H)) →
+      (∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.value u x = 0) →
+      (∀ v : W1p0 mu (U ⊓ H) 2,
+        energyFormH1 a 0 0 (W1p.restrictL (inf_le_left : U ⊓ H ≤ U) u)
+          (v : W1p mu (U ⊓ H) 2) =
+            ∫ x in U ⊓ H, f x * W1p.value (v : W1p mu (U ⊓ H) 2) x ∂mu) →
+      0 < R → Metric.cthickening R K ⊆ (U : Set (EuclideanSpace ℝ ι)) →
+        HolderOnWith (C * R ^ (-(α : ℝ)) * (R ^ (-(Fintype.card ι : ℝ) / 2) *
+          √(∫ y in U, W1p.value (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU
+            u) y ^ 2 ∂mu) + R ^ (2 - (Fintype.card ι : ℝ) / r) *
+              (eLpNorm f r (mu.restrict (U ⊓ H))).toReal / lam)).toNNReal α
+          (preciseRepresentative mu
+            (W1p.value (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u))) K := by
+  -- Any exponent `q > max 2 n` will do, since the divergence datum vanishes.
+  obtain ⟨α, C, hα, hα1, hC, hhol⟩ :=
+    exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp_add_divergence
+      (mu := mu) (lam := lam) (Lam := Lam) (q := Fintype.card ι + 3) hr hrn
+      (by push_cast; linarith [(Fintype.card ι).cast_nonneg (α := ℝ)]) (by push_cast; linarith)
+  refine ⟨α, C, hα, hα1, hC, fun hν hH hU ha ham hf2 hfr hu0 hu hR hRK => ?_⟩
+  have h := hhol (F := 0) hν hH hU ha ham hf2 hfr MemLp.zero MemLp.zero hu0
+    (fun v => by simp only [hu v, Pi.zero_apply, inner_zero_left, integral_zero, sub_zero]) hR hRK
+  simpa only [eLpNorm_zero, ENNReal.toReal_zero, mul_zero, add_zero] using h
 
 /-- **De Giorgi's theorem with a right-hand side in divergence form up to a flat boundary.** Let
 `n ≥ 1` be the dimension and let `q > 2` with `q > n`. There are `α ∈ (0, 1]` and `C > 0`,
@@ -382,9 +351,10 @@ agrees with `u` on `U ∩ H`, is Hölder continuous on `K` with exponent `α` an
 `C R^(-α) (R^(-n/2) ‖w‖_{L²(U)} + R^(1 - n/q) ‖F‖_{L^q(U ∩ H)} / λ)`.
 
 This is the case `f = 0` of
-`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_add_divergence`
+`exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp_add_divergence`.
 -/
-theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_divergence
+theorem
+    exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp_divergence
     [Nonempty ι] {lam Lam : ℝ} {q : ℝ≥0} (hq : 2 < (q : ℝ)) (hqn : (Fintype.card ι : ℝ) < q) :
     ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {U H : Opens (EuclideanSpace ℝ ι)}
       {ν : EuclideanSpace ℝ ι} {c₀ : ℝ} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
@@ -408,7 +378,7 @@ theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_
             (W1p.value (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u))) K := by
   -- Any scalar exponent `r > max 1 (n/2)` will do, since the scalar datum vanishes.
   obtain ⟨α, C, hα, hα1, hC, hhol⟩ :=
-    exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_add_divergence
+    exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp_add_divergence
       (mu := mu) (lam := lam) (Lam := Lam) (r := Fintype.card ι + 2)
       (one_lt_two.trans_le le_add_self) (by push_cast; linarith) hq hqn
   refine ⟨α, C, hα, hα1, hC, fun hν hH hU ha ham hF2 hFq hu0 hu hR hRK => ?_⟩
