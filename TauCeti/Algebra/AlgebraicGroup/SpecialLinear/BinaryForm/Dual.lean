@@ -98,10 +98,12 @@ theorem le_dualAnnihilator_comap_binaryFormsSocle
     {W : Subcomodule k (coordinateHopfAlgebra k 2) (Module.Dual k (binaryForms k d))}
     (hW : W ≠ ⊤) :
     W ≤ ((binaryFormsSocle k d).comap (Subcomodule.subtype (binaryForms k d))).dualAnnihilator := by
-  rw [← Subcomodule.dualCoannihilator_dualAnnihilator W,
+  have hS : Function.Injective (HopfAlgebra.antipode k (A := coordinateHopfAlgebra k 2)) :=
+    Function.Involutive.injective (HopfAlgebra.antipode_antipode (R := k))
+  rw [← Subcomodule.dualCoannihilator_dualAnnihilator W hS,
     Subcomodule.dualAnnihilator_le_dualAnnihilator_iff]
-  set N := W.dualCoannihilator
-  have hN : N ≠ ⊥ := Subcomodule.dualCoannihilator_eq_bot_iff.not.mpr hW
+  set N := W.dualCoannihilator hS
+  have hN : N ≠ ⊥ := (Subcomodule.dualCoannihilator_eq_bot_iff hS).not.mpr hW
   -- The image of the common kernel in the polynomial functions is a nonzero subrepresentation
   -- of the binary forms, so it contains the socle.
   have hle : N.map (Subcomodule.subtype (binaryForms k d)) ≤ binaryForms k d := by

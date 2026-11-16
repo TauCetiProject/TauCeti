@@ -82,4 +82,21 @@ theorem coefficientMatrix_mul_toMatrix (f : Hom R A M N) (b : Basis ι R M)
         coefficientMatrix (C := A) b :=
   (b.map_coact_iff_coefficientMatrix c f.toLinearMap).mp f.map_coact
 
+omit [DecidableEq ι] in
+/-- A scalar matrix intertwining the coefficient matrices of two finite free comodules with no
+nonzero comodule morphism between them is zero. -/
+theorem eq_zero_of_coefficientMatrix_mul_eq
+    (b : Basis ι R M) (c : Basis κ R N)
+    (hzero : ∀ f : Hom R A M N, f = 0) {T : Matrix κ ι R}
+    (hT : coefficientMatrix (C := A) c * T.map (algebraMap R A) =
+      T.map (algebraMap R A) * coefficientMatrix (C := A) b) :
+    T = 0 := by
+  classical
+  let f : M →ₗ[R] N := (LinearMap.toMatrix b c).symm T
+  have hf : TensorProduct.map f LinearMap.id ∘ₗ coact (R := R) (C := A) =
+      coact (R := R) (C := A) ∘ₗ f :=
+    (b.map_coact_iff_coefficientMatrix c f).mpr (by simpa [f] using hT)
+  have hf0 : f = 0 := congrArg Hom.toLinearMap (hzero ⟨f, hf⟩)
+  simpa [f] using congrArg (LinearMap.toMatrix b c) hf0
+
 end TauCeti.Comodule.Hom

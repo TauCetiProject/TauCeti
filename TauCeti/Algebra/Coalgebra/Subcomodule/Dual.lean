@@ -15,19 +15,19 @@ import TauCeti.LinearAlgebra.Dual.Annihilator
 /-!
 # Subcomodules of the dual comodule
 
-Let `M` be a finite-dimensional right comodule over a commutative Hopf algebra `H` over a field
-`k`, and let `M*` carry the dual comodule structure `TauCeti.Comodule.dual`. Annihilators
-exchange the subcomodules of `M` and of `M*`: the annihilator `N^⊥ ≤ M*` of a subcomodule
-`N ≤ M` is a subcomodule, and so is the common kernel `W° ≤ M` of a subcomodule `W ≤ M*`. These
-constructions are mutually inverse, so they give an order-reversing bijection between the two
-lattices of subcomodules (`TauCeti.Subcomodule.dualAnnihilatorOrderIso`). Thus, for example, a
-simple subcomodule of `M` contained in every nonzero subcomodule corresponds to a maximal proper
-subcomodule of `M*` containing every proper subcomodule.
+Let `M` be a finite-dimensional right comodule over a Hopf algebra `H` over a field `k`, and let
+`M*` carry the dual comodule structure `TauCeti.Comodule.dual`. Annihilators exchange the
+subcomodules of `M` and of `M*`: the annihilator `N^⊥ ≤ M*` of a subcomodule `N ≤ M` is a
+subcomodule, and when the antipode of `H` is injective, the common kernel `W° ≤ M` of a
+subcomodule `W ≤ M*` is also a subcomodule. These constructions are mutually inverse, so they
+give an order-reversing bijection between the two lattices of subcomodules
+(`TauCeti.Subcomodule.dualAnnihilatorOrderIso`). In particular, `M*` is simple if and only if
+`M` is simple (`TauCeti.Subcomodule.isSimpleOrder_dual_iff`).
 
 Both directions compare matrix coefficients of `M` and `M*` through the equation
 `c(ev_m, φ) = S(c(φ, m))` (`TauCeti.Comodule.matrixCoefficient_dual_eval`). For the common
-kernel the antipode `S` has to be cancelled, which uses that it is an involution of the
-commutative Hopf algebra `H`.
+kernel the antipode `S` has to be cancelled, which requires only that `S` be injective (as in
+every commutative Hopf algebra or Hopf star algebra).
 
 ## Main declarations
 
@@ -38,6 +38,8 @@ commutative Hopf algebra `H`.
   `TauCeti.Subcomodule.dualAnnihilator_dualCoannihilator`: the two constructions are inverse.
 * `TauCeti.Subcomodule.dualAnnihilatorOrderIso`: the order-reversing bijection between
   subcomodules of `M` and of its dual.
+* `TauCeti.Subcomodule.isSimpleOrder_dual_iff`: simplicity of `M*` is equivalent to simplicity
+  of `M`.
 
 ## References
 
@@ -114,91 +116,113 @@ theorem dualAnnihilator_eq_bot_iff {N : Subcomodule k H M} : N.dualAnnihilator =
 
 end Ring
 
-variable [CommRing H] [HopfAlgebra k H] [Comodule k H M]
+variable [Ring H] [HopfAlgebra k H] [Comodule k H M]
 
-/-- **The common kernel of a subcomodule of the dual.** The vectors killed by every functional
-of a subcomodule `W ≤ M*` form a subcomodule `W°` of `M`. -/
-noncomputable def dualCoannihilator (W : Subcomodule k H (Module.Dual k M)) :
+/-- **The common kernel of a subcomodule of the dual.** Over a Hopf algebra with injective
+antipode, the vectors killed by every functional of a subcomodule `W ≤ M*` form a subcomodule
+`W°` of `M`. -/
+noncomputable def dualCoannihilator (W : Subcomodule k H (Module.Dual k M))
+    (hS : Function.Injective (HopfAlgebra.antipode k (A := H))) :
     Subcomodule k H M :=
   ofSubmodule W.toSubmodule.dualCoannihilator fun m hm ↦ by
     refine (Submodule.coact_mem_range_iff_forall_matrixCoefficient_eq_zero _ m).mpr fun ψ ↦ ?_
     -- In finite dimension, the functionals vanishing on `W°` are the elements of `W`.
     have hψ := W.toSubmodule.dualCoannihilator.comp_mkQ_mem_dualAnnihilator ψ
     rw [Subspace.dualCoannihilator_dualAnnihilator_eq, mem_toSubmodule] at hψ
-    -- Evaluation at `m ∈ W°` vanishes on `W`; cancel the antipode, an involution of `H`.
+    -- Evaluation at `m ∈ W°` vanishes on `W`; cancel the injective antipode.
     have hm' : Module.Dual.eval k M m ∈ W.toSubmodule.dualAnnihilator :=
       (Submodule.mem_dualAnnihilator _).mpr fun φ hφ ↦ by
         simpa using (Submodule.mem_dualCoannihilator m).mp hm φ hφ
-    rw [← HopfAlgebra.antipode_antipode (R := k) (Comodule.matrixCoefficient (R := k) (C := H) _ m),
-      ← Comodule.matrixCoefficient_dual_eval,
-      W.toSubmodule.matrixCoefficient_eq_zero_of_mem_dualAnnihilator (W.coact_mem hψ) hm', map_zero]
+    apply hS
+    rw [map_zero, ← Comodule.matrixCoefficient_dual_eval,
+      W.toSubmodule.matrixCoefficient_eq_zero_of_mem_dualAnnihilator (W.coact_mem hψ) hm']
 
 @[simp]
-theorem dualCoannihilator_toSubmodule (W : Subcomodule k H (Module.Dual k M)) :
-    W.dualCoannihilator.toSubmodule = W.toSubmodule.dualCoannihilator :=
+theorem dualCoannihilator_toSubmodule (W : Subcomodule k H (Module.Dual k M))
+    (hS : Function.Injective (HopfAlgebra.antipode k (A := H))) :
+    (W.dualCoannihilator hS).toSubmodule = W.toSubmodule.dualCoannihilator :=
   (rfl)
 
 @[simp]
-theorem mem_dualCoannihilator {W : Subcomodule k H (Module.Dual k M)} {m : M} :
-    m ∈ W.dualCoannihilator ↔ ∀ φ ∈ W, φ m = 0 := by
+theorem mem_dualCoannihilator {W : Subcomodule k H (Module.Dual k M)}
+    (hS : Function.Injective (HopfAlgebra.antipode k (A := H))) {m : M} :
+    m ∈ W.dualCoannihilator hS ↔ ∀ φ ∈ W, φ m = 0 := by
   rw [← mem_toSubmodule, dualCoannihilator_toSubmodule, Submodule.mem_dualCoannihilator]
   simp only [mem_toSubmodule]
 
 /-- The common kernel of the annihilator of a subcomodule is the subcomodule itself. -/
 @[simp]
-theorem dualAnnihilator_dualCoannihilator (N : Subcomodule k H M) :
-    N.dualAnnihilator.dualCoannihilator = N :=
+theorem dualAnnihilator_dualCoannihilator (N : Subcomodule k H M)
+    (hS : Function.Injective (HopfAlgebra.antipode k (A := H))) :
+    N.dualAnnihilator.dualCoannihilator hS = N :=
   ext fun m ↦ by
     rw [← mem_toSubmodule, dualCoannihilator_toSubmodule, dualAnnihilator_toSubmodule,
       Subspace.dualAnnihilator_dualCoannihilator_eq, mem_toSubmodule]
 
 /-- The annihilator of the common kernel of a subcomodule of the dual is that subcomodule. -/
 @[simp]
-theorem dualCoannihilator_dualAnnihilator (W : Subcomodule k H (Module.Dual k M)) :
-    W.dualCoannihilator.dualAnnihilator = W :=
+theorem dualCoannihilator_dualAnnihilator (W : Subcomodule k H (Module.Dual k M))
+    (hS : Function.Injective (HopfAlgebra.antipode k (A := H))) :
+    (W.dualCoannihilator hS).dualAnnihilator = W :=
   ext fun φ ↦ by
     rw [← mem_toSubmodule, dualAnnihilator_toSubmodule, dualCoannihilator_toSubmodule,
       Subspace.dualCoannihilator_dualAnnihilator_eq, mem_toSubmodule]
 
-theorem dualCoannihilator_le_dualCoannihilator_iff {W X : Subcomodule k H (Module.Dual k M)} :
-    W.dualCoannihilator ≤ X.dualCoannihilator ↔ X ≤ W := by
+theorem dualCoannihilator_le_dualCoannihilator_iff {W X : Subcomodule k H (Module.Dual k M)}
+    (hS : Function.Injective (HopfAlgebra.antipode k (A := H))) :
+    W.dualCoannihilator hS ≤ X.dualCoannihilator hS ↔ X ≤ W := by
   rw [← dualAnnihilator_le_dualAnnihilator_iff, dualCoannihilator_dualAnnihilator,
     dualCoannihilator_dualAnnihilator]
 
 variable (k H M) in
 /-- **Subcomodules of the dual.** Over a field, taking annihilators is an order-reversing
-bijection between the subcomodules of a finite-dimensional comodule `M` over a commutative
-Hopf algebra and the subcomodules of its dual `M*`, with inverse the common kernel. -/
-noncomputable def dualAnnihilatorOrderIso :
+bijection between the subcomodules of a finite-dimensional comodule `M` over a Hopf algebra
+with injective antipode and the subcomodules of its dual `M*`, with inverse the common kernel. -/
+noncomputable def dualAnnihilatorOrderIso
+    (hS : Function.Injective (HopfAlgebra.antipode k (A := H))) :
     Subcomodule k H M ≃o (Subcomodule k H (Module.Dual k M))ᵒᵈ where
   toFun N := OrderDual.toDual N.dualAnnihilator
-  invFun W := (OrderDual.ofDual W).dualCoannihilator
-  left_inv := dualAnnihilator_dualCoannihilator
-  right_inv := dualCoannihilator_dualAnnihilator
+  invFun W := (OrderDual.ofDual W).dualCoannihilator hS
+  left_inv N := dualAnnihilator_dualCoannihilator N hS
+  right_inv W := dualCoannihilator_dualAnnihilator W hS
   map_rel_iff' := dualAnnihilator_le_dualAnnihilator_iff
 
 @[simp]
-theorem dualAnnihilatorOrderIso_apply (N : Subcomodule k H M) :
-    dualAnnihilatorOrderIso k H M N = OrderDual.toDual N.dualAnnihilator :=
+theorem dualAnnihilatorOrderIso_apply (hS : Function.Injective (HopfAlgebra.antipode k (A := H)))
+    (N : Subcomodule k H M) :
+    dualAnnihilatorOrderIso k H M hS N = OrderDual.toDual N.dualAnnihilator :=
   (rfl)
 
 @[simp]
-theorem dualAnnihilatorOrderIso_symm_apply (W : (Subcomodule k H (Module.Dual k M))ᵒᵈ) :
-    (dualAnnihilatorOrderIso k H M).symm W = (OrderDual.ofDual W).dualCoannihilator :=
+theorem dualAnnihilatorOrderIso_symm_apply
+    (hS : Function.Injective (HopfAlgebra.antipode k (A := H)))
+    (W : (Subcomodule k H (Module.Dual k M))ᵒᵈ) :
+    (dualAnnihilatorOrderIso k H M hS).symm W = (OrderDual.ofDual W).dualCoannihilator hS :=
   (rfl)
 
-theorem dualCoannihilator_injective :
-    Function.Injective (dualCoannihilator (k := k) (H := H) (M := M)) :=
-  Function.LeftInverse.injective dualCoannihilator_dualAnnihilator
+theorem dualCoannihilator_injective
+    (hS : Function.Injective (HopfAlgebra.antipode k (A := H))) :
+    Function.Injective (fun W : Subcomodule k H (Module.Dual k M) ↦ W.dualCoannihilator hS) :=
+  Function.LeftInverse.injective fun W ↦ dualCoannihilator_dualAnnihilator W hS
 
 @[simp]
-theorem dualCoannihilator_eq_bot_iff {W : Subcomodule k H (Module.Dual k M)} :
-    W.dualCoannihilator = ⊥ ↔ W = ⊤ := by
+theorem dualCoannihilator_eq_bot_iff {W : Subcomodule k H (Module.Dual k M)}
+    (hS : Function.Injective (HopfAlgebra.antipode k (A := H))) :
+    W.dualCoannihilator hS = ⊥ ↔ W = ⊤ := by
   rw [← dualAnnihilator_eq_top_iff, dualCoannihilator_dualAnnihilator]
 
 @[simp]
-theorem dualCoannihilator_eq_top_iff {W : Subcomodule k H (Module.Dual k M)} :
-    W.dualCoannihilator = ⊤ ↔ W = ⊥ := by
+theorem dualCoannihilator_eq_top_iff {W : Subcomodule k H (Module.Dual k M)}
+    (hS : Function.Injective (HopfAlgebra.antipode k (A := H))) :
+    W.dualCoannihilator hS = ⊤ ↔ W = ⊥ := by
   rw [← dualAnnihilator_eq_bot_iff, dualCoannihilator_dualAnnihilator]
+
+/-- Over a Hopf algebra with injective antipode, the dual of a finite-dimensional comodule is
+simple exactly when the original comodule is simple. -/
+theorem isSimpleOrder_dual_iff
+    (hS : Function.Injective (HopfAlgebra.antipode k (A := H))) :
+    IsSimpleOrder (Subcomodule k H (Module.Dual k M)) ↔ IsSimpleOrder (Subcomodule k H M) :=
+  ((dualAnnihilatorOrderIso k H M hS).isSimpleOrder_iff.trans
+    isSimpleOrder_iff_isSimpleOrder_orderDual.symm).symm
 
 end TauCeti.Subcomodule

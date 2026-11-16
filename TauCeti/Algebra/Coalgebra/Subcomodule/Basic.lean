@@ -44,6 +44,7 @@ groups.
   vector.
 * `TauCeti.Subcomodule.isSimpleOrder_of_transitive`: a family of maps that preserves every
   subcomodule and acts transitively on nonzero vectors makes the subcomodule lattice simple.
+* `TauCeti.Subcomodule.nontrivial_of_isSimpleOrder`: a simple comodule is nontrivial.
 * `TauCeti.Subcomodule.map`: the image of a subcomodule under a comodule morphism.
 * `TauCeti.Subcomodule.mem_map`, `TauCeti.Subcomodule.map_le_iff`, `TauCeti.Subcomodule.map_mono`,
   `TauCeti.Subcomodule.map_bot`, `TauCeti.Subcomodule.map_id` and `TauCeti.Subcomodule.map_map`:
@@ -270,6 +271,11 @@ theorem toSubmodule_eq_bot {N : Subcomodule R C M} : N.toSubmodule = ⊥ ↔ N =
 /-- A subcomodule is nonzero exactly when it contains a nonzero vector. -/
 theorem ne_bot_iff {N : Subcomodule R C M} : N ≠ ⊥ ↔ ∃ m ∈ N, m ≠ 0 :=
   (not_congr toSubmodule_eq_bot).symm.trans (Submodule.ne_bot_iff N.toSubmodule)
+
+/-- A comodule with a simple subcomodule lattice is nontrivial. -/
+theorem nontrivial_of_isSimpleOrder [IsSimpleOrder (Subcomodule R C M)] : Nontrivial M := by
+  obtain ⟨m, _, hm0⟩ := ne_bot_iff.mp (bot_ne_top (α := Subcomodule R C M)).symm
+  exact ⟨⟨m, 0, hm0⟩⟩
 
 /-- If a family of maps preserves every subcomodule and acts transitively on nonzero vectors,
 then the subcomodule lattice is simple. -/

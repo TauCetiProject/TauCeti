@@ -27,6 +27,8 @@ character of the represented group: the determinant character of the comodule.
 ## Main declarations
 
 * `TauCeti.Comodule.coefficientMatrix`: the matrix of basis matrix coefficients.
+* `TauCeti.Comodule.coefficientMatrix_reindex` and `TauCeti.Comodule.coefficientMatrix_map`:
+  invariance of the coefficient matrix under reindexing and comodule linear equivalences.
 * `TauCeti.Comodule.coefficientMatrix_corestrict`: corestriction maps every coefficient entry
   along the coalgebra morphism.
 * `TauCeti.Comodule.coact_basis_eq_sum_coefficientMatrix`: the coaction of a basis vector is the
@@ -77,6 +79,27 @@ theorem coefficientMatrix_apply (b : Basis ι R M) (i j : ι) :
     coefficientMatrix (C := C) b i j =
       matrixCoefficient (R := R) (C := C) (b.coord i) (b j) := by
   rw [coefficientMatrix]
+
+/-- Reindexing a basis permutes rows and columns of the coefficient matrix by the inverse
+equivalence. -/
+@[simp]
+theorem coefficientMatrix_reindex {κ : Type*} (b : Basis ι R M) (e : ι ≃ κ) :
+    coefficientMatrix (C := C) (b.reindex e) =
+      (coefficientMatrix (C := C) b).submatrix e.symm e.symm := by
+  ext i j
+  rw [coefficientMatrix_apply, Matrix.submatrix_apply, coefficientMatrix_apply, Basis.reindex_apply]
+  congr 1
+
+/-- Pushing a basis forward along a comodule isomorphism preserves its coefficient matrix. -/
+theorem coefficientMatrix_map {N : Type*} [AddCommMonoid N] [Module R N] [Comodule R C N]
+    (b : Basis ι R M) (e : M ≃ₗ[R] N) (he : Hom R C M N) (hcoe : ∀ m, he m = e m) :
+    coefficientMatrix (C := C) (b.map e) = coefficientMatrix (C := C) b := by
+  ext i j
+  rw [coefficientMatrix_apply, coefficientMatrix_apply, Basis.map_apply, ← hcoe,
+    matrixCoefficient_map]
+  congr 1
+  refine b.ext fun k ↦ ?_
+  simp [hcoe, Basis.coord_apply]
 
 variable {D : Type*} [AddCommMonoid D] [Module R D] [Coalgebra R D]
 

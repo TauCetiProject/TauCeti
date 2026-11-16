@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dual.Basis
 public import TauCeti.Algebra.Coalgebra.Comodule.Dual
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Product
 
 /-!
@@ -97,6 +99,20 @@ theorem matrixCoefficientSet_dual :
       ⟨φ, m, rfl⟩
     rw [← matrixCoefficient_dual_eval]
     exact matrixCoefficient_mem_set (R := R) (C := H) (Module.Dual.eval R M m) φ
+
+/-- In the dual basis of a finite basis `b`, the coefficient matrix of the dual comodule is the
+entrywise antipode of the transpose of the coefficient matrix of `b`. -/
+@[simp]
+theorem coefficientMatrix_dualBasis {ι : Type*} [Finite ι] [DecidableEq ι]
+    (b : Module.Basis ι R M) :
+    coefficientMatrix (C := H) b.dualBasis =
+      (coefficientMatrix (C := H) b).transpose.map (HopfAlgebra.antipode R) := by
+  ext i j
+  rw [coefficientMatrix_apply, Matrix.map_apply, Matrix.transpose_apply, coefficientMatrix_apply]
+  have hcoord : b.dualBasis.coord i = Module.Dual.eval R M (b i) := by
+    ext ψ
+    simp
+  rw [hcoord, matrixCoefficient_dual_eval, Module.Basis.coe_dualBasis]
 
 end Set
 
