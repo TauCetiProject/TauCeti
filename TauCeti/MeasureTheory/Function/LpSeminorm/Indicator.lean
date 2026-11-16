@@ -34,7 +34,8 @@ namespace TauCeti
 /-- **Hölder's inequality for disjoint pieces.** For `1 ≤ r`, the `Lʳ` seminorms of the restrictions
 of `g` to the members of a finite family of `N` pairwise disjoint measurable sets add up to at most
 `N^{1 - 1/r} ‖g‖_r`. -/
-theorem sum_eLpNorm_indicator_le {α ι F : Type*} [MeasurableSpace α] [NormedAddCommGroup F]
+theorem sum_eLpNorm_indicator_le {α ι F : Type*} [MeasurableSpace α] [TopologicalSpace F]
+    [ESeminormedAddMonoid F]
     {μ : Measure α} {r : ℝ≥0∞} (hr : 1 ≤ r) (s : Finset ι) {J : ι → Set α}
     (hJ : ∀ i ∈ s, MeasurableSet (J i)) (hd : (s : Set ι).PairwiseDisjoint J) (g : α → F) :
     ∑ i ∈ s, eLpNorm ((J i).indicator g) r μ ≤

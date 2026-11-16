@@ -44,6 +44,8 @@ Reversing time reverses the phase: `exp(i(-t)ω(D)) = exp(it(-ω)(D))`
 * `TauCeti.phasePropagator_zero`, `TauCeti.phasePropagator_add`: the group law.
 * `TauCeti.norm_phasePropagator_apply`, `TauCeti.inner_phasePropagator_apply`,
   `TauCeti.adjoint_phasePropagator`: unitarity.
+* `TauCeti.inner_phasePropagator_sub_apply`: the Duhamel pairing `⟪exp(i(t - s)ω(D)) f, g⟫` as a
+  pairing of data pulled back to time zero.
 * `TauCeti.continuous_phasePropagator_apply`: strong continuity.
 * `TauCeti.phaseGroup`, `TauCeti.isUnitary_phaseGroup`: the unitary C₀-group.
 
@@ -232,6 +234,16 @@ theorem inner_phasePropagator_apply (t : ℝ) (f g : Lp F 2 (volume : Measure E)
     ⟪phasePropagator F ω t f, phasePropagator F ω t g⟫ = ⟪f, g⟫ := by
   rw [← ContinuousLinearMap.adjoint_inner_right, adjoint_phasePropagator,
     phasePropagator_neg_apply_phasePropagator_apply]
+
+/-- The pairing `⟪exp(i(t - s)ω(D)) f, g⟫` of a Duhamel integrand is the pairing
+`⟪exp(isω(D))* f, exp(itω(D))* g⟫` of the data pulled back to time zero. -/
+theorem inner_phasePropagator_sub_apply (s t : ℝ) (f g : Lp F 2 (volume : Measure E)) :
+    ⟪phasePropagator F ω (t - s) f, g⟫ =
+      ⟪ContinuousLinearMap.adjoint (phasePropagator F ω s) f,
+        ContinuousLinearMap.adjoint (phasePropagator F ω t) g⟫ := by
+  rw [adjoint_phasePropagator, adjoint_phasePropagator,
+    ← inner_phasePropagator_apply ω (-t) (phasePropagator F ω (t - s) f) g,
+    ← phasePropagator_add_apply, neg_add_eq_sub, sub_sub_cancel_left]
 
 /-- `exp(itω(D))` commutes with every `L²` Fourier multiplier. -/
 theorem phasePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E)) :
