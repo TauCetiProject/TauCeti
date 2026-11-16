@@ -11,19 +11,21 @@ public import TauCeti.RingTheory.DedekindDomain.Factorization
 /-!
 # Prime-factorization formulas for fractional ideal and field norms
 
-Let `R` be a Dedekind domain that is finite and free as a `ℤ`-module, with fraction field `K`.
-Combining `FractionalIdeal.finprod_unitOfPrime_zpow_count` with `FractionalIdeal.absNorm` expresses
-the rational norm of any nonzero fractional ideal (and in particular of any nonzero integral ideal
-or principal fractional ideal) as the product over all height-one primes `v` of `R` of the residue
-cardinality `Nat.card (R ⧸ v.asIdeal)` raised to the multiplicity at `v`.
+Let `R` be a Dedekind domain. For any nonzero ideal `J` of `R`, applying `Ideal.absNorm` to
+`Ideal.finprod_heightOneSpectrum_factorization` expresses `Ideal.absNorm J` in `ℕ` as the product
+over all height-one primes `v` of `R` of the residue cardinality `Nat.card (R ⧸ v.asIdeal)` raised
+to the multiplicity at `v`. When `R` is also finite and free as a `ℤ`-module, with fraction field
+`K`, combining `FractionalIdeal.finprod_unitOfPrime_zpow_count` with `FractionalIdeal.absNorm`
+gives the corresponding formula in `ℚ` for any nonzero fractional ideal (and in particular for any
+nonzero principal fractional ideal).
 
 ## Main results
 
 * `FractionalIdeal.finprod_zpow_count_units_eq_absNorm` and
   `FractionalIdeal.finprod_zpow_count_eq_absNorm`: the rational norm of an invertible (or nonzero)
   fractional ideal equals `∏ᶠ v, (#(R ⧸ v)) ^ count K v I`.
-* `Ideal.finprod_zpow_count_eq_absNorm`: for a nonzero ideal `J` of `R`, the absolute norm equals
-  `∏ᶠ v, (#(R ⧸ v)) ^ count v J`.
+* `Ideal.finprod_pow_count_eq_absNorm`: for a nonzero ideal `J` of an arbitrary Dedekind domain `R`,
+  the absolute norm equals `∏ᶠ v, (#(R ⧸ v)) ^ count v J`.
 * `IsDedekindDomain.HeightOneSpectrum.finprod_zpow_neg_log_valuation_eq_abs_norm`: when `K` is a
   finite `ℚ`-algebra, for any nonzero `a : K`,
   `∏ᶠ v, (#(R ⧸ v)) ^ (-WithZero.log (v.valuation K a)) = |Algebra.norm ℚ a|`.
@@ -69,20 +71,21 @@ namespace Ideal
 
 open _root_.IsDedekindDomain
 
-variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Module.Free ℤ R] [Module.Finite ℤ R]
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 
 /-- **Prime-factorization formula for the absolute norm of a nonzero ideal.** -/
-theorem finprod_zpow_count_eq_absNorm {J : Ideal R} (hJ : J ≠ ⊥) :
+theorem finprod_pow_count_eq_absNorm {J : Ideal R} (hJ : J ≠ ⊥) :
     (∏ᶠ v : HeightOneSpectrum R,
-        (Nat.card (R ⧸ v.asIdeal) : ℚ) ^
-          ((Associates.mk v.asIdeal).count (Associates.mk J).factors : ℤ)) =
+        Nat.card (R ⧸ v.asIdeal) ^ (Associates.mk v.asIdeal).count (Associates.mk J).factors) =
       Ideal.absNorm J := by
-  have hJ' : (J : FractionalIdeal R⁰ (FractionRing R)) ≠ 0 :=
-    FractionalIdeal.coeIdeal_ne_zero.mpr hJ
-  have h := FractionalIdeal.finprod_zpow_count_eq_absNorm hJ'
-  rw [FractionalIdeal.coeIdeal_absNorm] at h
-  rw [← h]
-  exact finprod_congr fun v ↦ by rw [FractionalIdeal.count_coeIdeal (FractionRing R) v hJ]
+  have hJ0 : J ≠ 0 := by rwa [Ideal.zero_eq_bot]
+  have hfact := congrArg Ideal.absNorm.toMonoidHom
+    (Ideal.finprod_heightOneSpectrum_factorization hJ0)
+  rw [MonoidHom.map_finprod _ (Ideal.hasFiniteMulSupport hJ0)] at hfact
+  refine Eq.trans ?_ hfact
+  refine finprod_congr fun v ↦ ?_
+  simp [IsDedekindDomain.HeightOneSpectrum.maxPowDividing, Ideal.absNorm_of_ne_bot v.ne_bot,
+    Submodule.cardQuot_apply]
 
 end Ideal
 
@@ -98,14 +101,9 @@ theorem finprod_zpow_neg_log_valuation_eq_abs_norm {a : K} (ha : a ≠ 0) :
     (∏ᶠ v : HeightOneSpectrum R,
         (Nat.card (R ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation K a))) =
       |Algebra.norm ℚ a| := by
-  have h :=
-    FractionalIdeal.finprod_zpow_count_units_eq_absNorm (toPrincipalIdeal R K (Units.mk0 a ha))
-  rw [coe_toPrincipalIdeal, Units.val_mk0, FractionalIdeal.absNorm_span_singleton] at h
-  rw [← h]
-  refine finprod_congr fun v ↦ ?_
-  have hcount := FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation K v (Units.mk0 a ha)
-  rw [coe_toPrincipalIdeal, Units.val_mk0] at hcount
-  rw [hcount]
+  simpa [FractionalIdeal.count_spanSingleton_eq_neg_log_valuation] using
+    FractionalIdeal.finprod_zpow_count_eq_absNorm
+      (FractionalIdeal.spanSingleton_ne_zero_iff (S := R⁰).mpr ha)
 
 end IsDedekindDomain.HeightOneSpectrum
 

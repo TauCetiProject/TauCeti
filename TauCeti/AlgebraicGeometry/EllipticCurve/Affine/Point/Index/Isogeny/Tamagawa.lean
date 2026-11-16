@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.FractionalIdeal.Norm
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.Ratio
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MinimalRealPeriod
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InvariantDifferential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.DefectIdeal
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.RealPeriod
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Tamagawa.Product
 import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
@@ -17,11 +17,9 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralReduction
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Separability
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RealPeriod
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MinimalRealPeriod
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.AdicCompletion
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.GlobalExistence
-import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.RealPeriod
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Isogeny
 import TauCeti.RingTheory.FractionalIdeal.Norm
 
@@ -66,15 +64,15 @@ finite-place product with the transformation of `realPeriod` over `ℝ`
   `TauCeti.Isogeny.finiteKummerRatio_eq_zpow_obstructionExponentAt_mul_tamagawaNumberAt_div`: the
   finite-place formula at `v : HeightOneSpectrum R` in terms of `v`-minimal models or
   `obstructionExponentAt`.
-* The Dedekind-domain finite-place product formulas
-  `TauCeti.Isogeny.finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_obstructionExponentAt`
-  and `TauCeti.Isogeny.finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_mul`.
+* The Dedekind-domain finite-place product formulas (in `namespace TauCeti.Isogeny`)
+  `finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_obstructionExponentAt_mul` and
+  `finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_mul`.
 * Evaluation of the finite-place product via norms and defect ideals over a number field:
-  `TauCeti.Isogeny.finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_of_isIntegral_smul`
-  and `TauCeti.Isogeny.finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul`.
-* `TauCeti.Isogeny.kummerRatio_mul_abs_mul_realPeriod_eq` and
-  `TauCeti.Isogeny.realKummerRatio_mul_abs_mul_minimalRealPeriod_eq`: the archimedean Kummer-ratio
-  period identities over `ℝ` and `ℚ`.
+  `finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_absNorm_div_mul_of_isIntegral_smul`
+  and `finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_absNorm_div_mul_of_isIntegral`,
+  specialising to `TauCeti.Isogeny.finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul`.
+* `TauCeti.Isogeny.realKummerRatio_mul_abs_mul_minimalRealPeriod_eq`: the archimedean Kummer-ratio
+  period identity for `minimalRealPeriod` over `ℚ`.
 * `TauCeti.Isogeny.kummerRatioProduct_mul_minimalRealPeriod_mul_tamagawaProduct`: over `ℚ`, the
   product of local Kummer ratios across all places equals the ratio of `minimalRealPeriod *
   tamagawaProduct`.
@@ -94,6 +92,26 @@ open WeierstrassCurve WeierstrassCurve.Affine
 open scoped nonZeroDivisors WithZero
 
 namespace TauCeti.Isogeny
+
+private theorem natCast_ne_zero_of_injective {S T : Type*} [NonAssocSemiring S]
+    [NonAssocSemiring T] {f : S →+* T} (hf : Function.Injective f) {n : ℕ} (hn : (n : S) ≠ 0) :
+    (n : T) ≠ 0 := by
+  simpa using hf.ne hn
+
+private theorem div_eq_zpow_sub_mul_div_of_mul_eq {a b q m c₁ c₂ k j : ℕ}
+    (hb : b ≠ 0) (hq : q ≠ 0) (hm : m ≠ 0) (hc₁ : c₁ ≠ 0)
+    (h : a * (q ^ k * m * c₁) = (q ^ j * m * c₂) * b) :
+    (a : ℚ) / b = (q : ℚ) ^ ((j : ℤ) - k) * c₂ / c₁ := by
+  have hq' : (q : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hq
+  have hm' : (m : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hm
+  have hc₁' : (c₁ : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hc₁
+  have hb' : (b : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hb
+  have hrat : (a : ℚ) * ((q : ℚ) ^ k * m * c₁) = ((q : ℚ) ^ j * m * c₂) * b := by
+    exact_mod_cast h
+  rw [zpow_sub₀ hq', zpow_natCast, zpow_natCast]
+  field_simp
+  apply mul_right_cancel₀ hm'
+  linear_combination hrat
 
 /-! ### Completed local formula -/
 
@@ -135,12 +153,9 @@ theorem kummerRatio_eq_zpow_mul_tamagawaNumber_div_of_isMinimal
   classical
   obtain ⟨C₁, rfl⟩ := (inferInstance : IsIntegral O_u W₁).integral
   obtain ⟨C₂, rfl⟩ := (inferInstance : IsIntegral O_u W₂).integral
-  have hdeg_ne : (φ.degree : F_u) ≠ 0 := by
-    intro h0
-    rw [← map_natCast (algebraMap A F_u), IsScalarTower.algebraMap_apply A F F_u,
-      map_eq_zero_iff _ (RingHom.injective _), map_eq_zero_iff _ (IsFractionRing.injective A F)]
-      at h0
-    exact hn h0
+  have hdeg_ne : (φ.degree : F_u) ≠ 0 :=
+    natCast_ne_zero_of_injective (RingHom.injective (algebraMap F F_u))
+      (natCast_ne_zero_of_injective (IsFractionRing.injective A F) hn)
   have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hdeg_ne hc
   have hvc : Valued.v c ≠ 0 := (Valued.v : Valuation F_u ℤᵐ⁰).ne_zero_iff.mpr hc0
   -- Choose a deep formal level `k₀ + 1` with `j₀ = k₀ - log (v c) ≥ 0`.
@@ -175,42 +190,12 @@ theorem kummerRatio_eq_zpow_mul_tamagawaNumber_div_of_isMinimal
       (φ.natCard_point_reduction_eq.trans
         C₂.natCard_point_reduction_baseChange_adicCompletion)
   rw [hq, hred_eq] at hdeep
-  -- Cast the cross-multiplied natural-number identity to `ℚ` and cancel the positive factors.
-  have hdeep_rat : ((Hom.ofIsogeny φ).pointMapHom.range.index : ℚ) *
-      ((Nat.card (A ⧸ u.asIdeal) : ℚ) ^ k₀ *
-        Nat.card ((integralModel R_u (C₂.baseChange F_u)).map
-          (IsLocalRing.residue R_u)).toAffine.Point *
-        (C₁.baseChange F_u).tamagawaNumber (Valued.v : Valuation F_u ℤᵐ⁰)) =
-      ((Nat.card (A ⧸ u.asIdeal) : ℚ) ^ j₀ *
-        Nat.card ((integralModel R_u (C₂.baseChange F_u)).map
-          (IsLocalRing.residue R_u)).toAffine.Point *
-        (C₂.baseChange F_u).tamagawaNumber (Valued.v : Valuation F_u ℤᵐ⁰)) *
-        Nat.card (Hom.ofIsogeny φ).pointMapHom.ker := by
-    exact_mod_cast hdeep
-  have hq0 : (Nat.card (A ⧸ u.asIdeal) : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  have hN0 : (Nat.card ((integralModel R_u (C₂.baseChange F_u)).map
-      (IsLocalRing.residue R_u)).toAffine.Point : ℚ) ≠ 0 :=
-    Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  have hc₁0 : ((C₁.baseChange F_u).tamagawaNumber (Valued.v : Valuation F_u ℤᵐ⁰) : ℚ) ≠ 0 :=
-    Nat.cast_ne_zero.mpr (tamagawaNumber_pos (C₁.baseChange F_u) _).ne'
   have _ := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
-  have hker0 : (Nat.card (Hom.ofIsogeny φ).pointMapHom.ker : ℚ) ≠ 0 :=
-    Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  have hzpow : (Nat.card (A ⧸ u.asIdeal) : ℚ) ^ j₀ / (Nat.card (A ⧸ u.asIdeal) : ℚ) ^ k₀ =
-      (Nat.card (A ⧸ u.asIdeal) : ℚ) ^ (-WithZero.log (Valued.v c)) := by
-    rw [← zpow_natCast, ← zpow_natCast, ← zpow_sub₀ hq0]
-    congr 1
-    omega
-  rw [kummerRatio_def, div_eq_iff hker0]
-  have hsolve : ((Hom.ofIsogeny φ).pointMapHom.range.index : ℚ) =
-      ((Nat.card (A ⧸ u.asIdeal) : ℚ) ^ j₀ / (Nat.card (A ⧸ u.asIdeal) : ℚ) ^ k₀) *
-        (C₂.baseChange F_u).tamagawaNumber (Valued.v : Valuation F_u ℤᵐ⁰) /
-        (C₁.baseChange F_u).tamagawaNumber (Valued.v : Valuation F_u ℤᵐ⁰) *
-        Nat.card (Hom.ofIsogeny φ).pointMapHom.ker := by
-    rw [eq_div_iff_mul_eq (mul_ne_zero (mul_ne_zero (pow_ne_zero k₀ hq0) hN0) hc₁0) |>.mpr
-      hdeep_rat]
-    field_simp [pow_ne_zero k₀ hq0, hN0, hc₁0]
-  rw [hsolve, hzpow]
+  have hsub : (j₀ : ℤ) - k₀ = -WithZero.log (Valued.v c) := by omega
+  rw [kummerRatio_def,
+    div_eq_zpow_sub_mul_div_of_mul_eq Nat.card_pos.ne' Nat.card_pos.ne' Nat.card_pos.ne'
+      (tamagawaNumber_pos _ _).ne' hdeep,
+    hsub]
 
 /-- **The local Kummer ratio on arbitrary equations over an adic completion.** Assume
 `Finite (A ⧸ u.asIdeal)`, `2 ≠ 0` in `F_u`, and `deg φ ≠ 0` in `A`. If `C₁` and `C₂` carry `E₁` and
@@ -242,6 +227,30 @@ section FinitePlaces
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
+private theorem neg_log_valuation_mul_div (v : HeightOneSpectrum R) {c : K} (hc0 : c ≠ 0)
+    (C₁ C₂ : VariableChange K) :
+    -WithZero.log (v.valuation K (c * C₂.u / C₁.u)) =
+      (v.valuation K).ord c + (v.valuation K).ord (C₂.u : K) -
+        (v.valuation K).ord (C₁.u : K) := by
+  rw [← Valuation.ord_def, Valuation.ord_div _ (mul_ne_zero hc0 C₂.u.ne_zero) C₁.u.ne_zero,
+    Valuation.ord_mul _ ((v.valuation K).ne_zero_iff.mpr hc0)
+      ((v.valuation K).ne_zero_iff.mpr C₂.u.ne_zero)]
+
+private theorem neg_log_valuation_mul_div_eq_ord_add_obstructionExponentAt
+    (E₁ E₂ : WeierstrassCurve K) [E₁.IsElliptic] [E₂.IsElliptic]
+    (v : HeightOneSpectrum R) {c : K} (hc0 : c ≠ 0) (C₁ C₂ : VariableChange K)
+    [IsMinimal (Localization.AtPrime v.asIdeal) (C₁ • E₁)]
+    [IsMinimal (Localization.AtPrime v.asIdeal) (C₂ • E₂)] :
+    -WithZero.log (v.valuation K (c * C₂.u / C₁.u)) =
+      (v.valuation K).ord c + obstructionExponentAt R v E₂ - obstructionExponentAt R v E₁ := by
+  have hf₁ : obstructionExponentAt R v (C₁ • E₁) = 0 :=
+    (obstructionExponentAt_eq_zero_iff_isMinimal R v (C₁ • E₁)).mpr inferInstance
+  have hf₂ : obstructionExponentAt R v (C₂ • E₂) = 0 :=
+    (obstructionExponentAt_eq_zero_iff_isMinimal R v (C₂ • E₂)).mpr inferInstance
+  rw [obstructionExponentAt_smul] at hf₁ hf₂
+  rw [neg_log_valuation_mul_div v hc0 C₁ C₂]
+  omega
+
 /-- For nonzero `c : K` and integral models `D₁ • E₁` and `D₂ • E₂` over `R`, the invertible
 fractional ideal `(c · D₂.u / D₁.u) · 𝔍_{D₂ • E₂} · 𝔍_{D₁ • E₁}⁻¹`, whose multiplicity at every
 height-one prime `v` is `(v.valuation K).ord c + f_v(E₂) - f_v(E₁)`. -/
@@ -264,22 +273,18 @@ private theorem count_obstructionScalingUnit
     FractionalIdeal.count K v
         (obstructionScalingUnit R E₁ E₂ hc0 D₁ D₂ : FractionalIdeal R⁰ K) =
       (v.valuation K).ord c + obstructionExponentAt R v E₂ - obstructionExponentAt R v E₁ := by
-  have hvc : v.valuation K c ≠ 0 := (v.valuation K).ne_zero_iff.mpr hc0
-  have hv₁ : v.valuation K (D₁.u : K) ≠ 0 := (v.valuation K).ne_zero_iff.mpr D₁.u.ne_zero
-  have hv₂ : v.valuation K (D₂.u : K) ≠ 0 := (v.valuation K).ne_zero_iff.mpr D₂.u.ne_zero
-  rw [obstructionScalingUnit, Units.val_mul, Units.val_mul, Units.val_inv_eq_inv_val,
-    FractionalIdeal.count_mul K v (mul_ne_zero (Units.ne_zero _) (Units.ne_zero _))
-      (inv_ne_zero (Units.ne_zero _)),
-    FractionalIdeal.count_mul K v (Units.ne_zero _) (Units.ne_zero _),
-    FractionalIdeal.count_inv, FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation,
-    Units.val_mk0, Units.val_mk0, Units.val_mk0,
-    FractionalIdeal.count_coeIdeal K v (weierstrassDefectIdeal_ne_bot R (D₂ • E₂)),
-    FractionalIdeal.count_coeIdeal K v (weierstrassDefectIdeal_ne_bot R (D₁ • E₁)),
-    count_weierstrassDefectIdeal_eq_obstructionExponentAt,
-    count_weierstrassDefectIdeal_eq_obstructionExponentAt,
-    obstructionExponentAt_smul, obstructionExponentAt_smul,
-    map_div₀, map_mul, WithZero.log_div (mul_ne_zero hvc hv₂) hv₁, WithZero.log_mul hvc hv₂,
-    Valuation.ord_def, Valuation.ord_def, Valuation.ord_def]
+  have h₁ : weierstrassDefectIdeal R (D₁ • E₁) ≠ ⊥ := by
+    simpa using weierstrassDefectIdeal_ne_bot R (D₁ • E₁)
+  have h₂ : weierstrassDefectIdeal R (D₂ • E₂) ≠ ⊥ := by
+    simpa using weierstrassDefectIdeal_ne_bot R (D₂ • E₂)
+  have hcount (W : WeierstrassCurve K) [W.IsElliptic] [IsIntegral R W] :
+      FractionalIdeal.count K v (weierstrassDefectIdeal R W : FractionalIdeal R⁰ K) =
+        obstructionExponentAt R v W := by
+    rw [FractionalIdeal.count_coeIdeal K v (weierstrassDefectIdeal_ne_bot R W),
+      count_weierstrassDefectIdeal_eq_obstructionExponentAt]
+  simp [obstructionScalingUnit, FractionalIdeal.count_mul, FractionalIdeal.count_inv,
+    FractionalIdeal.count_spanSingleton_eq_neg_log_valuation, hc0, h₁, h₂, hcount,
+    ← Valuation.ord_def]
   ring
 
 section HasFiniteQuotients
@@ -327,10 +332,7 @@ theorem finiteKummerRatio_eq_zpow_mul_tamagawaNumberAt_div
   have hval : Valued.v (algebraMap K (v.adicCompletion K) c *
       (C₂.baseChange (v.adicCompletion K)).u / (C₁.baseChange (v.adicCompletion K)).u) =
       v.valuation K (c * C₂.u / C₁.u) := by
-    rw [VariableChange.baseChange, VariableChange.baseChange, VariableChange.map_u,
-      VariableChange.map_u, Units.coe_map, Units.coe_map, MonoidHom.coe_ofClass, ← map_mul,
-      ← map_div₀, algebraMap_adicCompletion, Function.comp_apply,
-      valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
+    simp [VariableChange.baseChange, algebraMap_adicCompletion]
   -- `Valuation.valuationSubring` coerces definitionally to `Valuation.integer`, i.e. `𝒪[K_v]`.
   have _ : IsDiscreteValuationRing (ValuativeRel.valuation (v.adicCompletion K)).valuationSubring :=
     inferInstanceAs (IsDiscreteValuationRing 𝒪[v.adicCompletion K])
@@ -380,34 +382,19 @@ theorem finiteKummerRatio_eq_zpow_obstructionExponentAt_mul_tamagawaNumberAt_div
       (Nat.card (R ⧸ v.asIdeal) : ℚ) ^
         ((v.valuation K).ord c + obstructionExponentAt R v E₂ - obstructionExponentAt R v E₁) *
         E₂.tamagawaNumberAt v / E₁.tamagawaNumberAt v := by
-  have hφK : (φ.degree : K) ≠ 0 := by
-    intro h0
-    rw [← map_natCast (algebraMap R K), map_eq_zero_iff _ (IsFractionRing.injective R K)] at h0
-    exact hφ h0
+  have hφK : (φ.degree : K) ≠ 0 := natCast_ne_zero_of_injective (IsFractionRing.injective R K) hφ
   have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hφK hc
   obtain ⟨C₁, hC₁⟩ := exists_isMinimal (Localization.AtPrime v.asIdeal) E₁
   obtain ⟨C₂, hC₂⟩ := exists_isMinimal (Localization.AtPrime v.asIdeal) E₂
-  have hf₁ : obstructionExponentAt R v (C₁ • E₁) = 0 :=
-    (obstructionExponentAt_eq_zero_iff_isMinimal R v (C₁ • E₁)).mpr hC₁
-  have hf₂ : obstructionExponentAt R v (C₂ • E₂) = 0 :=
-    (obstructionExponentAt_eq_zero_iff_isMinimal R v (C₂ • E₂)).mpr hC₂
-  rw [obstructionExponentAt_smul] at hf₁ hf₂
-  have hvc : v.valuation K c ≠ 0 := (v.valuation K).ne_zero_iff.mpr hc0
-  have hv₁ : v.valuation K (C₁.u : K) ≠ 0 := (v.valuation K).ne_zero_iff.mpr C₁.u.ne_zero
-  have hv₂ : v.valuation K (C₂.u : K) ≠ 0 := (v.valuation K).ne_zero_iff.mpr C₂.u.ne_zero
-  have hexp : -WithZero.log (v.valuation K (c * C₂.u / C₁.u)) =
-      (v.valuation K).ord c + obstructionExponentAt R v E₂ - obstructionExponentAt R v E₁ := by
-    rw [map_div₀, map_mul, WithZero.log_div (mul_ne_zero hvc hv₂) hv₁, WithZero.log_mul hvc hv₂]
-    rw [Valuation.ord_def] at hf₁ hf₂ ⊢
-    omega
-  rw [finiteKummerRatio_eq_zpow_mul_tamagawaNumberAt_div φ v hc C₁ C₂ h2 hφ, hexp]
+  rw [finiteKummerRatio_eq_zpow_mul_tamagawaNumberAt_div φ v hc C₁ C₂ h2 hφ,
+    neg_log_valuation_mul_div_eq_ord_add_obstructionExponentAt E₁ E₂ v hc0 C₁ C₂]
 
 /-- **Choice-free global finite-place product of Kummer ratios and Tamagawa numbers.** Assume
 `Ring.HasFiniteQuotients R`. For any elliptic curves `E₁` and `E₂` over `K` and any isogeny
 `φ : E₁ → E₂` with `φ^*ω₂ = c ω₁`, `2 ≠ 0` in `K`, and `deg φ ≠ 0` in `R`, multiplying all finite
 local Kummer ratios by `E₁.tamagawaProduct` yields `E₂.tamagawaProduct` times the product over `v`
 of `(#(R ⧸ v)) ^ (ord_v c + f_v(E₂) - f_v(E₁))`. -/
-theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_obstructionExponentAt
+theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_obstructionExponentAt_mul
     (φ : Isogeny E₁.toAffine E₂.toAffine) {c : K}
     (hc : φ.pullbackDifferential (invariantDifferential E₂.toAffine) =
       c • invariantDifferential E₁.toAffine)
@@ -417,10 +404,7 @@ theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_obstructionExpo
         (Nat.card (R ⧸ v.asIdeal) : ℚ) ^
           ((v.valuation K).ord c + obstructionExponentAt R v E₂ - obstructionExponentAt R v E₁)) *
         E₂.tamagawaProduct (R := R) := by
-  have hφK : (φ.degree : K) ≠ 0 := by
-    intro h0
-    rw [← map_natCast (algebraMap R K), map_eq_zero_iff _ (IsFractionRing.injective R K)] at h0
-    exact hφ h0
+  have hφK : (φ.degree : K) ≠ 0 := natCast_ne_zero_of_injective (IsFractionRing.injective R K) hφ
   have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hφK hc
   obtain ⟨D₁, hD₁⟩ := exists_smul_isIntegral R E₁
   obtain ⟨D₂, hD₂⟩ := exists_smul_isIntegral R E₂
@@ -466,26 +450,16 @@ theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_mul
       (∏ᶠ v : HeightOneSpectrum R,
         (Nat.card (R ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation K (c * C₂.u / C₁.u)))) *
         E₂.tamagawaProduct (R := R) := by
-  have _ := hC₁.isIntegral
-  have _ := hC₂.isIntegral
-  have hφK : (φ.degree : K) ≠ 0 := by
-    intro h0
-    rw [← map_natCast (algebraMap R K), map_eq_zero_iff _ (IsFractionRing.injective R K)] at h0
-    exact hφ h0
+  have hφK : (φ.degree : K) ≠ 0 := natCast_ne_zero_of_injective (IsFractionRing.injective R K) hφ
   have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hφK hc
-  rw [finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_obstructionExponentAt φ hc h2 hφ]
+  rw [finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_obstructionExponentAt_mul
+    φ hc h2 hφ]
   congr 1
   refine finprod_congr fun v ↦ ?_
-  have hf₁ := (isGlobalMinimal_iff_obstructionExponentAt_eq_zero R (C₁ • E₁)).mp hC₁ v
-  have hf₂ := (isGlobalMinimal_iff_obstructionExponentAt_eq_zero R (C₂ • E₂)).mp hC₂ v
-  rw [obstructionExponentAt_smul] at hf₁ hf₂
-  have hvc : v.valuation K c ≠ 0 := (v.valuation K).ne_zero_iff.mpr hc0
-  have hv₁ : v.valuation K (C₁.u : K) ≠ 0 := (v.valuation K).ne_zero_iff.mpr C₁.u.ne_zero
-  have hv₂ : v.valuation K (C₂.u : K) ≠ 0 := (v.valuation K).ne_zero_iff.mpr C₂.u.ne_zero
+  have _ := hC₁.isMinimal v
+  have _ := hC₂.isMinimal v
   congr 1
-  rw [map_div₀, map_mul, WithZero.log_div (mul_ne_zero hvc hv₂) hv₁, WithZero.log_mul hvc hv₂]
-  rw [Valuation.ord_def] at hf₁ hf₂ ⊢
-  omega
+  exact (neg_log_valuation_mul_div_eq_ord_add_obstructionExponentAt E₁ E₂ v hc0 C₁ C₂).symm
 
 /-- **Global finite-place product of Kummer ratios and Tamagawa numbers between global minimal
 equations.** Assume `Ring.HasFiniteQuotients R`, `2 ≠ 0` in `K`, and `deg φ ≠ 0` in `R`, with
@@ -519,7 +493,8 @@ a Dedekind domain finite and free over `ℤ` with fraction field `K` finite over
 `C₂ • E₂` are integral over `R` and `φ^*ω₂ = c ω₁`, then
 `(∏_v φ.finiteKummerRatio v) · E₁.tamagawaProduct =
   (|Norm_{K/ℚ}(c · C₂.u / C₁.u)| · Norm(𝔍_{C₂ • E₂}) / Norm(𝔍_{C₁ • E₁})) · E₂.tamagawaProduct`. -/
-theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_of_isIntegral_smul
+theorem
+    finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_absNorm_div_mul_of_isIntegral_smul
     (φ : Isogeny E₁.toAffine E₂.toAffine) {c : K}
     (hc : φ.pullbackDifferential (invariantDifferential E₂.toAffine) =
       c • invariantDifferential E₁.toAffine)
@@ -529,28 +504,25 @@ theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_of_isInteg
         (Ideal.absNorm (weierstrassDefectIdeal R (C₂ • E₂)) : ℚ) /
         Ideal.absNorm (weierstrassDefectIdeal R (C₁ • E₁))) *
         E₂.tamagawaProduct (R := R) := by
-  have _ : CharZero K :=
-    ⟨fun a b h ↦ Nat.cast_injective <| (algebraMap ℚ K).injective <| by simpa using h⟩
+  have _ : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ K).injective
   have h2 : (2 : K) ≠ 0 := two_ne_zero
   have hφK : (φ.degree : K) ≠ 0 := Nat.cast_ne_zero.mpr φ.degree_pos.ne'
   have hφ : (φ.degree : R) ≠ 0 := by
     intro h0
     exact hφK (by rw [← map_natCast (algebraMap R K), h0, map_zero])
   have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul hc
-  rw [finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_obstructionExponentAt φ hc h2 hφ]
+  rw [finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_obstructionExponentAt_mul
+    φ hc h2 hφ]
   congr 1
   simp_rw [← count_obstructionScalingUnit E₁ E₂ hc0 C₁ C₂]
   rw [FractionalIdeal.finprod_zpow_count_units_eq_absNorm
-      (obstructionScalingUnit R E₁ E₂ hc0 C₁ C₂),
-    obstructionScalingUnit, Units.val_mul, Units.val_mul, Units.val_inv_eq_inv_val,
-    map_mul, map_mul, map_inv₀, coe_toPrincipalIdeal, Units.val_mk0, Units.val_mk0, Units.val_mk0,
-    FractionalIdeal.absNorm_span_singleton, FractionalIdeal.coeIdeal_absNorm,
-    FractionalIdeal.coeIdeal_absNorm, ← div_eq_mul_inv]
+    (obstructionScalingUnit R E₁ E₂ hc0 C₁ C₂)]
+  simp [obstructionScalingUnit, FractionalIdeal.coeIdeal_absNorm, div_eq_mul_inv, Algebra.norm_inv]
 
 /-- **The finite-place Kummer/Tamagawa identity between equations integral over `R`.** Here `R` is a
 Dedekind domain finite and free over `ℤ`, `K` is finite over `ℚ`, `E₁` and `E₂` are integral over
 `R`, and `φ^*ω₂ = c ω₁`. -/
-theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_of_isIntegral
+theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_absNorm_div_mul_of_isIntegral
     (φ : Isogeny E₁.toAffine E₂.toAffine) [IsIntegral R E₁] [IsIntegral R E₂] {c : K}
     (hc : φ.pullbackDifferential (invariantDifferential E₂.toAffine) =
       c • invariantDifferential E₁.toAffine) :
@@ -562,8 +534,9 @@ theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_of_isInteg
     simpa only [one_smul] using (inferInstance : IsIntegral R E₁)
   have _ : IsIntegral R ((1 : VariableChange K) • E₂) := by
     simpa only [one_smul] using (inferInstance : IsIntegral R E₂)
-  have h := finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_of_isIntegral_smul
-    (R := R) φ hc 1 1
+  have h :=
+    finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_absNorm_div_mul_of_isIntegral_smul
+      (R := R) φ hc 1 1
   have h₁ : weierstrassDefectIdeal R ((1 : VariableChange K) • E₁) = weierstrassDefectIdeal R E₁ :=
     by congr! 1; exact one_smul _ _
   have h₂ : weierstrassDefectIdeal R ((1 : VariableChange K) • E₂) = weierstrassDefectIdeal R E₂ :=
@@ -586,7 +559,9 @@ theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul
       |Algebra.norm ℚ (c * C₂.u / C₁.u)| * E₂.tamagawaProduct (R := R) := by
   have _ := hC₁.isIntegral
   have _ := hC₂.isIntegral
-  rw [finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_of_isIntegral_smul φ hc C₁ C₂,
+  rw [
+    finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_absNorm_div_mul_of_isIntegral_smul
+      φ hc C₁ C₂,
     (weierstrassDefectIdeal_eq_top_iff_isGlobalMinimal (C₁ • E₁)).mpr hC₁,
     (weierstrassDefectIdeal_eq_top_iff_isGlobalMinimal (C₂ • E₂)).mpr hC₂,
     Ideal.absNorm_top]
@@ -613,34 +588,6 @@ end NumberFieldNorm
 end FinitePlaces
 
 /-! ### Archimedean place and global period–Tamagawa transformation over `ℚ` -/
-
-section Real
-
-/-- **The real Kummer ratio and the real period.** Over `ℝ`, if an isogeny `φ : W₁ → W₂` of elliptic
-curves pulls back the invariant differential as `φ^*ω₂ = c ω₁`, then
-`(φ.kummerRatio : ℝ) * |c| * W₁.realPeriod = W₂.realPeriod`. -/
-theorem kummerRatio_mul_abs_mul_realPeriod_eq {W₁ W₂ : WeierstrassCurve ℝ}
-    [W₁.IsElliptic] [W₂.IsElliptic] (φ : Isogeny W₁.toAffine W₂.toAffine) {c : ℝ}
-    (hc : φ.pullbackDifferential (invariantDifferential W₂.toAffine) =
-      c • invariantDifferential W₁.toAffine) :
-    (φ.kummerRatio : ℝ) * |c| * W₁.realPeriod = W₂.realPeriod := by
-  classical
-  have hreal := abs_mul_realPeriod_mul_index_eq_card_ker_mul φ hc
-  have _ := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero _)
-  have hker0 : (Nat.card (Hom.ofIsogeny φ).pointMapHom.ker : ℝ) ≠ 0 :=
-    Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  rw [kummerRatio_def, Rat.cast_div, Rat.cast_natCast, Rat.cast_natCast]
-  apply mul_right_cancel₀ hker0
-  calc
-    (Hom.ofIsogeny φ).pointMapHom.range.index /
-        Nat.card (Hom.ofIsogeny φ).pointMapHom.ker * |c| * W₁.realPeriod *
-        Nat.card (Hom.ofIsogeny φ).pointMapHom.ker
-      = |c| * W₁.realPeriod * (Hom.ofIsogeny φ).pointMapHom.range.index := by
-        field_simp [hker0]
-    _ = W₂.realPeriod * Nat.card (Hom.ofIsogeny φ).pointMapHom.ker := by
-        rw [hreal, mul_comm]
-
-end Real
 
 section Rational
 
@@ -683,29 +630,10 @@ theorem realKummerRatio_mul_abs_mul_minimalRealPeriod_eq
     (hC₂ : IsGlobalMinimal ℤ (C₂ • E₂)) :
     (φ.realKummerRatio : ℝ) * |((c * C₂.u / C₁.u : ℚ) : ℝ)| * E₁.minimalRealPeriod =
       E₂.minimalRealPeriod := by
-  have hc_real : (φ.baseChange ℝ).pullbackDifferential
-      (invariantDifferential (E₂.baseChange ℝ).toAffine) =
-      algebraMap ℚ ℝ c • invariantDifferential (E₁.baseChange ℝ).toAffine :=
-    map_pullbackDifferential_invariantDifferential_eq_smul φ (algebraMap ℚ ℝ) hc
-  rw [eq_ratCast] at hc_real
-  have hloc := kummerRatio_mul_abs_mul_realPeriod_eq (φ.baseChange ℝ) hc_real
-  have hu₁ : |((C₁.u : ℚ) : ℝ)| ≠ 0 :=
-    abs_ne_zero.mpr (Rat.cast_ne_zero.mpr C₁.u.ne_zero)
-  have habs : |((c * C₂.u / C₁.u : ℚ) : ℝ)| * |((C₁.u : ℚ) : ℝ)| =
-      |(c : ℝ)| * |((C₂.u : ℚ) : ℝ)| := by
-    push_cast
-    rw [abs_div, abs_mul, div_mul_cancel₀ _ hu₁]
-  rw [realKummerRatio_def, E₁.minimalRealPeriod_eq_abs_mul hC₁, E₂.minimalRealPeriod_eq_abs_mul hC₂]
-  calc
-    ((φ.baseChange ℝ).kummerRatio : ℝ) * |((c * C₂.u / C₁.u : ℚ) : ℝ)| *
-        (|((C₁.u : ℚ) : ℝ)| * (E₁.baseChange ℝ).realPeriod)
-      = ((φ.baseChange ℝ).kummerRatio : ℝ) *
-          (|((c * C₂.u / C₁.u : ℚ) : ℝ)| * |((C₁.u : ℚ) : ℝ)|) *
-          (E₁.baseChange ℝ).realPeriod := by ring
-    _ = |((C₂.u : ℚ) : ℝ)| *
-          (((φ.baseChange ℝ).kummerRatio : ℝ) * |(c : ℝ)| * (E₁.baseChange ℝ).realPeriod) := by
-        rw [habs]; ring
-    _ = |((C₂.u : ℚ) : ℝ)| * (E₂.baseChange ℝ).realPeriod := by rw [hloc]
+  classical
+  rw [realKummerRatio_def, mul_assoc]
+  exact ratCast_kummerRatio_mul_eq_of_mul_index_eq_card_ker_mul (φ.baseChange ℝ)
+    (abs_mul_minimalRealPeriod_mul_index_eq_card_ker_mul φ hc hC₁ hC₂)
 
 /-- Between globally minimal equations over `ℤ`, if `φ^*ω₂ = c ω₁`, then
 `φ.realKummerRatio * |c| * Ω(E₁) = Ω(E₂)`. -/

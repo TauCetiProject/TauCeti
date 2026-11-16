@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GlobalMinimalModel
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import Mathlib.RingTheory.Valuation.ValuationSubring
-import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension
@@ -164,10 +163,8 @@ private theorem exists_variableChange_isIntegral_localizationAtPrime_and_valued_
     hu₀_approx.trans_lt <| by
       conv_rhs => rw [← mul_one γ]
       exact mul_lt_mul_of_pos_left (by simp [← WithZero.exp_zero]) hγ_pos
-  have hu₀_val : Valued.v (algebraMap K (v.adicCompletion K) u₀) = γ := by
-    have heq : algebraMap K (v.adicCompletion K) u₀ =
-        (algebraMap K (v.adicCompletion K) u₀ - C.u) + C.u := (sub_add_cancel _ _).symm
-    rw [heq, Valuation.map_add_of_distinct_val _ hu₀_lt.ne, max_eq_right hu₀_lt.le]
+  have hu₀_val : Valued.v (algebraMap K (v.adicCompletion K) u₀) = γ :=
+    Valuation.map_eq_of_sub_lt _ hu₀_lt
   have hu₀ : u₀ ≠ 0 := by
     rintro rfl
     exact hγ (by simpa using hu₀_val.symm)
@@ -194,9 +191,8 @@ private theorem valuation_maximalIdeal_adicCompletionIntegers_baseChange_Δ
     (maximalIdeal (v.adicCompletionIntegers K)).valuation (v.adicCompletion K)
         (W.baseChange (v.adicCompletion K)).Δ =
       (maximalIdeal (Localization.AtPrime v.asIdeal)).valuation K W.Δ := by
-  rw [v.valuation_maximalIdeal_adicCompletionIntegers, baseChange, map_Δ,
-    algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
-    Algebra.algebraMap_self_apply, v.valuation_maximalIdeal_localizationAtPrime]
+  simp [v.valuation_maximalIdeal_adicCompletionIntegers,
+    v.valuation_maximalIdeal_localizationAtPrime, baseChange, algebraMap_adicCompletion]
 
 /-- **Minimality of a base change to the adic completion.** A Weierstrass equation over `K` becomes
 minimal over `v.adicCompletionIntegers K` after base change to `v.adicCompletion K` if and only if

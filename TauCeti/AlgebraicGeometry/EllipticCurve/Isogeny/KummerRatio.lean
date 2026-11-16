@@ -122,4 +122,17 @@ theorem kummerRatio_conjByVariableChange (φ : Isogeny W₁ W₂)
     (φ.conjByVariableChange C₁ C₂).kummerRatio = φ.kummerRatio := by
   simp [conjByVariableChange_def]
 
+/-- A cross-multiplied point-index and kernel-cardinality identity in a characteristic-zero field
+rearranges to multiplication by `kummerRatio`. -/
+theorem ratCast_kummerRatio_mul_eq_of_mul_index_eq_card_ker_mul [DecidableEq F]
+    {K : Type*} [Field K] [CharZero K] (φ : Isogeny W₁ W₂) {a b : K}
+    (h : a * (Hom.ofIsogeny φ).pointMapHom.range.index =
+      Nat.card (Hom.ofIsogeny φ).pointMapHom.ker * b) :
+    (φ.kummerRatio : K) * a = b := by
+  have _ := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
+  have hker : (Nat.card (Hom.ofIsogeny φ).pointMapHom.ker : K) ≠ 0 :=
+    Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  rw [kummerRatio_def, Rat.cast_div, Rat.cast_natCast, Rat.cast_natCast, div_mul_eq_mul_div,
+    div_eq_iff hker, mul_comm _ a, h, mul_comm]
+
 end TauCeti.Isogeny

@@ -75,6 +75,10 @@ one of them: `W.autGroup ≃* (Hom W W)ˣ`.
   the negation isogeny.
 * `TauCeti.Isogeny.pullbackDifferential_variableChangeIsogeny_invariantDifferential`: a change of
   variables `C` pulls the invariant differential back to `C.u` times the invariant differential.
+* `TauCeti.Isogeny.conjByVariableChange_comp_variableChangeIsogeny`,
+  `TauCeti.Isogeny.conjByVariableChange_id`, `TauCeti.Isogeny.comp_conjByVariableChange`, and
+  `TauCeti.Isogeny.conjByVariableChange_inj`: intertwining, functoriality, and injectivity of
+  conjugation by changes of variables.
 * `TauCeti.Isogeny.exists_algebraMap_eq_pullback_of_degree_eq_one`: an isogeny of degree one out
   of a curve with integrally closed coordinate ring (for instance an elliptic curve) pulls the
   coordinate ring back into the coordinate ring.
@@ -271,6 +275,44 @@ theorem conjByVariableChange_def (φ : Isogeny W₁ W₂) (C₁ C₂ : VariableC
       (variableChangeIsogeny C₂ rfl).comp
         (φ.comp (variableChangeIsogeny C₁⁻¹ (inv_smul_smul C₁ W₁))) :=
   (rfl)
+
+/-- Conjugating an isogeny `φ : W₁ ⟶ W₂` by `C₁` and `C₂` intertwines `φ` with the variable-change
+isogenies of `C₁` and `C₂`. -/
+theorem conjByVariableChange_comp_variableChangeIsogeny (φ : Isogeny W₁ W₂)
+    (C₁ C₂ : VariableChange F) :
+    (φ.conjByVariableChange C₁ C₂).comp (variableChangeIsogeny C₁ rfl) =
+      (variableChangeIsogeny C₂ rfl).comp φ := by
+  rw [conjByVariableChange_def, comp_assoc, comp_assoc,
+    variableChangeIsogeny_inv_comp C₁ rfl (inv_smul_smul C₁ W₁), comp_id]
+
+/-- Conjugating the identity isogeny by a change of variables gives the identity isogeny. -/
+@[simp]
+theorem conjByVariableChange_id (W : WeierstrassCurve.Affine F) (C : VariableChange F) :
+    (id W).conjByVariableChange C C = id (C • W).toAffine := by
+  apply (variableChangeIsogeny C rfl).comp_right_injective
+  dsimp only
+  rw [conjByVariableChange_comp_variableChangeIsogeny, comp_id, id_comp]
+
+/-- Conjugation by changes of variables commutes with composition of isogenies. -/
+@[simp]
+theorem comp_conjByVariableChange (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W₂)
+    (C₁ C₂ C₃ : VariableChange F) :
+    (ψ.conjByVariableChange C₂ C₃).comp (φ.conjByVariableChange C₁ C₂) =
+      (ψ.comp φ).conjByVariableChange C₁ C₃ := by
+  apply (variableChangeIsogeny C₁ rfl).comp_right_injective
+  dsimp only
+  rw [comp_assoc, conjByVariableChange_comp_variableChangeIsogeny, ← comp_assoc,
+    conjByVariableChange_comp_variableChangeIsogeny, comp_assoc,
+    conjByVariableChange_comp_variableChangeIsogeny]
+
+/-- Conjugating by changes of variables is injective on isogenies. -/
+theorem conjByVariableChange_inj {φ ψ : Isogeny W₁ W₂} (C₁ C₂ : VariableChange F) :
+    φ.conjByVariableChange C₁ C₂ = ψ.conjByVariableChange C₁ C₂ ↔ φ = ψ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
+  have h' := congrArg (fun χ ↦ (variableChangeIsogeny C₂⁻¹ (inv_smul_smul C₂ W₂)).comp
+    (χ.comp (variableChangeIsogeny C₁ rfl))) h
+  simpa only [conjByVariableChange_comp_variableChangeIsogeny, ← comp_assoc,
+    variableChangeIsogeny_inv_comp C₂ rfl (inv_smul_smul C₂ W₂), id_comp] using h'
 
 /-- Conjugating an isogeny by changes of variables preserves its degree. -/
 @[simp]

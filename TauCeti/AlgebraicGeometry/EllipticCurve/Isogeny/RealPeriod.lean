@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InvariantDifferential
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.KummerRatio
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Wronskian
 public import TauCeti.AlgebraicGeometry.EllipticCurve.RealPeriod.Basic
 -- Proof-only: the quotient rule `(N / D)' = W(D, N) / D²`.
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
--- Proof-only: the real points over an abscissa, and the finite kernel of an isogeny on points.
+-- Proof-only: the real points over an abscissa.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Real
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
 -- Proof-only: the image of an open set under `N / D` is σ-compact, hence measurable, and the
 -- integrand `1 / √Ψ₂Sq` is measurable.
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
@@ -89,6 +89,8 @@ Otherwise the image has index two and its affine points lie exactly over `[e, �
   of `W₂` over `[e, ∞)`, for `e` the largest real root of `Ψ₂Sq₂`.
 * `TauCeti.Isogeny.abs_mul_realPeriod_mul_index_eq_card_ker_mul`: **the real period under an
   isogeny**, `|c| Ω(W₁) · [W₂(ℝ) : φ(W₁(ℝ))] = #ker φ(ℝ) · Ω(W₂)`.
+* `TauCeti.Isogeny.kummerRatio_mul_abs_mul_realPeriod_eq`: in Kummer-ratio form,
+  `(φ.kummerRatio : ℝ) * |c| * Ω(W₁) = Ω(W₂)`.
 
 ## References
 
@@ -679,6 +681,17 @@ theorem abs_mul_realPeriod_mul_index_eq_card_ker_mul (φ : Isogeny W₁ W₂) {c
   rw [hidx, WeierstrassCurve.realPeriod_def, WeierstrassCurve.realPeriod_def, hI₂]
   push_cast
   linear_combination 4 * hI₁
+
+/-- **The real Kummer ratio and the real period.** Over `ℝ`, if an isogeny `φ : W₁ → W₂` of elliptic
+curves pulls back the invariant differential as `φ^*ω₂ = c ω₁`, then
+`(φ.kummerRatio : ℝ) * |c| * W₁.realPeriod = W₂.realPeriod`. -/
+theorem kummerRatio_mul_abs_mul_realPeriod_eq (φ : Isogeny W₁ W₂) {c : ℝ}
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁) :
+    (φ.kummerRatio : ℝ) * |c| * W₁.realPeriod = W₂.realPeriod := by
+  classical
+  rw [mul_assoc]
+  exact ratCast_kummerRatio_mul_eq_of_mul_index_eq_card_ker_mul φ
+    (abs_mul_realPeriod_mul_index_eq_card_ker_mul φ hc)
 
 end Index
 
