@@ -59,6 +59,20 @@ variable
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
 
+/-- A property of a constant that holds near each point of a compact set `K`, within `K`, and is
+preserved when the constant grows in a directed order, holds on all of `K` for one constant. -/
+private theorem IsCompact.exists_forall_of_forall_exists_eventually {X : Type*}
+    [TopologicalSpace X] {α : Type*} [Preorder α] [IsDirected α (· ≤ ·)] [Nonempty α] {K : Set X}
+    (hK : IsCompact K) {p : α → X → Prop} (hp : ∀ ⦃a b⦄, a ≤ b → ∀ ⦃y⦄, p a y → p b y)
+    (h : ∀ y ∈ K, ∃ a, ∀ᶠ z in 𝓝[K] y, p a z) : ∃ a, ∀ y ∈ K, p a y := by
+  refine hK.induction_on (p := fun t ↦ ∃ a, ∀ y ∈ t, p a y)
+    ⟨Classical.arbitrary α, fun _ h ↦ h.elim⟩ (fun _ _ hst ⟨a, ha⟩ ↦ ⟨a, fun y hy ↦ ha y (hst hy)⟩)
+    (fun _ _ ⟨a, ha⟩ ⟨b, hb⟩ ↦ ?_) fun y hy ↦ ?_
+  · obtain ⟨c, hac, hbc⟩ := directed_of (· ≤ ·) a b
+    exact ⟨c, fun y hy ↦ hy.elim (fun hy ↦ hp hac (ha y hy)) fun hy ↦ hp hbc (hb y hy)⟩
+  · obtain ⟨a, ha⟩ := h y hy
+    exact ⟨_, ha, a, fun _ h ↦ h⟩
+
 section Norm
 
 variable [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)] [FiberBundle F E]
@@ -102,14 +116,9 @@ set `K`, has operator norm bounded on `K`. -/
 theorem IsCompact.exists_bound_of_continuousOn_bundle {K : Set X} (hK : IsCompact K)
     (hφ : ContinuousOn (fun y ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ)
       (E := fun x ↦ E x →L[ℝ] E x →L[ℝ] ℝ) (b y) (φ y)) K) :
-    ∃ C, ∀ y ∈ K, ‖φ y‖ ≤ C := by
-  refine hK.induction_on (p := fun t ↦ ∃ C, ∀ y ∈ t, ‖φ y‖ ≤ C) ⟨0, fun _ h ↦ h.elim⟩
-    (fun _ _ hst ⟨C, hC⟩ ↦ ⟨C, fun y hy ↦ hC y (hst hy)⟩)
-    (fun _ _ ⟨C, hC⟩ ⟨D, hD⟩ ↦ ⟨max C D, fun y hy ↦ hy.elim
-      (fun hy ↦ (hC y hy).trans (le_max_left _ _)) fun hy ↦ (hD y hy).trans (le_max_right _ _)⟩)
-    fun y hy ↦ ?_
-  obtain ⟨C, hC⟩ := (hφ y hy).exists_eventually_norm_le_bundle
-  exact ⟨_, hC, C, fun _ h ↦ h⟩
+    ∃ C, ∀ y ∈ K, ‖φ y‖ ≤ C :=
+  hK.exists_forall_of_forall_exists_eventually (p := fun C y ↦ ‖φ y‖ ≤ C)
+    (fun _ _ hab _ h ↦ h.trans hab) fun y hy ↦ (hφ y hy).exists_eventually_norm_le_bundle
 
 variable [FiniteDimensional ℝ F]
 
@@ -166,16 +175,13 @@ theorem IsCompact.exists_pos_forall_mul_norm_sq_le_bundle {K : Set X} (hK : IsCo
       (E := fun x ↦ E x →L[ℝ] E x →L[ℝ] ℝ) (b y) (φ y)) K)
     (hpos : ∀ y ∈ K, ∀ v, v ≠ 0 → 0 < φ y v v) :
     ∃ c > 0, ∀ y ∈ K, ∀ v, c * ‖v‖ ^ 2 ≤ φ y v v := by
-  refine hK.induction_on (p := fun t ↦ ∃ c > 0, ∀ y ∈ t, ∀ v, c * ‖v‖ ^ 2 ≤ φ y v v)
-    ⟨1, one_pos, fun _ h ↦ h.elim⟩
-    (fun _ _ hst ⟨c, hc, hle⟩ ↦ ⟨c, hc, fun y hy ↦ hle y (hst hy)⟩)
-    (fun _ _ ⟨c, hc, hle⟩ ⟨d, hd, hle'⟩ ↦ ⟨min c d, lt_min hc hd, fun y hy v ↦ hy.elim
-      (fun hy ↦ (mul_le_mul_of_nonneg_right (min_le_left c d) (by positivity)).trans (hle y hy v))
-      fun hy ↦ (mul_le_mul_of_nonneg_right (min_le_right c d) (by positivity)).trans
-        (hle' y hy v)⟩)
-    fun y hy ↦ ?_
-  obtain ⟨c, hc, hle⟩ := (hφ y hy).exists_pos_eventually_mul_norm_sq_le_bundle (hpos y hy)
-  exact ⟨_, hle, c, hc, fun _ h ↦ h⟩
+  -- Positive constants are ordered by `≥`, since a smaller constant gives a weaker bound.
+  obtain ⟨c, hc⟩ := hK.exists_forall_of_forall_exists_eventually (α := (Ioi (0 : ℝ))ᵒᵈ)
+    (p := fun c y ↦ ∀ v, ((OrderDual.ofDual c : Ioi (0 : ℝ)) : ℝ) * ‖v‖ ^ 2 ≤ φ y v v)
+    (fun _ _ hab _ h v ↦ le_trans (by gcongr; exact hab) (h v)) fun y hy ↦ by
+      obtain ⟨c, hc, hle⟩ := (hφ y hy).exists_pos_eventually_mul_norm_sq_le_bundle (hpos y hy)
+      exact ⟨OrderDual.toDual ⟨c, hc⟩, hle⟩
+  exact ⟨_, (OrderDual.ofDual c).2, hc⟩
 
 end Norm
 
@@ -197,12 +203,10 @@ theorem exists_inner_le_mul_inner (g g₀ : ContinuousRiemannianMetric F E) {K :
   refine ⟨max C 1, by positivity, fun x hx v ↦ ?_⟩
   -- The squared norm of `v` for the installed metric is `g₀.inner x v v`.
   have hv : ‖v‖ ^ 2 = g₀.inner x v v := (real_inner_self_eq_norm_sq v).symm
-  have hop := (le_opNorm₂ (g.inner x) v v).trans
-    (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right ((hC x hx).trans (le_max_left C 1))
-      (norm_nonneg v)) (norm_nonneg v))
   calc g.inner x v v ≤ ‖g.inner x v v‖ := Real.le_norm_self _
-    _ ≤ max C 1 * ‖v‖ ^ 2 := by rw [sq, ← mul_assoc]; exact hop
-    _ = max C 1 * g₀.inner x v v := by rw [hv]
+    _ ≤ _ := le_opNorm₂ (g.inner x) v v
+    _ ≤ max C 1 * ‖v‖ * ‖v‖ := by gcongr; exact (hC x hx).trans (le_max_left _ _)
+    _ = max C 1 * g₀.inner x v v := by rw [mul_assoc, ← sq, hv]
 
 /-- **Uniform equivalence of metrics over a compact set.** For two continuous Riemannian metrics
 `g` and `g₀` on a vector bundle and a compact subset `K` of the base, there are `0 < λ` and `0 < Λ`
