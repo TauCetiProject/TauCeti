@@ -124,7 +124,7 @@ theorem coe_weylWordLatticeEquiv_apply (l : List (Fin t.rank)) (m : D.lattice) :
         (D.isNilpotent_representation_rootGenerator (.inr i))).prod :
           Module.End ℚ D.carrier) m := by
   induction l generalizing m with
-  | nil => rfl
+  | nil => simp
   | cons i l ih =>
       simp only [weylWordLatticeEquiv_cons, mul_apply_eq_comp,
         coe_simpleWeylLatticeEquiv_apply, ih, List.map_cons, List.prod_cons,
@@ -140,7 +140,7 @@ theorem coe_weylWordLatticeEquiv_symm_apply (l : List (Fin t.rank)) (m : D.latti
           (Module.End ℚ D.carrier)ˣ) : Module.End ℚ D.carrier) m := by
   simp_rw [← LinearEquiv.coe_inv]
   induction l generalizing m with
-  | nil => rfl
+  | nil => simp
   | cons i l ih =>
       rw [weylWordLatticeEquiv_cons, mul_inv_rev, mul_apply_eq_comp, ih,
         LinearEquiv.coe_inv, coe_simpleWeylLatticeEquiv_symm_apply]
@@ -162,8 +162,7 @@ theorem map_toMatrix_simpleWeylLatticeEquiv (i : Fin t.rank) (A : Type v) [CommR
       D.representation_mem_lattice (D.isNilpotent_representation_rootGenerator (.inl i))
       (D.isNilpotent_representation_rootGenerator (.inr i)) (CommAlgCat.of ℤ A)).val
   rw [kostantWeylGL_val, kostantWeylPoints_toLinearMap,
-    Module.Basis.toMatrix_baseChange_baseChange]
-  rfl
+    Module.Basis.toMatrix_baseChange_baseChange, D.simpleWeylLatticeEquiv_def, algebraMap_int_eq]
 
 /-- The integral matrix of a Weyl word becomes the product of the datum's pinned
 simple Weyl representatives after scalar extension to any commutative ring. -/
@@ -178,6 +177,40 @@ theorem map_toMatrix_weylWordLatticeEquiv (l : List (Fin t.rank)) (A : Type v) [
       rw [weylWordLatticeEquiv_cons, LinearEquiv.coe_toLinearMap_mul,
         LinearMap.toMatrix_mul, Matrix.map_mul, D.map_toMatrix_simpleWeylLatticeEquiv i A, ih]
       simp only [List.map_cons, List.prod_cons, Subgroup.coe_mul, Units.val_mul]
+
+/-- The integral matrix of an inverse simple lattice representative base changes to the
+inverse of the datum's pinned simple Weyl matrix over any commutative ring. -/
+theorem map_toMatrix_simpleWeylLatticeEquiv_symm (i : Fin t.rank) (A : Type v) [CommRing A] :
+    (LinearMap.toMatrix D.basis D.basis (D.simpleWeylLatticeEquiv i).symm.toLinearMap).map
+        (Int.castRingHom A) =
+      (((D.weylElement (t.simpleIndex ht i) A 1)⁻¹ :
+        Matrix.GeneralLinearGroup (Fin D.dim) A) : Matrix (Fin D.dim) (Fin D.dim) A) := by
+  rw [coe_weylElement_simpleIndex_one]
+  -- As in the forward comparison, expose the linear map underlying the matrix unit
+  -- to use the base-change formula.
+  change _ = LinearMap.toMatrix (D.basis.baseChange A) (D.basis.baseChange A)
+    ((kostantWeylGL (t.lieBasis ht).rootGenerator (t.lieBasis ht).h D.representation D.lattice
+      D.representation_mem_lattice (D.isNilpotent_representation_rootGenerator (.inl i))
+      (D.isNilpotent_representation_rootGenerator (.inr i)) (CommAlgCat.of ℤ A))⁻¹).val
+  rw [kostantWeylGL_inv_val, kostantWeylPoints_symm_toLinearMap,
+    Module.Basis.toMatrix_baseChange_baseChange, D.simpleWeylLatticeEquiv_def, algebraMap_int_eq]
+
+/-- The integral matrix of an inverse Weyl word becomes the inverse product of the datum's
+pinned simple Weyl matrices after scalar extension to any commutative ring. -/
+theorem map_toMatrix_weylWordLatticeEquiv_symm (l : List (Fin t.rank)) (A : Type v)
+    [CommRing A] :
+    (LinearMap.toMatrix D.basis D.basis (D.weylWordLatticeEquiv l).symm.toLinearMap).map
+        (Int.castRingHom A) =
+      ((((l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod)⁻¹ :
+        Matrix.GeneralLinearGroup (Fin D.dim) A) : Matrix (Fin D.dim) (Fin D.dim) A) := by
+  induction l with
+  | nil => simp [LinearEquiv.one_eq_refl]
+  | cons i l ih =>
+      rw [weylWordLatticeEquiv_cons, LinearEquiv.mul_eq_trans, LinearEquiv.trans_symm,
+        ← LinearEquiv.mul_eq_trans, LinearEquiv.coe_toLinearMap_mul,
+        LinearMap.toMatrix_mul, Matrix.map_mul, ih,
+        D.map_toMatrix_simpleWeylLatticeEquiv_symm i A]
+      simp only [List.map_cons, List.prod_cons, mul_inv_rev, Subgroup.coe_mul, Units.val_mul]
 
 /-- A pinned simple lattice representative transports a Cartan weight vector by the
 corresponding simple reflection. -/
@@ -252,8 +285,8 @@ theorem isCartanWeightVector_weylWordLatticeEquiv_symm (l : List (Fin t.rank))
         LinearEquiv.coe_inv] using
         ih (D.isCartanWeightVector_simpleWeylLatticeEquiv_symm i hm)
 
-/-- An identity between words in the rational simple Weyl units descends to the
-integral admissible lattice, then holds in the datum's points over any commutative ring. -/
+/-- An identity between words in the rational simple Weyl units holds for the datum's
+pinned simple Weyl representatives over any commutative ring. -/
 theorem prod_map_weylElement_eq_of_prod_map_weylUnit_eq (l r : List (Fin t.rank))
     (h : (l.map fun k => weylUnit
         (D.isNilpotent_representation_rootGenerator (.inl k))

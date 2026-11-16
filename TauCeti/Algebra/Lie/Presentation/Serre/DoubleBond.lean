@@ -159,9 +159,6 @@ theorem weylUnit_braid_of_cartan_eq_neg_two (hs : IsSerreSystem ℚ CM H E F)
     simp only [ha, one_mul, mul_one]
   have hi : H i ≠ 0 := fun hz =>
     hj (hs.H_eq_zero_of_H_eq_zero hz (by omega : CM i j ≠ 0))
-  have hE : c a (c b (c a (E j))) = E j := by
-    simpa only [hc, Units.val_mul, Units.val_inv, mul_inv_rev, mul_assoc] using
-      hs.weylUnit_conj_triple_E_of_doubleBond hii hjj hij hji hi hj hEi hFi hEj hFj
   -- Signed exchange preserves each Weyl conjugation, so the raising calculation also
   -- proves that the three-letter word fixes the lowering operator.
   have hcneg {k : B} (hkk : CM k k = 2) (hk : H k ≠ 0)
@@ -182,12 +179,11 @@ theorem weylUnit_braid_of_cartan_eq_neg_two (hs : IsSerreSystem ℚ CM H E F)
     simpa only [map_neg, neg_inj] using h
   -- Exponentiating gives commutation with the Weyl unit itself, not merely equality
   -- of conjugation actions. This eliminates any possible central discrepancy.
-  have hwE : ((a * b * a : Aˣ) : A) * E j * ↑(a * b * a)⁻¹ = E j := by
-    simpa only [hc, Units.val_mul, mul_inv_rev, mul_assoc] using hE
   have hwF : ((a * b * a : Aˣ) : A) * F j * ↑(a * b * a)⁻¹ = F j := by
     simpa only [hc, Units.val_mul, mul_inv_rev, mul_assoc] using hF
   have hu : (a * b * a) * b * (a * b * a)⁻¹ = b :=
-    conj_weylUnit_of_conj_eq hEj hFj hEj hFj (a * b * a) hwE hwF
+    conj_weylUnit_of_conj_eq hEj hFj hEj hFj (a * b * a)
+      (hs.weylUnit_conj_triple_E_of_doubleBond hii hjj hij hji hi hj hEi hFi hEj hFj) hwF
   calc
     _ = b * (a * b * a) := mul_inv_eq_iff_eq_mul.mp hu
     _ = _ := by simp only [a, b, mul_assoc]

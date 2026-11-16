@@ -102,6 +102,25 @@ theorem weylAut_apply_of_weight_three (t : IsSl2Triple h e f)
   simpa only [neg_lie, lie_neg, neg_neg, smul_neg, neg_smul] using
     t.neg_symm.weylAut_apply_of_weight_neg_three hnf hne (by simp [hyh]) (by simp [hye])
 
+/-- The square of the pinned Weyl automorphism negates a lowest-weight vector
+of weight minus three. -/
+theorem weylAut_weylAut_apply_of_weight_neg_three (t : IsSl2Triple h e f)
+    (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) {y : L}
+    (hyh : ⁅h, y⁆ = (-3 : ℚ) • y) (hyf : ⁅f, y⁆ = 0) :
+    TauCeti.weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero
+      (TauCeti.weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero y) = -y := by
+  let a := TauCeti.weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero
+  have ha : a y = (6⁻¹ : ℚ) • ⁅e, ⁅e, ⁅e, y⁆⁆⁆ :=
+    t.weylAut_apply_of_weight_neg_three he hf hyh hyf
+  rw [ha, map_rat_smul, LieEquiv.map_lie, LieEquiv.map_lie, LieEquiv.map_lie,
+    TauCeti.weylAut_apply_e, ha]
+  have h1 := t.lie_f_pow_succ_toEnd_e hyh hyf 0
+  have h2 := t.lie_f_pow_succ_toEnd_e hyh hyf 1
+  have h3 := t.lie_f_pow_succ_toEnd_e hyh hyf 2
+  norm_num [pow_succ', mul_apply_eq_comp] at h1 h2 h3
+  simp only [neg_lie, lie_neg, lie_smul, h3, h2, h1]
+  module
+
 section Associative
 
 attribute [local instance 100] LieRing.ofAssociativeRing

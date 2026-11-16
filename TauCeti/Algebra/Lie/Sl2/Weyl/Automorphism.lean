@@ -537,6 +537,16 @@ theorem weylUnit_eq_one_of_eq_zero (hE : IsNilpotent E) (hF : IsNilpotent F)
   apply Units.ext
   simp [he, hf]
 
+/-- A ring homomorphism carries the pinned Weyl unit to that of the image root operators. -/
+theorem map_weylUnit {B G : Type*} [Ring B] [Algebra ℚ B]
+    [FunLike G A B] [RingHomClass G A B] (f : G)
+    (hE : IsNilpotent E) (hF : IsNilpotent F) :
+    Units.map (MonoidHom.ofClass f) (weylUnit hE hF) =
+      weylUnit (hE.map f) (hF.map f) := by
+  apply Units.ext
+  simp only [Units.coe_map, MonoidHom.coe_ofClass, coe_weylUnit, map_mul,
+    hE.map_exp f, hF.neg.map_exp f, map_neg]
+
 /-- Conjugating both nilpotent root operators conjugates their pinned Weyl unit.
 No `sl₂` relations or nonvanishing hypotheses are needed. -/
 theorem conj_weylUnit_of_conj_eq {E' F' : A}
@@ -548,10 +558,10 @@ theorem conj_weylUnit_of_conj_eq {E' F' : A}
   have hd (x : A) : d x = (u : A) * x * ↑u⁻¹ := by
     simp only [d, MulSemiringAction.toRingHom_apply, ConjAct.units_smul_def,
       ConjAct.ofConjAct_toConjAct]
-  have h : d (weylUnit hE hF : A) = (weylUnit hE' hF' : A) := by
-    simp only [coe_weylUnit, map_mul, hE.map_exp d, hF.neg.map_exp d, map_neg,
-      hd E, hd F, he, hf]
-  exact Units.ext (by simpa only [hd, Units.val_mul, Units.val_inv] using h)
+  apply Units.ext
+  have h := congrArg Units.val (map_weylUnit d hE hF)
+  simpa only [Units.coe_map, MonoidHom.coe_ofClass, coe_weylUnit, hd, he, hf,
+    Units.val_mul, Units.val_inv] using h
 
 variable {K : Type*} [CommRing K] [Algebra K A]
 

@@ -20,8 +20,9 @@ including in bad characteristic and over nonreduced rings, not just in a Weyl qu
 The rational Serre-operator braid relation is first restricted to the datum's integral
 Kostant-stable lattice and then extended to the value ring. This avoids imposing any
 restriction on weight multiplicities or choosing a signed permutation weight basis.
-`prod_map_weylElement_eq_of_prod_map_weylUnit_eq` supplies this transport for arbitrary words
-in the simple Weyl units, so the same construction applies to other bond types.
+`TauCeti.DynkinType.ChevalleyDatum.prod_map_weylElement_eq_of_forall_isSerreSystem`
+transports word identities valid for all nilpotent Serre systems to pinned simple Weyl
+representatives, so the same construction applies to other bond types.
 
 ## References
 

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.SerreConstruction
 public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Presentation.Basic
 import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Lie.Weights.Eigenvector
 public import TauCeti.Algebra.Lie.Quotient
 
 /-!
@@ -306,19 +307,26 @@ at each step. -/
 theorem IsSerreSystem.lie_H_ad_pow_E (hs : IsSerreSystem R CM H E F) (k i j : B) (n : ℕ) :
     ⁅H k, (ad R L (E i) ^ n) (E j)⁆ =
       ((n : ℤ) * CM k i + CM k j) • (ad R L (E i) ^ n) (E j) := by
-  induction n with
-  | zero => simpa using hs.lie_H_E k j
-  | succ n ih =>
-      simp only [pow_succ', mul_apply_eq_comp, ad_apply]
-      rw [leibniz_lie, hs.lie_H_E, ih]
-      simp only [zsmul_lie, lie_zsmul, Nat.cast_add, Nat.cast_one]
-      module
+  rw [ad_pow_apply_eq_ad_pow_apply R ℤ, ad_eq_toEnd, add_comm]
+  exact lie_pow_toEnd_eq_smul (R := ℤ) (M := L) (hs.lie_H_E k j) (hs.lie_H_E k i) n
 
 omit [DecidableEq B] in
 /-- The lowering weight relation with the negative Cartan entry read in the base ring. -/
 theorem IsSerreSystem.lie_H_F_smul (hs : IsSerreSystem R CM H E F) (i j : B) :
     ⁅H i, F j⁆ = -(CM i j : R) • F j := by
   simpa only [neg_smul, Int.cast_smul_eq_zsmul] using hs.lie_H_F i j
+
+omit [DecidableEq B] in
+/-- Repeated adjoint lowering shifts a Cartan weight by the lowering generator's weight
+at each step. -/
+theorem IsSerreSystem.lie_H_ad_pow_F (hs : IsSerreSystem R CM H E F) (k i j : B) (n : ℕ) :
+    ⁅H k, (ad R L (F i) ^ n) (F j)⁆ =
+      -(((n : ℤ) * CM k i + CM k j) • (ad R L (F i) ^ n) (F j)) := by
+  rw [ad_pow_apply_eq_ad_pow_apply R ℤ, ad_eq_toEnd]
+  simpa only [neg_smul, mul_neg, ← neg_add, add_comm] using
+    lie_pow_toEnd_eq_smul (R := ℤ) (M := L) (a := -CM k j) (c := -CM k i)
+      (by simpa only [neg_smul] using hs.lie_H_F k j)
+      (by simpa only [neg_smul] using hs.lie_H_F k i) n
 
 omit [DecidableEq B] in
 /-- In a torsion-free Serre system, a zero Cartan generator forces every raising generator

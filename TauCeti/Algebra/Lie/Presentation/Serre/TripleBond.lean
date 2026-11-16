@@ -72,11 +72,10 @@ private theorem long_node_string (hs : IsSerreSystem ℚ CM H E F)
     rw [lie_smul, hw, smul_neg]
   have hfjc : ⁅F j, c⁆ = 0 := by
     dsimp only [c]
-    rw [lie_smul, leibniz_lie (F j) (E i) ⁅E i, ⁅E i, E j⁆⁆, hfa, zero_lie, zero_add,
-      leibniz_lie (F j) (E i) ⁅E i, E j⁆, hfa, zero_lie, zero_add,
-      leibniz_lie (F j) (E i) (E j), hfa, zero_lie, zero_add,
-      ← lie_skew (F j) (E j), hs.lie_E_F_self, lie_neg,
-      ← lie_skew (E i) (H j), hs.lie_H_E, hji]
+    have hcomm (x : L) : ⁅F j, ⁅E i, x⁆⁆ = ⁅E i, ⁅F j, x⁆⁆ := by
+      rw [leibniz_lie, hfa, zero_lie, zero_add]
+    rw [lie_smul, hcomm, hcomm, ← lie_skew (F j) ⁅E i, E j⁆,
+      hs.lie_lie_E_E_F_of_ne hne]
     simp
   have heec : ⁅E j, ⁅E j, c⁆⁆ = 0 := by
     simpa [pow_succ', mul_apply_eq_comp] using tj.pow_ad_apply_eq_zero_of_weight_neg_nat hej 1
@@ -91,19 +90,15 @@ private theorem long_node_string (hs : IsSerreSystem ℚ CM H E F)
     rw [LieEquiv.map_lie, weylAut_apply_e, hbc, neg_lie, hfjd]
   exact ⟨hbc, hbd⟩
 
-private theorem fivefold_fixes_long_raising (hs : IsSerreSystem ℚ CM H E F)
-    {i j : B} (hii : CM i i = 2) (hjj : CM j j = 2)
-    (hij : CM i j = -3) (hji : CM j i = -1)
-    (hi : H i ≠ 0) (hj : H j ≠ 0)
-    (hei : IsNilpotent (ad ℚ L (E i))) (hfi : IsNilpotent (ad ℚ L (F i)))
-    (hej : IsNilpotent (ad ℚ L (E j))) (hfj : IsNilpotent (ad ℚ L (F j))) :
-    let a := weylAut (hs.isSl2Triple hii hi)
-      hei.exists_pow_apply_eq_zero hfi.exists_pow_apply_eq_zero
-    let b := weylAut (hs.isSl2Triple hjj hj)
-      hej.exists_pow_apply_eq_zero hfj.exists_pow_apply_eq_zero
-    a (b (a (b (a (E j))))) = E j := by
+-- The highest long root has short-node weight zero and is fixed by that node's Weyl action.
+private theorem short_node_fixes_highest_long_root (hs : IsSerreSystem ℚ CM H E F)
+    {i j : B} (hii : CM i i = 2) (hij : CM i j = -3) (hji : CM j i = -1)
+    (hi : H i ≠ 0)
+    (hei : IsNilpotent (ad ℚ L (E i))) (hfi : IsNilpotent (ad ℚ L (F i))) :
+    weylAut (hs.isSl2Triple hii hi) hei.exists_pow_apply_eq_zero hfi.exists_pow_apply_eq_zero
+      ⁅E j, (6⁻¹ : ℚ) • ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆⁆ =
+        ⁅E j, (6⁻¹ : ℚ) • ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆⁆ := by
   let ti := hs.isSl2Triple hii hi
-  let a := weylAut ti hei.exists_pow_apply_eq_zero hfi.exists_pow_apply_eq_zero
   let c := (6⁻¹ : ℚ) • ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆
   let d := ⁅E j, c⁆
   have hne : i ≠ j := by intro h; subst j; omega
@@ -111,7 +106,6 @@ private theorem fivefold_fixes_long_raising (hs : IsSerreSystem ℚ CM H E F)
     simpa [hij] using hs.lie_H_E_smul i j
   have hfi0 : ⁅F i, E j⁆ = 0 := by
     rw [← lie_skew, hs.lie_E_F_of_ne j i hne.symm, neg_zero]
-  have ha : a (E j) = c := ti.weylAut_apply_of_weight_neg_three hei hfi hw hfi0
   have hfc : ⁅F i, c⁆ = (2⁻¹ : ℚ) • ⁅E i, ⁅E i, E j⁆⁆ := by
     have h := ti.lie_f_pow_succ_toEnd_e hw hfi0 2
     norm_num [pow_succ', mul_apply_eq_comp] at h
@@ -140,21 +134,36 @@ private theorem fivefold_fixes_long_raising (hs : IsSerreSystem ℚ CM H E F)
     module
   have hed : ⁅E i, d⁆ = 0 := by
     simpa using ti.pow_ad_apply_eq_zero_of_weight_neg_nat hei 0 hhd hfd
-  have had : a d = d := weylAut_apply_of_lie_eq_zero
+  exact weylAut_apply_of_lie_eq_zero
     hei.exists_pow_apply_eq_zero hfi.exists_pow_apply_eq_zero ti
     (by rw [← lie_skew d (E i), hed, neg_zero])
     (by rw [← lie_skew d (F i), hfd, neg_zero])
+
+private theorem fivefold_fixes_long_raising (hs : IsSerreSystem ℚ CM H E F)
+    {i j : B} (hii : CM i i = 2) (hjj : CM j j = 2)
+    (hij : CM i j = -3) (hji : CM j i = -1)
+    (hi : H i ≠ 0) (hj : H j ≠ 0)
+    (hei : IsNilpotent (ad ℚ L (E i))) (hfi : IsNilpotent (ad ℚ L (F i)))
+    (hej : IsNilpotent (ad ℚ L (E j))) (hfj : IsNilpotent (ad ℚ L (F j))) :
+    let a := weylAut (hs.isSl2Triple hii hi)
+      hei.exists_pow_apply_eq_zero hfi.exists_pow_apply_eq_zero
+    let b := weylAut (hs.isSl2Triple hjj hj)
+      hej.exists_pow_apply_eq_zero hfj.exists_pow_apply_eq_zero
+    a (b (a (b (a (E j))))) = E j := by
+  let ti := hs.isSl2Triple hii hi
+  let a := weylAut ti hei.exists_pow_apply_eq_zero hfi.exists_pow_apply_eq_zero
+  let c := (6⁻¹ : ℚ) • ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆
+  have hw : ⁅H i, E j⁆ = (-3 : ℚ) • E j := by
+    simpa [hij] using hs.lie_H_E_smul i j
+  have hfi0 : ⁅F i, E j⁆ = 0 := by
+    rw [← lie_skew, hs.lie_E_F_of_ne j i (ne_of_apply_ne (CM i) (by omega)), neg_zero]
+  have ha : a (E j) = c := ti.weylAut_apply_of_weight_neg_three hei hfi hw hfi0
+  have had := short_node_fixes_highest_long_root hs hii hij hji hi hei hfi
   obtain ⟨hbc, hbd⟩ := long_node_string hs hjj hji hj hej hfj
   -- Returning down the short-node string contributes the second minus sign.
   have hac : a c = -E j := by
-    conv_lhs => dsimp only [c]
-    rw [map_smul, LieEquiv.map_lie, LieEquiv.map_lie, LieEquiv.map_lie,
-      weylAut_apply_e, ha]
-    have h1 := ti.lie_f_pow_succ_toEnd_e hw hfi0 0
-    have h2 := ti.lie_f_pow_succ_toEnd_e hw hfi0 1
-    norm_num [pow_succ', mul_apply_eq_comp] at h1 h2
-    simp only [neg_lie, lie_neg, lie_smul, hfc, h2, h1]
-    module
+    rw [← ha]
+    exact ti.weylAut_weylAut_apply_of_weight_neg_three hei hfi hw hfi0
   dsimp only
   rw [ha, hbc, had, hbd, map_neg, hac, neg_neg]
 
