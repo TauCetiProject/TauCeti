@@ -70,10 +70,9 @@ theorem mixtureWeight_ne_top (n : ℕ) : mixtureWeight n ≠ ∞ := by
 /-- The mixture weights sum to `1`. -/
 @[simp]
 theorem tsum_mixtureWeight : ∑' n, mixtureWeight n = 1 := by
-  rw [← ENNReal.tsum_two_zpow_neg_add_one]
-  refine tsum_congr fun n ↦ ?_
-  rw [mixtureWeight_def, neg_sub_left, ENNReal.zpow_neg, ← Nat.cast_one (R := ℤ), ← Nat.cast_add,
-    zpow_natCast]
+  simp_rw [mixtureWeight_def, ENNReal.inv_pow, pow_succ, ENNReal.tsum_mul_right,
+    ENNReal.tsum_geometric_two]
+  exact ENNReal.mul_inv_cancel two_ne_zero ENNReal.ofNat_ne_top
 
 /-- The **countable mixture** `∑ₙ 2^{-(n+1)} • P (θs n)` of the members `P (θs n)` of a family
 of measures. -/
