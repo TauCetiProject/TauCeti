@@ -42,17 +42,17 @@ variable (C : Type*) [Category* C] [Abelian C] [MonoidalCategory C] [MonoidalPre
   [∀ K L : CochainComplex C ℤ, HasTensor K L]
 
 /-- The object property of K-flat cochain complexes in `C`. -/
-abbrev isKFlatProperty : ObjectProperty (CochainComplex C ℤ) :=
+abbrev isKFlat : ObjectProperty (CochainComplex C ℤ) :=
   fun K ↦ K.IsKFlat
 
-instance (P : (isKFlatProperty C).FullSubcategory) : P.obj.IsKFlat := P.property
+instance (P : (isKFlat C).FullSubcategory) : P.obj.IsKFlat := P.property
 
 /-- The localizer morphism given by the inclusion of the full subcategory of K-flat complexes into
 `CochainComplex C ℤ`, with respect to quasi-isomorphisms. -/
 abbrev kFlatLocalizerMorphism :
-    LocalizerMorphism ((quasiIso C (.up ℤ)).inverseImage (isKFlatProperty C).ι)
+    LocalizerMorphism ((quasiIso C (.up ℤ)).inverseImage (isKFlat C).ι)
       (quasiIso C (.up ℤ)) where
-  functor := (isKFlatProperty C).ι
+  functor := (isKFlat C).ι
   map := by rfl
 
 instance : (kFlatLocalizerMorphism C).IsInduced where
@@ -71,22 +71,22 @@ variable [HasColimitsOfShape ℕ C] [HasExactColimitsOfShape ℕ C]
   [∀ X, PreservesFiniteColimits (tensorLeft (E.obj X))]
 
 /-- The lift of `kFlatResolutionFunctor E p` to the full subcategory of K-flat complexes. -/
-def kFlatResolutionLiftFunctor :
-    CochainComplex C ℤ ⥤ (isKFlatProperty C).FullSubcategory :=
-  (isKFlatProperty C).lift (kFlatResolutionFunctor E p) fun K ↦
+private def kFlatResolutionLiftFunctor :
+    CochainComplex C ℤ ⥤ (isKFlat C).FullSubcategory :=
+  (isKFlat C).lift (kFlatResolutionFunctor E p) fun K ↦
     inferInstanceAs ((kFlatResolutionFunctor E p).obj K).IsKFlat
 
 /-- The augmentation from the lifted K-flat resolution functor composed with the subcategory
 inclusion to the identity functor on `CochainComplex C ℤ`. -/
-def kFlatResolutionLiftAugmentation :
+private def kFlatResolutionLiftAugmentation :
     kFlatResolutionLiftFunctor E p ⋙ (kFlatLocalizerMorphism C).functor ⟶
       𝟭 (CochainComplex C ℤ) :=
-  ((isKFlatProperty C).liftCompιIso (kFlatResolutionFunctor E p) _).hom ≫
+  ((isKFlat C).liftCompιIso (kFlatResolutionFunctor E p) _).hom ≫
     kFlatResolution.πNatTrans E p
 
-lemma mem_quasiIso_kFlatResolutionLiftAugmentation_app (K : CochainComplex C ℤ) :
+private lemma mem_quasiIso_kFlatResolutionLiftAugmentation_app (K : CochainComplex C ℤ) :
     quasiIso C (.up ℤ) ((kFlatResolutionLiftAugmentation E p).app K) := by
-  let e := ((isKFlatProperty C).liftCompιIso (kFlatResolutionFunctor E p) fun K ↦
+  let e := ((isKFlat C).liftCompιIso (kFlatResolutionFunctor E p) fun K ↦
     inferInstanceAs ((kFlatResolutionFunctor E p).obj K).IsKFlat).app K
   exact (quasiIso C (.up ℤ)).comp_mem e.hom _ (MorphismProperty.of_isIso _ _)
     ((mem_quasiIso_iff _).2 inferInstance)

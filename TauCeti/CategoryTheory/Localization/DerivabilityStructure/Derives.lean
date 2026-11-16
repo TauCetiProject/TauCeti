@@ -12,8 +12,8 @@ public import Mathlib.CategoryTheory.Localization.DerivabilityStructure.Derives
 
 When a localizer morphism `Φ : LocalizerMorphism W₁ W₂` is a left (or right) derivability
 structure and `h : Φ.Derives F` holds for `F : C₂ ⥤ H`, any left (or right) derived functor of
-`F` is *absolute*: postcomposing with an arbitrary functor `G : H ⥤ H'` preserves the property
-`Φ.Derives` (`CategoryTheory.LocalizerMorphism.Derives.comp`) and sends derived functors of `F` to
+`F` is *absolute*: postcomposing with an arbitrary functor `G : H ⥤ H'` preserves `Φ.Derives`
+(via `CategoryTheory.MorphismProperty.IsInvertedBy.of_comp`) and sends derived functors of `F` to
 derived functors of `F ⋙ G`
 (`CategoryTheory.LocalizerMorphism.Derives.isLeftDerivedFunctor_comp` and
 `CategoryTheory.LocalizerMorphism.Derives.isRightDerivedFunctor_comp`).
@@ -46,13 +46,6 @@ namespace LocalizerMorphism.Derives
 
 variable {Φ : LocalizerMorphism W₁ W₂} {F : C₂ ⥤ H} (h : Φ.Derives F) (G : H ⥤ H')
 
-include h in
-/-- If `Φ` derives `F : C₂ ⥤ H`, then `Φ` also derives `F ⋙ G` for every functor `G : H ⥤ H'`. -/
-lemma comp : Φ.Derives (F ⋙ G) :=
-  fun _ _ f hf ↦ by
-    have : IsIso ((Φ.functor ⋙ F).map f) := h f hf
-    exact inferInstanceAs (IsIso (G.map ((Φ.functor ⋙ F).map f)))
-
 section Right
 
 variable [Φ.IsRightDerivabilityStructure] {L₂ : C₂ ⥤ D₂} [L₂.IsLocalization W₂]
@@ -64,7 +57,8 @@ composite with any functor `G : H ⥤ H'` is a right derived functor of `F ⋙ G
 lemma isRightDerivedFunctor_comp :
     (RF ⋙ G).IsRightDerivedFunctor
       (Functor.whiskerRight α G ≫ (Functor.associator L₂ RF G).hom) W₂ := by
-  refine (h.comp G).isRightDerivedFunctor_of_isIso _ fun X₁ ↦ ?_
+  have h' : Φ.Derives (F ⋙ G) := MorphismProperty.IsInvertedBy.of_comp W₁ (Φ.functor ⋙ F) h G
+  refine h'.isRightDerivedFunctor_of_isIso _ fun X₁ ↦ ?_
   have : IsIso (α.app (Φ.functor.obj X₁)) := h.isIso_of_isRightDerivedFunctor α X₁
   dsimp
   rw [Category.comp_id]
@@ -83,7 +77,8 @@ composite with any functor `G : H ⥤ H'` is a left derived functor of `F ⋙ G`
 lemma isLeftDerivedFunctor_comp :
     (LF ⋙ G).IsLeftDerivedFunctor
       ((Functor.associator L₂ LF G).inv ≫ Functor.whiskerRight α G) W₂ := by
-  refine (h.comp G).isLeftDerivedFunctor_of_isIso _ fun X₁ ↦ ?_
+  have h' : Φ.Derives (F ⋙ G) := MorphismProperty.IsInvertedBy.of_comp W₁ (Φ.functor ⋙ F) h G
+  refine h'.isLeftDerivedFunctor_of_isIso _ fun X₁ ↦ ?_
   have : IsIso (α.app (Φ.functor.obj X₁)) := h.isIso' α X₁
   dsimp
   rw [Category.id_comp]

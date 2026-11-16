@@ -13,13 +13,16 @@ import TauCeti.Algebra.Homology.Monoidal.Braiding
 # Independence of K-flat tensor models
 
 A quasi-isomorphism between K-flat complexes of modules remains a quasi-isomorphism after
-tensoring with any complex. Thus the endofunctor `CochainComplex.kFlatTensor` of the unbounded
-derived category sends quasi-isomorphisms in its K-flat input to natural isomorphisms. The
-comparison is induced by the specified map of models, so its identity and composition laws
-are those of `CochainComplex.kFlatTensorMap`.
+tensoring on either side with any complex (`CochainComplex.quasiIso_tensorHom_id_of_isKFlat`,
+`CochainComplex.quasiIso_id_tensorHom_of_isKFlat`), and the tensor product of two
+quasi-isomorphisms `f : K₁ ⟶ L₁` and `g : K₂ ⟶ L₂` is a quasi-isomorphism whenever `L₁` and `K₂`
+are K-flat (`CochainComplex.quasiIso_tensorHom_of_isKFlat`). Thus the endofunctor
+`CochainComplex.kFlatTensor` of the unbounded derived category sends quasi-isomorphisms in its
+K-flat input to natural isomorphisms. The comparison is induced by the specified map of models, so
+its identity and composition laws are those of `CochainComplex.kFlatTensorMap`.
 
-The arbitrary right factor is resolved by a K-flat complex, and the Koszul braiding exchanges
-the two factors. No boundedness, freeness or termwise flatness is required of either input.
+The arbitrary factor is resolved by a K-flat complex, and the Koszul braiding exchanges the two
+factors. No boundedness, freeness or termwise flatness is required of either input.
 
 ## References
 
@@ -64,6 +67,30 @@ instance quasiIso_tensorHom_id_of_isKFlat
     simp only [← mapBifunctorMap_comp, Category.id_comp, Category.comp_id]
   apply (quasiIso_iff_comp_left (tensorHom (𝟙 K) p) _).1
   rw [h]
+  infer_instance
+
+/-- A quasi-isomorphism between K-flat complexes of `R`-modules remains a quasi-isomorphism after
+tensoring on the left with an arbitrary, possibly unbounded, complex `A`. -/
+instance quasiIso_id_tensorHom_of_isKFlat (A : CochainComplex (ModuleCat.{u} R) ℤ)
+    {K L : CochainComplex (ModuleCat.{u} R) ℤ} [K.IsKFlat] [L.IsKFlat]
+    (f : K ⟶ L) [QuasiIso f] :
+    QuasiIso (tensorHom (𝟙 A) f) := by
+  rw [HomologicalComplex.tensorHom, ← whiskerLeft_eq_mapBifunctorMap]
+  have : QuasiIso (f ▷ A) := by
+    rw [whiskerRight_eq_mapBifunctorMap]
+    exact inferInstanceAs (QuasiIso (tensorHom f (𝟙 A)))
+  exact quasiIso_of_arrow_mk_iso (f ▷ A) (A ◁ f)
+    (Arrow.isoMk (β_ K A) (β_ L A) (BraidedCategory.braiding_naturality_left f A).symm)
+
+/-- The tensor product of two quasi-isomorphisms `f : K₁ ⟶ L₁` and `g : K₂ ⟶ L₂` of cochain
+complexes of `R`-modules is a quasi-isomorphism whenever `L₁` and `K₂` are K-flat. -/
+instance quasiIso_tensorHom_of_isKFlat
+    {K₁ L₁ K₂ L₂ : CochainComplex (ModuleCat.{u} R) ℤ} [L₁.IsKFlat] [K₂.IsKFlat]
+    (f : K₁ ⟶ L₁) (g : K₂ ⟶ L₂) [QuasiIso f] [QuasiIso g] :
+    QuasiIso (tensorHom f g) := by
+  have hfg : tensorHom f g = tensorHom f (𝟙 K₂) ≫ tensorHom (𝟙 L₁) g := by
+    simp only [← mapBifunctorMap_comp, Category.id_comp, Category.comp_id]
+  rw [hfg]
   infer_instance
 
 variable [HasDerivedCategory (ModuleCat.{u} R)]

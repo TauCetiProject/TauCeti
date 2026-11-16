@@ -618,6 +618,15 @@ public instance isKFlat_kFlatResolutionFunctor_obj [MonoidalCategory C] [Monoida
     ((kFlatResolutionFunctor E p).obj K).IsKFlat :=
   inferInstanceAs (kFlatResolution E.obj p.app K).IsKFlat
 
+/-- The terms of `(kFlatResolutionFunctor E p).obj K` are flat when the objects `E.obj X` are flat,
+and sequential colimits are exact and commute with tensoring by each object. -/
+public instance preservesFiniteLimits_tensorLeft_kFlatResolutionFunctor_obj_X [MonoidalCategory C]
+    [MonoidalPreadditive C] [HasExactColimitsOfShape ℕ C]
+    [∀ X : C, PreservesColimitsOfShape ℕ (tensorRight X)]
+    [∀ X, PreservesFiniteLimits (tensorLeft (E.obj X))] (K : CochainComplex C ℤ) (n : ℤ) :
+    PreservesFiniteLimits (tensorLeft (((kFlatResolutionFunctor E p).obj K).X n)) :=
+  inferInstanceAs (PreservesFiniteLimits (tensorLeft ((kFlatResolution E.obj p.app K).X n)))
+
 end FunctorialResolution
 
 end CochainComplex

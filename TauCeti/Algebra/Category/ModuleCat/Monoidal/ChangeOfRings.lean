@@ -101,4 +101,26 @@ noncomputable def extendScalarsCompRestrictScalarsIso :
         (restrictScalars.{u} f)) ≪≫
     extendScalarsCompTensorLeftIso f (𝟙_ (ModuleCat.{u} P))
 
+/-- The forward map of `extendScalarsCompRestrictScalarsIso` sends `s ⊗ x` to `s ⊗ x`. -/
+@[simp]
+theorem extendScalarsCompRestrictScalarsIso_hom_app_tmul (X : ModuleCat.{u} A)
+    (s : P) (x : X) :
+    (Hom.hom : ((restrictScalars f).obj ((extendScalars f).obj X) ⟶
+        (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P)) ⊗ X) → _)
+        ((extendScalarsCompRestrictScalarsIso f).hom.app X) (s ⊗ₜ[A, f] x) =
+      TensorProduct.tmul A (M := (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))) (N := X) s x :=
+  congr_arg (TensorProduct.tmul A (M := (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P)))
+    (N := X) · x) (mul_one s)
+
+/-- The inverse of `extendScalarsCompRestrictScalarsIso` sends `s ⊗ x` to `s ⊗ x`. -/
+@[simp]
+theorem extendScalarsCompRestrictScalarsIso_inv_app_tmul (X : ModuleCat.{u} A)
+    (s : (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))) (x : X) :
+    (Hom.hom : ((restrictScalars f).obj (𝟙_ (ModuleCat.{u} P)) ⊗ X ⟶
+        (restrictScalars f).obj ((extendScalars f).obj X)) → _)
+        ((extendScalarsCompRestrictScalarsIso f).inv.app X)
+        (TensorProduct.tmul A (M := (restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))) (N := X) s x) =
+      (s : P) ⊗ₜ[A, f] x :=
+  congr_arg (· ⊗ₜ[A, f] x) (mul_one (show P from s))
+
 end ModuleCat
