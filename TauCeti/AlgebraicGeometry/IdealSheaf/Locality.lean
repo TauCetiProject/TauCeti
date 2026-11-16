@@ -94,4 +94,11 @@ theorem IdealSheafData.ext_of_comap_fromSpec_over
     f.iSup_affineOpens_le_preimage_eq_top fun V ↦ V.1.2).openCover
     fun V ↦ V.2.elim fun U hVU ↦ h U V.1 hVU
 
+/-- Two ideal sheaves on `X` are equal if the same morphisms into `X` factor through their closed
+subschemes. -/
+theorem IdealSheafData.eq_of_forall_le_ker_iff {I J : X.IdealSheafData}
+    (h : ∀ {T : Scheme.{u}} (r : T ⟶ X), I ≤ r.ker ↔ J ≤ r.ker) : I = J :=
+  le_antisymm (((h _).2 J.ker_subschemeι.ge).trans J.ker_subschemeι.le)
+    (((h _).1 I.ker_subschemeι.ge).trans I.ker_subschemeι.le)
+
 end AlgebraicGeometry.Scheme
