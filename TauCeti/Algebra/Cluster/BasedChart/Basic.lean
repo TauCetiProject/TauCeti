@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.QuantumTorus.Basic
+public import TauCeti.Algebra.QuantumTorus.Basic
 
 /-!
 # Faithful based charts
@@ -70,9 +70,8 @@ theorem ext {M N : BasedChart u Λ B} (h : ∀ a, M.monomial a = N.monomial a) :
 theorem val_monomial_mul (M : BasedChart u Λ B) (a b : L) :
     (M.monomial a : B) * M.monomial b =
       ((u ^ (Λ a b) : Rˣ) : R) • (M.monomial (a + b) : B) := by
-  simpa only [Units.val_mul, Units.coe_map, MonoidHom.coe_ofClass, RingHom.coe_coe,
-    Algebra.smul_def] using
-    congrArg Units.val (M.monomial_mul a b)
+  rw [← Units.val_mul, M.monomial_mul]
+  simp [Algebra.smul_def, -map_zpow]
 
 /-- Evaluation of a based quantum torus in its chart. -/
 noncomputable def eval (M : BasedChart u Λ B) : QuantumTorus R L u Λ →ₐ[R] B :=
@@ -115,11 +114,16 @@ theorem eval_eq_one_iff (M : BasedChart u Λ B) {x : QuantumTorus R L u Λ} :
 /-- A chart embeds its scalar semiring in the ambient algebra. -/
 theorem algebraMap_injective (M : BasedChart u Λ B) : Function.Injective (algebraMap R B) := by
   rw [← M.eval.comp_algebraMap]
-  exact M.eval_injective.comp QuantumTorus.algebraMap_injective
+  exact M.eval_injective.comp TwistedMonoidAlgebra.algebraMap_injective
 
 /-- A chart makes scalar multiplication on the ambient algebra faithful. -/
 theorem faithfulSMul (M : BasedChart u Λ B) : FaithfulSMul R B :=
   (faithfulSMul_iff_algebraMap_injective R B).mpr M.algebraMap_injective
+
+/-- Ambient algebra maps fix the scalar units. -/
+private theorem units_map_algebraMap (f : B →ₐ[R] C) (v : Rˣ) :
+    Units.map (f : B →* C) (Units.map (algebraMap R B) v) = Units.map (algebraMap R C) v :=
+  Units.ext <| by simp
 
 /-- Transport a chart through an injective map of ambient algebras. -/
 noncomputable def map (M : BasedChart u Λ B) (f : B →ₐ[R] C) (hf : Function.Injective f) :
@@ -127,10 +131,7 @@ noncomputable def map (M : BasedChart u Λ B) (f : B →ₐ[R] C) (hf : Function
   monomial a := Units.map f (M.monomial a)
   monomial_zero := by simp
   monomial_mul a b := by
-    apply Units.ext
-    simpa only [Units.val_mul, Units.coe_map, map_mul, map_smul, MonoidHom.coe_ofClass,
-      RingHom.coe_coe, AlgHom.coe_toMonoidHom, AlgHom.commutes,
-      Algebra.smul_def] using congrArg f (M.val_monomial_mul a b)
+    rw [← map_mul, M.monomial_mul, map_mul, units_map_algebraMap]
   linearIndependent := by
     simpa only [Function.comp_def, AlgHom.toLinearMap_apply, Units.coe_map,
       AlgHom.coe_toMonoidHom] using
@@ -149,32 +150,16 @@ theorem eval_map (M : BasedChart u Λ B) (f : B →ₐ[R] C) (hf : Function.Inje
 
 @[simp]
 theorem map_id (M : BasedChart u Λ B) : M.map (AlgHom.id R B) Function.injective_id = M := by
-  apply BasedChart.ext
-  intro a
-  apply Units.ext
-  rfl
+  ext a
+  simp [map]
 
 /-- Ambient transport respects composition. -/
 @[simp]
 theorem map_map (M : BasedChart u Λ B) (f : B →ₐ[R] C) (hf : Function.Injective f)
     (g : C →ₐ[R] D) (hg : Function.Injective g) :
     (M.map f hf).map g hg = M.map (g.comp f) (hg.comp hf) := by
-  apply BasedChart.ext
-  intro a
-  apply Units.ext
-  rfl
-
-/-- For alternating forms, negation of an exponent inverts its monomial. -/
-theorem monomial_neg (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a : L) :
-    M.monomial (-a) = (M.monomial a)⁻¹ := by
-  apply eq_inv_of_mul_eq_one_right
-  simp [hΛ.self_eq_zero]
-
-/-- The inverse of a chart monomial times the diagonal factor is its negated monomial. -/
-theorem monomial_neg_eq_inv_map_mul (M : BasedChart u Λ B) (a : L) :
-    M.monomial (-a) = (Units.map (algebraMap R B) (u ^ (Λ a a)) * M.monomial a)⁻¹ := by
-  apply eq_inv_of_mul_eq_one_right
-  simp [mul_assoc]
+  ext a
+  simp [map]
 
 /-- Alternation gives the usual quasi-commutation factor in the ambient algebra. -/
 theorem val_monomial_mul_monomial_eq_smul_mul (M : BasedChart u Λ B) (hΛ : Λ.IsAlt)
@@ -188,10 +173,7 @@ theorem monomial_mul_monomial_eq_map_mul (M : BasedChart u Λ B) (hΛ : Λ.IsAlt
     M.monomial a * M.monomial b =
       Units.map (algebraMap R B) (u ^ (2 * Λ a b)) * (M.monomial b * M.monomial a) :=
   Units.ext <| by
-    simp only [Units.val_mul, Units.coe_map]
-    simpa only [map_zpow, Algebra.smul_def,
-      MonoidHom.coe_ofClass (algebraMap R B)] using
-        M.val_monomial_mul_monomial_eq_smul_mul hΛ a b
+    simpa [Algebra.smul_def, -map_zpow] using M.val_monomial_mul_monomial_eq_smul_mul hΛ a b
 
 /-- The identity map gives the canonical chart of the based torus in itself. -/
 noncomputable def canonical (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) :
@@ -224,7 +206,7 @@ theorem ofInjective_monomial (f : QuantumTorus R L u Λ →ₐ[R] B)
   (rfl)
 
 @[simp]
-theorem canonical_map (f : QuantumTorus R L u Λ →ₐ[R] B) (hf : Function.Injective f) :
+theorem map_canonical (f : QuantumTorus R L u Λ →ₐ[R] B) (hf : Function.Injective f) :
     (canonical u Λ).map f hf = ofInjective f hf :=
   (rfl)
 
@@ -302,10 +284,7 @@ theorem val_inv_monomial (M : BasedChart u Λ B) (a : L) :
 /-- The inverse of a chart monomial, including the diagonal correction. -/
 theorem monomial_inv_eq_map_mul (M : BasedChart u Λ B) (a : L) :
     (M.monomial a)⁻¹ = Units.map (algebraMap R B) (u ^ (Λ a a)) * M.monomial (-a) :=
-  Units.ext <| by
-    simp only [Units.val_mul, Units.coe_map]
-    simpa only [map_zpow, Algebra.smul_def,
-      MonoidHom.coe_ofClass (algebraMap R B)] using M.val_inv_monomial a
+  Units.ext <| by simpa [Algebra.smul_def, -map_zpow] using M.val_inv_monomial a
 
 /-- For alternating forms, negation of an exponent inverts its monomial. -/
 @[simp]
@@ -333,19 +312,22 @@ theorem val_monomial_pow (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a : L) (n : �
     (M.monomial a : B) ^ n = (M.monomial (n • a) : B) := by
   simpa only [Units.val_pow_eq_pow_val] using congrArg Units.val (M.monomial_pow hΛ a n)
 
-/-- In a division semiring, inverses of underlying monomials simplify to negated monomials. -/
+/-- For alternating forms in a division semiring, the inverse of an underlying monomial
+simplifies to the monomial at the negated exponent. -/
 @[simp]
 theorem val_monomial_inv {K : Type*} [DivisionSemiring K] [Algebra R K]
     (M : BasedChart u Λ K) (hΛ : Λ.IsAlt) (a : L) :
     (M.monomial a : K)⁻¹ = (M.monomial (-a) : K) := by
   rw [← Units.val_inv_eq_inv_val, M.monomial_inv hΛ]
 
-/-- In a division semiring, integer powers of underlying monomials simplify to monomials. -/
+/-- For alternating forms in a division semiring, integer powers of underlying monomials
+simplify to monomials. -/
 @[simp]
 theorem val_monomial_zpow {K : Type*} [DivisionSemiring K] [Algebra R K]
     (M : BasedChart u Λ K) (hΛ : Λ.IsAlt) (a : L) (n : ℤ) :
     (M.monomial a : K) ^ n = (M.monomial (n • a) : K) := by
   rw [← Units.val_zpow_eq_zpow_val, M.monomial_zpow hΛ]
+
 /-- The coordinate units of a chart relative to a lattice basis. -/
 noncomputable def coordinate {I : Type*} (M : BasedChart u Λ B)
     (b : Module.Basis I ℤ L) (i : I) : Bˣ :=
@@ -414,8 +396,8 @@ noncomputable def comap (M : BasedChart u Λ B) (f : L' →ₗ[ℤ] L)
 
 @[simp] theorem comap_id (M : BasedChart u Λ B) :
     M.comap (LinearMap.id) Function.injective_id (fun _ _ ↦ rfl) = M := by
-  ext
-  rfl
+  ext a
+  simp
 
 /-- Pulling back respects composition of lattice maps. -/
 @[simp] theorem comap_comap (M : BasedChart u Λ B) (f : L' →ₗ[ℤ] L)
@@ -424,16 +406,16 @@ noncomputable def comap (M : BasedChart u Λ B) (f : L' →ₗ[ℤ] L)
     (hgΛ : ∀ a b, Λ' (g a) (g b) = Λ'' a b) :
     (M.comap f hf hfΛ).comap g hg hgΛ =
       M.comap (f.comp g) (hf.comp hg) (fun a b ↦ (hfΛ (g a) (g b)).trans (hgΛ a b)) := by
-  ext
-  rfl
+  ext a
+  simp
 
 /-- Lattice pullback commutes with injective ambient transport. -/
 @[simp] theorem comap_map (M : BasedChart u Λ B) (f : L' →ₗ[ℤ] L)
     (hf : Function.Injective f) (hfΛ : ∀ a b, Λ (f a) (f b) = Λ' a b)
     (g : B →ₐ[R] C) (hg : Function.Injective g) :
     (M.map g hg).comap f hf hfΛ = (M.comap f hf hfΛ).map g hg := by
-  ext
-  rfl
+  ext a
+  simp
 
 /-- Reindex a chart along a lattice isomorphism preserving its integral form. -/
 noncomputable def reindex (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L')
@@ -449,9 +431,8 @@ theorem reindex_monomial (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L')
 @[simp]
 theorem reindex_refl (M : BasedChart u Λ B) :
     M.reindex (LinearEquiv.refl ℤ L) (fun _ _ ↦ rfl) = M := by
-  apply BasedChart.ext
-  intro a
-  rfl
+  ext a
+  simp [reindex]
 
 /-- Reindexing respects composition of lattice isomorphisms. -/
 theorem reindex_reindex (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L') (e' : L' ≃ₗ[ℤ] L'')
@@ -459,9 +440,8 @@ theorem reindex_reindex (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L') (e' : L' 
     (he' : ∀ a b, Λ'' (e' a) (e' b) = Λ' a b) :
     (M.reindex e he).reindex e' he' =
       M.reindex (e.trans e') (fun a b ↦ (he' (e a) (e b)).trans (he a b)) := by
-  apply BasedChart.ext
-  intro a
-  rfl
+  ext a
+  simp [reindex]
 
 @[simp]
 theorem reindex_reindex_symm (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L')
@@ -494,9 +474,8 @@ theorem coordinate_reindex {I : Type*} (M : BasedChart u Λ B) (b : Module.Basis
 theorem reindex_map (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L')
     (he : ∀ a b, Λ' (e a) (e b) = Λ a b) (f : B →ₐ[R] C) (hf : Function.Injective f) :
     (M.map f hf).reindex e he = (M.reindex e he).map f hf := by
-  apply BasedChart.ext
-  intro a
-  rfl
+  ext a
+  simp
 
 end Reindex
 
@@ -517,7 +496,7 @@ theorem untwistedEquiv_apply_single (h : ∀ a b, u ^ (Λ a b) = 1)
 /-- Untwisting evaluates after transporting along the quantum-torus equivalence. -/
 theorem untwistedEquiv_apply (h : ∀ a b, u ^ (Λ a b) = 1) (M : BasedChart u Λ B) :
     (untwistedEquiv h M).val = M.eval.comp (QuantumTorus.untwistedEquiv u Λ h).symm.toAlgHom := by
-  rfl
+  simp [untwistedEquiv]
 
 @[simp]
 theorem val_untwistedEquiv_symm_monomial (h : ∀ a b, u ^ (Λ a b) = 1)
