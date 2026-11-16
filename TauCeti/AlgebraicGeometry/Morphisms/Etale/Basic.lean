@@ -317,6 +317,12 @@ theorem hom_ext {X : Scheme.{u}} {U V : X.Etale} {f g : U ⟶ V} (h : f.left = g
     f = g :=
   MorphismProperty.Over.Hom.ext h
 
+/-- Forgetting to `Over X` preserves the underlying scheme morphism. -/
+@[simp]
+theorem forget_map_left {X : Scheme.{u}} {U V : X.Etale} (f : U ⟶ V) :
+    ((Etale.forget X).map f).left = f.left :=
+  rfl
+
 end AlgebraicGeometry.Scheme.Etale
 
 namespace AlgebraicGeometry.Scheme

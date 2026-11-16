@@ -78,7 +78,10 @@ theorem smallEtaleBaseChangeComp_associativity {W X Y Z : Scheme.{u}}
         f.smallEtaleBaseChange.map ((g.smallEtaleBaseChangeComp h gh hgh).hom.app V) =
       (fg.smallEtaleBaseChangeComp h fgh hfgh).hom.app V ≫
         (f.smallEtaleBaseChangeComp g fg hfg).hom.app (h.smallEtaleBaseChange.obj V) := by
-  apply Etale.hom_ext
+  rw [← cancel_mono ((f.smallEtaleBaseChangeComp g fg hfg).inv.app (h.smallEtaleBaseChange.obj V) ≫
+    (fg.smallEtaleBaseChangeComp h fgh hfgh).inv.app V)]
+  simp only [Category.assoc, Iso.hom_inv_id_app_assoc, Iso.hom_inv_id_app]
+  apply fgh.smallEtaleBaseChange_hom_ext
   let v : V.left ⟶ Z := V.hom
   let a₁ : pullback v fgh ⟶ pullback (pullback.snd v gh) f :=
     ((f.smallEtaleBaseChangeComp gh fgh hfgh').hom.app V).left
@@ -86,49 +89,26 @@ theorem smallEtaleBaseChangeComp_associativity {W X Y Z : Scheme.{u}}
     ((g.smallEtaleBaseChangeComp h gh hgh).hom.app V).left
   let m : pullback (pullback.snd v gh) f ⟶ pullback (pullback.snd (pullback.snd v h) g) f :=
     (f.smallEtaleBaseChange.map ((g.smallEtaleBaseChangeComp h gh hgh).hom.app V)).left
-  let b₁ : pullback v fgh ⟶ pullback (pullback.snd v h) fg :=
-    ((fg.smallEtaleBaseChangeComp h fgh hfgh).hom.app V).left
-  let b₂ : pullback (pullback.snd v h) fg ⟶ pullback (pullback.snd (pullback.snd v h) g) f :=
-    ((f.smallEtaleBaseChangeComp g fg hfg).hom.app (h.smallEtaleBaseChange.obj V)).left
-  have ha₁_fst : a₁ ≫ pullback.fst (pullback.snd v gh) f ≫ pullback.fst v gh =
-      pullback.fst v fgh :=
+  let b₂i : pullback (pullback.snd (pullback.snd v h) g) f ⟶ pullback (pullback.snd v h) fg :=
+    ((f.smallEtaleBaseChangeComp g fg hfg).inv.app (h.smallEtaleBaseChange.obj V)).left
+  let b₁i : pullback (pullback.snd v h) fg ⟶ pullback v fgh :=
+    ((fg.smallEtaleBaseChangeComp h fgh hfgh).inv.app V).left
+  have ha₁ : a₁ ≫ pullback.fst (pullback.snd v gh) f ≫ pullback.fst v gh = pullback.fst v fgh :=
     f.smallEtaleBaseChangeComp_hom_app_left_fst_fst gh fgh hfgh' V
-  have ha₁_snd : a₁ ≫ pullback.snd (pullback.snd v gh) f = pullback.snd v fgh :=
-    f.smallEtaleBaseChangeComp_hom_app_left_snd gh fgh hfgh' V
-  have ha₂_fst : a₂ ≫ pullback.fst (pullback.snd v h) g ≫ pullback.fst v h = pullback.fst v gh :=
+  have ha₂ : a₂ ≫ pullback.fst (pullback.snd v h) g ≫ pullback.fst v h = pullback.fst v gh :=
     g.smallEtaleBaseChangeComp_hom_app_left_fst_fst h gh hgh V
-  have ha₂_snd : a₂ ≫ pullback.snd (pullback.snd v h) g = pullback.snd v gh :=
-    g.smallEtaleBaseChangeComp_hom_app_left_snd h gh hgh V
-  have hm_fst : m ≫ pullback.fst (pullback.snd (pullback.snd v h) g) f =
+  have hm : m ≫ pullback.fst (pullback.snd (pullback.snd v h) g) f =
       pullback.fst (pullback.snd v gh) f ≫ a₂ :=
     f.smallEtaleBaseChange_map_left_fst ((g.smallEtaleBaseChangeComp h gh hgh).hom.app V)
-  have hm_snd : m ≫ pullback.snd (pullback.snd (pullback.snd v h) g) f =
-      pullback.snd (pullback.snd v gh) f :=
-    f.smallEtaleBaseChange_map_left_snd ((g.smallEtaleBaseChangeComp h gh hgh).hom.app V)
-  have hb₁_fst : b₁ ≫ pullback.fst (pullback.snd v h) fg ≫ pullback.fst v h = pullback.fst v fgh :=
-    fg.smallEtaleBaseChangeComp_hom_app_left_fst_fst h fgh hfgh V
-  have hb₁_snd : b₁ ≫ pullback.snd (pullback.snd v h) fg = pullback.snd v fgh :=
-    fg.smallEtaleBaseChangeComp_hom_app_left_snd h fgh hfgh V
-  have hb₂_fst : b₂ ≫ pullback.fst (pullback.snd (pullback.snd v h) g) f ≫
-      pullback.fst (pullback.snd v h) g = pullback.fst (pullback.snd v h) fg :=
-    f.smallEtaleBaseChangeComp_hom_app_left_fst_fst g fg hfg (h.smallEtaleBaseChange.obj V)
-  have hb₂_snd : b₂ ≫ pullback.snd (pullback.snd (pullback.snd v h) g) f =
-      pullback.snd (pullback.snd v h) fg :=
-    f.smallEtaleBaseChangeComp_hom_app_left_snd g fg hfg (h.smallEtaleBaseChange.obj V)
-  change a₁ ≫ m = b₁ ≫ b₂
-  apply pullback.hom_ext
-  · apply pullback.hom_ext
-    · apply pullback.hom_ext
-      · rw [Category.assoc, Category.assoc, Category.assoc, reassoc_of% hm_fst, ha₂_fst, ha₁_fst,
-          Category.assoc, Category.assoc, Category.assoc, reassoc_of% hb₂_fst, hb₁_fst]
-      · rw [Category.assoc, Category.assoc, Category.assoc, pullback.condition,
-          reassoc_of% hm_fst, reassoc_of% ha₂_snd, pullback.condition_assoc, reassoc_of% ha₁_snd,
-          Category.assoc, Category.assoc, Category.assoc, pullback.condition,
-          pullback.condition_assoc, reassoc_of% hb₂_snd, reassoc_of% hb₁_snd]
-    · rw [Category.assoc, Category.assoc, pullback.condition, reassoc_of% hm_snd,
-        reassoc_of% ha₁_snd, Category.assoc, Category.assoc, pullback.condition,
-        reassoc_of% hb₂_snd, reassoc_of% hb₁_snd]
-  · rw [Category.assoc, hm_snd, ha₁_snd, Category.assoc, hb₂_snd, hb₁_snd]
+  have hb₂i : b₂i ≫ pullback.fst (pullback.snd v h) fg =
+      pullback.fst (pullback.snd (pullback.snd v h) g) f ≫ pullback.fst (pullback.snd v h) g :=
+    f.smallEtaleBaseChangeComp_inv_app_left_fst g fg hfg (h.smallEtaleBaseChange.obj V)
+  have hb₁i : b₁i ≫ pullback.fst v fgh = pullback.fst (pullback.snd v h) fg ≫ pullback.fst v h :=
+    fg.smallEtaleBaseChangeComp_inv_app_left_fst h fgh hfgh V
+  -- Rewrite the composite of `.left` projections on `pullback`-typed factors so `simp` and
+  -- `reassoc_of%` can reassociate compositions without unfolding `smallEtaleBaseChange`.
+  change (a₁ ≫ m ≫ b₂i ≫ b₁i) ≫ pullback.fst v fgh = 𝟙 (pullback v fgh) ≫ pullback.fst v fgh
+  simp [hb₁i, reassoc_of% hb₂i, reassoc_of% hm, ha₂, ha₁]
 
 /-- Associativity pentagon for `smallEtaleBaseChangeComp` across `W --f--> X --g--> Y --h--> Z`. -/
 @[reassoc]
@@ -151,27 +131,13 @@ theorem smallEtaleBaseChangeComp_comp_id {X Y : Scheme.{u}} (f : X ⟶ Y) (hf : 
     (f.smallEtaleBaseChangeComp (𝟙 Y) f hf).hom.app V ≫
         f.smallEtaleBaseChange.map ((Y.smallEtaleBaseChangeId).hom.app V) =
       𝟙 (f.smallEtaleBaseChange.obj V) := by
-  apply Etale.hom_ext
-  let v : V.left ⟶ Y := V.hom
-  let a : pullback v f ⟶ pullback (pullback.snd v (𝟙 Y)) f :=
-    ((f.smallEtaleBaseChangeComp (𝟙 Y) f hf).hom.app V).left
-  let m : pullback (pullback.snd v (𝟙 Y)) f ⟶ pullback v f :=
-    (f.smallEtaleBaseChange.map ((Y.smallEtaleBaseChangeId).hom.app V)).left
-  have ha_fst : a ≫ pullback.fst (pullback.snd v (𝟙 Y)) f ≫ pullback.fst v (𝟙 Y) =
-      pullback.fst v f :=
-    f.smallEtaleBaseChangeComp_hom_app_left_fst_fst (𝟙 Y) f hf V
-  have ha_snd : a ≫ pullback.snd (pullback.snd v (𝟙 Y)) f = pullback.snd v f :=
-    f.smallEtaleBaseChangeComp_hom_app_left_snd (𝟙 Y) f hf V
-  have hm_fst : m ≫ pullback.fst v f =
-      pullback.fst (pullback.snd v (𝟙 Y)) f ≫ pullback.fst v (𝟙 Y) := by
-    simpa [Y.smallEtaleBaseChangeId_hom_app_left V] using
-      f.smallEtaleBaseChange_map_left_fst ((Y.smallEtaleBaseChangeId).hom.app V)
-  have hm_snd : m ≫ pullback.snd v f = pullback.snd (pullback.snd v (𝟙 Y)) f :=
-    f.smallEtaleBaseChange_map_left_snd ((Y.smallEtaleBaseChangeId).hom.app V)
-  change a ≫ m = 𝟙 (pullback v f)
-  apply pullback.hom_ext
-  · rw [Category.assoc, hm_fst, ha_fst, Category.id_comp]
-  · rw [Category.assoc, hm_snd, ha_snd, Category.id_comp]
+  apply f.smallEtaleBaseChange_hom_ext
+  exact ((Category.assoc _ _ _).trans <|
+    (congrArg (((f.smallEtaleBaseChangeComp (𝟙 Y) f hf).hom.app V).left ≫ ·) <|
+      (f.smallEtaleBaseChange_map_left_fst ((Y.smallEtaleBaseChangeId).hom.app V)).trans <|
+        congrArg (pullback.fst (pullback.snd V.hom (𝟙 Y)) f ≫ ·)
+          (Y.smallEtaleBaseChangeId_hom_app_left V)).trans <|
+      f.smallEtaleBaseChangeComp_hom_app_left_fst_fst (𝟙 Y) f hf V).trans (Category.id_comp _).symm
 
 /-- Right-unit coherence for `smallEtaleBaseChangeComp` and `smallEtaleBaseChangeId`. -/
 @[reassoc]
@@ -192,20 +158,12 @@ theorem smallEtaleBaseChangeComp_id_comp {X Y : Scheme.{u}} (f : X ⟶ Y) (hf : 
     (smallEtaleBaseChangeComp (𝟙 X) f f hf).hom.app V ≫
         (X.smallEtaleBaseChangeId).hom.app (f.smallEtaleBaseChange.obj V) =
       𝟙 (f.smallEtaleBaseChange.obj V) := by
-  apply Etale.hom_ext
-  let v : V.left ⟶ Y := V.hom
-  let a : pullback v f ⟶ pullback (pullback.snd v f) (𝟙 X) :=
-    ((smallEtaleBaseChangeComp (𝟙 X) f f hf).hom.app V).left
-  have ha_fst : a ≫ pullback.fst (pullback.snd v f) (𝟙 X) ≫ pullback.fst v f =
-      pullback.fst v f :=
-    smallEtaleBaseChangeComp_hom_app_left_fst_fst (𝟙 X) f f hf V
-  have ha_snd : a ≫ pullback.snd (pullback.snd v f) (𝟙 X) = pullback.snd v f :=
-    smallEtaleBaseChangeComp_hom_app_left_snd (𝟙 X) f f hf V
-  rw [Etale.comp_left, Etale.id_left, X.smallEtaleBaseChangeId_hom_app_left]
-  change a ≫ pullback.fst (pullback.snd v f) (𝟙 X) = 𝟙 (pullback v f)
-  apply pullback.hom_ext
-  · rw [Category.assoc, ha_fst, Category.id_comp]
-  · rw [Category.assoc, pullback.condition, Category.comp_id, ha_snd, Category.id_comp]
+  apply f.smallEtaleBaseChange_hom_ext
+  exact ((Category.assoc _ _ _).trans <|
+    (congrArg (((smallEtaleBaseChangeComp (𝟙 X) f f hf).hom.app V).left ≫ · ≫
+        pullback.fst V.hom f)
+      (X.smallEtaleBaseChangeId_hom_app_left (f.smallEtaleBaseChange.obj V))).trans <|
+      smallEtaleBaseChangeComp_hom_app_left_fst_fst (𝟙 X) f f hf V).trans (Category.id_comp _).symm
 
 /-- Left-unit coherence for `smallEtaleBaseChangeComp` and `smallEtaleBaseChangeId`. -/
 @[reassoc]
@@ -247,25 +205,14 @@ theorem smallEtaleBaseChangeCommSq_hom_app_left_fst_fst {X' X Y' Y : Scheme.{u}}
     {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {g : Y' ⟶ Y} (w : gX ≫ f = f' ≫ g) (V : Y.Etale) :
     dsimp% ((smallEtaleBaseChangeCommSq w).hom.app V).left ≫
         pullback.fst (pullback.snd V.hom g) f' ≫ pullback.fst V.hom g =
-      pullback.fst (pullback.snd V.hom f) gX ≫ pullback.fst V.hom f := by
-  let v : V.left ⟶ Y := V.hom
-  let a : pullback (pullback.snd v f) gX ⟶ pullback v (gX ≫ f) :=
-    ((gX.smallEtaleBaseChangeComp f).inv.app V).left
-  let b : pullback v (gX ≫ f) ⟶ pullback v (f' ≫ g) :=
-    ((smallEtaleBaseChangeCongr w).hom.app V).left
-  let c : pullback v (f' ≫ g) ⟶ pullback (pullback.snd v g) f' :=
-    ((f'.smallEtaleBaseChangeComp g).hom.app V).left
-  have ha : a ≫ pullback.fst v (gX ≫ f) =
-      pullback.fst (pullback.snd v f) gX ≫ pullback.fst v f :=
-    gX.smallEtaleBaseChangeComp_inv_app_left_fst f (gX ≫ f) rfl V
-  have hb : b ≫ pullback.fst v (f' ≫ g) = pullback.fst v (gX ≫ f) :=
-    smallEtaleBaseChangeCongr_hom_app_left_fst w V
-  have hc : c ≫ pullback.fst (pullback.snd v g) f' ≫ pullback.fst v g =
-      pullback.fst v (f' ≫ g) :=
-    f'.smallEtaleBaseChangeComp_hom_app_left_fst_fst g (f' ≫ g) rfl V
-  change (a ≫ b ≫ c) ≫ pullback.fst (pullback.snd v g) f' ≫ pullback.fst v g =
-    pullback.fst (pullback.snd v f) gX ≫ pullback.fst v f
-  rw [Category.assoc, Category.assoc, hc, hb, ha]
+      pullback.fst (pullback.snd V.hom f) gX ≫ pullback.fst V.hom f :=
+  (Category.assoc _ _ _).trans <|
+    (congrArg (((gX.smallEtaleBaseChangeComp f).inv.app V).left ≫ ·) <|
+      (Category.assoc _ _ _).trans <|
+        (congrArg (((smallEtaleBaseChangeCongr w).hom.app V).left ≫ ·)
+          (f'.smallEtaleBaseChangeComp_hom_app_left_fst_fst g (f' ≫ g) rfl V)).trans <|
+          smallEtaleBaseChangeCongr_hom_app_left_fst w V).trans <|
+      gX.smallEtaleBaseChangeComp_inv_app_left_fst f (gX ≫ f) rfl V
 
 /-- Composing the forward component of `smallEtaleBaseChangeCommSq w` at `V : Y.Etale` with the
 outer second projection to `X'` recovers the outer second projection on the opposite path. -/
@@ -285,15 +232,10 @@ theorem smallEtaleBaseChangeCommSq_hom_app_left_fst_snd {X' X Y' Y : Scheme.{u}}
     {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {g : Y' ⟶ Y} (w : gX ≫ f = f' ≫ g) (V : Y.Etale) :
     dsimp% ((smallEtaleBaseChangeCommSq w).hom.app V).left ≫
         pullback.fst (pullback.snd V.hom g) f' ≫ pullback.snd V.hom g =
-      pullback.snd (pullback.snd V.hom f) gX ≫ f' := by
-  let v : V.left ⟶ Y := V.hom
-  let a : pullback (pullback.snd v f) gX ⟶ pullback (pullback.snd v g) f' :=
-    ((smallEtaleBaseChangeCommSq w).hom.app V).left
-  have ha : a ≫ pullback.snd (pullback.snd v g) f' = pullback.snd (pullback.snd v f) gX :=
-    smallEtaleBaseChangeCommSq_hom_app_left_snd w V
-  change a ≫ pullback.fst (pullback.snd v g) f' ≫ pullback.snd v g =
-    pullback.snd (pullback.snd v f) gX ≫ f'
-  rw [pullback.condition, ← Category.assoc, ha]
+      pullback.snd (pullback.snd V.hom f) gX ≫ f' :=
+  (congrArg (((smallEtaleBaseChangeCommSq w).hom.app V).left ≫ ·) pullback.condition).trans <|
+    (Category.assoc _ _ _).symm.trans <|
+      congrArg (· ≫ f') (smallEtaleBaseChangeCommSq_hom_app_left_snd w V)
 
 /-- Composing the inverse component of `smallEtaleBaseChangeCommSq w` at `V : Y.Etale` with the two
 first projections recovers the two first projections on the opposite path of the square. -/
@@ -302,25 +244,15 @@ theorem smallEtaleBaseChangeCommSq_inv_app_left_fst_fst {X' X Y' Y : Scheme.{u}}
     {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {g : Y' ⟶ Y} (w : gX ≫ f = f' ≫ g) (V : Y.Etale) :
     dsimp% ((smallEtaleBaseChangeCommSq w).inv.app V).left ≫
         pullback.fst (pullback.snd V.hom f) gX ≫ pullback.fst V.hom f =
-      pullback.fst (pullback.snd V.hom g) f' ≫ pullback.fst V.hom g := by
-  let v : V.left ⟶ Y := V.hom
-  let a : pullback (pullback.snd v g) f' ⟶ pullback v (f' ≫ g) :=
-    ((f'.smallEtaleBaseChangeComp g).inv.app V).left
-  let b : pullback v (f' ≫ g) ⟶ pullback v (gX ≫ f) :=
-    ((smallEtaleBaseChangeCongr w).inv.app V).left
-  let c : pullback v (gX ≫ f) ⟶ pullback (pullback.snd v f) gX :=
-    ((gX.smallEtaleBaseChangeComp f).hom.app V).left
-  have ha : a ≫ pullback.fst v (f' ≫ g) =
-      pullback.fst (pullback.snd v g) f' ≫ pullback.fst v g :=
-    f'.smallEtaleBaseChangeComp_inv_app_left_fst g (f' ≫ g) rfl V
-  have hb : b ≫ pullback.fst v (gX ≫ f) = pullback.fst v (f' ≫ g) :=
-    smallEtaleBaseChangeCongr_inv_app_left_fst w V
-  have hc : c ≫ pullback.fst (pullback.snd v f) gX ≫ pullback.fst v f =
-      pullback.fst v (gX ≫ f) :=
-    gX.smallEtaleBaseChangeComp_hom_app_left_fst_fst f (gX ≫ f) rfl V
-  change ((a ≫ b) ≫ c) ≫ pullback.fst (pullback.snd v f) gX ≫ pullback.fst v f =
-    pullback.fst (pullback.snd v g) f' ≫ pullback.fst v g
-  rw [Category.assoc, hc, Category.assoc, hb, ha]
+      pullback.fst (pullback.snd V.hom g) f' ≫ pullback.fst V.hom g :=
+  (Category.assoc _ _ _).trans <|
+    (congrArg ((((f'.smallEtaleBaseChangeComp g).inv.app V).left ≫
+        ((smallEtaleBaseChangeCongr w).inv.app V).left) ≫ ·)
+      (gX.smallEtaleBaseChangeComp_hom_app_left_fst_fst f (gX ≫ f) rfl V)).trans <|
+      (Category.assoc _ _ _).trans <|
+        (congrArg (((f'.smallEtaleBaseChangeComp g).inv.app V).left ≫ ·)
+          (smallEtaleBaseChangeCongr_inv_app_left_fst w V)).trans <|
+          f'.smallEtaleBaseChangeComp_inv_app_left_fst g (f' ≫ g) rfl V
 
 /-- Composing the inverse component of `smallEtaleBaseChangeCommSq w` at `V : Y.Etale` with the
 outer second projection to `X'` recovers the outer second projection on the opposite path. -/
@@ -340,15 +272,10 @@ theorem smallEtaleBaseChangeCommSq_inv_app_left_fst_snd {X' X Y' Y : Scheme.{u}}
     {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {g : Y' ⟶ Y} (w : gX ≫ f = f' ≫ g) (V : Y.Etale) :
     dsimp% ((smallEtaleBaseChangeCommSq w).inv.app V).left ≫
         pullback.fst (pullback.snd V.hom f) gX ≫ pullback.snd V.hom f =
-      pullback.snd (pullback.snd V.hom g) f' ≫ gX := by
-  let v : V.left ⟶ Y := V.hom
-  let a : pullback (pullback.snd v g) f' ⟶ pullback (pullback.snd v f) gX :=
-    ((smallEtaleBaseChangeCommSq w).inv.app V).left
-  have ha : a ≫ pullback.snd (pullback.snd v f) gX = pullback.snd (pullback.snd v g) f' :=
-    smallEtaleBaseChangeCommSq_inv_app_left_snd w V
-  change a ≫ pullback.fst (pullback.snd v f) gX ≫ pullback.snd v f =
-    pullback.snd (pullback.snd v g) f' ≫ gX
-  rw [pullback.condition, ← Category.assoc, ha]
+      pullback.snd (pullback.snd V.hom g) f' ≫ gX :=
+  (congrArg (((smallEtaleBaseChangeCommSq w).inv.app V).left ≫ ·) pullback.condition).trans <|
+    (Category.assoc _ _ _).symm.trans <|
+      congrArg (· ≫ gX) (smallEtaleBaseChangeCommSq_inv_app_left_snd w V)
 
 /-- Transposing a commutative square inverts `smallEtaleBaseChangeCommSq`. -/
 theorem smallEtaleBaseChangeCommSq_symm {X' X Y' Y : Scheme.{u}}
@@ -389,80 +316,57 @@ theorem smallEtaleBaseChangeCommSq_paste {X'' X' X Y'' Y' Y : Scheme.{u}}
         f''.smallEtaleBaseChange.map ((g'.smallEtaleBaseChangeComp g).inv.app V) =
       (smallEtaleBaseChangeCommSq
         (by rw [Category.assoc, w₁, ← Category.assoc, w₂, Category.assoc])).hom.app V := by
-  apply Etale.hom_ext
+  apply f''.smallEtaleBaseChange_comp_hom_ext (g' ≫ g)
   let v : V.left ⟶ Y := V.hom
-  let a₁ : pullback (pullback.snd v f) (gX' ≫ gX) ⟶
+  let c₁ : pullback (pullback.snd v f) (gX' ≫ gX) ⟶
       pullback (pullback.snd (pullback.snd v f) gX) gX' :=
     ((gX'.smallEtaleBaseChangeComp gX).hom.app (f.smallEtaleBaseChange.obj V)).left
-  let a₂ : pullback (pullback.snd (pullback.snd v f) gX) gX' ⟶
+  let s₁ : pullback (pullback.snd v f) gX ⟶ pullback (pullback.snd v g) f' :=
+    ((smallEtaleBaseChangeCommSq w₁).hom.app V).left
+  let m₁ : pullback (pullback.snd (pullback.snd v f) gX) gX' ⟶
       pullback (pullback.snd (pullback.snd v g) f') gX' :=
     (gX'.smallEtaleBaseChange.map ((smallEtaleBaseChangeCommSq w₁).hom.app V)).left
-  let a₃ : pullback (pullback.snd (pullback.snd v g) f') gX' ⟶
+  let s₂ : pullback (pullback.snd (pullback.snd v g) f') gX' ⟶
       pullback (pullback.snd (pullback.snd v g) g') f'' :=
     ((smallEtaleBaseChangeCommSq w₂).hom.app (g.smallEtaleBaseChange.obj V)).left
-  let a₄ : pullback (pullback.snd (pullback.snd v g) g') f'' ⟶
+  let ci : pullback (pullback.snd v g) g' ⟶ pullback v (g' ≫ g) :=
+    ((g'.smallEtaleBaseChangeComp g).inv.app V).left
+  let m₂ : pullback (pullback.snd (pullback.snd v g) g') f'' ⟶
       pullback (pullback.snd v (g' ≫ g)) f'' :=
     (f''.smallEtaleBaseChange.map ((g'.smallEtaleBaseChangeComp g).inv.app V)).left
-  let c₁ : pullback (pullback.snd v f) gX ⟶ pullback (pullback.snd v g) f' :=
-    ((smallEtaleBaseChangeCommSq w₁).hom.app V).left
-  let c₂ : pullback (pullback.snd v g) g' ⟶ pullback v (g' ≫ g) :=
-    ((g'.smallEtaleBaseChangeComp g).inv.app V).left
-  let b : pullback (pullback.snd v f) (gX' ≫ gX) ⟶
-      pullback (pullback.snd v (g' ≫ g)) f'' :=
+  let s₁₂ : pullback (pullback.snd v f) (gX' ≫ gX) ⟶ pullback (pullback.snd v (g' ≫ g)) f'' :=
     ((smallEtaleBaseChangeCommSq
       (by rw [Category.assoc, w₁, ← Category.assoc, w₂, Category.assoc])).hom.app V).left
-  have ha₁_fst : a₁ ≫ pullback.fst (pullback.snd (pullback.snd v f) gX) gX' ≫
+  have hc₁ : c₁ ≫ pullback.fst (pullback.snd (pullback.snd v f) gX) gX' ≫
       pullback.fst (pullback.snd v f) gX = pullback.fst (pullback.snd v f) (gX' ≫ gX) :=
     gX'.smallEtaleBaseChangeComp_hom_app_left_fst_fst gX (gX' ≫ gX) rfl
       (f.smallEtaleBaseChange.obj V)
-  have ha₁_snd : a₁ ≫ pullback.snd (pullback.snd (pullback.snd v f) gX) gX' =
-      pullback.snd (pullback.snd v f) (gX' ≫ gX) :=
-    gX'.smallEtaleBaseChangeComp_hom_app_left_snd gX (gX' ≫ gX) rfl
-      (f.smallEtaleBaseChange.obj V)
-  have ha₂_fst : a₂ ≫ pullback.fst (pullback.snd (pullback.snd v g) f') gX' =
-      pullback.fst (pullback.snd (pullback.snd v f) gX) gX' ≫ c₁ :=
-    gX'.smallEtaleBaseChange_map_left_fst ((smallEtaleBaseChangeCommSq w₁).hom.app V)
-  have ha₂_snd : a₂ ≫ pullback.snd (pullback.snd (pullback.snd v g) f') gX' =
-      pullback.snd (pullback.snd (pullback.snd v f) gX) gX' :=
-    gX'.smallEtaleBaseChange_map_left_snd ((smallEtaleBaseChangeCommSq w₁).hom.app V)
-  have ha₃_fst : a₃ ≫ pullback.fst (pullback.snd (pullback.snd v g) g') f'' ≫
-      pullback.fst (pullback.snd v g) g' =
-      pullback.fst (pullback.snd (pullback.snd v g) f') gX' ≫
-        pullback.fst (pullback.snd v g) f' :=
-    smallEtaleBaseChangeCommSq_hom_app_left_fst_fst w₂ (g.smallEtaleBaseChange.obj V)
-  have ha₃_snd : a₃ ≫ pullback.snd (pullback.snd (pullback.snd v g) g') f'' =
-      pullback.snd (pullback.snd (pullback.snd v g) f') gX' :=
-    smallEtaleBaseChangeCommSq_hom_app_left_snd w₂ (g.smallEtaleBaseChange.obj V)
-  have ha₄_fst : a₄ ≫ pullback.fst (pullback.snd v (g' ≫ g)) f'' =
-      pullback.fst (pullback.snd (pullback.snd v g) g') f'' ≫ c₂ :=
-    f''.smallEtaleBaseChange_map_left_fst ((g'.smallEtaleBaseChangeComp g).inv.app V)
-  have ha₄_snd : a₄ ≫ pullback.snd (pullback.snd v (g' ≫ g)) f'' =
-      pullback.snd (pullback.snd (pullback.snd v g) g') f'' :=
-    f''.smallEtaleBaseChange_map_left_snd ((g'.smallEtaleBaseChangeComp g).inv.app V)
-  have hc₁ : c₁ ≫ pullback.fst (pullback.snd v g) f' ≫ pullback.fst v g =
+  have hs₁ : s₁ ≫ pullback.fst (pullback.snd v g) f' ≫ pullback.fst v g =
       pullback.fst (pullback.snd v f) gX ≫ pullback.fst v f :=
     smallEtaleBaseChangeCommSq_hom_app_left_fst_fst w₁ V
-  have hc₂ : c₂ ≫ pullback.fst v (g' ≫ g) =
+  have hm₁ : m₁ ≫ pullback.fst (pullback.snd (pullback.snd v g) f') gX' =
+      pullback.fst (pullback.snd (pullback.snd v f) gX) gX' ≫ s₁ :=
+    gX'.smallEtaleBaseChange_map_left_fst ((smallEtaleBaseChangeCommSq w₁).hom.app V)
+  have hs₂ : s₂ ≫ pullback.fst (pullback.snd (pullback.snd v g) g') f'' ≫
+      pullback.fst (pullback.snd v g) g' =
+      pullback.fst (pullback.snd (pullback.snd v g) f') gX' ≫ pullback.fst (pullback.snd v g) f' :=
+    smallEtaleBaseChangeCommSq_hom_app_left_fst_fst w₂ (g.smallEtaleBaseChange.obj V)
+  have hci : ci ≫ pullback.fst v (g' ≫ g) =
       pullback.fst (pullback.snd v g) g' ≫ pullback.fst v g :=
     g'.smallEtaleBaseChangeComp_inv_app_left_fst g (g' ≫ g) rfl V
-  have hb_fst : b ≫ pullback.fst (pullback.snd v (g' ≫ g)) f'' ≫ pullback.fst v (g' ≫ g) =
+  have hm₂ : m₂ ≫ pullback.fst (pullback.snd v (g' ≫ g)) f'' =
+      pullback.fst (pullback.snd (pullback.snd v g) g') f'' ≫ ci :=
+    f''.smallEtaleBaseChange_map_left_fst ((g'.smallEtaleBaseChangeComp g).inv.app V)
+  have hs₁₂ : s₁₂ ≫ pullback.fst (pullback.snd v (g' ≫ g)) f'' ≫ pullback.fst v (g' ≫ g) =
       pullback.fst (pullback.snd v f) (gX' ≫ gX) ≫ pullback.fst v f :=
     smallEtaleBaseChangeCommSq_hom_app_left_fst_fst
       (by rw [Category.assoc, w₁, ← Category.assoc, w₂, Category.assoc]) V
-  have hb_snd : b ≫ pullback.snd (pullback.snd v (g' ≫ g)) f'' =
-      pullback.snd (pullback.snd v f) (gX' ≫ gX) :=
-    smallEtaleBaseChangeCommSq_hom_app_left_snd
-      (by rw [Category.assoc, w₁, ← Category.assoc, w₂, Category.assoc]) V
-  change a₁ ≫ a₂ ≫ a₃ ≫ a₄ = b
-  apply pullback.hom_ext
-  · apply pullback.hom_ext
-    · rw [Category.assoc, Category.assoc, Category.assoc, Category.assoc, reassoc_of% ha₄_fst,
-        hc₂, reassoc_of% ha₃_fst, reassoc_of% ha₂_fst, hc₁, reassoc_of% ha₁_fst,
-        Category.assoc, hb_fst]
-    · rw [Category.assoc, Category.assoc, Category.assoc, Category.assoc, pullback.condition,
-        reassoc_of% ha₄_snd, reassoc_of% ha₃_snd, reassoc_of% ha₂_snd, reassoc_of% ha₁_snd,
-        Category.assoc, pullback.condition, reassoc_of% hb_snd]
-  · rw [Category.assoc, Category.assoc, Category.assoc, ha₄_snd, ha₃_snd, ha₂_snd, ha₁_snd, hb_snd]
+  -- Rewrite the composite of `.left` projections on `pullback`-typed factors so `simp` and
+  -- `reassoc_of%` can reassociate compositions without unfolding `smallEtaleBaseChange`.
+  change (c₁ ≫ m₁ ≫ s₂ ≫ m₂) ≫ pullback.fst (pullback.snd v (g' ≫ g)) f'' ≫
+      pullback.fst v (g' ≫ g) =
+    s₁₂ ≫ pullback.fst (pullback.snd v (g' ≫ g)) f'' ≫ pullback.fst v (g' ≫ g)
+  simp [hs₁₂, reassoc_of% hm₂, hci, reassoc_of% hs₂, reassoc_of% hm₁, hs₁, reassoc_of% hc₁]
 
 /-- Base-change comparison across the canonical pullback square of `f : X ⟶ Y` and `g : Y' ⟶ Y`:
 pulling an étale `Y`-scheme back along `f` and then `pullback.fst f g` is canonically isomorphic to
