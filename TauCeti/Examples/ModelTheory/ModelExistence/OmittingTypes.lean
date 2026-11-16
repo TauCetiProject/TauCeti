@@ -10,7 +10,7 @@ public import TauCeti.ModelTheory.Basic
 import TauCeti.Logic.Function.Update
 import TauCeti.ModelTheory.Infinitary.ConstantSupport
 import TauCeti.ModelTheory.LanguageMap
-import TauCeti.ModelTheory.Semantics
+import TauCeti.ModelTheory.Satisfiability
 import TauCeti.ModelTheory.Term.Constants
 
 /-!
