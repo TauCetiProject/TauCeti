@@ -7,7 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
 public import Mathlib.Topology.Compactification.OnePoint.Sphere
-public import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
+import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
 public import TauCeti.Topology.Homeomorph.Subset
 import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.Topology.Connected.PathConnected
@@ -28,8 +30,8 @@ point of `A` lies in the interior of `A` exactly when its image lies in the inte
 (`Homeomorph.coe_apply_mem_frontier_iff`). This identifies, for instance, the boundary surface of
 a handlebody embedded in a `3`-manifold with the frontier of its image.
 
-The `*_of_boundaryless` membership lemmas extend this to charted spaces over arbitrary
-finite-dimensional real boundaryless models of equal dimension. The induced homeomorphisms
+The `*_of_boundaryless` membership lemmas extend this to boundaryless manifolds charted over
+arbitrary finite-dimensional real models of equal dimension. The induced homeomorphisms
 `Homeomorph.interiorOfBoundaryless` and `Homeomorph.frontierOfBoundaryless` identify ambient
 interiors, and frontiers of closed subsets, respectively. The closed-ball membership lemmas
 characterize interior and frontier points using distance from the center.
@@ -373,19 +375,37 @@ open TauCeti
 open scoped Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [I.Boundaryless]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [BoundarylessManifold I M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {G : Type*} [TopologicalSpace G] (J : ModelWithCorners ℝ F G) [J.Boundaryless]
-  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+  {G : Type*} [TopologicalSpace G] (J : ModelWithCorners ℝ F G)
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [BoundarylessManifold J N]
   {A : Set M} {B : Set N}
 
 include I J in
-/-- A homeomorphism between subsets of charted spaces over finite-dimensional real
-boundaryless models of equal dimension preserves ambient interior membership. -/
+/-- A homeomorphism between subsets of boundaryless manifolds charted over finite-dimensional
+real models of equal dimension preserves ambient interior membership. -/
 theorem coe_apply_mem_interior_iff_of_boundaryless (e : A ≃ₜ B)
     (hdim : Module.finrank ℝ E = Module.finrank ℝ F) (x : A) :
     (e x).val ∈ interior B ↔ x.val ∈ interior A := by
+  let : ChartedSpace E (BoundarylessModel I M) :=
+    { atlas := univ
+      chartAt x := (chartAt H ((BoundarylessModel.homeomorph I M).symm x)).trans I.interiorChart
+      mem_chart_source x := by
+        simp only [OpenPartialHomeomorph.trans_source,
+          ModelWithCorners.interiorChart_source, BoundarylessModel.homeomorph_symm_apply]
+        exact ⟨mem_chart_source (M := M) H x,
+          BoundarylessManifold.isInteriorPoint (I := I) (M := M) (x := x)⟩
+      chart_mem_atlas _ := mem_univ _ }
+  let : ChartedSpace F (BoundarylessModel J N) :=
+    { atlas := univ
+      chartAt x := (chartAt G ((BoundarylessModel.homeomorph J N).symm x)).trans J.interiorChart
+      mem_chart_source x := by
+        simp only [OpenPartialHomeomorph.trans_source,
+          ModelWithCorners.interiorChart_source, BoundarylessModel.homeomorph_symm_apply]
+        exact ⟨mem_chart_source (M := N) G x,
+          BoundarylessManifold.isInteriorPoint (I := J) (M := N) (x := x)⟩
+      chart_mem_atlas _ := mem_univ _ }
   let a := BoundarylessModel.homeomorph I M
   let b := BoundarylessModel.homeomorph J N
   let e' := (a.image A).symm.trans (e.trans (b.image B))
@@ -396,9 +416,8 @@ theorem coe_apply_mem_interior_iff_of_boundaryless (e : A ≃ₜ B)
   simpa only [Set.mem_image, b.injective.eq_iff, a.injective.eq_iff, exists_eq_right] using h
 
 include I J in
-/-- A homeomorphism between subsets of charted spaces over finite-dimensional real
-boundaryless models of equal dimension preserves ambient frontier membership of points in the
-subsets. -/
+/-- A homeomorphism between subsets of boundaryless manifolds charted over finite-dimensional
+real models of equal dimension preserves ambient frontier membership of points in the subsets. -/
 theorem coe_apply_mem_frontier_iff_of_boundaryless (e : A ≃ₜ B)
     (hdim : Module.finrank ℝ E = Module.finrank ℝ F) (x : A) :
     (e x).val ∈ frontier B ↔ x.val ∈ frontier A := by
@@ -406,8 +425,8 @@ theorem coe_apply_mem_frontier_iff_of_boundaryless (e : A ≃ₜ B)
     true_and, e.coe_apply_mem_interior_iff_of_boundaryless I J hdim]
 
 include I J in
-/-- A homeomorphism between subsets of charted spaces over finite-dimensional real
-boundaryless models of equal dimension restricts to their ambient interiors. -/
+/-- A homeomorphism between subsets of boundaryless manifolds charted over finite-dimensional
+real models of equal dimension restricts to their ambient interiors. -/
 def interiorOfBoundaryless (e : A ≃ₜ B)
     (hdim : Module.finrank ℝ E = Module.finrank ℝ F) : interior A ≃ₜ interior B :=
   e.subsetRestrict interior_subset interior_subset
@@ -432,8 +451,8 @@ theorem interiorOfBoundaryless_symm_apply_coe (e : A ≃ₜ B)
   simp only [interiorOfBoundaryless, subsetRestrict_symm_apply_coe]
 
 include I J in
-/-- A homeomorphism between closed subsets of charted spaces over finite-dimensional real
-boundaryless models of equal dimension restricts to their ambient frontiers. -/
+/-- A homeomorphism between closed subsets of boundaryless manifolds charted over
+finite-dimensional real models of equal dimension restricts to their ambient frontiers. -/
 def frontierOfBoundaryless (e : A ≃ₜ B)
     (hdim : Module.finrank ℝ E = Module.finrank ℝ F) (hA : IsClosed A) (hB : IsClosed B) :
     frontier A ≃ₜ frontier B :=
@@ -462,29 +481,55 @@ theorem frontierOfBoundaryless_symm_apply_coe (e : A ≃ₜ B)
 
 variable {c : F} {r : ℝ}
 
+omit [FiniteDimensional ℝ F] [BoundarylessManifold I M] in
 include I in
-/-- For a subset of a charted space over a finite-dimensional real boundaryless model,
+private theorem finiteDimensional_of_homeomorph_closedBall (e : A ≃ₜ closedBall c r)
+    (hdim : Module.finrank ℝ E = Module.finrank ℝ F) (hr : 0 < r) :
+    FiniteDimensional ℝ F := by
+  nontriviality F
+  by_contra hF
+  -- Infinite-dimensional F would force the source model to have dimension zero.
+  have hE : Subsingleton E := Module.finrank_zero_iff.mp
+    (hdim.trans (Module.finrank_of_not_finite hF))
+  have : Subsingleton H := I.injective.subsingleton
+  have := ChartedSpace.discreteTopology (H := H) (M := M)
+  have := Subtype.preconnectedSpace (convex_closedBall c r).isPreconnected
+  obtain ⟨y, hy⟩ := (NormedSpace.sphere_nonempty (x := c)).mpr hr.le
+  have hyc : y = c := congrArg Subtype.val (e.symm.injective
+    (TotallyDisconnectedSpace.eq_of_continuous e.symm e.symm.continuous
+      ⟨y, sphere_subset_closedBall hy⟩ ⟨c, mem_closedBall_self hr.le⟩))
+  exact hr.ne (by simpa [hyc] using hy)
+
+omit [FiniteDimensional ℝ F] in
+include I in
+/-- For a subset of a boundaryless manifold charted over a finite-dimensional real model,
 a homeomorphism to a closed ball of nonzero radius in the same dimension characterizes ambient
 interior points. -/
 theorem dist_coe_apply_lt_iff_mem_interior_of_closedBall (e : A ≃ₜ closedBall c r)
     (hdim : Module.finrank ℝ E = Module.finrank ℝ F) (hr : r ≠ 0) (x : A) :
     dist (e x).val c < r ↔ x.val ∈ interior A := by
+  have : FiniteDimensional ℝ F := e.finiteDimensional_of_homeomorph_closedBall I hdim
+    (lt_of_le_of_ne (dist_nonneg.trans (e x).property) (Ne.symm hr))
   simpa only [interior_closedBall c hr, mem_ball] using
     e.coe_apply_mem_interior_iff_of_boundaryless I 𝓘(ℝ, F) hdim x
 
+omit [FiniteDimensional ℝ F] in
 include I in
-/-- For a subset of a charted space over a finite-dimensional real boundaryless model,
+/-- For a subset of a boundaryless manifold charted over a finite-dimensional real model,
 a homeomorphism to a closed ball of nonzero radius in the same dimension characterizes its points
 on the frontier. -/
 theorem dist_coe_apply_eq_iff_mem_frontier_of_closedBall (e : A ≃ₜ closedBall c r)
     (hdim : Module.finrank ℝ E = Module.finrank ℝ F) (hr : r ≠ 0) (x : A) :
     dist (e x).val c = r ↔ x.val ∈ frontier A := by
+  have : FiniteDimensional ℝ F := e.finiteDimensional_of_homeomorph_closedBall I hdim
+    (lt_of_le_of_ne (dist_nonneg.trans (e x).property) (Ne.symm hr))
   simpa only [frontier_closedBall c hr, mem_sphere] using
     e.coe_apply_mem_frontier_iff_of_boundaryless I 𝓘(ℝ, F) hdim x
 
+omit [FiniteDimensional ℝ F] in
 include I in
 /-- The image of a point of a closed ball of nonzero radius lies in the ambient interior of a
-homeomorphic subset of a charted space over a finite-dimensional real boundaryless model of
+homeomorphic subset of a boundaryless manifold charted over a finite-dimensional real model of
 the same dimension exactly when its distance from the center is less than the radius. -/
 theorem coe_apply_mem_interior_iff_of_closedBall (e : closedBall c r ≃ₜ A)
     (hdim : Module.finrank ℝ E = Module.finrank ℝ F) (hr : r ≠ 0) (z : closedBall c r) :
@@ -492,9 +537,10 @@ theorem coe_apply_mem_interior_iff_of_closedBall (e : closedBall c r ≃ₜ A)
   simpa only [symm_apply_apply] using
     (e.symm.dist_coe_apply_lt_iff_mem_interior_of_closedBall I hdim hr (e z)).symm
 
+omit [FiniteDimensional ℝ F] in
 include I in
 /-- The image of a point of a closed ball of nonzero radius lies on the ambient frontier of a
-homeomorphic subset of a charted space over a finite-dimensional real boundaryless model of
+homeomorphic subset of a boundaryless manifold charted over a finite-dimensional real model of
 the same dimension exactly when its distance from the center equals the radius. -/
 theorem coe_apply_mem_frontier_iff_of_closedBall (e : closedBall c r ≃ₜ A)
     (hdim : Module.finrank ℝ E = Module.finrank ℝ F) (hr : r ≠ 0) (z : closedBall c r) :
@@ -502,9 +548,10 @@ theorem coe_apply_mem_frontier_iff_of_closedBall (e : closedBall c r ≃ₜ A)
   simpa only [symm_apply_apply] using
     (e.symm.dist_coe_apply_eq_iff_mem_frontier_of_closedBall I hdim hr (e z)).symm
 
+omit [FiniteDimensional ℝ F] in
 include I in
 /-- A homeomorphism from a closed ball of positive radius maps its center into the ambient
-interior of its image in a charted space over a finite-dimensional real boundaryless model
+interior of its image in a boundaryless manifold charted over a finite-dimensional real model
 of the same dimension. -/
 theorem coe_apply_center_mem_interior_of_closedBall (e : closedBall c r ≃ₜ A)
     (hdim : Module.finrank ℝ E = Module.finrank ℝ F) (hr : 0 < r) :

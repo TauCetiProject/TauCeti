@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.PlaneSeparation.JordanCurve
-public import TauCeti.Topology.JordanCurve.ClosedBall
+import TauCeti.Topology.JordanCurve.ClosedBall
+import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 -- Supplies the locally convex, hence locally connected, instance on the complex plane.
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -50,7 +51,7 @@ components of `Jᶜ`.
   interior whose frontier is a Jordan curve is the filled hull of its frontier.
 * `Homeomorph.filledHull_frontier_eq_of_closedBall` and
   `Homeomorph.interior_eq_filledHull_sdiff_frontier_of_closedBall` — a planar subset homeomorphic
-  to a positive-radius closed ball in a two-dimensional real normed space is the filled hull
+  to a closed ball in a two-dimensional real normed space is the filled hull
   of its frontier, and its interior is the inside.
 * `TauCeti.IsJordanCurve.interior_filledHull`, `TauCeti.IsJordanCurve.closure_filledHull_sdiff` and
   `TauCeti.IsJordanCurve.closure_compl_filledHull` — the inside is the interior of the filled hull,
@@ -287,50 +288,64 @@ namespace Homeomorph
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {c : F} {r : ℝ} {D : Set ℂ}
 
-/-- A planar subset homeomorphic to a closed ball of positive radius in a two-dimensional real
-normed space is the filled hull of its frontier. -/
+/-- A planar subset homeomorphic to a closed ball in a two-dimensional real normed space is the
+filled hull of its frontier. -/
 theorem filledHull_frontier_eq_of_closedBall
-    (e : D ≃ₜ closedBall c r) (hr : 0 < r) (hF : Module.finrank ℝ F = 2) :
+    (e : D ≃ₜ closedBall c r) (hF : Module.finrank ℝ F = 2) :
     filledHull (frontier D) = D := by
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_eq_succ hF
-  have hD : IsCompact D := isCompact_iff_compactSpace.mpr e.symm.compactSpace
-  exact (e.isJordanCurve_frontier_of_closedBall hr hF).filledHull_frontier_eq hD
-    ⟨_, e.symm.coe_apply_center_mem_interior_of_closedBall 𝓘(ℝ, ℂ) (by simpa using hF.symm) hr⟩
+  rcases lt_trichotomy 0 r with hr | hr | hr
+  · have hD : IsCompact D := isCompact_iff_compactSpace.mpr e.symm.compactSpace
+    exact (e.isJordanCurve_frontier_of_closedBall hr hF).filledHull_frontier_eq hD
+      ⟨_, e.symm.coe_apply_center_mem_interior_of_closedBall 𝓘(ℝ, ℂ)
+        (by simpa using hF.symm) hr⟩
+  · subst r
+    have : Subsingleton (closedBall c (0 : ℝ)) := (subsingleton_closedBall c le_rfl).coe_sort
+    have : Subsingleton D := e.injective.subsingleton
+    let p : D := e.symm ⟨c, mem_closedBall_self le_rfl⟩
+    have hD : D = {p.val} := (subsingleton_coe D).mp inferInstance |>.eq_singleton_of_mem p.property
+    rw [hD, ← closedBall_zero (x := p.val), frontier_closedBall', filledHull_sphere _ le_rfl]
+  · have hD : D = ∅ := by
+      apply eq_empty_iff_forall_notMem.mpr
+      intro x hx
+      exact hr.not_ge (dist_nonneg.trans (e ⟨x, hx⟩).property)
+    simp only [hD, frontier_empty, filledHull_empty]
 
-/-- The interior of a planar subset homeomorphic to a closed ball of positive radius in a
-two-dimensional real normed space is the inside of its Jordan frontier. -/
+/-- The interior of a planar subset homeomorphic to a closed ball in a
+two-dimensional real normed space is the filled hull of its frontier minus the frontier. -/
 theorem interior_eq_filledHull_sdiff_frontier_of_closedBall
-    (e : D ≃ₜ closedBall c r) (hr : 0 < r) (hF : Module.finrank ℝ F = 2) :
+    (e : D ≃ₜ closedBall c r) (hF : Module.finrank ℝ F = 2) :
     interior D = filledHull (frontier D) \ frontier D := by
-  rw [e.filledHull_frontier_eq_of_closedBall hr hF, self_sdiff_frontier]
+  rw [e.filledHull_frontier_eq_of_closedBall hF, self_sdiff_frontier]
 
-/-- A point of a planar subset homeomorphic to a closed ball of positive radius in a
-two-dimensional real normed space lies inside its Jordan frontier exactly when its image
-has distance from the center less than the radius. -/
+/-- A point of a planar subset homeomorphic to a closed ball in a two-dimensional real normed
+space lies in the filled hull minus its frontier exactly when its image has distance from the
+center less than the radius. -/
 theorem coe_mem_filledHull_sdiff_frontier_iff_dist_lt_of_closedBall
-    (e : D ≃ₜ closedBall c r) (hr : 0 < r) (hF : Module.finrank ℝ F = 2) (x : D) :
+    (e : D ≃ₜ closedBall c r) (hF : Module.finrank ℝ F = 2) (x : D) :
     x.val ∈ filledHull (frontier D) \ frontier D ↔ dist (e x).val c < r := by
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_eq_succ hF
-  rw [← e.interior_eq_filledHull_sdiff_frontier_of_closedBall hr hF]
-  exact (e.dist_coe_apply_lt_iff_mem_interior_of_closedBall 𝓘(ℝ, ℂ)
-    (by simpa using hF.symm) hr.ne' x).symm
+  rw [← e.interior_eq_filledHull_sdiff_frontier_of_closedBall hF]
+  have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
+  simpa only [interior_closedBall', mem_ball] using
+    (e.coe_apply_mem_interior_iff (E := ℂ) (F := F) (by simpa using hF.symm) x).symm
 
-/-- A homeomorphism from a closed ball of positive radius in a two-dimensional real normed
-space to a planar subset maps a point inside the Jordan frontier exactly when its distance
-from the center is less than the radius. -/
+/-- A homeomorphism from a closed ball in a two-dimensional real normed space to a planar subset
+maps a point into the filled hull minus its frontier exactly when its distance from the center
+is less than the radius. -/
 theorem coe_apply_mem_filledHull_sdiff_frontier_iff_dist_lt_of_closedBall
-    (e : closedBall c r ≃ₜ D) (hr : 0 < r) (hF : Module.finrank ℝ F = 2)
+    (e : closedBall c r ≃ₜ D) (hF : Module.finrank ℝ F = 2)
     (z : closedBall c r) :
     (e z).val ∈ filledHull (frontier D) \ frontier D ↔ dist z.val c < r := by
   simpa only [symm_apply_apply] using
-    e.symm.coe_mem_filledHull_sdiff_frontier_iff_dist_lt_of_closedBall hr hF (e z)
+    e.symm.coe_mem_filledHull_sdiff_frontier_iff_dist_lt_of_closedBall hF (e z)
 
 /-- The preimage of the center under a homeomorphism to a closed ball of positive radius in a
 two-dimensional real normed space lies inside the Jordan frontier of its planar domain. -/
 theorem coe_symm_apply_center_mem_filledHull_sdiff_frontier_of_closedBall
     (e : D ≃ₜ closedBall c r) (hr : 0 < r) (hF : Module.finrank ℝ F = 2) :
     (e.symm ⟨c, mem_closedBall_self hr.le⟩).val ∈ filledHull (frontier D) \ frontier D :=
-  (e.symm.coe_apply_mem_filledHull_sdiff_frontier_iff_dist_lt_of_closedBall hr hF _).mpr
+  (e.symm.coe_apply_mem_filledHull_sdiff_frontier_iff_dist_lt_of_closedBall hF _).mpr
     (by simpa using hr)
 
 end Homeomorph

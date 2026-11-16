@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 public import TauCeti.Topology.JordanCurve.Basic
-public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-public import TauCeti.Topology.Homeomorph.SetCongr
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Topology.Homeomorph.SetCongr
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
@@ -42,13 +44,14 @@ open scoped Manifold
 namespace Homeomorph
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [I.Boundaryless]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] {D : Set M}
+  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [BoundarylessManifold I M]
+  [T2Space M] {D : Set M}
   {c : ℂ} {r : ℝ}
 
 include I in
-/-- The frontier of a subset of a Hausdorff charted space over a two-dimensional real
-boundaryless model is homeomorphic to the circle if the subset is homeomorphic to the
+/-- The frontier of a subset of a Hausdorff boundaryless manifold over a two-dimensional real
+model is homeomorphic to the circle if the subset is homeomorphic to the
 closed complex ball of positive radius. -/
 noncomputable def frontierHomeomorphCircleOfClosedBall
     (e : D ≃ₜ closedBall c r) (hr : 0 < r) (hdim : Module.finrank ℝ E = 2) :
@@ -85,7 +88,7 @@ theorem frontierHomeomorphCircleOfClosedBall_symm_apply_coe
   simp [frontierHomeomorphCircleOfClosedBall]
 
 include I in
-/-- A subset of a Hausdorff charted space over a two-dimensional real boundaryless model
+/-- A subset of a Hausdorff boundaryless manifold over a two-dimensional real model
 has a Jordan frontier if it is homeomorphic to a closed ball of positive radius in a
 two-dimensional real normed space. -/
 theorem isJordanCurve_frontier_of_closedBall_of_boundaryless
