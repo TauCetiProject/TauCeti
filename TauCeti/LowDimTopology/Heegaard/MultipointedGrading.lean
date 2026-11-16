@@ -39,16 +39,18 @@ all lie in the same component. So `A(r₀)` is a domain from every generator to 
 
 `μ(A(r₀)) = χ(C) + k(C)`
 
-(`TauCeti.HeegaardRegionSystem.maslovIndex_alphaComponentDomain_eq`), where `χ(C)` is the Euler
-characteristic of the closure `C` of the component, assembled from its regions and its `β`-arcs
+(`TauCeti.HeegaardRegionSystem.maslovIndex_alphaComponentDomain`), where `χ(C)` is the Euler
+characteristic of the component `C` of `Σ` cut along the `α`-curves (the compact surface whose
+interior is the component of `Σ - α`), assembled from its regions and its `β`-arcs
 (`TauCeti.HeegaardRegionSystem.alphaComponentEuler`; the arcs and points on its boundary cancel),
-and `k(C)` is the number of its boundary circles, an `α`-curve counting twice when the component
-lies on both of its sides (`TauCeti.HeegaardRegionSystem.alphaComponentBoundaryCount`). The Euler
-measure of `A(r₀)` is `χ(C)`, and the point measure of `A(r₀)` at every generator is `k(C) / 2`,
-since each point of a generator on a boundary circle of `C` sees two of its four corners in `C`.
-When `C` is a sphere with holes, `χ(C) = 2 - k(C)`, so `μ(A(r₀)) = 2`
-(`TauCeti.HeegaardRegionSystem.maslovIndex_alphaComponentDomain`). This normalization is the
-counterpart of the Euler characteristics `χ` of the regions being those of a closed surface of
+and `k(C)` is the number of its boundary circles, an `α`-curve giving two boundary circles when
+the component lies on both of its sides
+(`TauCeti.HeegaardRegionSystem.alphaComponentBoundaryCount`). The Euler measure of `A(r₀)` is
+`χ(C)`, and the point measure of `A(r₀)` at every generator is `k(C) / 2`, since each point of a
+generator on a boundary circle of `C` sees two of its four corners in `C`. When `C` is a
+sphere with holes, `χ(C) = 2 - k(C)`, so `μ(A(r₀)) = 2`
+(`TauCeti.HeegaardRegionSystem.maslovIndex_alphaComponentDomain_eq_two`). This normalization is
+the counterpart of the Euler characteristics `χ` of the regions being those of a closed surface of
 genus `n` in the singly pointed case: the Euler characteristics are not determined by the
 incidence data, so they are an explicit argument.
 
@@ -56,11 +58,13 @@ When distinct basepoints lie in distinct components, a domain `E` connects a gen
 exactly when `E - ∑ᵢ n_{zᵢ}(E) A(zᵢ)` is periodic
 (`TauCeti.HeegaardRegionSystem.isDomainBetween_self_iff_sub_sum_smul_mem_periodicDomains`). If
 moreover the components of the basepoints are spheres with holes, then `μ(E) - 2 ∑ᵢ n_{zᵢ}(E)` is
-a periodic Maslov index at `x`, and the class of `μ(D) - 2 ∑ᵢ n_{zᵢ}(D)` modulo the periodic Maslov
-indices `TauCeti.HeegaardRegionSystem.periodicMaslovIndices` does not depend on the domain `D`
-from `x` to `y`. The value `TauCeti.HeegaardRegionSystem.multipointedRelativeGrading` computed
-from a chosen domain is therefore a representative of this class, additive and antisymmetric
-modulo the subgroup; when the periodic domains have Maslov index zero at `x`, these hold in `ℚ`.
+a periodic Maslov index at `x`
+(`IsDomainBetween.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices`). This is the
+normalization from which `TauCeti.LowDimTopology.Heegaard.RelativeGrading` proves that the
+relative grading `TauCeti.HeegaardRegionSystem.relativeGrading` is well defined modulo
+the periodic Maslov indices `TauCeti.HeegaardRegionSystem.periodicMaslovIndices`, additive and
+antisymmetric (`TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_relativeGrading_eq` and the
+lemmas following it); when the periodic domains have Maslov index zero at `x`, these hold in `ℚ`.
 When every region also lies in the component of a basepoint, the whole surface is the sum of the
 `A(zᵢ)` and has Maslov index `2b` (`TauCeti.HeegaardRegionSystem.maslovIndex_one_eq_two_mul_card`):
 `2` for one basepoint and `4` for two.
@@ -71,32 +75,25 @@ When every region also lies in the component of a basepoint, the whole surface i
   `Σ - α`.
 * `TauCeti.HeegaardRegionSystem.alphaComponentDomain`: the domain of the component of `Σ - α`
   containing a region.
-* `TauCeti.HeegaardRegionSystem.alphaComponentEuler`: the Euler characteristic of the closure of
-  that component.
+* `TauCeti.HeegaardRegionSystem.alphaComponentEuler`: the Euler characteristic of that component
+  of `Σ` cut along the `α`-curves.
 * `TauCeti.HeegaardRegionSystem.alphaComponentBoundaryCount`: its number of boundary circles.
-* `TauCeti.HeegaardRegionSystem.multipointedRelativeGrading`: the relative grading
-  `μ(D) - 2 ∑ᵢ n_{zᵢ}(D)`, computed from a chosen domain `D` from `x` to `y`, or `0` when there is
-  none.
 
 ## Main results
 
 * `TauCeti.HeegaardRegionSystem.isDomainBetween_alphaComponentDomain`: the domain of a component
   of `Σ - α` connects every generator to itself.
-* `TauCeti.HeegaardRegionSystem.maslovIndex_alphaComponentDomain_eq`: its Maslov index is
-  `χ(C) + k(C)`, and `TauCeti.HeegaardRegionSystem.maslovIndex_alphaComponentDomain`: it is two
-  when `C` is a sphere with holes.
+* `TauCeti.HeegaardRegionSystem.maslovIndex_alphaComponentDomain`: its Maslov index is
+  `χ(C) + k(C)`, and `TauCeti.HeegaardRegionSystem.maslovIndex_alphaComponentDomain_eq_two`: it is
+  two when `C` is a sphere with holes.
 * `TauCeti.HeegaardRegionSystem.isDomainBetween_self_iff_sub_sum_smul_mem_periodicDomains`: a
   domain from `x` to `x` is a periodic domain plus `∑ᵢ n_{zᵢ}(E) A(zᵢ)`.
 * `TauCeti.HeegaardRegionSystem.maslovIndex_one_eq_two_mul_card`: in a balanced diagram the
   whole surface has Maslov index `2b`.
-* `TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_multipointedRelativeGrading_eq`: modulo the
-  periodic Maslov indices at `x`, the relative grading is `μ(D) - 2 ∑ᵢ n_{zᵢ}(D)` for every
-  domain `D` from `x` to `y`, and
-  `TauCeti.HeegaardRegionSystem.IsDomainBetween.multipointedRelativeGrading_eq` is the
-  `ℚ`-valued statement.
-* `TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_multipointedRelativeGrading_add`,
-  `TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_multipointedRelativeGrading_swap` and their
-  `ℚ`-valued versions: additivity and antisymmetry.
+* `IsDomainBetween.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices`:
+  when the basepoints lie in distinct sphere-with-holes components of `Σ - α`, a domain `E` from
+  `x` to `x` has `μ(E) - 2 ∑ᵢ n_{zᵢ}(E)` among the periodic Maslov indices at `x`, so the
+  relative grading `TauCeti.HeegaardRegionSystem.relativeGrading` is well defined modulo them.
 
 ## References
 
@@ -133,6 +130,22 @@ def SameAlphaComponent (r r' : Region) : Prop :=
   Relation.EqvGen (fun a b => ∃ p, H.betaLeft p = a ∧ H.betaRight p = b) r r'
 
 variable {H}
+
+/-- Two regions lie in the same component of `Σ - α` when they are related by the equivalence
+relation generated by the two sides of the `β`-arcs. -/
+theorem sameAlphaComponent_iff {r r' : Region} :
+    H.SameAlphaComponent r r' ↔
+      Relation.EqvGen (fun a b => ∃ p, H.betaLeft p = a ∧ H.betaRight p = b) r r' :=
+  Iff.rfl
+
+/-- **Elimination principle for components of `Σ - α`.** A function of the regions taking the same
+value on the two sides of every `β`-arc takes the same value on two regions of a common
+component. For instance, two regions are in different components when some set of regions
+containing exactly one of them contains both sides of every `β`-arc or neither. -/
+theorem SameAlphaComponent.apply_eq {α : Sort*} {f : Region → α}
+    (hf : ∀ p, f (H.betaLeft p) = f (H.betaRight p)) {r r' : Region}
+    (h : H.SameAlphaComponent r r') : f r = f r' :=
+  Relation.EqvGen.eqvGen_le (r' := InvImage Eq f) (fun _ _ ⟨p, ha, hb⟩ => ha ▸ hb ▸ hf p) r r' h
 
 @[refl]
 theorem SameAlphaComponent.refl (r : Region) : H.SameAlphaComponent r r :=
@@ -238,27 +251,31 @@ theorem isDomainBetween_alphaComponentDomain (x : H.Generator) (r₀ : Region) :
     H.IsDomainBetween x x (H.alphaComponentDomain r₀) :=
   isDomainBetween_self_iff_arcBoundary_eq_zero.mpr ⟨by simp, by simp⟩
 
+/-- The domain of a component of `Σ - α` takes the same value on one side of any two arcs of a
+common `α`-curve, for a choice `side` of a region along each `α`-arc whose values on consecutive
+arcs lie in a common component, such as the region to the left or to the right of the arc. -/
+theorem alphaComponentDomain_side_eq {side : Point → Region}
+    (hside : ∀ q, H.SameAlphaComponent (side q) (side (H.alphaNext.symm q))) {p q : Point}
+    (h : H.alpha p = H.alpha q) (r₀ : Region) :
+    H.alphaComponentDomain r₀ (side p) = H.alphaComponentDomain r₀ (side q) := by
+  obtain ⟨a, ha⟩ := (H.alphaNext.forall_comp_symm_sub_eq_zero_iff H.alphaNext_isCycleOn
+    fun p => H.alphaComponentDomain r₀ (side p)).mp fun q => by
+      rw [alphaComponentDomain_eq_of_sameAlphaComponent (hside q).symm, sub_self]
+  rw [ha, ha, h]
+
 /-- The domain of a component of `Σ - α` takes the same value to the left of any two arcs of a
 common `α`-curve. -/
 theorem alphaComponentDomain_alphaLeft_eq {p q : Point} (h : H.alpha p = H.alpha q)
     (r₀ : Region) :
-    H.alphaComponentDomain r₀ (H.alphaLeft p) = H.alphaComponentDomain r₀ (H.alphaLeft q) := by
-  obtain ⟨a, ha⟩ := (H.alphaNext.forall_comp_symm_sub_eq_zero_iff H.alphaNext_isCycleOn
-    fun p => H.alphaComponentDomain r₀ (H.alphaLeft p)).mp fun q => by
-      rw [alphaComponentDomain_eq_of_sameAlphaComponent
-        (H.sameAlphaComponent_alphaLeft_alphaNext_symm q).symm, sub_self]
-  rw [ha, ha, h]
+    H.alphaComponentDomain r₀ (H.alphaLeft p) = H.alphaComponentDomain r₀ (H.alphaLeft q) :=
+  H.alphaComponentDomain_side_eq H.sameAlphaComponent_alphaLeft_alphaNext_symm h r₀
 
 /-- The domain of a component of `Σ - α` takes the same value to the right of any two arcs of a
 common `α`-curve. -/
 theorem alphaComponentDomain_alphaRight_eq {p q : Point} (h : H.alpha p = H.alpha q)
     (r₀ : Region) :
-    H.alphaComponentDomain r₀ (H.alphaRight p) = H.alphaComponentDomain r₀ (H.alphaRight q) := by
-  obtain ⟨a, ha⟩ := (H.alphaNext.forall_comp_symm_sub_eq_zero_iff H.alphaNext_isCycleOn
-    fun p => H.alphaComponentDomain r₀ (H.alphaRight p)).mp fun q => by
-      rw [alphaComponentDomain_eq_of_sameAlphaComponent
-        (H.sameAlphaComponent_alphaRight_alphaNext_symm q).symm, sub_self]
-  rw [ha, ha, h]
+    H.alphaComponentDomain r₀ (H.alphaRight p) = H.alphaComponentDomain r₀ (H.alphaRight q) :=
+  H.alphaComponentDomain_side_eq H.sameAlphaComponent_alphaRight_alphaNext_symm h r₀
 
 /-- At every intersection point, the point measure of the domain of a component of `Σ - α` is
 half the number of sides of the `α`-curve through it that lie in the component. -/
@@ -296,7 +313,8 @@ theorem sum_pointMeasure_alphaComponentDomain (r₀ : Region) :
     Equiv.sum_comp H.betaNext.symm fun p => (H.alphaComponentDomain r₀ (H.betaLeft p) : ℚ)]
   ring
 
-/-- The number of boundary circles of the closure of the component of `Σ - α` containing `r₀`:
+/-- The number of boundary circles of the component `C` of `Σ` cut along the `α`-curves that
+contains `r₀`:
 the number of `α`-curves with an arc having the component on its left, plus the number with an
 arc having it on its right. An `α`-curve along which the component lies on both sides counts
 twice. This counts the boundary circles when every `α`-curve meets the `β`-curves, as it does in
@@ -305,6 +323,13 @@ noncomputable def alphaComponentBoundaryCount (r₀ : Region) : ℕ :=
   open scoped Classical in
   #{i | ∃ p, H.alpha p = i ∧ H.SameAlphaComponent (H.alphaLeft p) r₀} +
     #{i | ∃ p, H.alpha p = i ∧ H.SameAlphaComponent (H.alphaRight p) r₀}
+
+open scoped Classical in
+theorem alphaComponentBoundaryCount_def (r₀ : Region) :
+    H.alphaComponentBoundaryCount r₀ =
+      #{i | ∃ p, H.alpha p = i ∧ H.SameAlphaComponent (H.alphaLeft p) r₀} +
+        #{i | ∃ p, H.alpha p = i ∧ H.SameAlphaComponent (H.alphaRight p) r₀} :=
+  (rfl)
 
 /-- The point measure of the domain of a component of `Σ - α` at every generator is half the
 number of boundary circles of the component: the point of the generator on a boundary circle sees
@@ -315,22 +340,22 @@ theorem generatorPointMeasure_alphaComponentDomain (x : H.Generator) (r₀ : Reg
   have hxi (i : Fin n) : H.alpha (H.point x i) = i := by simp
   -- On the curve `αᵢ`, a side of the point `xᵢ` lies in the component exactly when the same side
   -- of some point of `αᵢ` does, since `A(r₀)` is constant along each side of `αᵢ`.
-  have hside (side : Point → Region) (hc : ∀ p q, H.alpha p = H.alpha q →
-      H.alphaComponentDomain r₀ (side p) = H.alphaComponentDomain r₀ (side q)) (i : Fin n) :
+  have hside (side : Point → Region)
+      (hc : ∀ q, H.SameAlphaComponent (side q) (side (H.alphaNext.symm q))) (i : Fin n) :
       H.alphaComponentDomain r₀ (side (H.point x i)) =
         {i | ∃ p, H.alpha p = i ∧ H.SameAlphaComponent (side p) r₀}.indicator 1 i := by
     by_cases h : ∃ p, H.alpha p = i ∧ H.SameAlphaComponent (side p) r₀
     · obtain ⟨p, hp, hpr⟩ := h
       rw [Set.indicator_of_mem (s := {i | ∃ p, H.alpha p = i ∧ H.SameAlphaComponent (side p) r₀})
-        ⟨p, hp, hpr⟩, hc _ p (by rw [hp, hxi]), alphaComponentDomain_of_sameAlphaComponent hpr,
-        Pi.one_apply]
+        ⟨p, hp, hpr⟩, H.alphaComponentDomain_side_eq hc (q := p) (by rw [hp, hxi]) r₀,
+        alphaComponentDomain_of_sameAlphaComponent hpr, Pi.one_apply]
     · rw [Set.indicator_of_notMem h, alphaComponentDomain_of_not_sameAlphaComponent fun hx =>
         h ⟨H.point x i, hxi i, hx⟩]
   classical
   simp only [alphaComponentBoundaryCount, Nat.cast_add, natCast_card_filter,
     generatorPointMeasure_apply, pointMeasure_alphaComponentDomain,
-    hside _ fun _ _ h => H.alphaComponentDomain_alphaLeft_eq h r₀,
-    hside _ fun _ _ h => H.alphaComponentDomain_alphaRight_eq h r₀, Set.indicator_apply,
+    hside _ H.sameAlphaComponent_alphaLeft_alphaNext_symm,
+    hside _ H.sameAlphaComponent_alphaRight_alphaNext_symm, Set.indicator_apply,
     Set.mem_ofPred_eq, Pi.one_apply, ← sum_div, sum_add_distrib]
   push_cast
   -- The two sides differ only in the decidability instances of their conditions.
@@ -338,10 +363,10 @@ theorem generatorPointMeasure_alphaComponentDomain (x : H.Generator) (r₀ : Reg
 
 variable [Fintype Region]
 
-/-- The Euler characteristic `χ(C)` of the closure `C` of the component of `Σ - α` containing
-`r₀`, for the Euler characteristics `χ` of the regions: the sum of `χ` over the regions of the
-component minus the number of `β`-arcs in it. The arcs and points on the boundary of `C`, which
-lies on the `α`-curves, are equal in number and cancel. -/
+/-- The Euler characteristic `χ(C)` of the component `C` of `Σ` cut along the `α`-curves that
+contains `r₀`, for the Euler characteristics `χ` of the regions: the sum of `χ` over the regions
+of the component minus the number of `β`-arcs in it. The arcs and points on the boundary of `C`,
+which lies on the `α`-curves, are equal in number and cancel. -/
 noncomputable def alphaComponentEuler (χ : Region → ℤ) (r₀ : Region) : ℤ :=
   ∑ r, χ r * H.alphaComponentDomain r₀ r - ∑ p, H.alphaComponentDomain r₀ (H.betaLeft p)
 
@@ -353,31 +378,31 @@ theorem alphaComponentEuler_def (χ : Region → ℤ) (r₀ : Region) :
 variable [DecidableEq Region]
 
 /-- The Euler measure of the domain of a component of `Σ - α` is the Euler characteristic of the
-closure of the component. -/
+component of `Σ` cut along the `α`-curves. -/
 theorem eulerMeasure_alphaComponentDomain (χ : Region → ℤ) (r₀ : Region) :
     H.eulerMeasure χ (H.alphaComponentDomain r₀) = H.alphaComponentEuler χ r₀ := by
   rw [eulerMeasure_eq_sub_sum_pointMeasure, sum_pointMeasure_alphaComponentDomain,
     alphaComponentEuler_def]
   push_cast
-  rfl
+  ring
 
 /-- **The Maslov index of a component of `Σ - α`.** At any two generators, the domain of the
 component of `Σ - α` containing `r₀` has Maslov index `χ(C) + k(C)`, the Euler characteristic of
-the closure `C` of the component plus its number of boundary circles. -/
-theorem maslovIndex_alphaComponentDomain_eq (χ : Region → ℤ) (x y : H.Generator) (r₀ : Region) :
+the component `C` of `Σ` cut along the `α`-curves plus its number of boundary circles. -/
+theorem maslovIndex_alphaComponentDomain (χ : Region → ℤ) (x y : H.Generator) (r₀ : Region) :
     H.maslovIndex χ x y (H.alphaComponentDomain r₀) =
       H.alphaComponentEuler χ r₀ + H.alphaComponentBoundaryCount r₀ := by
   rw [maslovIndex_apply, eulerMeasure_alphaComponentDomain,
     generatorPointMeasure_alphaComponentDomain, generatorPointMeasure_alphaComponentDomain]
   ring
 
-/-- **A sphere-with-holes component of `Σ - α` has Maslov index two.** When the closure of the
-component of `Σ - α` containing `r₀` is a sphere with holes, `χ(C) = 2 - k(C)`, its domain has
-Maslov index two at any two generators. -/
-theorem maslovIndex_alphaComponentDomain {χ : Region → ℤ} {r₀ : Region}
+/-- **A sphere-with-holes component of `Σ - α` has Maslov index two.** When the component `C`
+of `Σ` cut along the `α`-curves that contains `r₀` is a sphere with holes, `χ(C) = 2 - k(C)`,
+its domain has Maslov index two at any two generators. -/
+theorem maslovIndex_alphaComponentDomain_eq_two {χ : Region → ℤ} {r₀ : Region}
     (hχ : H.alphaComponentEuler χ r₀ = 2 - H.alphaComponentBoundaryCount r₀) (x y : H.Generator) :
     H.maslovIndex χ x y (H.alphaComponentDomain r₀) = 2 := by
-  rw [maslovIndex_alphaComponentDomain_eq, hχ]
+  rw [maslovIndex_alphaComponentDomain, hχ]
   push_cast
   ring
 
@@ -444,171 +469,31 @@ theorem maslovIndex_one_eq_two_mul_card
       2 - H.alphaComponentBoundaryCount (H.basepoint z)) (x y : H.Generator) :
     H.maslovIndex χ x y 1 = 2 * Fintype.card Basepoint := by
   rw [← sum_alphaComponentDomain_basepoint hz hcover, map_sum,
-    sum_congr rfl fun z _ => H.maslovIndex_alphaComponentDomain (hχ z) x y, sum_const, card_univ,
-    nsmul_eq_mul, mul_comm]
+    sum_congr rfl fun z _ => H.maslovIndex_alphaComponentDomain_eq_two (hχ z) x y, sum_const,
+    card_univ, nsmul_eq_mul, mul_comm]
 
-open scoped Classical in
-variable (H) in
-/-- The relative Maslov grading `gr(x, y) = μ(D) - 2 ∑ᵢ n_{zᵢ}(D)` of two generators of a
-multipointed diagram, for a chosen domain `D` from `x` to `y`, or `0` when no domain joins them.
-When distinct basepoints lie in distinct components of `Σ - α` and these components are spheres
-with holes, its class modulo the periodic Maslov indices at `x` does not depend on the choice of
-`D` (`TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_multipointedRelativeGrading_eq`), and when
-the periodic domains have Maslov index zero at the source generator neither does the value itself
-(`TauCeti.HeegaardRegionSystem.IsDomainBetween.multipointedRelativeGrading_eq`). -/
-noncomputable def multipointedRelativeGrading (χ : Region → ℤ) (x y : H.Generator) : ℚ :=
-  if h : ∃ D, H.IsDomainBetween x y D then
-    H.maslovIndex χ x y h.choose - 2 * ∑ z, (h.choose (H.basepoint z) : ℚ)
-  else 0
-
-/-- When no domain joins `x` to `y`, the multipointed relative grading is `0`. -/
-theorem multipointedRelativeGrading_of_forall_not_isDomainBetween {x y : H.Generator}
-    (h : ∀ D, ¬H.IsDomainBetween x y D) : H.multipointedRelativeGrading χ x y = 0 := by
-  rw [multipointedRelativeGrading, dite_eq_right (not_exists.mpr h)]
-
-variable (hz : ∀ z z', H.SameAlphaComponent (H.basepoint z) (H.basepoint z') → z = z')
-  (hχ : ∀ z, H.alphaComponentEuler χ (H.basepoint z) =
-    2 - H.alphaComponentBoundaryCount (H.basepoint z))
-  {x y w : H.Generator} {D D' E : Region → ℤ}
-
-include hz hχ
-
-/-- In a multipointed diagram whose basepoints lie in distinct sphere-with-holes components of
-`Σ - α`, a domain `E` from `x` to `x` has `μ(E) - 2 ∑ᵢ n_{zᵢ}(E)` among the periodic Maslov
-indices at `x`: it is a periodic domain plus `n_{zᵢ}(E)` copies of the domain of the component of
-each basepoint `zᵢ`, which has Maslov index two. -/
+/-- **The normalization of the relative grading in a multipointed diagram.** When the basepoints
+lie in distinct sphere-with-holes components of `Σ - α`, a domain `E` from `x` to `x` has
+`μ(E) - 2 ∑ᵢ n_{zᵢ}(E)` among the periodic Maslov indices at `x`: it is a periodic domain plus
+`n_{zᵢ}(E)` copies of the domain of the component of each basepoint `zᵢ`, which has Maslov index
+two. This is the hypothesis of the relative grading lemmas
+(`TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_relativeGrading_eq` and those following it),
+so the relative grading `TauCeti.HeegaardRegionSystem.relativeGrading` of a multipointed diagram
+is well defined modulo the periodic Maslov indices, additive and antisymmetric. -/
 theorem IsDomainBetween.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices
-    (hE : H.IsDomainBetween x x E) :
+    (hz : ∀ z z', H.SameAlphaComponent (H.basepoint z) (H.basepoint z') → z = z')
+    (hχ : ∀ z, H.alphaComponentEuler χ (H.basepoint z) =
+      2 - H.alphaComponentBoundaryCount (H.basepoint z))
+    {x : H.Generator} {E : Region → ℤ} (hE : H.IsDomainBetween x x E) :
     H.maslovIndex χ x x E - 2 * ∑ z, (E (H.basepoint z) : ℚ) ∈ H.periodicMaslovIndices χ x := by
   have h := maslovIndex_mem_periodicMaslovIndices (χ := χ) (x := x)
     ((isDomainBetween_self_iff_sub_sum_smul_mem_periodicDomains hz).mp hE)
   rw [map_sub, map_sum] at h
   simp only [AddMonoidHom.map_zsmul] at h
-  simp only [H.maslovIndex_alphaComponentDomain (hχ _), zsmul_eq_mul] at h
+  simp only [H.maslovIndex_alphaComponentDomain_eq_two (hχ _), zsmul_eq_mul] at h
   convert h using 2
   rw [mul_sum]
   exact sum_congr rfl fun z _ => mul_comm _ _
-
-/-- In a multipointed diagram whose basepoints lie in distinct sphere-with-holes components of
-`Σ - α` and all of whose periodic domains have Maslov index zero at `x`, a domain `E` from `x` to
-`x` has Maslov index `2 ∑ᵢ n_{zᵢ}(E)`. -/
-theorem IsDomainBetween.maslovIndex_self_eq_two_mul_sum
-    (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0) (hE : H.IsDomainBetween x x E) :
-    H.maslovIndex χ x x E = 2 * ∑ z, (E (H.basepoint z) : ℚ) := by
-  have h := hE.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices hz hχ
-  rwa [periodicMaslovIndices_eq_bot_iff.mpr hP, AddSubgroup.mem_bot, sub_eq_zero] at h
-
-/-- In a multipointed diagram whose basepoints lie in distinct sphere-with-holes components of
-`Σ - α`, the quantities `μ(D) - 2 ∑ᵢ n_{zᵢ}(D)` for domains `D` from `x` to `y` differ by periodic
-Maslov indices at `x`. -/
-theorem IsDomainBetween.maslovIndex_sub_two_mul_sum_sub_mem_periodicMaslovIndices
-    (hD : H.IsDomainBetween x y D) (hD' : H.IsDomainBetween x y D') :
-    H.maslovIndex χ x y D - 2 * ∑ z, (D (H.basepoint z) : ℚ) -
-        (H.maslovIndex χ x y D' - 2 * ∑ z, (D' (H.basepoint z) : ℚ)) ∈
-      H.periodicMaslovIndices χ x := by
-  -- `D - D'` runs from `x` to `x`, and both sides of its index count split along `y`.
-  have h := (hD.add hD'.neg).maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices hz hχ
-  rw [hD.maslovIndex_add χ hD'.neg, maslovIndex_neg] at h
-  convert h using 1
-  simp only [Pi.add_apply, Pi.neg_apply, Int.cast_add, Int.cast_neg, sum_add_distrib,
-    sum_neg_distrib]
-  ring
-
-/-- In a multipointed diagram whose basepoints lie in distinct sphere-with-holes components of
-`Σ - α` and all of whose periodic domains have Maslov index zero at `x`, the quantity
-`μ(D) - 2 ∑ᵢ n_{zᵢ}(D)` is the same for all domains `D` from `x` to `y`. -/
-theorem IsDomainBetween.maslovIndex_sub_two_mul_sum_eq
-    (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0) (hD : H.IsDomainBetween x y D)
-    (hD' : H.IsDomainBetween x y D') :
-    H.maslovIndex χ x y D - 2 * ∑ z, (D (H.basepoint z) : ℚ) =
-      H.maslovIndex χ x y D' - 2 * ∑ z, (D' (H.basepoint z) : ℚ) := by
-  have h := hD.maslovIndex_sub_two_mul_sum_sub_mem_periodicMaslovIndices hz hχ hD'
-  rwa [periodicMaslovIndices_eq_bot_iff.mpr hP, AddSubgroup.mem_bot, sub_eq_zero] at h
-
-/-- Modulo the periodic Maslov indices at `x`, the multipointed relative grading is
-`μ(D) - 2 ∑ᵢ n_{zᵢ}(D)` for every domain `D` from `x` to `y`. -/
-theorem IsDomainBetween.coe_multipointedRelativeGrading_eq (hD : H.IsDomainBetween x y D) :
-    (H.multipointedRelativeGrading χ x y : ℚ ⧸ H.periodicMaslovIndices χ x) =
-      ((H.maslovIndex χ x y D - 2 * ∑ z, (D (H.basepoint z) : ℚ) : ℚ) :
-        ℚ ⧸ H.periodicMaslovIndices χ x) := by
-  have h : ∃ D, H.IsDomainBetween x y D := ⟨D, hD⟩
-  rw [QuotientAddGroup.eq_iff_sub_mem, multipointedRelativeGrading, dite_eq_left h]
-  exact h.choose_spec.maslovIndex_sub_two_mul_sum_sub_mem_periodicMaslovIndices hz hχ hD
-
-/-- The multipointed relative grading is `μ(D) - 2 ∑ᵢ n_{zᵢ}(D)` for every domain `D` from `x` to
-`y`, when the periodic domains have Maslov index zero at `x`. -/
-theorem IsDomainBetween.multipointedRelativeGrading_eq
-    (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0) (hD : H.IsDomainBetween x y D) :
-    H.multipointedRelativeGrading χ x y =
-      H.maslovIndex χ x y D - 2 * ∑ z, (D (H.basepoint z) : ℚ) := by
-  have h := QuotientAddGroup.eq_iff_sub_mem.mp (hD.coe_multipointedRelativeGrading_eq hz hχ)
-  rwa [periodicMaslovIndices_eq_bot_iff.mpr hP, AddSubgroup.mem_bot, sub_eq_zero] at h
-
-/-- A generator has multipointed relative grading zero with itself, modulo the periodic Maslov
-indices. -/
-theorem coe_multipointedRelativeGrading_self :
-    (H.multipointedRelativeGrading χ x x : ℚ ⧸ H.periodicMaslovIndices χ x) = 0 := by
-  simp [(isDomainBetween_zero x).coe_multipointedRelativeGrading_eq hz hχ]
-
-/-- The multipointed relative grading is additive modulo the periodic Maslov indices:
-`gr(x, y) + gr(y, w) = gr(x, w)` for generators joined by domains. -/
-theorem IsDomainBetween.coe_multipointedRelativeGrading_add (hD : H.IsDomainBetween x y D)
-    (hE : H.IsDomainBetween y w E) :
-    ((H.multipointedRelativeGrading χ x y + H.multipointedRelativeGrading χ y w : ℚ) :
-        ℚ ⧸ H.periodicMaslovIndices χ x) = H.multipointedRelativeGrading χ x w := by
-  have hxy := QuotientAddGroup.eq_iff_sub_mem.mp (hD.coe_multipointedRelativeGrading_eq hz hχ)
-  have hyw := QuotientAddGroup.eq_iff_sub_mem.mp (hE.coe_multipointedRelativeGrading_eq hz hχ)
-  have hxw := QuotientAddGroup.eq_iff_sub_mem.mp
-    ((hD.add hE).coe_multipointedRelativeGrading_eq hz hχ)
-  rw [← hD.periodicMaslovIndices_eq] at hyw
-  rw [QuotientAddGroup.eq_iff_sub_mem]
-  convert sub_mem (add_mem hxy hyw) hxw using 1
-  simp only [hD.maslovIndex_add χ hE, Pi.add_apply, Int.cast_add, sum_add_distrib]
-  ring
-
-/-- The multipointed relative grading is antisymmetric modulo the periodic Maslov indices:
-`gr(y, x) = -gr(x, y)` for generators joined by a domain. -/
-theorem IsDomainBetween.coe_multipointedRelativeGrading_swap (hD : H.IsDomainBetween x y D) :
-    (H.multipointedRelativeGrading χ y x : ℚ ⧸ H.periodicMaslovIndices χ x) =
-      -(H.multipointedRelativeGrading χ x y : ℚ ⧸ H.periodicMaslovIndices χ x) := by
-  have hxy := QuotientAddGroup.eq_iff_sub_mem.mp (hD.coe_multipointedRelativeGrading_eq hz hχ)
-  have hyx := QuotientAddGroup.eq_iff_sub_mem.mp (hD.neg.coe_multipointedRelativeGrading_eq hz hχ)
-  rw [← hD.periodicMaslovIndices_eq] at hyx
-  rw [← QuotientAddGroup.mk_neg, QuotientAddGroup.eq_iff_sub_mem]
-  convert add_mem hyx hxy using 1
-  simp only [maslovIndex_neg, Pi.neg_apply, Int.cast_neg, sum_neg_distrib]
-  ring
-
-/-- A generator has multipointed relative grading zero with itself. -/
-theorem multipointedRelativeGrading_self
-    (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0) :
-    H.multipointedRelativeGrading χ x x = 0 := by
-  simp [(isDomainBetween_zero x).multipointedRelativeGrading_eq hz hχ hP]
-
-/-- The multipointed relative grading is additive: `gr(x, y) + gr(y, w) = gr(x, w)` for
-generators joined by domains, when the periodic domains have Maslov index zero at `x`. -/
-theorem IsDomainBetween.multipointedRelativeGrading_add
-    (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0) (hD : H.IsDomainBetween x y D)
-    (hE : H.IsDomainBetween y w E) :
-    H.multipointedRelativeGrading χ x y + H.multipointedRelativeGrading χ y w =
-      H.multipointedRelativeGrading χ x w := by
-  rw [hD.multipointedRelativeGrading_eq hz hχ hP,
-    hE.multipointedRelativeGrading_eq hz hχ
-      (hD.forall_mem_periodicDomains_maslovIndex_eq_zero χ hP),
-    (hD.add hE).multipointedRelativeGrading_eq hz hχ hP, hD.maslovIndex_add χ hE]
-  simp only [Pi.add_apply, Int.cast_add, sum_add_distrib]
-  ring
-
-/-- The multipointed relative grading is antisymmetric: `gr(y, x) = -gr(x, y)` for generators
-joined by a domain, when the periodic domains have Maslov index zero at `x`. -/
-theorem IsDomainBetween.multipointedRelativeGrading_swap
-    (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0) (hD : H.IsDomainBetween x y D) :
-    H.multipointedRelativeGrading χ y x = -H.multipointedRelativeGrading χ x y := by
-  rw [hD.multipointedRelativeGrading_eq hz hχ hP,
-    hD.neg.multipointedRelativeGrading_eq hz hχ
-      (hD.forall_mem_periodicDomains_maslovIndex_eq_zero χ hP), maslovIndex_neg]
-  simp only [Pi.neg_apply, Int.cast_neg, sum_neg_distrib]
-  ring
 
 end Balanced
 

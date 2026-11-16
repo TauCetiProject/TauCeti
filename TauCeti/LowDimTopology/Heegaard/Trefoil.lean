@@ -350,20 +350,22 @@ theorem maslovIndex_trefoil_single_one :
 computed from the bigon `B_z`, which avoids `w`. -/
 @[simp]
 theorem relativeGrading_trefoil_zero_two :
-    (trefoil fun _ : Unit => 1).relativeGrading 1 () (trefoilGenerator _ 0)
+    (trefoil fun _ : Unit => 1).relativeGrading 1 (trefoilGenerator _ 0)
       (trefoilGenerator _ 2) = 1 := by
-  rw [isDomainBetween_trefoil_single_two.relativeGrading_eq () (by decide)
-    (by simp [periodicDomains_trefoil]), maslovIndex_trefoil_single_two]
+  rw [isDomainBetween_trefoil_single_two.relativeGrading_eq
+    (fun _ _ hE => hE.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton ()
+      (by decide)) (by simp [periodicDomains_trefoil]), maslovIndex_trefoil_single_two]
   simp
 
 /-- In the diagram `(Σ, α, β, w)` of `S³`, the generator `x₁` lies one Maslov grading below `x₂`,
 computed from the bigon `B_w`, which contains `w`. -/
 @[simp]
 theorem relativeGrading_trefoil_one_two :
-    (trefoil fun _ : Unit => 1).relativeGrading 1 () (trefoilGenerator _ 1)
+    (trefoil fun _ : Unit => 1).relativeGrading 1 (trefoilGenerator _ 1)
       (trefoilGenerator _ 2) = -1 := by
-  rw [isDomainBetween_trefoil_single_one.relativeGrading_eq () (by decide)
-    (by simp [periodicDomains_trefoil]), maslovIndex_trefoil_single_one]
+  rw [isDomainBetween_trefoil_single_one.relativeGrading_eq
+    (fun _ _ hE => hE.maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton ()
+      (by decide)) (by simp [periodicDomains_trefoil]), maslovIndex_trefoil_single_one]
   norm_num
 
 /-- A domain from `x_a` to `x_c` with multiplicity zero on both bigons is zero and joins a
