@@ -18,21 +18,21 @@ import TauCeti.Geometry.Manifold.RegularValue.Open
 /-!
 # Maps of injective differential into regular levels
 
-Let `c` be a regular value of a map `f : M → F` from a boundaryless manifold, modelled on a
-finite-dimensional space `E`, to a finite-dimensional space `F`, with `f` of class `C¹` at the
-points of the level `f⁻¹(c)`. The level is then a manifold of dimension `dim E - dim F`
-(`TauCeti.isManifold_regularLevel`).
+Let `f : M → N` map a boundaryless manifold modelled on a finite-dimensional space `E` into
+any charted space modelled on a finite-dimensional space `F`. Suppose `g : P → M` maps a
+neighbourhood of an interior point `q₀` into the level `f⁻¹(c)`, where `P` has dimension
+`dim E - dim F`. If `f` is regular and `C¹` at `g q₀`, and `g` is `C¹` at `q₀` with injective
+differential there, then every point of the level sufficiently close to `g q₀` belongs to
+`g '' S`, for any prescribed neighbourhood `S` of `q₀`.
 
-A `C¹` map `g : P → M` with values in the level, from a manifold of that dimension, covers the
-level near the image `g q₀` of every interior point `q₀` at which its differential is injective:
-the points of the level close to `g q₀` are all values of `g`. Indeed, `g` is a `C¹` map into the
-level for its regular-level atlas, whose differential at `q₀` is an injective linear map between
-spaces of the same dimension. By the inverse function theorem it is a local diffeomorphism at
-`q₀`, and the image of a neighbourhood of `q₀` is a neighbourhood of `g q₀` in the level.
+Locally the level is a manifold of dimension `dim E - dim F`, and the inverse function theorem
+makes the induced map into that level a local diffeomorphism at `q₀`. No regularity or `C¹`
+hypotheses are needed away from the chosen points.
 
-The case of curves is a regular curve in a level of dimension one. For instance, near a point of
-a regular curve contained in the zero set of a function on a surface which is regular along that
-zero set, every zero of the function lies on the curve.
+For a curve `δ` in a level of dimension one near a parameter `s₀`, injectivity of the differential
+amounts to nonzero velocity at `s₀`. For instance, if a function on a surface is regular and `C¹`
+at `δ s₀`, and the curve is `C¹` with nonzero velocity there and lies in its zero set near `s₀`,
+then every zero sufficiently close to `δ s₀` lies on the prescribed curve segment.
 
 ## Main results
 
@@ -126,11 +126,11 @@ private theorem eventually_mem_image_normedSpace
   have hinj' : Injective (mfderiv J I g' ⟨q₀, hVmem⟩) := by
     intro v w hvw
     apply hinj
-    rw [← Manifold.mfderiv_subtype_val_comp_apply (f := g'),
-      ← Manifold.mfderiv_subtype_val_comp_apply (f := g')] at hvw
-    change mfderiv J I (g ∘ (Subtype.val : V' → P)) ⟨q₀, hVmem⟩ v =
-      mfderiv J I (g ∘ (Subtype.val : V' → P)) ⟨q₀, hVmem⟩ w at hvw
-    simpa only [Manifold.mfderiv_comp_subtype_val_apply] using hvw
+    have hg'val : (Subtype.val : U' → M) ∘ g' = g ∘ (Subtype.val : V' → P) := rfl
+    rw [← Manifold.mfderiv_comp_subtype_val_apply (x := (⟨q₀, hVmem⟩ : V')) v,
+      ← Manifold.mfderiv_comp_subtype_val_apply (x := (⟨q₀, hVmem⟩ : V')) w, ← hg'val,
+      Manifold.mfderiv_subtype_val_comp_apply, Manifold.mfderiv_subtype_val_comp_apply]
+    exact hvw
   have hmem := eventually_mem_range_of_isRegularValue hregU
     (fun p _ ↦ (hUsub p p.property).1.comp p (contMDiff_subtype_val p)) hdim hg'
     (fun q ↦ (hVsub q q.property).2.1) hinj'
@@ -147,8 +147,8 @@ section ChartedTarget
 variable {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 F H''}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H'' N] {f : M → N} {c : N}
 
-/-- A map into a level near an interior point, with injective differential and source dimension
-`dim E - dim F`, covers that level near its image. The target of the defining map may be any
+/-- A map `g` into a level near an interior point `q₀`, with injective differential and source
+dimension `dim E - dim F`, covers that level near `g q₀`. The target of the defining map may be any
 charted space modelled on `F`. Regularity of `f` and `C¹` regularity of both maps are required
 only at the chosen points; the image can be restricted to any source neighbourhood `S`. -/
 theorem IsRegularPoint.eventually_mem_image
