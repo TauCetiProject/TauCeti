@@ -47,7 +47,8 @@ sending the calibrated ground-ring class `[m! (a₀ ⋯ a_(2m)) • x]` in `HC^(
   `S^(j-i) : H^(n+2i)(Tot) → H^(n+2j)(Tot)` of the direct system.
 * `TauCeti.periodicCyclicCohomology`: periodic cyclic cohomology `HP^n(A; M)`, its direct limit.
 * `TauCeti.periodicCyclicCohomology.ι`: the canonical map `H^(n+2k)(Tot) → HP^n`.
-* `TauCeti.periodicCyclicCohomology.desc`: the universal property of the direct limit.
+* `TauCeti.periodicCyclicCohomology.desc`, `TauCeti.periodicCyclicCohomology.lift`: the universal
+  property of the direct limit (in `ModuleCat R` and as universe-polymorphic `R`-linear maps).
 * `TauCeti.periodicCyclicCohomology.shiftIso`: the `2`-periodicity `HP^(n+2) ≅ HP^n`.
 * `TauCeti.cyclicCohomology.periodicTransition`: the transition maps
   `S^(j-i) : HC^(n+2i)(A; M) → HC^(n+2j)(A; M)` under Connes' operator `S`.
@@ -224,6 +225,45 @@ theorem ι_desc {n : ℕ} {P : ModuleCat R}
     (f := fun _ _ h ↦ (cyclicTotalHomologyPeriodicTransition R A M n h).hom)
     (fun k ↦ (g k).hom)
     (fun _ _ h y ↦ congrArg (fun f ↦ f.hom y) (map_comp_of_periodicity_comp g hg h)) x
+
+/-- A family of `R`-linear maps out of the stages compatible with the periodicity maps is compatible
+with every transition map of the periodic system. -/
+private theorem linearMap_comp_of_periodicity_comp {n : ℕ} {P : Type*} [AddCommGroup P] [Module R P]
+    (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] P)
+    (hg : ∀ k, g (k + 1) ∘ₗ (cyclicTotalHomologyPeriodicity R A M (n + 2 * k)).hom = g k)
+    {i j : ℕ} (h : i ≤ j) :
+    g j ∘ₗ (cyclicTotalHomologyPeriodicTransition R A M n h).hom = g i := by
+  induction j, h using Nat.le_induction with
+  | base =>
+    rw [cyclicTotalHomologyPeriodicTransition_self]
+    ext y
+    simp
+  | succ j hij ih =>
+    rw [← cyclicTotalHomologyPeriodicTransition_comp R A M n hij (Nat.le_add_right j 1),
+      cyclicTotalHomologyPeriodicTransition_succ, ModuleCat.hom_comp, ← LinearMap.comp_assoc,
+      hg, ih]
+
+/-- The universe-polymorphic universal property of periodic cyclic cohomology as an `R`-linear map:
+a compatible family of `R`-linear maps out of the stages `H^(n+2k)(Tot)` into an `R`-module `P` in
+any universe factors through `HP^n`. -/
+def lift {n : ℕ} {P : Type*} [AddCommGroup P] [Module R P]
+    (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] P)
+    (hg : ∀ k, g (k + 1) ∘ₗ (cyclicTotalHomologyPeriodicity R A M (n + 2 * k)).hom = g k) :
+    periodicCyclicCohomology R A M n →ₗ[R] P :=
+  Module.DirectLimit.lift R ℕ _ _ g fun _ _ h x ↦
+    LinearMap.congr_fun (linearMap_comp_of_periodicity_comp g hg h) x
+
+/-- The `R`-linear map out of periodic cyclic cohomology induced by a compatible family agrees with
+the family on each stage. -/
+@[simp]
+theorem lift_ι {n : ℕ} {P : Type*} [AddCommGroup P] [Module R P]
+    (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] P)
+    (hg : ∀ k, g (k + 1) ∘ₗ (cyclicTotalHomologyPeriodicity R A M (n + 2 * k)).hom = g k)
+    (k : ℕ) (x : (cyclicTotalComplex R A M).homology (n + 2 * k)) :
+    lift g hg (ι R A M n k x) = g k x :=
+  Module.DirectLimit.lift_of
+    (f := fun _ _ h ↦ (cyclicTotalHomologyPeriodicTransition R A M n h).hom)
+    g (fun _ _ h y ↦ LinearMap.congr_fun (linearMap_comp_of_periodicity_comp g hg h) y) x
 
 /-- The canonical map `H^m(Tot) → HP^n` from a degree `m` equal to `n + 2k`, through the
 identification of `H^m(Tot)` with the `k`-th stage. -/
@@ -540,6 +580,15 @@ def fromCyclicCohomology (n k : ℕ) :
   algebraMap ℚ R (periodicComparisonScalar n k) •
     (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k) ≫
       ι R A M n k)
+
+/-- Explicit formula for `fromCyclicCohomology` in terms of `cyclicCochainComplexToTotal` and
+the stage inclusion `ι`. -/
+theorem fromCyclicCohomology_apply (n k : ℕ) (c : cyclicCohomology R A M (n + 2 * k)) :
+    fromCyclicCohomology R A M n k c =
+      algebraMap ℚ R (periodicComparisonScalar n k) •
+        ι R A M n k
+          (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k) c) :=
+  (rfl)
 
 /-- At stage zero (`k = 0`), `fromCyclicCohomology` is the unscaled inclusion into `HP^n`. -/
 @[simp]
