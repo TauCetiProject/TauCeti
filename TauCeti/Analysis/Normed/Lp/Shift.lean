@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.l2Space
-public import TauCeti.Analysis.Fredholm.Pow
 public import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
 
@@ -27,12 +26,10 @@ left shift (`lp.leftShift`) is a contraction satisfying `leftShift ∘ rightShif
 * `leftShift` is a quotient map with complemented kernel `{single 0 x | x ∈ E}`, linearly
   isomorphic to `E` (`lp.kerLeftShiftEquiv`);
 * on `ℓ²(ℕ, E)` for a Hilbert space `E`, `rightShift` and `leftShift` are Hilbert-space adjoints
-  (`lp.adjoint_rightShift`, `lp.adjoint_leftShift`);
-* over a nontrivially normed field `𝕜`, both shifts are Fredholm if and only if `E` is
-  finite-dimensional (`lp.isFredholm_rightShift_iff`, `lp.isFredholm_leftShift_iff`), with indices
-  `-(finrank 𝕜 E : ℤ)` and `(finrank 𝕜 E : ℤ)` (`lp.index_rightShift`, `lp.index_leftShift`). In
-  particular, when `𝕜` is complete, powers of the scalar unilateral shifts realize every integer as
-  a Fredholm index on `ℓ^p(ℕ, 𝕜)` (`lp.exists_isFredholm_and_index_eq`).
+  (`lp.adjoint_rightShift`, `lp.adjoint_leftShift`, `lp.star_rightShift`, `lp.star_leftShift`).
+
+Fredholmness and index formulas for the unilateral shifts and their powers live in
+`TauCeti.Analysis.Fredholm.Shift`.
 
 ## Main declarations
 
@@ -41,24 +38,22 @@ left shift (`lp.leftShift`) is a contraction satisfying `leftShift ∘ rightShif
 * `lp.leftShift`: the unilateral left shift on `ℓ^p(ℕ, E)`.
 * `lp.kerLeftShiftEquiv`, `lp.cokerRightShiftEquiv`: linear equivalences identifying `ker leftShift`
   and `coker rightShift` with `E`.
+* `lp.isClosedEmbedding_rightShift`, `lp.isQuotientMap_leftShift`: topological embedding and
+  quotient properties of the shifts and their powers.
 * `lp.adjoint_rightShift`, `lp.adjoint_leftShift`: adjointness of the unilateral shifts on
   `ℓ²(ℕ, E)`.
-* `lp.isFredholm_rightShift_iff`, `lp.isFredholm_leftShift_iff`, `lp.index_rightShift`,
-  `lp.index_leftShift`: Fredholmness and index of the unilateral shifts.
-* `lp.exists_isFredholm_and_index_eq`: realization of every integer as the index of a Fredholm
-  operator on `ℓ^p(ℕ, 𝕜)`.
 
 ## References
 
 * J. B. Conway, *A Course in Functional Analysis*, 2nd ed., Springer, 1990, Chapter II, §2,
-  Examples 2.10–2.11, and Chapter XI, §3.
+  Examples 2.10–2.11.
 * H. B. Lawson, Jr., and M.-L. Michelsohn, *Spin Geometry*, Princeton University Press, 1989,
   Chapter III, §7, Example 7.5.
 -/
 
 public section
 
-open Module Topology
+open Topology
 open scoped ENNReal InnerProductSpace lp
 
 namespace lp
@@ -85,6 +80,13 @@ private theorem memℓp_rightShiftSeq {f : ℕ → E} (hf : Memℓp f p) :
 
 variable (p) [Fact (1 ≤ p)]
 
+private theorem norm_le_of_forall_eq_succ {f' f : ℓ^p(ℕ, E)} (h : ∀ j, f' j = f (j + 1)) :
+    ‖f'‖ ≤ ‖f‖ :=
+  lp.norm_le_of_forall_eq_indicator_comp (zero_lt_one.trans_le Fact.out).ne'
+    (g := fun j ↦ j + 1) (s := Set.univ)
+    (fun _ _ _ _ hab ↦ Nat.add_right_cancel hab)
+    fun j ↦ by simp [h j]
+
 /-- The **unilateral right shift** on `ℓ^p(ℕ, E)`, sending `(x₀, x₁, …)` to `(0, x₀, x₁, …)`,
 bundled as a linear isometry. -/
 noncomputable def rightShiftₗᵢ : ℓ^p(ℕ, E) →ₗᵢ[𝕜] ℓ^p(ℕ, E) where
@@ -105,10 +107,7 @@ noncomputable def rightShiftₗᵢ : ℓ^p(ℕ, E) →ₗᵢ[𝕜] ℓ^p(ℕ, E)
         (g := fun j ↦ j - 1) (s := {j : ℕ | 1 ≤ j})
         (fun _ ha _ hb hab ↦ tsub_inj_left ha hb hab)
         fun j ↦ congrFun (rightShiftSeq_eq_indicator E f) j
-    · exact lp.norm_le_of_forall_eq_indicator_comp hp
-        (f := g) (f' := f) (g := fun j ↦ j + 1) (s := Set.univ)
-        (fun _ _ _ _ hab ↦ Nat.add_right_cancel hab)
-        fun j ↦ by simp [g, rightShiftSeq]
+    · exact norm_le_of_forall_eq_succ E p (f' := f) (f := g) fun j ↦ rfl
 
 /-- The **unilateral right shift** on `ℓ^p(ℕ, E)`, sending `(x₀, x₁, …)` to `(0, x₀, x₁, …)`, as a
 continuous linear map. -/
@@ -123,18 +122,21 @@ noncomputable def leftShift : ℓ^p(ℕ, E) →L[𝕜] ℓ^p(ℕ, E) :=
       map_add' := fun _ _ ↦ by ext; rfl
       map_smul' := fun _ _ ↦ by ext; rfl }
     1 fun f ↦ by
-      have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
       rw [one_mul]
-      exact lp.norm_le_of_forall_eq_indicator_comp hp
-        (g := fun j ↦ j + 1) (s := Set.univ)
-        (fun a _ b _ hab ↦ Nat.add_right_cancel hab)
-        fun j ↦ by simp
+      exact norm_le_of_forall_eq_succ E p fun _ ↦ rfl
 
 @[simp]
 theorem toContinuousLinearMap_rightShiftₗᵢ :
     (rightShiftₗᵢ 𝕜 E p).toContinuousLinearMap = rightShift 𝕜 E p := (rfl)
 
 @[simp]
+theorem toLinearMap_rightShiftₗᵢ :
+    (rightShiftₗᵢ 𝕜 E p).toLinearMap = (rightShift 𝕜 E p).toLinearMap := (rfl)
+
+@[simp]
+theorem coe_rightShiftₗᵢ :
+    ⇑(rightShiftₗᵢ 𝕜 E p) = rightShift 𝕜 E p := (rfl)
+
 theorem rightShiftₗᵢ_apply (f : ℓ^p(ℕ, E)) :
     rightShiftₗᵢ 𝕜 E p f = rightShift 𝕜 E p f := (rfl)
 
@@ -160,12 +162,8 @@ theorem isometry_rightShift : Isometry (rightShift 𝕜 E p) :=
   (rightShiftₗᵢ 𝕜 E p).isometry
 
 /-- The unilateral left shift on `ℓ^p(ℕ, E)` is a contraction. -/
-theorem norm_leftShift_apply_le (f : ℓ^p(ℕ, E)) : ‖leftShift 𝕜 E p f‖ ≤ ‖f‖ := by
-  have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-  exact lp.norm_le_of_forall_eq_indicator_comp hp
-    (g := fun j ↦ j + 1) (s := Set.univ)
-    (fun a _ b _ hab ↦ Nat.add_right_cancel hab)
-    fun j ↦ by simp
+theorem norm_leftShift_apply_le (f : ℓ^p(ℕ, E)) : ‖leftShift 𝕜 E p f‖ ≤ ‖f‖ :=
+  norm_le_of_forall_eq_succ E p fun j ↦ leftShift_apply 𝕜 E p f j
 
 @[simp]
 theorem rightShift_single (n : ℕ) (x : E) :
@@ -199,9 +197,38 @@ theorem leftShift_comp_rightShift :
   ext f n
   simp
 
+/-- Endomorphism-ring form of `lp.leftShift_comp_rightShift`. -/
+@[simp]
+theorem leftShift_mul_rightShift :
+    leftShift 𝕜 E p * rightShift 𝕜 E p = 1 :=
+  leftShift_comp_rightShift 𝕜 E p
+
+/-- For every `m : ℕ`, `leftShift ^ m` is a left inverse to `rightShift ^ m` in the endomorphism
+ring. -/
+@[simp]
+theorem leftShift_pow_mul_rightShift_pow (m : ℕ) :
+    leftShift 𝕜 E p ^ m * rightShift 𝕜 E p ^ m = 1 := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    rw [pow_succ, pow_succ', ← mul_assoc, mul_assoc (leftShift 𝕜 E p ^ m),
+      leftShift_mul_rightShift, mul_one, ih]
+
+/-- Operator-composition form of `lp.leftShift_pow_mul_rightShift_pow`. -/
+@[simp]
+theorem leftShift_pow_comp_rightShift_pow (m : ℕ) :
+    (leftShift 𝕜 E p ^ m).comp (rightShift 𝕜 E p ^ m) = ContinuousLinearMap.id 𝕜 ℓ^p(ℕ, E) :=
+  leftShift_pow_mul_rightShift_pow 𝕜 E p m
+
+/-- Pointwise left-inverse identity `leftShift (rightShift f) = f`. -/
 theorem leftInverse_leftShift_rightShift :
     Function.LeftInverse (leftShift 𝕜 E p) (rightShift 𝕜 E p) :=
   leftShift_rightShift 𝕜 E p
+
+/-- Pointwise left-inverse identity `(leftShift ^ m) ((rightShift ^ m) f) = f`. -/
+theorem leftInverse_leftShift_pow_rightShift_pow (m : ℕ) :
+    Function.LeftInverse ⇑(leftShift 𝕜 E p ^ m) ⇑(rightShift 𝕜 E p ^ m) := fun f ↦
+  congr($(leftShift_pow_comp_rightShift_pow 𝕜 E p m) f)
 
 /-- Applying `leftShift` followed by `rightShift` zeroes out the `0`-th coordinate. -/
 theorem rightShift_leftShift (f : ℓ^p(ℕ, E)) :
@@ -210,13 +237,20 @@ theorem rightShift_leftShift (f : ℓ^p(ℕ, E)) :
   · simp [lp.single_apply]
   · simp [lp.single_apply]
 
-/-- The defect `id - rightShift ∘ leftShift` is the rank-one coordinate projection at `0`. -/
+/-- The defect `id - rightShift ∘ leftShift` is the coordinate projection onto coordinate `0`. -/
 theorem id_sub_rightShift_comp_leftShift :
     ContinuousLinearMap.id 𝕜 ℓ^p(ℕ, E) - (rightShift 𝕜 E p).comp (leftShift 𝕜 E p) =
       (singleContinuousLinearMap 𝕜 (fun _ : ℕ ↦ E) p 0).comp
         (evalCLM 𝕜 (fun _ : ℕ ↦ E) p 0) := by
   ext f n
   simp [rightShift_leftShift, sub_sub_cancel]
+
+/-- Endomorphism-ring form of `lp.id_sub_rightShift_comp_leftShift`. -/
+theorem one_sub_rightShift_mul_leftShift :
+    1 - rightShift 𝕜 E p * leftShift 𝕜 E p =
+      (singleContinuousLinearMap 𝕜 (fun _ : ℕ ↦ E) p 0).comp
+        (evalCLM 𝕜 (fun _ : ℕ ↦ E) p 0) :=
+  id_sub_rightShift_comp_leftShift 𝕜 E p
 
 @[simp]
 theorem evalCLM_zero_comp_rightShift :
@@ -239,26 +273,42 @@ theorem evalCLM_comp_leftShift (n : ℕ) :
   simp
 
 @[simp]
+theorem rightShift_comp_singleContinuousLinearMap (n : ℕ) :
+    (rightShift 𝕜 E p).comp (singleContinuousLinearMap 𝕜 (fun _ : ℕ ↦ E) p n) =
+      singleContinuousLinearMap 𝕜 (fun _ : ℕ ↦ E) p (n + 1) := by
+  ext x m
+  simp
+
+@[simp]
 theorem leftShift_comp_singleContinuousLinearMap_zero :
     (leftShift 𝕜 E p).comp (singleContinuousLinearMap 𝕜 (fun _ : ℕ ↦ E) p 0) = 0 := by
   ext x n
   simp
 
-theorem injective_rightShift : Function.Injective (rightShift 𝕜 E p) :=
+@[simp]
+theorem leftShift_comp_singleContinuousLinearMap_succ (n : ℕ) :
+    (leftShift 𝕜 E p).comp (singleContinuousLinearMap 𝕜 (fun _ : ℕ ↦ E) p (n + 1)) =
+      singleContinuousLinearMap 𝕜 (fun _ : ℕ ↦ E) p n := by
+  ext x m
+  simp
+
+/-- The unilateral right shift on `ℓ^p(ℕ, E)` is injective. -/
+theorem rightShift_injective : Function.Injective (rightShift 𝕜 E p) :=
   (leftInverse_leftShift_rightShift 𝕜 E p).injective
 
-theorem surjective_leftShift : Function.Surjective (leftShift 𝕜 E p) :=
+/-- The unilateral left shift on `ℓ^p(ℕ, E)` is surjective. -/
+theorem leftShift_surjective : Function.Surjective (leftShift 𝕜 E p) :=
   (leftInverse_leftShift_rightShift 𝕜 E p).surjective
 
 @[simp]
 theorem ker_rightShift :
     LinearMap.ker (rightShift 𝕜 E p).toLinearMap = ⊥ :=
-  LinearMap.ker_eq_bot.2 (injective_rightShift 𝕜 E p)
+  LinearMap.ker_eq_bot.2 (rightShift_injective 𝕜 E p)
 
 @[simp]
 theorem range_leftShift :
     LinearMap.range (leftShift 𝕜 E p).toLinearMap = ⊤ :=
-  LinearMap.range_eq_top.2 (surjective_leftShift 𝕜 E p)
+  LinearMap.range_eq_top.2 (leftShift_surjective 𝕜 E p)
 
 /-- The range of the unilateral right shift consists of those sequences vanishing at `0`. -/
 theorem range_rightShift :
@@ -271,6 +321,12 @@ theorem range_rightShift :
     exact rightShift_apply_zero 𝕜 E p f
   · simp [rightShift_leftShift, hg]
 
+private theorem eq_single_zero_of_leftShift_eq_zero {f : ℓ^p(ℕ, E)}
+    (hf : leftShift 𝕜 E p f = 0) : f = lp.single p 0 (f 0) := by
+  have h := rightShift_leftShift 𝕜 E p f
+  rw [hf, map_zero, eq_comm, sub_eq_zero] at h
+  exact h
+
 /-- The kernel of the unilateral left shift is the image of the `0`-th coordinate inclusion. -/
 theorem ker_leftShift :
     LinearMap.ker (leftShift 𝕜 E p).toLinearMap =
@@ -278,47 +334,46 @@ theorem ker_leftShift :
   ext f
   simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, LinearMap.mem_range,
     singleContinuousLinearMap_apply]
-  refine ⟨fun hf ↦ ⟨f 0, ?_⟩, ?_⟩
-  · have := rightShift_leftShift 𝕜 E p f
-    rw [hf, map_zero, eq_comm, sub_eq_zero] at this
-    exact this.symm
-  · rintro ⟨x, rfl⟩
-    exact leftShift_single_zero 𝕜 E p x
+  refine ⟨fun hf ↦ ⟨f 0, (eq_single_zero_of_leftShift_eq_zero 𝕜 E p hf).symm⟩, ?_⟩
+  rintro ⟨x, rfl⟩
+  exact leftShift_single_zero 𝕜 E p x
 
-/-- The kernel of `leftShift` is linearly isomorphic to the fiber `E` via the `0`-th coordinate. -/
+private theorem leftInverse_evalCLM_zero_single_zero :
+    Function.LeftInverse ⇑(evalCLM 𝕜 (fun _ : ℕ ↦ E) p 0)
+      (singleContinuousLinearMap 𝕜 (fun _ : ℕ ↦ E) p 0).toLinearMap :=
+  fun x ↦ by simp
+
+/-- The kernel of `leftShift` is linearly isomorphic to the fiber `E` via evaluation at `0`. -/
 noncomputable def kerLeftShiftEquiv :
-    E ≃ₗ[𝕜] LinearMap.ker (leftShift 𝕜 E p).toLinearMap where
-  toFun x := ⟨lp.single p 0 x, by simp⟩
-  map_add' x y := by ext n; simp [lp.single_add]
-  map_smul' c x := by ext n; simp [lp.single_smul]
-  invFun f := (f : ℓ^p(ℕ, E)) 0
-  left_inv x := by simp
-  right_inv f := by
-    ext n
-    have hf : leftShift 𝕜 E p f.1 = 0 := f.2
-    have h := rightShift_leftShift 𝕜 E p f.1
-    rw [hf, map_zero, eq_comm, sub_eq_zero] at h
-    exact congrFun (congrArg Subtype.val h.symm) n
+    LinearMap.ker (leftShift 𝕜 E p).toLinearMap ≃ₗ[𝕜] E :=
+  (LinearEquiv.ofEq _ _ (ker_leftShift 𝕜 E p)).trans
+    (LinearEquiv.ofLeftInverse (leftInverse_evalCLM_zero_single_zero 𝕜 E p)).symm
 
 @[simp]
-theorem coe_kerLeftShiftEquiv_apply (x : E) :
-    (kerLeftShiftEquiv 𝕜 E p x : ℓ^p(ℕ, E)) = lp.single p 0 x := (rfl)
+theorem kerLeftShiftEquiv_apply (f : LinearMap.ker (leftShift 𝕜 E p).toLinearMap) :
+    kerLeftShiftEquiv 𝕜 E p f = (f : ℓ^p(ℕ, E)) 0 := by
+  simp [kerLeftShiftEquiv]
 
 @[simp]
-theorem kerLeftShiftEquiv_symm_apply
-    (f : LinearMap.ker (leftShift 𝕜 E p).toLinearMap) :
-    (kerLeftShiftEquiv 𝕜 E p).symm f = (f : ℓ^p(ℕ, E)) 0 := (rfl)
+theorem coe_kerLeftShiftEquiv_symm_apply (x : E) :
+    ((kerLeftShiftEquiv 𝕜 E p).symm x : ℓ^p(ℕ, E)) = lp.single p 0 x := by
+  simp [kerLeftShiftEquiv]
+
+private theorem evalCLM_zero_surjective :
+    Function.Surjective (evalCLM 𝕜 (fun _ : ℕ ↦ E) p 0).toLinearMap :=
+  fun x ↦ ⟨lp.single p 0 x, by simp⟩
 
 /-- The cokernel of `rightShift` is linearly isomorphic to `E` via evaluation at `0`. -/
 noncomputable def cokerRightShiftEquiv :
     (ℓ^p(ℕ, E) ⧸ LinearMap.range (rightShift 𝕜 E p).toLinearMap) ≃ₗ[𝕜] E :=
   (Submodule.quotEquivOfEq _ _ (range_rightShift 𝕜 E p)).trans <|
-    (evalCLM 𝕜 (fun _ : ℕ ↦ E) p 0).toLinearMap.quotKerEquivOfSurjective fun x ↦
-      ⟨lp.single p 0 x, by simp⟩
+    (evalCLM 𝕜 (fun _ : ℕ ↦ E) p 0).toLinearMap.quotKerEquivOfSurjective
+      (evalCLM_zero_surjective 𝕜 E p)
 
 @[simp]
 theorem cokerRightShiftEquiv_mk (f : ℓ^p(ℕ, E)) :
-    cokerRightShiftEquiv 𝕜 E p (Submodule.Quotient.mk f) = f 0 := (rfl)
+    cokerRightShiftEquiv 𝕜 E p (Submodule.Quotient.mk f) = f 0 := by
+  simp [cokerRightShiftEquiv]
 
 @[simp]
 theorem cokerRightShiftEquiv_symm_apply (x : E) :
@@ -327,17 +382,25 @@ theorem cokerRightShiftEquiv_symm_apply (x : E) :
   simp
 
 /-- The unilateral right shift on `ℓ^p(ℕ, E)` is a closed topological embedding. -/
-theorem isClosedEmbedding_rightShift : IsClosedEmbedding (rightShift 𝕜 E p) := by
-  refine IsClosedEmbedding.of_continuous_injective_isClosedMap (rightShift 𝕜 E p).continuous
-    (injective_rightShift 𝕜 E p) ?_
-  refine (isometry_rightShift 𝕜 E p).isEmbedding.isClosedMap ?_
-  rw [← ContinuousLinearMap.coe_coe, ← LinearMap.coe_range, range_rightShift]
-  exact (evalCLM 𝕜 (fun _ : ℕ ↦ E) p 0).isClosed_ker
+theorem isClosedEmbedding_rightShift : IsClosedEmbedding (rightShift 𝕜 E p) :=
+  (leftInverse_leftShift_rightShift 𝕜 E p).isClosedEmbedding
+    (leftShift 𝕜 E p).continuous (rightShift 𝕜 E p).continuous
+
+/-- Every natural-number power of the unilateral right shift on `ℓ^p(ℕ, E)` is a closed topological
+embedding. -/
+theorem isClosedEmbedding_rightShift_pow (m : ℕ) : IsClosedEmbedding ⇑(rightShift 𝕜 E p ^ m) :=
+  (leftInverse_leftShift_pow_rightShift_pow 𝕜 E p m).isClosedEmbedding
+    (leftShift 𝕜 E p ^ m).continuous (rightShift 𝕜 E p ^ m).continuous
 
 /-- The unilateral left shift on `ℓ^p(ℕ, E)` is a quotient map. -/
 theorem isQuotientMap_leftShift : IsQuotientMap (leftShift 𝕜 E p) :=
   IsQuotientMap.of_inverse (rightShift 𝕜 E p).continuous (leftShift 𝕜 E p).continuous
     (leftInverse_leftShift_rightShift 𝕜 E p)
+
+/-- Every natural-number power of the unilateral left shift on `ℓ^p(ℕ, E)` is a quotient map. -/
+theorem isQuotientMap_leftShift_pow (m : ℕ) : IsQuotientMap ⇑(leftShift 𝕜 E p ^ m) :=
+  IsQuotientMap.of_inverse (rightShift 𝕜 E p ^ m).continuous (leftShift 𝕜 E p ^ m).continuous
+    (leftInverse_leftShift_pow_rightShift_pow 𝕜 E p m)
 
 end BoundedSMul
 
@@ -381,7 +444,8 @@ theorem inner_rightShift_left (f g : ℓ²(ℕ, E)) :
   have h₁ := (hasSum_nat_add_iff' 1).2 (lp.hasSum_inner (𝕜 := 𝕜) (rightShift 𝕜 E 2 f) g)
   simp only [Finset.sum_range_one, rightShift_apply_zero, inner_zero_left, sub_zero,
     rightShift_apply_succ] at h₁
-  exact h₁.unique (lp.hasSum_inner (𝕜 := 𝕜) f (leftShift 𝕜 E 2 g))
+  exact h₁.unique
+    (by simpa only [leftShift_apply] using lp.hasSum_inner (𝕜 := 𝕜) f (leftShift 𝕜 E 2 g))
 
 /-- On `ℓ²(ℕ, E)`, `leftShift` and `rightShift` are formal adjoints with respect to the inner
 product. -/
@@ -406,76 +470,18 @@ theorem adjoint_leftShift [CompleteSpace E] :
     ContinuousLinearMap.adjoint (leftShift 𝕜 E 2) = rightShift 𝕜 E 2 := by
   rw [← adjoint_rightShift, ContinuousLinearMap.adjoint_adjoint]
 
+/-- C*-algebra star form of `lp.adjoint_rightShift`. -/
+@[simp]
+theorem star_rightShift [CompleteSpace E] :
+    star (rightShift 𝕜 E 2) = leftShift 𝕜 E 2 := by
+  rw [ContinuousLinearMap.star_eq_adjoint, adjoint_rightShift]
+
+/-- C*-algebra star form of `lp.adjoint_leftShift`. -/
+@[simp]
+theorem star_leftShift [CompleteSpace E] :
+    star (leftShift 𝕜 E 2) = rightShift 𝕜 E 2 := by
+  rw [ContinuousLinearMap.star_eq_adjoint, adjoint_leftShift]
+
 end Adjoint
-
-section Fredholm
-
-section Fiber
-
-variable (𝕜 E : Type*) (p : ℝ≥0∞) [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [Fact (1 ≤ p)]
-
-/-- The unilateral left shift on `ℓ^p(ℕ, E)` has index `finrank 𝕜 E`. -/
-@[simp]
-theorem index_leftShift :
-    (leftShift 𝕜 E p).index = (finrank 𝕜 E : ℤ) := by
-  rw [(leftShift 𝕜 E p).index_of_surjective (surjective_leftShift 𝕜 E p),
-    (kerLeftShiftEquiv 𝕜 E p).finrank_eq]
-
-/-- The unilateral right shift on `ℓ^p(ℕ, E)` has index `-finrank 𝕜 E`. -/
-@[simp]
-theorem index_rightShift :
-    (rightShift 𝕜 E p).index = -(finrank 𝕜 E : ℤ) := by
-  rw [(rightShift 𝕜 E p).index_of_injective (injective_rightShift 𝕜 E p),
-    (cokerRightShiftEquiv 𝕜 E p).finrank_eq]
-
-/-- For finite-dimensional `E`, the unilateral right shift on `ℓ^p(ℕ, E)` is Fredholm. -/
-theorem isFredholm_rightShift [FiniteDimensional 𝕜 E] :
-    (rightShift 𝕜 E p).IsFredholm :=
-  (isClosedEmbedding_rightShift 𝕜 E p).isFredholm
-    (Module.Finite.equiv (cokerRightShiftEquiv 𝕜 E p).symm)
-
-/-- The unilateral right shift on `ℓ^p(ℕ, E)` is Fredholm if and only if `E` is
-finite-dimensional. -/
-@[simp]
-theorem isFredholm_rightShift_iff :
-    (rightShift 𝕜 E p).IsFredholm ↔ FiniteDimensional 𝕜 E := by
-  refine ⟨fun h ↦ ?_, fun _ ↦ isFredholm_rightShift 𝕜 E p⟩
-  have := h.finite_coker
-  exact (cokerRightShiftEquiv 𝕜 E p).finiteDimensional
-
-/-- For finite-dimensional `E`, the unilateral left shift on `ℓ^p(ℕ, E)` is Fredholm. -/
-theorem isFredholm_leftShift [FiniteDimensional 𝕜 E] :
-    (leftShift 𝕜 E p).IsFredholm :=
-  (isQuotientMap_leftShift 𝕜 E p).isFredholm
-    ((leftShift 𝕜 E p).closedComplemented_ker_of_rightInverse (rightShift 𝕜 E p)
-      (leftInverse_leftShift_rightShift 𝕜 E p))
-    (kerLeftShiftEquiv 𝕜 E p).finiteDimensional
-
-/-- The unilateral left shift on `ℓ^p(ℕ, E)` is Fredholm if and only if `E` is
-finite-dimensional. -/
-@[simp]
-theorem isFredholm_leftShift_iff :
-    (leftShift 𝕜 E p).IsFredholm ↔ FiniteDimensional 𝕜 E := by
-  refine ⟨fun h ↦ ?_, fun _ ↦ isFredholm_leftShift 𝕜 E p⟩
-  have := h.finite_ker
-  exact (kerLeftShiftEquiv 𝕜 E p).symm.finiteDimensional
-
-end Fiber
-
-/-- Over a complete nontrivially normed field `𝕜`, every integer is the index of a Fredholm
-endomorphism of `ℓ^p(ℕ, 𝕜)`, realized by powers of the unilateral left or right shift. -/
-theorem exists_isFredholm_and_index_eq (𝕜 : Type*) (p : ℝ≥0∞) [NontriviallyNormedField 𝕜]
-    [CompleteSpace 𝕜] [Fact (1 ≤ p)] (n : ℤ) :
-    ∃ T : ℓ^p(ℕ, 𝕜) →L[𝕜] ℓ^p(ℕ, 𝕜), T.IsFredholm ∧ T.index = n := by
-  rcases Int.eq_nat_or_neg n with ⟨m, rfl | rfl⟩
-  · refine ⟨leftShift 𝕜 𝕜 p ^ m, (isFredholm_leftShift 𝕜 𝕜 p).pow m, ?_⟩
-    rw [(leftShift 𝕜 𝕜 p).index_pow (isFredholm_leftShift 𝕜 𝕜 p) m, index_leftShift,
-      Module.finrank_self, Nat.cast_one, mul_one]
-  · refine ⟨rightShift 𝕜 𝕜 p ^ m, (isFredholm_rightShift 𝕜 𝕜 p).pow m, ?_⟩
-    rw [(rightShift 𝕜 𝕜 p).index_pow (isFredholm_rightShift 𝕜 𝕜 p) m, index_rightShift,
-      Module.finrank_self, Nat.cast_one, mul_neg, mul_one]
-
-end Fredholm
 
 end lp

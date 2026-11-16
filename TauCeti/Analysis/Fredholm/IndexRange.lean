@@ -5,53 +5,56 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Analysis.Fredholm.Prod
-public import TauCeti.Analysis.Normed.Lp.Shift
+public import TauCeti.Analysis.Fredholm.Shift
+public import TauCeti.Analysis.Fredholm.Zero
 import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 
 /-!
 # Range of the Fredholm index
 
 This file determines the values taken by the Fredholm index on `{T : E →L[𝕜] F // T.IsFredholm}`
-across finite, mixed, and infinite dimensions:
+in finite and infinite dimensions (complementing the mixed-dimension emptiness results in
+`TauCeti.Analysis.Fredholm.Basic`):
 
-* **Dimension invariance** (`ContinuousLinearMap.IsFredholm.finiteDimensional_iff`): a Fredholm
-  operator between topological modules over a nontrivially normed field has finite-dimensional
-  domain if and only if it has finite-dimensional codomain. Consequently, when one space is
-  finite-dimensional and the other is infinite-dimensional, the Fredholm locus is empty
-  (`ContinuousLinearMap.isEmpty_fredholm_of_finiteDimensional_left`,
-  `ContinuousLinearMap.isEmpty_fredholm_of_finiteDimensional_right`).
-* **Finite-dimensional spaces** (`ContinuousLinearMap.range_index_fredholm_of_finiteDimensional`):
-  over a complete nontrivially normed field with Hausdorff target, every continuous linear map is
-  Fredholm and the image of the index on the Fredholm locus is the singleton
-  `{(finrank 𝕜 E : ℤ) - finrank 𝕜 F}`.
+* **Finite-dimensional spaces** (`ContinuousLinearMap.range_index_isFredholm_of_finiteDimensional`):
+  between finite-dimensional topological modules over a nontrivially normed field whenever the
+  Fredholm locus is nonempty (for instance when `F` is `T₁`, by
+  `ContinuousLinearMap.instNonemptyIsFredholmOfFiniteDimensional`), the image of the index on the
+  Fredholm locus is the singleton `{(finrank 𝕜 E : ℤ) - finrank 𝕜 F}`.
 * **Infinite-dimensional Hilbert spaces**
   (`ContinuousLinearMap.exists_isFredholm_and_index_eq_self`,
+  `ContinuousLinearMap.IsFredholm.exists_isFredholm_and_index_eq`,
+  `ContinuousLinearMap.index_isFredholm_surjective`,
+  `ContinuousLinearMap.range_index_isFredholm_of_not_finiteDimensional`,
   `ContinuousLinearEquiv.exists_isFredholm_and_index_eq`,
-  `LinearIsometryEquiv.exists_isFredholm_and_index_eq`): if `E` is an infinite-dimensional real or
-  complex Hilbert space (with no separability assumption), every integer `n : ℤ` is the index of a
-  Fredholm endomorphism of `E`, and hence of a Fredholm map `E →L[𝕜] F` along any continuous linear
-  equivalence `E ≃L[𝕜] F` (in particular any unitary equivalence `E ≃ₗᵢ[𝕜] F`).
+  `ContinuousLinearEquiv.exists_index_eq`): if `E` is an infinite-dimensional real or complex
+  Hilbert space (with no separability assumption), every integer `n : ℤ` is the index of a Fredholm
+  endomorphism of `E`, and hence of a Fredholm map `E →L[𝕜] F` whenever `F` is a Hausdorff
+  topological vector space with nonempty Fredholm locus `{T : E →L[𝕜] F // T.IsFredholm}` (or along
+  any continuous linear equivalence `E ≃L[𝕜] F` without topological-group or separation hypotheses
+  on `F`).
 
 The infinite-dimensional construction orthonormalizes a countably infinite linearly independent
-sequence in `E` via Gram–Schmidt, identifies its closed span `K` isometrically with `ℓ²(ℕ, 𝕜)`,
-transports the powers of the unilateral left and right shifts from
-`TauCeti.Analysis.Normed.Lp.Shift` to `K`, and extends them by the identity on `Kᗮ` across the
-orthogonal decomposition `E ≃L[𝕜] K × Kᗮ`.
+sequence in `E` via Gram–Schmidt, embeds `ℓ²(ℕ, 𝕜)` isometrically into `E`, and conjugates the
+product of a unilateral shift power from `TauCeti.Analysis.Fredholm.Shift` with the identity on the
+orthogonal complement across `LinearIsometry.prodOrthogonalRangeEquiv`.
 
 ## Main declarations
 
-* `ContinuousLinearMap.IsFredholm.finiteDimensional_iff`: Fredholm operators preserve and reflect
-  finite dimensionality.
-* `ContinuousLinearMap.range_index_fredholm_of_finiteDimensional`: in finite dimensions, the range
-  of the Fredholm index is `{(finrank 𝕜 E : ℤ) - finrank 𝕜 F}`.
+* `ContinuousLinearMap.range_index_isFredholm_of_finiteDimensional`: in finite dimensions, the
+  range of the Fredholm index on a nonempty Fredholm locus is `{(finrank 𝕜 E : ℤ) - finrank 𝕜 F}`.
 * `ContinuousLinearMap.exists_isFredholm_and_index_eq_self`: every integer is a Fredholm index on an
   infinite-dimensional Hilbert space.
+* `ContinuousLinearMap.IsFredholm.exists_isFredholm_and_index_eq`,
+  `ContinuousLinearMap.index_isFredholm_surjective`,
+  `ContinuousLinearMap.range_index_isFredholm_of_not_finiteDimensional`: every integer is realized
+  on any nonempty Fredholm locus out of an infinite-dimensional Hilbert space into a Hausdorff
+  topological vector space.
 * `ContinuousLinearEquiv.exists_isFredholm_and_index_eq`,
-  `LinearIsometryEquiv.exists_isFredholm_and_index_eq`: every integer is a Fredholm index between
-  continuously linearly (or unitarily) equivalent spaces when the source is an infinite-dimensional
-  Hilbert space.
+  `ContinuousLinearEquiv.exists_index_eq`: every integer is a Fredholm index along a continuous
+  linear equivalence out of an infinite-dimensional Hilbert space.
 
 ## References
 
@@ -71,67 +74,17 @@ section FiniteDimensional
 namespace ContinuousLinearMap
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
-  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [FiniteDimensional 𝕜 E]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [FiniteDimensional 𝕜 F]
 
-/-- A Fredholm operator has finite-dimensional domain if and only if it has finite-dimensional
-codomain. -/
-theorem IsFredholm.finiteDimensional_iff {T : E →L[𝕜] F} (hT : T.IsFredholm) :
-    FiniteDimensional 𝕜 E ↔ FiniteDimensional 𝕜 F := by
-  have := hT.finite_ker
-  have := hT.finite_coker
-  refine ⟨fun _ ↦ Module.Finite.of_submodule_quotient T.range, fun _ ↦ ?_⟩
-  have : FiniteDimensional 𝕜 (E ⧸ T.ker) := T.quotKerEquivRange.symm.finiteDimensional
-  exact Module.Finite.of_submodule_quotient T.ker
-
-/-- No Fredholm operator exists from a finite-dimensional space to an infinite-dimensional space. -/
-theorem not_exists_isFredholm_of_finiteDimensional_left [FiniteDimensional 𝕜 E]
-    (hF : ¬ FiniteDimensional 𝕜 F) : ¬ ∃ T : E →L[𝕜] F, T.IsFredholm :=
-  fun ⟨_, hT⟩ ↦ hF (hT.finiteDimensional_iff.1 inferInstance)
-
-/-- No Fredholm operator exists from an infinite-dimensional space to a finite-dimensional space. -/
-theorem not_exists_isFredholm_of_finiteDimensional_right (hE : ¬ FiniteDimensional 𝕜 E)
-    [FiniteDimensional 𝕜 F] : ¬ ∃ T : E →L[𝕜] F, T.IsFredholm :=
-  fun ⟨_, hT⟩ ↦ hE (hT.finiteDimensional_iff.2 inferInstance)
-
-/-- The Fredholm locus is empty when the domain is finite-dimensional and the codomain is
-infinite-dimensional. -/
-theorem isEmpty_fredholm_of_finiteDimensional_left [FiniteDimensional 𝕜 E]
-    (hF : ¬ FiniteDimensional 𝕜 F) : IsEmpty {T : E →L[𝕜] F // T.IsFredholm} :=
-  ⟨fun T ↦ not_exists_isFredholm_of_finiteDimensional_left hF ⟨T.val, T.property⟩⟩
-
-/-- The Fredholm locus is empty when the domain is infinite-dimensional and the codomain is
-finite-dimensional. -/
-theorem isEmpty_fredholm_of_finiteDimensional_right (hE : ¬ FiniteDimensional 𝕜 E)
-    [FiniteDimensional 𝕜 F] : IsEmpty {T : E →L[𝕜] F // T.IsFredholm} :=
-  ⟨fun T ↦ not_exists_isFredholm_of_finiteDimensional_right hE ⟨T.val, T.property⟩⟩
-
-section BothFinite
-
-variable [CompleteSpace 𝕜]
-  [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] [FiniteDimensional 𝕜 E]
-  [IsTopologicalAddGroup F] [ContinuousSMul 𝕜 F] [T2Space F] [FiniteDimensional 𝕜 F]
-
-/-- Between finite-dimensional topological vector spaces over a complete nontrivially normed field
-(with Hausdorff target), the Fredholm locus is nonempty since `0` is Fredholm. -/
-instance instNonemptyFredholmOfFiniteDimensional :
-    Nonempty {T : E →L[𝕜] F // T.IsFredholm} :=
-  ⟨⟨0, isFredholm_of_finiteDimensional 0⟩⟩
-
-/-- Between finite-dimensional spaces over a complete nontrivially normed field (with Hausdorff
-target), the range of the index on the Fredholm locus is the singleton
+/-- Between finite-dimensional spaces with nonempty Fredholm locus (in particular whenever `F` is
+`T₁`), the range of the index on the Fredholm locus is the singleton
 `{(finrank 𝕜 E : ℤ) - finrank 𝕜 F}`. -/
 @[simp]
-theorem range_index_fredholm_of_finiteDimensional :
+theorem range_index_isFredholm_of_finiteDimensional [Nonempty {T : E →L[𝕜] F // T.IsFredholm}] :
     Set.range (fun T : {T : E →L[𝕜] F // T.IsFredholm} ↦ T.val.index) =
       {(finrank 𝕜 E : ℤ) - finrank 𝕜 F} := by
-  ext n
-  simp only [Set.mem_range, Set.mem_singleton_iff]
-  refine ⟨?_, fun hn ↦ ⟨⟨0, isFredholm_of_finiteDimensional 0⟩, by simp [hn]⟩⟩
-  rintro ⟨T, rfl⟩
-  exact T.val.index_eq_of_finiteDimensional
-
-end BothFinite
+  simp [index_eq_of_finiteDimensional]
 
 end ContinuousLinearMap
 
@@ -148,8 +101,8 @@ namespace ContinuousLinearMap
 Fredholm endomorphism `E →L[𝕜] E`. No separability hypothesis is needed. -/
 theorem exists_isFredholm_and_index_eq_self (hE : ¬ FiniteDimensional 𝕜 E) (n : ℤ) :
     ∃ T : E →L[𝕜] E, T.IsFredholm ∧ T.index = n := by
-  -- Extract a countably infinite orthonormal sequence `v` via Gram–Schmidt, identify its closed
-  -- span `K` with `ℓ²(ℕ, 𝕜)`, transport a power of a shift to `K`, and extend by `id` on `Kᗮ`.
+  -- Orthonormalize a countably infinite linearly independent sequence via Gram–Schmidt, embed
+  -- `ℓ²(ℕ, 𝕜)` into `E`, and conjugate `S.prodMap id` across `φ.prodOrthogonalRangeEquiv`.
   have hinf : (Basis.ofVectorSpaceIndex 𝕜 E).Infinite :=
     fun hfin ↦ hE (FiniteDimensional.of_finite_basis (Basis.ofVectorSpace 𝕜 E) hfin)
   let e := hinf.natEmbedding (Basis.ofVectorSpaceIndex 𝕜 E)
@@ -158,35 +111,53 @@ theorem exists_isFredholm_and_index_eq_self (hE : ¬ FiniteDimensional 𝕜 E) (
     InnerProductSpace.gramSchmidtNormed_orthonormal
       ((Basis.ofVectorSpace 𝕜 E).linearIndependent.comp _ e.injective)
   let φ : ℓ²(ℕ, 𝕜) →ₗᵢ[𝕜] E := hv.orthogonalFamily.linearIsometry
-  let K : Submodule 𝕜 E := LinearMap.range φ.toLinearMap
-  let eK : ℓ²(ℕ, 𝕜) ≃L[𝕜] K := φ.equivRange.toContinuousLinearEquiv
-  have : CompleteSpace K := φ.equivRange.symm.toIsometryEquiv.completeSpace
-  let eE : (K × Kᗮ) ≃L[𝕜] E := K.prodEquivOfIsTopCompl Kᗮ K.isTopCompl_orthogonal
+  let eE := φ.prodOrthogonalRangeEquiv
   obtain ⟨S, hS, hind⟩ := lp.exists_isFredholm_and_index_eq 𝕜 2 n
-  let S' : K →L[𝕜] K := ((eK : ℓ²(ℕ, 𝕜) →L[𝕜] K).comp S).comp (eK.symm : K →L[𝕜] ℓ²(ℕ, 𝕜))
-  have hS' : S'.IsFredholm := (hS.equiv_comp eK).comp_equiv eK.symm
-  have hind' : S'.index = n := by simp [S', hind]
   let T : E →L[𝕜] E :=
-    ((eE : K × Kᗮ →L[𝕜] E).comp (S'.prodMap (.id 𝕜 Kᗮ))).comp (eE.symm : E →L[𝕜] K × Kᗮ)
-  refine ⟨T, ((hS'.prodMap .id).equiv_comp eE).comp_equiv eE.symm, ?_⟩
-  have := hS'.finite_ker
-  have := hS'.finite_coker
-  have := (IsFredholm.id (𝕜 := 𝕜) (E := Kᗮ)).finite_ker
-  have := (IsFredholm.id (𝕜 := 𝕜) (E := Kᗮ)).finite_coker
-  simp [T, hind']
+    (eE.toContinuousLinearMap.comp (S.prodMap (.id 𝕜 _))).comp eE.symm.toContinuousLinearMap
+  refine ⟨T, ((hS.prodMap .id).equiv_comp eE).comp_equiv eE.symm, ?_⟩
+  have := hS.finite_ker
+  have := hS.finite_coker
+  have := (IsFredholm.id (𝕜 := 𝕜) (E := (LinearMap.range φ.toLinearMap)ᗮ)).finite_ker
+  have := (IsFredholm.id (𝕜 := 𝕜) (E := (LinearMap.range φ.toLinearMap)ᗮ)).finite_coker
+  simp [T, hind]
 
-/-- On an infinite-dimensional Hilbert space `E`, the Fredholm index surjects onto `ℤ`. -/
-theorem surjective_index_fredholm_self (hE : ¬ FiniteDimensional 𝕜 E) :
-    Function.Surjective (fun T : {T : E →L[𝕜] E // T.IsFredholm} ↦ T.val.index) := fun n ↦ by
-  obtain ⟨T, hT, hind⟩ := exists_isFredholm_and_index_eq_self hE n
+section Nonempty
+
+variable {F : Type*} [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [Module 𝕜 F] [ContinuousSMul 𝕜 F] [T2Space F]
+
+/-- Given any Fredholm operator `T₀ : E →L[𝕜] F` out of an infinite-dimensional Hilbert space `E`
+into a Hausdorff topological vector space `F`, every integer `n : ℤ` is the index of a Fredholm
+operator `E →L[𝕜] F`. -/
+theorem IsFredholm.exists_isFredholm_and_index_eq {T₀ : E →L[𝕜] F} (hT₀ : T₀.IsFredholm)
+    (hE : ¬ FiniteDimensional 𝕜 E) (n : ℤ) :
+    ∃ T : E →L[𝕜] F, T.IsFredholm ∧ T.index = n := by
+  obtain ⟨S, hS, hind⟩ := exists_isFredholm_and_index_eq_self hE (n - T₀.index)
+  refine ⟨T₀.comp S, hT₀.comp hS, ?_⟩
+  have hcomp := hT₀.index_comp hS
+  rw [← index_def, ← index_def, ← index_def, hind] at hcomp
+  omega
+
+/-- Out of an infinite-dimensional Hilbert space `E` into a Hausdorff topological vector space `F`
+with nonempty Fredholm locus (in particular for `F = E`), the Fredholm index surjects onto `ℤ`. -/
+theorem index_isFredholm_surjective [Nonempty {T : E →L[𝕜] F // T.IsFredholm}]
+    (hE : ¬ FiniteDimensional 𝕜 E) :
+    Function.Surjective (fun T : {T : E →L[𝕜] F // T.IsFredholm} ↦ T.val.index) := fun n ↦ by
+  obtain ⟨⟨T₀, hT₀⟩⟩ := ‹Nonempty {T : E →L[𝕜] F // T.IsFredholm}›
+  obtain ⟨T, hT, hind⟩ := hT₀.exists_isFredholm_and_index_eq hE n
   exact ⟨⟨T, hT⟩, hind⟩
 
-/-- On an infinite-dimensional Hilbert space `E`, the range of the index on the Fredholm locus is
-all of `ℤ`. -/
+/-- Out of an infinite-dimensional Hilbert space `E` into a Hausdorff topological vector space `F`
+with nonempty Fredholm locus (in particular for `F = E`), the range of the index on the Fredholm
+locus is all of `ℤ`. -/
 @[simp]
-theorem range_index_fredholm_self_of_infiniteDimensional (hE : ¬ FiniteDimensional 𝕜 E) :
-    Set.range (fun T : {T : E →L[𝕜] E // T.IsFredholm} ↦ T.val.index) = Set.univ :=
-  Set.range_eq_univ.2 (surjective_index_fredholm_self hE)
+theorem range_index_isFredholm_of_not_finiteDimensional [Nonempty {T : E →L[𝕜] F // T.IsFredholm}]
+    (hE : ¬ FiniteDimensional 𝕜 E) :
+    Set.range (fun T : {T : E →L[𝕜] F // T.IsFredholm} ↦ T.val.index) = Set.univ :=
+  Set.range_eq_univ.2 (index_isFredholm_surjective hE)
+
+end Nonempty
 
 end ContinuousLinearMap
 
@@ -208,31 +179,6 @@ theorem exists_index_eq (e : E ≃L[𝕜] F) (hE : ¬ FiniteDimensional 𝕜 E) 
   obtain ⟨T, hT, hind⟩ := e.exists_isFredholm_and_index_eq hE n
   exact ⟨⟨T, hT⟩, hind⟩
 
-/-- Under a continuous linear equivalence from an infinite-dimensional Hilbert space `E` to `F`,
-the range of the Fredholm index is all of `ℤ`. -/
-theorem range_index_fredholm (e : E ≃L[𝕜] F) (hE : ¬ FiniteDimensional 𝕜 E) :
-    Set.range (fun T : {T : E →L[𝕜] F // T.IsFredholm} ↦ T.val.index) = Set.univ :=
-  Set.range_eq_univ.2 (e.exists_index_eq hE)
-
 end ContinuousLinearEquiv
-
-namespace LinearIsometryEquiv
-
-variable {F : Type*} [SeminormedAddCommGroup F] [Module 𝕜 F]
-
-/-- If `E` is an infinite-dimensional Hilbert space and `e : E ≃ₗᵢ[𝕜] F` is a linear isometric
-equivalence (for instance a unitary equivalence of Hilbert spaces), every integer is the index of a
-Fredholm operator `E →L[𝕜] F`. -/
-theorem exists_isFredholm_and_index_eq (e : E ≃ₗᵢ[𝕜] F) (hE : ¬ FiniteDimensional 𝕜 E) (n : ℤ) :
-    ∃ T : E →L[𝕜] F, T.IsFredholm ∧ T.index = n :=
-  e.toContinuousLinearEquiv.exists_isFredholm_and_index_eq hE n
-
-/-- Subtype form of `LinearIsometryEquiv.exists_isFredholm_and_index_eq`: every integer is the
-index of an element of the Fredholm locus `{T : E →L[𝕜] F // T.IsFredholm}`. -/
-theorem exists_index_eq (e : E ≃ₗᵢ[𝕜] F) (hE : ¬ FiniteDimensional 𝕜 E) (n : ℤ) :
-    ∃ T : {T : E →L[𝕜] F // T.IsFredholm}, T.val.index = n :=
-  e.toContinuousLinearEquiv.exists_index_eq hE n
-
-end LinearIsometryEquiv
 
 end Hilbert

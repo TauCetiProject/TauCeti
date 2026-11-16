@@ -29,6 +29,13 @@ intended throughout.
 
 ## Main declarations
 
+* `ContinuousLinearMap.instNonemptyIsFredholmSelf`: the Fredholm endomorphism locus `{T : E →L[𝕜]
+  E // T.IsFredholm}` is nonempty, witnessed by the identity operator.
+* `ContinuousLinearMap.IsFredholm.finiteDimensional_iff`: a Fredholm operator has
+  finite-dimensional domain if and only if it has finite-dimensional codomain; consequently, the
+  Fredholm locus is empty in mixed dimension
+  (`ContinuousLinearMap.isEmpty_isFredholm_of_finiteDimensional_of_not_finiteDimensional`,
+  `ContinuousLinearMap.isEmpty_isFredholm_of_not_finiteDimensional_of_finiteDimensional`).
 * `ContinuousLinearMap.isFredholm_of_finiteDimensional`: every operator between finite-dimensional
   topological vector spaces over a complete scalar field, with Hausdorff target, is Fredholm.
 * `ContinuousLinearMap.IsFredholm.neg`, `ContinuousLinearMap.IsFredholm.smul`: Fredholmness is
@@ -61,6 +68,46 @@ variable {E F G : Type*}
 variable [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
 variable [AddCommGroup F] [TopologicalSpace F] [Module 𝕜 F]
 variable [AddCommGroup G] [TopologicalSpace G] [Module 𝕜 G]
+
+/-- The Fredholm endomorphism locus `{T : E →L[𝕜] E // T.IsFredholm}` is nonempty, witnessed by the
+identity operator. -/
+instance instNonemptyIsFredholmSelf : Nonempty {T : E →L[𝕜] E // T.IsFredholm} :=
+  ⟨⟨.id 𝕜 E, .id⟩⟩
+
+/-- A Fredholm operator has finite-dimensional domain if and only if it has finite-dimensional
+codomain. -/
+theorem IsFredholm.finiteDimensional_iff {T : E →L[𝕜] F} (hT : T.IsFredholm) :
+    FiniteDimensional 𝕜 E ↔ FiniteDimensional 𝕜 F := by
+  have := hT.finite_ker
+  have := hT.finite_coker
+  refine ⟨fun _ ↦ Module.Finite.of_submodule_quotient T.range, fun _ ↦ ?_⟩
+  have : FiniteDimensional 𝕜 (E ⧸ T.ker) := T.quotKerEquivRange.symm.finiteDimensional
+  exact Module.Finite.of_submodule_quotient T.ker
+
+/-- No Fredholm operator exists from a finite-dimensional space to an infinite-dimensional space. -/
+theorem not_exists_isFredholm_of_finiteDimensional_of_not_finiteDimensional [FiniteDimensional 𝕜 E]
+    (hF : ¬ FiniteDimensional 𝕜 F) : ¬ ∃ T : E →L[𝕜] F, T.IsFredholm :=
+  fun ⟨_, hT⟩ ↦ hF (hT.finiteDimensional_iff.1 inferInstance)
+
+/-- No Fredholm operator exists from an infinite-dimensional space to a finite-dimensional space. -/
+theorem not_exists_isFredholm_of_not_finiteDimensional_of_finiteDimensional
+    (hE : ¬ FiniteDimensional 𝕜 E) [FiniteDimensional 𝕜 F] : ¬ ∃ T : E →L[𝕜] F, T.IsFredholm :=
+  fun ⟨_, hT⟩ ↦ hE (hT.finiteDimensional_iff.2 inferInstance)
+
+/-- The Fredholm locus is empty when the domain is finite-dimensional and the codomain is
+infinite-dimensional. -/
+theorem isEmpty_isFredholm_of_finiteDimensional_of_not_finiteDimensional [FiniteDimensional 𝕜 E]
+    (hF : ¬ FiniteDimensional 𝕜 F) : IsEmpty {T : E →L[𝕜] F // T.IsFredholm} :=
+  ⟨fun T ↦ not_exists_isFredholm_of_finiteDimensional_of_not_finiteDimensional hF
+    ⟨T.val, T.property⟩⟩
+
+/-- The Fredholm locus is empty when the domain is infinite-dimensional and the codomain is
+finite-dimensional. -/
+theorem isEmpty_isFredholm_of_not_finiteDimensional_of_finiteDimensional
+    (hE : ¬ FiniteDimensional 𝕜 E) [FiniteDimensional 𝕜 F] :
+    IsEmpty {T : E →L[𝕜] F // T.IsFredholm} :=
+  ⟨fun T ↦ not_exists_isFredholm_of_not_finiteDimensional_of_finiteDimensional hE
+    ⟨T.val, T.property⟩⟩
 
 section FiniteDimensional
 
