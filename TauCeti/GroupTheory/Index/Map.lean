@@ -30,12 +30,15 @@ for instance the local factor `[E₂(K) : φ E₁(K)] / #E₁(K)[φ]` of an isog
 
 * `Subgroup.index_map_mul_relIndex_ker`: the image-index factorization for groups.
 * `AddSubgroup.index_map_mul_relIndex_ker`: the same factorization for additive groups.
+* `Subgroup.index_smul`: pointwise action by a group preserves subgroup index.
 * `MonoidHom.index_range_mul_index_mul_card_inf_ker` and its additive form
   `AddMonoidHom.index_range_mul_index_mul_card_inf_ker`: the identity displayed above.
 
 For a subgroup `H` and a surjective homomorphism `f` with proof `hf`, use
 `H.index_map_mul_relIndex_ker f hf`. The same dot notation works for additive subgroups.
 -/
+
+open scoped Pointwise
 
 public section
 
@@ -56,6 +59,13 @@ theorem index_map_mul_relIndex_ker (H : Subgroup G) (f : G →* G')
     ← _root_.Subgroup.relIndex_sup_of_le_normalizer
       (H := H) (N := f.ker) _root_.Subgroup.le_normalizer_of_normal, mul_comm]
   exact _root_.Subgroup.relIndex_mul_index (H := H) (K := H ⊔ f.ker) le_sup_left
+
+/-- Pointwise action by a `MulDistribMulAction` preserves subgroup index (the multiplicative
+counterpart of `AddSubgroup.index_smul`). -/
+@[simp]
+theorem index_smul {α : Type*} [Group α] [MulDistribMulAction α G] (a : α)
+    (H : Subgroup G) : (a • H).index = H.index :=
+  index_map_of_bijective (MulAction.bijective a) H
 
 end Subgroup
 
