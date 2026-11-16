@@ -64,36 +64,6 @@ variable {O : Type*} [CommRing O] [IsDedekindDomain O]
   {K : Type*} [Field K] [Algebra O K] [IsFractionRing O K]
   (v : HeightOneSpectrum O)
 
-private theorem algebraMap_comp_localizationToCompletionIntegers :
-    (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)).comp
-        (v.localizationToCompletionIntegers (K := K)) =
-      (algebraMap K (v.adicCompletion K)).comp
-        (algebraMap (Localization.AtPrime v.asIdeal) K) := by
-  refine IsLocalization.ringHom_ext v.asIdeal.primeCompl (RingHom.ext fun x ↦ ?_)
-  simp only [RingHom.comp_apply, localizationToCompletionIntegers_algebraMap,
-    ← IsScalarTower.algebraMap_apply O (Localization.AtPrime v.asIdeal) K]
-  exact IsScalarTower.algebraMap_apply O (v.adicCompletionIntegers K) (v.adicCompletion K) x
-
-private theorem isInteger_adicCompletionIntegers_algebraMap_iff (a : K) :
-    (∃ r : v.adicCompletionIntegers K,
-        algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) r =
-          algebraMap K (v.adicCompletion K) a) ↔
-      ∃ r : Localization.AtPrime v.asIdeal,
-        algebraMap (Localization.AtPrime v.asIdeal) K r = a := by
-  have hv₁ := adicCompletionIntegers.integers K v
-  have hv₂ := v.integers_valuation_of_isLocalizationAtPrime
-    (Localization.AtPrime v.asIdeal) (K := K)
-  have h₁ : (∃ r : v.adicCompletionIntegers K,
-      algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) r =
-        algebraMap K (v.adicCompletion K) a) ↔
-      Valued.v (algebraMap K (v.adicCompletion K) a) ≤ 1 :=
-    ⟨fun ⟨r, hr⟩ ↦ hr ▸ hv₁.map_le_one r, fun h ↦ hv₁.exists_of_le_one h⟩
-  have h₂ : (∃ r : Localization.AtPrime v.asIdeal,
-      algebraMap (Localization.AtPrime v.asIdeal) K r = a) ↔ v.valuation K a ≤ 1 :=
-    ⟨fun ⟨r, hr⟩ ↦ hr ▸ hv₂.map_le_one r, fun h ↦ hv₂.exists_of_le_one h⟩
-  rw [h₁, h₂, algebraMap_adicCompletion, Function.comp_apply,
-    valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
-
 /-- A Weierstrass equation over `K` becomes integral over `O_v` after base change to `K_v` if and
 only if it is integral over the localization `Oᵥ`. -/
 @[simp]
@@ -102,68 +72,27 @@ theorem isIntegral_adicCompletionIntegers_baseChange_iff (W : WeierstrassCurve K
       IsIntegral (Localization.AtPrime v.asIdeal) W := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · refine isIntegral_of_exists_lift (Localization.AtPrime v.asIdeal)
-      ((isInteger_adicCompletionIntegers_algebraMap_iff v W.a₁).mp
+      ((v.isInteger_adicCompletionIntegers_algebraMap_iff W.a₁).mp
         ⟨_, (integralModel_a₁_eq _ (W.baseChange (v.adicCompletion K))).trans (by simp)⟩)
-      ((isInteger_adicCompletionIntegers_algebraMap_iff v W.a₂).mp
+      ((v.isInteger_adicCompletionIntegers_algebraMap_iff W.a₂).mp
         ⟨_, (integralModel_a₂_eq _ (W.baseChange (v.adicCompletion K))).trans (by simp)⟩)
-      ((isInteger_adicCompletionIntegers_algebraMap_iff v W.a₃).mp
+      ((v.isInteger_adicCompletionIntegers_algebraMap_iff W.a₃).mp
         ⟨_, (integralModel_a₃_eq _ (W.baseChange (v.adicCompletion K))).trans (by simp)⟩)
-      ((isInteger_adicCompletionIntegers_algebraMap_iff v W.a₄).mp
+      ((v.isInteger_adicCompletionIntegers_algebraMap_iff W.a₄).mp
         ⟨_, (integralModel_a₄_eq _ (W.baseChange (v.adicCompletion K))).trans (by simp)⟩)
-      ((isInteger_adicCompletionIntegers_algebraMap_iff v W.a₆).mp
+      ((v.isInteger_adicCompletionIntegers_algebraMap_iff W.a₆).mp
         ⟨_, (integralModel_a₆_eq _ (W.baseChange (v.adicCompletion K))).trans (by simp)⟩)
   · let _ : Algebra (Localization.AtPrime v.asIdeal) (v.adicCompletionIntegers K) :=
       (v.localizationToCompletionIntegers (K := K)).toAlgebra
     exact IsIntegral.baseChange
       (R := Localization.AtPrime v.asIdeal) (S := v.adicCompletionIntegers K)
-      (algebraMap_comp_localizationToCompletionIntegers v) W
+      v.algebraMap_comp_localizationToCompletionIntegers W
 
 /-- An equation over `K` integral at `Oᵥ` becomes integral over `O_v` upon completion. -/
 instance isIntegral_adicCompletionIntegers_baseChange (W : WeierstrassCurve K)
     [IsIntegral (Localization.AtPrime v.asIdeal) W] :
     IsIntegral (v.adicCompletionIntegers K) (W.baseChange (v.adicCompletion K)) :=
   (isIntegral_adicCompletionIntegers_baseChange_iff v W).mpr inferInstance
-
-private theorem irreducible_localizationToCompletionIntegers {ϖ : O}
-    (hϖ : v.intValuation ϖ = exp (-1)) :
-    Irreducible (v.localizationToCompletionIntegers (K := K)
-      (algebraMap O (Localization.AtPrime v.asIdeal) ϖ)) := by
-  have hϖ₁ : Irreducible (algebraMap O (Localization.AtPrime v.asIdeal) ϖ) :=
-    v.irreducible_algebraMap_localizationAtPrime hϖ
-  rw [IsDiscreteValuationRing.irreducible_iff_uniformizer, ← Set.image_singleton,
-    ← Ideal.map_span, ← hϖ₁.maximalIdeal_eq, v.maximalIdeal_map_completion]
-
-private theorem pow_dvd_localizationToCompletionIntegers_iff {ϖ : O}
-    (hϖ : v.intValuation ϖ = exp (-1)) (n : ℕ) (x : Localization.AtPrime v.asIdeal) :
-    (v.localizationToCompletionIntegers (K := K)
-        (algebraMap O (Localization.AtPrime v.asIdeal) ϖ)) ^ n ∣
-      v.localizationToCompletionIntegers (K := K) x ↔
-      (algebraMap O (Localization.AtPrime v.asIdeal) ϖ) ^ n ∣ x := by
-  have hϖ₁ : Irreducible (algebraMap O (Localization.AtPrime v.asIdeal) ϖ) :=
-    v.irreducible_algebraMap_localizationAtPrime hϖ
-  have hϖ₂ : Irreducible (v.localizationToCompletionIntegers (K := K)
-      (algebraMap O (Localization.AtPrime v.asIdeal) ϖ)) :=
-    irreducible_localizationToCompletionIntegers v hϖ
-  rw [← Ideal.mem_span_singleton, ← Ideal.span_singleton_pow, ← hϖ₂.maximalIdeal_eq,
-    ← Ideal.mem_span_singleton, ← Ideal.span_singleton_pow, ← hϖ₁.maximalIdeal_eq,
-    v.mem_maximalIdeal_pow_iff]
-  have hx : (v.localizationToCompletionIntegers (K := K) x : v.adicCompletion K) =
-      algebraMap K (v.adicCompletion K) (algebraMap (Localization.AtPrime v.asIdeal) K x) :=
-    RingHom.congr_fun (algebraMap_comp_localizationToCompletionIntegers v) x
-  rw [hx, algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
-    Algebra.algebraMap_self_apply, ← v.valuation_maximalIdeal_localizationAtPrime]
-  have hmax : (IsDiscreteValuationRing.maximalIdeal (Localization.AtPrime v.asIdeal)).asIdeal =
-      IsLocalRing.maximalIdeal (Localization.AtPrime v.asIdeal) := rfl
-  rw [valuation_of_algebraMap, ← hmax, intValuation_le_pow_iff_mem _ x n]
-
-private theorem exists_algebraMap_sub_mem_span_pow (x : v.adicCompletionIntegers K)
-    {ϖ : v.adicCompletionIntegers K} (hϖ : Irreducible ϖ) (n : ℕ) :
-    ∃ a : O, algebraMap O (v.adicCompletionIntegers K) a - x ∈ Ideal.span {ϖ ^ n} := by
-  obtain ⟨a, ha⟩ := v.exists_valued_sub_le (K := K) x n
-  refine ⟨a, ?_⟩
-  rw [← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, v.mem_maximalIdeal_pow_iff,
-    AddSubgroupClass.coe_sub, Valuation.map_sub_swap]
-  exact ha
 
 private theorem pow_dvd_smul_of_sub_mem_span_pow_six {R : Type*} [CommRing R] {ϖ : R}
     {W : WeierstrassCurve R} {r s t r' s' t' : R}
@@ -208,13 +137,17 @@ private theorem exists_pow_dvd_localization_of_not_isMinimal {ϖ₀ : O}
       algebraMap O (Localization.AtPrime v.asIdeal) ϖ₀ ^ 6 ∣ (C₀ • Wo).a₆ := by
   set f := v.localizationToCompletionIntegers (K := K)
   set Wv := Wo.map f
+  have hϖ₁ : Irreducible (algebraMap O (Localization.AtPrime v.asIdeal) ϖ₀) :=
+    v.irreducible_algebraMap_localizationAtPrime hϖ₀
   have hϖ₂ : Irreducible (f (algebraMap O (Localization.AtPrime v.asIdeal) ϖ₀)) :=
-    irreducible_localizationToCompletionIntegers v hϖ₀
+    v.irreducible_localizationToCompletionIntegers_iff.mpr hϖ₁
   obtain ⟨r, s, t, d₁, d₂, d₃, d₄, d₆⟩ :=
     exists_variableChange_pow_dvd_a₁_a₂_a₃_a₄_a₆_of_not_isMinimal hϖ₂ Wv hnot
-  obtain ⟨r₀, hr₀⟩ := exists_algebraMap_sub_mem_span_pow v r hϖ₂ 6
-  obtain ⟨s₀, hs₀⟩ := exists_algebraMap_sub_mem_span_pow v s hϖ₂ 6
-  obtain ⟨t₀, ht₀⟩ := exists_algebraMap_sub_mem_span_pow v t hϖ₂ 6
+  have hϖ₂6 : f (algebraMap O (Localization.AtPrime v.asIdeal) ϖ₀) ^ 6 ≠ 0 :=
+    pow_ne_zero 6 hϖ₂.ne_zero
+  obtain ⟨r₀, hr₀⟩ := v.exists_algebraMap_sub_mem_span_singleton r hϖ₂6
+  obtain ⟨s₀, hs₀⟩ := v.exists_algebraMap_sub_mem_span_singleton s hϖ₂6
+  obtain ⟨t₀, ht₀⟩ := v.exists_algebraMap_sub_mem_span_singleton t hϖ₂6
   set C₀ : VariableChange (Localization.AtPrime v.asIdeal) :=
     VariableChange.mk 1 (algebraMap O _ r₀) (algebraMap O _ s₀) (algebraMap O _ t₀)
   have hC₀ : (C₀ • Wo).map f =
@@ -227,12 +160,12 @@ private theorem exists_pow_dvd_localization_of_not_isMinimal {ϖ₀ : O}
   obtain ⟨d₁', d₂', d₃', d₄', d₆'⟩ :=
     pow_dvd_smul_of_sub_mem_span_pow_six hr₀ hs₀ ht₀ d₁ d₂ d₃ d₄ d₆
   rw [← hC₀] at d₁' d₂' d₃' d₄' d₆'
-  exact ⟨C₀, by simpa using
-      (pow_dvd_localizationToCompletionIntegers_iff v hϖ₀ 1 _).mp (by simpa using d₁'),
-    (pow_dvd_localizationToCompletionIntegers_iff v hϖ₀ 2 _).mp d₂',
-    (pow_dvd_localizationToCompletionIntegers_iff v hϖ₀ 3 _).mp d₃',
-    (pow_dvd_localizationToCompletionIntegers_iff v hϖ₀ 4 _).mp d₄',
-    (pow_dvd_localizationToCompletionIntegers_iff v hϖ₀ 6 _).mp d₆'⟩
+  exact ⟨C₀,
+    by rwa [map_a₁, v.localizationToCompletionIntegers_dvd_iff] at d₁',
+    by rwa [← map_pow, map_a₂, v.localizationToCompletionIntegers_dvd_iff] at d₂',
+    by rwa [← map_pow, map_a₃, v.localizationToCompletionIntegers_dvd_iff] at d₃',
+    by rwa [← map_pow, map_a₄, v.localizationToCompletionIntegers_dvd_iff] at d₄',
+    by rwa [← map_pow, map_a₆, v.localizationToCompletionIntegers_dvd_iff] at d₆'⟩
 
 /-- **Minimality is preserved and reflected by adic completion**: an elliptic Weierstrass equation
 `W` over `K` becomes minimal over `O_v` upon base change to `K_v` if and only if `W` is minimal
@@ -250,7 +183,7 @@ theorem isMinimal_adicCompletionIntegers_baseChange_iff (W : WeierstrassCurve K)
     set Wv := Wo.map f
     have hWo : Wo.baseChange K = W := baseChange_integralModel_eq _ W
     have hWv : Wv.baseChange (v.adicCompletion K) = W.baseChange (v.adicCompletion K) :=
-      baseChange_map_integralModel (algebraMap_comp_localizationToCompletionIntegers v) W
+      baseChange_map_integralModel v.algebraMap_comp_localizationToCompletionIntegers W
     have hΔo : Wo.Δ ≠ 0 := fun h ↦ W.isUnit_Δ.ne_zero <| by
       rw [← integralModel_Δ_eq (Localization.AtPrime v.asIdeal) W, h, map_zero]
     have hΔv : Wv.Δ ≠ 0 := fun h ↦ (W.baseChange (v.adicCompletion K)).isUnit_Δ.ne_zero <| by
@@ -259,7 +192,7 @@ theorem isMinimal_adicCompletionIntegers_baseChange_iff (W : WeierstrassCurve K)
     have hϖ₁ : Irreducible (algebraMap O (Localization.AtPrime v.asIdeal) ϖ₀) :=
       v.irreducible_algebraMap_localizationAtPrime hϖ₀
     have hϖ₂ : Irreducible (f (algebraMap O (Localization.AtPrime v.asIdeal) ϖ₀)) :=
-      irreducible_localizationToCompletionIntegers v hϖ₀
+      v.irreducible_localizationToCompletionIntegers_iff.mpr hϖ₁
     rw [← hWv, ← hWo,
       isMinimal_baseChange_iff_forall_not_pow_dvd_a₁_a₂_a₃_a₄_a₆ hϖ₂ Wv hΔv,
       isMinimal_baseChange_iff_forall_not_pow_dvd_a₁_a₂_a₃_a₄_a₆ hϖ₁ Wo hΔo]

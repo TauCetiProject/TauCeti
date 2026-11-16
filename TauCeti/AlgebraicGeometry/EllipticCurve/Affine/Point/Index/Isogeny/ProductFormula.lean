@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.Tamagawa
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MinimalRealPeriod
+import Mathlib.Algebra.FiniteSupport.Basic
 -- Proof-only: existence of a reduced global minimal equation over `ℚ` in every variable-change
 -- orbit.
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Reduced
@@ -133,9 +134,7 @@ theorem abs_mul_minimalRealPeriod_mul_realKummerRatio (φ : Isogeny E₁.toAffin
   have := (Hom.ofIsogeny (φ.baseChange ℝ)).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero _)
   have hker : (Nat.card (Hom.ofIsogeny (φ.baseChange ℝ)).pointMapHom.ker : ℝ) ≠ 0 :=
     Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  have hmap : (φ.map (algebraMap ℚ ℝ)).kummerRatio = (φ.baseChange ℝ).kummerRatio :=
-    congrArg (fun f : ℚ →+* ℝ ↦ (φ.map f).kummerRatio) (Subsingleton.elim _ _)
-  rw [realKummerRatio_def, hmap, kummerRatio_def]
+  rw [realKummerRatio_def, ← kummerRatio_baseChange, kummerRatio_def]
   push_cast at h ⊢
   rw [← mul_div_assoc, div_eq_iff hker, h, mul_comm]
 
@@ -194,22 +193,6 @@ private theorem finprod_cast_tamagawaNumberAt (E : WeierstrassCurve K) [E.IsElli
   exact ((Nat.castRingHom ℚ).toMonoidHom.map_finprod_of_preimage_one
     (fun _ h ↦ Nat.cast_eq_one.mp h) _).symm
 
-omit [CharZero K] in
-private theorem hasFiniteMulSupport_cast_tamagawaNumberAt (E : WeierstrassCurve K) [E.IsElliptic] :
-    Function.HasFiniteMulSupport (fun v : HeightOneSpectrum R ↦ (E.tamagawaNumberAt v : ℚ)) :=
-  (E.hasFiniteMulSupport_tamagawaNumberAt (R := R)).subset fun v hv ↦ by
-    rw [Function.mem_mulSupport] at hv ⊢
-    exact_mod_cast hv
-
-omit [CharZero K] [E₁.IsElliptic] [E₂.IsElliptic] in
-private theorem hasFiniteMulSupport_cast_normalizedAbsoluteValue {x : K} (hx : x ≠ 0) :
-    Function.HasFiniteMulSupport (fun v : HeightOneSpectrum R ↦
-      (TauCeti.normalizedAbsoluteValue (v.adicCompletion K)
-        (algebraMap K (v.adicCompletion K) x) : ℚ)) :=
-  (TauCeti.hasFiniteMulSupport_normalizedAbsoluteValue_algebraMap R hx).subset fun v hv ↦ by
-    rw [Function.mem_mulSupport] at hv ⊢
-    exact_mod_cast hv
-
 /-- **Product of finite local Kummer ratios over a Dedekind domain**: if `C₁ • E₁` and `C₂ • E₂`
 are globally minimal over `R` and `φ^*ω₂ = c ω₁`, then multiplying `∏ᶠ v, φ.finiteKummerRatio v` by
 `E₁.tamagawaProduct` and `∏ᶠ v, |c u₂ / u₁|_v` gives `E₂.tamagawaProduct`. -/
@@ -228,21 +211,17 @@ theorem finprod_normalizedAbsoluteValue_mul_tamagawaProduct_mul_finprod
   have hd : c * C₂.u / C₁.u ≠ 0 :=
     div_ne_zero (mul_ne_zero (ne_zero_of_pullbackDifferential_eq_smul φ hc) C₂.u.ne_zero)
       C₁.u.ne_zero
-  have hf₁ := hasFiniteMulSupport_cast_normalizedAbsoluteValue (R := R) hd
-  have hf₂ := hasFiniteMulSupport_cast_tamagawaNumberAt (R := R) E₁
+  have hf₁ : Function.HasFiniteMulSupport (fun v : HeightOneSpectrum R ↦
+      (TauCeti.normalizedAbsoluteValue (v.adicCompletion K)
+        (algebraMap K (v.adicCompletion K) (c * C₂.u / C₁.u)) : ℚ)) :=
+    (TauCeti.hasFiniteMulSupport_normalizedAbsoluteValue_algebraMap R hd).fun_comp NNRat.cast_one
+  have hf₂ : Function.HasFiniteMulSupport
+      (fun v : HeightOneSpectrum R ↦ (E₁.tamagawaNumberAt v : ℚ)) :=
+    (E₁.hasFiniteMulSupport_tamagawaNumberAt (R := R)).fun_comp Nat.cast_one
   have hf₃ := φ.hasFiniteMulSupport_finiteKummerRatio (R := R)
     (Nat.cast_ne_zero.mpr φ.degree_ne_zero)
-  have hf₁₂ : Function.HasFiniteMulSupport (fun v : HeightOneSpectrum R ↦
-      (TauCeti.normalizedAbsoluteValue (v.adicCompletion K)
-        (algebraMap K (v.adicCompletion K) (c * C₂.u / C₁.u)) : ℚ) * E₁.tamagawaNumberAt v) :=
-    (hf₁.union hf₂).subset fun v hv ↦ by
-      rw [Function.mem_mulSupport] at hv
-      by_contra h
-      rw [Set.mem_union, Function.mem_mulSupport, Function.mem_mulSupport, not_or, not_not,
-        not_not] at h
-      exact hv (by rw [h.1, h.2, mul_one])
   rw [← finprod_cast_tamagawaNumberAt (R := R) E₁, ← finprod_cast_tamagawaNumberAt (R := R) E₂,
-    ← finprod_mul_distrib hf₁ hf₂, ← finprod_mul_distrib hf₁₂ hf₃]
+    ← finprod_mul_distrib hf₁ hf₂, ← finprod_mul_distrib (hf₁.fun_mul hf₂) hf₃]
   refine finprod_congr fun v ↦ ?_
   rw [finiteKummerRatio_eq_of_isGlobalMinimal_smul φ hc h₁ h₂ v]
   have hv0 : (TauCeti.normalizedAbsoluteValue (v.adicCompletion K)

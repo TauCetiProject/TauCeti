@@ -81,32 +81,6 @@ open IsDedekindDomain IsLocalRing ValuativeRel WeierstrassCurve
 
 namespace TauCeti.Isogeny
 
-section Conjugate
-
-variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve F}
-
-/-- Conjugating an isogeny `φ : W₁ → W₂` with `φ^*ω₂ = c ω₁` by changes of variables `C₁`, `C₂`
-scales the pullback constant of the invariant differential to `c * C₂.u / C₁.u`. -/
-theorem pullbackDifferential_variableChangeIsogeny_comp_eq_smul
-    (φ : Isogeny W₁.toAffine W₂.toAffine) {c : F}
-    (hc : φ.pullbackDifferential (Affine.invariantDifferential W₂.toAffine) =
-      c • Affine.invariantDifferential W₁.toAffine)
-    (C₁ C₂ : VariableChange F) :
-    ((variableChangeIsogeny C₂ (rfl : C₂ • W₂.toAffine = (C₂ • W₂).toAffine)).comp
-        (φ.comp (variableChangeIsogeny C₁⁻¹
-          (inv_smul_smul C₁ W₁.toAffine)))).pullbackDifferential
-        (Affine.invariantDifferential (C₂ • W₂).toAffine) =
-      (c * C₂.u / C₁.u) • Affine.invariantDifferential (C₁ • W₁).toAffine := by
-  rw [pullbackDifferential_comp, pullbackDifferential_comp, LinearMap.comp_apply,
-    LinearMap.comp_apply, pullbackDifferential_variableChangeIsogeny_invariantDifferential,
-    map_smul, hc, map_smul, map_smul,
-    pullbackDifferential_variableChangeIsogeny_invariantDifferential, smul_smul, smul_smul]
-  simp only [VariableChange.inv_def, Units.val_inv_eq_inv_val]
-  congr 1
-  ring
-
-end Conjugate
-
 section AdicCompletion
 
 variable {A : Type*} [CommRing A] [IsDedekindDomain A]
@@ -277,7 +251,8 @@ theorem normalizedAbsoluteValue_mul_tamagawaNumber_mul_kummerRatio
   have hkr : ψ.kummerRatio = φ.kummerRatio := by
     simp [ψ]
   have h := normalizedAbsoluteValue_mul_tamagawaNumber_mul_kummerRatio_of_isMinimal u ψ
-    (pullbackDifferential_variableChangeIsogeny_comp_eq_smul φ hc C₁ C₂) h2 (hdeg ▸ hn)
+    (pullbackDifferential_variableChangeIsogeny_comp_eq_smul φ hc
+      (inv_smul_smul C₁ W₁.toAffine) rfl) h2 (hdeg ▸ hn)
   rwa [hkr, tamagawaNumber_smul, tamagawaNumber_smul] at h
 
 /-- **The local Kummer ratio on arbitrary equations over `F_u`, solved for `φ.kummerRatio`**. -/
@@ -296,7 +271,8 @@ theorem kummerRatio_eq_of_isMinimal_smul
     (variableChangeIsogeny C₂ (rfl : C₂ • W₂.toAffine = (C₂ • W₂).toAffine)).comp
       (φ.comp (variableChangeIsogeny C₁⁻¹ (inv_smul_smul C₁ W₁.toAffine)))
   have h := kummerRatio_eq_of_isMinimal u ψ
-    (pullbackDifferential_variableChangeIsogeny_comp_eq_smul φ hc C₁ C₂) h2 (by simpa [ψ] using hn)
+    (pullbackDifferential_variableChangeIsogeny_comp_eq_smul φ hc
+      (inv_smul_smul C₁ W₁.toAffine) rfl) h2 (by simpa [ψ] using hn)
   simpa [ψ, tamagawaNumber_smul] using h
 
 end AdicCompletion
@@ -324,7 +300,8 @@ theorem finiteKummerRatio_eq_of_isMinimal (φ : Isogeny E₁.toAffine E₂.toAff
         E₂.tamagawaNumberAt v / E₁.tamagawaNumberAt v := by
   have hdeg : (φ.baseChange (v.adicCompletion K)).degree = φ.degree :=
     degree_map φ (algebraMap K (v.adicCompletion K))
-  rw [finiteKummerRatio_def, E₁.tamagawaNumberAt_def, E₂.tamagawaNumberAt_def]
+  rw [finiteKummerRatio_def, ← kummerRatio_baseChange, E₁.tamagawaNumberAt_def,
+    E₂.tamagawaNumberAt_def]
   exact kummerRatio_eq_of_isMinimal v (φ.baseChange (v.adicCompletion K))
     (map_pullbackDifferential_invariantDifferential_eq_smul φ (algebraMap K (v.adicCompletion K))
       hc)
@@ -344,7 +321,8 @@ theorem normalizedAbsoluteValue_mul_tamagawaNumberAt_mul_finiteKummerRatio_of_is
       E₁.tamagawaNumberAt v * φ.finiteKummerRatio v = E₂.tamagawaNumberAt v := by
   have hdeg : (φ.baseChange (v.adicCompletion K)).degree = φ.degree :=
     degree_map φ (algebraMap K (v.adicCompletion K))
-  rw [finiteKummerRatio_def, E₁.tamagawaNumberAt_def, E₂.tamagawaNumberAt_def]
+  rw [finiteKummerRatio_def, ← kummerRatio_baseChange, E₁.tamagawaNumberAt_def,
+    E₂.tamagawaNumberAt_def]
   exact normalizedAbsoluteValue_mul_tamagawaNumber_mul_kummerRatio_of_isMinimal v
     (φ.baseChange (v.adicCompletion K))
     (map_pullbackDifferential_invariantDifferential_eq_smul φ (algebraMap K (v.adicCompletion K))
@@ -375,15 +353,14 @@ theorem finiteKummerRatio_eq_of_isMinimal_smul (φ : Isogeny E₁.toAffine E₂.
       (E₂.baseChange (v.adicCompletion K))).IsMinimal 𝒪[v.adicCompletion K] := by
     rw [baseChange_smul_baseChange]
     infer_instance
-  rw [finiteKummerRatio_def, E₁.tamagawaNumberAt_def, E₂.tamagawaNumberAt_def]
   have h := kummerRatio_eq_of_isMinimal_smul v
     (C₁ := C₁.baseChange (v.adicCompletion K)) (C₂ := C₂.baseChange (v.adicCompletion K))
     (φ.baseChange (v.adicCompletion K))
     (map_pullbackDifferential_invariantDifferential_eq_smul φ (algebraMap K (v.adicCompletion K))
       hc)
     h2 (hdeg ▸ hn)
-  change (φ.baseChange (v.adicCompletion K)).kummerRatio = _
-  rw [h]
+  rw [finiteKummerRatio_def, ← kummerRatio_baseChange, E₁.tamagawaNumberAt_def,
+    E₂.tamagawaNumberAt_def, h]
   congr 4
   simp [VariableChange.baseChange]
 

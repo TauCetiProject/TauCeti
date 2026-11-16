@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.RingTheory.DedekindDomain.Factorization
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ResidueField
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+import Mathlib.Algebra.FiniteSupport.Basic
 
 /-!
 # The finite-place product formula for normalized absolute values on adic completions
@@ -33,8 +35,6 @@ nonzero rational number `x`.
 
 ## Main results
 
-* `IsDedekindDomain.HeightOneSpectrum.finite_quotient_asIdeal`: when `R` has finite quotients,
-  every height-one prime `v` of `R` has finite residue field `R ⧸ v.asIdeal`.
 * `IsDedekindDomain.HeightOneSpectrum.normalizedAbsoluteValue_algebraMap_ring_eq_one_iff`: for
   `a : R`, `|a|_v = 1` in `K_v` if and only if `a ∉ v.asIdeal`.
 * `IsDedekindDomain.HeightOneSpectrum.normalizedAbsoluteValue_algebraMap_ring_eq_inv_absNorm` and
@@ -63,14 +63,6 @@ open scoped NNRat WithZero
 open IsDedekindDomain
 
 namespace IsDedekindDomain.HeightOneSpectrum
-
-/-- In a commutative ring with finite quotients, the quotient by every height-one prime is finite.
-Together with `isNonarchimedeanLocalField_adicCompletion`, this supplies the local-field structure
-on `v.adicCompletion K` automatically. -/
-instance finite_quotient_asIdeal {R : Type*} [CommRing R] [Ring.HasFiniteQuotients R]
-    (v : HeightOneSpectrum R) :
-    Finite (R ⧸ v.asIdeal) :=
-  Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
@@ -163,15 +155,9 @@ theorem hasFiniteMulSupport_normalizedAbsoluteValue_algebraMap {x : K} (hx : x �
   have ha0 : a ≠ 0 := by
     rintro rfl
     simp at hx
-  refine ((hasFiniteMulSupport_normalizedAbsoluteValue_algebraMap_ring K ha0).union
-    (hasFiniteMulSupport_normalizedAbsoluteValue_algebraMap_ring K hb0)).subset fun v hv ↦ ?_
-  rw [Function.mem_mulSupport] at hv
-  by_contra hnot
-  rw [Set.mem_union, Function.mem_mulSupport, Function.mem_mulSupport, not_or, not_not,
-    not_not] at hnot
-  refine hv ?_
-  rw [map_div₀, map_div₀, ← IsScalarTower.algebraMap_apply R K (v.adicCompletion K),
-    ← IsScalarTower.algebraMap_apply R K (v.adicCompletion K), hnot.1, hnot.2, div_one]
+  simp_rw [map_div₀, ← IsScalarTower.algebraMap_apply R K (HeightOneSpectrum.adicCompletion K _)]
+  exact (hasFiniteMulSupport_normalizedAbsoluteValue_algebraMap_ring K ha0).fun_div
+    (hasFiniteMulSupport_normalizedAbsoluteValue_algebraMap_ring K hb0)
 
 variable (K) in
 /-- **The finite-place product formula on `R \ {0}`**: for a Dedekind domain `R` with finite
@@ -239,9 +225,7 @@ theorem finprod_normalizedAbsoluteValue_rat {x : ℚ} (hx : x ≠ 0) :
       Function.HasFiniteMulSupport (fun v : HeightOneSpectrum ℤ ↦
         (normalizedAbsoluteValue (v.adicCompletion ℚ)
           (algebraMap ℤ (v.adicCompletion ℚ) n) : ℚ)) :=
-    (hasFiniteMulSupport_normalizedAbsoluteValue_algebraMap_ring ℚ hn).subset fun v hv ↦ by
-      rw [Function.mem_mulSupport] at hv ⊢
-      exact_mod_cast hv
+    (hasFiniteMulSupport_normalizedAbsoluteValue_algebraMap_ring ℚ hn).fun_comp NNRat.cast_one
   simp_rw [map_div₀, ← IsScalarTower.algebraMap_apply ℤ ℚ (HeightOneSpectrum.adicCompletion ℚ _),
     NNRat.cast_div]
   rw [finprod_div_distrib (hsupp a ha0) (hsupp b hb0), hcast a ha0, hcast b hb0,

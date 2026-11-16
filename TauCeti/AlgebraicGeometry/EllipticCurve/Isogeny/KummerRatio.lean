@@ -113,4 +113,12 @@ theorem kummerRatio_variableChangeIsogeny (C : WeierstrassCurve.VariableChange F
     (variableChangeIsogeny C h).kummerRatio = 1 :=
   kummerRatio_eq_one_of_degree_eq_one _ (degree_variableChangeIsogeny C h)
 
+/-- `Isogeny.baseChange` is `Isogeny.map (algebraMap F K)` typed between the `WeierstrassCurve`
+base changes, so both have the same Kummer ratio. -/
+theorem kummerRatio_baseChange {K : Type*} [Field K] [Algebra F K]
+    {E₁ E₂ : WeierstrassCurve F} [E₁.IsElliptic] [E₂.IsElliptic]
+    (φ : Isogeny E₁.toAffine E₂.toAffine) :
+    (φ.baseChange K).kummerRatio = (φ.map (algebraMap F K)).kummerRatio :=
+  (rfl)
+
 end TauCeti.Isogeny
