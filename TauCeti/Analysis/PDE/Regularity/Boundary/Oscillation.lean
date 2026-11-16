@@ -329,7 +329,7 @@ private theorem exists_uniformlyEllipticOn_top_extendByZeroL_posPart
   -- The values of the extension: `u⁺` on `Ω` and `0` off `Ω`.
   have hval : ∀ᵐ x ∂mu, W1p.value ub x =
       (Omega : Set (EuclideanSpace ℝ ι)).indicator (fun y => max (W1p.value u y) 0) x := by
-    have hext := coeFn_extendByZeroLpₗᵢ ℝ hOm
+    have hext := coeFn_extendByZeroLpₗᵢ ℝ hOm.nullMeasurableSet
       (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤)) (W1p.value (W1p.posPart (p := 2)
         (mu := mu) (Omega := Omega) (by norm_num) u))
     simp only [Opens.coe_top, Measure.restrict_univ] at hext
