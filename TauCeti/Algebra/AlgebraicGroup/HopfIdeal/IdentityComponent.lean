@@ -78,7 +78,7 @@ theorem identityComponent_le_of_le {I J : HopfIdeal k H} (hIJ : I ≤ J)
     I.identityComponent ≤ J := by
   let f := CommHopfAlgCat.quotientMapOfLe H.obj hIJ
   let _ : ConnectedSpace (PrimeSpectrum (FiniteTypeCommHopfAlgCat.quotient H J)) :=
-    geometricallyConnectedCommHopfAlgProperty.connectedSpace k _ hJ
+    geometricallyConnectedCommHopfAlgProperty.connectedSpace hJ
   intro x hx
   apply (CommHopfAlgCat.mkQuotient_eq_zero_iff H.obj J x).mp
   rw [← CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe H.obj hIJ]

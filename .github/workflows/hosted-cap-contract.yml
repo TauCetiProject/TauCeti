@@ -1,13 +1,9 @@
 name: Hosted concurrency contract
 
-on:
-  pull_request:
-    paths:
-      - .github/workflows/hosted-cap-contract.yml
-      - .github/workflows/pick-runner.yml
-      - .github/workflows/pr-build.yml
-      - .github/workflows/nightly-verify.yml
-      - scripts/test_pick_runner.py
+# A manual platform probe, not a regression suite for each workflow edit.
+# GitHub's queue semantics do not change when our picker changes. Keep ordinary
+# workflow regression coverage in scripts/test_pick_runner.py.
+on: workflow_dispatch
 
 permissions:
   contents: read
