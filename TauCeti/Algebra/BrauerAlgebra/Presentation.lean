@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.BrauerAlgebra.Basic
 
 import TauCeti.Algebra.BrauerAlgebra.Generation
+import TauCeti.Combinatorics.Brauer.Reconnect
 import TauCeti.Combinatorics.Brauer.Relations
 import TauCeti.Combinatorics.Brauer.WeightedAssociativity
 
@@ -51,7 +52,8 @@ Every Brauer diagram `D` with at least one cap is obtained by stacking a cap-cup
 `capCup c d` above the reconnected diagram `D.reconnect (Sum.inr c) (Sum.inl a)` with one cap fewer,
 closing no middle loop (`TauCeti.composeDiagram_capCup_reconnect`,
 `TauCeti.middleLoopCount_capCup_reconnect`). Evaluating a diagram recursively along one chosen
-reconnection defines a candidate map `evalDiagram : BrauerDiagram k → A`. Strong induction on
+reconnection defines a candidate map `evalDiagram : BrauerDiagram k → A`. Using the reconnection
+identities of `TauCeti/Combinatorics/Brauer/Reconnect.lean`, strong induction on
 `D.bottomCap.card` proves simultaneously that `evalDiagram D` is independent of which cap `(a, b)`
 and cup `(c, d)` are reconnected, and that left multiplication by `s σ` renames the top boundary by
 `σ`. From these two properties the loop rule
@@ -102,321 +104,6 @@ coincident strands.
 public section
 
 namespace TauCeti
-
-/-! ### Diagram identities for reconnection and overlapping pairs -/
-
-section DiagramLemmas
-
-variable {k : ℕ}
-
-/-- Reconnecting `a` to `b` is transporting along `Equiv.swap (D.val a) b`. -/
-private theorem reconnect_eq_congr {α : Type*} [DecidableEq α] (D : PerfectMatching α) (a b : α) :
-    D.reconnect a b = PerfectMatching.congr (Equiv.swap (D.val a) b) D :=
-  Subtype.ext ((PerfectMatching.reconnect_val D a b).trans (PerfectMatching.congr_val _ D).symm)
-
-/-- Two cap-cup diagrams sharing one point compose to a cap-cup diagram above a transposition. -/
-private theorem composeDiagram_capCup_capCup_eq_composeDiagram_permToBrauer_swap
-    {a b c : Fin k} (hac : a ≠ c) :
-    composeDiagram (capCup a c) (capCup a b) =
-      composeDiagram (capCup a c) (permToBrauer (Equiv.swap b c)) := by
-  rcases eq_or_ne a b with rfl | hab
-  · rw [capCup_self, composeDiagram_permToBrauer_one_right, composeDiagram_capCup_permToBrauer_swap]
-  rcases eq_or_ne b c with rfl | hbc
-  · rw [Equiv.swap_self, ← Equiv.Perm.one_def, composeDiagram_permToBrauer_one_right,
-      composeDiagram_capCup_capCup]
-  have hperm : Equiv.swap c a * Equiv.swap a b = Equiv.swap b c * Equiv.swap c a :=
-    Equiv.ext fun x => by
-      simp only [Equiv.Perm.mul_apply]
-      by_cases hxa : x = a
-      · subst x
-        rw [Equiv.swap_apply_left, Equiv.swap_apply_right, Equiv.swap_apply_right,
-          Equiv.swap_apply_of_ne_of_ne hbc hab.symm]
-      by_cases hxb : x = b
-      · subst x
-        rw [Equiv.swap_apply_right, Equiv.swap_apply_right,
-          Equiv.swap_apply_of_ne_of_ne hbc hab.symm, Equiv.swap_apply_left]
-      by_cases hxc : x = c
-      · subst x
-        rw [Equiv.swap_apply_of_ne_of_ne hac.symm hbc.symm, Equiv.swap_apply_left,
-          Equiv.swap_apply_of_ne_of_ne hab hac]
-      rw [Equiv.swap_apply_of_ne_of_ne hxa hxb, Equiv.swap_apply_of_ne_of_ne hxc hxa,
-        Equiv.swap_apply_of_ne_of_ne hxb hxc]
-  rw [capCup_comm c a, composeDiagram_capCup_capCup_eq_relabel_right hac.symm b, hperm,
-    ← mul_one (1 : Equiv.Perm (Fin k)),
-    ← BrauerDiagram.relabel_relabel (capCup c a) (Equiv.swap c a) 1 (Equiv.swap b c) 1,
-    BrauerDiagram.relabel_swap_one_capCup, composeDiagram_permToBrauer_right, Equiv.Perm.inv_def,
-    Equiv.symm_swap]
-
-/-- Stacking a permutation diagram on top commutes with reconnecting a top point to a bottom
-point. -/
-private theorem reconnect_composeDiagram_permToBrauer_left (D : BrauerDiagram k)
-    (σ : Equiv.Perm (Fin k)) (c a : Fin k) :
-    (composeDiagram (permToBrauer σ) D).reconnect (Sum.inr (σ c)) (Sum.inl a) =
-      composeDiagram (permToBrauer σ) (D.reconnect (Sum.inr c) (Sum.inl a)) := by
-  rw [composeDiagram_permToBrauer_left, composeDiagram_permToBrauer_left,
-    reconnect_eq_congr, BrauerDiagram.relabel_val_inr, σ.symm_apply_apply,
-    BrauerDiagram.relabel_def, BrauerDiagram.relabel_def, reconnect_eq_congr,
-    PerfectMatching.congr_trans, PerfectMatching.congr_trans]
-  refine congrArg (fun e => PerfectMatching.congr e D) (Equiv.ext fun x => ?_)
-  simp only [Equiv.trans_apply]
-  set φ : Equiv.Perm (Fin k ⊕ Fin k) := Equiv.Perm.sumCongr 1 σ
-  change Equiv.swap (φ (D.val (Sum.inr c))) (φ (Sum.inl a)) (φ x) =
-    φ (Equiv.swap (D.val (Sum.inr c)) (Sum.inl a) x)
-  by_cases hxu : x = D.val (Sum.inr c)
-  · subst x; simp
-  by_cases hxv : x = Sum.inl a
-  · subst x; simp
-  rw [Equiv.swap_apply_of_ne_of_ne hxu hxv,
-    Equiv.swap_apply_of_ne_of_ne (φ.injective.ne hxu) (φ.injective.ne hxv)]
-
-/-- Swapping the two endpoints of a top cup fixes the diagram. -/
-private theorem composeDiagram_permToBrauer_swap_of_cup {D : BrauerDiagram k} {c d : Fin k}
-    (hcup : D.val (Sum.inr c) = Sum.inr d) :
-    composeDiagram (permToBrauer (Equiv.swap c d)) D = D := by
-  have he : Equiv.Perm.sumCongr (1 : Equiv.Perm (Fin k)) (Equiv.swap c d) =
-      Equiv.swap (Sum.inr d) (Sum.inr c) :=
-    Equiv.ext fun x => by
-      rcases x with i | j
-      · simp only [Equiv.Perm.sumCongr_apply, Sum.map_inl, Equiv.Perm.one_def, Equiv.refl_apply]
-        exact (Equiv.swap_apply_of_ne_of_ne Sum.inl_ne_inr Sum.inl_ne_inr).symm
-      · simp only [Equiv.Perm.sumCongr_apply, Sum.map_inr]
-        by_cases hjc : j = c
-        · subst j; rw [Equiv.swap_apply_left, Equiv.swap_apply_right]
-        by_cases hjd : j = d
-        · subst j; rw [Equiv.swap_apply_right, Equiv.swap_apply_left]
-        rw [Equiv.swap_apply_of_ne_of_ne hjc hjd,
-          Equiv.swap_apply_of_ne_of_ne (by simpa using hjd) (by simpa using hjc)]
-  rw [composeDiagram_permToBrauer_left, BrauerDiagram.relabel_def, he, ← hcup,
-    ← reconnect_eq_congr]
-  exact PerfectMatching.reconnect_self D (Sum.inr c)
-
-/-- Reconnecting the other endpoint of the top cup is the same as reconnecting the other endpoint
-of the bottom cap. -/
-private theorem reconnect_swap_top {D : BrauerDiagram k} {a b c d : Fin k}
-    (hcap : D.val (Sum.inl a) = Sum.inl b) (hcup : D.val (Sum.inr c) = Sum.inr d) :
-    D.reconnect (Sum.inr d) (Sum.inl a) = D.reconnect (Sum.inr c) (Sum.inl b) := by
-  have hba : D.val (Sum.inl b) = Sum.inl a := D.apply_eq_of_apply_eq hcap
-  have hdc : D.val (Sum.inr d) = Sum.inr c := D.apply_eq_of_apply_eq hcup
-  set X₁ : BrauerDiagram k := D.reconnect (Sum.inr d) (Sum.inl a)
-  set X₂ : BrauerDiagram k := D.reconnect (Sum.inr c) (Sum.inl b)
-  have hX₁b : X₁.val (Sum.inl b) = Sum.inr c :=
-    hcap ▸ hdc ▸ PerfectMatching.reconnect_val_val_right Sum.inl_ne_inr
-  have hX₁c : X₁.val (Sum.inr c) = Sum.inl b :=
-    hcap ▸ hdc ▸ PerfectMatching.reconnect_val_val_self Sum.inl_ne_inr
-  have hX₂a : X₂.val (Sum.inl a) = Sum.inr d :=
-    hba ▸ hcup ▸ PerfectMatching.reconnect_val_val_right Sum.inl_ne_inr
-  have hX₂d : X₂.val (Sum.inr d) = Sum.inl a :=
-    hba ▸ hcup ▸ PerfectMatching.reconnect_val_val_self Sum.inl_ne_inr
-  refine Subtype.ext (Equiv.ext fun x => ?_)
-  by_cases hxa : x = Sum.inl a
-  · subst x; rw [PerfectMatching.reconnect_val_right Sum.inl_ne_inr, hX₂a]
-  by_cases hxb : x = Sum.inl b
-  · subst x; rw [hX₁b, PerfectMatching.reconnect_val_right Sum.inl_ne_inr]
-  by_cases hxc : x = Sum.inr c
-  · subst x; rw [hX₁c, PerfectMatching.reconnect_val_self Sum.inl_ne_inr]
-  by_cases hxd : x = Sum.inr d
-  · subst x; rw [PerfectMatching.reconnect_val_self Sum.inl_ne_inr, hX₂d]
-  rw [PerfectMatching.reconnect_val_of_ne hxd hxa (hdc ▸ hxc) (hcap ▸ hxb),
-    PerfectMatching.reconnect_val_of_ne hxc hxb (hcup ▸ hxd) (hba ▸ hxa)]
-
-/-- Reconnecting the other endpoint of the bottom cap swaps the two endpoints of the top cup. -/
-private theorem reconnect_swap_bottom {D : BrauerDiagram k} {a b c d : Fin k}
-    (hcap : D.val (Sum.inl a) = Sum.inl b) (hcup : D.val (Sum.inr c) = Sum.inr d) :
-    D.reconnect (Sum.inr c) (Sum.inl b) =
-      composeDiagram (permToBrauer (Equiv.swap c d)) (D.reconnect (Sum.inr c) (Sum.inl a)) := by
-  conv_lhs => rw [← reconnect_swap_top hcap hcup, ← Equiv.swap_apply_left c d]
-  rw [← reconnect_composeDiagram_permToBrauer_left, composeDiagram_permToBrauer_swap_of_cup hcup]
-
-/-- Reconnections on disjoint caps and disjoint cups commute. -/
-private theorem reconnect_reconnect_comm {D : BrauerDiagram k}
-    {a b a' b' c d c' d' : Fin k}
-    (_hcap : D.val (Sum.inl a) = Sum.inl b) (_hcap' : D.val (Sum.inl a') = Sum.inl b')
-    (hcup : D.val (Sum.inr c) = Sum.inr d) (hcup' : D.val (Sum.inr c') = Sum.inr d')
-    (haa' : a' ≠ a) (hcc' : c' ≠ c) (hc'd : c' ≠ d) :
-    (D.reconnect (Sum.inr c) (Sum.inl a)).reconnect (Sum.inr c') (Sum.inl a') =
-      (D.reconnect (Sum.inr c') (Sum.inl a')).reconnect (Sum.inr c) (Sum.inl a) := by
-  have hd'c : d' ≠ c := fun h => hc'd (Sum.inr.inj ((D.apply_eq_of_apply_eq hcup').symm.trans
-    (h ▸ hcup)))
-  have hd'd : d' ≠ d := fun h => hcc' (Sum.inr.inj (D.val.injective (hcup'.trans (h ▸ hcup.symm))))
-  have h₁ : (D.reconnect (Sum.inr c) (Sum.inl a)).val (Sum.inr c') = Sum.inr d' :=
-    PerfectMatching.reconnect_val_of_val_eq hcup' (by simpa using hcc') Sum.inr_ne_inl
-      (by simpa using hd'c) Sum.inr_ne_inl
-  have h₂ : (D.reconnect (Sum.inr c') (Sum.inl a')).val (Sum.inr c) = Sum.inr d :=
-    PerfectMatching.reconnect_val_of_val_eq hcup (by simpa using hcc'.symm) Sum.inr_ne_inl
-      (by simpa using hc'd.symm) Sum.inr_ne_inl
-  rw [reconnect_eq_congr, h₁, reconnect_eq_congr, hcup, PerfectMatching.congr_trans,
-    reconnect_eq_congr, h₂, reconnect_eq_congr, hcup', PerfectMatching.congr_trans]
-  refine congrArg (fun e => PerfectMatching.congr e D) (Equiv.ext fun x => ?_)
-  simp only [Equiv.trans_apply]
-  by_cases hxd' : x = Sum.inr d'
-  · subst x
-    rw [Equiv.swap_apply_of_ne_of_ne (by simpa using hd'd) Sum.inr_ne_inl,
-      Equiv.swap_apply_left,
-      Equiv.swap_apply_of_ne_of_ne Sum.inl_ne_inr (by simpa using haa')]
-  by_cases hxa' : x = Sum.inl a'
-  · subst x
-    rw [Equiv.swap_apply_of_ne_of_ne Sum.inl_ne_inr (by simpa using haa'),
-      Equiv.swap_apply_right,
-      Equiv.swap_apply_of_ne_of_ne (by simpa using hd'd) Sum.inr_ne_inl]
-  by_cases hxd : x = Sum.inr d
-  · subst x
-    rw [Equiv.swap_apply_left,
-      Equiv.swap_apply_of_ne_of_ne Sum.inl_ne_inr (by simpa using haa'.symm),
-      Equiv.swap_apply_of_ne_of_ne (by simpa using hd'd.symm) Sum.inr_ne_inl,
-      Equiv.swap_apply_left]
-  by_cases hxa : x = Sum.inl a
-  · subst x
-    rw [Equiv.swap_apply_right,
-      Equiv.swap_apply_of_ne_of_ne (by simpa using hd'd.symm) Sum.inr_ne_inl,
-      Equiv.swap_apply_of_ne_of_ne Sum.inl_ne_inr (by simpa using haa'.symm),
-      Equiv.swap_apply_right]
-  rw [Equiv.swap_apply_of_ne_of_ne hxd hxa, Equiv.swap_apply_of_ne_of_ne hxd' hxa',
-    Equiv.swap_apply_of_ne_of_ne hxd hxa]
-
-/-- Exchanging two disjoint top cups by `swap c c' * swap d d'` fixes the diagram. -/
-private theorem composeDiagram_permToBrauer_swap_mul_swap_of_cups {D : BrauerDiagram k}
-    {c d c' d' : Fin k} (hcup : D.val (Sum.inr c) = Sum.inr d)
-    (hcup' : D.val (Sum.inr c') = Sum.inr d') (hcc' : c' ≠ c) (hc'd : c' ≠ d) :
-    composeDiagram (permToBrauer (Equiv.swap c c' * Equiv.swap d d')) D = D := by
-  have hcd : c ≠ d := fun h => D.apply_ne (Sum.inr c) (by rw [hcup, h])
-  have hc'd' : c' ≠ d' := fun h => D.apply_ne (Sum.inr c') (by rw [hcup', h])
-  have hd'c : d' ≠ c := fun h => hc'd (Sum.inr.inj ((D.apply_eq_of_apply_eq hcup').symm.trans
-    (h ▸ hcup)))
-  have hdc : D.val (Sum.inr d) = Sum.inr c := D.apply_eq_of_apply_eq hcup
-  have hd'c' : D.val (Sum.inr d') = Sum.inr c' := D.apply_eq_of_apply_eq hcup'
-  set τ := Equiv.swap c c' * Equiv.swap d d'
-  have hτc : τ c = c' := by simp [τ, Equiv.swap_apply_of_ne_of_ne hcd hd'c.symm]
-  have hτc' : τ c' = c := by simp [τ, Equiv.swap_apply_of_ne_of_ne hc'd hc'd']
-  have hτd : τ d = d' := by simp [τ, Equiv.swap_apply_of_ne_of_ne hd'c hc'd'.symm]
-  have hτd' : τ d' = d := by simp [τ, Equiv.swap_apply_of_ne_of_ne hcd.symm hc'd.symm]
-  have hτ_other : ∀ {j : Fin k}, j ≠ c → j ≠ d → j ≠ c' → j ≠ d' → τ j = j := by
-    intro j hjc hjd hjc' hjd'
-    simp [τ, Equiv.swap_apply_of_ne_of_ne, hjc, hjd, hjc', hjd']
-  have hτ_symm : τ.symm = τ :=
-    Equiv.ext fun j => by
-      rw [Equiv.symm_apply_eq]
-      rcases eq_or_ne j c with rfl | hjc
-      · rw [hτc, hτc']
-      rcases eq_or_ne j d with rfl | hjd
-      · rw [hτd, hτd']
-      rcases eq_or_ne j c' with rfl | hjc'
-      · rw [hτc', hτc]
-      rcases eq_or_ne j d' with rfl | hjd'
-      · rw [hτd', hτd]
-      · rw [hτ_other hjc hjd hjc' hjd', hτ_other hjc hjd hjc' hjd']
-  rw [composeDiagram_permToBrauer_left]
-  refine Subtype.ext (Equiv.ext fun x => ?_)
-  rcases x with i | j
-  · rw [BrauerDiagram.relabel_val_inl, Equiv.Perm.one_def, Equiv.refl_symm, Equiv.refl_apply]
-    rcases hy : D.val (Sum.inl i) with i' | j'
-    · rfl
-    · obtain ⟨hyc, hyd⟩ := (D.apply_ne_and_ne_iff hcup (Sum.inl i)).mpr
-        ⟨Sum.inl_ne_inr, Sum.inl_ne_inr⟩
-      obtain ⟨hyc', hyd'⟩ := (D.apply_ne_and_ne_iff hcup' (Sum.inl i)).mpr
-        ⟨Sum.inl_ne_inr, Sum.inl_ne_inr⟩
-      rw [hy] at hyc hyd hyc' hyd'
-      simp [hτ_other (by simpa using hyc) (by simpa using hyd)
-        (by simpa using hyc') (by simpa using hyd')]
-  · rw [BrauerDiagram.relabel_val_inr, hτ_symm]
-    rcases eq_or_ne j c with rfl | hjc
-    · simp [hτc, hcup', hcup, hτd']
-    rcases eq_or_ne j d with rfl | hjd
-    · simp [hτd, hd'c', hdc, hτc']
-    rcases eq_or_ne j c' with rfl | hjc'
-    · simp [hτc', hcup, hcup', hτd]
-    rcases eq_or_ne j d' with rfl | hjd'
-    · simp [hτd', hdc, hd'c', hτc]
-    rw [hτ_other hjc hjd hjc' hjd']
-    obtain ⟨hyc, hyd⟩ := (D.apply_ne_and_ne_iff hcup (Sum.inr j)).mpr
-      ⟨by simpa using hjc, by simpa using hjd⟩
-    obtain ⟨hyc', hyd'⟩ := (D.apply_ne_and_ne_iff hcup' (Sum.inr j)).mpr
-      ⟨by simpa using hjc', by simpa using hjd'⟩
-    rcases hy : D.val (Sum.inr j) with i' | j'
-    · simp [Equiv.Perm.one_def]
-    · rw [hy] at hyc hyd hyc' hyd'
-      simp [hτ_other (by simpa using hyc) (by simpa using hyd) (by simpa using hyc')
-        (by simpa using hyd')]
-
-/-- Exchanging the bottom caps paired with two disjoint top cups renames those two top cups by
-`swap c c' * swap d d'`. -/
-private theorem reconnect_reconnect_swap_caps {D : BrauerDiagram k}
-    {a b a' b' c d c' d' : Fin k}
-    (hcap : D.val (Sum.inl a) = Sum.inl b) (hcap' : D.val (Sum.inl a') = Sum.inl b')
-    (hcup : D.val (Sum.inr c) = Sum.inr d) (hcup' : D.val (Sum.inr c') = Sum.inr d')
-    (haa' : a' ≠ a) (hcc' : c' ≠ c) (hc'd : c' ≠ d) :
-    (D.reconnect (Sum.inr c) (Sum.inl a')).reconnect (Sum.inr c') (Sum.inl a) =
-      composeDiagram (permToBrauer (Equiv.swap c c' * Equiv.swap d d'))
-        ((D.reconnect (Sum.inr c) (Sum.inl a)).reconnect (Sum.inr c') (Sum.inl a')) := by
-  have hcd : c ≠ d := fun h => D.apply_ne (Sum.inr c) (by rw [hcup, h])
-  have hc'd' : c' ≠ d' := fun h => D.apply_ne (Sum.inr c') (by rw [hcup', h])
-  have hd'c : d' ≠ c := fun h => hc'd (Sum.inr.inj ((D.apply_eq_of_apply_eq hcup').symm.trans
-    (h ▸ hcup)))
-  set τ := Equiv.swap c c' * Equiv.swap d d'
-  have hτc : τ c = c' := by simp [τ, Equiv.swap_apply_of_ne_of_ne hcd hd'c.symm]
-  have hτc' : τ c' = c := by simp [τ, Equiv.swap_apply_of_ne_of_ne hc'd hc'd']
-  symm
-  calc composeDiagram (permToBrauer τ)
-        ((D.reconnect (Sum.inr c) (Sum.inl a)).reconnect (Sum.inr c') (Sum.inl a'))
-      = ((composeDiagram (permToBrauer τ) D).reconnect (Sum.inr (τ c)) (Sum.inl a)).reconnect
-          (Sum.inr (τ c')) (Sum.inl a') := by
-        rw [← reconnect_composeDiagram_permToBrauer_left,
-          ← reconnect_composeDiagram_permToBrauer_left]
-    _ = (D.reconnect (Sum.inr c') (Sum.inl a)).reconnect (Sum.inr c) (Sum.inl a') := by
-        rw [composeDiagram_permToBrauer_swap_mul_swap_of_cups hcup hcup' hcc' hc'd, hτc, hτc']
-    _ = (D.reconnect (Sum.inr c) (Sum.inl a')).reconnect (Sum.inr c') (Sum.inl a) :=
-        reconnect_reconnect_comm hcap hcap' hcup' hcup haa' hcc'.symm hd'c.symm
-
-/-- Stacking `capCup p q` above a diagram where `p` and `q` lie on through strands closes no loop,
-and reconnecting the resulting cap and cup recovers the original diagram. -/
-private theorem reconnect_composeDiagram_capCup_of_isThrough {X : BrauerDiagram k} {p q a b : Fin k}
-    (hpq : p ≠ q) (hXp : X.val (Sum.inr p) = Sum.inl a) (hXq : X.val (Sum.inr q) = Sum.inl b) :
-    middleLoopCount (capCup p q) X = 0 ∧
-      (composeDiagram (capCup p q) X).val (Sum.inl a) = Sum.inl b ∧
-      (composeDiagram (capCup p q) X).val (Sum.inr p) = Sum.inr q ∧
-      (composeDiagram (capCup p q) X).reconnect (Sum.inr p) (Sum.inl a) = X := by
-  have hXa : X.val (Sum.inl a) = Sum.inr p := X.apply_eq_of_apply_eq hXp
-  have hXb : X.val (Sum.inl b) = Sum.inr q := X.apply_eq_of_apply_eq hXq
-  have hloop : middleLoopCount (capCup p q) X = 0 := by
-    refine middleLoopCount_eq_zero_iff.mpr fun m hm => ?_
-    have hvert := (isMiddleVertex_def _ _ _).mp hm.isMiddleVertex
-    rcases (BrauerDiagram.isCap_capCup_inl_iff hpq).mp hvert.1 with rfl | rfl
-    · exact X.not_isThrough_of_isCup _ hvert.2 (by simp [BrauerDiagram.isThrough_def, hXp])
-    · exact X.not_isThrough_of_isCup _ hvert.2 (by simp [BrauerDiagram.isThrough_def, hXq])
-  set D : BrauerDiagram k := composeDiagram (capCup p q) X
-  have hDcap : D.val (Sum.inl a) = Sum.inl b :=
-    composeDiagram_val_inl_eq_inl_of_cap_upper _ _ hXa (capCup_val_inl_left hpq) hXq
-  have hDcup : D.val (Sum.inr p) = Sum.inr q :=
-    composeDiagram_val_inr_eq_inr_of_cup_upper _ _ (capCup_val_inr_left hpq)
-  set Y : BrauerDiagram k := D.reconnect (Sum.inr p) (Sum.inl a)
-  have hYb : Y.val (Sum.inl b) = Sum.inr q :=
-    hDcap ▸ hDcup ▸ PerfectMatching.reconnect_val_val_right Sum.inl_ne_inr
-  have hYq : Y.val (Sum.inr q) = Sum.inl b :=
-    hDcap ▸ hDcup ▸ PerfectMatching.reconnect_val_val_self Sum.inl_ne_inr
-  refine ⟨hloop, hDcap, hDcup, Subtype.ext (Equiv.ext fun x => ?_)⟩
-  by_cases hxa : x = Sum.inl a
-  · subst x; rw [PerfectMatching.reconnect_val_right Sum.inl_ne_inr, hXa]
-  by_cases hxb : x = Sum.inl b
-  · subst x; rw [hYb, hXb]
-  by_cases hxp : x = Sum.inr p
-  · subst x; rw [PerfectMatching.reconnect_val_self Sum.inl_ne_inr, hXp]
-  by_cases hxq : x = Sum.inr q
-  · subst x; rw [hYq, hXq]
-  rw [PerfectMatching.reconnect_val_of_ne hxp hxa (hDcup ▸ hxq) (hDcap ▸ hxb)]
-  have hyp : X.val x ≠ Sum.inr p := fun h => hxa ((X.apply_eq_of_apply_eq h).symm.trans hXp)
-  have hyq : X.val x ≠ Sum.inr q := fun h => hxb ((X.apply_eq_of_apply_eq h).symm.trans hXq)
-  rcases x with i | j <;> rcases hy : X.val _ with i' | j'
-  · exact composeDiagram_val_inl_eq_inl_of_cap_lower _ _ hy
-  · rw [hy] at hyp hyq
-    exact composeDiagram_val_inl_eq_inr_of_through _ _ hy
-      (capCup_val_inl_of_ne (by simpa using hyp) (by simpa using hyq))
-  · exact composeDiagram_val_inr_eq_inl_of_through _ _
-      (capCup_val_inr_of_ne (by simpa using hxp) (by simpa using hxq)) hy
-  · rw [hy] at hyp hyq
-    exact composeDiagram_val_inr_eq_inr_of_cup_lower _ _
-      (capCup_val_inr_of_ne (by simpa using hxp) (by simpa using hxq)) hy
-      (capCup_val_inl_of_ne (by simpa using hyp) (by simpa using hyq))
-
-end DiagramLemmas
 
 namespace BrauerAlgebra
 
@@ -603,8 +290,8 @@ private theorem evalDiagram_move_cap
   · rfl
   rcases eq_or_ne a' b with rfl | ha'b
   · have hcard := D.card_bottomCap_reconnect hcap hcup
-    rw [reconnect_swap_bottom hcap hcup, ← ih_perm _ (by omega) (Equiv.swap c d), ← mul_assoc,
-      mul_swap_eq_self_of_relations he_comm hs_conj hs_swap hcd]
+    rw [BrauerDiagram.reconnect_swap_bottom hcap hcup, ← ih_perm _ (by omega) (Equiv.swap c d),
+      ← mul_assoc, mul_swap_eq_self_of_relations he_comm hs_conj hs_swap hcd]
   have hab : b ≠ a := fun h => D.apply_ne (Sum.inl a) (by rw [hcap, h])
   have ha_mem : a ∈ D.bottomCap := by simp [BrauerDiagram.isCap_def, hcap]
   have hb_mem : b ∈ D.bottomCap.erase a := by
@@ -653,7 +340,7 @@ private theorem evalDiagram_move_cap
     X₁.card_bottomCap_reconnect hX₁_cap' hX₁_cup'
   have hswap_caps : X₂.reconnect (Sum.inr c') (Sum.inl a) =
       composeDiagram (permToBrauer (Equiv.swap c c' * Equiv.swap d d')) Z₁ :=
-    reconnect_reconnect_swap_caps hcap hcap' hcup hcup' ha'a hc'c hc'd
+    BrauerDiagram.reconnect_reconnect_swap_caps hcup hcup' ha'a hc'c hc'd
   symm
   calc e c d * evalDiagram s e X₂
       = e c d * (e c' d' * (s (Equiv.swap c c' * Equiv.swap d d') * evalDiagram s e Z₁)) := by
@@ -694,7 +381,7 @@ private theorem evalDiagram_move_cup
   · subst c'
     have hd' : d' = c := Sum.inr.inj (hcup'.symm.trans (D.apply_eq_of_apply_eq hcup))
     subst d'
-    rw [he_comm d c, reconnect_swap_top hcap hcup,
+    rw [he_comm d c, BrauerDiagram.reconnect_swap_top hcap hcup,
       hmove_cap hcap (D.apply_eq_of_apply_eq hcap) hcup]
   have hab : b ≠ a := fun h => D.apply_ne (Sum.inl a) (by rw [hcap, h])
   have hcd : d ≠ c := fun h => D.apply_ne (Sum.inr c) (by rw [hcup, h])
@@ -741,7 +428,7 @@ private theorem evalDiagram_move_cup
       (by simpa using Ne.symm hc'd) Sum.inr_ne_inl
   rw [hmove_cap hcap hcap' hcup', ih_rec X₁ (by omega) hX₁_cap' hX₁_cup',
     ih_rec X₂ (by omega) hX₂_cap hX₂_cup,
-    reconnect_reconnect_comm hcap hcap' hcup hcup' ha'a hc'c hc'd,
+    BrauerDiagram.reconnect_reconnect_comm hcup hcup' ha'a hc'c hc'd,
     ← mul_assoc, (he_disj (Ne.symm hc'c) hd'c.symm (Ne.symm hc'd) hd'd.symm).eq, mul_assoc]
 
 /-- Inductive step for left permutation action at cap-cardinality `m`, given reconnection
@@ -773,7 +460,7 @@ private theorem evalDiagram_perm_left_step
       Sum.map_inr]
   have hX_card := D.card_bottomCap_reconnect hcap hcup
   rw [hP₂ D hm hcap hcup, hP₂ _ hD'_card hD'_cap hD'_cup,
-    reconnect_composeDiagram_permToBrauer_left, ← ih_perm _ (by omega) σ, ← mul_assoc,
+    BrauerDiagram.reconnect_composeDiagram_permToBrauer_left, ← ih_perm _ (by omega) σ, ← mul_assoc,
     hs_conj σ hcd, mul_assoc]
 
 /-- Reconnection independence and left permutation equivariance for `evalDiagram`. -/
@@ -836,8 +523,13 @@ private theorem evalDiagram_capCup_mul_of_isThrough
         evalDiagram s e (composeDiagram (capCup p q) X) := by
   obtain ⟨a, hXp⟩ := Sum.isLeft_iff.mp (X.isLeft_val_inr hp)
   obtain ⟨b, hXq⟩ := Sum.isLeft_iff.mp (X.isLeft_val_inr hq)
-  obtain ⟨hloop, hDcap, hDcup, hDrec⟩ := reconnect_composeDiagram_capCup_of_isThrough hpq hXp hXq
-  rw [hloop, pow_zero, one_smul, hrec _ hDcap hDcup, hDrec]
+  have hDcap : (composeDiagram (capCup p q) X).val (Sum.inl a) = Sum.inl b :=
+    composeDiagram_val_inl_eq_inl_of_cap_upper _ _ (X.apply_eq_of_apply_eq hXp)
+      (capCup_val_inl_left hpq) hXq
+  have hDcup : (composeDiagram (capCup p q) X).val (Sum.inr p) = Sum.inr q :=
+    composeDiagram_val_inr_eq_inr_of_cup_upper _ _ (capCup_val_inr_left hpq)
+  rw [middleLoopCount_capCup_of_isThrough hpq hp hq, pow_zero, one_smul, hrec _ hDcap hDcup,
+    BrauerDiagram.reconnect_composeDiagram_capCup hpq hXp hq]
 
 /-- Case of the cap-cup loop rule where `q` lies on a cup `(q, q')` of `X` with `q' ≠ p`. -/
 private theorem evalDiagram_capCup_mul_of_cup_ne
@@ -882,10 +574,8 @@ private theorem evalDiagram_capCup_mul_of_cup_ne
     rw [← hX, ← composeDiagram_assoc, capCup_comm q p,
       composeDiagram_capCup_capCup_eq_composeDiagram_permToBrauer_swap hpq.symm, capCup_comm p q,
       composeDiagram_assoc]
-  obtain ⟨a', hY'p_val⟩ := Sum.isLeft_iff.mp (Y'.isLeft_val_inr hY'p)
-  obtain ⟨b', hY'q_val⟩ := Sum.isLeft_iff.mp (Y'.isLeft_val_inr hY'q)
   have hloop_Y' : middleLoopCount (capCup p q) Y' = 0 :=
-    (reconnect_composeDiagram_capCup_of_isThrough hpq hY'p_val hY'q_val).1
+    middleLoopCount_capCup_of_isThrough hpq hY'p hY'q
   have hloop_X : middleLoopCount (capCup p q) X = 0 := by
     have h₁ := middleLoopCount_add_middleLoopCount_composeDiagram (capCup p q) (capCup q q') Y
     have h₂ := middleLoopCount_add_middleLoopCount_composeDiagram (capCup p q)
@@ -989,30 +679,9 @@ private theorem evalDiagram_capCup
   obtain ⟨hrec, -⟩ :=
     evalDiagram_reconnect_and_perm_left (s := s) (e := e) he_comm he_disj hs_conj hs_swap he_overlap
   have hrec_one : (capCup a b).reconnect (Sum.inr a) (Sum.inl a) = permToBrauer 1 := by
-    have hcap := capCup_val_inl_left hab
-    have hcup := capCup_val_inr_left hab
-    set Y : BrauerDiagram k := (capCup a b).reconnect (Sum.inr a) (Sum.inl a)
-    have hYa : Y.val (Sum.inl a) = Sum.inr a :=
-      PerfectMatching.reconnect_val_right Sum.inl_ne_inr
-    have hYb : Y.val (Sum.inl b) = Sum.inr b :=
-      hcap ▸ hcup ▸ PerfectMatching.reconnect_val_val_right Sum.inl_ne_inr
-    have hYc : Y.val (Sum.inr a) = Sum.inl a :=
-      PerfectMatching.reconnect_val_self Sum.inl_ne_inr
-    have hYd : Y.val (Sum.inr b) = Sum.inl b :=
-      hcap ▸ hcup ▸ PerfectMatching.reconnect_val_val_self Sum.inl_ne_inr
-    refine Subtype.ext (Equiv.ext fun x => ?_)
-    by_cases hxa : x = Sum.inl a
-    · subst x; simp [hYa, Equiv.Perm.one_def]
-    by_cases hxb : x = Sum.inl b
-    · subst x; simp [hYb, Equiv.Perm.one_def]
-    by_cases hxc : x = Sum.inr a
-    · subst x; simp [hYc, Equiv.Perm.one_def]
-    by_cases hxd : x = Sum.inr b
-    · subst x; simp [hYd, Equiv.Perm.one_def]
-    rw [PerfectMatching.reconnect_val_of_ne hxc hxa (hcup ▸ hxd) (hcap ▸ hxb)]
-    rcases x with i | j
-    · simp [capCup_val_inl_of_ne (by simpa using hxa) (by simpa using hxb), Equiv.Perm.one_def]
-    · simp [capCup_val_inr_of_ne (by simpa using hxc) (by simpa using hxd), Equiv.Perm.one_def]
+    have h := BrauerDiagram.reconnect_composeDiagram_capCup (X := permToBrauer 1) (a := a) hab
+      (by simp [Equiv.Perm.one_def]) (BrauerDiagram.isThrough_permToBrauer 1 (Sum.inr b))
+    rwa [composeDiagram_permToBrauer_one_right] at h
   rw [hrec (capCup a b) (capCup_val_inl_left hab) (capCup_val_inr_left hab), hrec_one,
     evalDiagram_permToBrauer, s.map_one, mul_one]
 
