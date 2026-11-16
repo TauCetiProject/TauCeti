@@ -214,6 +214,7 @@ def specialLinearSimpleRootIndex (k : Fin r) : (specialLinearDiagonalCartan r K)
   specialLinearRootIndex r K k.castSucc k.succ Fin.castSucc_lt_succ.ne
 
 /-- The simple root `αₖ` is the root `εₖ - εₖ₊₁`. -/
+@[simp]
 theorem specialLinearSimpleRootIndex_def (k : Fin r) :
     specialLinearSimpleRootIndex r K k =
       specialLinearRootIndex r K k.castSucc k.succ Fin.castSucc_lt_succ.ne :=
