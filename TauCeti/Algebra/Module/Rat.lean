@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Rat
+import Mathlib.Algebra.Module.Rat
 
 /-!
 # Rational modules: restriction to `ℚ≥0` and division by natural numbers
@@ -21,7 +22,7 @@ Consumers activate it where they need it with
 `ℚ`-algebra such as a universal enveloping algebra, so that `Ring.choose` elaborates there.
 
 Over a semiring that is a `ℚ`-module, scaling by `(n : ℚ)⁻¹` undoes multiplication by a nonzero
-natural number `n`.
+natural number `n`. Likewise, any module over a `ℚ`-algebra has unique additive divisibility.
 
 ## Main definitions
 
@@ -30,6 +31,7 @@ natural number `n`.
 ## Main statements
 
 * `TauCeti.inv_natCast_smul_natCast_mul`: `(n : ℚ)⁻¹ • (n * x) = x` for `n ≠ 0`.
+* `HasUniqueDiv.of_algebra_rat`: any module over a `ℚ`-algebra has unique additive divisibility.
 -/
 
 public section
@@ -48,3 +50,10 @@ theorem inv_natCast_smul_natCast_mul {A : Type*} [Semiring A] [Module ℚ A] {n 
   rw [← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℚ, inv_smul_smul₀ (Nat.cast_ne_zero.2 hn)]
 
 end TauCeti
+
+/-- Every module over a `ℚ`-algebra has unique additive divisibility. -/
+theorem HasUniqueDiv.of_algebra_rat (R V : Type*) [Semiring R] [Algebra ℚ R]
+    [AddCommMonoid V] [Module R V] : HasUniqueDiv V :=
+  let _ : Module ℚ V := Module.compHom V (algebraMap ℚ R)
+  let _ : Module ℚ≥0 V := TauCeti.moduleNNRat
+  .of_module_nnrat V

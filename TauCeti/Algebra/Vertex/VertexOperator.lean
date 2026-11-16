@@ -34,18 +34,24 @@ larger order (`VertexOperator.IsLocalOfOrder.mono`), and it is symmetric in `A` 
 
 ## Main definitions
 
+* `VertexOperator.id`: the identity field `id_V · z^0`, whose `(-1)`-mode is `1` and all other
+  modes vanish.
 * `VertexOperator.IsLocalOfOrder`: mutual locality of order at most `N`.
 
 ## Main results
 
 * `VertexOperator.ext_ncoeff`: vertex operators with the same normalized coefficients are equal.
+* `VertexOperator.support_ncoeff_add_apply_subset`,
+  `VertexOperator.finite_support_ncoeff_add_apply`,
+  `VertexOperator.finite_support_ncoeff_natCast_apply`: finite support of shifted nonnegative mode
+  evaluations on a vector.
 * `VertexOperator.IsLocalOfOrder.mono`, `VertexOperator.IsLocalOfOrder.symm`: locality is
   monotone in the order and symmetric.
 * `VertexOperator.IsLocalOfOrder.of_commute`: fields with pairwise commuting modes are local of
   order `0`.
-* `VertexOperator.IsLocalOfOrder.zero_left`, `VertexOperator.IsLocalOfOrder.add_left`,
-  `VertexOperator.IsLocalOfOrder.smul_left`, `VertexOperator.IsLocalOfOrder.sub_left`: linear
-  closure of mutual locality.
+* `VertexOperator.IsLocalOfOrder.zero_left`, `VertexOperator.IsLocalOfOrder.id_left`,
+  `VertexOperator.IsLocalOfOrder.add_left`, `VertexOperator.IsLocalOfOrder.smul_left`,
+  `VertexOperator.IsLocalOfOrder.sub_left`: linear and unit closure of mutual locality.
 
 ## References
 
@@ -83,6 +89,70 @@ theorem exists_forall_ncoeff_apply_eq_zero (A : VertexOperator R V) (v : V) :
   refine ⟨(-((HahnModule.of R).symm (A v)).order + 1).toNat, fun n hn ↦ ?_⟩
   apply ncoeff_eq_zero_of_lt_order
   omega
+
+/-- If `(B[[n + i]]) v = 0` for all `i ≥ P`, then `fun i : ℕ ↦ (B[[n + i]]) v` is supported in
+`range P`. -/
+theorem support_ncoeff_add_apply_subset (B : VertexOperator R V) (n : ℤ) (v : V) {P : ℕ}
+    (hP : ∀ i : ℕ, P ≤ i → (B[[n + i]]) v = 0) :
+    (Function.support fun i : ℕ ↦ (B[[n + i]]) v) ⊆ range P := by
+  intro i hi
+  simp only [mem_coe, mem_range]
+  by_contra! h
+  exact hi (hP i h)
+
+/-- For any integer shift `n` and vector `v`, only finitely many indices `i : ℕ` have
+`(B[[n + i]]) v ≠ 0`. -/
+theorem finite_support_ncoeff_add_apply (B : VertexOperator R V) (n : ℤ) (v : V) :
+    (Function.support fun i : ℕ ↦ (B[[n + i]]) v).Finite := by
+  obtain ⟨N, hN⟩ := B.exists_forall_ncoeff_apply_eq_zero v
+  exact (finite_toSet (range (N + n.natAbs))).subset
+    (B.support_ncoeff_add_apply_subset n v fun _ hi ↦ hN _ (by omega))
+
+/-- Only finitely many nonnegative modes `B[[(i : ℤ)]]` (`i : ℕ`) are nonzero on a vector `v`. -/
+theorem finite_support_ncoeff_natCast_apply (B : VertexOperator R V) (v : V) :
+    (Function.support fun i : ℕ ↦ (B[[(i : ℤ)]]) v).Finite := by
+  simpa using B.finite_support_ncoeff_add_apply 0 v
+
+private theorem bddBelow_id (v : V) :
+    BddBelow (Function.support fun k : ℤ ↦ (if k = 0 then (1 : Module.End R V) else 0) v) :=
+  ⟨0, fun k hk ↦ by
+    by_contra! hlt
+    exact hk (by
+      have h₀ : k ≠ 0 := by omega
+      simp [h₀])⟩
+
+/-- The identity field `id_V · z^0`, sending each vector `v` to the constant Laurent series `v z^0`,
+whose `(-1)`-mode is `1` and all other normalized modes vanish. -/
+protected def id : VertexOperator R V :=
+  of_coeff (fun k ↦ if k = 0 then 1 else 0) bddBelow_id
+
+/-- Applying the identity field to `v` gives the constant Laurent series `v z^0`. -/
+@[simp]
+theorem id_apply (v : V) :
+    (VertexOperator.id : VertexOperator R V) v = HahnModule.of R (HahnSeries.single 0 v) := by
+  apply (HahnModule.of R).symm.injective
+  ext k
+  simp only [VertexOperator.id, of_coeff_apply_coeff, Equiv.symm_apply_apply,
+    HahnSeries.coeff_single]
+  split_ifs <;> simp_all
+
+/-- The normalized modes of the identity field are `(VertexOperator.id)[[n]] = δ_{n,-1}`. -/
+theorem ncoeff_id (n : ℤ) :
+    (VertexOperator.id : VertexOperator R V)[[n]] = if n = -1 then 1 else 0 := by
+  rw [VertexOperator.id, ncoeff_of_coeff]
+  have h : (-n - 1 = 0) ↔ (n = -1) := by omega
+  simp [h]
+
+/-- The `(-1)`-mode of the identity field is `1`. -/
+@[simp]
+theorem ncoeff_neg_one_id : (VertexOperator.id : VertexOperator R V)[[-1]] = 1 := by
+  simp [ncoeff_id]
+
+/-- All normalized modes of the identity field other than `-1` vanish. -/
+@[simp]
+theorem ncoeff_id_of_ne {n : ℤ} (hn : n ≠ -1) :
+    (VertexOperator.id : VertexOperator R V)[[n]] = 0 := by
+  simp [ncoeff_id, hn]
 
 /-- `A` and `B` are **mutually local of order at most `N`**: `(z - w)ᴺ [A(z), B(w)] = 0`. In
 normalized coefficients, for all integers `m` and `n`,
@@ -165,6 +235,22 @@ theorem zero_left (B : VertexOperator R V) (N : ℕ) :
 @[simp]
 theorem zero_right (A : VertexOperator R V) (N : ℕ) : A.IsLocalOfOrder 0 N :=
   (zero_left A N).symm
+
+/-- The identity field is local of any order `N` to every field. -/
+@[simp]
+theorem id_left (B : VertexOperator R V) (N : ℕ) :
+    (VertexOperator.id : VertexOperator R V).IsLocalOfOrder B N :=
+  (of_commute fun m _ ↦ by
+    rw [ncoeff_id]
+    split_ifs
+    · exact Commute.one_left _
+    · exact Commute.zero_left _).mono (Nat.zero_le N)
+
+/-- Every field is local of any order `N` to the identity field. -/
+@[simp]
+theorem id_right (A : VertexOperator R V) (N : ℕ) :
+    A.IsLocalOfOrder VertexOperator.id N :=
+  (id_left A N).symm
 
 /-- Sums of fields local to `C` are local to `C`. -/
 theorem add_left (hA : A.IsLocalOfOrder C M) (hB : B.IsLocalOfOrder C N) :

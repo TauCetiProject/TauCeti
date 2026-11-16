@@ -7,14 +7,17 @@ module
 
 public import TauCeti.Algebra.Vertex.VertexOperator
 public import Mathlib.RingTheory.Binomial
+import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
 # Delta expansions of local formal distributions
 
 A two-variable formal distribution is an arbitrary coefficient family, with normalized indexing
 `c m n` for the coefficient of `z^(-m-1) w^(-n-1)`. Unlike a Hahn series, it need not have
-well-ordered support. Multiplication by `z - w` and residue in `z` are nevertheless defined:
-they use only finitely many coefficients.
+well-ordered support. Multiplication by `z - w` (`FormalDistribution.mulSub`) and residue in `z`
+are nevertheless defined: they use only finitely many coefficients, and `(z - w)^k` commutes with
+additive homomorphisms and shifts (`FormalDistribution.mulSub_pow_comp_shift`,
+`FormalDistribution.mulSub_pow_comp`).
 
 `FormalDistribution.deltaTerm j A` denotes `A(w) ∂_w^[j] δ(z,w)`, where the derivative is a
 Hasse (divided-power) derivative and `δ(z,w) = ∑ₘ z^(-m-1) w^m`. Its coefficients are
@@ -221,6 +224,24 @@ theorem mulSub_pow_apply (N : ℕ) (c : FormalDistribution M) (m n : ℤ) :
     rw [Finset.sum_congr rfl h₁, Finset.sum_congr rfl h₂, Finset.sum_neg_distrib]
     abel
 
+/-- Naturality of `mulSub ^ k` with respect to an additive homomorphism and a shift in the first
+variable. -/
+theorem mulSub_pow_comp_shift {N : Type*} [AddCommGroup N] (φ : M →+ N) (k : ℕ)
+    (d : FormalDistribution M) (s m n : ℤ) :
+    ((mulSub ^ k) (fun a b ↦ φ (d (a + s) b))) m n = φ (((mulSub ^ k) d) (m + s) n) := by
+  induction k generalizing m n with
+  | zero => rfl
+  | succ k ih =>
+    simp only [pow_succ', AddMonoid.End.mul_apply, mulSub_apply]
+    have h : m + 1 + s = m + s + 1 := by omega
+    rw [ih, ih, h, ← map_sub]
+
+/-- Naturality of `mulSub ^ k` with respect to an additive homomorphism. -/
+theorem mulSub_pow_comp {N : Type*} [AddCommGroup N] (φ : M →+ N) (k : ℕ)
+    (d : FormalDistribution M) (m n : ℤ) :
+    ((mulSub ^ k) (fun a b ↦ φ (d a b))) m n = φ (((mulSub ^ k) d) m n) := by
+  simpa only [add_zero] using mulSub_pow_comp_shift φ k d 0 m n
+
 end FormalDistribution
 
 end TauCeti
@@ -264,23 +285,14 @@ theorem IsLocalOfOrder.ncoeff_apply_ncoeff_apply_eq_zero
     (B[[m]]) ((C[[n]]) v) = 0 := by
   obtain ⟨P, hP⟩ := C.exists_forall_ncoeff_apply_eq_zero v
   let d : FormalDistribution V := fun a b ↦ (B[[b]]) ((C[[a + P]]) v)
-  have hd_mulSub : ∀ (k : ℕ) (a b : ℤ),
-      ((FormalDistribution.mulSub ^ k) d) a b =
-        -((((FormalDistribution.mulSub ^ k) (C.commutatorDistribution B)) (a + P) b) v) := by
-    intro k
-    induction k with
-    | zero =>
-      intro a b
-      simp [d, commutatorDistribution_apply, hv b]
-    | succ k ih =>
-      intro a b
-      have ha : a + 1 + (P : ℤ) = a + P + 1 := by omega
-      simp only [pow_succ', AddMonoid.End.coe_mul, Function.comp_apply,
-        FormalDistribution.mulSub_apply, ih, ha, LinearMap.sub_apply]
-      abel
+  let φ : Module.End R V →+ V := -LinearMap.evalAddMonoidHom v
+  have hd_eq : d = fun a b ↦ φ (C.commutatorDistribution B (a + P) b) := by
+    funext a b
+    simp [d, φ, commutatorDistribution_apply, hv b]
   have hdN : (FormalDistribution.mulSub ^ N) d = 0 := by
     funext a b
-    rw [hd_mulSub, (isLocalOfOrder_iff_mulSub_pow_eq_zero C B N).mp hBC.symm]
+    rw [hd_eq, FormalDistribution.mulSub_pow_comp_shift φ,
+      (isLocalOfOrder_iff_mulSub_pow_eq_zero C B N).mp hBC.symm]
     simp
   have hd0 : d = 0 := by
     rw [FormalDistribution.eq_sum_deltaTerm hdN]

@@ -18,8 +18,12 @@ nonnegative modes on the right. For fields `A` and `B`, its normalized coefficie
                  ∑ᶠ i : ℕ, B[[n-i-1]] (A[[i]] v)`.
 
 Both sums are finite on each vector, though generally not finite as sums of endomorphisms.
-We prove that these coefficients again define a field, without assuming mutual locality.
-This is the binary operation needed to form quadratic current fields.
+We prove that these coefficients again define a field, without assuming mutual locality, and show
+that on a vector killed by all nonnegative modes of `A` and `B`, `:AB:` vanishes in all nonnegative
+modes and acts at mode `-1` as `A[[-1]] ∘ B[[-1]]`
+(`VertexOperator.ncoeff_normalOrder_apply_of_nonneg`,
+`VertexOperator.ncoeff_neg_one_normalOrder_apply`). This is the binary operation needed to form
+quadratic current fields and negative `n`-th products.
 
 ## References
 
@@ -40,31 +44,22 @@ variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
 
 private theorem support_normalOrder_left_subset (A B : VertexOperator R V) (n : ℤ) (v : V)
     {P : ℕ} (hP : ∀ i : ℕ, P ≤ i → (B[[n + i]]) v = 0) :
-    (Function.support fun i : ℕ ↦ (A[[-(i : ℤ) - 1]]) ((B[[n + i]]) v)) ⊆ range P := by
-  intro i hi
-  simp only [mem_coe, mem_range]
-  by_contra! h
-  exact hi (by simp only [hP i h, map_zero])
+    (Function.support fun i : ℕ ↦ (A[[-(i : ℤ) - 1]]) ((B[[n + i]]) v)) ⊆ range P :=
+  fun _ hi ↦ B.support_ncoeff_add_apply_subset n v hP fun h ↦ hi (by simp [h])
 
 private theorem support_normalOrder_right_subset (A B : VertexOperator R V) (n : ℤ) (v : V)
     {Q : ℕ} (hQ : ∀ i : ℕ, Q ≤ i → (A[[(i : ℤ)]]) v = 0) :
-    (Function.support fun i : ℕ ↦ (B[[n - i - 1]]) ((A[[(i : ℤ)]]) v)) ⊆ range Q := by
-  intro i hi
-  simp only [mem_coe, mem_range]
-  by_contra! h
-  exact hi (by simp only [hQ i h, map_zero])
+    (Function.support fun i : ℕ ↦ (B[[n - i - 1]]) ((A[[(i : ℤ)]]) v)) ⊆ range Q :=
+  fun _ hi ↦ A.support_ncoeff_add_apply_subset 0 v (by simpa using hQ) fun h ↦
+    hi (by simp [zero_add] at h; simp [h])
 
 private theorem finite_support_normalOrder_left (A B : VertexOperator R V) (n : ℤ) (v : V) :
-    (Function.support fun i : ℕ ↦ (A[[-(i : ℤ) - 1]]) ((B[[n + i]]) v)).Finite := by
-  obtain ⟨N, hN⟩ := B.exists_forall_ncoeff_apply_eq_zero v
-  exact (finite_toSet (range (N + n.natAbs))).subset
-    (support_normalOrder_left_subset A B n v (fun i hi ↦ hN _ (by omega)))
+    (Function.support fun i : ℕ ↦ (A[[-(i : ℤ) - 1]]) ((B[[n + i]]) v)).Finite :=
+  (B.finite_support_ncoeff_add_apply n v).subset fun _ hi h ↦ hi (by simp [h])
 
 private theorem finite_support_normalOrder_right (A B : VertexOperator R V) (n : ℤ) (v : V) :
-    (Function.support fun i : ℕ ↦ (B[[n - i - 1]]) ((A[[(i : ℤ)]]) v)).Finite := by
-  obtain ⟨N, hN⟩ := A.exists_forall_ncoeff_apply_eq_zero v
-  exact (finite_toSet (range N)).subset
-    (support_normalOrder_right_subset A B n v (fun i hi ↦ hN _ (by omega)))
+    (Function.support fun i : ℕ ↦ (B[[n - i - 1]]) ((A[[(i : ℤ)]]) v)).Finite :=
+  (A.finite_support_ncoeff_natCast_apply v).subset fun _ hi h ↦ hi (by simp [h])
 
 private theorem normalOrder_sums_add (A B C D : VertexOperator R V) (n : ℤ) (v w : V) :
     (∑ᶠ i : ℕ, ((A[[-(i : ℤ) - 1]]) ((B[[n + i]]) v) +
@@ -269,5 +264,26 @@ theorem normalOrder_sum_right {ι : Type*} (A : VertexOperator R V) (s : Finset 
     (B : ι → VertexOperator R V) :
     normalOrder A (∑ i ∈ s, B i) = ∑ i ∈ s, normalOrder A (B i) :=
   map_sum (normalOrderₗ A) B s
+
+/-- Normal ordering preserves annihilation of a vector by all nonnegative modes. -/
+theorem ncoeff_normalOrder_apply_of_nonneg {A B : VertexOperator R V} {v : V}
+    (hA : ∀ m : ℤ, 0 ≤ m → (A[[m]]) v = 0)
+    (hB : ∀ m : ℤ, 0 ≤ m → (B[[m]]) v = 0) {m : ℤ} (hm : 0 ≤ m) :
+    ((normalOrder A B)[[m]]) v = 0 := by
+  rw [ncoeff_normalOrder,
+    normalOrderCoeff_eq_sum A B m v (P := 0) (Q := 0)
+      (fun i _ ↦ hB (m + i) (by omega)) (fun i _ ↦ hA i (Nat.cast_nonneg _))]
+  simp
+
+/-- On a vector killed by nonnegative modes of `A` and `B`, the `(-1)`-mode of `:AB:` acts as
+`A[[-1]] ∘ B[[-1]]`. -/
+theorem ncoeff_neg_one_normalOrder_apply {A B : VertexOperator R V} {v : V}
+    (hA : ∀ m : ℤ, 0 ≤ m → (A[[m]]) v = 0)
+    (hB : ∀ m : ℤ, 0 ≤ m → (B[[m]]) v = 0) :
+    ((normalOrder A B)[[-1]]) v = (A[[-1]]) ((B[[-1]]) v) := by
+  rw [ncoeff_normalOrder,
+    normalOrderCoeff_eq_sum A B (-1) v (P := 1) (Q := 0)
+      (fun i hi ↦ hB (-1 + i) (by omega)) (fun i _ ↦ hA i (Nat.cast_nonneg _))]
+  simp
 
 end VertexOperator

@@ -13,26 +13,28 @@ public import Mathlib.Algebra.Polynomial.Derivation
 # The polynomial formal vertex algebra via reconstruction
 
 On a polynomial ring `R[X]`, left multiplication by `X + z` defines a vertex operator
-`Polynomial.shiftedXField R` whose `(-1)`-mode is multiplication by `X`, whose `(-2)`-mode is the
-identity, and whose remaining modes vanish. It is translation-covariant with `d/dX`
+`TauCeti.Polynomial.shiftedXField R` whose `(-1)`-mode is multiplication by `X`, whose `(-2)`-mode
+is the identity, and whose remaining modes vanish. It is translation-covariant with `d/dX`
 (`Polynomial.derivative'`), mutually local with itself of order `0`, and its modes generate `R[X]`
 from the vacuum `1`.
 
 Over a `ℚ`-algebra `R`, applying `TauCeti.FormalVertexAxioms.ofGeneratingFields` to `(1, d/dX)` and
-the single generating field `Polynomial.shiftedXField R` recovers the commutative differential
-vertex algebra `(Polynomial.derivative').formalVertexAxioms`
-(`Polynomial.ofGeneratingFields_shiftedXField`).
+the single generating field `TauCeti.Polynomial.shiftedXField R` recovers the commutative
+differential vertex algebra `(Polynomial.derivative').formalVertexAxioms`
+(`TauCeti.Polynomial.ofGeneratingFields_shiftedXField`).
 
 ## Main definitions
 
-* `Polynomial.shiftedXField`: the field `p ↦ (X + z) p` on `R[X]`.
+* `TauCeti.Polynomial.shiftedXField`: the field `p ↦ (X + z) p` on `R[X]`.
 
 ## Main results
 
-* `Polynomial.formalVertexAxioms_derivative'_field_X`: in
-  `(Polynomial.derivative').formalVertexAxioms`, the field of `X` is `Polynomial.shiftedXField R`.
-* `Polynomial.ofGeneratingFields_shiftedXField`: reconstructing a formal vertex algebra on `R[X]`
-  from `Polynomial.shiftedXField R` recovers `(Polynomial.derivative').formalVertexAxioms`.
+* `TauCeti.Polynomial.formalVertexAxioms_derivative'_field_X`: in
+  `(Polynomial.derivative').formalVertexAxioms`, the field of `X` is
+  `TauCeti.Polynomial.shiftedXField R`.
+* `TauCeti.Polynomial.ofGeneratingFields_shiftedXField`: reconstructing a formal vertex algebra on
+  `R[X]` from `TauCeti.Polynomial.shiftedXField R` recovers
+  `(Polynomial.derivative').formalVertexAxioms`.
 
 ## References
 
@@ -45,8 +47,9 @@ public section
 noncomputable section
 
 open scoped VertexOperator Polynomial
+open Polynomial
 
-namespace Polynomial
+namespace TauCeti.Polynomial
 
 section CommRing
 
@@ -70,25 +73,33 @@ def shiftedXField : VertexOperator R R[X] :=
     (fun k ↦ if k = 0 then LinearMap.mulLeft R X else if k = 1 then 1 else 0)
     (bddBelow_shiftedXField R)
 
+/-- Normalized modes of `shiftedXField R`: mode `-1` is left multiplication by `X`, mode `-2` is
+`1`, and all other modes vanish. -/
+theorem ncoeff_shiftedXField (n : ℤ) :
+    (shiftedXField R)[[n]] =
+      if n = -1 then LinearMap.mulLeft R X else if n = -2 then 1 else 0 := by
+  rw [shiftedXField, VertexOperator.ncoeff_of_coeff]
+  have hk₀ : (-n - 1 = 0) ↔ (n = -1) := by omega
+  have hk₁ : (-n - 1 = 1) ↔ (n = -2) := by omega
+  simp [hk₀, hk₁]
+
 /-- The `(-1)`-mode (`z^0`-coefficient) of `shiftedXField R` is left multiplication by `X`. -/
 @[simp]
 theorem ncoeff_neg_one_shiftedXField :
     (shiftedXField R)[[-1]] = LinearMap.mulLeft R X := by
-  simp [shiftedXField]
+  simp [ncoeff_shiftedXField]
 
 /-- The `(-2)`-mode (`z^1`-coefficient) of `shiftedXField R` is the identity on `R[X]`. -/
 @[simp]
 theorem ncoeff_neg_two_shiftedXField :
     (shiftedXField R)[[-2]] = 1 := by
-  simp [shiftedXField]
+  simp [ncoeff_shiftedXField]
 
 /-- All modes of `shiftedXField R` other than `-1` and `-2` vanish. -/
+@[simp]
 theorem ncoeff_shiftedXField_of_ne {n : ℤ} (h₁ : n ≠ -1) (h₂ : n ≠ -2) :
     (shiftedXField R)[[n]] = 0 := by
-  rw [shiftedXField, VertexOperator.ncoeff_of_coeff]
-  have hk₀ : -n - 1 ≠ 0 := by omega
-  have hk₁ : -n - 1 ≠ 1 := by omega
-  simp [hk₀, hk₁]
+  simp [ncoeff_shiftedXField, h₁, h₂]
 
 /-- Translation covariance of `shiftedXField R` with `d/dX`. -/
 theorem lie_derivative_ncoeff_shiftedXField (n : ℤ) :
@@ -118,7 +129,7 @@ theorem lie_derivative_ncoeff_shiftedXField (n : ℤ) :
 theorem isLocalOfOrder_shiftedXField :
     (shiftedXField R).IsLocalOfOrder (shiftedXField R) 0 :=
   VertexOperator.IsLocalOfOrder.of_commute fun m n ↦ LinearMap.ext fun p ↦ by
-    rw [shiftedXField, VertexOperator.ncoeff_of_coeff, VertexOperator.ncoeff_of_coeff]
+    rw [ncoeff_shiftedXField, ncoeff_shiftedXField]
     split_ifs <;> simp
 
 /-- Any `R`-submodule of `R[X]` containing `1` and stable under the modes of `shiftedXField R` is
@@ -128,7 +139,8 @@ theorem submodule_eq_top_of_shiftedXField (W : Submodule R R[X]) (h1 : (1 : R[X]
     W = ⊤ := by
   rw [Submodule.eq_top_iff']
   intro p
-  refine Polynomial.induction_on p (fun a ↦ ?_) (fun f g hf hg ↦ W.add_mem hf hg) fun n a ih ↦ ?_
+  refine _root_.Polynomial.induction_on p (fun a ↦ ?_) (fun _ _ hf hg ↦ W.add_mem hf hg)
+    fun n a ih ↦ ?_
   · have ha : C a = a • (1 : R[X]) := by rw [Algebra.smul_def, algebraMap_eq, mul_one]
     exact ha ▸ W.smul_mem a h1
   · have hmul := hF (-1) (C a * X ^ n) ih
@@ -172,7 +184,7 @@ theorem formalVertexAxioms_derivative'_field_X :
 /-- Reconstructing a formal vertex algebra on `R[X]` from vacuum `1`, translation `d/dX`, and the
 single generator `shiftedXField R` recovers `(Polynomial.derivative').formalVertexAxioms`. -/
 theorem ofGeneratingFields_shiftedXField :
-    TauCeti.FormalVertexAxioms.ofGeneratingFields
+    FormalVertexAxioms.ofGeneratingFields
       (1 : R[X]) ((derivative' : Derivation R R[X] R[X]) : Module.End R R[X])
       (fun _ : Unit ↦ shiftedXField R)
       derivative_one
@@ -180,10 +192,10 @@ theorem ofGeneratingFields_shiftedXField :
       (fun _ _ ↦ ⟨0, isLocalOfOrder_shiftedXField R⟩)
       (fun W h1 hF ↦ submodule_eq_top_of_shiftedXField R W h1 (hF ())) =
     (derivative' : Derivation R R[X] R[X]).formalVertexAxioms :=
-  (TauCeti.FormalVertexAxioms.eq_of_generatingFields _ _ _ _ _ _ _
+  (FormalVertexAxioms.eq_ofGeneratingFields _ _ _ _ _ _ _
     (Derivation.formalVertexAxioms_vacuum (derivative' : Derivation R R[X] R[X])) fun _ ↦ by
       simp [formalVertexAxioms_derivative'_field_X]).symm
 
 end RatAlgebra
 
-end Polynomial
+end TauCeti.Polynomial

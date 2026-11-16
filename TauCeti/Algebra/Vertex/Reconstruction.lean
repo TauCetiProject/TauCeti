@@ -8,8 +8,7 @@ module
 public import TauCeti.Algebra.Vertex.Axioms
 public import TauCeti.Algebra.Vertex.NthProduct
 import TauCeti.Algebra.Vertex.FormalDistribution
-import Mathlib.Algebra.Module.Rat
-import Mathlib.Tactic.Abel
+import TauCeti.Algebra.Module.Rat
 
 /-!
 # State–field correspondence and the vertex algebra reconstruction theorem
@@ -43,9 +42,13 @@ that `F i` annihilates `vac` in all nonnegative modes, and no `vac ≠ 0` hypoth
   `TauCeti.FormalVertexAxioms.field_ncoeff_neg_one_apply`,
   `TauCeti.FormalVertexAxioms.field_ncoeff_neg_apply`: specializations to residue products, normal
   ordering, and negative modes.
-* `TauCeti.FormalVertexAxioms.eq_of_generatingFields`,
-  `TauCeti.FormalVertexAxioms.existsUnique_of_generatingFields`: uniqueness and existence-uniqueness
-  of the reconstructed formal vertex algebra.
+* `TauCeti.FormalVertexAxioms.ofGeneratingFields_field_ncoeff_neg_one_apply`,
+  `TauCeti.FormalVertexAxioms.ofGeneratingFields_field_ncoeff_apply`: evaluation of the
+  reconstructed state–field map on generating states and PBW words.
+* `TauCeti.FormalVertexAxioms.eq_of_field_eq`,
+  `TauCeti.FormalVertexAxioms.eq_ofGeneratingFields`,
+  `TauCeti.FormalVertexAxioms.existsUnique_of_generatingFields`: extensionality on generating
+  states, uniqueness, and existence-uniqueness of the reconstructed formal vertex algebra.
 
 ## References
 
@@ -72,35 +75,23 @@ section StateField
 
 variable {R V : Type*} [CommRing R] [Algebra ℚ R] [AddCommGroup V] [Module R V]
 
-private theorem hasUniqueDiv_of_algebra_rat (R V : Type*) [CommRing R] [Algebra ℚ R]
-    [AddCommGroup V] [Module R V] : HasUniqueDiv V :=
-  let _ : Module ℚ V := Module.compHom V (algebraMap ℚ R)
-  .of_module_rat V
-
 /-- **State–field correspondence.** For every state `a`, `b` and integer `n : ℤ`, the field of
 `a₍ₙ₎ b` is the `n`-th field product `Y(a, z)₍ₙ₎ Y(b, z)`. -/
 theorem field_ncoeff_apply (A : FormalVertexAxioms R V) (a b : V) (n : ℤ) :
     A.field (((A.field a)[[n]]) b) = nthProduct n (A.field a) (A.field b) := by
-  have := hasUniqueDiv_of_algebra_rat R V
+  have := HasUniqueDiv.of_algebra_rat R V
   symm
   refine A.eq_field_of_ncoeff_apply_vacuum_eq (fun d ↦ ?_) fun m ↦ ?_
   · obtain ⟨r, hr⟩ := A.exists_isLocalOfOrder a b
     obtain ⟨s, hs⟩ := A.exists_isLocalOfOrder a d
     obtain ⟨t, ht⟩ := A.exists_isLocalOfOrder b d
     exact ⟨_, hr.nthProduct_left hs ht n⟩
-  · rcases lt_or_ge m 0 with hm | hm
-    · obtain ⟨k, rfl⟩ : ∃ k : ℕ, m = -k - 1 := ⟨(-m - 1).toNat, by omega⟩
-      refine nsmul_right_injective k.factorial_ne_zero ?_
-      dsimp only
-      rw [factorial_smul_ncoeff_apply_of_lie_eq_derivative A.translation_vacuum
-            (lie_ncoeff_nthProduct (A.lie_translation_ncoeff a) (A.lie_translation_ncoeff b) n) k,
-          ncoeff_neg_one_nthProduct_apply (A.ncoeff_field_apply_vacuum_of_nonneg a)
-            (A.ncoeff_field_apply_vacuum_of_nonneg b) n,
-          A.ncoeff_neg_one_field_apply_vacuum,
-          A.factorial_smul_ncoeff_field_apply_vacuum]
-    · rw [ncoeff_nthProduct_apply_of_nonneg (A.ncoeff_field_apply_vacuum_of_nonneg a)
-            (A.ncoeff_field_apply_vacuum_of_nonneg b) n hm,
-          A.ncoeff_field_apply_vacuum_of_nonneg _ m hm]
+  · refine ncoeff_apply_eq_of_lie_eq_derivative A.translation_vacuum
+      (lie_ncoeff_nthProduct (A.lie_translation_ncoeff a) (A.lie_translation_ncoeff b) n)
+      (A.lie_translation_ncoeff _) ?_ m
+    rw [ncoeff_neg_one_nthProduct_apply (A.ncoeff_field_apply_vacuum_of_nonneg a)
+          (A.ncoeff_field_apply_vacuum_of_nonneg b) n,
+        A.ncoeff_neg_one_field_apply_vacuum, A.ncoeff_neg_one_field_apply_vacuum]
 
 /-- State–field correspondence for nonnegative residue products (`n : ℕ`). -/
 theorem field_ncoeff_natCast_apply (A : FormalVertexAxioms R V) (a b : V) (n : ℕ) :
@@ -129,68 +120,26 @@ section Reconstruction
 
 variable {R V ι : Type*} [CommRing R] [AddCommGroup V] [Module R V]
 
-private theorem bddBelow_idField (v : V) :
-    BddBelow (Function.support fun k : ℤ ↦ (if k = 0 then (1 : Module.End R V) else 0) v) :=
-  ⟨0, fun k hk ↦ by
-    by_contra! hlt
-    exact hk (by
-      have h₀ : k ≠ 0 := by omega
-      simp [h₀])⟩
-
-/-- The identity field `id_V · z^0`, whose `(-1)`-mode is `1` and all other modes vanish. -/
-private def idField : VertexOperator R V :=
-  of_coeff (fun k ↦ if k = 0 then 1 else 0) bddBelow_idField
-
-private theorem ncoeff_idField (n : ℤ) :
-    (idField (R := R) (V := V))[[n]] = if n = -1 then 1 else 0 := by
-  rw [idField, ncoeff_of_coeff]
-  have : (-n - 1 = 0) ↔ (n = -1) := by omega
-  simp [this]
-
-private theorem isLocalOfOrder_idField_left (B : VertexOperator R V) :
-    idField.IsLocalOfOrder B 0 :=
-  IsLocalOfOrder.of_commute fun m _ ↦ by
-    rw [ncoeff_idField]
-    split_ifs
-    · exact Commute.one_left _
-    · exact Commute.zero_left _
-
 /-- The `R`-submodule of fields that are translation-covariant with `T` and mutually local with
 every generating field `F j`. -/
 private def goodFields (T : Module.End R V) (F : ι → VertexOperator R V) :
     Submodule R (VertexOperator R V) where
   carrier := { B | (∀ n : ℤ, ⁅T, B[[n]]⁆ = (derivative B)[[n]]) ∧
     ∀ j : ι, ∃ N : ℕ, B.IsLocalOfOrder (F j) N }
-  zero_mem' := ⟨fun _ ↦ by simp [Ring.lie_def], fun j ↦ ⟨0, IsLocalOfOrder.zero_left (F j) 0⟩⟩
-  add_mem' {A B} hA hB :=
-    ⟨fun n ↦ by
-       rw [map_add, Pi.add_apply, map_add, map_add, Pi.add_apply, ← hA.1 n, ← hB.1 n]
-       simp only [Ring.lie_def, mul_add, add_mul]
-       abel,
-     fun j ↦ by
-       obtain ⟨M, hM⟩ := hA.2 j
-       obtain ⟨N, hN⟩ := hB.2 j
-       exact ⟨max M N, hM.add_left hN⟩⟩
-  smul_mem' r {B} hB :=
-    ⟨fun n ↦ by
-       rw [map_smul, Pi.smul_apply, map_smul, map_smul, Pi.smul_apply, ← hB.1 n,
-         Ring.lie_def, Ring.lie_def, mul_smul_comm, smul_mul_assoc, smul_sub],
-     fun j ↦ by
-       obtain ⟨N, hN⟩ := hB.2 j
-       exact ⟨N, IsLocalOfOrder.smul_left r hN⟩⟩
+  zero_mem' := ⟨lie_ncoeff_zero T, fun j ↦ ⟨0, IsLocalOfOrder.zero_left (F j) 0⟩⟩
+  add_mem' hA hB :=
+    ⟨lie_ncoeff_add hA.1 hB.1, fun j ↦ by
+      obtain ⟨M, hM⟩ := hA.2 j
+      obtain ⟨N, hN⟩ := hB.2 j
+      exact ⟨max M N, hM.add_left hN⟩⟩
+  smul_mem' r {_} hB :=
+    ⟨lie_ncoeff_smul r hB.1, fun j ↦ by
+      obtain ⟨N, hN⟩ := hB.2 j
+      exact ⟨N, IsLocalOfOrder.smul_left r hN⟩⟩
 
-private theorem idField_mem_goodFields (T : Module.End R V) (F : ι → VertexOperator R V) :
-    idField ∈ goodFields T F := by
-  refine ⟨fun n ↦ ?_, fun j ↦ ⟨0, isLocalOfOrder_idField_left (F j)⟩⟩
-  rw [ncoeff_derivative]
-  by_cases h₁ : n = -1
-  · subst h₁
-    simp [ncoeff_idField, Ring.lie_def]
-  · by_cases h₂ : n = 0
-    · subst h₂
-      simp [ncoeff_idField, Ring.lie_def]
-    · have hm : n - 1 ≠ -1 := by omega
-      simp [ncoeff_idField, h₁, hm, Ring.lie_def]
+private theorem id_mem_goodFields (T : Module.End R V) (F : ι → VertexOperator R V) :
+    VertexOperator.id ∈ goodFields T F :=
+  ⟨lie_ncoeff_id T, fun j ↦ ⟨0, IsLocalOfOrder.id_left (F j) 0⟩⟩
 
 private theorem generator_mem_goodFields {T : Module.End R V} {F : ι → VertexOperator R V}
     (hcov : ∀ (i : ι) (n : ℤ), ⁅T, (F i)[[n]]⁆ = (derivative (F i))[[n]])
@@ -239,7 +188,7 @@ private theorem evalVacuum_bijective (vac : V) (T : Module.End R V) (F : ι → 
     (hgen : ∀ W : Submodule R V, vac ∈ W →
       (∀ (i : ι) (n : ℤ), ∀ v ∈ W, ((F i)[[n]]) v ∈ W) → W = ⊤) :
     Function.Bijective (evalVacuum vac T F) := by
-  have := hasUniqueDiv_of_algebra_rat R V
+  have := HasUniqueDiv.of_algebra_rat R V
   refine ⟨fun x y hxy ↦ sub_eq_zero.mp ?_, ?_⟩
   · -- Injectivity: a good field with `(B[[-1]]) vac = 0` kills `vac` in all modes, hence kills `V`.
     let B := (x - y).1
@@ -247,14 +196,8 @@ private theorem evalVacuum_bijective (vac : V) (T : Module.End R V) (F : ι → 
     have hB0 : (B[[-1]]) vac = 0 := by
       simp only [evalVacuum_apply] at hxy
       simp [B, hxy]
-    have hBvac : ∀ m : ℤ, (B[[m]]) vac = 0 := by
-      intro m
-      rcases lt_or_ge m 0 with hm | hm
-      · obtain ⟨k, rfl⟩ : ∃ k : ℕ, m = -k - 1 := ⟨(-m - 1).toNat, by omega⟩
-        refine nsmul_right_injective k.factorial_ne_zero ?_
-        dsimp only
-        rw [factorial_smul_ncoeff_apply_of_lie_eq_derivative hT hB.1 k, hB0, map_zero, smul_zero]
-      · exact ncoeff_apply_eq_zero_of_nonneg_of_lie_eq_derivative hT hB.1 hm
+    have hBvac : ∀ m : ℤ, (B[[m]]) vac = 0 :=
+      ncoeff_apply_eq_zero_of_lie_eq_derivative hT hB.1 hB0
     let W : Submodule R V :=
       { carrier := { v | ∀ m : ℤ, (B[[m]]) v = 0 }
         zero_mem' := fun m ↦ map_zero _
@@ -269,15 +212,73 @@ private theorem evalVacuum_bijective (vac : V) (T : Module.End R V) (F : ι → 
   · -- Surjectivity: `range (evalVacuum vac T F)` contains `vac` and is closed under `(F i)[[n]]`.
     rw [← LinearMap.range_eq_top]
     refine hgen (LinearMap.range (evalVacuum vac T F)) ?_ ?_
-    · exact ⟨⟨idField, idField_mem_goodFields T F⟩, by simp [ncoeff_idField]⟩
+    · exact ⟨⟨VertexOperator.id, id_mem_goodFields T F⟩, by simp⟩
     · rintro i n _ ⟨⟨B, hB⟩, rfl⟩
       refine ⟨⟨nthProduct n (F i) B, nthProduct_generator_mem_goodFields hcov hloc i n hB⟩, ?_⟩
       exact ncoeff_neg_one_nthProduct_apply
         (fun _ hm ↦ ncoeff_apply_eq_zero_of_nonneg_of_lie_eq_derivative hT (hcov i) hm)
         (fun _ hm ↦ ncoeff_apply_eq_zero_of_nonneg_of_lie_eq_derivative hT hB.1 hm) n
 
-/-- Any good field `A` is mutually local with every field in the image of a state–field map `Y`
-reconstructed from `evalVacuum`. -/
+/-- The reconstructed linear state–field map `V →ₗ[R] VertexOperator R V`, obtained by inverting
+`evalVacuum` onto `goodFields T F`. -/
+private def generatingFieldsMap (vac : V) (T : Module.End R V) (F : ι → VertexOperator R V)
+    (hT : T vac = 0)
+    (hcov : ∀ (i : ι) (n : ℤ), ⁅T, (F i)[[n]]⁆ = (derivative (F i))[[n]])
+    (hloc : ∀ i j : ι, ∃ N : ℕ, (F i).IsLocalOfOrder (F j) N)
+    (hgen : ∀ W : Submodule R V, vac ∈ W →
+      (∀ (i : ι) (n : ℤ), ∀ v ∈ W, ((F i)[[n]]) v ∈ W) → W = ⊤) :
+    V →ₗ[R] VertexOperator R V :=
+  (goodFields T F).subtype.comp
+    (LinearEquiv.ofBijective (evalVacuum vac T F)
+      (evalVacuum_bijective vac T F hT hcov hloc hgen)).symm.toLinearMap
+
+private theorem generatingFieldsMap_mem_goodFields {vac : V} {T : Module.End R V}
+    {F : ι → VertexOperator R V}
+    (hT : T vac = 0)
+    (hcov : ∀ (i : ι) (n : ℤ), ⁅T, (F i)[[n]]⁆ = (derivative (F i))[[n]])
+    (hloc : ∀ i j : ι, ∃ N : ℕ, (F i).IsLocalOfOrder (F j) N)
+    (hgen : ∀ W : Submodule R V, vac ∈ W →
+      (∀ (i : ι) (n : ℤ), ∀ v ∈ W, ((F i)[[n]]) v ∈ W) → W = ⊤) (a : V) :
+    generatingFieldsMap vac T F hT hcov hloc hgen a ∈ goodFields T F := by
+  rw [generatingFieldsMap, LinearMap.comp_apply, Submodule.coe_subtype, LinearEquiv.coe_toLinearMap]
+  exact Subtype.prop _
+
+private theorem ncoeff_neg_one_generatingFieldsMap_apply_vacuum {vac : V} {T : Module.End R V}
+    {F : ι → VertexOperator R V}
+    (hT : T vac = 0)
+    (hcov : ∀ (i : ι) (n : ℤ), ⁅T, (F i)[[n]]⁆ = (derivative (F i))[[n]])
+    (hloc : ∀ i j : ι, ∃ N : ℕ, (F i).IsLocalOfOrder (F j) N)
+    (hgen : ∀ W : Submodule R V, vac ∈ W →
+      (∀ (i : ι) (n : ℤ), ∀ v ∈ W, ((F i)[[n]]) v ∈ W) → W = ⊤) (a : V) :
+    ((generatingFieldsMap vac T F hT hcov hloc hgen a)[[-1]]) vac = a := by
+  rw [generatingFieldsMap, LinearMap.comp_apply, Submodule.coe_subtype, LinearEquiv.coe_toLinearMap,
+    ← evalVacuum_apply vac T F]
+  exact LinearEquiv.apply_ofBijective_symm_apply (evalVacuum vac T F) a
+
+private theorem generatingFieldsMap_ncoeff_neg_one_apply {vac : V} {T : Module.End R V}
+    {F : ι → VertexOperator R V}
+    (hT : T vac = 0)
+    (hcov : ∀ (i : ι) (n : ℤ), ⁅T, (F i)[[n]]⁆ = (derivative (F i))[[n]])
+    (hloc : ∀ i j : ι, ∃ N : ℕ, (F i).IsLocalOfOrder (F j) N)
+    (hgen : ∀ W : Submodule R V, vac ∈ W →
+      (∀ (i : ι) (n : ℤ), ∀ v ∈ W, ((F i)[[n]]) v ∈ W) → W = ⊤)
+    {B : VertexOperator R V} (hB : B ∈ goodFields T F) :
+    generatingFieldsMap vac T F hT hcov hloc hgen ((B[[-1]]) vac) = B := by
+  have hval : (B[[-1]]) vac = evalVacuum vac T F ⟨B, hB⟩ := (evalVacuum_apply vac T F ⟨B, hB⟩).symm
+  rw [hval, generatingFieldsMap, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    LinearEquiv.ofBijective_symm_apply_apply, Submodule.coe_subtype]
+
+private theorem generatingFieldsMap_vacuum {vac : V} {T : Module.End R V}
+    {F : ι → VertexOperator R V}
+    (hT : T vac = 0)
+    (hcov : ∀ (i : ι) (n : ℤ), ⁅T, (F i)[[n]]⁆ = (derivative (F i))[[n]])
+    (hloc : ∀ i j : ι, ∃ N : ℕ, (F i).IsLocalOfOrder (F j) N)
+    (hgen : ∀ W : Submodule R V, vac ∈ W →
+      (∀ (i : ι) (n : ℤ), ∀ v ∈ W, ((F i)[[n]]) v ∈ W) → W = ⊤) :
+    generatingFieldsMap vac T F hT hcov hloc hgen vac = VertexOperator.id := by
+  simpa using generatingFieldsMap_ncoeff_neg_one_apply hT hcov hloc hgen (id_mem_goodFields T F)
+
+/-- Any good field `A` is mutually local with every field in the image of `generatingFieldsMap`. -/
 private theorem exists_isLocalOfOrder_of_mem_goodFields {vac : V} {T : Module.End R V}
     {F : ι → VertexOperator R V}
     (hT : T vac = 0)
@@ -285,14 +286,10 @@ private theorem exists_isLocalOfOrder_of_mem_goodFields {vac : V} {T : Module.En
     (hloc : ∀ i j : ι, ∃ N : ℕ, (F i).IsLocalOfOrder (F j) N)
     (hgen : ∀ W : Submodule R V, vac ∈ W →
       (∀ (i : ι) (n : ℤ), ∀ v ∈ W, ((F i)[[n]]) v ∈ W) → W = ⊤)
-    {Y : V →ₗ[R] VertexOperator R V}
-    (hY_mem : ∀ x : V, Y x ∈ goodFields T F)
-    (hY_eval : ∀ x : V, ((Y x)[[-1]]) vac = x)
-    (hY_eq : ∀ {B : VertexOperator R V}, B ∈ goodFields T F → Y ((B[[-1]]) vac) = B)
-    (hY_vac : Y vac = idField)
     {A : VertexOperator R V} (hA : A ∈ goodFields T F) (b : V) :
-    ∃ N : ℕ, A.IsLocalOfOrder (Y b) N := by
-  have := hasUniqueDiv_of_algebra_rat R V
+    ∃ N : ℕ, A.IsLocalOfOrder (generatingFieldsMap vac T F hT hcov hloc hgen b) N := by
+  have := HasUniqueDiv.of_algebra_rat R V
+  let Y := generatingFieldsMap vac T F hT hcov hloc hgen
   let W : Submodule R V :=
     { carrier := { x | ∃ N : ℕ, A.IsLocalOfOrder (Y x) N }
       zero_mem' := ⟨0, by rw [map_zero]; exact IsLocalOfOrder.zero_right A 0⟩
@@ -300,20 +297,22 @@ private theorem exists_isLocalOfOrder_of_mem_goodFields {vac : V} {T : Module.En
         ⟨max M N, by rw [map_add]; exact hM.add_right hN⟩
       smul_mem' := fun r x ⟨N, hN⟩ ↦
         ⟨N, by rw [map_smul]; exact IsLocalOfOrder.smul_right r hN⟩ }
-  have hW_vac : vac ∈ W := ⟨0, hY_vac ▸ (isLocalOfOrder_idField_left A).symm⟩
+  have hW_vac : vac ∈ W :=
+    ⟨0, (generatingFieldsMap_vacuum hT hcov hloc hgen) ▸ IsLocalOfOrder.id_right A 0⟩
   have hW_step : ∀ (i : ι) (n : ℤ), ∀ x ∈ W, ((F i)[[n]]) x ∈ W := by
     rintro i n x ⟨t, ht⟩
-    have hprod_mem := nthProduct_generator_mem_goodFields hcov hloc i n (hY_mem x)
+    have hYx := generatingFieldsMap_mem_goodFields hT hcov hloc hgen x
+    have hprod_mem := nthProduct_generator_mem_goodFields hcov hloc i n hYx
     have hprod_eval : ((nthProduct n (F i) (Y x))[[-1]]) vac = ((F i)[[n]]) x := by
       rw [ncoeff_neg_one_nthProduct_apply
             (fun _ hm ↦ ncoeff_apply_eq_zero_of_nonneg_of_lie_eq_derivative hT (hcov i) hm)
-            (fun _ hm ↦ ncoeff_apply_eq_zero_of_nonneg_of_lie_eq_derivative hT (hY_mem x).1 hm) n,
-          hY_eval]
+            (fun _ hm ↦ ncoeff_apply_eq_zero_of_nonneg_of_lie_eq_derivative hT hYx.1 hm) n,
+          ncoeff_neg_one_generatingFieldsMap_apply_vacuum]
     have hY_prod : Y (((F i)[[n]]) x) = nthProduct n (F i) (Y x) := by
       rw [← hprod_eval]
-      exact hY_eq hprod_mem
+      exact generatingFieldsMap_ncoeff_neg_one_apply hT hcov hloc hgen hprod_mem
     obtain ⟨s, hs⟩ := hA.2 i
-    obtain ⟨r, hr⟩ := (hY_mem x).2 i
+    obtain ⟨r, hr⟩ := hYx.2 i
     exact ⟨_, hY_prod ▸ IsLocalOfOrder.nthProduct_right hs ht hr.symm n⟩
   exact Submodule.eq_top_iff'.mp (hgen W hW_vac hW_step) b
 
@@ -330,38 +329,30 @@ def ofGeneratingFields (vac : V) (T : Module.End R V) (F : ι → VertexOperator
     (hgen : ∀ W : Submodule R V, vac ∈ W →
       (∀ (i : ι) (n : ℤ), ∀ v ∈ W, ((F i)[[n]]) v ∈ W) → W = ⊤) :
     FormalVertexAxioms R V :=
-  have := hasUniqueDiv_of_algebra_rat R V
-  let e : goodFields T F ≃ₗ[R] V :=
-    LinearEquiv.ofBijective (evalVacuum vac T F) (evalVacuum_bijective vac T F hT hcov hloc hgen)
-  let Y : V →ₗ[R] VertexOperator R V := (goodFields T F).subtype.comp e.symm.toLinearMap
-  have hY_mem (a : V) : Y a ∈ goodFields T F := (e.symm a).2
-  have hY_eval (a : V) : ((Y a)[[-1]]) vac = a := e.apply_symm_apply a
-  have hY_eq {B : VertexOperator R V} (hB : B ∈ goodFields T F) :
-      Y ((B[[-1]]) vac) = B :=
-    congr_arg Subtype.val (e.symm_apply_eq.mpr rfl : e.symm (e ⟨B, hB⟩) = ⟨B, hB⟩)
-  have hY_vac : Y vac = idField := by
-    have hid : ((idField (R := R) (V := V))[[-1]]) vac = vac := by simp [ncoeff_idField]
-    simpa only [hid] using hY_eq (idField_mem_goodFields T F)
-  { field := Y
+  have := HasUniqueDiv.of_algebra_rat R V
+  { field := generatingFieldsMap vac T F hT hcov hloc hgen
     vacuum := vac
     translation := T
     translation_vacuum := hT
-    ncoeff_field_vacuum n := by rw [hY_vac, ncoeff_idField]
-    ncoeff_field_apply_vacuum_of_nonneg a n hn :=
-      ncoeff_apply_eq_zero_of_nonneg_of_lie_eq_derivative hT (hY_mem a).1 hn
-    ncoeff_neg_one_field_apply_vacuum := hY_eval
+    ncoeff_field_vacuum n := by rw [generatingFieldsMap_vacuum, ncoeff_id]
+    ncoeff_field_apply_vacuum_of_nonneg a _ hn :=
+      ncoeff_apply_eq_zero_of_nonneg_of_lie_eq_derivative hT
+        (generatingFieldsMap_mem_goodFields hT hcov hloc hgen a).1 hn
+    ncoeff_neg_one_field_apply_vacuum :=
+      ncoeff_neg_one_generatingFieldsMap_apply_vacuum hT hcov hloc hgen
     field_translation a := by
-      have hd_eval : ((derivative (Y a))[[-1]]) vac = T a := by
-        have h := LinearMap.congr_fun ((hY_mem a).1 (-1)) vac
-        rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp, hT,
-          map_zero, sub_zero, hY_eval] at h
-        exact h.symm
+      have hYa := generatingFieldsMap_mem_goodFields hT hcov hloc hgen a
+      have hd_eval :
+          ((derivative (generatingFieldsMap vac T F hT hcov hloc hgen a))[[-1]]) vac = T a := by
+        rw [← apply_ncoeff_apply_of_lie_eq_derivative hT hYa.1 (-1),
+          ncoeff_neg_one_generatingFieldsMap_apply_vacuum]
       rw [← hd_eval]
-      exact hY_eq (derivative_mem_goodFields (hY_mem a))
-    lie_translation_ncoeff a := (hY_mem a).1
+      exact generatingFieldsMap_ncoeff_neg_one_apply hT hcov hloc hgen
+        (derivative_mem_goodFields hYa)
+    lie_translation_ncoeff a := (generatingFieldsMap_mem_goodFields hT hcov hloc hgen a).1
     exists_isLocalOfOrder a b :=
-      exists_isLocalOfOrder_of_mem_goodFields hT hcov hloc hgen hY_mem hY_eval hY_eq hY_vac
-        (hY_mem a) b }
+      exists_isLocalOfOrder_of_mem_goodFields hT hcov hloc hgen
+        (generatingFieldsMap_mem_goodFields hT hcov hloc hgen a) b }
 
 /-- The vacuum of `ofGeneratingFields` is the given vector `vac`. -/
 @[simp]
@@ -385,24 +376,69 @@ theorem ofGeneratingFields_translation (vac : V) (T : Module.End R V)
     (ofGeneratingFields vac T F hT hcov hloc hgen).translation = T :=
   (rfl)
 
+/-- The field of `vac` in `ofGeneratingFields` is `VertexOperator.id`. -/
+@[simp]
+theorem ofGeneratingFields_field_vacuum (vac : V) (T : Module.End R V)
+    (F : ι → VertexOperator R V) (hT : T vac = 0)
+    (hcov : ∀ (i : ι) (n : ℤ), ⁅T, (F i)[[n]]⁆ = (derivative (F i))[[n]])
+    (hloc : ∀ i j : ι, ∃ N : ℕ, (F i).IsLocalOfOrder (F j) N)
+    (hgen : ∀ W : Submodule R V, vac ∈ W →
+      (∀ (i : ι) (n : ℤ), ∀ v ∈ W, ((F i)[[n]]) v ∈ W) → W = ⊤) :
+    (ofGeneratingFields vac T F hT hcov hloc hgen).field vac = VertexOperator.id :=
+  (ofGeneratingFields vac T F hT hcov hloc hgen).field_vacuum
+
 /-- Reconstructed state–field assignment on the generating states `((F i)[[-1]]) vac`. -/
 @[simp]
-theorem ofGeneratingFields_field_apply_generator (vac : V) (T : Module.End R V)
+theorem ofGeneratingFields_field_ncoeff_neg_one_apply (vac : V) (T : Module.End R V)
     (F : ι → VertexOperator R V) (hT : T vac = 0)
     (hcov : ∀ (i : ι) (n : ℤ), ⁅T, (F i)[[n]]⁆ = (derivative (F i))[[n]])
     (hloc : ∀ i j : ι, ∃ N : ℕ, (F i).IsLocalOfOrder (F j) N)
     (hgen : ∀ W : Submodule R V, vac ∈ W →
       (∀ (i : ι) (n : ℤ), ∀ v ∈ W, ((F i)[[n]]) v ∈ W) → W = ⊤) (i : ι) :
     (ofGeneratingFields vac T F hT hcov hloc hgen).field (((F i)[[-1]]) vac) = F i := by
-  let e : goodFields T F ≃ₗ[R] V :=
-    LinearEquiv.ofBijective (evalVacuum vac T F) (evalVacuum_bijective vac T F hT hcov hloc hgen)
-  exact congr_arg Subtype.val
-    (e.symm_apply_eq.mpr rfl : e.symm (e ⟨F i, generator_mem_goodFields hcov hloc i⟩) = _)
+  rw [ofGeneratingFields]
+  exact generatingFieldsMap_ncoeff_neg_one_apply hT hcov hloc hgen
+    (generator_mem_goodFields hcov hloc i)
+
+-- `@[simp]` is omitted so it does not collide with `ofGeneratingFields_field_ncoeff_neg_one_apply`
+-- at `n = -1`, `v = vac`.
+/-- Recursive formula for the reconstructed state–field map under the action of any generator mode
+`(F i)[[n]]`. -/
+theorem ofGeneratingFields_field_ncoeff_apply (vac : V) (T : Module.End R V)
+    (F : ι → VertexOperator R V) (hT : T vac = 0)
+    (hcov : ∀ (i : ι) (n : ℤ), ⁅T, (F i)[[n]]⁆ = (derivative (F i))[[n]])
+    (hloc : ∀ i j : ι, ∃ N : ℕ, (F i).IsLocalOfOrder (F j) N)
+    (hgen : ∀ W : Submodule R V, vac ∈ W →
+      (∀ (i : ι) (n : ℤ), ∀ v ∈ W, ((F i)[[n]]) v ∈ W) → W = ⊤)
+    (i : ι) (n : ℤ) (v : V) :
+    (ofGeneratingFields vac T F hT hcov hloc hgen).field (((F i)[[n]]) v) =
+      nthProduct n (F i) ((ofGeneratingFields vac T F hT hcov hloc hgen).field v) := by
+  let G := ofGeneratingFields vac T F hT hcov hloc hgen
+  have hGi : G.field (((F i)[[-1]]) vac) = F i :=
+    ofGeneratingFields_field_ncoeff_neg_one_apply vac T F hT hcov hloc hgen i
+  calc
+    G.field (((F i)[[n]]) v) = G.field (((G.field (((F i)[[-1]]) vac))[[n]]) v) := by rw [hGi]
+    _ = nthProduct n (F i) (G.field v) := by rw [G.field_ncoeff_apply, hGi]
+
+/-- **Extensionality on generating states.** Two formal vertex algebra structures over a `ℚ`-algebra
+that share the same vacuum and assign the same fields to a family of states `s : ι → V` whose modes
+generate `V` from the vacuum are equal. -/
+theorem eq_of_field_eq {A B : FormalVertexAxioms R V} {s : ι → V}
+    (hvac : A.vacuum = B.vacuum) (hs : ∀ i : ι, A.field (s i) = B.field (s i))
+    (hgen : ∀ W : Submodule R V, A.vacuum ∈ W →
+      (∀ (i : ι) (n : ℤ), ∀ v ∈ W, ((A.field (s i))[[n]]) v ∈ W) → W = ⊤) :
+    A = B := by
+  refine FormalVertexAxioms.ext ?_
+  rw [← LinearMap.eqLocus_eq_top]
+  refine hgen (LinearMap.eqLocus A.field B.field) ?_ fun i n v hv ↦ ?_
+  · rw [LinearMap.mem_eqLocus, A.field_vacuum, hvac, B.field_vacuum]
+  · rw [LinearMap.mem_eqLocus] at hv ⊢
+    rw [A.field_ncoeff_apply, hv, hs i, B.field_ncoeff_apply]
 
 /-- **Uniqueness in the reconstruction theorem.** Any formal vertex algebra on `V` with vacuum
 `vac` whose state–field map assigns `F i` to `((F i)[[-1]]) vac` for each `i` equals
 `ofGeneratingFields`. -/
-theorem eq_of_generatingFields (vac : V) (T : Module.End R V) (F : ι → VertexOperator R V)
+theorem eq_ofGeneratingFields (vac : V) (T : Module.End R V) (F : ι → VertexOperator R V)
     (hT : T vac = 0)
     (hcov : ∀ (i : ι) (n : ℤ), ⁅T, (F i)[[n]]⁆ = (derivative (F i))[[n]])
     (hloc : ∀ i j : ι, ∃ N : ℕ, (F i).IsLocalOfOrder (F j) N)
@@ -410,26 +446,10 @@ theorem eq_of_generatingFields (vac : V) (T : Module.End R V) (F : ι → Vertex
       (∀ (i : ι) (n : ℤ), ∀ v ∈ W, ((F i)[[n]]) v ∈ W) → W = ⊤)
     {A : FormalVertexAxioms R V} (hvac : A.vacuum = vac)
     (hF : ∀ i : ι, A.field (((F i)[[-1]]) vac) = F i) :
-    A = ofGeneratingFields vac T F hT hcov hloc hgen := by
-  let G := ofGeneratingFields vac T F hT hcov hloc hgen
-  refine FormalVertexAxioms.ext ?_
-  rw [← LinearMap.eqLocus_eq_top]
-  refine hgen (LinearMap.eqLocus A.field G.field) ?_ ?_
-  · rw [LinearMap.mem_eqLocus]
-    refine ext_ncoeff fun n ↦ ?_
-    have hGvac : G.vacuum = vac := rfl
-    rw [← hGvac, G.ncoeff_field_vacuum, hGvac, ← hvac, A.ncoeff_field_vacuum]
-  · intro i n v hv
-    rw [LinearMap.mem_eqLocus] at hv ⊢
-    have hGi : G.field (((F i)[[-1]]) vac) = F i :=
-      ofGeneratingFields_field_apply_generator vac T F hT hcov hloc hgen i
-    calc
-      A.field (((F i)[[n]]) v) =
-          A.field (((A.field (((F i)[[-1]]) vac))[[n]]) v) := by rw [hF i]
-      _ = nthProduct n (F i) (A.field v) := by rw [A.field_ncoeff_apply, hF i]
-      _ = nthProduct n (F i) (G.field v) := by rw [hv]
-      _ = G.field (((G.field (((F i)[[-1]]) vac))[[n]]) v) := by rw [G.field_ncoeff_apply, hGi]
-      _ = G.field (((F i)[[n]]) v) := by rw [hGi]
+    A = ofGeneratingFields vac T F hT hcov hloc hgen :=
+  eq_of_field_eq (s := fun i ↦ ((F i)[[-1]]) vac) hvac
+    (fun i ↦ by rw [hF i, ofGeneratingFields_field_ncoeff_neg_one_apply])
+    (fun W hW hstep ↦ hgen W (hvac ▸ hW) fun i n v hv ↦ hF i ▸ hstep i n v hv)
 
 /-- **Existence and uniqueness of the reconstructed formal vertex algebra.** -/
 theorem existsUnique_of_generatingFields (vac : V) (T : Module.End R V)
@@ -441,8 +461,8 @@ theorem existsUnique_of_generatingFields (vac : V) (T : Module.End R V)
     ∃! A : FormalVertexAxioms R V,
       A.vacuum = vac ∧ A.translation = T ∧ ∀ i : ι, A.field (((F i)[[-1]]) vac) = F i :=
   ⟨ofGeneratingFields vac T F hT hcov hloc hgen,
-    ⟨rfl, rfl, ofGeneratingFields_field_apply_generator vac T F hT hcov hloc hgen⟩,
-    fun _ ⟨hvac, _, hF⟩ ↦ eq_of_generatingFields vac T F hT hcov hloc hgen hvac hF⟩
+    ⟨rfl, rfl, ofGeneratingFields_field_ncoeff_neg_one_apply vac T F hT hcov hloc hgen⟩,
+    fun _ ⟨hvac, _, hF⟩ ↦ eq_ofGeneratingFields vac T F hT hcov hloc hgen hvac hF⟩
 
 end Reconstruction
 
