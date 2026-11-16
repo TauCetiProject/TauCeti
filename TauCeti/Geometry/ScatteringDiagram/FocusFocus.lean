@@ -43,15 +43,17 @@ with the binomial expansion of `(1 + w)^r` yields:
 ## Main definitions and results
 
 * `TauCeti.FocusFocus.Coordinate`, `TauCeti.FocusFocus.Ambient`, `TauCeti.FocusFocus.modelIdeal`,
-  `TauCeti.FocusFocus.ModelAlgebra`, `TauCeti.FocusFocus.coordinate`: ambient polynomial ring and
-  order-`k` focus-focus model algebra.
-* `TauCeti.FocusFocus.modelW`, `TauCeti.FocusFocus.modelTheta`: the tangential unit `w` and theta
+  `TauCeti.FocusFocus.modelIdeal_le_iff`, `TauCeti.FocusFocus.ModelAlgebra`,
+  `TauCeti.FocusFocus.coordinate`: ambient polynomial ring and order-`k` focus-focus model algebra.
+* `TauCeti.FocusFocus.modelW`, `TauCeti.FocusFocus.map_modelW_zpow`,
+  `TauCeti.FocusFocus.modelTheta`: the tangential unit `w`, unit-power transport, and theta
   elements `ϑ_{n,b}`.
-* `TauCeti.FocusFocus.modelSlabEquiv`: `K`-algebra isomorphism with
-  `SlabAlgebra (BaseRing K k)[T;T⁻¹] (slabParam K k)`.
+* `TauCeti.FocusFocus.slabParam`, `TauCeti.FocusFocus.modelSlabEquiv`: `K`-algebra isomorphism
+  with `SlabAlgebra (BaseRing K k)[T;T⁻¹] (slabParam K k)`.
 * `TauCeti.FocusFocus.modelBasis`, `TauCeti.FocusFocus.instModuleFree`: `K`-basis `t^i ϑ_{n,b}` and
   freeness over `K`.
-* `TauCeti.FocusFocus.modelTheta_mul`: the focus-focus theta product formula.
+* `TauCeti.FocusFocus.modelTheta_mul`, `TauCeti.FocusFocus.rightChamberMap_binomial`: the
+  focus-focus theta product formula and the binomial right-chamber expansion for `q = t (1 + w)`.
 * `TauCeti.FocusFocus.mapRingHom`, `TauCeti.FocusFocus.truncAlgHom`: base-change and truncation
   homomorphisms preserving `modelTheta`.
 
@@ -91,6 +93,30 @@ def modelIdeal (k : ℕ) : Ideal (Ambient K) :=
     MvPolynomial.X t ^ (k + 1),
     MvPolynomial.X x * MvPolynomial.X y - MvPolynomial.X t * (1 + MvPolynomial.X w)}
 
+theorem w_mul_wInv_sub_one_mem_modelIdeal (k : ℕ) :
+    MvPolynomial.X w * MvPolynomial.X wInv - 1 ∈ modelIdeal K k :=
+  Ideal.subset_span (Set.mem_insert _ _)
+
+theorem t_pow_succ_mem_modelIdeal (k : ℕ) :
+    MvPolynomial.X t ^ (k + 1) ∈ modelIdeal K k :=
+  Ideal.subset_span (Set.mem_insert_of_mem _ (Set.mem_insert _ _))
+
+theorem x_mul_y_sub_mem_modelIdeal (k : ℕ) :
+    MvPolynomial.X x * MvPolynomial.X y - MvPolynomial.X t * (1 + MvPolynomial.X w) ∈
+      modelIdeal K k :=
+  Ideal.subset_span
+    (Set.mem_insert_of_mem _ (Set.mem_insert_of_mem _ (Set.mem_singleton _)))
+
+/-- An ideal of `Ambient K` contains `modelIdeal K k` if and only if it contains the three defining
+relations `w w⁻¹ - 1`, `t ^ (k + 1)`, and `x y - t (1 + w)`. -/
+theorem modelIdeal_le_iff (k : ℕ) {I : Ideal (Ambient K)} :
+    modelIdeal K k ≤ I ↔
+      MvPolynomial.X w * MvPolynomial.X wInv - 1 ∈ I ∧
+        MvPolynomial.X t ^ (k + 1) ∈ I ∧
+        MvPolynomial.X x * MvPolynomial.X y - MvPolynomial.X t * (1 + MvPolynomial.X w) ∈ I := by
+  rw [modelIdeal, Ideal.span_le]
+  simp [Set.insert_subset_iff]
+
 /-- The focus-focus model algebra `K[t, w^{±1}, x, y] / (t^{k + 1}, x y - t (1 + w))` at
 order `k`. -/
 abbrev ModelAlgebra (k : ℕ) := Ambient K ⧸ modelIdeal K k
@@ -105,11 +131,11 @@ def modelW (k : ℕ) : (ModelAlgebra K k)ˣ where
   inv := coordinate K (modelIdeal K k) wInv
   val_inv := by
     rw [coordinate, coordinate, ← map_mul, ← map_one (Ideal.Quotient.mk _), Ideal.Quotient.eq]
-    exact Ideal.subset_span (Set.mem_insert _ _)
+    exact w_mul_wInv_sub_one_mem_modelIdeal K k
   inv_val := by
     rw [mul_comm, coordinate, coordinate, ← map_mul, ← map_one (Ideal.Quotient.mk _),
       Ideal.Quotient.eq]
-    exact Ideal.subset_span (Set.mem_insert _ _)
+    exact w_mul_wInv_sub_one_mem_modelIdeal K k
 
 @[simp]
 theorem val_modelW (k : ℕ) :
@@ -121,18 +147,25 @@ theorem val_inv_modelW (k : ℕ) :
     (((modelW K k)⁻¹ : (ModelAlgebra K k)ˣ) : ModelAlgebra K k) =
       coordinate K (modelIdeal K k) wInv := (rfl)
 
+/-- A monoid homomorphism sending `w` to a unit `u` sends `modelW K k ^ b` to `u ^ b`. -/
+theorem map_modelW_zpow {M F : Type*} [Monoid M] (k : ℕ)
+    [FunLike F (ModelAlgebra K k) M] [MonoidHomClass F (ModelAlgebra K k) M]
+    (f : F) (u : Mˣ) (hu : f (coordinate K (modelIdeal K k) w) = u) (b : ℤ) :
+    f ((modelW K k ^ b : (ModelAlgebra K k)ˣ) : ModelAlgebra K k) = ((u ^ b : Mˣ) : M) := by
+  have hmap : Units.map (f : ModelAlgebra K k →* M) (modelW K k) = u := Units.ext hu
+  rw [← hmap, ← map_zpow, Units.coe_map, MonoidHom.coe_ofClass]
+
 theorem coordinate_t_pow_succ_eq_zero (k : ℕ) :
     coordinate K (modelIdeal K k) t ^ (k + 1) = 0 := by
   rw [coordinate, ← map_pow, Ideal.Quotient.eq_zero_iff_mem]
-  exact Ideal.subset_span (Set.mem_insert_of_mem _ (Set.mem_insert _ _))
+  exact t_pow_succ_mem_modelIdeal K k
 
 theorem coordinate_x_mul_y (k : ℕ) :
     coordinate K (modelIdeal K k) x * coordinate K (modelIdeal K k) y =
       coordinate K (modelIdeal K k) t * (1 + coordinate K (modelIdeal K k) w) := by
   rw [coordinate, coordinate, coordinate, coordinate, ← map_mul, ← map_one (Ideal.Quotient.mk _),
     ← map_add, ← map_mul, Ideal.Quotient.eq]
-  exact Ideal.subset_span
-    (Set.mem_insert_of_mem _ (Set.mem_insert_of_mem _ (Set.mem_singleton _)))
+  exact x_mul_y_sub_mem_modelIdeal K k
 
 /-- The model theta element `ϑ_{n,b}` in `ModelAlgebra K k`, equal to `x^{-n} w^b` for `n < 0`,
 `w^b` for `n = 0`, and `y^n w^b` for `n > 0`. -/
@@ -141,12 +174,46 @@ def modelTheta (k : ℕ) (n b : ℤ) : ModelAlgebra K k :=
     else coordinate K (modelIdeal K k) y ^ n.natAbs) *
     ((modelW K k ^ b : (ModelAlgebra K k)ˣ) : ModelAlgebra K k)
 
+theorem modelTheta_def (k : ℕ) (n b : ℤ) :
+    modelTheta K k n b =
+      (if n < 0 then coordinate K (modelIdeal K k) x ^ n.natAbs
+        else coordinate K (modelIdeal K k) y ^ n.natAbs) *
+        ((modelW K k ^ b : (ModelAlgebra K k)ˣ) : ModelAlgebra K k) := (rfl)
+
+theorem modelTheta_of_neg (k : ℕ) {n : ℤ} (hn : n < 0) (b : ℤ) :
+    modelTheta K k n b =
+      coordinate K (modelIdeal K k) x ^ n.natAbs *
+        ((modelW K k ^ b : (ModelAlgebra K k)ˣ) : ModelAlgebra K k) := by
+  simp [modelTheta_def, hn]
+
+theorem modelTheta_of_nonneg (k : ℕ) {n : ℤ} (hn : 0 ≤ n) (b : ℤ) :
+    modelTheta K k n b =
+      coordinate K (modelIdeal K k) y ^ n.natAbs *
+        ((modelW K k ^ b : (ModelAlgebra K k)ˣ) : ModelAlgebra K k) := by
+  simp [modelTheta_def, not_lt.mpr hn]
+
 @[simp]
 theorem modelTheta_zero_left (k : ℕ) (b : ℤ) :
     modelTheta K k 0 b = ((modelW K k ^ b : (ModelAlgebra K k)ˣ) : ModelAlgebra K k) := by
-  simp [modelTheta]
+  simp [modelTheta_def]
 
 theorem modelTheta_zero (k : ℕ) : modelTheta K k 0 0 = 1 := by simp
+
+@[simp]
+theorem modelTheta_natCast (k : ℕ) (a : ℕ) (b : ℤ) :
+    modelTheta K k (a : ℤ) b =
+      coordinate K (modelIdeal K k) y ^ a *
+        ((modelW K k ^ b : (ModelAlgebra K k)ˣ) : ModelAlgebra K k) := by
+  rw [modelTheta_of_nonneg K k (Int.natCast_nonneg a), Int.natAbs_natCast]
+
+@[simp]
+theorem modelTheta_neg_natCast (k : ℕ) (a : ℕ) (b : ℤ) :
+    modelTheta K k (-(a : ℤ)) b =
+      coordinate K (modelIdeal K k) x ^ a *
+        ((modelW K k ^ b : (ModelAlgebra K k)ˣ) : ModelAlgebra K k) := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  · rw [modelTheta_of_neg K k (by omega), Int.natAbs_neg, Int.natAbs_natCast]
 
 /-! ### Identification with `SlabAlgebra` over `(K[t] / (t^{k + 1}))[w, w⁻¹]` -/
 
@@ -156,6 +223,11 @@ abbrev BaseRing (k : ℕ) := AdjoinRoot (Polynomial.X ^ (k + 1) : Polynomial K)
 /-- The focus-focus slab parameter `t (1 + w)` in `(BaseRing K k)[T;T⁻¹]`. -/
 def slabParam (k : ℕ) : (BaseRing K k)[T;T⁻¹] :=
   C (AdjoinRoot.root (Polynomial.X ^ (k + 1) : Polynomial K)) * (1 + T 1)
+
+/-- Unfold the focus-focus slab parameter `slabParam K k = t (1 + w)`. -/
+theorem slabParam_def (k : ℕ) :
+    slabParam K k =
+      C (AdjoinRoot.root (Polynomial.X ^ (k + 1) : Polynomial K)) * (1 + T 1) := (rfl)
 
 private abbrev TargetSlab (k : ℕ) := SlabAlgebra (BaseRing K k)[T;T⁻¹] (slabParam K k)
 
@@ -171,23 +243,20 @@ private def modelToSlab (k : ℕ) : ModelAlgebra K k →ₐ[K] TargetSlab K k :=
   Ideal.Quotient.liftₐ (modelIdeal K k) (MvPolynomial.aeval (coordToSlab K k)) (by
     have hle : modelIdeal K k ≤
         RingHom.ker (MvPolynomial.aeval (coordToSlab K k)).toRingHom := by
-      rw [modelIdeal, Ideal.span_le]
-      intro p hp
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp
-      rw [SetLike.mem_coe, RingHom.mem_ker, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-      rcases hp with rfl | rfl | rfl
-      · rw [map_sub, map_mul, map_one, MvPolynomial.aeval_X, MvPolynomial.aeval_X, coordToSlab,
-          coordToSlab, ← map_mul, ← T_add]
+      rw [modelIdeal_le_iff]
+      refine ⟨?_, ?_, ?_⟩
+      · simp only [RingHom.mem_ker, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, map_sub, map_mul,
+          map_one, MvPolynomial.aeval_X, coordToSlab]
+        rw [← map_mul, ← T_add]
         simp
       · have hroot : AdjoinRoot.root (Polynomial.X ^ (k + 1) : Polynomial K) ^ (k + 1) = 0 := by
           simpa using AdjoinRoot.eval₂_root (Polynomial.X ^ (k + 1) : Polynomial K)
-        rw [map_pow, MvPolynomial.aeval_X, coordToSlab, ← map_pow, ← map_pow, hroot, map_zero,
-          map_zero]
-      · rw [map_sub, map_mul, map_mul, map_add, map_one, MvPolynomial.aeval_X,
-          MvPolynomial.aeval_X, MvPolynomial.aeval_X, MvPolynomial.aeval_X, coordToSlab,
-          coordToSlab, coordToSlab, coordToSlab, SlabAlgebra.X_mul_Y,
-          ← map_one (algebraMap (BaseRing K k)[T;T⁻¹] (TargetSlab K k)), ← map_add, ← map_mul]
-        exact sub_self _
+        simp only [RingHom.mem_ker, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, map_pow,
+          MvPolynomial.aeval_X, coordToSlab]
+        rw [← map_pow, ← map_pow, hroot, map_zero, map_zero]
+      · simp only [RingHom.mem_ker, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, map_sub, map_mul,
+          map_add, map_one, MvPolynomial.aeval_X, coordToSlab, SlabAlgebra.X_mul_Y, slabParam_def,
+          sub_self]
     exact fun _ ha => hle ha)
 
 @[simp]
@@ -204,7 +273,7 @@ private def slabToModel (k : ℕ) : TargetSlab K k →ₐ[K] ModelAlgebra K k :=
   { SlabAlgebra.liftRingHom (eval₂ (baseToModel K k).toRingHom (modelW K k))
       (coordinate K (modelIdeal K k) x) (coordinate K (modelIdeal K k) y)
       (by
-        simp only [slabParam, map_mul, map_add, map_one, eval₂_C, eval₂_T,
+        simp only [slabParam_def, map_mul, map_add, map_one, eval₂_C, eval₂_T,
           AlgHom.toRingHom_eq_coe, RingHom.coe_coe, baseToModel, AdjoinRoot.liftAlgHom_root,
           zpow_one, val_modelW]
         exact coordinate_x_mul_y K k) with
@@ -235,22 +304,22 @@ private theorem modelToSlab_baseToModel (k : ℕ) (a : BaseRing K k) :
 private theorem modelToSlab_modelW_zpow (k : ℕ) (n : ℤ) :
     modelToSlab K k (((modelW K k ^ n : (ModelAlgebra K k)ˣ) : ModelAlgebra K k)) =
       algebraMap (BaseRing K k)[T;T⁻¹] (TargetSlab K k) (T n) := by
-  let u : (TargetSlab K k)ˣ := Units.map (modelToSlab K k).toMonoidHom (modelW K k)
-  have hu : (u : TargetSlab K k) =
-      algebraMap (BaseRing K k)[T;T⁻¹] (TargetSlab K k) (T 1) := by simp [u, modelW, coordToSlab]
-  have hu_inv : ((u⁻¹ : (TargetSlab K k)ˣ) : TargetSlab K k) =
-      algebraMap (BaseRing K k)[T;T⁻¹] (TargetSlab K k) (T (-1)) := by
-    simp [u, modelW, coordToSlab]
+  let u : (TargetSlab K k)ˣ :=
+    ⟨algebraMap (BaseRing K k)[T;T⁻¹] (TargetSlab K k) (T 1),
+      algebraMap (BaseRing K k)[T;T⁻¹] (TargetSlab K k) (T (-1)),
+      by rw [← map_mul, ← T_add]; simp, by rw [← map_mul, ← T_add]; simp⟩
   have hmap : modelToSlab K k (((modelW K k ^ n : (ModelAlgebra K k)ˣ) : ModelAlgebra K k)) =
       ((u ^ n : (TargetSlab K k)ˣ) : TargetSlab K k) :=
-    (Units.coe_map (modelToSlab K k).toMonoidHom (modelW K k ^ n)).symm.trans
-      (congrArg Units.val (map_zpow (Units.map (modelToSlab K k).toMonoidHom) (modelW K k) n))
+    map_modelW_zpow K k (modelToSlab K k) u (by simp [u, coordToSlab]) n
   rw [hmap]
   cases n with
-  | ofNat d => simp [zpow_natCast, Units.val_pow_eq_pow_val, hu, ← map_pow, T_pow]
+  | ofNat d => simp [u, zpow_natCast, Units.val_pow_eq_pow_val, ← map_pow, T_pow]
   | negSucc d =>
-    rw [zpow_negSucc, ← inv_pow, Units.val_pow_eq_pow_val, hu_inv, ← map_pow, T_pow]
-    exact congrArg _ (congrArg T (by omega))
+    rw [zpow_negSucc, ← inv_pow, Units.val_pow_eq_pow_val, ← Units.inv_eq_val_inv]
+    dsimp only [u]
+    rw [← map_pow, T_pow]
+    congr 2
+    omega
 
 /-- Canonical `K`-algebra isomorphism between `ModelAlgebra K k` and the slab algebra
 `SlabAlgebra (BaseRing K k)[T;T⁻¹] (slabParam K k)` over `BaseRing K k = K[t] / (t ^ (k + 1))`. -/
@@ -316,7 +385,7 @@ theorem modelSlabEquiv_modelTheta (k : ℕ) (n b : ℤ) :
       SlabAlgebra.Z (slabParam K k) n *
         algebraMap (BaseRing K k)[T;T⁻¹] (SlabAlgebra (BaseRing K k)[T;T⁻¹] (slabParam K k))
           (T b) := by
-  rw [modelTheta, map_mul, modelSlabEquiv_modelW_zpow]
+  rw [modelTheta_def, map_mul, modelSlabEquiv_modelW_zpow]
   split_ifs with hn
   · simp [SlabAlgebra.Z_of_lt_zero (slabParam K k) hn]
   · simp [SlabAlgebra.Z_of_nonneg (slabParam K k) (not_lt.mp hn)]
@@ -364,7 +433,8 @@ theorem modelBasis_apply [Nontrivial K] (k : ℕ) (i : Fin (k + 1)) (n b : ℤ) 
     PowerBasis.coe_basis, AdjoinRoot.powerBasis'_gen, AddMonoidAlgebra.basis_apply,
     SlabAlgebra.slabBasis_apply, map_mul, map_pow, modelSlabEquiv_coordinate_t,
     modelSlabEquiv_modelTheta]
-  have hT : (AddMonoidAlgebra.single b (1 : BaseRing K k) : (BaseRing K k)[T;T⁻¹]) = T b := rfl
+  have hT : (AddMonoidAlgebra.single b (1 : BaseRing K k) : (BaseRing K k)[T;T⁻¹]) = T b := by
+    rw [single_eq_C_mul_T, map_one, one_mul]
   have hsmul₁ : (T b : (BaseRing K k)[T;T⁻¹]) • SlabAlgebra.Z (slabParam K k) n =
       algebraMap (BaseRing K k)[T;T⁻¹] (SlabAlgebra (BaseRing K k)[T;T⁻¹] (slabParam K k))
         (T b) * SlabAlgebra.Z (slabParam K k) n :=
@@ -406,7 +476,7 @@ theorem modelTheta_mul (k : ℕ) (n m b c : ℤ) :
       C (AdjoinRoot.root (Polynomial.X ^ (k + 1) : Polynomial K)) ^ r *
         ∑ j ∈ Finset.range (r + 1),
           (r.choose j : (BaseRing K k)[T;T⁻¹]) * T (b + c + j) := by
-    rw [slabParam, mul_pow, ← T_add, mul_assoc, LaurentPolynomial.one_add_T_pow_mul_T]
+    rw [slabParam_def, mul_pow, ← T_add, mul_assoc, LaurentPolynomial.one_add_T_pow_mul_T]
     simp_rw [mul_one]
   have hZmul : SlabAlgebra.Z (slabParam K k) n * SlabAlgebra.Z (slabParam K k) m =
       algebraMap (BaseRing K k)[T;T⁻¹] A (slabParam K k ^ r) *
@@ -425,11 +495,10 @@ theorem modelTheta_mul (k : ℕ) (n m b c : ℤ) :
     _ = modelSlabEquiv K k (coordinate K (modelIdeal K k) t ^ r *
           ∑ j ∈ Finset.range (r + 1), (r.choose j : ModelAlgebra K k) *
             modelTheta K k (n + m) (b + c + j)) := by
-          rw [hparam, map_mul, map_pow, map_sum, mul_right_comm, mul_assoc, Finset.mul_sum,
-            map_mul, map_pow, modelSlabEquiv_coordinate_t, map_sum]
-          congr 1
+          rw [hparam]
+          simp only [map_mul, map_pow, map_sum, map_natCast, modelSlabEquiv_coordinate_t,
+            modelSlabEquiv_modelTheta, Finset.mul_sum, Finset.sum_mul]
           refine Finset.sum_congr rfl fun j _ => ?_
-          rw [map_mul, map_natCast, map_mul, map_natCast, modelSlabEquiv_modelTheta]
           ring
 
 /-- Positivity of the focus-focus theta structure constants: every coefficient in
@@ -457,6 +526,32 @@ theorem modelTheta_neg_one_mul_one (k : ℕ) :
   rw [modelTheta_mul K k (-1) 1 0 0]
   simp [Finset.sum_range_succ, mul_add]
 
+/-! ### Binomial wall-crossing expansion for `q = t (1 + w)` -/
+
+/-- In the slab algebra `S[w, w⁻¹][X, Y] / (X Y - t (1 + w))` (with `w = T 1` in `S[T;T⁻¹]`
+and `y = T 1` in `(S[T;T⁻¹])[T;T⁻¹]`), the incoming left monomial `X^a w^b` maps in the right
+chamber to `t^a y^{-a} ∑_{j=0}^a binom(a, j) w^{b + j}`. -/
+theorem rightChamberMap_binomial {S : Type*} [CommRing S] (t : S) (a : ℕ) (b : ℤ) :
+    let q : S[T;T⁻¹] := C t * (1 + T 1)
+    SlabAlgebra.rightChamberMap q
+        (SlabAlgebra.X q ^ a * algebraMap S[T;T⁻¹] (SlabAlgebra S[T;T⁻¹] q) (T b)) =
+      C (C (t ^ a)) * T (-(a : ℤ)) *
+        ∑ j ∈ Finset.range (a + 1),
+          (a.choose j : (S[T;T⁻¹])[T;T⁻¹]) * C (T (b + j)) := by
+  intro q
+  calc SlabAlgebra.rightChamberMap q
+          (SlabAlgebra.X q ^ a * algebraMap S[T;T⁻¹] (SlabAlgebra S[T;T⁻¹] q) (T b))
+      = C (C (t ^ a) * ((1 + T 1 : S[T;T⁻¹]) ^ a * T b)) * T (-(a : ℤ)) := by
+        rw [map_mul, map_pow, SlabAlgebra.rightChamberMap_X, AlgHom.commutes, ← C_eq_algebraMap,
+          mul_pow, T_pow, mul_neg_one, mul_right_comm (C q ^ a) (T (-(a : ℤ))) (C (T b)),
+          ← map_pow, ← map_mul]
+        simp [q, mul_pow, mul_assoc]
+    _ = C (C (t ^ a)) * T (-(a : ℤ)) *
+          ∑ j ∈ Finset.range (a + 1),
+            (a.choose j : (S[T;T⁻¹])[T;T⁻¹]) * C (T (b + j)) := by
+        rw [LaurentPolynomial.one_add_T_pow_mul_T, map_mul, map_sum, mul_right_comm]
+        exact congrArg _ (Finset.sum_congr rfl fun _ _ => by rw [mul_one, map_mul, map_natCast])
+
 end
 
 /-! ### Functoriality in the coefficient ring `K` and order truncation `k' ≤ k` -/
@@ -465,52 +560,44 @@ noncomputable section
 
 open Coordinate
 
+/-- Mapping coefficients along `φ : K →+* K'` carries `modelIdeal K k` into `modelIdeal K' k`. -/
+theorem modelIdeal_le_comap_map {K K' : Type*} [CommRing K] [CommRing K']
+    (φ : K →+* K') (k : ℕ) :
+    modelIdeal K k ≤ (modelIdeal K' k).comap (MvPolynomial.map φ) := by
+  rw [modelIdeal_le_iff]
+  refine ⟨?_, ?_, ?_⟩
+  · simpa [Ideal.mem_comap] using w_mul_wInv_sub_one_mem_modelIdeal K' k
+  · simpa [Ideal.mem_comap] using t_pow_succ_mem_modelIdeal K' k
+  · simpa [Ideal.mem_comap] using x_mul_y_sub_mem_modelIdeal K' k
+
 /-- Ring homomorphism `ModelAlgebra K k →+* ModelAlgebra K' k` induced by a scalar ring
 homomorphism `φ : K →+* K'`. -/
 def mapRingHom {K K' : Type*} [CommRing K] [CommRing K'] (φ : K →+* K') (k : ℕ) :
     ModelAlgebra K k →+* ModelAlgebra K' k :=
-  Ideal.Quotient.lift (modelIdeal K k)
-    ((Ideal.Quotient.mk (modelIdeal K' k)).comp (MvPolynomial.map φ)) (by
-      have hle : modelIdeal K k ≤
-          RingHom.ker ((Ideal.Quotient.mk (modelIdeal K' k)).comp (MvPolynomial.map φ)) := by
-        rw [modelIdeal, Ideal.span_le]
-        intro p hp
-        simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp
-        rw [SetLike.mem_coe, RingHom.mem_ker, RingHom.comp_apply, Ideal.Quotient.eq_zero_iff_mem,
-          modelIdeal]
-        rcases hp with rfl | rfl | rfl
-        · simp only [map_sub, map_mul, map_one, MvPolynomial.map_X]
-          exact Ideal.subset_span (Set.mem_insert _ _)
-        · simp only [map_pow, MvPolynomial.map_X]
-          exact Ideal.subset_span (Set.mem_insert_of_mem _ (Set.mem_insert _ _))
-        · simp only [map_sub, map_mul, map_add, map_one, MvPolynomial.map_X]
-          exact Ideal.subset_span
-            (Set.mem_insert_of_mem _ (Set.mem_insert_of_mem _ (Set.mem_singleton _)))
-      exact fun _ ha => hle ha)
+  Ideal.quotientMap (modelIdeal K' k) (MvPolynomial.map φ) (modelIdeal_le_comap_map φ k)
 
 @[simp]
 theorem mapRingHom_coordinate {K K' : Type*} [CommRing K] [CommRing K']
     (φ : K →+* K') (k : ℕ) (c : Coordinate) :
-    mapRingHom φ k (coordinate K (modelIdeal K k) c) = coordinate K' (modelIdeal K' k) c :=
-  congrArg (Ideal.Quotient.mk (modelIdeal K' k)) (MvPolynomial.map_X φ c)
+    mapRingHom φ k (coordinate K (modelIdeal K k) c) = coordinate K' (modelIdeal K' k) c := by
+  rw [mapRingHom, coordinate, Ideal.quotientMap_mk, MvPolynomial.map_X, coordinate]
 
 @[simp]
 theorem mapRingHom_algebraMap {K K' : Type*} [CommRing K] [CommRing K']
     (φ : K →+* K') (k : ℕ) (r : K) :
     mapRingHom φ k (algebraMap K (ModelAlgebra K k) r) =
-      algebraMap K' (ModelAlgebra K' k) (φ r) :=
-  congrArg (Ideal.Quotient.mk (modelIdeal K' k)) (MvPolynomial.map_C φ r)
+      algebraMap K' (ModelAlgebra K' k) (φ r) := by
+  rw [mapRingHom, IsScalarTower.algebraMap_apply K (Ambient K), MvPolynomial.algebraMap_eq,
+    Ideal.Quotient.algebraMap_eq, Ideal.quotientMap_mk, MvPolynomial.map_C,
+    IsScalarTower.algebraMap_apply K' (Ambient K'), MvPolynomial.algebraMap_eq,
+    Ideal.Quotient.algebraMap_eq]
 
 private theorem map_modelTheta_of_coordinate {K K' : Type*} [CommRing K] [CommRing K']
     {k k' : ℕ} (f : ModelAlgebra K k →+* ModelAlgebra K' k')
     (hc : ∀ c, f (coordinate K (modelIdeal K k) c) = coordinate K' (modelIdeal K' k') c)
     (n b : ℤ) : f (modelTheta K k n b) = modelTheta K' k' n b := by
-  have hw : Units.map f.toMonoidHom (modelW K k) = modelW K' k' := Units.ext (by simp [modelW, hc])
-  have hzb : f (((modelW K k ^ b : (ModelAlgebra K k)ˣ) : ModelAlgebra K k)) =
-      ((modelW K' k' ^ b : (ModelAlgebra K' k')ˣ) : ModelAlgebra K' k') :=
-    (Units.coe_map f.toMonoidHom (modelW K k ^ b)).symm.trans
-      (congrArg Units.val (by rw [map_zpow, hw]))
-  rw [modelTheta, modelTheta, map_mul, hzb]
+  rw [modelTheta_def, modelTheta_def, map_mul,
+    map_modelW_zpow K k f (modelW K' k') (hc w) b]
   split_ifs <;> simp [hc]
 
 @[simp]
@@ -536,32 +623,26 @@ theorem mapRingHom_comp {K K' K'' : Type*} [CommRing K] [CommRing K'] [CommRing 
       ((mapRingHom_coordinate ψ k c).symm.trans
         (congrArg (mapRingHom ψ k) (mapRingHom_coordinate φ k c).symm)))
 
+/-- The focus-focus model ideals are antitone in the truncation order `k`. -/
+theorem modelIdeal_anti (K : Type*) [CommRing K] : Antitone (modelIdeal K) := by
+  intro k' k hk
+  rw [modelIdeal_le_iff]
+  refine ⟨w_mul_wInv_sub_one_mem_modelIdeal K k', ?_, x_mul_y_sub_mem_modelIdeal K k'⟩
+  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hk
+  rw [Nat.add_right_comm, pow_add _ (k' + 1) d]
+  exact Ideal.mul_mem_right _ _ (t_pow_succ_mem_modelIdeal K k')
+
 /-- Order-truncation `K`-algebra homomorphism `ModelAlgebra K k →ₐ[K] ModelAlgebra K k'` for
 `k' ≤ k`. -/
 def truncAlgHom (K : Type*) [CommRing K] {k' k : ℕ} (hk : k' ≤ k) :
     ModelAlgebra K k →ₐ[K] ModelAlgebra K k' :=
-  Ideal.Quotient.liftₐ (modelIdeal K k) (Ideal.Quotient.mkₐ K (modelIdeal K k')) (by
-    have hle : modelIdeal K k ≤
-        RingHom.ker (Ideal.Quotient.mkₐ K (modelIdeal K k')).toRingHom := by
-      rw [modelIdeal, Ideal.span_le]
-      intro p hp
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp
-      rw [SetLike.mem_coe, RingHom.mem_ker, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-        Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem, modelIdeal]
-      rcases hp with rfl | rfl | rfl
-      · exact Ideal.subset_span (Set.mem_insert _ _)
-      · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hk
-        rw [Nat.add_right_comm, pow_add _ (k' + 1) d]
-        exact Ideal.mul_mem_right _ _
-          (Ideal.subset_span (Set.mem_insert_of_mem _ (Set.mem_insert _ _)))
-      · exact Ideal.subset_span
-          (Set.mem_insert_of_mem _ (Set.mem_insert_of_mem _ (Set.mem_singleton _)))
-    exact fun _ ha => hle ha)
+  Ideal.Quotient.factorₐ K (modelIdeal_anti K hk)
 
 @[simp]
 theorem truncAlgHom_coordinate (K : Type*) [CommRing K] {k' k : ℕ} (hk : k' ≤ k)
     (c : Coordinate) :
-    truncAlgHom K hk (coordinate K (modelIdeal K k) c) = coordinate K (modelIdeal K k') c := (rfl)
+    truncAlgHom K hk (coordinate K (modelIdeal K k) c) = coordinate K (modelIdeal K k') c :=
+  Ideal.Quotient.factorₐ_apply_mk K (modelIdeal_anti K hk) (MvPolynomial.X c)
 
 @[simp]
 theorem truncAlgHom_modelTheta (K : Type*) [CommRing K] {k' k : ℕ} (hk : k' ≤ k) (n b : ℤ) :
@@ -571,16 +652,12 @@ theorem truncAlgHom_modelTheta (K : Type*) [CommRing K] {k' k : ℕ} (hk : k' �
 @[simp]
 theorem truncAlgHom_refl (K : Type*) [CommRing K] (k : ℕ) :
     truncAlgHom K (le_refl k) = AlgHom.id K (ModelAlgebra K k) :=
-  Ideal.Quotient.algHom_ext K <| MvPolynomial.algHom_ext fun c => by
-    rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.id_apply, Ideal.Quotient.mkₐ_eq_mk,
-      ← coordinate, truncAlgHom_coordinate]
+  Ideal.Quotient.factorₐ_refl (modelIdeal K k)
 
 theorem truncAlgHom_trans (K : Type*) [CommRing K] {k'' k' k : ℕ}
     (hk' : k'' ≤ k') (hk : k' ≤ k) :
     truncAlgHom K (hk'.trans hk) = (truncAlgHom K hk').comp (truncAlgHom K hk) :=
-  Ideal.Quotient.algHom_ext K <| MvPolynomial.algHom_ext fun c => by
-    rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
-      ← coordinate, truncAlgHom_coordinate, truncAlgHom_coordinate, truncAlgHom_coordinate]
+  (Ideal.Quotient.factorₐ_comp K (modelIdeal_anti K hk) (modelIdeal_anti K hk')).symm
 
 end
 

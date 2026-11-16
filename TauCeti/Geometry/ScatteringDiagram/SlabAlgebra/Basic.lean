@@ -43,8 +43,8 @@ Every mixed monomial `X^a Y^b` reduces modulo `X Y - q` to `q^{\min(a, b)}` time
   properties.
 * `TauCeti.SlabAlgebra.Z`, `TauCeti.SlabAlgebra.Z_mul`: the integer-indexed normal-form elements
   and their product formula.
-* `TauCeti.SlabAlgebra.slabBasis`: the `B`-basis `n ↦ Z q n`
-  (`{X^a | a ≥ 0} ∪ {Y^a | a ≥ 1}`).
+* `TauCeti.SlabAlgebra.slabBasis`, `TauCeti.SlabAlgebra.induction_linear`: the `B`-basis `n ↦ Z q n`
+  (`{X^a | a ≥ 0} ∪ {Y^a | a ≥ 1}`) and linear induction along it.
 * `TauCeti.SlabAlgebra.weightSubmodule`: the normal-weight `ℤ`-graded `B`-algebra decomposition.
 * `TauCeti.SlabAlgebra.map`, `TauCeti.SlabAlgebra.mapAlgHom`: functoriality in `(B, q)`.
 
@@ -403,6 +403,15 @@ theorem slabBasis_repr_mk_monomial (q : B) (d : SlabVar →₀ ℕ) (b : B) :
         (b * q ^ min (d SlabVar.X) (d SlabVar.Y)) :=
   reducePoly_monomial q d b
 
+/-- Linear induction principle on `SlabAlgebra B q` along its normal-form basis `n ↦ Z q n`. -/
+theorem induction_linear {q : B} {P : SlabAlgebra B q → Prop}
+    (zero : P 0) (add : ∀ x y, P x → P y → P (x + y))
+    (smul_Z : ∀ (b : B) (n : ℤ), P (b • Z q n)) (u : SlabAlgebra B q) : P u := by
+  rw [← (slabBasis q).linearCombination_repr u, Finsupp.linearCombination_apply, Finsupp.sum]
+  refine Finset.sum_induction _ _ add zero fun m _ => ?_
+  rw [slabBasis_apply]
+  exact smul_Z _ m
+
 /-- Every slab algebra is free as a module over its base ring `B` (and hence flat over `B`). -/
 instance instModuleFree (q : B) : Module.Free B (SlabAlgebra B q) :=
   Module.Free.of_basis (slabBasis q)
@@ -467,17 +476,15 @@ instance instGradedAlgebraWeightSubmodule (q : B) : GradedAlgebra (weightSubmodu
 theorem coe_decompose_weightSubmodule (q : B) (u : SlabAlgebra B q) (n : ℤ) :
     (DirectSum.decompose (weightSubmodule q) u n : SlabAlgebra B q) =
       ((slabBasis q).repr u n) • Z q n := by
-  induction u using DirectSum.Decomposition.inductionOn (weightSubmodule q) with
+  induction u using induction_linear with
   | zero => simp
   | add x y hx hy => simp [hx, hy, add_smul]
-  | @homogeneous m x =>
-    obtain ⟨b, hb⟩ := (mem_weightSubmodule_iff q m x.1).mp x.2
-    rw [DirectSum.decompose_of_mem (weightSubmodule q) x.2, DirectSum.coe_of_apply]
-    rcases eq_or_ne m n with rfl | h
-    · simp only [↓reduceIte]; rw [← hb, map_smul, slabBasis_repr_Z]; simp
-    · simp only [h, ↓reduceIte, ZeroMemClass.coe_zero]
-      rw [← hb, map_smul, slabBasis_repr_Z]
-      simp [Finsupp.single_eq_of_ne h.symm]
+  | smul_Z b m =>
+    have hm : b • Z q m ∈ weightSubmodule q m :=
+      Submodule.smul_mem _ _ (Z_mem_weightSubmodule q m)
+    rw [DirectSum.decompose_of_mem (weightSubmodule q) hm, DirectSum.coe_of_apply,
+      map_smul, slabBasis_repr_Z, Finsupp.smul_single, smul_eq_mul, mul_one]
+    rcases eq_or_ne m n with rfl | h <;> simp [Finsupp.single_eq_of_ne, Ne.symm, *]
 
 /-! ### Functoriality in `(B, q)` -/
 
@@ -508,12 +515,11 @@ theorem map_Z (φ : B →+* B') {q : B} {q' : B'} (hq : φ q = q') (n : ℤ) :
 theorem slabBasis_repr_map (φ : B →+* B') {q : B} {q' : B'} (hq : φ q = q')
     (u : SlabAlgebra B q) (n : ℤ) :
     (slabBasis q').repr (map φ hq u) n = φ ((slabBasis q).repr u n) := by
-  induction u using DirectSum.Decomposition.inductionOn (weightSubmodule q) with
+  induction u using induction_linear with
   | zero => simp
   | add x y hx hy => simp [hx, hy]
-  | @homogeneous m x =>
-    obtain ⟨b, hb⟩ := (mem_weightSubmodule_iff q m x.1).mp x.2
-    rw [← hb, Algebra.smul_def b (Z q m), map_mul, map_algebraMap, map_Z,
+  | smul_Z b m =>
+    rw [Algebra.smul_def b (Z q m), map_mul, map_algebraMap, map_Z,
       ← Algebra.smul_def (φ b) (Z q' m), ← Algebra.smul_def b (Z q m),
       map_smul, map_smul, slabBasis_repr_Z, slabBasis_repr_Z]
     rcases eq_or_ne m n with rfl | h <;> simp [Finsupp.single_eq_of_ne, Ne.symm, *]
