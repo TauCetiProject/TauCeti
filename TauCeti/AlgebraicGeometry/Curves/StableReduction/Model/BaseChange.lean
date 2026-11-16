@@ -321,7 +321,7 @@ variable {E F : FiniteDVRExtension R K}
 
 /-- The square of spectra of the local rings and extension fields of a map of chosen extensions
 commutes. -/
-lemma _root_.TauCeti.FiniteDVRExtension.Hom.spec_map_field_comp_spec_map_algebraMap
+lemma _root_.TauCeti.FiniteDVRExtension.Hom.SpecMap_field_comp_SpecMap_algebraMap
     (T : E ⟶ F) :
     Spec.map (CommRingCat.ofHom T.field.toRingHom) ≫
         Spec.map (CommRingCat.ofHom (algebraMap E.localRing E.extensionField)) =
@@ -345,14 +345,14 @@ private noncomputable def mapExtensionGenericι :
     (by
       rw [Category.assoc, genericι_toBase, ← Category.assoc,
         (isPullback_genericFiberMap K T.field toK).w, Category.assoc,
-        T.spec_map_field_comp_spec_map_algebraMap, Category.assoc])
+        T.SpecMap_field_comp_SpecMap_algebraMap, Category.assoc])
 
 private lemma isPullback_mapExtensionGenericι :
     IsPullback (mapExtensionGenericι M T) (genericFiber K F.extensionField toK).hom
       (pullback.snd M.toBase (Spec.map (CommRingCat.ofHom T.localMap.toRingHom)))
       (Spec.map (CommRingCat.ofHom (algebraMap F.localRing F.extensionField))) :=
   IsPullback.of_right (by
-      rw [mapExtensionGenericι, pullback.lift_fst, ← T.spec_map_field_comp_spec_map_algebraMap]
+      rw [mapExtensionGenericι, pullback.lift_fst, ← T.SpecMap_field_comp_SpecMap_algebraMap]
       exact (isPullback_genericFiberMap K T.field toK).paste_horiz M.isPullback_genericι)
     (pullback.lift_snd _ _ _) (IsPullback.of_hasPullback _ _)
 

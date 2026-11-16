@@ -403,7 +403,7 @@ variable {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
 
 /-- The structure morphism `Spec L ⟶ Spec R` factors through `Spec φ : Spec L ⟶ Spec K` for an
 `R`-algebra map `φ : K → L`. -/
-lemma spec_map_algebraMap_eq_spec_map_comp :
+lemma SpecMap_algebraMap_eq_SpecMap_comp_SpecMap_algebraMap :
     Spec.map (CommRingCat.ofHom (algebraMap R L)) =
       Spec.map (CommRingCat.ofHom φ.toRingHom) ≫
         Spec.map (CommRingCat.ofHom (algebraMap R K)) := by
@@ -417,7 +417,7 @@ noncomputable def genericFiberMap :
   pullback.map toBase (Spec.map (CommRingCat.ofHom (algebraMap R L))) toBase
     (Spec.map (CommRingCat.ofHom (algebraMap R K))) (𝟙 X)
     (Spec.map (CommRingCat.ofHom φ.toRingHom)) (𝟙 _) (by simp)
-    (by rw [Category.comp_id, spec_map_algebraMap_eq_spec_map_comp R φ])
+    (by rw [Category.comp_id, SpecMap_algebraMap_eq_SpecMap_comp_SpecMap_algebraMap R φ])
 
 /-- The comparison map of scalar extensions commutes with the projections to the total space. -/
 @[reassoc (attr := simp)]
@@ -441,7 +441,8 @@ lemma isPullback_genericFiberMap :
     IsPullback (genericFiberMap R φ toBase) (genericFiber R L toBase).hom
       (genericFiber R K toBase).hom (Spec.map (CommRingCat.ofHom φ.toRingHom)) :=
   IsPullback.of_right (by
-      rw [genericFiberMap_genericFiberι, ← spec_map_algebraMap_eq_spec_map_comp R φ]
+      rw [genericFiberMap_genericFiberι,
+        ← SpecMap_algebraMap_eq_SpecMap_comp_SpecMap_algebraMap R φ]
       exact isPullback_genericFiber R L toBase)
     (genericFiberMap_snd R φ toBase) (isPullback_genericFiber R K toBase)
 
