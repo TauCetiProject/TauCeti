@@ -38,6 +38,8 @@ A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
 A constant bound on `‖f x‖` over a ball of positive radius is nonnegative, since the ball
 contains `0`.
 
+The translation by `c - c₀`, which takes `c₀` to `c`, preserves distances to these centres.
+
 ## Main declarations
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
@@ -60,6 +62,7 @@ contains `0`.
 * `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
 * `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
   is nonnegative.
+* `TauCeti.dist_add_sub_eq` -- `dist (x + (c - c₀)) c = dist x c₀`.
 -/
 
 public section
@@ -168,5 +171,11 @@ theorem nonneg_of_forall_norm_lt {E F 𝓕 : Type*} [SeminormedAddGroup E] [Semi
     [FunLike 𝓕 E F] (f : 𝓕) {δ B : ℝ} (hδ : 0 < δ) (hf : ∀ x : E, ‖x‖ < δ → ‖f x‖ ≤ B) :
     0 ≤ B :=
   (norm_nonneg _).trans <| hf 0 (by simpa using hδ)
+
+/-- The translation by `c - c₀`, which takes `c₀` to `c`, preserves distances: the distance from
+`x + (c - c₀)` to `c` is the distance from `x` to `c₀`. -/
+theorem dist_add_sub_eq {E : Type*} [SeminormedAddCommGroup E] (x c c₀ : E) :
+    dist (x + (c - c₀)) c = dist x c₀ := by
+  rw [← dist_add_right x c₀ (c - c₀), add_sub_cancel]
 
 end TauCeti

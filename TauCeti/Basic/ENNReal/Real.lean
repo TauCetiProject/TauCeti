@@ -35,6 +35,9 @@ reparametrization of the class along surjections.
   for `0 ≤ q ≤ p`.
 * `TauCeti.le_ofReal_inv_add_mul_of_add_le`: if `a + b ≤ V` and `b ≥ ω V`, then
   `a ≤ (1 + ω)⁻¹ V`.
+* `TauCeti.ofReal_mul_ofReal_add_ofReal_mul_ofReal`: `ENNReal.ofReal` folds
+  `D * (s + r * F)` for `0 ≤ s, r, F`.
+* `TauCeti.le_ofReal_mul_add_ofReal_mul_top`: `D * (s + r * ∞)` is `∞` for `D, r > 0`.
 * `TauCeti.iSup₂_ofReal_iSup_eq_ofReal_mul`: if the class `Q` consists of the `c • F` with `F`
   in `P`, for `c > 0`, then the supremum for `Q` is `c` times that for `P`.
 * `TauCeti.iSup₂_ofReal_iSup_eq_of_comp`: classes related by composition with surjections have
@@ -88,6 +91,23 @@ theorem le_ofReal_inv_add_mul_of_add_le {a b : ℝ≥0∞} {V ω : ℝ} (hV : 0 
     _ = ENNReal.ofReal (V - ω * V) := (ENNReal.ofReal_sub _ (by positivity)).symm
     _ ≤ ENNReal.ofReal ((1 + ω)⁻¹ * V) := ENNReal.ofReal_le_ofReal hδV
     _ = ENNReal.ofReal (1 + ω)⁻¹ * ENNReal.ofReal V := ENNReal.ofReal_mul (by positivity)
+
+/-- `ENNReal.ofReal` folds `D * (s + r * F)` for `0 ≤ s, r, F`; the outer factor `D` may have
+either sign, since `ENNReal.ofReal` sends negative reals to `0`. -/
+theorem ofReal_mul_ofReal_add_ofReal_mul_ofReal (D : ℝ) {s r F : ℝ} (hs : 0 ≤ s)
+    (hr : 0 ≤ r) (hF : 0 ≤ F) :
+    ENNReal.ofReal D * (ENNReal.ofReal s + ENNReal.ofReal r * ENNReal.ofReal F) =
+      ENNReal.ofReal (D * (s + r * F)) := by
+  rw [← ENNReal.ofReal_mul hr, ← ENNReal.ofReal_add hs (mul_nonneg hr hF),
+    ← ENNReal.ofReal_mul' (add_nonneg hs (mul_nonneg hr hF))]
+
+/-- If `D, r > 0`, then `ENNReal.ofReal D * (ENNReal.ofReal s + ENNReal.ofReal r * ∞)` is `∞`,
+so it bounds everything. -/
+theorem le_ofReal_mul_add_ofReal_mul_top {X : ℝ≥0∞} {D r : ℝ} (hD : 0 < D) (hr : 0 < r)
+    (s : ℝ) : X ≤ ENNReal.ofReal D * (ENNReal.ofReal s + ENNReal.ofReal r * ∞) := by
+  rw [ENNReal.mul_top (ENNReal.ofReal_pos.2 hr).ne', add_top,
+    ENNReal.mul_top (ENNReal.ofReal_pos.2 hD).ne']
+  exact le_top
 
 /-- **Rescaling a class of functions.** If, for `c > 0`, the functions satisfying `Q` are exactly
 the `c • F` with `F` satisfying `P`, then the supremum of their maxima is `c` times that for `P`. -/
