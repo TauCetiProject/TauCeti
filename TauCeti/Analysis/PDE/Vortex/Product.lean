@@ -40,8 +40,8 @@ factors (`TauCeti.Vortex.equation_productField_apply_zero`,
 
 So the product of two vortices satisfies every equation except the curvature equation, whose
 defect is exactly `(1 - |α_x|²) (1 - |α_y|²) / 8`
-(`TauCeti.Vortex.equation_productField_of_equation_eq_zero`). Both factors decay to the vacuum
-at the rate `exp (-c |z|)` for every `c < 1 / 2`
+(`TauCeti.Vortex.equation_productField_of_equation_eq_zero`). The modulus defects
+`1 - |α_x|²` and `1 - |α_y|²` decay at the rate `exp (-c |z|)` for every `c < 1 / 2`
 (`TauCeti.Vortex.exists_nonneg_one_sub_normSq_le_mul_exp`).
 When the second vortex is moved away by the translation `z ↦ z + a`, the two defect factors are
 concentrated near points at distance `|a|`, and since `|z| + |z + a| ≥ |a|` their product is
