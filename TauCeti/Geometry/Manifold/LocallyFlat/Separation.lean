@@ -67,6 +67,14 @@ single connected component of the complement of the image
   closure and the frontier of a part of such a separation containing one side of a bicollar.
 * `TauCeti.IsBicollar.image_subset_connectedComponentIn`: each side of a bicollar lies in one
   connected component of the complement of the image.
+* `TauCeti.IsBicollar.connectedComponentIn_compl_range_eq_or_eq` and
+  `TauCeti.IsBicollar.compl_range_eq_union_connectedComponentIn`: in a connected, locally
+  connected space, the complement of the closed image of a bicollared connected space has at most
+  two components, those of the two sides.
+* `TauCeti.IsBicollar.isPreconnected_compl_range_iff`: that complement is preconnected exactly when
+  the two sides lie in the same component.
+* `TauCeti.IsBicollar.closure_connectedComponentIn_compl_range`: the closure of the component
+  containing a side is that component together with the image.
 
 ## References
 
@@ -414,6 +422,109 @@ theorem image_subset_connectedComponentIn [PreconnectedSpace N] (h : IsBicollar 
     h.isOpenEmbedding.continuous.continuousOn).subset_connectedComponentIn
     (mem_image_of_mem b ⟨mem_univ x, ht⟩)
     (image_subset_iff.2 fun _ hp hpf => h0 ((h.preimage_range.subset hpf).2 ▸ hp.2))
+
+/-- A point of the collar at a nonzero depth is off the image of `f`. -/
+private theorem apply_notMem_range (h : IsBicollar f b) (x : N) {t : ℝ} (ht : t ≠ 0) :
+    b (x, t) ∉ range f := fun hf ↦ ht (h.preimage_range.subset hf).2
+
+/-- The part of the closure of a connected component of `s` lying in `s` is that component. -/
+private theorem closure_connectedComponentIn_inter_subset {s : Set M} {x : M} (hx : x ∈ s) :
+    closure (connectedComponentIn s x) ∩ s ⊆ connectedComponentIn s x := by
+  intro y hy
+  have hcc : (⟨y, hy.2⟩ : s) ∈ closure (connectedComponent (⟨x, hx⟩ : s)) := by
+    rw [closure_subtype, ← connectedComponentIn_eq_image hx]
+    exact hy.1
+  rw [connectedComponentIn_eq_image hx]
+  exact ⟨⟨y, hy.2⟩, isClosed_connectedComponent.closure_subset hcc, rfl⟩
+
+omit [TopologicalSpace N] in
+/-- In a connected, locally connected space, the closure of a component of the complement of a
+nonempty closed set `range f` meets `range f`. -/
+private theorem exists_mem_range_mem_closure_connectedComponentIn [ConnectedSpace M]
+    [LocallyConnectedSpace M] [Nonempty N] (hclosed : IsClosed (range f)) {x : M}
+    (hx : x ∈ (range f)ᶜ) :
+    ∃ y ∈ range f, y ∈ closure (connectedComponentIn (range f)ᶜ x) := by
+  by_contra h
+  have hclosure : closure (connectedComponentIn (range f)ᶜ x) ⊆
+      connectedComponentIn (range f)ᶜ x := fun y hy ↦
+    closure_connectedComponentIn_inter_subset hx ⟨hy, fun hyF ↦ h ⟨y, hyF, hy⟩⟩
+  have huniv : connectedComponentIn (range f)ᶜ x = univ :=
+    IsClopen.eq_univ ⟨closure_subset_iff_isClosed.mp hclosure,
+      hclosed.isOpen_compl.connectedComponentIn⟩ ⟨x, mem_connectedComponentIn hx⟩
+  have hf : f (Classical.arbitrary N) ∈ connectedComponentIn (range f)ᶜ x := by
+    rw [huniv]
+    trivial
+  exact connectedComponentIn_subset _ _ hf ⟨Classical.arbitrary N, rfl⟩
+
+/-- **The complement of a bicollared hypersurface has at most two components.** Let `b` be a
+bicollar of a map `f` from a connected space into a connected, locally connected space, with
+closed image. Every connected component of the complement of the image of `f` is the component of
+a point `b (a, 1)` of the positive side or of a point `b (a, -1)` of the negative side. -/
+theorem connectedComponentIn_compl_range_eq_or_eq [ConnectedSpace M] [LocallyConnectedSpace M]
+    [ConnectedSpace N] (h : IsBicollar f b) (hclosed : IsClosed (range f)) {x : M}
+    (hx : x ∈ (range f)ᶜ) (a : N) :
+    connectedComponentIn (range f)ᶜ x = connectedComponentIn (range f)ᶜ (b (a, 1)) ∨
+      connectedComponentIn (range f)ᶜ x = connectedComponentIn (range f)ᶜ (b (a, -1)) := by
+  obtain ⟨y, hyF, hyclos⟩ := exists_mem_range_mem_closure_connectedComponentIn hclosed hx
+  have hyC : y ∈ closure (connectedComponentIn (range f)ᶜ x ∩ range b) :=
+    h.isOpenEmbedding.isOpen_range.closure_inter ⟨hyclos, h.range_subset_range hyF⟩
+  obtain ⟨z, hzC, hzB⟩ : (connectedComponentIn (range f)ᶜ x ∩ range b).Nonempty := by
+    simpa using (mem_closure_iff_nhds.mp hyC) univ (by simp)
+  have hzSide : z ∈ b '' (univ ×ˢ Ioi (0 : ℝ)) ∪ b '' (univ ×ˢ Iio (0 : ℝ)) := by
+    rw [← h.range_diff_range_eq_union]
+    exact ⟨hzB, connectedComponentIn_subset _ _ hzC⟩
+  rcases hzSide with ⟨⟨u, t⟩, ⟨-, ht⟩, rfl⟩ | ⟨⟨u, t⟩, ⟨-, ht⟩, rfl⟩
+  · refine .inl ((connectedComponentIn_eq hzC).trans (connectedComponentIn_eq ?_))
+    exact h.image_subset_connectedComponentIn isPreconnected_Ioi (lt_irrefl 0) u ht
+      ⟨(a, 1), ⟨mem_univ _, one_pos⟩, rfl⟩
+  · refine .inr ((connectedComponentIn_eq hzC).trans (connectedComponentIn_eq ?_))
+    exact h.image_subset_connectedComponentIn isPreconnected_Iio (lt_irrefl 0) u ht
+      ⟨(a, -1), ⟨mem_univ _, neg_one_lt_zero⟩, rfl⟩
+
+/-- The components of the complement of the image of a bicollared map containing the two sides
+cover the complement, under the hypotheses of `connectedComponentIn_compl_range_eq_or_eq`. -/
+theorem compl_range_eq_union_connectedComponentIn [ConnectedSpace M] [LocallyConnectedSpace M]
+    [ConnectedSpace N] (h : IsBicollar f b) (hclosed : IsClosed (range f)) (a : N) :
+    (range f)ᶜ = connectedComponentIn (range f)ᶜ (b (a, 1)) ∪
+      connectedComponentIn (range f)ᶜ (b (a, -1)) := by
+  refine Subset.antisymm (fun y hy ↦ ?_)
+    (union_subset (connectedComponentIn_subset _ _) (connectedComponentIn_subset _ _))
+  rcases h.connectedComponentIn_compl_range_eq_or_eq hclosed hy a with hpos | hneg
+  · exact .inl (hpos ▸ mem_connectedComponentIn hy)
+  · exact .inr (hneg ▸ mem_connectedComponentIn hy)
+
+/-- Under the hypotheses of `connectedComponentIn_compl_range_eq_or_eq`, the complement of the
+image of a bicollared map is preconnected exactly when the two sides of the bicollar lie in the
+same component of it. -/
+theorem isPreconnected_compl_range_iff [ConnectedSpace M] [LocallyConnectedSpace M]
+    [ConnectedSpace N] (h : IsBicollar f b) (hclosed : IsClosed (range f)) (a : N) :
+    IsPreconnected (range f)ᶜ ↔
+      connectedComponentIn (range f)ᶜ (b (a, 1)) = connectedComponentIn (range f)ᶜ (b (a, -1)) := by
+  refine ⟨fun hc ↦ ?_, fun heq ↦ ?_⟩
+  · rw [hc.connectedComponentIn (h.apply_notMem_range a one_ne_zero),
+      hc.connectedComponentIn (h.apply_notMem_range a (neg_ne_zero.2 one_ne_zero))]
+  · rw [h.compl_range_eq_union_connectedComponentIn hclosed a, heq, union_self]
+    exact isPreconnected_connectedComponentIn
+
+/-- **The closure of a complementary component containing a side.** Let `b` be a bicollar of a map
+`f` from a preconnected space. The closure of the component of the complement of the image of `f`
+containing a point `b (a, t)` of the collar at a nonzero depth `t` is that component together with
+the image of `f`. -/
+theorem closure_connectedComponentIn_compl_range [PreconnectedSpace N] (h : IsBicollar f b)
+    (a : N) {t : ℝ} (ht : t ≠ 0) :
+    closure (connectedComponentIn (range f)ᶜ (b (a, t))) =
+      connectedComponentIn (range f)ᶜ (b (a, t)) ∪ range f := by
+  refine Subset.antisymm (fun y hy ↦ ?_) (union_subset subset_closure ?_)
+  · by_cases hyF : y ∈ range f
+    · exact .inr hyF
+    · exact .inl (closure_connectedComponentIn_inter_subset (h.apply_notMem_range a ht)
+        ⟨hy, hyF⟩)
+  · rintro _ ⟨x, rfl⟩
+    rcases ht.lt_or_gt with hneg | hpos
+    · exact closure_mono (h.image_subset_connectedComponentIn isPreconnected_Iio (lt_irrefl 0) a
+        hneg) (h.apply_mem_closure_image (by simp) x)
+    · exact closure_mono (h.image_subset_connectedComponentIn isPreconnected_Ioi (lt_irrefl 0) a
+        hpos) (h.apply_mem_closure_image (by simp) x)
 
 end IsBicollar
 
