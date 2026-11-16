@@ -264,6 +264,10 @@ theorem ker_bilinFormAt_leftInvariantKirillovForm (g : G) :
       mulInvariantDistribution (lieAnnihilator ℝ (GroupLieAlgebra I G) ν).toSubmodule g := by
   ext v
   rw [mem_mulInvariantDistribution_iff, ← ker_kirillovForm]
+  -- Unfold kernel membership on both sides. The translate lies in `TangentSpace I (g⁻¹ * g)`,
+  -- which is definitionally `GroupLieAlgebra I G` (both are the model space), but `rw` and `simp`
+  -- with `LinearMap.mem_ker` cannot see this through the membership instance, so it is retyped
+  -- by the ascription.
   change ν.leftInvariantKirillovForm.bilinFormAt g v = 0 ↔
     ν.kirillovForm (mfderiv I I (g⁻¹ * ·) g v : GroupLieAlgebra I G) = 0
   simp only [LinearMap.ext_iff, bilinFormAt_leftInvariantKirillovForm_apply, LinearMap.zero_apply]
