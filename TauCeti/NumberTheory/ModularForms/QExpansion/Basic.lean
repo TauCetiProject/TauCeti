@@ -68,8 +68,12 @@ expanded through: one multiplies by `q` and divides the expansion of the product
 * `TauCeti.UpperHalfPlane.cuspFunction_map₂_eventuallyEq`,
   `TauCeti.UpperHalfPlane.cuspFunction_qParam_pow_mul_eventuallyEq` and
   `TauCeti.UpperHalfPlane.qExpansion_congr`: cusp functions off `q = 0`.
-* `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_mul` and its companions: meromorphy at `0`
-  of cusp functions under the field operations.
+* `TauCeti.UpperHalfPlane.analyticAt_cuspFunction_mul`,
+  `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_mul`,
+  `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_prod`,
+  `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_of_qParam_pow_mul`, and their companions:
+  analyticity and meromorphy at `0` of cusp functions under algebraic operations and untwisting by
+  `𝕢 ^ k`.
 * `TauCeti.UpperHalfPlane.cuspFunction_pow` and `TauCeti.UpperHalfPlane.qExpansion_pow`: powers of
   functions with analytic cusp functions.
 * `TauCeti.UpperHalfPlane.qExpansion_qParam` and `TauCeti.UpperHalfPlane.qExpansion_qParam_pow`:
@@ -259,16 +263,52 @@ theorem UpperHalfPlane.cuspFunction_pow (hf : ContinuousAt (cuspFunction h f) 0)
       _root_.UpperHalfPlane.cuspFunction_mul
         (by rw [cuspFunction_pow hf n]; exact hf.pow n) hf]
 
+/-- The cusp function of a constant function is analytic at `0`. -/
+theorem UpperHalfPlane.analyticAt_cuspFunction_const (h : ℝ) (c : ℂ) :
+    AnalyticAt ℂ (cuspFunction h fun _ : ℍ ↦ c) 0 :=
+  cuspFunction_const h c ▸ analyticAt_const
+
+/-- The cusp function of a product is analytic at `0` when both cusp functions are. -/
+theorem UpperHalfPlane.analyticAt_cuspFunction_mul (hf : AnalyticAt ℂ (cuspFunction h f) 0)
+    (hg : AnalyticAt ℂ (cuspFunction h g) 0) :
+    AnalyticAt ℂ (cuspFunction h (f * g)) 0 := by
+  rw [_root_.UpperHalfPlane.cuspFunction_mul hf.continuousAt hg.continuousAt]
+  exact hf.mul hg
+
+/-- The cusp function of a sum is analytic at `0` when both cusp functions are. -/
+theorem UpperHalfPlane.analyticAt_cuspFunction_add (hf : AnalyticAt ℂ (cuspFunction h f) 0)
+    (hg : AnalyticAt ℂ (cuspFunction h g) 0) :
+    AnalyticAt ℂ (cuspFunction h (f + g)) 0 := by
+  rw [_root_.UpperHalfPlane.cuspFunction_add hf.continuousAt hg.continuousAt]
+  exact hf.add hg
+
+/-- The cusp function of a difference is analytic at `0` when both cusp functions are. -/
+theorem UpperHalfPlane.analyticAt_cuspFunction_sub (hf : AnalyticAt ℂ (cuspFunction h f) 0)
+    (hg : AnalyticAt ℂ (cuspFunction h g) 0) :
+    AnalyticAt ℂ (cuspFunction h (f - g)) 0 := by
+  rw [_root_.UpperHalfPlane.cuspFunction_sub hf.continuousAt hg.continuousAt]
+  exact hf.sub hg
+
+/-- The cusp function of a scalar multiple is analytic at `0` when the cusp function is. -/
+theorem UpperHalfPlane.analyticAt_cuspFunction_smul (hf : AnalyticAt ℂ (cuspFunction h f) 0)
+    (c : ℂ) : AnalyticAt ℂ (cuspFunction h (c • f)) 0 := by
+  rw [_root_.UpperHalfPlane.cuspFunction_smul hf.continuousAt c]
+  exact hf.const_smul
+
+/-- The cusp function of a power is analytic at `0` when the cusp function is. -/
+theorem UpperHalfPlane.analyticAt_cuspFunction_pow (hf : AnalyticAt ℂ (cuspFunction h f) 0)
+    (n : ℕ) : AnalyticAt ℂ (cuspFunction h (f ^ n)) 0 := by
+  rw [cuspFunction_pow hf.continuousAt n]
+  exact hf.pow n
+
 /-- The `q`-expansion of a power is the power of the `q`-expansion, when the cusp function is
 analytic at `0`. -/
 theorem UpperHalfPlane.qExpansion_pow (hf : AnalyticAt ℂ (cuspFunction h f) 0) :
     ∀ n : ℕ, qExpansion h (f ^ n) = qExpansion h f ^ n
   | 0 => by rw [pow_zero, pow_zero, _root_.UpperHalfPlane.qExpansion_one]
   | n + 1 => by
-    have h_an : AnalyticAt ℂ (cuspFunction h (f ^ n)) 0 := by
-      rw [cuspFunction_pow hf.continuousAt n]
-      exact hf.pow n
-    rw [pow_succ, pow_succ, _root_.UpperHalfPlane.qExpansion_mul h_an hf, qExpansion_pow hf n]
+    rw [pow_succ, pow_succ, _root_.UpperHalfPlane.qExpansion_mul (analyticAt_cuspFunction_pow hf n)
+      hf, qExpansion_pow hf n]
 
 /-- The cusp function of a product is meromorphic at `0` when both cusp functions are. -/
 theorem UpperHalfPlane.meromorphicAt_cuspFunction_mul (hf : MeromorphicAt (cuspFunction h f) 0)
@@ -305,10 +345,34 @@ theorem UpperHalfPlane.meromorphicAt_cuspFunction_pow (hf : MeromorphicAt (cuspF
     (n : ℕ) : MeromorphicAt (cuspFunction h (f ^ n)) 0 :=
   (hf.pow n).congr (cuspFunction_map_eventuallyEq (· ^ n) f).symm
 
+/-- The cusp function of an integer power is meromorphic at `0` when the cusp function is. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_zpow (hf : MeromorphicAt (cuspFunction h f) 0)
+    (n : ℤ) : MeromorphicAt (cuspFunction h (f ^ n)) 0 :=
+  (hf.zpow n).congr (cuspFunction_map_eventuallyEq (· ^ n) f).symm
+
 /-- The cusp function of a constant function is meromorphic at `0`. -/
 theorem UpperHalfPlane.meromorphicAt_cuspFunction_const (c : ℂ) :
     MeromorphicAt (cuspFunction h fun _ : ℍ ↦ c) 0 :=
   cuspFunction_const h c ▸ analyticAt_const.meromorphicAt
+
+/-- The cusp function of a finite product of functions is meromorphic at `0` when each factor's
+cusp function is. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_prod {ι : Type*} (s : Finset ι)
+    {f : ι → ℍ → ℂ} (hf : ∀ i ∈ s, MeromorphicAt (cuspFunction h (f i)) 0) :
+    MeromorphicAt (cuspFunction h (∏ i ∈ s, f i)) 0 :=
+  Finset.prod_induction f (fun g ↦ MeromorphicAt (cuspFunction h g) 0)
+    (fun _ _ ↦ meromorphicAt_cuspFunction_mul) (meromorphicAt_cuspFunction_const 1) hf
+
+/-- If `𝕢 h ^ k * f` (`h > 0`) has a meromorphic cusp function at `0`, then so does `f`. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_of_qParam_pow_mul (hh : 0 < h) {k : ℕ}
+    (hk : MeromorphicAt (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ k * f τ) 0) :
+    MeromorphicAt (cuspFunction h f) 0 := by
+  refine ((analyticAt_id.pow k).meromorphicAt.inv.mul hk).congr ?_
+  filter_upwards [cuspFunction_qParam_pow_mul_eventuallyEq hh k f, self_mem_nhdsWithin] with
+    q h₁ hq
+  simp only [Set.mem_compl_iff, Set.mem_singleton_iff] at hq
+  simp only [Pi.mul_apply, Pi.inv_apply, Pi.pow_apply, id_eq, h₁,
+    inv_mul_cancel_left₀ (pow_ne_zero k hq)]
 
 /-- The order at `0` of `q ^ k` times the cusp function of `f`. -/
 theorem UpperHalfPlane.meromorphicOrderAt_pow_mul_cuspFunction {k : ℕ}

@@ -332,26 +332,24 @@ theorem siegelFunction_zero (τ : ℂ) : siegelFunction 0 τ = 0 := by
 @[simp]
 theorem siegelFunction_intCast (s : Fin 2 → ℤ) (τ : ℂ) :
     siegelFunction (fun i ↦ (s i : ℝ)) τ = 0 := by
-  have hexp₁ (z : ℤ) : cexp ((z : ℂ) * (2 * π * I)) = 1 := by
-    rw [Complex.exp_int_mul, exp_two_pi_mul_I, _root_.one_zpow]
   rw [siegelFunction_def]
   rcases lt_trichotomy (s 0) 0 with hs | hs | hs
   · obtain ⟨m, hm⟩ := Int.eq_succ_of_zero_lt (neg_pos.mpr hs)
     have hm' : s 0 = -((m + 1 : ℕ) : ℤ) := by omega
     rw [tprod_of_exists_eq_zero ⟨m, ?_⟩, mul_zero]
     have h1 : cexp (2 * π * I * τ) ^ (m + 1) * cexp (2 * π * I * ((s 0 : ℂ) * τ + s 1)) = 1 := by
-      rw [← Complex.exp_nat_mul, ← Complex.exp_add, hm', ← hexp₁ (s 1)]
+      rw [← Complex.exp_nat_mul, ← Complex.exp_add, hm', ← Complex.exp_int_mul_two_pi_mul_I (s 1)]
       congr 1; push_cast; ring
     simp [h1]
   · have h1 : cexp (2 * π * I * ((s 0 : ℂ) * τ + s 1)) = 1 := by
-      rw [hs, Int.cast_zero, zero_mul, zero_add, ← hexp₁ (s 1)]
+      rw [hs, Int.cast_zero, zero_mul, zero_add, ← Complex.exp_int_mul_two_pi_mul_I (s 1)]
       congr 1; ring
     simp [h1]
   · obtain ⟨m, hm⟩ := Int.eq_succ_of_zero_lt hs
     rw [tprod_of_exists_eq_zero ⟨m, ?_⟩, mul_zero]
     have h1 : cexp (2 * π * I * τ) ^ (m + 1) *
         cexp (-(2 * π * I * ((s 0 : ℂ) * τ + s 1))) = 1 := by
-      rw [← Complex.exp_nat_mul, ← Complex.exp_add, hm, ← hexp₁ (-s 1)]
+      rw [← Complex.exp_nat_mul, ← Complex.exp_add, hm, ← Complex.exp_int_mul_two_pi_mul_I (-s 1)]
       congr 1; push_cast; ring
     simp [h1]
 
