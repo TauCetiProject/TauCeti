@@ -83,6 +83,18 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 private def covectorAtOne : CotangentBundle I G :=
   TotalSpace.mk' (E →L[ℝ] ℝ) (1 : G) (LinearMap.toContinuousLinearMap (show E →ₗ[ℝ] ℝ from ν))
 
+omit [LieGroup I ∞ G] in
+@[simp]
+private theorem proj_covectorAtOne : (covectorAtOne ν).proj = 1 :=
+  rfl
+
+omit [LieGroup I ∞ G] in
+-- The covector at the identity is `ν` read as a continuous functional on the model space, which
+-- is definitional because `GroupLieAlgebra I G` is an abbreviation for the tangent space at `1`.
+private theorem covectorAtOne_snd_apply (v : TangentSpace I (1 : G)) :
+    (covectorAtOne ν).2 v = ν v :=
+  rfl
+
 /-! ### The left-invariant covector field -/
 
 /-- The **left-invariant covector field** of `ν ∈ 𝔤*`: the section of the cotangent bundle of `G`
@@ -102,9 +114,8 @@ theorem leftInvariantCovector_snd_apply (g : G) (v : TangentSpace I g) :
     (ν.leftInvariantCovector g).2 v = ν (mfderiv I I (g⁻¹ * ·) g v) := by
   have h := CotangentBundle.smul_snd_apply g (covectorAtOne ν) v
   simp only [smul_eq_mul] at h
-  rw [leftInvariantCovector, h, show (covectorAtOne ν).proj = 1 from rfl, mul_one]
-  -- The covector at the identity is `ν` read as a continuous functional on the model space.
-  rfl
+  rw [leftInvariantCovector, h, proj_covectorAtOne, mul_one]
+  exact covectorAtOne_snd_apply ν _
 
 /-- The left-invariant covector field is equivariant for left multiplication on `G` and the
 cotangent-lifted action on `T*G`. -/
@@ -122,8 +133,7 @@ private theorem momentMap_covectorAtOne : CotangentBundle.momentMap I G (covecto
   ext ξ
   have h : (fun g : G ↦ g • (covectorAtOne ν).proj) = id := funext fun g ↦ mul_one g
   rw [CotangentBundle.momentMap_apply, fundamentalVectorField_apply, h, mfderiv_id]
-  -- The covector at the identity is `ν` read as a continuous functional on the model space.
-  rfl
+  exact covectorAtOne_snd_apply ν ξ
 
 /-- The cotangent moment map of left multiplication sends the left-invariant covector field of `ν`
 to the coadjoint orbit map: `μ(g • ν) = Ad*_g ν`. -/
@@ -236,29 +246,29 @@ theorem bilinFormAt_one_leftInvariantKirillovForm :
     ← ν.eval₂_leftInvariantKirillovForm_mulInvariantVectorField ξ η 1,
     mulInvariantVectorField_one, mulInvariantVectorField_one]
 
+/-- The left-invariant Kirillov form of `ν` pairs tangent vectors `v` and `w` at `g` to
+`ν ⁅d(L_{g⁻¹})_g v, d(L_{g⁻¹})_g w⁆`, the Kirillov form of their translates to the identity. -/
+theorem bilinFormAt_leftInvariantKirillovForm_apply (g : G) (v w : TangentSpace I g) :
+    ν.leftInvariantKirillovForm.bilinFormAt g v w =
+      ν.kirillovForm (mfderiv I I (g⁻¹ * ·) g v) (mfderiv I I (g⁻¹ * ·) g w) := by
+  obtain ⟨ξ, rfl⟩ := exists_mulInvariantVectorField_eq v
+  obtain ⟨η, rfl⟩ := exists_mulInvariantVectorField_eq w
+  rw [SmoothForm.bilinFormAt_apply, eval₂_leftInvariantKirillovForm_mulInvariantVectorField,
+    mfderiv_inv_mul_mulInvariantVectorField, mfderiv_inv_mul_mulInvariantVectorField,
+    kirillovForm_apply]
+
 /-- **The kernel of the left-invariant Kirillov form** of `ν` at `g` is the left translate
 `d(L_g)(𝔤_ν)` of the coadjoint stabilizer `𝔤_ν` of `ν`, the tangent space of the coset `g G_ν`. -/
 theorem ker_bilinFormAt_leftInvariantKirillovForm (g : G) :
     LinearMap.ker (ν.leftInvariantKirillovForm.bilinFormAt g) =
       mulInvariantDistribution (lieAnnihilator ℝ (GroupLieAlgebra I G) ν).toSubmodule g := by
   ext v
-  obtain ⟨ξ, rfl⟩ := exists_mulInvariantVectorField_eq v
-  have hinj {ξ' : GroupLieAlgebra I G}
-      (h : mulInvariantVectorField ξ' g = mulInvariantVectorField ξ g) : ξ' = ξ := by
-    rw [← mfderiv_inv_mul_mulInvariantVectorField ξ' g, h,
-      mfderiv_inv_mul_mulInvariantVectorField]
-  rw [mem_mulInvariantDistribution, LinearMap.mem_ker]
-  refine ⟨fun h ↦ ⟨ξ, ?_, rfl⟩, fun ⟨ξ', hξ', h⟩ ↦ ?_⟩
-  · rw [← ker_kirillovForm, LinearMap.mem_ker]
-    ext η
-    have := LinearMap.congr_fun h (mulInvariantVectorField η g)
-    rwa [SmoothForm.bilinFormAt_apply, eval₂_leftInvariantKirillovForm_mulInvariantVectorField,
-      LinearMap.zero_apply, ← kirillovForm_apply] at this
-  · rw [hinj h, ← ker_kirillovForm, LinearMap.mem_ker] at hξ'
-    ext w
-    obtain ⟨η, rfl⟩ := exists_mulInvariantVectorField_eq w
-    rw [SmoothForm.bilinFormAt_apply, eval₂_leftInvariantKirillovForm_mulInvariantVectorField,
-      LinearMap.zero_apply, ← kirillovForm_apply, hξ', LinearMap.zero_apply]
+  rw [mem_mulInvariantDistribution_iff, ← ker_kirillovForm]
+  change ν.leftInvariantKirillovForm.bilinFormAt g v = 0 ↔
+    ν.kirillovForm (mfderiv I I (g⁻¹ * ·) g v : GroupLieAlgebra I G) = 0
+  simp only [LinearMap.ext_iff, bilinFormAt_leftInvariantKirillovForm_apply, LinearMap.zero_apply]
+  refine ⟨fun h η ↦ ?_, fun h w ↦ h _⟩
+  simpa only [mfderiv_inv_mul_mulInvariantVectorField] using h (mulInvariantVectorField η g)
 
 /-- The left-invariant Kirillov form is invariant under left translations. -/
 @[simp]
