@@ -87,7 +87,7 @@ linear approximation error by the difference of the Hessians.
 * `HolderWith.bddAbove_norm_iteratedFDeriv_add_two`: the top derivative `D^(k+2) f` of a function
   with bounded `D^k f` and Hölder `D^(k+2) f` is bounded.
 * `HolderWith.norm_iteratedFDeriv_add_two_le_of_norm_le` and
-  `HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le_add_two`: the absorbed bounds on the two
+  `HolderWith.norm_iteratedFDeriv_succ_le_of_contDiff_of_norm_le`: the absorbed bounds on the two
   derivatives above `D^k f`, and
   `HolderWith.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le`: both bounds with
   one constant, for scales `ε ≤ 1`, and `HolderWith.norm_fderiv_le_and_norm_iteratedFDeriv_two_le`:
@@ -564,7 +564,7 @@ theorem norm_iteratedFDeriv_add_two_le_of_norm_le {f : E → F} {k : ℕ} {H α 
 /-- **Absorbed interpolation inequality for the intermediate derivative.** If `f` is `C^(k+2)`
 with `‖D^k f‖ ≤ M` and `D^(k+2) f` is globally `α`-Hölder with constant `H`, then
 `‖D^(k+1) f x‖ ≤ 34 M / ε + 2 H ε^(1 + α)` for every `ε > 0`. -/
-theorem norm_iteratedFDeriv_succ_le_of_norm_le_add_two {f : E → F} {k : ℕ} {H α : ℝ≥0}
+theorem norm_iteratedFDeriv_succ_le_of_contDiff_of_norm_le {f : E → F} {k : ℕ} {H α : ℝ≥0}
     (hH : HolderWith H α (iteratedFDeriv ℝ (k + 2) f)) (hf : ContDiff ℝ (k + 2) f) {M : ℝ}
     (hM : ∀ y, ‖iteratedFDeriv ℝ k f y‖ ≤ M) {ε : ℝ} (hε : 0 < ε) (x : E) :
     ‖iteratedFDeriv ℝ (k + 1) f x‖ ≤ 34 * M / ε + 2 * H * ε ^ (1 + (α : ℝ)) := by
@@ -598,7 +598,7 @@ theorem norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le {f : E �
   have hc : (34 / ε + 32 / ε ^ 2) * M = 34 * M / ε + 32 * M / ε ^ 2 := by ring
   have hεα : ε ^ (1 + (α : ℝ)) ≤ ε ^ (α : ℝ) :=
     Real.rpow_le_rpow_of_exponent_ge hε hε1 (by linarith)
-  have h1 := hH.norm_iteratedFDeriv_succ_le_of_norm_le_add_two hf hM hε x
+  have h1 := hH.norm_iteratedFDeriv_succ_le_of_contDiff_of_norm_le hf hM hε x
   have h2 := hH.norm_iteratedFDeriv_add_two_le_of_norm_le hf hM hε x
   rw [hc]
   constructor
