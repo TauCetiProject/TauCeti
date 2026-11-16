@@ -187,8 +187,9 @@ theorem abs_add_setIntegral_inv_mul_div_le (hx : x₀ < x₁) {lam M : ℝ} (hla
     _ ≤ _ := by gcongr
 
 /-- Integrating the first integral `a u' + F = k - Φ` over `(x₀, x₁)`, after dividing by `a`:
-`k ∫ a⁻¹ = ū x₁ - ū x₀ + ∫ a⁻¹ (Φ + F)`. -/
-private theorem mul_setIntegral_inv_eq (hx : x₀ < x₁) {lam : ℝ} (hlam : 0 < lam)
+`k ∫ a⁻¹ = ū x₁ - ū x₀ + ∫ a⁻¹ (Φ + F)`. So the constant `k` is determined by the endpoint values
+of `u`. -/
+theorem mul_setIntegral_inv_eq (hx : x₀ < x₁) {lam : ℝ} (hlam : 0 < lam)
     (ha : AEStronglyMeasurable a (volume.restrict (Ioo x₀ x₁)))
     (hlama : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t) (hF : IntegrableOn F (Ioo x₀ x₁))
     {Φ : ℝ → ℝ} (hΦ : IntegrableOn Φ (Ioo x₀ x₁)) {k : ℝ}
