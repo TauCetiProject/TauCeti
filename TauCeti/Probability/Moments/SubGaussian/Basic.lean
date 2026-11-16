@@ -8,18 +8,21 @@ module
 public import Mathlib.Probability.Moments.SubGaussian
 import Mathlib.Probability.Moments.MGFAnalytic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.Fatou
 
 /-!
 # Basic properties of sub-Gaussian moment-generating functions
 
 The quadratic MGF bound forces a sub-Gaussian random variable to have mean zero, is monotone in
-the variance proxy, and bounds its first absolute moment by `√(2c)`.
+the variance proxy, and bounds its first absolute moment by `√(2c)`. By Fatou's lemma, an almost
+everywhere limit of sub-Gaussian random variables with a common variance proxy is sub-Gaussian
+with the same proxy.
 -/
 
 public section
 
-open MeasureTheory ProbabilityTheory Real
-open scoped NNReal
+open Filter MeasureTheory ProbabilityTheory Real
+open scoped NNReal Topology
 
 namespace ProbabilityTheory.HasSubgaussianMGF
 
@@ -75,7 +78,7 @@ theorem integral_abs_le {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X :
       t * |X x| ≤ (exp (t * X x) + exp ((-t) * X x)) * exp (-1) := by
     calc t * |X x|
         ≤ exp (t * |X x| - 1) := by simpa using add_one_le_exp (t * |X x| - 1)
-      _ = exp |t * X x| * exp (-1) := by rw [abs_mul, abs_of_pos ht, ← exp_add]; congr 1
+      _ = exp |t * X x| * exp (-1) := by rw [abs_mul, abs_of_pos ht, ← exp_add, sub_eq_add_neg]
       _ ≤ (exp (t * X x) + exp ((-t) * X x)) * exp (-1) := by
         simpa only [neg_mul] using mul_le_mul_of_nonneg_right (exp_abs_le (t * X x))
           (exp_pos (-1)).le
@@ -92,5 +95,30 @@ theorem integral_abs_le {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X :
           (exp_pos (-1)).le
       _ = 2 := by rw [neg_sq, ht2, ← two_mul, mul_assoc, ← exp_add]; norm_num
   exact (mul_le_mul_iff_right₀ ht).1 (hbound.trans_eq hts.symm)
+
+/-- An almost everywhere limit, along a countably generated filter, of random variables that are
+frequently sub-Gaussian with variance proxy `c` is sub-Gaussian with variance proxy `c`. -/
+theorem of_tendsto {Ω ι : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {l : Filter ι}
+    [l.IsCountablyGenerated] {X : ι → Ω → ℝ} {Y : Ω → ℝ} {c : ℝ≥0}
+    (h : ∃ᶠ i in l, HasSubgaussianMGF (X i) c μ)
+    (hlim : ∀ᵐ ω ∂μ, Tendsto (fun i ↦ X i ω) l (𝓝 (Y ω))) : HasSubgaussianMGF Y c μ := by
+  obtain ⟨u, hu, hX⟩ := exists_seq_forall_of_frequently h
+  -- Apply Fatou's lemma to the exponentials along a sequence of sub-Gaussian terms.
+  have hexp (t : ℝ) :
+      ∀ᵐ ω ∂μ, Tendsto (fun n ↦ exp (t * X (u n) ω)) atTop (𝓝 (exp (t * Y ω))) :=
+    hlim.mono fun ω hω ↦ ((hω.comp hu).const_mul t).rexp
+  have hint (t : ℝ) : ∀ᶠ n in atTop, Integrable (fun ω ↦ exp (t * X (u n) ω)) μ :=
+    .of_forall fun n ↦ (hX n).integrable_exp_mul t
+  have hpos (t : ℝ) : ∀ᶠ n in atTop, 0 ≤ᵐ[μ] fun ω ↦ exp (t * X (u n) ω) :=
+    .of_forall fun _ ↦ .of_forall fun _ ↦ (exp_pos _).le
+  have hbound (t : ℝ) :
+      ∃ᶠ n in atTop, ∫ ω, exp (t * X (u n) ω) ∂μ ≤ exp (c * t ^ 2 / 2) :=
+    .of_forall fun n ↦ by
+      rw [← mgf]
+      exact (hX n).mgf_le t
+  refine ⟨fun t ↦ TauCeti.integrable_of_tendsto_of_integral_le (hint t) (hpos t) (hexp t)
+    (hbound t), fun t ↦ ?_⟩
+  rw [mgf]
+  exact TauCeti.integral_le_of_tendsto_of_integral_le (hint t) (hpos t) (hexp t) (hbound t)
 
 end ProbabilityTheory.HasSubgaussianMGF

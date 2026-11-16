@@ -239,12 +239,13 @@ namespace TauCeti
 
 /-- A family bounded in norm almost everywhere by a common real function, with uniformly bounded
 `L¹` deviations from given centers, has uniformly bounded centers under any nonzero measure.
-No measurability or integrability of the envelope is required. -/
+Only the norms of the deviations need to be integrable, and no measurability or integrability of
+the envelope is required. -/
 theorem exists_forall_norm_le_of_integral_norm_sub_le {ι Ω E : Type*}
-    [MeasurableSpace Ω] [NormedAddCommGroup E] {μ : Measure Ω} (hμ : μ ≠ 0)
+    [MeasurableSpace Ω] [SeminormedAddGroup E] {μ : Measure Ω} (hμ : μ ≠ 0)
     {f : Ω → ℝ} {g : ι → Ω → E} {m : ι → E} {D : ℝ}
     (hgf : ∀ n, ∀ᵐ x ∂μ, ‖g n x‖ ≤ f x)
-    (hint : ∀ n, Integrable (fun x ↦ g n x - m n) μ)
+    (hint : ∀ n, Integrable (fun x ↦ ‖g n x - m n‖) μ)
     (hD : ∀ n, ∫ x, ‖g n x - m n‖ ∂μ ≤ D) : ∃ B, ∀ n, ‖m n‖ ≤ B := by
   -- Some sublevel set of the envelope has positive outer measure.
   obtain ⟨N, hN⟩ : ∃ N : ℕ, μ {x | f x ≤ N} ≠ 0 := by
@@ -267,14 +268,18 @@ theorem exists_forall_norm_le_of_integral_norm_sub_le {ι Ω E : Type*}
     refine (min_le_left _ _).trans (measure_mono_ae ?_)
     filter_upwards [hgf n] with x hx hxf
     have : f x ≤ N := hxf
-    have hnorm := norm_sub_norm_le (m n) (g n x)
-    rw [norm_sub_rev] at hnorm
+    have hnorm := norm_le_norm_add_norm_sub (g n x) (m n)
     linarith
+  have hfin : μ {x | ‖m n‖ - N ≤ ‖g n x - m n‖} ≠ ∞ := by
+    simpa only [Real.norm_of_nonneg (norm_nonneg _)] using
+      ((hint n).measure_norm_ge_lt_top ht).ne
+  have hpμ : p.toReal ≤ μ.real {x | ‖m n‖ - N ≤ ‖g n x - m n‖} := by
+    rw [measureReal_def]
+    exact ENNReal.toReal_mono hfin hle
   have hreal : (‖m n‖ - N) * p.toReal ≤ D :=
-    (mul_le_mul_of_nonneg_left
-      (ENNReal.toReal_mono ((hint n).measure_norm_ge_lt_top ht).ne hle) ht.le).trans <|
+    (mul_le_mul_of_nonneg_left hpμ ht.le).trans <|
       (mul_meas_ge_le_integral_of_nonneg (.of_forall fun _ ↦ norm_nonneg _)
-        (hint n).norm (‖m n‖ - N)).trans (hD n)
+        (hint n) (‖m n‖ - N)).trans (hD n)
   have : ‖m n‖ - N ≤ D / p.toReal := (le_div_iff₀ hp).2 hreal
   linarith
 

@@ -180,9 +180,8 @@ private lemma LogSobolevInequality.mgf_le (h : LogSobolevInequality μ C) (hG : 
   · -- Apply the positive case to `-G` at `-t`.
     have hneg := h.mgf_le_of_pos hG.neg (G := -G) (by simpa using hGM)
       (by simpa [fderiv_neg] using hGK) (neg_pos.2 ht)
-    rw [mgf_neg, neg_neg, Pi.neg_def, integral_neg] at hneg
-    convert hneg using 2
-    ring
+    rw [mgf_neg, neg_neg, Pi.neg_def, integral_neg, neg_mul_neg, neg_sq] at hneg
+    exact hneg
   · simp
   · exact h.mgf_le_of_pos hG hGM hGK ht
 
@@ -202,7 +201,7 @@ private lemma LogSobolevInequality.hasSubgaussianMGF_of_contDiff (h : LogSobolev
         ≤ exp (t * ∫ x, G x ∂μ + C * K ^ 2 * t ^ 2 / 2) * exp (t * -∫ y, G y ∂μ) := by
           gcongr; exact h.mgf_le hG hGM hGK t
       _ = exp (↑(C * K ^ 2) * t ^ 2 / 2) := by
-          rw [← exp_add]; push_cast; ring_nf
+          rw [← exp_add]; congr 1; push_cast; ring
 
 end Bounded
 
@@ -224,7 +223,7 @@ theorem LogSobolevInequality.hasSubgaussianMGF_of_lipschitzWith (h : LogSobolevI
   have hsub (n : ℕ) := h.hasSubgaussianMGF_of_contDiff (hgs n) (hgn n) (hgK n)
   obtain ⟨B, hB⟩ := TauCeti.exists_forall_norm_le_of_integral_norm_sub_le (μ := μ) (NeZero.ne μ)
     (fun n ↦ .of_forall fun x ↦ by simpa only [Real.norm_eq_abs] using hgf n x)
-    (fun n ↦ (hsub n).integrable)
+    (fun n ↦ (hsub n).integrable.norm)
     (fun n ↦ by simpa only [Real.norm_eq_abs] using (hsub n).integral_abs_le)
   simp only [Real.norm_eq_abs] at hB
   -- Fatou's lemma gives every exponential moment of `f`.
@@ -235,6 +234,7 @@ theorem LogSobolevInequality.hasSubgaussianMGF_of_lipschitzWith (h : LogSobolevI
         (.of_forall fun x ↦ abs_le.1 (hgn n x)))
       (.of_forall fun _ ↦ .of_forall fun _ ↦ (exp_pos _).le)
       (.of_forall fun x ↦ ((hlim x).const_mul t).rexp) (.of_forall fun n ↦ ?_)
+    rw [← mgf]
     refine (h.mgf_le (hgs n) (hgn n) (hgK n) t).trans (exp_le_exp.2 ?_)
     have : t * ∫ y, g n y ∂μ ≤ |t| * B :=
       (le_abs_self _).trans (by rw [abs_mul]; exact mul_le_mul_of_nonneg_left (hB n) (abs_nonneg t))
@@ -246,18 +246,9 @@ theorem LogSobolevInequality.hasSubgaussianMGF_of_lipschitzWith (h : LogSobolevI
     tendsto_integral_of_dominated_convergence (fun x ↦ |f x| + 1)
       (fun n ↦ (hgs n).continuous.aestronglyMeasurable) (hfint.abs.add (integrable_const 1))
       (fun n ↦ .of_forall fun x ↦ by rw [Real.norm_eq_abs]; exact hgf n x) (.of_forall hlim)
-  -- Fatou's lemma passes the centred bounds of the approximants to `f`.
-  have hcent (t : ℝ) : ∀ᵐ x ∂μ, Tendsto (fun n ↦ exp (t * (g n x - ∫ y, g n y ∂μ))) atTop
-      (𝓝 (exp (t * (f x - ∫ y, f y ∂μ)))) :=
-    .of_forall fun x ↦ (((hlim x).sub hm).const_mul t).rexp
-  have hpos (t : ℝ) (n : ℕ) : 0 ≤ᵐ[μ] fun x ↦ exp (t * (g n x - ∫ y, g n y ∂μ)) :=
-    .of_forall fun _ ↦ (exp_pos _).le
-  exact ⟨fun t ↦ TauCeti.integrable_of_tendsto_of_integral_le
-      (.of_forall fun n ↦ (hsub n).integrable_exp_mul t) (.of_forall (hpos t)) (hcent t)
-      (.of_forall fun n ↦ (hsub n).mgf_le t),
-    fun t ↦ TauCeti.integral_le_of_tendsto_of_integral_le
-      (.of_forall fun n ↦ (hsub n).integrable_exp_mul t) (.of_forall (hpos t)) (hcent t)
-      (.of_forall fun n ↦ (hsub n).mgf_le t)⟩
+  -- The centred approximants converge to the centred `f`, so the bound passes to the limit.
+  exact HasSubgaussianMGF.of_tendsto (l := atTop) (.of_forall hsub)
+    (.of_forall fun x ↦ (hlim x).sub hm)
 
 /-- Under a logarithmic Sobolev inequality, every real exponential moment of a Lipschitz
 function is integrable. -/
