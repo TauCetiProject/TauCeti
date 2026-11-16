@@ -236,6 +236,11 @@ theorem _root_.LinearMap.restrictScalars_mem_differentialOperators_zero (f : M �
     f.restrictScalars R ∈ differentialOperators R A M N 0 :=
   mem_differentialOperators_zero_iff.2 fun a x ↦ by simp
 
+/-- Multiplication by an element of a commutative ring is a differential operator of order `0`. -/
+theorem lsmul_mem_differentialOperators_zero {B : Type*} [CommRing B] [Algebra R B] (a : B) :
+    Algebra.lsmul R R B a ∈ differentialOperators R B B B 0 :=
+  mem_differentialOperators_zero_iff.2 fun b x ↦ smul_comm a b x
+
 theorem differentialOperators_le_succ (m : ℕ) :
     differentialOperators R A M N m ≤ differentialOperators R A M N (m + 1) := by
   induction m with
