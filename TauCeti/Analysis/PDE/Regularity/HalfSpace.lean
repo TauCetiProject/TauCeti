@@ -227,8 +227,11 @@ private theorem exists_norm_le_hasWeakLineDerivOn_matrixBilinearForm_smul
   have hc : 0 ≤ Lam * ‖p‖ * ‖q‖ :=
     mul_nonneg (mul_nonneg ha.upper_nonneg (norm_nonneg p)) (norm_nonneg q)
   have hK' : 0 ≤ (K : ℝ) * ‖p‖ * ‖q‖ * ‖v‖ := by positivity
-  exact add_le_add (mul_le_mul_of_nonneg_left hG₀n hc)
-    (mul_le_mul_of_nonneg_left (Lp.toReal_eLpNorm_inner_const_le (W1p.gradient U) z) hK')
+  have hz : (eLpNorm (fun x => ⟪W1p.gradient U x, z⟫_ℝ) 2 (mu.restrict Omega)).toReal ≤
+      ‖z‖ * ‖W1p.gradient U‖ := by
+    simpa [Lp.norm_def] using ENNReal.toReal_mono (by finiteness)
+      (eLpNorm_inner_const_le (𝕜 := ℝ) (μ := mu.restrict Omega) (W1p.gradient U) z 2)
+  exact add_le_add (mul_le_mul_of_nonneg_left hG₀n hc) (mul_le_mul_of_nonneg_left hz hK')
 
 /-- **Dividing by the normal coefficient.** Let `‖e‖ = 1` and let `a` be uniformly elliptic and
 bounded on `Ω` with constants `λ` and `Λ`, with `x ↦ a(x)` `K`-Lipschitz on `Ω` as a bilinear

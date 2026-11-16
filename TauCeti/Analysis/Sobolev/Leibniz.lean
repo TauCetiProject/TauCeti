@@ -16,6 +16,7 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.Mollification.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
 # The product rule for weak derivatives
@@ -419,39 +420,24 @@ theorem HasWeakLineDerivOn.exists_norm_le_lipschitzOnWith_smul {p : ℝ≥0∞} 
   refine ⟨hm.toLp _, ?_, (h.lipschitzOnWith_smul hψ).congr_ae_deriv hm.coeFn_toLp.symm⟩
   rcases (Ω : Set E).eq_empty_or_nonempty with hΩ | ⟨x₀, hx₀⟩
   · simp [Lp.norm_toLp, hΩ]
-  have hM : 0 ≤ M := (norm_nonneg _).trans (hψb x₀ hx₀)
-  have hKv : (0 : ℝ) ≤ K * ‖v‖ := by positivity
+  lift M to ℝ≥0 using (norm_nonneg _).trans (hψb x₀ hx₀)
   -- Pointwise, `|ψ| ≤ M` and `|∂_v ψ| ≤ K ‖v‖` on `Ω`.
-  have hpt : ∀ᵐ x ∂μ.restrict Ω, ‖ψ x • u' x + lineDeriv ℝ ψ x v • u x‖ ≤
-      (M • (fun x => ‖u' x‖) + (K * ‖v‖) • fun x => ‖u x‖) x := by
-    filter_upwards [ae_restrict_mem hΩm] with x hx
-    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-    · rw [norm_smul]
-      exact mul_le_mul_of_nonneg_right (hψb x hx) (norm_nonneg _)
-    · rw [norm_smul]
-      exact mul_le_mul_of_nonneg_right
-        (norm_lineDeriv_le_of_lipschitzOn ℝ (Ω.isOpen.mem_nhds hx) hψ) (norm_nonneg _)
-  have hle : eLpNorm (fun x => ψ x • u' x + lineDeriv ℝ ψ x v • u x) p (μ.restrict Ω) ≤
-      ENNReal.ofReal M * eLpNorm u' p (μ.restrict Ω) +
-        ENNReal.ofReal (K * ‖v‖) * eLpNorm u p (μ.restrict Ω) := by
-    calc _ ≤ eLpNorm (M • (fun x => ‖u' x‖) + (K * ‖v‖) • fun x => ‖u x‖) p (μ.restrict Ω) :=
-          eLpNorm_mono_ae_real hm.aestronglyMeasurable hpt
-      _ ≤ eLpNorm (M • fun x => ‖u' x‖) p (μ.restrict Ω) +
-            eLpNorm ((K * ‖v‖) • fun x => ‖u x‖) p (μ.restrict Ω) :=
-          eLpNorm_add_le Fact.out
-      _ = _ := by
-          rw [eLpNorm_const_smul, eLpNorm_const_smul, eLpNorm_norm, eLpNorm_norm,
-            Real.eNorm_eq_ofReal hM, Real.eNorm_eq_ofReal hKv]
-          exacts [hu.aestronglyMeasurable, hu'.aestronglyMeasurable]
+  have hle := eLpNorm_le_mul_add_mul_of_ae_norm_le (A := M) (B := K * ‖v‖₊) (p := p)
+    (f := fun x => ψ x • u' x + lineDeriv ℝ ψ x v • u x) Fact.out
+    hm.aestronglyMeasurable hu'.aestronglyMeasurable hu.aestronglyMeasurable <| by
+      filter_upwards [ae_restrict_mem hΩm] with x hx
+      refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+      · rw [norm_smul]
+        exact mul_le_mul_of_nonneg_right (hψb x hx) (norm_nonneg _)
+      · rw [norm_smul, NNReal.coe_mul, coe_nnNorm]
+        exact mul_le_mul_of_nonneg_right
+          (norm_lineDeriv_le_of_lipschitzOn ℝ (Ω.isOpen.mem_nhds hx) hψ) (norm_nonneg _)
+  have hu_ne := hu.eLpNorm_ne_top
+  have hu'_ne := hu'.eLpNorm_ne_top
   rw [Lp.norm_toLp]
-  calc _ ≤ (ENNReal.ofReal M * eLpNorm u' p (μ.restrict Ω) +
-        ENNReal.ofReal (K * ‖v‖) * eLpNorm u p (μ.restrict Ω)).toReal :=
-        ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-          hu'.eLpNorm_ne_top, ENNReal.mul_ne_top ENNReal.ofReal_ne_top hu.eLpNorm_ne_top⟩) hle
-    _ = _ := by
-        rw [ENNReal.toReal_add (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hu'.eLpNorm_ne_top)
-          (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hu.eLpNorm_ne_top), ENNReal.toReal_mul,
-          ENNReal.toReal_mul, ENNReal.toReal_ofReal hM, ENNReal.toReal_ofReal hKv]
+  refine (ENNReal.toReal_mono (by finiteness) hle).trans_eq ?_
+  rw [ENNReal.toReal_add (by finiteness) (by finiteness)]
+  simp
 
 end Lipschitz
 
@@ -475,19 +461,13 @@ theorem eLpNorm_smul_add_fderiv_smulRight_le (hp : 1 ≤ p) {ψ : E → ℝ}
   have hm : AEStronglyMeasurable (fun z => ψ z • D z + (fderiv ℝ ψ z).smulRight (u z)) μ :=
     (hψ.smul hD).add ((ContinuousLinearMap.smulRightL ℝ E F).aestronglyMeasurable_comp₂
       (measurable_fderiv ℝ ψ).aestronglyMeasurable hu)
-  calc eLpNorm (fun z => ψ z • D z + (fderiv ℝ ψ z).smulRight (u z)) p μ
-      ≤ eLpNorm ((A : ℝ) • fun z => ‖D z‖) p μ + eLpNorm ((B : ℝ) • fun z => ‖u z‖) p μ := by
-        refine (eLpNorm_mono_ae_real hm ?_).trans (eLpNorm_add_le hp)
-        filter_upwards [hA, hB] with z hAz hBz
-        simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-        refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-        · rw [norm_smul]
-          exact mul_le_mul_of_nonneg_right hAz (norm_nonneg _)
-        · rw [ContinuousLinearMap.norm_smulRight_apply]
-          exact mul_le_mul_of_nonneg_right hBz (norm_nonneg _)
-    _ = A * eLpNorm D p μ + B * eLpNorm u p μ := by
-        rw [eLpNorm_const_smul, eLpNorm_const_smul, eLpNorm_norm, eLpNorm_norm] <;>
-          first | assumption | simp
+  refine eLpNorm_le_mul_add_mul_of_ae_norm_le hp hm hD hu ?_
+  filter_upwards [hA, hB] with z hAz hBz
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+  · rw [norm_smul]
+    exact mul_le_mul_of_nonneg_right hAz (norm_nonneg _)
+  · rw [ContinuousLinearMap.norm_smulRight_apply]
+    exact mul_le_mul_of_nonneg_right hBz (norm_nonneg _)
 
 end LpBound
 

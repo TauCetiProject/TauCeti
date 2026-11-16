@@ -25,8 +25,8 @@ hypotheses on random vectors are usually stated, together with the special case 
 form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function. Likewise the weighted
 squared norm `V² ‖g‖²` of a square-integrable `g` against an essentially bounded weight `V` is
 integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`). The `Lᵖ` seminorm of the pairing
-`x ↦ ⟪F x, c⟫` of an `Lᵖ` function with a constant vector is at most `‖c‖ ‖F‖`
-(`MeasureTheory.Lp.toReal_eLpNorm_inner_const_le`).
+`x ↦ ⟪f x, c⟫` of a function with a constant vector is at most `‖c‖ₑ` times that of `f`
+(`MeasureTheory.eLpNorm_inner_const_le`).
 For counting measure, singleton-supported vectors separate L² functions and determine
 continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
 L² function with a continuous function is an integral
@@ -96,16 +96,16 @@ theorem MemLp.integrable_sq_mul_norm_sq {F : Type*} [NormedAddCommGroup F] {g : 
   hg.norm.integrable_sq.bdd_mul (hV.pow 2)
     (hVC.mono fun _ hx ↦ (Real.norm_of_nonneg (sq_nonneg _)).trans_le hx)
 
-/-- The `Lᵖ` seminorm of the pairing `x ↦ ⟪F x, c⟫` of an `Lᵖ` function `F` with a constant
-vector `c` is at most `‖c‖ ‖F‖`. -/
-theorem Lp.toReal_eLpNorm_inner_const_le {p : ℝ≥0∞} (F : Lp E p μ) (c : E) :
-    (eLpNorm (fun x ↦ ⟪F x, c⟫_𝕜) p μ).toReal ≤ ‖c‖ * ‖F‖ := by
-  have hc : MemLp (fun x ↦ ⟪F x, c⟫_𝕜) p μ := (Lp.memLp F).inner_const c
-  rw [← Lp.norm_toLp _ hc]
-  refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-  filter_upwards [hc.coeFn_toLp] with x hx
-  rw [hx, mul_comm]
-  exact norm_inner_le_norm _ _
+/-- The `Lᵖ` seminorm of the pairing `x ↦ ⟪f x, c⟫` of a function `f` with a constant vector `c`
+is at most `‖c‖ₑ` times that of `f`. -/
+theorem eLpNorm_inner_const_le (f : α → E) (c : E) (p : ℝ≥0∞) :
+    eLpNorm (fun x ↦ ⟪f x, c⟫_𝕜) p μ ≤ ‖c‖ₑ * eLpNorm f p μ := by
+  by_cases hf : AEStronglyMeasurable f μ
+  · exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul' (c := ‖c‖₊) (hf.inner aestronglyMeasurable_const)
+      (.of_forall fun x ↦ (eNorm_inner_le_eNorm _ _).trans_eq (mul_comm _ _)) p
+  obtain rfl | hc := eq_or_ne c 0
+  · simp
+  simp [eLpNorm_of_not_aestronglyMeasurable hf, hc]
 
 /-- A counting-measure L² function orthogonal to every singleton-supported vector is zero.
 No countability of the underlying measurable space is needed. -/
