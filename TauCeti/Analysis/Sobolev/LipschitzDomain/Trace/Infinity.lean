@@ -25,8 +25,9 @@ an interval, zero endpoint values do not imply approximation in the full `W^{1,�
 
 ## References
 
-* R. A. Adams, J. J. F. Fournier, *Sobolev Spaces*, 2nd ed., §4.7.
-* L. C. Evans, *Partial Differential Equations*, 2nd ed., §§5.4–5.5.
+* R. A. Adams, J. J. F. Fournier, *Sobolev Spaces*, 2nd ed., Chapter 3
+  (the closure definition of zero-boundary Sobolev spaces).
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., §§5.4–5.5 and §5.8.2.
 -/
 
 public section
@@ -34,7 +35,7 @@ public section
 noncomputable section
 
 open Bornology MeasureTheory Set TopologicalSpace
-open scoped ENNReal NNReal BoundedContinuousFunction
+open scoped ENNReal NNReal BoundedContinuousFunction ContDiff Gradient
 
 namespace TauCeti.W1p
 
@@ -48,15 +49,6 @@ private def frontierExtensionL
     W1p volume Ω ∞ →L[ℝ] W1p volume (⊤ : Opens (WithLp 2 (ℝ × E))) ∞ :=
   (exists_extensionL_of_isLipschitzDomainWith (p := ∞) hΩ hb).choose
 
-private theorem restrictL_frontierExtensionL
-    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
-    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (u : W1p volume Ω ∞) :
-    restrictL le_top (frontierExtensionL hΩ hb u) = u := by
-  simpa only [frontierExtensionL, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.id_apply] using
-    congrArg (fun T ↦ T u)
-      (exists_extensionL_of_isLipschitzDomainWith (p := ∞) hΩ hb).choose_spec.1
-
 private def frontierRepresentativeL
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) :
@@ -67,12 +59,11 @@ private theorem value_ae_eq_frontierRepresentativeL
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (u : W1p volume Ω ∞) :
     value u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] frontierRepresentativeL hΩ hb u := by
-  have hval := value_restrictL_ae (le_top : Ω ≤ ⊤) (frontierExtensionL hΩ hb u)
-  rw [restrictL_frontierExtensionL] at hval
   rw [frontierRepresentativeL, ContinuousLinearMap.comp_apply]
-  exact hval.trans
-    ((value_ae_eq_boundedContinuousRepresentativeL (frontierExtensionL hΩ hb u)).filter_mono
-      (ae_mono Measure.restrict_le_self))
+  exact (value_ae_eq_of_restrictL_comp_eq_id (le_top : Ω ≤ ⊤)
+    (exists_extensionL_of_isLipschitzDomainWith (p := ∞) hΩ hb).choose_spec.1 u).symm.trans
+      (ae_restrict_of_ae
+        (value_ae_eq_boundedContinuousRepresentativeL (frontierExtensionL hΩ hb u)))
 
 /-- The boundary trace of a `W^{1,∞}` class on a bounded Lipschitz domain, with values in
 `L∞` for normalized Euclidean Hausdorff measure on the frontier. -/
@@ -100,6 +91,7 @@ theorem frontierTraceTop_ae_eq_of_continuousOn
     hf.domRestrict
     ((ae_restrict_iff' Ω.isOpen.measurableSet).1
       ((value_ae_eq_frontierRepresentativeL hΩ hb u).symm.trans hu))
+  rw [frontierTraceTop, ContinuousLinearMap.comp_apply]
   filter_upwards [BoundedContinuousFunction.coeFn_toLpTop
       ((μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
         (frontier (Ω : Set (WithLp 2 (ℝ × E))))) (𝕜 := ℝ) (frontierRepresentativeL hΩ hb u),
@@ -123,6 +115,25 @@ theorem exists_lipschitzWith_ae_eq_frontierTraceTop
       (value_ae_eq_frontierRepresentativeL hΩ hb u)⟩
   simpa only [frontierRepresentativeL, ContinuousLinearMap.comp_apply] using
     lipschitzWith_boundedContinuousRepresentativeL (frontierExtensionL hΩ hb u)
+
+/-- The `L∞` trace commutes with multiplication by a smooth function bounded together
+with its gradient on the domain. -/
+theorem frontierTraceTop_contDiffSMul_ae
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
+    {ψ : WithLp 2 (ℝ × E) → ℝ} {M : ℝ} (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (u : W1p volume Ω ∞) :
+    frontierTraceTop hΩ hb (contDiffSMul ψ hψ hM hψM hgM u) =ᵐ[
+      (μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+        (frontier (Ω : Set (WithLp 2 (ℝ × E))))]
+      fun x ↦ ψ x * frontierTraceTop hΩ hb u x := by
+  obtain ⟨f, _, _, hu, hf⟩ := exists_lipschitzWith_ae_eq_frontierTraceTop hΩ hb u
+  have hprod := Filter.EventuallyEq.trans (value_contDiffSMul_ae hψ hM hψM hgM u)
+    (Filter.EventuallyEq.rfl.smul hu)
+  exact (frontierTraceTop_ae_eq_of_continuousOn hΩ hb
+    (hψ.continuous.mul f.continuous).continuousOn hprod).trans
+      (Filter.EventuallyEq.rfl.mul hf.symm)
 
 /-- Taking the boundary trace does not increase the essential supremum of the value. -/
 theorem norm_frontierTraceTop_le
@@ -177,7 +188,7 @@ theorem eq_frontierTraceTop
 /-- The `L∞` trace agrees almost everywhere with every finite-exponent trace of the same
 Sobolev class. -/
 theorem frontierTrace_ofExponentLE_ae_eq_frontierTraceTop {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (hp : p ≠ ∞) (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (u : W1p volume Ω ∞) :
     letI : IsFiniteMeasure (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))) :=
       isFiniteMeasure_restrict.2 hb.measure_lt_top.ne

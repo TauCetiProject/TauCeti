@@ -43,16 +43,18 @@ local instance : (μ.restrict ((⊤ : Opens E) : Set E)).IsOpenPosMeasure := by
 private def boundedContinuousRepresentative (u : W1p μ (⊤ : Opens E) ∞) : E →ᵇ ℝ :=
   BoundedContinuousFunction.ofNormedAddCommGroup
     (preciseRepresentative μ (value u)) (lipschitzWith_preciseRepresentative u).continuous
-    ‖value u‖ (fun x ↦ norm_preciseRepresentative_le u (mem_univ x))
+    ‖value u‖ (fun x ↦ norm_preciseRepresentative_le u (Opens.mem_top x))
 
 private theorem toLpTop_boundedContinuousRepresentative (u : W1p μ (⊤ : Opens E) ∞) :
     BoundedContinuousFunction.toLpTop (μ.restrict ((⊤ : Opens E) : Set E)) ℝ
       (boundedContinuousRepresentative u) =
       value u := by
   apply Lp.ext
-  exact (BoundedContinuousFunction.coeFn_toLpTop
-    (μ.restrict ((⊤ : Opens E) : Set E)) _).trans
-    (ae_eq_preciseRepresentative u).symm
+  have h := BoundedContinuousFunction.coeFn_toLpTop
+    (μ.restrict ((⊤ : Opens E) : Set E)) (𝕜 := ℝ) (boundedContinuousRepresentative u)
+  simp only [boundedContinuousRepresentative,
+    BoundedContinuousFunction.coe_ofNormedAddCommGroup] at h
+  exact h.trans (ae_eq_preciseRepresentative u).symm
 
 /-- The bounded Lipschitz representative of a whole-space `W^{1,∞}` function, as a continuous
 linear map. Its norm is controlled by the value component alone. -/
@@ -62,26 +64,23 @@ def boundedContinuousRepresentativeL : W1p μ (⊤ : Opens E) ∞ →L[ℝ] (E �
       map_add' := fun u v ↦ by
         apply BoundedContinuousFunction.toLpTop_injective
           (μ.restrict ((⊤ : Opens E) : Set E)) (𝕜 := ℝ)
-        simp only [map_add, toLpTop_boundedContinuousRepresentative]
-        simpa only [valueL_apply] using
-          (valueL (mu := μ) (Omega := ⊤) (p := ∞)).map_add u v
+        simp only [map_add, toLpTop_boundedContinuousRepresentative, value_add]
       map_smul' := fun c u ↦ by
         apply BoundedContinuousFunction.toLpTop_injective
           (μ.restrict ((⊤ : Opens E) : Set E)) (𝕜 := ℝ)
-        simp only [map_smul, toLpTop_boundedContinuousRepresentative]
-        simpa only [valueL_apply, RingHom.id_apply] using
-          (valueL (mu := μ) (Omega := ⊤) (p := ∞)).map_smul c u }
+        simp only [RingHom.id_apply, map_smul, toLpTop_boundedContinuousRepresentative,
+          value_smul] }
     1 (fun u ↦ by
-      have h : ‖boundedContinuousRepresentative u‖ ≤ ‖u‖ :=
-        (BoundedContinuousFunction.norm_le (norm_nonneg u)).2 fun x ↦
-          (norm_preciseRepresentative_le u (mem_univ x)).trans (norm_value_le u)
-      simpa only [LinearMap.coe_mk, AddHom.coe_mk, one_mul] using h)
+      simp only [LinearMap.coe_mk, AddHom.coe_mk, one_mul]
+      rw [← BoundedContinuousFunction.norm_toLpTop
+        (μ.restrict ((⊤ : Opens E) : Set E)) (𝕜 := ℝ),
+        toLpTop_boundedContinuousRepresentative]
+      exact norm_value_le u)
 
 /-- Evaluating the bounded continuous representative gives the precise representative. -/
--- Rewrite the representative before simplification of the whole-space open-set coercion.
-@[simp↓]
 theorem boundedContinuousRepresentativeL_apply (u : W1p μ (⊤ : Opens E) ∞) (x : E) :
-    boundedContinuousRepresentativeL u x = preciseRepresentative μ (value u) x := (rfl)
+    boundedContinuousRepresentativeL u x = preciseRepresentative μ (value u) x := by
+  simp [boundedContinuousRepresentativeL, boundedContinuousRepresentative]
 
 /-- The bounded continuous representative agrees almost everywhere with the original value. -/
 theorem value_ae_eq_boundedContinuousRepresentativeL (u : W1p μ (⊤ : Opens E) ∞) :
@@ -91,6 +90,27 @@ theorem value_ae_eq_boundedContinuousRepresentativeL (u : W1p μ (⊤ : Opens E)
   exact h.trans (Filter.Eventually.of_forall fun x ↦
     (boundedContinuousRepresentativeL_apply u x).symm)
 
+/-- A bounded continuous function is the canonical representative exactly when it agrees
+almost everywhere with the Sobolev value. -/
+theorem boundedContinuousRepresentativeL_eq_iff (u : W1p μ (⊤ : Opens E) ∞) (f : E →ᵇ ℝ) :
+    boundedContinuousRepresentativeL u = f ↔ value u =ᵐ[μ] f := by
+  constructor
+  · rintro rfl
+    exact value_ae_eq_boundedContinuousRepresentativeL u
+  · intro h
+    apply DFunLike.coe_injective
+    exact (Continuous.ae_eq_iff_eq μ (boundedContinuousRepresentativeL u).continuous
+      f.continuous).1
+      ((value_ae_eq_boundedContinuousRepresentativeL u).symm.trans h)
+
+/-- The bounded continuous representative determines its Sobolev class. -/
+theorem boundedContinuousRepresentativeL_injective :
+    Function.Injective (boundedContinuousRepresentativeL (μ := μ)) := by
+  intro u v h
+  have hu := (boundedContinuousRepresentativeL_eq_iff u _).1 h
+  exact ext_value (Lp.ext (ae_restrict_of_ae
+    (hu.trans (value_ae_eq_boundedContinuousRepresentativeL v).symm)))
+
 /-- The supremum norm of the continuous representative is exactly the essential supremum
 norm of the Sobolev value. -/
 -- Rewrite the norm before simplification of the whole-space open-set coercion.
@@ -99,11 +119,14 @@ theorem norm_boundedContinuousRepresentativeL (u : W1p μ (⊤ : Opens E) ∞) :
     ‖boundedContinuousRepresentativeL u‖ = ‖value u‖ := by
   rw [← BoundedContinuousFunction.norm_toLpTop
     (μ.restrict ((⊤ : Opens E) : Set E)) (𝕜 := ℝ)]
-  exact congrArg norm (toLpTop_boundedContinuousRepresentative u)
+  simpa only [boundedContinuousRepresentativeL, LinearMap.mkContinuous_apply,
+    LinearMap.coe_mk, AddHom.coe_mk] using
+    congrArg norm (toLpTop_boundedContinuousRepresentative u)
 
 /-- The Lipschitz constant of the representative is bounded by the weak-gradient norm. -/
 theorem lipschitzWith_boundedContinuousRepresentativeL (u : W1p μ (⊤ : Opens E) ∞) :
-    LipschitzWith ‖gradient u‖₊ (boundedContinuousRepresentativeL u) :=
-  lipschitzWith_preciseRepresentative u
+    LipschitzWith ‖gradient u‖₊ (boundedContinuousRepresentativeL u) := by
+  rw [funext (boundedContinuousRepresentativeL_apply u)]
+  exact lipschitzWith_preciseRepresentative u
 
 end TauCeti.W1p
