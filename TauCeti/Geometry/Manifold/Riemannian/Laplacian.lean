@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Giada Franz
 -/
 module
 
@@ -42,6 +42,11 @@ linear coordinates is `D²f(u, v) - Df(Γ(u, v))` with `Γ` the Christoffel symb
 finite-dimensional inner-product space, the operator agrees with Mathlib's
 flat Laplacian. The Hessian conventions follow Lee, *Introduction to Riemannian Manifolds*,
 Chapter 3.
+
+The Laplace–Beltrami locality lemmas are adapted from Giada Franz's locality helper.
+The operator depends only on the germ of the function: locally equal functions have equal
+Laplacians when the gradient is differentiable at the point, and the Laplacian vanishes off
+the function's topological support without any regularity assumption.
 
 -/
 
@@ -353,6 +358,17 @@ variable (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
 theorem divergence_zero (x : M) : divergence I 0 x = 0 := by
   simp [divergence]
 
+/-- Locally equal vector fields have equal divergence at a point where one is differentiable. -/
+theorem divergence_congr_of_eventuallyEq {X Y : (x : M) → TangentSpace I x} {x : M}
+    (hX : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) x)
+    (h : ∀ᶠ y in nhds x, X y = Y y) : divergence I X x = divergence I Y x := by
+  have hT : (fun y ↦ (⟨y, Y y⟩ : TangentBundle I M)) =ᶠ[nhds x]
+      fun y ↦ (⟨y, X y⟩ : TangentBundle I M) :=
+    h.mono fun y hy ↦ congrArg (TotalSpace.mk' E y) hy.symm
+  rw [divergence_def, divergence_def,
+    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.congr_of_eventuallyEq
+      hX (hX.congr_of_eventuallyEq hT) Filter.univ_mem h]
+
 /-- Divergence is additive at a point where both vector fields are differentiable. -/
 theorem divergence_add (X Y : (x : M) → TangentSpace I x) (x : M)
     (hX : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) x)
@@ -486,6 +502,37 @@ theorem laplaceBeltrami_const (c : ℝ) (x : M) :
 @[simp]
 theorem laplaceBeltrami_zero (x : M) : laplaceBeltrami I (0 : M → ℝ) x = 0 :=
   laplaceBeltrami_const I 0 x
+
+/-- Locally equal functions have equal Laplace–Beltrami operators at a point where the gradient
+of one function is differentiable. -/
+theorem laplaceBeltrami_congr_of_eventuallyEq_of_mdifferentiableAt_mgradient
+    {f g : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (h : f =ᶠ[nhds x] g) : laplaceBeltrami I f x = laplaceBeltrami I g x := by
+  rw [laplaceBeltrami_def, laplaceBeltrami_def]
+  apply divergence_congr_of_eventuallyEq I hf
+  filter_upwards [h.eventuallyEq_nhds] with y hy
+  apply ext_inner_right ℝ
+  intro v
+  rw [inner_mgradient, inner_mgradient, hy.mvfderiv_eq]
+
+/-- Two functions which agree near a point have the same Laplace–Beltrami operator there if
+one is `C²` at the point. -/
+theorem laplaceBeltrami_congr_of_eventuallyEq {f g : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (h : f =ᶠ[nhds x] g) :
+    laplaceBeltrami I f x = laplaceBeltrami I g x := by
+  let : IsManifold I (1 + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
+  apply laplaceBeltrami_congr_of_eventuallyEq_of_mdifferentiableAt_mgradient I _ h
+  exact (contMDiffAt_mgradient (n := 1)
+    (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp)
+
+/-- The Laplace–Beltrami operator vanishes off the topological support of a function. -/
+theorem laplaceBeltrami_eq_zero_of_notMem_tsupport {f : M → ℝ} {x : M}
+    (hx : x ∉ tsupport f) : laplaceBeltrami I f x = 0 := by
+  rw [← laplaceBeltrami_congr_of_eventuallyEq I contMDiffAt_zero
+    (notMem_tsupport_iff_eventuallyEq.1 hx).symm, laplaceBeltrami_zero]
 
 /-- The Laplace–Beltrami operator is additive at a point where both functions are `C²`. -/
 theorem laplaceBeltrami_add_of_contMDiffAt {f g : M → ℝ} {x : M}
