@@ -1,0 +1,111 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.MvPolynomial.Derivation
+
+/-!
+# Coefficientwise derivations of multivariate polynomials
+
+Let `A` be a commutative `R`-algebra. An `R`-derivation `d` of `A` acts on `MvPolynomial σ A`
+coefficient by coefficient; `Derivation.mvMapCoeffs d` is this `R`-derivation, which kills the
+variables. It is the multivariate analogue of Mathlib's `Derivation.mapCoeffs`. Adding an
+`A`-linear derivation `MvPolynomial.mkDerivation A f`, with scalars restricted to `R`, gives an
+`R`-derivation of `MvPolynomial σ A` lifting `d` with prescribed values `f` on the variables.
+
+`MvPolynomial.derivation_ext'` records that an `R`-derivation of `MvPolynomial σ A` is
+determined by its values on the constants and on the variables. Mathlib's
+`MvPolynomial.derivation_ext` covers derivations that are linear over the coefficient ring,
+which vanish on constants.
+-/
+
+public section
+
+noncomputable section
+
+open MvPolynomial
+
+variable {R A σ : Type*} [CommSemiring R] [CommSemiring A]
+
+namespace MvPolynomial
+
+/-- An `R`-derivation of `MvPolynomial σ A` is determined by its values on the constants `C a`
+and on the variables `X i`. -/
+theorem derivation_ext' {M : Type*} [Algebra R (MvPolynomial σ A)] [AddCommMonoid M]
+    [Module (MvPolynomial σ A) M] [Module R M] {D₁ D₂ : Derivation R (MvPolynomial σ A) M}
+    (hC : ∀ a, D₁ (C a) = D₂ (C a)) (hX : ∀ i, D₁ (X i) = D₂ (X i)) : D₁ = D₂ := by
+  ext p
+  induction p using MvPolynomial.induction_on with
+  | C a => exact hC a
+  | add p q hp hq => rw [map_add, map_add, hp, hq]
+  | mul_X p i hp => rw [Derivation.leibniz, Derivation.leibniz, hp, hX]
+
+end MvPolynomial
+
+namespace Derivation
+
+variable [Algebra R A] (d : Derivation R A A)
+
+/-- The `R`-derivation of `MvPolynomial σ A` applying the derivation `d` of `A` to every
+coefficient. -/
+def mvMapCoeffs : Derivation R (MvPolynomial σ A) (MvPolynomial σ A) where
+  -- The underlying map is `AddMonoidAlgebra.map`, through the representation of
+  -- `MvPolynomial σ A` as `AddMonoidAlgebra A (σ →₀ ℕ)`. The proofs below compare
+  -- coefficients, and `coeff_mvMapCoeffs` records this representation for the later lemmas.
+  toFun := AddMonoidAlgebra.map (d : A →ₗ[R] A).toAddMonoidHom
+  map_add' := AddMonoidAlgebra.map_add _
+  map_smul' r p := by
+    ext m
+    simp
+  map_one_eq_zero' := by
+    classical
+    ext m
+    simp [coeff_one, apply_ite]
+  leibniz' p q := by
+    classical
+    simp only [LinearMap.coe_mk, AddHom.coe_mk]
+    have hmon (m : σ →₀ ℕ) (a : A) : AddMonoidAlgebra.map (d : A →ₗ[R] A).toAddMonoidHom
+        (monomial m a : MvPolynomial σ A) = monomial m (d a) := by
+      ext k
+      simp [coeff_monomial, apply_ite d]
+    -- Both sides are biadditive in `p` and `q`, so it suffices to compare monomials.
+    induction p using MvPolynomial.induction_on' with
+    | add p p' hp hp' =>
+      simp only [add_mul, AddMonoidAlgebra.map_add, hp, hp', add_smul, smul_add]
+      abel
+    | monomial m a =>
+      induction q using MvPolynomial.induction_on' with
+      | add q q' hq hq' =>
+        simp only [mul_add, AddMonoidAlgebra.map_add, hq, hq', add_smul, smul_add]
+        abel
+      | monomial n b =>
+        simp only [monomial_mul_monomial, hmon, Derivation.leibniz, smul_eq_mul, map_add]
+        rw [add_comm n m]
+
+/-- The coefficients of `d.mvMapCoeffs p` are the derivatives of those of `p`. -/
+@[simp, grind =]
+theorem coeff_mvMapCoeffs (p : MvPolynomial σ A) (m : σ →₀ ℕ) :
+    (d.mvMapCoeffs p).coeff m = d (p.coeff m) := (rfl)
+
+/-- `d.mvMapCoeffs` differentiates the coefficient of a monomial. -/
+@[simp, grind =]
+theorem mvMapCoeffs_monomial (m : σ →₀ ℕ) (a : A) :
+    d.mvMapCoeffs (monomial m a : MvPolynomial σ A) = monomial m (d a) := by
+  classical
+  ext k
+  simp [coeff_monomial, apply_ite d]
+
+/-- `d.mvMapCoeffs` acts on constants by `d`. -/
+@[simp, grind =]
+theorem mvMapCoeffs_C (a : A) : d.mvMapCoeffs (C a : MvPolynomial σ A) = C (d a) :=
+  d.mvMapCoeffs_monomial 0 a
+
+/-- `d.mvMapCoeffs` kills the variables. -/
+@[simp, grind =]
+theorem mvMapCoeffs_X (i : σ) : d.mvMapCoeffs (X i : MvPolynomial σ A) = 0 := by
+  rw [X, mvMapCoeffs_monomial, map_one_eq_zero, map_zero]
+
+end Derivation

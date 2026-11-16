@@ -75,9 +75,11 @@ noncomputable section
 
 namespace TauCeti
 
-variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] {ι : Type*} [Fintype ι]
-
 /-! ### Monomials in commuting derivations -/
+
+section Semiring
+
+variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] {ι : Type*} [Fintype ι]
 
 /-- The monomial `∂^α = ∏ᵢ ∂ᵢ ^ αᵢ` in pairwise commuting derivations `∂ᵢ` of `A`, for a
 multi-index `α : ι → ℕ`, as an `R`-linear endomorphism of `A`. -/
@@ -119,6 +121,16 @@ theorem multiIndexDeriv_single [DecidableEq ι] (i : ι) (k : ℕ) :
 theorem multiIndexDeriv_add_single [DecidableEq ι] (α : ι → ℕ) (i : ι) :
     multiIndexDeriv d hd (α + Pi.single i 1) = multiIndexDeriv d hd α * d i := by
   rw [multiIndexDeriv_add, multiIndexDeriv_single, pow_one]
+
+/-- Applying `∂_i` after `∂^α` gives `∂^(e_i + α)`. -/
+theorem multiIndexDeriv_single_add [DecidableEq ι] (α : ι → ℕ) (i : ι) :
+    multiIndexDeriv d hd (Pi.single i 1 + α) = d i * multiIndexDeriv d hd α := by
+  rw [multiIndexDeriv_add, multiIndexDeriv_single, pow_one]
+
+end Semiring
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] {ι : Type*} [Fintype ι]
+  (d : ι → Derivation R A A) (hd : ∀ i j, Commute (d i : Module.End R A) (d j))
 
 /-- A monomial `∂^α` in derivations is a differential operator of order at most `|α|`. -/
 theorem multiIndexDeriv_mem_differentialOperators (α : ι → ℕ) :
