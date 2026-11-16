@@ -1019,7 +1019,7 @@ theorem exists_subseq_periodic_hasDerivAt_tendstoLocallyUniformly_of_tendsto_set
   -- further subsequence `ψ` converging locally uniformly.
   obtain ⟨φ, hφ, hφP⟩ := Filter.extraction_forall_of_eventually hband
   obtain ⟨ψ, hψ, g, htr⟩ := exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith hK
-    (R := fun n ↦ (n : ℝ)) (fun n ↦ Nat.cast_nonneg n) tendsto_natCast_atTop_atTop
+    (R := fun n ↦ (n : ℝ)) tendsto_natCast_atTop_atTop
     (fun n ↦ (hφP n).1) fun n ↦ (hφP n).2
   have hχ : Tendsto (fun n ↦ φ (ψ n)) atTop atTop := (hφ.comp hψ).tendsto_atTop
   -- The limit is periodic in `t`, since the translates eventually are at each point.
