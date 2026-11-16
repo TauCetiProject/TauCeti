@@ -86,6 +86,9 @@ star, so the subdivision is glued from the same two pieces the geometric picture
 * `PreAbstractSimplicialComplex.isCone_stellarSubdivision_closedStar` and
   `link_stellarSubdivision_closedStar_singleton`: starring the closed star of a face at that
   face produces a cone whose apex link is the boundary `closedStar K σ ⊓ deletion K σ`.
+* `PreAbstractSimplicialComplex.link_stellarSubdivision_insert_eq_of_sdiff_eq_singleton`: when
+  `σ \ ρ = {u}`, the link of `insert v ρ` in `stellarSubdivision K σ v` equals
+  `link K (insert u ρ)`.
 -/
 
 public section
@@ -224,6 +227,15 @@ theorem stellarSubdivision_empty (K : PreAbstractSimplicialComplex ι) (v : ι) 
   · exact absurd (Finset.empty_subset τ) h
   · exact absurd (Finset.empty_subset _) h
 
+/-- Starring the void complex at any set gives the void complex. -/
+@[simp]
+theorem stellarSubdivision_bot (σ : Finset ι) (v : ι) :
+    stellarSubdivision (⊥ : PreAbstractSimplicialComplex ι) σ v = ⊥ := by
+  refine eq_bot_iff.mpr fun τ hτ => ?_
+  rcases mem_stellarSubdivision_iff.mp hτ with ⟨-, h, -⟩ | ⟨-, -, h⟩
+  · exact h
+  · exact h
+
 /-- Starring at a nonempty set that is *not* a face changes nothing, provided the new vertex is
 fresh: no face of `K` can contain the starred set, and freshness makes the new vertex occur in no
 face of `K` and in no face of the subdivision. Freshness is needed: without it, starring can
@@ -323,6 +335,37 @@ theorem link_stellarSubdivision_insert_le_link_closedStar_inf_deletion {ρ : Fin
   have hne' := hne.mono (Finset.subset_union_left : τ ⊆ τ ∪ ρ.erase v)
   exact mem_inf.mpr ⟨mem_closedStar_nonempty.mpr ⟨hne', hK⟩,
     mem_deletion.mpr ⟨(K.isRelLowerSet_faces hK).2 Finset.subset_union_left hne', hσ⟩⟩
+
+/-- When `ρ` misses a single vertex `u` of the starred set `σ`, adjoining the fresh starring
+vertex `v` to `ρ` gives a face whose link in the subdivision equals the old link of `insert u ρ`. -/
+theorem link_stellarSubdivision_insert_eq_of_sdiff_eq_singleton {u : ι}
+    (hv : ({v} : Finset ι) ∉ K) (hvρ : v ∉ ρ) (hσ : σ \ ρ = {u}) :
+    link (stellarSubdivision K σ v) (insert v ρ) = link K (insert u ρ) := by
+  have hunion : ρ ∪ σ = insert u ρ := by
+    rw [← Finset.union_sdiff_self_eq_union, hσ, Finset.union_singleton]
+  have hsub (τ : Finset ι) : σ ⊆ τ ∪ ρ ↔ u ∈ τ := by
+    rw [← sdiff_le_iff', hσ, Finset.singleton_subset_iff]
+  refine SetLike.ext fun τ => ?_
+  constructor
+  · intro hτ
+    obtain ⟨hne, hdis, hface⟩ := mem_link_nonempty.mp hτ
+    obtain ⟨hvτ, hdisρ⟩ := Finset.disjoint_insert_right.mp hdis
+    have hvτρ : v ∉ τ ∪ ρ := Finset.notMem_union.mpr ⟨hvτ, hvρ⟩
+    rw [Finset.union_insert] at hface
+    obtain ⟨hnot, hmemK⟩ := (insert_mem_stellarSubdivision_iff hvτρ).mp hface
+    rw [Finset.union_assoc, hunion] at hmemK
+    exact mem_link_nonempty.mpr
+      ⟨hne, Finset.disjoint_insert_right.mpr ⟨fun hu => hnot ((hsub τ).mpr hu), hdisρ⟩, hmemK⟩
+  · intro hτ
+    obtain ⟨hne, hdis, hmemK⟩ := mem_link_nonempty.mp hτ
+    obtain ⟨huτ, hdisρ⟩ := Finset.disjoint_insert_right.mp hdis
+    have hvτ : v ∉ τ := fun hv' =>
+      notMem_of_singleton_notMem hv hmemK (Finset.mem_union_left _ hv')
+    have hvτρ : v ∉ τ ∪ ρ := Finset.notMem_union.mpr ⟨hvτ, hvρ⟩
+    refine mem_link_nonempty.mpr ⟨hne, Finset.disjoint_insert_right.mpr ⟨hvτ, hdisρ⟩, ?_⟩
+    rw [Finset.union_insert]
+    refine (insert_mem_stellarSubdivision_iff hvτρ).mpr ⟨fun h => huτ ((hsub τ).mp h), ?_⟩
+    rwa [Finset.union_assoc, hunion]
 
 /-! ### Relabeling -/
 

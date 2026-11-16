@@ -61,6 +61,9 @@ the link of a simplex need not contain every vertex even when `K` does.
 * `PreAbstractSimplicialComplex.insert_mem_deletion_of_notMem` and
   `PreAbstractSimplicialComplex.deletion_deletion_singleton_of_mem`: deleting a face `σ` preserves
   domination of `v` by a vertex `w ∉ σ`, and does not affect a later deletion of `v ∈ σ`.
+* `PreAbstractSimplicialComplex.closedStar_eq_bot_of_notMem` / `link_eq_bot_of_notMem`: a nonempty
+  finset absent from `K` has void closed star and link.
+* `PreAbstractSimplicialComplex.map_link`: injective vertex relabelings commute with `link`.
 * monotonicity of all three constructions in `K`.
 -/
 
@@ -196,6 +199,17 @@ theorem link_le_closedStar : link K σ ≤ closedStar K σ :=
 theorem link_le : link K σ ≤ K :=
   link_le_closedStar.trans closedStar_le
 
+/-- A nonempty finset that is not a face of `K` has void closed star. -/
+theorem closedStar_eq_bot_of_notMem (hσne : σ.Nonempty) (hσ : σ ∉ K) :
+    closedStar K σ = ⊥ :=
+  eq_bot_iff.mpr fun _ hρ =>
+    hσ ((K.isRelLowerSet_faces (mem_closedStar_nonempty.mp hρ).2).2 subset_union_right hσne)
+
+/-- A nonempty finset that is not a face of `K` has void link. -/
+theorem link_eq_bot_of_notMem (hσne : σ.Nonempty) (hσ : σ ∉ K) :
+    link K σ = ⊥ :=
+  eq_bot_iff.mpr (link_le_closedStar.trans (closedStar_eq_bot_of_notMem hσne hσ).le)
+
 omit [DecidableEq ι] in
 /-- The deletion of `σ` is a subcomplex of `K`. -/
 theorem deletion_le : deletion K σ ≤ K :=
@@ -257,6 +271,26 @@ theorem link_mono (h : K ≤ L) : link K σ ≤ link L σ :=
   fun _ hρ => by
     obtain ⟨hρ, hdis, hρσ⟩ := mem_link.mp hρ
     exact mem_link.mpr ⟨h hρ, hdis, h hρσ⟩
+
+/-- An injective vertex map commutes with taking the link of a simplex. -/
+@[simp]
+theorem map_link {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
+    (link K σ).map f = link (K.map f) (σ.image f) := by
+  refine SetLike.ext fun ω => ?_
+  constructor
+  · intro hω
+    obtain ⟨ρ, hρ, rfl⟩ := mem_map_iff.mp hω
+    obtain ⟨hρK, hdis, hρσ⟩ := mem_link.mp hρ
+    refine mem_link.mpr ⟨mem_map_iff.mpr ⟨ρ, hρK, rfl⟩, (Finset.disjoint_image hf).mpr hdis, ?_⟩
+    rw [← Finset.image_union]
+    exact mem_map_iff.mpr ⟨ρ ∪ σ, hρσ, rfl⟩
+  · intro hω
+    obtain ⟨hωK, hdis, hωσ⟩ := mem_link.mp hω
+    obtain ⟨ρ, hρK, rfl⟩ := mem_map_iff.mp hωK
+    rw [← Finset.image_union] at hωσ
+    obtain ⟨η, hηK, hη⟩ := mem_map_iff.mp hωσ
+    obtain rfl := (Finset.image_inj hf).mp hη
+    exact mem_map_iff.mpr ⟨ρ, mem_link.mpr ⟨hρK, (Finset.disjoint_image hf).mp hdis, hηK⟩, rfl⟩
 
 omit [DecidableEq ι] in
 /-- The deletion is monotone in the complex. -/
