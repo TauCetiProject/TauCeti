@@ -37,6 +37,12 @@ variable {C}
 @[simp]
 lemma prop_isKilledBy_iff (e : ℕ) (Z : C) : isKilledBy C e Z ↔ e • 𝟙 Z = 0 := Iff.rfl
 
+/-- A natural number killing an object kills every morphism out of it. -/
+lemma nsmul_eq_zero_of_isKilledBy {e : ℕ} {Z W : C} (hZ : isKilledBy C e Z) (f : Z ⟶ W) :
+    e • f = 0 := by
+  rw [← Category.id_comp f, ← Preadditive.nsmul_comp, (prop_isKilledBy_iff e Z).1 hZ,
+    zero_comp]
+
 /-- A subobject of an object killed by `e` is killed by `e`. -/
 instance (e : ℕ) : (isKilledBy C e).IsClosedUnderSubobjects where
   prop_of_mono {Z W} f _ hW := by
@@ -48,8 +54,8 @@ instance (e : ℕ) : (isKilledBy C e).IsClosedUnderSubobjects where
 instance (e : ℕ) : (isKilledBy C e).IsClosedUnderQuotients where
   prop_of_epi {Z W} f _ hZ := by
     rw [prop_isKilledBy_iff] at hZ ⊢
-    rw [← cancel_epi f, Preadditive.comp_nsmul, Category.comp_id, comp_zero,
-      ← Category.id_comp f, ← Preadditive.nsmul_comp, hZ, zero_comp]
+    rw [← cancel_epi f, Preadditive.comp_nsmul, Category.comp_id, comp_zero]
+    exact nsmul_eq_zero_of_isKilledBy hZ f
 
 /-- Zero objects are killed by every natural number. -/
 instance (e : ℕ) [HasZeroObject C] : (isKilledBy C e).ContainsZero :=
@@ -61,9 +67,8 @@ instance (e : ℕ) (J : Type*) [Category* J] : (isKilledBy C e).IsClosedUnderCol
     rintro X ⟨h⟩
     rw [prop_isKilledBy_iff]
     refine h.isColimit.hom_ext fun j ↦ ?_
-    have hj : e • 𝟙 (h.diag.obj j) = 0 := h.prop_diag_obj j
-    -- `e • ι = (e • 𝟙) ≫ ι` vanishes on every leg of the colimit cocone.
-    rw [Preadditive.comp_nsmul, Category.comp_id, comp_zero, ← Category.id_comp (h.ι.app j),
-      ← Preadditive.nsmul_comp, hj, zero_comp]
+    -- `e • ι` vanishes on every leg of the colimit cocone.
+    rw [Preadditive.comp_nsmul, Category.comp_id, comp_zero]
+    exact nsmul_eq_zero_of_isKilledBy (h.prop_diag_obj j) (h.ι.app j)
 
 end CategoryTheory.ObjectProperty

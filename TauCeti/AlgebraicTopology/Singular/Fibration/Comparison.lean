@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicTopology.Singular.SerreClass
 public import TauCeti.CategoryTheory.Abelian.GrothendieckAxioms.ObjectProperty
 public import TauCeti.Topology.Homotopy.SerreFibration.WeakHomotopyEquivalence
 import TauCeti.AlgebraicTopology.Singular.Contractible
-import TauCeti.CategoryTheory.MorphismProperty.Cokernel
+import TauCeti.CategoryTheory.ObjectProperty.ArrowIso
 import TauCeti.CategoryTheory.ObjectProperty.ColimitsOfShape
 
 /-!
@@ -84,6 +84,9 @@ map over a weak homotopy equivalence `g : B ⟶ B'` factors as a map over `B` in
 * `TauCeti.TopCat.isoModSerre_singularHomologyMap_of_commSq`: a map of Serre fibrations over a
   weak homotopy equivalence whose maps on the homology of the fibres in degrees at most `k` have
   kernels and cokernels in `Q ≤ P` is an isomorphism modulo `P` on the total spaces in degree `k`.
+* `TauCeti.TopCat.isoModSerre_singularHomologyMap_of_fiber_to_point`: a Serre fibration whose
+  fibres have the homology of a point modulo `Q` in degrees at most `k` is an isomorphism modulo
+  `P` in degree `k`.
 * `TauCeti.TopCat.isoModSerre_singularHomologyMap_of_prop_fiber`: a Serre fibration whose fibres
   are path-connected with homology in `Q` in the positive degrees at most `k` is an isomorphism
   modulo `P` in degree `k`.
@@ -435,15 +438,20 @@ variable {R : Type u} [Ring R] (P Q : ObjectProperty (ModuleCat.{u} R)) [P.IsSer
   [Q.IsClosedUnderIsomorphisms] [Q.ContainsZero]
   [∀ J : Type u, Q.IsClosedUnderColimitsOfShape (Discrete J)]
 
+omit [Q.ContainsZero] in
 /-- **A Serre fibration whose fibres have the homology of a point modulo a Serre class is a
 homology isomorphism modulo that class.** Let `P` be a Serre class of `R`-modules and `Q ≤ P` a
-property containing zero and closed under isomorphisms and direct sums. Let `p : E ⟶ B` be a Serre
-fibration whose fibres are path-connected and have their `R`-homology in `Q` in the positive
-degrees `q ≤ k`. Then `p` induces an isomorphism modulo `P` on `Hₖ(E; R) ⟶ Hₖ(B; R)`. -/
-theorem isoModSerre_singularHomologyMap_of_prop_fiber (hQP : Q ≤ P) (hp : serreFibrations p)
-    (k : ℕ) (hconn : ∀ b, PathConnectedSpace (p.fiber b))
-    (hfib : ∀ b, ∀ q, q ≠ 0 → q ≤ k → Q (((AlgebraicTopology.singularHomologyFunctor
-      (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (p.fiber b))) :
+property closed under isomorphisms and direct sums. Let `p : E ⟶ B` be a Serre fibration such
+that, for every `b : B` and `q ≤ k`, the map from the fibre `p⁻¹(b)` to a point induces on
+`Hq(-; R)` a map whose kernel and cokernel lie in `Q`. Then `p` induces an isomorphism modulo `P`
+on `Hₖ(E; R) ⟶ Hₖ(B; R)`. -/
+theorem isoModSerre_singularHomologyMap_of_fiber_to_point (hQP : Q ≤ P)
+    (hp : serreFibrations p) (k : ℕ)
+    (hfib : ∀ b, ∀ q ≤ k,
+      Q (kernel (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).map (_root_.TopCat.isTerminalPUnit.from (p.fiber b)))) ∧
+      Q (cokernel (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).map (_root_.TopCat.isTerminalPUnit.from (p.fiber b))))) :
     P.isoModSerre (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
       (ModuleCat.of R R)).map p) := by
   let sq : CommSq p p (𝟙 B) (𝟙 B) := ⟨rfl⟩
@@ -452,18 +460,48 @@ theorem isoModSerre_singularHomologyMap_of_prop_fiber (hQP : Q ≤ P) (hp : serr
   let H := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)
   -- The fibre of the identity over `b` is a point.
   let F := TopCat.Hom.fiber (𝟙 B) ((𝟙 B) b)
+  let t := _root_.TopCat.isTerminalPUnit.from F
   have : Unique F := ⟨⟨⟨b, rfl⟩⟩, fun x ↦ Subtype.ext x.2⟩
+  have : IsIso t := by
+    rw [_root_.TopCat.isTerminalPUnit.hom_ext t
+      (_root_.TopCat.isoOfHomeo (Homeomorph.homeomorphOfUnique F PUnit)).hom]
+    infer_instance
+  -- The map from the fibre of `p` to a point factors through the fibre map, so the two maps are
+  -- isomorphic arrows.
+  have hfac : sq.fiberMap b ≫ t = 𝟙 _ ≫ _root_.TopCat.isTerminalPUnit.from (p.fiber b) :=
+    _root_.TopCat.isTerminalPUnit.hom_ext _ _
+  have hc := (CommSq.mk hfac).map H
+  let e : Arrow.mk (H.map (sq.fiberMap b)) ≅
+      Arrow.mk (H.map (_root_.TopCat.isTerminalPUnit.from (p.fiber b))) :=
+    Arrow.isoMk (H.mapIso (Iso.refl _)) (H.mapIso (asIso t)) hc.w.symm
+  exact ⟨Q.prop_kernel_of_arrowIso e.symm (hfib b q hq).1,
+    Q.prop_cokernel_of_arrowIso e.symm (hfib b q hq).2⟩
+
+/-- **A Serre fibration whose fibres are path-connected with the homology of a point modulo a
+Serre class is a homology isomorphism modulo that class.** Let `P` be a Serre class of `R`-modules
+and `Q ≤ P` a property containing zero and closed under isomorphisms and direct sums. Let
+`p : E ⟶ B` be a Serre fibration whose fibres are path-connected and have their `R`-homology in
+`Q` in the positive degrees `q ≤ k`. Then `p` induces an isomorphism modulo `P` on
+`Hₖ(E; R) ⟶ Hₖ(B; R)`. -/
+theorem isoModSerre_singularHomologyMap_of_prop_fiber (hQP : Q ≤ P) (hp : serreFibrations p)
+    (k : ℕ) (hconn : ∀ b, PathConnectedSpace (p.fiber b))
+    (hfib : ∀ b, ∀ q, q ≠ 0 → q ≤ k → Q (((AlgebraicTopology.singularHomologyFunctor
+      (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (p.fiber b))) :
+    P.isoModSerre (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
+      (ModuleCat.of R R)).map p) := by
+  refine isoModSerre_singularHomologyMap_of_fiber_to_point P Q hQP hp k fun b q hq ↦ ?_
+  let H := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)
+  let t := _root_.TopCat.isTerminalPUnit.from (p.fiber b)
   have := hconn b
   rcases eq_or_ne q 0 with rfl | hq0
-  · -- In degree zero both fibres are path-connected, so the map is an isomorphism.
-    have : PathConnectedSpace F := inferInstance
-    have := IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε (ModuleCat.of R R)
-      (sq.fiberMap b))
+  · -- In degree zero the fibre and the point are path-connected, so the map is an isomorphism.
+    have := IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε (ModuleCat.of R R) t)
     exact ⟨Q.prop_of_isZero (isZero_kernel_of_mono _), Q.prop_of_isZero (isZero_cokernel_of_epi _)⟩
   · -- In positive degrees the homology of the point vanishes: the map is zero, its kernel is the
-    -- homology of the fibre of `p` and its cokernel vanishes.
-    have hz := isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of R R) F hq0
-    have h0 : H.map (sq.fiberMap b) = 0 := hz.eq_of_tgt _ _
+    -- homology of the fibre and its cokernel vanishes.
+    have hz := isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of R R)
+      (_root_.TopCat.of PUnit) hq0
+    have h0 : H.map t = 0 := hz.eq_of_tgt _ _
     exact ⟨Q.prop_of_iso (kernelIsoOfEq h0 ≪≫ kernelZeroIsoSource).symm (hfib b q hq0 hq),
       Q.prop_of_isZero (hz.of_iso (cokernelIsoOfEq h0 ≪≫ cokernelZeroIsoTarget))⟩
 
@@ -517,23 +555,10 @@ theorem isIso_singularHomologyMap_of_isIso_fiber_to_point (hp : serreFibrations 
         (_root_.TopCat.isTerminalPUnit.from (p.fiber b)))) :
     IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
       (ModuleCat.of R R)).map p) := by
-  let sq : CommSq p p (𝟙 B) (𝟙 B) := ⟨rfl⟩
-  refine isIso_singularHomologyMap_of_commSq hp (MorphismProperty.id_mem _ B) R sq
-    ContinuousMap.IsWeakHomotopyEquivalence.id k (fun b q hq ↦ ?_)
-  let H := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)
-  -- The fibre of the identity over `b` is a point.
-  let F := TopCat.Hom.fiber (𝟙 B) ((𝟙 B) b)
-  let t := _root_.TopCat.isTerminalPUnit.from F
-  have : Unique F := ⟨⟨⟨b, rfl⟩⟩, fun x ↦ Subtype.ext x.2⟩
-  have : IsIso t := by
-    rw [_root_.TopCat.isTerminalPUnit.hom_ext t
-      (_root_.TopCat.isoOfHomeo (Homeomorph.homeomorphOfUnique F PUnit)).hom]
-    infer_instance
-  -- The map from the fibre of `p` to a point factors through the fibre map.
-  have hfac : sq.fiberMap b ≫ t = _root_.TopCat.isTerminalPUnit.from (p.fiber b) :=
-    _root_.TopCat.isTerminalPUnit.hom_ext _ _
-  rw [← isIso_comp_right_iff _ (H.map t), ← H.map_comp, hfac]
-  exact hfib b q hq
+  -- This is the case of the Serre class of zero modules.
+  exact (ObjectProperty.isoModSerre_isZero_iff _).1 <|
+    isoModSerre_singularHomologyMap_of_fiber_to_point IsZero IsZero le_rfl hp k
+      fun b q hq ↦ (ObjectProperty.isoModSerre_isZero_iff _).2 (hfib b q hq)
 
 end TopCat
 
