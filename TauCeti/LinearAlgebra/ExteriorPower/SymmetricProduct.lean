@@ -8,44 +8,37 @@ module
 public import TauCeti.Algebra.Lie.ExteriorPower
 public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import Mathlib.Tactic.Module
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Square
 
 /-!
 # Symmetric exterior product of linear maps on the second exterior power
 
-When `2` is invertible in a commutative ring `R`, any two linear maps `f, g : M →ₗ[R] N` induce a
-linear map `exteriorPower.symmMap₂ f g : ⋀[R]^2 M →ₗ[R] ⋀[R]^2 N` determined on decomposable
-bivectors by
+When `2` is invertible in a commutative ring `R`, any two linear maps `f, g : M →ₗ[R] N` induce
+`exteriorPower.symmMap₂ f g : ⋀[R]^2 M →ₗ[R] ⋀[R]^2 N` given on pure wedges by
+`(f ∧ g)(u ∧ v) = ⅟2 • (f u ∧ g v + g u ∧ f v)`. On the diagonal `symmMap₂ f f = map 2 f`, and
+pairing an endomorphism with `id` gives half the derivation action `exteriorPower.lieMap 2`.
 
-`(f ∧ g)(u ∧ v) = ⅟2 • (f u ∧ g v + g u ∧ f v)`.
-
-This is the polarized bilinear form associated with the quadratic assignment `f ↦ ⋀² f`:
-`symmMap₂ f f = exteriorPower.map 2 f`, so in particular `symmMap₂ id id = id` (whereas omitting
-the factor `⅟2` would send `id` to `2 • id`). Pairing an endomorphism `f` with `id` recovers half
-the derivation action `exteriorPower.lieMap 2 f`.
-
-In Riemannian geometry (`Besse, Section 1.G`), `symmMap₂` is the operator-side counterpart of the
-Kulkarni–Nomizu product of symmetric bilinear forms, expressing the scalar curvature operator as a
-multiple of `id ∧ id = id` and the traceless-Ricci curvature operator through `Ric₀ ∧ id`.
+In Riemannian geometry (`Böhm–Wilking, Section 2`; cf. `Besse, Section 1.G` for the unnormalized
+bilinear-form Kulkarni–Nomizu product `h ⊙ k`), this `⅟2`-normalized operator wedge product is the
+operator-side counterpart of the Kulkarni–Nomizu product, expressing the scalar curvature operator
+via `id ∧ id = id` and the traceless-Ricci operator via `Ric₀ ∧ id`.
 
 ## Main definitions
 
-* `exteriorPower.symmMap₂`: the symmetric bilinear map sending `f, g : M →ₗ[R] N` to
-  `u ∧ v ↦ ⅟2 • (f u ∧ g v + g u ∧ f v)` on `⋀[R]^2 M →ₗ[R] ⋀[R]^2 N`.
+* `exteriorPower.symmMap₂`: `(f, g) ↦ (u ∧ v ↦ ⅟2 • (f u ∧ g v + g u ∧ f v))`.
 
 ## Main results
 
-* `exteriorPower.symmMap₂_apply_ιMulti`: evaluation on a decomposable bivector `u ∧ v`.
-* `exteriorPower.symmMap₂_comm`: symmetry in the two linear maps.
-* `exteriorPower.symmMap₂_self` and `exteriorPower.symmMap₂_id`: `symmMap₂ f f = map 2 f` and
-  `symmMap₂ id id = id`.
-* `exteriorPower.symmMap₂_id_right` and `exteriorPower.symmMap₂_id_left`: comparison with
-  `exteriorPower.lieMap 2`.
-* `exteriorPower.map_comp_symmMap₂` and `exteriorPower.symmMap₂_comp_map`: naturality under
-  post- and pre-composition.
+* `exteriorPower.symmMap₂_apply_ιMulti`, `exteriorPower.symmMap₂_comm`,
+  `exteriorPower.symmMap₂_self`, `exteriorPower.symmMap₂_id_right`,
+  `exteriorPower.symmMap₂_id_left`, `exteriorPower.map_comp_symmMap₂`, and
+  `exteriorPower.symmMap₂_comp_map`.
 
 ## References
 
+* C. Böhm and B. Wilking, *Manifolds with positive curvature operators are space forms*,
+  Ann. of Math. 167 (2008), 1079–1097, Section 2.
 * A. L. Besse, *Einstein Manifolds*, Springer (1987), Section 1.G.
 -/
 
@@ -64,9 +57,8 @@ private noncomputable def symmWedgeBilin (f g : M →ₗ[R] N) : M →ₗ[R] M �
     (fun _ _ _ ↦ by simp only [map_smul, ιMulti_two_smul_right]; module)
 
 private theorem isAlt_symmWedgeBilin (f g : M →ₗ[R] N) : (symmWedgeBilin f g).IsAlt := fun x ↦ by
-  simp only [symmWedgeBilin, LinearMap.mk₂_apply]
-  have hswap : ![g x, f x] = ![f x, g x] ∘ Equiv.swap 0 1 := by funext i; fin_cases i <;> rfl
-  rw [hswap, (ιMulti R 2).map_add_swap _ (by decide), smul_zero]
+  simp only [symmWedgeBilin, LinearMap.mk₂_apply, ιMulti_two_swap (f x) (g x), add_neg_cancel,
+    smul_zero]
 
 /-- The symmetric exterior product of two linear maps `f, g : M →ₗ[R] N` on the second exterior
 power, characterized by `symmMap₂ f g (u ∧ v) = ⅟2 • (f u ∧ g v + g u ∧ f v)`. -/
@@ -91,8 +83,7 @@ noncomputable def symmMap₂ :
         LinearMap.mk₂_apply, ιMulti_two_smul_left, ιMulti_two_smul_right]; module)
 
 /-- On `u ∧ v`, `symmMap₂ f g` evaluates to `⅟2 • (f u ∧ g v + g u ∧ f v)`. -/
-@[simp]
-theorem symmMap₂_apply_ιMulti (f g : M →ₗ[R] N) (u v : M) :
+@[simp] theorem symmMap₂_apply_ιMulti (f g : M →ₗ[R] N) (u v : M) :
     symmMap₂ f g (ιMulti R 2 ![u, v]) =
       ⅟(2 : R) • (ιMulti R 2 ![f u, g v] + ιMulti R 2 ![g u, f v]) := by
   simp [symmMap₂, symmWedgeBilin, alternatingMapLinearEquiv_apply_ιMulti,
@@ -108,54 +99,46 @@ theorem symmMap₂_apply_ιMulti_tuple (f g : M →ₗ[R] N) (v : Fin 2 → M) :
 
 /-- `symmMap₂` is symmetric in its two linear-map arguments. -/
 theorem symmMap₂_comm (f g : M →ₗ[R] N) : symmMap₂ f g = symmMap₂ g f :=
-  linearMap_ext <| AlternatingMap.ext fun v ↦ by
+  linearMap_ext <| AlternatingMap.ext fun _ ↦ by
     simp only [LinearMap.compAlternatingMap_apply, symmMap₂_apply_ιMulti_tuple, add_comm]
 
 /-- On the diagonal `(f, f)`, `symmMap₂` agrees with `exteriorPower.map 2 f`. -/
-@[simp]
-theorem symmMap₂_self (f : M →ₗ[R] N) : symmMap₂ f f = map 2 f :=
+@[simp] theorem symmMap₂_self (f : M →ₗ[R] N) : symmMap₂ f f = map 2 f :=
   linearMap_ext <| AlternatingMap.ext fun v ↦ by
-    simp only [LinearMap.compAlternatingMap_apply, symmMap₂_apply_ιMulti_tuple, map_apply_ιMulti]
-    have hfv : f ∘ v = ![f (v 0), f (v 1)] := by funext i; fin_cases i <;> rfl
-    rw [hfv, ← two_smul R, smul_smul, invOf_mul_self, one_smul]
-
-/-- The symmetric exterior product of the identity with itself is the identity on `⋀[R]^2 M`. -/
-theorem symmMap₂_id : symmMap₂ (LinearMap.id : M →ₗ[R] M) LinearMap.id = LinearMap.id := by
-  rw [symmMap₂_self, map_id]
+    have hv : v = ![v 0, v 1] := by funext i; fin_cases i <;> rfl
+    conv_rhs => rw [LinearMap.compAlternatingMap_apply, hv, map_apply_ιMulti_two]
+    simp only [LinearMap.compAlternatingMap_apply, symmMap₂_apply_ιMulti_tuple, ← two_smul R,
+      smul_smul, invOf_mul_self, one_smul]
 
 /-- Pairing an endomorphism `f` with `id` gives half the derivation action `lieMap 2 f`. -/
 theorem symmMap₂_id_right (f : Module.End R M) :
     symmMap₂ f LinearMap.id = ⅟(2 : R) • lieMap 2 f :=
   linearMap_ext <| AlternatingMap.ext fun v ↦ by
     have hv : v = ![v 0, v 1] := by funext i; fin_cases i <;> rfl
-    rw [hv]
-    simp only [LinearMap.compAlternatingMap_apply, symmMap₂_apply_ιMulti, LinearMap.id_apply,
-      LinearMap.smul_apply, lieMap_two_apply_ιMulti]
+    rw [hv]; simp only [LinearMap.compAlternatingMap_apply, symmMap₂_apply_ιMulti,
+      LinearMap.id_apply, LinearMap.smul_apply, lieMap_two_apply_ιMulti]
 
 /-- Pairing `id` with an endomorphism `f` gives half the derivation action `lieMap 2 f`. -/
 theorem symmMap₂_id_left (f : Module.End R M) :
-    symmMap₂ LinearMap.id f = ⅟(2 : R) • lieMap 2 f := by
-  rw [symmMap₂_comm, symmMap₂_id_right]
+    symmMap₂ LinearMap.id f = ⅟(2 : R) • lieMap 2 f := by rw [symmMap₂_comm, symmMap₂_id_right]
 
 variable {P : Type*} [AddCommGroup P] [Module R P]
 
 /-- Naturality of `symmMap₂` under post-composition with `map 2 h`. -/
 theorem map_comp_symmMap₂ (h : N →ₗ[R] P) (f g : M →ₗ[R] N) :
     (map 2 h).comp (symmMap₂ f g) = symmMap₂ (h.comp f) (h.comp g) :=
-  linearMap_ext <| AlternatingMap.ext fun v ↦ by
-    have h₁ : h ∘ ![f (v 0), g (v 1)] = ![h (f (v 0)), h (g (v 1))] := by
-      funext i; fin_cases i <;> rfl
-    have h₂ : h ∘ ![g (v 0), f (v 1)] = ![h (g (v 0)), h (f (v 1))] := by
-      funext i; fin_cases i <;> rfl
+  linearMap_ext <| AlternatingMap.ext fun _ ↦ by
     simp only [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply,
-      symmMap₂_apply_ιMulti_tuple, map_smul, map_add, map_apply_ιMulti, h₁, h₂]
+      symmMap₂_apply_ιMulti_tuple, map_smul, map_add, map_apply_ιMulti_two]
 
 /-- Naturality of `symmMap₂` under pre-composition with `map 2 h`. -/
 theorem symmMap₂_comp_map (f g : N →ₗ[R] P) (h : M →ₗ[R] N) :
     (symmMap₂ f g).comp (map 2 h) = symmMap₂ (f.comp h) (g.comp h) :=
   linearMap_ext <| AlternatingMap.ext fun v ↦ by
-    have hv : h ∘ v = ![h (v 0), h (v 1)] := by funext i; fin_cases i <;> rfl
-    simp only [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply, map_apply_ιMulti, hv,
-      symmMap₂_apply_ιMulti_tuple, Matrix.cons_val_zero, Matrix.cons_val_one]
+    have hv : v = ![v 0, v 1] := by funext i; fin_cases i <;> rfl
+    conv_lhs => rw [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply, hv,
+      map_apply_ιMulti_two, symmMap₂_apply_ιMulti]
+    simp only [LinearMap.compAlternatingMap_apply, symmMap₂_apply_ιMulti_tuple,
+      LinearMap.comp_apply]
 
 end exteriorPower
