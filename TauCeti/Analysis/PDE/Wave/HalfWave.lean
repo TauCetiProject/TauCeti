@@ -36,6 +36,9 @@ annuli `‖ξ‖ ≈ 2^j` (Tao, Section 2.2).
 * `TauCeti.halfWavePropagator`: the propagator `W₊(t) = exp(itD)` on `L²(E, F)`.
 * `TauCeti.coeFn_fourier_halfWavePropagator`: `𝓕 (W₊(t) f) = exp(2πi t ‖·‖) • 𝓕 f`.
 * `TauCeti.halfWavePropagator_neg`: `W₊(-t) = W₋(t)`, the multiplier with phase `-2π ‖·‖`.
+* `TauCeti.adjoint_halfWavePropagator`: the adjoint of `W₊(t)` is `W₊(-t)`.
+* `TauCeti.halfWavePropagator_comp_fourierMultiplierCLM`: `W₊(t)` commutes with every `L²`
+  Fourier multiplier.
 * `TauCeti.contDiffOn_phaseSymbol_sqrtNegLaplacianSymbol`: the symbol `exp(2πi t ‖ξ‖)` is smooth
   away from the origin.
 
@@ -49,7 +52,7 @@ public section
 
 noncomputable section
 
-open scoped FourierTransform ContDiff
+open scoped FourierTransform ContDiff ENNReal
 open MeasureTheory Complex Real
 
 namespace TauCeti
@@ -96,5 +99,23 @@ the phase `-2π ‖·‖`. -/
 theorem halfWavePropagator_neg (t : ℝ) :
     halfWavePropagator F (-t) = phasePropagator (E := E) F (-sqrtNegLaplacianSymbol) t := by
   rw [halfWavePropagator_def, phasePropagator_neg]
+
+/-- The adjoint of `W₊(t)` is `W₊(-t)`. -/
+theorem adjoint_halfWavePropagator (t : ℝ) :
+    ContinuousLinearMap.adjoint (halfWavePropagator (E := E) F t) = halfWavePropagator F (-t) :=
+  adjoint_phasePropagator sqrtNegLaplacianSymbol t
+
+/-- `W₊(t)` commutes with every `L²` Fourier multiplier. -/
+theorem halfWavePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E)) :
+    halfWavePropagator F t ∘L Lp.fourierMultiplierCLM F m =
+      Lp.fourierMultiplierCLM F m ∘L halfWavePropagator F t :=
+  phasePropagator_comp_fourierMultiplierCLM sqrtNegLaplacianSymbol t m
+
+/-- `W₊(t)` commutes with every `L²` Fourier multiplier, applied form. -/
+theorem fourierMultiplierCLM_halfWavePropagator_apply (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E))
+    (f : Lp F 2 (volume : Measure E)) :
+    Lp.fourierMultiplierCLM F m (halfWavePropagator F t f) =
+      halfWavePropagator F t (Lp.fourierMultiplierCLM F m f) :=
+  (ContinuousLinearMap.ext_iff.1 (halfWavePropagator_comp_fourierMultiplierCLM t m) f).symm
 
 end TauCeti

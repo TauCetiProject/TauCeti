@@ -513,7 +513,7 @@ theorem exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le {ψ : E → �
       (f := phaseSymbol sqrtNegLaplacianSymbol t))
     (contDiff_phaseSymbol_sqrtNegLaplacianSymbol_mul_comp_smul hψ hψ0 t)
   have hσ : ⇑σ = fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ * ψ (((2 : ℝ) ^ j)⁻¹ • ξ) :=
-    (rfl)
+    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
   -- `W₊(t) T` is the multiplier with the Schwartz symbol `σ`.
   have hop : halfWavePropagator F t (Lp.fourierMultiplierCLM F m f) =
       Lp.fourierMultiplierCLM F (σ.toLp ∞) f := by

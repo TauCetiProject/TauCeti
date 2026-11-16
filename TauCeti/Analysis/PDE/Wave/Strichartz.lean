@@ -81,8 +81,8 @@ private theorem adjoint_halfWavePropagator_comp_fourierMultiplierCLM_apply
     (m : Lp ℂ ∞ (volume : Measure E)) (t : ℝ) (g : Lp ℂ 2 (volume : Measure E)) :
     ((halfWavePropagator ℂ t ∘L Lp.fourierMultiplierCLM ℂ m)†) g =
       Lp.fourierMultiplierCLM ℂ (star m) (halfWavePropagator ℂ (-t) g) := by
-  rw [ContinuousLinearMap.adjoint_comp, Lp.adjoint_fourierMultiplierCLM, halfWavePropagator_def,
-    adjoint_phasePropagator, ContinuousLinearMap.comp_apply, ← halfWavePropagator_def]
+  rw [ContinuousLinearMap.adjoint_comp, Lp.adjoint_fourierMultiplierCLM,
+    adjoint_halfWavePropagator, ContinuousLinearMap.comp_apply]
 
 /-- The time pairings `U(s) U(t)*` of `U(t) = W₊(t) T_m` are `W₊(s - t) T_m T_{star m}`. -/
 private theorem halfWavePropagator_comp_apply_adjoint (m : Lp ℂ ∞ (volume : Measure E))
@@ -91,13 +91,9 @@ private theorem halfWavePropagator_comp_apply_adjoint (m : Lp ℂ ∞ (volume : 
         (((halfWavePropagator ℂ t ∘L Lp.fourierMultiplierCLM ℂ m)†) g) =
       halfWavePropagator ℂ (s - t)
         (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ (star m) g)) := by
-  -- Fourier multipliers commute with the propagators.
-  have hcomm (τ : ℝ) (m' : Lp ℂ ∞ (volume : Measure E)) (h : Lp ℂ 2 (volume : Measure E)) :
-      Lp.fourierMultiplierCLM ℂ m' (halfWavePropagator ℂ τ h) =
-        halfWavePropagator ℂ τ (Lp.fourierMultiplierCLM ℂ m' h) :=
-    (ContinuousLinearMap.ext_iff.1 (phasePropagator_comp_fourierMultiplierCLM _ τ m') h).symm
   rw [adjoint_halfWavePropagator_comp_fourierMultiplierCLM_apply, ContinuousLinearMap.comp_apply,
-    hcomm, hcomm, halfWavePropagator_def, halfWavePropagator_def, halfWavePropagator_def,
+    fourierMultiplierCLM_halfWavePropagator_apply, fourierMultiplierCLM_halfWavePropagator_apply,
+    halfWavePropagator_def, halfWavePropagator_def, halfWavePropagator_def,
     ← phasePropagator_add_apply, ← sub_eq_add_neg]
 
 /-- The decay of the Riesz–Thorin bound: if `(q, r)` is wave-admissible, `a = 1 / r` and
@@ -135,6 +131,14 @@ private theorem rpow_mul_rpow_le {n : ℕ} {a c C₁ B₁ τ : ℝ} {q : ℝ≥0
         (c * |τ|) ^ (-(2 / q : ℝ))) := by
         gcongr
     _ = _ := by rw [hpow]; ring
+
+/-- The square root of `A c^{2s}` is `√A c^s`. -/
+private theorem ofReal_rpow_mul_rpow_two_mul {A c s : ℝ} (hA : 0 ≤ A) (hc : 0 < c) :
+    ENNReal.ofReal ((A * c ^ (2 * s)) ^ (2⁻¹ : ℝ)) =
+      ENNReal.ofReal √A * ENNReal.ofReal (c ^ s) := by
+  rw [← ENNReal.ofReal_mul (Real.sqrt_nonneg _), Real.mul_rpow hA (by positivity),
+    ← Real.rpow_mul hc.le, Real.sqrt_eq_rpow, one_div, mul_comm 2 s,
+    mul_inv_cancel_right₀ two_ne_zero]
 
 variable {ψ : E → ℂ} {q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 
@@ -347,11 +351,9 @@ theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le
     (by simpa only [adjoint_halfWavePropagator_comp_fourierMultiplierCLM_apply] using hPF)
   simp only [adjoint_halfWavePropagator_comp_fourierMultiplierCLM_apply] at h
   refine h.trans_eq ?_
-  -- The square root of the pairing constant `A 2^{2js}` is `√A 2^{js}`.
   rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),
-    Real.mul_rpow hA0.le (by positivity), ← Real.rpow_mul (zpow_pos two_pos j).le, ← one_div,
-    ← Real.sqrt_eq_rpow, mul_one_div, mul_div_cancel_left₀ _ two_ne_zero,
-    ENNReal.ofReal_mul (Real.sqrt_nonneg _), ENNReal.coe_mul, ENNReal.ofNNReal_toNNReal]
+    ofReal_rpow_mul_rpow_two_mul hA0.le (zpow_pos two_pos j), ENNReal.coe_mul,
+    ENNReal.ofNNReal_toNNReal]
   ring
 
 /-- **The frequency-localized Strichartz estimate for the wave equation**, in weak form. Let `E`
