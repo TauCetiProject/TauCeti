@@ -76,9 +76,7 @@ Over a local commutative ring `R`, every monomial `monomial α r` lies in `𝔪 
 (`MvPowerSeries.monomial_mem_maximalIdeal_pow`), and in finitely many variables every series of
 order at least `k` lies in `𝔪 ^ k` (`MvPowerSeries.mem_maximalIdeal_pow_of_le_order`). Over a field
 `K`, the converse also holds in any number of variables
-(`MvPowerSeries.natCast_le_order_of_mem_maximalIdeal_pow`), so membership in `𝔪 ^ k` coincides with
-having order at least `k` in finitely many variables
-(`MvPowerSeries.mem_maximalIdeal_pow_iff_le_order`).
+(`MvPowerSeries.natCast_le_order_of_mem_maximalIdeal_pow`).
 -/
 
 public section
@@ -803,12 +801,6 @@ theorem natCast_le_order_of_mem_maximalIdeal_pow {g : MvPowerSeries σ K} {k : �
       one_le_order_iff_constCoeff_eq_zero.mpr (mem_maximalIdeal_iff_constantCoeff_eq_zero.mp hb)
     rw [Nat.cast_add, Nat.cast_one]
     exact (add_le_add (ih ha) hb1).trans le_order_mul
-
-/-- Over a field `K` in finitely many variables `σ`, a power series lies in `𝔪 ^ k` if and only if
-its order is at least `k`. -/
-theorem mem_maximalIdeal_pow_iff_le_order [Finite σ] {g : MvPowerSeries σ K} {k : ℕ} :
-    g ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ k ↔ (k : ℕ∞) ≤ g.order :=
-  ⟨natCast_le_order_of_mem_maximalIdeal_pow, mem_maximalIdeal_pow_of_le_order⟩
 
 end Field
 
