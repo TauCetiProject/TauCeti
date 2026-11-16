@@ -8,7 +8,6 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.DescentDatum
-import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Products of descent data and descent data on monoid and group objects
@@ -482,8 +481,6 @@ monoid isomorphism, then `D` is compatible with the monoid structure if and only
 theorem Hom.isMon_iff {X Y : Over S'} [MonObj X] [MonObj Y]
     {D : DescentDatum p X} {E : DescentDatum p Y} (f : Hom D E)
     [IsIso f.hom] [IsMonHom f.hom] : D.IsMon ↔ E.IsMon := by
-  have : IsIso f.hom.left := Over.isIso_left f.hom
-  have : IsIso f.inv.hom.left := Over.isIso_left f.inv.hom
   have : IsMonHom f.inv.hom := by
     have : IsMonHom (asIso f.hom).hom := ‹_›
     simpa [Hom.inv_hom] using (inferInstance : IsMonHom (asIso f.hom).inv)
