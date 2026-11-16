@@ -16,12 +16,16 @@ inverse `e.symm : b ≌ a`, exchanging the two `1`-morphisms, and equivalences `
 with `Bicategory.Equivalence.mkOfAdjointifyCounit`, so only the unit and counit isomorphisms
 are given and the counit is adjointified. The given counits already satisfy the triangle
 identities, so adjointification leaves them unchanged (`adjointifyCounit_eq_of_left_triangle`),
-and `symm_counit` and `trans_counit` state them directly.
+and `symm_counit` and `trans_counit` state them directly. An equivalence `e : a ≌ b` also cancels
+on the left of `2`-isomorphisms `e.hom ≫ f ≅ e.hom ≫ g` by whiskering with `e.inv` and
+conjugating by `e.counit`.
 
 ## Main definitions
 
 * `CategoryTheory.Bicategory.Equivalence.symm`, `CategoryTheory.Bicategory.Equivalence.trans`:
   the inverse and the composite of adjoint equivalences in a bicategory.
+* `CategoryTheory.Bicategory.Equivalence.cancelLeftIso`: left cancellation of an adjoint
+  equivalence on `2`-isomorphisms.
 
 ## References
 
@@ -122,6 +126,26 @@ lemma trans_counit (e₁ : a ≌ b) (e₂ : b ≌ c) :
       whiskerRightIso_hom, whiskerLeft_comp, comp_whiskerRight, leftZigzag,
       Adjunction.compUnit, Adjunction.compCounit, adj_unit, adj_counit]
     bicategory
+
+/-- Cancel an adjoint equivalence `e : a ≌ b` on the left of a `2`-isomorphism
+`e.hom ≫ f ≅ e.hom ≫ g` by whiskering with `e.inv` and conjugating by `e.counit`. -/
+@[expose] def cancelLeftIso (e : a ≌ b) {f g : b ⟶ c} (i : e.hom ≫ f ≅ e.hom ≫ g) : f ≅ g :=
+  (λ_ f).symm ≪≫ whiskerRightIso e.counit.symm f ≪≫ α_ e.inv e.hom f ≪≫
+    whiskerLeftIso e.inv i ≪≫ (α_ e.inv e.hom g).symm ≪≫ whiskerRightIso e.counit g ≪≫ λ_ g
+
+@[simp]
+lemma cancelLeftIso_hom (e : a ≌ b) {f g : b ⟶ c} (i : e.hom ≫ f ≅ e.hom ≫ g) :
+    (e.cancelLeftIso i).hom =
+      (λ_ f).inv ≫ e.counit.inv ▷ f ≫ (α_ e.inv e.hom f).hom ≫ e.inv ◁ i.hom ≫
+        (α_ e.inv e.hom g).inv ≫ e.counit.hom ▷ g ≫ (λ_ g).hom := by
+  simp [cancelLeftIso]
+
+@[simp]
+lemma cancelLeftIso_inv (e : a ≌ b) {f g : b ⟶ c} (i : e.hom ≫ f ≅ e.hom ≫ g) :
+    (e.cancelLeftIso i).inv =
+      (λ_ g).inv ≫ e.counit.inv ▷ g ≫ (α_ e.inv e.hom g).hom ≫ e.inv ◁ i.inv ≫
+        (α_ e.inv e.hom f).inv ≫ e.counit.hom ▷ f ≫ (λ_ f).hom := by
+  simp [cancelLeftIso]
 
 end Equivalence
 

@@ -152,11 +152,6 @@ private lemma normalizationInvJointNaturality_app (φ : L ⟶ L') {p q : Γ} (g 
   rw [← Functor.map_comp_assoc]
   simp [jointMapIso_hom_app, jointActIso_hom_app, Cat.Hom.inv_hom_id_toNatTrans_app]
 
-private lemma isoMk_trans_leftUnitor_symm_hom_app {C D : Type w} [Category.{v} C] [Category.{v} D]
-    {F G : C ⥤ D} (e : G ≅ F) (x : C) :
-    (Cat.Hom.isoMk e ≪≫ (λ_ F.toCatHom).symm).hom.toNatTrans.app x = e.hom.app x := by
-  simp
-
 /-- The inverse naturality isomorphism `(L.normalizationInv ≫ φ).joint ≅
 (φ.normalizedTransportHom.toLiftHom ≫ L'.normalizationInv).joint` on joint pseudofunctors, with
 components `φ.inverseFiberIso`. -/
@@ -173,8 +168,8 @@ noncomputable def normalizationInvJointSymmIso (φ : L ⟶ L') :
       obtain ⟨q, ⟨⟩⟩ := Y
       refine Cat.whiskerLeft_comp_eq_comp_whiskerRight _ _ _ _ (fun (x : fiber actions p) ↦ ?_)
       let y : fiber actions q := (L.normalizedTransport.jointFunctor f.as).obj x
-      have hq := isoMk_trans_leftUnitor_symm_hom_app (φ.inverseFiberIso q) y
-      have hp := isoMk_trans_leftUnitor_symm_hom_app (φ.inverseFiberIso p) x
+      have hq := Cat.Hom.isoMk_trans_leftUnitor_symm_hom_app (φ.inverseFiberIso q) y
+      have hp := Cat.Hom.isoMk_trans_leftUnitor_symm_hom_app (φ.inverseFiberIso p) x
       have h₁ : (((φ.normalizedTransportHom.toLiftHom :
             L.normalizedTransport.toLift ⟶ L'.normalizedTransport.toLift) ≫
             L'.normalizationInv).joint.naturality f).hom.toNatTrans.app x =
@@ -252,7 +247,7 @@ to composing `L.normalizationInv` with `φ`, via the inverse-fiber comparisons o
     funext x
     simp only [Cat.Hom₂.comp_app, Cat.whiskerRight_app]
     have hα : α.toNatTrans.app x = (φ.inverseFiberIso p).hom.app x :=
-      isoMk_trans_leftUnitor_symm_hom_app (φ.inverseFiberIso p) x
+      Cat.Hom.isoMk_trans_leftUnitor_symm_hom_app (φ.inverseFiberIso p) x
     have hβ : β.toNatTrans.app x = (L'.fiberEquivalence p).counit.app x := by
       refine (congrArg (fun i ↦ (i.hom.as.app ⟨SingleObj.star H⟩).toNatTrans.app x)
         (EquivariantGroupoidLift.comp_fiberIso
@@ -456,22 +451,6 @@ lemma normalizationInv_inverseFiberIso_hom_app (L : EquivariantGroupoidLift Γ a
   dsimp only [Functor.comp_obj, Functor.comp_map, Functor.id_obj, Functor.id_map] at hc
   exact (congrArg (· ≫ ε) (L.normalizationInv_fiberFunctorIso_hom_app p y)).trans hc.symm
 
-private lemma normalizationInv_transportIso_hom_app (L : EquivariantGroupoidLift Γ actions)
-    {p q : Γ} (g : p ⟶ q) (x : fiber actions p) :
-    (L.normalizationInv.transportIso g).hom.app x =
-      let y : fiber actions p := (L.normalizedTransport.toLift.fiberEquivalence p).inverse.obj x
-      let ε : y ⟶ x := (L.normalizedTransport.toLift.fiberEquivalence p).counit.app x
-      (L.fiberEquivalence q).counitInv.app
-          ((L.normalizedTransport.jointFunctor (g ×ₘ 𝟙 (SingleObj.star H))).obj y) ≫
-        (L.fiberEquivalence q).functor.map
-          ((L.normalizationJointIso (g ×ₘ 𝟙 (SingleObj.star H))).hom.app y) ≫
-        (L.fiberEquivalence q).functor.map
-          ((L.jointMap g).map ((L.fiberEquivalence p).inverse.map ε)) := by
-  rw [Hom.transportIso_hom_app, L.normalizationInv_fiberFunctorIso_inv_app,
-    L.normalizationInv_jointMapIso_hom_app]
-  erw [L.normalizationInv_inverseFiberIso_hom_app]
-  rfl
-
 /-- Normalizing `L.normalizationInv` gives the canonical return comparison
 `(toLiftNormalizedTransportIso L.normalizedTransport).hom`. -/
 @[simp]
@@ -482,15 +461,25 @@ lemma normalizationInv_normalizedTransportHom (L : EquivariantGroupoidLift Γ ac
   let y : fiber actions p := (L.normalizedTransport.toLift.fiberEquivalence p).inverse.obj x
   let ε : y ⟶ x := (L.normalizedTransport.toLift.fiberEquivalence p).counit.app x
   rw [Hom.normalizedTransportHom_transportIso, toLiftNormalizedTransportIso_hom_transportIso,
-    L.normalizationInv_transportIso_hom_app, L.normalizedTransport.toLiftTransportIso_hom_app]
+    Hom.transportIso_hom_app, L.normalizationInv_fiberFunctorIso_inv_app,
+    L.normalizationInv_jointMapIso_hom_app, L.normalizedTransport.toLiftTransportIso_hom_app]
+  erw [L.normalizationInv_inverseFiberIso_hom_app]
+  -- `NormalizedTransport.joint` and `NormalizedTransport.toLift` are `@[expose] def` rather than
+  -- reducible abbreviations, so `toLift.jointFiber p = fiber actions p` (`toLift_joint`,
+  -- `joint_obj`), `(toLift.fiberEquivalence p).functor = 𝟭 (fiber actions p)`
+  -- (`toLift_comparison`, `comparison_app`), and `toLift.jointMap g = act actions p (𝟙 _) ⋙
+  -- L.transport g` (`joint_map_toFunctor`, `normalizedTransport_transport`) hold at
+  -- `semireducible` but not `implicit` transparency. Because `Functor.obj` and `NatTrans.app`
+  -- match `[Category]` instances at `implicit` transparency, `rw` and `simp` cannot fold `y`, `ε`,
+  -- or `joint_map_toFunctor` across those dependent fiber carriers without `change`.
   change (L.fiberEquivalence q).counitInv.app
-        ((L.normalizedTransport.jointFunctor (g ×ₘ 𝟙 (SingleObj.star H))).obj y) ≫
+        ((act actions p (𝟙 (SingleObj.star H)) ⋙ L.transport g).obj y) ≫
       (L.fiberEquivalence q).functor.map
         ((L.normalizationJointIso (g ×ₘ 𝟙 (SingleObj.star H))).hom.app y) ≫
       (L.fiberEquivalence q).functor.map
         ((L.jointMap g).map ((L.fiberEquivalence p).inverse.map ε)) =
-    (L.normalizedTransport.transport g).map ((act actions p (𝟙 (SingleObj.star H))).map ε) ≫
-      (L.normalizedTransport.transport g).map ((actId actions p).hom.app x)
+    (L.transport g).map ((act actions p (𝟙 (SingleObj.star H))).map ε) ≫
+      (L.transport g).map ((actId actions p).hom.app x)
   -- Simplify the left-unitor compositor at `(𝟙 p, 𝟙 ⋆)` and combine it with `actInverseIso_actId`.
   have hmid : (L.jointMap g).map ((L.actInverseIso p (𝟙 (SingleObj.star H))).hom.app y) ≫
         (L.joint.mapComp' (𝟙 p ×ₘ 𝟙 (SingleObj.star H)).toLoc
@@ -516,8 +505,7 @@ lemma normalizationInv_normalizedTransportHom (L : EquivariantGroupoidLift Γ ac
       (L.jointMap g).map ((L.fiberEquivalence p).inverse.map ((actId actions p).hom.app y)) :=
     (L.normalizationJointIso_hom_app (g ×ₘ 𝟙 (SingleObj.star H)) y).trans (congrArg (_ ≫ ·) hmid)
   rw [hj]
-  dsimp only [NormalizedTransport.jointFunctor, normalizedTransport, transport_obj,
-    transport_map, Functor.comp_obj]
+  dsimp only [transport_obj, transport_map, Functor.comp_obj]
   simp only [Functor.map_comp, Category.assoc]
   -- Cancel the target counit-unit zigzag and commute `actId` past `ε`.
   erw [← (L.fiberEquivalence q).counit_app_functor]
@@ -585,16 +573,11 @@ namespace Hom
 
 variable {L L' : EquivariantGroupoidLift Γ actions}
 
-private def cancelLeftEquivIso {B : Type*} [Bicategory B] {a b c : B} (e : a ≌ b)
-    {f g : b ⟶ c} (i : e.hom ≫ f ≅ e.hom ≫ g) : f ≅ g :=
-  (λ_ f).symm ≪≫ whiskerRightIso e.counit.symm f ≪≫ α_ e.inv e.hom f ≪≫
-    whiskerLeftIso e.inv i ≪≫ (α_ e.inv e.hom g).symm ≪≫ whiskerRightIso e.counit g ≪≫ λ_ g
-
 /-- Two parallel morphisms of lifts with equal normalizations are isomorphic by a unique compatible
 modification, obtained by cancelling `L.normalizationInv` across `normalizationInvNaturality`. -/
 noncomputable def isoOfNormalizedTransportHomEq {φ ψ : L ⟶ L'}
     (h : φ.normalizedTransportHom = ψ.normalizedTransportHom) : φ ≅ ψ :=
-  cancelLeftEquivIso L.normalizationInv.equivalence
+  L.normalizationInv.equivalence.cancelLeftIso
     ((normalizationInvNaturality φ).symm ≪≫
       whiskerRightIso
         (eqToIso (congrArg
@@ -611,11 +594,6 @@ lemma nonempty_hom₂_iff {φ ψ : L ⟶ L'} :
 
 end Hom
 
-private def conjugateHomFunctor {B : Type*} [Bicategory B] {a₀ a b b₀ : B}
-    (u : a₀ ⟶ a) (v : b ⟶ b₀) : (a ⟶ b) ⥤ (a₀ ⟶ b₀) where
-  obj f := u ≫ f ≫ v
-  map η := u ◁ (η ▷ v)
-
 /-- The inverse functor on hom-categories sending a morphism of normalized transports to the
 reconstructed lift morphism conjugated by `normalizationEquivalence.hom` and `normalizationInv`. -/
 noncomputable def normalizationHomInverse (L L' : EquivariantGroupoidLift Γ actions) :
@@ -623,7 +601,7 @@ noncomputable def normalizationHomInverse (L L' : EquivariantGroupoidLift Γ act
       (normalizationPseudofunctor actions).obj L') ⥤ (L ⟶ L') :=
   (reconstructionPseudofunctor actions).mapFunctor
       ((normalizationPseudofunctor actions).obj L) ((normalizationPseudofunctor actions).obj L') ⋙
-    conjugateHomFunctor L.normalizationEquivalence.hom L'.normalizationInv
+    postcomp _ L'.normalizationInv ⋙ precomp _ L.normalizationEquivalence.hom
 
 @[simp]
 lemma normalizationHomInverse_obj (L L' : EquivariantGroupoidLift Γ actions)

@@ -29,6 +29,8 @@ as well as identity, composition, and modification coherence equations.
   `Cat.comp_whiskerLeft_eq_whiskerRight_comp_associators`: componentwise criteria for
   identity and composition coherence.
 * `Cat.whiskerLeft_comp_eq_comp_whiskerRight`: a componentwise modification criterion.
+* `Cat.Hom.isoMk_trans_leftUnitor_symm_hom_app`: component evaluation of
+  `Cat.Hom.isoMk e ≪≫ (λ_ F.toCatHom).symm`.
 -/
 
 public section
@@ -48,6 +50,13 @@ lemma Hom₂.isIso_of_isIso_app {C D : Cat.{v, w}} {F G : C ⟶ D} (α : F ⟶ G
     simp
   · apply Hom₂.ext
     simp
+
+/-- The components of `Cat.Hom.isoMk e ≪≫ (λ_ F.toCatHom).symm : G.toCatHom ≅ 𝟙 _ ≫ F.toCatHom`
+are those of `e`. -/
+lemma Hom.isoMk_trans_leftUnitor_symm_hom_app {C D : Type w} [Category.{v} C] [Category.{v} D]
+    {F G : C ⥤ D} (e : G ≅ F) (x : C) :
+    (Cat.Hom.isoMk e ≪≫ (λ_ F.toCatHom).symm).hom.toNatTrans.app x = e.hom.app x := by
+  simp
 
 /-- The associator of three identity functors in `Cat` is the identity. -/
 @[simp]
