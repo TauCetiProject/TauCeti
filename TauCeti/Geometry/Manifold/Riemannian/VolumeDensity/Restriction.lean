@@ -12,9 +12,9 @@ public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 # Relative volume density under restriction
 
 This file proves that restricting both metrics to an open submanifold or to `M × [a, b]`
-preserves their relative volume density, including at the interval endpoints. It uses fibrewise
-transport from `TauCeti.Geometry.Manifold.VectorBundle.Riemannian.VolumeDensity` and pullback
-invariance from `TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative`.
+preserves their relative volume density, including at the interval endpoints. These identities
+localize relative-volume comparisons to open submanifolds and restrict metric families on
+`M × ℝ` to closed slabs `M × [a, b]` with boundary.
 -/
 
 public section

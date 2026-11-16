@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative
-public import TauCeti.Geometry.Manifold.Riemannian.Conformal
 
 /-!
 # The Riemannian volume under a conformal change of metric
@@ -32,9 +31,6 @@ comparison of chart densities `TauCeti.WithMetric.chartVolumeDensity_rescale`, a
 orientation.
 
 ## Main results
-
-* `Bundle.ContMDiffRiemannianMetric.relativeVolumeDensity_rescale_right`: conformal rescaling
-  of the relative density.
 
 * `TauCeti.WithMetric.riemannianVolume_rescale`: the Riemannian volume of `f g` is the image of
   the volume of `g` weighted by `f ^ (N / 2)`.

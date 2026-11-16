@@ -21,6 +21,14 @@ basis-independent Gram determinant ratio. Its pointwise definition needs neither
 nor a manifold structure on the base. Continuous metrics have continuous relative density;
 smooth metric families have smooth density wherever their inner-product sections are smooth.
 
+## Main results
+
+* `Bundle.RiemannianMetric.relativeVolumeDensity_pos`: positivity of the relative density.
+* `Module.Basis.relativeVolumeDensity_eq_sqrt_det_of_orthonormal`: the orthonormal-basis formula.
+* `Bundle.ContMDiffRiemannianMetric.contMDiff_relativeVolumeDensity`: smoothness of the density.
+* `Bundle.ContMDiffRiemannianMetric.relativeVolumeDensity_rescale_right` and
+  `Bundle.ContMDiffRiemannianMetric.relativeVolumeDensity_rescale_left`: conformal rescaling laws.
+
 The tangent-bundle measure comparison is developed in
 `TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative`.
 
@@ -95,9 +103,7 @@ variable (g g') in
 @[simp]
 theorem relativeVolumeDensity_pos (x : B) : 0 < relativeVolumeDensity g g' x :=
   Real.sqrt_pos.2 <| LinearMap.BilinForm.detRatio_pos _ _
-    (by simpa only [ContinuousLinearMap.toBilinForm_apply] using g.symm x)
     (by simpa only [ContinuousLinearMap.toBilinForm_apply] using g.pos x)
-    (by simpa only [ContinuousLinearMap.toBilinForm_apply] using g'.symm x)
     (by simpa only [ContinuousLinearMap.toBilinForm_apply] using g'.pos x)
 
 variable (g) in
@@ -175,14 +181,14 @@ theorem relativeVolumeDensity_mul_relativeVolumeDensity
 section Regularity
 
 variable [TopologicalSpace B]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
 
 private def innerInCoordinates (g : RiemannianMetric V) (a x : B) : F →L[ℝ] F →L[ℝ] ℝ :=
   (trivializationAt (F →L[ℝ] F →L[ℝ] ℝ) (fun x : B ↦ V x →L[ℝ] V x →L[ℝ] ℝ) a
     ⟨x, g.inner x⟩).2
 
-omit [∀ x, FiniteDimensional ℝ (V x)] [FiniteDimensional ℝ F] in
+omit [∀ x, FiniteDimensional ℝ (V x)] in
 private theorem innerInCoordinates_apply (g : RiemannianMetric V) {a x : B}
     (hx : x ∈ (trivializationAt F V a).baseSet) (v w : F) :
     innerInCoordinates g a x v w =
@@ -192,7 +198,7 @@ private theorem innerInCoordinates_apply (g : RiemannianMetric V) {a x : B}
   rw [inCoordinates_apply_eq₂ hx hx (by simp)]
   simp
 
-omit [∀ x, FiniteDimensional ℝ (V x)] [FiniteDimensional ℝ F] in
+omit [∀ x, FiniteDimensional ℝ (V x)] in
 private theorem innerInCoordinates_pos (g : RiemannianMetric V) {a x : B}
     (hx : x ∈ (trivializationAt F V a).baseSet) (v : F) (hv : v ≠ 0) :
     0 < innerInCoordinates g a x v v := by
@@ -202,7 +208,8 @@ private theorem innerInCoordinates_pos (g : RiemannianMetric V) {a x : B}
     EmbeddingLike.map_ne_zero_iff] using hv
 
 omit [∀ x, FiniteDimensional ℝ (V x)] in
-private theorem metricVolumeDensity_innerInCoordinates_pos (g : RiemannianMetric V) {a x : B}
+private theorem metricVolumeDensity_innerInCoordinates_pos [FiniteDimensional ℝ F]
+    (g : RiemannianMetric V) {a x : B}
     (hx : x ∈ (trivializationAt F V a).baseSet) :
     0 < (Module.finBasis ℝ F).metricVolumeDensity (innerInCoordinates g a x) := by
   apply (Module.finBasis ℝ F).metricVolumeDensity_pos_of_posDef _
@@ -211,7 +218,7 @@ private theorem metricVolumeDensity_innerInCoordinates_pos (g : RiemannianMetric
   intro v w
   simp only [ContinuousLinearMap.toBilinForm_apply, innerInCoordinates_apply g hx, g.symm]
 
-private theorem relativeVolumeDensity_eq_div_metricVolumeDensity
+private theorem relativeVolumeDensity_eq_div_metricVolumeDensity [FiniteDimensional ℝ F]
     (g g' : RiemannianMetric V) {a x : B}
     (hx : x ∈ (trivializationAt F V a).baseSet) :
     relativeVolumeDensity g g' x =
@@ -247,6 +254,8 @@ theorem contMDiffWithinAt_relativeVolumeDensity
         (E := fun x : B ↦ V x →L[ℝ] V x →L[ℝ] ℝ) (b q) ((g' q).inner (b q))) s p) :
     ContMDiffWithinAt IP 𝓘(ℝ) k (fun q ↦ relativeVolumeDensity (g q) (g' q) (b q)) s p := by
   classical
+  have : FiniteDimensional ℝ F :=
+    (VectorBundle.continuousLinearEquivAt ℝ F V (b p)).finiteDimensional
   -- Use a common trivialization and compose the existing Gram-density smoothness theorem.
   have hp : b p ∈ (trivializationAt F V (b p)).baseSet :=
     mem_baseSet_trivializationAt F V (b p)
@@ -274,7 +283,7 @@ namespace Bundle.ContinuousRiemannianMetric
 open Bundle.RiemannianMetric
 
 variable {B : Type*} [TopologicalSpace B]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : B → Type*} [∀ x, TopologicalSpace (V x)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, FiniteDimensional ℝ (V x)]
@@ -286,6 +295,8 @@ theorem continuous_relativeVolumeDensity (g g' : ContinuousRiemannianMetric F V)
     Continuous (relativeVolumeDensity g.toRiemannianMetric g'.toRiemannianMetric) := by
   classical
   refine continuous_iff_continuousAt.2 fun x ↦ ?_
+  have : FiniteDimensional ℝ F :=
+    (VectorBundle.continuousLinearEquivAt ℝ F V x).finiteDimensional
   have hx : x ∈ (trivializationAt F V x).baseSet := mem_baseSet_trivializationAt F V x
   have hs := ((Module.finBasis ℝ F).contDiffAt_metricVolumeDensity_of_posDef
     (innerInCoordinates_pos g'.toRiemannianMetric hx) (n := 0)).continuousAt.comp
@@ -307,13 +318,16 @@ open Bundle.RiemannianMetric
 variable {B : Type*} [TopologicalSpace B]
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
   {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB} [ChartedSpace HB B]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : B → Type*} [∀ x, TopologicalSpace (V x)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, FiniteDimensional ℝ (V x)]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
   {n n' : ℕ∞ω}
-  (g : ContMDiffRiemannianMetric IB n F V) (g' : ContMDiffRiemannianMetric IB n' F V)
+
+section Smooth
+
+variable (g : ContMDiffRiemannianMetric IB n F V) (g' : ContMDiffRiemannianMetric IB n' F V)
 
 /-- The relative volume density is `C^k` at every point whenever both metrics are at least
 `C^k`. -/
@@ -340,17 +354,19 @@ theorem contMDiff_relativeVolumeDensity {k : ℕ∞ω}
       (relativeVolumeDensity g.toRiemannianMetric g'.toRiemannianMetric) :=
   contMDiffAt_relativeVolumeDensity g g' hk hk'
 
+end Smooth
+
 variable [∀ x, ContinuousConstSMul ℝ (V x)]
 
-omit [FiniteDimensional ℝ F] in
 /-- On a rank-`N` vector bundle, rescaling the compared metric by `f` multiplies the relative
 volume density by `f ^ (N / 2)`. -/
 @[simp]
 theorem relativeVolumeDensity_rescale_right
+    (g' : ContMDiffRiemannianMetric IB n' F V) (g : RiemannianMetric V)
     {f : B → ℝ} {hf : ContMDiff IB 𝓘(ℝ) n' f} {hf_pos : ∀ x, 0 < f x} (x : B) :
-    relativeVolumeDensity g.toRiemannianMetric (g'.rescale f hf hf_pos).toRiemannianMetric x =
+    relativeVolumeDensity g (g'.rescale f hf hf_pos).toRiemannianMetric x =
       f x ^ ((Module.finrank ℝ F : ℝ) / 2) *
-        relativeVolumeDensity g.toRiemannianMetric g'.toRiemannianMetric x := by
+        relativeVolumeDensity g g'.toRiemannianMetric x := by
   have hB : ((g'.rescale f hf hf_pos).toRiemannianMetric.inner x).toBilinForm =
       f x • (g'.toRiemannianMetric.inner x).toBilinForm := by
     ext v w
@@ -359,16 +375,16 @@ theorem relativeVolumeDensity_rescale_right
     LinearMap.BilinForm.detRatio_smul_right, VectorBundle.finrank_eq ℝ F V,
     Real.sqrt_mul (pow_nonneg (hf_pos x).le _), Real.sqrt_pow_eq_rpow (hf_pos x).le]
 
-omit [FiniteDimensional ℝ F] in
 /-- On a rank-`N` vector bundle, rescaling the reference metric by `f` divides the relative
 volume density by `f ^ (N / 2)`. -/
 @[simp]
 theorem relativeVolumeDensity_rescale_left
+    (g : ContMDiffRiemannianMetric IB n F V) (g' : RiemannianMetric V)
     {f : B → ℝ} {hf : ContMDiff IB 𝓘(ℝ) n f} {hf_pos : ∀ x, 0 < f x} (x : B) :
-    relativeVolumeDensity (g.rescale f hf hf_pos).toRiemannianMetric g'.toRiemannianMetric x =
-      relativeVolumeDensity g.toRiemannianMetric g'.toRiemannianMetric x /
+    relativeVolumeDensity (g.rescale f hf hf_pos).toRiemannianMetric g' x =
+      relativeVolumeDensity g.toRiemannianMetric g' x /
         f x ^ ((Module.finrank ℝ F : ℝ) / 2) := by
-  rw [← inv_relativeVolumeDensity g'.toRiemannianMetric _, relativeVolumeDensity_rescale_right]
+  rw [← inv_relativeVolumeDensity g' _, relativeVolumeDensity_rescale_right]
   simp only [mul_inv_rev, inv_relativeVolumeDensity, div_eq_mul_inv]
 
 end Bundle.ContMDiffRiemannianMetric

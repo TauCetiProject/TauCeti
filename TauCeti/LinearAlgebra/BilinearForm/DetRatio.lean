@@ -14,9 +14,9 @@ public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 `LinearMap.BilinForm.detRatio B B'` is the Gram determinant ratio `det B' / det B`,
 comparing a bilinear form `B'` against a reference form `B`. A change of basis multiplies both
 determinants by the same nonzero square, so the ratio
-is basis independent. For positive-definite symmetric forms it is positive; for a nondegenerate
-form its self ratio is one. This provides a basis- and orientation-free comparison of bilinear
-forms; its square root gives
+is basis independent. For forms positive on nonzero diagonal inputs it is positive; for a
+nondegenerate form its self ratio is one. This provides a basis- and orientation-free comparison
+of bilinear forms; its square root gives
 `Bundle.RiemannianMetric.relativeVolumeDensity` for Riemannian metrics.
 -/
 
@@ -25,20 +25,57 @@ public section
 noncomputable section
 
 open LinearMap (BilinForm)
+open Matrix
+open scoped Matrix
 
 variable {R V : Type*} [CommRing R] [PartialOrder R]
   [Nontrivial R] [IsOrderedRing R] [PosMulReflectLT R]
   [AddCommGroup V] [Module R V]
 
-/-- The Gram determinant of a symmetric positive-definite bilinear form is positive in every
-basis. -/
+/-- The Gram determinant of a bilinear form positive on nonzero diagonal inputs is positive in
+every basis. Symmetry is not required. -/
 theorem Module.Basis.det_bilinFormToMatrix_pos {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b : Module.Basis ι R V)
-    {B : BilinForm R V} (hsymm : ∀ v w, B v w = B w v) (hpos : ∀ v, v ≠ 0 → 0 < B v v) :
+    (b : Module.Basis ι R V) {B : BilinForm R V} (hpos : ∀ v, v ≠ 0 → 0 < B v v) :
     0 < (BilinForm.toMatrix b B).det := by
-  let : StarRing R := starRingOfComm
-  have : TrivialStar R := ⟨fun _ ↦ rfl⟩
-  exact ((BilinForm.posDef_toQuadraticMap_iff_matrix b B ⟨hsymm⟩).1 hpos).det_pos
+  -- Adapt the adjugate induction of Matrix.PosDef.det_pos, which does not use symmetry.
+  suffices hdet : ∀ k (N : Matrix (Fin k) (Fin k) R),
+      (∀ v, v ≠ 0 → 0 < v ⬝ᵥ N *ᵥ v) → 0 < N.det by
+    let e := (Fintype.equivFin ι).symm
+    rw [← det_submatrix_equiv_self e (BilinForm.toMatrix b B)]
+    apply hdet
+    intro v hv
+    rw [submatrix_mulVec_equiv, dotProduct_comp_equiv_symm,
+      BilinForm.dotProduct_toMatrix_mulVec]
+    apply hpos
+    intro hz
+    apply hv
+    funext i
+    have h := congrArg b.equivFun hz
+    rw [b.equivFun.apply_symm_apply, map_zero] at h
+    simpa [e] using congrFun h (e i)
+  intro k
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    intro N hN
+    set M := N.submatrix Fin.succ Fin.succ with M_def
+    set v := N.adjugate.col 0 with v_def
+    have hM : ∀ w, w ≠ 0 → 0 < w ⬝ᵥ M *ᵥ w := by
+      intro w hw
+      have hw' : vecCons 0 w ≠ 0 := by
+        intro h
+        apply hw
+        funext i
+        exact congrFun h i.succ
+      simpa [dotProduct, mulVec, Fin.sum_univ_succ, M_def] using hN _ hw'
+    have hvM : v 0 = M.det := by simp [M_def, v_def, adjugate_fin_succ_eq_det_submatrix]
+    replace ih : 0 < M.det := ih _ hM
+    suffices 0 < M.det * N.det from lt_of_mul_lt_mul_left (by simpa using this) ih.le
+    have hNv : N *ᵥ v = fun i ↦ if i = 0 then N.det else 0 := by
+      ext
+      simp [v_def, ← col_mul_eq_mulVec_col, mul_adjugate, Matrix.one_apply]
+    have hv₀ : v ≠ 0 := fun contra ↦ ih.ne' <| by simp [← hvM, contra]
+    simpa [hNv, dotProduct, hvM] using hN v hv₀
 
 variable {K : Type*} [Field K] [Module K V] [Module.Finite K V]
 
@@ -75,14 +112,13 @@ theorem Module.Basis.bilinFormDetRatio_eq_det_bilinFormToMatrix_of_eq_one
     BilinForm.detRatio B B' = (BilinForm.toMatrix b B').det := by
   rw [b.bilinFormDetRatio_eq, hB, Matrix.det_one, div_one]
 
-/-- The Gram determinant ratio of two symmetric positive-definite bilinear forms is positive. -/
+/-- The Gram determinant ratio of two forms positive on nonzero diagonal inputs is positive. -/
 theorem LinearMap.BilinForm.detRatio_pos [PartialOrder K] [IsOrderedRing K] [PosMulReflectLT K]
-    (B B' : BilinForm K V) (hsymm : ∀ v w, B v w = B w v)
-    (hpos : ∀ v, v ≠ 0 → 0 < B v v) (hsymm' : ∀ v w, B' v w = B' w v)
+    (B B' : BilinForm K V) (hpos : ∀ v, v ≠ 0 → 0 < B v v)
     (hpos' : ∀ v, v ≠ 0 → 0 < B' v v) :
     0 < BilinForm.detRatio B B' :=
-  div_pos (Module.Basis.det_bilinFormToMatrix_pos _ hsymm' hpos')
-    (Module.Basis.det_bilinFormToMatrix_pos _ hsymm hpos)
+  div_pos (Module.Basis.det_bilinFormToMatrix_pos _ hpos')
+    (Module.Basis.det_bilinFormToMatrix_pos _ hpos)
 
 /-- The Gram determinant ratio of a nondegenerate bilinear form with itself is one. -/
 @[simp]

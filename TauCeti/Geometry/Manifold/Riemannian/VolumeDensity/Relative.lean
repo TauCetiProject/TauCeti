@@ -33,17 +33,15 @@ volume density of `g'` is `J` times that of `g`. No orientation is used. For a c
 `g' = f g` in real dimension `N`, `J = f ^ (N / 2)`, recovering
 `TauCeti.WithMetric.riemannianVolume_rescale`.
 
-## Main definitions
-
-* `Bundle.RiemannianMetric.relativeVolumeDensity`: the relative volume density of
-  `g'` with respect to `g`.
+The density definition, basis formulas, positivity, and bundle regularity results live in
+`TauCeti.Geometry.Manifold.VectorBundle.Riemannian.VolumeDensity`.
 
 ## Main results
 
-* `Module.Basis.relativeVolumeDensity_eq_sqrt_det_of_orthonormal`: in a `g`-orthonormal basis,
-  `J` is the square root of the Gram determinant of `g'`.
-* `Bundle.RiemannianMetric.relativeVolumeDensity_pos`: `J` is positive.
-* `Bundle.ContMDiffRiemannianMetric.contMDiff_relativeVolumeDensity`: `J` is `C^n`.
+* `Bundle.ContMDiffRiemannianMetric.relativeVolumeDensity_pullback`: invariance under
+  pullback with bijective differential.
+* `integrable_riemannianVolume_iff_integrable_relativeVolumeDensity_smul`:
+  integrability under a change of metric.
 * `Bundle.ContMDiffRiemannianMetric.chartVolumeDensity_toWithMetric_eq_mul`:
   compatibility with chart volume densities.
 * `Bundle.ContMDiffRiemannianMetric.riemannianVolume_eq_map_withDensity_relativeVolumeDensity`
@@ -138,21 +136,50 @@ theorem relativeVolumeDensity_eq_sqrt_div_chartGramMatrix {α x : M}
   simp only [chartLocalFrame_apply_of_mem_chart_source α hx, toRiemannianMetric_inner]
 
 variable (g g') in
-/-- **Compatibility with chart volume densities.** On the chart source at `α`, the chart volume
-density of `g'` is the relative volume density times the chart volume density of `g`. -/
-theorem chartVolumeDensity_toWithMetric_eq_mul {α x : M} (hx : x ∈ (chartAt H α).source) :
+/-- **Compatibility with chart volume densities.** The chart volume density of `g'` is the
+relative volume density times the chart volume density of `g`, including outside the chart
+source. -/
+theorem chartVolumeDensity_toWithMetric_eq_mul (α x : M) :
     chartVolumeDensity (I := I) (WithMetric.toWithMetric g' α) (WithMetric.toWithMetric g' x) =
       relativeVolumeDensity g.toRiemannianMetric g'.toRiemannianMetric x *
         chartVolumeDensity (I := I) (WithMetric.toWithMetric g α)
           (WithMetric.toWithMetric g x) := by
-  have hpos : 0 < (chartGramMatrix (I := I) (WithMetric.toWithMetric g α)
-      (WithMetric.toWithMetric g x)).det :=
-    chartGramMatrix_det_pos _ (by
-      rw [TangentBundle.trivializationAt_baseSet]
-      exact (WithMetric.mem_chartAt_source_iff _ _).2 hx)
-  rw [relativeVolumeDensity_eq_sqrt_div_chartGramMatrix g g' hx, chartVolumeDensity_def,
-    chartVolumeDensity_def, ← Real.sqrt_mul (div_nonneg (chartGramMatrix_det_nonneg _ _)
-      hpos.le), div_mul_cancel₀ _ hpos.ne']
+  by_cases hx : x ∈ (chartAt H α).source
+  · have hpos : 0 < (chartGramMatrix (I := I) (WithMetric.toWithMetric g α)
+        (WithMetric.toWithMetric g x)).det :=
+      chartGramMatrix_det_pos _ (by
+        rw [TangentBundle.trivializationAt_baseSet]
+        exact (WithMetric.mem_chartAt_source_iff _ _).2 hx)
+    rw [relativeVolumeDensity_eq_sqrt_div_chartGramMatrix g g' hx, chartVolumeDensity_def,
+      chartVolumeDensity_def, ← Real.sqrt_mul (div_nonneg (chartGramMatrix_det_nonneg _ _)
+        hpos.le), div_mul_cancel₀ _ hpos.ne']
+  by_cases hdim : Module.finrank ℝ E = 0
+  · have : Subsingleton (TangentSpace I x) := Module.finrank_zero_iff.mp (by
+      rw [VectorBundle.finrank_eq ℝ E (TangentSpace I)]
+      exact hdim)
+    have hinner : g'.toRiemannianMetric.inner x = g.toRiemannianMetric.inner x := by
+      ext v w
+      have hv : v = 0 := Subsingleton.elim _ _
+      simp [hv]
+    have : IsEmpty (Fin (Module.finrank ℝ E)) := Fin.isEmpty_iff.mpr hdim
+    rw [relativeVolumeDensity_congr _ _ rfl hinner, relativeVolumeDensity_self]
+    simp [chartVolumeDensity_def]
+  · have : Nonempty (Fin (Module.finrank ℝ E)) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hdim)
+    have hframe : ∀ i, chartLocalFrame (I := I) α i x = 0 := by
+      intro i
+      rw [chartLocalFrame_def, Trivialization.localFrame_apply_of_notMem]
+      simpa only [TangentBundle.trivializationAt_baseSet] using hx
+    have hzero (m : ℕ∞ω)
+        (h : ContMDiffRiemannianMetric I m E (fun x : M ↦ TangentSpace I x)) :
+        chartVolumeDensity (I := I) (WithMetric.toWithMetric h α)
+          (WithMetric.toWithMetric h x) = 0 := by
+      have hz : chartGramMatrix (I := I) (WithMetric.toWithMetric h α)
+          (WithMetric.toWithMetric h x) = 0 := by
+        rw [chartGramMatrix_toWithMetric]
+        ext i j
+        simp [hframe]
+      rw [chartVolumeDensity_def, hz, Matrix.det_zero, Real.sqrt_zero]
+    rw [hzero _ g, hzero _ g', mul_zero]
 
 variable (g g') in
 /-- On the chart source at `α`, the relative volume density is the ratio of the chart volume
@@ -168,7 +195,7 @@ theorem relativeVolumeDensity_eq_div_chartVolumeDensity {α x : M}
     chartVolumeDensity_pos _ (by
       rw [TangentBundle.trivializationAt_baseSet]
       exact (WithMetric.mem_chartAt_source_iff _ _).2 hx)
-  rw [chartVolumeDensity_toWithMetric_eq_mul g g' hx, mul_div_cancel_right₀ _ hpos.ne']
+  rw [chartVolumeDensity_toWithMetric_eq_mul g g' α x, mul_div_cancel_right₀ _ hpos.ne']
 
 
 section Measure
@@ -234,7 +261,7 @@ theorem riemannianVolume_eq_map_withDensity_relativeVolumeDensity :
     (extChartAt I β).left_inv (by rwa [extChartAt_source])
   simp only [WithMetric.extChartAt_symm_apply, WithMetric.extChartAt_apply,
     WithMetric.ofWithMetric_toWithMetric, hsymm]
-  rw [chartVolumeDensity_toWithMetric_eq_mul g g' hx',
+  rw [chartVolumeDensity_toWithMetric_eq_mul g g' β x.ofWithMetric,
     ENNReal.ofReal_mul
       (relativeVolumeDensity_nonneg g.toRiemannianMetric g'.toRiemannianMetric _), mul_comm]
 
