@@ -9,6 +9,7 @@ public import TauCeti.Probability.PopulationSampling.Basic
 public import TauCeti.Probability.Process.EmpiricalMeasure
 public import TauCeti.Probability.UniformSampling
 public import Mathlib.MeasureTheory.Measure.FiniteMeasurePi
+import TauCeti.Data.Fintype.Card.Embedding
 
 /-!
 # Sampling finite populations with and without replacement
@@ -44,6 +45,10 @@ of the latter's sampling law, without separation assumptions on the value space.
   with sampling;
 * `sampleWithoutReplacement_dirac_comp`, `sampleWithReplacement_dirac_comp`: their
   deterministic-population composition forms;
+* `sampleWithoutReplacement_dirac_apply_singleton`,
+  `sampleWithReplacement_dirac_apply_singleton`: singleton masses of deterministic-population
+  sampling laws as fibre counts divided by `(Fintype.card κ).descFactorial (Fintype.card ι)` and
+  `Fintype.card κ ^ Fintype.card ι`;
 * `pi_empiricalMeasureOfFintype_eq_map_uniformOn`: independent empirical draws as uniform
   selections;
 * `sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype`: the empirical-product mixture;
@@ -90,6 +95,13 @@ theorem sampleWithoutReplacement_def {ι κ : Type*} [MeasurableSpace κ] (ρ : 
     sampleWithoutReplacement (ι := ι) ρ =
       samplePopulation (uniformOn {k : ι → κ | Function.Injective k}) ρ :=
   (rfl)
+
+/-- Sampling without replacement from a finite population law gives a finite law. -/
+instance isFiniteMeasure_sampleWithoutReplacement {ι κ : Type*} [MeasurableSpace κ]
+    (ρ : Measure (κ → α)) [IsFiniteMeasure ρ] :
+    IsFiniteMeasure (sampleWithoutReplacement (ι := ι) ρ) := by
+  rw [sampleWithoutReplacement_def]
+  infer_instance
 
 /-- Sampling a deterministic population without replacement is the pushforward of uniform
 injective selections. -/
@@ -231,6 +243,53 @@ theorem sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype [Fintype ι] 
         (ProbabilityMeasure.pi fun _ : ι => empiricalMeasureOfFintype x).toMeasure := by
   simp_rw [sampleWithReplacement_eq_samplePopulation_uniformOn,
     samplePopulation_eq_bind_population, pi_empiricalMeasureOfFintype_eq_map_uniformOn]
+
+section Singleton
+
+variable [Fintype ι] [Fintype κ] [MeasurableSingletonClass α]
+
+/-- The without-replacement sampling law of a deterministic population assigns to a word `y` the
+number of embeddings producing `y` divided by `(Fintype.card κ).descFactorial (Fintype.card ι)`.
+When `Fintype.card κ < Fintype.card ι`, no embedding exists and both sides vanish. -/
+theorem sampleWithoutReplacement_dirac_apply_singleton (x : κ → α) (y : ι → α) :
+    sampleWithoutReplacement (Measure.dirac x) {y} =
+      Nat.card {f : ι ↪ κ // x ∘ f = y} /
+        ((Fintype.card κ).descFactorial (Fintype.card ι) : ℝ≥0∞) := by
+  classical
+  have hS : {k : ι → κ | Function.Injective k} =
+      ((Finset.univ.filter Function.Injective : Finset (ι → κ)) : Set (ι → κ)) := by simp
+  have hT : (fun k : ι → κ => fun i => x (k i)) ⁻¹' {y} =
+      ((Finset.univ.filter (fun k : ι → κ => x ∘ k = y) : Finset (ι → κ)) : Set (ι → κ)) := by
+    ext k
+    simp [Function.comp_def]
+  have heq : {f : ι ↪ κ // x ∘ f = y} ≃ {k : ι → κ // Function.Injective k ∧ x ∘ k = y} :=
+    { toFun := fun f => ⟨f.1, f.1.injective, f.2⟩
+      invFun := fun k => ⟨⟨k.1, k.2.1⟩, k.2.2⟩
+      left_inv := fun _ => rfl
+      right_inv := fun _ => rfl }
+  rw [sampleWithoutReplacement_dirac,
+    Measure.map_apply (measurable_readPopulation x) (measurableSet_singleton y),
+    hS, hT, uniformOn_apply_finset, ← Finset.filter_and, ← Fintype.card_subtype,
+    ← Fintype.card_subtype, Fintype.card_subtype_injective, Nat.card_congr heq,
+    Nat.card_eq_fintype_card]
+
+/-- The with-replacement sampling law of a deterministic population assigns to a word `y` the
+number of index maps producing `y` divided by `(Fintype.card κ) ^ Fintype.card ι`. -/
+theorem sampleWithReplacement_dirac_apply_singleton (x : κ → α) (y : ι → α) :
+    sampleWithReplacement (Measure.dirac x) {y} =
+      Nat.card {f : ι → κ // x ∘ f = y} /
+        (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
+  classical
+  have hpre : (fun k : ι → κ => fun i => x (k i)) ⁻¹' {y} = {f : ι → κ | x ∘ f = y} := by
+    ext f
+    simp [Function.comp_def]
+  rw [sampleWithReplacement_dirac,
+    Measure.map_apply (measurable_readPopulation x) (measurableSet_singleton y),
+    uniformOn_univ, hpre, Measure.count_apply_finite _ (Set.toFinite _),
+    ← Set.ncard_eq_toFinset_card _, ← Nat.card_coe_set_eq, Set.coe_ofPred, Fintype.card_fun,
+    Nat.cast_pow]
+
+end Singleton
 
 section Bounds
 
