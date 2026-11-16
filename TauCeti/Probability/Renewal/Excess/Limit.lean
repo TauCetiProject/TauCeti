@@ -9,6 +9,8 @@ public import TauCeti.Probability.Renewal.Excess.Basic
 public import TauCeti.Probability.Renewal.Equilibrium
 public import TauCeti.Probability.Renewal.IntervalLimit
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Cdf
+import TauCeti.MeasureTheory.Integral.Lebesgue.Support
+import TauCeti.Probability.HasLaw
 
 /-!
 # Excess-life convergence from renewal interval limits
@@ -53,20 +55,16 @@ theorem tendsto_measureReal_lt_renewalExcess_of_tendsto_measureReal_Ioc
     Tendsto (fun t ↦ P.real {ω | x < renewalExcess T t ω}) atTop
       (𝓝 ((P.map (T 0)).equilibriumExcessLaw.real (Ioi (x : ℝ)))) := by
   have := hindep.isProbabilityMeasure
+  simp_rw [measureReal_lt_renewalExcess hindep hid]
+  rw [Measure.equilibriumExcessLaw_real_Ioi_eq_integral_tail_add]
   by_cases hzero : P {ω | T 0 ω = 0} < 1
   swap
-  · have hlaw := hasLaw_dirac_zero_of_not_lt (hid 0).aemeasurable_fst hzero
-    have hE : (P.map (T 0)).equilibriumExcessLaw = 0 := by
-      rw [← Measure.measure_univ_eq_zero, Measure.equilibriumExcessLaw_univ, hlaw.map_eq]
-      simp
-    rw [hlaw.map_eq] at hE
-    simp [measureReal_lt_renewalExcess hindep hid, hlaw.map_eq, hE]
+  · simp [(hasLaw_dirac_of_prob_eq_one (hid 0).aemeasurable_fst
+      (le_antisymm prob_le_one (not_lt.1 hzero))).map_eq]
   have hF : (P.map (T 0)) {0} < 1 := by
     rwa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst (measurableSet_singleton 0)]
   have htail : Antitone (fun u : ℝ≥0 ↦ (P.map (T 0)).real (Ioi (u + x))) :=
     fun _ _ h ↦ measureReal_mono (Ioi_subset_Ioi (by gcongr))
-  simp_rw [measureReal_lt_renewalExcess hindep hid]
-  rw [Measure.equilibriumExcessLaw_real_Ioi_eq_integral_tail_add]
   exact (P.map (T 0)).tendsto_renewalConv_of_tendsto_measureReal_Ioc hF hlim
     htail (fun _ ↦ measureReal_nonneg)
     ((P.map (T 0)).integrableOn_Ioi_measureReal_tail_add x hmean)
@@ -171,12 +169,10 @@ theorem tendstoInDistribution_renewalExcess_of_tendsto_measureReal_Ioc
     infer_instance
   obtain ⟨hne, hmean⟩ := (Measure.isProbabilityMeasure_equilibriumExcessLaw_iff _).1 hprob
   have hzero : P {ω | T 0 ω = 0} < 1 := by
-    refine lt_of_le_of_ne prob_le_one fun h ↦ hne ?_
-    have hae : ∀ᵐ ω ∂P, T 0 ω = 0 :=
-      (mem_ae_iff_prob_eq_one₀ ((hid 0).aemeasurable_fst.nullMeasurable
-        (measurableSet_singleton 0))).2 h
-    rw [lintegral_map' measurable_coe_nnreal_ennreal.aemeasurable (hid 0).aemeasurable_fst]
-    exact (lintegral_congr_ae (hae.mono fun ω hω ↦ by simp [hω])).trans (lintegral_zero)
+    have := (P.map (T 0)).measure_singleton_lt_one_of_lintegral_pos
+      (f := fun u ↦ (u : ℝ≥0∞)) (a := 0) (by simp) (pos_iff_ne_zero.2 hne)
+    rwa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst
+      (measurableSet_singleton 0)] at this
   apply TendstoInDistribution.of_tendsto_cdf
     (fun i ↦ measurable_coe_nnreal_real.comp_aemeasurable
       (aemeasurable_renewalExcess (fun n ↦ (hid n).aemeasurable_fst) (t i))) hZ.aemeasurable

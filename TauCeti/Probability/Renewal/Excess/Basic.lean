@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.MeasurableSpace.Eval
 public import TauCeti.Probability.Renewal.Count
 public import TauCeti.Probability.Renewal.Equation
+import TauCeti.Probability.HasLaw
 import TauCeti.Probability.IdentDistrib
 
 /-!
@@ -27,9 +28,9 @@ excess is strictly positive; on explosive paths the formula uses the exceptional
 For independent increments with common law `F`, this file computes
 the law of the excess at each fixed time in terms of the renewal measure `U = ∑ n, F^{∗n}`. The
 tail representation holds for every `F`; the distribution-function representation requires that
-`F` is not almost surely zero (otherwise `E t = 0` almost surely, so `P(E t ≤ x) = 1`, while the
-integrand below vanishes). Writing `F> u = F((u, ∞))` for the tail of `F` and `F≤ u = F([0, u])`
-for its distribution function,
+`F {0} < 1`, that is, `F` is not concentrated at zero (otherwise `E t = 0` almost surely, so
+`P(E t ≤ x) = 1`, while the integrand below vanishes). Writing `F> u = F((u, ∞))` for the tail of
+`F` and `F≤ u = F([0, u])` for its distribution function,
 
 ```text
 P(x < E t) = ∫_{[0, t]} F> (t - s + x) U(ds),
@@ -39,13 +40,13 @@ P(E t ≤ x) = ∫_{[0, t]} (F≤ (t - s + x) - F≤ (t - s)) U(ds).
 The first identity splits the event `x < E t` according to the value `n` of `N t`. Almost surely
 it is the disjoint union over `n` of the events `{arrival T n ≤ t, t + x < arrival T n + T n}`, and
 `arrival T n`, which has law `F^{∗n}`, is independent of `T n`. The second identity, for `F` not
-almost surely zero, follows from the tail identity `∫_{[0, t]} F> (t - s) U(ds) = 1`
-(`TauCeti.Probability.renewalConv_measureReal_Ioi_renewalMeasure`), which also needs `F` not almost
-surely zero. In the notation of `TauCeti.Probability.renewalConv`, both probabilities are of the
-form `h ∗ U` (the second for `F` not almost surely zero), so they solve the renewal equation
-`g = h + g ∗ F` with forcing terms `F> (t + x)` and `F≤ (t + x) - F≤ t` respectively. Both renewal
-equations hold for every `F`: for almost surely zero increments `h = 0` and `g ∗ F = g`. These
-representations are the input of the limit theorem for the excess.
+concentrated at zero, follows from the tail identity `∫_{[0, t]} F> (t - s) U(ds) = 1`
+(`TauCeti.Probability.renewalConv_measureReal_Ioi_renewalMeasure`), which also needs `F` not
+concentrated at zero. In the notation of `TauCeti.Probability.renewalConv`, both probabilities are
+of the form `h ∗ U` (the second for `F` not concentrated at zero), so they solve the renewal
+equation `g = h + g ∗ F` with forcing terms `F> (t + x)` and `F≤ (t + x) - F≤ t` respectively. Both
+renewal equations hold for every `F`: for almost surely zero increments `h = 0` and `g ∗ F = g`.
+These representations are the input of the limit theorem for the excess.
 
 ## Main definitions
 
@@ -59,7 +60,7 @@ representations are the input of the limit theorem for the excess.
 * `TauCeti.Probability.measure_lt_renewalExcess`,
   `TauCeti.Probability.measureReal_lt_renewalExcess`: the excess-tail representation
   `P(x < E t) = (F> (· + x) ∗ U) t`.
-* `TauCeti.Probability.measureReal_renewalExcess_le`: for `F` not almost surely zero, the
+* `TauCeti.Probability.measureReal_renewalExcess_le`: for `F` not concentrated at zero, the
   distribution function of the excess is `P(E t ≤ x) = ((F≤ (· + x) - F≤) ∗ U) t`.
 * `TauCeti.Probability.measureReal_lt_renewalExcess_eq_add`,
   `TauCeti.Probability.measureReal_renewalExcess_le_eq_add`: the renewal equations satisfied by
@@ -204,12 +205,6 @@ private lemma measure_arrival_le_lt_arrival_succ (hindep : iIndepFun T P)
   · rw [indicator_of_notMem (by simpa using hs)]
     simp [B, hs]
 
-/-- If `T 0 = 0` almost surely, the common law of the increments is the Dirac mass at `0`. -/
-lemma hasLaw_dirac_zero_of_not_lt [IsProbabilityMeasure P] (hT : AEMeasurable (T 0) P)
-    (hzero : ¬ P {ω | T 0 ω = 0} < 1) : HasLaw (T 0) (Measure.dirac 0) P :=
-  hasLaw_dirac_of_ae_eq <| (mem_ae_iff_prob_eq_one₀ (hT.nullMeasurable
-    (measurableSet_singleton 0))).2 (one_le_prob_iff.1 (not_lt.1 hzero))
-
 /-- **The excess-tail representation**, in `ℝ≥0∞`. For i.i.d. increments with law `F`, the excess
 at time `t` exceeds `x` with probability `∫_{[0, t]} F((t - s + x, ∞)) U(ds)`, where `U` is the
 renewal measure of `F`. If the increments are almost surely zero, both sides vanish. The increments
@@ -224,7 +219,7 @@ theorem measure_lt_renewalExcess (hindep : iIndepFun T P)
   swap
   · -- Almost surely every increment vanishes, hence so does the excess, while `F = δ₀` has no
     -- mass to the right of any `y ≥ 0`.
-    have hlaw := hasLaw_dirac_zero_of_not_lt (hT 0) hzero
+    have hlaw := hasLaw_dirac_of_prob_eq_one (hT 0) (le_antisymm prob_le_one (not_lt.1 hzero))
     have hex : ∀ᵐ ω ∂P, ω ∉ {ω | x < renewalExcess T t ω} := by
       filter_upwards [ae_forall_eq_of_identDistrib hid hlaw.ae_eq_of_dirac] with ω hω
       simp [renewalExcess_def, arrival_def, hω]
@@ -301,7 +296,8 @@ theorem measureReal_lt_renewalExcess_eq_add (hindep : iIndepFun T P)
   by_cases hzero : P {ω | T 0 ω = 0} < 1
   swap
   · -- For `F = δ₀` the forcing term vanishes and `g ∗ δ₀ = g`.
-    simp [(hasLaw_dirac_zero_of_not_lt (hid 0).aemeasurable_fst hzero).map_eq]
+    simp [(hasLaw_dirac_of_prob_eq_one (hid 0).aemeasurable_fst
+      (le_antisymm prob_le_one (not_lt.1 hzero))).map_eq]
   have := Measure.isLocallyFiniteMeasure_renewalMeasure _
     (by rwa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst
       (measurableSet_singleton 0)])
@@ -322,7 +318,8 @@ theorem measureReal_renewalExcess_le_eq_add (hindep : iIndepFun T P)
   by_cases hzero : P {ω | T 0 ω = 0} < 1
   swap
   · -- For `F = δ₀` the forcing term is `1 - 1 = 0` and `g ∗ δ₀ = g`.
-    simp [(hasLaw_dirac_zero_of_not_lt (hid 0).aemeasurable_fst hzero).map_eq]
+    simp [(hasLaw_dirac_of_prob_eq_one (hid 0).aemeasurable_fst
+      (le_antisymm prob_le_one (not_lt.1 hzero))).map_eq]
   have := Measure.isLocallyFiniteMeasure_renewalMeasure _
     (by rwa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst
       (measurableSet_singleton 0)])

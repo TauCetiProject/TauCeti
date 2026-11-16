@@ -56,6 +56,8 @@ Nonnegative random variables whose real coercions have a common law are identica
   `Measure.dirac x` exactly when `ν` is the Dirac measure at its value at `x`;
 * `TauCeti.Probability.not_hasLaw_dirac_source_of_forall_ne_dirac` — no map at all has a
   non-Dirac law under a Dirac measure;
+* `TauCeti.Probability.hasLaw_dirac_of_prob_eq_one` — an a.e. measurable map that takes the value
+  `y` with probability one has law `Measure.dirac y`;
 * `ProbabilityTheory.HasLaw.mapsTo_support_of_continuousOn` — a map continuous on a carrier of
   `μ` inside its support sends that carrier into the support of its law;
 * `ProbabilityTheory.HasLaw.measure_eq_zero_or_measure_eq_zero_of_continuousOn` — a map
@@ -200,6 +202,15 @@ the law it is claimed to have. -/
 theorem not_hasLaw_dirac_source_of_forall_ne_dirac (hν : ∀ y : Y, ν ≠ Measure.dirac y) (x : X) :
     ¬HasLaw T ν (Measure.dirac x) :=
   fun h ↦ hν (T x) ((hasLaw_dirac_source_iff h.aemeasurable).1 h)
+
+/-- An a.e. measurable map that takes the value `y` with probability one has the Dirac measure at
+`y` as its law. This is `ProbabilityTheory.hasLaw_dirac_iff` with the almost sure equality
+stated as the probability of the event `{T = y}`. -/
+theorem hasLaw_dirac_of_prob_eq_one [IsProbabilityMeasure μ] [MeasurableSingletonClass Y]
+    {y : Y} (hT : AEMeasurable T μ) (h : μ {x | T x = y} = 1) :
+    HasLaw T (Measure.dirac y) μ :=
+  hasLaw_dirac_of_ae_eq <|
+    (mem_ae_iff_prob_eq_one₀ (hT.nullMeasurable (measurableSet_singleton y))).2 h
 
 section Topology
 
