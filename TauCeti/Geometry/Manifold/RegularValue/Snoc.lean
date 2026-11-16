@@ -49,20 +49,21 @@ theorem IsRegularPoint.finSnoc {F : M → Fin k → 𝕜} {g : M → 𝕜} {x : 
   refine ⟨v₀ + c • w, funext fun i ↦ ?_⟩
   -- Read the `i`-th component of the derivative as the derivative of the `i`-th component.
   have hi := DFunLike.congr_fun (mvfderiv_apply hd i) (v₀ + c • w)
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] at hi
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] at hi
   rw [← hi]
   clear hi
   induction i using Fin.lastCases with
   | last =>
     simp only [Fin.snoc_last, map_add, map_smul, smul_eq_mul]
     -- The component `fun y ↦ g y` is `g` up to eta.
-    rw [show mvfderiv I (fun y ↦ g y) = mvfderiv I g from rfl, mul_comm c,
-      mul_inv_cancel_left₀ hgw]
+    change mvfderiv I g x v₀ + c * mvfderiv I g x w = _
+    simp only [c]
+    field_simp
     ring
   | cast j =>
     simp only [Fin.snoc_castSucc]
-    rw [DFunLike.congr_fun (mvfderiv_apply hFd j), ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.proj_apply, map_add, map_smul, hFw, hv₀]
-    simp [Fin.init]
+    rw [DFunLike.congr_fun (mvfderiv_apply hFd j)]
+    -- Keep `mvfderiv` folded so that `hFw` and `hv₀` apply.
+    simp [-mvfderiv_apply_eq_mfderiv_apply, hFw, hv₀, Fin.init]
 
 end TauCeti
