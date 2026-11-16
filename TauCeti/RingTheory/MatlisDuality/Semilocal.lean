@@ -110,11 +110,11 @@ open LinearMap
 
 section Semilocal
 
-variable {R : Type u} [CommRing R] [IsSemisimpleRing (R ⧸ Ring.jacobson R)]
-  {E : Type v} [AddCommGroup E] [Module R E] [Small.{v} R]
-  {f : R ⧸ Ring.jacobson R →ₗ[R] E}
+section Quotient
 
-omit [Small.{v} R] in
+variable {R : Type u} [CommRing R] [IsSemisimpleRing (R ⧸ Ring.jacobson R)]
+  {E : Type v} [AddCommGroup E] [Module R E] {f : R ⧸ Ring.jacobson R →ₗ[R] E}
+
 /-- In an injective hull of `R ⧸ J(R)`, each simple module occurs once: `Hom_R(R ⧸ 𝔪, E)` has
 length one for every maximal ideal `𝔪`. -/
 theorem IsInjectiveEnvelope.length_quotient_linearMap_eq_one (hf : IsInjectiveEnvelope f)
@@ -132,6 +132,12 @@ theorem IsInjectiveEnvelope.length_quotient_linearMap_eq_one (hf : IsInjectiveEn
     φ.codRestrict _ fun z => hf.isEssential_range.atom_le hatom (LinearMap.mem_range_self φ z),
     LinearMap.ext fun z => ?_⟩
   simp [LinearEquiv.ofInjective_symm_apply]
+
+end Quotient
+
+variable {R : Type u} [CommRing R] [IsSemisimpleRing (R ⧸ Ring.jacobson R)]
+  {E : Type v} [AddCommGroup E] [Module R E] [Small.{v} R]
+  {f : R ⧸ Ring.jacobson R →ₗ[R] E}
 
 /-- **Matlis duality preserves length.** For an injective hull `E` of `R ⧸ J(R)`, where `R ⧸ J(R)`
 is a semisimple ring, `Hom_R(M, E)` has the same length as `M`, for every module `M`. -/
