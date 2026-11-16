@@ -225,80 +225,37 @@ theorem thetaCosetClass_slash_T (hL : IsEven L) (γ : DiscriminantGroup L) (k : 
 
 end IsEven
 
-/-! ### Counterexamples without integrality -/
+/-! ### Counterexample without integrality -/
 
 section NonIntegralCounterexamples
-
-/-- The dual of `½ ℤ ⊆ ℝ` is `2 ℤ`. -/
-theorem dual_span_inv_two :
-    dual (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) = Submodule.span ℤ {(2 : ℝ)} :=
-  dual_span_inv two_ne_zero
-
-/-- The dual `2 ℤ` of `½ ℤ ⊆ ℝ` is strictly contained in `½ ℤ`. -/
-theorem dual_span_inv_two_lt :
-    dual (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) < Submodule.span ℤ {(2⁻¹ : ℝ)} :=
-  dual_span_inv_natCast_lt one_lt_two
-
-/-- The lattice `½ ℤ ⊆ ℝ` is not integral. -/
-theorem not_isIntegral_span_inv_two :
-    ¬ IsIntegral (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) :=
-  not_isIntegral_span_inv_natCast one_lt_two
-
-/-- For a nonzero natural number `n`, the discriminant group of `n⁻¹ ℤ ⊆ ℝ` is trivial. -/
-theorem subsingleton_discriminantGroup_span_inv_natCast {n : ℕ} (hn : n ≠ 0) :
-    Subsingleton (DiscriminantGroup (Submodule.span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ)) :=
-  subsingleton_discriminantGroup_iff.mpr (dual_span_inv_natCast_le hn)
 
 /-- The discriminant group of `½ ℤ ⊆ ℝ` is trivial. -/
 instance instSubsingletonDiscriminantGroupSpanInvTwo :
     Subsingleton (DiscriminantGroup (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ)) :=
-  subsingleton_discriminantGroup_span_inv_natCast two_ne_zero
+  subsingleton_discriminantGroup_iff.mpr (dual_span_inv_natCast_le two_ne_zero)
 
 /-- The trivial discriminant group of `½ ℤ ⊆ ℝ` as a `Fintype`. -/
 noncomputable instance instFintypeDiscriminantGroupSpanInvTwo :
     Fintype (DiscriminantGroup (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ)) :=
   Fintype.ofSubsingleton 0
 
-/-- For a natural number `n > 1`, `(Θ_{nℤ}(τ)).re < (Θ_{n⁻¹ℤ}(τ)).re` on the imaginary axis. -/
-theorem re_thetaSeries_span_natCast_lt_re_thetaSeries_span_inv_natCast {n : ℕ} (hn : 1 < n)
-    {τ : ℍ} (hτ : τ.re = 0) :
-    (thetaSeries (Submodule.span ℤ {(n : ℝ)} : Submodule ℤ ℝ) τ).re <
-      (thetaSeries (Submodule.span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ) τ).re :=
-  re_thetaSeries_lt_re_thetaSeries (span_natCast_lt_span_inv_natCast hn) hτ
-
-/-- For a natural number `n > 1`, `Θ_{nℤ}(τ) ≠ Θ_{n⁻¹ℤ}(τ)` on the imaginary axis. -/
-theorem thetaSeries_span_natCast_ne_thetaSeries_span_inv_natCast {n : ℕ} (hn : 1 < n)
-    {τ : ℍ} (hτ : τ.re = 0) :
-    thetaSeries (Submodule.span ℤ {(n : ℝ)} : Submodule ℤ ℝ) τ ≠
-      thetaSeries (Submodule.span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ) τ :=
-  thetaSeries_ne_thetaSeries_of_lt (span_natCast_lt_span_inv_natCast hn) hτ
-
 /-- The theta series of `2 ℤ ⊆ ℝ` and `½ ℤ ⊆ ℝ` differ at `i`: `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)`. -/
 theorem thetaSeries_span_two_ne_thetaSeries_span_inv_two :
     thetaSeries (Submodule.span ℤ {(2 : ℝ)} : Submodule ℤ ℝ) UpperHalfPlane.I ≠
       thetaSeries (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) UpperHalfPlane.I :=
-  thetaSeries_span_natCast_ne_thetaSeries_span_inv_natCast one_lt_two UpperHalfPlane.I_re
+  thetaSeries_ne_thetaSeries_of_lt (span_natCast_lt_span_inv_natCast one_lt_two)
+    UpperHalfPlane.I_re
 
-/-- For a natural number `n > 1`, the dual-sum identity fails for `L = n⁻¹ ℤ ⊆ ℝ` on the imaginary
-axis. Here `DiscriminantGroup (n⁻¹ ℤ)` is a `Subsingleton`
-(`ZLattice.subsingleton_discriminantGroup_span_inv_natCast`), so a `Fintype` instance exists via
-`Fintype.ofSubsingleton 0`. -/
-theorem thetaSeries_dual_span_inv_natCast_ne_sum {n : ℕ} (hn : 1 < n)
-    [Fintype (DiscriminantGroup (Submodule.span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ))] {τ : ℍ}
-    (hτ : τ.re = 0) :
-    thetaSeries (dual (Submodule.span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ)) τ ≠
-      ∑ γ : DiscriminantGroup (Submodule.span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ),
-        thetaCosetClass (Submodule.span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ) γ τ :=
-  thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt (dual_span_inv_natCast_lt hn) hτ
-
-/-- For the non-integral lattice `L = ½ ℤ ⊆ ℝ`, `L^∨ = 2 ℤ < L`, the discriminant group `A_L` is
-trivial (`ZLattice.instSubsingletonDiscriminantGroupSpanInvTwo`), and at `τ = i`
+/-- For the non-integral lattice `L = ½ ℤ ⊆ ℝ` (`ZLattice.not_isIntegral_span_inv_natCast`),
+`L^∨ = 2 ℤ < L`, the discriminant group `A_L` is trivial
+(`ZLattice.instSubsingletonDiscriminantGroupSpanInvTwo`), and at `τ = i`
 `Θ_{L^∨}(i) ≠ ∑_{γ ∈ A_L} θ_γ(i)`. -/
 theorem thetaSeries_dual_span_inv_two_ne_sum :
     thetaSeries (dual (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ)) UpperHalfPlane.I ≠
       ∑ γ : DiscriminantGroup (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ),
         thetaCosetClass (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) γ UpperHalfPlane.I :=
-  thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt dual_span_inv_two_lt UpperHalfPlane.I_re
+  thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt (L := Submodule.span ℤ {(2⁻¹ : ℝ)})
+    (dual_span_inv_natCast_lt one_lt_two) UpperHalfPlane.I_re
 
 end NonIntegralCounterexamples
 
