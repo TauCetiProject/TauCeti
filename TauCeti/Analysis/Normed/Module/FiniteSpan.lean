@@ -59,31 +59,38 @@ theorem upperSemicontinuous_infDist_span_range [ContinuousConstSMul 𝕜 E]
 
 end Semiring
 
-variable [NormedField 𝕜] [NormedSpace 𝕜 E] [Fintype ι]
+variable [NormedField 𝕜] [NormedSpace 𝕜 E]
 
 /-- The norm of a coefficient times the distance of its vector from the span of the remaining
 vectors is bounded by the norm of the full linear combination. No independence or closedness is
 needed. -/
-theorem norm_mul_infDist_span_range_ne_le (v : ι → E) (c : ι → 𝕜) (i : ι) :
+theorem norm_mul_infDist_span_range_ne_le_finsupp (v : ι → E) (c : ι →₀ 𝕜) (i : ι) :
     ‖c i‖ * infDist (v i)
       (Submodule.span 𝕜 (range fun j : {j // j ≠ i} ↦ v j) : Set E) ≤
-      ‖∑ j, c j • v j‖ := by
+      ‖c.sum fun j r ↦ r • v j‖ := by
   classical
   let W := Submodule.span 𝕜 (range fun j : {j // j ≠ i} ↦ v j)
   have hzero (j : ι) (hj : j ≠ i) : W.mkQ (v j) = 0 :=
     (Submodule.Quotient.mk_eq_zero W).mpr (Submodule.subset_span ⟨⟨j, hj⟩, rfl⟩)
-  have hsum : W.mkQ (∑ j, c j • v j) = c i • W.mkQ (v i) := by
-    rw [map_sum, sum_eq_single i]
-    · simp
-    · intro j _ hj
-      simp [hzero j hj]
-    · simp
+  have hsum : W.mkQ (c.sum fun j r ↦ r • v j) = c i • W.mkQ (v i) := by
+    rw [map_finsuppSum]
+    exact c.sum_eq_single i (fun j _ hj ↦ by simp [hzero j hj]) (by simp)
   calc
     _ = ‖c i • W.mkQ (v i)‖ := by
       rw [norm_smul, Submodule.mkQ_apply]
       exact congrArg (fun t : ℝ ↦ ‖c i‖ * t)
         (QuotientAddGroup.norm_mk (S := W.toAddSubgroup) (v i)).symm
-    _ = ‖W.mkQ (∑ j, c j • v j)‖ := congrArg norm hsum.symm
+    _ = ‖W.mkQ (c.sum fun j r ↦ r • v j)‖ := congrArg norm hsum.symm
     _ ≤ _ := Submodule.Quotient.norm_mk_le W _
+
+/-- The norm of a coefficient times the distance of its vector from the span of the remaining
+vectors is bounded by the norm of the full finite linear combination. -/
+theorem norm_mul_infDist_span_range_ne_le [Fintype ι] (v : ι → E) (c : ι → 𝕜) (i : ι) :
+    ‖c i‖ * infDist (v i)
+      (Submodule.span 𝕜 (range fun j : {j // j ≠ i} ↦ v j) : Set E) ≤
+      ‖∑ j, c j • v j‖ := by
+  classical
+  simpa [Finsupp.sum_fintype] using
+    norm_mul_infDist_span_range_ne_le_finsupp v (Finsupp.equivFunOnFinite.symm c) i
 
 end TauCeti

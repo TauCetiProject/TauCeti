@@ -14,13 +14,16 @@ public import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
 For a countable family of measurable predicates `P k` on a measure space, the number of indices
 `k` with `P k x` is a function of `x` with values in `ℕ∞`. Its Lebesgue integral is the sum of the
-measures of the sets `{x | P k x}`, by exchanging the sum and the integral. For a finite family
+measures of the sets `{x | P k x}`, by exchanging the sum and the integral. For a countable family
 of arbitrary sets, Markov's inequality bounds the outer measure of points in more than `k` sets
 by the sum of their outer measures divided by `k + 1`.
 
 ## Main statements
 
 * `MeasureTheory.lintegral_encard_setOf_eq_tsum`: `∫⁻ x, #{k | P k x} ∂μ = ∑' k, μ {x | P k x}`.
+* `MeasureTheory.measure_lt_encard_setOf_le`: the outer measure of points in more than `k` sets
+  of a countable family is at most the sum of their outer measures divided by `k + 1`.
+* `MeasureTheory.measure_lt_card_filter_le`: the finite-family version using `Finset.filter`.
 * `MeasureTheory.lintegral_enat_eq_tsum`: `∫⁻ x, (f x : ℝ≥0∞) ∂μ = ∑' k, μ {x | (k : ℕ∞) < f x}`.
 -/
 
@@ -56,40 +59,50 @@ theorem lintegral_enat_eq_tsum {β : Type*} [MeasurableSpace β] (μ : Measure �
   simp_rw [hcount]
   exact lintegral_encard_setOf_eq_tsum μ hf
 
-open scoped Classical in
-/-- The outer measure of points lying in more than `k` sets of a finite family is at most
+/-- The outer measure of points lying in more than `k` sets of a countable family is at most
 the sum of their outer measures divided by `k + 1`. The sets need not be measurable. -/
-theorem measure_lt_card_filter_le {ι Ω : Type*} [Fintype ι] [MeasurableSpace Ω]
-    {P : Measure Ω} (s : ι → Set Ω) (k : ℕ) :
-    P {ω | k < (Finset.univ.filter fun i ↦ ω ∈ s i).card} ≤
-      (∑ i, P (s i)) / (k + 1 : ℝ≥0∞) := by
+theorem measure_lt_encard_setOf_le {ι Ω : Type*} [Countable ι] [MeasurableSpace Ω]
+    (μ : Measure Ω) (s : ι → Set Ω) (k : ℕ) :
+    μ {ω | (k : ℕ∞) < {i | ω ∈ s i}.encard} ≤
+      (∑' i, μ (s i)) / (k + 1 : ℝ≥0∞) := by
   classical
-  let f (ω : Ω) : ℝ≥0∞ := ∑ i, (toMeasurable P (s i)).indicator (fun _ ↦ 1) ω
-  have hi (i : ι) : Measurable ((toMeasurable P (s i)).indicator (fun _ ↦ (1 : ℝ≥0∞))) :=
-    measurable_const.indicator (measurableSet_toMeasurable P (s i))
-  have hf : Measurable f := Finset.measurable_sum _ fun i _ ↦ hi i
-  have hfi : ∫⁻ ω, f ω ∂P = ∑ i, P (s i) := by
-    rw [lintegral_finsetSum _ fun i _ ↦ hi i]
-    apply Finset.sum_congr rfl
-    intro i _
-    rw [lintegral_indicator_const (measurableSet_toMeasurable P (s i)), one_mul,
-      measure_toMeasurable]
-  have hsub : {ω | k < (Finset.univ.filter fun i ↦ ω ∈ s i).card} ⊆
-      {ω | (k + 1 : ℝ≥0∞) ≤ f ω} := by
-    intro ω hcard
-    have hcount : ((Finset.univ.filter fun i ↦ ω ∈ s i).card : ℝ≥0∞) ≤ f ω := by
+  let f (ω : Ω) : ℝ≥0∞ := {i | ω ∈ toMeasurable μ (s i)}.encard
+  have hf : Measurable f := by
+    have hcount : f = fun ω ↦ ∑' i, (toMeasurable μ (s i)).indicator (fun _ ↦ 1) ω := by
+      funext ω
       dsimp only [f]
-      rw [Finset.card_eq_sum_ones, Nat.cast_sum, Finset.sum_filter]
-      apply Finset.sum_le_sum
-      intro i _
-      by_cases hi : ω ∈ s i
-      · simp [hi, Set.indicator_of_mem (subset_toMeasurable P (s i) hi)]
-      · simp [hi]
-    have hcard' : (k + 1 : ℝ≥0∞) ≤ (Finset.univ.filter fun i ↦ ω ∈ s i).card := by
-      exact_mod_cast Nat.succ_le_of_lt hcard
-    exact hcard'.trans hcount
+      rw [← ENNReal.tsum_indicator_one]
+      exact tsum_congr fun i ↦ by simp only [Set.indicator, Set.mem_ofPred_eq]
+    rw [hcount]
+    simp only [tsum_eq_iSup_sum]
+    exact Measurable.iSup fun t ↦ Finset.measurable_sum t fun i _ ↦
+      measurable_const.indicator (measurableSet_toMeasurable μ (s i))
+  have hfi : ∫⁻ ω, f ω ∂μ = ∑' i, μ (s i) := by
+    simpa only [f, Set.ofPred_mem_eq, measure_toMeasurable] using
+      lintegral_encard_setOf_eq_tsum μ
+        (P := fun i ω ↦ ω ∈ toMeasurable μ (s i))
+        (fun i ↦ measurableSet_toMeasurable μ (s i))
+  have hsub : {ω | (k : ℕ∞) < {i | ω ∈ s i}.encard} ⊆
+      {ω | (k + 1 : ℝ≥0∞) ≤ f ω} := by
+    intro ω hω
+    have hcount : {i | ω ∈ s i}.encard ≤ {i | ω ∈ toMeasurable μ (s i)}.encard :=
+      Set.encard_mono fun i hi ↦ subset_toMeasurable μ (s i) hi
+    have hge := ENat.natCast_add_one_le_iff.mpr (hω.trans_le hcount)
+    simpa [f] using ENat.toENNReal_mono hge
   exact (measure_mono hsub).trans <|
     (meas_ge_le_lintegral_div hf.aemeasurable (by positivity) (by finiteness)).trans_eq
       (by rw [hfi])
+
+/-- The outer measure of points lying in more than `k` sets of a finite family is at most
+the sum of their outer measures divided by `k + 1`. The sets need not be measurable. -/
+theorem measure_lt_card_filter_le {ι Ω : Type*} [Fintype ι] [MeasurableSpace Ω]
+    {P : Measure Ω} (s : ι → Set Ω) [∀ ω i, Decidable (ω ∈ s i)] (k : ℕ) :
+    P {ω | k < (Finset.univ.filter fun i ↦ ω ∈ s i).card} ≤
+      (∑ i, P (s i)) / (k + 1 : ℝ≥0∞) := by
+  have hcount (ω : Ω) : {i | ω ∈ s i} = ↑(Finset.univ.filter fun i ↦ ω ∈ s i) := by
+    ext i
+    simp
+  simpa only [hcount, Set.encard_coe_eq_coe_finsetCard, ENat.natCast_lt_natCast, tsum_fintype]
+    using measure_lt_encard_setOf_le P s k
 
 end MeasureTheory

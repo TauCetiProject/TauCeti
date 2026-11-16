@@ -209,27 +209,6 @@ end take
 
 variable [RCLike 𝕜]
 
-/-- At most `k` coordinates exceed a nonnegative threshold `t` when the squared norm is at
-most `(k + 1) * t²`. -/
-theorem card_filter_lt_norm_le {x : EuclideanSpace 𝕜 ι} {k : ℕ} {t : ℝ}
-    (ht : 0 ≤ t) (hxt : ‖x‖ ^ 2 ≤ (k + 1 : ℝ) * t ^ 2) :
-    (Finset.univ.filter fun i ↦ t < ‖x i‖).card ≤ k := by
-  classical
-  by_contra h
-  let s := Finset.univ.filter fun i ↦ t < ‖x i‖
-  have hcard : k + 1 ≤ s.card := Nat.succ_le_of_lt (Nat.lt_of_not_ge h)
-  have hsum : (s.card : ℝ) * t ^ 2 < ∑ i ∈ s, ‖x i‖ ^ 2 := by
-    calc
-      _ = ∑ _i ∈ s, t ^ 2 := by simp
-      _ < _ := Finset.sum_lt_sum_of_nonempty (Finset.card_pos.mp (by omega)) fun i hi ↦
-        pow_lt_pow_left₀ ((Finset.mem_filter.mp hi).2) ht (by norm_num : 2 ≠ 0)
-  have htotal : ∑ i ∈ s, ‖x i‖ ^ 2 ≤ ‖x‖ ^ 2 := by
-    rw [EuclideanSpace.norm_sq_eq]
-    exact Finset.sum_le_univ_sum_of_nonneg fun _ ↦ sq_nonneg _
-  have hcard' : (k + 1 : ℝ) ≤ s.card := by exact_mod_cast hcard
-  exact (mul_le_mul_of_nonneg_right hcard' (sq_nonneg t)).not_gt
-    (hsum.trans_le (htotal.trans hxt))
-
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
 equivalence `(t, x) ↦ (t, x₀, …, xₙ₋₁)`. This is `Fin.consEquivL` read in Euclidean

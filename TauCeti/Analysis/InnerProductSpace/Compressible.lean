@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 
-import TauCeti.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.Normed.Module.FiniteSpan
 
 /-!
@@ -208,8 +208,8 @@ theorem not_isIncompressibleVector_of_one_le (hρ : 1 ≤ ρ) :
     ¬IsIncompressibleVector k ρ x :=
   fun hx ↦ hx.not_isCompressibleVector (isCompressibleVector_of_one_le hx.norm_eq_one hρ)
 
-/-- An incompressible vector is spread: the coordinates between `a` and `b` carry squared mass
-greater than `ρ² - n a²`, provided at most `k` coordinates exceed `b`. -/
+/-- An incompressible vector is spread: the coordinates with norm in `(a, b]` carry squared mass
+greater than `ρ² - n a²`, provided at most `k` coordinates have norm exceeding `b`. -/
 theorem IsIncompressibleVector.lt_sum_filter_norm (hx : IsIncompressibleVector k ρ x) (hρ : 0 ≤ ρ)
     {a b : ℝ} (hb : (univ.filter fun i ↦ b < ‖x i‖).card ≤ k) :
     ρ ^ 2 - (Fintype.card ι : ℝ) * a ^ 2 <
@@ -239,8 +239,8 @@ theorem IsIncompressibleVector.lt_sum_filter_norm (hx : IsIncompressibleVector k
       _ = _ := by rw [sum_add_distrib]; simp [sum_filter]
   linarith
 
-/-- More than `k` coordinates of an incompressible vector exceed a threshold whose total
-squared mass is at most `ρ²`. -/
+/-- More than `k` coordinates of an incompressible vector have norm exceeding a threshold `a`
+satisfying `n a² ≤ ρ²`. -/
 theorem IsIncompressibleVector.lt_card_filter_norm (hx : IsIncompressibleVector k ρ x) (hρ : 0 ≤ ρ)
     {a : ℝ} (haρ : (Fintype.card ι : ℝ) * a ^ 2 ≤ ρ ^ 2) :
     k < (univ.filter fun i ↦ a < ‖x i‖).card := by
@@ -266,7 +266,7 @@ theorem IsIncompressibleVector.exists_finset_lt_card_and_forall_norm
   have hsqrt : (Real.sqrt (k + 1 : ℝ)) ^ 2 = k + 1 := Real.sq_sqrt hkp.le
   -- Remove the small coordinates from the mass outside the large coordinates.
   have hmass := hx.lt_sum_filter_norm hρ (a := ρ / Real.sqrt (2 * Fintype.card ι))
-    (EuclideanSpace.card_filter_lt_norm_le (k := k) (t := 1 / Real.sqrt (k + 1))
+    (PiLp.card_filter_lt_norm_le (k := k) (t := 1 / Real.sqrt (k + 1))
       (by positivity) (by
       rw [hx.norm_eq_one, div_pow, one_pow, hsqrt]
       exact (mul_one_div_cancel (ne_of_gt hkp)).ge))

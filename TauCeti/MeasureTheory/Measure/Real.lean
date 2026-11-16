@@ -12,7 +12,8 @@ public import Mathlib.MeasureTheory.Measure.Real
 # Elementary real-measure identities and maps
 
 This file records elementary identities for real-valued measures and for measures on the real
-line. Bounds by finite sums divided by a nonzero constant pass from extended to real values.
+line. Bounds by finite sums divided by a nonzero constant pass from extended to real values
+when every measure in the sum is finite.
 The absolute-value map folds the negative half-line onto the positive half-line. Squaring loses
 the sign of a real number
 and nothing else, so it determines a measure on the line as soon as the measure cannot tell the two
@@ -23,6 +24,8 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
 
 ## Main results
 
+* `MeasureTheory.Measure.real_le_sum_div_of_le` — a bound by a finite sum divided by a nonzero
+  constant passes to real-valued measures when each summand is finite;
 * `TauCeti.volume_Ioc_inter_Ioo_of_le_of_le` — the portion of an interval inside a larger open
   interval keeps its full length;
 * `MeasureTheory.Measure.map_abs_eq_restrict_add_restrict` — decomposition of the image under
@@ -46,14 +49,14 @@ open scoped Pointwise ENNReal
 namespace MeasureTheory.Measure
 
 /-- A bound by a finite sum of measures divided by a nonzero constant passes to real-valued
-measures when the measure is finite. -/
-theorem real_le_sum_div_of_le {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι]
-    (P : Measure Ω) [IsFiniteMeasure P] {s : Set Ω} {t : ι → Set Ω} {c : ℝ≥0∞}
-    (hc : c ≠ 0) (h : P s ≤ (∑ i, P (t i)) / c) :
-    P.real s ≤ (∑ i, P.real (t i)) / c.toReal := by
-  simpa [ENNReal.toReal_div, ENNReal.toReal_sum, measureReal_def] using
-    ENNReal.toReal_mono
-      (ENNReal.div_ne_top (ENNReal.sum_ne_top.mpr fun _ _ ↦ measure_ne_top _ _) hc) h
+measures when each summand is finite. -/
+theorem real_le_sum_div_of_le {Ω ι : Type*} [MeasurableSpace Ω]
+    (P : Measure Ω) {I : Finset ι} {s : Set Ω} {t : ι → Set Ω} {c : ℝ≥0∞}
+    (hc : c ≠ 0) (h : P s ≤ (∑ i ∈ I, P (t i)) / c)
+    (ht : ∀ i ∈ I, P (t i) ≠ ∞ := by finiteness) :
+    P.real s ≤ (∑ i ∈ I, P.real (t i)) / c.toReal := by
+  simpa only [ENNReal.toReal_div, ENNReal.toReal_sum ht, measureReal_def] using
+    ENNReal.toReal_mono (ENNReal.div_ne_top (ENNReal.sum_ne_top.mpr ht) hc) h
 
 /-- **The folded law.** Folding keeps the nonnegative half of `μ` in place and reflects its
 negative half onto the positive half-line. -/
