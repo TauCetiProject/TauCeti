@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Parseval
+import TauCeti.Analysis.InnerProductSpace.SingularValues
 
 /-!
 # Continuity, adjoints, one-dimensional values, and orthogonal extensions of the Jacobian `normDet`
@@ -51,6 +53,8 @@ identity.
 * `ContinuousLinearMap.normDet_le_opNorm_pow`,
   `ContinuousLinearMap.normDet_adjoint_le_opNorm_pow`: the Jacobian `f.normDet` is at most
   `‖f‖ ^ dim U`, and the coarea Jacobian `f.adjoint.normDet` is at most `‖f‖ ^ dim F`.
+* `LipschitzOnWith.normDet_adjoint_fderiv_le`, `LipschitzWith.normDet_adjoint_fderiv_le`: the
+  coarea Jacobian `(fderiv ℝ f x)†.normDet` of a `K`-Lipschitz map is at most `K ^ dim F`.
 * `ContinuousLinearMap.normDet_adjoint_eq_norm`: the Jacobian of the adjoint of a linear functional
   is its norm.
 * `LinearMap.normDet_coprod_of_orthogonal`: the Jacobian of a sum of maps with orthogonal ranges
@@ -230,25 +234,15 @@ theorem normDet_le_opNorm_pow {𝕜 U V : Type*} [RCLike 𝕜] [NormedAddCommGro
     f.normDet ≤ ‖f‖ ^ Module.finrank 𝕜 U := by
   let A := (f : U →ₗ[𝕜] V).rangeRestrict
   have hA : (f : U →ₗ[𝕜] V).normDet = A.normDet := (LinearMap.normDet_codRestrict _).symm
+  have hAnorm (x : U) : ‖A x‖ ≤ ‖f‖ * ‖x‖ := by
+    rw [← Submodule.norm_coe, LinearMap.codRestrict_apply, ContinuousLinearMap.coe_coe]
+    exact f.le_opNorm x
   rw [hA, A.normDet_eq_prod_singularValues]
   calc ∏ i ∈ Finset.range (Module.finrank 𝕜 U), A.singularValues i
       ≤ ∏ _ ∈ Finset.range (Module.finrank 𝕜 U), ‖f‖ := by
-        gcongr with i hi
+        gcongr with i
         · exact fun i _ ↦ A.singularValues_nonneg i
-        obtain ⟨v, hv⟩ := (A.hasEigenvalue_adjoint_comp_self_sq_singularValues
-          (Finset.mem_range.1 hi)).exists_hasEigenvector
-        have hsq : A.singularValues i ^ 2 * ‖v‖ ^ 2 ≤ ‖f‖ ^ 2 * ‖v‖ ^ 2 := by
-          have hinner : RCLike.re (inner 𝕜 ((A.adjoint ∘ₗ A) v) v) = ‖f v‖ ^ 2 := by
-            rw [LinearMap.comp_apply, LinearMap.adjoint_inner_left, inner_self_eq_norm_sq]
-            rfl
-          have heig : RCLike.re (inner 𝕜 ((A.adjoint ∘ₗ A) v) v) =
-              A.singularValues i ^ 2 * ‖v‖ ^ 2 := by
-            simp [hv.apply_eq_smul, inner_smul_left, inner_self_eq_norm_sq_to_K]
-          calc A.singularValues i ^ 2 * ‖v‖ ^ 2 = ‖f v‖ ^ 2 := heig.symm.trans hinner
-            _ ≤ (‖f‖ * ‖v‖) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (f.le_opNorm v) 2
-            _ = ‖f‖ ^ 2 * ‖v‖ ^ 2 := mul_pow _ _ _
-        exact (sq_le_sq₀ (A.singularValues_nonneg i) (norm_nonneg f)).1
-          (le_of_mul_le_mul_right hsq (pow_pos (norm_pos_iff.2 hv.2) 2))
+        · exact A.singularValues_le_of_norm_apply_le (norm_nonneg f) hAnorm i
     _ = ‖f‖ ^ Module.finrank 𝕜 U := by simp
 
 /-- The coarea Jacobian `f.adjoint.normDet` of a continuous linear map `f : E →L[𝕜] F` into a
@@ -259,6 +253,24 @@ theorem normDet_adjoint_le_opNorm_pow {𝕜 E F : Type*} [RCLike 𝕜] [NormedAd
     [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [CompleteSpace F] (f : E →L[𝕜] F) :
     f.adjoint.normDet ≤ ‖f‖ ^ Module.finrank 𝕜 F :=
   f.adjoint.normDet_le_opNorm_pow.trans_eq (by rw [LinearIsometryEquiv.norm_map])
+
+/-- If `f` is `K`-Lipschitz on a neighbourhood `U ∈ 𝓝 x`, then its coarea Jacobian at `x` is
+bounded by `K ^ dim F`. The domain need only be complete, not finite-dimensional. -/
+theorem _root_.LipschitzOnWith.normDet_adjoint_fderiv_le {E F : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] {K : ℝ≥0} {f : E → F} {U : Set E} {x : E}
+    (hf : LipschitzOnWith K f U) (hU : U ∈ 𝓝 x) :
+    (fderiv ℝ f x).adjoint.normDet ≤ (K : ℝ) ^ Module.finrank ℝ F :=
+  (fderiv ℝ f x).normDet_adjoint_le_opNorm_pow.trans
+    (pow_le_pow_left₀ (norm_nonneg _) (norm_fderiv_le_of_lipschitzOn ℝ hU hf) _)
+
+/-- The coarea Jacobian `(fderiv ℝ f x)†.normDet` of a `K`-Lipschitz map `f : E → F` is everywhere
+at most `K ^ dim F`. The domain need only be complete, not finite-dimensional. -/
+theorem _root_.LipschitzWith.normDet_adjoint_fderiv_le {E F : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] {K : ℝ≥0} {f : E → F} (hf : LipschitzWith K f) (x : E) :
+    (fderiv ℝ f x).adjoint.normDet ≤ (K : ℝ) ^ Module.finrank ℝ F :=
+  hf.lipschitzOnWith.normDet_adjoint_fderiv_le Filter.univ_mem
 
 omit [FiniteDimensional ℝ V] in
 /-- Around an injective linear map `B` there is a ball on which the antilipschitz constant is

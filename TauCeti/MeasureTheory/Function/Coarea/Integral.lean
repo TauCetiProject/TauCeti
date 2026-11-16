@@ -19,6 +19,10 @@ For a map differentiable with surjective derivative on a Lebesgue-measurable set
 an extended nonnegative almost-everywhere measurable weight along its fibers gives the integral of
 that weight times the coarea Jacobian. The fibers carry normalized Euclidean Hausdorff measure.
 No Lipschitz hypothesis outside the set, or finiteness of either integral, is required.
+Adapting `MeasureTheory.map_withDensity_abs_det_fderiv_eq_addHaar` in
+`Mathlib.MeasureTheory.Function.Jacobian`, this yields a Radon-Nikodym pushforward identity:
+pushing forward `(volume.restrict s).withDensity (ENNReal.ofReal (J f ·) * w ·)` under `f` produces
+`volume` weighted by the fiber Hausdorff integrals of `w`.
 
 The unweighted input is the regular-part coarea identity in
 `TauCeti.MeasureTheory.Function.Coarea.Basic`. Measurable-function induction and ambient-to-fiber
@@ -33,6 +37,9 @@ preimage from the level integrals `∫_{{h = t} ∩ {Dh ≠ 0}} ‖Dh‖⁻¹ dH
 
 * `MeasureTheory.lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber`: weighted
   coarea on the regular part.
+* `MeasureTheory.map_withDensity_normDet_adjoint_fderiv_mul_eq_withDensity_setLIntegral_fiber`,
+  `map_withDensity_normDet_adjoint_fderiv_eq_withDensity_euclideanHausdorffMeasure_inter_preimage`:
+  Radon-Nikodym pushforward forms of regular-part coarea.
 * `MeasureTheory.volume_preimage_inter_setOf_fderiv_ne_zero`: the volume of the regular part of
   `h⁻¹(I)` is the integral of the level integrals over `I`.
 
@@ -132,6 +139,58 @@ theorem lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
   rw [hlhs, hrhs]
   exact lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber_of_measurable
     hs hd hsurj hg.measurable_mk
+
+/-- Disintegration of Jacobian-weighted volume on the regular locus (adapting
+`MeasureTheory.map_withDensity_abs_det_fderiv_eq_addHaar` in
+`Mathlib.MeasureTheory.Function.Jacobian`): pushing forward
+`(volume.restrict s).withDensity (ENNReal.ofReal (J f ·) * w ·)` under `f` produces `volume`
+weighted by the fiber Hausdorff integrals of `w`. -/
+theorem map_withDensity_normDet_adjoint_fderiv_mul_eq_withDensity_setLIntegral_fiber
+    (hs : NullMeasurableSet s volume) (hd : ∀ x ∈ s, DifferentiableAt ℝ f x)
+    (hsurj : ∀ x ∈ s, Surjective (fderiv ℝ f x)) {w : E → ℝ≥0∞}
+    (hw : AEMeasurable w (volume.restrict s)) :
+    Measure.map f ((volume.restrict s).withDensity
+        fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x) =
+      volume.withDensity fun y ↦
+        ∫⁻ x in s ∩ f ⁻¹' {y}, w x ∂μHE[finrank ℝ E - finrank ℝ F] := by
+  have h'f : AEMeasurable f (volume.restrict s) :=
+    ContinuousOn.aemeasurable₀ (fun x hx ↦ (hd x hx).continuousAt.continuousWithinAt) hs
+  have h''f : AEMeasurable f ((volume.restrict s).withDensity
+      fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x) :=
+    h'f.mono_ac (withDensity_absolutelyContinuous _ _)
+  apply Measure.ext fun t ht ↦ ?_
+  have h't : NullMeasurableSet (f ⁻¹' t) (volume.restrict s) := h'f.nullMeasurableSet_preimage ht
+  rw [map_apply_of_aemeasurable h''f ht, withDensity_apply₀ _ h't, withDensity_apply _ ht,
+    restrict_restrict₀ h't,
+    lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
+      ((nullMeasurableSet_restrict hs).1 h't) (fun x hx ↦ hd x hx.2) (fun x hx ↦ hsurj x hx.2)
+      (hw.mono_measure (Measure.restrict_mono inter_subset_right le_rfl)),
+    ← lintegral_indicator ht]
+  refine lintegral_congr fun y ↦ ?_
+  by_cases hy : y ∈ t
+  · have hset : (f ⁻¹' t ∩ s) ∩ f ⁻¹' {y} = s ∩ f ⁻¹' {y} := by
+      ext x
+      simp only [mem_inter_iff, mem_preimage, mem_singleton_iff]
+      exact ⟨fun h ↦ ⟨h.1.2, h.2⟩, fun h ↦ ⟨⟨h.2.symm ▸ hy, h.1⟩, h.2⟩⟩
+    rw [indicator_of_mem hy, hset]
+  · have hset : (f ⁻¹' t ∩ s) ∩ f ⁻¹' {y} = ∅ := by
+      ext x
+      simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, mem_empty_iff_false, iff_false]
+      exact fun h ↦ hy (h.2 ▸ h.1.1)
+    rw [indicator_of_notMem hy, hset, Measure.restrict_empty, lintegral_zero_measure]
+
+/-- Unweighted Radon-Nikodym form of coarea on the regular locus: pushing forward
+`(volume.restrict s).withDensity (ENNReal.ofReal (J f ·))` under `f` yields `volume` weighted by the
+fiber Hausdorff measures `y ↦ μHE[dim E - dim F] (s ∩ f ⁻¹' {y})`. -/
+theorem
+    map_withDensity_normDet_adjoint_fderiv_eq_withDensity_euclideanHausdorffMeasure_inter_preimage
+    (hs : NullMeasurableSet s volume) (hd : ∀ x ∈ s, DifferentiableAt ℝ f x)
+    (hsurj : ∀ x ∈ s, Surjective (fderiv ℝ f x)) :
+    Measure.map f ((volume.restrict s).withDensity
+        fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet) =
+      volume.withDensity fun y ↦ μHE[finrank ℝ E - finrank ℝ F] (s ∩ f ⁻¹' {y}) := by
+  simpa using map_withDensity_normDet_adjoint_fderiv_mul_eq_withDensity_setLIntegral_fiber hs hd
+    hsurj (aemeasurable_const (b := (1 : ℝ≥0∞)))
 
 /-- **The coarea formula for the regular part of a preimage.** For every function `h` and
 measurable set `I`, the volume of the regular part `h⁻¹(I) ∩ {Dh ≠ 0}` is the integral over `I`
