@@ -11,6 +11,8 @@ public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Option
 public import TauCeti.Data.Finsupp.Order
 
+import Mathlib.Data.Nat.Digits.Lemmas
+
 /-!
 # Weights of finitely supported functions
 
@@ -66,6 +68,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   vectors of degree `n` form a fintype, enumerated by `Finset.finsuppAntidiag`.
 * `Finsupp.weight_vecCons_one`, `Finsupp.injOn_weight_vecCons_one`: the weight `![1, B]` sends
   `μ : Fin 2 →₀ ℕ` to `μ 0 + B * μ 1`, and is injective on the exponents with `μ 0 < B`.
+* `Finsupp.injOn_weight_pow`: the base-`B` weight `i ↦ B ^ (i : ℕ)` on `Fin m →₀ ℕ` is injective
+  on the box `{d | ∀ i, d i < B}` of exponent vectors with all entries below `B`.
 * `Finsupp.finite_weightedStrip`: the weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` is
   finite. Polynomials in `Z = X 0` and `W = X 1` supported on it have `Z`-degree below `B`, which
   is the condition under which the power substitution `Z ↦ X, W ↦ X ^ B` is injective.
@@ -300,6 +304,22 @@ theorem injOn_weight_vecCons_one (B : ℕ) :
     simpa [Nat.add_mul_div_left _ _ hB, Nat.div_eq_of_lt hμ, Nat.div_eq_of_lt hν] using
       congrArg (· / B) h
   exact Finsupp.ext (Fin.forall_fin_two.mpr ⟨h0, h1⟩)
+
+/-- The base-`B` weight `i ↦ B ^ (i : ℕ)` is injective on the box `{d : Fin m →₀ ℕ | ∀ i, d i < B}`
+of exponent vectors whose entries are all below `B`. For `B ≥ 2` this is uniqueness of base-`B`
+digit representations; for `B ≤ 1` the box is a subsingleton. -/
+theorem injOn_weight_pow (m B : ℕ) :
+    Set.InjOn (weight fun i : Fin m ↦ B ^ (i : ℕ)) {d : Fin m →₀ ℕ | ∀ i, d i < B} := by
+  intro d hd e he h
+  simp only [Set.mem_ofPred_eq] at hd he
+  by_cases hB : 1 < B
+  · have hfn : (d : Fin m → ℕ) = e :=
+      List.ofFn_injective (Nat.ofDigits_inj_of_len_eq hB (by simp) (by simpa using hd)
+        (by simpa using he) <| by
+          simpa [Nat.ofDigits_eq_sum_mapIdx, List.mapIdx_eq_ofFn, List.sum_ofFn,
+            weight_apply, Finsupp.sum_fintype] using h)
+    exact Finsupp.ext (congrFun hfn)
+  · exact Finsupp.ext fun i ↦ by have := hd i; have := he i; omega
 
 /-- The weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` of two-variable exponents is
 finite. It is empty when `B = 0`; otherwise both weights are nonzero. -/
