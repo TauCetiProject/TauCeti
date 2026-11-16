@@ -99,6 +99,18 @@ theorem riemannianVolumeForm_apply_orthonormal
   rw [riemannianVolumeForm_def]
   exact Orientation.volumeFormL_apply_orthonormal _ b hb
 
+/-- The Riemannian volume form takes value `1` on a positively oriented tangent `Module.Basis`
+whose vectors are orthonormal. -/
+theorem riemannianVolumeForm_apply_of_orthonormal
+    (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (b : Module.Basis (Fin m) ℝ (TangentSpace I x))
+    (hb : b.orientation = Manifold.Orientation.orientationAt o x)
+    (horth : Orthonormal ℝ b) :
+    riemannianVolumeForm o x b = 1 := by
+  rw [← b.coe_toOrthonormalBasis horth]
+  exact riemannianVolumeForm_apply_orthonormal o x (b.toOrthonormalBasis horth)
+    (by rwa [b.toBasis_toOrthonormalBasis])
+
 /-- The Riemannian volume form has absolute value one on every orthonormal basis. -/
 theorem abs_riemannianVolumeForm_apply_orthonormal
     (o : Manifold.Orientation I M (Fin m)) (x : M)
@@ -150,6 +162,35 @@ theorem eq_riemannianVolumeForm_of_apply_orthonormal
   let := o.fact_finrank_tangentSpace x
   rw [riemannianVolumeForm_def]
   exact Orientation.eq_volumeFormL_of_apply_orthonormal _ ω b hb hω
+
+/-- A top form taking value `1` on a positively oriented tangent `Module.Basis` whose vectors are
+orthonormal is the Riemannian volume form. -/
+theorem eq_riemannianVolumeForm_of_apply_of_orthonormal
+    (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (ω : TangentSpace I x [⋀^Fin m]→L[ℝ] ℝ)
+    (b : Module.Basis (Fin m) ℝ (TangentSpace I x))
+    (hb : b.orientation = Manifold.Orientation.orientationAt o x)
+    (horth : Orthonormal ℝ b) (hω : ω b = 1) :
+    ω = riemannianVolumeForm o x :=
+  eq_riemannianVolumeForm_of_apply_orthonormal o x ω (b.toOrthonormalBasis horth)
+    (by rwa [b.toBasis_toOrthonormalBasis]) (by rwa [b.coe_toOrthonormalBasis])
+
+/-- At every point of an oriented Riemannian manifold with nonempty orientation index `ι`, there
+exists a positively oriented tangent `Module.Basis` whose vectors are orthonormal. -/
+theorem Manifold.Orientation.exists_basis_orientationAt_eq_and_orthonormal
+    {ι : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι]
+    (o : Manifold.Orientation I M ι) (x : M) :
+    ∃ b : Module.Basis ι ℝ (TangentSpace I x),
+      b.orientation = o.orientationAt x ∧ Orthonormal ℝ b := by
+  let : FiniteDimensional ℝ (TangentSpace I x) :=
+    Module.finite_of_finrank_pos (o.finrank_tangentSpace_eq x ▸ Fintype.card_pos)
+  let b := ((stdOrthonormalBasis ℝ (TangentSpace I x)).reindex
+    (Fintype.equivFinOfCardEq (o.finrank_tangentSpace_eq x).symm).symm).adjustToOrientation
+    (o.orientationAt x)
+  refine ⟨b.toBasis,
+    ((stdOrthonormalBasis ℝ (TangentSpace I x)).reindex _).orientation_adjustToOrientation _, ?_⟩
+  rw [b.coe_toBasis]
+  exact b.orthonormal
 
 open scoped Classical in
 /-- In dimension zero, the Riemannian volume form evaluates to `1` or `-1` according to whether the

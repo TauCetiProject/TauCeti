@@ -69,9 +69,9 @@ sources to Harvey–Lawson's homological volume-minimization theorem (whereas on
 * R. Harvey and H. B. Lawson, *Calibrated geometries*, Acta Math. **148** (1982), 47–157,
   Theorem II.4.2.
 * D. Joyce, *Lectures on special Lagrangian geometry*, in *Global Theory of Minimal Surfaces*,
-  Clay Math. Proc. **2** (2005), arXiv:math/0111111v3, Theorem 2.2.
+  Clay Math. Proc. **2** (2005), arXiv:math/0111111v3, Section 2.1.
 * R. C. McLean, *Deformations of calibrated submanifolds*, Comm. Anal. Geom. **6** (1998), 705–747,
-  Section 2 (smooth-immersion formulation of the homological volume bound).
+  Section 1, p. 706.
 -/
 
 public section
@@ -116,11 +116,8 @@ theorem abs_mpullback_apply_le_abs_riemannianVolumeForm {k : ℕ}
       (finCongr (by simpa using o.finrank_tangentSpace_eq x))
   have hφb : |mpullback I' I f φ x b.toBasis| ≤ 1 := by
     rw [mpullback_apply, b.coe_toBasis]
-    exact hcomass (f x) (mfderiv I' I f x ∘ b) fun i j ↦ by
-      dsimp only [Function.comp_apply]
-      rw [← ContMDiffRiemannianMetric.pullback_inner,
-        ← ContMDiffRiemannianMetric.inner_riemannianBundle]
-      exact orthonormal_iff_ite.mp b.orthonormal i j
+    exact hcomass (f x) (mfderiv I' I f x ∘ b)
+      ((g.orthonormal_pullback_iff f (by simpa using hf) hinj x b).1 b.orthonormal)
   have hvolb : |riemannianVolumeForm o x b.toBasis| = 1 := by
     rw [b.coe_toBasis]
     exact abs_riemannianVolumeForm_apply_orthonormal o x b
@@ -306,16 +303,9 @@ theorem integralTopForm_mpullback_eq_immersionVolume_iff_isCalibratedImmersion [
     have hle : φ (f x) (mfderiv I' I f x ∘ b) ≤ 1 :=
       (le_abs_self _).trans (hcomass (f x) (mfderiv I' I f x ∘ b) horth)
     have hlt : φ (f x) (mfderiv I' I f x ∘ b) < 1 := lt_of_le_of_ne hle hne
-    have hb_orth : Orthonormal ℝ b := orthonormal_iff_ite.2 fun i j ↦ by
-      rw [ContMDiffRiemannianMetric.inner_riemannianBundle,
-        ContMDiffRiemannianMetric.pullback_inner]
-      exact horth i j
-    let b' := b.toOrthonormalBasis hb_orth
-    have hb' : b'.toBasis.orientation = o.orientationAt x := by
-      rwa [b.toBasis_toOrthonormalBasis]
-    have hvol_b : riemannianVolumeForm o x b = 1 := by
-      rw [← b.coe_toOrthonormalBasis]
-      exact riemannianVolumeForm_apply_orthonormal o x b' hb'
+    have hvol_b : riemannianVolumeForm o x b = 1 :=
+      riemannianVolumeForm_apply_of_orthonormal o x b hb
+        ((g.orthonormal_pullback_iff f (by simpa using hf) hinj x b).2 horth)
     have hpos_val : 0 < (riemannianVolumeForm o - mpullback I' I f φ) x b := by
       rw [Pi.sub_apply, ContinuousAlternatingMap.sub_apply, hvol_b, mpullback_apply]
       exact sub_pos.2 hlt
@@ -349,7 +339,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- **The fundamental theorem of calibrations**: an oriented immersion `f : N → M` calibrated by a
 smooth calibration `φ` has `immersionVolume` at most that of every compact oriented immersion
 `f' : N' → M` (allowing boundary or corners) whose `integralTopForm` periods agree with those of `f`
-on every smooth closed `k`-form `η` (Harvey–Lawson 1982, Theorem II.4.2; McLean 1998, Section 2).
+on every smooth closed `k`-form `η` (Harvey–Lawson 1982, Theorem II.4.2; McLean 1998, Section 1,
+p. 706).
 Holds in every degree `k : ℕ`, including degree zero. When `N` is also compact (`[CompactSpace N]`),
 both sides equal the total Riemannian volumes of `f^* g` and `f'^* g`
 (`immersionVolume_eq_riemannianTotalVolume`), recovering Riemannian volume minimization within a

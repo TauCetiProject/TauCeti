@@ -42,8 +42,9 @@ the metric that a manifold with a geometric structure receives through its chart
   `C^n` at `f x₀`, along a map `f` that is `C^(n+1)` at `x₀`, is a `C^n` section at `x₀`.
 * `Bundle.ContMDiffRiemannianMetric.contMDiffAt_pullback`: the special case of a `C^n` Riemannian
   metric.
-* `Bundle.ContMDiffRiemannianMetric.pullback`: the `C^n` Riemannian metric obtained from an
-  immersion by pulling back the target metric.
+* `Bundle.ContMDiffRiemannianMetric.pullback` and
+  `Bundle.ContMDiffRiemannianMetric.orthonormal_pullback_iff`: the `C^n` Riemannian metric obtained
+  from an immersion by pulling back the target metric, and its orthonormality criterion.
 * `Bundle.ContMDiffRiemannianMetric.pullback_id`,
   `Bundle.ContMDiffRiemannianMetric.pullback_comp_inner`, and
   `Bundle.ContMDiffRiemannianMetric.pullback_comp`: the functoriality laws for pullback metrics.
@@ -278,6 +279,23 @@ theorem pullback_inner
     (g.pullback f hf hinj).inner x v w =
       g.inner (f x) (mfderiv I J f x v) (mfderiv I J f x w) :=
   (rfl)
+
+/-- A family of tangent vectors at `x` is orthonormal for the pullback metric
+`g.pullback f hf hinj` if and only if its image under `mfderiv I J f x` is orthonormal for `g` at
+`f x`. -/
+theorem orthonormal_pullback_iff {ι : Type*} [DecidableEq ι]
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) (f : M → N)
+    (hf : ContMDiff I J (n + 1) f)
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x)) (x : M)
+    (v : ι → TangentSpace I x) :
+    (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) :=
+       ⟨(g.pullback f hf hinj).toRiemannianMetric⟩
+     Orthonormal ℝ v) ↔
+      ∀ i j, g.inner (f x) (mfderiv I J f x (v i)) (mfderiv I J f x (v j)) =
+        if i = j then 1 else 0 := by
+  let : RiemannianBundle (fun y : M ↦ TangentSpace I y) :=
+    ⟨(g.pullback f hf hinj).toRiemannianMetric⟩
+  simp only [orthonormal_iff_ite, inner_riemannianBundle, pullback_inner]
 
 /-- Pulling back along equal maps gives equal metrics, whatever the regularity and injectivity
 proofs supplied. -/
