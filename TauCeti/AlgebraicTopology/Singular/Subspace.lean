@@ -40,6 +40,17 @@ lemma mem_range_toSSet_subtypeVal_iff (S : Set X) (n : SimplexCategoryᵒᵖ)
   rw [ConcreteCategory.hom_ofHom,
     show Set.range (⇑(ContinuousMap.subtypeVal S)) = S from Subtype.range_coe]
 
+/-- A singular simplex of an open set `W` comes from the open subset `V ≤ W` exactly when its image
+lies in `V`. -/
+lemma mem_range_toSSet_map_inclusion_iff {M : Type*} [TopologicalSpace M] {V W : Opens M}
+    (h : V ≤ W) (n : SimplexCategoryᵒᵖ) (σ : (toSSet.obj (of W)).obj n) :
+    σ ∈ (SSet.Subcomplex.range
+      (toSSet.map (ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩))).obj n ↔
+      Set.range ((of W).toSSetObjEquiv n σ) ⊆ {x | (x : M) ∈ V} := by
+  rw [Subfunctor.range_obj,
+    IsInducing.mem_range_toSSet_map_app_iff (IsEmbedding.inclusion h).isInducing n σ]
+  exact Iff.of_eq (congrArg _ (Set.range_inclusion h))
+
 section Opens
 
 variable {V : Opens X} {n : SimplexCategoryᵒᵖ}
