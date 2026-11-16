@@ -18,6 +18,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
@@ -570,14 +571,31 @@ theorem contMDiffAt_circle_arg {n : WithTop ℕ∞} {z : Circle} (hz : |Complex.
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
+/-- `Circle.exp : ℝ → S¹` is a smooth local diffeomorphism at every point. -/
+theorem isLocalDiffeomorphAt_circleExp (t : ℝ) :
+    IsLocalDiffeomorphAt 𝓘(ℝ, ℝ) (𝓡 1) 1 Circle.exp t :=
+  isLocalDiffeomorphAt_of_injective_mfderiv
+    (contMDiff_circleExp (m := 1)).contMDiffOn isOpen_univ (Set.mem_univ t)
+    BoundarylessManifold.isInteriorPoint le_rfl (injective_mfderiv_circleExp t)
+    (by simp)
+
 /-- The chain rule for a map `f` of the circle read along `Circle.exp`: the derivative of
 `s ↦ f (exp (s i))` at `t`, as a map out of `ℝ`, is the derivative of `f` at `exp (t i)` after that
 of `Circle.exp` at `t`. -/
-theorem toSpanSingleton_deriv_comp_circleExp {f : Circle → V} {t : ℝ}
-    (hf : MDifferentiableAt (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)) :
+theorem toSpanSingleton_deriv_comp_circleExp {f : Circle → V} {t : ℝ} :
     ContinuousLinearMap.toSpanSingleton ℝ (deriv (f ∘ Circle.exp) t) =
       (mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t) : EuclideanSpace ℝ (Fin 1) →L[ℝ] V).comp
         (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t) := by
+  by_cases hf : MDifferentiableAt (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)
+  swap
+  · -- Neither `f` nor `f ∘ Circle.exp` is differentiable, so both sides are zero.
+    have hγ : ¬ DifferentiableAt ℝ (f ∘ Circle.exp) t := fun h ↦ hf
+      (((isLocalDiffeomorphAt_circleExp t).mdifferentiableAt_comp_iff one_ne_zero).1
+        (mdifferentiableAt_iff_differentiableAt.2 h))
+    rw [deriv_zero_of_not_differentiableAt hγ, mfderiv_zero_of_not_mdifferentiableAt hf]
+    ext
+    simp
+    rfl
   have hexp := (contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero (x := t)
   have hγ : DifferentiableAt ℝ (f ∘ Circle.exp) t :=
     mdifferentiableAt_iff_differentiableAt.mp (hf.comp t hexp)
@@ -597,7 +615,7 @@ theorem toSpanSingleton_deriv_chart_comp_circleExp {M : Type*} [TopologicalSpace
         ((mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)).comp (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t)) := by
   have hφd : MDifferentiableAt 𝓘(ℝ, V) 𝓘(ℝ, V) φ (f (Circle.exp t)) :=
     (contMDiffAt_of_mem_maximalAtlas hφ hft).mdifferentiableAt hn
-  have h := toSpanSingleton_deriv_comp_circleExp (f := φ ∘ f) (t := t) (hφd.comp _ hf)
+  have h := toSpanSingleton_deriv_comp_circleExp (f := φ ∘ f) (t := t)
   rw [mfderiv_comp _ hφd hf] at h
   exact h
 
@@ -666,7 +684,7 @@ theorem deriv_comp_circleExp_ne_zero_and_range_mfderiv {f : Circle → V} {t : �
   have he_surj : Surjective e := surjective_mfderiv_circleExp t
   have hD_inj : Injective D := hinj
   have hD : ContinuousLinearMap.toSpanSingleton ℝ (deriv (f ∘ Circle.exp) t) = D.comp e :=
-    toSpanSingleton_deriv_comp_circleExp (mdifferentiableAt_of_mfderiv_injective hinj)
+    toSpanSingleton_deriv_comp_circleExp
   have hDe : D (e 1) = deriv (f ∘ Circle.exp) t := by
     simpa using (congrArg (fun L => L 1) hD).symm
   refine ⟨fun h0 => one_ne_zero (he_inj (hD_inj (by rw [hDe, h0, map_zero, map_zero]))), ?_⟩
@@ -679,26 +697,23 @@ theorem deriv_comp_circleExp_ne_zero_and_range_mfderiv {f : Circle → V} {t : �
 /-- **The velocity along `Circle.exp` determines the derivative**, for maps of the circle into a
 real normed space. -/
 theorem mfderiv_eq_of_deriv_comp_circleExp_eq {f g : Circle → V} {t : ℝ}
-    (hf : MDifferentiableAt (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t))
-    (hg : MDifferentiableAt (𝓡 1) 𝓘(ℝ, V) g (Circle.exp t))
     (h : deriv (f ∘ Circle.exp) t = deriv (g ∘ Circle.exp) t) :
     mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t) = mfderiv (𝓡 1) 𝓘(ℝ, V) g (Circle.exp t) := by
-  have hD := (toSpanSingleton_deriv_comp_circleExp hf).symm.trans
-    (h ▸ toSpanSingleton_deriv_comp_circleExp hg)
+  have hD := (toSpanSingleton_deriv_comp_circleExp (f := f) (t := t)).symm.trans
+    (h ▸ toSpanSingleton_deriv_comp_circleExp (f := g) (t := t))
   refine ContinuousLinearMap.ext fun τ => ?_
   obtain ⟨s, rfl⟩ := surjective_mfderiv_circleExp t τ
   exact congrArg (fun L : ℝ →L[ℝ] V => L s) hD
 
-/-- A map `f` of the circle, differentiable at `exp (t i)`, has injective derivative there as soon
+/-- A map `f` of the circle has injective derivative at `exp (t i)` as soon
 as the curve `s ↦ f (exp (s i))` has nonzero derivative at `t`. -/
 theorem injective_mfderiv_of_deriv_comp_circleExp_ne_zero {f : Circle → V} {t : ℝ}
-    (hf : MDifferentiableAt (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t))
     (ht : deriv (f ∘ Circle.exp) t ≠ 0) :
     Injective (mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)) := by
   set D : EuclideanSpace ℝ (Fin 1) →L[ℝ] V := mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)
   set e : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t
   have hD : ContinuousLinearMap.toSpanSingleton ℝ (deriv (f ∘ Circle.exp) t) = D.comp e :=
-    toSpanSingleton_deriv_comp_circleExp hf
+    toSpanSingleton_deriv_comp_circleExp
   refine (injective_iff_map_eq_zero D).mpr fun v hv => ?_
   -- Every tangent vector at `exp (t i)` is `e s` for some `s : ℝ`, and the chain rule sends it to
   -- `s` times the derivative of the curve.
@@ -725,7 +740,8 @@ theorem smul_deriv_coe_comp_circleExp
         (mfderiv (𝓡 1) (𝓡 n) f (Circle.exp t) (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t s)) := by
   have hc : MDifferentiableAt (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) (f (Circle.exp t)) :=
     (contMDiff_coe_sphere (m := 1)).mdifferentiableAt one_ne_zero
-  have h := DFunLike.congr_fun (toSpanSingleton_deriv_comp_circleExp (hc.comp _ hf)) s
+  have h := DFunLike.congr_fun (toSpanSingleton_deriv_comp_circleExp
+    (f := ((↑) : sphere (0 : E) 1 → E) ∘ f) (t := t)) s
   rw [ContinuousLinearMap.toSpanSingleton_apply] at h
   refine h.trans ?_
   rw [← mvfderiv_comp_apply _ hc hf, mvfderiv_apply_eq_mfderiv_apply]
@@ -734,13 +750,20 @@ theorem smul_deriv_coe_comp_circleExp
 
 /-- The velocity of a loop in a sphere, read along `Circle.exp` in the ambient space, is tangent to
 the sphere: it is orthogonal to the point of the loop. -/
-theorem inner_deriv_coe_comp_circleExp_eq_zero
-    (hf : MDifferentiableAt (𝓡 1) (𝓡 n) f (Circle.exp t)) :
+theorem inner_deriv_coe_comp_circleExp_eq_zero :
     ⟪(f (Circle.exp t) : E), deriv (fun s => (f (Circle.exp s) : E)) t⟫_ℝ = 0 := by
-  rw [← one_smul ℝ (deriv _ t), smul_deriv_coe_comp_circleExp hf]
-  refine Submodule.inner_right_of_mem_orthogonal (Submodule.mem_span_singleton_self _) ?_
-  rw [← range_mvfderiv_subtypeVal (n := n)]
-  exact LinearMap.mem_range_self _ _
+  by_cases hF : DifferentiableAt ℝ (fun s => (f (Circle.exp s) : E)) t
+  · -- The squared norm of the loop is constant, so its derivative vanishes.
+    have h := hF.hasDerivAt.inner ℝ hF.hasDerivAt
+    have hc : (fun s => ⟪(f (Circle.exp s) : E), (f (Circle.exp s) : E)⟫_ℝ) = fun _ => 1 := by
+      funext s
+      rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere (f (Circle.exp s))]
+      norm_num
+    rw [hc] at h
+    have h0 := h.unique (hasDerivAt_const t (1 : ℝ))
+    rw [real_inner_comm (f (Circle.exp t) : E)] at h0
+    linarith
+  · rw [deriv_zero_of_not_differentiableAt hF, inner_zero_right]
 
 /-- A loop in a sphere with injective derivative at `exp (t i)`, read along `Circle.exp` in the
 ambient space, has nonzero velocity at `t`. -/
@@ -835,7 +858,7 @@ theorem mfderiv_eq_of_deriv_comp_circleExp_eq_prod {f g : Circle × ℝ → sphe
     congr 1
     · exact mfderiv_eq_of_deriv_coe_comp_circleExp_eq hf₁.fst hg₁.fst
         (congrArg Prod.fst (hline t)) h₁
-    · exact mfderiv_eq_of_deriv_comp_circleExp_eq hf₁.snd hg₁.snd h₂
+    · exact mfderiv_eq_of_deriv_comp_circleExp_eq h₂
   · -- On the line `{exp (θ i)} × ℝ` the two maps agree.
     rw [show (fun z : ℝ => f (Circle.exp θ, z)) = fun z => g (Circle.exp θ, z) from funext hline]
 
