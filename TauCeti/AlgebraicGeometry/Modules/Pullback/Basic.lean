@@ -208,21 +208,18 @@ variable {Z : Scheme.{u}}
 /-- Pullback along a morphism of schemes preserves the structure sheaf: `f^* 𝒪_Y ≅ 𝒪_X`, the
 isomorphism being Mathlib's comparison `SheafOfModules.pullbackObjUnitToUnit`. -/
 def pullbackObjUnitIso (f : X ⟶ Y) : (pullback f).obj (𝟙_ Y.Modules) ≅ 𝟙_ X.Modules :=
-  haveI : (Opens.map f.base).Final := TopologicalSpace.Opens.final_map f.base
   SheafOfModules.pullbackObjUnitIso f.toRingCatSheafHom
 
 /-- The hom of `pullbackObjUnitIso` is Mathlib's structure sheaf comparison map. -/
 @[simp]
 lemma pullbackObjUnitIso_hom (f : X ⟶ Y) :
     (pullbackObjUnitIso f).hom = SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom :=
-  haveI : (Opens.map f.base).Final := TopologicalSpace.Opens.final_map f.base
   SheafOfModules.pullbackObjUnitIso_hom f.toRingCatSheafHom
 
 /-- The transpose of `f^* 𝒪_Y ≅ 𝒪_X` is the map `𝒪_Y ⟶ f_* 𝒪_X` given by `f` on sections. -/
 lemma pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom (f : X ⟶ Y) :
     (pullbackPushforwardAdjunction f).homEquiv _ _ (pullbackObjUnitIso f).hom =
       SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom :=
-  haveI : (Opens.map f.base).Final := TopologicalSpace.Opens.final_map f.base
   SheafOfModules.pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom f.toRingCatSheafHom
 
 /-- The map `𝒪_Z ⟶ (f ≫ g)_* 𝒪_X` given by `f ≫ g` on sections is the composite of the maps given
@@ -245,8 +242,6 @@ lemma pullbackObjUnitIso_id (X : Scheme.{u}) :
 lemma pullbackObjUnitIso_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
     (pullbackComp f g).inv.app _ ≫ (pullback f).map (pullbackObjUnitIso g).hom ≫
       (pullbackObjUnitIso f).hom = (pullbackObjUnitIso (f ≫ g)).hom :=
-  haveI : (Opens.map f.base).Final := TopologicalSpace.Opens.final_map f.base
-  haveI : (Opens.map g.base).Final := TopologicalSpace.Opens.final_map g.base
   SheafOfModules.pullbackObjUnitIso_comp g.toRingCatSheafHom f.toRingCatSheafHom
 
 /-- The composite `𝒪_X ≅ f^* 𝒪_Y ≅ f^* g^* 𝒪_Z ≅ (f ≫ g)^* 𝒪_Z` is the inverse of the
@@ -256,8 +251,6 @@ lemma pullbackObjUnitIso_inv_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
     (pullbackObjUnitIso f).inv ≫ (pullback f).map (pullbackObjUnitIso g).inv ≫
         (pullbackComp f g).hom.app _ =
       (pullbackObjUnitIso (f ≫ g)).inv :=
-  haveI : (Opens.map f.base).Final := TopologicalSpace.Opens.final_map f.base
-  haveI : (Opens.map g.base).Final := TopologicalSpace.Opens.final_map g.base
   SheafOfModules.pullbackObjUnitIso_inv_comp g.toRingCatSheafHom f.toRingCatSheafHom
 
 /-- The canonical identification of a pulled-back structure sheaf is unchanged when the

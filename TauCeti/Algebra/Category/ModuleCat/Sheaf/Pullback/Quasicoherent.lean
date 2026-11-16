@@ -183,7 +183,7 @@ variable {X : TopCat.{u}} (U : Opens X) (R : X.Sheaf RingCat.{u})
 /-- Open-subspace restriction of module sheaves preserves quasi-coherence. -/
 instance isQuasicoherent_sheafOfModulesRestrict [M.IsQuasicoherent] :
     ((U.sheafOfModulesRestrict.{u} R).obj M).IsQuasicoherent :=
-  (SheafOfModules.isQuasicoherent (U.sheafRestrict.obj R)).prop_of_iso
+  (SheafOfModules.isQuasicoherent ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj R)).prop_of_iso
     ((U.sheafOfModulesRestrictIsoPullback.{u} R).app M).symm
     (SheafOfModules.isQuasicoherent_pullback (U.sheafInclusionHom RingCat.{u} R) M)
 
@@ -191,26 +191,28 @@ instance isQuasicoherent_sheafOfModulesRestrict [M.IsQuasicoherent] :
 instance isFiniteType_sheafOfModulesRestrict [M.IsFiniteType] :
     ((U.sheafOfModulesRestrict.{u} R).obj M).IsFiniteType :=
   haveI := SheafOfModules.isFiniteType_pullback (U.sheafInclusionHom RingCat.{u} R) M
-  SheafOfModules.IsFiniteType.of_iso (R := U.sheafRestrict.obj R)
+  SheafOfModules.IsFiniteType.of_iso
+    (R := (U.isOpenEmbedding.sheafPullback RingCat.{u}).obj R)
     ((U.sheafOfModulesRestrictIsoPullback.{u} R).app M).symm
 
 /-- Open-subspace restriction of module sheaves preserves finite presentation. -/
 instance isFinitePresentation_sheafOfModulesRestrict [M.IsFinitePresentation] :
     ((U.sheafOfModulesRestrict.{u} R).obj M).IsFinitePresentation :=
-  (SheafOfModules.isFinitePresentation (U.sheafRestrict.obj R)).prop_of_iso
+  (SheafOfModules.isFinitePresentation
+      ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj R)).prop_of_iso
     ((U.sheafOfModulesRestrictIsoPullback.{u} R).app M).symm
     (SheafOfModules.isFinitePresentation_pullback (U.sheafInclusionHom RingCat.{u} R) M)
 
 /-- Open-subspace restriction of module sheaves preserves local freeness. -/
 instance isLocallyFree_sheafOfModulesRestrict [M.IsLocallyFree] :
     ((U.sheafOfModulesRestrict.{u} R).obj M).IsLocallyFree :=
-  (SheafOfModules.isLocallyFree (U.sheafRestrict.obj R)).prop_of_iso
+  (SheafOfModules.isLocallyFree ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj R)).prop_of_iso
     ((U.sheafOfModulesRestrictIsoPullback.{u} R).app M).symm
     (SheafOfModules.isLocallyFree_pullback (U.sheafInclusionHom RingCat.{u} R) M)
 
 /-- Open-subspace restriction of module sheaves preserves finite local freeness. -/
 theorem isFiniteLocallyFree_sheafOfModulesRestrict (hM : SheafOfModules.isFiniteLocallyFree R M) :
-    SheafOfModules.isFiniteLocallyFree (U.sheafRestrict.obj R)
+    SheafOfModules.isFiniteLocallyFree ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj R)
       ((U.sheafOfModulesRestrict.{u} R).obj M) := by
   obtain ⟨hLF, hFP⟩ := hM
   exact ⟨inferInstance, inferInstance⟩
