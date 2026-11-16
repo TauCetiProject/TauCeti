@@ -30,8 +30,6 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   finitely many `ℝ≥0∞`-valued families is at most the lower limit of their sum.
 * `ENNReal.le_add_of_forall_one_lt_le_add_mul`: if `a ≤ b + t c` for every `t > 1`, then
   `a ≤ b + c`.
-* `TauCeti.le_ofReal_of_forall_pos_le_ofReal`: a bound `X ≤ ENNReal.ofReal (φ ζ)` for every
-  `ζ > 0`, with `φ` continuous from the right at `0`, passes to `ζ = 0`.
 * `TauCeti.truncated_cost_le_add_of_label_eq`: an `ℝ≥0∞`-valued cost truncated at `M` on a
   rectangle varies by at most `η` between points with the same labels.
 -/
@@ -163,13 +161,5 @@ theorem tendsto_ofReal_div_mul_add_mul_enorm_sub {ι F : Type*} [NormedAddCommGr
     simpa [Function.comp_def] using
       (ENNReal.Tendsto.const_mul ((continuous_eNorm.tendsto (0 : F)).comp h0) (Or.inr hM))
   simpa using h1.add h2
-
-/-- A bound `X ≤ ENNReal.ofReal (φ ζ)` for every `ζ > 0`, with `φ` continuous from the right
-at `0`, passes to `ζ = 0`. -/
-theorem le_ofReal_of_forall_pos_le_ofReal {X : ℝ≥0∞} {φ : ℝ → ℝ}
-    (hφ : ContinuousWithinAt φ (Set.Ioi 0) 0)
-    (h : ∀ ζ : ℝ, 0 < ζ → X ≤ ENNReal.ofReal (φ ζ)) : X ≤ ENNReal.ofReal (φ 0) :=
-  ge_of_tendsto (ENNReal.continuous_ofReal.continuousAt.comp_continuousWithinAt hφ)
-    (eventually_nhdsWithin_of_forall fun ζ hζ ↦ h ζ hζ)
 
 end TauCeti

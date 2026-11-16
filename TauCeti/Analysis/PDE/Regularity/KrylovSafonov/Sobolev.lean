@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.PowerDecay
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Sobolev
 import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
-import TauCeti.Topology.Instances.ENNReal
+import TauCeti.Topology.Order.OrderClosed
 
 /-!
 # Power decay for strong supersolutions
@@ -74,14 +74,12 @@ private theorem le_ofReal_mul_rpow_neg_mul_of_forall_div {C ε t : ℝ} (ht : 0 
     {m V : ℝ≥0∞} (hV : V ≠ ∞)
     (h : ∀ ζ : ℝ, 0 < ζ → m ≤ ENNReal.ofReal (C * (t / (1 + 3 * ζ)) ^ (-ε)) * V) :
     m ≤ ENNReal.ofReal (C * t ^ (-ε)) * V := by
-  have hφ : ContinuousAt (fun ζ : ℝ ↦ C * (t / (1 + 3 * ζ)) ^ (-ε) * V.toReal) 0 := by
-    refine (continuousAt_const.mul (ContinuousAt.rpow_const ?_ (Or.inl (by simp [ht.ne'])))).mul
-      continuousAt_const
+  have hφ : ContinuousAt (fun ζ : ℝ ↦ C * (t / (1 + 3 * ζ)) ^ (-ε)) 0 := by
+    refine continuousAt_const.mul (ContinuousAt.rpow_const ?_ (Or.inl (by simp [ht.ne'])))
     exact continuousAt_const.div (by fun_prop) (by norm_num)
-  have hle := le_ofReal_of_forall_pos_le_ofReal hφ.continuousWithinAt fun ζ hζ ↦ by
-    rw [ENNReal.ofReal_mul' ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hV]
-    exact h ζ hζ
-  simpa [ENNReal.ofReal_mul' ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hV] using hle
+  have hg := (ENNReal.continuous_mul_const hV).continuousAt.comp
+    (ENNReal.continuous_ofReal.continuousAt.comp hφ)
+  simpa using hg.continuousWithinAt.le_of_forall_gt_le h
 
 /-- **Power decay of the superlevel sets of a strong supersolution** (Gilbarg–Trudinger,
 Section 9.7; Caffarelli–Cabré, Lemma 4.6). Let `κ > 0`. There are constants `C > 0`, `ε > 0` and
