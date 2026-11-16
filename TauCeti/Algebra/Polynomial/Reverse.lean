@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import Mathlib.Algebra.Polynomial.Inductions
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.RingDivision
 public import Mathlib.Algebra.Polynomial.Taylor
+public import Mathlib.RingTheory.Nilpotent.Defs
+import Mathlib.Algebra.Group.Commute.Units
 import Mathlib.Algebra.Polynomial.BigOperators
+import Mathlib.RingTheory.Nilpotent.Basic
 import TauCeti.Algebra.Polynomial.Taylor
 
 /-!
@@ -57,6 +62,14 @@ the subleading term is read off from the Taylor expansion of `p` at `-a`.
 
 Over a semifield, translating by `τ` and reflecting at a degree bound `d` sends the root `a⁻¹ + τ`
 of `p` to the root `a` of `(taylor τ p).reflect d` (`Polynomial.isRoot_reflect_taylor_iff`).
+
+Reflecting at a degree bound `N ≥ p.natDegree` multiplies `p.reverse` by `X ^ (N - p.natDegree)`
+(`Polynomial.reflect_eq_X_pow_mul_reverse`), and mapping a polynomial with unit leading coefficient
+commutes with reversal (`Polynomial.reverse_map_of_isUnit_leadingCoeff`). When
+`c * p.leadingCoeff = 1`, `1 - C c * p.reverse` factors as `X * (-(C c * p.reverse.divX))`
+(`Polynomial.one_sub_C_mul_reverse_eq_X_mul`, `Polynomial.one_sub_smul_aeval_reverse_eq_mul`), so
+an element `f` of an `R`-algebra at which `p.reverse` is nilpotent is necessarily a unit
+(`Polynomial.isUnit_of_isNilpotent_aeval_reverse`).
 -/
 
 public section
@@ -400,5 +413,56 @@ theorem reverse_C_mul_prod_X_sub_C {K ι : Type*} [Field K] (s : Finset ι) (r :
   rw [Finset.prod_congr rfl hlin]
   simp only [Finset.prod_mul_distrib, ← map_prod]
   rw [← mul_assoc, ← C_mul]
+
+/-- Reflecting `p` at a degree bound `N ≥ p.natDegree` multiplies `p.reverse` by
+`X ^ (N - p.natDegree)`. -/
+theorem reflect_eq_X_pow_mul_reverse [Semiring R] (p : R[X]) {N : ℕ} (hN : p.natDegree ≤ N) :
+    p.reflect N = X ^ (N - p.natDegree) * p.reverse := by
+  have h := reflect_mul (1 : R[X]) p (F := N - p.natDegree) (G := p.natDegree) (by simp) le_rfl
+  rw [one_mul, Nat.sub_add_cancel hN, reflect_one] at h
+  exact h
+
+/-- Mapping a polynomial with invertible leading coefficient commutes with reversal. -/
+theorem reverse_map_of_isUnit_leadingCoeff [Semiring R] [Semiring S] (f : R →+* S) {p : R[X]}
+    (hp : IsUnit p.leadingCoeff) :
+    (p.map f).reverse = p.reverse.map f := by
+  nontriviality S
+  rw [reverse, reverse, natDegree_map_eq_of_isUnit_leadingCoeff f hp, reflect_map]
+
+/-- If `c * p.leadingCoeff = 1`, then `1 - C c * p.reverse = X * (-(C c * p.reverse.divX))`. -/
+theorem one_sub_C_mul_reverse_eq_X_mul [Ring R] {p : R[X]} {c : R}
+    (hc : c * p.leadingCoeff = 1) :
+    1 - C c * p.reverse = X * (-(C c * p.reverse.divX)) := by
+  have hdiv := X_mul_divX_add p.reverse
+  rw [coeff_zero_reverse] at hdiv
+  have hmul := congrArg (C c * ·) hdiv
+  rw [mul_add, ← C_mul, hc, map_one, ← mul_assoc, ← X_mul_C, mul_assoc] at hmul
+  calc 1 - C c * p.reverse = 1 - (X * (C c * p.reverse.divX) + 1) := by rw [hmul]
+    _ = -(X * (C c * p.reverse.divX)) := by rw [add_comm, sub_add_cancel_left]
+    _ = X * (-(C c * p.reverse.divX)) := (mul_neg _ _).symm
+
+/-- If `c * p.leadingCoeff = 1`, evaluating `1 - c • p.reverse` at `f` in an `R`-algebra factors
+as `f * (-(c • aeval f p.reverse.divX))`. -/
+theorem one_sub_smul_aeval_reverse_eq_mul {A : Type*} [CommRing R] [Ring A] [Algebra R A]
+    {p : R[X]} {c : R} (hc : c * p.leadingCoeff = 1) (f : A) :
+    1 - c • aeval f p.reverse = f * (-(c • aeval f p.reverse.divX)) := by
+  simpa only [map_sub, map_one, map_mul, map_neg, aeval_C, aeval_X,
+    Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul] using
+    congrArg (aeval f) (one_sub_C_mul_reverse_eq_X_mul hc)
+
+/-- If `p` has unit leading coefficient and `aeval f p.reverse` is nilpotent in an `R`-algebra,
+then `f` is a unit. -/
+theorem isUnit_of_isNilpotent_aeval_reverse {A : Type*} [CommRing R] [Ring A] [Algebra R A]
+    {p : R[X]} {f : A} (hp : IsUnit p.leadingCoeff) (hnil : IsNilpotent (aeval f p.reverse)) :
+    IsUnit f := by
+  obtain ⟨c, hc⟩ := hp.exists_left_inv
+  have hnil' : IsNilpotent (c • aeval f p.reverse) := by
+    obtain ⟨n, hn⟩ := hnil
+    exact ⟨n, by rw [smul_pow, hn, smul_zero]⟩
+  have hcomm : Commute f (-(c • aeval f p.reverse.divX)) := by
+    have h : Commute f (aeval f p.reverse.divX) := by
+      simpa only [aeval_X] using (Commute.all X p.reverse.divX).map (aeval f)
+    exact (h.smul_right c).neg_right
+  exact (hcomm.isUnit_mul_iff.mp (one_sub_smul_aeval_reverse_eq_mul hc f ▸ hnil'.isUnit_one_sub)).1
 
 end Polynomial

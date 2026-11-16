@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Module.Complement
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm.Banach
 public import TauCeti.Analysis.Normed.Operator.RowCompact.PrModule
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.BaseChange
-import Mathlib.Algebra.Polynomial.Inductions
+import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.Algebra.Ring.SpectralIdempotent
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
@@ -37,12 +37,13 @@ of which `Q*(u)` is a continuous linear automorphism
 
 When the leading coefficient `Q*(0)` of `Q` is a unit, the identity
 `1 - lc(Q)⁻¹ Q*(u) = u * (-lc(Q)⁻¹ Q*.divX(u))` yields two consequences at once: `u` restricts to
-a continuous linear automorphism of the finite summand `range E = ker Q*(u)`
+a continuous linear automorphism of the spectral summand `range E = ker Q*(u)`
 (`ContinuousLinearMap.IsRieszColemanProjection.equivRange`), and `E` factors through `u` so that
 every Riesz–Coleman projection of a row-compact operator is row compact
 (`ContinuousLinearMap.IsRieszColemanProjection.isRowCompact`,
-`ContinuousLinearMap.IsRieszColemanProjection.isPrCompact`), hence has finitely generated
-projective range (`ContinuousLinearMap.IsRieszColemanProjection.finite_range_of_isPrCompact`,
+`ContinuousLinearMap.IsRieszColemanProjection.isPrCompact`); over a complete ultrametric Tate
+ring, the projection of a `(Pr)`-compact operator therefore has finitely generated projective
+range (`ContinuousLinearMap.IsRieszColemanProjection.finite_range_of_isPrCompact`,
 `ContinuousLinearMap.IsRieszColemanProjection.projective_range_of_isPrCompact`).
 
 Riesz–Coleman projections are functorial with respect to arbitrary (not necessarily continuous)
@@ -322,25 +323,7 @@ theorem coe_equivKer_symm_apply (hE : IsRieszColemanProjection u Q E) (x : E.ker
     (hE.equivKer.symm x : M) = hE.inverse x :=
   (rfl)
 
-omit [TauCeti.NormedRing.IsTate R] in
-/-- The polynomial identity `1 - c Q*(X) = X * (-c Q*.divX(X))` when `c` inverts the leading
-coefficient of `Q`. -/
-private theorem one_sub_smul_aeval_reverse_eq_mul (hQ : IsUnit Q.leadingCoeff) :
-    (1 : M →L[R] M) - Ring.inverse Q.leadingCoeff • Polynomial.aeval u Q.reverse =
-      u * (-(Ring.inverse Q.leadingCoeff • Polynomial.aeval u Q.reverse.divX)) := by
-  have hc : Ring.inverse Q.leadingCoeff * Q.leadingCoeff = 1 := Ring.inverse_mul_cancel _ hQ
-  have hpoly : (1 : Polynomial R) - Polynomial.C (Ring.inverse Q.leadingCoeff) * Q.reverse =
-      Polynomial.X * (-(Polynomial.C (Ring.inverse Q.leadingCoeff) * Q.reverse.divX)) := by
-    have hdiv := Polynomial.X_mul_divX_add Q.reverse
-    rw [Polynomial.coeff_zero_reverse] at hdiv
-    have hmul := congrArg (Polynomial.C (Ring.inverse Q.leadingCoeff) * ·) hdiv
-    rw [mul_add, ← Polynomial.C_mul, hc, map_one] at hmul
-    linear_combination hmul
-  simpa only [map_sub, map_one, map_mul, map_neg, Polynomial.aeval_C, Polynomial.aeval_X,
-    Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul] using
-    congrArg (Polynomial.aeval u) hpoly
-
-/-- **Invertibility of `u` on the finite summand.** When `Q` has unit leading coefficient, `u`
+/-- **Invertibility of `u` on the spectral summand.** When `Q` has unit leading coefficient, `u`
 restricts to a continuous linear automorphism of `range E = ker Q*(u)`, with inverse given by
 `-lc(Q)⁻¹ Q*.divX(u)`. -/
 noncomputable def equivRange (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) :
@@ -354,7 +337,7 @@ noncomputable def equivRange (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit 
         (Commute.all Polynomial.X Q.reverse.divX).map (Polynomial.aeval u)
     exact (hcomm.smul_right _).neg_right
   have hmul : (1 : M →L[R] M) - Ring.inverse Q.leadingCoeff • Polynomial.aeval u Q.reverse =
-      u * g := one_sub_smul_aeval_reverse_eq_mul hQ
+      u * g := Polynomial.one_sub_smul_aeval_reverse_eq_mul (Ring.inverse_mul_cancel _ hQ) u
   have happly (x : E.range) : u (g x) = x := by
     have hzero : Polynomial.aeval u Q.reverse x = 0 := by
       have hx : (x : M) ∈ LinearMap.ker ((Polynomial.aeval u Q.reverse : M →L[R] M) : M →ₗ[R] M) :=
@@ -371,13 +354,13 @@ noncomputable def equivRange (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit 
       simpa only [restrict_apply, mul_apply_eq_comp, happly x] using h.symm))
     (fun x ↦ Subtype.ext (happly x))
 
-/-- The finite-summand automorphism acts by `u`. -/
+/-- The spectral-summand automorphism acts by `u`. -/
 @[simp]
 theorem coe_equivRange_apply (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff)
     (x : E.range) : (hE.equivRange hQ x : M) = u x :=
   (rfl)
 
-/-- The inverse of `u` on the finite summand acts by `-lc(Q)⁻¹ Q*.divX(u)`. -/
+/-- The inverse of `u` on the spectral summand acts by `-lc(Q)⁻¹ Q*.divX(u)`. -/
 @[simp]
 theorem coe_equivRange_symm_apply (hE : IsRieszColemanProjection u Q E)
     (hQ : IsUnit Q.leadingCoeff) (x : E.range) :
@@ -400,8 +383,9 @@ multiple of `u` whenever `Q` has unit leading coefficient. -/
 theorem eq_mul_neg_smul_aeval_divX_mul (hE : IsRieszColemanProjection u Q E)
     (hQ : IsUnit Q.leadingCoeff) :
     E = u * (-(Ring.inverse Q.leadingCoeff • Polynomial.aeval u Q.reverse.divX)) * E := by
-  rw [← one_sub_smul_aeval_reverse_eq_mul hQ, sub_mul (α := M →L[R] M), one_mul, smul_mul_assoc,
-    hE.aeval_reverse_mul_eq_zero, smul_zero, sub_zero (G := M →L[R] M)]
+  rw [← Polynomial.one_sub_smul_aeval_reverse_eq_mul (Ring.inverse_mul_cancel _ hQ) u,
+    sub_mul (α := M →L[R] M), one_mul, smul_mul_assoc, hE.aeval_reverse_mul_eq_zero, smul_zero,
+    sub_zero (G := M →L[R] M)]
 
 end IsRieszColemanProjection
 
@@ -469,7 +453,7 @@ theorem semiconj (hE : IsRieszColemanProjection u Q E) (hF : IsRieszColemanProje
   rw [map_sub, map_sub, hfixed, sub_eq_zero] at hzero
   exact hzero.symm
 
-/-- An intertwiner sends the finite spectral summand into the corresponding summand. -/
+/-- An intertwiner sends the spectral summand into the corresponding summand. -/
 theorem mapsTo_range_of_semiconj (hE : IsRieszColemanProjection u Q E)
     (hF : IsRieszColemanProjection v Q F) (f : M →ₗ[R] N) (hf : Function.Semiconj f u v) :
     Set.MapsTo f E.range F.range := by
@@ -701,23 +685,6 @@ variable {J R S : Type*} [TopologicalSpace J] [DiscreteTopology J] [DecidableEq 
   [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
   [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S]
 
-/-- Coefficient extension commutes with polynomial evaluation on endomorphisms of a model space. -/
-@[simp]
-theorem mapCoeffs_aeval (u : C₀(J, R) →L[R] C₀(J, R)) (p : Polynomial R) (f : R →+* S)
-    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
-    (Polynomial.aeval u p).mapCoeffs f hf = Polynomial.aeval (u.mapCoeffs f hf) (p.map f) := by
-  induction p using Polynomial.induction_on' with
-  | add p q hp hq => simp [Polynomial.map_add, hp, hq]
-  | monomial n a => simp [Polynomial.aeval_monomial, Algebra.algebraMap_eq_smul_one]
-
-omit [TauCeti.NormedRing.IsTate R] [IsUltrametricDist S] [CompleteSpace S] in
-/-- Mapping a polynomial with invertible leading coefficient commutes with reversal. -/
-private theorem reverse_map_of_isUnit_leadingCoeff {Q : Polynomial R} (hQ : IsUnit Q.leadingCoeff)
-    (f : R →+* S) : (Q.map f).reverse = Q.reverse.map f := by
-  nontriviality S
-  rw [Polynomial.reverse, Polynomial.reverse,
-    Polynomial.natDegree_map_eq_of_isUnit_leadingCoeff f hQ, Polynomial.reflect_map]
-
 /-- **Riesz–Coleman projections under bounded base change.** If `Q` has unit leading coefficient,
 the coefficientwise extension of a Riesz–Coleman projection of `u` at `Q` is a Riesz–Coleman
 projection of the extension of `u` at `Q.map f`. No compactness is needed. -/
@@ -725,7 +692,7 @@ theorem IsRieszColemanProjection.mapCoeffs [TauCeti.NormedRing.IsTate S]
     {u E : C₀(J, R) →L[R] C₀(J, R)} {Q : Polynomial R} (hE : IsRieszColemanProjection u Q E)
     (hQ : IsUnit Q.leadingCoeff) (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
     IsRieszColemanProjection (u.mapCoeffs f hf) (Q.map f) (E.mapCoeffs f hf) := by
-  have hrev := reverse_map_of_isUnit_leadingCoeff hQ f
+  have hrev := Polynomial.reverse_map_of_isUnit_leadingCoeff f hQ
   obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw⟩ := hE.exists_inverse
   refine ⟨?_, ?_, mapCoeffs_mem_closure_adjoin f hf hE.mem_closure_adjoin, ?_,
     ⟨w.mapCoeffs f hf, ?_, ?_, ?_, ?_, mapCoeffs_mem_closure_adjoin f hf hw⟩⟩
@@ -742,7 +709,7 @@ theorem IsRieszColemanProjection.inverse_mapCoeffs [TauCeti.NormedRing.IsTate S]
     {u E : C₀(J, R) →L[R] C₀(J, R)} {Q : Polynomial R} (hE : IsRieszColemanProjection u Q E)
     (hQ : IsUnit Q.leadingCoeff) (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
     (hE.mapCoeffs hQ f hf).inverse = hE.inverse.mapCoeffs f hf := by
-  have hrev := reverse_map_of_isUnit_leadingCoeff hQ f
+  have hrev := Polynomial.reverse_map_of_isUnit_leadingCoeff f hQ
   symm
   refine (hE.mapCoeffs hQ f hf).eq_inverse ?_ ?_
   · simpa [hrev] using congrArg (fun v ↦ v.mapCoeffs f hf) hE.aeval_reverse_mul_inverse

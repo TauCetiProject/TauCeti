@@ -94,6 +94,8 @@ operators, whose Fredholm determinants are entire series.
 * `TauCeti.PowerSeries.eq_and_eq_of_entire_mul_add_eq` and
   `TauCeti.PowerSeries.existsUnique_entire_mul_add_eq`: uniqueness over an ultrametric ring
   with `‖1‖ = 1`.
+* `TauCeti.PowerSeries.eq_of_coe_mul_eq_coe_mul_of_isCoprime`: uniqueness of a coprime
+  polynomial-entire factorisation up to constant-term normalisation.
 
 ## References
 
@@ -769,5 +771,78 @@ theorem existsUnique_entire_mul_add_eq (hf : f.IsEntire) (hp : IsUnit p.leadingC
   refine ⟨(q, b), ⟨hq, hb, h⟩, fun qb ⟨hq', hb', h'⟩ ↦ ?_⟩
   obtain ⟨rfl, rfl⟩ := eq_and_eq_of_entire_mul_add_eq hp hq' hq hb' hb h' h
   rfl
+
+/-- If `P` and `Q` are polynomials with equal invertible constant coefficients, `Q` has unit
+leading coefficient, `P.natDegree ≤ Q.natDegree`, `(P : R⟦X⟧) * F₂ = (Q : R⟦X⟧) * S` for entire
+`S` and `F₂`, and `Q` is coprime to `F₂` in the ring of entire series, then `P = Q` and
+`F₂ = S`. -/
+theorem eq_of_coe_mul_eq_coe_mul_of_isCoprime {P Q : Polynomial R} {S F₂ : R⟦X⟧}
+    (hQ0 : IsUnit (Q.coeff 0)) (hQ : IsUnit Q.leadingCoeff)
+    (hP0 : P.coeff 0 = Q.coeff 0) (hPdeg : P.natDegree ≤ Q.natDegree)
+    (hS : S.IsEntire) (hF₂ : F₂.IsEntire)
+    (heq : (P : R⟦X⟧) * F₂ = (Q : R⟦X⟧) * S)
+    (hcop : IsCoprime
+      (⟨Q, IsEntire.mem_subring.mpr (isEntire_coe Q)⟩ : IsEntire.subring R)
+      ⟨F₂, IsEntire.mem_subring.mpr hF₂⟩) :
+    P = Q ∧ F₂ = S := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  let u := hQ.unit
+  let Qm : Polynomial R := u⁻¹ • Q
+  have hQm : Qm.Monic := Polynomial.monic_of_isUnit_leadingCoeff_inv_smul hQ
+  have hQm_deg : Qm.natDegree = Q.natDegree := by
+    rw [Polynomial.natDegree, Polynomial.natDegree,
+      Polynomial.degree_smul_of_smul_regular Q (IsSMulRegular.all _)]
+  obtain ⟨A, B, hAB⟩ := hcop
+  have hAB' : (A : R⟦X⟧) * (Q : R⟦X⟧) + (B : R⟦X⟧) * F₂ = 1 := by
+    simpa only [Subring.coe_add, Subring.coe_mul, Subring.coe_one] using congrArg Subtype.val hAB
+  -- Multiply the Bézout relation by `P` and substitute `P * F₂ = Q * S` to show `Qm ∣ P` in entire
+  -- series, hence in `R[X]` by uniqueness of entire division.
+  let G : R⟦X⟧ := u • ((A : R⟦X⟧) * (P : R⟦X⟧) + (B : R⟦X⟧) * S)
+  have hG : G.IsEntire :=
+    (((IsEntire.mem_subring.mp A.2).mul (isEntire_coe P)).add
+      ((IsEntire.mem_subring.mp B.2).mul hS)).smul _
+  have hP_div : (P : R⟦X⟧) = (Qm : R⟦X⟧) * G := by
+    have h1 : (P : R⟦X⟧) = (Q : R⟦X⟧) * ((A : R⟦X⟧) * (P : R⟦X⟧) + (B : R⟦X⟧) * S) := by
+      calc (P : R⟦X⟧) = ((A : R⟦X⟧) * (Q : R⟦X⟧) + (B : R⟦X⟧) * F₂) * (P : R⟦X⟧) := by
+            rw [hAB', one_mul]
+        _ = (A : R⟦X⟧) * (Q : R⟦X⟧) * (P : R⟦X⟧) + (B : R⟦X⟧) * ((P : R⟦X⟧) * F₂) := by ring
+        _ = (A : R⟦X⟧) * (Q : R⟦X⟧) * (P : R⟦X⟧) + (B : R⟦X⟧) * ((Q : R⟦X⟧) * S) := by rw [heq]
+        _ = (Q : R⟦X⟧) * ((A : R⟦X⟧) * (P : R⟦X⟧) + (B : R⟦X⟧) * S) := by ring
+    have hQm_coe : (Qm : R⟦X⟧) = u⁻¹ • (Q : R⟦X⟧) := by simp [Qm, Units.smul_def]
+    rw [hQm_coe]
+    dsimp only [G]
+    rw [smul_mul_smul_comm, inv_mul_cancel, one_smul]
+    exact h1
+  have hmod : P %ₘ Qm = 0 := by
+    rw [← modByMonic_coe P hQm, hP_div, hG.coe_mul_modByMonic hQm]
+  have hP_eq : P = Qm * (P /ₘ Qm) := by
+    have h := Polynomial.modByMonic_add_div P Qm
+    rw [hmod, zero_add] at h
+    exact h.symm
+  set K : Polynomial R := P /ₘ Qm
+  have hK0 : K ≠ 0 := by
+    intro h0
+    rw [h0, mul_zero] at hP_eq
+    rw [hP_eq, Polynomial.coeff_zero] at hP0
+    exact hQ0.ne_zero hP0.symm
+  have hKdeg : K.natDegree = 0 := by
+    have hdeg := hQm.natDegree_mul' hK0
+    rw [← hP_eq, hQm_deg] at hdeg
+    omega
+  have hP_C : P = Polynomial.C ((↑u⁻¹ : R) * K.coeff 0) * Q := by
+    have hK_C : K = Polynomial.C (K.coeff 0) := Polynomial.eq_C_of_natDegree_eq_zero hKdeg
+    calc P = Qm * K := hP_eq
+      _ = (Polynomial.C (↑u⁻¹ : R) * Q) * Polynomial.C (K.coeff 0) := by
+            rw [hK_C]; simp [Qm, Units.smul_def, Polynomial.smul_eq_C_mul]
+      _ = Polynomial.C ((↑u⁻¹ : R) * K.coeff 0) * Q := by rw [map_mul]; ring
+  have hcK : (↑u⁻¹ : R) * K.coeff 0 = 1 := by
+    have h := congrArg (fun p : Polynomial R ↦ p.coeff 0) hP_C
+    rw [hP0, Polynomial.coeff_C_mul] at h
+    exact hQ0.mul_right_cancel (by rw [one_mul]; exact h.symm)
+  have hPQ : P = Q := by rw [hP_C, hcK, map_one, one_mul]
+  refine ⟨hPQ, ?_⟩
+  rw [hPQ] at heq
+  have hQu : IsUnit (Q : R⟦X⟧) := isUnit_iff_constantCoeff.mpr (by simpa using hQ0)
+  exact hQu.mul_left_cancel heq
 
 end TauCeti.PowerSeries

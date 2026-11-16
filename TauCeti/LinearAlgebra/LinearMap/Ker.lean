@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Submodule.Ker
+public import Mathlib.Algebra.Regular.SMul
 
 /-!
 # Kernels in commuting squares
@@ -15,6 +16,10 @@ share a vertical side paste to a commuting square. In a commuting square `f' ∘
 sends the kernel of `d` into the kernel of `e`; with `f' = f`, this is how a chain map acts on
 cycles. In a commuting square `g ∘ e₁ = e₂ ∘ f` whose source side `e₁` is surjective and whose
 target side `e₂` is injective, `e₁` carries the kernel of `f` onto the kernel of `g`.
+
+Scaling a semilinear map by a scalar acting injectively on the codomain (in particular, by any
+unit) leaves its kernel unchanged (`LinearMap.ker_smul_of_isSMulRegular`,
+`LinearMap.ker_smul_of_isUnit`).
 -/
 
 public section
@@ -48,5 +53,26 @@ theorem map_ker_eq_ker_of_comp_eq (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} {e�
     (ker f).map e₁ = ker g := by
   rw [← ker_comp_of_ker_eq_bot f (ker_eq_bot_of_injective he₂), ← h, ker_comp,
     Submodule.map_comap_eq_of_surjective he₁]
+
+section SMul
+
+variable {R₂ S M₂ : Type*} [Semiring R₂] [AddCommMonoid M₂] [Module R₂ M₂] {τ₁₂ : R →+* R₂}
+
+/-- Scaling a semilinear map by a scalar acting injectively on the codomain does not change its
+kernel. -/
+theorem ker_smul_of_isSMulRegular [DistribSMul S M₂] [SMulCommClass R₂ S M₂]
+    (f : M →ₛₗ[τ₁₂] M₂) {c : S} (hc : IsSMulRegular M₂ c) :
+    ker (c • f) = ker f := by
+  ext x
+  simp only [mem_ker, LinearMap.smul_apply]
+  exact ⟨fun h ↦ hc (h.trans (smul_zero c).symm), fun h ↦ by rw [h, smul_zero]⟩
+
+/-- Scaling a semilinear map by a unit does not change its kernel. -/
+theorem ker_smul_of_isUnit [Monoid S] [DistribMulAction S M₂] [SMulCommClass R₂ S M₂]
+    (f : M →ₛₗ[τ₁₂] M₂) {c : S} (hc : IsUnit c) :
+    ker (c • f) = ker f :=
+  ker_smul_of_isSMulRegular f (hc.isSMulRegular M₂)
+
+end SMul
 
 end LinearMap

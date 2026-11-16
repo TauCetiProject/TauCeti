@@ -8,7 +8,11 @@ module
 public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.Algebra.Module.Submodule.Ker
 public import Mathlib.Algebra.Module.Equiv.Basic
+public import Mathlib.Algebra.Polynomial.AlgebraMap
+import Mathlib.Algebra.Polynomial.Div
 import Mathlib.Tactic.Abel
+import TauCeti.LinearAlgebra.End.Aeval
+import TauCeti.LinearAlgebra.LinearMap.Ker
 
 /-!
 # Extending endomorphisms along a split surjection
@@ -23,6 +27,11 @@ formula `LinearMap.splitEnd_one_sub` is useful for characteristic polynomials, w
 construction and its unit criterion also underlie determinants on finite projective modules.
 `LinearMap.kerSplitEndEquiv` identifies the kernel of an extension with the original kernel;
 in particular, extending by the identity does not add generalized spectral vectors at zero.
+
+Evaluating a polynomial with zero constant term commutes with extending an endomorphism by zero
+along a retract (`LinearMap.aeval_comp_comp_of_retract`). Consequently, for any polynomial `p`
+with invertible constant term, `LinearMap.kerAevalEquivOfRetract` identifies
+`ker (p(σ ∘ u ∘ π))` with `ker (p(u))` via the retraction and section.
 -/
 
 public section
@@ -135,5 +144,69 @@ theorem isUnit_splitEnd_iff (f : Module.End R M) : IsUnit (splitEnd π σ h f) �
       (π ∘ₗ g ∘ₗ σ) * f = π ∘ₗ (g * splitEnd π σ h f) ∘ₗ σ := by
         simp [Module.End.mul_eq_comp, comp_assoc, splitEnd_comp]
       _ = 1 := by simp [hgf, Module.End.one_eq_id, h]
+
+section Polynomial
+
+/-- Extending an endomorphism along a retract `π ∘ₗ σ = id` commutes with evaluating a
+polynomial whose constant coefficient is zero. -/
+theorem aeval_comp_comp_of_retract {R M F : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid F] [Module R F]
+    {π : F →ₗ[R] M} {σ : M →ₗ[R] F} (h : π ∘ₗ σ = id)
+    (u : Module.End R M) {p : Polynomial R} (hp : p.coeff 0 = 0) :
+    Polynomial.aeval (σ ∘ₗ u ∘ₗ π) p = σ ∘ₗ Polynomial.aeval u p ∘ₗ π := by
+  obtain ⟨q, rfl⟩ := Polynomial.X_dvd_iff.2 hp
+  have hπ : u ∘ₗ π = π ∘ₗ (σ ∘ₗ u ∘ₗ π) := by
+    rw [← comp_assoc, ← comp_assoc, h, id_comp]
+  rw [map_mul, Polynomial.aeval_X, map_mul, Polynomial.aeval_X,
+    Module.End.mul_eq_comp, Module.End.mul_eq_comp]
+  calc (σ ∘ₗ u ∘ₗ π) ∘ₗ Polynomial.aeval (σ ∘ₗ u ∘ₗ π) q
+      = σ ∘ₗ u ∘ₗ (π ∘ₗ Polynomial.aeval (σ ∘ₗ u ∘ₗ π) q) := by simp only [comp_assoc]
+    _ = σ ∘ₗ u ∘ₗ (Polynomial.aeval u q ∘ₗ π) := by
+          rw [← Module.End.aeval_comp_of_comp_eq hπ q]
+    _ = σ ∘ₗ (u ∘ₗ Polynomial.aeval u q) ∘ₗ π := by simp only [comp_assoc]
+
+variable {R M F : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup F] [Module R F]
+
+/-- For a split surjection `π ∘ₗ σ = id` and a polynomial `p` with invertible constant term, the
+retraction and section identify `ker (p(σ ∘ u ∘ π))` with `ker (p(u))`. -/
+noncomputable def kerAevalEquivOfRetract (π : F →ₗ[R] M) (σ : M →ₗ[R] F) (h : π ∘ₗ σ = id)
+    (u : Module.End R M) {p : Polynomial R} (hp : IsUnit (p.coeff 0)) :
+    ker (Polynomial.aeval (σ ∘ₗ u ∘ₗ π) p) ≃ₗ[R] ker (Polynomial.aeval u p) := by
+  let c : R := ↑hp.unit⁻¹
+  have hc : c * p.coeff 0 = 1 := hp.unit.inv_mul
+  have hc_unit : IsUnit c := hp.unit⁻¹.isUnit
+  set B : Polynomial R := 1 - Polynomial.C c * p
+  have hB0 : B.coeff 0 = 0 := by simp [B, hc]
+  have hB_ext := aeval_comp_comp_of_retract h u hB0
+  have hsplit : splitEnd π σ h (c • Polynomial.aeval u p) =
+      c • Polynomial.aeval (σ ∘ₗ u ∘ₗ π) p := by
+    have h1 : c • Polynomial.aeval u p = 1 - Polynomial.aeval u B := by
+      simp [B, Algebra.algebraMap_eq_smul_one]
+    have h2 : c • Polynomial.aeval (σ ∘ₗ u ∘ₗ π) p =
+        1 - Polynomial.aeval (σ ∘ₗ u ∘ₗ π) B := by
+      simp [B, Algebra.algebraMap_eq_smul_one]
+    rw [h1, splitEnd_one_sub, ← hB_ext, ← h2]
+  exact (LinearEquiv.ofEq _ _ (by rw [← ker_smul_of_isUnit _ hc_unit, ← hsplit])).trans
+    ((kerSplitEndEquiv π σ h (c • Polynomial.aeval u p)).trans
+      (LinearEquiv.ofEq _ _ (ker_smul_of_isUnit _ hc_unit)))
+
+/-- The forward map of `kerAevalEquivOfRetract` applies the retraction. -/
+@[simp]
+theorem coe_kerAevalEquivOfRetract_apply (π : F →ₗ[R] M) (σ : M →ₗ[R] F) (h : π ∘ₗ σ = id)
+    (u : Module.End R M) {p : Polynomial R} (hp : IsUnit (p.coeff 0))
+    (x : ker (Polynomial.aeval (σ ∘ₗ u ∘ₗ π) p)) :
+    (kerAevalEquivOfRetract π σ h u hp x : M) = π x :=
+  (rfl)
+
+/-- The inverse map of `kerAevalEquivOfRetract` applies the section. -/
+@[simp]
+theorem coe_kerAevalEquivOfRetract_symm_apply (π : F →ₗ[R] M) (σ : M →ₗ[R] F) (h : π ∘ₗ σ = id)
+    (u : Module.End R M) {p : Polynomial R} (hp : IsUnit (p.coeff 0))
+    (x : ker (Polynomial.aeval u p)) :
+    ((kerAevalEquivOfRetract π σ h u hp).symm x : F) = σ x :=
+  (rfl)
+
+end Polynomial
 
 end LinearMap

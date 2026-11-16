@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
+import Mathlib.Algebra.Polynomial.Inductions
 
 /-!
 # Coefficient extension of operators on model spaces
@@ -13,11 +15,11 @@ public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 A bounded unital ring homomorphism `f : R →+* S` extends the matrix of an operator
 `C₀(J, R) →L[R] C₀(I, R)` coefficientwise to an operator over `S`. Null columns and a
 uniform entry bound ensure that the extended matrix defines a continuous linear map.
-The construction respects identities, addition, scalar multiplication and composition,
-including composition of coefficient homomorphisms. Its matrix characterizes it uniquely.
-Over Tate target scalars it is Lipschitz in operator norm, so it preserves operator-norm sums
-and sends the closure of the polynomials in an endomorphism `u` into the closure of the
-polynomials in its extension.
+The construction respects identities, addition, scalar multiplication, composition,
+and polynomial evaluation, including composition of coefficient homomorphisms. Its matrix
+characterizes it uniquely. Over Tate target scalars it is Lipschitz in operator norm, so it
+preserves operator-norm sums and sends the closure of the polynomials in an endomorphism `u` into
+the closure of the polynomials in its extension.
 
 The coefficient rings need not have a common ground field. Tate data on the source supplies
 the entry bound; the target need only be complete and ultrametric.
@@ -170,6 +172,15 @@ theorem mapCoeffs_pow (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
   induction n with
   | zero => simp
   | succ n ih => rw [pow_succ, mapCoeffs_mul, ih, pow_succ]
+
+/-- Coefficient extension commutes with polynomial evaluation on endomorphisms of a model space. -/
+@[simp]
+theorem mapCoeffs_aeval (u : C₀(J, R) →L[R] C₀(J, R)) (p : Polynomial R) (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    (Polynomial.aeval u p).mapCoeffs f hf = Polynomial.aeval (u.mapCoeffs f hf) (p.map f) := by
+  induction p using Polynomial.induction_on' with
+  | add p q hp hq => simp [Polynomial.map_add, hp, hq]
+  | monomial n a => simp [Polynomial.aeval_monomial, Algebra.algebraMap_eq_smul_one]
 
 section Topology
 

@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 public import TauCeti.LinearAlgebra.End.Aeval
-import Mathlib.Algebra.Polynomial.Div
+import TauCeti.LinearAlgebra.End.Split
 
 /-!
 # Intertwining linear maps
@@ -16,13 +18,17 @@ A linear map `T : E →ₗ[R] F` between topological modules, possibly discontin
 intertwined by continuous linear maps `Q` on `F` and `P` on `E` up to a continuous error when
 `Q ∘ T - T ∘ P` is continuous. This file shows that such intertwining pairs are closed under
 taking products. Exact intertwiners also intertwine the spectral operators `1 - a • u`
-and their powers. Polynomial evaluation with zero constant coefficient commutes with extending
-an endomorphism along a continuous linear retract; no complement is needed.
+and their powers. Polynomial evaluation commutes with restricting an endomorphism to an
+invariant submodule (`ContinuousLinearMap.coe_aeval_restrict_apply`), and polynomial evaluation
+with zero constant coefficient commutes with extending an endomorphism along a continuous linear
+retract (`ContinuousLinearMap.aeval_comp_comp_of_retract`); no complement is needed.
 
 ## Main results
 
 * `LinearMap.continuous_comp_sub_comp_of_continuous_sub`: products of maps intertwining `T`
   up to continuous errors again intertwine `T` up to a continuous error.
+* `ContinuousLinearMap.coe_aeval_restrict_apply`: polynomial evaluation on the restriction of an
+  endomorphism to an invariant submodule agrees with evaluation on the ambient endomorphism.
 * `ContinuousLinearMap.aeval_comp_comp_of_retract`: polynomial evaluation with zero constant
   coefficient commutes with extension along a retract.
 -/
@@ -93,6 +99,8 @@ end LinearMap
 
 namespace ContinuousLinearMap
 
+section CommSemiring
+
 variable {R M N : Type*} [CommSemiring R]
   [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
   [ContinuousConstSMul R M]
@@ -113,19 +121,32 @@ kernel of the retraction. -/
 theorem aeval_comp_comp_of_retract {i : M →L[R] N} {r : N →L[R] M}
     (hri : r.comp i = .id R M) (u : M →L[R] M) {B : Polynomial R} (hB0 : B.coeff 0 = 0) :
     Polynomial.aeval (i.comp (u.comp r)) B = i.comp ((Polynomial.aeval u B).comp r) := by
-  obtain ⟨Q, rfl⟩ := Polynomial.X_dvd_iff.2 hB0
-  have hr : u.toLinearMap ∘ₗ r.toLinearMap =
-      r.toLinearMap ∘ₗ (i.comp (u.comp r)).toLinearMap := by
-    apply LinearMap.ext
-    intro y
-    have h := DFunLike.congr_fun hri (u (r y))
-    simpa using h.symm
-  have hQ : (Polynomial.aeval u Q).comp r =
-      r.comp (Polynomial.aeval (i.comp (u.comp r)) Q) := by
-    apply ContinuousLinearMap.coe_injective
-    simpa only [toLinearMap_comp, toLinearMap_aeval] using
-      Module.End.aeval_comp_of_comp_eq hr Q
-  simp only [map_mul, Polynomial.aeval_X, mul_def, comp_assoc]
-  rw [← hQ]
+  have hri' : r.toLinearMap ∘ₗ i.toLinearMap = LinearMap.id := by
+    simpa only [toLinearMap_comp, coe_id] using congrArg toLinearMap hri
+  apply coe_injective
+  simpa only [toLinearMap_aeval, toLinearMap_comp, LinearMap.comp_assoc] using
+    LinearMap.aeval_comp_comp_of_retract hri' u.toLinearMap hB0
+
+end CommSemiring
+
+section Restrict
+
+variable {R M : Type*} [CommRing R]
+  [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
+  [ContinuousConstSMul R M]
+
+/-- Polynomial evaluation on the restriction of `u` to an invariant submodule agrees with
+evaluation on `u`. -/
+@[simp]
+theorem coe_aeval_restrict_apply {u : M →L[R] M} {W : Submodule R M}
+    (hW : ∀ x ∈ W, u x ∈ W) (p : Polynomial R) (x : W) :
+    ((Polynomial.aeval (u.restrict hW) p : W →L[R] W) x : M) = Polynomial.aeval u p x := by
+  have hsub : u.toLinearMap ∘ₗ W.subtype = W.subtype ∘ₗ (u.restrict hW).toLinearMap :=
+    LinearMap.ext fun _ ↦ rfl
+  have h := LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hsub p) x
+  simpa only [LinearMap.comp_apply, Submodule.coe_subtype, ← toLinearMap_aeval, coe_coe] using
+    h.symm
+
+end Restrict
 
 end ContinuousLinearMap
