@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
 import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Flow
-public import TauCeti.Geometry.Manifold.VectorField.Chart.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.VectorField.Chart.Basic
 
 /-!
 # Homogeneity of connected manifolds
@@ -49,7 +50,7 @@ public section
 
 noncomputable section
 
-open Set Filter Metric Topology VectorField
+open Set Filter Metric Topology
 open scoped Manifold ContDiff
 
 namespace TauCeti
