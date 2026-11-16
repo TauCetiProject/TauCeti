@@ -24,7 +24,9 @@ A finite-mass measurable atom of a source measure is an obstruction to a prescri
 almost-everywhere measurable map sends its whole mass to a single point of a standard Borel target.
 For singleton atoms this needs no condition on the target measurable space, since their image is
 already explicit. This file records both forms of the constraint and their consequences for
-transporting Dirac measures and for laws that are null on singletons.
+transporting Dirac measures and for laws that are null on singletons. In the other direction, an
+almost everywhere measurable map whose level set at a point has mass one, under a measure that is
+zero or a probability measure, has the Dirac law at that point.
 
 Connectedness of the source is a second obstruction, this time to continuous maps. A map that is
 continuous on a set `s` carrying `μ`, with every point of `s` in the support of `μ`, sends all of
@@ -56,16 +58,20 @@ Nonnegative random variables whose real coercions have a common law are identica
   `Measure.dirac x` exactly when `ν` is the Dirac measure at its value at `x`;
 * `TauCeti.Probability.not_hasLaw_dirac_source_of_forall_ne_dirac` — no map at all has a
   non-Dirac law under a Dirac measure;
-* `TauCeti.Probability.hasLaw_dirac_of_prob_eq_one` — an a.e. measurable map that takes the value
-  `y` with probability one has law `Measure.dirac y`;
+* `TauCeti.Probability.hasLaw_dirac_of_prob_eq_one` — an a.e. measurable map whose level set
+  `{T = y}` has mass one, under a measure that is zero or a probability measure, has law
+  `Measure.dirac y`;
 * `ProbabilityTheory.HasLaw.mapsTo_support_of_continuousOn` — a map continuous on a carrier of
   `μ` inside its support sends that carrier into the support of its law;
 * `ProbabilityTheory.HasLaw.measure_eq_zero_or_measure_eq_zero_of_continuousOn` — a map
   continuous on a preconnected such carrier has a law that does not charge both of two disjoint
   closed sets carrying it.
 
-Mathlib's `ProbabilityTheory.hasLaw_dirac_iff` is the statement for a Dirac *target*; the results
-here are about a Dirac *source*, which is what `dirac_source` records in their names.
+Mathlib's `ProbabilityTheory.hasLaw_dirac_iff` and `ProbabilityTheory.hasLaw_dirac_of_ae_eq` are
+statements for a Dirac *target*, and so is `TauCeti.Probability.hasLaw_dirac_of_prob_eq_one`.
+`TauCeti.Probability.hasLaw_dirac_source_iff` and
+`TauCeti.Probability.not_hasLaw_dirac_source_of_forall_ne_dirac` are about a Dirac *source*, which
+is what `dirac_source` records in their names.
 -/
 
 public section
@@ -203,14 +209,16 @@ theorem not_hasLaw_dirac_source_of_forall_ne_dirac (hν : ∀ y : Y, ν ≠ Meas
     ¬HasLaw T ν (Measure.dirac x) :=
   fun h ↦ hν (T x) ((hasLaw_dirac_source_iff h.aemeasurable).1 h)
 
-/-- An a.e. measurable map that takes the value `y` with probability one has the Dirac measure at
-`y` as its law. This is `ProbabilityTheory.hasLaw_dirac_iff` with the almost sure equality
-stated as the probability of the event `{T = y}`. -/
-theorem hasLaw_dirac_of_prob_eq_one [IsProbabilityMeasure μ] [MeasurableSingletonClass Y]
-    {y : Y} (hT : AEMeasurable T μ) (h : μ {x | T x = y} = 1) :
-    HasLaw T (Measure.dirac y) μ :=
-  hasLaw_dirac_of_ae_eq <|
-    (mem_ae_iff_prob_eq_one₀ (hT.nullMeasurable (measurableSet_singleton y))).2 h
+/-- An a.e. measurable map whose level set `{T = y}` has mass one has the Dirac measure at `y` as
+its law. This is the analogue of `ProbabilityTheory.hasLaw_dirac_of_ae_eq` with the almost sure
+equality `T =ᵐ[μ] fun _ ↦ y` replaced by `μ {T = y} = 1`. Singletons of `Y` need not be
+measurable, so `{T = y}` need not be a measurable event and `μ` is evaluated on it as an outer
+measure. The measure is only assumed to be zero or a probability measure; the hypothesis `h` rules
+out the zero measure. -/
+theorem hasLaw_dirac_of_prob_eq_one [IsZeroOrProbabilityMeasure μ] {y : Y}
+    (hT : AEMeasurable T μ) (h : μ {x | T x = y} = 1) : HasLaw T (Measure.dirac y) μ :=
+  ⟨hT, Measure.eq_dirac_of_measure_singleton_eq_one <|
+    one_le_prob_iff.1 (h.ge.trans (Measure.le_map_apply hT {y}))⟩
 
 section Topology
 
