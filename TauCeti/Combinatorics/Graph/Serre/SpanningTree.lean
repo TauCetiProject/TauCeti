@@ -40,8 +40,9 @@ one dart `e` from each reversal pair outside `T`; the basis consists of the loop
 * `TauCeti.SerreGraph.nonempty_spanningTree_iff`: a graph has a spanning tree exactly when it is
   connected.
 * `TauCeti.SerreGraph.SpanningTree.eq_path`: the tree path is the only reduced path in the tree.
-* `TauCeti.SerreGraph.SpanningTree.mapPath_path_of_injective`: a morphism injective on darts and
-  carrying one spanning tree into another sends tree paths to tree paths.
+* `TauCeti.SerreGraph.SpanningTree.mapPath_path_of_injective`: a morphism injective on the darts
+  issuing from each vertex and carrying one spanning tree into another sends tree paths to tree
+  paths.
 * `TauCeti.SerreGraph.SpanningTree.path_eq_cons_or_path_eq_cons_reverse`: the tree paths from a
   vertex to the two ends of a tree dart differ by that dart.
 
@@ -339,12 +340,14 @@ theorem homotopic_mapPath_path (a b : Γ.V) :
       (T'.path (f.toPrefunctor.obj a) (f.toPrefunctor.obj b)) :=
   T'.homotopic_path _ fun _ => T.mem_of_mem_darts_mapPath_path f T' hT
 
-/-- A morphism of Serre graphs injective on darts and carrying a spanning tree `T` into a
-spanning tree `T'` sends the tree paths of `T` to the tree paths of `T'`. -/
-theorem mapPath_path_of_injective (hf : Function.Injective f.mapE) (a b : Γ.V) :
+/-- A morphism of Serre graphs injective on the darts issuing from each vertex and carrying a
+spanning tree `T` into a spanning tree `T'` sends the tree paths of `T` to the tree paths of
+`T'`. -/
+theorem mapPath_path_of_injective
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e') (a b : Γ.V) :
     f.toPrefunctor.mapPath (T.path a b) =
       T'.path (f.toPrefunctor.obj a) (f.toPrefunctor.obj b) :=
-  T'.eq_path (f.isReduced_mapPath (fun _ _ _ h => hf h) _ (T.isReduced_path a b)) fun _ =>
+  T'.eq_path (f.isReduced_mapPath hf _ (T.isReduced_path a b)) fun _ =>
     T.mem_of_mem_darts_mapPath_path f T' hT
 
 end Map
@@ -386,7 +389,8 @@ tree to the tree paths of the tree. -/
     (Γ.restrictInclusion S hS).toPrefunctor.mapPath ((T.restrict S hS hTS).path a b) =
       T.path a b :=
   (T.restrict S hS hTS).mapPath_path_of_injective (Γ.restrictInclusion S hS) T
-    (fun _ he => (T.mem_restrict_darts S hS hTS).mp he) Subtype.val_injective a b
+    (fun _ he => (T.mem_restrict_darts S hS hTS).mp he) (fun _ _ _ h => Subtype.val_injective h)
+    a b
 
 end Restrict
 

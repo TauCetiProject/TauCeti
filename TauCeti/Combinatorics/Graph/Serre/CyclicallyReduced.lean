@@ -88,12 +88,14 @@ theorem Path.IsCyclicallyReduced.isReduced {a : Γ.V} {p : Γ.Path a a}
   rw [Path.isCyclicallyReduced_iff, Path.isCyclicallyReduced_iff, ← Quiver.Path.reverse_comp,
     Path.isReduced_reverse]
 
-/-- A morphism injective on darts preserves and reflects cyclically reduced closed paths. -/
+/-- A morphism that is injective on the darts issuing from each vertex preserves and reflects
+cyclically reduced closed paths. -/
 theorem Hom.isCyclicallyReduced_mapPath_iff {Δ : SerreGraph} (f : Γ.Hom Δ)
-    (hf : Function.Injective f.mapE) {a : Γ.V} (p : Γ.Path a a) :
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e')
+    {a : Γ.V} (p : Γ.Path a a) :
     Path.IsCyclicallyReduced Δ (f.toPrefunctor.mapPath p) ↔ Path.IsCyclicallyReduced Γ p := by
   rw [Path.isCyclicallyReduced_iff, Path.isCyclicallyReduced_iff, ← Prefunctor.mapPath_comp,
-    Hom.isReduced_mapPath_iff Γ f fun _ _ _ h => hf h]
+    Hom.isReduced_mapPath_iff Γ f hf]
 
 /-- A cyclically reduced closed path can be restarted at any of its darts: the rotated path is
 cyclically reduced, begins with that dart, and traverses the same darts. -/
@@ -180,18 +182,21 @@ theorem tgt_mem_cyclicVertices {e : Γ.E} (he : e ∈ Γ.cyclicDarts) :
     Γ.tgt e ∈ Γ.cyclicVertices := by
   simpa only [Γ.src_rev] using Γ.src_mem_cyclicVertices ((Γ.rev_mem_cyclicDarts_iff e).mpr he)
 
-/-- A morphism injective on darts sends vertices on cyclically reduced closed paths to such
-vertices. -/
+/-- A morphism that is injective on the darts issuing from each vertex sends vertices on
+cyclically reduced closed paths to such vertices. -/
 theorem Hom.map_mem_cyclicVertices {Δ : SerreGraph} (f : Γ.Hom Δ)
-    (hf : Function.Injective f.mapE) {a : Γ.V} (ha : a ∈ Γ.cyclicVertices) :
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e')
+    {a : Γ.V} (ha : a ∈ Γ.cyclicVertices) :
     f.mapV a ∈ Δ.cyclicVertices := by
   obtain ⟨p, h0, hp⟩ := ha
   exact ⟨f.toPrefunctor.mapPath p, h0.trans_eq (Prefunctor.length_mapPath f.toPrefunctor p).symm,
     (f.isCyclicallyReduced_mapPath_iff Γ hf p).mpr hp⟩
 
-/-- A morphism injective on darts sends darts on cyclically reduced closed paths to such darts. -/
+/-- A morphism that is injective on the darts issuing from each vertex sends darts on cyclically
+reduced closed paths to such darts. -/
 theorem Hom.map_mem_cyclicDarts {Δ : SerreGraph} (f : Γ.Hom Δ)
-    (hf : Function.Injective f.mapE) {e : Γ.E} (he : e ∈ Γ.cyclicDarts) :
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e')
+    {e : Γ.E} (he : e ∈ Γ.cyclicDarts) :
     f.mapE e ∈ Δ.cyclicDarts := by
   obtain ⟨a, p, hp, he⟩ := he
   exact ⟨_, f.toPrefunctor.mapPath p, (f.isCyclicallyReduced_mapPath_iff Γ hf p).mpr hp,
@@ -381,14 +386,14 @@ private theorem Path.IsCyclicallyReduced.exists_core_path {v : Γ.V} {a : (Γ.co
   obtain ⟨q, rfl⟩ : ∃ q : (Γ.core v).Path a a, _ := Γ.exists_subgraph_path _ _ _ _ c
     (fun e he => hc.mem_coreDarts ((Γ.coreInclusion v).toPrefunctor.mapPath q₀) he) a.2 a.2
   exact ⟨q, ((Γ.coreInclusion v).isCyclicallyReduced_mapPath_iff _
-    (Γ.subgraphInclusion_mapE_injective _ _ _ _) q).mp hc, rfl⟩
+    (fun _ _ _ h => Γ.subgraphInclusion_mapE_injective _ _ _ _ h) q).mp hc, rfl⟩
 
 /-- A vertex of a based core lies on a cyclically reduced closed path of the core exactly when it
 does so in the ambient graph. -/
 theorem mem_cyclicVertices_core_iff (v : Γ.V) (a : (Γ.core v).V) :
     a ∈ (Γ.core v).cyclicVertices ↔ a.1 ∈ Γ.cyclicVertices := by
   refine ⟨(Γ.coreInclusion v).map_mem_cyclicVertices _
-    (Γ.subgraphInclusion_mapE_injective _ _ _ _), ?_⟩
+    (fun _ _ _ h => Γ.subgraphInclusion_mapE_injective _ _ _ _ h), ?_⟩
   rintro ⟨c, h0, hc⟩
   obtain ⟨q, hq, rfl⟩ := hc.exists_core_path
   exact ⟨q, h0.trans_eq (Prefunctor.length_mapPath _ q), hq⟩
@@ -398,7 +403,7 @@ does so in the ambient graph. -/
 theorem mem_cyclicDarts_core_iff (v : Γ.V) (e : (Γ.core v).E) :
     e ∈ (Γ.core v).cyclicDarts ↔ e.1 ∈ Γ.cyclicDarts := by
   refine ⟨(Γ.coreInclusion v).map_mem_cyclicDarts _
-    (Γ.subgraphInclusion_mapE_injective _ _ _ _), ?_⟩
+    (fun _ _ _ h => Γ.subgraphInclusion_mapE_injective _ _ _ _ h), ?_⟩
   rintro ⟨a, c, hc, he⟩
   -- Restart the closed path at `e`, whose initial vertex lies in the core.
   obtain ⟨c', hc', -, hcc'⟩ := hc.exists_rotate Γ he

@@ -419,13 +419,14 @@ theorem Homotopic.mapPath {Δ : SerreGraph} (f : Γ.Hom Δ) {a b : Γ.V} {p q : 
     reduce Δ (f.toPrefunctor.mapPath (reduce Γ p)) = reduce Δ (f.toPrefunctor.mapPath p) :=
   (((homotopic_reduce Γ p).mapPath Γ f).reduce_eq Δ).symm
 
-/-- A morphism injective on darts commutes with reduction of paths. -/
+/-- A morphism that is injective on the darts issuing from each vertex commutes with reduction of
+paths. -/
 theorem reduce_mapPath_of_injective {Δ : SerreGraph} (f : Γ.Hom Δ)
-    (hf : Function.Injective f.mapE) {a b : Γ.V} (p : Γ.Path a b) :
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e')
+    {a b : Γ.V} (p : Γ.Path a b) :
     reduce Δ (f.toPrefunctor.mapPath p) = f.toPrefunctor.mapPath (reduce Γ p) := by
   rw [← reduce_mapPath_reduce]
-  exact reduce_eq_self_of_isReduced Δ _
-    (f.isReduced_mapPath (fun _ _ _ h => hf h) _ (isReduced_reduce Γ p))
+  exact reduce_eq_self_of_isReduced Δ _ (f.isReduced_mapPath hf _ (isReduced_reduce Γ p))
 
 /-- Opposite directions of a rose petal remain distinct under path homotopy. -/
 theorem rose_not_homotopic_reverse {α : Type*} (a : α) :
