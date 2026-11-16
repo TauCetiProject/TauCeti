@@ -35,7 +35,8 @@ surjective one, and composing on the left with a map that does not lower the dim
 does not enlarge the kernel. Conjugating an endomorphism by a linear equivalence preserves the
 dimension of its kernel.
 The kernel of a surjection from a finite-dimensional space has dimension the difference of the
-dimensions.
+dimensions, and an endomorphism of a finite-dimensional space has kernel and cokernel of the same
+dimension.
 -/
 
 public section
@@ -273,6 +274,15 @@ theorem finrank_ker_eq_sub_of_surjective {K : Type*} {M : Type v} {N : Type*} [R
     Module.finrank K (ker f) = Module.finrank K M - Module.finrank K N := by
   have h := (ker f).finrank_quotient_add_finrank
   rw [(f.quotKerEquivOfSurjective hf).finrank_eq] at h
+  omega
+
+/-- An endomorphism of a finite-dimensional vector space has kernel and cokernel of the same
+dimension. -/
+theorem finrank_quotient_range_eq_finrank_ker {K V : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] (T : V →ₗ[K] V) :
+    Module.finrank K (V ⧸ range T) = Module.finrank K (ker T) := by
+  have h₁ := Submodule.finrank_quotient_add_finrank (range T)
+  have h₂ := T.finrank_range_add_finrank_ker
   omega
 
 end LinearMap
