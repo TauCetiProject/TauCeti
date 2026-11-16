@@ -9,7 +9,6 @@ public import TauCeti.Analysis.InnerProductSpace.Spectral.ContinuousFunctionalCa
 import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 import TauCeti.Analysis.Normed.Operator.Compact.Spectrum
 import TauCeti.LinearAlgebra.End.Idempotent
-import TauCeti.Topology.Algebra.Indicator
 
 /-!
 # Spectral projections of finite rank
@@ -63,14 +62,7 @@ theorem range_cfc_indicator_le_of_subset (T : H →L[𝕜] H) {Ω Ω' : Set ℝ}
     (hf : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ T))
     (hf' : ContinuousOn (Ω'.indicator (1 : ℝ → ℝ)) (spectrum ℝ T)) :
     (cfc (Ω.indicator (1 : ℝ → ℝ)) T).range ≤ (cfc (Ω'.indicator (1 : ℝ → ℝ)) T).range := by
-  have h : cfc (Ω.indicator (1 : ℝ → ℝ)) T =
-      cfc (Ω'.indicator (1 : ℝ → ℝ)) T * cfc (Ω.indicator (1 : ℝ → ℝ)) T := by
-    rw [← cfc_mul _ _ T hf' hf]
-    refine cfc_congr fun x _ ↦ ?_
-    by_cases hx : x ∈ Ω
-    · simp [hx, hΩ hx]
-    · simp [hx]
-  rw [h]
+  rw [← inter_eq_right.2 hΩ, ← TauCeti.cfc_indicator_mul_cfc_indicator T hf' hf]
   exact LinearMap.range_comp_le_range _ _
 
 /-- For disjoint `Ω₁` and `Ω₂` whose indicators are continuous on the spectrum, the rank of the
@@ -90,11 +82,7 @@ theorem finrank_range_cfc_indicator_union (T : H →L[𝕜] H) {Ω₁ Ω₂ : Se
       (hf : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ T))
       (hf' : ContinuousOn (Ω'.indicator (1 : ℝ → ℝ)) (spectrum ℝ T)) :
       cfc (Ω.indicator (1 : ℝ → ℝ)) T * cfc (Ω'.indicator (1 : ℝ → ℝ)) T = 0 := by
-    rw [← cfc_mul _ _ T hf hf', ← cfc_zero ℝ T]
-    refine cfc_congr fun x _ ↦ ?_
-    by_cases hx : x ∈ Ω
-    · simp [hx, hd.notMem_of_mem_left hx]
-    · simp [hx]
+    simp [TauCeti.cfc_indicator_mul_cfc_indicator T hf hf', hd.inter_eq]
   have hsum : cfc ((Ω₁ ∪ Ω₂).indicator (1 : ℝ → ℝ)) T = P + Q := by
     rw [← cfc_add T _ _ hf₁ hf₂]
     exact cfc_congr fun x _ ↦ congr_fun (indicator_union_of_disjoint h _) x
@@ -118,15 +106,14 @@ namespace IsSelfAdjoint
 
 variable [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)]
 
-/-- **A spectral projection of finite rank sees finitely many spectral values.** If the frontier
-of `Ω` avoids the spectrum of a self-adjoint operator `T` and the spectral projection of `T` for
-`Ω` has finite rank, then the spectrum of `T` meets `Ω` in finitely many points. -/
+/-- **A spectral projection of finite rank sees finitely many spectral values.** If the indicator
+of `Ω` is continuous on the spectrum of a self-adjoint operator `T` (for instance, if the frontier
+of `Ω` avoids the spectrum) and the spectral projection of `T` for `Ω` has finite rank, then the
+spectrum of `T` meets `Ω` in finitely many points. -/
 theorem finite_spectrum_inter_of_finiteDimensional_range_cfc_indicator {T : H →L[𝕜] H}
-    (hT : IsSelfAdjoint T) {Ω : Set ℝ} (hfr : Disjoint (frontier Ω) (spectrum ℝ T))
+    (hT : IsSelfAdjoint T) {Ω : Set ℝ} (hf : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ T))
     (hP : FiniteDimensional 𝕜 (cfc (Ω.indicator (1 : ℝ → ℝ)) T).range) :
     (spectrum ℝ T ∩ Ω).Finite := by
-  have hf : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ T) :=
-    continuousOn_const.continuousOn_indicator_of_disjoint_frontier hfr
   obtain ⟨m, hm⟩ := (ContinuousFunctionalCalculus.isCompact_spectrum (R := ℝ) T).bddBelow
   -- The shift `g x = (x - m + 1) * 1_Ω(x)` is at least `1` at the spectral values in `Ω`.
   set g : ℝ → ℝ := fun x ↦ Ω.indicator (1 : ℝ → ℝ) x * (x - m + 1)
