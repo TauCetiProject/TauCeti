@@ -8,10 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.CartierDivisor.ClassGroup
 public import TauCeti.AlgebraicGeometry.CartierDivisor.IdealSheaf
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Factorial
-public import TauCeti.AlgebraicGeometry.Scheme.Normal
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Cartier.Inverse
-import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
-import TauCeti.AlgebraicGeometry.Scheme.Regular
 
 /-!
 # Divisors on normal and locally factorial schemes
@@ -136,7 +133,7 @@ theorem toWeilDivisor_ofEffectiveCartier_vanishingIdeal_closure_singleton
   refine WeilDivisor.ext fun y ↦ ?_
   obtain ⟨U, hyU, a, ha, hIa⟩ := (Scheme.IdealSheafData.isEffectiveCartier_iff _).mp hη y
   have : Nonempty U.1 := ⟨⟨y, hyU⟩⟩
-  have hfnz := germToFunctionField_ne_zero_of_isSMulRegular ha
+  have hfnz := isSMulRegular_iff_germToFunctionField_ne_zero.mp ha
   let f : X.functionFieldˣ := Units.mk0 (X.germToFunctionField U.1 a) hfnz
   rw [coeff_toWeilDivisor_eq_ord _ y hyU f (ofEffectiveCartier_restrict hη U ha hIa rfl).symm]
   have hgerm_ne : X.presheaf.germ U.1 y hyU a ≠ 0 := fun h0 ↦

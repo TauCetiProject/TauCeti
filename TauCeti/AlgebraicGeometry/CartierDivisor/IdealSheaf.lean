@@ -145,13 +145,6 @@ private lemma eq_of_locally_eq_affine {D₁ D₂ : CartierDivisor X}
     (fun _ ↦ homOfLE le_top) (fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxU x⟩) _ _ fun x ↦ ?_
   simpa only [TopCat.Presheaf.restrictOpen, TopCat.Presheaf.restrict] using hU x
 
-/-- A section over a nonempty open whose image in the function field is a unit is regular. -/
-private lemma isSMulRegular_of_germToFunctionField_eq_unit {U : X.Opens} [Nonempty U]
-    {a : Γ(X, U)} {f : X.functionFieldˣ} (hf : X.germToFunctionField U a = f) :
-    IsSMulRegular Γ(X, U) a := fun _ _ hrt ↦ X.germToFunctionField_injective U <|
-  mul_left_cancel₀ f.ne_zero (by
-    simpa only [smul_eq_mul, map_mul, hf] using congrArg (X.germToFunctionField U) hrt)
-
 /-- If `I` is generated on affine opens `U` and `V` by regular sections `a` and `b`, then on any
 nonempty `W ≤ U ⊓ V` their images in the function field have the same Cartier-divisor class. -/
 private lemma rationalUnitClass_eq_of_ideal_eq_span {U V : X.affineOpens} {W : X.Opens}
@@ -196,7 +189,7 @@ theorem existsUnique_ofEffectiveCartier (hI : I.IsEffectiveCartier) :
   have hne (x : X) : Nonempty (U x).1 := ⟨⟨x, hxU x⟩⟩
   let f (x : X) : X.functionFieldˣ := letI := hne x
     Units.mk0 (X.germToFunctionField (U x).1 (a x))
-      (Scheme.germToFunctionField_ne_zero_of_isSMulRegular (ha x))
+      (Scheme.isSMulRegular_iff_germToFunctionField_ne_zero.mp (ha x))
   have hcompat : TopCat.Presheaf.IsCompatible (Scheme.cartierDivisorSheaf X).obj
       (fun x ↦ (U x).1) fun x ↦
         letI := hne x; Scheme.rationalUnitClass X (U x).1 (Additive.ofMul (f x)) := fun x y ↦ by
@@ -244,7 +237,7 @@ theorem isEffective_ofEffectiveCartier (hI : I.IsEffectiveCartier) :
   obtain ⟨U, hxU, a, ha, hIa⟩ := (Scheme.IdealSheafData.isEffectiveCartier_iff I).mp hI x
   have : Nonempty U.1 := ⟨⟨x, hxU⟩⟩
   let f := Units.mk0 (X.germToFunctionField U.1 a)
-    (Scheme.germToFunctionField_ne_zero_of_isSMulRegular ha)
+    (Scheme.isSMulRegular_iff_germToFunctionField_ne_zero.mp ha)
   refine ⟨f, isLocalEquationAt_of_rationalUnitClass_eq
     (ofEffectiveCartier_restrict hI U ha hIa rfl).symm hxU, ?_⟩
   rw [Units.val_mk0, ← X.algebraMap_germ_eq_germToFunctionField hxU]
@@ -259,7 +252,7 @@ theorem idealSheaf_isEffective_ofEffectiveCartier (hI : I.IsEffectiveCartier) :
     (eq_top_iff.mpr fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxU x⟩) fun x ↦ ?_
   have : Nonempty (U x).1 := ⟨⟨x, hxU x⟩⟩
   let f := Units.mk0 (X.germToFunctionField (U x).1 (a x))
-    (Scheme.germToFunctionField_ne_zero_of_isSMulRegular (ha x))
+    (Scheme.isSMulRegular_iff_germToFunctionField_ne_zero.mp (ha x))
   exact ((isEffective_ofEffectiveCartier hI).idealSheaf_ideal_eq_span (U x)
     (ofEffectiveCartier_restrict hI (U x) (ha x) (hIa x) (f := f) rfl).symm
     (a := a x) rfl).trans (hIa x).symm
@@ -299,7 +292,7 @@ theorem ofEffectiveCartier_isEffectiveCartier_idealSheaf (hD : D.IsEffective) :
     rw [← Scheme.rationalUnitClass_restrict X hUV, hV,
       TopCat.Presheaf.restrict_restrict hUV le_top D]
   exact ⟨⟨U, hU⟩, hxU, (ofEffectiveCartier_restrict _ ⟨U, hU⟩
-    (isSMulRegular_of_germToFunctionField_eq_unit haf)
+    (Scheme.isSMulRegular_iff_germToFunctionField_ne_zero.mpr (haf ▸ f.ne_zero))
     (hD.idealSheaf_ideal_eq_span ⟨U, hU⟩ hDU haf) haf).trans hDU⟩
 
 /-- The empty effective Cartier divisor corresponds to the zero Cartier divisor. -/
@@ -326,9 +319,9 @@ theorem ofEffectiveCartier_mul (hI : I.IsEffectiveCartier) (hJ : J.IsEffectiveCa
     simp only [Scheme.IdealSheafData.ideal_mul, Pi.mul_apply, hIa', hJb,
       Ideal.span_singleton_mul_span_singleton]
   let fa := Units.mk0 (X.germToFunctionField V.1 a')
-    (Scheme.germToFunctionField_ne_zero_of_isSMulRegular ha')
+    (Scheme.isSMulRegular_iff_germToFunctionField_ne_zero.mp ha')
   let fb := Units.mk0 (X.germToFunctionField V.1 b)
-    (Scheme.germToFunctionField_ne_zero_of_isSMulRegular hb)
+    (Scheme.isSMulRegular_iff_germToFunctionField_ne_zero.mp hb)
   refine ⟨V, hxV, ?_⟩
   rw [ofEffectiveCartier_restrict _ V (ha'.mul hb) hIJa'b (f := fa * fb) (by simp [fa, fb]),
     ofMul_mul, map_add, ← ofEffectiveCartier_restrict hI V ha' hIa' (f := fa) rfl,
@@ -385,7 +378,7 @@ theorem ofEffectiveCartier_ofIdealTop_span_singleton {a : Γ(X, ⊤)}
       (Scheme.IdealSheafData.ofIdealTop (Ideal.span {a})).ideal ⟨U, hU⟩ = Ideal.span {a'} := by
     rw [Scheme.IdealSheafData.ofIdealTop_ideal, Ideal.map_span, Set.image_singleton]
   exact ⟨⟨U, hU⟩, hxU, (ofEffectiveCartier_restrict h ⟨U, hU⟩
-    (isSMulRegular_of_germToFunctionField_eq_unit ha'f) hIa' ha'f).trans
+    (Scheme.isSMulRegular_iff_germToFunctionField_ne_zero.mpr (ha'f ▸ f.ne_zero)) hIa' ha'f).trans
     (principalCartierDivisor_restrict X f U).symm⟩
 
 /-- **The line-bundle class of `ofEffectiveCartier hI` is `[I]⁻¹`.** -/

@@ -7,12 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Factorial
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Pullback
-public import TauCeti.AlgebraicGeometry.Scheme.IntegrallyClosed
 import Mathlib.Algebra.Group.Subgroup.Finsupp
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.TensorProduct
-import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 import TauCeti.AlgebraicGeometry.LineBundle.LocalRing
-import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 import TauCeti.AlgebraicGeometry.Noetherian
 
 /-!
@@ -85,13 +82,13 @@ theorem pullback_primeDivisorClass_eq_one_of_notMem_range {η : CodimensionOnePo
 @[simp]
 theorem pullback_primeDivisorClass_mapOfIsOpenImmersion (y : CodimensionOnePoint U) :
     letI := isLocallyNoetherian_of_isOpenImmersion j
-    letI := isDomain_stalk_of_isOpenImmersion j
-    letI := uniqueFactorizationMonoid_stalk_of_isOpenImmersion j
+    letI := j.isDomain_stalk_of_isOpenImmersion
+    letI := j.uniqueFactorizationMonoid_stalk_of_isOpenImmersion
     pullback j (primeDivisorClass (CodimensionOnePoint.mapOfIsOpenImmersion j y)) =
       primeDivisorClass y := by
   have := isLocallyNoetherian_of_isOpenImmersion j
-  have := isDomain_stalk_of_isOpenImmersion j
-  have := uniqueFactorizationMonoid_stalk_of_isOpenImmersion j
+  have := j.isDomain_stalk_of_isOpenImmersion
+  have := j.uniqueFactorizationMonoid_stalk_of_isOpenImmersion
   have hI := isEffectiveCartier_vanishingIdeal_closure_singleton
     (CodimensionOnePoint.mapOfIsOpenImmersion j y).2
   rw [primeDivisorClass_def, primeDivisorClass_def, pullback_inv,
@@ -127,13 +124,13 @@ along a nonempty open immersion `j : U ⟶ X`. -/
 private lemma pullback_weilToLineBundleClassHom [Nonempty U] (D : SchemeWeilDivisor X) :
     letI : IsIntegral U := isIntegral_of_isOpenImmersion j
     letI : IsNoetherian U := isNoetherian_of_finiteType j
-    letI := uniqueFactorizationMonoid_stalk_of_isOpenImmersion j
+    letI := j.uniqueFactorizationMonoid_stalk_of_isOpenImmersion
     Additive.ofMul (pullback j (Scheme.CartierDivisor.weilToLineBundleClassHom X D).toMul) =
       Scheme.CartierDivisor.weilToLineBundleClassHom U
         (WeilDivisor.pullback (CodimensionOnePoint.mapOfIsOpenImmersion_injective j) D) := by
   have : IsIntegral U := isIntegral_of_isOpenImmersion j
   have : IsNoetherian U := isNoetherian_of_finiteType j
-  have := uniqueFactorizationMonoid_stalk_of_isOpenImmersion j
+  have := j.uniqueFactorizationMonoid_stalk_of_isOpenImmersion
   induction D using Finsupp.induction_linear with
   | zero => simp
   | add _ _ ih₁ ih₂ =>
@@ -152,30 +149,6 @@ private lemma pullback_weilToLineBundleClassHom [Nonempty U] (D : SchemeWeilDivi
       rw [WeilDivisor.pullback_ofPoint_of_notMem_range _ hη, smul_zero, map_zero,
         pullback_primeDivisorClass_eq_one_of_notMem_range j hnot, ofMul_one, smul_zero]
 
-omit [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)] in
-/-- Pulling back a principal Weil divisor along a nonempty open immersion `j : U ⟶ X`
-corresponds to pulling back the defining rational function along `j.functionFieldMap`. -/
-private lemma pullback_principalDivisor_of_isOpenImmersion [Nonempty U] (f : X.functionFieldˣ) :
-    letI : IsIntegral U := isIntegral_of_isOpenImmersion j
-    letI : IsNoetherian U := isNoetherian_of_finiteType j
-    letI : IsDominant j :=
-      isDominant_iff_genericPoint_eq.mpr (genericPoint_eq_of_isOpenImmersion j)
-    WeilDivisor.pullback (CodimensionOnePoint.mapOfIsOpenImmersion_injective j)
-        ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor (Additive.ofMul f)) =
-      (WeilDivisor.OrderSystem.ofScheme U).principalDivisor
-        (Additive.ofMul (Units.map j.functionFieldMap.hom.toMonoidHom f)) := by
-  have : IsIntegral U := isIntegral_of_isOpenImmersion j
-  have : IsNoetherian U := isNoetherian_of_finiteType j
-  have : IsDominant j := isDominant_iff_genericPoint_eq.mpr (genericPoint_eq_of_isOpenImmersion j)
-  refine WeilDivisor.ext fun y ↦ ?_
-  rw [WeilDivisor.coeff_pullback, WeilDivisor.OrderSystem.coeff_principalDivisor,
-    WeilDivisor.OrderSystem.coeff_principalDivisor, WeilDivisor.OrderSystem.ofScheme_ord,
-    WeilDivisor.OrderSystem.ofScheme_ord, SchemeWeilDivisor.orderAt_apply,
-    SchemeWeilDivisor.orderAt_apply, toMul_ofMul, toMul_ofMul, Units.coe_map,
-    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-    CodimensionOnePoint.coe_mapOfIsOpenImmersion]
-  exact (Scheme.ord_functionFieldMap j ↑f ↑y).symm
-
 /-- **Open-immersion surjectivity on Picard groups (Hartshorne, Proposition II.6.5(c)).** On a
 Noetherian locally factorial integral scheme `X`, `LineBundleClass.pullback j` is surjective for
 any open immersion `j : U ⟶ X`. -/
@@ -183,7 +156,7 @@ theorem pullback_surjective_of_isOpenImmersion : Function.Surjective (pullback j
   by_cases hU : Nonempty U
   · have : IsIntegral U := isIntegral_of_isOpenImmersion j
     have : IsNoetherian U := isNoetherian_of_finiteType j
-    have := uniqueFactorizationMonoid_stalk_of_isOpenImmersion j
+    have := j.uniqueFactorizationMonoid_stalk_of_isOpenImmersion
     obtain ⟨D, hD⟩ := Scheme.CartierDivisor.weilToLineBundleClassHom_surjective (X := U)
       (Additive.ofMul b)
     refine ⟨(Scheme.CartierDivisor.weilToLineBundleClassHom X
@@ -212,7 +185,7 @@ theorem pullback_eq_one_iff_mem_closure_of_isOpenImmersion {a : LineBundleClass 
   · refine ⟨fun ha ↦ ?_, fun ha ↦ ?_⟩
     · have : IsIntegral U := isIntegral_of_isOpenImmersion j
       have : IsNoetherian U := isNoetherian_of_finiteType j
-      have := uniqueFactorizationMonoid_stalk_of_isOpenImmersion j
+      have := j.uniqueFactorizationMonoid_stalk_of_isOpenImmersion
       have : IsDominant j :=
         isDominant_iff_genericPoint_eq.mpr (genericPoint_eq_of_isOpenImmersion j)
       obtain ⟨D, hD⟩ := Scheme.CartierDivisor.weilToLineBundleClassHom_surjective (X := X)
@@ -228,8 +201,8 @@ theorem pullback_eq_one_iff_mem_closure_of_isOpenImmersion {a : LineBundleClass 
       let E := D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor (Additive.ofMul f)
       have hEpull :
           WeilDivisor.pullback (CodimensionOnePoint.mapOfIsOpenImmersion_injective j) E = 0 := by
-        rw [map_sub, ← hg, pullback_principalDivisor_of_isOpenImmersion j f, hfg, ofMul_toMul,
-          sub_self]
+        rw [map_sub, ← hg, j.pullback_principalDivisor_of_isOpenImmersion, toMul_ofMul, hfg,
+          ofMul_toMul, sub_self]
       refine hmem E (by simp [E, hD]) fun η hη hrange ↦ ?_
       obtain ⟨y, rfl⟩ := (CodimensionOnePoint.mem_range_mapOfIsOpenImmersion j).mpr hrange
       apply WeilDivisor.mem_support_iff.mp hη

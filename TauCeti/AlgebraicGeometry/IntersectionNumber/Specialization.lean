@@ -7,22 +7,20 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Quotient.Basic
-public import TauCeti.AlgebraicGeometry.CartierDivisor.Excision
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Weight
+public import TauCeti.AlgebraicGeometry.SpecialFiber.Picard
 import Mathlib.Algebra.Order.Field.Rat
 
 /-!
-# Picard excision and line-bundle specialization on regular models
+# Line-bundle specialization on regular models
 
 Let `R` be a discrete valuation ring with fraction field `K` and residue field `k`, and let
 `toBase : X ⟶ Spec R` be a proper regular integral Noetherian scheme of dimension at most two
-whose generic point lies over the generic point of `Spec R`. Following
+whose generic point lies over the generic point of `Spec R`. Building on generic-fibre Picard
+excision (`TauCeti.AlgebraicGeometry.SpecialFiber.Picard`) and following
 [Stacks, Chapter 55](https://stacks.math.columbia.edu/tag/0C2P) (specifically
 [Tag 0CEI](https://stacks.math.columbia.edu/tag/0CEI)) and Liu, Section 9.1, this file establishes:
 
-* **Generic-fibre Picard excision** (`pullback_genericFiberι_surjective_of_isRegular`,
-  `pullback_genericFiberι_eq_one_iff_of_isRegular`): exactness of
-  `Vertical → Pic(X) → Pic(X_K) → 1`.
 * **Multidegrees and weighted intersection matrix** (`reducedSpecialFiberMultidegree`,
   `specialFiberMultidegreeOnFiber`, `specialFiberMultidegree`,
   `specialFiberWeightedIntersectionMatrix`, `specialFiberMultidegree_prod_zpow`): compatible
@@ -56,76 +54,13 @@ open CategoryTheory AlgebraicGeometry IsLocalRing Order
 open Set.Finite (mem_toFinset)
 open scoped Matrix
 open TauCeti TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme.Modules
-open TauCeti.AlgebraicGeometry.LineBundleClass (intersectionNumber pullback pullbackHom
-  primeDivisorClass)
+open TauCeti.AlgebraicGeometry.LineBundleClass (intersectionNumber pullback pullbackHom)
 open AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal inclusion
   isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular)
 
 universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
-
-/-! ### Generic-fibre Picard excision -/
-
-section GenericFiberExcision
-
-variable {R : Type u} (K : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
-  [CommRing K] [Algebra R K] [IsFractionRing R K] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
-  [IsIntegral X] [IsNoetherian X]
-
-/-- **Surjectivity of restriction to the generic fibre on Picard groups.** On a Noetherian integral
-scheme `X` with factorial local rings over a DVR `R`, every line-bundle class on `X_K` extends to
-`X`. -/
-theorem pullback_genericFiberι_surjective
-    [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)] :
-    Function.Surjective (pullback (genericFiberι R K toBase)) :=
-  have := isOpenImmersion_genericFiberι R K toBase
-  LineBundleClass.pullback_surjective_of_isOpenImmersion (genericFiberι R K toBase)
-
-/-- **Kernel of restriction to the generic fibre on Picard groups.** On a Noetherian integral
-scheme `X` with factorial local rings over a DVR `R` whose generic point lies outside the special
-fibre, `a : Pic(X)` restricts to `1` on `X_K` if and only if it is a product of powers of the
-component classes `[𝒪_X(C_i)]`. -/
-theorem pullback_genericFiberι_eq_one_iff
-    [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)]
-    (hη : toBase (genericPoint X) ≠ closedPoint R) {a : LineBundleClass X} :
-    pullback (genericFiberι R K toBase) a = 1 ↔
-      ∃ v : (toBase.finite_setOf_base_eq_closedPoint
-          (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → ℤ,
-        a = ∏ i, primeDivisorClass i.1 ^ v i := by
-  have := isOpenImmersion_genericFiberι R K toBase
-  refine LineBundleClass.pullback_eq_one_iff_exists_prod_of_isOpenImmersion
-    (genericFiberι R K toBase) fun η ↦ ?_
-  rw [range_genericFiberι_of_isDiscreteValuationRing]
-  simp
-
-/-- **Surjectivity of `Pic(X) → Pic(X_K)` on a regular model.** On a regular Noetherian integral
-scheme `X` of dimension at most two over a DVR `R`, restriction `Pic(X) → Pic(X_K)` is
-surjective. -/
-theorem pullback_genericFiberι_surjective_of_isRegular
-    [TauCeti.AlgebraicGeometry.IsRegular X] (hX : ∀ x : X, coheight x ≤ 2) :
-    Function.Surjective (pullback (genericFiberι R K toBase)) :=
-  have := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
-  toBase.pullback_genericFiberι_surjective K
-
-/-- **Exact kernel of `Pic(X) → Pic(X_K)` on a regular model.** On a regular Noetherian integral
-scheme `X` of dimension at most two over a DVR `R` with generic point outside the special fibre,
-`a : Pic(X)` restricts to `1` on `X_K` if and only if it is a product `∏_i [𝒪_X(C_i)]^{v_i}`
-supported on the irreducible components `C_i` of the special fibre. -/
-theorem pullback_genericFiberι_eq_one_iff_of_isRegular
-    [TauCeti.AlgebraicGeometry.IsRegular X] (hX : ∀ x : X, coheight x ≤ 2)
-    (hη : toBase (genericPoint X) ≠ closedPoint R) {a : LineBundleClass X} :
-    pullback (genericFiberι R K toBase) a = 1 ↔
-      ∃ v : (toBase.finite_setOf_base_eq_closedPoint
-          (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → ℤ,
-        a = ∏ i, (LineBundleClass.mk
-          (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
-            i.1.2).toInvertibleSheaf)⁻¹ ^ v i := by
-  have := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
-  simpa only [LineBundleClass.primeDivisorClass_def] using
-    toBase.pullback_genericFiberι_eq_one_iff K hη (a := a)
-
-end GenericFiberExcision
 
 /-! ### Multidegrees across `X`, `X_s`, and `(X_s)_red`, and the weighted intersection matrix -/
 
@@ -182,13 +117,11 @@ private def componentMultidegreeHom {Y : Scheme.{u}}
       (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton ((mem_toFinset _).mp i.2))
     intersectionNumber (ResidueField R) (f i) a.toMul /
       (toBase.specialFiberWeight ((mem_toFinset _).mp i.2) : ℤ)
-  map_zero' := by
-    funext i
+  map_zero' := funext fun i ↦ by
     let := subschemeOverResidueField
       (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton ((mem_toFinset _).mp i.2))
     rw [toMul_zero, LineBundleClass.intersectionNumber_one, Int.zero_ediv, Pi.zero_apply]
-  map_add' a b := by
-    funext i
+  map_add' a b := funext fun i ↦ by
     have hi : toBase i.1 = closedPoint R := (mem_toFinset _).mp i.2
     let :=
       subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
@@ -212,8 +145,7 @@ private lemma componentMultidegreeHom_apply {Y : Scheme.{u}} {f}
       letI := subschemeOverResidueField
         (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton ((mem_toFinset _).mp i.2))
       intersectionNumber (ResidueField R) (f i) a.toMul /
-        (toBase.specialFiberWeight ((mem_toFinset _).mp i.2) : ℤ) :=
-  rfl
+        (toBase.specialFiberWeight ((mem_toFinset _).mp i.2) : ℤ) := rfl
 
 /-- Multiplying the `i`-th coordinate of `componentMultidegreeHom` by `w_i` recovers the
 intersection number over the residue field. -/
@@ -226,11 +158,10 @@ private lemma componentMultidegreeHom_mul_specialFiberWeight {Y : Scheme.{u}} {f
       intersectionNumber (ResidueField R) (f i) a.toMul := by
   have hi : toBase i.1 = closedPoint R := (mem_toFinset _).mp i.2
   let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
-  rw [componentMultidegreeHom_apply]
-  refine Int.ediv_mul_cancel ?_
-  rw [specialFiberWeight_def]
-  exact LineBundleClass.finrank_cohomology_zero_trivial_dvd_intersectionNumber (ResidueField R) _
-    (toBase.isField_globalSections_subscheme_closure_singleton hi) a.toMul
+  refine Int.ediv_mul_cancel (by
+    rw [specialFiberWeight_def]
+    exact LineBundleClass.finrank_cohomology_zero_trivial_dvd_intersectionNumber (ResidueField R) _
+      (toBase.isField_globalSections_subscheme_closure_singleton hi) a.toMul)
 
 /-- `componentMultidegreeHom` vanishes if and only if every component intersection number
 vanishes. -/
@@ -239,20 +170,20 @@ private lemma componentMultidegreeHom_eq_zero_iff {Y : Scheme.{u}} {f} (a : Line
       ∀ i,
         letI := subschemeOverResidueField
           (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton ((mem_toFinset _).mp i.2))
-        intersectionNumber (ResidueField R) (f i) a = 0 := by
-  refine ⟨fun h i ↦ ?_, fun h ↦ funext fun i ↦ ?_⟩
-  · have hm := toBase.componentMultidegreeHom_mul_specialFiberWeight hX hη h₀ h₁
+        intersectionNumber (ResidueField R) (f i) a = 0 :=
+  ⟨fun h i ↦ by
+    have hm := toBase.componentMultidegreeHom_mul_specialFiberWeight hX hη h₀ h₁
       (f := f) (Additive.ofMul a) i
     rw [h, Pi.zero_apply, zero_mul, toMul_ofMul] at hm
-    exact hm.symm
-  · rw [componentMultidegreeHom_apply, toMul_ofMul, h i, Int.zero_ediv, Pi.zero_apply]
+    exact hm.symm,
+   fun h ↦ funext fun i ↦ by
+    rw [componentMultidegreeHom_apply, toMul_ofMul, h i, Int.zero_ediv, Pi.zero_apply]⟩
 
 /-- Functoriality of `componentMultidegreeHom` along a morphism `g : Y ⟶ Z`. -/
 private lemma componentMultidegreeHom_pullback {Y Z : Scheme.{u}} {f} {g : Y ⟶ Z} {f'}
     (hfg : ∀ i, f i ≫ g = f' i) (a : LineBundleClass Z) :
     toBase.componentMultidegreeHom hX hη h₀ h₁ f (Additive.ofMul (pullback g a)) =
-      toBase.componentMultidegreeHom hX hη h₀ h₁ f' (Additive.ofMul a) := by
-  funext i
+      toBase.componentMultidegreeHom hX hη h₀ h₁ f' (Additive.ofMul a) := funext fun i ↦ by
   let := subschemeOverResidueField
     (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton ((mem_toFinset _).mp i.2))
   rw [componentMultidegreeHom_apply, componentMultidegreeHom_apply, toMul_ofMul, toMul_ofMul,
@@ -383,9 +314,8 @@ theorem specialFiberMultidegree_apply (a : Additive (LineBundleClass X)) (i) :
 theorem specialFiberMultidegreeOnFiber_eq_reducedSpecialFiberMultidegree_pullback
     (b : LineBundleClass (specialFiber R toBase).left) :
     toBase.specialFiberMultidegreeOnFiber hX hη h₀ h₁ (Additive.ofMul b) =
-      toBase.reducedSpecialFiberMultidegree hX hη h₀ h₁
-        (Additive.ofMul (pullback
-          (subschemeToSpecialFiber (specialFiberι R toBase).ker.le_radical) b)) :=
+      toBase.reducedSpecialFiberMultidegree hX hη h₀ h₁ (Additive.ofMul (pullback
+        (subschemeToSpecialFiber (specialFiberι R toBase).ker.le_radical) b)) :=
   (toBase.componentMultidegreeHom_pullback hX hη h₀ h₁
     (fun _ ↦ inclusion_subschemeToSpecialFiber _ _) b).symm
 
@@ -483,10 +413,8 @@ theorem specialFiberMultidegree_prod_zpow
     toBase.specialFiberMultidegree hX hη h₀ h₁ (Additive.ofMul (∏ i, (LineBundleClass.mk
         (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
           i.1.2).toInvertibleSheaf)⁻¹ ^ v i)) =
-      v ᵥ* toBase.specialFiberWeightedIntersectionMatrix hX hη := by
-  rw [ofMul_prod, map_sum]
-  funext j
-  rw [Finset.sum_apply, Matrix.vecMul, dotProduct]
+      v ᵥ* toBase.specialFiberWeightedIntersectionMatrix hX hη := funext fun j ↦ by
+  rw [ofMul_prod, map_sum, Finset.sum_apply, Matrix.vecMul, dotProduct]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [ofMul_zpow, map_zsmul, Pi.smul_apply, smul_eq_mul,
     specialFiberMultidegree_inv_mk_toInvertibleSheaf]
@@ -528,10 +456,9 @@ include hX in
 /-- Surjectivity of the additive generic-fibre pullback homomorphism on `LineBundleClass`. -/
 private lemma toAdditive_pullbackHom_genericFiberι_surjective :
     Function.Surjective (MonoidHom.toAdditive (pullbackHom (genericFiberι R K toBase))) :=
-  fun b ↦ by
-    obtain ⟨a, ha⟩ := toBase.pullback_genericFiberι_surjective_of_isRegular K hX b.toMul
-    refine ⟨Additive.ofMul a, Additive.toMul.injective ?_⟩
-    rwa [MonoidHom.toAdditive_apply_apply, LineBundleClass.pullbackHom_apply, toMul_ofMul]
+  fun b ↦ let ⟨a, ha⟩ := toBase.pullback_genericFiberι_surjective_of_isRegular K hX b.toMul
+  ⟨Additive.ofMul a, Additive.toMul.injective (by
+    rwa [MonoidHom.toAdditive_apply_apply, LineBundleClass.pullbackHom_apply, toMul_ofMul])⟩
 
 /-- The **Picard specialization homomorphism**
 ([Stacks, Tag 0CEI](https://stacks.math.columbia.edu/tag/0CEI); Liu, Section 9.1) from `Pic(X_K)`
@@ -547,13 +474,12 @@ def specialFiberPicardSpecialization :
   let φ : Additive (LineBundleClass X) →+ _ ⧸ S :=
     S.mkQ.toAddMonoidHom.comp (toBase.specialFiberMultidegree hX hη h₀ h₁)
   have hker : ∀ a ∈ p.ker, φ a = 0 := fun a ha ↦ by
-    have ha' : pullback (genericFiberι R K toBase) a.toMul = 1 := by
-      simpa only [p, MonoidHom.toAdditive_apply_apply, LineBundleClass.pullbackHom_apply,
-        toMul_ofMul, toMul_zero] using congrArg Additive.toMul (AddMonoidHom.mem_ker.mp ha)
     rw [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, Submodule.mkQ_apply,
       Submodule.Quotient.mk_eq_zero, ← ofMul_toMul a]
-    exact toBase.specialFiberMultidegree_mem_range_of_pullback_genericFiberι_eq_one
-      K hX hη h₀ h₁ ha'
+    refine toBase.specialFiberMultidegree_mem_range_of_pullback_genericFiberι_eq_one
+      K hX hη h₀ h₁ ?_
+    simpa only [p, MonoidHom.toAdditive_apply_apply, LineBundleClass.pullbackHom_apply,
+      toMul_ofMul, toMul_zero] using congrArg Additive.toMul (AddMonoidHom.mem_ker.mp ha)
   exact (QuotientAddGroup.lift p.ker φ hker).comp
     (QuotientAddGroup.liftEquiv p.ker
       (toBase.toAdditive_pullbackHom_genericFiberι_surjective K hX) rfl).symm.toAddMonoidHom
@@ -572,8 +498,8 @@ theorem specialFiberPicardSpecialization_pullback (a : LineBundleClass X) :
     Additive.toMul.injective (by simp [p])
   have hsymm : (QuotientAddGroup.liftEquiv p.ker hp rfl).symm (p (Additive.ofMul a)) =
       QuotientAddGroup.mk (Additive.ofMul a) :=
-    (QuotientAddGroup.liftEquiv p.ker hp rfl).injective <| by
-      rw [AddEquiv.apply_symm_apply, QuotientAddGroup.liftEquiv_mk]
+    (QuotientAddGroup.liftEquiv p.ker hp rfl).injective (by
+      rw [AddEquiv.apply_symm_apply, QuotientAddGroup.liftEquiv_mk])
   rw [specialFiberPicardSpecialization, hpa, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
     hsymm]
   refine (QuotientAddGroup.lift_mk' (N := p.ker) _ (Additive.ofMul a)).trans ?_
@@ -664,10 +590,9 @@ theorem exists_dvd_specialFiberMultiplicity_and_pow_eq_one
       rw [Int.cast_mul, Int.cast_mul, Int.cast_natCast, Int.cast_natCast, hc j, mul_right_comm,
         Rat.mul_den_eq_num]
   refine ⟨c.den, c.den_pos, fun j ↦ ?_, ?_⟩
-  · have hdvdN : c.den ∣ c.num.natAbs * toBase.specialFiberMultiplicity π j := by
+  · exact c.reduced.symm.dvd_of_dvd_mul_left (by
       simpa only [Int.natAbs_natCast, Int.natAbs_mul] using
-        Int.natAbs_dvd_natAbs.mpr ⟨v j, (hrel j).symm.trans (mul_comm _ _)⟩
-    exact c.reduced.symm.dvd_of_dvd_mul_left hdvdN
+        Int.natAbs_dvd_natAbs.mpr ⟨v j, (hrel j).symm.trans (mul_comm _ _)⟩)
   · have hsp := toBase.prod_inv_mk_toInvertibleSheaf_vanishingIdeal_pow_eq_one hX hη hπ hreg
     rw [← Finset.prod_coe_sort] at hsp
     rw [← Finset.prod_pow, ← one_zpow c.num, ← hsp, ← Finset.prod_zpow]
@@ -725,11 +650,11 @@ theorem existsUnique_pullback_genericFiberι_eq_and_specialFiberMultidegree_eq_z
   have han : a ^ n = 1 := by
     rw [← zpow_natCast, ← zpow_mul, mul_right_comm, mul_comm (d : ℤ) (n : ℤ), zpow_mul, zpow_mul,
       zpow_natCast, zpow_natCast, hadn, one_zpow]
-  refine ⟨a, ⟨haK, ha0, han⟩, fun a' ⟨ha'K, ha'0, ha'n⟩ ↦ eq_of_mul_inv_eq_one ?_⟩
-  exact toBase.eq_one_of_pullback_genericFiberι_eq_one_of_coprime_specialFiberMultiplicity
-    K hX hη h₀ h₁ hπ hconn hcop (by simp [ha'K, haK])
-    (by rw [ofMul_mul, ofMul_inv, map_add, map_neg, ha'0, ha0, neg_zero, add_zero])
-    (by rw [mul_pow, inv_pow, ha'n, han, inv_one, mul_one])
+  refine ⟨a, ⟨haK, ha0, han⟩, fun a' ⟨ha'K, ha'0, ha'n⟩ ↦ eq_of_mul_inv_eq_one <|
+    toBase.eq_one_of_pullback_genericFiberι_eq_one_of_coprime_specialFiberMultiplicity
+      K hX hη h₀ h₁ hπ hconn hcop (by simp [ha'K, haK])
+      (by rw [ofMul_mul, ofMul_inv, map_add, map_neg, ha'0, ha0, neg_zero, add_zero])
+      (by rw [mul_pow, inv_pow, ha'n, han, inv_one, mul_one])⟩
 
 end Connected
 
