@@ -18,7 +18,7 @@ Mathlib's `extDerivWithin` and `extDeriv`. This file records that this flat form
 on `U`:
 
 * for a smooth form `η`, it is smooth on `U` (`TauCeti.SmoothForm.contDiffOn_mpullback`);
-* for a closed smooth form `η`, it is closed at every point of `U`
+* for a closed smooth form `η`, it is closed at every point where `φ` is `C²`
   (`TauCeti.SmoothForm.IsClosed.extDeriv_mpullback_eq_zero`).
 
 They follow from the pointwise statements `ContMDiffAt.mpullback_form` and
@@ -60,25 +60,22 @@ theorem _root_.OpenPartialHomeomorph.mpullback_mpullback_symm_apply (e : OpenPar
   rw [← mpullback_comp_at hd hds, hid.mpullback_eq, mpullback_id]
 
 omit [IsManifold I ∞ M] in
-/-- Let `e : M → E` be a partial homeomorphism, differentiable in the inverse direction, which
-intertwines a self-map `f` of its source preserving the form `η` with a map `A` of `E`. Then `η`
-read through `e.symm` is `A`-invariant at every point `y` of the target of `e` where `A` and `f`
-are differentiable. -/
+/-- Let `e : M → E` be a partial homeomorphism which intertwines a self-map `f` of its source
+preserving the form `η` with a map `A` of `E`. Then `η` read through `e.symm` is `A`-invariant at
+every point `y` of the target of `e` where `A` and `f` are differentiable and `e.symm` is
+differentiable at `y` and `A y`. -/
 theorem _root_.OpenPartialHomeomorph.mpullback_mpullback_symm_apply_of_intertwines
-    (e : OpenPartialHomeomorph M E) (hes : MDifferentiableOn 𝓘(ℝ, E) I e.symm e.target)
-    {f : M → M} {A : E → E} {η : RoughForm I M F k} (hηf : mpullback I I f η = η)
-    (hA : ∀ z ∈ e.source, f z ∈ e.source ∧ e (f z) = A (e z)) {y : E} (hy : y ∈ e.target)
+    (e : OpenPartialHomeomorph M E) {f : M → M} {A : E → E} {η : RoughForm I M F k}
+    (hηf : mpullback I I f η = η) (hA : ∀ z ∈ e.source, f z ∈ e.source ∧ e (f z) = A (e z))
+    {y : E} (hy : y ∈ e.target) (hds : MDifferentiableAt 𝓘(ℝ, E) I e.symm y)
+    (hdsA : MDifferentiableAt 𝓘(ℝ, E) I e.symm (A y))
     (hAd : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) A y) (hf : MDifferentiableAt I I f (e.symm y)) :
     mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) A (mpullback 𝓘(ℝ, E) I e.symm η) y =
       mpullback 𝓘(ℝ, E) I e.symm η y := by
-  have hds {z : E} (hz : z ∈ e.target) : MDifferentiableAt 𝓘(ℝ, E) I e.symm z :=
-    (hes z hz).mdifferentiableAt (e.open_target.mem_nhds hz)
-  have hsymm {z : E} (hz : z ∈ e.target) := e.toPartialEquiv.symm_map_of_intertwines hA hz
   have heq : e.symm ∘ A =ᶠ[𝓝 y] f ∘ e.symm := by
     filter_upwards [e.open_target.mem_nhds hy] with z hz
-    exact (hsymm hz).2
-  rw [← mpullback_comp_at hAd (hds (hsymm hy).1), heq.mpullback_eq,
-    mpullback_comp_at (hds hy) hf, hηf]
+    exact (e.toPartialEquiv.symm_map_of_intertwines hA hz).2
+  rw [← mpullback_comp_at hAd hdsA, heq.mpullback_eq, mpullback_comp_at hds hf, hηf]
 
 namespace SmoothForm
 
@@ -92,14 +89,14 @@ theorem contDiffOn_mpullback (η : SmoothForm I M F k) (hU : IsOpen U)
     ((η.contMDiff (φ y)).mpullback_form ((hφ y hy).contMDiffAt (hU.mem_nhds hy))
       (by simp)).contMDiffWithinAt
 
-/-- The pullback of a closed smooth form along a map from a normed space, smooth on an open set
-`U`, is closed at every point of `U` as a flat form. -/
-theorem IsClosed.extDeriv_mpullback_eq_zero {η : SmoothForm I M F k} (hη : η.IsClosed)
-    (hU : IsOpen U) (hφ : ContMDiffOn 𝓘(ℝ, E') I 2 φ U) {y : E'} (hy : y ∈ U) :
+/-- The pullback of a closed smooth form along a map from a normed space is closed, as a flat
+form, at every point where the map is `C²`. -/
+theorem IsClosed.extDeriv_mpullback_eq_zero {η : SmoothForm I M F k} (hη : η.IsClosed) {y : E'}
+    (hφ : ContMDiffAt 𝓘(ℝ, E') I 2 φ y) :
     extDeriv (TauCeti.mpullback 𝓘(ℝ, E') I φ η.1 : E' → E' [⋀^Fin k]→L[ℝ] F) y = 0 := by
   -- `d (φ^* η) = φ^* dη = 0` at `y`, by naturality of the exterior derivative.
-  rw [← mextDeriv_eq_extDeriv, ← mpullback_mextDeriv_at ((hφ y hy).contMDiffAt (hU.mem_nhds hy))
-    ((η.contMDiff (φ y)).of_le (by simp)), (isClosed_def η).1 hη, TauCeti.mpullback_zero]
+  rw [← mextDeriv_eq_extDeriv, ← mpullback_mextDeriv_at hφ ((η.contMDiff (φ y)).of_le (by simp)),
+    (isClosed_def η).1 hη, TauCeti.mpullback_zero]
   rfl
 
 end SmoothForm

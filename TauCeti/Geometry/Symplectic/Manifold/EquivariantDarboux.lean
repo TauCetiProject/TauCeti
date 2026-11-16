@@ -10,6 +10,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.ModelSpace
 import TauCeti.Geometry.Manifold.GroupAction.CompactLinearization
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Symplectic.Darboux.Basic
+import TauCeti.Logic.Equiv.PartialEquiv
 
 /-!
 # The equivariant Darboux theorem on manifolds
@@ -157,13 +158,15 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
   -- Bochner coordinates `e` at `x₀`, in which `G` acts through its isotropy representation `ρ`.
   obtain ⟨ρ, e, hρc, hx₀e, hex₀, he, hes, hequiv, hρ, hderiv⟩ :=
     exists_equivariant_contMDiff_chart_of_compactSpace (I := I) (n := ⊤) IG le_top hx₀
+  have hds {y : E} (hy : y ∈ e.target) : MDifferentiableAt 𝓘(ℝ, E) I e.symm y :=
+    (hes.contMDiffAt (e.open_target.mem_nhds hy)).mdifferentiableAt (by simp)
   -- The form read in `e`: a closed `ρ`-invariant form on the target of `e`, equal to `form x₀` at
   -- the origin.
   let η : E → E [⋀^Fin 2]→L[ℝ] ℝ := mpullback 𝓘(ℝ, E) I e.symm form.1
   have hηe {x : M} (hx : x ∈ e.source) : mpullback I 𝓘(ℝ, E) e η x = form.1 x :=
     e.mpullback_mpullback_symm_apply form.1 hx
       ((he.contMDiffAt (e.open_source.mem_nhds hx)).mdifferentiableAt (by simp))
-      ((hes.contMDiffAt (e.open_target.mem_nhds (e.map_source hx))).mdifferentiableAt (by simp))
+      (hds (e.map_source hx))
   have hη0 (a b : TangentSpace I x₀) : η 0 ![a, b] = form.eval₂ x₀ a b := by
     have hid (v : TangentSpace I x₀) : mfderiv I 𝓘(ℝ, E) e x₀ v = v := by
       rw [hderiv.mfderiv]
@@ -172,26 +175,23 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
     -- The two sides differ only in the type of the entries of `![a, b]`, `TangentSpace I x₀` on
     -- one side and `E` on the other, which agree by definition.
     rfl
-  have hηρ (g : G) {y : E} (hy : y ∈ e.target) :
+  have hηρ (g : G) (y : E) (hy : y ∈ e.target) :
       (η (ρ g y)).compContinuousLinearMap (ρ g) = η y := by
     have h := e.mpullback_mpullback_symm_apply_of_intertwines
-      (hes.mdifferentiableOn (by simp))
-      (by simpa using congrArg Subtype.val (hG g)) (hequiv g) hy (ρ g).mdifferentiableAt
+      (by simpa using congrArg Subtype.val (hG g)) (hequiv g) hy (hds hy)
+      (hds (e.toPartialEquiv.symm_map_of_intertwines (hequiv g) hy).1) (ρ g).mdifferentiableAt
       ((ContMDiffSMul.contMDiff_const_smul (I := IG) (n := ∞) g).mdifferentiable (by simp) _)
-    rw [mpullback_eq_flat] at h
-    calc (η (ρ g y)).compContinuousLinearMap (ρ g)
-        = (η (ρ g y)).compContinuousLinearMap (fderiv ℝ (ρ g) y) := by rw [(ρ g).fderiv]
-      _ = η y := h
+    calc _ = (η (ρ g y)).compContinuousLinearMap (fderiv ℝ (ρ g) y) := by rw [(ρ g).fderiv]
+      _ = η y := by rwa [mpullback_eq_flat] at h
   -- The flat equivariant Darboux theorem for `η`, transported back to `M` along `e`.
   obtain ⟨ψ, U, hUo, h0U, -, hUρ, hψ0, hψρ, hψ⟩ :=
     exists_equivariant_diffeomorph_compContinuousLinearMap_fderiv_eq (r := ⊤)
       (isCompact_range hρc).isBounded (fun g ↦ map_zero (ρ g)) le_top e.open_target
       (hex₀ ▸ e.map_source hx₀e) (form.contDiffOn_mpullback e.open_target hes)
-      (fun y hy ↦
-        hform.isClosed.extDeriv_mpullback_eq_zero e.open_target (hes.of_le (by simp)) hy)
+      (fun y hy ↦ hform.isClosed.extDeriv_mpullback_eq_zero
+        ((hes.contMDiffAt (e.open_target.mem_nhds hy)).of_le (by simp)))
       (fun v hv ↦ isNondegenerate_iff_separatingLeft.1 hform.isNondegenerate x₀ v fun w ↦
-        (hη0 v w).symm.trans (hv w))
-      fun g y hy ↦ hηρ g hy
+        (hη0 v w).symm.trans (hv w)) hηρ
   obtain ⟨chart, hx₀c, hc0, hcequiv, hcη⟩ := exists_chart_comp_symm he hes hequiv hηe ψ hUo h0U
     hUρ hψ0 hψρ (fun u hu ↦ by rw [mpullback_eq_flat]; exact hψ u hu) hx₀e hex₀
   simp only [← hρ]
