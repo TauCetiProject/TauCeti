@@ -54,7 +54,7 @@ constant, depending on `N`, times `‖S_N u - g‖_p`.
   `TauCeti.BesovSpace.coe_littleBesov`, and it is the smallest closed subspace containing the
   Schwartz functions (`TauCeti.BesovSpace.littleBesov_le`).
 * `SchwartzMap.toLittleBesovCLM`: the inclusion of the Schwartz functions in `b^s_{p,∞}`.
-* `TauCeti.BesovSpace.denseRange_littleBesov`: the Schwartz functions are dense in `b^s_{p,∞}`, so
+* `SchwartzMap.denseRange_toLittleBesovCLM`: the Schwartz functions are dense in `b^s_{p,∞}`, so
   continuous linear maps out of it are determined by their values on them
   (`TauCeti.BesovSpace.continuousLinearMap_ext_littleBesov`).
 * `TauCeti.BesovSpace.mem_littleBesov_iff`: the characterisation by the blocks, assembled from
@@ -143,7 +143,8 @@ theorem littleBesov_le {S : Submodule ℂ (BesovSpace F φ s p ∞)}
 
 variable (F φ s p) in
 /-- **Schwartz functions are dense in the little Besov space** `b^s_{p,∞}`, by definition. -/
-theorem denseRange_littleBesov : DenseRange (SchwartzMap.toLittleBesovCLM F φ s p) := by
+theorem _root_.SchwartzMap.denseRange_toLittleBesovCLM :
+    DenseRange (SchwartzMap.toLittleBesovCLM F φ s p) := by
   refine Topology.IsInducing.subtypeVal.dense_iff.2 fun u ↦ ?_
   rw [← Set.range_comp]
   simpa only [Function.comp_def, SchwartzMap.coe_toLittleBesovCLM, ← coe_littleBesov] using u.2
@@ -156,7 +157,8 @@ theorem continuousLinearMap_ext_littleBesov {G : Type*} [AddCommMonoid G] [Modul
       T' (SchwartzMap.toLittleBesovCLM F φ s p f)) :
     T = T' :=
   ContinuousLinearMap.ext fun u ↦ congrFun
-    ((denseRange_littleBesov F φ s p).equalizer T.continuous T'.continuous (funext h)) u
+    ((SchwartzMap.denseRange_toLittleBesovCLM F φ s p).equalizer T.continuous T'.continuous
+      (funext h)) u
 
 /-- **The weighted blocks of an element of `b^s_{p,∞}` vanish at high frequency:**
 `2^{js} ‖Δⱼ u‖_p → 0`. -/

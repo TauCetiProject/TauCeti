@@ -520,7 +520,7 @@ theorem coe_quantizeLittleBesov_toLittleBesovCLM (ha : a.HasCompactSpatialSuppor
   obtain ⟨C, -, hC⟩ := exists_norm_quantizeToLittleBesov_le ha φ s
   rw [quantizeLittleBesov,
     ← ContinuousLinearMap.coe_coe (SchwartzMap.toLittleBesovCLM ℂ φ s p),
-    LinearMap.extendOfNorm_eq (BesovSpace.denseRange_littleBesov ℂ φ s p) ⟨C, hC⟩ u,
+    LinearMap.extendOfNorm_eq (SchwartzMap.denseRange_toLittleBesovCLM ℂ φ s p) ⟨C, hC⟩ u,
     quantizeToLittleBesov, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
     ContinuousLinearMap.coe_coe, SchwartzMap.coe_toLittleBesovCLM]
 
@@ -530,7 +530,8 @@ theorem exists_norm_quantizeLittleBesov_le (ha : a.HasCompactSpatialSupport)
     (φ : ContDiffBump (0 : CoordinateSpace n)) (s : ℝ) :
     ∃ C, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)], ‖a.quantizeLittleBesov ha φ s p‖ ≤ C := by
   obtain ⟨C, hC0, hC⟩ := exists_norm_quantizeToLittleBesov_le ha φ s
-  exact ⟨C, LinearMap.opNorm_extendOfNorm_le (BesovSpace.denseRange_littleBesov ℂ φ s _) hC0 hC⟩
+  exact ⟨C,
+    LinearMap.opNorm_extendOfNorm_le (SchwartzMap.denseRange_toLittleBesovCLM ℂ φ s _) hC0 hC⟩
 
 end Symbol
 
