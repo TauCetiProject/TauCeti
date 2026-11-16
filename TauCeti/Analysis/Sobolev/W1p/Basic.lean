@@ -514,6 +514,16 @@ theorem W1p.value_neg_ae (u : W1p mu Omega p) :
     ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -⇑(W1p.value u) := by
   simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
 
+/-- On a set `s ⊆ Ω`, a Sobolev function is bounded by `B` in absolute value almost everywhere
+exactly when both it and its negation are bounded above by `B` almost everywhere. -/
+theorem W1p.ae_abs_value_le_iff {u : W1p mu Omega p} {s : Set E} (hs : s ⊆ Omega) {B : ℝ} :
+    (∀ᵐ x ∂mu.restrict s, |W1p.value u x| ≤ B) ↔
+      (∀ᵐ x ∂mu.restrict s, W1p.value u x ≤ B) ∧ ∀ᵐ x ∂mu.restrict s, W1p.value (-u) x ≤ B := by
+  rw [← Filter.eventually_and]
+  refine Filter.eventually_congr ?_
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset hs (W1p.value_neg_ae u)] with x hx
+  rw [hx, Pi.neg_apply, abs_le, neg_le, and_comm]
+
 /-- The value of a sum of two Sobolev functions is almost everywhere the sum of their values. -/
 theorem W1p.value_add_ae (u v : W1p mu Omega p) :
     ⇑(W1p.value (u + v)) =ᵐ[mu.restrict Omega] ⇑(W1p.value u) + ⇑(W1p.value v) := by
