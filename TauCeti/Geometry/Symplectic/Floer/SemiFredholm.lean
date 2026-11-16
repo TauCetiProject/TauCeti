@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 public import TauCeti.Geometry.Symplectic.Floer.InteriorEstimate
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Symplectic.Floer.SobolevDensity
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.Topology.Instances.Real.TSupport
 
