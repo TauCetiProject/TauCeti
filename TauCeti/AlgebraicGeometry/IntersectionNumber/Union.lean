@@ -14,7 +14,7 @@ public import TauCeti.AlgebraicGeometry.LineBundle.BaseChange
 
 Let `X` be a scheme over a field `k` and let `V(I)`, `V(J)` be closed subschemes of `X` meeting in
 a scheme `V(I ⊔ J)` finite over `k` (for instance in finitely many points, when `X` is locally of
-finite type over `k`: `Scheme.IdealSheafData.isFinite_subschemeι_comp_of_finite`). Then the
+finite type over `k`: `Scheme.IdealSheafData.isFinite_subschemeι_comp_of_finite_support`). Then the
 degree of a line bundle on the union `V(I ⊓ J)` is the sum of its degrees on `V(I)` and on
 `V(J)`:
 
@@ -121,7 +121,7 @@ private lemma finiteDimensional_cohomology_tensorMayerVietoris_X₁ {i : ℕ} (h
   have h₂ (i : ℕ) (hi : i < 2) :=
     finiteDimensional_cohomology_tensorMayerVietoris_X₂ k E I J hI hJ hi
   have : FiniteDimensional k (Cohomology (tensorMayerVietoris E I J).X₃ 0) :=
-    finiteDimensional_cohomology_zero_tensor_pushforward k (I ⊔ J) E
+    finiteDimensional_cohomology_zero_tensor_pushforwardSubscheme k (I ⊔ J) E
   obtain rfl | rfl : i = 0 ∨ i = 1 := by omega
   · have := hS.mono_f
     have := h₂ 0 (by omega)
@@ -156,7 +156,7 @@ theorem FiniteLocallyFreeSheaf.FixedRank.eulerCharBelow_pullback_subschemeι_inf
           ((FiniteLocallyFreeSheaf.pullback J.subschemeι).obj E.obj).obj 2 := by
   have hS := shortExact_tensorMayerVietoris E I J
   have h₃ : Subsingleton (Cohomology (tensorMayerVietoris E I J).X₃ 1) :=
-    subsingleton_cohomology_one_tensor_pushforward k (I ⊔ J) E
+    subsingleton_cohomology_one_tensor_pushforwardSubscheme k (I ⊔ J) E
   -- The connecting map out of `H¹` of the last term, which vanishes, is zero.
   have hδ : cohomologyδBaseLinear k X hS 1 2 rfl = 0 :=
     LinearMap.ext fun x ↦ by
@@ -178,7 +178,7 @@ theorem FiniteLocallyFreeSheaf.FixedRank.eulerCharBelow_pullback_subschemeι_inf
     eulerCharBelow_tensor_pushforwardSubscheme k (I ⊓ J) E.obj 2
   have h₃ : eulerCharBelow k X (tensorMayerVietoris E I J).X₃ 2 =
       r * ((I ⊔ J).subschemeι ≫ X ↘ Spec (.of k)).finrank s :=
-    eulerCharBelow_tensor_pushforward k (I ⊔ J) E s
+    eulerCharBelow_tensor_pushforwardSubscheme_eq_mul_finrank k (I ⊔ J) E s
   rw [h₁, h₃] at h
   exact h.symm
 
@@ -269,7 +269,7 @@ private lemma intersectionNumber_vanishingIdeal_finset_sup (s : Finset (Closeds 
     -- `W` meets the union of the members of `t` in finitely many points.
     have : IsFinite ((vanishingIdeal W ⊔ vanishingIdeal (t.sup id)).subschemeι ≫
         X ↘ Spec (.of k)) := by
-      refine isFinite_subschemeι_comp_of_finite k _ ?_
+      refine isFinite_subschemeι_comp_of_finite_support k _ ?_
       rw [support_sup, Closeds.coe_inf, coe_support_vanishingIdeal, coe_support_vanishingIdeal,
         Closeds.coe_finset_sup, Finset.sup_set_eq_biUnion, Set.inter_iUnion₂]
       refine t.finite_toSet.biUnion fun Z hZ ↦ ?_
