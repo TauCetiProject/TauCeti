@@ -33,6 +33,8 @@ The path formulation includes the zero-step case and proves integrability first.
 
 ## Main results
 
+* `TauCeti.indepFun_prod_wignerMatrix_apply_of_ne`: products of Wigner matrix entries over two
+  families sharing no unordered position are independent.
 * `TauCeti.integral_prod_wignerMatrix_apply_eq_zero`: for independent centred entries, a product
   of entries reading some edge exactly once has expectation zero.
 * `TauCeti.integral_trace_pow_wignerMatrix`: for independent centred entries in `Lᵏ`, the
@@ -101,6 +103,43 @@ private theorem wignerMatrix_apply_eq_orientEntry {n : ℕ} (ω : Ω) (i j : Fin
   · obtain rfl := Fin.ext h
     simp [orientEntry, entryIndex]
   · simp [orientEntry, entryIndex, h, h.not_gt]
+
+/-- **Edge-disjoint Wigner products are independent.** For independent entries of the array and two
+finite families of positions `(u₁ s, v₁ s)` and `(u₂ t, v₂ t)` sharing no unordered position, the
+products of the corresponding entries of the Wigner matrix are independent. -/
+theorem indepFun_prod_wignerMatrix_apply_of_ne {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
+    (hξm : ∀ ij, AEMeasurable (ξ ij) P) (hηm : ∀ i, AEMeasurable (η i) P)
+    (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
+    {n : ℕ} (u₁ v₁ : ι₁ → Fin n) (u₂ v₂ : ι₂ → Fin n)
+    (hne : ∀ s t, s(u₁ s, v₁ s) ≠ s(u₂ t, v₂ t)) :
+    IndepFun (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u₁ s) (v₁ s))
+      (fun ω ↦ ∏ t, wignerMatrix ξ η n ω (u₂ t) (v₂ t)) P := by
+  classical
+  set X : StrictUpper ⊕ ℕ → Ω → ℂ := fun k ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k
+  set e₁ : ι₁ → StrictUpper ⊕ ℕ := fun s ↦ entryIndex (u₁ s) (v₁ s)
+  set e₂ : ι₂ → StrictUpper ⊕ ℕ := fun t ↦ entryIndex (u₂ t) (v₂ t)
+  set c : ℂ := (Real.sqrt n : ℂ)⁻¹
+  have hX (k : StrictUpper ⊕ ℕ) : AEMeasurable (X k) P := aemeasurable_sumElim_ofReal hξm hηm k
+  set S : Finset (StrictUpper ⊕ ℕ) := Finset.univ.image e₁
+  set T : Finset (StrictUpper ⊕ ℕ) := Finset.univ.image e₂
+  have hST : Disjoint S T := by
+    rw [Finset.disjoint_left]
+    intro k hkS hkT
+    obtain ⟨s, -, rfl⟩ := Finset.mem_image.1 hkS
+    obtain ⟨t, -, hkt⟩ := Finset.mem_image.1 hkT
+    exact hne s t (entryIndex_eq_entryIndex_iff.1 hkt.symm)
+  set φ : (S → ℂ) → ℂ := fun g ↦ ∏ s : ι₁,
+    c * orientEntry (u₁ s) (v₁ s) (g ⟨e₁ s, Finset.mem_image_of_mem e₁ (Finset.mem_univ s)⟩)
+  set ψ : (T → ℂ) → ℂ := fun g ↦ ∏ t : ι₂,
+    c * orientEntry (u₂ t) (v₂ t) (g ⟨e₂ t, Finset.mem_image_of_mem e₂ (Finset.mem_univ t)⟩)
+  have hφ : Measurable φ := Finset.measurable_prod _ fun s _ ↦
+    measurable_const.mul ((measurable_orientEntry _ _).comp (measurable_pi_apply _))
+  have hψ : Measurable ψ := Finset.measurable_prod _ fun t _ ↦
+    measurable_const.mul ((measurable_orientEntry _ _).comp (measurable_pi_apply _))
+  refine ((hindep.indepFun_finset₀ S T hST hX).comp hφ hψ).congr
+    (.of_forall fun ω ↦ ?_) (.of_forall fun ω ↦ ?_)
+  · simp only [Function.comp_apply, wignerMatrix_apply_eq_orientEntry, φ, X, e₁, c]
+  · simp only [Function.comp_apply, wignerMatrix_apply_eq_orientEntry, ψ, X, e₂, c]
 
 /-- **Singleton edges vanish.** Let the entries of the array be independent and centred. For a
 finite family of positions `(u s, v s)`, if the unordered position `s(u t, v t)` is read by no
