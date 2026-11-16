@@ -437,7 +437,8 @@ where `(φ ⊗ ψ)(x, y) = ψ y • φ x`. It is linear in `K`. -/
 def kernelOperator (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) :
     𝓓'(V, F) →ₗ[ℝ] 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, F) :=
   LinearMap.mk₂ ℝ (compProdSMul hV)
-    (fun _ _ _ ↦ (rfl)) (fun _ _ _ ↦ (rfl))
+    (fun K K' _ ↦ ContinuousLinearMap.add_comp K K' _)
+    (fun c K _ ↦ ContinuousLinearMap.smul_comp c K _)
     (fun K ψ ψ' ↦ by ext φ; simp [compProdSMul_apply, prodSMulCLM_add])
     (fun c K ψ ↦ by ext φ; simp [compProdSMul_apply, prodSMulCLM_smul])
 
