@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
+public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
 import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
@@ -18,20 +18,16 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
-import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Mellin–Barnes integrals for the Gauss hypergeometric function
 
-Olver's regularized Gauss hypergeometric function `𝐅(a, b; c; z)` (`Complex.regularizedGaussHGFun`
-on `‖z‖ < 1`, continued by `Complex.eulerIntegral` on `{z | 1 - z ∈ Complex.slitPlane}`) admits two
-classical Mellin–Barnes integral representations along vertical lines `Re s = σ` separating left and
-right sequences of Gamma poles (with the ordinary series `₂F₁(a, b; c; z)` obtained on multiplying
-by `Γ(c)`):
+Two classical Mellin–Barnes vertical-line integrals represent the Gauss hypergeometric family along
+vertical lines `Re s = σ` separating left and right sequences of Gamma poles:
 
-* **DLMF 15.6.6** in powers of `-z`, on the cut plane `{z | -z ∈ Complex.slitPlane}`:
+* **DLMF 15.6.6** in powers of `-z`, holomorphic on the cut plane `{z | -z ∈ Complex.slitPlane}`:
   `(2π Γ(a) Γ(b))⁻¹ ∫ Γ(a + s) Γ(b + s) Γ(-s) Γ(c + s)⁻¹ (-z)^s dy`,
   where `s = σ + i y` and `max (-Re a, -Re b) < σ < 0`.
 * **DLMF 15.6.7** in powers of `1 - z`, holomorphic on `{z | 1 - z ∈ Complex.slitPlane}` (and
@@ -39,10 +35,10 @@ by `Γ(c)`):
   `(2π Γ(a) Γ(b) Γ(c - a) Γ(c - b))⁻¹ ∫ Γ(a + s) Γ(b + s) Γ(c - a - b - s) Γ(-s) (1 - z)^s dy`,
   where `s = σ + i y` and `max (-Re a, -Re b) < σ < min (0, Re (c - a - b))`.
 
-This file proves convergence and holomorphy of both Mellin–Barnes integrals on their cut planes,
-and evaluates 15.6.6 against `Complex.eulerIntegral` (`Re b < Re c`, `-Re b < σ < 0`,
-`-z ∈ slitPlane`) and 15.6.7 against `Complex.regularizedGaussHGFun` and
-`Complex.ordinaryHypergeometric` (`‖z‖ < 1`).
+This file proves convergence and holomorphy of both Mellin–Barnes integrals on their respective cut
+planes, evaluates 15.6.6 against Euler's normalized integral `Complex.eulerIntegral` (`Re b < Re c`,
+`-Re b < σ < 0`, `-z ∈ slitPlane`), and evaluates 15.6.7 against Mathlib's power series
+`Complex.regularizedGaussHGFun` and `Complex.ordinaryHypergeometric` (`‖z‖ < 1`).
 
 On any pole-free line `Re s = σ`, Stirling's vertical-strip bounds give
 `O((1 + |y|)^K exp (-π |y|))` decay for the Gamma ratio in 15.6.6 locally uniformly in `c` (with
@@ -123,7 +119,7 @@ private theorem exists_norm_three_Gamma_le {a b : ℂ} {σ : ℝ}
     simpa only [← add_assoc] using hbb y
   have h3 : ‖Gamma (-((σ : ℂ) + y * I))‖ ≤
       Cs * (1 + |y|) ^ Ks * Real.exp (-(π * |y| / 2)) := by
-    rw [show -((σ : ℂ) + y * I) = (-σ : ℂ) - y * I by ring]
+    rw [neg_add']
     exact hbs y
   rw [norm_mul, norm_mul]
   calc ‖Gamma (a + (σ + y * I))‖ * ‖Gamma (b + (σ + y * I))‖ * ‖Gamma (-((σ : ℂ) + y * I))‖
@@ -346,9 +342,10 @@ theorem analyticOnNhd_integral_Gamma_mul_Gamma_mul_Gamma_mul_inv_Gamma_mul_neg_c
     refine Eventually.of_forall fun y p hp ↦ ?_
     have hp1 : p.1 + σ ∈ ball (p₀.1 + σ) 1 := by
       simpa [mem_ball_iff_norm, add_sub_add_right_eq_sub] using hp.1
+    have hp_exp : 5 / 2 - (p₀.1 + (σ : ℂ)).re = p_exp + 1 := by dsimp [p_exp]; ring
     obtain ⟨hi, hd⟩ := hbc (p.1 + σ) hp1 y
     rw [add_assoc] at hi hd
-    rw [show 5 / 2 - (p₀.1 + ↑σ).re = p_exp + 1 by dsimp [p_exp]; ring] at hd
+    rw [hp_exp] at hd
     exact norm_fderiv_mellinBarnesIntegrand_le hCg hCc (hbg y) hi hd
       ((hball (-p.2) hp.2).2.1 y) ((hball (-p.2) hp.2).2.2 y)
   have h_dom_int := (TauCeti.integrable_one_add_abs_rpow_mul_exp_neg_mul_abs (Kg + p_exp + 1)
@@ -380,10 +377,11 @@ private theorem integrable_eulerMellinKernel (a : ℂ) {b c : ℂ} (hbc : b.re <
       (fun n hn ↦ by simp at hn; linarith [n.cast_nonneg' (α := ℝ)])
       (fun n hn ↦ by simp at hn; linarith [n.cast_nonneg' (α := ℝ)])).const_mul ((x : ℂ) ^ (σ : ℂ))
     refine hg.norm.congr (Eventually.of_forall fun y ↦ ?_)
+    have ha_eq : a + ((σ : ℂ) + y * I) = a + σ + y * I := (add_assoc a σ (y * I)).symm
+    have hσ_eq : -((σ : ℂ) + y * I) = -(σ : ℂ) - y * I := neg_add' _ _
     dsimp only
     congr 1
-    rw [show a + ((σ : ℂ) + y * I) = a + σ + y * I by ring,
-      show -((σ : ℂ) + y * I) = (-σ : ℂ) - y * I by ring]
+    rw [ha_eq, hσ_eq]
     ring
   -- Joint measurability via continuity on `(0, 1) × ℝ`, and a.e. norm identity.
   refine (hf₁.mul_prod hf₂).mono' ?_ ?_
@@ -453,10 +451,10 @@ private theorem eulerIntegral_neg_ofReal_eq_mellinBarnes (a : ℂ) {b c : ℂ} (
           ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)) *
             (((x * t : ℝ) : ℂ) ^ (-((τ : ℂ) + (-y : ℝ) * I)) *
               (Gamma ((τ : ℂ) + (-y : ℝ) * I) * Gamma (a - ((τ : ℂ) + (-y : ℝ) * I)))) := by
+        have hexp : b + ((σ : ℂ) + y * I) - 1 = (b - 1) + ((σ : ℂ) + y * I) := by ring
         have ht_pow : (t : ℂ) ^ (b + ((σ : ℂ) + y * I) - 1) =
             (t : ℂ) ^ (b - 1) * (t : ℂ) ^ ((σ : ℂ) + y * I) := by
-          rw [show b + ((σ : ℂ) + y * I) - 1 = (b - 1) + ((σ : ℂ) + y * I) by ring,
-            cpow_add _ _ (ofReal_ne_zero.mpr ht.1.ne')]
+          rw [hexp, cpow_add _ _ (ofReal_ne_zero.mpr ht.1.ne')]
         have hxt_pow : (t : ℂ) ^ ((σ : ℂ) + y * I) * (x : ℂ) ^ ((σ : ℂ) + y * I) =
             ((x * t : ℝ) : ℂ) ^ ((σ : ℂ) + y * I) := by
           rw [ofReal_mul, mul_cpow_ofReal_nonneg hx.le ht.1.le, mul_comm]
@@ -467,12 +465,14 @@ private theorem eulerIntegral_neg_ofReal_eq_mellinBarnes (a : ℂ) {b c : ℂ} (
         dsimp [F]
         rw [ht_pow, hneg3, hneg1, hneg2, ← hxt_pow]
         ring
+      have hbase : (1 : ℂ) + ((x * t : ℝ) : ℂ) = 1 - (-(x : ℂ)) * (t : ℂ) := by
+        rw [ofReal_mul]
+        ring
       simp_rw [hsplit]
       rw [integral_const_mul, integral_neg_eq_self (fun y : ℝ ↦
         ((x * t : ℝ) : ℂ) ^ (-((τ : ℂ) + y * I)) *
           (Gamma ((τ : ℂ) + y * I) * Gamma (a - ((τ : ℂ) + y * I)))),
-        integral_cpow_neg_mul_Gamma_mul_Gamma_sub hτ_pos hτ_lt hxt,
-        show (1 : ℂ) + ((x * t : ℝ) : ℂ) = 1 - (-(x : ℂ)) * (t : ℂ) by push_cast; ring]
+        integral_cpow_neg_mul_Gamma_mul_Gamma_sub hτ_pos hτ_lt hxt, hbase]
       ring
     rw [integral_congr_ae hinner, integral_const_mul]
     congr 1
@@ -738,7 +738,7 @@ private theorem integral_four_Gamma_mul_multichoose (a b c z : ℂ) {σ : ℝ} (
     have hGs : Gamma (-s) ≠ 0 := Gamma_ne_zero_of_re_pos (by simp [s]; linarith)
     have hmc : Gamma (-s) * Ring.multichoose (-s) n = Gamma ((n : ℂ) - s) / (n ! : ℂ) := by
       rw [TauCeti.multichoose_eq_inv_factorial_mul_eval_ascPochhammer,
-        ← Gamma_add_nat_div_Gamma_eq (-s) hs_ne, show -s + (n : ℂ) = (n : ℂ) - s by ring]
+        ← Gamma_add_nat_div_Gamma_eq (-s) hs_ne, neg_add_eq_sub]
       field_simp [hGs, hfac]
     calc Gamma (a + s) * Gamma (b + s) * Gamma (c - a - b - s) * Gamma (-s) *
             (Ring.multichoose (-s) n * z ^ n)
@@ -787,10 +787,8 @@ private theorem integrable_tsum_multichoose_bound {Cg : ℝ} (hCg : 0 < Cg) (Kg 
   -- Bound `(1 - ‖z‖)^{-(|σ| + |y|)}` by `2^{|σ|} exp ((log 2) |y|)` on `‖z‖ < 1 / 2`.
   refine ((TauCeti.integrable_one_add_abs_rpow_mul_exp_neg_mul_abs Kg hrate).const_mul
     (Cg * 2 ^ |σ|)).mono' ?_ (Eventually.of_forall fun y ↦ ?_)
-  · rw [show (fun y : ℝ ↦ ∑' n : ℕ, Cg * (1 + |y|) ^ Kg * Real.exp (-(2 * π * |y|)) *
-          (Ring.multichoose (|σ| + |y|) n * ‖z‖ ^ n)) =
-        fun y : ℝ ↦ Cg * (1 + |y|) ^ Kg * Real.exp (-(2 * π * |y|)) *
-          (1 / (1 - ‖z‖) ^ (|σ| + |y|)) from funext fun y ↦ (h_sum y).tsum_eq]
+  · have htsum (y : ℝ) := (h_sum y).tsum_eq
+    simp_rw [htsum]
     refine Continuous.aestronglyMeasurable ?_
     have hc1 : Continuous fun y : ℝ ↦ Cg * (1 + |y|) ^ Kg * Real.exp (-(2 * π * |y|)) :=
       (continuous_const.mul ((continuous_const.add continuous_abs).rpow_const fun y ↦
@@ -882,7 +880,7 @@ private theorem regularizedGaussHGFun_eq_mellinBarnes_one_sub_of_norm_lt_half (a
       h_hasSum_int.mul_left (2 * π * Gamma a * Gamma b * Gamma (c - a) * Gamma (c - b))⁻¹
   simpa only [G, mul_assoc] using (hasSum_regularizedGaussHGFun a b c hz1).unique h_rhs_sum
 
-/-- **Mellin–Barnes integral for the regularized Gauss hypergeometric function**
+/-- **Mellin–Barnes integral for the regularized Gauss hypergeometric series**
 ([DLMF 15.6.7](https://dlmf.nist.gov/15.6.E7)) on the open unit disk `‖z‖ < 1`: on any vertical
 line `Re s = σ` with `max (-Re a, -Re b) < σ < min (0, Re (c - a - b))`,
 `regularizedGaussHGFun a b c z =

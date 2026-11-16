@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
 import Mathlib.Analysis.Complex.Liouville
-import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale

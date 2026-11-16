@@ -319,7 +319,8 @@ theorem integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma {a b c d : ℂ} (ha : 0 < a
           (Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) * Gamma (d - y * I)) := by
       have hm := (hasMellin_one_add_cpow_neg (s := c - y * I) (a := a + c)
         (by simpa using hc) (by simp; linarith)).2
-      simp only [mellin, smul_eq_mul, show a + c - (c - (y : ℂ) * I) = a + y * I by ring] at hm
+      have hsub : a + c - (c - (y : ℂ) * I) = a + y * I := by ring
+      simp only [mellin, smul_eq_mul, hsub] at hm
       simp only [F, μ, integral_mul_const, hm]
       ring
     simp_rw [hinner, integral_const_mul]
@@ -353,7 +354,8 @@ theorem integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma {a b c d : ℂ} (ha : 0 < a
     rw [integral_congr_ae hinner, integral_const_mul]
     have hm := (hasMellin_one_add_cpow_neg (s := b + c) (a := a + b + c + d)
       (by simp; linarith) (by simp; linarith)).2
-    simp only [mellin, smul_eq_mul, show a + b + c + d - (b + c) = a + d by ring] at hm
+    have hsub : a + b + c + d - (b + c) = a + d := by ring
+    simp only [mellin, smul_eq_mul, hsub] at hm
     exact congrArg (2 * π * Gamma (b + d) * ·) hm
   have hswap : ∫ u, (∫ y : ℝ, F u y) ∂μ = ∫ y : ℝ, ∫ u, F u y ∂μ := integral_integral_swap hF
   rw [h_y_first, h_u_first] at hswap
@@ -392,8 +394,8 @@ theorem integral_Gamma_add_mul_Gamma_add_mul_Gamma_sub_mul_Gamma_sub {a b c d : 
         Gamma (a + σ + y * I) * Gamma (b + σ + y * I) *
           Gamma (c - σ - y * I) * Gamma (d - σ - y * I) := by
     simp only [← add_assoc, sub_add_eq_sub_sub]
+  have hsum : a + (σ : ℂ) + (b + σ) + (c - σ) + (d - σ) = a + b + c + d := by ring
   simp_rw [hcongr]
-  simpa only [add_add_sub_cancel, show a + ↑σ + (b + ↑σ) + (c - ↑σ) + (d - ↑σ) = a + b + c + d
-    by ring] using h
+  simpa only [add_add_sub_cancel, hsum] using h
 
 end Complex
