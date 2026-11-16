@@ -23,13 +23,14 @@ fixed complex structure `J₀`. This file reads `A` in a path of frames `Φ(t)` 
 (`TauCeti.Floer.asymptoticOperator_frame_apply`), where `S'` is `TauCeti.Floer.frameLoop Φ S`. So in
 the frame, `A` is the asymptotic operator of the constant structure `J₀` and the loop `S'`. If
 every `Φ(t)` is symplectic and every `S_t` is infinitesimally symplectic, so is every `S'_t`
-(`TauCeti.Floer.frameLoop_apply_add_apply_eq_zero`); `S'` is continuous when `Φ` is `C¹` and `S`
-is continuous (`TauCeti.Floer.continuous_frameLoop`), and periodic when `Φ` and `S` are
-(`TauCeti.Floer.frameLoop_periodic`). These are the hypotheses on the loop under which the
-asymptotic operator of `J₀` is symmetric with an eigenbasis, by
-`TauCeti.CircleSobolev.real_inner_I_smul_loopOperator_comm` and
-`TauCeti.CircleSobolev.exists_hilbertBasis_I_smul_loopOperator_eq_smul` when `J₀` is the
-multiplication by `i` of a complex inner product space.
+(`TauCeti.Floer.frameLoop_apply_add_apply_eq_zero`); `S'` is continuous when `Φ` is a `C¹` path
+of invertible frames and `S` is continuous (`TauCeti.Floer.continuous_frameLoop`), and periodic
+when `Φ` and `S` are (`TauCeti.Floer.frameLoop_periodic`). These are the hypotheses on the loop
+under which the asymptotic operator of `J₀` is symmetric
+(`TauCeti.CircleSobolev.real_inner_I_smul_loopOperator_comm`, when `J₀` is the multiplication by
+`i` of a complex inner product space). Its eigenbasis
+(`TauCeti.CircleSobolev.exists_hilbertBasis_I_smul_loopOperator_eq_smul`) also needs the loop
+operator of `S'` to be invertible, which follows from nondegeneracy of the orbit.
 
 The unitary frames `Ψ_{J_t}` of `TauCeti.SymplecticForm.unitaryFrame` supply such a path for every
 `C¹` loop of compatible structures `J_t`, when the inner product is the metric of `J₀`
