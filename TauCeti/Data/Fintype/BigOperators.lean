@@ -181,7 +181,7 @@ theorem prod_card_eq_card_filter_piFinset_mul_prod {ι : Type*} {κ : ι → Typ
 /-- The volume of a finite box is the number of maps in the box with a prescribed value `a ∈ s i`
 at the coordinate `i`, times the size of the cell at `i`. -/
 theorem prod_card_eq_card_filter_piFinset_mul {ι : Type*} {κ : ι → Type*} [Fintype ι]
-    [DecidableEq ι] [∀ m, DecidableEq (κ m)] {i : ι} (s : ∀ m, Finset (κ m)) {a : κ i}
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] (s : ∀ m, Finset (κ m)) (i : ι) {a : κ i}
     (ha : a ∈ s i) : ∏ m, #(s m) = #{h ∈ piFinset s | h i = a} * #(s i) := by
   rw [prod_card_eq_card_filter_piFinset_mul_prod s {i}
     (a := fun m hm ↦ (mem_singleton.1 hm).symm ▸ a) (by grind), prod_singleton]
