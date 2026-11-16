@@ -263,8 +263,11 @@ def ofPoints {ι : Type u} (x : ι → M) (hx : LocallyFinite fun i ↦ ({x i} :
   tolerance_pos := hε
   locallyFinite := by simpa only [Compacts.coe_mk, image_singleton, extChartAt_to_inv] using hx
 
+-- Priority `high` makes simp use this before the general `mem_ball`, which would leave field
+-- projections of the unexposed `ofPoints` that cannot be reduced outside this module.
 /-- The neighbourhood of `f` of a pointwise control consists of the maps whose values at each point
 `x i` differ from that of `f` by less than `ε i`. -/
+@[simp high]
 theorem mem_ball_ofPoints {ι : Type u} {x : ι → M} {hx : LocallyFinite fun i ↦ ({x i} : Set M)}
     {ε : ι → ℝ} {hε : ∀ i, 0 < ε i} {f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
     g ∈ (ofPoints (I := I) (n := n) x hx ε hε).ball f ↔ ∀ i, ‖g (x i) - f (x i)‖ < ε i := by
