@@ -14,7 +14,7 @@ import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Extension
 import TauCeti.Data.Set.InjOnUnion
 import TauCeti.Order.Interval.Set.ProjIcc
-import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
+import TauCeti.Topology.ContinuousMap.Glue.ClosedEmbeddings
 
 /-!
 # Closed hemispheres of a unit sphere

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LowDimTopology.DehnSurgery.Framing
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Exterior
-public import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
+public import TauCeti.Topology.ContinuousMap.Glue.ClosedEmbeddings
 
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 
