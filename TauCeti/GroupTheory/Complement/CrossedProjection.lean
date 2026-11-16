@@ -69,7 +69,6 @@ noncomputable def crossedProjection (g : G) : N :=
 
 omit [N.Normal] in
 /-- The projection of a product of the two factors is its normal component. -/
-@[simp]
 theorem crossedProjection_mul (n : N) (d : D) :
     h.crossedProjection ((n : G) * d) = n :=
   congrArg Prod.fst (h.equiv.apply_symm_apply (n, d))
@@ -94,6 +93,7 @@ theorem crossedProjection_one : h.crossedProjection 1 = 1 :=
 
 omit [N.Normal] in
 /-- Left multiplication by an element of `N` multiplies the crossed projection on the left. -/
+@[simp]
 theorem crossedProjection_mul_left (n : N) (g : G) :
     h.crossedProjection ((n : G) * g) = n * h.crossedProjection g :=
   congrArg Prod.fst (h.equiv_mul_left n g)
@@ -101,6 +101,7 @@ theorem crossedProjection_mul_left (n : N) (g : G) :
 omit [N.Normal] in
 /-- Right multiplication by an element of the complement leaves the crossed projection
 unchanged. -/
+@[simp]
 theorem crossedProjection_mul_right (g : G) (d : D) :
     h.crossedProjection (g * d) = h.crossedProjection g :=
   (Prod.ext_iff.mp (h.equiv_mul_right g d)).1
