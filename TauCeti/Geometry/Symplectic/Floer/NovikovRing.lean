@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PeriodGroup
-public import TauCeti.RingTheory.NovikovSeries.Grading
+public import TauCeti.RingTheory.NovikovSeries.HomogeneousComponents
 public import Mathlib.Algebra.Order.Floor.Ring
 public import Mathlib.Data.Int.Interval
 
@@ -27,7 +27,10 @@ topology and the completeness of Novikov series apply to it directly, and we gra
 homomorphism `PeriodGroup.degree = 2 • chern`. A series whose support meets infinitely many
 degrees is not a finite sum of homogeneous series, so `Λ` is not in general the direct sum of its
 homogeneous pieces; the graded structure is the graded monoid of homogeneous series of
-`TauCeti.RingTheory.NovikovSeries.Grading`.
+`TauCeti.RingTheory.NovikovSeries.Grading`. For nontrivial coefficients `Λ` is that direct sum
+exactly when `ω` or `c` vanishes on spherical classes (`NovikovRing.isInternal_gradeBy_degree_iff`).
+In every case each series is the sum, convergent in the period topology, of its homogeneous
+components (`TauCeti.NovikovSeries.hasSum_gradeProj`).
 
 The two classical coefficient regimes are distinguished by this grading.
 
@@ -57,6 +60,9 @@ The two classical coefficient regimes are distinguished by this grading.
   for a spherically monotone pair, every homogeneous series is a monomial.
 * `TauCeti.Floer.NovikovRing.mem_iSup_gradeBy_degree_iff`: if `ker c ≤ ker ω`, the homogeneous
   series span exactly the finitely supported series, the image of `R[Γ]`.
+* `TauCeti.Floer.NovikovRing.isInternal_gradeBy_degree_iff`: for nontrivial coefficients, the
+  ring is the internal direct sum of its homogeneous pieces exactly when the area or the first
+  Chern number vanishes on spherical classes.
 * `TauCeti.Floer.NovikovRing.forall_finite_lt_iff_bddAbove_degree`: for a positively monotone
   pair, a coefficient function is a Floer Novikov series exactly when the degrees of its support
   are bounded above.
@@ -151,6 +157,18 @@ theorem mem_iSup_gradeBy_degree_iff {a : NovikovRing R ω c} :
 end KerLE
 
 end Semiring
+
+/-- **The Floer Novikov ring is internally graded only in the degenerate cases.** For nontrivial
+coefficients, the Floer Novikov ring is the internal direct sum of its homogeneous pieces exactly
+when the symplectic area or the first Chern number vanishes on the spherical classes. Otherwise
+some class has positive area and nonzero Chern number, and its geometric series meets infinitely
+many degrees; the ring is then only the completion of the sum of its homogeneous pieces, each
+series being the convergent sum of its homogeneous components
+(`TauCeti.NovikovSeries.hasSum_gradeProj`). -/
+theorem isInternal_gradeBy_degree_iff [Ring R] [Nontrivial R] :
+    DirectSum.IsInternal (NovikovSeries.gradeBy R (-area ω c) (degree ω c)) ↔ ω = 0 ∨ c = 0 := by
+  rw [NovikovSeries.isInternal_gradeBy_iff_eq_zero_or_eq_zero, neg_eq_zero, area_eq_zero_iff,
+    degree_eq_zero_iff]
 
 section Monotone
 
