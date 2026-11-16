@@ -402,9 +402,10 @@ lemma coe_levelRaise [𝒢'.HasDetOne] [NeZero d]
   unfold levelRaise
   rw [FunLike.coe_smul, _root_.CuspForm.coe_restrict, _root_.CuspForm.coe_translate]
 
-/-- The level-raise of a cusp form, read as a modular form, is the level-raise of the cusp form
-read as a modular form. -/
-lemma _root_.CuspForm.levelRaise_toModularForm [𝒢'.HasDetOne] [NeZero d]
+/-- The level-raise of a cusp form, read as a modular form, is the modular-form level-raise of the
+cusp form read as a modular form. -/
+@[simp]
+lemma _root_.CuspForm.coe_levelRaise_toModularForm [𝒢'.HasDetOne] [NeZero d]
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
     (CuspForm.levelRaise d hle f : ModularForm 𝒢' k) =
       ModularForm.levelRaise d hle (f : ModularForm 𝒢 k) := by
@@ -418,7 +419,7 @@ cusp form read as a modular form. -/
 lemma _root_.CuspForm.coe_levelRaise_eq_modularForm [𝒢'.HasDetOne] [NeZero d]
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
     ⇑(CuspForm.levelRaise d hle f) = ⇑(ModularForm.levelRaise d hle (f : ModularForm 𝒢 k)) :=
-  congrArg DFunLike.coe (CuspForm.levelRaise_toModularForm hle f)
+  congrArg DFunLike.coe (CuspForm.coe_levelRaise_toModularForm hle f)
 
 /-- **The defining formula for `V_d` on cusp forms**: `(V_d f) τ = f (d τ)`, with no stray
 power of `d`. -/

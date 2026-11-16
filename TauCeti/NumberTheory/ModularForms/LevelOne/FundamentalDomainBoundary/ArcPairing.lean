@@ -310,9 +310,7 @@ theorem two_mul_intervalIntegral_excised_deriv_smul_logDeriv_comp_ofComplex_fdBo
 
 /-- The reflected-half integrability: interval integrability of the arc contour
 integrand on `[2, 3]` follows from integrability on `[1, 2]` through the pairing, which
-writes the second half as a reflected constant-minus-first-half integrand. This is the case of an
-empty excision set of
-`intervalIntegrable_excised_deriv_smul_logDeriv_comp_ofComplex_fdBoundarySegment3`. -/
+writes the second half as a reflected constant-minus-first-half integrand. -/
 theorem intervalIntegrable_deriv_smul_logDeriv_comp_ofComplex_fdBoundarySegment3
     [SlashInvariantFormClass F Γ k] (f : F) (hS : ModularGroup.S ∈ Γ) {H : ℝ}
     (hd : ∀ t ∈ Ioo (1 : ℝ) 2, DifferentiableAt ℂ (⇑f ∘ ofComplex) (fdBoundary H t))
