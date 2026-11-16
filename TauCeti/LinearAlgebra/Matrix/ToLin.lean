@@ -49,7 +49,7 @@ computation every matrix model of a Lie algebra performs on its root vectors.
 * `LinearMap.toMatrix_mulVec_eq_repr`: the coordinate vector of `φ (∑ j, x j • v j)` is the
   matrix of `φ` applied to `x`.
 * `LinearMap.isUnit_toMatrix_iff_bijective`, `LinearMap.isUnit_det_toMatrix_iff_bijective`,
-  `Matrix.bijective_toLin_iff`, and `Matrix.bijective_toLin_iff_isUnit_det`: for bases of two
+  `Matrix.toLin_bijective_iff`, and `Matrix.toLin_bijective_iff_isUnit_det`: for bases of two
   modules indexed by the same finite type, the representing matrix (and, over a commutative ring,
   its determinant) is a unit if and only if the linear map is bijective.
 * `Matrix.linearIndependent_row_one`: over any semiring, the rows of an identity matrix are
@@ -254,7 +254,7 @@ theorem linearIndependent_row_one {R m : Type*} [Semiring R] [DecidableEq m] :
 
 /-- For bases `v` and `b` indexed by the same finite type, `Matrix.toLin v b A` is bijective if and
 only if `A` is a unit matrix. -/
-theorem bijective_toLin_iff {R V M ι : Type*} [CommSemiring R] [AddCommMonoid V]
+theorem toLin_bijective_iff {R V M ι : Type*} [CommSemiring R] [AddCommMonoid V]
     [Module R V] [AddCommMonoid M] [Module R M] [Fintype ι] [DecidableEq ι]
     (v : Module.Basis ι R V) (b : Module.Basis ι R M) (A : Matrix ι ι R) :
     Function.Bijective (Matrix.toLin v b A) ↔ IsUnit A := by
@@ -262,11 +262,11 @@ theorem bijective_toLin_iff {R V M ι : Type*} [CommSemiring R] [AddCommMonoid V
 
 /-- Over a commutative ring, for bases `v` and `b` indexed by the same finite type,
 `Matrix.toLin v b A` is bijective if and only if `A.det` is a unit. -/
-theorem bijective_toLin_iff_isUnit_det {R V M ι : Type*} [CommRing R] [AddCommMonoid V]
+theorem toLin_bijective_iff_isUnit_det {R V M ι : Type*} [CommRing R] [AddCommMonoid V]
     [Module R V] [AddCommMonoid M] [Module R M] [Fintype ι] [DecidableEq ι]
     (v : Module.Basis ι R V) (b : Module.Basis ι R M) (A : Matrix ι ι R) :
     Function.Bijective (Matrix.toLin v b A) ↔ IsUnit A.det := by
-  rw [bijective_toLin_iff, isUnit_iff_isUnit_det]
+  rw [toLin_bijective_iff, isUnit_iff_isUnit_det]
 
 end Matrix
 

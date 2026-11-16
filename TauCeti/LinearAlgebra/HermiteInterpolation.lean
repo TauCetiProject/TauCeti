@@ -504,37 +504,20 @@ theorem eval_iterate_derivative_bijective_iff {a : ι → R} {m : ι → ℕ} :
       (derivative^[k] (f : R[X])).eval (a i)) ↔
       (∀ i, ∀ k < m i, IsUnit (k ! : R)) ∧
         ∀ i j, i ≠ j → m i ≠ 0 → m j ≠ 0 → IsUnit (a i - a j) := by
-  let e := Fintype.equivFin ι
-  let d := e.symm
-  let eL := LinearEquiv.ofEq _ _ (congr_arg (degreeLT R) (d.sum_comp m))
-  let eR := Equiv.piCongrLeft' (fun i => Fin (m i) → R) e
-  let L : degreeLT R (∑ j, (m ∘ d) j) →ₗ[R] ∀ j, Fin ((m ∘ d) j) → R :=
-    LinearMap.pi fun j => LinearMap.pi fun k =>
-      leval ((a ∘ d) j) ∘ₗ ((k : ℕ) ! • hasseDeriv (k : ℕ)) ∘ₗ
-        (degreeLT R (∑ j, (m ∘ d) j)).subtype
-  have hcomp : (L : degreeLT R (∑ j, (m ∘ d) j) → ∀ j, Fin ((m ∘ d) j) → R) =
-      eR ∘ (fun (f : degreeLT R (∑ i, m i)) i (k : Fin (m i)) =>
-        (derivative^[k] (f : R[X])).eval (a i)) ∘ eL := by
-    ext f j k
-    simp [L, eR, eL, d, ← factorial_smul_hasseDeriv]
-  have hmat : LinearMap.toMatrix (degreeLT.basis R (∑ j, (m ∘ d) j))
-      ((Pi.basis fun j => Pi.basisFun R (Fin ((m ∘ d) j))).reindex finSigmaFinEquiv) L =
-      Matrix.of fun ρ (j : Fin (∑ j, (m ∘ d) j)) =>
-        (derivative^[(finSigmaFinEquiv.symm ρ).2] (X ^ (j : ℕ) : R[X])).eval
-          ((a ∘ d) (finSigmaFinEquiv.symm ρ).1) := by
-    ext ρ j
-    simp [L, LinearMap.toMatrix_apply, Pi.basis_repr, Pi.basisFun_repr,
-      ← factorial_smul_hasseDeriv]
-  rw [← EquivLike.bijective_comp eL, ← EquivLike.comp_bijective _ eR, ← hcomp,
-    ← LinearMap.isUnit_det_toMatrix_iff_bijective (degreeLT.basis R (∑ j, (m ∘ d) j))
-      ((Pi.basis fun j => Pi.basisFun R (Fin ((m ∘ d) j))).reindex finSigmaFinEquiv),
-    hmat, Matrix.isUnit_det_iterate_derivative_iff]
-  refine and_congr
-    ⟨fun h i k hk => h (e i) k (by simpa [d] using hk), fun h j => h (d j)⟩
-    ⟨fun h i j hij hi hj => by
-        simpa [d] using h (e i) (e j) (e.injective.ne hij) (by simpa [d] using hi)
-          (by simpa [d] using hj),
-      fun h i j hij => h (d i) (d j) (d.injective.ne hij)⟩
+  let S : (∀ i, Fin (m i) → R) → ∀ i, Fin (m i) → R :=
+    Pi.map fun i => Pi.map fun (k : Fin (m i)) => (((k : ℕ) ! : R) * ·)
+  have hcomp : (fun (f : degreeLT R (∑ i, m i)) i (k : Fin (m i)) =>
+      (derivative^[k] (f : R[X])).eval (a i)) = S ∘ hermiteJet a m := by
+    ext f i k
+    simp [S, ← factorial_smul_hasseDeriv]
+  have hS (hm : ∀ i, ∀ k < m i, IsUnit (k ! : R)) : Bijective S :=
+    .piMap fun i => .piMap fun k => IsUnit.isUnit_iff_mulLeft_bijective.1 (hm i k k.2)
+  rw [hcomp]
+  refine ⟨fun h => ?_, fun ⟨hm, ha⟩ => (hS hm).comp (hermiteJet_bijective_iff.2 ha)⟩
+  have hm : ∀ i, ∀ k < m i, IsUnit (k ! : R) := by
+    obtain ⟨c, hc⟩ := h.surjective.of_comp (fun _ _ => 1)
+    exact fun i k hk => IsUnit.of_mul_eq_one (c i ⟨k, hk⟩) (congr_fun (congr_fun hc i) ⟨k, hk⟩)
+  exact ⟨hm, hermiteJet_bijective_iff.1 (((hS hm).of_comp_iff' _).1 h)⟩
 
 end ConfluentVandermonde
 
