@@ -156,26 +156,15 @@ variable {𝕜 A H K : Type*} [RCLike 𝕜] [Semiring A] [StarRing A] [Algebra �
   (π : A →⋆ₐ[𝕜] (H →L[𝕜] H)) {V : K →ₗᵢ[𝕜] H}
   (hπ : ∀ a, Set.MapsTo (π a) (Set.range V) (Set.range V))
 
-private theorem compression_one :
-    (1 : H →L[𝕜] H).compression V.toContinuousLinearMap = 1 := by
-  ext x
-  simpa only [ContinuousLinearMap.compression_apply, ContinuousLinearMap.comp_apply,
-    one_apply_eq_self, LinearIsometry.coe_toContinuousLinearMap] using
-    congr($(V.adjoint_comp_self) x)
-
 /-- Compress a unital star-algebra representation `π : A →⋆ₐ[𝕜] (H →L[𝕜] H)` along a linear
 isometry `V : K →ₗᵢ[𝕜] H` whose range is `π`-invariant. -/
 def restrictLinearIsometry : A →⋆ₐ[𝕜] (K →L[𝕜] K) where
   toFun a := (π a).compression V.toContinuousLinearMap
-  map_one' := by
-    rw [map_one]
-    exact compression_one
+  map_one' := by simp
   map_mul' a b := (π.toNonUnitalStarAlgHom.restrictLinearIsometry hπ).map_mul' a b
   map_zero' := by simp
   map_add' a b := by simp
-  commutes' c := by
-    rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one, ContinuousLinearMap.compression_smul,
-      compression_one, Algebra.algebraMap_eq_smul_one]
+  commutes' c := by simp [Algebra.algebraMap_eq_smul_one]
   map_star' a := (π.toNonUnitalStarAlgHom.restrictLinearIsometry hπ).map_star' a
 
 @[simp]
