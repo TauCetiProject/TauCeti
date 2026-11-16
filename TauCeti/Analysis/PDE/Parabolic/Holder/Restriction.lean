@@ -162,6 +162,12 @@ theorem norm_restrictL_le :
     rw [restrictL_eq_restrict, one_mul]
     exact norm_restrict_le ha hb hab' f
 
+/-- The restriction of a map to a smaller slab has at most its norm. -/
+theorem norm_restrictL_apply_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖restrictL ha hb hab' f‖ ≤ ‖f‖ := by
+  rw [restrictL_eq_restrict]
+  exact norm_restrict_le ha hb hab' f
+
 /-- Restricting to the whole slab does nothing. -/
 @[simp]
 theorem restrictL_self (f : ParabolicC2HolderSpace α E F hab) :
