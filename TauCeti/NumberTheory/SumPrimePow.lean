@@ -24,19 +24,19 @@ partial sums of a Dirichlet series supported on prime powers with finite product
 
 For each prime `p ≤ N`, the first omitted power `p ^ (Nat.log p N + 1)` exceeds `N`. The sum of
 their reciprocals over the primes `p ≤ N` tends to zero as `N → ∞`, which controls the tails left
-out by the regrouping. Meanwhile, the reciprocals of all higher prime powers `p ^ k` (`k ≥ 2`,
-`p ≤ N`) are bounded prime-by-prime by `1 / (p (p - 1))`, whose sum over `p ≤ N` is at most `1` by
-telescoping `1 / ((n + 1) (n + 2))`.
+out by the regrouping. Meanwhile, for any exponent cutoff `K : ℕ → ℕ`, the reciprocals `(p ^ k)⁻¹`
+of higher prime powers (`2 ≤ k ≤ K p`, `p ≤ N`) are bounded prime-by-prime by `1 / (p (p - 1))`,
+whose sum over `p ≤ N` is at most `1`.
 
 ## Main results
 
-* `Nat.sum_Icc_ite_pow_le_eq_sum_Icc_log`: rewrites `∑ k ∈ Icc 1 N, if p ^ k ≤ N then g k else 0`
-  as `∑ k ∈ Icc 1 (p.log N), g k` for `1 < p`.
 * `Nat.sum_Icc_eq_sum_primesLE_sum_Icc_log`: the regrouping of a finite sum of a function
   supported on the prime powers.
+* `Nat.primesLE_sigma_Icc_log_filter_le`: for `M ≤ N`, restricting the prime-power index pairs
+  `(p, k)` (`p ≤ N` prime, `1 ≤ k ≤ p.log N`) to `p ^ k ≤ M` yields the index pairs for `M`.
 * `Nat.tendsto_sum_primesLE_inv_pow_log_succ`: `∑ p ≤ N, 1 / p ^ (Nat.log p N + 1)` tends to `0`.
-* `Nat.sum_primesLE_inv_mul_sub_one_le_one`, `Nat.sum_primesLE_sum_Icc_two_inv_pow_le_one`:
-  `∑ p ≤ N, 1 / (p (p - 1)) ≤ 1` and `∑ p ≤ N, ∑_{2 ≤ k ≤ log_p N} 1 / p ^ k ≤ 1`.
+* `Nat.sum_primesLE_one_div_mul_sub_one_le_one`, `Nat.sum_primesLE_sum_Icc_two_inv_pow_le_one`:
+  `∑ p ≤ N, 1 / (p (p - 1)) ≤ 1` and `∑ p ≤ N, ∑_{2 ≤ k ≤ K p} (p ^ k)⁻¹ ≤ 1`.
 
 ## References
 
@@ -50,19 +50,6 @@ open Filter Finset
 open scoped Topology
 
 namespace Nat
-
-/-- For any base `p > 1`, filtering exponents `k ∈ Icc 1 N` by `p ^ k ≤ N` is equivalent to summing
-over `Icc 1 (p.log N)`. -/
-theorem sum_Icc_ite_pow_le_eq_sum_Icc_log {M : Type*} [AddCommMonoid M] {p : ℕ} (hp : 1 < p)
-    (N : ℕ) (g : ℕ → M) :
-    ∑ k ∈ Icc 1 N, (if p ^ k ≤ N then g k else 0) = ∑ k ∈ Icc 1 (p.log N), g k := by
-  rw [← sum_filter]
-  congr 1
-  ext k
-  simp only [mem_filter, mem_Icc]
-  refine ⟨fun ⟨⟨hk1, _⟩, hpk⟩ ↦ ⟨hk1, le_log_of_pow_le hp hpk⟩, fun ⟨hk1, hklog⟩ ↦ ?_⟩
-  have hN0 : N ≠ 0 := by rintro rfl; simp at hklog; lia
-  exact ⟨⟨hk1, hklog.trans (log_le_self p N)⟩, pow_le_of_le_log hN0 hklog⟩
 
 /-- A finite sum of a function supported on the prime powers, regrouped by the prime base: the
 terms `f n` with `1 ≤ n ≤ N` are the terms `f (p ^ k)` with `p ≤ N` prime and
@@ -90,6 +77,20 @@ theorem sum_Icc_eq_sum_primesLE_sum_Icc_log {M : Type*} [AddCommMonoid M] {f : �
       h).1.symm
   _ = _ := sum_congr rfl fun p hp ↦
     sum_image fun _ _ _ _ h ↦ Nat.pow_right_injective (two_le_of_mem_primesLE hp) h
+
+/-- For `M ≤ N`, the prime-power pairs `(p, k)` with `p ≤ N` prime, `1 ≤ k ≤ p.log N`, and
+`p ^ k ≤ M` are precisely the pairs with `p ≤ M` prime and `1 ≤ k ≤ p.log M`. -/
+theorem primesLE_sigma_Icc_log_filter_le {M N : ℕ} (hMN : M ≤ N) :
+    (((primesLE N).sigma fun p ↦ Icc 1 (p.log N)).filter fun x ↦ x.1 ^ x.2 ≤ M) =
+      (primesLE M).sigma fun p ↦ Icc 1 (p.log M) := by
+  ext ⟨p, k⟩
+  simp only [mem_filter, mem_sigma, mem_primesLE, mem_Icc]
+  refine ⟨fun ⟨⟨⟨_, hp⟩, hk1, _⟩, hpk⟩ ↦ ?_, fun ⟨⟨hpM, hp⟩, hk1, hkM⟩ ↦ ?_⟩
+  · exact ⟨⟨(le_self_pow₀ hp.one_lt.le (by lia : k ≠ 0)).trans hpk, hp⟩,
+      hk1, le_log_of_pow_le hp.one_lt hpk⟩
+  · have := hp.two_le
+    have hM0 : M ≠ 0 := by lia
+    exact ⟨⟨⟨hpM.trans hMN, hp⟩, hk1, hkM.trans (log_mono_right hMN)⟩, pow_le_of_le_log hM0 hkM⟩
 
 /-- The reciprocals of the first omitted prime powers `p ^ (Nat.log p N + 1)`, summed over the
 primes `p ≤ N`, tend to `0`: each is less than `1 / N`, and they are dominated by the summable
@@ -127,9 +128,8 @@ theorem tendsto_sum_primesLE_inv_pow_log_succ :
     · simp only [norm_zero]
       positivity
 
-/-- Summing `1 / (p (p - 1))` over primes `p ≤ N` is bounded above by `1`, by comparing with the
-telescoping integer series `∑ (1 / (n + 1) - 1 / (n + 2))`. -/
-theorem sum_primesLE_inv_mul_sub_one_le_one (N : ℕ) :
+/-- For every `N : ℕ`, the sum of `1 / (p * (p - 1))` over primes `p ≤ N` is at most `1`. -/
+theorem sum_primesLE_one_div_mul_sub_one_le_one (N : ℕ) :
     ∑ p ∈ primesLE N, 1 / ((p : ℝ) * ((p : ℝ) - 1)) ≤ 1 := by
   have hsub : primesLE N ⊆ (range N).map ⟨(· + 2), add_left_injective 2⟩ := fun p hp ↦ by
     have hp2 : 2 ≤ p := (prime_of_mem_primesLE hp).two_le
@@ -148,20 +148,20 @@ theorem sum_primesLE_inv_mul_sub_one_le_one (N : ℕ) :
         refine sum_congr rfl fun n _ ↦ ?_
         simp only [Function.Embedding.coeFn_mk, ← one_div]
         push_cast
-        rw [show (n : ℝ) + 2 - 1 = (n : ℝ) + 1 by ring]
+        have hsub' : (n : ℝ) + 2 - 1 = (n : ℝ) + 1 := by ring
+        rw [hsub']
         have h1 : (n : ℝ) + 1 ≠ 0 := by positivity
         have h2 : (n : ℝ) + 2 ≠ 0 := by positivity
         field_simp
         ring
-    _ = 1 - ((N : ℝ) + 1)⁻¹ := by
-        simpa [Nat.cast_add, add_assoc, one_add_one_eq_two] using
-          sum_range_sub' (fun n : ℕ ↦ ((n : ℝ) + 1)⁻¹) N
-    _ ≤ 1 := sub_le_self 1 (by positivity)
+    _ ≤ 1 := sum_le_hasSum (range N) (fun n _ ↦ sub_nonneg.mpr (by gcongr; norm_num))
+        TauCeti.hasSum_inv_add_one_sub_inv_add_two
 
-/-- The higher-prime-power reciprocals `1 / p ^ k` (`k ≥ 2`, `p ≤ N`) sum to at most `1`. -/
-theorem sum_primesLE_sum_Icc_two_inv_pow_le_one (N : ℕ) :
-    ∑ p ∈ primesLE N, ∑ k ∈ Icc 2 (p.log N), ((p : ℝ) ^ k)⁻¹ ≤ 1 :=
+/-- For any exponent cutoff `K : ℕ → ℕ`, the higher-prime-power reciprocals `(p ^ k)⁻¹`
+(`p ≤ N` prime, `2 ≤ k ≤ K p`) sum to at most `1`. -/
+theorem sum_primesLE_sum_Icc_two_inv_pow_le_one (N : ℕ) (K : ℕ → ℕ) :
+    ∑ p ∈ primesLE N, ∑ k ∈ Icc 2 (K p), ((p : ℝ) ^ k)⁻¹ ≤ 1 :=
   (sum_le_sum fun p hp ↦ TauCeti.sum_Icc_inv_pow_le (prime_of_mem_primesLE hp).ne_one
-    (p.log N)).trans (sum_primesLE_inv_mul_sub_one_le_one N)
+    (K p)).trans (sum_primesLE_one_div_mul_sub_one_le_one N)
 
 end Nat

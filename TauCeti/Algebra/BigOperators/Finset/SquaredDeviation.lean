@@ -14,8 +14,8 @@ import Mathlib.Tactic.Ring
 # Squared deviations from a finite mean
 
 The sum of squared deviations splits into the sum at the mean and the squared excess. Bounding the
-centered variance by the uncentered second moment `∑ i ∈ s, t i ^ 2` gives
-`∑ i ∈ s, (t i - c) ^ 2 ≤ ∑ i ∈ s, t i ^ 2 + (∑ i ∈ s, t i - s.card * c) ^ 2 / s.card`.
+sum of squared deviations from the mean by the sum of squares `∑ i ∈ s, t i ^ 2` gives
+`∑ i ∈ s, (t i - c) ^ 2 ≤ ∑ i ∈ s, t i ^ 2 + ((∑ i ∈ s, t i) - s.card * c) ^ 2 / s.card`.
 -/
 
 public section
@@ -80,9 +80,9 @@ theorem sum_sq_sub_mean_eq_iff {ι : Type*} (s : Finset ι) (t : ι → ℝ)
     exact_mod_cast (card_ne_zero.mpr hs)
   rw [mul_eq_zero, or_iff_right hcard, sq_eq_zero_iff, sub_eq_zero]
 
-/-- Bounding squared deviations from an arbitrary constant `c` by the uncentered second moment plus
-the squared discrepancy of `∑ i ∈ s, t i` from `s.card * c` divided by `s.card` (including for
-`s = ∅`, where both sides vanish). -/
+/-- Bounding squared deviations from an arbitrary constant `c` by the sum of squares plus the
+squared discrepancy of `∑ i ∈ s, t i` from `s.card * c` divided by `s.card` (including for `s = ∅`,
+where both sides vanish). -/
 theorem sum_sub_sq_le_sum_sq_add_div {ι : Type*} (s : Finset ι) (t : ι → ℝ) (c : ℝ) :
     (∑ i ∈ s, (t i - c) ^ 2) ≤
       (∑ i ∈ s, t i ^ 2) + ((∑ i ∈ s, t i) - s.card * c) ^ 2 / s.card := by

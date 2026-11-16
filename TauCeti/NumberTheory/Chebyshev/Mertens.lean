@@ -58,8 +58,8 @@ of `∑_{p ≥ y} log p / p ^ 2`.
   first theorem for `p < x` and `Nat.primesBelow n`.
 * `Chebyshev.abs_sum_primesLE_filter_gt_log_div_sub_log_div_le`: interval Mertens estimate on
   `(y, x]`.
-* `Chebyshev.sum_primesLE_filter_ge_inv_le`: reciprocal prime sum bound on `[y, x]` (`y > 1`) from
-  `1 / p ≤ (log p / p) / log y`.
+* `Chebyshev.sum_primesLE_filter_ge_inv_le`: reciprocal prime sum bound
+  `∑_{y ≤ p ≤ x} 1 / p ≤ (log x + log 4 + 4) / log y` on `[y, x]` for `1 ≤ x` and `1 < y`.
 * `Chebyshev.tendsto_sum_primesLE_log_div_atTop`, `Chebyshev.not_summable_prime_log_div`,
   `Chebyshev.not_summable_prime_log_div_ge`, `Chebyshev.not_summable_prime_log_div_gt`,
   `Nat.Primes.not_summable_log_div`: divergence of the logarithmic prime sum and non-summability of
@@ -331,8 +331,8 @@ theorem abs_sum_primesLE_filter_gt_log_div_sub_log_div_le {y x : ℝ} (hy : 1 �
   exact (abs_sub _ _).trans (by linarith [abs_sum_primesLE_log_div_sub_log_le hx,
     abs_sum_primesLE_log_div_sub_log_le hy])
 
-/-- Weighting `1 / p ≤ (log p / p) / log y` on primes `y ≤ p ≤ x` (`1 ≤ x`, `1 < y`) gives
-`∑_{y ≤ p ≤ x} 1 / p ≤ (log x + log 4 + 4) / log y`. -/
+/-- For `1 ≤ x` and `1 < y`, the sum of `p⁻¹` over primes `y ≤ p ≤ x` is at most
+`(log x + log 4 + 4) / log y`. -/
 theorem sum_primesLE_filter_ge_inv_le {x y : ℝ} (hx : 1 ≤ x) (hy : 1 < y) :
     ∑ p ∈ (Nat.primesLE ⌊x⌋₊).filter (fun p : ℕ ↦ y ≤ (p : ℝ)), (p : ℝ)⁻¹ ≤
       (Real.log x + (Real.log 4 + 4)) / Real.log y := by

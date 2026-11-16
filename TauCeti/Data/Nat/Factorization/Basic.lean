@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Nat.Factorization.Basic
 
 /-!
-# Removing prime-power factors
+# Prime-power factors and exact valuation counts
 
 The least prime belongs to the prime factors of a natural number greater than one, and removing
 its full multiplicity gives a smaller number. Removing the `p`-part erases `p` from the prime
@@ -18,9 +18,14 @@ ordCompl[p] m * p ^ (v_p(m) - v_p(n))`, which is how a power map `x ↦ x ^ (m /
 of roots of unity acts on their `p`-primary parts. For a prime `p`, a divisor of `p * k` with the
 same `p`-free part as `k` either divides `k` or is `p * k`. The product of any set of prime
 factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to the product of all the prime
-factors of `n` exactly when it is coprime to `n`. Monomial products of an injective family of
-primes (or fixed positive powers of their casts in characteristic zero) are injective on finitely
-supported exponent tuples.
+factors of `n` exactly when it is coprime to `n`.
+
+For a prime `p` and `n ≠ 0`, `n.factorization p = k` holds precisely when `p ^ k ∣ n` and
+`¬p ^ (k + 1) ∣ n`, giving exact inclusion–exclusion counts on `Finset.Icc 1 N` for one prime
+(`N / p ^ k - N / p ^ (k + 1)`) and for two distinct primes (`p ≠ q`). Moreover, if two prime
+powers `p ^ k` and `q ^ l` divide `n ≠ 0` with `n < p ^ k * q ^ l`, coprimality forces `p = q`.
+Monomial products of an injective family of primes (or fixed positive powers of their casts in
+characteristic zero) are injective on finitely supported exponent tuples.
 
 ## Provenance
 
@@ -30,6 +35,8 @@ Apache-2.0, commit `2baa76f742bdb4fb8ee323fabba41203bd390e08`, file `StrongMulti
 -/
 
 public section
+
+open scoped Finset
 
 namespace Nat
 
@@ -103,6 +110,114 @@ theorem Prime.eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq {p d k : ℕ} (hp : p.
   rw [← ordProj_mul_ordCompl_eq_self d p, h, ← ordProj_mul_ordCompl_eq_self (p * k) p,
     ordCompl_mul, hpk, show d.factorization p = k.factorization p + 1 by omega]
   simp [hp.factorization_self, Nat.div_self hp.pos]
+
+/-- For a prime `p` and nonzero `n`, the `p`-adic valuation `n.factorization p` equals `k` if and
+only if `p ^ k ∣ n` and `¬p ^ (k + 1) ∣ n`. -/
+theorem Prime.factorization_eq_iff_pow_dvd_and_not_pow_dvd {p n k : ℕ} (hp : p.Prime)
+    (hn : n ≠ 0) : n.factorization p = k ↔ p ^ k ∣ n ∧ ¬p ^ (k + 1) ∣ n := by
+  rw [hp.pow_dvd_iff_le_factorization hn, hp.pow_dvd_iff_le_factorization hn]
+  omega
+
+/-- If two prime powers `p ^ k` and `q ^ l` divide `n ≠ 0` and their product exceeds `n`, then
+`p = q`. -/
+theorem Prime.eq_of_pow_dvd_of_lt_mul {p q k l n : ℕ} (hp : p.Prime) (hq : q.Prime) (hn : n ≠ 0)
+    (hp_dvd : p ^ k ∣ n) (hq_dvd : q ^ l ∣ n) (hlt : n < p ^ k * q ^ l) : p = q := by
+  by_contra hpq
+  exact hlt.not_ge (le_of_dvd (pos_of_ne_zero hn)
+    ((((coprime_primes hp hq).mpr hpq).pow k l).mul_dvd_of_dvd_of_dvd hp_dvd hq_dvd))
+
+/-- For distinct primes `p ≠ q` and any `M : ℕ`, `M / p + M / q ≤ M` (since one of `p, q` is at
+least `2` and the other is at least `3`). -/
+theorem Prime.div_add_div_le {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q) (M : ℕ) :
+    M / p + M / q ≤ M := by
+  have hp2 := hp.two_le
+  have hq2 := hq.two_le
+  have h3 : 3 ≤ p ∨ 3 ≤ q := by omega
+  rcases h3 with hp3 | hq3
+  · have := Nat.div_le_div_left hp3 (by decide : 0 < 3) (a := M)
+    have := Nat.div_le_div_left hq2 (by decide : 0 < 2) (a := M)
+    omega
+  · have := Nat.div_le_div_left hp2 (by decide : 0 < 2) (a := M)
+    have := Nat.div_le_div_left hq3 (by decide : 0 < 3) (a := M)
+    omega
+
+/-- Exactly `N / d` natural numbers in `[1, N]` are multiples of `d`. -/
+theorem card_filter_Icc_one_dvd (N d : ℕ) : #{n ∈ Finset.Icc 1 N | d ∣ n} = N / d := by
+  have h : Finset.Icc 1 N = Finset.Ioc 0 N := by ext; simp; omega
+  rw [h, Ioc_filter_dvd_card_eq_div]
+
+/-- For a prime `p`, the number of `n ∈ [1, N]` with `n.factorization p = k` equals
+`N / p ^ k - N / p ^ (k + 1)`. -/
+theorem card_filter_Icc_factorization_eq (N : ℕ) {p : ℕ} (hp : p.Prime) (k : ℕ) :
+    #{n ∈ Finset.Icc 1 N | n.factorization p = k} = N / p ^ k - N / p ^ (k + 1) := by
+  have hsdiff : ({n ∈ Finset.Icc 1 N | n.factorization p = k} : Finset ℕ) =
+      {n ∈ Finset.Icc 1 N | p ^ k ∣ n} \ {n ∈ Finset.Icc 1 N | p ^ (k + 1) ∣ n} := by
+    ext n
+    simp only [Finset.mem_filter, Finset.mem_Icc, Finset.mem_sdiff]
+    refine ⟨fun ⟨hn, hval⟩ ↦ ?_, fun ⟨⟨hn, hk⟩, hnk⟩ ↦ ⟨hn, ?_⟩⟩
+    · obtain ⟨hk, hnk⟩ := (hp.factorization_eq_iff_pow_dvd_and_not_pow_dvd (by omega)).mp hval
+      exact ⟨⟨hn, hk⟩, fun ⟨_, h⟩ ↦ hnk h⟩
+    · exact (hp.factorization_eq_iff_pow_dvd_and_not_pow_dvd (by omega)).mpr
+        ⟨hk, fun h ↦ hnk ⟨hn, h⟩⟩
+  have hsub : ({n ∈ Finset.Icc 1 N | p ^ (k + 1) ∣ n} : Finset ℕ) ⊆
+      {n ∈ Finset.Icc 1 N | p ^ k ∣ n} := fun n hn ↦ by
+    obtain ⟨hn', hdvd⟩ := Finset.mem_filter.mp hn
+    exact Finset.mem_filter.mpr ⟨hn', (pow_dvd_pow p (Nat.le_succ k)).trans hdvd⟩
+  rw [hsdiff, Finset.card_sdiff_of_subset hsub, card_filter_Icc_one_dvd, card_filter_Icc_one_dvd]
+
+/-- For distinct primes `p ≠ q`, the number of `n ∈ [1, N]` with `n.factorization p = k` and
+`n.factorization q = l` is given by inclusion–exclusion over multiples of `p ^ i * q ^ j`
+(`i ∈ {k, k + 1}`, `j ∈ {l, l + 1}`). -/
+theorem card_filter_Icc_factorization_eq_and_eq (N : ℕ) {p q : ℕ} (hp : p.Prime) (hq : q.Prime)
+    (hpq : p ≠ q) (k l : ℕ) :
+    #{n ∈ Finset.Icc 1 N | n.factorization p = k ∧ n.factorization q = l} =
+      N / (p ^ k * q ^ l) - N / (p ^ k * q ^ (l + 1)) - N / (p ^ (k + 1) * q ^ l) +
+        N / (p ^ (k + 1) * q ^ (l + 1)) := by
+  have hiff : ∀ i j n : ℕ, p ^ i * q ^ j ∣ n ↔ p ^ i ∣ n ∧ q ^ j ∣ n := fun i j n ↦
+    ⟨fun h ↦ ⟨(dvd_mul_right _ _).trans h, (dvd_mul_left _ _).trans h⟩, fun ⟨h1, h2⟩ ↦
+      (((coprime_primes hp hq).mpr hpq).pow i j).mul_dvd_of_dvd_of_dvd h1 h2⟩
+  let s : ℕ → ℕ → Finset ℕ := fun i j ↦ {n ∈ Finset.Icc 1 N | p ^ i * q ^ j ∣ n}
+  have hs_card : ∀ i j, #(s i j) = N / (p ^ i * q ^ j) := fun i j ↦ card_filter_Icc_one_dvd N _
+  have htarget : ({n ∈ Finset.Icc 1 N | n.factorization p = k ∧ n.factorization q = l} : Finset ℕ) =
+      s k l \ (s k (l + 1) ∪ s (k + 1) l) := by
+    ext n
+    simp only [s, Finset.mem_filter, Finset.mem_Icc, Finset.mem_sdiff, Finset.mem_union, hiff]
+    refine ⟨fun ⟨hn, hvp, hvq⟩ ↦ ?_, fun ⟨⟨hn, hpk, hql⟩, hnot⟩ ↦ ⟨hn, ?_, ?_⟩⟩
+    · have hn0 : n ≠ 0 := by omega
+      obtain ⟨hpk, hnpk⟩ := (hp.factorization_eq_iff_pow_dvd_and_not_pow_dvd hn0).mp hvp
+      obtain ⟨hql, hnql⟩ := (hq.factorization_eq_iff_pow_dvd_and_not_pow_dvd hn0).mp hvq
+      exact ⟨⟨hn, hpk, hql⟩, fun h ↦ h.elim (fun ⟨_, _, h'⟩ ↦ hnql h') (fun ⟨_, h', _⟩ ↦ hnpk h')⟩
+    · have hn0 : n ≠ 0 := by omega
+      exact (hp.factorization_eq_iff_pow_dvd_and_not_pow_dvd hn0).mpr
+        ⟨hpk, fun h ↦ hnot (Or.inr ⟨hn, h, hql⟩)⟩
+    · have hn0 : n ≠ 0 := by omega
+      exact (hq.factorization_eq_iff_pow_dvd_and_not_pow_dvd hn0).mpr
+        ⟨hql, fun h ↦ hnot (Or.inl ⟨hn, hpk, h⟩)⟩
+  have hsub : s k (l + 1) ∪ s (k + 1) l ⊆ s k l := Finset.union_subset
+    (fun n hn ↦ by
+      simp only [s, Finset.mem_filter, hiff] at hn ⊢
+      exact ⟨hn.1, hn.2.1, (pow_dvd_pow q (Nat.le_succ l)).trans hn.2.2⟩)
+    (fun n hn ↦ by
+      simp only [s, Finset.mem_filter, hiff] at hn ⊢
+      exact ⟨hn.1, (pow_dvd_pow p (Nat.le_succ k)).trans hn.2.1, hn.2.2⟩)
+  have hinter : s k (l + 1) ∩ s (k + 1) l = s (k + 1) (l + 1) := by
+    ext n
+    simp only [s, Finset.mem_inter, Finset.mem_filter, hiff]
+    exact ⟨fun ⟨⟨hn, _, hql1⟩, _, hpk1, _⟩ ↦ ⟨hn, hpk1, hql1⟩, fun ⟨hn, hpk1, hql1⟩ ↦
+      ⟨⟨hn, (pow_dvd_pow p (Nat.le_succ k)).trans hpk1, hql1⟩,
+        hn, hpk1, (pow_dvd_pow q (Nat.le_succ l)).trans hql1⟩⟩
+  have h1 := Finset.card_sdiff_add_card_eq_card hsub
+  have h2 := Finset.card_union_add_card_inter (s k (l + 1)) (s (k + 1) l)
+  rw [← htarget, hs_card] at h1
+  rw [hinter, hs_card, hs_card, hs_card] at h2
+  have hdiv_q : N / (p ^ k * q ^ (l + 1)) = N / (p ^ k * q ^ l) / q := by
+    rw [pow_succ, ← mul_assoc, Nat.div_div_eq_div_mul]
+  have hdiv_p : N / (p ^ (k + 1) * q ^ l) = N / (p ^ k * q ^ l) / p := by
+    rw [pow_succ, mul_right_comm, Nat.div_div_eq_div_mul]
+  have hle : N / (p ^ k * q ^ (l + 1)) + N / (p ^ (k + 1) * q ^ l) ≤ N / (p ^ k * q ^ l) := by
+    rw [hdiv_q, hdiv_p, add_comm]
+    exact hp.div_add_div_le hq hpq _
+  omega
 
 end Nat
 

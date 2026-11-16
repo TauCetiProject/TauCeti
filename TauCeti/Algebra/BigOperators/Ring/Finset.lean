@@ -31,6 +31,8 @@ over all triples, `(#s₀ * #s₁ * #s₂) * (p * q * r)`, as a sum of three one
 `Finset.sum_filter_mem_mul_eq`: when the weight `w` vanishes outside a set `U`, the weighted sum
 `∑ s ∈ S, w s * r s` only sees the points of `S` lying in `U`.
 
+## Powers of at-most-one-term conditional sums
+
 `Finset.sum_ite_pow_of_subsingleton`: when at most one index of `s` satisfies `P`, any positive
 power `(∑ i ∈ s, if P i then w i else 0) ^ k` distributes into the conditional sum.
 -/
