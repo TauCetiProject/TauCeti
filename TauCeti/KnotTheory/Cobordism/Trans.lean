@@ -259,9 +259,8 @@ private theorem proj_surjective : Surjective (proj S₁ S₂) :=
 private theorem isEmbedding_stackMap : IsEmbedding (stackMap S₁ S₂) :=
   ⟨⟨rfl⟩, Setoid.kerLift_injective _⟩
 
-private theorem range_stackMap : range (stackMap S₁ S₂) = range (piecesMap S₁ S₂) := by
-  rw [← (proj_surjective S₁ S₂).range_comp]
-  exact congrArg range (funext (stackMap_proj S₁ S₂))
+private theorem range_stackMap : range (stackMap S₁ S₂) = range (piecesMap S₁ S₂) :=
+  Setoid.range_kerLift_eq_range _
 
 private theorem continuous_proj : Continuous (proj S₁ S₂) :=
   continuous_induced_rng.2 <| continuous_sum_dom.2
@@ -313,16 +312,14 @@ private theorem range_proj_inr :
 private theorem isOpenEmbedding_proj_inl : IsOpenEmbedding (proj S₁ S₂ ∘ Sum.inl) := by
   have he : IsEmbedding (stackMap S₁ S₂ ∘ (proj S₁ S₂ ∘ Sum.inl)) :=
     (isSmoothEmbedding_lower S₁).isEmbedding.comp IsEmbedding.subtypeVal
-  refine ⟨⟨(isEmbedding_stackMap S₁ S₂).isInducing.of_comp_iff.1 he.isInducing,
-    fun x x' h ↦ he.injective (congrArg (stackMap S₁ S₂) h)⟩, ?_⟩
+  refine ⟨(isEmbedding_stackMap S₁ S₂).of_comp_iff.mp he, ?_⟩
   rw [range_proj_inl]
   exact isOpen_lt (continuous_snd.comp (isEmbedding_stackMap S₁ S₂).continuous) continuous_const
 
 private theorem isOpenEmbedding_proj_inr : IsOpenEmbedding (proj S₁ S₂ ∘ Sum.inr) := by
   have he : IsEmbedding (stackMap S₁ S₂ ∘ (proj S₁ S₂ ∘ Sum.inr)) :=
     (isSmoothEmbedding_upper S₂).isEmbedding.comp IsEmbedding.subtypeVal
-  refine ⟨⟨(isEmbedding_stackMap S₁ S₂).isInducing.of_comp_iff.1 he.isInducing,
-    fun y y' h ↦ he.injective (congrArg (stackMap S₁ S₂) h)⟩, ?_⟩
+  refine ⟨(isEmbedding_stackMap S₁ S₂).of_comp_iff.mp he, ?_⟩
   rw [range_proj_inr]
   exact isOpen_lt continuous_const (continuous_snd.comp (isEmbedding_stackMap S₁ S₂).continuous)
 
@@ -653,30 +650,18 @@ private theorem proj_inr_comp_transition :
     (proj S₁ S₂ ∘ Sum.inr) ∘ transition S₁ S₂ = (proj S₁ S₂ ∘ Sum.inl) ∘ Subtype.val :=
   funext fun w ↦ (proj_eq_proj_iff S₁ S₂).2 (upper_transition S₁ S₂ w)
 
-private theorem contMDiff_transition :
-    ContMDiff ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ (transition S₁ S₂) := by
-  intro w
-  have hT := congrFun (proj_inr_comp_transition S₁ S₂)
-  obtain ⟨τ, hτ, -, hτeq⟩ := exists_deck S₁ S₂ (isOpenEmbedding_proj_inr S₁ S₂)
-    (isImmersionAt_upper_val S₁ S₂ (transition S₁ S₂ w)) (hT w).symm
-  have hinl : ContMDiff ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞
-      (Sum.inl ∘ Subtype.val : overlap S₁ S₂ → Pieces S₁ S₂) :=
-    ContMDiff.inl.comp contMDiff_subtype_val
-  refine (hτ.comp w (hinl w)).congr_of_eventuallyEq ?_
-  filter_upwards [hinl.continuous.continuousAt.preimage_mem_nhds hτeq] with w' hw'
-  exact (isOpenEmbedding_proj_inr S₁ S₂).injective ((hT w').trans hw'.symm)
-
-private theorem isInvertible_mfderiv_transition (w : overlap S₁ S₂) :
-    (mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) (transition S₁ S₂) w).IsInvertible := by
+private theorem isLocalDiffeomorph_transition :
+    IsLocalDiffeomorph ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ (transition S₁ S₂) := by
   -- `proj ∘ inr ∘ transition = proj ∘ inl ∘ val` is a local diffeomorphism, and cancelling the
   -- local diffeomorphism `proj ∘ inr` makes `transition` one.
-  have hcomp : IsLocalDiffeomorphAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞
-      ((proj S₁ S₂ ∘ Sum.inr) ∘ transition S₁ S₂) w := by
+  have hcomp : IsLocalDiffeomorph ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞
+      ((proj S₁ S₂ ∘ Sum.inr) ∘ transition S₁ S₂) := by
     rw [proj_inr_comp_transition]
-    exact (isLocalDiffeomorph_subtype_val w).comp
+    exact fun w ↦ (isLocalDiffeomorph_subtype_val w).comp
       (hg := isLocalDiffeomorph_proj_inl S₁ S₂ (w : lowerPiece S₁ S₂))
-  exact (hcomp.of_comp_left (isLocalDiffeomorph_proj_inr S₁ S₂ (transition S₁ S₂ w))
-    (contMDiff_transition S₁ S₂).continuous.continuousAt).isInvertible_mfderiv (NeZero.ne ∞)
+  exact fun w ↦ (hcomp w).of_comp_left (isLocalDiffeomorph_proj_inr S₁ S₂ (transition S₁ S₂ w))
+    ((isOpenEmbedding_proj_inr S₁ S₂).isEmbedding.continuous_iff.mpr
+      hcomp.contMDiff.continuous).continuousAt
 
 /-- The index type of orientations of surfaces modelled on `ℝ¹ × ℝ`. -/
 private abbrev OrientationIndex : Type :=
@@ -723,10 +708,11 @@ preserves orientation on the overlap: the overlap is connected, so the restricte
 private theorem exists_transitionPreserves : ∃ o₁ o₂, TransitionPreserves S₁ S₂ o₁ o₂ := by
   obtain ⟨o₁⟩ := S₁.orientable.nonempty_orientation
   obtain ⟨o₂⟩ := S₂.orientable.nonempty_orientation
-  have hT := (contMDiff_transition S₁ S₂).of_le (m := 1)
+  have hT := (isLocalDiffeomorph_transition S₁ S₂).contMDiff.of_le (m := 1)
     (ENat.one_le_iff_ne_zero_withTop.mpr (NeZero.ne ∞))
   rcases ((o₁.restrict (lowerPiece S₁ S₂)).restrict (overlap S₁ S₂)).eq_or_eq_neg
-    ((o₂.restrict (upperPiece S₁ S₂)).pullback hT (isInvertible_mfderiv_transition S₁ S₂)
+    ((o₂.restrict (upperPiece S₁ S₂)).pullback hT
+      (fun w ↦ (isLocalDiffeomorph_transition S₁ S₂ w).isInvertible_mfderiv (NeZero.ne ∞))
       o₂.card_eq) with h | h
   · refine ⟨o₁.restrict (lowerPiece S₁ S₂), o₂.restrict (upperPiece S₁ S₂), fun w ↦ ?_⟩
     rw [h]
@@ -758,7 +744,7 @@ private instance : Orientable ((𝓡 1).prod 𝓘(ℝ)) (Stack S₁ S₂) := by
   exact (map_orientationAt_eq_of_comp_eventuallyEq (isLocalDiffeomorph_proj_inl S₁ S₂)
     (isLocalDiffeomorph_proj_inr S₁ S₂) (isOrientationPreservingAt_restrict o₁ _ ⟨x, hx⟩)
     (ho ⟨x, hx⟩) ((isLocalDiffeomorph_subtype_val _).mdifferentiableAt (NeZero.ne ∞))
-    ((contMDiff_transition S₁ S₂ _).mdifferentiableAt (NeZero.ne ∞))
+    ((isLocalDiffeomorph_transition S₁ S₂ _).mdifferentiableAt (NeZero.ne ∞))
     (.of_eq (proj_inr_comp_transition S₁ S₂).symm) :)
 
 /-! ### The composite -/
