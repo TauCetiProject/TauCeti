@@ -7,8 +7,10 @@ module
 
 public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
 public import TauCeti.RingTheory.Huber.WeightedEval.UniversalProperty
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Reduction
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
+import TauCeti.Topology.Algebra.Module.Quotient
 
 /-!
 # The universal property of Gauss-normed Tate algebras at power-bounded arguments
@@ -25,7 +27,10 @@ identity comparison `TauCeti.Huber.restrictedMvPowerSeriesGaussEquiv` between th
 the Gauss-normed model, which is continuous in both directions. Unlike
 `MvPowerSeries.restrictedEval₂`, neither `‖φ r‖ ≤ ‖r‖` nor `‖bᵢ‖ ≤ 1` is assumed. Power-boundedness
 is `TauCeti.Huber.IsPowerBounded` for the topology of `S`: for a normed `S` the powers of `bᵢ`
-stay bounded, while `bᵢ` itself may have norm larger than one.
+stay bounded, while `bᵢ` itself may have norm larger than one. When `S` is a complete Hausdorff
+linearly topologised `R`-algebra with continuous structure map, open-ideal neighbourhoods make every
+element of `S` power-bounded, so arbitrary variable images `b : Fin k → S` extend uniquely
+(`TauCeti.MvPowerSeries.restrictedLiftAlgHomOfIsLinearTopology`).
 
 ## Main definitions
 
@@ -33,6 +38,8 @@ stay bounded, while `bᵢ` itself may have norm larger than one.
   `R⟨X₁, …, Xₖ⟩ →+* S` extending `φ` and sending `Xᵢ` to `bᵢ`.
 * `TauCeti.MvPowerSeries.restrictedRename`: for complete `R` and `f : Fin m → Fin k`, the
   `R`-algebra map `R⟨X₁, …, Xₘ⟩ →ₐ[R] R⟨X₁, …, Xₖ⟩` sending `Xᵢ` to `X_{f i}`.
+* `TauCeti.MvPowerSeries.restrictedLiftAlgHomOfIsLinearTopology`: continuous `R`-algebra evaluation
+  of `R⟨X₁, …, Xₖ⟩` at arbitrary points of a complete Hausdorff linearly topologised `R`-algebra.
 
 ## Main results
 
@@ -41,8 +48,11 @@ stay bounded, while `bᵢ` itself may have norm larger than one.
   homomorphisms out of `R⟨X₁, …, Xₖ⟩` agreeing on constants and variables are equal.
 * `TauCeti.MvPowerSeries.restrictedLift_unique`: `restrictedLift` is the only such continuous
   extension.
-* `TauCeti.MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring`: the universal
-  property.
+* `TauCeti.MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring` and
+  `TauCeti.MvPowerSeries.existsUnique_continuous_algHom_isRestricted_subring_of_isLinearTopology`:
+  the universal property at power-bounded arguments and in linearly topologised `R`-algebras.
+* `TauCeti.MvPowerSeries.mk_restrictedLift_eq_eval₂_isRestrictedReduction`: evaluation of
+  `restrictedLift` commutes with open-ideal polynomial reduction.
 * `TauCeti.MvPowerSeries.restrictedRename_id`, `TauCeti.MvPowerSeries.restrictedRename_comp`:
   renaming along the identity is the identity, and successive renamings compose.
 
@@ -50,6 +60,7 @@ stay bounded, while `bᵢ` itself may have norm larger than one.
 
 * T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Proposition 5.50.
 * S. Bosch, U. Güntzer, R. Remmert, *Non-Archimedean Analysis*, §1.4.
+* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §7.5.3.
 -/
 
 public section
@@ -189,5 +200,106 @@ theorem restrictedRename_restrictedRename {n : ℕ} (g : Fin k → Fin n) (f : F
   congr($(restrictedRename_comp g f) x)
 
 end Rename
+
+section LinearTopology
+
+variable {T : Type*} [CommRing T] [UniformSpace T] [IsUniformAddGroup T] [CompleteSpace T]
+  [T2Space T]
+
+/-- **Evaluation of `restrictedLift` commutes with open-ideal polynomial reduction.** -/
+theorem mk_restrictedLift_eq_eval₂_isRestrictedReduction [NonarchimedeanRing T] {φ : R →+* T}
+    (hφ : Continuous φ) {b : Fin k → T} (hb : ∀ i, IsPowerBounded (b i))
+    (I : Ideal R) (hI : IsOpen (I : Set R)) (J : Ideal T) (hJ : IsOpen (J : Set T))
+    (hIJ : I ≤ J.comap φ) (f : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
+    Ideal.Quotient.mk J (restrictedLift hφ hb f) =
+      (I.isRestrictedReduction hI f).eval₂ (Ideal.quotientMap J φ hIJ)
+        (Ideal.Quotient.mk J ∘ b) := by
+  let : DiscreteTopology (T ⧸ J) := Submodule.Quotient.discreteTopology_of_isOpen J hJ
+  have h := isRestricted_subring_ringHom_ext_of_continuous
+    (ψ₁ := (Ideal.Quotient.mk J).comp (restrictedLift hφ hb))
+    (ψ₂ := (MvPolynomial.eval₂Hom (Ideal.quotientMap J φ hIJ)
+      (Ideal.Quotient.mk J ∘ b)).comp (I.isRestrictedReduction (σ := Fin k) hI))
+    (continuous_quot_mk.comp (continuous_restrictedLift hφ hb))
+    (I.continuous_comp_isRestrictedReduction hI
+      (MvPolynomial.eval₂Hom (Ideal.quotientMap J φ hIJ) (Ideal.Quotient.mk J ∘ b)))
+    (fun r ↦ by simp)
+    (fun i ↦ by simp)
+  exact RingHom.congr_fun h f
+
+variable [IsLinearTopology T T] [Algebra R T]
+
+/-- **Continuous `R`-algebra evaluation of Gauss-normed restricted series in a complete Hausdorff
+linearly topologised `R`-algebra** (EGA I, Ch. 0, §7.5.3). When `T` is complete and Hausdorff and
+`algebraMap R T` is continuous, open-ideal neighbourhoods of zero in `T` make every subset bounded
+(`isBounded_of_isLinearTopology`) and every element power-bounded, so arbitrary points
+`b : Fin k → T` (with neither `‖b i‖ ≤ 1` nor an explicit `IsPowerBounded (b i)` hypothesis)
+determine a continuous `R`-algebra homomorphism. -/
+noncomputable def restrictedLiftAlgHomOfIsLinearTopology (hR : Continuous (algebraMap R T))
+    (b : Fin k → T) :
+    IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →ₐ[R] T := by
+  haveI := IsLinearTopology.isTopologicalRing (R := T)
+  haveI := IsLinearTopology.nonarchimedeanRing T
+  let φ := restrictedLift hR (b := b)
+    fun _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)
+  exact
+    { __ := φ
+      toFun := φ
+      commutes' := fun r ↦ restrictedLift_algebraMap hR _ r }
+
+/-- Underlying ring homomorphism of `restrictedLiftAlgHomOfIsLinearTopology`. -/
+@[simp]
+theorem coe_restrictedLiftAlgHomOfIsLinearTopology (hR : Continuous (algebraMap R T))
+    (b : Fin k → T) :
+    (restrictedLiftAlgHomOfIsLinearTopology hR b :
+      IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* T) =
+      letI := IsLinearTopology.isTopologicalRing (R := T)
+      letI := IsLinearTopology.nonarchimedeanRing T
+      restrictedLift hR (b := b) fun _ ↦
+        isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _) := by
+  ext f
+  rfl
+
+/-- `restrictedLiftAlgHomOfIsLinearTopology` sends each variable `Xᵢ` to `bᵢ`. -/
+@[simp]
+theorem restrictedLiftAlgHomOfIsLinearTopology_X (hR : Continuous (algebraMap R T))
+    (b : Fin k → T) (i : Fin k) :
+    restrictedLiftAlgHomOfIsLinearTopology hR b ⟨X i, isRestricted_X _ i⟩ = b i := by
+  have := IsLinearTopology.isTopologicalRing (R := T)
+  have := IsLinearTopology.nonarchimedeanRing T
+  exact restrictedLift_X hR (b := b)
+    (fun _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)) i
+
+/-- `restrictedLiftAlgHomOfIsLinearTopology` is continuous for the Gauss norm topology. -/
+theorem continuous_restrictedLiftAlgHomOfIsLinearTopology (hR : Continuous (algebraMap R T))
+    (b : Fin k → T) :
+    Continuous (restrictedLiftAlgHomOfIsLinearTopology hR b) := by
+  have := IsLinearTopology.isTopologicalRing (R := T)
+  have := IsLinearTopology.nonarchimedeanRing T
+  exact continuous_restrictedLift hR (b := b)
+    fun _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)
+
+/-- **Universal property of Gauss-normed restricted series for complete Hausdorff linearly
+topologised `R`-algebras.** When `T` is complete and Hausdorff with continuous structure map
+`algebraMap R T`, unlike the general topological universal property
+(`existsUnique_continuous_ringHom_isRestricted_subring`, which requires `IsPowerBounded (b i)`) and
+normed evaluation (`RingHom.restrictedEval₂OfBound`, which requires `‖b i‖ ≤ 1`), open-ideal
+neighbourhoods in `T` make every element power-bounded, so arbitrary `b : Fin k → T` extend
+uniquely. -/
+theorem existsUnique_continuous_algHom_isRestricted_subring_of_isLinearTopology
+    (hR : Continuous (algebraMap R T)) (b : Fin k → T) :
+    ∃! ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →ₐ[R] T,
+      Continuous ψ ∧ ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i := by
+  have := IsLinearTopology.isTopologicalRing (R := T)
+  have := IsLinearTopology.nonarchimedeanRing T
+  refine ⟨restrictedLiftAlgHomOfIsLinearTopology hR b,
+    ⟨continuous_restrictedLiftAlgHomOfIsLinearTopology hR b,
+      restrictedLiftAlgHomOfIsLinearTopology_X hR b⟩,
+    fun ψ ⟨hψ, hX⟩ ↦ AlgHom.toRingHom_injective ?_⟩
+  exact isRestricted_subring_ringHom_ext_of_continuous hψ
+    (continuous_restrictedLiftAlgHomOfIsLinearTopology hR b)
+    (fun r ↦ (ψ.commutes r).trans ((restrictedLiftAlgHomOfIsLinearTopology hR b).commutes r).symm)
+    (fun i ↦ (hX i).trans (restrictedLiftAlgHomOfIsLinearTopology_X hR b i).symm)
+
+end LinearTopology
 
 end TauCeti.MvPowerSeries

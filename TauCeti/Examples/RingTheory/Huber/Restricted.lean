@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.Padic.Field
 public import TauCeti.RingTheory.Huber.Padic.Restricted
 import TauCeti.Topology.Algebra.Nonarchimedean.GeometricSeries
 
@@ -46,23 +45,11 @@ noncomputable example {A : Type*} [CommRing A] [TopologicalSpace A] [Nonarchimed
   weightedPolynomialEquivOfDiscrete _ isWeightFamily_one_weight
 
 /-- Over a discrete ultrametric normed ring `R`, the polynomial inclusion into Gauss-normed
-unit-radius restricted series is bijective. -/
-theorem polynomialToRestricted_bijective_of_discreteTopology {R : Type*} [NormedCommRing R]
-    [IsUltrametricDist R] [DiscreteTopology R] (k : ℕ) :
-    Function.Bijective
-      (polynomialToRestricted (R := R) (fun _ : Fin k ↦ (1 : ℝ))) := by
-  have hcomp :
-      ⇑(polynomialToRestricted (R := R) (fun _ : Fin k ↦ (1 : ℝ))) =
-        ⇑(restrictedMvPowerSeriesGaussEquiv (n := k) (R := R)) ∘
-          ⇑(weightedPolynomialEquivOfDiscrete
-            (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight) := by
-    ext p : 1
-    dsimp only [Function.comp_apply]
-    rw [weightedPolynomialEquivOfDiscrete_apply,
-      restrictedMvPowerSeriesGaussEquiv_weightedPolynomialHom]
-  rw [hcomp]
-  exact (restrictedMvPowerSeriesGaussEquiv (n := k) (R := R)).bijective.comp
-    (weightedPolynomialEquivOfDiscrete _ isWeightFamily_one_weight).bijective
+restricted series of polyradius `c ≥ 1` is bijective. -/
+example {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] [DiscreteTopology R]
+    {c : σ → ℝ} (hc : ∀ i, 1 ≤ c i) :
+    Function.Bijective (polynomialToRestricted (R := R) c) :=
+  polynomialToRestricted_bijective_of_discreteTopology hc
 
 /-! ### 2. Reduction of `ℤ_[p]⟨X₁, …, Xₙ⟩` modulo `p ^ m` -/
 
@@ -96,33 +83,22 @@ theorem coeff_reduction_quadratic_mod_p_sq :
     red.coeff 0 = 1 ∧ red.coeff (Finsupp.single 0 1) = p ∧
       red.coeff (Finsupp.single 0 2) = 0 := by
   intro q f red
-  have hq : q = 1 + MvPolynomial.monomial (Finsupp.single 0 1) (p : ℤ_[p]) +
-      MvPolynomial.monomial (Finsupp.single 0 2) ((p : ℤ_[p]) ^ 2) := by
-    dsimp only [q]
-    rw [← MvPolynomial.C_mul_X_pow_eq_monomial, ← MvPolynomial.C_mul_X_pow_eq_monomial, pow_one]
-  have hred (ν : Fin 1 →₀ ℕ) : red.coeff ν = _root_.PadicInt.toZModPow 2 (q.coeff ν) := by
+  have hred (ν : Fin 1 →₀ ℕ) : red.coeff ν =
+      _root_.PadicInt.toZModPow 2
+        ((1 : MvPolynomial (Fin 1) ℤ_[p]).coeff ν +
+          (p : ℤ_[p]) * (MvPolynomial.X (R := ℤ_[p]) 0).coeff ν +
+          ((p : ℤ_[p]) ^ 2) * (MvPolynomial.X (R := ℤ_[p]) 0 ^ 2).coeff ν) := by
     dsimp only [red, f]
     rw [coeff_quotientSpanPowIsRestrictedEquivMvPolynomialZMod_mk, coe_polynomialToRestricted,
       MvPolynomial.coeff_coe]
-  have h01 : (0 : Fin 1 →₀ ℕ) ≠ Finsupp.single 0 1 := by
-    intro h
-    simpa using DFunLike.congr_fun h 0
-  have h02 : (0 : Fin 1 →₀ ℕ) ≠ Finsupp.single 0 2 := by
-    intro h
-    simpa using DFunLike.congr_fun h 0
-  have h12 : (Finsupp.single (0 : Fin 1) 1 : Fin 1 →₀ ℕ) ≠ Finsupp.single 0 2 := by
-    intro h
-    simpa using DFunLike.congr_fun h 0
+    simp only [q, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, MvPolynomial.coeff_C_mul]
   refine ⟨?_, ?_, ?_⟩
-  · rw [hred, hq]
-    simp [MvPolynomial.coeff_monomial, h01.symm, h02.symm]
-  · rw [hred, hq]
-    simp [MvPolynomial.coeff_one, MvPolynomial.coeff_monomial, h01, h12.symm]
-  · rw [hred, hq]
-    have hcoeff : q.coeff (Finsupp.single 0 2) = (p : ℤ_[p]) ^ 2 := by
-      rw [hq]
-      simp [MvPolynomial.coeff_one, MvPolynomial.coeff_monomial, h02, h12]
-    rw [← hq, hcoeff, map_pow, map_natCast, ← Nat.cast_pow, ZMod.natCast_self]
+  · simp [hred, MvPolynomial.coeff_X, MvPolynomial.coeff_X_pow]
+  · simp [hred, MvPolynomial.coeff_one, MvPolynomial.coeff_X, MvPolynomial.coeff_X_pow,
+      eq_comm (a := (0 : Fin 1 →₀ ℕ)), Finsupp.single_eq_zero]
+  · simpa [hred, MvPolynomial.coeff_one, MvPolynomial.coeff_X, MvPolynomial.coeff_X_pow,
+      eq_comm (a := (0 : Fin 1 →₀ ℕ)), Finsupp.single_eq_zero] using
+      (Nat.cast_pow (α := ZMod (p ^ 2)) p 2).symm.trans (ZMod.natCast_self (p ^ 2))
 
 /-! ### 3. `∑ X ^ n` lies in `ℤ_[p]⟦X⟧` but not in `ℤ_[p]⟨X⟩` -/
 
@@ -149,9 +125,9 @@ theorem geometricSeries_not_mem_restricted :
 
 /-! ### 5. Linearly topologised vs normed universal property over `ℤ_[p]` -/
 
-/-- Into the linearly topologised `ℤ_[p]`-algebra `ℤ_[p]⟨Y⟩`, every choice `b` of image for `X`
-extends uniquely to a continuous `ℤ_[p]`-algebra homomorphism, agreeing on both carriers; whereas
-in `ℚ_[p]`, `p⁻¹` has norm `p > 1` and is not power-bounded. -/
+/-- Into the complete Hausdorff linearly topologised `ℤ_[p]`-algebra `ℤ_[p]⟨Y⟩`, every choice `b`
+of image for `X` extends uniquely to a continuous `ℤ_[p]`-algebra homomorphism; whereas in `ℚ_[p]`,
+`p⁻¹` has norm `p > 1` and is not power-bounded. -/
 example (b : MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin 1 ↦ 1)) :
     (∃! ψ : MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin 1 ↦ 1) →ₐ[ℤ_[p]]
         MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin 1 ↦ 1),
@@ -160,7 +136,7 @@ example (b : MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin 1 �
   refine ⟨?_, ?_⟩
   · simpa [Fin.forall_fin_one] using
       existsUnique_continuous_algHom_isRestricted_subring_of_isLinearTopology
-        (R := ℤ_[p]) (S := MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin 1 ↦ 1))
+        (R := ℤ_[p]) (T := MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin 1 ↦ 1))
         _root_.MvPowerSeries.isometry_algebraMap_isRestrictedSubring.continuous (fun _ : Fin 1 ↦ b)
   · rw [isPowerBounded_iff_norm_le_one, norm_inv, Padic.norm_p, inv_inv, not_le]
     exact mod_cast (Fact.out : p.Prime).one_lt
@@ -233,18 +209,22 @@ private def ThreeAdicInt : Type := ℤ
 private instance : CommRing ThreeAdicInt := inferInstanceAs (CommRing ℤ)
 private instance : WithIdeal ThreeAdicInt := ⟨Ideal.span {3}⟩
 
+private def threeAdicIntEquiv : ThreeAdicInt ≃+* ℤ := RingEquiv.refl ℤ
+
 private theorem t2Space_threeAdicInt : T2Space ThreeAdicInt := by
   have hadic : IsAdic (Ideal.span {(3 : ThreeAdicInt)}) := rfl
   have hhaus : IsHausdorff (Ideal.span {(3 : ThreeAdicInt)}) ThreeAdicInt := by
     refine ⟨fun x hx ↦ ?_⟩
     by_contra hx0
-    let z : ℤ := x
-    have hz0 : z ≠ 0 := hx0
+    let z : ℤ := threeAdicIntEquiv x
+    have hz0 : z ≠ 0 := by
+      rwa [Ne, map_eq_zero_iff threeAdicIntEquiv threeAdicIntEquiv.injective]
     have hmem : x - 0 ∈ Ideal.span {(3 : ThreeAdicInt)} ^ z.natAbs • (⊤ : Ideal ThreeAdicInt) :=
       SModEq.sub_mem.mp (hx z.natAbs)
     rw [sub_zero, smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow,
       Ideal.mem_span_singleton] at hmem
-    have hdvd : (3 : ℤ) ^ z.natAbs ∣ z := hmem
+    have hdvd : (3 : ℤ) ^ z.natAbs ∣ z := by
+      simpa only [z, map_pow, map_ofNat] using map_dvd threeAdicIntEquiv hmem
     have hle : (3 : ℕ) ^ z.natAbs ≤ z.natAbs := by
       simpa using Int.natAbs_le_of_dvd_ne_zero hdvd hz0
     exact (Nat.lt_pow_self (by decide : 1 < 3)).not_ge hle
@@ -268,11 +248,8 @@ example : T2Space ThreeAdicInt ∧ ¬ CompleteSpace ThreeAdicInt ∧
       rw [h4]
       exact (hnil3.map
         (continuous_algebraMap_restrictedMvPowerSeriesCompletion 0 ThreeAdicInt)).isUnit_one_add
-    have he4 : e 4 = (4 : ThreeAdicInt) := map_ofNat e 4
     have huZ : IsUnit (4 : ℤ) := by
-      change IsUnit (4 : ThreeAdicInt)
-      rw [← he4]
-      exact hu4.map e
+      simpa only [map_ofNat] using hu4.map (e.trans threeAdicIntEquiv)
     rcases Int.isUnit_iff.mp huZ with h | h <;> omega
   have hnot_comp : ¬ CompleteSpace ThreeAdicInt := fun hcomp ↦
     hemp.false ((restrictedMvPowerSeriesCompletionEquiv 0 ThreeAdicInt).trans

@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.RingTheory.Huber.Padic.Basic
 public import TauCeti.RingTheory.Huber.Restricted.Comparison
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # Restricted power series over `ℤ_[p]`
@@ -23,9 +24,8 @@ nilpotent. Both carriers are complete noetherian adic rings of finite ideal type
 noetherian), and reducing modulo `p ^ m` gives the polynomial ring `(ZMod (p ^ m))[T₁, …, Tₙ]`
 compatibility-preservingly across the Gauss comparison.
 
-## Main definitions and instances
+## Main definitions
 
-* `TauCeti.Huber.PadicInt.isAdicRing`: `ℤ_[p]` is an adic ring of finite ideal type.
 * `TauCeti.Huber.PadicInt.quotientSpanPowIsRestrictedEquivMvPolynomialZMod`: the ring isomorphism
   `ℤ_[p]⟨T₁, …, Tₙ⟩ ⧸ (p ^ m) ≃+* (ZMod (p ^ m))[T₁, …, Tₙ]` on the Gauss-normed carrier.
 * `TauCeti.Huber.PadicInt.quotientSpanPowRestrictedCompletionEquivMvPolynomialZMod`: the
@@ -37,7 +37,8 @@ compatibility-preservingly across the Gauss comparison.
   carriers have the `(p)`-adic topology.
 * `not_isTateRing_isRestricted_subring` and `not_isTateRing_restrictedMvPowerSeriesCompletion`:
   neither carrier is a Tate ring.
-* `coeff_quotientSpanPowIsRestrictedEquivMvPolynomialZMod_mk` and
+* `coeff_quotientSpanPowIsRestrictedEquivMvPolynomialZMod_mk`,
+  `quotientSpanPowRestrictedCompletionEquivMvPolynomialZMod_mk`, and
   `quotientSpanPowIsRestrictedEquivMvPolynomialZMod_quotientEquiv`: reduction modulo `p ^ m`
   truncates each coefficient via `PadicInt.toZModPow m` and commutes with the Gauss comparison.
 
@@ -55,35 +56,20 @@ open IsLocalRing TauCeti.MvPowerSeries
 
 variable {p : ℕ} [Fact p.Prime]
 
-/-- **`ℤ_[p]` is an adic ring of finite ideal type**, with `(p)` as a finitely generated ideal of
-definition. -/
-instance isAdicRing : IsAdicRing ℤ_[p] :=
-  ⟨maximalIdeal ℤ_[p],
-    by rw [_root_.PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _,
-    isAdic_maximalIdeal,
-    isAdic_maximalIdeal.isAdicComplete_iff.mpr ⟨inferInstance, inferInstance⟩⟩
-
-private theorem fg_maximalIdeal : (maximalIdeal ℤ_[p]).FG := by
-  rw [_root_.PadicInt.maximalIdeal_eq_span_p]
-  exact Submodule.fg_span_singleton _
-
-private theorem map_maximalIdeal_eq_span_p {S : Type*} [CommRing S] (φ : ℤ_[p] →+* S) :
-    (maximalIdeal ℤ_[p]).map φ = Ideal.span {(p : S)} := by
-  rw [_root_.PadicInt.maximalIdeal_eq_span_p, Ideal.map_span, Set.image_singleton, map_natCast]
-
 /-- The Gauss-normed restricted-series ring `ℤ_[p]⟨T₁, …, Tₙ⟩` carries the `(p)`-adic topology. -/
 theorem isAdic_span_p_isRestricted_subring (n : ℕ) :
     IsAdic (Ideal.span {(p : MvPowerSeries.IsRestricted.subring (R := ℤ_[p])
       (fun _ : Fin n ↦ 1))}) := by
-  rw [← map_maximalIdeal_eq_span_p (algebraMap ℤ_[p] _)]
-  exact isAdic_map_algebraMap_isRestricted_subring n isAdic_maximalIdeal fg_maximalIdeal
+  rw [← _root_.PadicInt.map_maximalIdeal_eq_span_p (algebraMap ℤ_[p] _)]
+  exact isAdic_map_algebraMap_isRestricted_subring n isAdic_maximalIdeal
+    (maximalIdeal ℤ_[p]).fg_of_isNoetherianRing
 
 /-- The completed Huber restricted-series ring over `ℤ_[p]` carries the `(p)`-adic topology. -/
 theorem isAdic_span_p_restrictedMvPowerSeriesCompletion (n : ℕ) :
     IsAdic (Ideal.span {(p : restrictedMvPowerSeriesCompletion n ℤ_[p])}) := by
-  rw [← map_maximalIdeal_eq_span_p (algebraMap ℤ_[p] _)]
+  rw [← _root_.PadicInt.map_maximalIdeal_eq_span_p (algebraMap ℤ_[p] _)]
   exact isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion n isAdic_maximalIdeal
-    fg_maximalIdeal
+    (maximalIdeal ℤ_[p]).fg_of_isNoetherianRing
 
 /-- `ℤ_[p]⟨T₁, …, Tₙ⟩` is not a Tate ring: its topology is adic for the proper ideal `(p)`. -/
 theorem not_isTateRing_isRestricted_subring (n : ℕ) :
@@ -97,6 +83,12 @@ theorem not_isTateRing_restrictedMvPowerSeriesCompletion (n : ℕ) :
     (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := ℤ_[p])).toEquiv.nontrivial
   exact IsAdicRing.not_isTateRing
 
+private noncomputable def quotientMaximalIdealPowEquivZMod (m : ℕ) :
+    (ℤ_[p] ⧸ maximalIdeal ℤ_[p] ^ m) ≃+* ZMod (p ^ m) :=
+  (Ideal.quotEquivOfEq
+    (by rw [_root_.PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow])).trans
+    (_root_.PadicInt.quotientSpanPowEquivZMod m)
+
 /-- **Reduction of `ℤ_[p]⟨T₁, …, Tₙ⟩` modulo `p ^ m` is `(ZMod (p ^ m))[T₁, …, Tₙ]`** on the
 Gauss-normed carrier, for every `n, m : ℕ`. -/
 noncomputable def quotientSpanPowIsRestrictedEquivMvPolynomialZMod (n m : ℕ) :
@@ -107,14 +99,11 @@ noncomputable def quotientSpanPowIsRestrictedEquivMvPolynomialZMod (n m : ℕ) :
   have hS : Ideal.span {(p : MvPowerSeries.IsRestricted.subring (R := ℤ_[p])
         (fun _ : Fin n ↦ 1)) ^ m} =
       (maximalIdeal ℤ_[p]).map (algebraMap ℤ_[p] _) ^ m := by
-    rw [map_maximalIdeal_eq_span_p, Ideal.span_singleton_pow]
-  have hR : maximalIdeal ℤ_[p] ^ m = Ideal.span {(p : ℤ_[p]) ^ m} := by
-    rw [_root_.PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow]
+    rw [_root_.PadicInt.map_maximalIdeal_eq_span_p, Ideal.span_singleton_pow]
   ((Ideal.quotEquivOfEq hS).trans
     (quotientIsRestrictedPowEquivMvPolynomialQuotient (k := n) isAdic_maximalIdeal
-      fg_maximalIdeal m).toRingEquiv).trans
-    (MvPolynomial.mapEquiv (Fin n)
-      ((Ideal.quotEquivOfEq hR).trans (_root_.PadicInt.quotientSpanPowEquivZMod m)))
+      (maximalIdeal ℤ_[p]).fg_of_isNoetherianRing m).toRingEquiv).trans
+    (MvPolynomial.mapEquiv (Fin n) (quotientMaximalIdealPowEquivZMod m))
 
 /-- Reducing a restricted series `f ∈ ℤ_[p]⟨T₁, …, Tₙ⟩` modulo `p ^ m` applies
 `PadicInt.toZModPow m` to each coefficient. -/
@@ -124,7 +113,8 @@ theorem coeff_quotientSpanPowIsRestrictedEquivMvPolynomialZMod_mk (n m : ℕ)
     (ν : Fin n →₀ ℕ) :
     (quotientSpanPowIsRestrictedEquivMvPolynomialZMod n m (Ideal.Quotient.mk _ f)).coeff ν =
       _root_.PadicInt.toZModPow m (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin n) ℤ_[p])) := by
-  simp [quotientSpanPowIsRestrictedEquivMvPolynomialZMod, MvPolynomial.coeff_map]
+  simp [quotientSpanPowIsRestrictedEquivMvPolynomialZMod, quotientMaximalIdealPowEquivZMod,
+    MvPolynomial.coeff_map]
 
 /-- **Reduction of `restrictedMvPowerSeriesCompletion n ℤ_[p]` modulo `p ^ m` is
 `(ZMod (p ^ m))[T₁, …, Tₙ]`**, for every `n, m : ℕ`. -/
@@ -134,14 +124,59 @@ noncomputable def quotientSpanPowRestrictedCompletionEquivMvPolynomialZMod (n m 
       MvPolynomial (Fin n) (ZMod (p ^ m)) :=
   have hS : Ideal.span {(p : restrictedMvPowerSeriesCompletion n ℤ_[p]) ^ m} =
       (maximalIdeal ℤ_[p]).map (algebraMap ℤ_[p] _) ^ m := by
-    rw [map_maximalIdeal_eq_span_p, Ideal.span_singleton_pow]
-  have hR : maximalIdeal ℤ_[p] ^ m = Ideal.span {(p : ℤ_[p]) ^ m} := by
-    rw [_root_.PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow]
+    rw [_root_.PadicInt.map_maximalIdeal_eq_span_p, Ideal.span_singleton_pow]
   ((Ideal.quotEquivOfEq hS).trans
     (quotientRestrictedCompletionPowEquivMvPolynomialQuotient (k := n) isAdic_maximalIdeal
-      fg_maximalIdeal m).toRingEquiv).trans
-    (MvPolynomial.mapEquiv (Fin n)
-      ((Ideal.quotEquivOfEq hR).trans (_root_.PadicInt.quotientSpanPowEquivZMod m)))
+      (maximalIdeal ℤ_[p]).fg_of_isNoetherianRing m).toRingEquiv).trans
+    (MvPolynomial.mapEquiv (Fin n) (quotientMaximalIdealPowEquivZMod m))
+
+/-- Reducing an element `x ∈ restrictedMvPowerSeriesCompletion n ℤ_[p]` modulo `p ^ m` applies
+`restrictedCompletionReduction` modulo `(p ^ m)` followed by coefficientwise identification with
+`ZMod (p ^ m)`. -/
+@[simp]
+theorem quotientSpanPowRestrictedCompletionEquivMvPolynomialZMod_mk (n m : ℕ)
+    (x : restrictedMvPowerSeriesCompletion n ℤ_[p]) :
+    quotientSpanPowRestrictedCompletionEquivMvPolynomialZMod n m (Ideal.Quotient.mk _ x) =
+      MvPolynomial.map (_root_.PadicInt.quotientSpanPowEquivZMod m).toRingHom
+        ((Ideal.span {(p : ℤ_[p]) ^ m}).restrictedCompletionReduction
+          (by
+            simpa only [← Ideal.span_singleton_pow, ← _root_.PadicInt.maximalIdeal_eq_span_p]
+              using isAdic_maximalIdeal.isOpen_pow m) x) := by
+  have hR : maximalIdeal ℤ_[p] ^ m = Ideal.span {(p : ℤ_[p]) ^ m} := by
+    rw [_root_.PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow]
+  have hhom : (Ideal.quotEquivOfEq hR : _ →+* _) = Ideal.Quotient.factor (le_of_eq hR) := by
+    ext q
+    simp
+  simp only [quotientSpanPowRestrictedCompletionEquivMvPolynomialZMod,
+    quotientMaximalIdealPowEquivZMod, RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk,
+    AlgEquiv.coe_toRingEquiv, quotientRestrictedCompletionPowEquivMvPolynomialQuotient_mk,
+    MvPolynomial.mapEquiv_apply, RingEquiv.toRingHom_trans, ← MvPolynomial.map_map, hhom,
+    RingEquiv.toRingHom_eq_coe]
+  exact congrArg _ (map_restrictedCompletionReduction _ _ _ _)
+
+/-- The `ZMod (p ^ m)`-polynomial quotient equivalences on the completed Huber and Gauss-normed
+carriers agree across `Ideal.quotientMap` of `restrictedMvPowerSeriesCompletionGaussEquiv` (the
+`simp` normal form of `Ideal.quotientEquiv` under `Ideal.quotientEquiv_apply`). -/
+@[simp]
+theorem quotientSpanPowIsRestrictedEquivMvPolynomialZMod_quotientMap (n m : ℕ)
+    (h : Ideal.span {(p : restrictedMvPowerSeriesCompletion n ℤ_[p]) ^ m} ≤
+      Ideal.comap (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := ℤ_[p]) : _ →+* _)
+        (Ideal.span {(p : MvPowerSeries.IsRestricted.subring (R := ℤ_[p])
+          (fun _ : Fin n ↦ 1)) ^ m}))
+    (q : restrictedMvPowerSeriesCompletion n ℤ_[p] ⧸
+      Ideal.span {(p : restrictedMvPowerSeriesCompletion n ℤ_[p]) ^ m}) :
+    quotientSpanPowIsRestrictedEquivMvPolynomialZMod n m
+        (Ideal.quotientMap _
+          (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := ℤ_[p]) : _ →+* _) h q) =
+      quotientSpanPowRestrictedCompletionEquivMvPolynomialZMod n m q := by
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
+  simp only [Ideal.quotientMap_mk, RingEquiv.coe_toRingHom,
+    quotientSpanPowIsRestrictedEquivMvPolynomialZMod,
+    quotientSpanPowRestrictedCompletionEquivMvPolynomialZMod, RingEquiv.trans_apply,
+    Ideal.quotEquivOfEq_mk, AlgEquiv.coe_toRingEquiv,
+    quotientIsRestrictedPowEquivMvPolynomialQuotient_mk,
+    quotientRestrictedCompletionPowEquivMvPolynomialQuotient_mk,
+    isRestrictedReduction_restrictedMvPowerSeriesCompletionGaussEquiv]
 
 /-- The `ZMod (p ^ m)`-polynomial quotient equivalences on the completed Huber and Gauss-normed
 carriers agree across `restrictedMvPowerSeriesCompletionGaussEquiv`. -/
@@ -153,8 +188,6 @@ theorem quotientSpanPowIsRestrictedEquivMvPolynomialZMod_quotientEquiv (n m : �
           (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := ℤ_[p]))
           (by rw [Ideal.map_span, Set.image_singleton, map_pow, map_natCast]) q) =
       quotientSpanPowRestrictedCompletionEquivMvPolynomialZMod n m q := by
-  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
-  simp [quotientSpanPowIsRestrictedEquivMvPolynomialZMod,
-    quotientSpanPowRestrictedCompletionEquivMvPolynomialZMod]
+  simp
 
 end TauCeti.Huber.PadicInt
