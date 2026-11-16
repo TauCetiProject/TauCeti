@@ -30,7 +30,7 @@ identification `Hₙ(Dⁿ, Sⁿ⁻¹; χⱼ*L) ≅ L(χⱼ(0))` followed by the 
 * Relative twisted homology is additive (`TopPair.isColimitCofanTwistedHomology`).
 * On the Euclidean disk pair, a local system is constant, and transport along the straight-line
   contraction onto the centre identifies `Hₙ(Dⁿ, Sⁿ⁻¹; L)` with `Hₙ(Dⁿ, Sⁿ⁻¹; L(0)) ≅ L(0)`
-  (`TopPair.twistedHomologyDiskBoundaryPairIso`).
+  (`TauCeti.twistedHomologyDiskBoundaryPairIso`).
 
 For a fibration over a CW complex and the local system of fibre homology `b ↦ H_q(p⁻¹(b))`, the
 summand of the cell `j` is the homology of the fibre over its centre. The first page of the Serre
@@ -39,7 +39,6 @@ spectral sequence is a coproduct of the same fibre homology groups, one per cell
 
 ## Main definitions
 
-* `TopPair.twistedHomologyDiskBoundaryPairIso`: `Hₙ(Dⁿ, Sⁿ⁻¹; L) ≅ L(0)`.
 * `TauCeti.twistedCellularChainGroupIso`: `Hₙ(Xⁿ, Xⁿ⁻¹; L) ≅ ∐ⱼ L(χⱼ(0))`.
 
 ## Main results
@@ -61,62 +60,10 @@ open CategoryTheory Limits Topology Topology.RelCWComplex
 
 universe w v u
 
-namespace TopPair
-
-open TauCeti
-
-variable {R : Type u} [Ring R]
-
-/-- **The relative homology of the disk with local coefficients in its dimension** is the fibre of
-the system over the centre: `Hₙ(Dⁿ, Sⁿ⁻¹; L) ≅ L(0)`. It is the identification of `L` with the
-constant system `L(0)` by transport along the straight-line contraction onto the centre, followed
-by `TauCeti.singularHomologyDiskBoundaryPairIso`. -/
-def twistedHomologyDiskBoundaryPairIso (n : ℕ)
-    (L : LocalCoefficientSystem.{u, v, max v w} R (diskBoundaryPair.{v} n).fst) :
-    (diskBoundaryPair.{v} n).twistedHomology L n ≅ L.obj (FundamentalGroupoid.mk (diskCenter n)) :=
-  (diskBoundaryPair.{v} n).twistedHomologyIsoOfHomotopy (diskContraction n) L n ≪≫
-    singularHomologyDiskBoundaryPairIso _ n
-
-/-- `TopPair.twistedHomologyDiskBoundaryPairIso` is the identification of the coefficients with a
-constant system along the straight-line contraction `TauCeti.diskContraction`, followed by the
-computation of the relative homology of the disk with constant coefficients. -/
-lemma twistedHomologyDiskBoundaryPairIso_hom (n : ℕ)
-    (L : LocalCoefficientSystem.{u, v, max v w} R (diskBoundaryPair.{v} n).fst) :
-    (twistedHomologyDiskBoundaryPairIso n L).hom =
-      ((diskBoundaryPair.{v} n).twistedHomologyIsoOfHomotopy (diskContraction n) L n).hom ≫
-        (singularHomologyDiskBoundaryPairIso
-          (L.obj (FundamentalGroupoid.mk (diskCenter n))) n).hom :=
-  (rfl)
-
-end TopPair
-
 namespace TauCeti
 
 variable {R : Type u} [Ring R] {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X}
   (C : Set X) [RelCWComplex C D] (L : LocalCoefficientSystem.{u, w, max w v} R (TopCat.of C))
-
-/-- Read on the Euclidean disk of the cell `j`, the characteristic maps send the centre of the disk
-to the centre `χⱼ(0)` of the cell. -/
-lemma coe_characteristicPairMap_sigmaDiskBoundaryPairIso_diskCenter (n : ℕ) (j : cell C n) :
-    (ConcreteCategory.hom (Y := TopCat.of (skeletonLT C (n + 1)))
-      (TopPair.Hom.fst (characteristicPairMap C n))
-        (TopPair.Hom.fst (sigmaDiskBoundaryPairIso (cell C n) n).hom
-          (TopPair.Hom.fst (TopPair.sigmaι (fun _ : cell C n ↦ diskBoundaryPair.{w} n) j)
-            (diskCenter n)))).1 = map n j 0 := by
-  let c := TopPair.Hom.fst (TopPair.sigmaι (fun _ : cell C n ↦ diskBoundaryPair.{w} n) j)
-    (diskCenter n)
-  have h₁ := sigmaDiskBoundaryPairIso_hom_fst_apply_fst (cell C n) n c
-  have h₂ :
-      ((TopPair.Hom.fst (sigmaDiskBoundaryPairIso (cell C n) n).hom c).2 : Fin n → ℝ) = 0 := by
-    rw [coe_sigmaDiskBoundaryPairIso_hom_fst_apply_snd,
-      ContinuousLinearEquiv.unitBallHomeomorph_apply]
-    -- The summand of `c` is `diskCenter n` only after unfolding the inclusion of the summand.
-    erw [coe_diskCenter_down, map_zero, gaugeRescale_zero]
-  refine (characteristicPairMap_fst_apply C n _).trans ?_
-  generalize TopPair.Hom.fst (sigmaDiskBoundaryPairIso (cell C n) n).hom c = q at h₁ h₂ ⊢
-  obtain ⟨i, y⟩ := q
-  obtain rfl : i = j := h₁
-  exact congrArg (map n i) h₂
 
 /-- **The cellular chain group with local coefficients is a coproduct of fibres, one per cell**:
 `Hₙ(Xⁿ, Xⁿ⁻¹; L)` is the coproduct, over the `n`-cells `j`, of the fibres `L(χⱼ(0))` of `L` over
@@ -134,7 +81,7 @@ def twistedCellularChainGroupIso (n : ℕ) :
         (skeletonSystem C L (n + 1))) n)).symm ≪≫
     (TopPair.isColimitCofanTwistedHomology (fun _ : cell C n ↦ diskBoundaryPair.{w} n) _
       n).coconePointUniqueUpToIso (colimit.isColimit _) ≪≫
-    Sigma.mapIso fun j ↦ TopPair.twistedHomologyDiskBoundaryPairIso n
+    Sigma.mapIso fun j ↦ twistedHomologyDiskBoundaryPairIso n
         ((LocalCoefficientSystem.pullback (TopPair.Hom.fst
           (TopPair.sigmaι (fun _ : cell C n ↦ diskBoundaryPair.{w} n) j)).hom).obj
           ((LocalCoefficientSystem.pullback
@@ -154,7 +101,7 @@ lemma ι_twistedCellularChainGroupIso_inv (n : ℕ) (j : cell C n) :
         (twistedCellularChainGroupIso C L n).inv =
       eqToHom (congrArg (fun x ↦ L.obj (FundamentalGroupoid.mk x)) (Subtype.ext
           (coe_characteristicPairMap_sigmaDiskBoundaryPairIso_diskCenter C n j)).symm) ≫
-        (TopPair.twistedHomologyDiskBoundaryPairIso n
+        (twistedHomologyDiskBoundaryPairIso n
           ((LocalCoefficientSystem.pullback (TopPair.Hom.fst
             (TopPair.sigmaι (fun _ : cell C n ↦ diskBoundaryPair.{w} n) j)).hom).obj
             ((LocalCoefficientSystem.pullback
