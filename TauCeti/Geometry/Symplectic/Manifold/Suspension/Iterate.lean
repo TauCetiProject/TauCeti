@@ -37,9 +37,8 @@ No nondegeneracy of `σ` and no compactness of `M` are needed for the area formu
 
 ## Main results
 
-* `TauCeti.SmoothMappingTorus.mpullback_prodMap_iterateMap_mpullback_snd_fiberForm`,
-  `TauCeti.SmoothMappingTorus.mpullback_prodMap_iterateMap_suspensionForm`: the map pulls the
-  fiber forms of `φ` back to those of `φ ^ k`, and `Ω` back to `ds ∧ k dt + σ_v`.
+* `TauCeti.SmoothMappingTorus.mpullback_prodMap_iterateMap_suspensionForm`: the map pulls `Ω`
+  back to `ds ∧ k dt + σ_v`.
 * `TauCeti.SmoothMappingTorus.isSymplectic_smul_wedge_timeForm_add_fiberForm_iff`: for `k ≠ 0`,
   the form `ds ∧ k dt + σ_v` on `X_(φ^k)` is symplectic exactly when `σ` is.
 * `SmoothMappingTorus.integralTopForm_mpullback_prodMap_iterateMap_comp_orbitTorus_suspensionForm`:
@@ -70,24 +69,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
   (hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ)
 
 /-- The map `(s, y) ↦ (s, iterateMap φ k y)` from `(ℝ / ℤ) × Y_(φ^k)` to `(ℝ / ℤ) × Y_φ` pulls the
-fiber form of a `φ`-invariant form `τ`, pulled back to `(ℝ / ℤ) × Y_φ`, back to the corresponding
-form for `φ ^ k`, in every degree. -/
-@[simp]
-theorem mpullback_prodMap_iterateMap_mpullback_snd_fiberForm {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {r : ℕ} (τ : SmoothForm I M F r)
-    (hτ : SmoothForm.mpullback φ φ.contMDiff τ = τ) :
-    SmoothForm.mpullback (Prod.map id (iterateMap φ k))
-        (contMDiff_id.prodMap (contMDiff_iterateMap φ k))
-        (SmoothForm.mpullback (I := 𝓘(ℝ).prod (𝓘(ℝ).prod I))
-          (Prod.snd : UnitAddCircle × SmoothMappingTorus φ → SmoothMappingTorus φ) contMDiff_snd
-          (fiberForm φ τ hτ)) =
-      SmoothForm.mpullback (I := 𝓘(ℝ).prod (𝓘(ℝ).prod I))
-        (Prod.snd : UnitAddCircle × SmoothMappingTorus (φ ^ k) → SmoothMappingTorus (φ ^ k))
-        contMDiff_snd (fiberForm (φ ^ k) τ (SmoothForm.mpullback_zpow_eq_self hτ k)) := by
-  rw [SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id (contMDiff_iterateMap φ k),
-    mpullback_iterateMap_fiberForm]
-
-/-- The map `(s, y) ↦ (s, iterateMap φ k y)` from `(ℝ / ℤ) × Y_(φ^k)` to `(ℝ / ℤ) × Y_φ` pulls the
 form `Ω = ds ∧ dt + σ_v` back to `ds ∧ k dt + σ_v`. The time form of `Y_φ` pulls back to `k` times
 the time form of `Y_(φ^k)`, while the fiber form of `σ` has no rescaling factor. -/
 theorem mpullback_prodMap_iterateMap_suspensionForm :
@@ -115,7 +96,8 @@ theorem mpullback_prodMap_iterateMap_suspensionForm :
       map_smul]
   -- `rw [map_add]` is slow here: the wedge `ds ∧ dt` has degree `1 + 1`, while `Ω` has degree `2`.
   refine (congrArg _ suspensionForm_def).trans ((map_add _ _ _).trans (congrArg₂ (· + ·) ?_
-    (mpullback_prodMap_iterateMap_mpullback_snd_fiberForm φ k σ hσ)))
+    (by rw [SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id hm,
+      mpullback_iterateMap_fiberForm])))
   refine (SmoothForm.mpullback_wedge (k := 1) (l := 1) (Prod.map id (iterateMap φ k))
     (contMDiff_id.prodMap hm) _ _).trans ?_
   exact (congrArg₂ (fun α β ↦ SmoothForm.wedge α β) hds hdt).trans (map_smul _ _ _)
@@ -180,8 +162,8 @@ theorem integralTopForm_mpullback_prodMap_iterateMap_comp_orbitTorus_fiberForm
         (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0 := by
   rw [← SmoothForm.mpullback_mpullback _ _ (contMDiff_orbitTorus hx)
       (contMDiff_id.prodMap (contMDiff_iterateMap φ k)),
-    mpullback_prodMap_iterateMap_mpullback_snd_fiberForm,
-    mpullback_orbitTorus_mpullback_snd_fiberForm hx two_ne_zero]
+    SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id (contMDiff_iterateMap φ k),
+    mpullback_iterateMap_fiberForm, mpullback_orbitTorus_mpullback_snd_fiberForm hx two_ne_zero]
   exact integralTopForm_zero o
 
 end TauCeti.SmoothMappingTorus
