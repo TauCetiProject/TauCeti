@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Pi
 public import Mathlib.MeasureTheory.Function.L2Space
-public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import TauCeti.LinearAlgebra.Matrix.Determinant.WeightedStar
 
 /-!
 # Andréief's integration identity
@@ -98,30 +98,14 @@ section Hermitian
 
 variable {φ : ι → E → 𝕜}
 
-omit [MeasurableSpace E] in
-private theorem weighted_det_identity (φ : ι → E → 𝕜) (u : E → 𝕜) (x : ι → E) :
-    det (Matrix.of fun i j ↦ φ i (x j)) *
-        det (Matrix.of fun i j ↦ u (x j) * star (φ i (x j))) =
-      (∏ j, u (x j)) * (‖det (Matrix.of fun i j ↦ φ i (x j))‖ ^ 2 : ℝ) := by
-  have hs : det (Matrix.of fun i j ↦ star (φ i (x j))) =
-      star (det (Matrix.of fun i j ↦ φ i (x j))) := by
-    simpa only [RingHom.mapMatrix_apply, Matrix.map, Matrix.of_apply, starRingEnd_apply] using
-      ((starRingEnd 𝕜).map_det (Matrix.of fun i j ↦ φ i (x j))).symm
-  have hd := Matrix.det_mul_row (fun j ↦ u (x j))
-    (Matrix.of fun i j ↦ star (φ i (x j)))
-  simp only [Matrix.of_apply] at hd
-  rw [hd, hs, mul_left_comm]
-  exact congrArg ((∏ j, u (x j)) * ·) (by
-    simpa only [starRingEnd_apply, RCLike.ofReal_pow] using
-      RCLike.mul_conj (det (Matrix.of fun i j ↦ φ i (x j))))
-
 /-- A weighted squared evaluation determinant is integrable whenever the corresponding
 weighted pairwise products are integrable. -/
 theorem integrable_prod_mul_norm_det_sq {u : E → 𝕜}
     (hu : ∀ i j, Integrable (fun x ↦ φ i x * (u x * star (φ j x))) μ) :
     Integrable (fun x : ι → E ↦ (∏ j, u (x j)) *
       (‖det (Matrix.of fun i j ↦ φ i (x j))‖ ^ 2 : ℝ)) (Measure.pi fun _ ↦ μ) := by
-  exact (integrable_det_mul_det hu).congr (.of_forall (weighted_det_identity φ u))
+  exact (integrable_det_mul_det hu).congr (.of_forall (fun x ↦ Matrix.det_mul_det_weighted_star
+    (Matrix.of fun i j ↦ φ i (x j)) (fun j ↦ u (x j))))
 
 /-- **Weighted Hermitian Andréief identity.** Multiplying the squared evaluation determinant
 by one weight per particle inserts that weight into every pairwise integral. -/
@@ -132,7 +116,8 @@ theorem integral_prod_mul_norm_det_sq {u : E → 𝕜}
       (Fintype.card ι).factorial *
         det (Matrix.of fun i j ↦ ∫ x, φ i x * (u x * star (φ j x)) ∂μ) := by
   rw [← integral_det_mul_det hu]
-  exact integral_congr_ae (.of_forall fun x ↦ (weighted_det_identity φ u x).symm)
+  exact integral_congr_ae (.of_forall fun x ↦ (Matrix.det_mul_det_weighted_star
+    (Matrix.of fun i j ↦ φ i (x j)) (fun j ↦ u (x j))).symm)
 
 /-- The squared evaluation determinant is integrable for square-integrable generators. -/
 theorem integrable_norm_det_sq (hφ : ∀ i, MemLp (φ i) 2 μ) :

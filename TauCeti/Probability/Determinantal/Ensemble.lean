@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.Determinant.Andreief
-public import TauCeti.Probability.Determinantal.Kernel
+public import TauCeti.MeasureTheory.Integral.Kernel.FiniteRank
 public import Mathlib.MeasureTheory.Measure.WithDensityFinite
 import TauCeti.MeasureTheory.Measure.WithDensity
 import Mathlib.Analysis.Matrix.MeasurableSpace
@@ -43,6 +43,11 @@ variable {ι E 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [RCLike 𝕜]
 /-- The real density of a labelled finite determinantal ensemble. -/
 def determinantalDensity (φ : ι → E → 𝕜) (x : ι → E) : ℝ :=
   ‖det (Matrix.of fun i j ↦ φ i (x j))‖ ^ 2 / (Fintype.card ι).factorial
+
+/-- The defining squared evaluation determinant of the labelled density. -/
+theorem determinantalDensity_def (φ : ι → E → 𝕜) (x : ι → E) :
+    determinantalDensity φ x =
+      ‖det (Matrix.of fun i j ↦ φ i (x j))‖ ^ 2 / (Fintype.card ι).factorial := (rfl)
 
 /-- A determinantal density is nonnegative. -/
 theorem determinantalDensity_nonneg (φ : ι → E → 𝕜) (x : ι → E) :

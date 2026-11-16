@@ -40,6 +40,10 @@ family is orthonormal for the reference measure. -/
 def finiteRankKernel (φ : ι → E → 𝕜) (x y : E) : 𝕜 :=
   ∑ i, φ i x * star (φ i y)
 
+/-- The defining finite sum of a Gram kernel. -/
+theorem finiteRankKernel_def (φ : ι → E → 𝕜) (x y : E) :
+    finiteRankKernel φ x y = ∑ i, φ i x * star (φ i y) := (rfl)
+
 /-- The Gram kernel is Hermitian. -/
 @[simp]
 theorem star_finiteRankKernel (φ : ι → E → 𝕜) (x y : E) :

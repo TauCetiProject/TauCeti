@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Determinantal.Ensemble
+import TauCeti.Algebra.BigOperators.Group.Finset.Indicator
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Count laws and gap probabilities of finite determinantal ensembles
@@ -41,6 +43,11 @@ variable {ι E 𝕜 : Type*} [Fintype ι] [RCLike 𝕜]
 def particleCount (x : ι → E) (B : Set E) : ℕ := by
   classical
   exact (Finset.univ.filter fun i ↦ x i ∈ B).card
+
+open Classical in
+/-- The defining cardinality of the particles whose coordinates belong to a window. -/
+theorem particleCount_def (x : ι → E) (B : Set E) :
+    particleCount x B = (Finset.univ.filter fun i ↦ x i ∈ B).card := (rfl)
 
 /-- A count never exceeds the number of particles. -/
 theorem particleCount_le (x : ι → E) (B : Set E) : particleCount x B ≤ Fintype.card ι := by
@@ -109,32 +116,6 @@ theorem isProbabilityMeasure_determinantalCountLaw {κ : Type*}
   rw [determinantalCountLaw_def]
   infer_instance
 
-omit [Fintype ι] [DecidableEq ι] [SigmaFinite μ] in
-open Classical in
-private theorem integrable_joint_window_multiplier {κ : Type*} [Fintype κ]
-    (hφ : ∀ i, MemLp (φ i) 2 μ) {B : κ → Set E} (hB : ∀ k, MeasurableSet (B k))
-    (z : κ → 𝕜) (i j : ι) :
-    Integrable (fun x ↦ φ i x * ((∏ k, if x ∈ B k then z k else 1) * star (φ j x))) μ := by
-  have hm : Measurable (fun x : E ↦ ∏ k, if x ∈ B k then z k else (1 : 𝕜)) :=
-    Finset.measurable_prod _ fun k _ ↦ Measurable.ite (hB k) measurable_const measurable_const
-  have hb (x : E) : ‖∏ k, if x ∈ B k then z k else (1 : 𝕜)‖ ≤ ∏ k, max ‖z k‖ 1 := by
-    rw [norm_prod]
-    apply Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _)
-    intro k _
-    split_ifs
-    · exact le_max_left _ _
-    · simp
-  simpa only [mul_left_comm, Pi.mul_apply, Pi.star_apply] using
-    ((hφ i).integrable_mul (hφ j).star).bdd_mul hm.aestronglyMeasurable (.of_forall hb)
-
-omit [Fintype ι] [DecidableEq ι] [SigmaFinite μ] in
-open Classical in
-private theorem integrable_window_multiplier (hφ : ∀ i, MemLp (φ i) 2 μ)
-    {B : Set E} (hB : MeasurableSet B) (z : 𝕜) (i j : ι) :
-    Integrable (fun x ↦ φ i x * ((if x ∈ B then z else 1) * star (φ j x))) μ := by
-  simpa using integrable_joint_window_multiplier hφ (B := fun _ : Unit ↦ B)
-    (fun _ ↦ hB) (fun _ ↦ z) i j
-
 /-- Orthonormality turns the count generating function into `det (I + (z - 1) G_B)`,
 where `G_B` is the matrix of pairwise integrals over the window. -/
 theorem integral_pow_particleCount (hφ : ∀ i, MemLp (φ i) 2 μ)
@@ -146,7 +127,11 @@ theorem integral_pow_particleCount (hφ : ∀ i, MemLp (φ i) 2 μ)
   have hi (i j : ι) : Integrable (fun x ↦ φ i x * star (φ j x)) μ :=
     (hφ i).integrable_mul (hφ j).star
   simp_rw [pow_particleCount]
-  rw [integral_prod_determinantalEnsemble hφ (integrable_window_multiplier hφ hB z)]
+  have hint (i j : ι) :
+      Integrable (fun x ↦ φ i x * ((if x ∈ B then z else 1) * star (φ j x))) μ := by
+    simpa only [Finset.prod_singleton, mul_right_comm, mul_assoc] using
+      (hi i j).mul_prod_piecewise_const {()} (B := fun _ ↦ B) (fun _ _ ↦ hB) (fun _ ↦ z)
+  rw [integral_prod_determinantalEnsemble hφ hint]
   congr 1
   ext i j
   have heq (x : E) : φ i x * ((if x ∈ B then z else 1) * star (φ j x)) =
@@ -200,30 +185,10 @@ theorem integral_prod_pow_determinantalCountLaw {κ : Type*} [Fintype κ]
     hm.aestronglyMeasurable]
   simp_rw [pow_particleCount]
   simp_rw [Finset.prod_comm (s := (univ : Finset κ))]
-  exact integral_prod_determinantalEnsemble hφ (integrable_joint_window_multiplier hφ hB z)
-
-omit [MeasurableSpace E] in
-open Classical in
-private theorem prod_window_weight_of_pairwise_disjoint {κ : Type*} [Fintype κ]
-    {B : κ → Set E} (hdisj : Pairwise (fun i j ↦ Disjoint (B i) (B j)))
-    (z : κ → 𝕜) (x : E) :
-    (∏ k, if x ∈ B k then z k else 1) =
-      1 + ∑ k, (B k).indicator (fun _ ↦ z k - 1) x := by
-  classical
-  by_cases hx : ∃ k, x ∈ B k
-  · obtain ⟨k, hk⟩ := hx
-    have hn (j : κ) (hjk : j ≠ k) : x ∉ B j := by
-      exact fun hj ↦ Set.disjoint_left.mp (hdisj hjk) hj hk
-    rw [Finset.prod_eq_single k, Finset.sum_eq_single k]
-    · simp [hk]
-    · intro j _ hjk
-      simp [hn j hjk]
-    · simp
-    · intro j _ hjk
-      simp [hn j hjk]
-    · simp
-  · have hn : ∀ k, x ∉ B k := by simpa using hx
-    simp [hn]
+  apply integral_prod_determinantalEnsemble (u := fun x ↦ ∏ k, if x ∈ B k then z k else 1) hφ
+  intro i j
+  simpa only [Pi.mul_apply, Pi.star_apply, mul_assoc, mul_left_comm, mul_comm] using
+    ((hφ i).integrable_mul (hφ j).star).mul_prod_piecewise_const univ (fun k _ ↦ hB k) z
 
 /-- **The determinantal joint count formula on disjoint windows.** The generating matrix is
 `I + ∑ₖ (zₖ - 1) G_{Bₖ}`. Disjointness is used only for this linear form; the general formula
@@ -250,7 +215,10 @@ theorem integral_prod_pow_determinantalCountLaw_eq_det {κ : Type*} [Fintype κ]
       ((∏ k, if x ∈ B k then z k else 1) * star (φ j x)) =
       φ i x * star (φ j x) + ∑ k, (z k - 1) *
         (B k).indicator (fun x ↦ φ i x * star (φ j x)) x := by
-    rw [prod_window_weight_of_pairwise_disjoint hdisj]
+    have hw := Finset.prod_mulIndicator_eq_one_add_sum_indicator
+      (β := 𝕜) univ (t := B) (fun _ _ _ _ hij ↦ hdisj hij) (fun k _ ↦ z k) x
+    simp only [Set.mulIndicator, Set.indicator] at hw
+    rw [hw]
     simp only [add_mul, one_mul, mul_add, Finset.sum_mul, Finset.mul_sum]
     congr 1
     apply Finset.sum_congr rfl
