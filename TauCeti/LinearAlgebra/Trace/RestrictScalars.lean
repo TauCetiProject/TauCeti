@@ -20,10 +20,23 @@ first. This is the module version of the transitivity of the algebra trace
 
 ## Main results
 
+* `TauCeti.Algebra.trace_eq_zero_of_not_finite`: the algebra trace vanishes when the extension is
+  not finite as a module.
 * `LinearMap.trace_restrictScalars`: `tr_R(f) = Tr_{A/R}(tr_A(f))`.
+* `TauCeti.Algebra.trace_trace_of_free`: `Tr_{A/R}(Tr_{B/A}(b)) = Tr_{B/R}(b)` in any tower of free
+  extensions, without finiteness hypotheses.
 -/
 
 public section
+
+namespace TauCeti.Algebra
+
+/-- The algebra trace vanishes on an algebra that is not module-finite over the base ring. -/
+theorem trace_eq_zero_of_not_finite {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+    (h : ¬Module.Finite R A) : _root_.Algebra.trace R A = 0 :=
+  _root_.Algebra.trace_eq_zero_of_not_exists_basis R fun ⟨_, ⟨b⟩⟩ ↦ h (.of_basis b)
+
+end TauCeti.Algebra
 
 namespace LinearMap
 
@@ -45,8 +58,7 @@ theorem trace_restrictScalars (f : M →ₗ[A] M) :
   have := bA.index_nonempty
   have := bM.index_nonempty
   cases fintypeOrInfinite ιA; swap
-  · simp [Algebra.trace_eq_zero_of_not_exists_basis R
-      fun ⟨_, ⟨b⟩⟩ ↦ not_finite_of_infinite_basis bA (.of_basis b),
+  · simp [TauCeti.Algebra.trace_eq_zero_of_not_finite (not_finite_of_infinite_basis bA),
       TauCeti.LinearMap.trace_eq_zero_of_not_finite
         (not_finite_of_infinite_basis (bA.smulTower bM))]
   cases fintypeOrInfinite ιM; swap
@@ -58,3 +70,18 @@ theorem trace_restrictScalars (f : M →ₗ[A] M) :
   simp [Algebra.trace_eq_matrix_trace bA, Matrix.trace]
 
 end LinearMap
+
+namespace TauCeti.Algebra
+
+/-- **Transitivity of the algebra trace along a tower of free extensions**, without finiteness
+assumptions: when either step is infinite-rank, both sides vanish. -/
+theorem trace_trace_of_free {R A B : Type*} [CommRing R] [CommRing A] [CommRing B]
+    [Algebra R A] [Module.Free R A] [Algebra A B] [Module.Free A B] [Algebra R B]
+    [IsScalarTower R A B] (b : B) :
+    _root_.Algebra.trace R A (_root_.Algebra.trace A B b) = _root_.Algebra.trace R B b := by
+  have hlmul :
+      LinearMap.restrictScalars R (_root_.Algebra.lmul A B b) = _root_.Algebra.lmul R B b := rfl
+  rw [_root_.Algebra.trace_apply (R := R) (S := B), ← hlmul, LinearMap.trace_restrictScalars,
+    _root_.Algebra.trace_apply (R := A) (S := B)]
+
+end TauCeti.Algebra

@@ -133,7 +133,7 @@ canonical derivations `d/dt`. -/
 theorem derivation_algHom_apply {L' : Type*} [CommRing L'] [Algebra K⸨X⸩ L'] [Algebra K L']
     [IsScalarTower K K⸨X⸩ L'] [Algebra.FormallyEtale K⸨X⸩ L'] (φ : L →ₐ[K⸨X⸩] L') (x : L) :
     derivation K L' (φ x) = φ (derivation K L x) :=
-  Derivation.algHom_apply_eq_of_formallyUnramified φ
+  Derivation.apply_algHom_eq_of_formallyUnramified φ
     (fun f ↦ by rw [derivation_algebraMap, derivation_algebraMap, φ.commutes]) x
 
 /-- In a tower of formally étale `K⸨X⸩`-algebras `L → L'`, the derivation `d/dt` of `L'` extends
@@ -150,16 +150,8 @@ variable (K L) in
 theorem continuous_derivation [τ₀ : TopologicalSpace L] [IsModuleTopology K⸨X⸩ L] :
     Continuous (derivation K L) := by
   have : ContinuousAdd L := IsModuleTopology.toContinuousAdd K⸨X⸩ L
-  let φ : L → L × L := fun x ↦ (x, derivation K L x)
-  have hadd : @ContinuousAdd L (.induced φ inferInstance) _ := by
-    refine @ContinuousAdd.mk L (.induced φ inferInstance) _ ?_
-    rw [@continuous_iff_le_induced]
-    let H : (L × L) × (L × L) → L × L := fun q ↦ (q.1.1 + q.2.1, q.1.2 + q.2.2)
-    have hH : Continuous H := by fun_prop
-    have heq : (φ ∘ fun p : L × L ↦ p.1 + p.2) = H ∘ fun p : L × L ↦ (φ p.1, φ p.2) := by
-      ext <;> simp [φ, H]
-    rw [prod_induced_induced φ φ, induced_compose, heq, ← induced_compose]
-    exact induced_mono hH.le_induced
+  let φ : L →+ L × L := (AddMonoidHom.id L).prod (derivation K L).toAddMonoidHom
+  have hadd : @ContinuousAdd L (.induced φ inferInstance) _ := continuousAdd_induced φ
   have hsmul : @ContinuousSMul K⸨X⸩ L _ _ (.induced φ inferInstance) := by
     refine @ContinuousSMul.mk K⸨X⸩ L _ _ (.induced φ inferInstance) ?_
     rw [@continuous_iff_le_induced]
@@ -191,32 +183,24 @@ def ContinuousKaehlerDifferential : Type _ :=
 
 namespace ContinuousKaehlerDifferential
 
+-- The `SMul R'` instance precedes `AddCommGroup` to avoid a `zsmul` diamond.
+noncomputable instance {R' : Type*} [CommRing R'] [Algebra R' L] :
+    SMul R' (ContinuousKaehlerDifferential K L) :=
+  inferInstanceAs <| SMul R' <|
+    Ω[L⁄K] ⧸ LinearMap.ker (derivation K L).liftKaehlerDifferential
+
 noncomputable instance : AddCommGroup (ContinuousKaehlerDifferential K L) :=
   inferInstanceAs <| AddCommGroup <|
     Ω[L⁄K] ⧸ LinearMap.ker (derivation K L).liftKaehlerDifferential
 
-noncomputable instance : Module L (ContinuousKaehlerDifferential K L) :=
-  inferInstanceAs <| Module L <|
+noncomputable instance {R' : Type*} [CommRing R'] [Algebra R' L] :
+    Module R' (ContinuousKaehlerDifferential K L) :=
+  inferInstanceAs <| Module R' <|
     Ω[L⁄K] ⧸ LinearMap.ker (derivation K L).liftKaehlerDifferential
 
-noncomputable instance : Module K⸨X⸩ (ContinuousKaehlerDifferential K L) :=
-  inferInstanceAs <| Module K⸨X⸩ <|
-    Ω[L⁄K] ⧸ LinearMap.ker (derivation K L).liftKaehlerDifferential
-
-noncomputable instance : Module K (ContinuousKaehlerDifferential K L) :=
-  inferInstanceAs <| Module K <|
-    Ω[L⁄K] ⧸ LinearMap.ker (derivation K L).liftKaehlerDifferential
-
-instance : IsScalarTower K⸨X⸩ L (ContinuousKaehlerDifferential K L) :=
-  inferInstanceAs <| IsScalarTower K⸨X⸩ L <|
-    Ω[L⁄K] ⧸ LinearMap.ker (derivation K L).liftKaehlerDifferential
-
-instance : IsScalarTower K L (ContinuousKaehlerDifferential K L) :=
-  inferInstanceAs <| IsScalarTower K L <|
-    Ω[L⁄K] ⧸ LinearMap.ker (derivation K L).liftKaehlerDifferential
-
-instance : IsScalarTower K K⸨X⸩ (ContinuousKaehlerDifferential K L) :=
-  inferInstanceAs <| IsScalarTower K K⸨X⸩ <|
+instance {R₁ R₂ : Type*} [CommRing R₁] [CommRing R₂] [Algebra R₁ L] [Algebra R₂ L] [SMul R₁ R₂]
+    [IsScalarTower R₁ R₂ L] : IsScalarTower R₁ R₂ (ContinuousKaehlerDifferential K L) :=
+  inferInstanceAs <| IsScalarTower R₁ R₂ <|
     Ω[L⁄K] ⧸ LinearMap.ker (derivation K L).liftKaehlerDifferential
 
 variable (K L)
@@ -484,18 +468,17 @@ algebraic Kähler differentials. -/
 theorem mapSemilinear_mk (φ : L →ₐ[K⸨X⸩] L') (ω : Ω[L⁄K]) :
     mapSemilinear φ (mk K L ω) =
       mk K L' (KaehlerDifferential.mapSemilinear (φ.restrictScalars K) ω) := by
-  have hω : ω ∈ (⊤ : Submodule L Ω[L⁄K]) := Submodule.mem_top
-  rw [← KaehlerDifferential.span_range_derivation] at hω
-  induction hω using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨a, rfl⟩ := hx
-    rw [← D_apply, mapSemilinear_D, KaehlerDifferential.mapSemilinear_D,
-      AlgHom.restrictScalars_apply, D_apply]
-  | zero => rw [map_zero, map_zero, map_zero, map_zero]
-  | add x y _ _ hx hy => rw [map_add, map_add, map_add, map_add, hx, hy]
-  | smul a x _ hx =>
-    rw [LinearMap.map_smul, mapSemilinear_smul, hx, KaehlerDifferential.mapSemilinear_smul,
-      LinearMap.map_smul, AlgHom.restrictScalars_apply]
+  have h : (mapSemilinear φ).comp (mk K L) =
+      (mk K L').comp (KaehlerDifferential.mapSemilinear (φ.restrictScalars K)) :=
+    LinearMap.ext_on_range (KaehlerDifferential.span_range_derivation K L) fun x ↦ by
+      -- `(φ.restrictScalars K).toRingHom` is definitionally `φ.toRingHom`, but not at `implicit`
+      -- transparency, which blocks `rw [LinearMap.comp_apply]` on the right-hand side.
+      change mapSemilinear φ (mk K L (KaehlerDifferential.D K L x)) =
+        mk K L' (KaehlerDifferential.mapSemilinear (φ.restrictScalars K)
+          (KaehlerDifferential.D K L x))
+      rw [← D_apply, mapSemilinear_D, KaehlerDifferential.mapSemilinear_D,
+        AlgHom.restrictScalars_apply, D_apply]
+  exact congr($h ω)
 
 /-- Pulling back from `K⸨X⸩` to `L` and then along `φ : L →ₐ[K⸨X⸩] L'` is pulling back directly to
 `L'`. -/
@@ -595,12 +578,8 @@ theorem continuousEquivSelf_symm_apply [IsTopologicalSemiring L] (x : L) :
 instance [IsTopologicalSemiring L] [T2Space L] : T2Space (ContinuousKaehlerDifferential K L) :=
   (continuousEquivSelf K L).toHomeomorph.isEmbedding.t2Space
 
-instance [ContinuousSMul K⸨X⸩ L] : ContinuousSMul K⸨X⸩ (ContinuousKaehlerDifferential K L) := by
-  refine ⟨?_⟩
-  have h : Continuous (fun p : K⸨X⸩ × ContinuousKaehlerDifferential K L ↦
-      (p.1 • (1 : L)) • p.2) := by
-    fun_prop
-  exact h.congr fun p ↦ by rw [Algebra.smul_def, mul_one, IsScalarTower.algebraMap_smul]
+instance [ContinuousSMul K⸨X⸩ L] : ContinuousSMul K⸨X⸩ (ContinuousKaehlerDifferential K L) :=
+  IsScalarTower.continuousSMul L
 
 /-- Over a topological semiring `L`, every `L`-linear map out of `Ω¹_cont(L/K)` into a module with
 continuous `L`-scalar multiplication is continuous, without assuming continuity of addition. -/
@@ -635,18 +614,13 @@ theorem continuous_D : Continuous (D K L) :=
 /-- For a formally étale `K⸨X⸩`-algebra `L` carrying the `K⸨X⸩`-module topology and a Hausdorff
 topological `L`-module `N`, a `K`-derivation `δ : L → N` is continuous on `L` if and only if its
 restriction to `K⸨X⸩` is continuous. -/
-theorem continuous_iff_continuous_compAlgebraMap {N : Type*} [AddCommGroup N] [Module L N]
-    [Module K N] [IsScalarTower K L N] [Module K⸨X⸩ N] [IsScalarTower K⸨X⸩ L N]
-    [IsScalarTower K K⸨X⸩ N] [TopologicalSpace N] [ContinuousSMul L N] [T2Space N]
-    (δ : Derivation K L N) :
+theorem _root_.Derivation.continuous_iff_continuous_compAlgebraMap_laurentSeries {N : Type*}
+    [AddCommGroup N] [Module L N] [Module K N] [IsScalarTower K L N] [Module K⸨X⸩ N]
+    [IsScalarTower K⸨X⸩ L N] [IsScalarTower K K⸨X⸩ N] [TopologicalSpace N] [ContinuousSMul L N]
+    [T2Space N] (δ : Derivation K L N) :
     Continuous δ ↔ Continuous (δ.compAlgebraMap K⸨X⸩) := by
-  have : ContinuousAdd L := IsModuleTopology.toContinuousAdd K⸨X⸩ L
-  have halg : Continuous (algebraMap K⸨X⸩ L) :=
-    IsModuleTopology.continuous_of_linearMap (Algebra.linearMap K⸨X⸩ L)
-  have : ContinuousSMul K⸨X⸩ N :=
-    ⟨((halg.comp continuous_fst).smul continuous_snd).congr fun p ↦
-      IsScalarTower.algebraMap_smul L p.1 p.2⟩
-  refine ⟨fun h ↦ h.comp halg, fun h ↦ ?_⟩
+  have : ContinuousSMul K⸨X⸩ N := IsScalarTower.continuousSMul L
+  refine ⟨fun h ↦ h.comp (continuous_algebraMap K⸨X⸩ L), fun h ↦ ?_⟩
   exact ((continuous_derivation K L).smul continuous_const).congr
     fun x ↦ (apply_eq_derivation_smul δ h x).symm
 

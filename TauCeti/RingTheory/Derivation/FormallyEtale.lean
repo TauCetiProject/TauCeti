@@ -28,7 +28,7 @@ base and extension are arbitrary commutative rings and the derivations are modul
 
 * `Derivation.eq_of_formallyUnramified`: two derivations of a formally unramified extension
   agreeing on the base are equal;
-* `Derivation.algHom_apply_eq_of_formallyUnramified`: an `S`-algebra map out of a formally
+* `Derivation.apply_algHom_eq_of_formallyUnramified`: an `S`-algebra map out of a formally
   unramified `S`-algebra intertwines compatible derivations;
 * `Derivation.extendOfFormallyEtale`: the extension of a derivation to a formally étale
   extension, with `Derivation.extendOfFormallyEtale_algebraMap` stating that it extends and
@@ -69,10 +69,17 @@ theorem eq_of_formallyUnramified [Algebra.FormallyUnramified S T] {δ₁ δ₂ :
   -- `δ x` is `δ₁ x - δ₂ x` by construction of `δ`.
   exact sub_eq_zero.mp (hδ x)
 
+end Unramified
+
+section ApplyAlgHom
+
+variable {R R' S T T' : Type*} [CommSemiring R] [CommSemiring R'] [CommRing S] [CommRing T]
+  [CommRing T'] [Algebra R T] [Algebra R' T'] [Algebra S T]
+  [Algebra S T'] [Algebra.FormallyUnramified S T]
+
 /-- An `S`-algebra homomorphism out of a formally unramified `S`-algebra intertwines derivations
 that are compatible on `S`. -/
-theorem algHom_apply_eq_of_formallyUnramified {R' T' : Type*} [CommRing R'] [CommRing T']
-    [Algebra R' T'] [Algebra S T'] [Algebra.FormallyUnramified S T] (φ : T →ₐ[S] T')
+theorem apply_algHom_eq_of_formallyUnramified (φ : T →ₐ[S] T')
     {δ : Derivation R T T} {δ' : Derivation R' T' T'}
     (h : ∀ s : S, δ' (algebraMap S T' s) = φ (δ (algebraMap S T s))) (t : T) :
     δ' (φ t) = φ (δ t) := by
@@ -85,14 +92,13 @@ theorem algHom_apply_eq_of_formallyUnramified {R' T' : Type*} [CommRing R'] [Com
 
 /-- In a scalar tower `S → T → T'` with `T/S` formally unramified, derivations of `T` and `T'`
 that are compatible on `S` remain compatible along `T → T'`. -/
-theorem algebraMap_apply_eq_of_formallyUnramified {R' T' : Type*} [CommRing R'] [CommRing T']
-    [Algebra R' T'] [Algebra S T'] [Algebra T T'] [IsScalarTower S T T']
-    [Algebra.FormallyUnramified S T] {δ : Derivation R T T} {δ' : Derivation R' T' T'}
+theorem apply_algebraMap_eq_of_formallyUnramified [Algebra T T'] [IsScalarTower S T T']
+    {δ : Derivation R T T} {δ' : Derivation R' T' T'}
     (h : ∀ s : S, δ' (algebraMap S T' s) = algebraMap T T' (δ (algebraMap S T s))) (t : T) :
     δ' (algebraMap T T' t) = algebraMap T T' (δ t) :=
-  algHom_apply_eq_of_formallyUnramified (IsScalarTower.toAlgHom S T T') h t
+  apply_algHom_eq_of_formallyUnramified (IsScalarTower.toAlgHom S T T') h t
 
-end Unramified
+end ApplyAlgHom
 
 section Etale
 
@@ -127,12 +133,12 @@ theorem eq_extendOfFormallyEtale (D : Derivation R S N) {δ : Derivation R T N}
 
 /-- Extending a self-derivation of `S` along formally étale `S`-algebras is natural with respect to
 `S`-algebra homomorphisms. -/
-theorem extendOfFormallyEtale_algHom_apply {T' : Type*} [CommRing T'] [Algebra R T'] [Algebra S T']
-    [IsScalarTower R S T'] [Algebra.FormallyEtale S T'] (D : Derivation R S S) (φ : T →ₐ[S] T')
-    (t : T) :
+theorem extendOfFormallyEtale_algHom_apply
+    {T' : Type*} [CommRing T'] [Algebra R T'] [Algebra S T'] [IsScalarTower R S T']
+    [Algebra.FormallyEtale S T'] (D : Derivation R S S) (φ : T →ₐ[S] T') (t : T) :
     ((Algebra.linearMap S T').compDer D).extendOfFormallyEtale T' (φ t) =
       φ (((Algebra.linearMap S T).compDer D).extendOfFormallyEtale T t) :=
-  algHom_apply_eq_of_formallyUnramified φ (fun s ↦ by simp) t
+  apply_algHom_eq_of_formallyUnramified φ (fun s ↦ by simp) t
 
 end Etale
 

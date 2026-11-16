@@ -35,6 +35,8 @@ zero (`Level.ContinuousKaehlerDifferential.map_eq_zero_iff`).
 
 ## Main definitions
 
+* `TauCeti.LaurentSeries.Level.derivation K d`: the `K`-derivation `d/du` of level `d` in its
+  level variable `u`.
 * `TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential K d`: the continuous one-forms
   `Ω¹_cont(L/K)` of level `d`.
 * `Level.ContinuousKaehlerDifferential.equivLevel K d`: the `L`-linear
@@ -77,6 +79,29 @@ open scoped LaurentSeries
 namespace TauCeti.LaurentSeries.Level
 
 variable (K : Type*) [Field K] (d : ℕ+)
+
+/-- The `K`-derivation `d/du` of the ramified level `Level K d` (`L = K⸨u⸩`, `u ^ d = t`) in its
+level variable `u`: the formal derivative of `K⸨X⸩` transported across `ringEquivLaurentSeries`. -/
+noncomputable def derivation : Derivation K (Level K d) (Level K d) :=
+  let e := algEquivLaurentSeries K d
+  let hmod : (inferInstance : Module K K⸨X⸩) = Algebra.toModule :=
+    Module.ext <| funext fun r ↦ funext fun f ↦ (laurentSeries_algebraMap_mul_eq_smul r f).symm
+  let δ : @Derivation K K⸨X⸩ K⸨X⸩ _ _ _ _ _ Algebra.toModule := hmod ▸ laurentSeriesDerivation K
+  letI : Module K K⸨X⸩ := Algebra.toModule
+  δ.liftOfRightInverse (f := e.symm) (f_inv := e) e.symm_apply_apply (by simp)
+
+/-- In the level variable `u`, `Level.derivation K d` is the formal derivative of `K⸨X⸩`. -/
+@[simp]
+theorem ringEquivLaurentSeries_derivation {K : Type*} [Field K] {d : ℕ+} (x : Level K d) :
+    ringEquivLaurentSeries K d (Level.derivation K d x) =
+      derivative K (ringEquivLaurentSeries K d x) := by
+  have hcast (m : Module K K⸨X⸩) (h : m = Algebra.toModule)
+      (δ : @Derivation K K⸨X⸩ K⸨X⸩ _ _ _ _ _ m) (y : K⸨X⸩) :
+      (h ▸ δ : @Derivation K K⸨X⸩ K⸨X⸩ _ _ _ _ _ Algebra.toModule) y = δ y := by
+    cases h; rfl
+  obtain ⟨y, rfl⟩ := (algEquivLaurentSeries K d).symm.surjective x
+  rw [Level.derivation, Derivation.liftOfRightInverse_apply]
+  simp [hcast]
 
 /-- The **continuous one-forms** `Ω¹_cont(L/K)` of the ramified level `L = K⸨u⸩`, `u ^ d = t`:
 a wrapped copy of the continuous one-forms of `K⸨X⸩`, read in the level variable `u` and carrying
@@ -162,6 +187,15 @@ theorem addEquivContinuousKaehlerDifferential_laurentSeries_smul (f : K⸨X⸩)
       expand K d f • addEquivContinuousKaehlerDifferential K d ω := by
   rw [← IsScalarTower.algebraMap_smul (Level K d) f, addEquivContinuousKaehlerDifferential_smul,
     algebraMap_apply]
+
+/-- Constants act on the one-forms of level `d` as on the underlying Laurent one-forms. -/
+@[simp]
+theorem addEquivContinuousKaehlerDifferential_const_smul (c : K)
+    (ω : Level.ContinuousKaehlerDifferential K d) :
+    addEquivContinuousKaehlerDifferential K d (c • ω) =
+      c • addEquivContinuousKaehlerDifferential K d ω := by
+  rw [← IsScalarTower.algebraMap_smul (Level K d) c, addEquivContinuousKaehlerDifferential_smul,
+    ringEquivLaurentSeries_algebraMap_const, ← IsScalarTower.algebraMap_smul K⸨X⸩ c]
 
 variable (K d)
 
