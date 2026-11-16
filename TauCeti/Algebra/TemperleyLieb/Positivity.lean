@@ -54,6 +54,8 @@ hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Compl
 * `TauCeti.TemperleyLieb.pos_of_mem_jonesLoopParameters`,
   `TauCeti.TemperleyLieb.zero_notMem_jonesLoopParameters`: every admissible loop parameter is
   strictly positive.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_zero`: positivity of `tr n (x⋆ * x)`
+  at loop parameter `0` over any commutative star-ordered semiring.
 * `TauCeti.TemperleyLieb.qInt_pos_of_notMem_jonesLoopParameters`,
   `TauCeti.TemperleyLieb.qInt_floor_add_one_neg_of_notMem_jonesLoopParameters`: the signs of the
   quantum integers at an inadmissible positive loop parameter.
@@ -194,6 +196,22 @@ private theorem sum_neighborFinset_pathGraph_qInt {k : ℕ} (v : Fin (k + 1)) :
 end QuantumInteger
 
 namespace IsMarkovTrace
+
+/-- At loop parameter `δ = 0` over a commutative star-ordered semiring, the form `tr n (x⋆ * x)` of
+a Markov trace is nonnegative on every number of strands: on `0` strands it is `(aug x)⋆ * aug x`,
+and on `n + 1` strands `tr` is identically zero. -/
+theorem map_star_mul_self_nonneg_zero
+    {R : Type*} [CommSemiring R] [PartialOrder R] [StarRing R] [StarOrderedRing R]
+    [Fact (IsSelfAdjoint (0 : R))] {tr : ∀ n : ℕ, TemperleyLieb R 0 n →ₗ[R] R}
+    (htr : IsMarkovTrace R 0 tr) :
+    ∀ (n : ℕ) (x : TemperleyLieb R 0 n), 0 ≤ tr n (star x * x)
+  | 0, x => by
+    have hx : x = algebraMap R (TemperleyLieb R 0 0) (aug x) := by
+      simpa using ((algEquivOfLeOne (R := R) 0 (Nat.zero_le 1)).symm_apply_apply x).symm
+    rw [hx, Algebra.algebraMap_eq_smul_one, star_smul, star_one, smul_mul_smul_comm, one_mul,
+      map_smul, htr.map_one, pow_zero, smul_eq_mul, mul_one]
+    exact star_mul_self_nonneg (aug x)
+  | n + 1, x => by simp [htr.eq_zero_of_loop_zero n]
 
 section StarRing
 

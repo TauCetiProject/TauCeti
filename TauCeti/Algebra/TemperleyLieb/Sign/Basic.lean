@@ -43,9 +43,6 @@ The sign isomorphism commutes with every structural operation of the Temperley�
   equivalences on the trace-radical quotients (`IsMarkovTrace.quotientSignEquivOfAddEqZero`,
   `IsMarkovTrace.quotientSignStarAlgEquivOfAddEqZero`), intertwining `quotientStrandIncl` and
   scaling `quotientTrace` by `(-1) ^ n`.
-* **Zero loop parameter**: at `δ = 0`, every Markov trace vanishes on one or more strands
-  (`IsMarkovTrace.eq_zero_of_loop_zero`), since every closed diagram on `n ≥ 1` strands has at
-  least one circle.
 
 ## Main definitions
 
@@ -66,9 +63,6 @@ The sign isomorphism commutes with every structural operation of the Temperley�
   `TauCeti.TemperleyLieb.signEquivOfAddEqZero_jonesWenzl`,
   `TauCeti.TemperleyLieb.signEquivOfAddEqZero_star`: compatibility with `strandIncl`,
   `jonesWenzl`, and `star`.
-* `TauCeti.TemperleyLieb.eq_of_algHom_e_two`,
-  `TauCeti.TemperleyLieb.not_exists_algHom_e_neg_two`: no two-strand algebra map fixes the
-  generator across distinct loop parameters.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.pullback_signEquivOfAddEqZero`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.map_signEquivOfAddEqZero`,
   `TauCeti.TemperleyLieb.markovTrace_signEquiv`: the `(-1) ^ n` transformation law of Markov
@@ -79,8 +73,6 @@ The sign isomorphism commutes with every structural operation of the Temperley�
 * `TauCeti.TemperleyLieb.IsMarkovTrace.quotientSignEquivOfAddEqZero_quotientStrandIncl`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.quotientTrace_quotientSignEquivOfAddEqZero`: tower and
   trace compatibility on the trace-radical quotients.
-* `TauCeti.TemperleyLieb.IsMarkovTrace.eq_zero_of_loop_zero`: vanishing of Markov traces on
-  `n + 1` strands at loop value `0`.
 
 ## References
 
@@ -94,64 +86,11 @@ public section
 
 namespace TauCeti.TemperleyLieb
 
-/-! ### Vanishing of Markov traces at zero loop parameter and rigidity on two strands -/
-
-section Semiring
-
-variable {R : Type*} [CommSemiring R]
-
-/-- On two strands, an `R`-algebra map sending `e δ 0` to `e δ' 0` forces `δ = δ'`, since
-`e_0 ^ 2 = δ • e_0` and scalar multiples of the two-strand generator are distinct. -/
-theorem eq_of_algHom_e_two {δ δ' : R}
-    (f : TemperleyLieb R δ 2 →ₐ[R] TemperleyLieb R δ' 2)
-    (hf : f (e δ 0) = e δ' 0) : δ = δ' := by
-  apply smul_left_injective_e_two (R := R) (δ := δ') 0
-  calc
-    δ • e δ' 0 = f (δ • e δ 0) := by rw [map_smul, hf]
-    _ = f (e δ 0 * e δ 0) := by rw [e_mul_self]
-    _ = e δ' 0 * e δ' 0 := by rw [map_mul, hf]
-    _ = δ' • e δ' 0 := e_mul_self 0
-
-namespace IsMarkovTrace
-
-/-- At loop parameter `δ = 0`, every unnormalized Markov trace vanishes on one or more strands:
-on one strand `tr 1 1 = 0 ^ 1 = 0`, and on `n + 2` strands both `strandIncl a` and
-`strandIncl a * e 0 (Fin.last n) * strandIncl b` are killed by induction along the tower. -/
-theorem eq_zero_of_loop_zero {tr : ∀ n : ℕ, TemperleyLieb R 0 n →ₗ[R] R}
-    (htr : IsMarkovTrace R 0 tr) : ∀ n : ℕ, tr (n + 1) = 0
-  | 0 => by
-    ext x
-    rw [← (algEquivOfLeOne (0 : R) le_rfl).symm_apply_apply x, algEquivOfLeOne_symm_apply,
-      Algebra.algebraMap_eq_smul_one, map_smul, htr.map_one, pow_one, smul_zero,
-      LinearMap.zero_apply]
-  | n + 1 => by
-    have ih := htr.eq_zero_of_loop_zero n
-    refine LinearMap.ext_on (span_strandIncl_union_strandIncl_mul_e_last_mul_eq_top n) ?_
-    rintro _ (⟨a, rfl⟩ | ⟨⟨a, b⟩, rfl⟩)
-    · simp [htr.map_strandIncl]
-    · simp [htr.map_strandIncl_mul_e_last_mul, ih]
-
-end IsMarkovTrace
-
-end Semiring
-
 /-! ### The sign algebra isomorphism and tower compatibilities -/
 
 section SignEquiv
 
 variable {R : Type*} [CommRing R]
-
-/-- When `2 • δ ≠ 0`, no `R`-algebra map `TemperleyLieb R δ 2 →ₐ[R] TemperleyLieb R (-δ) 2` fixes
-the generator without negating it. -/
-theorem not_exists_algHom_e_neg_two {δ : R} (hδ : (2 : R) * δ ≠ 0) :
-    ¬∃ f : TemperleyLieb R δ 2 →ₐ[R] TemperleyLieb R (-δ) 2, f (e δ 0) = e (-δ) 0 := by
-  rintro ⟨f, hf⟩
-  have heq := eq_of_algHom_e_two f hf
-  apply hδ
-  calc
-    (2 : R) * δ = δ + δ := two_mul δ
-    _ = δ + (-δ) := by nth_rw 2 [heq]
-    _ = 0 := add_neg_cancel δ
 
 /-- Auxiliary `R`-algebra map sending each generator `e δ i` to `-e δ' i` when `δ + δ' = 0`. -/
 private def signHomOfAddEqZero {δ δ' : R} (h : δ + δ' = 0) (n : ℕ) :

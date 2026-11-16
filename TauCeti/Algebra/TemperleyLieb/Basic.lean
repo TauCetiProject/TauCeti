@@ -77,7 +77,9 @@ two-strand case above is the part of it that the presentation alone can see.
 * `TauCeti.TemperleyLieb.crossing_mul_crossing_swap_eq_one` and
   `TauCeti.TemperleyLieb.crossing_braid`: a crossing is invertible and crossings satisfy the braid
   relation under their respective scalar hypotheses.
-* `TauCeti.TemperleyLieb.e_ne_zero_two`: non-degeneracy on two strands.
+* `TauCeti.TemperleyLieb.e_ne_zero_two`, `TauCeti.TemperleyLieb.eq_of_algHom_e_two`, and
+  `TauCeti.TemperleyLieb.not_exists_algHom_e_neg_two`: non-degeneracy and parameter rigidity on two
+  strands.
 
 ## References
 
@@ -336,6 +338,18 @@ theorem smul_left_injective_e_two (i : Fin (2 - 1)) :
   have h' := congrArg (fun x ↦ twoStrandRep δ x 1 0) h
   simpa using h'
 
+/-- On two strands, an `R`-algebra map sending `e δ 0` to `e δ' 0` forces `δ = δ'`, since
+`e 0 ^ 2 = δ • e 0` and scalar multiples of the two-strand generator are distinct. -/
+theorem eq_of_algHom_e_two {δ' : R}
+    (f : TemperleyLieb R δ 2 →ₐ[R] TemperleyLieb R δ' 2)
+    (hf : f (e δ 0) = e δ' 0) : δ = δ' := by
+  apply smul_left_injective_e_two (R := R) (δ := δ') 0
+  calc
+    δ • e δ' 0 = f (δ • e δ 0) := by rw [map_smul, hf]
+    _ = f (e δ 0 * e δ 0) := by rw [e_mul_self]
+    _ = e δ' 0 * e δ' 0 := by rw [map_mul, hf]
+    _ = δ' • e δ' 0 := e_mul_self 0
+
 end SmallCases
 
 section Kauffman
@@ -424,6 +438,18 @@ theorem crossing_mul_crossing_swap_eq_one (hαβ : α * β = 1) (hδ : δ = -(α
   apply crossing_mul_crossing_swap_eq_one_of_polynomial hαβ
   rw [hδ, hαβ]
   ring
+
+/-- When `2 • δ ≠ 0`, no `R`-algebra map `TemperleyLieb R δ 2 →ₐ[R] TemperleyLieb R (-δ) 2` fixes
+the generator without negating it. -/
+theorem not_exists_algHom_e_neg_two (hδ : (2 : R) * δ ≠ 0) :
+    ¬∃ f : TemperleyLieb R δ 2 →ₐ[R] TemperleyLieb R (-δ) 2, f (e δ 0) = e (-δ) 0 := by
+  rintro ⟨f, hf⟩
+  have heq := eq_of_algHom_e_two f hf
+  apply hδ
+  calc
+    (2 : R) * δ = δ + δ := two_mul δ
+    _ = δ + (-δ) := by nth_rw 2 [heq]
+    _ = 0 := add_neg_cancel δ
 
 end TemperleyLieb
 

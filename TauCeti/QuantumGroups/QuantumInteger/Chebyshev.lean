@@ -149,6 +149,7 @@ theorem qInt_neg (δ : R) : ∀ n : ℕ, qInt R (-δ) n = (-1) ^ (n + 1) * qInt 
     ring
 
 /-- Negating the loop parameter preserves invertibility of every quantum integer. -/
+@[simp]
 theorem isUnit_qInt_neg_iff {δ : R} {n : ℕ} :
     IsUnit (qInt R (-δ) n) ↔ IsUnit (qInt R δ n) := by
   rw [qInt_neg, ← (isUnit_neg_one.pow (n + 1)).unit_spec, mul_comm, Units.isUnit_mul_units]

@@ -41,9 +41,8 @@ at negative loop parameters:
 
 ## Main results
 
-* `TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_zero`,
-  `TauCeti.TemperleyLieb.IsMarkovTrace.neg_one_pow_mul_map_star_mul_self_nonneg_zero`: automatic
-  positivity of both forms at `δ = 0` over any commutative star-ordered ring.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.neg_one_pow_mul_map_star_mul_self_nonneg_zero`: automatic
+  positivity of the signed form at `δ = 0` over any commutative star-ordered ring.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.exists_neg_one_pow_mul_map_star_mul_self_neg`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.lt_floor_of_forall_neg_one_pow_nonneg`: failure of signed
   positivity from level `⌊π / arccos (-δ / 2)⌋₊` onward when `δ < 0` and `-δ` is inadmissible.
@@ -73,19 +72,6 @@ section Zero
 variable {R : Type*} [CommRing R] [PartialOrder R] [StarRing R] [StarOrderedRing R]
   [Fact (IsSelfAdjoint (0 : R))]
   {tr : ∀ n : ℕ, TemperleyLieb R 0 n →ₗ[R] R}
-
-/-- At loop parameter `δ = 0` over a commutative star-ordered ring, the form `tr n (x⋆ * x)` of a
-Markov trace is nonnegative on every number of strands: on `0` strands it is `(aug x)⋆ * aug x`,
-and on `n + 1` strands `tr` is identically zero. -/
-theorem map_star_mul_self_nonneg_zero (htr : IsMarkovTrace R 0 tr) :
-    ∀ (n : ℕ) (x : TemperleyLieb R 0 n), 0 ≤ tr n (star x * x)
-  | 0, x => by
-    have hx : x = algebraMap R (TemperleyLieb R 0 0) (aug x) := by
-      simpa using ((algEquivOfLeOne (R := R) 0 (Nat.zero_le 1)).symm_apply_apply x).symm
-    rw [hx, Algebra.algebraMap_eq_smul_one, star_smul, star_one, smul_mul_smul_comm, one_mul,
-      map_smul, htr.map_one, pow_zero, smul_eq_mul, mul_one]
-    exact star_mul_self_nonneg (aug x)
-  | n + 1, x => by simp [htr.eq_zero_of_loop_zero n]
 
 /-- At loop parameter `δ = 0` over a commutative star-ordered ring, the signed form
 `(-1) ^ n * tr n (x⋆ * x)` of a Markov trace is also nonnegative on every number of strands. -/
