@@ -149,7 +149,7 @@ theorem contMDiffOn_koszulBilinear_family {s : Set M} (hs : IsOpen s) (hm : n + 
       (hV : ContMDiffOn I (I.prod 𝓘(ℝ, E)) j (fun y ↦ TotalSpace.mk' E y (V y)) s) :
       ContMDiffOn (IP.prod I) 𝓘(ℝ) j (fun q : P × M ↦ b q.1 q.2 (U q.2) (V q.2))
         (univ ×ˢ s) :=
-    (hb.of_le hj).clm_section_apply₂ (hlift hU) (hlift hV)
+    (hb.of_le hj).clm_bundle_apply₂_trivial (hlift hU) (hlift hV)
   have hderiv {U V W : Π x : M, TangentSpace I x}
       (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (U y)) s)
       (hV : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (V y)) s)

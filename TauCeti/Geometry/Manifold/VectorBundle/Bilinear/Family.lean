@@ -62,7 +62,7 @@ theorem contMDiffAt_uncurry_apply_apply {n : WithTop ℕ∞}
   have hW' : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E)) n
       (fun q : ℝ × M ↦ TotalSpace.mk' E q.2 (W q.2)) (t, x) := hW.comp (t, x) contMDiffAt_snd
   exact contMDiffWithinAt_univ.mp
-    (hb.contMDiffWithinAt.clm_section_apply₂ hV'.contMDiffWithinAt hW'.contMDiffWithinAt)
+    (hb.contMDiffWithinAt.clm_bundle_apply₂_trivial hV'.contMDiffWithinAt hW'.contMDiffWithinAt)
 
 /-- The parameter curve `s ↦ b s x u w` of a family of fields of bilinear forms, jointly `C¹` at
 `(t, x)`, is differentiable at `t`. -/

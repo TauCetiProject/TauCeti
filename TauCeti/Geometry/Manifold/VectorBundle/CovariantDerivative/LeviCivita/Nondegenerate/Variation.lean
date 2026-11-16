@@ -427,7 +427,7 @@ private theorem contMDiffOn_apply_deriv_difference [IsManifold IP 1 P]
     (contMDiffOn_koszulBilinear (n := ∞) (m := ∞) (b := h) hs (by simp)
       (by simpa using hh.contMDiffOn) (by simpa using hY) (by simpa using hX)
       (by simpa using hZ))
-  refine (hK.sub (hh.contMDiffOn.clm_section_apply₂ hcovX hZ)).congr fun y hy ↦ ?_
+  refine (hK.sub (hh.contMDiffOn.clm_bundle_apply₂_trivial hcovX hZ)).congr fun y hy ↦ ?_
   have hd {U : Π y : M, TangentSpace I y}
       (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) ∞ (fun y ↦ TotalSpace.mk' E y (U y)) s) :
       MDiffAt (T% U) y :=

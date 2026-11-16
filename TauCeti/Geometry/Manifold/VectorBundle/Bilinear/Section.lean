@@ -13,7 +13,7 @@ public import Mathlib.LinearAlgebra.Projection
 # `C^n` bilinear fields
 
 Pairing two `C^n` sections with a `C^n` bilinear field gives a `C^n` function
-(`ContMDiffWithinAt.clm_section_apply₂` and its variant on a set).
+(`ContMDiffWithinAt.clm_bundle_apply₂_trivial` and its variant on a set).
 
 The transpose of a `C^n` bilinear field is `C^n`. When two is nonzero in the scalar field,
 averaging a field with its transpose defines a linear projection onto the symmetric `C^n`
@@ -232,7 +232,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- Pairing two `C^n` sections with a `C^n` bilinear field, over a base map `b`, gives a `C^n`
 function, within a set at a point. -/
-theorem ContMDiffWithinAt.clm_section_apply₂
+theorem ContMDiffWithinAt.clm_bundle_apply₂_trivial
     {β : ∀ x : M, V₁ (b x) →L[𝕜] V₂ (b x) →L[𝕜] G} {U : ∀ x : M, V₁ (b x)}
     {W : ∀ x : M, V₂ (b x)}
     (hβ : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ →L[𝕜] G)) n
@@ -246,7 +246,7 @@ theorem ContMDiffWithinAt.clm_section_apply₂
 
 /-- Pairing two `C^n` sections with a `C^n` bilinear field, over a base map `b`, gives a `C^n`
 function on a set. -/
-theorem ContMDiffOn.clm_section_apply₂
+theorem ContMDiffOn.clm_bundle_apply₂_trivial
     {β : ∀ x : M, V₁ (b x) →L[𝕜] V₂ (b x) →L[𝕜] G} {U : ∀ x : M, V₁ (b x)}
     {W : ∀ x : M, V₂ (b x)}
     (hβ : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ →L[𝕜] G)) n
@@ -255,7 +255,7 @@ theorem ContMDiffOn.clm_section_apply₂
     (hU : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁)) n (fun y ↦ TotalSpace.mk' F₁ (b y) (U y)) s)
     (hW : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₂)) n (fun y ↦ TotalSpace.mk' F₂ (b y) (W y)) s) :
     ContMDiffOn IM 𝓘(𝕜, G) n (fun y ↦ β y (U y) (W y)) s :=
-  fun y hy ↦ (hβ y hy).clm_section_apply₂ (hU y hy) (hW y hy)
+  fun y hy ↦ (hβ y hy).clm_bundle_apply₂_trivial (hU y hy) (hW y hy)
 
 end Pairing
 
