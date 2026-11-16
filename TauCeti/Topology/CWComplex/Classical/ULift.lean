@@ -20,16 +20,18 @@ comparing spaces that live in different universes `Type u` and `Type v`, lifting
 Its `n`-cells are `ULift.{v, u} (cell C n)`, equivalent to `cell C n` via `Equiv.ulift`
 (`Topology.RelCWComplex.uliftCellEquiv`), and its characteristic maps are those of `C` followed by
 `ULift.up` (`Topology.RelCWComplex.coe_map_ulift`). In particular `ULift.down ⁻¹' univ = univ` and
-`ULift.down ⁻¹' ∅ = ∅` definitionally, so an absolute CW complex on `C` lifts directly to an
-absolute CW complex `Topology.CWComplex.ulift` on `ULift.down ⁻¹' C`. Finiteness properties are
-preserved.
+`ULift.down ⁻¹' ∅ = ∅` definitionally, so an absolute CW complex on `C` (or `univ`) lifts directly
+to an absolute CW complex `Topology.CWComplex.ulift` (and `Topology.CWComplex.uliftUniv`), with
+matching cell equivalences, `@[simp]` map/cell lemmas, and finiteness instances.
 
 ## Main declarations
 
 * `Topology.RelCWComplex.ulift`: the lifted relative CW structure on `ULift.down ⁻¹' C` relative to
   `ULift.down ⁻¹' D` in `ULift.{v, u} X`.
 * `Topology.RelCWComplex.uliftCellEquiv`: equivalence of its `n`-cells with `cell C n`.
-* `Topology.CWComplex.ulift`: the lifted absolute CW structure on `ULift.down ⁻¹' C`.
+* `Topology.CWComplex.ulift` and `Topology.CWComplex.uliftUniv`: lifted absolute CW structures on
+  `ULift.down ⁻¹' C` and `univ : Set (ULift.{v, u} X)`, with cell equivalences, map/cell lemmas,
+  and `FiniteDimensional`/`FiniteType`/`Finite` instances.
 
 ## References
 
@@ -100,15 +102,12 @@ def ulift :
       exact Or.inr (mem_iUnion₂_of_mem hmn
         (mem_iUnion₂_of_mem (Finset.mem_map_of_mem _ hj) hxj))
   closed' A hAC hA := by
-    have himage : ⇑Homeomorph.ulift '' A = ULift.up ⁻¹' A := by
-      ext x
-      simp [Homeomorph.ulift]
-    rw [← Homeomorph.ulift.isClosed_image, himage]
-    refine RelCWComplex.closed' (C := C) (ULift.up ⁻¹' A) (fun x hx ↦ hAC hx) ⟨fun n j ↦ ?_, ?_⟩
+    refine Homeomorph.ulift.symm.isClosed_preimage.1
+      (RelCWComplex.closed' (C := C) (ULift.up ⁻¹' A) (fun x hx ↦ hAC hx) ⟨fun n j ↦ ?_, ?_⟩)
     · have := (hA.1 n (ULift.up j)).preimage continuous_uliftUp
       rwa [preimage_inter, image_uliftMap, preimage_preimage] at this
     · have h2 := hA.2.preimage continuous_uliftUp
-      rwa [preimage_inter, show ULift.up ⁻¹' (ULift.down ⁻¹' D) = D from rfl] at h2
+      rwa [preimage_inter, preimage_preimage] at h2
   isClosedBase := (isClosedBase C).preimage continuous_uliftDown
   union' := by
     ext ⟨x⟩
@@ -180,5 +179,113 @@ variable {X : Type u} [TopologicalSpace X] (C : Set X) [CWComplex C]
 /-- Universe lift of an absolute CW complex `C` in `X : Type u` to `ULift.{v, u} X`. -/
 instance ulift : CWComplex (ULift.down ⁻¹' C : Set (ULift.{v, u} X)) :=
   (RelCWComplex.ulift.{v} C).toCWComplex
+
+/-- The `n`-cells of the lifted absolute CW complex `ULift.down ⁻¹' C` are equivalent to the
+`n`-cells of `C`. -/
+def uliftCellEquiv (n : ℕ) :
+    RelCWComplex.cell (ULift.down ⁻¹' C : Set (ULift.{v, u} X)) n ≃ RelCWComplex.cell C n :=
+  Equiv.ulift
+
+lemma coe_map_ulift (n : ℕ)
+    (i : RelCWComplex.cell (ULift.down ⁻¹' C : Set (ULift.{v, u} X)) n) :
+    ⇑(RelCWComplex.map (C := (ULift.down ⁻¹' C : Set (ULift.{v, u} X))) n i) =
+      ULift.up ∘ RelCWComplex.map (C := C) n (uliftCellEquiv.{v} C n i) :=
+  (rfl)
+
+lemma openCell_ulift (n : ℕ)
+    (i : RelCWComplex.cell (ULift.down ⁻¹' C : Set (ULift.{v, u} X)) n) :
+    RelCWComplex.openCell (C := (ULift.down ⁻¹' C : Set (ULift.{v, u} X))) n i =
+      ULift.down ⁻¹' RelCWComplex.openCell (C := C) n (uliftCellEquiv.{v} C n i) :=
+  RelCWComplex.openCell_ulift.{v} C n i
+
+lemma closedCell_ulift (n : ℕ)
+    (i : RelCWComplex.cell (ULift.down ⁻¹' C : Set (ULift.{v, u} X)) n) :
+    RelCWComplex.closedCell (C := (ULift.down ⁻¹' C : Set (ULift.{v, u} X))) n i =
+      ULift.down ⁻¹' RelCWComplex.closedCell (C := C) n (uliftCellEquiv.{v} C n i) :=
+  RelCWComplex.closedCell_ulift.{v} C n i
+
+lemma cellFrontier_ulift (n : ℕ)
+    (i : RelCWComplex.cell (ULift.down ⁻¹' C : Set (ULift.{v, u} X)) n) :
+    RelCWComplex.cellFrontier (C := (ULift.down ⁻¹' C : Set (ULift.{v, u} X))) n i =
+      ULift.down ⁻¹' RelCWComplex.cellFrontier (C := C) n (uliftCellEquiv.{v} C n i) :=
+  RelCWComplex.cellFrontier_ulift.{v} C n i
+
+/-- The universe lift of a finite-dimensional absolute CW complex is finite-dimensional. -/
+instance instFiniteDimensionalUlift [RelCWComplex.FiniteDimensional C] :
+    RelCWComplex.FiniteDimensional (ULift.down ⁻¹' C : Set (ULift.{v, u} X)) :=
+  ⟨by
+    filter_upwards [RelCWComplex.FiniteDimensional.eventually_isEmpty_cell (C := C) (D := ∅)]
+      with n _
+    exact (uliftCellEquiv.{v} C n).isEmpty_congr.2 inferInstance⟩
+
+/-- The universe lift of an absolute CW complex of finite type has finite type. -/
+instance instFiniteTypeUlift [RelCWComplex.FiniteType C] :
+    RelCWComplex.FiniteType (ULift.down ⁻¹' C : Set (ULift.{v, u} X)) :=
+  ⟨fun n ↦
+    have := RelCWComplex.FiniteType.finite_cell (C := C) (D := ∅) n
+    (uliftCellEquiv.{v} C n).finite_iff.2 inferInstance⟩
+
+/-- The universe lift of a finite absolute CW complex is finite. -/
+instance instFiniteUlift [RelCWComplex.Finite C] :
+    RelCWComplex.Finite (ULift.down ⁻¹' C : Set (ULift.{v, u} X)) :=
+  RelCWComplex.finite_of_finiteDimensional_finiteType (ULift.down ⁻¹' C : Set (ULift.{v, u} X))
+
+section Univ
+
+variable [CWComplex (univ : Set X)]
+
+/-- Universe lift of an absolute CW complex structure on `univ : Set X` to
+`univ : Set (ULift.{v, u} X)`. Definitionally equal to `CWComplex.ulift univ`. -/
+instance uliftUniv : CWComplex (univ : Set (ULift.{v, u} X)) :=
+  ulift.{v} (univ : Set X)
+
+/-- The `n`-cells of `univ : Set (ULift.{v, u} X)` are equivalent to those of `univ : Set X`. -/
+def uliftUnivCellEquiv (n : ℕ) :
+    RelCWComplex.cell (univ : Set (ULift.{v, u} X)) n ≃ RelCWComplex.cell (univ : Set X) n :=
+  Equiv.ulift
+
+@[simp]
+lemma coe_map_uliftUniv (n : ℕ) (i : RelCWComplex.cell (univ : Set (ULift.{v, u} X)) n) :
+    ⇑(RelCWComplex.map (C := (univ : Set (ULift.{v, u} X))) n i) =
+      ULift.up ∘ RelCWComplex.map (C := (univ : Set X)) n (uliftUnivCellEquiv.{v} n i) :=
+  (rfl)
+
+@[simp]
+lemma openCell_uliftUniv (n : ℕ) (i : RelCWComplex.cell (univ : Set (ULift.{v, u} X)) n) :
+    RelCWComplex.openCell (C := (univ : Set (ULift.{v, u} X))) n i =
+      ULift.down ⁻¹' RelCWComplex.openCell (C := (univ : Set X)) n
+        (uliftUnivCellEquiv.{v} n i) :=
+  RelCWComplex.openCell_ulift.{v} (univ : Set X) n i
+
+@[simp]
+lemma closedCell_uliftUniv (n : ℕ) (i : RelCWComplex.cell (univ : Set (ULift.{v, u} X)) n) :
+    RelCWComplex.closedCell (C := (univ : Set (ULift.{v, u} X))) n i =
+      ULift.down ⁻¹' RelCWComplex.closedCell (C := (univ : Set X)) n
+        (uliftUnivCellEquiv.{v} n i) :=
+  RelCWComplex.closedCell_ulift.{v} (univ : Set X) n i
+
+@[simp]
+lemma cellFrontier_uliftUniv (n : ℕ) (i : RelCWComplex.cell (univ : Set (ULift.{v, u} X)) n) :
+    RelCWComplex.cellFrontier (C := (univ : Set (ULift.{v, u} X))) n i =
+      ULift.down ⁻¹' RelCWComplex.cellFrontier (C := (univ : Set X)) n
+        (uliftUnivCellEquiv.{v} n i) :=
+  RelCWComplex.cellFrontier_ulift.{v} (univ : Set X) n i
+
+/-- The universe lift of a finite-dimensional CW space `X` is finite-dimensional. -/
+instance instFiniteDimensionalUliftUniv [RelCWComplex.FiniteDimensional (univ : Set X)] :
+    RelCWComplex.FiniteDimensional (univ : Set (ULift.{v, u} X)) :=
+  instFiniteDimensionalUlift.{v} (univ : Set X)
+
+/-- The universe lift of a CW space `X` of finite type has finite type. -/
+instance instFiniteTypeUliftUniv [RelCWComplex.FiniteType (univ : Set X)] :
+    RelCWComplex.FiniteType (univ : Set (ULift.{v, u} X)) :=
+  instFiniteTypeUlift.{v} (univ : Set X)
+
+/-- The universe lift of a finite CW space `X` is finite. -/
+instance instFiniteUliftUniv [RelCWComplex.Finite (univ : Set X)] :
+    RelCWComplex.Finite (univ : Set (ULift.{v, u} X)) :=
+  instFiniteUlift.{v} (univ : Set X)
+
+end Univ
 
 end Topology.CWComplex
