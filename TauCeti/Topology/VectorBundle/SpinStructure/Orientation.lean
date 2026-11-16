@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Euclidean
 public import TauCeti.Topology.VectorBundle.Orientation.OrientedFrame
 public import TauCeti.Topology.VectorBundle.SpinStructure.Basic
 
-import TauCeti.Topology.Covering.Pullback
+import TauCeti.Topology.Covering.BundleMap
 
 /-!
 # The orientation and double-cover geometry of a Spin structure
@@ -46,10 +47,11 @@ From this equivariance three structural consequences follow:
    orthonormal frames (`TauCeti.SpinStructure.range_toFrame_eq_orientedFrames`), so `s.toFrame`
    restricts to a continuous equivariant surjection `s.toOrientedFrames o`. When `E` is a
    continuous Riemannian bundle, comparing equivariant local trivializations of `s.P` and of
-   `orientedFrames` identifies `s.toOrientedFrames o` locally with a pullback of the Spin double
-   cover `Spin(n) → SO(n)`, proving that `s.toOrientedFrames o` is a covering map
-   (`TauCeti.SpinStructure.isCoveringMap_toOrientedFrames`) and a quotient covering map by the
-   two-element kernel of `Spin(n) → SO(n)`
+   `orientedFrames` conjugates `s.toOrientedFrames o` locally to a product of the identity on the
+   base with the Spin double cover `Spin(n) → SO(n)`
+   (`IsCoveringMap.of_equivariant_trivialization`), proving that `s.toOrientedFrames o` is a
+   covering map (`TauCeti.SpinStructure.isCoveringMap_toOrientedFrames`) and a quotient covering map
+   by the two-element kernel of `Spin(n) → SO(n)`
    (`TauCeti.SpinStructure.isQuotientCoveringMap_toOrientedFrames`).
 
 ## Main definitions
@@ -102,11 +104,6 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} {E : X → Type w}
   [TopologicalSpace (TotalSpace F E)]
   [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)] {n : ℕ} [NeZero n]
 
-private theorem negOne_mul_comm (g : realCliffordSpinGroupZero n) :
-    spinGroup.negOne (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0).ne_zero * g =
-      g * spinGroup.negOne (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0).ne_zero :=
-  Subtype.ext (by simp)
-
 /-- The frame map of a Spin structure is equivariant for the right `Spin(n)`-action on `P` and the
 right `SO(n)`-action on orthonormal frames via
 `TauCeti.CliffordAlgebra.realCliffordSpinToEuclideanSpecialOrthogonal`. -/
@@ -129,13 +126,9 @@ theorem toFrame_op_smul (s : SpinStructure F E n) (g : realCliffordSpinGroupZero
   have hw := s.toFrame_smul x p g w.ofLp
   rw [WithLp.toLp_ofLp, hq₀, hq₁] at hw
   rw [TotalSpace.mk_inj.1 hw, LinearIsometryEquiv.trans_apply, unop_op]
-  have hu := DFunLike.congr_fun (Unitary.coe_linearIsometryEquiv_apply
-    ((realCliffordSpinToEuclideanSpecialOrthogonal n g :
-      specialOrthogonalGroup (EuclideanSpace ℝ (Fin n))) :
-      unitary (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)))) w
-  exact congrArg φ₀
-    ((congrFun (LinearIsometryEquiv.coe_coe'' (Unitary.linearIsometryEquiv _)) w).symm.trans
-      (hu.trans (realCliffordSpinToEuclideanSpecialOrthogonal_apply_apply n g w))).symm
+  congr 1
+  rw [← LinearIsometryEquiv.coe_coe'', Unitary.coe_linearIsometryEquiv_apply,
+    realCliffordSpinToEuclideanSpecialOrthogonal_apply_apply]
 
 /-- Acting on the right by the central element `-1` of `Spin(n)` preserves the induced frame. -/
 @[simp]
@@ -171,10 +164,7 @@ theorem toFrame_eq_toFrame_iff (s : SpinStructure F E n)
     have hxy : x = y := by
       simpa only [proj_toFrame] using congrArg OrthonormalFrameBundle.proj h
     subst hxy
-    set g := PrincipalBundle.division (realCliffordSpinGroupZero n) q p
-    have hpq : (⟨x, p⟩ : TotalSpace (realCliffordSpinGroupZero n) s.P) = op g • ⟨x, q⟩ :=
-      congrArg (TotalSpace.mk' _ x) (PrincipalBundle.smul_division q p).symm
-    rw [hpq] at h ⊢
+    rw [← PrincipalBundle.smul_division_mk q p] at h ⊢
     rcases (s.toFrame_op_smul_eq_self_iff.1 h) with hg | hg <;> rw [hg]
     · exact .inl (one_smul _ _)
     · exact .inr rfl
@@ -243,10 +233,7 @@ theorem toOrientationCover_toFrame_eq_of_proj_eq (s : SpinStructure F E n)
   obtain ⟨x, p⟩ := p
   obtain ⟨y, q⟩ := q
   obtain rfl : x = y := h
-  have hpq : (⟨x, p⟩ : TotalSpace (realCliffordSpinGroupZero n) s.P) =
-      op (PrincipalBundle.division (realCliffordSpinGroupZero n) q p) • ⟨x, q⟩ :=
-    congrArg (TotalSpace.mk' _ x) (PrincipalBundle.smul_division q p).symm
-  rw [hpq, s.toOrientationCover_toFrame_op_smul]
+  rw [← PrincipalBundle.smul_division_mk q p, s.toOrientationCover_toFrame_op_smul]
 
 /-! ### Central sheet involution and automorphisms -/
 
@@ -271,7 +258,7 @@ def negOne (s : SpinStructure F E n) : s.Equiv s where
     continuous_const_smul
       (op (spinGroup.negOne (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0).ne_zero))
   map_smul x p g := by
-    simp only [_root_.Equiv.coe_fn_mk, smul_smul, ← op_mul, negOne_mul_comm]
+    simp only [_root_.Equiv.coe_fn_mk, smul_smul, ← op_mul, spinGroup.negOne_mul_comm]
   toFrame_map x p := s.toFrame_negOne_smul ⟨x, p⟩
 
 @[simp]
@@ -294,8 +281,8 @@ theorem negOne_toHomeomorph_apply (s : SpinStructure F E n)
     (negOne s).toHomeomorph p =
       op (spinGroup.negOne (realCliffordForm n 0)
         (nondegenerate_realCliffordForm n 0).ne_zero) • p := by
-  rw [toHomeomorph_apply, negOne_toEquiv_apply]
-  rfl
+  cases p
+  rw [toHomeomorph_apply, negOne_toEquiv_apply, TotalSpace.smul_mk]
 
 @[simp]
 theorem negOne_symm (s : SpinStructure F E n) : (negOne s).symm = negOne s :=
@@ -360,12 +347,21 @@ independent of the choice of point `p` in the fibre `s.P x`. -/
 theorem division_toEquiv_eq {s : SpinStructure F E n} (φ : s.Equiv s) (x : X) (p q : s.P x) :
     PrincipalBundle.division (realCliffordSpinGroupZero n) p (φ.toEquiv x p) =
       PrincipalBundle.division (realCliffordSpinGroupZero n) q (φ.toEquiv x q) := by
-  set g := PrincipalBundle.division (realCliffordSpinGroupZero n) q p
-  have hp : p = op g • q := (PrincipalBundle.smul_division q p).symm
-  rw [hp, φ.map_smul, PrincipalBundle.division_smul_left, PrincipalBundle.division_smul_right]
+  rw [← PrincipalBundle.smul_division (G := realCliffordSpinGroupZero n) q p, φ.map_smul,
+    PrincipalBundle.division_smul_left, PrincipalBundle.division_smul_right]
   rcases φ.division_toEquiv_eq_one_or_negOne x q with hd | hd <;> rw [hd]
   · simp
-  · rw [negOne_mul_comm g, inv_mul_cancel_left]
+  · rw [spinGroup.negOne_mul_comm, inv_mul_cancel_left]
+
+/-- For an automorphism `φ : s.Equiv s`, the division map
+`p ↦ division _ p.2 (φ.toEquiv p.proj p.2)` is continuous on the total space of `s.P`. -/
+theorem continuous_division_toEquiv {s : SpinStructure F E n} (φ : s.Equiv s) :
+    Continuous fun p : TotalSpace (realCliffordSpinGroupZero n) s.P ↦
+      PrincipalBundle.division (realCliffordSpinGroupZero n) p.2 (φ.toEquiv p.proj p.2) :=
+  Continuous.division (f := TotalSpace.proj)
+    (p := fun p : TotalSpace (realCliffordSpinGroupZero n) s.P ↦ p.2)
+    (q := fun p : TotalSpace (realCliffordSpinGroupZero n) s.P ↦ φ.toEquiv p.proj p.2)
+    continuous_id φ.continuous_toFun
 
 /-- Over a preconnected base, every automorphism of a Spin structure is either the identity or the
 sheet-exchange automorphism `Equiv.negOne`. -/
@@ -383,49 +379,22 @@ theorem eq_refl_or_eq_negOne [PreconnectedSpace X] {s : SpinStructure F E n} (φ
   have hd_cont : Continuous d := by
     rw [(FiberBundle.isQuotientMap_proj
       (F := realCliffordSpinGroupZero n) (E := s.P)).continuous_iff]
-    exact (Continuous.division (f := TotalSpace.proj)
-      (p := fun p : TotalSpace (realCliffordSpinGroupZero n) s.P ↦ p.2)
-      (q := fun p : TotalSpace (realCliffordSpinGroupZero n) s.P ↦ φ.toEquiv p.proj p.2)
-      continuous_id φ.continuous_toFun).congr fun p ↦ (hd_eq p).symm
-  have hd_or (x : X) :
-      d x = 1 ∨
-        d x = spinGroup.negOne (realCliffordForm n 0)
-          (nondegenerate_realCliffordForm n 0).ne_zero :=
-    φ.division_toEquiv_eq_one_or_negOne x _
-  have hcompl :
-      {x : X | d x = 1}ᶜ =
-        {x : X | d x = spinGroup.negOne (realCliffordForm n 0)
-          (nondegenerate_realCliffordForm n 0).ne_zero} := by
-    ext x
-    simp only [mem_compl_iff, mem_ofPred_eq]
-    refine ⟨(hd_or x).resolve_left, fun h h1 ↦ ?_⟩
-    exact spinGroup.negOne_ne_one (realCliffordForm n 0)
-      (nondegenerate_realCliffordForm n 0).ne_zero (h.symm.trans h1)
-  have hc_neg :
-      IsClosed {x : X | d x = spinGroup.negOne (realCliffordForm n 0)
-        (nondegenerate_realCliffordForm n 0).ne_zero} :=
-    isClosed_singleton.preimage hd_cont
-  rw [← hcompl] at hc_neg
-  have hclopen : IsClopen {x : X | d x = 1} :=
-    ⟨isClosed_singleton.preimage hd_cont, isClosed_compl_iff.1 hc_neg⟩
-  rcases isClopen_iff.1 hclopen with hempty | huniv
-  · right
-    refine ext fun x p ↦ ?_
-    have hx : d x = spinGroup.negOne (realCliffordForm n 0)
-        (nondegenerate_realCliffordForm n 0).ne_zero :=
-      (hd_or x).resolve_left fun h1 ↦ hempty.subset h1
-    have hdiv : PrincipalBundle.division (realCliffordSpinGroupZero n) p (φ.toEquiv x p) =
-        spinGroup.negOne (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0).ne_zero :=
-      (hd_eq ⟨x, p⟩).symm.trans hx
-    rw [negOne_toEquiv_apply]
-    exact (PrincipalBundle.division_eq_iff.1 hdiv).symm
-  · left
-    refine ext fun x p ↦ ?_
-    have hx : d x = 1 := huniv.symm.subset (mem_univ x)
-    have hdiv : PrincipalBundle.division (realCliffordSpinGroupZero n) p (φ.toEquiv x p) = 1 :=
-      (hd_eq ⟨x, p⟩).symm.trans hx
-    rw [refl_toEquiv, _root_.Equiv.refl_apply]
-    simpa only [op_one, one_smul] using (PrincipalBundle.division_eq_iff.1 hdiv).symm
+    exact φ.continuous_division_toEquiv.congr fun p ↦ (hd_eq p).symm
+  let T : Set (realCliffordSpinGroupZero n) :=
+    {1, spinGroup.negOne (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0).ne_zero}
+  obtain ⟨g, hgT, hdg⟩ := isPreconnected_univ.eqOn_const_of_mapsTo (T := T)
+    (toFinite T).isDiscrete hd_cont.continuousOn
+    (fun x _ ↦ φ.division_toEquiv_eq_one_or_negOne x _) ⟨1, by simp [T]⟩
+  have hdiv (x : X) (p : s.P x) :
+      PrincipalBundle.division (realCliffordSpinGroupZero n) p (φ.toEquiv x p) = g :=
+    (hd_eq ⟨x, p⟩).symm.trans (hdg (mem_univ x))
+  rcases hgT with rfl | rfl
+  · exact .inl <| ext fun x p ↦ by
+      simpa only [refl_toEquiv, _root_.Equiv.refl_apply, op_one, one_smul] using
+        (PrincipalBundle.division_eq_iff.1 (hdiv x p)).symm
+  · exact .inr <| ext fun x p ↦ by
+      rw [negOne_toEquiv_apply]
+      exact (PrincipalBundle.division_eq_iff.1 (hdiv x p)).symm
 
 /-- Over a preconnected base, any two equivalences between the same pair of Spin structures are
 equal or differ by the sheet-exchange automorphism `Equiv.negOne`. -/
@@ -530,24 +499,8 @@ theorem fiberOrientation_pullback {Y : Type*} [TopologicalSpace Y] {K : Type*} [
   obtain rfl : f y = x₁ := by
     symm
     simpa [hfr] using s.proj_toFrame ⟨f y, p⟩
-  let q : TotalSpace (realCliffordSpinGroupZero n) (s.pullback f).P := ⟨y, p⟩
-  let φ₁' : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] ((f : Y → X) *ᵖ E) y := φ₁
-  have hlift : OrthonormalFrameBundle.pullbackLift f ((s.pullback f).toFrame q) = ⟨f y, φ₁⟩ :=
-    (s.pullbackLift_toFrame_pullback f q).trans hfr
-  have hpull : (s.pullback f).toFrame q =
-      (⟨y, φ₁'⟩ : OrthonormalFrameBundle ℝ F ((f : Y → X) *ᵖ E) (EuclideanSpace ℝ (Fin n))) :=
-    (OrthonormalFrameBundle.pullbackHomeomorph (f : Y → X)).injective <|
-      Subtype.ext <|
-        (congrArg Subtype.val
-          (OrthonormalFrameBundle.pullbackHomeomorph_apply (f : Y → X)
-            ((s.pullback f).toFrame q))).trans <|
-        (Prod.ext ((s.pullback f).proj_toFrame q)
-          (hlift.trans
-            (OrthonormalFrameBundle.pullbackLift_mk (F := F) (f : Y → X) y φ₁).symm)).trans
-        (congrArg Subtype.val
-          (OrthonormalFrameBundle.pullbackHomeomorph_apply (f : Y → X) ⟨y, φ₁'⟩)).symm
-  have h₁ := (s.pullback f).toOrientationCover_toFrame o q
-  rw [hpull, OrthonormalFrameBundle.toOrientationCover_eq_mk,
+  have h₁ := (s.pullback f).toOrientationCover_toFrame o ⟨y, p⟩
+  rw [s.toFrame_pullback_mk f y p hfr, OrthonormalFrameBundle.toOrientationCover_eq_mk,
     VectorBundleOrientationCover.mk_eq_mk_iff] at h₁
   have h₂ := s.toOrientationCover_toFrame o ⟨f y, p⟩
   rw [hfr, OrthonormalFrameBundle.toOrientationCover_eq_mk,
@@ -747,124 +700,32 @@ section ContinuousRiemannian
 
 variable [IsContinuousRiemannianBundle F E]
 
-/-- **The lifted frame map of a Spin structure is a two-sheeted covering map** onto the positively
-oriented orthonormal frames of a continuous Riemannian vector bundle. -/
+/-- **The lifted frame map of a Spin structure is a covering map** onto the positively oriented
+orthonormal frames of a continuous Riemannian vector bundle (with two-point fibres by
+`ncard_preimage_toFrame_singleton` and quotient covering structure in
+`isQuotientCoveringMap_toOrientedFrames`). -/
 theorem isCoveringMap_toOrientedFrames (s : SpinStructure F E n)
     (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) :
     IsCoveringMap (s.toOrientedFrames o) := by
-  rcases isEmpty_or_nonempty X with hX | hX
-  · have : IsEmpty (TotalSpace (realCliffordSpinGroupZero n) s.P) := ⟨fun p ↦ isEmptyElim p.proj⟩
-    exact .of_isEmpty _
+  refine IsCoveringMap.of_equivariant_trivialization
+    (projP := TotalSpace.proj)
+    (projQ := fun q : OrthonormalFrameBundle.orientedFrames (s.orientation o) o ↦
+      (q : OrthonormalFrameBundle ℝ F E (EuclideanSpace ℝ (Fin n))).proj)
+    (isCoveringMap_realCliffordSpinToEuclideanSpecialOrthogonal n)
+    (s.continuous_toOrientedFrames o) (s.proj_coe_toOrientedFrames o)
+    (fun g p ↦ TotalSpace.proj_smul (op g) p) (s.toOrientedFrames_op_smul o) fun q₀ ↦ ?_
+  let x := (q₀ : OrthonormalFrameBundle ℝ F E (EuclideanSpace ℝ (Fin n))).proj
+  have : Nonempty X := ⟨x⟩
   have : FiniteDimensional ℝ F := s.finiteDimensional_model
   have : Nonempty (Fin n) := Fin.pos_iff_nonempty.1 (NeZero.pos n)
   have hF : Fintype.card (Fin n) = Module.finrank ℝ F :=
     (Fintype.card_fin n).trans s.finrank_model.symm
-  intro q₀
-  let x := (q₀ : OrthonormalFrameBundle ℝ F E (EuclideanSpace ℝ (Fin n))).proj
-  let e := trivializationAt (realCliffordSpinGroupZero n) s.P x
-  have hxe : x ∈ e.baseSet := mem_baseSet_trivializationAt _ s.P x
   obtain ⟨t, hxt, ht⟩ :=
     OrthonormalFrameBundle.exists_trivialization_orientedFrames (s.orientation o) o hF x
-  let W : Set X := e.baseSet ∩ t.baseSet
-  have hW : IsOpen W := e.open_baseSet.inter t.open_baseSet
-  have hxW : x ∈ W := ⟨hxe, hxt⟩
-  let pr : OrthonormalFrameBundle.orientedFrames (s.orientation o) o → X :=
-    fun q ↦ (q : OrthonormalFrameBundle ℝ F E (EuclideanSpace ℝ (Fin n))).proj
-  let V : Set (OrthonormalFrameBundle.orientedFrames (s.orientation o) o) := pr ⁻¹' W
-  have hV : IsOpen V :=
-    hW.preimage (OrthonormalFrameBundle.continuous_proj.comp continuous_subtype_val)
-  have hpreV_eq : s.toOrientedFrames o ⁻¹' V = π (realCliffordSpinGroupZero n) s.P ⁻¹' W := by
-    ext p
-    simp [V, pr]
-  have hpreV : IsOpen (s.toOrientedFrames o ⁻¹' V) :=
-    hpreV_eq ▸ hW.preimage (FiberBundle.continuous_proj (realCliffordSpinGroupZero n) s.P)
-  refine IsCoveringMapOn.of_isCoveringMap_restrictPreimage _ hV hpreV ?_ q₀ hxW
-  have hWe : W ⊆ e.baseSet := fun _ hy ↦ hy.1
-  have hWt : W ⊆ t.baseSet := fun _ hy ↦ hy.2
-  -- Identify `s.toOrientedFrames o ⁻¹' V` and `V` with `W × Spin(n)` and `W × SO(n)` via `e`
-  -- and `t`; `hSet` is written directly so its underlying coercion is definitional under `module`.
-  let hSet : (s.toOrientedFrames o ⁻¹' V) ≃ₜ (π (realCliffordSpinGroupZero n) s.P ⁻¹' W) :=
-    { toFun q := ⟨q.1, hpreV_eq ▸ q.2⟩
-      invFun q := ⟨q.1, hpreV_eq.symm ▸ q.2⟩
-      left_inv _ := rfl
-      right_inv _ := rfl
-      continuous_toFun := continuous_subtype_val.subtype_mk _
-      continuous_invFun := continuous_subtype_val.subtype_mk _ }
-  let hDom : (s.toOrientedFrames o ⁻¹' V) ≃ₜ W × realCliffordSpinGroupZero n :=
-    hSet.trans (e.preimageHomeomorph hWe)
-  let hCod : V ≃ₜ W × specialOrthogonalGroup (EuclideanSpace ℝ (Fin n)) :=
-    t.preimageHomeomorph hWt
-  -- Read the local unit section `σ` of `s.P` in `t` to obtain the transition map `c : W → SO(n)`
-  -- such that `(y, g)` maps to `(y, c y * ρ g)`, realizing the local map as `Pullback.fst`.
-  let σ : W → TotalSpace (realCliffordSpinGroupZero n) s.P :=
-    fun y ↦ e.toOpenPartialHomeomorph.symm (y.1, 1)
-  have hσ_cont : Continuous σ :=
-    e.continuousOn_invFun.comp_continuous (continuous_subtype_val.prodMk continuous_const)
-      fun y ↦ e.mem_target.2 y.2.1
-  have hσ_proj (y : W) : (σ y).proj = y.1 := e.proj_symm_apply' y.2.1
-  let c : W → specialOrthogonalGroup (EuclideanSpace ℝ (Fin n)) :=
-    fun y ↦ (t (s.toOrientedFrames o (σ y))).2
-  have hc_cont : Continuous c :=
-    continuous_snd.comp <| t.continuousOn_toFun.comp_continuous
-      ((s.continuous_toOrientedFrames o).comp hσ_cont) fun y ↦ by
-        rw [t.mem_source, s.proj_coe_toOrientedFrames, hσ_proj]
-        exact y.2.2
-  let ρ := realCliffordSpinToEuclideanSpecialOrthogonal n
-  let f : W × specialOrthogonalGroup (EuclideanSpace ℝ (Fin n)) →
-      specialOrthogonalGroup (EuclideanSpace ℝ (Fin n)) :=
-    fun yh ↦ (c yh.1)⁻¹ * yh.2
-  have hf_cont : Continuous f := (hc_cont.comp continuous_fst).inv.mul continuous_snd
-  let hPull : W × realCliffordSpinGroupZero n ≃ₜ _root_.Function.Pullback f ρ :=
-    { toFun yg := ⟨((yg.1, c yg.1 * ρ yg.2), yg.2), inv_mul_cancel_left (c yg.1) (ρ yg.2)⟩
-      invFun z := (z.1.1.1, z.1.2)
-      left_inv _ := rfl
-      right_inv z := by
-        rcases z with ⟨⟨⟨y, h⟩, g⟩, hzg⟩
-        dsimp only [f] at hzg
-        exact Subtype.ext (Prod.ext (Prod.ext rfl (inv_mul_eq_iff_eq_mul.1 hzg).symm) rfl)
-      continuous_toFun :=
-        ((continuous_fst.prodMk ((hc_cont.comp continuous_fst).mul
-          ((map_continuous ρ).comp continuous_snd))).prodMk continuous_snd).subtype_mk _
-      continuous_invFun :=
-        (continuous_fst.comp _root_.Function.Pullback.continuous_fst).prodMk
-          _root_.Function.Pullback.continuous_snd }
-  have hlocal :
-      V.restrictPreimage (s.toOrientedFrames o) =
-        hCod.symm ∘ _root_.Function.Pullback.fst ∘ hPull ∘ hDom := by
-    funext p
-    apply hCod.injective
-    rw [Function.comp_apply, Function.comp_apply, Function.comp_apply, Homeomorph.apply_symm_apply]
-    have hpW : p.1.proj ∈ W := by simpa only [hpreV_eq, mem_preimage] using p.2
-    let y : W := ⟨p.1.proj, hpW⟩
-    let g : realCliffordSpinGroupZero n := (e p.1).2
-    have hDom_p : hDom p = (y, g) :=
-      (Homeomorph.trans_apply hSet (e.preimageHomeomorph hWe) p).trans
-        (e.preimageHomeomorph_apply hWe (hSet p))
-    have hPull_fst : _root_.Function.Pullback.fst (hPull (y, g)) = (y, c y * ρ g) := rfl
-    rw [hDom_p, hPull_fst]
-    have hp_eq : p.1 = op g • σ y := by
-      have he1 : (e p.1).1 = y.1 := e.coe_fst' hpW.1
-      calc
-        p.1 = e.toOpenPartialHomeomorph.symm (e p.1) :=
-          (e.symm_apply_apply (e.mem_source.2 hpW.1)).symm
-        _ = e.toOpenPartialHomeomorph.symm (y.1, g) := by rw [← he1]
-        _ = op g • σ y := e.symm_apply_eq_smul hpW.1 g
-    have hq_mem : (s.toOrientedFrames o (σ y) :
-        OrthonormalFrameBundle ℝ F E (EuclideanSpace ℝ (Fin n))).proj ∈ t.baseSet := by
-      rw [s.proj_coe_toOrientedFrames, hσ_proj]
-      exact hpW.2
-    have hCod_p :
-        hCod (V.restrictPreimage (s.toOrientedFrames o) p) =
-          (⟨pr (s.toOrientedFrames o p.1), p.2⟩, (t (s.toOrientedFrames o p.1)).2) :=
-      t.preimageHomeomorph_apply hWt (V.restrictPreimage (s.toOrientedFrames o) p)
-    rw [hCod_p]
-    refine Prod.ext (Subtype.ext ?_) ?_
-    · exact s.proj_coe_toOrientedFrames o p.1
-    · dsimp only
-      rw [hp_eq, s.toOrientedFrames_op_smul, ht _ _ hq_mem]
-  rw [hlocal]
-  exact ((((isCoveringMap_realCliffordSpinToEuclideanSpecialOrthogonal n).pullback_fst
-    hf_cont).comp_homeomorph hPull).homeomorph_comp hCod.symm).comp_homeomorph hDom
+  let e := trivializationAt (realCliffordSpinGroupZero n) s.P x
+  exact ⟨e, t, mem_baseSet_trivializationAt _ s.P x, hxt,
+    fun g ⟨_, p⟩ hp ↦ e.snd_apply_smul hp p g,
+    fun h q hq ↦ congrArg Prod.snd (ht h q hq)⟩
 
 /-- The lifted frame map of a Spin structure onto positively oriented frames is an open map. -/
 theorem isOpenMap_toOrientedFrames (s : SpinStructure F E n)

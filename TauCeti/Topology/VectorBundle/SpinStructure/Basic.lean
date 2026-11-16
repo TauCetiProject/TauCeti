@@ -386,6 +386,19 @@ theorem pullbackLift_toFrame_pullback (s : SpinStructure F E n) (f : K)
       s.toFrame (Pullback.lift f p) :=
   s.pullbackLift_pullbackToFrame f p
 
+/-- If `s.toFrame ⟨f y, p⟩` is the frame `φ` at `f y`, then `(s.pullback f).toFrame ⟨y, p⟩` is the
+same frame viewed in the pullback fibre at `y`. -/
+theorem toFrame_pullback_mk (s : SpinStructure F E n) (f : K) (y : Y) (p : s.P (f y))
+    {φ : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] E (f y)} (h : s.toFrame ⟨f y, p⟩ = ⟨f y, φ⟩) :
+    (s.pullback f).toFrame (⟨y, p⟩ : TotalSpace (realCliffordSpinGroupZero n) (s.pullback f).P) =
+      (⟨y, φ⟩ : OrthonormalFrameBundle ℝ F ((f : Y → X) *ᵖ E) (EuclideanSpace ℝ (Fin n))) := by
+  apply (OrthonormalFrameBundle.pullbackHomeomorph (f : Y → X)).injective
+  apply Subtype.ext
+  simp only [OrthonormalFrameBundle.pullbackHomeomorph_apply,
+    OrthonormalFrameBundle.pullbackLift_mk]
+  exact Prod.ext ((s.pullback f).proj_toFrame ⟨y, p⟩)
+    ((s.pullbackLift_toFrame_pullback f ⟨y, p⟩).trans h)
+
 /-- The **pullback of an equivalence** of Spin structures along a continuous map: equivalences
 commute with pullback. -/
 noncomputable def Equiv.pullback {s t : SpinStructure F E n} (φ : s.Equiv t) (f : K) :

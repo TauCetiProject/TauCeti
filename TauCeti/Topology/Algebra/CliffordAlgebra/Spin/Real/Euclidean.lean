@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.SpecialOrthogonal
-public import TauCeti.Analysis.Matrix.EuclideanLin
+public import TauCeti.Analysis.Matrix.SpecialOrthogonal
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
 public import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal
 
@@ -21,15 +21,12 @@ contrast, the compact real Spin group `CliffordAlgebra.realCliffordSpinGroupZero
 the coordinate quadratic form `CliffordAlgebra.realCliffordForm n 0`, whose special orthogonal
 group consists of form-preserving linear equivalences of `Fin n → ℝ`.
 
-This file bridges the two models of `SO(n)`. Over any `RCLike` field `𝕜` and finite index type
-`ι`, the star-algebra isomorphism `Matrix.toEuclideanCLM` restricts to a topological group
-isomorphism between `Matrix.unitaryGroup ι 𝕜` and the unitary operator group of
-`EuclideanSpace 𝕜 ι`; over `ℝ` it further restricts to determinant-one subgroups, identifying
-`Matrix.specialOrthogonalGroup ι ℝ` with `TauCeti.specialOrthogonalGroup (EuclideanSpace ℝ ι)`.
-Composing with `TauCeti.QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm`
-identifies the quadratic-form group `QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)`
-with the Euclidean special orthogonal operator group, and composing with the Spin action produces
-the continuous surjective homomorphism
+This file bridges the two models of `SO(n)`. Composing
+`TauCeti.QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm` with
+`TauCeti.matrixSpecialOrthogonalContinuousMulEquivEuclidean` identifies the quadratic-form group
+`QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)` with the Euclidean special orthogonal
+operator group `TauCeti.specialOrthogonalGroup (EuclideanSpace ℝ (Fin n))`, and composing with the
+Spin action produces the continuous surjective homomorphism
 `TauCeti.CliffordAlgebra.realCliffordSpinToEuclideanSpecialOrthogonal` from `Spin(n)` onto the
 Euclidean special orthogonal group.
 
@@ -38,13 +35,6 @@ positive dimension its kernel is `{1, -1}` and it is a quotient covering map by 
 
 ## Main definitions
 
-* `TauCeti.instFactCardEqFinrankEuclideanSpace`: `Fact` instance recording
-  `Fintype.card ι = Module.finrank 𝕜 (EuclideanSpace 𝕜 ι)`.
-* `TauCeti.matrixUnitaryContinuousMulEquivEuclidean`: topological group isomorphism between unitary
-  matrices and unitary operators on `EuclideanSpace 𝕜 ι`.
-* `TauCeti.matrixSpecialOrthogonalContinuousMulEquivEuclidean`: topological group isomorphism
-  between real special orthogonal matrices and
-  `TauCeti.specialOrthogonalGroup (EuclideanSpace ℝ ι)`.
 * `TauCeti.CliffordAlgebra.realCliffordSpecialOrthogonalContinuousMulEquivEuclidean`: topological
   group isomorphism between `QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)` and
   `TauCeti.specialOrthogonalGroup (EuclideanSpace ℝ (Fin n))`.
@@ -75,126 +65,6 @@ noncomputable section
 
 namespace TauCeti
 
-/-- The cardinality of `ι` equals the dimension of `EuclideanSpace 𝕜 ι`, recorded as a `Fact` for
-rank-indexed APIs such as `TauCeti.OrthonormalFrameBundle.orientedFrames`. -/
-instance instFactCardEqFinrankEuclideanSpace (𝕜 ι : Type*) [RCLike 𝕜] [Fintype ι] :
-    Fact (Fintype.card ι = Module.finrank 𝕜 (EuclideanSpace 𝕜 ι)) :=
-  ⟨(finrank_euclideanSpace (𝕜 := 𝕜) (ι := ι)).symm⟩
-
-section MatrixUnitary
-
-variable (ι 𝕜 : Type*) [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
-
-/-- Unitary `ι × ι` matrices over `𝕜` and unitary operators on `EuclideanSpace 𝕜 ι` are isomorphic
-as topological groups via `Matrix.toEuclideanCLM`. -/
-def matrixUnitaryContinuousMulEquivEuclidean :
-    Matrix.unitaryGroup ι 𝕜 ≃ₜ*
-      unitary (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) where
-  toFun A := ⟨Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜) A.1,
-    Unitary.map_mem (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)) A.2⟩
-  invFun u := ⟨(Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm u.1,
-    Unitary.map_mem (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm u.2⟩
-  left_inv A := Subtype.ext <| StarAlgEquiv.symm_apply_apply _ A.1
-  right_inv u := Subtype.ext <| StarAlgEquiv.apply_symm_apply _ u.1
-  map_mul' A B := Subtype.ext <| map_mul (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)) A.1 B.1
-  continuous_toFun :=
-    (Matrix.continuous_toEuclideanCLM.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun :=
-    (Matrix.continuous_toEuclideanCLM_symm.comp continuous_subtype_val).subtype_mk _
-
-variable {ι 𝕜}
-
-@[simp]
-theorem coe_matrixUnitaryContinuousMulEquivEuclidean (A : Matrix.unitaryGroup ι 𝕜) :
-    (matrixUnitaryContinuousMulEquivEuclidean ι 𝕜 A :
-        EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) =
-      Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜) (A : Matrix ι ι 𝕜) :=
-  (rfl)
-
-@[simp]
-theorem coe_matrixUnitaryContinuousMulEquivEuclidean_symm
-    (u : unitary (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι)) :
-    ((matrixUnitaryContinuousMulEquivEuclidean ι 𝕜).symm u : Matrix ι ι 𝕜) =
-      (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm
-        (u : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :=
-  (rfl)
-
-theorem matrixUnitaryContinuousMulEquivEuclidean_apply_apply (A : Matrix.unitaryGroup ι 𝕜)
-    (v : EuclideanSpace 𝕜 ι) :
-    (matrixUnitaryContinuousMulEquivEuclidean ι 𝕜 A :
-        EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) v =
-      Matrix.toEuclideanLin (A : Matrix ι ι 𝕜) v :=
-  Matrix.toEuclideanCLM_apply (A : Matrix ι ι 𝕜) v
-
-end MatrixUnitary
-
-section MatrixSpecialOrthogonal
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-private theorem mem_unitaryGroup_real_iff_mem_orthogonalGroup {A : Matrix ι ι ℝ} :
-    A ∈ Matrix.unitaryGroup ι ℝ ↔ A ∈ Matrix.orthogonalGroup ι ℝ := by
-  simp [Matrix.mem_unitaryGroup_iff]
-
-variable (ι) in
-/-- Real special orthogonal `ι × ι` matrices and the special orthogonal operator group of
-`EuclideanSpace ℝ ι` are isomorphic as topological groups via `Matrix.toEuclideanCLM`. -/
-def matrixSpecialOrthogonalContinuousMulEquivEuclidean :
-    Matrix.specialOrthogonalGroup ι ℝ ≃ₜ* specialOrthogonalGroup (EuclideanSpace ℝ ι) where
-  toFun A :=
-    ⟨matrixUnitaryContinuousMulEquivEuclidean ι ℝ
-        ⟨A.1, mem_unitaryGroup_real_iff_mem_orthogonalGroup.2 A.2.1⟩,
-      mem_specialOrthogonalGroup_iff.2 <| by
-        rw [coe_matrixUnitaryContinuousMulEquivEuclidean, Matrix.det_toEuclideanCLM]
-        exact A.2.2⟩
-  invFun g :=
-    ⟨((matrixUnitaryContinuousMulEquivEuclidean ι ℝ).symm g.1).1,
-      mem_unitaryGroup_real_iff_mem_orthogonalGroup.1
-        ((matrixUnitaryContinuousMulEquivEuclidean ι ℝ).symm g.1).2,
-      MonoidHom.mem_mker.2 <| by
-        have hg : (g.1 : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι).det = 1 :=
-          mem_specialOrthogonalGroup_iff.1 g.2
-        simpa [coe_matrixUnitaryContinuousMulEquivEuclidean_symm,
-          ← Matrix.det_toEuclideanCLM (ι := ι) (𝕜 := ℝ)] using hg⟩
-  left_inv A := Subtype.ext <| by
-    simpa only [coe_matrixUnitaryContinuousMulEquivEuclidean,
-      coe_matrixUnitaryContinuousMulEquivEuclidean_symm] using
-      StarAlgEquiv.symm_apply_apply (Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)) A.1
-  right_inv g := Subtype.ext <| Subtype.ext <| by
-    simpa only [coe_matrixUnitaryContinuousMulEquivEuclidean,
-      coe_matrixUnitaryContinuousMulEquivEuclidean_symm] using
-      StarAlgEquiv.apply_symm_apply (Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)) g.1.1
-  map_mul' A B := Subtype.ext <| Subtype.ext <| by
-    simp only [Submonoid.coe_mul, Subgroup.coe_mul,
-      coe_matrixUnitaryContinuousMulEquivEuclidean]
-    exact map_mul (Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)) A.1 B.1
-  continuous_toFun :=
-    (((Matrix.continuous_toEuclideanCLM.comp continuous_subtype_val).subtype_mk _).subtype_mk _)
-  continuous_invFun :=
-    ((Matrix.continuous_toEuclideanCLM_symm.comp
-      (continuous_subtype_val.comp continuous_subtype_val)).subtype_mk _)
-
-@[simp]
-theorem coe_matrixSpecialOrthogonalContinuousMulEquivEuclidean
-    (A : Matrix.specialOrthogonalGroup ι ℝ) :
-    ((matrixSpecialOrthogonalContinuousMulEquivEuclidean ι A :
-        unitary (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)) :
-      EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) =
-      Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ) (A : Matrix ι ι ℝ) :=
-  (rfl)
-
-@[simp]
-theorem coe_matrixSpecialOrthogonalContinuousMulEquivEuclidean_symm
-    (g : specialOrthogonalGroup (EuclideanSpace ℝ ι)) :
-    (((matrixSpecialOrthogonalContinuousMulEquivEuclidean ι).symm g :
-        Matrix.specialOrthogonalGroup ι ℝ) : Matrix ι ι ℝ) =
-      (Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)).symm
-        ((g : unitary (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)) :
-          EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) :=
-  (rfl)
-
-end MatrixSpecialOrthogonal
-
 namespace CliffordAlgebra
 
 open _root_.CliffordAlgebra
@@ -221,12 +91,8 @@ theorem realCliffordSpecialOrthogonalContinuousMulEquivEuclidean_apply_apply (n 
       WithLp.toLp 2 ((g : (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)) v.ofLp) := by
   rw [realCliffordSpecialOrthogonalContinuousMulEquivEuclidean, ContinuousMulEquiv.trans_apply,
     coe_matrixSpecialOrthogonalContinuousMulEquivEuclidean, Matrix.toEuclideanCLM_apply,
-    QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_symm_coe]
-  have hlin : Matrix.toEuclideanLin (LinearMap.toMatrix'
-      (g : (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)).toLinearMap) v =
-      WithLp.toLp 2 (Matrix.toLin' (LinearMap.toMatrix'
-        (g : (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)).toLinearMap) v.ofLp) := rfl
-  rw [hlin, Matrix.toLin'_toMatrix', LinearEquiv.coe_coe]
+    QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_symm_coe,
+    Matrix.toLpLin_apply, ← Matrix.toLin'_apply, Matrix.toLin'_toMatrix', LinearEquiv.coe_coe]
 
 /-- The compact real Spin projection onto the special orthogonal operator group of
 `EuclideanSpace ℝ (Fin n)`, bundled as a continuous group homomorphism. -/
@@ -371,13 +237,8 @@ theorem isQuotientCoveringMap_realCliffordSpinToEuclideanSpecialOrthogonal :
           realCliffordSpinGroupZero n →* specialOrthogonalGroup (EuclideanSpace ℝ (Fin n))) =
         (realCliffordSpinDoubleCoverZero n).rightHom.ker := by
     rw [ker_realCliffordSpinToEuclideanSpecialOrthogonal, realCliffordSpinDoubleCoverZero_rightHom]
-  have hfn :
-      ⇑(realCliffordSpinToEuclideanSpecialOrthogonal n) =
-        ⇑(realCliffordSpecialOrthogonalContinuousMulEquivEuclidean n).toHomeomorph ∘
-          ⇑(realCliffordSpinDoubleCoverZero n).rightHom := by
-    rw [realCliffordSpinToEuclideanSpecialOrthogonal_eq_comp n, coe_realCliffordSpinProjectionZero]
-    rfl
-  rw [hfn, hker]
+  rw [hker, realCliffordSpinToEuclideanSpecialOrthogonal_eq_comp n,
+    coe_realCliffordSpinProjectionZero]
   exact (isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n).homeomorph_comp
     (realCliffordSpecialOrthogonalContinuousMulEquivEuclidean n).toHomeomorph
 
