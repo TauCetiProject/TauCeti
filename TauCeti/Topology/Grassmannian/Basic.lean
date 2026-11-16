@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Grassmannian
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Topology.Homeomorph.Quotient
+import TauCeti.LinearAlgebra.Matrix.Module
 
 /-!
 # Finite Grassmannians as quotients of frame spaces
@@ -96,10 +97,8 @@ instance : MulAction (GL (Fin r) 𝕜) (finiteFullRankFrame 𝕜 r N) where
     ext j : 2
     simp [Matrix.one_apply]
   mul_smul A B f := by
-    ext j : 2
-    simp only [coe_smul, Units.val_mul, Matrix.mul_apply, Finset.sum_smul, Finset.smul_sum,
-      smul_smul]
-    exact Finset.sum_comm
+    ext : 1
+    simp only [coe_smul, Units.val_mul, Matrix.sum_mul_apply_smul]
 
 /-- Over a topological ring, each element of the general linear group acts continuously on
 frames. -/
