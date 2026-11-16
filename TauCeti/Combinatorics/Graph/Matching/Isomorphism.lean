@@ -136,6 +136,15 @@ theorem coe_matchingSubgraph_vertexEquiv_apply (f : Iso G H) (M : Set E(G))
       f.vertexEquiv ⟨x, (G.matchingSubgraph_le M).vertexSet_mono x.2⟩ :=
   (rfl)
 
+/-- The inverse vertex equivalence of `Graph.Iso.matchingSubgraph` is the inverse vertex
+equivalence of the ambient isomorphism. -/
+@[simp]
+theorem coe_matchingSubgraph_vertexEquiv_symm_apply (f : Iso G H) (M : Set E(G))
+    (y : V(H.matchingSubgraph (f.edgeEquiv '' M))) :
+    ((f.matchingSubgraph M).vertexEquiv.symm y : α) =
+      f.vertexEquiv.symm ⟨y, (H.matchingSubgraph_le _).vertexSet_mono y.2⟩ :=
+  (rfl)
+
 /-- The edge equivalence of `Graph.Iso.matchingSubgraph` is the edge equivalence of the ambient
 isomorphism. -/
 @[simp]
@@ -143,6 +152,15 @@ theorem coe_matchingSubgraph_edgeEquiv_apply (f : Iso G H) (M : Set E(G))
     (e : E(G.matchingSubgraph M)) :
     ((f.matchingSubgraph M).edgeEquiv e : β') =
       f.edgeEquiv ⟨e, (G.matchingSubgraph_le M).edgeSet_mono e.2⟩ :=
+  (rfl)
+
+/-- The inverse edge equivalence of `Graph.Iso.matchingSubgraph` is the inverse edge equivalence
+of the ambient isomorphism. -/
+@[simp]
+theorem coe_matchingSubgraph_edgeEquiv_symm_apply (f : Iso G H) (M : Set E(G))
+    (e : E(H.matchingSubgraph (f.edgeEquiv '' M))) :
+    ((f.matchingSubgraph M).edgeEquiv.symm e : β) =
+      f.edgeEquiv.symm ⟨e, (H.matchingSubgraph_le _).edgeSet_mono e.2⟩ :=
   (rfl)
 
 end Iso
