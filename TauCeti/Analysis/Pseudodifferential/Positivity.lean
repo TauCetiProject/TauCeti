@@ -41,8 +41,8 @@ holds at every nonzero frequency
 (`TauCeti.ClassicalSymbol.IsElliptic.isStrictlyPositive_coefficient_principal`). When `Op(a)` is
 positive on all compactly supported Schwartz functions, the principal symbol is therefore a
 strictly positive homogeneous symbol
-(`TauCeti.ClassicalSymbol.IsElliptic.isStrictlyPositive_principal`), and its real powers
-`σ(a) ^ z` are again homogeneous symbols (`TauCeti.HomogeneousSymbol.rpow`).
+(`TauCeti.ClassicalSymbol.IsElliptic.isStrictlyPositive_principal`), and for finite-dimensional
+`H` its real powers `σ(a) ^ z` are again homogeneous symbols (`TauCeti.HomogeneousSymbol.rpow`).
 
 ## References
 
@@ -141,7 +141,8 @@ theorem IsElliptic.isStrictlyPositive_coefficient_principal {a : ClassicalSymbol
 
 /-- If `a` is an elliptic classical symbol with `0 ≤ ∫ ⟪Op(a) u (x), u (x)⟫ dx` for every compactly
 supported Schwartz function `u`, then its principal symbol is a strictly positive homogeneous
-symbol; in particular it has real powers `HomogeneousSymbol.rpow`. -/
+symbol; in particular, when `H` is finite-dimensional, it has real powers
+`HomogeneousSymbol.rpow`. -/
 theorem IsElliptic.isStrictlyPositive_principal {a : ClassicalSymbol n H H m} (he : a.IsElliptic)
     (ha : ∀ u : 𝓢(CoordinateSpace n, H), HasCompactSupport u →
       0 ≤ ∫ x, ⟪quantizeSchwartzValue a.toSymbol.coefficient u x, u x⟫_ℂ) :
