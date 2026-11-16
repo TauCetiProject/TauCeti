@@ -232,7 +232,8 @@ theorem eventually_nonneg_integral_cutoffCurrent_comp_closedBall {ι : Type*} {l
     (neg_mul_div_le_integral_cutoffCurrent_comp_closedBall hδ (hα k) (hb k) hχ hχ₀ hσ hhol hk)
   rw [hn] at hle ⊢
   have hn₁ : (-1 : ℝ) < n := by nlinarith [Real.pi_pos]
-  have hn₀ : (0 : ℝ) ≤ n := by exact_mod_cast (show (-1 : ℤ) < n by exact_mod_cast hn₁)
+  have hn₁' : (-1 : ℤ) < n := by exact_mod_cast hn₁
+  have hn₀ : (0 : ℝ) ≤ n := by exact_mod_cast (show (0 : ℤ) ≤ n by omega)
   exact mul_nonneg Real.two_pi_pos.le hn₀
 
 /-- **The stable charge of a pseudoholomorphic disc is a natural number.** In the setting of
