@@ -236,8 +236,8 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_cappedExchangePertur
     | one => exact hloop one (by decide) fun t ↦ by simpa using hx₁ t
     | inf => exact hloop inf (by decide) fun t ↦ by simpa using hxinf t
   have h := hω.integral_floerEnergyDensity_of_eq_smul_endAngularForm hK
-    (fun q w x hw ↦ cappedExchangePerturbation_zero_eq_smul_endAngularForm hL q w x hw) hH' hv hE
-    hA (hω.integrable_hamiltonianCurvature_cappedExchangePerturbation hH hHs hB hL le_rfl
+    (fun q w x hw ↦ cappedExchangePerturbation_zero_eq_smul_endAngularForm (by linarith) q w x hw)
+    hH' hv hE hA (hω.integrable_hamiltonianCurvature_cappedExchangePerturbation hH hHs hB hL le_rfl
       zero_le_one hv.continuousOn) hh
   simp only [hS, Puncture.sum_univ, endSign_zero, endSign_one, endSign_inf] at h ⊢
   rw [h]

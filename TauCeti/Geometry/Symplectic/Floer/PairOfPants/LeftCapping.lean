@@ -252,11 +252,11 @@ theorem cappedExchangePerturbation_eq_zero (hL : 2 < L) (hc₀ : 0 ≤ c) (hc₁
     plumbedPerturbation_single_inf_eq_zero (by decide) hL (by simpa using hw),
     negativePlanePerturbation_sub_eq_zero_of_norm_le hc₀ hc₁ hn, add_zero]
 
-/-- **The capping datum at `0` is cylindrical on the three ends.** For `L > 4`, beyond the height
+/-- **The capping datum at `0` is cylindrical on the three ends.** For `L > 2`, beyond the height
 `L` of each end `q` of `ℂ ∖ {0, 1}`, the capping datum at `0` is `H_q(t) dt` for the Hamiltonians
 `H` with the end at `0` set to `0`: it is `H_1(t) dt` and `H_∞(t) dt` on the ends at `1` and `∞`,
 and it vanishes on the end at `0`, the capped one. -/
-theorem cappedExchangePerturbation_zero_eq_smul_endAngularForm (hL : 4 < L)
+theorem cappedExchangePerturbation_zero_eq_smul_endAngularForm (hL : 2 < L)
     (q : Puncture) (w : ℂ) (x : M) (hw : L ≤ q.endSign * (q.endCoord w).re) :
     cappedExchangePerturbation H L 0 w x = update H zero 0 q (q.endCoord w).im x •
       q.endAngularForm w := by
