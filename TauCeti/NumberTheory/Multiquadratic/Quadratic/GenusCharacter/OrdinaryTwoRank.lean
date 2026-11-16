@@ -210,12 +210,12 @@ theorem twoRank_eq_ncard_ramifiedPrimes_sub_one_iff {s : Finset ℤ}
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hd : 0 < d) :
-    TauCeti.ClassGroup.twoRank (𝓞 K) = (ramifiedPrimes K).ncard - 1 ↔ ∀ P ∈ s, 0 < P := by
+    ClassGroup.twoRank (𝓞 K) = (ramifiedPrimes K).ncard - 1 ↔ ∀ P ∈ s, 0 < P := by
   rw [← ker_toClassGroup_le_square_iff hs hprod hmin hgen hsf hd,
     ← MonoidHom.twoRank_eq_twoRank_iff_ker_le_square _
       NarrowClassGroup.toClassGroup_surjective,
     ← narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf,
-    TauCeti.ClassGroup.twoRank_def, NarrowClassGroup.twoRank_def, TauCeti.twoRank_def,
+    ClassGroup.twoRank_def, NarrowClassGroup.twoRank_def, TauCeti.twoRank_def,
     TauCeti.twoRank_def]
 
 /-- **A negative prime discriminant drops the ordinary `2`-rank to `t - 2`.** For a real quadratic
@@ -226,7 +226,7 @@ theorem twoRank_eq_ncard_ramifiedPrimes_sub_two_of_neg {s : Finset ℤ}
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hd : 0 < d) {P : ℤ} (hP : P ∈ s) (hneg : P < 0) :
-    TauCeti.ClassGroup.twoRank (𝓞 K) = (ramifiedPrimes K).ncard - 2 := by
+    ClassGroup.twoRank (𝓞 K) = (ramifiedPrimes K).ncard - 2 := by
   refine (twoRank_eq_ncard_ramifiedPrimes_sub_one_or_sub_two
     (finrank_rat_eq_two hmin hgen)).resolve_left fun h => ?_
   have hpos :=
@@ -242,7 +242,7 @@ negative Pell equation `x² - 34 y² = -1` has no integer solution, so no unit o
 `-1`, although `-1 = (3/5)² - 34 (1/5)²` is a norm from the field. -/
 theorem twoRank_eq_one_of_minpoly_eq_X_sq_sub_thirty_four
     (hmin : minpoly ℤ θ = X ^ 2 - C (34 : ℤ)) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    TauCeti.ClassGroup.twoRank (𝓞 K) = 1 := by
+    ClassGroup.twoRank (𝓞 K) = 1 := by
   have hsf : Squarefree (34 : ℤ) := by
     rw [← Int.squarefree_natAbs]
     simpa using (Nat.squarefree_mul (by decide : Nat.Coprime 2 17)).mpr

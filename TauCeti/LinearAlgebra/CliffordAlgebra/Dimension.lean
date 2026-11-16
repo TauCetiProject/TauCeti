@@ -9,8 +9,11 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 -- Private: `CliffordAlgebra.nonempty_evenOddEquivAddOne` is used only inside the proof that the
--- two halves of the `ℤ/2`-grading are equidimensional.
+-- two halves of the `ℤ/2`-grading are equidimensional, and
+-- `CliffordAlgebra.even_eq_top_of_subsingleton` handles the zero-dimensional case of
+-- `finrank_even`.
 import TauCeti.LinearAlgebra.CliffordAlgebra.ParitySwap
+import TauCeti.LinearAlgebra.CliffordAlgebra.Zero
 -- Private: the ordered exterior-basis formula proves the empty and singleton basis identities.
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 -- Private: `Module.Finite.of_surjective_end` shows that a spinor module is finite-dimensional.
@@ -94,9 +97,9 @@ isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filt
   `CliffordAlgebra.finrank_evenOdd_of_finrank_eq_two_pow` reads that half off any count of the
   whole algebra by a power of two.
 * `CliffordAlgebra.finrank_evenOdd` and `CliffordAlgebra.finrank_even`: over a field, each half of
-  the grading of the Clifford algebra of a nonzero finite-dimensional space, and in particular the
-  even subalgebra, has dimension `2 ^ (finrank K V - 1)`; for the zero form this is the even and
-  the odd half of an exterior algebra.
+  the grading of the Clifford algebra of a nonzero finite-dimensional space has dimension
+  `2 ^ (finrank K V - 1)`, and the even subalgebra has dimension `2 ^ (finrank K V - 1)` for every
+  finite-dimensional space (including `V = 0`, where `2 ^ (0 - 1) = 1`).
 * `CliffordAlgebra.finrank_eq_two_pow_of_bijective_lsmul`: a module on which
   the Clifford algebra of a `2l`-dimensional space acts as its whole endomorphism algebra has
   dimension `2 ^ l`.
@@ -299,14 +302,19 @@ theorem finrank_evenOdd [Module.Finite K V] [Nontrivial V] (i : ZMod 2) :
     finrank K (evenOdd Q i) = 2 ^ (finrank K V - 1) :=
   finrank_evenOdd_of_finrank_eq_two_pow Q Module.finrank_pos (finrank_eq_two_pow Q) i
 
-/-- Over a field, the even Clifford algebra of a nonzero
-finite-dimensional space has dimension `2 ^ (n - 1)`, one power of two below the whole algebra.
-This is the dimension count behind the identification of the even subalgebra with a product of two
-matrix algebras one size down. -/
-theorem finrank_even [Module.Finite K V] [Nontrivial V] :
-    finrank K (_root_.CliffordAlgebra.even Q) = 2 ^ (finrank K V - 1) :=
-  (LinearEquiv.ofEq _ _ (_root_.CliffordAlgebra.even_toSubmodule Q)).finrank_eq.trans
-    (finrank_evenOdd Q 0)
+/-- Over a field, the even Clifford algebra of any finite-dimensional space has dimension
+`2 ^ (n - 1)` for `n = finrank K V` (including `V = 0`, where `even Q = ⊤` has dimension
+`1 = 2 ^ (0 - 1)`). For nonzero `V` this is one power of two below the whole algebra, the dimension
+count behind the identification of the even subalgebra with a product of two matrix algebras one
+size down. -/
+theorem finrank_even [Module.Finite K V] :
+    finrank K (_root_.CliffordAlgebra.even Q) = 2 ^ (finrank K V - 1) := by
+  by_cases hV : Nontrivial V
+  · exact (LinearEquiv.ofEq _ _ (_root_.CliffordAlgebra.even_toSubmodule Q)).finrank_eq.trans
+      (finrank_evenOdd Q 0)
+  · have : Subsingleton V := not_nontrivial_iff_subsingleton.mp hV
+    rw [even_eq_top_of_subsingleton, Subalgebra.topEquiv.toLinearEquiv.finrank_eq,
+      finrank_eq_two_pow, Module.finrank_zero_of_subsingleton]
 
 /-- **Only even-dimensional spaces have spinor modules.** If `CliffordAlgebra Q` is isomorphic to
 the endomorphism algebra of `S`, then `finrank K V` is even: comparing dimensions gives
