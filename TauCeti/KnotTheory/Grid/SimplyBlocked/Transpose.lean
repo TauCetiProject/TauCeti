@@ -90,11 +90,11 @@ theorem simplyBlockedDifferential_transpose_simplyBlockedTransposeEquiv
     (c : GridChainHat R n i) :
     G.transpose.simplyBlockedDifferential R (G.O i) (G.simplyBlockedTransposeEquiv R i c) =
       G.simplyBlockedTransposeEquiv R i (G.simplyBlockedDifferential R i c) := by
-  obtain ⟨c, rfl⟩ := simplyBlockedSpecialization_surjective R i c
-  rw [← simplyBlockedSpecialization_transposeRenameEquiv,
-    ← simplyBlockedSpecialization_unblockedDifferential,
-    unblockedDifferential_transpose_transposeRenameEquiv,
-    simplyBlockedSpecialization_transposeRenameEquiv,
-    simplyBlockedSpecialization_unblockedDifferential]
+  symm
+  apply map_simplyBlockedDifferential_of_simplyBlockedSpecialization
+  · intro c
+    exact (G.simplyBlockedSpecialization_transposeRenameEquiv R i c).symm
+  · intro c
+    exact (G.unblockedDifferential_transpose_transposeRenameEquiv R c).symm
 
 end TauCeti.GridDiagram

@@ -88,13 +88,14 @@ module counting the empty rectangles whose only covered `X`-marking is `X_k` and
 blocked `O`-marking, each weighted by the variables of the other `O`-markings it covers. -/
 noncomputable def simplyBlockedXHomotopy (i k : Fin n) :
     GridChainHat R n i →ₗ[MvPolynomial {c : Fin n // c ≠ i} R] GridChainHat R n i :=
-  simplyBlockedMap R i (G.XHomotopy R k)
+  simplyBlockedMap R i i (RingHom.id _) (G.XHomotopy R k)
 
 /-- The specialized homotopy sends a generator to the specialization of its image under `H_k`. -/
 theorem simplyBlockedXHomotopy_single (i k : Fin n) (x : GridState n) :
     G.simplyBlockedXHomotopy R i k (Finsupp.single x 1) =
-      simplyBlockedSpecialization R i (G.XHomotopy R k (Finsupp.single x 1)) :=
-  simplyBlockedMap_single R i _ x
+      simplyBlockedSpecialization R i (G.XHomotopy R k (Finsupp.single x 1)) := by
+  simpa only [simplyBlockedXHomotopy, map_one, one_smul] using
+    simplyBlockedMap_single R i i (RingHom.id _) (G.XHomotopy R k) x 1
 
 /-- The matrix coefficients of the specialized homotopy are the specialized matrix coefficients of
 `H_k`. -/
@@ -103,7 +104,8 @@ theorem simplyBlockedXHomotopy_single_apply (i k : Fin n) (x y : GridState n) :
     G.simplyBlockedXHomotopy R i k (Finsupp.single x 1) y =
       MvPolynomial.killCompl (σ := {c : Fin n // c ≠ i}) Subtype.val_injective
         (G.XHomotopyCoefficient R k x y) := by
-  rw [simplyBlockedXHomotopy, simplyBlockedMap_single_apply, XHomotopy_single_apply]
+  rw [simplyBlockedXHomotopy, simplyBlockedMap_single_apply, XHomotopy_single_apply,
+    simplyBlockedRingHom_apply]
 
 /-- Coefficientwise specialization at `V_i = 0` intertwines the `X`-marking homotopy with its
 specialization. -/
@@ -111,7 +113,8 @@ specialization. -/
 theorem simplyBlockedSpecialization_XHomotopy (i k : Fin n) (c : GridChainMinus R n) :
     simplyBlockedSpecialization R i (G.XHomotopy R k c) =
       G.simplyBlockedXHomotopy R i k (simplyBlockedSpecialization R i c) :=
-  simplyBlockedSpecialization_apply_linearMap R i _ c
+  (simplyBlockedMap_simplyBlockedSpecialization R i i (RingHom.id _)
+    (G.XHomotopy R k) (fun _ => rfl) c).symm
 
 variable [CharP R 2]
 
