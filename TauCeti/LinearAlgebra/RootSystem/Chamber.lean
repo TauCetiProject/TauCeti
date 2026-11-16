@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.RootSystem.Balanced
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 import Mathlib.LinearAlgebra.Basis.VectorSpace
@@ -64,6 +65,11 @@ Weyl-invariant.
   are negative.
 * `RootPairing.Base.exists_forall_root'_eq`: over a field the simple roots take arbitrary
   prescribed values at some point of the coweight space.
+* `RootPairing.preimage_rootSpanProj_dominantChamber` and
+  `RootPairing.preimage_rootSpanProj_openDominantChamber`: for a balanced root pairing over a
+  preordered field, the closed and open dominant chambers are the preimages under
+  `RootPairing.rootSpanProj` of the dominant chambers in the root-span root system
+  `RootPairing.restrictScalars' R`.
 
 ## Implementation notes
 
@@ -467,5 +473,29 @@ theorem Base.exists_forall_root'_eq (c : ι → R) : ∃ x : N, ∀ i ∈ b.supp
     Module.Basis.span_apply] at h
   rw [← h, ← LinearMap.flip_apply (m := P.root i), ← flip_toLinearMap,
     ← LinearMap.toPerfPair_apply, LinearEquiv.apply_symm_apply]
+
+/-- **Cylinder description of the closed dominant chamber**: for a balanced root pairing over a
+preordered field, `dominantChamber P b` is the preimage under `P.rootSpanProj` (projection along
+the common coroot kernel) of the closed dominant chamber in the root-span root system
+`P.restrictScalars' R`. -/
+theorem preimage_rootSpanProj_dominantChamber (P : RootPairing ι R M N) [P.IsBalanced]
+    [Preorder R] (b : P.Base) :
+    P.rootSpanProj ⁻¹' dominantChamber (P.restrictScalars' R) (b.restrictScalars' R) =
+      dominantChamber P b := by
+  ext x
+  simp only [Set.mem_preimage, mem_dominantChamber, Base.support_restrictScalars']
+  exact forall₂_congr fun i _ ↦ by rw [P.restrictScalars'_coroot'_rootSpanProj]
+
+/-- **Cylinder description of the open dominant chamber**: for a balanced root pairing over a
+preordered field, `openDominantChamber P b` is the preimage under `P.rootSpanProj` (projection
+along the common coroot kernel) of the open dominant chamber in the root-span root system
+`P.restrictScalars' R`. -/
+theorem preimage_rootSpanProj_openDominantChamber (P : RootPairing ι R M N) [P.IsBalanced]
+    [Preorder R] (b : P.Base) :
+    P.rootSpanProj ⁻¹' openDominantChamber (P.restrictScalars' R) (b.restrictScalars' R) =
+      openDominantChamber P b := by
+  ext x
+  simp only [Set.mem_preimage, mem_openDominantChamber, Base.support_restrictScalars']
+  exact forall₂_congr fun i _ ↦ by rw [P.restrictScalars'_coroot'_rootSpanProj]
 
 end RootPairing

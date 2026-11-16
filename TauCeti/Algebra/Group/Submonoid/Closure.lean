@@ -35,8 +35,10 @@ the nonzero elements of a generated submonoid is tested on the nonzero generator
   lies in the additive closure of the family, or its negative does.
 * `AddSubmonoid.forall_pos_iff_of_closure_eq`: an additive map is strictly positive on the nonzero
   elements of a generated submonoid exactly when it is on the nonzero generators.
+* `AddMonoidHom.map_mem_closure_image` and `AddMonoidHom.mem_closure_image_iff`: transporting
+  and reflecting membership in `AddSubmonoid.closure` along an (injective) additive homomorphism.
 
-The last statement is adapted from `Mei/Algebra/Group/AddSubmonoid/Degree.lean` in
+The positivity statement is adapted from `Mei/Algebra/Group/AddSubmonoid/Degree.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0).
 -/
@@ -120,3 +122,22 @@ theorem forall_pos_iff_of_closure_eq {P : AddSubmonoid M} {s : Set M} (hs : clos
   exact (hPS hx).resolve_left hx0
 
 end AddSubmonoid
+
+namespace AddMonoidHom
+
+/-- An additive homomorphism carries membership in `AddSubmonoid.closure s` into
+`AddSubmonoid.closure (f '' s)`. -/
+theorem map_mem_closure_image {M₀ M : Type*} [AddZeroClass M₀] [AddZeroClass M]
+    (f : M₀ →+ M) {s : Set M₀} {x : M₀} (hx : x ∈ AddSubmonoid.closure s) :
+    f x ∈ AddSubmonoid.closure (f '' s) := by
+  rw [← AddMonoidHom.map_mclosure f]
+  exact AddSubmonoid.mem_map_of_mem f hx
+
+/-- An injective additive homomorphism preserves and reflects membership in
+`AddSubmonoid.closure`. -/
+theorem mem_closure_image_iff {M₀ M : Type*} [AddZeroClass M₀] [AddZeroClass M]
+    (f : M₀ →+ M) (hf : Function.Injective f) {s : Set M₀} {x : M₀} :
+    f x ∈ AddSubmonoid.closure (f '' s) ↔ x ∈ AddSubmonoid.closure s := by
+  rw [← AddMonoidHom.map_mclosure f, AddSubmonoid.mem_map_iff_mem hf]
+
+end AddMonoidHom

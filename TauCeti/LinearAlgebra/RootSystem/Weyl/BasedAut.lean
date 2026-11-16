@@ -7,6 +7,8 @@ module
 
 public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
+public import TauCeti.LinearAlgebra.RootSystem.CentralAut
+public import TauCeti.LinearAlgebra.RootSystem.Empty
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Transport
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
@@ -39,7 +41,13 @@ dominant chamber.
 
 For a root system (roots and coroots both spanning), every permutation of the simple roots
 preserving the Cartan matrix extends uniquely to a based automorphism
-(`RootPairing.Base.existsUnique_basedAut_of_cartanMatrix`).
+(`RootPairing.Base.existsUnique_basedAut_of_cartanMatrix`). Without spanning, every base
+stabilizer contains the kernel `(Equiv.indexHom P).ker` of central automorphisms
+(`RootPairing.Base.ker_indexHom_le_basedAut`, whose elements are constructed by
+`RootPairing.Equiv.ofFixRootCoroot` and characterized by `RootPairing.map_weightHom_ker_indexHom`);
+in particular, when `ι` is empty every automorphism is based
+(`RootPairing.Base.basedAut_eq_top_of_isEmpty`), and `b.basedAut` can be infinite even for a finite
+reduced crystallographic integral root datum (`RootPairing.infinite_basedAut_empty_fin_two`).
 
 ## Main definitions
 
@@ -74,6 +82,11 @@ preserving the Cartan matrix extends uniquely to a based automorphism
 * `RootPairing.Base.map_semidirectProductMulEquiv` and
   `RootPairing.Base.map_semidirectProductMulEquiv_symm_left`: the Weyl factor of an automorphism
   `g` is the Weyl-group element carrying `b` to `b.map g`.
+* `RootPairing.Base.ker_indexHom_le_basedAut` and `RootPairing.Equiv.ofFixRootCoroot_mem_basedAut`:
+  every base stabilizer contains the kernel `(Equiv.indexHom P).ker` of central automorphisms.
+* `RootPairing.Base.basedAut_eq_top_of_isEmpty` and `RootPairing.infinite_basedAut_empty_fin_two`:
+  in the root-free case every automorphism is based, and `basedAut` can be infinite for an
+  integral root datum.
 
 ## References
 
@@ -290,3 +303,58 @@ theorem map_semidirectProductMulEquiv_symm_left (b : P.Base) (g : P.Aut) :
   rw [← map_semidirectProductMulEquiv, MulEquiv.apply_symm_apply]
 
 end RootPairing.Base
+
+namespace RootPairing
+
+section CentralAndEmpty
+
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N]
+
+/-- **Every base stabilizer contains the kernel `(Equiv.indexHom P).ker` of central
+automorphisms.** -/
+theorem Base.ker_indexHom_le_basedAut {P : RootPairing ι R M N} (b : P.Base) :
+    (Equiv.indexHom P).ker ≤ b.basedAut := fun g hg ↦ by
+  have h1 : g.indexEquiv = 1 := hg
+  simp [Base.mem_basedAut_iff, h1]
+
+/-- Every compatible central automorphism `Equiv.ofFixRootCoroot` belongs to `b.basedAut`. -/
+theorem Equiv.ofFixRootCoroot_mem_basedAut (P : RootPairing ι R M N) (b : P.Base)
+    (e : M ≃ₗ[R] M) (hroot : ∀ i, e (P.root i) = P.root i)
+    (hcoroot : ∀ i x, P.coroot' i (e x) = P.coroot' i x) :
+    Equiv.ofFixRootCoroot P e hroot hcoroot ∈ b.basedAut :=
+  b.ker_indexHom_le_basedAut (Equiv.ofFixRootCoroot_mem_ker_indexHom P e hroot hcoroot)
+
+/-- **Every automorphism of a root-free pairing is based.** -/
+@[simp] theorem Base.basedAut_eq_top_of_isEmpty [IsEmpty ι] {P : RootPairing ι R M N}
+    (b : P.Base) : b.basedAut = ⊤ :=
+  eq_top_iff.mpr fun g _ ↦ b.ker_indexHom_le_basedAut (Subsingleton.elim (Equiv.indexHom P g) 1)
+
+/-- **The based automorphism group of a finite reduced crystallographic integral root datum can
+be infinite**: on the rank-2 root-free datum `RootPairing.empty ℤ (Fin 2 → ℤ)`, the unipotent
+shear `(x₀, x₁) ↦ (x₀ + x₁, x₁)` generates infinitely many based automorphisms. -/
+theorem infinite_basedAut_empty_fin_two :
+    Infinite (Base.ofIsEmpty (RootPairing.empty ℤ (Fin 2 → ℤ))).basedAut := by
+  let P₀ := RootPairing.empty ℤ (Fin 2 → ℤ)
+  let shear : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) :=
+    { toFun v := ![v 0 + v 1, v 1]
+      invFun v := ![v 0 - v 1, v 1]
+      left_inv v := by ext i; fin_cases i <;> simp
+      right_inv v := by ext i; fin_cases i <;> simp
+      map_add' u v := by ext i; fin_cases i <;> simp [add_add_add_comm]
+      map_smul' r v := by ext i; fin_cases i <;> simp [mul_add] }
+  have hpow (n : ℕ) : (shear ^ n) ![0, 1] = ![(n : ℤ), 1] := by
+    induction n with
+    | zero => simp
+    | succ n ih => rw [pow_succ', mul_apply_eq_comp, ih]; ext i; fin_cases i <;> simp [shear]
+  refine Infinite.of_injective
+    (fun n : ℕ ↦ (⟨P₀.autMulEquivOfIsEmpty.symm (shear ^ n), by simp⟩ :
+      (Base.ofIsEmpty P₀).basedAut)) fun m n hmn ↦ ?_
+  have h0 := congrArg (fun e : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) ↦ e ![0, 1] 0) <|
+    P₀.autMulEquivOfIsEmpty.symm.injective (congrArg Subtype.val hmn)
+  rw [hpow m, hpow n] at h0
+  exact Int.ofNat.inj h0
+
+end CentralAndEmpty
+
+end RootPairing

@@ -18,6 +18,8 @@ exactly when `v ∘ f` is linearly independent on `s`. This is the linear counte
 ## Main results
 
 * `TauCeti.linearIndepOn_image_iff`: linear independence on `f '' s` versus of `v ∘ f` on `s`.
+* `LinearIndepOn.restrict_scalars'`: linear independence on a set restricts along a faithful
+  scalar action.
 -/
 
 public section
@@ -33,3 +35,15 @@ theorem linearIndepOn_image_iff {s : Set ι} {f : ι → ι'} (v : ι' → M) (h
   ⟨fun h ↦ h.comp_of_image hf, fun h ↦ h.image_of_comp f v⟩
 
 end TauCeti
+
+namespace LinearIndepOn
+
+/-- A family linearly independent on `s` over `K` remains linearly independent on `s` over a
+subring `R` acting faithfully on `K`. -/
+theorem restrict_scalars' (R : Type*) {ι K M : Type*} [Semiring R] [Semiring K]
+    [AddCommMonoid M] [SMulWithZero R K] [Module R M] [Module K M]
+    [IsScalarTower R K M] [FaithfulSMul R K] [IsScalarTower R K K]
+    {v : ι → M} {s : Set ι} (hv : LinearIndepOn K v s) : LinearIndepOn R v s :=
+  hv.linearIndependent.restrict_scalars' R
+
+end LinearIndepOn
