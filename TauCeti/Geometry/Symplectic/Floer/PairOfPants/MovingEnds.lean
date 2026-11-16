@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
+import TauCeti.Analysis.Complex.ThricePuncturedSphere.MovingEnds
 import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.Algebra.Monoid
@@ -78,11 +79,6 @@ open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 namespace TauCeti.Floer
 
 variable {M : Type*}
-
-/-- The factor `exp (-2π)` relating the radius of the support of an input end datum to the radius
-of its end disc is less than `1`. -/
-private theorem exp_neg_two_pi_lt_one : Real.exp (-(2 * π)) < 1 :=
-  Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
 
 section InputEnd
 
@@ -267,15 +263,10 @@ private theorem puncturedSpherePerturbation_eq_inputEndPerturbation_of_norm_sub_
     (hsep : Pairwise fun i j => r i + r j ≤ ‖c i - c j‖)
     (hout : ∀ i, ‖c i‖ + r i ≤ 2 * Real.exp (2 * π)) {i : ι} {w : ℂ} (hw : ‖w - c i‖ < r i)
     (x : M) :
-    puncturedSpherePerturbation c a H Hout w x = inputEndPerturbation (c i) (a i) (H i) w x := by
-  refine puncturedSpherePerturbation_eq_inputEndPerturbation_of_forall_ne (fun j hj => ?_) ?_ x
-  · have h₁ := hsep hj
-    have h₂ : ‖c j - c i‖ ≤ ‖w - c i‖ + ‖w - c j‖ := by
-      simpa using norm_sub_le (w - c i) (w - c j)
-    linarith [hr j]
-  · calc ‖w‖ ≤ ‖c i‖ + ‖w - c i‖ := by
-          simpa using norm_add_le (c i) (w - c i)
-      _ ≤ 2 * Real.exp (2 * π) := by linarith [hout i]
+    puncturedSpherePerturbation c a H Hout w x = inputEndPerturbation (c i) (a i) (H i) w x :=
+  puncturedSpherePerturbation_eq_inputEndPerturbation_of_forall_ne
+    (fun j hj => (hr j).trans (le_norm_sub_of_norm_sub_le hsep hj hw.le))
+    (norm_le_of_norm_sub_le hout hw.le) x
 
 /-- **Near an input end the datum is that end's datum.** If the discs `‖w - c j‖ < ‖a j‖ / 2` are
 pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, then on the disc of the input `i` the
@@ -286,7 +277,7 @@ theorem puncturedSpherePerturbation_eq_inputEndPerturbation
     (hw : ‖w - c i‖ < ‖a i‖ / 2) (x : M) :
     puncturedSpherePerturbation c a H Hout w x = inputEndPerturbation (c i) (a i) (H i) w x :=
   puncturedSpherePerturbation_eq_inputEndPerturbation_of_norm_sub_lt
-    (fun j => by nlinarith [norm_nonneg (a j), exp_neg_two_pi_lt_one]) hsep hout hw x
+    (fun j => norm_mul_exp_neg_two_pi_div_two_le (a j)) hsep hout hw x
 
 /-- **The datum on an input end.** If the discs `‖w - c j‖ < ‖a j‖ / 2` are pairwise disjoint and
 lie in the disc `‖w‖ ≤ 2 exp (2π)`, then on the part `s > 0` of the input end `i`, the pullback of
@@ -299,15 +290,8 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_of_pos
     puncturedSpherePerturbation c a H Hout (c i + a i * zero.cylindricalEndLift z) x
         (a i * (deriv zero.cylindricalEndLift z * v)) =
       v.im * (smoothTransition (z.re - 1) * H i z.im x) := by
-  have hlt : ‖c i + a i * zero.cylindricalEndLift z - c i‖ < ‖a i‖ / 2 := by
-    have h := norm_cylindricalEndLift_sub_endCenter zero z
-    rw [endCenter_zero, sub_zero, endScale_zero] at h
-    have h2 : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by norm_num
-    rw [add_sub_cancel_left, norm_mul, h, h2]
-    have : Real.exp (-(2 * π * z.re)) < 1 :=
-      Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
-    nlinarith [norm_pos_iff.2 ha]
-  rw [puncturedSpherePerturbation_eq_inputEndPerturbation hsep hout hlt,
+  rw [puncturedSpherePerturbation_eq_inputEndPerturbation hsep hout
+      (norm_add_mul_cylindricalEndLift_sub_lt (c i) ha hz),
     inputEndPerturbation_cylindricalEndLift_apply hH ha]
 
 /-- **The datum is `H i(t) dt` far out on each input end.** Under the hypotheses of
@@ -332,16 +316,9 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_inf_of_le
     puncturedSpherePerturbation c a H Hout (inf.cylindricalEndLift z) x
         (deriv inf.cylindricalEndLift z * v) =
       v.im * (smoothTransition (-z.re - 1) * Hout z.im x) := by
-  have hnorm : 2 * Real.exp (2 * π) ≤ ‖inf.cylindricalEndLift z‖ := by
-    have h := norm_cylindricalEndLift_sub_endCenter inf z
-    rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
-    rw [h]
-    gcongr
-    nlinarith [Real.pi_pos]
-  rw [puncturedSpherePerturbation_eq_negativePlanePerturbation fun i => ?_,
+  rw [puncturedSpherePerturbation_eq_negativePlanePerturbation
+      fun i => le_norm_cylindricalEndLift_inf_sub (hout i) hz,
     negativePlanePerturbation_cylindricalEndLift_apply hH]
-  have h := norm_sub_norm_le (inf.cylindricalEndLift z) (c i)
-  nlinarith [hout i, norm_nonneg (a i), exp_neg_two_pi_lt_one]
 
 /-- **The datum is `Hout(t) dt` far out on the output end.** Under the hypothesis of
 `puncturedSpherePerturbation_cylindricalEndLift_inf_of_le`, on the part `s ≤ -2` of the output end
@@ -371,15 +348,6 @@ theorem contMDiffAt_inputEndPerturbation {n : ℕ∞} {H : ℝ → M → ℝ} (h
     ContMDiffAt (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
       (fun p : (ℂ × ℂ) × (ℂ × M) => inputEndPerturbation p.1.1 p.1.2 H p.2.1 p.2.2)
       ((c, a), (w, x)) := by
-  have hcoord : ContDiffAt ℝ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
-    have h : ContDiffAt ℂ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
-      refine ContDiffAt.div (x := ((c, a), w)) (f := fun q : (ℂ × ℂ) × ℂ => q.2 - q.1.1)
-        (g := fun q : (ℂ × ℂ) × ℂ => q.1.2) ?_ ?_ ha <;> fun_prop
-    exact h.restrict_scalars ℝ
-  have hcoordM : ContMDiffAt (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
-      (fun p : (ℂ × ℂ) × (ℂ × M) => (p.2.1 - p.1.1) / p.1.2) ((c, a), (w, x)) :=
-    hcoord.contMDiffAt.comp (f := fun p : (ℂ × ℂ) × (ℂ × M) => (p.1, p.2.1)) ((c, a), (w, x))
-      (contMDiffAt_fst.prodMk_space (contMDiffAt_fst.comp _ contMDiffAt_snd))
   have hinv : ContDiffAt ℝ n (fun q : ℂ × ℂ => ContinuousLinearMap.mul ℝ ℂ q.2⁻¹) (c, a) :=
     (ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp (c, a)
       ((contDiffAt_inv ℝ ha).comp (c, a) contDiffAt_snd)
@@ -389,7 +357,7 @@ theorem contMDiffAt_inputEndPerturbation {n : ℕ∞} {H : ℝ → M → ℝ} (h
       ((c, a), (w, x)) hinv.contMDiffAt contMDiffAt_fst
   exact ((contMDiffAt_positivePlanePerturbation hH hHs
     (div_ne_zero (sub_ne_zero.2 hw) ha) x).comp ((c, a), (w, x))
-    (hcoordM.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))).clm_comp hmul
+    ((contMDiffAt_sub_div ha x).prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))).clm_comp hmul
 
 variable {ι : Type*} [Fintype ι] {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
 
