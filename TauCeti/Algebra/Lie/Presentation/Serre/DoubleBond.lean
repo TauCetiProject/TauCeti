@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.Algebra.Lie.Sl2.Weyl.WeightTwo
+import TauCeti.Algebra.Lie.Presentation.Serre.Braid
 import TauCeti.Algebra.Lie.Presentation.Serre.SingleBond
 import Mathlib.Algebra.Ring.Action.ConjAct
 
