@@ -30,19 +30,28 @@ public section
 namespace ContinuousAffineMap
 
 variable {𝕜 V : Type*} [TopologicalSpace 𝕜] [Ring 𝕜] [PartialOrder 𝕜]
-  [IsOrderedAddMonoid 𝕜] [IsTopologicalAddGroup 𝕜] [AddCommGroup V] [Module 𝕜 V]
-  [TopologicalSpace V] [IsTopologicalAddGroup V] {P : Set V}
+  [IsOrderedAddMonoid 𝕜] [ContinuousAdd 𝕜] [AddCommGroup V] [Module 𝕜 V]
+  [TopologicalSpace V] {P : Set V}
 
 /-- A supporting level of a continuous affine functional is exposed in any set on which the
 functional is bounded above by that level. -/
 theorem isExposed_setOf_eq_of_le (g : V →ᴬ[𝕜] 𝕜) {c : 𝕜} (hg : ∀ x ∈ P, g x ≤ c) :
     IsExposed 𝕜 P {x ∈ P | g x = c} := by
   rintro ⟨p, hp, hpc⟩
-  have hval (x : V) : g x = g.contLinear x + g 0 := by
-    simpa only [vadd_eq_add, add_zero] using g.map_vadd (0 : V) x
-  have hcmp (a b : V) : g.contLinear a ≤ g.contLinear b ↔ g a ≤ g b := by
+  have hlin : (g.toAffineMap.linear : V → 𝕜) = fun x => g x + -g 0 := by
+    ext x
+    simpa only [ContinuousAffineMap.coe_toAffineMap, Pi.sub_apply, sub_eq_add_neg] using
+      congrFun g.toAffineMap.decomp' x
+  let l : StrongDual 𝕜 V := ⟨g.toAffineMap.linear, by
+    change Continuous (g.toAffineMap.linear : V → 𝕜)
+    rw [hlin]
+    exact g.continuous.add continuous_const⟩
+  have hval (x : V) : g x = l x + g 0 := by
+    change g x = g.toAffineMap.linear x + g 0
+    rw [congrFun hlin, add_assoc, neg_add_cancel, add_zero]
+  have hcmp (a b : V) : l a ≤ l b ↔ g a ≤ g b := by
     rw [hval a, hval b, add_le_add_iff_right]
-  refine ⟨g.contLinear, Set.ext fun x => ?_⟩
+  refine ⟨l, Set.ext fun x => ?_⟩
   constructor
   · rintro ⟨hx, hxc⟩
     exact ⟨hx, fun y hy => (hcmp y x).mpr ((hg y hy).trans_eq hxc.symm)⟩

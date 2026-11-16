@@ -109,10 +109,8 @@ theorem single_active_of_exterior_witness [Finite ι] (g : ι → (V →ᵃ[ℝ]
     exact (affineSpan_nonempty ℝ).mp ⟨x, hxA⟩
   let A := affineSpan ℝ P
   have hconv : Convex ℝ P := by
-    have hc := A.convex.inter (convex_iInter fun j => (convex_Iic (0 : ℝ)).affine_preimage (g j))
-    convert hc using 1
-    ext p
-    simpa [A] using Set.ext_iff.mp hf p
+    rw [hf, Set.ofPred_and, SetLike.setOfPred_mem_eq, Set.ofPred_forall]
+    exact A.convex.inter (convex_iInter fun j => (convex_Iic (0 : ℝ)).affine_preimage (g j))
   obtain ⟨q, hq, hqzero⟩ := hconv.exists_mem_zero_iff_forall hne g
     (fun j y hy => (hf ▸ hy).2 j)
   have hqstrict (j : ι) : g j q < 0 := by
@@ -139,7 +137,7 @@ theorem single_active_of_exterior_witness [Finite ι] (g : ι → (V →ᵃ[ℝ]
       fun h => ⟨((Set.ext_iff.mp hf y).mp h.1).1, ((Set.ext_iff.mp hf y).mp h.1).2, h.2⟩⟩
   rw [hset, direction_affineSpan] at hspan
   refine ⟨⟨p, hpP, hpj, hpstrict⟩, hspan, fun h => ?_⟩
-  have hv : (g j).linear (p -ᵥ q) = 0 := h (vsub_mem_vectorSpan ℝ hpP hq)
+  have hv := LinearMap.mem_ker.mp (h (vsub_mem_vectorSpan ℝ hpP hq))
   rw [AffineMap.linear_apply_vsub] at hv
   have hgq : g j q = 0 := by simpa [hpj] using hv
   exact (hqstrict j).ne hgq
@@ -160,12 +158,10 @@ theorem exists_irredundant_affine_subfamily [Finite ι] (f : ι → (V →ᵃ[�
 
 variable [TopologicalSpace V]
 
-variable [IsTopologicalAddGroup V]
-
-/-- Thin a finite continuous relative presentation, keeping the same selected rows and their
-exposed faces, witnesses active only among the selected rows, face-direction kernels
-and non-containment of the parent direction in each row kernel.
-No finite-dimensionality assumption is needed. -/
+/-- A finite subfamily `S` of `f` still presents `P` within its affine span. Each `j ∈ S`
+has an exposed active face and a witness `p ∈ P` where `f j p = 0` and every other selected row
+`l ∈ S` is strictly negative. Its face direction is `vectorSpan ℝ P ⊓ (f j).toAffineMap.linear.ker`,
+and the parent direction is not contained in `(f j).toAffineMap.linear.ker`. -/
 theorem exists_irredundant_subfamily [Finite ι] (f : ι → (V →ᴬ[ℝ] ℝ))
     (hf : P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, f j x ≤ 0}) :
     ∃ S : Finset ι, P = {x | x ∈ affineSpan ℝ P ∧ ∀ j ∈ S, f j x ≤ 0} ∧
@@ -190,9 +186,7 @@ theorem IsConvexPolyhedron.exists_irredundant_presentation (hP : IsConvexPolyhed
         vectorSpan ℝ {x ∈ P | g j x = 0} = vectorSpan ℝ P ⊓ (g j).toAffineMap.linear.ker ∧
         ¬ vectorSpan ℝ P ≤ (g j).toAffineMap.linear.ker := by
   obtain ⟨_, f, hf⟩ := isConvexPolyhedron_iff.mp hP
-  have hrel : P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, f j x ≤ 0} := by
-    rw [Set.ofPred_and, SetLike.setOfPred_mem_eq, ← hf]
-    exact (Set.inter_eq_right.mpr (subset_affineSpan ℝ P)).symm
+  have hrel := eq_setOf_mem_affineSpan_and hf
   obtain ⟨S, hS, hrows⟩ := exists_irredundant_subfamily f hrel
   exact ⟨S, inferInstance, fun j => f j, by simpa only [Subtype.forall] using hS, hrows⟩
 
@@ -200,54 +194,21 @@ section FiniteDimension
 
 variable [FiniteDimensional ℝ (vectorSpan ℝ P)]
 
-/-- Select a subfamily `S` which still presents `P`, retaining the input functionals and labels.
-Each retained row is active at a point of `P` where every other retained row in `S` is strict.
-Its active face is exposed and has relative codimension one. -/
-theorem exists_facet_subfamily [Finite ι] (f : ι → (V →ᴬ[ℝ] ℝ))
-    (hf : P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, f j x ≤ 0}) :
-    ∃ S : Finset ι, P = {x | x ∈ affineSpan ℝ P ∧ ∀ j ∈ S, f j x ≤ 0} ∧
-      ∀ j : S, IsExposed ℝ P {x ∈ P | f j x = 0} ∧
-        (∃ p ∈ P, f j p = 0 ∧ ∀ l : S, l ≠ j → f l p < 0) ∧
-        vectorSpan ℝ {x ∈ P | f j x = 0} = vectorSpan ℝ P ⊓ (f j).toAffineMap.linear.ker ∧
-        ¬ vectorSpan ℝ P ≤ (f j).toAffineMap.linear.ker ∧
-        finrank ℝ (vectorSpan ℝ {x ∈ P | f j x = 0}) + 1 = finrank ℝ (vectorSpan ℝ P) := by
-  obtain ⟨S, hS, hrows⟩ := exists_irredundant_subfamily f hf
-  refine ⟨S, hS, fun j => ?_⟩
-  obtain ⟨he, hw, hk, hn⟩ := hrows j
-  refine ⟨he, hw, hk, hn, ?_⟩
-  rw [hk, inf_comm]
-  exact Module.Dual.finrank_ker_inf_add_one hn
-
 namespace IsConvexPolyhedron
-
-/-- A polyhedron has a finite presentation `g` inside its affine span by exposed facets.
-For each row, a point of the polyhedron makes that row active while satisfying every other
-inequality of `g` strictly. -/
-theorem exists_facet_presentation (hP : IsConvexPolyhedron P) :
-    ∃ (ι : Type) (_ : Fintype ι) (g : ι → (V →ᴬ[ℝ] ℝ)),
-      P = {x | x ∈ affineSpan ℝ P ∧ ∀ j, g j x ≤ 0} ∧
-      ∀ j, IsExposed ℝ P {x ∈ P | g j x = 0} ∧
-        (∃ p ∈ P, g j p = 0 ∧ ∀ l ≠ j, g l p < 0) ∧
-        vectorSpan ℝ {x ∈ P | g j x = 0} = vectorSpan ℝ P ⊓ (g j).toAffineMap.linear.ker ∧
-        ¬ vectorSpan ℝ P ≤ (g j).toAffineMap.linear.ker ∧
-        finrank ℝ (vectorSpan ℝ {x ∈ P | g j x = 0}) + 1 = finrank ℝ (vectorSpan ℝ P) := by
-  obtain ⟨ι, hι, g, hg, hrows⟩ := hP.exists_irredundant_presentation
-  refine ⟨ι, hι, g, hg, fun j => ?_⟩
-  obtain ⟨he, hw, hk, hn⟩ := hrows j
-  refine ⟨he, hw, hk, hn, ?_⟩
-  rw [hk, inf_comm]
-  exact Module.Dual.finrank_ker_inf_add_one hn
 
 /-- Every relative frontier point lies on an exposed face of relative codimension one. -/
 theorem exists_facet_of_mem_intrinsicFrontier (hP : IsConvexPolyhedron P) {x : V}
     (hx : x ∈ intrinsicFrontier ℝ P) : ∃ F, IsExposed ℝ P F ∧ x ∈ F ∧
       finrank ℝ (vectorSpan ℝ F) + 1 = finrank ℝ (vectorSpan ℝ P) := by
-  obtain ⟨_, _, g, hpres, hrows⟩ := hP.exists_facet_presentation
+  obtain ⟨_, _, g, hpres, hrows⟩ := hP.exists_irredundant_presentation
   obtain ⟨j, _, hxp, hj⟩ :=
     Set.mem_iUnion₂.mp (intrinsicFrontier_subset_iUnion_active g hpres hx)
-  exact ⟨_, (hrows j).1, ⟨hxp, hj⟩, (hrows j).2.2.2.2⟩
+  obtain ⟨he, _, hk, hn⟩ := hrows j
+  refine ⟨_, he, ⟨hxp, hj⟩, ?_⟩
+  rw [hk, inf_comm]
+  exact Module.Dual.finrank_ker_inf_add_one hn
 
-variable [ContinuousSMul ℝ V]
+variable [ContinuousAdd V] [ContinuousSMul ℝ V]
 
 /-- The relative boundary consists precisely of the points on exposed facets. -/
 theorem mem_intrinsicFrontier_iff_exists_facet (hP : IsConvexPolyhedron P) {x : V} :

@@ -376,22 +376,34 @@ section TopologicalRealModule
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [ContinuousAdd E]
   [ContinuousSMul ℝ E] {C : Set E} {c : E}
 
+/-- Any point of the carrier can be extended past an intrinsic-interior point along an
+open segment, without convexity or finite dimension. -/
+theorem exists_mem_openSegment_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior ℝ C)
+    {y : E} (hy : y ∈ C) : ∃ z ∈ C, c ∈ openSegment ℝ y z := by
+  have hv : c - y ∈ (affineSpan ℝ C).direction := by
+    rw [direction_affineSpan]
+    exact vsub_mem_vectorSpan ℝ (intrinsicInterior_subset hc) hy
+  have he := eventually_add_smul_mem_of_mem_intrinsicInterior hc hv
+  obtain ⟨ε, hε, hεpos⟩ := ((he.filter_mono nhdsWithin_le_nhds).and
+    (self_mem_nhdsWithin (s := Ioi 0))).exists
+  replace hεpos : 0 < ε := mem_Ioi.1 hεpos
+  refine ⟨_, hε, ε / (1 + ε), 1 / (1 + ε), by positivity, by positivity,
+    by field_simp; ring, ?_⟩
+  match_scalars
+  · field_simp
+    ring
+  · field_simp
+
 /-- An affine function which is nonnegative on a set `C` and vanishes at an intrinsic interior
 point `c` of `C` vanishes on all of `C`. -/
 theorem eq_zero_of_nonneg_of_mem_intrinsicInterior {g : E →ᵃ[ℝ] ℝ} (hg : ∀ y ∈ C, 0 ≤ g y)
     (hc : c ∈ intrinsicInterior ℝ C) (hgc : g c = 0) {y : E} (hy : y ∈ C) : g y = 0 := by
-  -- Push `c` slightly away from `y` inside `C`; there `g` takes the value `-ε * g y`.
-  have hv : c - y ∈ (affineSpan ℝ C).direction := by
-    rw [direction_affineSpan]
-    exact vsub_mem_vectorSpan ℝ (intrinsicInterior_subset hc) hy
-  obtain ⟨ε, hε, hεpos⟩ := (((eventually_add_smul_mem_of_mem_intrinsicInterior hc hv).filter_mono
-    nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Ioi 0))).exists
-  have hgε : g (c + ε • (c - y)) = g c + ε * (g c - g y) := by
-    rw [add_comm c, ← vadd_eq_add, AffineMap.map_vadd, map_smul, ← vsub_eq_sub,
-      AffineMap.linear_apply_vsub, vadd_eq_add, smul_eq_mul, vsub_eq_sub, add_comm]
-  have h := hg _ hε
-  rw [hgε, hgc] at h
-  nlinarith [hg y hy, mem_Ioi.1 hεpos]
+  obtain ⟨z, hz, a, b, ha, hb, hab, he⟩ :=
+    exists_mem_openSegment_of_mem_intrinsicInterior hc hy
+  have heq := congrArg g he
+  rw [Convex.combo_affine_apply hab, hgc] at heq
+  simp only [smul_eq_mul] at heq
+  nlinarith [hg y hy, hg z hz]
 
 end TopologicalRealModule
 
@@ -496,20 +508,9 @@ theorem intrinsicInterior_mono_of_inter_intrinsicInterior_nonempty {s u : Set E}
     intrinsicInterior ℝ u ⊆ intrinsicInterior ℝ s := by
   intro y hy
   obtain ⟨z, hzu, hzs⟩ := h
-  -- Push `y` slightly away from `z` inside `u`; then `y` lies strictly between `z` and that point.
-  have hv : y - z ∈ (affineSpan ℝ u).direction := by
-    rw [direction_affineSpan]
-    exact vsub_mem_vectorSpan ℝ (intrinsicInterior_subset hy) hzu
-  obtain ⟨ε, hε, hεpos⟩ := (((eventually_add_smul_mem_of_mem_intrinsicInterior hy hv).filter_mono
-    nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Ioi 0))).exists
-  replace hεpos : 0 < ε := mem_Ioi.1 hεpos
-  refine hs.openSegment_intrinsicInterior_intrinsicClosure_subset_intrinsicInterior hzs
-    (subset_intrinsicClosure (hus hε)) ⟨ε / (1 + ε), 1 / (1 + ε), by positivity, by positivity,
-      by field_simp; ring, ?_⟩
-  match_scalars
-  · field_simp
-    ring
-  · field_simp
+  obtain ⟨w, hw, hseg⟩ := exists_mem_openSegment_of_mem_intrinsicInterior hy hzu
+  exact hs.openSegment_intrinsicInterior_intrinsicClosure_subset_intrinsicInterior hzs
+    (subset_intrinsicClosure (hus hw)) hseg
 
 /-- **The intrinsic interior of an intersection** (Rockafellar, Theorem 6.5). If the intrinsic
 interiors of two convex sets meet, the intrinsic interior of their intersection is the
