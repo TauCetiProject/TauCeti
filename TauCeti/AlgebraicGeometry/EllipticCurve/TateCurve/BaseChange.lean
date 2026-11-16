@@ -44,8 +44,8 @@ target is the quotient by `f q`, it lands in the quotient by the image of `q ∈
   compatible with base change.
 * `TauCeti.tateQuotientCoordinates_tateParameterMap`: the descended coordinate pair commutes with
   continuous `K`-algebra maps.
-* `TauCeti.baseChange_tateCurveAt`: the base change of `E_q` to a normed `K`-algebra `L` is the
-  Tate curve of the image of `q`.
+* `TauCeti.baseChange_tateCurveAt`: the base change of `E_q` to a complete ultrametric normed
+  `K`-algebra `L` is the Tate curve of the image of `q`.
 
 ## References
 

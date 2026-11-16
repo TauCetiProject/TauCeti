@@ -54,7 +54,13 @@ along the domain of the flow
 (`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_mem`) and everywhere for a
 complete suspension (`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_eq`). A nonzero
 `g` is the shape of the rate in Gray's argument for a family of contact forms, where the
-time-dependent field is chosen to make the rate a multiple of the contact form.
+time-dependent field is chosen to make the rate a multiple of the contact form. The invariance
+also holds pointwise: it only needs the rate to vanish along the trajectory of the point, where
+the flow is defined
+(`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc_of_mem`) or
+for a complete suspension
+(`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc`). This is
+how Moser's argument runs with a field cut off away from a region of interest.
 
 ## Main results
 
@@ -75,6 +81,11 @@ time-dependent field is chosen to make the rate a multiple of the contact form.
   then `(φ_{s,t}^* α_t)ₓ = (α_s)ₓ` where the flow is defined.
 * `TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_eq`: for a complete suspension, if the
   rate vanishes, then `φ_{s,t}^* α_t = α_s`.
+* `TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc_of_mem`: if
+  the rate vanishes along the trajectory of `x` between times `s` and `t`, then
+  `(φ_{s,t}^* α_t)ₓ = (α_s)ₓ` where the flow is defined.
+* `TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc`: the same
+  for a complete suspension.
 
 ## References
 
@@ -433,6 +444,43 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smu
     (ordConnected_setOf_mem_timeDependentFlowDomain s x) hcont
     (fun u hu ↦ (hP u hu).hasDerivWithinAt) (mem_timeDependentFlowDomain_self hX₁ s x) h
 
+/-- **Moser's principle along a trajectory**, along the domain of the flow. Let `X` be a jointly
+`C²` time-dependent vector field with time-dependent flow `φ`, defined at `x` from time `s` to time
+`t`, and let `α` be a form on `ℝ × M` with slices `α_u = ι_u^* α`, which is `C¹` along the
+trajectory of `x`. If the rate `ι_u^* L_{∂_t} α + L_{X_u} α_u` vanishes at the point `φ_{s,u} x`
+for every time `u` between `s` and `t`, then `(φ_{s,t}^* α_t)ₓ = (α_s)ₓ`. Nothing is assumed away
+from the trajectory of `x`. -/
+theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc_of_mem
+    {s t : ℝ} {x : M} (h : ((s, t), x) ∈ timeDependentFlowDomain X)
+    (hα : ∀ u ∈ uIcc s t, ContMDiffAt (𝓘(ℝ, ℝ).prod I)
+      ((𝓘(ℝ, ℝ).prod I).prod 𝓘(ℝ, (ℝ × E) [⋀^Fin k]→L[ℝ] F)) 1
+      (fun p ↦ TotalSpace.mk' ((ℝ × E) [⋀^Fin k]→L[ℝ] F) p (α p))
+      (u, timeDependentFlowOf X s u x))
+    (hL : ∀ u ∈ uIcc s t, (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u)
+          (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α) +
+        mlieDerivForm (X u) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) α))
+          (timeDependentFlowOf X s u x) = 0) :
+    mpullback I I (timeDependentFlowOf X s t) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α) x =
+      mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
+  -- The flow from `(s, x)` is defined at all times between `s` and `t`.
+  have hJ : uIcc s t ⊆ {u | ((s, u), x) ∈ timeDependentFlowDomain X} :=
+    (ordConnected_setOf_mem_timeDependentFlowDomain s x).uIcc_subset
+      (mem_timeDependentFlowDomain_self_of_mem h) h
+  -- The pullbacks `(φ_{s,u}^* α_u)ₓ` have zero velocity between `s` and `t`.
+  have hd (u : ℝ) (hu : u ∈ uIcc s t) : HasDerivWithinAt (F := E [⋀^Fin k]→L[ℝ] F)
+      (fun u ↦ mpullback I I (timeDependentFlowOf X s u)
+        (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) α) x) 0 (uIcc s t) u := by
+    refine ((hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk hX (hJ hu)
+      (hα u hu)).congr_deriv ?_).hasDerivWithinAt
+    rw [mpullback_apply_eq_compContinuousLinearMapCLM, hL u hu, _root_.map_zero]
+    -- The two zeros are those of the fibre `T_x M` and of the model space `E` of forms.
+    rfl
+  -- So they are constant there.
+  have hconst := (convex_uIcc s t).norm_image_sub_le_of_norm_hasDerivWithin_le hd
+    (fun _ _ ↦ norm_zero.le) left_mem_uIcc right_mem_uIcc
+  have hid : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self X s)
+  rw [sub_eq_zero.1 (norm_le_zero_iff.1 (hconst.trans_eq (zero_mul _))), hid, mpullback_id]
+
 /-- **Moser's principle for families of forms**, invariance case along the domain of the flow.
 Let `X` be a jointly `C²` time-dependent vector field with time-dependent flow `φ`, defined at `x`
 from time `s` to time `t`, and let `α` be a `C¹` form on `ℝ × M` with slices `α_t = ι_t^* α`. If
@@ -445,10 +493,9 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_mem
         mlieDerivForm (X t) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α) = 0)
     {s t : ℝ} {x : M} (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
     mpullback I I (timeDependentFlowOf X s t) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α) x =
-      mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
-  have h := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul_of_mem hX
-    (g := 0) continuous_const hα (fun t ↦ by rw [hL t]; funext y; simp) h
-  simpa using h
+      mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x :=
+  mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc_of_mem hX h
+    (fun _ _ ↦ hα.contMDiffAt) fun u _ ↦ by rw [hL u, Pi.zero_apply]
 
 variable (hc : IsCompleteVectorField (timeDependentSuspensionField X))
 include hc
@@ -489,5 +536,25 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_eq
   funext x
   exact mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_mem hX hα hL
     ((timeDependentFlowDomain_eq_univ hc).symm ▸ mem_univ _)
+
+/-- **Moser's principle along a trajectory**, for a complete suspension. Let `X` be a jointly
+`C²` time-dependent vector field with complete suspension and time-dependent flow `φ`, and let `α`
+be a form on `ℝ × M` with slices `α_u = ι_u^* α`, which is `C¹` along the trajectory of `x`. If the
+rate `ι_u^* L_{∂_t} α + L_{X_u} α_u` vanishes at the point `φ_{s,u} x` for every time `u` between
+`s` and `t`, then `(φ_{s,t}^* α_t)ₓ = (α_s)ₓ`. -/
+theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc
+    {s t : ℝ} {x : M}
+    (hα : ∀ u ∈ uIcc s t, ContMDiffAt (𝓘(ℝ, ℝ).prod I)
+      ((𝓘(ℝ, ℝ).prod I).prod 𝓘(ℝ, (ℝ × E) [⋀^Fin k]→L[ℝ] F)) 1
+      (fun p ↦ TotalSpace.mk' ((ℝ × E) [⋀^Fin k]→L[ℝ] F) p (α p))
+      (u, timeDependentFlowOf X s u x))
+    (hL : ∀ u ∈ uIcc s t, (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u)
+          (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α) +
+        mlieDerivForm (X u) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) α))
+          (timeDependentFlowOf X s u x) = 0) :
+    mpullback I I (timeDependentFlowOf X s t) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α) x =
+      mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x :=
+  mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc_of_mem hX
+    ((timeDependentFlowDomain_eq_univ hc).symm ▸ mem_univ _) hα hL
 
 end TauCeti

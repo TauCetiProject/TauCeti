@@ -98,8 +98,10 @@ private theorem exists_criticalPoint_continuation_self
       manifoldMorseIndex_symm_eq_morseIndex_of_mem_maximalAtlas he ht hq
     rw [hchart, manifoldMorseIndex_def]
     exact hi
-  have huniq' := eventually_mfderiv_eq_zero_iff_extChartAt_symm (hG.of_le (by norm_num)) htarget
-    huniq
+  have huniq' := eventually_mfderiv_eq_zero_iff_extChartAt_symm
+    ((hG.eventually (by norm_num)).mono fun q hq ↦
+      (hq.comp q.2 (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt (by norm_num))
+    htarget huniq
   refine ⟨ψ, hψp, hψ, hnd', hindex', huniq', hval, ?_⟩
   simpa only [G, hηp, φ.left_inv hx] using hderiv
 
