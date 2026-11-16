@@ -143,28 +143,18 @@ private noncomputable def normalizerCharacterEquiv (g : normalizerPoints π hπ)
   toFun := MonoidAlgebra.mapDomainBialgHomPreimage R (normalizerCoordinateMap π hπ g)
   invFun := MonoidAlgebra.mapDomainBialgHomPreimage R (normalizerCoordinateMap π hπ g⁻¹)
   left_inv x := by
-    let : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
-    apply MonoidAlgebra.single_left_injective (R := R) (M := X) one_ne_zero
-    dsimp only
-    rw [← MonoidAlgebra.mapDomainBialgHomPreimage_single,
-      ← MonoidAlgebra.mapDomainBialgHomPreimage_single]
-    rw [← BialgHom.comp_apply, ← normalizerCoordinateMap_mul]
-    simp [normalizerCoordinateMap_one]
+    simp [← MonoidHom.comp_apply, ← MonoidAlgebra.mapDomainBialgHomPreimage_comp,
+      ← normalizerCoordinateMap_mul, normalizerCoordinateMap_one]
   right_inv x := by
-    let : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
-    apply MonoidAlgebra.single_left_injective (R := R) (M := X) one_ne_zero
-    dsimp only
-    rw [← MonoidAlgebra.mapDomainBialgHomPreimage_single,
-      ← MonoidAlgebra.mapDomainBialgHomPreimage_single]
-    rw [← BialgHom.comp_apply, ← normalizerCoordinateMap_mul]
-    simp [normalizerCoordinateMap_one]
+    simp [← MonoidHom.comp_apply, ← MonoidAlgebra.mapDomainBialgHomPreimage_comp,
+      ← normalizerCoordinateMap_mul, normalizerCoordinateMap_one]
   map_mul' := (MonoidAlgebra.mapDomainBialgHomPreimage R
     (normalizerCoordinateMap π hπ g)).map_mul
 
 private theorem normalizerCharacterEquiv_single (g : normalizerPoints π hπ) (x : X) :
     normalizerCoordinateMap π hπ g (MonoidAlgebra.single x 1) =
       MonoidAlgebra.single (normalizerCharacterEquiv π hπ g x) 1 :=
-  MonoidAlgebra.mapDomainBialgHomPreimage_single R _ x
+  (MonoidAlgebra.single_mapDomainBialgHomPreimage R _ x 1).symm
 
 private theorem normalizerCoordinateMap_eq_domCongr (g : normalizerPoints π hπ) :
     (normalizerCoordinateMap π hπ g).toAlgHom =
