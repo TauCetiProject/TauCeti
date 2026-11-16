@@ -121,7 +121,7 @@ theorem tendsto_spectralMeasure_sampleCovariance_standardize_iff
       (isHermitian_sampleCovariance _)) l (𝓝 μ) ↔
     Tendsto (fun i ↦ (sampleCovariance (X i)).spectralMeasure
       (isHermitian_sampleCovariance _)) l (𝓝 μ) := by
-  simp_rw [sampleCovariance_smul]
+  simp_rw [sampleCovariance_real_smul]
   exact (tendsto_spectralMeasure_smul_iff _ (fun _ ↦ isHermitian_sampleCovariance _) hc).trans
     (tendsto_spectralMeasure_sampleCovariance_sub_const_iff X u hdim)
 

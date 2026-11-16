@@ -66,23 +66,7 @@ theorem tendsto_spectralMeasure_smul_iff (A : (i : ι) → Matrix (m i) (m i) �
     {μ : ProbabilityMeasure ℝ} :
     Tendsto (fun i ↦ (c i • A i).spectralMeasure ((hA i).smul (IsSelfAdjoint.all _))) l (𝓝 μ) ↔
       Tendsto (fun i ↦ (A i).spectralMeasure (hA i)) l (𝓝 μ) := by
-  have hcont := ProbabilityMeasure.continuous_map_of_continuous_uncurry
-    (f := fun c x : ℝ ↦ c * x) (by fun_prop)
-  have hid : μ.map (fun x ↦ x) = μ := by
-    apply ProbabilityMeasure.toMeasure_injective
-    simp [ProbabilityMeasure.toMeasure_map]
-  constructor
-  · intro h
-    have hi : Tendsto (fun i ↦ (c i)⁻¹) l (𝓝 1) := by
-      simpa using hc.inv₀ one_ne_zero
-    have ht := (hcont.tendsto (1, μ)).comp (hi.prodMk_nhds h)
-    have hne : ∀ᶠ i in l, c i ≠ 0 := hc.eventually_ne one_ne_zero
-    simp only [Function.comp_def, one_mul, hid] at ht
-    exact ht.congr' (hne.mono fun i hi ↦ by
-      rw [map_spectralMeasure_mul]
-      simp [smul_smul, hi])
-  · intro h
-    have ht := (hcont.tendsto (1, μ)).comp (hc.prodMk_nhds h)
-    simpa only [Function.comp_def, one_mul, hid, map_spectralMeasure_mul] using ht
+  simpa only [map_spectralMeasure_mul] using
+    ProbabilityMeasure.tendsto_map_mul_iff (fun i ↦ (A i).spectralMeasure (hA i)) hc
 
 end Matrix

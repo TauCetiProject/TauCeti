@@ -132,32 +132,32 @@ theorem posSemidef_sampleCovariance [Finite p] (X : Matrix p n 𝕜) :
   rw [sampleCovariance_eq_sampleSecondMoment]
   exact TauCeti.posSemidef_sampleSecondMoment _
 
+/-- Scaling the data scales its covariance by the scalar times its conjugate. -/
+@[simp]
+theorem sampleCovariance_smul (X : Matrix p n 𝕜) (c : 𝕜) :
+    sampleCovariance (c • X) = (c * star c) • sampleCovariance X := by
+  simp only [sampleCovariance_def, conjTranspose_smul, smul_mul, Matrix.mul_smul]
+  rw [smul_smul (star c) c, mul_comm (star c) c,
+    smul_comm (1 / (Fintype.card n : ℝ)) (c * star c)]
+
 /-- Multiplying all data by a real scalar multiplies the sample covariance by its square.
 This includes zero scalars and empty samples. -/
-theorem sampleCovariance_smul (X : Matrix p n 𝕜) (c : ℝ) :
+@[simp]
+theorem sampleCovariance_real_smul (X : Matrix p n 𝕜) (c : ℝ) :
     sampleCovariance (c • X) = c ^ 2 • sampleCovariance X := by
-  simp [sampleCovariance_def, conjTranspose_smul, smul_smul,
-    sq, mul_comm]
+  rw [RCLike.real_smul_eq_coe_smul (K := 𝕜), sampleCovariance_smul]
+  simp [sq, RCLike.real_smul_eq_coe_smul (K := 𝕜)]
 
 /-- Subtracting the empirical column mean removes its outer product from the uncentered
 sample covariance. The identity also holds for an empty sample, whose mean is zero. -/
+@[simp]
 theorem sampleCovariance_sub_colMean (X : Matrix p n 𝕜) :
     sampleCovariance (of fun i j ↦ X i j - (TauCeti.finiteMean 𝕜 X.col) i) =
       sampleCovariance X - vecMulVec (TauCeti.finiteMean 𝕜 X.col)
         (star (TauCeti.finiteMean 𝕜 X.col)) := by
-  classical
-  rcases isEmpty_or_nonempty n with hn | hn
-  · simp [sampleCovariance_def]
-  have hN : (Fintype.card n : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-  -- Collect the entrywise sums before cancelling the nonzero sample size.
   ext i j
-  simp only [Matrix.sub_apply, sampleCovariance_apply, of_apply, vecMulVec_apply,
-    Pi.star_apply, TauCeti.finiteMean_eq_inv_smul_sum, Pi.smul_apply, Finset.sum_apply,
-    col_apply, smul_eq_mul, star_mul, star_inv₀, star_natCast, star_sum, star_sub,
-    RCLike.real_smul_eq_coe_mul, one_div, RCLike.ofReal_inv, RCLike.ofReal_natCast]
-  simp only [sub_mul, mul_sub, Finset.sum_sub_distrib, ← Finset.sum_mul,
-    ← Finset.mul_sum, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-  field_simp
-  ring
+  simpa [sampleCovariance_apply, TauCeti.finiteMean_eq_inv_smul_sum,
+    RCLike.real_smul_eq_coe_mul, star_sum, vecMulVec_apply, mul_assoc, mul_left_comm] using
+    TauCeti.finiteMean_sub_mul_sub (fun k ↦ X i k) (fun k ↦ star (X j k))
 
 end Matrix
