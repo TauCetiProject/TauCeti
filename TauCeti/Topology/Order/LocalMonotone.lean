@@ -34,7 +34,8 @@ exactly when `h` and `τ` go in the same direction.
   is strictly monotone; similarly with one or both strictly antitone.
 * `TauCeti.strictMonoAt_or_strictAntiAt`: a function continuous and injective on a neighbourhood
   of `a` is strictly monotone or strictly antitone at `a`.
-* `TauCeti.not_strictMonoAt_and_strictAntiAt`: no function is both at a point.
+* `TauCeti.not_strictMonoAt_and_strictAntiAt`: no function is both at a point that is not
+  isolated.
 * `TauCeti.strictMonoAt_iff_of_eventuallyEq_comp`: the direction of a composite.
 -/
 
