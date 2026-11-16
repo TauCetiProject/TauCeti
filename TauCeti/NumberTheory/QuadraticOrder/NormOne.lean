@@ -239,15 +239,13 @@ private theorem negFourUnitary_surjective : Function.Surjective negFourUnitary :
     apply Subtype.ext
     ext <;> simp [negFourUnitary, h, hr]
 
-private theorem negFourUnitary_bijective : Function.Bijective negFourUnitary :=
-  ⟨negFourUnitary_injective, negFourUnitary_surjective⟩
-
 /-- The discriminant-minus-four order has four units. -/
 theorem card_units_neg_four : Nat.card (toSubalgebra (-4) (by decide))ˣ = 4 := by
   have h := Nat.card_congr (normOneUnitsEquivUnitary (-4) (by decide)).toEquiv
   rw [normOneUnits_eq_top_of_neg _ _ (by decide), Subgroup.card_top] at h
   exact h.trans (by
-    simpa using (Nat.card_eq_of_bijective negFourUnitary negFourUnitary_bijective).symm)
+    simpa using (Nat.card_eq_of_bijective negFourUnitary
+      ⟨negFourUnitary_injective, negFourUnitary_surjective⟩).symm)
 
 private def negThreeUnitary (i : Fin 6) : unitary (QuadraticAlgebra ℤ (-3) (-3)) :=
   ⟨![⟨1, 0⟩, ⟨-1, 0⟩, ⟨1, 1⟩, ⟨2, 1⟩, ⟨-1, -1⟩, ⟨-2, -1⟩] i, by
@@ -261,23 +259,9 @@ private theorem negThreeUnitary_injective : Function.Injective negThreeUnitary :
       ((z : QuadraticAlgebra ℤ (-3) (-3)).re, (z : QuadraticAlgebra ℤ (-3) (-3)).im)) hij
      norm_num [negThreeUnitary] at h)
 
-/-- Every unitary element of `QuadraticAlgebra ℤ (-3) (-3)` with imaginary part `-1` lies in the
-range of `negThreeUnitary`. -/
-private theorem exists_negThreeUnitary_eq_of_im_eq_neg_one
-    (z : unitary (QuadraticAlgebra ℤ (-3) (-3))) (h : z.val.im = -1) :
-    ∃ i, negThreeUnitary i = z := by
-  have hz := QuadraticAlgebra.norm_eq_one_iff_mem_unitary.mpr z.property
-  norm_num [QuadraticAlgebra.norm_def] at hz
-  have hr : (z.val.re + 1) * (z.val.re + 2) = 0 := by rw [h] at hz; nlinarith [hz]
-  rcases mul_eq_zero.mp hr with hr | hr
-  · have hr' : z.val.re = -1 := by omega
-    refine ⟨4, ?_⟩
-    apply Subtype.ext
-    ext <;> simp [negThreeUnitary, h, hr']
-  · have hr' : z.val.re = -2 := by omega
-    refine ⟨5, ?_⟩
-    apply Subtype.ext
-    ext <;> simp [negThreeUnitary, h, hr']
+private theorem neg_negThreeUnitary (i : Fin 6) :
+    -negThreeUnitary i = negThreeUnitary (![1, 0, 4, 5, 2, 3] i) := by
+  fin_cases i <;> exact Subtype.ext (by ext <;> simp [negThreeUnitary, Unitary.coe_neg])
 
 /-- Every unitary element of `QuadraticAlgebra ℤ (-3) (-3)` with imaginary part `1` lies in the
 range of `negThreeUnitary`. -/
@@ -306,7 +290,8 @@ private theorem negThreeUnitary_surjective : Function.Surjective negThreeUnitary
   have hb : -1 ≤ z.val.im ∧ z.val.im ≤ 1 := by constructor <;> nlinarith
   have hc : z.val.im = -1 ∨ z.val.im = 0 ∨ z.val.im = 1 := by omega
   rcases hc with h | h | h
-  · exact exists_negThreeUnitary_eq_of_im_eq_neg_one z h
+  · obtain ⟨i, hi⟩ := exists_negThreeUnitary_eq_of_im_eq_one (-z) (by simp [Unitary.coe_neg, h])
+    exact ⟨![1, 0, 4, 5, 2, 3] i, by rw [← neg_negThreeUnitary, hi, neg_neg]⟩
   · have hr : z.val.re = 1 ∨ z.val.re = -1 := by
       rw [h] at hz
       apply sq_eq_one_iff.mp
@@ -320,15 +305,13 @@ private theorem negThreeUnitary_surjective : Function.Surjective negThreeUnitary
       ext <;> simp [negThreeUnitary, h, hr]
   · exact exists_negThreeUnitary_eq_of_im_eq_one z h
 
-private theorem negThreeUnitary_bijective : Function.Bijective negThreeUnitary :=
-  ⟨negThreeUnitary_injective, negThreeUnitary_surjective⟩
-
 /-- The discriminant-minus-three order has six units. -/
 theorem card_units_neg_three : Nat.card (toSubalgebra (-3) (by decide))ˣ = 6 := by
   have h := Nat.card_congr (normOneUnitsEquivUnitary (-3) (by decide)).toEquiv
   rw [normOneUnits_eq_top_of_neg _ _ (by decide), Subgroup.card_top] at h
   exact h.trans (by
-    simpa using (Nat.card_eq_of_bijective negThreeUnitary negThreeUnitary_bijective).symm)
+    simpa using (Nat.card_eq_of_bijective negThreeUnitary
+      ⟨negThreeUnitary_injective, negThreeUnitary_surjective⟩).symm)
 
 /-- The unit count for every negative quadratic discriminant, including the two exceptions. -/
 theorem card_units_of_neg (hneg : D < 0) :
