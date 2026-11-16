@@ -564,9 +564,12 @@ theorem abs_sum_primesLE_one_div_sub_log_log_sub_mertensConstant_le {x : ℝ} (h
   have hlim := squeeze_zero_norm' ((eventually_ge_atTop 2).mono fun x hx ↦
     (Real.norm_eq_abs _).trans_le (hB x hx))
     (tendsto_const_nhds.div_atTop Real.tendsto_log_atTop)
-  refine tendsto_nhds_unique (by simpa using hlim.add_const B)
+  have hlimB : Tendsto (fun x ↦ ∑ p ∈ Nat.primesLE ⌊x⌋₊, 1 / (p : ℝ) -
+      Real.log (Real.log x)) atTop (𝓝 B) := by
+    simpa using hlim.add_const B
+  refine tendsto_nhds_unique hlimB
     ((tendsto_primeSummatory_inv_absNorm_sub_log_log ℚ).congr fun x ↦ ?_)
-  rw [primeSummatory_rat_eq_sum_primesLE fun n ↦ (n : ℝ)⁻¹]
+  simp only [primeSummatory_rat_eq_sum_primesLE fun n ↦ (n : ℝ)⁻¹, one_div]
 
 open IsDedekindDomain
 
