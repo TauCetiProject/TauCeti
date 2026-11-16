@@ -50,7 +50,7 @@ statement: no measurability or moments in the sample variable are required. Conv
 in variation L¹ permits arbitrary changes where the bond has zero variation. -/
 theorem tendstoUniformlyOn_simpleGains_bondPrice_of_L1
     (hr : ContinuousOn r (Icc 0 T)) (hT : 0 ≤ T)
-    (hτ : ∀ k, MonotoneOn (τ k) (Iic (n k))) (hzero : ∀ k, 0 ≤ τ k 0)
+    (hτ : ∀ᶠ k in l, MonotoneOn (τ k) (Iic (n k))) (hzero : ∀ᶠ k in l, 0 ≤ τ k 0)
     (ω : Ω) {b : ℝ → ℝ}
     (hb : AEStronglyMeasurable b
       ((boundedVariationOn_bondPrice hr hT β₀).vectorMeasureIcc hT).variation)
@@ -70,8 +70,8 @@ theorem tendstoUniformlyOn_simpleGains_bondPrice_of_L1
     (B := ContinuousLinearMap.mul ℝ ℝ) hb (.of_forall hint) hlim).comp (fun t ↦ Ioc 0 t)
   apply (h.tendstoUniformlyOn.congr_right
     (fun t ht ↦ setIntegral_Ioc_vectorMeasureIcc_bondPrice hr hT β₀ b ht)).congr
-  filter_upwards [] with k t ht
+  filter_upwards [hτ, hzero] with k hτk hzerok t ht
   exact (simpleGains_eq_setIntegral_vectorMeasureIcc_bondPrice hr hT β₀
-    (hτ k) (hzero k) (a k) ω ht).symm
+    hτk hzerok (a k) ω ht).symm
 
 end TauCeti.Finance
