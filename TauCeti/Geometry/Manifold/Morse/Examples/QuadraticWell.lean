@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Distance
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Morse.Examples.ExponentialConvergence
@@ -89,14 +90,6 @@ private theorem neg_mgradient_sq_real_apply (x : ℝ) :
   -- Both sides are the real number `-2 x`, read in `ℝ` and in its tangent space.
   rfl
 
-/-- The curve `t ↦ x₀ exp (-k t)` solves `x' = -k x`. -/
-private theorem hasDerivAt_expTrajectory (k x₀ t : ℝ) :
-    HasDerivAt (fun s ↦ x₀ * Real.exp (-(k * s))) (-(k * (x₀ * Real.exp (-(k * t))))) t := by
-  have h : HasDerivAt (fun s : ℝ ↦ -(k * s)) (-k) t := by
-    simpa using ((hasDerivAt_id t).const_mul k).fun_neg
-  convert h.exp.const_mul x₀ using 1
-  ring
-
 /-- The function `x ↦ x²` on `ℝ` has the single critical point `0`. -/
 theorem criticalPoints_sq_real : criticalPoints 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) = {0} := by
   ext x
@@ -134,7 +127,7 @@ theorem maximalIntegralCurve_neg_mgradient_sq (x₀ t : ℝ) :
   have hb : 0 < |t| + 1 := by positivity
   simpa using eqOn_maximalIntegralCurve_neg_mgradient_of_hasDerivAt
     (f := fun y : ℝ ↦ y ^ 2) (by fun_prop) (a := -(|t| + 1)) (b := |t| + 1) ⟨neg_lt_zero.2 hb, hb⟩
-    (fun s _ ↦ (hasDerivAt_expTrajectory 2 x₀ s).congr_deriv (by simp [gradient_eq_deriv']))
+    (fun s _ ↦ (hasDerivAt_mul_exp_neg_mul 2 x₀ s).congr_deriv (by simp [gradient_eq_deriv']))
     ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
 
 /-- The trajectories of the quadratic well, as functions of time. -/
@@ -182,7 +175,7 @@ theorem pathELength_maximalIntegralCurve_neg_mgradient_sq (x₀ : ℝ) {t s : �
     -- The unit tangent vector at `u` is the real number `1`.
     have h1 : NormedSpace.fromTangentSpace u (1 : TangentSpace 𝓘(ℝ, ℝ) u) = (1 : ℝ) := rfl
     rw [mfderiv_eq_fderiv, eNorm_tangentSpace_vectorSpace,
-      (hasDerivAt_expTrajectory 2 x₀ u).hasFDerivAt.fderiv, ← ofReal_norm]
+      (hasDerivAt_mul_exp_neg_mul 2 x₀ u).hasFDerivAt.fderiv, ← ofReal_norm]
     simp [h1]
     ring_nf
   have hcont : Continuous fun u : ℝ ↦ 2 * |x₀| * Real.exp (-(2 * u)) := by fun_prop
@@ -272,7 +265,7 @@ theorem isMIntegralCurveOn_Ici_neg_mgradient_sq (x₀ : ℝ) :
   have heq : ∀ u ∈ Ici (0 : ℝ),
       x₀ * Real.exp (-(2 * max u 0)) = x₀ * Real.exp (-(2 * u)) := fun u (hu : 0 ≤ u) ↦ by
     rw [max_eq_left hu]
-  refine ((hasDerivAt_expTrajectory 2 x₀ t).hasDerivWithinAt.congr_of_mem heq
+  refine ((hasDerivAt_mul_exp_neg_mul 2 x₀ t).hasDerivWithinAt.congr_of_mem heq
     (mem_Ici.mpr ht)).congr_deriv ?_
   dsimp only
   rw [neg_mgradient_sq_real_apply, max_eq_left ht]
@@ -376,7 +369,7 @@ private theorem isMIntegralCurve_neg_mgradient_sq_scaledLineMetric (x₀ : ℝ) 
       (-mgradient 𝓘(ℝ, ℝ) (fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2)) := by
   intro t
   have h := (hasMFDerivAt_toWithMetric (g := scaledLineMetric ha) _).comp t
-    (hasDerivAt_expTrajectory (2 / a) x₀ t).hasFDerivAt.hasMFDerivAt
+    (hasDerivAt_mul_exp_neg_mul (2 / a) x₀ t).hasFDerivAt.hasMFDerivAt
   refine h.congr_mfderiv ?_
   -- The derivative of `toWithMetric` is the identity of `ℝ`, read in the tangent spaces.
   erw [neg_mgradient_sq_scaledLineMetric_apply]

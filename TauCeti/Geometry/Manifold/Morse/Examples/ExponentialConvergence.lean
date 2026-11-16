@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
 import TauCeti.Analysis.Calculus.Morse.Pi
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
 # Exponential convergence of gradient trajectories: two test cases
@@ -219,9 +220,8 @@ private theorem hasDerivAt_sqSubSqTrajectory (a t : ℝ) :
       (-gradient (fun z : EuclideanSpace ℝ (Fin 2) ↦ z 0 ^ 2 - z 1 ^ 2)
         (EuclideanSpace.single 0 (a * Real.exp (-(2 * t))))) t := by
   rw [(hasGradientAt_sq_sub_sq _).gradient]
-  have h : HasDerivAt (fun s ↦ a * Real.exp (-(2 * s))) (a * (Real.exp (-(2 * t)) * -2)) t := by
-    simpa using (((hasDerivAt_id t).const_mul 2).neg.exp).const_mul a
-  convert h.smul_const (EuclideanSpace.single (0 : Fin 2) (1 : ℝ)) using 1
+  convert (hasDerivAt_mul_exp_neg_mul 2 a t).smul_const
+    (EuclideanSpace.single (0 : Fin 2) (1 : ℝ)) using 1
   · ext s i
     fin_cases i <;> simp
   · ext i
