@@ -53,7 +53,6 @@ theorem riemannZetaData_continuedL : riemannZetaData.continuedL = riemannZeta :=
       (by rw [riemannZetaData_gammaFactor, Gammaℝ_one]; exact one_ne_zero)]
     rw [uncompletedProduct_riemannZetaData, riemannZeta_def_of_ne_zero one_ne_zero]
   · exact AnalyticLFunctionData.continuedL_eq_of_eventuallyEq
-      riemannZetaData_hasMeromorphicContinuation.meromorphic
       (analyticOn_riemannZeta s hs).continuousAt heq
 
 -- The cancelled pole at zero is filled with the genuine value of zeta, not zero.
