@@ -138,6 +138,13 @@ noncomputable def permutationLocalSystemAugmentation :
     ext e
     simp
 
+/-- The augmentation sends a formal sum of sheets to the sum of its coefficients. -/
+theorem permutationLocalSystemAugmentation_app_apply (x : FundamentalGroupoid B)
+    (f : (p ⁻¹' {x.as}) →₀ R) :
+    ((hp.permutationLocalSystemAugmentation R).app x).hom f = f.sum fun _ r ↦ r := by
+  change Finsupp.linearCombination R (fun _ ↦ (1 : R)) f = _
+  simp [Finsupp.linearCombination_apply]
+
 /-- The augmentation of the permutation local system is the identity on the coefficients at each
 sheet. -/
 @[reassoc (attr := simp)]
