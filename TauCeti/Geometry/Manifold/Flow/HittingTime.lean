@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Flow.Basic
+public import TauCeti.Geometry.Manifold.Flow.Locality
 public import Mathlib.Analysis.Calculus.ImplicitContDiff
 
 /-!
@@ -36,6 +36,12 @@ and taking `q = p` and `T` a period gives a local return branch near `T`. This b
 the Poincaré first return map: `T` may be a multiple of the primitive period, and earlier
 intersections with the section are not excluded.
 
+Hitting times and transitions depend only on the field near the trajectory segment from `p` to
+`flowOf v T p`: if `w` agrees with `v` on an open set containing it, the hitting times and
+transitions of `v` and `w` agree near `p` (`TauCeti.flowHittingTime_eventuallyEq_of_eqOn`,
+`TauCeti.flowTransition_eventuallyEq_of_eqOn`), since by `TauCeti.eventually_flowOf_eq_of_eqOn`
+their flows agree near `(T, p)`.
+
 ## Main definitions
 
 * `TauCeti.flowHittingTime v g T p`: the hitting time of the level of `g` through `flowOf v T p`,
@@ -50,6 +56,8 @@ intersections with the section are not excluded.
 * `TauCeti.eventually_eq_flowHittingTime_iff`: local uniqueness of the hitting time.
 * `TauCeti.eventuallyEq_flowHittingTime`: uniqueness of the germ of continuous hitting times.
 * `TauCeti.contMDiffAt_flowTransition`: the transition map to the level is `C^n`.
+* `TauCeti.flowHittingTime_eventuallyEq_of_eqOn`, `TauCeti.flowTransition_eventuallyEq_of_eqOn`:
+  hitting times and transitions depend only on the field near the trajectory segment.
 
 ## References
 
@@ -304,5 +312,42 @@ theorem mdifferentiableAt_flowTransition : MDifferentiableAt I I (flowTransition
   (contMDiffAt_flowTransition le_rfl hv hT hg hgv).mdifferentiableAt one_ne_zero
 
 end Continuous
+
+section Locality
+
+variable {w : (x : M) → TangentSpace I x} {U : Set M}
+  (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+  (hw : CMDiff 1 (fun y ↦ (⟨y, w y⟩ : TangentBundle I M))) (hU : IsOpen U) (hvw : EqOn w v U)
+  (hT : (T, p) ∈ flowDomain v) (hTU : MapsTo (fun s ↦ flowOf v s p) (uIcc 0 T) U)
+  (hg : ContMDiffAt I 𝓘(ℝ) 1 g (flowOf v T p))
+  (hgv : mvfderiv I g (flowOf v T p) (v (flowOf v T p)) ≠ 0)
+include hv hw hU hvw hT hTU hg hgv
+
+/-- **Hitting times depend only on the field near the trajectory.** If `w` agrees with `v` on an
+open set containing the trajectory of `p` under `v` from time `0` to time `T`, then the hitting
+times of a section through `flowOf v T p` transverse to `v` agree near `p`. -/
+theorem flowHittingTime_eventuallyEq_of_eqOn :
+    flowHittingTime w g T p =ᶠ[𝓝 p] flowHittingTime v g T p := by
+  have hflow := eventually_flowOf_eq_of_eqOn hv hw hU hvw hT hTU
+  obtain ⟨hTw, hpw⟩ := hflow.self_of_nhds
+  have hwq : w (flowOf v T p) = v (flowOf v T p) := hvw (hTU right_mem_uIcc)
+  refine (eventuallyEq_flowHittingTime hw hTw (by rwa [hpw]) (by rwa [hpw, hwq])
+    continuousAt_flowHittingTime (flowHittingTime_self ..) ?_).symm
+  filter_upwards [eventually_flowHittingTime hv hT hg hgv,
+    (tendsto_flowHittingTime_prodMk (I := I) (v := v) (g := g)).eventually hflow] with z hz hzw
+  rw [hzw.2, hz.2, hpw]
+
+/-- **Transitions depend only on the field near the trajectory.** If `w` agrees with `v` on an
+open set containing the trajectory of `p` under `v` from time `0` to time `T`, then the
+transitions to a section through `flowOf v T p` transverse to `v` agree near `p`. -/
+theorem flowTransition_eventuallyEq_of_eqOn :
+    flowTransition w g T p =ᶠ[𝓝 p] flowTransition v g T p := by
+  filter_upwards [flowHittingTime_eventuallyEq_of_eqOn hv hw hU hvw hT hTU hg hgv,
+    (tendsto_flowHittingTime_prodMk (I := I) (v := v) (g := g)).eventually
+      (eventually_flowOf_eq_of_eqOn hv hw hU hvw hT hTU)] with z hz hzw
+  rw [flowTransition_apply, flowTransition_apply, hz]
+  exact hzw.2
+
+end Locality
 
 end TauCeti
