@@ -199,4 +199,43 @@ theorem forall_fiberToSpecResidueField_iff (P : MorphismProperty Scheme.{u}) [P.
 
 end DimensionLEOne
 
+section DiscreteValuationRing
+
+variable (R K : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
+  [CommRing K] [Algebra R K] [IsFractionRing R K]
+  {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
+
+/-- Over a discrete valuation ring `R` with fraction ring `K`, the set-theoretic image of
+`genericFiberι R K toBase` consists of the points of `X` not lying over the closed point of
+`Spec R`. -/
+theorem range_genericFiberι_eq_setOf_base_ne_closedPoint :
+    Set.range (genericFiberι R K toBase) = {x : X | toBase x ≠ closedPoint R} := by
+  rw [range_genericFiberι R K toBase]
+  have hp : genericPoint (Spec (.of R)) = (⊥ : PrimeSpectrum R) :=
+    genericPoint_eq_bot_of_affine (.of R)
+  have htop : (⊤ : PrimeSpectrum R) = closedPoint R :=
+    PrimeSpectrum.ext (PrimeSpectrum.asIdeal_top (R := R))
+  have hbot_ne : (⊥ : PrimeSpectrum R) ≠ closedPoint R := fun h ↦
+    IsDiscreteValuationRing.not_a_field R (congrArg PrimeSpectrum.asIdeal h).symm
+  ext x
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq, hp]
+  -- The carrier of `Spec (.of R)` is `PrimeSpectrum R`, a local ring of Krull dimension at most 1.
+  rcases IsLocalRing.Ring.KrullDimLE.eq_bot_or_eq_top (toBase x : PrimeSpectrum R) with hy | hy
+  · exact ⟨fun _ ↦ hy ▸ hbot_ne, fun _ ↦ hy⟩
+  · exact ⟨fun h ↦ absurd (hy.symm.trans h).symm (htop ▸ hbot_ne),
+      fun h ↦ absurd (hy.trans htop) h⟩
+
+/-- If the generic point of `X` does not map to the closed point of `Spec R`, then the generic
+fibre `(genericFiber R K toBase).left` is nonempty. -/
+theorem nonempty_genericFiber_of_base_ne_closedPoint [IrreducibleSpace X]
+    (hη : toBase (genericPoint X) ≠ closedPoint R) :
+    Nonempty (genericFiber R K toBase).left := by
+  have hmem : genericPoint X ∈ Set.range (genericFiberι R K toBase) := by
+    rw [range_genericFiberι_eq_setOf_base_ne_closedPoint]
+    exact hη
+  obtain ⟨y, -⟩ := hmem
+  exact ⟨y⟩
+
+end DiscreteValuationRing
+
 end TauCeti

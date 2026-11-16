@@ -8,15 +8,16 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.Family
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Basic
 public import TauCeti.AlgebraicGeometry.Fibers.SchematicDensity
+public import TauCeti.AlgebraicGeometry.SpecialFiber.Components
 
 /-!
 # Generic fibres of models over a discrete valuation ring
 
 This file defines the canonical inclusion of a model's chosen generic fibre into its total space.
 It records compatibility with the structure morphism and proves that the inclusion is an open
-immersion and an affine morphism, with scheme-theoretically dense image. A morphism of total spaces
-over the base is compatible with the chosen generic fibres exactly when it commutes with these
-inclusions.
+immersion and an affine morphism, with scheme-theoretically dense image equal to the complement of
+the special fibre. A morphism of total spaces over the base is compatible with the chosen generic
+fibres exactly when it commutes with these inclusions.
 When the model is a family of curves, so is its generic fibre.
 -/
 
@@ -116,6 +117,29 @@ instance isSchemeTheoreticallyDominant_genericι (M : Model R K C toK) :
   have := isSchemeTheoreticallyDominant_genericFiberι R K (IsFractionRing.injective R K) M.toBase
   rw [genericι_def]
   infer_instance
+
+/-- The set-theoretic image of a model's chosen generic fibre in its total space is the complement
+of the special fibre. -/
+theorem range_genericι_eq_setOf_base_ne_closedPoint (M : Model R K C toK) :
+    Set.range M.genericι = {x : M.total | M.toBase x ≠ closedPoint R} := by
+  have : IsIso M.genericFiberIso.inv.left :=
+    inferInstanceAs (IsIso ((Over.forget _).map M.genericFiberIso.inv))
+  rw [M.genericι_def]
+  calc Set.range (M.genericFiberIso.inv.left ≫ genericFiberι R K M.toBase)
+      = Set.range (genericFiberι R K M.toBase ∘ M.genericFiberIso.inv.left) :=
+        congrArg Set.range (funext fun x ↦ Scheme.Hom.comp_apply _ _ x)
+    _ = Set.range (genericFiberι R K M.toBase) :=
+        M.genericFiberIso.inv.left.surjective.range_comp _
+    _ = {x : M.total | M.toBase x ≠ closedPoint R} :=
+        range_genericFiberι_eq_setOf_base_ne_closedPoint R K M.toBase
+
+/-- If the total space of a model `M` is irreducible, then its generic fibre `C` is nonempty. -/
+theorem nonempty_generic (M : Model R K C toK) [IrreducibleSpace M.total] : Nonempty C := by
+  have hmem : genericPoint M.total ∈ Set.range M.genericι := by
+    rw [M.range_genericι_eq_setOf_base_ne_closedPoint]
+    exact M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R)
+  obtain ⟨c, -⟩ := hmem
+  exact ⟨c⟩
 
 /-- A morphism of total spaces over the base respects the chosen identifications of generic fibres
 as soon as it carries the chosen generic fibre of `M` to that of `N`. This is the converse of

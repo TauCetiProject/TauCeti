@@ -13,9 +13,10 @@ import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 /-!
 # Noetherianity under finite-type morphisms and fibres
 
-A scheme of finite type over a Noetherian scheme is Noetherian. In particular, proper schemes
-over a field are Noetherian, supplying the finiteness hypothesis in divisor and line-bundle
-arguments without requiring a separate instance from the caller.
+A scheme of finite type over a Noetherian scheme is Noetherian (`isNoetherian_of_finiteType`); in
+particular, open subschemes (`isNoetherian_of_isOpenImmersion`) and proper schemes over a field are
+Noetherian, supplying the finiteness hypothesis in divisor and line-bundle arguments without
+requiring a separate instance from the caller.
 
 The fibre `X ×_S Spec κ(s)` of any morphism `f : X ⟶ S` with `X` locally Noetherian is locally
 Noetherian (`AlgebraicGeometry.Scheme.Hom.isLocallyNoetherian_fiber`), with no finiteness
@@ -39,6 +40,11 @@ theorem isNoetherian_of_finiteType {X Y : Scheme.{u}} (f : X ⟶ Y) [LocallyOfFi
     [QuasiCompact f] [IsNoetherian Y] : IsNoetherian X where
   toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian f
   toCompactSpace := QuasiCompact.compactSpace_of_compactSpace f
+
+/-- The source of an open immersion into a Noetherian scheme is Noetherian. -/
+theorem isNoetherian_of_isOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
+    [IsNoetherian X] : IsNoetherian U :=
+  isNoetherian_of_finiteType j
 
 /-- The underlying space of a locally Noetherian scheme is locally connected: every point has
 arbitrarily small affine open neighbourhoods, whose underlying spaces are Noetherian and hence

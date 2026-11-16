@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Scheme.IntegrallyClosed
 public import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
 
+import Mathlib.RingTheory.Polynomial.RationalRoot
+
 /-!
 # Normal schemes
 
@@ -49,6 +51,8 @@ use `IsNormalScheme (Spec R)` for it.
 * `TauCeti.AlgebraicGeometry.IsNormalScheme.isDiscreteValuationRing_stalk`: on a locally
   Noetherian normal scheme, the local ring at a point of coheight one is a discrete valuation
   ring, by the ring-level `IsDiscreteValuationRing.of_ringKrullDim_eq_one`.
+* `TauCeti.AlgebraicGeometry.IsNormalScheme.of_uniqueFactorizationMonoid_stalk`: a scheme whose
+  local rings are unique factorization domains is normal (instance).
 
 ## References
 
@@ -209,6 +213,12 @@ theorem IsNormalScheme.isDiscreteValuationRing_stalk [IsLocallyNoetherian X] [Is
     rw [ringKrullDim_stalk_eq_coheight]
     simp [hx]
   exact IsDiscreteValuationRing.of_ringKrullDim_eq_one hdim
+
+/-- A scheme whose local rings are unique factorization domains is normal. -/
+instance IsNormalScheme.of_uniqueFactorizationMonoid_stalk
+    [∀ x : X, IsDomain (X.presheaf.stalk x)]
+    [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)] : IsNormalScheme X :=
+  isNormalScheme_iff_forall_stalk.mpr fun _ ↦ ⟨inferInstance, inferInstance⟩
 
 end AlgebraicGeometry
 

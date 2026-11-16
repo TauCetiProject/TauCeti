@@ -22,7 +22,9 @@ divisors used in linear systems and Abel maps to be viewed as effective Cartier 
 
 The comparison uses `Scheme.CartierDivisor.isEffective_iff_one_mem_sections` and
 `Scheme.CartierDivisor.sections_eq_toWeilDivisor`; the effective monoid equivalence is the
-restriction of `SchemeWeilDivisor.equivCartierDivisor`.
+restriction of `SchemeWeilDivisor.equivCartierDivisor`. On any Noetherian normal integral scheme,
+algebraic Hartogs' principle similarly gives
+`Scheme.CartierDivisor.isEffective_iff_toWeilDivisor_nonneg`.
 
 ## References
 
@@ -57,6 +59,27 @@ theorem isEffective_iff_toWeilDivisor (hX : ∀ x : X, coheight x ≤ 1)
   rw [isEffective_iff_one_mem_sections,
     SchemeWeilDivisor.nonneg_iff_one_mem_sections,
     sections_eq_toWeilDivisor hX]
+
+omit [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))] in
+/-- On a Noetherian normal integral scheme, a Cartier divisor is effective if and only if its
+associated Weil divisor has nonnegative coefficients. -/
+theorem isEffective_iff_toWeilDivisor_nonneg [IsNormalScheme X] (D : CartierDivisor X) :
+    D.IsEffective ↔ 0 ≤ D.toWeilDivisor := by
+  have : ∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X)) :=
+    fun y ↦ IsNormalScheme.isDiscreteValuationRing_stalk y.1 y.2
+  refine ⟨fun hD ↦ (WeilDivisor.nonneg_iff _).mpr fun η ↦ ?_,
+    fun hD ↦ isEffective_iff_exists.mpr fun x ↦ ?_⟩
+  · obtain ⟨f, hf, b, hb⟩ := isEffective_iff_exists.mp hD η
+    obtain ⟨U, hηU, hU⟩ := isLocalEquationAt_iff.mp hf
+    have : Nonempty U := ⟨⟨η, hηU⟩⟩
+    rw [D.coeff_toWeilDivisor_eq_ord η hηU f hU, ← hb]
+    exact ord_algebraMap_stalk_nonneg η.2 specializes_rfl b
+  · obtain ⟨U, -, hxU, f, hf⟩ := D.exists_localEquation_le ⊤ (trivial : x ∈ (⊤ : X.Opens))
+    have : Nonempty U := ⟨⟨x, hxU⟩⟩
+    refine ⟨f, isLocalEquationAt_iff.mpr ⟨U, hxU, hf⟩,
+      exists_algebraMap_stalk_eq_of_forall_specializes_ord_nonneg fun η hηx ↦ ?_⟩
+    rw [← D.coeff_toWeilDivisor_eq_ord η (hηx.mem_open U.isOpen hxU) f hf]
+    exact WeilDivisor.coeff_nonneg hD η
 
 end Scheme.CartierDivisor
 

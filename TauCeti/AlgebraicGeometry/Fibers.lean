@@ -299,6 +299,25 @@ lemma genericFiberIsoFiberGenericPoint_inv_hom :
 
 end GenericPoint
 
+/-- Over an integral domain `R` with fraction ring `K`, the set-theoretic image of
+`genericFiberι R K toBase` is the preimage of the generic point of `Spec R`. -/
+theorem range_genericFiberι (R K : Type u) [CommRing R] [IsDomain R] [CommRing K]
+    [Algebra R K] [IsFractionRing R K] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) :
+    Set.range (genericFiberι R K toBase) = toBase ⁻¹' {genericPoint (Spec (.of R))} :=
+  calc Set.range (genericFiberι R K toBase)
+      = Set.range (genericFiberι R K toBase ∘
+          (genericFiberIsoFiberGenericPoint (R := .of R) (K := K) toBase).inv) :=
+        ((genericFiberIsoFiberGenericPoint (R := .of R) (K := K)
+          toBase).inv.surjective.range_comp _).symm
+    _ = Set.range ((genericFiberIsoFiberGenericPoint (R := .of R) (K := K) toBase).inv ≫
+          genericFiberι R K toBase) :=
+        congrArg Set.range (funext fun x ↦ (Scheme.Hom.comp_apply _ _ x).symm)
+    _ = Set.range (toBase.fiberι (genericPoint (Spec (.of R)))) :=
+        congrArg (fun g : toBase.fiber (genericPoint (Spec (.of R))) ⟶ X ↦ Set.range g)
+          (genericFiberIsoFiberGenericPoint_inv_genericFiberι (R := .of R) (K := K) toBase)
+    _ = toBase ⁻¹' {genericPoint (Spec (.of R))} :=
+        Scheme.Hom.range_fiberι toBase _
+
 section Tower
 
 variable (R K L : Type u) [CommRing R] [CommRing K] [CommRing L]
