@@ -51,7 +51,8 @@ direction one uses in practice to read off a residue.
   at every point where it is not a genuine pole: whenever `A = 0` or `z ≠ s`.
 * `TauCeti.Contour.residue_eq_of_eventuallyEq_div_sub`,
   `TauCeti.Contour.meromorphicAt_of_eventuallyEq_div_sub` — a function of the form `φ(z)/(z − z₀)`
-  near `z₀`, with `φ` analytic at `z₀`, is meromorphic at `z₀` with residue `φ(z₀)`.
+  near `z₀` has residue `φ(z₀)` when `φ` is analytic at `z₀`, and is meromorphic at `z₀` when `φ`
+  is.
 
 ## Provenance
 
@@ -219,7 +220,6 @@ theorem analyticAt_const_mul_sub_inv {A s z : ℂ} (h : A = 0 ∨ z ≠ s) :
   · simpa using analyticAt_const
   · fun_prop (disch := exact sub_ne_zero.2 h)
 
-
 /-- At a simple pole written as `F(z) = φ(z)/(z - z₀)` with `φ` analytic at `z₀`, the residue of
 `F` is `φ(z₀)`. Removable singularities are included, with `φ(z₀) = 0`. -/
 theorem residue_eq_of_eventuallyEq_div_sub {F φ : ℂ → ℂ} (hφ : AnalyticAt ℂ φ z₀)
@@ -227,11 +227,11 @@ theorem residue_eq_of_eventuallyEq_div_sub {F φ : ℂ → ℂ} (hφ : AnalyticA
   rw [residue_congr_nhdsNE hF]
   simpa using residue_div_sub_pow_of_analyticAt hφ 0
 
-/-- A function of the form `φ(z)/(z - z₀)` near `z₀`, with `φ` analytic at `z₀`, is meromorphic
-at `z₀`. -/
-theorem meromorphicAt_of_eventuallyEq_div_sub {F φ : ℂ → ℂ} (hφ : AnalyticAt ℂ φ z₀)
+/-- A function of the form `φ(z)/(z - z₀)` near `z₀`, with `φ` meromorphic at `z₀`, is
+meromorphic at `z₀`. -/
+theorem meromorphicAt_of_eventuallyEq_div_sub {F φ : ℂ → ℂ} (hφ : MeromorphicAt φ z₀)
     (hF : ∀ᶠ z in 𝓝[≠] z₀, F z = φ z / (z - z₀)) : MeromorphicAt F z₀ :=
-  (hφ.meromorphicAt.div (analyticAt_id.sub analyticAt_const).meromorphicAt).congr
+  (hφ.div (analyticAt_id.sub analyticAt_const).meromorphicAt).congr
     (hF.mono fun _ hz => hz.symm)
 
 end TauCeti.Contour
