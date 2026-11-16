@@ -28,10 +28,6 @@ quasi-isomorphism onto `R` with the action of `C_*(Ω_b B; R)` through its augme
 * a cycle of augmentation zero is a boundary
   (`TauCeti.exists_pathFromChainDifferential_eq_of_augmentation_eq_zero`).
 
-The point chain `[p]` of a path `p` (`TauCeti.pathFromPointChain`) is a cycle of augmentation
-`1` in degree `0`, and a loop `ω` takes it to `[ω • p]`
-(`TauCeti.point_smul_pathFromPointChain`).
-
 The contracting homotopy is the cone along the truncation homotopy
 (`TauCeti.cubicalChainModuleCone`). It is linear over `R` but not over `C_*(Ω_b B; R)`, since
 truncation does not commute with concatenation in front.
@@ -83,54 +79,5 @@ theorem exists_pathFromChainDifferential_eq_of_augmentation_eq_zero
     (hε : cubicalChainModuleAugmentation (MoorePathFrom B b) H R m = 0) :
     ∃ n, cubicalChainModuleDifferential (MoorePathFrom B b) H R n = m :=
   exists_cubicalChainModuleDifferential_eq_of_augmentation_eq_zero hd hε
-
-section PointChain
-
-open NormalizedCubicalChain
-
-variable (H R) in
-/-- The **point chain** `[p]` of a Moore path `p` from `b`, in `C_*(P_b B; R)`: the `0`-chain of the
-singular point at `p`. -/
-noncomputable def pathFromPointChain (p : MoorePathFrom B b) :
-    cubicalChainModule (MoorePathFrom B b) H R :=
-  cubicalChainModuleLof _ H R 0 (ofCube _ R (SingularCube.point p))
-
-/-- Unfold `TauCeti.pathFromPointChain`. -/
-theorem pathFromPointChain_def (p : MoorePathFrom B b) :
-    pathFromPointChain H R p = cubicalChainModuleLof _ H R 0 (ofCube _ R (SingularCube.point p)) :=
-  (rfl)
-
-/-- The point chain `[p]` lies in degree `0`. -/
-theorem pathFromPointChain_mem (p : MoorePathFrom B b) :
-    pathFromPointChain H R p ∈ cubicalChainModuleGrading (MoorePathFrom B b) H R 0 := by
-  rw [pathFromPointChain_def]
-  simpa using cubicalChainModuleLof_mem (G := H) (ofCube _ R (SingularCube.point p))
-
-/-- The point chain `[p]` is a cycle. -/
-@[simp]
-theorem cubicalChainModuleDifferential_pathFromPointChain (p : MoorePathFrom B b) :
-    cubicalChainModuleDifferential (MoorePathFrom B b) H R (pathFromPointChain H R p) = 0 :=
-  cubicalChainModuleDifferential_lof_zero _
-
-/-- The augmentation of the point chain `[p]` is `1`. -/
-@[simp]
-theorem cubicalChainModuleAugmentation_pathFromPointChain (p : MoorePathFrom B b) :
-    cubicalChainModuleAugmentation (MoorePathFrom B b) H R (pathFromPointChain H R p) = 1 := by
-  rw [pathFromPointChain_def, cubicalChainModuleAugmentation_lof_zero, augment_ofCube]
-
-/-- **Loops act on point chains by concatenation in front**: the point chain of a loop `ω` takes
-the point chain `[p]` to `[ω • p]`. -/
-@[simp]
-theorem point_smul_pathFromPointChain (ω : MooreLoopSpace B b) (p : MoorePathFrom B b) :
-    cubicalChainLof (MooreLoopSpace B b) R 0 (ofCube _ R (SingularCube.point ω)) •
-        pathFromPointChain H R p =
-      pathFromPointChain H R (ω • p) := by
-  rw [pathFromPointChain_def, pathFromPointChain_def, lof_smul_cubicalChainModuleLof,
-    leftAct_ofCube]
-  exact congrArg _ (congrArg _ (ContinuousMap.ext fun _ ↦ by
-    rw [ContinuousMap.comp_apply, leftActMap_apply, SingularCube.crossProduct_apply,
-      SingularCube.point_apply, SingularCube.point_apply, SingularCube.point_apply]))
-
-end PointChain
 
 end TauCeti

@@ -23,12 +23,12 @@ generator of each cell goes to a chain of paths whose boundary is the image of i
 This file constructs that comparison for the circle and proves that it is a quasi-isomorphism.
 
 * The generator `e₀` of the `0`-cell goes to the point chain `[b]` of the constant path of length
-  zero at `b` (`TauCeti.pathFromPointChain`).
+  zero at `b` (`TauCeti.cubicalChainModulePoint`).
 * The generator `e₁` of the `1`-cell goes to the `1`-chain `c_γ` of the initial segments of `γ`
   (`TauCeti.loopCellPathCube`): at time `s` the path `γ` truncated at `(1 - s)` times its length,
   through the contraction `TauCeti.MoorePathFrom.truncateHomotopy` of the based path space. Its
   boundary is `[γ] - [b]` (`TauCeti.cubicalChainModuleDifferential_loopCellPathChain`), and since
-  loops act on point chains by concatenation in front (`TauCeti.point_smul_pathFromPointChain`)
+  loops act on point chains by concatenation in front (`TauCeti.point_smul_cubicalChainModulePoint`)
   this is `([γ] - [1]) · [b]`, the image of the row of `e₁`.
 
 So the map `α e₀ + β e₁ ↦ α · [b] + β · c_γ` (`TauCeti.loopCellPathComparison`) commutes with the
@@ -146,11 +146,10 @@ theorem cubicalChainModuleAugmentation_loopCellPathChain (γ : MooreLoopSpace B 
 point chains of `γ`, read as a path from `b`, and of the constant path. -/
 theorem cubicalChainModuleDifferential_loopCellPathChain (γ : MooreLoopSpace B b) :
     cubicalChainModuleDifferential (MoorePathFrom B b) H R (loopCellPathChain H R γ) =
-      pathFromPointChain H R (γ • MoorePathFrom.refl B b) -
-        pathFromPointChain H R (MoorePathFrom.refl B b) := by
-  rw [loopCellPathChain_def, cubicalChainModuleDifferential_lof_succ, boundary_ofCube,
-    Fin.sum_univ_one, face_zero_zero_loopCellPathCube, face_zero_one_loopCellPathCube,
-    Fin.val_zero, pow_zero, one_smul, map_sub, pathFromPointChain_def, pathFromPointChain_def]
+      cubicalChainModulePoint (MoorePathFrom B b) H R (γ • MoorePathFrom.refl B b) -
+        cubicalChainModulePoint (MoorePathFrom B b) H R (MoorePathFrom.refl B b) := by
+  rw [loopCellPathChain_def, cubicalChainModuleDifferential_lof_succ, boundary_ofCube]
+  simp [cubicalChainModulePoint_def]
 
 variable (H R) in
 /-- **The comparison of Brown's resolution of a circle with the chains on its based paths**: the
@@ -162,13 +161,13 @@ def loopCellPathComparison (γ : MooreLoopSpace B b) :
     (Unit ⊕ Unit →₀ loopChainAlgebra B b R) →ₗ[loopChainAlgebra B b R]
       cubicalChainModule (MoorePathFrom B b) H R :=
   Finsupp.linearCombination _
-    (Sum.elim (fun _ ↦ pathFromPointChain H R (MoorePathFrom.refl B b))
+    (Sum.elim (fun _ ↦ cubicalChainModulePoint (MoorePathFrom B b) H R (MoorePathFrom.refl B b))
       (fun _ ↦ loopCellPathChain H R γ))
 
 @[simp]
 theorem loopCellPathComparison_single_inl (γ : MooreLoopSpace B b) (α : loopChainAlgebra B b R) :
     loopCellPathComparison H R γ (Finsupp.single (Sum.inl ()) α) =
-      α • pathFromPointChain H R (MoorePathFrom.refl B b) := by
+      α • cubicalChainModulePoint (MoorePathFrom B b) H R (MoorePathFrom.refl B b) := by
   simp [loopCellPathComparison]
 
 @[simp]
@@ -181,7 +180,8 @@ theorem loopCellPathComparison_single_inr (γ : MooreLoopSpace B b) (β : loopCh
 theorem loopCellPathComparison_apply (γ : MooreLoopSpace B b)
     (u : Unit ⊕ Unit →₀ loopChainAlgebra B b R) :
     loopCellPathComparison H R γ u =
-      u (Sum.inl ()) • pathFromPointChain H R (MoorePathFrom.refl B b) +
+      u (Sum.inl ()) •
+          cubicalChainModulePoint (MoorePathFrom B b) H R (MoorePathFrom.refl B b) +
         u (Sum.inr ()) • loopCellPathChain H R γ := by
   have hu : u = Finsupp.single (Sum.inl ()) (u (Sum.inl ())) +
       Finsupp.single (Sum.inr ()) (u (Sum.inr ())) := by
@@ -203,9 +203,7 @@ theorem loopCellPathComparison_differential (γ : MooreLoopSpace B b)
     (pathFromChain_isDGLeftModule B b H R) _ _).2 ?_) u
   rintro (⟨⟨⟩⟩ | ⟨⟨⟩⟩)
   · simp
-  · rw [loopCellCocycle_m_inr, Finsupp.linearCombination_single, Sum.elim_inl, sub_smul,
-      point_smul_pathFromPointChain, one_smul, Sum.elim_inr,
-      cubicalChainModuleDifferential_loopCellPathChain]
+  · simp [cubicalChainModuleDifferential_loopCellPathChain]
 
 /-- **The comparison commutes with the augmentations**: the augmentation of the image of `u` in
 `C_*(P_b B; R)` is the augmentation of the coefficient of `e₀`. -/
@@ -214,10 +212,7 @@ theorem cubicalChainModuleAugmentation_loopCellPathComparison (γ : MooreLoopSpa
     (u : Unit ⊕ Unit →₀ loopChainAlgebra B b R) :
     cubicalChainModuleAugmentation (MoorePathFrom B b) H R (loopCellPathComparison H R γ u) =
       loopCellAugmentation B b R u := by
-  rw [loopCellPathComparison_apply, map_add, pathFromChainAugmentation_smul,
-    pathFromChainAugmentation_smul, cubicalChainModuleAugmentation_pathFromPointChain,
-    cubicalChainModuleAugmentation_loopCellPathChain, _root_.mul_one, mul_zero, add_zero,
-    loopCellAugmentation_apply]
+  simp [loopCellPathComparison_apply, pathFromChainAugmentation_smul, loopCellAugmentation_apply]
 
 end Comparison
 

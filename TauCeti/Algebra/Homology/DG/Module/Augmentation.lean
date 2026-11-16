@@ -63,13 +63,12 @@ theorem exists_differential_eq_and_add_eq_of_augmentation {dM : M →ₗ[R] M} {
   -- Then `z = w - f v` is a cycle; correct its augmentation by a multiple of `s`.
   set z := w - f v with hz
   have hdz : dN (z - f (εN z • s)) = 0 := by
-    rw [map_sub, hz, map_sub, ← hw, ← hf, hv, ← hf, map_smul, hs, smul_zero, map_zero, sub_self,
-      sub_zero]
+    simp [hz, ← hf, hv, hs, ← hw]
   have hεz : εN (z - f (εN z • s)) = 0 := by
-    rw [map_sub, hεf, map_smul, hεs, smul_eq_mul, mul_one, sub_self]
+    simp [hεf, hεs]
   obtain ⟨w', hw'⟩ := hN hdz hεz
   refine ⟨v + εN z • s, w', ?_, ?_⟩
-  · rw [map_add, hv, map_smul, hs, smul_zero, add_zero]
+  · simp [hv, hs]
   · rw [hw', map_add, hz]
     abel
 
