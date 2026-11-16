@@ -420,12 +420,11 @@ section NullhomotopyAndIsolation
 
 open Filter Topology
 
-/-- **Uniform convergence of periodic loops characterizes contractibility of a limit orbit.** Let
-`γ₀` be a `T`-periodic solution (`0 < T`) of a vector field `X` in a compact set `K ⊆ M`, and let
-eventually continuous `T`-periodic loops `γ_i` in `K` converge uniformly to `γ₀` through a
-continuous map `e : M → F` into a Hausdorff uniform space `F` injective on `K` along a nontrivial
-filter `l`. Then `γ₀ ∈ contractiblePeriodicSolutions X T` if and only if the `γ_i` are eventually
-null-homotopic. -/
+/-- **Uniform convergence of periodic loops characterizes contractibility of a limit orbit.** If
+`γ₀ ∈ periodicSolutions X T` (`0 < T`) lies in a compact `K ⊆ M` and eventually continuous
+`T`-periodic `γ_i` in `K` satisfy `e ∘ γ_i → e ∘ γ₀` uniformly along a nontrivial `l` for
+`e : M → F` continuous and injective on `K` into a Hausdorff uniform space, then
+`γ₀ ∈ contractiblePeriodicSolutions X T` iff `γ_i` is eventually null-homotopic on `AddCircle T`. -/
 theorem mem_contractiblePeriodicSolutions_iff_of_tendstoUniformly_comp {F : Type*}
     [UniformSpace F] [T2Space F] {e : M → F} {K : Set M} (hK : IsCompact K)
     (he : ContinuousOn e K) (he_inj : InjOn e K) (hT : 0 < T) {γ₀ : ℝ → M}
@@ -435,55 +434,48 @@ theorem mem_contractiblePeriodicSolutions_iff_of_tendstoUniformly_comp {F : Type
     (hconv : TendstoUniformly (fun i t ↦ e (γ i t)) (e ∘ γ₀) l) :
     γ₀ ∈ contractiblePeriodicSolutions X T ↔
       ∀ᶠ i in l, ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ i t := by
-  let _ : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
-  let _ : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
+  have := I.locallyPathConnectedSpace_of_chartedSpace M
+  have := I.semilocallySimplyConnectedSpace M
   have hev := eventually_exists_nullhomotopic_iff_of_tendstoUniformly_comp hK he he_inj hT
     (continuous_of_mem_periodicSolutions hγ₀) (mem_periodicSolutions.1 hγ₀).2 hγ₀K hγc hγp hγK hconv
-  refine ⟨fun hx' ↦ hev.mono fun i hi ↦ hi.2 (mem_contractiblePeriodicSolutions.1 hx').2,
-    fun hγn ↦ mem_contractiblePeriodicSolutions.2 ⟨hγ₀, ?_⟩⟩
-  obtain ⟨i, hi, hin⟩ := (hev.and hγn).exists
-  exact hi.1 hin
+  exact ⟨fun hx ↦ hev.mono fun _ hi ↦ hi.2 (mem_contractiblePeriodicSolutions.1 hx).2, fun h ↦
+    mem_contractiblePeriodicSolutions.2 ⟨hγ₀, let ⟨_, hi, hn⟩ := (hev.and h).exists; hi.1 hn⟩⟩
 
-/-- **Nondegenerate periodic solutions are isolated at initial points in `K`.** Let `X` be a jointly
-`C¹` time-dependent vector field on a Hausdorff boundaryless finite-dimensional manifold `M`, and
-`e : M → F` continuous and injective on a compact set `K ⊆ M`. If `γ₀` is a `T`-periodic solution
-of `X` with `γ₀ s ∈ K` whose point `γ₀ s` at time `s` is a nondegenerate fixed point of the return
-map `timeDependentFlowOf X s (s + T)`, then there is `ε > 0` such that no other `T`-periodic
-solution `γ` with `γ s ∈ K` has `dist (e (γ s)) (e (γ₀ s)) < ε`. -/
+/-- **Nondegenerate periodic solutions are isolated at initial points in `K`.** For a jointly `C¹`
+field `X` on a Hausdorff boundaryless finite-dimensional manifold `M` and `e : M → F` continuous and
+injective on a compact `K ⊆ M`, if `γ₀ ∈ periodicSolutions X T` has `γ₀ s ∈ K` and `γ₀ s` is a
+nondegenerate fixed point of `timeDependentFlowOf X s (s + T)`, some `ε > 0` separates `e (γ₀ s)`
+from `e (γ s)` for all other `γ ∈ periodicSolutions X T` with `γ s ∈ K`. -/
 theorem exists_pos_forall_mem_periodicSolutions_eq_of_isNondegenerateFixedPt
     [FiniteDimensional ℝ E] [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
-    {F : Type*} [MetricSpace F] {e : M → F}
-    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+    {F : Type*} [MetricSpace F] {e : M → F} (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
-    {K : Set M} (hK : IsCompact K) (he : ContinuousOn e K) (he_inj : InjOn e K)
-    {γ₀ : ℝ → M} (hγ₀ : γ₀ ∈ periodicSolutions X T) (hγ₀K : γ₀ s ∈ K)
+    {K : Set M} (hK : IsCompact K) (he : ContinuousOn e K) (he_inj : InjOn e K) {γ₀ : ℝ → M}
+    (hγ₀ : γ₀ ∈ periodicSolutions X T) (hγ₀K : γ₀ s ∈ K)
     (hnd : IsNondegenerateFixedPt I (timeDependentFlowOf X s (s + T)) (γ₀ s)) :
-    ∃ ε > 0, ∀ γ ∈ periodicSolutions X T, γ s ∈ K → dist (e (γ s)) (e (γ₀ s)) < ε →
-      γ = γ₀ := by
+    ∃ ε > 0, ∀ γ ∈ periodicSolutions X T, γ s ∈ K → dist (e (γ s)) (e (γ₀ s)) < ε → γ = γ₀ := by
   have := isCompact_iff_compactSpace.1 hK
   have hemb : IsClosedEmbedding fun p : K ↦ e p :=
     (he.comp_continuous continuous_subtype_val Subtype.prop).isClosedEmbedding fun p q h ↦
       Subtype.ext (he_inj p.2 q.2 h)
-  have hisoM : ∀ᶠ p in 𝓝 (γ₀ s), IsFixedPt (timeDependentFlowOf X s (s + T)) p → p = γ₀ s :=
-    (eventually_nhdsWithin_iff.1 hnd.eventually_not_isFixedPt).mono fun p hp hfix ↦
-      Classical.byContradiction fun hne ↦ hp hne hfix
   have hisoK : ∀ᶠ p : K in 𝓝 ⟨γ₀ s, hγ₀K⟩,
       IsFixedPt (timeDependentFlowOf X s (s + T)) p.1 → p.1 = γ₀ s :=
-    (continuous_subtype_val.tendsto ⟨γ₀ s, hγ₀K⟩).eventually hisoM
+    (continuous_subtype_val.tendsto ⟨γ₀ s, hγ₀K⟩).eventually <|
+      (eventually_nhdsWithin_iff.1 hnd.eventually_not_isFixedPt).mono fun _ hp hfix ↦
+        Classical.byContradiction fun hne ↦ hp hne hfix
   rw [hemb.isEmbedding.nhds_eq_comap] at hisoK
   obtain ⟨V, hV, hVK⟩ := hisoK
   obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hV
-  have hflow_eq {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T) (t : ℝ) :
+  have hflow {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T) (t : ℝ) :
       timeDependentFlowOf X s t (γ s) = γ t :=
     timeDependentFlowOf_eq_of_hasMFDerivAt hX
       (fun u (_ : u ∈ Ioo (min s t - 1) (max s t + 1)) ↦ hγ.1 u)
       ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
       ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
-  refine ⟨ε, hε, fun γ hγ hγK hγx ↦ ?_⟩
-  have hγfix : IsFixedPt (timeDependentFlowOf X s (s + T)) (γ s) :=
-    (hflow_eq hγ (s + T)).trans (hγ.2 s)
-  have hγs : γ s = γ₀ s := @hVK ⟨γ s, hγK⟩ (hball (Metric.mem_ball.2 hγx)) hγfix
-  exact funext fun t ↦ (hflow_eq hγ t).symm.trans (hγs ▸ hflow_eq hγ₀ t)
+  refine ⟨ε, hε, fun γ hγ hγK hγx ↦ funext fun t ↦ ?_⟩
+  have hγs : γ s = γ₀ s := @hVK ⟨γ s, hγK⟩ (hball (Metric.mem_ball.2 hγx))
+    ((hflow hγ (s + T)).trans (hγ.2 s))
+  exact (hflow hγ t).symm.trans (hγs ▸ hflow hγ₀ t)
 
 end NullhomotopyAndIsolation
 

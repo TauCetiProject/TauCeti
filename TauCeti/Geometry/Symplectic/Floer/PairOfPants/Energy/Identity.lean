@@ -1345,9 +1345,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_of_eq_smul_endAngularForm
 `T n = n + max 2 T₀`, the lower Lebesgue energy is the limit of
 `ENNReal.ofReal (a n + ∑ q, ±∫ s, β'(±s - T n) * ∫₀¹ H_q)` with `a n → ∫ u^*ω - ∫ R_K`. -/
 theorem IsNondegenerate.exists_tendsto_ofReal_floerEnergyDensity_of_eq_smul_endAngularForm
-    (hω : ω.IsNondegenerate)
-    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
+    (hω : ω.IsNondegenerate) (hK : ∀ (w : ThricePuncturedSphere) x,
+      ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
     (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
     (hH : ∀ q, Periodic (H q) 1) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
@@ -1367,28 +1366,21 @@ theorem IsNondegenerate.exists_tendsto_ofReal_floerEnergyDensity_of_eq_smul_endA
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))) ∧
       Tendsto (fun n : ℕ ↦ ENNReal.ofReal (a n +
         ∑ q, q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - (n + max 2 T₀)) *
-          ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t))))) atTop
-        (𝓝 (∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
-          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z))) := by
+          ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t))))) atTop (𝓝 (∫⁻ z, ENNReal.ofReal
+            (ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+              (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z))) := by
   set e := ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u
   let T (n : ℕ) : ℝ := n + max 2 T₀
   have hT : Tendsto T atTop atTop := tendsto_atTop_add_const_right _ _ tendsto_natCast_atTop_atTop
-  have hT₂ (n : ℕ) : 2 ≤ T n := by dsimp [T]; linarith [n.cast_nonneg (α := ℝ), le_max_left 2 T₀]
-  have hT₀ (n : ℕ) : T₀ ≤ T n := by dsimp [T]; linarith [n.cast_nonneg (α := ℝ), le_max_right 2 T₀]
   have hχe (n : ℕ) : Integrable fun z ↦ SymplecticForm.truncation (T n) z * e z :=
     (hω.integral_truncation_mul_floerEnergyDensity_eq hK hu hR (T n)).1
-  have hχe₀ (n : ℕ) (z : ℝ × ℝ) : 0 ≤ SymplecticForm.truncation (T n) z * e z := by
-    by_cases hz : z ∈ thricePuncturedSphereReal
-    · exact mul_nonneg (SymplecticForm.truncation_mem_Icc _ z).1 (he z hz)
-    · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hz (SymplecticForm.mem_tsupport_truncation h)]
-  refine ⟨fun n ↦ (∫ z, SymplecticForm.truncation (T n) z *
-      (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+  refine ⟨fun n ↦ (∫ z, SymplecticForm.truncation (T n) z * (SmoothBundleForm.eval₂ ω (u z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) -
-    ∫ z, SymplecticForm.truncation (T n) z * ω.hamiltonianCurvature
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z),
+      ∫ z, SymplecticForm.truncation (T n) z * ω.hamiltonianCurvature
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z),
     ((SymplecticForm.tendsto_integral_truncation_mul hA).comp hT).sub
       ((SymplecticForm.tendsto_integral_truncation_mul hR).comp hT), ?_⟩
   refine (lintegral_tendsto_of_tendsto_of_monotone
@@ -1399,9 +1391,11 @@ theorem IsNondegenerate.exists_tendsto_ofReal_floerEnergyDensity_of_eq_smul_endA
   · filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz
     simpa only [comp_def, one_mul] using (ENNReal.continuous_ofReal.tendsto _).comp
       (((SymplecticForm.tendsto_truncation hz).comp hT).mul_const (e z))
-  · rw [← ofReal_integral_eq_lintegral_ofReal (hχe n) (ae_of_all _ (hχe₀ n)),
-      hω.integral_truncation_mul_floerEnergyDensity_eq_sum hK hKH hH hu hR (hT₂ n) (hT₀ n),
-      ← sub_add_eq_add_sub]
+  · rw [← ofReal_integral_eq_lintegral_ofReal (hχe n) (ae_mem_thricePuncturedSphereReal.mono
+        fun z hz ↦ mul_nonneg (SymplecticForm.truncation_mem_Icc _ z).1 (he z hz)),
+      hω.integral_truncation_mul_floerEnergyDensity_eq_sum hK hKH hH hu hR
+        (le_add_of_nonneg_of_le n.cast_nonneg (le_max_left 2 T₀))
+        (le_add_of_nonneg_of_le n.cast_nonneg (le_max_right 2 T₀)), ← sub_add_eq_add_sub]
 
 /-- **The energy identity for a nonnegative energy density, for a manifold target.** Under the
 hypotheses of
@@ -1416,7 +1410,8 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularFor
       (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
     (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
     (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ ω.floerEnergyDensity
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
@@ -1435,7 +1430,8 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularFor
       ENNReal.ofReal ((∫ z, (SmoothBundleForm.eval₂ ω (u z)
           (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
           (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
-        ∑ q, q.endSign * h q - ∫ z, ω.hamiltonianCurvature
+        ∑ q, q.endSign * h q -
+        ∫ z, ω.hamiltonianCurvature
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) := by
   obtain ⟨a, ha, he⟩ :=
@@ -1456,7 +1452,8 @@ theorem IsNondegenerate.integrable_floerEnergyDensity_of_eq_smul_endAngularForm
       (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
     (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
     (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ ω.floerEnergyDensity
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
@@ -1472,19 +1469,24 @@ theorem IsNondegenerate.integrable_floerEnergyDensity_of_eq_smul_endAngularForm
     Integrable (ω.floerEnergyDensity
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u) := by
-  set e := ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-    (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u
-  have hm : AEStronglyMeasurable e volume := by
-    refine aestronglyMeasurable_of_tendsto_ae (u := atTop)
-      (f := fun (n : ℕ) z ↦ SymplecticForm.truncation n z * e z)
+  -- The energy density is a limit of the integrable weighted densities, hence measurable.
+  have hm : AEStronglyMeasurable (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u) volume := by
+    refine aestronglyMeasurable_of_tendsto_ae (u := atTop) (f := fun n : ℕ ↦ fun z ↦
+      SymplecticForm.truncation n z * ω.floerEnergyDensity
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
       (fun n ↦ (hω.integral_truncation_mul_floerEnergyDensity_eq hK hu hR n).1.1) ?_
     filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz
     simpa using ((SymplecticForm.tendsto_truncation hz).comp
       tendsto_natCast_atTop_atTop).mul_const _
   refine ⟨hm, ?_⟩
-  rw [HasFiniteIntegral, lintegral_congr_ae (g := fun z ↦ ENNReal.ofReal (e z)) (by
-      filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz
-      exact Real.eNorm_eq_ofReal (he z hz)),
+  rw [HasFiniteIntegral, lintegral_congr_ae (g := fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)) (by
+        filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz
+        exact Real.eNorm_eq_ofReal (he z hz)),
     hω.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm hK hKH hH hu he hA hR hh]
   exact ENNReal.ofReal_lt_top
 

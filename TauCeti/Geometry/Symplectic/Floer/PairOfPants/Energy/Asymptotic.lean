@@ -51,9 +51,8 @@ specializations to the constant form `SymplecticForm.constSmooth`.
   integrals over its truncations, and integrals of a continuous Hamiltonian along the end loops
   converge to its integral along their pointwise limits when the Hamiltonian is bounded or the end
   loops eventually stay in a compact set.
-* `SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularForm`,
-  `SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_ne_top_of_eq_smul_endAngularForm`:
-  whole-surface lower Lebesgue energy bound and finiteness from eventually bounded end-loop
+* `SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularForm`:
+  whole-surface lower Lebesgue energy bound (and finiteness) from eventually bounded end-loop
   integrals and nonnegative energy density.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation`: the energy
   identity on the whole pair of pants, for a map with asymptotic loops at the ends; the
@@ -126,24 +125,21 @@ converge pointwise to `y` as `s → ∞`, then the integrals of a jointly contin
 theorem tendsto_intervalIntegral_endChart_of_isCompact {M E : Type*} [TopologicalSpace M]
     [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → M → E} (hfc : Continuous (uncurry f))
     {B : Set M} (hB : IsCompact B) {u : ℝ × ℝ → M} (hu : ContinuousOn u thricePuncturedSphereReal)
-    {q : Puncture}
-    (huB : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1, u (endChart q (q.endSign * s, t)) ∈ B)
+    {q : Puncture} (huB : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1, u (endChart q (q.endSign * s, t)) ∈ B)
     {y : ℝ → M}
     (hy : ∀ t, Tendsto (fun s : ℝ ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y t))) :
     Tendsto (fun s : ℝ ↦ ∫ t in (0 : ℝ)..1, f t (u (endChart q (q.endSign * s, t)))) atTop
       (𝓝 (∫ t in (0 : ℝ)..1, f t (y t))) := by
   obtain ⟨s₀, hs₀⟩ := eventually_atTop.1 (huB.and (eventually_gt_atTop (0 : ℝ)))
   set v : ℝ → ℝ → M := fun s t ↦ u (endChart q (q.endSign * max s s₀, t))
-  refine (tendsto_intervalIntegral_comp_of_tendsto hfc hB (y := v) (fun s ↦ ?_) (fun s t ht ↦ ?_)
+  refine (tendsto_intervalIntegral_comp_of_tendsto hfc hB (y := v) (fun s ↦ ?_) (fun s t ht ↦
+      (hs₀ _ (le_max_right s s₀)).1 t (by rwa [uIcc_of_le zero_le_one] at ht))
     fun t _ ↦ (hy t).congr' ((eventually_ge_atTop s₀).mono fun s hs ↦
       by simp only [v, max_eq_left hs])).congr'
     ((eventually_ge_atTop s₀).mono fun s hs ↦ by simp only [v, max_eq_left hs, uncurry_apply_pair])
-  · have hmem (t : ℝ) : endChart q (q.endSign * max s s₀, t) ∈ thricePuncturedSphereReal :=
-      endChart_mem_thricePuncturedSphereReal
-        (by simpa [← mul_assoc] using (hs₀ _ (le_max_right s s₀)).2)
-    exact (hu.comp_continuous ((contDiff_endChart q 0).continuous.comp
-      (continuous_const.prodMk continuous_id)) hmem).continuousOn
-  · exact (hs₀ _ (le_max_right s s₀)).1 t (by rwa [uIcc_of_le zero_le_one] at ht)
+  exact (hu.comp_continuous ((contDiff_endChart q 0).continuous.comp
+    (continuous_const.prodMk continuous_id)) fun _ ↦ endChart_mem_thricePuncturedSphereReal
+      (by simpa [← mul_assoc] using (hs₀ _ (le_max_right s s₀)).2)).continuousOn
 
 end Floer
 
@@ -277,19 +273,16 @@ theorem IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap
   linarith [h.2]
 
 /-- **Energy bound from bounded end-loop integrals, for a manifold target.** Under the hypotheses of
-`SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm`, except
-that instead of convergence of the end-loop integrals each end-loop integral
-`|∫₀¹ H_q(t, u(φ_q(±σ, t))) dt|` is eventually bounded by `M₀ q` as `σ → ∞` (for instance when `u`
-takes values in a compact set), the lower Lebesgue energy of `u` is bounded by
-`∫ u^*ω + ∑ q, M₀ q - ∫ R_K(u)`. -/
+`SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm`, if
+`|∫₀¹ H_q(t, u(φ_q(±σ, t))) dt|` is eventually bounded by `M₀ q` as `σ → ∞` instead of converging,
+the lower Lebesgue energy of `u` is bounded by `∫ u^*ω + ∑ q, M₀ q - ∫ R_K(u)` (hence finite). -/
 theorem IsNondegenerate.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularForm
     {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {u : ℝ × ℝ → M} (hω : ω.IsNondegenerate)
     (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
       (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
     (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1)
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (hH : ∀ q, Periodic (H q) 1) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
     (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ ω.floerEnergyDensity
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
@@ -298,8 +291,7 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularFor
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ))
     (hR : Integrable fun z ↦ ω.hamiltonianCurvature
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
-    {M₀ : Puncture → ℝ}
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) {M₀ : Puncture → ℝ}
     (hM₀ : ∀ q, ∀ᶠ σ in atTop,
       |∫ t in (0 : ℝ)..1, H q t (u (endChart q (q.endSign * σ, t)))| ≤ M₀ q) :
     ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
@@ -307,21 +299,18 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularFor
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≤
       ENNReal.ofReal ((∫ z, (SmoothBundleForm.eval₂ ω (u z)
           (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
-        ∑ q, M₀ q -
-        ∫ z, ω.hamiltonianCurvature
-          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) + ∑ q, M₀ q -
+        ∫ z, ω.hamiltonianCurvature (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) := by
   obtain ⟨S₀, hS₀⟩ := eventually_atTop.1 (eventually_all.2 hM₀)
   obtain ⟨a, ha, helim⟩ :=
     hω.exists_tendsto_ofReal_floerEnergyDensity_of_eq_smul_endAngularForm hK hKH hH hu he hA hR
   set T : ℕ → ℝ := fun n ↦ n + max 2 T₀
-  have hT : Tendsto T atTop atTop :=
-    tendsto_atTop_add_const_right _ _ tendsto_natCast_atTop_atTop
   rw [← sub_add_eq_add_sub]
   refine le_of_tendsto_of_tendsto helim
     ((ENNReal.continuous_ofReal.tendsto _).comp (ha.add tendsto_const_nhds)) ?_
-  filter_upwards [hT.eventually_ge_atTop S₀] with n hn
+  filter_upwards [(tendsto_atTop_add_const_right _ _
+    tendsto_natCast_atTop_atTop).eventually_ge_atTop S₀] with n hn
   refine ENNReal.ofReal_le_ofReal (add_le_add_right (Finset.sum_le_sum fun q _ ↦ ?_) (a n))
   refine (le_abs_self _).trans ?_
   rw [abs_mul, q.abs_endSign, one_mul, ← Real.norm_eq_abs]
@@ -335,35 +324,6 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularFor
     · rw [smoothTransition.deriv_of_neg (by linarith), zero_mul, zero_mul]
   · rw [integral_mul_const, smoothTransition.integral_deriv_mul_sub, q.abs_endSign, inv_one,
       one_mul]
-
-/-- **Finite energy from bounded end-loop integrals, for a manifold target.** Under the hypotheses
-of `SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularForm`, the
-lower Lebesgue energy of `u` is finite. -/
-theorem IsNondegenerate.lintegral_floerEnergyDensity_ne_top_of_eq_smul_endAngularForm
-    {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {u : ℝ × ℝ → M} (hω : ω.IsNondegenerate)
-    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
-      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1)
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
-    (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ ω.floerEnergyDensity
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
-    (hA : Integrable fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ))
-    (hR : Integrable fun z ↦ ω.hamiltonianCurvature
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
-    {M₀ : Puncture → ℝ}
-    (hM₀ : ∀ q, ∀ᶠ σ in atTop,
-      |∫ t in (0 : ℝ)..1, H q t (u (endChart q (q.endSign * σ, t)))| ≤ M₀ q) :
-    ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤ :=
-  ((hω.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularForm hK hKH hH hu he hA hR
-    hM₀).trans_lt ENNReal.ofReal_lt_top).ne
 
 end SmoothTwoForm
 

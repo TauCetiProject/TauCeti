@@ -609,15 +609,12 @@ theorem periodic_and_hasDerivAt_of_mapClusterPt (hu : ContDiffOn ℝ 1 u (Ioi a 
     ((hσy.tendsto_at t).comp hψ.tendsto_atTop) (hux.tendsto_at t)
   exact hyx ▸ ⟨hxper, hx⟩
 
-/-- **Convergence of loops to a periodic solution isolated within a limit-closed class.** Let `X`
-be a continuous, `1`-periodic time-dependent vector field and let `u` be `C¹` on the half-cylinder
-`s > a`, with derivative bounded by `C` and with `1`-periodic loops `t ↦ u(s, t)` in a compact set
-`K`. Suppose that the squared norm of the defect `∂_t u - X(t, u)` has finite integral over
-`(a, ∞) × [0, 1]`, that any `1`-periodic solution `x` of `x' = X(t, x)` in `K` which is a uniform
-limit of `u(s, ·)` along a nontrivial filter supported on `[a + 1, ∞)` satisfies `P x`, and that
-the `1`-periodic solutions in `K` satisfying `P` are isolated from one another in the uniform
-distance. Then the loops converge uniformly, as `s → ∞`, to a single `1`-periodic solution `x` in
-`K` satisfying `P`. -/
+/-- **Convergence of loops to a periodic solution isolated within a limit-closed class.** For a
+continuous `1`-periodic field `X` and `C¹` map `u` on `s > a` with derivative `≤ C`, `1`-periodic
+slices in a compact `K`, and square-integrable defect on `(a, ∞) × [0, 1]`, if `P` holds on every
+`1`-periodic solution in `K` arising as a uniform limit of `u(s, ·)` along a nontrivial filter on
+`[a + 1, ∞)` and isolates such solutions in `K`, then `u(s, ·)` converges uniformly as `s → ∞` to a
+`1`-periodic solution in `K` satisfying `P`. -/
 theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_forall_tendstoUniformly
     (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
     (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1) (hK : IsCompact K)
@@ -675,10 +672,9 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_forall_tendstoUnifo
       periodic_and_hasDerivAt_of_mapClusterPt hu hper hK huK hX hXper hfin hC hf
     let l : Filter ℝ := comap ℓ (𝓝 f) ⊓ atTop
     have : NeBot l := (map_neBot_iff ℓ).1 (by rwa [Filter.push_pull'])
-    have hconv_l : TendstoUniformly (fun s t ↦ u (s, t)) (UniformFun.toFun f) l :=
-      UniformFun.tendsto_iff_tendstoUniformly.1 (tendsto_comap.mono_left inf_le_left)
-    exact ⟨hfper, hf', hfS.2.1, hPlim hfper hf' hfS.2.1
-      ((eventually_ge_atTop (a + 1)).filter_mono inf_le_right) hconv_l⟩
+    exact ⟨hfper, hf', hfS.2.1, hPlim (l := l) hfper hf' hfS.2.1
+      ((eventually_ge_atTop (a + 1)).filter_mono inf_le_right)
+      (UniformFun.tendsto_iff_tendstoUniformly.1 (tendsto_comap.mono_left inf_le_left))⟩
   have hdisc : IsDiscrete O := by
     refine isDiscrete_iff_forall_mem_exists_isOpen.2 fun x hx ↦ ?_
     obtain ⟨ε, hε, hxε⟩ := hiso _ hx.1 hx.2.1 hx.2.2.1 hx.2.2.2
@@ -693,13 +689,9 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_forall_tendstoUnifo
   exact ⟨UniformFun.toFun x, hxO.1, hxO.2.1, hxO.2.2.1, hxO.2.2.2,
     UniformFun.tendsto_iff_tendstoUniformly.1 hx⟩
 
-/-- **Convergence of the loops to an isolated periodic solution.** Let `X` be a continuous,
-`1`-periodic time-dependent vector field and let `u` be `C¹` on the half-cylinder `s > a`, with
-derivative bounded by `C` and with `1`-periodic loops `t ↦ u(s, t)` in a compact set `K`. Suppose
-that the squared norm of the defect `∂_t u - X(t, u)` has finite integral over `(a, ∞) × [0, 1]`,
-and that the `1`-periodic solutions of `x' = X(t, x)` in `K` are isolated: each has a uniform
-neighbourhood containing no other. Then the loops converge uniformly, as `s → ∞`, to a single
-`1`-periodic solution `x`. -/
+/-- **Convergence of the loops to an isolated periodic solution.** Specialization of
+`exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_forall_tendstoUniformly` when all `1`-periodic
+solutions of `x' = X(t, x)` in `K` are isolated in the uniform distance. -/
 theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
     (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1) (hK : IsCompact K)
     (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K) (hX : Continuous (uncurry X))
@@ -710,14 +702,12 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop (hu : ContDiffOn ℝ 1
       ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 → (∀ t, HasDerivAt y (X t (y t)) t) →
         (∀ t, y t ∈ K) → (∀ t, dist (y t) (x t) < ε) → y = x) :
     ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (X t (x t)) t) ∧
-      TendstoUniformly (fun s t ↦ u (s, t)) x atTop := by
-  obtain ⟨x, hxper, hx, -, -, hux⟩ :=
-    exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_forall_tendstoUniformly hu hper hK huK
-      hX hXper hfin hC (P := fun _ ↦ True) (fun _ _ _ _ _ ↦ trivial)
-      fun x hxper hx hxK _ ↦ by
-        obtain ⟨ε, hε, h⟩ := hiso x hxper hx hxK
-        exact ⟨ε, hε, fun y hyper hy hyK _ hyx ↦ h y hyper hy hyK hyx⟩
-  exact ⟨x, hxper, hx, hux⟩
+      TendstoUniformly (fun s t ↦ u (s, t)) x atTop :=
+  (exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_forall_tendstoUniformly hu hper hK huK hX
+    hXper hfin hC (P := fun _ ↦ True) (fun _ _ _ _ _ ↦ trivial) fun x hxper hx hxK _ ↦
+      let ⟨ε, hε, h⟩ := hiso x hxper hx hxK
+      ⟨ε, hε, fun y hyper hy hyK _ ↦ h y hyper hy hyK⟩).imp
+    fun _ ⟨hxper, hx, _, _, hux⟩ ↦ ⟨hxper, hx, hux⟩
 
 end Convergence
 
