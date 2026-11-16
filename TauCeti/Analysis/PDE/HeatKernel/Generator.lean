@@ -54,6 +54,9 @@ the domain of `A`; both sides are continuous functions, and evaluating at `0` wi
 gives `∫ Δφ • f = ∫ φ • A f`. Thus `A` is a restriction of the distributional Laplacian. The two
 operators agree because `1 - A` is onto, `A` being the generator of a contraction semigroup, while
 `1 - Δ` is injective on `{f ∈ Lᵖ : Δf ∈ Lᵖ}` (`TauCeti.smul_sub_weakLaplacianLp_injective`).
+That the smooth compactly supported functions form a core of the generator is shown in
+`TauCeti/Analysis/PDE/HeatKernel/Generator/Core.lean`
+(`TauCeti.generator_heatSemigroup_hasCore_range_ambientToLp`).
 
 ## Main declarations
 
