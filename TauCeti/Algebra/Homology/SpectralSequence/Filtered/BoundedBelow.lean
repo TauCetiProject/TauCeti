@@ -23,12 +23,13 @@ the objects at `(p, q)` on the later pages
 graded piece exactly when it vanishes on some later page
 (`CochainComplex.filtrationSpectralSequencePageXToGraded_eq_zero_iff`). So the graded piece is
 the direct limit of the objects at `(p, q)` on the pages `r' ≥ r` along these maps. This is the
-convergence statement of Weibel's Classical Convergence Theorem 5.5.1(2), whose `E∞` is such a
-direct limit for a filtration bounded below, in the form needed when the filtration is not
-finite: together with the exhaustive filtration of `H^n(K)`
-(`CochainComplex.exists_mem_range_filtrationAbutmentFiltrationι`), which is bounded below
-(`CochainComplex.isZero_filtrationAbutmentFiltration_of_isZero_X`), the spectral sequence
-converges to `H^n(K)`. The strong convergence statements of
+`E∞` part of Weibel's Classical Convergence Theorem 5.5.1(2), whose `E∞` is such a direct limit
+for a filtration bounded below, in the form needed when the filtration is not finite.
+Convergence to `H^n(K)` needs in addition hypotheses in degree `n`, which this file does not
+assume: if every element of `K^n` lies in some `F_i`, the filtration of `H^n(K)` is exhaustive
+(`CochainComplex.exists_mem_range_filtrationAbutmentFiltrationι`), and if some stage vanishes in
+degree `n`, it is bounded below (`CochainComplex.isZero_filtrationAbutmentFiltration_of_isZero_X`).
+The strong convergence statements of
 `TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive` need instead the vanishing of the
 graded cohomology above some stage, which makes the pages stabilize.
 
@@ -53,6 +54,8 @@ filtrations.
 
 * `CochainComplex.exists_spectralSequencePageXToPageX_eq_zero`: for a functor `G` exhaustive in
   degree `n - 1`, an element of a page vanishing in `E∞` vanishes on some later page.
+* `CochainComplex.spectralSequencePageXToPageX_filtrationSpectralSequencePageXToGraded`: the maps
+  onto the graded piece are compatible with the maps to the later pages.
 * `CochainComplex.filtrationSpectralSequencePageXToGraded_eq_zero_iff`: **the Classical
   Convergence Theorem** for filtrations bounded below and exhaustive: the kernel of the map onto
   the graded piece consists of the elements vanishing on some later page.
@@ -89,6 +92,7 @@ private lemma map_comp_eq {a b c : EInt} (hab : a ≤ b) (hbc : b ≤ c) (hac : 
 
 /-- The map `H^n(q ≤ a) ⟶ H^n(q ≤ b)` of the spectral object of `G`, read through
 `spectralObjectHIsoCokernel`, is the map in cohomology of `G_a / G_q ⟶ G_b / G_q`. -/
+@[elementwise]
 private lemma H_map_twoδ₂Toδ₁'_comp_spectralObjectHIsoCokernel_hom {q a b : EInt} (hqa : q ≤ a)
     (hab : a ≤ b) (n : ℤ) :
     ((spectralObject G).H n).map (twoδ₂Toδ₁' q a b hqa hab) ≫
@@ -97,8 +101,7 @@ private lemma H_map_twoδ₂Toδ₁'_comp_spectralObjectHIsoCokernel_hom {q a b 
         (cokernel.map _ _ (𝟙 _) (G.map (homOfLE hab))
           (by rw [Category.id_comp, map_comp_eq])) n := by
   rw [spectralObject_H_map_comp_spectralObjectHIsoCokernel_hom]
-  congr 3
-  exact G.map_id _
+  simp [twoδ₂Toδ₁']
 
 /-- The directed union argument on the quotients: if every element of `G_⊤` in degree `n - 1`
 comes from some `G_i`, a class of `H^n(G_j / G_q)` vanishing in `H^n(G_⊤ / G_q)` already vanishes
@@ -164,57 +167,11 @@ theorem exists_spectralObject_H_map_twoδ₂Toδ₁'_eq_zero {q j n : ℤ} (hqj 
   have hqj' : (q : EInt) ≤ j := by simpa using hqj
   -- Read `y` in the cohomology of the quotients `G_a / G_q`.
   obtain ⟨j', hjj', h⟩ := exists_homologyMap_cokernelMap_eq_zero G hqj hex
-    ((spectralObjectHIsoCokernel G (homOfLE hqj') n).hom y) (by
-      have := ConcreteCategory.congr_hom
-        (H_map_twoδ₂Toδ₁'_comp_spectralObjectHIsoCokernel_hom G hqj' le_top n) y
-      simp only [ConcreteCategory.comp_apply] at this
-      rw [← this, hy, map_zero])
-  refine ⟨j', hjj', ?_⟩
-  have hja : (j : EInt) ≤ j' := by simpa using hjj'
-  have := ConcreteCategory.congr_hom
-    (H_map_twoδ₂Toδ₁'_comp_spectralObjectHIsoCokernel_hom G hqj' hja n) y
-  simp only [ConcreteCategory.comp_apply] at this
-  have h0 : (spectralObjectHIsoCokernel G (homOfLE (hqj'.trans hja)) n).hom
-      (((spectralObject G).H n).map (twoδ₂Toδ₁' (q : EInt) j j' hqj' hja) y) = 0 := by
-    rw [this]
-    exact h
-  simpa using congrArg (spectralObjectHIsoCokernel G (homOfLE (hqj'.trans hja)) n).inv h0
-
-omit [∀ {a b : EInt} (f : a ⟶ b), Mono (G.map f)] in
-/-- The canonical map `E^n(⊥ ≤ q ≤ q + 1 ≤ j) ⟶ E^n(⊥ ≤ q ≤ q + 1 ≤ a)`, read in
-`H^n(q ≤ a)` through `fromE`, is the map `H^n(q ≤ j) ⟶ H^n(q ≤ a)`. -/
-private lemma fromE_mapFourδ₄Toδ₃'_apply {q j : ℤ} (hj : q + 1 ≤ j) {a : EInt}
-    (hja : (j : EInt) ≤ a) (n : ℤ)
-    (x : (spectralObject G).E (homOfLE (bot_le : (⊥ : EInt) ≤ q))
-      (homOfLE (coe_le_coe_add_one q))
-      (homOfLE (show ((q + 1 : ℤ) : EInt) ≤ (j : EInt) by simpa using hj)) (n - 1) n (n + 1)) :
-    (spectralObject G).fromE (homOfLE (bot_le : (⊥ : EInt) ≤ q))
-        (homOfLE (coe_le_coe_add_one q))
-        (homOfLE (show ((q + 1 : ℤ) : EInt) ≤ a from (show ((q + 1 : ℤ) : EInt) ≤ j by
-          simpa using hj).trans hja))
-        (homOfLE (show (q : EInt) ≤ a from (show (q : EInt) ≤ j by simp; lia).trans hja)) rfl
-        (n - 1) n (n + 1) (by lia) (by lia)
-        ((spectralObject G).mapFourδ₄Toδ₃' ⊥ q ((q + 1 : ℤ) : EInt) j a bot_le
-          (coe_le_coe_add_one q) (by simpa using hj) hja (n - 1) n (n + 1) (by lia) (by lia) x) =
-      ((spectralObject G).H n).map (twoδ₂Toδ₁' (q : EInt) j a (by simp; lia) hja)
-        ((spectralObject G).fromE (homOfLE (bot_le : (⊥ : EInt) ≤ q))
-          (homOfLE (coe_le_coe_add_one q))
-          (homOfLE (show ((q + 1 : ℤ) : EInt) ≤ (j : EInt) by simpa using hj))
-          (homOfLE (show (q : EInt) ≤ j by simp; lia)) rfl (n - 1) n (n + 1) (by lia) (by lia)
-          x) := by
-  have e := (spectralObject G).map_fromE (homOfLE (bot_le : (⊥ : EInt) ≤ q))
-    (homOfLE (coe_le_coe_add_one q))
-    (homOfLE (show ((q + 1 : ℤ) : EInt) ≤ (j : EInt) by simpa using hj))
-    (homOfLE (show (q : EInt) ≤ j by simp; lia)) rfl
-    (homOfLE (bot_le : (⊥ : EInt) ≤ q)) (homOfLE (coe_le_coe_add_one q))
-    (homOfLE (show ((q + 1 : ℤ) : EInt) ≤ a from (show ((q + 1 : ℤ) : EInt) ≤ j by
-      simpa using hj).trans hja))
-    (homOfLE (show (q : EInt) ≤ a from (show (q : EInt) ≤ j by simp; lia).trans hja)) rfl
-    (fourδ₄Toδ₃' (⊥ : EInt) (q : EInt) ((q + 1 : ℤ) : EInt) (j : EInt) a bot_le
-      (coe_le_coe_add_one q) (by simpa using hj) hja) (n - 1) n (n + 1)
-    (twoδ₂Toδ₁' (q : EInt) j a (by simp; lia) hja) (Subsingleton.elim _ _)
-    (Subsingleton.elim _ _)
-  simpa only [ConcreteCategory.comp_apply] using ConcreteCategory.congr_hom e x
+    ((spectralObjectHIsoCokernel G (homOfLE hqj') n).hom y)
+    (by rw [← H_map_twoδ₂Toδ₁'_comp_spectralObjectHIsoCokernel_hom_apply, hy, map_zero])
+  refine ⟨j', hjj', (ModuleCat.mono_iff_injective (spectralObjectHIsoCokernel G
+    (homOfLE (show (q : EInt) ≤ j' by simp; lia)) n).hom).1 inferInstance ?_⟩
+  rw [H_map_twoδ₂Toδ₁'_comp_spectralObjectHIsoCokernel_hom_apply, h, map_zero]
 
 /-- **Vanishing in `E∞` is detected at a finite stage.** Suppose that every element of `G_⊤` in
 degree `n - 1` comes from some `G_i`, `i : ℤ`. Then an element of `E^n(⊥ ≤ q ≤ q + 1 ≤ j)` whose
@@ -231,12 +188,18 @@ theorem exists_mapFourδ₄Toδ₃'_eq_zero {q j n : ℤ} (hj : q + 1 ≤ j)
     ∃ (j' : ℤ) (hjj' : j ≤ j'), (spectralObject G).mapFourδ₄Toδ₃' ⊥ q ((q + 1 : ℤ) : EInt) j j'
       bot_le (coe_le_coe_add_one q) (by simpa using hj) (by simpa using hjj') (n - 1) n (n + 1)
         (by lia) (by lia) x = 0 := by
+  -- Through `fromE`, the canonical maps out of `E^n(⊥ ≤ q ≤ q + 1 ≤ j)` are the maps out of
+  -- `H^n(q ≤ j)`.
+  have hfromE {a : EInt} (hja : (j : EInt) ≤ a) := ConcreteCategory.congr_hom
+    ((spectralObject G).mapFourδ₄Toδ₃'_fromE ⊥ q ((q + 1 : ℤ) : EInt) j a bot_le
+      (coe_le_coe_add_one q) (by simpa using hj) hja (n - 1) n (n + 1)) x
+  simp only [ConcreteCategory.comp_apply] at hfromE
   -- The image of `x` in `H^n(q ≤ j)` vanishes in `H^n(q ≤ ⊤)`, hence in some `H^n(q ≤ j')`.
   obtain ⟨j', hjj', h⟩ := exists_spectralObject_H_map_twoδ₂Toδ₁'_eq_zero G (by lia : q ≤ j) hex _
-    (by rw [← fromE_mapFourδ₄Toδ₃'_apply G hj le_top n x, hx, map_zero])
+    (by rw [← hfromE le_top, hx, map_zero])
   refine ⟨j', hjj', (ModuleCat.mono_iff_injective ((spectralObject G).fromE _ _ _
     (homOfLE (show (q : EInt) ≤ j' by simp; lia)) rfl (n - 1) n (n + 1))).1 inferInstance ?_⟩
-  rw [fromE_mapFourδ₄Toδ₃'_apply G hj (by simpa using hjj') n x, h, map_zero]
+  rw [hfromE (by simpa using hjj'), h, map_zero]
 
 /-- **Vanishing in `E∞` is detected on a later page.** Let `pq = (p, q)` and `n = p + q`. Suppose
 that `H^{n+1}(⊥ ≤ q - r' + 2)` vanishes for all `r' ≥ r`, and that every element of `G_⊤` in
@@ -296,12 +259,37 @@ noncomputable def filtrationSpectralSequencePageXToGraded (r : ℤ) (hr : 2 ≤ 
       (isZero_spectralObject_H_bot_of_isZero_X F hF hs hrs) ≫
     ((spectralObject _).EInftyIsoCokernel _ _).hom
 
+/-- `filtrationSpectralSequencePageXToGraded` is the map `spectralSequencePageXToEInfty` onto
+`E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)` followed by its identification with the graded piece. -/
+lemma filtrationSpectralSequencePageXToGraded_def (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) {s : ℤ}
+    (hs : IsZero ((F s : CochainComplex (ModuleCat.{v} R) ℤ).X (pq.1 + pq.2 + 1)))
+    (hrs : pq.2 - r + 2 ≤ s) :
+    filtrationSpectralSequencePageXToGraded F hF r hr pq hs hrs =
+      (spectralObject _).spectralSequencePageXToEInfty r hr pq _ rfl
+          (isZero_spectralObject_H_bot_of_isZero_X F hF hs hrs) ≫
+        ((spectralObject _).EInftyIsoCokernel _ _).hom :=
+  (rfl)
+
 instance (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) {s : ℤ}
     (hs : IsZero ((F s : CochainComplex (ModuleCat.{v} R) ℤ).X (pq.1 + pq.2 + 1)))
     (hrs : pq.2 - r + 2 ≤ s) :
     Epi (filtrationSpectralSequencePageXToGraded F hF r hr pq hs hrs) := by
-  rw [filtrationSpectralSequencePageXToGraded]
+  rw [filtrationSpectralSequencePageXToGraded_def]
   infer_instance
+
+/-- The maps onto the graded piece are compatible with the maps from a page to later pages. -/
+@[reassoc (attr := simp)]
+lemma spectralSequencePageXToPageX_filtrationSpectralSequencePageXToGraded (r r' : ℤ) (hr : 2 ≤ r)
+    (hrr' : r ≤ r') (pq : ℤ × ℤ) {s : ℤ}
+    (hs : IsZero ((F s : CochainComplex (ModuleCat.{v} R) ℤ).X (pq.1 + pq.2 + 1)))
+    (hrs : pq.2 - r + 2 ≤ s) :
+    (spectralObject _).spectralSequencePageXToPageX r r' hr hrr' pq _ rfl
+        (isZero_spectralObject_H_bot_of_isZero_X F hF hs hrs)
+        (isZero_spectralObject_H_bot_of_isZero_X F hF hs (by lia)) ≫
+      filtrationSpectralSequencePageXToGraded F hF r' (hr.trans hrr') pq hs (by lia) =
+    filtrationSpectralSequencePageXToGraded F hF r hr pq hs hrs := by
+  rw [filtrationSpectralSequencePageXToGraded_def, filtrationSpectralSequencePageXToGraded_def,
+    spectralSequencePageXToPageX_spectralSequencePageXToEInfty_assoc]
 
 /-- **Weibel's Classical Convergence Theorem for filtrations bounded below.** Let `pq = (p, q)` and
 `n = p + q`. Suppose that the stage `F_s` vanishes in degree `n + 1` and that every element of
@@ -322,7 +310,7 @@ theorem filtrationSpectralSequencePageXToGraded_eq_zero_iff (r : ℤ) (hr : 2 �
         (spectralObject _).spectralSequencePageXToPageX r r' hr hrr' pq _ rfl
           (isZero_spectralObject_H_bot_of_isZero_X F hF hs hrs)
           (isZero_spectralObject_H_bot_of_isZero_X F hF hs (by lia)) x = 0 := by
-  rw [filtrationSpectralSequencePageXToGraded, ConcreteCategory.comp_apply,
+  rw [filtrationSpectralSequencePageXToGraded_def, ConcreteCategory.comp_apply,
     (ModuleCat.mono_iff_injective _).1 (inferInstance : Mono ((spectralObject _).EInftyIsoCokernel
       _ _).hom) |>.eq_iff' (map_zero _)]
   constructor

@@ -57,7 +57,9 @@ objects as images and of the differentials as connecting maps on representatives
   `H^n(f₁ ≫ f₂) ⟶ H^n(f₂ ≫ f₃)`.
 * `CategoryTheory.Abelian.SpectralObject.toE_map`,
   `CategoryTheory.Abelian.SpectralObject.map_fromE`: the maps between the objects `E` induced by
-  morphisms in `ComposableArrows ι 3`, on representatives and through the embeddings.
+  morphisms in `ComposableArrows ι 3`, on representatives and through the embeddings;
+  `CategoryTheory.Abelian.SpectralObject.mapFourδ₄Toδ₃'_fromE` is the case of the canonical maps
+  `E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₃) ⟶ E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₄)` for an index preorder.
 * `CategoryTheory.Abelian.SpectralObject.toE_d`, `CategoryTheory.Abelian.SpectralObject.d_fromE`:
   the differentials on representatives.
 * `CategoryTheory.Abelian.SpectralObject.toE_spectralSequence_page_d`,
@@ -213,6 +215,26 @@ lemma map_fromE (β : mk₁ f₂₃ ⟶ mk₁ f₂₃') (hβ₀ : β.app 0 = α.
     X.opcyclesMap_fromOpcycles (β := β) (hβ₀ := hβ₀) (hβ₁ := hβ₁)]
 
 end Naturality
+
+section Preorder
+
+variable {ι : Type*} [Preorder ι] (X : SpectralObject C ι) (i₀ i₁ i₂ i₃ i₄ : ι)
+  (hi₀₁ : i₀ ≤ i₁) (hi₁₂ : i₁ ≤ i₂) (hi₂₃ : i₂ ≤ i₃) (hi₃₄ : i₃ ≤ i₄) (n₀ n₁ n₂ : ℤ)
+
+/-- The canonical map `E^{n₁}(i₀ ≤ i₁ ≤ i₂ ≤ i₃) ⟶ E^{n₁}(i₀ ≤ i₁ ≤ i₂ ≤ i₄)`, followed by
+`X.fromE`, is `X.fromE` followed by the map `H^{n₁}(i₁ ≤ i₃) ⟶ H^{n₁}(i₁ ≤ i₄)`. -/
+@[reassoc]
+lemma mapFourδ₄Toδ₃'_fromE (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n₁ + 1 = n₂ := by lia) :
+    X.mapFourδ₄Toδ₃' i₀ i₁ i₂ i₃ i₄ hi₀₁ hi₁₂ hi₂₃ hi₃₄ n₀ n₁ n₂ hn₁ hn₂ ≫
+        X.fromE (homOfLE hi₀₁) (homOfLE hi₁₂) (homOfLE (hi₂₃.trans hi₃₄))
+          (homOfLE (hi₁₂.trans (hi₂₃.trans hi₃₄))) rfl n₀ n₁ n₂ hn₁ hn₂ =
+      X.fromE (homOfLE hi₀₁) (homOfLE hi₁₂) (homOfLE hi₂₃) (homOfLE (hi₁₂.trans hi₂₃)) rfl
+          n₀ n₁ n₂ hn₁ hn₂ ≫
+        (X.H n₁).map (twoδ₂Toδ₁' i₁ i₃ i₄ (hi₁₂.trans hi₂₃) hi₃₄) :=
+  X.map_fromE _ _ _ _ rfl _ _ _ _ rfl _ n₀ n₁ n₂ _ (Subsingleton.elim _ _) (Subsingleton.elim _ _)
+    hn₁ hn₂
+
+end Preorder
 
 section
 

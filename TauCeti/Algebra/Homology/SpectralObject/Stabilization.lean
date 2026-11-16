@@ -118,6 +118,23 @@ noncomputable def spectralSequencePageXIsoEBot (r : ℤ) (hr : 2 ≤ r) (pq : �
     (X.isoMapFourδ₁Toδ₀' ⊥ _ _ _ _ bot_le h₀₁ (coe_le_coe_add_one pq.2) h₂₃ (n - 1) n (n + 1)
       h₀).symm
 
+/-- The inverse of `X.spectralSequencePageXIsoEBot` is the canonical map
+`E^n(⊥ ≤ q ≤ q + 1 ≤ q + r - 1) ⟶ E^n(q - r + 2 ≤ q ≤ q + 1 ≤ q + r - 1)` followed by the
+identification of the latter with the page object. -/
+@[reassoc]
+lemma spectralSequencePageXIsoEBot_inv (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (n : ℤ)
+    (hn : n = pq.1 + pq.2)
+    (h₀ : IsZero ((X.H (n + 1)).obj
+      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 - r + 2 : ℤ) : EInt)))))) :
+    (X.spectralSequencePageXIsoEBot r hr pq n hn h₀).inv =
+      X.mapFourδ₁Toδ₀' ⊥ ((pq.2 - r + 2 : ℤ) : EInt) pq.2 ((pq.2 + 1 : ℤ) : EInt)
+          ((pq.2 + r - 1 : ℤ) : EInt) bot_le (by simp; lia) (coe_le_coe_add_one pq.2)
+          (by simp; lia) (n - 1) n (n + 1) ≫
+        (X.spectralSequencePageXIso coreE₂Cohomological r hr pq ((pq.2 - r + 2 : ℤ) : EInt) pq.2
+          ((pq.2 + 1 : ℤ) : EInt) ((pq.2 + r - 1 : ℤ) : EInt) rfl rfl rfl rfl (n - 1) n (n + 1)
+          hn).inv :=
+  (rfl)
+
 /-- When `H^{n+1}(⊥ ≤ q - r + 2)` vanishes, the epimorphism from the object at `pq = (p, q)` on page
 `r ≥ 2` onto `X.EInfty q n`, `n = p + q`: the canonical map
 `E^n(⊥ ≤ q ≤ q + 1 ≤ q + r - 1) ⟶ E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)` through
@@ -166,8 +183,9 @@ lemma spectralSequencePageXIsoEInfty_hom (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × �
       (mk₁ (homOfLE (le_top : ((pq.2 + r - 1 : ℤ) : EInt) ≤ ⊤))))) :
     (X.spectralSequencePageXIsoEInfty r hr pq n hn h₀ h₃).hom =
       X.spectralSequencePageXToEInfty r hr pq n hn h₀ := by
-  simp [spectralSequencePageXIsoEInfty, spectralSequencePageXToEInfty,
-    spectralSequencePageXIsoEBot]
+  rw [← cancel_epi (X.spectralSequencePageXIsoEBot r hr pq n hn h₀).inv,
+    spectralSequencePageXToEInfty_def, Iso.inv_hom_id_assoc, spectralSequencePageXIsoEBot_inv,
+    Category.assoc, mapFourδ₁Toδ₀'_comp_spectralSequencePageXIsoEInfty_hom]
 
 /-- When `H^{n+1}(⊥ ≤ q - r + 2)` and `H^{n+1}(⊥ ≤ q - r' + 2)` vanish, the canonical map from the
 object at `pq = (p, q)` on page `r` to the object at `pq` on a later page `r' ≥ r`: the map
