@@ -524,7 +524,7 @@ theorem coe_contract_ofGeodesicallyConvex {α : Type u} (V : α → Opens M)
     (p : ℝ × ↥(s.inf (ofGeodesicallyConvex I V hcov hlf hconv hnorm).openSet)) :
     (((ofGeodesicallyConvex I V hcov hlf hconv hnorm).contract s hs hW p :
       ↥(s.inf (ofGeodesicallyConvex I V hcov hlf hconv hnorm).openSet)) : M) =
-      radialGeodesicHomotopy I M hW.some r (Real.smoothTransition p.1, p.2.1) := by
+      radialGeodesicHomotopy I M hW.some (Metric.ball 0 r) (Real.smoothTransition p.1, p.2.1) := by
   let s' : Finset α := s
   have hs' : s'.Nonempty := hs
   have hWn : IsUniformlyNormal I ((s'.inf V : Opens M) : Set M) := by
@@ -533,7 +533,7 @@ theorem coe_contract_ofGeodesicallyConvex {α : Type u} (V : α → Opens M)
   exact (coe_geodesicOpenContract (s'.inf V) _ hW.some_mem
     (hWn.isNormalDomain_ball hW.some_mem)
     (hWn.subset_image_riemannianExp_ball hW.some_mem) p).trans <|
-    radialGeodesicHomotopy_eq_of_isNormalDomain (Real.smoothTransition p.1)
+    radialGeodesicHomotopy_ball_eq_of_isNormalDomain (Real.smoothTransition p.1)
       (hWn.isNormalDomain_ball hW.some_mem) hq
       (hWn.subset_image_riemannianExp_ball hW.some_mem p.2.2) (hsub p.2.2)
 

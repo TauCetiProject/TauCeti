@@ -31,7 +31,7 @@ coordinates built from the Riemannian distance to finitely many nearby centres.
 * `TauCeti.Manifold.IsUniformlyNormal`: a subset `U` of `M` admits a single positive radius `r`
   such that at every `q ∈ U`, the tangent ball `B(0, r)` is a normal domain whose exponential image
   contains `U`; monotone under inclusion (`IsUniformlyNormal.mono`) and closed under intersections
-  of nonempty families (`IsUniformlyNormal.biInter`).
+  of nonempty families (`IsUniformlyNormal.iInter`, `IsUniformlyNormal.biInter`).
 * `TauCeti.Manifold.exists_mem_nhds_forall_isNormalDomain_ball` and
   `TauCeti.Manifold.exists_isOpen_mem_isUniformlyNormal`: every point has an open uniformly normal
   neighbourhood.
@@ -95,6 +95,12 @@ theorem IsUniformlyNormal.inter_left {U V : Set M} (hU : IsUniformlyNormal I U) 
 theorem IsUniformlyNormal.inter_right {U V : Set M} (hV : IsUniformlyNormal I V) :
     IsUniformlyNormal I (U ∩ V) :=
   hV.mono inter_subset_right
+
+/-- The intersection of any nonempty indexed family of uniformly normal sets is uniformly
+normal. -/
+theorem IsUniformlyNormal.iInter {ι : Sort*} [Nonempty ι] {U : ι → Set M}
+    (hU : ∀ i, IsUniformlyNormal I (U i)) : IsUniformlyNormal I (⋂ i, U i) :=
+  (hU (Classical.arbitrary ι)).mono (iInter_subset _ _)
 
 /-- The intersection of any nonempty family of uniformly normal sets is uniformly normal. -/
 theorem IsUniformlyNormal.biInter {ι : Type*} {s : Set ι} {U : ι → Set M} (hs : s.Nonempty)

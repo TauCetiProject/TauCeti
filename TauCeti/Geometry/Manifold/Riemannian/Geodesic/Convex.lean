@@ -51,19 +51,18 @@ consequently uniform positive radii over any compact set:
    `t ↦ exp_x (t • log_x y)`, while convexity of squared distance from `p` keeps that radial
    geodesic strictly inside the `ε`-ball.
 3. **Intersections and smooth contractions**: binary intersections and intersections of nonempty
-   families preserve both uniform normality (`IsUniformlyNormal.biInter`) and strong geodesic
-   convexity (`IsStronglyGeodesicallyConvex.inter`, `IsStronglyGeodesicallyConvex.iInter`,
-   `IsStronglyGeodesicallyConvex.biInter`). On any open set `W` enjoying both properties, the
-   radial homotopy `H(s, x) = exp_q (s • log_q x)` from a chosen center `q ∈ W` is smooth on an
-   open domain containing `[0, 1] × W` and maps `[0, 1] × W` into `W`; reparametrizing time by
-   `Real.smoothTransition` yields a globally smooth contraction `ℝ × W → W` fixing `q`
-   (`TauCeti.Manifold.geodesicOpenContract`).
+   families preserve both uniform normality (`IsUniformlyNormal.iInter`,
+   `IsUniformlyNormal.biInter`) and strong geodesic convexity (`IsStronglyGeodesicallyConvex.inter`,
+   `IsStronglyGeodesicallyConvex.iInter`, `IsStronglyGeodesicallyConvex.biInter`). On any open set
+   `W` enjoying both properties, the radial homotopy `H(s, x) = exp_q (s • log_q x)` from a chosen
+   center `q ∈ W` (`TauCeti.Manifold.radialGeodesicHomotopy` in `Normal.Basic`) maps `[0, 1] × W`
+   into `W`; reparametrizing time by `Real.smoothTransition` yields a globally smooth contraction
+   `ℝ × W → W` fixing `q` (`TauCeti.Manifold.geodesicOpenContract`).
 
 All metric results are developed over an extended metric space
 `[EMetricSpace M] [IsRiemannianManifold I M]` so that disconnected and empty manifolds are covered
 without assuming finite distances between components; specializations to `[MetricSpace M]` are
-provided alongside, while the raw radial homotopy and its domain/smoothness lemmas require only
-`[TopologicalSpace M]`.
+provided alongside.
 
 ## Main definitions and results
 
@@ -78,10 +77,9 @@ provided alongside, while the raw radial homotopy and its domain/smoothness lemm
   `IsCompact.exists_pos_isNormalDomain_and_isStronglyGeodesicallyConvex_eball` (along with their
   `Metric.ball` counterparts): locally uniform and compact-set uniform normal and strong-convexity
   radii (Lee, Theorem 6.17).
-* `TauCeti.Manifold.radialGeodesicHomotopy`, `TauCeti.Manifold.radialGeodesicHomotopyDomain`, and
-  `TauCeti.Manifold.geodesicOpenContract`: the raw radial geodesic contraction on its natural open
-  domain and its `Real.smoothTransition` reparametrization on a strongly geodesically convex open
-  submanifold.
+* `TauCeti.Manifold.IsStronglyGeodesicallyConvex.mapsTo_radialGeodesicHomotopy` and
+  `TauCeti.Manifold.geodesicOpenContract`: radial invariance and the `Real.smoothTransition`
+  smooth contraction on a strongly geodesically convex open submanifold.
 
 ## References
 
@@ -376,6 +374,7 @@ private theorem strictConvexOn_norm_riemannianLog_sq_comp_geodesic {W : Set M} {
     StrictConvexOn ℝ (Icc a b)
       ((fun y : M ↦ ‖riemannianLog I M p (Metric.ball 0 R) y‖ ^ 2) ∘ γ) := by
   let f : M → ℝ := fun y ↦ ‖riemannianLog I M p (Metric.ball 0 R) y‖ ^ 2
+  -- Nonconstancy of the geodesic forces positive initial speed.
   have hspeed_pos : 0 < ‖curveVelocityWithin I γ (Icc a b) a‖ := by
     by_contra hle
     have hzero : ‖curveVelocityWithin I γ (Icc a b) a‖ = 0 :=
@@ -393,6 +392,7 @@ private theorem strictConvexOn_norm_riemannianLog_sq_comp_geodesic {W : Set M} {
   have hcont : ContinuousOn (f ∘ γ) (Icc a b) :=
     ((continuous_norm.pow 2).comp_continuousOn
       hdom_p.continuousOn_riemannianLog).comp hγ.continuousOn fun t ht ↦ hW_sub (hγW ht)
+  -- Check positivity of the second derivative on `(a, b)` via the local exponential ray at `γ t₀`.
   refine strictConvexOn_of_deriv2_pos (convex_Icc a b) hcont ?_
   rw [interior_Icc]
   intro t₀ ht₀
@@ -875,118 +875,7 @@ theorem _root_.IsCompact.exists_pos_isNormalDomain_and_isStronglyGeodesicallyCon
 
 end StronglyGeodesicallyConvexMetricSpace
 
-/-! ### Smooth radial geodesic contractions and smooth step reparametrization -/
-
-section RadialHomotopy
-
-variable
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-
-variable (I M) in
-/-- The natural domain of the raw radial geodesic homotopy centered at `q` on the normal tangent
-ball `B(0, r)`: pairs `(s, x) ∈ ℝ × M` with `x ∈ exp_q '' B(0, r)` and `s • log_q x ∈ expDomain`. -/
-def radialGeodesicHomotopyDomain (q : M) (r : ℝ) : Set (ℝ × M) :=
-  {p : ℝ × M | p.2 ∈ riemannianExp I M q '' Metric.ball 0 r ∧
-    p.1 • riemannianLog I M q (Metric.ball 0 r) p.2 ∈ expDomain I M q}
-
-@[simp]
-theorem mem_radialGeodesicHomotopyDomain_iff {q : M} {r : ℝ} {p : ℝ × M} :
-    p ∈ radialGeodesicHomotopyDomain I M q r ↔
-      p.2 ∈ riemannianExp I M q '' Metric.ball 0 r ∧
-        p.1 • riemannianLog I M q (Metric.ball 0 r) p.2 ∈ expDomain I M q := by
-  rw [radialGeodesicHomotopyDomain]
-  rfl
-
-variable (I M) in
-/-- The raw radial geodesic contraction `H(s, x) = exp_q (s • log_q x)` centered at `q` using the
-normal tangent ball `B(0, r)`. -/
-def radialGeodesicHomotopy (q : M) (r : ℝ) (p : ℝ × M) : M :=
-  riemannianExp I M q (p.1 • riemannianLog I M q (Metric.ball 0 r) p.2)
-
-theorem radialGeodesicHomotopy_def (q : M) (r : ℝ) (p : ℝ × M) :
-    radialGeodesicHomotopy I M q r p =
-      riemannianExp I M q (p.1 • riemannianLog I M q (Metric.ball 0 r) p.2) := by
-  rw [radialGeodesicHomotopy]
-
-theorem radialGeodesicHomotopy_one_left {q : M} {r : ℝ} {x : M}
-    (hx : x ∈ riemannianExp I M q '' Metric.ball 0 r) :
-    radialGeodesicHomotopy I M q r (1, x) = x := by
-  simp [radialGeodesicHomotopy, riemannianExp_riemannianLog hx]
-
-/-- The raw radial geodesic homotopy at `(s, x)` does not depend on the normal radius `r` once `x`
-lies in both normal balls. -/
-theorem radialGeodesicHomotopy_eq_of_isNormalDomain {q x : M} {r₁ r₂ : ℝ} (s : ℝ)
-    (hq₁ : IsNormalDomain I M q (Metric.ball 0 r₁))
-    (hq₂ : IsNormalDomain I M q (Metric.ball 0 r₂))
-    (hx₁ : x ∈ riemannianExp I M q '' Metric.ball 0 r₁)
-    (hx₂ : x ∈ riemannianExp I M q '' Metric.ball 0 r₂) :
-    radialGeodesicHomotopy I M q r₁ (s, x) = radialGeodesicHomotopy I M q r₂ (s, x) := by
-  rcases le_total r₁ r₂ with hle | hle
-  · rw [radialGeodesicHomotopy_def, radialGeodesicHomotopy_def,
-      hq₂.riemannianLog_eq_of_subset (Metric.ball_subset_ball hle) hx₁]
-  · rw [radialGeodesicHomotopy_def, radialGeodesicHomotopy_def,
-      (hq₁.riemannianLog_eq_of_subset (Metric.ball_subset_ball hle) hx₂).symm]
-
-/-- For any subset `W ⊆ exp_q '' B(0, r)`, the cylinder `[0, 1] ×ˢ W` lies in
-`radialGeodesicHomotopyDomain I M q r`. -/
-theorem IsNormalDomain.Icc_prod_subset_radialGeodesicHomotopyDomain {q : M} {r : ℝ}
-    (hq : IsNormalDomain I M q (Metric.ball 0 r)) {W : Set M}
-    (hW : W ⊆ riemannianExp I M q '' Metric.ball 0 r) :
-    Icc (0 : ℝ) 1 ×ˢ W ⊆ radialGeodesicHomotopyDomain I M q r := by
-  rintro ⟨s, x⟩ ⟨hs, hx⟩
-  rw [mem_radialGeodesicHomotopyDomain_iff]
-  exact ⟨hW hx, hq.subset_expDomain (hq.smul_mem (riemannianLog_mem (hW hx)) hs.1 hs.2)⟩
-
-variable [I.Boundaryless] [T2Space M]
-
-@[simp]
-theorem radialGeodesicHomotopy_zero_left (q : M) (r : ℝ) (x : M) :
-    radialGeodesicHomotopy I M q r (0, x) = q := by
-  simp [radialGeodesicHomotopy]
-
-@[simp]
-theorem IsNormalDomain.radialGeodesicHomotopy_self_right {q : M} {r : ℝ}
-    (hq : IsNormalDomain I M q (Metric.ball 0 r)) (s : ℝ) :
-    radialGeodesicHomotopy I M q r (s, q) = q := by
-  simp [radialGeodesicHomotopy, hq.riemannianLog_self]
-
-/-- When `B(0, r)` is a normal domain at `q`, the natural domain of `radialGeodesicHomotopy` is
-open in `ℝ × M`. -/
-theorem IsNormalDomain.isOpen_radialGeodesicHomotopyDomain {q : M} {r : ℝ}
-    (hq : IsNormalDomain I M q (Metric.ball 0 r)) :
-    IsOpen (radialGeodesicHomotopyDomain I M q r) := by
-  let V := riemannianExp I M q '' Metric.ball 0 r
-  have hcont : ContinuousOn
-      (fun p : ℝ × M ↦ p.1 • riemannianLog I M q (Metric.ball 0 r) p.2) (univ ×ˢ V) :=
-    continuousOn_fst.smul (hq.continuousOn_riemannianLog.comp continuousOn_snd fun _ hp ↦ hp.2)
-  have hopen := hcont.isOpen_inter_preimage (isOpen_univ.prod hq.isOpen_image) (isOpen_expDomain q)
-  have heq : (univ ×ˢ V) ∩
-      (fun p : ℝ × M ↦ p.1 • riemannianLog I M q (Metric.ball 0 r) p.2) ⁻¹' expDomain I M q =
-      radialGeodesicHomotopyDomain I M q r := by
-    ext ⟨s, x⟩
-    simp [radialGeodesicHomotopyDomain, V]
-  rwa [← heq]
-
-/-- On a normal ball `B(0, r)` at `q`, the raw radial geodesic homotopy is smooth on its open
-domain `radialGeodesicHomotopyDomain I M q r`. -/
-theorem IsNormalDomain.contMDiffOn_radialGeodesicHomotopy {q : M} {r : ℝ}
-    (hq : IsNormalDomain I M q (Metric.ball 0 r)) :
-    ContMDiffOn ((𝓘(ℝ, ℝ)).prod I) I ∞ (radialGeodesicHomotopy I M q r)
-      (radialGeodesicHomotopyDomain I M q r) := by
-  intro p hp
-  rw [mem_radialGeodesicHomotopyDomain_iff] at hp
-  have hlog : ContMDiffAt ((𝓘(ℝ, ℝ)).prod I) 𝓘(ℝ, TangentSpace I q) ∞
-      (fun u : ℝ × M ↦ riemannianLog I M q (Metric.ball 0 r) u.2) p :=
-    (hq.contMDiffOn_riemannianLog.contMDiffAt
-      (hq.isOpen_image.mem_nhds hp.1)).comp p contMDiffAt_snd
-  have hsmul : ContMDiffAt ((𝓘(ℝ, ℝ)).prod I) 𝓘(ℝ, TangentSpace I q) ∞
-      (fun u : ℝ × M ↦ u.1 • riemannianLog I M q (Metric.ball 0 r) u.2) p :=
-    contMDiffAt_fst.smul hlog
-  exact ((contMDiffAt_riemannianExp hp.2).comp p hsmul).contMDiffWithinAt
-
-end RadialHomotopy
+/-! ### Smooth radial geodesic contractions of strongly geodesically convex opens -/
 
 section RadialContraction
 
@@ -1003,8 +892,9 @@ theorem IsStronglyGeodesicallyConvex.mapsTo_radialGeodesicHomotopy {W : Set M}
     (hW : IsStronglyGeodesicallyConvex I W) {q : M} (hqW : q ∈ W) {r : ℝ}
     (hq : IsNormalDomain I M q (Metric.ball 0 r))
     (hsub : W ⊆ riemannianExp I M q '' Metric.ball 0 r) :
-    MapsTo (radialGeodesicHomotopy I M q r) (Icc (0 : ℝ) 1 ×ˢ W) W := by
+    MapsTo (radialGeodesicHomotopy I M q (Metric.ball 0 r)) (Icc (0 : ℝ) 1 ×ˢ W) W := by
   rintro ⟨s, x⟩ ⟨hs, hx⟩
+  rw [radialGeodesicHomotopy_def]
   exact hW.mapsTo_riemannianExp_smul_riemannianLog hqW hq hsub hx hs
 
 variable (I) in
@@ -1014,7 +904,7 @@ variable (I) in
 def geodesicOpenContract (W : Opens M) (hW : IsStronglyGeodesicallyConvex I (W : Set M))
     {q : M} (hqW : q ∈ W) {r : ℝ} (hq : IsNormalDomain I M q (Metric.ball 0 r))
     (hsub : (W : Set M) ⊆ riemannianExp I M q '' Metric.ball 0 r) (p : ℝ × ↥W) : ↥W :=
-  ⟨radialGeodesicHomotopy I M q r (Real.smoothTransition p.1, p.2.1),
+  ⟨radialGeodesicHomotopy I M q (Metric.ball 0 r) (Real.smoothTransition p.1, p.2.1),
     hW.mapsTo_radialGeodesicHomotopy hqW hq hsub
       ⟨⟨Real.smoothTransition.nonneg p.1, Real.smoothTransition.le_one p.1⟩, p.2.2⟩⟩
 
@@ -1022,7 +912,7 @@ theorem coe_geodesicOpenContract (W : Opens M) (hW : IsStronglyGeodesicallyConve
     {q : M} (hqW : q ∈ W) {r : ℝ} (hq : IsNormalDomain I M q (Metric.ball 0 r))
     (hsub : (W : Set M) ⊆ riemannianExp I M q '' Metric.ball 0 r) (p : ℝ × ↥W) :
     (geodesicOpenContract I W hW hqW hq hsub p : M) =
-      radialGeodesicHomotopy I M q r (Real.smoothTransition p.1, p.2.1) :=
+      radialGeodesicHomotopy I M q (Metric.ball 0 r) (Real.smoothTransition p.1, p.2.1) :=
   (rfl)
 
 /-- The smooth-transition-reparametrized radial geodesic contraction `ℝ × W → W` is `C^∞`. -/
@@ -1032,11 +922,13 @@ theorem contMDiff_geodesicOpenContract (W : Opens M)
     (hsub : (W : Set M) ⊆ riemannianExp I M q '' Metric.ball 0 r) :
     ContMDiff ((𝓘(ℝ, ℝ)).prod I) I ∞ (geodesicOpenContract I W hW hqW hq hsub) := by
   have hcoe : Subtype.val ∘ geodesicOpenContract I W hW hqW hq hsub =
-      radialGeodesicHomotopy I M q r ∘ fun u : ℝ × ↥W ↦ (Real.smoothTransition u.1, (u.2 : M)) :=
+      radialGeodesicHomotopy I M q (Metric.ball 0 r) ∘
+        fun u : ℝ × ↥W ↦ (Real.smoothTransition u.1, (u.2 : M)) :=
     funext (coe_geodesicOpenContract W hW hqW hq hsub)
   rw [← TauCeti.ContMDiff.subtypeVal_comp_iff W, hcoe]
   intro p
-  have hmem : (Real.smoothTransition p.1, (p.2 : M)) ∈ radialGeodesicHomotopyDomain I M q r :=
+  have hmem : (Real.smoothTransition p.1, (p.2 : M)) ∈
+      radialGeodesicHomotopyDomain I M q (Metric.ball 0 r) :=
     hq.Icc_prod_subset_radialGeodesicHomotopyDomain hsub
       ⟨⟨Real.smoothTransition.nonneg p.1, Real.smoothTransition.le_one p.1⟩, p.2.2⟩
   have hstep : ContMDiffAt ((𝓘(ℝ, ℝ)).prod I) ((𝓘(ℝ, ℝ)).prod I) ∞
