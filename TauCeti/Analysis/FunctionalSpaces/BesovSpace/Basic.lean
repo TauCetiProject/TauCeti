@@ -663,7 +663,11 @@ theorem exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_of_forall_le {u
   -- The constant sequence `c` lies in `ℓ^∞` and bounds the weighted blocks.
   let b : lp (fun _ : ℕ ↦ ℝ) ∞ :=
     ⟨fun _ ↦ c, memℓp_infty ⟨c, by rintro _ ⟨_, rfl⟩; exact (Real.norm_of_nonneg hc0).le⟩⟩
-  obtain ⟨v, hv, hvb⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq g b hg hc
+  -- The entries of the anonymous `lp` element `b` are `c` by definition:
+  -- `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
+  have hbj (j : ℕ) : b j = c := rfl
+  obtain ⟨v, hv, hvb⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq g b hg
+    fun j ↦ (hc j).trans_eq (hbj j).symm
   exact ⟨v, hv, hvb.trans (lp.norm_le_of_forall_le hc0 fun _ ↦ (Real.norm_of_nonneg hc0).le)⟩
 
 /-- **A blockwise criterion for Besov membership.** Let `u ∈ B^s_{p,q}` and `B ≥ 0`. If every
