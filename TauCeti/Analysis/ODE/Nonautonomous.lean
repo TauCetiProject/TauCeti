@@ -41,7 +41,7 @@ produces a bounded-in-time field whose global solutions agree on `(-min R₁ R�
   initial value problem.
 * `ODE.nonautonomousSolution_eq_integral`: the integral equation from `t₀` to `t`.
 * `ODE.eqOn_nonautonomousSolution_of_hasDerivWithinAt` and `ODE.eq_nonautonomousSolution`:
-  finite-interval and global uniqueness.
+  interval and global uniqueness.
 * `ODE.nonautonomousSolution_eq_of_eqOn`: finite-interval congruence in the vector field.
 * `ODE.nonautonomousSolution_trans`: two-time evolution composition law.
 * `ODE.dist_nonautonomousSolution_le`: two-sided exponential Grönwall bound in the initial state.
@@ -118,6 +118,10 @@ private noncomputable def nonautPicardOp (u : ℝ →ᵇ E) : ℝ →ᵇ E :=
   BoundedContinuousFunction.ofNormedAddCommGroup (nonautPicardMap v k x u)
     (continuous_nonautPicardMap hvc u) _ (norm_nonautPicardMap_le hk hv hx u)
 
+private theorem nonautPicardOp_apply (u : ℝ →ᵇ E) (t : ℝ) :
+    nonautPicardOp hvc hk hv hx u t = nonautPicardMap v k x u t :=
+  congrFun (BoundedContinuousFunction.coe_ofNormedAddCommGroup _ _ _ _) t
+
 private theorem contractingWith_nonautPicardOp :
     ContractingWith (1 / 2 : ℝ≥0) (nonautPicardOp hvc hk hv hx) := by
   refine ⟨by norm_num, LipschitzWith.of_dist_le_mul fun u₁ u₂ ↦ ?_⟩
@@ -140,9 +144,8 @@ private theorem contractingWith_nonautPicardOp :
     (F := fun s ↦ v s (nonautCurve k x u₁ s) - v s (nonautCurve k x u₂ s))
     (by positivity) (mul_nonneg hk.le dist_nonneg) t (.of_forall hbound)
   rw [intervalIntegral.integral_sub (hint u₁) (hint u₂), abs_of_pos (by positivity)] at hstep
-  change dist (nonautPicardMap v k x u₁ t) (nonautPicardMap v k x u₂ t) ≤ _
-  rw [dist_eq_norm, nonautPicardMap, nonautPicardMap, ← smul_sub, norm_smul,
-    Real.norm_of_nonneg (inv_nonneg.2 hcosh.le), inv_mul_le_iff₀ hcosh]
+  rw [nonautPicardOp_apply, nonautPicardOp_apply, dist_eq_norm, nonautPicardMap, nonautPicardMap,
+    ← smul_sub, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hcosh.le), inv_mul_le_iff₀ hcosh]
   exact hstep.trans_eq (by field_simp)
 
 variable [CompleteSpace E]
@@ -153,10 +156,11 @@ private noncomputable def nonautFixedPoint : ℝ →ᵇ E :=
 private theorem nonautCurve_fixedPoint (t : ℝ) :
     nonautCurve k x (nonautFixedPoint hvc hk hv hx) t =
       x + ∫ s in (0 : ℝ)..t, v s (nonautCurve k x (nonautFixedPoint hvc hk hv hx) s) := by
-  have hpt : nonautPicardMap v k x (nonautFixedPoint hvc hk hv hx) t =
+  have hpt : nonautPicardOp hvc hk hv hx (nonautFixedPoint hvc hk hv hx) t =
       nonautFixedPoint hvc hk hv hx t :=
     congrArg (fun w : ℝ →ᵇ E ↦ w t)
       (ContractingWith.fixedPoint_isFixedPt (contractingWith_nonautPicardOp hvc hk hv hx))
+  rw [nonautPicardOp_apply] at hpt
   rw [nonautCurve, ← hpt, nonautPicardMap, smul_inv_smul₀ (Real.cosh_pos (2 * k * t)).ne']
 
 end PicardOp
@@ -198,6 +202,18 @@ variable {v : ℝ → E → E} (hvc : ∀ x, Continuous fun t ↦ v t x) {K : �
 private noncomputable def clampedField (v : ℝ → E → E) {R : ℝ} (hR : 0 ≤ R) (s : ℝ) (y : E) : E :=
   v (Set.projIcc (-R) R (neg_le_self hR) s) y
 
+private noncomputable def clampedFieldAt {R : ℝ} (x : E) : Icc (-R) R →ᵇ E :=
+  BoundedContinuousFunction.mkOfCompact
+    ⟨fun t : Icc (-R) R ↦ v t x, (hvc x).comp continuous_subtype_val⟩
+
+omit [NormedSpace ℝ E] [CompleteSpace E] in
+private theorem norm_clampedField_le {R : ℝ} (hR : 0 ≤ R) (x : E) (s : ℝ) :
+    ‖clampedField v hR s x‖ ≤ ‖clampedFieldAt hvc (R := R) x‖ := by
+  have h := (clampedFieldAt hvc (R := R) x).norm_coe_le_norm
+    (Set.projIcc (-R) R (neg_le_self hR) s)
+  rw [clampedFieldAt, BoundedContinuousFunction.mkOfCompact_apply, ContinuousMap.coe_mk] at h
+  rwa [clampedField]
+
 /-- Clamping time to `[-R, R]` produces a bounded-in-time field agreeing with `v` on `[-R, R]`. -/
 private noncomputable def clampedSolution {R : ℝ} (hR : 0 ≤ R) (x : E) : ℝ → E :=
   boundedTimeSolution
@@ -205,11 +221,7 @@ private noncomputable def clampedSolution {R : ℝ} (hR : 0 ≤ R) (x : E) : ℝ
       (fun s ↦ hv (Set.projIcc (-R) R (neg_le_self hR) s))
       fun y ↦ (hvc y).comp (continuous_subtype_val.comp continuous_projIcc))
     (fun s ↦ hv (Set.projIcc (-R) R (neg_le_self hR) s))
-    (M := ‖BoundedContinuousFunction.mkOfCompact ⟨fun t : Icc (-R) R ↦ v t x,
-      (hvc x).comp continuous_subtype_val⟩‖)
-    fun s ↦ (BoundedContinuousFunction.mkOfCompact ⟨fun t : Icc (-R) R ↦ v t x,
-      (hvc x).comp continuous_subtype_val⟩).norm_coe_le_norm
-        (Set.projIcc (-R) R (neg_le_self hR) s)
+    (norm_clampedField_le hvc hR x)
 
 private theorem clampedSolution_zero {R : ℝ} (hR : 0 ≤ R) (x : E) :
     clampedSolution hvc hv hR x 0 = x :=
@@ -313,18 +325,24 @@ theorem nonautonomousSolution_eq_integral (t₀ : ℝ) (x : E) (t : ℝ) :
     nonautonomousSolution_self]
   abel
 
-/-- **Finite-interval uniqueness.** Any curve solving `γ' s = v s (γ s)` within `[a, b]` around
-`t₀ ∈ [a, b]` agrees on `[a, b]` with `ODE.nonautonomousSolution` through `γ t₀`. -/
-theorem eqOn_nonautonomousSolution_of_hasDerivWithinAt {a b t₀ : ℝ} (ht₀ : t₀ ∈ Icc a b)
-    {γ : ℝ → E} (hγ : ∀ s ∈ Icc a b, HasDerivWithinAt γ (v s (γ s)) (Icc a b) s) :
-    EqOn γ (nonautonomousSolution v hvc hv t₀ (γ t₀)) (Icc a b) := fun t ht ↦ by
+/-- **Interval uniqueness.** Any curve solving `γ' s = v s (γ s)` within an order-connected set
+`I ⊆ ℝ` containing `t₀` agrees on `I` with `ODE.nonautonomousSolution` through `γ t₀`. -/
+theorem eqOn_nonautonomousSolution_of_hasDerivWithinAt {I : Set ℝ} (hI : I.OrdConnected)
+    {t₀ : ℝ} (ht₀ : t₀ ∈ I) {γ : ℝ → E}
+    (hγ : ∀ s ∈ I, HasDerivWithinAt γ (v s (γ s)) I s) :
+    EqOn γ (nonautonomousSolution v hvc hv t₀ (γ t₀)) I := fun t ht ↦ by
+  have hsub : Icc (min t₀ t) (max t₀ t) ⊆ I := by
+    rw [Icc_min_max]
+    exact hI.uIcc_subset ht₀ ht
   have hle := TauCeti.norm_le_gronwallBound_of_norm_derivWithin_le (E := E)
+    (a := min t₀ t) (b := max t₀ t)
     (f := fun s ↦ γ s - nonautonomousSolution v hvc hv t₀ (γ t₀) s)
     (f' := fun s ↦ v s (γ s) - v s (nonautonomousSolution v hvc hv t₀ (γ t₀) s))
-    (δ := 0) (K := K) (ε := 0) ht₀
-    (fun s hs ↦ (hγ s hs).sub
+    (δ := 0) (K := K) (ε := 0) ⟨min_le_left t₀ t, le_max_left t₀ t⟩
+    (fun s hs ↦ ((hγ s (hsub hs)).mono hsub).sub
       (hasDerivAt_nonautonomousSolution v hvc hv t₀ (γ t₀) s).hasDerivWithinAt)
-    (by simp) (fun s _ ↦ by simpa only [add_zero] using (hv s).norm_sub_le _ _) t ht
+    (by simp) (fun s _ ↦ by simpa only [add_zero] using (hv s).norm_sub_le _ _)
+    t ⟨min_le_right t₀ t, le_max_right t₀ t⟩
   rw [gronwallBound_ε0_δ0] at hle
   exact sub_eq_zero.1 (norm_le_zero_iff.1 hle)
 
@@ -332,9 +350,8 @@ theorem eqOn_nonautonomousSolution_of_hasDerivWithinAt {a b t₀ : ℝ} (ht₀ :
 `ODE.nonautonomousSolution` through its value at any chosen time `t₀`. -/
 theorem eq_nonautonomousSolution {γ : ℝ → E} (hγ : ∀ t, HasDerivAt γ (v t (γ t)) t) (t₀ : ℝ) :
     γ = nonautonomousSolution v hvc hv t₀ (γ t₀) :=
-  funext fun t ↦ eqOn_nonautonomousSolution_of_hasDerivWithinAt v hvc hv
-    ⟨min_le_left t₀ t, le_max_left t₀ t⟩ (fun s _ ↦ (hγ s).hasDerivWithinAt)
-    ⟨min_le_right t₀ t, le_max_right t₀ t⟩
+  funext fun t ↦ eqOn_nonautonomousSolution_of_hasDerivWithinAt v hvc hv ordConnected_univ
+    (mem_univ t₀) (fun s _ ↦ (hγ s).hasDerivWithinAt) (mem_univ t)
 
 /-- **Two-time evolution composition law.** Evolving from `r` to `s` and then from `s` to `t`
 agrees with evolving directly from `r` to `t`. -/
@@ -393,13 +410,12 @@ theorem nonautonomousSolution_eq_of_eqOn {v₁ v₂ : ℝ → E → E}
     {K₁ K₂ : ℝ≥0} (hv₁ : ∀ s, LipschitzWith K₁ (v₁ s)) (hv₂ : ∀ s, LipschitzWith K₂ (v₂ s))
     {t₀ t : ℝ} (heq : EqOn v₁ v₂ (uIcc t₀ t)) (x : E) :
     nonautonomousSolution v₁ hvc₁ hv₁ t₀ x t = nonautonomousSolution v₂ hvc₂ hv₂ t₀ x t := by
-  have h := eqOn_nonautonomousSolution_of_hasDerivWithinAt v₂ hvc₂ hv₂
-    (a := min t₀ t) (b := max t₀ t) ⟨min_le_left t₀ t, le_max_left t₀ t⟩
-    (γ := nonautonomousSolution v₁ hvc₁ hv₁ t₀ x)
+  have h := eqOn_nonautonomousSolution_of_hasDerivWithinAt v₂ hvc₂ hv₂ ordConnected_uIcc
+    left_mem_uIcc (γ := nonautonomousSolution v₁ hvc₁ hv₁ t₀ x)
     (fun s hs ↦ by
       rw [← congrFun (heq hs) _]
       exact (hasDerivAt_nonautonomousSolution v₁ hvc₁ hv₁ t₀ x s).hasDerivWithinAt)
-    ⟨min_le_right t₀ t, le_max_right t₀ t⟩
+    right_mem_uIcc
   rwa [nonautonomousSolution_self] at h
 
 /-- **Independence of the Lipschitz constant.** Two uniform Lipschitz bounds for `v` produce the

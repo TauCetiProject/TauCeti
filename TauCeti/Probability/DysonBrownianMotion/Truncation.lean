@@ -9,7 +9,6 @@ public import TauCeti.Probability.DysonBrownianMotion.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.Analysis.ODE.Gronwall
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.ODE.Nonautonomous
@@ -103,7 +102,7 @@ theorem continuous_truncatedDysonPath : Continuous (truncatedDysonPath hε n x w
 
 /-- Value of `truncatedDysonPath` at time `0`. -/
 @[simp]
-theorem truncatedDysonPath_zero : truncatedDysonPath hε n x w hw 0 = x + w 0 := by
+theorem truncatedDysonPath_eval_zero : truncatedDysonPath hε n x w hw 0 = x + w 0 := by
   simp [truncatedDysonPath]
 
 /-- **Integral equation of `truncatedDysonPath`.** Every coordinate satisfies the `ε`-truncated
@@ -195,20 +194,19 @@ theorem eq_truncatedDysonPath_of_eq_integral {ε : ℝ} (hε : 0 < ε) {n : ℕ}
         rw [uIcc_of_le u.coe_nonneg] at hs
         simp only [g, min_eq_left ((Real.toNNReal_le_iff_le_coe.2 hs.2).trans hu)]
     dsimp only [Z, Pi.add_apply]; rw [← hproj, hcongr, heq u hu i]; ring
-  have hZ_ode : ∀ r ∈ Ico (0 : ℝ) T,
-      HasDerivWithinAt Z (shiftedTruncatedField ε n w r (Z r)) (Ici r) r := fun r hr ↦ by
-    have hr_le : r.toNNReal ≤ T := Real.toNNReal_le_iff_le_coe.2 hr.2.le
+  have hZ_ode : ∀ r ∈ Icc (0 : ℝ) T,
+      HasDerivWithinAt Z (shiftedTruncatedField ε n w r (Z r)) (Icc (0 : ℝ) T) r := fun r hr ↦ by
+    have hr_le : r.toNNReal ≤ T := Real.toNNReal_le_iff_le_coe.2 hr.2
     have hZr : Z r + w r.toNNReal = Y r.toNNReal := by
       simpa only [Real.coe_toNNReal r hr.1] using hZY r.toNNReal hr_le
     rw [show shiftedTruncatedField ε n w r (Z r) = g r by
       simp only [g, shiftedTruncatedField, min_eq_left hr_le, hZr]]
     exact (hZ_deriv r).hasDerivWithinAt
-  have hEqOn : EqOn Z (shiftedTruncatedCurve hε n x w hw) (Icc (0 : ℝ) T) :=
-    ODE_solution_unique (lipschitzWith_shiftedTruncatedField hε n w)
-      (Differentiable.continuous fun r ↦ (hZ_deriv r).differentiableAt).continuousOn hZ_ode
-      (ODE.continuous_nonautonomousSolution_apply _ _ _ 0 x).continuousOn
-      (fun r _ ↦ (ODE.hasDerivAt_nonautonomousSolution _ _ _ 0 x r).hasDerivWithinAt)
-      (by dsimp only [Z]; simp)
+  have hEqOn : EqOn Z (shiftedTruncatedCurve hε n x w hw) (Icc (0 : ℝ) T) := by
+    simpa only [show Z 0 = x by simp [Z], shiftedTruncatedCurve] using
+      ODE.eqOn_nonautonomousSolution_of_hasDerivWithinAt (shiftedTruncatedField ε n w)
+        (continuous_shiftedTruncatedField hε n hw) (lipschitzWith_shiftedTruncatedField hε n w)
+        ordConnected_Icc ⟨le_rfl, T.coe_nonneg⟩ hZ_ode
   rw [← hZY t ht, truncatedDysonPath, hEqOn ⟨t.coe_nonneg, NNReal.coe_le_coe.2 ht⟩]
 
 /-- **Grönwall stability of `truncatedDysonPath` in `(x, w)` on `[0, T]`.** Perturbing the initial

@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.ODE.Basic
-public import Mathlib.Analysis.ODE.ExistUnique
-public import Mathlib.Analysis.ODE.Transform
-public import Mathlib.Topology.ContinuousMap.Bounded.Normed
-public import TauCeti.MeasureTheory.Integral.Cosh
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.Analysis.ODE.Transform
 import TauCeti.Analysis.ODE.Nonautonomous
 
 /-!
@@ -42,7 +40,7 @@ weighted Picard contraction in `TauCeti.Analysis.ODE.Nonautonomous`.
 public section
 
 open Filter MeasureTheory Set Topology
-open scoped BoundedContinuousFunction NNReal
+open scoped NNReal
 
 namespace ODE
 

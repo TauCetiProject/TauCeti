@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.GlobalSolution
 public import TauCeti.Analysis.ODE.SmoothParameter
+import Mathlib.Analysis.ODE.ExistUnique
 
 /-!
 # Smooth dependence of an ODE solution on its initial condition

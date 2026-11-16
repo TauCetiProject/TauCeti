@@ -30,8 +30,9 @@ values `∏ (1 - q^{-k})` of local densities.
 * `Finset.prod_pow_sub_one`: factoring `q ^ (∑ i ∈ s, f i)` out of `∏ i ∈ s, (q ^ f i - 1)`.
 * `Finset.sum_range_add_mul_add_div_two`: the increments of a quadratic along a uniform grid sum to
   the increment of the quadratic from `0` to the end of the grid.
-* `Finset.sum_sum_erase_sub_inv_mul_sub_inv_eq_zero`: cyclic cancellation of off-diagonal products
-  `(x i - x j)⁻¹ * (x i - x k)⁻¹` (`k ≠ j`) over an injective family on a finite set in any field.
+* `Finset.sum_sum_sum_erase_sub_inv_mul_sub_inv_eq_zero`: cyclic cancellation of off-diagonal
+  products `(x i - x j)⁻¹ * (x i - x k)⁻¹` (`k ≠ j`) over an injective family on a finite set in any
+  field.
 -/
 
 public section
@@ -74,29 +75,28 @@ theorem sum_range_natCast_sq {K : Type*} [DivisionRing K] [NeZero (2 : K)] [NeZe
 /-- **Cyclic partial-fraction cancellation over distinct points in a field.** For an injective
 family `x` on a finite set `s`, all off-diagonal products `(x i - x j)⁻¹ * (x i - x k)⁻¹` (`k ≠ j`)
 cancel in triples `(i, j, k)`, in every characteristic. -/
-theorem sum_sum_erase_sub_inv_mul_sub_inv_eq_zero {ι K : Type*} [DecidableEq ι] [Field K]
+theorem sum_sum_sum_erase_sub_inv_mul_sub_inv_eq_zero {ι K : Type*} [DecidableEq ι] [Field K]
     (s : Finset ι) {x : ι → K} (hx : Set.InjOn x s) :
     (∑ i ∈ s, ∑ j ∈ s, ∑ k ∈ s.erase j, (x i - x j)⁻¹ * (x i - x k)⁻¹) = 0 := by
-  let g : ι → ι → ι → K := fun i j k ↦ (x i - x j)⁻¹ * (x i - x k)⁻¹
   induction s using Finset.induction_on with
   | empty => simp
   | insert a t hat ih =>
-    have hstep (i : ι) : (∑ j ∈ insert a t, ∑ k ∈ (insert a t).erase j, g i j k) =
-        (∑ k ∈ t, g i a k) + (∑ j ∈ t, g i j a) + ∑ j ∈ t, ∑ k ∈ t.erase j, g i j k := by
+    have hstep (f : ι → ι → K) : (∑ j ∈ insert a t, ∑ k ∈ (insert a t).erase j, f j k) =
+        (∑ k ∈ t, f a k) + (∑ j ∈ t, f j a) + ∑ j ∈ t, ∑ k ∈ t.erase j, f j k := by
       rw [sum_insert hat, erase_insert hat, add_assoc]
       refine congrArg _ ((sum_congr rfl fun j hj ↦ ?_).trans sum_add_distrib)
       rw [erase_insert_of_ne (ne_of_mem_of_not_mem hj hat).symm,
         sum_insert fun ha ↦ hat (mem_of_mem_erase ha)]
-    change (∑ i ∈ insert a t, ∑ j ∈ insert a t, ∑ k ∈ (insert a t).erase j, g i j k) = 0
     rw [sum_insert hat]
     simp_rw [hstep]
-    simp only [g, sub_self, inv_zero, zero_mul, mul_zero, sum_const_zero, zero_add, sum_add_distrib]
+    simp only [sub_self, inv_zero, zero_mul, mul_zero, sum_const_zero, zero_add, sum_add_distrib]
     rw [ih (hx.mono (subset_insert a t)), add_zero]
-    have h1 : (∑ j ∈ t, ∑ k ∈ t, g j a k) = ∑ j ∈ t, ∑ k ∈ t.erase j, g j a k :=
-      sum_congr rfl fun j hj ↦ by rw [← add_sum_erase t _ hj]; simp [g]
-    have h2 : (∑ i ∈ t, ∑ j ∈ t, g i j a) = ∑ j ∈ t, ∑ k ∈ t.erase j, g k j a :=
-      sum_comm.trans <| sum_congr rfl fun j hj ↦ by rw [← add_sum_erase t _ hj]; simp [g]
-    dsimp only [g] at h1 h2
+    have h1 : (∑ j ∈ t, ∑ k ∈ t, (x j - x a)⁻¹ * (x j - x k)⁻¹) =
+        ∑ j ∈ t, ∑ k ∈ t.erase j, (x j - x a)⁻¹ * (x j - x k)⁻¹ :=
+      sum_congr rfl fun j hj ↦ by rw [← add_sum_erase t _ hj]; simp
+    have h2 : (∑ i ∈ t, ∑ j ∈ t, (x i - x j)⁻¹ * (x i - x a)⁻¹) =
+        ∑ j ∈ t, ∑ k ∈ t.erase j, (x k - x j)⁻¹ * (x k - x a)⁻¹ :=
+      sum_comm.trans <| sum_congr rfl fun j hj ↦ by rw [← add_sum_erase t _ hj]; simp
     rw [h1, h2, ← sum_add_distrib, ← sum_add_distrib]
     refine sum_eq_zero fun j hj ↦ ?_
     rw [← sum_add_distrib, ← sum_add_distrib]

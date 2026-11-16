@@ -109,18 +109,10 @@ theorem eval_zero_of_eq_zero (hX : IsDysonPath n x w X) (hw : w 0 = 0) : X 0 = x
   simp [hX.eval_zero, hw]
 
 /-- The initial configuration `X 0` of a Dyson trajectory is antitone. -/
-theorem antitone_zero (hX : IsDysonPath n x w X) : Antitone (X 0) := by
-  intro i j hij
-  rcases eq_or_lt_of_le hij with rfl | hlt
-  · exact le_rfl
-  let u : ℕ → ℝ≥0 := fun k ↦ ((k : ℝ≥0) + 1)⁻¹
-  have hu_tendsto : Tendsto u atTop (𝓝 0) := by
-    rw [← NNReal.tendsto_coe]
-    simpa [u, one_div] using (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
-  exact le_of_tendsto_of_tendsto
-    (((continuous_apply j).comp hX.continuous).continuousAt.tendsto.comp hu_tendsto)
-    (((continuous_apply i).comp hX.continuous).continuousAt.tendsto.comp hu_tendsto)
-    (.of_forall fun k ↦ (hX.strictAnti (u k) (inv_pos.2 (by positivity)) hlt).le)
+theorem antitone_zero (hX : IsDysonPath n x w X) : Antitone (X 0) :=
+  isClosed_antitone.mem_of_tendsto
+    (hX.continuous.continuousAt.tendsto.mono_left (nhdsWithin_le_nhds (s := Ioi 0)))
+    (eventually_nhdsWithin_of_forall fun t ht ↦ (hX.strictAnti t (mem_Ioi.1 ht)).antitone)
 
 /-- Every Dyson trajectory forces its driving path `w` to be continuous. -/
 theorem continuous_driving (hX : IsDysonPath n x w X) : Continuous w := by
@@ -216,7 +208,7 @@ theorem integral_sum_Ioi_sub_inv_le (hX : IsDysonPath n x w X) (t : ℝ≥0) :
       fun _ _ ↦ by simp
   have hmono := intervalIntegral.integral_mono_on_of_le_Ioo t.coe_nonneg (hint_lhs.const_mul _)
     hint_rhs fun s hs ↦ mul_sum_Ioi_sub_inv_le_sum_sub_two_mul_mul_dysonDrift
-      (hX.strictAnti s.toNNReal (Real.toNNReal_pos.2 hs.1))
+      (hX.strictAnti s.toNNReal (Real.toNNReal_pos.2 hs.1)).antitone
   rw [intervalIntegral.integral_const_mul,
     intervalIntegral.integral_finsetSum fun i _ ↦
       (hX.intervalIntegrable_dysonDrift t i).const_mul _,

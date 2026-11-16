@@ -8,6 +8,7 @@ module
 public import TauCeti.Dynamics.Flow.TimeDependent
 public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Dynamics.FixedPoints.Defs
+import Mathlib.Analysis.Calculus.Deriv.Shift
 
 /-!
 # Periodic solutions of time-dependent vector fields
