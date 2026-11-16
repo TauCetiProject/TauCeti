@@ -11,7 +11,7 @@ public import Mathlib.CategoryTheory.Subobject.Limits
 # Pullbacks of subobjects
 
 Every pullback of a subobject along a morphism `p` contains the kernel of `p`, which is the
-pullback of `⊥` (`Subobject.pullback_obj_bot`).
+pullback of `⊥` (`Subobject.pullback_bot`).
 
 A subobject `Z` of `A` identifies the subobjects of the object `(Z : C)` with the subobjects of `A`
 below `Z`, by `Subobject.map Z.arrow` with inverse `Subobject.pullback Z.arrow` (Mathlib's
@@ -20,11 +20,11 @@ below `Z`, by `Subobject.map Z.arrow` with inverse `Subobject.pullback Z.arrow` 
 
 ## Main results
 
-* `CategoryTheory.Subobject.kernelSubobject_le_pullback_obj`: every pullback along `p` contains the
+* `CategoryTheory.Subobject.kernelSubobject_le_pullback`: every pullback along `p` contains the
   kernel of `p`.
-* `CategoryTheory.Subobject.pullback_arrow_obj_of_le`: for `S ≤ Z`, the pullback of `S` along
+* `CategoryTheory.Subobject.pullback_arrow_of_le`: for `S ≤ Z`, the pullback of `S` along
   `Z.arrow` is the subobject represented by the inclusion `Subobject.ofLE S Z`.
-* `CategoryTheory.Subobject.map_arrow_pullback_arrow_obj_of_le`: for `S ≤ Z`, mapping back the
+* `CategoryTheory.Subobject.map_pullback_arrow_of_le`: for `S ≤ Z`, mapping back the
   pullback of `S` along `Z.arrow` gives `S`.
 * `CategoryTheory.Subobject.isLimitKernelForkOfLE`: if the kernel of a morphism `g` out of `Z` is
   the pullback of `S ≤ Z`, then the inclusion `S ⟶ Z` is a kernel of `g`.
@@ -42,7 +42,7 @@ variable {C : Type u} [Category.{v} C] [HasPullbacks C] {A : C}
 
 /-- The pullback of a subobject `S ≤ Z` along `Z.arrow` is represented by the inclusion
 `S ⟶ Z`. -/
-lemma pullback_arrow_obj_of_le {S Z : Subobject A} (h : S ≤ Z) :
+lemma pullback_arrow_of_le {S Z : Subobject A} (h : S ≤ Z) :
     (pullback Z.arrow).obj S = mk (ofLE S Z h) := by
   have : S = (map Z.arrow).obj (mk (ofLE S Z h)) := by
     simp only [map_mk, ofLE_arrow, mk_arrow]
@@ -50,7 +50,7 @@ lemma pullback_arrow_obj_of_le {S Z : Subobject A} (h : S ≤ Z) :
   exact pullback_map_self _ _
 
 /-- Mapping back along `Z.arrow` the pullback of a subobject `S ≤ Z` gives `S`. -/
-lemma map_arrow_pullback_arrow_obj_of_le {S Z : Subobject A} (h : S ≤ Z) :
+lemma map_pullback_arrow_of_le {S Z : Subobject A} (h : S ≤ Z) :
     (map Z.arrow).obj ((pullback Z.arrow).obj S) = S := by
   rw [← inf_eq_map_pullback, inf_eq_right.2 h]
 
@@ -59,16 +59,16 @@ section Kernel
 variable [HasZeroMorphisms C]
 
 /-- The preimage of any subobject contains the kernel. -/
-lemma kernelSubobject_le_pullback_obj {X Y : C} (p : Y ⟶ X) [HasKernel p]
+lemma kernelSubobject_le_pullback {X Y : C} (p : Y ⟶ X) [HasKernel p]
     (K : Subobject X) : kernelSubobject p ≤ (pullback p).obj K :=
   le_of_factors (pullback_factors p K _ (by rw [kernelSubobject_arrow_comp]; exact factors_zero))
 
 /-- The kernel of a morphism is the preimage of the bottom subobject. -/
 @[simp]
-lemma pullback_obj_bot [HasZeroObject C] {X Y : C} (p : Y ⟶ X)
+lemma pullback_bot [HasZeroObject C] {X Y : C} (p : Y ⟶ X)
     [HasKernel p] : (pullback p).obj ⊥ = kernelSubobject p :=
   le_antisymm (le_kernelSubobject _ _ ((bot_factors_iff_zero _).1
-    ((pullback_factors_iff p ⊥ _).1 (factors_self _)))) (kernelSubobject_le_pullback_obj p ⊥)
+    ((pullback_factors_iff p ⊥ _).1 (factors_self _)))) (kernelSubobject_le_pullback p ⊥)
 
 variable {S Z : Subobject A} (h : S ≤ Z) {X : C} (g : (Z : C) ⟶ X)
   [HasKernel g] (hg : kernelSubobject g = (pullback Z.arrow).obj S)

@@ -122,9 +122,19 @@ lemma ofLE_π : ofLE P.B P.Z P.le ≫ P.π = 0 := by
 /-- The kernel of the projection is the smaller subobject, seen inside the larger one. -/
 lemma kernelSubobject_π : kernelSubobject P.π = (Subobject.pullback P.Z.arrow).obj P.B := by
   rw [← cokernel_π_iso_hom, kernelSubobject_comp_mono, kernelSubobject_cokernel_π,
-    pullback_arrow_obj_of_le]
+    pullback_arrow_of_le]
 
 end Basic
+
+omit [Abelian C] in
+/-- Composing with the inclusion of a subobject into itself does nothing. The hypothesis `S ≤ S`
+is stated for a single `S`, so this applies wherever the source and target of `ofLE` agree only
+after unfolding a definition: the larger subobjects of `ofEpi`, `trans` and `mapIso` are, by
+definition, the subobjects they are built from, but cannot be rewritten in the source of a
+morphism. -/
+private lemma ofLE_self_comp {S : Subobject A} (h : S ≤ S) (f : (S : C) ⟶ X) :
+    ofLE S S h ≫ f = f := by
+  rw [ofLE_refl, Category.id_comp]
 
 /-- Two subquotient presentations are equal when they have the same subobjects and the same
 projection. -/
@@ -170,7 +180,7 @@ end OfEpi
 lemma ofEpi_π (P : SubquotientPresentation A X) : ofEpi P.le P.π P.kernelSubobject_π = P :=
   ext rfl rfl (by
     rw [π_ofEpi]
-    exact (by rw [ofLE_refl, Category.id_comp] : P.π = ofLE P.Z P.Z le_rfl ≫ P.π))
+    exact (ofLE_self_comp _ _).symm)
 
 section Preimage
 
@@ -210,7 +220,7 @@ lemma preimage_le_Z (K : Subobject X) : P.preimage K ≤ P.Z := by
 
 @[simp]
 lemma preimage_bot : P.preimage ⊥ = P.B := by
-  rw [preimage, pullback_obj_bot, kernelSubobject_π, map_arrow_pullback_arrow_obj_of_le P.le]
+  rw [preimage, pullback_bot, kernelSubobject_π, map_pullback_arrow_of_le P.le]
 
 @[simp]
 lemma preimage_top : P.preimage ⊤ = P.Z := by
@@ -222,13 +232,13 @@ lemma B_le_preimage (K : Subobject X) : P.B ≤ P.preimage K :=
 /-- The image of the preimage of a subobject of `X` is that subobject. -/
 @[simp]
 lemma image_preimage (K : Subobject X) : P.image (P.preimage K) = K := by
-  rw [image, preimage, pullback_map_self, exists_obj_pullback_obj_of_epi]
+  rw [image, preimage, pullback_map_self, exists_pullback_eq_self_of_epi]
 
 /-- A subobject of `A` in the interval `[B, Z]` is the preimage of its image. -/
 lemma preimage_image {S : Subobject A} (h₁ : P.B ≤ S) (h₂ : S ≤ P.Z) :
     P.preimage (P.image S) = S := by
-  rw [image, preimage, pullback_obj_exists_obj_of_kernelSubobject_le,
-    map_arrow_pullback_arrow_obj_of_le h₂]
+  rw [image, preimage, pullback_exists_eq_self_of_kernelSubobject_le,
+    map_pullback_arrow_of_le h₂]
   rw [kernelSubobject_π]
   exact (Subobject.pullback _).monotone h₁
 
@@ -370,26 +380,28 @@ lemma π_trans : (P.trans Q).π = P.preimageπ Q.Z ≫ Q.π := π_ofEpi _ _ _
 lemma π_trans' :
     (P.trans Q).π = ofLE _ (P.preimage Q.Z) (P.trans_Z Q).le ≫ P.preimageπ Q.Z ≫ Q.π := by
   rw [π_trans]
-  conv_lhs => rw [← Category.id_comp (P.preimageπ Q.Z ≫ Q.π), ← ofLE_refl (P.preimage Q.Z)]
-  -- The larger subobject of `P.trans Q` is `P.preimage Q.Z` by definition, but `trans_Z` cannot
-  -- be rewritten in the source of `P.preimageπ Q.Z`.
-  rfl
+  exact (ofLE_self_comp _ _).symm
 
 /-- Taking preimages along a composite presentation is taking preimages twice. -/
 @[simp]
 lemma preimage_trans (K : Subobject Y) : (P.trans Q).preimage K = P.preimage (Q.preimage K) := by
-  -- Inside the preimage of `Q.Z`, both sides consist of the maps `x` with `x ≫ ρ ≫ Q.π`
-  -- landing in `K`, where `ρ = P.preimageπ Q.Z`.
-  have key : ∀ {V : C} (x : V ⟶ (P.preimage Q.Z : C)),
-      ((P.trans Q).preimage K).Factors (x ≫ (P.preimage Q.Z).arrow) ↔
-        (P.preimage (Q.preimage K)).Factors (x ≫ (P.preimage Q.Z).arrow) := fun x ↦ by
-    refine ((P.trans Q).factors_preimage_iff K x).trans ?_
-    rw [π_trans, ← ofLE_arrow (P.preimage_le_Z Q.Z), ← Category.assoc, P.factors_preimage_iff,
-      Category.assoc, ← preimageπ_arrow, ← Category.assoc, Q.factors_preimage_iff,
-      Category.assoc]
-    exact Iff.rfl
-  have h₁ : (P.trans Q).preimage K ≤ P.preimage Q.Z := (P.trans Q).preimage_le_Z K
-  have h₂ : P.preimage (Q.preimage K) ≤ P.preimage Q.Z := P.preimage_monotone (Q.preimage_le_Z K)
+  -- Inside `(P.trans Q).Z`, the preimage of `Q.Z`, both sides consist of the maps `x` with
+  -- `x ≫ ρ ≫ Q.π` landing in `K`, where `ρ = P.preimageπ Q.Z` (read through `π_trans'`).
+  have key : ∀ {V : C} (x : V ⟶ ((P.trans Q).Z : C)),
+      ((P.trans Q).preimage K).Factors (x ≫ (P.trans Q).Z.arrow) ↔
+        (P.preimage (Q.preimage K)).Factors (x ≫ (P.trans Q).Z.arrow) := fun x ↦ by
+    rw [(P.trans Q).factors_preimage_iff, π_trans',
+      ← ofLE_arrow ((P.trans_Z Q).le.trans (P.preimage_le_Z Q.Z)),
+      ← ofLE_comp_ofLE _ _ _ (P.trans_Z Q).le (P.preimage_le_Z Q.Z)]
+    simp only [← Category.assoc]
+    rw [P.factors_preimage_iff]
+    simp only [Category.assoc]
+    rw [← preimageπ_arrow]
+    simp only [← Category.assoc]
+    rw [Q.factors_preimage_iff]
+  have h₁ : (P.trans Q).preimage K ≤ (P.trans Q).Z := (P.trans Q).preimage_le_Z K
+  have h₂ : P.preimage (Q.preimage K) ≤ (P.trans Q).Z :=
+    (P.preimage_monotone (Q.preimage_le_Z K)).trans_eq (P.trans_Z Q).symm
   have k₁ := (key (ofLE _ _ h₁)).1
   have k₂ := (key (ofLE _ _ h₂)).2
   rw [ofLE_arrow] at k₁ k₂
@@ -477,7 +489,7 @@ section Refl
 /-- The identity presentation of `X` inside itself, by `⊥ ≤ ⊤`, whose projection is the
 (invertible) arrow of `⊤`. -/
 @[expose] noncomputable def refl (X : C) : SubquotientPresentation X X :=
-  ofEpi bot_le (⊤ : Subobject X).arrow (pullback_obj_bot _).symm
+  ofEpi bot_le (⊤ : Subobject X).arrow (pullback_bot _).symm
 
 @[simp]
 lemma refl_B : (refl X).B = ⊥ := (rfl)
@@ -492,7 +504,7 @@ lemma π_refl : (refl X).π = (refl X).Z.arrow := π_ofEpi _ _ _
 /-- Transport along the identity presentation is the identity. -/
 @[simp]
 lemma preimage_refl (K : Subobject X) : (refl X).preimage K = K := by
-  rw [preimage, π_refl, map_arrow_pullback_arrow_obj_of_le (Z := (refl X).Z) le_top]
+  rw [preimage, π_refl, map_pullback_arrow_of_le (Z := (refl X).Z) le_top]
 
 variable (P : SubquotientPresentation A X)
 
@@ -536,10 +548,7 @@ lemma π_mapIso (e : X ≅ Y) : (P.mapIso e).π = P.π ≫ e.hom :=
 /-- The projection of a transported presentation, as a morphism out of `P.Z`. -/
 lemma π_mapIso' (e : X ≅ Y) : (P.mapIso e).π = ofLE _ P.Z (P.mapIso_Z e).le ≫ P.π ≫ e.hom := by
   rw [π_mapIso]
-  conv_lhs => rw [← Category.id_comp (P.π ≫ e.hom), ← ofLE_refl P.Z]
-  -- The larger subobject of `P.mapIso e` is `P.Z` by definition, but `mapIso_Z` cannot be
-  -- rewritten in the source of `P.π`.
-  rfl
+  exact (ofLE_self_comp _ _).symm
 
 @[simp]
 lemma preimage_mapIso (e : X ≅ Y) (K : Subobject Y) :

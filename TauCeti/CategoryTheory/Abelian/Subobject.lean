@@ -25,11 +25,11 @@ of a subquotient back to the ambient object.
 
 ## Main results
 
-* `CategoryTheory.Subobject.exists_obj_pullback_obj_of_epi`: the image of the preimage of a
+* `CategoryTheory.Subobject.exists_pullback_eq_self_of_epi`: the image of the preimage of a
   subobject of `X` along `p` is that subobject.
-* `CategoryTheory.Subobject.pullback_obj_exists_obj_of_kernelSubobject_le`: the preimage of the
+* `CategoryTheory.Subobject.pullback_exists_eq_self_of_kernelSubobject_le`: the preimage of the
   image of a subobject of `Y` containing the kernel of `p` is that subobject.
-* `CategoryTheory.Subobject.kernelSubobject_cokernel_π`: the kernel of the cokernel of a
+* `CategoryTheory.Limits.kernelSubobject_cokernel_π`: the kernel of the cokernel of a
   monomorphism `f` is the subobject represented by `f`.
 -/
 
@@ -39,27 +39,31 @@ open CategoryTheory Limits
 
 universe v u
 
-namespace CategoryTheory.Subobject
-
 variable {C : Type u} [Category.{v} C] [Abelian C] {X Y : C}
+
+namespace CategoryTheory.Limits
 
 /-- The kernel of the cokernel of a monomorphism `f` is the subobject represented by `f`. -/
 @[simp]
 lemma kernelSubobject_cokernel_π {W : C} (f : W ⟶ Y) [Mono f] :
-    kernelSubobject (cokernel.π f) = mk f := by
+    kernelSubobject (cokernel.π f) = Subobject.mk f := by
   rw [← imageSubobject_mono f]
   exact ((ShortComplex.mk f (cokernel.π f) (cokernel.condition f)).exact_iff_image_eq_kernel.1
     (ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel f))).symm
 
+end CategoryTheory.Limits
+
+namespace CategoryTheory.Subobject
+
 /-- Along an epimorphism, the image of the preimage of a subobject is that subobject. -/
 @[simp]
-lemma exists_obj_pullback_obj_of_epi (p : Y ⟶ X) [Epi p] (K : Subobject X) :
+lemma exists_pullback_eq_self_of_epi (p : Y ⟶ X) [Epi p] (K : Subobject X) :
     («exists» p).obj ((pullback p).obj K) = K := by
   rw [exists_eq_imageSubobject, ← (isPullback p K).w, imageSubobject_comp_eq_of_epi,
     imageSubobject_mono, mk_arrow]
 
 /-- The preimage of the image of a subobject containing the kernel is that subobject. -/
-lemma pullback_obj_exists_obj_of_kernelSubobject_le (p : Y ⟶ X) {S : Subobject Y}
+lemma pullback_exists_eq_self_of_kernelSubobject_le (p : Y ⟶ X) {S : Subobject Y}
     (hS : kernelSubobject p ≤ S) : (pullback p).obj ((«exists» p).obj S) = S := by
   refine le_antisymm ?_ (le_pullback_exists p S)
   set T := (pullback p).obj ((«exists» p).obj S)
