@@ -315,17 +315,14 @@ theorem exists_fiberwiseCellReattachment_comp_fiberwiseCellAttachmentMap_morseFa
         (fun p ↦ hball₀ (φ p)) (fun p ↦ hf₀ (φ p)) hs₀' i).comp
         (ContinuousMap.fst.prodMk
           (diskMapFamily.{u} (fun p ↦ g i (φ p)) ((hgc i).comp φ.continuous)))) :=
-    { toFun q := K i (q.1, (φ q.2.1, q.2.2))
-      continuous_toFun := (K i).continuous.comp (continuous_fst.prodMk
-        ((φ.continuous.comp (continuous_fst.comp continuous_snd)).prodMk
-          (continuous_snd.comp continuous_snd)))
-      map_zero_left x := ((K i).apply_zero _).trans
-        (morseFamilyCharacteristicMap_comp_apply ψ₁ k hk hε hball₁ hf₁ hs₁ φ hs₁' i x.1 x.2).symm
-      map_one_left x := by
-        simp only [ContinuousMap.Homotopy.apply_one, ContinuousMap.comp_apply,
-          ContinuousMap.prod_eval, ContinuousMap.fst_apply, diskMapFamily_apply]
+    ((K i).compContinuousMap (φ.prodMap (ContinuousMap.id _))).cast
+      (ContinuousMap.ext fun x ↦
+        (morseFamilyCharacteristicMap_comp_apply ψ₁ k hk hε hball₁ hf₁ hs₁ φ hs₁' i x.1 x.2).symm)
+      (ContinuousMap.ext fun x ↦ by
+        simp only [ContinuousMap.comp_apply, ContinuousMap.prod_eval, ContinuousMap.fst_apply,
+          ContinuousMap.prodMap_apply, ContinuousMap.id_apply, Prod.map, diskMapFamily_apply]
         exact (morseFamilyCharacteristicMap_comp_apply ψ₀ k hk hε hball₀ hf₀ hs₀ φ hs₀' i x.1
-          _).symm }
+          _).symm)
   have hK'K (i : ι) (t : unitInterval) (p : P') (x : TopCat.disk.{u} (k i)) :
       K' i (t, (p, x)) = K i (t, (φ p, x)) :=
     rfl
