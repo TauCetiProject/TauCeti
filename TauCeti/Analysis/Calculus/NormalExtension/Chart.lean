@@ -92,7 +92,7 @@ theorem symm_apply_of_coe_eq_normalExtension {𝕜 V E W : Type*} [NontriviallyN
 
 section Lipschitz
 
-variable {𝕜 V E W : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+variable {𝕜 V E W : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup W] [NormedSpace 𝕜 W]
 
 /-- The pointwise estimate behind
