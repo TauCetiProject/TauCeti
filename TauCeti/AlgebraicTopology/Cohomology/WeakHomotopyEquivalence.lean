@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DerivedCategory.KProjective
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Basic
+public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Relative
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 
 /-!
@@ -40,6 +41,9 @@ projective under the same hypotheses.
 * `TopPair.homotopyEquivalences_singularCochainComplexMap_of_isWeakHomotopyEquivalence`,
   `TopPair.isIso_singularCohomologyMap_of_isWeakHomotopyEquivalence`: the same for relative
   cohomology of pairs.
+* `TopPair.homotopyEquivalences_twistedCochainComplexMap_of_isWeakHomotopyEquivalence`,
+  `TopPair.isIso_twistedCohomologyMap_of_isWeakHomotopyEquivalence`: the same for relative
+  cohomology of pairs with local coefficients.
 
 ## References
 
@@ -128,5 +132,35 @@ theorem isIso_singularCohomologyMap_of_isWeakHomotopyEquivalence
   have := (HomologicalComplex.mem_quasiIso_iff _).1 <| homotopyEquivalences_le_quasiIso _ _ _
     (homotopyEquivalences_singularCochainComplexMap_of_isWeakHomotopyEquivalence f R k M hfst hsnd)
   inferInstance
+
+section Twisted
+
+variable (L : TauCeti.LocalCoefficientSystem.{u, v, v} A P'.fst) [∀ y, Projective (L.obj y)]
+
+/-- **A map of pairs which is a weak homotopy equivalence on the ambient spaces and on the
+subspaces induces a cochain homotopy equivalence of relative singular cochains with local
+coefficients**, from the relative cochains of `P'` twisted by a local coefficient system `L` with
+projective fibres to those of `P` twisted by its pullback, with values in any module `M`. -/
+theorem homotopyEquivalences_twistedCochainComplexMap_of_isWeakHomotopyEquivalence
+    (hfst : (Hom.fst f).hom.IsWeakHomotopyEquivalence)
+    (hsnd : (Hom.snd f).hom.IsWeakHomotopyEquivalence) :
+    HomologicalComplex.homotopyEquivalences _ _ (TopPair.twistedCochainComplexMap k M f L) := by
+  obtain ⟨e, he⟩ :=
+    homotopyEquivalences_twistedChainComplexMap_of_isWeakHomotopyEquivalence f hfst hsnd L
+  exact ⟨e.linearYonedaFunctorMap k M, by rw [HomotopyEquiv.linearYonedaFunctorMap_hom, he]⟩
+
+/-- **A map of pairs which is a weak homotopy equivalence on the ambient spaces and on the
+subspaces induces isomorphisms on relative singular cohomology with local coefficients**
+`Hⁿ(Y, B; L, M) ≅ Hⁿ(X, A; f⁎L, M)`, for a local coefficient system `L` on `Y` with projective
+fibres and values in any module `M`. -/
+theorem isIso_twistedCohomologyMap_of_isWeakHomotopyEquivalence
+    (hfst : (Hom.fst f).hom.IsWeakHomotopyEquivalence)
+    (hsnd : (Hom.snd f).hom.IsWeakHomotopyEquivalence) (n : ℕ) :
+    IsIso (TopPair.twistedCohomologyMap k M f L n) :=
+  have := (HomologicalComplex.mem_quasiIso_iff _).1 <| homotopyEquivalences_le_quasiIso _ _ _
+    (homotopyEquivalences_twistedCochainComplexMap_of_isWeakHomotopyEquivalence f k M L hfst hsnd)
+  inferInstance
+
+end Twisted
 
 end TopPair

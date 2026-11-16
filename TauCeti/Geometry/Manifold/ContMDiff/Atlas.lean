@@ -49,8 +49,9 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
 * `TauCeti.extChartAtDiffeomorph`: on a boundaryless model, the extended chart at a point as a
   native `C^n` diffeomorphism from `TauCeti.chartSourceOpens` onto `TauCeti.extChartTargetOpens`,
   the open target of the chart in the model vector space.
-* `OpenPartialHomeomorph.contMDiffOn_extendTrans` and
-  `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
+* `OpenPartialHomeomorph.contMDiffOn_extendTrans`, `OpenPartialHomeomorph.contMDiffAt_extendTrans`
+  and `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`,
+  `OpenPartialHomeomorph.contMDiffAt_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
   transported by `OpenPartialHomeomorph.extendTrans` and of its inverse.
 -/
 
@@ -180,6 +181,22 @@ theorem contMDiffOn_extendTrans_symm (c : OpenPartialHomeomorph M H)
     I.contMDiffOn_symm.comp hΨ.contMDiff.contMDiffOn fun _ _ ↦ by simp [I.range_eq_univ]
   exact ((contMDiffOn_symm_of_mem_maximalAtlas hc).comp h1 fun _ hv ↦ by
     simpa [extendTrans_target] using hv).congr fun _ _ ↦ by simp
+
+/-- A chart `c` of the maximal `C^n` atlas, read in `E` and moved to `F` by a `C^n` homeomorphism
+`Ψ`, is `C^n` at each point of the source of `c`. -/
+theorem contMDiffAt_extendTrans (c : OpenPartialHomeomorph M H)
+    (hc : c ∈ IsManifold.maximalAtlas I n M) {Ψ : E ≃ₜ F} (hΨ : ContDiff 𝕜 n Ψ) {x : M}
+    (hx : x ∈ c.source) : ContMDiffAt I 𝓘(𝕜, F) n (c.extendTrans I Ψ) x :=
+  (c.contMDiffOn_extendTrans hc hΨ).contMDiffAt
+    ((c.extendTrans I Ψ).open_source.mem_nhds (by rwa [extendTrans_source]))
+
+/-- The inverse of `c.extendTrans I Ψ`, for `c` in the maximal `C^n` atlas and `Ψ.symm` of class
+`C^n`, is `C^n` at each point of its target. -/
+theorem contMDiffAt_extendTrans_symm (c : OpenPartialHomeomorph M H)
+    (hc : c ∈ IsManifold.maximalAtlas I n M) {Ψ : E ≃ₜ F} (hΨ : ContDiff 𝕜 n Ψ.symm) {v : F}
+    (hv : v ∈ (c.extendTrans I Ψ).target) : ContMDiffAt 𝓘(𝕜, F) I n (c.extendTrans I Ψ).symm v :=
+  (c.contMDiffOn_extendTrans_symm hc hΨ).contMDiffAt
+    ((c.extendTrans I Ψ).open_target.mem_nhds hv)
 
 end OpenPartialHomeomorph
 

@@ -75,20 +75,4 @@ theorem euclideanWeight_eq_hammingNorm (x : ι → ZMod 2) : euclideanWeight x =
     fin_cases a <;> decide
   simp only [euclideanWeight_def, h, Finset.sum_boole, hammingNorm, Nat.cast_id]
 
-/-- The Hamming weight of the binary reduction of an integer vector is bounded by its
-sum of squares. -/
-theorem hammingNorm_intCast_le_sum_sq (z : ι → ℤ) :
-    (hammingNorm (fun i ↦ (z i : ZMod 2)) : ℤ) ≤ ∑ i, z i ^ 2 := by
-  have hsum : ∑ i, (if (z i : ZMod 2) ≠ 0 then (1 : ℤ) else 0) ≤ ∑ i, z i ^ 2 := by
-    apply Finset.sum_le_sum
-    intro i _
-    split_ifs with hi
-    · have hz : z i ≠ 0 := by
-        rintro h
-        simp [h] at hi
-      have := sq_pos_of_ne_zero hz
-      omega
-    · exact sq_nonneg _
-  simpa only [Finset.sum_boole, hammingNorm] using hsum
-
 end TauCeti

@@ -41,6 +41,8 @@ pairwise commuting elements.
 
 ## Main results
 
+* `Group.isVaught_iff_commute`: Vaught's condition is equivalent to the quasi-identity
+  `x ^ 2 * y ^ 2 * z ^ 2 = 1 → x * y = y * x`.
 * `Group.not_isVaught_dihedralGroup_four`: the dihedral group of order `8` does not satisfy
   Vaught's condition.
 * `Group.IsVaught.isMulCommutative_closure`: in a group satisfying Vaught's condition, a solution
@@ -81,6 +83,15 @@ def IsVaught : Prop :=
 theorem isVaught_iff : IsVaught G ↔
     ∀ x y z : G, x ^ 2 * y ^ 2 * z ^ 2 = 1 → Commute x y ∧ Commute x z ∧ Commute y z :=
   Iff.rfl
+
+/-- Vaught's condition is equivalent to the quasi-identity
+`x ^ 2 * y ^ 2 * z ^ 2 = 1 → x * y = y * x`, which only asks `x` and `y` to commute. -/
+theorem isVaught_iff_commute :
+    IsVaught G ↔ ∀ x y z : G, x ^ 2 * y ^ 2 * z ^ 2 = 1 → Commute x y :=
+  ⟨fun hG x y z h => (hG x y z h).1, fun hG x y z h => ⟨hG x y z h,
+    -- The other two relations: apply the quasi-identity to the cyclic rotations of `(x, y, z)`.
+    (hG z x y (by rwa [mul_assoc, mul_eq_one_comm])).symm,
+    hG y z x (by rwa [mul_eq_one_comm, ← mul_assoc])⟩⟩
 
 /-- The dihedral group of order `8` does not satisfy Vaught's condition: for the rotation `r 1` and
 the reflection `sr 0`, the product `r 1 ^ 2 * sr 0 ^ 2 * r 1 ^ 2` is trivial although `r 1` and
