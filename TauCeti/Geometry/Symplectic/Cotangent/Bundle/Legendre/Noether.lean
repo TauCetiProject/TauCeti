@@ -36,7 +36,7 @@ tangent-lifted action for `ω_L` (`TauCeti.isEquivariantMomentMap_momentMap_comp
 
 **Noether's theorem** (`TauCeti.momentMap_legendreMap_eq_of_isMIntegralCurveOn`) follows from the
 conservation law of moment maps under invariant Hamiltonians
-(`TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_map_smul`): along an
+(`TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_smul_invariant`): along an
 integral curve of a Lagrangian vector field `X`, that is `ι_X ω_L = dE_L`, the derivative of
 `⟨J, ξ⟩` is `ω_L(ξ_{TM}, X) = -dE_L(ξ_{TM})`, and this vanishes because `E_L` is invariant. So
 `J` is constant along every motion of the system. Neither regularity of `L` nor nondegeneracy
@@ -103,7 +103,8 @@ variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E
 private theorem comp_tangentMap_constSmul (hLg : ∀ v, L (g • v) = L v) :
     L ∘ tangentMap I I (Diffeomorph.constSmul I ∞ g) = L :=
   funext fun v ↦ by
-    rw [Function.comp_apply, Diffeomorph.coe_constSmul, ← TangentBundle.smul_eq_tangentMap, hLg]
+    rw [← Diffeomorph.coe_tangent, Diffeomorph.tangent_constSmul, Function.comp_apply,
+      Diffeomorph.coe_constSmul, hLg]
 
 /-- **The Legendre map of an invariant Lagrangian is equivariant.** If `g` preserves `L`, then
 `FL (g • v) = g • FL v`, for the tangent-lifted action on `TM` and the cotangent-lifted action on
@@ -202,8 +203,8 @@ theorem momentMap_legendreMap_eq_of_isMIntegralCurveOn (hL : ContMDiff I.tangent
     CotangentBundle.momentMap IG G (legendreMap L (γ t)) =
       CotangentBundle.momentMap IG G (legendreMap L (γ t₀)) :=
   (isEquivariantMomentMap_momentMap_comp_legendreMap hL hLG).toIsMomentMap
-    |>.apply_eq_of_isMIntegralCurveOn_of_map_smul (fun g ↦ lagrangianEnergy_smul (hLG g)) hX hs
-      hγ (fun t _ ↦ (contMDiff_lagrangianEnergy hL (m := 1) (by simp)).mdifferentiableAt
+    |>.apply_eq_of_isMIntegralCurveOn_of_smul_invariant (fun g ↦ lagrangianEnergy_smul (hLG g))
+      hX hs hγ (fun t _ ↦ (contMDiff_lagrangianEnergy hL (m := 1) (by simp)).mdifferentiableAt
         one_ne_zero) ht₀ ht
 
 /-- **Noether's theorem** along a global integral curve: for a smooth Lagrangian `L` invariant
@@ -231,7 +232,7 @@ theorem IsHyperregularLagrangian.momentMap_eq_of_isMIntegralCurveOn
     {γ : ℝ → CotangentBundle I M} {s : Set ℝ} (hs : IsPreconnected s)
     (hγ : IsMIntegralCurveOn γ X s) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     CotangentBundle.momentMap IG G (γ t) = CotangentBundle.momentMap IG G (γ t₀) :=
-  CotangentBundle.isEquivariantMomentMap_momentMap.apply_eq_of_isMIntegralCurveOn_of_map_smul
+  CotangentBundle.isEquivariantMomentMap_momentMap.apply_eq_of_isMIntegralCurveOn_of_smul_invariant
     (fun g ↦ hLh.hamiltonian_smul (hLG g)) hX hs hγ
     (fun t _ ↦ (hLh.contMDiff_hamiltonian hL).mdifferentiableAt (by simp)) ht₀ ht
 

@@ -47,9 +47,9 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
   tangent representation carries `ξ_M(x)` to `(Ad_g ξ)_M(x)`.
 * `MonoidHom.fundamentalVectorField_groupLieAlgebraMap`: for an action through a homomorphism
   `φ : K →* G`, the fundamental vector field of `ξ ∈ Lie(K)` is that of `dφ ξ ∈ Lie(G)`.
-* `TauCeti.mfderiv_fundamentalVectorField_eq_zero_of_map_smul`,
-  `TauCeti.mvfderiv_fundamentalVectorField_eq_zero_of_map_smul`: the derivative of an invariant
-  map vanishes on fundamental vector fields.
+* `TauCeti.mfderiv_fundamentalVectorField_eq_zero_of_smul_invariant`,
+  `TauCeti.mvfderiv_fundamentalVectorField_eq_zero_of_smul_invariant`: the derivative of an
+  invariant map vanishes on fundamental vector fields.
 * `TauCeti.mfderiv_fundamentalVectorField_of_map_smul`: an equivariant map `f : M → N` sends
   `ξ_M` to `ξ_N`.
 * `TangentBundle.mfderiv_proj_fundamentalVectorField`: the fundamental vector field `ξ_{TM}` of the
@@ -201,7 +201,7 @@ theorem _root_.TangentBundle.mfderiv_proj_fundamentalVectorField [IsManifold I �
 /-- **Invariant maps are constant along fundamental vector fields.** If `f (g • x) = f x` for
 every `g`, and `f` and the orbit map of `x` are differentiable, then the derivative of `f` at `x`
 vanishes on `ξ_M(x)`. -/
-theorem mfderiv_fundamentalVectorField_eq_zero_of_map_smul {E'' : Type*}
+theorem mfderiv_fundamentalVectorField_eq_zero_of_smul_invariant {E'' : Type*}
     [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] {H'' : Type*} [TopologicalSpace H'']
     {I'' : ModelWithCorners 𝕜 E'' H''} {N : Type*} [TopologicalSpace N] [ChartedSpace H'' N]
     {f : M → N} {x : M} (hf : MDifferentiableAt I' I'' f x)
@@ -217,13 +217,13 @@ theorem mfderiv_fundamentalVectorField_eq_zero_of_map_smul {E'' : Type*}
 /-- **Invariant functions are constant along fundamental vector fields.** If a function `f` to a
 normed space satisfies `f (g • x) = f x` for every `g`, and `f` and the orbit map of `x` are
 differentiable, then `df_x(ξ_M(x)) = 0`. -/
-theorem mvfderiv_fundamentalVectorField_eq_zero_of_map_smul {F : Type*} [NormedAddCommGroup F]
+theorem mvfderiv_fundamentalVectorField_eq_zero_of_smul_invariant {F : Type*} [NormedAddCommGroup F]
     [NormedSpace 𝕜 F] {f : M → F} {x : M} (hf : MDifferentiableAt I' 𝓘(𝕜, F) f x)
     (horbit : MDifferentiableAt I I' (fun g : G => g • x) 1) (hfx : ∀ g : G, f (g • x) = f x)
     (ξ : GroupLieAlgebra I G) :
     mvfderiv I' f x (fundamentalVectorField I' ξ x) = 0 := by
   rw [mvfderiv, ContinuousLinearMap.comp_apply,
-    mfderiv_fundamentalVectorField_eq_zero_of_map_smul hf horbit hfx ξ, map_zero]
+    mfderiv_fundamentalVectorField_eq_zero_of_smul_invariant hf horbit hfx ξ, map_zero]
 
 /-- For a `C^n` action, the fundamental vector field of `ξ` is a `C^m` vector field when
 `m + 1 ≤ n`. -/

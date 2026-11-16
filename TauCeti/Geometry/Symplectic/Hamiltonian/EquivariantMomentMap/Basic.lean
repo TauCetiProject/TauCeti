@@ -78,7 +78,7 @@ point of `μ⁻¹(G · c)`, the preimage of the coadjoint orbit of `c`
 
 The derivative of an invariant function vanishes on every fundamental vector field, so a moment map
 is conserved along the integral curves of a Hamiltonian vector field of an invariant function
-(`TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_map_smul`). This is
+(`TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_smul_invariant`). This is
 **Noether's theorem** for Hamiltonian systems.
 
 ## Main definitions
@@ -100,7 +100,7 @@ is conserved along the integral curves of a Hamiltonian vector field of an invar
   symplectomorphisms on a preconnected manifold, equivariance can be tested at a single point.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isEquivariantMomentMap_iff_exists_eq_add`:
   uniqueness of group-level moment maps up to coadjoint-invariant constants.
-* `TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_map_smul`: **Noether's
+* `TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_smul_invariant`: **Noether's
   theorem**, a moment map is conserved along the integral curves of a Hamiltonian vector field of
   an invariant function.
 * `TauCeti.SmoothTwoForm.IsMomentMap.mvfderiv_momentDefect_one`: the derivative of the defect at
@@ -219,7 +219,7 @@ variable [CompleteSpace E] [CompleteSpace E']
 fundamental vector fields and `X` a Hamiltonian vector field of a `G`-invariant function `f`.
 Then `μ` is constant along every integral curve of `X` on a preconnected set of times along which
 `f` is differentiable. -/
-theorem IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_map_smul
+theorem IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_smul_invariant
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) {f : M → ℝ}
     (hfG : ∀ (g : G) x, f (g • x) = f x) {X : (x : M) → TangentSpace I' x}
     (hX : σ.IsHamiltonianVectorField f X) {γ : ℝ → M} {s : Set ℝ} (hs : IsPreconnected s)
@@ -227,7 +227,7 @@ theorem IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_map_smul
     {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) : μ (γ t) = μ (γ t₀) :=
   h.apply_eq_of_isMIntegralCurveOn hX hs hγ (fun u hu ξ ↦ by
     rw [InfinitesimalAction.fundamental_apply]
-    exact mvfderiv_fundamentalVectorField_eq_zero_of_map_smul (hf u hu)
+    exact mvfderiv_fundamentalVectorField_eq_zero_of_smul_invariant (hf u hu)
       ((ContMDiffSMul.contMDiff_smul_const (n := ∞) (γ u)).mdifferentiableAt (by simp))
       (fun g ↦ hfG g (γ u)) ξ) ht₀ ht
 

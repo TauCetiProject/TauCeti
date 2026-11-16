@@ -35,6 +35,7 @@ The underlying function is Mathlib's `tangentMap`; no parallel tangent-map API i
 * `TangentBundle.instMulAction`: the tangent lift `g • v = dg_x v` of an action of a group by
   smooth maps, again an action by smooth maps (`TangentBundle.instContMDiffConstSMul`), and jointly
   smooth when the action is (`TangentBundle.instContMDiffSMul`).
+* `Diffeomorph.tangent_constSmul`: the tangent lift of `x ↦ g • x` is `v ↦ g • v`.
 -/
 
 public section
@@ -171,6 +172,7 @@ theorem proj_smul (g : G) (v : TangentBundle I M) : (g • v).proj = g • v.pro
   rw [smul_eq_tangentMap, tangentMap]
 
 /-- The tangent-lifted action sends a tangent vector `v` at `x` to `dg_x v`. -/
+@[simp]
 theorem snd_smul (g : G) (v : TangentBundle I M) :
     (g • v).2 = mfderiv I I (fun x : M ↦ g • x) v.proj v.2 := by
   rw [smul_eq_tangentMap, tangentMap]
@@ -200,5 +202,18 @@ instance instContMDiffSMul {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace 
       (n := ∞) (m := ∞) (by simp)).congr fun p ↦ smul_eq_tangentMap p.1 p.2
 
 end TangentBundle
+
+namespace Diffeomorph
+
+variable {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
+
+/-- The tangent lift of the diffeomorphism `x ↦ g • x` is the diffeomorphism `v ↦ g • v` of the
+tangent-lifted action. -/
+@[simp]
+theorem tangent_constSmul (g : G) :
+    (constSmul I ∞ g : M ≃ₘ⟮I, I⟯ M).tangent = constSmul I.tangent ∞ g :=
+  Diffeomorph.ext fun v ↦ (TangentBundle.smul_def g v).symm.trans (constSmul_apply g v).symm
+
+end Diffeomorph
 
 end
