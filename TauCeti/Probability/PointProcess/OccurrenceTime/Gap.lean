@@ -20,7 +20,10 @@ With this convention, the partial sum of the first `n + 1` extended gaps equals
 `μ.occurrenceTime n` for every measure `μ` and every index `n`, without local finiteness,
 integrality, or nonexplosion hypotheses, and `μ.occurrenceGap n` is finite if and only if
 `μ.occurrenceTime n` is finite. Every locally finite integer-valued measure is therefore
-reconstructed from its extended gap sequence.
+reconstructed from its extended gap sequence, so extended interarrival gaps determine both a
+locally finite counting measure and its law (`ProbabilityTheory.IdentDistrib.of_occurrenceGap`).
+Restricting to `[0, b]` retains exactly the gaps of occurrences in `[0, b]` and sets later gaps
+to `∞`.
 
 For locally finite counting measures, exceeding a threshold duration in gap `0` means `[0, s]`
 is empty, and exceeding a threshold duration in gap `n + 1` after a simple finite occurrence `n`
@@ -66,20 +69,23 @@ theorem occurrenceGap_succ_of_ne_top {μ : Measure ℝ≥0} {n : ℕ} (h : μ.oc
     μ.occurrenceGap (n + 1) = μ.occurrenceTime (n + 1) - μ.occurrenceTime n := by
   simp [occurrenceGap_succ, h]
 
-/-- Between two finite consecutive occurrences, the finite `ℝ≥0` representative of the gap is
-the difference of their finite occurrence times. -/
+/-- After a finite occurrence `n`, the `ℝ≥0` representative `(μ.occurrenceGap (n + 1)).toNNReal`
+equals the truncated difference of the `toNNReal` occurrence times, including when occurrence
+`n + 1` is `∞` (where both sides vanish). -/
 theorem toNNReal_occurrenceGap_succ {μ : Measure ℝ≥0} {n : ℕ}
     (hn : μ.occurrenceTime n ≠ ∞) :
     (μ.occurrenceGap (n + 1)).toNNReal =
       (μ.occurrenceTime (n + 1)).toNNReal - (μ.occurrenceTime n).toNNReal := by
   rw [occurrenceGap_succ_of_ne_top hn, ENNReal.toNNReal_sub hn]
 
-/-- Between two finite consecutive occurrences, the real representative of the gap is the
-difference of their real occurrence times. -/
+/-- When occurrence `n + 1` is finite, occurrence `n` is automatically finite and the real
+representative of gap `n + 1` is the difference of the two real occurrence times. -/
 theorem toReal_occurrenceGap_succ {μ : Measure ℝ≥0} {n : ℕ}
-    (hn : μ.occurrenceTime n ≠ ∞) (hnext : μ.occurrenceTime (n + 1) ≠ ∞) :
+    (hnext : μ.occurrenceTime (n + 1) ≠ ∞) :
     (μ.occurrenceGap (n + 1)).toReal =
       (μ.occurrenceTime (n + 1)).toReal - (μ.occurrenceTime n).toReal := by
+  have hn : μ.occurrenceTime n ≠ ∞ :=
+    ne_top_of_le_ne_top hnext (μ.monotone_occurrenceTime (Nat.le_succ n))
   rw [occurrenceGap_succ_of_ne_top hn,
     ENNReal.toReal_sub_of_le (μ.monotone_occurrenceTime (Nat.le_succ n)) hnext]
 
@@ -122,7 +128,7 @@ theorem occurrenceGap_lt_top_iff (μ : Measure ℝ≥0) (n : ℕ) :
 /-- Summing the first `n + 1` extended gaps recovers occurrence time `n` for every measure,
 including finite configurations, multiple points, and non-locally-finite measures. -/
 @[simp]
-theorem sum_occurrenceGap_range (μ : Measure ℝ≥0) (n : ℕ) :
+theorem sum_range_occurrenceGap (μ : Measure ℝ≥0) (n : ℕ) :
     ∑ i ∈ Finset.range (n + 1), μ.occurrenceGap i = μ.occurrenceTime n := by
   induction n with
   | zero => simp
@@ -135,11 +141,11 @@ theorem sum_occurrenceGap_range (μ : Measure ℝ≥0) (n : ℕ) :
 
 /-- When occurrence `n` is finite, summing the finite `ℝ≥0` gap representatives recovers its
 finite occurrence time. -/
-theorem sum_toNNReal_occurrenceGap_range {μ : Measure ℝ≥0} {n : ℕ}
+theorem sum_range_toNNReal_occurrenceGap {μ : Measure ℝ≥0} {n : ℕ}
     (h : μ.occurrenceTime n ≠ ∞) :
     ∑ i ∈ Finset.range (n + 1), (μ.occurrenceGap i).toNNReal =
       (μ.occurrenceTime n).toNNReal := by
-  rw [← ENNReal.toNNReal_sum fun i hi => ?_, μ.sum_occurrenceGap_range n]
+  rw [← ENNReal.toNNReal_sum fun i hi => ?_, μ.sum_range_occurrenceGap n]
   rw [μ.occurrenceGap_ne_top_iff]
   exact ne_top_of_le_ne_top h
     (μ.monotone_occurrenceTime (Nat.le_of_lt_succ (Finset.mem_range.1 hi)))
@@ -173,16 +179,52 @@ theorem occurrenceGap_dirac (t : ℝ≥0) (n : ℕ) :
     (dirac t).occurrenceGap n = if n = 0 then (t : ℝ≥0∞) else ∞ := by
   cases n <;> simp [occurrenceGap_succ]
 
+/-- Restricting to a closed observation window `[0, b]` retains exactly the interarrival gaps of
+occurrences in `[0, b]`; all subsequent gaps become infinite. -/
+@[simp]
+theorem occurrenceGap_restrict_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ]
+    (b : ℝ≥0) (n : ℕ) :
+    (μ.restrict (Iic b)).occurrenceGap n =
+      if μ.occurrenceTime n ≤ b then μ.occurrenceGap n else ∞ := by
+  cases n with
+  | zero =>
+    simp [occurrenceGap_zero, occurrenceTime_restrict_Iic]
+  | succ n =>
+    rw [occurrenceGap_succ, occurrenceTime_restrict_Iic, occurrenceTime_restrict_Iic]
+    by_cases h : μ.occurrenceTime (n + 1) ≤ b
+    · have hn_le : μ.occurrenceTime n ≤ b :=
+        (μ.monotone_occurrenceTime (Nat.le_succ n)).trans h
+      have hn_ne : μ.occurrenceTime n ≠ ∞ := ne_top_of_le_ne_top ENNReal.coe_ne_top hn_le
+      simp [h, hn_le, hn_ne, occurrenceGap_succ]
+    · simp only [h, ↓reduceIte]
+      by_cases hn_le : μ.occurrenceTime n ≤ b
+      · have hn_ne : μ.occurrenceTime n ≠ ∞ := ne_top_of_le_ne_top ENNReal.coe_ne_top hn_le
+        simp [hn_le, hn_ne]
+      · simp [hn_le]
+
 section Counting
 
-variable {μ : Measure ℝ≥0} [IsLocallyFiniteMeasure μ]
+variable {μ ν : Measure ℝ≥0} [IsLocallyFiniteMeasure μ]
 
 /-- Every locally finite integer-valued measure is reconstructed from the partial sums of its
 extended interarrival gaps, including when the total mass is finite. -/
 theorem IsIntegerValued.eq_occurrenceTimeMeasure_sum_occurrenceGap (hμ : μ.IsIntegerValued) :
     μ = TauCeti.Probability.occurrenceTimeMeasure
       (fun n => ∑ i ∈ Finset.range (n + 1), μ.occurrenceGap i) := by
-  simpa only [sum_occurrenceGap_range] using hμ.eq_occurrenceTimeMeasure
+  simpa only [sum_range_occurrenceGap] using hμ.eq_occurrenceTimeMeasure
+
+/-- On locally finite counting measures, equality of extended interarrival-gap sequences is
+equivalent to equality of measures. The integrality assumption is essential. -/
+@[simp]
+theorem IsIntegerValued.occurrenceGap_inj [IsLocallyFiniteMeasure ν]
+    (hμ : μ.IsIntegerValued) (hν : ν.IsIntegerValued) :
+    μ.occurrenceGap = ν.occurrenceGap ↔ μ = ν := by
+  constructor
+  · intro h
+    rw [hμ.eq_occurrenceTimeMeasure_sum_occurrenceGap,
+      hν.eq_occurrenceTimeMeasure_sum_occurrenceGap, h]
+  · rintro rfl
+    rfl
 
 /-- For a locally finite counting measure, the initial gap exceeds `s` exactly when `[0, s]`
 contains no occurrences. -/
@@ -230,6 +272,28 @@ theorem IsIntegerValued.occurrenceGap_pos (hμ : μ.IsIntegerValued)
 end Counting
 
 end MeasureTheory.Measure
+
+namespace ProbabilityTheory.IdentDistrib
+
+variable {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω']
+  {P : Measure Ω} {P' : Measure Ω'} {N : Ω → Measure ℝ≥0} {N' : Ω' → Measure ℝ≥0}
+
+/-- Equality in law of the whole extended interarrival-gap sequence implies equality in law of
+the temporal counting measures. Local finiteness and integrality are required only on
+full-measure events. Neither simplicity nor infinitely many occurrences is assumed. -/
+theorem of_occurrenceGap
+    (h : IdentDistrib (fun ω => (N ω).occurrenceGap)
+      (fun ω => (N' ω).occurrenceGap) P P')
+    (hN : ∀ᵐ ω ∂P, IsLocallyFiniteMeasure (N ω) ∧ (N ω).IsIntegerValued)
+    (hN' : ∀ᵐ ω ∂P', IsLocallyFiniteMeasure (N' ω) ∧ (N' ω).IsIntegerValued) :
+    IdentDistrib N N' P P' := by
+  have hm : Measurable fun (g : ℕ → ℝ≥0∞) (n : ℕ) => ∑ i ∈ Finset.range (n + 1), g i :=
+    measurable_pi_iff.mpr fun n =>
+      Finset.measurable_sum _ fun i _ => measurable_pi_apply i
+  refine IdentDistrib.of_occurrenceTime ?_ hN hN'
+  simpa only [Function.comp_def, Measure.sum_range_occurrenceGap] using h.comp hm
+
+end ProbabilityTheory.IdentDistrib
 
 namespace TauCeti.Probability
 

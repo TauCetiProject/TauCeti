@@ -13,13 +13,14 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 # Measure extensionality on the strictly increasing positive chamber
 
 A measure on `Fin n → ℝ≥0` concentrated on strictly increasing tuples with positive coordinates
-is determined by its values on separated half-open boxes `∏ᵢ (aᵢ, bᵢ]` satisfying
-`aᵢ ≤ bᵢ` for all `i` and `bᵢ ≤ aⱼ` whenever `i < j`, provided the first measure is finite.
+is determined by its values on separated left-open, right-closed boxes `∏ᵢ (aᵢ, bᵢ]` satisfying
+`aᵢ ≤ bᵢ` for all `i` and `bᵢ ≤ aⱼ` whenever `i < j`, provided the first measure is locally
+finite (or, more generally, finite on all separated boxes).
 
-Separated half-open boxes form a π-system on the strictly increasing positive chamber, and
-their rational subfamily countably covers the chamber and generates its subtype Borel σ-algebra.
-This avoids multivariate coordinate changes when comparing ordered arrival-time laws with
-order-statistic or renewal partial-sum laws.
+Separated boxes form a π-system on the strictly increasing positive chamber, and their rational
+subfamily countably covers the chamber and generates its subtype Borel σ-algebra. This avoids
+multivariate coordinate changes when comparing ordered arrival-time laws with order-statistic or
+renewal partial-sum laws.
 -/
 
 public section
@@ -29,41 +30,46 @@ open scoped ENNReal NNReal
 
 namespace TauCeti
 
-/-- Half-open box endpoints `a, b : Fin n → ℝ≥0` are separated when each interval is
-well-ordered (`a i ≤ b i`) and earlier right endpoints do not exceed later left endpoints. -/
-def IsSeparatedBox {n : ℕ} (a b : Fin n → ℝ≥0) : Prop :=
-  (∀ i, a i ≤ b i) ∧ ∀ ⦃i j : Fin n⦄, i < j → b i ≤ a j
+/-- Box endpoints `a, b : ι → α` are separated when each coordinate interval is well-ordered
+(`a i ≤ b i`) and earlier right endpoints do not exceed later left endpoints. -/
+def IsSeparatedBox {ι α : Type*} [Preorder ι] [Preorder α] (a b : ι → α) : Prop :=
+  (∀ i, a i ≤ b i) ∧ ∀ ⦃i j : ι⦄, i < j → b i ≤ a j
 
-/-- Explicit characterization of separated half-open box endpoints. -/
-theorem isSeparatedBox_iff {n : ℕ} {a b : Fin n → ℝ≥0} :
-    IsSeparatedBox a b ↔ (∀ i, a i ≤ b i) ∧ ∀ ⦃i j : Fin n⦄, i < j → b i ≤ a j :=
+/-- Explicit characterization of separated box endpoints. -/
+theorem isSeparatedBox_iff {ι α : Type*} [Preorder ι] [Preorder α] {a b : ι → α} :
+    IsSeparatedBox a b ↔ (∀ i, a i ≤ b i) ∧ ∀ ⦃i j : ι⦄, i < j → b i ≤ a j :=
   (Iff.rfl)
 
 /-- Construct `IsSeparatedBox` from coordinatewise order and strict-index separation. -/
-theorem IsSeparatedBox.mk {n : ℕ} {a b : Fin n → ℝ≥0} (hle : ∀ i, a i ≤ b i)
-    (hsep : ∀ ⦃i j : Fin n⦄, i < j → b i ≤ a j) : IsSeparatedBox a b :=
+theorem IsSeparatedBox.mk {ι α : Type*} [Preorder ι] [Preorder α] {a b : ι → α}
+    (hle : ∀ i, a i ≤ b i) (hsep : ∀ ⦃i j : ι⦄, i < j → b i ≤ a j) : IsSeparatedBox a b :=
   ⟨hle, hsep⟩
 
 /-- Separated box endpoints satisfy `a i ≤ b i` in every coordinate. -/
-theorem IsSeparatedBox.le {n : ℕ} {a b : Fin n → ℝ≥0} (h : IsSeparatedBox a b) (i : Fin n) :
-    a i ≤ b i :=
+theorem IsSeparatedBox.le {ι α : Type*} [Preorder ι] [Preorder α] {a b : ι → α}
+    (h : IsSeparatedBox a b) (i : ι) : a i ≤ b i :=
   h.1 i
 
 /-- Separated box endpoints place `b i` at or before `a j` whenever `i < j`. -/
-theorem IsSeparatedBox.le_of_lt {n : ℕ} {a b : Fin n → ℝ≥0} (h : IsSeparatedBox a b)
-    {i j : Fin n} (hij : i < j) : b i ≤ a j :=
+theorem IsSeparatedBox.le_of_lt {ι α : Type*} [Preorder ι] [Preorder α] {a b : ι → α}
+    (h : IsSeparatedBox a b) {i j : ι} (hij : i < j) : b i ≤ a j :=
   h.2 hij
+
+/-- Precomposing separated box endpoints with a strictly monotone index map preserves separation. -/
+theorem IsSeparatedBox.comp {ι ι' α : Type*} [Preorder ι] [Preorder ι'] [Preorder α]
+    {a b : ι → α} (h : IsSeparatedBox a b) {f : ι' → ι} (hf : StrictMono f) :
+    IsSeparatedBox (a ∘ f) (b ∘ f) :=
+  IsSeparatedBox.mk (fun i => h.le (f i)) fun _ _ hij => h.le_of_lt (hf hij)
+
+/-- Subtracting a constant on the right preserves separation of box endpoints. -/
+theorem IsSeparatedBox.sub_const {ι α : Type*} [Preorder ι] [Preorder α] [AddCommSemigroup α]
+    [Sub α] [OrderedSub α] {a b : ι → α} (h : IsSeparatedBox a b) (c : α) :
+    IsSeparatedBox (fun i => a i - c) (fun i => b i - c) :=
+  IsSeparatedBox.mk (fun i => tsub_le_tsub_right (h.le i) c) fun _ _ hij =>
+    tsub_le_tsub_right (h.le_of_lt hij) c
 
 private abbrev PosStrictMono (n : ℕ) : Set (Fin n → ℝ≥0) :=
   {s | (∀ i, 0 < s i) ∧ StrictMono s}
-
-/-- Strictly increasing `Fin n`-tuples with strictly positive coordinates form a measurable set. -/
-theorem measurableSet_setOf_pos_and_strictMono (n : ℕ) :
-    MeasurableSet {s : Fin n → ℝ≥0 | (∀ i, 0 < s i) ∧ StrictMono s} := by
-  have hpos : MeasurableSet {s : Fin n → ℝ≥0 | ∀ i, 0 < s i} := by
-    simp only [ofPred_forall]
-    exact MeasurableSet.iInter fun i => measurable_pi_apply i measurableSet_Ioi
-  exact hpos.inter measurableSet_setOf_strictMono
 
 private def separatedBoxSystem (n : ℕ) : Set (Set ↥(PosStrictMono n)) :=
   {A | ∃ a b : Fin n → ℝ≥0, IsSeparatedBox a b ∧
@@ -195,11 +201,13 @@ namespace MeasureTheory.Measure
 open TauCeti
 
 /-- Two measures concentrated on the strictly increasing positive chamber of `Fin n → ℝ≥0`
-are equal if the first is finite and they agree on all separated half-open boxes. No
-finiteness assumption on the second measure is required. -/
-theorem ext_of_Ioc_strictMono {n : ℕ} {μ ν : Measure (Fin n → ℝ≥0)} [IsFiniteMeasure μ]
+are equal if the first is finite on all separated boxes and they agree on all separated
+left-open, right-closed boxes. No finiteness assumption on the second measure is required. -/
+theorem ext_of_Ioc_strictMono' {n : ℕ} {μ ν : Measure (Fin n → ℝ≥0)}
     (hμ : ∀ᵐ s ∂μ, (∀ i, 0 < s i) ∧ StrictMono s)
     (hν : ∀ᵐ s ∂ν, (∀ i, 0 < s i) ∧ StrictMono s)
+    (hfin : ∀ a b : Fin n → ℝ≥0, IsSeparatedBox a b →
+      μ (univ.pi fun i => Ioc (a i) (b i)) ≠ ∞)
     (hbox : ∀ a b : Fin n → ℝ≥0, IsSeparatedBox a b →
       μ (univ.pi fun i => Ioc (a i) (b i)) = ν (univ.pi fun i => Ioc (a i) (b i))) :
     μ = ν := by
@@ -224,9 +232,11 @@ theorem ext_of_Ioc_strictMono {n : ℕ} {μ ν : Measure (Fin n → ℝ≥0)} [I
     intro x
     obtain ⟨qa, qb, hsep, _, hx⟩ := exists_rat_separatedBox_mem x 0 fun i => x.2.1 i
     exact ⟨ratSeparatedBox n (qa, qb), ⟨(qa, qb), hsep, rfl⟩, hx⟩
-  · rintro A ⟨⟨qa, qb⟩, _, rfl⟩
+  · rintro A ⟨⟨qa, qb⟩, hp, rfl⟩
     rw [he.comap_apply]
-    exact ((measure_mono (subset_univ _)).trans_lt (measure_lt_top μ univ)).ne
+    dsimp only [ratSeparatedBox]
+    rw [Subtype.image_preimage_coe]
+    exact ne_top_of_le_ne_top (hfin _ _ hp) (measure_mono inter_subset_right)
   · rintro _ ⟨a, b, hsep, rfl⟩
     have hB : MeasurableSet (univ.pi fun i => Ioc (a i) (b i)) :=
       MeasurableSet.univ_pi fun _ => measurableSet_Ioc
@@ -235,5 +245,19 @@ theorem ext_of_Ioc_strictMono {n : ℕ} {μ ν : Measure (Fin n → ℝ≥0)} [I
       he.comap_apply, Subtype.image_preimage_coe, inter_comm, ← Measure.restrict_apply hB,
       Measure.restrict_eq_self_of_ae_mem hν]
     exact hbox a b hsep
+
+/-- Two measures concentrated on the strictly increasing positive chamber of `Fin n → ℝ≥0`
+are equal if the first is locally finite and they agree on all separated left-open,
+right-closed boxes. No finiteness assumption on the second measure is required. -/
+theorem ext_of_Ioc_strictMono {n : ℕ} {μ ν : Measure (Fin n → ℝ≥0)} [IsLocallyFiniteMeasure μ]
+    (hμ : ∀ᵐ s ∂μ, (∀ i, 0 < s i) ∧ StrictMono s)
+    (hν : ∀ᵐ s ∂ν, (∀ i, 0 < s i) ∧ StrictMono s)
+    (hbox : ∀ a b : Fin n → ℝ≥0, IsSeparatedBox a b →
+      μ (univ.pi fun i => Ioc (a i) (b i)) = ν (univ.pi fun i => Ioc (a i) (b i))) :
+    μ = ν :=
+  ext_of_Ioc_strictMono' hμ hν (fun a b _ => by
+    have hsub : (univ.pi fun i => Ioc (a i) (b i)) ⊆ Icc a b :=
+      fun x hx => ⟨fun i => (hx i (mem_univ i)).1.le, fun i => (hx i (mem_univ i)).2⟩
+    exact ((measure_mono hsub).trans_lt measure_Icc_lt_top).ne) hbox
 
 end MeasureTheory.Measure

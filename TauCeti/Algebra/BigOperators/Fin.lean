@@ -32,7 +32,8 @@ minors of a diagonal matrix with chained entries the smallest ones in divisibili
 A tuple is determined by its leading partial sums `∑_{j < k} a j`, and in a canonically ordered
 monoid each of them is at most the total. These are the facts about the dominance order of
 exponent vectors (compare leading partial sums) that triangular expansions in Hecke rings use.
-At `i.succ`, `Fin.partialProd` and `Fin.partialSum` agree with the `Finset.Iic i` product and sum.
+At `i.succ`, `Fin.partialProd` and `Fin.partialSum` agree with the `Finset.Iic i` product and sum,
+and strictly positive entries yield strictly increasing partial sums (`Fin.strictMono_partialSum`).
 
 A product over the pairs `Fin 2 → α` is the double product over their two entries. A double sum
 over pairs of paths `Fin (i + 1) → X` and `Fin (j + 1) → X` meeting at an endpoint is a sum over
@@ -70,6 +71,15 @@ theorem partialProd_succ_eq_prod_Iic {M : Type*} [CommMonoid M] {n : ℕ}
     ext j
     simp
   simp only [partialProd, List.prod_take_ofFn, hs]
+
+/-- Entries strictly greater than `1` produce a strictly increasing partial-product tuple. -/
+@[to_additive /-- Strictly positive entries produce a strictly increasing partial-sum tuple. -/]
+theorem strictMono_partialProd {M : Type*} [Monoid M] [Preorder M] [MulLeftStrictMono M]
+    {n : ℕ} {f : Fin n → M} (hf : ∀ i, 1 < f i) :
+    StrictMono (partialProd f) :=
+  strictMono_iff_lt_succ.mpr fun i => by
+    rw [partialProd_succ]
+    exact lt_mul_of_one_lt_right' _ (hf i)
 
 /-- Successive differences telescope to the endpoint difference. -/
 theorem sum_univ_succ_sub_castSucc {G : Type*} [AddCommGroup G] {n : ℕ}

@@ -122,7 +122,7 @@ theorem IsPoissonRandomMeasure.ae_eq_zero (h : IsPoissonRandomMeasure P N Λ)
 countability hypothesis on the state space is needed. -/
 theorem IsPoissonRandomMeasure.ae_eq_zero_of_zero (h : IsPoissonRandomMeasure P N 0) :
     ∀ᵐ ω ∂P, N ω = 0 := by
-  filter_upwards [h.ae_eq_zero (A := Set.univ) rfl] with ω hω
+  filter_upwards [h.ae_eq_zero (A := Set.univ) (by simp)] with ω hω
   exact Measure.measure_univ_eq_zero.mp hω
 
 /-- Flooring a finite-intensity count and casting back recovers the count almost surely. -/
