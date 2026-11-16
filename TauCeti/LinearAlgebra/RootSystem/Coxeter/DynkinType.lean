@@ -120,20 +120,17 @@ def coxeterMatrix (t : DynkinType) : CoxeterMatrix (Fin t.rank) :=
 applied to the product of the two Cartan entries. -/
 @[simp]
 lemma coxeterMatrix_apply (t : DynkinType) (i j : Fin t.rank) :
-    t.coxeterMatrix i j = coxeterOrder (t.cartanMatrix i j * t.cartanMatrix j i) := by
-  refine coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_coxeterOrder _ t.cartanMatrix_apply_same
-    (fun k l hkl ↦ ?_) i j
-  have := t.cartanMatrix_mul_cartanMatrix_mem_of_ne hkl
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at this
-  omega
+    t.coxeterMatrix i j = coxeterOrder (t.cartanMatrix i j * t.cartanMatrix j i) :=
+  coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_coxeterOrder _ i j (t.cartanMatrix_apply_same i)
+    fun hij ↦ (mem_zero_one_two_three_iff.mp (t.cartanMatrix_mul_cartanMatrix_mem_of_ne hij)).2
 
 /-- **Two nodes carry the Coxeter entry `2` exactly when they are not joined**: the two simple
 reflections commute exactly when the two simple roots are orthogonal. On the diagonal both sides
 fail. -/
 lemma coxeterMatrix_apply_eq_two_iff (t : DynkinType) {i j : Fin t.rank} :
     t.coxeterMatrix i j = 2 ↔ t.cartanMatrix i j = 0 :=
-  coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_two_iff _ t.cartanMatrix_apply_same
-    (fun i j h ↦ (t.cartanMatrix_apply_eq_zero_iff_symm i j).mp h)
+  coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_two_iff _ (t.cartanMatrix_apply_same i)
+    (t.cartanMatrix_apply_eq_zero_iff_symm j i).mp
 
 /-- **On a simply-laced type the Coxeter matrix is the diagram**: distinct nodes carry the entry `2`
 when they are not joined and `3` when they are, there being no multiple edge to raise an entry to

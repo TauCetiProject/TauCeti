@@ -203,6 +203,7 @@ noncomputable def weylGroup : Subgroup (Dual K H ≃ₗ[K] Dual K H) :=
 theorem weylGroup_def :
     R.weylGroup hA = Subgroup.closure (Set.range (R.simpleReflection hA)) := (rfl)
 
+@[simp]
 theorem simpleReflection_mem_weylGroup (i : I) : R.simpleReflection hA i ∈ R.weylGroup hA :=
   Subgroup.subset_closure (Set.mem_range_self i)
 
@@ -452,7 +453,7 @@ example {K H : Type*} [Field K] [CharZero K] [AddCommGroup H] [Module K H]
     (hA : ∀ i, (!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → K) i i = 2) :
     orderOf (R.simpleReflection hA 0 * R.simpleReflection hA 1) = 0 := by
   rw [R.orderOf_simpleReflection_mul_simpleReflection hA (by decide) (by decide)]
-  exact coxeterMatrixOfGeneralizedCartanMatrix_apply_of_four_le _ (by decide) (by decide)
+  simp
 
 /-- Type `B₂`, with `A = [[2, -2], [-1, 2]]`: the Cartan product is `2`, so the product of the two
 simple reflections has order `4`, not `3`. -/
@@ -460,8 +461,7 @@ example {K H : Type*} [Field K] [CharZero K] [AddCommGroup H] [Module K H]
     (R : CartanRealization ((!![2, -2; -1, 2] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → K)) H)
     (hA : ∀ i, (!![2, -2; -1, 2] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → K) i i = 2) :
     orderOf (R.simpleReflection hA 0 * R.simpleReflection hA 1) = 4 := by
-  rw [R.orderOf_simpleReflection_mul_simpleReflection hA (by decide) (by decide),
-    coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four _ (by decide) (by decide)]
+  rw [R.orderOf_simpleReflection_mul_simpleReflection hA (by decide) (by decide)]
   simp
 
 end Examples

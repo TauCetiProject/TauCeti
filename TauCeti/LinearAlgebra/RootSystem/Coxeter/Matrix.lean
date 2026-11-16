@@ -140,6 +140,12 @@ lemma coxeterOrder_le_three_iff {c : ℤ} (hc : c ∈ ({0, 1, 2, 3} : Set ℤ)) 
   simp only [mem_insert_iff, mem_singleton_iff] at hc
   rcases hc with rfl | rfl | rfl | rfl <;> simp
 
+/-- The products `0`, `1`, `2`, `3` that occur for a pair of independent roots are exactly the
+integers in `[0, 4)`. -/
+lemma mem_zero_one_two_three_iff {c : ℤ} : c ∈ ({0, 1, 2, 3} : Set ℤ) ↔ 0 ≤ c ∧ c < 4 := by
+  simp only [mem_insert_iff, mem_singleton_iff]
+  omega
+
 /-- The product `0` is the only one of Coxeter order `2`. -/
 lemma coxeterOrder_eq_two_iff {c : ℤ} : coxeterOrder c = 2 ↔ c = 0 := by
   unfold coxeterOrder
@@ -193,40 +199,42 @@ lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne {i j : B} (hij : i ≠ 
 
 /-- Two distinct nodes of Cartan product less than `4` carry the entry `TauCeti.coxeterOrder` of
 that product. -/
+@[simp]
 lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four {i j : B} (hij : i ≠ j)
     (h : A i j * A j i < 4) :
     coxeterMatrixOfGeneralizedCartanMatrix A i j = coxeterOrder (A i j * A j i) := by
   rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne A hij, ite_eq_left h]
 
 /-- Two distinct nodes of Cartan product at least `4` carry the entry `0`, an infinite order. -/
+@[simp]
 lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_of_four_le {i j : B} (hij : i ≠ j)
     (h : 4 ≤ A i j * A j i) : coxeterMatrixOfGeneralizedCartanMatrix A i j = 0 := by
   rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne A hij, ite_eq_right (not_lt.mpr h)]
 
 /-- **In finite type every entry is the Coxeter order of the Cartan product**: when the diagonal
-entries are `2` and the Cartan products of distinct nodes are less than `4`, the entry at any pair
-of nodes is `TauCeti.coxeterOrder` of their Cartan product. On the diagonal that is
+entry at `i` is `2` and, if `i ≠ j`, the Cartan product of `i` and `j` is less than `4`, the entry
+at `i` and `j` is `TauCeti.coxeterOrder` of their Cartan product. On the diagonal that is
 `TauCeti.coxeterOrder 4 = 1`. -/
-lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_coxeterOrder (hdiag : ∀ i, A i i = 2)
-    (hlt : ∀ i j, i ≠ j → A i j * A j i < 4) (i j : B) :
+lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_coxeterOrder (i j : B) (hdiag : A i i = 2)
+    (hlt : i ≠ j → A i j * A j i < 4) :
     coxeterMatrixOfGeneralizedCartanMatrix A i j = coxeterOrder (A i j * A j i) := by
   rcases eq_or_ne i j with rfl | hij
   · simp [hdiag]
-  · exact coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four A hij (hlt i j hij)
+  · exact coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four A hij (hlt hij)
 
 /-- **Two nodes carry the Coxeter entry `2` exactly when the Cartan entry between them
-vanishes**, provided the diagonal entries are `2` and the zero pattern of the matrix is symmetric:
+vanishes**, provided the diagonal entry at `i` is `2` and `A i j` vanishes whenever `A j i` does:
 the product of the two entries then vanishes exactly when the first of them does. On the diagonal
 both sides fail. -/
-lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_two_iff (hdiag : ∀ i, A i i = 2)
-    (hsymm : ∀ i j, A i j = 0 → A j i = 0) {i j : B} :
+lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_two_iff {i j : B} (hdiag : A i i = 2)
+    (hsymm : A j i = 0 → A i j = 0) :
     coxeterMatrixOfGeneralizedCartanMatrix A i j = 2 ↔ A i j = 0 := by
   rcases eq_or_ne i j with rfl | hij
   · simp [hdiag]
   rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne A hij]
   split_ifs with h4
   · rw [coxeterOrder_eq_two_iff, mul_eq_zero]
-    exact or_iff_left_iff_imp.mpr (hsymm j i)
+    exact or_iff_left_iff_imp.mpr hsymm
   · refine ⟨fun h ↦ absurd h (by norm_num), fun h ↦ absurd ?_ h4⟩
     simp [h]
 
@@ -322,11 +330,9 @@ to the product of the two Cartan entries. -/
 lemma coxeterMatrixOfBase_apply (i j : b.support) :
     coxeterMatrixOfBase P b i j = coxeterOrder (b.cartanMatrix i j * b.cartanMatrix j i) := by
   classical
-  refine coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_coxeterOrder _
-    b.cartanMatrix_apply_same (fun k l hkl ↦ ?_) i j
-  have := cartanMatrix_mul_cartanMatrix_mem_of_ne P b hkl
-  simp only [mem_insert_iff, mem_singleton_iff] at this
-  omega
+  exact coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_coxeterOrder _ i j
+    (b.cartanMatrix_apply_same i) fun hij ↦
+      (mem_zero_one_two_three_iff.mp (cartanMatrix_mul_cartanMatrix_mem_of_ne P b hij)).2
 
 /-- Off the diagonal the Coxeter matrix of a base takes only the four dihedral values. -/
 lemma coxeterMatrixOfBase_mem_of_ne {i j : b.support} (hij : i ≠ j) :

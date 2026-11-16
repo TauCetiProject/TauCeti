@@ -262,10 +262,7 @@ lemma coxeterMatrixOfGeneralizedCartanMatrix_cartan_apply_eq_zero_iff {i j : ι}
       3 < D.cartan i j * D.cartan j i := by
   refine ⟨fun h ↦ not_le.mp fun hle ↦ ?_, fun h ↦
     coxeterMatrixOfGeneralizedCartanMatrix_apply_of_four_le _ hij (by omega)⟩
-  have hmem : D.cartan i j * D.cartan j i ∈ ({0, 1, 2, 3} : Set ℤ) := by
-    have := D.cartan_mul_cartan_nonneg i j
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-    omega
+  have hmem := mem_zero_one_two_three_iff.mpr ⟨D.cartan_mul_cartan_nonneg i j, by omega⟩
   have := two_le_coxeterOrder hmem
   rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four _ hij (by omega)] at h
   omega

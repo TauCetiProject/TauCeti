@@ -184,20 +184,20 @@ The exact orders are those of the two linear reflections, computed in
 
 /-- A power of the product of the two reflections is trivial in the Weyl group exactly when the
 same power of the product of the two linear reflections is. -/
-private lemma pow_ofIdx_mul_ofIdx_eq_one_iff (n : ℕ) :
+lemma pow_ofIdx_mul_ofIdx_eq_one_iff (n : ℕ) :
     (_root_.RootPairing.weylGroup.ofIdx P i *
       _root_.RootPairing.weylGroup.ofIdx P j) ^ n = 1 ↔
       (P.reflection i * P.reflection j) ^ n = 1 := by
   refine ⟨fun h ↦ LinearEquiv.ext fun x ↦ ?_, fun h ↦
     RootPairing.weylGroup.eq_one_of_smul_eq_self fun x ↦ ?_⟩
   · rw [← RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq, h, one_smul]
-    rfl
+    simp
   · rw [RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq, h]
-    rfl
+    simp
 
 /-- The product of the two reflections has the same order in the Weyl group as the product of the
 two linear reflections. -/
-private lemma orderOf_ofIdx_mul_ofIdx :
+lemma orderOf_ofIdx_mul_ofIdx :
     orderOf (_root_.RootPairing.weylGroup.ofIdx P i *
       _root_.RootPairing.weylGroup.ofIdx P j) = orderOf (P.reflection i * P.reflection j) :=
   orderOf_eq_orderOf_iff.mpr (RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_eq_one_iff P i j)

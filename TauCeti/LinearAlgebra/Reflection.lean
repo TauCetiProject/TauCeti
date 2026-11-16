@@ -244,7 +244,7 @@ theorem orderOf_reflection_mul_reflection_eq_two [NeZero (2 : R)]
     orderOf (reflection hf * reflection hg) = 2 := by
   refine orderOf_eq_prime (reflection_mul_reflection_pow_two_eq_one hf hg hfy hgx) fun h1 ↦ ?_
   have := ((reflection_mul_reflection_pow_apply_self_eq_self_iff hxy 1).mp
-    (by rw [pow_one, h1]; rfl)).1
+    (by rw [pow_one, h1]; simp)).1
   norm_num [hfy, S_zero, S_one] at this
   exact (two_ne_zero : (2 : R) ≠ 0) (by linear_combination -this)
 
