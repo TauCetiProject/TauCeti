@@ -219,8 +219,7 @@ theorem IsLocalDiffeomorphAt.exists_partialDiffeomorph_mpullback_eq
       by rw [mem_preimage, hΛx]; exact hxO⟩
   rw [PartialDiffeomorph.restrOpen_source] at hy
   obtain ⟨hyΛ, -, hyO⟩ := hy
-  have hΛd : MDifferentiableAt I' I Λ y :=
-    (Λ.contMDiffOn_toFun.contMDiffAt (Λ.open_source.mem_nhds hyΛ)).mdifferentiableAt hn
+  have hΛd : MDifferentiableAt I' I Λ y := Λ.mdifferentiableAt hn hyΛ
   -- On the source of `Λ`, `f ∘ Λ` is the identity.
   have hid : f ∘ Λ =ᶠ[𝓝 y] id :=
     eventually_of_mem (Λ.open_source.mem_nhds hyΛ) hf.localInverse_eqOn_right

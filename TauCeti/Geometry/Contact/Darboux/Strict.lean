@@ -15,6 +15,7 @@ import TauCeti.Geometry.Contact.Flat
 import TauCeti.Geometry.Contact.Slice
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Poincare
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Symplectic.Manifold.Darboux
 
@@ -404,19 +405,12 @@ private theorem eval₂_mextDerivₗ_mpullback_eq_stdSymplecticForm {K : Type*}
     SmoothBundleForm.eval₂ (mextDerivₗ 𝓘(ℝ, V × V) 1 (SmoothForm.mpullback ι' hι' α)) w u v =
       stdSymplecticForm u v := by
   have hsrc : ψ.symm w ∈ ψ.source := ψ.map_target hwt
-  have hψs : MDifferentiableAt _ 𝓘(ℝ, K) ψ.symm w :=
-    (ψ.contMDiffOn_invFun.contMDiffAt (ψ.open_target.mem_nhds hwt)).mdifferentiableAt (by simp)
-  have hψd : MDifferentiableAt 𝓘(ℝ, K) _ ψ (ψ.symm w) :=
-    (ψ.contMDiffOn_toFun.contMDiffAt (ψ.open_source.mem_nhds hsrc)).mdifferentiableAt (by simp)
-  -- `dψ ∘ dψ⁻¹` is the identity at `w`, since `ψ ∘ ψ⁻¹` is the identity near `w`.
+  have hψs : MDifferentiableAt _ 𝓘(ℝ, K) ψ.symm w := ψ.symm.mdifferentiableAt (by simp) hwt
+  -- `dψ ∘ dψ⁻¹` is the identity at `w`.
   have hinv (u : TangentSpace 𝓘(ℝ, V × V) w) :
       mvfderiv 𝓘(ℝ, K) ψ (ψ.symm w) (mfderiv _ 𝓘(ℝ, K) ψ.symm w u) = u := by
-    have heq : ψ ∘ ψ.symm =ᶠ[𝓝 w] id :=
-      eventually_of_mem (ψ.open_target.mem_nhds hwt) fun z hz ↦ ψ.right_inv hz
-    have h := ((hψd.hasMFDerivAt.comp w hψs.hasMFDerivAt).mfderiv).symm.trans
-      ((hasMFDerivAt_id w).congr_of_eventuallyEq heq).mfderiv
     rw [mvfderiv_apply_eq_mfderiv_apply]
-    exact DFunLike.congr_fun h u
+    exact ψ.mfderiv_apply_mfderiv_symm_apply (by simp) hwt u
   calc SmoothBundleForm.eval₂ (mextDerivₗ _ 1 (SmoothForm.mpullback ι' hι' α)) w u v
       = TauCeti.mpullback _ I ι' (mextDeriv α.1) w ![u, v] := by
         rw [SmoothForm.mextDerivₗ_mpullback, SmoothBundleForm.eval₂_apply,
