@@ -410,10 +410,8 @@ private theorem exists_value_gradient_ae_eq_indicator {Omega : Opens (EuclideanS
         ⨍⁻ x in S, ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator
             (W1p.gradient (u : W1p mu Omega 2)) x‖ₑ ^ p ∂mu =
           ⨍⁻ x in S, ‖W1p.gradient u₀ x‖ₑ ^ p ∂mu := by
-  have hval := W1p0.value_extendByZeroL_ae le_top u
-  have hgrad := W1p0.gradient_extendByZeroL_ae le_top u
-  simp only [Opens.coe_top, Measure.restrict_univ] at hval hgrad
-  exact ⟨_, hval, hgrad, fun _ _ =>
+  have hgrad := W1p0.gradient_extendByZeroL_top_ae u
+  exact ⟨_, W1p0.value_extendByZeroL_top_ae u, hgrad, fun _ _ =>
     laverage_congr (ae_restrict_of_ae (hgrad.mono fun x hx => by simp only [hx]))⟩
 
 open Filter in

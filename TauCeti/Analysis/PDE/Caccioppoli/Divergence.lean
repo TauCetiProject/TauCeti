@@ -303,15 +303,11 @@ theorem exists_setIntegral_ball_norm_indicator_gradient_sq_le_divergence :
   intro mu _ Omega a lam Lam F u y r R h ha hF hu hrR
   have hOm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
   -- The zero extension `u₀ ∈ H¹(ℝⁿ)` of `u`, whose components are `1_Ω u` and `1_Ω ∇u`.
+  have hval := W1p0.value_extendByZeroL_top_ae u
+  have hgrad := W1p0.gradient_extendByZeroL_top_ae u
   set u₀ : W1p mu ⊤ 2 := (W1p0.extendByZeroL le_top u : W1p mu ⊤ 2)
   have htop : mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) = mu := by
     rw [Opens.coe_top, Measure.restrict_univ]
-  have hval : (W1p.value u₀ : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu]
-      (Omega : Set (EuclideanSpace ℝ ι)).indicator (W1p.value (u : W1p mu Omega 2)) := by
-    simpa only [htop] using W1p0.value_extendByZeroL_ae (le_top : Omega ≤ ⊤) u
-  have hgrad : (W1p.gradient u₀ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) =ᵐ[mu]
-      (Omega : Set (EuclideanSpace ℝ ι)).indicator (W1p.gradient (u : W1p mu Omega 2)) := by
-    simpa only [htop] using W1p0.gradient_extendByZeroL_ae (le_top : Omega ≤ ⊤) u
   -- Caccioppoli's inequality for `u` on `Ω`, with a cutoff whose support may meet `∂Ω`, is the
   -- cutoff inequality for `u₀` on the whole space.
   have hF0 : MemLp ((Omega : Set (EuclideanSpace ℝ ι)).indicator F) 2 mu :=

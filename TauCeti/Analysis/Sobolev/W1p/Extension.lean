@@ -55,6 +55,8 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
 * `TauCeti.W1p0.restrictL_extendByZeroL`: restricting the extension back to `Ω` recovers `u`.
 * `TauCeti.W1p0.value_extendByZeroL_ae`, `TauCeti.W1p0.gradient_extendByZeroL_ae`: the two
   components of the extension are almost everywhere the indicators of those of `u`.
+* `TauCeti.W1p0.value_extendByZeroL_top_ae`, `TauCeti.W1p0.gradient_extendByZeroL_top_ae`: the
+  same identities for the whole-space extension, almost everywhere for `mu` itself.
 * `TauCeti.W1p0.hasWeakFDerivOn_indicator`: the analytic content, that the
   zero-extension of `u` is weakly differentiable on `Ω'` with the zero-extension of `∇u` as its
   weak gradient.
@@ -335,6 +337,20 @@ theorem W1p0.gradient_extendByZeroL_ae (hsub : Omega ≤ Omega') (u : W1p0 mu Om
       (Omega : Set E).indicator (W1p.gradient (u : W1p mu Omega p) : E → E) := by
   rw [W1p0.gradient_extendByZeroL]
   exact coeFn_extendByZeroLpₗᵢ _ _ _ _
+
+/-- The value component of the whole-space extension is almost everywhere the indicator of `Ω`
+applied to the value component of `u`. -/
+theorem W1p0.value_extendByZeroL_top_ae (u : W1p0 mu Omega p) :
+    (W1p.value (W1p0.extendByZeroL le_top u : W1p mu ⊤ p) : E → ℝ) =ᵐ[mu]
+      (Omega : Set E).indicator (W1p.value (u : W1p mu Omega p) : E → ℝ) := by
+  simpa only [Opens.coe_top, Measure.restrict_univ] using W1p0.value_extendByZeroL_ae le_top u
+
+/-- The gradient component of the whole-space extension is almost everywhere the indicator of `Ω`
+applied to the weak gradient of `u`. -/
+theorem W1p0.gradient_extendByZeroL_top_ae (u : W1p0 mu Omega p) :
+    (W1p.gradient (W1p0.extendByZeroL le_top u : W1p mu ⊤ p) : E → E) =ᵐ[mu]
+      (Omega : Set E).indicator (W1p.gradient (u : W1p mu Omega p) : E → E) := by
+  simpa only [Opens.coe_top, Measure.restrict_univ] using W1p0.gradient_extendByZeroL_ae le_top u
 
 /-- **The analytic content of the extension theorem.**  The zero-extension of `u ∈ W^{1,p}_0(Ω)`
 is weakly differentiable on the larger open set `Ω'`, with weak gradient the zero-extension of the

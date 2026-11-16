@@ -632,7 +632,7 @@ theorem setLAverage_enorm_sq_le_of_ae_eq_zero {E : Type*} [NormedAddCommGroup E]
     calc ‖f x‖ₑ ^ (2 : ℝ) ≤ (‖f x - c‖ₑ + ‖c‖ₑ) ^ (2 : ℝ) := by gcongr
       _ ≤ 2 ^ ((2 : ℝ) - 1) * (‖f x - c‖ₑ ^ (2 : ℝ) + ‖c‖ₑ ^ (2 : ℝ)) :=
         ENNReal.rpow_add_le_mul_rpow_add_rpow _ _ one_le_two
-      _ = _ := by norm_num; ring
+      _ = _ := by rw [show (2 : ℝ) - 1 = 1 by norm_num, ENNReal.rpow_one]; ring
   calc ⨍⁻ x in s, ‖f x‖ₑ ^ (2 : ℝ) ∂μ
       ≤ ⨍⁻ x in s, (2 * ‖f x - c‖ₑ ^ (2 : ℝ) + 2 * ‖c‖ₑ ^ (2 : ℝ)) ∂μ :=
         setLAverage_mono_ae s (Filter.Eventually.of_forall hpt)
