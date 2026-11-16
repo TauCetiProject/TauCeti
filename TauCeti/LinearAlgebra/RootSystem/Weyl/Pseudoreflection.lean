@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Charpoly.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 public import TauCeti.RepresentationTheory.ReflectingHyperplane
@@ -62,10 +63,6 @@ coefficients.
 
 ## Main results
 
-* `RootPairing.weylGroupRootRep_injective` and `RootPairing.ker_weylGroupRootRep`: faithfulness of
-  `P.weylGroupRootRep`.
-* `RootPairing.finite_weight_of_isRootSystem`: finite generation of the weight module of a finite
-  root system.
 * `RootPairing.exists_map_int_eq_charpoly_weylGroupRootRep_of_base` and
   `RootPairing.exists_map_int_eq_charpoly_weylGroupRootRep`: integrality of characteristic
   polynomials on a crystallographic root system.
@@ -107,50 +104,6 @@ section CommRing
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] (P : RootPairing ι R M N)
 
-/-- The weight-space representation of the Weyl group acts by scalar multiplication. -/
-@[simp]
-theorem weylGroupRootRep_apply (w : P.weylGroup) (x : M) :
-    P.weylGroupRootRep w x = w • x :=
-  rfl
-
-/-- On the weight space, the Weyl-group generator `weylGroup.ofIdx P i` acts as `P.reflection i`. -/
-theorem weylGroupRootRep_ofIdx_apply (i : ι) (x : M) :
-    P.weylGroupRootRep (weylGroup.ofIdx P i) x = P.reflection i x :=
-  rfl
-
-/-- The weight-space representation of the Weyl group is faithful, without any spanning
-hypothesis on the roots. -/
-theorem weylGroupRootRep_injective : Function.Injective P.weylGroupRootRep :=
-  fun _ _ h ↦ weylGroup.ext (LinearMap.congr_fun h)
-
-/-- The kernel of `P.weylGroupRootRep` is trivial. -/
-@[simp]
-theorem ker_weylGroupRootRep : P.weylGroupRootRep.ker = ⊥ :=
-  eq_bot_iff.mpr fun _ hw ↦ P.weylGroupRootRep_injective (by simpa using hw)
-
-/-- On a finite root system, the weight module is finitely generated because it is spanned by the
-finite set of roots. -/
-theorem finite_weight_of_isRootSystem [Finite ι] [P.IsRootSystem] : Module.Finite R M :=
-  Module.finite_def.mpr
-    (IsRootSystem.span_root_eq_top (P := P) ▸ Submodule.fg_span (Set.finite_range P.root))
-
-/-- Reflecting a root index across itself does not change the associated Weyl-group reflection. -/
-@[simp]
-theorem weylGroup.ofIdx_reflectionPerm_self (i : ι) :
-    weylGroup.ofIdx P (P.reflectionPerm i i) = weylGroup.ofIdx P i := by
-  ext x
-  change P.reflection (P.reflectionPerm i i) x = P.reflection i x
-  rw [reflection_apply, reflection_apply, root_reflectionPerm, coroot'_reflectionPerm_self,
-    reflection_apply_self]
-  simp
-
-/-- The Weyl-group reflection attached to the negative of a root index is the same reflection. -/
-theorem weylGroup.ofIdx_neg (i : ι) :
-    letI := P.indexNeg
-    weylGroup.ofIdx P (-i) = weylGroup.ofIdx P i := by
-  let := P.indexNeg
-  simp
-
 /-- Over an integral domain where `2` is nonzero and `M` is torsion-free, the fixed submodule of
 the reflection in `i` is the kernel of the coroot functional `P.coroot' i`. -/
 @[simp]
@@ -162,25 +115,18 @@ theorem fixedSubmodule_weylGroupRootRep_ofIdx [IsDomain R] [IsTorsionFree R M] [
     sub_eq_self, smul_eq_zero, LinearMap.mem_ker]
   exact or_iff_left (P.ne_zero i)
 
-/-- **Coxeter reflections of a Weyl group are precisely the root reflections.** Every conjugate of
-a simple reflection is the reflection in the transported simple root, and conversely every root is
-in the Weyl orbit of a simple root. -/
-theorem weylCoxeterSystem_isReflection_iff_exists_ofIdx [Finite ι] [CharZero R] [IsDomain R]
-    [P.IsCrystallographic] [P.IsReduced] (b : P.Base) {w : P.weylGroup} :
-    (weylCoxeterSystem P b).IsReflection w ↔ ∃ i : ι, w = weylGroup.ofIdx P i := by
-  refine ⟨?_, fun ⟨i, hi⟩ ↦ hi ▸ P.weylCoxeterSystem_isReflection_ofIdx b i⟩
-  rintro ⟨u, j, rfl⟩
-  exact ⟨P.weylGroupToPerm u j, by
-    rw [weylCoxeterSystem_simple, weylGroup.ofIdx_weylGroupToPerm_eq_conj]⟩
-
 /-- On a root system with a base `b`, the characteristic polynomial of any Weyl-group element on
 `M` is the scalar extension of an integer polynomial: the simple roots form an `R`-basis
 `b.toWeightBasis` of `M`, and `w` expands each simple root as an integer combination of simple
 roots. -/
-theorem exists_map_int_eq_charpoly_weylGroupRootRep_of_base [CharZero R] [Module.Free R M]
-    [Module.Finite R M] [P.IsRootSystem] (b : P.Base) (w : P.weylGroup) :
+theorem exists_map_int_eq_charpoly_weylGroupRootRep_of_base [CharZero R] [P.IsRootSystem]
+    (b : P.Base) (w : P.weylGroup) :
+    letI := Module.Free.of_basis b.toWeightBasis
+    letI := Module.Finite.of_basis b.toWeightBasis
     ∃ p : Polynomial ℤ, p.map (algebraMap ℤ R) = (P.weylGroupRootRep w).charpoly := by
   classical
+  let := Module.Free.of_basis b.toWeightBasis
+  let := Module.Finite.of_basis b.toWeightBasis
   choose c _ _ hc using fun j : b.support ↦ b.exists_root_eq_sum_int (P.weylGroupToPerm w j)
   let A : Matrix b.support b.support ℤ := fun i j ↦ c j i
   have hmat : LinearMap.toMatrix b.toWeightBasis b.toWeightBasis (P.weylGroupRootRep w) =
@@ -201,7 +147,9 @@ theorem exists_map_int_eq_charpoly_weylGroupRootRep_of_base [CharZero R] [Module
 /-- On a root system with a base over a `ℚ`-algebra of characteristic zero, the characteristic
 polynomial of any Weyl-group element on `M` is the scalar extension of a rational polynomial. -/
 theorem exists_map_rat_eq_charpoly_weylGroupRootRep_of_base [CharZero R] [Algebra ℚ R]
-    [Module.Free R M] [Module.Finite R M] [P.IsRootSystem] (b : P.Base) (w : P.weylGroup) :
+    [P.IsRootSystem] (b : P.Base) (w : P.weylGroup) :
+    letI := Module.Free.of_basis b.toWeightBasis
+    letI := Module.Finite.of_basis b.toWeightBasis
     ∃ p : Polynomial ℚ, p.map (algebraMap ℚ R) = (P.weylGroupRootRep w).charpoly := by
   obtain ⟨p, hp⟩ := P.exists_map_int_eq_charpoly_weylGroupRootRep_of_base b w
   refine ⟨p.map (algebraMap ℤ ℚ), ?_⟩
@@ -293,10 +241,8 @@ theorem ker_coroot'_injOn_posRoots [Finite ι] (b : P.Base) :
   set c : K := (2 : K)⁻¹ * P.coroot' j (P.root i)
   have hcoroot' : P.coroot' j = c • P.coroot' i := LinearMap.ext hrel
   have hcoroot : P.coroot j = c • P.coroot i :=
-    P.toLinearMap.flip.toPerfPair.injective <| by
-      change P.coroot' j = P.toLinearMap.flip.toPerfPair (c • P.coroot i)
-      rw [map_smul]
-      exact hcoroot'
+    P.toLinearMap.flip.toPerfPair.injective
+      (by simpa only [map_smul, LinearMap.toLinearMap_toPerfPair] using hcoroot')
   have hdep : ¬ LinearIndependent K ![P.flip.root j, P.flip.root i] := by
     rw [LinearIndependent.pair_iff]
     intro hli
@@ -314,21 +260,13 @@ end PosRootsUniqueness
 
 /-- Every Weyl-group element preserves the `K`-span of the roots. -/
 private theorem weylGroupRootRep_mem_rootSpan (w : P.weylGroup) (x : M) (hx : x ∈ P.rootSpan K) :
-    P.weylGroupRootRep w x ∈ P.rootSpan K := by
-  induction hx using Submodule.span_induction with
-  | mem y hy =>
-    obtain ⟨i, rfl⟩ := hy
-    rw [weylGroupRootRep_apply, P.weylGroup_apply_root]
-    exact Submodule.subset_span ⟨P.weylGroupToPerm w i, rfl⟩
-  | zero =>
-    rw [map_zero]
-    exact zero_mem _
-  | add y z _ _ hy hz =>
-    rw [map_add]
-    exact add_mem hy hz
-  | smul c y _ hy =>
-    rw [map_smul]
-    exact Submodule.smul_mem _ c hy
+    P.weylGroupRootRep w x ∈ P.rootSpan K :=
+  Submodule.mapsTo_span (f := P.weylGroupRootRep w)
+    (by
+      rintro _ ⟨i, rfl⟩
+      rw [weylGroupRootRep_apply, P.weylGroup_apply_root]
+      exact mem_range_self (P.weylGroupToPerm w i))
+    hx
 
 /-- The restriction of `P.weylGroupRootRep` to the root span `P.rootSpan K`. -/
 private noncomputable def weylGroupRootSpanRep : Representation K P.weylGroup (P.rootSpan K) where
@@ -342,16 +280,16 @@ private theorem det_weylGroupRootSpanRep_sq (w : P.weylGroup) :
   obtain ⟨g, hg⟩ := w
   induction hg using weylGroup.induction with
   | mem i =>
-    change LinearMap.det (P.weylGroupRootSpanRep (weylGroup.ofIdx P i)) ^ 2 = 1
+    rw [show (⟨Equiv.reflection P i, P.reflection_mem_weylGroup i⟩ : P.weylGroup) =
+      weylGroup.ofIdx P i from Subtype.ext (weylGroup.coe_ofIdx P i).symm]
     have hsq : P.weylGroupRootSpanRep (weylGroup.ofIdx P i) ^ 2 = 1 := by
       rw [sq, ← map_mul, weylGroup.ofIdx_mul_self, map_one]
     rw [← map_pow, hsq, map_one]
   | one =>
-    change LinearMap.det (P.weylGroupRootSpanRep 1) ^ 2 = 1
-    rw [map_one, map_one, one_pow]
+    rw [(Submonoid.mk_eq_one (S := P.weylGroup.toSubmonoid)).mpr rfl, map_one, map_one, one_pow]
   | mul x y hx hy ihx ihy =>
-    change LinearMap.det (P.weylGroupRootSpanRep (⟨x, hx⟩ * ⟨y, hy⟩)) ^ 2 = 1
-    rw [map_mul, map_mul, mul_pow, ihx, ihy, mul_one]
+    rw [← Submonoid.mk_mul_mk P.weylGroup.toSubmonoid x y hx hy, map_mul, map_mul, mul_pow,
+      ihx, ihy, mul_one]
 
 section Classification
 
@@ -782,14 +720,16 @@ theorem isRegularWeight_iff_forall_notMem_reflectingHyperplanes (x : M) :
 
 /-- On a finite reduced crystallographic root system in characteristic zero, the characteristic
 polynomial of any Weyl-group element on `M` is the scalar extension of an integer polynomial. -/
-theorem exists_map_int_eq_charpoly_weylGroupRootRep [Module.Finite K M] (w : P.weylGroup) :
+theorem exists_map_int_eq_charpoly_weylGroupRootRep (w : P.weylGroup) :
+    letI := P.finite_weight_of_isRootSystem
     ∃ p : Polynomial ℤ, p.map (algebraMap ℤ K) = (P.weylGroupRootRep w).charpoly := by
   obtain ⟨b⟩ := P.nonempty_base
   exact P.exists_map_int_eq_charpoly_weylGroupRootRep_of_base b w
 
 /-- On a finite reduced crystallographic root system in characteristic zero, the characteristic
 polynomial of any Weyl-group element on `M` is the scalar extension of a rational polynomial. -/
-theorem exists_map_rat_eq_charpoly_weylGroupRootRep [Module.Finite K M] (w : P.weylGroup) :
+theorem exists_map_rat_eq_charpoly_weylGroupRootRep (w : P.weylGroup) :
+    letI := P.finite_weight_of_isRootSystem
     ∃ p : Polynomial ℚ, p.map (algebraMap ℚ K) = (P.weylGroupRootRep w).charpoly := by
   obtain ⟨b⟩ := P.nonempty_base
   exact P.exists_map_rat_eq_charpoly_weylGroupRootRep_of_base b w
