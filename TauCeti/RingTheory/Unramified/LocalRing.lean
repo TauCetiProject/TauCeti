@@ -69,9 +69,9 @@ separable residue-field extension `κ(p) → κ(q)` at an unramified prime `q` o
   algebras essentially of finite type descends along a flat local homomorphism.
 * `Localization.formallyUnramified_localRingHom_iff`: the local homomorphism `R_p → S_q` is formally
   unramified iff `S` is unramified over `R` at `q`.
-* `TauCeti.residueFieldMap_bijective_of_isUnramifiedAt`: at an unramified prime `𝔮` of an
-  essentially-finite-type `R`-algebra lying over a prime `𝔭` with `κ(𝔭)` separably closed, the
-  induced map `κ(𝔭) → κ(𝔮)` is bijective.
+* `TauCeti.residueFieldMap_bijective_of_isSepClosed_of_isUnramifiedAt`: at an unramified prime `𝔮`
+  of an essentially-finite-type `R`-algebra lying over a prime `𝔭` with `κ(𝔭)` separably closed,
+  the induced map `κ(𝔭) → κ(𝔮)` is bijective.
 
 ## References
 
@@ -215,8 +215,8 @@ namespace TauCeti
 `𝔭` of `R` whose residue field `κ(𝔭)` is separably closed, then the induced map `κ(𝔭) → κ(𝔮)` on
 residue fields is bijective. -/
 @[stacks 00UW "(2), for separably closed base residue field"]
-theorem residueFieldMap_bijective_of_isUnramifiedAt {R T : Type*} [CommRing R] [CommRing T]
-    [Algebra R T] [Algebra.EssFiniteType R T] {𝔭 : Ideal R} [𝔭.IsPrime]
+theorem residueFieldMap_bijective_of_isSepClosed_of_isUnramifiedAt {R T : Type*} [CommRing R]
+    [CommRing T] [Algebra R T] [Algebra.EssFiniteType R T] {𝔭 : Ideal R} [𝔭.IsPrime]
     [IsSepClosed 𝔭.ResidueField] {𝔮 : Ideal T} [𝔮.IsPrime] [Algebra.IsUnramifiedAt R 𝔮]
     (h𝔮 : 𝔭 = 𝔮.comap (algebraMap R T)) :
     Function.Bijective (Ideal.ResidueField.map 𝔭 𝔮 (algebraMap R T) h𝔮) := by

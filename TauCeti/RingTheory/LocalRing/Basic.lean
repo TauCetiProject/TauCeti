@@ -42,9 +42,8 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
   noncommutative algebra to the residue field of a commutative local ring is a maximal ideal.
 * `TauCeti.IsLocalRing.algHom_residueField_eq_of_ker_eq`: two algebra maps to the residue field of
   a commutative local ring with the same kernel coincide.
-* `TauCeti.IsLocalRing.ker_residue_comp_eq_comap_maximalIdeal` and
-  `TauCeti.IsLocalRing.comap_ker_algHom_residueField`: the kernel of a reduced retraction and the
-  preimage of the kernel of an algebra map to the residue field.
+* `AlgHom.ker_residue_comp_eq_comap_maximalIdeal` and `AlgHom.comap_ker_residueField`: the kernel
+  of a reduced retraction and the preimage of the kernel of an algebra map to the residue field.
 -/
 
 public section
@@ -149,6 +148,33 @@ theorem AlgHom.ker_isMaximal_residueField {A B : Type*} [CommRing A] [IsLocalRin
     obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective y
     exact ⟨algebraMap A _ a, by rw [AlgHom.commutes, IsLocalRing.ResidueField.algebraMap_eq]⟩
 
+namespace AlgHom
+
+section ResidueField
+
+open IsLocalRing
+
+variable {R S : Type*} [CommRing R] [IsLocalRing R] [Ring S] [Algebra R S]
+
+/-- The kernel of the reduction `S → R → ResidueField R` of an `R`-algebra retraction `τ : S → R`
+is `τ⁻¹(𝔪_R)`. -/
+@[simp]
+theorem ker_residue_comp_eq_comap_maximalIdeal (τ : S →ₐ[R] R) :
+    RingHom.ker ((Algebra.ofId R (ResidueField R)).comp τ) = (maximalIdeal R).comap τ := by
+  ext s
+  simp [RingHom.mem_ker, ResidueField.algebraMap_eq]
+
+/-- The kernel of an `R`-algebra map from `S` to `ResidueField R` lies over `𝔪_R`. -/
+@[simp]
+theorem comap_ker_residueField (ψ : S →ₐ[R] ResidueField R) :
+    (RingHom.ker ψ).comap (algebraMap R S) = maximalIdeal R := by
+  ext r
+  simp [Ideal.mem_comap, RingHom.mem_ker, ResidueField.algebraMap_eq]
+
+end ResidueField
+
+end AlgHom
+
 namespace TauCeti.IsLocalRing
 
 section ResidueField
@@ -169,21 +195,6 @@ theorem algHom_residueField_eq_of_ker_eq {ψ₁ ψ₂ : S →ₐ[R] ResidueField
   rw [RingHom.mem_ker, map_sub, AlgHom.commutes, sub_eq_zero, ResidueField.algebraMap_eq, hr]
     at hmem₂
   exact hmem₂.symm
-
-/-- The kernel of the reduction `S → R → ResidueField R` of an `R`-algebra retraction `τ : S → R`
-is `τ⁻¹(𝔪_R)`. -/
-@[simp]
-theorem ker_residue_comp_eq_comap_maximalIdeal (τ : S →ₐ[R] R) :
-    RingHom.ker ((Algebra.ofId R (ResidueField R)).comp τ) = (maximalIdeal R).comap τ := by
-  ext s
-  simp [RingHom.mem_ker, ResidueField.algebraMap_eq]
-
-/-- The kernel of an `R`-algebra map from `S` to `ResidueField R` lies over `𝔪_R`. -/
-@[simp]
-theorem comap_ker_algHom_residueField (ψ : S →ₐ[R] ResidueField R) :
-    (RingHom.ker ψ).comap (algebraMap R S) = maximalIdeal R := by
-  ext r
-  simp [Ideal.mem_comap, RingHom.mem_ker, ResidueField.algebraMap_eq]
 
 end ResidueField
 

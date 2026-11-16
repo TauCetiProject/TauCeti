@@ -35,14 +35,15 @@ residue field `(maximalIdeal S).ResidueField` automatically via
 
 Over a strictly henselian local ring `S`, every prime `𝔮` of an étale `S`-algebra `T` lying over
 the maximal ideal `𝔪_S` has residue field separable over `κ(𝔪_S)`, hence equal to `κ(𝔪_S)`
-(`TauCeti.residueFieldMap_bijective_of_isUnramifiedAt`), so
-`HenselianLocalRing.existsUnique_algHom_of_residueFieldMap_surjective` produces a unique
-`S`-algebra retraction `τ : T →ₐ[S] S` with `τ⁻¹(𝔪_S) = 𝔮`
-(`TauCeti.IsStrictlyHenselianLocalRing.existsUnique_algHom_of_etale`). Conversely, this étale
-retraction property implies both `HenselianLocalRing S` (via `HenselianLocalRing.tfae_etale`) and
-`IsSepClosed (ResidueField S)` (by retracting the finite étale local algebra `S[X]/(g)` attached to
-a monic lift `g` of an irreducible separable polynomial over `ResidueField S`), yielding the
-equivalence `TauCeti.IsStrictlyHenselianLocalRing.tfae` (Stacks, Tag 04GG).
+(`TauCeti.residueFieldMap_bijective_of_isSepClosed_of_isUnramifiedAt`), so
+`HenselianLocalRing.existsUnique_algHom_comap_maximalIdeal_of_residueFieldMap_surjective` produces a
+unique `S`-algebra retraction `τ : T →ₐ[S] S` with `τ⁻¹(𝔪_S) = 𝔮`
+(`TauCeti.IsStrictlyHenselianLocalRing.existsUnique_algHom_comap_maximalIdeal_of_etale`).
+Conversely, this étale retraction property implies both `HenselianLocalRing S` (via
+`HenselianLocalRing.tfae_etale`) and `IsSepClosed (ResidueField S)` (by retracting the finite étale
+local algebra `S[X]/(g)` attached to a monic lift `g` of an irreducible separable polynomial over
+`ResidueField S`), yielding the equivalence `TauCeti.IsStrictlyHenselianLocalRing.tfae` (Stacks,
+Tag 04GG).
 
 The second half of the file establishes permanence properties (Stacks, Tag 04GH):
 * separably closed fields are strictly henselian (`TauCeti.Field.isSepClosed_residueField` together
@@ -64,8 +65,8 @@ The second half of the file establishes permanence properties (Stacks, Tag 04GH)
   `IsSepClosed (ResidueField S)`.
 * `TauCeti.IsStrictlyHenselianLocalRing.isSepClosed_maximalIdeal_residueField`: instance giving
   `IsSepClosed (maximalIdeal S).ResidueField` from `[IsStrictlyHenselianLocalRing S]`.
-* `TauCeti.IsStrictlyHenselianLocalRing.existsUnique_algHom_of_etale`: unique `S`-algebra
-  retraction at any prime of an étale `S`-algebra lying over the maximal ideal.
+* `TauCeti.IsStrictlyHenselianLocalRing.existsUnique_algHom_comap_maximalIdeal_of_etale`: unique
+  `S`-algebra retraction at any prime of an étale `S`-algebra lying over the maximal ideal.
 * `TauCeti.IsStrictlyHenselianLocalRing.tfae`: characterisations of strictly henselian local rings
   (Stacks, Tag 04GG).
 * `TauCeti.IsStrictlyHenselianLocalRing.isFiniteEtaleSplit`: strictly henselian local rings have no
@@ -137,11 +138,11 @@ variable {S T : Type*} [CommRing S] [IsStrictlyHenselianLocalRing S] [CommRing T
 /-- Over a strictly henselian local ring `S`, every prime `𝔮` of an étale `S`-algebra `T` lying
 over `𝔪_S` is the preimage of `𝔪_S` under a unique `S`-algebra retraction `τ : T →ₐ[S] S`. -/
 @[stacks 04GG "(1) ⇒ (8), strictly henselian form"]
-theorem existsUnique_algHom_of_etale [Algebra.Etale S T] (𝔮 : Ideal T) [𝔮.IsPrime]
-    (h𝔮 : 𝔮.comap (algebraMap S T) = maximalIdeal S) :
+theorem existsUnique_algHom_comap_maximalIdeal_of_etale [Algebra.Etale S T] (𝔮 : Ideal T)
+    [𝔮.IsPrime] (h𝔮 : 𝔮.comap (algebraMap S T) = maximalIdeal S) :
     ∃! τ : T →ₐ[S] S, (maximalIdeal S).comap τ = 𝔮 :=
-  HenselianLocalRing.existsUnique_algHom_of_residueFieldMap_surjective h𝔮
-    (residueFieldMap_bijective_of_isUnramifiedAt h𝔮.symm).surjective
+  HenselianLocalRing.existsUnique_algHom_comap_maximalIdeal_of_residueFieldMap_surjective h𝔮
+    (residueFieldMap_bijective_of_isSepClosed_of_isUnramifiedAt h𝔮.symm).surjective
 
 end Etale
 
@@ -161,7 +162,7 @@ theorem tfae (S : Type u) [CommRing S] [_root_.IsLocalRing S] :
           𝔮.comap (algebraMap S T) = _root_.IsLocalRing.maximalIdeal S →
             ∃! τ : T →ₐ[S] S, (_root_.IsLocalRing.maximalIdeal S).comap τ = 𝔮] := by
   tfae_have 1 ↔ 2 := iff_henselianLocalRing_and_isSepClosed S
-  tfae_have 1 → 3 := fun _ _ _ _ _ 𝔮 _ h𝔮 ↦ existsUnique_algHom_of_etale 𝔮 h𝔮
+  tfae_have 1 → 3 := fun _ _ _ _ _ 𝔮 _ h𝔮 ↦ existsUnique_algHom_comap_maximalIdeal_of_etale 𝔮 h𝔮
   tfae_have 3 → 2 := by
     intro h
     refine ⟨((HenselianLocalRing.tfae_etale S).out 5 1 rfl rfl).mp fun T _ _ _ 𝔮 _ h𝔮 _ ↦
@@ -202,8 +203,7 @@ theorem of_isIntegral (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
     IsStrictlyHenselianLocalRing S := by
   have : HenselianLocalRing S := HenselianLocalRing.of_isIntegral R S
   have : IsSepClosed (ResidueField R) := isSepClosed_residueField
-  have : Algebra.IsIntegral R (ResidueField S) :=
-    inferInstanceAs (Algebra.IsIntegral R (S ⧸ maximalIdeal S))
+  have : Algebra.IsIntegral R (ResidueField S) := Algebra.IsIntegral.trans S
   have : Algebra.IsIntegral (ResidueField R) (ResidueField S) := Algebra.IsIntegral.tower_top R
   have : IsSepClosed (ResidueField S) :=
     Algebra.IsAlgebraic.isSepClosed (F := ResidueField R) (E := ResidueField S)
