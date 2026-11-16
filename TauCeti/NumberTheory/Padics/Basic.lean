@@ -22,13 +22,14 @@ It also records that the scalar action of `ℤ_[p]` on `ℚ_[p]` multiplies norm
 coefficient ring for Mathlib's Mahler isometry `PadicInt.mahlerEquiv` and for the Amice transform
 of measures on `ℤ_p`.
 
-Finally, it records that the inclusion `PadicInt.Coe.ringHom : ℤ_[p] →+* ℚ_[p]` is the structure
-map of the `ℤ_[p]`-algebra `ℚ_[p]`, and that it is a topological embedding of norm at most `1` whose
-range contains the closed unit ball. These are the hypotheses under which `ℚ_[p]`-valued measures
-of norm at most `1` come from `ℤ_[p]`-valued measures. It also maps exactly the maximal ideal of
-`ℤ_[p]` into the open unit ball (`PadicInt.norm_coe_ringHom_lt_one_iff`); together with the norm
-bound, this is the hypothesis under which formal and normed Weierstrass degrees over `ℤ_[p]` are
-compared.
+Finally, it records that the canonical embedding `algebraMap ℚ ℚ_[p]` has dense range
+(`Padic.denseRange_algebraMap_rat`), that the inclusion `PadicInt.Coe.ringHom : ℤ_[p] →+* ℚ_[p]`
+is the structure map of the `ℤ_[p]`-algebra `ℚ_[p]`, and that it is a topological embedding of
+norm at most `1` whose range contains the closed unit ball. These are the hypotheses under which
+`ℚ_[p]`-valued measures of norm at most `1` come from `ℤ_[p]`-valued measures. It also maps
+exactly the maximal ideal of `ℤ_[p]` into the open unit ball
+(`PadicInt.norm_coe_ringHom_lt_one_iff`); together with the norm bound, this is the hypothesis
+under which formal and normed Weierstrass degrees over `ℤ_[p]` are compared.
 
 For a normed `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is continuous. When `‖1‖ = 1` in `K` it is an
@@ -59,6 +60,17 @@ instance normSMulClass_padicInt_padic (p : ℕ) [Fact (Nat.Prime p)] :
   ⟨fun a x ↦ by rw [Algebra.smul_def, norm_mul, PadicInt.algebraMap_apply, PadicInt.norm_coe]⟩
 
 end TauCeti
+
+namespace Padic
+
+/-- The canonical embedding `algebraMap ℚ ℚ_[p]` has dense range in `ℚ_[p]`. -/
+theorem denseRange_algebraMap_rat (p : ℕ) [Fact (Nat.Prime p)] :
+    DenseRange (algebraMap ℚ ℚ_[p]) := by
+  have h : ⇑(algebraMap ℚ ℚ_[p]) = Rat.cast := funext (eq_ratCast _)
+  rw [h]
+  exact Padic.denseRange_ratCast p
+
+end Padic
 
 namespace PadicInt
 
