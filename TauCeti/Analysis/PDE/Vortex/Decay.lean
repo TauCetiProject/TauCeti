@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.ScalarEquation
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.MeasureTheory.Integral.Exp.Decay
@@ -31,6 +32,18 @@ applies the exterior comparison principle `TauCeti.le_mul_exp_of_sq_mul_le_lapla
 therefore integrable for every additive Haar measure on the plane. This is the curvature
 integrability needed to state the flux identity `(2π)⁻¹ ∫ i F_a = m`.
 
+The same subsolution property gives a local estimate, uniform over all vortices. Where
+`|α|² ≥ 4 c²` on a disc of radius `R` about `z`, with `0 < c ≤ 1 / 2`, the defect `-log |α|²` is
+at most `log (1 / (4 c²))` and satisfies `c² u ≤ Δ u`, so the interior comparison principle
+`TauCeti.le_two_mul_mul_exp_of_mul_le_laplacian` bounds it at the centre: for every `0 ≤ k < c`,
+
+`1 - |α(z)|² ≤ -log |α(z)|² ≤ 2 log (1 / (4 c²)) exp (-k (R - 2 c / (c² - k²)))`.
+
+The constant depends only on `c` and `k`, not on the vortex, its degree or the position of its
+zeros. So, deep inside a region where `|α|` stays away from zero, for instance between widely
+separated clusters of zeros, a vortex is exponentially close to the vacuum, and so is its
+curvature.
+
 ## Main results
 
 * `TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp`: `1 - |α|² ≤ K exp (-c |z|)` for every
@@ -39,6 +52,12 @@ integrability needed to state the flux identity `(2π)⁻¹ ∫ i F_a = m`.
   `∂₁ b₂ - ∂₂ b₁`.
 * `TauCeti.Vortex.integrable_one_sub_normSq`, `TauCeti.Vortex.integrable_curvature`: the modulus
   defect and the curvature are integrable.
+* `TauCeti.Vortex.neg_log_normSq_le_mul_exp_of_forall_le_normSq`,
+  `TauCeti.Vortex.one_sub_normSq_le_mul_exp_of_forall_le_normSq`,
+  `TauCeti.Vortex.abs_curvature_le_mul_exp_of_forall_le_normSq`: where `|α|² ≥ 4 c²` on a disc of
+  radius `R`, the logarithmic defect, the modulus defect and the curvature at its centre are at
+  most constant multiples of `exp (-k R)` for every `k < c`, with constants depending only on `c`
+  and `k`.
 
 ## References
 
@@ -163,6 +182,79 @@ theorem exists_abs_curvature_le_mul_exp
     linarith [normSq_le_one_of_tendsto hp hq hsol hlim z]
   rw [curvature_eq_of_equation_eq_zero (hsol z), abs_neg, abs_of_nonneg (by linarith)]
   linarith [hK z]
+
+/-- **A vortex is exponentially close to the vacuum deep inside the region `|α| ≥ 2 c`.** Let `x`
+be a vortex on the whole plane whose section satisfies `|α| → 1` at infinity, and let `0 ≤ k < c`.
+If `|α|² ≥ 4 c²` on the closed disc of radius `R ≥ 0` about `z`, then at its centre
+
+`-log |α(z)|² ≤ 2 log (1 / (4 c²)) exp (-k (R - 2 c / (c² - k²)))`.
+
+The constant depends only on `c` and `k`. -/
+theorem neg_log_normSq_le_mul_exp_of_forall_le_normSq
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c k R : ℝ}
+    (hk : 0 ≤ k) (hkc : k < c) (hR : 0 ≤ R) {z : ℂ}
+    (hball : ∀ w ∈ closedBall z R, 4 * c ^ 2 ≤ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) :
+    -Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) ≤
+      2 * -Real.log (4 * c ^ 2) * Real.exp (-(k * (R - 2 * c / (c ^ 2 - k ^ 2)))) := by
+  set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)
+  have hs₁ : ∀ z, s z ≤ 1 := normSq_le_one_of_tendsto hp hq hsol hlim
+  have hscd : ContDiff ℝ 2 s := contDiff_normSq hp hq
+  have hc4 : 0 < 4 * c ^ 2 := by
+    have : 0 < c := hk.trans_lt hkc
+    positivity
+  have hpos : ∀ w ∈ closedBall z R, 0 < s w := fun w hw ↦ hc4.trans_le (hball w hw)
+  -- On the disc the logarithmic defect `u = -log |α|²` is at most `M = -log (4 c²) ≥ 0`.
+  have hM : 0 ≤ -Real.log (4 * c ^ 2) :=
+    neg_nonneg.mpr (Real.log_nonpos hc4.le ((hball z (mem_closedBall_self hR)).trans (hs₁ z)))
+  have hle := TauCeti.le_two_mul_mul_exp_of_mul_le_laplacian (u := fun w ↦ -Real.log (s w))
+    (V := fun _ ↦ c ^ 2) hR hk hkc hM
+    (fun w hw ↦ (hscd.continuous.continuousAt.log (hpos w hw).ne').neg.continuousWithinAt)
+    (fun w hw ↦ (hscd.contDiffAt.log (hpos w (ball_subset_closedBall hw)).ne').neg)
+    (fun _ _ ↦ le_rfl)
+    (fun w hw ↦ sq_mul_neg_log_normSq_le_laplacian hp hq hsol
+      (hball w (ball_subset_closedBall hw)) (hpos w (ball_subset_closedBall hw)) (hs₁ w))
+    (fun w hw ↦ neg_le_neg (Real.log_le_log hc4 (hball w (sphere_subset_closedBall hw))))
+  simpa [Complex.finrank_real_complex] using hle
+
+/-- **The modulus defect of a vortex is exponentially small deep inside the region `|α| ≥ 2 c`.**
+Let `x` be a vortex on the whole plane whose section satisfies `|α| → 1` at infinity, and let
+`0 ≤ k < c`. If `|α|² ≥ 4 c²` on the closed disc of radius `R ≥ 0` about `z`, then
+
+`1 - |α(z)|² ≤ 2 log (1 / (4 c²)) exp (-k (R - 2 c / (c² - k²)))`. -/
+theorem one_sub_normSq_le_mul_exp_of_forall_le_normSq
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c k R : ℝ}
+    (hk : 0 ≤ k) (hkc : k < c) (hR : 0 ≤ R) {z : ℂ}
+    (hball : ∀ w ∈ closedBall z R, 4 * c ^ 2 ≤ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) :
+    1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤
+      2 * -Real.log (4 * c ^ 2) * Real.exp (-(k * (R - 2 * c / (c ^ 2 - k ^ 2)))) := by
+  have hc4 : 0 < 4 * c ^ 2 := by
+    have : 0 < c := hk.trans_lt hkc
+    positivity
+  have hpos := hc4.trans_le (hball z (mem_closedBall_self hR))
+  linarith [Real.log_le_sub_one_of_pos hpos,
+    neg_log_normSq_le_mul_exp_of_forall_le_normSq hp hq hsol hlim hk hkc hR hball]
+
+/-- **The curvature of a vortex is exponentially small deep inside the region `|α| ≥ 2 c`.** Let
+`x` be a vortex on the whole plane whose section satisfies `|α| → 1` at infinity, and let
+`0 ≤ k < c`. If `|α|² ≥ 4 c²` on the closed disc of radius `R ≥ 0` about `z`, then the curvature
+coefficient `∂₁ b₂ - ∂₂ b₁` at `z` is at most
+`log (1 / (4 c²)) exp (-k (R - 2 c / (c² - k²))) / 4` in absolute value. -/
+theorem abs_curvature_le_mul_exp_of_forall_le_normSq
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c k R : ℝ}
+    (hk : 0 ≤ k) (hkc : k < c) (hR : 0 ≤ R) {z : ℂ}
+    (hball : ∀ w ∈ closedBall z R, 4 * c ^ 2 ≤ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) :
+    |fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I| ≤
+      -Real.log (4 * c ^ 2) * Real.exp (-(k * (R - 2 * c / (c ^ 2 - k ^ 2)))) / 4 := by
+  have h₀ : 0 ≤ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
+    linarith [normSq_le_one_of_tendsto hp hq hsol hlim z]
+  rw [curvature_eq_of_equation_eq_zero (hsol z), abs_neg, abs_of_nonneg (by linarith)]
+  linarith [one_sub_normSq_le_mul_exp_of_forall_le_normSq hp hq hsol hlim hk hkc hR hball]
 
 variable (μ : Measure ℂ) [μ.IsAddHaarMeasure]
 
