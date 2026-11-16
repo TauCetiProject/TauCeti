@@ -222,4 +222,16 @@ theorem freeLoopHomotopyEquiv_symm_apply (p : Σ _ : ℤ, Circle) (z : Circle) :
     freeLoopHomotopyEquiv.symm p z = p.2 * z ^ p.1 :=
   (rfl)
 
+/-- The inverse of `Circle.freeLoopHomotopyEquiv` is an exact right inverse: the free loop
+`z ↦ w zⁿ` has degree `n` and value `w` at `1`. -/
+theorem freeLoopHomotopyEquiv_apply_symm_apply (p : Σ _ : ℤ, Circle) :
+    freeLoopHomotopyEquiv (freeLoopHomotopyEquiv.symm p) = p :=
+  freeLoopToSigma_freeLoopOfSigma p
+
+/-- The free loop `z ↦ w zⁿ` has degree `n`. -/
+@[simp]
+theorem degree_toBasedLoop_freeLoopHomotopyEquiv_symm (p : Σ _ : ℤ, Circle) :
+    degree (freeLoopHomotopyEquiv.symm p).toBasedLoop = p.1 :=
+  congr_arg Sigma.fst (freeLoopHomotopyEquiv_apply_symm_apply p)
+
 end Circle
