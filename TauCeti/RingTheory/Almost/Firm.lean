@@ -445,9 +445,7 @@ theorem isAlmostIso_ihom_ev_app (N : ModuleCat.{u} V) :
   -- Every `ε ∈ m` kills the kernel and the cokernel of `ev`.
   refine isAlmostIso_iff.mpr ⟨isAlmostZero_iff.mpr fun ε hε x ↦ ?_,
     isAlmostZero_iff.mpr fun ε hε y ↦ ?_⟩
-  all_goals
-    rw [← range_tildeMul] at hε
-    obtain ⟨s, rfl⟩ := hε
+  all_goals obtain ⟨s, rfl⟩ := S.exists_tildeMul_eq hε
   · apply Subtype.ext
     -- The source of `ev` is `m~ ⊗[V] Hom(m~, N)` as a `ModuleCat`, so `key` applies up to defeq.
     refine (Submodule.coe_smul _ x).trans ((key s x).trans ?_)

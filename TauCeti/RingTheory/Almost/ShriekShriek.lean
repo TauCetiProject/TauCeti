@@ -496,11 +496,14 @@ theorem shriekShriekCounit_tmul (t : S.tilde) (r : R) :
 /-- The kernel of the action map `R_! → R` is almost zero. -/
 private theorem smul_eq_zero_of_act_eq_zero {ε : V} (hε : ε ∈ S.ideal) {z : S.Shriek R}
     (hz : Shriek.act S R z = 0) : ε • z = 0 := by
-  obtain ⟨g, -, hg⟩ := (S.isAlmostIso_tildeAct R).exists_comp_eq_smul_id hε
-  have := LinearMap.congr_fun hg ((equiv S R).symm z)
-  simp only [LinearMap.comp_apply, ← Shriek.act_apply, hz, map_zero, LinearMap.smul_apply,
-    LinearMap.id_apply] at this
-  exact (equiv S R).symm.map_eq_zero_iff.mp ((map_smul _ ε z).trans this.symm)
+  -- Instance search does not find the `AddCommGroup` structure on the kernel of a map out of a
+  -- tensor product, so it is supplied by hand.
+  let _ : AddCommGroup (LinearMap.ker (S.tildeAct R)) :=
+    Submodule.addCommGroup (M := S.tilde ⊗[V] R) _
+  have h := (isAlmostIso_iff.mp (S.isAlmostIso_tildeAct R)).1.smul_eq_zero hε
+    ⟨(equiv S R).symm z, by rwa [LinearMap.mem_ker, ← Shriek.act_apply]⟩
+  rw [Subtype.ext_iff, Submodule.coe_smul, Submodule.coe_zero] at h
+  exact (equiv S R).symm.map_eq_zero_iff.mp ((map_smul _ ε z).trans h)
 
 /-- The kernel of `R_!! → R` is almost zero: for `ε, δ ∈ m`, the product `δ ε` kills it. -/
 private theorem smul_eq_zero_of_shriekShriekCounit_eq_zero {ε : V} (hε : ε ∈ S.ideal)
