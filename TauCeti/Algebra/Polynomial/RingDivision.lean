@@ -21,7 +21,7 @@ binomials `X ^ n - C a` and `X ^ n - C b`.
 Over a ring without zero divisors, if `p = a X + b` and `q = c X + d` are coprime polynomials with
 `max p.natDegree q.natDegree = 1`, then the determinant `a d - b c` of their coefficient matrix is
 nonzero (`Polynomial.coeff_one_mul_coeff_zero_sub_ne_zero_of_isCoprime_of_max_natDegree_eq_one`).
-In other words, the coefficient matrix of a reduced non-constant rational function
+Over a field, this means that the coefficient matrix of a reduced non-constant rational function
 `(a X + b) / (c X + d)` is invertible.
 -/
 
