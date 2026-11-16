@@ -461,17 +461,13 @@ theorem d_comp_cochainsMap (f : Hom R H M N) (n : ℕ) :
     d R H N n ∘ₗ cochainsMap f n = cochainsMap f (n + 1) ∘ₗ d R H M n := by
   induction n with
   | zero =>
-    refine LinearMap.ext fun m ↦ ?_
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, cochainsMap_zero_apply, d_zero_apply,
-      d_zero_apply, map_sub, cochainsMap_succ, LinearMap.rTensor_tmul, cochainsMap_zero_apply,
-      LinearMap.rTensor_def, cochainsMap_zero, ← f.map_coact_apply]
+    rw [d_zero, d_zero, cochainsMap_succ, cochainsMap_zero]
+    refine LinearMap.ext fun (m : M) ↦ ?_
+    simp [LinearMap.rTensor_def]
   | succ n ih =>
     have h₁ : (d R H N n).rTensor H ∘ₗ cochainsMap f (n + 1) =
         cochainsMap f (n + 2) ∘ₗ (d R H M n).rTensor H :=
-      TensorProduct.ext' fun x h ↦ by
-        rw [LinearMap.comp_apply, LinearMap.comp_apply, cochainsMap_succ_tmul,
-          LinearMap.rTensor_tmul, LinearMap.rTensor_tmul, cochainsMap_succ_tmul,
-          ← LinearMap.comp_apply, ih, LinearMap.comp_apply]
+      by simpa only [cochainsMap_succ, LinearMap.rTensor_comp] using congrArg (·.rTensor H) ih
     have h₂ : lastComul R H (cochains R H N n) ∘ₗ cochainsMap f (n + 1) =
         cochainsMap f (n + 2) ∘ₗ lastComul R H (cochains R H M n) :=
       lastComul_comp_rTensor R H (cochainsMap f n)
@@ -496,6 +492,8 @@ theorem cochainComplexMap_f (f : Hom R H M N) (n : ℕ) :
 theorem cochainComplexMap_id : cochainComplexMap (Hom.id R H M) = 𝟙 _ := by
   ext n : 1
   rw [cochainComplexMap_f, cochainsMap_id, HomologicalComplex.id_f]
+  -- `𝟙 ((cochainComplex R H M).X n)` is `𝟙 (ModuleCat.of R (cochains R H M n))` only by unfolding
+  -- `CochainComplex.of` (`cochainComplex_X`), so `exact` closes the goal up to that identification.
   exact ModuleCat.ofHom_id
 
 /-- The cochain map induced by a composite is the composite of the induced cochain maps. -/
@@ -505,6 +503,8 @@ theorem cochainComplexMap_comp (g : Hom R H N P) (f : Hom R H M N) :
   ext n : 1
   rw [cochainComplexMap_f, cochainsMap_comp, HomologicalComplex.comp_f, cochainComplexMap_f,
     cochainComplexMap_f]
+  -- As in `cochainComplexMap_id`, the objects of the composite are the modules
+  -- `ModuleCat.of R (cochains _ n)` only by unfolding `CochainComplex.of` (`cochainComplex_X`).
   exact ModuleCat.ofHom_comp _ _
 
 /-- The identification of degree-zero cohomology with the invariants is natural in the
