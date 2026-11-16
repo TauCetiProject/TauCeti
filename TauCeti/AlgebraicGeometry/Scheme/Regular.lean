@@ -18,10 +18,9 @@ import TauCeti.RingTheory.SerreCondition.Normal
 
 On a locally Noetherian integral scheme a regular function has nonnegative order at every point
 where it is defined (`TauCeti.AlgebraicGeometry.Scheme.ord_germToFunctionField_nonneg`). This file
-proves the converse both for a scheme of dimension at most one whose codimension-one local rings
-on an open subset `U` are discrete valuation rings, and in arbitrary dimension for a locally
-Noetherian normal integral scheme: a rational function with no poles on `U` is the germ of a
-regular function on `U`.
+proves the converse for a scheme of dimension at most one whose codimension-one local rings on an
+open subset `U` are discrete valuation rings: a rational function with no poles on `U` is the germ
+of a regular function on `U`.
 
 ## Main declarations
 
@@ -42,8 +41,13 @@ regular function on `U`.
   algebraic Hartogs' principle on locally Noetherian normal integral schemes in arbitrary
   dimension, proved via Serre's condition `(S_2)`.
 
-The one-dimensional argument follows Hartshorne, *Algebraic Geometry*, II.6.3A and
-Proposition II.6.11, where the intersection of the local rings can be taken over the points of `U`
+The third statement is the one-dimensional case of algebraic Hartogs' principle, and it is the
+input that identifies the sheaf `𝒪_X(0)` of the zero divisor with the structure sheaf. The last
+one applies it to a function and to its inverse; it is the local comparison used to glue the
+local equations of a locally principal Weil divisor into a Cartier divisor.
+
+The argument follows Hartshorne, *Algebraic Geometry*, II.6.3A and Proposition II.6.11, in the
+dimension-one case where the intersection of the local rings can be taken over the points of `U`
 themselves. The local step is Mathlib's `IsDiscreteValuationRing.exists_lift_of_le_one` together
 with `Ring.ordFrac_eq_valuation_inv`, and the global step, that a rational function lying in every
 local ring of `U` is regular on `U`, is
@@ -147,22 +151,19 @@ section Normal
 variable [IsNormalScheme X]
 
 /-- **Local algebraic Hartogs' principle.** At a point `x` of a locally Noetherian normal integral
-scheme, a rational function `f` whose order of vanishing is nonnegative at every codimension-one
-generization of `x` lies in the local ring `𝒪_{X,x}`. -/
+scheme, a rational function `f` with nonnegative order at every codimension-one generization of `x`
+lies in `𝒪_{X,x}`. -/
 theorem exists_algebraMap_stalk_eq_of_ord_nonneg_of_isNormalScheme {x : X} {f : X.functionField}
     (hf : ∀ η : CodimensionOnePoint X, (η : X) ⤳ x → 0 ≤ X.ord f η) :
     ∃ g : X.presheaf.stalk x, algebraMap (X.presheaf.stalk x) X.functionField g = f := by
   set A := X.presheaf.stalk x
   obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective (A := A) f
+  have hb0 : algebraMap A X.functionField b ≠ 0 :=
+    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hb
   by_cases hab : a ∈ Ideal.span {b}
   · obtain ⟨g, rfl⟩ := Ideal.mem_span_singleton'.mp hab
-    refine ⟨g, ?_⟩
-    have hb0 : algebraMap A X.functionField b ≠ 0 :=
-      IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hb
-    rw [map_mul, mul_div_cancel_right₀ _ hb0]
+    exact ⟨g, by rw [map_mul, mul_div_cancel_right₀ _ hb0]⟩
   exfalso
-  -- `A` is a Noetherian normal domain, so it satisfies `(S_2)` and every associated prime `P` of
-  -- `A ⧸ (b)` containing `((b) : a)` has height one.
   have hS : Module.SatisfiesSerreS 2 A A :=
     TauCeti.satisfiesSerreS_two_of_forall_isIntegrallyClosed fun p _ ↦
       ⟨inferInstance, isIntegrallyClosed_of_isLocalization _ p.primeCompl
@@ -170,37 +171,29 @@ theorem exists_algebraMap_stalk_eq_of_ord_nonneg_of_isNormalScheme {x : X} {f : 
   obtain ⟨P, hPass, hle⟩ := exists_le_isAssociatedPrime_of_isNoetherianRing A
     (Ideal.Quotient.mk (Ideal.span {b}) a) (by rwa [Ne, Ideal.Quotient.eq_zero_iff_mem])
   have := hPass.isPrime
-  have hP1 : P.height = 1 :=
-    hS.height_eq_one_of_isAssociatedPrime_quotient_span_singleton hb hPass
   obtain ⟨η, hηcoh, hηx, hcomap⟩ := exists_specializes_and_comap_stalkSpecializes_maximalIdeal_eq P
-  rw [hP1] at hηcoh
+  rw [hS.height_eq_one_of_isAssociatedPrime_quotient_span_singleton hb hPass] at hηcoh
   have : IsDiscreteValuationRing (X.presheaf.stalk η) :=
     IsNormalScheme.isDiscreteValuationRing_stalk η hηcoh
-  -- Nonnegative order at `η` puts `a / b` in `𝒪_{X,η} = A_P`, giving `s * a ∈ (b)` for `s ∉ P`.
   obtain ⟨c, hc⟩ := exists_algebraMap_stalk_eq_of_ord_nonneg (hf ⟨η, hηcoh⟩ hηx)
   let := (X.presheaf.stalkSpecializes hηx).hom.toAlgebra
   set Q := (maximalIdeal (X.presheaf.stalk η)).comap (X.presheaf.stalkSpecializes hηx).hom
   have := isLocalization_stalkSpecializes hηx
   obtain ⟨⟨d, s⟩, hds⟩ := IsLocalization.surj Q.primeCompl c
   have hba : algebraMap A X.functionField (s * a) = algebraMap A X.functionField (b * d) := by
-    have hb0 : algebraMap A X.functionField b ≠ 0 :=
-      IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hb
     have hcd := congrArg (algebraMap (X.presheaf.stalk η) X.functionField) hds
     rw [map_mul, RingHom.algebraMap_toAlgebra (X.presheaf.stalkSpecializes hηx).hom,
       algebraMap_stalkSpecializes, algebraMap_stalkSpecializes, hc,
       mul_comm _ (algebraMap A _ (s : A))] at hcd
     have hcd' := congrArg (· * algebraMap A X.functionField b) hcd
     rw [mul_div_assoc', div_mul_cancel₀ _ hb0, mul_comm _ (algebraMap A X.functionField b)] at hcd'
-    rw [map_mul, map_mul]
-    exact hcd'
-  have hsa : (s : A) * a ∈ Ideal.span {b} :=
-    Ideal.mem_span_singleton'.mpr ⟨d, mul_comm d b ▸
-      IsFractionRing.injective A X.functionField hba.symm⟩
+    rwa [map_mul, map_mul]
+  have hsa : (s : A) * a ∈ Ideal.span {b} := Ideal.mem_span_singleton'.mpr
+    ⟨d, mul_comm d b ▸ IsFractionRing.injective A X.functionField hba.symm⟩
   exact (hcomap ▸ s.2 : (s : A) ∉ P) (hle (TauCeti.Ideal.Quotient.mem_colon_singleton_mk.mpr hsa))
 
-/-- **Algebraic Hartogs' principle on normal Noetherian schemes.** On a locally Noetherian normal
-integral scheme, a rational function whose order of vanishing is nonnegative at every
-codimension-one point of a nonempty open subset `U` is regular on `U`. -/
+/-- **Algebraic Hartogs' principle on normal Noetherian schemes.** A rational function with
+nonnegative order at every codimension-one point of a nonempty open `U` is regular on `U`. -/
 theorem exists_germToFunctionField_eq_of_ord_nonneg_of_isNormalScheme {U : X.Opens} [Nonempty U]
     {f : X.functionField} (hf : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → 0 ≤ X.ord f y) :
     ∃ a : Γ(X, U), X.germToFunctionField U a = f :=
@@ -208,9 +201,8 @@ theorem exists_germToFunctionField_eq_of_ord_nonneg_of_isNormalScheme {U : X.Ope
     exists_algebraMap_stalk_eq_of_ord_nonneg_of_isNormalScheme fun y hyx ↦
       hf y (hyx.mem_open U.isOpen hx)
 
-/-- **A rational function without zeros or poles on a normal scheme is a regular unit.** On a
-locally Noetherian normal integral scheme, a nonzero rational function whose order vanishes at
-every codimension-one point of a nonempty open subset `U` comes from a unit of `Γ(X, U)`. -/
+/-- **A rational function without zeros or poles on a normal scheme is a regular unit.** A nonzero
+rational function with zero order at every codimension-one point of `U` comes from `Γ(X, U)ˣ`. -/
 theorem exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isNormalScheme {U : X.Opens}
     [Nonempty U] {f : X.functionFieldˣ}
     (hf : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → X.ord (f : X.functionField) y = 0) :

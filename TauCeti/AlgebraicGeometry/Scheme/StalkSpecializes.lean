@@ -183,8 +183,8 @@ theorem specializes_of_comap_stalkSpecializes_maximalIdeal_le {x' : X} (h : x �
   have hsp := ((PrimeSpectrum.le_iff_specializes _ _).mp hle').map hU.fromSpec.continuous
   rwa [hU.fromSpec_primeIdealOf, hU.fromSpec_primeIdealOf] at hsp
 
-/-- Every prime ideal `P` of a local ring `𝒪_{X,x}` arises from a generization `η ⤳ x` whose
-codimension equals `P.height`. -/
+/-- Every prime ideal `P` of `𝒪_{X,x}` arises from a generization `η ⤳ x` of codimension
+`P.height`. -/
 theorem exists_specializes_and_comap_stalkSpecializes_maximalIdeal_eq {x : X}
     (P : Ideal (X.presheaf.stalk x)) [P.IsPrime] :
     ∃ η : X, Order.coheight η = P.height ∧ ∃ h : η ⤳ x,
@@ -194,16 +194,14 @@ theorem exists_specializes_and_comap_stalkSpecializes_maximalIdeal_eq {x : X}
   have hηx : η ⤳ x := _root_.AlgebraicGeometry.Scheme.range_fromSpecStalk.subset ⟨q, rfl⟩
   have hcoh : Order.coheight η = P.height := by
     have h := X.height_eq_ringKrullDim_fromSpecStalk x q
-    rw [ringKrullDim_stalk_eq_coheight] at h
-    exact_mod_cast h.symm
-  refine ⟨η, hcoh, hηx, ?_⟩
+    rw [ringKrullDim_stalk_eq_coheight] at h; exact_mod_cast h.symm
   let c : Spec (X.presheaf.stalk η) := closedPoint (X.presheaf.stalk η)
-  have hq : Spec.map (X.presheaf.stalkSpecializes hηx) c = q := by
-    apply (X.fromSpecStalk x).isEmbedding.injective
-    rw [← _root_.AlgebraicGeometry.Scheme.Hom.comp_apply,
-      _root_.AlgebraicGeometry.Scheme.SpecMap_stalkSpecializes_fromSpecStalk,
-      _root_.AlgebraicGeometry.Scheme.fromSpecStalk_closedPoint]
-  exact congrArg PrimeSpectrum.asIdeal hq
+  have hq : Spec.map (X.presheaf.stalkSpecializes hηx) c = q :=
+    (X.fromSpecStalk x).isEmbedding.injective <| by
+      rw [← _root_.AlgebraicGeometry.Scheme.Hom.comp_apply,
+        _root_.AlgebraicGeometry.Scheme.SpecMap_stalkSpecializes_fromSpecStalk,
+        _root_.AlgebraicGeometry.Scheme.fromSpecStalk_closedPoint]
+  exact ⟨η, hcoh, hηx, congrArg PrimeSpectrum.asIdeal hq⟩
 
 /-- **Prime elements of a local ring and codimension-one generizations.** On a locally Noetherian
 integral scheme, every prime element `p` of the local ring `𝒪_{X,y}` generates the prime of
