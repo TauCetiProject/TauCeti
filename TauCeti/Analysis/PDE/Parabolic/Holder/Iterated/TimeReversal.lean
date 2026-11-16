@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
+import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Time reversal of bounded parabolic Hölder maps of every order
@@ -58,14 +60,6 @@ variable {k : ℕ} {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSp
 
 namespace ParabolicCkHolderSpace
 
-/-- Reparametrizing by an isometry and multiplying by a sign `(-1) ^ n` keeps a Hölder bound. -/
-private theorem holderWith_neg_one_pow_smul_comp {X X' Y : Type*} [PseudoMetricSpace X]
-    [PseudoMetricSpace X'] [NormedAddCommGroup Y] [NormedSpace ℝ Y] {C r : ℝ≥0} {g : X → Y}
-    (hg : HolderWith C r g) {φ : X' → X} (hφ : Isometry φ) (n : ℕ) :
-    HolderWith C r fun x ↦ (-1 : ℝ) ^ n • g (φ x) := by
-  simpa [Function.comp_def, Pi.smul_def] using
-    (hg.comp hφ.lipschitzWith.holderWith).smul ((-1 : ℝ) ^ n)
-
 variable {a' b' : ℝ} (T : ℝ) (ha : a' = T - b) (hb : b' = T - a)
 
 /-- The fields `(-1) ^ r (D_t^r D_x^m u) ∘ R` of the time reversal of `u`. -/
@@ -113,21 +107,23 @@ private theorem exists_holderWith_reverseField (f : ParabolicCkHolderSpace k α 
     {r m : ℕ} (h : 2 * r + m + 1 = k) :
     ∃ C, ∀ x : E,
       HolderWith C ((1 + α) / 2) fun t : Icc a' b' ↦ reverseField T ha hb f r m (slabMk x t) := by
-  refine ⟨‖timeSliceL r m f‖₊, fun x ↦ ?_⟩
+  refine ⟨‖timeSliceL r m f‖₊ * ‖(-1 : ℝ) ^ r‖₊, fun x ↦ ?_⟩
   have hx : ‖timeSliceL r m f x‖₊ ≤ ‖timeSliceL r m f‖₊ := by
     exact_mod_cast lp.norm_apply_le_norm ENNReal.top_ne_zero _ x
-  convert holderWith_neg_one_pow_smul_comp ((timeSliceL r m f x).holderWith_nnnorm.mono hx)
-    (iccTimeReverse T ha hb).isometry r using 2 with t
+  convert (((timeSliceL r m f x).holderWith_nnnorm.mono hx).comp_isometry
+    (iccTimeReverse T ha hb).isometry).smul ((-1 : ℝ) ^ r) using 2 with t
   simp [reverseField_apply, timeSliceL_apply f h, iccTimeReverse_apply]
 
 /-- The reversed fields of order `k` are parabolically `α`-Hölder, because `R` is an isometry. -/
 private theorem memHolder_reverseField (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
     (h : 2 * r + m = k) :
     MemHolder α (reverseField T ha hb f r m : slab (E := E) a' b' → E [×m]→L[ℝ] F) := by
-  refine ⟨‖mixedDerivHolderL r m f‖₊, ?_⟩
-  convert holderWith_neg_one_pow_smul_comp (mixedDerivHolderL r m f).holderWith_nnnorm
-    (slabTimeReverse T ha hb).isometry r using 2 with p
-  rw [reverseField_apply, ← HolderSpace.toBoundedContinuousFunction_apply,
+  refine ⟨‖mixedDerivHolderL r m f‖₊ * ‖(-1 : ℝ) ^ r‖₊, ?_⟩
+  convert ((mixedDerivHolderL r m f).holderWith_nnnorm.comp_isometry
+    (slabTimeReverse T ha hb).isometry).smul ((-1 : ℝ) ^ r) using 1
+  funext p
+  rw [reverseField_apply, Pi.smul_apply, Function.comp_apply,
+    ← HolderSpace.toBoundedContinuousFunction_apply,
     toBoundedContinuousFunction_mixedDerivHolderL f h]
 
 /-- The time reversal `u ∘ R` of a parabolic Hölder map of order `k`. -/
@@ -172,11 +168,6 @@ private theorem mixedDerivHolderL_reverse (f : ParabolicCkHolderSpace k α E F h
       toBoundedContinuousFunction_mixedDerivHolderL _ h,
       toBoundedContinuousFunction_mixedDerivHolderL _ h, mixedDerivL_reverse]
   · simp [mixedDerivHolderL_of_ne h]
-
-/-- The sign `(-1)^n` does not change norms. -/
-private theorem norm_neg_one_pow_smul {G : Type*} [SeminormedAddCommGroup G] [SMul ℝ G]
-    [NormSMulClass ℝ G] (n : ℕ) (y : G) : ‖(-1 : ℝ) ^ n • y‖ = ‖y‖ := by
-  simp [norm_smul]
 
 private theorem norm_reverse_le (f : ParabolicCkHolderSpace k α E F hab) :
     ‖reverse T ha hb f‖ ≤ ‖f‖ := by
