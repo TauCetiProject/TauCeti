@@ -25,8 +25,9 @@ variation bound `1 - (1 / 2) ∑ c, |q c - p c|`.
 
 ## Main results
 
-* `TauCeti.exists_coupling_kernel`: existence of a Markov transition kernel pushing `q` forward to
-  `p` with `min (q c₀) (p c₀) ≤ q c₀ * M c₀ c₀` for every `c₀ : κ`.
+* `TauCeti.exists_sum_eq_one_and_sum_mul_eq_and_min_le_mul`: existence of a nonnegative transition
+  matrix with row sums `1` pushing `q` forward to `p` with `min (q c₀) (p c₀) ≤ q c₀ * M c₀ c₀`
+  for every `c₀ : κ`.
 
 ## References
 
@@ -44,8 +45,8 @@ namespace TauCeti
 taking values in a linearly ordered field `𝕜`, there is a Markov transition kernel `M : κ → κ → 𝕜`
 pushing `q` forward to `p` whose stay-put mass at every state `c₀` is at least
 `min (q c₀) (p c₀)`. -/
-theorem exists_coupling_kernel {κ 𝕜 : Type*} [Fintype κ] [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] {q p : κ → 𝕜}
+theorem exists_sum_eq_one_and_sum_mul_eq_and_min_le_mul {κ 𝕜 : Type*} [Fintype κ] [Field 𝕜]
+    [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] {q p : κ → 𝕜}
     (hq : ∀ c, 0 ≤ q c) (hq1 : ∑ c, q c = 1) (hp : ∀ c, 0 ≤ p c) (hp1 : ∑ c, p c = 1) :
     ∃ M : κ → κ → 𝕜, (∀ c₀ c, 0 ≤ M c₀ c) ∧ (∀ c₀, ∑ c, M c₀ c = 1) ∧
       (∀ c, ∑ c₀, q c₀ * M c₀ c = p c) ∧ ∀ c₀, min (q c₀) (p c₀) ≤ q c₀ * M c₀ c₀ := by

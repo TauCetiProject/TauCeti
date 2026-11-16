@@ -157,10 +157,17 @@ theorem exists_recoloring_regular_offDiag [Fintype κ] (hε : 0 < ε)
       #{p : V × V | T.colorOfPair p.1 p.2 ≠ S.colorOfPair p.1 p.2} ≤
         ∑ AB ∈ S.irregularPairs ε P, #AB.1 * #AB.2 := by
   classical
-  let order : LinearOrder P.parts := LinearOrder.lift' (Fintype.equivFin P.parts)
-    (Fintype.equivFin P.parts).injective
+  let e : P.parts ≃ Fin (Fintype.card P.parts) := Fintype.equivFin P.parts
+  let order : LinearOrder P.parts := LinearOrder.lift' e e.injective
   choose T hrev hkeep hreg using S.exists_local_recoloring P hε hsize
-  obtain ⟨R, hRrev, hlocal⟩ := S.exists_cellwise_recoloring P order T fun A B _ ↦ hrev A B
+  obtain ⟨R, hRrev, hlt, heq⟩ :=
+    S.exists_recoloring_colorOfPair_eq P e T fun A B _ ↦ hrev A B
+  have hlocal : ∀ A B : P.parts, order.le A B → ∀ x ∈ A.1, ∀ y ∈ B.1,
+      R.colorOfPair x y = (T A B).colorOfPair x y := by
+    intro A B hAB x hx y hy
+    rcases lt_or_eq_of_le (show e A ≤ e B from hAB) with h | h
+    · exact hlt A B h x hx y hy
+    · rw [heq A B h x hx y hy, hkeep A B (Or.inl (e.injective h))]
   have hagree := S.recoloring_agrees P order T R hlocal hRrev hkeep
   have hpairs := S.regular_density_of_cellwise P order T R hlocal hRrev hreg
   refine ⟨R, hRrev, hagree, ?_, ?_, S.card_edits_le_irregularPairs P R hagree⟩
