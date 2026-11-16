@@ -40,7 +40,8 @@ change of charts.
   at the point, in every chart it is the value and the chart derivative of the local
   representative (`TauCeti.FirstJetBundle.trivializationAt_jet`), and it is a `C^n` section of
   `J¹V` for a `C^(n+1)` section `s` (`TauCeti.FirstJetBundle.contMDiff_jet`).
-  For the trivial bundle over a model space it is `(s x, fderiv 𝕜 s x)`.
+  For the trivial bundle over a model space it is `(s x, fderiv 𝕜 s x)`. A zero first jet has
+  zero chart derivative (`TauCeti.FirstJetBundle.fderivWithin_localRep_eq_zero_of_jet_eq_zero`).
 * `TauCeti.FirstJetBundle.value` and `TauCeti.FirstJetBundle.ofDeriv`: the fibres of the projection
   `J¹V → V` and of the inclusion `Hom(TM, V) → J¹V` of continuous linear maps (for
   finite-dimensional fibres, `Hom(TM, V) = T*M ⊗ V`). The projection sends `j¹s(x)` to
@@ -510,6 +511,15 @@ at `x`. -/
 @[simp]
 theorem jet_snd (s : ∀ x, V x) (x : M) :
     (jet I F s x).2 = fderivWithin 𝕜 (localRep I F s x) (range I) (extChartAt I x x) := (rfl)
+
+/-- If a section has zero first jet at a point, the derivative of its local representative in
+that point's preferred chart and trivialization is zero. No differentiability hypothesis is
+needed, since the first jet records the totalized chart derivative. -/
+theorem fderivWithin_localRep_eq_zero_of_jet_eq_zero {s : ∀ x, V x} {x : M}
+    (h : jet I F s x = 0) :
+    fderivWithin 𝕜 (localRep I F s x) (range I) (extChartAt I x x) = 0 := by
+  rw [← jet_snd]
+  exact congrArg Prod.snd h
 
 /-- **The first jet in an arbitrary chart.** In the chart and trivialization at `i`, the first jet
 of a section differentiable at `y` consists of the value and the chart derivative of the local

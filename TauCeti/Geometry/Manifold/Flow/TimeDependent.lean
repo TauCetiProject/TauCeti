@@ -59,6 +59,9 @@ the initial position of the submanifold to the later ones.
 * `TauCeti.hasMFDerivAt_timeDependentFlowOf`: the curves of the flow solve `γ' u = X u (γ u)`.
 * `TauCeti.timeDependentFlowOf_eq_of_hasMFDerivAt`: every solution on an open interval is a curve
   of the flow.
+* `TauCeti.mem_timeDependentFlowDomain_of_forall_mem_uIcc_eq_zero` and
+  `TauCeti.timeDependentFlowOf_eq_self_of_forall_mem_uIcc_eq_zero`: a point where the field vanishes
+  between two times stays in the domain and is fixed by the time map between them.
 * `TauCeti.timeDependentFlowOf_trans_of_mem` and `TauCeti.timeDependentFlowOf_trans`: the two-time
   composition law, where it is defined, and everywhere for a complete suspension.
 * `TauCeti.timeDependentFlowOf_const_smul`: the time-dependent flow of a constant multiple `c • v`
@@ -508,6 +511,106 @@ theorem exists_timeDependentFlow [FiniteDimensional ℝ E] [T2Space M]
     (by fun_prop : Continuous (fun t : ℝ ↦ ((p.1, t), p.2))).continuousAt.preimage_mem_nhds
       ((isOpen_timeDependentFlowDomain hX).mem_nhds (mem_timeDependentFlowDomain_self hX _ _))
   exact hdom.mono fun _ ht ↦ hasMFDerivAt_timeDependentFlowOf hX ht
+
+/-- Glue two solutions across a matching endpoint, using their one-sided manifold derivatives. -/
+private theorem hasMFDerivAt_timeDependent_piecewise {f g : ℝ → M} {c u : ℝ} (hfg : f c = g c)
+    (hf : u ≤ c → HasMFDerivAt 𝓘(ℝ, ℝ) I f u
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (X u (f u))))
+    (hg : c ≤ u → HasMFDerivAt 𝓘(ℝ, ℝ) I g u
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (X u (g u)))) :
+    HasMFDerivAt 𝓘(ℝ, ℝ) I (fun r ↦ if r ≤ c then f r else g r) u
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (X u (if u ≤ c then f u else g u))) := by
+  rcases lt_trichotomy u c with h | h | h
+  · rw [ite_eq_left h.le]
+    exact (hf h.le).congr_of_eventuallyEq_abuse
+      ((eventually_lt_nhds h).mono fun r hr ↦ ite_eq_left hr.le)
+  · subst u
+    have h₁ := (hf le_rfl).hasMFDerivWithinAt (s := Iic c)
+    have h₂ := (hg le_rfl).hasMFDerivWithinAt (s := Ici c)
+    have h₁' := h₁.congr_mono (f₁ := fun r ↦ if r ≤ c then f r else g r) (t := Iic c)
+      (fun r hr ↦ ite_eq_left hr) (ite_eq_left le_rfl) Subset.rfl
+    have h₂' := h₂.congr_mono (f₁ := fun r ↦ if r ≤ c then f r else g r) (t := Ici c)
+      (fun r hr ↦ by
+        split_ifs with h
+        · exact (le_antisymm h hr) ▸ hfg
+        · rfl)
+      ((ite_eq_left le_rfl).trans hfg) Subset.rfl
+    rw [ite_eq_left le_rfl]
+    exact ((h₁'.union (by convert h₂' using 1; rw [hfg])).hasMFDerivAt
+      (by rw [Iic_union_Ici]; exact Filter.univ_mem))
+  · rw [ite_eq_right (not_le.mpr h)]
+    exact (hg h.le).congr_of_eventuallyEq_abuse
+      ((eventually_gt_nhds h).mono fun r hr ↦ ite_eq_right (not_le.mpr hr))
+
+/-- Extend a constant solution on a closed interval by local solutions at its endpoints. -/
+private theorem exists_hasMFDerivAt_eq_const_on_Icc [CompleteSpace E] [T2Space M]
+    [IsManifold I 1 M] [BoundarylessManifold I M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {a b : ℝ} {x : M} (hab : a ≤ b) (hx : ∀ u ∈ Icc a b, X u x = 0) :
+    ∃ (γ : ℝ → M) (l r : ℝ), l < a ∧ b < r ∧ (∀ u ∈ Icc a b, γ u = x) ∧
+      ∀ u ∈ Ioo l r, HasMFDerivAt 𝓘(ℝ, ℝ) I γ u
+        ((1 : ℝ →L[ℝ] ℝ).smulRight (X u (γ u))) := by
+  obtain ⟨l, q, ha, -, hf⟩ := exists_Ioo_of_mem_timeDependentFlowDomain
+    (mem_timeDependentFlowDomain_self hX a x)
+  obtain ⟨p, r, hb, -, hg⟩ := exists_Ioo_of_mem_timeDependentFlowDomain
+    (mem_timeDependentFlowDomain_self hX b x)
+  let γ : ℝ → M := fun u ↦ if u ≤ a then timeDependentFlowOf X a u x
+    else if u ≤ b then x else timeDependentFlowOf X b u x
+  refine ⟨γ, l, r, ha.1, hb.2, ?_, ?_⟩
+  · intro u hu
+    dsimp only [γ]
+    split_ifs with hua hub
+    · rw [le_antisymm hua hu.1, timeDependentFlowOf_self]
+    · rfl
+    · exact (hub hu.2).elim
+  · intro u hu
+    apply hasMFDerivAt_timeDependent_piecewise (c := a)
+    · rw [timeDependentFlowOf_self, ite_eq_left hab]
+    · intro hua
+      exact hasMFDerivAt_timeDependentFlowOf hX (hf u ⟨hu.1, hua.trans_lt ha.2⟩)
+    · intro hau
+      apply hasMFDerivAt_timeDependent_piecewise (c := b)
+      · exact (timeDependentFlowOf_self X b x).symm
+      · intro hub
+        rw [hx u ⟨hau, hub⟩, ContinuousLinearMap.smulRight_zero]
+        exact hasMFDerivAt_const x u
+      · intro hbu
+        exact hasMFDerivAt_timeDependentFlowOf hX (hg u ⟨hb.1.trans_le hbu, hu.2⟩)
+
+/-- A point where the field vanishes throughout the closed interval between `s` and `t` belongs
+to the domain of the time-dependent flow from `s` to `t`. No stationarity outside that interval
+is required. -/
+theorem mem_timeDependentFlowDomain_of_forall_mem_uIcc_eq_zero [CompleteSpace E] [T2Space M]
+    [IsManifold I 1 M] [BoundarylessManifold I M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {x : M} (s t : ℝ) (hx : ∀ u ∈ uIcc s t, X u x = 0) :
+    ((s, t), x) ∈ timeDependentFlowDomain X := by
+  obtain ⟨γ, l, r, hl, hr, hγx, hγ⟩ :=
+    exists_hasMFDerivAt_eq_const_on_Icc hX (min_le_max (a := s) (b := t)) hx
+  have hs : s ∈ Ioo l r :=
+    ⟨hl.trans_le (min_le_left s t), (le_max_left s t).trans_lt hr⟩
+  have ht : t ∈ Ioo l r :=
+    ⟨hl.trans_le (min_le_right s t), (le_max_right s t).trans_lt hr⟩
+  simpa only [hγx s left_mem_uIcc] using mem_timeDependentFlowDomain_of_hasMFDerivAt hγ hs ht
+
+/-- The time-dependent flow from `s` to `t` fixes a point where the field vanishes throughout
+the closed interval between those times. -/
+theorem timeDependentFlowOf_eq_self_of_forall_mem_uIcc_eq_zero [CompleteSpace E] [T2Space M]
+    [IsManifold I 1 M] [BoundarylessManifold I M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {x : M} (s t : ℝ) (hx : ∀ u ∈ uIcc s t, X u x = 0) :
+    timeDependentFlowOf X s t x = x := by
+  obtain ⟨γ, l, r, hl, hr, hγx, hγ⟩ :=
+    exists_hasMFDerivAt_eq_const_on_Icc hX (min_le_max (a := s) (b := t)) hx
+  have hs : s ∈ Ioo l r :=
+    ⟨hl.trans_le (min_le_left s t), (le_max_left s t).trans_lt hr⟩
+  have ht : t ∈ Ioo l r :=
+    ⟨hl.trans_le (min_le_right s t), (le_max_right s t).trans_lt hr⟩
+  simpa only [hγx s left_mem_uIcc, hγx t right_mem_uIcc] using
+    timeDependentFlowOf_eq_of_hasMFDerivAt hX hγ hs ht
 
 /-! ### Time maps as partial diffeomorphisms -/
 

@@ -9,6 +9,8 @@ public import TauCeti.Dynamics.Flow.Variational
 public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 -- Private: compactly supported `C¹` maps are Lipschitz; used only inside the proof.
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+-- Private: the variational derivative is constant when its time derivative vanishes.
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Time-dependent flows near a rest point
@@ -27,6 +29,10 @@ globally Lipschitz, and takes the global time-dependent flow `TauCeti.timeDepend
 diffeomorphism of the whole space, and for every `x` near `x₀` and `t ∈ [0, 1]` the point `ψₜ x`
 stays in `U`, the orbit solves `∂ₜ ψₜ x = Xₜ (ψₜ x)`, and the derivative `Dψₜ(x)` solves the
 variational equation `∂ₜ Dψₜ(x) = DXₜ(ψₜ x) ∘ Dψₜ(x)`.
+
+If the spatial derivative of the field also vanishes at `x₀` for `t ∈ [0, 1]`,
+`TauCeti.exists_localFlow_hasFDerivAt_id` gives such a local flow whose time-one map has identity
+derivative at `x₀`.
 
 These are exactly the hypotheses of Moser's identity
 (`TauCeti.compContinuousLinearMap_fderiv_eq_of_curryLeft_eq_neg`), so this is the flow used in
@@ -134,5 +140,41 @@ theorem exists_eventually_forall_hasDerivAt_fderiv_of_contDiffOn {X : ℝ → E 
     exact hasDerivAt_timeDependentFlow Y hS 0 t x
   · rw [← hEq.fderiv_eq]
     exact hasDerivAt_fderiv_timeDependentFlow hS (hY.of_le hr') 0 t x
+
+/-- A jointly `C¹` time-dependent field on `T × U`, with `T ⊇ [0, 1]` and `U ∋ z₀` open,
+which vanishes at `z₀` for all times in `T` and has zero spatial derivative there on `[0, 1]`,
+admits a local flow whose time-one map has identity derivative at `z₀`. Nearby orbits stay in `U`
+and solve the given field equation up to time one. -/
+theorem exists_localFlow_hasFDerivAt_id {Y : ℝ → E → E} {T : Set ℝ} {U : Set E} {z₀ : E}
+    (hT : IsOpen T) (hU : IsOpen U) (hTI : Icc 0 1 ⊆ T) (hz₀ : z₀ ∈ U)
+    (hY : ContDiffOn ℝ 1 (fun p : ℝ × E ↦ Y p.1 p.2) (T ×ˢ U))
+    (hYzero : ∀ τ ∈ T, Y τ z₀ = 0)
+    (hYderiv : ∀ τ ∈ Icc (0 : ℝ) 1, fderiv ℝ (Y τ) z₀ = 0) :
+    ∃ ψ : ℝ → E → E, ψ 0 = id ∧
+      HasFDerivAt (ψ 1) (ContinuousLinearMap.id ℝ E) z₀ ∧
+      ∀ᶠ z in 𝓝 z₀, ∀ τ ∈ Icc (0 : ℝ) 1,
+        ψ τ z ∈ U ∧ HasDerivAt (fun r ↦ ψ r z) (Y τ (ψ τ z)) τ := by
+  obtain ⟨ψ, ψ', hψ, -, -, -, hψ₀, hψfix, hev⟩ :=
+    exists_eventually_forall_hasDerivAt_fderiv_of_contDiffOn (r := 1) le_rfl
+      hT hU hTI hz₀ hY hYzero
+  have hψx (τ : ℝ) : ψ τ z₀ = z₀ := hψfix _ hYzero τ
+  have hDψ (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) :
+      HasDerivAt (fun r ↦ fderiv ℝ (ψ r) z₀) 0 τ := by
+    simpa only [hψx, hYderiv τ hτ, ContinuousLinearMap.zero_comp] using
+      (hev.self_of_nhds τ hτ).2.2
+  have hDψ₁ : fderiv ℝ (ψ 1) z₀ = ContinuousLinearMap.id ℝ E := by
+    have hbound := (convex_Icc (0 : ℝ) 1).norm_image_sub_le_of_norm_deriv_le
+      (fun τ hτ ↦ (hDψ τ hτ).differentiableAt)
+      (fun τ hτ ↦ by rw [(hDψ τ hτ).deriv, norm_zero])
+      (left_mem_Icc.2 zero_le_one) (right_mem_Icc.2 zero_le_one)
+    have hcst : fderiv ℝ (ψ 1) z₀ = fderiv ℝ (ψ 0) z₀ := by
+      simpa only [zero_mul, norm_le_zero_iff, sub_eq_zero] using hbound
+    simpa only [hψ₀, fderiv_id] using hcst
+  have hψderiv : HasFDerivAt (ψ 1) (ContinuousLinearMap.id ℝ E) z₀ := by
+    rw [← hDψ₁]
+    exact (hψ.differentiable one_ne_zero _).hasFDerivAt
+  refine ⟨ψ, hψ₀, hψderiv, ?_⟩
+  filter_upwards [hev] with z hz τ hτ
+  exact ⟨(hz τ hτ).1, (hz τ hτ).2.1⟩
 
 end TauCeti

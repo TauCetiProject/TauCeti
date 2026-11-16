@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
-public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -85,9 +83,6 @@ they give the classical coordinate formula for `∇ σ` along a frame direction.
   of the Christoffel form.
 * `TauCeti.Manifold.covariantDerivative_apply_localFrame_eq_sum`: the classical coordinate
   formula `(∇_{eᵢ} σ)ᵏ = dσᵏ(eᵢ) + ∑ j, σʲ Γᵏᵢⱼ`.
-
-* `IsCovariantDerivativeOn.jet_eq_zero_of_eq_zero`: a section with zero value and covariant
-  derivative has zero intrinsic first jet, even for a connection given only locally.
 
 ## References
 
@@ -807,76 +802,3 @@ theorem covariantDerivative_apply_localFrame_eq_sum [Fintype ι]
 end TangentBundle
 
 end TauCeti.Manifold
-
-
-namespace IsCovariantDerivativeOn
-
-open Bundle Set TauCeti TauCeti.Manifold
-open scoped Manifold Topology
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
-  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
-  [FiberBundle F V] [VectorBundle 𝕜 F V] [ContMDiffVectorBundle 1 F V I]
-  {cov : (Π x : M, V x) → Π x : M, TangentSpace I x →L[𝕜] V x}
-  {U : Set M} {x : M} {σ : Π x : M, V x}
-
-/-- A differentiable section with zero value and zero covariant derivative has zero first jet.
-The connection laws are needed only on a set containing the point.
--/
-theorem jet_eq_zero_of_eq_zero (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U)
-    (hσ : MDifferentiableAt I (I.prod 𝓘(𝕜, F))
-      (fun y ↦ (⟨y, σ y⟩ : TotalSpace F V)) x)
-    (hzero : σ x = 0) (hcovzero : cov σ x = 0) :
-    FirstJetBundle.jet I F σ x = 0 := by
-  let e := trivializationAt F V x
-  let b := Module.finBasis 𝕜 F
-  let g : M → F := fun y ↦ (e ⟨y, σ y⟩).2
-  have he : x ∈ e.baseSet := mem_baseSet_trivializationAt F V x
-  have hg : MDifferentiableAt I 𝓘(𝕜, F) g x :=
-    (e.mdifferentiableAt_section_iff I σ he).1 hσ
-  have hcoeff : ∀ i, (fun y ↦ e.localFrameCoeff I b i y (σ y)) =ᶠ[𝓝 x]
-      fun y ↦ b.coord i (g y) := by
-    intro i
-    filter_upwards [e.open_baseSet.mem_nhds he] with y hy
-    exact e.localFrameCoeff_eq_coeff hy
-  -- This is the local-frame comparison underlying `covariantDerivative_eq_add_christoffelForm`.
-  have hg' : HasMFDerivAt I 𝓘(𝕜, F) g x (mvfderiv I g x) := by
-    apply hg.hasMFDerivAt.congr_mfderiv
-    ext v
-    exact (mvfderiv_apply_eq_mfderiv_apply g x v).symm
-  have hflat := frameCovariantDerivative_eq_symmL_comp b hg' hcoeff he
-  have hcovU := hcov.mono (s := U ∩ e.baseSet) inter_subset_left
-  have hflatU := (isCovariantDerivativeOn_frameCovariantDerivative (I := I) (e := e) b).mono
-    (s := U ∩ e.baseSet) inter_subset_right
-  have h := (hcovU.difference hflatU x).map_zero
-  rw [← hzero, hcovU.difference_apply hflatU ⟨hx, he⟩ hσ,
-    hcovzero, zero_sub, neg_eq_zero, hflat] at h
-  have hD : mvfderiv I g x = 0 := by
-    ext v
-    have hv := congrArg (fun L : TangentSpace I x →L[𝕜] V x ↦
-      e.continuousLinearMapAt 𝕜 x (L v)) h
-    simp only [ContinuousLinearMap.comp_apply, zero_apply, map_zero] at hv
-    rw [e.continuousLinearMapAt_symmL he] at hv
-    simpa only [zero_apply] using hv
-  have hf := hg.hasMFDerivAt
-  rw [TauCeti.mvfderiv_eq_zero_iff.1 hD] at hf
-  have hd : HasFDerivWithinAt (g ∘ (extChartAt I x).symm) (0 : E →L[𝕜] F)
-      (range I) (extChartAt I x x) := by
-    simpa only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-      Function.id_comp, ContinuousLinearMap.comp_zero, ContinuousLinearMap.zero_comp] using hf.2
-  apply Prod.ext
-  · rw [FirstJetBundle.jet_fst, hzero, ← e.continuousLinearMapAt_apply_of_mem 𝕜 he, map_zero]
-    rfl
-  · rw [FirstJetBundle.jet_snd]
-    have hrep : FirstJetBundle.localRep I F σ x = g ∘ (extChartAt I x).symm :=
-      funext fun z ↦ FirstJetBundle.localRep_apply I F σ x z
-    rw [hrep]
-    exact hd.fderivWithin I.uniqueDiffWithinAt_image
-
-end IsCovariantDerivativeOn
