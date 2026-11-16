@@ -195,12 +195,9 @@ theorem isZero_singularHomology_sphereFibration_of_lt {m : ℕ} (hm : m < n) :
   obtain ⟨i, rfl⟩ : ∃ i, n = i + 1 := ⟨n - 1, by omega⟩
   refine (isZero_singularHomology_preimage_skeletonLT (C := univ) hp R
     (k := ((i + 1 + 1 : ℕ) : ℕ∞)) (by norm_cast; omega) (by omega : m ≤ i)).of_iso ?_
-  refine (TopPair.singularHomologyMapIso (ModuleCat.of R R) ?_ m).symm
-  exact TopPair.ofInclusionIsoOfSubset _
-    (fun x ↦ by rw [mem_preimage, skeletonLT_succ_sphereRelCWComplex h]; exact mem_univ _)
-    (fun x ↦ by
-      rw [mem_preimage, mem_preimage, show (i : ℕ∞) + 1 = ((i + 1 : ℕ) : ℕ∞) by norm_cast,
-        skeletonLT_sphereRelCWComplex h (by omega) le_rfl])
+  -- `(i : ℕ∞) + 1` and `((i + 1 : ℕ) : ℕ∞)` are defeq, so the pair is `preimageSkeletonPair p _ n`.
+  exact (TopPair.singularHomologyMapIso (ModuleCat.of R R) (preimageSkeletonPairIso h (by omega))
+    m).symm
 
 section Contractible
 
