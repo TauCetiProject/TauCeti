@@ -7,11 +7,9 @@ module
 
 public import TauCeti.Combinatorics.Hive.Fibre
 import Mathlib.Data.Int.Order.Lemmas
-import Mathlib.Tactic.Abel
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Ring
 
 /-!
 # The product chart and determinant-shift equivalences on hives
@@ -51,8 +49,8 @@ Gelfand–Tsetlin patterns:
 
 * A. Knutson and T. Tao, *The honeycomb model of $\mathrm{GL}_n(\mathbb{C})$ tensor products I:
   proof of the saturation conjecture*, J. Amer. Math. Soc. **12** (1999), 1055–1090, Appendix 2.
-* A. S. Buch, *The saturation conjecture (after A. Knutson and T. Tao)*, Enseign. Math. (2) **46**
-  (2000), 43–60, Appendix A.
+* A. S. Buch, *The saturation conjecture (after A. Knutson and T. Tao)*, with an appendix by
+  W. Fulton, Enseign. Math. (2) **46** (2000), 43–60, §1 and Appendix A.
 -/
 
 public section
@@ -211,19 +209,8 @@ theorem isRhombus_ofChart_horiz {n i j : ℕ} (hij : i ≤ j) (hjn : j + 2 ≤ n
       (Vertex.ofChart n i j hij (by omega))
       (Vertex.ofChart n (i + 1) (j + 1) (by omega) (by omega))
       (Vertex.ofChart n (i + 1) (j + 2) (by omega) hjn) := by
-  have hx0 : ((n - j : ℕ) : ℤ) = (n : ℤ) - j := by omega
-  have hx1 : ((n - (j + 1) : ℕ) : ℤ) = (n : ℤ) - j - 1 := by omega
-  have hx2 : ((n - (j + 2) : ℕ) : ℤ) = (n : ℤ) - j - 2 := by omega
-  have hy00 : ((j - i : ℕ) : ℤ) = (j : ℤ) - i := by omega
-  have hy01 : ((j + 1 - i : ℕ) : ℤ) = (j : ℤ) - i + 1 := by omega
-  have hy11 : ((j + 1 - (i + 1) : ℕ) : ℤ) = (j : ℤ) - i := by omega
-  have hy12 : ((j + 2 - (i + 1) : ℕ) : ℤ) = (j : ℤ) - i + 1 := by omega
-  refine ⟨by simp; omega, by simp; omega, by simp, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals
-    rw [Vertex.sqDist_def]
-    simp only [Vertex.ofChart_x, Vertex.ofChart_y, Vertex.ofChart_z,
-      hx0, hx1, hx2, hy00, hy01, hy11, hy12, Nat.cast_add, Nat.cast_one]
-    ring
+  convert isRhombus_ofYZ_step (n := n) (y := j - i) (z := i) (by omega) using 1 <;>
+    ext <;> simp <;> omega
 
 /-- Elementary `(i, j)` grid cell unit rhombus (`0 ≤ i < j < n`), with obtuse corners
 `(i, j), (i + 1, j + 1)` and acute corners `(i + 1, j), (i, j + 1)`. -/
@@ -233,18 +220,9 @@ theorem isRhombus_ofChart_cell {n i j : ℕ} (hij : i < j) (hjn : j < n) :
       (Vertex.ofChart n (i + 1) j hij hjn.le)
       (Vertex.ofChart n (i + 1) (j + 1) (by omega) hjn)
       (Vertex.ofChart n i (j + 1) (by omega) hjn) := by
-  have hx0 : ((n - j : ℕ) : ℤ) = (n : ℤ) - j := by omega
-  have hx1 : ((n - (j + 1) : ℕ) : ℤ) = (n : ℤ) - j - 1 := by omega
-  have hy00 : ((j - i : ℕ) : ℤ) = (j : ℤ) - i := by omega
-  have hy10 : ((j - (i + 1) : ℕ) : ℤ) = (j : ℤ) - i - 1 := by omega
-  have hy11 : ((j + 1 - (i + 1) : ℕ) : ℤ) = (j : ℤ) - i := by omega
-  have hy01 : ((j + 1 - i : ℕ) : ℤ) = (j : ℤ) - i + 1 := by omega
-  refine ⟨by simp, by simp; omega, by simp; omega, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals
-    rw [Vertex.sqDist_def]
-    simp only [Vertex.ofChart_x, Vertex.ofChart_y, Vertex.ofChart_z,
-      hx0, hx1, hy00, hy10, hy11, hy01, Nat.cast_add, Nat.cast_one]
-    ring
+  refine (isRhombus_of_hasStep_iff (v := ![0, 1, -1]) (w := ![-1, 1, 0])
+    (isUnitStep_iff.mpr (by decide)) (isUnitStep_iff.mpr (by decide)) ?_ ?_ ?_).mpr (by decide)
+  all_goals rw [hasStep_iff]; intro s; fin_cases s <;> simp <;> omega
 
 /-- Vertical-strip unit rhombus in `(i, j)` coordinates (`0 ≤ i < j < n`), with obtuse corners
 `(i + 1, j), (i + 1, j + 1)` and acute corners `(i, j), (i + 2, j + 1)`. -/
@@ -254,18 +232,9 @@ theorem isRhombus_ofChart_vert {n i j : ℕ} (hij : i < j) (hjn : j < n) :
       (Vertex.ofChart n i j hij.le hjn.le)
       (Vertex.ofChart n (i + 1) (j + 1) (by omega) hjn)
       (Vertex.ofChart n (i + 2) (j + 1) (by omega) hjn) := by
-  have hx0 : ((n - j : ℕ) : ℤ) = (n : ℤ) - j := by omega
-  have hx1 : ((n - (j + 1) : ℕ) : ℤ) = (n : ℤ) - j - 1 := by omega
-  have hy00 : ((j - i : ℕ) : ℤ) = (j : ℤ) - i := by omega
-  have hy10 : ((j - (i + 1) : ℕ) : ℤ) = (j : ℤ) - i - 1 := by omega
-  have hy11 : ((j + 1 - (i + 1) : ℕ) : ℤ) = (j : ℤ) - i := by omega
-  have hy21 : ((j + 1 - (i + 2) : ℕ) : ℤ) = (j : ℤ) - i - 1 := by omega
-  refine ⟨by simp, by simp; omega, by simp; omega, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals
-    rw [Vertex.sqDist_def]
-    simp only [Vertex.ofChart_x, Vertex.ofChart_y, Vertex.ofChart_z,
-      hx0, hx1, hy00, hy10, hy11, hy21, Nat.cast_add, Nat.cast_one, Nat.cast_ofNat]
-    ring
+  refine (isRhombus_of_hasStep_iff (v := ![0, -1, 1]) (w := ![-1, 0, 1])
+    (isUnitStep_iff.mpr (by decide)) (isUnitStep_iff.mpr (by decide)) ?_ ?_ ?_).mpr (by decide)
+  all_goals rw [hasStep_iff]; intro s; fin_cases s <;> simp <;> omega
 
 private theorem unit_chart_step {u v : ℤ} (h : (-v) ^ 2 + (v - u) ^ 2 + u ^ 2 = 2) :
     (u = 0 ∧ v = 1) ∨ (u = 1 ∧ v = 1) ∨ (u = 1 ∧ v = 0) ∨
@@ -346,37 +315,13 @@ private theorem le_of_isRhombus_oriented {n : ℕ} {R : Type*} [AddCommGroup R] 
   have := hr.midpoint_x; have := hr.midpoint_y; have := hr.midpoint_z
   rcases chart_steps_of_isRhombus_oriented hr hbz hord with
     ⟨hu, hv, hu', hv'⟩ | ⟨hu, hv, hu', hv'⟩ | ⟨hu, hv, hu', hv'⟩
-  · have hij : b.z ≤ n - b.x := by omega
-    have hjn : (n - b.x) + 2 ≤ n := by omega
-    have hb_eq : b = Vertex.ofChart n b.z (n - b.x) hij (by omega) := by simp
-    have hd_eq : d = Vertex.ofChart n (b.z + 1) ((n - b.x) + 2) (by omega) hjn := by
-      ext <;> simp <;> omega
-    have ha_eq : a = Vertex.ofChart n b.z ((n - b.x) + 1) (by omega) (by omega) := by
-      ext <;> simp <;> omega
-    have hc_eq : c = Vertex.ofChart n (b.z + 1) ((n - b.x) + 1) (by omega) (by omega) := by
-      ext <;> simp <;> omega
-    rw [congrArg f hb_eq, congrArg f hd_eq, congrArg f ha_eq, congrArg f hc_eq]
-    exact hH b.z (n - b.x) hij hjn
-  · have hij : b.z < n - d.x := by omega
-    have hjn : n - d.x < n := by omega
-    have hb_eq : b = Vertex.ofChart n b.z ((n - d.x) + 1) (by omega) hjn := by
-      ext <;> simp <;> omega
-    have hd_eq : d = Vertex.ofChart n (b.z + 1) (n - d.x) hij hjn.le := by ext <;> simp <;> omega
-    have ha_eq : a = Vertex.ofChart n b.z (n - d.x) hij.le hjn.le := by ext <;> simp <;> omega
-    have hc_eq : c = Vertex.ofChart n (b.z + 1) ((n - d.x) + 1) (by omega) hjn := by
-      ext <;> simp <;> omega
-    rw [congrArg f hb_eq, congrArg f hd_eq, congrArg f ha_eq, congrArg f hc_eq, add_comm]
-    exact hC b.z (n - d.x) hij hjn
-  · have hij : b.z < n - b.x := by omega
-    have hjn : n - b.x < n := by omega
-    have hb_eq : b = Vertex.ofChart n b.z (n - b.x) hij.le hjn.le := by simp
-    have hd_eq : d = Vertex.ofChart n (b.z + 2) ((n - b.x) + 1) (by omega) hjn := by
-      ext <;> simp <;> omega
-    have ha_eq : a = Vertex.ofChart n (b.z + 1) (n - b.x) hij hjn.le := by ext <;> simp <;> omega
-    have hc_eq : c = Vertex.ofChart n (b.z + 1) ((n - b.x) + 1) (by omega) hjn := by
-      ext <;> simp <;> omega
-    rw [congrArg f hb_eq, congrArg f hd_eq, congrArg f ha_eq, congrArg f hc_eq]
-    exact hV b.z (n - b.x) hij hjn
+  · convert hH b.z (n - b.x) (by omega) (by omega) using 2 <;>
+      congr 1 <;> ext <;> simp <;> omega
+  · rw [add_comm (f b) (f d)]
+    convert hC b.z (n - d.x) (by omega) (by omega) using 2 <;>
+      congr 1 <;> ext <;> simp <;> omega
+  · convert hV b.z (n - b.x) (by omega) (by omega) using 2 <;>
+      congr 1 <;> ext <;> simp <;> omega
 
 /-- **Rhombus concavity in the `(i, j)` chart**: a lattice function is rhombus-concave if and only
 if it satisfies the horizontal, elementary-cell, and vertical unit-rhombus inequalities in

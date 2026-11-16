@@ -109,18 +109,8 @@ theorem schur_mul_eq_finsum_hiveCount {n : ℕ} {R : Type*} [CommSemiring R]
       simp [emb, weightOfShape_shape hpol]
     · simp [hpol] at hcnt
   rw [finsum_eq_sum_of_support_subset _ hsupp, Finset.sum_image fun _ _ _ _ h => hemb_inj h,
-    diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau]
-  rw [← Finset.sum_filter_add_sum_filter_not Finset.univ
-    (fun ν : (lam.shape.card + μ.shape.card).Partition => (ofPartition ν).colLen 0 ≤ n)]
-  have hzero : (∑ ν ∈ Finset.univ.filter
-      (fun ν : (lam.shape.card + μ.shape.card).Partition => ¬ (ofPartition ν).colLen 0 ≤ n),
-      Nat.card (LRTableau lam.shape (ofPartition ν) μ.shape) •
-        diagramSchurPoly n R (ofPartition ν)) = 0 := by
-    refine Finset.sum_eq_zero fun ν hν => ?_
-    have hlt : n < (ofPartition ν).colLen 0 := Nat.lt_of_not_le (Finset.mem_filter.mp hν).2
-    rw [diagramSchurPoly_eq_zero_of_lt_colLen hlt, smul_zero]
-  rw [hzero, add_zero, Finset.sum_subtype (p := fun ν => (ofPartition ν).colLen 0 ≤ n) _
-    (fun _ => Finset.mem_filter.trans (and_iff_right (Finset.mem_univ _)))]
+    diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau,
+    sum_nsmul_diagramSchurPoly_eq_sum_colLen_le]
   refine Finset.sum_congr rfl fun ν _ => ?_
   have hsh : (emb ν).shape = ofPartition ν.1 := shape_weightOfShape ν.2
   have hpol : (emb ν).IsPolynomial := isPolynomial_weightOfShape n (ofPartition ν.1)
@@ -189,6 +179,21 @@ private theorem sum_natCard_lrTableau_shift_eq_hiveCount {n : ℕ} (lam μ γ : 
         rw [h, DominantWeight.detShift_shift]; omega
     dsimp only [w] at hne'; simp only [hne', ↓reduceIte]
 
+/-- Unbundled direct-sum decomposition of `rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ`. -/
+private theorem nonempty_equiv_fdrep_tensor_rationalWeyl {n : ℕ} (lam μ : DominantWeight n) :
+    Nonempty (Representation.Equiv
+      (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ).ρ
+      (Representation.directSum fun p :
+          Σ ν : {ν : (lam.detShiftShape.card + μ.detShiftShape.card).Partition //
+              (ofPartition ν).colLen 0 ≤ n},
+            {T : BoundedSSYT n μ.detShiftShape //
+              T.1.IsYamanouchi lam.detShiftShape ∧
+                ∀ i, lam.detShiftShape.rowLen i + T.1.content i = (ofPartition ν.1).rowLen i} =>
+        (rationalWeylFDRep ℂ n
+          ((weightOfShape n (ofPartition p.1.1)).shift (lam.detShift + μ.detShift))).ρ)) :=
+  let ⟨e⟩ := nonempty_equiv_tprod_rationalWeylRep n lam μ
+  ⟨(FDRep.tprodEquiv _ _).trans e⟩
+
 /-- **The hive model of tensor-product multiplicities for `GL n ℂ`**: for all dominant weights
 `λ, μ, γ` of `GL n ℂ`, the complex dimension of the space of intertwiners from `V_γ` to
 `V_λ ⊗ V_μ` in `FDRep ℂ (GL (Fin n) ℂ)` is `hiveCount (productBoundary λ μ γ)`. -/
@@ -197,26 +202,12 @@ theorem finrank_hom_eq_hiveCount {n : ℕ} (lam μ γ : DominantWeight n) :
         rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ) =
       hiveCount (productBoundary lam μ γ) := by
   classical
-  let Sub := {ν : (lam.detShiftShape.card + μ.detShiftShape.card).Partition //
-    (ofPartition ν).colLen 0 ≤ n}
-  let Fib (ν : Sub) := {T : BoundedSSYT n μ.detShiftShape //
-    T.1.IsYamanouchi lam.detShiftShape ∧
-      ∀ i, lam.detShiftShape.rowLen i + T.1.content i = (ofPartition ν.1).rowLen i}
-  let w (ν : Sub) : DominantWeight n :=
-    (weightOfShape n (ofPartition ν.1)).shift (lam.detShift + μ.detShift)
-  obtain ⟨e⟩ := nonempty_equiv_tprod_rationalWeylRep n lam μ
-  have he : Representation.Equiv
-      (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ).ρ
-      (Representation.directSum fun p : Σ ν : Sub, Fib ν =>
-        (rationalWeylFDRep ℂ n (w p.1)).ρ) :=
-    (FDRep.tprodEquiv _ _).trans e
+  obtain ⟨he⟩ := nonempty_equiv_fdrep_tensor_rationalWeyl lam μ
   rw [FDRep.finrank_hom_of_equiv_directSum _ _ _ he, Fintype.sum_sigma,
     ← sum_natCard_lrTableau_shift_eq_hiveCount lam μ γ]
   refine Finset.sum_congr rfl fun ν _ => ?_
   simp only [finrank_hom_rationalWeylFDRep, Finset.sum_const, Finset.card_univ, smul_eq_mul,
-    mul_boole]
-  dsimp only [w, Fib]
-  rw [card_boundedYamanouchi_eq_natCard_lrTableau ν.2]
+    mul_boole, card_boundedYamanouchi_eq_natCard_lrTableau ν.2]
 
 /-- **Symmetry of hive counts in the two inputs**: `c^p_{l, m} = c^p_{m, l}` for all dominant
 weights `l, m, p` of `GL n`. -/
@@ -236,11 +227,7 @@ private theorem nonempty_iso_tensorUnit_rationalWeylFDRep_zero (n : ℕ) :
   obtain ⟨e⟩ := IsRationalRep.nonempty_equiv_of_forall_character_diagGL_eq
     (isRationalRep_detPowerRep (n := n) 0) (isRationalRep_rationalWeylRep n 0) fun t => by
       have hlhs : (detPowerRep ℂ n 0).character (diagGL t) = 1 := by
-        rw [detPowerRep_zero]
-        have htriv : (1 : Representation ℂ (GL (Fin n) ℂ) ℂ) =
-            Representation.trivial ℂ (GL (Fin n) ℂ) ℂ :=
-          MonoidHom.ext fun _ => LinearMap.ext fun _ => rfl
-        rw [htriv, Representation.char_trivial, Module.finrank_self, Nat.cast_one]
+        rw [char_detPowerRep, zpow_zero, Units.val_one]
       have hrhs : Representation.character
           (V := ↥(weylModuleOfShape ℂ n (0 : DominantWeight n).detShiftShape).toSubmodule)
           (rationalWeylRep ℂ n 0) (diagGL t) = 1 := by
@@ -248,12 +235,24 @@ private theorem nonempty_iso_tensorUnit_rationalWeylFDRep_zero (n : ℕ) :
           diagramSchurPoly_bot]
         simp
       rw [hlhs, hrhs]
+  -- `𝟙_ (FDRep ℂ (GL (Fin n) ℂ))` has carrier `ℂ` definitionally (cf. `FDRep.char_tensorUnit`).
   refine ⟨e.toLinearEquiv.toFDRepIso fun g x => ?_⟩
   have hunit : (𝟙_ (FDRep ℂ (GL (Fin n) ℂ))).ρ g x = detPowerRep ℂ n 0 g x := by
-    rw [FDRep.tensorUnit_ρ, detPowerRep_zero]
-    rfl
+    rw [FDRep.tensorUnit_ρ]
+    simp [detPowerRep_zero]
   rw [hunit]
   exact LinearMap.ext_iff.mp (e.toIntertwiningMap.isIntertwining' g) x
+
+private noncomputable def directSumEquivCongr {k G ι : Type*} [Semiring k] [Monoid G]
+    {V W : ι → Type*} [∀ i, AddCommMonoid (V i)] [∀ i, Module k (V i)]
+    [∀ i, AddCommMonoid (W i)] [∀ i, Module k (W i)]
+    {ρ : ∀ i, Representation k G (V i)} {σ : ∀ i, Representation k G (W i)}
+    (e : ∀ i, (ρ i).Equiv (σ i)) :
+    (Representation.directSum ρ).Equiv (Representation.directSum σ) :=
+  .mk (DirectSum.congrLinearEquiv fun i => (e i).toLinearEquiv) fun g =>
+    LinearMap.ext fun x => DFinsupp.ext fun i => by
+      simpa [Representation.directSum_apply, DirectSum.coe_congrLinearEquiv] using
+        LinearMap.ext_iff.mp ((e i).toIntertwiningMap.isIntertwining' g) (x i)
 
 /-- **The invariant form of the hive model for `GL n ℂ`**: for all dominant weights `λ, μ, ν` of
 `GL n ℂ`, the complex dimension of the space of `GL n ℂ`-invariants
@@ -267,34 +266,14 @@ theorem finrank_invariants_eq_hiveCount {n : ℕ} (lam μ ν : DominantWeight n)
   classical
   obtain ⟨i₀⟩ := nonempty_iso_tensorUnit_rationalWeylFDRep_zero n
   rw [(Linear.homCongr ℂ i₀ (α_ _ _ _).symm).finrank_eq]
-  let Sub := {κ : (lam.detShiftShape.card + μ.detShiftShape.card).Partition //
-    (ofPartition κ).colLen 0 ≤ n}
-  let Fib (κ : Sub) := {T : BoundedSSYT n μ.detShiftShape //
-    T.1.IsYamanouchi lam.detShiftShape ∧
-      ∀ i, lam.detShiftShape.rowLen i + T.1.content i = (ofPartition κ.1).rowLen i}
-  let w (p : Σ κ : Sub, Fib κ) : DominantWeight n :=
-    (weightOfShape n (ofPartition p.1.1)).shift (lam.detShift + μ.detShift)
-  obtain ⟨e₁₂⟩ := nonempty_equiv_tprod_rationalWeylRep n lam μ
-  let eTensor₁₂ := FDRep.tprodEquiv (rationalWeylFDRep ℂ n lam) (rationalWeylFDRep ℂ n μ)
-  let eTensor₃ := FDRep.tprodEquiv
-    (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ) (rationalWeylFDRep ℂ n ν)
-  let eSumTensor : Representation.Equiv
-      (Representation.directSum fun p =>
-        Representation.tprod (rationalWeylFDRep ℂ n (w p)).ρ (rationalWeylFDRep ℂ n ν).ρ)
-      (Representation.directSum fun p =>
-        (rationalWeylFDRep ℂ n (w p) ⊗ rationalWeylFDRep ℂ n ν).ρ) :=
-    .mk (LinearEquiv.refl ℂ (⨁ p, ↥(rationalWeylFDRep ℂ n (w p) ⊗ rationalWeylFDRep ℂ n ν)))
-      fun g => LinearMap.ext fun x => DFinsupp.ext fun p => by
-        simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Representation.directSum_apply,
-          DirectSum.lmap_apply, Representation.tprod_apply]
-        rw [FDRep.tensor_ρ]
-        rfl
-  have he₃ : Representation.Equiv
-      ((rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ) ⊗ rationalWeylFDRep ℂ n ν).ρ
-      (Representation.directSum fun p =>
-        (rationalWeylFDRep ℂ n (w p) ⊗ rationalWeylFDRep ℂ n ν).ρ) :=
-    eTensor₃.trans <| ((eTensor₁₂.trans e₁₂).tprod (.refl _)).trans <|
-      (Representation.tprodDirectSumLeftEquiv _ _).trans eSumTensor
+  obtain ⟨he₁₂⟩ := nonempty_equiv_fdrep_tensor_rationalWeyl lam μ
+  have he₃ := (FDRep.tprodEquiv
+      (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ) (rationalWeylFDRep ℂ n ν)).trans <|
+    (he₁₂.tprod (.refl _)).trans <| (Representation.tprodDirectSumLeftEquiv _ _).trans <|
+      directSumEquivCongr fun p =>
+        (FDRep.tprodEquiv (rationalWeylFDRep ℂ n
+          ((weightOfShape n (ofPartition p.1.1)).shift (lam.detShift + μ.detShift)))
+          (rationalWeylFDRep ℂ n ν)).symm
   have hrot (σ : DominantWeight n) :
       hiveCount (productBoundary σ ν 0) = if ν.dual = σ then 1 else 0 := by
     have hb : productBoundary σ ν 0 = fun s => productBoundary 0 σ ν.dual (s + 1) := by
@@ -304,8 +283,7 @@ theorem finrank_invariants_eq_hiveCount {n : ℕ} (lam μ ν : DominantWeight n)
     ext s i; fin_cases s <;> simp
   rw [FDRep.finrank_hom_of_equiv_directSum _ _ _ he₃]
   simp only [finrank_hom_eq_hiveCount, hrot, ← finrank_hom_rationalWeylFDRep]
-  rw [← FDRep.finrank_hom_of_equiv_directSum _ _ (fun p => rationalWeylFDRep ℂ n (w p))
-      (eTensor₁₂.trans e₁₂), finrank_hom_eq_hiveCount, hdual]
+  rw [← FDRep.finrank_hom_of_equiv_directSum _ _ _ he₁₂, finrank_hom_eq_hiveCount, hdual]
 
 /-! ### Concrete representation-theoretic and finite-alphabet checks -/
 
@@ -397,17 +375,15 @@ theorem finrank_invariants_two_std_checks :
 private theorem shape_eq_of_one_two (w₁ : DominantWeight 1) (w₂ : DominantWeight 2)
     (h0 : w₁.1 0 = w₂.1 0) (h1 : w₂.1 1 = 0) : w₁.shape = w₂.shape := by
   refine YoungDiagram.rowLen_injective (funext fun i => ?_)
-  rcases Nat.eq_zero_or_pos i with rfl | hi
-  · have a := w₁.rowLen_shape 0
-    have b := w₂.rowLen_shape 0
-    simp only [Fin.val_zero, h0] at a b
-    omega
-  · rcases eq_or_ne i 1 with rfl | hi₁
-    · have a := w₁.rowLen_shape_eq_zero_of_le le_rfl
-      have b := w₂.rowLen_shape 1
-      simp only [Fin.val_one, h1] at b
-      omega
-    · rw [w₁.rowLen_shape_eq_zero_of_le (by omega), w₂.rowLen_shape_eq_zero_of_le (by omega)]
+  match i with
+  | 0 =>
+    have a := w₁.rowLen_shape 0; have b := w₂.rowLen_shape 0
+    simp only [Fin.val_zero, h0] at a b; omega
+  | 1 =>
+    have b := w₂.rowLen_shape 1
+    rw [w₁.rowLen_shape_eq_zero_of_le le_rfl]; simp only [Fin.val_one, h1] at b; omega
+  | i + 2 =>
+    rw [w₁.rowLen_shape_eq_zero_of_le (by omega), w₂.rowLen_shape_eq_zero_of_le (by omega)]
 
 /-- Sharpness of the `n`-variable alphabet in `schur_mul_eq_finsum_hiveCount`: for rank `1` weights
 `λ = μ = (1)` evaluated in `2` variables, `s_{(1)}² = s_{(2)} + s_{(1, 1)}`, whereas the rank-`1`
@@ -448,14 +424,6 @@ theorem schur_mul_two_vars_ne_finsum_hiveCount_one :
       hiveCount_two_std_std_eq, hiveCount_two_std_std_eq]
     simp [sym₂, det₂]
   rw [hlhs₂, hrhs₁] at heq
-  have heval := congrArg (MvPolynomial.eval fun _ : Fin 2 => (1 : ℤ)) (add_eq_left.mp heq)
-  rw [eval_one_diagramSchurPoly_eq_card_boundedSSYT, map_zero, Int.natCast_eq_zero] at heval
-  have : Nonempty (BoundedSSYT 2 det₂.shape) :=
-    ⟨⟨_root_.SemistandardYoungTableau.highestWeight det₂.shape, fun i c hc => by
-      rw [_root_.SemistandardYoungTableau.highestWeight_apply]
-      simp only [hc, ↓reduceIte]
-      exact (det₂.shape.mem_iff_lt_colLen.mp hc).trans_le
-        ((det₂.shape.colLen_anti 0 c (Nat.zero_le c)).trans det₂.colLen_zero_shape_le)⟩⟩
-  exact Nat.card_pos.ne' heval
+  exact diagramSchurPoly_ne_zero det₂.colLen_zero_shape_le (add_eq_left.mp heq)
 
 end TauCeti.Hive

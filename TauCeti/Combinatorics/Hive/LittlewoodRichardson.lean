@@ -70,8 +70,8 @@ vertical-strip concavity gives the Yamanouchi lattice-word condition.
 
 * A. Knutson and T. Tao, *The honeycomb model of $\mathrm{GL}_n(\mathbb{C})$ tensor products I:
   proof of the saturation conjecture*, J. Amer. Math. Soc. **12** (1999), 1055–1090, Appendix 2.
-* A. S. Buch, *The saturation conjecture (after A. Knutson and T. Tao)*, Enseign. Math. (2) **46**
-  (2000), 43–60, Appendix A.
+* A. S. Buch, *The saturation conjecture (after A. Knutson and T. Tao)*, with an appendix by
+  W. Fulton, Enseign. Math. (2) **46** (2000), 43–60, §1 and Appendix A.
 * W. Fulton, *Young Tableaux*, Cambridge University Press (1997), §5.2.
 -/
 
@@ -275,34 +275,24 @@ theorem hiveRowCountInt_of_lt (h : IntegerHive n) {r l : ℕ} (hlr : l < r) (hrn
         h (Vertex.ofChart n l (r + 1) (by omega) (by omega)) -
         h (Vertex.ofChart n (l + 1) r hlr hrn.le) +
         h (Vertex.ofChart n l r hlr.le hrn.le) := by
-  unfold hiveRowCountInt
-  split_ifs with h₁
-  · rfl
-  · exact absurd ⟨hlr, hrn⟩ h₁
-  · exact absurd ⟨hlr, hrn⟩ h₁
+  unfold hiveRowCountInt; split_ifs <;> first | rfl | omega
 
 /-- On the diagonal (`l < n`), `hiveRowCountInt h l l` is `h(l + 1, l + 1) - h(l, l + 1)`. -/
 theorem hiveRowCountInt_diag (h : IntegerHive n) {l : ℕ} (hln : l < n) :
     hiveRowCountInt h l l =
       h (Vertex.ofChart n (l + 1) (l + 1) le_rfl (by omega)) -
         h (Vertex.ofChart n l (l + 1) (by omega) (by omega)) := by
-  unfold hiveRowCountInt
-  split_ifs with h₁ h₂
-  · omega
-  · rfl
-  · exact absurd ⟨rfl, hln⟩ h₂
+  unfold hiveRowCountInt; split_ifs <;> first | rfl | omega
 
 /-- Above the diagonal (`r < l`), `hiveRowCountInt h r l` vanishes. -/
-theorem hiveRowCountInt_eq_zero_of_lt (h : IntegerHive n) {r l : ℕ} (hrl : r < l) :
+@[simp] theorem hiveRowCountInt_eq_zero_of_lt (h : IntegerHive n) {r l : ℕ} (hrl : r < l) :
     hiveRowCountInt h r l = 0 := by
-  unfold hiveRowCountInt
-  split_ifs <;> omega
+  unfold hiveRowCountInt; split_ifs <;> omega
 
 /-- Beyond row `n` (`n ≤ r`), `hiveRowCountInt h r l` vanishes. -/
-theorem hiveRowCountInt_eq_zero_of_le (h : IntegerHive n) {r : ℕ} (hr : n ≤ r) (l : ℕ) :
+@[simp] theorem hiveRowCountInt_eq_zero_of_le (h : IntegerHive n) {r : ℕ} (hr : n ≤ r) (l : ℕ) :
     hiveRowCountInt h r l = 0 := by
-  unfold hiveRowCountInt
-  split_ifs <;> omega
+  unfold hiveRowCountInt; split_ifs <;> omega
 
 /-- Above the diagonal (`r < l`), `hiveRowCount h r l` vanishes. -/
 @[simp] theorem hiveRowCount_eq_zero_of_lt (h : IntegerHive n) {r l : ℕ} (hrl : r < l) :
@@ -313,6 +303,16 @@ theorem hiveRowCountInt_eq_zero_of_le (h : IntegerHive n) {r : ℕ} (hr : n ≤ 
 @[simp] theorem hiveRowCount_eq_zero_of_le (h : IntegerHive n) {r : ℕ} (hr : n ≤ r) (l : ℕ) :
     hiveRowCount h r l = 0 := by
   simp [hiveRowCount, hiveRowCountInt_eq_zero_of_le h hr l]
+
+private theorem hiveRowCountInt_eq_zero_of_le_right (h : IntegerHive n) (r : ℕ) {l : ℕ}
+    (hl : n ≤ l) : hiveRowCountInt h r l = 0 := by
+  rcases lt_or_ge r n with hr | hr
+  · exact hiveRowCountInt_eq_zero_of_lt h (hr.trans_le hl)
+  · exact hiveRowCountInt_eq_zero_of_le h hr l
+
+private theorem hiveRowCount_eq_zero_of_le_right (h : IntegerHive n) (r : ℕ) {l : ℕ}
+    (hl : n ≤ l) : hiveRowCount h r l = 0 := by
+  simp [hiveRowCount, hiveRowCountInt_eq_zero_of_le_right h r hl]
 
 /-- Summing `hiveRowCountInt h r l` over rows `r < j` (with `l < j ≤ n`) telescopes to the
 vertical chart difference `h(l + 1, j) - h(l, j)`. -/
@@ -529,11 +529,8 @@ private theorem lattice_hiveRowCount {lam μ γ : DominantWeight n} {h : Integer
         have hanti : μ.1 ⟨k + 1, hk1⟩ ≤ μ.1 ⟨k, by omega⟩ :=
           μ.antitone (Fin.mk_le_mk.mpr (Nat.le_succ k))
         linarith
-      · rw [Finset.sum_eq_zero fun r _ => ?_]
-        · exact Finset.sum_nonneg fun r _ => hiveRowCountInt_nonneg hb hμ r k
-        · rcases lt_or_ge r n with hrn | hrn
-          · exact hiveRowCountInt_eq_zero_of_lt h (by omega)
-          · exact hiveRowCountInt_eq_zero_of_le h hrn (k + 1)
+      · rw [Finset.sum_eq_zero fun r _ => hiveRowCountInt_eq_zero_of_le_right h r (by omega)]
+        exact Finset.sum_nonneg fun r _ => hiveRowCountInt_nonneg hb hμ r k
 
 /-- Littlewood–Richardson tableau reconstructed from a fixed-boundary integer hive for polynomial
 dominant weights `lam, μ`. -/
@@ -543,10 +540,8 @@ def lrTableauOfHive {lam μ γ : DominantWeight n} (hlam : lam.IsPolynomial) (h�
   have hle := shape_le_of_productBoundary h.2 hlam hμ
   have hsum := sum_hiveRowCount_eq_rowLen_sub h.2 hlam hμ
   have hcol := col_strict_hiveRowCount h.2 hlam hμ
-  have hzero : ∀ r l, n ≤ l → hiveRowCount h.1 r l = 0 := fun r l hl => by
-    rcases lt_or_ge r n with hr | hr
-    · exact hiveRowCount_eq_zero_of_lt h.1 (hr.trans_le hl)
-    · exact hiveRowCount_eq_zero_of_le h.1 hr l
+  have hzero : ∀ r l, n ≤ l → hiveRowCount h.1 r l = 0 :=
+    fun r _ hl => hiveRowCount_eq_zero_of_le_right h.1 r hl
   let S := SkewSemistandardYoungTableau.ofRowCount hle n (hiveRowCount h.1) hsum hcol
   refine ⟨S, funext fun k => ?_, S.isLatticeWord_readingWord_iff.mpr fun k x => ?_⟩
   · rw [← S.sum_range_rowCount_eq_content k γ.colLen_zero_shape_le]
@@ -567,11 +562,9 @@ def lrTableauOfHive {lam μ γ : DominantWeight n} (hlam : lam.IsPolynomial) (h�
 @[simp] theorem rowCount_lrTableauOfHive {lam μ γ : DominantWeight n}
     (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial)
     (h : FixedIntegerHive (productBoundary lam μ γ)) (r l : ℕ) :
-    (lrTableauOfHive hlam hμ h).1.rowCount r l = hiveRowCount h.1 r l := by
-  refine SkewSemistandardYoungTableau.rowCount_ofRowCount _ _ _ (fun i k hk => ?_) r l
-  rcases lt_or_ge i n with hi | hi
-  · exact hiveRowCount_eq_zero_of_lt h.1 (hi.trans_le hk)
-  · exact hiveRowCount_eq_zero_of_le h.1 hi k
+    (lrTableauOfHive hlam hμ h).1.rowCount r l = hiveRowCount h.1 r l :=
+  SkewSemistandardYoungTableau.rowCount_ofRowCount _ _ _
+    (fun i _ hk => hiveRowCount_eq_zero_of_le_right h.1 i hk) r l
 
 /-- **Explicit equivalence between fixed-boundary integer hives and Littlewood–Richardson tableaux**
 for polynomial dominant weights `lam, μ, γ` of `GL n`.
@@ -708,14 +701,13 @@ theorem hiveCount_productBoundary (lam μ γ : DominantWeight n) :
 
 /-! ### Unit-weight fibres and concrete checks -/
 
+private theorem weightOfShape_bot : weightOfShape n ⊥ = 0 := by ext i; simp
+
 private theorem isPolynomial_zero : (0 : DominantWeight n).IsPolynomial :=
-  (DominantWeight.isPolynomial_def 0).mpr (by simp)
+  weightOfShape_bot ▸ isPolynomial_weightOfShape n ⊥
 
 private theorem shape_zero : (0 : DominantWeight n).shape = ⊥ :=
-  YoungDiagram.rowLen_injective <| funext fun i => by
-    by_cases hi : i < n
-    · simpa using (0 : DominantWeight n).rowLen_shape ⟨i, hi⟩
-    · simpa using (0 : DominantWeight n).rowLen_shape_eq_zero_of_le (not_lt.mp hi)
+  weightOfShape_bot ▸ shape_weightOfShape (by simp)
 
 open scoped Classical in
 /-- With trivial first input weight `0`, `productBoundary 0 μ γ` has one integer hive when `γ = μ`
@@ -733,9 +725,7 @@ theorem hiveCount_productBoundary_zero_left (μ γ : DominantWeight n) :
       apply h
       have heq : γ.shift (-μ.detShift) = μ.shift (-μ.detShift) := by
         rw [← weightOfShape_shape hp, ← weightOfShape_shape μ.isPolynomial_shift_neg_detShift, hm]
-      calc γ = (γ.shift (-μ.detShift)).shift μ.detShift := by simp
-        _ = (μ.shift (-μ.detShift)).shift μ.detShift := by rw [heq]
-        _ = μ := by simp
+      simpa using congrArg (fun w : DominantWeight n => w.shift μ.detShift) heq
     · rfl
     · rfl
 
@@ -744,38 +734,25 @@ open scoped Classical in
 `γ = lam` and none otherwise. -/
 theorem hiveCount_productBoundary_zero_right (lam γ : DominantWeight n) :
     hiveCount (productBoundary lam 0 γ) = if γ = lam then 1 else 0 := by
-  rw [← hiveCount_productBoundary_shift_left lam 0 γ (-lam.detShift),
-    hiveCount_productBoundary_of_isPolynomial lam.isPolynomial_shift_neg_detShift isPolynomial_zero,
-    shape_zero, natCard_lrTableau_bot_right]
-  rcases eq_or_ne γ lam with rfl | h
-  · simp [γ.isPolynomial_shift_neg_detShift]
-  · simp only [h, ↓reduceIte]
-    split_ifs with hp hl
-    · exfalso
-      apply h
-      have heq : γ.shift (-lam.detShift) = lam.shift (-lam.detShift) := by
-        rw [← weightOfShape_shape hp, ← weightOfShape_shape lam.isPolynomial_shift_neg_detShift, hl]
-      calc γ = (γ.shift (-lam.detShift)).shift lam.detShift := by simp
-        _ = (lam.shift (-lam.detShift)).shift lam.detShift := by rw [heq]
-        _ = lam := by simp
-    · rfl
-    · rfl
+  rw [← hiveCount_productBoundary_dual, DominantWeight.dual_zero,
+    hiveCount_productBoundary_zero_left]
+  exact if_congr DominantWeight.dual_injective.eq_iff rfl rfl
 
 /-- Rank-`1` hive check: `hiveCount (productBoundary a b g) = 1` if `g = a + b` and `0` otherwise.
 -/
 theorem hiveCount_one_productBoundary (a b g : DominantWeight 1) :
     hiveCount (productBoundary a b g) = if g = a + b then 1 else 0 := by
-  have ha : a = (0 : DominantWeight 1).shift (a.1 0) := by ext i; fin_cases i; simp
-  have hb : b = (0 : DominantWeight 1).shift (b.1 0) := by ext i; fin_cases i; simp
+  have ha : a = (0 : DominantWeight 1).shift (a.1 0) := by ext i; rw [Fin.fin_one_eq_zero i]; simp
+  have hb : b = (0 : DominantWeight 1).shift (b.1 0) := by ext i; rw [Fin.fin_one_eq_zero i]; simp
   have hg : g = (g.shift (-(a.1 0 + b.1 0))).shift (a.1 0 + b.1 0) := by simp
   conv_lhs => rw [ha, hb, hg, hiveCount_productBoundary_shift, hiveCount_productBoundary_zero_left]
   refine if_congr ⟨fun h => ?_, fun h => ?_⟩ rfl rfl
-  · ext i; fin_cases i
+  · ext i; rw [Fin.fin_one_eq_zero i]
     have h0 := congrArg (fun w : DominantWeight 1 => w.1 0) h
-    simp only [DominantWeight.shift_apply, DominantWeight.zero_apply, DominantWeight.add_apply,
-      Fin.zero_eta] at h0 ⊢
+    simp only [DominantWeight.shift_apply, DominantWeight.zero_apply,
+      DominantWeight.add_apply] at h0 ⊢
     omega
-  · subst h; ext i; fin_cases i; simp
+  · subst h; ext i; rw [Fin.fin_one_eq_zero i]; simp
 
 /-- Signed rank-`2` check: `λ = (1, 0), μ = (0, -1), γ = (0, 0)` has `hiveCount = 1`
 (the trivial invariant in `V ⊗ V*`), whereas truncating negative entries to `0` would give
@@ -814,22 +791,13 @@ private theorem isRhombusConcave_of_chartThree (c : ℕ → ℕ → ℤ)
   refine ⟨fun i j hij hjn => ?_, fun i j hij hjn => ?_, fun i j hij hjn => ?_⟩
   · simp only [hv]
     rcases (by omega : (i = 0 ∧ j = 0) ∨ (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 1)) with
-      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-    · exact hH.1
-    · exact hH.2.1
-    · exact hH.2.2
+      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp only [hH]
   · simp only [hv]
     rcases (by omega : (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 1 ∧ j = 2)) with
-      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-    · exact hC.1
-    · exact hC.2.1
-    · exact hC.2.2
+      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp only [hC]
   · simp only [hv]
     rcases (by omega : (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 1 ∧ j = 2)) with
-      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-    · exact hV.1
-    · exact hV.2.1
-    · exact hV.2.2
+      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp only [hV]
 
 /-- A rank-`3` hive with fixed boundary `B` is uniquely determined by its value at the single
 interior vertex `(1, 1, 1)`. -/
@@ -839,16 +807,15 @@ private theorem fixedIntegerHive_three_ext {B : Fin 3 → Fin 3 → ℤ}
   refine Subtype.ext <| ext fun p => ?_
   have := p.sum_eq
   by_cases hz : p.z = 0
-  · have he : p = Vertex.edgePoint 3 0 ⟨p.y, by omega⟩ := by ext <;> simp [hz]; omega
-    rw [he, k₁.1.apply_edgePoint_zero, k₂.1.apply_edgePoint_zero, k₁.2, k₂.2]
+  · rw [show p = Vertex.edgePoint 3 0 ⟨p.y, by omega⟩ by ext <;> simp [hz]; omega,
+      k₁.1.apply_edgePoint_zero, k₂.1.apply_edgePoint_zero, k₁.2, k₂.2]
   · by_cases hx : p.x = 0
-    · have he : p = Vertex.edgePoint 3 1 ⟨p.z, by omega⟩ := by ext <;> simp [hx]; omega
-      rw [he, k₁.1.apply_edgePoint_one, k₂.1.apply_edgePoint_one, k₁.2, k₂.2]
+    · rw [show p = Vertex.edgePoint 3 1 ⟨p.z, by omega⟩ by ext <;> simp [hx]; omega,
+        k₁.1.apply_edgePoint_one, k₂.1.apply_edgePoint_one, k₁.2, k₂.2]
     · by_cases hy : p.y = 0
-      · have he : p = Vertex.edgePoint 3 2 ⟨p.x, by omega⟩ := by ext <;> simp [hy]; omega
-        rw [he, k₁.1.apply_edgePoint_two, k₂.1.apply_edgePoint_two, k₁.2, k₂.2]
-      · have hm : p = ⟨1, 1, 1, rfl⟩ := by ext <;> simp <;> omega
-        rw [hm, hmid]
+      · rw [show p = Vertex.edgePoint 3 2 ⟨p.x, by omega⟩ by ext <;> simp [hy]; omega,
+          k₁.1.apply_edgePoint_two, k₂.1.apply_edgePoint_two, k₁.2, k₂.2]
+      · rw [show p = ⟨1, 1, 1, rfl⟩ by ext <;> simp <;> omega, hmid]
 
 /-- Rhombus bounds on the interior value `k.1 (1, 1, 1)` of any rank-`3` product-boundary hive. -/
 private theorem apply_center_bounds_three {lam μ γ : DominantWeight 3}
@@ -865,10 +832,8 @@ private theorem apply_center_bounds_three {lam μ γ : DominantWeight 3}
     (isRhombus_ofChart_horiz (n := 3) (i := 0) (j := 1) (by decide) (by decide))
   have hrC := k.1.le_of_isRhombus
     (isRhombus_ofChart_cell (n := 3) (i := 0) (j := 2) (by decide) (by decide))
-  rw [apply_ofChart_zero_left k.2, apply_ofChart_zero_left k.2, apply_ofChart_right k.2,
-    Fin.sum_univ_three, hsumlt, hsumlt, hsumlt, congrArg k.1 hch12] at hrH
-  rw [apply_ofChart_zero_left k.2, apply_ofChart_zero_left k.2, apply_ofChart_right k.2,
-    Fin.sum_univ_three, hsumlt, hsumlt, hsumlt, congrArg k.1 hch12] at hrC
+  simp only [apply_ofChart_zero_left k.2, apply_ofChart_right k.2, Fin.sum_univ_three, hsumlt,
+    hch12] at hrH hrC
   simp only [Nat.lt_add_one, Nat.zero_lt_two, Nat.one_lt_ofNat, lt_self_iff_false,
     Nat.not_ofNat_lt_one, ↓reduceIte] at hrH hrC
   omega

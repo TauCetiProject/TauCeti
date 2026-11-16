@@ -350,7 +350,7 @@ def affine (n : ℕ) (β γ : R) : Hive n R where
   simp
 
 /-- Slope parameters of normalized affine hives add homomorphically. -/
-@[simp] theorem affine_add (n : ℕ) (β₁ γ₁ β₂ γ₂ : R) :
+theorem affine_add (n : ℕ) (β₁ γ₁ β₂ γ₂ : R) :
     affine n (β₁ + β₂) (γ₁ + γ₂) = affine n β₁ γ₁ + affine n β₂ γ₂ := by
   ext p
   simp only [affine_apply, add_apply, nsmul_add]

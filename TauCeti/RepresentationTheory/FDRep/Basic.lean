@@ -316,14 +316,13 @@ theorem tensor_ρ {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep
     (X ⊗ Y).ρ g = TensorProduct.map (X.ρ g) (Y.ρ g) := (rfl)
 
 open MonoidalCategory in
-/-- **Unbundled tensor-product identification for `FDRep.ρ` on `X ⊗ Y`**: the representation
-carried by `X ⊗ Y` in `FDRep R G` is equivalent via `LinearEquiv.refl` to
-`Representation.tprod X.ρ Y.ρ`. -/
+/-- **Unbundled tensor-product identification for `FDRep.ρ` on `X ⊗ Y`**: the monoidal product in
+`FDRep R G = Action (FGModuleCat R) G` carries the carrier `↥X ⊗[R] ↥Y` definitionally, so
+`LinearEquiv.refl` intertwines `(X ⊗ Y).ρ` with `Representation.tprod X.ρ Y.ρ`. -/
 noncomputable def tprodEquiv {R : Type u} {G : Type v} [CommRing R] [Monoid G]
     (X Y : FDRep R G) : Representation.Equiv (X ⊗ Y).ρ (Representation.tprod X.ρ Y.ρ) :=
-  .mk (LinearEquiv.refl R ↥(X ⊗ Y)) fun g => LinearMap.ext fun _ => by
-    rw [tensor_ρ]
-    rfl
+  .mk (LinearEquiv.refl R ↥(X ⊗ Y)) fun g => by
+    simpa [Representation.tprod_apply] using tensor_ρ X Y g
 
 open MonoidalCategory in
 /-- The linear equivalence underlying `FDRep.tprodEquiv` is the identity. -/
