@@ -10,9 +10,10 @@ public import TauCeti.MeasureTheory.Group.LocalFieldScaling
 public import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 public import TauCeti.NumberTheory.LocalField.Topology
 public import TauCeti.NumberTheory.LocalField.Uniformizer
+public import TauCeti.Topology.Algebra.ValuativeRel.PuncturedNhds
 import TauCeti.RingTheory.Valuation.ValuationRing
+import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
-import TauCeti.Topology.Algebra.ValuativeRel.PuncturedNhds
 
 /-!
 # Normalized additive Haar measure and character of a nonarchimedean local field
@@ -224,12 +225,9 @@ theorem measure_setOf_valuation_eq_one (μ : Measure E) [μ.IsAddLeftInvariant]
   have hsphere : {x : E | valuation E x = 1} =
       (𝒪[E] : Set E) \ (((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ 1)) := by
     ext x
-    rw [pow_one]
-    simp only [mem_ofPred_eq, mem_sdiff, SetLike.mem_coe, Valuation.mem_integer_iff,
-      mem_image, Subtype.exists, exists_and_right, exists_eq_right]
-    refine ⟨fun hx ↦ ⟨hx.le, fun ⟨_, hlt⟩ ↦ hx.not_lt ((Valuation.mem_maximalIdeal_iff _ _).1 hlt)⟩,
-      fun ⟨hle, hnot⟩ ↦ le_antisymm hle (not_lt.1 fun hlt ↦
-        hnot ⟨hle, (Valuation.mem_maximalIdeal_iff _ _).2 hlt⟩)⟩
+    simp only [Set.mem_ofPred_eq, Set.mem_sdiff, SetLike.mem_coe, pow_one,
+      Valuation.mem_integer_iff, ← valuation_lt_one_iff_mem_image_maximalIdeal, le_antisymm_iff,
+      not_lt]
   have hsub : (((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ 1)) ⊆ (𝒪[E] : Set E) := by
     rintro _ ⟨y, -, rfl⟩
     exact y.2

@@ -361,7 +361,7 @@ theorem isLattice_span {s : Set V} (hs : s.Finite) (hspan : span A s = ⊤) :
   fg := ⟨hs.toFinset, by simp⟩
   span_eq_top := by rw [span_span_of_tower, hspan]
 
-/-- The `R`-span of a finite `A`-basis `b` of `V` is a full `A`-lattice. -/
+/-- The `R`-span of a finite `A`-basis `b` of `V` is a full `R`-lattice in `V` (over `A`). -/
 instance _root_.Module.Basis.isLattice_span_range {ι : Type*} [Finite ι]
     (b : Module.Basis ι A V) :
     (span R (Set.range b)).IsLattice A :=

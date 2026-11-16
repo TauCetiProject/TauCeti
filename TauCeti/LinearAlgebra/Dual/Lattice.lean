@@ -120,7 +120,7 @@ instance isLattice_dualLattice (N : Submodule R V) [N.IsLattice K] [Module.Free 
   classical
   let b := Module.Free.chooseBasis R N
   rw [← b.span_range_extendOfIsLattice (K := K), (b.extendOfIsLattice K).dualLattice_span]
-  exact isLattice_span (Set.finite_range _) (b.extendOfIsLattice K).dualBasis.span_eq
+  exact (b.extendOfIsLattice K).dualBasis.isLattice_span_range
 
 section Pairing
 

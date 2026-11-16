@@ -23,7 +23,8 @@ coordinate topology through that basis. This identifies the canonical topology u
 spaces and their endomorphisms with a finite product of copies of the scalars. In particular, over
 a Hausdorff locally compact division ring equipped with a topological semiring structure, the
 module topology of a finite-dimensional space is Hausdorff and locally compact; every subspace of
-a module with the module topology is closed; over σ-compact scalars it is σ-compact. No norm or
+a module with the module topology is closed; over σ-compact (respectively second-countable) scalars
+it is σ-compact (respectively second countable). No norm or
 completeness hypothesis on the scalars is needed.
 
 Separation of the scalars cannot be dropped from the Hausdorff and closed-subspace statements:
@@ -276,6 +277,12 @@ basis. -/
 theorem sigmaCompactSpace (b : _root_.Module.Basis ι K V) [SigmaCompactSpace K] :
     SigmaCompactSpace V :=
   (equivFunHomeomorph b).isClosedEmbedding.sigmaCompactSpace
+
+/-- The module topology is second countable when the scalars are second countable and the module
+has a finite basis. -/
+theorem secondCountableTopology (b : _root_.Module.Basis ι K V) [SecondCountableTopology K] :
+    SecondCountableTopology V :=
+  (equivFunHomeomorph b).isEmbedding.secondCountableTopology
 
 end ModuleTopology
 

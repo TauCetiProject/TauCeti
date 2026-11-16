@@ -97,7 +97,7 @@ noncomputable instance instIsLatticeDualCarrier (L : IntegralLattice V) [L.IsNon
     L.dualCarrier.IsLattice ℚ := by
   let b := Module.Free.chooseBasis ℤ L.carrier
   rw [L.dualCarrier_eq_span_dualBasis b]
-  exact isLattice_span_basis (L.form.dualBasis L.form_nondegenerate (b.extendOfIsLattice ℚ))
+  exact (L.form.dualBasis L.form_nondegenerate (b.extendOfIsLattice ℚ)).isLattice_span_range
 
 /-- The dual carrier has the same rank as the ambient rational space. -/
 theorem finrank_dualCarrier (L : IntegralLattice V) [L.IsNondegenerate] :
