@@ -31,7 +31,10 @@ subgroup of `alternatingGroup α`).
 Conjugating the stabilizer of `a` by `v ∈ kleinFour α` yields the stabilizer of `v • a`, and
 multiplies `c_a` by the principal crossed map `g ↦ g • v / v`. Because `kleinFour α` acts sharply
 transitively on `α`, `kleinFour α` permutes both the four complements and the four normalized
-crossed projections sharply transitively.
+crossed projections sharply transitively. In fact, whenever `kleinFour α` is commutative (which by
+`alternatingGroup.isMulCommutative_kleinFour_iff` already forces `Nat.card α ≤ 4`), any two
+normalized multiplicative `1`-cocycles `alternatingGroup α → kleinFour α` differ by a unique
+principal crossed map `g ↦ g • v / v` without needing `Nat.card α = 4`.
 
 ## Main definitions
 
@@ -48,8 +51,9 @@ crossed projections sharply transitively.
   `1`-cocycle `alternatingGroup α → kleinFour α` equals `c_a` for a unique `a : α`.
 * `alternatingGroup.kleinFourCrossedProjection_smul_point`:
   `c_{v • a} g = c_a g * (g • v / v)` for `v ∈ kleinFour α`.
-* `alternatingGroup.existsUnique_principal_twist_of_isMulCocycle₁`: any two normalized crossed maps
-  `alternatingGroup α → kleinFour α` differ by a unique principal crossed map `g ↦ g • v / v`.
+* `alternatingGroup.existsUnique_principal_twist_of_isMulCocycle₁`: whenever `kleinFour α` is
+  commutative, any two normalized crossed maps `alternatingGroup α → kleinFour α` differ by a
+  unique principal crossed map `g ↦ g • v / v`.
 
 ## References
 
@@ -76,23 +80,28 @@ noncomputable def kleinFourCrossedProjection (hα4 : Nat.card α = 4) (a : α)
     (g : alternatingGroup α) : kleinFour α :=
   (isComplement'_kleinFour_stabilizer hα4 a).crossedProjection g
 
+/-- `kleinFourCrossedProjection hα4 a` restricts to the identity on `kleinFour α`. -/
 @[simp]
 theorem kleinFourCrossedProjection_coe (hα4 : Nat.card α = 4) (a : α) (v : kleinFour α) :
     kleinFourCrossedProjection hα4 a v = v :=
   (isComplement'_kleinFour_stabilizer hα4 a).crossedProjection_coe v
 
+/-- `kleinFourCrossedProjection hα4 a` maps `1` to `1`. -/
 @[simp]
 theorem kleinFourCrossedProjection_one (hα4 : Nat.card α = 4) (a : α) :
     kleinFourCrossedProjection hα4 a 1 = 1 :=
   (isComplement'_kleinFour_stabilizer hα4 a).crossedProjection_coe 1
 
+/-- `kleinFourCrossedProjection hα4 a g` is trivial if and only if `g` fixes `a`. -/
 @[simp]
 theorem kleinFourCrossedProjection_eq_one_iff (hα4 : Nat.card α = 4) (a : α)
     (g : alternatingGroup α) :
     kleinFourCrossedProjection hα4 a g = 1 ↔ g • a = a :=
   (isComplement'_kleinFour_stabilizer hα4 a).crossedProjection_eq_one_iff g
 
-theorem kleinFourCrossedProjection_mul_right_mem (hα4 : Nat.card α = 4) (a : α)
+/-- When `d` fixes `a`, multiplying `v ∈ kleinFour α` on the right by `d` leaves `c_a` unchanged:
+`c_a (v * d) = v`. -/
+theorem kleinFourCrossedProjection_coe_mul_of_smul_eq (hα4 : Nat.card α = 4) (a : α)
     (v : kleinFour α) {d : alternatingGroup α} (hd : d • a = a) :
     kleinFourCrossedProjection hα4 a ((v : alternatingGroup α) * d) = v :=
   (isComplement'_kleinFour_stabilizer hα4 a).crossedProjection_mul v ⟨d, hd⟩
@@ -125,14 +134,14 @@ theorem kleinFourCrossedProjection_eq_iff (hα4 : Nat.card α = 4) (a : α)
 theorem kleinFourCrossedProjection_mul_coe (hα4 : Nat.card α = 4) (a : α)
     (g : alternatingGroup α) (v : kleinFour α) :
     kleinFourCrossedProjection hα4 a (g * v) = kleinFourCrossedProjection hα4 a g * g • v := by
-  let _ := (kleinFour_isKleinFour hα4).isMulCommutative
+  have := (kleinFour_isKleinFour hα4).isMulCommutative
   have hc : kleinFourCrossedProjection hα4 a (g * v) =
       g • kleinFourCrossedProjection hα4 a v * kleinFourCrossedProjection hα4 a g :=
     (isComplement'_kleinFour_stabilizer hα4 a).isMulCocycle₁_crossedProjection g v
   rw [hc, kleinFourCrossedProjection_coe, mul_comm]
 
 /-- When `d` fixes `a`, `c_a (d * v) = d • v`, in contrast to `c_a (v * d) = v`. -/
-theorem kleinFourCrossedProjection_mul_coe_of_stabilizer (hα4 : Nat.card α = 4) (a : α)
+theorem kleinFourCrossedProjection_mul_coe_of_smul_eq (hα4 : Nat.card α = 4) (a : α)
     {d : alternatingGroup α} (hd : d • a = a) (v : kleinFour α) :
     kleinFourCrossedProjection hα4 a (d * v) = d • v := by
   rw [kleinFourCrossedProjection_mul_coe,
@@ -145,7 +154,7 @@ theorem exists_kleinFourCrossedProjection_mul_ne (hα4 : Nat.card α = 4) (a : �
       kleinFourCrossedProjection hα4 a (g * k) ≠
         kleinFourCrossedProjection hα4 a g * kleinFourCrossedProjection hα4 a k := by
   by_contra! hmul
-  let _ := (kleinFour_isKleinFour hα4).isMulCommutative
+  have := (kleinFour_isKleinFour hα4).isMulCommutative
   let φ : alternatingGroup α →* kleinFour α :=
     { toFun := kleinFourCrossedProjection hα4 a
       map_one' := kleinFourCrossedProjection_one hα4 a
@@ -165,18 +174,25 @@ theorem exists_kleinFourCrossedProjection_mul_ne (hα4 : Nat.card α = 4) (a : �
 /-! ### Sharp transitive `V₄`-conjugacy of complements and crossed projections -/
 
 /-- `kleinFour α` acts sharply transitively by conjugation on the point stabilizers in
-`alternatingGroup α` when `Nat.card α = 4`. -/
-theorem existsUnique_conj_kleinFour_stabilizer (hα4 : Nat.card α = 4) (a b : α) :
+`alternatingGroup α` whenever `Nat.card α ≤ 4`. -/
+theorem existsUnique_conj_kleinFour_stabilizer (hα : Nat.card α ≤ 4) (a b : α) :
     ∃! v : kleinFour α,
       MulAut.conj (v : alternatingGroup α) • MulAction.stabilizer (alternatingGroup α) a =
         MulAction.stabilizer (alternatingGroup α) b := by
-  have heq : ∀ v : kleinFour α,
-      (MulAut.conj (v : alternatingGroup α) • MulAction.stabilizer (alternatingGroup α) a =
-        MulAction.stabilizer (alternatingGroup α) b) ↔ v • a = b := by
-    intro v
-    rw [conj_smul_stabilizer, (stabilizer_injective_of_card_eq_four hα4).eq_iff]
-    rfl
-  simpa only [heq] using existsUnique_kleinFour_smul_eq hα4 a b
+  rcases hα.eq_or_lt with hα4 | hαlt
+  · have heq : ∀ v : kleinFour α,
+        (MulAut.conj (v : alternatingGroup α) • MulAction.stabilizer (alternatingGroup α) a =
+          MulAction.stabilizer (alternatingGroup α) b) ↔ v • a = b := by
+      intro v
+      change (MulAction.stabilizer (alternatingGroup α) a).map
+          (MulAut.conj (v : alternatingGroup α)).toMonoidHom = _ ↔ _
+      rw [← MulAction.stabilizer_smul_eq_stabilizer_map_conj,
+        (stabilizer_injective hα4.ge).eq_iff]
+      rfl
+    simpa only [heq] using existsUnique_kleinFour_smul_eq hα4 a b
+  · have hbot : kleinFour α = ⊥ := kleinFour_eq_bot_iff.mpr hαlt
+    rw [(stabilizer_eq_bot_iff a).mpr hαlt, (stabilizer_eq_bot_iff b).mpr hαlt]
+    exact ⟨1, by simp, fun v _ => Subtype.ext (Subgroup.mem_bot.mp (hbot ▸ v.property))⟩
 
 /-- Shifting the basepoint `a` by `v ∈ kleinFour α` multiplies `kleinFourCrossedProjection hα4 a`
 by the principal crossed map `g ↦ g • v / v`. -/
@@ -184,11 +200,10 @@ theorem kleinFourCrossedProjection_smul_point (hα4 : Nat.card α = 4) (v : klei
     (a : α) (g : alternatingGroup α) :
     kleinFourCrossedProjection hα4 (v • a) g =
       kleinFourCrossedProjection hα4 a g * (g • v / v) := by
-  let _ := (kleinFour_isKleinFour hα4).isMulCommutative
+  have := (kleinFour_isKleinFour hα4).isMulCommutative
   have hstab : MulAction.stabilizer (alternatingGroup α) (v • a) =
-      MulAut.conj (v : alternatingGroup α) • MulAction.stabilizer (alternatingGroup α) a := by
-    rw [conj_smul_stabilizer]
-    rfl
+      MulAut.conj (v : alternatingGroup α) • MulAction.stabilizer (alternatingGroup α) a :=
+    MulAction.stabilizer_smul_eq_stabilizer_map_conj (v : alternatingGroup α) a
   exact ((isComplement'_kleinFour_stabilizer hα4 a).eq_conj_smul_iff_crossedProjection_eq
     (isComplement'_kleinFour_stabilizer hα4 (v • a)) v).mp hstab g
 
@@ -199,7 +214,7 @@ theorem existsUnique_kleinFourCrossedProjection_principal_twist (hα4 : Nat.card
     ∃! v : kleinFour α, ∀ g : alternatingGroup α,
       kleinFourCrossedProjection hα4 b g =
         kleinFourCrossedProjection hα4 a g * (g • v / v) := by
-  let _ := (kleinFour_isKleinFour hα4).isMulCommutative
+  have := (kleinFour_isKleinFour hα4).isMulCommutative
   have hiff : ∀ v : kleinFour α,
       (∀ g : alternatingGroup α,
         kleinFourCrossedProjection hα4 b g =
@@ -210,7 +225,7 @@ theorem existsUnique_kleinFourCrossedProjection_principal_twist (hα4 : Nat.card
     simp only [kleinFourCrossedProjection]
     rw [← (isComplement'_kleinFour_stabilizer hα4 a).eq_conj_smul_iff_crossedProjection_eq
       (isComplement'_kleinFour_stabilizer hα4 b) v, eq_comm]
-  simpa only [hiff] using existsUnique_conj_kleinFour_stabilizer hα4 a b
+  simpa only [hiff] using existsUnique_conj_kleinFour_stabilizer hα4.le a b
 
 /-! ### Bijection with normalized `1`-cocycles -/
 
@@ -231,6 +246,8 @@ noncomputable def kleinFourCrossedProjectionEquiv (hα4 : Nat.card α = 4) :
       IsCocycle₁ c ∧ ∀ n : kleinFour α, c n = Additive.ofMul n} :=
   (kleinFourComplementEquiv hα4).trans (kleinFour α).crossedProjectionEquiv
 
+/-- Evaluating `kleinFourCrossedProjectionEquiv hα4 a` at `g` gives
+`Additive.ofMul (kleinFourCrossedProjection hα4 a g)`. -/
 @[simp]
 theorem kleinFourCrossedProjectionEquiv_apply (hα4 : Nat.card α = 4) (a : α)
     (g : alternatingGroup α) :
@@ -242,6 +259,8 @@ theorem kleinFourCrossedProjectionEquiv_apply (hα4 : Nat.card α = 4) (a : α)
   rw [kleinFourCrossedProjectionEquiv, Equiv.trans_apply, heq,
     Subgroup.crossedProjectionEquiv_apply, kleinFourCrossedProjection]
 
+/-- The point stabilizer of `(kleinFourCrossedProjectionEquiv hα4).symm c` is the zero locus of
+`c`. -/
 @[simp]
 theorem kleinFourCrossedProjectionEquiv_symm_stabilizer (hα4 : Nat.card α = 4)
     (c : {c : alternatingGroup α → Additive (kleinFour α) //
@@ -283,15 +302,23 @@ theorem existsUnique_eq_kleinFourCrossedProjection (hα4 : Nat.card α = 4)
     exact congrArg Additive.ofMul (congrFun hb.symm g)
 
 /-- Any two normalized multiplicative crossed maps `alternatingGroup α → kleinFour α` differ by a
-unique principal crossed map `g ↦ g • v / v` when `Nat.card α = 4`. -/
-theorem existsUnique_principal_twist_of_isMulCocycle₁ (hα4 : Nat.card α = 4)
+unique principal crossed map `g ↦ g • v / v`. Commutativity of `kleinFour α` already forces
+`Nat.card α ≤ 4` (`alternatingGroup.isMulCommutative_kleinFour_iff`); the case `Nat.card α < 4`
+is trivial since `kleinFour α = ⊥`, and `Nat.card α = 4` follows from sharp transitivity. -/
+theorem existsUnique_principal_twist_of_isMulCocycle₁
     {c c' : alternatingGroup α → kleinFour α}
     (hc : IsMulCocycle₁ c) (hn : ∀ n : kleinFour α, c n = n)
     (hc' : IsMulCocycle₁ c') (hn' : ∀ n : kleinFour α, c' n = n) :
     ∃! v : kleinFour α, ∀ g : alternatingGroup α, c' g = c g * (g • v / v) := by
-  obtain ⟨a, rfl, -⟩ := existsUnique_eq_kleinFourCrossedProjection hα4 hc hn
-  obtain ⟨b, rfl, -⟩ := existsUnique_eq_kleinFourCrossedProjection hα4 hc' hn'
-  exact existsUnique_kleinFourCrossedProjection_principal_twist hα4 a b
+  rcases (isMulCommutative_kleinFour_iff.mp ‹_›).eq_or_lt with hα4 | hlt
+  · obtain ⟨a, rfl, -⟩ := existsUnique_eq_kleinFourCrossedProjection hα4 hc hn
+    obtain ⟨b, rfl, -⟩ := existsUnique_eq_kleinFourCrossedProjection hα4 hc' hn'
+    exact existsUnique_kleinFourCrossedProjection_principal_twist hα4 a b
+  · have hbot : kleinFour α = ⊥ := kleinFour_eq_bot_iff.mpr hlt
+    have hsub : Subsingleton (kleinFour α) := ⟨fun x y => Subtype.ext <|
+      (Subgroup.mem_bot.mp (hbot ▸ x.property)).trans
+        (Subgroup.mem_bot.mp (hbot ▸ y.property)).symm⟩
+    exact ⟨1, fun _ => Subsingleton.elim _ _, fun _ _ => Subsingleton.elim _ _⟩
 
 end Cocycle
 
