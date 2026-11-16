@@ -20,8 +20,9 @@ counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
 * `Unitization.map_id`, `Unitization.map_comp`: functoriality.
 * `Unitization.fstHom_comp_map`: the induced map preserves the augmentation.
 * `Unitization.map_surjective`: the induced map of a surjective homomorphism is surjective.
-* `Unitization.fstAlgEquiv`, `Unitization.fstStarAlgEquiv`: when `A` is a subsingleton, the
-  augmentation `Unitization.fstHom` upgrades to an algebra (or `⋆`-algebra) equivalence onto `R`.
+* `Unitization.fstAlgEquivOfSubsingleton`, `Unitization.fstStarAlgEquivOfSubsingleton`: when `A`
+  is a subsingleton, the augmentation `Unitization.fstHom` upgrades to an algebra (or `⋆`-algebra)
+  equivalence onto `R`.
 -/
 
 public section
@@ -92,35 +93,35 @@ variable {R A : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A]
 variable (R A) in
 /-- When `A` is a subsingleton, the augmentation `Unitization.fstHom` upgrades to an algebra
 equivalence `Unitization R A ≃ₐ[R] R` with inverse `Unitization.inl`. -/
-def fstAlgEquiv : Unitization R A ≃ₐ[R] R :=
+def fstAlgEquivOfSubsingleton : Unitization R A ≃ₐ[R] R :=
   { fstHom R A with
     invFun := inl
-    left_inv := fun _ ↦ Unitization.ext rfl (Subsingleton.elim _ _)
+    left_inv := fun _ ↦ Unitization.ext (by simp) (Subsingleton.elim _ _)
     right_inv := fst_inl A }
 
 @[simp]
-theorem fstAlgEquiv_apply (u : Unitization R A) :
-    fstAlgEquiv R A u = u.fst := (rfl)
+theorem fstAlgEquivOfSubsingleton_apply (u : Unitization R A) :
+    fstAlgEquivOfSubsingleton R A u = u.fst := (rfl)
 
 @[simp]
-theorem fstAlgEquiv_symm_apply (r : R) :
-    (fstAlgEquiv R A).symm r = inl r := (rfl)
+theorem fstAlgEquivOfSubsingleton_symm_apply (r : R) :
+    (fstAlgEquivOfSubsingleton R A).symm r = inl r := (rfl)
 
 variable (R A) in
 /-- When `A` is a subsingleton, the augmentation `Unitization.fstHom` upgrades to a `⋆`-algebra
 equivalence `Unitization R A ≃⋆ₐ[R] R` with inverse `Unitization.inl`. -/
-def fstStarAlgEquiv [Star R] [Star A] : Unitization R A ≃⋆ₐ[R] R :=
-  { fstAlgEquiv R A with
+def fstStarAlgEquivOfSubsingleton [Star R] [Star A] : Unitization R A ≃⋆ₐ[R] R :=
+  { fstAlgEquivOfSubsingleton R A with
     map_smul' := map_smul (fstHom R A)
-    map_star' := fun _ ↦ rfl }
+    map_star' := fun _ ↦ by simp }
 
 @[simp]
-theorem fstStarAlgEquiv_apply [Star R] [Star A] (u : Unitization R A) :
-    fstStarAlgEquiv R A u = u.fst := (rfl)
+theorem fstStarAlgEquivOfSubsingleton_apply [Star R] [Star A] (u : Unitization R A) :
+    fstStarAlgEquivOfSubsingleton R A u = u.fst := (rfl)
 
 @[simp]
-theorem fstStarAlgEquiv_symm_apply [Star R] [Star A] (r : R) :
-    (fstStarAlgEquiv R A).symm r = inl r := (rfl)
+theorem fstStarAlgEquivOfSubsingleton_symm_apply [Star R] [Star A] (r : R) :
+    (fstStarAlgEquivOfSubsingleton R A).symm r = inl r := (rfl)
 
 end Subsingleton
 

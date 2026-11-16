@@ -87,8 +87,8 @@ def maximalIdealZero : Ideal C(unitInterval, ℂ) :=
 
 @[simp]
 theorem mem_maximalIdealZero_iff (f : C(unitInterval, ℂ)) :
-    f ∈ maximalIdealZero ↔ f 0 = 0 :=
-  Iff.rfl
+    f ∈ maximalIdealZero ↔ f 0 = 0 := by
+  simp [maximalIdealZero]
 
 theorem maximalIdealZero_eq_idealOfSet :
     maximalIdealZero = ContinuousMap.idealOfSet ℂ ({(0 : unitInterval)}ᶜ : Set unitInterval) :=
@@ -265,20 +265,10 @@ theorem no_identity_Ioc :
     have hx : e x * ((x : ℝ) : ℂ) = 1 * ((x : ℝ) : ℂ) := by
       simpa using congrArg (fun f : C₀(Set.Ioc (0 : ℝ) 1, ℂ) ↦ f x) (he coordIoc).1
     exact mul_right_cancel₀ (Complex.ofReal_ne_zero.mpr x.2.1.ne') hx
-  have hball : e ⁻¹' Metric.ball (0 : ℂ) 1 ∈ cocompact (Set.Ioc (0 : ℝ) 1) :=
-    (zero_at_infty e) (Metric.ball_mem_nhds 0 zero_lt_one)
-  have hemp : e ⁻¹' Metric.ball (0 : ℂ) 1 = ∅ := by
-    ext x
-    simp [he1 x]
-  rw [hemp, Filter.mem_cocompact] at hball
-  obtain ⟨K, hK, hKc⟩ := hball
-  have hKuniv : K = Set.univ :=
-    Set.compl_empty_iff.mp (Set.Subset.antisymm hKc (Set.empty_subset _))
-  rw [hKuniv, ← isCompact_iff_isCompact_univ] at hK
-  have h0 : (0 : ℝ) ∈ Set.Ioc (0 : ℝ) 1 := by
-    rw [← hK.isClosed.closure_eq, closure_Ioc (zero_ne_one' ℝ)]
-    exact ⟨le_rfl, zero_le_one⟩
-  exact lt_irrefl 0 h0.1
+  have : NoncompactSpace (Set.Ioc (0 : ℝ) 1) :=
+    not_compactSpace_iff.mp (mt isCompact_iff_compactSpace.mpr (by simp))
+  exact one_ne_zero (tendsto_nhds_unique (tendsto_const_nhds.congr fun x ↦ (he1 x).symm)
+    (zero_at_infty e))
 
 /-- On `C₀(Set.Ioc (0 : ℝ) 1, ℂ)`, the operator `1 • id + L_{-coordIoc}` has norm `1` because
 `1 - t → 1` as `t → 0⁺`. -/
@@ -344,6 +334,6 @@ theorem empty_unitization_contrast (z : ℂ) :
     Subsingleton (Unitization.LeftAction ℂ C(Empty, ℂ)) ∧
       Unitization.lift (NonUnitalAlgHom.Lmul ℂ C(Empty, ℂ)) (Unitization.inl z) = 0 ∧
       ‖(Unitization.inl z : Unitization ℂ C(Empty, ℂ))‖ = ‖z‖ :=
-  ⟨inferInstance, Unitization.lift_Lmul_eq_zero _, by simp [Unitization.norm_eq_norm_fst]⟩
+  ⟨inferInstance, Unitization.lift_Lmul_eq_zero_of_subsingleton _, by simp⟩
 
 end TauCeti.UnitizationExample

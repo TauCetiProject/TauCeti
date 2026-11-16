@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Algebra.Unitization
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Analysis.SpecificLimits.Normed
-public import TauCeti.Algebra.Algebra.Unitization
 public import TauCeti.Algebra.Star.Basic
 public import TauCeti.Analysis.Normed.Operator.Mul
+import TauCeti.Algebra.Group.Action.Faithful
 
 /-!
 # The left and right actions of the minimal unitization
@@ -18,14 +18,15 @@ public import TauCeti.Analysis.Normed.Operator.Mul
 The canonical left action of `Unitization 𝕜 A` on `A` is Mathlib's
 `Unitization.lift (NonUnitalAlgHom.Lmul 𝕜 A)`, sending `(z, a)` to `z • id + L_a`; symmetrically,
 `Unitization.rightAction 𝕜 A` is the `𝕜`-linear antimultiplicative map sending `(z, a)` to
-`z • id + R_a`. If a complete normed algebra `A` has no left (respectively, right) identity—or has
-an antimultiplicative involution and no two-sided identity—the scalar coordinate is bounded by the
-operator norm of the corresponding action, with the right-handed statements deduced from `Aᵐᵒᵖ`.
-When `A` is a regular normed algebra, left multiplication is faithful, so any left identity is
-already two-sided without assuming an involution; consequently, the left action is faithful if and
-only if `A` has no identity (without assuming completeness), embeds `Unitization 𝕜 A` isometrically
-when `A` is complete and has no identity, and has closed image in `A →L[𝕜] A` when both `𝕜` and
-`A` are complete.
+`z • id + R_a`. Whenever left multiplication on a seminormed algebra `A` is faithful
+(`FaithfulSMul A A`), the left action is injective if and only if `A` has no two-sided identity
+(without assuming completeness or an involution). If a complete normed algebra `A` has no left
+(respectively, right) identity—or has an antimultiplicative involution and no two-sided identity—
+the scalar coordinate is bounded by the operator norm of the corresponding action, with the
+right-handed statements deduced from `Aᵐᵒᵖ`. When `A` is a complete regular normed algebra, the
+left action embeds `Unitization 𝕜 A` isometrically when `A` has no identity, and has closed image in
+`A →L[𝕜] A` when `𝕜` is also complete (with the corresponding closed-range result for
+`Unitization.rightAction 𝕜 A` whenever `Aᵐᵒᵖ` is regular).
 
 The absence of an identity is essential for faithfulness and isometry:
 * for an already unital algebra `A`, the external unitization acts through `(z, a) ↦ z • 1 + a`,
@@ -33,18 +34,20 @@ The absence of an identity is essential for faithfulness and isometry:
 * for a subsingleton (zero) algebra `A`, `Unitization 𝕜 A` is isometrically isomorphic to `𝕜`
   with norm `‖u‖ = ‖u.fst‖`, while the left-action image is `{0}`.
 
-For any normed algebra `A`, `Unitization.LeftAction 𝕜 A` is the subtype of the unital subalgebra
-`(Unitization.lift (NonUnitalAlgHom.Lmul 𝕜 A)).range` of `A →L[𝕜] A`, inheriting its normed algebra
-structure from `A →L[𝕜] A`, commutative when `A` is commutative, and complete when `𝕜` and `A` are
-complete and `A` is regular. Although `A →L[𝕜] A` carries no ambient adjoint in general, every
-operator `z • id + L_a` and its formal conjugate `star z • id + L_{star a}` satisfy the `A`-valued
-adjoint identity `star ((z • id + L_a) x) * y = star x * ((star z • id + L_{star a}) y)`. When `A`
-has a proper involution (`IsProperStar A`), this adjoint is uniquely determined by the operator
-itself—even when `A` is unital or zero—equipping `Unitization.LeftAction 𝕜 A` with `StarRing` and
-`StarModule` structures and the nonunital `⋆`-homomorphism `Unitization.LeftAction.Lmul` (which is
-isometric when `A` is regular). When `A` is regular with proper involution and no two-sided
-identity, `Unitization.starLift` of `Lmul` upgrades to `Unitization.starAlgEquivLeftAction :
-Unitization 𝕜 A ≃⋆ₐ[𝕜] Unitization.LeftAction 𝕜 A`, which is isometric when `A` is complete.
+For any seminormed algebra `A`, `Unitization.LeftAction 𝕜 A` is the subtype of the unital
+subalgebra `(Unitization.lift (NonUnitalAlgHom.Lmul 𝕜 A)).range` of `A →L[𝕜] A`, inheriting its
+seminormed (or normed) algebra structure from `A →L[𝕜] A`, commutative when `A` is commutative, and
+complete when `𝕜` and `A` are complete and `A` is a regular normed algebra. Although `A →L[𝕜] A`
+carries no ambient adjoint in general, every operator `z • id + L_a` and its formal conjugate
+`star z • id + L_{star a}` satisfy the `A`-valued adjoint identity
+`star ((z • id + L_a) x) * y = star x * ((star z • id + L_{star a}) y)`. When right multiplication
+on `A` is faithful (`FaithfulSMul Aᵐᵒᵖ A`, in particular whenever `IsProperStar A`), this adjoint
+is uniquely determined by the operator itself—even when `A` is unital or zero—equipping
+`Unitization.LeftAction 𝕜 A` with `StarRing` and `StarModule` structures and the nonunital
+`⋆`-homomorphism `Unitization.LeftAction.Lmul` (which is isometric when `A` is regular). When `A`
+has no two-sided identity, `Unitization.starLift` of `Lmul` upgrades to
+`Unitization.starAlgEquivLeftAction 𝕜 hA : Unitization 𝕜 A ≃⋆ₐ[𝕜] Unitization.LeftAction 𝕜 A`,
+which is isometric when `A` is a complete regular normed algebra.
 
 ## References
 
@@ -101,37 +104,21 @@ theorem range_lift_Lmul_of_left_identity {e : A} (he : ∀ b : A, e * b = b) :
 of `Unitization.rightAction 𝕜 A` coincides with the range of right multiplication. -/
 theorem range_rightAction_of_right_identity {e : A} (he : ∀ b : A, b * e = b) :
     Set.range (rightAction 𝕜 A) = Set.range (mul 𝕜 A).flip := by
-  have he' (b : Aᵐᵒᵖ) : MulOpposite.op e * b = b :=
-    MulOpposite.unop_injective (he b.unop)
   ext T
-  refine ⟨?_, fun ⟨a, ha⟩ ↦ ⟨a, by simpa using ha⟩⟩
-  rintro ⟨u, rfl⟩
-  have hmem : lift (NonUnitalAlgHom.Lmul 𝕜 Aᵐᵒᵖ) (inl u.fst + inr (MulOpposite.op u.snd)) ∈
-      Set.range (mul 𝕜 Aᵐᵒᵖ) := by
-    rw [← range_lift_Lmul_of_left_identity he']
-    exact ⟨_, rfl⟩
-  obtain ⟨a, ha⟩ := hmem
-  refine ⟨a.unop, ?_⟩
-  ext b
-  have hb := congrArg MulOpposite.unop (DFunLike.congr_fun ha (MulOpposite.op b))
-  simpa [Algebra.algebraMap_eq_smul_one] using hb
+  refine ⟨?_, ?_⟩
+  · rintro ⟨u, rfl⟩
+    refine ⟨u.fst • e + u.snd, ?_⟩
+    ext b
+    simp [he b]
+  · rintro ⟨a, rfl⟩
+    exact ⟨a, by simp⟩
 
-end Seminormed
-
-section Normed
-
-variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜]
-  [NonUnitalNormedRing A] [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
-
-section Injectivity
-
-variable [RegularNormedAlgebra 𝕜 A]
-
-/-- In a regular normed algebra, the left action of `Unitization 𝕜 A` is injective if and only if
-`A` has no left identity; completeness is not needed. -/
-theorem injective_lift_Lmul_iff_no_left_identity :
-    Function.Injective (lift (NonUnitalAlgHom.Lmul 𝕜 A)) ↔ ¬ ∃ e : A, ∀ b : A, e * b = b := by
-  rw [injective_iff_map_eq_zero]
+/-- When left multiplication on `A` is faithful, the left action of `Unitization 𝕜 A` is injective
+if and only if `A` has no two-sided identity; neither completeness nor an involution is needed. -/
+theorem injective_lift_Lmul_iff [FaithfulSMul A A] :
+    Function.Injective (lift (NonUnitalAlgHom.Lmul 𝕜 A)) ↔
+      ¬ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b := by
+  rw [← FaithfulSMul.exists_left_identity_iff, injective_iff_map_eq_zero]
   refine ⟨fun hinj ⟨e, he⟩ ↦ ?_, fun hA u hu ↦ ?_⟩
   · have h0 : lift (NonUnitalAlgHom.Lmul 𝕜 A) (inl (1 : 𝕜) - (e : Unitization 𝕜 A)) = 0 := by
       ext b
@@ -140,25 +127,21 @@ theorem injective_lift_Lmul_iff_no_left_identity :
     exact one_ne_zero h1
   · by_cases hz : u.fst = 0
     · have hsnd : mul 𝕜 A u.snd = 0 := by simpa [hz] using hu
-      exact Unitization.ext hz ((isometry_mul 𝕜 A).injective (by simpa using hsnd))
+      refine Unitization.ext hz (FaithfulSMul.eq_of_smul_eq_smul (α := A) fun b ↦ ?_)
+      simpa [smul_eq_mul] using DFunLike.congr_fun hsnd b
     · refine (hA ⟨-u.fst⁻¹ • u.snd, fun b ↦ ?_⟩).elim
       have hb : u.fst • b + u.snd * b = 0 := by
         simpa [Algebra.algebraMap_eq_smul_one] using DFunLike.congr_fun hu b
       have hmul : u.snd * b = -(u.fst • b) := eq_neg_of_add_eq_zero_right hb
       simp [smul_mul_assoc, hmul, smul_smul, hz]
 
-/-- In a regular normed algebra, the left action of `Unitization 𝕜 A` is injective if and only if
-`A` has no two-sided identity; neither completeness nor an involution is needed. -/
-theorem injective_lift_Lmul_iff :
-    Function.Injective (lift (NonUnitalAlgHom.Lmul 𝕜 A)) ↔
-      ¬ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b := by
-  rw [injective_lift_Lmul_iff_no_left_identity, RegularNormedAlgebra.exists_left_identity_iff 𝕜]
-
-end Injectivity
+end Seminormed
 
 section Complete
 
-variable [CompleteSpace A]
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜]
+  [NonUnitalNormedRing A] [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
+  [CompleteSpace A]
 
 /-- For a complete normed algebra without a left identity, the scalar coordinate is bounded
 by the operator norm of the left action. -/
@@ -199,7 +182,7 @@ theorem norm_fst_le_norm_rightAction_of_no_right_identity
     (hA : ¬ ∃ e : A, ∀ b : A, b * e = b) (u : Unitization 𝕜 A) :
     ‖u.fst‖ ≤ ‖rightAction 𝕜 A u‖ := by
   have hA' : ¬ ∃ e : Aᵐᵒᵖ, ∀ b : Aᵐᵒᵖ, e * b = b := fun ⟨e, he⟩ ↦
-    hA ⟨e.unop, fun b ↦ MulOpposite.op_injective (he (MulOpposite.op b))⟩
+    hA ⟨e.unop, fun b ↦ by simpa using congrArg MulOpposite.unop (he (MulOpposite.op b))⟩
   let u' : Unitization 𝕜 Aᵐᵒᵖ := inl u.fst + inr (MulOpposite.op u.snd)
   let T' : Aᵐᵒᵖ →L[𝕜] Aᵐᵒᵖ := lift (NonUnitalAlgHom.Lmul 𝕜 Aᵐᵒᵖ) u'
   have hfst : ‖u.fst‖ ≤ ‖T'‖ := by
@@ -217,30 +200,19 @@ theorem norm_fst_le_norm_rightAction [StarMul A]
     ‖u.fst‖ ≤ ‖rightAction 𝕜 A u‖ :=
   norm_fst_le_norm_rightAction_of_no_right_identity (mt TauCeti.exists_right_identity_iff.mp hA) u
 
+section Regular
+
 variable [RegularNormedAlgebra 𝕜 A]
-
-/-- The minimal unitization norm equals the norm of the left action when a complete regular
-normed algebra has no left identity. -/
-theorem norm_lift_Lmul_of_no_left_identity
-    (hA : ¬ ∃ e : A, ∀ b : A, e * b = b) (u : Unitization 𝕜 A) :
-    ‖lift (NonUnitalAlgHom.Lmul 𝕜 A) u‖ = ‖u‖ := by
-  rw [norm_eq_sup]
-  exact (max_eq_right (norm_fst_le_norm_lift_Lmul_of_no_left_identity hA u)).symm
-
-/-- When `A` has no left identity, the left action embeds the minimal unitization isometrically
-into the bounded operators on `A`. -/
-theorem isometry_lift_Lmul_of_no_left_identity
-    (hA : ¬ ∃ e : A, ∀ b : A, e * b = b) :
-    Isometry (lift (NonUnitalAlgHom.Lmul 𝕜 A)) :=
-  AddMonoidHomClass.isometry_of_norm _ (norm_lift_Lmul_of_no_left_identity hA)
 
 /-- The minimal unitization norm equals the norm of the left action when the complete regular
 normed algebra has no two-sided identity. This includes nonunital C⋆-algebras. -/
 theorem norm_lift_Lmul
     (hA : ¬ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b) (u : Unitization 𝕜 A) :
-    ‖lift (NonUnitalAlgHom.Lmul 𝕜 A) u‖ = ‖u‖ :=
-  norm_lift_Lmul_of_no_left_identity
-    (mt (RegularNormedAlgebra.exists_left_identity_iff 𝕜).mp hA) u
+    ‖lift (NonUnitalAlgHom.Lmul 𝕜 A) u‖ = ‖u‖ := by
+  have := RegularNormedAlgebra.faithfulSMul 𝕜 (R := A)
+  rw [norm_eq_sup]
+  exact (max_eq_right (norm_fst_le_norm_lift_Lmul_of_no_left_identity
+    (mt FaithfulSMul.exists_left_identity_iff.mp hA) u)).symm
 
 /-- When `A` has no two-sided identity, the left action embeds the minimal unitization
 isometrically into the bounded operators on `A`. -/
@@ -250,19 +222,43 @@ theorem isometry_lift_Lmul
   AddMonoidHomClass.isometry_of_norm _ (norm_lift_Lmul hA)
 
 /-- For any complete regular normed algebra over a complete field, the left-action image of
-`Unitization 𝕜 A` in `A →L[𝕜] A` is closed: if `A` has a left identity it equals the isometric
-image of `mul 𝕜 A`, and otherwise `lift (NonUnitalAlgHom.Lmul 𝕜 A)` is itself an isometry. -/
+`Unitization 𝕜 A` in `A →L[𝕜] A` is closed, whether or not `A` has an identity. -/
 theorem isClosed_range_lift_Lmul [CompleteSpace 𝕜] :
     IsClosed (Set.range (lift (NonUnitalAlgHom.Lmul 𝕜 A))) := by
-  by_cases hA : ∃ e : A, ∀ b : A, e * b = b
+  by_cases hA : ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b
   · obtain ⟨e, he⟩ := hA
-    rw [range_lift_Lmul_of_left_identity he]
+    rw [range_lift_Lmul_of_left_identity fun b ↦ (he b).1]
     exact (isometry_mul 𝕜 A).isClosedEmbedding.isClosed_range
-  · exact (isometry_lift_Lmul_of_no_left_identity hA).isClosedEmbedding.isClosed_range
+  · exact (isometry_lift_Lmul hA).isClosedEmbedding.isClosed_range
+
+end Regular
+
+/-- For any complete normed algebra over a complete field whose opposite algebra is regular, the
+right-action image of `Unitization 𝕜 A` in `A →L[𝕜] A` is closed, whether or not `A` has an
+identity. -/
+theorem isClosed_range_rightAction [CompleteSpace 𝕜] [RegularNormedAlgebra 𝕜 Aᵐᵒᵖ] :
+    IsClosed (Set.range (rightAction 𝕜 A)) := by
+  let e : (A →L[𝕜] A) ≃L[𝕜] (Aᵐᵒᵖ →L[𝕜] Aᵐᵒᵖ) :=
+    (MulOpposite.opContinuousLinearEquiv 𝕜).arrowCongr (MulOpposite.opContinuousLinearEquiv 𝕜)
+  have hpre : Set.range (rightAction 𝕜 A) =
+      e ⁻¹' Set.range (lift (NonUnitalAlgHom.Lmul 𝕜 Aᵐᵒᵖ)) := by
+    ext T
+    simp only [Set.mem_range, Set.mem_preimage]
+    refine ⟨?_, ?_⟩
+    · rintro ⟨u, rfl⟩
+      refine ⟨inl u.fst + inr (MulOpposite.op u.snd), ?_⟩
+      ext y
+      simp [e, Algebra.algebraMap_eq_smul_one]
+    · rintro ⟨v, hv⟩
+      refine ⟨inl v.fst + inr v.snd.unop, ?_⟩
+      apply e.injective
+      rw [← hv]
+      ext y
+      simp [e, Algebra.algebraMap_eq_smul_one]
+  rw [hpre]
+  exact (isClosed_range_lift_Lmul (𝕜 := 𝕜) (A := Aᵐᵒᵖ)).preimage e.continuous
 
 end Complete
-
-end Normed
 
 section Unital
 
@@ -319,12 +315,12 @@ variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalSeminormedRin
   [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [Subsingleton A]
 
 /-- On a subsingleton algebra, every element of `Unitization 𝕜 A` acts as the zero operator. -/
-theorem lift_Lmul_eq_zero (u : Unitization 𝕜 A) :
+theorem lift_Lmul_eq_zero_of_subsingleton (u : Unitization 𝕜 A) :
     lift (NonUnitalAlgHom.Lmul 𝕜 A) u = 0 :=
   Subsingleton.elim _ _
 
 /-- On a subsingleton algebra, the left-action image of `Unitization 𝕜 A` is `{0}`. -/
-theorem range_lift_Lmul_eq_singleton_zero :
+theorem range_lift_Lmul_eq_singleton_zero_of_subsingleton :
     Set.range (lift (NonUnitalAlgHom.Lmul 𝕜 A)) = {0} := by
   ext T
   simp only [Set.mem_range, Set.mem_singleton_iff, Subsingleton.elim T 0]
@@ -332,11 +328,12 @@ theorem range_lift_Lmul_eq_singleton_zero :
 
 /-- On a subsingleton algebra over a nontrivially normed field, the left action of
 `Unitization 𝕜 A` is not injective. -/
-theorem not_injective_lift_Lmul :
+theorem not_injective_lift_Lmul_of_subsingleton :
     ¬ Function.Injective (lift (NonUnitalAlgHom.Lmul 𝕜 A)) := by
   intro hinj
   have h : (inl 1 : Unitization 𝕜 A) = 0 := hinj (Subsingleton.elim _ _)
-  exact one_ne_zero (congrArg (·.fst) h)
+  have h1 : (1 : 𝕜) = 0 := by simpa using congrArg (·.fst) h
+  exact one_ne_zero h1
 
 end SeminormedSubsingleton
 
@@ -348,21 +345,15 @@ variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A]
 /-- On a subsingleton normed algebra, the minimal unitization norm is the norm of the scalar
 coordinate. -/
 @[simp]
-theorem norm_eq_norm_fst (u : Unitization 𝕜 A) : ‖u‖ = ‖u.fst‖ := by
+theorem norm_eq_norm_fst_of_subsingleton (u : Unitization 𝕜 A) : ‖u‖ = ‖u.fst‖ := by
   rw [norm_eq_sup, Subsingleton.elim (algebraMap 𝕜 (A →L[𝕜] A) u.fst + mul 𝕜 A u.snd) 0,
     norm_zero, max_eq_left (norm_nonneg _)]
 
-/-- On a subsingleton normed algebra, the augmentation `Unitization.fstHom` is an isometry. -/
-theorem isometry_fstHom : Isometry (fstHom 𝕜 A) :=
-  AddMonoidHomClass.isometry_of_norm _ fun u ↦ (norm_eq_norm_fst u).symm
-
-/-- On a subsingleton normed algebra, `Unitization.fstAlgEquiv` is an isometry. -/
-theorem isometry_fstAlgEquiv : Isometry (fstAlgEquiv 𝕜 A) :=
-  AddMonoidHomClass.isometry_of_norm _ fun u ↦ by simp
-
-/-- On a subsingleton normed star algebra, `Unitization.fstStarAlgEquiv` is an isometry. -/
-theorem isometry_fstStarAlgEquiv [Star 𝕜] [Star A] : Isometry (fstStarAlgEquiv 𝕜 A) :=
-  AddMonoidHomClass.isometry_of_norm _ fun u ↦ by simp
+/-- On a subsingleton normed algebra, the scalar projection `fun u ↦ u.fst` is an isometry. -/
+theorem isometry_fst_of_subsingleton : Isometry (fun u : Unitization 𝕜 A ↦ u.fst) :=
+  isometry_iff_dist_eq.mpr fun u v ↦ by
+    rw [dist_eq_norm, dist_eq_norm, sub_eq_add_neg, sub_eq_add_neg,
+      norm_eq_norm_fst_of_subsingleton, fst_add, fst_neg]
 
 end NormedSubsingleton
 
@@ -372,7 +363,7 @@ section Adjoint
 
 /-- Every left-action operator `lift (NonUnitalAlgHom.Lmul 𝕜 A) u` and its formal conjugate at
 `star u` are mutually adjoint with respect to `(x, y) ↦ star x * y`. -/
-theorem star_lift_Lmul_apply_mul {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [StarRing 𝕜]
+theorem star_lift_Lmul_apply_mul {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [Star 𝕜]
     [NonUnitalSeminormedRing A] [StarRing A] [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A]
     [SMulCommClass 𝕜 A A] [StarModule 𝕜 A] (u : Unitization 𝕜 A) (x y : A) :
     star (lift (NonUnitalAlgHom.Lmul 𝕜 A) u x) * y =
@@ -380,10 +371,11 @@ theorem star_lift_Lmul_apply_mul {𝕜 A : Type*} [NontriviallyNormedField 𝕜]
   simp [Algebra.algebraMap_eq_smul_one, star_add, star_smul, star_mul, add_mul, mul_add,
     smul_mul_assoc, mul_smul_comm, mul_assoc]
 
-/-- When `A` has a proper involution, the left action of `star u` depends only on the operator
-`lift (NonUnitalAlgHom.Lmul 𝕜 A) u`, without assuming completeness or absence of an identity. -/
-theorem lift_Lmul_star_eq_of_eq {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [StarRing 𝕜]
-    [NonUnitalNormedRing A] [StarRing A] [IsProperStar A] [NormedSpace 𝕜 A]
+/-- When right multiplication on `A` is faithful (`FaithfulSMul Aᵐᵒᵖ A`), the left action of
+`star u` depends only on the operator `lift (NonUnitalAlgHom.Lmul 𝕜 A) u`, without assuming
+completeness or absence of an identity. -/
+theorem lift_Lmul_star_eq_of_eq {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [Star 𝕜]
+    [NonUnitalSeminormedRing A] [StarRing A] [FaithfulSMul Aᵐᵒᵖ A] [NormedSpace 𝕜 A]
     [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [StarModule 𝕜 A] {u v : Unitization 𝕜 A}
     (h : lift (NonUnitalAlgHom.Lmul 𝕜 A) u = lift (NonUnitalAlgHom.Lmul 𝕜 A) v) :
     lift (NonUnitalAlgHom.Lmul 𝕜 A) (star u) = lift (NonUnitalAlgHom.Lmul 𝕜 A) (star v) := by
@@ -398,8 +390,9 @@ end Adjoint
 /-- The unital operator-norm subalgebra `{z • id + L_a : z ∈ 𝕜, a ∈ A}` of `A →L[𝕜] A` generated
 by the identity and left multiplications, realized as the subtype of
 `(Unitization.lift (NonUnitalAlgHom.Lmul 𝕜 A)).range`. Its `Ring`, `Module`, `Algebra`,
-`NormedRing`, and `NormedAlgebra` structures are inherited from `Subalgebra`. -/
-abbrev LeftAction (𝕜 A : Type*) [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A]
+`SeminormedRing` (and `NormedRing`), and `NormedAlgebra` structures are inherited from
+`Subalgebra`. -/
+abbrev LeftAction (𝕜 A : Type*) [NontriviallyNormedField 𝕜] [NonUnitalSeminormedRing A]
     [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] : Type _ :=
   (lift (NonUnitalAlgHom.Lmul 𝕜 A)).range
 
@@ -411,8 +404,7 @@ variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A]
   [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
 
 /-- When `𝕜` and `A` are complete and `A` is regular, `LeftAction 𝕜 A` is complete in the
-inherited operator norm because its carrier in `A →L[𝕜] A` is closed
-(`isClosed_range_lift_Lmul`). -/
+inherited operator norm. -/
 instance instCompleteSpace [CompleteSpace 𝕜] [RegularNormedAlgebra 𝕜 A] [CompleteSpace A] :
     CompleteSpace (LeftAction 𝕜 A) :=
   ((AlgHom.coe_range (lift (NonUnitalAlgHom.Lmul 𝕜 A))).symm ▸
@@ -420,31 +412,48 @@ instance instCompleteSpace [CompleteSpace 𝕜] [RegularNormedAlgebra 𝕜 A] [C
 
 end Normed
 
-section CommNormed
+section CommSeminormed
 
-variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedCommRing A]
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalSeminormedCommRing A]
   [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
 
-/-- When `A` is commutative, `LeftAction 𝕜 A` is a commutative normed ring even though the ambient
-endomorphism ring `A →L[𝕜] A` need not be commutative. -/
-noncomputable instance instNormedCommRing : NormedCommRing (LeftAction 𝕜 A) :=
-  { (inferInstance : NormedRing (LeftAction 𝕜 A)) with
+/-- When `A` is commutative, `LeftAction 𝕜 A` is a commutative seminormed ring even though the
+ambient endomorphism ring `A →L[𝕜] A` need not be commutative. -/
+noncomputable instance instSeminormedCommRing : SeminormedCommRing (LeftAction 𝕜 A) :=
+  { (inferInstance : SeminormedRing (LeftAction 𝕜 A)) with
     mul_comm := fun S T ↦ by
       obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp S.2
       obtain ⟨v, hv⟩ := (AlgHom.mem_range _).mp T.2
       apply Subtype.ext
       rw [Subalgebra.coe_mul, Subalgebra.coe_mul, ← hu, ← hv, ← map_mul, mul_comm u v, map_mul] }
 
+end CommSeminormed
+
+section CommNormed
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedCommRing A]
+  [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
+
+/-- When `A` is a commutative normed ring, `LeftAction 𝕜 A` is a commutative normed ring even
+though the ambient endomorphism ring `A →L[𝕜] A` need not be commutative. -/
+noncomputable instance instNormedCommRing : NormedCommRing (LeftAction 𝕜 A) :=
+  { (inferInstance : NormedRing (LeftAction 𝕜 A)) with
+    mul_comm := instSeminormedCommRing.mul_comm }
+
 end CommNormed
 
 section Star
 
-variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [StarRing 𝕜] [NonUnitalNormedRing A]
-  [StarRing A] [IsProperStar A] [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A]
-  [SMulCommClass 𝕜 A A] [StarModule 𝕜 A]
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalSeminormedRing A]
+  [StarRing A] [FaithfulSMul Aᵐᵒᵖ A] [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A]
+  [SMulCommClass 𝕜 A A]
 
-/-- On an algebra with proper involution, `star` on `LeftAction 𝕜 A` is transported along the
-surjection `lift (NonUnitalAlgHom.Lmul 𝕜 A)` (`lift_Lmul_star_eq_of_eq`). -/
+section StarOp
+
+variable [Star 𝕜] [StarModule 𝕜 A]
+
+/-- On an algebra with faithful right multiplication, `star` on `LeftAction 𝕜 A` is transported
+along the surjection `lift (NonUnitalAlgHom.Lmul 𝕜 A)` (`lift_Lmul_star_eq_of_eq`). -/
 noncomputable instance instStar : Star (LeftAction 𝕜 A) where
   star T := ⟨lift (NonUnitalAlgHom.Lmul 𝕜 A) (star ((AlgHom.mem_range _).mp T.2).choose),
     (lift (NonUnitalAlgHom.Lmul 𝕜 A)).mem_range_self _⟩
@@ -456,6 +465,18 @@ theorem coe_star_of_eq {T : LeftAction 𝕜 A} {u : Unitization 𝕜 A}
     ((star T : LeftAction 𝕜 A) : A →L[𝕜] A) = lift (NonUnitalAlgHom.Lmul 𝕜 A) (star u) :=
   -- `instStar` above defines `↑(star T)` as the left action of `star` of the chosen preimage.
   lift_Lmul_star_eq_of_eq (((AlgHom.mem_range _).mp T.2).choose_spec.trans hu.symm)
+
+/-- Every operator in `LeftAction 𝕜 A` and its involution are mutually adjoint for
+`(x, y) ↦ star x * y`. -/
+theorem star_apply_mul (T : LeftAction 𝕜 A) (x y : A) :
+    star ((T : A →L[𝕜] A) x) * y = star x * ((star T : LeftAction 𝕜 A) : A →L[𝕜] A) y := by
+  obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp T.2
+  rw [coe_star_of_eq hu, ← hu]
+  exact star_lift_Lmul_apply_mul u x y
+
+end StarOp
+
+variable [StarRing 𝕜] [StarModule 𝕜 A]
 
 noncomputable instance instStarRing : StarRing (LeftAction 𝕜 A) where
   star_involutive T := by
@@ -484,14 +505,6 @@ noncomputable instance instStarRing : StarRing (LeftAction 𝕜 A) where
     rw [coe_star_of_eq huv, StarAddMonoid.star_add u v, map_add, Subalgebra.coe_add,
       coe_star_of_eq hu, coe_star_of_eq hv]
 
-/-- Every operator in `LeftAction 𝕜 A` and its involution are mutually adjoint for
-`(x, y) ↦ star x * y`. -/
-theorem star_apply_mul (T : LeftAction 𝕜 A) (x y : A) :
-    star ((T : A →L[𝕜] A) x) * y = star x * ((star T : LeftAction 𝕜 A) : A →L[𝕜] A) y := by
-  obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp T.2
-  rw [coe_star_of_eq hu, ← hu]
-  exact star_lift_Lmul_apply_mul u x y
-
 instance instStarModule : StarModule 𝕜 (LeftAction 𝕜 A) where
   star_smul c T := by
     obtain ⟨u, hu⟩ := (AlgHom.mem_range _).mp T.2
@@ -518,19 +531,12 @@ noncomputable def Lmul : A →⋆ₙₐ[𝕜] LeftAction 𝕜 A where
 @[simp]
 theorem coe_Lmul (a : A) : ((Lmul 𝕜 A a : LeftAction 𝕜 A) : A →L[𝕜] A) = mul 𝕜 A a := (rfl)
 
-/-- Left multiplication into `LeftAction 𝕜 A` preserves norms in any regular normed algebra
-(including `a = 0`). -/
-theorem norm_Lmul [RegularNormedAlgebra 𝕜 A] (a : A) :
-    ‖Lmul 𝕜 A a‖ = ‖a‖ := by
-  simp
-
-/-- Left multiplication into `LeftAction 𝕜 A` is an isometry in any regular normed algebra. -/
+/-- Left multiplication into `LeftAction 𝕜 A` is an isometry in any regular seminormed algebra. -/
 theorem isometry_Lmul [RegularNormedAlgebra 𝕜 A] :
     Isometry (Lmul 𝕜 A) :=
-  AddMonoidHomClass.isometry_of_norm (Lmul 𝕜 A).toNonUnitalAlgHom norm_Lmul
+  AddMonoidHomClass.isometry_of_norm (Lmul 𝕜 A).toNonUnitalAlgHom fun _ ↦ by simp
 
-/-- By uniqueness of lifts from `Unitization 𝕜 A`, the underlying algebra homomorphism of
-`Unitization.starLift (LeftAction.Lmul 𝕜 A)` equals
+/-- The underlying algebra homomorphism of `Unitization.starLift (LeftAction.Lmul 𝕜 A)` equals
 `(lift (NonUnitalAlgHom.Lmul 𝕜 A)).rangeRestrict`. -/
 theorem toAlgHom_starLift_Lmul :
     (starLift (Lmul 𝕜 A)).toAlgHom = (lift (NonUnitalAlgHom.Lmul 𝕜 A)).rangeRestrict :=
@@ -566,15 +572,23 @@ end LeftAction
 
 section Equiv
 
-variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [StarRing 𝕜] [NonUnitalNormedRing A]
-  [StarRing A] [IsProperStar A] [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A]
-  [SMulCommClass 𝕜 A A] [StarModule 𝕜 A] [RegularNormedAlgebra 𝕜 A]
+section SeminormedEquiv
 
-/-- When `A` is a regular normed star algebra with proper involution and no two-sided identity,
-`Unitization.starLift (LeftAction.Lmul 𝕜 A)` is a `⋆`-algebra equivalence onto `LeftAction 𝕜 A`. -/
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [StarRing 𝕜] [NonUnitalSeminormedRing A]
+  [StarRing A] [FaithfulSMul Aᵐᵒᵖ A] [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A]
+  [SMulCommClass 𝕜 A A] [StarModule 𝕜 A]
+
+variable (𝕜) in
+/-- When `A` is a seminormed star algebra with faithful right multiplication and no two-sided
+identity, `Unitization.starLift (LeftAction.Lmul 𝕜 A)` is a `⋆`-algebra equivalence onto
+`LeftAction 𝕜 A`. -/
 noncomputable def starAlgEquivLeftAction
     (hA : ¬ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b) :
     Unitization 𝕜 A ≃⋆ₐ[𝕜] LeftAction 𝕜 A :=
+  haveI : FaithfulSMul A A :=
+    ⟨fun {x y} h ↦ star_injective <| MulOpposite.op_injective <|
+      FaithfulSMul.eq_of_smul_eq_smul (α := A) fun c ↦ by
+        simpa [MulOpposite.smul_eq_mul_unop, smul_eq_mul] using congrArg star (h (star c))⟩
   StarAlgEquiv.ofBijective (starLift (LeftAction.Lmul 𝕜 A))
     ⟨fun u v huv ↦ (injective_lift_Lmul_iff.mpr hA) <| by
       rw [← LeftAction.coe_starLift_Lmul_eq_lift_Lmul, ← LeftAction.coe_starLift_Lmul_eq_lift_Lmul,
@@ -584,43 +598,54 @@ noncomputable def starAlgEquivLeftAction
 @[simp]
 theorem toStarAlgHom_starAlgEquivLeftAction
     (hA : ¬ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b) :
-    (starAlgEquivLeftAction (𝕜 := 𝕜) hA).toStarAlgHom = starLift (LeftAction.Lmul 𝕜 A) := (rfl)
+    (starAlgEquivLeftAction 𝕜 hA).toStarAlgHom = starLift (LeftAction.Lmul 𝕜 A) := (rfl)
 
 @[simp]
 theorem coe_starAlgEquivLeftAction
     (hA : ¬ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b) (u : Unitization 𝕜 A) :
-    ((starAlgEquivLeftAction (𝕜 := 𝕜) hA u : LeftAction 𝕜 A) : A →L[𝕜] A) =
-      u.fst • ContinuousLinearMap.id 𝕜 A + mul 𝕜 A u.snd :=
-  LeftAction.coe_starLift_Lmul u
+    ((starAlgEquivLeftAction 𝕜 hA u : LeftAction 𝕜 A) : A →L[𝕜] A) =
+      u.fst • ContinuousLinearMap.id 𝕜 A + mul 𝕜 A u.snd := by
+  rw [← StarAlgEquiv.toStarAlgHom_apply, toStarAlgHom_starAlgEquivLeftAction]
+  exact LeftAction.coe_starLift_Lmul u
 
 @[simp]
 theorem starAlgEquivLeftAction_inr
     (hA : ¬ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b) (a : A) :
-    starAlgEquivLeftAction (𝕜 := 𝕜) hA (a : Unitization 𝕜 A) = LeftAction.Lmul 𝕜 A a :=
+    starAlgEquivLeftAction 𝕜 hA (a : Unitization 𝕜 A) = LeftAction.Lmul 𝕜 A a :=
   Subtype.ext (by simp)
 
 @[simp]
 theorem starAlgEquivLeftAction_symm_Lmul
     (hA : ¬ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b) (a : A) :
-    (starAlgEquivLeftAction (𝕜 := 𝕜) hA).symm (LeftAction.Lmul 𝕜 A a) = (a : Unitization 𝕜 A) :=
-  (starAlgEquivLeftAction (𝕜 := 𝕜) hA).symm_apply_eq.mpr (starAlgEquivLeftAction_inr hA a).symm
+    (starAlgEquivLeftAction 𝕜 hA).symm (LeftAction.Lmul 𝕜 A a) = (a : Unitization 𝕜 A) :=
+  (starAlgEquivLeftAction 𝕜 hA).symm_apply_eq.mpr (starAlgEquivLeftAction_inr hA a).symm
 
-/-- When `A` is complete and has no two-sided identity, `Unitization.starAlgEquivLeftAction`
-preserves norms. -/
-theorem norm_starAlgEquivLeftAction [CompleteSpace A]
+end SeminormedEquiv
+
+section NormedEquiv
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [StarRing 𝕜] [NonUnitalNormedRing A]
+  [StarRing A] [FaithfulSMul Aᵐᵒᵖ A] [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A]
+  [SMulCommClass 𝕜 A A] [StarModule 𝕜 A] [RegularNormedAlgebra 𝕜 A] [CompleteSpace A]
+
+/-- When `A` is a complete regular normed star algebra with faithful right multiplication and no
+two-sided identity, `Unitization.starAlgEquivLeftAction` preserves norms. -/
+theorem norm_starAlgEquivLeftAction
     (hA : ¬ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b) (u : Unitization 𝕜 A) :
-    ‖starAlgEquivLeftAction (𝕜 := 𝕜) hA u‖ = ‖u‖ := by
+    ‖starAlgEquivLeftAction 𝕜 hA u‖ = ‖u‖ := by
   rw [AddSubgroupClass.coe_norm, ← StarAlgEquiv.toStarAlgHom_apply,
     toStarAlgHom_starAlgEquivLeftAction, LeftAction.coe_starLift_Lmul_eq_lift_Lmul,
     norm_lift_Lmul hA u]
 
-/-- When `A` is complete and has no two-sided identity, `Unitization.starAlgEquivLeftAction` is
-an isometry. -/
-theorem isometry_starAlgEquivLeftAction [CompleteSpace A]
+/-- When `A` is a complete regular normed star algebra with faithful right multiplication and no
+two-sided identity, `Unitization.starAlgEquivLeftAction` is an isometry. -/
+theorem isometry_starAlgEquivLeftAction
     (hA : ¬ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b) :
-    Isometry (starAlgEquivLeftAction (𝕜 := 𝕜) hA) :=
-  AddMonoidHomClass.isometry_of_norm (starAlgEquivLeftAction (𝕜 := 𝕜) hA).toStarAlgHom.toAlgHom
+    Isometry (starAlgEquivLeftAction 𝕜 hA) :=
+  AddMonoidHomClass.isometry_of_norm (starAlgEquivLeftAction 𝕜 hA).toStarAlgHom.toAlgHom
     (norm_starAlgEquivLeftAction hA)
+
+end NormedEquiv
 
 end Equiv
 

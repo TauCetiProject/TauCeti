@@ -35,7 +35,8 @@ equivalence of complex vector spaces is real-linear.
 * `StarMemClass.mul_mem_right_of_mul_mem_left`: left absorption implies right absorption on
   star-closed subsets.
 * `TauCeti.exists_left_identity_iff` and `TauCeti.exists_right_identity_iff`: in a magma with an
-  antimultiplicative involution, a one-sided identity is self-adjoint and hence two-sided.
+  antimultiplicative involution, a left (respectively, right) identity exists if and only if a
+  two-sided identity exists.
 * `TauCeti.eq_zero_of_forall_star_mul_mul_eq_zero`: if `star d * X * c = 0` for all `c` and
   `d`, then `X = 0`.
 * `TauCeti.faithfulSMul_mulOpposite_of_isProperStar`: if `c * x = c * y` for all `c`, then
@@ -59,8 +60,8 @@ theorem StarMemClass.mul_mem_right_of_mul_mem_left {S A : Type*} [Mul A] [StarMu
 
 namespace TauCeti
 
-/-- In a magma with an antimultiplicative involution, a left identity is self-adjoint and
-therefore a two-sided identity. -/
+/-- In a magma with an antimultiplicative involution, a left identity exists if and only if a
+two-sided identity exists. -/
 theorem exists_left_identity_iff {A : Type*} [Mul A] [StarMul A] :
     (∃ e : A, ∀ b : A, e * b = b) ↔ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b := by
   refine ⟨?_, fun ⟨e, he⟩ ↦ ⟨e, fun b ↦ (he b).1⟩⟩
@@ -70,16 +71,16 @@ theorem exists_left_identity_iff {A : Type*} [Mul A] [StarMul A] :
   have heStar : e = star e := (hright e).symm.trans (hleft (star e))
   exact ⟨e, fun b ↦ ⟨hleft b, heStar ▸ hright b⟩⟩
 
-/-- In a magma with an antimultiplicative involution, a right identity is self-adjoint and
-therefore a two-sided identity. -/
+/-- In a magma with an antimultiplicative involution, a right identity exists if and only if a
+two-sided identity exists. -/
 theorem exists_right_identity_iff {A : Type*} [Mul A] [StarMul A] :
     (∃ e : A, ∀ b : A, b * e = b) ↔ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b := by
   refine ⟨fun ⟨e, he⟩ ↦ ?_, fun ⟨e, he⟩ ↦ ⟨e, fun b ↦ (he b).2⟩⟩
   obtain ⟨e', he'⟩ := (exists_left_identity_iff (A := Aᵐᵒᵖ)).mp
-    ⟨MulOpposite.op e, fun b ↦ MulOpposite.unop_injective (he b.unop)⟩
+    ⟨MulOpposite.op e, fun b ↦ MulOpposite.unop_injective (by simpa using he b.unop)⟩
   exact ⟨e'.unop, fun b ↦
-    ⟨MulOpposite.op_injective (he' (MulOpposite.op b)).2,
-      MulOpposite.op_injective (he' (MulOpposite.op b)).1⟩⟩
+    ⟨by simpa using congrArg MulOpposite.unop (he' (MulOpposite.op b)).2,
+      by simpa using congrArg MulOpposite.unop (he' (MulOpposite.op b)).1⟩⟩
 
 variable {R : Type*} [NonUnitalSemiring R] [StarRing R] [IsProperStar R]
 
