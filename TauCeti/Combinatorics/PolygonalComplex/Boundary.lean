@@ -308,27 +308,21 @@ theorem count_add_count_rev_le_one [DecidableEq S.boundary.E] (e : S.boundary.E)
       (SerreGraph.Path.darts _ c.path).count (S.boundary.rev e) ≤ 1 :=
   SerreGraph.count_add_count_rev_le_one_of_nodup_map_toGeomEdge _ c.nodup_map_toGeomEdge_darts e
 
+/-- A boundary circuit of `b` traverses an edge exactly once, in one of its two directions,
+exactly when the edge lies in `b`. -/
+theorem count_add_count_rev_eq_one_iff [DecidableEq S.boundary.E] {e : S.boundary.E} :
+    (SerreGraph.Path.darts _ c.path).count e +
+      (SerreGraph.Path.darts _ c.path).count (S.boundary.rev e) = 1 ↔ S.boundaryClass e = b :=
+  (SerreGraph.count_add_count_rev_eq_one_iff_of_nodup_map_toGeomEdge _
+    c.nodup_map_toGeomEdge_darts e).trans c.mem_darts_or_rev_mem_darts_iff
+
 /-- A boundary circuit of `b` traverses every edge of `b` exactly once, in one of its two
 directions. -/
 theorem count_add_count_rev_eq_one [DecidableEq S.boundary.E] {e : S.boundary.E}
     (he : S.boundaryClass e = b) :
     (SerreGraph.Path.darts _ c.path).count e +
-      (SerreGraph.Path.darts _ c.path).count (S.boundary.rev e) = 1 := by
-  refine (c.count_add_count_rev_le_one e).antisymm ?_
-  rcases c.mem_darts_or_rev_mem_darts he with h | h
-  · exact (List.count_pos_iff.2 h).trans_le (Nat.le_add_right _ _)
-  · exact (List.count_pos_iff.2 h).trans_le (Nat.le_add_left _ _)
-
-/-- A boundary circuit of `b` traverses an edge exactly once, in one of its two directions,
-exactly when the edge lies in `b`. -/
-theorem count_add_count_rev_eq_one_iff [DecidableEq S.boundary.E] {e : S.boundary.E} :
-    (SerreGraph.Path.darts _ c.path).count e +
-      (SerreGraph.Path.darts _ c.path).count (S.boundary.rev e) = 1 ↔ S.boundaryClass e = b := by
-  refine ⟨fun h => c.mem_darts_or_rev_mem_darts_iff.1 ?_, c.count_add_count_rev_eq_one⟩
-  by_contra hn
-  rw [not_or] at hn
-  rw [List.count_eq_zero_of_not_mem hn.1, List.count_eq_zero_of_not_mem hn.2] at h
-  exact zero_ne_one h
+      (SerreGraph.Path.darts _ c.path).count (S.boundary.rev e) = 1 :=
+  c.count_add_count_rev_eq_one_iff.2 he
 
 /-- A boundary circuit is reduced. -/
 @[simp] theorem isReduced : SerreGraph.Path.IsReduced _ c.path :=
@@ -342,23 +336,9 @@ theorem count_add_count_rev_eq_one_iff [DecidableEq S.boundary.E] {e : S.boundar
 number of boundary darts in `b`. -/
 theorem two_mul_length :
     2 * c.path.length = Nat.card {e : S.boundary.E // S.boundaryClass e = b} := by
-  classical
-  -- The darts of `b` are the darts of the circuit and their reverses.
-  let f : {d // d ∈ SerreGraph.Path.darts _ c.path} ⊕ {d // d ∈ SerreGraph.Path.darts _ c.path} →
-      {e : S.boundary.E // S.boundaryClass e = b} :=
-    Sum.elim (fun d => ⟨d, c.boundaryClass_eq_of_mem_darts d.2⟩)
-      (fun d => ⟨S.boundary.rev d, by rw [boundaryClass_rev, c.boundaryClass_eq_of_mem_darts d.2]⟩)
-  have hf : Function.Bijective f := by
-    refine ⟨Function.Injective.sumElim (fun d d' h => Subtype.ext (Subtype.mk.inj h))
-      (fun d d' h => Subtype.ext (S.boundary.rev_injective (Subtype.mk.inj h)))
-      fun d d' h => c.rev_notMem_darts d'.2 ?_, fun e => ?_⟩
-    · rw [← Subtype.mk.inj h]
-      exact d.2
-    · rcases c.mem_darts_or_rev_mem_darts e.2 with h | h
-      · exact ⟨.inl ⟨e, h⟩, rfl⟩
-      · exact ⟨.inr ⟨_, h⟩, Subtype.ext (S.boundary.rev_rev e)⟩
-  rw [← Nat.card_congr (Equiv.ofBijective f hf), Nat.card_sum,
-    ← Nat.card_congr c.nodup_darts.getEquiv, Nat.card_fin, SerreGraph.Path.length_darts, two_mul]
+  rw [← SerreGraph.Path.length_darts,
+    SerreGraph.two_mul_length_of_nodup_map_toGeomEdge c.nodup_map_toGeomEdge_darts]
+  exact Nat.card_congr (Equiv.subtypeEquivRight fun _ => c.mem_darts_or_rev_mem_darts_iff)
 
 /-- A boundary circuit is a nonempty path. -/
 theorem length_pos : 0 < c.path.length := by
@@ -373,7 +353,7 @@ theorem length_pos : 0 < c.path.length := by
 
 /-- A boundary circuit visits each boundary vertex at most once. -/
 theorem nodup_map_src_darts : ((SerreGraph.Path.darts _ c.path).map S.boundary.src).Nodup := by
-  refine SerreGraph.Path.nodup_map_src_darts_of_nodup_map_toGeomEdge_darts (fun x => ?_)
+  refine SerreGraph.Path.nodup_map_src_darts_of_nodup_map_toGeomEdge_darts (fun x _ => ?_)
     c.nodup_map_toGeomEdge_darts
   rw [← (Set.toFinite _).cast_ncard_eq, ← Nat.card_coe_set_eq]
   exact_mod_cast (S.card_boundary_src_fiber x).le
@@ -438,7 +418,8 @@ each of its edges exactly once. -/
 theorem boundaryCircuit_exists (b : S.BoundaryComponent) : Nonempty (S.BoundaryCircuit b) := by
   obtain ⟨x, rfl⟩ := StronglyConnectedComponent.mk_surjective b
   obtain ⟨p, hnodup, hmem⟩ :=
-    SerreGraph.exists_path_nodup_map_toGeomEdge_darts_and_mem S.card_boundary_src_fiber x
+    SerreGraph.exists_path_nodup_map_toGeomEdge_darts_and_mem x fun _ _ =>
+      S.card_boundary_src_fiber _
   refine ⟨⟨x, p, hnodup, fun e he => hmem e ?_⟩⟩
   rw [boundaryClass_def] at he
   obtain ⟨q⟩ := StronglyConnectedComponent.mk_eq_mk_iff_nonempty_path.1 he
