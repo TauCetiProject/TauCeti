@@ -8,9 +8,11 @@ module
 public import Mathlib.FieldTheory.IsPerfectClosure
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.MvPolynomial.Basic
+public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.RingHom.Flat
 import TauCeti.Algebra.CharP.Frobenius.Flat
 import TauCeti.RingTheory.Perfect.Basic
+import TauCeti.RingTheory.Perfect.IsPRadical
 import TauCeti.RingTheory.RingHom.Flat
 
 /-!
@@ -28,19 +30,25 @@ of perfect rings, such as the vanishing of `Tor_i^A(B, C)` for perfect `A`-algeb
 and `i > 0`, to quotients of perfect rings by radical ideals.
 
 Over a base which is not perfect, flatness of Frobenius takes the place of perfectness: if the
-Frobenius endomorphism of `K` is flat, then every perfect closure `K → L` is flat. For instance
-the perfection of a regular ring of characteristic `p` is flat over it, by Kunz's theorem.
+Frobenius endomorphism of `K` is flat, then every perfect closure `K → L` is flat, and in fact
+faithfully flat since it induces a homeomorphism on prime spectra. For instance the perfection of
+a regular ring of characteristic `p` is faithfully flat over it, by Kunz's theorem. Moreover,
+passing to perfect closures preserves surjectivity of ring homomorphisms.
 
 ## Main results
 
 * `IsPRadical.pow_mem_of_finite`: finitely many elements of a `p`-radical extension have
   `p ^ n`-th powers in the base for a common exponent `n`.
+* `PerfectRing.surjective_lift_comp`: a surjective ring homomorphism induces a surjective map
+  between perfect closures.
 * `Module.Flat.of_isPerfectClosure`: a perfect closure of a flat algebra over a perfect ring is
   flat.
 * `IsPerfectClosure.injective_of_flat_frobenius`: a perfect closure of a ring with flat
   Frobenius is injective.
 * `RingHom.Flat.of_isPerfectClosure`: a perfect closure of a ring with flat Frobenius is flat
   over it.
+* `RingHom.FaithfullyFlat.of_isPerfectClosure`: a perfect closure of a ring with flat Frobenius is
+  faithfully flat over it.
 * `RingHom.Flat.perfectClosureOf_comp`: the colimit perfection of a flat algebra over a perfect
   ring is flat.
 * `TauCeti.flat_perfectClosureOf_comp_C`: the perfect polynomial algebra
@@ -76,6 +84,20 @@ theorem IsPRadical.pow_mem_of_finite {ι : Type*} [Finite ι] (z : ι → L) :
     Nat.add_sub_cancel' (Finset.le_sup (Finset.mem_univ j))]
 
 end IsPRadical
+
+/-- **Perfect closures preserve surjections**: if `f : K →+* K'` is surjective and `i : K →+* L`,
+`j : K' →+* L'` are perfect closures, then the induced map `L →+* L'` is surjective. -/
+theorem PerfectRing.surjective_lift_comp {K K' L L' : Type*} [CommRing K] [CommRing K']
+    [CommRing L] [CommRing L'] (i : K →+* L) (j : K' →+* L') {f : K →+* K'}
+    (hf : Function.Surjective f) (p : ℕ) [ExpChar K p] [ExpChar L p] [PerfectRing L p]
+    [IsPRadical i p] [ExpChar L' p] [PerfectRing L' p] [IsPRadical j p] :
+    Function.Surjective (PerfectRing.lift i (j.comp f) p) := fun z ↦ by
+  obtain ⟨n, b, hb⟩ := IsPRadical.pow_mem j p z
+  obtain ⟨a, rfl⟩ := hf b
+  refine ⟨(iterateFrobeniusEquiv L p n).symm (i a), ?_⟩
+  rw [PerfectRing.lift_apply i (j.comp f) p _ n a
+      (by rw [← iterateFrobeniusEquiv_def, RingEquiv.apply_symm_apply]),
+    RingHom.comp_apply, hb, ← iterateFrobeniusEquiv_def, RingEquiv.symm_apply_apply]
 
 namespace Module.Flat
 
@@ -185,6 +207,15 @@ theorem RingHom.Flat.of_isPerfectClosure (hF : (frobenius K p).Flat) : i.Flat :=
   simp_rw [iterateFrobeniusEquiv_def, sum_pow_char_pow, mul_pow, hL, ← map_pow, ← map_mul,
     ← map_sum, pow_add, pow_mul, ← hy, ← map_pow, hyw, iterateFrobenius_def]
   simp only [← pow_mul, ← pow_add]
+
+/-- A perfect closure of a ring with flat Frobenius is faithfully flat: it is flat by
+`RingHom.Flat.of_isPerfectClosure` and induces a homeomorphism on prime spectra by
+`IsPRadical.isHomeomorph_comap`. -/
+theorem RingHom.FaithfullyFlat.of_isPerfectClosure (hF : (frobenius K p).Flat) :
+    i.FaithfullyFlat :=
+  have : NeZero p := ⟨(expChar_pos K p).ne'⟩
+  RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.2
+    ⟨RingHom.Flat.of_isPerfectClosure i p hF, (IsPRadical.isHomeomorph_comap i p).surjective⟩
 
 end FlatFrobenius
 

@@ -17,7 +17,9 @@ braiding on module categories.
 For a morphism `f : A →+* P` and a `P`-module `M`, tensoring an extension of scalars with `M`
 over `P` is tensoring with `M` over `A`: `M ⊗[P] (P ⊗[A] X) ≅ M ⊗[A] X`, naturally in the
 `A`-module `X` (`ModuleCat.extendScalarsCompTensorLeftIso`). This computes `Tor` over `A` by a
-projective resolution over `P` after a flat extension of scalars.
+projective resolution over `P` after a flat extension of scalars. Taking `M = P` and commuting the
+factors identifies `extendScalars f ⋙ restrictScalars f` with tensoring on the right with `P`
+(`ModuleCat.extendRestrictScalarsIsoTensorRight`).
 -/
 
 public section
@@ -87,6 +89,44 @@ theorem extendScalarsCompTensorLeftIso_inv_app_tmul (M : ModuleCat.{u} P) (X : M
         ((extendScalarsCompTensorLeftIso f M).inv.app X)
         (TensorProduct.tmul A (M := (restrictScalars f).obj M) (N := X) m x) =
       TensorProduct.tmul P (M := M) (N := (extendScalars f).obj X) m ((1 : P) ⊗ₜ[A, f] x) :=
+  (rfl)
+
+/-- The `A`-linear equivalence `P ⊗[A] X ≃ X ⊗[A] P`, `s ⊗ x ↦ x ⊗ s`, where `A` acts on `P`
+through `f`. -/
+private noncomputable def extendRestrictScalarsTensorRightLinearEquiv (X : ModuleCat.{u} A) :
+    (restrictScalars f).obj ((extendScalars f).obj X) ≃ₗ[A]
+      (X ⊗ (restrictScalars f).obj (of P P) : ModuleCat A) :=
+  letI := f.toAlgebra
+  TensorProduct.comm A P X
+
+/-- **Extension followed by restriction of scalars is tensoring on the right.** For `f : A →+* P`,
+the composite `extendScalars f ⋙ restrictScalars f` is naturally isomorphic to `- ⊗[A] P`,
+sending `s ⊗ x` to `x ⊗ s`. -/
+noncomputable def extendRestrictScalarsIsoTensorRight :
+    extendScalars.{u, u, u} f ⋙ restrictScalars.{u} f ≅
+      tensorRight ((restrictScalars f).obj (of P P)) :=
+  (NatIso.ofComponents
+    (fun X ↦ (extendRestrictScalarsTensorRightLinearEquiv f X).toModuleIso.symm)
+    fun _ ↦ by apply MonoidalCategory.tensor_ext; intros; rfl).symm
+
+/-- The forward map of `extendRestrictScalarsIsoTensorRight` sends `s ⊗ x` to `x ⊗ s`. -/
+@[simp]
+theorem extendRestrictScalarsIsoTensorRight_hom_app_tmul (X : ModuleCat.{u} A) (s : P) (x : X) :
+    (Hom.hom : ((restrictScalars f).obj ((extendScalars f).obj X) ⟶
+        X ⊗ (restrictScalars f).obj (of P P)) → _)
+        ((extendRestrictScalarsIsoTensorRight f).hom.app X) (s ⊗ₜ[A, f] x) =
+      TensorProduct.tmul A (M := X) (N := (restrictScalars f).obj (of P P)) x s :=
+  (rfl)
+
+/-- The inverse of `extendRestrictScalarsIsoTensorRight` sends `x ⊗ s` to `s ⊗ x`. -/
+@[simp]
+theorem extendRestrictScalarsIsoTensorRight_inv_app_tmul (X : ModuleCat.{u} A) (x : X)
+    (s : (restrictScalars f).obj (of P P)) :
+    (Hom.hom : (X ⊗ (restrictScalars f).obj (of P P) ⟶
+        (restrictScalars f).obj ((extendScalars f).obj X)) → _)
+        ((extendRestrictScalarsIsoTensorRight f).inv.app X)
+        (TensorProduct.tmul A (M := X) (N := (restrictScalars f).obj (of P P)) x s) =
+      (s : P) ⊗ₜ[A, f] x :=
   (rfl)
 
 end ModuleCat
