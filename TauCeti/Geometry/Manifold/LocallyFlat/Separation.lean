@@ -73,7 +73,7 @@ single connected component of the complement of the image
   two components, those of the two sides.
 * `TauCeti.IsBicollar.isPreconnected_compl_range_iff`: that complement is preconnected exactly when
   the two sides lie in the same component.
-* `TauCeti.IsBicollar.closure_connectedComponentIn_compl_range`: the closure of the component
+* `TauCeti.IsBicollar.closure_connectedComponentIn_compl_range_apply`: the closure of the component
   containing a side is that component together with the image.
 
 ## References
@@ -510,7 +510,7 @@ theorem isPreconnected_compl_range_iff [ConnectedSpace M] [LocallyConnectedSpace
 `f` from a preconnected space. The closure of the component of the complement of the image of `f`
 containing a point `b (a, t)` of the collar at a nonzero depth `t` is that component together with
 the image of `f`. -/
-theorem closure_connectedComponentIn_compl_range [PreconnectedSpace N] (h : IsBicollar f b)
+theorem closure_connectedComponentIn_compl_range_apply [PreconnectedSpace N] (h : IsBicollar f b)
     (a : N) {t : ℝ} (ht : t ≠ 0) :
     closure (connectedComponentIn (range f)ᶜ (b (a, t))) =
       connectedComponentIn (range f)ᶜ (b (a, t)) ∪ range f := by
