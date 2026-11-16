@@ -82,6 +82,7 @@ def assignmentEquiv (f : Iso G H) (R : Type w') :
 
 /-- A transported assignment takes, on an arrow of `H`, the value of the inverse image of that
 arrow. -/
+@[simp low]
 theorem assignmentEquiv_apply (f : Iso G H) {R : Type w'} (φ : Assignment G.BidirectedHom R)
     {x y : V(H)} (b : H.BidirectedHom x y) :
     f.assignmentEquiv R φ b = φ (f.symm.mapHom b) :=
