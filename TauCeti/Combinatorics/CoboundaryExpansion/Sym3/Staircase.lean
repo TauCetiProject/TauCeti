@@ -42,6 +42,9 @@ Kozlov's cut-minimality, edge count and odd-triangle count are transported:
   Lemma 3.10 (triangle count).
 * Jeromie Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every
   k≥4*, Zenodo, doi:10.5281/zenodo.22090958, Corollary 7 and Theorem 8 (the `Sym(3)` transfer).
+* Jeromie Beasley, `coboundary-k3-lean` (MIT), https://github.com/dicipler-pixel/coboundary-k3-lean,
+  commit `7f5f2c6`: this file adapts the staircase cochain and its parity bound from
+  `CoboundaryK3/Staircase.lean`, with the counting replaced by `SimpleGraph.staircase`.
 -/
 
 public section

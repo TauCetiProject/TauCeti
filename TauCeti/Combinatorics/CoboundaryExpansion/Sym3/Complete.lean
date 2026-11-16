@@ -37,6 +37,9 @@ with `3 N ≤ k D` and `0 < D`, and `h1_le_div` applies.
   k≥4*, Zenodo, doi:10.5281/zenodo.22090958, Corollary 7 and Theorem 8.
 * D. N. Kozlov, *The first Cheeger constant of a simplex*, arXiv:1610.07136,
   Definition 3.2 (staircase graphs), Lemma 3.8 and Corollary 3.13 (cut-minimality).
+* Jeromie Beasley, `coboundary-k3-lean` (MIT), https://github.com/dicipler-pixel/coboundary-k3-lean,
+  commit `7f5f2c6`: the `k = 4` seed `w4` comes from `CoboundaryK3/Basic.lean`, and the assembly
+  of the seeds follows `CoboundaryK3/Constant.lean` and `CoboundaryK3/Staircase.lean`.
 -/
 
 public section

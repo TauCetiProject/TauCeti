@@ -38,6 +38,9 @@ bound `h1 (complete V) (movedNorm (Fin 3)) ≤ card V / 3` needs.
 
 * Jeromie Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every
   k≥4*, Zenodo, doi:10.5281/zenodo.22090958, Lemma 6 and Corollary 7.
+* Jeromie Beasley, `coboundary-k3-lean` (MIT), https://github.com/dicipler-pixel/coboundary-k3-lean,
+  commit `7f5f2c6`: this file adapts the list-based counts of `CoboundaryK3/Basic.lean` and the
+  balanced replication of `CoboundaryK3/Replication.lean`.
 -/
 
 -- `moved`, `triangles`, `val` and `defect` are evaluated by `decide +kernel` for the `k = 4` seed;
