@@ -324,7 +324,7 @@ theorem contractibleSpace_halfSpace_diff (hK : StarConvex ℝ p K) (hp : p ∈ K
   -- A vector `v` pointing into the open half-space.
   obtain ⟨v, hv⟩ : ∃ v, 0 < f v := by
     obtain ⟨w, hw⟩ := DFunLike.ne_iff.1 hf
-    rcases (show f w ≠ 0 from hw).lt_or_gt with h | h
+    rcases (by simpa using hw : f w ≠ 0).lt_or_gt with h | h
     · exact ⟨-w, by simpa using h⟩
     · exact ⟨w, h⟩
   have hstar : StarConvex ℝ (p + v) ({x | 0 ≤ f x} \ {p}) := by
