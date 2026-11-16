@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Bott.Attachment
 public import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
 public import TauCeti.Geometry.Manifold.Morse.Bott.Tubular
+import TauCeti.Topology.Compactness.LocallyCompact
 import TauCeti.Topology.FiberBundle.Separation
 
 /-!
@@ -54,11 +55,16 @@ section, such a sublevel lies in any given compact neighbourhood of the compact 
   sizes (`IsCriticalSubmanifold.zeroSection_mem_negativeDiscBundle`), and consists of negative
   normal vectors
   (`IsCriticalSubmanifold.mem_negativeNormalSpace_of_mem_negativeDiscBundle`).
+* `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.negativeSphereBundle`: its boundary
+  `{v ∈ ν⁻ | -½ Hessₛ (v, v) = ε}`, along which it is attached
+  (`IsCriticalSubmanifold.negativeSphereBundle_subset_negativeDiscBundle`).
 
 ## Main results
 
 In the namespace `TauCeti.SmoothEmbedding`:
 
+* `IsNondegenerateCriticalSubmanifold.isCompact_negativeDiscBundle`: the negative disc bundle of a
+  compact Morse–Bott submanifold is compact.
 * `IsNondegenerateCriticalSubmanifold.exists_sublevel_union_negativeDiscBundle_deformation`:
   crossing the level of a compact Morse–Bott submanifold attaches its negative disc bundle, up to
   a strong deformation retraction.
@@ -128,6 +134,27 @@ theorem zeroSection_mem_negativeDiscBundle {ε : ℝ} (hε : 0 ≤ ε) (s : S) :
   (mem_negativeDiscBundle hn).2 ⟨zero_mem _, by
     rw [zeroSection_snd, LinearMap.map_zero₂, mul_zero, neg_zero]
     exact hε⟩
+
+/-- The **negative sphere bundle** of a critical submanifold, of size `ε`, relative to a fibre
+metric `g` on the normal spaces: the normal vectors `v` in the negative normal space with
+`-½ Hessₛ (v, v) = ε`, where `Hessₛ` is the normal Hessian. It is the part of the negative disc
+bundle of size `ε` along which that disc bundle is attached to the sublevel below a Morse–Bott
+critical level. -/
+def negativeSphereBundle (ε : ℝ) : Set (TotalSpace P fun s ↦ i.NormalSpace s hn) :=
+  {x | x.2 ∈ h.negativeNormalSpace hn g x.proj ∧ -(2⁻¹ * h.normalHessian hn x.proj x.2 x.2) = ε}
+
+variable {h P g} in
+@[simp]
+theorem mem_negativeSphereBundle {ε : ℝ} {x : TotalSpace P fun s ↦ i.NormalSpace s hn} :
+    x ∈ h.negativeSphereBundle hn P g ε ↔
+      x.2 ∈ h.negativeNormalSpace hn g x.proj ∧ -(2⁻¹ * h.normalHessian hn x.proj x.2 x.2) = ε :=
+  Iff.rfl
+
+/-- The negative sphere bundle lies in the negative disc bundle of the same size. -/
+theorem negativeSphereBundle_subset_negativeDiscBundle (ε : ℝ) :
+    h.negativeSphereBundle hn P g ε ⊆ h.negativeDiscBundle hn P g ε := fun _ hx ↦
+  (mem_negativeDiscBundle hn).2
+    ⟨((mem_negativeSphereBundle hn).1 hx).1, ((mem_negativeSphereBundle hn).1 hx).2.le⟩
 
 end IsCriticalSubmanifold
 
@@ -290,6 +317,11 @@ private theorem posSq_zeroSection (s : S) :
     h.posSq hn g (zeroSection P (fun s ↦ i.NormalSpace s hn) s) = 0 := by
   rw [zeroSection, posSq_mk, map_zero, map_zero, mul_zero]
 
+private theorem rescale_rescale (a b a' b' : ℝ) :
+    h.rescale hn g a b (h.rescale hn g a' b' x) = h.rescale hn g (a * a') (b * b') x := by
+  rw [rescale_def, rescale_def, rescale_def, h.negPart_smul_add_smul, h.posPart_smul_add_smul,
+    smul_smul, smul_smul]
+
 /-- The disc bundle `{t = 0, s ≤ ε}` of the normal form is the negative disc bundle. -/
 private theorem setOf_posSq_eq_zero_and_negSq_le (ε : ℝ) :
     {x | h.posSq hn g x = 0 ∧ h.negSq hn g x ≤ ε} = h.negativeDiscBundle hn P g ε := by
@@ -368,6 +400,71 @@ private theorem contMDiff_negSq_posSq_rescale (h : i.IsNondegenerateCriticalSubm
     rw [Trivialization.coe_linearMapAt_of_mem _ hp]
   simp only [rescale, negPart, posPart, TotalSpace.mk', Pi.add_apply, Pi.smul_apply', comp_apply,
     hlin, map_add, map_smul]
+
+/-- **The negative disc bundle of a compact Morse–Bott submanifold is compact.** Let `i : S → M` be
+a nondegenerate critical submanifold of a smooth function `f`, with `S` compact and Hausdorff, and
+let `g` be a smooth fibre metric on its normal bundle. Then the negative disc bundle `D_ε` relative
+to `g` (`TauCeti.SmoothEmbedding.IsCriticalSubmanifold.negativeDiscBundle`) is compact for every
+`ε`: its fibres are the closed ellipsoids `{-½ Hessₛ (v, v) ≤ ε}` of the negative normal spaces. -/
+theorem isCompact_negativeDiscBundle [T2Space S] [CompactSpace S]
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
+    (g : letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) (ε : ℝ) :
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    IsCompact (h.negativeDiscBundle hn P g.toRiemannianMetric ε) := by
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  set gR := g.toRiemannianMetric
+  set X := TotalSpace P fun s ↦ i.NormalSpace s hn
+  have : LocallyCompactSpace (ModelProd H' P) := (J.prod 𝓘(ℝ, P)).locallyCompactSpace
+  have : LocallyCompactSpace X := ChartedSpace.locallyCompactSpace (ModelProd H' P) _
+  obtain ⟨hs, ht, hσ⟩ := h.contMDiff_negSq_posSq_rescale hn hfs hdim g
+  have hs0 := h.negSq_nonneg (P := P) hn gR
+  have ht0 := h.posSq_nonneg (P := P) hn gR
+  -- `Q = negSq + posSq` vanishes exactly on the compact zero section, and decreases towards it
+  -- along the rays `r ↦ r • x`, so its sublevels just above `0` are compact.
+  have hQ : Continuous fun x : X ↦ h.negSq hn gR x + h.posSq hn gR x :=
+    hs.continuous.add ht.continuous
+  obtain ⟨m, hm, -, hmK⟩ := exists_gt_setOf_lt_subset_and_isCompact
+    (isCompact_range (Bundle.contMDiff_zeroSection (n := ∞) (IB := J) _ _).continuous)
+    isOpen_univ (subset_univ _) hQ (a := 0)
+    (fun x hx ↦ ⟨x.proj, h.eq_zeroSection_of_negSq_eq_zero hn gR x
+      (by linarith [hs0 x, ht0 x]) (by linarith [hs0 x, ht0 x])⟩)
+    (fun x ↦ ⟨(fun r : ℝ ↦ h.rescale hn gR r r x) '' Icc 0 1,
+      (isPreconnected_Icc.image _ ((hσ.continuous.comp
+        ((continuous_id.prodMk continuous_id).prodMk continuous_const)).continuousOn)),
+      ⟨1, ⟨zero_le_one, le_rfl⟩, h.rescale_one_one hn gR x⟩,
+      ⟨_, ⟨0, ⟨le_rfl, zero_le_one⟩, rfl⟩, ⟨x.proj, (h.rescale_zero_zero hn gR x).symm⟩⟩,
+      by
+        rintro _ ⟨r, hr, rfl⟩
+        rw [h.negSq_rescale hn gR, h.posSq_rescale hn gR, ← mul_add]
+        exact mul_le_of_le_one_left (add_nonneg (hs0 x) (ht0 x)) (pow_le_one₀ hr.1 hr.2)⟩)
+  have hclosed (δ : ℝ) : IsClosed (h.negativeDiscBundle hn P gR δ) := by
+    rw [← h.setOf_posSq_eq_zero_and_negSq_le hn gR δ]
+    exact (isClosed_eq ht.continuous continuous_const).inter
+      (isClosed_le hs.continuous continuous_const)
+  -- Below `m` the negative disc bundle lies in the compact sublevel `{Q ≤ δ}`.
+  have hsmall (δ : ℝ) (hδ : δ < m) : IsCompact (h.negativeDiscBundle hn P gR δ) := by
+    refine (hmK δ hδ).of_isClosed_subset (hclosed δ) fun x hx ↦ ?_
+    rw [← h.setOf_posSq_eq_zero_and_negSq_le hn gR δ] at hx
+    exact (add_eq_left.2 hx.1).trans_le hx.2
+  refine (lt_or_ge ε m).elim (hsmall ε) fun hε ↦ ?_
+  -- Above `m` it is the image of the one of size `m / 2` under rescaling by `a = √(2ε / m)`.
+  set a := √(ε / (m / 2))
+  have ha : 0 < a := Real.sqrt_pos.2 (div_pos (by linarith) (by linarith))
+  refine ((hsmall (m / 2) (by linarith)).image (hσ.continuous.comp
+    ((continuous_const (y := (a, a))).prodMk continuous_id))).of_isClosed_subset (hclosed ε)
+    fun x hx ↦ ⟨h.rescale hn gR a⁻¹ a⁻¹ x, ?_, ?_⟩
+  · rw [← h.setOf_posSq_eq_zero_and_negSq_le hn gR] at hx ⊢
+    refine ⟨by rw [h.posSq_rescale hn gR, hx.1, mul_zero], ?_⟩
+    rw [h.negSq_rescale hn gR, inv_pow, Real.sq_sqrt (div_nonneg (by linarith) (by linarith)),
+      inv_div, div_mul_eq_mul_div, div_le_iff₀ (by linarith)]
+    nlinarith [hx.2]
+  · exact (h.rescale_rescale hn gR x a a a⁻¹ a⁻¹).trans
+      (by rw [mul_inv_cancel₀ ha.ne', h.rescale_one_one hn gR])
 
 /-- **Crossing the level of a compact Morse–Bott submanifold attaches its negative disc bundle.**
 Let `i : S → M` be a nondegenerate critical submanifold of a smooth function `f` on a Hausdorff,

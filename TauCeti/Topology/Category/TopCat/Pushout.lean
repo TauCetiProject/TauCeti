@@ -45,6 +45,8 @@ closed embedding.
   agree on the overlaps glue to a map out of the whole space.
 * `CategoryTheory.IsPushout.of_isClosedEmbedding`: a cover by a closed subspace and finitely many
   closed pieces meeting it along prescribed subspaces is a pushout square.
+* `CategoryTheory.IsPushout.of_isClosedEmbedding_of_union`: the case of a single piece, a cover
+  by two closed subspaces meeting along a prescribed subspace.
 * `TauCeti.TopCat.range_union_iUnion_range_of_isPushout_sigma`,
   `TauCeti.TopCat.exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma`: every point of a pushout of
   `L` and `⨆ᵢ D i` comes from `L` or from one of the `D i`.
@@ -281,6 +283,35 @@ theorem of_isClosedEmbedding (w : ∀ k, g k ≫ i = m k ≫ j k) (hi : IsClosed
         (desc s).choose_spec.2 k]
 
 end ClosedCover
+
+section ClosedUnion
+
+open Set Topology Limits
+
+universe u
+
+variable {S A B X : TopCat.{u}} {g : S ⟶ A} {m : S ⟶ B} {i : A ⟶ X} {j : B ⟶ X}
+
+/-- **Two closed pieces meeting along a prescribed subspace form a pushout.** Let `X` be covered
+by the ranges of closed embeddings `i : A ⟶ X` and `j : B ⟶ X` which meet exactly along `S`: the
+square `g ≫ i = m ≫ j` commutes, and every point `i a = j b` comes from a point `s` of `S` with
+`g s = a` and `m s = b`. Then `X` is the pushout of `A` and `B` along `S`. This is the case of a
+single piece of `CategoryTheory.IsPushout.of_isClosedEmbedding`. -/
+theorem of_isClosedEmbedding_of_union (w : g ≫ i = m ≫ j) (hi : IsClosedEmbedding i)
+    (hj : IsClosedEmbedding j) (hcover : range i ∪ range j = univ)
+    (hij : ∀ a b, i a = j b → ∃ s, g s = a ∧ m s = b) :
+    IsPushout g m i j := by
+  have h := of_isClosedEmbedding (ι := PUnit.{u + 1}) (S := fun _ ↦ S) (B := fun _ ↦ B)
+    (g := fun _ ↦ g) (m := fun _ ↦ m) (j := fun _ ↦ j) (fun _ ↦ w) hi (fun _ ↦ hj)
+    (by rwa [iUnion_const]) (fun k l hkl ↦ absurd (Subsingleton.elim k l) hkl) fun _ ↦ hij
+  refine h.of_iso (coproductUniqueIso _) (Iso.refl _) (coproductUniqueIso _) (Iso.refl _) ?_ ?_
+    ?_ ?_
+  · exact Sigma.hom_ext _ _ fun _ ↦ by simp
+  · exact Sigma.hom_ext _ _ fun _ ↦ by simp
+  · simp
+  · exact Sigma.hom_ext _ _ fun _ ↦ by simp
+
+end ClosedUnion
 
 end CategoryTheory.IsPushout
 
