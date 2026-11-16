@@ -169,7 +169,7 @@ theorem stinespringEquiv_toStinespring (a : A) (ξ : H) :
       (𝓝 (U (φ.stinespringOp ξ))) :=
     (U.continuous.tendsto _).comp (φ.tendsto_toStinespring_approximateUnit ξ)
   have h₂ : Tendsto (fun e => π e (V ξ)) (CStarAlgebra.approximateUnit A) (𝓝 (V ξ)) :=
-    (NonUnitalStarAlgHom.isNondegenerate_iff_tendsto hl).mp
+    (NonUnitalStarAlgHom.isNondegenerate_iff_tendsto hl.eventually_norm hl.tendsto_mul_right).mp
       (isNondegenerate_of_minimal π V hmin) (V ξ)
   exact tendsto_nhds_unique h₁ (by simpa only [U, stinespringEquiv_toStinespring] using h₂)
 

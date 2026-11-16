@@ -190,8 +190,8 @@ theorem radonNikodym_nonUnital (φ ψ : A →CP (H →L[ℂ] H))
     have hl := CStarAlgebra.increasingApproximateUnit A
     have := hl.neBot
     have h₁ : Tendsto (fun e => W (π e (V ξ))) (CStarAlgebra.approximateUnit A) (𝓝 (W (V ξ))) :=
-      (W.continuous.tendsto _).comp ((NonUnitalStarAlgHom.isNondegenerate_iff_tendsto hl).mp
-        (isNondegenerate_of_minimal π V hmin) (V ξ))
+      (W.continuous.tendsto _).comp ((NonUnitalStarAlgHom.isNondegenerate_iff_tendsto
+        hl.eventually_norm hl.tendsto_mul_right).mp (isNondegenerate_of_minimal π V hmin) (V ξ))
     exact tendsto_nhds_unique h₁
       (by simpa only [hW_apply] using ψ.tendsto_toStinespring_approximateUnit ξ)
   have hcommW (a : A) : Commute (W.adjoint.comp W) (π a) := by
