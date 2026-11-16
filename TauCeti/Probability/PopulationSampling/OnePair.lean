@@ -10,6 +10,7 @@ public import TauCeti.Probability.PopulationSampling.Finite
 import Mathlib.Data.Finset.Preimage
 import Mathlib.Tactic.IntervalCases
 import TauCeti.Logic.Function.Update
+import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 
 /-!
 # The one-pair population: fibres and exact sampling discrepancy
@@ -178,7 +179,7 @@ theorem sampleWithoutReplacement_dirac_update_id_card_filter_eq_two
 under sampling with replacement is `p` times the without-replacement mass when `r ≤ 1`, and
 `2 * p` times it when `r = 2`. -/
 private theorem sampleWithReplacement_dirac_update_id_real_singleton_comp
-    (hab : a ≠ b) (hmn : Fintype.card ι ≤ Fintype.card κ) (f : ι ↪ κ) :
+    (hab : a ≠ b) (f : ι ↪ κ) :
     (sampleWithReplacement (ι := ι) (Measure.dirac (update id b a))).real
         {update id b a ∘ f} =
       (let p : ℝ := (Fintype.card κ).descFactorial (Fintype.card ι) /
@@ -188,7 +189,8 @@ private theorem sampleWithReplacement_dirac_update_id_real_singleton_comp
         {update id b a ∘ f} := by
   classical
   have hdesc : ((Fintype.card κ).descFactorial (Fintype.card ι) : ℝ) ≠ 0 := by
-    exact_mod_cast Nat.descFactorial_eq_zero_iff_lt.not.2 (not_lt.2 hmn)
+    exact_mod_cast
+      Nat.descFactorial_eq_zero_iff_lt.not.2 (not_lt.2 (Fintype.card_le_of_embedding f))
   have hr : #{i | update id b a (f i) = a} ≤ 2 :=
     card_filter_update_id_apply_eq_le_two f.injective
   simp only [Measure.real, sampleWithReplacement_dirac_apply_singleton,
@@ -196,13 +198,20 @@ private theorem sampleWithReplacement_dirac_update_id_real_singleton_comp
     natCard_update_id_comp_eq_update_id_comp hab f,
     natCard_embedding_update_id_comp_eq_update_id_comp hab f,
     ENNReal.toReal_div, ENNReal.toReal_natCast, ENNReal.toReal_pow]
-  interval_cases #{i | update id b a (f i) = a} <;> simp <;> field_simp [hdesc]; ring
+  interval_cases #{i | update id b a (f i) = a}
+  · simp
+    field_simp [hdesc]
+  · simp
+    field_simp [hdesc]
+  · simp
+    field_simp [hdesc]
+    ring
 
 /-- For every word `y : ι → κ`, the positive singleton difference `(P {y} - Q {y}).toReal` is
 `max (1 - 2 * p) 0 * P.real {y}` when `y` hits `a` twice and `(1 - p) * P.real {y}` otherwise;
 words outside the support of `P` satisfy `P.real {y} = 0`, so both sides vanish there. -/
 private theorem toReal_sampleWithoutReplacement_sub_sampleWithReplacement_singleton
-    (hab : a ≠ b) (hmn : Fintype.card ι ≤ Fintype.card κ) (y : ι → κ) :
+    (hab : a ≠ b) (y : ι → κ) :
     (sampleWithoutReplacement (ι := ι) (Measure.dirac (update id b a)) {y} -
         sampleWithReplacement (ι := ι) (Measure.dirac (update id b a)) {y}).toReal =
       (let p : ℝ := (Fintype.card κ).descFactorial (Fintype.card ι) /
@@ -214,15 +223,14 @@ private theorem toReal_sampleWithoutReplacement_sub_sampleWithReplacement_single
   set Q := sampleWithReplacement (ι := ι) (Measure.dirac (update id b a))
   set p : ℝ := (Fintype.card κ).descFactorial (Fintype.card ι) /
       (Fintype.card κ : ℝ) ^ Fintype.card ι
-  obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
-  have := isProbabilityMeasure_sampleWithoutReplacement (Measure.dirac (update id b a)) e
   by_cases hy : ∃ f : ι ↪ κ, update id b a ∘ f = y
   · obtain ⟨f, rfl⟩ := hy
+    have := isProbabilityMeasure_sampleWithoutReplacement (Measure.dirac (update id b a)) f
     have hp_le : p ≤ 1 := div_le_one_of_le₀
       (by exact_mod_cast Nat.descFactorial_le_pow _ _) (by positivity)
     rw [← ofReal_measureReal (μ := P), ← ofReal_measureReal (μ := Q),
       ← ENNReal.ofReal_sub _ measureReal_nonneg, ENNReal.toReal_ofReal',
-      sampleWithReplacement_dirac_update_id_real_singleton_comp hab hmn f]
+      sampleWithReplacement_dirac_update_id_real_singleton_comp hab f]
     have hsub : P.real {update id b a ∘ f} -
         (if #{i | update id b a (f i) = a} = 2 then 2 * p else p) *
           P.real {update id b a ∘ f} =
@@ -257,7 +265,7 @@ private theorem sum_toReal_sampleWithoutReplacement_sub_sampleWithReplacement_si
           (Fintype.card κ : ℝ) ^ Fintype.card ι
       let t : ℝ := (Fintype.card ι).descFactorial 2 / (Fintype.card κ).descFactorial 2
       1 - p - t * min p (1 - p) := by
-  simp_rw [toReal_sampleWithoutReplacement_sub_sampleWithReplacement_singleton hab hmn]
+  simp_rw [toReal_sampleWithoutReplacement_sub_sampleWithReplacement_singleton hab]
   set P := sampleWithoutReplacement (ι := ι) (Measure.dirac (update id b a))
   set p : ℝ := (Fintype.card κ).descFactorial (Fintype.card ι) /
       (Fintype.card κ : ℝ) ^ Fintype.card ι

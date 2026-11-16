@@ -247,24 +247,27 @@ theorem sampleWithoutReplacement_dirac_apply_singleton (x : κ → α) (y : ι �
       (Nat.card {f : ι ↪ κ // x ∘ f = y} : ℝ≥0∞) /
         (Fintype.card κ).descFactorial (Fintype.card ι) := by
   classical
-  have hpre : (fun k : ι → κ => fun i => x (k i)) ⁻¹' {y} = {f : ι → κ | x ∘ f = y} := by
+  let s : Finset (ι → κ) := Finset.univ.filter Function.Injective
+  let t : Finset (ι → κ) := Finset.univ.filter fun f => x ∘ f = y
+  have hs : ({k : ι → κ | Function.Injective k} : Set (ι → κ)) = s := by
     ext f
-    simp [Function.comp_def]
-  have hinj : ({k : ι → κ | Function.Injective k} : Set (ι → κ)) =
-      (({k : ι → κ | Function.Injective k} : Finset (ι → κ)) : Set (ι → κ)) := by
-    simp
-  have hevt : ({f : ι → κ | x ∘ f = y} : Set (ι → κ)) =
-      (({f : ι → κ | x ∘ f = y} : Finset (ι → κ)) : Set (ι → κ)) := by
-    simp
+    simp [s]
+  have ht : (fun k : ι → κ => fun i => x (k i)) ⁻¹' {y} = t := by
+    ext f
+    simp [t, Function.comp_def]
+  have hmeas : sampleWithoutReplacement (Measure.dirac x) {y} =
+      ((s ∩ t).card : ℝ≥0∞) / s.card := by
+    rw [sampleWithoutReplacement_dirac,
+      Measure.map_apply (measurable_readPopulation x) (measurableSet_singleton y),
+      hs, ht, uniformOn_apply_finset]
   have heq : {k : ι → κ // Function.Injective k ∧ x ∘ k = y} ≃ {f : ι ↪ κ // x ∘ f = y} :=
     (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm.trans
       ((Equiv.subtypeInjectiveEquivEmbedding ι κ).subtypeEquiv fun _ => Iff.rfl)
-  rw [sampleWithoutReplacement_dirac,
-    Measure.map_apply (measurable_readPopulation x) (measurableSet_singleton y),
-    hpre, hinj, hevt, uniformOn_apply_finset, ← Finset.filter_and,
-    ← Fintype.card_subtype, ← Fintype.card_subtype,
-    Fintype.card_congr (Equiv.subtypeInjectiveEquivEmbedding ι κ), Fintype.card_embedding_eq,
-    ← Nat.card_eq_fintype_card, Nat.card_congr heq]
+  have hnum : (s ∩ t).card = Nat.card {f : ι ↪ κ // x ∘ f = y} := by
+    simp [s, t, ← Finset.filter_and, ← Fintype.card_subtype, Fintype.card_congr heq]
+  have hden : s.card = (Fintype.card κ).descFactorial (Fintype.card ι) := by
+    simp [s, ← Fintype.card_subtype, Fintype.card_congr (Equiv.subtypeInjectiveEquivEmbedding ι κ)]
+  rw [hmeas, hnum, hden]
 
 /-- For a deterministic population `x : κ → α`, the mass of a word `y : ι → α` under sampling with
 replacement is the number of index maps `f : ι → κ` with `x ∘ f = y` divided by
@@ -277,11 +280,15 @@ theorem sampleWithReplacement_dirac_apply_singleton (x : κ → α) (y : ι → 
   have hpre : (fun k : ι → κ => fun i => x (k i)) ⁻¹' {y} = {f : ι → κ | x ∘ f = y} := by
     ext f
     simp [Function.comp_def]
-  rw [sampleWithReplacement_dirac,
-    Measure.map_apply (measurable_readPopulation x) (measurableSet_singleton y),
-    hpre, uniformOn_univ, Measure.count_apply_finite _ (Set.toFinite _),
-    ← Set.ncard_eq_toFinset_card _, ← Nat.card_coe_set_eq, Set.coe_ofPred, Fintype.card_fun,
-    Nat.cast_pow]
+  have hmeas : sampleWithReplacement (Measure.dirac x) {y} =
+      Measure.count {f : ι → κ | x ∘ f = y} / Fintype.card (ι → κ) := by
+    rw [sampleWithReplacement_dirac,
+      Measure.map_apply (measurable_readPopulation x) (measurableSet_singleton y),
+      hpre, uniformOn_univ]
+  have hcount : Measure.count {f : ι → κ | x ∘ f = y} = Nat.card {f : ι → κ // x ∘ f = y} := by
+    simp [Measure.count_apply_finite _ (Set.toFinite _), Fintype.card_subtype]
+  rw [hmeas, hcount]
+  simp
 
 end Singletons
 
