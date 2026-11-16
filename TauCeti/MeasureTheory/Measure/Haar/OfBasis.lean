@@ -30,10 +30,9 @@ carries the normalized Haar measure of the first to that of the second.
 
 ## Attribution
 
-`Module.Basis.measurePreserving_equiv` generalizes the measure-preservation lemma for the chart
-coordinate change in the closed pull request
-[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536) (branch
-`chrisflav:roadmap/closed-surface-hyperbolic-metric-worker-73`) from one pair of bases to any two.
+`Module.Basis.measurePreserving_equiv` is adapted from the measure-preservation lemma for the chart
+coordinate change in
+[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536).
 -/
 
 public section
@@ -119,12 +118,12 @@ theorem measurePreserving_equiv (b : Basis ι ℝ E) (b' : Basis ι' ℝ F) (e :
     MeasurePreserving (b.equiv b' e) b.addHaar b'.addHaar := by
   have := b.finiteDimensional_of_finite
   have := b'.finiteDimensional_of_finite
-  let f : E ≃L[ℝ] F := (b.equiv b' e).toContinuousLinearEquiv
-  have hmap : b.map f.toLinearEquiv = b'.reindex e.symm := by
+  have hmap : b.map (b.equiv b' e) = b'.reindex e.symm := by
     ext i
-    simp [f]
-  refine ⟨f.continuous.measurable, ?_⟩
-  rw [show ⇑(b.equiv b' e) = f from rfl, b.map_addHaar, hmap, addHaar_reindex]
+    simp
+  refine ⟨(b.equiv b' e).toContinuousLinearEquiv.continuous.measurable, ?_⟩
+  rw [← LinearEquiv.coe_toContinuousLinearEquiv', b.map_addHaar,
+    LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, hmap, addHaar_reindex]
 
 end Equiv
 

@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.H1
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Matrix.Order
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.PDE.Ellipticity.PosDef
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
@@ -74,12 +73,8 @@ hence zero (`ae_eq_zero_of_integral_contMDiff_smul_eq_zero`).
 
 ## Attribution
 
-Adapted from the chart bridge, De Giorgi continuity and semilinear bootstrap of the closed pull
-request
-[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536) (branch
-`chrisflav:roadmap/closed-surface-hyperbolic-metric-worker-73`), with the long proofs split into
-chart helper lemmas and its orthogonality lemma replaced by Mathlib's
-`ae_eq_zero_of_integral_contMDiff_smul_eq_zero`.
+Adapted from the chart bridge, De Giorgi continuity and semilinear bootstrap of
+[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536).
 -/
 
 public section
@@ -539,7 +534,7 @@ private theorem exists_contMDiff_of_testFunction (p : M)
   obtain ⟨Φ₀, hΦ₀, -, hΦ₀supp, hΦ₀eq⟩ :=
     exists_contMDiff_comp_extChartAt_symm_eq (I := I) (n := ∞) (c := p) hwE_smooth hwE_comp hwE_tgt
   let Φ : C^∞⟮I, M; ℝ⟯ := ⟨Φ₀, hΦ₀⟩
-  have hΦ_coe (x : M) : Φ x = Φ₀ x := rfl
+  have hΦ_coe (x : M) : Φ x = Φ₀ x := congrFun (ContMDiffMap.coeFn_mk Φ₀ hΦ₀) x
   have hΦ_ψ (y : EuclideanSpace ℝ (Fin (finrank ℝ E))) (hy : y ∈ Ω) :
       Φ (chartInvMap (I := I) p y) = φ y := by
     rw [hΦ_coe, chartInvMap, hΦ₀eq _ (hΩt hy)]

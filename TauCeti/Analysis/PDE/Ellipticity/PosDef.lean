@@ -13,12 +13,14 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 # Uniform ellipticity of continuous positive-definite matrix fields on compact sets
 
 A continuous matrix field `a : X → Matrix ι ι ℝ` on a compact set `K` whose quadratic form is
-pointwise strictly positive on nonzero vectors is uniformly elliptic on `K`: the quadratic form
-`(x, ξ) ↦ ξᵀ a(x) ξ` attains a positive minimum `λ` on the compact product `K × Sⁿ⁻¹`, and the
-operator norm of `matrixBilinearForm (a x)` attains a finite maximum on `K`. No symmetry of `a` is
-required (`TauCeti.PDE.exists_uniformlyEllipticOn_of_isCompact`); the lower bound is the
-matrix case of `IsCompact.exists_pos_forall_mul_norm_sq_le`. In particular, every continuous
-field of positive-definite matrices on a compact set is uniformly elliptic
+pointwise strictly positive on nonzero vectors is uniformly elliptic on `K`: there is a constant
+`λ > 0` with `λ ‖ξ‖² ≤ ξᵀ a(x) ξ` for all `x ∈ K`, and the operator norms of
+`matrixBilinearForm (a x)` are bounded on `K`. When `K` is nonempty these come from the positive
+minimum of the quadratic form on the compact product `K × Sⁿ⁻¹` and the maximum of an entrywise
+bound on `K`. No symmetry of `a` is required
+(`TauCeti.PDE.exists_uniformlyEllipticOn_of_isCompact`); the lower bound is the matrix case of
+`IsCompact.exists_pos_forall_mul_norm_sq_le`. In particular, every continuous field of
+positive-definite matrices on a compact set is uniformly elliptic
 (`TauCeti.PDE.exists_uniformlyEllipticOn_of_isCompact_of_posDef`).
 
 ## Main results
@@ -37,10 +39,8 @@ field of positive-definite matrices on a compact set is uniformly elliptic
 
 ## Attribution
 
-Adapted from the positive-definite ellipticity lemma of the closed pull request
-[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536) (branch
-`chrisflav:roadmap/closed-surface-hyperbolic-metric-worker-73`), whose coercivity step is
-obtained here from the existing `IsCompact.exists_pos_forall_mul_norm_sq_le`.
+Adapted from the positive-definite ellipticity lemma of
+[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536).
 -/
 
 public section

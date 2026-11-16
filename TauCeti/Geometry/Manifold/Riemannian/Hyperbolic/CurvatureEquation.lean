@@ -61,10 +61,8 @@ for every constant negative scalar curvature `c`, the hyperbolic case being `c =
 ## Attribution
 
 `TauCeti.Manifold.eq_of_neg_laplaceBeltrami_add_add_exp_eq_zero` is adapted from the uniqueness
-argument in the closed pull request
-[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536) (branch
-`chrisflav:roadmap/closed-surface-hyperbolic-metric-worker-73`), stated here separately for `C²`
-solutions and arbitrary `K`.
+argument of
+[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536).
 -/
 
 public section

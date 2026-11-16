@@ -12,7 +12,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.LiouvilleEnergy.Sobolev
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Regularity
-import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Trudinger
 import TauCeti.Geometry.Manifold.Riemannian.TotalCurvature
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.WithMetric
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
@@ -28,8 +27,9 @@ curvature equation
 `Δ⁺φ + K + e^(2φ) = 0`,
 
 where `Δ⁺ = -div grad` is the nonnegative Laplacian of `g` and `K = Scal^g / 2` its Gaussian
-curvature, the hyperbolic metric being `e^(2φ) g`, and proves that such a conformal hyperbolic
-metric exists (and is unique) if and only if the total curvature of `g` is negative.
+curvature, the hyperbolic metric being `e^(2φ) g`, and proves that, when `M` is nonempty, such a
+conformal hyperbolic metric exists (and is unique) if and only if the total curvature of `g` is
+negative.
 
 Completeness holds automatically on a closed surface, since the Riemannian distance of a compact
 manifold is complete (`TauCeti.HyperbolicMetric.ofCompactSpace`), and finite volume follows
@@ -75,10 +75,8 @@ closed surface carries a conformal hyperbolic metric, and its area is `-∫ K dV
 ## Attribution
 
 The existence, uniqueness and characterization theorems for conformal hyperbolic metrics are
-adapted from the closed pull request
-[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536) (branch
-`chrisflav:roadmap/closed-surface-hyperbolic-metric-worker-73`), with the existence proof split
-from the uniqueness argument.
+adapted from
+[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536).
 -/
 
 public section

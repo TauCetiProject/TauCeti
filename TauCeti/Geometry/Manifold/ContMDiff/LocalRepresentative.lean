@@ -30,10 +30,8 @@ representatives. It is the manifold counterpart of `TauCeti.exists_contDiffOn_ae
 
 ## Attribution
 
-Adapted from the manifold gluing lemma of the closed pull request
-[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536) (branch
-`chrisflav:roadmap/closed-surface-hyperbolic-metric-worker-73`), moved to its own file and
-generalized from the Riemannian volume to any measure that charges nonempty open sets.
+Adapted from the manifold gluing lemma of
+[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536).
 -/
 
 public section
