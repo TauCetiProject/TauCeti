@@ -17,7 +17,7 @@ Skew-adjointness on the real vectors is equivalent to compatibility with this co
 adjoint on the whole algebra. For a real Clifford action `ρ`, this says that its complex-linear
 extension `CliffordAlgebra.liftBaseChange ℂ Q ρ` is a `*`-representation exactly when Clifford
 multiplication by every real vector is skew-adjoint
-(`CliffordAlgebra.adjoint_liftBaseChange_eq_conjStar_iff`).
+(`CliffordAlgebra.adjoint_liftBaseChange_eq_liftBaseChange_conjStar_iff`).
 
 If the action surjects onto the full complex endomorphism algebra, every positive definite
 compatible Hermitian form is a unique positive real multiple of any given compatible inner
@@ -140,7 +140,7 @@ variable [NormedAddCommGroup S] [InnerProductSpace ℂ S] [FiniteDimensional ℂ
 Hermitian module, the complex-linear extension `ρ_ℂ` of a real Clifford action satisfies
 `ρ_ℂ(a)* = ρ_ℂ(conjStar a)` for every `a` exactly when Clifford multiplication by every real
 vector is skew-adjoint. -/
-theorem adjoint_liftBaseChange_eq_conjStar_iff :
+theorem adjoint_liftBaseChange_eq_liftBaseChange_conjStar_iff :
     (∀ a, LinearMap.adjoint (liftBaseChange ℂ Q ρ a) = liftBaseChange ℂ Q ρ (conjStar Q a)) ↔
       ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v) := by
   simpa only [liftBaseChange_ι_tmul, one_smul] using

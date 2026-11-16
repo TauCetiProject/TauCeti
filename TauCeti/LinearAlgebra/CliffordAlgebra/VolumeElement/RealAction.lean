@@ -34,8 +34,8 @@ Clifford multiplication.
 
 On a complex inner product space, `ρ_ℂ` is a `*`-representation for the conjugate-linear Clifford
 involution `CliffordAlgebra.conjStar` exactly when the real generators act skew-Hermitianly
-(`CliffordAlgebra.adjoint_liftBaseChange_eq_conjStar_iff`), the second clause of the geometric
-convention `AlgHom.IsGeometricClifford`
+(`CliffordAlgebra.adjoint_liftBaseChange_eq_liftBaseChange_conjStar_iff`), the second clause of
+the geometric convention `AlgHom.IsGeometricClifford`
 (`AlgHom.IsGeometricClifford.inner_liftBaseChange_apply_left`). Since `Γ` is fixed by `conjStar`,
 under the geometric convention `ρ_ℂ(Γ)` is self-adjoint and the half-spinor spaces are
 orthogonal. These are the forms of `Γ` and `S^±` used for Clifford-module bundles, whose fibres

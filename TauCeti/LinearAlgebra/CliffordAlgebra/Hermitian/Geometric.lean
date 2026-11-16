@@ -9,6 +9,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Complex
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
+
 /-!
 # The geometric convention for real Clifford actions
 
@@ -95,7 +97,7 @@ theorem map_ι_mul_self (v : V) : ρ (ι Q v) * ρ (ι Q v) = ((-‖v‖ ^ 2 : �
   rw [map_ι_mul_map_ι, hρ.apply_eq_neg_norm_sq]
 
 /-- Clifford multiplications by orthogonal vectors anticommute. -/
-theorem map_ι_mul_map_ι_of_inner_eq_zero {v w : V} (h : ⟪v, w⟫_ℝ = 0) :
+theorem map_ι_mul_map_ι_comm_of_inner_eq_zero {v w : V} (h : ⟪v, w⟫_ℝ = 0) :
     ρ (ι Q v) * ρ (ι Q w) = -(ρ (ι Q w) * ρ (ι Q v)) := by
   rw [← map_mul ρ, ← map_mul ρ, ← map_neg ρ,
     ι_mul_ι_comm_of_isOrtho ((QuadraticMap.isOrtho_iff_inner_eq_zero hρ.apply_eq_neg_norm_sq).2 h)]
@@ -109,14 +111,10 @@ theorem map_ι_mul_self_of_norm_eq_one {v : V} (h : ‖v‖ = 1) : ρ (ι Q v) *
 theorem map_ι_mul_map_ι_mul_self_of_orthonormal {e₁ e₂ : V} (h₁ : ‖e₁‖ = 1) (h₂ : ‖e₂‖ = 1)
     (h : ⟪e₁, e₂⟫_ℝ = 0) :
     ρ (ι Q e₁) * ρ (ι Q e₂) * (ρ (ι Q e₁) * ρ (ι Q e₂)) = -1 := by
-  calc ρ (ι Q e₁) * ρ (ι Q e₂) * (ρ (ι Q e₁) * ρ (ι Q e₂))
-      = ρ (ι Q e₁) * (ρ (ι Q e₂) * ρ (ι Q e₁)) * ρ (ι Q e₂) := by noncomm_ring
-    _ = -(ρ (ι Q e₁) * ρ (ι Q e₁) * (ρ (ι Q e₂) * ρ (ι Q e₂))) := by
-      rw [← neg_neg (ρ (ι Q e₂) * ρ (ι Q e₁)), ← hρ.map_ι_mul_map_ι_of_inner_eq_zero h]
-      noncomm_ring
-    _ = -1 := by
-      rw [hρ.map_ι_mul_self_of_norm_eq_one h₁, hρ.map_ι_mul_self_of_norm_eq_one h₂]
-      simp
+  rw [← map_mul ρ, ← map_mul ρ, ι_mul_ι_mul_self_of_isOrtho
+    ((QuadraticMap.isOrtho_iff_inner_eq_zero hρ.apply_eq_neg_norm_sq).2 h), map_neg,
+    AlgHom.commutes, hρ.apply_eq_neg_norm_sq, hρ.apply_eq_neg_norm_sq, h₁, h₂]
+  simp
 
 /-- **A geometric action is a `*`-representation**: under the geometric convention, the
 complex-linear extension `ρ_ℂ` satisfies `⟪ρ_ℂ(a) s, t⟫ = ⟪s, ρ_ℂ(conjStar a) t⟫`, on a module
