@@ -824,12 +824,8 @@ theorem waveFrontSet_subset_waveFrontSet_sum_smul_iteratedLineDerivOp_union {ι 
     (T : 𝓓'(Ω, ℂ)) :
     T.waveFrontSet ⊆ (∑ i ∈ s, c i • ∂^{m i} T).waveFrontSet ∪
       constCoeffCharacteristicSet s c m M := by
-  rintro ⟨x, ξ⟩ hp
-  obtain ⟨hx, hξ, hT⟩ := mem_waveFrontSet_iff.1 hp
-  by_contra h
-  rw [mem_union, not_or, mem_waveFrontSet_iff, mem_constCoeffCharacteristicSet_iff] at h
-  exact hT (IsMicrolocallySmoothAt.of_sum_smul_iteratedLineDerivOp hk
-    (by simpa [hx, hξ] using h.1) fun h0 ↦ h.2 ⟨hξ, h0⟩)
+  simpa using waveFrontSet_subset_waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_union s c
+    (a := fun _ _ ↦ 1) (fun _ ↦ contDiff_const) m hk T
 
 /-- **An elliptic constant-coefficient operator preserves the wave front set.** If the principal
 symbol of `P = ∑ i ∈ s, c i ∂^(m i)` of order `M` vanishes at no `ξ ≠ 0`, then
@@ -839,11 +835,8 @@ theorem waveFrontSet_sum_smul_iteratedLineDerivOp_of_forall_ne_zero {ι : Type*}
     (hσ : ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol s c m M ξ ≠ 0)
     (T : 𝓓'(Ω, ℂ)) :
     (∑ i ∈ s, c i • ∂^{m i} T).waveFrontSet = T.waveFrontSet := by
-  refine subset_antisymm (waveFrontSet_sum_smul_iteratedLineDerivOp_subset s c m T)
-    fun p hp ↦ ?_
-  refine (waveFrontSet_subset_waveFrontSet_sum_smul_iteratedLineDerivOp_union s c m hk T
-    hp).resolve_right ?_
-  exact fun h ↦ hσ p.2 h.1 h.2
+  simpa using waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero s c
+    (a := fun _ _ ↦ 1) (fun _ ↦ contDiff_const) m hk (fun _ _ ξ hξ ↦ by simpa using hσ ξ hξ) T
 
 /-- **Elliptic regularity for constant-coefficient operators.** If the principal symbol of
 `P = ∑ i ∈ s, c i ∂^(m i)` of order `M` vanishes at no `ξ ≠ 0`, then `P T` and `T` have the same
@@ -854,8 +847,8 @@ theorem singularSupport_sum_smul_iteratedLineDerivOp_of_forall_ne_zero [Measurab
     (hσ : ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol s c m M ξ ≠ 0)
     (T : 𝓓'(Ω, ℂ)) :
     (∑ i ∈ s, c i • ∂^{m i} T).singularSupport = T.singularSupport := by
-  rw [← fst_image_waveFrontSet, ← fst_image_waveFrontSet,
-    waveFrontSet_sum_smul_iteratedLineDerivOp_of_forall_ne_zero s c m hk hσ]
+  simpa using singularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero s c
+    (a := fun _ _ ↦ 1) (fun _ ↦ contDiff_const) m hk (fun _ _ ξ hξ ↦ by simpa using hσ ξ hξ) T
 
 /-- **The Laplacian preserves the wave front set.** The Laplacian
 `Δ = LineDeriv.laplacianCLM ℝ E 𝓓'(Ω, ℂ)`, which is `∑ i, ∂_{b i} ∂_{b i}` for any orthonormal
