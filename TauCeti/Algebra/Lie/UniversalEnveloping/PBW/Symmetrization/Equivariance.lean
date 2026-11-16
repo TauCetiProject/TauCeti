@@ -18,15 +18,12 @@ of `d` generators to `1/d!` times the sum of their products in all `d!` orders. 
 determines `e` (`IsPBWSymmetrization.unique`), since pure powers span the symmetric algebra, and the
 canonical global symmetrization `pbwSymmetrizationMap` satisfies it when `R : Type`.
 
-This file proves the two structural properties of such a map, working directly with the formula,
-so that the scalar ring may lie in any universe:
+This file proves the two structural properties of such a map, for a scalar ring in any universe:
 
 * **adjoint equivariance**: `e ⁅x, p⁆ = ι x * e p - e p * ι x`, where `L` acts on `Sym(L)` by
   the derivations extending `ad x`;
 * **filtration**: a symmetric tensor has degree at most `n` exactly when its image has PBW degree
-  at most `n`. The forward inclusion needs nothing; the converse needs `L` free over `R`, and
-  uses that the leading PBW symbol of the image of a homogeneous tensor is its canonical image
-  in the associated graded algebra.
+  at most `n`. The forward inclusion holds in general; the converse assumes `L` free over `R`.
 
 Consequently `e` is injective for free `L`, and an element of `Sym(L)` is a Lie invariant exactly
 when its symmetrization is central in `U(L)`. For the canonical map the injectivity holds without
@@ -196,8 +193,11 @@ private theorem mk_apply_eq_pbwHomogeneousComponentMap (n : ℕ) (p : 𝒮 n) :
         prod_map_ι_mem_homogeneousSubmodule R L (List.replicate n y)⟩ :=
     Subtype.ext (by simp [v])
   rw [hw, pbwHomogeneousComponentMap_prod_map_ι_of_length_eq R L _ (List.length_replicate ..)]
+  -- `ψ` takes the class of the symmetrization, and `e (ι y ^ n) = ι y ^ n`.
   refine congrArg Submodule.Quotient.mk (Subtype.ext ?_)
-  simp [he.apply_ι_pow]
+  rw [LinearMap.codRestrict_apply, LinearMap.comp_apply, Submodule.subtype_apply]
+  simp only [List.map_replicate, List.prod_replicate]
+  exact he.apply_ι_pow y n
 
 /-- For free `L`, a homogeneous tensor of degree `n` whose symmetrization has PBW degree below
 `n` is zero. -/
