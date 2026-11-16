@@ -176,7 +176,10 @@ theorem norm_sq_le_div_mul_max_one_sub_add_div_of_isLocalMax (hr : 0 < r) (hK₁
     ‖β x₀‖ ^ 2 ≤ 4 * c ^ 2 / r * (max (1 - ‖α x₀‖ ^ 2) 0 + 4 * (1 + 2 * K₁) / r) := by
   have hcα : ContMDiffAt I 𝓘(ℝ) 2 ((4 * c ^ 2 / r) • fun y ↦ ‖α y‖ ^ 2) x₀ := by
     simpa only [Pi.smul_def, smul_eq_mul, Pi.mul_def] using contMDiffAt_const.mul hα
-  have hΔ := Manifold.laplaceBeltrami_nonpos_of_isLocalMax (hβ.add hcα) hmax
+  have hf : (fun y ↦ ‖β y‖ ^ 2 + 4 * c ^ 2 / r * ‖α y‖ ^ 2) =
+      (fun y ↦ ‖β y‖ ^ 2) + (4 * c ^ 2 / r) • fun y ↦ ‖α y‖ ^ 2 := by
+    ext; simp
+  have hΔ := Manifold.laplaceBeltrami_nonpos_of_isLocalMax (hβ.add hcα) (hf ▸ hmax)
   rw [Manifold.laplaceBeltrami_add_of_contMDiffAt I hβ hcα,
     Manifold.laplaceBeltrami_smul_of_contMDiffAt I _ hα] at hΔ
   exact sq_le_of_add_div_mul_nonpos hr hK₁ hWβ hWα hΔ
