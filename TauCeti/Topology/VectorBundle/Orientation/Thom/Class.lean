@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Local.Orientation
+public import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
-public import TauCeti.Topology.VectorBundle.Thom.FiniteCover
 import TauCeti.Algebra.Module.Equiv.SpanSingleton
 
 /-!
@@ -60,8 +60,6 @@ stated in degree `finrank ℝ F`, so `isThomClass_thomClass` transports it along
   of the model fibre and a class `g ∈ Hʳ(F, F ∖ {0})`.
 * `TauCeti.VectorBundleOrientation.thomClass`: the integral Thom class of an oriented real vector
   bundle of positive rank.
-* `TauCeti.VectorBundleOrientation.thomEquivOfModelOfCompactSpace`: the oriented Thom linear
-  equivalence `Hᵖ(B; M) ≃ₗ[K] Hᵐ(E, E₀; M)` over a compact base.
 
 ## Main results
 
@@ -97,8 +95,6 @@ stated in degree `finrank ℝ F`, so `isThomClass_thomClass` transports it along
 * `TauCeti.VectorBundleOrientation.singularCohomologyMap_negThomPairMap_thomClass`: in odd rank,
   fibrewise negation carries it to the Thom class of the opposite orientation.
 * `TauCeti.VectorBundleOrientation.isThomClass_thomClass`: it is a Thom class.
-* `TauCeti.VectorBundleOrientation.bijective_thomMap_thomClassOfModel_of_compactSpace`: over a
-  compact base, `thomMap` of `o.thomClassOfModel` normalized by a generator is bijective.
 
 ## References
 
@@ -657,53 +653,5 @@ theorem isThomClass_thomClass :
     ).toLinearEquiv.span_singleton_apply_eq_top_iff.2 (Orientation.span_localCohomologyClass _ _)
 
 end ThomClass
-
-section ThomIsomorphism
-
-variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
-  [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)]
-  [FiberBundle F E] [VectorBundle ℝ F E] {ι : Type*} [Fintype ι]
-  {K : Type w} [CommRing K]
-
-/-- **The oriented Thom isomorphism over a compact base**: for an oriented real vector bundle
-`o : VectorBundleOrientation F E ι` over a compact space `B`, an orientation `ω` of `F`, and a
-generator `g` of `Hʳ(F, F ∖ {0}; K)`, the Thom map of `o.thomClassOfModel hι ω g` is bijective in
-every degree. -/
-theorem bijective_thomMap_thomClassOfModel_of_compactSpace [CompactSpace B]
-    (o : VectorBundleOrientation F E ι) (hι : Fintype.card ι = finrank ℝ F)
-    (ω : Orientation ℝ F ι) (M : ModuleCat.{w} K) {p m : ℕ} (h : p + finrank ℝ F = m)
-    {g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology
-      (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
-    (hg : Submodule.span K {g} = ⊤) :
-    Function.Bijective
-      (thomMap F E M (finrank ℝ F) p m h (o.thomClassOfModel hι ω g)) :=
-  (o.isThomClass_thomClassOfModel hι ω hg).bijective_thomMap_of_compactSpace M h
-
-/-- **The oriented Thom linear equivalence** `Hᵖ(B; M) ≃ₗ[K] Hᵐ(E, E₀; M)` over a compact base `B`
-associated to `o.thomClassOfModel hι ω g`. -/
-def thomEquivOfModelOfCompactSpace [CompactSpace B]
-    (o : VectorBundleOrientation F E ι) (hι : Fintype.card ι = finrank ℝ F)
-    (ω : Orientation ℝ F ι) (M : ModuleCat.{w} K) {p m : ℕ} (h : p + finrank ℝ F = m)
-    {g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology
-      (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
-    (hg : Submodule.span K {g} = ⊤) :
-    (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p ≃ₗ[K]
-      (thomPair F E).singularCohomology (ModuleCat.of K K) K M m :=
-  (o.isThomClass_thomClassOfModel hι ω hg).thomEquivOfCompactSpace M h
-
-@[simp]
-theorem thomEquivOfModelOfCompactSpace_apply [CompactSpace B]
-    (o : VectorBundleOrientation F E ι) (hι : Fintype.card ι = finrank ℝ F)
-    (ω : Orientation ℝ F ι) (M : ModuleCat.{w} K) {p m : ℕ} (h : p + finrank ℝ F = m)
-    {g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology
-      (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
-    (hg : Submodule.span K {g} = ⊤)
-    (a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p) :
-    o.thomEquivOfModelOfCompactSpace hι ω M h hg a =
-      thomMap F E M (finrank ℝ F) p m h (o.thomClassOfModel hι ω g) a :=
-  (o.isThomClass_thomClassOfModel hι ω hg).thomEquivOfCompactSpace_apply M h a
-
-end ThomIsomorphism
 
 end TauCeti.VectorBundleOrientation

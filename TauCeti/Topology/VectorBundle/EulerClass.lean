@@ -529,6 +529,15 @@ theorem pullbackSubtypeValThomPairMap_fst_apply (W : Set B)
       ⟨Pullback.lift (ContinuousMap.subtypeVal W) z, z.proj.2⟩ :=
   (rfl)
 
+@[simp]
+theorem pullbackSubtypeValThomPairMap_snd_apply (W : Set B)
+    (z : (thomPair F ((⇑(ContinuousMap.subtypeVal W)) *ᵖ E)).snd) :
+    TopPair.Hom.snd (pullbackSubtypeValThomPairMap F E W) z =
+      ⟨Pullback.lift (ContinuousMap.subtypeVal W) z.1, z.1.proj.2,
+        (mem_zeroSectionCompl (E := E)).2
+          ((mem_zeroSectionCompl (E := (⇑(ContinuousMap.subtypeVal W)) *ᵖ E)).1 z.2)⟩ :=
+  (rfl)
+
 /-- `pullbackSubtypeValThomPairMap` followed by the subspace inclusion `(E|_W, E₀|_W) ⟶ (E, E₀)` is
 `pullbackThomPairMap` along `ContinuousMap.subtypeVal W`. -/
 @[reassoc (attr := simp)]

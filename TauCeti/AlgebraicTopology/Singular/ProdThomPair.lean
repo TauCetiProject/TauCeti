@@ -96,6 +96,12 @@ variable (B : Type w) [TopologicalSpace B] (F : Type w) [TopologicalSpace F] [Ze
 abbrev prodThomPair : TopPair.{w} :=
   TopPair.ofSubset (X := TopCat.of (B × F)) {p | p.2 ≠ 0}
 
+variable {B F} in
+/-- When `F` is a subsingleton, the punctured product `B × (F ∖ {0})` is empty. -/
+instance isEmpty_prodThomPair_snd [Subsingleton F] :
+    IsEmpty (prodThomPair B F).snd :=
+  ⟨fun p ↦ p.2 (Subsingleton.elim p.1.2 0)⟩
+
 variable {B} {B' : Type w} [TopologicalSpace B'] {B'' : Type w} [TopologicalSpace B'']
 
 /-- The map of Thom pairs of product bundles `(B × F, B × (F ∖ {0})) ⟶ (B' × F, B' × (F ∖ {0}))`

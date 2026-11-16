@@ -24,21 +24,20 @@ of the complement `B × (F ∖ {0})` of the zero section of the product bundle `
 * `B × (F ∖ {0})` is homotopy equivalent to `Sᵈ × B` by `(b, x) ↦ (e x / ‖e x‖, b)`
   (`TauCeti.prodThomPairPuncturedHomotopyEquiv`, in
   `TauCeti.AlgebraicTopology.Singular.ProdThomPair`). Let `σ ∈ Hᵈ(B × (F ∖ {0}); k)` be the
-  pullback of the standard generator of `Hᵈ(Sᵈ; k)`
-  (`TauCeti.singularCohomologyTopCatSphereZeroGenerator` for `d = 0`,
-  `TauCeti.singularCohomologyTopCatSphereGenerator` for `d ≥ 1`) along the first component
-  (`TauCeti.prodThomPairPuncturedClass`), and `π : B × (F ∖ {0}) → B` the projection
-  (`TauCeti.prodThomPairPuncturedProj`). The decomposition of the cohomology of `Sᵈ × B`
-  (`TopCat.singularCohomologySphereZeroProdEquiv` for `d = 0`,
-  `TopCat.singularCohomologySphereProdSlantEquiv` for `d ≥ 1`) becomes
+  pullback of `TauCeti.singularCohomologyTopCatSphereClass k d` — the indicator class
+  `TauCeti.singularCohomologyTopCatSpherePlusIndicator` of `TauCeti.spherePlus` in `H⁰(S⁰; k)`
+  (spanning a complement to `k · 1` and representing the generator of degree-`0` reduced cohomology
+  of `S⁰`) for `d = 0`, and the generator `TauCeti.singularCohomologyTopCatSphereGenerator` of
+  `Hᵈ(Sᵈ; k)` for `d ≥ 1` — along the first component (`TauCeti.prodThomPairPuncturedClass`), and
+  `π : B × (F ∖ {0}) → B` the projection (`TauCeti.prodThomPairPuncturedProj`). The decomposition
+  of the cohomology of `Sᵈ × B` (`TopCat.singularCohomologySphereProdCupEquiv`) becomes
   `Hⁿ⁺ᵈ(B; M) × Hⁿ(B; M) ≃ Hⁿ⁺ᵈ(B × (F ∖ {0}); M)`, `(b, c) ↦ π^* b + σ ⌣ π^* c`
   (`TauCeti.prodThomPairPuncturedSingularCohomologyEquiv`).
-* Whenever `F` is nontrivial, the projection `B × (F ∖ {0}) → B` has a continuous section, so
-  `π^*` is injective (`TauCeti.injective_singularCohomologyMap_prodThomPairPuncturedProj`); when
-  `F` is also contractible, the map `Hᵐ(B × F, B × (F ∖ {0}); M) → Hᵐ(B × F; M)` vanishes
-  (`TauCeti.singularCohomologyπ_prodThomPair_eq_zero`) and the connecting morphism `δ` identifies
+* Whenever `F` is nontrivial and contractible, `π^*` is injective, the map
+  `Hᵐ(B × F, B × (F ∖ {0}); M) → Hᵐ(B × F; M)` vanishes, and the connecting morphism `δ` identifies
   any complement of `im π^*` with relative cohomology
-  (`TauCeti.bijective_singularCohomologyδ_comp_inr_of_prodThomPair`). Applied to the sphere
+  (`TauCeti.bijective_singularCohomologyδ_comp_inr_of_prodThomPair`, in
+  `TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Basic`). Applied to the sphere
   decomposition above, `c ↦ δ (σ ⌣ π^* c)` is a `k`-linear equivalence
   `Hⁿ(B; M) ≃ Hⁿ⁺ʳ(B × F, B × (F ∖ {0}); M)` for every `n`
   (`TauCeti.prodThomPairSingularCohomologySphereEquiv`), sending the unit of `H⁰(B; k)` to `δ σ`
@@ -53,10 +52,6 @@ rank `0` (where `F ∖ {0}` is empty). Below degree `r` the relative cohomology 
 
 ## Main definitions and results
 
-* `TauCeti.injective_singularCohomologyMap_prodThomPairPuncturedProj`,
-  `TauCeti.singularCohomologyπ_prodThomPair_eq_zero`,
-  `TauCeti.bijective_singularCohomologyδ_comp_inr_of_prodThomPair`: rank-independent section and
-  long-exact-sequence lemmas for `[ContractibleSpace F] [Nontrivial F]`.
 * `TauCeti.prodThomPairPuncturedClass`: the class `σ ∈ Hᵈ(B × (F ∖ {0}); k)` pulled back from `Sᵈ`.
 * `TauCeti.prodThomPairPuncturedSingularCohomologyEquiv`:
   `Hⁿ⁺ᵈ(B; M) × Hⁿ(B; M) ≃ Hⁿ⁺ᵈ(B × (F ∖ {0}); M)`, `(b, c) ↦ π^* b + σ ⌣ π^* c`.
@@ -82,130 +77,10 @@ universe w
 
 namespace TauCeti
 
-section RankIndependent
-
-/-- Pulling back along the punctured projection `B × (F ∖ {0}) → B` is injective whenever `F` is
-nontrivial, since any nonzero vector `v : F` gives a continuous section `b ↦ (b, v)`. -/
-theorem injective_singularCohomologyMap_prodThomPairPuncturedProj
-    {k : Type*} [Ring k] [Linear k (ModuleCat.{w} k)] (R M : ModuleCat.{w} k)
-    (B : Type w) [TopologicalSpace B] {F : Type w} [TopologicalSpace F] [Zero F]
-    [Nontrivial F] (m : ℕ) :
-    Function.Injective (TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
-      (prodThomPairPuncturedProj B F) m) := by
-  obtain ⟨v, hv⟩ := exists_ne (0 : F)
-  let s : TopCat.of B ⟶ (prodThomPair B F).snd :=
-    TopCat.ofHom ⟨fun b ↦ ⟨(b, v), hv⟩, by fun_prop⟩
-  have hs : s ≫ prodThomPairPuncturedProj B F = 𝟙 _ :=
-    TopCat.ext fun b ↦ prodThomPairPuncturedProj_apply F (s b)
-  refine Function.LeftInverse.injective (g := TopCat.singularCohomologyMap s m) fun b ↦ ?_
-  rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hs,
-    TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
-
-/-- When `F` is contractible and nontrivial, the map
-`Hᵐ(B × F, B × (F ∖ {0})) → Hᵐ(B × F)` from relative to absolute singular cohomology vanishes in
-every degree `m`. -/
-@[simp]
-theorem singularCohomologyπ_prodThomPair_eq_zero
-    {k : Type*} [Ring k] [Linear k (ModuleCat.{w} k)] (R M : ModuleCat.{w} k)
-    (B : Type w) [TopologicalSpace B] {F : Type w} [TopologicalSpace F] [Zero F]
-    [ContractibleSpace F] [Nontrivial F] (m : ℕ)
-    (z : (prodThomPair B F).singularCohomology R k M m) :
-    (prodThomPair B F).singularCohomologyπ R k M m z = 0 := by
-  let P := prodThomPair B F
-  let b := inv (TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
-    (prodThomPairProj B F) m) (P.singularCohomologyπ R k M m z)
-  have hb : TopCat.singularCohomologyMap (prodThomPairProj B F) m b =
-      P.singularCohomologyπ R k M m z := by
-    rw [← ConcreteCategory.comp_apply, IsIso.inv_hom_id, ConcreteCategory.id_apply]
-  have h0 := ConcreteCategory.congr_hom
-    (P.singularCohomologyπ_comp_singularCohomologyMap R k M m) z
-  rw [ConcreteCategory.comp_apply, ← hb, ← ConcreteCategory.comp_apply,
-    ← TopCat.singularCohomologyMap_comp, map_comp_prodThomPairProj] at h0
-  simp only [ModuleCat.hom_zero, LinearMap.zero_apply] at h0
-  rw [← hb, injective_singularCohomologyMap_prodThomPairPuncturedProj R M B m
-    (h0.trans (map_zero _).symm), map_zero]
-
-/-- Given a decomposition `D : H^q(B) × Hⁿ(B) ≃ₗ[k] H^q(B × (F ∖ {0}))` whose first summand is
-pullback along `B × F → B` followed by restriction to `B × (F ∖ {0})`, the composite
-`c ↦ δ (D (0, c))` is bijective `Hⁿ(B) → Hᵐ(B × F, B × (F ∖ {0}))` whenever `F` is contractible and
-nontrivial and `q + 1 = m`. -/
-theorem bijective_singularCohomologyδ_comp_inr_of_prodThomPair
-    {k : Type*} [CommRing k] [Linear k (ModuleCat.{w} k)] (R M : ModuleCat.{w} k)
-    {B : Type w} [TopologicalSpace B] {F : Type w} [TopologicalSpace F] [Zero F]
-    [ContractibleSpace F] [Nontrivial F] {n q m : ℕ} (hqm : q + 1 = m)
-    (D : ((TopCat.of B).singularCohomology R k M q ×
-      (TopCat.of B).singularCohomology R k M n) ≃ₗ[k]
-      (prodThomPair B F).snd.singularCohomology R k M q)
-    (hD : ∀ b, D (b, 0) = TopCat.singularCohomologyMap (prodThomPair B F).map q
-      (TopCat.singularCohomologyMap (prodThomPairProj B F) q b)) :
-    Function.Bijective
-      (((prodThomPair B F).singularCohomologyδ R k M q m hqm).hom ∘ₗ
-        D.toLinearMap ∘ₗ LinearMap.inr k _ _) := by
-  let P := prodThomPair B F
-  let f := (P.singularCohomologyδ R k M q m hqm).hom ∘ₗ D.toLinearMap ∘ₗ LinearMap.inr k _ _
-  have hf (c) : f c = P.singularCohomologyδ R k M q m hqm (D (0, c)) := rfl
-  refine ⟨(injective_iff_map_eq_zero f).2 fun c hc ↦ ?_, fun z ↦ ?_⟩
-  · rw [hf] at hc
-    obtain ⟨y, hy⟩ := (ShortComplex.moduleCat_exact_iff _).1
-      (P.singularCohomology_exact_subspace R k M q m hqm) _ hc
-    let b := inv (TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
-      (prodThomPairProj B F) q) y
-    have hb : TopCat.singularCohomologyMap (prodThomPairProj B F) q b = y := by
-      rw [← ConcreteCategory.comp_apply, IsIso.inv_hom_id, ConcreteCategory.id_apply]
-    rw [← hb, ← hD b] at hy
-    exact congrArg Prod.snd (D.injective hy).symm
-  · obtain ⟨x, rfl⟩ := (ShortComplex.moduleCat_exact_iff _).1
-      (P.singularCohomology_exact_relative R k M q m hqm) z
-      (singularCohomologyπ_prodThomPair_eq_zero R M B m z)
-    obtain ⟨⟨b', c⟩, rfl⟩ := D.surjective x
-    have hδ0 : P.singularCohomologyδ R k M q m hqm (D (b', 0)) = 0 := by
-      rw [hD b', ← ConcreteCategory.comp_apply,
-        P.singularCohomologyMap_comp_singularCohomologyδ R k M q m hqm]
-      simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
-    have hbc : ((b', c) : _ × _) = (b', 0) + (0, c) := by simp
-    refine ⟨c, ?_⟩
-    rw [hf, hbc, map_add, map_add, hδ0, zero_add]
-
-end RankIndependent
-
 variable {k : Type w} [CommRing k] (M : ModuleCat.{w} k)
 
 variable {B : Type w} [TopologicalSpace B]
   {F : Type w} [TopologicalSpace F] [AddCommMonoid F] [Module ℝ F] {d : ℕ}
-
-/-- A point of the sphere `Sᵈ⁺¹`, at which the slant products of
-`TopCat.singularCohomologySphereProdSlantEquiv` are taken. -/
-private def sphereBasePoint (d : ℕ) : TopCat.sphere.{w} (d + 1) :=
-  ⟨⟨EuclideanSpace.single 0 1, by simp⟩⟩
-
-/-- The standard generator of `Hᵈ(Sᵈ; k)` for every `d : ℕ`:
-`TauCeti.singularCohomologyTopCatSphereZeroGenerator` at `d = 0` and
-`TauCeti.singularCohomologyTopCatSphereGenerator` at `d + 1`. -/
-private def sphereGen (k : Type w) [CommRing k] : (d : ℕ) →
-    (TopCat.sphere.{w} d).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) d
-  | 0 => singularCohomologyTopCatSphereZeroGenerator k
-  | d + 1 => singularCohomologyTopCatSphereGenerator k d
-
-/-- Unified decomposition `Hⁿ⁺ᵈ(Y; M) × Hⁿ(Y; M) ≃ₗ[k] Hⁿ⁺ᵈ(Sᵈ × Y; M)` for every `d : ℕ`. -/
-private def sphereProdEquiv (M : ModuleCat.{w} k) (Y : TopCat.{w}) (n : ℕ) : (d : ℕ) →
-    (Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ×
-      Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n) ≃ₗ[k]
-      (TopCat.sphere.{w} d ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d)
-  | 0 => TopCat.singularCohomologySphereZeroProdEquiv M Y n
-  | d + 1 => (TopCat.singularCohomologySphereProdSlantEquiv M Y (sphereBasePoint d) n).symm
-
-private theorem sphereProdEquiv_apply (M : ModuleCat.{w} k) (Y : TopCat.{w}) (n : ℕ) :
-    ∀ (d : ℕ) (bc : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ×
-      Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n),
-      sphereProdEquiv M Y n d bc =
-        TopCat.singularCohomologyMap (snd _ Y) (n + d) bc.1 +
-          (TopCat.sphere.{w} d ⊗ Y).singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ M).hom
-            d n (n + d) (add_comm d n)
-            (TopCat.singularCohomologyMap (fst _ Y) d (sphereGen k d))
-            (TopCat.singularCohomologyMap (snd _ Y) n bc.2)
-  | 0, bc => TopCat.singularCohomologySphereZeroProdEquiv_apply M Y n bc
-  | d + 1, bc => TopCat.singularCohomologySphereProdSlantEquiv_symm_apply M Y
-      (sphereBasePoint d) n bc
 
 /-- The homotopy equivalence `TauCeti.prodThomPairPuncturedHomotopyEquiv`, as a morphism of
 `TopCat`. -/
@@ -214,34 +89,26 @@ private abbrev sphereProdMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1))) 
   TopCat.ofHom (prodThomPairPuncturedHomotopyEquiv B e).toFun
 
 variable (k B) in
-/-- The class of `Hᵈ(B × (F ∖ {0}); k)` pulled back from the generator of `Hᵈ(Sᵈ; k)`
-(`TauCeti.singularCohomologyTopCatSphereZeroGenerator` for `d = 0`,
-`TauCeti.singularCohomologyTopCatSphereGenerator` for `d ≥ 1`) along the radial projection
-`(b, x) ↦ e x / ‖e x‖`. -/
+/-- The class of `Hᵈ(B × (F ∖ {0}); k)` pulled back from
+`TauCeti.singularCohomologyTopCatSphereClass k d` (the indicator class
+`TauCeti.singularCohomologyTopCatSpherePlusIndicator` of `TauCeti.spherePlus` in `H⁰(S⁰; k)`,
+representing the generator of degree-`0` reduced cohomology of `S⁰`, for `d = 0`, and the generator
+`TauCeti.singularCohomologyTopCatSphereGenerator` of `Hᵈ(Sᵈ; k)` for `d ≥ 1`) along the radial
+projection `(b, x) ↦ e x / ‖e x‖`. -/
 def prodThomPairPuncturedClass (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1))) :
     (prodThomPair B F).snd.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) d :=
-  TopCat.singularCohomologyMap (sphereProdMap e ≫ fst _ _) d (sphereGen k d)
+  TopCat.singularCohomologyMap (sphereProdMap e ≫ fst _ _) d
+    (singularCohomologyTopCatSphereClass k d)
 
 variable (k B) in
-/-- In rank `1` (`d = 0`), `TauCeti.prodThomPairPuncturedClass` is the pullback of
-`TauCeti.singularCohomologyTopCatSphereZeroGenerator` along the first component of
+/-- The class `TauCeti.prodThomPairPuncturedClass` is the pullback of
+`TauCeti.singularCohomologyTopCatSphereClass k d` along the first component of
 `TauCeti.prodThomPairPuncturedHomotopyEquiv`. -/
-theorem prodThomPairPuncturedClass_zero (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) :
+theorem prodThomPairPuncturedClass_def (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1))) :
     prodThomPairPuncturedClass k B e =
       TopCat.singularCohomologyMap
-        (TopCat.ofHom (prodThomPairPuncturedHomotopyEquiv B e).toFun ≫ fst _ _) 0
-        (singularCohomologyTopCatSphereZeroGenerator k) :=
-  (rfl)
-
-variable (k B) in
-/-- In rank `d + 2`, `TauCeti.prodThomPairPuncturedClass` is the pullback of
-`TauCeti.singularCohomologyTopCatSphereGenerator` along the first component of
-`TauCeti.prodThomPairPuncturedHomotopyEquiv`. -/
-theorem prodThomPairPuncturedClass_succ (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2))) :
-    prodThomPairPuncturedClass k B e =
-      TopCat.singularCohomologyMap
-        (TopCat.ofHom (prodThomPairPuncturedHomotopyEquiv B e).toFun ≫ fst _ _) (d + 1)
-        (singularCohomologyTopCatSphereGenerator k d) :=
+        (TopCat.ofHom (prodThomPairPuncturedHomotopyEquiv B e).toFun ≫ fst _ _) d
+        (singularCohomologyTopCatSphereClass k d) :=
   (rfl)
 
 /-- The composite of the homotopy equivalence `TauCeti.prodThomPairPuncturedHomotopyEquiv` with
@@ -265,7 +132,7 @@ private def puncturedEquivAux (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1)))
     ((TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ×
       (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n) ≃ₗ[k]
       (prodThomPair B F).snd.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) :=
-  (sphereProdEquiv M (TopCat.of B) n d).trans
+  ((TopCat.of B).singularCohomologySphereProdCupEquiv M n d).trans
     (asIso (TopCat.singularCohomologyMap (sphereProdMap e) (n + d))).toLinearEquiv
 
 private theorem puncturedEquivAux_apply (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1))) (n : ℕ)
@@ -277,9 +144,10 @@ private theorem puncturedEquivAux_apply (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin
           d n (n + d) (add_comm d n) (prodThomPairPuncturedClass k B e)
           (TopCat.singularCohomologyMap (prodThomPairPuncturedProj B F) n bc.2) := by
   rw [← sphereProdMap_snd e]
-  simp only [puncturedEquivAux, LinearEquiv.trans_apply, sphereProdEquiv_apply,
-    Iso.toLinearEquiv_apply, asIso_hom, map_add, prodThomPairPuncturedClass,
-    TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply, TopCat.singularCup_naturality]
+  simp only [puncturedEquivAux, LinearEquiv.trans_apply,
+    TopCat.singularCohomologySphereProdCupEquiv_apply, Iso.toLinearEquiv_apply, asIso_hom, map_add,
+    prodThomPairPuncturedClass, TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply,
+    TopCat.singularCup_naturality]
 
 /-- The map `(b, c) ↦ π^* b + σ ⌣ π^* c` into the cohomology of the punctured product bundle. -/
 private def puncturedMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1))) (n m : ℕ)
@@ -320,8 +188,7 @@ continuous linear equivalence `e : F ≃L[ℝ] ℝᵈ⁺¹` and `m = n + d`, eve
 where `π` is the projection to `B` and `σ` is the class `TauCeti.prodThomPairPuncturedClass`
 (`TauCeti.prodThomPairPuncturedSingularCohomologyEquiv_apply`).
 This is the decomposition of the cohomology of `Sᵈ × B`
-(`TopCat.singularCohomologySphereZeroProdEquiv` for `d = 0`,
-`TopCat.singularCohomologySphereProdSlantEquiv` for `d ≥ 1`), transported along the homotopy
+(`TopCat.singularCohomologySphereProdCupEquiv`), transported along the homotopy
 equivalence `TauCeti.prodThomPairPuncturedHomotopyEquiv`. -/
 def prodThomPairPuncturedSingularCohomologyEquiv (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1)))
     (n m : ℕ) (h : n + d = m := by lia) :

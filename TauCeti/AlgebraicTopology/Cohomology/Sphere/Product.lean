@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Prod
-public import TauCeti.AlgebraicTopology.Cohomology.DegreeZero
 public import TauCeti.AlgebraicTopology.Cohomology.Manifold
 public import TauCeti.AlgebraicTopology.Cohomology.Slant
 public import TauCeti.AlgebraicTopology.Cohomology.Sphere.Basic
@@ -26,15 +25,18 @@ classes on `Y` (`TopCat.singularSlant`); here they are taken along the multiplic
 `k ⊗ k ≅ k`, so that they act on `Hⁿ(X × Y; M)`.
 
 **The zero-sphere `S⁰`.** Because `S⁰` consists of the two discrete points `TauCeti.sphereMinus`
-and `TauCeti.spherePlus` (`TauCeti.eq_sphereMinus_or_eq_spherePlus`,
-`TauCeti.discreteTopology_sphere_zero`), there is a unique class `θ₀ ∈ H⁰(S⁰; k)` taking value `1`
-at `spherePlus` and `0` at `sphereMinus` (`TauCeti.singularCohomologyTopCatSphereZeroGenerator`).
+and `TauCeti.spherePlus` (`TauCeti.eq_sphereMinus_or_eq_spherePlus_of_sphere_zero`,
+`TauCeti.discreteTopology_sphere_zero`), the indicator class `θ₀ ∈ H⁰(S⁰; k)` taking value `1`
+at `spherePlus` and `0` at `sphereMinus` (`TauCeti.singularCohomologyTopCatSpherePlusIndicator`, in
+`TauCeti.AlgebraicTopology.Cohomology.Sphere.Basic`) spans a complement to the constant classes.
 By additivity of singular cohomology over the discrete two-point fan
 (`TauCeti.isLimitFanSingularCohomology`), classes on `S⁰ × Y` are detected by restriction to the
-two slices (`TopCat.eq_zero_of_prodFiberInclusion_sphere_zero_eq_zero`), and
+two slices (`TopCat.eq_zero_of_singularCohomologyMap_prodFiberInclusion_sphere_zero_eq_zero`), and
 `(b, c) ↦ pr₂^* b + pr₁^* θ₀ ⌣ pr₂^* c` is a `k`-linear equivalence
 `Hⁿ(Y; M) × Hⁿ(Y; M) ≃ₗ[k] Hⁿ(S⁰ × Y; M)` with inverse `φ ↦ (ι_-^* φ, ι_+^* φ - ι_-^* φ)`
-(`TopCat.singularCohomologySphereZeroProdEquiv`).
+(`TopCat.singularCohomologySphereZeroProdEquiv`). Together with the positive-dimensional slant
+decomposition, `TopCat.singularCohomologySphereProdCupEquiv` packages
+`Hⁿ⁺ᵈ(Y; M) × Hⁿ(Y; M) ≃ₗ[k] Hⁿ⁺ᵈ(Sᵈ × Y; M)` uniformly across all `d : ℕ`.
 
 **Classes pulled back from `Y`** (in `TauCeti.AlgebraicTopology.Cohomology.Slant`). Let `X` be
 path-connected with projective homology `Hₚ(X; k)`, and `x₀ ∈ X`. Slanting by the class of the
@@ -122,56 +124,17 @@ open CategoryTheory Limits MonoidalCategory AlgebraicTopology HomologicalComplex
 
 universe w
 
-namespace TauCeti
-
-private theorem exists_singularCohomologyTopCatSphereZeroGenerator (k : Type w) [CommRing k] :
-    ∃ θ : (TopCat.sphere.{w} 0).singularCohomology
-        (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0,
-      singularCohomologyZeroEval (X := TopCat.sphere.{w} 0) spherePlus θ = 1 ∧
-        singularCohomologyZeroEval (X := TopCat.sphere.{w} 0) sphereMinus θ = 0 := by
-  -- Decidable equality on `S⁰` defines the `{0, 1}`-valued indicator function.
-  have : DecidableEq (TopCat.diskBoundary.{w} 1) := Classical.decEq _
-  obtain ⟨θ, hθ⟩ := exists_singularCohomologyZeroEval_eq (k := k) (X := TopCat.sphere.{w} 0)
-    (fun s : TopCat.diskBoundary.{w} 1 ↦ if s = spherePlus then 1 else 0) fun x y hxy ↦ by
-      have hxy' : (x : TopCat.diskBoundary.{w} 1) = y := hxy.eq_of_totallyDisconnectedSpace
-      rw [hxy']
-  exact ⟨θ, (hθ spherePlus).trans (by simp),
-    (hθ sphereMinus).trans (by simp [sphereMinus_ne_spherePlus])⟩
-
-/-- **The standard degree-zero relative generator on `S⁰`**: the class of
-`H⁰(TopCat.sphere 0; k)` taking value `1` at `TauCeti.spherePlus` and `0` at
-`TauCeti.sphereMinus`. -/
-def singularCohomologyTopCatSphereZeroGenerator (k : Type w) [CommRing k] :
-    (TopCat.sphere.{w} 0).singularCohomology
-      (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0 :=
-  (exists_singularCohomologyTopCatSphereZeroGenerator k).choose
-
-@[simp]
-theorem singularCohomologyZeroEval_singularCohomologyTopCatSphereZeroGenerator_spherePlus
-    (k : Type w) [CommRing k] :
-    singularCohomologyZeroEval (X := TopCat.sphere.{w} 0) spherePlus
-      (singularCohomologyTopCatSphereZeroGenerator k) = 1 :=
-  (exists_singularCohomologyTopCatSphereZeroGenerator k).choose_spec.1
-
-@[simp]
-theorem singularCohomologyZeroEval_singularCohomologyTopCatSphereZeroGenerator_sphereMinus
-    (k : Type w) [CommRing k] :
-    singularCohomologyZeroEval (X := TopCat.sphere.{w} 0) sphereMinus
-      (singularCohomologyTopCatSphereZeroGenerator k) = 0 :=
-  (exists_singularCohomologyTopCatSphereZeroGenerator k).choose_spec.2
-
-end TauCeti
-
 namespace TopCat
 
 variable {k : Type w} [CommRing k] (M : ModuleCat.{w} k)
 
 section SphereZero
 
+variable {M} in
 /-- **Classes of `S⁰ × Y` are detected on the two slices**: a class `φ ∈ Hⁿ(S⁰ × Y; M)` whose
 restrictions to `{spherePlus} × Y` and `{sphereMinus} × Y` both vanish is zero. -/
-theorem eq_zero_of_prodFiberInclusion_sphere_zero_eq_zero (Y : TopCat.{w}) {n : ℕ}
-    (φ : (sphere.{w} 0 ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n)
+theorem eq_zero_of_singularCohomologyMap_prodFiberInclusion_sphere_zero_eq_zero (Y : TopCat.{w})
+    {n : ℕ} (φ : (sphere.{w} 0 ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n)
     (hplus : TopCat.singularCohomologyMap
       (prodFiberInclusion (sphere.{w} 0) Y TauCeti.spherePlus) n φ = 0)
     (hminus : TopCat.singularCohomologyMap
@@ -198,13 +161,9 @@ theorem eq_zero_of_prodFiberInclusion_sphere_zero_eq_zero (Y : TopCat.{w}) {n : 
       ConcreteCategory.hom_ofHom, LinearMap.toSpanSingleton_apply, map_smul, ModuleCat.hom_zero,
       LinearMap.zero_apply]
     rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hι s]
-    rcases TauCeti.eq_sphereMinus_or_eq_spherePlus s with hs | hs
-    · exact (congrArg (fun p : sphere.{w} 0 ↦
-          r • TopCat.singularCohomologyMap (prodFiberInclusion (sphere.{w} 0) Y p) n φ) hs).trans
-        ((congrArg (r • ·) hminus).trans (smul_zero r))
-    · exact (congrArg (fun p : sphere.{w} 0 ↦
-          r • TopCat.singularCohomologyMap (prodFiberInclusion (sphere.{w} 0) Y p) n φ) hs).trans
-        ((congrArg (r • ·) hplus).trans (smul_zero r))
+    rcases TauCeti.eq_sphereMinus_or_eq_spherePlus_of_sphere_zero s with rfl | rfl
+    · simp [hminus]
+    · simp [hplus]
   have hx : x = 0 := by
     have h1 := congrArg (fun g : ModuleCat.of k k ⟶ N ↦ g.hom (1 : k)) hf0
     simpa [f] using h1
@@ -220,10 +179,10 @@ private theorem prodFiberInclusion_sphere_zero_add_cup (Y : TopCat.{w}) (n : ℕ
           (sphere.{w} 0 ⊗ Y).singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ M).hom
             0 n n (Nat.zero_add n)
             (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 0
-              (TauCeti.singularCohomologyTopCatSphereZeroGenerator k))
+              (TauCeti.singularCohomologyTopCatSpherePlusIndicator k))
             (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) n bc.2)) =
       bc.1 + (TauCeti.singularCohomologyZeroEval s
-        (TauCeti.singularCohomologyTopCatSphereZeroGenerator k)) • bc.2 := by
+        (TauCeti.singularCohomologyTopCatSpherePlusIndicator k)) • bc.2 := by
   simp only [map_add, ← TopCat.singularCup_naturality, ← ConcreteCategory.comp_apply,
     ← TopCat.singularCohomologyMap_comp, prodFiberInclusion_snd, prodFiberInclusion_fst,
     TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply,
@@ -234,7 +193,7 @@ private theorem prodFiberInclusion_sphere_zero_add_cup (Y : TopCat.{w}) (n : ℕ
 
 /-- **The cohomology of `S⁰ × Y`**: `(b, c) ↦ pr₂^* b + pr₁^* θ₀ ⌣ pr₂^* c` is a `k`-linear
 equivalence `Hⁿ(Y; M) × Hⁿ(Y; M) ≃ₗ[k] Hⁿ(S⁰ × Y; M)`, where `θ₀ ∈ H⁰(S⁰; k)` is
-`TauCeti.singularCohomologyTopCatSphereZeroGenerator`, with inverse sending `φ` to
+`TauCeti.singularCohomologyTopCatSpherePlusIndicator`, with inverse sending `φ` to
 `(ι_-^* φ, ι_+^* φ - ι_-^* φ)`. -/
 def singularCohomologySphereZeroProdEquiv (Y : TopCat.{w}) (n : ℕ) :
     (Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n ×
@@ -245,7 +204,7 @@ def singularCohomologySphereZeroProdEquiv (Y : TopCat.{w}) (n : ℕ) :
       (sphere.{w} 0 ⊗ Y).singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ M).hom
         0 n n (Nat.zero_add n)
         (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 0
-          (TauCeti.singularCohomologyTopCatSphereZeroGenerator k))
+          (TauCeti.singularCohomologyTopCatSpherePlusIndicator k))
         (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) n bc.2)
   map_add' x y := by
     simp only [Prod.fst_add, Prod.snd_add, map_add]
@@ -260,44 +219,29 @@ def singularCohomologySphereZeroProdEquiv (Y : TopCat.{w}) (n : ℕ) :
         TopCat.singularCohomologyMap
           (prodFiberInclusion (sphere.{w} 0) Y TauCeti.sphereMinus) n φ)
   left_inv bc := by
-    have h0 :=
-      TauCeti.singularCohomologyZeroEval_singularCohomologyTopCatSphereZeroGenerator_sphereMinus k
-    have h1 :=
-      TauCeti.singularCohomologyZeroEval_singularCohomologyTopCatSphereZeroGenerator_spherePlus k
-    have hminus : TopCat.singularCohomologyMap
-        (prodFiberInclusion (sphere.{w} 0) Y TauCeti.sphereMinus) n _ = bc.1 :=
-      (prodFiberInclusion_sphere_zero_add_cup M Y n TauCeti.sphereMinus bc).trans
-        ((congrArg (fun r : k ↦ bc.1 + r • bc.2) h0).trans
-          ((congrArg (bc.1 + ·) (zero_smul k bc.2)).trans (add_zero bc.1)))
-    have hplus : TopCat.singularCohomologyMap
-        (prodFiberInclusion (sphere.{w} 0) Y TauCeti.spherePlus) n _ = bc.1 + bc.2 :=
-      (prodFiberInclusion_sphere_zero_add_cup M Y n TauCeti.spherePlus bc).trans
-        ((congrArg (fun r : k ↦ bc.1 + r • bc.2) h1).trans
-          (congrArg (bc.1 + ·) (one_smul k bc.2)))
-    exact Prod.ext hminus ((congrArg₂ (· - ·) hplus hminus).trans (add_sub_cancel_left bc.1 bc.2))
+    have hp := prodFiberInclusion_sphere_zero_add_cup M Y n TauCeti.spherePlus bc
+    have hm := prodFiberInclusion_sphere_zero_add_cup M Y n TauCeti.sphereMinus bc
+    ext
+    · simpa using hm
+    · dsimp only
+      rw [hp, hm]
+      simp
   right_inv φ := by
-    let φm := TopCat.singularCohomologyMap
-      (prodFiberInclusion (sphere.{w} 0) Y TauCeti.sphereMinus) n φ
-    let φp := TopCat.singularCohomologyMap
-      (prodFiberInclusion (sphere.{w} 0) Y TauCeti.spherePlus) n φ
-    have h0 :=
-      TauCeti.singularCohomologyZeroEval_singularCohomologyTopCatSphereZeroGenerator_sphereMinus k
-    have h1 :=
-      TauCeti.singularCohomologyZeroEval_singularCohomologyTopCatSphereZeroGenerator_spherePlus k
+    let bc :=
+      (TopCat.singularCohomologyMap (prodFiberInclusion (sphere.{w} 0) Y TauCeti.sphereMinus) n φ,
+        TopCat.singularCohomologyMap (prodFiberInclusion (sphere.{w} 0) Y TauCeti.spherePlus) n φ -
+          TopCat.singularCohomologyMap (prodFiberInclusion (sphere.{w} 0) Y TauCeti.sphereMinus)
+            n φ)
+    have hp := prodFiberInclusion_sphere_zero_add_cup M Y n TauCeti.spherePlus bc
+    have hm := prodFiberInclusion_sphere_zero_add_cup M Y n TauCeti.sphereMinus bc
     rw [← sub_eq_zero]
-    refine eq_zero_of_prodFiberInclusion_sphere_zero_eq_zero M Y _ ?_ ?_
-    · refine (map_sub _ _ _).trans ?_
-      refine (congrArg (· - φp)
-        (prodFiberInclusion_sphere_zero_add_cup M Y n TauCeti.spherePlus (φm, φp - φm))).trans ?_
-      exact (congrArg (fun r : k ↦ φm + r • (φp - φm) - φp) h1).trans
-        ((congrArg (fun x ↦ φm + x - φp) (one_smul k (φp - φm))).trans
-          ((congrArg (· - φp) (add_sub_cancel φm φp)).trans (sub_self φp)))
-    · refine (map_sub _ _ _).trans ?_
-      refine (congrArg (· - φm)
-        (prodFiberInclusion_sphere_zero_add_cup M Y n TauCeti.sphereMinus (φm, φp - φm))).trans ?_
-      exact (congrArg (fun r : k ↦ φm + r • (φp - φm) - φm) h0).trans
-        ((congrArg (fun x ↦ φm + x - φm) (zero_smul k (φp - φm))).trans
-          ((congrArg (· - φm) (add_zero φm)).trans (sub_self φm)))
+    refine eq_zero_of_singularCohomologyMap_prodFiberInclusion_sphere_zero_eq_zero Y _ ?_ ?_
+    · dsimp only
+      rw [map_sub]
+      exact sub_eq_zero.2 (hp.trans (by simp [bc]))
+    · dsimp only
+      rw [map_sub]
+      exact sub_eq_zero.2 (hm.trans (by simp [bc]))
 
 @[simp]
 theorem singularCohomologySphereZeroProdEquiv_apply (Y : TopCat.{w}) (n : ℕ)
@@ -308,7 +252,7 @@ theorem singularCohomologySphereZeroProdEquiv_apply (Y : TopCat.{w}) (n : ℕ)
         (sphere.{w} 0 ⊗ Y).singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ M).hom
           0 n n (Nat.zero_add n)
           (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 0
-            (TauCeti.singularCohomologyTopCatSphereZeroGenerator k))
+            (TauCeti.singularCohomologyTopCatSpherePlusIndicator k))
           (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) n bc.2) :=
   (rfl)
 
@@ -654,5 +598,45 @@ theorem singularCohomologySphereProdSlantEquiv_singularCup_of_compactSpace
   exact Prod.ext (Subsingleton.elim _ _) rfl
 
 end Cup
+
+end TopCat
+
+namespace TopCat
+
+variable {k : Type w} [CommRing k]
+
+/-- **The cohomology of `Sᵈ × Y` across all sphere dimensions `d : ℕ`**: `(b, c) ↦ pr₂^* b +
+pr₁^* θ ⌣ pr₂^* c` is a `k`-linear equivalence
+`Hⁿ⁺ᵈ(Y; M) × Hⁿ(Y; M) ≃ₗ[k] Hⁿ⁺ᵈ(Sᵈ × Y; M)` for every `d : ℕ`, where
+`θ = TauCeti.singularCohomologyTopCatSphereClass k d`
+(`TauCeti.singularCohomologyTopCatSpherePlusIndicator` at `d = 0` and
+`TauCeti.singularCohomologyTopCatSphereGenerator` at `d + 1`), combining
+`TopCat.singularCohomologySphereZeroProdEquiv` and the inverse of
+`TopCat.singularCohomologySphereProdSlantEquiv`. -/
+def singularCohomologySphereProdCupEquiv (Y : TopCat.{w}) (M : ModuleCat.{w} k) (n : ℕ) :
+    (d : ℕ) →
+      (Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ×
+        Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n) ≃ₗ[k]
+        (sphere.{w} d ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d)
+  | 0 => singularCohomologySphereZeroProdEquiv M Y n
+  | d + 1 =>
+    (singularCohomologySphereProdSlantEquiv M Y (Classical.arbitrary (sphere.{w} (d + 1))) n).symm
+
+/-- The unified splitting `TopCat.singularCohomologySphereProdCupEquiv` sends `(b, c)` to
+`pr₂^* b + pr₁^* θ ⌣ pr₂^* c`. -/
+@[simp]
+theorem singularCohomologySphereProdCupEquiv_apply (Y : TopCat.{w}) {M : ModuleCat.{w} k}
+    (n : ℕ) :
+    ∀ (d : ℕ) (bc : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ×
+      Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n),
+      Y.singularCohomologySphereProdCupEquiv M n d bc =
+        TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + d) bc.1 +
+          (sphere.{w} d ⊗ Y).singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ M).hom
+            d n (n + d) (add_comm d n)
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) d
+              (TauCeti.singularCohomologyTopCatSphereClass k d))
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) n bc.2)
+  | 0, bc => by simp [singularCohomologySphereProdCupEquiv]
+  | d + 1, bc => by simp [singularCohomologySphereProdCupEquiv]
 
 end TopCat

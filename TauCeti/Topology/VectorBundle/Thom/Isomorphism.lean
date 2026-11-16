@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Pullback
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
-import TauCeti.AlgebraicTopology.Cohomology.Point
 
 /-!
 # The Thom map of a vector bundle
@@ -256,19 +255,8 @@ theorem thomMapOver_singularCohomologyMap_subtypeVal (W : Set B) {n p m : ℕ} (
         (TopCat.restrictPreimagePairMap (X := TopCat.of (TotalSpace F E))
           (π F E) (zeroSectionCompl F E) W) m
         (thomMap F E M n p m h u a) := by
-  rw [thomMapOver_apply, thomMap_def]
-  have hcomm : TopPair.Hom.fst (TopCat.restrictPreimagePairMap (X := TopCat.of (TotalSpace F E))
-      (π F E) (zeroSectionCompl F E) W) ≫ thomPairProj F E =
-      TopCat.ofHom (ContinuousMap.restrictPreimage ⟨π F E, FiberBundle.continuous_proj F E⟩ W) ≫
-        TopCat.ofHom (ContinuousMap.subtypeVal W) :=
-    TopCat.ext fun v ↦ (congrArg (thomPairProj F E)
-      (TopCat.restrictPreimagePairMap_fst_apply (X := TopCat.of (TotalSpace F E))
-        (π F E) (zeroSectionCompl F E) W v)).trans (thomPairProj_apply F E v.1)
-  exact TopPair.pullbackCup_naturality
-    (TopCat.restrictPreimagePairMap (X := TopCat.of (TotalSpace F E))
-      (π F E) (zeroSectionCompl F E) W)
-    (TopCat.ofHom (ContinuousMap.restrictPreimage ⟨π F E, FiberBundle.continuous_proj F E⟩ W))
-    (thomPairProj F E) (TopCat.ofHom (ContinuousMap.subtypeVal W)) hcomm h u a
+  rw [thomMapOver_def, thomMap_def, thomPairProj_def]
+  exact TopCat.pullbackCupRestrict_singularCohomologyMap_subtypeVal _ _ M W h u a
 
 attribute [local instance] pullbackFiberZero in
 /-- **Compatibility of `thomMapOver` with `thomMap` of the pullback bundle along `W ↪ B`**: pulling
@@ -309,17 +297,8 @@ codomain vanish. -/
 theorem bijective_thomMapOver_empty {n p m : ℕ} (h : p + n = m)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
     Function.Bijective (thomMapOver F E M ∅ n p m h u) := by
-  have : IsEmpty (thomPairOver F E (∅ : Set B)).fst := ⟨fun x ↦ x.2⟩
-  have : IsEmpty (thomPairOver F E (∅ : Set B)).snd := ⟨fun x ↦ x.2.1⟩
-  have : Subsingleton ((TopCat.of ↥(∅ : Set B)).singularCohomology (ModuleCat.of K K) K M p) :=
-    ModuleCat.subsingleton_of_isZero (isZero_singularCohomology_of_isEmpty
-      (ModuleCat.of K K) K M (TopCat.of ↥(∅ : Set B)) p)
-  have : Subsingleton ((thomPairOver F E ∅).singularCohomology (ModuleCat.of K K) K M m) :=
-    ModuleCat.subsingleton_of_isZero
-      ((isZero_singularCohomology_of_isEmpty (ModuleCat.of K K) K M
-        (thomPairOver F E ∅).fst m).of_iso
-          (asIso ((thomPairOver F E ∅).singularCohomologyπ (ModuleCat.of K K) K M m)))
-  exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
+  rw [thomMapOver_def]
+  exact TopCat.bijective_pullbackCupRestrict_empty _ _ M h u
 
 attribute [local instance] pullbackFiberZero in
 /-- Over any subset `W ⊆ B`, `thomMapOver` of `u` is bijective if and only if `thomMap` of the

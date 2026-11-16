@@ -148,7 +148,7 @@ lemma reducedSingularHomologyTopCatSphereIso_zero_inv_ι :
         (reducedSingularHomologyFunctor R 0).map
           (TopCat.ofHom (diskBoundaryHomeomorph.{w} 1).toHomotopyEquiv.invFun) := by
     apply Iso.inv_ext
-    rw [reducedSingularHomologyTopCatSphereIso_hom]
+    rw [reducedSingularHomologyTopCatSphereIso_hom, ← sphereZeroBasis_def]
     exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (Iso.hom_inv_id_assoc _ _)).trans
       ((Functor.map_comp _ _ _).symm.trans
         ((congrArg _ hid).trans (CategoryTheory.Functor.map_id _ _))))
@@ -159,7 +159,8 @@ lemma reducedSingularHomologyTopCatSphereIso_zero_inv_ι :
         singularHomology₀Section R sphereMinus - singularHomology₀Section R spherePlus := by
     rw [(reducedSingularHomologyι R 0).naturality, ← Category.assoc,
       reducedSingularHomologySphereIso_inv_ι, Preadditive.sub_comp,
-      singularHomology₀Section_naturality, singularHomology₀Section_naturality]
+      singularHomology₀Section_naturality, singularHomology₀Section_naturality,
+      sphereMinus_def, spherePlus_def]
     rfl
   rw [hinv]
   exact (Category.assoc _ _ _).trans key

@@ -289,9 +289,7 @@ followed by the inverse of the quotient map from `H₀(E)` and by the augmentati
 def singularHomologyComplSingletonIsoOfFinrankEqZero [FiniteDimensional ℝ E]
     (h : finrank ℝ E = 0) :
     (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomology R 0 ≅ R :=
-  haveI : IsEmpty (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).snd :=
-    have : Subsingleton E := Module.finrank_zero_iff.1 h
-    ⟨fun z ↦ z.2 (Subsingleton.elim _ _)⟩
+  haveI : Subsingleton E := Module.finrank_zero_iff.1 h
   -- The quotient map starts at the homology of the singular simplicial set of `E`, so the
   -- augmentation is taken there; it is `TopCat.singularHomology₀ε` by definition.
   haveI : IsIso ((TopPair.toSSetPair.obj
@@ -314,9 +312,7 @@ lemma singularHomologyπ_comp_singularHomologyComplSingletonIsoOfFinrankEqZero_h
         (singularHomologyComplSingletonIsoOfChart R φ hx 0).inv ≫
           (singularHomologyComplSingletonIsoOfFinrankEqZero R φ hx h).hom =
       (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).fst.singularHomology₀ε R := by
-  have : IsEmpty (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).snd :=
-    have : Subsingleton E := Module.finrank_zero_iff.1 h
-    ⟨fun z ↦ z.2 (Subsingleton.elim _ _)⟩
+  have : Subsingleton E := Module.finrank_zero_iff.1 h
   simp only [singularHomologyComplSingletonIsoOfFinrankEqZero, Iso.trans_hom, Iso.symm_hom,
     asIso_hom, asIso_inv, Iso.inv_hom_id_assoc, IsIso.hom_inv_id_assoc]
   -- The augmentation of the singular simplicial set of `E` is `TopCat.singularHomology₀ε`.

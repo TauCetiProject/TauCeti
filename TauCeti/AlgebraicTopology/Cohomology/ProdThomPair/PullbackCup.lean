@@ -55,7 +55,7 @@ every `b : B` (`LinearEquiv.span_singleton_eq_top_iff_isUnit` via
 `TauCeti.singularCohomologyComplSingletonFinrankEquivSelf`), hence `γ` is a cup-product unit in
 `H⁰(B; K)` (`TauCeti.exists_singularCup_eq_one`). By associativity of the relative cup product,
 `π^* a ⌣ u = π^* (a ⌣ γ) ⌣ u₀`, which is a composite of two bijections
-(`TauCeti.bijective_singularCup_right_of_exists_inv`).
+(`TopCat.bijective_singularCup_right_of_singularCup_eq_one`).
 
 ## Main definitions and results
 
@@ -84,31 +84,11 @@ universe w
 
 namespace TauCeti
 
-/-- Multiplication by `(-1)^k` is an involution on any additive group, hence bijective. -/
-private theorem bijective_neg_one_pow_zsmul_comp_iff {α β : Type*} [AddCommGroup β] (k : ℕ)
-    (f : α → β) :
-    (Function.Bijective fun a ↦ ((-1 : ℤ) ^ k) • f a) ↔ Function.Bijective f := by
-  have hinv : Function.Bijective fun y : β ↦ ((-1 : ℤ) ^ k) • y :=
-    Function.Involutive.bijective fun y ↦ by
-      rw [smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
-  exact hinv.of_comp_iff' f
-
 /-! ### Rank zero -/
 
 section RankZero
 
 variable {F : Type w} [TopologicalSpace F] [Zero F] [Subsingleton F]
-
-/-- When `F` is a subsingleton, `F ∖ {0}` is empty. -/
-private instance isEmpty_compl_zero_of_subsingleton :
-    IsEmpty (TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).snd :=
-  ⟨fun x ↦ x.2 (Subsingleton.elim x.1 0)⟩
-
-/-- When `F` is a subsingleton, `B × (F ∖ {0})` is empty. -/
-private instance isEmpty_prodThomPair_snd (B : Type w) [TopologicalSpace B] :
-    IsEmpty (prodThomPair B F).snd :=
-  ⟨fun p ↦ p.2 (Subsingleton.elim p.1.2 0)⟩
-
 variable {K : Type w} [CommRing K]
 
 /-- In rank zero, the fibre class lifting the unit `0`-class of `F` across `H⁰(F, ∅) ≅ H⁰(F)`. -/
@@ -202,13 +182,15 @@ private theorem bijective_pullbackCup_sphere (B : Type w) [TopologicalSpace B]
       ← prodThomPairMap_const B F PUnit.unit, ← ConcreteCategory.comp_apply,
       TopPair.singularCohomologyδ_naturality _ d (d + 1) rfl, ConcreteCategory.comp_apply,
       singularCohomologyMap_snd_prodThomPairMap_prodThomPairPuncturedClass]
-  rw [hu, ← bijective_neg_one_pow_zsmul_comp_iff (p * (d + 1))]
-  have heq : (fun c ↦ ((-1 : ℤ) ^ (p * (d + 1))) •
-      (prodThomPair B F).pullbackCup M (prodThomPairProj B F) (d + 1) p m h
+  rw [hu]
+  refine (((isUnit_neg_one : IsUnit (-1 : ℤ)).pow (p * (d + 1))).smul_bijective.of_comp_iff' _).1 ?_
+  have heq : (((-1 : ℤ) ^ (p * (d + 1)) • ·) ∘
+      ⇑((prodThomPair B F).pullbackCup M (prodThomPairProj B F) (d + 1) p m h
         ((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K))
-          d (d + 1) rfl (prodThomPairPuncturedClass K B e)) c) =
+          d (d + 1) rfl (prodThomPairPuncturedClass K B e)))) =
       ⇑(prodThomPairSingularCohomologySphereEquiv M B e p m h) := by
     funext c
+    simp only [Function.comp_apply]
     rw [prodThomPairSingularCohomologySphereEquiv_apply]
     have key := ((prodThomPair B F).singularCohomologyδ_singularCup_eq_zsmul_pullbackCup M
       (prodThomPairProj B F) (Nat.add_comm p d) rfl (by omega) h
@@ -299,7 +281,8 @@ theorem bijective_pullbackCup_prodThomPair {B : Type w} [TopologicalSpace B] (M 
     exact ((prodThomPair B F).singularCup_assoc K (by monoidal) (by monoidal)
       (Nat.add_zero p) h (Nat.zero_add _) h _ _ u₀).symm
   rw [hcomp]
-  exact (hg₀ B M h).comp (bijective_singularCup_right_of_exists_inv (TopCat.of B) M p γ γ' h₁ h₂)
+  exact (hg₀ B M h).comp
+    ((TopCat.of B).bijective_singularCup_right_of_singularCup_eq_one M p γ γ' h₁ h₂)
 
 /-- **The Thom isomorphism for `pr₂^* g` on a product bundle**: if `g` generates
 `Hʳ(F, F ∖ {0}; K)`, then `pullbackCup` of `pr₂^* g` on `prodThomPair B F` is bijective in every
