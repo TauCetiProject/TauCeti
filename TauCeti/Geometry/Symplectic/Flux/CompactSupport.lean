@@ -26,11 +26,11 @@ Its class in compactly supported de Rham cohomology is the **compactly supported
 `Flux_c(φ) ∈ H¹_c(M)` (`TauCeti.Diffeotopy.compactFlux`).
 
 Forgetting supports, along the comparison map `H¹_c(M) → H¹_dR(M)`, carries it to the ordinary
-flux (`TauCeti.Diffeotopy.toDeRhamCohomology_compactFlux`). The comparison map is not injective
-on noncompact manifolds, so the compactly supported flux retains more information than the
-ordinary one: on the cylinder `ℝ × (ℝ / ℤ)` a shear supported in a compact band has zero flux but
-nonzero compactly supported flux (`TauCeti.Geometry.Symplectic.Flux.Cylinder`). On a compact
-manifold every form is compactly supported and the two fluxes determine each other.
+flux (`TauCeti.Diffeotopy.toDeRhamCohomology_compactFlux`). The comparison map need not be
+injective on noncompact manifolds, so the compactly supported flux can retain more information
+than the ordinary one: on the cylinder `ℝ × AddCircle p` a shear supported in a compact band has
+zero flux but nonzero compactly supported flux (`TauCeti.Geometry.Symplectic.Flux.Cylinder`).
+On a compact manifold every form is compactly supported and the two fluxes determine each other.
 
 ## Main definitions
 

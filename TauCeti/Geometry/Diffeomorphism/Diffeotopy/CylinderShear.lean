@@ -33,9 +33,10 @@ where `τ'` is the image of the time vector `τ` under the derivative of the inc
 `t g` (`TauCeti.mfderiv_cylinderShear_apply`), and the velocity of the time slice. So the
 velocity of the shear is the vertical vector `(0, g r)` at every time
 (`TauCeti.mfderiv_cylinderMap_cylinderShearDiffeotopy_apply_one`), and its spatial derivative
-`w ↦ (w₁, w₂ + t g'(r) w₁)` (`TauCeti.mfderiv_cylinderMap_cylinderShearDiffeotopy_apply_zero`) is
+`w ↦ (w₁, w₂ + t g'(r) w₁)` (`TauCeti.mfderiv_cylinderMap_cylinderShearDiffeotopy_space`) is
 a unipotent shear matrix, which preserves the area form `dr ∧ dθ`. These are the inputs for
-computing the flux of the shear.
+computing the flux of the shear. The derivative computation follows the torus translation
+diffeotopy `TauCeti.torusTranslationDiffeotopy`.
 
 ## Main definitions
 
@@ -48,8 +49,13 @@ computing the flux of the shear.
 * `TauCeti.hasMFDerivAt_cylinderShear`, `TauCeti.mfderiv_cylinderShear_apply`: the derivative of
   the shear `(r, θ) ↦ (r, θ + [h r])`.
 * `TauCeti.mfderiv_cylinderMap_cylinderShearDiffeotopy_apply_one`,
-  `TauCeti.mfderiv_cylinderMap_cylinderShearDiffeotopy_apply_zero`: the velocity and the spatial
+  `TauCeti.mfderiv_cylinderMap_cylinderShearDiffeotopy_space`: the velocity and the spatial
   derivative of the motion of the shear diffeotopy.
+
+## References
+
+* Dusa McDuff and Dietmar Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford
+  University Press, 2017, Section 10.2 (the flux homomorphism on open manifolds).
 -/
 
 public section
@@ -72,37 +78,44 @@ theorem contMDiff_cylinderShear {n : ℕ∞} {h : ℝ → ℝ} (hh : ContDiff �
   contMDiff_fst.prodMk (contMDiff_snd.add
     ((AddCircle.contMDiff_coe p n).comp (hh.contMDiff.comp contMDiff_fst)))
 
-/-- **The derivative of a shear of the cylinder.** For a `C¹` function `h`, the shear
-`(r, θ) ↦ (r, θ + [h r])` of `ℝ × AddCircle p` has derivative `(w₁, w₂) ↦ (w₁, w₂ + h'(r) w₁)`. -/
-theorem hasMFDerivAt_cylinderShear {h : ℝ → ℝ} (hh : ContDiff ℝ 1 h) (y : ℝ × AddCircle p) :
+/-- **The derivative of a shear of the cylinder.** For a function `h` differentiable at `r`, the
+shear `(r, θ) ↦ (r, θ + [h r])` of `ℝ × AddCircle p` has derivative
+`(w₁, w₂) ↦ (w₁, w₂ + h'(r) w₁)` at `(r, θ)`. -/
+theorem hasMFDerivAt_cylinderShear {h : ℝ → ℝ} (y : ℝ × AddCircle p)
+    (hh : DifferentiableAt ℝ h y.1) :
     HasMFDerivAt (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ))
       (fun y : ℝ × AddCircle p ↦ (y.1, y.2 + (h y.1 : AddCircle p))) y
       ((ContinuousLinearMap.fst ℝ ℝ ℝ).prod
         (ContinuousLinearMap.snd ℝ ℝ ℝ + deriv h y.1 • ContinuousLinearMap.fst ℝ ℝ ℝ)) := by
+  -- The angle component is the sum `θ + [h r]`, differentiable at `y` as a composite of smooth
+  -- addition on the circle with a map differentiable at `y`.
   have h₂ : MDifferentiableAt (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ)
       (fun y : ℝ × AddCircle p ↦ y.2 + (h y.1 : AddCircle p)) y :=
-    ((contMDiff_snd.add ((AddCircle.contMDiff_coe p 1).comp
-      (hh.contMDiff.comp contMDiff_fst))).mdifferentiableAt one_ne_zero)
+    ((contMDiff_add 𝓘(ℝ) 1).mdifferentiableAt one_ne_zero).comp y
+      (mdifferentiableAt_snd.prodMk (((AddCircle.contMDiff_coe p 1).mdifferentiableAt
+        one_ne_zero).comp y (hh.mdifferentiableAt.comp y mdifferentiableAt_fst)))
   refine (hasMFDerivAt_fst y).prodMk (h₂.hasMFDerivAt.congr_mfderiv
     (ContinuousLinearMap.ext fun w ↦ ?_))
   rw [mfderiv_prod_eq_add_apply h₂]
   -- In `r` the angle moves with velocity `h'(r)`; in `θ` the map is a translation of the circle.
-  have hr := (AddCircle.hasMFDerivAt_add_coe_comp
-    ((hh.differentiable one_ne_zero y.1).hasDerivAt) y.2).mfderiv
+  have hr := (AddCircle.hasMFDerivAt_add_coe_comp hh.hasDerivAt y.2).mfderiv
   simp only [hr, AddCircle.mfderiv_add_right]
   -- The tangent spaces are type synonyms of `ℝ`, on which both sides are real expressions in
   -- `w₁` and `w₂`; the linear maps unfold to multiplication by `h'(r)` and the identity.
   change w.1 * deriv h y.1 + w.2 = w.2 + deriv h y.1 * w.1
   ring
 
-/-- **The derivative of a shear of the cylinder**, evaluated: the shear `(r, θ) ↦ (r, θ + [h r])`
-sends the tangent vector `(w₁, w₂)` to `(w₁, w₂ + h'(r) w₁)`. -/
-theorem mfderiv_cylinderShear_apply {h : ℝ → ℝ} (hh : ContDiff ℝ 1 h) (y : ℝ × AddCircle p)
-    (w : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) y) :
+/-- **The derivative of a shear of the cylinder**, evaluated: for a function `h` differentiable
+at `r`, the shear `(r, θ) ↦ (r, θ + [h r])` sends the tangent vector `(w₁, w₂)` at `(r, θ)` to
+`(w₁, w₂ + h'(r) w₁)`. -/
+theorem mfderiv_cylinderShear_apply {h : ℝ → ℝ} (y : ℝ × AddCircle p)
+    (hh : DifferentiableAt ℝ h y.1) (w : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) y) :
     mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ))
         (fun y : ℝ × AddCircle p ↦ (y.1, y.2 + (h y.1 : AddCircle p))) y w =
       (w.1, w.2 + deriv h y.1 * w.1) := by
-  rw [(hasMFDerivAt_cylinderShear p hh y).mfderiv]
+  rw [(hasMFDerivAt_cylinderShear p y hh).mfderiv]
+  -- The tangent spaces are type synonyms of `ℝ × ℝ`, so `simp` cannot see the linear map as a map
+  -- of `ℝ × ℝ`; by definition its components are `w₁` and `w₂ + h'(r) • w₁ = w₂ + h'(r) * w₁`.
   rfl
 
 /-! ### The shear diffeotopy -/
@@ -226,7 +239,7 @@ theorem mfderiv_cylinderMap_cylinderShearDiffeotopy_apply_one (y : ℝ × AddCir
 /-- **The spatial derivative of a shear diffeotopy.** On spatial tangent vectors, the derivative of
 the motion of the shear diffeotopy at time `t` is the shear `w ↦ (w₁, w₂ + t g'(r) w₁)`. -/
 @[simp]
-theorem mfderiv_cylinderMap_cylinderShearDiffeotopy_apply_zero (y : ℝ × AddCircle p)
+theorem mfderiv_cylinderMap_cylinderShearDiffeotopy_space (y : ℝ × AddCircle p)
     (t : unitInterval) (w : ℝ × ℝ) :
     mfderiv ((𝓘(ℝ).prod 𝓘(ℝ)).prod (𝓡∂ 1)) (𝓘(ℝ).prod 𝓘(ℝ))
         (cylinderShearDiffeotopy p g).cylinderMap (y, t)
@@ -236,8 +249,8 @@ theorem mfderiv_cylinderMap_cylinderShearDiffeotopy_apply_zero (y : ℝ × AddCi
       (0 : TangentSpace (𝓡∂ 1) t) = (0 : ℝ × ℝ) := map_zero _
   refine (mfderiv_cylinderMap_cylinderShearDiffeotopy_apply_eq_add p g y t w 0).trans ?_
   rw [hB]
-  refine (add_zero _).trans ((mfderiv_cylinderShear_apply p
-    (contDiff_const.mul (g.contMDiff.contDiff.of_le (by simp))) y w).trans ?_)
+  refine (add_zero _).trans ((mfderiv_cylinderShear_apply p y
+    (((g.contMDiff.contDiff.differentiable (by simp)) y.1).const_mul _) w).trans ?_)
   rw [deriv_const_mul _ ((g.contMDiff.contDiff.differentiable (by simp)) y.1)]
 
 end TauCeti

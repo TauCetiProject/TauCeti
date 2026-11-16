@@ -633,6 +633,18 @@ theorem map_comp (f : M → M') (g : M' → M'') (hf : ContMDiff I I' ∞ f)
     compactlySupportedClosedForms.mpullback_comp f g hf hg hfp hgp]
   rfl
 
+/-- Pullback on compactly supported cohomology along a smooth proper map `f` is injective when `f`
+has a smooth proper section `s`: pullback along `s` is a left inverse. -/
+theorem map_injective_of_leftInverse (f : M → M') (s : M' → M) (hf : ContMDiff I I' ∞ f)
+    (hs : ContMDiff I' I ∞ s) (hfp : IsProperMap f) (hsp : IsProperMap s)
+    (hfs : Function.LeftInverse f s) (k : ℕ) :
+    Function.Injective (map f hf hfp k) := by
+  refine Function.LeftInverse.injective (g := map s hs hsp k) fun c ↦ ?_
+  rw [← LinearMap.comp_apply, ← map_comp s f hs hf hsp hfp]
+  -- The composite `f ∘ s` is the identity.
+  convert LinearMap.congr_fun (map_id (I := I') (M := M') k) c
+  exact funext hfs
+
 /-- The comparison with de Rham cohomology commutes with pullback along smooth proper maps. -/
 theorem toDeRhamCohomology_map (f : M → M') (hf : ContMDiff I I' ∞ f) (hp : IsProperMap f)
     (k : ℕ) (c : compactlySupportedDeRhamCohomology I' M' k) :
