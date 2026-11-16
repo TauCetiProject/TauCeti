@@ -67,8 +67,7 @@ private def meridianOfLength (x : X) (ℓ : ℝ≥0) :
     · rw [MoorePath.target_rescale _ h, Path.target_toMoorePath]⟩
 
 private theorem meridianOfLength_zero (x : X) : meridianOfLength (x₀ := x₀) x 0 = 1 :=
-  MooreLoopSpace.ext <| (MoorePath.rescale_zero _).trans <|
-    (congrArg MoorePath.refl (Path.source_toMoorePath _)).trans MooreLoopSpace.toMoorePath_one.symm
+  MooreLoopSpace.ext <| by simp [meridianOfLength, MoorePath.rescale_zero]
 
 /-- A family of meridians run in continuously varying times is continuous, also where the time
 vanishes, provided the meridians run in time zero are the ones through the basepoint. -/
@@ -109,7 +108,13 @@ theorem length_mooreMeridian (x : X) : (mooreMeridian u hu x).length = u x := by
 basepoint from time `u x` on (with `t / 0 = 0`). -/
 theorem mooreMeridian_apply (x : X) (t : ℝ≥0) :
     (mooreMeridian u hu x).toMoorePath t = mk (x, Set.projIcc 0 1 zero_le_one (t / u x : ℝ≥0)) := by
-  simp [Path.extend, Set.IccExtend]
+  rw [toMoorePath_mooreMeridian, MoorePath.rescale_apply, Path.toMoorePath_apply,
+    Path.length_toMoorePath, one_mul]
+  rcases le_total (t / u x : ℝ≥0) 1 with h | h
+  · have hmem : ((t / u x : ℝ≥0) : ℝ) ∈ Set.Icc 0 1 := ⟨(t / u x).2, mod_cast h⟩
+    rw [Path.extend_apply _ hmem, Set.projIcc_of_mem _ hmem, meridian_apply]
+  · rw [Path.extend_of_one_le _ (mod_cast h), Set.projIcc_of_right_le _ (mod_cast h)]
+    exact (mk_one x).symm
 
 /-- The Moore meridian through the basepoint, run in time zero, is the unit of the Moore loop
 space. -/
@@ -164,11 +169,7 @@ theorem eq_jamesMap {f : JamesReducedProduct X x₀ →ₜ* MooreLoopSpace (Redu
 `u x₁ + ⋯ + u xₙ`. -/
 theorem length_jamesMap_mk {n : ℕ} (v : Fin n → X) :
     (jamesMap u hu (mk v : JamesReducedProduct X x₀)).length = ∑ i, u (v i) := by
-  have h := map_list_prod (MooreLoopSpace.lengthHom (basepoint : ReducedSuspension X x₀))
-    (List.ofFn fun i ↦ mooreMeridian u (fun x ↦ (hu x).1) (v i))
-  rw [MooreLoopSpace.lengthHom_apply] at h
-  simpa [List.map_ofFn, Function.comp_def, MooreLoopSpace.lengthHom_apply, List.prod_ofFn,
-    ← ofAdd_sum] using h
+  simp [MooreLoopSpace.length_list_prod, List.map_ofFn, Function.comp_def, List.sum_ofFn]
 
 /-- Normalized to the unit interval, the image of a one-letter word under the James map is the
 meridian through its letter. -/
@@ -178,7 +179,7 @@ theorem toPath_jamesMap_letter (x : X) :
 
 /-- **The James map does not depend on the choice of times up to homotopy**: for two continuous
 functions `u` and `u'` vanishing exactly at the basepoint, the James maps they define are
-homotopic, through the James maps of the convex combinations `(1 - t) • u + t • u'`. -/
+homotopic. -/
 theorem jamesMap_homotopic (u' : C(X, ℝ≥0)) (hu' : ∀ x, u' x = 0 ↔ x = x₀) :
     (jamesMap u hu).toContinuousMap.Homotopic (jamesMap u' hu').toContinuousMap := by
   -- The times of the meridians at the stage `t` of the homotopy.

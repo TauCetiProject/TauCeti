@@ -742,6 +742,13 @@ theorem length_eq_zero_iff {γ : MooreLoopSpace X x} : γ.length = 0 ↔ γ = 1 
 theorem length_mul (γ δ : MooreLoopSpace X x) : (γ * δ).length = γ.length + δ.length :=
   (rfl)
 
+/-- The length of a product of Moore loops is the sum of their lengths. -/
+@[simp]
+theorem length_list_prod (l : List (MooreLoopSpace X x)) : l.prod.length = (l.map length).sum := by
+  induction l with
+  | nil => simp
+  | cons γ l ih => simp [ih]
+
 @[fun_prop]
 theorem continuous_length : Continuous (length : MooreLoopSpace X x → ℝ≥0) :=
   MoorePath.continuous_length.comp continuous_toMoorePath

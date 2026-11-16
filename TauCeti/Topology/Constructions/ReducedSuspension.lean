@@ -36,7 +36,8 @@ image of the collapsed locus. Write `[x, s]` for the image of `(x, s)`
 * The **meridian** through `x` is the loop `s ↦ [x, s]` at the basepoint
   (`TauCeti.ReducedSuspension.meridian`). It depends continuously on `x`, and the meridian through
   the basepoint is the constant loop. As a based map `X → Ω(ΣX)` it is the unit of the
-  suspension–loop adjunction, and its values are the letters of the James map.
+  suspension–loop adjunction. Normalized to the unit interval, the James map sends the letter `x`
+  to the meridian through `x` (`TauCeti.JamesReducedProduct.toPath_jamesMap_letter`).
 * Every point `[x, s]` lies on the meridian through `x`, so the reduced suspension of any pointed
   space is path connected.
 
