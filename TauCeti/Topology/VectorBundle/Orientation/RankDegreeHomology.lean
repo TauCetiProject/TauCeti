@@ -294,12 +294,17 @@ private theorem fiberHom_apply (W : Set B) {b : B} (hb : b ∈ W)
     fiberHom F E hF W hb σ =
       signLocalSystemFiberEquiv (card_fin_eq_finrank hF) o σ • fiberClassOver F E hF W hb o := by
   rcases eq_or_eq_neg_chosenOrientation hF o with h | h
+  -- The codomain of `fiberHom` is the homology only by unfolding, so `rw` cannot see through
+  -- `ModuleCat.ofHom`; the apply lemmas are chained as terms. `Int.cast_smul_eq_zsmul` turns the
+  -- module action used by `toSpanSingleton` into `zsmul`.
   · subst h
-    exact Int.cast_smul_eq_zsmul ℤ _ _
+    exact (ModuleCat.ofHom_apply _ σ).trans ((LinearMap.comp_apply _ _ σ).trans
+      ((LinearMap.toSpanSingleton_apply ℤ _ _ _).trans (Int.cast_smul_eq_zsmul ℤ _ _)))
   · subst h
     rw [fiberClassOver_neg, VectorBundleOrientationCover.signLocalSystemFiberEquiv_neg, zsmul_neg,
       neg_zsmul, neg_neg]
-    exact Int.cast_smul_eq_zsmul ℤ _ _
+    exact (ModuleCat.ofHom_apply _ σ).trans ((LinearMap.comp_apply _ _ σ).trans
+      ((LinearMap.toSpanSingleton_apply ℤ _ _ _).trans (Int.cast_smul_eq_zsmul ℤ _ _)))
 
 open VectorBundleOrientationCover in
 /-- The value of `TauCeti.fiberHom` read at any point `c` of the orientation double cover over
@@ -492,7 +497,11 @@ private def trivGenHom (x : W) :
 
 private theorem trivGenHom_apply (x : W) (c : ULift.{w} ℤ) :
     trivGenHom hF b₀ hW x c = c.down • trivGen hF b₀ hW x :=
-  Int.cast_smul_eq_zsmul ℤ _ _
+  -- The fibre of the restricted system is that of `B` only by unfolding, so `rw` cannot see
+  -- through `ModuleCat.ofHom`; the apply lemmas are chained as terms. `Int.cast_smul_eq_zsmul`
+  -- turns the module action used by `toSpanSingleton` into `zsmul`.
+  (ModuleCat.ofHom_apply _ c).trans ((LinearMap.comp_apply _ _ c).trans
+    ((LinearMap.toSpanSingleton_apply ℤ _ _ _).trans (Int.cast_smul_eq_zsmul ℤ _ _)))
 
 private theorem trivGenHom_comp_map {x y : TopCat.of W}
     (p : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) :
