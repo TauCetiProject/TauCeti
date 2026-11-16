@@ -79,6 +79,19 @@ variable {𝕜 F EM EM' EX H H' HX B B' X K : Type*} [NontriviallyNormedField �
   [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)]
   [FiberBundle F E] [FunLike K B' B] [ContinuousMapClass K B' B] {m n : WithTop ℕ∞}
 
+/-- A map into a pullback bundle is `C^n` within a set at a point exactly when its base
+projection and its lift to the original total space are `C^n` within that set there. -/
+theorem contMDiffWithinAt_iff (f : K) {q : X → TotalSpace F ((f : B' → B) *ᵖ E)} {s : Set X}
+    {x : X} (hf : ContMDiffAt I' I n f (q x).proj) :
+    ContMDiffWithinAt IX (I'.prod 𝓘(𝕜, F)) n q s x ↔
+      ContMDiffWithinAt IX I' n (fun y => (q y).proj) s x ∧
+        ContMDiffWithinAt IX (I.prod 𝓘(𝕜, F)) n
+          (fun y => Pullback.lift f (q y)) s x := by
+  simp only [Bundle.contMDiffWithinAt_totalSpace_iff, trivializationAt,
+    FiberBundle.pullback_trivializationAt', Trivialization.pullback_apply, Pullback.lift_proj]
+  exact ⟨fun ⟨hq, hcoord⟩ => ⟨hq, hf.comp_contMDiffWithinAt x hq, hcoord⟩,
+    fun ⟨hq, _, hcoord⟩ => ⟨hq, hcoord⟩⟩
+
 /-- A map into a pullback bundle is `C^n` at a point exactly when its base projection and its
 lift to the original total space are `C^n` there. -/
 theorem contMDiffAt_iff (f : K) {q : X → TotalSpace F ((f : B' → B) *ᵖ E)} {x : X}
@@ -86,11 +99,8 @@ theorem contMDiffAt_iff (f : K) {q : X → TotalSpace F ((f : B' → B) *ᵖ E)}
     ContMDiffAt IX (I'.prod 𝓘(𝕜, F)) n q x ↔
       ContMDiffAt IX I' n (fun y => (q y).proj) x ∧
         ContMDiffAt IX (I.prod 𝓘(𝕜, F)) n
-          (fun y => Pullback.lift f (q y)) x := by
-  simp only [Bundle.contMDiffAt_totalSpace_iff, trivializationAt,
-    FiberBundle.pullback_trivializationAt', Trivialization.pullback_apply, Pullback.lift_proj]
-  exact ⟨fun ⟨hq, hcoord⟩ => ⟨hq, hf.comp x hq, hcoord⟩,
-    fun ⟨hq, _, hcoord⟩ => ⟨hq, hcoord⟩⟩
+          (fun y => Pullback.lift f (q y)) x :=
+  contMDiffWithinAt_iff f hf
 
 /-- A map into a pullback bundle is `C^n` exactly when its base projection and its lift to the
 original total space are `C^n`. -/

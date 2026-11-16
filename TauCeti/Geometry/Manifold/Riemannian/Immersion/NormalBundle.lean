@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
-import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Immersion.Projection
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
@@ -22,17 +22,19 @@ Let `f : M → N` be an immersion into a manifold whose tangent spaces carry a R
 Its normal space at `x : M` is the orthogonal complement of the range of `mfderiv I J f x` in
 `T_{f x} N` (`TauCeti.orthogonalNormalSpace`). These spaces are indexed by the source point, so
 two sheets of an immersion through one image point keep separate normal spaces. This file makes
-them a smooth vector bundle `ν_f`, a subbundle of the pulled-back tangent bundle `f *ᵖ TN`, with
-the smooth tangent/normal splitting of `f *ᵖ TN`. This is the bundle in which the second
-fundamental form and the normal connection of an immersion take values.
+them a smooth vector bundle `ν_f`, a subbundle of the pulled-back tangent bundle `f *ᵖ TN`,
+together with the smooth orthogonal projection of `f *ᵖ TN` onto `ν_f`. This is the bundle in which
+the second fundamental form and the normal connection of an immersion take values.
 
-The normal spaces are closed (`TauCeti.isClosed_orthogonalNormalSpace`); for a finite-dimensional
-source they admit orthogonal projections and their orthogonal complements are the tangent ranges
-(`TauCeti.orthogonal_orthogonalNormalSpace`). The orthogonal projection onto the normal space
-is `v ↦ v - df ((df* df)⁻¹ (df* v))`, where `df* df` is the pullback metric on `T_x M`
-(`TauCeti.starProjection_orthogonalNormalSpace_eq_sub_mfderiv_inverse`). It is a `C^m` self-map of
-`f *ᵖ TN` near every point where `f` is `C^n` with injective differential, for `m + 1 ≤ n` and a
-`C^m` metric (`TauCeti.contMDiffAt_starProjection_orthogonalNormalSpace`,
+The normal spaces are closed (`TauCeti.isClosed_orthogonalNormalSpace`). When the range of the
+differential admits an orthogonal projection, for instance for a finite-dimensional source, so do
+the normal spaces, and their orthogonal complements are the tangent ranges
+(`TauCeti.orthogonal_orthogonalNormalSpace`). For a finite-dimensional source, the orthogonal
+projection onto the normal space is `v ↦ v - df ((df* df)⁻¹ (df* v))`, where `df* df` is the
+pullback metric on `T_x M` (`TauCeti.starProjection_orthogonalNormalSpace_eq_sub_mfderiv_inverse`).
+It is a `C^m` self-map of `f *ᵖ TN` near every point where `f` is `C^n` with injective
+differential, for `m + 1 ≤ n` and a `C^m` metric
+(`TauCeti.contMDiffAt_starProjection_orthogonalNormalSpace`,
 `TauCeti.contMDiff_starProjection_orthogonalNormalSpace`).
 
 For a `C^n` immersion with `m + 1 ≤ n` into a finite-dimensional manifold, the normal spaces have
@@ -41,12 +43,14 @@ subspace topology of `f *ᵖ TN` they form a `C^m` vector bundle `ν_f` of rank 
 (`TauCeti.orthogonalNormalFiberBundle`, `TauCeti.orthogonalNormalVectorBundle`,
 `TauCeti.orthogonalNormalContMDiffVectorBundle`). The fibre bundle structure is a definition,
 not a global instance, since it depends on the regularity hypotheses: install it with `letI`, as
-the statements below do. The inclusions of `ν_f` into `f *ᵖ TN` and `TN` are `C^m`
+the statements below do. Its atlas consists of the `C^m` local frames, so it depends on `m`, but
+not on `n` or on the proofs of the hypotheses (`TauCeti.orthogonalNormalFiberBundle_congr`). The
+inclusions of `ν_f` into `f *ᵖ TN` and `TN` are `C^m`
 (`TauCeti.contMDiff_orthogonalNormalSpace_inclusion`,
 `TauCeti.contMDiff_orthogonalNormalSpace_inclusion_tangentBundle`). For `k ≤ m`, a map into `ν_f`
-is `C^k` exactly when it is `C^k` into `f *ᵖ TN`
-(`TauCeti.contMDiffAt_orthogonalNormalSpace_mk_iff`), or when its base point is `C^k` and it is
-`C^k` into `TN` (`TauCeti.contMDiffAt_orthogonalNormalSpace_mk_iff_tangentBundle`). The
+is `C^k` (within a set) exactly when it is `C^k` into `f *ᵖ TN`
+(`TauCeti.contMDiffWithinAt_orthogonalNormalSpace_mk_iff`), or when its base point is `C^k` and it
+is `C^k` into `TN` (`TauCeti.contMDiffWithinAt_orthogonalNormalSpace_mk_iff_tangentBundle`). The
 orthogonal projection of `f *ᵖ TN` onto `ν_f` is `C^m`
 (`TauCeti.contMDiff_orthogonalProjectionOnto_orthogonalNormalSpace`). No compactness, injectivity
 of `f`, boundarylessness or choice of normal frame is assumed. The identity map has zero normal
@@ -170,28 +174,45 @@ theorem finrank_orthogonalNormalSpace_add_finrank [FiniteDimensional ℝ V] {f :
   rw [orthogonalNormalSpace_def, add_comm]
   exact h
 
-section FiniteDimensionalSource
+section OrthogonalProjection
 
-variable [FiniteDimensional ℝ E]
+variable {f : M → N} {x : M}
+  [(LinearMap.range (mfderiv I J f x).toLinearMap).HasOrthogonalProjection]
 
-/-- For a finite-dimensional source, the normal spaces admit orthogonal projections. -/
-instance instHasOrthogonalProjectionOrthogonalNormalSpace (f : M → N) (x : M) :
-    (orthogonalNormalSpace I J f x).HasOrthogonalProjection := by
-  rw [orthogonalNormalSpace_def]
-  infer_instance
+/-- If the range of the differential admits an orthogonal projection, so does the normal space.
+This applies in particular to a finite-dimensional source, where the range is finite-dimensional
+and hence complete. -/
+instance instHasOrthogonalProjectionOrthogonalNormalSpace :
+    (orthogonalNormalSpace I J f x).HasOrthogonalProjection :=
+  inferInstanceAs (LinearMap.range (mfderiv I J f x).toLinearMap)ᗮ.HasOrthogonalProjection
 
-/-- For a finite-dimensional source, the orthogonal complement of the normal space is the range
-of the differential. -/
+/-- If the range of the differential admits an orthogonal projection, for instance for a
+finite-dimensional source, the orthogonal complement of the normal space is that range. -/
 @[simp]
-theorem orthogonal_orthogonalNormalSpace (f : M → N) (x : M) :
+theorem orthogonal_orthogonalNormalSpace :
     (orthogonalNormalSpace I J f x)ᗮ = LinearMap.range (mfderiv I J f x).toLinearMap := by
   rw [orthogonalNormalSpace_def]
   exact Submodule.orthogonal_orthogonal _
 
+/-- The orthogonal projection onto the normal space is the orthogonal projection onto the
+orthogonal complement of the range of the differential. Both sides are the same map:
+`orthogonalNormalSpace I J f x` is this orthogonal complement by definition
+(`TauCeti.orthogonalNormalSpace_def`), and `Submodule.HasOrthogonalProjection` is a `Prop`. -/
+theorem starProjection_orthogonalNormalSpace :
+    (orthogonalNormalSpace I J f x).starProjection =
+      (LinearMap.range (mfderiv I J f x).toLinearMap)ᗮ.starProjection :=
+  (rfl)
+
+end OrthogonalProjection
+
+section FiniteDimensionalSource
+
+variable [FiniteDimensional ℝ E]
+
 /-- The orthogonal projection onto the normal space subtracts the tangential component of an
 ambient vector `v`, which is `df ((df* df)⁻¹ (df* v))` for the pullback metric `df* df` on `T_x M`.
-Only injectivity of the differential at `x` is assumed; the ambient metric need not be
-regular. -/
+For a finite-dimensional source, only injectivity of the differential at `x` is assumed; neither
+`f` nor the ambient metric need be regular. -/
 theorem starProjection_orthogonalNormalSpace_eq_sub_mfderiv_inverse {f : M → N} {x : M}
     (hinj : Function.Injective (mfderiv I J f x)) (v : TangentSpace J (f x)) :
     let d := mfderiv I J f x
@@ -232,6 +253,7 @@ theorem contMDiffAt_starProjection_orthogonalNormalSpace {f : K}
   have hfm : ContMDiffAt I J m f p.proj := hf.of_le (le_self_add.trans hm)
   have hbase : ContMDiffAt (I.prod 𝓘(ℝ, V)) I m
       (π V ((f : M → N) *ᵖ (TangentSpace J))) p := contMDiffAt_proj _
+  simp only [starProjection_orthogonalNormalSpace]
   refine (Pullback.contMDiffAt_iff f hfm).mpr ⟨hbase, ?_⟩
   exact ((hf.starProjection_orthogonal_range_mfderiv hm hinj).comp p hbase).clm_bundle_apply
     (Pullback.contMDiffAt_lift f hfm (E := fun y : N ↦ TangentSpace J y))
@@ -254,6 +276,15 @@ end FiniteDimensionalSource
 variable [FiniteDimensional ℝ V] {n m : ℕ∞ω} [IsManifold I 1 M] [IsManifold J 1 N]
   [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)] [IsManifold J (m + 1) N]
 
+omit [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [FiniteDimensional ℝ V] [IsManifold I 1 M]
+  [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)] in
+/-- The pulled-back tangent bundle `f *ᵖ TN` along a `C^m` map is a `C^m` vector bundle
+(`ContMDiffVectorBundle.pullback`). -/
+theorem contMDiffVectorBundle_pullback_tangentSpace {f : K} (hf : ContMDiff I J m f) :
+    ContMDiffVectorBundle m V ((f : M → N) *ᵖ (TangentSpace J)) I :=
+  letI := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
+  ContMDiffVectorBundle.pullback V (TangentSpace J) I (⟨f, hf⟩ : C^m⟮I, M; J, N⟯)
+
 /-- **Local frames of the normal bundle.** For a `C^n` immersion `f` with `m + 1 ≤ n`, a `C^m`
 ambient metric and `dim N = dim M + r`, the normal spaces have `C^m` local frames of size `r` in
 the pulled-back tangent bundle `f *ᵖ TN`. By
@@ -264,10 +295,7 @@ theorem hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace {r : ℕ} {f : K}
     (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r) :
     HasLocalContMDiffSubbundleFrames I m V (Fin r) (E := (f : M → N) *ᵖ (TangentSpace J))
       (orthogonalNormalSpace I J f) := by
-  let fc : C^m⟮I, M; J, N⟯ := ⟨f, hf.of_le (le_self_add.trans hm)⟩
-  let := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
-  let : ContMDiffVectorBundle m V ((f : M → N) *ᵖ (TangentSpace J)) I :=
-    ContMDiffVectorBundle.pullback V (TangentSpace J) I fc
+  have := contMDiffVectorBundle_pullback_tangentSpace (m := m) (hf.of_le (le_self_add.trans hm))
   -- Elaborate in the fibres `TangentSpace J (f x)`, not in the pullback fibres.
   have hrange (x : M) : LinearMap.range ((orthogonalNormalSpace I J f x).starProjection :
       TangentSpace J (f x) →ₗ[ℝ] TangentSpace J (f x)) = orthogonalNormalSpace I J f x :=
@@ -297,7 +325,9 @@ instance instTopologicalSpaceTotalSpaceOrthogonalNormalSpace (P : Type*) (f : M 
 `C^m` ambient metric and `dim N = dim M + r`, the normal spaces `orthogonalNormalSpace I J f`
 form a fibre bundle over `M` with model fibre `Fin r → ℝ`, carrying the subspace topology from
 `f *ᵖ TN` (`TauCeti.HasLocalContMDiffSubbundleFrames.fiberBundle`). Install this definition
-locally with `letI`. -/
+locally with `letI`. Its trivializations are those of the `C^m` local frames of the normal
+spaces, so the structure depends on `m`; it does not depend on `n` or on the proofs `hf`, `hinj`,
+`hm` and `hr` (`TauCeti.orthogonalNormalFiberBundle_congr`). -/
 @[instance_reducible]
 def orthogonalNormalFiberBundle {r : ℕ} {f : K} (hf : ContMDiff I J n f)
     (hinj : ∀ x, Function.Injective (mfderiv I J f x))
@@ -313,6 +343,14 @@ theorem orthogonalNormalFiberBundle_def {r : ℕ} {f : K} (hf : ContMDiff I J n 
     (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r) :
     orthogonalNormalFiberBundle hf hinj hm hr =
       (hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace hf hinj hm hr).fiberBundle :=
+  (rfl)
+
+/-- The fibre bundle structure of `ν_f` depends only on the regularity `m` of its local frames:
+two `C^n` and `C^n'` immersion hypotheses with the same `m` give the same structure. -/
+theorem orthogonalNormalFiberBundle_congr {r : ℕ} {n' : ℕ∞ω} {f : K} (hf : ContMDiff I J n f)
+    (hf' : ContMDiff I J n' f) (hinj : ∀ x, Function.Injective (mfderiv I J f x))
+    (hm : m + 1 ≤ n) (hm' : m + 1 ≤ n') (hr : finrank ℝ V = finrank ℝ E + r) :
+    orthogonalNormalFiberBundle hf hinj hm hr = orthogonalNormalFiberBundle hf' hinj hm' hr :=
   (rfl)
 
 /-- **The normal bundle `ν_f` is a topological vector bundle**, with the fibre bundle structure
@@ -333,10 +371,7 @@ theorem orthogonalNormalContMDiffVectorBundle {r : ℕ} {f : K} (hf : ContMDiff 
     letI := orthogonalNormalFiberBundle hf hinj hm hr
     letI := orthogonalNormalVectorBundle hf hinj hm hr
     ContMDiffVectorBundle m (Fin r → ℝ) (fun x ↦ orthogonalNormalSpace I J f x) I := by
-  let fc : C^m⟮I, M; J, N⟯ := ⟨f, hf.of_le (le_self_add.trans hm)⟩
-  let := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
-  let : ContMDiffVectorBundle m V ((f : M → N) *ᵖ (TangentSpace J)) I :=
-    ContMDiffVectorBundle.pullback V (TangentSpace J) I fc
+  have := contMDiffVectorBundle_pullback_tangentSpace (m := m) (hf.of_le (le_self_add.trans hm))
   exact (hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace hf hinj hm hr).contMDiffVectorBundle
 
 /-- The canonical inclusion `ν_f → f *ᵖ TN` of the normal bundle of an immersion is `C^m`. -/
@@ -349,10 +384,7 @@ theorem contMDiff_orthogonalNormalSpace_inclusion {r : ℕ} {f : K} (hf : ContMD
       (fun v : TotalSpace (Fin r → ℝ) (fun x ↦ orthogonalNormalSpace I J f x) ↦
         (⟨v.proj, (v.2 : TangentSpace J (f v.proj))⟩ :
           TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) := by
-  let fc : C^m⟮I, M; J, N⟯ := ⟨f, hf.of_le (le_self_add.trans hm)⟩
-  let := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
-  let : ContMDiffVectorBundle m V ((f : M → N) *ᵖ (TangentSpace J)) I :=
-    ContMDiffVectorBundle.pullback V (TangentSpace J) I fc
+  have := contMDiffVectorBundle_pullback_tangentSpace (m := m) (hf.of_le (le_self_add.trans hm))
   exact (hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace hf hinj hm hr
     ).contMDiff_totalSpace_inclusion
 
@@ -377,6 +409,24 @@ variable {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace ℝ EX] [Topolog
   {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace X] [ChartedSpace HX X] {k : ℕ∞ω}
 
 /-- **Maps into the normal bundle.** For `k ≤ m`, a map into `f *ᵖ TN` whose values are normal
+vectors and which is `C^k` within `s` at `z₀` is `C^k` within `s` at `z₀` as a map into `ν_f`. -/
+theorem contMDiffWithinAt_orthogonalNormalSpace_mk {r : ℕ} {f : K} (hf : ContMDiff I J n f)
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x))
+    (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r) (hk : k ≤ m) {b : X → M}
+    {w : ∀ z, TangentSpace J (f (b z))} {s : Set X} {z₀ : X}
+    (hw : ContMDiffWithinAt IX (I.prod 𝓘(ℝ, V)) k
+      (fun z ↦ (⟨b z, w z⟩ : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) s z₀)
+    (hmem : ∀ z, w z ∈ orthogonalNormalSpace I J f (b z)) :
+    letI := orthogonalNormalFiberBundle hf hinj hm hr
+    letI := orthogonalNormalVectorBundle hf hinj hm hr
+    ContMDiffWithinAt IX (I.prod 𝓘(ℝ, Fin r → ℝ)) k
+      (fun z ↦ (⟨b z, ⟨w z, hmem z⟩⟩ :
+        TotalSpace (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) s z₀ := by
+  have := contMDiffVectorBundle_pullback_tangentSpace (m := m) (hf.of_le (le_self_add.trans hm))
+  exact (hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace hf hinj hm hr
+    ).contMDiffWithinAt_totalSpace_mk hk hw hmem
+
+/-- **Maps into the normal bundle.** For `k ≤ m`, a map into `f *ᵖ TN` whose values are normal
 vectors and which is `C^k` at `z₀` is `C^k` at `z₀` as a map into `ν_f`. -/
 theorem contMDiffAt_orthogonalNormalSpace_mk {r : ℕ} {f : K} (hf : ContMDiff I J n f)
     (hinj : ∀ x, Function.Injective (mfderiv I J f x))
@@ -389,13 +439,28 @@ theorem contMDiffAt_orthogonalNormalSpace_mk {r : ℕ} {f : K} (hf : ContMDiff I
     letI := orthogonalNormalVectorBundle hf hinj hm hr
     ContMDiffAt IX (I.prod 𝓘(ℝ, Fin r → ℝ)) k
       (fun z ↦ (⟨b z, ⟨w z, hmem z⟩⟩ :
-        TotalSpace (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) z₀ := by
-  let fc : C^m⟮I, M; J, N⟯ := ⟨f, hf.of_le (le_self_add.trans hm)⟩
-  let := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
-  let : ContMDiffVectorBundle m V ((f : M → N) *ᵖ (TangentSpace J)) I :=
-    ContMDiffVectorBundle.pullback V (TangentSpace J) I fc
-  exact (hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace hf hinj hm hr
-    ).contMDiffAt_totalSpace_mk_of_le hk hw hmem
+        TotalSpace (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) z₀ :=
+  contMDiffWithinAt_orthogonalNormalSpace_mk hf hinj hm hr hk hw hmem
+
+/-- **Universal property of `ν_f` in `f *ᵖ TN`.** For `k ≤ m`, a map with normal values is `C^k`
+within `s` at `z₀` into `ν_f` exactly when it is `C^k` within `s` at `z₀` into `f *ᵖ TN`. -/
+theorem contMDiffWithinAt_orthogonalNormalSpace_mk_iff {r : ℕ} {f : K} (hf : ContMDiff I J n f)
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x))
+    (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r) (hk : k ≤ m) {b : X → M}
+    {w : ∀ z, TangentSpace J (f (b z))} {s : Set X} {z₀ : X}
+    (hmem : ∀ z, w z ∈ orthogonalNormalSpace I J f (b z)) :
+    letI := orthogonalNormalFiberBundle hf hinj hm hr
+    letI := orthogonalNormalVectorBundle hf hinj hm hr
+    ContMDiffWithinAt IX (I.prod 𝓘(ℝ, Fin r → ℝ)) k
+        (fun z ↦ (⟨b z, ⟨w z, hmem z⟩⟩ :
+          TotalSpace (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) s z₀ ↔
+      ContMDiffWithinAt IX (I.prod 𝓘(ℝ, V)) k
+        (fun z ↦ (⟨b z, w z⟩ : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) s z₀ :=
+  letI := orthogonalNormalFiberBundle hf hinj hm hr
+  letI := orthogonalNormalVectorBundle hf hinj hm hr
+  ⟨fun h ↦ ((contMDiff_orthogonalNormalSpace_inclusion hf hinj hm hr).of_le hk _
+      ).comp_contMDiffWithinAt z₀ h,
+    fun h ↦ contMDiffWithinAt_orthogonalNormalSpace_mk hf hinj hm hr hk h hmem⟩
 
 /-- **Universal property of `ν_f` in `f *ᵖ TN`.** For `k ≤ m`, a map with normal values is `C^k`
 at `z₀` into `ν_f` exactly when it is `C^k` at `z₀` into `f *ᵖ TN`. -/
@@ -411,10 +476,26 @@ theorem contMDiffAt_orthogonalNormalSpace_mk_iff {r : ℕ} {f : K} (hf : ContMDi
           TotalSpace (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) z₀ ↔
       ContMDiffAt IX (I.prod 𝓘(ℝ, V)) k
         (fun z ↦ (⟨b z, w z⟩ : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) z₀ :=
-  letI := orthogonalNormalFiberBundle hf hinj hm hr
-  letI := orthogonalNormalVectorBundle hf hinj hm hr
-  ⟨fun h ↦ ((contMDiff_orthogonalNormalSpace_inclusion hf hinj hm hr).of_le hk _).comp z₀ h,
-    fun h ↦ contMDiffAt_orthogonalNormalSpace_mk hf hinj hm hr hk h hmem⟩
+  contMDiffWithinAt_orthogonalNormalSpace_mk_iff hf hinj hm hr hk hmem
+
+/-- **Universal property of `ν_f` in `TN`.** For `k ≤ m`, a map with normal values is `C^k` within
+`s` at `z₀` into `ν_f` exactly when its base point is `C^k` within `s` at `z₀` and the
+corresponding map into the ambient tangent bundle `TN` is `C^k` within `s` at `z₀`. -/
+theorem contMDiffWithinAt_orthogonalNormalSpace_mk_iff_tangentBundle {r : ℕ} {f : K}
+    (hf : ContMDiff I J n f) (hinj : ∀ x, Function.Injective (mfderiv I J f x))
+    (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r) (hk : k ≤ m) {b : X → M}
+    {w : ∀ z, TangentSpace J (f (b z))} {s : Set X} {z₀ : X}
+    (hmem : ∀ z, w z ∈ orthogonalNormalSpace I J f (b z)) :
+    letI := orthogonalNormalFiberBundle hf hinj hm hr
+    letI := orthogonalNormalVectorBundle hf hinj hm hr
+    ContMDiffWithinAt IX (I.prod 𝓘(ℝ, Fin r → ℝ)) k
+        (fun z ↦ (⟨b z, ⟨w z, hmem z⟩⟩ :
+          TotalSpace (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) s z₀ ↔
+      ContMDiffWithinAt IX I k b s z₀ ∧
+        ContMDiffWithinAt IX (J.prod 𝓘(ℝ, V)) k
+          (fun z ↦ (⟨f (b z), w z⟩ : TangentBundle J N)) s z₀ :=
+  (contMDiffWithinAt_orthogonalNormalSpace_mk_iff hf hinj hm hr hk hmem).trans
+    (Pullback.contMDiffWithinAt_iff f ((hf (b z₀)).of_le ((hk.trans le_self_add).trans hm)))
 
 /-- **Universal property of `ν_f` in `TN`.** For `k ≤ m`, a map with normal values is `C^k` at
 `z₀` into `ν_f` exactly when its base point is `C^k` at `z₀` and the corresponding map into the
@@ -432,8 +513,7 @@ theorem contMDiffAt_orthogonalNormalSpace_mk_iff_tangentBundle {r : ℕ} {f : K}
       ContMDiffAt IX I k b z₀ ∧
         ContMDiffAt IX (J.prod 𝓘(ℝ, V)) k
           (fun z ↦ (⟨f (b z), w z⟩ : TangentBundle J N)) z₀ :=
-  (contMDiffAt_orthogonalNormalSpace_mk_iff hf hinj hm hr hk hmem).trans
-    (Pullback.contMDiffAt_iff f ((hf (b z₀)).of_le ((hk.trans le_self_add).trans hm)))
+  contMDiffWithinAt_orthogonalNormalSpace_mk_iff_tangentBundle hf hinj hm hr hk hmem
 
 end UniversalProperty
 
@@ -447,11 +527,13 @@ theorem contMDiff_orthogonalProjectionOnto_orthogonalNormalSpace {r : ℕ} {f : 
     ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, Fin r → ℝ)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
         (⟨p.proj, (orthogonalNormalSpace I J f p.proj).orthogonalProjectionOnto p.2⟩ :
-          TotalSpace (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) := fun p ↦
+          TotalSpace (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) := fun p ↦ by
   have := finiteDimensional_of_injective_mfderiv (hinj p.proj)
-  contMDiffAt_orthogonalNormalSpace_mk hf hinj hm hr le_rfl
-    (contMDiffAt_starProjection_orthogonalNormalSpace (hf p.proj) (hinj p.proj) hm)
-    fun q ↦ (orthogonalNormalSpace I J f q.proj).starProjection_apply_mem
-      (q.2 : TangentSpace J (f q.proj))
+  -- The values in `f *ᵖ TN` are the normal projections (`Submodule.starProjection_apply`).
+  have hw := (contMDiffAt_starProjection_orthogonalNormalSpace (hf p.proj) (hinj p.proj) hm
+    ).congr_of_eventuallyEq <| .of_forall fun q ↦ congrArg (TotalSpace.mk q.proj)
+      ((orthogonalNormalSpace I J f q.proj).starProjection_apply (q.2 : TangentSpace J _)).symm
+  exact contMDiffAt_orthogonalNormalSpace_mk hf hinj hm hr le_rfl hw
+    fun q ↦ ((orthogonalNormalSpace I J f q.proj).orthogonalProjectionOnto q.2).2
 
 end TauCeti

@@ -218,7 +218,7 @@ theorem contMDiff_orthogonalSpan_decompose :
       contMDiff_id) p).congr_of_eventuallyEq (Filter.Eventually.of_forall fun q ↦ by
         simp only [Pi.smul_apply', real_inner_self_eq_norm_sq]
         rfl)
-  · exact hV.contMDiffAt_totalSpace_mk
+  · exact hV.contMDiffAt_totalSpace_mk le_rfl
       (g.contMDiff_starProjection_orthogonal_span_singleton hI s hs hne p) _
 
 /-- **Splitting off the line of a nowhere-zero section.** For a nowhere-zero smooth section `s`
@@ -510,7 +510,7 @@ theorem contMDiff_orthogonalSpanFamily_decompose
     -- The trivialization of `Bundle.Trivial B (ι → ℂ)` is the identity on the fibre coordinate.
     exact contMDiffAt_pi_module_iff.mpr fun i ↦
       g.contMDiff_hermitianPairing hI ((hs i).comp hb) contMDiff_id p
-  · exact hV.contMDiffAt_totalSpace_mk (g.contMDiff_sub_sum_inner_smul hI s hs p) _
+  · exact hV.contMDiffAt_totalSpace_mk le_rfl (g.contMDiff_sub_sum_inner_smul hI s hs p) _
 
 /-- **Splitting off the span of an orthonormal family.** For a pointwise orthonormal family `s` of
 smooth sections of a smooth Hermitian bundle `V`, the map `(x, c, w) ↦ ∑ i, c i • s i x + w` is a
