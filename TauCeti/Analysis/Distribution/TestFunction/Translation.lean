@@ -29,6 +29,8 @@ invariance of weak derivatives and distributional variation.
   functions.
 * `TauCeti.reflectTranslateTestFunction`: the reflected translate `t ↦ ρ (y - t)` of a smooth
   compactly supported function, as a test function on `Omega`.
+* `TauCeti.fderiv_reflectTranslateTestFunction`, `TauCeti.lineDeriv_reflectTranslateTestFunction`:
+  derivatives of the reflected translate.
 -/
 
 public section
@@ -135,5 +137,33 @@ theorem reflectTranslateTestFunction_apply (ρ : E → F) (y : E)
     (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hy : ∀ t ∈ tsupport ρ, y - t ∈ Omega)
     (t : E) : reflectTranslateTestFunction ρ y hρ hρc hy t = ρ (y - t) :=
   (rfl)
+
+/-- The reflected translate of `ρ` about `y` is the function `t ↦ ρ (y - t)`. -/
+theorem coe_reflectTranslateTestFunction (ρ : E → F) (y : E)
+    (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hy : ∀ t ∈ tsupport ρ, y - t ∈ Omega) :
+    ⇑(reflectTranslateTestFunction ρ y hρ hρc hy) = fun t ↦ ρ (y - t) :=
+  (rfl)
+
+/-- The Fréchet derivative of the reflected translate `t ↦ ρ (y - t)` is
+`t ↦ -fderiv ℝ ρ (y - t)`. -/
+@[simp]
+theorem fderiv_reflectTranslateTestFunction (ρ : E → F) (y : E)
+    (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hy : ∀ t ∈ tsupport ρ, y - t ∈ Omega)
+    (t : E) :
+    fderiv ℝ (reflectTranslateTestFunction ρ y hρ hρc hy : E → F) t = -fderiv ℝ ρ (y - t) := by
+  rw [coe_reflectTranslateTestFunction]
+  simpa [Function.comp_def] using ((hρ.differentiable (by simp) (y - t)).hasFDerivAt.comp t
+    ((hasFDerivAt_id t).const_sub y)).fderiv
+
+/-- The directional derivative of the reflected translate `t ↦ ρ (y - t)` in the direction `v`
+is `-fderiv ℝ ρ (y - t) v`. -/
+@[simp]
+theorem lineDeriv_reflectTranslateTestFunction (ρ : E → F) (y : E)
+    (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hy : ∀ t ∈ tsupport ρ, y - t ∈ Omega)
+    (t v : E) :
+    lineDeriv ℝ (reflectTranslateTestFunction ρ y hρ hρc hy : E → F) t v =
+      -fderiv ℝ ρ (y - t) v := by
+  rw [((reflectTranslateTestFunction ρ y hρ hρc hy).contDiff.differentiable (by simp)
+    t).lineDeriv_eq_fderiv, fderiv_reflectTranslateTestFunction, neg_apply]
 
 end TauCeti

@@ -45,14 +45,9 @@ theorem conjWirtingerDeriv_convolution_right_of_integral_eq
     (hx : ∀ y ∈ tsupport ρ, x - y ∈ Ω) :
     conjWirtingerDeriv (u ⋆[(lsmul ℝ ℝ).flip] ρ) x 1 =
       (f ⋆[(lsmul ℝ ℝ).flip] ρ) x := by
-  have hφ : ⇑(reflectTranslateTestFunction ρ x hρ hρc hx) = fun z ↦ ρ (x - z) :=
-    funext (reflectTranslateTestFunction_apply ρ x hρ hρc hx)
-  have hline (z v : ℂ) : lineDeriv ℝ (fun t ↦ ρ (x - t)) z v =
-      -fderiv ℝ ρ (x - z) v := by
-    simpa [Function.comp_def] using ((hρ.differentiable (by simp) (x - z)).hasFDerivAt.comp z
-      ((hasFDerivAt_id z).const_sub x)).hasLineDerivAt v |>.lineDeriv
   have hweak := h (reflectTranslateTestFunction ρ x hρ hρc hx)
-  simp only [hφ, hline, neg_smul, integral_neg, smul_neg] at hweak
+  simp only [lineDeriv_reflectTranslateTestFunction, reflectTranslateTestFunction_apply, neg_smul,
+    integral_neg, smul_neg] at hweak
   have hd := hρc.hasFDerivAt_convolution_right (lsmul ℝ ℝ).flip hu (hρ.of_le (by simp)) x
   have hD (v : ℂ) : fderiv ℝ (u ⋆[(lsmul ℝ ℝ).flip] ρ) x v =
       ∫ z, fderiv ℝ ρ (x - z) v • u z := by

@@ -80,14 +80,10 @@ theorem HasWeakLineDerivOn.hasLineDerivAt_convolution_right {u u' : E → F} {v 
     (hrho_cpt : HasCompactSupport rho) (x : E)
     (hx : ∀ y ∈ tsupport rho, x - y ∈ Omega) :
     HasLineDerivAt ℝ (u ⋆[(lsmul ℝ ℝ).flip, mu] rho) ((u' ⋆[(lsmul ℝ ℝ).flip, mu] rho) x) x v := by
-  have hφ : ⇑(reflectTranslateTestFunction rho x hrho hrho_cpt hx) = fun t ↦ rho (x - t) :=
-    funext (reflectTranslateTestFunction_apply rho x hrho hrho_cpt hx)
-  have hline (t : E) : lineDeriv ℝ (fun s ↦ rho (x - s)) t v = -fderiv ℝ rho (x - t) v := by
-    simpa [Function.comp_def] using ((hrho.differentiable (by simp) (x - t)).hasFDerivAt.comp t
-      ((hasFDerivAt_id t).const_sub x)).hasLineDerivAt v |>.lineDeriv
   have hweak := h.integral_lineDeriv_smul_eq_neg_integral_smul
     (reflectTranslateTestFunction rho x hrho hrho_cpt hx)
-  simp only [hφ, hline, neg_smul, integral_neg, neg_inj] at hweak
+  simp only [lineDeriv_reflectTranslateTestFunction, reflectTranslateTestFunction_apply, neg_smul,
+    integral_neg, neg_inj] at hweak
   convert (hrho_cpt.hasFDerivAt_convolution_right (lsmul ℝ ℝ).flip hu
     (hrho.of_le (by simp)) x).hasLineDerivAt v using 1
   rw [convolution_precompR_apply (lsmul ℝ ℝ).flip hu (hrho_cpt.fderiv ℝ)
