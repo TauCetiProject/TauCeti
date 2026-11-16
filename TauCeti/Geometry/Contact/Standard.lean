@@ -52,7 +52,9 @@ coordinates
 the vectors
 `(u, v, w)` with `w = ⟪p, u⟫` (`TauCeti.mem_kerDistribution_innerProductContactForm`). The proof of
 contactness tests a kernel vector `(u, v, w)` against the kernel vectors `(0, u, 0)` and
-`(v, 0, ⟪p, v⟫)`, on which `dα` takes the values `‖u‖²` and `-‖v‖²`.
+`(v, 0, ⟪p, v⟫)`, on which `dα` takes the values `‖u‖²` and `-‖v‖²`. When `V` is
+finite-dimensional, its Reeb vector field is the constant vector `(0, 0, 1)`
+(`TauCeti.reebVectorField_innerProductContactForm`).
 
 For `V = ℝ` this is the form `dz - x dy` above in the coordinates `(q, p, z) = (y, x, z)`
 (`TauCeti.mpullback_innerProductContactForm_real`). The linear map
@@ -369,6 +371,18 @@ theorem isContactForm_innerProductContactForm : (innerProductContactForm V).IsCo
   rw [innerProductContactForm_apply, sub_eq_zero, h₁, inner_zero_right] at hv
   -- The zero tangent vector is by definition the zero of `V × V × ℝ`.
   exact Prod.ext h₁ (Prod.ext h₂ hv)
+
+/-- The Reeb vector field of the standard contact form `dz - ⟪p, dq⟫` on a finite-dimensional
+inner product space is the constant vector `(0, 0, 1)`. -/
+@[simp]
+theorem reebVectorField_innerProductContactForm [FiniteDimensional ℝ V] (x : V × V × ℝ) :
+    ((innerProductContactForm V).reebVectorField x : V × V × ℝ) = (0, 0, 1) := by
+  obtain ⟨e, he⟩ : ∃ e : TangentSpace 𝓘(ℝ, V × V × ℝ) x, e = ((0, 0, 1) : V × V × ℝ) := ⟨_, rfl⟩
+  have key : e = (innerProductContactForm V).reebVectorField x :=
+    (isContactForm_innerProductContactForm V).eq_reebVectorField_iff.2
+      ⟨by rw [innerProductContactForm_apply, he]; simp,
+        fun w ↦ by rw [mextDeriv_innerProductContactForm_apply, he]; simp⟩
+  exact key.symm.trans he
 
 /-- On `ℝ^(2n+1) = ℝⁿ × ℝⁿ × ℝ`, the standard contact form is `dz - Σᵢ pᵢ dqᵢ`. -/
 theorem innerProductContactForm_euclideanSpace_apply {n : ℕ}
