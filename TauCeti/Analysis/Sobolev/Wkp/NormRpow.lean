@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.MeasureTheory.Integral.NormRpow
@@ -63,7 +64,7 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Meas
 /-- **The weak Hessian of a norm power.** For `s > 2 - dim E`, the weak Hessian of an element of
 `W^{2,p}(Ω)` equal to `‖x‖ ^ s` is, almost everywhere on `Ω`, its classical Hessian
 `w ↦ s ‖x‖ ^ (s - 2) w + s (s - 2) ‖x‖ ^ (s - 4) ⟪x, w⟫ x`, although that Hessian is only defined
-away from the origin and is unbounded there for `s < 2`. -/
+away from the origin and, for `s < 2` with `s ≠ 0`, is unbounded there. -/
 theorem Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_norm_rpow
     (hs : 2 - (Module.finrank ℝ E : ℝ) < s) (W : Wkp μ Ω p 2)
     (hW : Wkp.value 2 W =ᵐ[μ.restrict Ω] fun x => ‖x‖ ^ s) :
@@ -127,13 +128,11 @@ private theorem le_norm_normRpowHessian (hs : 2 - (Module.finrank ℝ E : ℝ) <
       laplacian_norm_rpow_of_ne s hx]
     ring
   have hle : |s * (Module.finrank ℝ E + s - 2) * ‖x‖ ^ (s - 2)| ≤ Module.finrank ℝ E * ‖H‖ := by
-    rw [← htr]
-    refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
-    calc ∑ i, |⟪H (b i), b i⟫| ≤ ∑ _i : Fin (Module.finrank ℝ E), ‖H‖ := by
-          refine Finset.sum_le_sum fun i _ => ?_
-          refine (abs_real_inner_le_norm _ _).trans ?_
-          simpa only [b.orthonormal.1 i, mul_one] using H.le_opNorm (b i)
-      _ = Module.finrank ℝ E * ‖H‖ := by simp
+    have htrH : traceCLM ℝ E H = ∑ i, ⟪H (b i), b i⟫ := by
+      rw [traceCLM_apply, LinearMap.trace_eq_sum_inner _ b]
+      simp only [ContinuousLinearMap.coe_coe, real_inner_comm]
+    rw [← htr, ← htrH, ← Real.norm_eq_abs]
+    exact H.norm_traceCLM_le
   rw [abs_mul, abs_mul, abs_of_pos (by linarith : (0 : ℝ) < Module.finrank ℝ E + s - 2),
     abs_of_nonneg (by positivity : (0 : ℝ) ≤ ‖x‖ ^ (s - 2))] at hle
   rw [div_mul_eq_mul_div, div_le_iff₀ hd]

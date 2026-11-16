@@ -34,9 +34,10 @@ for `p < n / (2 - γ)`, an exponent strictly between `n / 2` and `n`
 (`TauCeti.exists_wkp_two_value_ae_eq_norm_rpow_iff`).
 
 So for coefficients that are bounded, measurable and uniformly elliptic but discontinuous, a
-`W^{2,p₀}` strong solution of `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = 0` need not lie in `W^{2,p}` for `p > p₀`, not
-even for `p = n`: the interior `W^{2,p}` regularity of strong solutions needs a regularity
-hypothesis on the coefficients, such as continuity, under which the interior estimate of
+`W^{2,p₀}` strong solution of `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = 0` with `p₀ < n` need not lie in `W^{2,p}` for
+any `p > p₀` with `p > n / 2`, not even for `p = n`: the interior `W^{2,p}` regularity of
+strong solutions needs a regularity hypothesis on the coefficients, such as continuity, under
+which the interior estimate of
 `TauCeti/Analysis/PDE/Regularity/Hessian/ContinuousCoefficient.lean` holds, or vanishing mean
 oscillation. The ellipticity ratio `1 + b` of the counterexample tends to infinity as
 `n / (2 - γ)` approaches `n`.
