@@ -72,12 +72,6 @@ namespace TauCeti.QuaternionicProjectiveSpace
 
 variable {n : ℕ} (v : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1)
 
-/-- The sphere `S⁴ⁿ⁺³` of `ℍⁿ⁺¹` lives in a real vector space of dimension `(4n + 3) + 1`. -/
-private lemma finrank_piLp_quaternion_fin :
-    finrank ℝ (PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) = (4 * n + 3) + 1 := by
-  rw [finrank_piLp_quaternion, Fintype.card_fin]
-  ring
-
 /-- **The homology of `ΩHPⁿ` vanishes in the degrees `1, 2` and `4, …, 4n + 1`**, with
 coefficients in any ring, for `n ≥ 1`. -/
 theorem isZero_singularHomology_mooreLoopSpace (hn : n ≠ 0) (R : Type) [Ring R] {k : ℕ}
@@ -91,8 +85,8 @@ theorem isZero_singularHomology_mooreLoopSpace (hn : n ≠ 0) (R : Type) [Ring R
   -- `ΩHPⁿ` is weakly equivalent to `S³ × ΩS⁴ⁿ⁺³`, whose `H_k` vanishes with `H_k` and `H_{k-3}`
   -- of `ΩS⁴ⁿ⁺³`; below degree `3` only `H_k` of `ΩS⁴ⁿ⁺³` contributes.
   have hY {m : ℕ} (hm₀ : m ≠ 0) (hm : m < 4 * n + 2) :=
-    isZero_singularHomology_mooreLoopSpace_sphere finrank_piLp_quaternion_fin v R hm₀
-      (by omega)
+    isZero_singularHomology_mooreLoopSpace_sphere (finrank_piLp_quaternion_fin_succ 2 n) v R
+      hm₀ (by omega)
   rcases lt_or_gt_of_ne hk₃ with hk3 | hk3
   · exact (isZero_singularHomology_sphere_prod_iff_of_lt _ Quaternion.finrank_eq_four hk3).2
       (hY hk₀ hk)
@@ -112,8 +106,8 @@ theorem isIso_singularHomologyMap_mooreLoopSpaceMap (hn : n ≠ 0) (R : Type) [R
   have := (isIso_singularHomologyMap_prodMk_sphere_iff (ModuleCat.of R R)
     (B := MooreLoopSpace (sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) v)
     Quaternion.finrank_eq_four 1 (n := 4 * n - 1) (m := 4 * n + 2) (by omega)).2
-    (isZero_singularHomology_mooreLoopSpace_sphere finrank_piLp_quaternion_fin v R (by omega)
-      (by omega))
+    (isZero_singularHomology_mooreLoopSpace_sphere (finrank_piLp_quaternion_fin_succ 2 n) v R
+      (by omega) (by omega))
   infer_instance
 
 /-! ### The integral generator -/
