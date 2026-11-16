@@ -337,9 +337,7 @@ theorem energyFormH1_extendByZeroL_posPart_le_setIntegral {Omega' : Opens (Eucli
       W1p.value v x) = (Omega : Set (EuclideanSpace ℝ ι)).indicator
         (fun x => max (f x) 0 * W1p.value v x) := by
     funext x
-    by_cases hx : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
-    · rw [indicator_of_mem hx, indicator_of_mem hx]
-    · rw [indicator_of_notMem hx, indicator_of_notMem hx, zero_mul]
+    exact (indicator_mul_left _ _ _).symm
   have hrestr : ∀ᵐ x ∂mu.restrict Omega,
       max (f x) 0 * W1p.value v x = max (f x) 0 * W1p.value (W1p.restrictL hsub v) x := by
     filter_upwards [W1p.value_restrictL_ae hsub v] with x hx
@@ -465,10 +463,7 @@ private theorem energyFormH1_restrictL_sub_nonpos [Nonempty ι] {U : Opens (Eucl
     rw [W1p0.value_extendByZeroL]
     filter_upwards [hext, ae_restrict_of_ae ((ae_restrict_iff' hUm).1 hv)] with x hx hxv
     rw [hx]
-    by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
-    · rw [indicator_of_mem hxU]
-      exact hxv hxU
-    · rw [indicator_of_notMem hxU]
+    exact indicator_apply_nonneg hxv
   have hint : Integrable (fun x => g x * W1p.value (W1p0.extendByZeroL hU v : W1p mu ⊤ 2) x)
       (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
     have hind : Integrable ((U : Set (EuclideanSpace ℝ ι)).indicator
@@ -480,9 +475,7 @@ private theorem energyFormH1_restrictL_sub_nonpos [Nonempty ι] {U : Opens (Eucl
     rw [W1p0.value_extendByZeroL]
     filter_upwards [hext] with x hx
     rw [hx]
-    by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
-    · rw [indicator_of_mem hxU, indicator_of_mem hxU]
-    · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, mul_zero]
+    exact indicator_mul_right _ _ _
   have hle : energyFormH1 a' 0 0 (W1p.restrictL hU ub) (v : W1p mu U 2) ≤
       ∫ x in U, g x * W1p.value (v : W1p mu U 2) x ∂mu := by
     rw [energyFormH1_restrictL a' 0 0 hU ub v]
@@ -834,24 +827,13 @@ theorem exists_ae_abs_value_le_pow_mul_of_mul_measureReal_le_measureReal_ball_di
       (lam := lam) (Lam := Lam) hθ
   refine ⟨δ, hδ0, hδ1, ?_⟩
   intro Omega a u x₀ R M h ha hu0 hu hR hle hext j
-  have hneg : ∀ᵐ x ∂mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ (R / 4 ^ j)),
-      W1p.value (-u) x = -W1p.value u x :=
-    ae_restrict_of_ae_restrict_of_subset inter_subset_left (W1p.value_neg_ae u)
+  rw [W1p.ae_abs_value_le_iff inter_subset_left] at hle ⊢
   -- Both `u` and `-u` are subsolutions vanishing on the boundary.
-  have hpos := hdecay h ha (W1p.posPart_mem_w1p0Submodule (by norm_num) hu0)
-    (fun v _ => (hu v).le) hR (by filter_upwards [hle] with x hx using (abs_le.1 hx).2) hext j
-  have hneg' := hdecay h ha
-    (W1p.posPart_mem_w1p0Submodule (by norm_num)
+  exact ⟨hdecay h ha (W1p.posPart_mem_w1p0Submodule (by norm_num) hu0)
+    (fun v _ => (hu v).le) hR hle.1 hext j,
+    hdecay h ha (W1p.posPart_mem_w1p0Submodule (by norm_num)
       ((w1p0Submodule mu Omega 2).toSubmodule.neg_mem hu0))
-    (fun v _ => by rw [energyFormH1_neg_left, hu v, neg_zero]) hR
-    (by
-      filter_upwards [hle, ae_restrict_of_ae_restrict_of_subset inter_subset_left
-        (W1p.value_neg_ae u)] with x hx hx'
-      rw [hx', Pi.neg_apply]
-      exact neg_le.1 (abs_le.1 hx).1) hext j
-  filter_upwards [hpos, hneg', hneg] with x h1 h2 h3
-  rw [h3] at h2
-  exact abs_le.2 ⟨neg_le.1 h2, h1⟩
+    (fun v _ => by rw [energyFormH1_neg_left, hu v, neg_zero]) hR hle.2 hext j⟩
 
 /-- The discrete form of the decay at the boundary with a right-hand side: iterating the
 reduction of the supremum `u ≤ (1 - δ) M + K t^γ ‖f‖ / λ` from `B(x₀, 2t)` to `B(x₀, t/2)` along
@@ -1071,28 +1053,18 @@ theorem exists_ae_abs_value_le_mul_rpow_mul_add_of_mul_measureReal_le_measureRea
   · -- For `M < 0` the hypothesis says that `Ω ∩ B(x₀, R)` is null.
     filter_upwards [ae_restrict_of_ae_restrict_of_subset hsub hle] with x hx
     exact absurd ((abs_nonneg _).trans hx) (not_le.2 hM)
-  have hneg : ∀ᵐ x ∂mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ R),
-      W1p.value (-u) x = -W1p.value u x :=
-    ae_restrict_of_ae_restrict_of_subset inter_subset_left (W1p.value_neg_ae u)
+  rw [W1p.ae_abs_value_le_iff inter_subset_left] at hle ⊢
   -- Both `u` and `-u` are subsolutions vanishing on the boundary, with data `f` and `-f`.
-  have hpos := hdecay h ha hf (W1p.posPart_mem_w1p0Submodule (by norm_num) hu0)
-    (fun v _ => (hu v).le) hρ hρR hM
-    (by filter_upwards [hle] with x hx using (abs_le.1 hx).2) hext
-  have hneg' := hdecay (u := -u) (f := -f) h ha hf.neg
+  have hneg := hdecay (u := -u) (f := -f) h ha hf.neg
     (W1p.posPart_mem_w1p0Submodule (by norm_num)
       ((w1p0Submodule mu Omega 2).toSubmodule.neg_mem hu0))
     (fun v _ => by
       rw [energyFormH1_neg_left, hu v]
       simp only [Pi.neg_apply, neg_mul, integral_neg, le_refl])
-    hρ hρR hM
-    (by
-      filter_upwards [hle, hneg] with x hx hx'
-      rw [hx']
-      exact neg_le.1 (abs_le.1 hx).1) hext
-  rw [eLpNorm_neg] at hneg'
-  filter_upwards [hpos, hneg', ae_restrict_of_ae_restrict_of_subset hsub hneg] with x h1 h2 h3
-  rw [h3] at h2
-  exact abs_le.2 ⟨neg_le.1 h2, h1⟩
+    hρ hρR hM hle.2 hext
+  rw [eLpNorm_neg] at hneg
+  exact ⟨hdecay h ha hf (W1p.posPart_mem_w1p0Submodule (by norm_num) hu0)
+    (fun v _ => (hu v).le) hρ hρR hM hle.1 hext, hneg⟩
 
 end PDE
 

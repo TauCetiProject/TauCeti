@@ -542,18 +542,6 @@ theorem exists_ae_value_le_add_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr 
       rw [hpow]
       ring
 
-omit [DecidableEq ι] in
-/-- A bound from above for `u` and for `-u` is a bound for `|u|`. This is how the two-sided bounds
-for weak Dirichlet solutions follow from the one-sided bounds. -/
-private theorem ae_abs_value_le_of_ae_value_le_of_ae_value_neg_le {u : W1p mu Omega 2} {B : ℝ}
-    (hup : ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ B)
-    (hlo : ∀ᵐ x ∂mu.restrict Omega, W1p.value (-u) x ≤ B) :
-    ∀ᵐ x ∂mu.restrict Omega, |W1p.value u x| ≤ B := by
-  filter_upwards [hup, hlo, W1p.value_neg_ae u] with x h₁ h₂ h₃
-  rw [h₃, Pi.neg_apply] at h₂
-  rw [abs_le]
-  constructor <;> linarith
-
 /-- **Global boundedness of weak Dirichlet solutions, in every dimension.** Let `n ≥ 1` be the
 dimension and let `r > 1` with `r > n/2`. There is `C > 0`, depending only on `n`, `r` and the
 normalization of `mu`, such that on every `Ω` of finite measure, for measurable, uniformly
@@ -598,7 +586,7 @@ theorem exists_ae_abs_value_le_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr 
   have hnorm : eLpNorm (fun x => -f x) r (mu.restrict Omega) = eLpNorm f r (mu.restrict Omega) :=
     eLpNorm_neg _ _ _
   rw [hnorm] at hlo
-  simpa only [zero_add] using ae_abs_value_le_of_ae_value_le_of_ae_value_neg_le hup hlo
+  simpa only [zero_add] using (W1p.ae_abs_value_le_iff subset_rfl).2 ⟨hup, hlo⟩
 
 
 /-! ### A right-hand side in divergence form -/
@@ -858,6 +846,6 @@ theorem exists_ae_abs_value_le_mul_div_mul_rpow_divergence [Nonempty ι] {q : �
   have hnorm : eLpNorm (fun x => -F x) q (mu.restrict Omega) = eLpNorm F q (mu.restrict Omega) :=
     eLpNorm_neg _ _ _
   rw [hnorm] at hlo
-  simpa only [zero_add] using ae_abs_value_le_of_ae_value_le_of_ae_value_neg_le hup hlo
+  simpa only [zero_add] using (W1p.ae_abs_value_le_iff subset_rfl).2 ⟨hup, hlo⟩
 
 end TauCeti.PDE
