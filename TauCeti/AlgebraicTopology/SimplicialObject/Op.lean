@@ -14,7 +14,9 @@ Mathlib's `SimplicialObject.opFunctor` precomposes a simplicial object with the 
 involution `SimplexCategory.rev`, so that its `i`th face and degeneracy become the original
 ones at the reversed index `i.rev`. Since `SimplexCategory.rev` fixes every object, the
 augmentation of an augmented simplicial object can be kept unchanged. This gives the
-reversal `SimplicialObject.Augmented.opFunctor` of augmented simplicial objects.
+reversal `SimplicialObject.Augmented.opFunctor` of augmented simplicial objects. Like its
+non-augmented counterpart it is an involution, so it is an equivalence
+`SimplicialObject.Augmented.opEquivalence`.
 
 Mathlib's `SimplicialObject.Augmented.ExtraDegeneracy` splits the zeroth faces. After reversal,
 a family of maps splitting the *last* faces, such as the one a split counit gives on a comonad
@@ -51,8 +53,13 @@ def opFunctor : Augmented C ⥤ Augmented C where
 @[simp] lemma opFunctor_obj_right (X : Augmented C) :
     (opFunctor.obj X).right = X.right := (rfl)
 
+-- Not `simp`: the lemmas below on the augmentation, on morphisms and on the involution
+-- `opFunctorCompOpFunctorIso` identify morphisms of the reversed objects with morphisms of the
+-- original ones only up to unfolding `opFunctor`, and as `simp` lemmas they would stop lemmas
+-- about the reversed objects, such as `ExtraDegeneracy.s'_comp_ε`, from applying.
+
 /-- The reversed augmentation is the original augmentation. -/
-@[simp] lemma opFunctor_obj_hom_app (X : Augmented C) (n : SimplexCategoryᵒᵖ) :
+lemma opFunctor_obj_hom_app (X : Augmented C) (n : SimplexCategoryᵒᵖ) :
     (opFunctor.obj X).hom.app n = X.hom.app n := (rfl)
 
 -- Not `simp`: `opFunctor_obj_left` already normalizes these left sides.
@@ -72,10 +79,53 @@ lemma opFunctor_obj_left_σ (X : Augmented C) {n : ℕ} (i : Fin (n + 1)) :
   (SimplicialObject.opFunctor_obj_σ X.left i).trans
     ((Category.id_comp _).trans (Category.comp_id _))
 
-@[simp] lemma opFunctor_map_left {X Y : Augmented C} (f : X ⟶ Y) :
+lemma opFunctor_map_left {X Y : Augmented C} (f : X ⟶ Y) :
     (opFunctor.map f).left = SimplicialObject.opFunctor.map f.left := (rfl)
 
-@[simp] lemma opFunctor_map_right {X Y : Augmented C} (f : X ⟶ Y) :
+/-- The components of a reversed morphism are the original components. -/
+lemma opFunctor_map_left_app {X Y : Augmented C} (f : X ⟶ Y) (n : SimplexCategoryᵒᵖ) :
+    (opFunctor.map f).left.app n = f.left.app n := (rfl)
+
+lemma opFunctor_map_right {X Y : Augmented C} (f : X ⟶ Y) :
     (opFunctor.map f).right = f.right := (rfl)
+
+/-- The reversal of augmented simplicial objects is an involution. -/
+def opFunctorCompOpFunctorIso : opFunctor (C := C) ⋙ opFunctor ≅ 𝟭 _ :=
+  NatIso.ofComponents
+    (fun X ↦ Comma.isoMk (SimplicialObject.opFunctorCompOpFunctorIso.app X.left) (Iso.refl X.right)
+      (by
+        ext n
+        rw [NatTrans.comp_app, NatTrans.comp_app, Functor.id_map, Iso.app_hom,
+          SimplicialObject.opFunctorCompOpFunctorIso_hom_app_app]
+        exact (Category.id_comp (𝟙 (X.left.obj n)) =≫ X.hom.app n).trans
+          ((Category.id_comp (X.hom.app n)).trans (Category.comp_id (X.hom.app n)).symm)))
+    (fun f ↦ hom_ext _ _ (SimplicialObject.opFunctorCompOpFunctorIso.hom.naturality f.left)
+      ((Category.comp_id f.right).trans (Category.id_comp f.right).symm))
+
+lemma opFunctorCompOpFunctorIso_hom_app_left (X : Augmented C) :
+    (opFunctorCompOpFunctorIso.hom.app X).left =
+      SimplicialObject.opFunctorCompOpFunctorIso.hom.app X.left := (rfl)
+
+lemma opFunctorCompOpFunctorIso_hom_app_right (X : Augmented C) :
+    (opFunctorCompOpFunctorIso.hom.app X).right = 𝟙 X.right := (rfl)
+
+lemma opFunctorCompOpFunctorIso_inv_app_left (X : Augmented C) :
+    (opFunctorCompOpFunctorIso.inv.app X).left =
+      SimplicialObject.opFunctorCompOpFunctorIso.inv.app X.left := (rfl)
+
+lemma opFunctorCompOpFunctorIso_inv_app_right (X : Augmented C) :
+    (opFunctorCompOpFunctorIso.inv.app X).right = 𝟙 X.right := (rfl)
+
+/-- The reversal of augmented simplicial objects as an equivalence of categories. -/
+@[simps]
+def opEquivalence : Augmented C ≌ Augmented C where
+  functor := opFunctor
+  inverse := opFunctor
+  unitIso := opFunctorCompOpFunctorIso.symm
+  counitIso := opFunctorCompOpFunctorIso
+  functor_unitIso_comp X := hom_ext _ _
+    (SimplicialObject.opEquivalence.functor_unitIso_comp X.left) (Category.id_comp _)
+
+instance : (opFunctor (C := C)).IsEquivalence := opEquivalence.isEquivalence_functor
 
 end CategoryTheory.SimplicialObject.Augmented

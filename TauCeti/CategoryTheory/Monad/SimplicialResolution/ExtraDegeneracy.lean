@@ -48,9 +48,12 @@ def resolutionInnerMap : ∀ n : ℕ, (G.resolutionStage n).obj X ⟶ (G.resolut
   | 0 => a
   | n + 1 => G.map (resolutionInnerMap n)
 
-@[simp] lemma resolutionInnerMap_zero : G.resolutionInnerMap a 0 = a := (rfl)
+-- Not `simp`: the stages `G.resolutionStage n` are not reducible, so the two sides of these
+-- recursion lemmas have types that agree only up to unfolding them.
 
-@[simp] lemma resolutionInnerMap_succ (n : ℕ) :
+lemma resolutionInnerMap_zero : G.resolutionInnerMap a 0 = a := (rfl)
+
+lemma resolutionInnerMap_succ (n : ℕ) :
     G.resolutionInnerMap a (n + 1) = G.map (G.resolutionInnerMap a n) := (rfl)
 
 -- The recursive stages `G^(n+1) X` and `G (G^n X)` agree only definitionally, so the
