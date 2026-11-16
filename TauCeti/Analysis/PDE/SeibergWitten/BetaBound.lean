@@ -35,11 +35,11 @@ boundaryless Riemannian manifold from the two projected Weitzenböck inequalitie
 
   `-Δ|α|² / 2 + |∇_a α|² - (r / 4)(1 - |α|²)|α|² ≤ K₁`.
 
-The first inequality alone bounds `|β|²` by `(4 c² / r²) |∇_a α|²` up to lower-order terms,
-which is of order `1 / r` near the zeros of `α`, where `|∇_a α|²` may be of order `r`. To trade
-`|∇_a α|²` for the vacuum defect, consider `f = |β|² + (4 c² / r) |α|²`. At a maximum of `f` its
-Laplacian is nonpositive, and adding `4 c² / r` times the second inequality to the first cancels
-the gradient terms, leaving
+The first inequality alone bounds `|β|²` by a constant multiple of `(c² / r²) |∇_a α|²` up to
+lower-order terms, which is of order `1 / r` near the zeros of `α`, where `|∇_a α|²` may be of
+order `r`. To trade `|∇_a α|²` for the vacuum defect, consider `f = |β|² + (4 c² / r) |α|²`. At a
+maximum of `f` its Laplacian is nonpositive, and adding `4 c² / r` times the second inequality to
+the first cancels the gradient terms, leaving
 
 `(r / 16) (2 |α|² + 3) |β|² ≤ c² (1 - |α|²) |α|² + c² (3 + 4 K₁) / r`
 
