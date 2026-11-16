@@ -33,6 +33,9 @@ On an open set on which the limit is continuous, locally uniform convergence is 
 continuous convergence at every point of the set
 (`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`).
 
+Locally uniform convergence passes to subsequences, and more generally along any map of index
+filters (`TendstoLocallyUniformlyOn.comp_tendsto`).
+
 A family `Φ : α → δ → γ` that is jointly continuous at every point of `α × {q}` converges locally
 uniformly in its first argument as the second tends to `q`
 (`TauCeti.tendstoLocallyUniformly_of_forall_continuousAt`), with no local compactness assumption
@@ -58,6 +61,15 @@ theorem IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn {ι 
     ((hf.continuousAt (hs.mem_nhds hx)).tendsto).comp tendsto_snd
   refine ⟨fun h ↦ hfx.congr_uniformity h, fun h ↦ ?_⟩
   exact (hfx.prodMk_nhds h).mono_right (nhds_le_uniformity (f x))
+
+/-- **Locally uniform convergence along a finer index filter.** If `F i → f` locally uniformly on
+`s` as `i → l`, and `ψ` tends to `l` along `l'`, then `F (ψ j) → f` locally uniformly on `s` as
+`j → l'`; for instance along a subsequence `ψ` of a sequence. -/
+theorem TendstoLocallyUniformlyOn.comp_tendsto {ι κ α β : Type*} [TopologicalSpace α]
+    [UniformSpace β] {F : ι → α → β} {f : α → β} {l : Filter ι} {l' : Filter κ} {s : Set α}
+    (h : TendstoLocallyUniformlyOn F f l s) {ψ : κ → ι} (hψ : Tendsto ψ l' l) :
+    TendstoLocallyUniformlyOn (fun j ↦ F (ψ j)) f l' s := fun U hU x hx ↦
+  (h U hU x hx).imp fun _ ⟨ht, h'⟩ ↦ ⟨ht, hψ.eventually h'⟩
 
 variable {α β ι : Type*} [TopologicalSpace α] [PseudoMetricSpace β] {l : Filter ι}
   {F : ι → α → β} {u : α → β} {s : Set α}

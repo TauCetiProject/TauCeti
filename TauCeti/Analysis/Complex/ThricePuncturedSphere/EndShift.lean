@@ -150,9 +150,7 @@ theorem endCoord_endShift (q : Puncture) (L : ℝ) {w : ℂ} (hw : w ≠ q.endCe
 `±s`. -/
 theorem endSign_mul_re_endCoord_endShift (q : Puncture) (L : ℝ) {w : ℂ} (hw : w ≠ q.endCenter) :
     q.endSign * (q.endCoord (q.endShift L w)).re = q.endSign * (q.endCoord w).re + L := by
-  have hs : q.endSign * q.endSign = 1 := by
-    rcases q.endSign_eq_one_or_eq_neg_one with h | h <;> rw [h] <;> norm_num
-  rw [endCoord_endShift q L hw, Complex.add_re, Complex.ofReal_re, mul_add, ← mul_assoc, hs,
-    one_mul]
+  rw [endCoord_endShift q L hw, Complex.add_re, Complex.ofReal_re, mul_add,
+    endSign_mul_endSign_mul]
 
 end TauCeti.ThricePuncturedSphere.Puncture

@@ -333,9 +333,8 @@ theorem cappedPerturbation_endShift {q : Puncture} (hH : Function.Periodic (H q)
     rw [endShift_endCenter, h, h, zero_apply, zero_apply]
   · -- Write `w` as the end lift of its end coordinate `z`, and `v` as the image of a tangent
     -- vector of the cylinder at `z`.
-    have hc : w ≠ q.endCenter := q.ne_endCenter_of_re_endCoord_ne_zero fun h ↦ by
-      rw [h, mul_zero] at hw
-      norm_num at hw
+    have hc : w ≠ q.endCenter :=
+      q.ne_endCenter_of_endSign_mul_re_endCoord_pos (two_pos.trans_le hw)
     have hd := q.deriv_cylindricalEndLift_ne_zero (q.endCoord w)
     have key := cappedPerturbation_cylindricalEndLift_add_endSign_mul (a := a) hH hL hw x
       (v / deriv q.cylindricalEndLift (q.endCoord w))

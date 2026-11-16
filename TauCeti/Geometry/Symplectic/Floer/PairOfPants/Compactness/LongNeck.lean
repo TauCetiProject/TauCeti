@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capped
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Capped
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Compactness at the long-neck end of the capped comparison family
@@ -145,36 +146,6 @@ private theorem differentiableAt_cappedPerturbation_apply (hH : ∀ q, Periodic 
   ((contDiff_cappedPerturbation_apply hH hHs a L v).differentiable one_ne_zero
     ).differentiableAt.comp (f := fun y : V ↦ (z, y)) x
       ((differentiableAt_const _).prodMk differentiableAt_id)
-
-/-- **The energy of the comparison family on any region.** For `R ≥ 0`, the Floer energy over any
-set of a solution with symplectic area at most `A` is at most `A + 2 (B₀ + B₁ + B_∞)`. -/
-private theorem setIntegral_floerEnergyDensity_cappedComparisonPerturbation_le
-    (ω : SymplecticForm V) (h₀ : ω.Compatible J₀) (hJ : ∀ q t x, ω.Tames (J q t x))
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {R A : ℝ} (hR : 0 ≤ R)
-    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u)
-    (hfl : ∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (cappedComparisonAlmostComplex h₀ J hJ R (equivRealProdCLM.symm z) (u z))
-      (ω.perturbedFDeriv
-        (fun z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x I)
-        u z : ℝ × ℝ →ₗ[ℝ] V))
-    (hint : Integrable (ω.floerEnergyDensity
-      (fun z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x I) u))
-    (harea : ∫ z, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) ≤ A)
-    (S : Set (ℝ × ℝ)) :
-    ∫ z in S, ω.floerEnergyDensity
-      (fun z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x I) u z ≤
-        A + 2 * ∑ q, B q := by
-  have habs := ω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH hHs hB hR
-    hu hint
-  refine (setIntegral_le_integral hint (Eventually.of_forall fun z ↦
-    ω.floerEnergyDensity_nonneg ?_ (hfl z))).trans ?_
-  · rw [cappedComparisonAlmostComplex_def]
-    exact tames_cappedAlmostComplex h₀ _ _ _ _
-  · linarith [(abs_sub_le_iff.1 habs).1]
 
 /-- **The Floer equation on the PSS plane pieces.** For `R ≥ 2`, let `χ` be the translation
 `TauCeti.ThricePuncturedSphere.Puncture.endShift q (R - 1)` by the neck length along the end `q`. At
@@ -493,11 +464,6 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComp
   refine ⟨min δc (min (δp .zero) (min (δp .one) (δp .inf))),
     lt_min hδc (lt_min (hδp _) (lt_min (hδp _) (hδp _))),
     fun Ω Ω' R u A hΩ hΩT hΩ' hΩ'D hΩ'q hR2 hRT hu hfl huK huK' hint harea ↦ ?_⟩
-  -- Locally uniform convergence passes to subsequences.
-  have hsub {F : ℕ → ℝ × ℝ → V} {f : ℝ × ℝ → V} {s : Set (ℝ × ℝ)} {ψ : ℕ → ℕ}
-      (hψ : StrictMono ψ) (h : TendstoLocallyUniformlyOn F f atTop s) :
-      TendstoLocallyUniformlyOn (fun n ↦ F (ψ n)) f atTop s := fun U hU z hz ↦
-    (h U hU z hz).imp fun _ ⟨ht, h'⟩ ↦ ⟨ht, hψ.tendsto_atTop.eventually h'⟩
   have hcard {δ' : ℝ} (hδ' : min δc (min (δp .zero) (min (δp .one) (δp .inf))) ≤ δ')
       {Z₀ : Finset (ℝ × ℝ)} (h : Z₀.card * δ' ≤ A + 2 * ∑ q, B q) :
       Z₀.card * min δc (min (δp .zero) (min (δp .one) (δp .inf))) ≤ A + 2 * ∑ q, B q :=
@@ -521,12 +487,12 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComp
   refine ⟨φ₀ ∘ φ₁ ∘ φ₂ ∘ φ₃, Z, fun q ↦ match q with | .zero => Z₀ | .one => Z₁ | .inf => Z₂, v,
     fun q ↦ match q with | .zero => v₀ | .one => v₁ | .inf => v₂,
     hφ₀.comp (hφ₁.comp (hφ₂.comp hφ₃)), hZ, hcard (min_le_left _ _) hZE, hvc, hvK,
-    (hsub (hφ₁.comp (hφ₂.comp hφ₃)) hv :), ?_⟩
+    (hv.comp_tendsto (hφ₁.comp (hφ₂.comp hφ₃)).tendsto_atTop :), ?_⟩
   rintro (_ | _ | _)
   · exact ⟨hZ₀, hcard ((min_le_right _ _).trans (min_le_left _ _)) hZ₀E, hv₀c, hv₀K,
-      (hsub (hφ₂.comp hφ₃) hv₀ :)⟩
+      (hv₀.comp_tendsto (hφ₂.comp hφ₃).tendsto_atTop :)⟩
   · exact ⟨hZ₁, hcard ((min_le_right _ _).trans ((min_le_right _ _).trans (min_le_left _ _)))
-      hZ₁E, hv₁c, hv₁K, (hsub hφ₃ hv₁ :)⟩
+      hZ₁E, hv₁c, hv₁K, (hv₁.comp_tendsto hφ₃.tendsto_atTop :)⟩
   · exact ⟨hZ₂, hcard ((min_le_right _ _).trans ((min_le_right _ _).trans (min_le_right _ _)))
       hZ₂E, hv₂c, hv₂K, hv₂⟩
 

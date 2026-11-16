@@ -143,16 +143,10 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
   refine ⟨δ, hδ, fun Ω R u A hΩ hΩD hRC hu hfl huK hint harea ↦ ?_⟩
   -- The Floer energy over `Ω` is at most the energy over the plane, which exceeds the area by at
   -- most `2 (B₀ + B₁ + B_∞)`.
-  have hE (k : ℕ) : ∫ z in Ω, ω.floerEnergyDensity
-      (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x I) (u k) z ≤
-        A + 2 * ∑ q, B q := by
-    have habs := ω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH
-      (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀ (hRC k)) ((hu k).of_le (by norm_num))
-      (hint k)
-    refine (setIntegral_le_integral (hint k) (Eventually.of_forall fun z ↦
-      ω.floerEnergyDensity_nonneg (hJt _ _ _) (hfl k z))).trans ?_
-    linarith [(abs_sub_le_iff.1 habs).1, harea k]
+  have hE (k : ℕ) :=
+    ω.setIntegral_floerEnergyDensity_cappedComparisonPerturbation_le h₀ hJ hH
+      (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀ (hRC k)) ((hu k).of_le (by norm_num)) (hfl k)
+      (hint k) (harea k) Ω
   exact hconv hΩ hΩD hRC (fun k ↦ (hu k).contDiffOn) (fun k z _ ↦ hfl k z) huK
     (fun k ↦ (hint k).integrableOn) hE
 

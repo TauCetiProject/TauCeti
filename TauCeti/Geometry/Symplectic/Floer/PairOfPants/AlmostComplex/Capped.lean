@@ -329,9 +329,8 @@ theorem cappedAlmostComplex_endShift (h₀ : ω.Compatible J₀) (hJp : Function
     have h (L' : ℝ) := cappedAlmostComplex_eq_base_of_notMem_truncation (J := J) (hJ := hJ) h₀ r
       (notMem_truncation_of_eq_zero_or_eq_one q.endCenter_eq_zero_or_eq_one (L' + 3)) x
     rw [endShift_endCenter, h, h]
-  · have hc : w ≠ q.endCenter := q.ne_endCenter_of_re_endCoord_ne_zero fun h ↦ by
-      rw [h, mul_zero] at hw
-      norm_num at hw
+  · have hc : w ≠ q.endCenter :=
+      q.ne_endCenter_of_endSign_mul_re_endCoord_pos (two_pos.trans_le hw)
     have key := cappedAlmostComplex_cylindricalEndLift_add_endSign_mul (hJ := hJ) h₀ hJp r hL hw x
     rwa [cylindricalEndLift_add_endSign_mul, q.cylindricalEndLift_endCoord hc] at key
 

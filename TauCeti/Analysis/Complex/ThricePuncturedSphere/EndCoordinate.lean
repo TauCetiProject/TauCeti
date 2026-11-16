@@ -368,6 +368,11 @@ theorem ne_endCenter_of_re_endCoord_ne_zero (q : Puncture) {w : ℂ}
   rintro rfl
   exact h q.re_endCoord_endCenter
 
+/-- A point with positive signed longitudinal coordinate is not the center of the end. -/
+theorem ne_endCenter_of_endSign_mul_re_endCoord_pos (q : Puncture) {w : ℂ}
+    (h : 0 < q.endSign * (q.endCoord w).re) : w ≠ q.endCenter :=
+  q.ne_endCenter_of_re_endCoord_ne_zero (right_ne_zero_of_mul h.ne')
+
 /-- The angular coordinate of a point of an end. -/
 theorem im_endCoord (q : Puncture) (w : ℂ) :
     (q.endCoord w).im = -Complex.arg ((w - q.endCenter) / q.endScale) / (2 * π) := by
