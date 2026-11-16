@@ -12,6 +12,7 @@ import Mathlib.Algebra.Homology.HomotopyCategory.HomComplexShift
 import Mathlib.Algebra.Homology.HomotopyCategory.MappingCone
 import Mathlib.CategoryTheory.Limits.Constructions.EpiMono
 import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
+import TauCeti.Algebra.Homology.HomotopyCategory.ShiftSequence
 import TauCeti.AlgebraicGeometry.Modules.Sections
 import TauCeti.AlgebraicGeometry.Modules.Sheaf
 import TauCeti.Topology.Sheaves.Exact
@@ -592,18 +593,6 @@ end LocalLifting
 
 section LocalDerivedMaps
 
-/-- Shifting an acyclic cochain complex preserves acyclicity. -/
-private lemma acyclic_shift {C : Type*} [Category* C] [Abelian C]
-    {K : CochainComplex C ℤ} (hK : K.Acyclic) (a : ℤ) : (K⟦a⟧).Acyclic := by
-  intro i
-  rw [HomologicalComplex.exactAt_iff_isZero_homology]
-  refine (((HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) 0).shiftIso a i
-    (a + i) rfl).app K).isZero_iff.mpr ?_
-  -- `homologyFunctor.shift (a + i)` is definitionally `homologyFunctor (a + i)`.
-  change IsZero (K.homology (a + i))
-  rw [← HomologicalComplex.exactAt_iff_isZero_homology]
-  exact hK (a + i)
-
 /-- If `f ≫ s` is nullhomotopic for a quasi-isomorphism `s : M ⟶ M'`, then `f : P ⟶ M` factors
 through the acyclic complex `(mappingCone s)⟦-1⟧`. -/
 private lemma exists_acyclic_factorization_of_homotopy_comp_zero {C : Type*} [Category* C]
@@ -621,7 +610,8 @@ private lemma exists_acyclic_factorization_of_homotopy_comp_zero {C : Type*} [Ca
   let p : (CochainComplex.mappingCone s)⟦(-1 : ℤ)⟧ ⟶ M :=
     (Cocycle.equivHomShift' (-1) 1 (add_neg_cancel 1)).symm (CochainComplex.mappingCone.fst s)
   refine ⟨(CochainComplex.mappingCone s)⟦(-1 : ℤ)⟧,
-    acyclic_shift ((CochainComplex.quasiIso_iff_acyclic_mappingCone s).mp inferInstance) (-1),
+    ((CochainComplex.mappingCone s).acyclic_shift_iff (-1)).2
+      ((CochainComplex.quasiIso_iff_acyclic_mappingCone s).mp inferInstance),
     γ, p, ?_⟩
   refine HomologicalComplex.hom_ext _ _ fun i ↦ ?_
   have hγ : γ.f i = -(γ₀.1.v i (i - 1) (by omega) ≫
