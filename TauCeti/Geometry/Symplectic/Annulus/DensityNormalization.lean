@@ -162,10 +162,30 @@ theorem stripColumnMean_periodic (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x
     Periodic (stripColumnMean ρ) 1 := fun x ↦
   integral_congr fun y hy ↦ hper x y (by rwa [uIcc_of_le zero_le_one] at hy)
 
-theorem continuous_stripColumnMean (hρ : Continuous ρ) : Continuous (stripColumnMean ρ) :=
-  continuous_parametric_intervalIntegral_of_continuous' (f := fun x r ↦ ρ (x, r)) hρ 0 1
+/-- A function continuous on the strip agrees there with a function continuous on the plane: clamp
+the second coordinate to `[0, 1]`. -/
+private theorem exists_continuous_eqOn_univ_prod_Icc (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1)) :
+    ∃ ρ' : ℝ × ℝ → ℝ, Continuous ρ' ∧ EqOn ρ' ρ (univ ×ˢ Icc 0 1) :=
+  ⟨fun p ↦ ρ (p.1, projIcc 0 1 zero_le_one p.2),
+    hρ.comp_continuous (continuous_fst.prodMk (continuous_subtype_val.comp
+      ((continuous_projIcc (a := (0 : ℝ)) (b := 1) (h := zero_le_one)).comp continuous_snd)))
+      fun p ↦ ⟨mem_univ _, Subtype.coe_prop _⟩,
+    fun p hp ↦ by simp [projIcc_of_mem _ hp.2]⟩
 
-theorem continuous_stripAreaFraction (hρ : Continuous ρ) : Continuous (stripAreaFraction ρ) :=
+/-- The column means only read `ρ` on the strip. -/
+private theorem stripColumnMean_congr {ρ' : ℝ × ℝ → ℝ} (h : EqOn ρ' ρ (univ ×ˢ Icc 0 1)) :
+    stripColumnMean ρ' = stripColumnMean ρ :=
+  funext fun x ↦ integral_congr fun y hy ↦
+    h ⟨mem_univ _, by rwa [uIcc_of_le zero_le_one] at hy⟩
+
+theorem continuous_stripColumnMean (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1)) :
+    Continuous (stripColumnMean ρ) := by
+  obtain ⟨ρ', hρ', h⟩ := exists_continuous_eqOn_univ_prod_Icc hρ
+  rw [← stripColumnMean_congr h]
+  exact continuous_parametric_intervalIntegral_of_continuous' (f := fun x r ↦ ρ' (x, r)) hρ' 0 1
+
+theorem continuous_stripAreaFraction (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1)) :
+    Continuous (stripAreaFraction ρ) :=
   continuous_const.mul (continuous_primitive
     (fun _ _ ↦ (continuous_stripColumnMean hρ).intervalIntegrable _ _) 0)
 
@@ -181,7 +201,7 @@ theorem continuous_stripDensityNormalization_curry_right (hρ : Continuous ρ) (
 
 /-- For a density `1`-periodic on the strip, `u(x + 1) = u(x) + 1`: the area fraction is the
 lift of a degree-one map of the circle. -/
-theorem stripAreaFraction_add_one (hρ : Continuous ρ)
+theorem stripAreaFraction_add_one (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1))
     (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y)) (ha : annulusArea ρ ≠ 0) (x : ℝ) :
     stripAreaFraction ρ (x + 1) = stripAreaFraction ρ x + 1 := by
   have hc := continuous_stripColumnMean hρ
@@ -193,7 +213,7 @@ theorem stripAreaFraction_add_one (hρ : Continuous ρ)
   rw [stripAreaFraction_def, stripAreaFraction_def, h, mul_add, inv_mul_cancel₀ ha]
 
 /-- On the strip, the normalization commutes with the deck translation `(x, y) ↦ (x + 1, y)`. -/
-theorem stripDensityNormalization_add_fst (hρ : Continuous ρ)
+theorem stripDensityNormalization_add_fst (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1))
     (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y)) (ha : annulusArea ρ ≠ 0)
     {p : ℝ × ℝ} (hp : p.2 ∈ Icc (0 : ℝ) 1) :
     stripDensityNormalization ρ (p + (1, 0)) = stripDensityNormalization ρ p + (1, 0) := by
@@ -206,7 +226,7 @@ theorem stripDensityNormalization_add_fst (hρ : Continuous ρ)
   · simp [stripDensityNormalization_snd, (stripColumnMean_periodic hper) p.1, hint]
 
 /-- The area fraction is the identity on the integers. -/
-theorem stripAreaFraction_intCast (hρ : Continuous ρ)
+theorem stripAreaFraction_intCast (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1))
     (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y)) (ha : annulusArea ρ ≠ 0) (m : ℤ) :
     stripAreaFraction ρ m = m := by
   have hg : Periodic (fun x ↦ stripAreaFraction ρ x - x) 1 := fun x ↦ by
@@ -215,7 +235,7 @@ theorem stripAreaFraction_intCast (hρ : Continuous ρ)
   simpa [sub_eq_zero] using (hg.int_mul m).eq
 
 /-- For a density `1`-periodic on the strip with nonzero area, the area fraction is onto. -/
-theorem stripAreaFraction_surjective (hρ : Continuous ρ)
+theorem stripAreaFraction_surjective (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1))
     (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y)) (ha : annulusArea ρ ≠ 0) :
     Surjective (stripAreaFraction ρ) := by
   intro u
@@ -232,34 +252,38 @@ theorem stripAreaFraction_surjective (hρ : Continuous ρ)
 /-! ### Positivity and monotonicity -/
 
 /-- The column mean is positive over `x` when `ρ` is positive on the segment `{x} × [0, 1]`. -/
-theorem stripColumnMean_pos (hρ : Continuous ρ) {x : ℝ}
+theorem stripColumnMean_pos (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1)) {x : ℝ}
     (hpos : ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) : 0 < stripColumnMean ρ x :=
-  intervalIntegral_pos_of_pos_on ((by fun_prop : Continuous fun r ↦ ρ (x, r)).intervalIntegrable
-    0 1) (fun y hy ↦ hpos y (Ioo_subset_Icc_self hy)) zero_lt_one
+  have hc : ContinuousOn (fun r ↦ ρ (x, r)) (Icc 0 1) :=
+    hρ.comp (continuous_const.prodMk continuous_id).continuousOn fun _ hr ↦ ⟨mem_univ x, hr⟩
+  intervalIntegral_pos_of_pos_on (hc.intervalIntegrable_of_Icc zero_le_one)
+    (fun y hy ↦ hpos y (Ioo_subset_Icc_self hy)) zero_lt_one
 
 /-- Every column mean is positive when `ρ` is positive on the strip. -/
-theorem stripColumnMean_pos_of_forall (hρ : Continuous ρ)
+theorem stripColumnMean_pos_of_forall (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1))
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) (x : ℝ) : 0 < stripColumnMean ρ x :=
   stripColumnMean_pos hρ (hpos x)
 
 /-- The area of the annulus is positive when all column means are. -/
-theorem annulusArea_pos (hρ : Continuous ρ) (hs : ∀ x ∈ Icc (0 : ℝ) 1, 0 < stripColumnMean ρ x) :
+theorem annulusArea_pos (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1))
+    (hs : ∀ x ∈ Icc (0 : ℝ) 1, 0 < stripColumnMean ρ x) :
     0 < annulusArea ρ :=
   intervalIntegral_pos_of_pos_on ((continuous_stripColumnMean hρ).intervalIntegrable 0 1)
     (fun x hx ↦ hs x (Ioo_subset_Icc_self hx)) zero_lt_one
 
 /-- The area of the annulus is positive when `ρ` is positive on the strip. -/
-theorem annulusArea_pos_of_forall (hρ : Continuous ρ)
+theorem annulusArea_pos_of_forall (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1))
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) : 0 < annulusArea ρ :=
   annulusArea_pos hρ fun x _ ↦ stripColumnMean_pos_of_forall hρ hpos x
 
 /-- The area fraction has derivative `u'(x) = s(x) / a`. -/
-theorem hasDerivAt_stripAreaFraction (hρ : Continuous ρ) (x : ℝ) :
+theorem hasDerivAt_stripAreaFraction (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1)) (x : ℝ) :
     HasDerivAt (stripAreaFraction ρ) ((annulusArea ρ)⁻¹ * stripColumnMean ρ x) x :=
   ((continuous_stripColumnMean hρ).integral_hasStrictDerivAt 0 x).hasDerivAt.const_mul _
 
 /-- When all column means are positive, the area fraction is strictly increasing. -/
-theorem stripAreaFraction_strictMono (hρ : Continuous ρ) (hs : ∀ x, 0 < stripColumnMean ρ x) :
+theorem stripAreaFraction_strictMono (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1))
+    (hs : ∀ x, 0 < stripColumnMean ρ x) :
     StrictMono (stripAreaFraction ρ) :=
   strictMono_of_deriv_pos fun x ↦ by
     rw [(hasDerivAt_stripAreaFraction hρ x).deriv]
@@ -305,7 +329,7 @@ theorem contDiff_stripDensityNormalization_of_forall (hρ : ContDiff ℝ n ρ)
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) :
     ContDiff ℝ n (stripDensityNormalization ρ) :=
   contDiff_stripDensityNormalization hρ fun x ↦
-    (stripColumnMean_pos_of_forall hρ.continuous hpos x).ne'
+    (stripColumnMean_pos_of_forall hρ.continuous.continuousOn hpos x).ne'
 
 /-- **The Jacobian of the density normalization.** Over a column of nonzero mean, the Jacobian
 determinant of `Φ` is `ρ / a`, that is, `Φ` pulls `a dx ∧ dy` back to `ρ dx ∧ dy`. -/
@@ -316,7 +340,7 @@ theorem det_fderiv_stripDensityNormalization (hρ : ContDiff ℝ 1 ρ) {p : ℝ 
   set A := fderiv ℝ (stripDensityNormalization ρ) (x, y)
   have hA : HasFDerivAt (stripDensityNormalization ρ) A (x, y) :=
     (hasStrictFDerivAt_stripDensityNormalization hρ hs).hasFDerivAt
-  have hcρ : Continuous ρ := hρ.continuous
+  have hcρ := hρ.continuous.continuousOn (s := univ ×ˢ Icc 0 1)
   -- Along the horizontal line through `(x, y)` the first coordinate is `t ↦ u(x + t)`.
   have h10 : (A (1, 0)).1 = (annulusArea ρ)⁻¹ * stripColumnMean ρ x := by
     have h1 := hasFDerivAt_fst.comp_hasDerivAt _ (hA.hasLineDerivAt (1, 0))
@@ -403,11 +427,10 @@ theorem injOn_stripDensityNormalization (hρ : Continuous ρ)
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) :
     InjOn (stripDensityNormalization ρ) (stripDensityNormalizationSource ρ) := by
   rintro ⟨x, y⟩ hp ⟨x', y'⟩ hq h
+  have hs := stripColumnMean_pos_of_forall hρ.continuousOn hpos
   obtain rfl : x = x' :=
-    (stripAreaFraction_strictMono hρ (stripColumnMean_pos_of_forall hρ hpos)).injective
-      (congrArg Prod.fst h)
-  rw [(strictMonoOn_stripDensityNormalization_snd hρ (stripColumnMean_pos_of_forall hρ hpos x)
-    ).injOn hp hq (congrArg Prod.snd h)]
+    (stripAreaFraction_strictMono hρ.continuousOn hs).injective (congrArg Prod.fst h)
+  rw [(strictMonoOn_stripDensityNormalization_snd hρ (hs x)).injOn hp hq (congrArg Prod.snd h)]
 
 /-- At a point of the domain of injectivity, the Jacobian determinant of the normalization is
 positive: the normalization preserves orientation. -/
@@ -415,9 +438,9 @@ theorem det_fderiv_stripDensityNormalization_pos (hρ : ContDiff ℝ 1 ρ)
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) {p : ℝ × ℝ}
     (hp : p ∈ stripDensityNormalizationSource ρ) :
     0 < (fderiv ℝ (stripDensityNormalization ρ) p).det := by
-  rw [det_fderiv_stripDensityNormalization hρ
-    (stripColumnMean_pos_of_forall hρ.continuous hpos p.1).ne']
-  exact mul_pos (inv_pos.2 (annulusArea_pos_of_forall hρ.continuous hpos)) (hp p.2 right_mem_uIcc)
+  have hcρ := hρ.continuous.continuousOn (s := univ ×ˢ Icc 0 1)
+  rw [det_fderiv_stripDensityNormalization hρ (stripColumnMean_pos_of_forall hcρ hpos p.1).ne']
+  exact mul_pos (inv_pos.2 (annulusArea_pos_of_forall hcρ hpos)) (hp p.2 right_mem_uIcc)
 
 /-- The density normalization is an open map on its domain of injectivity: at each of its points
 it has invertible strict derivative. -/
@@ -431,7 +454,7 @@ private theorem isOpenMap_domRestrict_stripDensityNormalization (hρ : ContDiff 
         (ℝ × ℝ) →L[ℝ] ℝ × ℝ) p := by
     rw [ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero]
     exact hasStrictFDerivAt_stripDensityNormalization hρ
-      (stripColumnMean_pos_of_forall hρ.continuous hpos p.1).ne'
+      (stripColumnMean_pos_of_forall hρ.continuous.continuousOn hpos p.1).ne'
   -- The source is open, so the neighbourhoods of `p` in it map onto those in the plane; the
   -- restricted map is `Φ` composed with the inclusion of the source, which closes the goal.
   have hnhds := map_nhds_subtype_coe_eq_nhds hp
@@ -489,19 +512,33 @@ theorem contDiffOn_stripDensityNormalizationOpenPartialHomeomorph_symm (hρ₁ :
 
 /-! ### The strip -/
 
-/-- For a continuous density positive and `1`-periodic on the strip `ℝ × [0, 1]`, the density
+/-- For a density continuous, positive and `1`-periodic on the strip `ℝ × [0, 1]`, the density
 normalization maps the strip bijectively onto itself. -/
-theorem bijOn_stripDensityNormalization (hρ : Continuous ρ)
+theorem bijOn_stripDensityNormalization (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1))
     (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y))
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) :
     BijOn (stripDensityNormalization ρ) (univ ×ˢ Icc 0 1) (univ ×ˢ Icc 0 1) := by
-  have hs := stripColumnMean_pos_of_forall hρ hpos
+  -- On the strip the normalization only reads `ρ` there, so `ρ` may be taken continuous.
+  obtain ⟨ρ', hc, hρρ'⟩ := exists_continuous_eqOn_univ_prod_Icc hρ
+  have hcm := stripColumnMean_congr hρρ'
+  refine BijOn.congr (f₁ := stripDensityNormalization ρ') ?_ fun p hp ↦ Prod.ext ?_ ?_
+  rotate_left
+  · simp only [stripDensityNormalization_fst, stripAreaFraction_def, annulusArea_def, hcm]
+  · simp only [stripDensityNormalization_snd, hcm]
+    exact congrArg _ (integral_congr fun y hy ↦ hρρ' ⟨mem_univ _,
+      Icc_subset_Icc_right hp.2.2 (by rwa [uIcc_of_le hp.2.1] at hy)⟩)
+  replace hper x y (hy : y ∈ Icc (0 : ℝ) 1) : ρ' (x + 1, y) = ρ' (x, y) := by
+    rw [hρρ' ⟨mem_univ _, hy⟩, hρρ' ⟨mem_univ _, hy⟩, hper x y hy]
+  replace hpos x y (hy : y ∈ Icc (0 : ℝ) 1) : 0 < ρ' (x, y) := by
+    rw [hρρ' ⟨mem_univ _, hy⟩]
+    exact hpos x y hy
+  have hs := stripColumnMean_pos_of_forall hc.continuousOn hpos
   refine ⟨fun p hp ↦ ⟨mem_univ _, ?_⟩,
-    (injOn_stripDensityNormalization hρ hpos).mono
+    (injOn_stripDensityNormalization hc hpos).mono
       (univ_prod_Icc_subset_stripDensityNormalizationSource hpos), fun q hq ↦ ?_⟩
   · -- `v(x, ·)` is monotone on `[0, 1]`, with `v(x, 0) = 0` and `v(x, 1) = 1`.
-    have hv := (strictMonoOn_stripDensityNormalization_snd hρ (hs p.1)).monotoneOn
-    have hmem {y : ℝ} (hy : y ∈ Icc (0 : ℝ) 1) : (p.1, y) ∈ stripDensityNormalizationSource ρ :=
+    have hv := (strictMonoOn_stripDensityNormalization_snd hc (hs p.1)).monotoneOn
+    have hmem {y : ℝ} (hy : y ∈ Icc (0 : ℝ) 1) : (p.1, y) ∈ stripDensityNormalizationSource ρ' :=
       univ_prod_Icc_subset_stripDensityNormalizationSource hpos ⟨mem_univ _, hy⟩
     have h0 := hv (hmem (left_mem_Icc.2 zero_le_one)) (hmem hp.2) hp.2.1
     have h1 := hv (hmem hp.2) (hmem (right_mem_Icc.2 zero_le_one)) hp.2.2
@@ -509,10 +546,10 @@ theorem bijOn_stripDensityNormalization (hρ : Continuous ρ)
       stripDensityNormalization_snd_mk_one (hs p.1).ne'] at h0 h1
     exact ⟨h0, h1⟩
   · -- Solve `u(x) = q.1` by surjectivity of `u`, then `v(x, y) = q.2` on the column over `x`.
-    obtain ⟨x, hx⟩ :=
-      stripAreaFraction_surjective hρ hper (annulusArea_pos_of_forall hρ hpos).ne' q.1
+    obtain ⟨x, hx⟩ := stripAreaFraction_surjective hc.continuousOn hper
+      (annulusArea_pos_of_forall hc.continuousOn hpos).ne' q.1
     obtain ⟨y, hy, hxy⟩ := intermediate_value_Icc zero_le_one
-      (continuous_stripDensityNormalization_curry_right hρ x).snd.continuousOn
+      (continuous_stripDensityNormalization_curry_right hc x).snd.continuousOn
       (by simpa [stripDensityNormalization_snd_mk_one (hs x).ne'] using hq.2)
     exact ⟨(x, y), ⟨mem_univ _, hy⟩, Prod.ext (by simpa using hx) hxy⟩
 
@@ -529,8 +566,8 @@ theorem det_fderiv_stripDensityNormalization_comp_comp_symm (hρ₁ : ContDiff �
         (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).symm)
       (stripDensityNormalization ρ p)).det = ρ (F p) * (fderiv ℝ F p).det / ρ p := by
   set e := stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos
-  have hs := stripColumnMean_pos_of_forall hρ₁.continuous hpos
-  have ha : annulusArea ρ ≠ 0 := (annulusArea_pos_of_forall hρ₁.continuous hpos).ne'
+  have hs := stripColumnMean_pos_of_forall hρ₁.continuous.continuousOn hpos
+  have ha : annulusArea ρ ≠ 0 := (annulusArea_pos_of_forall hρ₁.continuous.continuousOn hpos).ne'
   have hdet := (det_fderiv_stripDensityNormalization_pos hρ₁ hpos hp).ne'
   set A := (fderiv ℝ (stripDensityNormalization ρ) p).toContinuousLinearEquivOfDetNeZero hdet
   have hA : (A : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) = fderiv ℝ (stripDensityNormalization ρ) p :=
