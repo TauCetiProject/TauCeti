@@ -11,22 +11,15 @@ public import TauCeti.Analysis.Convex.Polyhedron.Rational.Direction
 /-!
 # Integral coorientations of oriented wall cells
 
-An oriented rational-normal cell of codimension one admits a nonzero integral
-normal with the prescribed positive side. The sign of its real extension on
-every vector agrees with the conormal orientation on the corresponding
-one-vector frame. Thus the normal records the orientation, rather than only
-the tangent hyperplane.
+`OrientedCell.exists_ker_realCharacter_eq_direction_and_sign_eq_evalSign` gives a nonzero integral
+normal for a codimension-one oriented cell with rational normals. Its real extension has the
+cell direction as kernel, and its sign on each vector identifies the prescribed positive crossing
+side of the wall. The cell may have irrational offsets, be unbounded or have lineality.
+The normal need not be primitive.
 
 Adapted from `Mei/Geometry/Convex/PolyhedralCochain/Coorientation.lean` at
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `7f1e4c7714fb020473694755ad8748c8f15d0e7f` (Apache 2.0).
-
-The integral equation comes from
-`IsRationalNormalPolyhedron.exists_direction_eq_ker`. The sign is selected
-using `Module.Ray.IsConormal.eq_or_eq_neg` and the cell's normal-quotient
-dimension: its prescribed orientation is the ray of the integral one-form or
-the reversed ray. No primitive normal, rational offset, boundedness or absence
-of lineality is required.
 -/
 
 public section
