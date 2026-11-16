@@ -49,7 +49,8 @@ process, Kharlampovich–Myasnikov, §5.1).
 * `TauCeti.GenEq.Solution.cutBase`: transfer of a solution of `Ω` to `Ω′`.
 * `TauCeti.GenEq.solutionEquivCutBase`, `TauCeti.GenEq.solutionEquivCutBaseOfOpen`: equivalences
   between solutions of `Ω` and solutions of `Ω′`.
-* `TauCeti.GenEq.cutBaseTransformation`: ET1 packaged as a `Transformation Ω`.
+* `TauCeti.GenEq.cutBaseTransformation`, `TauCeti.GenEq.cutBaseTransformationIndex`: ET1 packaged
+  as a `Transformation Ω` together with its successor-index constructor.
 
 ## Main results
 
@@ -85,57 +86,100 @@ section GroupSolutions
 variable {A : Type*} {Ω : GenEq A} {p : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases}
   {q : Fin (Ω.numItems + 1)} (hc : (p, μ, q) ∈ Ω.connections) (hμ : μ ≠ Ω.dual μ)
 
-private theorem lift_mk_segment_mul {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H)
-    {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) (hk : k ≤ Ω.numItems) :
-    FreeGroup.lift f (FreeGroup.mk (Ω.segment i k true)) =
-      FreeGroup.lift f (FreeGroup.mk (Ω.segment i j true)) *
-        FreeGroup.lift f (FreeGroup.mk (Ω.segment j k true)) := by
-  rw [← Ω.segment_append hij hjk hk, ← FreeGroup.mul_mk, map_mul]
+private theorem boundaryEquation_cutBase_cutPiece_zero (p' q' : Fin (Ω.numItems + 1)) :
+    (Ω.cutBase p μ q hc hμ).boundaryEquation (p', Ω.cutPiece μ hμ 0, q') =
+      Ω.boundaryEquation (p', μ, q') := by
+  refine Prod.ext (by simp) ?_
+  by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
+  · rw [(Ω.cutBase p μ q hc hμ).boundaryEquation_snd_of_sign_eq (by simpa using hs),
+      Ω.boundaryEquation_snd_of_sign_eq (c := (p', μ, q')) hs]
+    simp [hs]
+  · rw [(Ω.cutBase p μ q hc hμ).boundaryEquation_snd_of_sign_ne (by simpa using hs),
+      Ω.boundaryEquation_snd_of_sign_ne (c := (p', μ, q')) hs]
+    simp [hs]
 
-private theorem lift_mk_segment_eq_of_sign_eq {H : Type*} [Group H] {f : Fin Ω.numItems ⊕ A → H}
-    {i₁ j₁ i₂ j₂ : ℕ} {s₁ s₂ : Bool} (hs : s₁ = s₂) :
-    FreeGroup.lift f (FreeGroup.mk (Ω.segment i₁ j₁ s₁)) =
-        FreeGroup.lift f (FreeGroup.mk (Ω.segment i₂ j₂ s₂)) ↔
-      FreeGroup.lift f (FreeGroup.mk (Ω.segment i₁ j₁ true)) =
-        FreeGroup.lift f (FreeGroup.mk (Ω.segment i₂ j₂ true)) := by
-  subst hs
-  cases s₁
-  · rw [Ω.lift_mk_segment f i₁ j₁ false, Ω.lift_mk_segment f i₂ j₂ false]
-    exact inv_inj
-  · rfl
+private theorem lift_basicEquation_cutPiece_zero_iff {H : Type*} [Group H]
+    (f : Fin Ω.numItems ⊕ A → H) :
+    (FreeGroup.lift f
+        (FreeGroup.mk ((Ω.cutBase p μ q hc hμ).basicEquation (Ω.cutPiece μ hμ 0)).1) =
+      FreeGroup.lift f
+        (FreeGroup.mk ((Ω.cutBase p μ q hc hμ).basicEquation (Ω.cutPiece μ hμ 0)).2)) ↔
+      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).2) := by
+  by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
+  · rw [(Ω.cutBase p μ q hc hμ).lift_mk_basicEquation_eq_iff_of_sign_eq (by simpa using hs),
+      Ω.lift_mk_boundaryEquation_eq_iff_of_sign_eq (c := (p, μ, q)) hs]
+    simp [hs]
+  · rw [(Ω.cutBase p μ q hc hμ).lift_mk_basicEquation_eq_iff_of_sign_ne (by simpa using hs),
+      Ω.lift_mk_boundaryEquation_eq_iff_of_sign_ne (c := (p, μ, q)) hs]
+    simp [hs]
 
-private theorem lift_mk_segment_eq_of_sign_ne {H : Type*} [Group H] {f : Fin Ω.numItems ⊕ A → H}
-    {i₁ j₁ i₂ j₂ : ℕ} {s₁ s₂ : Bool} (hs : s₁ ≠ s₂) :
-    FreeGroup.lift f (FreeGroup.mk (Ω.segment i₁ j₁ s₁)) =
-        FreeGroup.lift f (FreeGroup.mk (Ω.segment i₂ j₂ s₂)) ↔
-      FreeGroup.lift f (FreeGroup.mk (Ω.segment i₁ j₁ true)) =
-        (FreeGroup.lift f (FreeGroup.mk (Ω.segment i₂ j₂ true)))⁻¹ := by
-  cases s₁ <;> cases s₂ <;> simp only [ne_eq, not_true_eq_false] at hs
-  · rw [Ω.lift_mk_segment f i₁ j₁ false, Ω.lift_mk_segment f i₂ j₂ true]
-    dsimp only [cond]
-    rw [← inv_inj, inv_inv]
-  · rw [Ω.lift_mk_segment f i₁ j₁ true, Ω.lift_mk_segment f i₂ j₂ false]
-    rfl
+private theorem lift_basicEquation_cutPiece_one_iff {H : Type*} [Group H]
+    (f : Fin Ω.numItems ⊕ A → H)
+    (hconn : FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).1) =
+      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).2)) :
+    (FreeGroup.lift f
+        (FreeGroup.mk ((Ω.cutBase p μ q hc hμ).basicEquation (Ω.cutPiece μ hμ 1)).1) =
+      FreeGroup.lift f
+        (FreeGroup.mk ((Ω.cutBase p μ q hc hμ).basicEquation (Ω.cutPiece μ hμ 1)).2)) ↔
+      FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2) := by
+  obtain ⟨hp₁, hp₂, hq₁, hq₂⟩ := Ω.bounds_of_mem_connections (p, μ, q) hc
+  dsimp only at hp₁ hp₂ hq₁ hq₂
+  by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
+  · rw [(Ω.cutBase p μ q hc hμ).lift_mk_basicEquation_eq_iff_of_sign_eq (by simpa using hs),
+      Ω.lift_mk_basicEquation_eq_iff_of_sign_eq hs]
+    simp only [segment_cutBase, cutLeft_cutPiece_one, cutRight_cutPiece_one, cutDual_cutPiece_one,
+      cutLeft_cutPiece_three, cutRight_cutPiece_three, hs, ↓reduceIte]
+    have hc₀ := (Ω.lift_mk_boundaryEquation_eq_iff_of_sign_eq (c := (p, μ, q)) hs).1 hconn
+    dsimp only at hc₀
+    rw [← Ω.lift_mk_segment_mul f hp₁.le hp₂.le (Ω.right μ).is_le,
+      ← Ω.lift_mk_segment_mul f hq₁.le hq₂.le (Ω.right (Ω.dual μ)).is_le, hc₀, mul_right_inj]
+  · rw [(Ω.cutBase p μ q hc hμ).lift_mk_basicEquation_eq_iff_of_sign_ne (by simpa using hs),
+      Ω.lift_mk_basicEquation_eq_iff_of_sign_ne hs]
+    simp only [segment_cutBase, cutLeft_cutPiece_one, cutRight_cutPiece_one, cutDual_cutPiece_one,
+      cutLeft_cutPiece_three, cutRight_cutPiece_three, hs, ↓reduceIte]
+    have hc₀ := (Ω.lift_mk_boundaryEquation_eq_iff_of_sign_ne (c := (p, μ, q)) hs).1 hconn
+    dsimp only at hc₀
+    rw [← Ω.lift_mk_segment_mul f hp₁.le hp₂.le (Ω.right μ).is_le,
+      ← Ω.lift_mk_segment_mul f hq₁.le hq₂.le (Ω.right (Ω.dual μ)).is_le, mul_inv_rev, ← hc₀,
+      mul_right_inj]
 
-private theorem lift_boundaryEquation_of_sign_eq {H : Type*} [Group H] {f : Fin Ω.numItems ⊕ A → H}
-    {c : Fin (Ω.numItems + 1) × Fin Ω.numBases × Fin (Ω.numItems + 1)}
-    (hs : Ω.sign c.2.1 = Ω.sign (Ω.dual c.2.1)) :
-    (FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation c).1) =
-        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation c).2)) ↔
-      FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left c.2.1) c.1 true)) =
-        FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual c.2.1)) c.2.2 true)) := by
-  rw [boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_eq hs]
-
-private theorem lift_boundaryEquation_of_sign_ne {H : Type*} [Group H] {f : Fin Ω.numItems ⊕ A → H}
-    {c : Fin (Ω.numItems + 1) × Fin Ω.numBases × Fin (Ω.numItems + 1)}
-    (hs : Ω.sign c.2.1 ≠ Ω.sign (Ω.dual c.2.1)) :
-    (FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation c).1) =
-        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation c).2)) ↔
-      FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left c.2.1) c.1 true)) =
-        (FreeGroup.lift f (FreeGroup.mk (Ω.segment c.2.2 (Ω.right (Ω.dual c.2.1)) true)))⁻¹ := by
-  rw [boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_ne hs,
-    Ω.lift_mk_segment f c.2.2 (Ω.right (Ω.dual c.2.1)) false]
-  rfl
+private theorem lift_boundaryEquation_cutPiece_one_iff {H : Type*} [Group H]
+    (f : Fin Ω.numItems ⊕ A → H) {p' q' : Fin (Ω.numItems + 1)} (hp' : p ≤ p')
+    (hq' : if Ω.sign μ = Ω.sign (Ω.dual μ) then q ≤ q' else q' ≤ q)
+    (hconn : FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).1) =
+      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).2)) :
+    (FreeGroup.lift f (FreeGroup.mk
+        ((Ω.cutBase p μ q hc hμ).boundaryEquation (p', Ω.cutPiece μ hμ 1, q')).1) =
+      FreeGroup.lift f (FreeGroup.mk
+        ((Ω.cutBase p μ q hc hμ).boundaryEquation (p', Ω.cutPiece μ hμ 1, q')).2)) ↔
+      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p', μ, q')).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p', μ, q')).2) := by
+  obtain ⟨hp₁, -, hq₁, hq₂⟩ := Ω.bounds_of_mem_connections (p, μ, q) hc
+  dsimp only at hp₁ hq₁ hq₂
+  by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
+  · simp only [hs, ↓reduceIte] at hq'
+    rw [(Ω.cutBase p μ q hc hμ).lift_mk_boundaryEquation_eq_iff_of_sign_eq
+        (c := (p', Ω.cutPiece μ hμ 1, q')) (by simpa using hs),
+      Ω.lift_mk_boundaryEquation_eq_iff_of_sign_eq (c := (p', μ, q')) hs]
+    simp only [segment_cutBase, cutLeft_cutPiece_one, cutDual_cutPiece_one, cutLeft_cutPiece_three,
+      hs, ↓reduceIte]
+    have hc₀ := (Ω.lift_mk_boundaryEquation_eq_iff_of_sign_eq (c := (p, μ, q)) hs).1 hconn
+    dsimp only at hc₀
+    rw [← Ω.lift_mk_segment_mul f hp₁.le hp' p'.is_le,
+      ← Ω.lift_mk_segment_mul f hq₁.le hq' q'.is_le, hc₀, mul_right_inj]
+  · simp only [hs, ↓reduceIte] at hq'
+    rw [(Ω.cutBase p μ q hc hμ).lift_mk_boundaryEquation_eq_iff_of_sign_ne
+        (c := (p', Ω.cutPiece μ hμ 1, q')) (by simpa using hs),
+      Ω.lift_mk_boundaryEquation_eq_iff_of_sign_ne (c := (p', μ, q')) hs]
+    simp only [segment_cutBase, cutLeft_cutPiece_one, cutDual_cutPiece_one, cutRight_cutPiece_three,
+      hs, ↓reduceIte]
+    have hc₀ := (Ω.lift_mk_boundaryEquation_eq_iff_of_sign_ne (c := (p, μ, q)) hs).1 hconn
+    dsimp only at hc₀
+    rw [← Ω.lift_mk_segment_mul f hp₁.le hp' p'.is_le,
+      ← Ω.lift_mk_segment_mul f hq' hq₂.le (Ω.right (Ω.dual μ)).is_le, mul_inv_rev, ← hc₀,
+      mul_right_inj]
 
 /-- Every point of `Ω*` in an `F(A)`-group is a point of `(Ω.cutBase p μ q hc hμ)*`. This forward
 inclusion requires no formal-consistency hypothesis on `Ω`. -/
@@ -144,158 +188,67 @@ theorem V_toSystem_subset_cutBase {H : Type*} [Group H] (ι : FreeGroup A →* H
   intro v hv
   rw [mem_V_toSystem_iff] at hv ⊢
   set f : Fin Ω.numItems ⊕ A → H := Sum.elim v (ι ∘ FreeGroup.of)
-  obtain ⟨hp₁, hp₂, hq₁, hq₂⟩ := Ω.bounds_of_mem_connections (p, μ, q) hc
-  dsimp only at hp₁ hp₂ hq₁ hq₂
   have hbasic_μ := hv _ (Ω.basicEquation_mem_equations μ)
   have hconn_p := hv _ (Ω.boundaryEquation_mem_equations hc)
-  have hpiece0 : FreeGroup.lift f
-      (FreeGroup.mk ((Ω.cutBase p μ q hc hμ).basicEquation (Ω.cutPiece μ hμ 0)).1) =
-      FreeGroup.lift f
-        (FreeGroup.mk ((Ω.cutBase p μ q hc hμ).basicEquation (Ω.cutPiece μ hμ 0)).2) := by
-    simp only [basicEquation_fst, basicEquation_snd, segment_cutBase, cutLeft_cutPiece_zero,
-      cutRight_cutPiece_zero, cutDual_cutPiece_zero, cutLeft_cutPiece_two, cutRight_cutPiece_two,
-      cutOrigBase_cutPiece_zero, cutOrigBase_cutPiece_two]
-    by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
-    · simp only [hs, ↓reduceIte, lift_mk_segment_eq_of_sign_eq rfl]
-      exact (lift_boundaryEquation_of_sign_eq (c := (p, μ, q)) hs).1 hconn_p
-    · simp only [hs, ↓reduceIte]
-      rw [lift_mk_segment_eq_of_sign_ne hs]
-      exact (lift_boundaryEquation_of_sign_ne (c := (p, μ, q)) hs).1 hconn_p
-  have hpiece1 : FreeGroup.lift f
-      (FreeGroup.mk ((Ω.cutBase p μ q hc hμ).basicEquation (Ω.cutPiece μ hμ 1)).1) =
-      FreeGroup.lift f
-        (FreeGroup.mk ((Ω.cutBase p μ q hc hμ).basicEquation (Ω.cutPiece μ hμ 1)).2) := by
-    simp only [basicEquation_fst, basicEquation_snd, segment_cutBase, cutLeft_cutPiece_one,
-      cutRight_cutPiece_one, cutDual_cutPiece_one, cutLeft_cutPiece_three, cutRight_cutPiece_three,
-      cutOrigBase_cutPiece_one, cutOrigBase_cutPiece_three]
-    by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
-    · simp only [hs, ↓reduceIte, lift_mk_segment_eq_of_sign_eq rfl]
-      have hbas : FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) (Ω.right μ) true)) =
-          FreeGroup.lift f
-            (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true)) := by
-        rwa [basicEquation_fst, basicEquation_snd, lift_mk_segment_eq_of_sign_eq hs] at hbasic_μ
-      have hc₀ := (lift_boundaryEquation_of_sign_eq (c := (p, μ, q)) hs).1 hconn_p
-      dsimp only at hc₀
-      rw [lift_mk_segment_mul f hp₁.le hp₂.le (Ω.right μ).is_le,
-        lift_mk_segment_mul f hq₁.le hq₂.le (Ω.right (Ω.dual μ)).is_le, hc₀] at hbas
-      exact mul_left_cancel hbas
-    · simp only [hs, ↓reduceIte]
-      rw [lift_mk_segment_eq_of_sign_ne hs]
-      have hbas : FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) (Ω.right μ) true)) =
-          (FreeGroup.lift f
-            (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true)))⁻¹ := by
-        rwa [basicEquation_fst, basicEquation_snd, lift_mk_segment_eq_of_sign_ne hs] at hbasic_μ
-      have hc₀ := (lift_boundaryEquation_of_sign_ne (c := (p, μ, q)) hs).1 hconn_p
-      dsimp only at hc₀
-      rw [lift_mk_segment_mul f hp₁.le hp₂.le (Ω.right μ).is_le,
-        lift_mk_segment_mul f hq₁.le hq₂.le (Ω.right (Ω.dual μ)).is_le, mul_inv_rev, ← hc₀] at hbas
-      exact mul_left_cancel hbas
+  have hpiece0 := (lift_basicEquation_cutPiece_zero_iff hc hμ f).2 hconn_p
+  have hpiece1 := (lift_basicEquation_cutPiece_one_iff hc hμ f hconn_p).2 hbasic_μ
+  have hconn0 : ∀ {p' q' : Fin (Ω.numItems + 1)},
+      (p', Ω.cutPiece μ hμ 0, q') ∈ (Ω.cutBase p μ q hc hμ).connections →
+      FreeGroup.lift f (FreeGroup.mk
+          ((Ω.cutBase p μ q hc hμ).boundaryEquation (p', Ω.cutPiece μ hμ 0, q')).1) =
+        FreeGroup.lift f (FreeGroup.mk
+          ((Ω.cutBase p μ q hc hμ).boundaryEquation (p', Ω.cutPiece μ hμ 0, q')).2) := by
+    intro p' q' hc'
+    rw [boundaryEquation_cutBase_cutPiece_zero]
+    exact hv _ (Ω.boundaryEquation_mem_equations
+      (by simpa using ((mem_connections_cutBase hc hμ).1 hc').1))
+  have hconn1 : ∀ {p' q' : Fin (Ω.numItems + 1)},
+      (p', Ω.cutPiece μ hμ 1, q') ∈ (Ω.cutBase p μ q hc hμ).connections →
+      FreeGroup.lift f (FreeGroup.mk
+          ((Ω.cutBase p μ q hc hμ).boundaryEquation (p', Ω.cutPiece μ hμ 1, q')).1) =
+        FreeGroup.lift f (FreeGroup.mk
+          ((Ω.cutBase p μ q hc hμ).boundaryEquation (p', Ω.cutPiece μ hμ 1, q')).2) := by
+    intro p' q' hc'
+    obtain ⟨hc₀, hl₁, -, hl₂, hr₂⟩ := (mem_connections_cutBase hc hμ).1 hc'
+    have hc₀' : (p', μ, q') ∈ Ω.connections := by simpa using hc₀
+    have hp' : p ≤ p' := (by simpa using hl₁ : p < p').le
+    have hq' : if Ω.sign μ = Ω.sign (Ω.dual μ) then q ≤ q' else q' ≤ q := by
+      split_ifs with hs
+      · exact (by simpa [hs] using hl₂ : q < q').le
+      · exact (by simpa [hs] using hr₂ : q' < q).le
+    exact (lift_boundaryEquation_cutPiece_one_iff hc hμ f hp' hq' hconn_p).2
+      (hv _ (Ω.boundaryEquation_mem_equations hc₀'))
   rw [forall_mem_equations]
-  refine ⟨(forall_cutBase hμ).2 ⟨fun ν => ?_, ?_⟩, fun b hb => ?_, fun c' hc' => ?_⟩
+  refine ⟨(forall_cutBase hμ).2 ⟨fun ν => ?_, ?_⟩, fun b hb => ?_, fun ⟨p', β, q'⟩ hc' => ?_⟩
   · rw [basicEquation_cutBase_cutSurv]
     exact hv _ (Ω.basicEquation_mem_equations _)
   · refine cutPiece_cases hpiece0 hpiece1 ?_ ?_
-    · simpa [basicEquation_fst, basicEquation_snd] using hpiece0.symm
-    · simpa [basicEquation_fst, basicEquation_snd] using hpiece1.symm
+    · simpa only [cutDual_cutPiece_zero] using
+        ((Ω.cutBase p μ q hc hμ).lift_mk_basicEquation_dual_eq_iff (Ω.cutPiece μ hμ 0)).2 hpiece0
+    · simpa only [cutDual_cutPiece_one] using
+        ((Ω.cutBase p μ q hc hμ).lift_mk_basicEquation_dual_eq_iff (Ω.cutPiece μ hμ 1)).2 hpiece1
   · rw [coeffEquation_cutBase]
     exact hv _ (Ω.coeffEquation_mem_equations hb)
-  · rcases c' with ⟨p', β, q'⟩
-    revert hc'
+  · revert hc'
     refine cutBase_cases hμ (fun ν hc' => ?_) (fun i hc' => ?_) β
     · rw [boundaryEquation_cutBase_cutSurv]
       exact hv _ (Ω.boundaryEquation_mem_equations ((mem_connections_cutBase_cutSurv hc hμ).1 hc'))
     · revert hc'
-      refine cutPiece_cases ?_ ?_ ?_ ?_ i <;> intro hc'
-      · obtain ⟨hc₀, -, -, -, -⟩ := (mem_connections_cutBase hc hμ).1 hc'
-        have hc₀' : (p', μ, q') ∈ Ω.connections := by simpa using hc₀
-        have heq := hv _ (Ω.boundaryEquation_mem_equations hc₀')
-        by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
-        · rw [(Ω.cutBase p μ q hc hμ).lift_boundaryEquation_of_sign_eq
-            (c := (p', Ω.cutPiece μ hμ 0, q')) (by simpa using hs)]
-          simpa [hs] using (Ω.lift_boundaryEquation_of_sign_eq (c := (p', μ, q')) hs).1 heq
-        · rw [(Ω.cutBase p μ q hc hμ).lift_boundaryEquation_of_sign_ne
-            (c := (p', Ω.cutPiece μ hμ 0, q')) (by simpa using hs)]
-          simpa [hs] using (Ω.lift_boundaryEquation_of_sign_ne (c := (p', μ, q')) hs).1 heq
-      · obtain ⟨hc₀, hl₁, -, hl₂, hr₂⟩ := (mem_connections_cutBase hc hμ).1 hc'
-        have hc₀' : (p', μ, q') ∈ Ω.connections := by simpa using hc₀
-        have heq := hv _ (Ω.boundaryEquation_mem_equations hc₀')
-        have hp'_le : p ≤ p' := (by simpa using hl₁ : p < p').le
-        by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
-        · have hq'_le : q ≤ q' := (by simpa [hs] using hl₂ : q < q').le
-          rw [(Ω.cutBase p μ q hc hμ).lift_boundaryEquation_of_sign_eq
-            (c := (p', Ω.cutPiece μ hμ 1, q')) (by simpa using hs)]
-          simp only [segment_cutBase, cutLeft_cutPiece_one, cutDual_cutPiece_one,
-            cutLeft_cutPiece_three, hs, ↓reduceIte]
-          have heq' := (Ω.lift_boundaryEquation_of_sign_eq (c := (p', μ, q')) hs).1 heq
-          have hc₀_eq := (Ω.lift_boundaryEquation_of_sign_eq (c := (p, μ, q)) hs).1 hconn_p
-          dsimp only at heq' hc₀_eq
-          rw [lift_mk_segment_mul f hp₁.le hp'_le p'.is_le,
-            lift_mk_segment_mul f hq₁.le hq'_le q'.is_le, hc₀_eq] at heq'
-          exact mul_left_cancel heq'
-        · have hq'_le : q' ≤ q := (by simpa [hs] using hr₂ : q' < q).le
-          rw [(Ω.cutBase p μ q hc hμ).lift_boundaryEquation_of_sign_ne
-            (c := (p', Ω.cutPiece μ hμ 1, q')) (by simpa using hs)]
-          simp only [segment_cutBase, cutLeft_cutPiece_one, cutDual_cutPiece_one,
-            cutRight_cutPiece_three, hs, ↓reduceIte]
-          have heq' := (Ω.lift_boundaryEquation_of_sign_ne (c := (p', μ, q')) hs).1 heq
-          have hc₀_eq := (Ω.lift_boundaryEquation_of_sign_ne (c := (p, μ, q)) hs).1 hconn_p
-          dsimp only at heq' hc₀_eq
-          rw [lift_mk_segment_mul f hp₁.le hp'_le p'.is_le,
-            lift_mk_segment_mul f hq'_le hq₂.le (Ω.right (Ω.dual μ)).is_le, mul_inv_rev,
-            ← hc₀_eq] at heq'
-          exact mul_left_cancel heq'
-      · obtain ⟨hc₀, hl₁, -, -, hr₂⟩ := (mem_connections_cutBase hc hμ).1 hc'
-        have hc₀' : (p', Ω.dual μ, q') ∈ Ω.connections := by simpa using hc₀
-        have heq := hv _ (Ω.boundaryEquation_mem_equations hc₀')
-        by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
-        · have hs' : Ω.sign (Ω.dual μ) = Ω.sign (Ω.dual (Ω.dual μ)) := by
-            simpa [Ω.dual_involutive μ] using hs.symm
-          rw [(Ω.cutBase p μ q hc hμ).lift_boundaryEquation_of_sign_eq
-            (c := (p', Ω.cutPiece μ hμ 2, q')) (by simpa [eq_comm] using hs)]
-          have heq' := (Ω.lift_boundaryEquation_of_sign_eq (c := (p', Ω.dual μ, q')) hs').1 heq
-          simpa [hs, Ω.dual_involutive μ] using heq'
-        · have hs' : Ω.sign (Ω.dual μ) ≠ Ω.sign (Ω.dual (Ω.dual μ)) := by
-            simpa [Ω.dual_involutive μ, ne_comm] using hs
-          have hconn_q := hv _ (Ω.boundaryEquation_mem_equations (Ω.dual_mem_connections _ hc))
-          have hp'_le : q ≤ p' := (by simpa [hs] using hl₁ : q < p').le
-          have hq'_le : q' ≤ p := (by simpa using hr₂ : q' < p).le
-          rw [(Ω.cutBase p μ q hc hμ).lift_boundaryEquation_of_sign_ne
-            (c := (p', Ω.cutPiece μ hμ 2, q')) (by simpa [ne_comm] using hs)]
-          simp only [segment_cutBase, cutLeft_cutPiece_two, cutDual_cutPiece_two,
-            cutRight_cutPiece_zero, hs, ↓reduceIte]
-          have heq' := (Ω.lift_boundaryEquation_of_sign_ne (c := (p', Ω.dual μ, q')) hs').1 heq
-          have hconn_q' :=
-            (Ω.lift_boundaryEquation_of_sign_ne (c := (q, Ω.dual μ, p)) hs').1 hconn_q
-          simp only [Ω.dual_involutive μ] at heq' hconn_q'
-          rw [lift_mk_segment_mul f hq₁.le hp'_le p'.is_le,
-            lift_mk_segment_mul f hq'_le hp₂.le (Ω.right μ).is_le, mul_inv_rev, ← hconn_q'] at heq'
-          exact mul_left_cancel heq'
-      · obtain ⟨hc₀, hl₁, -, hl₂, -⟩ := (mem_connections_cutBase hc hμ).1 hc'
-        have hc₀' : (p', Ω.dual μ, q') ∈ Ω.connections := by simpa using hc₀
-        have heq := hv _ (Ω.boundaryEquation_mem_equations hc₀')
-        by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
-        · have hs' : Ω.sign (Ω.dual μ) = Ω.sign (Ω.dual (Ω.dual μ)) := by
-            simpa [Ω.dual_involutive μ] using hs.symm
-          have hconn_q := hv _ (Ω.boundaryEquation_mem_equations (Ω.dual_mem_connections _ hc))
-          have hp'_le : q ≤ p' := (by simpa [hs] using hl₁ : q < p').le
-          have hq'_le : p ≤ q' := (by simpa using hl₂ : p < q').le
-          rw [(Ω.cutBase p μ q hc hμ).lift_boundaryEquation_of_sign_eq
-            (c := (p', Ω.cutPiece μ hμ 3, q')) (by simpa [eq_comm] using hs)]
-          simp only [segment_cutBase, cutLeft_cutPiece_three, cutDual_cutPiece_three,
-            cutLeft_cutPiece_one, hs, ↓reduceIte]
-          have heq' := (Ω.lift_boundaryEquation_of_sign_eq (c := (p', Ω.dual μ, q')) hs').1 heq
-          have hconn_q' :=
-            (Ω.lift_boundaryEquation_of_sign_eq (c := (q, Ω.dual μ, p)) hs').1 hconn_q
-          simp only [Ω.dual_involutive μ] at heq' hconn_q'
-          rw [lift_mk_segment_mul f hq₁.le hp'_le p'.is_le,
-            lift_mk_segment_mul f hp₁.le hq'_le q'.is_le, hconn_q'] at heq'
-          exact mul_left_cancel heq'
-        · have hs' : Ω.sign (Ω.dual μ) ≠ Ω.sign (Ω.dual (Ω.dual μ)) := by
-            simpa [Ω.dual_involutive μ, ne_comm] using hs
-          rw [(Ω.cutBase p μ q hc hμ).lift_boundaryEquation_of_sign_ne
-            (c := (p', Ω.cutPiece μ hμ 3, q')) (by simpa [ne_comm] using hs)]
-          have heq' := (Ω.lift_boundaryEquation_of_sign_ne (c := (p', Ω.dual μ, q')) hs').1 heq
-          simpa [hs, Ω.dual_involutive μ] using heq'
+      refine cutPiece_cases (fun hc' => hconn0 hc') (fun hc' => hconn1 hc') ?_ ?_ i
+      · intro hc'
+        have hc_dual : (q', Ω.cutPiece μ hμ 0, p') ∈ (Ω.cutBase p μ q hc hμ).connections := by
+          simpa using (Ω.cutBase p μ q hc hμ).dual_mem_connections _ hc'
+        obtain ⟨h₁, h₂, h₃, h₄⟩ := (Ω.cutBase p μ q hc hμ).bounds_of_mem_connections _ hc_dual
+        simpa only [cutDual_cutPiece_zero] using
+          ((Ω.cutBase p μ q hc hμ).lift_mk_boundaryEquation_dual_eq_iff
+            h₁.le h₂.le h₃.le h₄.le hpiece0).2 (hconn0 hc_dual)
+      · intro hc'
+        have hc_dual : (q', Ω.cutPiece μ hμ 1, p') ∈ (Ω.cutBase p μ q hc hμ).connections := by
+          simpa using (Ω.cutBase p μ q hc hμ).dual_mem_connections _ hc'
+        obtain ⟨h₁, h₂, h₃, h₄⟩ := (Ω.cutBase p μ q hc hμ).bounds_of_mem_connections _ hc_dual
+        simpa only [cutDual_cutPiece_one] using
+          ((Ω.cutBase p μ q hc hμ).lift_mk_boundaryEquation_dual_eq_iff
+            h₁.le h₂.le h₃.le h₄.le hpiece1).2 (hconn1 hc_dual)
 
 /-- **ET1 on group solutions.** In a formally consistent generalised equation, cutting `μ` at
 `(p, μ, q)` preserves the set of group solutions in every `F(A)`-group. -/
@@ -305,122 +258,51 @@ theorem V_toSystem_cutBase (hΩ : Ω.IsFormallyConsistent) {H : Type*} [Group H]
   refine Set.Subset.antisymm (fun v hv => ?_) (V_toSystem_subset_cutBase hc hμ ι)
   rw [mem_V_toSystem_iff] at hv ⊢
   set f : Fin Ω.numItems ⊕ A → H := Sum.elim v (ι ∘ FreeGroup.of)
-  obtain ⟨hp₁, hp₂, hq₁, hq₂⟩ := Ω.bounds_of_mem_connections (p, μ, q) hc
-  dsimp only at hp₁ hp₂ hq₁ hq₂
-  have hp0 := hv _ ((Ω.cutBase p μ q hc hμ).basicEquation_mem_equations (Ω.cutPiece μ hμ 0))
-  have hp1 := hv _ ((Ω.cutBase p μ q hc hμ).basicEquation_mem_equations (Ω.cutPiece μ hμ 1))
-  simp only [basicEquation_fst, basicEquation_snd, segment_cutBase, cutLeft_cutPiece_zero,
-    cutRight_cutPiece_zero, cutDual_cutPiece_zero, cutLeft_cutPiece_two, cutRight_cutPiece_two,
-    cutOrigBase_cutPiece_zero, cutOrigBase_cutPiece_two] at hp0
-  simp only [basicEquation_fst, basicEquation_snd, segment_cutBase, cutLeft_cutPiece_one,
-    cutRight_cutPiece_one, cutDual_cutPiece_one, cutLeft_cutPiece_three, cutRight_cutPiece_three,
-    cutOrigBase_cutPiece_one, cutOrigBase_cutPiece_three] at hp1
-  have hbasic_μ : FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
-      FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2) := by
-    rw [basicEquation_fst, basicEquation_snd]
-    by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
-    · simp only [hs, ↓reduceIte, lift_mk_segment_eq_of_sign_eq rfl] at hp0 hp1
-      rw [lift_mk_segment_eq_of_sign_eq hs,
-        lift_mk_segment_mul f hp₁.le hp₂.le (Ω.right μ).is_le,
-        lift_mk_segment_mul f hq₁.le hq₂.le (Ω.right (Ω.dual μ)).is_le, hp0, hp1]
-    · simp only [hs, ↓reduceIte] at hp0 hp1
-      rw [lift_mk_segment_eq_of_sign_ne hs] at hp0 hp1 ⊢
-      rw [lift_mk_segment_mul f hp₁.le hp₂.le (Ω.right μ).is_le,
-        lift_mk_segment_mul f hq₁.le hq₂.le (Ω.right (Ω.dual μ)).is_le, mul_inv_rev, hp0, hp1]
+  have hconn_p := (lift_basicEquation_cutPiece_zero_iff hc hμ f).1
+    (hv _ ((Ω.cutBase p μ q hc hμ).basicEquation_mem_equations (Ω.cutPiece μ hμ 0)))
+  have hbasic_μ := (lift_basicEquation_cutPiece_one_iff hc hμ f hconn_p).1
+    (hv _ ((Ω.cutBase p μ q hc hμ).basicEquation_mem_equations (Ω.cutPiece μ hμ 1)))
   have hconn_μ : ∀ {p' q' : Fin (Ω.numItems + 1)}, (p', μ, q') ∈ Ω.connections →
       FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p', μ, q')).1) =
         FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p', μ, q')).2) := by
     intro p' q' hc₀
     rcases lt_trichotomy p' p with hlt | rfl | hgt
     · have hc' := (mem_connections_cutBase_of_lt hc hμ hΩ hc₀ hlt).1
-      have heq := hv _ ((Ω.cutBase p μ q hc hμ).boundaryEquation_mem_equations hc')
-      by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
-      · rw [lift_boundaryEquation_of_sign_eq (c := (p', μ, q')) hs]
-        have heq' := ((Ω.cutBase p μ q hc hμ).lift_boundaryEquation_of_sign_eq
-          (c := (p', Ω.cutPiece μ hμ 0, q')) (by simpa using hs)).1 heq
-        simpa [hs] using heq'
-      · rw [lift_boundaryEquation_of_sign_ne (c := (p', μ, q')) hs]
-        have heq' := ((Ω.cutBase p μ q hc hμ).lift_boundaryEquation_of_sign_ne
-          (c := (p', Ω.cutPiece μ hμ 0, q')) (by simpa using hs)).1 heq
-        simpa [hs] using heq'
+      rw [← boundaryEquation_cutBase_cutPiece_zero hc hμ]
+      exact hv _ ((Ω.cutBase p μ q hc hμ).boundaryEquation_mem_equations hc')
     · obtain rfl : q' = q := hΩ.isTiedTo_unique (isTiedTo_of_mem_connections hc₀)
         (isTiedTo_of_mem_connections hc)
-      by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
-      · simp only [hs, ↓reduceIte, lift_mk_segment_eq_of_sign_eq rfl] at hp0
-        exact (lift_boundaryEquation_of_sign_eq (c := (p', μ, q')) hs).2 hp0
-      · simp only [hs, ↓reduceIte] at hp0
-        rw [lift_mk_segment_eq_of_sign_ne hs] at hp0
-        exact (lift_boundaryEquation_of_sign_ne (c := (p', μ, q')) hs).2 hp0
+      exact hconn_p
     · have hc' := (mem_connections_cutBase_of_gt hc hμ hΩ hc₀ hgt).1
-      have heq := hv _ ((Ω.cutBase p μ q hc hμ).boundaryEquation_mem_equations hc')
-      by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
-      · have hq_lt : q < q' := hΩ.lt_of_isTiedTo_of_sign_eq hs (isTiedTo_of_mem_connections hc)
-          (isTiedTo_of_mem_connections hc₀) hgt
-        simp only [hs, ↓reduceIte, lift_mk_segment_eq_of_sign_eq rfl] at hp0
-        have heq' := ((Ω.cutBase p μ q hc hμ).lift_boundaryEquation_of_sign_eq
-          (c := (p', Ω.cutPiece μ hμ 1, q')) (by simpa using hs)).1 heq
-        simp only [segment_cutBase, cutLeft_cutPiece_one, cutDual_cutPiece_one,
-          cutLeft_cutPiece_three, hs, ↓reduceIte] at heq'
-        rw [lift_boundaryEquation_of_sign_eq (c := (p', μ, q')) hs]
-        dsimp only
-        rw [lift_mk_segment_mul f hp₁.le hgt.le p'.is_le,
-          lift_mk_segment_mul f hq₁.le hq_lt.le q'.is_le, hp0, heq']
-      · have hq_lt : q' < q := hΩ.lt_of_isTiedTo_of_sign_ne hs (isTiedTo_of_mem_connections hc)
-          (isTiedTo_of_mem_connections hc₀) hgt
-        simp only [hs, ↓reduceIte] at hp0
-        rw [lift_mk_segment_eq_of_sign_ne hs] at hp0
-        have heq' := ((Ω.cutBase p μ q hc hμ).lift_boundaryEquation_of_sign_ne
-          (c := (p', Ω.cutPiece μ hμ 1, q')) (by simpa using hs)).1 heq
-        simp only [segment_cutBase, cutLeft_cutPiece_one, cutDual_cutPiece_one,
-          cutRight_cutPiece_three, hs, ↓reduceIte] at heq'
-        rw [lift_boundaryEquation_of_sign_ne (c := (p', μ, q')) hs]
-        dsimp only
-        rw [lift_mk_segment_mul f hp₁.le hgt.le p'.is_le,
-          lift_mk_segment_mul f hq_lt.le hq₂.le (Ω.right (Ω.dual μ)).is_le, mul_inv_rev, ← hp0,
-          ← heq']
+      have hq' : if Ω.sign μ = Ω.sign (Ω.dual μ) then q ≤ q' else q' ≤ q := by
+        split_ifs with hs
+        · exact (hΩ.lt_of_isTiedTo_of_sign_eq hs (isTiedTo_of_mem_connections hc)
+            (isTiedTo_of_mem_connections hc₀) hgt).le
+        · exact (hΩ.lt_of_isTiedTo_of_sign_ne hs (isTiedTo_of_mem_connections hc)
+            (isTiedTo_of_mem_connections hc₀) hgt).le
+      exact (lift_boundaryEquation_cutPiece_one_iff hc hμ f hgt.le hq' hconn_p).1
+        (hv _ ((Ω.cutBase p μ q hc hμ).boundaryEquation_mem_equations hc'))
   rw [forall_mem_equations]
-  refine ⟨fun ν => ?_, fun b hb => ?_, fun c₀ hc₀ => ?_⟩
+  refine ⟨fun ν => ?_, fun b hb => ?_, fun ⟨p', ν, q'⟩ hc₀ => ?_⟩
   · by_cases hmem : ν ∈ ({μ, Ω.dual μ} : Finset (Fin Ω.numBases))
     · rcases Finset.mem_insert.1 hmem with rfl | hmem
       · exact hbasic_μ
       · rw [Finset.mem_singleton.1 hmem]
-        simpa [basicEquation_fst, basicEquation_snd, Ω.dual_involutive μ] using hbasic_μ.symm
+        exact (Ω.lift_mk_basicEquation_dual_eq_iff μ).2 hbasic_μ
     · obtain ⟨ν₀, rfl⟩ := exists_cutSurvEmb_eq hmem
       rw [← basicEquation_cutBase_cutSurv hc hμ]
       exact hv _ ((Ω.cutBase p μ q hc hμ).basicEquation_mem_equations _)
   · rw [← coeffEquation_cutBase hc hμ]
     exact hv _ ((Ω.cutBase p μ q hc hμ).coeffEquation_mem_equations hb)
-  · rcases c₀ with ⟨p', ν, q'⟩
-    by_cases hmem : ν ∈ ({μ, Ω.dual μ} : Finset (Fin Ω.numBases))
+  · by_cases hmem : ν ∈ ({μ, Ω.dual μ} : Finset (Fin Ω.numBases))
     · rcases Finset.mem_insert.1 hmem with rfl | hmem
       · exact hconn_μ hc₀
       · rw [Finset.mem_singleton.1 hmem] at hc₀ ⊢
         have hc₀_dual : (q', μ, p') ∈ Ω.connections := by
           simpa [Ω.dual_involutive μ] using Ω.dual_mem_connections _ hc₀
-        have heq_dual := hconn_μ hc₀_dual
-        obtain ⟨hp'₁, hp'₂, hq'₁, hq'₂⟩ := Ω.bounds_of_mem_connections (q', μ, p') hc₀_dual
-        dsimp only at hp'₁ hp'₂ hq'₁ hq'₂
-        by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
-        · have hs' : Ω.sign (Ω.dual μ) = Ω.sign (Ω.dual (Ω.dual μ)) := by
-            simpa [Ω.dual_involutive μ] using hs.symm
-          rw [lift_boundaryEquation_of_sign_eq (c := (p', Ω.dual μ, q')) hs']
-          have heq' := (lift_boundaryEquation_of_sign_eq (c := (q', μ, p')) hs).1 heq_dual
-          simpa [Ω.dual_involutive μ] using heq'.symm
-        · have hs' : Ω.sign (Ω.dual μ) ≠ Ω.sign (Ω.dual (Ω.dual μ)) := by
-            simpa [Ω.dual_involutive μ, ne_comm] using hs
-          have hbas : FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) (Ω.right μ) true)) =
-              (FreeGroup.lift f
-                (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true)))⁻¹ := by
-            rwa [basicEquation_fst, basicEquation_snd, lift_mk_segment_eq_of_sign_ne hs] at hbasic_μ
-          have heq' := (lift_boundaryEquation_of_sign_ne (c := (q', μ, p')) hs).1 heq_dual
-          dsimp only at heq'
-          rw [lift_boundaryEquation_of_sign_ne (c := (p', Ω.dual μ, q')) hs']
-          simp only [Ω.dual_involutive μ]
-          rw [lift_mk_segment_mul f hp'₁.le hp'₂.le (Ω.right μ).is_le,
-            lift_mk_segment_mul f hq'₁.le hq'₂.le (Ω.right (Ω.dual μ)).is_le, mul_inv_rev,
-            ← heq'] at hbas
-          rw [← inv_inj, inv_inv]
-          exact (mul_left_cancel hbas).symm
+        obtain ⟨h₁, h₂, h₃, h₄⟩ := Ω.bounds_of_mem_connections (q', μ, p') hc₀_dual
+        exact (Ω.lift_mk_boundaryEquation_dual_eq_iff h₁.le h₂.le h₃.le h₄.le hbasic_μ).2
+          (hconn_μ hc₀_dual)
     · obtain ⟨ν₀, rfl⟩ := exists_cutSurvEmb_eq hmem
       rw [← boundaryEquation_cutBase_cutSurv hc hμ]
       exact hv _ ((Ω.cutBase p μ q hc hμ).boundaryEquation_mem_equations
@@ -700,15 +582,6 @@ theorem solutionEquivCutBase_symm_apply_toHom :
 
 end EquivSymm
 
-private theorem isReduced_append_of_overlap {u₁ u₂ v₁ v₂ : List (A × Bool)}
-    (hu : FreeGroup.IsReduced (u₁ ++ u₂)) (hv : FreeGroup.IsReduced (v₁ ++ v₂))
-    (hmid : FreeGroup.IsReduced (u₂ ++ v₁)) (hu₂ : u₂ ≠ []) (hv₁ : v₁ ≠ []) :
-    FreeGroup.IsReduced ((u₁ ++ u₂) ++ (v₁ ++ v₂)) := by
-  refine List.isChain_append.2 ⟨hu, hv, fun x hx y hy => ?_⟩
-  rw [List.getLast?_append_of_ne_nil _ hu₂] at hx
-  rw [List.head?_append_of_ne_nil _ hv₁] at hy
-  exact (List.isChain_append.1 hmid).2.2 x hx y hy
-
 /-- If the cut boundary `p` remains open in `Ω.cutBase p μ q hc hμ`, another variable base crosses
 `p` and forces the junction between `U′.word (p - 1)` and `U′.word p` to be reduced, so
 `U′[α(μ), β(μ)]` is automatically reduced as written for every solution `U′` of `Ω.cutBase`. -/
@@ -760,8 +633,9 @@ theorem isReduced_cutBase_of_isOpenBoundary
   rw [hseg₀, substituteVars_append] at hred₀
   rw [hseg₁, substituteVars_append] at hred₁
   rw [hseg_mid, substituteVars_append] at hred_mid
-  exact isReduced_append_of_overlap hred₀ hred₁ hred_mid
-    (by simp [segment_succ, U'.word_ne_nil k₀]) (by simp [segment_succ, U'.word_ne_nil k₁])
+  have hstep := hred₀.append_overlap hred_mid (by simp [segment_succ, U'.word_ne_nil k₀])
+  simpa [List.append_assoc] using
+    hstep.append_overlap hred₁ (by simp [segment_succ, U'.word_ne_nil k₁])
 
 /-- **ET1 when the cut boundary stays open.** If `Ω` is formally consistent and `p` remains an open
 boundary in `Ω.cutBase p μ q hc hμ`, graphical solutions of `Ω` and of `Ω.cutBase p μ q hc hμ` are
@@ -825,10 +699,25 @@ variable {A : Type*} {Ω : GenEq A} {p : Fin (Ω.numItems + 1)} {μ : Fin Ω.num
 cutting `μ` at `(p, μ, q)`: its family of successors consists of `Ω.cutBase p μ q hc hμ` whenever
 that cut is formally consistent (and is empty otherwise, in which case `Ω` has no graphical solution
 by `isFormallyConsistent_cutBase_of_nonempty_solution`). -/
+-- `@[expose]` is required by Lean 4's module system (as on `Transformation.id`,
+-- `Transformation.bind`, and `Transformation.ofFamily`): the codomain of `Transformation.hom i`
+-- and the fibre of `Transformation.transfer U` depend on `target i`, so `cutBaseTransformation_hom`
+-- and `cutBaseTransformation_transfer` need `target i` to reduce to `Ω.cutBase p μ q hc hμ`, and
+-- compiling `cutBaseTransformationIndex` also requires the `ι` field to be exposed.
 @[expose] def cutBaseTransformation : Transformation Ω :=
   Transformation.ofFamily (κ := Unit) (fun _ => Ω.cutBase p μ q hc hμ)
     (fun _ => cutBaseHom hc hμ hΩ) (fun _ => cutBaseHom_surjective hc hμ hΩ)
     (fun U => ⟨(), U.cutBase hc hμ⟩) (fun U => toHom_comp_cutBaseHom hc hμ hΩ U)
+
+/-- The unique successor index of `cutBaseTransformation hc hμ hΩ` when `Ω.cutBase p μ q hc hμ` is
+formally consistent. -/
+def cutBaseTransformationIndex (h : (Ω.cutBase p μ q hc hμ).IsFormallyConsistent) :
+    (cutBaseTransformation hc hμ hΩ).ι :=
+  ⟨(), h⟩
+
+/-- `cutBaseTransformation hc hμ hΩ` has at most one successor. -/
+instance : Subsingleton (cutBaseTransformation hc hμ hΩ).ι :=
+  inferInstanceAs (Subsingleton { _x : Unit // (Ω.cutBase p μ q hc hμ).IsFormallyConsistent })
 
 /-- Every successor in `cutBaseTransformation` is `Ω.cutBase p μ q hc hμ`. -/
 @[simp]
@@ -846,21 +735,21 @@ theorem cutBaseTransformation_hom (i : (cutBaseTransformation hc hμ hΩ).ι) :
 @[simp]
 theorem cutBaseTransformation_transfer (U : Ω.Solution) :
     (cutBaseTransformation hc hμ hΩ).transfer U =
-      ⟨⟨(), (U.cutBase hc hμ).isFormallyConsistent⟩, U.cutBase hc hμ⟩ :=
+      ⟨cutBaseTransformationIndex hc hμ hΩ (U.cutBase hc hμ).isFormallyConsistent,
+        U.cutBase hc hμ⟩ :=
   (rfl)
 
 /-- `cutBaseTransformation hc hμ hΩ` has a successor if and only if `Ω.cutBase p μ q hc hμ` is
 formally consistent. -/
 theorem nonempty_cutBaseTransformation_iff :
     Nonempty (cutBaseTransformation hc hμ hΩ).ι ↔ (Ω.cutBase p μ q hc hμ).IsFormallyConsistent :=
-  ⟨fun ⟨i⟩ => i.2, fun h => ⟨⟨(), h⟩⟩⟩
+  ⟨fun ⟨i⟩ => (cutBaseTransformation hc hμ hΩ).isFormallyConsistent_target i,
+    fun h => ⟨cutBaseTransformationIndex hc hμ hΩ h⟩⟩
 
 /-- **ET1 transfers solutions uniquely.** -/
 theorem transfersUniquely_cutBaseTransformation :
-    (cutBaseTransformation hc hμ hΩ).TransfersUniquely := by
-  have : Subsingleton (cutBaseTransformation hc hμ hΩ).ι :=
-    inferInstanceAs (Subsingleton { _x : Unit // (Ω.cutBase p μ q hc hμ).IsFormallyConsistent })
-  exact Transformation.transfersUniquely_of_subsingleton _
+    (cutBaseTransformation hc hμ hΩ).TransfersUniquely :=
+  Transformation.transfersUniquely_of_subsingleton _
 
 end Transformation
 

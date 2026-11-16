@@ -96,8 +96,7 @@ theorem cutSurvCard_add_four {μ : Fin Ω.numBases} (hμ : μ ≠ Ω.dual μ) :
   have hle : 2 ≤ Ω.numBases := by
     rw [← Fintype.card_fin Ω.numBases, ← Finset.card_pair hμ]
     exact Finset.card_le_univ _
-  have hr := Ω.numBases_removePair hμ
-  change (Ω.removePair μ).numBases + 4 = Ω.numBases + 2
+  simp only [cutSurvCard, Finset.card_compl, Finset.card_pair hμ, Fintype.card_fin]
   omega
 
 /-- The variable base of `Ω` corresponding to the `ν`-th surviving base outside `{μ, Δ(μ)}`. -/
@@ -239,9 +238,9 @@ theorem cutSurvEmb_ne_dual (ν : Fin (Ω.cutSurvCard μ)) : Ω.cutSurvEmb μ ν 
 theorem exists_cutSurvEmb_eq {ν : Fin Ω.numBases}
     (hmem : ν ∉ ({μ, Ω.dual μ} : Finset (Fin Ω.numBases))) :
     ∃ ν₀, Ω.cutSurvEmb μ ν₀ = ν := by
-  change ν ∈ Set.range (({μ, Ω.dual μ} : Finset (Fin Ω.numBases))ᶜ.orderEmbOfFin rfl)
-  rw [Finset.range_orderEmbOfFin]
-  exact Finset.mem_compl.2 hmem
+  have hmem' : ν ∈ ({μ, Ω.dual μ} : Finset (Fin Ω.numBases))ᶜ := Finset.mem_compl.2 hmem
+  rw [← Finset.mem_coe, ← Finset.range_orderEmbOfFin _ rfl, Set.mem_range] at hmem'
+  simpa only [cutSurvEmb] using hmem'
 
 section Pieces
 
