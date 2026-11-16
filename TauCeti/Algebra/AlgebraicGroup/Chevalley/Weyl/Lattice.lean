@@ -154,14 +154,8 @@ theorem map_toMatrix_simpleWeylLatticeEquiv (i : Fin t.rank) (A : Type v) [CommR
         (Int.castRingHom A) =
       ((D.weylElement (t.simpleIndex ht i) A 1 : Matrix.GeneralLinearGroup (Fin D.dim) A) :
         Matrix (Fin D.dim) (Fin D.dim) A) := by
-  rw [coe_weylElement_simpleIndex_one]
-  -- Unwrap the matrix algebra equivalence and the map on units to apply the base-change
-  -- matrix formula, which is stated for linear maps rather than units.
-  change _ = LinearMap.toMatrix (D.basis.baseChange A) (D.basis.baseChange A)
-    (kostantWeylGL (t.lieBasis ht).rootGenerator (t.lieBasis ht).h D.representation D.lattice
-      D.representation_mem_lattice (D.isNilpotent_representation_rootGenerator (.inl i))
-      (D.isNilpotent_representation_rootGenerator (.inr i)) (CommAlgCat.of ℤ A)).val
-  rw [kostantWeylGL_val, kostantWeylPoints_toLinearMap,
+  simp [coe_weylElement_simpleIndex_one, LinearMap.toMatrixAlgEquiv,
+    kostantWeylGL_val, kostantWeylPoints_toLinearMap,
     Module.Basis.toMatrix_baseChange_baseChange, D.simpleWeylLatticeEquiv_def, algebraMap_int_eq]
 
 /-- The integral matrix of a Weyl word becomes the product of the datum's pinned
@@ -185,14 +179,8 @@ theorem map_toMatrix_simpleWeylLatticeEquiv_symm (i : Fin t.rank) (A : Type v) [
         (Int.castRingHom A) =
       (((D.weylElement (t.simpleIndex ht i) A 1)⁻¹ :
         Matrix.GeneralLinearGroup (Fin D.dim) A) : Matrix (Fin D.dim) (Fin D.dim) A) := by
-  rw [coe_weylElement_simpleIndex_one]
-  -- As in the forward comparison, expose the linear map underlying the matrix unit
-  -- to use the base-change formula.
-  change _ = LinearMap.toMatrix (D.basis.baseChange A) (D.basis.baseChange A)
-    ((kostantWeylGL (t.lieBasis ht).rootGenerator (t.lieBasis ht).h D.representation D.lattice
-      D.representation_mem_lattice (D.isNilpotent_representation_rootGenerator (.inl i))
-      (D.isNilpotent_representation_rootGenerator (.inr i)) (CommAlgCat.of ℤ A))⁻¹).val
-  rw [kostantWeylGL_inv_val, kostantWeylPoints_symm_toLinearMap,
+  simp [coe_weylElement_simpleIndex_one, LinearMap.toMatrixAlgEquiv,
+    kostantWeylGL_inv_val, kostantWeylPoints_symm_toLinearMap,
     Module.Basis.toMatrix_baseChange_baseChange, D.simpleWeylLatticeEquiv_def, algebraMap_int_eq]
 
 /-- The integral matrix of an inverse Weyl word becomes the inverse product of the datum's

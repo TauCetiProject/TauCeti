@@ -50,12 +50,15 @@ theorem weylElement_braid_of_cartanMatrix_eq_neg_two (i j : Fin t.rank)
       D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 *
         D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 := by
   have hij := t.cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two i j (by omega)
-  have h' := D.prod_map_weylElement_eq_of_forall_isSerreSystem [i, j, i, j] [j, i, j, i] (by
-    intro H E F hs hE hF
+  have h' := D.prod_map_weylElement_eq_of_prod_map_weylUnit_eq [i, j, i, j] [j, i, j, i] (by
     -- Serre's convention transposes the root-row Cartan matrix, so exchange the nodes.
     simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
-      mul_one, mul_assoc] using (hs.weylUnit_braid_of_cartan_eq_neg_two
-        (i := j) (j := i) (by simp) (by simp) hij hji (hE j) (hF j) (hE i) (hF i)).symm) A
+      mul_one, mul_assoc] using (D.isSerreSystem_representation.weylUnit_braid_of_cartan_eq_neg_two
+        (i := j) (j := i) (by simp) (by simp) hij hji
+        (D.isNilpotent_representation_rootGenerator (.inl j))
+        (D.isNilpotent_representation_rootGenerator (.inr j))
+        (D.isNilpotent_representation_rootGenerator (.inl i))
+        (D.isNilpotent_representation_rootGenerator (.inr i))).symm) A
   simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
     mul_one, mul_assoc] using h'
 

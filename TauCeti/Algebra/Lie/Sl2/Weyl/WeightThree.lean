@@ -121,6 +121,20 @@ theorem weylAut_weylAut_apply_of_weight_neg_three (t : IsSl2Triple h e f)
   simp only [neg_lie, lie_neg, lie_smul, h3, h2, h1]
   module
 
+/-- The square of the pinned Weyl automorphism negates a highest-weight vector
+of weight three. -/
+theorem weylAut_weylAut_apply_of_weight_three (t : IsSl2Triple h e f)
+    (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) {y : L}
+    (hyh : ⁅h, y⁆ = (3 : ℚ) • y) (hye : ⁅e, y⁆ = 0) :
+    TauCeti.weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero
+      (TauCeti.weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero y) = -y := by
+  have hnf : IsNilpotent (ad K L (-f)) := by simpa using hf.neg
+  have hne : IsNilpotent (ad K L (-e)) := by simpa using he.neg
+  simp_rw [← t.weylAut_neg_symm he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero
+    hnf.exists_pow_apply_eq_zero hne.exists_pow_apply_eq_zero]
+  exact t.neg_symm.weylAut_weylAut_apply_of_weight_neg_three hnf hne (y := y)
+    (by simp [hyh]) (by simp [hye])
+
 section Associative
 
 attribute [local instance 100] LieRing.ofAssociativeRing

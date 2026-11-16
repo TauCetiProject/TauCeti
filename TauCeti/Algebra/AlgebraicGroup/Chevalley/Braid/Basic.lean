@@ -20,9 +20,10 @@ including in bad characteristic and over nonreduced rings, not just in a Weyl qu
 The rational Serre-operator braid relation is first restricted to the datum's integral
 Kostant-stable lattice and then extended to the value ring. This avoids imposing any
 restriction on weight multiplicities or choosing a signed permutation weight basis.
-`TauCeti.DynkinType.ChevalleyDatum.prod_map_weylElement_eq_of_forall_isSerreSystem`
-transports word identities valid for all nilpotent Serre systems to pinned simple Weyl
-representatives, so the same construction applies to other bond types.
+`TauCeti.DynkinType.ChevalleyDatum.isSerreSystem_representation` identifies the datum's
+rational operators as a Serre system. Together with
+`TauCeti.DynkinType.ChevalleyDatum.prod_map_weylElement_eq_of_prod_map_weylUnit_eq`,
+this transports Serre-operator word identities to pinned simple Weyl representatives.
 
 ## References
 
@@ -42,31 +43,18 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-/-- A word identity valid for all nilpotent Serre systems on the datum's rational carrier,
-in the transposed Cartan convention, holds for its pinned simple Weyl representatives
-over every commutative ring. -/
-theorem prod_map_weylElement_eq_of_forall_isSerreSystem (l r : List (Fin t.rank))
-    (h : ∀ {H E F : Fin t.rank → Module.End ℚ D.carrier},
-      IsSerreSystem ℚ t.cartanMatrix.transpose H E F →
-      ∀ (hE : ∀ k, IsNilpotent (E k)) (hF : ∀ k, IsNilpotent (F k)),
-        (l.map (fun k => weylUnit (hE k) (hF k))).prod =
-          (r.map (fun k => weylUnit (hE k) (hF k))).prod)
-    (A : Type*) [CommRing A] :
-    (l.map (fun k => D.weylElement (t.simpleIndex ht k) A 1)).prod =
-      (r.map (fun k => D.weylElement (t.simpleIndex ht k) A 1)).prod := by
-  let φ := D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
-  have hs := (t.isSerreSystem_lieBasis ht).map φ
-  have hE (k : Fin t.rank) : IsNilpotent (φ ((t.lieBasis ht).e k)) := by
-    simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-      LieAlgebra.Basis.rootGenerator_inl] using
-      D.isNilpotent_representation_rootGenerator (.inl k)
-  have hF (k : Fin t.rank) : IsNilpotent (φ ((t.lieBasis ht).f k)) := by
-    simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-      LieAlgebra.Basis.rootGenerator_inr] using
-      D.isNilpotent_representation_rootGenerator (.inr k)
-  apply D.prod_map_weylElement_eq_of_prod_map_weylUnit_eq l r ?_ A
-  simpa only [φ, Function.comp_apply, LieHom.comp_apply, AlgHom.toLieHom_apply,
-    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using h hs hE hF
+/-- The represented pinned generators form a Serre system for the transposed Cartan matrix. -/
+theorem isSerreSystem_representation :
+    IsSerreSystem ℚ t.cartanMatrix.transpose
+      (fun k => D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h k)))
+      (fun k => D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl k))))
+      (fun k => D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inr k)))) := by
+  simpa only [Function.comp_def, LieHom.comp_apply, AlgHom.toLieHom_apply,
+    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
+    (t.isSerreSystem_lieBasis ht).map
+      (D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ))
 
 /-- Pinned simple Weyl representatives at a single bond satisfy the length-three braid
 relation over every commutative value ring. -/
@@ -77,11 +65,14 @@ theorem weylElement_braid_of_cartanMatrix_eq_neg_one (i j : Fin t.rank)
         D.weylElement (t.simpleIndex ht i) A 1 =
       D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 *
         D.weylElement (t.simpleIndex ht j) A 1 := by
-  have h' := D.prod_map_weylElement_eq_of_forall_isSerreSystem [i, j, i] [j, i, j] (by
-    intro H E F hs hE hF
+  have h' := D.prod_map_weylElement_eq_of_prod_map_weylUnit_eq [i, j, i] [j, i, j] (by
     simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
-      mul_one, mul_assoc] using hs.weylUnit_braid_of_cartan_eq_neg_one
-        (i := i) (j := j) (by simp) (by simp) hji hij (hE i) (hF i) (hE j) (hF j)) A
+      mul_one, mul_assoc] using D.isSerreSystem_representation.weylUnit_braid_of_cartan_eq_neg_one
+        (i := i) (j := j) (by simp) (by simp) hji hij
+        (D.isNilpotent_representation_rootGenerator (.inl i))
+        (D.isNilpotent_representation_rootGenerator (.inr i))
+        (D.isNilpotent_representation_rootGenerator (.inl j))
+        (D.isNilpotent_representation_rootGenerator (.inr j))) A
   simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
     mul_one, mul_assoc] using h'
 
