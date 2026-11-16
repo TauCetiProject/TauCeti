@@ -83,6 +83,14 @@ theorem _root_.IsCompact.exists_tendsto_of_eventually_mem {ι : Type*} {s : Set 
   obtain ⟨x, hx, h⟩ := hs.ultrafilter_le_nhds' (U.map u) (Ultrafilter.mem_map.2 hu)
   exact ⟨x, hx, by rwa [Ultrafilter.coe_map] at h⟩
 
+/-- In a Hausdorff space, the closure of the image of a compact set under a continuous map lies
+in the range of the map. -/
+theorem _root_.IsCompact.closure_image_subset_range {Y : Type*} [TopologicalSpace Y] [T2Space Y]
+    {s : Set X} (hs : IsCompact s) {f : X → Y} (hf : ContinuousOn f s) :
+    closure (f '' s) ⊆ Set.range f := by
+  rw [(hs.image_of_continuousOn hf).isClosed.closure_eq]
+  exact Set.image_subset_range _ _
+
 /-- A preconnected noncompact space has no compact connected component: its only component is the
 whole space. -/
 theorem not_isCompact_connectedComponent [PreconnectedSpace X] [NoncompactSpace X]

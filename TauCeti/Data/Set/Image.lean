@@ -10,7 +10,8 @@ public import Mathlib.Data.Set.Image
 /-!
 # Images of sets under compositions
 
-This file contains elementary lemmas about images of sets under composed functions.
+This file contains elementary lemmas about images of sets under composed functions, including
+`Function.Injective.image_preimage_eq_preimage_image` for Cartesian-like squares of functions.
 -/
 
 public section
@@ -34,5 +35,22 @@ lemma image_image_inter_eq_inter_image {α β γ δ : Type*} {A s : Set α} {B :
     (hAB : MapsTo f (s ∩ A) B) (hU : ∀ z ∈ s, f z ∈ B → (g' (f z) ∈ U ↔ z ∈ A)) :
     ι '' (g '' (s ∩ A)) = U ∩ g' '' (f '' s ∩ B) := by
   grind [MapsTo]
+
+/-- In a commuting square of functions `f ∘ i = j ∘ f'` with `j` injective and
+`range i = f ⁻¹' range j`, the `i`-image of an `f'`-preimage equals the `f`-preimage of the
+`j`-image. -/
+theorem _root_.Function.Injective.image_preimage_eq_preimage_image {U V X Y : Type*}
+    {f : X → Y} {f' : U → V} {i : U → X} {j : V → Y} (hj : Injective j)
+    (hsq : f ∘ i = j ∘ f') (hpre : range i = f ⁻¹' range j) (s : Set V) :
+    i '' (f' ⁻¹' s) = f ⁻¹' (j '' s) := by
+  ext x
+  simp only [mem_image, mem_preimage]
+  constructor
+  · rintro ⟨u, hu, rfl⟩
+    exact ⟨f' u, hu, (congrFun hsq u).symm⟩
+  · rintro ⟨v, hv, hfx⟩
+    have hx : x ∈ range i := hpre.symm ▸ ⟨v, hfx⟩
+    obtain ⟨u, rfl⟩ := hx
+    exact ⟨u, hj ((congrFun hsq u).symm.trans hfx.symm) ▸ hv, rfl⟩
 
 end TauCeti
