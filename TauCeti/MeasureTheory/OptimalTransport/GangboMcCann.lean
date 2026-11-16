@@ -33,15 +33,16 @@ and the cone condition (H2) at infinity,
 potential avoids `⊥` on a neighbourhood and has differentiable real representative at Haar-almost
 every point of `{x | φ x ≠ ⊥}` (its finiteness domain whenever `φ ≢ ⊤`).
 
-Combining this potential regularity with
-`TauCeti.exists_isOptimalCoupling_isCyclicallyMonotone_support` and Rockafellar–Rüschendorf
-(`TauCeti.IsCyclicallyMonotone.exists_isCConcave_subset_cSuperdifferential`) yields Gangbo and
-McCann's Theorem 1.2: for probability measures `μ` and `ν` with `μ` absolutely continuous with
-respect to Haar measure, there is a `c`-concave potential `φ` such that `T x = x - ∇h⋆(∇φ x)` is a
-Kantorovich-optimal transport map whose graph plan has `c`-cyclically monotone support
+When `0 ≤ h`, wrapping the displacement cost as `(x, y) ↦ ENNReal.ofReal (h (x - y))` and combining
+this potential regularity with `TauCeti.exists_isOptimalCoupling_isCyclicallyMonotone_support` and
+Rockafellar–Rüschendorf (`TauCeti.IsCyclicallyMonotone.exists_isCConcave_subset_cSuperdifferential`)
+yields Gangbo and McCann's Theorem 1.2: for probability measures `μ` and `ν` with `μ` absolutely
+continuous with respect to Haar measure, there is a `c`-concave potential `φ` such that
+`T x = x - ∇h⋆(∇φ x)` is a Kantorovich-optimal transport map for `ENNReal.ofReal (h (x - y))` whose
+graph plan has `c`-cyclically monotone support
 (`TauCeti.exists_isCConcave_and_isKantorovichOptimalTransportMap_of_strictConvexOn`), even when the
-optimal transport cost is `∞`. When the optimal cost is finite, both the optimal coupling and the
-optimal transport map are unique
+optimal transport cost is `∞`. When the optimal cost for `ENNReal.ofReal (h (x - y))` is finite,
+both the optimal coupling and the optimal transport map are unique
 (`TauCeti.IsOptimalCoupling.unique_of_strictConvexOn`,
 `TauCeti.exists_isKantorovichOptimalTransportMap_of_strictConvexOn`). When `h` is also
 differentiable, `∇h⋆` is the two-sided inverse of `∇h` by
@@ -54,12 +55,14 @@ differentiable, `∇h⋆` is the two-sided inverse of `∇h` by
   first marginal concentrated on `cSuperdifferential c φ` is the graph plan of
   `x ↦ x - ∇h⋆(∇φ x)`;
 * `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_strictConvexOn` and
-  `TauCeti.IsOptimalCoupling.unique_of_strictConvexOn` — map representation and uniqueness of
-  finite-cost optimal plans;
-* `TauCeti.exists_isCConcave_and_isKantorovichOptimalTransportMap_of_strictConvexOn` — unconditional
-  existence of a `c`-concave potential and cyclically/Kantorovich-optimal map `x ↦ x - ∇h⋆(∇φ x)`;
-* `TauCeti.exists_isKantorovichOptimalTransportMap_of_strictConvexOn` — finite-cost existence and
-  uniqueness of the Kantorovich-optimal transport map and optimal plan.
+  `TauCeti.IsOptimalCoupling.unique_of_strictConvexOn` — for `0 ≤ h`, map representation and
+  uniqueness of finite-cost optimal plans for `(x, y) ↦ ENNReal.ofReal (h (x - y))`;
+* `TauCeti.exists_isCConcave_and_isKantorovichOptimalTransportMap_of_strictConvexOn` — for `0 ≤ h`,
+  unconditional existence of a `c`-concave potential and cyclically/Kantorovich-optimal map
+  `x ↦ x - ∇h⋆(∇φ x)` for `(x, y) ↦ ENNReal.ofReal (h (x - y))`;
+* `TauCeti.exists_isKantorovichOptimalTransportMap_of_strictConvexOn` — for `0 ≤ h`, finite-cost
+  existence and uniqueness of the Kantorovich-optimal transport map and optimal plan for
+  `(x, y) ↦ ENNReal.ofReal (h (x - y))`.
 
 ## References
 

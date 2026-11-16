@@ -45,8 +45,9 @@ geometric regularity steps:
    bounded ball, where `h` is Lipschitz (`ConvexOn.locallyLipschitz`,
    `LocallyLipschitzOn.exists_lipschitzOnWith_of_compact`); hence
    `x ↦ (φ x).toReal` is locally Lipschitz wherever `φ` is locally bounded below
-   (`TauCeti.locallyLipschitzOn_toReal_cTransformSymm_of_eventually_le`), and therefore
-   differentiable Haar-almost everywhere on `{x | φ x ≠ ⊥}` by Rademacher's theorem
+   (`TauCeti.locallyLipschitzOn_toReal_cTransformSymm_of_eventually_le`). Combined with step 1 under
+   the cone condition (H2), `φ` avoids `⊥` locally and `x ↦ (φ x).toReal` is differentiable
+   Haar-almost everywhere on `{x | φ x ≠ ⊥}` by Rademacher's theorem
    (`LocallyLipschitzOn.ae_differentiableAt_of_mem`,
    `TauCeti.ae_eventually_ne_bot_and_differentiableAt_toReal_cTransformSymm`).
 
@@ -60,9 +61,9 @@ geometric regularity steps:
   `TauCeti.locallyLipschitzOn_interior_toReal_cTransformSymm` — local Lipschitzness of the real
   representative of `cTransformSymm` for convex superlinear `h` where locally bounded below, and on
   `interior {x | φ x ≠ ⊥}` under the cone condition (H2);
-* `TauCeti.ae_eventually_ne_bot_and_differentiableAt_toReal_cTransformSymm` — avoiding `⊥` locally
-  and differentiability of the real representative Haar-almost everywhere on `{x | φ x ≠ ⊥}` (the
-  finiteness domain when `ψ ≢ ⊥`).
+* `TauCeti.ae_eventually_ne_bot_and_differentiableAt_toReal_cTransformSymm` — for convex superlinear
+  `h` satisfying the cone condition (H2), avoiding `⊥` locally and differentiability of the real
+  representative Haar-almost everywhere on `{x | φ x ≠ ⊥}` (the finiteness domain when `ψ ≢ ⊥`).
 
 ## References
 
@@ -331,8 +332,9 @@ private theorem exists_closedBall_subset_setOf_cTransformSymm_eq_bot [Nontrivial
 
 /-- **The set `{x | cTransformSymm c ψ x ≠ ⊥}` equals its interior up to Haar measure zero**
 (Gangbo–McCann, Proposition 3.3). Under continuity of `h` and the cone condition (H2), the
-boundary points `{x | cTransformSymm c ψ x ≠ ⊥} \ interior {x | cTransformSymm c ψ x ≠ ⊥}` (the
-boundary of the finiteness domain when `ψ ≢ ⊥`) have zero additive Haar measure. -/
+non-interior points `{x | cTransformSymm c ψ x ≠ ⊥} \ interior {x | cTransformSymm c ψ x ≠ ⊥}`
+(the boundary points belonging to the finiteness domain when `ψ ≢ ⊥`) have zero additive Haar
+measure. -/
 theorem addHaar_sdiff_interior_setOf_cTransformSymm_ne_bot_eq_zero
     [MeasurableSpace E] [BorelSpace E] (ρ : Measure E) [ρ.IsAddHaarMeasure] (hc : Continuous h)
     (h_cone : ∀ r θ : ℝ, 0 < θ → θ < Real.pi → ∃ R : ℝ, ∀ p, R < ‖p‖ →
