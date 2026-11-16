@@ -9,6 +9,8 @@ public import TauCeti.Analysis.PDE.Strichartz.TTStar
 public import TauCeti.Analysis.PDE.Wave.Dispersive
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Integral.RieszThorin
 
 /-!
@@ -105,14 +107,9 @@ theorem exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le
       rw [hσ, hσ]
       funext ξ
       rw [littlewoodPaley_apply_eq_littlewoodPaley_zero_apply]
-    have h := integral_norm_pow_mul_norm_fourierInv_comp_smul (⇑(σ 0)) 0
-      (inv_ne_zero (zpow_ne_zero j two_ne_zero))
-    simp only [pow_zero, one_mul] at h
-    rw [eLpNorm_one_eq_lintegral_eNorm, eLpNorm_one_eq_lintegral_eNorm,
-      ← ofReal_integral_norm_eq_lintegral_eNorm (𝓕⁻ (σ j)).integrable,
-      ← ofReal_integral_norm_eq_lintegral_eNorm (𝓕⁻ (σ 0)).integrable,
-      SchwartzMap.fourierInv_coe, SchwartzMap.fourierInv_coe, hscale, h]
-    all_goals exact (SchwartzMap.continuous _).aestronglyMeasurable
+    rw [SchwartzMap.fourierInv_coe, SchwartzMap.fourierInv_coe, hscale,
+      eLpNorm_fourierInv_comp_inv_smul _ (zpow_pos two_pos j) 1]
+    simp
   refine ⟨(eLpNorm (𝓕⁻ (σ 0) : 𝓢(E, ℂ)) 1 volume).toNNReal, fun j m hm p hp f ↦ ?_⟩
   have hm' : m = (σ j).toLp ∞ := by
     apply Lp.ext
@@ -127,29 +124,13 @@ section TimePairing
 
 variable {φ} {j : ℤ} {m : Lp ℂ ∞ (volume : Measure E)}
 
-/-- A symbol that is almost everywhere the real cutoff `ψⱼ` is its own complex conjugate. -/
-private theorem star_eq_of_ae_eq_littlewoodPaley
-    (hm : m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))) : star m = m := by
-  apply Lp.ext
-  filter_upwards [Lp.coeFn_star m, hm] with ξ h₁ h₂
-  rw [h₁, Pi.star_apply, h₂, Complex.star_def, Complex.conj_ofReal]
-
-/-- A symbol that is almost everywhere the cutoff `ψⱼ` has `L^∞` norm at most `1`. -/
-private theorem norm_le_one_of_ae_eq_littlewoodPaley
-    (hm : m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))) : ‖m‖ ≤ 1 := by
-  rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable m)]
-  refine ENNReal.toReal_le_of_le_ofReal zero_le_one (eLpNormEssSup_le_of_ae_bound ?_)
-  filter_upwards [hm] with ξ h
-  rw [h, Complex.norm_real, Real.norm_eq_abs]
-  exact φ.abs_littlewoodPaley_le_one j ξ
-
 /-- The adjoint of `W(t) Pⱼ` is `Pⱼ W(-t)`. -/
 private theorem adjoint_halfWavePropagator_comp_fourierMultiplierCLM
     (hm : m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))) (t : ℝ) :
     (halfWavePropagator ℂ t ∘L Lp.fourierMultiplierCLM ℂ m)† =
       Lp.fourierMultiplierCLM ℂ m ∘L halfWavePropagator ℂ (-t) := by
   rw [ContinuousLinearMap.adjoint_comp, Lp.adjoint_fourierMultiplierCLM,
-    star_eq_of_ae_eq_littlewoodPaley hm, halfWavePropagator_def, adjoint_phasePropagator]
+    Lp.star_eq_self_of_ae_eq_ofReal hm, halfWavePropagator_def, adjoint_phasePropagator]
 
 /-- The time pairings of the family `W(t) Pⱼ` are `W(s - t) Pⱼ²`. -/
 private theorem halfWavePropagator_comp_apply_adjoint_apply
@@ -234,7 +215,10 @@ private theorem norm_halfWavePropagator_comp_fourierMultiplierCLM_comp_le_one
     ‖halfWavePropagator ℂ τ ∘L (Lp.fourierMultiplierCLM ℂ m ∘L Lp.fourierMultiplierCLM ℂ m)‖ ≤
       1 := by
   have hP : ‖Lp.fourierMultiplierCLM (E := E) ℂ m‖ ≤ 1 :=
-    (Lp.norm_fourierMultiplierCLM_le _).trans (norm_le_one_of_ae_eq_littlewoodPaley hm)
+    (Lp.norm_fourierMultiplierCLM_le _).trans <| Lp.norm_top_le_of_ae_bound zero_le_one <| by
+      filter_upwards [hm] with ξ h
+      rw [h, Complex.norm_real, Real.norm_eq_abs]
+      exact φ.abs_littlewoodPaley_le_one j ξ
   calc _ ≤ ‖halfWavePropagator (E := E) ℂ τ‖ *
         (‖Lp.fourierMultiplierCLM (E := E) ℂ m‖ * ‖Lp.fourierMultiplierCLM (E := E) ℂ m‖) :=
         (ContinuousLinearMap.opNorm_comp_le _ _).trans
