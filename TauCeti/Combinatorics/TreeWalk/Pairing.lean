@@ -108,7 +108,6 @@ theorem perfectMatching_noncrossingPairingEquiv_toPlanarMatching (w : ClosedTree
 
 /-- The partner of step `a` in `w.toPlanarMatching` is characterized as the unique step `b ≠ a`
 traversing the same unordered edge. -/
-@[simp]
 theorem toPlanarMatching_apply_eq_iff (w : ClosedTreeWalk k) (a b : Fin (2 * k)) :
     w.toPlanarMatching.1.val a = b ↔
       b ≠ a ∧ s(w.1 b, w.1 ((b : ℕ) + 1)) = s(w.1 a, w.1 ((a : ℕ) + 1)) := by
@@ -116,13 +115,13 @@ theorem toPlanarMatching_apply_eq_iff (w : ClosedTreeWalk k) (a b : Fin (2 * k))
     Finpartition.IsPairing.toPerfectMatching_apply_eq_iff, mem_part_toNoncrossingPairing, and_comm]
 
 /-- Every step and its partner in `w.toPlanarMatching` traverse the same unordered edge. -/
-@[simp]
 theorem sym2_toPlanarMatching_apply (w : ClosedTreeWalk k) (a : Fin (2 * k)) :
     s(w.1 (w.toPlanarMatching.1.val a), w.1 ((w.toPlanarMatching.1.val a : ℕ) + 1)) =
       s(w.1 a, w.1 ((a : ℕ) + 1)) :=
   ((w.toPlanarMatching_apply_eq_iff a _).mp rfl).2
 
 /-- The partner step in `w.toPlanarMatching` starts at the endpoint of step `a`. -/
+@[simp]
 theorem val_toPlanarMatching_apply (w : ClosedTreeWalk k) (a : Fin (2 * k)) :
     w.1 (w.toPlanarMatching.1.val a) = w.1 ((a : ℕ) + 1) := by
   obtain ⟨hne, heq⟩ := (w.toPlanarMatching_apply_eq_iff a _).mp rfl
@@ -130,6 +129,7 @@ theorem val_toPlanarMatching_apply (w : ClosedTreeWalk k) (a : Fin (2 * k)) :
     (Fin.val_ne_of_ne hne) heq).1
 
 /-- The partner step in `w.toPlanarMatching` ends at the starting vertex of step `a`. -/
+@[simp]
 theorem val_toPlanarMatching_apply_add_one (w : ClosedTreeWalk k) (a : Fin (2 * k)) :
     w.1 ((w.toPlanarMatching.1.val a : ℕ) + 1) = w.1 a := by
   obtain ⟨hne, heq⟩ := (w.toPlanarMatching_apply_eq_iff a _).mp rfl
