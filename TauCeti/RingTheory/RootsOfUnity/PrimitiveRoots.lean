@@ -58,6 +58,8 @@ when quantum binomial coefficients are evaluated at such a `q`.
   sends every element outside its kernel to a primitive `p`-th root of unity.
 * `IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq`: in the presence of a primitive `n`-th root of
   unity, a nonzero element with one `n`-th root has exactly `n` of them.
+* `IsPrimitiveRoot.ncard_setOf_pow_eq_one`: in the presence of a primitive `n`-th root of unity,
+  `n ≠ 0`, exactly `n` elements have `n`-th power `1`.
 * `IsPrimitiveRoot.pow_mul_add_one_eq_neg_one_pow`: if `q²` is a primitive `l`-th root of unity
   with `l > 0`, then `q^(l(l+1)) = (-1)^(l+1)`.
 
@@ -122,6 +124,17 @@ theorem _root_.IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq {n : ℕ} {ζ α a 
   classical
   rw [nthRootsFinset_def, Multiset.toFinset_card_of_nodup (hζ.nthRoots_nodup ha),
     hζ.card_nthRoots, ite_eq_left ⟨α, hα⟩]
+
+open Polynomial in
+/-- If `R` has a primitive `n`-th root of unity with `n ≠ 0`, then exactly `n` elements of `R`
+have `n`-th power `1`. This is Mathlib's `IsPrimitiveRoot.card_nthRootsFinset` stated for the set
+of solutions rather than the finset `nthRootsFinset n 1`. -/
+theorem _root_.IsPrimitiveRoot.ncard_setOf_pow_eq_one {n : ℕ} {ζ : R} (hζ : IsPrimitiveRoot ζ n)
+    (hn : n ≠ 0) : {x : R | x ^ n = 1}.ncard = n := by
+  have h : {x : R | x ^ n = 1} = ↑(nthRootsFinset n (1 : R)) := by
+    ext x
+    simp [mem_nthRootsFinset (Nat.pos_of_ne_zero hn)]
+  rw [h, Set.ncard_coe_finset, hζ.card_nthRootsFinset]
 
 /-- If `q²` is a primitive `l`-th root of unity with `l > 0`, then `q^(l(l+1)) = (-1)^(l+1)`: for
 even `l`, `q^l = (q²)^(l/2) = -1`, while for odd `l` the exponent `l(l+1)` is a multiple of
