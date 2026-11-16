@@ -203,7 +203,7 @@ theorem polynomialChainPrefix_castSucc {I : Fin (n + 2) → Type*} {W : Fin (n +
     refine congrArg (fun F => bind₁ F (P i.castSucc o)) (funext fun x => ?_)
     rcases x with w | a
     · rw [Sum.elim_inl, Sum.elim_inl, rename_X, Sum.map_inl]
-      exact congrArg (fun p => X (Sum.inl p)) (by simp)
+      simp
     · rw [Sum.elim_inr, Sum.elim_inr]
       exact ih a
 
@@ -237,7 +237,7 @@ theorem polynomialChainPrefix_succ_eq_rename_polynomialCompose
     rcases x with w | a
     · rw [Sum.elim_inl, Sum.elim_inl, bind₁_X_right, Sum.elim_inl, rename_X, Sum.map_inl,
         Sum.elim_inr]
-      exact congrArg (fun p => X (Sum.inl p)) (by simp)
+      simp
     · rw [Sum.elim_inr, Sum.elim_inr, ← polynomialCompose_apply]
       exact ih a
 
@@ -279,7 +279,7 @@ theorem polynomialChain_succ_last {I : Fin (n + 2) → Type*} {W : Fin (n + 1) �
   rcases x with w | a
   · rw [Sum.elim_inl, Sum.elim_inl, rename_X, rename_X, Sum.map_inl, Sum.map_inl, Sum.elim_inr,
       Sum.elim_inr]
-    exact congrArg (fun p => X (Sum.inl p)) (by simp)
+    simp
   · simp only [Sum.elim_inr, polynomialChain_def]
     refine (rename_rename _ _ _).trans ?_
     refine ((congrArg _ (polynomialChainPrefix_castSucc P (Fin.last n) a)).trans
