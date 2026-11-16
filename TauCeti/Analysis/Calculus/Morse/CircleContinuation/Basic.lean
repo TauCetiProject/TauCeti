@@ -298,8 +298,7 @@ private theorem lipschitzWith_circleContinuationSlope {δ m₀ t : ℝ} (r : ℝ
   -- Unfold the coercion of the `ℝ≥0` Lipschitz constant.
   change _ ≤ (4 * |δ| / m₀) * dist θ θ'
   rw [div_eq_mul_inv]
-  exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (inv_anti₀ hm₀ hm)
-    (by positivity)) dist_nonneg
+  gcongr
 
 /-- **Continuous dependence on `δ`.** Let `m₀ > 0` bound `t (1 - t²)` below on `[a, b] ⊆ (0, 1)`.
 Two solutions `Θ₁`, `Θ₂` of `Θ' = circleContinuationSlope δᵢ r t (Θ t)` on `[a, b]` stay within the
@@ -420,12 +419,14 @@ theorem exists_eq_forall_mem_Icc_hasDerivWithinAt_circleContinuationSlope {δ a 
       -- Unfold the coercion of the `ℝ≥0` bound.
       change _ ≤ 2 * |δ| / (a * (1 - b ^ 2))
       rw [div_eq_mul_inv]
-      exact mul_le_mul_of_nonneg_left (inv_anti₀ hm (mul_one_sub_sq_le ha hb ht)) (by positivity)
+      gcongr _ * ?_⁻¹
+      exact mul_one_sub_sq_le ha hb ht
     · -- Unfold the coercions of the `ℝ≥0` constants and of the initial time.
       change 2 * |δ| / (a * (1 - b ^ 2)) * max (b - t₀) (t₀ - a) ≤
         2 * |δ| / (a * (1 - b ^ 2)) * (b - a) - 0
       rw [sub_zero]
-      exact mul_le_mul_of_nonneg_left (max_le (by linarith [ht₀.1]) (by linarith [ht₀.2])) L.2
+      gcongr
+      exact max_le (by linarith [ht₀.1]) (by linarith [ht₀.2])
   exact hPL.exists_eq_forall_mem_Icc_hasDerivWithinAt₀
 
 /-- The angular velocity vanishes where `sin (2 (θ - r t)) = 0`. -/
