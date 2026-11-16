@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.HopfAlgebroid
 public import TauCeti.RingTheory.FormalGroup.ExponentTwo.CoordinateChange
+import Mathlib.Algebra.MvPolynomial.Monad
 
 /-!
 # The exponent-two ring as an invariant quotient of the Lazard ring
