@@ -260,7 +260,7 @@ private theorem iSup_inversions_le_positivePoints_inf_conj_negativePoints
   · let w := D.weylProjection k n
     let δ := (t.simplyConnectedRootDatum ht).weylGroupToPerm w⁻¹ γ
     have hδ : δ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-      rw [negRoots_eq_compl, t.posRoots_rationalRootSystem ht, ← negRoots_eq_compl]
+      rw [← compl_posRoots, t.posRoots_rationalRootSystem ht, compl_posRoots]
       exact mapsTo_inversions_negRoots _ _ _ hγ
     have hwδ : (t.simplyConnectedRootDatum ht).weylGroupToPerm w δ = γ := by
       simp only [δ, map_inv, Equiv.Perm.inv_def, Equiv.apply_symm_apply]

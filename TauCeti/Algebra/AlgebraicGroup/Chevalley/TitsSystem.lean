@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Elementary
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Generation
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Borel
 public import TauCeti.GroupTheory.TitsSystem.Basic
@@ -16,12 +16,9 @@ import TauCeti.GroupTheory.TitsSystem.Comap
 /-!
 # The Tits system and Weyl quotient of a Chevalley datum over a field
 
-Let `D` be a Chevalley datum of valid Dynkin type `t`. Over every commutative ring `A`, its
-Borel-type subgroup `D.borelSubgroup A` and Weyl subgroup `D.weylSubgroup A` lie in and generate
-the extended elementary subgroup `D.extendedElementarySubgroup A`.
-
-Over an arbitrary field `k` — including `𝔽₂`, with no hypothesis on `kˣ` — this file constructs and
-identifies the associated Tits systems and Weyl quotients:
+Let `D` be a Chevalley datum of valid Dynkin type `t`. Over an arbitrary field `k` — including
+`𝔽₂`, with no hypothesis on `kˣ` — this file constructs and identifies the Tits systems and Weyl
+quotients associated to `D.borelSubgroup k` and `D.weylSubgroup k`:
 
 1. `D.extendedElementaryTitsSystem k`: the Tits system on `D.extendedElementarySubgroup k` formed
    by the subgroups induced by `D.borelSubgroup k` and `D.weylSubgroup k` together with the cosets
@@ -46,7 +43,6 @@ identifies the associated Tits systems and Weyl quotients:
 
 public section
 
-open Multiplicative
 open scoped Pointwise
 
 namespace TauCeti.DynkinType.ChevalleyDatum
@@ -55,74 +51,8 @@ universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-/-! ### Generation of the extended elementary subgroup over a commutative ring -/
-
-section CommRing
-
-variable (A : Type v) [CommRing A]
-
-/-- Over every commutative ring, the Borel-type subgroup lies in the extended elementary subgroup.
--/
-theorem borelSubgroup_le_extendedElementarySubgroup :
-    D.borelSubgroup A ≤ D.extendedElementarySubgroup A :=
-  (D.borelSubgroup_le_iff A).mpr
-    ⟨fun γ _ u => D.elementarySubgroup_le_extendedElementarySubgroup A
-      (D.rootSubgroupPoints_mem_elementarySubgroup A γ u),
-      D.torusPoints_mem_extendedElementarySubgroup A⟩
-
-/-- Over every commutative ring, the Weyl subgroup lies in the extended elementary subgroup. -/
-theorem weylSubgroup_le_extendedElementarySubgroup :
-    D.weylSubgroup A ≤ D.extendedElementarySubgroup A := by
-  rw [D.weylSubgroup_def, Subgroup.closure_le]
-  rintro _ (⟨s, rfl⟩ | ⟨i, rfl⟩)
-  · exact D.torusPoints_mem_extendedElementarySubgroup A s
-  · dsimp only
-    rw [D.weylElement_def]
-    have hmem (γ : Fin t.numRoots) (u : Multiplicative A) :
-        D.rootSubgroupPoints γ A u ∈ D.extendedElementarySubgroup A :=
-      D.elementarySubgroup_le_extendedElementarySubgroup A
-        (D.rootSubgroupPoints_mem_elementarySubgroup A γ u)
-    exact mul_mem (mul_mem (hmem _ _) (hmem _ _)) (hmem _ _)
-
-/-- Over every commutative ring, the Borel-type subgroup and the Weyl subgroup generate the
-extended elementary subgroup. -/
-theorem closure_borelSubgroup_union_weylSubgroup :
-    Subgroup.closure ((D.borelSubgroup A : Set (D.points A)) ∪ D.weylSubgroup A) =
-      D.extendedElementarySubgroup A := by
-  let C := Subgroup.closure ((D.borelSubgroup A : Set (D.points A)) ∪ D.weylSubgroup A)
-  apply le_antisymm
-  · exact (Subgroup.closure_le _).mpr <| Set.union_subset
-      (D.borelSubgroup_le_extendedElementarySubgroup A)
-      (D.weylSubgroup_le_extendedElementarySubgroup A)
-  · have helem : D.elementarySubgroup A ≤ C := by
-      rw [D.elementarySubgroup_eq_closure_simpleRootPair, Subgroup.closure_le]
-      intro g hg
-      obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hg
-      have hpos_i : t.simpleIndex ht i ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) :=
-        simpleIndex_mem_posRoots i
-      rcases hi with ⟨u, rfl⟩ | ⟨u, rfl⟩
-      · exact Subgroup.subset_closure <| Or.inl <| D.positivePoints_le_borelSubgroup A
-          (D.rootSubgroupPoints_mem_positivePoints A hpos_i u)
-      · let ε := t.chevalleyWeylSign ht (t.simpleIndex ht i) (t.simpleIndex ht i)
-        have hconj := D.weylElement_conj_rootSubgroupPoints i (t.simpleIndex ht i) A
-          ((ε : ℤ) • toAdd u)
-        have hε : (ε : A) * ((ε : ℤ) • toAdd u) = toAdd u := by
-          rw [zsmul_eq_mul, ← mul_assoc, ← Int.cast_mul, ← Units.val_mul, Int.units_mul_self,
-            Units.val_one, Int.cast_one, one_mul]
-        rw [hε, ofAdd_toAdd] at hconj
-        rw [← hconj]
-        have hni : D.weylElement (t.simpleIndex ht i) A 1 ∈ C :=
-          Subgroup.subset_closure (Or.inr (D.weylElement_mem_weylSubgroup A i))
-        have hxi : D.rootSubgroupPoints (t.simpleIndex ht i) A (ofAdd ((ε : ℤ) • toAdd u)) ∈ C :=
-          Subgroup.subset_closure <| Or.inl <| D.positivePoints_le_borelSubgroup A
-            (D.rootSubgroupPoints_mem_positivePoints A hpos_i _)
-        exact C.mul_mem (C.mul_mem hni hxi) (C.inv_mem hni)
-    rw [D.extendedElementarySubgroup_def]
-    refine sup_le helem ?_
-    rintro _ ⟨s, rfl⟩
-    exact Subgroup.subset_closure (Or.inl (D.range_torusPoints_le_borelSubgroup A ⟨s, rfl⟩))
-
-private theorem mem_doubleCoset_subgroupOf_iff (x z : D.extendedElementarySubgroup A) :
+private theorem mem_doubleCoset_subgroupOf_iff (A : Type v) [CommRing A]
+    (x z : D.extendedElementarySubgroup A) :
     z ∈ DoubleCoset.doubleCoset x
         ((D.borelSubgroup A).subgroupOf (D.extendedElementarySubgroup A))
         ((D.borelSubgroup A).subgroupOf (D.extendedElementarySubgroup A)) ↔
@@ -137,8 +67,6 @@ private theorem mem_doubleCoset_subgroupOf_iff (x z : D.extendedElementarySubgro
     exact DoubleCoset.mem_doubleCoset.mpr
       ⟨⟨b₁, D.borelSubgroup_le_extendedElementarySubgroup A hb₁⟩, hb₁,
         ⟨b₂, D.borelSubgroup_le_extendedElementarySubgroup A hb₂⟩, hb₂, Subtype.ext hmul⟩
-
-end CommRing
 
 /-! ### The Tits system on the extended elementary subgroup -/
 
@@ -193,8 +121,8 @@ private theorem closure_borelSubgroup_union_weylSubgroup_subgroupOf :
       (D.weylSubgroup k : Set (D.points k)) := by
     rw [← Subgroup.coe_map,
       Subgroup.map_subgroupOf_eq_of_le (D.weylSubgroup_le_extendedElementarySubgroup k)]
-  rw [MonoidHom.map_closure, Set.image_union, hB, hN, htop,
-    D.closure_borelSubgroup_union_weylSubgroup k]
+  rw [MonoidHom.map_closure, Set.image_union, hB, hN, htop, Subgroup.closure_union,
+    Subgroup.closure_eq, Subgroup.closure_eq, D.borelSubgroup_sup_weylSubgroup k]
 
 private theorem closure_range_simpleWeylRep :
     Subgroup.closure (Set.range fun i : Fin t.rank =>

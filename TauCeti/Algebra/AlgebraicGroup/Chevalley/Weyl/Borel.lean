@@ -8,15 +8,14 @@ module
 public import Mathlib.GroupTheory.DoubleCoset
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Blocks
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.PositiveSubsystem
 import TauCeti.GroupTheory.DoubleCoset.Basic
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
 # Borel intersections and simple-reflection double cosets for a Chevalley datum
@@ -31,8 +30,8 @@ relates the Weyl subgroup `D.weylSubgroup k` of a Chevalley datum `D` to its pos
 2. `D.positivePoints k ⊓ D.weylSubgroup k = ⊥` and consequently
    `D.borelSubgroup k ⊓ D.weylSubgroup k = (D.torusPoints k).range`. Off-diagonal entries between
    distinct weights vanish after passing to the algebraic closure where torus characters separate
-   weights; entries within a single weight space agree with the identity matrix because positive
-   root operators strictly raise weights under every tie-breaking linear order.
+   weights; entries within a single weight space agree with the identity matrix by
+   `ChevalleyDatum.coe_apply_eq_one_apply_of_mem_positivePoints_of_weight_eq`.
 3. Left multiplication of a double coset `B n B` (`n ∈ D.weylSubgroup k`) by the simple-reflection
    cell `B nᵢ(1) B` equals `B (nᵢ(1) n) B` whenever `(D.weylProjection k n)⁻¹` keeps `αᵢ`
    positive, and always lies in `B (nᵢ(1) n) B ∪ B n B`.
@@ -49,7 +48,7 @@ simple Weyl representatives.
 
 public section
 
-open Multiplicative TensorProduct
+open Multiplicative
 open TauCeti.UniversalEnvelopingAlgebra
 open scoped Pointwise
 
@@ -58,117 +57,6 @@ namespace TauCeti.DynkinType.ChevalleyDatum
 universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
-
--- Match scalar-extension tensor products with the integral algebra structure on the value ring.
-attribute [local instance high] Algebra.toModule
-
-/-! ### Weight-space entries of positive points -/
-
-/-- Auxiliary index wrapper carrying no built-in order, so weight-decreasing linear orders do not
-compete with the standard order on `Fin D.dim`. -/
-private structure WtIdx (n : ℕ) where
-  idx : Fin n
-
-private def equivWtIdx (n : ℕ) : Fin n ≃ WtIdx n :=
-  ⟨WtIdx.mk, WtIdx.idx, fun _ => rfl, fun _ => rfl⟩
-
-private instance (n : ℕ) : Fintype (WtIdx n) :=
-  Fintype.ofEquiv (Fin n) (equivWtIdx n)
-
-@[instance_reducible]
-private noncomputable def wtIdxLinearOrder {β : Type} [LinearOrder β] (tie : Fin D.dim ≃ β) :
-    LinearOrder (WtIdx D.dim) :=
-  LinearOrder.lift'
-    (fun x => toLex (OrderDual.toDual (t.weightDegree ht (D.weight x.idx)), tie x.idx))
-    (fun ⟨_⟩ ⟨_⟩ h => congrArg WtIdx.mk (tie.injective (congrArg (fun z => (ofLex z).2) h)))
-
-/-- Under a weight-decreasing linear order with tie-breaker `tie`, every positive point is upper
-unitriangular when reindexed to `WtIdx D.dim`. -/
-private theorem isUpperUnitriangular_submatrix_of_mem_positivePoints {A : Type v} [CommRing A]
-    {β : Type} [LinearOrder β] (tie : Fin D.dim ≃ β)
-    {g : D.points A} (hg : g ∈ D.positivePoints A) :
-    letI : LinearOrder (WtIdx D.dim) := D.wtIdxLinearOrder tie
-    (((g : Matrix.GeneralLinearGroup (Fin D.dim) A) :
-      Matrix (Fin D.dim) (Fin D.dim) A).submatrix WtIdx.idx WtIdx.idx).IsUpperUnitriangular := by
-  let : LinearOrder (WtIdx D.dim) := D.wtIdxLinearOrder tie
-  obtain ⟨u, hu, hu_eq⟩ := D.mem_positivePoints_iff.mp hg
-  have hu' : u ∈ kostantSubsystemSubgroup (t.chevalleySystem ht) (t.lieBasis ht).h
-      D.representation D.lattice
-      (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
-        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
-      (isNilpotent_apply_ι_chevalleySystem D.representation
-        D.isNilpotent_representation_rootGenerator)
-      (posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) (CommAlgCat.of ℤ A) := by
-    simpa only [SetLike.mem_coe, D.positiveSubgroup_eq_closure, kostantSubsystemSubgroup_eq_closure,
-      kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
-        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator] using hu
-  have hpos : ∀ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
-      ∀ {r s : WtIdx D.dim} {m : ℕ}, 0 < m →
-        D.weight r.idx = D.weight s.idx + m • (t.simplyConnectedRootDatum ht).root γ → r < s := by
-    intro γ hγ r s m hm hrs
-    -- Expose the defining lexicographic order of `wtIdxLinearOrder`.
-    change toLex (OrderDual.toDual (t.weightDegree ht (D.weight r.idx)), tie r.idx) <
-      toLex (OrderDual.toDual (t.weightDegree ht (D.weight s.idx)), tie s.idx)
-    apply Prod.Lex.left
-    rw [hrs, map_add, map_nsmul]
-    exact lt_add_of_pos_right _ (nsmul_pos (t.weightDegree_root_pos ht hγ) hm.ne')
-  have hmem := UpperUnitriangularGroup.mem_iff.mp <|
-    map_kostantSubsystemSubgroup_le_upperUnitriangular
-      (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice
-      (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
-        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
-      (isNilpotent_apply_ι_chevalleySystem D.representation
-        D.isNilpotent_representation_rootGenerator)
-      (D.basis.reindex (equivWtIdx D.dim)) (fun x => D.weight x.idx)
-      (t.simplyConnectedRootDatum ht).root
-      (posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-      (fun x => by simpa [equivWtIdx] using D.isCartanWeightVector_basis x.idx)
-      (fun γ _ j => t.lie_lieBasis_h_chevalleySystem ht γ j) hpos A ⟨u, hu', rfl⟩
-  have hmat :
-      ((Units.map (LinearMap.toMatrixAlgEquiv
-          ((D.basis.reindex (equivWtIdx D.dim)).baseChange A)).toMulEquiv u :
-        Matrix.GeneralLinearGroup (WtIdx D.dim) A) : Matrix (WtIdx D.dim) (WtIdx D.dim) A) =
-      (((g : Matrix.GeneralLinearGroup (Fin D.dim) A) :
-        Matrix (Fin D.dim) (Fin D.dim) A).submatrix WtIdx.idx WtIdx.idx) := by
-    rw [← hu_eq]
-    ext ⟨r⟩ ⟨s⟩
-    simp [equivWtIdx, LinearMap.toMatrixAlgEquiv, LinearMap.toMatrix_apply,
-      Module.Basis.baseChange_reindex, Module.Basis.reindex_apply, Module.Basis.repr_reindex]
-  rwa [hmat] at hmem
-
-/-- Positive points act as the identity on each individual weight space: if
-`D.weight r = D.weight s`, the `(r, s)` entry of `g ∈ D.positivePoints A` agrees with that of
-`1`. -/
-private theorem coe_apply_of_mem_positivePoints_of_weight_eq {A : Type v} [CommRing A]
-    {g : D.points A} (hg : g ∈ D.positivePoints A)
-    {r s : Fin D.dim} (hrs : D.weight r = D.weight s) :
-    ((g : Matrix.GeneralLinearGroup (Fin D.dim) A) : Matrix (Fin D.dim) (Fin D.dim) A) r s =
-      (1 : Matrix (Fin D.dim) (Fin D.dim) A) r s := by
-  rcases lt_trichotomy r s with hlt | rfl | hgt
-  · let : LinearOrder (WtIdx D.dim) := D.wtIdxLinearOrder OrderDual.toDual
-    have hu := D.isUpperUnitriangular_submatrix_of_mem_positivePoints OrderDual.toDual hg
-    have hdual : (⟨s⟩ : WtIdx D.dim) < ⟨r⟩ := by
-      -- Expose the lexicographic comparison on `WtIdx D.dim`.
-      change toLex (OrderDual.toDual (t.weightDegree ht (D.weight s)), OrderDual.toDual s) <
-        toLex (OrderDual.toDual (t.weightDegree ht (D.weight r)), OrderDual.toDual r)
-      rw [hrs]
-      exact Prod.Lex.right _ hlt
-    rw [Matrix.one_apply_ne hlt.ne]
-    exact hu.isUpperTriangular hdual
-  · let : LinearOrder (WtIdx D.dim) := D.wtIdxLinearOrder (Equiv.refl _)
-    rw [Matrix.one_apply_eq]
-    exact (D.isUpperUnitriangular_submatrix_of_mem_positivePoints
-      (Equiv.refl _) hg).apply_diag ⟨r⟩
-  · let : LinearOrder (WtIdx D.dim) := D.wtIdxLinearOrder (Equiv.refl _)
-    have hu := D.isUpperUnitriangular_submatrix_of_mem_positivePoints (Equiv.refl _) hg
-    have hrefl : (⟨s⟩ : WtIdx D.dim) < ⟨r⟩ := by
-      -- Expose the lexicographic comparison on `WtIdx D.dim`.
-      change toLex (OrderDual.toDual (t.weightDegree ht (D.weight s)), s) <
-        toLex (OrderDual.toDual (t.weightDegree ht (D.weight r)), r)
-      rw [hrs]
-      exact Prod.Lex.right _ hgt
-    rw [Matrix.one_apply_ne hgt.ne']
-    exact hu.isUpperTriangular hrefl
 
 /-! ### Intersection of the Weyl subgroup with the positive and Borel subgroups -/
 
@@ -188,7 +76,7 @@ theorem weylProjection_eq_one_of_mem_borelSubgroup (n : D.weylSubgroup k)
     exact inversions_subset_posRoots _ _ _ hγ
   have hγ_neg : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k n) γ ∈
       negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-    rw [negRoots_eq_compl, t.posRoots_rationalRootSystem ht, ← negRoots_eq_compl]
+    rw [← compl_posRoots, t.posRoots_rationalRootSystem ht, compl_posRoots]
     exact mapsTo_inversions_negRoots _ _ _ hγ
   obtain ⟨c, hc⟩ := D.exists_unit_conj_rootSubgroupPoints k n γ
   have hconj_mem :
@@ -216,7 +104,7 @@ theorem positivePoints_inf_weylSubgroup_eq_bot :
   intro r s
   simp only [Subgroup.coe_one, Units.val_one]
   by_cases hwt : D.weight r = D.weight s
-  · exact D.coe_apply_of_mem_positivePoints_of_weight_eq hpos hwt
+  · exact D.coe_apply_eq_one_apply_of_mem_positivePoints_of_weight_eq k hpos hwt
   · have hrs : r ≠ s := fun h => hwt (congrArg D.weight h)
     rw [Matrix.one_apply_ne hrs]
     obtain ⟨x, hx⟩ := exists_torusCharacter_ne (K := AlgebraicClosure k) hwt
