@@ -135,16 +135,15 @@ theorem mul_S_apply (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i = ![γ i 1, -γ i
   ext j
   fin_cases j <;> simp [coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
 
-/-- Right multiplication by `T` sends row `i` of `γ ∈ SL(2, ℤ)` to `(γ i 0, γ i 0 + γ i 1)`. -/
-theorem mul_T_apply (γ : SL(2, ℤ)) (i : Fin 2) : (γ * T) i = ![γ i 0, γ i 0 + γ i 1] := by
-  ext j
-  fin_cases j <;> simp [coe_mul, coe_T, Matrix.mul_apply, Fin.sum_univ_two]
-
 /-- Right multiplication by `T ^ n` sends row `i` of `γ ∈ SL(2, ℤ)` to
 `(γ i 0, γ i 0 * n + γ i 1)`. -/
 theorem mul_T_zpow_apply (γ : SL(2, ℤ)) (n : ℤ) (i : Fin 2) :
     (γ * T ^ n) i = ![γ i 0, γ i 0 * n + γ i 1] := by
   ext j
   fin_cases j <;> simp [coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- Right multiplication by `T` sends row `i` of `γ ∈ SL(2, ℤ)` to `(γ i 0, γ i 0 + γ i 1)`. -/
+theorem mul_T_apply (γ : SL(2, ℤ)) (i : Fin 2) : (γ * T) i = ![γ i 0, γ i 0 + γ i 1] := by
+  simpa using mul_T_zpow_apply γ 1 i
 
 end Matrix.SpecialLinearGroup

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
-public import TauCeti.NumberTheory.ModularForms.DedekindEta.Multiplier
+public import TauCeti.NumberTheory.ModularForms.DedekindEta.Transformation
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Data.Int.MulPred
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
@@ -20,7 +20,7 @@ For `γ = (a b; c d) ∈ SL(2, ℤ)` and `e(x) = exp(2π i x)`, the Dedekind eta
 * `ε(γ) = (d / |c|) e(((a + d) c - b d (c² - 1) - 3 c) / 24)` when `c` is odd, and
 * `ε(γ) = (c / d) e(((a + d) c - b d (c² - 1) + 3 d - 3 - 3 c d) / 24)` when `c` is even,
 
-where `(· / ·)` is the Kronecker symbol `TauCeti.kroneckerSym`. For `c > 0`, `|c| = c`, so
+where `(· / ·)` is the Kronecker symbol `TauCeti.kroneckerSym`. For `c ≥ 0`, `|c| = c`, so
 `(d / |c|)` reduces to `(d / c)`. Unlike the Dedekind-sum formula in
 `TauCeti.NumberTheory.ModularForms.DedekindEta.Multiplier`, this expression exhibits the quadratic
 character in `d` and `c` directly across all of `SL(2, ℤ)`, which is the input to the modularity
@@ -40,27 +40,18 @@ The formulas then extend to `c = 0` via `etaMultiplier_of_c_eq_zero` and to `c <
 `etaMultiplier_neg_of_c_neg`, where the sign factor `χ₄` from negating the Kronecker symbol
 combines with `i` and the `-6 m` numerator shift.
 
-Combining the Kronecker formula with `etaMultiplier_of_c_pos` also gives the closed evaluation of
-`exp(-π i s(d, c))` in terms of `kroneckerSym` for any integers `a, d, c` with `c > 0` and
-`a d ≡ 1 (mod c)`.
-
 ## Main results
 
-* `TauCeti.ModularForm.etaMultiplier_eq_ite_kroneckerSym_mul_cexp`,
-  `TauCeti.ModularForm.etaMultiplier_eq_ite_kroneckerSym_mul_cexp_of_c_pos`: unified
-  Kronecker-symbol formula on all of `SL(2, ℤ)` and its specialization to `c > 0`.
+* `TauCeti.ModularForm.etaMultiplier_eq_ite_kroneckerSym_mul_cexp_of_c_nonneg`,
+  `TauCeti.ModularForm.etaMultiplier_eq_ite_kroneckerSym_mul_cexp`: unified Kronecker-symbol
+  formula for `c ≥ 0` and on all of `SL(2, ℤ)`.
 * `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_cexp_of_odd_c`,
-  `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_cexp_of_c_pos_of_odd_c`,
+  `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_cexp_of_c_nonneg_of_odd_c`,
   `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_cexp_of_even_c`: the odd-`c` and
   even-`c` formulas.
 * `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_cexp_of_isCoprime_c_six`,
-  `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_cexp_of_c_pos_of_isCoprime_c_six`:
+  `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_cexp_of_c_nonneg_of_isCoprime_c_six`:
   simplified formula `ε(γ) = (d / |c|) e^{π i (a + d - 3) c / 12}` when `c` is prime to `6`.
-* `TauCeti.cexp_neg_pi_mul_I_mul_dedekindSum_of_pos_of_mul_modEq_one`,
-  `TauCeti.cexp_neg_pi_mul_I_mul_dedekindSum_of_pos_of_mul_modEq_one_of_odd`,
-  `TauCeti.cexp_neg_pi_mul_I_mul_dedekindSum_of_pos_of_mul_modEq_one_of_even`:
-  closed evaluation of `exp(-π i s(d, c))` in terms of `kroneckerSym` for `c > 0` and
-  `a d ≡ 1 (mod c)`.
 
 ## References
 
@@ -381,24 +372,61 @@ private theorem kroneckerEtaMultiplier_mul_S_of_odd_of_even {γ : SL(2, ℤ)} (h
     kroneckerSym_neg_right_of_nonneg hd.le, hnum, hexp]
   ring
 
+private theorem etaMultiplier_eq_kronecker_even_of_c_eq_zero {γ : SL(2, ℤ)} (hc : γ 1 0 = 0) :
+    etaMultiplier γ = kroneckerSym (γ 1 0) (γ 1 1) *
+      cexp (2 * π * I *
+        (((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) +
+          3 * γ 1 1 - 3 - 3 * γ 1 0 * γ 1 1 : ℤ) : ℂ) / 24) := by
+  have hdet := γ.fin_two_mul_sub_mul_eq_one
+  rw [hc, mul_zero, sub_zero] at hdet
+  rcases Int.mul_eq_one_iff_eq_one_or_neg_one.mp hdet with ⟨_, hd⟩ | ⟨_, hd⟩
+  · rw [etaMultiplier_of_c_eq_zero_of_d_pos hc (by omega), hc, hd, kroneckerSym_one_right,
+      Int.cast_one, one_mul]
+    congr 1
+    push_cast
+    ring
+  · have hexp : 2 * π * I *
+        (((γ 0 0 + -1) * 0 - γ 0 1 * -1 * (0 ^ 2 - 1) + 3 * -1 - 3 - 3 * 0 * -1 : ℤ) : ℂ) / 24 =
+        -π / 2 * I + -(π * I * γ 0 1 / 12) := by
+      push_cast
+      ring
+    rw [etaMultiplier_of_c_eq_zero_of_d_neg hc (by omega), hc, hd,
+      kroneckerSym_zero_left, ite_eq_left (Or.inr rfl), Int.cast_one, one_mul,
+      hexp, Complex.exp_add, Complex.exp_neg_pi_div_two_mul_I]
+
 /-! ### Main Kronecker-symbol formulas -/
 
-private theorem etaMultiplier_eq_kroneckerEtaMultiplier_of_c_pos {γ : SL(2, ℤ)} (hc : 0 < γ 1 0) :
-    etaMultiplier γ = kroneckerEtaMultiplier γ := by
-  symm
-  refine eq_etaMultiplier_of_c_pos (f := kroneckerEtaMultiplier)
-    (fun δ hδ ↦ kroneckerEtaMultiplier_of_c_eq_one hδ)
-    (fun δ hδ ↦ ?_) (fun δ hδ0 hδ1 ↦ ?_) γ hc
-  · rcases Int.even_or_odd (δ 1 0) with heven | hodd
-    · exact kroneckerEtaMultiplier_mul_T_of_even heven
-    · exact kroneckerEtaMultiplier_mul_T_of_odd hδ hodd
-  · rcases Int.even_or_odd (δ 1 0) with heven_c | hodd_c
-    · exact kroneckerEtaMultiplier_mul_S_of_even_of_odd hδ1 heven_c
-        (Matrix.SpecialLinearGroup.odd_apply_zero_zero_and_apply_one_one_of_even_apply_one_zero
-          heven_c).2
-    · rcases Int.even_or_odd (δ 1 1) with heven_d | hodd_d
-      · exact kroneckerEtaMultiplier_mul_S_of_odd_of_even hδ1 hodd_c heven_d
-      · exact kroneckerEtaMultiplier_mul_S_of_odd_of_odd hδ0 hδ1 hodd_c hodd_d
+/-- **Kronecker-symbol formula for the eta multiplier for `c ≥ 0`** (Strömberg, Remark 2.5,
+equation (2.5)): for `γ = (a b; c d) ∈ SL(2, ℤ)` with `c ≥ 0`, `|c| = c`, so `ε(γ)` is given in
+terms of `(d / c)` when `c` is odd and `(c / d)` when `c` is even. -/
+theorem etaMultiplier_eq_ite_kroneckerSym_mul_cexp_of_c_nonneg (γ : SL(2, ℤ)) (hc : 0 ≤ γ 1 0) :
+    etaMultiplier γ =
+      if Odd (γ 1 0) then
+        kroneckerSym (γ 1 1) (γ 1 0) *
+          cexp (2 * π * I *
+            (((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) - 3 * γ 1 0 : ℤ) : ℂ) / 24)
+      else
+        kroneckerSym (γ 1 0) (γ 1 1) *
+          cexp (2 * π * I *
+            (((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) +
+              3 * γ 1 1 - 3 - 3 * γ 1 0 * γ 1 1 : ℤ) : ℂ) / 24) := by
+  rcases hc.eq_or_lt with hc0 | hc_pos
+  · rw [ite_eq_right (hc0 ▸ Int.not_odd_zero)]
+    exact etaMultiplier_eq_kronecker_even_of_c_eq_zero hc0.symm
+  · symm
+    refine eq_etaMultiplier_of_c_pos (f := kroneckerEtaMultiplier)
+      (fun δ hδ ↦ kroneckerEtaMultiplier_of_c_eq_one hδ)
+      (fun δ hδ ↦ ?_) (fun δ hδ0 hδ1 ↦ ?_) γ hc_pos
+    · rcases Int.even_or_odd (δ 1 0) with heven | hodd
+      · exact kroneckerEtaMultiplier_mul_T_of_even heven
+      · exact kroneckerEtaMultiplier_mul_T_of_odd hδ hodd
+    · rcases Int.even_or_odd (δ 1 0) with heven_c | hodd_c
+      · exact kroneckerEtaMultiplier_mul_S_of_even_of_odd hδ1 heven_c
+          (Matrix.SpecialLinearGroup.odd_apply_zero_zero_and_apply_one_one_of_even_apply_one_zero
+            heven_c).2
+      · rcases Int.even_or_odd (δ 1 1) with heven_d | hodd_d
+        · exact kroneckerEtaMultiplier_mul_S_of_odd_of_even hδ1 hodd_c heven_d
+        · exact kroneckerEtaMultiplier_mul_S_of_odd_of_odd hδ0 hδ1 hodd_c hodd_d
 
 /-- For odd `m`, the sign factor `χ₄ m * i` cancels the `-6 m` numerator shift in
 `exp(2π i (N - 6 m) / 24)`: for `m ≡ 1 (mod 4)` it is `1 * i * (-i) = 1`, and for `m ≡ 3 (mod 4)`
@@ -430,28 +458,6 @@ private theorem chi4_mul_I_mul_cexp_sub_six_mul (N : ℤ) {m : ℤ} (hm : Odd m)
     rw [hχ, Int.cast_neg, Int.cast_one, hexp, hsplit, Complex.exp_add,
       Complex.exp_pi_div_two_mul_I, ← mul_assoc, hI, one_mul]
 
-private theorem etaMultiplier_eq_kronecker_even_of_c_eq_zero {γ : SL(2, ℤ)} (hc : γ 1 0 = 0) :
-    etaMultiplier γ = kroneckerSym (γ 1 0) (γ 1 1) *
-      cexp (2 * π * I *
-        (((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) +
-          3 * γ 1 1 - 3 - 3 * γ 1 0 * γ 1 1 : ℤ) : ℂ) / 24) := by
-  have hdet := γ.fin_two_mul_sub_mul_eq_one
-  rw [hc, mul_zero, sub_zero] at hdet
-  rcases Int.mul_eq_one_iff_eq_one_or_neg_one.mp hdet with ⟨_, hd⟩ | ⟨_, hd⟩
-  · rw [etaMultiplier_of_c_eq_zero_of_d_pos hc (by omega), hc, hd, kroneckerSym_one_right,
-      Int.cast_one, one_mul]
-    congr 1
-    push_cast
-    ring
-  · have hexp : 2 * π * I *
-        (((γ 0 0 + -1) * 0 - γ 0 1 * -1 * (0 ^ 2 - 1) + 3 * -1 - 3 - 3 * 0 * -1 : ℤ) : ℂ) / 24 =
-        -π / 2 * I + -(π * I * γ 0 1 / 12) := by
-      push_cast
-      ring
-    rw [etaMultiplier_of_c_eq_zero_of_d_neg hc (by omega), hc, hd,
-      kroneckerSym_zero_left, ite_eq_left (Or.inr rfl), Int.cast_one, one_mul,
-      hexp, Complex.exp_add, Complex.exp_neg_pi_div_two_mul_I]
-
 private theorem etaMultiplier_eq_kronecker_even_of_c_neg {γ : SL(2, ℤ)} (hc : γ 1 0 < 0)
     (heven : Even (γ 1 0)) :
     etaMultiplier γ = kroneckerSym (γ 1 0) (γ 1 1) *
@@ -477,7 +483,7 @@ private theorem etaMultiplier_eq_kronecker_even_of_c_neg {γ : SL(2, ℤ)} (hc :
       3 * -γ 1 1 - 3 - 3 * -γ 1 0 * -γ 1 1 : ℤ)) = N - 6 * γ 1 1 := by
     simp only [N]
     ring
-  rw [hmul, etaMultiplier_eq_kroneckerEtaMultiplier_of_c_pos hneg_pos, kroneckerEtaMultiplier,
+  rw [hmul, etaMultiplier_eq_ite_kroneckerSym_mul_cexp_of_c_nonneg (-γ) hneg_pos.le,
     ite_eq_right hnot_odd]
   simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply]
   rw [hsym, hnum, Int.cast_mul, ← chi4_mul_I_mul_cexp_sub_six_mul N hodd_d]
@@ -505,7 +511,7 @@ private theorem etaMultiplier_eq_kronecker_odd_of_c_neg {γ : SL(2, ℤ)} (hc : 
       3 * -γ 1 0 : ℤ)) = N - 6 * (-γ 1 0) := by
     simp only [N]
     ring
-  rw [hmul, etaMultiplier_eq_kroneckerEtaMultiplier_of_c_pos hneg_pos, kroneckerEtaMultiplier,
+  rw [hmul, etaMultiplier_eq_ite_kroneckerSym_mul_cexp_of_c_nonneg (-γ) hneg_pos.le,
     ite_eq_left hodd_neg]
   simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply]
   rw [hsym, hnum, Int.cast_mul, ← chi4_mul_I_mul_cexp_sub_six_mul N hodd.neg]
@@ -525,32 +531,13 @@ theorem etaMultiplier_eq_ite_kroneckerSym_mul_cexp (γ : SL(2, ℤ)) :
           cexp (2 * π * I *
             (((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) +
               3 * γ 1 1 - 3 - 3 * γ 1 0 * γ 1 1 : ℤ) : ℂ) / 24) := by
-  rcases lt_trichotomy (γ 1 0) 0 with hc | hc | hc
+  rcases lt_or_ge (γ 1 0) 0 with hc | hc
   · by_cases hodd : Odd (γ 1 0)
     · rw [ite_eq_left hodd]
       exact etaMultiplier_eq_kronecker_odd_of_c_neg hc hodd
     · rw [ite_eq_right hodd]
       exact etaMultiplier_eq_kronecker_even_of_c_neg hc (Int.not_odd_iff_even.mp hodd)
-  · rw [ite_eq_right (hc ▸ Int.not_odd_zero)]
-    exact etaMultiplier_eq_kronecker_even_of_c_eq_zero hc
-  · rw [etaMultiplier_eq_kroneckerEtaMultiplier_of_c_pos hc, kroneckerEtaMultiplier,
-      Int.natAbs_of_nonneg hc.le]
-
-/-- **Kronecker-symbol formula for the eta multiplier for `c > 0`** (Strömberg, Remark 2.5,
-equation (2.5)): for `γ = (a b; c d) ∈ SL(2, ℤ)` with `c > 0`, `|c| = c`, so `ε(γ)` is given in
-terms of `(d / c)` when `c` is odd and `(c / d)` when `c` is even. -/
-theorem etaMultiplier_eq_ite_kroneckerSym_mul_cexp_of_c_pos (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) :
-    etaMultiplier γ =
-      if Odd (γ 1 0) then
-        kroneckerSym (γ 1 1) (γ 1 0) *
-          cexp (2 * π * I *
-            (((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) - 3 * γ 1 0 : ℤ) : ℂ) / 24)
-      else
-        kroneckerSym (γ 1 0) (γ 1 1) *
-          cexp (2 * π * I *
-            (((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) +
-              3 * γ 1 1 - 3 - 3 * γ 1 0 * γ 1 1 : ℤ) : ℂ) / 24) := by
-  rw [etaMultiplier_eq_ite_kroneckerSym_mul_cexp γ, Int.natAbs_of_nonneg hc.le]
+  · rw [etaMultiplier_eq_ite_kroneckerSym_mul_cexp_of_c_nonneg γ hc, Int.natAbs_of_nonneg hc]
 
 /-- **Kronecker-symbol formula for odd `c`** on `SL(2, ℤ)`:
 `ε(γ) = (d / |c|) exp(2π i ((a + d) c - b d (c² - 1) - 3 c) / 24)`. -/
@@ -561,15 +548,15 @@ theorem etaMultiplier_eq_kroneckerSym_mul_cexp_of_odd_c (γ : SL(2, ℤ)) (hodd 
           24) := by
   rw [etaMultiplier_eq_ite_kroneckerSym_mul_cexp γ, ite_eq_left hodd]
 
-/-- **Kronecker-symbol formula for odd positive `c`** (Strömberg, Remark 2.5, equation (2.5)):
+/-- **Kronecker-symbol formula for odd nonnegative `c`** (Strömberg, Remark 2.5, equation (2.5)):
 `ε(γ) = (d / c) exp(2π i ((a + d) c - b d (c² - 1) - 3 c) / 24)`. -/
-theorem etaMultiplier_eq_kroneckerSym_mul_cexp_of_c_pos_of_odd_c (γ : SL(2, ℤ)) (hc : 0 < γ 1 0)
-    (hodd : Odd (γ 1 0)) :
+theorem etaMultiplier_eq_kroneckerSym_mul_cexp_of_c_nonneg_of_odd_c (γ : SL(2, ℤ))
+    (hc : 0 ≤ γ 1 0) (hodd : Odd (γ 1 0)) :
     etaMultiplier γ = kroneckerSym (γ 1 1) (γ 1 0) *
       cexp (2 * π * I *
         (((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) - 3 * γ 1 0 : ℤ) : ℂ) /
           24) := by
-  rw [etaMultiplier_eq_kroneckerSym_mul_cexp_of_odd_c γ hodd, Int.natAbs_of_nonneg hc.le]
+  rw [etaMultiplier_eq_kroneckerSym_mul_cexp_of_odd_c γ hodd, Int.natAbs_of_nonneg hc]
 
 /-- **Kronecker-symbol formula for even `c`** on all of `SL(2, ℤ)` (Strömberg, Remark 2.5,
 equation (2.5)): `ε(γ) = (c / d) exp(2π i ((a + d) c - b d (c² - 1) + 3 d - 3 - 3 c d) / 24)`. -/
@@ -599,110 +586,13 @@ theorem etaMultiplier_eq_kroneckerSym_mul_cexp_of_isCoprime_c_six (γ : SL(2, �
   congr 2
   ring
 
-/-- When `c = γ 1 0 > 0` is coprime to `6`, `24 ∣ c² - 1`, so the `b d (c² - 1)` term drops out:
+/-- When `c = γ 1 0 ≥ 0` is coprime to `6`, `24 ∣ c² - 1`, so the `b d (c² - 1)` term drops out:
 `ε(γ) = (d / c) exp(π i (a + d - 3) c / 12)`. -/
-theorem etaMultiplier_eq_kroneckerSym_mul_cexp_of_c_pos_of_isCoprime_c_six (γ : SL(2, ℤ))
-    (hc : 0 < γ 1 0) (hc6 : IsCoprime (γ 1 0) 6) :
+theorem etaMultiplier_eq_kroneckerSym_mul_cexp_of_c_nonneg_of_isCoprime_c_six (γ : SL(2, ℤ))
+    (hc : 0 ≤ γ 1 0) (hc6 : IsCoprime (γ 1 0) 6) :
     etaMultiplier γ = kroneckerSym (γ 1 1) (γ 1 0) *
       cexp (π * I * (((γ 0 0 + γ 1 1 - 3) * γ 1 0 : ℤ) : ℂ) / 12) := by
   rw [etaMultiplier_eq_kroneckerSym_mul_cexp_of_isCoprime_c_six γ hc6,
-    Int.natAbs_of_nonneg hc.le]
+    Int.natAbs_of_nonneg hc]
 
 end TauCeti.ModularForm
-
-namespace TauCeti
-
-open TauCeti.ModularForm
-
-/-! ### Exponential Dedekind-sum evaluation via the Kronecker symbol -/
-
-private theorem cexp_neg_pi_mul_I_mul_dedekindSum_of_etaMultiplier_eq {γ : SL(2, ℤ)}
-    (hc : 0 < γ 1 0) {K : ℂ} {N : ℤ}
-    (hγ : etaMultiplier γ = K * cexp (2 * π * I * (N : ℂ) / 24)) :
-    cexp (-(π * I * dedekindSum (γ 1 1) (γ 1 0))) =
-      K * cexp (π * I *
-        (((N * γ 1 0 - (γ 0 0 + γ 1 1 - 3 * γ 1 0) : ℤ) : ℂ) / (12 * γ 1 0))) := by
-  have h := (etaMultiplier_of_c_pos γ hc).symm.trans hγ
-  have hc' : (γ 1 0 : ℂ) ≠ 0 := Int.cast_ne_zero.mpr hc.ne'
-  set E : ℂ := π * I * (((γ 0 0 + γ 1 1 : ℤ) : ℂ) / (12 * γ 1 0) - 1 / 4)
-  have hlhs : cexp (π * I *
-      (((γ 0 0 + γ 1 1 : ℤ) : ℂ) / (12 * γ 1 0) - dedekindSum (γ 1 1) (γ 1 0) - 1 / 4)) =
-      cexp E * cexp (-(π * I * dedekindSum (γ 1 1) (γ 1 0))) := by
-    rw [← Complex.exp_add]
-    congr 1
-    simp only [E]
-    ring
-  rw [hlhs] at h
-  apply mul_left_cancel₀ (Complex.exp_ne_zero E)
-  rw [h, mul_left_comm, ← Complex.exp_add]
-  congr 2
-  simp only [E]
-  push_cast
-  field_simp
-  ring
-
-/-- For integers `a, d, c` with `c > 0` and `a d ≡ 1 (mod c)`, `exp(-π i s(d, c))` equals
-`(d / c) exp(π i ((a (1 - d²) + 2 d) (c² - 1) - 3 c (c - 1)) / (12 c))` when `c` is odd, and
-`(c / d) exp(π i ((a (1 - d²) + 2 d) (c² - 1) + 3 c d (1 - c)) / (12 c))` when `c` is even. -/
-theorem cexp_neg_pi_mul_I_mul_dedekindSum_of_pos_of_mul_modEq_one {a d c : ℤ}
-    (hc : 0 < c) (had : a * d ≡ 1 [ZMOD c]) :
-    cexp (-(π * I * dedekindSum d c)) =
-      if Odd c then
-        kroneckerSym d c *
-          cexp (π * I * ((((a * (1 - d ^ 2) + 2 * d) * (c ^ 2 - 1) -
-            3 * c * (c - 1) : ℤ) : ℂ) / (12 * c)))
-      else
-        kroneckerSym c d *
-          cexp (π * I * ((((a * (1 - d ^ 2) + 2 * d) * (c ^ 2 - 1) +
-            3 * c * d * (1 - c) : ℤ) : ℂ) / (12 * c))) := by
-  obtain ⟨b, hb⟩ := Int.modEq_iff_dvd.mp had.symm
-  let γ : SL(2, ℤ) := ⟨!![a, b; c, d], by
-    rw [Matrix.det_fin_two_of]
-    linear_combination hb⟩
-  have h00 : γ 0 0 = a := rfl
-  have h01 : γ 0 1 = b := rfl
-  have h10 : γ 1 0 = c := rfl
-  have h11 : γ 1 1 = d := rfl
-  by_cases hodd : Odd c
-  · rw [ite_eq_left hodd]
-    have hγ := etaMultiplier_eq_kroneckerSym_mul_cexp_of_c_pos_of_odd_c γ
-      (h10.symm ▸ hc) (h10.symm ▸ hodd)
-    have hval := cexp_neg_pi_mul_I_mul_dedekindSum_of_etaMultiplier_eq (h10.symm ▸ hc) hγ
-    rw [h00, h01, h10, h11] at hval
-    have hnum : (((a + d) * c - b * d * (c ^ 2 - 1) - 3 * c) * c - (a + d - 3 * c) : ℤ) =
-        (a * (1 - d ^ 2) + 2 * d) * (c ^ 2 - 1) - 3 * c * (c - 1) := by
-      linear_combination d * (c ^ 2 - 1) * hb
-    rw [hval, hnum]
-  · have heven : Even c := Int.not_odd_iff_even.mp hodd
-    rw [ite_eq_right hodd]
-    have hγ := etaMultiplier_eq_kroneckerSym_mul_cexp_of_even_c γ (h10.symm ▸ heven)
-    have hval := cexp_neg_pi_mul_I_mul_dedekindSum_of_etaMultiplier_eq (h10.symm ▸ hc) hγ
-    rw [h00, h01, h10, h11] at hval
-    have hnum : (((a + d) * c - b * d * (c ^ 2 - 1) + 3 * d - 3 - 3 * c * d) * c -
-        (a + d - 3 * c) : ℤ) =
-        (a * (1 - d ^ 2) + 2 * d) * (c ^ 2 - 1) + 3 * c * d * (1 - c) := by
-      linear_combination d * (c ^ 2 - 1) * hb
-    rw [hval, hnum]
-
-/-- For integers `a, d, c` with odd `c > 0` and `a d ≡ 1 (mod c)`,
-`exp(-π i s(d, c)) = (d / c) exp(π i ((a (1 - d²) + 2 d) (c² - 1) - 3 c (c - 1)) / (12 c))`. -/
-theorem cexp_neg_pi_mul_I_mul_dedekindSum_of_pos_of_mul_modEq_one_of_odd {a d c : ℤ}
-    (hc : 0 < c) (had : a * d ≡ 1 [ZMOD c]) (hodd : Odd c) :
-    cexp (-(π * I * dedekindSum d c)) =
-      kroneckerSym d c *
-        cexp (π * I * ((((a * (1 - d ^ 2) + 2 * d) * (c ^ 2 - 1) -
-          3 * c * (c - 1) : ℤ) : ℂ) / (12 * c))) := by
-  rw [cexp_neg_pi_mul_I_mul_dedekindSum_of_pos_of_mul_modEq_one hc had, ite_eq_left hodd]
-
-/-- For integers `a, d, c` with even `c > 0` and `a d ≡ 1 (mod c)`,
-`exp(-π i s(d, c)) = (c / d) exp(π i ((a (1 - d²) + 2 d) (c² - 1) + 3 c d (1 - c)) / (12 c))`. -/
-theorem cexp_neg_pi_mul_I_mul_dedekindSum_of_pos_of_mul_modEq_one_of_even {a d c : ℤ}
-    (hc : 0 < c) (had : a * d ≡ 1 [ZMOD c]) (heven : Even c) :
-    cexp (-(π * I * dedekindSum d c)) =
-      kroneckerSym c d *
-        cexp (π * I * ((((a * (1 - d ^ 2) + 2 * d) * (c ^ 2 - 1) +
-          3 * c * d * (1 - c) : ℤ) : ℂ) / (12 * c))) := by
-  rw [cexp_neg_pi_mul_I_mul_dedekindSum_of_pos_of_mul_modEq_one hc had,
-    ite_eq_right (Int.not_odd_iff_even.mpr heven)]
-
-end TauCeti

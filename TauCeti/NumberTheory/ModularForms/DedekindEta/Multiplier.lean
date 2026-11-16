@@ -24,19 +24,14 @@ The proof applies the Euclidean uniqueness theorem `eq_etaMultiplier_of_c_pos` f
 periodicity `s(c + d, c) = s(d, c)`, while checking the `S`-step uses Dedekind's reciprocity law
 `dedekindSum_add_dedekindSum` together with `a d - b c = 1`.
 
-Combining the `c > 0` formula with the negation and upper-triangular formulas in `Transformation`
-yields explicit Dedekind-sum formulas for `c < 0`, for `ε(γ⁻¹)`, and for lower-triangular
-transvections `(1 0; c 1)`.
+Combining the `c > 0` formula with the negation law in `Transformation` yields the explicit
+Dedekind-sum formula for `c < 0`.
 
 ## Main results
 
 * `TauCeti.ModularForm.etaMultiplier_of_c_pos`, `TauCeti.ModularForm.eta_smul_of_c_pos`,
   `TauCeti.ModularForm.etaTransformation`: Dedekind's functional equation with the Dedekind sum.
 * `TauCeti.ModularForm.etaMultiplier_of_c_neg`: explicit Dedekind-sum formula for `c < 0`.
-* `TauCeti.ModularForm.etaMultiplier_inv_of_c_ne_zero`, `TauCeti.ModularForm.etaMultiplier_inv`:
-  behavior of `ε` under matrix inversion.
-* `TauCeti.ModularForm.etaMultiplier_of_a_eq_one_of_b_eq_zero`: `ε(1 0; c 1) = e^{-π i c / 12}`
-  for every integer `c`.
 
 ## References
 
@@ -127,7 +122,7 @@ theorem etaTransformation (γ : SL(2, ℤ)) :
   push_cast
   rfl
 
-/-! ### Negative `c`, inversion, and lower-triangular transvections -/
+/-! ### Negative `c` -/
 
 /-- Explicit Dedekind-sum formula for negative lower-left entry `c = γ 1 0 < 0`:
 `ε(γ) = exp(π i ((a + d) / (12 c) + s(d, -c) + 1/4))`. -/
@@ -147,80 +142,5 @@ theorem etaMultiplier_of_c_neg (γ : SL(2, ℤ)) (hc : γ 1 0 < 0) :
   push_cast
   field_simp
   ring
-
-/-- Whenever `γ 1 0 ≠ 0`, the eta multiplier of `γ⁻¹` is `(ε(γ))⁻¹`. -/
-theorem etaMultiplier_inv_of_c_ne_zero {γ : SL(2, ℤ)} (hc : γ 1 0 ≠ 0) :
-    etaMultiplier γ⁻¹ = (etaMultiplier γ)⁻¹ := by
-  have hpos : ∀ δ : SL(2, ℤ), 0 < δ 1 0 → etaMultiplier δ⁻¹ = (etaMultiplier δ)⁻¹ := by
-    intro δ hδ
-    have hinv_c : (δ⁻¹ : SL(2, ℤ)) 1 0 < 0 := by simpa using hδ
-    have hmod : δ 0 0 * δ 1 1 ≡ 1 [ZMOD δ 1 0] :=
-      Int.modEq_iff_dvd.mpr ⟨-δ 0 1, by linear_combination -δ.fin_two_mul_sub_mul_eq_one⟩
-    rw [etaMultiplier_of_c_neg δ⁻¹ hinv_c, etaMultiplier_of_c_pos δ hδ, ← Complex.exp_neg]
-    simp only [Matrix.SpecialLinearGroup.inv_apply_zero_zero,
-      Matrix.SpecialLinearGroup.inv_apply_one_zero, Matrix.SpecialLinearGroup.inv_apply_one_one,
-      neg_neg]
-    rw [dedekindSum_eq_of_mul_modEq_one hmod]
-    have hc' : (δ 1 0 : ℂ) ≠ 0 := Int.cast_ne_zero.mpr hδ.ne'
-    congr 1
-    push_cast
-    field_simp
-    ring
-  rcases hc.lt_or_gt with hc_neg | hc_pos
-  · have hc_inv : 0 < (γ⁻¹ : SL(2, ℤ)) 1 0 := by simpa using hc_neg
-    have h := hpos γ⁻¹ hc_inv
-    rw [inv_inv] at h
-    rw [h, inv_inv]
-  · exact hpos γ hc_pos
-
-/-- Explicit inversion law for `etaMultiplier` across all of `SL(2, ℤ)`: `ε(γ⁻¹) = ε(γ)⁻¹` except
-on the negative upper-triangular coset `γ = -T⁻ᵇ` (`γ 1 0 = 0` and `γ 1 1 < 0`), where the
-automorphy factor `-1` sits on the negative real branch cut and `ε(γ⁻¹) = -ε(γ)⁻¹`. -/
-theorem etaMultiplier_inv (γ : SL(2, ℤ)) :
-    etaMultiplier γ⁻¹ =
-      if γ 1 0 = 0 ∧ γ 1 1 < 0 then -(etaMultiplier γ)⁻¹ else (etaMultiplier γ)⁻¹ := by
-  by_cases hc : γ 1 0 = 0
-  · have hinv10 : (γ⁻¹ : SL(2, ℤ)) 1 0 = 0 := by simp [hc]
-    have hdet := γ.fin_two_mul_sub_mul_eq_one
-    rw [hc, mul_zero, sub_zero] at hdet
-    rcases Int.mul_eq_one_iff_eq_one_or_neg_one.mp hdet with ⟨ha, hd⟩ | ⟨ha, hd⟩
-    · rw [ite_eq_right (by omega), etaMultiplier_of_c_eq_zero_of_d_pos hinv10 (by simp [ha]),
-        etaMultiplier_of_c_eq_zero_of_d_pos hc (by omega),
-        Matrix.SpecialLinearGroup.inv_apply_zero_one, ← Complex.exp_neg]
-      congr 1
-      push_cast
-      ring
-    · rw [ite_eq_left (by omega), etaMultiplier_of_c_eq_zero_of_d_neg hinv10 (by simp [ha]),
-        etaMultiplier_of_c_eq_zero_of_d_neg hc (by omega),
-        Matrix.SpecialLinearGroup.inv_apply_zero_one, mul_inv, inv_neg, Complex.inv_I,
-        ← Complex.exp_neg, neg_neg, neg_mul, Int.cast_neg]
-      congr 3
-      ring
-  · rw [ite_eq_right (fun h ↦ hc h.1)]
-    exact etaMultiplier_inv_of_c_ne_zero hc
-
-/-- For a lower-triangular transvection `γ = (1 0; c 1) ∈ SL(2, ℤ)`, `ε(γ) = e^{-π i c / 12}` for
-every integer `c` (positive, zero, or negative). -/
-theorem etaMultiplier_of_a_eq_one_of_b_eq_zero {γ : SL(2, ℤ)} (ha : γ 0 0 = 1) (hb : γ 0 1 = 0) :
-    etaMultiplier γ = cexp (-(π * I * γ 1 0 / 12)) := by
-  have hd : γ 1 1 = 1 := by
-    have hdet := γ.fin_two_mul_sub_mul_eq_one
-    rw [ha, hb, one_mul, zero_mul, sub_zero] at hdet
-    exact hdet
-  rcases lt_trichotomy (γ 1 0) 0 with hc | hc | hc
-  · rw [etaMultiplier_of_c_neg γ hc, ha, hd, dedekindSum_one_left (by omega)]
-    have hc' : (γ 1 0 : ℂ) ≠ 0 := Int.cast_ne_zero.mpr hc.ne
-    congr 1
-    push_cast
-    field_simp
-    ring
-  · rw [etaMultiplier_of_c_eq_zero_of_d_pos hc (by omega), hb, hc]
-    simp
-  · rw [etaMultiplier_of_c_pos γ hc, ha, hd, dedekindSum_one_left hc.le]
-    have hc' : (γ 1 0 : ℂ) ≠ 0 := Int.cast_ne_zero.mpr hc.ne'
-    congr 1
-    push_cast
-    field_simp
-    ring
 
 end TauCeti.ModularForm

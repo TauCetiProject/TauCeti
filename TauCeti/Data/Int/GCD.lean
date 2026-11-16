@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Int.GCD
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.Ring.Divisibility.Basic
+import Mathlib.Data.Int.Order.Units
 import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.Tactic.LinearCombination
 
@@ -30,12 +31,12 @@ interacts with `gcd(c, n)`.
   `TauCeti.Int.exists_dvd_mul_sub_mul_add_mul_of_gcd_dvd`: writing `n = g m`, `c = g c₁` and
   `c' = g c₁'`, the congruence holds for some `j` exactly when `gcd(g, m) ∣ c₁ d' - c₁' d`
   (the converse needing `c₁` and `c₁'` prime to `m`).
-* `Int.isCoprime_emod_left` and `IsCoprime.emod_pos_of_one_lt`: Euclidean remainder preserves
-  coprimality to `c`, so `0 < d % c` whenever `IsCoprime d c` and `1 < c`.
+* `Int.isCoprime_emod_left` and `IsCoprime.emod_pos`: Euclidean remainder preserves coprimality to
+  `c`, so `0 < d % c` whenever `IsCoprime d c` and `1 < |c|`.
 
 Their consumers are the cusp counts of `Γ₀(N)` and `Γ₁(N)` in
-`TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Cusp/`, Dedekind-sum integrality in
-`TauCeti/NumberTheory/DedekindSum.lean`, and the Euclidean uniqueness of the eta multiplier.
+`TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Cusp/` and the Euclidean uniqueness of the
+eta multiplier.
 -/
 
 public section
@@ -116,9 +117,10 @@ theorem isCoprime_emod_left (d c : ℤ) : IsCoprime (d % c) c ↔ IsCoprime d c 
 
 end Int
 
-/-- If `d` is coprime to `c` and `1 < c`, the Euclidean remainder `d % c` is strictly positive. -/
-theorem IsCoprime.emod_pos_of_one_lt {d c : ℤ} (hdc : IsCoprime d c) (hc : 1 < c) :
+/-- If `d` is coprime to `c` and `1 < |c|`, the Euclidean remainder `d % c` is strictly positive. -/
+theorem IsCoprime.emod_pos {d c : ℤ} (hdc : IsCoprime d c) (hc : 1 < |c|) :
     0 < d % c := by
   have hcop : IsCoprime (d % c) c := (Int.isCoprime_emod_left d c).mpr hdc
-  refine lt_of_le_of_ne (Int.emod_nonneg d (by omega)) fun hr0 ↦ ?_
-  exact (Int.le_of_dvd one_pos (isCoprime_zero_left.mp (hr0 ▸ hcop)).dvd).not_gt hc
+  have hc0 : c ≠ 0 := fun h ↦ by simp [h] at hc
+  refine lt_of_le_of_ne (Int.emod_nonneg d hc0) fun hr0 ↦ ?_
+  exact hc.ne (Int.isUnit_iff_abs_eq.mp (isCoprime_zero_left.mp (hr0 ▸ hcop))).symm
