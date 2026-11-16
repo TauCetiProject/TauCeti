@@ -32,65 +32,71 @@ open CategoryTheory TopologicalSpace Opposite
 
 namespace AlgebraicGeometry
 
+/-- Restriction from the global sections of an integral factorial affine scheme to a nonempty
+open is bijective if that open lies in no prime basic open. The open need not be affine. -/
+theorem Scheme.bijective_restrict_of_not_le_basicOpen {X : Scheme.{u}} [IsAffine X]
+    [IsIntegral X] [UniqueFactorizationMonoid Γ(X, ⊤)] {U : X.Opens} [Nonempty U]
+    (h : ∀ π : Γ(X, ⊤), Prime π → ¬U ≤ X.basicOpen π) :
+    Function.Bijective (X.presheaf.map (homOfLE le_top : U ⟶ ⊤).op) := by
+  have : Nonempty (⊤ : X.Opens) := ⟨⟨(Nonempty.some ‹Nonempty U›).1, trivial⟩⟩
+  have := functionField_isFractionRing_of_isAffineOpen X ⊤ (isAffineOpen_top X)
+  -- A prime factor of a reduced denominator would force `U` into its basic open.
+  refine ⟨map_injective_of_isIntegral X _, fun s ↦ ?_⟩
+  obtain ⟨a, b, hab, hs⟩ :=
+    IsFractionRing.exists_reduced_fraction Γ(X, ⊤) (X.germToFunctionField U s)
+  by_cases hb : IsUnit (b : Γ(X, ⊤))
+  · refine ⟨a * ↑hb.unit⁻¹, X.germToFunctionField_injective U ?_⟩
+    rw [← hs, X.presheaf.germ_res_apply, eq_comm, IsLocalization.mk'_eq_iff_eq_mul]
+    calc algebraMap Γ(X, ⊤) X.functionField a
+        = algebraMap Γ(X, ⊤) X.functionField (a * ↑hb.unit⁻¹ * b) := by
+          rw [mul_assoc, hb.val_inv_mul, mul_one]
+      _ = _ := map_mul _ _ _
+  · exfalso
+    obtain ⟨π, hπirr, hπb⟩ :=
+      WfDvdMonoid.exists_irreducible_factor hb (nonZeroDivisors.ne_zero b.2)
+    have hπ := hπirr.prime
+    obtain ⟨y, hyW, hyπ⟩ := Set.not_subset.mp (h π hπ)
+    let := TopCat.Presheaf.algebra_section_stalk X.presheaf (⟨y, trivial⟩ : (⊤ : X.Opens))
+    have := (isAffineOpen_top X).isLocalization_stalk ⟨y, trivial⟩
+    obtain ⟨⟨c, t⟩, hcd⟩ := IsLocalization.mk'_surjective
+      ((isAffineOpen_top X).primeIdealOf ⟨y, trivial⟩).asIdeal.primeCompl
+      (X.presheaf.germ U y hyW s)
+    have heq (a : Γ(X, ⊤)) :
+        algebraMap Γ(X, ⊤) (X.presheaf.stalk y) a = X.presheaf.germ ⊤ y trivial a :=
+      congrArg (fun f : Γ(X, ⊤) →+* X.presheaf.stalk y ↦ f a)
+        (X.presheaf.stalk_open_algebraMap (U := ⊤) ⟨y, trivial⟩)
+    -- The section algebra on the function field is induced by `germToFunctionField`.
+    have e' (a : Γ(X, ⊤)) :
+        X.germToFunctionField ⊤ a = algebraMap Γ(X, ⊤) X.functionField a := rfl
+    have hπd : ¬π ∣ (t : Γ(X, ⊤)) := by
+      refine fun hπd ↦ hyπ ((X.mem_basicOpen π y trivial).mpr (isUnit_of_dvd_unit
+        (map_dvd (X.presheaf.germ ⊤ y trivial).hom hπd) ?_))
+      rw [← heq]
+      exact IsLocalization.map_units _ t
+    have h1 := congrArg (algebraMap (X.presheaf.stalk y) X.functionField)
+      (IsLocalization.mk'_spec (X.presheaf.stalk y) c t)
+    dsimp only at hcd
+    have hgerm (a : Γ(X, ⊤)) :
+        algebraMap (X.presheaf.stalk y) X.functionField
+          (X.presheaf.germ ⊤ y trivial a) = X.germToFunctionField ⊤ a :=
+      X.algebraMap_germ_eq_germToFunctionField (U := ⊤) (x := y) trivial a
+    rw [hcd, heq, heq, map_mul,
+      X.algebraMap_germ_eq_germToFunctionField hyW s, hgerm, hgerm,
+      ← hs, e', e'] at h1
+    have h2 : a * t = b * c := IsFractionRing.injective Γ(X, ⊤) X.functionField (by
+      rw [map_mul, map_mul, ← IsLocalization.mk'_spec X.functionField a b, ← h1]
+      ring)
+    obtain hπa | hπd' := hπ.dvd_or_dvd (h2 ▸ hπb.mul_right c)
+    · exact hπ.not_isUnit (hab hπa hπb)
+    · exact hπd hπd'
+
 /-- An affine open in an integral factorial affine scheme is the whole scheme if it is
 contained in no basic open defined by a prime element. -/
 theorem Scheme.eq_top_of_isAffineOpen_of_not_le_basicOpen {X : Scheme.{u}} [IsAffine X]
     [IsIntegral X] [UniqueFactorizationMonoid Γ(X, ⊤)] {U : X.Opens} (hW : IsAffineOpen U)
     [Nonempty U] (h : ∀ π : Γ(X, ⊤), Prime π → ¬U ≤ X.basicOpen π) : U = ⊤ := by
-  have : Nonempty (⊤ : X.Opens) := ⟨⟨(Nonempty.some ‹Nonempty U›).1, trivial⟩⟩
-  have := functionField_isFractionRing_of_isAffineOpen X ⊤ (isAffineOpen_top X)
   let ρ := X.presheaf.map (homOfLE le_top : U ⟶ ⊤).op
-  -- A reduced fraction representing a section over `U` has no prime factor in its
-  -- denominator: such a factor would force `U` into its basic open.
-  have hρ : Function.Bijective ρ := by
-    refine ⟨map_injective_of_isIntegral X _, fun s ↦ ?_⟩
-    obtain ⟨a, b, hab, hs⟩ :=
-      IsFractionRing.exists_reduced_fraction Γ(X, ⊤) (X.germToFunctionField U s)
-    by_cases hb : IsUnit (b : Γ(X, ⊤))
-    · refine ⟨a * ↑hb.unit⁻¹, X.germToFunctionField_injective U ?_⟩
-      rw [← hs, X.presheaf.germ_res_apply, eq_comm, IsLocalization.mk'_eq_iff_eq_mul]
-      calc algebraMap Γ(X, ⊤) X.functionField a
-          = algebraMap Γ(X, ⊤) X.functionField (a * ↑hb.unit⁻¹ * b) := by
-            rw [mul_assoc, hb.val_inv_mul, mul_one]
-        _ = _ := map_mul _ _ _
-    · exfalso
-      obtain ⟨π, hπirr, hπb⟩ :=
-        WfDvdMonoid.exists_irreducible_factor hb (nonZeroDivisors.ne_zero b.2)
-      have hπ := hπirr.prime
-      obtain ⟨y, hyW, hyπ⟩ := Set.not_subset.mp (h π hπ)
-      let := TopCat.Presheaf.algebra_section_stalk X.presheaf (⟨y, trivial⟩ : (⊤ : X.Opens))
-      have := (isAffineOpen_top X).isLocalization_stalk ⟨y, trivial⟩
-      obtain ⟨⟨c, t⟩, hcd⟩ := IsLocalization.mk'_surjective
-        ((isAffineOpen_top X).primeIdealOf ⟨y, trivial⟩).asIdeal.primeCompl
-        (X.presheaf.germ U y hyW s)
-      have heq (a : Γ(X, ⊤)) :
-          algebraMap Γ(X, ⊤) (X.presheaf.stalk y) a = X.presheaf.germ ⊤ y trivial a :=
-        congrArg (fun f : Γ(X, ⊤) →+* X.presheaf.stalk y ↦ f a)
-          (X.presheaf.stalk_open_algebraMap (U := ⊤) ⟨y, trivial⟩)
-      -- The section algebra on the function field is induced by `germToFunctionField`.
-      have e' (a : Γ(X, ⊤)) :
-          X.germToFunctionField ⊤ a = algebraMap Γ(X, ⊤) X.functionField a := rfl
-      have hπd : ¬π ∣ (t : Γ(X, ⊤)) := by
-        refine fun hπd ↦ hyπ ((X.mem_basicOpen π y trivial).mpr (isUnit_of_dvd_unit
-          (map_dvd (X.presheaf.germ ⊤ y trivial).hom hπd) ?_))
-        rw [← heq]
-        exact IsLocalization.map_units _ t
-      have h1 := congrArg (algebraMap (X.presheaf.stalk y) X.functionField)
-        (IsLocalization.mk'_spec (X.presheaf.stalk y) c t)
-      dsimp only at hcd
-      have hgerm (a : Γ(X, ⊤)) :
-          algebraMap (X.presheaf.stalk y) X.functionField
-            (X.presheaf.germ ⊤ y trivial a) = X.germToFunctionField ⊤ a :=
-        X.algebraMap_germ_eq_germToFunctionField (U := ⊤) (x := y) trivial a
-      rw [hcd, heq, heq, map_mul,
-        X.algebraMap_germ_eq_germToFunctionField hyW s, hgerm, hgerm,
-        ← hs, e', e'] at h1
-      have h2 : a * t = b * c := IsFractionRing.injective Γ(X, ⊤) X.functionField (by
-        rw [map_mul, map_mul, ← IsLocalization.mk'_spec X.functionField a b, ← h1]
-        ring)
-      obtain hπa | hπd' := hπ.dvd_or_dvd (h2 ▸ hπb.mul_right c)
-      · exact hπ.not_isUnit (hab hπa hπb)
-      · exact hπd hπd'
+  have hρ : Function.Bijective ρ := X.bijective_restrict_of_not_le_basicOpen h
   -- A bijective restriction is an isomorphism, hence its spectrum covers all of `X`.
   have : IsIso ρ := (ConcreteCategory.isIso_iff_bijective ρ).mpr hρ
   refine eq_top_iff.mpr fun x _ ↦ ?_
