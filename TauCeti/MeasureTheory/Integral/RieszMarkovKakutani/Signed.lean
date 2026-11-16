@@ -275,7 +275,7 @@ theorem forall_bddAbove_image_Icc_iff_exists_regular :
         ∀ f : C_c(X, ℝ), Λ f = ∫ x, f x ∂μ - ∫ x, f x ∂ν := by
   refine ⟨fun hΛ => ⟨_, _, inferInstance, inferInstance, fun f =>
     (integral_rieszMeasure_posPart_sub_integral_rieszMeasure_negPart hΛ f).symm⟩, ?_⟩
-  rintro ⟨μ, ν, hμ, hν, hΛ⟩ f
+  rintro ⟨μ, ν, hμ, _, hΛ⟩ f
   refine ⟨∫ x, f x ∂μ, ?_⟩
   rintro _ ⟨g, ⟨hg, hgf⟩, rfl⟩
   rw [hΛ, sub_le_iff_le_add]

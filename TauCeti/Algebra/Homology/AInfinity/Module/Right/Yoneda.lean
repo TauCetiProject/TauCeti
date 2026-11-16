@@ -191,7 +191,7 @@ private theorem isHomogeneous_tmulConcat_barGrading {p : ℤ} {x : M} (hx : x �
       (barGrading AA AA.toRightModule.grading).piece (barGrading AA MM.grading).piece (p - 1) := by
   have hx' : x ∈ (MM.grading.shift 1).piece (p - 1) := by
     rwa [InternalGrading.shift_piece, sub_add_cancel]
-  have hG (G : InternalGrading R M) : (barGrading AA G).piece =
+  have hG (G : InternalGrading R M ℤ) : (barGrading AA G).piece =
       ((G.shift 1).tensorProduct (TensorWords.grading (AA.grading.shift 1))).piece :=
     funext (barGrading_piece AA G)
   have hA : (barGrading AA AA.toRightModule.grading).piece =

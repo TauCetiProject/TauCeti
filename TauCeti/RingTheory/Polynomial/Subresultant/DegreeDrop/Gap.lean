@@ -24,13 +24,13 @@ columns, and its first two columns read only the first row of the coefficient ma
 * at the last strict index `j = m - 1`, with `e ≤ j`, the subresultant is
   `p.coeff m ^ (n - j) • q`.
 
-When `p.natDegree ≤ m`, these two identities together with the two results above determine the
-subresultants of `p` and `q` at every strict index from the actual degree of `q`. The left
-versions follow by the block-swap sign. Taking `q` constant gives the subresultants of a
-polynomial and a constant.
+These two identities together with the two results above determine the subresultants of `p` and
+`q` at every strict index from the actual degree of `q`. The left versions follow by the
+block-swap sign. Taking `q` constant gives the subresultants of a polynomial and a constant.
 
-The two identities of this file hold over every commutative ring, with no hypothesis on `p` and
-no nonvanishing assumption on any coefficient.
+All four right degree-drop identities, the two of this file and the two results above, hold over
+every commutative ring, with no hypothesis on `p` and no nonvanishing assumption on any
+coefficient.
 
 ## Main results
 
@@ -49,9 +49,7 @@ no nonvanishing assumption on any coefficient.
 
 public section
 
-namespace TauCeti
-
-open Polynomial
+namespace Polynomial
 
 variable {R : Type*} [CommRing R] {p q : R[X]} {m n j k : ℕ}
 
@@ -60,7 +58,7 @@ variable {R : Type*} [CommRing R] {p q : R[X]} {m n j k : ℕ}
 /-- If the right input has degree below `j` and the `q`-block has at least two columns, every
 coefficient minor at index `j` vanishes: the first two `q`-columns are supported in the first
 row. -/
-theorem _root_.Polynomial.subresultantCoeff_eq_zero_of_natDegree_right_lt
+theorem subresultantCoeff_eq_zero_of_natDegree_right_lt
     (hq : q.natDegree < j) (hjm : j + 2 ≤ m) (k : ℕ) :
     subresultantCoeff p q m n j k = 0 := by
   let i₀ : Fin ((m - j) + (n - j)) := ⟨0, by omega⟩
@@ -82,13 +80,13 @@ theorem _root_.Polynomial.subresultantCoeff_eq_zero_of_natDegree_right_lt
     (by simp [Fin.ext_iff]) (hcol _ (by simp)) (hcol _ (by simp))
 
 /-- In the degree gap of the right input, the principal coefficient vanishes. -/
-theorem _root_.Polynomial.psc_eq_zero_of_natDegree_right_lt
+theorem psc_eq_zero_of_natDegree_right_lt
     (hq : q.natDegree < j) (hjm : j + 2 ≤ m) :
     psc p q m n j = 0 := by
   simpa using subresultantCoeff_eq_zero_of_natDegree_right_lt (p := p) (n := n) hq hjm j
 
 /-- In the degree gap of the right input, the subresultant polynomial vanishes. -/
-theorem _root_.Polynomial.subresultant_eq_zero_of_natDegree_right_lt
+theorem subresultant_eq_zero_of_natDegree_right_lt
     (hq : q.natDegree < j) (hjm : j + 2 ≤ m) :
     subresultant p q m n j = 0 := by
   ext k
@@ -96,19 +94,19 @@ theorem _root_.Polynomial.subresultant_eq_zero_of_natDegree_right_lt
 
 /-- If the left input has degree below `j` and the `p`-block has at least two columns, every
 coefficient minor at index `j` vanishes. -/
-theorem _root_.Polynomial.subresultantCoeff_eq_zero_of_natDegree_left_lt
+theorem subresultantCoeff_eq_zero_of_natDegree_left_lt
     (hp : p.natDegree < j) (hjn : j + 2 ≤ n) (k : ℕ) :
     subresultantCoeff p q m n j k = 0 := by
   rw [subresultantCoeff_comm, subresultantCoeff_eq_zero_of_natDegree_right_lt hp hjn, mul_zero]
 
 /-- In the degree gap of the left input, the principal coefficient vanishes. -/
-theorem _root_.Polynomial.psc_eq_zero_of_natDegree_left_lt
+theorem psc_eq_zero_of_natDegree_left_lt
     (hp : p.natDegree < j) (hjn : j + 2 ≤ n) :
     psc p q m n j = 0 := by
   simpa using subresultantCoeff_eq_zero_of_natDegree_left_lt (q := q) (m := m) hp hjn j
 
 /-- In the degree gap of the left input, the subresultant polynomial vanishes. -/
-theorem _root_.Polynomial.subresultant_eq_zero_of_natDegree_left_lt
+theorem subresultant_eq_zero_of_natDegree_left_lt
     (hp : p.natDegree < j) (hjn : j + 2 ≤ n) :
     subresultant p q m n j = 0 := by
   ext k
@@ -119,7 +117,7 @@ theorem _root_.Polynomial.subresultant_eq_zero_of_natDegree_left_lt
 /-- At index `j` with left bound `j + 1`, if the right input has degree at most `j`, the
 coefficient minors are the coefficients of `q` times `p.coeff (j + 1) ^ (n - j)`: the
 coefficient matrix is upper triangular. -/
-theorem _root_.Polynomial.subresultantCoeff_eq_coeff_pow_mul_of_natDegree_right_le
+theorem subresultantCoeff_eq_coeff_pow_mul_of_natDegree_right_le
     (hq : q.natDegree ≤ j) (hjn : j ≤ n) (hk : k ≤ j) :
     subresultantCoeff p q (j + 1) n j k = p.coeff (j + 1) ^ (n - j) * q.coeff k := by
   let M := subresultantCoeffMatrix p q (j + 1) n j k
@@ -161,14 +159,14 @@ theorem _root_.Polynomial.subresultantCoeff_eq_coeff_pow_mul_of_natDegree_right_
 
 /-- At index `j` with left bound `j + 1`, if the right input has degree at most `j`, the
 principal coefficient is `p.coeff (j + 1) ^ (n - j) * q.coeff j`. -/
-theorem _root_.Polynomial.psc_eq_coeff_pow_mul_of_natDegree_right_le
+theorem psc_eq_coeff_pow_mul_of_natDegree_right_le
     (hq : q.natDegree ≤ j) (hjn : j ≤ n) :
     psc p q (j + 1) n j = p.coeff (j + 1) ^ (n - j) * q.coeff j := by
   simpa using subresultantCoeff_eq_coeff_pow_mul_of_natDegree_right_le (p := p) hq hjn le_rfl
 
 /-- **The last strict index.** At index `j` with left bound `j + 1 ≤ n`, if the right input has
 degree at most `j`, the subresultant polynomial is `p.coeff (j + 1) ^ (n - j) • q`. -/
-theorem _root_.Polynomial.subresultant_eq_C_mul_of_natDegree_right_le
+theorem subresultant_eq_C_mul_of_natDegree_right_le
     (hq : q.natDegree ≤ j) (hjn : j < n) :
     subresultant p q (j + 1) n j = C (p.coeff (j + 1) ^ (n - j)) * q := by
   ext k
@@ -182,7 +180,7 @@ theorem _root_.Polynomial.subresultant_eq_C_mul_of_natDegree_right_le
 
 /-- At index `j` with right bound `j + 1`, if the left input has degree at most `j`, the
 coefficient minors are the coefficients of `p` times `(-q.coeff (j + 1)) ^ (m - j)`. -/
-theorem _root_.Polynomial.subresultantCoeff_eq_neg_coeff_pow_mul_of_natDegree_left_le
+theorem subresultantCoeff_eq_neg_coeff_pow_mul_of_natDegree_left_le
     (hp : p.natDegree ≤ j) (hjm : j ≤ m) (hk : k ≤ j) :
     subresultantCoeff p q m (j + 1) j k = (-q.coeff (j + 1)) ^ (m - j) * p.coeff k := by
   rw [subresultantCoeff_comm, subresultantCoeff_eq_coeff_pow_mul_of_natDegree_right_le hp hjm hk,
@@ -191,14 +189,14 @@ theorem _root_.Polynomial.subresultantCoeff_eq_neg_coeff_pow_mul_of_natDegree_le
 
 /-- At index `j` with right bound `j + 1`, if the left input has degree at most `j`, the
 principal coefficient is `(-q.coeff (j + 1)) ^ (m - j) * p.coeff j`. -/
-theorem _root_.Polynomial.psc_eq_neg_coeff_pow_mul_of_natDegree_left_le
+theorem psc_eq_neg_coeff_pow_mul_of_natDegree_left_le
     (hp : p.natDegree ≤ j) (hjm : j ≤ m) :
     psc p q m (j + 1) j = (-q.coeff (j + 1)) ^ (m - j) * p.coeff j := by
   simpa using subresultantCoeff_eq_neg_coeff_pow_mul_of_natDegree_left_le (q := q) hp hjm le_rfl
 
 /-- At index `j` with right bound `j + 1 ≤ m`, if the left input has degree at most `j`, the
 subresultant polynomial is `(-q.coeff (j + 1)) ^ (m - j) • p`. -/
-theorem _root_.Polynomial.subresultant_eq_C_mul_of_natDegree_left_le
+theorem subresultant_eq_C_mul_of_natDegree_left_le
     (hp : p.natDegree ≤ j) (hjm : j < m) :
     subresultant p q m (j + 1) j = C ((-q.coeff (j + 1)) ^ (m - j)) * p := by
   rw [subresultant_comm, subresultant_eq_C_mul_of_natDegree_right_le hp hjm]
@@ -211,7 +209,7 @@ theorem _root_.Polynomial.subresultant_eq_C_mul_of_natDegree_left_le
 /-- At a positive index, the subresultant of `p` and a constant `c` is zero, except at the last
 strict index `j = m - 1 < n`, where it is the constant `c * p.coeff m ^ (n - j)`. At index zero
 it is the constant resultant (`Polynomial.subresultant_zero`). -/
-theorem _root_.Polynomial.subresultant_C_right (p : R[X]) (c : R) (hj : 0 < j) :
+theorem subresultant_C_right (p : R[X]) (c : R) (hj : 0 < j) :
     subresultant p (C c) m n j = if j + 1 = m ∧ j < n then C (c * p.coeff m ^ (n - j)) else 0 := by
   split_ifs with h
   · obtain ⟨rfl, hjn⟩ := h
@@ -222,7 +220,7 @@ theorem _root_.Polynomial.subresultant_C_right (p : R[X]) (c : R) (hj : 0 < j) :
 
 /-- At a positive index, the subresultant of a constant `c` and `q` is zero, except at the last
 strict index `j = n - 1 < m`, where it is the constant `(-q.coeff n) ^ (m - j) * c`. -/
-theorem _root_.Polynomial.subresultant_C_left (c : R) (q : R[X]) (hj : 0 < j) :
+theorem subresultant_C_left (c : R) (q : R[X]) (hj : 0 < j) :
     subresultant (C c) q m n j =
       if j + 1 = n ∧ j < m then C ((-q.coeff n) ^ (m - j) * c) else 0 := by
   split_ifs with h
@@ -232,4 +230,4 @@ theorem _root_.Polynomial.subresultant_C_left (c : R) (q : R[X]) (hj : 0 < j) :
     · exact subresultant_eq_zero_of_natDegree_left_lt (by simpa using hj) hjn
     · exact subresultant_eq_zero_of_min_le _ _ _ _ _ (by omega)
 
-end TauCeti
+end Polynomial

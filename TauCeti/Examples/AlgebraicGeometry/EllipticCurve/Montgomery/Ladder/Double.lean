@@ -30,15 +30,15 @@ open WeierstrassCurve
 
 -- No normalization of the input representative is required.
 example {K : Type*} [Field K] [DecidableEq K] {A B N D c : K}
-    (hB : B ≠ 0) (hD : D ≠ 0) (h : 4 * N = (A + 2) * D) (hc : c ≠ 0)
+    (hD : D ≠ 0) (h : 4 * N = (A + 2) * D) (hc : c ≠ 0)
     (P : (model A B).toAffine.Point) (k : ℕ) :
     double N D (c • coordinates A B (k • P)) ≠ 0 ∧
       (double N D (c • coordinates A B (k • P))).cross
         (coordinates A B ((2 * k) • P)) = 0 := by
   simpa only [mul_nsmul, two_nsmul, nsmul_add] using
-    double_coordinates_of_cross_eq_zero hB hD h
+    double_coordinates_of_cross_eq_zero hD h
       (P := k • P) (S := c • coordinates A B (k • P))
-      (by simp [hc, coordinates_ne_zero hB]) (by simp)
+      (by simp [hc]) (by simp)
 
 -- The scaled relation is sufficient even in characteristic two, on the singular model A = 0.
 example (P : (model (0 : ZMod 2) 1).toAffine.Point) (k : ℕ) :
@@ -46,8 +46,8 @@ example (P : (model (0 : ZMod 2) 1).toAffine.Point) (k : ℕ) :
       (double 1 1 (coordinates 0 1 (k • P))).cross
         (coordinates 0 1 ((2 * k) • P)) = 0 := by
   simpa only [mul_nsmul, two_nsmul, nsmul_add] using
-    double_coordinates_of_cross_eq_zero (N := 1) (D := 1) (by decide) (by decide) (by decide)
-      (coordinates_ne_zero (by decide) (k • P)) (by simp)
+    double_coordinates_of_cross_eq_zero (N := 1) (D := 1) (by decide) (by decide)
+      (coordinates_ne_zero_of_nontrivial (k • P)) (by simp)
 
 -- Track actual raw outputs rather than assuming the group order or the intermediate multiples.
 example [Fact (Nat.Prime 7)] :
@@ -71,13 +71,13 @@ example [Fact (Nat.Prime 7)] :
   have h₁ : (Pair.mk (3 : ZMod 7) 1).cross (coordinates 0 1 (1 • P)) = 0 := by
     simp [P]
   have hD : (4 : ZMod 7) ≠ 0 := (ZMod.natCast_eq_zero_iff 4 7).not.mpr (by decide)
-  have h₂ := double_coordinates_of_cross_eq_zero (N := 2) (D := 4) (by simp) hD
+  have h₂ := double_coordinates_of_cross_eq_zero (N := 2) (D := 4) hD
     (by norm_num) (S := ⟨3, 1⟩) (by simp [Pair.ne_zero_iff]) h₁
   simp only [hd₁, ← two_nsmul, ← mul_nsmul] at h₂
-  have h₄ := double_coordinates_of_cross_eq_zero (N := 2) (D := 4) (by simp) hD
+  have h₄ := double_coordinates_of_cross_eq_zero (N := 2) (D := 4) hD
     (by norm_num) h₂.1 h₂.2
   simp only [hd₂, ← two_nsmul, ← mul_nsmul] at h₄
-  have h₈ := double_coordinates_of_cross_eq_zero (N := 2) (D := 4) (by simp) hD
+  have h₈ := double_coordinates_of_cross_eq_zero (N := 2) (D := 4) hD
     (by norm_num) h₄.1 h₄.2
   simp only [hd₄, ← two_nsmul, ← mul_nsmul] at h₈
   apply (coordinates_z_eq_zero_iff (by simp)).mp

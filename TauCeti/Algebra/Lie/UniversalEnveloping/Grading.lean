@@ -81,6 +81,31 @@ theorem ι_mem_homogeneousSubmodule {n : Γ} {x : L} (hx : x ∈ ℒ n) :
     ι R x ∈ homogeneousSubmodule ℒ n := by
   simpa using prod_mem_homogeneousSubmodule ℒ [⟨n, x, hx⟩]
 
+private theorem word_eq_zero_of_degree_neg (d : Γ →+ ℤ)
+    (hneg : ∀ n, d n < 0 → ℒ n = ⊥) (l : List (Σ i, ℒ i))
+    (hl : d (l.map Sigma.fst).sum < 0) :
+    (l.map (fun x => ι R (x.2 : L))).prod = 0 := by
+  induction l with
+  | nil => simp only [List.map_nil, List.sum_nil, map_zero, lt_self_iff_false] at hl
+  | cons a l ih =>
+    by_cases ha : d a.1 < 0
+    · have ha0 : (a.2 : L) = 0 := by simpa only [hneg a.1 ha, Submodule.mem_bot] using a.2.property
+      simp only [List.map_cons, List.prod_cons, ha0, map_zero, zero_mul]
+    · by_cases ht : d (l.map Sigma.fst).sum < 0
+      · simp only [List.map_cons, List.prod_cons, ih ht, mul_zero]
+      · simp only [List.map_cons, List.sum_cons, map_add] at hl
+        omega
+
+/-- A negative-degree enveloping piece vanishes when all negative-degree Lie pieces vanish. -/
+theorem homogeneousSubmodule_eq_bot_of_degree_neg (d : Γ →+ ℤ)
+    (hneg : ∀ n, d n < 0 → ℒ n = ⊥) {n : Γ} (hn : d n < 0) :
+    homogeneousSubmodule ℒ n = ⊥ := by
+  apply le_antisymm _ bot_le
+  rw [homogeneousSubmodule_def, Submodule.span_le]
+  rintro a ⟨l, hl, rfl⟩
+  exact (Submodule.mem_bot R).mpr
+    (word_eq_zero_of_degree_neg ℒ d hneg l (by simpa only [hl] using hn))
+
 /-- The homogeneous word spans are compatible with the algebra product. -/
 instance homogeneousSubmodule_gradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule ℒ) where
   one_mem := Submodule.subset_span ⟨[], by simp, rfl⟩

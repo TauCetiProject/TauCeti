@@ -12,16 +12,17 @@ public import TauCeti.Algebra.Colimit.Ring
 # Henselian pairs under directed colimits
 
 Let `(G i, I i)` be a directed system of pairs of a commutative ring and an ideal, indexed by a
-nonempty directed preorder, whose transition maps `f i j` carry `I i` into `I j`. The main
+directed preorder, whose transition maps `f i j` carry `I i` into `I j`. The main
 result, `Ring.DirectLimit.henselianRing`, is that if every `(G i, I i)` is Henselian, then
 `Ring.DirectLimit G f` is Henselian along the colimit ideal `⨆ i, (I i).map (of G f i)`.
 
-A monic polynomial over the colimit with a simple root modulo the colimit ideal comes, together
-with its approximate root and the witnesses for both conditions, from a single stage (using the
-descent lemmas of `TauCeti.Algebra.Colimit.Ring`); the root found there maps to the required root
-in the colimit. This is the filtered-colimit case of the permanence properties of Henselian
-pairs. Directedness is essential: the coproduct of two copies of `(ℤ_[p], (p))`, which is not a
-directed colimit, is not Henselian along `p`.
+For a nonempty index type, a monic polynomial over the colimit with a simple root modulo the
+colimit ideal comes, together with its approximate root and the witnesses for both conditions,
+from a single stage (using the descent lemmas of `TauCeti.Algebra.Colimit.Ring`); the root found
+there maps to the required root in the colimit. For an empty index type the colimit ideal is `⊥`,
+and every ring is Henselian along `⊥`. This is the filtered-colimit case of the permanence
+properties of Henselian pairs. Directedness is essential: the coproduct of two copies of
+`(ℤ_[p], (p))`, which is not a directed colimit, is not Henselian along `p`.
 
 ## Main results
 
@@ -44,10 +45,9 @@ namespace Ring.DirectLimit
 variable {ι : Type*} [Preorder ι] {G : ι → Type*} [∀ i, CommRing (G i)]
   {f : ∀ i j, i ≤ j → G i →+* G j} {I : ∀ i, Ideal (G i)}
 
-/-- **Henselian pairs are stable under directed colimits.** If every `(G i, I i)` is a
-Henselian pair and the transition maps carry `I i` into `I j`, then the directed colimit
-`Ring.DirectLimit G f` is Henselian along the colimit ideal `⨆ i, (I i).map (of G f i)`. -/
-theorem henselianRing [Nonempty ι] [IsDirectedOrder ι] [DirectedSystem G (f · · ·)]
+/-- The nonempty case of `henselianRing`. -/
+private theorem henselianRing_of_nonempty [Nonempty ι] [IsDirectedOrder ι]
+    [DirectedSystem G (f · · ·)]
     [∀ i, HenselianRing (G i) (I i)]
     (hI : ∀ i j (hij : i ≤ j), I i ≤ (I j).comap (f i j hij)) :
     HenselianRing (DirectLimit G (f · · ·)) (⨆ i, (I i).map (of G (f · · ·) i)) where
@@ -81,5 +81,17 @@ theorem henselianRing [Nonempty ι] [IsDirectedOrder ι] [DirectedSystem G (f ·
       (by simpa [DirectedSystem.map_map' f] using h₂)
     refine ⟨of G (f · · ·) l a, by simpa [Polynomial.map_map] using ha.map (of G (f · · ·) l), ?_⟩
     simpa using (mem_iSup_map_of_iff hI).2 ⟨l, _, hab, rfl⟩
+
+/-- **Henselian pairs are stable under directed colimits.** If every `(G i, I i)` is a
+Henselian pair and the transition maps carry `I i` into `I j`, then the directed colimit
+`Ring.DirectLimit G f` is Henselian along the colimit ideal `⨆ i, (I i).map (of G f i)`. -/
+theorem henselianRing [IsDirectedOrder ι] [DirectedSystem G (f · · ·)]
+    [∀ i, HenselianRing (G i) (I i)]
+    (hI : ∀ i j (hij : i ≤ j), I i ≤ (I j).comap (f i j hij)) :
+    HenselianRing (DirectLimit G (f · · ·)) (⨆ i, (I i).map (of G (f · · ·) i)) := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · rw [iSup_of_empty]
+    infer_instance
+  · exact henselianRing_of_nonempty hI
 
 end Ring.DirectLimit

@@ -13,19 +13,20 @@ public import Mathlib.Topology.Separation.Connected
 # Profinite groups are nonarchimedean
 
 A topological group is *nonarchimedean* when every neighbourhood of the identity contains an open
-subgroup. In a compact totally disconnected topological group every open neighbourhood of the
+subgroup. In a compact zero-dimensional topological group every open neighbourhood of the
 identity contains an open normal subgroup, which is Mathlib's
 `ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one`; this file records the consequence
 as the `NonarchimedeanGroup` instance, so that everything Mathlib and Tau Ceti prove about
 nonarchimedean groups — the basis of open subgroups at the identity, the transport to quotients
 and subgroups, total separatedness of Hausdorff nonarchimedean groups — applies to profinite
-groups and to compact totally disconnected topological modules without further argument.
+groups and to compact totally disconnected topological modules without further argument: a
+compact totally disconnected topological group is Hausdorff, hence zero-dimensional.
 
 ## Main results
 
 * `TauCeti.IsTopologicalGroup.nonarchimedeanGroup_of_compactSpace`, and its additive form
-  `TauCeti.IsTopologicalAddGroup.nonarchimedeanAddGroup_of_compactSpace`: a compact totally
-  disconnected topological group is nonarchimedean.
+  `TauCeti.IsTopologicalAddGroup.nonarchimedeanAddGroup_of_compactSpace`: a compact
+  zero-dimensional topological group is nonarchimedean.
 -/
 
 public section
@@ -33,13 +34,15 @@ public section
 namespace TauCeti
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [TotallyDisconnectedSpace G]
+  [ZeroDimensionalSpace G]
 
-/-- A compact totally disconnected topological group is nonarchimedean: every neighbourhood of
-the identity contains an open subgroup. -/
-@[to_additive IsTopologicalAddGroup.nonarchimedeanAddGroup_of_compactSpace /-- A compact totally
-disconnected topological additive group is nonarchimedean: every neighbourhood of zero contains an
-open additive subgroup. -/]
+/-- A compact zero-dimensional topological group is nonarchimedean: every neighbourhood of the
+identity contains an open subgroup. This covers profinite groups, since a compact totally
+disconnected topological group is zero-dimensional. -/
+@[to_additive IsTopologicalAddGroup.nonarchimedeanAddGroup_of_compactSpace /-- A compact
+zero-dimensional topological additive group is nonarchimedean: every neighbourhood of zero
+contains an open additive subgroup. This covers compact totally disconnected topological additive
+groups, which are zero-dimensional. -/]
 instance (priority := 100) IsTopologicalGroup.nonarchimedeanGroup_of_compactSpace :
     NonarchimedeanGroup G where
   is_nonarchimedean U hU := by

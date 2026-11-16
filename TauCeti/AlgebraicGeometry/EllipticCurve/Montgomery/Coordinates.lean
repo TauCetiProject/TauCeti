@@ -54,7 +54,9 @@ a `K`-rational point exactly when `(r³ + A r² + r) / B` is a square in `K`.
 
 ## Main results
 
-* `TauCeti.Montgomery.coordinates_ne_zero`: for `B ≠ 0` the coordinate pair is nonzero.
+* `TauCeti.Montgomery.coordinates_ne_zero` and
+  `TauCeti.Montgomery.coordinates_ne_zero_of_nontrivial`: the coordinate pair is nonzero, for
+  `B ≠ 0`, respectively over a nontrivial domain for any `B`.
 * `TauCeti.Montgomery.coordinates_z_eq_zero_iff` and
   `TauCeti.Montgomery.coordinates_x_eq_zero_iff`: its fields vanish exactly at infinity and at
   the distinguished point of order two, respectively.
@@ -140,6 +142,21 @@ end CommRing
 section Domain
 
 variable {R : Type*} [CommRing R] [NoZeroDivisors R] {A B : R}
+
+/-- Over a nontrivial domain, the coordinate pair of a native point is nonzero, also for `B = 0`,
+where the model `y² = x³` is singular at `(0, 0)`; see `coordinates_ne_zero` for the version over
+an arbitrary commutative ring with `B ≠ 0`. -/
+@[simp]
+theorem coordinates_ne_zero_of_nontrivial [Nontrivial R] (P : (model A B).toAffine.Point) :
+    coordinates A B P ≠ 0 := by
+  rcases P with _ | ⟨x, y, hns⟩
+  · simp [← Affine.Point.zero_def, Pair.eq_zero_iff]
+  · rw [coordinates_some, Ne, Pair.eq_zero_iff]
+    rintro ⟨rfl, rfl⟩
+    rw [Affine.nonsingular_iff, Affine.equation_iff] at hns
+    obtain ⟨he, hy⟩ := hns
+    obtain rfl : y = 0 := by simpa using he
+    simp at hy
 
 /-- The coordinate pair of the distinguished point of order two is `(0, B)`. -/
 @[simp]

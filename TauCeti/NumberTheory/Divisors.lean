@@ -1,12 +1,14 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2023 Arend Mellendijk and 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Arend Mellendijk, OpenAI Codex
 -/
 module
 
 public import Mathlib.NumberTheory.Divisors
+public import Mathlib.Algebra.Squarefree.Basic
 import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Algebra.GCDMonoid.Nat
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 
@@ -16,6 +18,9 @@ import Mathlib.Tactic.NormNum
 For `N ≠ 0`, the divisors `d` of `N` with `a = N + d` (respectively `a = N - d`) are at most one,
 and such a divisor exists exactly when `a - N` divides `N` (respectively `N - a` divides `a`).
 These lemmas evaluate the corresponding indicator sums over `N.divisors`.
+
+`Nat.sum_divisors_filter_dvd` reindexes divisors divisible by a fixed `m ∣ n` as `m` times
+the divisors of `n / m`.
 
 `Nat.sum_divisorsAntidiagonal_ite_dvd` regroups a sum over the factor pairs `(a, b)` of `n`,
 restricted to `a ∣ m`, as a sum over the divisors of `gcd(m, n)`.
@@ -30,6 +35,9 @@ strictly increasing factors. `Nat.injOn_add_divisorsAntidiagonal_filter_lt` and
 `Int.isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal` identify those factor pairs
 by their sum and by a positive square discriminant.
 
+For radical `P`, `Nat.pairwiseDisjoint_divisors_pow_filter_dvd` states that the families of
+divisors of `d ^ M` divisible by `d` are pairwise disjoint as `d` ranges over the divisors of `P`.
+
 `TauCeti.nontrivialDivisorEquiv` identifies divisors greater than one with the subtype of
 `N.divisors` omitting the unit divisor.
 -/
@@ -39,6 +47,31 @@ public section
 namespace Nat
 
 variable {M : Type*} [AddCommMonoid M]
+
+/-- The divisors of `n` divisible by `m ∣ n` are `m` times the divisors of `n / m`,
+so a sum over those divisors can be reindexed by division by `m`. -/
+theorem sum_divisors_filter_dvd {m n : ℕ} (h : m ∣ n) (f : ℕ → M) :
+    (∑ d ∈ n.divisors with m ∣ d, f d) = ∑ d ∈ (n / m).divisors, f (m * d) := by
+  classical
+  by_cases hn : n = 0
+  · subst n
+    simp
+  have hm : m ≠ 0 := ne_zero_of_dvd_ne_zero hn h
+  have hq : n / m ≠ 0 := Nat.div_ne_zero_iff.mpr ⟨hm, Nat.le_of_dvd (Nat.pos_of_ne_zero hn) h⟩
+  symm
+  apply Finset.sum_bij (fun d _ ↦ m * d)
+  · intro d hd
+    exact Finset.mem_filter.mpr ⟨Nat.mem_divisors.mpr
+      ⟨(Nat.mul_dvd_mul_left m (Nat.dvd_of_mem_divisors hd)).trans
+        (by rw [Nat.mul_div_cancel' h]), hn⟩, dvd_mul_right _ _⟩
+  · intro a _ b _ hab
+    exact Nat.eq_of_mul_eq_mul_left (Nat.pos_of_ne_zero hm) hab
+  · intro d hd
+    obtain ⟨hd, hmd⟩ := Finset.mem_filter.mp hd
+    refine ⟨d / m, Nat.mem_divisors.mpr ⟨Nat.div_dvd_div hmd (Nat.dvd_of_mem_divisors hd), hq⟩, ?_⟩
+    exact Nat.mul_div_cancel' hmd
+  · intro d _
+    rfl
 
 /-- The sum over the divisors `d` of `N` of `f d` restricted to `a = N + d`. -/
 theorem sum_divisors_ite_eq_add {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : ℕ → M) :
@@ -181,7 +214,7 @@ theorem isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal
     have hmul : a * d = n := by
       have ha2 : 2 * a = |t| - |u| := by dsimp [a]; omega
       have hd2 : 2 * d = |t| + |u| := by dsimp [d]; omega
-      nlinarith
+      nlinarith [hd2]
     refine ⟨(a.toNat, d.toNat), ?_, by omega, by omega⟩
     simpa only [Int.toNat_natCast] using
       prodMk_toNat_mem_divisorsAntidiagonal_toNat ha (by omega) hmul
@@ -221,3 +254,26 @@ theorem nontrivialDivisorEquiv_symm_apply_val
     (nontrivialDivisorEquiv.symm d).val = d.val.val := by rfl
 
 end TauCeti
+
+namespace Nat
+
+open Finset
+
+/-- For radical `P`, the divisors of `d ^ M` divisible by `d` are disjoint as `d` ranges
+through the divisors of `P`. This is the prime-support partition used by the Selberg sieve. -/
+theorem pairwiseDisjoint_divisors_pow_filter_dvd {P : ℕ} (hP : IsRadical P) (M : ℕ) :
+    (P.divisors : Set ℕ).PairwiseDisjoint
+      (fun d ↦ (d ^ M).divisors.filter (d ∣ ·)) := by
+  intro i hi j hj hij
+  have hPsq := IsRadical.squarefree (Nat.ne_zero_of_mem_divisors hi) hP
+  apply Finset.disjoint_left.mpr
+  intro m hmi hmj
+  obtain ⟨hmi, him⟩ := mem_filter.mp hmi
+  obtain ⟨hmj, hjm⟩ := mem_filter.mp hmj
+  have hij' : i ∣ j := (hPsq.squarefree_of_dvd (Nat.dvd_of_mem_divisors hi)).isRadical
+    M j (him.trans (Nat.dvd_of_mem_divisors hmj))
+  have hji' : j ∣ i := (hPsq.squarefree_of_dvd (Nat.dvd_of_mem_divisors hj)).isRadical
+    M i (hjm.trans (Nat.dvd_of_mem_divisors hmi))
+  exact hij (Nat.dvd_antisymm hij' hji')
+
+end Nat

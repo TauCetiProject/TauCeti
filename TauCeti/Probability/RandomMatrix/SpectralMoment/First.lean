@@ -68,7 +68,7 @@ theorem variance_integral_spectralMeasure_wignerMatrix (n : ℕ)
   rw [heq, variance_const_mul]
   simp only [← Finset.sum_apply]
   rw [IndepFun.variance_sum (fun i _ ↦ hη i) (by
-    intro i hi j hj hij
+    intro i _ j _ hij
     exact hindep hij)]
   simp only [Finset.sum_apply]
 

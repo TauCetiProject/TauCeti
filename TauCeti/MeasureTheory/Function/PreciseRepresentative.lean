@@ -160,7 +160,7 @@ theorem ae_eq_preciseRepresentative_of_hasBesicovitchCovering {Y : Type*} [Metri
 
 section Oscillation
 
-variable [CompleteSpace E] [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
+variable [CompleteSpace E] [μ.IsOpenPosMeasure]
 
 /-- If `f` takes values almost everywhere on `ball x r` in a closed convex set `S`, then so do its
 averages over the closed balls around `x` of small radius. -/
@@ -169,16 +169,30 @@ theorem eventually_setAverage_closedBall_mem {S : Set E} (hSc : Convex ℝ S) (h
     (hfS : ∀ᵐ y ∂μ.restrict (ball x r), f y ∈ S) :
     ∀ᶠ ε in 𝓝[>] (0 : ℝ), ⨍ y in closedBall x ε, f y ∂μ ∈ S := by
   obtain ⟨t, ht, hint⟩ := hf
-  obtain ⟨t', ht', hfin⟩ := μ.finiteAt_nhds x
-  obtain ⟨δ, hδ, hsub⟩ := nhds_basis_closedBall.mem_iff.1
-    (inter_mem (inter_mem ht ht') (ball_mem_nhds x hr))
+  obtain ⟨δ, hδ, hsub⟩ := nhds_basis_closedBall.mem_iff.1 (inter_mem ht (ball_mem_nhds x hr))
   filter_upwards [Ioo_mem_nhdsGT hδ] with ε hε
-  have hε' : closedBall x ε ⊆ t ∩ t' ∩ ball x r :=
+  have hε' : closedBall x ε ⊆ t ∩ ball x r :=
     (closedBall_subset_closedBall hε.2.le).trans hsub
-  exact hSc.set_average_mem hS (measure_closedBall_pos μ x hε.1).ne'
-    ((measure_mono fun _ hy => (hε' hy).1.2).trans_lt hfin).ne
-    (ae_restrict_of_ae_restrict_of_subset (fun _ hy => (hε' hy).2) hfS)
-    (hint.mono_set fun _ hy => (hε' hy).1.1)
+  have hfS' : ∀ᵐ y ∂μ.restrict (closedBall x ε), f y ∈ S :=
+    ae_restrict_of_ae_restrict_of_subset (fun _ hy => (hε' hy).2) hfS
+  have hint' : IntegrableOn f (closedBall x ε) μ := hint.mono_set fun _ hy => (hε' hy).1
+  by_cases hfin : μ (closedBall x ε) = ⊤
+  · -- A ball of infinite measure has average `0`, and `0 ∈ S`, for otherwise `f` is bounded below
+    -- in norm on a set of infinite measure and is not integrable.
+    rw [setAverage_eq, Measure.real, hfin]
+    simp only [ENNReal.toReal_top, inv_zero, zero_smul]
+    by_contra h0S
+    obtain ⟨d, hd, hdS⟩ := Metric.isOpen_iff.1 hS.isOpen_compl 0 h0S
+    have hlow : ∀ᵐ y ∂μ.restrict (closedBall x ε), ENNReal.ofReal d ≤ ‖f y‖ₑ :=
+      hfS'.mono fun y hy => by
+        rw [← ofReal_norm]
+        refine ENNReal.ofReal_le_ofReal (not_lt.1 fun h => hdS ?_ hy)
+        simpa using h
+    have h1 := lintegral_mono_ae hlow
+    rw [lintegral_const, Measure.restrict_apply_univ, hfin,
+      ENNReal.mul_top (ENNReal.ofReal_pos.2 hd).ne'] at h1
+    exact hint'.2.ne (top_le_iff.1 h1)
+  · exact hSc.set_average_mem hS (measure_closedBall_pos μ x hε.1).ne' hfin hfS' hint'
 
 /-- If `f` takes values almost everywhere on `ball x r` in a closed convex set `S`, and the
 averages of `f` over the closed balls around `x` converge, then the precise representative of `f`
@@ -272,13 +286,28 @@ theorem dist_preciseRepresentative_le {y : X} {c : E} {r L : ℝ} (hxy : dist x 
 
 /-- If `f` is essentially bounded by `M` on `ball x r` and the averages of `f` over the closed balls
 around `x` converge, then the precise representative of `f` at `x` has norm at most `M`. -/
-theorem norm_preciseRepresentative_le {r M : ℝ} (hr : 0 < r) (hf : IntegrableAtFilter f (𝓝 x) μ)
+theorem norm_preciseRepresentative_le {r M : ℝ} (hr : 0 < r)
     (hbdd : ∀ᵐ y ∂μ.restrict (ball x r), ‖f y‖ ≤ M)
     (hlim : Tendsto (fun ε => ⨍ y in closedBall x ε, f y ∂μ) (𝓝[>] 0)
       (𝓝 (preciseRepresentative μ f x))) :
     ‖preciseRepresentative μ f x‖ ≤ M := by
-  simpa using preciseRepresentative_mem (convex_closedBall (0 : E) M) isClosed_closedBall hr hf
-    (by simpa using hbdd) hlim
+  by_cases hf : IntegrableAtFilter f (𝓝 x) μ
+  · simpa using preciseRepresentative_mem (convex_closedBall (0 : E) M) isClosed_closedBall hr hf
+      (by simpa using hbdd) hlim
+  · -- Without integrability near `x` every average vanishes, so the precise representative is `0`.
+    have hzero : (fun ε => ⨍ y in closedBall x ε, f y ∂μ) =ᶠ[𝓝[>] 0] fun _ => (0 : E) := by
+      filter_upwards [self_mem_nhdsWithin] with ε hε
+      have hni : ¬ IntegrableOn f (closedBall x ε) μ := fun h =>
+        hf ⟨closedBall x ε, closedBall_mem_nhds x hε, h⟩
+      rw [setAverage_eq, integral_undef hni, smul_zero]
+    have h0 : preciseRepresentative μ f x = 0 :=
+      preciseRepresentative_eq_of_tendsto (tendsto_const_nhds.congr' hzero.symm)
+    have hne : μ.restrict (ball x r) ≠ 0 := fun h =>
+      (measure_ball_pos μ x hr).ne' (by simpa using congrArg (fun m : Measure X => m univ) h)
+    have : NeBot (ae (μ.restrict (ball x r))) := ae_neBot.2 hne
+    obtain ⟨y, hy⟩ := hbdd.exists
+    rw [h0, norm_zero]
+    exact (norm_nonneg _).trans hy
 
 /-- **Power-law oscillation decay gives convergence of the averages.** Let `α > 0` and `ρ > 0`. If
 for every `0 < r ≤ ρ` the function `f` takes values almost everywhere on `ball x r` in a closed
@@ -340,7 +369,7 @@ theorem holderOnWith_preciseRepresentative {s : Set X} {C M α ρ : ℝ≥0}
     exact hle.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
   · -- Distant points: both values have norm at most `M`, and `2M ≤ (2M / ρ^α) dist^α`.
     have hbound : ∀ z ∈ s, ‖preciseRepresentative μ f z‖ ≤ M := fun z hz =>
-      norm_preciseRepresentative_le hρ' (hf z hz) (hbdd z hz) (hlim z hz)
+      norm_preciseRepresentative_le hρ' (hbdd z hz) (hlim z hz)
     have _ : (0 : ℝ) < (ρ : ℝ) ^ (α : ℝ) := Real.rpow_pos_of_pos hρ' _
     calc dist (preciseRepresentative μ f x) (preciseRepresentative μ f y)
         ≤ ‖preciseRepresentative μ f x‖ + ‖preciseRepresentative μ f y‖ := dist_le_norm_add_norm _ _

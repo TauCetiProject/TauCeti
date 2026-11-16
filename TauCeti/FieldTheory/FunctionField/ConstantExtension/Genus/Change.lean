@@ -175,7 +175,7 @@ private theorem mem_riemannRochSpace_conorm_iff_forall_smul_mem (hF' : IsFunctio
       Divisor.coeff_conorm, hP', hs]
     omega
   simp only [key, mem_riemannRochSpace_iff]
-  exact ⟨fun hz P P' hP' ↦ hz P', fun hz P' ↦ hz _ P' rfl⟩
+  exact ⟨fun hz P P' _ ↦ hz P', fun hz P' ↦ hz _ P' rfl⟩
 
 variable (hF' : IsFunctionField k' F') {D : Divisor k F} {s : Place k F → F}
   (hs0 : ∀ P, s P ≠ 0) (hs : ∀ P, P.ord (s P) = D.coeff P)

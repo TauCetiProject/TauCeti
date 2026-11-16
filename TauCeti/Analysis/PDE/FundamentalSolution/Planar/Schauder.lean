@@ -100,7 +100,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_planarNewtonianKernel_convolution
     have h := ((hneg.add h2).add ((h1.add hi).smul (2 : ℝ)))
     convert h using 1
     · dsimp only [A]
-      simp only [Real.nnnorm_ofNat]
+      simp only [Real.nnNorm_ofNat]
       ring
     · funext x
       rw [((hχ.of_le (by simp : (2 : WithTop ℕ∞) ≤ ∞)).contDiffAt).laplacian_fun_mul_complex

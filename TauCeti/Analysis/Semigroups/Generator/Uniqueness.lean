@@ -85,7 +85,7 @@ private theorem hasDerivAt_realOperator_sub {S : StronglyContinuousSemigroup X} 
   have hyS : y ∈ S.domain := by rwa [S.generator_domain] at hy
   have hpsi : HasDerivAt (fun u : ℝ => S.realOperator u y) (S.realOperator (t - s) a) (t - s) := by
     have h := S.realOperator_hasDerivWithinAt_Ici ⟨y, hyS⟩ hrpos.le
-    rw [S.realOperator_generator_map hrpos.le ⟨y, hyS⟩] at h
+    rw [S.realOperator_generator_map ⟨y, hyS⟩] at h
     simp only [hSa] at h
     exact h.hasDerivAt (Ici_mem_nhds hrpos)
   exact HasDerivAt.comp_const_sub t s hpsi
@@ -123,7 +123,7 @@ private theorem hasDerivWithinAt_interpolate {S T : StronglyContinuousSemigroup 
     rw [← S.generator_domain, ← T.generator_domain, hgen]
   have hrpos : (0 : ℝ) < t - s := sub_pos.mpr hst
   set y : X := T.realOperator s x
-  have hyT : y ∈ T.domain := T.realOperator_mem_domain hs0 hx
+  have hyT : y ∈ T.domain := T.realOperator_mem_domain hx
   have hyT' : y ∈ T.generator.domain := by rw [T.generator_domain]; exact hyT
   have hyS' : y ∈ S.generator.domain := by rw [S.generator_domain, hdom]; exact hyT
   set a : X := T.generator ⟨y, hyT'⟩

@@ -22,7 +22,9 @@ filtrations need not be separated or adic.
 
 Adapted from `yuma-mizuno-lean/Mei`, commit
 `7f1e4c7714fb020473694755ad8748c8f15d0e7f`,
-`Mei/RingTheory/FilteredAlgebra/Map.lean` (Apache 2.0).
+`Mei/RingTheory/FilteredAlgebra/Map.lean` (Apache 2.0). The first-ideal preservation
+lemma is adapted from the same file at commit
+`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7`.
 -/
 
 public section
@@ -78,6 +80,23 @@ theorem mapCompletion_mem_completionIdeal (k : ℕ) {x : F.completion}
     F.mapCompletion G f l hl hf x ∈ G.completionIdeal (k + 1) := by
   simp only [completionIdeal_succ, RingHom.mem_ker] at hx ⊢
   rw [projection_mapCompletion, hx, map_zero]
+
+/-- A map preserving the first original ideal preserves the first completed ideal,
+even when its chosen cutoff modulus does not send zero to zero. -/
+theorem mapCompletion_mem_first (h₁ : F.ideal 1 ≤ (G.ideal 1).comap f)
+    {x : F.completion} (hx : x ∈ F.completionIdeal 1) :
+    F.mapCompletion G f l hl hf x ∈ G.completionIdeal 1 := by
+  have hx₀ : F.projection 0 x = 0 := by
+    simpa only [completionIdeal_succ, RingHom.mem_ker] using hx
+  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (F.projection (l 0) x)
+  have ha₀ : Ideal.Quotient.mk (F.ideal 1) a = 0 := by
+    have he := F.factor_projection (Nat.zero_le (l 0)) x
+    rw [← ha, Ideal.Quotient.factor_mk, hx₀] at he
+    exact he
+  have hfa := h₁ ((Ideal.Quotient.eq_zero_iff_mem).mp ha₀)
+  rw [completionIdeal_succ, RingHom.mem_ker,
+    projection_mapCompletion, ← ha, Ideal.quotientMap_mk]
+  exact Ideal.Quotient.eq_zero_iff_mem.mpr hfa
 
 variable {l}
 

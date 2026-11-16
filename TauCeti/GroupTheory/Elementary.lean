@@ -105,12 +105,6 @@ a prescribed element inside.
 
 ## References
 
-This supplies a prerequisite for
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`,
-Layer 6 ("Elementary and hyperelementary subgroups"), which asks for exactly these two predicates
-"from these orientations, with their basic closure properties", as the indexing sets of Artin's and
-Brauer's induction theorems.
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, Springer GTM 42 (1977), Part II, §10.
 -/
 
@@ -673,23 +667,12 @@ works, with no `p`-elementary conclusion. -/
 theorem exists_mem_pElementaryOfSylow (x : G) :
     ∃ P : Sylow p (centralizer ({pFreePart p x} : Set G)),
       x ∈ pElementaryOfSylow (pFreePart p x) P := by
-  by_cases h : p.Prime ∧ orderOf x ≠ 0
-  swap
-  · have hfree : pFreePart p x = x := by
-      rcases not_and_or.1 h with hp | hx
-      · exact pFreePart_of_not_prime hp x
-      · exact pFreePart_of_orderOf_eq_zero p (not_not.1 hx)
-    obtain ⟨P⟩ := (inferInstance : Nonempty (Sylow p (centralizer ({pFreePart p x} : Set G))))
-    exact ⟨P, (congrArg (· ∈ pElementaryOfSylow (pFreePart p x) P) hfree).mp
-      (self_mem_pElementaryOfSylow (pFreePart p x) P)⟩
-  obtain ⟨hp, hx⟩ := h
-  have := Fact.mk hp
   have hu : pPart p x ∈ centralizer ({pFreePart p x} : Set G) :=
     mem_centralizer_singleton_iff.2 (commute_pFreePart_pPart p x).symm.eq
   have hQ : IsPGroup p (zpowers (⟨pPart p x, hu⟩ :
       centralizer ({pFreePart p x} : Set G))) := by
     refine IsPGroup.of_card_dvd_pow (n := (orderOf x).factorization p) ?_
-    rw [Nat.card_zpowers, orderOf_mk, orderOf_pPart Fact.out hx]
+    rw [Nat.card_zpowers, orderOf_mk, orderOf_pPart]
   obtain ⟨P, hP⟩ := hQ.exists_le_sylow
   refine ⟨P, ?_⟩
   have hmem : pFreePart p x * pPart p x ∈ pElementaryOfSylow (pFreePart p x) P :=

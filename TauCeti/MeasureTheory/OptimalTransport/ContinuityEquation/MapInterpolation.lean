@@ -171,7 +171,7 @@ theorem exists_isContinuityEquation_map_smul_add_smul_of_ae_injOn (μ : Measure 
   have hS'π : ∀ᵐ z ∂graphPlan T μ, z ∈ S' :=
     (ae_graphPlan_iff hT.aemeasurable hS').2 (hSμ.mono fun _ hx ↦ ⟨hx, rfl⟩)
   obtain ⟨v, hce, hv, hact⟩ := exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_ae_injOn
-    (graphPlan T μ) (by rwa [lintegral_graphPlan hT.aemeasurable (by fun_prop)]) hS' hS'π
+    (graphPlan T μ) (by rwa [lintegral_graphPlan hT.aemeasurable (by fun_prop)]) hS'π
     (hinj.mono fun t ht hmem ↦ by
       rintro ⟨x, _⟩ ⟨hx, (rfl : _ = T x)⟩ ⟨x', _⟩ ⟨hx', (rfl : _ = T x')⟩ he
       exact congrArg (fun x ↦ (x, T x)) (ht hmem hx hx' he))

@@ -46,7 +46,7 @@ how far `σ` is from `π.fitLaw f μ`.
 * `MeasureTheory.Measure.rnDeriv_fitLaw` and `MeasureTheory.Measure.fitLaw_withDensity`: the
   projection has density `dμ/d(f₊π) ∘ f` against `π`, so a law with density `g` against `f₊π` is
   fitted by the density `g ∘ f`.
-* `MeasureTheory.Measure.fitLaw_apply_singleton`: on spaces with measurable singletons, the
+* `MeasureTheory.Measure.fitLaw_apply_singleton`: when the target has measurable singletons, the
   projection multiplies the mass of each point `ω` by `μ {f ω} / π.map f {f ω}`;
   `MeasureTheory.Measure.fitLaw_real_singleton` is the same for real masses.
 * `TauCeti.klDiv_eq_klDiv_map_add_klDiv_fitLaw`: the Pythagorean identity above.
@@ -143,13 +143,18 @@ theorem fitLaw_eq_self [SigmaFinite μ] (hf : Measurable f) (h : π.map f = μ) 
   conv_rhs => rw [← withDensity_one (μ := π)]
   exact withDensity_congr_ae (ae_of_ae_map hf.aemeasurable (rnDeriv_self _))
 
-/-- On spaces with measurable singletons, the projection reweights the mass of each point `ω` by
-the ratio of the masses that `μ` and the law of `f` under `π` give to `f ω`. -/
-theorem fitLaw_apply_singleton [MeasurableSingletonClass Ω] [MeasurableSingletonClass X]
+/-- On spaces with measurable singletons for the target, the projection reweights the mass of each
+point `ω` by the ratio of the masses that `μ` and the law of `f` under `π` give to `f ω`. -/
+theorem fitLaw_apply_singleton [MeasurableSingletonClass X]
     [SigmaFinite (π.map f)] [μ.HaveLebesgueDecomposition (π.map f)]
     (hf : Measurable f) (ω : Ω) :
     π.fitLaw f μ {ω} = μ {f ω} / π.map f {f ω} * π {ω} := by
-  rw [fitLaw_def, withDensity_apply _ (measurableSet_singleton ω), lintegral_singleton]
+  have hg : Measurable fun a ↦ μ.rnDeriv (π.map f) (f a) :=
+    (measurable_rnDeriv _ _).comp hf
+  have hω : π.fitLaw f μ {ω} = μ.rnDeriv (π.map f) (f ω) * π {ω} := by
+    have := SigmaFinite.of_map π hf.aemeasurable ‹SigmaFinite (π.map f)›
+    rw [fitLaw_def, withDensity_apply' _ {ω}, lintegral_singleton' hg ω]
+  rw [hω]
   rcases eq_or_ne (π {ω}) 0 with h | h
   · rw [h, mul_zero, mul_zero]
   have hle : π {ω} ≤ π.map f {f ω} := by
@@ -159,7 +164,7 @@ theorem fitLaw_apply_singleton [MeasurableSingletonClass Ω] [MeasurableSingleto
 
 /-- The real-mass form of `MeasureTheory.Measure.fitLaw_apply_singleton`: the projection reweights
 the real mass of each point `ω` by `μ.real {f ω} / (π.map f).real {f ω}`. -/
-theorem fitLaw_real_singleton [MeasurableSingletonClass Ω] [MeasurableSingletonClass X]
+theorem fitLaw_real_singleton [MeasurableSingletonClass X]
     [SigmaFinite (π.map f)] [μ.HaveLebesgueDecomposition (π.map f)]
     (hf : Measurable f) (ω : Ω) :
     (π.fitLaw f μ).real {ω} = μ.real {f ω} / (π.map f).real {f ω} * π.real {ω} := by

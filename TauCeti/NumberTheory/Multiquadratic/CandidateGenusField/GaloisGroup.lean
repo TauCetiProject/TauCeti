@@ -24,8 +24,16 @@ order `2 ^ (genusPrimeDiscriminants hd).card`.
 
 This supplies the Galois and abelian parts of the multiquadratic description of the candidate
 genus field. For negative `d`, `isGenusField_candidateGenusField` identifies this candidate with
-the maximal extension satisfying the genus-field ramification conditions. The real case and the
-identification of its relative Galois group with `Cl/Cl²` remain future work.
+the maximal extension satisfying the genus-field ramification conditions. For positive nonsquare
+`d`, `isGenusField_candidateGenusFieldReal` identifies the genus field with the maximal totally
+real subfield `candidateGenusFieldReal hd` of this candidate instead.
+
+For nonsquare `d`, the Galois group of the candidate over its quadratic base `K = ℚ(√d)` is
+identified with `Cl⁺(K)/Cl⁺(K)²` by `autCandidateGenusFieldEquivNarrowElementaryTwoQuotient`, and
+for negative `d` with `Cl(K)/Cl(K)²` by `autCandidateGenusFieldEquivElementaryTwoQuotient`, both in
+`CandidateGenusField/Relative/GenusCharacter`. For positive nonsquare `d`,
+`autCandidateGenusFieldRealEquivElementaryTwoQuotient` in `CandidateGenusField/Relative/Real`
+identifies the Galois group of the real subfield over `K` with `Cl(K)/Cl(K)²`.
 
 The prime-discriminant description of the genus field is classical; see D. A. Cox,
 *Primes of the Form x² + ny²*, and F. Lemmermeyer, *Reciprocity Laws*.

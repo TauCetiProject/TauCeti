@@ -96,7 +96,9 @@ theorem tangentCoordChange_normal_pos {α β x : M}
   let ν := EuclideanSpace.single (𝕜 := ℝ) (0 : Fin (n + 1)) 1
   let a := (D ν) 0
   have hfactor (v : EuclideanSpace ℝ (Fin (n + 1))) : (D v) 0 = a * v 0 :=
-    (π.comp D).eq_mul_apply_zero_of_nonneg hnonneg v
+    Module.Dual.apply_eq_mul_apply_of_nonneg (EuclideanSpace.projₗ (𝕜 := ℝ) 0)
+      (π.comp D : EuclideanSpace ℝ (Fin (n + 1)) →ₗ[ℝ] ℝ) (x := ν) (by simp [ν])
+      hnonneg v
   have ha : 0 ≤ a := hnonneg ν (by simp [ν])
   have hpos : 0 < a := by
     by_contra hn

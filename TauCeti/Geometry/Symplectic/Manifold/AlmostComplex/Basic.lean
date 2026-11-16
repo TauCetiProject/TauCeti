@@ -187,19 +187,21 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Topolog
 `b` gives a `C^n` vector field along `b`. Taking `b = id` this says that `J` preserves `C^n`
 vector fields on `M`. -/
 lemma contMDiff_apply {n : ℕ∞ω} [ENat.LEInfty n] (J : SmoothAlmostComplexStructure I M)
-    {b : N → M} (hb : ContMDiff I' I n b) {V : ∀ y : N, TangentSpace I (b y)}
+    {b : N → M} {V : ∀ y : N, TangentSpace I (b y)}
     (hV : ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (V y))) :
     ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (J (b y) (V y))) :=
-  ((J.toEndomorphism.contMDiff.of_le ENat.LEInfty.out).comp hb).clm_bundle_apply hV
+  ((J.toEndomorphism.contMDiff.of_le ENat.LEInfty.out).comp
+    ((contMDiff_proj (TangentSpace I)).comp hV)).clm_bundle_apply hV
 
-/-- Applying a smooth almost complex structure along a map `b` differentiable at `y₀` to a vector
-field along `b` differentiable at `y₀` gives a vector field along `b` differentiable at `y₀`.
+/-- Applying a smooth almost complex structure to a vector field along a map `b`, differentiable at
+`y₀` as a map into the tangent bundle, gives a vector field along `b` differentiable at `y₀`.
 Taking `b = id` this says that `J` preserves vector fields differentiable at a point. -/
 lemma mdifferentiableAt_apply (J : SmoothAlmostComplexStructure I M) {b : N → M} {y₀ : N}
-    (hb : MDifferentiableAt I' I b y₀) {V : ∀ y : N, TangentSpace I (b y)}
+    {V : ∀ y : N, TangentSpace I (b y)}
     (hV : MDifferentiableAt I' I.tangent (fun y ↦ TotalSpace.mk' E (b y) (V y)) y₀) :
     MDifferentiableAt I' I.tangent (fun y ↦ TotalSpace.mk' E (b y) (J (b y) (V y))) y₀ :=
-  ((J.toEndomorphism.contMDiff.mdifferentiableAt (by simp)).comp y₀ hb).clm_bundle_apply hV
+  ((J.toEndomorphism.contMDiff.mdifferentiableAt (by simp)).comp y₀
+    ((mdifferentiableAt_totalSpace _ _).1 hV).1).clm_bundle_apply hV
 
 /-- A family of smooth almost complex structures which equals a fixed `J` near `y₀`, read along a
 map `b` which is `C^n` at `y₀`, is `C^n` at `y₀` as a section of the tangent endomorphism bundle

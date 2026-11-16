@@ -46,6 +46,8 @@ chain rule for the gradient of a real profile composed with a real function.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
 * `TauCeti.gradient_neg` and `TauCeti.gradient_sub`: the gradient of a negative and of a
   difference.
+* `TauCeti.gradient_comp_linearIsometryEquiv_right`: `∇ (f ∘ l) x = l⁻¹ (∇ f (l x))` for a
+  linear isometry equivalence `l`.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
 * `TauCeti.gradient_eq_zero_iff`: `∇ f x = 0 ↔ fderiv 𝕜 f x = 0`.
 * `HasCompactSupport.gradient`: the gradient of a compactly supported function is compactly
@@ -124,6 +126,16 @@ theorem gradient_neg : ∇ (-f) x = -∇ f x := by
 theorem gradient_sub (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g x) :
     ∇ (f - g) x = ∇ f x - ∇ g x := by
   rw [sub_eq_add_neg, gradient_add hf hg.neg, gradient_neg, sub_eq_add_neg]
+
+/-- The gradient transforms under right composition by a linear isometry equivalence `l` as
+`∇ (f ∘ l) x = l⁻¹ (∇ f (l x))`. No differentiability hypothesis is needed. -/
+theorem gradient_comp_linearIsometryEquiv_right {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] (l : E ≃ₗᵢ[𝕜] F) (f : F → 𝕜) (x : E) :
+    ∇ (f ∘ l) x = l.symm (∇ f (l x)) := by
+  refine ext_inner_right 𝕜 fun a => ?_
+  rw [gradient, gradient, ← LinearIsometryEquiv.coe_toContinuousLinearEquiv l,
+    ContinuousLinearEquiv.comp_right_fderiv]
+  simp [LinearIsometryEquiv.inner_map_eq_flip]
 
 /-- The gradient vanishes off the topological support of the function, as the Fréchet derivative
 does. -/

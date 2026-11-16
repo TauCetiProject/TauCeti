@@ -11,14 +11,13 @@ import Mathlib.Tactic.NormNum.Prime
 /-!
 # Worked examples of fundamental discriminants
 
-The multiquadratic roadmap's `Worked examples` section (`TauCetiRoadmap/Multiquadratic/README.md`)
-lists `ℚ(√-5)`, with discriminant `-20` and genus field `ℚ(√-1, √5)`, and `ℚ(√-21)`, with
-discriminant `-84` and genus field `ℚ(√-1, √-3, √-7)`. This file establishes the
-fundamental-discriminant component of those examples: each discriminant is derived as a product
-of prime discriminants through
+Two worked examples of genus theory are `ℚ(√-5)`, with discriminant `-20` and genus field
+`ℚ(√-1, √5)`, and `ℚ(√-21)`, with discriminant `-84` and genus field `ℚ(√-1, √-3, √-7)`. This file
+establishes the fundamental-discriminant component of those examples: each discriminant is derived
+as a product of prime discriminants through
 `isFundamentalDiscr_mul_prod_oddPrimeDiscriminant_of_isEvenPrimeDiscriminant`, rather than
-by unfolding the definition. Their class-group and concrete genus-field identifications remain
-future work.
+by unfolding the definition. Their class numbers and genus fields are computed in the
+`Multiquadratic/MinusFive` and `Multiquadratic/MinusTwentyOne` directories.
 
 ## Main results
 

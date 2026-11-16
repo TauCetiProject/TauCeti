@@ -356,6 +356,17 @@ theorem toContinuousAffineMap_apply (e : IntegralAffineEquiv h h') (x : V) :
 theorem toContinuousAffineMap_toAffineMap (e : IntegralAffineEquiv h h') :
     e.toContinuousAffineMap.toAffineMap = e.toAffineEquiv.toAffineMap := (rfl)
 
+/-- The underlying continuous affine equivalence, used to transport exposed subsets. -/
+def toContinuousAffineEquiv (e : IntegralAffineEquiv h h') : V ≃ᴬ[ℝ] V' :=
+  { e.toAffineEquiv with
+    continuous_toFun := e.continuous
+    continuous_invFun := e.symm.continuous }
+
+/-- Bundling continuity does not change evaluation. -/
+@[simp]
+theorem coe_toContinuousAffineEquiv (e : IntegralAffineEquiv h h') :
+    ⇑e.toContinuousAffineEquiv = e := (rfl)
+
 /-- Rationality with the exact bundled continuous-map type, for use in public
 constructions without relying on unfolding the rational-map predicate. -/
 theorem isRational_toContinuousAffineMap (e : IntegralAffineEquiv h h') :

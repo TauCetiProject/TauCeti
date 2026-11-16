@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.IsTensorProduct
 public import TauCeti.LinearAlgebra.TensorProduct.Torsion
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import Mathlib.RingTheory.TensorProduct.Quotient
 import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 import TauCeti.RingTheory.Ideal.Quotient.Operations
 
@@ -298,3 +299,27 @@ theorem isBaseChange_of_primaryComponent_eq_top {N : Type*} [AddCommGroup N] [Mo
   exact IsBaseChange.of_equiv (.ofBijective l hlb) fun n ↦ hl n
 
 end TauCeti
+
+namespace Ideal
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Module.Flat R S]
+
+/-- A flat map inducing an isomorphism modulo `I` induces an isomorphism modulo any ideal `J`
+whose quotient is `I`-power torsion. In particular this applies to every power of `I`. -/
+theorem quotientMap_bijective_of_primaryComponent_eq_top (I J : Ideal R)
+    (hI : Function.Bijective
+      (quotientMap (I.map (algebraMap R S)) (algebraMap R S) le_comap_map))
+    (hJ : I.primaryComponent (R ⧸ J) = ⊤) :
+    Function.Bijective
+      (quotientMap (J.map (algebraMap R S)) (algebraMap R S) le_comap_map) := by
+  let e := Algebra.TensorProduct.quotIdealMapEquivTensorQuot S J
+  have h := e.symm.bijective.comp
+    (TauCeti.tensorProduct_mk_bijective_of_primaryComponent_eq_top (S := S) hI hJ)
+  convert h using 1
+  funext q
+  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective q
+  simp only [quotientMap_mk, Function.comp_apply, TensorProduct.mk_apply, e,
+    Algebra.TensorProduct.quotIdealMapEquivTensorQuot_symm_tmul, Algebra.smul_def, mul_one]
+  exact (IsScalarTower.algebraMap_apply R S (S ⧸ J.map (algebraMap R S)) r).symm
+
+end Ideal

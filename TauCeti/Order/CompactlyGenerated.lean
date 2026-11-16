@@ -55,8 +55,7 @@ theorem iSupIndep.finite_ne_bot_of_isCompactElement {α ι : Type*} [CompleteLat
   obtain ⟨s, hs⟩ := hc.exists_finset_of_le_iSup a le_rfl
   refine s.finite_toSet.subset fun i hi ↦ ?_
   by_contra his
-  refine hi ((ha i).eq_bot_of_le ((le_iSup a i).trans (hs.trans (iSup₂_le fun j hj ↦ ?_))))
-  exact le_iSup₂_of_le j (fun hji ↦ his (Finset.mem_coe.mpr (hji ▸ hj))) le_rfl
+  exact hi ((ha.disjoint_biSup his).eq_bot_of_le ((le_iSup a i).trans hs))
 
 /-- **A subfamily of an independent family truncates a dominated supremum.** If `B i ≤ A i` for
 every `i` and the `A i` are independent, then the total supremum of the `B` meets the partial
@@ -82,9 +81,5 @@ theorem iSupIndep.iSup₂_inf_iSup₂_eq_iSup₂_and {α ι : Type*} [CompleteLa
     (hA : iSupIndep A) (P Q : ι → Prop) :
     (⨆ (i) (_ : P i), A i) ⊓ (⨆ (i) (_ : Q i), A i) =
       ⨆ (i) (_ : P i ∧ Q i), A i := by
-  classical
-  have h := iSupIndep.iSup₂_inf_iSup_eq_iSup₂
-    (A := A) (B := fun i ↦ if Q i then A i else ⊥) hA
-    (fun i ↦ by split <;> simp_all) P
-  simp only [iSup_ite, iSup_bot, sup_bot_eq] at h
-  simpa only [iSup_and] using h
+  simpa only [iSup_and] using
+    hA.iSup₂_inf_iSup_eq_iSup₂ (B := fun i ↦ ⨆ _ : Q i, A i) (fun _ ↦ iSup_le fun _ ↦ le_rfl) P

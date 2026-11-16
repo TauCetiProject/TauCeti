@@ -128,7 +128,7 @@ theorem mextDerivWithin_apply_vectorField {n : ℕ}
   refine hflat.trans ?_
   congr 1
   · apply Finset.sum_congr rfl
-    intro i hi
+    intro i _
     congr 1
     have hd := fderivWithin_inChartAt_apply_mpullbackWithin (s := s) φ
       (fun j ↦ V (i.succAbove j)) hφ' (fun j ↦ hV' (i.succAbove j))

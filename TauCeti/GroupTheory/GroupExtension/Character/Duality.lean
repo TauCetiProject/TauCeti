@@ -72,8 +72,8 @@ theorem commutatorCharacterRestriction_surjective
 
 end Restriction
 
-variable [Finite (Abelianization α.Extension)]
-  [HasEnoughRootsOfUnity k (Monoid.exponent (Abelianization α.Extension))]
+variable [Finite (Group.Abelianization α.Extension)]
+  [HasEnoughRootsOfUnity k (Monoid.exponent (Group.Abelianization α.Extension))]
 
 /-- Transgression vanishes exactly when the character kills the commutator part of the
 extension kernel. The action on the kernel need not be trivial for this criterion. -/

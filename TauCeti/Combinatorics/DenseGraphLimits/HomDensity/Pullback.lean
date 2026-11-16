@@ -40,8 +40,6 @@ is the step turning the same-carrier counting lemma into its coupling form,
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — the basic theory of `homDensity`;
-  the invariance recorded here is the transport the cross-carrier Layer-2 counting lemma runs on.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), §7 — homomorphism densities of a graphon read through a measure-preserving map.
 -/

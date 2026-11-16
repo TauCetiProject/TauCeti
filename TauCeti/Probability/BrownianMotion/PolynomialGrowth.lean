@@ -65,7 +65,6 @@ theorem lintegral_iSup_sq_price_geometricBrownianMotion_lt_top
         2 * A ^ 2 * (1 + geometricBrownianMotion s μ σ W t ω ^ (p * 2)) := by
     have hS := geometricBrownianMotion_pos hs μ σ W t ω
     have hg := hC _ hS t ht
-    have hr := rpow_nonneg hS.le p
     have hsq := sq_le_sq₀ (abs_nonneg _) (mul_nonneg hA (by positivity)) |>.2 hg
     rw [sq_abs] at hsq
     rw [rpow_mul hS.le, rpow_two]

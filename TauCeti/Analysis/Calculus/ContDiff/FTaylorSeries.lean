@@ -244,7 +244,7 @@ theorem _root_.HasFTaylorSeriesUpToOn.contDiff_piecewise {k : ℕ∞} {f g : E �
     rw [← hf.zero_eq x hx.1, ← hg.zero_eq x hx.2, hmatch x hx 0 (by simp)]
   have hf' : HasFTaylorSeriesUpToOn k (s.piecewise f g) r s := by
     apply (hf.congr (fun x hx ↦ by simp [hx])).congr_series
-    intro m hm x hx
+    intro m _ x hx
     simp [r, hx]
   have hg' : HasFTaylorSeriesUpToOn k (s.piecewise f g) r t := by
     have hfunction : HasFTaylorSeriesUpToOn k (s.piecewise f g) q t := by

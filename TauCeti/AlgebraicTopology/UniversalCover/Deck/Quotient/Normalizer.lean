@@ -21,7 +21,7 @@ covering `r`:
   `deck r ≃* N(H) ⧸ H`,
 
 where `N(H)` is the normalizer of `H` in `Γ`. Taking `H = ⊥` recovers
-`TauCeti.Deck.IsQuotientCoveringMap.deckMulEquiv`, which identifies `deck p` with `Γ` itself.
+`IsQuotientCoveringMap.deckMulEquiv`, which identifies `deck p` with `Γ` itself.
 
 Only a normalizer element descends to the quotient as a deck transformation: translation by
 `γ` respects the `H`-orbit relation, so descends as a map, exactly when `γ H γ⁻¹ ⊆ H`, while
@@ -36,16 +36,16 @@ normalize `H`.
 
 ## Main declarations
 
-* `TauCeti.Deck.IsQuotientCoveringMap.normalizerMap`: translation by a normalizer element,
+* `IsQuotientCoveringMap.normalizerMap`: translation by a normalizer element,
   descended to the orbit quotient.
-* `TauCeti.Deck.IsQuotientCoveringMap.normalizerDeckHom`: the resulting homomorphism from the
+* `IsQuotientCoveringMap.normalizerDeckHom`: the resulting homomorphism from the
   normalizer to `deck r`.
-* `TauCeti.Deck.IsQuotientCoveringMap.ker_normalizerDeckHom`: its kernel is `H`.
-* `TauCeti.Deck.IsQuotientCoveringMap.normalizerDeckHom_surjective`: it is surjective when `E`
+* `IsQuotientCoveringMap.ker_normalizerDeckHom`: its kernel is `H`.
+* `IsQuotientCoveringMap.normalizerDeckHom_surjective`: it is surjective when `E`
   is preconnected and `r` is a covering map.
-* `TauCeti.Deck.IsQuotientCoveringMap.normalizerQuotientDeckMulEquiv`: **the deck group of `r`
+* `IsQuotientCoveringMap.normalizerQuotientDeckMulEquiv`: **the deck group of `r`
   is `N(H) ⧸ H`.**
-* `TauCeti.Deck.IsQuotientCoveringMap.quotientDeckMulEquivOfNormal`: for normal `H` this reads
+* `IsQuotientCoveringMap.quotientDeckMulEquivOfNormal`: for normal `H` this reads
   `deck r ≃* Γ ⧸ H`.
 
 ## References
@@ -60,35 +60,30 @@ Thomas Browning after Hatcher, *Algebraic Topology*, Proposition 1.34.
 public section
 noncomputable section
 
-namespace TauCeti
-
-namespace Deck
+namespace IsQuotientCoveringMap
 
 variable {E F X : Type*} [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace X]
 variable {Γ : Type*} [Group Γ] [MulAction Γ E]
 variable {p : E → X} {q : E → F} {r : F → X} {H : Subgroup Γ}
 
-namespace IsQuotientCoveringMap
-
 section Descend
-
-variable (hq : IsQuotientCoveringMap q H)
-include hq
 
 /-- Translation by an element of the normalizer of `H`, descended to the quotient of `E` by the
 `H`-action. It is well defined because `γ H γ⁻¹ = H`. -/
-def normalizerMap (γ : _root_.Subgroup.normalizer (H : Set Γ)) (y : F) : F :=
+def normalizerMap (hq : IsQuotientCoveringMap q H) (γ : Subgroup.normalizer (H : Set Γ))
+    (y : F) : F :=
   q ((γ : Γ) • Function.surjInv hq.surjective y)
 
 /-- The descended translation sends the class of `e` to the class of `γ • e`. -/
 @[simp]
-theorem normalizerMap_apply (γ : _root_.Subgroup.normalizer (H : Set Γ)) (e : E) :
-    normalizerMap hq γ (q e) = q ((γ : Γ) • e) := by
+theorem normalizerMap_apply (hq : IsQuotientCoveringMap q H)
+    (γ : Subgroup.normalizer (H : Set Γ)) (e : E) :
+    hq.normalizerMap γ (q e) = q ((γ : Γ) • e) := by
   obtain ⟨h, hh⟩ :=
     hq.apply_eq_iff_mem_orbit.mp (Function.surjInv_eq hq.surjective (q e))
   have hsurj : Function.surjInv hq.surjective (q e) = (h : Γ) • e := hh.symm
   have hconj : (γ : Γ) * (h : Γ) * (γ : Γ)⁻¹ ∈ H :=
-    (_root_.Subgroup.mem_normalizer_iff.mp γ.2 (h : Γ)).mp h.2
+    (Subgroup.mem_normalizer_iff.mp γ.2 (h : Γ)).mp h.2
   have hstep : (γ : Γ) • ((h : Γ) • e) = ((⟨_, hconj⟩ : H) : Γ) • ((γ : Γ) • e) := by
     rw [← mul_smul, ← mul_smul]
     congr 1
@@ -98,88 +93,95 @@ theorem normalizerMap_apply (γ : _root_.Subgroup.normalizer (H : Set Γ)) (e : 
 
 /-- The identity of the normalizer descends to the identity. -/
 @[simp]
-theorem normalizerMap_one (y : F) : normalizerMap hq 1 y = y := by
+theorem normalizerMap_one (hq : IsQuotientCoveringMap q H) (y : F) :
+    hq.normalizerMap 1 y = y := by
   obtain ⟨e, rfl⟩ := hq.surjective y
-  rw [normalizerMap_apply]
+  rw [hq.normalizerMap_apply]
   simp
 
 /-- Descending translations is multiplicative, the right factor acting first. -/
 @[simp]
-theorem normalizerMap_mul (γ γ' : _root_.Subgroup.normalizer (H : Set Γ)) (y : F) :
-    normalizerMap hq (γ * γ') y = normalizerMap hq γ (normalizerMap hq γ' y) := by
+theorem normalizerMap_mul (hq : IsQuotientCoveringMap q H)
+    (γ γ' : Subgroup.normalizer (H : Set Γ)) (y : F) :
+    hq.normalizerMap (γ * γ') y = hq.normalizerMap γ (hq.normalizerMap γ' y) := by
   obtain ⟨e, rfl⟩ := hq.surjective y
-  rw [normalizerMap_apply, normalizerMap_apply, normalizerMap_apply, Subgroup.coe_mul, mul_smul]
-
-variable [ContinuousConstSMul Γ E]
+  rw [hq.normalizerMap_apply, hq.normalizerMap_apply, hq.normalizerMap_apply, Subgroup.coe_mul,
+    mul_smul]
 
 /-- The descended translation is continuous, because `q` is a quotient map. -/
-theorem continuous_normalizerMap (γ : _root_.Subgroup.normalizer (H : Set Γ)) :
-    Continuous (normalizerMap hq γ) := by
+theorem continuous_normalizerMap (hq : IsQuotientCoveringMap q H) [ContinuousConstSMul Γ E]
+    (γ : Subgroup.normalizer (H : Set Γ)) :
+    Continuous (hq.normalizerMap γ) := by
   rw [hq.toIsQuotientMap.continuous_iff]
-  have h : normalizerMap hq γ ∘ q = fun e => q ((γ : Γ) • e) :=
-    funext fun e => normalizerMap_apply hq γ e
+  have h : hq.normalizerMap γ ∘ q = fun e => q ((γ : Γ) • e) :=
+    funext fun e => hq.normalizerMap_apply γ e
   rw [h]
   exact hq.isCoveringMap.continuous.comp (continuous_const_smul _)
 
 /-- Translation by a normalizer element, as a homeomorphism of the orbit quotient. -/
-def normalizerHomeomorph (γ : _root_.Subgroup.normalizer (H : Set Γ)) : F ≃ₜ F where
-  toFun := normalizerMap hq γ
-  invFun := normalizerMap hq γ⁻¹
-  left_inv y := by rw [← normalizerMap_mul, inv_mul_cancel, normalizerMap_one]
-  right_inv y := by rw [← normalizerMap_mul, mul_inv_cancel, normalizerMap_one]
-  continuous_toFun := continuous_normalizerMap hq γ
-  continuous_invFun := continuous_normalizerMap hq γ⁻¹
+def normalizerHomeomorph (hq : IsQuotientCoveringMap q H) [ContinuousConstSMul Γ E]
+    (γ : Subgroup.normalizer (H : Set Γ)) : F ≃ₜ F where
+  toFun := hq.normalizerMap γ
+  invFun := hq.normalizerMap γ⁻¹
+  left_inv y := by rw [← hq.normalizerMap_mul, inv_mul_cancel, hq.normalizerMap_one]
+  right_inv y := by rw [← hq.normalizerMap_mul, mul_inv_cancel, hq.normalizerMap_one]
+  continuous_toFun := hq.continuous_normalizerMap γ
+  continuous_invFun := hq.continuous_normalizerMap γ⁻¹
 
 @[simp]
-theorem normalizerHomeomorph_apply (γ : _root_.Subgroup.normalizer (H : Set Γ)) (e : E) :
-    normalizerHomeomorph hq γ (q e) = q ((γ : Γ) • e) :=
-  normalizerMap_apply hq γ e
+theorem normalizerHomeomorph_apply (hq : IsQuotientCoveringMap q H) [ContinuousConstSMul Γ E]
+    (γ : Subgroup.normalizer (H : Set Γ)) (e : E) :
+    hq.normalizerHomeomorph γ (q e) = q ((γ : Γ) • e) :=
+  hq.normalizerMap_apply γ e
 
 /-- The inverse of the descended translation is translation by the inverse. -/
 @[simp]
-theorem normalizerHomeomorph_symm_apply (γ : _root_.Subgroup.normalizer (H : Set Γ)) (e : E) :
-    (normalizerHomeomorph hq γ).symm (q e) = q ((γ : Γ)⁻¹ • e) := by
-  rw [Homeomorph.symm_apply_eq, normalizerHomeomorph_apply, smul_inv_smul]
+theorem normalizerHomeomorph_symm_apply (hq : IsQuotientCoveringMap q H)
+    [ContinuousConstSMul Γ E] (γ : Subgroup.normalizer (H : Set Γ)) (e : E) :
+    (hq.normalizerHomeomorph γ).symm (q e) = q ((γ : Γ)⁻¹ • e) := by
+  rw [Homeomorph.symm_apply_eq, hq.normalizerHomeomorph_apply, smul_inv_smul]
 
 end Descend
 
 section DeckHom
 
-variable (hp : IsQuotientCoveringMap p Γ) (hq : IsQuotientCoveringMap q H) (hr : r ∘ q = p)
-include hp hq hr
-
 /-- Translation by an element normalizing `H`, as a homomorphism from the normalizer to the
 deck transformation group of the intermediate covering `r`. -/
-def normalizerDeckHom : _root_.Subgroup.normalizer (H : Set Γ) →* deck r :=
+def normalizerDeckHom (hp : IsQuotientCoveringMap p Γ) (hq : IsQuotientCoveringMap q H)
+    (hr : r ∘ q = p) : Subgroup.normalizer (H : Set Γ) →* deck r :=
   letI := hp.toContinuousConstSMul
-  { toFun := fun γ => ⟨normalizerHomeomorph hq γ, by
+  { toFun := fun γ => ⟨hq.normalizerHomeomorph γ, by
       rw [deck.mem_iff, funext_iff]
       intro y
       obtain ⟨e, rfl⟩ := hq.surjective y
       have hrq : ∀ e' : E, r (q e') = p e' := fun e' => congrFun hr e'
-      rw [Function.comp_apply, normalizerHomeomorph_apply, hrq, hrq, hp.map_smul]⟩
-    map_one' := Subtype.ext (Homeomorph.ext (normalizerMap_one hq))
-    map_mul' := fun γ γ' => Subtype.ext (Homeomorph.ext (normalizerMap_mul hq γ γ')) }
+      rw [Function.comp_apply, hq.normalizerHomeomorph_apply, hrq, hrq, hp.map_smul]⟩
+    map_one' := Subtype.ext (Homeomorph.ext hq.normalizerMap_one)
+    map_mul' := fun γ γ' => Subtype.ext (Homeomorph.ext (hq.normalizerMap_mul γ γ')) }
 
 /-- On points, the deck transformation attached to a normalizer element is the descent of
 translation by that element. -/
 @[simp]
-theorem normalizerDeckHom_apply (γ : _root_.Subgroup.normalizer (H : Set Γ)) (e : E) :
-    (normalizerDeckHom hp hq hr γ).1 (q e) = q ((γ : Γ) • e) :=
-  normalizerMap_apply hq γ e
+theorem normalizerDeckHom_apply (hp : IsQuotientCoveringMap p Γ) (hq : IsQuotientCoveringMap q H)
+    (hr : r ∘ q = p) (γ : Subgroup.normalizer (H : Set Γ)) (e : E) :
+    (hp.normalizerDeckHom hq hr γ).1 (q e) = q ((γ : Γ) • e) :=
+  hq.normalizerMap_apply γ e
 
 /-- The inverse of the deck transformation attached to a normalizer element is the descent of
 translation by the inverse element. -/
 @[simp]
-theorem normalizerDeckHom_symm_apply (γ : _root_.Subgroup.normalizer (H : Set Γ)) (e : E) :
-    (normalizerDeckHom hp hq hr γ).1.symm (q e) = q ((γ : Γ)⁻¹ • e) := by
-  rw [Homeomorph.symm_apply_eq, normalizerDeckHom_apply, smul_inv_smul]
+theorem normalizerDeckHom_symm_apply (hp : IsQuotientCoveringMap p Γ)
+    (hq : IsQuotientCoveringMap q H) (hr : r ∘ q = p) (γ : Subgroup.normalizer (H : Set Γ))
+    (e : E) :
+    (hp.normalizerDeckHom hq hr γ).1.symm (q e) = q ((γ : Γ)⁻¹ • e) := by
+  rw [Homeomorph.symm_apply_eq, hp.normalizerDeckHom_apply, smul_inv_smul]
 
 /-- The kernel of the normalizer-to-deck homomorphism is `H`: a translation descends to the
 identity exactly when it is an `H`-translation, because the `Γ`-action is free. -/
-theorem ker_normalizerDeckHom [Nonempty E] :
-    (normalizerDeckHom hp hq hr).ker
-      = H.subgroupOf (_root_.Subgroup.normalizer (H : Set Γ)) := by
+theorem ker_normalizerDeckHom (hp : IsQuotientCoveringMap p Γ) (hq : IsQuotientCoveringMap q H)
+    (hr : r ∘ q = p) [Nonempty E] :
+    (hp.normalizerDeckHom hq hr).ker
+      = H.subgroupOf (Subgroup.normalizer (H : Set Γ)) := by
   have := hp.isCancelSMul
   ext γ
   rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf]
@@ -187,7 +189,7 @@ theorem ker_normalizerDeckHom [Nonempty E] :
   · intro hγ
     obtain ⟨e⟩ := ‹Nonempty E›
     have h1 : q ((γ : Γ) • e) = q e := by
-      rw [← normalizerDeckHom_apply hp hq hr γ e, hγ]
+      rw [← hp.normalizerDeckHom_apply hq hr γ e, hγ]
       rfl
     obtain ⟨h, hh⟩ := hq.apply_eq_iff_mem_orbit.mp h1
     have hcoe : (h : Γ) = (γ : Γ) := IsCancelSMul.right_cancel _ _ e hh
@@ -195,13 +197,13 @@ theorem ker_normalizerDeckHom [Nonempty E] :
   · intro hγ
     refine Subtype.ext (Homeomorph.ext fun y => ?_)
     obtain ⟨e, rfl⟩ := hq.surjective y
-    rw [normalizerDeckHom_apply]
+    rw [hp.normalizerDeckHom_apply]
     exact hq.map_smul (⟨(γ : Γ), hγ⟩ : H)
 
-omit hr in
 /-- If translating a fixed point by `γ` is insensitive to an `H`-translation first, then `γ`
 conjugates `H` into itself. -/
-private theorem conj_mem_of_smul_eq {γ : Γ} {e₀ : E}
+private theorem conj_mem_of_smul_eq (hp : IsQuotientCoveringMap p Γ)
+    (hq : IsQuotientCoveringMap q H) {γ : Γ} {e₀ : E}
     (hγ : ∀ h ∈ H, q ((γ * h) • e₀) = q (γ • e₀)) {h : Γ} (hh : h ∈ H) :
     γ * h * γ⁻¹ ∈ H := by
   have := hp.isCancelSMul
@@ -215,8 +217,10 @@ private theorem conj_mem_of_smul_eq {γ : Γ} {e₀ : E}
 
 /-- Every deck transformation of the intermediate covering is the descent of a translation by
 a normalizer element. -/
-theorem normalizerDeckHom_surjective [PreconnectedSpace E] (hrc : IsCoveringMap r) :
-    Function.Surjective (normalizerDeckHom hp hq hr) := by
+theorem normalizerDeckHom_surjective (hp : IsQuotientCoveringMap p Γ)
+    (hq : IsQuotientCoveringMap q H) (hr : r ∘ q = p) [PreconnectedSpace E]
+    (hrc : IsCoveringMap r) :
+    Function.Surjective (hp.normalizerDeckHom hq hr) := by
   have := hp.toContinuousConstSMul
   intro φ
   rcases isEmpty_or_nonempty E with hE | hne
@@ -253,82 +257,88 @@ theorem normalizerDeckHom_surjective [PreconnectedSpace E] (hrc : IsCoveringMap 
     intro h hh
     rw [mul_smul, ← hkey', ← hkey']
     exact congrArg φ.1.symm (hq.map_smul (⟨h, hh⟩ : H))
-  have hmem : γ ∈ _root_.Subgroup.normalizer (H : Set Γ) := by
-    rw [_root_.Subgroup.mem_normalizer_iff]
-    refine fun h => ⟨fun hh => conj_mem_of_smul_eq hp hq hstep hh, fun hh => ?_⟩
-    have hback := conj_mem_of_smul_eq hp hq hstep' hh
+  have hmem : γ ∈ Subgroup.normalizer (H : Set Γ) := by
+    rw [Subgroup.mem_normalizer_iff]
+    refine fun h => ⟨fun hh => hp.conj_mem_of_smul_eq hq hstep hh, fun hh => ?_⟩
+    have hback := hp.conj_mem_of_smul_eq hq hstep' hh
     simpa [mul_assoc] using hback
   refine ⟨⟨γ, hmem⟩, Subtype.ext (Homeomorph.ext fun y => ?_)⟩
   obtain ⟨e, rfl⟩ := hq.surjective y
-  rw [normalizerDeckHom_apply, ← hkey]
+  rw [hp.normalizerDeckHom_apply, ← hkey]
 
 /-- **The deck group of an intermediate covering is the normalizer quotient.** For a quotient
 covering map `p : E → X` with preconnected nonempty total space, a subgroup `H` of the acting
 group, and the induced covering `r : E / H → X`, translation identifies `N(H) ⧸ H` with
 `deck r`. -/
-def normalizerQuotientDeckMulEquiv [PreconnectedSpace E] [Nonempty E] (hrc : IsCoveringMap r) :
-    (_root_.Subgroup.normalizer (H : Set Γ)) ⧸
-        H.subgroupOf (_root_.Subgroup.normalizer (H : Set Γ)) ≃* deck r :=
-  (QuotientGroup.quotientMulEquivOfEq (ker_normalizerDeckHom hp hq hr).symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective (normalizerDeckHom hp hq hr)
-      (normalizerDeckHom_surjective hp hq hr hrc))
+def normalizerQuotientDeckMulEquiv (hp : IsQuotientCoveringMap p Γ)
+    (hq : IsQuotientCoveringMap q H) (hr : r ∘ q = p) [PreconnectedSpace E] [Nonempty E]
+    (hrc : IsCoveringMap r) :
+    (Subgroup.normalizer (H : Set Γ)) ⧸
+        H.subgroupOf (Subgroup.normalizer (H : Set Γ)) ≃* deck r :=
+  (QuotientGroup.quotientMulEquivOfEq (hp.ker_normalizerDeckHom hq hr).symm).trans
+    (QuotientGroup.quotientKerEquivOfSurjective (hp.normalizerDeckHom hq hr)
+      (hp.normalizerDeckHom_surjective hq hr hrc))
 
 /-- The normalizer-quotient isomorphism sends the class of `γ` to the descent of translation
 by `γ`. -/
 @[simp]
-theorem normalizerQuotientDeckMulEquiv_mk [PreconnectedSpace E] [Nonempty E]
-    (hrc : IsCoveringMap r) (γ : _root_.Subgroup.normalizer (H : Set Γ)) :
-    normalizerQuotientDeckMulEquiv hp hq hr hrc (QuotientGroup.mk γ) =
-      normalizerDeckHom hp hq hr γ := by
-  simp [normalizerQuotientDeckMulEquiv, QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
+theorem normalizerQuotientDeckMulEquiv_mk (hp : IsQuotientCoveringMap p Γ)
+    (hq : IsQuotientCoveringMap q H) (hr : r ∘ q = p) [PreconnectedSpace E] [Nonempty E]
+    (hrc : IsCoveringMap r) (γ : Subgroup.normalizer (H : Set Γ)) :
+    hp.normalizerQuotientDeckMulEquiv hq hr hrc (QuotientGroup.mk γ) =
+      hp.normalizerDeckHom hq hr γ := by
+  simp [normalizerQuotientDeckMulEquiv]
 
 end DeckHom
 
 section Normal
 
-variable (hp : IsQuotientCoveringMap p Γ) (hq : IsQuotientCoveringMap q H) (hr : r ∘ q = p)
 variable [H.Normal]
-include hp hq hr
 
-omit hp hq hr in
 /-- For a normal subgroup, the identity is a homomorphism onto the normalizer. -/
-private def toNormalizerOfNormal : Γ →* _root_.Subgroup.normalizer (H : Set Γ) where
-  toFun γ := ⟨γ, _root_.Subgroup.subset_normalizer_of_normal (Set.mem_univ γ)⟩
+private def toNormalizerOfNormal : Γ →* Subgroup.normalizer (H : Set Γ) where
+  toFun γ := ⟨γ, Subgroup.subset_normalizer_of_normal (Set.mem_univ γ)⟩
   map_one' := rfl
   map_mul' _ _ := rfl
 
 /-- For a normal subgroup every group element descends, giving a homomorphism from the whole
 acting group to the deck group of the intermediate covering. -/
-def deckHomOfNormal : Γ →* deck r :=
-  (normalizerDeckHom hp hq hr).comp (toNormalizerOfNormal (H := H))
+def deckHomOfNormal (hp : IsQuotientCoveringMap p Γ) (hq : IsQuotientCoveringMap q H)
+    (hr : r ∘ q = p) : Γ →* deck r :=
+  (hp.normalizerDeckHom hq hr).comp (toNormalizerOfNormal (H := H))
 
 @[simp]
-theorem deckHomOfNormal_apply (γ : Γ) (e : E) :
-    (deckHomOfNormal hp hq hr γ).1 (q e) = q (γ • e) :=
-  normalizerDeckHom_apply hp hq hr _ e
+theorem deckHomOfNormal_apply (hp : IsQuotientCoveringMap p Γ) (hq : IsQuotientCoveringMap q H)
+    (hr : r ∘ q = p) (γ : Γ) (e : E) :
+    (hp.deckHomOfNormal hq hr γ).1 (q e) = q (γ • e) :=
+  hp.normalizerDeckHom_apply hq hr _ e
 
 /-- The inverse of the deck transformation attached to `γ` is the descent of translation by
 `γ⁻¹`. -/
 @[simp]
-theorem deckHomOfNormal_symm_apply (γ : Γ) (e : E) :
-    (deckHomOfNormal hp hq hr γ).1.symm (q e) = q (γ⁻¹ • e) :=
-  normalizerDeckHom_symm_apply hp hq hr _ e
+theorem deckHomOfNormal_symm_apply (hp : IsQuotientCoveringMap p Γ)
+    (hq : IsQuotientCoveringMap q H) (hr : r ∘ q = p) (γ : Γ) (e : E) :
+    (hp.deckHomOfNormal hq hr γ).1.symm (q e) = q (γ⁻¹ • e) :=
+  hp.normalizerDeckHom_symm_apply hq hr _ e
 
 /-- **For a normal subgroup, the deck group of the intermediate covering is `Γ ⧸ H`.** This is
 the general normalizer-quotient identification, read through the algebraic comparison
 `Subgroup.normalizerQuotientEquivQuotientOfNormal` between `N(H) ⧸ H` and `Γ ⧸ H`. -/
-def quotientDeckMulEquivOfNormal [PreconnectedSpace E] [Nonempty E] (hrc : IsCoveringMap r) :
+def quotientDeckMulEquivOfNormal (hp : IsQuotientCoveringMap p Γ)
+    (hq : IsQuotientCoveringMap q H) (hr : r ∘ q = p) [PreconnectedSpace E] [Nonempty E]
+    (hrc : IsCoveringMap r) :
     Γ ⧸ H ≃* deck r :=
   (Subgroup.normalizerQuotientEquivQuotientOfNormal H).symm.trans
-    (normalizerQuotientDeckMulEquiv hp hq hr hrc)
+    (hp.normalizerQuotientDeckMulEquiv hq hr hrc)
 
 /-- The isomorphism `Γ ⧸ H ≃* deck r` sends the class of `γ` to the descent of translation
 by `γ`. -/
 @[simp]
-theorem quotientDeckMulEquivOfNormal_mk [PreconnectedSpace E] [Nonempty E]
+theorem quotientDeckMulEquivOfNormal_mk (hp : IsQuotientCoveringMap p Γ)
+    (hq : IsQuotientCoveringMap q H) (hr : r ∘ q = p) [PreconnectedSpace E] [Nonempty E]
     (hrc : IsCoveringMap r) (γ : Γ) :
-    quotientDeckMulEquivOfNormal hp hq hr hrc (QuotientGroup.mk γ) =
-      deckHomOfNormal hp hq hr γ := by
+    hp.quotientDeckMulEquivOfNormal hq hr hrc (QuotientGroup.mk γ) =
+      hp.deckHomOfNormal hq hr γ := by
   -- Unwinding both equivalences leaves translation by the same normalizer element `⟨γ, _⟩` on
   -- either side, reached through two different membership proofs.
   simp [quotientDeckMulEquivOfNormal, deckHomOfNormal, toNormalizerOfNormal]
@@ -337,7 +347,3 @@ theorem quotientDeckMulEquivOfNormal_mk [PreconnectedSpace E] [Nonempty E]
 end Normal
 
 end IsQuotientCoveringMap
-
-end Deck
-
-end TauCeti

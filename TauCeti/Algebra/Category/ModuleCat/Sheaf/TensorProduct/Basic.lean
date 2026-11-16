@@ -36,7 +36,7 @@ that structure is transported to presheaves of modules over the sheaf of rings u
 The site-level construction remains available on a scheme as
 `SheafOfModules.tensorProduct X.sheaf`; the canonical tensor notation `M ⊗ N` and symmetric
 monoidal structure on `X.Modules` are in
-`TauCeti/AlgebraicGeometry/Modules/TensorProduct.lean`.
+`TauCeti/AlgebraicGeometry/Modules/Tensor/Product.lean`.
 -/
 
 public section

@@ -63,23 +63,24 @@ in the Tate group of degree `2`: the image of `χ`, as a class in `H¹(G, ℚ/�
 action, under the connecting map of `0 → ℤ → ℚ → ℚ/ℤ → 0`. The character is read on `G` through
 the abelianization map `G → Gᵃᵇ`. It is additive in the character. -/
 def characterConnectingClass :
-    (Additive (Abelianization G) →+ AddCircle (1 : ℚ)) →+ tateCohomology (Rep.trivial ℤ G ℤ) 2 :=
+    (Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) →+ tateCohomology (Rep.trivial ℤ G
+        ℤ) 2 :=
   ((_root_.TateCohomology.isoGroupCohomology 2).inv.app
       (Rep.trivial ℤ G ℤ)).hom.toAddMonoidHom.comp <|
     (groupCohomology.δ (Rep.ratAddCircleShortComplex_shortExact G) 1 2
         rfl).hom.toAddMonoidHom.comp <|
       (groupCohomology.H1IsoOfIsTrivial
           (Rep.trivial ℤ G (AddCircle (1 : ℚ)))).inv.hom.toAddMonoidHom.comp <|
-        AddMonoidHom.compHom' Abelianization.of.toAdditive
+        AddMonoidHom.compHom' Group.Abelianization.of.toAdditive
 
 /-- The connecting class of `χ` is the connecting map applied to the class of `G → Gᵃᵇ → ℚ/ℤ`
 in `H¹(G, ℚ/ℤ)`, carried to Tate cohomology by the comparison of positive degrees. -/
-theorem characterConnectingClass_def (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
+theorem characterConnectingClass_def (χ : Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) :
     characterConnectingClass G χ =
       (_root_.TateCohomology.isoGroupCohomology 2).inv.app (Rep.trivial ℤ G ℤ)
         (groupCohomology.δ (Rep.ratAddCircleShortComplex_shortExact G) 1 2 rfl
           ((groupCohomology.H1IsoOfIsTrivial (Rep.trivial ℤ G (AddCircle (1 : ℚ)))).inv
-            (χ.comp Abelianization.of.toAdditive))) :=
+            (χ.comp Group.Abelianization.of.toAdditive))) :=
   (rfl)
 
 private abbrev ratCircleRep : Rep ℤ G := Rep.trivial ℤ G (AddCircle (1 : ℚ))
@@ -88,20 +89,20 @@ private abbrev ratCircleRep : Rep ℤ G := Rep.trivial ℤ G (AddCircle (1 : ℚ
 character. Its image under the dimension-shift isomorphism is the Tate degree-one class obtained
 from the ordinary character class in `H¹(G, ℚ/ℤ)`. -/
 def characterDimensionShift
-    : (Additive (Abelianization G) →+ AddCircle (1 : ℚ)) →+
+    : (Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) →+
       (dimensionShiftUp (Rep.ratAddCircleShortComplex G).X₃).ρ.invariants where
   toFun χ := by
     -- The function `g ↦ χ(g)` changes under right translation by the constant function
     -- `χ(g)`, so its image in the coinduced quotient is invariant.
     let f : coindBot ℤ G (AddCircle (1 : ℚ)) :=
       (coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm fun g ↦
-        χ (Additive.ofMul (Abelianization.of g))
+        χ (Additive.ofMul (Group.Abelianization.of g))
     refine ⟨(dimensionShiftUpπ (ratCircleRep G)).hom f, ?_⟩
     intro g
     rw [← Rep.hom_comm_apply (dimensionShiftUpπ (ratCircleRep G)) g f]
     have hfun : ((coindBot ℤ G (AddCircle (1 : ℚ))).ρ g) f =
         f + (coindBotUnit (ratCircleRep G)).hom
-          (χ (Additive.ofMul (Abelianization.of g))) := by
+          (χ (Additive.ofMul (Group.Abelianization.of g))) := by
       apply (coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).injective
       rw [map_add]
       funext h
@@ -114,7 +115,7 @@ def characterDimensionShift
     rw [hfun, map_add]
     have hzero : (dimensionShiftUpπ (ratCircleRep G)).hom
         ((coindBotUnit (ratCircleRep G)).hom
-          (χ (Additive.ofMul (Abelianization.of g)))) = 0 := by
+          (χ (Additive.ofMul (Group.Abelianization.of g)))) = 0 := by
       rw [← ConcreteCategory.comp_apply,
         coindBotUnit_comp_dimensionShiftUpπ (ratCircleRep G)]
       rfl
@@ -131,23 +132,23 @@ omit [Fintype G] in
 shift of the coinduced function `g ↦ χ(g)`. -/
 @[simp]
 theorem coe_characterDimensionShift
-    (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
+    (χ : Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) :
     (characterDimensionShift G χ : dimensionShiftUp (Rep.ratAddCircleShortComplex G).X₃) =
       (dimensionShiftUpπ (Rep.ratAddCircleShortComplex G).X₃).hom
         ((coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm fun g ↦
-          χ (Additive.ofMul (Abelianization.of g))) :=
+          χ (Additive.ofMul (Group.Abelianization.of g))) :=
   (rfl)
 
 /-- The connecting isomorphism sends `characterDimensionShift` to the standard Tate
 degree-one class of the character. -/
 theorem dimensionShiftUpIso_characterDimensionShift
-    (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
+    (χ : Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) :
     (dimensionShiftUpIso (Rep.ratAddCircleShortComplex G).X₃ 0).hom
         (H0π (dimensionShiftUp (Rep.ratAddCircleShortComplex G).X₃)
           (characterDimensionShift G χ)) =
       Rep.fromGroupCohomology (Rep.ratAddCircleShortComplex G).X₃ 1
         ((groupCohomology.H1IsoOfIsTrivial (Rep.ratAddCircleShortComplex G).X₃).inv
-          (χ.comp Abelianization.of.toAdditive)) := by
+          (χ.comp Group.Abelianization.of.toAdditive)) := by
   let S := ShortComplex.mk (coindBotUnit (ratCircleRep G))
     (dimensionShiftUpπ (ratCircleRep G))
     (coindBotUnit_comp_dimensionShiftUpπ (ratCircleRep G))
@@ -156,9 +157,9 @@ theorem dimensionShiftUpIso_characterDimensionShift
       dimensionShiftUpSES_shortExact (ratCircleRep G)
   let f : coindBot ℤ G (AddCircle (1 : ℚ)) :=
     (coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm fun g ↦
-      χ (Additive.ofMul (Abelianization.of g))
+      χ (Additive.ofMul (Group.Abelianization.of g))
   let c : G → AddCircle (1 : ℚ) := fun g ↦
-    χ (Additive.ofMul (Abelianization.of g))
+    χ (Additive.ofMul (Group.Abelianization.of g))
   have hc : S.f.hom ∘ c = groupCohomology.d₀₁ S.X₂ f := by
     funext g
     apply (coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).injective
@@ -179,7 +180,7 @@ theorem dimensionShiftUpIso_characterDimensionShift
     groupCohomology.δ₀_apply hS (characterDimensionShift G χ) f rfl c hc
   have hcoc : coc =
       (groupCohomology.cocycles₁IsoOfIsTrivial (ratCircleRep G)).inv
-        (χ.comp Abelianization.of.toAdditive) := by
+        (χ.comp Group.Abelianization.of.toAdditive) := by
     apply groupCohomology.cocycles₁_ext
     intro g
     rfl
@@ -199,16 +200,16 @@ theorem dimensionShiftUpIso_characterDimensionShift
 degree-one class. This compares the definition through ordinary group cohomology with the Tate
 connecting homomorphism used by the cup-product boundary formula. -/
 theorem characterConnectingClass_eq_tateδ
-    (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
+    (χ : Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) :
     characterConnectingClass G χ =
       _root_.TateCohomology.δ (Rep.ratAddCircleShortComplex_shortExact G) 1
         (Rep.fromGroupCohomology (Rep.ratAddCircleShortComplex G).X₃ 1
           ((groupCohomology.H1IsoOfIsTrivial (Rep.ratAddCircleShortComplex G).X₃).inv
-            (χ.comp Abelianization.of.toAdditive))) := by
+            (χ.comp Group.Abelianization.of.toAdditive))) := by
   have h := ConcreteCategory.congr_hom
     (δ_comp_fromGroupCohomology (Rep.ratAddCircleShortComplex_shortExact G) 1)
     ((groupCohomology.H1IsoOfIsTrivial (ratCircleRep G)).inv
-      (χ.comp Abelianization.of.toAdditive))
+      (χ.comp Group.Abelianization.of.toAdditive))
   rw [characterConnectingClass_def]
   simp only [Rep.fromGroupCohomology_succ] at h ⊢
   norm_num at h ⊢

@@ -75,13 +75,21 @@ theorem spectralValue_eq_norm_coeff_zero_rpow_of_irreducible {p : K[X]} (hm : p.
   rwa [hmin] at h
 
 /-- Over a complete nontrivially normed field with an ultrametric norm, let `f` be irreducible of
-degree `d` and let `ρ ≥ 0` balance its leading and constant terms, `‖a_d‖ ρ ^ d = ‖a₀‖`. Then
+degree `d` and let `ρ` balance its leading and constant terms, `‖a_d‖ ρ ^ d = ‖a₀‖`. Then
 every term satisfies `‖aᵢ‖ ρ ^ i ≤ ‖a₀‖`. -/
 theorem norm_coeff_mul_pow_le_norm_coeff_zero_of_irreducible {f : K[X]} (hf : Irreducible f)
-    {ρ : ℝ} (hρ : 0 ≤ ρ) (hconst : ‖f.leadingCoeff‖ * ρ ^ f.natDegree = ‖f.coeff 0‖) (i : ℕ) :
+    {ρ : ℝ} (hconst : ‖f.leadingCoeff‖ * ρ ^ f.natDegree = ‖f.coeff 0‖) (i : ℕ) :
     ‖f.coeff i‖ * ρ ^ i ≤ ‖f.coeff 0‖ := by
   have hf0 := hf.ne_zero
   have hl0 : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf0
+  -- A negative radius is replaced by its absolute value.
+  have hρn : 0 ≤ ρ ^ f.natDegree :=
+    (mul_nonneg_iff_of_pos_left (norm_pos_iff.mpr hl0)).1 (hconst ▸ norm_nonneg _)
+  obtain ⟨ρ, hρ, hconst, hρi⟩ : ∃ r : ℝ, 0 ≤ r ∧
+      ‖f.leadingCoeff‖ * r ^ f.natDegree = ‖f.coeff 0‖ ∧ ρ ^ i ≤ r ^ i :=
+    ⟨|ρ|, abs_nonneg ρ, by rwa [pow_abs, abs_of_nonneg hρn],
+      (le_abs_self _).trans_eq (pow_abs ρ i).symm⟩
+  refine le_trans (mul_le_mul_of_nonneg_left hρi (norm_nonneg _)) ?_
   -- The monic normalisation `g` of `f` has spectral value `ρ`.
   set g := f * C f.leadingCoeff⁻¹
   have hg : g.Monic := monic_mul_leadingCoeff_inv hf0

@@ -238,6 +238,7 @@ theorem coe_zetaRatFunc : (W.zetaRatFunc : ℚ⸨X⸩) = (W.zetaFunction : ℚ�
   rw [zetaRatFunc_def, W.zetaFunction_eq_mul_inv, map_mul, hinv, ← div_eq_mul_inv, map_div₀]
   simp
 
+omit [W.IsElliptic] in
 /-- **The Riemann hypothesis for an elliptic curve over a finite field** (Silverman V.2.4): every
 complex zero `z` of the numerator `1 - a_q T + q T²` of the zeta function has `|z| = q^{-1/2}`,
 where `q` is the number of elements of `F` and `a_q` the Frobenius trace of `W`. -/

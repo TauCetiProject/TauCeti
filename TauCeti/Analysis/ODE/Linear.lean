@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.Semigroups.Group.Flow
 public import TauCeti.Analysis.Semigroups.Group.Generator
 public import TauCeti.Dynamics.Flow.Stable
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.Normed.Operator.Exponential
 
 /-!
@@ -43,6 +45,11 @@ negative-gradient convention used by Morse theory is recovered by applying these
   for `exp (t T)` is the negative spectral subspace of `T`.
 * `LinearMap.IsSymmetric.unstableSet_flow_eq_positiveSpectralSubspace`: the corresponding
   backward-time statement.
+* `TauCeti.exists_contDiff_deriv_eq_neg_apply`: a purely imaginary eigenvalue `± i ω` of `B`,
+  given by vectors `v, w` with `B v = -ω • w` and `B w = ω • v`, yields a solution of `e' = -B e`
+  which is bounded, has bounded derivative and is bounded away from `0`.
+* `TauCeti.tendsto_deriv_add_apply`: along a bounded solution of `e' = -B e`, the defect
+  `e' + A e` tends to `0` wherever `A` tends to `B`.
 
 ## References
 
@@ -349,5 +356,95 @@ theorem unstableSet_flow_eq_positiveSpectralSubspace
     (LinearMap.IsSymmetric.mem_positiveSpectralSubspace_iff hT hn).symm
 
 end LinearMap.IsSymmetric
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A pair `v, w`, not both zero, with `B v = -ω • w` and `B w = ω • v` gives a `C¹` solution `e` of
+`e' = -B e`, bounded with bounded derivative and bounded away from `0`. For `ω = 0` it is constant;
+otherwise it is `e(s) = cos (ω s) • v + sin (ω s) • w`, a periodic path which never vanishes. -/
+theorem exists_contDiff_deriv_eq_neg_apply {B : E →L[ℝ] E} {ω : ℝ} {v w : E}
+    (hv : B v = -ω • w) (hw : B w = ω • v) (hvw : ¬ (v = 0 ∧ w = 0)) :
+    ∃ (e : ℝ → E) (m M : ℝ), ContDiff ℝ 1 e ∧ 0 < m ∧ (∀ s, m ≤ ‖e s‖) ∧
+      (∀ s, ‖e s‖ ≤ M) ∧ (∀ s, ‖deriv e s‖ ≤ M) ∧ ∀ s, deriv e s = -B (e s) := by
+  rcases eq_or_ne ω 0 with rfl | hω
+  · -- A nonzero kernel vector is a constant solution.
+    obtain ⟨u, hu, hBu⟩ : ∃ u : E, u ≠ 0 ∧ B u = 0 := by
+      by_cases h : v = 0
+      · exact ⟨w, fun hw0 ↦ hvw ⟨h, hw0⟩, by simpa using hw⟩
+      · exact ⟨v, h, by simpa using hv⟩
+    exact ⟨fun _ ↦ u, ‖u‖, ‖u‖, contDiff_const, norm_pos_iff.2 hu, fun _ ↦ le_rfl,
+      fun _ ↦ le_rfl, fun _ ↦ by simp, fun _ ↦ by simp [hBu]⟩
+  set e : ℝ → E := fun s ↦ Real.cos (ω * s) • v + Real.sin (ω * s) • w with he_def
+  have hderiv (s : ℝ) : HasDerivAt e (-B (e s)) s := by
+    have h := (((hasDerivAt_id s).const_mul ω).cos.smul_const v).add
+      (((hasDerivAt_id s).const_mul ω).sin.smul_const w)
+    simp only [id, mul_one] at h
+    convert h using 1
+    simp only [he_def, map_add, map_smul, hv, hw]
+    module
+  -- The path never vanishes: at a zero, applying `B` would force `v = w = 0`.
+  have hne (s : ℝ) : e s ≠ 0 := by
+    intro h0
+    set c := Real.cos (ω * s)
+    set d := Real.sin (ω * s)
+    have h1 : ω • (d • v - c • w) = 0 := by
+      have := congrArg B h0
+      simp only [he_def, map_add, map_smul, hv, hw, map_zero] at this
+      rw [← this]
+      module
+    have h2 : d • v - c • w = 0 := (smul_eq_zero.1 h1).resolve_left hω
+    have hcd : c ^ 2 + d ^ 2 = 1 := by rw [add_comm]; exact Real.sin_sq_add_cos_sq _
+    refine hvw ⟨?_, ?_⟩
+    · calc v = c • e s + d • (d • v - c • w) := by
+            simp only [he_def]
+            linear_combination (norm := module) -(hcd • v)
+        _ = 0 := by rw [h0, h2, smul_zero, smul_zero, add_zero]
+    · calc w = d • e s - c • (d • v - c • w) := by
+            simp only [he_def]
+            linear_combination (norm := module) -(hcd • w)
+        _ = 0 := by rw [h0, h2, smul_zero, smul_zero, sub_zero]
+  have hcont : Continuous e := by fun_prop
+  -- A periodic nonvanishing path is bounded away from `0`.
+  have hper : Function.Periodic e (ω⁻¹ * (2 * Real.pi)) := fun s ↦ by
+    simp only [he_def, Real.cos_periodic.const_mul ω s, Real.sin_periodic.const_mul ω s]
+  have hperT : Function.Periodic e |ω⁻¹ * (2 * Real.pi)| := by
+    rcases abs_choice (ω⁻¹ * (2 * Real.pi)) with h | h <;> rw [h]
+    exacts [hper, hper.neg]
+  have hT : 0 < |ω⁻¹ * (2 * Real.pi)| := abs_pos.2 (by positivity)
+  obtain ⟨s₀, -, hs₀⟩ := isCompact_Icc.exists_isMinOn (nonempty_Icc.2 hT.le)
+    (hcont.norm.continuousOn (s := Icc 0 |ω⁻¹ * (2 * Real.pi)|))
+  refine ⟨e, ‖e s₀‖, (1 + ‖B‖) * (‖v‖ + ‖w‖), by fun_prop, norm_pos_iff.2 (hne s₀),
+    fun s ↦ ?_, fun s ↦ ?_, fun s ↦ ?_, fun s ↦ (hderiv s).deriv⟩
+  · obtain ⟨y, hy, hey⟩ := hperT.exists_mem_Ico₀ hT s
+    rw [hey]
+    exact hs₀ (Ico_subset_Icc_self hy)
+  · have h : ‖e s‖ ≤ ‖v‖ + ‖w‖ := by
+      refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul] <;>
+        exact mul_le_of_le_one_left (norm_nonneg _) (by simp [Real.abs_cos_le_one,
+          Real.abs_sin_le_one])
+    nlinarith [norm_nonneg B, norm_nonneg v, norm_nonneg w]
+  · rw [(hderiv s).deriv, norm_neg]
+    have h : ‖e s‖ ≤ ‖v‖ + ‖w‖ := by
+      refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul] <;>
+        exact mul_le_of_le_one_left (norm_nonneg _) (by simp [Real.abs_cos_le_one,
+          Real.abs_sin_le_one])
+    calc ‖B (e s)‖ ≤ ‖B‖ * ‖e s‖ := B.le_opNorm _
+      _ ≤ ‖B‖ * (‖v‖ + ‖w‖) := by gcongr
+      _ ≤ _ := by nlinarith [norm_nonneg v, norm_nonneg w]
+
+/-- Along a bounded solution `e` of `e' = -B e`, the defect `e' + A e = (A - B) e` tends to `0`
+wherever `A` tends to `B`. -/
+theorem tendsto_deriv_add_apply {A : ℝ → E →L[ℝ] E} {l : Filter ℝ} {B : E →L[ℝ] E}
+    (hAB : Tendsto A l (𝓝 B))
+    {e : ℝ → E} {M : ℝ} (hup : ∀ s, ‖e s‖ ≤ M) (hd : ∀ s, deriv e s = -B (e s)) :
+    Tendsto (fun s ↦ deriv e s + A s (e s)) l (𝓝 0) := by
+  refine squeeze_zero_norm (a := fun s ↦ ‖A s - B‖ * M) (fun s ↦ ?_) ?_
+  · rw [hd, neg_add_eq_sub, ← sub_apply]
+    exact ((A s - B).le_opNorm _).trans (by gcongr; exact hup s)
+  · simpa using (tendsto_iff_norm_sub_tendsto_zero.1 hAB).mul_const M
+
+end TauCeti
 
 end

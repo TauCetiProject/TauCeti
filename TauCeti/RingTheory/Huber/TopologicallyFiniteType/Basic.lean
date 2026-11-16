@@ -30,10 +30,10 @@ power-series ring `A⟨X₁, …, Xₖ⟩_T` on finitely many variables, each we
 that the presenting algebra is `TauCeti.Huber.restrictedMvPowerSeriesCompletion`, the object this
 library writes `A⟨X₁, …, Xₖ⟩`.
 
-The notion is what three results the adic-spaces roadmap needs are stated in terms of: the second
-half of Proposition and Definition 6.36 (a Tate ring is strongly noetherian exactly when every
-Tate ring topologically of finite type over it is noetherian), Remark 6.37(1), and Example 6.38,
-which Proposition 8.30 cites by name.
+Three results of the theory are stated in terms of this notion: the second half of Proposition and
+Definition 6.36 (a Tate ring is strongly noetherian exactly when every Tate ring topologically of
+finite type over it is noetherian), Remark 6.37(1), and Example 6.38, which Proposition 8.30 cites
+by name.
 
 ## What is and is not assumed
 
@@ -47,7 +47,7 @@ of `B` should assume it alongside, not read it out of these definitions.
 ## Notation, and one thing it is easy to get backwards
 
 `A⟨X₁, …, Xₖ⟩_T` names the **uncompleted** weighted ring `TauCeti.Huber.weightedRestrictedSubring`
-of Wedhorn's Remark and Definition 5.48, as it does in the roadmap (`AdicSpaces/README.md`, §0.4).
+of Wedhorn's Remark and Definition 5.48.
 Wedhorn's presenting algebra in 6.28/6.29 is its **completion**, which he writes `Â⟨…⟩`; at the
 trivial weight family that completion is `restrictedMvPowerSeriesCompletion`, which this library
 writes `A⟨X₁, …, Xₖ⟩` without a subscript. So the domain of `π` below is a completion throughout,
@@ -55,12 +55,11 @@ never the subring itself.
 
 ## The weighted algebra, and why not the Tate-only one
 
-The presenting algebra is the **weighted** one. That is Wedhorn's own 6.29(i), and it is what the
-roadmap asks for (`AdicSpaces/README.md`, §5.2): the Tate-only algebra is too narrow downstream,
-since `A_inf` is Huber and not Tate. Definition 6.28, the strict variant, is the Tate-only case;
-the implication between them is `IsStrictlyTopologicallyFiniteType.isTopologicallyFiniteType`, and
-over a Tate ring the converse `IsTopologicallyFiniteType.isStrictlyTopologicallyFiniteType` holds
-as well.
+The presenting algebra is the **weighted** one. That is Wedhorn's own 6.29(i), and the Tate-only
+algebra would be too narrow, since `A_inf` is Huber and not Tate. Definition 6.28, the strict
+variant, is the Tate-only case; the implication between them is
+`IsStrictlyTopologicallyFiniteType.isTopologicallyFiniteType`, and over a Tate ring the converse
+`IsTopologicallyFiniteType.isStrictlyTopologicallyFiniteType` holds as well.
 
 Two conditions on the weight family are in play and they are not the same. Wedhorn's standing
 hypothesis on `T` — needed even to *form* `A⟨X⟩_T` — is `TauCeti.Huber.IsWeightFamily`, that

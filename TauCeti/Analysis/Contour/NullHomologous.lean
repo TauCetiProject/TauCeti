@@ -10,11 +10,11 @@ public import TauCeti.Analysis.Contour.Winding.Number.Basic
 /-!
 # Basic API for null-homologous contours
 
-The contour-integration roadmap uses `Contour.IsNullHomologous γ a b Ω` as the hypothesis that a
-curve has zero generalized winding number about every point outside the domain `Ω`. This file
-records the elementary set-theoretic API for that predicate: monotonicity in the ambient domain,
-the universal and empty-domain boundary cases, intersections, unions, and replacement by another
-curve with the same winding numbers off the domain.
+The predicate `Contour.IsNullHomologous γ a b Ω` is the hypothesis that a curve has zero generalized
+winding number about every point outside the domain `Ω`. This file records the elementary
+set-theoretic API for that predicate: monotonicity in the ambient domain, the universal and
+empty-domain boundary cases, intersections, unions, and replacement by another curve with the same
+winding numbers off the domain.
 
 These lemmas are prerequisites for the homology Cauchy theorem and for the Hungerbühler--Wasem
 generalized residue theorem, where the same cycle is repeatedly viewed inside larger or smaller
@@ -36,8 +36,8 @@ domains and the proof only needs the vanishing of the winding number on the comp
 
 ## Provenance
 
-This is routine API around the Hungerbühler--Wasem null-homology condition from the contour
-integration roadmap; no formal source is vendored.
+This is routine API around the Hungerbühler--Wasem null-homology condition; no formal source is
+vendored.
 -/
 
 public section

@@ -124,6 +124,7 @@ variable {𝕜 A M : Type*} [RCLike 𝕜] [Semiring A] [StarRing A]
   [Algebra 𝕜 A] [StarModule 𝕜 A] [Coalgebra 𝕜 A]
   [NormedAddCommGroup M] [InnerProductSpace 𝕜 M] [FiniteDimensional 𝕜 M]
 
+omit [StarModule 𝕜 A] in
 /-- A unitary group-like element gives a unitary scalar coaction on every finite-dimensional
 inner product space. In particular this includes the rank-one unitary corepresentations. -/
 theorem isUnitary_comodule (g : GroupLike 𝕜 A) (hg : (g : A) ∈ unitary A) :
@@ -132,7 +133,7 @@ theorem isUnitary_comodule (g : GroupLike 𝕜 A) (hg : (g : A) ∈ unitary A) :
   classical
   let : Comodule 𝕜 A M := groupLike (R := 𝕜) (C := A) (M := M) g
   let b := stdOrthonormalBasis 𝕜 M
-  rw [b.isUnitary_comodule_iff]
+  rw [IsUnitary]
   have hmat : coefficientMatrix (C := A) b.toBasis = Matrix.diagonal (fun _ => (g : A)) := by
     ext i j
     simp [coefficientMatrix_apply, matrixCoefficient_groupLike, Basis.coord_apply,

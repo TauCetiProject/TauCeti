@@ -43,10 +43,6 @@ Kostant carrier with the standard symplectic group on field-valued points.
 
 * R. W. Carter, *Simple Groups of Lie Type* (1972), §5.2.
 * R. Steinberg, *Lectures on Chevalley Groups* (1968), §§3--4.
-
-This advances the Chevalley--Demazure construction in Layer 9 of the ReductiveGroups roadmap.
-The field-valued generation theorem it feeds is needed to identify the type-`C` pinned carrier
-consumed by milestone L0 of the CFSGStatement roadmap.
 -/
 
 public section

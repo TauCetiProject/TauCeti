@@ -167,7 +167,7 @@ private theorem isClosed_setOf_mem_bfTree (enum : ℕ → V) (w : List (V × V))
       w ∈ bfTree enum q.1 q.2} := by
   have heq : {q : RelationalConfiguration L V × RelationalConfiguration L V |
       w ∈ bfTree enum q.1 q.2} =
-      {q | bfSchedule enum w} ∩
+      {_q | bfSchedule enum w} ∩
         ⋂ idx : AtomicIdx L w.length,
           {q | @AtomicIdx.Holds L w.length V q.1.toStructure idx (tupleMap Prod.fst w) ↔
             @AtomicIdx.Holds L w.length V q.2.toStructure idx (tupleMap Prod.snd w)} := by

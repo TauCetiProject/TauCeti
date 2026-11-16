@@ -174,15 +174,16 @@ theorem boundary_rectPolygon (z w : ℂ) :
   rw [← (rectPolygon z w).image_boundaryParam, Nat.cast_ofNat, uIcc_of_le (by norm_num),
     ← rectBoundary_def, image_rectBoundary]
 
-/-- The rectangle boundary over `[0, 4]` lies on the frontier of the rectangle. -/
-theorem rectBoundary_mem_frontier {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 4) :
-    rectBoundary z w t ∈ frontier (Rectangle z w) :=
-  image_rectBoundary z w ▸ mem_image_of_mem _ ht
+/-- The rectangle boundary lies on the frontier of the rectangle: it is periodic, so each value is
+one over `[0, 4)`. -/
+theorem rectBoundary_mem_frontier (t : ℝ) : rectBoundary z w t ∈ frontier (Rectangle z w) := by
+  obtain ⟨s, hs, hts⟩ := (periodic_rectBoundary z w).exists_mem_Ico₀ (by norm_num) t
+  rw [hts]
+  exact image_rectBoundary z w ▸ mem_image_of_mem _ (Ico_subset_Icc_self hs)
 
-/-- The rectangle boundary over `[0, 4]` stays in the closed rectangle. -/
-theorem rectBoundary_mem_rectangle {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 4) :
-    rectBoundary z w t ∈ Rectangle z w :=
-  (isClosed_rectangle z w).frontier_subset (rectBoundary_mem_frontier ht)
+/-- The rectangle boundary stays in the closed rectangle. -/
+theorem rectBoundary_mem_rectangle (t : ℝ) : rectBoundary z w t ∈ Rectangle z w :=
+  (isClosed_rectangle z w).frontier_subset (rectBoundary_mem_frontier t)
 
 section Integral
 

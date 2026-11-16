@@ -230,7 +230,7 @@ theorem hasCompactSupport_referenceConnection_sub (f g : ContDiffBump (0 : ℝ))
 /-- The winding phase is homogeneous of degree `0`. -/
 private theorem phase_smul (m : ℕ) {t : ℝ} (ht : 0 < t) (z : ℂ) :
     (t • z / (‖t • z‖ : ℂ)) ^ m = (z / (‖z‖ : ℂ)) ^ m := by
-  rcases eq_or_ne z 0 with rfl | hz
+  rcases eq_or_ne z 0 with rfl | _
   · simp
   rw [norm_smul, Real.norm_of_nonneg ht.le, real_smul, ofReal_mul,
     mul_div_mul_left _ _ (ofReal_ne_zero.2 ht.ne')]

@@ -89,7 +89,7 @@ theorem structureConstant_mul_structureConstant_neg_neg :
           rw [Weight.coe_neg, Weight.coe_neg, Weight.coe_neg, hαβ]
           abel) =
       -(((chainBotCoeff α β + 1 : ℕ) : K) ^ 2) := by
-  have hprod := hx.structureConstant_mul_structureConstant α β γ hγ hαβ hα hβ
+  have hprod := hx.structureConstant_mul_structureConstant α β γ hγ hαβ hβ
   have hsymm := hx.structureConstant_neg_neg_mul_killingForm_eq α β γ hγ hαβ hβ
   have hlen := hx.chainTopCoeff_mul_killingForm_root_neg_eq α β γ hα hβ hγ hαβ
   -- The Killing pairing of opposite root vectors at `γ` is non-zero, so it can be cancelled.

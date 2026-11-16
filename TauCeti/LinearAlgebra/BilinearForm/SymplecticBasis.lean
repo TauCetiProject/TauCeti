@@ -102,24 +102,6 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 variable {B : BilinForm R M} (hB : B.IsAlt) {e f : M} (hfe : B f e = 1)
 include hB hfe
 
-/-- Two vectors pairing to `1` under an alternating form are linearly independent. -/
-theorem IsAlt.linearIndependent_pair_of_apply_eq_one : LinearIndependent R ![e, f] := by
-  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
-  rw [LinearIndependent.pair_iff]
-  intro s t hst
-  have h1 := congrArg (B f) hst
-  have h2 := congrArg (B e) hst
-  simp only [map_add, map_smul, hfe, hef, hB.self_eq_zero, smul_eq_mul, mul_one, mul_zero,
-    add_zero, zero_add, mul_neg, map_zero, neg_eq_zero] at h1 h2
-  exact ⟨h1, h2⟩
-
-/-- The projection `u ↦ u - B f u • e + B e u • f` lands in the orthogonal complement of the span
-of the hyperbolic pair `e, f`. -/
-theorem IsAlt.sub_smul_add_smul_mem_orthogonal_span_pair (u : M) :
-    u - B f u • e + B e u • f ∈ B.orthogonal (span R {e, f}) := by
-  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
-  simp [orthogonal, hfe, hef, hB.self_eq_zero]
-
 /-- The restriction of a nondegenerate alternating form to the orthogonal complement of the span
 of a hyperbolic pair is nondegenerate. -/
 theorem IsAlt.restrict_nondegenerate_orthogonal_span_pair (hnd : B.Nondegenerate) :
@@ -186,7 +168,7 @@ private theorem IsAlt.apply_cons_cons_eq_J {m : ℕ}
     B (Sum.elim (Fin.cons e fun a => c (Sum.inl a)) (Fin.cons f fun a => c (Sum.inr a)) x)
         (Sum.elim (Fin.cons e fun a => c (Sum.inl a)) (Fin.cons f fun a => c (Sum.inr a)) y) =
       Matrix.J (Fin (m + 1)) R x y := by
-  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
+  have hef : B e f = -1 := hB.apply_eq_neg_one_of_apply_eq_one hfe
   have hce : ∀ x, B (c x) e = 0 := fun x => by rw [← hB.neg_eq, hec, neg_zero]
   have hcf : ∀ x, B (c x) f = 0 := fun x => by rw [← hB.neg_eq, hfc, neg_zero]
   rcases x with x | x <;> rcases y with y | y <;>
@@ -229,7 +211,7 @@ theorem IsAlt.nondegenerate_iff_ne_zero_of_finrank_eq_two {B : BilinForm K V} (h
   set f := (B w e)⁻¹ • w
   have hfe : B f e = 1 := by
     rw [map_smul, LinearMap.smul_apply, smul_eq_mul, inv_mul_cancel₀ hwe]
-  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
+  have hef : B e f = -1 := hB.apply_eq_neg_one_of_apply_eq_one hfe
   have hspan : span K {e, f} = ⊤ := by
     rw [← Matrix.range_cons_cons_empty e f ![]]
     exact (hB.linearIndependent_pair_of_apply_eq_one hfe).span_eq_top_of_card_eq_finrank
@@ -253,16 +235,7 @@ section HyperbolicPair
 variable {e f : V} (hfe : B f e = 1)
 include hfe
 
-/-- The orthogonal complement of the span of a hyperbolic pair has codimension two. -/
-theorem IsAlt.finrank_orthogonal_span_pair_add_two :
-    finrank K (B.orthogonal (span K {e, f})) + 2 = finrank K V := by
-  have h := finrank_add_finrank_orthogonal hB.isRefl (span K {e, f})
-  rw [orthogonal_top_eq_bot hnd, inf_bot_eq, finrank_bot, add_zero] at h
-  have hU : finrank K (span K {e, f}) = 2 := by
-    rw [← Matrix.range_cons_cons_empty e f ![], finrank_span_eq_card
-      (hB.linearIndependent_pair_of_apply_eq_one hfe), Fintype.card_fin]
-  omega
-
+omit hnd [FiniteDimensional K V] in
 /-- **Adjoining a hyperbolic pair to a symplectic basis of the orthogonal complement of its span
 gives a symplectic basis.** The new basis puts `e` and `f` in the positions `inl 0` and `inr 0`
 and shifts the given basis of the complement to the successor positions. -/
@@ -272,6 +245,11 @@ theorem IsAlt.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair {m : ℕ}
     ∃ b : Basis (Fin (m + 1) ⊕ Fin (m + 1)) K V,
       (∀ x y, B (b x) (b y) = Matrix.J (Fin (m + 1)) K x y) ∧
         ⇑b = Sum.elim (Fin.cons e fun a => c (Sum.inl a)) (Fin.cons f fun a => c (Sum.inr a)) := by
+  -- The ambient space is the sum of the plane spanned by `e, f` and its orthogonal complement.
+  have : FiniteDimensional K (span K {e, f}) := FiniteDimensional.span_of_finite K (Set.toFinite _)
+  have : FiniteDimensional K (B.orthogonal (span K {e, f})) := Module.Finite.of_basis c
+  have : FiniteDimensional K V :=
+    Module.Finite.equiv (Submodule.prodEquivOfIsCompl _ _ (hB.isCompl_span_pair_orthogonal hfe))
   have hecf : ∀ x, B e (c x) = 0 ∧ B f (c x) = 0 := fun x => by
     simpa [orthogonal] using (c x).2
   have hec : ∀ x, B e (c x) = 0 := fun x => (hecf x).1
@@ -286,7 +264,7 @@ theorem IsAlt.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair {m : ℕ}
     rw [hG]
     exact (Matrix.isUnit_det_J _ _).ne_zero
   have hcard : Fintype.card (Fin (m + 1) ⊕ Fin (m + 1)) = finrank K V := by
-    rw [← hB.finrank_orthogonal_span_pair_add_two hnd hfe, finrank_eq_card_basis c]
+    rw [← hB.finrank_orthogonal_span_pair_add_two hfe, finrank_eq_card_basis c]
     simp only [Fintype.card_sum, Fintype.card_fin]
     omega
   exact ⟨basisOfLinearIndependentOfCardEqFinrank hli hcard,
@@ -321,13 +299,13 @@ private theorem exists_basis_apply_eq_J_of_iSup_eq_top_aux (n : ℕ) :
   have hfe : B f e = 1 := by rw [hf_def]; simp [inv_mul_cancel₀ hwe]
   -- Apply the induction hypothesis to the orthogonal complement of `span {e, f}`.
   set Z := B.orthogonal (span K {e, f})
-  have hZn : finrank K Z + 2 = n := hn ▸ hB.finrank_orthogonal_span_pair_add_two hnd hfe
+  have hZn : finrank K Z + 2 = n := hn ▸ hB.finrank_orthogonal_span_pair_add_two hfe
   obtain ⟨m, c, hc, hcW⟩ := ih (finrank K Z) (by omega) Z rfl (B.restrict Z)
     (fun z => hB.self_eq_zero z) (hB.restrict_nondegenerate_orthogonal_span_pair hfe hnd)
     (fun j => (W j).comap Z.subtype) σ hσ
     (hB.iSup_comap_orthogonal_span_pair_eq_top hfe hσ hW horth he hf)
     (fun i j hij v hv w hw => horth i j hij v hv w hw)
-  obtain ⟨b, hb, hbd⟩ := hB.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair hnd hfe c hc
+  obtain ⟨b, hb, hbd⟩ := hB.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair hfe c hc
   refine ⟨m + 1, b, hb, ?_⟩
   rintro (x | x) <;> induction x using Fin.cases
   · exact ⟨i, by simpa [hbd] using he⟩
@@ -387,7 +365,7 @@ theorem IsAlt.exists_basis_apply_eq_J_inl_zero_eq {e : V} (he : e ≠ 0) :
     hZ.exists_basis_toMatrix_eq_J (hB.restrict_nondegenerate_orthogonal_span_pair hfe hnd)
   have hc' : ∀ x y, B (c x) (c y) = Matrix.J (Fin m) K x y := fun x y => by
     rw [← hc, toMatrix_apply, restrict_apply, LinearMap.domRestrict_apply]
-  obtain ⟨b, hb, hbd⟩ := hB.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair hnd hfe c hc'
+  obtain ⟨b, hb, hbd⟩ := hB.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair hfe c hc'
   exact ⟨m, b, hb, by rw [hbd, Sum.elim_inl, Fin.cons_zero]⟩
 
 end LinearMap.BilinForm

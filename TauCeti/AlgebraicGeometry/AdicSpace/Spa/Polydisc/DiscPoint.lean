@@ -166,13 +166,13 @@ theorem closedDiscGaussValuation_taylorHom (hr₀ : 0 < r) (hr₁ : r ≤ 1) (a 
       weightedC _ isWeightFamily_one_weight c) ≤ v (weightedX _ isWeightFamily_one_weight 0) := by
     refine (v.map_add _ _).trans ?_
     rw [← NNReal.coe_le_coe, NNReal.coe_max, coe_closedDiscGaussValuation_weightedX,
-      closedDiscGaussValuation_weightedC, coe_nnnorm]
+      closedDiscGaussValuation_weightedC, coe_nnNorm]
     exact max_le le_rfl hc
   refine valuation_taylorHom_eq a ha (isContinuous_closedDiscGaussValuation hr₀ hr₁)
     (Fin.forall_fin_one.2 (hX har))
     (valuation_monomial_le_of_forall_pow fun g n ↦ ?_) f
   rw [← NNReal.coe_le_coe, map_mul, map_pow, NNReal.coe_mul, NNReal.coe_pow,
-    closedDiscGaussValuation_weightedC, coe_closedDiscGaussValuation_weightedX, coe_nnnorm]
+    closedDiscGaussValuation_weightedC, coe_closedDiscGaussValuation_weightedX, coe_nnNorm]
   exact norm_coeff_mul_pow_le_closedDiscGaussValuation hr₀ hr₁ g n
 
 /-- **The Gauss valuation just above `r` is invariant under translation by `c` with
@@ -312,7 +312,7 @@ theorem discPoint_eq_gaussPoint_iff {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r)
     simp only [discPoint_vle_iff, gaussPoint_vle_iff, taylorHom_weightedC, map_sub,
       taylorHom_weightedX, add_sub_cancel_right, eq_iff_iff, ← NNReal.coe_le_coe,
       closedDiscGaussValuation_weightedC, coe_closedDiscGaussValuation_weightedX,
-      coe_closedDiscGaussValuation_weightedX_sub_weightedC, coe_nnnorm] at key
+      coe_closedDiscGaussValuation_weightedX_sub_weightedC, coe_nnNorm] at key
     exact (key.mpr (le_max_right _ _)).not_gt hlt
   refine ⟨?_, har⟩
   rw [discPoint_eq_gaussPoint_of_norm_le ha hr₀ hr₁ har] at h
@@ -624,7 +624,7 @@ theorem discPointAbove_eq_gaussPointAbove_iff {a : K} (ha : ‖a‖ ≤ 1) (hr�
     -- about `a`, the variable `T` has Gauss norm `r < ‖a‖`, so it is strictly smaller than `a`
     refine (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁.le ?_).not_ge (key.mpr hmono)
     rw [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
-      closedDiscGaussValuation_weightedC, coe_nnnorm]
+      closedDiscGaussValuation_weightedC, coe_nnNorm]
     exact hlt
   exact ⟨(gaussPointAbove_inj hr₀ hr₁ hs₀ hs₁).mp ((hrec har).symm.trans h), har⟩
 
@@ -665,7 +665,7 @@ theorem discPointBelow_eq_gaussPointBelow_iff {a : K} (ha : ‖a‖ ≤ 1) (hr�
     rcases hle.lt_or_eq with hlt | heq
     · refine (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ ?_).not_ge (key.mpr hmono)
       rw [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
-        closedDiscGaussValuation_weightedC, coe_nnnorm]
+        closedDiscGaussValuation_weightedC, coe_nnNorm]
       exact hlt
     · exact not_closedDiscGaussValuationBelow_weightedC_le hr₀ hr₁ heq.symm (key.mpr hmono)
   exact ⟨(gaussPointBelow_inj hr₀ hr₁ hs₀ hs₁).mp ((hrec har).symm.trans h), har⟩

@@ -69,8 +69,6 @@ regular one, are in `TauCeti.RepresentationTheory.Symmetric.PermutationModule.Ex
 ## References
 
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 7.2.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 4, "the named small irreducibles".
 -/
 
 public section

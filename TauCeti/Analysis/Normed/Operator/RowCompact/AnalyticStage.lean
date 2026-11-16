@@ -111,7 +111,7 @@ increase norms. -/
 theorem isCompletelyContinuous_transitionLE [Module.Finite R E] (hhk : h < k) :
     (transitionLE (p := p) (E := E) R hhk.le).IsCompletelyContinuous := by
   rw [← transitionLE_comp_transition R hhk]
-  exact isCompletelyContinuous_transition.clm_comp_of_bound _ one_pos fun c ↦ by
+  exact isCompletelyContinuous_transition.clm_comp_of_bound _ (C := 1) fun c ↦ by
     simpa using norm_transitionLE_le R hhk c
 
 /-- Evaluation `LA_h(E) → C(ℤ_p, E)` is completely continuous for finitely generated coefficients:
@@ -119,7 +119,7 @@ it is the transition to level `h + 1` followed by evaluation, which does not inc
 theorem isCompletelyContinuous_eval [Module.Finite R E] :
     (eval R : AnalyticStage p h E →L[R] C(ℤ_[p], E)).IsCompletelyContinuous := by
   rw [← eval_comp_transition]
-  exact isCompletelyContinuous_transition.clm_comp_of_bound _ one_pos fun c ↦ by
+  exact isCompletelyContinuous_transition.clm_comp_of_bound _ (C := 1) fun c ↦ by
     simpa using norm_eval_le R c
 
 /-- Evaluation at `0` of the constant function `e` on the disc of `0`, whose coefficient vector
@@ -142,7 +142,7 @@ theorem isCompletelyContinuous_eval_iff :
     ext e
     simpa using eval_single_zero (p := p) (R := R) e
   rw [← ContinuousLinearMap.isCompletelyContinuous_id_iff, ← hid]
-  exact (hT.comp_clm_of_bound _ one_pos fun e ↦ by simp).clm_comp_of_bound _ one_pos fun f ↦ by
+  exact (hT.comp_clm_of_bound _ (C := 1) fun e ↦ by simp).clm_comp_of_bound _ (C := 1) fun f ↦ by
     simpa using f.norm_coe_le_norm 0
 
 /-- Raising the level `LA_h(E) → LA_{h+1}(E)` is completely continuous exactly when `E` is a
@@ -153,7 +153,7 @@ theorem isCompletelyContinuous_transition_iff :
   refine ⟨fun hT ↦ (isCompletelyContinuous_eval_iff (p := p) (h := h)).1 ?_,
     fun _ ↦ isCompletelyContinuous_transition⟩
   rw [← eval_comp_transition]
-  exact hT.clm_comp_of_bound _ one_pos fun c ↦ by simpa using norm_eval_le R c
+  exact hT.clm_comp_of_bound _ (C := 1) fun c ↦ by simpa using norm_eval_le R c
 
 /-- Raising the level `LA_h(E) → LA_k(E)` with `h < k` is completely continuous exactly when `E`
 is a finitely generated `R`-module. -/
@@ -163,7 +163,7 @@ theorem isCompletelyContinuous_transitionLE_iff (hhk : h < k) :
   refine ⟨fun hT ↦ (isCompletelyContinuous_eval_iff (p := p) (h := h)).1 ?_,
     fun _ ↦ isCompletelyContinuous_transitionLE hhk⟩
   rw [← eval_comp_transitionLE R hhk.le]
-  exact hT.clm_comp_of_bound _ one_pos fun c ↦ by simpa using norm_eval_le R c
+  exact hT.clm_comp_of_bound _ (C := 1) fun c ↦ by simpa using norm_eval_le R c
 
 end Ring
 

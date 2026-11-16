@@ -111,8 +111,8 @@ private theorem rTensor_comp_coact_of_mem_weightSpace (π : C →ₗc[R] MonoidA
     rw [hπ c, TensorProduct.comm_comm]
   -- Coassociativity turns the left-hand side into `ρ v ⊗ s` with its last two factors swapped.
   have hcoassoc : ρ.rTensor C (ρ v) =
-      (TensorProduct.assoc R V C C).symm (Coalgebra.comul.lTensor V (ρ v)) := by
-    rw [← Comodule.coassoc_apply, LinearEquiv.symm_apply_apply]
+      (TensorProduct.assoc R V C C).symm (Coalgebra.comul.lTensor V (ρ v)) :=
+    (Comodule.coassoc_symm_apply v).symm
   have hassoc : (TensorProduct.map LinearMap.id P).lTensor V (Coalgebra.comul.lTensor V (ρ v)) =
       TensorProduct.assoc R V C (MonoidAlgebra R X) (ρ v ⊗ₜ s) := by
     rw [← Comodule.coassoc_apply, ← LinearMap.rTensor_tmul (M := MonoidAlgebra R X) ρ, ← hv]

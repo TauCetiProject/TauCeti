@@ -24,11 +24,6 @@ the finitely many exceptional members of a family for which a uniform tail bound
   has tight range.
 * `TauCeti.isTightMeasureSet_range_of_eventually_eq`: a family of finite measures that is equal to
   a fixed measure off finitely many indices has tight range.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem
-  milestone), "measure extraction via Prokhorov tightness".
 -/
 
 public section

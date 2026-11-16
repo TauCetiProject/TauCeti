@@ -52,11 +52,6 @@ alongside the upper- and lower-unipotent factors.
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 5.2.
 * T. A. Springer, *Linear Algebraic Groups*, 2nd ed., §8.1.
-
-This advances the explicit type-`C` Chevalley--Demazure construction in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`.  The type-`C` branch of milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md` consumes the resulting pinned carrier; the next carrier
-step is the field-valued symplectic generation theorem, whose Levi factor is supplied here.
 -/
 
 public section
@@ -200,16 +195,7 @@ theorem map_leviHom {S : Type*} [CommRing S] (f : R →+* S) (A : GL (Fin m) R) 
     GLSymplecticFin.map m R f (leviHom A) =
       leviHom (Matrix.GeneralLinearGroup.map f A) := by
   apply (mulEquivGLSymplectic m S).injective
-  have hmap :
-      mulEquivGLSymplectic m S (GLSymplecticFin.map m R f (leviHom A)) =
-        GLSymplectic.map (Fin m) f (mulEquivGLSymplectic m R (leviHom A)) := by
-    apply Subtype.ext
-    apply Matrix.GeneralLinearGroup.ext
-    intro i j
-    simp only [coe_mulEquivGLSymplectic, GLSymplecticFin.coe_map,
-      GLSymplectic.coe_map, Equiv.coe_reindexGL, Equiv.symm_symm,
-      Matrix.GeneralLinearGroup.map_apply, Matrix.submatrix_apply]
-  rw [hmap, mulEquivGLSymplectic_leviHom, GLSymplectic.map_leviHom,
+  rw [mulEquivGLSymplectic_map, mulEquivGLSymplectic_leviHom, GLSymplectic.map_leviHom,
     mulEquivGLSymplectic_leviHom]
 
 /-- The `Fin`-indexed Levi homomorphism is injective. -/

@@ -64,7 +64,7 @@ theorem not_equivalent_toBilin'_diagonal_one_one_three_three_padicInt_two :
   have hortho (d : Fin 2 → ℤ_[2]) : (Matrix.toBilin' (Matrix.diagonal d)).iIsOrtho b :=
     LinearMap.BilinForm.iIsOrtho_def.mpr fun i j hij ↦ by simp [hdiag, hij]
   have : (Matrix.toBilin' (Matrix.diagonal ![(1 : ℤ_[2]), 1])).IsPerfPair :=
-    b.isPerfPair_of_apply_eq_ite _ 1 fun i j ↦ by
+    b.isPerfPair_of_apply_eq_ite b _ 1 fun i j ↦ by
       fin_cases i <;> fin_cases j <;> simp [hdiag]
   have h8 := h.eight_dvd_sum_apply_self_sub_sum_apply_self PadicInt.two_dvd_sq_sub_self
     (hortho _) (hortho _)

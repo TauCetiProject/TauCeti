@@ -28,14 +28,11 @@ is one side of the archimedean local-image formula of explicit `2`-descent, whic
 ## Provenance
 
 Adapted, with the author's proofs, from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at `66889eada51a`),
 `EllipticCurves/WeakMordellWeil.lean` lines 806-868 — the `2`-torsion section, which sits after
 the range that `TauCeti/AlgebraicGeometry/EllipticCurve/MordellWeil/XSubT.lean` ported.
 
-This advances `TauCetiRoadmap/EllipticCurves/README.md`, Layer 6 (README:813-820), whose
-"Explicit `2`-descent (core, this layer)" bullet names the local conditions and the rank bound;
-the archimedean local-image count needs this torsion count.
+The archimedean local-image count of explicit `2`-descent needs this torsion count.
 -/
 
 public section

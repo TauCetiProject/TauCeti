@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Map
 public import Mathlib.Algebra.Module.ZMod
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Group
+public import TauCeti.LinearAlgebra.Pi
+public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Subfield
 
 /-!
 # The subfield lattice of a multiquadratic field
@@ -21,22 +23,22 @@ of `Gal(M/K)`; transporting along the isomorphism `Gal(M/K) ≃ (ℤ/2)ⁿ` land
 `𝔽₂`-subspace. Composing these identifications gives an order-reversing bijection between the
 intermediate fields of `M/K` and the `𝔽₂`-subspaces of `ι → ℤ/2`.
 
-This is the lattice-of-subfields layer of the multiquadratic roadmap: the dictionary
-"subfields ↔ subspaces of `𝔽₂ⁿ`" that organises, for instance, the quadratic subfields and the
-genus-field constructions.
+This is the dictionary "subfields ↔ subspaces of `𝔽₂ⁿ`" that organises, for instance, the
+quadratic subfields and the genus-field constructions.
 
 ## Main results
 
 * `TauCeti.Multiquadratic.intermediateFieldEquivSubmodule`: for square-class independent
   radicands, the order-reversing bijection
   `IntermediateField K M ≃o (Submodule (ZMod 2) (ι → ℤ/2))ᵒᵈ`.
-* `TauCeti.Multiquadratic.card_intermediateField_adjoin_range`: its cardinality reading — the
-  number of intermediate fields of `M/K` is the number of `𝔽₂`-subspaces of `ι → ℤ/2`.
+* `TauCeti.Multiquadratic.card_intermediateField_adjoin_range`: its cardinality reading — for a
+  finite index type, the number of intermediate fields of `M/K` is the number of `𝔽₂`-subspaces
+  of `ι → ℤ/2`. For an infinite index type there is no bijection to read off (there are infinitely
+  many of each), and the statement is only the equality of two `Nat.card`s that are both `0`.
 
 ## Provenance
 
-The Galois-group identification this builds on is migrated, with the rest of the multiquadratic
-Layer 0, from
+The Galois-group identification this builds on is migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization of
 L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture. The subfield/subspace
 dictionary itself assembles Mathlib's Galois correspondence
@@ -124,16 +126,28 @@ sign patterns lie in that subspace. -/
       rw [galoisGroupEquiv_apply] at happ
       simpa [Multiplicative.ofAdd.injective happ] using hv)
 
-/-- **The number of subfields of a multiquadratic field.** Under square-class independence, the
-intermediate fields of `M = K(rootᵢ : i)` over `K` are in bijection with the `𝔽₂`-subspaces of
-`ι → ℤ/2`, so there are exactly as many of them. (For `|ι| = n` this count is the number of
-subspaces of `𝔽₂ⁿ`, the Galois number `Gₙ`.) -/
-theorem card_intermediateField_adjoin_range [Finite ι] [NeZero (2 : K)]
+/-- **The number of subfields of a multiquadratic field.** Under square-class independence, for a
+finite index type the intermediate fields of `M = K(rootᵢ : i)` over `K` are in bijection with the
+`𝔽₂`-subspaces of `ι → ℤ/2` (`intermediateFieldEquivSubmodule`), so there are exactly as many of
+them. (For `|ι| = n` this count is the number of subspaces of `𝔽₂ⁿ`, the Galois number `Gₙ`.) For
+an infinite index type both sets are infinite and the statement is only the equality of two
+`Nat.card`s that are both `0`, by the convention for the cardinality of an infinite type. -/
+theorem card_intermediateField_adjoin_range [NeZero (2 : K)]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) :
     Nat.card (IntermediateField K (adjoin K (Set.range root)))
-      = Nat.card (Submodule (ZMod 2) (ι → ZMod 2)) :=
-  Nat.card_congr <|
+      = Nat.card (Submodule (ZMod 2) (ι → ZMod 2)) := by
+  by_cases hι : Finite ι
+  swap
+  · have := not_finite_iff_infinite.mp hι
+    have : Infinite (Submodule (ZMod 2) (ι → ZMod 2)) := Submodule.infinite_pi_of_infinite
+    have : Infinite (IntermediateField K (adjoin K (Set.range root))) :=
+      haveI := infinite_quadratic_intermediateField hroot hindep
+      Infinite.of_injective (Subtype.val :
+        {F : IntermediateField K (adjoin K (Set.range root)) // Module.finrank K F = 2} → _)
+        Subtype.val_injective
+    rw [Nat.card_eq_zero_of_infinite, Nat.card_eq_zero_of_infinite]
+  exact Nat.card_congr <|
     (intermediateFieldEquivSubmodule hroot hindep).toEquiv.trans
       (OrderDual.toDual (α := Submodule (ZMod 2) (ι → ZMod 2))).symm
 

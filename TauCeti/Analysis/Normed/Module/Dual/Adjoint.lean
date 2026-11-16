@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Analysis.Normed.Operator.Banach
+public import TauCeti.LinearAlgebra.Dual.Annihilator
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Basic
 
@@ -29,6 +31,10 @@ For a bounded operator between Banach spaces it then proves the **closed-range t
 `range T` is closed iff `range T*` is closed, in which case `range T* = (ker T)ᗮ`.
 It also proves that a bounded map between Banach spaces is bijective iff its transpose is.
 
+If `T` has closed range of finite codimension, every functional vanishing on `range T` is
+continuous, so the kernel of the transpose agrees with the kernel of the algebraic dual map
+`T^*` (`ContinuousLinearMap.kerPrecompEquivKerDualMap`); both are the dual of the cokernel of `T`.
+
 The reverse implication only needs the domain to be complete. It goes through the criterion
 that a map whose adjoint is bounded below is surjective: geometric Hahn–Banach shows that the
 closure of the image of a ball contains a ball, and Banach's lemma
@@ -46,6 +52,8 @@ into `ℓ²` has dense proper range, while its adjoint is surjective.
   is surjective.
 * `ContinuousLinearMap.isClosed_range_precomp_iff`: the closed-range theorem.
 * `ContinuousLinearMap.bijective_precomp_iff`: a map is bijective iff its transpose is.
+* `ContinuousLinearMap.kerPrecompEquivKerDualMap`: for closed range of finite codimension, the
+  kernel of the transpose is the kernel of the algebraic dual map.
 
 ## References
 
@@ -177,7 +185,7 @@ theorem surjective_of_norm_le_norm_comp [CompleteSpace E]
     [NormedAddCommGroup F] [NormedSpace 𝕜 F] (S : E →L[𝕜] F) {K : ℝ≥0}
     (hK : ∀ g : StrongDual 𝕜 F, ‖g‖ ≤ K * ‖g.comp S‖) : Surjective S := fun y ↦
   let ⟨x, hx, _⟩ := S.exists_preimage_norm_le_of_mem_closure
-    (S.mem_closure_image_closedBall_of_norm_le_norm_comp hK) y
+    (S.mem_closure_image_closedBall_of_norm_le_norm_comp hK) (lt_add_one _) y
   ⟨x, hx⟩
 
 /-- **Closed-range theorem, reverse implication.** If the adjoint of a bounded operator on a
@@ -265,5 +273,58 @@ theorem bijective_precomp_iff [CompleteSpace F] (T : E →L[𝕜] F) :
     · exact ⟨f.comp e.symm.toContinuousLinearMap, ext fun x ↦ by simp [e]⟩
 
 end Complete
+
+section FiniteCodimension
+
+open Module
+
+variable [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [AddCommGroup E] [Module 𝕜 E]
+  [TopologicalSpace E] [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [ContinuousSMul 𝕜 F]
+  (T : E →L[𝕜] F) (hT : IsClosed (T.range : Set F)) [FiniteDimensional 𝕜 (F ⧸ T.range)]
+
+/-- **The kernel of the transpose.** If `T` has closed range of finite codimension, every
+functional vanishing on the range of `T` is continuous, so the inclusion of continuous functionals
+into all functionals identifies the kernel of the transpose `T'` with the kernel of the algebraic
+dual map `T^*`. Both are the dual of the cokernel of `T` (`LinearMap.kerDualMapEquiv`). -/
+noncomputable def kerPrecompEquivKerDualMap :
+    (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).ker ≃ₗ[𝕜]
+      LinearMap.ker (T : E →ₗ[𝕜] F).dualMap :=
+  LinearEquiv.ofBijective
+    ((coeLM 𝕜 : StrongDual 𝕜 F →ₗ[𝕜] Dual 𝕜 F).restrict fun φ hφ ↦
+      LinearMap.mem_ker.2 <| LinearMap.ext fun x ↦ by
+        simpa using DFunLike.congr_fun (LinearMap.mem_ker.1 hφ) x)
+    ⟨fun φ ψ h ↦ Subtype.ext <| coe_injective <| congrArg Subtype.val h, fun ψ ↦ by
+      have hψ : T.range ≤ LinearMap.ker (ψ : Dual 𝕜 F) := by
+        rintro _ ⟨x, rfl⟩
+        exact LinearMap.congr_fun (LinearMap.mem_ker.1 ψ.2) x
+      -- `ψ` factors through the Hausdorff finite-dimensional quotient by the closed range.
+      have : IsClosed (T.range : Set F) := hT
+      have hcont : Continuous (ψ : Dual 𝕜 F) := by
+        rw [← T.range.liftQ_mkQ (ψ : Dual 𝕜 F) hψ, LinearMap.coe_comp]
+        exact (T.range.liftQ _ hψ).continuous_of_finiteDimensional.comp continuous_quot_mk
+      exact ⟨⟨⟨ψ, hcont⟩, LinearMap.mem_ker.2 <| ContinuousLinearMap.ext fun x ↦ hψ ⟨x, rfl⟩⟩,
+        rfl⟩⟩
+
+@[simp]
+theorem coe_kerPrecompEquivKerDualMap_apply
+    (φ : (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).ker) :
+    (kerPrecompEquivKerDualMap T hT φ : Dual 𝕜 F) = (φ : StrongDual 𝕜 F) :=
+  (rfl)
+
+@[simp]
+theorem coe_kerPrecompEquivKerDualMap_symm_apply (ψ : LinearMap.ker (T : E →ₗ[𝕜] F).dualMap) :
+    (((kerPrecompEquivKerDualMap T hT).symm ψ : StrongDual 𝕜 F) : Dual 𝕜 F) = ψ := by
+  rw [← coe_kerPrecompEquivKerDualMap_apply T hT, LinearEquiv.apply_symm_apply]
+
+include hT in
+/-- The kernel of the transpose has the dimension of the cokernel of `T`. -/
+theorem finrank_ker_precomp_eq_finrank_quotient_range :
+    finrank 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).ker =
+      finrank 𝕜 (F ⧸ T.range) :=
+  (kerPrecompEquivKerDualMap T hT).finrank_eq.trans
+    (T : E →ₗ[𝕜] F).finrank_ker_dualMap_eq_finrank_quotient_range
+
+end FiniteCodimension
 
 end ContinuousLinearMap

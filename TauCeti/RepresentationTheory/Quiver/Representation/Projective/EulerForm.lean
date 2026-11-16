@@ -40,8 +40,7 @@ norm of `dim Pᵢ` is `1`; that statement lives in
 The hypothesis carried throughout is `∀ a, Finite (Quiver.Path i a)`, for the vertex `i` at hand:
 the finiteness that makes `TauCeti.dimVector (indecProjRep k Q i)` an honest path count rather than
 the `0` that `Module.finrank` returns on an infinite-dimensional space. For a finite quiver it
-follows from acyclicity, by `TauCeti.finite_paths_of_isAcyclic`; the loop quiver, where it fails, is
-exactly the boundary case the roadmap records.
+follows from acyclicity, by `TauCeti.finite_paths_of_isAcyclic`, and it fails for the loop quiver.
 
 Dimension vectors take values in `ℕ` while the Euler form is defined on `Q → ℤ`, so every statement
 below feeds the Euler form the pointwise cast `fun v ↦ (dimVector M v : ℤ)`.
@@ -54,10 +53,9 @@ decomposition of a path by its *first* arrow, which
 
 ## References
 
-This implements the projective case of the homological interpretation of the Euler form, Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See Derksen--Weyman, *An
-Introduction to Quiver Representations*, Ch. 1, and Assem--Simson--Skowroński, *Elements of the
-Representation Theory of Associative Algebras I*, Ch. III.
+This is the projective case of the homological interpretation of the Euler form. See
+Derksen--Weyman, *An Introduction to Quiver Representations*, Ch. 1, and Assem--Simson--Skowroński,
+*Elements of the Representation Theory of Associative Algebras I*, Ch. III.
 -/
 
 public section

@@ -69,10 +69,8 @@ between two vertices into their equality; it is private because it is a `Nat.car
 
 ## References
 
-This proves the indecomposability asserted by the names of the vertex projectives and injectives in
-Layer 1, by the brick route that Layer 4 identifies, of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See Assem--Simson--
-Skowroński, *Elements of the Representation Theory of Associative Algebras I*, Ch. III.
+See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
+Ch. III.
 -/
 
 public section

@@ -11,8 +11,8 @@ import TauCeti.Probability.Exchangeability.Map
 /-!
 # Bounded observables of contractable processes in L²
 
-This file supplies the bounded-observable entry point to the L² lane of the Exchangeability
-roadmap.  Applying a measurable real-valued observable coordinatewise to a contractable process
+This file supplies the bounded-observable entry point to the L² route to de Finetti's theorem.
+Applying a measurable real-valued observable coordinatewise to a contractable process
 preserves contractability, so whenever the mapped coordinates are square-integrable the process
 inherits the uniform covariance structure of
 `TauCeti.Probability.Exchangeability.L2.Covariance`: the means agree across all coordinates, so do
@@ -23,9 +23,7 @@ the variances, and every off-diagonal covariance takes a single common value.
 * `Contractable.covariance_structure_comp_of_bound` specializes it to a bounded observable, whose
   coordinates are square-integrable automatically on a finite measure space.
 
-The bounded case discharges the worked-example check in `TauCetiRoadmap/Exchangeability/README.md`,
-"In the real-valued L² lane, bounded observables give `MemLp 2` automatically."  Credit for the
-reused material goes to the Tau Ceti covariance and map APIs; no material from
+Credit for the reused material goes to the Tau Ceti covariance and map APIs; no material from
 `cameronfreer/exchangeability` is used.
 -/
 

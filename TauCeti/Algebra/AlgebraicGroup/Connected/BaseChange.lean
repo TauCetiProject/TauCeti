@@ -49,10 +49,6 @@ two scalar extensions, after which connectedness descends along an injective map
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §2.a.
-
-This is base-change infrastructure for Layer 3, "Identity component and component group", of the
-ReductiveGroups roadmap: connectedness there is geometric and is therefore used after extending
-the ground field.
 -/
 
 public section

@@ -44,7 +44,7 @@ universe uk uA uM
 
 variable {k : Type uk} [CommSemiring k] {A : Type uA} [Semiring A] [Algebra k A]
   {M : Type uM} [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
-  (𝒜 : ℤ → Submodule k A) {G : InternalGrading k M} [SetLike.GradedSMul 𝒜 G.piece]
+  (𝒜 : ℤ → Submodule k A) {G : InternalGrading k M ℤ} [SetLike.GradedSMul 𝒜 G.piece]
 
 /-- The degree-`p` component of an element of `A₊ M` is a sum of products `a • y` with `a` of
 some positive degree `i` and `y` of degree `p - i`. -/

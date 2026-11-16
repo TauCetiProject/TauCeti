@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.RootsOfUnity.Finite
 public import TauCeti.RingTheory.RootsOfUnity.Henselian
 public import TauCeti.RingTheory.RootsOfUnity.IntegrallyClosed
 
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
@@ -165,12 +166,21 @@ theorem range_teichmuller :
     exact teichmuller_pow_card_sub_one R x
   · rw [← rootsOfUnityMulEquivUnitsResidueField_symm_apply, MulEquiv.symm_apply_apply]
 
-/-- A Henselian local ring with residue field of cardinality `q` has exactly `q - 1` roots of
-unity of order dividing `q - 1`. -/
+omit [Finite (ResidueField R)] in
+/-- A Henselian local ring with finite residue field of cardinality `q` has exactly `q - 1` roots
+of unity of order dividing `q - 1`. For an infinite residue field both sides are `0` (the
+`Nat.card` of an infinite type), since `rootsOfUnity 0 R` is all of `Rˣ`, which is infinite. -/
 theorem card_rootsOfUnity :
     Nat.card (rootsOfUnity (Nat.card (ResidueField R) - 1) R) =
       Nat.card (ResidueField R) - 1 := by
-  rw [Nat.card_congr (rootsOfUnityMulEquivUnitsResidueField R).toEquiv, Nat.card_units]
+  rcases finite_or_infinite (ResidueField R) with h | h
+  · rw [Nat.card_congr (rootsOfUnityMulEquivUnitsResidueField R).toEquiv, Nat.card_units]
+  · have hR : Infinite Rˣ :=
+      Infinite.of_surjective _ (IsLocalRing.surjective_units_map_of_local_ringHom
+        (residue R) residue_surjective inferInstance)
+    rw [Nat.card_eq_zero_of_infinite (α := ResidueField R), zero_tsub, rootsOfUnity_zero,
+      Subgroup.card_top]
+    exact Nat.card_eq_zero_of_infinite
 
 /-- For odd `q`, the Teichmüller lift of `-1` is `-1`. (For even `q` the residue `-1` is `1`,
 whose lift is `1`.) -/

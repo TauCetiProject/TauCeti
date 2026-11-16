@@ -25,15 +25,15 @@ Both halves already exist and are joined rather than rebuilt. On the diagram sid
 `TauCeti.GraphTwistedIndex.diagramPerm_mem_diagramSymmetry` reads `σ` as a symmetry of the
 Bourbaki-numbered Cartan matrix; on the carrier side, that is exactly what
 `TauCeti.DynkinType.geckGraphAutPoints` and `TauCeti.DynkinType.geckTwistedFrobenius` consume. The
-work here is the assignment of one to the other, and the resulting equations in the shape milestone
-L1 states them, on the numbered root subgroups of `TauCeti.ValidLieTypeIndex.geckRootSubgroup`:
+work here is the assignment of one to the other, and the resulting equations on the numbered root
+subgroups of `TauCeti.ValidLieTypeIndex.geckRootSubgroup`:
 
 ```text
 γ (x_i(u)) = x_{σ i}(u),        F (x_i(u)) = x_{σ i}(u ^ q),
 ```
 
-together with the two relations that milestone requires of the graph factor, namely that `γ`
-commutes with the Frobenius and that the twist order recorded by the index annihilates it,
+together with the two relations of the graph factor of a graph-twisted Steinberg map, namely that
+`γ` commutes with the Frobenius and that the twist order recorded by the index annihilates it,
 `γ ^ 2 = 1` on `²Aₙ`, `²Dₙ` and `²E₆` and `γ ^ 3 = 1` on `³D₄`.
 
 The nine untwisted families are indices of this subtype too, with `σ = 1`, so the construction is
@@ -48,7 +48,7 @@ The `geck` prefix is the same disclaimer it carries in
 `TauCeti/GroupTheory/SpecificGroups/CFSG/GeckCarrier.lean`. Geck's module is the adjoint module, so
 outside the `E₈`, `F₄` and `G₂` diagrams the characters occurring in the carrier generate the root
 lattice and not the whole character lattice of the pinned torus, and the carrier is therefore not
-yet the simply connected group that milestone L0 asks for. No declaration below asserts that it is,
+yet the pinned simply connected group. No declaration below asserts that it is,
 nor that any group here is finite, perfect or simple, and no fixed-point subgroup is formed on a
 branch whose carrier has not been identified.
 
@@ -93,19 +93,14 @@ branch whose carrier has not been identified.
 * M. Geck, *On the construction of semisimple Lie algebras and Chevalley groups*,
   Proc. Amer. Math. Soc. **145** (2017), 3233--3247, for the matrix realization of the carrier.
 
-## Roadmap
+## Related files
 
-This is the carrier layer of milestone L1, "ordinary and graph Steinberg maps", of
-`TauCetiRoadmap/CFSGStatement/README.md`, whose completion condition is that "the simple-root-
-subgroup equations and the order relations are proved". Those equations and relations are proved
-here for all thirteen ordinary indices at once, in the shape the milestone states them and against
-the diagram permutations that `TauCeti/GroupTheory/SpecificGroups/CFSG/GraphTwisted.lean` pins.
-
-It does not close L1, and it does not close milestone L0: the carrier is the Geck one, whose
-identification with the pinned simply connected Chevalley--Demazure group of
-`TauCeti.DynkinType.simplyConnectedRootDatum` is a Layer 9 target of
-`TauCetiRoadmap/ReductiveGroups/README.md` that this roadmap consumes rather than proves. This file
-stands to `TauCeti/GroupTheory/SpecificGroups/CFSG/Datum/Steinberg.lean` as
+The simple-root-subgroup equations and the order relations are proved here for all thirteen
+ordinary indices at once, against the diagram permutations that
+`TauCeti/GroupTheory/SpecificGroups/CFSG/GraphTwisted.lean` pins. The carrier is the Geck one,
+whose identification with the pinned simply connected Chevalley--Demazure group of
+`TauCeti.DynkinType.simplyConnectedRootDatum` is not proved here. This file stands to
+`TauCeti/GroupTheory/SpecificGroups/CFSG/Datum/Steinberg.lean` as
 `TauCeti/GroupTheory/SpecificGroups/CFSG/GeckCarrier.lean` stands to
 `TauCeti/GroupTheory/SpecificGroups/CFSG/Datum/Frobenius.lean`: the same map one layer up, on
 points instead of on the root datum.
@@ -129,7 +124,7 @@ the matrix of the induced permutation of the Geck coordinates. It is the identit
 untwisted families, where that permutation is the identity.
 
 It is an automorphism of the Geck carrier, which is not claimed to be the pinned simply connected
-Chevalley--Demazure group that milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md` asks for. -/
+Chevalley--Demazure group. -/
 def geckGraphAut : MulAut (ValidLieTypeIndex.GeckGroup d.1) :=
   d.1.dynkinType.geckGraphAutPoints d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry
     d.1.Closure
@@ -157,8 +152,8 @@ theorem coe_geckGraphAut (g : ValidLieTypeIndex.GeckGroup d.1) :
 
 /-- **The graph automorphism renumbers the root subgroups by the diagram permutation and leaves
 their parameters alone.** On a simple root subgroup this is the equation `γ (x_α(t)) = x_{γ α}(t)`
-that milestone L1 asks of the graph factor of a graph-twisted Steinberg map, proved here on the
-Geck carrier. The same node permutation acts on the raising and on the lowering generators. -/
+of the graph factor of a graph-twisted Steinberg map, proved here on the Geck carrier. The
+same node permutation acts on the raising and on the lowering generators. -/
 @[simp]
 theorem geckGraphAut_geckRootSubgroup (i : Fin d.1.rank ⊕ Fin d.1.rank)
     (u : Multiplicative d.1.Closure) :
@@ -189,7 +184,7 @@ theorem geckGraphAut_geckWeightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
 
 /-- **The twist order recorded by an index annihilates its graph automorphism.** This is `γ ^ 2 = 1`
 for `²Aₙ`, `²Dₙ` and `²E₆`, `γ ^ 3 = 1` for `³D₄`, and the trivial relation on an untwisted family,
-which is the order relation milestone L1 requires of the graph factor. -/
+which is the order relation of the graph factor of a graph-twisted Steinberg map. -/
 @[simp]
 theorem geckGraphAut_pow_twistOrder : d.geckGraphAut ^ d.twistOrder = 1 := by
   rw [geckGraphAut_def]
@@ -238,8 +233,8 @@ theorem geckSteinberg_apply (g : ValidLieTypeIndex.GeckGroup d.1) :
   exact d.1.dynkinType.geckTwistedFrobenius_apply d.1.dynkinType_valid
     d.diagramPerm_mem_diagramSymmetry d.1.characteristic d.1.fieldExponent d.1.Closure g
 
-/-- **The graph automorphism commutes with the Frobenius.** This is the second relation milestone
-L1 requires of a graph-twisted Steinberg map, read on the Geck point group. -/
+/-- **The graph automorphism commutes with the Frobenius.** This is the second relation of the graph
+factor of a graph-twisted Steinberg map, read on the Geck point group. -/
 theorem geckGraphAut_comp_geckFrobenius :
     d.geckGraphAut.toMonoidHom.comp d.1.geckFrobenius =
       d.1.geckFrobenius.comp d.geckGraphAut.toMonoidHom := by
@@ -261,8 +256,8 @@ theorem geckSteinberg_eq_geckFrobenius_comp :
 
 /-- **The Steinberg map raises the parameter of every numbered root subgroup to the `q`-th power
 and renumbers it by the diagram permutation.** On a simple root subgroup this is the equation
-`F (x_{α_i}(t)) = x_{α_{σ i}}(t ^ q)` that milestone L1 asks of an ordinary Steinberg map, proved
-here on the Geck carrier for all thirteen ordinary families at once. -/
+`F (x_{α_i}(t)) = x_{α_{σ i}}(t ^ q)` of an ordinary Steinberg map, proved here on the Geck
+carrier for all thirteen ordinary families at once. -/
 @[simp]
 theorem geckSteinberg_geckRootSubgroup (i : Fin d.1.rank ⊕ Fin d.1.rank)
     (u : Multiplicative d.1.Closure) :

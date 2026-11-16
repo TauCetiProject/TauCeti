@@ -28,9 +28,8 @@ in degree zero. It suffices to check bijectivity on sections over the affine ope
 lying over affine opens `W` of `S`, since these form a basis
 (`Scheme.Hom.isBasis_range_affineOpens_le_preimage`). There both sides are base changes of
 `Γ(f⁻¹ W, M)` from `Γ(S, W)` to `Γ(S', W')`: the source because `f_* M` is quasi-coherent and
-`W`, `W'` are affine (`Scheme.Hom.isBaseChange_pullbackSectionsLEBaseLinear` for the
-identity square on `g`), and the target by flat base change of sections over the quasi-compact
-quasi-separated open `f⁻¹ W`
+`W`, `W'` are affine (`Scheme.Hom.isBaseChange_pullbackSectionsLE`), and the target by flat
+base change of sections over the quasi-compact quasi-separated open `f⁻¹ W`
 (`Scheme.Hom.isBaseChange_pullbackSectionsLEBaseLinear_of_isQuasiSeparated`). The base change
 morphism is compatible with both identifications, so it is bijective
 (`IsBaseChange.bijective_of_comp_eq`).
@@ -71,25 +70,17 @@ theorem bijective_pushforwardBaseChange_app_app (H : IsPullback g' f' f g) [Quas
     Function.Bijective (((pushforwardBaseChange H.toCommSq).app M).app W') := by
   -- Both sides are base changes of `Γ(f⁻¹ W, M) = Γ(W, f_* M)` from `Γ(S, W)` to `Γ(S', W')`,
   -- and the base change morphism is compatible with the two base-change maps. First the
-  -- source, through the identity square on `g`, whose rings act through identities.
+  -- source, by base change of sections over the affine opens `W' ≤ g⁻¹ W`.
   let N := (pushforward f).obj M
   let : Algebra Γ(S, W) Γ(S', W') := (g.appLE W W' h).hom.toAlgebra
   let : Module Γ(S, W) Γ((pullback g).obj N, W') := Module.compHom _ (algebraMap Γ(S, W) Γ(S', W'))
   have : IsScalarTower Γ(S, W) Γ(S', W') Γ((pullback g).obj N, W') :=
     .of_algebraMap_smul fun _ _ ↦ rfl
-  let alg₁ : Algebra Γ(S, W) Γ(S, W) := (Scheme.Hom.appLE (𝟙 S) W W le_rfl).hom.toAlgebra
-  have t₁ : @IsScalarTower Γ(S, W) Γ(S, W) Γ(N, W) alg₁.toSMul _ _ :=
-    @IsScalarTower.of_algebraMap_smul _ _ _ _ _ alg₁ _ _ fun r n ↦ by
-      rw [RingHom.algebraMap_toAlgebra, Scheme.Hom.appLE_eq_id_of_eq_id (f := 𝟙 S) rfl W le_rfl]
-      rfl
-  let alg₂ : Algebra Γ(S', W') Γ(S', W') := (Scheme.Hom.appLE (𝟙 S') W' W' le_rfl).hom.toAlgebra
-  have t₂ : @IsScalarTower Γ(S', W') Γ(S', W') Γ((pullback g).obj N, W') alg₂.toSMul _ _ :=
-    @IsScalarTower.of_algebraMap_smul _ _ _ _ _ alg₂ _ _ fun r n ↦ by
-      rw [RingHom.algebraMap_toAlgebra,
-        Scheme.Hom.appLE_eq_id_of_eq_id (f := 𝟙 S') rfl W' le_rfl]
-      rfl
-  have hα := Scheme.Hom.isBaseChange_pullbackSectionsLEBaseLinear g N
-    (IsPullback.id_vert g) hW hW' h (UX := W) le_rfl hW (UY := W') (by simpa using h)
+  let α : Γ(N, W) →ₗ[Γ(S, W)] Γ((pullback g).obj N, W') :=
+    { toFun := g.pullbackSectionsLE N W W' h
+      map_add' := map_add _
+      map_smul' := (g.pullbackSectionsLE N W W' h).map_smulₛₗ }
+  have hα := g.isBaseChange_pullbackSectionsLE N hW hW' h (fun _ ↦ rfl) α fun _ ↦ rfl
   -- Then the target, the sections of `f'_* g'^* M` over `W'`, by flat base change over
   -- `W' ⟶ W`.
   have hUY := Scheme.Hom.preimage_eq_preimage_inf_of_comp_eq H.w h
@@ -120,9 +111,8 @@ theorem bijective_pushforwardBaseChange_app_app (H : IsPullback g' f' f g) [Quas
       map_add' := map_add _
       map_smul' := Hom.app_smul _ }
   exact IsBaseChange.bijective_of_comp_eq hα hβ φ fun s ↦
-    (congrArg φ (Scheme.Hom.pullbackSectionsLEBaseLinear_apply g N _ h _ _ _ s)).trans
-      ((pushforwardBaseChange_app_app_pullbackSectionsLE H.toCommSq M W W' h s).trans
-        (Scheme.Hom.pullbackSectionsLEBaseLinear_apply g' M _ h _ _ _ s).symm)
+    (pushforwardBaseChange_app_app_pullbackSectionsLE H.toCommSq M W W' h s).trans
+      (Scheme.Hom.pullbackSectionsLEBaseLinear_apply g' M _ h _ _ _ s).symm
 
 
 /-- **Flat base change for the direct image of a quasi-coherent sheaf.** For a cartesian square

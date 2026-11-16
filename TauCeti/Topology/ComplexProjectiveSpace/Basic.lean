@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.Ball.Action
 public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.Topology.Algebra.ProperAction.Basic
+import TauCeti.Analysis.Normed.Module.Ball.Action
 
 /-!
 # Complex projective space as a quotient of an odd sphere
@@ -36,6 +37,7 @@ connected as a continuous image of the sphere, and the projection is an open quo
 * `TauCeti.ComplexProjectiveSpace.isOpenQuotientMap_mk`: the projection is an open quotient map.
 * `TauCeti.ComplexProjectiveSpace.instT2Space`, `instCompactSpace`, `instPathConnectedSpace`:
   `CPⁿ` is a compact, path-connected Hausdorff space.
+* `TauCeti.ComplexProjectiveSpace.instSubsingletonZero`: `CP⁰` is a point.
 
 ## References
 
@@ -147,6 +149,18 @@ theorem continuousAt_lift {α : Type*} [TopologicalSpace α]
 /-- Complex projective space is nonempty. -/
 instance instNonempty : Nonempty (ComplexProjectiveSpace n) :=
   ⟨mk n ⟨EuclideanSpace.single 0 1, by simp⟩⟩
+
+/-- Complex projective `0`-space is a point: two unit vectors of `ℂ¹` differ by a unit scalar. -/
+instance instSubsingletonZero : Subsingleton (ComplexProjectiveSpace 0) where
+  allEq p q := by
+    induction p using ComplexProjectiveSpace.inductionOn with | h x => ?_
+    induction q using ComplexProjectiveSpace.inductionOn with | h y => ?_
+    have hnorm (z : sphere (0 : EuclideanSpace ℂ (Fin 1)) 1) : ‖z.1 0‖ = 1 := by
+      simpa using (EuclideanSpace.norm_eq z.1).symm.trans (norm_eq_of_mem_sphere z)
+    have hy : y.1 0 ≠ 0 := norm_ne_zero_iff.1 (by rw [hnorm]; exact one_ne_zero)
+    refine (mk_eq_mk_iff 0 x y).2 ⟨⟨x.1 0 / y.1 0, by simp [hnorm]⟩, Subtype.ext ?_⟩
+    ext i
+    simp [Fin.fin_one_eq_zero i, div_mul_cancel₀ _ hy]
 
 /-- Complex projective space is path connected, as a continuous image of the unit sphere of the
 real vector space underlying `ℂⁿ⁺¹`, of real dimension `2n + 2 > 1`. -/

@@ -209,16 +209,16 @@ variable (μ) in
 /-- The `L¹(μ)` norm of a test function is the integral of its norm. -/
 theorem enorm_toLp_one (φ : 𝓓^{n}(Ω, F)) :
     ‖toLp 1 μ φ‖ₑ = ∫⁻ x, ‖φ x‖ₑ ∂μ := by
-  rw [Lp.enorm_def, eLpNorm_congr_ae (coeFn_toLp φ), eLpNorm_one_eq_lintegral_enorm]
+  rw [Lp.eNorm_def, eLpNorm_congr_ae (coeFn_toLp φ), eLpNorm_one_eq_lintegral_eNorm]
   exact (memLp_subtype (p := 1) φ).aestronglyMeasurable
 
 variable (μ) in
 /-- The `L¹(μ)` norm of `1_A φ` is the integral of `‖φ‖` over `A`. -/
 theorem enorm_indicatorToLp_one (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
     ‖indicatorToLp 1 μ hA φ‖ₑ = ∫⁻ x in A, ‖φ x‖ₑ ∂μ := by
-  rw [indicatorToLp_apply, Lp.enorm_toLp, eLpNorm_one_eq_lintegral_enorm,
+  rw [indicatorToLp_apply, Lp.eNorm_toLp, eLpNorm_one_eq_lintegral_eNorm,
     ← lintegral_indicator hA]
-  · simp_rw [enorm_indicator_eq_indicator_enorm]
+  · simp_rw [eNorm_indicator_eq_indicator_eNorm]
   · exact ((memLp_subtype (p := 1) φ).indicator hA.nullMeasurableSet).aestronglyMeasurable
 
 /-- Cutting a test function off by an indicator does not increase its `Lᵖ(μ)` norm. -/
@@ -293,7 +293,7 @@ theorem denseRange_toLp [FiniteDimensional ℝ E] [CompleteSpace F] [μ.Regular]
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
   refine fun f => (mem_closure_iff_nhds_basis Metric.nhds_basis_closedEBall).2 fun ε hε => ?_
   -- Approximate `f` by a continuous function with compact support, and that by a test function.
-  obtain ⟨g, hgc, hfg, hg, hgp⟩ := (Lp.memLp f).exists_hasCompactSupport_eLpNorm_sub_le hp
+  obtain ⟨g, hgc, hfg, hg, _⟩ := (Lp.memLp f).exists_hasCompactSupport_eLpNorm_sub_le hp
     (ENNReal.half_pos hε.ne').ne'
   obtain ⟨φ, hφ⟩ := hgc.exists_testFunction_eLpNorm_sub_le (n := n) (μ := μ) hg hp
     (ENNReal.half_pos hε.ne').ne'

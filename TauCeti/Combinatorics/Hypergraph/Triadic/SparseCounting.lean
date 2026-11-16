@@ -254,7 +254,6 @@ theorem placed_induced_counting3_of_sparseRoute (φ : PatternPlacement3 C F)
   have hb := (H.expectedInducedCountAt_le_expectedLowerRouteCountAt φ ψ).trans
     (expectedLowerRouteCountAt_le_of_sparseRoute φ ψ h)
   have h₀ := H.expectedInducedCountAt_nonneg φ ψ
-  have h₁ : (0 : ℝ) ≤ H.placedInducedCopyCount φ ψ := Nat.cast_nonneg _
   exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
 
 end Colored3Graph

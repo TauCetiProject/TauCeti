@@ -17,7 +17,7 @@ bookkeeping: in a square determined by two distinct directions, the sum of the t
 one path equals the sum along the other path.
 
 These identities are the weight part of the standard `∂² = 0` cubical cancellation in Némethi's
-lattice homology. `CubeGenerator.lean` already proves that the two paths around each square reach
+lattice homology. `Cube/Generator` already proves that the two paths around each square reach
 the same codimension-two generator; the lemmas here add that they also carry the same total
 `U`-power.
 
@@ -32,8 +32,6 @@ the same codimension-two generator; the lemmas here add that they also carry the
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L
-("lattice homology"), whose differential is built from cubical face weights of a plumbing lattice.
 The face-exponent convention follows Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841).
 -/
 

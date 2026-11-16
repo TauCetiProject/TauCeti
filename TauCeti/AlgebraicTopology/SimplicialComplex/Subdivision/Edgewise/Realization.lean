@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.B
 
 import Mathlib.Data.Fin.Tuple.Sort
 import Mathlib.LinearAlgebra.Finsupp.Pi
-import TauCeti.Data.Fintype.CardFilterOrder
+import TauCeti.Data.Fintype.Card.FilterOrder
 
 /-!
 # The realization map of an edgewise subdivision

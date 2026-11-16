@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
+public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Probability.Cdf
@@ -30,7 +31,9 @@ zero. No new definition is introduced: this file computes the elementary theory 
   `TauCeti.Probability.support_uniformOn_Icc_int`: the native masses and the support.
 * `TauCeti.Probability.map_add_const_uniformOn_Icc_int` and
   `TauCeti.Probability.map_neg_uniformOn_Icc_int`: integer translations shift the endpoints and
-  reflection negates and exchanges them.
+  reflection negates and exchanges them, with corresponding random-variable laws
+  `ProbabilityTheory.HasLaw.add_const_uniformOn_Icc_int` and
+  `ProbabilityTheory.HasLaw.neg_uniformOn_Icc_int`.
 * `TauCeti.Probability.map_toNat_sub_uniformOn_Icc_int`: translating by `-a` gives the uniform
   law on `{0, …, N - 1} ⊆ ℕ`, whose probability generating function is
   `TauCeti.Probability.pgf_uniformOn_Iio`.
@@ -419,3 +422,23 @@ theorem tendsto_quantile_map_intCast_uniformOn_Icc_nhdsLT_one {a b : ℤ} (h : a
   ring_nf
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+open TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℤ} {a b : ℤ}
+
+/-- Translating an integer-valued random variable uniform on `Icc a b` shifts both endpoints. -/
+theorem HasLaw.add_const_uniformOn_Icc_int
+    (hX : HasLaw X (uniformOn (Icc a b : Set ℤ)) P) (c : ℤ) :
+    HasLaw (fun ω ↦ X ω + c) (uniformOn (Icc (a + c) (b + c) : Set ℤ)) P :=
+  HasLaw.comp ⟨by fun_prop, map_add_const_uniformOn_Icc_int a b c⟩ hX
+
+/-- Negating an integer-valued random variable uniform on `Icc a b` reflects its endpoints. -/
+theorem HasLaw.neg_uniformOn_Icc_int
+    (hX : HasLaw X (uniformOn (Icc a b : Set ℤ)) P) :
+    HasLaw (fun ω ↦ -X ω) (uniformOn (Icc (-b) (-a) : Set ℤ)) P :=
+  HasLaw.comp ⟨by fun_prop, map_neg_uniformOn_Icc_int a b⟩ hX
+
+end ProbabilityTheory

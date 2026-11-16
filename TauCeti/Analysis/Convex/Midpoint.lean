@@ -65,8 +65,6 @@ theorem le_chord_of_midpoint {g : ℝ → ℝ} (hg : UpperSemicontinuousOn g (Ic
   obtain ⟨t₀, ⟨ht₀, ht₀v : c v ≤ c t₀⟩, hleast⟩ :=
     (hc.isCompact_inter_preimage_Ici isCompact_Icc (c v)).exists_isLeast ⟨v, hv, le_rfl⟩
   have hM : 0 < c v := hcu.trans_le (hmax _ hu)
-  have h0 : c 0 = 0 := by simp [hc_def]
-  have h1 : c 1 = 0 := by simp [hc_def]
   have ht₀0 : 0 < t₀ := ht₀.1.lt_of_ne (by rintro rfl; linarith)
   have ht₀1 : t₀ < 1 := ht₀.2.lt_of_ne (by rintro rfl; linarith)
   set δ := min t₀ (1 - t₀)

@@ -34,9 +34,7 @@ jobs:
           && (github.event.action != 'edited' || github.event.changes.body != null || github.event.changes.base != null))
         || ((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
           && github.ref == 'refs/heads/main'))
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     concurrency:
       group: roadmap-label-batch

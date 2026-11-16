@@ -113,7 +113,7 @@ theorem map_fst_localData_markedPlace_eq_parts_weightedRamificationPartition
   intro Q hQ
   simp only [he]
   calc
-    _ = ∑ Q' ∈ s'.filter (fun Q' => Q'.restrict k F = Q),
+    _ = ∑ _ ∈ s'.filter (fun Q' => Q'.restrict k F = Q),
         ({ramificationIdx (RatFunc k) Q} : Multiset ℕ) := by
       apply Finset.sum_congr rfl
       intro Q' hQ'

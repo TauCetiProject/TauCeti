@@ -97,7 +97,6 @@ theorem _root_.LipschitzWith.thickening_preimage_subset_preimage_thickening
   intro y hy
   obtain ⟨z, hz, hyz⟩ := mem_thickening_iff.1 hy
   refine mem_thickening_iff.2 ⟨f z, mem_preimage.1 hz, (hf.dist_le_mul y z).trans_lt ?_⟩
-  have hK' : (0 : ℝ) < K := by positivity
   calc (K : ℝ) * dist y z < K * (R / K) := by gcongr
     _ = R := by field_simp
 

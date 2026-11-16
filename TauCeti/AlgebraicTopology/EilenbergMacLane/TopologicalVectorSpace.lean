@@ -23,9 +23,10 @@ The two inputs are Mathlib's `RealTopologicalVectorSpace.contractibleSpace` and
 `HomotopyGroup.subsingleton_of_topologicalVectorSpace`; both are instances, so the
 statement carries no hypothesis beyond the quotient covering map itself.
 
-This advances `TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 13, "`K(G, 1)`
-spaces". The circle and torus were already known to be `K(ℤ, 1)` and `K(ℤᵏ, 1)` by direct
-computation of their homotopy groups; this states the underlying general principle.
+The circle and tori are shown to be `K(ℤ, 1)` and `K(Π i, ℤ, 1)` spaces by direct computation
+of their homotopy groups, in `TauCeti.AlgebraicTopology.UniversalCover.Circle.EilenbergMacLane`
+and `TauCeti.AlgebraicTopology.UniversalCover.Torus.EilenbergMacLane`; this file states the
+general principle behind those examples.
 
 ## Main declarations
 

@@ -17,7 +17,7 @@ This includes convergence to the Dirac law at the location when the scale tends 
 The statements use the weak topology on `ProbabilityMeasure ℝ`.
 
 The family is realized by the continuous affine maps `x ↦ m + γ * x` of a single standard
-Cauchy variable. `MeasureTheory.ProbabilityMeasure.continuous_map_of_forall_continuous`
+Cauchy variable. `MeasureTheory.ProbabilityMeasure.continuous_map_of_ae_continuous`
 applies even though a positive-scale Cauchy variable has no integrable first moment.
 -/
 
@@ -33,9 +33,9 @@ including the zero-scale Dirac boundary. -/
 theorem continuous_cauchyMeasure :
     Continuous (fun p : ℝ × ℝ≥0 ↦ (cauchyMeasure p.1 p.2).toProbabilityMeasure) := by
   let P := (cauchyMeasure 0 1).toProbabilityMeasure
-  have h := P.continuous_map_of_forall_continuous
+  have h := P.continuous_map_of_ae_continuous
     (f := fun p : ℝ × ℝ≥0 ↦ fun x ↦ p.1 + (p.2 : ℝ) * x)
-    (fun _ ↦ by fun_prop) (fun _ ↦ by fun_prop)
+    (fun _ ↦ by fun_prop) (ae_of_all _ fun _ ↦ by fun_prop)
   refine h.congr fun p ↦ ?_
   apply ProbabilityMeasure.toMeasure_injective
   simp only [ProbabilityMeasure.toMeasure_map, P, Measure.coe_toProbabilityMeasure,

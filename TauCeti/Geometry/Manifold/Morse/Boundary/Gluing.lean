@@ -25,6 +25,10 @@ The converse is the gluing theorem at a broken trajectory,
 `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.mem_closure_of_mem_unstableSet_inter_stableSet`,
 restated for the sets `morseTrajectoryPairs` and `morseBrokenTrajectoryPairs`.
 
+The half-open gluing arc of `IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet`
+also moves into the compactified space: since the broken pairs are finite, each of them has a
+neighbourhood there homeomorphic to `[0, δ)`, so it is a boundary point.
+
 ## Main results
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
@@ -34,6 +38,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
   broken pairs.
 * `closure_diff_morseTrajectoryPairs`: the points the compactification adds are exactly the
   broken pairs.
+* `exists_homeomorph_Ico_of_mem_morseBrokenTrajectoryPairs`: every broken pair has a
+  neighbourhood in the compactified space homeomorphic to a half-open interval `[0, δ)`.
 
 ## References
 
@@ -44,7 +50,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
 
 public section
 
-open Set
+open Set Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -69,13 +75,9 @@ theorem morseBrokenTrajectoryPairs_subset_closure (p r : M) (c₁ c₂ : ℝ) :
     hX.morseBrokenTrajectoryPairs p r c₁ c₂ ⊆ closure (hX.morseTrajectoryPairs p r c₁ c₂) := by
   rintro ⟨y₁, y₂⟩ hw
   simp only [mem_morseBrokenTrajectoryPairs] at hw
-  obtain ⟨q, hq, hpq, hqr, hy₁, rfl, hy₂, rfl⟩ := hw
-  have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
-  refine closure_mono (fun w hw ↦ hX.mem_morseTrajectoryPairs.2 hw)
-    (h.mem_closure_of_mem_unstableSet_inter_stableSet hf
-    (hX.mfderiv_eq_zero_of_forall_eq (hdf p) fun t ↦ by rw [Flow.fixed_of_mem_unstableSet hy₁.1 t])
-    hq (hX.mfderiv_eq_zero_of_forall_eq (hdf r) fun t ↦ by rw [Flow.fixed_of_mem_stableSet hy₂.2 t])
-    hpq hqr hy₁ hy₂)
+  obtain ⟨q, -, hpq, hqr, hy₁, rfl, hy₂, rfl⟩ := hw
+  exact closure_mono (fun w hw ↦ hX.mem_morseTrajectoryPairs.2 hw)
+    (h.mem_closure_of_mem_unstableSet_inter_stableSet hf hpq hqr hy₁ hy₂)
 
 include h hf in
 /-- **The compactified space of index-two trajectories.** Let `p` and `r` be critical points with
@@ -83,29 +85,74 @@ include h hf in
 strictly between `f r` and `f p` from `f r` and `f p`. The closure of the pairs of points on these
 levels of trajectories from `p` to `r` consists of these pairs together with the pairs of points
 of trajectories broken once, at a critical point of intermediate index. -/
-theorem closure_morseTrajectoryPairs {p r : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
+theorem closure_morseTrajectoryPairs {p r : M}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) {c₁ c₂ : ℝ}
     (hr₂ : f r < c₂) (h₂₁ : c₂ < c₁) (h₁p : c₁ < f p)
     (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁) :
     closure (hX.morseTrajectoryPairs p r c₁ c₂) =
       hX.morseTrajectoryPairs p r c₁ c₂ ∪ hX.morseBrokenTrajectoryPairs p r c₁ c₂ :=
-  (h.closure_morseTrajectoryPairs_subset hf hp hr hind hr₂ h₂₁ h₁p hgap).antisymm
+  (h.closure_morseTrajectoryPairs_subset hf hind hr₂ h₂₁ h₁p hgap).antisymm
     (union_subset subset_closure (h.morseBrokenTrajectoryPairs_subset_closure hf p r c₁ c₂))
 
 include h hf in
 /-- **The compactification adds exactly the broken trajectories.** Under the hypotheses of
 `closure_morseTrajectoryPairs`, the points of the closure of the unbroken trajectory pairs that are
 not unbroken pairs are the broken trajectory pairs. -/
-theorem closure_diff_morseTrajectoryPairs {p r : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
+theorem closure_diff_morseTrajectoryPairs {p r : M}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) {c₁ c₂ : ℝ}
     (hr₂ : f r < c₂) (h₂₁ : c₂ < c₁) (h₁p : c₁ < f p)
     (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁) :
     closure (hX.morseTrajectoryPairs p r c₁ c₂) \ hX.morseTrajectoryPairs p r c₁ c₂ =
       hX.morseBrokenTrajectoryPairs p r c₁ c₂ := by
-  rw [h.closure_morseTrajectoryPairs hf hp hr hind hr₂ h₂₁ h₁p hgap, union_sdiff_left,
+  rw [h.closure_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap, union_sdiff_left,
     (hX.disjoint_morseTrajectoryPairs_morseBrokenTrajectoryPairs p r c₁ c₂).symm.sdiff_eq_left]
+
+include h hf in
+/-- **A broken trajectory is an endpoint of the compactified space.** Under the hypotheses of
+`closure_morseTrajectoryPairs`, every broken trajectory pair `w` has a neighbourhood in the
+closure of the unbroken pairs homeomorphic to a half-open interval `[0, δ)`, with `w`
+corresponding to `0`. -/
+theorem exists_homeomorph_Ico_of_mem_morseBrokenTrajectoryPairs {p r : M}
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) {c₁ c₂ : ℝ}
+    (hr₂ : f r < c₂) (h₂₁ : c₂ < c₁) (h₁p : c₁ < f p)
+    (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁)
+    {w : M × M} (hw : w ∈ closure (hX.morseTrajectoryPairs p r c₁ c₂))
+    (hwB : w ∈ hX.morseBrokenTrajectoryPairs p r c₁ c₂) :
+    ∃ N ∈ 𝓝 (⟨w, hw⟩ : closure (hX.morseTrajectoryPairs p r c₁ c₂)),
+      ∃ (δ : ℝ) (hδ : 0 < δ) (e : Ico (0 : ℝ) δ ≃ₜ N),
+        (e ⟨0, left_mem_Ico.2 hδ⟩ : closure (hX.morseTrajectoryPairs p r c₁ c₂)) = ⟨w, hw⟩ := by
+  set S := hX.morseTrajectoryPairs p r c₁ c₂ with hSdef
+  set B := hX.morseBrokenTrajectoryPairs p r c₁ c₂
+  obtain ⟨a₁, a₂⟩ := w
+  obtain ⟨q, -, hpq, hqr, ha₁, hc₁, ha₂, hc₂⟩ := hX.mem_morseBrokenTrajectoryPairs.1 hwB
+  simp only at ha₁ hc₁ ha₂ hc₂
+  obtain ⟨N, δ, hδ, e, he₀, hN, hNw⟩ :=
+    h.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet hf hpq hqr ha₁ ha₂
+  -- The unbroken trajectories in the gluing theorem are those recorded on the levels `c₁, c₂`.
+  have hS : {w : M × M | w.1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r ∧
+      f w.1 = f a₁ ∧ f w.2 = f a₂ ∧ ∃ t, hX.flow t w.1 = w.2} = S := by
+    ext w
+    rw [hSdef, mem_morseTrajectoryPairs, mem_ofPred_eq, hc₁, hc₂]
+  rw [hS] at hN hNw
+  -- Near `(a₁, a₂)`, the compactified space adds no broken pair other than `(a₁, a₂)`.
+  have hloc : 𝓝[closure S] (a₁, a₂) ≤ 𝓝[insert (a₁, a₂) S] (a₁, a₂) := by
+    have hfar : (B \ {(a₁, a₂)})ᶜ ∈ 𝓝 (a₁, a₂) :=
+      ((h.finite_morseBrokenTrajectoryPairs hf c₁ c₂).sdiff.isClosed.isOpen_compl).mem_nhds
+        (by simp)
+    refine nhdsWithin_le_of_mem (mem_nhdsWithin_iff_exists_mem_nhds_inter.2
+      ⟨_, hfar, fun x ⟨hxB, hxK⟩ ↦ ?_⟩)
+    rcases h.closure_morseTrajectoryPairs_subset hf hind hr₂ h₂₁ h₁p hgap hxK with hx | hx
+    · exact Or.inr hx
+    · exact Or.inl (not_not.1 fun hne ↦ hxB ⟨hx, hne⟩)
+  -- The half-open arc, viewed in the compactified space.
+  let g : Ico (0 : ℝ) δ → closure S := codRestrict (Subtype.val ∘ e) (closure S) fun s ↦
+    insert_subset hw subset_closure (hN (e s).2)
+  have hg : IsEmbedding g := (IsEmbedding.subtypeVal.comp e.isEmbedding).codRestrict _ _
+  have hrange : (↑) '' range g = N := by
+    rw [← range_comp]
+    exact (range_comp Subtype.val e).trans (by rw [e.range_coe, image_univ, Subtype.range_coe])
+  refine ⟨range g, mem_nhds_subtype_iff_nhdsWithin.2 (hrange ▸ hloc hNw), δ, hδ, hg.toHomeomorph,
+    Subtype.ext he₀⟩
 
 end IsMorseSmale
 

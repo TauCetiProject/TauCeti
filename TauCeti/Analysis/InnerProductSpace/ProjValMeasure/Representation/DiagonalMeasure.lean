@@ -158,7 +158,7 @@ theorem representationDiagMeasure_smul (c : ℂ) (ξ : H) :
   refine ((eq_representationDiagMeasure_iff π (c • ξ) _).2 fun f => ?_).symm
   rw [integral_smul_nnreal_measure, integral_representationDiagMeasure, map_smul]
   simp only [NNReal.smul_def, Complex.real_smul, inner_smul_left, inner_smul_right,
-    NNReal.coe_pow, coe_nnnorm, Complex.ofReal_pow, ← Complex.mul_conj']
+    NNReal.coe_pow, coe_nnNorm, Complex.ofReal_pow, ← Complex.mul_conj']
   ring
 
 /-- Scaling the vector by a unit complex number does not change the diagonal measure. -/

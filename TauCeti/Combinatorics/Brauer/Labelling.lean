@@ -50,6 +50,8 @@ the Brauer algebra `B_k(|ι|)`.
   cap-cup diagram.
 * `TauCeti.BrauerDiagram.isConstantOnArcs_flip_iff`: reflecting a diagram exchanges the bottom and
   top labels.
+* `TauCeti.BrauerDiagram.isConstantOnArcs_congr_comp_symm_iff`: transporting a diagram along a
+  permutation of the boundary points transports the labellings constant on its arcs.
 * `TauCeti.BrauerDiagram.exists_forall_isConstantOnArcs_iff_eq`: with at least `k` labels, giving
   the arcs of a diagram distinct labels produces a labelling constant on the arcs of that diagram
   and of no other.
@@ -205,6 +207,17 @@ theorem isConstantOnArcs_flip_iff (D : BrauerDiagram k) (ℓ : Fin k ⊕ Fin k �
     D.flip.IsConstantOnArcs ℓ ↔ D.IsConstantOnArcs (ℓ ∘ Sum.swap) := by
   simp only [isConstantOnArcs_def, flip_val, Function.comp_apply]
   exact ⟨fun h x => by simpa using h x.swap, fun h x => by simpa using h x.swap⟩
+
+/-- **Permuting the boundary points transports labellings.** A permutation of the boundary points
+carries a labelling constant on the arcs of a diagram to a labelling constant on the arcs of the
+permuted diagram. -/
+theorem isConstantOnArcs_congr_comp_symm_iff (π : Equiv.Perm (Fin k ⊕ Fin k))
+    (D : BrauerDiagram k) (ℓ : Fin k ⊕ Fin k → ι) :
+    IsConstantOnArcs (PerfectMatching.congr π D) (ℓ ∘ π.symm) ↔ D.IsConstantOnArcs ℓ := by
+  rw [isConstantOnArcs_def, isConstantOnArcs_def]
+  refine ⟨fun h x => ?_, fun h x => ?_⟩
+  · simpa [PerfectMatching.congr_val_apply_apply] using h (π x)
+  · simpa [PerfectMatching.congr_val_apply] using h (π.symm x)
 
 /-! ### Labels are carried along the strands of a stack -/
 

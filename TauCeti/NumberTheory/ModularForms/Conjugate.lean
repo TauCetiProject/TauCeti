@@ -406,14 +406,16 @@ lemma coe_conjCharSpace_conjCharSpace (f : cuspFormCharSpace k χ) :
   simp
 
 open HeckeRing.GL2 in
-/-- **The conjugate form intertwines the Hecke operators**: for `f ∈ S_k(N, χ)` and `n ≠ 0`,
+/-- **The conjugate form intertwines the Hecke operators**: for `f ∈ S_k(N, χ)`,
 `T_n (f_ρ) = (T_n f)_ρ`, where on the left `T_n` acts on `S_k(N, χ⁻¹)`. Since the conjugation is
 antilinear, the conjugate of a `T_n`-eigenform with eigenvalue `λ` is a `T_n`-eigenform with
 eigenvalue `conj λ`. -/
-theorem heckeRingHomCuspCharSpace_conjCharSpace [NeZero N] {n : ℕ} (hn : n ≠ 0)
+theorem heckeRingHomCuspCharSpace_conjCharSpace [NeZero N] (n : ℕ)
     (f : cuspFormCharSpace k χ) :
     heckeRingHomCuspCharSpace k χ⁻¹ (heckeTCompositeGamma0 N n) (CuspForm.conjCharSpace k χ f) =
       CuspForm.conjCharSpace k χ (heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) f) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [heckeTCompositeGamma0_zero]
   have h1 := one_mem_strictPeriods_Gamma1_map N
   refine Subtype.ext <| _root_.CuspForm.qExpansion_injective one_pos h1 ?_
   ext m
@@ -425,13 +427,12 @@ theorem heckeRingHomCuspCharSpace_conjCharSpace [NeZero N] {n : ℕ} (hn : n ≠
 open HeckeRing.GL2 in
 /-- **The conjugate of a Hecke eigenform is an eigenform with the conjugate eigenvalue**: if
 `Tₙ f = λ f` on `S_k(N, χ)`, then `Tₙ f_ρ = conj λ • f_ρ` on `S_k(N, χ⁻¹)`. -/
-theorem heckeRingHomCuspCharSpace_conjCharSpace_eq_smul [NeZero N] {n : ℕ}
-    (hn : n ≠ 0)
+theorem heckeRingHomCuspCharSpace_conjCharSpace_eq_smul [NeZero N] (n : ℕ)
     {f : cuspFormCharSpace k χ} {c : ℂ}
     (hf : heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) f = c • f) :
     heckeRingHomCuspCharSpace k χ⁻¹ (heckeTCompositeGamma0 N n) (CuspForm.conjCharSpace k χ f) =
       starRingEnd ℂ c • CuspForm.conjCharSpace k χ f := by
-  rw [heckeRingHomCuspCharSpace_conjCharSpace hn, hf, map_smulₛₗ]
+  rw [heckeRingHomCuspCharSpace_conjCharSpace n, hf, map_smulₛₗ]
 
 end Nebentypus
 

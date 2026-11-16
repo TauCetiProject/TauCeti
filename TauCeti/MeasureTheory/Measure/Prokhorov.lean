@@ -40,11 +40,6 @@ sequence is tight.
   neighbourhood bounds under convergence against compactly supported continuous functions.
 * `TauCeti.isTightMeasureSet_range_of_tendsto`: a weakly convergent sequence of probability
   measures on a Polish space is tight.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem milestone).
-* Roadmap: `TauCetiRoadmap/OptimalTransport/README.md`, Layer 1, item 6 (stability).
 -/
 
 public section

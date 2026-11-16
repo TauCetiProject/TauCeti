@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.Cofree
+public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Basic
 
 /-!
@@ -31,7 +31,7 @@ preserve addition and scalar multiplication.
 ## References
 
 The cofree-comodule construction follows Sweedler, *Hopf Algebras*, Chapter 2, as in
-`TauCeti.Algebra.Coalgebra.Comodule.Cofree`.
+`TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic`.
 -/
 
 public section
@@ -51,7 +51,7 @@ variable {M : Type w} [AddCommMonoid M] [Module R M] [Module.Finite R (M ⊗[R] 
 variable {N : Type w} [AddCommMonoid N] [Module R N] [Module.Finite R (N ⊗[R] C)]
 
 -- Resolve the cofree comodule structure on `· ⊗[R] C` automatically, rather than threading it
--- through every statement with `letI`. As in `Comodule.Cofree`, this is a local (not global)
+-- through every statement with `letI`. As in `Comodule.Cofree.Basic`, this is a local (not global)
 -- instance because an `R`-module can carry many coactions. The bundled `FGComoduleCat` objects
 -- carry their own comodule instance, so this does not clash with their coactions.
 attribute [local instance] Comodule.cofree

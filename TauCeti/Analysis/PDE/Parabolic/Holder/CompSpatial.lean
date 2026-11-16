@@ -222,7 +222,6 @@ variable (α F hab) in
 `K ^ (2 + α)`. -/
 theorem norm_compSpatialL_le_of_norm_le {e : E →L[ℝ] E'} {K : ℝ} (hK : 1 ≤ K) (he : ‖e‖ ≤ K) :
     ‖compSpatialL α F hab e‖ ≤ K ^ 2 * K ^ (α : ℝ) := by
-  have hK₀ : 0 ≤ K := zero_le_one.trans hK
   exact (norm_compSpatialL_le α F hab e).trans
     (mul_le_mul (pow_le_pow_left₀ (by positivity) (max_le he hK) 2)
       (Real.rpow_le_rpow (by positivity) (max_le he hK) (by positivity))

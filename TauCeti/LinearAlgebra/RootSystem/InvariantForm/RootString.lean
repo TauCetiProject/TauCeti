@@ -84,26 +84,14 @@ theorem length_of_root_eq_add_zsmul (P : RootPairing I ℤ M N)
     (α β γ : I) (n : ℤ) (h : P.root γ = P.root β + n • P.root α) :
     length γ = length β + n * length α * P.pairing β α + n ^ 2 * length α := by
   have hpair (j : I) : P.pairing γ j = P.pairing β j + n * P.pairing α j := by
-    have hj := P.pairing_eq_add_of_root_eq_smul_add_smul (i := β) (j := j) (k := γ) (l := α)
-      (x := Int.castRingHom ℤ 1) (y := Int.castRingHom ℤ n)
-      (by simpa only [Int.coe_castRingHom, Int.cast_smul_eq_zsmul, one_zsmul] using h)
-    simpa only [Int.coe_castRingHom, Int.cast_smul_eq_zsmul, one_zsmul, smul_eq_mul,
-      Int.cast_id, one_mul] using hj
-  have htwo :
-      2 * length γ = 2 * (length β + n * length α * P.pairing β α + n ^ 2 * length α) := by
-    calc
-      2 * length γ = length γ * P.pairing γ γ := by rw [P.pairing_same]; ring
-      _ = length γ * (P.pairing β γ + n * P.pairing α γ) := by rw [hpair γ]
-      _ = length γ * P.pairing β γ + n * (length γ * P.pairing α γ) := by ring
-      _ = length β * P.pairing γ β + n * (length α * P.pairing γ α) := by
-        rw [hsym γ β, hsym γ α]
-      _ = length β * (P.pairing β β + n * P.pairing α β) +
-          n * (length α * (P.pairing β α + n * P.pairing α α)) := by
-        rw [hpair β, hpair α]
-      _ = 2 * (length β + n * length α * P.pairing β α + n ^ 2 * length α) := by
-        rw [P.pairing_same, P.pairing_same]
-        linear_combination -n * hsym α β
-  exact mul_left_cancel₀ (by norm_num : (2 : ℤ) ≠ 0) htwo
+    simpa using P.pairing_eq_add_of_root_eq_smul_add_smul (j := j) (x := 1) (y := n)
+      (by simpa using h)
+  -- Expand `2 * length γ = length γ * ⟨γ, γ^∨⟩` along `γ = β + n • α`, moving each `length`
+  -- across a pairing with `hsym`.
+  refine mul_left_cancel₀ (two_ne_zero (α := ℤ)) ?_
+  linear_combination -length γ * P.pairing_same γ + length γ * hpair γ + hsym γ β +
+    n * hsym γ α + length β * hpair β + n * length α * hpair α + length β * P.pairing_same β +
+    n ^ 2 * length α * P.pairing_same α - n * hsym α β
 
 variable {P : RootPairing I ℤ M N}
 
@@ -141,60 +129,52 @@ theorem root_add_notMem_of_root_eq_add (hγ : P.root γ = P.root α + P.root β)
 
 end SymmetricPairing
 
-/-- Distinct non-opposite roots of equal positive length have Cartan pairing `-1`, `0`, or `1`
-when that pairing has absolute value at most two. -/
-theorem pairing_mem_neg_one_zero_one_of_length_eq
-    [Finite I] [Module.IsTorsionFree ℤ M]
+/-- Distinct non-opposite roots of equal nonzero length in a finite integral root pairing have
+Cartan pairing `-1`, `0`, or `1`. -/
+theorem pairing_mem_neg_one_zero_one_of_length_eq [Finite I]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
-    (α β : I) (hpair : |P.pairing β α| ≤ 2)
-    (hαpos : 0 < length α) (hαβ : length α = length β) (hne : β ≠ α)
+    (α β : I) (hα : length α ≠ 0) (hαβ : length α = length β) (hne : β ≠ α)
     (hneg : P.root β ≠ -P.root α) :
     P.pairing β α ∈ ({-1, 0, 1} : Set ℤ) := by
-  have hsym' : P.pairing β α = P.pairing α β := by
-    have h := hsym α β
-    rw [← hαβ] at h
-    nlinarith
-  have hne_two : P.pairing β α ≠ 2 := by
-    intro htwo
-    have : β = α := (P.pairing_two_two_iff β α).mp ⟨htwo, hsym'.symm.trans htwo⟩
-    exact hne this
-  have hne_neg_two : P.pairing β α ≠ -2 := by
-    intro htwo
-    have : P.root β = -P.root α :=
-      (P.pairing_neg_two_neg_two_iff β α).mp ⟨htwo, hsym'.symm.trans htwo⟩
-    exact hneg this
+  have : Module.IsReflexive ℤ M := .of_isPerfPair P.toLinearMap
+  have hsym' : P.pairing β α = P.pairing α β := mul_left_cancel₀ hα (by rw [hsym, hαβ])
+  have h₂ : P.pairing β α ≠ 2 := fun h ↦ hne ((P.pairing_two_two_iff β α).mp ⟨h, hsym' ▸ h⟩)
+  have h₂' : P.pairing β α ≠ -2 := fun h ↦
+    hneg ((P.pairing_neg_two_neg_two_iff β α).mp ⟨h, hsym' ▸ h⟩)
+  -- The Coxeter weight `⟨β, α^∨⟩ ⟨α, β^∨⟩` of a finite root pairing is at most four.
+  have hpi (i j : I) : P.pairingIn ℤ i j = P.pairing i j := by
+    simpa using P.algebraMap_pairingIn ℤ i j
+  have hw := P.coxeterWeightIn_le_four ℤ β α
+  rw [coxeterWeightIn, hpi, hpi, ← hsym'] at hw
+  have : -2 ≤ P.pairing β α := by nlinarith
+  have : P.pairing β α ≤ 2 := by nlinarith
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-  have hbounds : -2 ≤ P.pairing β α ∧ P.pairing β α ≤ 2 := abs_le.mp hpair
   omega
 
 /-- An equal-length root string through non-opposite roots has no term two or more steps
 in the positive direction when the resulting root has length less than three times theirs. -/
-theorem not_root_eq_add_nsmul_of_length_eq_of_two_le
-    [Finite I] [Module.IsTorsionFree ℤ M]
+theorem not_root_eq_add_nsmul_of_length_eq_of_two_le [Finite I]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
-    (α β γ : I) (n : ℕ) (hpair : |P.pairing β α| ≤ 2)
+    (α β γ : I) (n : ℕ)
     (hαpos : 0 < length α) (hαβ : length α = length β)
     (hγ : length γ < 3 * length α)
     (hneg : P.root β ≠ -P.root α) (hn : 2 ≤ n)
     (h : P.root γ = P.root β + (n : ℤ) • P.root α) : False := by
-  have hquad : 0 ≤ (n : ℤ) ^ 2 - n - 2 := by nlinarith
-  have hne_or_eq : β = α ∨ β ≠ α := eq_or_ne β α
-  have hp : P.pairing β α ∈ ({-1, 0, 1, 2} : Set ℤ) := by
-    rcases hne_or_eq with hsame | hne
-    · subst β
-      simp
-    · have hp' := P.pairing_mem_neg_one_zero_one_of_length_eq length hsym α β
-        hpair hαpos hαβ hne hneg
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp' ⊢
-      rcases hp' with hp' | hp' | hp' <;> simp [hp']
+  have hp : -1 ≤ P.pairing β α := by
+    rcases eq_or_ne β α with rfl | hne
+    · simp
+    · have := P.pairing_mem_neg_one_zero_one_of_length_eq length hsym α β hαpos.ne' hαβ hne hneg
+      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at this
+      omega
   have hlen := P.length_of_root_eq_add_zsmul length hsym α β γ n h
   rw [← hαβ] at hlen
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp
-  rcases hp with hp | hp | hp | hp <;>
-    rw [hp] at hlen <;>
-    nlinarith [mul_nonneg hquad (le_of_lt hαpos)]
+  have hn' : (2 : ℤ) ≤ n := by exact_mod_cast hn
+  -- `length γ = length α * (1 + n ⟨β, α^∨⟩ + n²) ≥ length α * (n² - n + 1) ≥ 3 * length α`.
+  nlinarith [mul_nonneg (mul_nonneg hαpos.le (sub_nonneg.2 hn')) (by positivity : (0 : ℤ) ≤ n + 1),
+    mul_nonneg (mul_nonneg hαpos.le (by positivity : (0 : ℤ) ≤ n))
+      (by omega : (0 : ℤ) ≤ P.pairing β α + 1)]
 
 /-- If two roots of length one add to a root of length two, their Cartan pairing is zero. -/
 theorem pairing_eq_zero_of_short_add_short_eq_long
@@ -217,45 +197,24 @@ theorem n_eq_one_and_pairing_eq_neg_one_and_length_eq_one_of_short_add_nsmul_lon
     (hγ : length γ = 1 ∨ length γ = 2) (hn : 0 < n)
     (h : P.root γ = P.root β + (n : ℤ) • P.root α) :
     n = 1 ∧ P.pairing β α = -1 ∧ length γ = 1 := by
-  have hsym' : 2 * P.pairing β α = P.pairing α β := by
-    have hs := hsym α β
-    rw [hα, hβ, one_mul] at hs
-    exact hs
-  have hp : P.pairing β α ∈ ({-1, 0, 1} : Set ℤ) := by
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-    have hb := abs_le.mp hpair
-    omega
+  have hsym' := hsym α β
   have hlen := P.length_of_root_eq_add_zsmul length hsym α β γ n h
+  rw [hα, hβ] at hsym' hlen
+  -- `2 * ⟨β, α^∨⟩ = ⟨α, β^∨⟩` and `|⟨α, β^∨⟩| ≤ 2` leave three values for `⟨β, α^∨⟩`.
+  have hp : P.pairing β α = -1 ∨ P.pairing β α = 0 ∨ P.pairing β α = 1 := by
+    have := abs_le.mp hpair
+    omega
   have hn' : (1 : ℤ) ≤ n := by exact_mod_cast hn
-  have hnle : n ≤ 1 := by
-    rcases hγ with hγ | hγ <;>
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp <;>
-      rcases hp with hp | hp | hp <;>
-      rw [hα, hβ, hγ, hp] at hlen <;>
-      norm_num at hlen <;>
-      nlinarith [sq_nonneg ((n : ℤ) - 1)]
-  have hn_eq : n = 1 := by omega
-  subst n
-  have hlen' := P.length_of_root_eq_add_zsmul length hsym α β γ 1 (by simpa using h)
-  constructor
-  · rfl
-  rcases hγ with hγ | hγ
-  · rw [hα, hβ, hγ] at hlen'
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp
-    rcases hp with hp | hp | hp
-    · exact ⟨hp, hγ⟩
-    · rw [hp] at hlen'
-      norm_num at hlen'
-    · rw [hp] at hlen'
-      norm_num at hlen'
-  · rw [hα, hβ, hγ] at hlen'
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp
-    rcases hp with hp | hp | hp <;> rw [hp] at hlen' <;> norm_num at hlen'
+  rcases hγ with hγ | hγ <;> rcases hp with hp | hp | hp <;> rw [hγ, hp] at hlen
+  all_goals first
+    | exact ⟨by exact_mod_cast (show (n : ℤ) = 1 by nlinarith), hp, hγ⟩
+    | omega
+    | nlinarith
 
 /-- If two roots of length one add to a root of length two, their descending chain coefficient
 is one. -/
 theorem chainBotCoeff_eq_one_of_short_add_short_eq_long
-    [Finite I] [P.IsCrystallographic] [P.IsReduced]
+    [Finite I] [P.IsReduced]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I)
@@ -288,7 +247,7 @@ theorem pairings_of_long_add_two_short
 /-- A two-step root string from a length-two root in a length-one direction has a length-one
 midpoint, and its chain coefficients are zero, two, one, and one. -/
 theorem exists_short_midpoint_of_long_add_two_short
-    [Finite I] [Module.IsTorsionFree ℤ M] [P.IsCrystallographic] [P.IsReduced]
+    [Finite I] [P.IsReduced]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I)
@@ -297,6 +256,7 @@ theorem exists_short_midpoint_of_long_add_two_short
     ∃ δ : I, P.root δ = P.root β + P.root α ∧ length δ = 1 ∧
       P.chainBotCoeff α β = 0 ∧ P.chainTopCoeff α β = 2 ∧
       P.chainBotCoeff α δ = 1 ∧ P.chainTopCoeff α δ = 1 := by
+  have : Module.IsReflexive ℤ M := .of_isPerfPair P.toLinearMap
   obtain ⟨hp, hp', _⟩ := P.pairings_of_long_add_two_short length hsym
     α β γ hα hβ hγ h
   have hne : α ≠ β := by
@@ -311,11 +271,7 @@ theorem exists_short_midpoint_of_long_add_two_short
     IsReduced.linearIndependent P hne hneg
   have htop_ge : 2 ≤ P.chainTopCoeff α β := by
     rw [← P.root_add_nsmul_mem_range_iff_le_chainTopCoeff hlin]
-    refine ⟨γ, ?_⟩
-    have hcast : (2 : ℕ) • P.root α = (2 : ℤ) • P.root α := by
-      simp only [two_nsmul, two_zsmul]
-    rw [hcast]
-    exact h
+    exact ⟨γ, by simpa only [two_nsmul, two_zsmul] using h⟩
   have hpIn : P.pairingIn ℤ β α = -2 := by
     simpa using (P.algebraMap_pairingIn ℤ β α).trans hp
   have hdiff := P.chainBotCoeff_sub_chainTopCoeff hlin
@@ -341,7 +297,7 @@ theorem exists_short_midpoint_of_long_add_two_short
 /-- A root edge from a root of positive length whose source and target have the same length has no
 descending root when every possible predecessor has length at most two. -/
 theorem chainBotCoeff_eq_zero_of_add_of_length_eq
-    [Finite I] [P.IsCrystallographic]
+    [Finite I]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I) (hαpos : 0 < length α)
@@ -354,18 +310,11 @@ theorem chainBotCoeff_eq_zero_of_add_of_length_eq
     norm_num at hlen
     nlinarith
   have hβpos : 0 < length β := by
-    have hx : P.pairingIn ℤ β α = -1 := by
-      have h := P.algebraMap_pairingIn ℤ β α
-      rw [hpair] at h
-      simpa only [algebraMap_int_eq, eq_intCast, Int.cast_id] using h
-    have hy : P.pairingIn ℤ α β = P.pairing α β := by
-      simpa only [algebraMap_int_eq, eq_intCast, Int.cast_id] using P.algebraMap_pairingIn ℤ α β
+    have hpi (i j : I) : P.pairingIn ℤ i j = P.pairing i j := by
+      simpa using P.algebraMap_pairingIn ℤ i j
     have hneg : P.pairing α β < 0 := by
-      rw [← hy]
-      exact (P.pairingIn_lt_zero_iff ℤ).mpr (by omega)
-    have hs := hsym α β
-    rw [hpair] at hs
-    nlinarith
+      simpa only [hpi] using (P.pairingIn_lt_zero_iff ℤ (i := β) (j := α)).mp (by simp [hpi, hpair])
+    nlinarith [hsym α β]
   rw [P.chainBotCoeff_eq_zero_iff]
   right
   rintro ⟨δ, hδ⟩
@@ -488,11 +437,9 @@ theorem InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero
   -- Step 1: Establish orthogonality and compute pairings with the sum root k.
   have hji₀ : P.pairing j i = 0 := (P.pairing_eq_zero_iff' (i := i) (j := j)).mp hij₀
   have hki : P.pairing k i = 2 := by
-    rw [← P.root_coroot'_eq_pairing, hk, map_add, P.root_coroot'_eq_pairing,
-      P.root_coroot'_eq_pairing, hji₀, P.pairing_same, add_zero]
+    rw [pairing_eq_add_of_root_eq_add hk, hji₀, P.pairing_same, add_zero]
   have hkj : P.pairing k j = 2 := by
-    rw [← P.root_coroot'_eq_pairing, hk, map_add, P.root_coroot'_eq_pairing,
-      P.root_coroot'_eq_pairing, hij₀, P.pairing_same, zero_add]
+    rw [pairing_eq_add_of_root_eq_add hk, hij₀, P.pairing_same, zero_add]
   -- Step 2: Verify that i and j are distinct from ±k to apply the pairing classification.
   obtain ⟨hik, hik'⟩ := P.root_ne_and_root_ne_neg_of_root_eq_add hk
   obtain ⟨hjk, hjk'⟩ := P.root_ne_and_root_ne_neg_of_root_eq_add (i := j) (j := i) (k := k)
@@ -545,19 +492,15 @@ theorem InvariantForm.chainTopCoeff_mul_apply_root_self_eq
   have hji := P.linearIndependent_of_add_mem_range_root' (i := j) (j := i)
     (by simpa [add_comm] using hadd)
   have hbot := P.chainBotCoeff_comm_of_root_add_mem hadd
-  have hpq := P.chainBotCoeff_sub_chainTopCoeff hij
-  have hpq' := P.chainBotCoeff_sub_chainTopCoeff hji
   -- Step 2: Bilinear expansion of `B(k, k) = B(i + j, i + j)` and invariant-form swap relation.
   have hpqR : P.pairing j i =
       (P.chainBotCoeff i j : R) - P.chainTopCoeff i j := by
-    rw [← P.algebraMap_pairingIn ℤ, ← hpq]
-    push_cast
-    rfl
+    rw [← P.algebraMap_pairingIn ℤ, ← P.chainBotCoeff_sub_chainTopCoeff hij]
+    simp
   have hpqR' : P.pairing i j =
       (P.chainBotCoeff j i : R) - P.chainTopCoeff j i := by
-    rw [← P.algebraMap_pairingIn ℤ, ← hpq']
-    push_cast
-    rfl
+    rw [← P.algebraMap_pairingIn ℤ, ← P.chainBotCoeff_sub_chainTopCoeff hji]
+    simp
   have hlength := B.pairing_mul_eq_pairing_mul_swap i j
   rw [hpqR, hpqR', ← hbot] at hlength
   rw [hk, B.form_root_add_root_self i j, hpqR]

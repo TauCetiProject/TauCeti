@@ -119,6 +119,26 @@ theorem continuous_radialContraction (T : IsTubularNeighborhood f U toFun) :
     T.radialContraction ⟨0, u⟩ = ⟨zeroSection F E u.1.1, T.zero_mem u.1.1⟩ :=
   Subtype.ext (by simp [zeroSection])
 
+/-- The core of the tube lies in the tube. -/
+theorem f_mem_range (T : IsTubularNeighborhood f U toFun) (x : B) : f x ∈ range toFun :=
+  ⟨_, T.map_zeroSection x⟩
+
+/-- The core lies in the tube. -/
+theorem range_f_subset (T : IsTubularNeighborhood f U toFun) : range f ⊆ range toFun :=
+  range_subset_iff.2 T.f_mem_range
+
+/-- The base projection is continuous on the tubular domain. This needs no fibre-bundle
+structure: composed with the core embedding it is the tubular chart of the radial contraction at
+time zero. -/
+theorem continuous_proj (T : IsTubularNeighborhood f U toFun) :
+    Continuous fun u : U ↦ (u : TotalSpace F E).proj := by
+  refine T.isEmbedding_f.continuous_iff.2 ?_
+  have h : Continuous fun u : U ↦ toFun (T.radialContraction ⟨0, u⟩) :=
+    T.isOpenEmbedding.continuous.comp
+      (T.continuous_radialContraction.comp (continuous_const.prodMk continuous_id))
+  refine h.congr fun u ↦ ?_
+  simp only [Function.comp_apply, radialContraction_zero, T.map_zeroSection]
+
 end IsTubularNeighborhood
 
 end TauCeti

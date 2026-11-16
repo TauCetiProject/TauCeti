@@ -11,7 +11,6 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.CartanWeights
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Serre.Relations
 
 import TauCeti.LinearAlgebra.Eigenspace.Binomial
-import TauCeti.RepresentationTheory.Spin.HalfSpin.Basic
 import TauCeti.RingTheory.DividedPowers.Associative
 
 /-!
@@ -28,10 +27,9 @@ all of their binomial coefficients preserve the same lattice. These two facts gi
 under every generator of the Serre Kostant form.
 
 The full exterior algebra, rather than either parity summand alone, is used because its weights
-span the full simply connected type-`D` character lattice. Thus this is the admissible-lattice
-input for the full-weight type-`D` Chevalley--Demazure carrier in Layer 9 of the ReductiveGroups
-roadmap. That carrier is consumed by the `Dₙ(q)` and `²Dₙ(q)` branches of milestone L0 in the
-CFSGStatement roadmap.
+span the full simply connected type-`D` character lattice. A Kostant-stable lattice with that
+property is the integral input from which the simply connected Chevalley--Demazure group of type `D`
+is built; no such group is constructed here.
 
 ## Main declarations
 
@@ -155,24 +153,32 @@ theorem typeDSpinRep_serreF_eq_spinAction (i : Fin n) :
       spinAction Q P (P.typeDSimpleNegativeRootBivector b (by omega) i) := by
   rw [P.typeDSpinRep_ι b hn, P.typeDSpinSerreRepresentation_serreF b hn]
 
-/-- **The represented root generators preserve exterior parity**, for a polarization without a
-line summand. Each acts through a simple-root Clifford bivector, which is even, so it maps each
+/-- **The represented root generators preserve exterior parity.** Each acts through a
+simple-root Clifford bivector, a product of two vectors of `W` or `W'`, which maps each
 half-spin summand into itself. -/
-theorem typeDSpinRep_rootGenerator_mem_evenOdd (hline : P.line = ⊥) (k : Fin n ⊕ Fin n)
+theorem typeDSpinRep_rootGenerator_mem_evenOdd (k : Fin n ⊕ Fin n)
     {j : ZMod 2} {s : ExteriorAlgebra ℚ P.W} (hs : s ∈ evenOdd (0 : QuadraticForm ℚ P.W) j) :
     P.typeDSpinRep b hn
         (_root_.UniversalEnvelopingAlgebra.ι ℚ
           (TauCeti.serreRootGenerator (CartanMatrix.D n) k)) s ∈
       evenOdd (0 : QuadraticForm ℚ P.W) j := by
+  have hW (x : P.W) := fun {j : ZMod 2} {s : ExteriorAlgebra ℚ P.W}
+    (hs : s ∈ evenOdd (0 : QuadraticForm ℚ P.W) j) ↦ P.cliffordOperator_coe_W_mem_evenOdd x hs
+  have hW' (y : P.W') := fun {j : ZMod 2} {s : ExteriorAlgebra ℚ P.W}
+    (hs : s ∈ evenOdd (0 : QuadraticForm ℚ P.W) j) ↦ P.cliffordOperator_coe_W'_mem_evenOdd y hs
   cases k with
   | inl i =>
-    rw [TauCeti.serreRootGenerator_inl, P.typeDSpinRep_serreE_eq_spinAction b hn]
-    exact spinAction_mem_evenOdd_of_mem_even P hline (quadraticLieSubalgebra_le_even Q
-      (P.typeDSimpleRootBivector_mem_quadraticLieSubalgebra b (by omega) i)) hs
+    rw [TauCeti.serreRootGenerator_inl, P.typeDSpinRep_serreE_eq_spinAction b hn,
+      P.typeDSimpleRootBivector_def b]
+    split_ifs
+    · exact P.spinAction_ι_mul_ι_mem_evenOdd (hW _) (hW' _) hs
+    · exact P.spinAction_ι_mul_ι_mem_evenOdd (hW _) (hW _) hs
   | inr i =>
-    rw [TauCeti.serreRootGenerator_inr, P.typeDSpinRep_serreF_eq_spinAction b hn]
-    exact spinAction_mem_evenOdd_of_mem_even P hline (quadraticLieSubalgebra_le_even Q
-      (P.typeDSimpleNegativeRootBivector_mem_quadraticLieSubalgebra b (by omega) i)) hs
+    rw [TauCeti.serreRootGenerator_inr, P.typeDSpinRep_serreF_eq_spinAction b hn,
+      P.typeDSimpleNegativeRootBivector_def b]
+    split_ifs
+    · exact P.spinAction_ι_mul_ι_mem_evenOdd (hW _) (hW' _) hs
+    · exact P.spinAction_ι_mul_ι_mem_evenOdd (hW' _) (hW' _) hs
 
 /-- At a chain node, the positive type-`D` root generator moves the singleton exterior-basis
 vector at `i + 1` to the singleton at `i`. -/

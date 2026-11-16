@@ -286,8 +286,8 @@ private theorem exists_norm_iteratedFDeriv_heatKernel_sub_le (m : ℕ) :
   obtain ⟨C₁, hC₁⟩ := exists_norm_iteratedDeriv_iteratedFDeriv_heatKernel_le (E := E) 1 m
   refine ⟨max C₁ 1, by positivity, fun a b ha hab x => ?_⟩
   have hb : 0 < b := ha.trans_le hab
-  have hn : (0 : ℝ) ≤ finrank ℝ E := Nat.cast_nonneg _
-  have hm : (0 : ℝ) ≤ m := Nat.cast_nonneg _
+  have _ : (0 : ℝ) ≤ finrank ℝ E := Nat.cast_nonneg _
+  have _ : (0 : ℝ) ≤ m := Nat.cast_nonneg _
   -- On `[a, b]` the time derivative is at most `C₁ a^(-(n + m + 2)/2) exp(-‖x‖² / (8b))`.
   have hderiv : ∀ s ∈ Icc a b, ‖deriv (fun s => iteratedFDeriv ℝ m (heatKernel s) x) s‖ ≤
       max C₁ 1 * a ^ (-(finrank ℝ E + m + 2 : ℝ) / 2) * exp (-‖x‖ ^ 2 / (8 * b)) := by
@@ -320,7 +320,6 @@ theorem exists_norm_iteratedFDeriv_heatKernel_sub_mul_rpow_le (m : ℕ) {α : �
   obtain ⟨C₁, hC₁0, hC₁⟩ := exists_norm_iteratedFDeriv_heatKernel_sub_le (E := E) m
   obtain ⟨C₂, hC₂0, hC₂⟩ := exists_norm_rpow_mul_heatKernel_le (E := E) hα
   set n : ℝ := (finrank ℝ E : ℝ)
-  have hn : 0 ≤ n := Nat.cast_nonneg _
   refine ⟨C₁ * C₂ * (16 * π) ^ (n / 2) * 4 ^ (α / 2), by positivity,
     fun a b ha hab hb2 x => ?_⟩
   have hb : 0 < b := ha.trans_le hab

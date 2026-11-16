@@ -176,7 +176,7 @@ private theorem ofReal_abs_sqrt_real_inner_add_sub_le_pathELength_riemannianExp 
       ‖Real.sqrt (inner ℝ (w b) (w b) + δ) - Real.sqrt (inner ℝ (w a) (w a) + δ)‖ₑ ≤
         ∫⁻ t in Icc a b,
           ‖derivWithin (fun u ↦ Real.sqrt (inner ℝ (w u) (w u) + δ)) (Icc a b) t‖ₑ :=
-    enorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc hrw hab
+    eNorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc hrw hab
   calc
     ENNReal.ofReal
         |Real.sqrt (inner ℝ (w b) (w b) + δ) -

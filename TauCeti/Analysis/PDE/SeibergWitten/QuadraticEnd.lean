@@ -285,7 +285,7 @@ theorem norm_quadraticEndPolar_le (ψ φ : E) : ‖quadraticEndPolar ψ φ‖ �
   · simp
   rcases eq_or_ne φ 0 with rfl | hφ
   · simp
-  set t := ‖φ‖ / ‖ψ‖ with ht_def
+  set t := ‖φ‖ / ‖ψ‖
   have ht : 0 < t := by positivity
   have htψ : t * ‖ψ‖ = ‖φ‖ := div_mul_cancel₀ _ (norm_ne_zero_iff.2 hψ)
   have hkey := key (t • ψ) φ

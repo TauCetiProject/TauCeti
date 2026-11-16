@@ -35,14 +35,12 @@ dividing `n` the degree can drop). The identities below need none of those hypot
 Everything is stated over an arbitrary commutative ring; no domain, field or ellipticity hypothesis
 is needed, because a coordinate-ring identity evaluates wherever the Weierstrass equation holds.
 
-This is a prerequisite of the Nagell–Lutz integrality milestone of
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 6, item "The torsion subgroup and Nagell–Lutz",
-whose route the roadmap records as "division polynomials".
+This is a prerequisite of the division-polynomial proof of the Nagell–Lutz theorem.
 
 ## Provenance
 
-Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), pinned by
-that roadmap at `dev/modular-curves @ 9fec8eba7652`:
+Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), at
+`dev/modular-curves @ 9fec8eba7652`:
 `LutzNagell/LutzNagellTheorem/EvalBridge.lean`. That project runs against its own vendored copy of
 Mathlib's division polynomials; here the statements are rebased onto pinned Mathlib's
 `WeierstrassCurve.{ψ, Ψ, ΨSq, φ, Φ, preΨ}` and generalised from a field to a commutative ring.

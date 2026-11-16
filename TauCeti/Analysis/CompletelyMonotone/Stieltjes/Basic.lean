@@ -32,6 +32,8 @@ Stieltjes/Bernstein-function correspondences.
 * `TauCeti.IsStieltjesFunction`: existence of a Stieltjes representation.
 * `TauCeti.measurable_stieltjesWeight` and `TauCeti.integrable_stieltjesWeight`: the weight is
   measurable, and every finite measure satisfies the weight condition.
+* `TauCeti.integrable_stieltjesWeight_of_integrable_div`: if the transform kernel `t / (t + x)` is
+  integrable for some `t > 0`, so is the weight.
 * `TauCeti.lintegral_inv_le_of_eventually_integral_inv_add_le`: a bound on the Stieltjes
   transform of a Stieltjes measure on `ℝ≥0` near the origin, tending to `c`, bounds
   `∫ y, y⁻¹ ∂ν` by `c`.
@@ -99,6 +101,25 @@ theorem integrable_inv_add {μ : Measure ℝ≥0} (hμ : Integrable stieltjesWei
     le_div_iff₀ (by positivity), ← div_eq_inv_mul, div_le_iff₀ (by positivity)]
   nlinarith [mul_le_mul_of_nonneg_left (le_max_right 1 t⁻¹) ht.le,
     mul_le_mul_of_nonneg_left (le_max_left 1 t⁻¹) hx, mul_inv_cancel₀ ht.ne']
+
+/-- If the transform kernel `x ↦ t / (t + x)` is integrable for some `t > 0`, then so is the
+Stieltjes weight `x ↦ (1 + x)⁻¹`. -/
+theorem integrable_stieltjesWeight_of_integrable_div {μ : Measure ℝ≥0} {t : ℝ} (ht : 0 < t)
+    (h : Integrable (fun x : ℝ≥0 => t / (t + x)) μ) : Integrable stieltjesWeight μ := by
+  refine (h.const_mul (max 1 t⁻¹)).mono' ?_ (ae_of_all _ fun x => ?_)
+  · exact measurable_stieltjesWeight.aestronglyMeasurable
+  · have hM1 : 1 ≤ max 1 t⁻¹ := le_max_left _ _
+    have hM2 : 1 ≤ max 1 t⁻¹ * t := by
+      calc (1 : ℝ) = t⁻¹ * t := (inv_mul_cancel₀ ht.ne').symm
+        _ ≤ max 1 t⁻¹ * t := by gcongr; exact le_max_right _ _
+    have hx : (0 : ℝ) ≤ x := x.2
+    rw [stieltjesWeight_apply, Real.norm_of_nonneg (by positivity), ← sub_nonneg]
+    have : max 1 t⁻¹ * (t / (t + x)) - (1 + (x : ℝ))⁻¹ =
+        (max 1 t⁻¹ * t * (1 + x) - (t + x)) / ((t + x) * (1 + x)) := by
+      field_simp
+    rw [this]
+    refine div_nonneg ?_ (by positivity)
+    nlinarith [mul_nonneg hx (sub_nonneg.2 hM2), mul_nonneg ht.le (sub_nonneg.2 hM1)]
 
 /-- If the Stieltjes transform of a measure on `ℝ≥0` satisfying the standard weighted
 integrability condition is bounded near `0⁺` by a function `g` tending to `c` there, then

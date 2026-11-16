@@ -55,6 +55,9 @@ its limit at `x₀` provides.
   of unit integral and unit `L¹` norm exist inside every neighbourhood of a point.
 * `TauCeti.exists_nonneg_tsupport_subset_integral_eq_one`: on a locally compact space, they can
   be taken continuous, compactly supported and nonnegative.
+* `CompactlySupportedContinuousMap.norm_integral_smul_sub_le`: the direct continuous peak-function
+  estimate `‖∫ x, φ x • ψ x ∂μ - y‖ ≤ ε` for a nonnegative `φ : C_c(α, ℝ)` of unit integral and
+  continuous `ψ` within `ε` of `y` on `tsupport φ`.
 
 ## References
 
@@ -194,3 +197,29 @@ theorem exists_nonneg_tsupport_subset_integral_eq_one [TopologicalSpace α] [R1S
   · simp [hg, integral_const_mul, inv_mul_cancel₀ hpos.ne']
 
 end TauCeti
+
+/-- **Continuous peak-function estimate.** If a nonnegative `φ : C_c(α, ℝ)` has unit integral and
+a continuous map `ψ : α → E` into a Banach space stays within `ε` of `y` on `tsupport φ`, then
+`‖(∫ x, φ x • ψ x ∂μ) - y‖ ≤ ε`. -/
+theorem CompactlySupportedContinuousMap.norm_integral_smul_sub_le {α E : Type*}
+    [TopologicalSpace α] [MeasurableSpace α] [OpensMeasurableSpace α]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    {μ : Measure α} [IsFiniteMeasureOnCompacts μ]
+    {φ : C_c(α, ℝ)} (hφ : 0 ≤ φ) (hφ1 : ∫ x, φ x ∂μ = 1) {ψ : α → E} (hψ : Continuous ψ)
+    {y : E} {ε : ℝ} (hψU : ∀ x ∈ tsupport φ, ‖ψ x - y‖ ≤ ε) :
+    ‖(∫ x, φ x • ψ x ∂μ) - y‖ ≤ ε := by
+  have hφi : Integrable φ μ := φ.continuous.integrable_of_hasCompactSupport φ.hasCompactSupport
+  have hψi : Integrable (fun x ↦ φ x • ψ x) μ :=
+    (φ.continuous.smul hψ).integrable_of_hasCompactSupport φ.hasCompactSupport.smul_right
+  have hsub : (∫ x, φ x • ψ x ∂μ) - y = ∫ x, φ x • (ψ x - y) ∂μ := by
+    calc (∫ x, φ x • ψ x ∂μ) - y
+        = (∫ x, φ x • ψ x ∂μ) - ∫ x, φ x • y ∂μ := by rw [integral_smul_const, hφ1, one_smul]
+      _ = ∫ x, φ x • (ψ x - y) ∂μ := by
+          rw [← integral_sub hψi (hφi.smul_const y)]
+          simp_rw [smul_sub]
+  rw [hsub, ← one_mul ε, ← hφ1, ← integral_mul_const]
+  refine norm_integral_le_of_norm_le (hφi.mul_const ε) (.of_forall fun x ↦ ?_)
+  rw [norm_smul, Real.norm_of_nonneg (hφ x)]
+  by_cases hx : x ∈ tsupport φ
+  · exact mul_le_mul_of_nonneg_left (hψU x hx) (hφ x)
+  · simp [image_eq_zero_of_notMem_tsupport hx]

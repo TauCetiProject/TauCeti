@@ -68,8 +68,6 @@ theorem hasOneCommonSide_of_left_eq_right (E : GridPentagonRectangleDecompositio
     simp only [GridRectangleBetween.mem_sideColumns, toRectangleDecomposition_first_left,
       toRectangleDecomposition_first_right, toRectangleDecomposition_second_left,
       toRectangleDecomposition_second_right] at hc
-    have hfirst := E.pentagon.left_ne_right
-    have hsecond := E.rectangle.left_ne_right
     grind
 
 /-- A pentagon followed by a rectangle ending on the pentagon's initial side has exactly one
@@ -85,8 +83,6 @@ theorem hasOneCommonSide_of_right_eq_left (E : GridPentagonRectangleDecompositio
     simp only [GridRectangleBetween.mem_sideColumns, toRectangleDecomposition_first_left,
       toRectangleDecomposition_first_right, toRectangleDecomposition_second_left,
       toRectangleDecomposition_second_right] at hc
-    have hfirst := E.pentagon.left_ne_right
-    have hsecond := E.rectangle.left_ne_right
     grind
 
 /-- If the intermediate state of a two-step decomposition exchanges two rows of the source state,
@@ -387,7 +383,7 @@ private theorem mem_initialOverlapPartners_of_recut
       second := GridPentagonBetween.ofRightEq R.second hright hturn }
   have hD : D.toRectangleDecomposition = R := by
     apply GridRectangleDecomposition.ext <;>
-      simp [D, GridRectanglePentagonDecomposition.pentagon, hright]
+      simp [D, GridRectanglePentagonDecomposition.pentagon]
   have hrecut : E.toRectangleDecomposition.IsRecut D.toRectangleDecomposition := by
     rw [hD]
     exact E.toRectangleDecomposition.isRecut_recut hone hfirst hsecond

@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.UniformSpace.CompactConvergence
+public import Mathlib.Topology.CompactOpen
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
-import Mathlib.Topology.Separation.DisjointCover
 -- Supplies compact and totally disconnected instances; `PrincipalUnits` imports it privately.
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.QuotientTower
+import TauCeti.Topology.ContinuousMap.LocallyConstant
 
 /-!
 # The congruence quotients of `ℤ_pˣ` and functions factoring through them
@@ -30,8 +30,10 @@ the finite groups `(ℤ/p^nℤ)ˣ` a complete system of finite coordinates for `
   truncation modulo `p ^ n` for some `n` (`IsLocallyConstant.exists_comp_unitsToZModPow_eq`),
   and a locally constant homomorphism does so through a homomorphism
   (`IsLocallyConstant.exists_monoidHom_comp_unitsToZModPow_eq`);
-* the *cylinder functions* `g ∘ unitsToZModPow n` are dense in `C(ℤ_pˣ, R)` for every uniform
-  space `R` (`TauCeti.dense_setOf_comp_unitsToZModPow`).
+* the *cylinder functions* `g ∘ unitsToZModPow n` are dense in `C(ℤ_pˣ, R)`, with the
+  compact-open topology, for every topological space `R`
+  (`TauCeti.dense_setOf_comp_unitsToZModPow`), since they include the locally constant
+  functions, which are dense by `LocallyConstant.denseRange_toContinuousMap`.
 
 The factor of a function through the surjection `unitsToZModPow n` is unique
 (`Function.Surjective.injective_comp_right` applied to `PadicInt.unitsToZModPow_surjective`,
@@ -45,16 +47,12 @@ some `(ℤ/p^nℤ)ˣ`, and such test functions are dense among all continuous on
 
 * J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*, Ann. Math. Qué.
   (2024), Definitions 3.7–3.8, Remarks 3.11–3.12 and Proposition 3.16.
-* D. Loeffler, Mathlib's `Mathlib.Topology.Separation.DisjointCover`, for finite approximation of
-  continuous maps on profinite spaces.
 * Tau Ceti's `TauCeti.FiniteQuotientTower`, of which the truncations form the instance
   `TauCeti.FiniteQuotientTower.unitTower`; the factorisation and descent statements here are its
   general descent results read on that tower.
 -/
 
 public section
-
-open Filter Topology
 
 namespace TauCeti
 
@@ -164,18 +162,15 @@ theorem isLocallyConstant_iff_exists_comp_unitsToZModPow_eq {f : ℤ_[p]ˣ → A
   exact (IsLocallyConstant.of_discrete g).comp_continuous (PadicInt.unitsToZModPow n).continuous
 
 /-- **Density of cylinder functions.** The continuous functions on `ℤ_pˣ` that factor through
-truncation modulo `p ^ n` for some `n` are dense in `C(ℤ_pˣ, R)` for every uniform space `R`. -/
-theorem dense_setOf_comp_unitsToZModPow (R : Type*) [UniformSpace R] :
+truncation modulo `p ^ n` for some `n` are dense in `C(ℤ_pˣ, R)`, with the compact-open
+topology, for every topological space `R`. When `R` is a uniform space, this is the topology of
+uniform convergence. -/
+theorem dense_setOf_comp_unitsToZModPow (R : Type*) [TopologicalSpace R] :
     Dense {F : C(ℤ_[p]ˣ, R) |
-      ∃ n, ∃ g : (ZMod (p ^ n))ˣ → R, g ∘ PadicInt.unitsToZModPow n = F} := by
-  refine fun f ↦ (mem_closure_iff_nhds_basis
-    (nhds_basis_uniformity' ContinuousMap.hasBasis_compactConvergenceUniformity_of_compact)).mpr
-    fun V hV ↦ ?_
-  -- Approximate `f` within `V` by a function factoring through a finite discrete space.
-  obtain ⟨N, c, h, hc, hch⟩ := ContinuousMap.exists_finite_approximation_of_mem_nhds_diagonal f
-    (nhdsSet_diagonal_le_uniformity hV)
-  have hloc : IsLocallyConstant (h ∘ c) :=
-    (IsLocallyConstant.of_discrete h).comp_continuous hc
-  exact ⟨⟨h ∘ c, hloc.continuous⟩, hloc.exists_comp_unitsToZModPow_eq, fun x ↦ hch x⟩
+      ∃ n, ∃ g : (ZMod (p ^ n))ˣ → R, g ∘ PadicInt.unitsToZModPow n = F} :=
+  -- The locally constant functions are dense, and each factors through some truncation.
+  LocallyConstant.denseRange_toContinuousMap.mono <| Set.range_subset_iff.mpr fun F ↦ by
+    rw [Set.mem_ofPred_eq, LocallyConstant.coe_continuousMap]
+    exact F.isLocallyConstant.exists_comp_unitsToZModPow_eq
 
 end TauCeti

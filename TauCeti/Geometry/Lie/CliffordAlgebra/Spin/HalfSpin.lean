@@ -85,9 +85,9 @@ local instance : NormedAlgebra ℝ (S →L[ℂ] S) := NormedAlgebra.complexToRea
 local instance : NormedSpace ℝ (S →L[ℂ] S) :=
   NormedAlgebra.toNormedSpace (𝕜 := ℝ) (S →L[ℂ] S)
 
-local instance : CompleteSpace S := FiniteDimensional.complete ℂ S
+local instance : CompleteSpace S := FiniteDimensional.completeSpace ℂ S
 
-local instance : CompleteSpace (S →L[ℂ] S) := FiniteDimensional.complete ℂ _
+local instance : CompleteSpace (S →L[ℂ] S) := FiniteDimensional.completeSpace ℂ _
 
 /-- The framed even Clifford action on the chosen chirality eigenspace, in continuous
 endomorphisms rather than algebraic endomorphisms. -/

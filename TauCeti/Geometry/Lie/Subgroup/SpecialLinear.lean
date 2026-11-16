@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Lie.Exponential.Matrix.SpecialLinear
 public import TauCeti.Geometry.Lie.Subgroup.Units
+public import TauCeti.Algebra.Lie.Subalgebra.RestrictScalars
 
 /-!
 # The Lie algebra of the special linear group
@@ -42,6 +43,13 @@ determinant one.
   hypothesis every closed-subgroup statement about it needs.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_sl`: **the Lie
   algebra of the special linear group is `sl`.**
+* `TauCeti.Lie.unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_range_toGL`: the
+  algebra-coordinate image is the range of the real inclusion of the trace-zero algebra.
+
+## References
+
+* B. C. Hall, *Lie Groups, Lie Algebras, and Representations*, 2nd ed., Springer GTM 222
+  (2015), Proposition 3.23 (the special linear Lie algebra).
 -/
 
 public section
@@ -107,5 +115,26 @@ theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_sl
   -- `exp`: the ring and topology of the operator-norm normed ring on the left, the default matrix
   -- ring and the entrywise topology on the right, which agree definitionally.
   exact Iff.rfl
+
+/-- The algebra-coordinate image of the special linear subgroup Lie algebra is the
+range of the trace-zero algebra's inclusion over the real scalars. -/
+@[simp]
+theorem unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_range_toGL :
+    (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕂))
+      (Matrix.SpecialLinearGroup.toGL : Matrix.SpecialLinearGroup n 𝕂 →* GL n 𝕂).range).map
+        (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕂)).toLieHom =
+      ((LieAlgebra.SpecialLinear.sl n 𝕂).restrictScalarsIncl ℝ).range := by
+  ext A
+  rw [LieSubalgebra.mem_range_restrictScalarsIncl]
+  let e := unitsLieAlgebraLieEquiv (R := Matrix n n 𝕂)
+  constructor
+  · rintro ⟨Y, hY, rfl⟩
+    exact (unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_sl (e Y)).mp
+      (by simpa only [e, LieEquiv.symm_apply_apply, LieSubalgebra.coe_toSubmodule,
+        LieSubalgebra.mem_coe] using hY)
+  · intro hA
+    exact ⟨e.symm A,
+      (unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_sl A).mpr hA,
+      e.apply_symm_apply A⟩
 
 end TauCeti.Lie

@@ -24,6 +24,10 @@ order of a power (`orderOf_pow`) and decides when a power of a cycle is again a 
 all the cycles of `f ^ k` have the *same* length, which holds because `(f ^ m) x = x` is
 equivalent to `orderOf f ∣ m` independently of the point `x` of the support.
 
+The torus-link grid diagrams of `TauCeti.KnotTheory.Grid.TorusLink.Basic` use this: their
+component permutation is the inverse of a power of the cyclic shift `finRotate`, and its cycle
+type counts the components of the represented link.
+
 ## Main results
 
 * `Equiv.Perm.IsCycle.pow_apply_eq_self_iff`: `(f ^ n) x = x` holds for one point moved by the
@@ -40,11 +44,6 @@ The declarations are stated in the `Equiv.Perm.IsCycle` namespace, giving dot no
   (Kim Morrison) — the draft upstream adaptation of this file; the `Equiv.Perm.IsCycle`
   namespace, the `orderOf`-based statement of the fixed-point lemma, and the dropped
   support-card wrapper all follow the form prepared for that PR.
-
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane
-G.1 and Lane G.7: the component permutation of the standard grid diagram of the `(p, q)` torus
-link is a power of the cyclic shift `finRotate`, and its cycle decomposition is what counts the
-components of the represented link.
 -/
 
 public section

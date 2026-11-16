@@ -30,6 +30,7 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   determined by its permutation of the roots.
 * `RootPairing.Equiv.indexHom_injective_of_corootSpan_eq_top` gives the same faithfulness
   when the coroots span, in particular for simply connected integral root data.
+* `RootPairing.reflectionPerm_reflectionPerm_self` says negating a root index twice gives it back.
 * `RootPairing.coroot'_reflection_self` says a reflection reverses the sign of its own
   coroot functional.
 * `RootPairing.coroot'_smul` and `RootPairing.coroot'_weylGroupToPerm_smul` say an
@@ -67,10 +68,6 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
 * `RootPairing.finite_aut` proves that the automorphism group of a finite root system is
   finite, and `RootPairing.finite_subgroup_aut` deduces the same for every subgroup of it.
 * `RootPairing.finite_weylGroup` is the resulting finiteness theorem for the Weyl group.
-
-## References
-
-* [Root systems roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/RootSystems/README.md)
 -/
 
 public section
@@ -129,6 +126,13 @@ end
 
 section
 
+/-- Negating a root index twice gives it back: the root of index `P.reflectionPerm j j` for
+`j = P.reflectionPerm i i` is `-(-P.root i) = P.root i`. -/
+@[simp]
+theorem reflectionPerm_reflectionPerm_self (i : ι) :
+    P.reflectionPerm (P.reflectionPerm i i) (P.reflectionPerm i i) = i :=
+  P.indexNeg.neg_neg i
+
 /-- Reflecting a root in itself negates its coroot functional. -/
 @[simp]
 lemma coroot'_reflectionPerm_self
@@ -153,11 +157,9 @@ lemma coroot'_reflection_self (i : ι) (x : M) :
 @[grind =]
 lemma coroot'_smul (g : P.Aut) (i : ι) (x : M) :
     P.coroot' i (g • x) = P.coroot' (g.indexEquiv.symm i) x := by
-  -- This is the transpose condition packaged in `RootPairing.Hom.weight_coweight_transpose`.
-  have h := congrFun (congrArg DFunLike.coe
-    (Hom.weight_coweight_transpose_apply P P (P.coroot i) g.toHom)) x
-  simp only [LinearMap.dualMap_apply, Hom.coroot_coweightMap_apply] at h
-  exact h
+  -- `g • x` is `g.weightMap x` by definition of the action.
+  change P.coroot' i (g.weightMap x) = _
+  simpa using g.toHom.coroot'_weightMap (g.indexEquiv.symm i) x
 
 /-- **A Weyl-group element matches the coroot functional of a root with the coroot functional of
 its image.** -/
@@ -374,7 +376,7 @@ lemma mem_corootSpan_of_mem_closure_range_coreflection {w : N ≃ₗ[R] N}
     obtain ⟨i, rfl⟩ := hw
     exact hrefl i hv
   | one => exact hv
-  | mul w₁ w₂ _ _ h₁ h₂ => exact h₁ (h₂ hv)
+  | mul _ w₂ _ _ h₁ h₂ => exact h₁ (h₂ hv)
 
 /-- A coreflection permutes the root functionals: `⟨αⱼ, s_{αᵢ} x⟩ = ⟨s_{αᵢ} αⱼ, x⟩`. -/
 lemma root'_coreflection (i j : ι) (x : N) :

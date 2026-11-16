@@ -248,7 +248,6 @@ theorem quantile_map_inner_uniformBallMeasure (c : E) {r : ℝ} (hr : 0 ≤ r) (
   rw [map_inner_uniformBallMeasure_affine c hr v]
   by_cases hrv : r * ‖v‖ = 0
   · simp [hrv, Measure.map_const, Measure.quantile_dirac _ hu.1 hu.2.le]
-  have hpos : 0 < r * ‖v‖ := lt_of_le_of_ne (mul_nonneg hr (norm_nonneg _)) (Ne.symm hrv)
   rw [quantile_map_affine_pos (by positivity) hu.1 hu.2,
     quantile_betaMeasure ha ha hu]
   ring
@@ -258,9 +257,9 @@ theorem tendsto_quantile_map_inner_uniformBallMeasure_nhdsGT_zero (c : E) {r : �
     (hr : 0 ≤ r) (v : E) :
     Tendsto ((uniformBallMeasure c r).map (fun x ↦ ⟪v, x⟫)).quantile
       (𝓝[>] 0) (𝓝 (⟪v, c⟫ - r * ‖v‖)) := by
-  have ha : 0 < ((Module.finrank ℝ E : ℝ) + 1) / 2 := by positivity
-  have h := (((tendsto_inverseRegularizedIncompleteBeta_zero ha ha).const_mul 2).const_add (-1)
-    |>.const_mul (r * ‖v‖)).const_add ⟪v, c⟫
+  have h := (((tendsto_inverseRegularizedIncompleteBeta_zero ((Module.finrank ℝ E + 1) / 2)
+    ((Module.finrank ℝ E + 1) / 2)).const_mul 2).const_add (-1) |>.const_mul (r * ‖v‖)).const_add
+    ⟪v, c⟫
   simp only [mul_zero, add_zero, mul_neg_one, ← sub_eq_add_neg] at h
   apply h.congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu

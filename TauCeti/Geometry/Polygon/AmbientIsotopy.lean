@@ -184,8 +184,7 @@ private theorem mem_of_forall_gauge_le_one {w : V} (h : ∀ ε ∈ Ioo (0 : ℝ)
   -- The off-plane component vanishes.
   have hp : F.proj w = 0 := by
     by_contra hp
-    have hN := norm_pos_iff.2 hp
-    set ε := min (‖F.proj w‖ / 2) (1 / 2) with hε
+    set ε := min (‖F.proj w‖ / 2) (1 / 2)
     have hε₀ : 0 < ε := lt_min (by positivity) (by norm_num)
     have hε₁ : ε < 1 := (min_le_right _ _).trans_lt (by norm_num)
     have h₁ := h ε ⟨hε₀, hε₁⟩
@@ -198,7 +197,7 @@ private theorem mem_of_forall_gauge_le_one {w : V} (h : ∀ ε ∈ Ioo (0 : ℝ)
   have hg : 0 ≤ F.g w := by
     by_contra hg
     push Not at hg
-    set ε := min (-F.g w / 2) (1 / 2) with hε
+    set ε := min (-F.g w / 2) (1 / 2)
     have hε₀ : 0 < ε := lt_min (by linarith) (by norm_num)
     have hε₁ : ε < 1 := (min_le_right _ _).trans_lt (by norm_num)
     have h₁ := h ε ⟨hε₀, hε₁⟩
@@ -211,9 +210,9 @@ private theorem mem_of_forall_gauge_le_one {w : V} (h : ∀ ε ∈ Ioo (0 : ℝ)
   refine ⟨hp, hg, ?_⟩
   by_contra hfg
   push Not at hfg
-  set δ := |F.f w| + F.g w - 1 with hδ
+  set δ := |F.f w| + F.g w - 1
   have hδ₀ : 0 < δ := by linarith
-  set ε := min (1 / 2) (δ / (2 * (F.g w + 1))) with hε
+  set ε := min (1 / 2) (δ / (2 * (F.g w + 1)))
   have hε₀ : 0 < ε := lt_min (by norm_num) (by positivity)
   have hε₁ : ε < 1 := (min_le_left _ _).trans_lt (by norm_num)
   have h₁ := h ε ⟨hε₀, hε₁⟩

@@ -27,10 +27,10 @@ and tends to infinity at infinity.
 
 ## Main statements
 
-* `TauCeti.frontier_image_inv_sub`: inverting an open unbounded set about a point outside its
-  closure adds `0` to the inverted frontier.
-* `TauCeti.isJordanCurve_frontier_image_inv_sub`: the inversion of an unbounded Jordan domain about
-  an exterior point is a bounded Jordan domain.
+* `TauCeti.isJordanCurve_frontier_image_inv_sub`: inversion carries a set whose frontier, with
+  infinity, is a spherical Jordan curve to a set with planar Jordan frontier, when the centre is
+  outside the closure of the set (the inverted frontier is
+  `TauCeti.frontier_image_inv_sub`).
 * `TauCeti.exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_infty`:
   Carathéodory's theorem on the closed upper half-plane for an unbounded Jordan domain, with
   infinity sent to infinity.
@@ -53,19 +53,6 @@ namespace TauCeti
 
 variable {U : Set ℂ} {q : ℂ}
 
-/-- The inversion `z ↦ (z - q)⁻¹` maps an open set not containing `q` to an open set. -/
-theorem isOpen_image_inv_sub (hUo : IsOpen U) (hqU : q ∉ U) :
-    IsOpen ((fun z : ℂ => (z - q)⁻¹) '' U) := by
-  -- the image is the preimage of `U` under `w ↦ q + w⁻¹`, which is continuous away from `0`
-  have : (fun z : ℂ => (z - q)⁻¹) '' U = {0}ᶜ ∩ (fun w : ℂ => q + w⁻¹) ⁻¹' U := by
-    rw [image_eq_preimage_of_inverse (f := fun z : ℂ => (z - q)⁻¹)
-      (g := fun w : ℂ => q + w⁻¹)
-      (by intro z; simp) (by intro w; simp)]
-    exact (inter_eq_right (s := {0}ᶜ).mpr fun w hw (hw0 : w = 0) =>
-      hqU (by simpa [hw0] using hw)).symm
-  rw [this]
-  exact (continuousOn_const.add continuousOn_inv₀).isOpen_inter_preimage isOpen_compl_singleton hUo
-
 /-- A Jordan curve of the Riemann sphere through the point at infinity is unbounded in the plane:
 were its finite part `S` bounded, infinity would be an isolated point of the curve. -/
 theorem not_isBounded_of_isJordanCurve_insert_infty {S : Set ℂ}
@@ -83,26 +70,12 @@ theorem not_isBounded_of_isJordanCurve_insert_infty {S : Set ℂ}
   · exact hyinf rfl
   · exact hyO (mem_image_of_mem _ (subset_closure hz))
 
-/-- An open set whose frontier is, with the point at infinity, a Jordan curve of the Riemann sphere
+/-- A set whose frontier is, with the point at infinity, a Jordan curve of the Riemann sphere
 is unbounded. -/
 theorem not_isBounded_of_isJordanCurve_frontier
     (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) : ¬IsBounded U :=
   fun h =>
     not_isBounded_of_isJordanCurve_insert_infty hUJ (h.closure.subset frontier_subset_closure)
-
-/-- Inverting an open unbounded set `U` about a point `q` outside its closure, the frontier of the
-image is the image of the frontier together with `0`, the image of infinity. -/
-theorem frontier_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure U) (hUb : ¬IsBounded U) :
-    frontier ((fun z : ℂ => (z - q)⁻¹) '' U) =
-      insert 0 ((fun z : ℂ => (z - q)⁻¹) '' frontier U) := by
-  have hU0 : (0 : ℂ) ∉ (fun z : ℂ => (z - q)⁻¹) '' U := by
-    rintro ⟨z, hz, hz0⟩
-    rw [inv_eq_zero, sub_eq_zero] at hz0
-    exact hq (subset_closure (hz0 ▸ hz))
-  have hV := isOpen_image_inv_sub hUo fun h => hq (subset_closure h)
-  rw [hV.frontier_eq, closure_image_inv_sub hUb, insert_sdiff_of_notMem _ hU0,
-    hUo.frontier_eq, image_sdiff (f := fun z : ℂ => (z - q)⁻¹)
-      (inv_injective.comp (sub_left_injective (b := q)))]
 
 /-- Inverting the finite part of a spherical Jordan curve through infinity about a point off
 that curve gives a planar Jordan curve through `0`. No domain or frontier identification is
@@ -132,13 +105,14 @@ theorem isJordanCurve_insert_zero_image_inv_sub {S : Set ℂ} (hq : q ∉ S)
     have hzq : z = q := by simpa [g, sub_eq_zero] using hz0
     exact hq (hzq ▸ hz)
 
-/-- **Inverting an unbounded Jordan domain gives a bounded Jordan domain.** If the frontier of an
-open set `U`, together with infinity, is a spherical Jordan curve, inversion about a point outside
-its closure gives a planar Jordan frontier through `0`. -/
-theorem isJordanCurve_frontier_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure U)
+/-- **Inversion carries a spherical Jordan frontier to a planar one.** If the frontier of a set
+`U`, together with infinity, is a spherical Jordan curve, then inversion about a point outside the
+closure of `U` gives a set whose frontier is a planar Jordan curve through `0`. -/
+theorem isJordanCurve_frontier_image_inv_sub (hq : q ∉ closure U)
     (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) :
     IsJordanCurve (frontier ((fun z : ℂ => (z - q)⁻¹) '' U)) := by
-  rw [frontier_image_inv_sub hUo hq (not_isBounded_of_isJordanCurve_frontier hUJ)]
+  rw [frontier_image_inv_sub (fun h => hq (subset_closure h))
+    (not_isBounded_of_isJordanCurve_frontier hUJ)]
   exact isJordanCurve_insert_zero_image_inv_sub
     (fun h => hq (frontier_subset_closure h)) hUJ
 
@@ -166,11 +140,11 @@ theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_inft
   have hVc : IsConnected ((fun z : ℂ => (z - q)⁻¹) '' U) :=
     hUc.image _ ((continuousOn_id.sub continuousOn_const).inv₀ fun z hz =>
       sub_ne_zero.mpr fun (h : z = q) => hqU (h ▸ hz))
-  have hVfr := frontier_image_inv_sub hUo hq hUb
+  have hVfr := frontier_image_inv_sub hqU hUb
   obtain ⟨g, hgc, hgd, hgV, hgcl, hgR, hg0⟩ :=
     exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier hVo hVc
       (isBounded_image_inv_sub hq)
-      (isJordanCurve_frontier_image_inv_sub hUo hq hUJ) (hVfr ▸ mem_insert _ _)
+      (isJordanCurve_frontier_image_inv_sub hq hUJ) (hVfr ▸ mem_insert _ _)
   -- removing `0` from the closure or the frontier of the inverted domain leaves the image of the
   -- closure or the frontier of `U`, which `w ↦ q + w⁻¹` carries back
   have h0 {S : Set ℂ} (hS : S ⊆ closure U) : (0 : ℂ) ∉ (fun z : ℂ => (z - q)⁻¹) '' S := by

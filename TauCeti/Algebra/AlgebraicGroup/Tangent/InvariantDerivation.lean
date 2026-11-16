@@ -131,7 +131,7 @@ theorem comul_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R))
     LinearMap.ext (leftInvariantDerivation_apply d)
   rw [leftInvariantDerivation_apply, hD, LinearMap.lTensor_comp, LinearMap.comp_apply,
     ← LinearMap.tensorComponent_assoc_symm,
-    Coalgebra.coassoc_symm_apply, LinearMap.rTensor_def, tensorComponent_map, LinearMap.comp_id]
+    Coalgebra.coassoc_symm_apply, tensorComponent_rTensor]
 
 /-- **Iterated invariant derivations commute with left translations**:
 `Δ ∘ Dⁿ = (id ⊗ Dⁿ) ∘ Δ`. -/

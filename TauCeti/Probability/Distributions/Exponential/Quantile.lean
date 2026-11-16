@@ -45,10 +45,12 @@ theorem quantile_expMeasure (hr : 0 < r) (hu : u ∈ Ioo 0 1) :
   rw [expMeasure, quantile_gammaMeasure one_pos hr, inverseRegularizedGamma_one hu]
 
 /-- Exponential quantiles tend to the lower support endpoint `0` as the probability level tends
-to zero from above. -/
-theorem tendsto_quantile_expMeasure_nhdsGT_zero (hr : 0 < r) :
+to zero from above. For a nonpositive rate the law is the zero measure, whose quantile is `0`. -/
+theorem tendsto_quantile_expMeasure_nhdsGT_zero :
     Tendsto (fun u ↦ ((expMeasure r).quantile u : EReal)) (nhdsWithin 0 (Ioi 0))
       (nhds 0) := by
+  rcases le_or_gt r 0 with hr | hr
+  · simp [expMeasure_of_nonpos hr, Measure.quantile_zero]
   rw [expMeasure]
   exact EReal.tendsto_coe.2
     ((tendsto_quantile_gammaMeasure_nhdsGT_zero one_pos hr).mono_right inf_le_left)

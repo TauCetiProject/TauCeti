@@ -9,10 +9,8 @@ public import Mathlib.Algebra.IsPrimePow
 public import Mathlib.Algebra.CharZero.Infinite
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
-import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 import Mathlib.Order.Filter.AtTopBot.Finset
-import Mathlib.RingTheory.Ideal.GoingUp
-import TauCeti.RingTheory.DedekindDomain.PrimesAbove
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import TauCeti.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
@@ -658,16 +656,6 @@ a ratio usable: the denominator is eventually positive, and a finite discrepancy
 numerators vanishes in the limit. -/
 theorem tendsto_primeCount_univ_atTop (K : Type*) [Field K] [NumberField K] :
     Tendsto (primeCount K Set.univ) atTop atTop := by
-  -- The arithmetic input is lying over for the integral extension `ℤ → 𝓞 K`: contraction from the
-  -- height-one spectrum of `𝓞 K` onto that of `ℤ` is surjective. The latter spectrum is equivalent
-  -- to the infinite type of natural primes. The rest is the generic fact that cardinality tends to
-  -- infinity along the directed set of finite subsets.
-  let _ : Infinite (HeightOneSpectrum ℤ) :=
-    Infinite.of_surjective Rat.HeightOneSpectrum.primesEquiv
-      Rat.HeightOneSpectrum.primesEquiv.surjective
-  let _ : Infinite (HeightOneSpectrum (𝓞 K)) :=
-    Infinite.of_surjective (HeightOneSpectrum.under ℤ)
-      (HeightOneSpectrum.under_surjective ℤ (𝓞 K))
   have hcarrier : Tendsto (primesLE K) atTop atTop :=
     tendsto_normLE_atTop (fun p : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm p.asIdeal)
   have hcard : Tendsto (fun x => (primesLE K x).card) atTop atTop :=
@@ -848,6 +836,22 @@ theorem primeTheta_le_primeCount_mul_log (S : Set (HeightOneSpectrum (𝓞 K))) 
   · rw [Set.indicator_of_mem hS, Set.indicator_of_mem hS, Pi.one_apply, one_mul]
     exact Real.log_le_log (absNorm_asIdeal_real_pos v) hv
   · rw [Set.indicator_of_notMem hS, Set.indicator_of_notMem hS, zero_mul]
+
+/-- If `ϑ(x)` vanishes at a cutoff, so does `π(x)`: a prime of `S` below the cutoff would contribute
+a positive logarithm to `ϑ(x)`. -/
+theorem primeCount_eq_zero_of_primeTheta_eq_zero {x : ℝ} (h : primeTheta K S x = 0) :
+    primeCount K S x = 0 := by
+  rw [primeTheta_apply, Finset.sum_eq_zero_iff_of_nonneg fun v _ ↦ Set.indicator_nonneg
+    (fun v _ ↦ log_absNorm_asIdeal_nonneg v) v] at h
+  rw [primeCount_apply]
+  refine Finset.sum_eq_zero fun v hv ↦ ?_
+  by_contra hne
+  have hvS : v ∈ S := by
+    by_contra hvS
+    exact hne (Set.indicator_of_notMem hvS _)
+  have hlog := h v hv
+  rw [Set.indicator_of_mem hvS] at hlog
+  exact (log_absNorm_asIdeal_pos v).ne' hlog
 
 /-- A finite set of primes has eventually constant count, namely its cardinality. This is used to
 prove that finite sets of primes have Dirichlet density zero. -/

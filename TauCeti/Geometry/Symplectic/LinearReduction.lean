@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Geometry.Symplectic.ExistsCompatible
 public import TauCeti.Geometry.Symplectic.Lagrangian.Constructions
@@ -44,6 +45,10 @@ form on `V ⧸ ker B` (`LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`).
   form on the quotient by its kernel.
 * `TauCeti.SymplecticForm.ReducedSpace ω U`: the reduced space `U ⧸ (U ∩ U^ω)`.
 * `TauCeti.SymplecticForm.reduction ω U`: its symplectic form `[u], [v] ↦ ω(u, v)`.
+* `TauCeti.SymplecticForm.reducedSpaceTopEquiv ω`: the identification of `V` with the reduced
+  space of `⊤`, a symplectomorphism.
+* `TauCeti.SymplecticForm.reducedQuadraticForm ω U Q hQ`: the quadratic form `[u] ↦ Q u` on the
+  reduced space, for a quadratic form `Q` whose polar form vanishes on `(U ∩ U^ω) × U`.
 * `TauCeti.SymplecticForm.reducedSpaceCongr`: the symplectomorphism of reduced spaces induced by a
   linear symplectomorphism.
 * `TauCeti.SymplecticForm.reducedSpaceRepresentation`: the induced symplectic representation of a
@@ -189,7 +194,58 @@ theorem isSymplectomorphism_quotEquivOfEqBot (h : ω.IsSymplectic U) :
   induction y using Submodule.Quotient.induction_on with
   | H v => simp
 
+/-- The reduced space of the whole space is `V` itself: the linear equivalence `v ↦ [v]`, a
+symplectomorphism by `TauCeti.SymplecticForm.isSymplectomorphism_reducedSpaceTopEquiv`. -/
+noncomputable def reducedSpaceTopEquiv : V ≃ₗ[ℝ] ω.ReducedSpace (⊤ : Submodule ℝ V) :=
+  Submodule.topEquiv.symm.trans
+    (Submodule.quotEquivOfEqBot _ ((ker_restrict_eq_bot_iff ω ⊤).2 isSymplectic_top)).symm
+
+/-- The defining formula `v ↦ [v]` of the identification of `V` with the reduced space of `⊤`. -/
+@[simp]
+theorem reducedSpaceTopEquiv_apply (v : V) :
+    ω.reducedSpaceTopEquiv v = Submodule.Quotient.mk ⟨v, Submodule.mem_top⟩ :=
+  (rfl)
+
+/-- The identification of `V` with the reduced space of `⊤` is a symplectomorphism. -/
+theorem isSymplectomorphism_reducedSpaceTopEquiv :
+    IsSymplectomorphism ω (ω.reduction ⊤) ω.reducedSpaceTopEquiv := by
+  rw [isSymplectomorphism_iff]
+  intro v w
+  rw [reducedSpaceTopEquiv_apply, reducedSpaceTopEquiv_apply, reduction_mk]
+
 end Basic
+
+section QuadraticForm
+
+variable (ω : SymplecticForm V) (U : Submodule ℝ V)
+
+/-- The polar form of `Q` restricted to `U`, as a bilinear form on `U`, kills the kernel of the
+restriction of `ω` to `U` on either side when the polar form of `Q` vanishes on
+`(U ∩ U^ω) × U`. -/
+private theorem polar_comp_subtype_eq_zero {Q : QuadraticForm ℝ V}
+    (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0) {w : U}
+    (hw : w ∈ LinearMap.ker (ω.toBilinForm.restrict U)) (u : U) :
+    QuadraticMap.polar (Q.comp U.subtype) w u = 0 := by
+  rw [mem_ker_restrict_iff] at hw
+  simpa [QuadraticMap.polar] using hQ w ⟨w.2, hw⟩ u u.2
+
+/-- The **quadratic form induced on the reduced space** `U ⧸ (U ∩ U^ω)` by a quadratic form `Q` on
+`V` whose polar form vanishes on `(U ∩ U^ω) × U`: the form `[u] ↦ Q u`. -/
+noncomputable def reducedQuadraticForm (Q : QuadraticForm ℝ V)
+    (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0) :
+    QuadraticForm ℝ (ω.ReducedSpace U) :=
+  (Q.comp U.subtype).lift _ fun _ hw ↦ by
+    rw [QuadraticMap.radical_eq_ker_polarBilin]
+    exact LinearMap.ext fun u ↦ polar_comp_subtype_eq_zero ω U hQ hw u
+
+/-- The defining formula `Q_red [u] = Q u` of the induced quadratic form on the reduced space. -/
+@[simp]
+theorem reducedQuadraticForm_mk (Q : QuadraticForm ℝ V)
+    (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0) (u : U) :
+    ω.reducedQuadraticForm U Q hQ (Submodule.Quotient.mk u) = Q u :=
+  QuadraticMap.lift_mk _ u
+
+end QuadraticForm
 
 section Finrank
 

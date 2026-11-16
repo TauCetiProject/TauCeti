@@ -582,8 +582,10 @@ theorem irreducibleQuotientMk_vermaGenerator :
 `M(lam)` and the projection being surjective. So `L(lam)` is a highest weight module of weight
 `lam`. -/
 theorem lieSpan_irreducibleQuotientGenerator_eq_top :
-    LieSubmodule.lieSpan K L {irreducibleQuotientGenerator b lam} = ⊤ :=
-  lieSpan_mk_eq_top_of_lieSpan_eq_top (lieSpan_vermaGenerator_eq_top b lam) _
+    LieSubmodule.lieSpan K L {irreducibleQuotientGenerator b lam} = ⊤ := by
+  rw [← irreducibleQuotientMk_vermaGenerator]
+  exact lieSpan_apply_eq_top_of_lieSpan_eq_top (lieSpan_vermaGenerator_eq_top b lam)
+    (irreducibleQuotientMk_surjective b lam)
 
 /-- **`L(lam)` is irreducible, for every weight `lam`.** The Verma module is nonzero, so it is a
 highest weight module of weight `lam`, and its quotient by the maximal submodule is irreducible.

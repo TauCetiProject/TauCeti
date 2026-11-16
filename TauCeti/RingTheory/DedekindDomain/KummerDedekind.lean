@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 
+import TauCeti.RingTheory.UniqueFactorizationDomain.NormalizedFactors
+
 /-!
 # Kummer–Dedekind: the primes over `p`, with their residue degrees and ramification indices
 
@@ -35,8 +37,9 @@ factor, so the bijection can be evaluated on a concrete example.
 * `TauCeti.KummerDedekind.primesOverEquivNormalizedFactorsMinPolyMk`: the bijection between the
   primes of `S` over `p` and the normalized irreducible factors of `minpoly R x` modulo `p`.
 * `TauCeti.KummerDedekind.quotientEquivQuotientSpan`: the isomorphism
-  `(R ⧸ p)[X] ⧸ (Q) ≃+* S ⧸ span (p S ∪ {Q (x)})` for `Q` a lift of such a factor, which computes
-  the residue field at the attached prime.
+  `(R ⧸ p)[X] ⧸ (Q) ≃+* S ⧸ span (p S ∪ {Q (x)})` for any `Q` whose reduction modulo `p` divides
+  `minpoly R x` modulo `p`; for `Q` a lift of a normalized irreducible factor it computes the
+  residue field at the attached prime.
 
 ## Main results
 
@@ -104,21 +107,18 @@ theorem primesOverEquivNormalizedFactorsMinPolyMk_symm_apply_coe {Q : R[X]}
   KummerDedekind.normalizedFactorsMapEquivNormalizedFactorsMinPolyMk_symm_apply_eq_span
     hp hQ hp0 hx hx'
 
-open scoped Classical in
-/-- **The residue ring at a Kummer–Dedekind factor**: for `Q` a lift of a normalized irreducible
-factor of `minpoly R x` modulo `p`, the quotient of `S` by the prime `span (p S ∪ {Q (x)})`
-attached to that factor is `(R ⧸ p)[X]` modulo the factor. -/
+/-- **The residue ring at a Kummer–Dedekind factor**: for `Q` a polynomial whose reduction modulo
+`p` divides `minpoly R x` modulo `p`, the quotient of `S` by `span (p S ∪ {Q (x)})` is
+`(R ⧸ p)[X]` modulo the reduction of `Q`. When `Q` lifts a normalized irreducible factor and `p` is
+a nonzero maximal ideal, that ideal is the prime of `S` over `p` attached to the factor, so this
+computes its residue field. -/
 noncomputable def quotientEquivQuotientSpan {Q : R[X]}
-    (hQ : Q.map (Ideal.Quotient.mk p) ∈
-      normalizedFactors ((minpoly R x).map (Ideal.Quotient.mk p))) :
+    (hQ : Q.map (Ideal.Quotient.mk p) ∣ (minpoly R x).map (Ideal.Quotient.mk p)) :
     (R ⧸ p)[X] ⧸ span {Q.map (Ideal.Quotient.mk p)} ≃+*
       S ⧸ span (p.map (algebraMap R S) ∪ {aeval x Q}) :=
-  have h0 : (minpoly R x).map (Ideal.Quotient.mk p) ≠ 0 :=
-    map_monic_ne_zero (minpoly.monic hx')
   have h₁ : span {Q.map (Ideal.Quotient.mk p)} =
       span {(minpoly R x).map (Ideal.Quotient.mk p)} ⊔ span {Q.map (Ideal.Quotient.mk p)} := by
-    rw [← span_insert, span_pair_comm, span_pair_eq_span_left_iff_dvd.mpr]
-    exact ((Polynomial.mem_normalizedFactors_iff h0).mp hQ).2.2
+    rw [← span_insert, span_pair_comm, span_pair_eq_span_left_iff_dvd.mpr hQ]
   have h₂ : p.map (algebraMap R S) ⊔ span {aeval x Q} =
       span (p.map (algebraMap R S) ∪ {aeval x Q}) := by
     rw [span_union, span_eq]
@@ -130,14 +130,12 @@ noncomputable def quotientEquivQuotientSpan {Q : R[X]}
           KummerDedekind.quotMapEquivQuotQuotMap_symm_apply hx hx' Q])).trans <|
     (DoubleQuot.quotQuotEquivQuotSup _ _).trans (Ideal.quotEquivOfEq h₂)
 
-open scoped Classical in
 /-- `TauCeti.KummerDedekind.quotientEquivQuotientSpan` carries the class of a polynomial `P` over
 `R ⧸ p` to the class of `P (x)`. -/
 @[simp]
 theorem quotientEquivQuotientSpan_mk {Q : R[X]}
-    (hQ : Q.map (Ideal.Quotient.mk p) ∈
-      normalizedFactors ((minpoly R x).map (Ideal.Quotient.mk p))) (P : R[X]) :
-    quotientEquivQuotientSpan hp hx hx' hQ (Ideal.Quotient.mk
+    (hQ : Q.map (Ideal.Quotient.mk p) ∣ (minpoly R x).map (Ideal.Quotient.mk p)) (P : R[X]) :
+    quotientEquivQuotientSpan hx hx' hQ (Ideal.Quotient.mk
         (span {Q.map (Ideal.Quotient.mk p)}) (P.map (Ideal.Quotient.mk p))) =
       Ideal.Quotient.mk (span (p.map (algebraMap R S) ∪ {aeval x Q})) (aeval x P) := by
   simp only [quotientEquivQuotientSpan, RingEquiv.coe_trans, Function.comp_apply,
@@ -165,11 +163,11 @@ theorem inertiaDeg_primesOverEquivNormalizedFactorsMinPolyMk_symm_apply {d : (R 
   rw [hspan, Ideal.inertiaDeg_eq_of_isMaximal p _, ← finrank_quotient_span_eq_natDegree
     (K := R ⧸ p) (f := Q.map (Ideal.Quotient.mk p))]
   refine (Algebra.finrank_eq_of_equiv_equiv (RingEquiv.refl (R ⧸ p))
-    (quotientEquivQuotientSpan hp hx hx' hd) ?_).symm
+    (quotientEquivQuotientSpan hx hx' (dvd_of_mem_normalizedFactors hd)) ?_).symm
   refine Ideal.Quotient.ringHom_ext (RingHom.ext fun r ↦ ?_)
   simpa [IsScalarTower.algebraMap_apply (R ⧸ p) ((R ⧸ p)[X])
     ((R ⧸ p)[X] ⧸ span {Q.map (Ideal.Quotient.mk p)})] using
-    (quotientEquivQuotientSpan_mk hp hx hx' hd (C r)).symm
+    (quotientEquivQuotientSpan_mk hx hx' (dvd_of_mem_normalizedFactors hd) (C r)).symm
 
 open scoped Classical in
 /-- **The ramification index of a Kummer–Dedekind factor is its multiplicity**: the prime of `S`
@@ -181,10 +179,6 @@ theorem ramificationIdx_primesOverEquivNormalizedFactorsMinPolyMk_symm_apply {d 
         p.primesOver S) : Ideal S).ramificationIdx R =
       multiplicity d ((minpoly R x).map (Ideal.Quotient.mk p)) := by
   have hmem := ((primesOverEquivNormalizedFactorsMinPolyMk hp hp0 hx hx').symm ⟨d, hd⟩).2
-  have : (((primesOverEquivNormalizedFactorsMinPolyMk hp hp0 hx hx').symm ⟨d, hd⟩ :
-    p.primesOver S) : Ideal S).IsPrime := hmem.1
-  have : (((primesOverEquivNormalizedFactorsMinPolyMk hp hp0 hx hx').symm ⟨d, hd⟩ :
-    p.primesOver S) : Ideal S).LiesOver p := hmem.2
   rw [IsDedekindDomain.ramificationIdx_eq_multiplicity p _ (Ideal.map_ne_bot_of_ne_bot hp0)]
   refine multiplicity_eq_of_emultiplicity_eq ?_
   have hfac := (Ideal.mem_primesOver_iff_mem_normalizedFactors S hp0).mp hmem
@@ -205,25 +199,13 @@ theorem irreducible_minpoly_of_irreducible_map (hp : p.IsMaximal)
   have hp0 : p ≠ ⊥ := by
     rintro rfl
     exact h.ne_zero (by simp)
-  have hm0 : (minpoly R x).map (Ideal.Quotient.mk p) ≠ 0 :=
-    Polynomial.map_monic_ne_zero (minpoly.monic hx')
   -- The prime factors of `p S` form a singleton, and they are the image of the normalized factors
   -- of `minpoly R x` modulo `p` under the Kummer–Dedekind bijection.
   have hcard : Multiset.card (normalizedFactors ((minpoly R x).map (Ideal.Quotient.mk p))) = 1 := by
-    have h1 : Multiset.card (normalizedFactors (p.map (algebraMap R S))) = 1 := by
-      rw [normalizedFactors_irreducible h, Multiset.card_singleton]
-    have hmap := congrArg Multiset.card
+    simpa [normalizedFactors_irreducible h] using (congrArg Multiset.card
       (KummerDedekind.normalizedFactors_ideal_map_eq_normalizedFactors_min_poly_mk_map hp hp0 hx
-        hx')
-    rw [h1, Multiset.card_map, Multiset.card_attach] at hmap
-    exact hmap.symm
-  obtain ⟨d, hd⟩ := Multiset.card_eq_one.mp hcard
-  have hdirr : Irreducible d :=
-    irreducible_of_normalized_factor d (by rw [hd]; exact Multiset.mem_singleton_self d)
-  -- Hence `minpoly R x` modulo `p` is associated to the irreducible `d`.
-  have hassoc := prod_normalizedFactors hm0
-  rw [hd, Multiset.prod_singleton] at hassoc
-  exact hassoc.irreducible hdirr
+        hx')).symm
+  exact card_normalizedFactors_eq_one_iff.mp hcard
 
 /-- **The Kummer–Dedekind irreducibility criterion.** `p` stays prime in `S` exactly when
 `minpoly R x` is irreducible modulo `p`. -/

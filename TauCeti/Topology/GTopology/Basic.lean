@@ -345,7 +345,7 @@ theorem topological_grothendieckTopology :
       rw [topological_covers_iff]
       ext x
       constructor
-      · rintro ⟨_, ⟨V, ⟨f, hf⟩, rfl⟩, hxV⟩
+      · rintro ⟨_, ⟨V, ⟨f, _⟩, rfl⟩, hxV⟩
         exact leOfHom f hxV
       · intro hx
         obtain ⟨V, f, hf, hxV⟩ := hR x hx

@@ -17,7 +17,7 @@ is an integer, which is integral); this file packages such an `x` as an element
 `NumberField.integralSqrt hx` of the ring of integers `𝓞 K`, together with its two
 defining identities: its image in `K` is `x`, and it squares to `d` in `𝓞 K`.
 
-This is the shared square-root packaging used by the multiquadratic Layer 1 files: the
+This is the shared square-root packaging used by the multiquadratic files: the
 splitting law (`TauCeti.NumberTheory.Multiquadratic.MultiquadraticSplitting`) moves the
 generators `√dᵢ` into `𝓞 K` to compare residues, and the Frobenius computation
 (`TauCeti.NumberTheory.NumberField.Frobenius`) applies the arithmetic-Frobenius congruence,

@@ -10,7 +10,7 @@ public import Mathlib.GroupTheory.Torsion
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.RingHoms
-import TauCeti.Algebra.Group.Primary.Decomposition
+import TauCeti.GroupTheory.Torsion
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 
@@ -153,7 +153,7 @@ private theorem tensorRetraction_one_tmul {x : A} (hx : x ∈ AddCommGroup.prima
     tensorRetraction hA hmc ((1 : ℤ_[p]) ⊗ₜ x) = x := by
   have hpow : ((p : ℤ) ^ N) • x = 0 := by
     rw [← Nat.cast_pow, natCast_zsmul]
-    exact pow_nsmul_eq_zero_of_mem_primaryComponent hm hA hx
+    exact pow_nsmul_eq_zero_of_mem_primaryComponent (hp.out.coprime_iff_not_dvd.mpr hm) (hA x) hx
   -- Mathlib's `zsmul_eq_zsmul_iff_modEq`: congruent integers act alike on `x`.
   have hcong {a b : ℤ} (h : (p : ℤ) ^ N ∣ b - a) : a • x = b • x :=
     zsmul_eq_zsmul_iff_modEq.mpr

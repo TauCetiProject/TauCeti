@@ -118,9 +118,8 @@ private theorem exists_under_eq_and_isArithFrobAt
     have hQne : Q.1 ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot P.ne_bot Q.1
     let Q' : HeightOneSpectrum (𝓞 L) := HeightOneSpectrum.ofPrime
       (Ideal.prime_of_isPrime hQne inferInstance)
-    have hQE : Q'.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma))) = P := by
-      apply HeightOneSpectrum.ext
-      exact Q.2.2.over.symm
+    have hQE : Q'.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma))) = P :=
+      HeightOneSpectrum.under_eq_iff_liesOver.mpr Q.2.2
     have hQK' : Q.1.under (𝓞 K) = p.asIdeal := by
       calc
         Q.1.under (𝓞 K) =
@@ -184,8 +183,7 @@ theorem fixedField_frobenius_fiber_eq_image
     have hur : ∀ (R : Ideal (𝓞 L)) [R.IsPrime] [R.LiesOver p.asIdeal],
         Algebra.IsUnramifiedAt (𝓞 K) R :=
       (mem_frobeniusPrimeSet_iff.mp hp).choose
-    have : Q.asIdeal.LiesOver p.asIdeal :=
-      ⟨(congrArg HeightOneSpectrum.asIdeal hQp).symm⟩
+    have : Q.asIdeal.LiesOver p.asIdeal := HeightOneSpectrum.under_eq_iff_liesOver.mp hQp
     let _ : Algebra.IsUnramifiedAt (𝓞 K) Q.asIdeal := hur Q.asIdeal
     obtain ⟨tau, htau, hres⟩ := Ideal.exists_isArithFrobAt_and_restrictScalars_eq Q.asIdeal sigma hQ
     have htau_eq : tau = sigma.toFixedFieldAlgEquiv :=
@@ -195,9 +193,6 @@ theorem fixedField_frobenius_fiber_eq_image
         [R.LiesOver (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))).asIdeal],
         Algebra.IsUnramifiedAt (𝓞 ↥(fixedField (Subgroup.zpowers sigma))) R :=
       fun R _ _ ↦ isUnramifiedAt_fixedField_of_under_eq sigma p hur Q hQp R
-    have : Q.asIdeal.LiesOver
-        (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))).asIdeal :=
-      ⟨HeightOneSpectrum.under_asIdeal _ Q⟩
     refine ⟨?_, mem_frobeniusPrimeSet_mk_of_isArithFrobAt hurE Q.asIdeal (htau_eq ▸ htau)⟩
     exact (HeightOneSpectrum.under_under
       (𝓞 ↥(fixedField (Subgroup.zpowers sigma))) Q).trans hQp
@@ -281,8 +276,6 @@ private theorem under_mem_frobeniusPrimeSet_fixedField (σ : L ≃ₐ[K] L)
     (hQ : IsArithFrobAt (𝓞 K) (AlgEquiv.restrictScalars K τ) Q.asIdeal) :
     Q.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))) ∈
       frobeniusPrimeSet ↥(fixedField (Subgroup.zpowers σ)) L (ConjClasses.mk τ) := by
-  have : Q.asIdeal.LiesOver (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers σ)))).asIdeal :=
-    ⟨HeightOneSpectrum.under_asIdeal _ Q⟩
   have := isUnramifiedAt_of_under_eq p hur Q hQp
   exact mem_frobeniusPrimeSet_mk_of_isArithFrobAt
     (fun R _ _ ↦ isUnramifiedAt_fixedField_of_under_eq σ p hur Q hQp R) Q.asIdeal
@@ -352,15 +345,12 @@ theorem fixedField_frobenius_fiber_inertiaDeg_eq_one_card_mul
   -- Grouped by the prime of `E` below them, they are exactly the primes above the
   -- residue-degree-one primes of the relative fibre at which `τ` is the relative Frobenius,
   -- and there are `orderOf σ / orderOf τ` of those above each such prime.
-  set w := AlgEquiv.restrictScalars K τ with hw_def
+  set w := AlgEquiv.restrictScalars K τ
   have hC : ConjClasses.mk w = C := ConjClasses.mem_carrier_iff_mk_eq.mp hτ
   have hp' : p ∈ frobeniusPrimeSet K L (ConjClasses.mk w) := hC ▸ hp
   have hur : ∀ (R : Ideal (𝓞 L)) [R.IsPrime] [R.LiesOver p.asIdeal],
       Algebra.IsUnramifiedAt (𝓞 K) R :=
     (mem_frobeniusPrimeSet_iff.mp hp).choose
-  have hord : orderOf τ = orderOf w :=
-    (orderOf_injective (AlgEquiv.restrictScalarsHom K)
-      (AlgEquiv.restrictScalarsHom_injective K) τ).symm
   -- The absolute fibre `U` of `w` above `p`.
   let U := {Q : HeightOneSpectrum (𝓞 L) //
     Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) w Q.asIdeal}

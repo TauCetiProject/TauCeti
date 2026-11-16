@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.CrossedProduct.BrauerClass
+import Mathlib.FieldTheory.Normal.Closure
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.FieldTheory.Galois.Trace
 
@@ -229,10 +230,20 @@ variable (f hf) in
 For finite Galois extensions `K ⊆ L ⊆ M` and `f : Gal(M/K) → Gal(L/K)` compatible with the
 inclusion `L ⊆ M`, the crossed product of `c.comap f` is isomorphic to the algebra of
 `[M : L] × [M : L]` matrices over the crossed product of `c`. -/
-theorem nonempty_algEquiv_matrix_comap [IsGalois K M] [IsGalois K L] (c : TwoCocycle K L) :
+theorem nonempty_algEquiv_matrix_comap [IsGalois K M] (c : TwoCocycle K L) :
     Nonempty (CrossedProduct (c.comap f (IsScalarTower.toAlgHom K L M) hf) ≃ₐ[K]
       Matrix (Fin (finrank L M)) (Fin (finrank L M)) (CrossedProduct c)) := by
   have : FiniteDimensional K L := Module.Finite.left K L M
+  -- the intertwining `hf` makes `L` stable under `Gal(M/K)`, hence normal over `K`
+  have : IsGalois K L := by
+    have : Algebra.IsSeparable K L := Algebra.isSeparable_tower_bot_of_isSeparable K L M
+    have hn : Normal K (IsScalarTower.toAlgHom K L M).fieldRange := by
+      rw [IntermediateField.normal_iff_forall_map_le']
+      rintro σ _ ⟨_, ⟨x, rfl⟩, rfl⟩
+      exact ⟨f σ x, hf σ x⟩
+    have : Normal K L :=
+      Normal.of_algEquiv (AlgHom.equivFieldRange (IsScalarTower.toAlgHom K L M)).symm
+    exact ⟨⟩
   have : FiniteDimensional L M := Module.Finite.of_restrictScalars_finite K L M
   have : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
   have : NeZero (finrank L M) := ⟨Module.finrank_pos.ne'⟩

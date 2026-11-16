@@ -292,7 +292,7 @@ private theorem exists_isCoupling_lintegral_lt [IsFiniteMeasure π] (hc : Contin
   -- `t • ρ i ≤ n⁻¹ • π` for every `i`.
   have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
   obtain ⟨j, hj⟩ := Finite.exists_min fun i ↦ π (W i)
-  set t : ℝ≥0∞ := π (W j) / n with ht_def
+  set t : ℝ≥0∞ := π (W j) / n
   have ht0 : t ≠ 0 := ENNReal.div_ne_zero.2 ⟨hW0 j, ENNReal.natCast_ne_top n⟩
   have httop : t ≠ ∞ := ENNReal.div_ne_top (measure_ne_top π _) (Nat.cast_ne_zero.2 hn)
   let κ := t • Measure.sum ρ

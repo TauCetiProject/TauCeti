@@ -21,6 +21,14 @@ field exists on all of `M`. These are the hypersurfaces whose characteristic fol
 preserved, up to conjugation, by the flow of `Z`, which is how existence of closed characteristics
 on them is deduced from almost existence.
 
+The definitions are predicates on an arbitrary map `ι` and an arbitrary two-form `ω`: they do not
+require `ι` to be an immersion, an embedding or of codimension one, nor `ω` to be nondegenerate.
+They are the standard notions when `ι` is the inclusion of a `C¹`-embedded hypersurface of a
+symplectic manifold. Otherwise transversality can degenerate: for a constant map, or where `ι` is
+not differentiable for the atlas of `S` (so that `mfderiv` takes its junk value `0`), it only
+asks that `Z` does not vanish along `ι`, and for `ω = 0` every map along which some smooth vector
+field is nowhere tangent is of restricted contact type with primitive `0`.
+
 For a closed `ω`, a Liouville vector field `Z` is the same as a primitive `α = ι_Z ω` of `ω`
 (`TauCeti.isLiouvilleVectorField_iff_mextDeriv_interior_eq`), and when `ω` is nondegenerate the
 primitive determines the field. The definitions below keep the primitive explicit:
@@ -90,7 +98,12 @@ variable (J) in
 `ω`, with primitive `α`, when on some open neighbourhood `U` of the image of `ι` the one-form `α` is
 a primitive of `ω`, `dα = ω`, and some vector field `Z`, smooth on `U` and satisfying `ι_Z ω = α`
 on `U`, is transverse along `ι`. When `ω` is smooth, such a `Z` is a Liouville vector field of
-`ω` on `U`. -/
+`ω` on `U`.
+
+Neither `ι` being a codimension-one embedding nor `ω` being symplectic is part of the definition;
+these are the hypotheses under which this is the standard notion (and under which `α` restricts to a
+contact form on `S`). In general transversality degenerates to `Z ≠ 0` along `ι` where `ι` is
+constant or not differentiable for the atlas of `S`. -/
 def IsContactType (ω : RoughForm I M ℝ 2) (α : RoughForm I M ℝ 1) (ι : S → M) : Prop :=
   ∃ U : Set M, IsOpen U ∧ range ι ⊆ U ∧ (∀ x ∈ U, mextDeriv α x = ω x) ∧
     ∃ Z : (x : M) → TangentSpace I x, ContMDiffOn I I.tangent (⊤ : ℕ∞) (T% Z) U ∧
@@ -101,7 +114,12 @@ variable (J) in
 the two-form `ω`, with primitive `α`, when `α` is a primitive of `ω` on all of `M`, `dα = ω`, and
 some smooth vector field `Z` on `M` with `ι_Z ω = α` is transverse along `ι`. For a closed
 `C¹` form `ω`, such a `Z` is a Liouville vector field of `ω`
-(`TauCeti.exists_isRestrictedContactType_iff`). -/
+(`TauCeti.exists_isRestrictedContactType_iff`).
+
+As for `TauCeti.IsContactType`, `ι` need not be a codimension-one embedding nor `ω` symplectic:
+these are the hypotheses under which this is the standard notion, and otherwise transversality can
+degenerate to `Z ≠ 0` along `ι` (for `ω = 0` any map along which some smooth vector field is
+nowhere tangent qualifies, with primitive `0`). -/
 def IsRestrictedContactType (ω : RoughForm I M ℝ 2) (α : RoughForm I M ℝ 1) (ι : S → M) : Prop :=
   mextDeriv α = ω ∧ ∃ Z : (x : M) → TangentSpace I x, ContMDiff I I.tangent (⊤ : ℕ∞) (T% Z) ∧
     ω.interior Z = α ∧ IsTransverseAlong J Z ι

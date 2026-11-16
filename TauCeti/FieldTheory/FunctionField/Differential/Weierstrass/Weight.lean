@@ -79,7 +79,7 @@ private theorem exists_wronskian_eq_wronskian_basis_mul (hF : IsFunctionField k 
     have h := Module.finrank_eq_card_basis b
     rw [Fintype.card_fin, ← Divisor.dim_def, hW.dim_eq hF hex, hW.genus_eq hF hex] at h
     exact h.symm
-  have hcard : P.weierstrassGaps.card = n := (P.card_weierstrassGaps hF hex hP).trans hn.symm
+  have hcard : P.weierstrassGaps.card = n := (P.card_weierstrassGaps hF hP).trans hn.symm
   -- Enumerate the gaps as `e 0, …, e (n - 1)`.
   set e : Fin n → ℕ := fun j ↦ ((P.weierstrassGaps.equivFinOfCardEq hcard).symm j : ℕ)
   have he_mem : ∀ j, e j ∈ P.weierstrassGaps := fun j ↦
@@ -90,8 +90,7 @@ private theorem exists_wronskian_eq_wronskian_basis_mul (hF : IsFunctionField k 
     exact Equiv.sum_comp (P.weierstrassGaps.equivFinOfCardEq hcard).symm fun m ↦ ((m : ℕ) : ℤ)
   -- A section of `L(W)` of order `e j - 1 - W(P)` at `P` for each gap `e j`.
   choose f hfW hf0 hford using fun j ↦
-    (P.isGap_iff_exists_mem_riemannRochSpace_ord_eq hF hW hP
-      ((P.mem_weierstrassGaps_iff _).mp (he_mem j)).1).mp
+    (P.isGap_iff_exists_mem_riemannRochSpace_ord_eq hF hW hP).mp
       ((P.mem_weierstrassGaps_iff_isGap hF hex _).mp (he_mem j))
   have hinj : Function.Injective fun j ↦ (P.ord (f j) : k) := fun i j hij ↦ by
     simp only [hford] at hij

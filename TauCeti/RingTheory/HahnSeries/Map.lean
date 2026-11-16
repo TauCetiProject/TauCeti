@@ -221,8 +221,8 @@ theorem exists_mul_eval₂_C_eq_eval₂_C_of_mapRingHom {φ ℓ : K⟦Γ⟧} {P 
     rw [← map_pow, mul_left_comm, ← map_mul, C_mul_eq_smul, C_mul_eq_smul, mul_smul_comm]
     exact map_smul_mapRingHom_algebraMap f _ _
   refine ⟨lin P, lin Q, fun h0 ↦ ?_, ?_⟩
-  · have := Polynomial.ext_iff.mp h0 Q.natDegree
-    simp [lin, finsetSum_coeff, coeff_monomial, hf] at this
+  · have := congrArg (fun p : K[X] ↦ p.coeff Q.natDegree) h0
+    simp [lin, coeff_monomial, Finsupp.single_apply, hf] at this
   · rw [← one_mul ((lin P).eval₂ C ℓ), ← hlin, ← hlin, map_one, one_mul, h]
 
 end Descent

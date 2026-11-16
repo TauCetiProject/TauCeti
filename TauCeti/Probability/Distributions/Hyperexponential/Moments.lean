@@ -53,7 +53,7 @@ theorem integral_pow_hyperexponentialMeasure
   rw [integral_hyperexponentialMeasure hr (integrable_pow_hyperexponentialMeasure p r n),
     Finset.mul_sum]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   by_cases hwi : p.weights i = 0
   · simp [hwi]
   · rw [integral_pow_expMeasure (hr i (pos_iff_ne_zero.mpr hwi))]

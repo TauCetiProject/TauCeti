@@ -39,6 +39,8 @@ group is this range, which is the centralizer of `J`
   is the realification of the unitary group.
 * `Matrix.GeneralLinearGroup.mem_range_realify_iff`: the realified general linear group is the
   centralizer of `J` in `GL (n ⊕ n) ℝ`.
+* `Matrix.GeneralLinearGroup.star_mem_range_realify`: the realified general linear group is closed
+  under transposition.
 * `TauCeti.GLSymplectic.inf_unitarySubgroup`, `TauCeti.GLSymplectic.inf_range_realify` and
   `Matrix.GeneralLinearGroup.unitarySubgroup_inf_range_realify`: the same three identities for
   subgroups of `GL (n ⊕ n) ℝ`.
@@ -161,6 +163,15 @@ theorem mem_range_realify_iff {M : GL (n ⊕ n) ℝ} :
   · simp [← Matrix.realify_inj, hA, hB]
   · simp [← Matrix.realify_inj, hA, hB]
   · simpa using hA
+
+/-- **The realified general linear group is closed under transposition.** -/
+theorem star_mem_range_realify {M : GL (n ⊕ n) ℝ} (hM : M ∈ (realify n ℂ).range) :
+    star M ∈ (realify n ℂ).range := by
+  obtain ⟨A, rfl⟩ := hM
+  -- Realification turns the conjugate transpose into the transpose.
+  refine ⟨star A, Units.ext ?_⟩
+  simp [coe_realify, star_eq_conjTranspose, realify_conjTranspose,
+    conjTranspose_eq_transpose_of_trivial]
 
 /-- An invertible real matrix is a realified unitary matrix exactly when it commutes with `J` and
 is orthogonal. -/

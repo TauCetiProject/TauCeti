@@ -47,12 +47,9 @@ Nothing here needs the presentation to come from Artin--Wedderburn: an algebra e
 
 ## References
 
-This implements the Layer 2 target "the dimension count" of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md),
-pinned there as `finrank_eq_sum_sq_of_isAlgClosed`; its companion `finrank_eq_sum_sq_finrank`, which
-assumes nothing of the coefficients, is in `TauCeti/Algebra/Matrix/Pi.lean`. See C. W. Curtis and
-I. Reiner, *Representation Theory of Finite Groups and Associative Algebras*, §25, or T. Y. Lam,
-*A First Course in Noncommutative Rings*, §3.
+The companion `TauCeti.finrank_eq_sum_sq_finrank`, which assumes nothing of the coefficients, is in
+`TauCeti/Algebra/Matrix/Pi.lean`. See C. W. Curtis and I. Reiner, *Representation Theory of Finite
+Groups and Associative Algebras*, §25, or T. Y. Lam, *A First Course in Noncommutative Rings*, §3.
 -/
 
 public section

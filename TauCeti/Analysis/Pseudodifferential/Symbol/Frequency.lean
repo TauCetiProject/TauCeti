@@ -17,7 +17,9 @@ A smooth coefficient `b(ξ)` with `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m - k)` i
 (`TauCeti.Symbol.ofFrequency`). This file constructs two such symbols on `ℝⁿ`:
 
 * `TauCeti.Symbol.besselPotential`: the Bessel weight `(1 + ‖ξ / 2π‖²) ^ (s / 2)` in the angular
-  frequency `ξ`, a uniform symbol of order `s`;
+  frequency `ξ`, a uniform symbol of order `s`. Composing with it is additive in `s`
+  (`TauCeti.Symbol.coefficient_comp_besselPotential_comp_besselPotential`) and trivial for `s = 0`
+  (`TauCeti.Symbol.coefficient_comp_besselPotential_zero`);
 * `TauCeti.Symbol.ofInner`: the linear coefficient `⟪ξ, v⟫`, a uniform symbol of order `1`. For
   `v ≠ 0` and a nontrivial fibre it has no smaller order
   (`TauCeti.Symbol.not_exists_coefficient_eq_ofInner_coefficient`).
@@ -77,6 +79,26 @@ theorem coefficient_besselPotential (s : ℝ) (p : CoordinateSpace n × Coordina
 
 theorem isUniform_besselPotential (s : ℝ) : (besselPotential s : Symbol n V V s).IsUniform :=
   isUniform_ofFrequency _ _
+
+/-- Multiplying a symbol by `⟨ξ / 2π⟩ ^ t` and then by `⟨ξ / 2π⟩ ^ t'` multiplies it by
+`⟨ξ / 2π⟩ ^ (t + t')`. -/
+@[simp]
+theorem coefficient_comp_besselPotential_comp_besselPotential {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℂ W] (a : Symbol n V W m) (t t' : ℝ) :
+    ((a.comp (besselPotential t)).comp (besselPotential t')).coefficient =
+      (a.comp (besselPotential (t + t'))).coefficient := by
+  ext1 p
+  simp only [coefficient_comp, coefficient_besselPotential, ContinuousLinearMap.comp_smul,
+    ContinuousLinearMap.comp_id, smul_smul, ← Complex.ofReal_mul]
+  rw [← Real.rpow_add (by positivity), add_div, add_comm (t' / 2)]
+
+/-- Multiplying a symbol by `⟨ξ / 2π⟩ ^ 0 = 1` does not change its coefficient. -/
+@[simp]
+theorem coefficient_comp_besselPotential_zero {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℂ W] (a : Symbol n V W m) :
+    (a.comp (besselPotential 0)).coefficient = a.coefficient := by
+  ext1 p
+  simp [coefficient_comp]
 
 
 /-- The linear function `⟪ξ, v⟫` satisfies the symbol estimates of order `1`. -/

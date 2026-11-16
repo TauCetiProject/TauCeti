@@ -51,16 +51,21 @@ structure Orientation (G : Graph V E) where
 
 namespace Orientation
 
-/-- Two orientations are equal when they choose the same tail and head for every edge. -/
+/-- Two orientations choosing the same tail for an edge also choose the same head. -/
+theorem head_eq_of_tail_eq {o₁ o₂ : Orientation G} {e : G.edgeSet}
+    (h : o₁.tail e = o₂.tail e) : o₁.head e = o₂.head e :=
+  Subtype.ext <| (o₁.isLink e).right_unique <| h ▸ o₂.isLink e
+
+/-- Two orientations are equal when they choose the same tail for every edge: the head is
+determined by the tail and the edge. -/
 @[ext]
-theorem ext {o₁ o₂ : Orientation G} (htail : ∀ e, o₁.tail e = o₂.tail e)
-    (hhead : ∀ e, o₁.head e = o₂.head e) : o₁ = o₂ := by
+theorem ext {o₁ o₂ : Orientation G} (htail : ∀ e, o₁.tail e = o₂.tail e) : o₁ = o₂ := by
   cases o₁ with
   | mk tail₁ head₁ hlink₁ =>
     cases o₂ with
     | mk tail₂ head₂ hlink₂ =>
       have htail' : tail₁ = tail₂ := funext htail
-      have hhead' : head₁ = head₂ := funext hhead
+      have hhead' : head₁ = head₂ := funext fun e ↦ head_eq_of_tail_eq (htail e)
       subst tail₂ head₂
       rfl
 
@@ -77,15 +82,6 @@ theorem tail_inc (o : Orientation G) (e : G.edgeSet) : G.Inc e.1 (o.tail e).1 :=
 theorem head_inc (o : Orientation G) (e : G.edgeSet) : G.Inc e.1 (o.head e).1 :=
   (o.isLink e).inc_right
 
-/-- Two orientations choosing the same tail for an edge also choose the same head. -/
-theorem head_eq_of_tail_eq {o₁ o₂ : Orientation G} {e : G.edgeSet}
-    (h : o₁.tail e = o₂.tail e) : o₁.head e = o₂.head e :=
-  Subtype.ext <| (o₁.isLink e).right_unique <| h ▸ o₂.isLink e
-
-/-- Two orientations are equal when they choose the same tail for every edge. -/
-theorem ext_of_tail {o₁ o₂ : Orientation G} (h : ∀ e, o₁.tail e = o₂.tail e) : o₁ = o₂ :=
-  ext h fun _ ↦ head_eq_of_tail_eq (h _)
-
 /-- Two orientations choosing the same head for an edge also choose the same tail. -/
 theorem tail_eq_of_head_eq {o₁ o₂ : Orientation G} {e : G.edgeSet}
     (h : o₁.head e = o₂.head e) : o₁.tail e = o₂.tail e :=
@@ -93,7 +89,7 @@ theorem tail_eq_of_head_eq {o₁ o₂ : Orientation G} {e : G.edgeSet}
 
 /-- Two orientations are equal when they choose the same head for every edge. -/
 theorem ext_of_head {o₁ o₂ : Orientation G} (h : ∀ e, o₁.head e = o₂.head e) : o₁ = o₂ :=
-  ext (fun _ ↦ tail_eq_of_head_eq (h _)) h
+  ext fun _ ↦ tail_eq_of_head_eq (h _)
 
 /-- The orientation choosing a prescribed incident vertex as the head of every edge; the tail is
 the other end, which is the head itself for a loop. -/
@@ -154,7 +150,8 @@ theorem reverse_head (o : Orientation G) (e : G.edgeSet) :
 
 @[simp]
 theorem reverse_reverse (o : Orientation G) : o.reverse.reverse = o := by
-  ext <;> rfl
+  ext
+  rfl
 
 theorem reverse_involutive : Function.Involutive (reverse (G := G)) :=
   reverse_reverse

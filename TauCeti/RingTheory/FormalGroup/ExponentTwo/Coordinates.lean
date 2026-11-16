@@ -160,7 +160,7 @@ theorem exponentTwoLog_inv_smul_𝔾ₐ (h2 : (2 : R) = 0) (h₁ : PowerSeries.c
   -- `φ` is the series of the inverse of the isomorphism `φ⁻¹ : 𝔾ₐ → φ⁻¹ • 𝔾ₐ`.
   have hφ := (smulIso φ⁻¹ (𝔾ₐ (R := R))).invHom.hom
   rw [smulIso_invHom_toPowerSeries, inv_inv] at hφ
-  exact ((φ⁻¹ • 𝔾ₐ).eq_exponentTwoLog _ φ.constantCoeff_toPowerSeries h₁ hp
+  exact ((φ⁻¹ • 𝔾ₐ).eq_exponentTwoLog _ h₁ hp
     (FormalGroupHom.hom_additive_iff.mp hφ)).symm
 
 end FormalGroup

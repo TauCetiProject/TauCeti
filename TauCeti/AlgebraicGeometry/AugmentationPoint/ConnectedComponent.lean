@@ -11,8 +11,9 @@ public import TauCeti.RingTheory.Idempotents.Connected.Component
 /-!
 # The connected component defined by an augmentation
 
-An algebra homomorphism from a commutative algebra to its ground field determines a rational point
-of the algebra's prime spectrum. This file records that the component idempotent maps to one and
+An algebra homomorphism from a commutative algebra to its ground ring, an integral domain,
+determines a point of the algebra's prime spectrum (a rational point when the ground ring is a
+field). This file records that the component idempotent maps to one and
 the factorization of the augmentation through the quotient cutting out that point's connected
 component when the prime spectrum is locally connected.
 
@@ -32,7 +33,7 @@ component when the prime spectrum is locally connected.
 
 The connected-component factorization is used to construct the identity component `G°` of an
 algebraic group and its component group `π₀(G)`. It concerns only the ordinary connected
-component over the ground field and asserts no compatibility with base change.
+component over the ground ring and asserts no compatibility with base change.
 -/
 
 public section
@@ -43,7 +44,7 @@ namespace AlgHom
 
 universe u v
 
-variable {k : Type u} [Field k]
+variable {k : Type u} [CommRing k] [IsDomain k]
 variable {H : Type v} [CommRing H] [Algebra k H]
 variable (f : H →ₐ[k] k)
 
@@ -99,12 +100,12 @@ namespace PrimeSpectrum
 
 universe u v
 
-variable {k : Type u} [Field k]
+variable {k : Type u} [CommRing k] [IsDomain k]
 variable {H : Type v} [CommRing H] [Algebra k H]
 variable [LocallyConnectedSpace (PrimeSpectrum H)]
 
-/-- A rational point of the quotient cutting out a connected component maps into that component
-under the quotient map. -/
+/-- The point of the quotient cutting out a connected component defined by an augmentation maps
+into that component under the quotient map. -/
 theorem kernelPoint_comp_mkₐ_mem_connectedComponent (z : PrimeSpectrum H)
     (g : (H ⧸ connectedComponentIdeal z) →ₐ[k] k) :
     AlgHom.kernelPoint

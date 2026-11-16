@@ -98,7 +98,7 @@ private theorem minorsIdeal_span_image_of_free [Free R F] [Module.Finite R F]
     obtain rfl : w = fun i ↦ j (v i) := funext fun i ↦ (hvw i).symm
     -- The determinant is multilinear in the functionals `g k`, which are `S`-linear combinations
     -- of base changes of functionals on `F` since `Dual S W` is the base change of `Dual R F`.
-    let μ : MultilinearMap S (fun _ : Fin p ↦ Dual S W) S :=
+    let μ : MultilinearMap (RingHom.id S) (fun _ : Fin p ↦ Dual S W) S :=
       (Matrix.detRowAlternating.compLinearMap
         (LinearMap.pi fun i ↦ LinearMap.applyₗ (j (v i)))).toMultilinearMap
     have hμ (g : Fin p → Dual S W) : μ g = (Matrix.of fun i k ↦ g k (j (v i))).det := by

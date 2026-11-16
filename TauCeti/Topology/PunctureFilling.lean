@@ -32,11 +32,12 @@ homeomorphism of their fillings (`PunctureFilling.congr`).
 
 This is how a finite cover of a punctured surface is compactified: each component of the preimage
 of a punctured disc about a puncture is itself a punctured disc, and the filling adds its missing
-centre. The general statements here need only the charts `φ i`. When they are open embeddings,
-`E` and the filled discs are open subspaces of the filling, and the neighbourhoods of `center φ i`
-are the images of the discs of radius `r` (`PunctureFilling.hasBasis_nhds_center`). Under the
-hypotheses describing the ends of `E` the filling is Hausdorff, compact, connected and second
-countable.
+centre. The general statements here need only the charts `φ i`. When they are continuous, `E` is
+an open subspace of the filling; when moreover `φ i` is an open map, so is the filled disc
+`disc φ i`, and the neighbourhoods of `center φ i` are the images of the discs of radius `r`
+(`PunctureFilling.hasBasis_nhds_center`); when `φ i` is an open embedding, the filled disc is an
+open subspace. Under the hypotheses describing the ends of `E` the filling is Hausdorff, compact,
+connected and second countable.
 
 ## Main declarations
 
@@ -45,9 +46,9 @@ countable.
   filled discs `PunctureFilling.disc`.
 * `TauCeti.PunctureFilling.isOpen_iff`, `TauCeti.PunctureFilling.continuous_iff`: the final
   topology and its universal property.
-* `TauCeti.PunctureFilling.isOpenEmbedding_incl`, `TauCeti.PunctureFilling.isOpenEmbedding_disc`:
-  `E` and the filled discs are open subspaces, and `E` is dense
-  (`TauCeti.PunctureFilling.denseRange_incl`).
+* `TauCeti.PunctureFilling.isOpenEmbedding_incl`, `TauCeti.PunctureFilling.isOpenMap_disc`,
+  `TauCeti.PunctureFilling.isOpenEmbedding_disc`: `E` and the filled discs are open subspaces, and
+  `E` is dense (`TauCeti.PunctureFilling.denseRange_incl`).
 * `TauCeti.PunctureFilling.nhds_center`, `TauCeti.PunctureFilling.hasBasis_nhds_center`: the
   neighbourhoods of an added point.
 * `TauCeti.PunctureFilling.extend`, `TauCeti.PunctureFilling.continuous_extend_iff`: maps out of
@@ -396,30 +397,44 @@ theorem isOpenEmbedding_incl (hφ : ∀ i, Continuous (φ i)) : IsOpenEmbedding 
   rw [disc_preimage_image_incl]
   exact isOpenEmbedding_inclusion_puncture.isOpenMap _ (hU.preimage (hφ i))
 
+/-- If the punctured discs `φ j` are continuous and `φ i` is an open map, so is the `i`-th filled
+disc. -/
+theorem isOpenMap_disc (hφ : ∀ j, Continuous (φ j)) {i : ι} (hi : IsOpenMap (φ i)) :
+    IsOpenMap (disc φ i) := by
+  intro W hW
+  have hincl : IsOpen (incl φ ⁻¹' (disc φ i '' W)) := by
+    rw [incl_preimage_image_disc]
+    exact hi _ (hW.preimage (continuous_inclusion _))
+  have hE (k : ι) : IsOpen (disc φ k ⁻¹' (incl φ '' (incl φ ⁻¹' (disc φ i '' W)))) := by
+    rw [disc_preimage_image_incl]
+    exact isOpenEmbedding_inclusion_puncture.isOpenMap _ (hincl.preimage (hφ k))
+  refine isOpen_iff.2 ⟨hincl, fun k => ?_⟩
+  -- Off its centre, the `k`-th disc meets the image of `W` only inside `E`; its centre lies in
+  -- that image only when `k = i` and `0 ∈ W`.
+  have hsub : disc φ k ⁻¹' (disc φ i '' W) ⊆
+      disc φ k ⁻¹' (incl φ '' (incl φ ⁻¹' (disc φ i '' W))) ∪ {z | k = i ∧ z ∈ W} := by
+    intro z hz
+    by_cases hz0 : z = 0
+    · obtain ⟨w, hw, hwz⟩ := hz
+      rw [hz0, disc_zero, disc_eq_center_iff] at hwz
+      obtain ⟨rfl, rfl⟩ := hwz
+      exact Or.inr ⟨rfl, hz0 ▸ hw⟩
+    · rw [mem_union, mem_preimage, image_preimage_eq_inter_range]
+      exact Or.inl ⟨hz, by rwa [← mem_preimage, disc_preimage_range_incl]⟩
+  by_cases hk : k = i
+  · convert (hE k).union hW using 1
+    exact (hsub.trans (union_subset_union_right _ fun _ hz => hz.2)).antisymm
+      (union_subset (preimage_mono (image_preimage_subset _ _)) (hk ▸ subset_preimage_image _ _))
+  · convert hE k using 1
+    exact (hsub.trans (union_subset subset_rfl fun _ hz => (hk hz.1).elim)).antisymm
+      (preimage_mono (image_preimage_subset _ _))
+
 /-- If the punctured discs `φ j` are continuous and `φ i` is an open embedding, the `i`-th filled
 disc is an open subspace of the puncture filling. -/
 theorem isOpenEmbedding_disc (hφ : ∀ j, Continuous (φ j)) {i : ι} (hi : IsOpenEmbedding (φ i)) :
-    IsOpenEmbedding (disc φ i) := by
-  refine .of_continuous_injective_isOpenMap (continuous_disc i) (disc_injective hi.injective)
-    fun W hW => ?_
-  have hincl : IsOpen (incl φ ⁻¹' (disc φ i '' W)) := by
-    rw [incl_preimage_image_disc]
-    exact hi.isOpenMap _ (hW.preimage (continuous_inclusion _))
-  refine isOpen_iff.2 ⟨hincl, fun k => ?_⟩
-  by_cases hk : k = i
-  · subst hk
-    rwa [(disc_injective hi.injective).preimage_image]
-  -- Off the centre, the `k`-th disc meets the `i`-th one only inside `E`.
-  have h : disc φ k ⁻¹' (disc φ i '' W) =
-      disc φ k ⁻¹' (incl φ '' (incl φ ⁻¹' (disc φ i '' W))) := by
-    rw [image_preimage_eq_inter_range, preimage_inter, left_eq_inter]
-    rintro z ⟨w, -, hw⟩
-    rw [mem_preimage, ← mem_preimage, disc_preimage_range_incl, mem_compl_singleton_iff]
-    rintro rfl
-    rw [disc_zero, disc_eq_center_iff] at hw
-    exact hk hw.2.symm
-  rw [h, disc_preimage_image_incl]
-  exact isOpenEmbedding_inclusion_puncture.isOpenMap _ (hincl.preimage (hφ k))
+    IsOpenEmbedding (disc φ i) :=
+  .of_continuous_injective_isOpenMap (continuous_disc i) (disc_injective hi.injective)
+    (isOpenMap_disc hφ hi.isOpenMap)
 
 /-- `E` is dense in its puncture filling: every added point is a limit of points of `E`. -/
 theorem denseRange_incl : DenseRange (incl φ) := by
@@ -466,17 +481,17 @@ theorem nhds_incl (hφ : ∀ i, Continuous (φ i)) (x : E) :
 
 /-- The neighbourhoods of the added point `center φ i` are those of the point itself together with
 the image of the end of `φ i`, the filter of points `φ i w` with `w` near `0`. -/
-theorem nhds_center (hφ : ∀ j, Continuous (φ j)) {i : ι} (hi : IsOpenEmbedding (φ i)) :
+theorem nhds_center (hφ : ∀ j, Continuous (φ j)) {i : ι} (hi : IsOpenMap (φ i)) :
     𝓝 (center φ i) =
       pure (center φ i) ⊔ map (incl φ ∘ φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)) := by
-  rw [← disc_zero, ← (isOpenEmbedding_disc hφ hi).map_nhds_eq, ← pure_sup_nhdsNE, map_sup,
-    map_pure, map_disc_nhdsNE]
+  rw [← disc_zero, ← (isOpenMap_disc hφ hi).map_nhds_eq (continuous_disc i).continuousAt,
+    ← pure_sup_nhdsNE, map_sup, map_pure, map_disc_nhdsNE]
 
 /-- **The neighbourhoods of an added point.** The images under `disc φ i` of the discs of radius
 `r > 0` form a basis of the neighbourhoods of `center φ i`. -/
-theorem hasBasis_nhds_center (hφ : ∀ j, Continuous (φ j)) {i : ι} (hi : IsOpenEmbedding (φ i)) :
+theorem hasBasis_nhds_center (hφ : ∀ j, Continuous (φ j)) {i : ι} (hi : IsOpenMap (φ i)) :
     (𝓝 (center φ i)).HasBasis (fun r : ℝ => 0 < r) fun r => disc φ i '' {z | ‖(z : ℂ)‖ < r} := by
-  rw [← disc_zero, ← (isOpenEmbedding_disc hφ hi).map_nhds_eq]
+  rw [← disc_zero, ← (isOpenMap_disc hφ hi).map_nhds_eq (continuous_disc i).continuousAt]
   convert (nhds_basis_ball (x := (0 : 𝔻))).map (disc φ i) using 3 with r
   ext z
   simp [Subtype.dist_eq]
@@ -484,25 +499,17 @@ theorem hasBasis_nhds_center (hφ : ∀ j, Continuous (φ j)) {i : ι} (hi : IsO
 /-- **The added points are isolated from one another**: every set of added points is closed, as
 each filled disc meets it at most in its centre. -/
 theorem isDiscrete_range_center : IsDiscrete (range (center φ)) := by
-  rw [isDiscrete_iff_forall_mem_exists_isOpen]
-  rintro _ ⟨i, rfl⟩
-  refine ⟨(center φ '' {i}ᶜ)ᶜ, isOpen_iff.2 ⟨?_, fun k => ?_⟩, ?_⟩
+  refine isDiscrete_iff_forall_mem_exists_isClosed.2 fun s hs => ⟨s, ?_, inter_eq_left.2 hs⟩
+  rw [← isOpen_compl_iff, isOpen_iff]
+  simp only [preimage_compl]
+  refine ⟨?_, fun k => (Set.Subsingleton.isClosed fun z hz z' hz' => ?_).isOpen_compl⟩
   · convert isOpen_univ
-    ext x
-    simp
-  · rw [preimage_compl, isOpen_compl_iff]
-    refine Set.Subsingleton.isClosed fun z hz z' hz' => ?_
-    obtain ⟨j, -, hj⟩ := hz
-    obtain ⟨j', -, hj'⟩ := hz'
+    exact eq_univ_of_forall fun x hx => by
+      obtain ⟨i, hi⟩ := hs hx
+      exact incl_ne_center x i hi.symm
+  · obtain ⟨j, hj⟩ := hs hz
+    obtain ⟨j', hj'⟩ := hs hz'
     rw [(disc_eq_center_iff.1 hj.symm).1, (disc_eq_center_iff.1 hj'.symm).1]
-  · ext y
-    simp only [mem_inter_iff, mem_compl_iff, mem_image, mem_range, mem_singleton_iff]
-    constructor
-    · rintro ⟨hy, j, rfl⟩
-      by_contra hj
-      exact hy ⟨j, fun h => hj (congrArg _ h), rfl⟩
-    · rintro rfl
-      exact ⟨fun ⟨j, hj, h⟩ => hj (center_injective h), i, rfl⟩
 
 /-! ### Continuity of maps out of the puncture filling -/
 
@@ -535,21 +542,17 @@ theorem continuous_extend_iff {g : E → Y} {c : ι → Y} :
     rw [← continuousWithinAt_compl_self, ContinuousWithinAt, Function.comp_apply, disc_zero,
       extend_center, tendsto_extend_comp_disc_nhdsNE_iff]
   rw [← h0]
-  -- Away from the centre, the filled disc is the continuous map `g ∘ φ i`.
+  -- Away from the centre, the filled disc is the map `g ∘ φ i`.
+  have heq : (extend g c ∘ disc φ i) ∘ inclusion sdiff_subset = g ∘ φ i :=
+    funext fun w => by simp
   constructor
   · intro h
-    refine ⟨?_, h.continuousAt⟩
-    have hcomp : (extend g c ∘ disc φ i) ∘ inclusion sdiff_subset = g ∘ φ i :=
-      funext fun w => by simp
-    rw [← hcomp]
-    exact h.comp (continuous_inclusion _)
+    exact ⟨heq ▸ h.comp (continuous_inclusion _), h.continuousAt⟩
   · rintro ⟨hcomp, h⟩
     refine continuous_iff_continuousAt.2 fun z => ?_
     by_cases hz : z = 0
     · rwa [hz]
     obtain ⟨w, rfl⟩ : ∃ w, inclusion sdiff_subset w = z := ⟨puncture hz, rfl⟩
-    have heq : (extend g c ∘ disc φ i) ∘ inclusion sdiff_subset = g ∘ φ i :=
-      funext fun w => by simp
     rw [← isOpenEmbedding_inclusion_puncture.continuousAt_iff, heq]
     exact hcomp.continuousAt
 
@@ -621,15 +624,14 @@ end Map
 
 /-! ### Separation, compactness, connectedness and countability -/
 
-/-- **The puncture filling is Hausdorff** when `E` is, the punctured discs are open embeddings, no
-point of `E` is a limit of the end of a punctured disc, and the ends of two different punctured
-discs are disjoint. -/
-theorem t2Space [T2Space E] (hφ : ∀ i, IsOpenEmbedding (φ i))
+/-- **The puncture filling is Hausdorff** when `E` is, the punctured discs are continuous open
+maps, no point of `E` is a limit of the end of a punctured disc, and the ends of two different
+punctured discs are disjoint. -/
+theorem t2Space [T2Space E] (hφ : ∀ i, Continuous (φ i)) (hφo : ∀ i, IsOpenMap (φ i))
     (hend : ∀ i x, Disjoint (𝓝 x) (map (φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0))))
     (hdisj : Pairwise fun i j => Disjoint (map (φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)))
       (map (φ j) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)))) :
     T2Space (PunctureFilling φ) := by
-  have hc : ∀ i, Continuous (φ i) := fun i => (hφ i).continuous
   have hpure (i : ι) (F : Filter E) : Disjoint (pure (center φ i)) (map (incl φ) F) :=
     disjoint_of_disjoint_of_mem
       (disjoint_singleton_left.2 (by rintro ⟨x, hx⟩; exact incl_ne_center x i hx))
@@ -640,21 +642,21 @@ theorem t2Space [T2Space E] (hφ : ∀ i, IsOpenEmbedding (φ i))
   | incl x =>
     induction b using PunctureFilling.induction with
     | incl y =>
-      rw [nhds_incl hc, nhds_incl hc, disjoint_map incl_injective]
+      rw [nhds_incl hφ, nhds_incl hφ, disjoint_map incl_injective]
       exact disjoint_nhds_nhds.2 fun h => hab (congrArg _ h)
     | center j =>
-      rw [nhds_incl hc, nhds_center hc (hφ j), disjoint_sup_right, ← map_map,
+      rw [nhds_incl hφ, nhds_center hφ (hφo j), disjoint_sup_right, ← map_map,
         disjoint_map incl_injective]
       exact ⟨(hpure j _).symm, hend j x⟩
   | center i =>
     induction b using PunctureFilling.induction with
     | incl y =>
-      rw [nhds_incl hc, nhds_center hc (hφ i), disjoint_sup_left, ← map_map,
+      rw [nhds_incl hφ, nhds_center hφ (hφo i), disjoint_sup_left, ← map_map,
         disjoint_map incl_injective]
       exact ⟨hpure i _, (hend i y).symm⟩
     | center j =>
       have hij : i ≠ j := fun h => hab (congrArg _ h)
-      rw [nhds_center hc (hφ i), nhds_center hc (hφ j), disjoint_sup_left, disjoint_sup_right,
+      rw [nhds_center hφ (hφo i), nhds_center hφ (hφo j), disjoint_sup_left, disjoint_sup_right,
         disjoint_sup_right, ← map_map, ← map_map, disjoint_map incl_injective]
       exact ⟨⟨disjoint_pure_pure.2 (center_injective.ne hij), hpure i _⟩, (hpure j _).symm,
         hdisj hij⟩

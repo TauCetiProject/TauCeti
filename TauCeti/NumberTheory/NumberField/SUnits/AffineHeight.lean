@@ -135,7 +135,7 @@ theorem exists_forall_logHeightAff_smul_le (S : Finset (HeightOneSpectrum (𝓞 
           ∑ v ∈ S, log (⨆ o, FinitePlace.mk v (y o)) :=
       log_prod_iSup_eq S (fun w ↦ zero_lt_one.trans_le (one_le_iSup_option_elim w _))
         (fun v _ ↦ zero_lt_one.trans_le (one_le_iSup_option_elim (FinitePlace.mk v) _))
-    _ ≤ ∑ w : InfinitePlace K, (w.mult / D * h + R) + ∑ v ∈ S, (h / D + R) :=
+    _ ≤ ∑ w : InfinitePlace K, (w.mult / D * h + R) + ∑ _ ∈ S, (h / D + R) :=
       add_le_add (Finset.sum_le_sum fun w _ ↦ hinf w) (Finset.sum_le_sum hfin)
     _ = h + (Fintype.card (InfinitePlace K) + #S) * R := by
       rw [Finset.sum_add_distrib, Finset.sum_add_distrib, ← Finset.sum_mul, ← Finset.sum_div]

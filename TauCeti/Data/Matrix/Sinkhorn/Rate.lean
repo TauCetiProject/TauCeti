@@ -106,7 +106,7 @@ theorem hilbertProjectiveDist_sinkhornUpdate_iterate_le_mul_projectiveDiameter
   rw [hsemi.iterate_right, hsemi.iterate_right]
   have h := hilbertProjectiveDist_sinkhornStep_iterate_le hKt hb ha (sinkhornUpdate_pos hKt hb hx)
     (sinkhornUpdate_pos hKt hb hy) n
-  have h0 := hilbertProjectiveDist_sinkhornUpdate_le_projectiveDiameter hKt (fun j ↦ (hb j).ne')
+  have h0 := hilbertProjectiveDist_sinkhornUpdate_le_projectiveDiameter hKt b
     (fun i ↦ (hx i).le) (fun i ↦ (hy i).le)
   rw [projectiveDiameter_transpose] at h h0
   exact h.trans (mul_le_mul_of_nonneg_left h0 (pow_nonneg ht _))
@@ -134,7 +134,7 @@ theorem hilbertProjectiveDist_sinkhornStep_iterate_succ_le_mul_projectiveDiamete
   have hKt : ∀ j i, 0 < Kᵀ j i := fun j i ↦ by simpa using hK i j
   calc _ ≤ tanh (K.projectiveDiameter / 4) *
         (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter) :=
-      (hilbertProjectiveDist_sinkhornUpdate_le hK (fun i ↦ (ha i).ne')
+      (hilbertProjectiveDist_sinkhornUpdate_le hK a
         (sinkhornUpdate_pos hKt hb (sinkhornStep_iterate_pos hK ha hb hx n))
         (sinkhornUpdate_pos hKt hb (sinkhornStep_iterate_pos hK ha hb hy n))).trans
         (mul_le_mul_of_nonneg_left
@@ -142,23 +142,31 @@ theorem hilbertProjectiveDist_sinkhornStep_iterate_succ_le_mul_projectiveDiamete
           ht)
     _ = tanh (K.projectiveDiameter / 4) ^ (2 * n + 1) * K.projectiveDiameter := by ring
 
-/-- **Rate of the column potentials**: if `P` is the diagonal scaling of a strictly positive `K` by
-strictly positive factors `u` and `v` with row sums `a` and column sums `b`, then from every
-strictly positive `u₀` the column factors of the Sinkhorn iteration after `n` steps are within
+/-- **Rate of the column potentials**: if `P` is a diagonal scaling of a strictly positive `K` by
+row factors `u` and strictly positive column factors `v`, with strictly positive row sums `a` and
+column sums `b`, then from every strictly positive `u₀` the column factors of the Sinkhorn
+iteration after `n` steps are within
 `tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter` of `v` in Hilbert's projective
 metric. -/
 theorem IsDiagonalScaling.hilbertProjectiveDist_sinkhornUpdate_iterate_le_mul_projectiveDiameter
     {P K : Matrix ι κ ℝ} {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) {a : ι → ℝ}
     {b : κ → ℝ} (hPm : HasMarginals P a b) (hK : ∀ i j, 0 < K i j) (ha : ∀ i, 0 < a i)
-    (hb : ∀ j, 0 < b j) (hu : ∀ i, 0 < u i) (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ}
-    (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) :
+    (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) :
     hilbertProjectiveDist (Kᵀ.sinkhornUpdate b ((K.sinkhornStep a b)^[n] u₀)) v ≤
       tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter := by
-  rcases isEmpty_or_nonempty κ with hκ | hκ
-  · simpa [hilbertProjectiveDist_def] using mul_nonneg
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
+  · -- without rows every column update is `0 / 0 = 0`, at distance `0` from anything
+    have h0 : Kᵀ.sinkhornUpdate b ((K.sinkhornStep a b)^[n] u₀) = 0 := by
+      funext j
+      simp [sinkhornUpdate_apply, mulVec_apply_eq_sum]
+    rw [h0]
+    simpa [hilbertProjectiveDist_def] using mul_nonneg
       (pow_nonneg (tanh_projectiveDiameter_div_four_nonneg K) (2 * n)) (projectiveDiameter_nonneg K)
-  obtain ⟨j⟩ := id hκ
-  have : Nonempty ι := hPm.nonempty_of_col_sum_ne_zero (hb j).ne'
+  have : Nonempty κ := hPm.nonempty_of_row_sum_ne_zero (ha i).ne'
+  have : Nonempty ι := ⟨i⟩
+  have hu (i : ι) : 0 < u i := hP.pos_left (fun j ↦ (hK i j).le) (fun j ↦ (hv j).le)
+    ((((hasMarginals_def P a b).1 hPm).1 i).symm ▸ ha i)
+  have hb : ∀ j, 0 < b j := hP.col_marginal_pos hPm hK ha hv
   have hv' : Kᵀ.sinkhornUpdate b ((K.sinkhornStep a b)^[n] u) = v := by
     rw [Function.iterate_fixed (hP.sinkhornStep_eq hPm hK hu hv)]
     exact hP.sinkhornUpdate_transpose_eq ((hasMarginals_def P a b).1 hPm).2 hK hu
@@ -174,8 +182,7 @@ projective metric. -/
 theorem IsDiagonalScaling.hilbertProjectiveDist_sinkhornStep_iterate_succ_le_mul_projectiveDiameter
     {P K : Matrix ι κ ℝ} {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) {a : ι → ℝ}
     {b : κ → ℝ} (hPm : HasMarginals P a b) (hK : ∀ i j, 0 < K i j) (ha : ∀ i, 0 < a i)
-    (hb : ∀ j, 0 < b j) (hu : ∀ i, 0 < u i) (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ}
-    (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) :
+    (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) :
     hilbertProjectiveDist ((K.sinkhornStep a b)^[n + 1] u₀) u ≤
       tanh (K.projectiveDiameter / 4) ^ (2 * n + 1) * K.projectiveDiameter := by
   rcases isEmpty_or_nonempty ι with hι | hι
@@ -184,6 +191,9 @@ theorem IsDiagonalScaling.hilbertProjectiveDist_sinkhornStep_iterate_succ_le_mul
       (projectiveDiameter_nonneg K)
   obtain ⟨i⟩ := id hι
   have : Nonempty κ := hPm.nonempty_of_row_sum_ne_zero (ha i).ne'
+  have hu (i : ι) : 0 < u i := hP.pos_left (fun j ↦ (hK i j).le) (fun j ↦ (hv j).le)
+    ((((hasMarginals_def P a b).1 hPm).1 i).symm ▸ ha i)
+  have hb : ∀ j, 0 < b j := hP.col_marginal_pos hPm hK ha hv
   have h := Matrix.hilbertProjectiveDist_sinkhornStep_iterate_succ_le_mul_projectiveDiameter hK ha
     hb hu₀ hu n
   rwa [Function.iterate_fixed (hP.sinkhornStep_eq hPm hK hu hv)] at h
@@ -191,22 +201,27 @@ theorem IsDiagonalScaling.hilbertProjectiveDist_sinkhornStep_iterate_succ_le_mul
 /-! ### Plans and marginals -/
 
 /-- **Linear convergence of the Sinkhorn iteration from any initial factors**, upper bound: if `P`
-is the diagonal scaling of a strictly positive `K` by strictly positive factors with row sums `a`
-and column sums `b`, then every entry of the Sinkhorn plan after `n` steps from a strictly positive
-`u₀` is at most `exp (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter)` times the
-corresponding entry of `P`. -/
+is a diagonal scaling of a strictly positive `K` by row factors and strictly positive column
+factors, with strictly positive row sums `a` and column sums `b`, then every entry of the Sinkhorn
+plan after `n` steps from a strictly positive `u₀` is at most
+`exp (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter)` times the corresponding
+entry of `P`. -/
 theorem sinkhornPlan_iterate_apply_le_exp_mul_projectiveDiameter_mul {K : Matrix ι κ ℝ}
-    (hK : ∀ i j, 0 < K i j) {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} (hb : ∀ j, 0 < b j)
+    (hK : ∀ i j, 0 < K i j) {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ}
     {P : Matrix ι κ ℝ} {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P K u v)
-    (hPm : HasMarginals P a b) (hu : ∀ i, 0 < u i) (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ}
+    (hPm : HasMarginals P a b) (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ}
     (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) (i : ι) (j : κ) :
     K.sinkhornPlan a b ((K.sinkhornStep a b)^[n] u₀) i j ≤
       exp (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter) * P i j := by
+  have : Nonempty ι := ⟨i⟩
   have : Nonempty κ := ⟨j⟩
+  have hu (i : ι) : 0 < u i := hP.pos_left (fun j ↦ (hK i j).le) (fun j ↦ (hv j).le)
+    ((((hasMarginals_def P a b).1 hPm).1 i).symm ▸ ha i)
+  have hb : ∀ j, 0 < b j := hP.col_marginal_pos hPm hK ha hv
   refine (hP.sinkhornPlan_apply_le_exp_mul hK (fun i ↦ (ha i).le) hb
     ((hasMarginals_def P a b).1 hPm).1 hv (sinkhornStep_iterate_pos hK ha hb hu₀ n) i j).trans ?_
   exact mul_le_mul_of_nonneg_right (exp_le_exp.2
-    (hP.hilbertProjectiveDist_sinkhornUpdate_iterate_le_mul_projectiveDiameter hPm hK ha hb hu hv
+    (hP.hilbertProjectiveDist_sinkhornUpdate_iterate_le_mul_projectiveDiameter hPm hK ha hv
       hu₀ n)) (hP.pos hK hu hv i j).le
 
 /-- **Linear convergence of the Sinkhorn iteration from any initial factors**, lower bound: in the
@@ -214,19 +229,22 @@ setting of `Matrix.sinkhornPlan_iterate_apply_le_exp_mul_projectiveDiameter_mul`
 is at most `exp (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter)` times the
 corresponding entry of the Sinkhorn plan after `n` steps. -/
 theorem le_exp_mul_projectiveDiameter_mul_sinkhornPlan_iterate_apply {K : Matrix ι κ ℝ}
-    (hK : ∀ i j, 0 < K i j) {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} (hb : ∀ j, 0 < b j)
+    (hK : ∀ i j, 0 < K i j) {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ}
     {P : Matrix ι κ ℝ} {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P K u v)
-    (hPm : HasMarginals P a b) (hu : ∀ i, 0 < u i) (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ}
+    (hPm : HasMarginals P a b) (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ}
     (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) (i : ι) (j : κ) :
     P i j ≤ exp (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter) *
       K.sinkhornPlan a b ((K.sinkhornStep a b)^[n] u₀) i j := by
   have : Nonempty ι := ⟨i⟩
   have : Nonempty κ := ⟨j⟩
+  have hu (i : ι) : 0 < u i := hP.pos_left (fun j ↦ (hK i j).le) (fun j ↦ (hv j).le)
+    ((((hasMarginals_def P a b).1 hPm).1 i).symm ▸ ha i)
+  have hb : ∀ j, 0 < b j := hP.col_marginal_pos hPm hK ha hv
   have hun := sinkhornStep_iterate_pos hK ha hb hu₀ n
   refine (hP.le_exp_mul_sinkhornPlan_apply hK hb ((hasMarginals_def P a b).1 hPm).1
     (fun i ↦ (hu i).le) hv hun i j).trans ?_
   exact mul_le_mul_of_nonneg_right (exp_le_exp.2
-    (hP.hilbertProjectiveDist_sinkhornUpdate_iterate_le_mul_projectiveDiameter hPm hK ha hb hu hv
+    (hP.hilbertProjectiveDist_sinkhornUpdate_iterate_le_mul_projectiveDiameter hPm hK ha hv
       hu₀ n))
     ((isDiagonalScaling_sinkhornPlan K a b _).pos hK (sinkhornStep_pos hK ha hb hun)
       (sinkhornUpdate_pos (fun j i ↦ by simpa using hK i j) hb hun) i j).le
@@ -236,28 +254,31 @@ theorem le_exp_mul_projectiveDiameter_mul_sinkhornPlan_iterate_apply {K : Matrix
 the Sinkhorn plan after `n` steps differs from `b j` by at most
 `(exp (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter) - 1) * b j`. -/
 theorem abs_sum_sinkhornPlan_iterate_apply_sub_le {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j)
-    {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ}
+    {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} {P : Matrix ι κ ℝ}
     {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) (hPm : HasMarginals P a b)
-    (hu : ∀ i, 0 < u i) (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ)
+    (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ)
     (j : κ) :
     |∑ i, K.sinkhornPlan a b ((K.sinkhornStep a b)^[n] u₀) i j - b j| ≤
       (exp (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter) - 1) * b j := by
   set E := exp (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter)
   have hb' := ((hasMarginals_def P a b).1 hPm).2 j
+  have hu (i : ι) : 0 < u i := hP.pos_left (fun j ↦ (hK i j).le) (fun j ↦ (hv j).le)
+    ((((hasMarginals_def P a b).1 hPm).1 i).symm ▸ ha i)
+  have hb : 0 ≤ b j := hb' ▸ Finset.sum_nonneg fun i _ ↦ (hP.pos hK hu hv i j).le
   have hup : ∑ i, K.sinkhornPlan a b ((K.sinkhornStep a b)^[n] u₀) i j ≤ E * b j := by
     rw [← hb', Finset.mul_sum]
     exact Finset.sum_le_sum fun i _ ↦
-      sinkhornPlan_iterate_apply_le_exp_mul_projectiveDiameter_mul hK ha hb hP hPm hu hv hu₀ n i j
+      sinkhornPlan_iterate_apply_le_exp_mul_projectiveDiameter_mul hK ha hP hPm hv hu₀ n i j
   have hlow : b j ≤ E * ∑ i, K.sinkhornPlan a b ((K.sinkhornStep a b)^[n] u₀) i j := by
     rw [← hb', Finset.mul_sum]
     exact Finset.sum_le_sum fun i _ ↦
-      le_exp_mul_projectiveDiameter_mul_sinkhornPlan_iterate_apply hK ha hb hP hPm hu hv hu₀ n i j
+      le_exp_mul_projectiveDiameter_mul_sinkhornPlan_iterate_apply hK ha hP hPm hv hu₀ n i j
   -- `b j ≤ E * s` gives `b j - s ≤ (1 - E⁻¹) * b j`, and `1 - E⁻¹ ≤ E - 1`
   have hE : 0 < E := exp_pos _
   rw [abs_sub_le_iff]
   constructor
   · linarith
-  · nlinarith [mul_nonneg (hb j).le (sq_nonneg (E - 1))]
+  · nlinarith [mul_nonneg hb (sq_nonneg (E - 1))]
 
 /-- **ℓ¹ column residual of the Sinkhorn iteration**: in the setting of
 `Matrix.sinkhornPlan_iterate_apply_le_exp_mul_projectiveDiameter_mul`, the column sums of the
@@ -265,20 +286,21 @@ Sinkhorn plan after `n` steps differ from `b` in `ℓ¹` by at most
 `(exp (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter) - 1) * ∑ j, b j`. Its row
 sums are exactly `a`. -/
 theorem sum_abs_sum_sinkhornPlan_iterate_apply_sub_le {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j)
-    {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ}
+    {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} {P : Matrix ι κ ℝ}
     {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) (hPm : HasMarginals P a b)
-    (hu : ∀ i, 0 < u i) (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) :
+    (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) :
     ∑ j, |∑ i, K.sinkhornPlan a b ((K.sinkhornStep a b)^[n] u₀) i j - b j| ≤
       (exp (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter) - 1) *
         ∑ j, b j := by
   rw [Finset.mul_sum]
   exact Finset.sum_le_sum fun j _ ↦
-    abs_sum_sinkhornPlan_iterate_apply_sub_le hK ha hb hP hPm hu hv hu₀ n j
+    abs_sum_sinkhornPlan_iterate_apply_sub_le hK ha hP hPm hv hu₀ n j
 
 /-! ### The objective -/
 
-/-- **Objective gap of the Sinkhorn iteration**: if `P` is the diagonal scaling of a strictly
-positive `K` by strictly positive factors with row sums `a` and column sums `b`, so that
+/-- **Objective gap of the Sinkhorn iteration**: if `P` is a diagonal scaling of a strictly
+positive `K` by row factors and strictly positive column factors, with strictly positive row sums
+`a` and column sums `b`, so that
 `relEntropy P K` is the minimum of the relative entropy against `K` with these marginals, then the
 dual objective at the logarithms of the row and column factors of the Sinkhorn plan after `n` steps
 from a strictly positive `u₀` falls short of that minimum by at most
@@ -286,18 +308,21 @@ from a strictly positive `u₀` falls short of that minimum by at most
 `Matrix.relEntropyDual_le_relEntropy` the shortfall is nonnegative. -/
 theorem IsDiagonalScaling.relEntropy_sub_relEntropyDual_iterate_le {P K : Matrix ι κ ℝ}
     {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) {a : ι → ℝ} {b : κ → ℝ}
-    (hPm : HasMarginals P a b) (hK : ∀ i j, 0 < K i j) (ha : ∀ i, 0 < a i) (hb : ∀ j, 0 < b j)
-    (hu : ∀ i, 0 < u i) (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) :
+    (hPm : HasMarginals P a b) (hK : ∀ i j, 0 < K i j) (ha : ∀ i, 0 < a i)
+    (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) :
     relEntropy P K - K.relEntropyDual a b
         (fun i ↦ log (K.sinkhornStep a b ((K.sinkhornStep a b)^[n] u₀) i))
         (fun j ↦ log (Kᵀ.sinkhornUpdate b ((K.sinkhornStep a b)^[n] u₀) j)) ≤
       (∑ i, a i) * (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter) := by
-  rcases isEmpty_or_nonempty κ with hκ | hκ
-  · -- a positive row sum needs a column, so there are no rows either
-    have : IsEmpty ι := ⟨fun i ↦ hκ.false (hPm.nonempty_of_row_sum_ne_zero (ha i).ne').some⟩
-    simp [relEntropy_def, relEntropyDual_def]
-  obtain ⟨j⟩ := id hκ
-  have : Nonempty ι := hPm.nonempty_of_col_sum_ne_zero (hb j).ne'
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
+  · -- without rows the column sums `b` vanish
+    have hb : b = 0 := funext fun j ↦ by simp [← ((hasMarginals_def P a b).1 hPm).2 j]
+    simp [relEntropy_def, relEntropyDual_def, hb]
+  have : Nonempty κ := hPm.nonempty_of_row_sum_ne_zero (ha i).ne'
+  have : Nonempty ι := ⟨i⟩
+  have hu (i : ι) : 0 < u i := hP.pos_left (fun j ↦ (hK i j).le) (fun j ↦ (hv j).le)
+    ((((hasMarginals_def P a b).1 hPm).1 i).symm ▸ ha i)
+  have hb : ∀ j, 0 < b j := hP.col_marginal_pos hPm hK ha hv
   set x := (K.sinkhornStep a b)^[n] u₀
   have hx : ∀ i, 0 < x i := sinkhornStep_iterate_pos hK ha hb hu₀ n
   have hrow := sinkhornStep_pos hK ha hb hx
@@ -313,8 +338,8 @@ theorem IsDiagonalScaling.relEntropy_sub_relEntropyDual_iterate_le {P K : Matrix
   rw [Finset.sum_mul]
   refine Finset.sum_le_sum fun j _ ↦ ?_
   -- cell by cell, `P i j ≤ exp δ * R i j` bounds `log (P i j) - log (R i j)` by `δ`
-  have hle := le_exp_mul_projectiveDiameter_mul_sinkhornPlan_iterate_apply hK ha hb hP hPm hu hv
-    hu₀ n i j
+  have hle := le_exp_mul_projectiveDiameter_mul_sinkhornPlan_iterate_apply hK ha hP hPm hv hu₀ n
+    i j
   have hPpos := hP.pos hK hu hv i j
   have hlog : log (P i j) ≤ tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter +
       log (K.sinkhornPlan a b x i j) := by

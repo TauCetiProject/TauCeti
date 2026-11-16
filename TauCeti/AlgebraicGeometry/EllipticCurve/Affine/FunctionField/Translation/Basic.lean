@@ -58,13 +58,9 @@ injective (`CoordinateRing.algHom_injective`) and so extendable to the fraction 
 here; the function field gets its own instance from it, so the points of `W⁄F(W)` are available
 with no further assumption.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 0.5**, third milestone: "function-field
-pullbacks of the translations `τ_P`, with the action and composition laws". Layer 1's dual-isogeny
-milestone consumes them — "`Kˢᵉᵖ(W₁)/φ^*Kˢᵉᵖ(W₂)` **is** Galois with group `ker φ(Kˢᵉᵖ)` acting by
-translations" — and so does the place-free fibre count of Layer 1, where "translation moves the
-kernel fibre onto one".
+These pullbacks feed the dual isogeny, where for a separable isogeny `φ` the extension
+`Kˢᵉᵖ(W₁)/φ^*Kˢᵉᵖ(W₂)` is Galois with group `ker φ(Kˢᵉᵖ)` acting by translations, and the
+place-free fibre count of an isogeny, where translation moves the kernel fibre onto one.
 
 ## References
 
@@ -72,9 +68,9 @@ kernel fibre onto one".
 
 ## Provenance
 
-Not a port: none of the pinned sources builds the translation action. The pullback is manufactured
-from Mathlib's `Affine.Point` group law rather than from the addition formulas directly, so the
-composition law is the associativity Mathlib already proved.
+Not a port: none of the external sources this library draws on builds the translation action.
+The pullback is manufactured from Mathlib's `Affine.Point` group law rather than from the addition
+formulas directly, so the composition law is the associativity Mathlib already proved.
 -/
 
 public section

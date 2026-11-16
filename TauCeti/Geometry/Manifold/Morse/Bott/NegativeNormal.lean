@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Spectral.RelativeProjection
 public import TauCeti.Geometry.Manifold.Morse.Bott.Coordinates
+public import TauCeti.Geometry.Manifold.Morse.Bott.Splitting
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -15,7 +16,7 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 Let `i : S → M` be a nondegenerate critical submanifold of a function `f`. At each point of `S`
 the normal Hessian is a nondegenerate symmetric bilinear form on the normal space, whose negative
 index of inertia is the Morse index of `f` at `i s`
-(`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.sigNeg_normalHessian`). Given a fibre
+(`TauCeti.SmoothEmbedding.IsCriticalSubmanifold.sigNeg_normalHessian`). Given a fibre
 metric on the normal bundle, the normal space therefore splits, orthogonally for the metric and for
 the normal Hessian, into a **negative normal space**, on which the normal Hessian is negative
 definite, and a positive normal space, on which it is positive definite. The negative normal
@@ -39,12 +40,19 @@ No eigenbasis of the normal Hessian is chosen, so no smoothly varying eigenvecto
 
 ## Main results
 
-In the namespace `TauCeti.SmoothEmbedding`:
+In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
-* `IsNondegenerateCriticalSubmanifold.exists_contMDiffOn_negativeNormalProjection`: in each
-  normal-bundle trivialization, the projections onto the negative normal spaces of a Morse–Bott
-  submanifold relative to a `C^k` fibre metric form a `C^k` family, of rank the Morse index; their
-  ranges and kernels are the negative and positive relative spectral subspaces.
+* `exists_contMDiffOn_negativeNormalProjection`: in each normal-bundle trivialization, the
+  projections onto the negative normal spaces of a Morse–Bott submanifold relative to a `C^k` fibre
+  metric form a `C^k` family, of rank the Morse index; their ranges and kernels are the negative
+  and positive relative spectral subspaces.
+* `normalSpaceTrivialization_symm_negativeSpectralProjection_apply`: in a normal-bundle
+  trivialization, the negative spectral projection of the normal Hessian relative to a fibre
+  metric `g` reads the projection onto the negative normal space for `g`
+  (`TauCeti.SmoothEmbedding.IsCriticalSubmanifold.negativeNormalSpace`) along the positive normal
+  space for `g`.
+* `exists_contMDiffOn_projection_negativeNormalSpace`: these projections form a `C^k` family in
+  each normal-bundle trivialization.
 
 ## References
 
@@ -67,7 +75,10 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
   {f : M → ℝ} {n : ℕ∞ω} {i : SmoothEmbedding J I n S M} (hn : n ≠ 0)
   [I.Boundaryless] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold J 1 S]
-  {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
+
+section NormedSpace
+
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
 
 /-- **The negative normal projections of a Morse–Bott submanifold are smooth.** Let `i` be a
 nondegenerate critical submanifold of `f`, with `f` of class `C^{k+2}` along it and `k ≤ n`, and
@@ -164,5 +175,133 @@ theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I
       QuadraticMap.Equivalent.sigNeg_eq ⟨L⟩, h.sigNeg_normalHessian hn s]
   · rw [hker, LinearMap.BilinForm.finrank_relativeSpectralSubspace_Ioi hGs hGp hQs,
       QuadraticMap.Equivalent.sigPos_eq ⟨L⟩, h.sigPos_normalHessian hn s]
+
+end NormedSpace
+
+section InnerProductSpace
+
+variable {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P] [FiniteDimensional ℝ P]
+
+/-- **The negative spectral projection in a normal-bundle trivialization.** Let `Q` be the normal
+Hessian of a Morse–Bott submanifold at `s`, read in the preferred normal-bundle trivialization `e`
+at `s₀`, and let `G` be a fibre metric `g` read in `e`. Then the negative spectral projection of
+`Q` relative to `G` reads, through `e`, the projection of the normal space onto the negative normal
+space for `g` along the positive normal space for `g`. -/
+theorem normalSpaceTrivialization_symm_negativeSpectralProjection_apply [IsManifold I 2 M]
+    (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') {s₀ s : S}
+    (hs : s ∈ (i.normalSpaceTrivialization hn hdim s₀).baseSet) {Q G : P →L[ℝ] P →L[ℝ] ℝ}
+    (hQ : ∀ u v, h.normalHessian hn s ((i.normalSpaceTrivialization hn hdim s₀).symm s u)
+      ((i.normalSpaceTrivialization hn hdim s₀).symm s v) = Q u v)
+    (hGg : ∀ u v, G u v = g.inner s ((i.normalSpaceTrivialization hn hdim s₀).symm s u)
+      ((i.normalSpaceTrivialization hn hdim s₀).symm s v)) (u : P) :
+    (i.normalSpaceTrivialization hn hdim s₀).symm s (Q.negativeSpectralProjection G u) =
+      (h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g s)
+        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s)
+        ((i.normalSpaceTrivialization hn hdim s₀).symm s u) := by
+  set e := i.normalSpaceTrivialization hn hdim s₀
+  set hc := h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s
+  set pr := (h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g s) hc
+  let L := e.linearEquivAt ℝ s hs
+  have hL (w : P) : L.symm w = e.symm s w := Trivialization.linearEquivAt_symm_apply ..
+  have hQ' (w w' : P) : Q w w' = h.normalHessian hn s (L.symm w) (L.symm w') := by
+    rw [hL, hL, hQ]
+  have hG' (w w' : P) : G w w' = g.inner s (L.symm w) (L.symm w') := by rw [hL, hL, hGg]
+  have hne {w : P} (hw : w ≠ 0) : L.symm w ≠ 0 := (map_ne_zero_iff _ L.symm.injective).2 hw
+  -- `Q` is symmetric and nondegenerate, and `G` is positive definite, as the normal Hessian and
+  -- the fibre metric are.
+  have hQsymm (w w' : P) : Q w w' = Q w' w := by
+    rw [hQ', hQ', (h.isSymm_normalHessian hn s).eq]
+  have hQinj : Injective Q := fun w w' hww' ↦ by
+    have hker : L.symm (w - w') ∈ LinearMap.ker (h.normalHessian hn s) := by
+      rw [LinearMap.mem_ker]
+      ext x
+      obtain ⟨v, rfl⟩ := L.symm.surjective x
+      rw [map_sub, LinearMap.map_sub₂, LinearMap.zero_apply, ← hQ', ← hQ', hww', sub_self]
+    rwa [h.ker_normalHessian hn s, Submodule.mem_bot, map_eq_zero_iff _ L.symm.injective,
+      sub_eq_zero] at hker
+  have hG : IsStrictlyPositive (continuousLinearMapOfBilin (𝕜 := ℝ) G) :=
+    isStrictlyPositive_continuousLinearMapOfBilin_iff.mpr
+      ⟨fun w w' ↦ by rw [hG', hG', g.symm], fun w hw ↦ by rw [hG']; exact g.pos s _ (hne hw)⟩
+  -- The projection read in the trivialization.
+  let p : P →L[ℝ] P := LinearMap.toContinuousLinearMap (L.conj pr)
+  have hp (w : P) : L.symm (p w) = pr (L.symm w) := by
+    simp only [p, LinearMap.coe_toContinuousLinearMap', LinearEquiv.conj_apply_apply,
+      LinearEquiv.symm_apply_apply]
+  have hmem (w : P) : L.symm (p w) ∈ h.negativeNormalSpace hn g s := by
+    rw [hp]; exact Submodule.projection_apply_mem hc _
+  have hmem' (w : P) : L.symm (w - p w) ∈ h.positiveNormalSpace hn g s := by
+    rw [map_sub, hp]; exact Submodule.sub_projection_mem hc _
+  have heq : p = Q.negativeSpectralProjection G := by
+    refine (ContinuousLinearMap.eq_negativeSpectralProjection_iff hG hQsymm hQinj).2
+      ⟨?_, fun w w' ↦ ?_, fun w w' ↦ ?_, fun w hw ↦ ?_, fun w hw ↦ ?_⟩
+    · ext w
+      apply L.symm.injective
+      rw [mul_apply_eq_comp, hp, hp,
+        Submodule.projection_apply_of_mem_left hc (Submodule.projection_apply_mem hc _)]
+    · rw [hG']
+      exact h.inner_eq_zero_of_mem_negativeNormalSpace hn g (hmem w) (hmem' w')
+    · rw [hQ']
+      exact h.normalHessian_eq_zero_of_mem_negativeNormalSpace hn g (hmem w) (hmem' w')
+    · rw [hQ']
+      exact h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g (hmem w) (hne hw)
+    · rw [hQ']
+      exact h.normalHessian_apply_self_pos_of_mem_positiveNormalSpace hn g (hmem' w) (hne hw)
+  rw [← heq, ← hL, ← hL, hp]
+
+/-- **The projections onto the negative normal spaces are `C^k` in a normal-bundle
+trivialization.** Let `i` be a nondegenerate critical submanifold of `f`, with `f` of class
+`C^{k+2}` along it and `k ≤ n`, and let `g` be a fibre metric on its normal spaces, read in the
+preferred normal-bundle trivialization `e` at `s₀` as a `C^k` family `G` of bilinear forms on the
+Euclidean fibre model `P` over a set `U`. Then over the intersection of `U` with the base set of
+`e`, the projections of the normal spaces onto the negative normal spaces for `g` along the
+positive normal spaces for `g` are read in `e` by a `C^k` family of operators on `P`. This
+identifies the family of `exists_contMDiffOn_negativeNormalProjection` for the fibre metric `g`. -/
+theorem exists_contMDiffOn_projection_negativeNormalSpace {k : ℕ∞ω} [IsManifold I (k + 2) M]
+    (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
+    (hk : k ≤ n) (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') (s₀ : S)
+    {U : Set S} {G : S → P →L[ℝ] P →L[ℝ] ℝ}
+    (hG : ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ) k G U)
+    (hGg : haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+      ∀ s ∈ U ∩ (i.normalSpaceTrivialization hn hdim s₀).baseSet, ∀ u v,
+      G s u v = g.inner s ((i.normalSpaceTrivialization hn hdim s₀).symm s u)
+        ((i.normalSpaceTrivialization hn hdim s₀).symm s v)) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    ∃ p : S → P →L[ℝ] P,
+      ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P) k p (U ∩ (i.normalSpaceTrivialization hn hdim s₀).baseSet) ∧
+      ∀ s ∈ U ∩ (i.normalSpaceTrivialization hn hdim s₀).baseSet, ∀ u,
+        (i.normalSpaceTrivialization hn hdim s₀).symm s (p s u) =
+          (h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g s)
+            (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s)
+            ((i.normalSpaceTrivialization hn hdim s₀).symm s u) := by
+  have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  set e := i.normalSpaceTrivialization hn hdim s₀
+  set V := U ∩ e.baseSet
+  -- Over `V`, the family `G` is symmetric and positive definite, as the fibre metric is.
+  have hGsymm (s : S) (hs : s ∈ V) (u v : P) : G s u v = G s v u := by
+    rw [hGg s hs, hGg s hs, g.symm]
+  have hGpos (s : S) (hs : s ∈ V) (u : P) (hu : u ≠ 0) : 0 < G s u u := by
+    rw [hGg s hs, ← Trivialization.linearEquivAt_symm_apply (R := ℝ) e s hs.2]
+    exact g.pos s _ ((map_ne_zero_iff _ (e.linearEquivAt ℝ s hs.2).symm.injective).2 hu)
+  obtain ⟨p, hp, hprop⟩ := h.exists_contMDiffOn_negativeNormalProjection hn hk hf hdim s₀
+    (hG.mono inter_subset_left) hGsymm hGpos
+  rw [inter_assoc, inter_self] at hp hprop
+  obtain ⟨Q, -, hrep⟩ :=
+    h.exists_contMDiffOn_normalHessian_normalSpaceTrivialization hn hk hf hdim s₀
+  refine ⟨p, hp, fun s hs u ↦ ?_⟩
+  -- The properties of `p s` characterize the negative spectral projection of `Q s`.
+  obtain ⟨hQ, hQinj⟩ := hrep s hs.2
+  obtain ⟨hidem, -, -, hpG, hpN, hneg, hpos, -, -⟩ := hprop s hs
+  have hN (u v : P) := (hQ u v).1
+  simp only [hN] at hpN hneg hpos
+  have hGH : IsStrictlyPositive (continuousLinearMapOfBilin (𝕜 := ℝ) (G s)) :=
+    isStrictlyPositive_continuousLinearMapOfBilin_iff.mpr ⟨hGsymm s hs, hGpos s hs⟩
+  rw [(ContinuousLinearMap.eq_negativeSpectralProjection_iff hGH (fun u v ↦ (hQ u v).2)
+    hQinj).2 ⟨hidem, hpG, hpN, hneg, hpos⟩]
+  exact h.normalSpaceTrivialization_symm_negativeSpectralProjection_apply hn g hdim hs.2 hN
+    (hGg s hs) u
+
+end InnerProductSpace
 
 end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold

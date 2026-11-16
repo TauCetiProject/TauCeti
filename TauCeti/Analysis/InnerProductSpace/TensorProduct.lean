@@ -136,7 +136,7 @@ variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSp
 /-- The Hilbert tensor product of two finite-dimensional inner product spaces is complete, so
 operators between such tensor products have adjoints. -/
 instance instCompleteSpaceOfFiniteDimensional : CompleteSpace (E ⊗[𝕜] F) :=
-  FiniteDimensional.complete 𝕜 _
+  FiniteDimensional.completeSpace 𝕜 _
 
 end TensorProduct
 

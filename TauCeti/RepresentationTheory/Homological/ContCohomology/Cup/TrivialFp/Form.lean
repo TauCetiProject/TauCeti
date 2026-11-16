@@ -47,7 +47,9 @@ multiple rescales the form and changes nothing below.
 
 public section
 
-namespace TauCeti
+open TauCeti
+
+namespace LinearMap
 
 universe u
 
@@ -62,52 +64,52 @@ The form is a construction on the linear functional `φ`, so it and its lemmas l
 `(a, b) ↦ φ (a ⌣ b)` on `H¹(G, 𝔽_p)`. For a Demushkin group, where `H²(G, 𝔽_p)` is
 one-dimensional, an isomorphism `φ : H²(G, 𝔽_p) ≅ 𝔽_p` turns the cup square into the
 nondegenerate bilinear form of Labute's definition. -/
-noncomputable def _root_.LinearMap.cupForm (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p) :
+noncomputable def cupForm (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p) :
     LinearMap.BilinForm (ZMod p) (cohomFp p G 1) :=
   (cupFp p G).compr₂ φ
 
 @[simp]
-theorem _root_.LinearMap.cupForm_apply (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p)
+theorem cupForm_apply (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p)
     (a b : cohomFp p G 1) : φ.cupForm a b = φ (cupFp p G a b) := by
   simp only [LinearMap.cupForm, LinearMap.compr₂_apply]
 
 /-- Rescaling the functional rescales the cup form. -/
 @[simp]
-theorem _root_.LinearMap.cupForm_smul (c : ZMod p) (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p) :
+theorem cupForm_smul (c : ZMod p) (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p) :
     (c • φ).cupForm = c • φ.cupForm := by
   ext a b
   simp
 
 /-- **The cup form is skew-symmetric**, by graded commutativity of the cup square. -/
-theorem _root_.LinearMap.cupForm_gradedComm (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p)
+theorem cupForm_gradedComm (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p)
     (a b : cohomFp p G 1) : φ.cupForm a b = -φ.cupForm b a := by
   rw [LinearMap.cupForm_apply, LinearMap.cupForm_apply, cupFp_gradedComm, map_neg]
 
 /-- The cup form is reflexive: `φ (a ⌣ b) = 0` implies `φ (b ⌣ a) = 0`. -/
-theorem _root_.LinearMap.isRefl_cupForm (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p) :
+theorem isRefl_cupForm (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p) :
     φ.cupForm.IsRefl :=
   fun a b h => by rw [LinearMap.cupForm_gradedComm, h, neg_zero]
 
 /-- The cup form is alternating exactly when `φ` kills every cup square. -/
-theorem _root_.LinearMap.isAlt_cupForm_iff (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p) :
+theorem isAlt_cupForm_iff (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p) :
     φ.cupForm.IsAlt ↔ ∀ a : cohomFp p G 1, φ (cupFp p G a a) = 0 := by
   unfold LinearMap.BilinForm.IsAlt LinearMap.IsAlt
   simp only [LinearMap.cupForm_apply]
 
 /-- For injective `φ`, the cup form is alternating exactly when every cup square `a ⌣ a`
 vanishes; in particular alternation does not depend on the choice of `φ`. -/
-theorem _root_.LinearMap.isAlt_cupForm_iff_of_injective (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p)
+theorem isAlt_cupForm_iff_of_injective (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p)
     (hφ : Function.Injective φ) :
     φ.cupForm.IsAlt ↔ ∀ a : cohomFp p G 1, cupFp p G a a = 0 := by
   simp only [LinearMap.isAlt_cupForm_iff, map_eq_zero_iff φ hφ]
 
 /-- **At an odd prime the cup form is alternating.** -/
-theorem _root_.LinearMap.isAlt_cupForm_of_ne_two [Fact p.Prime]
+theorem isAlt_cupForm_of_ne_two [Fact p.Prime]
     (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p) (hp : p ≠ 2) : φ.cupForm.IsAlt := fun a => by
   rw [LinearMap.cupForm_apply, cupFp_self_eq_zero_of_ne_two p G hp, map_zero]
 
 /-- **At `p = 2` the cup form is symmetric**: skew-symmetry is symmetry in characteristic two. -/
-theorem _root_.LinearMap.isSymm_cupForm_two (φ : cohomFp 2 G 2 →ₗ[ZMod 2] ZMod 2) :
+theorem isSymm_cupForm_two (φ : cohomFp 2 G 2 →ₗ[ZMod 2] ZMod 2) :
     φ.cupForm.IsSymm :=
   LinearMap.BilinForm.isSymm_def.mpr fun a b => by
     rw [LinearMap.cupForm_gradedComm, ZMod.neg_eq_self_mod_two]
@@ -116,7 +118,7 @@ theorem _root_.LinearMap.isSymm_cupForm_two (φ : cohomFp 2 G 2 →ₗ[ZMod 2] Z
 points on the left**: every nonzero class `a` has some `b` with `a ⌣ b ≠ 0`. By reflexivity the
 right-separating condition is automatic, and nondegeneracy does not depend on the choice of
 `φ`. -/
-theorem _root_.LinearMap.nondegenerate_cupForm_iff_of_injective
+theorem nondegenerate_cupForm_iff_of_injective
     (φ : cohomFp p G 2 →ₗ[ZMod p] ZMod p) (hφ : Function.Injective φ) :
     φ.cupForm.Nondegenerate ↔
       ∀ a : cohomFp p G 1, a ≠ 0 → ∃ b : cohomFp p G 1, cupFp p G a b ≠ 0 := by
@@ -134,4 +136,4 @@ theorem _root_.LinearMap.nondegenerate_cupForm_iff_of_injective
     rw [LinearMap.cupForm_apply] at hab
     exact hb ((map_eq_zero_iff φ hφ).mp hab)
 
-end TauCeti
+end LinearMap

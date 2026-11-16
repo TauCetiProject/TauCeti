@@ -36,8 +36,8 @@ final extraction step before this result applies to the unrestricted double-edge
 
 ## References
 
-This is the branchless double-edge case of the "classification of finite-type Cartan matrices" in
-Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The exclusion of two
+This is the branchless double-edge case of the classification of finite-type Cartan matrices. The
+exclusion of two
 multiple edges is the affine-diagram argument in N. Bourbaki, *Lie Groups and Lie Algebras,
 Chapters 4--6*, Chapter VI, section 4, and J. E. Humphreys, *Introduction to Lie Algebras and
 Representation Theory*, section 11.4.

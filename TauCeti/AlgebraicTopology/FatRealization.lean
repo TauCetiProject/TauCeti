@@ -34,15 +34,17 @@ This file constructs `TauCeti.fatRealization X` with its characteristic maps
 `TauCeti.fatRealization.homotopy` from `‖φ 0‖` to `‖φ 1‖`: since `[0, 1]` is locally compact, the
 product of `‖X‖` with `[0, 1]` is still a quotient of `Σ n, Xₙ × Δⁿ × [0, 1]`.
 
-The main result is the open restriction theorem. If `φ : Y ⟶ X` is levelwise an open embedding
-and its image is closed under passing from a face back to the simplex, then `‖φ‖ : ‖Y‖ ⟶ ‖X‖` is
-an open embedding (`TauCeti.fatRealization.isOpenEmbedding_map`). In particular, if the image of
-`φ` in each level is the preimage of a set `V ⊆ Z` under an augmentation, then `‖Y‖` is
-homeomorphic, through `‖φ‖`, to the open subspace of `‖X‖` lying over `V`
-(`TauCeti.fatRealization.preimage_augment_eq_range_map` and
-`TauCeti.fatRealization.isOpenEmbedding_map_of_range_eq_preimage`). For the nerve of a groupoid
+The main results are the open and closed restriction theorems. If `φ : Y ⟶ X` is levelwise an
+open (respectively closed) embedding and its image is closed under passing from a face back to the
+simplex, then `‖φ‖ : ‖Y‖ ⟶ ‖X‖` is an open (respectively closed) embedding
+(`TauCeti.fatRealization.isOpenEmbedding_map`, `TauCeti.fatRealization.isClosedEmbedding_map`).
+In particular, if the image of `φ` in each level is the preimage of a set `V ⊆ Z` under an
+augmentation, then `‖Y‖` is homeomorphic, through `‖φ‖`, to the subspace of `‖X‖` lying over `V`
+(`TauCeti.fatRealization.preimage_augment_eq_range_map`,
+`TauCeti.fatRealization.isOpenEmbedding_map_of_range_eq_preimage` and
+`TauCeti.fatRealization.isClosedEmbedding_map_of_range_eq_preimage`). For the nerve of a groupoid
 augmented by the orbit map to its coarse space, this identifies the preimage of a saturated open
-set with the fat realization of the nerve of the restricted groupoid.
+or closed set with the fat realization of the nerve of the restricted groupoid.
 
 ## References
 
@@ -273,7 +275,7 @@ theorem homotopy_apply_ι (φ : unitInterval → (X ⟶ Y))
 
 end Homotopy
 
-section OpenRestriction
+section Restriction
 
 variable {X} {Y : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}} (φ : Y ⟶ X)
 
@@ -347,6 +349,22 @@ one of its faces does, then `‖φ‖ : ‖Y‖ ⟶ ‖X‖` is injective. -/
 theorem map_injective : Function.Injective (map φ) := fun q q' h ↦ Option.some.inj <| by
   rw [← partialInv_map hinj hsat q, ← partialInv_map hinj hsat q', h]
 
+/-- Under the same hypotheses, the preimage in level `n` of the image of `W ⊆ ‖Y‖` under `‖φ‖`
+is the image under `φ × id` of the preimage of `W`. -/
+private theorem preimage_ι_image_map (W : Set (fatRealization Y)) (n : SemiSimplexCategory) :
+    ι X n ⁻¹' (map φ '' W) = Prod.map (φ.app (op n)) id '' (ι Y n ⁻¹' W) := by
+  ext ⟨x, t⟩
+  constructor
+  · rintro ⟨q, hq, hqx⟩
+    have h := partialInv_map hinj hsat q
+    rw [hqx] at h
+    obtain ⟨y, rfl, rfl⟩ := exists_eq_of_partialInv_eq_some hinj hsat h
+    exact ⟨(y, t), hq, rfl⟩
+  · rintro ⟨⟨y, t'⟩, hy, hyx⟩
+    simp only [Prod.map_apply, id_eq, Prod.mk.injEq] at hyx
+    obtain ⟨rfl, rfl⟩ := hyx
+    exact ⟨ι Y n (y, t'), hy, rfl⟩
+
 end PartialInv
 
 variable {φ}
@@ -363,19 +381,24 @@ theorem isOpenEmbedding_map (hφ : ∀ n, IsOpenEmbedding (φ.app n))
     fun W hW ↦ ?_
   rw [isOpen_iff] at hW ⊢
   intro n
-  -- The preimage of `‖φ‖(W)` in level `n` is the image of the preimage of `W` under `φ × id`.
-  convert ((hφ (op n)).prodMap .id).isOpenMap _ (hW n) using 1
-  ext ⟨x, t⟩
-  constructor
-  · rintro ⟨q, hq, hqx⟩
-    have h := partialInv_map hinj hsat q
-    rw [hqx] at h
-    obtain ⟨y, rfl, rfl⟩ := exists_eq_of_partialInv_eq_some hinj hsat h
-    exact ⟨(y, t), hq, rfl⟩
-  · rintro ⟨⟨y, t'⟩, hy, hyx⟩
-    simp only [Prod.map_apply, id_eq, Prod.mk.injEq] at hyx
-    obtain ⟨rfl, rfl⟩ := hyx
-    exact ⟨ι Y n (y, t'), hy, rfl⟩
+  rw [preimage_ι_image_map hinj hsat]
+  exact ((hφ (op n)).prodMap .id).isOpenMap _ (hW n)
+
+/-- **Closed restriction.** If `φ : Y ⟶ X` is levelwise a closed embedding and a simplex of `X`
+lies in the image of `φ` whenever one of its faces does, then `‖φ‖ : ‖Y‖ ⟶ ‖X‖` is a closed
+embedding: `‖Y‖` is a closed subspace of `‖X‖`, with the quotient topology of its own fat
+realization. -/
+theorem isClosedEmbedding_map (hφ : ∀ n, IsClosedEmbedding (φ.app n))
+    (hsat : ∀ ⦃m n : SemiSimplexCategoryᵒᵖ⦄ (f : m ⟶ n) (x : X.obj m),
+      X.map f x ∈ range (φ.app n) → x ∈ range (φ.app m)) :
+    IsClosedEmbedding (map φ) := by
+  have hinj : ∀ n, Function.Injective (φ.app n) := fun n ↦ (hφ n).injective
+  refine .of_continuous_injective_isClosedMap (map φ).hom.continuous (map_injective hinj hsat)
+    fun W hW ↦ ?_
+  rw [isClosed_iff] at hW ⊢
+  intro n
+  rw [preimage_ι_image_map hinj hsat]
+  exact ((hφ (op n)).prodMap .id).isClosedMap _ (hW n)
 
 variable {Z : TopCat.{u}} (ε : X ⟶ (Functor.const _).obj Z) {V : Set Z}
 
@@ -394,17 +417,30 @@ theorem preimage_augment_eq_range_map (hrange : ∀ n, range (φ.app n) = ε.app
     rw [mem_preimage, ← ConcreteCategory.comp_apply, map_comp_augment, augment_ι]
     exact (hrange (op n)).subset ⟨y, rfl⟩
 
-/-- If `φ` is levelwise an open embedding whose image is the preimage of `V` under an augmentation
-`ε`, then `‖φ‖` is an open embedding; by `preimage_augment_eq_range_map` its image is the part of
-`‖X‖` lying over `V`. -/
-theorem isOpenEmbedding_map_of_range_eq_preimage (hφ : ∀ n, IsOpenEmbedding (φ.app n))
-    (hrange : ∀ n, range (φ.app n) = ε.app n ⁻¹' V) : IsOpenEmbedding (map φ) := by
-  refine isOpenEmbedding_map hφ fun m n f x hx ↦ ?_
+/-- If the image of `φ` in every level is the preimage of a set under an augmentation, then a
+simplex lies in the image of `φ` whenever one of its faces does. -/
+private theorem mem_range_of_map_mem_range (hrange : ∀ n, range (φ.app n) = ε.app n ⁻¹' V)
+    ⦃m n : SemiSimplexCategoryᵒᵖ⦄ (f : m ⟶ n) (x : X.obj m)
+    (hx : X.map f x ∈ range (φ.app n)) : x ∈ range (φ.app m) := by
   rw [hrange, mem_preimage, NatTrans.naturality_apply] at hx
   rw [hrange]
   simpa using hx
 
-end OpenRestriction
+/-- If `φ` is levelwise an open embedding whose image is the preimage of `V` under an augmentation
+`ε`, then `‖φ‖` is an open embedding; by `preimage_augment_eq_range_map` its image is the part of
+`‖X‖` lying over `V`. -/
+theorem isOpenEmbedding_map_of_range_eq_preimage (hφ : ∀ n, IsOpenEmbedding (φ.app n))
+    (hrange : ∀ n, range (φ.app n) = ε.app n ⁻¹' V) : IsOpenEmbedding (map φ) :=
+  isOpenEmbedding_map hφ (mem_range_of_map_mem_range ε hrange)
+
+/-- If `φ` is levelwise a closed embedding whose image is the preimage of `V` under an
+augmentation `ε`, then `‖φ‖` is a closed embedding; by `preimage_augment_eq_range_map` its image
+is the part of `‖X‖` lying over `V`. -/
+theorem isClosedEmbedding_map_of_range_eq_preimage (hφ : ∀ n, IsClosedEmbedding (φ.app n))
+    (hrange : ∀ n, range (φ.app n) = ε.app n ⁻¹' V) : IsClosedEmbedding (map φ) :=
+  isClosedEmbedding_map hφ (mem_range_of_map_mem_range ε hrange)
+
+end Restriction
 
 end fatRealization
 

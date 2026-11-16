@@ -17,6 +17,7 @@ import TauCeti.NumberTheory.GaussSum.Stickelberger
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.RingTheory.Ideal.Pointwise
 
 /-!
 # Stickelberger's relation
@@ -253,7 +254,6 @@ private theorem count_normalizedFactors_stickelbergerPhi [DecidableEq (Ideal (�
     simpa using (mem_of_liesOver P (span {(p : ℤ)}) (p : ℤ)).1 (mem_span_singleton_self _)
   have hNP : p ^ inertiaDeg P ℤ = absNorm P := pow_inertiaDeg p P
   have hΦ := stickelbergerPhi_ne_zero hP hm
-  let v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) := ⟨Q, inferInstance, hQ⟩
   by_cases hpQ : (p : 𝓞 K) ∈ Q
   swap
   · -- Away from `p`: no `σ⁻¹ • P` is `Q`, and `Φ(P) ∉ Q` as `N P = p ^ f ∉ Q`.
@@ -272,6 +272,7 @@ private theorem count_normalizedFactors_stickelbergerPhi [DecidableEq (Ideal (�
     IsPrime.ne_top' ((span_singleton_le_iff_mem _).2 (by simpa using hpQ))⟩
   have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
   obtain ⟨τ, rfl⟩ := exists_smul_eq_of_isGaloisGroup (span {(p : ℤ)}) P Q Gal(K/ℚ)
+  let v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) := ⟨τ • P, inferInstance, hQ⟩
   have hΦτ : τ⁻¹ • stickelbergerPhi v.asIdeal m = stickelbergerPhi P m := by
     have h := map_stickelbergerPhi (m := m) P (MulSemiringAction.toRingEquiv _ (𝓞 K) τ)
     rw [MulSemiringAction.toRingEquiv_apply_apply] at h
@@ -280,7 +281,7 @@ private theorem count_normalizedFactors_stickelbergerPhi [DecidableEq (Ideal (�
     rfl
   have hloc := intValuation_smul_stickelbergerPhi hm hpm v τ⁻¹
   rw [hΦτ, v.intValuation_eq_exp_neg_multiplicity hΦ, multiplicity_eq_count_normalizedFactors
-    v.irreducible (by simpa using hΦ), normalize_eq] at hloc
+    v.irreducible, normalize_eq] at hloc
   rw [Nat.cast_injective (neg_injective (WithZero.exp_injective hloc)),
     TauCeti.NumberField.sum_val_galEquivZMod_filter_inv_smul_eq_smul hpm P τ]
 
@@ -301,9 +302,6 @@ theorem span_stickelbergerPhi_of_isMaximal (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [
   have hpm : ¬ p ∣ m := (Nat.Prime.coprime_iff_not_dvd hp).1 <|
     hP.coprime_dvd_left (hNP ▸ dvd_pow_self p (inertiaDeg_pos P ℤ).ne')
   set c : Gal(K/ℚ) → ℕ := fun σ ↦ (galEquivZMod m K σ : ZMod m).val
-  have hσP (σ : Gal(K/ℚ)) : (σ • P).IsMaximal := by
-    rw [pointwise_smul_eq_comap]
-    exact comap_isMaximal_of_surjective _ (RingEquiv.surjective _)
   -- The right side is the product of the multiset `M` of primes, its normalized factors.
   set M : Multiset (Ideal (𝓞 K)) := ∑ σ, c σ • {σ⁻¹ • P} with hM
   have hMprod : M.prod = ∏ σ : Gal(K/ℚ), (σ⁻¹ • P) ^ c σ := by
@@ -313,8 +311,8 @@ theorem span_stickelbergerPhi_of_isMaximal (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [
     obtain ⟨σ, -, hσ⟩ := Multiset.mem_sum.1 hQ
     rw [Multiset.mem_nsmul, Multiset.mem_singleton] at hσ
     rw [hσ.2]
-    exact prime_of_isPrime (Ring.ne_bot_of_isMaximal_of_not_isField (hσP σ⁻¹)
-      (RingOfIntegers.not_isField K)) (hσP σ⁻¹).isPrime
+    exact prime_of_isPrime (Ring.ne_bot_of_isMaximal_of_not_isField inferInstance
+      (RingOfIntegers.not_isField K)) inferInstance
   have hΦ := stickelbergerPhi_ne_zero hP hm
   suffices h : normalizedFactors (span {stickelbergerPhi P m}) = M by
     rw [← hMprod, ← h, prod_normalizedFactors_eq_self (by simpa using hΦ)]
@@ -325,7 +323,6 @@ theorem span_stickelbergerPhi_of_isMaximal (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [
       fun hS ↦ Multiset.count_eq_zero.2 fun h ↦ hQ ⟨(hS Q h).ne_zero, isPrime_of_prime (hS Q h)⟩
     rw [hQ' fun _ h ↦ prime_of_normalized_factor _ h, hQ' hMprime]
   have : Q.IsPrime := hQ.2
-  let v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) := ⟨Q, hQ.2, hQ.1⟩
   -- The multiplicity of `Q` on the right is the sum of the `c σ` with `σ⁻¹ • P = Q`.
   have hcount : M.count Q = ∑ σ with σ⁻¹ • P = Q, c σ := by
     simp [hM, Multiset.count_sum', Multiset.count_singleton, Finset.sum_filter, eq_comm]

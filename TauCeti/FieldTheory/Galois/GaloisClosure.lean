@@ -6,16 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.GaloisClosure
+public import TauCeti.FieldTheory.Galois.Restriction
 
 /-!
 # The normal closure of a finite intermediate field
 
-In a Galois extension `K/k`, the normal closure of a finite intermediate field `L` is finite and
-Galois over `k`. This file records it as an element of `FiniteGaloisIntermediateField k K`
-(`FiniteGaloisIntermediateField.normalClosure`), the smallest one containing `L`
-(`FiniteGaloisIntermediateField.normalClosure_le_iff`). In particular every finite intermediate
-field lies in a finite Galois one, which is how statements about the finite Galois subextensions of
-an infinite Galois extension reach its other finite subextensions.
+In a normal extension `K/k`, the normal closure of a finite separable intermediate field `L` is
+finite and Galois over `k`. This file records it as an element of
+`FiniteGaloisIntermediateField k K` (`FiniteGaloisIntermediateField.normalClosure`), the smallest
+one containing `L` (`FiniteGaloisIntermediateField.normalClosure_le_iff`). In particular every
+finite intermediate field of a Galois extension lies in a finite Galois one, which is how
+statements about the finite Galois subextensions of an infinite Galois extension reach its other
+finite subextensions.
 
 ## Main definitions
 
@@ -27,7 +29,7 @@ an infinite Galois extension reach its other finite subextensions.
 * `FiniteGaloisIntermediateField.le_normalClosure`: `L` lies in its normal closure.
 * `FiniteGaloisIntermediateField.normalClosure_le_iff`: the normal closure of `L` is the smallest
   finite Galois intermediate field containing `L`.
-* `IntermediateField.fixingSubgroup_normalClosure`: in a Galois extension, the subgroup fixing
+* `IntermediateField.fixingSubgroup_normalClosure`: in a normal extension, the subgroup fixing
   the normal closure of `L` is the normal core of the subgroup fixing `L`.
 * `IntermediateField.normalClosure_fixedField`: in a finite Galois extension, the normal closure
   of the fixed field of `H` is the fixed field of the normal core of `H`.
@@ -37,16 +39,16 @@ public section
 
 namespace FiniteGaloisIntermediateField
 
-variable (k : Type*) {K : Type*} [Field k] [Field K] [Algebra k K] [IsGalois k K]
-  (L : IntermediateField k K) [FiniteDimensional k L]
+variable (k : Type*) {K : Type*} [Field k] [Field K] [Algebra k K] [Normal k K]
+  (L : IntermediateField k K) [FiniteDimensional k L] [Algebra.IsSeparable k L]
 
-/-- **The normal closure of a finite intermediate field** `L` of a Galois extension `K/k`, as a
-finite Galois intermediate field. It is the smallest finite Galois intermediate field containing
-`L` (`normalClosure_le_iff`). -/
+/-- **The normal closure of a finite separable intermediate field** `L` of a normal extension
+`K/k`, as a finite Galois intermediate field. It is the smallest finite Galois intermediate field
+containing `L` (`normalClosure_le_iff`). -/
 noncomputable def normalClosure : FiniteGaloisIntermediateField k K where
   toIntermediateField := IntermediateField.normalClosure k L K
   finiteDimensional := normalClosure.is_finiteDimensional k L K
-  isGalois := IsGalois.normalClosure k L K
+  isGalois := IsGalois.normalClosure_of_isSeparable k L K
 
 /-- The underlying intermediate field of `normalClosure k L` is the normal closure of `L`. -/
 @[simp]
@@ -69,16 +71,26 @@ end FiniteGaloisIntermediateField
 
 namespace IntermediateField
 
-variable {k K : Type*} [Field k] [Field K] [Algebra k K] [IsGalois k K]
+variable {k K : Type*} [Field k] [Field K] [Algebra k K]
 
-/-- **The subgroup fixing a normal closure is a normal core.** In a Galois extension `K/k`, the
+/-- **The subgroup fixing a normal closure is a normal core.** In a normal extension `K/k`, the
 subgroup fixing the normal closure of an intermediate field `L` is the largest normal subgroup
 fixing `L`, that is, the normal core of the subgroup fixing `L`. -/
-theorem fixingSubgroup_normalClosure (L : IntermediateField k K) :
+theorem fixingSubgroup_normalClosure [Normal k K] (L : IntermediateField k K) :
     (normalClosure k L K).fixingSubgroup = L.fixingSubgroup.normalCore := by
+  -- The subgroup fixing the normal closure is normal (`IntermediateField.fixingSubgroup_normal`),
+  -- so it lies in the normal core.
   refine le_antisymm (Subgroup.normal_le_normalCore.2 (fixingSubgroup_le (le_normalClosure L)))
     ?_
-  -- The fixed field of the normal core is normal over `k` and contains `L`.
+  -- The fixed field of the normal core is stable under `Gal(K/k)`, hence normal over `k`, as in
+  -- Mathlib's `IsGalois.of_fixedField_normal_subgroup`: for `τ` in the normal core, so is
+  -- `σ⁻¹ * τ * σ`, which fixes `x`; that is, `τ` fixes `σ x`.
+  have : Normal k (fixedField L.fixingSubgroup.normalCore) := by
+    refine normal_iff_forall_map_le'.mpr ?_
+    rintro σ _ ⟨x, hx, rfl⟩ τ
+    exact (AlgEquiv.symm_apply_eq σ).mp
+      (hx ⟨σ⁻¹ * τ * σ, (Subgroup.normalCore_normal _).conj_mem' τ.1 τ.2 σ⟩)
+  -- It contains `L`, so it contains the normal closure of `L`.
   rw [← le_fixedField_iff_le_fixingSubgroup, normalClosure_le_iff_of_normal,
     le_fixedField_iff_le_fixingSubgroup]
   exact Subgroup.normalCore_le _
@@ -86,7 +98,7 @@ theorem fixingSubgroup_normalClosure (L : IntermediateField k K) :
 /-- **The normal closure of a fixed field.** In a finite Galois extension `K/k`, the normal
 closure of the fixed field of a subgroup `H` of `Gal(K/k)` is the fixed field of the normal core
 of `H`. -/
-theorem normalClosure_fixedField [FiniteDimensional k K] (H : Subgroup Gal(K/k)) :
+theorem normalClosure_fixedField [IsGalois k K] [FiniteDimensional k K] (H : Subgroup Gal(K/k)) :
     normalClosure k (fixedField H) K = fixedField H.normalCore := by
   rw [← IsGalois.fixedField_fixingSubgroup (normalClosure k (fixedField H) K),
     fixingSubgroup_normalClosure, fixingSubgroup_fixedField]

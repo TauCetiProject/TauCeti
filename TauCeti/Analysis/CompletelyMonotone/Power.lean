@@ -12,15 +12,14 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 /-!
 # Negative real powers are completely monotone
 
-This file proves the open-half-line negative-power example requested by the
-`OneParameterSemigroups` roadmap.
+This file proves that negative real powers are completely monotone on the open half-line.
 
 For a real exponent `s ≥ 0` the `n`-th derivative of `y ↦ y^{-s}` is
 `(descPochhammer ℝ n)(-s) · y^{-s-n}`, and the falling factorial `(-s)(-s-1)⋯(-s-n+1)`
 carries the sign `(-1)ⁿ`, so `(-1)ⁿ` times the derivative is `s(s+1)⋯(s+n-1) · y^{-s-n} ≥ 0`.
 Thus on the open half-line, `t ↦ t^{-s}` is completely monotone for every `s ≥ 0`. The case
-`s = 1` is `t ↦ 1/t`, whose (infinite) representing measure is Lebesgue measure, the
-Hausdorff–Bernstein–Widder example the roadmap flags for the open half-line.
+`s = 1` is `t ↦ 1/t`, whose (infinite) representing measure is Lebesgue measure, the standard
+Hausdorff–Bernstein–Widder example on the open half-line.
 
 The iterated derivative of `y ↦ y^s` is Mathlib's `Real.iter_deriv_rpow_const`, and the sign of
 the falling factorial at a negative argument is packaged in the private lemma

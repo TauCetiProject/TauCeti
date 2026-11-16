@@ -284,7 +284,6 @@ theorem isPiecewiseAffineOn_coordinateSimplexHalfSpaceChart_transition
     let e := (coordinateSimplexHalfSpaceChart v).symm.trans (coordinateSimplexHalfSpaceChart w)
     IsPiecewiseAffineOn (I ∘ e ∘ I.symm) (I.symm ⁻¹' e.source ∩ range I) := by
   let I := modelWithCornersHalfSpace (ι → ℝ)
-  let e := (coordinateSimplexHalfSpaceChart v).symm.trans (coordinateSimplexHalfSpaceChart w)
   refine ((isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap w).comp
     (isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap_symm v)
     (mapsTo_univ _ _)).mono (subset_univ _) |>.congr ?_

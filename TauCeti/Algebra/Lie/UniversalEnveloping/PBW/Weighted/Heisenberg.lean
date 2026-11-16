@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Weighted.Basis
-public import TauCeti.Algebra.Lie.Heisenberg
+public import TauCeti.Algebra.Lie.Heisenberg.Basic
 
 /-!
 # The seven-dimensional weighted Heisenberg quotient

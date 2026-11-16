@@ -99,23 +99,22 @@ theorem exists_smul_eq_upperTriangular (h : a ≠ d) {M : Matrix (Fin 2) (Fin 2)
   obtain ⟨γ, c, -, -, hγ⟩ := exists_smul_eq_splitTriangularForm_of_discrim_eq_sq _ hs
     (discrim_ofMatrix_of_mem_traceDetFiber hM)
   -- `-b` must be congruent to `c` modulo `d - a`; take `b` the least residue of `-c`
-  obtain ⟨τ, hτ⟩ := (exists_smul_splitTriangularForm_eq_iff (d - a) c (-(-c % (d - a))) hs).2 <| by
+  obtain ⟨τ, hτ⟩ := (exists_smul_splitTriangularForm_eq_iff (d - a) c (-(-c % (d - a)))).2 <| by
     simpa [sub_eq_add_neg, add_comm] using (Int.dvd_self_sub_emod (x := -c) (m := d - a)).neg_right
   refine ⟨toConjAct (τ * γ), -c % (d - a), Int.emod_nonneg _ hs, Int.emod_lt_abs _ hs, ?_⟩
   rw [smul_eq_iff_ofConjAct_smul_ofMatrix_eq (by simp [(mem_traceDetFiber.1 hM).1, trace_fin_two]),
     ofConjAct_toConjAct, mul_smul, hγ, hτ, ofMatrix_upperTriangular]
 
-/-- **Conjugacy of upper-triangular matrices**: if `a ≠ d`, the matrices `!![a, b; 0, d]` and
+/-- **Conjugacy of upper-triangular matrices**: the matrices `!![a, b; 0, d]` and
 `!![a, b'; 0, d]` are `SL(2, ℤ)`-conjugate exactly when `d - a ∣ b - b'`. -/
-theorem exists_smul_upperTriangular_eq_iff (h : a ≠ d) (b b' : ℤ) :
+theorem exists_smul_upperTriangular_eq_iff (b b' : ℤ) :
     (∃ g : ConjAct SL(2, ℤ), g • !![a, b; 0, d] = !![a, b'; 0, d]) ↔ d - a ∣ b - b' := by
-  have hs : d - a ≠ 0 := sub_ne_zero.2 h.symm
   have htr : (!![a, b; 0, d] : Matrix (Fin 2) (Fin 2) ℤ).trace = (!![a, b'; 0, d]).trace := by
     simp [trace_fin_two]
   simp_rw [smul_eq_iff_ofConjAct_smul_ofMatrix_eq htr, ofMatrix_upperTriangular]
   rw [toConjAct.surjective.exists]
   simp_rw [ofConjAct_toConjAct]
-  rw [exists_smul_splitTriangularForm_eq_iff _ _ _ hs, neg_sub_neg, dvd_sub_comm]
+  rw [exists_smul_splitTriangularForm_eq_iff, neg_sub_neg, dvd_sub_comm]
 
 /-- The map `b ↦ [!![a, b; 0, d]]` from `Fin |d - a|` to the conjugacy classes of matrices of
 trace `a + d` and determinant `a d`. -/
@@ -125,11 +124,10 @@ private def upperTriangularClass (a d : ℤ) (b : Fin (d - a).natAbs) :
 
 private theorem upperTriangularClass_bijective (h : a ≠ d) :
     Function.Bijective (upperTriangularClass a d) := by
-  have hs : (d - a).natAbs ≠ 0 := Int.natAbs_ne_zero.2 (sub_ne_zero.2 h.symm)
   refine ⟨fun i j hij ↦ ?_, fun X ↦ ?_⟩
   · obtain ⟨g, hg⟩ := Quotient.exact' hij
     -- `d - a` divides `j - i`, and `|j - i| < |d - a|`
-    have hdvd := (exists_smul_upperTriangular_eq_iff h j i).1 ⟨g, congrArg Subtype.val hg⟩
+    have hdvd := (exists_smul_upperTriangular_eq_iff j i).1 ⟨g, congrArg Subtype.val hg⟩
     have := Int.eq_zero_of_dvd_of_natAbs_lt_natAbs hdvd (by omega)
     exact Fin.ext (by omega)
   · induction X using Quotient.inductionOn' with

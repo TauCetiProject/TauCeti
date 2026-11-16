@@ -22,6 +22,7 @@ an open embedding.
   image `𝒪[E]`.
 * `TauCeti.isClosedEmbedding_ofId_integer` and `TauCeti.isOpenEmbedding_ofId_integer`: it is a
   closed and open embedding.
+* `TauCeti.completeSpace_integer`: `𝒪[E]` is a complete uniform subspace when `E` is complete.
 -/
 
 public section
@@ -45,6 +46,8 @@ theorem injective_ofId_integer : Function.Injective (Algebra.ofId 𝒪[E] E) := 
 theorem range_ofId_integer : Set.range (Algebra.ofId 𝒪[E] E) = 𝒪[E] := by
   rw [coe_ofId_integer, Subtype.range_coe]
 
+section TopologicalSpace
+
 variable [TopologicalSpace E] [IsValuativeTopology E]
 
 /-- The inclusion of the valuation ring `𝒪[E]` into `E` is a closed embedding. -/
@@ -56,5 +59,14 @@ theorem isClosedEmbedding_ofId_integer : IsClosedEmbedding (Algebra.ofId 𝒪[E]
 theorem isOpenEmbedding_ofId_integer : IsOpenEmbedding (Algebra.ofId 𝒪[E] E) := by
   rw [coe_ofId_integer]
   exact Valuation.isOpen_integer.isOpenEmbedding_subtypeVal
+
+end TopologicalSpace
+
+/-- In a complete uniform ring `E` with a valuative topology, the valuation ring `𝒪[E]` is a
+complete uniform subspace. -/
+theorem completeSpace_integer (E : Type*) [CommRing E] [ValuativeRel E] [UniformSpace E]
+    [IsValuativeTopology E] [CompleteSpace E] :
+    CompleteSpace 𝒪[E] :=
+  Valuation.isClosed_integer.completeSpace_coe
 
 end TauCeti

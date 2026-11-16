@@ -60,12 +60,6 @@ The root-identification proofs and torus-conjugation wrapper patterns are adapte
 [TauCetiProject/TauCeti#5198](https://github.com/TauCetiProject/TauCeti/pull/5198), and
 `TauCeti/Algebra/Lie/Symplectic/StandardCarrier/RootDatum.lean`, developed in
 [TauCetiProject/TauCeti#5203](https://github.com/TauCetiProject/TauCeti/pull/5203).
-
-This advances the "Pinnings" and "Root subgroup maps" targets of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`: `ValidLieTypeIndex.AmbientGroup` must be traceable through
-`ValidLieTypeIndex.dynkinType` to `DynkinType.simplyConnectedRootDatum`, with its root subgroups
-identified by characters of that same datum.
 -/
 
 public section

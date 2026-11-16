@@ -42,7 +42,7 @@ theorem MemLp.uniformIntegrable_condExp (hf : MemLp f p μ) (hp : 1 ≤ p) (hp_t
     (integrable_norm_rpow_iff hf.aestronglyMeasurable
       (ne_of_gt (zero_lt_one.trans_le hp)) hp_top).2 hf
   have hui := hint.uniformIntegrable_condExp hℱ
-  refine ⟨unifIntegrable_iff.2 ?_, (eLpNorm f p μ).toNNReal, fun i => ?_⟩
+  refine ⟨unifIntegrable_iff.2 ?_, ?_⟩
   · intro ε hε
     obtain ⟨δ, hδ, hbound⟩ := unifIntegrable_iff.1 hui.1 (ε ^ p.toReal)
       (ENNReal.rpow_pos_of_nonneg hε hp_pos.le)
@@ -65,7 +65,6 @@ theorem MemLp.uniformIntegrable_condExp (hf : MemLp f p μ) (hp : 1 ≤ p) (hp_t
         simpa only [Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _),
           abs_of_nonneg hnonneg] using hω
       _ ≤ ε ^ p.toReal := hbound i s hs
-  · exact (eLpNorm_condExp_le_eLpNorm f hp).trans_eq
-      (ENNReal.coe_toNNReal hf.eLpNorm_ne_top).symm
+  · exact lt_of_le_of_lt (iSup_le fun _ => eLpNorm_condExp_le_eLpNorm f hp) hf.eLpNorm_lt_top
 
 end MeasureTheory

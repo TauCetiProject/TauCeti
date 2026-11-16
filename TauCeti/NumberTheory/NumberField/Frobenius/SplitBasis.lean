@@ -71,6 +71,7 @@ variable {K L M : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Fi
   (hur : ∀ v : HeightOneSpectrum (𝓞 K), v ∉ S →
     ∀ (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver v.asIdeal], Algebra.IsUnramifiedAt (𝓞 K) Q)
 
+omit [NumberField L] in
 include hp hexp in
 /-- The Frobenius elements `Frob_v` at the places `v ∉ S` that have a place of `L` of residue
 degree one above them generate `Gal(M/L)`, as soon as the Frobenius elements of `M/L` above the

@@ -27,9 +27,9 @@ which the one-sided tangents of a piecewise-`C¹` immersion arrive.
 ## Provenance
 
 Adapted from `hasDerivWithinAt_Ioi_of_tendsto` and `hasDerivWithinAt_Iio_of_tendsto` of
-`FlatnessConditions.lean` in the AINTLIB `LeanModularForms` development. Prerequisite for the
-crossing analysis of the generalized residue theorem on the roadmap, where the one-sided
-tangents of a piecewise-`C¹` curve are recovered from derivative limits.
+`FlatnessConditions.lean` in the AINTLIB `LeanModularForms` development. The crossing analysis
+of contour integrals (for instance `TauCeti.Analysis.Contour.Crossing.Monotonicity`) uses these
+lemmas to recover the one-sided tangents of a piecewise-`C¹` curve from derivative limits.
 -/
 
 public section

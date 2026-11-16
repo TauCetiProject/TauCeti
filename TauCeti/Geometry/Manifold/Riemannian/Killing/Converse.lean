@@ -88,7 +88,7 @@ theorem inner_leviCivitaConnection_self_eq_zero_of_eventually_norm_mfderiv_flowO
     (contMDiffAt_riemannianExp_smul_zero p u).of_le (by simp)
   have hvel : curveVelocity I γ 0 = u := curveVelocity_riemannianExp_smul_zero p u
   let F : ℝ → ℝ → M := fun q t ↦ flowOf X t (γ q)
-  have hF₀ : (fun q ↦ F q 0) = γ := funext fun q ↦ flowOf_zero hX₁ (γ q)
+  have hF₀ : (fun q ↦ F q 0) = γ := funext fun q ↦ flowOf_zero _ (γ q)
   have hF : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
       (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, 0) :=
     contMDiffAt_flowOf_comp (by norm_num) (hX.of_le (by simp))

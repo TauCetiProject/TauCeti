@@ -213,7 +213,7 @@ theorem exists_regular_exact_refining_equipartition (P : Finpartition (univ : Fi
   set k := #P.parts
   have hk : 0 < k := card_pos.2 <| P.parts_nonempty <|
     (card_pos.1 ((bound_pos δ _).trans_le hα)).ne_empty
-  obtain ⟨P₁, hP₁, hP₁card, hP₁P⟩ := hP.exists_refining_equipartition_card_eq_mul
+  obtain ⟨P₁, hP₁, hP₁card, hP₁P, -⟩ := hP.exists_refining_equipartition_card_eq_mul P le_rfl
     (initialBound_pos δ 0).ne' (by rw [card_univ]; exact (le_bound δ _).trans hα)
   -- The energy induction runs below `P₁`, whose `a * k` parts are as many as Szemerédi's
   -- regularity lemma starts from.

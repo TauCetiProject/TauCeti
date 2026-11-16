@@ -382,4 +382,25 @@ instance projective_ofMulAction : Projective (Rep.ofMulAction k G X) :=
 
 end Free
 
+section Cardinality
+
+variable (k : Type u) [Semiring k] [StrongRankCondition k] {G : Type v} [Monoid G]
+  {X Y : Type w} [MulAction G X] [MulAction G Y]
+
+/-- **Equivalent permutation representations come from `G`-sets of the same size.** This needs no
+assumption on the characteristic: an equivalence of representations is in particular a linear
+equivalence, and `k[X]` is free of rank `#X` over any coefficient semiring with the strong rank
+condition. -/
+theorem natCard_eq_of_nonempty_equiv_ofMulAction
+    (h : Nonempty ((Representation.ofMulAction k G X).Equiv
+      (Representation.ofMulAction k G Y))) :
+    Nat.card X = Nat.card Y := by
+  obtain ⟨φ⟩ := h
+  have hrank := ((MonoidAlgebra.coeffLinearEquiv k (S := k) (M := X)).symm.trans
+    (φ.toLinearEquiv.trans (MonoidAlgebra.coeffLinearEquiv k (S := k) (M := Y)))).rank_eq
+  rw [rank_finsupp_self, rank_finsupp_self] at hrank
+  exact Nat.card_congr (Cardinal.eq.mp (Cardinal.lift_inj.mp hrank)).some
+
+end Cardinality
+
 end TauCeti

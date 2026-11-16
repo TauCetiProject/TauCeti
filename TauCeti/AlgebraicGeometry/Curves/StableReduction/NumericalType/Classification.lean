@@ -252,11 +252,12 @@ lemma two_le_of_intersection_pos (hc : T.IsSelfIntersectionMinusTwoChain t c)
     {x : T.Component} (hxS : x ∈ S) (hx_ne : ∀ i < t, x ≠ c i)
     (hx_self : T.intersection x x = -(2 * (T.weight x : ℤ))) {y : T.Component} (hyS : y ∈ S)
     (hy_ne : ∀ i < t, y ≠ c i) (hy_self : T.intersection y y = -(2 * (T.weight y : ℤ)))
-    (hyx : y ≠ x) {r : ℕ} (hr : r < t) (hx : 0 < T.intersection (c r) x)
-    (hxy : 0 < T.intersection x y) : 2 ≤ r := by
+    {r : ℕ} (hx : 0 < T.intersection (c r) x) (hxy : 0 < T.intersection x y) : 2 ≤ r := by
+  have hyx : y ≠ x := (T.ne_of_intersection_nonneg hx_self hxy.le).symm
   have hright := hmax _ _
-    (((hc.shift (r := r) (s := t - r) (by omega)).cons (fun i hi ↦ hx_ne _ (by omega))
-      hx_self (fun _ ↦ by simpa [T.intersection_comm] using hx)).cons
+    (((hc.shift (r := min r t) (s := t - r) (by omega)).cons (fun i hi ↦ hx_ne _ (by omega))
+      hx_self (fun h ↦ by
+        simpa [min_eq_left (by omega : r ≤ t), T.intersection_comm] using hx)).cons
       (fun i hi ↦ by split_ifs; exacts [hyx, hy_ne _ (by omega)])
       hy_self (fun _ ↦ by simpa [T.intersection_comm] using hxy))
     fun i hi ↦ by split_ifs; exacts [hyS, hxS, hcS _ (by omega)]
@@ -312,11 +313,14 @@ chain classification fix all weights below `t - 1`, and the resulting fibre rela
 multiplicities are incompatible at the right end of the chain. -/
 lemma card_ne_add_one_of_branch_two (hc : T.IsSelfIntersectionMinusTwoChain t c)
     (ht5 : 5 ≤ t) (ht7 : t ≤ 7) {x : T.Component}
-    (hx_ne : ∀ i < t, x ≠ c i) (hx_self : T.intersection x x = -(2 * (T.weight x : ℤ)))
+    (hx_self : T.intersection x x = -(2 * (T.weight x : ℤ)))
     (hx_pos : 0 < T.intersection (c 2) x)
     (hx_zero : ∀ i < t, i ≠ 2 → T.intersection (c i) x = 0) :
     Fintype.card T.Component ≠ t + 1 := by
   intro hcard
+  have hx_ne : ∀ i < t, x ≠ c i := fun i hi ↦
+    (T.ne_of_intersection_nonneg (hc.intersection_self i hi)
+      (by rcases eq_or_ne i 2 with rfl | h2; exacts [hx_pos.le, (hx_zero i hi h2).ge])).symm
   have hchainCard : t < Fintype.card T.Component := by omega
   have hf4 : T.IsSelfIntersectionMinusTwoFork 4 c x :=
     ⟨hc.mono (by omega), by omega, fun i hi ↦ hx_ne i (by omega), hx_self, hx_pos⟩
@@ -339,13 +343,13 @@ lemma card_ne_add_one_of_branch_two (hc : T.IsSelfIntersectionMinusTwoChain t c)
   -- At each constant-weight triple, the chain API cancels the common weight.
   have hm3 : (T.multiplicity (c 1) : ℤ) + T.multiplicity (c 3) + T.multiplicity x =
       2 * T.multiplicity (c 2) :=
-    hc.interior_relation_of_weight_eq hchainCard (i := 2) (by omega) (by omega)
+    hc.interior_relation_of_weight_eq (i := 2) (by omega) (by omega)
       (hw _ (by omega)) (hw _ (by omega)) (hw _ (by omega)) (by
         simpa only [h2x] using hfib (c 2))
   have hrec (i : ℕ) (hi1 : 1 ≤ i) (hi2 : i ≠ 2) (hit : i + 1 < t - 1) :
       (T.multiplicity (c (i - 1)) : ℤ) + T.multiplicity (c (i + 1)) =
         2 * T.multiplicity (c i) := by
-    have h := hc.interior_relation_of_weight_eq hchainCard (by omega) (by omega)
+    have h := hc.interior_relation_of_weight_eq (by omega) (by omega)
       (hw (i - 1) (by omega)) (hw i (by omega)) (hw (i + 1) hit) (b := 0) (by
         simpa [hx_zero i (by omega) (by omega)] using hfib (c i))
     simpa using h
@@ -374,7 +378,7 @@ interior position `s` and `b = c s`. -/
 private lemma two_le_or_exists_leaf_position (hc : T.IsSelfIntersectionMinusTwoChain t c)
     (hcS : ∀ i < t, c i ∈ S)
     (hmax : ∀ t' c', T.IsSelfIntersectionMinusTwoChain t' c' → (∀ i < t', c' i ∈ S) → t' ≤ t)
-    {x y b : T.Component} (hxS : x ∈ S) (hyS : y ∈ S) (hyx : y ≠ x)
+    {x y b : T.Component} (hxS : x ∈ S) (hyS : y ∈ S)
     (hx_ne : ∀ i < t, x ≠ c i) (hy_ne : ∀ i < t, y ≠ c i)
     (hx_self : T.intersection x x = -(2 * (T.weight x : ℤ)))
     (hy_self : T.intersection y y = -(2 * (T.weight y : ℤ))) {r : ℕ} (hrt : r + 1 < t)
@@ -384,11 +388,11 @@ private lemma two_le_or_exists_leaf_position (hc : T.IsSelfIntersectionMinusTwoC
   rcases hb with hbx | ⟨s, hs, rfl⟩
   · rw [hbx] at hby
     have hr2 := hc.two_le_of_intersection_pos hcS hmax hxS hx_ne hx_self hyS hy_ne hy_self
-      hyx (by omega) hpos hby
+      hpos hby
     have hreverse : t - 1 - (t - 1 - r) = r := by omega
     have hrt2 := hc.reverse.two_le_of_intersection_pos (fun i hi ↦ hcS _ (by omega)) hmax
       hxS (fun i hi ↦ hx_ne _ (by omega)) hx_self hyS (fun i hi ↦ hy_ne _ (by omega)) hy_self
-      hyx (r := t - 1 - r) (by omega) (by simpa [hreverse] using hpos) hby
+      (r := t - 1 - r) (by simpa [hreverse] using hpos) hby
     exact .inl ⟨hr2, hrt2, hbx⟩
   · obtain ⟨hs0, hst⟩ := hc.pos_and_lt_of_intersection_pos hcS hmax hyS hy_ne hy_self hs hby
     exact .inr ⟨s, hs0, hst, rfl⟩
@@ -448,7 +452,7 @@ private lemma insert_eq_of_connected (hc : T.IsSelfIntersectionMinusTwoChain t c
     have := card_le_card (insert_subset hyS (insert_subset hxS hAsub))
     rw [card_insert_of_notMem hyB, card_insert_of_notMem hxA, hAcard] at this
     omega
-  rcases hc.two_le_or_exists_leaf_position hcS hmax hxS hyS hyx hx_ne hy_ne hx_self hy_self hrt
+  rcases hc.two_le_or_exists_leaf_position hcS hmax hxS hyS hx_ne hy_ne hx_self hy_self hrt
       hpos ((mem_insert.mp hb).imp_right mem_A.mp) hby with
     ⟨hr2, hrt2, hbx⟩ | ⟨s, hs0, hst, rfl⟩
   · -- `x` has a second neighbour `y` in `S`, and at least two chain components on either side,
@@ -788,7 +792,7 @@ private lemma exists_affineE7_or_affineE8_of_card_eq_succ
   by_cases ht8 : 8 ≤ t
   · exact .inr (hc.exists_affineE8 ht8 hx_ne hx)
   · exact (hc.card_ne_add_one_of_branch_two (by omega) (by omega)
-      hx_ne hx_self hx hx_zero hcard).elim
+      hx_self hx hx_zero hcard).elim
 
 /-- If a chain `c` exhausts a numerical type with at least two components, then either the
 topological genus is positive or `c` is a chordless chain. -/
@@ -800,7 +804,7 @@ private lemma topologicalGenus_pos_or_chain_of_card_eq
         ∀ i < t, ∀ j < t, i ≠ j → i + 1 ≠ j → j + 1 ≠ i → T.intersection (c i) (c j) = 0) := by
   by_cases hends : 2 < t ∧ 0 < T.intersection (c 0) (c (t - 1))
   · exact .inl (hc.topologicalGenus_pos_of_card_eq_of_intersection_pos hcard hends.1 hends.2)
-  · refine .inr ⟨by omega, hcard, hc, hc.intersection_eq_zero_of_card_eq hcard ?_⟩
+  · refine .inr ⟨by omega, hcard, hc, hc.intersection_eq_zero_of_endpoints_eq_zero ?_⟩
     intro ht2
     have hle : T.intersection (c 0) (c (t - 1)) ≤ 0 := not_lt.mp fun h ↦ hends ⟨ht2, h⟩
     exact le_antisymm hle (T.offDiagonal_nonneg _ _ (hc.ne (by omega) (by omega) (by omega)))
@@ -849,7 +853,7 @@ private lemma exists_affineE6_or_fourLeafStar_or_doubleFork
         T.IsSelfIntersectionMinusTwoFork t' c' right ∧
         T.IsSelfIntersectionMinusTwoFork t' (fun i ↦ c' (t' - 1 - i)) left := by
   have hcU : ∀ i < t, c i ∈ (univ : Finset T.Component) := fun _ _ ↦ mem_univ _
-  rcases hc.two_le_or_exists_leaf_position hcU hmax (mem_univ x) (mem_univ y) hyx hx_ne hy_ne
+  rcases hc.two_le_or_exists_leaf_position hcU hmax (mem_univ x) (mem_univ y) hx_ne hy_ne
       hx_self hy_self hrt hpos hb hby with
     ⟨hr2, hrt2, rfl⟩ | ⟨s, hs0, hst, rfl⟩
   · exact .inl (hc.exists_affineE6 hr2 (by omega) hyx.symm hx_ne hy_ne hpos hby)

@@ -34,8 +34,8 @@ module: `C a` acts coefficientwise on the left, while `X` sends `a Xⁿ` to
 * `TauCeti.OreExtension.lift` and `TauCeti.OreExtension.liftAlgHom`: the universal ring and
   `k`-algebra homomorphisms out of the Ore extension.
 * `TauCeti.OreExtension.mapAlgHom` and `TauCeti.OreExtension.mapAlgEquiv`: the algebra
-  homomorphisms and
-  equivalences induced by coefficient maps intertwining the twists and the skew derivations.
+  homomorphisms and equivalences induced by coefficient maps intertwining the twists and the skew
+  derivations.
 
 ## Main statements
 
@@ -336,7 +336,7 @@ private theorem xOperator_lsmul (a : R) :
   intro p
   induction p using induction_on with
   | zero => simp
-  | add n b p hn hb ih =>
+  | add n b p _ _ ih =>
       simp only [map_add, mul_apply_eq_comp, LinearMap.add_apply, Algebra.lsmul_apply] at ih ⊢
       rw [ih]
       congr 1
@@ -349,7 +349,7 @@ private theorem xOperator_regularRepresentation (p : OreExtension σ δ) :
     xOperator * regularRepresentation p = regularRepresentation (xOperator p) := by
   induction p using induction_on with
   | zero => rw [map_zero, mul_zero, map_zero, map_zero]
-  | add n a p hn ha ih =>
+  | add n a p _ _ ih =>
       rw [map_add, map_add, mul_add, ih]
       simp only [regularRepresentation_monomial, xOperator_monomial, map_add]
       congr 1
@@ -366,19 +366,15 @@ private theorem regularRepresentation_smul (a : R) (p : OreExtension σ δ) :
     regularRepresentation (a • p) = Algebra.lsmul k k _ a * regularRepresentation p := by
   induction p using induction_on with
   | zero => simp
-  | add n b p hn hb ih =>
-      rw [smul_add, map_add, map_add, ih, smul_monomial, smul_eq_mul,
-        regularRepresentation_monomial, regularRepresentation_monomial, map_mul, mul_assoc,
-        mul_add]
+  | add n b p _ _ ih => simp [ih, mul_add, mul_assoc]
 
 private theorem regularRepresentation_mul (p q : OreExtension σ δ) :
     regularRepresentation (p * q) = regularRepresentation p * regularRepresentation q := by
   induction p using induction_on with
   | zero => rw [zero_mul, map_zero, zero_mul]
-  | add n a p hn ha ih =>
-      rw [add_mul, map_add, map_add, add_mul, ih, monomial_mul_apply,
-        regularRepresentation_smul, ← xOperator_pow_regularRepresentation,
-        regularRepresentation_monomial, mul_assoc]
+  | add n a p _ _ ih =>
+      simp only [add_mul, map_add, ih, monomial_mul_apply, regularRepresentation_smul,
+        ← xOperator_pow_regularRepresentation, regularRepresentation_monomial, mul_assoc]
 
 private theorem xOperator_pow_C_one (n : ℕ) :
     (xOperator (σ := σ) (δ := δ) ^ n) (C 1) = monomial n 1 := by
@@ -392,10 +388,7 @@ private theorem regularRepresentation_apply_C_one (p : OreExtension σ δ) :
     regularRepresentation p (C 1) = p := by
   induction p using induction_on with
   | zero => simp
-  | add n a p hn ha ih =>
-      rw [map_add, LinearMap.add_apply, ih, regularRepresentation_monomial,
-        mul_apply_eq_comp, xOperator_pow_C_one, Algebra.lsmul_apply, smul_monomial,
-        smul_eq_mul, mul_one]
+  | add n a p _ _ ih => simp [ih, mul_apply_eq_comp, xOperator_pow_C_one]
 
 private theorem regularRepresentation_injective :
     Function.Injective (regularRepresentation (σ := σ) (δ := δ)) := by
@@ -532,7 +525,7 @@ theorem X_mul_monomial (n : ℕ) (a : R) :
 theorem coeff_X_mul_zero (p : OreExtension σ δ) : coeff (X * p) 0 = δ (coeff p 0) := by
   induction p using induction_on with
   | zero => simp
-  | add n a p hn ha ih =>
+  | add n a p _ _ ih =>
     simp only [mul_add, coeff_add, X_mul_monomial, map_add, ih]
     by_cases h : n = 0 <;> simp [coeff_monomial, h]
 
@@ -542,7 +535,7 @@ theorem coeff_X_mul_succ (p : OreExtension σ δ) (n : ℕ) :
     coeff (X * p) (n + 1) = σ (coeff p n) + δ (coeff p (n + 1)) := by
   induction p using induction_on with
   | zero => simp
-  | add m a p hm ha ih =>
+  | add m a p hm _ ih =>
     simp only [mul_add, coeff_add, X_mul_monomial, map_add, ih, coeff_monomial]
     by_cases h : m = n
     · subst m
@@ -571,16 +564,14 @@ private theorem eval₂_smul (f : R →+* S) (x : S) (a : R) (p : OreExtension �
     eval₂ f x (a • p) = f a * eval₂ f x p := by
   induction p using induction_on with
   | zero => simp
-  | add n b p hn hb ih =>
-      rw [smul_add, map_add, map_add, ih, smul_monomial, smul_eq_mul,
-        eval₂_monomial, eval₂_monomial, map_mul, mul_add, mul_assoc]
+  | add n b p _ _ ih => simp [ih, mul_add, mul_assoc]
 
 private theorem eval₂_xOperator (f : R →+* S) (x : S)
     (h : ∀ a, x * f a = f (σ a) * x + f (δ a)) (p : OreExtension σ δ) :
     eval₂ f x (xOperator p) = x * eval₂ f x p := by
   induction p using induction_on with
   | zero => simp
-  | add n a p hn ha ih =>
+  | add n a p _ _ ih =>
       rw [map_add, xOperator_monomial]
       simp only [map_add, eval₂_monomial, ih]
       rw [mul_add]
@@ -601,9 +592,8 @@ theorem eval₂_mul (f : R →+* S) (x : S)
     eval₂ f x (p * q) = eval₂ f x p * eval₂ f x q := by
   induction p using induction_on with
   | zero => simp
-  | add n a p hn ha ih =>
-      rw [add_mul, map_add, map_add, add_mul, ih, monomial_mul_apply,
-        eval₂_smul, eval₂_xOperator_pow f x h, eval₂_monomial, mul_assoc]
+  | add n a p _ _ ih =>
+      simp [add_mul, ih, eval₂_smul, eval₂_xOperator_pow f x h, mul_assoc]
 
 /-- The universal map from an Ore extension. The chosen image `x` of the variable must satisfy
 the defining Ore commutation relation with every coefficient. -/
@@ -638,9 +628,8 @@ theorem ringHom_ext {f g : OreExtension σ δ →+* S}
   intro p
   induction p using induction_on with
   | zero => simp
-  | add n a p hn ha ih =>
-      rw [map_add, map_add, ih, ← C_mul_X_pow_eq_monomial, map_mul, map_mul, map_pow, map_pow,
-        hC, hX]
+  | add n a p _ _ ih =>
+      simp only [map_add, ih, ← C_mul_X_pow_eq_monomial, map_mul, map_pow, hC, hX]
 
 variable [Algebra k S]
 
@@ -697,8 +686,7 @@ theorem mapAlgHom_X (f : R →ₐ[k] R') (hσ : ∀ a, f (σ a) = σ' (f a))
 theorem mapAlgHom_monomial (f : R →ₐ[k] R') (hσ : ∀ a, f (σ a) = σ' (f a))
     (hδ : ∀ a, f (δ a) = δ' (f a)) (n : ℕ) (a : R) :
     mapAlgHom f hσ hδ (monomial n a) = monomial n (f a) := by
-  rw [← C_mul_X_pow_eq_monomial, map_mul, map_pow, mapAlgHom_C, mapAlgHom_X,
-    C_mul_X_pow_eq_monomial]
+  simp only [← C_mul_X_pow_eq_monomial, map_mul, map_pow, mapAlgHom_C, mapAlgHom_X]
 
 /-- An algebra equivalence of coefficients intertwining the twists and the skew derivations
 induces a `k`-algebra equivalence of Ore extensions, which is `e` on the coefficients and fixes
@@ -733,17 +721,13 @@ theorem mapAlgEquiv_X (e : R ≃ₐ[k] R') (hσ : ∀ a, e (σ a) = σ' (e a))
 
 @[simp]
 theorem mapAlgEquiv_symm_C (e : R ≃ₐ[k] R') (hσ : ∀ a, e (σ a) = σ' (e a))
-    (hδ : ∀ a, e (δ a) = δ' (e a)) (b : R') : (mapAlgEquiv e hσ hδ).symm (C b) = C (e.symm b) :=
-  mapAlgHom_C (e.symm : R' →ₐ[k] R)
-    (Function.Semiconj.inverse_left hσ e.symm_apply_apply e.apply_symm_apply)
-    (Function.Semiconj.inverse_left hδ e.symm_apply_apply e.apply_symm_apply) b
+    (hδ : ∀ a, e (δ a) = δ' (e a)) (b : R') : (mapAlgEquiv e hσ hδ).symm (C b) = C (e.symm b) := by
+  rw [AlgEquiv.symm_apply_eq, mapAlgEquiv_C, AlgEquiv.apply_symm_apply]
 
 @[simp]
 theorem mapAlgEquiv_symm_X (e : R ≃ₐ[k] R') (hσ : ∀ a, e (σ a) = σ' (e a))
-    (hδ : ∀ a, e (δ a) = δ' (e a)) : (mapAlgEquiv e hσ hδ).symm X = X :=
-  mapAlgHom_X (e.symm : R' →ₐ[k] R)
-    (Function.Semiconj.inverse_left hσ e.symm_apply_apply e.apply_symm_apply)
-    (Function.Semiconj.inverse_left hδ e.symm_apply_apply e.apply_symm_apply)
+    (hδ : ∀ a, e (δ a) = δ' (e a)) : (mapAlgEquiv e hσ hδ).symm X = X := by
+  rw [AlgEquiv.symm_apply_eq, mapAlgEquiv_X]
 
 end Map
 

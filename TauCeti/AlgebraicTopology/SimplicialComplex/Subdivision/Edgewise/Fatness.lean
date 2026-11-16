@@ -13,7 +13,7 @@ import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.Data.Fintype.Fin
 import Mathlib.Tactic.Rify
 import TauCeti.Algebra.Order.BigOperators.ChainCombination
-import TauCeti.Data.Fintype.CardFilterOrder
+import TauCeti.Data.Fintype.Card.FilterOrder
 
 /-!
 # The simplices of edgewise subdivisions are small and uniformly fat
@@ -102,9 +102,9 @@ theorem mul_sum_abs_le_norm_sum_smul_edgewisePoint (hρ : ρ ∈ K.edgewiseSubdi
   · simp
   -- `C a i` counts the entries of the vertex `a` that are at most `i`, and `N a j` those equal
   -- to `j`; `F i` is the set of vertices of `σ` that are at most `i`.
-  set C : ρ → σ → ℕ := fun a i => #{l | a.1.1 l ≤ i.1} with hC
+  set C : ρ → σ → ℕ := fun a i => #{l | a.1.1 l ≤ i.1}
   set N : ρ → σ → ℕ := fun a j => #{l | a.1.1 l = j.1} with hN
-  set F : σ → Finset σ := fun i => {j | j ≤ i} with hF
+  set F : σ → Finset σ := fun i => {j | j ≤ i}
   have hcount (a : ρ) (i : σ) : C a i = ∑ j ∈ F i, N a j :=
     card_filter_le_eq_sum_card_filter_eq (hσ a.1 a.2) i
   have hxj (j : σ) : (k : ℝ) * x j = ∑ a, v a * N a j := by

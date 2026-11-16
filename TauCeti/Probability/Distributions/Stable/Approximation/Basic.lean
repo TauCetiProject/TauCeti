@@ -251,7 +251,7 @@ theorem mgf_stableCompensatedPoissonMeasure {α β ε t : ℝ} (hε : 0 < ε)
       exp (∫ x in s, exp (t * x) ∂ν - ν.real s) := by
     simpa only [AddMonoidHom.coe_id, AddMonoidHom.id_apply] using
       mgf_compoundPoissonMeasure_cond (f := AddMonoidHom.id ℝ)
-        (by simpa only [AddMonoidHom.coe_id] using measurable_id) hm0 hm_top
+        (by simpa only [AddMonoidHom.coe_id] using measurable_id) hm_top
         (by simpa only [AddMonoidHom.id_apply] using hexp)
   -- Split the compensated integral into its exponential, constant and sine parts.
   have hsplit : ∫ x in s, exp (t * x) - 1 - t * sin x ∂ν =

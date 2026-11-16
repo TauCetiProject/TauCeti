@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Functoriality
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
 public import TauCeti.Algebra.Category.CommGrpCat.FiniteGeneration
 public import TauCeti.Algebra.Bialgebra.MonoidAlgebra.GroupLike
+import TauCeti.Algebra.MonoidAlgebra.MapDomain
 
 /-!
 # Finite-type diagonalizable groups
@@ -131,12 +132,7 @@ theorem coordinateMap_surjective_of_surjective {G H : FGCommGrpCat.{v}} (φ : G 
     Function.Surjective
       (FiniteTypeCommHopfAlgCat.toBialgHom (coordinateMap R φ)) := by
   rw [toBialgHom_coordinateMap]
-  intro y
-  obtain ⟨x, hx⟩ := Finsupp.mapDomain_surjective (M := R) hφ y.coeff
-  refine ⟨MonoidAlgebra.ofCoeff x, ?_⟩
-  unfold MonoidAlgebra.mapDomainBialgHom
-  apply MonoidAlgebra.coeff_injective
-  exact hx
+  exact MonoidAlgebra.mapDomain_surjective hφ
 
 /-- Recover the character-group homomorphism that induces a morphism between coordinate
 Hopf algebras of finite-type diagonalizable groups over a base with connected prime
@@ -161,18 +157,17 @@ theorem coordinateMapPreimage_apply_eq_iff [ConnectedSpace (PrimeSpectrum R)]
     TauCeti.MonoidAlgebra.mapDomainBialgHomPreimage_apply_eq_iff R
       (FiniteTypeCommHopfAlgCat.toBialgHom F) g h
 
-/-- The recovered character-group homomorphism is characterized by the image of each
-standard basis element under the coordinate Hopf-algebra morphism. -/
-@[simp↓]
-theorem coordinateMapPreimage_single [ConnectedSpace (PrimeSpectrum R)]
+/-- Each standard basis element indexed by the recovered character-group homomorphism agrees
+with the image of the original basis element under the coordinate Hopf-algebra morphism. -/
+@[simp]
+theorem single_coordinateMapPreimage [ConnectedSpace (PrimeSpectrum R)]
     {G H : FGCommGrpCat.{v}}
-    (F : coordinateRing R G ⟶ coordinateRing R H) (g : G) :
-    FiniteTypeCommHopfAlgCat.toBialgHom F (MonoidAlgebra.single g 1) =
-      MonoidAlgebra.single
-        ((coordinateMapPreimage R F).hom.hom g) 1 := by
+    (F : coordinateRing R G ⟶ coordinateRing R H) (g : G) (r : R) :
+    MonoidAlgebra.single ((coordinateMapPreimage R F).hom.hom g) r =
+      FiniteTypeCommHopfAlgCat.toBialgHom F (MonoidAlgebra.single g r) := by
   simpa only [coordinateMapPreimage, FGCommGrpCat.hom_hom_ofHom] using
-    TauCeti.MonoidAlgebra.mapDomainBialgHomPreimage_single R
-      (FiniteTypeCommHopfAlgCat.toBialgHom F) g
+    TauCeti.MonoidAlgebra.single_mapDomainBialgHomPreimage R
+      (FiniteTypeCommHopfAlgCat.toBialgHom F) g r
 
 /-- Applying the coordinate-map construction to the recovered character-group
 homomorphism gives the original coordinate Hopf-algebra morphism. -/

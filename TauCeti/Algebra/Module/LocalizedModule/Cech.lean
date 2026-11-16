@@ -654,12 +654,21 @@ theorem cechLocalizationDifferential_comp_differential (p : ℕ) :
     cechLocalizationDifferential M f (p + 1) ∘ₗ cechLocalizationDifferential M f p = 0 :=
   LinearMap.ext (D_D M f (p + 1))
 
+omit [LinearOrder ι] in
 /-- If the `f i` generate the unit ideal, the augmentation of the Čech complex is injective. -/
-theorem injective_cechLocalizationAugmentation [Finite ι]
+theorem injective_cechLocalizationAugmentation
     (hf : Ideal.span (Set.range f) = ⊤) :
     Function.Injective (cechLocalizationAugmentation M f) := by
-  rw [augmentation_eq, LinearMap.coe_comp]
-  exact (injective_D_zero_of_span M f hf).comp (incl_injective M f)
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro m hm
+  refine Module.eq_zero_of_isLocalized_span (Set.range f) hf
+    (fun r ↦ LocalizedModule (.powers r.1) M) (fun r ↦ mkLinearMap (.powers r.1) M) m ?_
+  rintro ⟨_, a, rfl⟩
+  have h : mk m (1 : Submonoid.powers (∏ i ∈ ({a} : Finset ι), f i)) = 0 :=
+    (cechLocalizationAugmentation_apply M f m ⟨{a}, Finset.card_singleton a⟩).symm.trans
+      (congrFun hm ⟨{a}, Finset.card_singleton a⟩)
+  rw [Finset.prod_singleton] at h
+  exact h
 
 /-- If the `f i` generate the unit ideal, the Čech complex is exact at its degree `0` term. -/
 theorem exact_cechLocalizationAugmentation_differential [Finite ι]

@@ -50,8 +50,7 @@ the same character.
 ## Implementation notes
 
 The target is `ℤˣ` rather than a two-element type of one's own, matching Mathlib's
-`Equiv.Perm.sign` and the `(-1 : ℤˣ) ^ _` spelling that the Weyl numerator of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md` asks for.
+`Equiv.Perm.sign` and the `(-1 : ℤˣ) ^ _` spelling of the signs in the Weyl numerator.
 
 `TauCeti.weylSign_apply` is deliberately not a `simp` lemma. Unfolding the character back to a
 power of `-1` would take every lemma below out of simp-normal form, `TauCeti.weylSign_ofIdx` first
@@ -65,13 +64,10 @@ canonical choice to build the definition on, only the theorem that the choice do
 ## References
 
 The sign character is the "`sgn(w)`" of the Weyl numerator
-`∑_{w ∈ W} sgn(w) e^{w(λ+ρ) - ρ}` in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md` (the Weyl character formula, the
-Weyl dimension formula and Kostant's multiplicity formula are all stated with it), and of the
-Tits-sign criterion in the same layer. Its well-definedness is the length-parity statement
-`TauCeti.length_modEq_length_of_wordProd_eq` recorded in Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, whose docstring names this character
-as its purpose; this file is that prerequisite, built where the inversion combinatorics lives.
+`∑_{w ∈ W} sgn(w) e^{w(λ+ρ) - ρ}` (the Weyl character formula, the Weyl dimension formula and
+Kostant's multiplicity formula are all stated with it). Its well-definedness is the length-parity
+statement `TauCeti.length_modEq_length_of_wordProd_eq`, whose docstring names this character as its
+purpose.
 
 The convention follows Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6, Ch. VI §1, and
 J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. III §10.3.
@@ -220,17 +216,11 @@ theorem even_ncard_inversions_iff (b₁ b₂ : P.Base) (w : P.weylGroup) :
 
 /-! ### The longest element -/
 
-section IsRootSystem
-
-variable [P.IsRootSystem]
-
 /-- **The longest element has sign `(-1) ^ |Φ⁺|`**: it inverts every positive root, so its
 inversion count is the number of positive roots. -/
 @[simp]
 theorem weylSign_longestElement :
     weylSign P b (longestElement P b) = (-1) ^ (posRoots P b).ncard := by
   rw [weylSign_apply, ncard_inversions_longestElement]
-
-end IsRootSystem
 
 end TauCeti

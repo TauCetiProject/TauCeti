@@ -40,7 +40,7 @@ theorem norm_charCoeff_le_prod_decreasingRearrangement
     (hr : BddAbove (Set.range r)) (hA : ∀ i j, ‖A i j‖ ≤ r i) (n : ℕ) :
     ‖A.charCoeff n‖ ≤ ∏ k ∈ range n, TauCeti.decreasingRearrangement r k := by
   apply norm_charCoeff_le hA
-    (prod_nonneg fun k _ ↦ TauCeti.decreasingRearrangement_nonneg hr k)
+    (prod_nonneg fun k _ ↦ TauCeti.decreasingRearrangement_nonneg k)
   intro s hs
   exact hs ▸ TauCeti.prod_le_prod_decreasingRearrangement
     (fun i ↦ (norm_nonneg (A i i)).trans (hA i i)) hr s

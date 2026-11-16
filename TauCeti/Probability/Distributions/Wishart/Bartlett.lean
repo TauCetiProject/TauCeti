@@ -255,8 +255,9 @@ private theorem bartlettCoordinatePDFReal_nonneg (hn : (p : ℝ) - 1 < n) (ij : 
 
 /-- A coordinate vector off the positive-diagonal region has a nonpositive diagonal coordinate,
 where the chi density vanishes. -/
-private theorem prod_bartlettCoordinatePDFReal_of_notMem {x : lowerTriangle p → ℝ}
-    (hx : x ∉ posDiagLowerRegion p) : ∏ ij, bartlettCoordinatePDFReal n ij (x ij) = 0 := by
+private theorem prod_ofReal_bartlettCoordinatePDFReal_of_notMem {x : lowerTriangle p → ℝ}
+    (hx : x ∉ posDiagLowerRegion p) :
+    ∏ ij, ENNReal.ofReal (bartlettCoordinatePDFReal n ij (x ij)) = 0 := by
   obtain ⟨i, hi⟩ := not_forall.1 ((mem_posDiagLowerRegion p).not.1 hx)
   refine Finset.prod_eq_zero (Finset.mem_univ (⟨(i, i), le_rfl⟩ : lowerTriangle p)) ?_
   have hmem : x (⟨(i, i), le_rfl⟩ : lowerTriangle p) ∉ Ioi (0 : ℝ) := by simpa using hi
@@ -293,18 +294,13 @@ theorem map_lowerTriangleGram_pi_bartlettCoordinateMeasure
     ENNReal.ofReal ((A : Matrix (Fin p) (Fin p) ℝ).det ^ ((n - p - 1) / 2) *
       exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace / 2) /
         (2 ^ (n * p / 2) * multivariateGamma p (n / 2))) with hw_def
-  have hcoe : Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      (A : Matrix (Fin p) (Fin p) ℝ) := continuous_subtype_val
-  have hw : Measurable w :=
-    ENNReal.measurable_ofReal.comp <| (((hcoe.matrix_det.measurable.pow_const _).mul
-      (hcoe.matrix_trace.neg.div_const _).rexp.measurable)).div_const _
   have hpi := pi_bartlettCoordinateMeasure_eq_withDensity (p := p) n
   have hgram := measurable_lowerTriangleGram p
   -- Both sides are integrals over the coordinate space: the left by definition of the
   -- pushforward, the right by the Cholesky change of variables. Compare the integrands.
   ext s hs
   rw [Measure.map_apply hgram hs, hpi, withDensity_apply _ (hgram hs), withDensity_apply _ hs,
-    ← lintegral_indicator hs, setLIntegral_posDef_symmetricLebesgue p (hw.indicator hs),
+    ← lintegral_indicator hs, setLIntegral_posDef_symmetricLebesgue p (s.indicator w),
     ← lintegral_indicator (hgram hs), ← lintegral_indicator (measurableSet_posDiagLowerRegion p)]
   refine lintegral_congr fun x ↦ ?_
   by_cases hx : x ∈ posDiagLowerRegion p
@@ -321,8 +317,7 @@ theorem map_lowerTriangleGram_pi_bartlettCoordinateMeasure
         Set.indicator_of_notMem hxs, mul_zero]
   · rw [Set.indicator_of_notMem hx, Set.indicator_apply_eq_zero]
     intro _
-    rw [← ENNReal.ofReal_prod_of_nonneg fun ij _ ↦ bartlettCoordinatePDFReal_nonneg hn ij (x ij),
-      prod_bartlettCoordinatePDFReal_of_notMem hx, ENNReal.ofReal_zero]
+    exact prod_ofReal_bartlettCoordinatePDFReal_of_notMem hx
 
 /-! ### The coordinate laws -/
 
@@ -381,13 +376,12 @@ theorem map_diagonal_sq_pi_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 < n) :
       exact map_sq_bartlettCoordinateMeasure_of_eq hn rfl
 
 /-- The product of the coordinate laws gives no mass to a nonpositive diagonal coordinate. -/
-theorem pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion (hn : (p : ℝ) - 1 < n) :
+theorem pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion :
     Measure.pi (bartlettCoordinateMeasure (p := p) n) (posDiagLowerRegion p)ᶜ = 0 := by
   rw [pi_bartlettCoordinateMeasure_eq_withDensity,
     withDensity_apply _ (measurableSet_posDiagLowerRegion p).compl]
   refine setLIntegral_eq_zero (measurableSet_posDiagLowerRegion p).compl fun x hx ↦ ?_
-  rw [← ENNReal.ofReal_prod_of_nonneg fun ij _ ↦ bartlettCoordinatePDFReal_nonneg hn ij (x ij),
-    prod_bartlettCoordinatePDFReal_of_notMem hx, ENNReal.ofReal_zero, Pi.zero_apply]
+  exact prod_ofReal_bartlettCoordinatePDFReal_of_notMem hx
 
 /-! ### The Bartlett decomposition -/
 
@@ -430,7 +424,7 @@ theorem map_choleskyLowerCoordinates_comap_nonsingularWishartMeasure (hn : (p : 
       (posDiagLowerRegion p) = Measure.pi (bartlettCoordinateMeasure (p := p) n) :=
     Measure.restrict_eq_self_of_ae_mem <| by
       rw [ae_iff]
-      exact pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion hn
+      exact pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion
   ext s hs
   have hE : MeasurableSet (Subtype.val '' (choleskyLowerCoordinates p ⁻¹' s)) :=
     hemb.measurableSet_image.2 (measurable_choleskyLowerCoordinates p hs)

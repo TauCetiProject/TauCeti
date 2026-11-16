@@ -126,19 +126,19 @@ def laurentQExpansion : MeromorphicFunction Γ.CompactifiedQuotient →ₐ[ℂ] 
     simp only [MeromorphicFunction.finitePart_one, Pi.one_apply]
     exact TauCeti.UpperHalfPlane.laurentQExpansion_const _ 1 |>.trans (map_one _)
   map_mul' F G := by
-    rw [TauCeti.UpperHalfPlane.laurentQExpansion_congr D.width_pos
+    rw [TauCeti.UpperHalfPlane.laurentQExpansion_congr
       (cuspFunction_eventuallyEq_of_eventuallyEq D
         (MeromorphicFunction.finitePart_mul_eventuallyEq F G _))]
-    exact TauCeti.UpperHalfPlane.laurentQExpansion_mul D.width_pos
+    exact TauCeti.UpperHalfPlane.laurentQExpansion_mul
       (meromorphicAt_cuspFunction_finitePart D F) (meromorphicAt_cuspFunction_finitePart D G)
   map_zero' := by
     simp only [MeromorphicFunction.finitePart_zero, Pi.zero_apply]
     exact TauCeti.UpperHalfPlane.laurentQExpansion_const _ 0 |>.trans (map_zero _)
   map_add' F G := by
-    rw [TauCeti.UpperHalfPlane.laurentQExpansion_congr D.width_pos
+    rw [TauCeti.UpperHalfPlane.laurentQExpansion_congr
       (cuspFunction_eventuallyEq_of_eventuallyEq D
         (MeromorphicFunction.finitePart_add_eventuallyEq F G _))]
-    exact TauCeti.UpperHalfPlane.laurentQExpansion_add D.width_pos
+    exact TauCeti.UpperHalfPlane.laurentQExpansion_add
       (meromorphicAt_cuspFunction_finitePart D F) (meromorphicAt_cuspFunction_finitePart D G)
   commutes' c := by
     simp only [MeromorphicFunction.finitePart_algebraMap]
@@ -171,7 +171,7 @@ theorem laurentQExpansion_aeval (F : MeromorphicFunction Γ.CompactifiedQuotient
 `F` at the cusp of `D`. -/
 theorem orderTop_laurentQExpansion (F : MeromorphicFunction Γ.CompactifiedQuotient) :
     (laurentQExpansion D F).orderTop = MeromorphicFunction.order (ofCusp D.cuspOrbit) F := by
-  rw [laurentQExpansion_apply, TauCeti.UpperHalfPlane.orderTop_laurentQExpansion D.width_pos
+  rw [laurentQExpansion_apply, TauCeti.UpperHalfPlane.orderTop_laurentQExpansion
     (meromorphicAt_cuspFunction_finitePart D F), MeromorphicFunction.order_apply,
     meromorphicOrderAt_ofCusp (F := F.finitePart) D fun _ ↦ rfl,
     TauCeti.Subgroup.CuspDatum.cuspExtension_def]
@@ -191,7 +191,7 @@ theorem laurentQExpansion_coeff_zero_eq_finitePart (hF : F (ofCusp D.cuspOrbit) 
       (fun z ↦ F.finitePart (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z))))) 0 :=
     (meromorphicAt_cuspFunction_finitePart D F).analyticAt (hcont.congr heq.symm)
   rw [laurentQExpansion_apply,
-    TauCeti.UpperHalfPlane.laurentQExpansion_coeff_zero_of_analyticAt D.width_pos han,
+    TauCeti.UpperHalfPlane.laurentQExpansion_coeff_zero_of_analyticAt han,
     heq.eq_of_nhds, comp_apply, cuspChart_symm_zero]
 
 /-- **Convergence of the Laurent `q`-expansion.** Sufficiently high in the upper half-plane, the
@@ -212,7 +212,7 @@ theorem laurentQExpansion_ofMeromorphic {H : Γ.CompactifiedQuotient → ℂ}
     laurentQExpansion D (MeromorphicFunction.ofMeromorphic hH) =
       TauCeti.UpperHalfPlane.laurentQExpansion D.width
         fun z ↦ H (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z))) :=
-  TauCeti.UpperHalfPlane.laurentQExpansion_congr D.width_pos
+  TauCeti.UpperHalfPlane.laurentQExpansion_congr
     (cuspFunction_eventuallyEq_of_eventuallyEq D
       (MeromorphicFunction.finitePart_ofMeromorphic_eventuallyEq hH _))
 
@@ -279,7 +279,7 @@ theorem laurentQExpansion_compactifiedQuotientComap (hσ : D.scaling = E.scaling
     laurentQExpansion D (compactifiedQuotientComap h F) =
       LaurentSeries.expand ℂ d (laurentQExpansion E F) := by
   rw [laurentQExpansion_apply, laurentQExpansion_apply, finitePart_compactifiedQuotientComap, hσ,
-    hw, ← TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul E.width_pos (periodic_finitePart E F)
+    hw, ← TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul (periodic_finitePart E F)
       (meromorphicAt_cuspFunction_finitePart E F)]
   simp only [comp_apply, compactifiedQuotientMap_ofQuotient, TauCeti.Setoid.map_of_le_mk]
 
@@ -289,8 +289,7 @@ scaling, the pullback of `F` has its coefficients at `D` in a subfield `K` of `�
 theorem compactifiedQuotientComap_mem_coeffSubfield_iff (hσ : D.scaling = E.scaling)
     {K : Subfield ℂ} :
     compactifiedQuotientComap h F ∈ coeffSubfield D K ↔ F ∈ coeffSubfield E K := by
-  obtain ⟨d, hd, hw⟩ := TauCeti.Subgroup.CuspDatum.exists_width_eq_nat_mul h D E
-    (D.cusp_eq_of_scaling_eq E hσ) hσ
+  obtain ⟨d, hd, hw⟩ := TauCeti.Subgroup.CuspDatum.exists_width_eq_nat_mul h D E hσ
   lift d to ℕ+ using hd
   rw [mem_coeffSubfield, mem_coeffSubfield, laurentQExpansion_compactifiedQuotientComap h hσ hw]
   refine ⟨fun hF n ↦ by simpa using hF (d * n), fun hF n ↦ ?_⟩

@@ -46,13 +46,16 @@ adic space.
   noetherian type.
 * `TauCeti.Huber.PairOfDefinition.exists_noetherianPairOfDefinition_completionLocObj`: the complete
   separated topological ring `A⟨T/s⟩` has a pair of definition with noetherian ring of definition.
-* `TauCeti.Huber.PairOfDefinition.isNoetherianType_completion_locTopology_of_isNoetherianType`: if
-  `A` is of noetherian type and `T ∪ {s}` spans an open ideal, then `A⟨T/s⟩` is of noetherian type.
+* `TauCeti.Huber.PairOfDefinition.isNoetherianType_completion_locTopology_of_isNoetherianType`,
+  `TauCeti.Huber.PairOfDefinition.isHuberStandard_completion_locTopology_of_isHuberStandard`: if
+  `A` is of noetherian type (resp. in Huber's standing class) and `T ∪ {s}` spans an open ideal,
+  then `A⟨T/s⟩` stays in the class.
 
 ## References
 
 * R. Huber, *A generalization of formal schemes and rigid analytic varieties*, Math. Z. 217
   (1994), §2, proof of Theorem 2.5, Case I, p. 529.
+* R. Huber, *Étale Cohomology of Rigid Analytic Varieties and Adic Spaces*, (1.1.1).
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition and Definition 5.51, Remark 6.37 and
   Corollary 8.35.
 -/
@@ -141,6 +144,25 @@ theorem isNoetherianType_completion_locTopology_of_isNoetherianType [IsHuberRing
     letI := isTopologicalRing_locUniformSpace P T s S hden
     letI := isHuberRing_completion_locTopology P T s S hden
     IsNoetherianType (UniformSpace.Completion S) :=
+  letI := locUniformSpace P T s S hden
+  letI := isUniformAddGroup_locUniformSpace P T s S hden
+  letI := isTopologicalRing_locUniformSpace P T s S hden
+  letI := isHuberRing_completion_locTopology P T s S hden
+  .of_isTopologicallyFiniteType (P.isTopologicallyFiniteType_toCompletionLoc T s S hden hT)
+
+/-- **Rational localisation preserves Huber's standing class.** If `A` is in Huber's standing class
+and `T ∪ {s}` spans an open ideal, then `A⟨T/s⟩` stays in Huber's standing class, since
+`A → A⟨T/s⟩` is topologically of finite type (`isTopologicallyFiniteType_toCompletionLoc`) and
+Huber's standing class ascends along such maps (`IsHuberStandard.of_isTopologicallyFiniteType`). -/
+theorem isHuberStandard_completion_locTopology_of_isHuberStandard [IsHuberRing A]
+    [IsHuberStandard A] (P : PairOfDefinition A) {T : Finset A} {s : A}
+    (hT : IsOpen (Ideal.span (insert s (T : Set A)) : Set A)) (S : Type*) [CommRing S] [Algebra A S]
+    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_completion_locTopology P T s S hden
+    IsHuberStandard (UniformSpace.Completion S) :=
   letI := locUniformSpace P T s S hden
   letI := isUniformAddGroup_locUniformSpace P T s S hden
   letI := isTopologicalRing_locUniformSpace P T s S hden

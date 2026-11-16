@@ -35,7 +35,8 @@ variable (R : Type*) {n : ℕ} (M : Fin (n + 1) → Type*) (N : Type*) [CommSemi
 /-- Currying the first argument of a multilinear map into its values:
 `f ↦ ((m₁, …, mₙ) ↦ (m₀ ↦ f (m₀, m₁, …, mₙ)))`. -/
 def multilinearCurryFirstEquiv :
-    MultilinearMap R M N ≃ₗ[R] MultilinearMap R (fun i : Fin n ↦ M i.succ) (M 0 →ₗ[R] N) where
+    MultilinearMap (RingHom.id R) M N ≃ₗ[R] MultilinearMap (RingHom.id R) (fun i : Fin n ↦ M
+        i.succ) (M 0 →ₗ[R] N) where
   toFun f := MultilinearMap.mk'
     (fun m ↦
       { toFun x := f (Fin.cons x m)
@@ -59,7 +60,7 @@ variable {R M N}
 
 /-- The curried map evaluates `f` on the tuple with `x` prepended. -/
 @[simp]
-theorem multilinearCurryFirstEquiv_apply_apply (f : MultilinearMap R M N)
+theorem multilinearCurryFirstEquiv_apply_apply (f : MultilinearMap (RingHom.id R) M N)
     (m : ∀ i : Fin n, M i.succ) (x : M 0) :
     multilinearCurryFirstEquiv R M N f m x = f (Fin.cons x m) :=
   (rfl)
@@ -67,7 +68,7 @@ theorem multilinearCurryFirstEquiv_apply_apply (f : MultilinearMap R M N)
 /-- The uncurried map evaluates on the last `n` entries and then on the first one. -/
 @[simp]
 theorem multilinearCurryFirstEquiv_symm_apply
-    (g : MultilinearMap R (fun i : Fin n ↦ M i.succ) (M 0 →ₗ[R] N)) (m : ∀ i, M i) :
+    (g : MultilinearMap (RingHom.id R) (fun i : Fin n ↦ M i.succ) (M 0 →ₗ[R] N)) (m : ∀ i, M i) :
     (multilinearCurryFirstEquiv R M N).symm g m = g (Fin.tail m) (m 0) :=
   (rfl)
 

@@ -155,7 +155,7 @@ theorem IsMorseSmale.separatedSum (hfs : ContDiff ℝ 2 f) (hgs : ContDiff ℝ 2
   have hfd := hfs.differentiable two_ne_zero
   have hgd := hgs.differentiable two_ne_zero
   refine IsMorseSmale.of_forall fun p q y hp hq ⟨hyu, hys⟩ ↦ ?_
-  rw [isNondegenerateCriticalPoint_separatedSum_iff hfs.contDiffAt hgs.contDiffAt] at hp hq
+  rw [isNondegenerateCriticalPoint_separatedSum_iff] at hp hq
   obtain ⟨hu₁, hu₂⟩ := (mem_unstableSet_separatedSum hfd hgd hf hg hh).1 hyu
   obtain ⟨hs₁, hs₂⟩ := (mem_stableSet_separatedSum hfd hgd hf hg hh).1 hys
   let e := (WithLp.prodContinuousLinearEquiv 2 ℝ E F).symm

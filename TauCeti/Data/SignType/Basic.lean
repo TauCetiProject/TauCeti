@@ -35,6 +35,7 @@ product, so when `a + b` is odd the two signs multiply to the sign of `lc`.
 * `TauCeti.sign_one_sub_pow`: the sign of a nonzero `1 - x ^ k`.
 * `TauCeti.forall_sign_eq_iff_sum_sq_eq_zero_and_pos`: prescribed signs of the entries of a finite
   family as one sum-of-squares equation and positivity conditions.
+* `TauCeti.coe_sign_mul_coe_sign_of_ne_zero`: the sign of a nonzero element squares to `1`.
 * `TauCeti.sign_mul_pow_mul_sign_mul_pow_of_ne_zero`: the product of the signs of `u * lc ^ a`
   and `u * lc ^ b` is the sign of `lc` when `u ≠ 0` and `a + b` is odd.
 -/
@@ -96,6 +97,13 @@ theorem forall_sign_eq_iff_sum_sq_eq_zero_and_pos {ι R : Type*} [Fintype ι] [R
     rcases δ with _ | _ | _ <;> simp [sign_eq_zero_iff, sign_eq_neg_one_iff, sign_eq_one_iff]
   simp only [Finset.sum_sq_eq_zero_iff, Finset.mem_filter, Finset.mem_univ, true_and, this,
     forall_and]
+
+/-- In a linearly ordered ring, the sign of a nonzero element squares to `1`, read in any ring
+with negation. -/
+theorem coe_sign_mul_coe_sign_of_ne_zero {R α : Type*} [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [MulZeroOneClass α] [HasDistribNeg α] {r : R} (hr : r ≠ 0) :
+    (SignType.sign r : α) * SignType.sign r = 1 := by
+  rw [← SignType.coe_mul, ← sign_mul, sign_pos (mul_self_pos.2 hr), SignType.coe_one]
 
 /-- If `u ≠ 0` and `a + b` is odd, the signs of `u * lc ^ a` and `u * lc ^ b` multiply to the sign
 of `lc`. -/

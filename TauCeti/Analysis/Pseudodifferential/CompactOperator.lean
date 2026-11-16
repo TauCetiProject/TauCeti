@@ -17,7 +17,7 @@ Its quantization `Op(a)` is bounded from `H^s(ℝⁿ; V)` to `H^{s - m}(ℝⁿ; 
 is moreover **compact** as an operator `H^s → H^r` for every `r < s - m`. In particular:
 
 * a symbol of negative order `m < 0` with compact spatial support quantizes to a compact operator
-  `H^s → H^s` (take `r = s`);
+  `H^s → H^s` (`TauCeti.Symbol.exists_isCompactOperator_quantizeSobolev` with `r = s`);
 * a smoothing symbol with compact spatial support quantizes to a compact operator `H^s → H^r` for
   all real `s` and `r` (`TauCeti.Symbol.IsSmoothing.exists_isCompactOperator_quantizeSobolev`).
 

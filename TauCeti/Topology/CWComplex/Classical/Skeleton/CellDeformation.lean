@@ -83,6 +83,7 @@ lemma cellDeformation_of_mem_skeletonLT {A : Set (cell C n)}
     (hx : x ∈ (skeletonLT C (n : ℕ∞) : Set X)) : cellDeformation A Ψ (t, x) = x :=
   cellDeformation_of_notMem fun _ _ ↦ (disjoint_skeletonLT_openCell le_rfl).notMem_of_mem_left hx
 
+omit [T2Space X] in
 /-- **Through the characteristic map of a cell of `A`, the deformation is `Ψ`**, provided `Ψ`
 fixes the unit sphere. -/
 lemma cellDeformation_map {A : Set (cell C n)} {Ψ : C(I × (Fin n → ℝ), Fin n → ℝ)}
@@ -93,8 +94,14 @@ lemma cellDeformation_map {A : Set (cell C n)} {Ψ : C(I × (Fin n → ℝ), Fin
   · have hmem : y ∈ (map n j).source := by rwa [source_eq, mem_ball_zero_iff]
     rw [cellDeformation_of_mem hj ⟨y, mem_ball_zero_iff.2 hy, rfl⟩, (map n j).left_inv hmem]
   · -- A point of the boundary sphere lands in the frontier of the cell, which is fixed.
-    rw [hΨ t y hy, cellDeformation_of_mem_skeletonLT
-      (cellFrontier_subset_skeletonLT n j ⟨y, mem_sphere_zero_iff_norm.2 hy, rfl⟩)]
+    obtain ⟨J, hJ⟩ := cellFrontier_subset_finite_openCell n j
+    rw [hΨ t y hy]
+    refine cellDeformation_of_notMem fun i _ hxi ↦ ?_
+    rcases hJ ⟨y, mem_sphere_zero_iff_norm.2 hy, rfl⟩ with h | h
+    · exact (disjointBase n i).notMem_of_mem_left hxi h
+    · simp only [mem_iUnion] at h
+      obtain ⟨m, hm, k, -, hk⟩ := h
+      exact (disjoint_openCell_of_ne (by simp [hm.ne])).notMem_of_mem_left hk hxi
 
 /-- The deformation keeps the `n`-skeleton inside itself, provided `Ψ` keeps the closed unit ball
 inside itself. -/

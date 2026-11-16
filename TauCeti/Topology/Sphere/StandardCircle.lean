@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.UnitInterval
 public import TauCeti.Geometry.Sphere.Circle
 public import TauCeti.Topology.Homotopy.Cube.Basic
 
@@ -23,6 +23,7 @@ the point `(1, 0)` and is injective elsewhere, so it is a quotient map of `I¹` 
 * `TauCeti.circleLoop_eq_east_iff`, `TauCeti.circleLoop_surjective` and
   `TauCeti.eq_or_of_circleLoop_eq`: it collapses exactly the boundary to `(1, 0)`, is surjective,
   and is injective elsewhere.
+* `TauCeti.circleGenLoop`: the standard loop as a generalized loop at `(1, 0)`.
 * `TauCeti.sphereHomeomorphCircle_circleLoop`: identified with the complex unit circle, it is
   `t ↦ exp(2πit)`.
 * `TauCeti.diskBoundaryTwoLoop`: the same counterclockwise parametrization as a loop of the
@@ -35,7 +36,7 @@ public section
 noncomputable section
 
 open Metric Real
-open scoped unitInterval
+open scoped unitInterval Topology.Homotopy
 
 namespace TauCeti
 
@@ -82,18 +83,7 @@ theorem circleLoop_eq_east_iff (t : Fin 1 → I) :
     have h0 := congrArg (fun q : Sphere1 => (q : EuclideanSpace ℝ (Fin 2)) 0) h
     simp only [circleLoop_apply_zero, Sphere1.coe_east, PiLp.single_apply,
       ite_true] at h0
-    obtain ⟨n, hn⟩ := Real.cos_eq_one_iff _ |>.1 h0
-    have hpi : (2 * π) ≠ 0 := by positivity
-    have hnt : (n : ℝ) = t 0 := mul_right_cancel₀ hpi (by linarith)
-    have h1 : (0 : ℝ) ≤ n := hnt ▸ (t 0).2.1
-    have h2 : (n : ℝ) ≤ 1 := hnt ▸ (t 0).2.2
-    have : n = 0 ∨ n = 1 := by
-      have h1' : 0 ≤ n := by exact_mod_cast h1
-      have h2' : n ≤ 1 := by exact_mod_cast h2
-      omega
-    rcases this with rfl | rfl
-    · exact Or.inl (Subtype.ext (by simpa using hnt.symm))
-    · exact Or.inr (Subtype.ext (by simpa using hnt.symm))
+    exact eq_zero_or_eq_one_of_cos_two_pi_mul_eq_one h0
   · rintro (h | h)
     · refine Subtype.ext ?_
       ext i
@@ -102,6 +92,14 @@ theorem circleLoop_eq_east_iff (t : Fin 1 → I) :
       ext i
       fin_cases i <;> simp [circleLoop_apply_zero, circleLoop_apply_one, Sphere1.coe_east, h]
 
+/-- The standard loop `t ↦ (cos 2πt, sin 2πt)` as a generalized loop `I¹ → S¹` at `(1, 0)`. -/
+def circleGenLoop : Ω^ (Fin 1) Sphere1 Sphere1.east :=
+  ⟨circleLoop, fun t ht => (circleLoop_eq_east_iff t).2 ht⟩
+
+@[simp]
+theorem circleGenLoop_apply (t : Fin 1 → I) : circleGenLoop t = circleLoop t :=
+  (rfl)
+
 /-- Two points of the interval with the same image under the standard loop are equal, or both
 end points. -/
 theorem eq_or_of_circleLoop_eq {t t' : Fin 1 → I} (h : circleLoop t = circleLoop t') :
@@ -109,29 +107,14 @@ theorem eq_or_of_circleLoop_eq {t t' : Fin 1 → I} (h : circleLoop t = circleLo
   have hc := congrArg (fun q : Sphere1 => (q : EuclideanSpace ℝ (Fin 2)) 0) h
   have hs := congrArg (fun q : Sphere1 => (q : EuclideanSpace ℝ (Fin 2)) 1) h
   simp only [circleLoop_apply_zero, circleLoop_apply_one] at hc hs
-  obtain ⟨n, hn⟩ := Real.exists_int_eq_add_of_cos_sin_eq hc hs
-  have ha := (t 0).2
-  have hb := (t' 0).2
-  have h1 : (-1 : ℝ) ≤ n := by linarith [ha.1, ha.2, hb.1, hb.2]
-  have h2 : (n : ℝ) ≤ 1 := by linarith [ha.1, ha.2, hb.1, hb.2]
-  have h1' : -1 ≤ n := by exact_mod_cast h1
-  have h2' : n ≤ 1 := by exact_mod_cast h2
   rw [Cube.boundary_fin_one_iff, Cube.boundary_fin_one_iff]
-  have hcases : n = -1 ∨ n = 0 ∨ n = 1 := by omega
-  rcases hcases with rfl | rfl | rfl
-  · right
-    push_cast at hn
-    refine ⟨Or.inl (Subtype.ext ?_), Or.inr (Subtype.ext ?_)⟩ <;>
-      simp only [Set.Icc.coe_zero, Set.Icc.coe_one] <;> linarith [ha.1, ha.2, hb.1, hb.2]
+  rcases eq_or_of_cos_sin_two_pi_mul_eq hc hs with h | ⟨h0, h1⟩ | ⟨h1, h0⟩
   · left
-    push_cast at hn
     funext i
     obtain rfl : i = 0 := Subsingleton.elim _ _
-    exact Subtype.ext (by linarith)
-  · right
-    push_cast at hn
-    refine ⟨Or.inr (Subtype.ext ?_), Or.inl (Subtype.ext ?_)⟩ <;>
-      simp only [Set.Icc.coe_zero, Set.Icc.coe_one] <;> linarith [ha.1, ha.2, hb.1, hb.2]
+    exact h
+  · exact Or.inr ⟨Or.inl h0, Or.inr h1⟩
+  · exact Or.inr ⟨Or.inr h1, Or.inl h0⟩
 
 /-- The standard loop is surjective. -/
 theorem circleLoop_surjective : Function.Surjective circleLoop := by
@@ -139,32 +122,12 @@ theorem circleLoop_surjective : Function.Surjective circleLoop := by
   have hn : v 0 ^ 2 + v 1 ^ 2 = 1 := by
     rw [mem_sphere_zero_iff_norm, EuclideanSpace.norm_eq, Real.sqrt_eq_one] at hv
     simpa [Fin.sum_univ_two] using hv
-  let z : ℂ := ⟨v 0, v 1⟩
-  have hzn : ‖z‖ = 1 := by
-    rw [Complex.norm_def, Complex.normSq_mk, Real.sqrt_eq_one]
-    nlinarith
-  have hz0 : z ≠ 0 := fun h => by simp [h] at hzn
-  have hcos : cos (Complex.arg z) = v 0 := by
-    rw [Complex.cos_arg hz0, hzn, div_one]
-  have hsin : sin (Complex.arg z) = v 1 := by
-    rw [Complex.sin_arg, hzn, div_one]
-  set θ := Complex.arg z with hθ
-  have hp : (0 : ℝ) < 2 * π := by positivity
-  set r := toIcoMod hp 0 θ with hr
-  have hrmem : r ∈ Set.Ico 0 (2 * π) := toIcoMod_mem_Ico' hp θ
-  have hrθ : r = θ - (toIcoDiv hp 0 θ : ℝ) * (2 * π) := by
-    rw [hr, toIcoMod, zsmul_eq_mul]
-  have hrc : cos r = v 0 := by rw [hrθ, cos_sub_int_mul_two_pi, hcos]
-  have hrs : sin r = v 1 := by rw [hrθ, sin_sub_int_mul_two_pi, hsin]
-  have hs0 : 0 ≤ r / (2 * π) := div_nonneg hrmem.1 hp.le
-  have hs1 : r / (2 * π) ≤ 1 := (div_le_one hp).2 hrmem.2.le
-  refine ⟨fun _ => ⟨r / (2 * π), hs0, hs1⟩, Subtype.ext ?_⟩
+  obtain ⟨t, hc, hs⟩ := exists_cos_sin_two_pi_mul_eq hn
+  refine ⟨fun _ => t, Subtype.ext ?_⟩
   ext i
   fin_cases i
-  · simp only [Fin.zero_eta, circleLoop_apply_zero]
-    rw [mul_div_cancel₀ _ hp.ne', hrc]
-  · simp only [Fin.mk_one, circleLoop_apply_one]
-    rw [mul_div_cancel₀ _ hp.ne', hrs]
+  · simp only [Fin.zero_eta, circleLoop_apply_zero, hc]
+  · simp only [Fin.mk_one, circleLoop_apply_one, hs]
 
 /-- Under the identification of `S¹ ⊆ ℝ²` with the complex unit circle, the standard loop is
 `t ↦ exp(2πit)`. -/

@@ -207,9 +207,9 @@ private lemma sum_smul_root_e8SimpleIndex (j : Fin 240) :
 
 private lemma linearIndependent_root_e8SimpleIndex :
     LinearIndependent ℤ fun i : Fin 8 ↦ e8Root (e8SimpleIndex i) := by
-  simpa only [root_e8SimpleIndex] using
-    linearIndependent_rows_of_det_ne_zero (A := CartanMatrix.E 8)
-      (by rw [CartanMatrix.E₈_det]; norm_num)
+  simp only [root_e8SimpleIndex]
+  exact linearIndependent_rows_of_det_ne_zero (A := CartanMatrix.E 8)
+    (by rw [CartanMatrix.E₈_det]; norm_num)
 
 private lemma linearIndependent_coroot_e8SimpleIndex :
     LinearIndependent ℤ fun i : Fin 8 ↦ e8Coroot (e8SimpleIndex i) := by

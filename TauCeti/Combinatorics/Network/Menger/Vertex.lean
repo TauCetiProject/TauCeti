@@ -126,11 +126,11 @@ private theorem exists_paths_vertexSeparator_sum_eq_of_finite [Finite V] [Decida
   obtain rfl : F = ∅ := by
     by_contra hF
     obtain ⟨a, ha⟩ := nonempty_iff_ne_empty.2 hF
-    have hMF : M ≤ ∑ a ∈ F, M := single_le_sum (f := fun _ ↦ M) (fun _ _ ↦ hM) ha
+    have hMF : M ≤ ∑ _ ∈ F, M := single_le_sum (f := fun _ ↦ M) (fun _ _ ↦ hM) ha
     have hX : 0 ≤ ∑ v ∈ X, (c v : ℤ) := by positivity
     omega
   obtain ⟨hs, ht, hX⟩ := isMixedSeparator_empty_iff.1 hXF
-  obtain ⟨k, P, hk, hP, hPv⟩ := f.exists_paths_card_eq_val_card_filter_le
+  obtain ⟨k, P, hk, hP, -, hPv⟩ := f.exists_paths_card_eq_val_card_filter_le
   refine ⟨k, P, X, hP, fun v hvs hvt ↦ ?_, hs, ht, hX, ?_⟩
   · exact_mod_cast (hPv v hvs).trans (hf.le hvs hvt)
   · rw [hval, sum_empty, add_zero] at hk

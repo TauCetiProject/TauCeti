@@ -64,7 +64,7 @@ nonzero, and hence that its analytic order is finite. -/
 @[simp]
 theorem L_ne_zero (f : Newform N k) (hk : 0 < k) :
     ModularForm.L hk f.toCuspForm ≠ 0 := by
-  apply CuspForm.L_ne_zero_of_qExpansion_coeff_ne_zero f.toCuspForm hk one_ne_zero
+  apply CuspForm.L_ne_zero_of_qExpansion_coeff_ne_zero f.toCuspForm hk (n := 1)
   simpa only [strictWidthInfty_Gamma1, f.isNorm] using one_ne_zero
 
 /-- The analytic order of the entire L-function of a newform is finite at every point. -/
@@ -72,7 +72,7 @@ theorem L_ne_zero (f : Newform N k) (hk : 0 < k) :
 theorem analyticOrderAt_L_ne_top (f : Newform N k) (hk : 0 < k) (s : ℂ) :
     analyticOrderAt (ModularForm.L hk f.toCuspForm) s ≠ ⊤ := by
   apply CuspForm.analyticOrderAt_L_ne_top_of_qExpansion_coeff_ne_zero
-    f.toCuspForm hk s one_ne_zero
+    f.toCuspForm hk s (n := 1)
   simpa only [strictWidthInfty_Gamma1, f.isNorm] using one_ne_zero
 
 /-- The **analytic rank** of a positive-weight newform is the order of vanishing of its entire

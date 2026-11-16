@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.FiniteMeasure
 
+import Mathlib.Analysis.MeanInequalities
+import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
@@ -54,6 +56,8 @@ most `e (k + 1) 2 ^ (-k) μ(Ω)`. The finitely many terms with `k < n - 1` are b
   with an upper bound for `‖Du‖_{Lⁿ}` in place of the norm itself.
 * `TauCeti.W1p.setLIntegral_exp_abs_value_div_rpow_le`: Trudinger's inequality on
   `W^{1,n}_0(Ω)`.
+* `TauCeti.W1p.integrableOn_exp_mul_abs_value`: its local form on `W^{1,n}(Ω)`, without boundary
+  condition: `exp (c |u|)` is integrable on every compact subset of `Ω`, for every `c`.
 
 ## References
 
@@ -457,8 +461,82 @@ theorem W1p.setLIntegral_exp_abs_value_div_rpow_le (hp : p = finrank ℝ E)
       rw [ENNReal.ofReal_mul (by positivity)]
       ring
   rw [Measure.restrict_apply_univ, ENNReal.toReal_mul, ENNReal.toReal_ofReal hK,
-    toReal_enorm] at h
+    toReal_eNorm] at h
   simpa only [K, Real.norm_eq_abs, mul_assoc] using h
+
+/-- **Local exponential integrability of `W^{1,n}(Ω)`.** Let `n ≥ 2` be the dimension. For every
+`u ∈ W^{1,n}(Ω)`, every compact `K ⊆ Ω` and every real `c`, the function `exp (c |u|)` is
+integrable on `K`. No boundary condition on `u` and no regularity of `Ω` is assumed.
+
+This is the local form of Trudinger's inequality
+`TauCeti.W1p.setLIntegral_exp_abs_value_div_rpow_le`: a cutoff of `u` lies in `W^{1,n}_0(U)` for
+an open `U ⊇ K` of finite measure, and by Young's inequality `exp (c |u|)` is bounded by a constant
+times `exp ((|u| / A) ^ (n / (n - 1)))` for every rate `c`, because `n / (n - 1) > 1`. -/
+theorem W1p.integrableOn_exp_mul_abs_value (hp : p = finrank ℝ E) (hn : 2 ≤ finrank ℝ E)
+    (u : W1p mu Omega p) {K : Set E} (hK : IsCompact K) (hKO : K ⊆ Omega) (c : ℝ) :
+    IntegrableOn (fun x ↦ Real.exp (c * |W1p.value u x|)) K mu := by
+  set n := finrank ℝ E
+  have hp' : p ≠ ∞ := hp ▸ ENNReal.natCast_ne_top n
+  have hn1 : (1 : ℝ) < n := by exact_mod_cast hn
+  obtain ⟨U, hU, hKU, T, hT⟩ := W1p.exists_zeroBoundaryLocalization (μ := mu) hp' (V := K)
+    (by rwa [hK.isClosed.closure_eq]) (by rwa [hK.isClosed.closure_eq])
+  set v : W1p mu U p := (T u : W1p mu U p)
+  have hv0 : v ∈ w1p0Submodule mu U p := (T u).2
+  have hKU' : mu.restrict K ≤ mu.restrict U := Measure.restrict_mono hKU le_rfl
+  have hum : AEStronglyMeasurable (W1p.value u : E → ℝ) (mu.restrict K) :=
+    (Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hKO le_rfl)
+  refine ⟨Real.continuous_exp.comp_aestronglyMeasurable
+    ((continuous_abs.comp_aestronglyMeasurable hum).const_mul c), ?_⟩
+  rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ fun x ↦ (Real.exp_pos _).le)]
+  -- On `K` the value of `u` is that of its cutoff `v ∈ W^{1,n}_0(U)`.
+  calc ∫⁻ x in K, ENNReal.ofReal (Real.exp (c * |W1p.value u x|)) ∂mu
+      = ∫⁻ x in K, ENNReal.ofReal (Real.exp (c * |W1p.value v x|)) ∂mu :=
+        lintegral_congr_ae (hT u |>.mono fun x hx ↦ by simp only [v, hx])
+    _ ≤ ∫⁻ x in U, ENNReal.ofReal (Real.exp (c * |W1p.value v x|)) ∂mu :=
+        lintegral_mono' hKU' le_rfl
+    _ < ∞ := ?_
+  rcases (norm_nonneg (W1p.gradient v)).eq_or_lt with hG | hG
+  · -- If `∇v = 0`, the borderline Sobolev inequality forces `v = 0`.
+    have h0 : eLpNorm (W1p.value v : E → ℝ) (n : ℝ≥0) (mu.restrict U) = 0 := by
+      refine le_antisymm ((W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient hp hU
+        le_rfl hv0).trans_eq ?_) bot_le
+      rw [← ofReal_norm, ← hG, ENNReal.ofReal_zero, mul_zero]
+    have hv : (W1p.value v : E → ℝ) =ᵐ[mu.restrict U] 0 :=
+      (eLpNorm_eq_zero_iff (by simp; omega)).1 h0
+    calc ∫⁻ x in U, ENNReal.ofReal (Real.exp (c * |W1p.value v x|)) ∂mu
+        = ∫⁻ _ in U, 1 ∂mu := lintegral_congr_ae (hv.mono fun x hx ↦ by simp [hx])
+      _ < ∞ := by rw [setLIntegral_one]; exact hU.lt_top
+  · -- Otherwise Young's inequality reduces to Trudinger's inequality for `v`.
+    set A := (2 * Real.exp 1) ^ (1 - (n : ℝ)⁻¹) * (n : ℝ)⁻¹ * mu.real (ball 0 1) ^ (-(n : ℝ)⁻¹) *
+      ‖W1p.gradient v‖
+    have hA : 0 < A := by
+      have : Nontrivial E := Module.nontrivial_of_finrank_pos (by omega : 0 < n)
+      have := measureReal_ball_pos mu (0 : E) one_pos
+      positivity
+    have hsq : ((n : ℝ) / (n - 1)).HolderConjugate n :=
+      (Real.HolderConjugate.conjExponent hn1).symm
+    -- Young's inequality: `c t ≤ (t / A) ^ (n / (n - 1)) + (|c| A) ^ n` for `t ≥ 0`.
+    have hyoung (t : ℝ) (ht : 0 ≤ t) :
+        c * t ≤ (t / A) ^ ((n : ℝ) / (n - 1)) + (|c| * A) ^ (n : ℝ) :=
+      calc c * t ≤ |c| * t := mul_le_mul_of_nonneg_right (le_abs_self c) ht
+        _ = t / A * (|c| * A) := by field_simp
+        _ ≤ (t / A) ^ ((n : ℝ) / (n - 1)) / ((n : ℝ) / (n - 1)) + (|c| * A) ^ (n : ℝ) / n :=
+          Real.young_inequality_of_nonneg (by positivity) (by positivity) hsq
+        _ ≤ _ := add_le_add (div_le_self (by positivity) hsq.lt.le)
+          (div_le_self (by positivity) hsq.symm.lt.le)
+    have htr := W1p.setLIntegral_exp_abs_value_div_rpow_le hp hn hv0
+    calc ∫⁻ x in U, ENNReal.ofReal (Real.exp (c * |W1p.value v x|)) ∂mu
+        ≤ ∫⁻ x in U, ENNReal.ofReal (Real.exp ((|c| * A) ^ (n : ℝ))) *
+            ENNReal.ofReal (Real.exp ((|W1p.value v x| / A) ^ ((n : ℝ) / (n - 1)))) ∂mu := by
+          refine lintegral_mono fun x ↦ ?_
+          rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, add_comm]
+          gcongr
+          exact hyoung _ (abs_nonneg _)
+      _ = ENNReal.ofReal (Real.exp ((|c| * A) ^ (n : ℝ))) *
+            ∫⁻ x in U, ENNReal.ofReal (Real.exp ((|W1p.value v x| / A) ^ ((n : ℝ) / (n - 1))))
+              ∂mu := lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+      _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top (htr.trans_lt
+          (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hU.lt_top))
 
 end W1p0
 

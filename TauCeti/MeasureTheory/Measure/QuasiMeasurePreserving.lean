@@ -33,6 +33,6 @@ variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure
 preserving. -/
 theorem QuasiMeasurePreserving.of_map_le_smul (hf : Measurable f) (hmap : μ.map f ≤ C • ν) :
     QuasiMeasurePreserving f μ ν :=
-  ⟨hf, Measure.absolutelyContinuous_of_le_smul hmap⟩
+  ⟨hf.aemeasurable, Measure.absolutelyContinuous_of_le_smul hmap⟩
 
 end MeasureTheory

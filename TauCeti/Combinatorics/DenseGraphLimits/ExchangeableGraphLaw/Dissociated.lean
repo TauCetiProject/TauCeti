@@ -49,9 +49,6 @@ the rectangle of their upper events.
   (2008), 33--61, Section 5.
 -/
 
--- Provenance: the body of `IsDissociated` and the signature of `isDissociated_iff_upperMass_mul`
--- follow `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
-
 public section
 
 noncomputable section

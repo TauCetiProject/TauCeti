@@ -90,20 +90,15 @@ statement shapes and proofs this file follows. The coordinate-free form of the i
 points of a Hopf algebra rather than for matrix points, is
 `TauCeti.Bialgebra.frobeniusFixedPointsMulEquiv`.
 
-## Roadmap
+## Applications
 
-This advances the target "points over an algebraically closed field as a group, functorially in the
-field, so that a field endomorphism induces a group endomorphism of the points. The `q`-power
-Frobenius is the case a consumer asks for first" in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, by naming an isomorphism onto the group that
-endomorphism fixes, from the points over the fixed subring. Its consumer is milestone L3 of
-`TauCetiRoadmap/CFSGStatement/README.md`, which takes the derived central quotient of
-`H_d = fixedSubgroup d.steinberg`. The families this isomorphism serves directly are the untwisted
+A finite simple group of Lie type is read off, by a derived central quotient, from the subgroup
+fixed by a Steinberg endomorphism. The families this isomorphism serves directly are the untwisted
 `C_n(q)` and `B₂(q)`, whose Steinberg endomorphism is the Frobenius treated here. The Suzuki family
 `²B₂(2^(2m+1))` is carried by the same carrier but is not among them: its Steinberg endomorphism is
 the twisted one built from the special isogeny, and no isomorphism for the subgroup it fixes is
-established here. Reading `H_d` on that branch through the carrier's points awaits the group-scheme
-lift of the special isogeny and a twisted counterpart of the result below.
+established here. Reading that subgroup through the carrier's points needs the group-scheme lift
+of the special isogeny and a twisted counterpart of the result below.
 -/
 
 public section

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Order.Filter.Basic
 public import Mathlib.Topology.Order.Basic
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import TauCeti.Geometry.Toric.Delzant.Basic
 
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty

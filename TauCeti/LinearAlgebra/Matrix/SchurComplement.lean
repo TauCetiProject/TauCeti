@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
+public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # Schur complements and rank-one inverse updates
@@ -28,6 +29,10 @@ when the perturbed matrix is invertible. These results specialize Mathlib's
 `Matrix.det_add_replicateCol_mul_replicateRow` and `Matrix.add_mul_mul_inv_eq_sub` to a single
 column and row, over any commutative ring; the scalar inverse is `Ring.inverse`.
 
+Mathlib's `Matrix.det_one_sub_mul_comm` says that `A * B` and `B * A` have the same
+`det (1 - ·)`. The same holds for every positive power, because
+`(A * B) ^ (k + 1) = A * ((B * A) ^ k * B)` while `(B * A) ^ k * B * A = (B * A) ^ (k + 1)`.
+
 ## Main results
 
 * `Matrix.PosSemidef.schur_complement₂₂` and `Matrix.PosSemidef.schur_complement₁₁`:
@@ -39,6 +44,7 @@ column and row, over any commutative ring; the scalar inverse is `Ring.inverse`.
 * `Matrix.isUnit_add_vecMulVec_iff`: a rank-one update is invertible exactly when its
   Sherman–Morrison denominator is a unit.
 * `Matrix.inv_add_vecMulVec`: the Sherman–Morrison inverse formula over a commutative ring.
+* `Matrix.det_one_sub_mul_pow_comm`: `det (1 - (A * B) ^ k) = det (1 - (B * A) ^ k)` for `k ≠ 0`.
 
 ## References
 
@@ -57,30 +63,48 @@ variable {m n R : Type*} [Ring R] [PartialOrder R] [StarRing R]
 /-- A generalized Schur complement of the bottom-right block of a positive-semidefinite
 matrix is positive semidefinite. Only the Hermitian property and the second generalized-inverse
 equation are needed, so the block may be singular. -/
-theorem PosSemidef.schur_complement₂₂ [Finite m] [Fintype n]
+theorem PosSemidef.schur_complement₂₂ [Fintype n]
     {A : Matrix m m R} {B : Matrix m n R}
     {D P : Matrix n n R} (h : (fromBlocks A B Bᴴ D).PosSemidef)
     (hP : P.IsHermitian) (hPDP : P * D * P = P) :
     (A - B * P * Bᴴ).PosSemidef := by
   classical
-  let := Fintype.ofFinite m
-  have hcancel : B * P * D * P = B * P := by
-    simpa only [Matrix.mul_assoc] using congrArg (B * ·) hPDP
+  refine TauCeti.posSemidef_of_support_posSemidef (fun a b ↦ (A - B * P * Bᴴ) a b)
+    ((isHermitian_fromBlocks_iff.1 h.1).1.sub
+      (by simp [IsHermitian, conjTranspose_mul, hP.eq, Matrix.mul_assoc]))
+    fun x ↦ ?_
+  let e : x.support → m := (↑)
+  have hmat : (fromBlocks A B Bᴴ D).submatrix (Sum.map e id) (Sum.map e id) =
+      fromBlocks (A.submatrix e e) (B.submatrix e id) (B.submatrix e id)ᴴ D := by
+    ext (i | i) (j | j) <;> simp [conjTranspose_apply]
+  have hsub : (A - B * P * Bᴴ).submatrix e e =
+      A.submatrix e e - B.submatrix e id * P * (B.submatrix e id)ᴴ := by
+    rw [submatrix_sub, Pi.sub_apply, Pi.sub_apply,
+      submatrix_mul _ _ _ id _ Function.bijective_id,
+      submatrix_mul _ _ _ id _ Function.bijective_id, conjTranspose_submatrix]
+    simp
+  have hcancel : B.submatrix e id * P * D * P = B.submatrix e id * P := by
+    simpa only [Matrix.mul_assoc] using congrArg (B.submatrix e id * ·) hPDP
   have hcompress :
-      fromCols 1 (-(B * P)) * fromBlocks A B Bᴴ D * (fromCols 1 (-(B * P)))ᴴ =
-        A - B * P * Bᴴ := by
+      fromCols 1 (-(B.submatrix e id * P)) * fromBlocks (A.submatrix e e) (B.submatrix e id)
+          (B.submatrix e id)ᴴ D * (fromCols 1 (-(B.submatrix e id * P)))ᴴ =
+        (A - B * P * Bᴴ).submatrix e e := by
+    rw [hsub]
     simp only [conjTranspose_fromCols_eq_fromRows_conjTranspose, conjTranspose_one,
       conjTranspose_neg, conjTranspose_mul, hP.eq,
       fromCols_mul_fromBlocks, fromCols_mul_fromRows, Matrix.one_mul, Matrix.mul_one,
       Matrix.add_mul, Matrix.neg_mul, Matrix.mul_neg,
       ← Matrix.mul_assoc, hcancel]
     abel
-  rw [← hcompress]
-  exact h.mul_mul_conjTranspose_same _
+  -- The support helper states its goal for `Matrix.of fun a b ↦ (A - B * P * Bᴴ) a b`, which is
+  -- `(A - B * P * Bᴴ).submatrix e e` by definition (both are `fun a b ↦ _ (e a) (e b)`).
+  change ((A - B * P * Bᴴ).submatrix e e).PosSemidef
+  rw [← hcompress, ← hmat]
+  exact (h.submatrix _).mul_mul_conjTranspose_same _
 
 /-- A generalized Schur complement of the top-left block of a positive-semidefinite matrix
 is positive semidefinite, including when that block is singular. -/
-theorem PosSemidef.schur_complement₁₁ [Fintype m] [Finite n]
+theorem PosSemidef.schur_complement₁₁ [Fintype m]
     {A P : Matrix m m R} {B : Matrix m n R} {D : Matrix n n R}
     (h : (fromBlocks A B Bᴴ D).PosSemidef)
     (hP : P.IsHermitian) (hPAP : P * A * P = P) :
@@ -135,10 +159,19 @@ theorem inv_add_vecMulVec (A : Matrix n n R) (hA : IsUnit A) (u v : n → R)
   rw [hUV, hinv] at h
   rw [h]
   congr 1
-  simp only [Matrix.mul_smul, Matrix.mul_one, Matrix.smul_mul, Matrix.mul_assoc,
+  simp only [Matrix.mul_smul, Matrix.mul_one, smul_mul, Matrix.mul_assoc,
     hUV, mul_vecMulVec, vecMulVec_mul]
 
 end RankOne
+
+/-- The products `A * B` and `B * A` of rectangular matrices have the same `det (1 - · ^ k)` for
+every positive power `k`, generalizing `Matrix.det_one_sub_mul_comm` (the case `k = 1`). -/
+theorem det_one_sub_mul_pow_comm {m n R : Type*} [Fintype m] [Fintype n] [DecidableEq m]
+    [DecidableEq n] [CommRing R] (A : Matrix m n R) (B : Matrix n m R) {k : ℕ} (hk : k ≠ 0) :
+    det (1 - (A * B) ^ k) = det (1 - (B * A) ^ k) := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk
+  rw [pow_succ, ← Matrix.mul_assoc, Matrix.mul_pow_mul, Matrix.mul_assoc, det_one_sub_mul_comm,
+    Matrix.mul_assoc, ← pow_succ]
 
 variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K]
 

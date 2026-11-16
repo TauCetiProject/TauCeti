@@ -13,7 +13,7 @@ import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 /-!
 # The Cesàro limit of an observable is its conditional expectation given the process tail
 
-Layer 3 of the Exchangeability roadmap produces the Cesàro limit of an observable of a contractable
+The `L²` route to de Finetti's theorem produces the Cesàro limit of an observable of a contractable
 process twice over: `weighted_sums_converge_L1_of_memLp` gives it as an abstract `L¹` limit, and
 `Contractable.exists_tailProcess_measurable_cesaro_limit_of_memLp` places it on the process tail
 `tailProcess X`. Neither says *what* the limit is.
@@ -38,11 +38,11 @@ tail-measurable, hence its own conditional expectation; and conditional expectat
 No reverse-martingale convergence theorem is used, which is what keeps this on the `L²` route
 rather than the martingale one.
 
-The roadmap maps `Exchangeability/Bridge/CesaroToCondExp.lean` in `cameronfreer/exchangeability`
-(pin `e0532e59ceff23edab44dda9ab0655debbc9cc22`) as the Layer 3 source for this bridge. No material
-is ported from it: the identification here is assembled from Tau Ceti's own tail-measurability
-result and its `L¹`-continuity lemma, and it conditions on the *process* tail `tailProcess X`
-throughout.
+The corresponding bridge in `cameronfreer/exchangeability` (pin
+`e0532e59ceff23edab44dda9ab0655debbc9cc22`) is `Exchangeability/Bridge/CesaroToCondExp.lean`. No
+material is ported from it: the identification here is assembled from Tau Ceti's own
+tail-measurability result and its `L¹`-continuity lemma, and it conditions on the *process* tail
+`tailProcess X` throughout.
 -/
 
 public section
@@ -84,7 +84,7 @@ whose composite with a single coordinate is square-integrable, the block average
 a contractable process converge in `L¹` to `μ[f ∘ X 0 | tailProcess X]`, for every selection `k`
 that is injective for all sufficiently large lengths — the selection may move with the length.
 
-This is the identification the Layer 3 route needs: the limit supplied by
+This is the identification the `L²` route needs: the limit supplied by
 `weighted_sums_converge_L1_of_memLp` is not merely tail-measurable, it is the conditional
 expectation of a single coordinate given the tail. -/
 theorem Contractable.tendsto_integral_abs_blockAverage_sub_condExp_of_memLp {μ : Measure Ω}

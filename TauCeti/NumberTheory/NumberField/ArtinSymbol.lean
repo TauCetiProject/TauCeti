@@ -255,10 +255,6 @@ The companion to `artinSymbol_map_restrictNormalHom`. That law shrinks the top f
 tower and takes no power; this one raises the base field and takes the power `f(𝔓/𝔭)`.
 -/
 
--- Source. Both transport laws are specified by `TauCetiRoadmap/Chebotarev/README.md` Layer 1,
--- which asks for closed transport lemmas derived from `artinSymbol_map_restrictNormalHom` and
--- `exists_isArithFrobAt_pow_inertiaDeg`. This is the second of the two.
-
 /-- **Raising the base field raises the Artin symbol to the residue degree.** For number fields
 `K ⊆ M ⊆ L` with `L / K` Galois, `𝔭` a prime of `𝓞 K` unramified in `L / K`, and `𝔓` a prime of
 `𝓞 M` over it: the Artin symbol of `𝔓` for `L / M`, read inside `Gal(L/K)` along

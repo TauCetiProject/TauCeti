@@ -9,7 +9,9 @@ public import Mathlib.Topology.Sheaves.LocalPredicate
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Basic
+import TauCeti.Analysis.Complex.RiemannSurface.Differential.IdentityTheorem
 import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
 # The sheaf `Ω_D` of meromorphic `1`-forms bounded by a divisor
@@ -46,6 +48,9 @@ functorial in the divisor.
   holomorphic `1`-forms `TauCeti.RiemannSurface.holomorphicOneForms`.
 * `TauCeti.RiemannSurface.differentialSheafMapOfLE`: the inclusion `Ω_D ⟶ Ω_E` for `D ≤ E`, a
   monomorphism.
+* `TauCeti.RiemannSurface.differentialSections.toOneForm`: a global section of `Ω_D`, read as a
+  `1`-form on `X`. On a connected surface a nonzero one has finite order everywhere
+  (`TauCeti.RiemannSurface.differentialSections.order_toOneForm_ne_top`).
 
 ## References
 
@@ -316,22 +321,55 @@ theorem eq_of_eventually_codiscrete {U : Opens X}
 
 end IsManifold
 
-/-- The global sections of `Ω_0`, read as `1`-forms on `X`, are holomorphic. -/
-private theorem holomorphicAt_of_mem_differentialSections_zero
-    {s : (x : (⊤ : Opens X)) → TangentSpace 𝓘(ℂ) (x : X) →L[ℂ] ℂ}
-    (hs : s ∈ differentialSections (0 : WeilDivisor X) ⊤) (x : X) :
-    OneForm.HolomorphicAt (fun y ↦ s ⟨y, trivial⟩) x := by
-  obtain ⟨η, hη, e⟩ := hs ⟨x, trivial⟩
-  refine ((isDifferentialSectionAt_iff_of_eq_zero rfl).1 hη).congr ?_
+/-! ### Global sections as `1`-forms -/
+
+namespace differentialSections
+
+variable (D) in
+/-- A global section of `Ω_D`, read as a `1`-form on `X`. -/
+def toOneForm : differentialSections D ⊤ →ₗ[ℂ] OneForm X where
+  toFun s y := s.1 ⟨y, trivial⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem toOneForm_apply (s : differentialSections D ⊤) (y : X) :
+    toOneForm D s y = s.1 ⟨y, trivial⟩ :=
+  (rfl)
+
+/-- A global section of `Ω_D` is determined by its `1`-form. -/
+theorem toOneForm_injective (D : WeilDivisor X) : Function.Injective (toOneForm D) :=
+  fun _ _ h ↦ Subtype.ext (funext fun y ↦ congrFun h y.1)
+
+/-- A global section of `Ω_D`, read as a `1`-form, is a local section of `Ω_D` at every point. -/
+theorem isDifferentialSectionAt_toOneForm (s : differentialSections D ⊤) (x : X) :
+    IsDifferentialSectionAt D (toOneForm D s) x := by
+  obtain ⟨η, hη, e⟩ := mem_differentialSections_iff.1 s.2 ⟨x, trivial⟩
+  refine hη.congr ?_
   rw [← (⊤ : Opens X).isOpenEmbedding'.map_nhds_eq ⟨x, trivial⟩, eventually_map]
   exact e.mono fun y hy ↦ hy.symm
+
+/-- On a connected surface, a nonzero global section of `Ω_D` has finite order everywhere. -/
+theorem order_toOneForm_ne_top [IsManifold 𝓘(ℂ) 1 X] [PreconnectedSpace X]
+    {s : differentialSections D ⊤} (hs : s ≠ 0) (x : X) : (toOneForm D s).order x ≠ ⊤ := by
+  intro hx
+  have hu := (OneForm.isClopen_setOfPred_order_eq_top fun y ↦
+    (isDifferentialSectionAt_toOneForm s y).meromorphicAt).eq_univ ⟨x, hx⟩
+  refine hs (Subtype.ext (eq_of_eventually_codiscrete s.2 (zero_mem _)
+    (eventually_codiscrete_iff_forall_eventually_nhdsNE.2 fun y ↦ ?_)))
+  have ht := continuous_subtype_val.continuousAt.tendsto_nhdsNE (x := y) Subtype.val_injective
+  exact ht.eventually
+    (OneForm.eventually_apply_eq_zero_of_order_eq_top (eq_univ_iff_forall.1 hu y))
+
+end differentialSections
 
 /-- **`H⁰(X, Ω) ≅` holomorphic `1`-forms.** The global sections of `Ω_0` are the holomorphic
 `1`-forms on `X`. -/
 def differentialSectionsZeroEquiv :
     differentialSections (0 : WeilDivisor X) ⊤ ≃ₗ[ℂ] holomorphicOneForms X where
-  toFun s := ⟨fun y ↦ s.1 ⟨y, trivial⟩,
-    mem_holomorphicOneForms.2 (holomorphicAt_of_mem_differentialSections_zero s.2)⟩
+  toFun s := ⟨differentialSections.toOneForm 0 s, mem_holomorphicOneForms.2 fun x ↦
+    (isDifferentialSectionAt_iff_of_eq_zero rfl).1
+      (differentialSections.isDifferentialSectionAt_toOneForm s x)⟩
   invFun ω := ⟨fun y ↦ ω.1 y, restrict_mem_differentialSections fun x _ ↦
     (isDifferentialSectionAt_iff_of_eq_zero rfl).2 (mem_holomorphicOneForms.1 ω.2 x)⟩
   map_add' _ _ := rfl

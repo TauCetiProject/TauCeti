@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.AddCircle.Defs
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import TauCeti.Geometry.Toric.Delzant.Basic
 
 import Mathlib.Analysis.Convex.PathConnected
@@ -74,8 +74,13 @@ points.
   `π` is surjective.
 * `TauCeti.Toric.exists_facetTorusHom_eq`: every element of `V / p i(N)` is the image under `π`
   of the classes of real angles.
+* `TauCeti.Toric.facetTorusHom_comp_equiv`, `TauCeti.Toric.ker_facetTorusHom_comp_left`:
+  relabelling the facets relabels the angles, and a compatible change of lattice does not change
+  the kernel of `π`.
 * `TauCeti.Toric.eq_zero_of_mem_ker_facetTorusHom`: the kernel of `π` meets the coordinate
   subtorus of a lattice basis of normals trivially.
+* `TauCeti.Toric.IsIntegralLattice.isClosed_ker_facetTorusHom`: for an integral lattice, the
+  kernel of `π` is closed.
 * `TauCeti.Toric.mem_faceSubtorus_iff_exists_facetTorusHom_eq`: the face subtorus of `s` is the
   image under `π` of the angles supported on `s`.
 * `TauCeti.Toric.faceSubtorus_eq_bot_iff`, `TauCeti.Toric.faceSubtorus_eq_top_iff`: for a
@@ -256,6 +261,70 @@ theorem eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i) {s : Set ι}
   · rw [Pi.zero_apply, ← ht, hcoeff ⟨j, hj⟩, AddCircle.coe_eq_zero_iff]
     exact ⟨b.repr n ⟨j, hj⟩, by simp [mul_comm]⟩
   · exact hθs j hj
+
+/-! ### Changes of presentation -/
+
+section Presentation
+
+variable {ι' N' V' : Type*} [Fintype ι'] [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
+  {i' : N' →+ V'} {p : ℝ}
+
+variable (i u p) in
+/-- **Relabelling the facets.** Listing the normals along a bijection `e : ι' ≃ ι` turns the
+homomorphism `(ℝ / pℤ)^ι → V / p i(N)` into its composite with the relabelling `θ ↦ θ ∘ e.symm`
+of angles. -/
+theorem facetTorusHom_comp_equiv (e : ι' ≃ ι) (θ : ι' → AddCircle p) :
+    facetTorusHom i (u ∘ e) p θ = facetTorusHom i u p (θ ∘ e.symm) := by
+  choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
+  obtain rfl : (fun j ↦ (t j : AddCircle p)) = θ := funext ht
+  -- The relabelled angles are the classes of the relabelled representatives `t ∘ e.symm`.
+  refine (facetTorusHom_coe i (u ∘ e) p t).trans (Eq.trans ?_ (facetTorusHom_coe i u p
+    (t ∘ e.symm)).symm)
+  simp only [Fintype.linearCombination_apply, Function.comp_apply]
+  exact congrArg _ (Fintype.sum_equiv e _ _ fun j ↦ by simp)
+
+/-- **Changing the lattice.** For a surjective map of lattices `f` and an injective linear map `g`
+with `g ∘ i = i' ∘ f`, the homomorphism of tori of the mapped normals `f ∘ u` has the same kernel
+as that of `u`. -/
+theorem ker_facetTorusHom_comp_left {f : N → N'} {g : V →ₗ[ℝ] V'} (hf : Function.Surjective f)
+    (hg : Function.Injective g) (hfg : ∀ n, g (i n) = i' (f n)) :
+    (facetTorusHom i' (fun j ↦ f (u j)) p).ker = (facetTorusHom i u p).ker := by
+  ext θ
+  choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
+  obtain rfl : (fun j ↦ (t j : AddCircle p)) = θ := funext ht
+  have hβ : Fintype.linearCombination ℝ (fun j ↦ i' (f (u j))) t =
+      g (Fintype.linearCombination ℝ (fun j ↦ i (u j)) t) := by
+    simp [Fintype.linearCombination_apply, map_sum, hfg]
+  simp only [AddMonoidHom.mem_ker, facetTorusHom_coe, QuotientAddGroup.eq_zero_iff,
+    AddMonoidHom.mem_range, AddMonoidHom.smul_apply, hβ]
+  constructor
+  · rintro ⟨n', hn'⟩
+    obtain ⟨n, rfl⟩ := hf n'
+    exact ⟨n, hg (by rw [map_smul, hfg, hn'])⟩
+  · rintro ⟨n, hn⟩
+    exact ⟨f n, by rw [← hn, map_smul, hfg]⟩
+
+end Presentation
+
+/-! ### Closedness of the kernel -/
+
+section Closed
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {i : N →+ V}
+
+/-- **The kernel torus is closed.** For an integral lattice `i`, the kernel of the homomorphism
+`(ℝ / pℤ)^ι → V / p i(N)` is a closed subgroup; for `p ≠ 0` it is therefore a compact subgroup of
+the torus `(ℝ / pℤ)^ι`. -/
+theorem IsIntegralLattice.isClosed_ker_facetTorusHom (hi : IsIntegralLattice i) (u : ι → N)
+    (p : ℝ) : IsClosed ((facetTorusHom i u p).ker : Set (ι → AddCircle p)) := by
+  have h0 : IsClosed ({0} : Set (V ⧸ (p • i).range)) := by
+    rw [← (QuotientAddGroup.isQuotientMap_mk _).isClosed_preimage]
+    convert hi.isClosed_range_smul p using 1
+    ext v
+    simp [QuotientAddGroup.eq_zero_iff]
+  exact h0.preimage (continuous_facetTorusHom i u p)
+
+end Closed
 
 /-! ### Face subtori -/
 

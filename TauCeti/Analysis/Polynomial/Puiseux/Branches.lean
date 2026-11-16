@@ -94,16 +94,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 /-- **A power substitution splits a monic analytic family on a punctured disc.** On an open
 simply connected parameter domain, let `F` be monic of constant degree `d`, with analytic
 coefficients and separable fibres on the punctured product of radius `R`. For every nonzero
-multiple `n` of `d!` and positive `R'` with `R' ^ n ≤ R`, there are `d` analytic branches on the
-punctured product of radius `R'`. They are pointwise distinct and their linear factors multiply
-to `F (x, t ^ n)`.
+multiple `n` of `d!` and `R'` with `R' ^ n ≤ R` (for `R' ≤ 0` the disc is empty), there are `d`
+analytic branches on the punctured product of radius `R'`. They are pointwise distinct and their
+linear factors multiply to `F (x, t ^ n)`.
 
 The branches are ambient functions, so they can be passed directly to analytic extension
 results. Their values outside the punctured product are unconstrained. No regularity at `t = 0`
 is required of the original family or asserted of the branches. -/
 theorem exists_analyticOnNhd_eq_prod_X_sub_C_powerSubstitution [CompleteSpace E]
     [SimplyConnectedSpace U]
-    (hU : IsOpen U) (hR' : 0 < R') (hn : n ≠ 0) (hR : R' ^ n ≤ R) (hdvd : d.factorial ∣ n)
+    (hU : IsOpen U) (hn : n ≠ 0) (hR : R' ^ n ≤ R) (hdvd : d.factorial ∣ n)
     (hF : ∀ i < d, AnalyticOnNhd ℂ (fun b => (F b).coeff i) (U ×ˢ (ball 0 R \ {0})))
     (hmonic : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), (F b).Monic)
     (hdeg : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), (F b).natDegree = d)
@@ -112,6 +112,9 @@ theorem exists_analyticOnNhd_eq_prod_X_sub_C_powerSubstitution [CompleteSpace E]
       (∀ i, AnalyticOnNhd ℂ (r i) (U ×ˢ (ball 0 R' \ {0}))) ∧
       ∀ b ∈ U ×ˢ (ball 0 R' \ {0}),
         Injective (fun i => r i b) ∧ F (b.1, b.2 ^ n) = ∏ i, (X - C (r i b)) := by
+  rcases le_or_gt R' 0 with hR'0 | hR'
+  · have hempty : ball (0 : ℂ) R' = ∅ := Metric.ball_eq_empty.2 hR'0
+    exact ⟨fun _ _ => 0, by simp [hempty], by simp [hempty]⟩
   let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ ℂ E
   let : LocallyPathConnectedSpace U := hU.locallyPathConnectedSpace
   -- Monicity makes the remaining coefficient locally constant, so only lower coefficients

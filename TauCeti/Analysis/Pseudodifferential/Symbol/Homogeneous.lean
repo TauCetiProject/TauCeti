@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -30,7 +31,10 @@ The main results are:
   and up to a smoothing symbol in the frequency;
 * `TauCeti.HomogeneousSymbol.eq_zero_of_coefficient_eq_cutoffSymbol`: the cut-off term has no
   order below `m` unless `a = 0`, since homogeneity transports any extra decay at large
-  frequencies to every frequency.
+  frequencies to every frequency;
+* `TauCeti.Symbol.ofContDiffHomogeneous`: a coefficient that is smooth on all of `ℝⁿ × ℝⁿ` and
+  homogeneous of degree `m` away from `ξ = 0` is a symbol of order `m`, since it agrees with its
+  cut-off term at large frequencies.
 
 ## References
 
@@ -118,7 +122,7 @@ theorem spatialDeriv_cutoffSymbol (j : Fin n)
   · simp [χ.apply_zero]
   · have hd : DifferentiableAt ℝ (fun y => a.coefficient (y, ξ)) x :=
       (a.differentiableAt_coefficient (p := (x, ξ)) hξ).comp x (by fun_prop)
-    rw [fderiv_fun_const_smul hd, smul_apply, coefficient_spatialDeriv _ _ hξ]
+    rw [fderiv_fun_const_smul hd, smul_apply, coefficient_spatialDeriv _ _]
 
 /-- A frequency derivative of the cut-off term is the cut-off term of the frequency derivative, up
 to a smoothing symbol: the two agree at all frequencies of norm greater than `2`, where the cutoff
@@ -177,5 +181,37 @@ theorem eq_zero_of_coefficient_eq_cutoffSymbol {m' : ℝ} (hm : m' < m)
   exact ge_of_tendsto hlim key
 
 end HomogeneousSymbol
+
+namespace Symbol
+
+open HomogeneousSymbol
+open scoped ContDiff
+
+/-- A coefficient `f` that is smooth on all of `ℝⁿ × ℝⁿ` and positively homogeneous of degree `m`
+in the frequency away from `ξ = 0` is a symbol of order `m`: it agrees with the cut-off term of
+the homogeneous symbol `HomogeneousSymbol.mk' f` at frequencies of norm at least `2`. Homogeneous
+polynomials in `ξ` with smooth coefficients are of this form. -/
+def ofContDiffHomogeneous (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ContDiff ℝ ∞ f)
+    (hhom : ∀ x ξ, ξ ≠ 0 → ∀ t : ℝ, 0 < t → f (x, t • ξ) = t ^ m • f (x, ξ)) :
+    Symbol n V W m where
+  coefficient := f
+  contDiff_coefficient := hf
+  exists_bound := by
+    obtain ⟨c, hc⟩ := exists_coefficient_eq_of_forall_le_norm hf
+      (cutoffSymbol (default : FrequencyCutoff (CoordinateSpace n)) (mk' f hf.contDiffOn hhom)) 2
+      fun x ξ hξ ↦ by
+        have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (by linarith)
+        rw [coefficient_cutoffSymbol_of_two_le_norm _ _ hξ, coefficient_mk'_of_ne_zero _ _ _ hξ0]
+    exact hc ▸ c.exists_bound
+
+@[simp]
+theorem coefficient_ofContDiffHomogeneous (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ContDiff ℝ ∞ f)
+    (hhom : ∀ x ξ, ξ ≠ 0 → ∀ t : ℝ, 0 < t → f (x, t • ξ) = t ^ m • f (x, ξ)) :
+    (ofContDiffHomogeneous f hf hhom : Symbol n V W m).coefficient = f :=
+  (rfl)
+
+end Symbol
 
 end TauCeti

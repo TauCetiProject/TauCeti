@@ -392,4 +392,12 @@ theorem measurableSet_setOf_successiveVisit_ne_top (hX : ∀ n, Measurable (X n)
     MeasurableSet {ω | successiveVisit X a k ω ≠ ⊤} :=
   (measurableSet_singleton ⊤).compl.preimage (measurable_successiveVisit hX ha k)
 
+/-- With measurable coordinates, the event that the process visits `a` infinitely often is
+measurable. -/
+theorem measurableSet_setOf_infinite_setOf_eq (hX : ∀ n, Measurable (X n))
+    (ha : MeasurableSet ({a} : Set α)) :
+    MeasurableSet {ω | {n | X n ω = a}.Infinite} :=
+  MeasurableSet.setOfPred_infinite.preimage
+    (Measurable.of_mem fun n => measurableSet_setOfPred.1 (hX n ha))
+
 end TauCeti.Probability

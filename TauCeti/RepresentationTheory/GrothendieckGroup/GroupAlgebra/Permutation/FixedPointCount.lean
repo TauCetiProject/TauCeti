@@ -68,7 +68,7 @@ section Field
 attribute [local instance] Finsupp.comapSMul Finsupp.comapMulAction
   Finsupp.comapDistribMulAction comapSMulCommClass
 
-variable (k : Type u) [Field k] {G X Y : Type u} [Group G] [Finite G]
+variable (k : Type u) [Field k] {G X Y : Type u} [Group G]
   [MulAction G X] [MulAction G Y] [Finite X] [Finite Y]
 
 /-- **Over every field, equal fixed-point counts give equal permutation classes.** -/

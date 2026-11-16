@@ -272,6 +272,41 @@ instance additive_supportedSubmoduleSectionsFunctor (W : Opens X) :
   exact inferInstanceAs ((supportedSubmoduleFunctor S ⋙
     (sheafSections _ (ModuleCat.{u} R)).obj (op W)).Additive)
 
+/-- Restriction of supported sections, natural in the coefficient sheaf. -/
+def supportedSubmoduleSectionsRestrict {W' W : Opens X} (i : W' ⟶ W) :
+    supportedSubmoduleSectionsFunctor (R := R) S W ⟶
+      supportedSubmoduleSectionsFunctor S W' :=
+  Functor.whiskerLeft (supportedSubmoduleFunctor S)
+    ((sheafSections (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map i.op)
+
+/-- Restriction of supported sections leaves the usual restriction in the ambient sheaf. -/
+-- Rewrite before evaluation simplifies the bundled section object.
+@[simp↓]
+lemma coe_supportedSubmoduleSectionsRestrict_app_apply {W' W : Opens X} (i : W' ⟶ W)
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
+    (s : F.supportedSubmodule S W) :
+    ((supportedSubmoduleSectionsRestrict (R := R) S i).app F s).val = F.obj.map i.op s :=
+  (rfl)
+
+/-- Restriction along an identity open inclusion is the identity transformation. -/
+@[simp]
+lemma supportedSubmoduleSectionsRestrict_id (W : Opens X) :
+    supportedSubmoduleSectionsRestrict (R := R) S (𝟙 W) = 𝟙 _ := by
+  ext F s
+  apply Subtype.ext
+  simp [supportedSubmoduleSectionsRestrict]
+
+/-- Restricting through two open inclusions agrees with restriction along their composite. -/
+@[reassoc (attr := simp)]
+lemma supportedSubmoduleSectionsRestrict_comp {W'' W' W : Opens X}
+    (i : W'' ⟶ W') (j : W' ⟶ W) :
+    supportedSubmoduleSectionsRestrict (R := R) S j ≫
+        supportedSubmoduleSectionsRestrict S i =
+      supportedSubmoduleSectionsRestrict S (i ≫ j) := by
+  ext F s
+  apply Subtype.ext
+  simp [supportedSubmoduleSectionsRestrict, ← Functor.map_comp, ← op_comp]
+
 /-- The comparison with underlying abelian supported sections is natural in the sheaf. -/
 def supportedSubmoduleFunctorForgetIso :
     supportedSubmoduleFunctor S ⋙ sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) ≅

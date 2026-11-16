@@ -49,6 +49,8 @@ comes from the subadditivity of inversion counts
   `s` is the source of `φ` and zero otherwise, and `φ I(t)` is `φ` when `t` is its target.
 * `TauCeti.StrandsAlgebra.map_mul_of_basis`: a linear map out of the strands algebra is
   multiplicative once it is multiplicative on basis elements.
+* `TauCeti.StrandsAlgebra.repr_mul_idOn`: the coefficient on an identity diagram is
+  multiplicative.
 
 ## References
 
@@ -313,6 +315,40 @@ theorem repr_mul_apply [Fintype (StrandDiagram α)] (x y : StrandsAlgebra R α)
   · rw [ite_eq_left h, ← basis_apply, Module.Basis.repr_self, Finsupp.single_apply]
     by_cases h' : φ.trans ψ = χ <;> simp [h, h']
   · simp [h]
+
+/-- A diagram with a nonzero coefficient in a product is the composite of two composable diagrams
+with nonzero coefficients in the factors. -/
+theorem exists_of_repr_mul_ne_zero {x y : StrandsAlgebra R α} {χ : StrandDiagram α}
+    (h : (basis R α).repr (x * y) χ ≠ 0) :
+    ∃ φ ψ, φ.Composable ψ ∧ φ.trans ψ = χ ∧ (basis R α).repr x φ ≠ 0 ∧
+      (basis R α).repr y ψ ≠ 0 := by
+  have := Fintype.ofFinite (StrandDiagram α)
+  rw [repr_mul_apply] at h
+  obtain ⟨φ, -, hφ⟩ := Finset.exists_ne_zero_of_sum_ne_zero h
+  obtain ⟨ψ, -, hψ⟩ := Finset.exists_ne_zero_of_sum_ne_zero hφ
+  rw [ne_eq, ite_eq_right_iff, not_imp] at hψ
+  obtain ⟨⟨hc, rfl⟩, hψ⟩ := hψ
+  exact ⟨φ, ψ, hc, rfl, left_ne_zero_of_mul hψ, right_ne_zero_of_mul hψ⟩
+
+/-- **The coefficient on an identity diagram is multiplicative.** The only factorization of the
+identity diagram `I(s)` is `I(s) I(s)` (`TauCeti.StrandDiagram.trans_eq_idOn_iff_of_target_eq`),
+so its coefficient in a product is the product of its coefficients in the factors. -/
+@[simp]
+theorem repr_mul_idOn (x y : StrandsAlgebra R α) (s : Finset α) :
+    (basis R α).repr (x * y) (StrandDiagram.idOn s) =
+      (basis R α).repr x (StrandDiagram.idOn s) * (basis R α).repr y (StrandDiagram.idOn s) := by
+  classical
+  let := Fintype.ofFinite (StrandDiagram α)
+  have key (φ ψ : StrandDiagram α) :
+      (φ.Composable ψ ∧ φ.trans ψ = StrandDiagram.idOn s) ↔
+        (φ = StrandDiagram.idOn s ∧ ψ = StrandDiagram.idOn s) := by
+    refine ⟨fun ⟨hc, h⟩ ↦ (StrandDiagram.trans_eq_idOn_iff_of_target_eq hc.target_eq).1 h,
+      fun ⟨hφ, hψ⟩ ↦ ?_⟩
+    subst hφ hψ
+    exact ⟨StrandDiagram.composable_idOn_left_iff.2 (StrandDiagram.source_idOn s).symm,
+      StrandDiagram.idOn_trans_of_eq_source (StrandDiagram.source_idOn s).symm⟩
+  rw [repr_mul_apply]
+  simp [key, ite_and]
 
 end StrandsAlgebra
 

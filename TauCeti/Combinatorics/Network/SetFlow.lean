@@ -24,20 +24,24 @@ admissible side in the sense of `TauCeti.TerminalCut.IsAdmissible`, and its capa
 capacity of the arrows leaving it. Either set may be empty, in which case every `A`–`B` flow has
 value zero.
 
-For disjoint `A` and `B` this file proves the max-flow/min-cut theorem between vertex sets: weak
-duality, the augmenting-path optimality criterion, the existence of an `A`–`B` flow and an
-`A`–`B` cut of equal value and capacity, and integrality in an additive subgroup containing the
-capacities. Here an augmenting walk runs from a vertex of `A` to a vertex of `B` along residual
+For arbitrary `A` and `B` this file proves the existence of a maximum `A`–`B` flow, which can be
+taken with values in an additive subgroup containing the capacities. For disjoint `A` and `B` it
+proves the max-flow/min-cut theorem between vertex sets: weak duality, the augmenting-path
+optimality criterion, and the existence of an `A`–`B` flow and an `A`–`B` cut of equal value and
+capacity. Here an augmenting walk runs from a vertex of `A` to a vertex of `B` along residual
 arrows of positive capacity.
 
 The existence results come from the reduction to single terminals. Add a fresh source with an arrow
 to each `a ∈ A` of capacity the total capacity leaving `a`, and a fresh sink with an arrow from each
-`b ∈ B` of capacity the total capacity entering `b` (`TauCeti.setFlowCapacity`). The `A`–`B` flows
-then correspond exactly to the ordinary flows between the fresh terminals, with the same values on
-the original arrows and the same value (`TauCeti.SetFlow.auxFlowEquiv`), and normalizing a minimum
-cut between the fresh terminals gives a minimum `A`–`B` cut of the same capacity
-(`TauCeti.TerminalCut.IsMinimum.isMinimum_union_sdiff`, in
-`TauCeti.Combinatorics.Network.AuxiliaryTerminals`).
+`b ∈ B` of capacity the total capacity entering `b` (`TauCeti.setFlowCapacity`). For disjoint `A`
+and `B`, the `A`–`B` flows then correspond exactly to the ordinary flows between the fresh
+terminals, with the same values on the original arrows and the same value
+(`TauCeti.SetFlow.auxFlowEquiv`), and normalizing a minimum cut between the fresh terminals gives a
+minimum `A`–`B` cut of the same capacity (`TauCeti.TerminalCut.IsMinimum.isMinimum_union_sdiff`, in
+`TauCeti.Combinatorics.Network.AuxiliaryTerminals`). For arbitrary `A` and `B`, a vertex in both
+sets is conserved, so the `A`–`B` flows are the flows between the disjoint sets `A \ B` and `B \ A`
+with the same arrow assignments, values and maximum flows (`TauCeti.SetFlow.sdiffEquiv`,
+`TauCeti.SetFlow.isMaximum_toSdiff`), and the existence results pass to this disjoint pair.
 
 ## Main definitions
 
@@ -48,6 +52,8 @@ cut between the fresh terminals gives a minimum `A`–`B` cut of the same capaci
   of the auxiliary network.
 * `TauCeti.SetFlow.auxFlowEquiv`: the correspondence between `A`–`B` flows and ordinary flows of
   the auxiliary network.
+* `TauCeti.SetFlow.toSdiff`, `TauCeti.SetFlow.ofSdiff` and `TauCeti.SetFlow.sdiffEquiv`: the
+  correspondence between `A`–`B` flows and flows between `A \ B` and `B \ A`.
 
 ## Main results
 
@@ -488,25 +494,121 @@ end AuxFlow
 
 namespace SetFlow
 
+section Sdiff
+
+variable [PartialOrder K] {cap : Assignment Q K} {A B : Finset V}
+
+/-- The value of an `A`–`B` flow is its total excess on `B \ A`, since a vertex in both `A` and `B`
+is conserved. -/
+theorem val_eq_sum_sdiff (f : SetFlow cap A B) : f.val = ∑ b ∈ B \ A, excessAt f.toFun b := by
+  rw [val_def]
+  exact (sum_subset sdiff_subset fun x hxB hx ↦
+    f.excessAt_eq_zero_of_mem_of_mem (by simpa [hxB] using hx) hxB).symm
+
+/-- An `A`–`B` flow as a flow between the disjoint sets `A \ B` and `B \ A`, with the same arrow
+assignment: a vertex in both `A` and `B` is conserved. -/
+def toSdiff (f : SetFlow cap A B) : SetFlow cap (A \ B) (B \ A) where
+  toFun := f.toFun
+  mem_Icc := f.mem_Icc
+  conserve v hA hB := by
+    by_cases hvA : v ∈ A
+    · exact f.excessAt_eq_zero_of_mem_of_mem hvA (by simpa [hvA] using hA)
+    · exact f.conserve v hvA (by simpa [hvA] using hB)
+  excessAt_nonpos a ha := f.excessAt_nonpos a (mem_sdiff.1 ha).1
+  excessAt_nonneg b hb := f.excessAt_nonneg b (mem_sdiff.1 hb).1
+
+@[simp]
+theorem toSdiff_toFun (f : SetFlow cap A B) : f.toSdiff.toFun = f.toFun :=
+  (rfl)
+
+/-- A flow between `A \ B` and `B \ A` as an `A`–`B` flow, with the same arrow assignment: it is
+conserved at every vertex of `A ∩ B`, which lies in neither `A \ B` nor `B \ A`. -/
+def ofSdiff (f : SetFlow cap (A \ B) (B \ A)) : SetFlow cap A B where
+  toFun := f.toFun
+  mem_Icc := f.mem_Icc
+  conserve v hA hB := f.conserve v (by simp [hA]) (by simp [hB])
+  excessAt_nonpos a ha :=
+    if hB : a ∈ B then (f.conserve a (by simp [hB]) (by simp [ha])).le
+    else f.excessAt_nonpos a (by simp [ha, hB])
+  excessAt_nonneg b hb :=
+    if hA : b ∈ A then (f.conserve b (by simp [hb]) (by simp [hA])).ge
+    else f.excessAt_nonneg b (by simp [hb, hA])
+
+@[simp]
+theorem ofSdiff_toFun (f : SetFlow cap (A \ B) (B \ A)) : f.ofSdiff.toFun = f.toFun :=
+  (rfl)
+
+@[simp]
+theorem ofSdiff_toSdiff (f : SetFlow cap A B) : f.toSdiff.ofSdiff = f :=
+  (rfl)
+
+@[simp]
+theorem toSdiff_ofSdiff (f : SetFlow cap (A \ B) (B \ A)) : f.ofSdiff.toSdiff = f :=
+  (rfl)
+
+/-- The `A`–`B` flows are the flows between the disjoint sets `A \ B` and `B \ A`, with the same
+arrow assignments, by `SetFlow.toSdiff` and `SetFlow.ofSdiff`. -/
+def sdiffEquiv : SetFlow cap A B ≃ SetFlow cap (A \ B) (B \ A) where
+  toFun := toSdiff
+  invFun := ofSdiff
+  left_inv := ofSdiff_toSdiff
+  right_inv := toSdiff_ofSdiff
+
+@[simp]
+theorem sdiffEquiv_apply (f : SetFlow cap A B) : sdiffEquiv f = f.toSdiff :=
+  (rfl)
+
+@[simp]
+theorem sdiffEquiv_symm_apply (f : SetFlow cap (A \ B) (B \ A)) : sdiffEquiv.symm f = f.ofSdiff :=
+  (rfl)
+
+/-- An `A`–`B` flow has the same value as a flow between `A \ B` and `B \ A`. -/
+@[simp]
+theorem val_toSdiff (f : SetFlow cap A B) : f.toSdiff.val = f.val := by
+  rw [f.val_eq_sum_sdiff, val_def, toSdiff_toFun]
+
+/-- A flow between `A \ B` and `B \ A` has the same value as an `A`–`B` flow. -/
+@[simp]
+theorem val_ofSdiff (f : SetFlow cap (A \ B) (B \ A)) : f.ofSdiff.val = f.val := by
+  rw [f.ofSdiff.val_eq_sum_sdiff, ofSdiff_toFun, val_def]
+
+/-- An `A`–`B` flow is maximum exactly when it is maximum as a flow between `A \ B` and
+`B \ A`. -/
+@[simp]
+theorem isMaximum_toSdiff {f : SetFlow cap A B} : f.toSdiff.IsMaximum ↔ f.IsMaximum := by
+  rw [isMaximum_iff, isMaximum_iff, (sdiffEquiv (cap := cap) (A := A) (B := B)).forall_congr_left]
+  simp
+
+/-- A flow between `A \ B` and `B \ A` is maximum exactly when it is maximum as an `A`–`B`
+flow. -/
+@[simp]
+theorem isMaximum_ofSdiff {f : SetFlow cap (A \ B) (B \ A)} :
+    f.ofSdiff.IsMaximum ↔ f.IsMaximum := by
+  rw [← isMaximum_toSdiff, toSdiff_ofSdiff]
+
+end Sdiff
+
 variable [LinearOrder K] [IsOrderedAddMonoid K] {cap : Assignment Q K} {A B : Finset V}
 
 omit [DecidableEq V] in
-/-- **Integrality of maximum `A`–`B` flows.** For disjoint `A` and `B` and nonnegative capacities in
-an additive subgroup `H`, some maximum `A`–`B` flow takes values in `H`. -/
-theorem exists_isMaximum_mem (hAB : Disjoint A B) (hcap : 0 ≤ cap) (H : AddSubgroup K)
+/-- **Integrality of maximum `A`–`B` flows.** For nonnegative capacities in an additive subgroup
+`H`, some maximum `A`–`B` flow takes values in `H`. A vertex in both `A` and `B` is conserved, so
+the `A`–`B` flows are the flows between the disjoint sets `A \ B` and `B \ A`
+(`SetFlow.sdiffEquiv`), with the same values. -/
+theorem exists_isMaximum_mem (hcap : 0 ≤ cap) (H : AddSubgroup K)
     (hcapH : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ H) :
     ∃ f : SetFlow cap A B, f.IsMaximum ∧ ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ H := by
   classical
+  have hAB : Disjoint (A \ B) (B \ A) := disjoint_sdiff_sdiff
   obtain ⟨g, hg, hgH⟩ := Flow.exists_isMaximum_mem (s := inr false) (t := inr true)
-    (setFlowCapacity_nonneg hcap) H (setFlowCapacity_mem hcapH)
-  refine ⟨g.toSetFlow hAB, ?_, fun _ _ e ↦ by simpa using hgH (AuxTerminalHom.original e)⟩
-  rwa [← isMaximum_toAuxFlow hAB, Flow.toSetFlow_toAuxFlow]
+    (setFlowCapacity_nonneg (A := A \ B) (B := B \ A) hcap) H (setFlowCapacity_mem hcapH)
+  refine ⟨(g.toSetFlow hAB).ofSdiff, ?_, fun _ _ e ↦ by simpa using hgH (AuxTerminalHom.original e)⟩
+  rwa [isMaximum_ofSdiff, ← isMaximum_toAuxFlow hAB, Flow.toSetFlow_toAuxFlow]
 
 omit [DecidableEq V] in
-/-- For disjoint `A` and `B` and nonnegative capacities, a maximum `A`–`B` flow exists. -/
-theorem exists_isMaximum (hAB : Disjoint A B) (hcap : 0 ≤ cap) :
-    ∃ f : SetFlow cap A B, f.IsMaximum :=
-  let ⟨f, hf, _⟩ := exists_isMaximum_mem hAB hcap ⊤ fun _ _ _ ↦ AddSubgroup.mem_top _
+/-- For nonnegative capacities, a maximum `A`–`B` flow exists. -/
+theorem exists_isMaximum (hcap : 0 ≤ cap) : ∃ f : SetFlow cap A B, f.IsMaximum :=
+  let ⟨f, hf, _⟩ := exists_isMaximum_mem hcap ⊤ fun _ _ _ ↦ AddSubgroup.mem_top _
   ⟨f, hf⟩
 
 /-- **Max-flow/min-cut theorem between vertex sets.** For disjoint `A` and `B` and nonnegative
@@ -515,7 +617,7 @@ capacities, some `A`–`B` flow has value equal to the capacity of some `A`–`B
 theorem exists_val_eq_arrowSum (hAB : Disjoint A B) (hcap : 0 ≤ cap) :
     ∃ f : SetFlow cap A B, ∃ S : Finset V,
       TerminalCut.IsAdmissible A B S ∧ f.val = arrowSum cap S Sᶜ :=
-  let ⟨f, hf⟩ := exists_isMaximum hAB hcap
+  let ⟨f, hf⟩ := exists_isMaximum hcap
   ⟨f, hf.exists_val_eq_arrowSum hAB⟩
 
 end SetFlow

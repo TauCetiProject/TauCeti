@@ -11,8 +11,8 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 /-!
 # Integrability of pointwise PDE energy densities
 
-The weak-form lane of the PDE roadmap will define the energy bilinear form by integrating the
-pointwise scalar density
+The energy bilinear form of a divergence-form operator is defined by integrating the pointwise
+scalar density
 `x ↦ energyIntegrand (a x) (b x) (c x) (U x) (V x)`.  The preceding finite-dimensional files
 give the measurability of this density and the pointwise bound with explicit coefficient
 constants.  This file packages the next handoff: bounded measurable coefficient fields and
@@ -20,8 +20,8 @@ measurable jet fields whose norm product is integrable produce integrable scalar
 densities.  In particular, this applies to square-integrable jet fields, and specializes on
 finite-measure domains to bounded jet fields.
 
-This remains below the Sobolev-space construction.  The coefficient bounds are stated inline,
-matching the roadmap's bounded-measurable-coefficient hypotheses.
+The statements concern raw jet fields rather than Sobolev functions, and the coefficient bounds
+are stated inline as bounded-measurable-coefficient hypotheses.
 
 ## Main declarations
 
@@ -33,7 +33,8 @@ matching the roadmap's bounded-measurable-coefficient hypotheses.
   specialization.
 * `TauCeti.PDE.integrable_energyIntegrand_apply_of_bounds`: the fixed-jet specialization.
 * The corresponding `UniformlyEllipticOn.*_on` lemmas replace the raw principal coefficient
-  bound by the roadmap's named uniform-ellipticity hypothesis on an a.e.-supported domain.
+  bound by the uniform-ellipticity hypothesis `UniformlyEllipticOn` on an a.e.-supported
+  domain.
 -/
 
 public section

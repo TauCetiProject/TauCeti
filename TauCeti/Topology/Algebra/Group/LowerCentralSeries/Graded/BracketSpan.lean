@@ -109,19 +109,24 @@ theorem gradedBracketSpan_eq_span (k : ℕ) :
     gradedBracketLinear_apply]
 
 /-- **Induction on the bracket span**: a predicate that holds on the brackets `[x, y]` with `y` of
-degree zero and on `0`, and is closed under addition and scalar multiplication, holds on all of
+degree zero and is closed under addition and scalar multiplication, holds on all of
 `C_{k+1}(G)`. -/
 @[elab_as_elim]
 theorem gradedBracketSpan_induction {k : ℕ}
     {motive : (z : gradedPiece p G (k + 1)) → z ∈ gradedBracketSpan p G k → Prop}
     (bracket : ∀ (x : gradedPiece p G k) (y : gradedPiece p G 0),
       motive (gradedBracket p G k 0 x y) (gradedBracket_mem_gradedBracketSpan x y))
-    (zero : motive 0 (zero_mem _))
     (add : ∀ x y hx hy, motive x hx → motive y hy → motive (x + y) (add_mem hx hy))
     (smul : ∀ (c : ZMod p) x hx, motive x hx → motive (c • x) (smul_mem _ c hx))
     {z : gradedPiece p G (k + 1)} (hz : z ∈ gradedBracketSpan p G k) : motive z hz := by
   have hz' : z ∈ span (ZMod p) (Set.range fun xy : gradedPiece p G k × gradedPiece p G 0 ↦
       gradedBracket p G k 0 xy.1 xy.2) := (gradedBracketSpan_eq_span k).le hz
+  have zero : motive 0 (zero_mem _) := by
+    have key : ∀ (w : gradedPiece p G (k + 1)) (hw : w ∈ gradedBracketSpan p G k),
+        w = (0 : ZMod p) • gradedBracket p G k 0 0 0 → motive w hw := by
+      rintro w hw rfl
+      exact smul 0 _ _ (bracket 0 0)
+    exact key 0 _ (zero_smul _ _).symm
   refine span_induction (p := fun z h ↦ motive z ((gradedBracketSpan_eq_span k).ge h))
     ?_ zero ?_ ?_ hz'
   · rintro _ ⟨⟨x, y⟩, rfl⟩
@@ -154,7 +159,6 @@ theorem exists_mem_commutator_gradedMk_eq_of_mem_gradedBracketSpan {k : ℕ}
       (gradedBracket_gradedMk x y).symm⟩
     rw [commutator_def]
     exact commutator_mem_commutator (mem_top _) (mem_top _)
-  | zero => exact ⟨1, one_mem _, gradedMk_one _⟩
   | add x y _ _ hx hy =>
     obtain ⟨z, hz, rfl⟩ := hx
     obtain ⟨z', hz', rfl⟩ := hy

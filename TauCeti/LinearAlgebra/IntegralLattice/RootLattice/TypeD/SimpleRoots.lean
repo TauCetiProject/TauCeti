@@ -62,7 +62,6 @@ the lattice.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IV.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, §4.7.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 5, the `Dₙ` rows of the ADE table.
 -/
 
 public section
@@ -112,17 +111,13 @@ private theorem ratOfIntVec_injective : Function.Injective (ratOfIntVec n) := by
 sum is `0` or `2`. -/
 theorem checkerboardSimpleRoot_mem_checkerboardCarrier (hn : 4 ≤ n) (i : Fin n) :
     checkerboardSimpleRoot n hn i ∈ checkerboardCarrier n :=
-  mem_checkerboardCarrier_of (DynkinType.typeDSimpleRoot n hn i)
+  mem_checkerboardCarrier_of_even_sum (DynkinType.typeDSimpleRoot n hn i)
     (checkerboardSimpleRoot_apply hn i) (DynkinType.even_sum_typeDSimpleRoot hn i)
 
 /-! ## The Gram matrix -/
 
 /-- **The Gram matrix of the Bourbaki simple roots in the checkerboard lattice is the Cartan
-matrix of type `Dₙ`.**
-
-Not a `simp` lemma: `checkerboardLattice_form` is `@[simp]`, so `simp` rewrites the head of the
-left-hand side to `Matrix.toBilin' 1` before this equation can fire.  Every sibling
-`checkerboardLattice_form_*` lemma is untagged for the same reason. -/
+matrix of type `Dₙ`.** -/
 theorem checkerboardLattice_form_checkerboardSimpleRoot_checkerboardSimpleRoot
     (hn : 4 ≤ n) (i j : Fin n) :
     (checkerboardLattice n).form (checkerboardSimpleRoot n hn i) (checkerboardSimpleRoot n hn j) =

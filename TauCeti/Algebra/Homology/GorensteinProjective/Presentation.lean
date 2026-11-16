@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.FinitePresentation
 public import TauCeti.Algebra.Homology.GorensteinProjective.Basic
 
 /-!
@@ -26,6 +27,8 @@ used to put the Frobenius exact structure on Gorenstein-projective modules.
 * `TauCeti.IsGorensteinProjective.exists_projectiveCopresentation`: every
   Gorenstein-projective module embeds in a finitely generated projective module with
   Gorenstein-projective cokernel.
+* `TauCeti.IsGorensteinProjective.finitePresentation`: every Gorenstein-projective module is
+  finitely presented.
 
 ## References
 
@@ -73,5 +76,22 @@ theorem IsGorensteinProjective.exists_projectiveCopresentation
     exact hP.finite 0
   · simpa using hP.projective 0
   · simpa using hP.isGorensteinProjective_cycles 1
+
+/-- A Gorenstein-projective module is finitely presented: by its projective presentation it is the
+quotient of a finitely generated projective module by a finitely generated submodule. -/
+theorem IsGorensteinProjective.finitePresentation [Small.{v} A]
+    {M : ModuleCat.{v} A} (hM : IsGorensteinProjective A M) : Module.FinitePresentation A M := by
+  obtain ⟨S, hS, ⟨e⟩, _, _, hK⟩ := hM.exists_projectivePresentation
+  have := hK.finite
+  have := S.X₂.projective_of_module_projective
+  have := Module.finitePresentation_of_projective A S.X₂
+  have : Module.FinitePresentation A S.X₃ := by
+    refine Module.finitePresentation_of_surjective S.g.hom
+      ((ModuleCat.epi_iff_surjective _).1 hS.epi_g) ?_
+    rw [LinearMap.exact_iff.1
+      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS.exact),
+      LinearMap.range_eq_map]
+    exact Module.Finite.fg_top.map _
+  exact Module.FinitePresentation.of_equiv e.toLinearEquiv
 
 end TauCeti

@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Sphere.Circle
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Covering
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalVectorSpace
+import TauCeti.Analysis.Complex.Circle
 
 /-!
 # Higher homotopy groups of the circle
@@ -19,18 +20,15 @@ public import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalVectorSpace
 The real line covers every real additive circle `AddCircle p`. This file combines that
 covering with the invariance of higher homotopy groups under covering maps to show that all
 homotopy groups of a circle in dimensions at least two are trivial. The complex unit circle
-`Circle` is homeomorphic to `AddCircle (2 * π)`, and the unit circle of
-`EuclideanSpace ℝ (Fin 2)` is homeomorphic to `Circle`, so the higher homotopy groups of those
-two models vanish as well.
+`Circle` is homeomorphic to `AddCircle (2 * π)`, and the unit circles of `ℂ` and of
+`EuclideanSpace ℝ (Fin 2)` are homeomorphic to `Circle`, so the higher homotopy groups of those
+models vanish as well.
 
 The only calculation needed in the total space is elementary: any two generalized loops in a
 real topological vector space are homotopic relative to the cube boundary, so all homotopy
 groups of such a space are subsingletons
 (`HomotopyGroup.subsingleton_of_topologicalVectorSpace`). Applying the covering-map
 isomorphism for `ℝ → AddCircle p` gives the circle calculation.
-
-This proves Stage 4, item 11 of the Tau Ceti universal-covers roadmap
-(`TauCetiRoadmap/UniversalCovers/README.md`): `π_n(S¹) = 0` for `n ≥ 2`.
 
 ## Main declarations
 
@@ -40,6 +38,7 @@ This proves Stage 4, item 11 of the Tau Ceti universal-covers roadmap
   equalities.
 * `Circle.subsingleton_homotopyGroup`, `Circle.homotopyGroup_eq_one` and
   `Circle.homotopyGroupPi_eq_one`: the same statements for the complex unit circle.
+* `TauCeti.Complex.subsingleton_homotopyGroup_sphere`: the same for the unit sphere of `ℂ`.
 * `TauCeti.EuclideanSpace.subsingleton_homotopyGroup_sphere`,
   `TauCeti.EuclideanSpace.homotopyGroup_sphere_eq_one` and
   `TauCeti.EuclideanSpace.homotopyGroupPi_sphere_eq_one`: the same statements for the unit circle
@@ -98,6 +97,20 @@ theorem homotopyGroupPi_eq_one (n : ℕ) (a : π_ (n + 2) Circle z) : a = 1 :=
 end Circle
 
 namespace TauCeti
+
+namespace Complex
+
+open Metric
+
+variable {N : Type*} [Nontrivial N] (y : sphere (0 : ℂ) 1)
+
+/-- Every higher homotopy group of the unit sphere of `ℂ` is trivial. -/
+instance subsingleton_homotopyGroup_sphere :
+    Subsingleton (HomotopyGroup N (sphere (0 : ℂ) 1) y) :=
+  (HomotopyGroup.homeomorphEquiv (N := N) Circle.homeomorphSphere.symm y).subsingleton_congr.mpr
+    inferInstance
+
+end Complex
 
 namespace EuclideanSpace
 

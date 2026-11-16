@@ -68,7 +68,7 @@ private theorem exists_character_apply_unitFive_apply_neg_one_ne_zero (n : ℕ) 
     simpa using ZMod.orderOf_unitFive (n + 3)
   obtain ⟨χ₀, hχ₀⟩ : ∃ χ : Additive (ZMod (2 ^ (n + 3)))ˣ →+ AddCircle (1 : ℚ),
       χ (Additive.ofMul u) = ((1 / addOrderOf (Additive.ofMul u) : ℚ) : AddCircle (1 : ℚ)) :=
-    exists_apply_eq_inv_addOrderOf (Additive.ofMul u) (hu.trans_ne (by positivity))
+    exists_apply_eq_inv_addOrderOf (Additive.ofMul u)
   have hχ₀ : χ₀ (Additive.ofMul u) = ((1 / 2 ^ (n + 1) : ℚ) : AddCircle (1 : ℚ)) := by
     simpa only [hu, Nat.cast_pow, Nat.cast_ofNat] using hχ₀
   -- A character modulo four changes the value at -1 without changing the value at five.
@@ -78,7 +78,7 @@ private theorem exists_character_apply_unitFive_apply_neg_one_ne_zero (n : ℕ) 
   obtain ⟨δ, hδ⟩ : ∃ δ : Additive (ZMod 4)ˣ →+ AddCircle (1 : ℚ),
       δ (Additive.ofMul (-1)) =
         ((1 / addOrderOf (Additive.ofMul (-1 : (ZMod 4)ˣ)) : ℚ) : AddCircle (1 : ℚ)) :=
-    exists_apply_eq_inv_addOrderOf (Additive.ofMul (-1 : (ZMod 4)ˣ)) (hneg.trans_ne (by decide))
+    exists_apply_eq_inv_addOrderOf (Additive.ofMul (-1 : (ZMod 4)ˣ))
   have hδ : δ (Additive.ofMul (-1)) = ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
     simpa only [hneg, Nat.cast_ofNat] using hδ
   have h4 : 4 ∣ 2 ^ (n + 3) := by

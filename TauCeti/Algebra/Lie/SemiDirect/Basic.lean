@@ -276,7 +276,8 @@ theorem isCompl_idealOfLeNormalizer_comap_incl (hT' : T' ≤ T.normalizer)
     ext x
     exact Iff.rfl
   rw [hI, hH]
-  refine TauCeti.Submodule.isCompl_comap_subtype (U := T'.toSubmodule) hdisj ?_
+  refine (Submodule.isCompl_comap_subtype_iff (U := T'.toSubmodule)).2
+    ⟨hdisj.mono inf_le_right inf_le_right, ?_⟩
   rw [inf_eq_right.mpr hTT', inf_eq_right.mpr hHT']
   exact hsup.ge
 

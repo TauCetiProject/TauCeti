@@ -92,7 +92,6 @@ theorem exists_mem_dualSemigroup_neg_mem_dualSemigroup_inf_ker_eq (hi : IsIntegr
       σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m)) = σ ⊓ τ ∧
       τ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m)) = σ ⊓ τ := by
   have := hi.free
-  have := hi.finite
   obtain ⟨s, rfl⟩ := isLatticeRational_iff.1 hσ
   obtain ⟨t, rfl⟩ := isLatticeRational_iff.1 hτ
   -- Tucker's theorem for the generators of `σ` and the negatives of the generators of `τ`.

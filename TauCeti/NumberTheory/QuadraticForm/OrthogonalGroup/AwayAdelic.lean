@@ -330,10 +330,10 @@ theorem mem_range_awayAdelicSpecialOrthogonalToOrthogonal_iff (x : U.awayAdelicO
     · ext p : 1
       exact (U.awayAdelicSpecialOrthogonalToOrthogonal_apply S _ p).trans (hy p)
 
-/-- For a nondegenerate form on a nonzero space, a Spin point away from `S` projects to the
+/-- For a nondegenerate form, a Spin point away from `S` projects to the
 identity of `SO(V)(𝔸^S)` exactly when each of its components is `1` or `-1` in the local Clifford
 algebra. -/
-theorem mem_ker_awayAdelicSpinToSpecialOrthogonal_iff [FiniteDimensional ℚ V] [Nontrivial V]
+theorem mem_ker_awayAdelicSpinToSpecialOrthogonal_iff [FiniteDimensional ℚ V]
     (hQ : Q.Nondegenerate) (x : U.awayAdelicSpin S) :
     x ∈ (U.awayAdelicSpinToSpecialOrthogonal S).ker ↔
       ∀ p : {p : Nat.Primes // p ∉ S},
@@ -343,13 +343,20 @@ theorem mem_ker_awayAdelicSpinToSpecialOrthogonal_iff [FiniteDimensional ℚ V] 
             -1 := by
   rw [MonoidHom.mem_ker, RestrictedProduct.ext_iff]
   refine forall_congr' fun p ↦ ?_
+  rw [awayAdelicSpinToSpecialOrthogonal_apply, RestrictedProduct.one_apply, ← MonoidHom.mem_ker]
+  rcases subsingleton_or_nontrivial V with hV | hV
+  · have : Subsingleton (ℚ_[p.1] ⊗[ℚ] V) := inferInstance
+    have hx : x p = 1 :=
+      (CliffordAlgebra.spinToSpecialOrthogonal_bijective_of_subsingleton
+        (Q.baseChange ℚ_[p.1])).injective (Subsingleton.elim _ _)
+    simp only [hx, OneMemClass.coe_one, true_or, iff_true]
+    exact Subsingleton.elim _ _
   have : Nontrivial (ℚ_[p.1] ⊗[ℚ] V) := Module.nontrivial_of_finrank_pos <| by
     rw [Module.finrank_baseChange]
     exact Module.finrank_pos
   have hQp : (Q.baseChange ℚ_[p.1]).Nondegenerate :=
     _root_.QuadraticForm.Nondegenerate.baseChange hQ
-  rw [awayAdelicSpinToSpecialOrthogonal_apply, RestrictedProduct.one_apply, ← MonoidHom.mem_ker,
-    CliffordAlgebra.mem_ker_spinToSpecialOrthogonal_iff _ hQp]
+  rw [CliffordAlgebra.mem_ker_spinToSpecialOrthogonal_iff _ hQp]
   simp only [Subtype.ext_iff, OneMemClass.coe_one, CliffordAlgebra.spinGroup.coe_negOne]
 
 /-! ### Transport along local isometries -/

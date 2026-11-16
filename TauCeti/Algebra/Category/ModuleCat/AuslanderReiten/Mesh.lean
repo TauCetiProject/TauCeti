@@ -76,8 +76,6 @@ theorem card_arrows_eq_card_arrows_of_translate_eq_some
     simp [hp] at h
   obtain ⟨E, i, p, hip, hE, hS⟩ := exists_isAlmostSplit_arTranslate k m.representative
     m.representative_property.2 hp
-  have : IsLocalRing (End (arTranslate k m.representative)) :=
-    isLocalRing_end_of_indecomposable (R := k) hS.isLeftAlmostSplit_f.indecomposable
   -- The translate of `m` is the class of the initial term of the sequence.
   rw [← IrreducibleMorphismQuiver.of_representative m, (arTranslation k A).translate_of _ _ hp,
     Option.some.injEq] at h

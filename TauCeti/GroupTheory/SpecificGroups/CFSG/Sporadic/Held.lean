@@ -10,10 +10,9 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the Held group
 
-This file carries the `He` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records John Bray's ATLAS version 3 presentation on
-the standard generators `a` and `b` as a `TauCeti.GroupPresentation`, together with the source,
-generator convention, transcription notes, and expected counts.
+This file carries the `He` row of the sporadic presentation data. It records John Bray's ATLAS
+version 3 presentation on the standard generators `a` and `b` as a `TauCeti.GroupPresentation`,
+together with the source, generator convention, transcription notes, and expected counts.
 
 The presentation displayed by the ATLAS is
 
@@ -56,7 +55,7 @@ constructor writes the same active words in `x,y`, but places the long commutato
 comments out three other words, marking each redundant and two of them possibly useful, so none
 belongs to the active relator list. This checks every source relator, inverse, exponent, both
 source-order renderings, and the active/commented boundary independently of the original
-transcription and closes this row's S1 source-to-Lean read-through.
+transcription and closes this row's source-to-Lean read-through.
 
 ## Independent comparison with the ATLAS permutation data
 
@@ -75,7 +74,7 @@ the identity. A Schreier--Sims calculation from the same decoded tables gives ge
 The check used Python 3.14.6 and SymPy 1.14.0. Concatenating the zero-based forward image tables for
 `a` and then `b`, with each image stored as a two-byte little-endian integer, has SHA-256
 `4a386b7656182c087d66c18ca3ee9f6c4cc61b416d23f1623b97996ce8499da5`. This is the independent
-comparison artifact required by S1; no external code or permutation data is imported into Tau Ceti.
+comparison artifact; no external code or permutation data is imported into Tau Ceti.
 
 For separate corroboration, `finite-simple-groups-lean` at commit
 `7f09e33a9ceef6b59ce03e34cd4f0558c763e325` defines `hea` and `heb` by coset enumeration from this

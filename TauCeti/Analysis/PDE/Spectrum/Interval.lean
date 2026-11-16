@@ -205,7 +205,6 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (
     filter_upwards [hu, Lp.coeFn_zero ℝ 2
       (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))))] with x h1 h2
     rw [← h1, hval, h2]
-  have hk' : (0 : ℝ) < k := Nat.cast_pos.2 hk
   have hba : 0 < b - a := sub_pos.2 hab
   have hmem : lineEquiv (a + (b - a) / (2 * k)) ∈ intervalDomain a b := by
     rw [mem_intervalDomain, ← lineEquiv_symm_apply, LinearIsometryEquiv.symm_apply_apply]
@@ -245,7 +244,8 @@ private theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero (hab : a < b)
   have hg : MemLp (fun t => f (lineEquiv t)) 2 (volume.restrict (Ioc a b)) := by
     rw [← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
     exact (Lp.memLp f).comp_measurePreserving hmpΩ
-  have hg0 := ae_eq_zero_of_forall_integral_mul_sin_eq_zero hg fun k hk => by
+  have hg0 := ae_eq_zero_of_forall_integral_mul_sin_eq_zero (hg.integrable one_le_two)
+    fun k hk => by
     rw [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo, ← h k hk,
       ← preimage_lineEquiv_intervalDomain, ← hmp.setIntegral_preimage_emb
         lineEquiv.toHomeomorph.measurableEmbedding]
@@ -301,7 +301,6 @@ theorem isLeast_isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) :
   refine ⟨by simpa using isDirichletEigenvalue_laplacian_intervalDomain hab one_pos,
     fun kappa hkappa => ?_⟩
   obtain ⟨k, hk, rfl⟩ := (isDirichletEigenvalue_laplacian_intervalDomain_iff hab).1 hkappa
-  have hba : 0 < b - a := sub_pos.2 hab
   gcongr
   exact le_mul_of_one_le_left Real.pi_pos.le (Nat.one_le_cast.2 hk)
 

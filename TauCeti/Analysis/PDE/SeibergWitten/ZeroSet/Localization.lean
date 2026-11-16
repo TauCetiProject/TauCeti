@@ -102,7 +102,7 @@ theorem exists_forall_exists_dist_le_of_le (C c c₀ : ℝ) (hc : 0 < c) {σ : �
       (∀ R, c₀ * h ≤ R → (∀ z ∈ Z, R ≤ dist x z) →
         max (1 - s x) 0 ≤ C / r * max (1 - s x) 0 + C / r + C * exp (-(c * R / h))) →
       s x ≤ σ → ∃ z ∈ Z, dist x z ≤ K * h := by
-  set η := 1 - σ with hη_def
+  set η := 1 - σ
   have hη : 0 < η := by linarith
   refine ⟨max c₀ (log (4 * C / η) / c), max 1 (max (2 * C) (8 * C / η)), by positivity, ?_⟩
   intro X _ s Z r h hr hh x hbound hs
@@ -132,7 +132,7 @@ lies within distance `K h` of `Z`. -/
 theorem exists_forall_exists_dist_le_of_mem_tsupport_cutoffCurrent (C c c₀ : ℝ) (hc : 0 < c) :
     ∃ K r₀ : ℝ, 0 < r₀ ∧ ∀ {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
       {χ : ℝ → ℝ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {α : E → ℂ} (Z : Set E) (r h : ℝ),
-      ContDiff ℝ 2 α → Differentiable ℝ b → EqOn χ 1 (Ioi (1 / 2)) → r₀ ≤ r → 0 < h →
+      ContDiff ℝ 2 α → EqOn χ 1 (Ioi (1 / 2)) → r₀ ≤ r → 0 < h →
       ∀ x ∈ tsupport (cutoffCurrent χ b α),
       (∀ R, c₀ * h ≤ R → (∀ z ∈ Z, R ≤ dist x z) →
         max (1 - Complex.normSq (α x)) 0 ≤
@@ -141,9 +141,9 @@ theorem exists_forall_exists_dist_le_of_mem_tsupport_cutoffCurrent (C c c₀ : �
   obtain ⟨K, r₀, hr₀, hK⟩ := exists_forall_exists_dist_le_of_le C c c₀ hc (σ := 1 / 2)
     (by norm_num)
   refine ⟨K, r₀, hr₀, ?_⟩
-  intro E _ _ χ b α Z r h hα hb hχ hr hh x hx hbound
+  intro E _ _ χ b α Z r h hα hχ hr hh x hx hbound
   exact hK (fun y ↦ Complex.normSq (α y)) Z r h hr hh x hbound
-    (tsupport_cutoffCurrent_subset (by norm_num) hα hb hχ hx)
+    (tsupport_cutoffCurrent_subset (by norm_num) hα hχ hx)
 
 /-- **Zero localization at a vanishing tolerance.** There is a constant `K`, depending only on
 `C`, `c` and `c₀`, with the following property. For every tolerance `ε(r)` tending to zero as

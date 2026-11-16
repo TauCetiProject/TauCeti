@@ -248,7 +248,7 @@ theorem reebVectorField_of_eq_exp_smul_standardContactForm
   obtain ⟨y, hy⟩ : ∃ y : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p,
       y = Real.exp (-p.1) • ((0, 1, p.1) : ℝ × ℝ × ℝ) := ⟨_, rfl⟩
   have key := (isContactForm_standardContactForm.reebVectorField_eq_inv_smul_add_iff hf
-    (Real.exp_pos _).ne' hβ y).2 ⟨?_, fun w hw ↦ ?_⟩
+    hβ y).2 ⟨?_, fun w _ ↦ ?_⟩
   · rw [key, hy, reebVectorField_standardContactForm, standardReebField_apply]
     -- The tangent space of `ℝ × ℝ × ℝ` carries the vector operations of `ℝ × ℝ × ℝ` by
     -- definition. Restate the goal there, where the `Prod` simp lemmas apply.

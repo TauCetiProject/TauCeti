@@ -151,8 +151,7 @@ end QuadraticForm
 
 namespace TauCeti.NumberField.QuadraticForm.GlobalFormInvariants
 
--- Hilbert's product formula, used for the residual system, is stated for number fields in `Type`.
-variable {K : Type} [Field K] [NumberField K]
+variable {K : Type*} [Field K] [NumberField K]
 
 /-- The system obtained from `I` by removing a line `⟨c⟩`, computed with a representative `δ` of the
 discriminant of `I`: rank `n - 1`, discriminant `δ c`, Hasse signs `s_v(I) · (c, δ c)_v`, and the

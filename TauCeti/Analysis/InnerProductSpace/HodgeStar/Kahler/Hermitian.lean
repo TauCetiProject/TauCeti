@@ -105,7 +105,11 @@ def hermitianForm (J : AlmostComplexStructure V) : ⋀[ℝ]^2 V →ₗ[ℝ] Line
 /-- The Hermitian part is `B(v, w) = (F(v, J w) + F(w, J v)) / 2`. -/
 theorem hermitianForm_apply (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 V) (v w : V) :
     J.hermitianForm F v w = (⟪F, ιMulti ℝ 2 ![v, J w]⟫ + ⟪F, ιMulti ℝ 2 ![w, J v]⟫) / 2 := by
-  simp [hermitianForm, QuadraticMap.associated_toQuadraticMap, inner_twoVectorContraction_apply]
+  simp only [hermitianForm, LinearMap.coe_comp, Function.comp_apply,
+    QuadraticMap.associated_apply, Module.End.smul_def,
+    QuadraticMap.half_moduleEnd_apply_eq_half_smul]
+  simp [invOf_eq_inv, LinearMap.BilinMap.toQuadraticMap_apply, inner_twoVectorContraction_apply,
+    map_add]
   ring
 
 /-- The quadratic form of the Hermitian part is `B(v, v) = F(v, J v)`. -/
@@ -399,7 +403,6 @@ theorem forall_le_hermitianForm_apply_self_iff (F : ⋀[ℝ]^2 V) {C : ℝ} :
   have hle : ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ / √2 ≤ ⟪J.kahlerForm, F⟫ / 2 + C := by
     rw [div_le_iff₀ (by positivity), mul_comm]
     exact hC
-  have hv := sq_nonneg ‖v‖
   nlinarith [neg_abs_le (J.hermitianForm F v v - ⟪J.kahlerForm, F⟫ / 2 * ‖v‖ ^ 2)]
 
 end Four

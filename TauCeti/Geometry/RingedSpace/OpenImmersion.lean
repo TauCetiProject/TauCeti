@@ -9,7 +9,7 @@ public import Mathlib.Geometry.RingedSpace.OpenImmersion
 public import TauCeti.Topology.Sheaves.Functors
 
 /-!
-# Open immersions of presheafed spaces under a change of coefficients
+# Open immersions of presheafed and locally ringed spaces
 
 Applying a functor `F : C ⥤ D` to the sections of a presheafed space (`Functor.mapPresheaf`)
 preserves open immersions: the underlying continuous map is unchanged, and the components of the
@@ -27,6 +27,10 @@ presheafed spaces of rings, whose stalk maps are isomorphisms
   `f x`.
 * `AlgebraicGeometry.PresheafedSpace.IsOpenImmersion.isSheaf_iff_of_range_eq`: the sources of two
   open immersions with the same range satisfy the sheaf condition together.
+* `AlgebraicGeometry.LocallyRingedSpace.range_iso_inv_comp`: precomposing a morphism of locally
+  ringed spaces with an isomorphism does not change its image.
+* `AlgebraicGeometry.LocallyRingedSpace.IsOpenImmersion.isOpenImmersion_lift`: lifting an open
+  immersion through an open immersion gives an open immersion.
 -/
 
 public section
@@ -75,3 +79,21 @@ theorem isIso_stalkMap_of_isOpenImmersion_comp {C : Type u} [Category.{v} C]
   exact (isIso_comp_right_iff _ (f.stalkMap x)).mp this
 
 end AlgebraicGeometry.PresheafedSpace
+
+namespace AlgebraicGeometry.LocallyRingedSpace
+
+/-- Precomposing a morphism of locally ringed spaces with an isomorphism preserves its image. -/
+theorem range_iso_inv_comp {X Y Z : LocallyRingedSpace.{u}} (e : X ≅ Y) (g : X ⟶ Z) :
+    Set.range (e.inv ≫ g).base = Set.range g.base := by
+  rw [comp_base, TopCat.coe_comp,
+    (Function.LeftInverse.surjective (iso_hom_base_inv_base_apply e)).range_comp]
+
+/-- The lift of an open immersion through an open immersion is an open immersion. -/
+instance IsOpenImmersion.isOpenImmersion_lift {X Y Z : LocallyRingedSpace.{u}}
+    (f : X ⟶ Z) (g : Y ⟶ Z) [IsOpenImmersion f] [IsOpenImmersion g]
+    (H : Set.range g.base ⊆ Set.range f.base) : IsOpenImmersion (IsOpenImmersion.lift f g H) := by
+  have := IsOpenImmersion.pullback_snd_isIso_of_range_subset f g H
+  dsimp only [IsOpenImmersion.lift]
+  infer_instance
+
+end AlgebraicGeometry.LocallyRingedSpace

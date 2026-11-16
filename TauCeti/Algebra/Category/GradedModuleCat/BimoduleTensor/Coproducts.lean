@@ -26,7 +26,7 @@ namespace TauCeti.GradedModuleCat
 universe w v
 variable {k A B C : Type*} [CommRing k] [Ring A] [Ring B] [Ring C]
   [Algebra k A] [Algebra k B] [Algebra k C]
-  (Γ : InternalGrading k A) (Δ : InternalGrading k B) (Θ : InternalGrading k C)
+  (Γ : InternalGrading k A ℤ) (Δ : InternalGrading k B ℤ) (Θ : InternalGrading k C ℤ)
   [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece] [GradedAlgebra Θ.piece]
 
 private def tensorBilinear

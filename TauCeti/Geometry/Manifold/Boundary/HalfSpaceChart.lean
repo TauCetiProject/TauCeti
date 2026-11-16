@@ -253,7 +253,7 @@ theorem isInvertible_mfderiv_subtypeVal_of_forall_mem_atlas_halfSpaceChart
     rw [heq.mfderiv_eq, mfderiv_extChartAt_self]
     exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩
   exact (isInvertible_mfderiv_of_isInvertible_mfderiv_comp
-    (by rw [finrank_euclideanSpace_fin, hn]) (by rw [finrank_euclideanSpace_fin, hn]) he
+    (by rw [finrank_euclideanSpace_fin, hn]) he
     ((contMDiff_subtypeVal_of_forall_mem_atlas_halfSpaceChart h x).mdifferentiableAt hm)
     hcomp).1
 

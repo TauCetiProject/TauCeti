@@ -179,7 +179,7 @@ theorem mem_graphSubspace_iff {A : Matrix (n ⊕ n) (n ⊕ n) ℝ} {w : Euclidea
     refine (congrArg (WithLp.toLp 2) (graphFrame_mulVec A fun k => (v k).re).symm).trans ?_
     rw [toEuclideanCLM_apply, toLpLin_apply, ← hv']
   · rintro ⟨x, rfl⟩
-    refine ⟨WithLp.toLp 2 fun k => (x k : ℂ), mem_realSubspace.2 fun k => by simp, ?_⟩
+    refine ⟨WithLp.toLp 2 fun k => (x k : ℂ), mem_realSubspace.2 fun _ => by simp, ?_⟩
     rw [toEuclideanCLM_apply]
     exact congrArg (WithLp.toLp 2) (graphFrame_mulVec A x)
 

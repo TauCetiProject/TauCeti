@@ -242,7 +242,7 @@ theorem DualFG.fg {M N : Type*} [AddCommGroup M] [Module K M]
   obtain ⟨s, rfl⟩ := hC
   induction s using Finset.induction_on with
   | empty => simpa using (Module.Finite.fg_top : (⊤ : PointedCone K N).FG)
-  | @insert a s ha ih =>
+  | @insert a s _ ih =>
     rw [Finset.coe_insert, dual_insert]
     have he : dual p {a} =
         dual (LinearMap.id : Module.Dual K N →ₗ[K] Module.Dual K N) {p a} := by

@@ -58,11 +58,6 @@ splitting off the first coordinate identifies the closed unit ball with the cube
   ball of the sup norm carries `Cube.boundary N` onto the unit sphere.
 * `TauCeti.closedBallHomeomorphProd`: the closed unit ball of the sup norm on `Fin (n + 1) → ℝ` is
   homeomorphic to `I × I^(Fin n)`, carrying the unit sphere onto `Cube.prodBoundary (Fin n)`.
-
-## References
-
-This supplies the cube geometry behind the base-point-change isomorphisms of higher homotopy
-groups requested in `TauCetiRoadmap/UniversalCovers/README.md`, Stage 3, item 9.
 -/
 
 public section

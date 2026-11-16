@@ -18,14 +18,14 @@ piecewise-`C¹` curve `γ` that is **null-homologous** in `U` and avoids `S`,
 `∫ t in a..b, γ' t • logDeriv f (γ t) = 2πi · ∑_{z ∈ S} n_z(γ) · ord z`,
 
 where `n_z(γ)` is the generalized winding number of `γ` about `z` and `ord` is a caller-supplied
-integer-valued function required to agree with `meromorphicOrderAt f` only at the points of `S`
-that lie in `U` — positive at a zero, negative at a pole. Nothing is asked of `f` or of `ord` at a
-point of `S` outside `U`: null-homology forces the winding number there to vanish, so its term
-drops out whatever `ord` says. This is the arbitrary-cycle form of the argument principle: the
-roadmap's Layer-2 statement `TauCeti.Contour.argumentPrinciple` fixes the contour to be a round
-circle with every special point strictly inside, so each order is counted exactly once; here the
-contour is any piecewise-`C¹` loop and each order is counted with the multiplicity with which the
-loop winds around it.
+integer-valued function required to agree with `meromorphicOrderAt f` only at the points of `S` that
+lie in `U` — positive at a zero, negative at a pole. Nothing is asked of `f` or of `ord` at a point
+of `S` outside `U`: null-homology forces the winding number there to vanish, so its term drops out
+whatever `ord` says. This is the arbitrary-cycle form of the argument principle: the circle
+statement `TauCeti.Contour.argumentPrinciple` fixes the contour to be a round circle with every
+special point strictly inside, so each order is counted exactly once; here the contour is any
+piecewise-`C¹` loop and each order is counted with the multiplicity with which the loop winds around
+it.
 
 The proof is the classical one-liner over the two pieces the repository already has: the residue
 theorem for a null-homologous cycle (`TauCeti.Contour.classicalResidueTheorem_nullHomologous`)
@@ -61,9 +61,8 @@ differentiability of `logDeriv f` on `U ∖ S`.
   `∮_γ f'/f = 2πi · ∑_{z ∈ S} n_z(γ) · analyticOrderNatAt f z`, the winding-weighted count of the
   zeros of `f` with multiplicity.
 
-This is the arbitrary-cycle upgrade of a Layer-2 target of the contour-integration roadmap; like
-the residue theorem it rests on it, it is a Layer-3 statement, since its hypotheses and its proof
-go through the homology Cauchy theorem.
+This is the arbitrary-cycle upgrade of the circle argument principle; like the residue theorem it
+rests on, its hypotheses and its proof go through the homology Cauchy theorem.
 
 ## Provenance
 
@@ -119,7 +118,7 @@ theorem argumentPrinciple_nullHomologous {f : ℂ → ℂ} {S : Finset ℂ} {U :
   -- Off `S` the function is analytic and non-vanishing, so its logarithmic derivative is
   -- holomorphic there; at a point of `S` it is meromorphic, being `deriv f / f`.
   have hdiff : DifferentiableOn ℂ (logDeriv f) (U \ (↑S : Set ℂ)) := fun z hz =>
-    (analyticAt_logDeriv_of_analyticAt (hoff z hz.1 hz.2).1
+    ((hoff z hz.1 hz.2).1.logDeriv
       (hoff z hz.1 hz.2).2).differentiableAt.differentiableWithinAt
   have hmeroL : ∀ s ∈ S, s ∈ U → MeromorphicAt (logDeriv f) s := fun s hs hsU =>
     (hmero s hs hsU).deriv.div (hmero s hs hsU)

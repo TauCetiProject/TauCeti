@@ -38,8 +38,6 @@ integrability hypothesis in `RepresentsStieltjes` suffices at every derivative o
 
 * R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions: Theory and Applications*,
   2nd ed., Theorem 2.2.
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B, the
-  Stieltjes/Bernstein-function relationships target.
 -/
 
 public section

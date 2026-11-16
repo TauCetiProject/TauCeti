@@ -110,13 +110,14 @@ theorem subst_subst_toPowerSeries_exponentTwoLog {σ : Type*} {f₀ f₁ : MvPow
 
 /-- A power series `g = X + ⋯` without terms of degree `2ᵏ`, `k ≥ 1`, that is additive along `F`
 is the normalised logarithm. -/
-theorem eq_exponentTwoLog {g : PowerSeries R} (h₀ : PowerSeries.constantCoeff g = 0)
-    (h₁ : PowerSeries.coeff 1 g = 1) (hp : ∀ k, 0 < k → PowerSeries.coeff (2 ^ k) g = 0)
+theorem eq_exponentTwoLog {g : PowerSeries R} (h₁ : PowerSeries.coeff 1 g = 1)
+    (hp : ∀ k, 0 < k → PowerSeries.coeff (2 ^ k) g = 0)
     (hg : PowerSeries.subst F.toPowerSeries g =
       PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g) :
     g = F.exponentTwoLog hF :=
-  (F.existsUnique_logarithm_of_nsmulSeries_eq_zero Nat.prime_two hF).unique ⟨h₀, h₁, hp, hg⟩
-    (F.exponentTwoLog_spec hF)
+  F.logarithm_unique_of_natCast_eq_zero Nat.prime_two (F.natCast_eq_zero_of_nsmulSeries_eq_zero hF)
+    h₁ hp hg (F.coeff_one_exponentTwoLog hF) (fun _ hk ↦ F.coeff_two_pow_exponentTwoLog hF hk)
+    (F.subst_toPowerSeries_exponentTwoLog hF)
 
 end ExponentTwoLog
 

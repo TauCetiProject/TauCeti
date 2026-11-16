@@ -116,6 +116,12 @@ theorem tateCurveAt_equation_iff (q : Kˣ) (hq : ‖(q : K)‖ < 1) {x y : K} :
   simp only [tateCurveAt_a₁, tateCurveAt_a₂, tateCurveAt_a₃, tateCurveAt_a₄, tateCurveAt_a₆]
   constructor <;> intro h <;> linear_combination h
 
+/-- The invariant `c₄` of the specialized Tate equation is the evaluation of the formal
+invariant. -/
+theorem tateCurveAt_c₄ (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    (tateCurveAt q hq).c₄ = evalIntSeries (q : K) hq tateCurve.c₄ := by
+  rw [tateCurveAt, WeierstrassCurve.map_c₄]
+
 /-- The discriminant of the specialized Tate equation is the evaluation of the formal
 discriminant of the Tate curve. -/
 theorem tateCurveAt_Δ (q : Kˣ) (hq : ‖(q : K)‖ < 1) :

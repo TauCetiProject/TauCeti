@@ -15,17 +15,14 @@ public import Mathlib.Topology.Maps.Basic
 An *isotopy* between two continuous maps is a homotopy whose every time slice is a topological
 embedding, and an *ambient isotopy* of a space `Y` is a
 homotopy from the identity of `Y` whose level-preserving total map `I × Y → I × Y` is a
-homeomorphism. These are the point-set foundations that the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology`) asks for once, in full generality, before specialising.
-`Isotopy` deliberately uses the slice-wise, homotopy-through-embeddings convention.
+homeomorphism. Both notions are defined here for arbitrary topological spaces. `Isotopy`
+deliberately uses the slice-wise, homotopy-through-embeddings convention.
 Burde--Zieschang, *Knots*, Chapter 1, Definition 1.1 instead requires the associated
 level-preserving map `I × X → I × Y` to be an embedding. The two conditions agree when `X` is
 compact and `Y` is Hausdorff, but the slice-wise condition is weaker for the arbitrary spaces
 allowed here. `AmbientIsotopy` follows their Definition 1.2, generalized to this continuous
-topological setting. The non-ambient relation is a general point-set notion of isotopy; later
-knot-equivalence foundations should use ambient isotopy, specialized as needed to smooth
-embeddings `S¹ ↪ M`. Later geometric-topology foundations specialize these notions as appropriate
-for locally flat isotopy, diffeotopies, and concordance.
+topological setting. The non-ambient relation is a general point-set notion of isotopy; knot
+equivalence should use ambient isotopy instead (see the warning below).
 
 ## A warning: non-ambient isotopy is degenerate for knots
 
@@ -42,7 +39,7 @@ after their stronger level-preserving notion of non-ambient isotopy (Definition 
 
 * `TauCeti.Isotopy f₀ f₁`: a homotopy from `f₀` to `f₁` through topological embeddings.
 * `TauCeti.Isotopic f₀ f₁`: the proposition that such an isotopy exists. This is the reusable
-  general non-ambient relation; knot-equivalence layers should instead use `AmbientIsotopic` from
+  general non-ambient relation; knot equivalence should instead use `AmbientIsotopic` from
   `TauCeti.Topology.Homotopy.AmbientIsotopic.Basic`.
 * `TauCeti.AmbientIsotopy Y`: a homotopy of `Y` from the identity whose total
   level-preserving map is a homeomorphism.

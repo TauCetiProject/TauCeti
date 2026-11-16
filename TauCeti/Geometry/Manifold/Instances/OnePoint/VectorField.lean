@@ -13,7 +13,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.RingTheory.Polynomial.Basic
-public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!

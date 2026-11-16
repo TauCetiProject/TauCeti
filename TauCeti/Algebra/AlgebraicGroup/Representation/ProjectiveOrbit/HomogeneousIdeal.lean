@@ -26,8 +26,8 @@ orbit coordinate lies in `x`. This file records that description and three conse
   a single point: lines spanned by weight vectors are fixed by the whole group scheme, not just by
   its rational points.
 * If `H` is a domain and no nonzero form of positive degree has vanishing orbit coordinate, then
-  the image of the generic point of `Spec H` specializes to every point of projective space. In
-  particular the orbit is dense.
+  the image of the generic point of `Spec H` specializes to every point of projective space. More
+  generally, without assuming that `H` is a domain, the orbit is then dense.
 
 These are the inputs for computing the orbits of explicit actions on projective space, such as
 the action of the multiplicative group on the projective line.
@@ -113,6 +113,32 @@ theorem notMem_range_projectiveOrbitMap_of_isUnit (m : M) (hm : Module.IsUnimodu
   exact x.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _
     ((mem_projectiveOrbitMap_iff m hm x hn hs).mp hy) hu)
 
+omit [Module.Finite R M] [Module.Projective R M] in
+/-- Let `t` be a form of positive degree outside the point `y` of projective space. If no nonzero
+form of positive degree has vanishing orbit coordinate, then a homogeneous form `a` such that
+`a * t` has nilpotent orbit coordinate lies in `y`: a power of `a * t` has vanishing orbit
+coordinate, so it is zero. -/
+private theorem mem_of_isNilpotent_orbitCoordinates_mul (m : M)
+    (hrel : ∀ n > 0, ∀ s ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M) n,
+      orbitCoordinates (H := H) m s = 0 → s = 0)
+    {y : Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M))}
+    {i d : ℕ} (hd : 0 < d) {a t : SymmetricAlgebra R (Module.Dual R M)}
+    (ha : a ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M) i)
+    (ht : t ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M) d)
+    (hty : t ∉ y.asHomogeneousIdeal) (hnil : IsNilpotent (orbitCoordinates (H := H) m (a * t))) :
+    a ∈ y.asHomogeneousIdeal := by
+  obtain ⟨N, hN⟩ := hnil
+  have hat := SetLike.mul_mem_graded ha ht
+  have hpow : (a * t) ^ (N + 1) = 0 := by
+    refine hrel _ ?_ _ (SetLike.pow_mem_graded _ hat) ?_
+    · rw [smul_eq_mul]
+      exact Nat.mul_pos (Nat.succ_pos N) (by omega)
+    · rw [map_pow, pow_succ, hN, zero_mul]
+  have hmem : (a * t) ^ (N + 1) ∈ y.asHomogeneousIdeal := by
+    rw [hpow]
+    exact zero_mem _
+  exact (y.isPrime.mem_or_mem (y.isPrime.mem_of_pow_mem _ hmem)).resolve_right hty
+
 /-- If `H` is a domain and no nonzero form of positive degree has vanishing orbit coordinate,
 then the image of the generic point of `Spec H` specializes to every point of projective
 space. -/
@@ -125,18 +151,15 @@ theorem projectiveOrbitMap_bot_specializes [IsDomain H] (m : M) (hm : Module.IsU
   set η := projectiveOrbitMap (H := H) m hm ⟨⊥, Ideal.isPrime_bot⟩
   obtain ⟨d, hd, t, ht, hty⟩ := ProjectiveSpectrum.exists_le_mem_notMem y 1
   -- Every homogeneous component `a` of an element of `η`, multiplied by a form `t` of positive
-  -- degree outside `y`, has vanishing orbit coordinate, so `a * t = 0` and `a ∈ y`.
+  -- degree outside `y`, has vanishing orbit coordinate, so `a ∈ y`.
   have hcomp (i : ℕ) (a : SymmetricAlgebra R (Module.Dual R M)) (ha : a ∈ 𝒜 i)
       (haη : a ∈ η.asHomogeneousIdeal) : a ∈ y.asHomogeneousIdeal := by
     have hat : a * t ∈ 𝒜 (i + d) := SetLike.mul_mem_graded ha ht
     have hatη : a * t ∈ η.asHomogeneousIdeal :=
       Ideal.mul_mem_right t η.asHomogeneousIdeal.toIdeal haη
-    have hzero := hrel (i + d) (by omega) (a * t) hat
-      ((mem_projectiveOrbitMap_iff m hm _ (by omega) hat).mp hatη)
-    have hmem : a * t ∈ y.asHomogeneousIdeal := by
-      rw [hzero]
-      exact zero_mem _
-    exact (y.isPrime.mem_or_mem hmem).resolve_right hty
+    have hzero := (mem_projectiveOrbitMap_iff m hm _ (by omega) hat).mp hatη
+    exact mem_of_isNilpotent_orbitCoordinates_mul m hrel (by omega) ha ht hty
+      (by rw [Ideal.mem_bot.mp hzero]; exact IsNilpotent.zero)
   classical
   rw [specializes_iff_mem_closure]
   refine (ProjectiveSpectrum.le_iff_mem_closure (𝒜 := 𝒜) η y).mp fun a ha ↦ ?_
@@ -144,14 +167,34 @@ theorem projectiveOrbitMap_bot_specializes [IsDomain H] (m : M) (hm : Module.IsU
   exact sum_mem fun i _ ↦ hcomp i _ (SetLike.coe_mem _)
     (η.asHomogeneousIdeal.isHomogeneous i ha)
 
-/-- If `H` is a domain and no nonzero form of positive degree has vanishing orbit coordinate,
-then the orbit is dense in projective space. -/
-theorem dense_range_projectiveOrbitMap [IsDomain H] (m : M) (hm : Module.IsUnimodular R m)
+/-- If no nonzero form of positive degree has vanishing orbit coordinate, then the orbit is dense
+in projective space. -/
+theorem dense_range_projectiveOrbitMap (m : M) (hm : Module.IsUnimodular R m)
     (hrel : ∀ n > 0, ∀ s ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M) n,
       orbitCoordinates (H := H) m s = 0 → s = 0) :
-    Dense (Set.range (projectiveOrbitMap (H := H) m hm)) := fun y ↦
-  closure_mono (Set.singleton_subset_iff.mpr (Set.mem_range_self _))
-    (specializes_iff_mem_closure.mp (projectiveOrbitMap_bot_specializes m hm hrel y))
+    Dense (Set.range (projectiveOrbitMap (H := H) m hm)) := fun y ↦ by
+  set 𝒜 := TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M)
+  obtain ⟨d, hd, t, ht, hty⟩ := ProjectiveSpectrum.exists_le_mem_notMem y 1
+  -- A homogeneous form lying in the ideal of every orbit image, multiplied by `t`, has a nilpotent
+  -- orbit coordinate: it lies in every prime ideal of `H`.
+  have hcomp (i : ℕ) (a : SymmetricAlgebra R (Module.Dual R M)) (ha : a ∈ 𝒜 i)
+      (hax : ∀ x : Spec (.of H), a ∈ (projectiveOrbitMap (H := H) m hm x).asHomogeneousIdeal) :
+      a ∈ y.asHomogeneousIdeal := by
+    have hat : a * t ∈ 𝒜 (i + d) := SetLike.mul_mem_graded ha ht
+    refine mem_of_isNilpotent_orbitCoordinates_mul m hrel (by omega) ha ht hty ?_
+    rw [← mem_nilradical, nilradical_eq_sInf, Ideal.mem_sInf]
+    intro J hJ
+    exact (mem_projectiveOrbitMap_iff m hm ⟨J, hJ⟩ (by omega) hat).mp
+      (Ideal.mul_mem_right t _ (hax ⟨J, hJ⟩))
+  -- `Proj` is built on the space of homogeneous primes, so its closure of a set is computed there.
+  change y ∈ closure (Set.range (projectiveOrbitMap (H := H) m hm) : Set (ProjectiveSpectrum 𝒜))
+  rw [← ProjectiveSpectrum.zeroLocus_vanishingIdeal_eq_closure]
+  intro a ha
+  classical
+  rw [← DirectSum.sum_support_decompose 𝒜 a]
+  refine sum_mem fun i _ ↦ hcomp i _ (SetLike.coe_mem _) fun x ↦ ?_
+  exact (ProjectiveSpectrum.mem_vanishingIdeal _ _).mp
+    ((ProjectiveSpectrum.vanishingIdeal _).isHomogeneous i ha) _ ⟨x, rfl⟩
 
 end Ring
 

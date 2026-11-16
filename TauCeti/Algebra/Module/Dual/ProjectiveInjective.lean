@@ -11,6 +11,7 @@ import TauCeti.Algebra.Module.Injective.SelfInjective
 import TauCeti.Algebra.Module.Opposite
 public import TauCeti.LinearAlgebra.Dual.RightAction
 import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+import Mathlib.RingTheory.Finiteness.Small
 
 /-!
 # Linear duality exchanges projective and injective modules
@@ -235,9 +236,17 @@ variable {k : Type u} [Field k] {A : Type v} [Ring A] [Algebra k A]
 /-- Over a finite-dimensional algebra, the linear dual of a finite-dimensional injective
 right module is a projective left module, with the action given by precomposition. -/
 theorem moduleProjective_of_dual_injective [FiniteDimensional k A] [FiniteDimensional k N]
-    [Small.{w} Aᵐᵒᵖ] [Module.Injective Aᵐᵒᵖ N] (e : Q ≃ₗ[k] Module.Dual k N)
+    [Module.Injective Aᵐᵒᵖ N] (e : Q ≃ₗ[k] Module.Dual k N)
     (he : ∀ (a : A) (q : Q) (x : N), e (a • q) x = e q (MulOpposite.op a • x)) :
     Module.Projective A Q := by
+  -- A trivial `N` has trivial dual `Q`; otherwise `k ↪ N` makes `k`, hence `A` and `Aᵐᵒᵖ`, small.
+  rcases subsingleton_or_nontrivial N with hN | hN
+  · have : Subsingleton Q := e.toEquiv.subsingleton_congr.2 inferInstance
+    exact Module.Projective.of_basis (Module.Basis.empty (ι := Empty) (R := A) Q)
+  obtain ⟨x, hx⟩ := exists_ne (0 : N)
+  have : Small.{w} k := small_of_injective (f := fun c : k ↦ c • x) (smul_left_injective k hx)
+  have : Small.{w} A := Module.Finite.small k A
+  have : Small.{w} Aᵐᵒᵖ := small_of_injective (f := MulOpposite.unop) MulOpposite.unop_injective
   have : FiniteDimensional k Q := LinearEquiv.finiteDimensional e.symm
   have := e.isScalarTower_of_linearMap he
   have : Module.Finite A Q := Module.Finite.of_restrictScalars_finite k A Q

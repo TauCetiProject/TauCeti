@@ -32,7 +32,7 @@ python3 scripts/test_fleet_runner.py
 python3 scripts/test_bwrap_pin.py
 python3 scripts/test_bump_manifest.py
 python3 scripts/test_bump_latest.py
-python3 scripts/test_lint_scope.py
+# Staging lint scope runs against its deployed Tools pin in the next workflow step.
 python3 scripts/test_ci_preflight_policy.py
 python3 scripts/test_bors_scope_approval.py
 python3 scripts/test_bors_staging_identity.py

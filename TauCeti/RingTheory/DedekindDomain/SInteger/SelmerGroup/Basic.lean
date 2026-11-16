@@ -80,14 +80,14 @@ Dirichlet's unit theorem.
 ## References
 
 Adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at the
-`EllipticCurves` roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll), whose treatment this
-follows. The names differ: the substrate that source keeps in its own `FractionalIdeal` file is
-already here as `TauCeti.AlgebraicGeometry.WeilDivisor.nthRootClass` and its neighbours, and the
-`S`-integer dictionary is already here under `IsDedekindDomain.integer*`, so only the Selmer layer
-itself is adapted, and it is named after Mathlib's `selmerGroup` API rather than after the source.
-Following this repository's convention for adapted material, the upstream authorship is credited
-here rather than in the copyright header.
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll), whose treatment this follows. The names
+differ: the substrate that source keeps in its own `FractionalIdeal` file is already here as
+`TauCeti.AlgebraicGeometry.WeilDivisor.nthRootClass` and its neighbours, and the `S`-integer
+dictionary is already here under `IsDedekindDomain.integer*`, so only the Selmer layer itself is
+adapted, and it is named after Mathlib's `selmerGroup` API rather than after the source. Following
+this repository's convention for adapted material, the upstream authorship is credited here rather
+than in the copyright header.
 -/
 
 public section

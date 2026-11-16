@@ -31,9 +31,6 @@ inherited from `SemimoduleCat` along the faithful monoidal forgetful functor.
 
 ## References
 
-This is the symmetric-category part of Layer 1 of the Tau Ceti reductive-groups roadmap,
-`ReductiveGroups/README.md` in TauCetiRoadmap. It advances the requested rigid monoidal
-category of finite-dimensional comodules and the later Tannakian reconstruction target.
 The construction is standard; see Sweedler, *Hopf Algebras*, Chapter 2. The categorical
 packaging follows Mathlib's symmetric structure on `SemimoduleCat` and uses
 `BraidedCategory.ofFaithful` and `SymmetricCategory.ofFaithful`.

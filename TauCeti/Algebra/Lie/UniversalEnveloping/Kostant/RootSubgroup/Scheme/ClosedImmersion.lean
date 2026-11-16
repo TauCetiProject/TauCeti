@@ -50,6 +50,8 @@ criterion supplies the same closed subgroup.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix`: the represented generator
   in an integral lattice basis, shared with the matrix construction of
   `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.AlternatingForm`.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix_apply`: the entries of the
+  integral matrix are the coordinates of the images of the basis vectors.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix_eq_of_action`: the basis
   action determines the integral root matrix.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix_mul_self`: square-zero
@@ -178,15 +180,22 @@ variable {V : Type v} [AddCommGroup V] [Module ℚ V] (e : ι → L) (h : κ →
     ⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s),
       hM _ (rootVector_mem_kostantForm e h i) _ (b s).2⟩
 
+/-- The `(r, s)` entry of the integral root matrix is the `r`-th coordinate of the image of the
+`s`-th basis vector under the lattice endomorphism. -/
+theorem kostantRootGeneratorIntMatrix_apply (r s : η) :
+    kostantRootGeneratorIntMatrix e h ρ M hM i b r s =
+      b.repr (kostantRootOperator e h ρ M hM i (b s)) r := by
+  rw [kostantRootGeneratorIntMatrix, Module.Basis.toMatrix_apply]
+  congr 2
+  apply Subtype.ext
+  rw [coe_kostantRootOperator_apply]
+
 /-- The represented integral root matrix is the matrix of its lattice endomorphism. -/
 theorem kostantRootGeneratorIntMatrix_eq_toMatrix [Fintype η] [DecidableEq η] :
     kostantRootGeneratorIntMatrix e h ρ M hM i b =
       LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i) := by
   ext r s
-  rw [kostantRootGeneratorIntMatrix, Module.Basis.toMatrix_apply, LinearMap.toMatrix_apply]
-  congr 2
-  apply Subtype.ext
-  rw [coe_kostantRootOperator_apply]
+  rw [kostantRootGeneratorIntMatrix_apply, LinearMap.toMatrix_apply]
 
 section MatrixRelations
 

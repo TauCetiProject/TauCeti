@@ -52,14 +52,10 @@ theorem lieSubalgebra_identityComponentHopfIdeal_eq_top :
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
   let e : H := PrimeSpectrum.connectedComponentIdempotent (R := H)
     (Bialgebra.augmentationPoint k H)
-  have hspan : (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)).toIdeal =
-      Ideal.span {1 - e} := by
-    rw [HopfAlgebra.identityComponentHopfIdeal_toIdeal]
-    ext x
-    exact PrimeSpectrum.mem_connectedComponentIdeal_iff.trans Ideal.mem_span_singleton'.symm
   rw [eq_top_iff]
   intro d _
-  rw [mem_lieSubalgebra_iff_of_toIdeal_eq_span _ hspan]
+  rw [mem_lieSubalgebra_iff_of_toIdeal_eq_span _
+    HopfAlgebra.identityComponentHopfIdeal_toIdeal_eq_span]
   rintro x rfl
   have he : IsIdempotentElem e := PrimeSpectrum.isIdempotentElem_connectedComponentIdempotent _
   rw [map_sub, d.map_one_eq_zero, d.apply_eq_zero_of_isIdempotentElem he, sub_zero]

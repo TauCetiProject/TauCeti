@@ -33,7 +33,8 @@ at pin `66889eada51a`, Apache 2.0, by Michael Stoll).
 * `FractionalIdeal.isUnit_num_iff`: a fractional ideal and its integral numerator are invertible
   together, over any localization.
 * `FractionalIdeal.isUnit_of_restrictScalars_mul_eq_one`: a fractional ideal is invertible once its
-  underlying `A`-submodule times some `A`-submodule `t` equals the image of `R`.
+  underlying `A`-submodule times some `A`-submodule `t` equals the image of `R`, over any
+  localization.
 * `FractionalIdeal.spanSingleton_inv_mul_cancel_left`: scaling by a unit and then by its inverse
   returns the fractional ideal.
 * `Ideal.moduleInvertible_of_isUnit_fractionalIdeal`: an ideal invertible in a faithful
@@ -98,7 +99,8 @@ theorem ringEquivOfRingEquiv_coeIdeal (K L : Type*)
   apply FractionalIdeal.coeToSubmodule_injective
   dsimp only
   rw [← FractionalIdeal.val_eq_coe, FractionalIdeal.ringEquivOfRingEquiv_apply_val,
-    FractionalIdeal.val_eq_coe, FractionalIdeal.coe_coeIdeal, FractionalIdeal.coe_coeIdeal]
+    FractionalIdeal.val_eq_coe, FractionalIdeal.coeToSubmodule_coeIdeal,
+    FractionalIdeal.coeToSubmodule_coeIdeal]
   ext x
   simp only [Submodule.mem_map, FractionalIdeal.mem_coeSubmodule]
   constructor
@@ -112,7 +114,7 @@ theorem ringEquivOfRingEquiv_coeIdeal (K L : Type*)
 
 end RingEquiv
 
-section SpanSingleton
+section Localization
 
 variable {R : Type*} [CommRing R] {S : Submonoid R} {P : Type*} [CommRing P] [Algebra R P]
   [IsLocalization S P]
@@ -130,7 +132,24 @@ theorem spanSingleton_inv_mul_cancel_left (x : Pˣ) (I : FractionalIdeal S P) :
     spanSingleton S ((x⁻¹ : Pˣ) : P) * (spanSingleton S (x : P) * I) = I := by
   rw [← mul_assoc, ← map_mul (spanSingleton _), Units.inv_mul, map_one (spanSingleton _), one_mul]
 
-end SpanSingleton
+/-- **Criterion for invertibility of a fractional ideal.** A fractional ideal whose
+`A`-submodule has an `A`-submodule inverse for multiplication, with product the image of `R`,
+is invertible. -/
+theorem isUnit_of_restrictScalars_mul_eq_one {A : Type*} [CommSemiring A] [Algebra A R]
+    [Algebra A P] [IsScalarTower A R P] {I : FractionalIdeal S P} {t : Submodule A P}
+    (hinv : (I : Submodule R P).restrictScalars A * t = (1 : Submodule R P).restrictScalars A) :
+    IsUnit I := by
+  -- The `R`-span of `t` is an inverse of `I` among the `R`-submodules of `P`.
+  have hJ : (I : Submodule R P) * Submodule.span R (t : Set P) = 1 := by
+    have h := congrArg (fun N : Submodule A P ↦ Submodule.span R (N : Set P)) hinv
+    rwa [Submodule.mul_eq_span_mul_set, Submodule.span_span_of_tower,
+      Submodule.coe_restrictScalars, Submodule.coe_restrictScalars, Submodule.span_eq,
+      ← Submodule.span_mul_span, Submodule.span_eq] at h
+  -- Invertible `R`-submodules of `P` are fractional ideals (`unitsMulEquivSubmodule`).
+  obtain ⟨u, hu⟩ : IsUnit (I : Submodule R P) := .of_mul_eq_one _ hJ
+  exact ⟨unitsMulEquivSubmodule.symm u, coeToSubmodule_inj.mp hu⟩
+
+end Localization
 
 /-- The kernel of the principal-ideal map is the image of `Rˣ`: `toPrincipalIdeal R K u` is trivial
 exactly when `u` comes from a unit of `R`. This is the left end of the ideal class exact
@@ -139,7 +158,7 @@ lemma toPrincipalIdeal_eq_one_iff {R : Type*} [CommRing R]
     {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] (u : Kˣ) :
     toPrincipalIdeal R K u = 1 ↔ ∃ a : Rˣ, Units.map (algebraMap R K : R →* K) a = u := by
   rw [← Units.val_inj, coe_toPrincipalIdeal, Units.val_one, ← coeToSubmodule_inj,
-    coe_spanSingleton, coe_one, Submodule.span_singleton_eq_one_iff]
+    coeToSubmodule_spanSingleton, coeToSubmodule_one, Submodule.span_singleton_eq_one_iff]
   exact ⟨fun ⟨a, ha⟩ ↦ ⟨a, Units.ext ha.symm⟩, fun ⟨a, ha⟩ ↦ ⟨a, by rw [← ha]; rfl⟩⟩
 
 /-- Negating a generator preserves its principal ideal, because `-1` is a unit of the base ring. -/
@@ -149,38 +168,6 @@ lemma toPrincipalIdeal_eq_one_iff {R : Type*} [CommRing R]
   have hneg : toPrincipalIdeal R K (-1 : Kˣ) = 1 :=
     (toPrincipalIdeal_eq_one_iff _).mpr ⟨-1, Units.ext (by simp)⟩
   rw [← neg_one_mul x, map_mul, hneg, one_mul]
-
-/-- **Criterion for invertibility of a fractional ideal.** A fractional ideal whose
-`A`-submodule has an `A`-submodule inverse for multiplication, with product the image of `R`,
-is invertible. -/
-theorem isUnit_of_restrictScalars_mul_eq_one {R : Type*} [CommRing R] [IsDomain R]
-    {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] {A : Type*} [CommRing A]
-    [Algebra A R] [Algebra A K] [IsScalarTower A R K] {Ifr : FractionalIdeal R⁰ K}
-    {t : Submodule A K}
-    (hinv : (Ifr : Submodule R K).restrictScalars A * t = (1 : Submodule R K).restrictScalars A) :
-    IsUnit Ifr := by
-  have h1 : (1 : K) ∈ (Ifr : Submodule R K).restrictScalars A * t := by
-    rw [hinv]
-    exact Submodule.mem_one.mpr ⟨1, map_one _⟩
-  have hIfr : Ifr ≠ 0 := by
-    rintro rfl
-    simp at h1
-  have hle : t ≤ ((Ifr⁻¹ : FractionalIdeal R⁰ K) : Submodule R K).restrictScalars A := by
-    intro x hx
-    rw [Submodule.restrictScalars_mem, FractionalIdeal.mem_coe, mem_inv_iff hIfr]
-    intro y hy
-    have h := Submodule.mul_mem_mul
-      ((Submodule.restrictScalars_mem A _ _).mpr (mem_coe.mpr hy) :
-        y ∈ (Ifr : Submodule R K).restrictScalars A) hx
-    rw [hinv, Submodule.restrictScalars_mem] at h
-    rw [mul_comm, ← mem_coe, coe_one]
-    exact h
-  have h2 : (1 : K) ∈ ((Ifr * Ifr⁻¹ : FractionalIdeal R⁰ K) : Submodule R K).restrictScalars A := by
-    rw [coe_mul, Submodule.restrictScalars_mul]
-    exact Submodule.mul_le.mpr (fun m hm n hn => Submodule.mul_mem_mul hm (hle hn)) h1
-  refine (mul_inv_cancel_iff_isUnit K).mp (le_antisymm mul_one_div_le_one ?_)
-  rw [← coe_le_coe, coe_one, Submodule.one_le, ← Submodule.restrictScalars_mem A]
-  exact h2
 
 end FractionalIdeal
 
@@ -200,7 +187,7 @@ theorem moduleInvertible_of_isUnit_fractionalIdeal {R : Type*} [CommRing R]
     congrArg FractionalIdeal.coeToSubmodule hI.unit_spec
   have hmap : Submodule.map (Algebra.linearMap R P) I =
       (I : FractionalIdeal S P).coeToSubmodule := by
-    rw [FractionalIdeal.coe_coeIdeal, IsLocalization.coeSubmodule]
+    rw [FractionalIdeal.coeToSubmodule_coeIdeal, IsLocalization.coeSubmodule]
   let e : I ≃ₗ[R] U :=
     (Submodule.equivMapOfInjective (Algebra.linearMap R P)
       (FaithfulSMul.algebraMap_injective R P) I).trans

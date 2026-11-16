@@ -270,7 +270,7 @@ theorem UniformlyEllipticOn.ae_value_eq_of_frequently_lt_add [Nonempty ι]
       linarith [hu v hv])
     (by filter_upwards [hm, hneg] with x hx hxn; rw [hxn, Pi.neg_apply]; linarith) hy
     fun ρ hρ hρΩ ε hε => ((hfreq ρ hρ hρΩ ε hε).and_eventually
-      (ae_restrict_of_ae_restrict_of_subset hρΩ hneg)).mono fun x ⟨hx, hxn⟩ => by
+      (ae_restrict_of_ae_restrict_of_subset hρΩ hneg)).mono fun x ⟨_, hxn⟩ => by
         rw [hxn, Pi.neg_apply]; linarith
   filter_upwards [hmax, hneg] with x hx hxn
   rw [hxn, Pi.neg_apply] at hx
@@ -300,7 +300,7 @@ theorem UniformlyEllipticOn.ae_value_eq_of_frequently_lt_add_of_isCompact [Nonem
       linarith [hu v hv])
     (by filter_upwards [hm, hneg] with x hx hxn; rw [hxn, Pi.neg_apply]; linarith) hK hKΩ
     fun ε hε => ((hfreq ε hε).and_eventually (ae_restrict_of_ae_restrict_of_subset hKΩ hneg)).mono
-      fun x ⟨hx, hxn⟩ => by rw [hxn, Pi.neg_apply]; linarith
+      fun x ⟨_, hxn⟩ => by rw [hxn, Pi.neg_apply]; linarith
   filter_upwards [hmax, hneg] with x hx hxn
   rw [hxn, Pi.neg_apply] at hx
   linarith

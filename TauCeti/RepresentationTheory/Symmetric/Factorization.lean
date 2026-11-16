@@ -43,8 +43,6 @@ dimension count of the Specht module and is not done here.
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 7.2, Lemma 3.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lemma 4.24 and
   Lemma 4.26.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 3.
 -/
 
 public section
@@ -173,9 +171,9 @@ theorem exists_eq_smul_youngSymmetrizer_mul_mul (t : YoungTableau μ)
 /-- The square of a Young symmetrizer is a multiple of it.  Identifying the scalar needs the
 dimension of the left ideal `ℚ[Sₙ] c_t`, so it is done downstream, in
 `TauCeti.YoungTableau.youngSymmetrizer_sq`, which proves the scalar is
-`μ.card ! / finrank ℚ (ℚ[Sₙ] c_t)`.  The roadmap writes it as `μ.card ! / f^μ`, with `f^μ` the
-number of standard tableaux of shape `μ`; that form needs the standard basis theorem
-`dim S^μ = f^μ`, which is not available yet. -/
+`μ.card ! / finrank ℚ (ℚ[Sₙ] c_t)`.  In terms of the number `f^μ` of standard tableaux of shape
+`μ` the scalar is `μ.card ! / f^μ`, by the standard basis theorem `dim S^μ = f^μ`; that form is
+`TauCeti.YoungTableau.youngSymmetrizer_sq_eq_factorial_div_standardCount`. -/
 theorem exists_eq_smul_youngSymmetrizer_sq (t : YoungTableau μ) :
     ∃ κ : ℚ, youngSymmetrizer (R := ℚ) t * youngSymmetrizer (R := ℚ) t = κ • youngSymmetrizer (R
       := ℚ) t := by

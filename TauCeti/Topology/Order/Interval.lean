@@ -246,7 +246,6 @@ theorem _root_.ContinuousOn.apply_ne_apply_of_injOn_Ico {α δ : Type*}
   have ha : a ∈ Ico a b := ⟨le_rfl, hab⟩
   intro hab'
   obtain ⟨m, hm⟩ := exists_between hab
-  have hfm : f m ≠ f a := fun h ↦ hm.1.ne' (hinj ⟨hm.1.le, hm.2⟩ ha h)
   -- A value strictly between `f a` and `f m` would be attained on both `[a, m]` and `[m, b]`.
   obtain ⟨v, hv, hva, hvm⟩ : ∃ v ∈ uIcc (f a) (f m), v ≠ f a ∧ v ≠ f m := by
     obtain ⟨m', hm'⟩ := exists_between hm.1

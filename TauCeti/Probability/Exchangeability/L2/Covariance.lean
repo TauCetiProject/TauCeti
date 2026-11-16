@@ -10,13 +10,10 @@ public import TauCeti.Probability.Exchangeability.Contractability
 /-!
 # The covariance structure of a contractable L² sequence
 
-This file opens the Layer 3 (L²) lane of the Exchangeability roadmap
-(`TauCetiRoadmap/Exchangeability/README.md`, "Layer 3: L² averaging library and the
-standard-Borel de Finetti route"), whose first analytic input is the *uniform covariance
-structure of a contractable L² sequence* (`contractable_covariance_structure`). It also
-supplies the two Layer 3 preliminaries listed before it — "equality of means and integrals
-from equal one-dimensional laws" and "equality of pair covariances from equal two-dimensional
-laws".
+This file proves the *uniform covariance structure of a contractable L² sequence*
+(`contractable_covariance_structure`), the first analytic input of the L² route to de Finetti's
+theorem. It also supplies two preliminaries: equality of means and integrals from equal
+one-dimensional laws, and equality of pair covariances from equal two-dimensional laws.
 
 For a real-valued contractable sequence, the one- and two-coordinate `IdentDistrib` facts in
 `TauCeti.Probability.Exchangeability.Contractability` give the uniform first- and second-moment
@@ -29,8 +26,8 @@ structure:
 
 The `IdentDistrib` and moment machinery is Mathlib's (`ProbabilityTheory.IdentDistrib`,
 `ProbabilityTheory.covariance`, `ProbabilityTheory.variance`); the contractability input is
-the Layer 0 API in `TauCeti.Probability.Exchangeability.Contractability`. No material from
-`cameronfreer/exchangeability` is used: the source's L² lane carries the real-valued
+the API in `TauCeti.Probability.Exchangeability.Contractability`. No material from
+`cameronfreer/exchangeability` is used: the source's L² development carries the real-valued
 statement through block averages, whereas this file records only the elementary
 moment-uniformity that seeds it.
 -/
@@ -113,7 +110,7 @@ theorem Contractable.covariance_eq_of_ne (hX : Contractable μ X)
 /-- **The uniform covariance structure of a contractable L² sequence.** A contractable
 real-valued process with `L²` coordinates has constant coordinate means and variances, and a
 single common off-diagonal covariance: any two unequal-index pairs have equal covariance. This
-is the seed of the Layer 3 L² route to de Finetti. -/
+is the seed of the L² route to de Finetti. -/
 theorem contractable_covariance_structure (hX : Contractable μ X) (hX_L2 : ∀ n, MemLp (X n) 2 μ) :
     (∀ i j, μ[X i] = μ[X j]) ∧ (∀ i j, Var[X i; μ] = Var[X j; μ]) ∧
       (∀ i j k l, i ≠ j → k ≠ l → cov[X i, X j; μ] = cov[X k, X l; μ]) := by

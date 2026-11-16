@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Hom
 public import Mathlib.Order.Filter.Germ.Basic
 
 /-!
@@ -51,5 +52,22 @@ theorem mapGerm_injective (f : R →+* S) (l : Filter α) (hf : Function.Injecti
   induction b using Filter.Germ.inductionOn with | _ b =>
   simp only [mapGerm_coe, Filter.Germ.coe_eq]
   exact fun h ↦ h.mono fun _ hx ↦ hf hx
+
+/-- A ring homomorphism `φ : R →+* S` induces an algebra homomorphism between germs whenever it
+is compatible with algebra structures over a common commutative semiring `A`. -/
+def mapGermAlgHom (φ : R →+* S) (l : Filter α) {A : Type*} [CommSemiring A]
+    [Algebra A (Filter.Germ l R)] [Algebra A (Filter.Germ l S)]
+    (h : ∀ a : A, φ.mapGerm l (algebraMap A (Filter.Germ l R) a) =
+      algebraMap A (Filter.Germ l S) a) :
+    Filter.Germ l R →ₐ[A] Filter.Germ l S :=
+  { φ.mapGerm l with commutes' := h }
+
+@[simp]
+theorem coe_mapGermAlgHom (φ : R →+* S) (l : Filter α) {A : Type*} [CommSemiring A]
+    [Algebra A (Filter.Germ l R)] [Algebra A (Filter.Germ l S)]
+    (h : ∀ a : A, φ.mapGerm l (algebraMap A (Filter.Germ l R) a) =
+      algebraMap A (Filter.Germ l S) a) :
+    ⇑(φ.mapGermAlgHom l h) = φ.mapGerm l := by
+  simp [mapGermAlgHom]
 
 end RingHom

@@ -139,7 +139,6 @@ theorem norm_stepCorrectionTerm_le (a : ℕ → ℂ) (n : ℕ) (hz : -2 ≤ z.re
     intro x hx
     rw [uIoc_of_le (by linarith)] at hx
     have hx' : x ∈ Icc (n : ℝ) (n + 1) := Ioc_subset_Icc_self hx
-    have hC : 0 ≤ C := by positivity
     calc ‖(x : ℂ) ^ (-z - 1) - ((n : ℝ) : ℂ) ^ (-z - 1)‖ ≤ C * ‖x - n‖ :=
           Convex.norm_image_sub_le_of_norm_hasDerivWithin_le
             (fun y hy ↦ (hderiv y hy).hasDerivWithinAt) hderiv_le (convex_Icc _ _)

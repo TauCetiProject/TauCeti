@@ -18,6 +18,8 @@ import TauCeti.GroupTheory.Index.Three
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 -- Proof-only: a root of a quadratic with unit discriminant is simple.
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
+-- Proof-only: lifting roots of a quadratic with unit discriminant.
+import TauCeti.RingTheory.Henselian.Basic
 
 /-!
 # Points with singular reduction at the symbol `IV`
@@ -477,9 +479,10 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IV
   obtain ⟨hm₃, hm₄, hm₆, hp, hD, -⟩ := isTateTerminal_IV_data v hϖ h h₃ h₄ h₆
   -- lift the root `t` to a root `Y` of `T² + A₃ T − A₆`
   obtain ⟨Y₀, rfl⟩ := residue_surjective t
-  obtain ⟨Y, hY', -, hu⟩ :=
-    TauCeti.HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant hD
-    ((residue_eq_zero_iff _).1 (by simpa using ht))
+  obtain ⟨Y, hY₀, -, hu⟩ := TauCeti.HenselianRing.exists_quadratic_root_of_isUnit_discrim
+    (I := maximalIdeal v.valuationSubring) (b := A₃) (c := -A₆) (by simpa using hD)
+    ((residue_eq_zero_iff _).1 (by simpa [sub_eq_add_neg] using ht))
+  have hY' : Y ^ 2 + A₃ * Y - A₆ = 0 := by linear_combination hY₀
   -- the point `(0, ϖ Y)`
   have hns : Wo.toAffine.Nonsingular 0 (ϖ * Y) := by
     rw [nonsingular_iff']

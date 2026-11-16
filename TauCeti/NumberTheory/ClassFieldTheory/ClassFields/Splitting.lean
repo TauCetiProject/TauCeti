@@ -52,8 +52,7 @@ variable {K : Type} [Field K] [NumberField K]
 `𝔭` away from `𝔪` and a prime `Q` of the ray class field above it, `f(Q / 𝔭)` is the order of
 `[𝔭]` in the ray class group. -/
 theorem orderOf_idealClass_eq_inertiaDeg (𝔪 : Modulus K) (J : integralIdealsPrimeTo 𝔪)
-    [(J : Ideal (𝓞 K)).IsMaximal] (Q : Ideal (𝓞 (rayClassField 𝔪))) [Q.IsPrime]
-    [Q.LiesOver (J : Ideal (𝓞 K))] :
+    (Q : Ideal (𝓞 (rayClassField 𝔪))) [Q.IsPrime] [Q.LiesOver (J : Ideal (𝓞 K))] :
     orderOf (idealClass 𝔪 J) = Q.inertiaDeg (𝓞 K) := by
   rw [← (rayClassArtinEquiv 𝔪).orderOf_eq, rayClassArtinEquiv_apply,
     orderOf_rayClassArtinMap_idealClass _ J Q]

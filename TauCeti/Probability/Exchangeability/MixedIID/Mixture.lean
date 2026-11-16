@@ -46,11 +46,9 @@ the right `map_bind` to push the marginal inside the mixture, `map_prefixProj_in
 recognise each prefix marginal of an infinite power as the corresponding finite power, and
 `bind_map` to re-index the mixture over `μ` rather than over `μ.map ν`.
 
-This advances `TauCetiRoadmap/Exchangeability/README.md`, Layer 6, the directing-measure API bullet
-asking for the mixture-of-product-measures form. That bullet also asks for `π` to be the *unique*
-law of `ν`, which `mixedIID_mixingLaw_unique` now supplies: the mixture representation turns two
-witnesses into the same `Measure.bind`, and injectivity of `π ↦ π.bind (P ↦ P^{⊗ℕ})`
-(`Measure.ext_of_bind_infinitePi_eq`) identifies the mixing laws. The roadmap name
+Uniqueness of the mixing law (`mixedIID_mixingLaw_unique`) follows from the representation: it
+turns two witnesses into the same `Measure.bind`, and injectivity of `π ↦ π.bind (P ↦ P^{⊗ℕ})`
+(`Measure.ext_of_bind_infinitePi_eq`) identifies the mixing laws. The de Finetti form
 `deFinetti_mixture`, which derives the unique representation from exchangeability rather than
 assuming a witness, lives in `TauCeti.Probability.DeFinetti.Representation`.
 -/
@@ -139,9 +137,7 @@ conditional predicate (`conditionallyIID_ae_unique`).
 mixing measures can produce identical `∞`-valued finite-dimensional mixtures, so mixing-law
 uniqueness fails at the hypothesis-light generality the definitions otherwise enjoy.
 
-Normalization, however, is not needed. The roadmap states this target with
-`[IsProbabilityMeasure μ]`, but the justification it gives only separates finite from infinite base
-measures, and the proof goes through for any finite `μ`. -/
+Normalization, however, is not needed: the proof goes through for any finite `μ`. -/
 theorem mixedIID_mixingLaw_unique {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     {ν ν' : Ω → ProbabilityMeasure α}
     (h : MixedIIDWith μ X ν) (h' : MixedIIDWith μ X ν') :

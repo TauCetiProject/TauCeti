@@ -212,6 +212,17 @@ theorem W1p.restrictL_eq_of_value_ae_eq (hU : U ≤ Omega) {u : W1p mu U p} {w :
     (hvalw : W1p.value w =ᵐ[mu.restrict U] W1p.value u) : W1p.restrictL hU w = u :=
   W1p.ext_value (Lp.ext ((W1p.value_restrictL_ae hU w).trans hvalw))
 
+/-- An extension operator, a right inverse of restriction to the smaller open set `U`, keeps the
+value representative on `U`. -/
+theorem W1p.value_ae_eq_of_restrictL_comp_eq_id (hU : U ≤ Omega)
+    {T : W1p mu U p →L[ℝ] W1p mu Omega p}
+    (hT : (W1p.restrictL hU).comp T = ContinuousLinearMap.id ℝ (W1p mu U p)) (u : W1p mu U p) :
+    W1p.value (T u) =ᵐ[mu.restrict U] W1p.value u := by
+  have hu : W1p.restrictL hU (T u) = u := by
+    simpa using congrArg (· u) hT
+  filter_upwards [W1p.value_restrictL_ae hU (T u)] with x hx
+  rw [← hx, hu]
+
 /-- Restriction keeps the same weak-gradient representative on the smaller open set. -/
 theorem W1p.gradient_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :
     W1p.gradient (W1p.restrictL hU u) =ᵐ[mu.restrict U] W1p.gradient u := by

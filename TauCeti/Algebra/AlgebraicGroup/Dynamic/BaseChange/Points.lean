@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Parabolic
 public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
-public import TauCeti.Algebra.Bialgebra.AddMonoidAlgebra.BaseChange
+public import TauCeti.Algebra.Bialgebra.MonoidAlgebra.BaseChange
 
 /-!
 # Base change of dynamic subgroups on points
@@ -42,7 +42,7 @@ variable [Semiring H] [Bialgebra R H]
 identification of the scalar-extended Laurent coordinate algebra. -/
 noncomputable def baseChangeCocharacter (l : H →ₐc[R] LaurentPolynomial R) :
     S ⊗[R] H →ₐc[S] LaurentPolynomial S :=
-  (AddMonoidAlgebra.scalarTensorBialgEquiv R S (M := ℤ)).toBialgHom.comp
+  (AddMonoidAlgebra.scalarTensorBialgEquiv R S (G := ℤ)).toBialgHom.comp
     (_root_.Bialgebra.TensorProduct.map (BialgHom.id S S) l)
 
 /-- The base-changed cocharacter on a pure tensor. -/

@@ -164,7 +164,7 @@ theorem IsLowestDominant.of_isUnit_mul {u : PowerSeries.IsRestricted.subring (R 
   let _ : Nontrivial R := nontrivial_of_ne _ _ h.coeff_ne_zero
   obtain ⟨v, hv, hvg⟩ := exists_isUnit_mul_mul_eq (g := g) hu
   have hv0 := isDistinguished_zero_of_isUnit hc hv
-  have hl := hv0.isLowestDominant_zero.mul h hc hv0.hasGaussNorm h.hasGaussNorm (norm_mul _ _)
+  have hl := hv0.isLowestDominant_zero.mul h hc (norm_mul _ _)
   rwa [zero_add, hvg] at hl
 
 /-- If `f` is distinguished of degree `s` at a positive radius `c`, `u` is a unit of the ring of

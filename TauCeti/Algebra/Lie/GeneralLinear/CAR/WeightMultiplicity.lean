@@ -430,7 +430,7 @@ private theorem glHalfStaircase_weightSpace_eq_commonFixed
 `2 ^ (N * (N + 1) / 2)`. -/
 @[simp]
 theorem finrank_weightSpace_glHalfStaircase_car
-    {K : Type*} [Field K] [CharZero K] [Invertible (2 : K)] (N : ℕ) :
+    {K : Type*} [Field K] [CharZero K] (N : ℕ) :
     finrank K (LieModule.weightSpace
       (CliffordAlgebra (traceQuadraticForm K (Fin N)))
       ((glWeightEquiv K (Fin N) (glHalfStaircase K N) :

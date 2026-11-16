@@ -101,8 +101,6 @@ theorem isPrime_topologicallyNilpotentIdeal_of_supSeminorm_mul [Nontrivial A]
     (hA : IsAffinoidAlgebra K A)
     (h : ∀ f g : A, supSeminorm K (f * g) = supSeminorm K f * supSeminorm K g) :
     (Huber.topologicallyNilpotentIdeal A).IsPrime := by
-  have hle (u : Huber.powerBoundedSubring A) : supSeminorm K (u : A) ≤ 1 :=
-    hA.isPowerBounded_iff_supSeminorm_le_one.mp (Huber.mem_powerBoundedSubring.mp u.2)
   refine Ideal.isPrime_iff.mpr ⟨fun htop ↦ ?_, fun {u v} huv ↦ ?_⟩
   · have := hA.mem_topologicallyNilpotentIdeal_iff_supSeminorm_lt_one.mp
       ((Ideal.eq_top_iff_one _).mp htop)

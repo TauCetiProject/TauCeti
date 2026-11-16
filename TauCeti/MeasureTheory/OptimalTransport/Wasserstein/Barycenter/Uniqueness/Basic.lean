@@ -95,7 +95,7 @@ theorem subsingleton_frechetBarycenters (hp : p ≠ ∞) {P : Measure (Wasserste
     fun m ↦ 2⁻¹ * edist m ν₀ ^ p.toReal + 2⁻¹ * edist m ν₁ ^ p.toReal
   have hgf (m : WassersteinSpace p X) : g m ≤ f m := by
     simp only [g, f, edist_def, hν]
-    exact wassersteinEDist_smul_add_smul_rpow_le measurable_edist hp0 hp
+    exact wassersteinEDist_smul_add_smul_rpow_le measurable_edist
       ENNReal.inv_two_add_inv_two _ _ _
   have hintf : ∫⁻ m, f m ∂P = frechetPower p P ν₀ := by
     rw [lintegral_add_left ((hm' ν₀).const_mul _), lintegral_const_mul _ (hm' ν₀),

@@ -189,7 +189,7 @@ instance (n : ℕ) : Finite (Arity n) :=
 noncomputable instance (n : ℕ) : Fintype (Arity n) := Fintype.ofFinite _
 
 instance : IsEmpty (Arity 0) :=
-  ⟨fun t ↦ by have h := t.val.numLeaves_pos; have ht := t.property; omega⟩
+  ⟨fun t ↦ (ne_of_gt t.val.numLeaves_pos) t.property⟩
 
 /-- The single leaf is the unique tree of arity one. -/
 instance : Unique (Arity 1) where

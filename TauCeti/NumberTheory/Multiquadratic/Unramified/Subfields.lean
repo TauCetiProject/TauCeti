@@ -61,12 +61,11 @@ In the namespace `TauCeti.Multiquadratic`:
 
 ## Provenance
 
-Independently reconstructed. The multiquadratic roadmap designates
+Independently reconstructed. The multiquadratic square-class machinery migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance) (the formalization of
-L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture) as the migration
-source for its Layer-0 square-class machinery — `sqrtTower`, `mem_sup_adjoin_sq`,
-`squareClass_of_sqrt_mem`, `sqrtTower_finrank`, `exists_transversal_family` and
-`units_sq_index_le` — and none of that is used here: this file is inertia theory over the Galois
+L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture) — `sqrtTower`,
+`mem_sup_adjoin_sq`, `squareClass_of_sqrt_mem`, `sqrtTower_finrank`, `exists_transversal_family`
+and `units_sq_index_le` — is not used here: this file is inertia theory over the Galois
 group of `M / ℚ`, resting on Mathlib's `Ideal.inertia` and on
 `TauCeti/NumberTheory/NumberField/Inertia.lean`.
 -/

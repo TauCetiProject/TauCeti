@@ -62,6 +62,8 @@ faithfulness of precomposition with the quotient functor — applies to `C/I` un
 * `⊤` and `⊥`: the ideal of all morphisms and the zero ideal, the top and bottom of the order.
 * `TauCeti.MorphismIdeal.isZero_quotientFunctor_obj_iff`: an object becomes zero in `C/I` exactly
   when its identity belongs to `I`.
+* `TauCeti.MorphismIdeal.not_isIso_of_mem`: an ideal not containing `𝟙 X` contains no isomorphism
+  out of `X`.
 * `TauCeti.MorphismIdeal.isIso_quotientFunctor_map_iff`: a morphism becomes invertible in `C/I`
   exactly when it admits a two-sided inverse modulo `I`.
 
@@ -285,6 +287,10 @@ theorem isIso_quotientFunctor_map_iff {X Y : C} (f : X ⟶ Y) :
       exact I.quotientFunctor_map_eq_iff.mpr hfg
     · rw [← I.quotientFunctor.map_comp, ← I.quotientFunctor.map_id]
       exact I.quotientFunctor_map_eq_iff.mpr hgf
+
+/-- An ideal not containing the identity of `X` contains no isomorphism out of `X`. -/
+theorem not_isIso_of_mem {X Y : C} (hX : 𝟙 X ∉ I.hom X X) {f : X ⟶ Y} (hf : f ∈ I.hom X Y) :
+    ¬ IsIso f := fun _ ↦ hX (by simpa using I.comp_mem_right (inv f) hf)
 
 /-- Every ideal is the kernel of its quotient functor. -/
 @[simp]

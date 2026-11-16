@@ -13,9 +13,8 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 This file extends the API for `TauCeti.IsCompletelyMonotoneOnIoi`, the ordinary-derivative
 version of complete monotonicity on `(0, ∞)`, with the multiplicative and differential closure
-properties needed by the Bernstein-function part of the one-parameter-semigroups roadmap, and
-derives the corresponding multiplicative closure for the closed-half-line predicate
-`TauCeti.IsContinuousCompletelyMonotoneOnIoi`.
+properties needed for Bernstein functions, and derives the corresponding multiplicative closure
+for the closed-half-line predicate `TauCeti.IsContinuousCompletelyMonotoneOnIoi`.
 
 The closed-half-line predicate `TauCeti.IsCompletelyMonotone` already has product and
 negated-derivative closure in `TauCeti.Analysis.CompletelyMonotone.Closure`. The open version is

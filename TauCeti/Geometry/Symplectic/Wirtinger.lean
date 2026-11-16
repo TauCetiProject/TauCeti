@@ -247,7 +247,7 @@ theorem Compatible.two_mul_wedgeNorm_le (h : ω.Compatible J) (v w : V) :
   have hsum := add_nonneg (h.associatedBilinForm_self_nonneg v)
     (h.associatedBilinForm_self_nonneg w)
   have hx := ω.wedgeNorm_nonneg J v w
-  nlinarith [sq_nonneg (ω.associatedBilinForm J v v - ω.associatedBilinForm J w w),
+  nlinarith [hx, sq_nonneg (ω.associatedBilinForm J v v - ω.associatedBilinForm J w w),
     sq_nonneg (ω.associatedBilinForm J v w)]
 
 /-- The equality case of `2 |v ∧ w|_g ≤ g(v, v) + g(w, w)`: it holds exactly for conformal pairs,
