@@ -44,6 +44,53 @@ noncomputable section
 
 open Set
 
+namespace TauCeti
+
+/-- Coplanar commutation transfers to the image wall family under an injective affine map. -/
+theorem commute_of_affineSpan_image_eq {V U ι G : Type*} [AddCommGroup V] [Module ℝ V]
+    [AddCommGroup U] [Module ℝ U] [Mul G] {W : ι → Set V} (label : ι → G)
+    (hcomm : ∀ i j, affineSpan ℝ (W i) = affineSpan ℝ (W j) → Commute (label i) (label j))
+    {f : V →ᵃ[ℝ] U} (hf : Function.Injective f) {i j : ι}
+    (hij : affineSpan ℝ (f '' W i) = affineSpan ℝ (f '' W j)) :
+    Commute (label i) (label j) := by
+  refine hcomm i j ((AffineSubspace.gciMapComap hf).l_injective ?_)
+  rwa [AffineSubspace.map_span, AffineSubspace.map_span]
+
+end TauCeti
+
+namespace ContinuousAffineEquiv
+
+/-- Coplanar commutation transfers to the image wall family under a continuous affine
+equivalence. -/
+theorem commute_of_affineSpan_image_eq {V U ι G : Type*}
+    [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+    [AddCommGroup U] [Module ℝ U] [TopologicalSpace U] [Mul G] {W : ι → Set V}
+    (e : V ≃ᴬ[ℝ] U) (label : ι → G)
+    (hcomm : ∀ i j, affineSpan ℝ (W i) = affineSpan ℝ (W j) → Commute (label i) (label j))
+    {i j : ι} (hij : affineSpan ℝ (e '' W i) = affineSpan ℝ (e '' W j)) :
+    Commute (label i) (label j) := by
+  have hfeq : (e.toAffineEquiv.toAffineMap : V → U) = e := by
+    rw [AffineEquiv.coe_toAffineMap, e.coe_coe]
+  rw [← hfeq] at hij
+  exact TauCeti.commute_of_affineSpan_image_eq label hcomm (hfeq.symm ▸ e.injective) hij
+
+/-- Coplanar commutation transfers along a continuous affine equivalence and a wall bijection. -/
+theorem commute_of_affineSpan_reindex_eq {V U ι ι' G : Type*}
+    [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+    [AddCommGroup U] [Module ℝ U] [TopologicalSpace U] [Mul G]
+    {W : ι → Set V} {W' : ι' → Set U}
+    (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i)
+    (label : ι → G)
+    (hcomm : ∀ i j, affineSpan ℝ (W i) = affineSpan ℝ (W j) → Commute (label i) (label j))
+    {i' j' : ι'} (hij : affineSpan ℝ (W' i') = affineSpan ℝ (W' j')) :
+    Commute ((label ∘ r.symm) i') ((label ∘ r.symm) j') := by
+  obtain ⟨i, rfl⟩ := r.surjective i'
+  obtain ⟨j, rfl⟩ := r.surjective j'
+  rw [hW i, hW j] at hij
+  simpa using e.commute_of_affineSpan_image_eq label hcomm hij
+
+end ContinuousAffineEquiv
+
 namespace TauCeti.WallComplement
 
 variable {V ι G K : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [Finite ι]
@@ -240,7 +287,7 @@ theorem map_segmentPathProduct (f : G →* K) (e : x ⟶ y) :
   simp only [segmentPathProduct, map_list_prod, List.map_map, Function.comp_def,
     map_crossingEventProduct]
 
-/-- Reversal inverts segment transport, including simultaneous crossings. -/
+/-- Reversing a segment inverts segment transport, including simultaneous crossings. -/
 @[simp]
 theorem segmentPathProduct_reverse
     (hν : ∀ i, LinearMap.ker (ν i) = (affineSpan ℝ (W i)).direction)
@@ -251,6 +298,71 @@ theorem segmentPathProduct_reverse
     List.reverse_reverse, List.map_map, Function.comp_def,
     crossingEventProduct_reverse ν label hcomm hν,
     sub_sub_cancel, List.prod_inv_reverse]
+
+/-- Continuous affine coordinate transport together with a wall-index equivalence `r : ι ≃ ι'`
+preserves each simultaneous crossing-event product under pushed-forward coorientations and
+reindexed labels. -/
+theorem crossingEventProduct_mapReindex {U ι' : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    [Finite ι'] {W' : ι' → Set U} (a : x ⟶ y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
+    (hW : ∀ i, W' (r i) = e '' W i)
+    {hcomm' : ∀ i' j', affineSpan ℝ (W' i') = affineSpan ℝ (W' j') →
+      Commute ((label ∘ r.symm) i') ((label ∘ r.symm) j')}
+    (b : x.mapReindex e r hW ⟶ y.mapReindex e r hW) (t : ℝ) :
+    crossingEventProduct (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap)
+        (label ∘ r.symm) hcomm' b t =
+      crossingEventProduct ν label hcomm a t := by
+  let S := signedCrossingEvent ν x y t
+  let f : ι' × ℤ → G := fun c => (label ∘ r.symm) c.1 ^ c.2
+  let emb := (Equiv.prodCongr r (Equiv.refl ℤ)).toEmbedding
+  have hc' : (S.map emb : Set (ι' × ℤ)).Pairwise (fun c d => Commute (f c) (f d)) := by
+    rw [← signedCrossingEvent_mapReindex ν x y e r hW t]
+    exact signedCrossingEvent_pairwise _ (label ∘ r.symm) hcomm' b t
+  calc
+    _ = (S.map emb).noncommProd f hc' :=
+      Finset.noncommProd_congr (signedCrossingEvent_mapReindex ν x y e r hW t) (fun _ _ => rfl) _
+    _ = S.noncommProd (fun c => f (emb c)) _ :=
+      Finset.noncommProd_map S emb f hc'
+    _ = _ := by
+      refine Finset.noncommProd_congr rfl (fun c _ => ?_) _
+      simp [f, emb]
+
+/-- Continuous affine coordinate transport together with a wall-index equivalence `r : ι ≃ ι'`
+preserves segment transport under pushed-forward coorientations and reindexed labels. -/
+theorem segmentPathProduct_mapReindex {U ι' : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    [Finite ι'] {W' : ι' → Set U} (a : x ⟶ y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
+    (hW : ∀ i, W' (r i) = e '' W i)
+    {hcomm' : ∀ i' j', affineSpan ℝ (W' i') = affineSpan ℝ (W' j') →
+      Commute ((label ∘ r.symm) i') ((label ∘ r.symm) j')}
+    (b : x.mapReindex e r hW ⟶ y.mapReindex e r hW) :
+    segmentPathProduct (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap)
+        (label ∘ r.symm) hcomm' b =
+      segmentPathProduct ν label hcomm a := by
+  rw [segmentPathProduct_def, segmentPathProduct_def, orderedCrossingTimes_mapReindex a e r hW b,
+    funext (crossingEventProduct_mapReindex ν label hcomm a e r hW b)]
+
+/-- Continuous affine coordinate transport preserves each simultaneous crossing-event product under
+pushed-forward coorientations. -/
+theorem crossingEventProduct_map {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    (a : x ⟶ y) (e : V ≃ᴬ[ℝ] U)
+    {hcomm' : ∀ i j, affineSpan ℝ (e '' W i) = affineSpan ℝ (e '' W j) →
+      Commute (label i) (label j)}
+    (b : x.map e ⟶ y.map e) (t : ℝ) :
+    crossingEventProduct (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap)
+        label hcomm' b t =
+      crossingEventProduct ν label hcomm a t :=
+  crossingEventProduct_mapReindex ν label hcomm a e (Equiv.refl ι) (fun _ => rfl) b t
+
+/-- Continuous affine coordinate transport preserves segment transport under pushed-forward
+coorientations. -/
+theorem segmentPathProduct_map {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    (a : x ⟶ y) (e : V ≃ᴬ[ℝ] U)
+    {hcomm' : ∀ i j, affineSpan ℝ (e '' W i) = affineSpan ℝ (e '' W j) →
+      Commute (label i) (label j)}
+    (b : x.map e ⟶ y.map e) :
+    segmentPathProduct (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap)
+        label hcomm' b =
+      segmentPathProduct ν label hcomm a :=
+  segmentPathProduct_mapReindex ν label hcomm a e (Equiv.refl ι) (fun _ => rfl) b
 
 end TauCeti.WallComplement
 
@@ -456,35 +568,36 @@ theorem IsSubdivision.wallPathProduct_eq {p q : AdmissiblePLPath x y} (h : IsSub
     p.wallPathProduct ν label hcomm = q.wallPathProduct ν label hcomm :=
   wallPathProduct_eq_of_signedCrossingEvents_eq ν label hcomm p q (h.signedCrossingEvents_eq ν)
 
-omit [Finite ι] in
-include hcomm in
-/-- Coplanar commutation transfers to the image wall family under a continuous affine
-equivalence. -/
-theorem commute_of_affineSpan_image_eq {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
-    (e : V ≃ᴬ[ℝ] U) {i j : ι}
-    (hij : affineSpan ℝ (e '' W i) = affineSpan ℝ (e '' W j)) :
-    Commute (label i) (label j) := by
-  refine hcomm i j ?_
-  have hcoe : (e.toAffineEquiv.toAffineMap : V → U) = e := rfl
-  have hmap (k : ι) : affineSpan ℝ (e '' W k) =
-      (affineSpan ℝ (W k)).map e.toAffineEquiv.toAffineMap := by
-    rw [← hcoe, AffineSubspace.map_span]
-  rw [hmap, hmap] at hij
-  have hid : e.toAffineEquiv.symm.toAffineMap.comp e.toAffineEquiv.toAffineMap =
-      AffineMap.id ℝ V := by ext x; simp
-  have hinv := congrArg (AffineSubspace.map e.toAffineEquiv.symm.toAffineMap) hij
-  simpa only [AffineSubspace.map_map, hid, AffineSubspace.map_id] using hinv
+/-- Transporting an admissible polygonal path along a continuous affine equivalence `e` and a
+wall-index equivalence `r : ι ≃ ι'` preserves its wall-crossing product under pushed-forward
+coorientations and reindexed labels. -/
+@[simp]
+theorem wallPathProduct_affineMapReindex {U ι' : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    [Finite ι'] {W' : ι' → Set U} (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
+    (hW : ∀ i, W' (r i) = e '' W i)
+    {hcomm' : ∀ i' j', affineSpan ℝ (W' i') = affineSpan ℝ (W' j') →
+      Commute ((label ∘ r.symm) i') ((label ∘ r.symm) j')} :
+    (p.affineMapReindex e r hW).wallPathProduct
+        (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap)
+        (label ∘ r.symm) hcomm' =
+      p.wallPathProduct ν label hcomm := by
+  induction p with
+  | nil => simp
+  | cons p a ih =>
+    simp [ih, segmentPathProduct_mapReindex ν label hcomm a e r hW]
 
 /-- Transporting an admissible polygonal path along a continuous affine equivalence preserves
 its wall-crossing product under pushed-forward coorientations. -/
 @[simp]
 theorem wallPathProduct_affineMap {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
-    (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) :
+    (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U)
+    {hcomm' : ∀ i j, affineSpan ℝ (e '' W i) = affineSpan ℝ (e '' W j) →
+      Commute (label i) (label j)} :
     (p.affineMap e).wallPathProduct
-        (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap) label
-        (fun _ _ => commute_of_affineSpan_image_eq label hcomm e) =
+        (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap) label hcomm' =
       p.wallPathProduct ν label hcomm := by
-  rw [wallPathProduct_eq_prod_signedCrossingEvents,
-    wallPathProduct_eq_prod_signedCrossingEvents, signedCrossingEvents_affineMap]
+  rw [← affineMapReindex_refl]
+  exact wallPathProduct_affineMapReindex (W' := fun i => e '' W i)
+    ν label hcomm p e (Equiv.refl ι) (fun _ => rfl) (hcomm' := hcomm')
 
 end Quiver.Path

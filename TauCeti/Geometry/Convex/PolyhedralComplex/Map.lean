@@ -164,6 +164,18 @@ noncomputable abbrev wallsEquiv (C : FinitePolyhedralComplex h)
     C.walls ≃ (C.image e).walls :=
   C.cellsOfCodimensionEquiv e 1
 
+-- Not `@[simp]`: `wallsEquiv` is reducible, so `coe_cellsOfCodimensionEquiv_apply` already
+-- simplifies the LHS.
+/-- `wallsEquiv` acts on underlying sets as the image under `e`. -/
+theorem coe_wallsEquiv_apply (C : FinitePolyhedralComplex h)
+    (e : Toric.IntegralAffineEquiv h h') (w : C.walls) :
+    (C.wallsEquiv e w : Set W) = e '' (w : Set V) := (rfl)
+
+/-- `(wallsEquiv e).symm` acts on underlying sets as the image under `e.symm`. -/
+theorem coe_wallsEquiv_symm_apply (C : FinitePolyhedralComplex h)
+    (e : Toric.IntegralAffineEquiv h h') (w : (C.image e).walls) :
+    ((C.wallsEquiv e).symm w : Set V) = e.symm '' (w : Set W) := (rfl)
+
 end FinitePolyhedralComplex
 
 end TauCeti

@@ -170,13 +170,24 @@ theorem orderedCrossingTimes_subdivide {z : WallComplement W}
     · exact ⟨i, ((mem_crossings_subdivide_left hz ⟨ht.1, ht.2.le⟩ i s).mp hs).1⟩
     · exact ⟨i, ((mem_crossings_subdivide_right hz ⟨ht.1.le, ht.2⟩ i s).mp hs).1⟩
 
-/-- Continuous affine coordinate transport preserves the ordered crossing times of a segment. -/
-theorem orderedCrossingTimes_map {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
-    (a : x ⟶ y) (e : V ≃ᴬ[ℝ] U) (b : x.map e ⟶ y.map e) :
+/-- Continuous affine coordinate transport together with a wall-index equivalence `r : ι ≃ ι'`
+preserves the ordered crossing times of a segment. -/
+theorem orderedCrossingTimes_mapReindex {U ι' : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    [Finite ι'] {W' : ι' → Set U} (a : x ⟶ y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
+    (hW : ∀ i, W' (r i) = e '' W i) (b : x.mapReindex e r hW ⟶ y.mapReindex e r hW) :
     orderedCrossingTimes b = orderedCrossingTimes a := by
   refine (pairwise_orderedCrossingTimes b).eq_of_mem_iff (pairwise_orderedCrossingTimes a)
     fun t => ?_
-  simp [crossings_map]
+  simp only [mem_orderedCrossingTimes]
+  exact ⟨fun ⟨i', hi'⟩ => ⟨r.symm i', (mem_crossings_mapReindex x y e r hW _ t).mp
+      (by simpa using hi')⟩,
+    fun ⟨i, hi⟩ => ⟨r i, (mem_crossings_mapReindex x y e r hW i t).mpr hi⟩⟩
+
+/-- Continuous affine coordinate transport preserves the ordered crossing times of a segment. -/
+theorem orderedCrossingTimes_map {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    (a : x ⟶ y) (e : V ≃ᴬ[ℝ] U) (b : x.map e ⟶ y.map e) :
+    orderedCrossingTimes b = orderedCrossingTimes a :=
+  orderedCrossingTimes_mapReindex a e (Equiv.refl ι) (fun _ => rfl) b
 
 variable (ν : ι → V →ₗ[ℝ] ℝ)
 
@@ -345,6 +356,27 @@ theorem segmentCrossingEvents_subdivide {z : WallComplement W}
     exact signedCrossingEvent_subdivide_right ν hz ⟨ht.1.le, ht.2⟩
       (mem_Ioo_of_mem_orderedCrossingTimes e₂ hs).1.le
 
+/-- Continuous affine coordinate transport together with a wall-index equivalence `r : ι ≃ ι'`
+maps each signed crossing event along `Equiv.prodCongr r (Equiv.refl ℤ)` when coorientations are
+pushed forward along the linear part. -/
+@[simp]
+theorem signedCrossingEvent_mapReindex {U ι' : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    [Finite ι'] {W' : ι' → Set U} (x y : WallComplement W) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
+    (hW : ∀ i, W' (r i) = e '' W i) (t : ℝ) :
+    signedCrossingEvent
+        (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap)
+        (x.mapReindex e r hW) (y.mapReindex e r hW) t =
+      (signedCrossingEvent ν x y t).map
+        (Equiv.prodCongr r (Equiv.refl ℤ)).toEmbedding := by
+  ext ⟨i', s⟩
+  obtain ⟨i, rfl⟩ := r.surjective i'
+  simp only [Finset.mem_map, Prod.exists, Equiv.toEmbedding_apply, Equiv.prodCongr_apply,
+    Prod.map_apply, Equiv.refl_apply, Prod.mk.injEq, mem_signedCrossingEvent,
+    mem_crossings_mapReindex, Equiv.symm_apply_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_coe, e.linear_symm_apply_sub]
+  exact ⟨fun h => ⟨i, s, h, rfl, rfl⟩,
+    fun ⟨j, _, hm, hij, rfl⟩ => r.injective hij ▸ hm⟩
+
 /-- Continuous affine coordinate transport preserves each signed crossing event when the
 coorientations are pushed forward along the linear part. -/
 @[simp]
@@ -353,21 +385,27 @@ theorem signedCrossingEvent_map {U : Type*} [NormedAddCommGroup U] [NormedSpace 
     signedCrossingEvent (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap)
         (x.map e) (y.map e) t =
       signedCrossingEvent ν x y t := by
-  ext ⟨i, s⟩
-  have hv₀ : e.toAffineEquiv.linear (y.val - x.val) = e y.val - e x.val :=
-    e.toAffineEquiv.toAffineMap.linear_apply_vsub _ _
-  have hv : e.toAffineEquiv.linear.symm ((y.map e).val - (x.map e).val) = y.val - x.val := by
-    rw [map_val, map_val, ← hv₀]
-    exact e.toAffineEquiv.linear.symm_apply_apply _
-  simp [crossings_map, hv]
+  simpa using signedCrossingEvent_mapReindex ν x y e (Equiv.refl ι) (fun _ => rfl) t
+
+/-- Continuous affine coordinate transport together with a wall-index equivalence `r : ι ≃ ι'`
+maps a segment's signed crossing event list along `Equiv.prodCongr r (Equiv.refl ℤ)`. -/
+theorem segmentCrossingEvents_mapReindex {U ι' : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    [Finite ι'] {W' : ι' → Set U} (a : x ⟶ y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
+    (hW : ∀ i, W' (r i) = e '' W i) (b : x.mapReindex e r hW ⟶ y.mapReindex e r hW) :
+    segmentCrossingEvents
+        (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap) b =
+      (segmentCrossingEvents ν a).map
+        (fun S => S.map (Equiv.prodCongr r (Equiv.refl ℤ)).toEmbedding) := by
+  rw [segmentCrossingEvents_def, segmentCrossingEvents_def,
+    orderedCrossingTimes_mapReindex a e r hW b, List.map_map]
+  exact List.map_congr_left fun t _ => signedCrossingEvent_mapReindex ν x y e r hW t
 
 /-- Continuous affine coordinate transport preserves a segment's signed crossing event list. -/
 theorem segmentCrossingEvents_map {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
     (a : x ⟶ y) (e : V ≃ᴬ[ℝ] U) (b : x.map e ⟶ y.map e) :
     segmentCrossingEvents (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap) b =
       segmentCrossingEvents ν a := by
-  rw [segmentCrossingEvents_def, segmentCrossingEvents_def, orderedCrossingTimes_map a e b]
-  exact List.map_congr_left fun t _ => signedCrossingEvent_map ν x y e t
+  simpa using segmentCrossingEvents_mapReindex ν a e (Equiv.refl ι) (fun _ => rfl) b
 
 end TauCeti.WallComplement
 
@@ -471,6 +509,22 @@ theorem IsSubdivision.signedCrossingEvents_eq (ν : ι → V →ₗ[ℝ] ℝ)
   | comp _ _ ihp ihq => simp [ihp, ihq]
   | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
 
+/-- Transporting an admissible polygonal path along a continuous affine equivalence `e` and a
+wall-index equivalence `r : ι ≃ ι'` maps its signed crossing events along
+`Equiv.prodCongr r (Equiv.refl ℤ)` under pushed-forward coorientations. -/
+@[simp]
+theorem signedCrossingEvents_affineMapReindex {U ι' : Type*}
+    [NormedAddCommGroup U] [NormedSpace ℝ U] [Finite ι'] {W' : ι' → Set U}
+    (ν : ι → V →ₗ[ℝ] ℝ) (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
+    (hW : ∀ i, W' (r i) = e '' W i) :
+    (p.affineMapReindex e r hW).signedCrossingEvents
+        (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap) =
+      (p.signedCrossingEvents ν).map
+        (fun S => S.map (Equiv.prodCongr r (Equiv.refl ℤ)).toEmbedding) := by
+  induction p with
+  | nil => simp
+  | cons p a ih => simp [ih, segmentCrossingEvents_mapReindex ν a e r hW]
+
 /-- Transporting an admissible polygonal path along a continuous affine equivalence preserves
 its signed crossing events under pushed-forward coorientations. -/
 @[simp]
@@ -479,8 +533,8 @@ theorem signedCrossingEvents_affineMap {U : Type*} [NormedAddCommGroup U] [Norme
     (p.affineMap e).signedCrossingEvents
         (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap) =
       p.signedCrossingEvents ν := by
-  induction p with
-  | nil => simp
-  | cons p a ih => simp [ih, segmentCrossingEvents_map ν a e]
+  rw [← affineMapReindex_refl]
+  simpa using signedCrossingEvents_affineMapReindex (W' := fun i => e '' W i)
+    ν p e (Equiv.refl ι) (fun _ => rfl)
 
 end Quiver.Path

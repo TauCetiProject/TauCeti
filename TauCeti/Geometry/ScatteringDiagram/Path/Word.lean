@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Antigravity (Gemini 4 Carbon)
+Authors: Codex, Antigravity (Gemini 4 Carbon)
 -/
 module
 
@@ -21,22 +21,38 @@ carries a well-defined `crossingWord` in `FreeGroup ι`. Following the left-acti
 `WallComplement.signedCrossingEvent`, the first crossing stands rightmost and a positive normal
 velocity contributes the inverse generator `(FreeGroup.of i)⁻¹`.
 
-Every `wallPathProduct` with coplanar-commuting labels in a group `G` factors uniquely through
-`crossingWord` via `FreeGroup.lift` (`lift_crossingWord_eq_wallPathProduct`). The crossing word is
-multiplicative in reverse order under concatenation, inverted by path reversal, invariant under
-positive rescaling of coorientations and under path subdivision (`IsSubdivision.crossingWord_eq`),
-mapped by `FreeGroup.lift` killing deleted walls when restricting to an injectively indexed
-subfamily (`crossingWord_restrictWalls`), and mapped by `FreeGroup.map` along a wall-index
-equivalence under continuous affine coordinate transport (`crossingWord_affineMapReindex`).
+Every `wallPathProduct` with coplanar-commuting labels in a group `G` factors through
+`crossingWord` via `FreeGroup.lift label` (`lift_crossingWord_eq_wallPathProduct`). The crossing
+word is multiplicative in reverse order under concatenation, inverted by path reversal, invariant
+under positive rescaling of coorientations and under path subdivision
+(`IsSubdivision.crossingWord_eq`), mapped by `FreeGroup.lift` killing deleted walls when
+restricting to an injectively indexed subfamily (`crossingWord_restrictPrefunctor`), and mapped by
+`FreeGroup.map` along a wall-index equivalence under continuous affine coordinate transport
+(`crossingWord_affineMapReindex`).
 
-Specialization to the walls of a `FinitePolyhedralComplex` and worked examples are developed in
-`TauCeti.Geometry.ScatteringDiagram.Path.Polyhedral`.
+Specialization to the walls of a `FinitePolyhedralComplex` is developed in
+`TauCeti.Geometry.ScatteringDiagram.Path.Polyhedral`, and worked examples are in
+`TauCeti.Examples.Geometry.ScatteringDiagram.Path.Word`.
 
 ## References
 
-* M. Kontsevich and Y. Soibelman, *Affine structures and non-Archimedean analytic spaces*, §2.2.
+* M. Kontsevich and Y. Soibelman, *Wall-crossing structures in Donaldson–Thomas invariants,
+  integrable systems and Mirror Symmetry*, §2.1.
 * M. Gross, *Tropical Geometry and Mirror Symmetry*, §6.2.
 * T. Bridgeland, *Scattering diagrams, Hall algebras and stability conditions*, §2.3.
+
+## Attribution
+
+The `crossingEventWord`, `segmentCrossingWord`, and `crossingWord` API closely adapts
+`TauCeti/Geometry/ScatteringDiagram/Path/Product.lean`,
+`TauCeti/Geometry/ScatteringDiagram/Path/Basic.lean`, and
+`TauCeti/Geometry/ScatteringDiagram/Path/Affine.lean`, which were ported from
+`Mei/Geometry/Convex/Polyhedron/Path/Product.lean`,
+`Mei/Geometry/Convex/Polyhedron/AdmissiblePath.lean`, and
+`Mei/Geometry/Convex/Polyhedron/AffinePath.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei) at commits
+`9cf969cdee9748087aae45dbf4888a130890655c` and `a79c57178cc83666fc244ca6e6eeaa722e9b8bc7`
+(Apache 2.0; original copyright (c) 2026 Mei contributors, original author Codex).
 -/
 
 public section
@@ -44,6 +60,37 @@ public section
 noncomputable section
 
 open Set
+
+namespace TauCeti
+
+/-- Generator map for wall deletion along `f : κ → ι`: sends each `i ∈ Set.range f` to
+`FreeGroup.of` of a chosen preimage (hence sending `f j` to `FreeGroup.of j` when `f` is injective)
+and every index outside `Set.range f` to `1`. -/
+def deleteWallsMap {ι κ : Type*} (f : κ → ι) (i : ι) : FreeGroup κ :=
+  open scoped Classical in
+  if hi : i ∈ Set.range f then FreeGroup.of hi.choose else 1
+
+open Classical in
+/-- Unfold `deleteWallsMap` as a classical `dite` over membership in `Set.range f`. -/
+theorem deleteWallsMap_def {ι κ : Type*} (f : κ → ι) (i : ι) :
+    deleteWallsMap f i = if hi : i ∈ Set.range f then FreeGroup.of hi.choose else 1 := (rfl)
+
+/-- When `f` is injective, `deleteWallsMap f` sends each `f j` to `FreeGroup.of j`. -/
+@[simp]
+theorem deleteWallsMap_apply_of_injective {ι κ : Type*} {f : κ → ι} (hf : Function.Injective f)
+    (j : κ) : deleteWallsMap f (f j) = FreeGroup.of j := by
+  unfold deleteWallsMap
+  split_ifs with hj
+  · exact congrArg FreeGroup.of (hf hj.choose_spec)
+  · exact (hj ⟨j, rfl⟩).elim
+
+/-- `deleteWallsMap f` sends every index outside `Set.range f` to `1`. -/
+@[simp]
+theorem deleteWallsMap_apply_of_notMem {ι κ : Type*} (f : κ → ι) {i : ι} (hi : i ∉ Set.range f) :
+    deleteWallsMap f i = 1 := by
+  simp [deleteWallsMap, hi]
+
+end TauCeti
 
 namespace TauCeti.WallComplement
 
@@ -109,13 +156,13 @@ theorem card_signedCrossingEvent_eq_one (ν : ι → V →ₗ[ℝ] ℝ) (e : x �
 
 /-- Pairwise commutation on a signed crossing event holds vacuously when walls have pairwise
 disjoint intrinsic interiors. -/
-theorem signedCrossingEvent_pairwise_of_disjoint {G : Type*} [Group G] (ν : ι → V →ₗ[ℝ] ℝ)
+theorem signedCrossingEvent_pairwise_of_disjoint {G : Type*} [Mul G] (ν : ι → V →ₗ[ℝ] ℝ)
     (e : x ⟶ y)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     (f : ι × ℤ → G) (t : ℝ) :
     (signedCrossingEvent ν x y t : Set (ι × ℤ)).Pairwise
       (fun a b => Commute (f a) (f b)) :=
-  fun _ ha _ hb hab => (hab (subsingleton_signedCrossingEvent ν e hdisj t ha hb)).elim
+  (subsingleton_signedCrossingEvent ν e hdisj t).pairwise _
 
 /-- The free-group generator (or inverse) contributed at affine parameter `t` on an admissible
 segment across an interior-disjoint wall family. -/
@@ -124,6 +171,15 @@ def crossingEventWord (ν : ι → V →ₗ[ℝ] ℝ)
     (e : x ⟶ y) (t : ℝ) : FreeGroup ι :=
   (signedCrossingEvent ν x y t).noncommProd (fun a => FreeGroup.of a.1 ^ a.2)
     (signedCrossingEvent_pairwise_of_disjoint ν e hdisj _ t)
+
+/-- `crossingEventWord` is the `Finset.noncommProd` of signed generators over
+`signedCrossingEvent`. -/
+theorem crossingEventWord_def (ν : ι → V →ₗ[ℝ] ℝ)
+    (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
+    (e : x ⟶ y) (t : ℝ) :
+    crossingEventWord ν hdisj e t =
+      (signedCrossingEvent ν x y t).noncommProd (fun a => FreeGroup.of a.1 ^ a.2)
+        (signedCrossingEvent_pairwise_of_disjoint ν e hdisj _ t) := (rfl)
 
 @[simp]
 theorem crossingEventWord_empty (ν : ι → V →ₗ[ℝ] ℝ)
@@ -195,12 +251,25 @@ theorem crossingEventWord_reverse (ν : ι → V →ₗ[ℝ] ℝ)
         Prod.map_snd, Equiv.refl_apply, Equiv.neg_apply, zpow_neg, crossingEventWord, S] using
         Finset.noncommProd_inv S f hc
 
+/-- Lifting `crossingEventWord` along any coplanar-commuting label assignment recovers
+`crossingEventProduct`. -/
+theorem lift_crossingEventWord_eq_crossingEventProduct {G : Type*} [Group G] (ν : ι → V →ₗ[ℝ] ℝ)
+    (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
+    (label : ι → G)
+    (hcomm : ∀ i j, affineSpan ℝ (W i) = affineSpan ℝ (W j) → Commute (label i) (label j))
+    (e : x ⟶ y) (t : ℝ) :
+    FreeGroup.lift label (crossingEventWord ν hdisj e t) =
+      crossingEventProduct ν label hcomm e t := by
+  rw [crossingEventWord_def, Finset.map_noncommProd, crossingEventProduct_eq_noncommProd]
+  exact Finset.noncommProd_congr rfl (fun a _ => by simp) _
+
 /-- The free-group word of an admissible segment, with the first crossing rightmost. -/
 def segmentCrossingWord (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     (e : x ⟶ y) : FreeGroup ι :=
   ((orderedCrossingTimes e).reverse.map (crossingEventWord ν hdisj e)).prod
 
+/-- `segmentCrossingWord` is the reverse-time list product of `crossingEventWord`. -/
 theorem segmentCrossingWord_def (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     (e : x ⟶ y) :
@@ -251,8 +320,9 @@ theorem segmentCrossingWord_self (ν : ι → V →ₗ[ℝ] ℝ)
   rintro ⟨i, t⟩ hi
   exact x.notMem i (by simpa using ((mem_crossings x x i t).mp hi).2)
 
-/-- A segment with a single crossing `(i, t)` has crossing word `FreeGroup.of i ^ (±1)`. -/
-theorem segmentCrossingWord_of_unique_crossing (ν : ι → V →ₗ[ℝ] ℝ)
+/-- A segment whose crossing set is a singleton `{(i, t)}` has crossing word
+`FreeGroup.of i ^ (±1)`. -/
+theorem segmentCrossingWord_of_crossings_eq_singleton (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     (e : x ⟶ y) {i : ι} {t : ℝ} (hcr : crossings x y = {(i, t)}) :
     segmentCrossingWord ν hdisj e =
@@ -276,177 +346,68 @@ theorem segmentCrossingWord_reverse (ν : ι → V →ₗ[ℝ] ℝ)
     List.reverse_reverse, List.map_map, Function.comp_def,
     crossingEventWord_reverse ν hdisj hν, sub_sub_cancel, List.prod_inv_reverse]
 
+/-- Lifting `segmentCrossingWord` along any coplanar-commuting label assignment `label : ι → G`
+recovers `segmentPathProduct`. -/
+theorem lift_segmentCrossingWord_eq_segmentPathProduct {G : Type*} [Group G] (ν : ι → V →ₗ[ℝ] ℝ)
+    (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
+    (label : ι → G)
+    (hcomm : ∀ i j, affineSpan ℝ (W i) = affineSpan ℝ (W j) → Commute (label i) (label j))
+    (e : x ⟶ y) :
+    FreeGroup.lift label (segmentCrossingWord ν hdisj e) = segmentPathProduct ν label hcomm e := by
+  simp only [segmentCrossingWord_def, segmentPathProduct_def, map_list_prod, List.map_map,
+    Function.comp_def, lift_crossingEventWord_eq_crossingEventProduct ν hdisj label hcomm e]
+
 end IsolatedCrossings
 
-/-! ### Restricting and reindexing wall families -/
+/-! ### Restricting wall families on segments -/
 
 section WallRestriction
 
-/-- Canonical generator map for wall deletion along `f : κ → ι`: sends `f j` to `FreeGroup.of j`
-and every index outside `Set.range f` to `1`. -/
-def deleteWallsMap {ι κ : Type*} (f : κ → ι) (i : ι) : FreeGroup κ :=
-  open scoped Classical in
-  if hi : i ∈ Set.range f then FreeGroup.of hi.choose else 1
-
-@[simp]
-theorem deleteWallsMap_apply_of_injective {ι κ : Type*} {f : κ → ι} (hf : Function.Injective f)
-    (j : κ) : deleteWallsMap f (f j) = FreeGroup.of j := by
-  unfold deleteWallsMap
-  split_ifs with hj
-  · exact congrArg FreeGroup.of (hf hj.choose_spec)
-  · exact (hj ⟨j, rfl⟩).elim
-
-@[simp]
-theorem deleteWallsMap_apply_of_notMem {ι κ : Type*} (f : κ → ι) {i : ι} (hi : i ∉ Set.range f) :
-    deleteWallsMap f i = 1 := by
-  simp [deleteWallsMap, hi]
-
-/-- Restrict an allowed vertex along any map `f : κ → ι` of wall indices. -/
-abbrev comap {V ι κ : Type*} {W : ι → Set V} (x : WallComplement W) (f : κ → ι) :
-    WallComplement (W ∘ f) where
-  val := x.val
-  notMem j := x.notMem (f j)
-
-@[simp]
-theorem comap_val {V ι κ : Type*} {W : ι → Set V} (x : WallComplement W) (f : κ → ι) :
-    (x.comap f).val = x.val := (rfl)
-
 variable {V ι κ : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {W : ι → Set V}
 
-theorem mem_crossings_comap (x y : WallComplement W) (f : κ → ι) (j : κ) (t : ℝ) :
-    (j, t) ∈ crossings (x.comap f) (y.comap f) ↔ (f j, t) ∈ crossings x y := by
-  simp only [mem_crossings, Function.comp_apply]
-
-/-- Restricting a wall family preserves segment admissibility without any injectivity assumption on
-`f : κ → ι`, since singular support only shrinks. -/
-theorem AdmissibleSegment.comap {x y : WallComplement W} (a : AdmissibleSegment x y)
-    (f : κ → ι) : AdmissibleSegment (x.comap f) (y.comap f) where
-  transverse j hj := a.transverse (f j) hj
-  regular t ht hs := a.regular t ht (singularSupport_comp_subset W f hs)
-
-/-- The quiver prefunctor restricting allowed vertices and admissible segments along `f : κ → ι`. -/
-abbrev comapPrefunctor (f : κ → ι) : WallComplement W ⥤q WallComplement (W ∘ f) where
-  obj x := x.comap f
-  map a := ⟨a.down.comap f⟩
-
-/-- Lifting `segmentCrossingWord` by any generator map `g : ι → FreeGroup κ` that sends `f j` to
-`FreeGroup.of j` and kills indices outside `Set.range f` computes the restricted segment's crossing
-word. -/
-theorem lift_segmentCrossingWord_comap [Finite ι] [Finite κ] (ν : ι → V →ₗ[ℝ] ℝ)
+/-- Restricting a segment along `WallComplement.restrictPrefunctor W f` maps its crossing word by
+`FreeGroup.lift g` for any generator map `g : ι → FreeGroup κ` sending `f j` to `FreeGroup.of j`
+and killing indices outside `Set.range f`. -/
+theorem segmentCrossingWord_restrictPrefunctor_eq_lift [Finite ι] [Finite κ] (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
-    {f : κ → ι} (hf : Function.Injective f) {g : ι → FreeGroup κ}
+    {f : κ → ι}
+    {hdisj' : Pairwise fun i j =>
+      Disjoint (intrinsicInterior ℝ ((W ∘ f) i)) (intrinsicInterior ℝ ((W ∘ f) j))}
+    {g : ι → FreeGroup κ}
     (hg_mem : ∀ j, g (f j) = FreeGroup.of j) (hg_out : ∀ i, i ∉ Set.range f → g i = 1)
-    {x y : WallComplement W} (e : x ⟶ y) (e' : x.comap f ⟶ y.comap f) :
-    FreeGroup.lift g (segmentCrossingWord ν hdisj e) =
-      segmentCrossingWord (ν ∘ f) (hdisj.comp_of_injective hf) e' := by
+    {x y : WallComplement W} (e : x ⟶ y)
+    (e' : (restrictPrefunctor W f).obj x ⟶ (restrictPrefunctor W f).obj y) :
+    segmentCrossingWord (ν ∘ f) hdisj' e' =
+      FreeGroup.lift g (segmentCrossingWord ν hdisj e) := by
   have hcover : ∀ t ∈ orderedCrossingTimes e', t ∈ orderedCrossingTimes e := by
     intro t ht
     obtain ⟨j, hj⟩ := (mem_orderedCrossingTimes e' t).mp ht
-    exact (mem_orderedCrossingTimes e t).mpr ⟨f j, (mem_crossings_comap x y f j t).mp hj⟩
-  rw [segmentCrossingWord_eq_prod_of_crossingTimes (ν ∘ f) (hdisj.comp_of_injective hf) e'
+    exact (mem_orderedCrossingTimes e t).mpr
+      ⟨f j, (mem_crossings_restrictPrefunctor W f x y j t).mp hj⟩
+  rw [segmentCrossingWord_eq_prod_of_crossingTimes (ν ∘ f) hdisj' e'
     (orderedCrossingTimes e) (pairwise_orderedCrossingTimes e) hcover,
     segmentCrossingWord_def, map_list_prod, List.map_map]
   refine congrArg List.prod (List.map_congr_left fun t _ => ?_)
   rw [Function.comp_apply]
-  by_cases hcr' : ∃ j, (j, t) ∈ crossings (x.comap f) (y.comap f)
+  by_cases hcr' : ∃ j, (j, t) ∈ crossings ((restrictPrefunctor W f).obj x)
+      ((restrictPrefunctor W f).obj y)
   · obtain ⟨j, hj⟩ := hcr'
-    have hjf : (f j, t) ∈ crossings x y := (mem_crossings_comap x y f j t).mp hj
-    rw [crossingEventWord_of_mem_crossings (ν ∘ f) _ e' hj,
+    have hjf : (f j, t) ∈ crossings x y := (mem_crossings_restrictPrefunctor W f x y j t).mp hj
+    rw [crossingEventWord_of_mem_crossings (ν ∘ f) hdisj' e' hj,
       crossingEventWord_of_mem_crossings ν hdisj e hjf, map_zpow, FreeGroup.lift_apply_of,
       hg_mem j]
     rfl
-  · rw [crossingEventWord_eq_one_of_forall_notMem _ _ e' t fun j hj => hcr' ⟨j, hj⟩]
+  · rw [crossingEventWord_eq_one_of_forall_notMem _ hdisj' e' t fun j hj => hcr' ⟨j, hj⟩]
     by_cases hcr : ∃ i, (i, t) ∈ crossings x y
     · obtain ⟨i, hi⟩ := hcr
       have hout : i ∉ Set.range f := fun ⟨j, hj⟩ =>
-        hcr' ⟨j, (mem_crossings_comap x y f j t).mpr (hj ▸ hi)⟩
+        hcr' ⟨j, (mem_crossings_restrictPrefunctor W f x y j t).mpr (hj ▸ hi)⟩
       rw [crossingEventWord_of_mem_crossings ν hdisj e hi, map_zpow,
         FreeGroup.lift_apply_of, hg_out i hout, one_zpow]
     · rw [crossingEventWord_eq_one_of_forall_notMem ν hdisj e t fun i hi => hcr ⟨i, hi⟩,
         map_one]
 
 end WallRestriction
-
-section Reindex
-
-variable {V U ι ι' : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [NormedAddCommGroup U] [NormedSpace ℝ U]
-  {W : ι → Set V} {W' : ι' → Set U}
-
-/-- Transport an allowed vertex along a continuous affine equivalence together with a wall-index
-equivalence `r : ι ≃ ι'` satisfying `∀ i, W' (r i) = e '' W i`. -/
-abbrev mapReindex (x : WallComplement W) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
-    (hW : ∀ i, W' (r i) = e '' W i) : WallComplement W' where
-  val := e x.val
-  notMem i' := by
-    obtain ⟨i, rfl⟩ := r.surjective i'
-    rw [hW i, e.injective.mem_set_image]
-    exact x.notMem i
-
-@[simp]
-theorem mapReindex_val (x : WallComplement W) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
-    (hW : ∀ i, W' (r i) = e '' W i) : (x.mapReindex e r hW).val = e x.val := (rfl)
-
-theorem mem_crossings_mapReindex (x y : WallComplement W) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
-    (hW : ∀ i, W' (r i) = e '' W i) (i : ι) (t : ℝ) :
-    (r i, t) ∈ crossings (x.mapReindex e r hW) (y.mapReindex e r hW) ↔
-      (i, t) ∈ crossings x y := by
-  have hline : e (AffineMap.lineMap x.val y.val t) =
-      AffineMap.lineMap (e x.val) (e y.val) t := e.toAffineEquiv.apply_lineMap _ _ _
-  simp only [mem_crossings, hW i, ← hline, e.injective.mem_set_image]
-
-/-- Transporting along a continuous affine equivalence and a wall bijection preserves segment
-admissibility. -/
-theorem AdmissibleSegment.mapReindex {x y : WallComplement W} (a : AdmissibleSegment x y)
-    (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i) :
-    AdmissibleSegment (x.mapReindex e r hW) (y.mapReindex e r hW) := by
-  have heq : W' = (fun i => e '' W i) ∘ r.symm := funext fun i' => by
-    obtain ⟨i, rfl⟩ := r.surjective i'
-    simp [hW i]
-  subst heq
-  exact (a.map e).comap r.symm
-
-/-- The quiver prefunctor transporting admissible segments along `e : V ≃ᴬ[ℝ] U` and `r : ι ≃ ι'`.
--/
-abbrev mapReindexPrefunctor (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i) :
-    WallComplement W ⥤q WallComplement W' where
-  obj x := x.mapReindex e r hW
-  map a := ⟨a.down.mapReindex e r hW⟩
-
-/-- Coordinate and wall-index transport maps `segmentCrossingWord` by `FreeGroup.map r`. -/
-theorem map_segmentCrossingWord_mapReindex [Finite ι] [Finite ι'] (ν : ι → V →ₗ[ℝ] ℝ)
-    (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
-    (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i)
-    (hdisj' : Pairwise fun i' j' =>
-      Disjoint (intrinsicInterior ℝ (W' i')) (intrinsicInterior ℝ (W' j')))
-    {x y : WallComplement W} (a : x ⟶ y)
-    (a' : x.mapReindex e r hW ⟶ y.mapReindex e r hW) :
-    segmentCrossingWord
-        (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap) hdisj' a' =
-      FreeGroup.map r (segmentCrossingWord ν hdisj a) := by
-  have htimes : orderedCrossingTimes a' = orderedCrossingTimes a := by
-    refine (pairwise_orderedCrossingTimes a').eq_of_mem_iff (pairwise_orderedCrossingTimes a)
-      fun t => ?_
-    simp only [mem_orderedCrossingTimes]
-    exact ⟨fun ⟨i', hi'⟩ => ⟨r.symm i', (mem_crossings_mapReindex x y e r hW _ t).mp
-        (by simpa using hi')⟩,
-      fun ⟨i, hi⟩ => ⟨r i, (mem_crossings_mapReindex x y e r hW i t).mpr hi⟩⟩
-  have hv₀ : e.toAffineEquiv.linear (y.val - x.val) = e y.val - e x.val :=
-    e.toAffineEquiv.toAffineMap.linear_apply_vsub _ _
-  have hv : e.toAffineEquiv.linear.symm (e y.val - e x.val) = y.val - x.val := by
-    rw [← hv₀]
-    exact e.toAffineEquiv.linear.symm_apply_apply _
-  rw [segmentCrossingWord_def, segmentCrossingWord_def, htimes, map_list_prod, List.map_map]
-  refine congrArg List.prod (List.map_congr_left fun t ht => ?_)
-  rw [Function.comp_apply]
-  obtain ⟨i, hi⟩ := (mem_orderedCrossingTimes a t).mp (List.mem_reverse.mp ht)
-  have hi' : (r i, t) ∈ crossings (x.mapReindex e r hW) (y.mapReindex e r hW) :=
-    (mem_crossings_mapReindex x y e r hW i t).mpr hi
-  rw [crossingEventWord_of_mem_crossings _ hdisj' a' hi',
-    crossingEventWord_of_mem_crossings ν hdisj a hi, map_zpow, FreeGroup.map.of]
-  simp [hv]
-
-end Reindex
 
 end TauCeti.WallComplement
 
@@ -481,6 +442,15 @@ def crossingWord (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     (p : AdmissiblePLPath x y) : FreeGroup ι :=
   MulOpposite.unop (p.weight (fun e => MulOpposite.op (segmentCrossingWord ν hdisj e)))
+
+/-- `crossingWord` is the path weight in the opposite group, so later segments multiply on the
+left. -/
+theorem crossingWord_eq_unop_weight (ν : ι → V →ₗ[ℝ] ℝ)
+    (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
+    (p : AdmissiblePLPath x y) :
+    p.crossingWord ν hdisj =
+      MulOpposite.unop (p.weight (fun e => MulOpposite.op (segmentCrossingWord ν hdisj e))) :=
+  (rfl)
 
 @[simp]
 theorem crossingWord_nil (ν : ι → V →ₗ[ℝ] ℝ)
@@ -574,19 +544,18 @@ theorem crossingWord_reverse (ν : ι → V →ₗ[ℝ] ℝ)
   | cons p e ih =>
     simp [Quiver.Path.reverse, ih, segmentCrossingWord_reverse ν hdisj hν, mul_inv_rev]
 
-/-- **Universal property of `crossingWord`**: lifting `p.crossingWord` along any coplanar-commuting
-label assignment `label : ι → G` recovers `p.wallPathProduct`. -/
-@[simp]
+/-- Lifting `p.crossingWord` along any coplanar-commuting label assignment `label : ι → G` recovers
+`p.wallPathProduct`. -/
 theorem lift_crossingWord_eq_wallPathProduct {G : Type*} [Group G] (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     (label : ι → G)
     (hcomm : ∀ i j, affineSpan ℝ (W i) = affineSpan ℝ (W j) → Commute (label i) (label j))
     (p : AdmissiblePLPath x y) :
     FreeGroup.lift label (p.crossingWord ν hdisj) = p.wallPathProduct ν label hcomm := by
-  rw [crossingWord_eq_prod_signedCrossingEvents, wallPathProduct_eq_prod_signedCrossingEvents,
-    map_list_prod, List.map_map]
-  refine congrArg List.prod (List.map_congr_left fun S _ => ?_)
-  simp [map_list_prod, List.map_map, Function.comp_def]
+  induction p with
+  | nil => simp
+  | cons p e ih =>
+    simp [ih, lift_segmentCrossingWord_eq_segmentPathProduct ν hdisj label hcomm e]
 
 end CrossingWord
 
@@ -595,102 +564,64 @@ end CrossingWord
 section WallRestriction
 
 variable {V ι κ : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  {W : ι → Set V} {x y z : WallComplement W}
+  {W : ι → Set V} {x y : WallComplement W}
 
-/-- Restrict an admissible polygonal path along `f : κ → ι` to the subfamily `W ∘ f`. -/
-def restrictWalls (p : AdmissiblePLPath x y) (f : κ → ι) :
-    AdmissiblePLPath (x.comap f) (y.comap f) :=
-  (comapPrefunctor f).mapPath p
-
-@[simp]
-theorem restrictWalls_nil (f : κ → ι) :
-    (nil : AdmissiblePLPath x x).restrictWalls f = nil := (rfl)
-
-@[simp]
-theorem restrictWalls_cons (p : AdmissiblePLPath x y) (e : y ⟶ z) (f : κ → ι) :
-    (p.cons e).restrictWalls f = (p.restrictWalls f).cons ((comapPrefunctor f).map e) := (rfl)
-
-@[simp]
-theorem restrictWalls_comp (p : AdmissiblePLPath x y) (q : AdmissiblePLPath y z) (f : κ → ι) :
-    (p.comp q).restrictWalls f = (p.restrictWalls f).comp (q.restrictWalls f) :=
-  Prefunctor.mapPath_comp _ _ _
-
-/-- Restricting to an injectively indexed subfamily of walls maps `crossingWord` by any
-`FreeGroup.lift g` sending `f j` to `FreeGroup.of j` and killing indices outside `Set.range f`. -/
-theorem crossingWord_restrictWalls_eq_lift [Finite ι] [Finite κ] (ν : ι → V →ₗ[ℝ] ℝ)
+/-- Restricting a polygonal path along `WallComplement.restrictPrefunctor W f` maps `crossingWord`
+by any `FreeGroup.lift g` sending `f j` to `FreeGroup.of j` and killing indices outside
+`Set.range f`. -/
+theorem crossingWord_restrictPrefunctor_eq_lift [Finite ι] [Finite κ] (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
-    {f : κ → ι} (hf : Function.Injective f) {g : ι → FreeGroup κ}
+    {f : κ → ι}
+    {hdisj' : Pairwise fun i j =>
+      Disjoint (intrinsicInterior ℝ ((W ∘ f) i)) (intrinsicInterior ℝ ((W ∘ f) j))}
+    {g : ι → FreeGroup κ}
     (hg_mem : ∀ j, g (f j) = FreeGroup.of j) (hg_out : ∀ i, i ∉ Set.range f → g i = 1)
     (p : AdmissiblePLPath x y) :
-    (p.restrictWalls f).crossingWord (ν ∘ f) (hdisj.comp_of_injective hf) =
+    ((WallComplement.restrictPrefunctor W f).mapPath p).crossingWord (ν ∘ f) hdisj' =
       FreeGroup.lift g (p.crossingWord ν hdisj) := by
   induction p with
   | nil => simp
   | cons p e ih =>
-    simp only [restrictWalls_cons, crossingWord_cons, map_mul, ih]
-    exact congrArg (· * _) (lift_segmentCrossingWord_comap ν hdisj hf hg_mem hg_out e _).symm
+    simp only [Prefunctor.mapPath_cons, crossingWord_cons, map_mul, ih]
+    exact congrArg (· * _) (segmentCrossingWord_restrictPrefunctor_eq_lift ν hdisj hg_mem hg_out
+      e ((WallComplement.restrictPrefunctor W f).map e))
 
-/-- Restricting to an injectively indexed subfamily of walls maps `crossingWord` by
-`FreeGroup.lift (deleteWallsMap f)`, killing deleted walls. -/
+/-- Restricting to an injectively indexed subfamily of walls along
+`WallComplement.restrictPrefunctor W f` maps `crossingWord` by `FreeGroup.lift (deleteWallsMap f)`,
+killing deleted walls. -/
 @[simp]
-theorem crossingWord_restrictWalls [Finite ι] [Finite κ] (ν : ι → V →ₗ[ℝ] ℝ)
+theorem crossingWord_restrictPrefunctor [Finite ι] [Finite κ] (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
-    {f : κ → ι} (hf : Function.Injective f) (p : AdmissiblePLPath x y) :
-    (p.restrictWalls f).crossingWord (ν ∘ f) (hdisj.comp_of_injective hf) =
+    {f : κ → ι} (hf : Function.Injective f)
+    {hdisj' : Pairwise fun i j =>
+      Disjoint (intrinsicInterior ℝ ((W ∘ f) i)) (intrinsicInterior ℝ ((W ∘ f) j))}
+    (p : AdmissiblePLPath x y) :
+    ((WallComplement.restrictPrefunctor W f).mapPath p).crossingWord (ν ∘ f) hdisj' =
       FreeGroup.lift (deleteWallsMap f) (p.crossingWord ν hdisj) :=
-  crossingWord_restrictWalls_eq_lift ν hdisj hf (deleteWallsMap_apply_of_injective hf)
+  crossingWord_restrictPrefunctor_eq_lift ν hdisj (deleteWallsMap_apply_of_injective hf)
     (fun _ => deleteWallsMap_apply_of_notMem f) p
 
 end WallRestriction
 
 section AffineTransport
 
-variable {V U ι : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {V U ι ι' : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup U] [NormedSpace ℝ U]
-  {W : ι → Set V} {x y z : WallComplement W}
+  {W : ι → Set V} {W' : ι' → Set U} {x y : WallComplement W}
 
 /-- Continuous affine coordinate transport preserves `crossingWord` (for the image family with the
 same index type `ι`) under pushed-forward coorientations. -/
 @[simp]
 theorem crossingWord_affineMap [Finite ι] (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
-    (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) :
+    (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U)
+    {hdisj' : Pairwise fun i j =>
+      Disjoint (intrinsicInterior ℝ (e '' W i)) (intrinsicInterior ℝ (e '' W j))} :
     (p.affineMap e).crossingWord
-        (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap)
-        (fun i j hij => by
-          change Disjoint (intrinsicInterior ℝ (e '' W i)) (intrinsicInterior ℝ (e '' W j))
-          rw [e.intrinsicInterior_image, e.intrinsicInterior_image]
-          exact Set.disjoint_left.mpr fun _ ⟨a, ha, hea⟩ ⟨_, hb, heb⟩ =>
-            Set.disjoint_left.mp (hdisj hij) ha (e.injective (hea.trans heb.symm) ▸ hb)) =
+        (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap) hdisj' =
       p.crossingWord ν hdisj :=
-  crossingWord_eq_of_signedCrossingEvents_eq _ _ _ _ (p.affineMap e) p
+  crossingWord_eq_of_signedCrossingEvents_eq _ _ hdisj' hdisj (p.affineMap e) p
     (signedCrossingEvents_affineMap ν p e)
-
-variable {ι' : Type*} {W' : ι' → Set U}
-
-/-- Transport an admissible polygonal path along `e : V ≃ᴬ[ℝ] U` and a wall bijection `r : ι ≃ ι'`.
--/
-def affineMapReindex (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
-    (hW : ∀ i, W' (r i) = e '' W i) :
-    AdmissiblePLPath (x.mapReindex e r hW) (y.mapReindex e r hW) :=
-  (mapReindexPrefunctor e r hW).mapPath p
-
-@[simp]
-theorem affineMapReindex_nil (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i) :
-    (nil : AdmissiblePLPath x x).affineMapReindex e r hW = nil := (rfl)
-
-@[simp]
-theorem affineMapReindex_cons (p : AdmissiblePLPath x y) (a : y ⟶ z)
-    (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i) :
-    (p.cons a).affineMapReindex e r hW =
-      (p.affineMapReindex e r hW).cons ((mapReindexPrefunctor e r hW).map a) := (rfl)
-
-@[simp]
-theorem affineMapReindex_comp (p : AdmissiblePLPath x y) (q : AdmissiblePLPath y z)
-    (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i) :
-    (p.comp q).affineMapReindex e r hW =
-      (p.affineMapReindex e r hW).comp (q.affineMapReindex e r hW) :=
-  Prefunctor.mapPath_comp _ _ _
 
 /-- Transporting an admissible polygonal path along `e : V ≃ᴬ[ℝ] U` and a wall bijection
 `r : ι ≃ ι'` maps its crossing word by `FreeGroup.map r`. -/
@@ -698,17 +629,32 @@ theorem affineMapReindex_comp (p : AdmissiblePLPath x y) (q : AdmissiblePLPath y
 theorem crossingWord_affineMapReindex [Finite ι] [Finite ι'] (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i)
-    (hdisj' : Pairwise fun i' j' =>
-      Disjoint (intrinsicInterior ℝ (W' i')) (intrinsicInterior ℝ (W' j')))
+    {hdisj' : Pairwise fun i' j' =>
+      Disjoint (intrinsicInterior ℝ (W' i')) (intrinsicInterior ℝ (W' j'))}
     (p : AdmissiblePLPath x y) :
     (p.affineMapReindex e r hW).crossingWord
         (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap) hdisj' =
       FreeGroup.map r (p.crossingWord ν hdisj) := by
-  induction p with
-  | nil => simp
-  | cons p a ih =>
-    simp only [affineMapReindex_cons, crossingWord_cons, map_mul, ih]
-    exact congrArg (· * _) (map_segmentCrossingWord_mapReindex ν hdisj e r hW hdisj' a _)
+  have heq : W' = (fun i => e '' W i) ∘ r.symm := funext fun i' => by
+    obtain ⟨i, rfl⟩ := r.surjective i'
+    simp [hW i]
+  subst heq
+  have hpath :
+      p.affineMapReindex e r hW =
+        (WallComplement.restrictPrefunctor (fun i => e '' W i) r.symm).mapPath (p.affineMap e) := by
+    rw [affineMapReindex_def, affineMap_def]
+    exact Prefunctor.mapPath_comp_apply e.wallComplementPrefunctor
+      (WallComplement.restrictPrefunctor (fun i => e '' W i) r.symm) p
+  have hν :
+      (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap) =
+        (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap) ∘ r.symm := rfl
+  rw [hpath, hν,
+    crossingWord_restrictPrefunctor_eq_lift _ (e.pairwise_disjoint_intrinsicInterior_image hdisj)
+      (g := FreeGroup.of ∘ r) (fun i' => by simp)
+      (fun i hi => (hi ⟨r i, r.symm_apply_apply i⟩).elim) (p.affineMap e),
+    ← FreeGroup.map_eq_lift,
+    crossingWord_affineMap ν hdisj p e
+      (hdisj' := e.pairwise_disjoint_intrinsicInterior_image hdisj)]
 
 end AffineTransport
 

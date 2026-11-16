@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Codex
+Authors: The Tau Ceti contributors, Codex, Antigravity (Gemini 4 Carbon)
 -/
 module
 
@@ -140,6 +140,29 @@ theorem eq_of_subset_of_finrank_direction_le (C : FinitePolyhedralComplex h)
     (C.disjoint_intrinsicInterior hP hQ hne)
   rw [direction_affineSpan, direction_affineSpan] at hdim
   exact hlt.not_ge hdim
+
+/-- A subset `Q` is contained in at most one cell of `C` having the same affine span as `Q`:
+the intersection of two such cells is again a cell of `C` with the same affine dimension. -/
+theorem eq_of_subset_of_affineSpan_eq (C : FinitePolyhedralComplex h)
+    {Q P₁ P₂ : Set V} (hP₁ : P₁ ∈ C.cells) (hP₂ : P₂ ∈ C.cells)
+    (hQP₁ : Q ⊆ P₁) (hQP₂ : Q ⊆ P₂)
+    (hspan₁ : affineSpan ℝ Q = affineSpan ℝ P₁)
+    (hspan₂ : affineSpan ℝ Q = affineSpan ℝ P₂) : P₁ = P₂ := by
+  have hQne : Q.Nonempty :=
+    (affineSpan_nonempty ℝ).mp (hspan₁.symm ▸ (C.nonempty P₁ hP₁).affineSpan ℝ)
+  have hI : P₁ ∩ P₂ ∈ C.cells :=
+    C.inter_mem_cells hP₁ hP₂ (hQne.mono (Set.subset_inter hQP₁ hQP₂))
+  have hspanI₁ : affineSpan ℝ (P₁ ∩ P₂) = affineSpan ℝ P₁ :=
+    le_antisymm (affineSpan_mono ℝ Set.inter_subset_left)
+      (hspan₁ ▸ affineSpan_mono ℝ (Set.subset_inter hQP₁ hQP₂))
+  have hspanI₂ : affineSpan ℝ (P₁ ∩ P₂) = affineSpan ℝ P₂ :=
+    le_antisymm (affineSpan_mono ℝ Set.inter_subset_right)
+      (hspan₂ ▸ affineSpan_mono ℝ (Set.subset_inter hQP₁ hQP₂))
+  have heq₁ := C.eq_of_subset_of_finrank_direction_le hI hP₁ Set.inter_subset_left
+    (by rw [hspanI₁])
+  have heq₂ := C.eq_of_subset_of_finrank_direction_le hI hP₂ Set.inter_subset_right
+    (by rw [hspanI₂])
+  exact heq₁.symm.trans heq₂
 
 /-- A cell contained in another cell is a face of it. -/
 theorem isPolyhedralFace_of_subset (C : FinitePolyhedralComplex h) {P Q : Set V}
@@ -306,6 +329,44 @@ theorem IsSubcomplex.cellsOfCodimension_subset {C D : FinitePolyhedralComplex h}
     C.cellsOfCodimension k ⊆ D.cellsOfCodimension k := fun _ hP =>
   mem_cellsOfCodimension.mpr
     ⟨isSubcomplex_iff.mp hCD (mem_cellsOfCodimension.mp hP).1, (mem_cellsOfCodimension.mp hP).2⟩
+
+/-- A nonempty subset of ambient codimension `k` lies in at most one codimension-`k` cell of `C`. -/
+theorem eq_of_subset_of_mem_cellsOfCodimension (C : FinitePolyhedralComplex h) {k : ℕ}
+    {Q P₁ P₂ : Set V} (hne : Q.Nonempty)
+    (hdim : Module.finrank ℝ (affineSpan ℝ Q).direction + k = Module.finrank ℝ V)
+    (hP₁ : P₁ ∈ C.cellsOfCodimension k) (hP₂ : P₂ ∈ C.cellsOfCodimension k)
+    (hQP₁ : Q ⊆ P₁) (hQP₂ : Q ⊆ P₂) : P₁ = P₂ := by
+  have := h.finiteDimensional
+  obtain ⟨hP₁C, hd₁⟩ := mem_cellsOfCodimension.mp hP₁
+  obtain ⟨hP₂C, hd₂⟩ := mem_cellsOfCodimension.mp hP₂
+  obtain ⟨x, hx⟩ := hne
+  have hspan₁ : affineSpan ℝ Q = affineSpan ℝ P₁ := by
+    refine AffineSubspace.ext_of_direction_eq ?_
+      ⟨x, subset_affineSpan ℝ Q hx, subset_affineSpan ℝ P₁ (hQP₁ hx)⟩
+    exact Submodule.eq_of_le_of_finrank_eq
+      (AffineSubspace.direction_le (affineSpan_mono ℝ hQP₁)) (by omega)
+  have hspan₂ : affineSpan ℝ Q = affineSpan ℝ P₂ := by
+    refine AffineSubspace.ext_of_direction_eq ?_
+      ⟨x, subset_affineSpan ℝ Q hx, subset_affineSpan ℝ P₂ (hQP₂ hx)⟩
+    exact Submodule.eq_of_le_of_finrank_eq
+      (AffineSubspace.direction_le (affineSpan_mono ℝ hQP₂)) (by omega)
+  exact C.eq_of_subset_of_affineSpan_eq hP₁C hP₂C hQP₁ hQP₂ hspan₁ hspan₂
+
+/-- Distinct walls of a finite polyhedral complex have disjoint intrinsic interiors. -/
+theorem pairwise_disjoint_intrinsicInterior_walls (C : FinitePolyhedralComplex h) :
+    Pairwise fun w₁ w₂ : C.walls =>
+      Disjoint (intrinsicInterior ℝ (w₁ : Set V)) (intrinsicInterior ℝ (w₂ : Set V)) :=
+  fun w₁ w₂ hne => C.disjoint_intrinsicInterior
+    (mem_cellsOfCodimension.mp w₁.2).1 (mem_cellsOfCodimension.mp w₂.2).1
+    (Subtype.coe_ne_coe.mpr hne)
+
+/-- Any wall of a complex `C'` is contained in at most one wall of a complex `C`. -/
+theorem eq_of_wall_subset {C C' : FinitePolyhedralComplex h}
+    {w' : C'.walls} {w₁ w₂ : C.walls}
+    (h₁ : (w' : Set V) ⊆ (w₁ : Set V)) (h₂ : (w' : Set V) ⊆ (w₂ : Set V)) : w₁ = w₂ :=
+  Subtype.ext (C.eq_of_subset_of_mem_cellsOfCodimension
+    (C'.nonempty w' (mem_cellsOfCodimension.mp w'.2).1)
+    (mem_cellsOfCodimension.mp w'.2).2 w₁.2 w₂.2 h₁ h₂)
 
 end FinitePolyhedralComplex
 
