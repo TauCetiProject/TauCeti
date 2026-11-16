@@ -90,11 +90,12 @@ noncomputable def toGroupExtensionEquiv :
     ext n
     simp [SemidirectProduct.toGroupExtension_inl]
   rightHom_comm := by
-    rw [← MulEquiv.coe_toMonoidHom, ← MonoidHom.coe_comp, MulEquiv.toMonoidHom_eq_coe,
-      GroupExtension.relabelQuotient_rightHom, quotientExtension_rightHom,
-      SemidirectProduct.toGroupExtension_rightHom, MulEquiv.toMonoidHom_eq_coe,
-      ← SemidirectProduct.rightHom_comp_mulEquivSubgroup_symm h, MonoidHom.comp_assoc,
-      MulEquiv.toMonoidHom_symm_comp_toMonoidHom, MonoidHom.comp_id]
+    ext x
+    simpa [SemidirectProduct.toGroupExtension_rightHom,
+      -SemidirectProduct.mulEquivSubgroup_apply,
+      -SemidirectProduct.rightHom_comp_mulEquivSubgroup_symm] using
+      (DFunLike.congr_fun (SemidirectProduct.rightHom_comp_mulEquivSubgroup_symm h)
+        (SemidirectProduct.mulEquivSubgroup h x)).symm
 
 /-- The underlying isomorphism of `Subgroup.IsComplement'.toGroupExtensionEquiv` is
 `SemidirectProduct.mulEquivSubgroup`. -/

@@ -391,19 +391,12 @@ theorem leftProjection_mul_eq (x y : H) :
       h.leftProjection x *
         ((N.normalizerMonoidHom).comp (inclusion h.right_le_normalizer)
           (h.rightProjection x) (h.leftProjection y)) := by
-  let n := h.leftProjection x *
-    ((N.normalizerMonoidHom).comp (inclusion h.right_le_normalizer)
-      (h.rightProjection x) (h.leftProjection y))
-  let k := h.rightProjection x * h.rightProjection y
-  have hxy : x * y = ⟨(n : G) * k, H.mul_mem (h.left_le n.property) (h.right_le k.property)⟩ := by
-    apply Subtype.ext
-    calc
-      ((x * y : H) : G) = ((h.leftProjection x : G) * h.rightProjection x) *
-          ((h.leftProjection y : G) * h.rightProjection y) := by
-        rw [coe_mul, ← h.leftProjection_mul_rightProjection x,
-          ← h.leftProjection_mul_rightProjection y]
-      _ = (n : G) * k := by simp [n, k, mul_assoc]
-  rw [hxy, h.leftProjection_mul]
+  have hmul := congrArg (subgroupOfEquivOfLe h.left_le)
+    (h.isComplement'_subgroupOf.equiv_fst_mul x y)
+  rw [map_mul (subgroupOfEquivOfLe h.left_le)] at hmul
+  refine hmul.trans (congrArg (h.leftProjection x * ·) ?_)
+  ext
+  simp [leftProjection, rightProjection_apply, equiv]
 
 end IsLocalComplement
 
