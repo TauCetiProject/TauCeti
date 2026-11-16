@@ -107,8 +107,8 @@ states its own hypothesis on `C`.
   `TauCeti.mem_Ioo_of_isIntegralCurve_triangleBasePotential` and
   `TauCeti.fst_eq_snd_of_isIntegralCurve_triangleBasePotential`: the source-to-sink trajectories are
   pairs of translates of `q`, stay in the open square, and run along the diagonal if they meet it.
-* `TauCeti.fderiv_triangleBaseOrbitParameter_apply_eq`: the linearized flow preserves the derivative
-  of the orbit parameter.
+* `TauCeti.fderiv_triangleBaseOrbitParameter_apply_eq_of_isIntegralCurve_triangleBasePotential`:
+  the linearized flow preserves the derivative of the orbit parameter.
 * `TauCeti.sign_fst_sub_snd_eq_of_isIntegralCurve_triangleBasePotential`: along the diagonal the
   normal component of every linearized solution keeps its sign.
 
@@ -743,7 +743,9 @@ theorem eventually_add_smul_mem_triangleBase_iff {t : ℝ} (ht : t ∈ Ioo 0 1)
 
 /-- **The orbits leaving the diagonal.** Flowing the first coordinate of a diagonal point
 `(t, t)` of the open square for the time `σ` gives the point `(Φ_σ t, t)`, whose orbit parameter
-is `C σ`. As `σ` runs through `[0, ∞)` these points meet every source-to-sink orbit once. -/
+is `C σ`. For `C > 0`, as `σ` runs through `[0, ∞)` these points meet every source-to-sink orbit
+once, since the orbit parameter classifies the orbits (`TauCeti.exists_triangleBaseFlow_eq_iff`) and
+takes every value in `[0, ∞)` on the triangle (`TauCeti.surjOn_triangleBaseOrbitParameter`). -/
 @[simp]
 theorem triangleBaseOrbitParameter_toLp_intervalBaseFlow (C σ : ℝ) {t : ℝ} (ht : t ∈ Ioo 0 1) :
     triangleBaseOrbitParameter (WithLp.toLp 2 (intervalBaseFlow C σ t, t)) = C * σ := by
@@ -839,7 +841,7 @@ equation `ξ' + Hess(γ) ξ = 0` the value `dP_{γ s} (ξ s)` of the derivative 
 `P` does not depend on `s`. Since `P` is a first integral of the flow
 (`TauCeti.triangleBaseOrbitParameter_triangleBaseFlow`), this is the linearization of
 `P ∘ Φ_s = P`. -/
-theorem fderiv_triangleBaseOrbitParameter_apply_eq
+theorem fderiv_triangleBaseOrbitParameter_apply_eq_of_isIntegralCurve_triangleBasePotential
     (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (triangleBasePotential C) z))
     (hγI : ∀ s, (γ s).fst ∈ Ioo 0 1 ∧ (γ s).snd ∈ Ioo 0 1) {ξ : ℝ → WithLp 2 (ℝ × ℝ)}
     (hξ : ∀ s, HasDerivAt ξ (-hessianOperator (triangleBasePotential C) (γ s) (ξ s)) s)
@@ -858,9 +860,9 @@ theorem fderiv_triangleBaseOrbitParameter_apply_eq
     simp
   rw [fderiv_triangleBaseOrbitParameter_apply (hγI s).1 (hγI s).2,
     fderiv_triangleBaseOrbitParameter_apply (hγI r).1 (hγI r).2,
-    mul_one_sub_sq_inv_mul_eq (hasDerivAt_of_isIntegralCurve_intervalBasePotential hu)
+    mul_one_sub_sq_inv_mul_eq_of_hasDerivAt (hasDerivAt_of_isIntegralCurve_intervalBasePotential hu)
       (fun s ↦ (hγI s).1) hw₁ s r,
-    mul_one_sub_sq_inv_mul_eq (hasDerivAt_of_isIntegralCurve_intervalBasePotential hv)
+    mul_one_sub_sq_inv_mul_eq_of_hasDerivAt (hasDerivAt_of_isIntegralCurve_intervalBasePotential hv)
       (fun s ↦ (hγI s).2) hw₂ s r]
 
 /-- **The positive normal kernel ray of the diagonal.** For `C > 0`, let `γ` be a trajectory of
@@ -882,7 +884,8 @@ theorem sign_fst_sub_snd_eq_of_isIntegralCurve_triangleBasePotential (hC : 0 < C
     (s r : ℝ) :
     SignType.sign ((ξ s).fst - (ξ s).snd) = SignType.sign ((ξ r).fst - (ξ r).snd) := by
   have hγI := mem_Ioo_of_isIntegralCurve_triangleBasePotential hC hγ hbot htop
-  have h := fderiv_triangleBaseOrbitParameter_apply_eq hγ hγI hξ s r
+  have h := fderiv_triangleBaseOrbitParameter_apply_eq_of_isIntegralCurve_triangleBasePotential
+    hγ hγI hξ s r
   -- On the diagonal the derivative of the orbit parameter is a positive multiple of the normal
   -- component.
   have hd (s : ℝ) : fderiv ℝ triangleBaseOrbitParameter (γ s) (ξ s) =

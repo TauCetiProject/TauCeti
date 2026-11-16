@@ -62,8 +62,8 @@ bijective.
   `0` to `1`, the flow line through `1 / √2` (`TauCeti.intervalBaseOrbit_eq_intervalBaseFlow`).
 * `TauCeti.intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`.
-* `TauCeti.mul_one_sub_sq_inv_mul_eq`: the linearized flow along a solution in `(0, 1)`
-  preserves `U'(x) w = w / (x (1 - x²))`.
+* `TauCeti.mul_one_sub_sq_inv_mul_eq_of_hasDerivAt`: the linearized flow along a solution in
+  `(0, 1)` preserves `U'(x) w = w / (x (1 - x²))`.
 * `TauCeti.bijOn_intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseOrbit_one_intervalBaseTimeCoordinate`: `U` identifies `(0, 1)` with `ℝ`.
 * `TauCeti.intervalBaseFlow`, `TauCeti.isIntegralCurve_intervalBaseFlow` and
@@ -537,7 +537,7 @@ equation `w' + C (3 x² - 1) w = 0` along it. Then `U'(x) w = w / (x (1 - x²))`
 (`TauCeti.deriv_intervalBaseTimeCoordinate`) does not depend on the time. Since the time
 coordinate `U` advances at the same rate `C` along every solution, this is the linearization of
 `U ∘ Φ_s = U + C s`. -/
-theorem mul_one_sub_sq_inv_mul_eq {x w : ℝ → ℝ}
+theorem mul_one_sub_sq_inv_mul_eq_of_hasDerivAt {x w : ℝ → ℝ}
     (hx : ∀ s, HasDerivAt x (C * x s * (1 - x s ^ 2)) s) (hxI : ∀ s, x s ∈ Ioo 0 1)
     (hw : ∀ s, HasDerivAt w (-(C * (3 * x s ^ 2 - 1) * w s)) s) (s r : ℝ) :
     (x s * (1 - x s ^ 2))⁻¹ * w s = (x r * (1 - x r ^ 2))⁻¹ * w r := by
