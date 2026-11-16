@@ -36,7 +36,9 @@ compatibility with composition characterizes the transport
 * `TauCeti.localHomologyRestriction`: for `S ⊆ T`, the map `Hₖ(M, M ∖ T) ⟶ Hₖ(M, M ∖ S)`
   induced by the identity of `M`.
 * `TauCeti.singularHomologyToLocalHomology`: with module coefficients, the map
-  `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from singular homology to the local homology at `x`.
+  `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from singular homology to the local homology at `x`, the map of
+  the long exact sequence of the pair `(M, M ∖ {x})`
+  (`TauCeti.singularHomologyToLocalHomology_eq_singularHomologyπ`).
 * `TauCeti.localHomologyMap`: for a continuous map `j : M → N` with `j ⁻¹' T ⊆ S`, the map
   `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`. It is functorial, is the restriction map for `j`
   the identity, and is compatible with restriction on both sides.
@@ -161,6 +163,18 @@ theorem singularHomologyToLocalHomology_apply (x : M) {k : ℕ}
         (((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
           (C := ModuleCat.{w} Λ) N k).hom μ) :=
   (rfl)
+
+/-- The map to the local homology at `x` is the map `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` of the long exact
+sequence of the pair `(M, M ∖ {x})`. -/
+theorem singularHomologyToLocalHomology_eq_singularHomologyπ (x : M) {k : ℕ}
+    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)) :
+    singularHomologyToLocalHomology N x k μ =
+      ((TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomologyπ
+        (C := ModuleCat.{w} Λ) N k).hom μ := by
+  rw [singularHomologyToLocalHomology_apply, localHomologyRestriction_def]
+  exact congrArg (fun φ ↦ ModuleCat.Hom.hom φ μ)
+    (TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id N
+      (fun _ h ↦ absurd h (by simp)) k)
 
 end SingularHomology
 

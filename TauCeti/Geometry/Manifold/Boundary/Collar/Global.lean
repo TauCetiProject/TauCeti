@@ -20,8 +20,9 @@ PL collar theorems can add the corresponding regularity to the same data.
 
 The parameter is the half-open interval `[0,1)`.  Thus a collar is an open embedding of
 `N × Ico 0 1` whose zero slice is the given embedding.  The small API below is the part consumed by
-gluing: restriction along an open subset of the boundary, and the injectivity and zero-slice
-consequences.
+gluing: restriction along an open subset of the boundary, reparametrization of the boundary (in
+particular by the image of the embedding, `TauCeti.IsCollared.subtypeVal_range`), and the
+injectivity and zero-slice consequences.
 
 The collar-neighborhood formulation follows J. Lee, *Introduction to Smooth Manifolds*, 2nd ed.,
 Theorem 9.25; this declaration is its topological abstraction.  The API adapts the existing
@@ -172,6 +173,13 @@ theorem isOpenEmbedding_comp {g : M → P} (h : IsCollared f) (hg : IsOpenEmbedd
 /-- Reparametrizing the domain by a homeomorphism preserves the existence of a collar. -/
 theorem comp_homeomorph (h : IsCollared f) (e : P ≃ₜ N) : IsCollared (f ∘ e) :=
   h.comp_isOpenEmbedding e.isOpenEmbedding
+
+/-- If `f` is collared, so is the inclusion of its image: a collared map is an embedding, so it
+identifies its domain with its image. -/
+theorem subtypeVal_range (h : IsCollared f) : IsCollared (Subtype.val : range f → M) := by
+  have hf : f ∘ h.isEmbedding.toHomeomorph.symm = Subtype.val :=
+    funext fun y ↦ congrArg Subtype.val (h.isEmbedding.toHomeomorph.apply_symm_apply y)
+  exact hf ▸ h.comp_homeomorph h.isEmbedding.toHomeomorph.symm
 
 end IsCollared
 
