@@ -40,6 +40,9 @@ in every universe (`FGModuleCat.isSeparator_of_isGenerator`).
 * `FGModuleCat.isSeparator_iff_isGenerator`: the separators of `mod R` are the generators of the
   module category.
 * `FGModuleCat.isSeparator_of_isGenerator`: a generator is a separator, in any universe.
+* `FGModuleCat.additiveClosure_of_isGenerator_of_projective`: a finitely generated projective
+  module lies in the additive closure `add M` of every finitely generated generator `M`, in any
+  universe.
 * `FGModuleCat.isSeparator_iff_additiveClosure` and `FGModuleCat.isSeparator_iff_exists_retract`:
   `M` is a separator of `mod R` exactly when `R ∈ add M`.
 -/
@@ -133,5 +136,25 @@ summand of a finite biproduct of copies of `M`, that is, `R ∈ add M`. -/
 theorem _root_.FGModuleCat.isSeparator_iff_exists_retract (M : FGModuleCat.{u} R) :
     IsSeparator M ↔ ∃ n : ℕ, Nonempty (Retract (FGModuleCat.of R R) (⨁ fun _ : Fin n ↦ M)) :=
   (FGModuleCat.isSeparator_iff_additiveClosure M).trans additiveClosure_iff
+
+/-- **Finitely generated projective modules are summands of finite sums of a generator**: if `M`
+is a generator of the module category, then a projective object of `FGModuleCat R` lies in `add M`.
+The modules may live in any universe. -/
+theorem _root_.FGModuleCat.additiveClosure_of_isGenerator_of_projective (M P : FGModuleCat.{v} R)
+    [Module.IsGenerator R M] [Projective P] : additiveClosure M P := by
+  -- If `∑ᵢ φᵢ(mᵢ) = 1` and the `xⱼ` generate `P`, the maps `m ↦ φᵢ(m) • xⱼ` give an epimorphism
+  -- from a finite sum of copies of `M`, which splits since `P` is projective.
+  obtain ⟨n, φ, m, h⟩ := Module.IsGenerator.exists_sum_eq_one (R := R) (M := M)
+  obtain ⟨k, x, hx⟩ := Module.Finite.exists_fin (R := R) (M := P)
+  let p : (⨁ fun _ : Fin k × Fin n ↦ M) ⟶ P := biproduct.desc fun j ↦
+    ObjectProperty.homMk (ModuleCat.ofHom ((φ j.2).smulRight (x j.1)))
+  have : Epi p := Preadditive.epi_of_cancel_zero p fun {Z} g hg ↦ by
+    refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext_on_range hx fun j ↦ ?_))
+    have hj (i : Fin n) : φ i (m i) • g.hom.hom (x j) = 0 := by
+      simpa [p] using congr((biproduct.ι _ (j, i) ≫ $hg).hom.hom (m i))
+    have : ∑ i, φ i (m i) • g.hom.hom (x j) = 0 := Finset.sum_eq_zero fun i _ ↦ hj i
+    simpa [← Finset.sum_smul, h] using this
+  exact (additiveClosure M).prop_of_retract ⟨Projective.factorThru (𝟙 P) p, p, by simp⟩
+    ((additiveClosure M).prop_of_isLimit (biproduct.isLimit _) fun _ ↦ additiveClosure_self M)
 
 end TauCeti

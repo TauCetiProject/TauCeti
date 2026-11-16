@@ -12,7 +12,6 @@ public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Module.Shrink
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
-public import TauCeti.Algebra.Module.Generator
 public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Basic
 
 /-!
@@ -40,9 +39,6 @@ every short exact sequence of finite-dimensional modules splits.
   projective `R`-module, provided `R` is small relative to the universe of the modules.
 * `CategoryTheory.Equivalence.moduleProjective_functor_obj_regular`: an equivalence between the
   categories of finitely generated modules carries the regular module to a projective module.
-* `FGModuleCat.additiveClosure_of_isGenerator_of_projective`: a finitely generated projective
-  module lies in the additive closure `add M` of every finitely generated generator `M`, in any
-  universe.
 * `FGModuleCat.additiveClosure_regular_of_projective`: a finitely generated projective module lies
   in the additive closure `add R` of the regular module.
 * `FGModuleCat.hasProjectiveDimensionLE_of_forget₂`: over a left noetherian ring, a finitely
@@ -117,32 +113,22 @@ theorem _root_.CategoryTheory.Equivalence.moduleProjective_functor_obj_regular
   exact FGModuleCat.moduleProjective_of_projective _
 
 variable {R} in
-/-- **Finitely generated projective modules are summands of finite sums of a generator**: if `M`
-is a generator of the module category, then a projective object of `FGModuleCat R` lies in `add M`.
-The modules may live in any universe. -/
-theorem additiveClosure_of_isGenerator_of_projective (M P : FGModuleCat.{v} R)
-    [Module.IsGenerator R M] [Projective P] : additiveClosure M P := by
-  -- If `∑ᵢ φᵢ(mᵢ) = 1` and the `xⱼ` generate `P`, the maps `m ↦ φᵢ(m) • xⱼ` give an epimorphism
-  -- from a finite sum of copies of `M`, which splits since `P` is projective.
-  obtain ⟨n, φ, m, h⟩ := Module.IsGenerator.exists_sum_eq_one (R := R) (M := M)
-  obtain ⟨k, x, hx⟩ := Module.Finite.exists_fin (R := R) (M := P)
-  let p : (⨁ fun _ : Fin k × Fin n ↦ M) ⟶ P := biproduct.desc fun j ↦
-    ObjectProperty.homMk (ModuleCat.ofHom ((φ j.2).smulRight (x j.1)))
-  have : Epi p := Preadditive.epi_of_cancel_zero p fun {Z} g hg ↦ by
-    refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext_on_range hx fun j ↦ ?_))
-    have hj (i : Fin n) : φ i (m i) • g.hom.hom (x j) = 0 := by
-      simpa [p] using congr((biproduct.ι _ (j, i) ≫ $hg).hom.hom (m i))
-    have : ∑ i, φ i (m i) • g.hom.hom (x j) = 0 := Finset.sum_eq_zero fun i _ ↦ hj i
-    simpa [← Finset.sum_smul, h] using this
-  exact (additiveClosure M).prop_of_retract ⟨Projective.factorThru (𝟙 P) p, p, by simp⟩
-    ((additiveClosure M).prop_of_isLimit (biproduct.isLimit _) fun _ ↦ additiveClosure_self M)
-
-variable {R} in
 /-- **Finitely generated projective modules are summands of finite free modules**: a projective
 object of `FGModuleCat R` lies in the additive closure of the regular module. -/
 theorem additiveClosure_regular_of_projective (P : FGModuleCat.{u} R) [Projective P] :
-    additiveClosure (FGModuleCat.of R R) P :=
-  additiveClosure_of_isGenerator_of_projective _ P
+    additiveClosure (FGModuleCat.of R R) P := by
+  -- A finite generating family gives an epimorphism from a finite sum of copies of `R`, which
+  -- splits since `P` is projective.
+  obtain ⟨n, x, hx⟩ := Module.Finite.exists_fin (R := R) (M := P)
+  let p : (⨁ fun _ : Fin n ↦ FGModuleCat.of R R) ⟶ P := biproduct.desc fun i ↦
+    ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.toSpanSingleton R P (x i)))
+  have : Epi p := Preadditive.epi_of_cancel_zero p fun {Z} g hg ↦ by
+    have hgi (i : Fin n) : g.hom.hom (x i) = 0 := by
+      have h := congr((biproduct.ι _ i ≫ $hg).hom.hom 1)
+      simpa [p] using h
+    refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext_on_range hx fun i ↦ ?_))
+    simpa using hgi i
+  exact additiveClosure_iff.2 ⟨n, ⟨⟨Projective.factorThru (𝟙 P) p, p, by simp⟩⟩⟩
 
 variable {R} in
 /-- `FGModuleCat R` has enough projectives: every finitely generated module is a quotient of a
