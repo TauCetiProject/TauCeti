@@ -25,6 +25,7 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
 
 ## Main results
 
+* `QuadraticMap.polar_eq_neg_two_mul_inner`: the polar form of `Q` is `-2 ⟪v, w⟫`.
 * `QuadraticMap.isOrtho_iff_inner_eq_zero`: orthogonality for `Q` is orthogonality for the inner
   product.
 * `OrthonormalBasis.isOrthoᵢ_associated`: an orthonormal basis is orthogonal for the polar form
@@ -36,6 +37,10 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
   vectors.
 * `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: in the even subalgebra,
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
+* `CliffordAlgebra.ι_mul_ι_of_inner_eq_zero`, `CliffordAlgebra.ι_mul_ι_sq_of_orthonormal`,
+  `CliffordAlgebra.ι_smul_add_smul_mul_ι_neg_smul_add_smul_of_orthonormal`,
+  `CliffordAlgebra.ι_cos_sin_mul_of_orthonormal`: orthogonal anticommutation, unit-bivector
+  squaring `(ι e₁ * ι e₂)² = -1`, and `SO(2)` rotation invariance of `ι e₁ * ι e₂`.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
 
 ## References
@@ -47,14 +52,79 @@ public section
 
 open scoped RealInnerProductSpace
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
+section Seminormed
+
+variable {V : Type*} [SeminormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
   (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
 
+/-- For the negative-definite norm-square form `Q v = -‖v‖²` on a real inner product space, the
+polar bilinear form is `-2 ⟪v, w⟫`. -/
+theorem QuadraticMap.polar_eq_neg_two_mul_inner (v w : V) :
+    QuadraticMap.polar Q v w = -2 * ⟪v, w⟫ := by
+  simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
+  ring
+
 /-- For `Q v = -‖v‖²`, orthogonality for `Q` is orthogonality for the inner product. -/
 theorem QuadraticMap.isOrtho_iff_inner_eq_zero {x y : V} : Q.IsOrtho x y ↔ ⟪x, y⟫ = 0 := by
-  rw [QuadraticMap.isOrtho_def, hQ, hQ, hQ, norm_add_sq_real]
-  constructor <;> intro h <;> linarith
+  rw [← QuadraticMap.isOrtho_polarBilin]
+  simp [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_eq_neg_two_mul_inner hQ]
+
+namespace CliffordAlgebra
+
+/-- For `Q v = -‖v‖²`, the even Clifford relation is `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
+theorem even_ι_bilin_add_swap_eq_neg_two_inner (u v : V) :
+    (even.ι Q).bilin u v + (even.ι Q).bilin v u = algebraMap ℝ (even Q) (-2 * ⟪u, v⟫) := by
+  rw [even_ι_bilin_add_swap, QuadraticMap.polar_eq_neg_two_mul_inner hQ]
+
+/-- In `CliffordAlgebra Q` with `Q v = -‖v‖²`, orthogonal vectors anticommute:
+`⟪e₁, e₂⟫ = 0 → ι e₁ * ι e₂ = -(ι e₂ * ι e₁)`. -/
+theorem ι_mul_ι_of_inner_eq_zero {e₁ e₂ : V} (h₁₂ : ⟪e₁, e₂⟫ = 0) :
+    ι Q e₁ * ι Q e₂ = -(ι Q e₂ * ι Q e₁) :=
+  ι_mul_ι_comm_of_isOrtho ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 h₁₂)
+
+/-- In `CliffordAlgebra Q` with `Q v = -‖v‖²`, the bivector `ι e₁ * ι e₂` of an orthonormal pair
+squares to `-1`. -/
+theorem ι_mul_ι_sq_of_orthonormal {e₁ e₂ : V} (he₁ : ‖e₁‖ = 1) (he₂ : ‖e₂‖ = 1)
+    (h₁₂ : ⟪e₁, e₂⟫ = 0) :
+    (ι Q e₁ * ι Q e₂) ^ 2 = -1 := by
+  rw [sq, ι_mul_ι_mul_self_of_isOrtho ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 h₁₂)]
+  simp [hQ, he₁, he₂]
+
+/-- **`SO(2)` rotation invariance of a unit plane bivector**: for an orthonormal pair `(e₁, e₂)` and
+any `(c, s)` on the unit circle `c² + s² = 1`, rotating `(e₁, e₂)` to
+`(c • e₁ + s • e₂, -s • e₁ + c • e₂)` leaves the Clifford product `ι e₁ * ι e₂` unchanged. -/
+theorem ι_smul_add_smul_mul_ι_neg_smul_add_smul_of_orthonormal {e₁ e₂ : V} (he₁ : ‖e₁‖ = 1)
+    (he₂ : ‖e₂‖ = 1) (h₁₂ : ⟪e₁, e₂⟫ = 0) {c s : ℝ} (hcs : c ^ 2 + s ^ 2 = 1) :
+    ι Q (c • e₁ + s • e₂) * ι Q ((-s) • e₁ + c • e₂) = ι Q e₁ * ι Q e₂ := by
+  have h1 : ι Q e₁ * ι Q e₁ = -1 := by simp [ι_sq_scalar, hQ, he₁]
+  have h2 : ι Q e₂ * ι Q e₂ = -1 := by simp [ι_sq_scalar, hQ, he₂]
+  have h21 : ι Q e₂ * ι Q e₁ = -(ι Q e₁ * ι Q e₂) :=
+    ι_mul_ι_of_inner_eq_zero hQ (by rw [real_inner_comm, h₁₂])
+  simp only [map_add, map_smul, add_mul, mul_add, smul_mul_smul_comm, h1, h2, h21, smul_neg]
+  calc
+    _ = (c ^ 2 + s ^ 2) • (ι Q e₁ * ι Q e₂) + (c * s - s * c) • (1 : CliffordAlgebra Q) := by
+      module
+    _ = ι Q e₁ * ι Q e₂ := by rw [hcs, one_smul, mul_comm c s, sub_self, zero_smul, add_zero]
+
+/-- Trigonometric form of
+`CliffordAlgebra.ι_smul_add_smul_mul_ι_neg_smul_add_smul_of_orthonormal`: rotating an orthonormal
+pair `(e₁, e₂)` by angle `θ` preserves `ι e₁ * ι e₂`. -/
+theorem ι_cos_sin_mul_of_orthonormal {e₁ e₂ : V} (he₁ : ‖e₁‖ = 1) (he₂ : ‖e₂‖ = 1)
+    (h₁₂ : ⟪e₁, e₂⟫ = 0) (θ : ℝ) :
+    ι Q (Real.cos θ • e₁ + Real.sin θ • e₂) * ι Q ((-Real.sin θ) • e₁ + Real.cos θ • e₂) =
+      ι Q e₁ * ι Q e₂ :=
+  ι_smul_add_smul_mul_ι_neg_smul_add_smul_of_orthonormal hQ he₁ he₂ h₁₂ (Real.cos_sq_add_sin_sq θ)
+
+end CliffordAlgebra
+
+end Seminormed
+
+section Normed
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
+  (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+include hQ
 
 namespace OrthonormalBasis
 
@@ -90,14 +160,6 @@ end OrthonormalBasis
 
 namespace CliffordAlgebra
 
-/-- For `Q v = -‖v‖²`, the even Clifford relation is `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
-theorem even_ι_bilin_add_swap_eq_neg_two_inner (u v : V) :
-    (even.ι Q).bilin u v + (even.ι Q).bilin v u = algebraMap ℝ (even Q) (-2 * ⟪u, v⟫) := by
-  rw [even_ι_bilin_add_swap]
-  congr 1
-  simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
-  ring
-
 /-- **The square of a Clifford basis vector of an orthonormal basis**: for `Q v = -‖v‖²`, the
 ordered product `e_s` of the generators indexed by `s` satisfies
 `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`. Reordering contributes `(-1) ^ (|s|.choose 2)` and
@@ -111,3 +173,5 @@ theorem basis_mul_self_of_orthonormal {ι : Type*} [Fintype ι] [LinearOrder ι]
   simp [Nat.choose_succ_succ', add_comm]
 
 end CliffordAlgebra
+
+end Normed

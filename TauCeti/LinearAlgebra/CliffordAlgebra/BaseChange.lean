@@ -432,6 +432,14 @@ theorem ofBaseChange_mem_evenOdd_iff {y : A ⊗[R] CliffordAlgebra Q} {i : ZMod 
     ofBaseChange A Q y ∈ evenOdd (Q.baseChange A) i ↔ y ∈ (evenOdd Q i).baseChange A := by
   rw [← toBaseChange_mem_baseChange_evenOdd_iff, toBaseChange_ofBaseChange]
 
+/-- `CliffordAlgebra.ofBaseChangeAux` preserves the `ℤ/2`-grading: an element of parity `i` in
+`Cℓ(M, Q)` maps into the parity-`i` part of `Cℓ(A ⊗ M, Q_A)`. -/
+theorem ofBaseChangeAux_mem_evenOdd {x : CliffordAlgebra Q} {i : ZMod 2}
+    (hx : x ∈ evenOdd Q i) :
+    ofBaseChangeAux A Q x ∈ evenOdd (Q.baseChange A) i := by
+  rw [← toBaseChange_mem_baseChange_evenOdd_iff, toBaseChange_ofBaseChangeAux]
+  exact Submodule.tmul_mem_baseChange_of_mem 1 hx
+
 end TensorCarrier
 
 /-! ### Extending algebra homomorphisms along extension of scalars -/

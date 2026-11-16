@@ -14,7 +14,9 @@ public import TauCeti.Analysis.InnerProductSpace.SesquilinearForm
 On the complexification of a real Clifford algebra, the adjoint relevant to Hermitian
 representations is `CliffordAlgebra.conjStar`, not Mathlib's complex-linear Clifford `star`.
 Skew-adjointness on the real vectors is equivalent to compatibility with this conjugate-linear
-adjoint on the whole algebra.
+adjoint on the whole algebra (`CliffordAlgebra.adjoint_map_eq_map_conjStar_iff`, and for scalar
+extensions of real actions `CliffordAlgebra.inner_liftBaseChange_eq_conjStar_iff` and
+`CliffordAlgebra.adjoint_liftBaseChange_eq_conjStar_iff`).
 
 If the action surjects onto the full complex endomorphism algebra, every positive definite
 compatible Hermitian form is a unique positive real multiple of any given compatible inner
@@ -128,6 +130,35 @@ theorem existsUnique_pos_mul_inner_of_surjective [Nontrivial S]
 
 end Hermitian
 
+section LiftBaseChange
+
+/-- **Criterion for `conjStar`-compatibility of `liftBaseChange`** (in arbitrary dimension): the
+complex-linear extension `liftBaseChange ℂ Q ρ` satisfies
+`⟪ρ_ℂ a x, y⟫_ℂ = ⟪x, ρ_ℂ (conjStar Q a) y⟫_ℂ` for all `a` if and only if every real vector `v : V`
+acts skew-Hermitianly under `ρ`. -/
+theorem inner_liftBaseChange_eq_conjStar_iff [SeminormedAddCommGroup S] [InnerProductSpace ℂ S]
+    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) :
+    (∀ (a : CliffordAlgebra (Q.baseChange ℂ)) (x y : S),
+        inner ℂ (liftBaseChange ℂ Q ρ a x) y =
+          inner ℂ x (liftBaseChange ℂ Q ρ (conjStar Q a) y)) ↔
+      ∀ (v : V) (x y : S), inner ℂ (ρ (ι Q v) x) y = -inner ℂ x (ρ (ι Q v) y) := by
+  refine ⟨fun h v x y ↦ ?_, fun h a x y ↦ ?_⟩
+  · simpa using h (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) x y
+  · exact sesqForm_map_eq_map_conjStar (liftBaseChange ℂ Q ρ) (innerₛₗ ℂ)
+      (fun v x y ↦ by simpa using h v x y) a x y
+
+/-- **Adjoint criterion for `liftBaseChange`**: on a finite-dimensional complex inner product space,
+`liftBaseChange ℂ Q ρ` is a `*`-representation for `conjStar` if and only if every real vector acts
+skew-adjointly. -/
+theorem adjoint_liftBaseChange_eq_conjStar_iff [NormedAddCommGroup S] [InnerProductSpace ℂ S]
+    [FiniteDimensional ℂ S] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) :
+    (∀ a : CliffordAlgebra (Q.baseChange ℂ),
+        (liftBaseChange ℂ Q ρ a).adjoint = liftBaseChange ℂ Q ρ (conjStar Q a)) ↔
+      ∀ v : V, (ρ (ι Q v)).adjoint = -ρ (ι Q v) := by
+  simpa using adjoint_map_eq_map_conjStar_iff (liftBaseChange ℂ Q ρ)
+
+end LiftBaseChange
+
 section Uniqueness
 
 variable [AddCommGroup S] [Module ℂ S] [FiniteDimensional ℂ S]
@@ -148,21 +179,13 @@ theorem existsUnique_pos_mul_of_surjective [Nontrivial S] (hsurj : Function.Surj
         -H x (ρ (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) y)) :
     ∃! r : ℝ, 0 < r ∧ ∀ x y, H x y = (r : ℂ) * H₀ x y := by
   -- Make `H₀` the inner product of `S`.
-  let core : InnerProductSpace.Core ℂ S :=
-    { inner x y := H₀ x y
-      conj_inner_symm x y := hH₀.isSymm.eq y x
-      re_inner_nonneg x := (RCLike.nonneg_iff.mp (hH₀.isNonneg.nonneg x)).1
-      add_left x y z := by simp
-      smul_left x y r := by simp
-      definite x hx := by_contra fun h ↦ hdef₀ x h hx }
-  let := core.toNormedAddCommGroup
-  let := InnerProductSpace.ofCore core.toCore
-  -- `InnerProductSpace.ofCore` takes its inner product from the core, which is `H₀`.
-  have hinner (x y : S) : inner ℂ x y = H₀ x y := rfl
+  let := (hH₀.toInnerProductCore hdef₀).toNormedAddCommGroup
+  let := InnerProductSpace.ofCore (hH₀.toInnerProductCore hdef₀).toCore
+  have hinner := hH₀.inner_ofCore_toInnerProductCore hdef₀
   simp_rw [← hinner]
   refine existsUnique_pos_mul_inner_of_surjective ρ hsurj (fun v ↦ ?_) H hpos hdef hH
   refine ((LinearMap.eq_adjoint_iff _ _).mpr fun x y ↦ ?_).symm
-  simp [hinner, hH₀ρ]
+  simp [hH₀ρ]
 
 end Uniqueness
 
