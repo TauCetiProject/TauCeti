@@ -17,9 +17,10 @@ contraction evaluates all those slots and pairs the remaining vector with that d
 These operations turn derivative fields into the directional expressions used in Taylor
 polynomials, without choosing coordinates.
 
-Both operations are continuous linear in the field. Partial contraction of `i` slots is
-homogeneous of degree `i` in the direction and has norm at most `‖h‖ ^ i`; full contraction of
-`IteratedGradient E j` has degree `j + 1` and norm at most `‖h‖ ^ (j + 1)`.
+Both operations are continuous linear in the field and continuous in the direction. Partial
+contraction of `i` slots is homogeneous of degree `i` in the direction and has norm at most
+`‖h‖ ^ i`; full contraction of `IteratedGradient E j` has degree `j + 1` and norm at most
+`‖h‖ ^ (j + 1)`.
 -/
 
 public section
@@ -79,6 +80,16 @@ theorem contractL_smul_direction (j i : ℕ) (a : ℝ) (h : E) :
   | succ i ih =>
       ext G
       simp [ih, smul_smul, pow_succ, mul_comm]
+
+/-- Partial contraction of `i` outer slots is continuous in the direction vector. -/
+@[fun_prop]
+theorem continuous_contractL (j i : ℕ) : Continuous (contractL (E := E) j i) := by
+  induction i with
+  | zero => exact continuous_const.congr fun h ↦ (contractL_zero j h).symm
+  | succ i ih =>
+      exact (ih.clm_comp
+        (ContinuousLinearMap.id ℝ (E →L[ℝ] IteratedGradient E (j + i))).flip.continuous).congr
+        fun h ↦ (contractL_succ j i h).symm
 
 end NormedSpace
 
@@ -155,6 +166,16 @@ theorem norm_fullContractL_le (j : ℕ) (h : E) :
   apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
   intro G
   exact (norm_fullContractL_apply_le j h G).trans_eq (mul_comm _ _)
+
+/-- Full contraction of `IteratedGradient E j` is continuous in the direction vector. -/
+@[fun_prop]
+theorem continuous_fullContractL (j : ℕ) : Continuous (fullContractL (E := E) j) := by
+  induction j with
+  | zero => exact (innerSL ℝ (E := E)).continuous.congr fun h ↦ (fullContractL_zero h).symm
+  | succ j ih =>
+      exact (ih.clm_comp
+        (ContinuousLinearMap.id ℝ (E →L[ℝ] IteratedGradient E j)).flip.continuous).congr
+        fun h ↦ (fullContractL_succ j h).symm
 
 end InnerProductSpace
 

@@ -26,9 +26,6 @@ variables used in potential and averaged Taylor estimates.
 
 ## Main declarations
 
-* `TauCeti.IteratedGradient.continuous_contractL`,
-  `TauCeti.IteratedGradient.continuous_fullContractL`: continuity of partial and full contractions
-  in the direction vector.
 * `TauCeti.fullContractL_iteratedGradientChain`: unconditional identification of full contraction
   of `iteratedGradientChain f k x` with `iteratedFDeriv ℝ (k + 1) f x` on a constant tuple.
 * `TauCeti.continuousOn_sum_iteratedFDeriv`: continuity of the degree-`m` Taylor sum in the center
@@ -49,43 +46,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-open scoped Nat ContDiff
-
-namespace TauCeti.IteratedGradient
-
-section NormedSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- Partial contraction of `i` outer slots is continuous in the direction vector. -/
-@[fun_prop]
-theorem continuous_contractL (j i : ℕ) : Continuous (contractL (E := E) j i) := by
-  induction i with
-  | zero => exact continuous_const.congr fun h ↦ (contractL_zero j h).symm
-  | succ i ih =>
-      exact (ih.clm_comp
-        (ContinuousLinearMap.id ℝ (E →L[ℝ] IteratedGradient E (j + i))).flip.continuous).congr
-        fun h ↦ (contractL_succ j i h).symm
-
-end NormedSpace
-
-section InnerProductSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- Full contraction of `IteratedGradient E j` is continuous in the direction vector. -/
-@[fun_prop]
-theorem continuous_fullContractL (j : ℕ) : Continuous (fullContractL (E := E) j) := by
-  induction j with
-  | zero => exact (innerSL ℝ (E := E)).continuous.congr fun h ↦ (fullContractL_zero h).symm
-  | succ j ih =>
-      exact (ih.clm_comp
-        (ContinuousLinearMap.id ℝ (E →L[ℝ] IteratedGradient E j)).flip.continuous).congr
-        fun h ↦ (fullContractL_succ j h).symm
-
-end InnerProductSpace
-
-end TauCeti.IteratedGradient
+open scoped Nat
 
 namespace TauCeti
 
