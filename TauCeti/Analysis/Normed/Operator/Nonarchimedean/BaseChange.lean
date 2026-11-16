@@ -163,15 +163,9 @@ theorem IsRieszProjection.mapCoeffs [TauCeti.NormedRing.IsTate S]
     {u E : C₀(J, R) →L[R] C₀(J, R)} {a : R} {h : ℕ} (hE : IsRieszProjection u a h E)
     (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
     IsRieszProjection (u.mapCoeffs f hf) (f a) h (E.mapCoeffs f hf) := by
-  obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw⟩ := hE.exists_inverse
-  refine ⟨?_, ?_, mapCoeffs_mem_closure_adjoin f hf hE.mem_closure_adjoin, ?_,
-    ⟨w.mapCoeffs f hf, ?_, ?_, ?_, ?_, mapCoeffs_mem_closure_adjoin f hf hw⟩⟩
-  · simpa [IsIdempotentElem] using congrArg (fun v ↦ v.mapCoeffs f hf) hE.isIdempotentElem.eq
-  · simpa [Commute, SemiconjBy] using congrArg (fun v ↦ v.mapCoeffs f hf) hE.commute.eq
-  · simpa using congrArg (fun v ↦ v.mapCoeffs f hf) hE.pow_mul_eq_zero
-  · simpa using congrArg (fun v ↦ v.mapCoeffs f hf) hw₁
-  · simpa using congrArg (fun v ↦ v.mapCoeffs f hf) hw₂
-  · simpa using congrArg (fun v ↦ v.mapCoeffs f hf) hw₃
-  · simpa using congrArg (fun v ↦ v.mapCoeffs f hf) hw₄
+  simpa only [IsRieszProjection, mapCoeffsRingHom_apply, mapCoeffs_sub, mapCoeffs_one,
+    mapCoeffs_smul] using
+    IsSpectralProjection.map hE (mapCoeffsRingHom f hf)
+      (fun hv ↦ by simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
 
 end ContinuousLinearMap

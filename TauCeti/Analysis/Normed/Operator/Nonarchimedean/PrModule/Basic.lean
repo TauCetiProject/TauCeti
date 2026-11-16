@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
 public import TauCeti.Analysis.Normed.Operator.RowCompact.PrModule
 public import TauCeti.LinearAlgebra.Charpoly.Projective
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
 /-!
 # Fredholm series of row-compact operators on modules with property (Pr)
@@ -55,8 +56,9 @@ finite projective module may vary over `Spec R`.
   `det (1 - T (u ∘ v)) = det (1 - T (v ∘ u))`.
 * `ContinuousLinearMap.IsPrCompact.charPowerSeries_conj`: invariance under conjugation.
 * `ContinuousLinearMap.IsPrCompact.isEntire_charPowerSeries`: the series is entire.
-* `ContinuousLinearMap.charPowerSeries_eq_projectiveCharpolyRev`: comparison with the finite
-  projective determinant.
+* `ContinuousLinearMap.charPowerSeries_eq_projectiveCharpolyRev`,
+  `ContinuousLinearMap.IsRowCompact.charPowerSeries_matrixCoeff_mul_eq_projectiveCharpolyRev`:
+  comparison with the finite projective determinant.
 
 ## References
 
@@ -248,6 +250,34 @@ theorem charPowerSeries_eq_projectiveCharpolyRev [Module.Finite R M] (hM : HasPr
   congr 3
   refine LinearMap.ext fun y ↦ funext fun j ↦ ?_
   simp [e]
+
+/-- For a row-compact idempotent `e` on a model space `C₀(I, R)`, whose range is finitely
+generated and projective, the principal-minor series `det (1 - T u e)` of any endomorphism `u`
+preserving `range e` is the reversed characteristic polynomial `det (1 - X u|_{range e})`. -/
+theorem IsRowCompact.charPowerSeries_matrixCoeff_mul_eq_projectiveCharpolyRev
+    {I : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
+    {u e : C₀(I, R) →L[R] C₀(I, R)} (he : e.IsRowCompact) (he' : IsIdempotentElem e)
+    (hmaps : Set.MapsTo u e.range e.range) :
+    letI : AddCommGroup e.range := inferInstance
+    haveI := he.finite_range_of_isIdempotentElem he'
+    haveI := he.projective_range_of_isIdempotentElem he'
+    (u * e).matrixCoeff.charPowerSeries =
+      ((u.toLinearMap.restrict hmaps).projectiveCharpolyRev : PowerSeries R) := by
+  let : AddCommGroup e.range := inferInstance
+  have := he.finite_range_of_isIdempotentElem he'
+  have := he.projective_range_of_isIdempotentElem he'
+  have hri : e.rangeRestrict.comp e.range.subtypeL = .id R e.range :=
+    ext fun x ↦ Subtype.ext (ContinuousLinearMap.IsIdempotentElem.apply_coe_range he' x)
+  have hM : HasPr R e.range :=
+    (isPrCompact_iff_isRowCompact.2 he).hasPr_source.of_retract _ _ hri
+  let v : e.range →L[R] e.range := u.restrict (fun _ hx ↦ hmaps hx)
+  have hv := isPrCompact_of_finite (R := R) (M := e.range) (L := e.range) hM hM v
+  have hext : e.range.subtypeL.comp (v.comp e.rangeRestrict) = u * e := by
+    dsimp only [v]
+    rw [← comp_assoc, subtypeL_comp_restrict, rangeRestrict, domRestrict_comp_codRestrict, mul_def]
+  rw [← hext, ← hv.charPowerSeries_eq hri,
+    charPowerSeries_eq_projectiveCharpolyRev (R := R) (M := e.range) hM v]
+  rfl
 
 end Finite
 

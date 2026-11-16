@@ -22,8 +22,8 @@ Since `x - c` divides `p(x) - p(c)`, a congruence `(x - c) e ≡ 0` modulo an id
 A monic polynomial of positive degree dividing every polynomial that vanishes at `f : B` forces
 `A` to act faithfully on `B` (`Polynomial.Monic.faithfulSMul_of_dvd`).
 
-An element of an algebra killed by a polynomial with invertible constant coefficient is a unit
-(`Polynomial.isUnit_of_aeval_eq_zero`).
+An element of an algebra killed by a polynomial whose constant coefficient maps to a unit in the
+algebra is a unit (`Polynomial.isUnit_of_aeval_eq_zero`).
 -/
 
 public section
@@ -67,21 +67,26 @@ theorem Monic.faithfulSMul_of_dvd {A B : Type*} [CommRing A] [Ring B] [Algebra A
   exact hp.not_dvd_of_natDegree_lt (C_ne_zero.mpr ha0) (by rwa [natDegree_C])
     (hdvd _ (by rwa [aeval_C]))
 
-/-- An element of an algebra killed by a polynomial with invertible constant coefficient is a
-unit. -/
+/-- An element of an algebra killed by a polynomial whose constant coefficient maps to a unit in
+the algebra is a unit. -/
 theorem isUnit_of_aeval_eq_zero {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A] {x : A}
-    {p : R[X]} (hp : IsUnit (p.coeff 0)) (hx : aeval x p = 0) : IsUnit x := by
-  obtain ⟨c, hc⟩ := hp.exists_left_inv
+    {p : R[X]} (hp : IsUnit (algebraMap R A (p.coeff 0))) (hx : aeval x p = 0) : IsUnit x := by
   have hdiv := congrArg (aeval x) (X_mul_divX_add p)
   simp only [map_add, map_mul, aeval_X, aeval_C, hx] at hdiv
-  let y : A := algebraMap R A c * aeval x p.divX
+  let c : A := (hp.unit⁻¹ : Aˣ)
+  have hc : c * algebraMap R A (p.coeff 0) = 1 := by
+    simp [c]
+  have hcx : Commute c x := by
+    have hcomm : Commute (hp.unit : A) x := by
+      simpa only [IsUnit.unit_spec] using Algebra.commute_algebraMap_left (p.coeff 0) x
+    exact hcomm.units_inv_left
+  let y : A := c * aeval x p.divX
   have hcomm : Commute x y :=
-    (Algebra.commute_algebraMap_right c x).mul_right
+    hcx.symm.mul_right
       (by simpa only [aeval_X] using (Commute.all (X : R[X]) p.divX).map (aeval x))
   have he : x * y + 1 = 0 := by
-    have hmul := congrArg (algebraMap R A c * ·) hdiv
-    rw [mul_zero, mul_add, ← map_mul, hc, map_one, ← mul_assoc,
-      (Algebra.commute_algebraMap_left c x).eq, mul_assoc] at hmul
+    have hmul := congrArg (c * ·) hdiv
+    rw [mul_zero, mul_add, hc, ← mul_assoc, hcx.eq, mul_assoc] at hmul
     exact hmul
   have hee : (x * y) * (x * y) = 1 := by
     calc (x * y) * (x * y) = (x * y) * (x * y) + (x * y + 1) := by rw [he, add_zero]
