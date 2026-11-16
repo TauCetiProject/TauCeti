@@ -325,6 +325,22 @@ def restrict (E : LinearEquation U n) {V : Opens ℂ} (h : V ≤ U) : LinearEqua
 theorem restrict_coeff (E : LinearEquation U n) {V : Opens ℂ} (h : V ≤ U) (j : Fin n) :
     (E.restrict h).coeff j = HolomorphicFunctions.restrict h (E.coeff j) := by rfl
 
+/-- Restricting an equation to its own domain leaves it unchanged. -/
+@[simp]
+theorem restrict_refl (E : LinearEquation U n) :
+    E.restrict (le_refl U) = E := by
+  ext j z
+  simp
+
+/-- Successive restriction of an equation along nested open subdomains equals direct
+restriction. -/
+@[simp]
+theorem restrict_restrict (E : LinearEquation U n) {V W : Opens ℂ}
+    (hVU : V ≤ U) (hWV : W ≤ V) :
+    (E.restrict hVU).restrict hWV = E.restrict (hWV.trans hVU) := by
+  ext j z
+  simp
+
 /-- On the smaller domain, the companion matrix of `E.restrict h` agrees with `E.companion`. -/
 theorem companion_restrict_eq_of_mem (E : LinearEquation U n) {V : Opens ℂ} (h : V ≤ U)
     {z : ℂ} (hz : z ∈ V) : (E.restrict h).companion z = E.companion z := by
@@ -375,6 +391,51 @@ theorem initialJet_restrictSolutionSpace (E : LinearEquation U n) {V : Opens ℂ
     {a : ℂ} (ha : a ∈ V) (f : E.solutionSpace) :
     (E.restrict h).initialJet ha (E.restrictSolutionSpace h f) = E.initialJet (h ha) f :=
   HolomorphicFunctions.jet_restrict h ha n f.val
+
+/-- Restricting a solution to its own domain acts as the identity under the canonical
+identification of equal solution submodules. -/
+@[simp]
+theorem ofEq_restrictSolutionSpace_refl (E : LinearEquation U n)
+    (h : (E.restrict (le_refl U)).solutionSpace = E.solutionSpace) (f : E.solutionSpace) :
+    LinearEquiv.ofEq _ _ h (E.restrictSolutionSpace (le_refl U) f) = f := by
+  apply Subtype.ext
+  simp
+
+/-- Restricting the solution space to its own domain is the identity linear map up to the
+canonical identification of equal solution submodules. -/
+@[simp]
+theorem ofEq_comp_restrictSolutionSpace_refl (E : LinearEquation U n)
+    (h : (E.restrict (le_refl U)).solutionSpace = E.solutionSpace) :
+    (LinearEquiv.ofEq _ _ h).toLinearMap.comp (E.restrictSolutionSpace (le_refl U)) =
+      LinearMap.id :=
+  LinearMap.ext fun _ ↦ by simp
+
+/-- Successive restriction of a solution along nested open subdomains equals direct restriction
+under the canonical identification of equal solution submodules. -/
+@[simp]
+theorem ofEq_restrictSolutionSpace_restrictSolutionSpace (E : LinearEquation U n)
+    {V W : Opens ℂ} (hVU : V ≤ U) (hWV : W ≤ V)
+    (h : ((E.restrict hVU).restrict hWV).solutionSpace =
+      (E.restrict (hWV.trans hVU)).solutionSpace)
+    (f : E.solutionSpace) :
+    LinearEquiv.ofEq _ _ h
+        ((E.restrict hVU).restrictSolutionSpace hWV (E.restrictSolutionSpace hVU f)) =
+      E.restrictSolutionSpace (hWV.trans hVU) f := by
+  apply Subtype.ext
+  simp only [LinearEquiv.coe_ofEq_apply, coe_restrictSolutionSpace, ← AlgHom.comp_apply,
+    HolomorphicFunctions.restrict_comp]
+
+/-- Successive restriction of solution spaces along nested open subdomains equals direct
+restriction up to the canonical identification of equal solution submodules. -/
+@[simp]
+theorem ofEq_comp_restrictSolutionSpace_comp (E : LinearEquation U n)
+    {V W : Opens ℂ} (hVU : V ≤ U) (hWV : W ≤ V)
+    (h : ((E.restrict hVU).restrict hWV).solutionSpace =
+      (E.restrict (hWV.trans hVU)).solutionSpace) :
+    (LinearEquiv.ofEq _ _ h).toLinearMap.comp
+        (((E.restrict hVU).restrictSolutionSpace hWV).comp (E.restrictSolutionSpace hVU)) =
+      E.restrictSolutionSpace (hWV.trans hVU) :=
+  LinearMap.ext fun _ ↦ by simp
 
 /-! ### Uniqueness on preconnected open domains -/
 

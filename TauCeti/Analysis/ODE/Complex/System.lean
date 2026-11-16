@@ -15,9 +15,9 @@ import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.TaylorSeries
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
-import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Calculus.FDeriv.Matrix
 import TauCeti.Analysis.ODE.Gronwall.Uniqueness
+import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # Holomorphic linear differential systems on discs
@@ -259,16 +259,6 @@ private theorem exists_subdisc_bound_of_mem_eball
   rw [norm_smul, norm_inv, Complex.norm_natCast, inv_mul_le_iff₀ hfac, ← mul_div_assoc]
   exact hk
 
-private theorem summable_pow_succ_mul_geometric {q : ℝ} (hq0 : 0 < q) (hq1 : q < 1) (K d : ℕ) :
-    Summable (fun n : ℕ ↦ (n + d : ℝ) ^ K * q ^ n) := by
-  have hq_norm : ‖q‖ < 1 := by rwa [Real.norm_of_nonneg hq0.le]
-  have hbase := (summable_pow_mul_geometric_of_norm_lt_one K hq_norm).comp_injective
-    (add_left_injective d)
-  have hqd : q ^ d ≠ 0 := pow_ne_zero d hq0.ne'
-  refine (hbase.mul_right (q ^ d)⁻¹).congr fun n ↦ ?_
-  dsimp only [Function.comp_def]
-  rw [Nat.cast_add, pow_add, mul_assoc, mul_inv_cancel_right₀ hqd]
-
 /-- The power series defining `propagatorSeries A z₀ z` is norm-summable at every point of an
 extended open ball on which `A` is complex differentiable. -/
 theorem summable_norm_pow_smul_propagatorCoeff_of_mem_eball
@@ -277,10 +267,11 @@ theorem summable_norm_pow_smul_propagatorCoeff_of_mem_eball
     Summable (fun n : ℕ ↦ ‖(z - z₀) ^ n • propagatorCoeff A z₀ n‖) := by
   obtain ⟨r₁, ρ, -, K, hr₁, hr₁ρ, -, hzr₁, -, hbound⟩ := exists_subdisc_bound_of_mem_eball hA hz
   have hρ : 0 < ρ := hr₁.trans hr₁ρ
-  have hq0 : 0 < r₁ / ρ := div_pos hr₁ hρ
-  have hq1 : r₁ / ρ < 1 := (div_lt_one hρ).mpr hr₁ρ
+  have hq : ‖r₁ / ρ‖ < 1 := by
+    rw [Real.norm_of_nonneg (div_nonneg hr₁.le hρ.le)]
+    exact (div_lt_one hρ).mpr hr₁ρ
   refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
-    ((summable_pow_succ_mul_geometric hq0 hq1 K 1).mul_left ‖(1 : B)‖)
+    ((summable_add_pow_mul_geometric_of_norm_lt_one (1 : ℝ) K hq).mul_left ‖(1 : B)‖)
   calc
     ‖(z - z₀) ^ n • propagatorCoeff A z₀ n‖
         = ‖z - z₀‖ ^ n * ‖propagatorCoeff A z₀ n‖ := by rw [norm_smul, norm_pow]
@@ -288,8 +279,7 @@ theorem summable_norm_pow_smul_propagatorCoeff_of_mem_eball
         gcongr
         · exact (mem_ball_iff_norm.mp hzr₁).le
         · exact hbound n
-    _ = ‖(1 : B)‖ * ((n + (1 : ℕ) : ℝ) ^ K * (r₁ / ρ) ^ n) := by
-        push_cast; rw [div_pow]; ring
+    _ = ‖(1 : B)‖ * ((n + 1 : ℝ) ^ K * (r₁ / ρ) ^ n) := by rw [div_pow]; ring
 
 private theorem tsum_deriv_propagator_eq_mul
     {A : ℂ → B} {z₀ z : ℂ} {r : ℝ≥0∞} (hA : DifferentiableOn ℂ A (eball z₀ r))
@@ -351,8 +341,9 @@ theorem hasDerivAt_propagatorSeries_of_mem_eball
             one_add_one_eq_two, pow_succ', div_pow]
           field_simp [hρ.ne']
   have hu : Summable u := (summable_nat_add_iff 1).mp <|
-    ((summable_pow_succ_mul_geometric (div_pos hr₁ hρ)
-      ((div_lt_one hρ).mpr hr₁ρ) (K + 1) 2).mul_left (‖(1 : B)‖ / ρ)).congr
+    ((summable_add_pow_mul_geometric_of_norm_lt_one (2 : ℝ) (K + 1)
+      (by rw [Real.norm_of_nonneg (div_nonneg hr₁.le hρ.le)]; exact (div_lt_one hρ).mpr hr₁ρ))
+        |>.mul_left (‖(1 : B)‖ / ρ)).congr
         fun m ↦ by simp only [u, Nat.add_sub_cancel, Nat.cast_add, Nat.cast_one]; ring
   have hg0 : Summable (fun n ↦ g n z₀) :=
     summable_of_ne_finset_zero (s := {0}) fun n hn ↦ by
