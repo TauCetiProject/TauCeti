@@ -36,6 +36,9 @@ long as the order of `N` is prime to the index of one of the two subgroups.
   form.
 * `IsCyclic.index_inf_eq_lcm`: in a cyclic group the index of `H ⊓ K` is the least common multiple
   of the indices of `H` and `K`.
+* `IsCyclic.index_zpowGroupHom_range`, `IsCyclic.index_zpowGroupHom_range_of_infinite`: in a cyclic
+  commutative group `G`, the `m`-th power subgroup has index `m.gcd (Nat.card G)` (and `m.natAbs`
+  when `G` is infinite), with additive versions for `zsmulAddGroupHom`.
 * `Subgroup.index_inf_eq_lcm_of_isCyclic_quotient`: the same holds in a group with a normal
   subgroup `N` whose quotient is cyclic, provided the order of `N` is prime to the index of one of
   the two subgroups. This is the group theory behind Abhyankar's lemma, where `N` is the wild
@@ -176,5 +179,58 @@ theorem index_inf_eq_lcm_of_isCyclic_quotient (N : Subgroup G) [N.Normal] [IsCyc
       show A.index * (s * (B ⊔ N).index) = s * (A.index * (B ⊔ N).index) by ring,
       Nat.mul_div_assoc _ ((Nat.gcd_dvd_left _ _).mul_right _)]
   rw [index_inf, ← relIndex_mul_index (le_sup_left : B ≤ B ⊔ N), hmul, ← hcyc, mul_left_comm]
+
+/-- **Index of the `m`-th power subgroup of a cyclic group.** In a cyclic commutative group `G`,
+the image of `zpowGroupHom m : G →* G` has index `m.gcd (Nat.card G)`. This holds for both finite
+and infinite cyclic groups (with `Nat.card G = 0` when `G` is infinite, giving `m.natAbs`). -/
+@[to_additive
+/-- **Index of the `m`-th multiple subgroup of an additive cyclic group.** In an additive cyclic
+commutative group `G`, the image of `zsmulAddGroupHom m : G →+ G` has index
+`m.gcd (Nat.card G)`. -/]
+theorem _root_.IsCyclic.index_zpowGroupHom_range {G : Type*} [CommGroup G] [IsCyclic G] (m : ℤ) :
+    (zpowGroupHom m : G →* G).range.index = m.gcd (Nat.card G) := by
+  obtain ⟨g, hg⟩ := isCyclic_iff_exists_zpowers_eq_top.mp ‹_›
+  refine Nat.dvd_right_iff_eq.mp fun n ↦ ?_
+  rw [← pow_mem_iff_index_dvd _ hg, MonoidHom.mem_range]
+  have hmem : (∃ x : G, zpowGroupHom m x = g ^ n) ↔
+      ∃ k : ℤ, (orderOf g : ℤ) ∣ k * m - n := by
+    constructor
+    · rintro ⟨x, hx⟩
+      obtain ⟨k, rfl⟩ := mem_zpowers_iff.mp (hg.symm ▸ mem_top x)
+      refine ⟨k, orderOf_dvd_iff_zpow_eq_one.mpr ?_⟩
+      rw [zpow_sub, zpow_mul, zpow_natCast, zpowGroupHom_apply] at *
+      rw [hx, mul_inv_cancel]
+    · rintro ⟨k, hk⟩
+      refine ⟨g ^ k, ?_⟩
+      rw [zpowGroupHom_apply, ← zpow_mul, ← zpow_natCast]
+      exact mul_inv_eq_one.mp (by rw [← zpow_sub]; exact orderOf_dvd_iff_zpow_eq_one.mp hk)
+  rw [hmem, orderOf_eq_card_of_zpowers_eq_top hg]
+  constructor
+  · rintro ⟨k, j, hkj⟩
+    have hdiv : ((m.gcd (Nat.card G) : ℕ) : ℤ) ∣ (n : ℤ) := by
+      have hn : (n : ℤ) = k * m - (Nat.card G : ℤ) * j := by omega
+      rw [hn]
+      exact dvd_sub (dvd_mul_of_dvd_right (Int.gcd_dvd_left m (Nat.card G)) k)
+        (dvd_mul_of_dvd_left (Int.gcd_dvd_right m (Nat.card G)) j)
+    exact Int.natCast_dvd_natCast.mp hdiv
+  · intro hdiv
+    obtain ⟨q, hq⟩ := Int.natCast_dvd_natCast.mpr hdiv
+    refine ⟨q * Int.gcdA m (Nat.card G), -(q * Int.gcdB m (Nat.card G)), ?_⟩
+    have hbez : (m.gcd (Nat.card G) : ℤ) = m * Int.gcdA m (Nat.card G) +
+        (Nat.card G : ℤ) * Int.gcdB m (Nat.card G) := Int.gcd_eq_gcd_ab m (Nat.card G)
+    grind
+
+/-- **Index of the `m`-th power subgroup of an infinite cyclic group.** In an infinite cyclic
+commutative group `G` (such as `Multiplicative ℤ`), the image of `zpowGroupHom m : G →* G` has
+index `m.natAbs`. -/
+@[to_additive (attr := simp)
+/-- **Index of the `m`-th multiple subgroup of an infinite additive cyclic group.** In an infinite
+additive cyclic commutative group `G` (such as `ℤ`), the image of `zsmulAddGroupHom m : G →+ G` has
+index `m.natAbs`. -/]
+theorem _root_.IsCyclic.index_zpowGroupHom_range_of_infinite {G : Type*} [CommGroup G]
+    [IsCyclic G] [Infinite G] (m : ℤ) :
+    (zpowGroupHom m : G →* G).range.index = m.natAbs := by
+  rw [IsCyclic.index_zpowGroupHom_range, Nat.card_eq_zero_of_infinite, Int.natCast_zero,
+    Int.gcd_zero_right]
 
 end Subgroup

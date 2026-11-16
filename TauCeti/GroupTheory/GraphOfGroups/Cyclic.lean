@@ -11,7 +11,9 @@ public import TauCeti.GroupTheory.PresentedGroup
 public import Mathlib.Algebra.Group.Torsion
 public import Mathlib.Data.Int.Cast.Lemmas
 public import Mathlib.GroupTheory.Abelianization.Defs
+public import Mathlib.GroupTheory.Index
 public import Mathlib.RingTheory.Coprime.Basic
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Index
 
 /-!
 # One-edge graphs of infinite cyclic groups
@@ -50,6 +52,12 @@ and `true` is `t`, respectively `y`.
   abelianization of `⟨x, y ∣ x ^ m = y ^ n⟩` is `ℤ`.
 * `TauCeti.GraphOfGroups.π₁Tree.cyclicAmalgamAbelianizationEquiv`: for coprime `m` and `n`, the
   abelianization of the fundamental group of the segment is `ℤ`.
+
+## Main results
+
+* `TauCeti.GraphOfGroups.index_range_α_baumslagSolitar`,
+  `TauCeti.GraphOfGroups.index_range_ω_baumslagSolitar`: the boundary images of `baumslagSolitar`
+  have indices `|m|` and `|n|`.
 
 ## References
 
@@ -93,6 +101,31 @@ fundamental group is the Baumslag–Solitar group `⟨a, t ∣ t a ^ n t⁻¹ = 
 @[simp] theorem baumslagSolitar_α_false :
     (baumslagSolitar m n hm hn).α ((), false) = zpowGroupHom (α := Multiplicative ℤ) n :=
   loop_α_false ..
+
+-- `baumslagSolitar` and `loop` are `@[expose]` rather than `abbrev`, so their vertex and edge
+-- groups (and `Group` instances) reduce to `Multiplicative ℤ` only definitionally; direct `rw` or
+-- `simp` with `IsCyclic.index_zpowGroupHom_range_of_infinite` fails at default transparency.
+private theorem baumslagSolitar_range_index_eq {k : ℤ}
+    {f : Multiplicative ℤ →* Multiplicative ℤ} (hf : f = zpowGroupHom k) :
+    f.range.index = k.natAbs :=
+  (congrArg (fun g : Multiplicative ℤ →* Multiplicative ℤ => g.range.index) hf).trans
+    (IsCyclic.index_zpowGroupHom_range_of_infinite k)
+
+/-- The image of `α` on a dart of `baumslagSolitar m n` has index `|m|` on `((), true)` and `|n|`
+on `((), false)`. -/
+@[simp] theorem index_range_α_baumslagSolitar (e : (SerreGraph.rose Unit).E) :
+    ((baumslagSolitar m n hm hn).α e).range.index = cond e.2 m.natAbs n.natAbs := by
+  obtain ⟨⟨⟩, _ | _⟩ := e
+  · exact baumslagSolitar_range_index_eq (baumslagSolitar_α_false m n hm hn)
+  · exact baumslagSolitar_range_index_eq (baumslagSolitar_α_true m n hm hn)
+
+/-- The image of `ω` on a dart of `baumslagSolitar m n` has index `|n|` on `((), true)` and `|m|`
+on `((), false)`. -/
+@[simp] theorem index_range_ω_baumslagSolitar (e : (SerreGraph.rose Unit).E) :
+    ((baumslagSolitar m n hm hn).ω e).range.index = cond e.2 n.natAbs m.natAbs := by
+  obtain ⟨⟨⟩, _ | _⟩ := e
+  · exact baumslagSolitar_range_index_eq (baumslagSolitar_ω_false m n hm hn)
+  · exact baumslagSolitar_range_index_eq (baumslagSolitar_ω_true m n hm hn)
 
 /-- The Baumslag–Solitar relator `t a ^ n t⁻¹ a ^ (-m)` in the free group on `a = false` and
 `t = true`. -/

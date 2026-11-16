@@ -66,20 +66,13 @@ section Stabilizers
 
 variable {𝔸 v₀}
 
-private theorem mk_comp_homotopic_cons_iff {v : Γ.V} (s : 𝔸.Path ⟨v₀⟩ ⟨v₀⟩)
-    (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) (a : 𝔸.vertexGroup v) :
-    Path.Homotopic (s.comp p) (p.cons (Letter.vertex a)) ↔ π₁.vertexHom p a = π₁.mk s := by
-  rw [π₁.vertexHom_apply, eq_comm, π₁.mk_eq_mk_iff, ← Path.comp_ofVertex]
-  exact ⟨fun h => (Path.Homotopic.comp_comp_reverse s p).symm.trans (h.comp_right p.reverse),
-    fun h => (h.comp_right p).trans (Path.Homotopic.comp_reverse_comp _ p)⟩
-
 /-- The stabilizer in `π₁(𝔸, v₀)` of the vertex `p A_v` of `X(𝔸, v₀)` is `p A_v p⁻¹`, the image of
 `π₁.vertexHom p : A_v →* π₁(𝔸, v₀)`. -/
 theorem stabilizer_vertex {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
     stabilizer (π₁ 𝔸 v₀) (𝔸.bassSerreVertex v₀ p) = (π₁.vertexHom p).range := by
   ext g
   refine π₁.induction_on g fun s => ?_
-  simp [mem_stabilizer_iff, bassSerreVertex_eq_iff, mk_comp_homotopic_cons_iff]
+  simp [mem_stabilizer_iff, bassSerreVertex_eq_iff, ← π₁.vertexHom_eq_mk_iff]
 
 /-- At the base vertex `1 · A_{v₀}`, the stabilizer is the image of `A_{v₀}` in `π₁(𝔸, v₀)`. -/
 @[simp] theorem stabilizer_bassSerreBaseVertex :
@@ -106,7 +99,7 @@ theorem stabilizer_edge (e : Γ.E) (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) :
   ext g
   refine π₁.induction_on g fun s => ?_
   simp [mem_stabilizer_iff, bassSerreDart_eq_iff, ← MonoidHom.range_comp,
-    mk_comp_homotopic_cons_iff]
+    ← π₁.vertexHom_eq_mk_iff]
 
 /-- The isomorphism of `A_e` onto the stabilizer of `[e, p]` in `π₁(𝔸, v₀)` sending `c` to
 `π₁.vertexHom p (𝔸.α e c)`. -/

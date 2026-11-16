@@ -16,14 +16,12 @@ Let `𝔸` be a graph of groups over a Serre graph `Γ` with base vertex `v₀`.
 Weidmann and Myasnikov (Definition 2.5) and Serre (Chapter I, §5.3), the Bass–Serre covering tree
 `X(𝔸, v₀)` is constructed from `𝔸`-paths starting at `v₀`:
 
-* Its vertices (`GraphOfGroups.BassSerreVertex`) are the equivalence classes `p A_v` of pairs
-  `(v, p)` where `p` is an `𝔸`-path from `v₀` to `v`, with `(v, p) ≈ (v, q)` when `p` is homotopic
-  to `q · a` for some `a ∈ A_v`.
-* Its darts (`GraphOfGroups.BassSerreDart`) are the equivalence classes `[e, p]` of pairs `(e, p)`
-  where `e` is a dart of `Γ` and `p` is an `𝔸`-path from `v₀` to `src e`, with `(e, p) ≈ (e, q)`
-  when `p` is homotopic to `q · α_e(c)` for some `c ∈ A_e`. For `a ∈ A_v` and a dart `e` from `v`
-  to `v'`, the dart `[e, p · a]` has source `p A_v`, reversal `[rev e, p · a · e]`, and target
-  `(p a e) A_{v'}`.
+* Its vertices are the equivalence classes `p A_v` of pairs `(v, p)` where `p` is an `𝔸`-path from
+  `v₀` to `v`, with `(v, p) ≈ (v, q)` when `p` is homotopic to `q · a` for some `a ∈ A_v`.
+* Its darts are the equivalence classes `[e, p]` of pairs `(e, p)` where `e` is a dart of `Γ` and
+  `p` is an `𝔸`-path from `v₀` to `src e`, with `(e, p) ≈ (e, q)` when `p` is homotopic to
+  `q · α_e(c)` for some `c ∈ A_e`. For `a ∈ A_v` and a dart `e` from `v` to `v'`, the dart
+  `[e, p · a]` has source `p A_v`, reversal `[rev e, p · a · e]`, and target `(p a e) A_{v'}`.
 
 The fundamental group `π₁(𝔸, v₀)` acts on `X(𝔸, v₀)` on the left by concatenating closed `𝔸`-paths
 at `v₀`. Because the type projection `X(𝔸, v₀) → Γ` sending `p A_v` to `v` and `[e, p]` to `e` is
@@ -41,24 +39,19 @@ Stabilizers and the quotient graph isomorphism are established in
 
 ## Main definitions
 
-* `TauCeti.GraphOfGroups.BassSerreVertex`, `TauCeti.GraphOfGroups.BassSerreDart`: vertex and dart
-  types of the Bass–Serre tree.
-* `TauCeti.GraphOfGroups.bassSerreGraph`: the underlying `SerreGraph` of `X(𝔸, v₀)`.
-* `TauCeti.GraphOfGroups.bassSerreAction`: the left action of `π₁(𝔸, v₀)` by graph automorphisms.
 * `TauCeti.GraphOfGroups.bassSerreTree`: `X(𝔸, v₀)` as a `GTree (π₁ 𝔸 v₀)`.
 * `TauCeti.GraphOfGroups.bassSerreVertex`, `TauCeti.GraphOfGroups.bassSerreBaseVertex`,
   `TauCeti.GraphOfGroups.bassSerreDart`: path constructors for vertices and darts of
   `𝔸.bassSerreTree v₀`.
+* `TauCeti.GraphOfGroups.bassSerreVertexLift`, `TauCeti.GraphOfGroups.bassSerreDartLift`:
+  `Sort*`-valued eliminators descending invariant maps out of vertices and darts of
+  `𝔸.bassSerreTree v₀`.
 * `TauCeti.GraphOfGroups.bassSerreTypeHom`, `TauCeti.GraphOfGroups.bassSerreComponentHom`:
   `π₁(𝔸, v₀)`-invariant projections from `X(𝔸, v₀)` to `Γ` and `Γ.component v₀`.
-* `TauCeti.GraphOfGroups.bassSerreTreeIsoPoint`: isomorphism of `X(𝔸, v₀)` with
-  `SerreGraph.noEdge PUnit` when `X(𝔸, v₀)` has no darts.
 
 ## Main results
 
 * `TauCeti.GraphOfGroups.bassSerreTree_isTree`: `X(𝔸, v₀)` is a tree.
-* `TauCeti.GraphOfGroups.bassSerreAction_smul_ne_rev`: `π₁(𝔸, v₀)` acts on `X(𝔸, v₀)` without
-  inversions.
 * `TauCeti.GraphOfGroups.bassSerreVertex_eq_iff_setLast_eq`: normal-form criterion for equality of
   vertices in `X(𝔸, v₀)`.
 
@@ -71,7 +64,7 @@ Stabilizers and the quotient graph isomorphism are established in
 
 public section
 
-universe u v w x u' v'
+universe u v w x
 
 namespace TauCeti
 
@@ -106,7 +99,7 @@ private def bassSerreVertexSetoid : Setoid (Σ v : Γ.V, 𝔸.Path ⟨v₀⟩ �
 
 /-- The vertex type of the Bass–Serre tree `X(𝔸, v₀)`: equivalence classes `p A_v` of `𝔸`-paths `p`
 starting at `v₀`. -/
-def BassSerreVertex : Type (max u v w) :=
+private def BassSerreVertex : Type (max u v w) :=
   Quotient (𝔸.bassSerreVertexSetoid v₀)
 
 /-- Path constructor for `BassSerreVertex`. -/
@@ -171,7 +164,7 @@ private def bassSerreDartSetoid : Setoid (Σ e : Γ.E, 𝔸.Path ⟨v₀⟩ ⟨�
 
 /-- The dart type of the Bass–Serre tree `X(𝔸, v₀)`: equivalence classes `[e, p]` of a dart `e` of
 `Γ` and an `𝔸`-path `p` from `v₀` to `src e`, modulo right multiplication by `α_e(A_e)`. -/
-def BassSerreDart : Type (max u v w) :=
+private def BassSerreDart : Type (max u v w) :=
   Quotient (𝔸.bassSerreDartSetoid v₀)
 
 /-- Path constructor for `BassSerreDart`. -/
@@ -208,13 +201,13 @@ private theorem BassSerreDart.mk_congr {e : Γ.E} {p q : 𝔸.Path ⟨v₀⟩ �
 end RawDartAPI
 
 /-- Source vertex `p A_{src e}` of a Bass–Serre dart `[e, p]`. -/
-def BassSerreDart.src : 𝔸.BassSerreDart v₀ → 𝔸.BassSerreVertex v₀ :=
+private def BassSerreDart.src : 𝔸.BassSerreDart v₀ → 𝔸.BassSerreVertex v₀ :=
   Quotient.lift (fun x => BassSerreVertex.mk 𝔸 v₀ x.2) <| by
     rintro ⟨e, p⟩ ⟨e', q⟩ ⟨h, c, hc⟩; dsimp only at h hc; subst h
     exact BassSerreVertex.mk_eq_mk_iff.mpr ⟨𝔸.α e c, hc⟩
 
 /-- Reversed Bass–Serre dart `[rev e, p · e]`. -/
-def BassSerreDart.rev : 𝔸.BassSerreDart v₀ → 𝔸.BassSerreDart v₀ :=
+private def BassSerreDart.rev : 𝔸.BassSerreDart v₀ → 𝔸.BassSerreDart v₀ :=
   Quotient.lift
     (fun x => BassSerreDart.mk 𝔸 v₀ (Γ.rev x.1) (x.2.cons (Letter.dart (Γ.dart x.1)))) <| by
     rintro ⟨e, p⟩ ⟨e', q⟩ ⟨h, c, hc⟩; dsimp only at h hc; subst h
@@ -228,7 +221,7 @@ private theorem bassSerreRev_aux {e' e : Γ.E} (he : Γ.rev e' = e) (q : 𝔸.Pa
       BassSerreDart.mk 𝔸 v₀ e (q.cons (Letter.dart ⟨e', rfl, by rw [Γ.tgt_def, he]⟩)) := by
   subst he; rw [Γ.dart_def]; rfl
 
-theorem BassSerreDart.rev_rev (d : 𝔸.BassSerreDart v₀) :
+private theorem BassSerreDart.rev_rev (d : 𝔸.BassSerreDart v₀) :
     BassSerreDart.rev 𝔸 v₀ (BassSerreDart.rev 𝔸 v₀ d) = d :=
   BassSerreDart.induction_on d fun e p => by
     refine (𝔸.bassSerreRev_aux v₀ (Γ.rev_rev e) (p.cons (Letter.dart (Γ.dart e)))).trans ?_
@@ -240,12 +233,12 @@ theorem BassSerreDart.rev_rev (d : 𝔸.BassSerreDart v₀) :
       BassSerreDart.mk 𝔸 v₀ e ((p.cons (Letter.dart (Γ.dart e))).cons (Letter.dart f))) hdart).trans
       (BassSerreDart.mk_congr (Path.Homotopic.dart_reverse p (Γ.dart e)))
 
-theorem BassSerreDart.rev_ne (d : 𝔸.BassSerreDart v₀) : BassSerreDart.rev 𝔸 v₀ d ≠ d :=
+private theorem BassSerreDart.rev_ne (d : 𝔸.BassSerreDart v₀) : BassSerreDart.rev 𝔸 v₀ d ≠ d :=
   BassSerreDart.induction_on d fun e _ h =>
     Γ.rev_ne e (BassSerreDart.mk_eq_mk_iff_exists.mp h).choose
 
 /-- The underlying Serre graph of the Bass–Serre tree `X(𝔸, v₀)`. -/
-@[expose] def bassSerreGraph : SerreGraph.{max u v w, max u v w} where
+private def bassSerreGraph : SerreGraph.{max u v w, max u v w} where
   V := 𝔸.BassSerreVertex v₀
   E := 𝔸.BassSerreDart v₀
   src := BassSerreDart.src 𝔸 v₀
@@ -397,7 +390,7 @@ private theorem bassSerreGraph_isAcyclic : (𝔸.bassSerreGraph v₀).IsAcyclic 
       (BassSerreVertex.mk_eq_mk_iff_exists.mp htgt).choose p₁ q hq_red hpath htgt
 
 /-- The Bass–Serre graph `X(𝔸, v₀)` is a tree. -/
-theorem bassSerreTree_isTree : (𝔸.bassSerreGraph v₀).IsTree :=
+private theorem bassSerreGraph_isTree : (𝔸.bassSerreGraph v₀).IsTree :=
   (SerreGraph.isTree_iff _).mpr ⟨𝔸.bassSerreGraph_connected v₀, 𝔸.bassSerreGraph_isAcyclic v₀⟩
 
 /-! ### Left action of `π₁(𝔸, v₀)` and the bundled `GTree` -/
@@ -460,7 +453,7 @@ private def smulDartEquiv (g : π₁ 𝔸 v₀) : (𝔸.bassSerreGraph v₀).E �
   right_inv d := by rw [← mul_smulDart, mul_inv_cancel, one_smulDart]
 
 /-- The left action of `π₁(𝔸, v₀)` on `X(𝔸, v₀)` by graph automorphisms via path concatenation. -/
-def bassSerreAction : π₁ 𝔸 v₀ →* (𝔸.bassSerreGraph v₀).Aut where
+private def bassSerreAction : π₁ 𝔸 v₀ →* (𝔸.bassSerreGraph v₀).Aut where
   toFun g :=
     { equivV := 𝔸.smulVertexEquiv v₀ g
       equivE := 𝔸.smulDartEquiv v₀ g
@@ -475,7 +468,7 @@ def bassSerreAction : π₁ 𝔸 v₀ →* (𝔸.bassSerreGraph v₀).Aut where
   map_mul' g h := SerreGraph.Iso.ext (𝔸.mul_smulVertex v₀ g h) (𝔸.mul_smulDart v₀ g h)
 
 /-- `π₁(𝔸, v₀)` acts on `X(𝔸, v₀)` without inversions. -/
-theorem bassSerreAction_smul_ne_rev (g : π₁ 𝔸 v₀) (d : (𝔸.bassSerreGraph v₀).E) :
+private theorem bassSerreAction_smul_ne_rev (g : π₁ 𝔸 v₀) (d : (𝔸.bassSerreGraph v₀).E) :
     (𝔸.bassSerreAction v₀ g).equivE d ≠ (𝔸.bassSerreGraph v₀).rev d :=
   π₁.induction_on g fun s => BassSerreDart.induction_on d fun e p h =>
     Γ.rev_ne e (BassSerreDart.mk_eq_mk_iff_exists.mp
@@ -483,11 +476,15 @@ theorem bassSerreAction_smul_ne_rev (g : π₁ 𝔸 v₀) (d : (𝔸.bassSerreGr
 
 /-- The Bass–Serre tree `X(𝔸, v₀)` of a graph of groups `𝔸` at base vertex `v₀`, as a `GTree` for
 `π₁(𝔸, v₀)`. -/
-@[expose] def bassSerreTree : GTree.{max u v w, max u v w} (π₁ 𝔸 v₀) where
+def bassSerreTree : GTree.{max u v w, max u v w} (π₁ 𝔸 v₀) where
   toSerreGraph := 𝔸.bassSerreGraph v₀
-  isTree := 𝔸.bassSerreTree_isTree v₀
+  isTree := 𝔸.bassSerreGraph_isTree v₀
   action := 𝔸.bassSerreAction v₀
   action_smul_ne_rev := 𝔸.bassSerreAction_smul_ne_rev v₀
+
+/-- The Bass–Serre graph `X(𝔸, v₀)` is a tree. -/
+theorem bassSerreTree_isTree : (𝔸.bassSerreTree v₀).IsTree :=
+  (𝔸.bassSerreTree v₀).isTree
 
 /-! ### Path constructors and basic API on `bassSerreTree` -/
 
@@ -508,9 +505,47 @@ instance : Inhabited (𝔸.bassSerreTree v₀).V := ⟨𝔸.bassSerreBaseVertex 
 def bassSerreDart (e : Γ.E) (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) : (𝔸.bassSerreTree v₀).E :=
   BassSerreDart.mk 𝔸 v₀ e p
 
+/-- Descend a homotopy-invariant function on `𝔸`-paths from `v₀`, invariant under right
+multiplication by vertex groups, to `(𝔸.bassSerreTree v₀).V`. -/
+def bassSerreVertexLift {β : Sort*} (f : ∀ {v : Γ.V}, 𝔸.Path ⟨v₀⟩ ⟨v⟩ → β)
+    (h_hom : ∀ {v : Γ.V} {p q : 𝔸.Path ⟨v₀⟩ ⟨v⟩}, p.Homotopic q → f p = f q)
+    (h_vert : ∀ {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) (a : 𝔸.vertexGroup v),
+      f (p.cons (Letter.vertex a)) = f p) :
+    (𝔸.bassSerreTree v₀).V → β :=
+  Quotient.lift (fun x => f x.2) fun ⟨_, _⟩ ⟨_, q⟩ ⟨h, a, ha⟩ => by
+    dsimp only at h ha; subst h
+    exact (h_hom ha).trans (h_vert q a)
+
+/-- Descend a homotopy-invariant function on pairs `(e, p)`, invariant under right multiplication
+by `α_e(A_e)`, to `(𝔸.bassSerreTree v₀).E`. -/
+def bassSerreDartLift {β : Sort*} (f : ∀ (e : Γ.E), 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩ → β)
+    (h_hom : ∀ {e : Γ.E} {p q : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩}, p.Homotopic q → f e p = f e q)
+    (h_α : ∀ (e : Γ.E) (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) (c : 𝔸.edgeGroup (Γ.toGeomEdge e)),
+      f e (p.cons (Letter.vertex (𝔸.α e c))) = f e p) :
+    (𝔸.bassSerreTree v₀).E → β :=
+  Quotient.lift (fun x => f x.1 x.2) fun ⟨e, _⟩ ⟨_, q⟩ ⟨h, c, hc⟩ => by
+    dsimp only at h hc; subst h
+    exact (h_hom (e := e) hc).trans (h_α e q c)
+
 section TreeAPI
 
 variable {𝔸 v₀}
+
+@[simp] theorem bassSerreVertexLift_bassSerreVertex {β : Sort*}
+    (f : ∀ {v : Γ.V}, 𝔸.Path ⟨v₀⟩ ⟨v⟩ → β)
+    (h_hom : ∀ {v : Γ.V} {p q : 𝔸.Path ⟨v₀⟩ ⟨v⟩}, p.Homotopic q → f p = f q)
+    (h_vert : ∀ {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) (a : 𝔸.vertexGroup v),
+      f (p.cons (Letter.vertex a)) = f p)
+    {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
+    𝔸.bassSerreVertexLift v₀ f h_hom h_vert (𝔸.bassSerreVertex v₀ p) = f p := (rfl)
+
+@[simp] theorem bassSerreDartLift_bassSerreDart {β : Sort*}
+    (f : ∀ (e : Γ.E), 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩ → β)
+    (h_hom : ∀ {e : Γ.E} {p q : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩}, p.Homotopic q → f e p = f e q)
+    (h_α : ∀ (e : Γ.E) (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) (c : 𝔸.edgeGroup (Γ.toGeomEdge e)),
+      f e (p.cons (Letter.vertex (𝔸.α e c))) = f e p)
+    (e : Γ.E) (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) :
+    𝔸.bassSerreDartLift v₀ f h_hom h_α (𝔸.bassSerreDart v₀ e p) = f e p := (rfl)
 
 /-- Prove a property of vertices of `𝔸.bassSerreTree v₀` by checking it on `𝔸`-paths from `v₀`. -/
 @[elab_as_elim] theorem bassSerreVertex_induction_on {P : (𝔸.bassSerreTree v₀).V → Prop}
@@ -625,18 +660,20 @@ end TreeAPI
 
 /-- The projection morphism from `X(𝔸, v₀)` to `Γ`, sending `p A_v` to `v` and `[e, p]` to `e`. -/
 def bassSerreTypeHom : (𝔸.bassSerreTree v₀).toSerreGraph.Hom Γ where
-  mapV := Quotient.lift Sigma.fst fun _ _ ⟨h, _, _⟩ => h
-  mapE := Quotient.lift Sigma.fst fun _ _ ⟨h, _, _⟩ => h
+  mapV := 𝔸.bassSerreVertexLift v₀ (fun {v} _ => v) (fun _ => rfl) (fun _ _ => rfl)
+  mapE := 𝔸.bassSerreDartLift v₀ (fun e _ => e) (fun _ => rfl) (fun _ _ _ => rfl)
   map_src d := bassSerreDart_induction_on d fun _ _ => rfl
   map_rev d := bassSerreDart_induction_on d fun _ _ => rfl
 
 /-- Every `𝔸`-path from `v₀` ends in `Γ.component v₀`, so the type projection factors through
 `Γ.component v₀`. -/
 def bassSerreComponentHom : (𝔸.bassSerreTree v₀).toSerreGraph.Hom (Γ.component v₀) where
-  mapV := Quotient.lift (fun x => ⟨x.1, (Γ.mem_componentVertices_iff v₀ x.1).mpr ⟨x.2.edgePath⟩⟩)
-    fun _ _ ⟨h, _, _⟩ => Subtype.ext h
-  mapE := Quotient.lift (fun x => ⟨x.1, (Γ.mem_componentDarts_iff v₀ x.1).mpr ⟨x.2.edgePath⟩⟩)
-    fun _ _ ⟨h, _, _⟩ => Subtype.ext h
+  mapV := 𝔸.bassSerreVertexLift v₀
+    (fun {v} p => ⟨v, (Γ.mem_componentVertices_iff v₀ v).mpr ⟨p.edgePath⟩⟩)
+    (fun _ => rfl) (fun _ _ => rfl)
+  mapE := 𝔸.bassSerreDartLift v₀
+    (fun e p => ⟨e, (Γ.mem_componentDarts_iff v₀ e).mpr ⟨p.edgePath⟩⟩)
+    (fun _ => rfl) (fun _ _ _ => rfl)
   map_src d := bassSerreDart_induction_on d fun _ _ => rfl
   map_rev d := bassSerreDart_induction_on d fun _ _ => rfl
 
@@ -712,23 +749,6 @@ instance [IsEmpty (Γ.component v₀).E] : IsEmpty (𝔸.bassSerreTree v₀).E :
 instance [IsEmpty (𝔸.bassSerreTree v₀).E] : Unique (𝔸.bassSerreTree v₀).V :=
   @uniqueOfSubsingleton _ (𝔸.bassSerreTree v₀).subsingleton_of_isEmpty_dart
     (𝔸.bassSerreBaseVertex v₀)
-
-/-- When `X(𝔸, v₀)` has no darts, it is isomorphic as a Serre graph to `SerreGraph.noEdge PUnit`. -/
-def bassSerreTreeIsoPoint [IsEmpty (𝔸.bassSerreTree v₀).E] :
-    (𝔸.bassSerreTree v₀).toSerreGraph.Iso (SerreGraph.noEdge.{u', v'} PUnit) where
-  equivV := Equiv.ofUnique _ _
-  equivE := Equiv.equivOfIsEmpty _ _
-  map_src d := isEmptyElim d
-  map_rev d := isEmptyElim d
-
-@[simp] theorem bassSerreTreeIsoPoint_equivV_symm_unit [IsEmpty (𝔸.bassSerreTree v₀).E] :
-    (𝔸.bassSerreTreeIsoPoint.{u, v, w, x, u', v'} v₀).equivV.symm PUnit.unit =
-      𝔸.bassSerreBaseVertex v₀ := (rfl)
-
-theorem bassSerreTreeIsoPoint_equivV_symm [IsEmpty (𝔸.bassSerreTree v₀).E]
-    (x : (SerreGraph.noEdge.{u', v'} PUnit).V) :
-    (𝔸.bassSerreTreeIsoPoint.{u, v, w, x, u', v'} v₀).equivV.symm x = 𝔸.bassSerreBaseVertex v₀ :=
-  Subsingleton.elim _ _
 
 end GraphOfGroups
 

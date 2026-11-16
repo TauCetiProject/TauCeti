@@ -424,6 +424,14 @@ theorem vertexHom_apply (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGroup b)
     vertexHom p g = mk ((p.comp (Path.ofVertex g)).comp p.reverse) :=
   (rfl)
 
+/-- A closed `𝔸`-path `s` at `a` satisfies `vertexHom p g = mk s` if and only if `s · p` is
+homotopic to `p · g`. -/
+theorem vertexHom_eq_mk_iff (s : 𝔸.Path ⟨a⟩ ⟨a⟩) (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGroup b) :
+    vertexHom p g = mk s ↔ Path.Homotopic (s.comp p) (p.cons (Letter.vertex g)) := by
+  rw [vertexHom_apply, eq_comm, mk_eq_mk_iff, ← Path.comp_ofVertex]
+  exact ⟨fun h => (h.comp_right p).trans (Path.Homotopic.comp_reverse_comp _ p),
+    fun h => (Path.Homotopic.comp_comp_reverse s p).symm.trans (h.comp_right p.reverse)⟩
+
 @[simp] theorem vertexHom_nil_apply (g : 𝔸.vertexGroup a) :
     vertexHom Quiver.Path.nil g = mk (Path.ofVertex g) :=
   (rfl)
@@ -854,14 +862,29 @@ variable {𝔸 v₀}
 def ofPath {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) : 𝔸.HomotopyPathFrom v₀ :=
   ⟨v, Quotient.mk (Path.setoid 𝔸 ⟨v₀⟩ ⟨v⟩) p⟩
 
-@[simp] theorem ofPath_vertex {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) : (ofPath p).vertex = v := (rfl)
+theorem ofPath_def {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
+    ofPath p = ⟨v, Quotient.mk (Path.setoid 𝔸 ⟨v₀⟩ ⟨v⟩) p⟩ := (rfl)
 
-@[simp] theorem ofPath_pathClass {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
+@[simp] theorem vertex_ofPath {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) : (ofPath p).vertex = v := (rfl)
+
+theorem pathClass_ofPath {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
     (ofPath p).pathClass =
-      (ofPath_vertex p).symm ▸ Quotient.mk (Path.setoid 𝔸 ⟨v₀⟩ ⟨v⟩) p := (rfl)
+      (vertex_ofPath p).symm ▸ Quotient.mk (Path.setoid 𝔸 ⟨v₀⟩ ⟨v⟩) p := (rfl)
 
-theorem ofPath_pathClass_heq {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
+theorem pathClass_ofPath_heq {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
     HEq (ofPath p).pathClass (Quotient.mk (Path.setoid 𝔸 ⟨v₀⟩ ⟨v⟩) p) := .rfl
+
+/-- Descend a homotopy-invariant function on `𝔸`-paths starting at `v₀` to
+`𝔸.HomotopyPathFrom v₀`. -/
+def lift {β : Sort*} (f : ∀ {v : Γ.V}, 𝔸.Path ⟨v₀⟩ ⟨v⟩ → β)
+    (hf : ∀ {v : Γ.V} (p q : 𝔸.Path ⟨v₀⟩ ⟨v⟩), p.Homotopic q → f p = f q)
+    (x : 𝔸.HomotopyPathFrom v₀) : β :=
+  Quotient.lift (f (v := x.vertex)) (fun _ _ h => hf _ _ h) x.pathClass
+
+@[simp] theorem lift_ofPath {β : Sort*} (f : ∀ {v : Γ.V}, 𝔸.Path ⟨v₀⟩ ⟨v⟩ → β)
+    (hf : ∀ {v : Γ.V} (p q : 𝔸.Path ⟨v₀⟩ ⟨v⟩), p.Homotopic q → f p = f q)
+    {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
+    lift f hf (ofPath p) = f p := (rfl)
 
 /-- Prove a property of `𝔸.HomotopyPathFrom v₀` by checking it on `𝔸`-paths starting at `v₀`. -/
 @[elab_as_elim] theorem induction_on {P : 𝔸.HomotopyPathFrom v₀ → Prop}
@@ -870,11 +893,19 @@ theorem ofPath_pathClass_heq {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
   rcases x with ⟨v, q⟩
   exact Quotient.inductionOn q fun p => h p
 
+theorem ofPath_eq_ofPath_iff_exists {v w : Γ.V} {p : 𝔸.Path ⟨v₀⟩ ⟨v⟩} {q : 𝔸.Path ⟨v₀⟩ ⟨w⟩} :
+    ofPath p = ofPath q ↔ ∃ h : v = w, Path.Homotopic (h ▸ p) q := by
+  refine ⟨fun h => ?_, ?_⟩
+  · have hv : v = w := congrArg vertex h
+    subst hv
+    exact ⟨rfl, by injection h with _ hq; exact Quotient.exact hq⟩
+  · rintro ⟨rfl, hpq⟩
+    exact congrArg (HomotopyPathFrom.mk v) (Quotient.sound hpq)
+
 @[simp] theorem ofPath_eq_ofPath_iff {v : Γ.V} {p q : 𝔸.Path ⟨v₀⟩ ⟨v⟩} :
-    ofPath p = ofPath q ↔ p.Homotopic q := by
-  refine ⟨fun h => ?_, fun h => congrArg (HomotopyPathFrom.mk v) (Quotient.sound h)⟩
-  injection h with _ hq
-  exact Quotient.exact hq
+    ofPath p = ofPath q ↔ p.Homotopic q :=
+  ofPath_eq_ofPath_iff_exists.trans
+    ⟨fun ⟨h, hpq⟩ => by rwa [Subsingleton.elim h rfl] at hpq, fun hpq => ⟨rfl, hpq⟩⟩
 
 /-- `π₁(𝔸, v₀)` acts on `𝔸.HomotopyPathFrom v₀` on the left by concatenating closed `𝔸`-paths at
 `v₀`. -/
@@ -884,7 +915,7 @@ instance : SMul (π₁ 𝔸 v₀) (𝔸.HomotopyPathFrom v₀) where
     (fun _ _ hs => funext fun q => Quotient.inductionOn q fun p =>
       Quotient.sound (Path.Homotopic.comp_right hs p)) g x.pathClass⟩
 
-@[simp] theorem smul_vertex (g : π₁ 𝔸 v₀) (x : 𝔸.HomotopyPathFrom v₀) :
+@[simp] theorem vertex_smul (g : π₁ 𝔸 v₀) (x : 𝔸.HomotopyPathFrom v₀) :
     (g • x).vertex = x.vertex := (rfl)
 
 @[simp] theorem mk_smul_ofPath (s : 𝔸.Path ⟨v₀⟩ ⟨v₀⟩) {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :

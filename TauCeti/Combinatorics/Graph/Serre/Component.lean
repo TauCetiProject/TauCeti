@@ -97,12 +97,12 @@ theorem mem_componentDarts_iff (e : Γ.E) :
     Γ.rev e ∈ Γ.componentDarts v ↔ e ∈ Γ.componentDarts v :=
   (Γ.tgt_mem_componentVertices_iff v e).trans Iff.rfl
 
-/-- Both endpoints of a dart in the component lie in the component. -/
+/-- The source of a dart in the component lies in the component. -/
 theorem src_mem_componentVertices {e : Γ.E} (he : e ∈ Γ.componentDarts v) :
     Γ.src e ∈ Γ.componentVertices v :=
   he
 
-/-- Both endpoints of a dart in the component lie in the component. -/
+/-- The target of a dart in the component lies in the component. -/
 theorem tgt_mem_componentVertices {e : Γ.E} (he : e ∈ Γ.componentDarts v) :
     Γ.tgt e ∈ Γ.componentVertices v :=
   Γ.tgt_mem_componentVertices_of_src_mem v he
