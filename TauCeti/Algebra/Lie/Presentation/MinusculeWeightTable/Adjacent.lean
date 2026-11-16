@@ -123,6 +123,7 @@ attribute [local instance 100] LieRing.ofAssociativeRing in
 /-- An alternating triple of raising operators at nodes joined by a Cartan entry `-1` vanishes:
 raising strings through such a pair have length at most two. Over `ℤ` this follows from
 `Eᵢ * Eᵢ = 0` and the Serre relation `⁅Eᵢ, ⁅Eᵢ, Eⱼ⁆⁆ = 0`, and it casts into `R`. -/
+@[simp]
 theorem raisingMatrix_mul_raisingMatrix_mul_raisingMatrix_of_cartanMatrix_eq_neg_one (i j : B)
     (hij : T.cartanMatrix i j = -1) :
     (T.raisingMatrix i).map (Int.cast : ℤ → R) *
@@ -174,6 +175,7 @@ theorem raisingCommutatorMatrix_def (i j : B) :
 
 /-- The raising matrix at `i` kills the commutator matrix `[Eᵢ, Eⱼ]` from the left when
 `T.cartanMatrix i j = -1`. -/
+@[simp]
 theorem raisingMatrix_mul_raisingCommutatorMatrix_left (i j : B)
     (hij : T.cartanMatrix i j = -1) :
     (T.raisingMatrix i).map (Int.cast : ℤ → R) * T.raisingCommutatorMatrix i j = 0 := by
@@ -184,6 +186,7 @@ theorem raisingMatrix_mul_raisingCommutatorMatrix_left (i j : B)
 
 /-- The raising matrix at `j` kills the commutator matrix `[Eᵢ, Eⱼ]` from the left when
 `T.cartanMatrix j i = -1`. -/
+@[simp]
 theorem raisingMatrix_mul_raisingCommutatorMatrix_right (i j : B)
     (hji : T.cartanMatrix j i = -1) :
     (T.raisingMatrix j).map (Int.cast : ℤ → R) * T.raisingCommutatorMatrix i j = 0 := by
@@ -193,6 +196,7 @@ theorem raisingMatrix_mul_raisingCommutatorMatrix_right (i j : B)
 
 /-- The raising matrix at `i` kills the commutator matrix `[Eᵢ, Eⱼ]` from the right when
 `T.cartanMatrix i j = -1`. -/
+@[simp]
 theorem raisingCommutatorMatrix_mul_raisingMatrix_left (i j : B)
     (hij : T.cartanMatrix i j = -1) :
     T.raisingCommutatorMatrix i j * (T.raisingMatrix i).map (Int.cast : ℤ → R) = 0 := by
@@ -202,6 +206,7 @@ theorem raisingCommutatorMatrix_mul_raisingMatrix_left (i j : B)
 
 /-- The raising matrix at `j` kills the commutator matrix `[Eᵢ, Eⱼ]` from the right when
 `T.cartanMatrix j i = -1`. -/
+@[simp]
 theorem raisingCommutatorMatrix_mul_raisingMatrix_right (i j : B)
     (hji : T.cartanMatrix j i = -1) :
     T.raisingCommutatorMatrix i j * (T.raisingMatrix j).map (Int.cast : ℤ → R) = 0 := by
@@ -210,6 +215,7 @@ theorem raisingCommutatorMatrix_mul_raisingMatrix_right (i j : B)
     mul_assoc, T.raisingMatrix_map_mul_self, mul_zero, sub_zero]
 
 /-- The commutator matrix of an adjacent pair squares to zero over every commutative ring. -/
+@[simp]
 theorem raisingCommutatorMatrix_mul_self (i j : B)
     (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) :
     T.raisingCommutatorMatrix (R := R) i j * T.raisingCommutatorMatrix i j = 0 := by
