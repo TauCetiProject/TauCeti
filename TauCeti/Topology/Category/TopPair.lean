@@ -501,12 +501,10 @@ abbrev prodSubspace : Set ↑(P.fst ⊗ Q.fst : TopCat.{u}) :=
     CartesianMonoidalCategory.snd P.fst Q.fst ⁻¹' Set.range Q.map
 
 /-- The inclusion `A × Y ⟶ A × Y ∪ X × B`. -/
-@[expose]
 def prodSubspaceInl : P.snd ⊗ Q.fst ⟶ TopCat.of (P.prodSubspace Q) :=
   TopCat.ofHom ⟨fun x ↦ ⟨(P.map x.1, x.2), Or.inl ⟨x.1, rfl⟩⟩, by fun_prop⟩
 
 /-- The inclusion `X × B ⟶ A × Y ∪ X × B`. -/
-@[expose]
 def prodSubspaceInr : P.fst ⊗ Q.snd ⟶ TopCat.of (P.prodSubspace Q) :=
   TopCat.ofHom ⟨fun x ↦ ⟨(x.1, Q.map x.2), Or.inr ⟨x.2, rfl⟩⟩, by fun_prop⟩
 
@@ -520,6 +518,20 @@ theorem coe_prodSubspaceInr_apply (x : ↑(P.fst ⊗ Q.snd : TopCat.{u})) :
     (P.prodSubspaceInr Q x : ↑(P.fst ⊗ Q.fst : TopCat.{u})) = (x.1, Q.map x.2) :=
   (rfl)
 
+/-- The inclusion of `A × Y` into `A × Y ∪ X × B`, followed by the inclusion into `X × Y`, is the
+product of the inclusion `A ⟶ X` with `Y`. -/
+@[reassoc]
+lemma prodSubspaceInl_comp_map :
+    P.prodSubspaceInl Q ≫ (ofSubset (P.prodSubspace Q)).map = P.map ▷ Q.fst := by
+  ext; rfl
+
+/-- The inclusion of `X × B` into `A × Y ∪ X × B`, followed by the inclusion into `X × Y`, is the
+product of `X` with the inclusion `B ⟶ Y`. -/
+@[reassoc]
+lemma prodSubspaceInr_comp_map :
+    P.prodSubspaceInr Q ≫ (ofSubset (P.prodSubspace Q)).map = P.fst ◁ Q.map := by
+  ext; rfl
+
 theorem isEmbedding_prodSubspaceInl : IsEmbedding (P.prodSubspaceInl Q) :=
   IsEmbedding.subtypeVal.of_comp_iff.1 (P.isEmbedding_map.prodMap (IsEmbedding.id (X := Q.fst)))
 
@@ -532,22 +544,63 @@ abbrev prodExcisionPair : TopPair.{u} :=
 
 /-- The **excision map** `(A × Y, A × B) ⟶ (A × Y ∪ X × B, X × B)` of the product pair, given by
 the inclusions. -/
-@[expose]
 def prodExcisionMap : Q.prodLeft P.snd ⟶ P.prodExcisionPair Q :=
   TopPair.ofHom (P.prodSubspaceInl Q) (P.map ▷ Q.snd) (by ext; rfl)
 
+lemma prodExcisionMap_fst : Hom.fst (P.prodExcisionMap Q) = P.prodSubspaceInl Q := (rfl)
+
+@[simp]
+lemma prodExcisionMap_fst_apply (x : ↑(P.snd ⊗ Q.fst : TopCat.{u})) :
+    Hom.fst (P.prodExcisionMap Q) x = P.prodSubspaceInl Q x := (rfl)
+
+lemma coe_prodExcisionMap_fst_apply (x : ↑(P.snd ⊗ Q.fst : TopCat.{u})) :
+    (Subtype.val (Hom.fst (P.prodExcisionMap Q) x) : ↑(P.fst ⊗ Q.fst : TopCat.{u})) =
+      (P.map x.1, x.2) :=
+  (rfl)
+
+lemma prodExcisionMap_snd : Hom.snd (P.prodExcisionMap Q) = P.map ▷ Q.snd := (rfl)
+
+@[simp]
+lemma prodExcisionMap_snd_apply (x : ↑(P.snd ⊗ Q.snd : TopCat.{u})) :
+    Hom.snd (P.prodExcisionMap Q) x = (P.map x.1, x.2) := (rfl)
+
 /-- The map of pairs `(X × Y, X × B) ⟶ (X × Y, A × Y ∪ X × B)` given by the identity of `X × Y`. -/
-@[expose]
 def prodLeftToProdSubspace : Q.prodLeft P.fst ⟶ ofSubset (P.prodSubspace Q) :=
   TopPair.ofHom (𝟙 _) (P.prodSubspaceInr Q) (by ext; rfl)
 
+lemma prodLeftToProdSubspace_fst : Hom.fst (P.prodLeftToProdSubspace Q) = 𝟙 _ := (rfl)
+
+@[simp]
+lemma prodLeftToProdSubspace_fst_apply (x : ↑(P.fst ⊗ Q.fst : TopCat.{u})) :
+    Hom.fst (P.prodLeftToProdSubspace Q) x = x := (rfl)
+
+lemma prodLeftToProdSubspace_snd : Hom.snd (P.prodLeftToProdSubspace Q) = P.prodSubspaceInr Q :=
+  (rfl)
+
+@[simp]
+lemma prodLeftToProdSubspace_snd_apply (x : ↑(P.fst ⊗ Q.snd : TopCat.{u})) :
+    Hom.snd (P.prodLeftToProdSubspace Q) x = P.prodSubspaceInr Q x := (rfl)
+
 /-- The map of pairs `(A × Y ∪ X × B, X × B) ⟶ (X × Y, X × B)` given by the inclusion. -/
-@[expose]
 def prodExcisionPairToProdLeft : P.prodExcisionPair Q ⟶ Q.prodLeft P.fst :=
   TopPair.ofHom (ofSubset (P.prodSubspace Q)).map (𝟙 _) (by ext; rfl)
 
+lemma prodExcisionPairToProdLeft_fst :
+    Hom.fst (P.prodExcisionPairToProdLeft Q) = (ofSubset (P.prodSubspace Q)).map := (rfl)
+
+@[simp]
+lemma prodExcisionPairToProdLeft_fst_apply (x : P.prodSubspace Q) :
+    Hom.fst (P.prodExcisionPairToProdLeft Q) x = x.1 := (rfl)
+
+lemma prodExcisionPairToProdLeft_snd : Hom.snd (P.prodExcisionPairToProdLeft Q) = 𝟙 _ := (rfl)
+
+@[simp]
+lemma prodExcisionPairToProdLeft_snd_apply (x : ↑(P.fst ⊗ Q.snd : TopCat.{u})) :
+    Hom.snd (P.prodExcisionPairToProdLeft Q) x = x := (rfl)
+
 /-- The excision map followed by the inclusion is the inclusion of pairs
 `(A × Y, A × B) ⟶ (X × Y, X × B)`. -/
+@[reassoc]
 theorem prodExcisionMap_comp_prodExcisionPairToProdLeft :
     P.prodExcisionMap Q ≫ P.prodExcisionPairToProdLeft Q = prodLeftMap (𝟙 Q) P.map :=
   hom_ext_of_fst _ (by ext; rfl)
