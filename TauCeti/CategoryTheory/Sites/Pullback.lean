@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Adjunction.Additive
 public import Mathlib.CategoryTheory.Adjunction.CompositionIso
+public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.CategoryTheory.Adjunction.Unique
 public import Mathlib.CategoryTheory.Comma.StructuredArrow.Small
 public import Mathlib.CategoryTheory.Limits.EssentiallySmall
@@ -22,11 +23,15 @@ exists.
 
 This file develops the basic properties of `sheafPullback`:
 
-* **Colimits and additivity**: `u.sheafPullback A J K` preserves colimits of any size (in
-  particular finite colimits) as a left adjoint, and is additive whenever `A` is preadditive.
+* **Colimits and additivity**: `u.sheafPullback A J K` is registered as `IsLeftAdjoint`
+  (`isLeftAdjoint_sheafPullback`), so Mathlib's adjunction instances automatically synthesize
+  `PreservesColimitsOfSize`, `PreservesColimitsOfShape`, and `PreservesFiniteColimits`, and it is
+  additive whenever `A` is preadditive.
 * **Functoriality**: from the identity, composition, and natural isomorphism compatibilities of
   `sheafPushforwardContinuous`, mate transport produces `sheafPullbackId`, `sheafPullbackComp`,
-  `sheafPullbackIso`, `sheafPullbackId'`, and `sheafPullbackComp'`.
+  `sheafPullbackIso`, `sheafPullbackId'`, and `sheafPullbackComp'`, together with the
+  pseudofunctor coherence laws `sheafPullback_id_comp`, `sheafPullback_comp_id`, and
+  `sheafPullback_assoc`.
 * **Adjoint continuous functors**: when `adj : F ⊣ G` is an adjunction between continuous functors,
   `G.sheafPullback A K J` is naturally isomorphic to `F.sheafPushforwardContinuous A J K`
   (`CategoryTheory.Adjunction.sheafPullbackIso`), since `adj.sheafPushforwardContinuous J K` already
@@ -42,7 +47,7 @@ This file develops the basic properties of `sheafPullback`:
 
 public section
 
-universe w w'
+universe w
 
 namespace CategoryTheory
 
@@ -59,20 +64,14 @@ variable {C : Type*} [Category* C] {J : GrothendieckTopology C}
   (u : C ⥤ D) [u.IsContinuous J K]
   {A : Type*} [Category* A] [(u.sheafPushforwardContinuous A J K).IsRightAdjoint]
 
+/-- The pullback of sheaves along a continuous functor is a left adjoint (in particular it
+preserves colimits of any size and finite colimits). -/
+instance isLeftAdjoint_sheafPullback : (u.sheafPullback A J K).IsLeftAdjoint :=
+  (u.sheafAdjunctionContinuous A J K).isLeftAdjoint
+
 /-- The pullback of sheaves along a continuous functor into a preadditive category is additive. -/
 instance sheafPullback_additive [Preadditive A] : (u.sheafPullback A J K).Additive :=
   (u.sheafAdjunctionContinuous A J K).left_adjoint_additive
-
-/-- The pullback of sheaves along a continuous functor preserves colimits of any size. -/
-lemma preservesColimitsOfSize_sheafPullback :
-    PreservesColimitsOfSize.{w, w'} (u.sheafPullback A J K) :=
-  (u.sheafAdjunctionContinuous A J K).leftAdjoint_preservesColimits
-
-/-- The pullback of sheaves along a continuous functor preserves finite colimits. -/
-instance preservesFiniteColimits_sheafPullback :
-    PreservesFiniteColimits (u.sheafPullback A J K) :=
-  letI := (u.sheafAdjunctionContinuous A J K).leftAdjoint_preservesColimits.{0, 0}
-  inferInstance
 
 end Exactness
 
@@ -135,6 +134,21 @@ lemma conjugateEquiv_sheafPullbackIso_inv {u u' : C ⥤ D} (e : u ≅ u')
       (sheafPullbackIso e A J K).inv = (sheafPushforwardContinuousIso e.symm A J K).inv := by
   simp [sheafPullbackIso]
 
+@[simp]
+lemma sheafPullbackIso_refl (u : C ⥤ D) (A : Type*) [Category* A]
+    (J : GrothendieckTopology C) (K : GrothendieckTopology D)
+    [u.IsContinuous J K] [(u.sheafPushforwardContinuous A J K).IsRightAdjoint] :
+    sheafPullbackIso (Iso.refl u) A J K = Iso.refl _ := by
+  apply Iso.ext
+  apply (conjugateEquiv (u.sheafAdjunctionContinuous A J K)
+    (u.sheafAdjunctionContinuous A J K)).injective
+  ext F X
+  simp only [conjugateEquiv_sheafPullbackIso_hom, Iso.refl_symm,
+    sheafPushforwardContinuousIso_hom, sheafPushforwardContinuousNatTrans_app_hom,
+    Iso.refl_inv, NatTrans.op_id, whiskerRight_id', Iso.refl_hom, conjugateEquiv_id,
+    NatTrans.id_app]
+  rfl
+
 /-- If a continuous endofunctor is naturally isomorphic to the identity, so is its sheaf
 pullback. -/
 def sheafPullbackId' {u₀ : C ⥤ C} (e : u₀ ≅ 𝟭 C)
@@ -160,9 +174,6 @@ lemma isRightAdjoint_sheafPushforwardContinuous_comp (u : C ⥤ D) (v : D ⥤ E)
     let := isContinuous_comp u v J K L
     ((u ⋙ v).sheafPushforwardContinuous A J L).IsRightAdjoint :=
   let := isContinuous_comp u v J K L
-  have : (v.sheafPushforwardContinuous A K L ⋙
-      u.sheafPushforwardContinuous A J K).IsRightAdjoint :=
-    ((u.sheafAdjunctionContinuous A J K).comp (v.sheafAdjunctionContinuous A K L)).isRightAdjoint
   isRightAdjoint_of_iso (sheafPushforwardContinuousComp u v A J K L)
 
 /-- The composition of two sheaf pullbacks identifies with the sheaf pullback of the composite
@@ -198,6 +209,59 @@ lemma conjugateEquiv_sheafPullbackComp_inv (u : C ⥤ D) (v : D ⥤ E)
   let := isContinuous_comp u v J K L
   have := isRightAdjoint_sheafPushforwardContinuous_comp u v A J K L
   simp [sheafPullbackComp]
+
+lemma sheafPullback_id_comp (u : C ⥤ D) (A : Type*) [Category* A]
+    (J : GrothendieckTopology C) (K : GrothendieckTopology D)
+    [u.IsContinuous J K] [(u.sheafPushforwardContinuous A J K).IsRightAdjoint] :
+    sheafPullbackComp (𝟭 C) u A J J K =
+      Functor.isoWhiskerRight (sheafPullbackId A J) (u.sheafPullback A J K) ≪≫
+        Functor.leftUnitor (u.sheafPullback A J K) :=
+  Adjunction.leftAdjointCompIso_id_comp _ _ _ _ (by
+    ext : 3
+    simp only [comp_obj, Iso.trans_hom, isoWhiskerLeft_hom, NatTrans.comp_app, id_obj,
+      whiskerLeft_app, rightUnitor_hom_app, Category.comp_id]
+    rfl)
+
+lemma sheafPullback_comp_id (u : C ⥤ D) (A : Type*) [Category* A]
+    (J : GrothendieckTopology C) (K : GrothendieckTopology D)
+    [u.IsContinuous J K] [(u.sheafPushforwardContinuous A J K).IsRightAdjoint] :
+    sheafPullbackComp u (𝟭 D) A J K K =
+      Functor.isoWhiskerLeft (u.sheafPullback A J K) (sheafPullbackId A K) ≪≫
+        Functor.rightUnitor (u.sheafPullback A J K) :=
+  Adjunction.leftAdjointCompIso_comp_id _ _ _ _ (by
+    ext : 3
+    simp only [comp_obj, Iso.trans_hom, isoWhiskerRight_hom, NatTrans.comp_app, id_obj,
+      whiskerRight_app, leftUnitor_hom_app, Category.comp_id]
+    exact (Functor.map_id _ _).symm)
+
+lemma sheafPullback_assoc {E' : Type*} [Category* E']
+    (u : C ⥤ D) (v : D ⥤ E) (w : E ⥤ E') (A : Type*) [Category* A]
+    (J : GrothendieckTopology C) (K : GrothendieckTopology D)
+    (L : GrothendieckTopology E) (M : GrothendieckTopology E')
+    [u.IsContinuous J K] [v.IsContinuous K L] [w.IsContinuous L M]
+    [(u.sheafPushforwardContinuous A J K).IsRightAdjoint]
+    [(v.sheafPushforwardContinuous A K L).IsRightAdjoint]
+    [(w.sheafPushforwardContinuous A L M).IsRightAdjoint] :
+    let := isContinuous_comp u v J K L
+    let := isContinuous_comp v w K L M
+    let := isContinuous_comp u (v ⋙ w) J K M
+    have := isRightAdjoint_sheafPushforwardContinuous_comp u v A J K L
+    have := isRightAdjoint_sheafPushforwardContinuous_comp v w A K L M
+    Functor.isoWhiskerLeft (u.sheafPullback A J K) (sheafPullbackComp v w A K L M) ≪≫
+        sheafPullbackComp u (v ⋙ w) A J K M =
+      (Functor.associator _ _ _).symm ≪≫
+        Functor.isoWhiskerRight (sheafPullbackComp u v A J K L) (w.sheafPullback A L M) ≪≫
+          sheafPullbackComp (u ⋙ v) w A J L M := by
+  let := isContinuous_comp u v J K L
+  let := isContinuous_comp v w K L M
+  let := isContinuous_comp u (v ⋙ w) J K M
+  have := isRightAdjoint_sheafPushforwardContinuous_comp u v A J K L
+  have := isRightAdjoint_sheafPushforwardContinuous_comp v w A K L M
+  exact Adjunction.leftAdjointCompIso_assoc _ _ _ _ _ _ _ _ _ _ (by
+    ext : 3
+    simp only [comp_obj, Iso.trans_hom, isoWhiskerLeft_hom, isoWhiskerRight_hom, Iso.symm_hom,
+      NatTrans.comp_app, whiskerLeft_app, whiskerRight_app, associator_inv_app, Category.id_comp]
+    exact (congrArg (· ≫ _) (Functor.map_id _ _)).symm)
 
 /-- When `u ⋙ v ≅ uv` is an isomorphism of continuous functors, the composite of the sheaf
 pullbacks along `u` and `v` identifies with the sheaf pullback along `uv`. -/
@@ -255,15 +319,10 @@ lemma isRightAdjoint_sheafPushforwardContinuous_of_isEquivalence
     [(H.sheafPushforwardContinuous A J₀ J).IsEquivalence]
     [(H ⋙ u).IsContinuous J₀ K]
     [((H ⋙ u).sheafPushforwardContinuous A J₀ K).IsRightAdjoint] :
-    (u.sheafPushforwardContinuous A J K).IsRightAdjoint := by
-  let e := (H.sheafPushforwardContinuous A J₀ J).asEquivalence
-  have : ((H ⋙ u).sheafPushforwardContinuous A J₀ K ⋙ e.inverse).IsRightAdjoint :=
-    (e.toAdjunction.comp ((H ⋙ u).sheafAdjunctionContinuous A J₀ K)).isRightAdjoint
-  exact isRightAdjoint_of_iso
-    (Functor.isoWhiskerRight (sheafPushforwardContinuousComp H u A J₀ J K).symm e.inverse ≪≫
-      Functor.associator _ _ _ ≪≫
-      Functor.isoWhiskerLeft (u.sheafPushforwardContinuous A J K) e.unitIso.symm ≪≫
-      Functor.rightUnitor _)
+    (u.sheafPushforwardContinuous A J K).IsRightAdjoint :=
+  (isRightAdjoint_comp_iff_left (u.sheafPushforwardContinuous A J K)
+    (H.sheafPushforwardContinuous A J₀ J)).mp
+    (isRightAdjoint_of_iso (sheafPushforwardContinuousComp H u A J₀ J K).symm)
 
 end Existence
 
@@ -306,11 +365,27 @@ lemma unit_sheafPullbackIso_hom [(G.sheafPushforwardContinuous A K J).IsRightAdj
   unit_leftAdjointUniq_hom _ _
 
 @[reassoc (attr := simp)]
+lemma unit_sheafPullbackIso_hom_app [(G.sheafPushforwardContinuous A K J).IsRightAdjoint]
+    (X : Sheaf K A) :
+    (G.sheafAdjunctionContinuous A K J).unit.app X ≫
+        (G.sheafPushforwardContinuous A K J).map ((adj.sheafPullbackIso A J K).hom.app X) =
+      (adj.sheafPushforwardContinuous J K).unit.app X :=
+  unit_leftAdjointUniq_hom_app _ _ X
+
+@[reassoc (attr := simp)]
 lemma sheafPullbackIso_hom_counit [(G.sheafPushforwardContinuous A K J).IsRightAdjoint] :
     Functor.whiskerLeft (G.sheafPushforwardContinuous A K J) (adj.sheafPullbackIso A J K).hom ≫
       (adj.sheafPushforwardContinuous J K).counit =
       (G.sheafAdjunctionContinuous A K J).counit :=
   leftAdjointUniq_hom_counit _ _
+
+@[reassoc (attr := simp)]
+lemma sheafPullbackIso_hom_app_counit [(G.sheafPushforwardContinuous A K J).IsRightAdjoint]
+    (Y : Sheaf J A) :
+    (adj.sheafPullbackIso A J K).hom.app ((G.sheafPushforwardContinuous A K J).obj Y) ≫
+        (adj.sheafPushforwardContinuous J K).counit.app Y =
+      (G.sheafAdjunctionContinuous A K J).counit.app Y :=
+  leftAdjointUniq_hom_app_counit _ _ Y
 
 end
 

@@ -18,7 +18,7 @@ For any morphism of schemes `f : X ⟶ Y`, base change defines a functor
 identities and composition up to natural isomorphism (`smallEtaleBaseChangeId`,
 `smallEtaleBaseChangeComp`). When `j : X ⟶ Y` is étale, postcomposition defines a functor
 `j.smallEtaleMap : X.Etale ⥤ Y.Etale` left adjoint to `j.smallEtaleBaseChange`
-(`j.smallEtaleMapPullbackAdj`).
+(`j.smallEtaleMapBaseChangeAdj`).
 
 For a scheme `S` and an étale `S`-scheme `U : S.Etale`, any morphism `V ⟶ U` in `S.Etale` has an
 étale underlying morphism `V.left ⟶ U.left` by right cancellation of étale morphisms, and
@@ -42,7 +42,6 @@ Consequently:
 
 * M. Artin, A. Grothendieck, J.-L. Verdier, *SGA 4*, Exposé VII, §1.5, localization of the small
   étale site.
-* The Stacks Project, [Tag 03YU](https://stacks.math.columbia.edu/tag/03YU).
 -/
 
 public section
@@ -159,29 +158,53 @@ lemma smallEtaleBaseChange_map_left_eq_pullback_map (f : X ⟶ Y) {V W : Y.Etale
     (f.smallEtaleBaseChange.map g).left =
       pullback.map V.hom f W.hom f g.left (𝟙 X) (𝟙 Y) (by simp) (by simp) := by
   rw [smallEtaleBaseChange_map_left]
-  change (_ : pullback V.hom f ⟶ pullback W.hom f) = _
-  ext <;> simp
+  apply pullback.hom_ext <;> simp
 
 /-- On underlying schemes over `X`, `smallEtaleBaseChange f` is base change along `f`. -/
 noncomputable def smallEtaleBaseChangeCompForgetIso (f : X ⟶ Y) :
     f.smallEtaleBaseChange ⋙ Etale.forget X ≅ Etale.forget Y ⋙ CategoryTheory.Over.pullback f :=
   Iso.refl _
 
+@[simp]
+lemma smallEtaleBaseChangeCompForgetIso_hom_app_left (f : X ⟶ Y) (V : Y.Etale) :
+    ((f.smallEtaleBaseChangeCompForgetIso).hom.app V).left = 𝟙 (pullback V.hom f) :=
+  (rfl)
+
+@[simp]
+lemma smallEtaleBaseChangeCompForgetIso_inv_app_left (f : X ⟶ Y) (V : Y.Etale) :
+    ((f.smallEtaleBaseChangeCompForgetIso).inv.app V).left = 𝟙 (pullback V.hom f) :=
+  (rfl)
+
 /-- For an étale morphism `j : X ⟶ Y`, postcomposition `j.smallEtaleMap` is left adjoint to base
 change `j.smallEtaleBaseChange`. -/
-noncomputable def smallEtaleMapPullbackAdj (j : X ⟶ Y) [Etale j] :
+noncomputable def smallEtaleMapBaseChangeAdj (j : X ⟶ Y) [Etale j] :
     j.smallEtaleMap ⊣ j.smallEtaleBaseChange :=
   MorphismProperty.Over.mapPullbackAdj @Etale ⊤ j ‹Etale j› trivial
+
+@[simp]
+lemma smallEtaleMapBaseChangeAdj_unit_app_left (j : X ⟶ Y) [Etale j] (W : X.Etale) :
+    ((j.smallEtaleMapBaseChangeAdj).unit.app W).left =
+      pullback.lift (𝟙 W.left) W.hom (by simp) :=
+  (rfl)
+
+@[simp]
+lemma smallEtaleMapBaseChangeAdj_counit_app_left (j : X ⟶ Y) [Etale j] (V : Y.Etale) :
+    ((j.smallEtaleMapBaseChangeAdj).counit.app V).left = pullback.fst V.hom j :=
+  (rfl)
 
 /-- Base change along `𝟙 X` on small étale sites is naturally isomorphic to `𝟭 X.Etale`. -/
 noncomputable def smallEtaleBaseChangeId (X : Scheme.{u}) :
     smallEtaleBaseChange (𝟙 X) ≅ 𝟭 X.Etale :=
-  conjugateIsoEquiv (smallEtaleMapPullbackAdj (𝟙 X)) .id (smallEtaleMapId X).symm
+  conjugateIsoEquiv (smallEtaleMapBaseChangeAdj (𝟙 X)) .id (smallEtaleMapId X).symm
 
 @[simp]
 lemma smallEtaleBaseChangeId_hom_app_left (X : Scheme.{u}) (V : X.Etale) :
-    ((smallEtaleBaseChangeId X).hom.app V).left = pullback.fst V.hom (𝟙 X) :=
-  Category.id_comp _
+    ((smallEtaleBaseChangeId X).hom.app V).left = pullback.fst V.hom (𝟙 X) := by
+  rw [smallEtaleBaseChangeId, conjugateIsoEquiv_apply_hom, conjugateEquiv_adjunction_id]
+  exact (MorphismProperty.Comma.comp_left _ _).trans (by
+    simp only [Iso.symm_hom, smallEtaleMapId_inv_app_left,
+      smallEtaleMapBaseChangeAdj_counit_app_left]
+    exact Category.id_comp _)
 
 @[simp]
 lemma smallEtaleBaseChangeId_inv_app_left (X : Scheme.{u}) (V : X.Etale) :
@@ -204,16 +227,16 @@ noncomputable def smallEtaleBaseChangeComp (f : X ⟶ Y) (g : Y ⟶ Z) :
 @[simp]
 lemma smallEtaleBaseChangeComp_hom_app_left (f : X ⟶ Y) (g : Y ⟶ Z) (V : Z.Etale) :
     ((smallEtaleBaseChangeComp f g).hom.app V).left =
-      (pullbackLeftPullbackSndIso V.hom g f).inv := by
-  change (pullback.congrHom rfl rfl ≪≫ (pullbackLeftPullbackSndIso V.hom g f).symm).hom = _
-  simp
+      (pullbackLeftPullbackSndIso V.hom g f).inv :=
+  (MorphismProperty.Over.pullbackComp_hom_app_left f g (f ≫ g) rfl V).trans
+    ((congrArg (· ≫ _) pullback.map_id).trans (Category.id_comp _))
 
 @[simp]
 lemma smallEtaleBaseChangeComp_inv_app_left (f : X ⟶ Y) (g : Y ⟶ Z) (V : Z.Etale) :
     ((smallEtaleBaseChangeComp f g).inv.app V).left =
-      (pullbackLeftPullbackSndIso V.hom g f).hom := by
-  change (pullback.congrHom rfl rfl ≪≫ (pullbackLeftPullbackSndIso V.hom g f).symm).inv = _
-  simp
+      (pullbackLeftPullbackSndIso V.hom g f).hom :=
+  (MorphismProperty.Over.pullbackComp_inv_app_left f g (f ≫ g) rfl V).trans
+    ((congrArg (_ ≫ ·) pullback.map_id).trans (Category.comp_id _))
 
 /-- Equal scheme morphisms induce naturally isomorphic base change functors on small étale sites. -/
 noncomputable def smallEtaleBaseChangeCongr {f f' : X ⟶ Y} (h : f = f') :
@@ -282,6 +305,26 @@ lemma iteratedSliceEquiv_inverse_map_left_left {V W : U.left.Etale} (g : V ⟶ W
     ((U.iteratedSliceEquiv.inverse.map g).left).left = g.left :=
   (rfl)
 
+@[simp]
+lemma iteratedSliceEquiv_unitIso_hom_app_left_left (V : CategoryTheory.Over U) :
+    ((U.iteratedSliceEquiv.unitIso.hom.app V).left).left = 𝟙 V.left.left :=
+  MorphismProperty.Over.iteratedSliceEquiv_unitIso_hom_app_left_left U V
+
+@[simp]
+lemma iteratedSliceEquiv_unitIso_inv_app_left_left (V : CategoryTheory.Over U) :
+    ((U.iteratedSliceEquiv.unitIso.inv.app V).left).left = 𝟙 V.left.left :=
+  MorphismProperty.Over.iteratedSliceEquiv_unitIso_inv_app_left_left U V
+
+@[simp]
+lemma iteratedSliceEquiv_counitIso_hom_app_left (W : U.left.Etale) :
+    (U.iteratedSliceEquiv.counitIso.hom.app W).left = 𝟙 W.left :=
+  MorphismProperty.Over.iteratedSliceEquiv_counitIso_hom_app_left U W
+
+@[simp]
+lemma iteratedSliceEquiv_counitIso_inv_app_left (W : U.left.Etale) :
+    (U.iteratedSliceEquiv.counitIso.inv.app W).left = 𝟙 W.left :=
+  MorphismProperty.Over.iteratedSliceEquiv_counitIso_inv_app_left U W
+
 /-- Postcomposing `U.iteratedSliceEquiv.inverse` with `CategoryTheory.Over.forget U` recovers
 postcomposition `U.hom.smallEtaleMap`. -/
 noncomputable def iteratedSliceEquivInverseCompForgetIso :
@@ -289,12 +332,32 @@ noncomputable def iteratedSliceEquivInverseCompForgetIso :
       (U.hom : U.left ⟶ S).smallEtaleMap :=
   MorphismProperty.Over.iteratedSliceBackwardCompForgetIso U
 
+@[simp]
+lemma iteratedSliceEquivInverseCompForgetIso_hom_app_left (W : U.left.Etale) :
+    (U.iteratedSliceEquivInverseCompForgetIso.hom.app W).left = 𝟙 W.left :=
+  MorphismProperty.Over.iteratedSliceBackwardCompForgetIso_hom_app_left U W
+
+@[simp]
+lemma iteratedSliceEquivInverseCompForgetIso_inv_app_left (W : U.left.Etale) :
+    (U.iteratedSliceEquivInverseCompForgetIso.inv.app W).left = 𝟙 W.left :=
+  MorphismProperty.Over.iteratedSliceBackwardCompForgetIso_inv_app_left U W
+
 /-- Postcomposing `U.iteratedSliceEquiv.functor` with `U.hom.smallEtaleMap` recovers
 `CategoryTheory.Over.forget U`. -/
 noncomputable def iteratedSliceEquivFunctorCompMapIso :
     U.iteratedSliceEquiv.functor ⋙ (U.hom : U.left ⟶ S).smallEtaleMap ≅
       CategoryTheory.Over.forget U :=
   MorphismProperty.Over.iteratedSliceForwardCompMapIso U
+
+@[simp]
+lemma iteratedSliceEquivFunctorCompMapIso_hom_app_left (V : CategoryTheory.Over U) :
+    (U.iteratedSliceEquivFunctorCompMapIso.hom.app V).left = 𝟙 V.left.left :=
+  MorphismProperty.Over.iteratedSliceForwardCompMapIso_hom_app_left U V
+
+@[simp]
+lemma iteratedSliceEquivFunctorCompMapIso_inv_app_left (V : CategoryTheory.Over U) :
+    (U.iteratedSliceEquivFunctorCompMapIso.inv.app V).left = 𝟙 V.left.left :=
+  MorphismProperty.Over.iteratedSliceForwardCompMapIso_inv_app_left U V
 
 /-- `U.iteratedSliceEquiv.inverse : U.left.Etale ⥤ CategoryTheory.Over U` identifies
 `smallEtaleTopology U.left` with the localized topology `(smallEtaleTopology S).over U`. -/
@@ -311,9 +374,66 @@ instance isDenseSubsite_iteratedSliceEquiv_inverse :
 
 /-- Sheaves on the localized small étale site `(Over U, (smallEtaleTopology S).over U)` are
 equivalent to sheaves on the small étale site of `U.left`. -/
+-- The body is exposed so `((U.overSheafEquiv A).functor.obj F).obj` and `.inverse` reduce in
+-- dependent section morphism types.
+@[expose]
 noncomputable def overSheafEquiv (A : Type*) [Category* A] :
     Sheaf ((smallEtaleTopology S).over U) A ≌ Sheaf (smallEtaleTopology U.left) A :=
   U.iteratedSliceEquiv.sheafCongr ((smallEtaleTopology S).over U) (smallEtaleTopology U.left) A
+
+@[simp]
+lemma overSheafEquiv_functor_obj_obj (A : Type*) [Category* A]
+    (F : Sheaf ((smallEtaleTopology S).over U) A) :
+    ((U.overSheafEquiv A).functor.obj F).obj = U.iteratedSliceEquiv.inverse.op ⋙ F.obj :=
+  (rfl)
+
+@[simp]
+lemma overSheafEquiv_functor_map_hom_app (A : Type*) [Category* A]
+    {F G : Sheaf ((smallEtaleTopology S).over U) A} (f : F ⟶ G) (W : U.left.Etaleᵒᵖ) :
+    ((U.overSheafEquiv A).functor.map f).hom.app W =
+      f.hom.app (U.iteratedSliceEquiv.inverse.op.obj W) :=
+  (rfl)
+
+@[simp]
+lemma overSheafEquiv_inverse_obj_obj (A : Type*) [Category* A]
+    (F : Sheaf (smallEtaleTopology U.left) A) :
+    ((U.overSheafEquiv A).inverse.obj F).obj = U.iteratedSliceEquiv.functor.op ⋙ F.obj :=
+  (rfl)
+
+@[simp]
+lemma overSheafEquiv_inverse_map_hom_app (A : Type*) [Category* A]
+    {F G : Sheaf (smallEtaleTopology U.left) A} (f : F ⟶ G) (V : (CategoryTheory.Over U)ᵒᵖ) :
+    ((U.overSheafEquiv A).inverse.map f).hom.app V =
+      f.hom.app (U.iteratedSliceEquiv.functor.op.obj V) :=
+  (rfl)
+
+@[simp]
+lemma overSheafEquiv_unitIso_hom_app_hom_app (A : Type*) [Category* A]
+    (F : Sheaf ((smallEtaleTopology S).over U) A) (V : (CategoryTheory.Over U)ᵒᵖ) :
+    ((U.overSheafEquiv A).unitIso.hom.app F).hom.app V =
+      F.obj.map (U.iteratedSliceEquiv.unitIso.inv.app V.unop).op :=
+  (rfl)
+
+@[simp]
+lemma overSheafEquiv_unitIso_inv_app_hom_app (A : Type*) [Category* A]
+    (F : Sheaf ((smallEtaleTopology S).over U) A) (V : (CategoryTheory.Over U)ᵒᵖ) :
+    ((U.overSheafEquiv A).unitIso.inv.app F).hom.app V =
+      F.obj.map (U.iteratedSliceEquiv.unitIso.hom.app V.unop).op :=
+  (rfl)
+
+@[simp]
+lemma overSheafEquiv_counitIso_hom_app_hom_app (A : Type*) [Category* A]
+    (F : Sheaf (smallEtaleTopology U.left) A) (W : U.left.Etaleᵒᵖ) :
+    ((U.overSheafEquiv A).counitIso.hom.app F).hom.app W =
+      F.obj.map (U.iteratedSliceEquiv.counitIso.inv.app W.unop).op :=
+  (rfl)
+
+@[simp]
+lemma overSheafEquiv_counitIso_inv_app_hom_app (A : Type*) [Category* A]
+    (F : Sheaf (smallEtaleTopology U.left) A) (W : U.left.Etaleᵒᵖ) :
+    ((U.overSheafEquiv A).counitIso.inv.app F).hom.app W =
+      F.obj.map (U.iteratedSliceEquiv.counitIso.hom.app W.unop).op :=
+  (rfl)
 
 /-- The forward functor of `U.overSheafEquiv A` is pushforward of sheaves along
 `U.iteratedSliceEquiv.inverse`. -/
@@ -322,6 +442,42 @@ noncomputable def overSheafEquivFunctorIso (A : Type*) [Category* A] :
       U.iteratedSliceEquiv.inverse.sheafPushforwardContinuous A
         (smallEtaleTopology U.left) ((smallEtaleTopology S).over U) :=
   Iso.refl _
+
+@[simp]
+lemma overSheafEquivFunctorIso_hom_app_hom_app (A : Type*) [Category* A]
+    (F : Sheaf ((smallEtaleTopology S).over U) A) (W : U.left.Etaleᵒᵖ) :
+    ((U.overSheafEquivFunctorIso A).hom.app F).hom.app W =
+      𝟙 (F.obj.obj (U.iteratedSliceEquiv.inverse.op.obj W)) :=
+  (rfl)
+
+@[simp]
+lemma overSheafEquivFunctorIso_inv_app_hom_app (A : Type*) [Category* A]
+    (F : Sheaf ((smallEtaleTopology S).over U) A) (W : U.left.Etaleᵒᵖ) :
+    ((U.overSheafEquivFunctorIso A).inv.app F).hom.app W =
+      𝟙 (F.obj.obj (U.iteratedSliceEquiv.inverse.op.obj W)) :=
+  (rfl)
+
+/-- The inverse functor of `U.overSheafEquiv A` is pushforward of sheaves along
+`U.iteratedSliceEquiv.functor`. -/
+noncomputable def overSheafEquivInverseIso (A : Type*) [Category* A] :
+    (U.overSheafEquiv A).inverse ≅
+      U.iteratedSliceEquiv.functor.sheafPushforwardContinuous A
+        ((smallEtaleTopology S).over U) (smallEtaleTopology U.left) :=
+  Iso.refl _
+
+@[simp]
+lemma overSheafEquivInverseIso_hom_app_hom_app (A : Type*) [Category* A]
+    (F : Sheaf (smallEtaleTopology U.left) A) (V : (CategoryTheory.Over U)ᵒᵖ) :
+    ((U.overSheafEquivInverseIso A).hom.app F).hom.app V =
+      𝟙 (F.obj.obj (U.iteratedSliceEquiv.functor.op.obj V)) :=
+  (rfl)
+
+@[simp]
+lemma overSheafEquivInverseIso_inv_app_hom_app (A : Type*) [Category* A]
+    (F : Sheaf (smallEtaleTopology U.left) A) (V : (CategoryTheory.Over U)ᵒᵖ) :
+    ((U.overSheafEquivInverseIso A).inv.app F).hom.app V =
+      𝟙 (F.obj.obj (U.iteratedSliceEquiv.functor.op.obj V)) :=
+  (rfl)
 
 /-- For `U : S.Etale`, postcomposition `U.hom.smallEtaleMap` is continuous for the small étale
 topologies. -/
@@ -379,9 +535,31 @@ noncomputable def overPullbackCompOverSheafEquivIso :
     Functor.sheafPushforwardContinuousComp' U.iteratedSliceEquivInverseCompForgetIso A
       (smallEtaleTopology U.left) ((smallEtaleTopology S).over U) (smallEtaleTopology S)
 
+@[simp]
+lemma overPullbackCompOverSheafEquivIso_hom_app_hom_app
+    (F : Sheaf (smallEtaleTopology S) A) (W : U.left.Etaleᵒᵖ) :
+    ((U.overPullbackCompOverSheafEquivIso A).hom.app F).hom.app W =
+      F.obj.map (U.iteratedSliceEquivInverseCompForgetIso.inv.app W.unop).op := by
+  simp only [overPullbackCompOverSheafEquivIso, Iso.trans_hom, NatTrans.comp_app,
+    Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
+    Functor.sheafPushforwardContinuousComp'_hom_app_hom_app,
+    ObjectProperty.FullSubcategory.comp_hom, overSheafEquivFunctorIso_hom_app_hom_app]
+  exact Category.id_comp _
+
+@[simp]
+lemma overPullbackCompOverSheafEquivIso_inv_app_hom_app
+    (F : Sheaf (smallEtaleTopology S) A) (W : U.left.Etaleᵒᵖ) :
+    ((U.overPullbackCompOverSheafEquivIso A).inv.app F).hom.app W =
+      F.obj.map (U.iteratedSliceEquivInverseCompForgetIso.hom.app W.unop).op := by
+  simp only [overPullbackCompOverSheafEquivIso, Iso.trans_inv, NatTrans.comp_app,
+    Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app,
+    Functor.sheafPushforwardContinuousComp'_inv_app_hom_app,
+    ObjectProperty.FullSubcategory.comp_hom, overSheafEquivFunctorIso_inv_app_hom_app]
+  exact Category.comp_id _
+
 /-- On an étale sheaf `F` on `S`, transporting `F.over U` across `U.overSheafEquiv A` identifies
 with `((U.hom : U.left ⟶ S).smallEtaleMap.sheafPushforwardContinuous A _ _).obj F`. -/
-noncomputable def overSheafEquivObjOverIso (F : Sheaf (smallEtaleTopology S) A) :
+noncomputable abbrev overSheafEquivObjOverIso (F : Sheaf (smallEtaleTopology S) A) :
     (U.overSheafEquiv A).functor.obj (F.over U) ≅
       ((U.hom : U.left ⟶ S).smallEtaleMap.sheafPushforwardContinuous A
         (smallEtaleTopology U.left) (smallEtaleTopology S)).obj F :=

@@ -196,6 +196,26 @@ lemma iteratedSliceEquiv_inverse :
     (iteratedSliceEquiv U).inverse = iteratedSliceBackward U :=
   (rfl)
 
+@[simp]
+lemma iteratedSliceEquiv_unitIso_hom_app_left_left (V : CategoryTheory.Over U) :
+    (((iteratedSliceEquiv U).unitIso.hom.app V).left).left = 𝟙 V.left.left :=
+  (rfl)
+
+@[simp]
+lemma iteratedSliceEquiv_unitIso_inv_app_left_left (V : CategoryTheory.Over U) :
+    (((iteratedSliceEquiv U).unitIso.inv.app V).left).left = 𝟙 V.left.left :=
+  (rfl)
+
+@[simp]
+lemma iteratedSliceEquiv_counitIso_hom_app_left (W : P.Over ⊤ U.left) :
+    ((iteratedSliceEquiv U).counitIso.hom.app W).left = 𝟙 W.left :=
+  (rfl)
+
+@[simp]
+lemma iteratedSliceEquiv_counitIso_inv_app_left (W : P.Over ⊤ U.left) :
+    ((iteratedSliceEquiv U).counitIso.inv.app W).left = 𝟙 W.left :=
+  (rfl)
+
 /-- Postcomposing `iteratedSliceForward U` with `MorphismProperty.Over.map ⊤ U.prop` recovers
 `CategoryTheory.Over.forget U : CategoryTheory.Over U ⥤ P.Over ⊤ X`. -/
 def iteratedSliceForwardCompMapIso :
