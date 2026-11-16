@@ -44,10 +44,6 @@ variable (Γ : BipartiteRibbonGraph.{u})
 
 /-! ### Face degrees -/
 
-/-- Equality of faces of a finite bipartite ribbon graph is decidable. -/
-instance instDecidableEqFace : DecidableEq Γ.Face :=
-  @Quotient.decidableEq _ _ (inferInstanceAs (DecidableRel (SameCycle Γ.facePerm)))
-
 /-- The degree of a face of `Γ`: the number of edges in that orbit of `facePerm`. -/
 def faceDegree (f : Γ.Face) : ℕ := Fintype.card {e : Γ.E // (Quotient.mk'' e : Γ.Face) = f}
 

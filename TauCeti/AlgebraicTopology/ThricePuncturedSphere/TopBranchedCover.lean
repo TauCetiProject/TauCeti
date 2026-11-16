@@ -639,13 +639,13 @@ theorem IsoClass.mk_surjective : Function.Surjective (IsoClass.mk (n := n)) :=
   Quotient.mk_surjective
 
 /-- Descend an isomorphism-invariant function on `TopBranchedCover n` to `IsoClass n`. -/
-def IsoClass.lift {α : Type*} (f : TopBranchedCover.{u} n → α)
+def IsoClass.lift {α : Sort*} (f : TopBranchedCover.{u} n → α)
     (hf : ∀ X Y, Nonempty (Iso X Y) → f X = f Y) : IsoClass.{u} n → α :=
   Quotient.lift f hf
 
 /-- Evaluating `IsoClass.lift` on `IsoClass.mk X` gives `f X`. -/
 @[simp]
-theorem IsoClass.lift_mk {α : Type*} (f : TopBranchedCover.{u} n → α)
+theorem IsoClass.lift_mk {α : Sort*} (f : TopBranchedCover.{u} n → α)
     (hf : ∀ X Y, Nonempty (Iso X Y) → f X = f Y) (X : TopBranchedCover.{u} n) :
     IsoClass.lift f hf (IsoClass.mk X) = f X :=
   (rfl)

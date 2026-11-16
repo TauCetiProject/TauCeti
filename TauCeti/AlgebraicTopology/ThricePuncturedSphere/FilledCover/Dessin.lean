@@ -41,7 +41,6 @@ representative-level dessin realisation (`exists_iso_of_connectedRibbonGraph`,
 public noncomputable section
 
 open Equiv Equiv.Perm Function
-open scoped OnePoint
 
 namespace TauCeti
 
@@ -317,33 +316,6 @@ end TopBranchedCover
 
 namespace AnalyticBelyiPair
 
-/-- The ordered triple of analytic ramification partitions of `P.β` over `0`, `1` and `∞`. -/
-def ramificationPartitions (P : AnalyticBelyiPair.{u}) :
-    Multiset ℕ × Multiset ℕ × Multiset ℕ :=
-  ((P.β.finite_fiber ((0 : ℂ) : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β),
-    (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β),
-    (P.β.finite_fiber (∞ : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β))
-
-/-- Unfold `AnalyticBelyiPair.ramificationPartitions` into its `0`, `1` and `∞` components. -/
-theorem ramificationPartitions_def (P : AnalyticBelyiPair.{u}) : P.ramificationPartitions =
-    ((P.β.finite_fiber ((0 : ℂ) : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β),
-      (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β),
-      (P.β.finite_fiber (∞ : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β)) := (rfl)
-
-/-- `P.toTopBranchedCover h` has the same ramification partitions as `P`. -/
-@[simp] theorem ramificationPartitions_toTopBranchedCover (P : AnalyticBelyiPair.{u}) {n : ℕ}
-    (h : degree P.β = n) :
-    (P.toTopBranchedCover h).ramificationPartitions = P.ramificationPartitions := by
-  simp only [TopBranchedCover.ramificationPartitions_def, ramificationPartitions_def,
-    P.parts_ramificationPartition_toTopBranchedCover h]
-
-/-- Isomorphic analytic Belyi pairs have the same ramification partitions over `0`, `1` and `∞`. -/
-theorem Iso.ramificationPartitions_eq {P Q : AnalyticBelyiPair.{u}} (e : P.Iso Q) :
-    P.ramificationPartitions = Q.ramificationPartitions := by
-  rw [← P.ramificationPartitions_toTopBranchedCover rfl,
-    ← Q.ramificationPartitions_toTopBranchedCover e.degree_eq.symm]
-  exact (e.toTopBranchedCover rfl e.degree_eq.symm).ramificationPartitions_eq
-
 /-- On `AnalyticBelyiPair.{0}`, `ramificationPartitions` equals `cycleData` of the monodromy. -/
 theorem ramificationPartitions_eq_cycleData_monodromyTriple (P : AnalyticBelyiPair.{0}) {n : ℕ}
     (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
@@ -354,23 +326,6 @@ theorem ramificationPartitions_eq_cycleData_monodromyTriple (P : AnalyticBelyiPa
   exact ((P.toTopBranchedCover h).ramificationPartitions_eq_cycleData_monodromyTriple νT).trans
     (PermutationTriple.cycleData_eq_of_equivalent (PermutationTriple.IsoClass.mk_eq_mk_iff.1
       (P.isoClass_monodromyTriple_toTopBranchedCover h ν νT)))
-
-/-- The ordered triple of ramification partitions over `0`, `1` and `∞` on `isoSetoid`. -/
-def isoClassRamificationPartitions (n : ℕ) :
-    Quotient (isoSetoid.{u} n) → Multiset ℕ × Multiset ℕ × Multiset ℕ :=
-  Quotient.lift (fun P ↦ P.1.ramificationPartitions) fun _ _ h ↦
-    (isoSetoid_r.1 h).elim Iso.ramificationPartitions_eq
-
-/-- Evaluating `isoClassRamificationPartitions` on `⟦P⟧` gives `P.1.ramificationPartitions`. -/
-@[simp] theorem isoClassRamificationPartitions_mk {n : ℕ}
-    (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
-    isoClassRamificationPartitions n ⟦P⟧ = P.1.ramificationPartitions := (rfl)
-
-/-- Forgetting the complex structure preserves the ramification partitions over `0`, `1` and `∞`. -/
-@[simp] theorem ramificationPartitions_toTopBranchedCoverIsoClass {n : ℕ}
-    (P : Quotient (isoSetoid.{u} n)) :
-    (toTopBranchedCoverIsoClass n P).ramificationPartitions =
-      isoClassRamificationPartitions n P := Quotient.inductionOn P fun _ ↦ by simp
 
 /-- `isoClassEquivConnectedIsoClass` matches `isoClassRamificationPartitions` with `cycleData`. -/
 @[simp] theorem cycleData_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
@@ -553,37 +508,6 @@ theorem isRegular_iff_ribbonGraph {P : AnalyticBelyiPair.{u}} {n : ℕ}
     (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
     P.IsRegular ↔ (P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.IsRegular := by
   rw [isRegular_iff_monodromyTriple ν, PermutationTriple.isRegular_ribbonGraph]
-
-/-- The order of the automorphism group of an isomorphism class of analytic Belyi pairs. -/
-def isoClassNatCardAut (n : ℕ) : Quotient (isoSetoid.{u} n) → ℕ :=
-  Quotient.lift (fun P ↦ Nat.card (P.1.Iso P.1)) fun _ _ h ↦
-    (isoSetoid_r.1 h).elim Iso.natCard_iso_eq
-
-/-- Evaluating `isoClassNatCardAut` on `⟦P⟧` gives `Nat.card (P.1.Iso P.1)`. -/
-@[simp] theorem isoClassNatCardAut_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
-    isoClassNatCardAut n ⟦P⟧ = Nat.card (P.1.Iso P.1) := (rfl)
-
-/-- Regularity on isomorphism classes of degree-`n` analytic Belyi pairs. -/
-def IsoClassIsRegular (n : ℕ) : Quotient (isoSetoid.{u} n) → Prop :=
-  Quotient.lift (fun P ↦ P.1.IsRegular) fun _ _ h ↦
-    (isoSetoid_r.1 h).elim fun e ↦ propext e.isRegular_iff
-
-/-- Evaluating `IsoClassIsRegular` on `⟦P⟧` recovers `P.1.IsRegular`. -/
-@[simp] theorem isoClassIsRegular_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
-    IsoClassIsRegular n ⟦P⟧ ↔ P.1.IsRegular := Iff.rfl
-
-/-- Forgetting the complex structure matches `isoClassNatCardAut` with `natCardDeck`. -/
-@[simp] theorem natCardDeck_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{u} n)) :
-    (toTopBranchedCoverIsoClass n P).natCardDeck = isoClassNatCardAut n P :=
-  Quotient.inductionOn P fun P ↦ by
-    rw [toTopBranchedCoverIsoClass_mk, TopBranchedCover.IsoClass.natCardDeck_mk,
-      isoClassNatCardAut_mk]
-    exact (Nat.card_congr (P.1.isoMulEquivDeckToTopBranchedCover P.2).toEquiv).symm
-
-/-- Forgetting the complex structure preserves regularity. -/
-@[simp] theorem isRegular_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{u} n)) :
-    (toTopBranchedCoverIsoClass n P).IsRegular ↔ IsoClassIsRegular n P :=
-  Quotient.inductionOn P fun _ ↦ by simp
 
 /-- `isoClassEquivConnectedIsoClass` preserves the order of the automorphism group. -/
 @[simp] theorem natCardAutomorphismGroup_isoClassEquivConnectedIsoClass {n : ℕ}
