@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Probability.Moments.Chebyshev
 
-/-! # Convergence in measure from moment bounds, high-probability rates, and uniform operations
+/-! # Convergence in measure: bounds, continuous transformations, and uniform operations
 
 A standard way to consume concentration inequalities: if for each index `i` the
 deviation `edist (f i x) (g x)` exceeds some deterministic `rate i` only on a
@@ -22,22 +22,16 @@ uses monotonicity of the (outer) measure; the index runs along an arbitrary
 filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
 
 Convergence in mean square also implies convergence in measure, with integrability of the
-squared deviations required only eventually along the filter. Finally, `TendstoInMeasure` is
-preserved under post-composition with uniformly continuous maps, product pairing, uniform group
-operations, and uniformly continuous scalar multiplication without finiteness or measurability
-hypotheses.
+squared deviations required only eventually along the filter.
+
+Pairing, post-composition with uniformly continuous maps, uniform group operations, and
+uniformly continuous constant scalar multiplication preserve convergence in measure along
+arbitrary filters and for arbitrary measures, without measurability assumptions. On finite
+measure spaces, continuous transformations also preserve convergence along arbitrary filters
+whenever the transformed functions are eventually almost everywhere strongly measurable.
 
 ## Main results
 
-* `UniformContinuous.comp_tendstoInMeasure`: post-composing with a uniformly continuous map
-  preserves convergence in measure.
-* `MeasureTheory.TendstoInMeasure.prodMk`: pairing two families that converge in measure yields
-  convergence in measure in the product space.
-* `MeasureTheory.TendstoInMeasure.mul`, `MeasureTheory.TendstoInMeasure.add`: convergence in
-  measure is closed under multiplication and addition in a uniform group.
-* `MeasureTheory.TendstoInMeasure.const_smul`, `MeasureTheory.TendstoInMeasure.const_mul`:
-  convergence in measure is closed under uniformly continuous constant scalar and left
-  multiplication.
 * `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
   implies convergence in measure for any measure and filter.
 * `TauCeti.tendstoInMeasure_of_tendsto_measure_rate_lt_edist`: the `edist`
@@ -49,10 +43,23 @@ hypotheses.
   `μ {x | dist (f i x) (g x) ≤ rate i} → 1`; here null-measurability of the
   good events (eventually along the filter) is genuinely needed, since an outer
   measure can assign full measure to both a set and its complement.
+* `UniformContinuous.comp_tendstoInMeasure`: post-composing with a uniformly continuous map
+  preserves convergence in measure without finiteness or measurability assumptions.
+* `MeasureTheory.TendstoInMeasure.prodMk`: convergence in measure of paired functions,
+  for arbitrary measures and filters, without measurability assumptions.
+* `MeasureTheory.TendstoInMeasure.mul`, `MeasureTheory.TendstoInMeasure.add`: convergence in
+  measure is closed under multiplication and addition in a uniform group.
+* `MeasureTheory.TendstoInMeasure.const_smul`, `MeasureTheory.TendstoInMeasure.const_add`,
+  `MeasureTheory.TendstoInMeasure.const_mul`: convergence in measure is closed under uniformly
+  continuous constant scalar multiplication, vector addition, and left multiplication.
+* `MeasureTheory.TendstoInMeasure.continuous_comp`: continuous unary transformations on
+  finite measure spaces along arbitrary filters.
+* `MeasureTheory.TendstoInMeasure.continuous_comp₂`: the corresponding binary transformation
+  theorem, obtained by pairing and unary composition.
 
 ## Source
 
-The rate-based concentration lemmas are adapted from the Davis--Kahan/DKPS formalization,
+The high-probability rate lemmas are adapted from the Davis--Kahan/DKPS formalization,
 `ForMathlib/MeasureTheory/Function/ConvergenceInMeasure.lean` at `fc38eb4`,
 by Claude Fable 5 (Kitware, Inc., Apache-2.0).
 -/
@@ -142,32 +149,32 @@ theorem UniformContinuous.comp_tendstoInMeasure {Ω E F ι : Type*}
   by_contra hlt
   exact (hosc (not_le.1 hlt)).not_ge hω
 
-namespace MeasureTheory
+namespace MeasureTheory.TendstoInMeasure
 
-open Filter Topology
+open Filter
+open scoped Topology ENNReal
 
-/-- Pairing two families that converge in measure gives convergence in measure in the product
-space. -/
-theorem TendstoInMeasure.prodMk {Ω E F ι : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
-    [PseudoEMetricSpace E] [PseudoEMetricSpace F] {l : Filter ι}
-    {f₁ : ι → Ω → E} {f₂ : ι → Ω → F} {g₁ : Ω → E} {g₂ : Ω → F}
+/-- Pairing functions preserves convergence in measure, without measurability or finiteness
+assumptions on the measure, and along an arbitrary filter. -/
+theorem prodMk {α ι E₁ E₂ : Type*} {_ : MeasurableSpace α} {μ : Measure α}
+    [PseudoEMetricSpace E₁] [PseudoEMetricSpace E₂] {l : Filter ι}
+    {f₁ : ι → α → E₁} {f₂ : ι → α → E₂} {g₁ : α → E₁} {g₂ : α → E₂}
     (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂) :
-    TendstoInMeasure μ (fun k ω ↦ (f₁ k ω, f₂ k ω)) l (fun ω ↦ (g₁ ω, g₂ ω)) := by
+    TendstoInMeasure μ (fun i x ↦ (f₁ i x, f₂ i x)) l (fun x ↦ (g₁ x, g₂ x)) := by
   intro ε hε
-  have h0 : Tendsto
-      (fun k ↦ μ {ω | ε ≤ edist (f₁ k ω) (g₁ ω)} + μ {ω | ε ≤ edist (f₂ k ω) (g₂ ω)})
-      l (𝓝 0) := by
-    simpa only [add_zero] using (h₁ ε hε).add (h₂ ε hε)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h0
-    (fun _ ↦ zero_le) fun k ↦ (measure_mono fun ω hω ↦ ?_).trans (measure_union_le _ _)
-  simpa only [Set.mem_union, Set.mem_ofPred_eq, Prod.edist_eq, le_max_iff] using hω
+  have hsum := (h₁ ε hε).add (h₂ ε hε)
+  rw [zero_add] at hsum
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
+    (fun _ ↦ zero_le) fun i ↦ ?_
+  simpa only [Prod.edist_eq, le_max_iff, Set.ofPred_or] using
+    measure_union_le {x | ε ≤ edist (f₁ i x) (g₁ x)} {x | ε ≤ edist (f₂ i x) (g₂ x)}
 
 /-- Pointwise multiplication of two families converging in measure in a uniform group converges in
 measure to the pointwise product of their limits. -/
 @[to_additive
   /-- Pointwise addition of two families converging in measure in an additive uniform group
   converges in measure to the pointwise sum of their limits. -/]
-theorem TendstoInMeasure.mul {Ω E ι : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
+theorem mul {Ω E ι : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
     [PseudoEMetricSpace E] [Group E] [IsUniformGroup E] {l : Filter ι}
     {f₁ f₂ : ι → Ω → E} {g₁ g₂ : Ω → E}
     (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂) :
@@ -177,7 +184,7 @@ theorem TendstoInMeasure.mul {Ω E ι : Type*} {_ : MeasurableSpace Ω} {μ : Me
 /-- Uniformly continuous constant scalar multiplication preserves convergence in measure. -/
 @[to_additive
   /-- Uniformly continuous constant vector addition preserves convergence in measure. -/]
-theorem TendstoInMeasure.const_smul {Ω M E ι : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
+theorem const_smul {Ω M E ι : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
     [PseudoEMetricSpace E] [SMul M E] [UniformContinuousConstSMul M E] {l : Filter ι}
     {f : ι → Ω → E} {g : Ω → E} (hf : TendstoInMeasure μ f l g) (c : M) :
     TendstoInMeasure μ (fun k ω ↦ c • f k ω) l (fun ω ↦ c • g ω) :=
@@ -185,11 +192,69 @@ theorem TendstoInMeasure.const_smul {Ω M E ι : Type*} {_ : MeasurableSpace Ω}
 
 /-- Left multiplication by a constant preserves convergence in measure whenever left multiplication
 is uniformly continuous via `UniformContinuousConstSMul R R`. -/
-theorem TendstoInMeasure.const_mul {Ω R ι : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
+theorem const_mul {Ω R ι : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
     [Mul R] [PseudoEMetricSpace R] [UniformContinuousConstSMul R R] {l : Filter ι}
     {f : ι → Ω → R} {g : Ω → R} (hf : TendstoInMeasure μ f l g) (c : R) :
     TendstoInMeasure μ (fun k ω ↦ c * f k ω) l (fun ω ↦ c * g ω) :=
   hf.const_smul c
+
+/-- A continuous transformation preserves convergence in measure on a finite measure space
+along an arbitrary filter, provided the transformed functions are eventually almost everywhere
+strongly measurable. The transformation need not be uniformly continuous or bounded. -/
+theorem continuous_comp {α ι E₁ E₂ : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] [PseudoEMetricSpace E₁] [PseudoEMetricSpace E₂]
+    {l : Filter ι} {f : ι → α → E₁} {g : α → E₁}
+    (h : TendstoInMeasure μ f l g) {φ : E₁ → E₂} (hφ : Continuous φ)
+    (hf : ∀ᶠ i in l, AEStronglyMeasurable (fun x ↦ φ (f i x)) μ) :
+    TendstoInMeasure μ (fun i x ↦ φ (f i x)) l (fun x ↦ φ (g x)) := by
+  classical
+  rw [tendstoInMeasure_iff_tendsto_toNNReal]
+  intro ε hε
+  by_contra hbad
+  obtain ⟨s, hs, hfreq⟩ := not_tendsto_iff_exists_frequently_notMem.1 hbad
+  obtain ⟨δ, hδ, hsub⟩ := NNReal.nhds_zero_basis.mem_iff.1 hs
+  let r : ℕ → ℝ≥0∞ := fun n ↦ (2⁻¹ : ℝ≥0∞) ^ n
+  have hr : Tendsto r atTop (𝓝 0) :=
+    ENNReal.tendsto_pow_atTop_nhds_zero_of_lt_one (by norm_num)
+  have hselect (n : ℕ) : ∃ i, AEStronglyMeasurable (fun x ↦ φ (f i x)) μ ∧
+      μ {x | r n ≤ edist (f i x) (g x)} ≤ r n ∧
+      δ ≤ (μ {x | ε ≤ edist (φ (f i x)) (φ (g x))}).toNNReal := by
+    have hrpos : 0 < r n := ENNReal.pow_pos (by norm_num) _
+    have hevent := (h (r n) hrpos).eventually (gt_mem_nhds hrpos)
+    obtain ⟨i, hi, hfi, hri⟩ := (hfreq.and_eventually (hf.and hevent)).exists
+    exact ⟨i, hfi, hri.le, Set.notMem_Iio.1 (Set.notMem_subset hsub hi)⟩
+  choose ns hmeas hbound hbadbound using hselect
+  have hseq : TendstoInMeasure μ (fun n ↦ f (ns n)) atTop g := by
+    apply TauCeti.tendstoInMeasure_of_tendsto_measure_rate_lt_edist hr
+    apply tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hr (fun _ ↦ zero_le)
+    intro n
+    exact (measure_mono (s := {x | r n < edist (f (ns n) x) (g x)})
+      (fun x hx ↦ show r n ≤ edist (f (ns n) x) (g x) from le_of_lt hx)).trans (hbound n)
+  obtain ⟨ks, _, hlim⟩ := hseq.exists_seq_tendsto_ae
+  have hcomp := tendstoInMeasure_of_tendsto_ae (fun n ↦ hmeas (ks n))
+    (hlim.mono fun x hx ↦ (hφ.tendsto (g x)).comp hx)
+  have hzero := tendstoInMeasure_iff_tendsto_toNNReal.mp hcomp ε hε
+  exact (not_lt_of_ge (ge_of_tendsto' hzero (fun n ↦ hbadbound (ks n)))) hδ
+
+/-- A continuous binary transformation preserves convergence in measure on a finite measure
+space along an arbitrary filter, provided the transformed functions are eventually
+almost everywhere strongly measurable. -/
+theorem continuous_comp₂ {α ι E₁ E₂ E₃ : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] [PseudoEMetricSpace E₁] [PseudoEMetricSpace E₂]
+    [PseudoEMetricSpace E₃] {l : Filter ι}
+    {f₁ : ι → α → E₁} {f₂ : ι → α → E₂} {g₁ : α → E₁} {g₂ : α → E₂}
+    (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂)
+    {φ : E₁ → E₂ → E₃} (hφ : Continuous (Function.uncurry φ))
+    (hf : ∀ᶠ i in l, AEStronglyMeasurable (fun x ↦ φ (f₁ i x) (f₂ i x)) μ) :
+    TendstoInMeasure μ (fun i x ↦ φ (f₁ i x) (f₂ i x)) l
+      (fun x ↦ φ (g₁ x) (g₂ x)) :=
+  (h₁.prodMk h₂).continuous_comp hφ hf
+
+end MeasureTheory.TendstoInMeasure
+
+namespace MeasureTheory
+
+open Filter Topology
 
 /-- Convergence in mean square implies convergence in measure, for any measure and filter.
 Integrability of the squared deviations is needed only eventually. -/
