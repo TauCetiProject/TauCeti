@@ -153,7 +153,7 @@ theorem classicalResidueTheorem_nullHomologous (hU : IsOpen U)
       (Finset.sum_filter_of_ne fun s _ hs ↦ not_not.mp fun hsU ↦
         hs (by rw [isNullHomologous_iff.mp hnull s hsU, zero_mul])).symm⟩
   rw [hsum]
-  have decomp : PolarPartDecomposition f T U := .ofMeromorphic hU hfT hmeroT
+  have decomp : PolarPartDecomposition f T U := .ofMeromorphic hfT hmeroT
   rw [integral_eq_analyticRemainder_add_sum decomp hCU fun s hs ↦ hoff s (hTS s hs),
     homologyCauchyTheorem hU hCU decomp.analyticRemainder_differentiableOn hnull, zero_add]
 

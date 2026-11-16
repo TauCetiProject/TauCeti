@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.SchwarzRearrangement.Lipschitz
+public import TauCeti.MeasureTheory.Function.Coarea.DistributionFunction
 public import TauCeti.Analysis.Calculus.Sard.Radial
 
 /-!
@@ -16,6 +17,17 @@ to any additive Haar measure has a Lebesgue-null set of critical values. Thus al
 contains neither zero-gradient points nor nondifferentiability points. This is the radial
 critical-value input to the reciprocal-gradient coarea formula for the distribution function of a
 rearrangement.
+
+Consequently, if the superlevel sets `{h > t}` have finite volume for `t > 0`, then at almost
+every level `t > 0` the reciprocal-gradient level integral of the rearrangement `h*` is exactly
+minus the derivative of the distribution function `μ_h(t) = |{h > t}|` of `h`:
+
+`∫_{{h* = t} ∩ {Dh* ≠ 0}} ‖Dh*‖⁻¹ dHⁿ⁻¹ = -μ_h'(t)`
+
+(`LipschitzWith.ae_setLIntegral_inv_enorm_fderiv_toReal_schwarzRearrangement_eq_ofReal_neg_deriv`).
+For `h` itself only the inequality `≤` holds in general
+(`MeasureTheory.ae_setLIntegral_inv_enorm_fderiv_le_ofReal_neg_deriv`). The Pólya–Szegő
+inequality for Lipschitz functions compares the two statements level by level.
 
 The representative is the canonical `schwarzRearrangement` followed by `ENNReal.toReal`.
 For integrable inputs the extended rearrangement is finite almost everywhere, by
@@ -31,7 +43,7 @@ itself needs no integrability hypothesis and retains the same totalization conve
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory Set Filter Module
 open scoped ENNReal NNReal
 
 namespace LipschitzWith
@@ -53,5 +65,37 @@ theorem volume_image_setOf_fderiv_toReal_schwarzRearrangement_eq_zero
   apply hLip.volume_image_setOf_fderiv_eq_zero_of_norm_eq
   intro x y hxy
   exact congrArg ENNReal.toReal (TauCeti.schwarzRearrangement_eq_of_norm_eq μ _ hxy)
+
+/-- **Level integrals of a rearranged Lipschitz function.** Let `h` be Lipschitz with superlevel
+sets `{h > t}` of finite volume for `t > 0`, and let `h*` be the real Schwarz rearrangement of its
+positive part. At almost every `t > 0`, the reciprocal-gradient level integral of `h*` equals minus
+the derivative of the distribution function `μ_h(t) = |{h > t}|` of `h`:
+
+`∫_{{h* = t} ∩ {Dh* ≠ 0}} ‖Dh*‖⁻¹ dHⁿ⁻¹ = -μ_h'(t)`. -/
+theorem ae_setLIntegral_inv_enorm_fderiv_toReal_schwarzRearrangement_eq_ofReal_neg_deriv
+    (hh : LipschitzWith K h) (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞) :
+    ∀ᵐ t, 0 < t →
+      ∫⁻ x in {x | fderiv ℝ (fun z ↦ (TauCeti.schwarzRearrangement volume
+          (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x ≠ 0} ∩
+          (fun z ↦ (TauCeti.schwarzRearrangement volume
+            (fun y ↦ ENNReal.ofReal (h y)) z).toReal) ⁻¹' {t},
+        ‖fderiv ℝ (fun z ↦ (TauCeti.schwarzRearrangement volume
+          (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1] =
+        ENNReal.ofReal (-deriv (fun s ↦ volume.real {x | s < h x}) t) := by
+  -- The real rearrangement has the same distribution function as `h` at positive levels.
+  have hdist (s : ℝ) (hs : 0 < s) : volume {x | s < (TauCeti.schwarzRearrangement volume
+      (fun y ↦ ENNReal.ofReal (h y)) x).toReal} = volume {x | s < h x} :=
+    TauCeti.addHaar_setOf_lt_toReal_schwarzRearrangement
+      (TauCeti.ae_schwarzRearrangement_ofReal_ne_top hh.continuous.aemeasurable (hfin 1 one_pos))
+      hs.le
+  have hv := TauCeti.lipschitzWith_toReal_schwarzRearrangement volume hh
+  filter_upwards [ae_setLIntegral_inv_enorm_fderiv_eq_ofReal_neg_deriv
+    hv.continuous.measurable.aemeasurable (fun t ht ↦ hdist t ht ▸ hfin t ht)
+    (hh.volume_image_setOf_fderiv_toReal_schwarzRearrangement_eq_zero volume)] with t ht htpos
+  rw [ht htpos]
+  congr 2
+  refine Filter.EventuallyEq.deriv_eq ?_
+  filter_upwards [Ioi_mem_nhds htpos] with s hs
+  rw [measureReal_def, measureReal_def, hdist s hs]
 
 end LipschitzWith

@@ -53,7 +53,7 @@ private theorem kernelHopfIdeal_le_identityComponentHopfIdeal_of_constant
       HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H) := by
   let I := HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)
   let q := CommHopfAlgCat.mkQuotient H.obj I
-  have hconn := (geometricallyConnected_identityComponent H).connectedSpace k _
+  have hconn := (geometricallyConnected_identityComponent H).connectedSpace
   have htriv := ConstantGroup.bialgHom_eq_unit_comp_counit_of_connected G hconn
     (q.hom.comp f.hom)
   apply HopfIdeal.toIdeal_le_toIdeal.mp

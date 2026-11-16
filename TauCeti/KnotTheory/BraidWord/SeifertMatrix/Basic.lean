@@ -1337,6 +1337,7 @@ theorem alexander_seifertMatrix_figureEight :
   rw [← Matrix.alexander_submatrix_equiv_self _ e, he,
     ← alexander_congruence_of_det_sq_eq_one _ hP, hcongr, alexander_figureEightSeifertMatrix]
 
+omit [IsStrictOrderedRing 𝕜] in
 /-- The Seifert matrix of the braid `σ₁ σ₂⁻¹ σ₁ σ₂⁻¹` has the signature `0` of the figure-eight
 knot. -/
 theorem signature_seifertMatrix_figureEight :

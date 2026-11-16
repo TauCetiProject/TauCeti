@@ -138,7 +138,6 @@ theorem eq_of_eventually_mem_of_inverted_coordinate_eq_zero
   have hnear {y : ℝ} (hy : g y = 0) (hfy : ∀ᶠ z in 𝓝[upperHalfPlaneSet] (y : ℂ), f z ∈ E)
       {V : Set ℂ} (hV : IsOpen V) (hyV : (y : ℂ) ∈ V) :
       ∃ z ∈ V ∩ upperHalfPlaneSet, f z ∈ C := by
-    have := Real.nhdsWithin_upperHalfPlaneSet_neBot y
     obtain ⟨z, hzC, hzE, hzV, hzH⟩ :=
       ((tendsto_cobounded_of_inverted_boundary_eq_zero (hgc _ (by simp)) hgf hgne hy).eventually
         hEC |>.and (hfy.and ((eventually_nhdsWithin_of_eventually_nhds

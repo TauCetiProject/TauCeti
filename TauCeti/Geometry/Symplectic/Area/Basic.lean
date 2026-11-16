@@ -40,7 +40,8 @@ area of a closed loop is the symplectic area of the cone `r x(t)` bounding it
 period of a `2π`-periodic curve backwards as a loop on `[0, 1]` negates its area over `[-π, π]`
 (`TauCeti.SymplecticForm.loopArea_comp_sub_mul`); in particular a circle traversed clockwise has
 minus the loop area of the counterclockwise circle
-(`TauCeti.SymplecticForm.loopArea_comp_circleMap_sub_mul`).
+(`TauCeti.SymplecticForm.loopArea_comp_circleMap_sub_mul`). Traversing a loop of period one
+backwards negates its area (`TauCeti.SymplecticForm.loopArea_comp_neg`).
 The area of `u` vanishes when `u` vanishes on the slices `s = a` and `s = b`
 (`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic`).
 

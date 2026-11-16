@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 public import TauCeti.Analysis.Complex.CauchyKernel
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -64,6 +65,8 @@ integrable `f` it is holomorphic off the closed support `tsupport f`, with compl
   integrable data is holomorphic off its closed support.
 * `HasCompactSupport.conjWirtingerDeriv_cauchyTransform` and
   `HasCompactSupport.cauchyTransform_conjWirtingerDeriv`: normalized right and left inverses.
+* `HasCompactSupport.cauchyTransform_conjWirtingerDeriv_smul`: the Cauchy–Pompeiu formula with a
+  cutoff, recovering `χ • f` from `\bar∂χ • f` for `f` holomorphic near the support of `χ`.
 * `TauCeti.two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I_eq`: the
   Cauchy–Pompeiu normalisation `(2π)⁻¹` with `D` is the normalisation `π⁻¹` with `\bar∂`.
 * `TauCeti.pi_inv_smul_integral_swap_sub_inv_smul_eq_neg_cauchyTransform` and
@@ -558,6 +561,35 @@ theorem _root_.HasCompactSupport.cauchyTransform_conjWirtingerDeriv {u : ℂ →
     cauchyTransform (fun z ↦ conjWirtingerDeriv u z 1) w = u w := by
   rw [← two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I_eq]
   exact hc.two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I hu w
+
+/-- **The Cauchy–Pompeiu formula with a cutoff.** If `χ` is a compactly supported `C¹` function
+whose topological support lies in an open set `V` on which `f : ℂ → F` is holomorphic, then
+`χ w • f w` is the Cauchy transform of `\bar∂χ • f`, for every `w ∈ ℂ`. -/
+theorem _root_.HasCompactSupport.cauchyTransform_conjWirtingerDeriv_smul {χ : ℂ → ℂ}
+    {f : ℂ → F} {V : Set ℂ} (hχ : HasCompactSupport χ) (hχd : ContDiff ℝ 1 χ) (hV : IsOpen V)
+    (hχV : tsupport χ ⊆ V) (hf : DifferentiableOn ℂ f V) (w : ℂ) :
+    cauchyTransform (fun z ↦ conjWirtingerDeriv χ z 1 • f z) w = χ w • f w := by
+  have hχz {z : ℂ} (hz : z ∉ V) : χ =ᶠ[𝓝 z] fun _ ↦ 0 :=
+    notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hz (hχV h)
+  have hgz {z : ℂ} (hz : z ∉ V) : (fun z ↦ χ z • f z) =ᶠ[𝓝 z] fun _ ↦ 0 := by
+    filter_upwards [hχz hz] with y hy
+    simp [hy]
+  have hg : ContDiff ℝ 1 fun z ↦ χ z • f z := contDiff_iff_contDiffAt.2 fun z ↦ by
+    by_cases hz : z ∈ V
+    · exact hχd.contDiffAt.smul
+        (((hf.contDiffOn hV).restrict_scalars ℝ).contDiffAt (hV.mem_nhds hz))
+    · exact contDiffAt_const.congr_of_eventuallyEq (hgz hz)
+  have hdg (z : ℂ) :
+      conjWirtingerDeriv (fun z ↦ χ z • f z) z 1 = conjWirtingerDeriv χ z 1 • f z := by
+    by_cases hz : z ∈ V
+    · have hfz : DifferentiableAt ℂ f z := hf.differentiableAt (hV.mem_nhds hz)
+      rw [conjWirtingerDeriv_smul_apply (hχd.differentiable one_ne_zero z)
+        (hfz.restrictScalars ℝ), hfz.conjWirtingerDeriv_eq_zero]
+      simp
+    · rw [(hgz hz).conjWirtingerDeriv_eq, (hχz hz).conjWirtingerDeriv_eq]
+      simp
+  simp_rw [← hdg]
+  exact (hχ.smul_right).cauchyTransform_conjWirtingerDeriv hg w
 
 /-- **The plausible wrong kernel.** For compactly supported `C¹` data `f`, the transform with the
 transposed kernel `(z - w)⁻¹` satisfies `\bar∂ T' f = -f`, not `f`. -/

@@ -47,6 +47,8 @@ flag-minor algebra, is a separate theorem not proved here.
 
 * `TauCeti.degree_rename_toLex_flagMinor` and `TauCeti.monic_rename_toLex_flagMinor`: for the
   row-major lexicographic order, a flag minor is monic with leading exponent its diagonal exponent.
+* `TauCeti.flagMinor_univ`: the flag minor of all rows is the determinant of the generic matrix.
+* `TauCeti.flagMinor_injective`: distinct sets of rows have distinct flag minors.
 * `TauCeti.GTPattern.exponentEntries_succ_sub`: the exponent is recovered from its partial column
   sums by successive differences.
 * `TauCeti.GTPattern.exponentEntries_flagDiagonalExponent`: the diagonal exponent of `I` is sent to
@@ -125,6 +127,34 @@ theorem flagDiagonalExponent_apply (I : Finset (Fin n)) (r c : Fin n) :
     simp only [ofLex_toLex, Fin.val_castLE] at this
     exact this ▸ d.2
 
+/-- The diagonal exponent of a single row `r` is that of the variable `z_(r,0)`. -/
+@[simp]
+theorem flagDiagonalExponent_singleton (r : Fin n) :
+    flagDiagonalExponent {r} = Finsupp.single (toLex (r, ⟨0, r.pos⟩)) 1 := by
+  have : Unique (Fin #{r}) := card_singleton r ▸ inferInstance
+  rw [flagDiagonalExponent, Fintype.sum_unique, mem_singleton.1 (orderEmbOfFin_mem _ _ _)]
+  congr
+  exact Fin.ext (Nat.lt_one_iff.1 ((default : Fin #{r}).2.trans_eq (card_singleton r)))
+
+/-- The diagonal exponent of all rows is that of the main diagonal `∏_c z_(c,c)`. -/
+theorem flagDiagonalExponent_univ :
+    flagDiagonalExponent (univ : Finset (Fin n)) =
+      ∑ c : Fin n, Finsupp.single (toLex (c, c)) 1 := by
+  rw [flagDiagonalExponent]
+  refine Fintype.sum_equiv (finCongr (by simp)) _ _ fun c ↦ ?_
+  rw [orderEmbOfFin_univ_apply]
+  rfl
+
+/-- The diagonal exponents do not involve the variables `z_(r,c)` with `r < c`. -/
+theorem flagDiagonalExponent_apply_eq_zero_of_lt (I : Finset (Fin n)) {r c : Fin n}
+    (hrc : r < c) : flagDiagonalExponent I (toLex (r, c)) = 0 := by
+  rw [flagDiagonalExponent_apply]
+  split_ifs with hc hr
+  · have := I.val_le_val_orderEmbOfFin rfl ⟨c, hc⟩
+    rw [hr] at this
+    exact ((Fin.lt_def.1 hrc).not_ge this).elim
+  all_goals rfl
+
 /-- For the lexicographic order on the variables ordered row by row, the leading exponent of a
 flag minor is its diagonal exponent. -/
 @[simp]
@@ -141,6 +171,39 @@ theorem monic_rename_toLex_flagMinor (I : Finset (Fin n)) :
   rw [flagMinor_def, Matrix.mvPolynomialMinor_eq_det_submatrix]
   exact Matrix.monic_rename_toLex_det_submatrix_mvPolynomialX (I.orderEmbOfFin rfl).strictMono
     (Fin.strictMono_castLE _)
+
+variable {R}
+
+/-- For the lexicographic order on the variables ordered row by row, the leading term of a flag
+minor is its diagonal monomial. -/
+@[simp]
+theorem leadingTerm_rename_toLex_flagMinor (I : Finset (Fin n)) :
+    lex.leadingTerm (rename toLex (flagMinor R I)) = monomial (flagDiagonalExponent I) 1 := by
+  nontriviality R
+  rw [MonomialOrder.leadingTerm, degree_rename_toLex_flagMinor,
+    (monic_rename_toLex_flagMinor R I).leadingCoeff_eq_one]
+
+/-- Every flag minor over a nontrivial coefficient ring is nonzero. -/
+@[simp]
+theorem flagMinor_ne_zero [Nontrivial R] (I : Finset (Fin n)) : flagMinor R I ≠ 0 := fun h ↦
+  (monic_rename_toLex_flagMinor R I).ne_zero (by rw [h, map_zero])
+
+/-- The flag minor of all rows is the determinant of the generic matrix. -/
+@[simp]
+theorem flagMinor_univ :
+    flagMinor R (univ : Finset (Fin n)) = (Matrix.mvPolynomialX (Fin n) (Fin n) R).det := by
+  rw [flagMinor_def, Matrix.mvPolynomialMinor_eq_det_submatrix]
+  convert Matrix.det_submatrix_equiv_self (finCongr (by simp : #(univ : Finset (Fin n)) = n))
+    (Matrix.mvPolynomialX (Fin n) (Fin n) R) using 2
+  ext i j
+  simp only [Matrix.submatrix_apply, orderEmbOfFin_univ_apply]
+  rfl
+
+/-- Flag minors commute with a change of coefficient ring. -/
+@[simp]
+theorem map_flagMinor {S : Type*} [CommRing S] (f : R →+* S) (I : Finset (Fin n)) :
+    map f (flagMinor R I) = flagMinor S I := by
+  simp only [flagMinor_def, Matrix.map_mvPolynomialMinor]
 
 end FlagMinor
 
@@ -292,5 +355,12 @@ theorem flagExponentEquiv_symm_apply (P : AddSubmonoid.nonneg (GTPattern n)) (r 
     exponentEntries_succ_sub]
 
 end GTPattern
+
+/-- Distinct sets of rows have distinct flag minors over a nontrivial coefficient ring. -/
+theorem flagMinor_injective (R : Type*) [CommRing R] [Nontrivial R] :
+    Function.Injective (flagMinor (n := n) R) := fun I J h ↦
+  GTPattern.flagDiagonalExponent_injective <| by
+    simpa only [degree_rename_toLex_flagMinor] using
+      congrArg (fun p ↦ lex.degree (rename toLex p)) h
 
 end TauCeti

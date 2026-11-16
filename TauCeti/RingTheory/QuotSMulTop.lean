@@ -124,6 +124,13 @@ theorem mk_smul_mk {x : R} (r : R) (m : M) :
       Submodule.Quotient.mk (r • m) :=
   rfl
 
+/-- Negation is the identity on a module modulo twice itself. -/
+@[simp]
+theorem neg_eq_self (x : QuotSMulTop (2 : R) M) : -x = x := by
+  apply neg_eq_iff_add_eq_zero.mpr
+  simpa only [two_smul] using
+    (Module.mem_annihilator.mp (mem_annihilator (M := M) (2 : R)) x)
+
 /-- Modulo a unit, every module is trivial: `x • ⊤ = ⊤` for a unit `x`. -/
 theorem subsingleton_of_isUnit {x : R} (hx : IsUnit x) : Subsingleton (QuotSMulTop x M) :=
   Submodule.Quotient.subsingleton_iff.2 (Submodule.smul_eq_self_of_isUnit hx)
@@ -161,9 +168,9 @@ end Ideal
 
 namespace LinearMap
 
-variable {R : Type*} [CommRing R]
-variable {M N P : Type*} [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P]
+variable {R : Type*} [CommSemiring R]
+variable {M N P : Type*} [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
 variable {f : M →ₗ[R] N} {g : N →ₗ[R] P} {r : R} {k : ℕ}
 
 /-- Bounded `r`-power torsion in the last term of an exact sequence gives a uniform comparison
