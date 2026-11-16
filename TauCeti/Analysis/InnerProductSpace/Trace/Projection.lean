@@ -24,6 +24,8 @@ its trace is the sum of the diagonal entries of `T` along that basis.
 * `LinearMap.forall_orthonormal_iff_forall_re_trace`: a condition on the diagonal sums of `T`
   along all orthonormal families of `k` vectors is the same condition on the real parts of the
   traces of its compressions to all `k`-dimensional subspaces.
+* `LinearMap.forall_orthonormal_fintype_of_fin`: such a condition along all orthonormal families
+  indexed by `Fin k` holds along every orthonormal family indexed by a type with `k` elements.
 -/
 
 public section
@@ -81,5 +83,14 @@ theorem forall_orthonormal_iff_forall_re_trace (T : E →ₗ[𝕜] E) {k : ℕ} 
     have := h W ((finrank_span_eq_card hli).trans (Fintype.card_fin k))
     simpa [re_trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_re_inner T W b, hb]
       using this
+
+/-- A condition on the diagonal sums of `T` along all orthonormal families of `k` vectors indexed
+by `Fin k` holds along every orthonormal family indexed by a type with `k` elements. -/
+theorem forall_orthonormal_fintype_of_fin (T : E →ₗ[𝕜] E) {k : ℕ} (P : ℝ → Prop)
+    (h : ∀ w : Fin k → E, Orthonormal 𝕜 w → P (∑ i, RCLike.re ⟪T (w i), w i⟫)) {ι : Type*}
+    [Fintype ι] (hι : Fintype.card ι = k) {w : ι → E} (hw : Orthonormal 𝕜 w) :
+    P (∑ i, RCLike.re ⟪T (w i), w i⟫) := by
+  let e := Fintype.equivFinOfCardEq hι
+  simpa [← e.symm.sum_comp] using h (w ∘ e.symm) (hw.comp _ e.symm.injective)
 
 end LinearMap
