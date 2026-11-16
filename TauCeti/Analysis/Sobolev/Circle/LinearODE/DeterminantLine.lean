@@ -61,6 +61,8 @@ return map. For them the orientation comparison above is expressed by the sign o
 
 ## Main results
 
+* `TauCeti.CircleSobolev.injective_loopOperator_iff`: `L_S` is injective exactly when `1 - Ψ(T)`
+  is.
 * `TauCeti.CircleSobolev.isInvertible_loopOperator_iff_det_ne_zero`: `L_S` is invertible exactly
   when `det (1 - Ψ(T)) ≠ 0`.
 * `TauCeti.CircleSobolev.detLineEndEquiv_detLineLoopOperatorEquiv`,
@@ -92,44 +94,6 @@ variable (T : ℝ) (S : C(AddCircle T, E →L[ℝ] E))
 
 /-! ### Comparison with the operator on `C¹` periodic maps -/
 
-/-- The loop `S`, regarded as a path on `ℝ`, is continuous. -/
-private theorem continuous_coe_comp : Continuous fun t : ℝ ↦ S t :=
-  S.continuous.comp (AddCircle.continuous_mk' T)
-
-/-- The loop `S`, regarded as a path on `ℝ`, is `T`-periodic. -/
-private theorem periodic_coe_comp : Function.Periodic (fun t : ℝ ↦ S t) T := fun t ↦ by
-  simp only [AddCircle.coe_add_period]
-
-/-- A map twisted by `1` along `T` is `T`-periodic. -/
-private theorem periodic_of_mem {f : ℝ → E} (hf : f ∈ twistedContinuous E T 1) :
-    Function.Periodic f T := fun t ↦ ((mem_twistedContinuous.1 hf).2 t).trans (one_smul ℝ _)
-
-variable (E) in
-/-- A continuous `T`-periodic map on `ℝ`, as a continuous loop on `AddCircle T`. -/
-private def toLoop : twistedContinuous E T 1 →ₗ[ℝ] C(AddCircle T, E) where
-  toFun f := ⟨(periodic_of_mem T f.2).lift,
-    continuous_coinduced_dom.2 (mem_twistedContinuous.1 f.2).1⟩
-  map_add' _ _ := ContinuousMap.ext fun θ ↦ by
-    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
-    rfl
-  map_smul' _ _ := ContinuousMap.ext fun θ ↦ by
-    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
-    rfl
-
-private theorem toLoop_apply (f : twistedContinuous E T 1) (t : ℝ) :
-    toLoop E T f t = (f : ℝ → E) t :=
-  (rfl)
-
-private theorem toLoop_injective : Function.Injective (toLoop E T) := fun f g h ↦
-  Subtype.ext (funext fun t ↦ by rw [← toLoop_apply, h, toLoop_apply])
-
-/-- The derivative of a `C¹` periodic map is a continuous periodic map. -/
-private theorem deriv_mem (w : twistedContDiff E T 1) :
-    deriv (w : ℝ → E) ∈ twistedContinuous E T 1 :=
-  mem_twistedContinuous.2 ⟨(mem_twistedContDiff.1 w.2).1.continuous_deriv le_rfl, fun t ↦ by
-    simp only [← fderiv_apply_one_eq_deriv, fderiv_add_eq_smul (mem_twistedContDiff.1 w.2).2 t,
-      smul_apply]⟩
-
 variable [hT : Fact (0 < T)] [FiniteDimensional ℂ E]
 
 /-- A finite-dimensional complex space is complete, as needed for continuous representatives and
@@ -140,29 +104,32 @@ local instance instCompleteSpaceLoopOperatorDetLine : CompleteSpace E :=
 variable (E) in
 /-- A continuous `T`-periodic map, as an element of `H⁰(E)`. -/
 private def toH0 : twistedContinuous E T 1 →ₗ[ℝ] CircleSobolev 0 E :=
-  ((ofContinuousMap (E := E) T).restrictScalars ℝ).toLinearMap ∘ₗ toLoop E T
+  ((ofContinuousMap (E := E) T).restrictScalars ℝ).toLinearMap ∘ₗ
+    (twistedContinuousOneEquiv E T).toLinearMap
 
 private theorem toH0_apply (f : twistedContinuous E T 1) :
-    toH0 E T f = ofContinuousMap T (toLoop E T f) :=
+    toH0 E T f = ofContinuousMap T (twistedContinuousOneEquiv E T f) :=
   (rfl)
 
 private theorem toH0_injective : Function.Injective (toH0 E T) :=
-  (ofContinuousMap_injective T).comp (toLoop_injective T)
+  (ofContinuousMap_injective T).comp (twistedContinuousOneEquiv E T).injective
 
 /-- A `C¹` periodic map is the continuous representative of an element of `H¹(E)` whose derivative
 is the class of its classical derivative. -/
 private theorem exists_toContinuousMap_eq (w : twistedContDiff E T 1) :
     ∃ a : CircleSobolev 1 E,
       toContinuousMap T (by norm_num) a =
-          toLoop E T (Submodule.inclusion twistedContDiff_le_twistedContinuous w) ∧
+          twistedContinuousOneEquiv E T
+            (Submodule.inclusion twistedContDiff_le_twistedContinuous w) ∧
         derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) a =
-          ofContinuousMap T (toLoop E T ⟨_, deriv_mem T w⟩) :=
-  exists_toContinuousMap_eq_and_derivative_eq T _ _ fun x ↦
-    ((mem_twistedContDiff.1 w.2).1.differentiable one_ne_zero x).hasDerivAt
+          ofContinuousMap T (twistedContinuousOneEquiv E T ⟨_, deriv_mem_twistedContinuous w⟩) :=
+  exists_toContinuousMap_eq_and_derivative_eq T _ _ fun x ↦ by
+    simp only [twistedContinuousOneEquiv_apply, Submodule.coe_inclusion]
+    exact ((mem_twistedContDiff.1 w.2).1.differentiable one_ne_zero x).hasDerivAt
 
 private theorem toContinuousMap_choose (w : twistedContDiff E T 1) :
     toContinuousMap T (by norm_num) (exists_toContinuousMap_eq T w).choose =
-      toLoop E T (Submodule.inclusion twistedContDiff_le_twistedContinuous w) :=
+      twistedContinuousOneEquiv E T (Submodule.inclusion twistedContDiff_le_twistedContinuous w) :=
   (exists_toContinuousMap_eq T w).choose_spec.1
 
 variable (E) in
@@ -174,30 +141,29 @@ private def toH1 : twistedContDiff E T 1 →ₗ[ℝ] CircleSobolev 1 E where
     simp only [map_add]
     rw [toContinuousMap_choose, toContinuousMap_choose]
   map_smul' c w := toContinuousMap_injective T (by norm_num) <| by
-    rw [RingHom.id_apply, toContinuousMap_choose,
-      ← Complex.coe_smul c (exists_toContinuousMap_eq T w).choose,
-      (toContinuousMap T (show (1 : ℝ) / 2 < 1 by norm_num)).map_smul, toContinuousMap_choose,
-      Complex.coe_smul, map_smul, map_smul]
+    rw [RingHom.id_apply, ContinuousLinearMap.map_smul_of_tower, toContinuousMap_choose,
+      toContinuousMap_choose, map_smul, map_smul]
 
 /-- `TauCeti.CircleSobolev.toContinuousMap_choose`, stated for `toH1`. -/
 private theorem toContinuousMap_toH1 (w : twistedContDiff E T 1) :
     toContinuousMap T (by norm_num) (toH1 E T w) =
-      toLoop E T (Submodule.inclusion twistedContDiff_le_twistedContinuous w) :=
+      twistedContinuousOneEquiv E T (Submodule.inclusion twistedContDiff_le_twistedContinuous w) :=
   toContinuousMap_choose T w
 
 private theorem derivative_toH1 (w : twistedContDiff E T 1) :
     derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) (toH1 E T w) =
-      ofContinuousMap T (toLoop E T ⟨_, deriv_mem T w⟩) :=
+      ofContinuousMap T (twistedContinuousOneEquiv E T ⟨_, deriv_mem_twistedContinuous w⟩) :=
   (exists_toContinuousMap_eq T w).choose_spec.2
 
 private theorem toH1_injective : Function.Injective (toH1 E T) := fun w v h ↦ by
   have h' := congrArg (toContinuousMap T (by norm_num)) h
   rw [toContinuousMap_toH1, toContinuousMap_toH1] at h'
-  exact Submodule.inclusion_injective _ (toLoop_injective T h')
+  exact Submodule.inclusion_injective _ ((twistedContinuousOneEquiv E T).injective h')
 
 /-- The square comparing `w ↦ w' - S w` on `C¹` periodic maps with `L_S` commutes. -/
 private theorem toH0_comp_twistedLinearOperator :
-    toH0 E T ∘ₗ twistedLinearOperator (continuous_coe_comp T S) (periodic_coe_comp T S) 1 =
+    toH0 E T ∘ₗ
+        twistedLinearOperator (continuous_comp_addCircle_coe S) (periodic_comp_addCircle_coe S) 1 =
       (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E) ∘ₗ toH1 E T := by
   ext w : 1
   simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, loopOperator_apply,
@@ -205,8 +171,9 @@ private theorem toH0_comp_twistedLinearOperator :
   congr 1
   ext θ
   obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
-  simp only [ContinuousMap.sub_apply, toLoop_apply, ContinuousMap.applyContinuousLinearMap_apply,
-    twistedLinearOperator_apply, Submodule.coe_inclusion]
+  simp only [ContinuousMap.sub_apply, twistedContinuousOneEquiv_apply,
+    ContinuousMap.applyContinuousLinearMap_apply, twistedLinearOperator_apply,
+    Submodule.coe_inclusion]
 
 /-- **Regularity.** An element of `H¹(E)` whose image under `L_S` is a continuous loop comes from
 a `C¹` periodic map. -/
@@ -216,7 +183,8 @@ private theorem mem_range_toH1 (a : CircleSobolev 1 E)
   set u := toContinuousMap T (show (1 : ℝ) / 2 < 1 by norm_num) a
   -- The weak derivative of `a` is the continuous loop `S u + f`.
   have hder : derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) a =
-      ofContinuousMap T (ContinuousMap.applyContinuousLinearMap S u + toLoop E T f) := by
+      ofContinuousMap T
+        (ContinuousMap.applyContinuousLinearMap S u + twistedContinuousOneEquiv E T f) := by
     rw [map_add, ← toH0_apply, hf, loopOperator_apply, mulLoop_apply]
     abel
   have hd (x : ℝ) := hasDerivAt_toContinuousMap_of_derivative_eq T a _ hder x
@@ -224,20 +192,21 @@ private theorem mem_range_toH1 (a : CircleSobolev 1 E)
     refine mem_twistedContDiff.2
       ⟨contDiff_one_iff_deriv.2 ⟨fun x ↦ (hd x).differentiableAt, ?_⟩, fun t ↦ ?_⟩
     · rw [funext fun x ↦ (hd x).deriv]
-      exact (ContinuousMap.applyContinuousLinearMap S u + toLoop E T f).continuous.comp
-        (AddCircle.continuous_mk' T)
+      exact continuous_comp_addCircle_coe
+        (ContinuousMap.applyContinuousLinearMap S u + twistedContinuousOneEquiv E T f)
     · simp only [AddCircle.coe_add_period, one_smul]
   refine ⟨⟨_, hu⟩, toContinuousMap_injective T (by norm_num) ?_⟩
   rw [toContinuousMap_toH1]
   ext θ
   obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
-  simp only [toLoop_apply, Submodule.coe_inclusion, u]
+  simp only [twistedContinuousOneEquiv_apply, Submodule.coe_inclusion, u]
 
 private theorem finrank_quotient_range_loopOperator_le :
     Module.finrank ℝ
         (CircleSobolev 0 E ⧸ range (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E)) ≤
       Module.finrank ℝ (twistedContinuous E T 1 ⧸
-        range (twistedLinearOperator (continuous_coe_comp T S) (periodic_coe_comp T S) 1)) := by
+        range (twistedLinearOperator (continuous_comp_addCircle_coe S)
+          (periodic_comp_addCircle_coe S) 1)) := by
   have hindex := index_loopOperator T S
   rw [ContinuousLinearMap.index_eq_finrank_sub, sub_eq_zero, Nat.cast_inj] at hindex
   rw [← hindex, ← finrank_ker_twistedLinearOperator_eq_finrank_quotient_range _ _ hT.out
@@ -264,7 +233,8 @@ def kerLoopOperatorEquiv :
       ker (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) :=
   ((LinearMap.kerEquivOfRegular (toH0_comp_twistedLinearOperator T S) (toH1_injective T)
       (toH0_injective T) (mem_range_toH1 T S)).symm.trans
-    (kerTwistedLinearOperatorEquiv (continuous_coe_comp T S) (periodic_coe_comp T S) 1)).trans
+    (kerTwistedLinearOperatorEquiv (continuous_comp_addCircle_coe S)
+      (periodic_comp_addCircle_coe S) 1)).trans
     (LinearEquiv.ofEq _ _ (by rw [one_smul]))
 
 @[simp]
@@ -276,11 +246,12 @@ theorem coe_kerLoopOperatorEquiv_apply
   have ha : (a : CircleSobolev 1 E) = toH1 E T (e.symm a) :=
     (LinearMap.apply_coe_kerEquivOfRegular_symm_apply _ _ _ _ a).symm
   rw [kerLoopOperatorEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    LinearEquiv.coe_ofEq_apply, kerTwistedLinearOperatorEquiv_apply, ha, toContinuousMap_toH1]
-  rfl
+    LinearEquiv.coe_ofEq_apply, kerTwistedLinearOperatorEquiv_apply, ha, toContinuousMap_toH1,
+    ← AddCircle.coe_zero, twistedContinuousOneEquiv_apply, Submodule.coe_inclusion]
 
 /-- The inverse of `TauCeti.CircleSobolev.kerLoopOperatorEquiv` sends `x` to the element of `H¹(E)`
 whose continuous representative is the solution `t ↦ Ψ(t) x` of `w' = S w`. -/
+@[simp]
 theorem toContinuousMap_kerLoopOperatorEquiv_symm_apply
     (x : ker (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E))) (t : ℝ) :
     toContinuousMap T (by norm_num) ((kerLoopOperatorEquiv T S).symm x).1 t =
@@ -288,7 +259,7 @@ theorem toContinuousMap_kerLoopOperatorEquiv_symm_apply
   set a := (kerLoopOperatorEquiv T S).symm x
   have h0 : toContinuousMap T (by norm_num) a.1 0 = x := by
     rw [← coe_kerLoopOperatorEquiv_apply, LinearEquiv.apply_symm_apply]
-  rw [eq_dysonSeriesLeft_apply (continuous_coe_comp T S)
+  rw [eq_dysonSeriesLeft_apply (continuous_comp_addCircle_coe S)
     ((loopOperator_eq_zero_iff T S a.1).1 a.2) t]
   exact congrArg _ h0
 
@@ -301,7 +272,8 @@ def quotientRangeLoopOperatorEquiv :
       E ⧸ range (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) :=
   ((LinearMap.cokerEquivOfRegular (toH0_comp_twistedLinearOperator T S) (toH0_injective T)
       (mem_range_toH1 T S) (sup_range_eq_top T S)).symm.trans
-    (quotientRangeTwistedLinearOperatorEquiv (continuous_coe_comp T S) (periodic_coe_comp T S)
+    (quotientRangeTwistedLinearOperatorEquiv (continuous_comp_addCircle_coe S)
+      (periodic_comp_addCircle_coe S)
       hT.out one_ne_zero)).trans
     (Submodule.quotEquivOfEq _ _ (by rw [one_smul]))
 
@@ -313,18 +285,12 @@ theorem quotientRangeLoopOperatorEquiv_mk (f : C(AddCircle T, E)) :
     quotientRangeLoopOperatorEquiv T S (Submodule.Quotient.mk (ofContinuousMap T f)) =
       Submodule.Quotient.mk (dysonSeriesLeft (fun t : ℝ ↦ S t) T
         (∫ s in 0..T, dysonSeries (-fun t : ℝ ↦ S t) s (f s))) := by
-  have hf : (fun t : ℝ ↦ f t) ∈ twistedContinuous E T 1 :=
-    mem_twistedContinuous.2 ⟨f.continuous.comp (AddCircle.continuous_mk' T), fun t ↦ by
-      simp only [AddCircle.coe_add_period, one_smul]⟩
-  have hj : ofContinuousMap T f = toH0 E T ⟨_, hf⟩ := by
-    rw [toH0_apply]
-    congr 1
-    ext θ
-    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
-    rfl
+  have hj : ofContinuousMap T f = toH0 E T ((twistedContinuousOneEquiv E T).symm f) := by
+    rw [toH0_apply, LinearEquiv.apply_symm_apply]
   rw [hj, quotientRangeLoopOperatorEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
     LinearMap.cokerEquivOfRegular_symm_mk, quotientRangeTwistedLinearOperatorEquiv_mk,
     twistedEndpoint_apply, Submodule.quotEquivOfEq_mk]
+  simp only [twistedContinuousOneEquiv_symm_apply]
 
 /-- **The determinant line of `L_S` is that of `1 - Ψ(T)`.** Evaluation at `0` on the kernel
 (`TauCeti.CircleSobolev.kerLoopOperatorEquiv`) and the endpoint map on the cokernel
@@ -349,14 +315,22 @@ theorem detLineLoopOperatorEquiv_tmul
         (φ ∘ₗ (LinearEquiv.detLineCongr (quotientRangeLoopOperatorEquiv T S)).symm.toLinearMap) :=
   LinearMap.detLineCongrKerCoker_tmul _ _ x φ
 
+/-- The operator `ζ ↦ ζ' - S ζ`, `H¹(E) → H⁰(E)`, is injective exactly when `1 - Ψ(T)` is, where
+`Ψ = TauCeti.dysonSeriesLeft S`. -/
+theorem injective_loopOperator_iff :
+    Function.Injective (loopOperator T S) ↔
+      Function.Injective ⇑(1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) := by
+  rw [← ContinuousLinearMap.coe_coe, ← LinearMap.ker_eq_bot, ← LinearMap.ker_eq_bot,
+    ← Submodule.subsingleton_iff_eq_bot, ← Submodule.subsingleton_iff_eq_bot,
+    (kerLoopOperatorEquiv T S).subsingleton_congr]
+
 /-- **The Fredholm alternative for `L_S`.** The operator `ζ ↦ ζ' - S ζ`, `H¹(E) → H⁰(E)`, is
 invertible exactly when `det (1 - Ψ(T)) ≠ 0`, where `Ψ = TauCeti.dysonSeriesLeft S`. -/
 theorem isInvertible_loopOperator_iff_det_ne_zero :
     (loopOperator T S).IsInvertible ↔
       LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) ≠ 0 := by
-  rw [Ne, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not, ← Submodule.subsingleton_iff_eq_bot,
-    ← (kerLoopOperatorEquiv T S).subsingleton_congr, Submodule.subsingleton_iff_eq_bot,
-    LinearMap.ker_eq_bot]
+  rw [Ne, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not, LinearMap.ker_eq_bot,
+    ← injective_loopOperator_iff]
   refine ⟨fun h ↦ ?_, fun h ↦
     (isFredholm_loopOperator T S).isInvertible_of_injective_of_index_eq_zero h
       (index_loopOperator T S)⟩
@@ -376,11 +350,7 @@ theorem detLineEndEquiv_detLineLoopOperatorEquiv (hL : Function.Bijective (loopO
       (LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)))⁻¹ *
         (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLineEquivOfBijective
           hL x := by
-  have hinj : Function.Injective ⇑(1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) := by
-    rw [← LinearMap.ker_eq_bot, ← Submodule.subsingleton_iff_eq_bot,
-      ← (kerLoopOperatorEquiv T S).subsingleton_congr, Submodule.subsingleton_iff_eq_bot,
-      LinearMap.ker_eq_bot]
-    exact hL.1
+  have hinj := (injective_loopOperator_iff T S).1 hL.1
   have hP := And.intro hinj (LinearMap.injective_iff_surjective.1 hinj)
   rw [LinearMap.detLineEndEquiv_eq_inv_det_mul _ hP, detLineLoopOperatorEquiv,
     LinearMap.detLineEquivOfBijective_detLineCongrKerCoker hL hP]

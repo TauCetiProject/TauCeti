@@ -90,6 +90,8 @@ this is the sign of `det (1 - P)` or `det (-1 - P)`.
 
 * `TauCeti.twistedContinuous X d ε`, `TauCeti.twistedContDiff X d ε`: the continuous and the `C¹`
   maps `ℝ → X` twisted by `ε` along `d`.
+* `TauCeti.twistedContinuousOneEquiv X d`: the continuous `d`-periodic maps `ℝ → X`, that is, the
+  continuous maps twisted by `1` along `d`, are the continuous loops on `AddCircle d`.
 * `TauCeti.twistedLinearOperator hM hper ε`: the operator `w ↦ w' - M w` between them.
 * `TauCeti.twistedEndpoint hM d ε`: the endpoint map `f ↦ Ψ(d) (∫₀ᵈ Ψ(s)⁻¹ (f s) ds)`.
 * `TauCeti.detLineTwistedLinearOperatorEquiv`: `det L ≃ det (ε - Ψ(d))`, computed on pure
@@ -173,6 +175,62 @@ theorem mem_twistedContDiff {w : ℝ → X} :
 theorem twistedContDiff_le_twistedContinuous : twistedContDiff X d ε ≤ twistedContinuous X d ε :=
   fun _ hw => ⟨hw.1.continuous, hw.2⟩
 
+/-- The derivative of a `C¹` map twisted by `ε` along `d` is a continuous map twisted by `ε`
+along `d`. -/
+theorem deriv_mem_twistedContinuous (w : twistedContDiff X d ε) :
+    deriv (w : ℝ → X) ∈ twistedContinuous X d ε :=
+  ⟨w.2.1.continuous_deriv le_rfl, fun t => by
+    simp only [← fderiv_apply_one_eq_deriv, fderiv_add_eq_smul w.2.2 t, smul_apply]⟩
+
+/-- A map twisted by `1` along `d` is `d`-periodic. -/
+theorem periodic_of_mem_twistedContinuous {f : ℝ → X} (hf : f ∈ twistedContinuous X d 1) :
+    Function.Periodic f d := fun t => (hf.2 t).trans (one_smul ℝ _)
+
+/-- A map on `AddCircle d`, regarded as a map on `ℝ`, is `d`-periodic. -/
+theorem periodic_comp_addCircle_coe {Y : Type*} (g : AddCircle d → Y) :
+    Function.Periodic (fun t : ℝ => g t) d := fun t => by
+  simp only [AddCircle.coe_add_period]
+
+/-- A continuous map on `AddCircle d`, regarded as a map on `ℝ`, is continuous. -/
+theorem continuous_comp_addCircle_coe {Y : Type*} [TopologicalSpace Y] (g : C(AddCircle d, Y)) :
+    Continuous fun t : ℝ => g t :=
+  g.continuous.comp (AddCircle.continuous_mk' d)
+
+/-- A continuous loop on `AddCircle d`, regarded as a map on `ℝ`, is a continuous `d`-periodic map,
+that is, a continuous map twisted by `1` along `d`. -/
+theorem coe_continuousMap_mem_twistedContinuous (g : C(AddCircle d, X)) :
+    (fun t : ℝ => g t) ∈ twistedContinuous X d 1 :=
+  ⟨continuous_comp_addCircle_coe g, fun t => by rw [periodic_comp_addCircle_coe g t, one_smul]⟩
+
+variable (X d) in
+/-- The continuous `d`-periodic maps `ℝ → X`, that is, the continuous maps twisted by `1` along
+`d`, are the continuous loops on `AddCircle d`. -/
+def twistedContinuousOneEquiv : twistedContinuous X d 1 ≃ₗ[ℝ] C(AddCircle d, X) where
+  toFun f := ⟨(periodic_of_mem_twistedContinuous f.2).lift, continuous_coinduced_dom.2 f.2.1⟩
+  map_add' f g := ContinuousMap.ext fun θ => by
+    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+    simp only [ContinuousMap.coe_mk, ContinuousMap.add_apply, Function.Periodic.lift_coe,
+      Submodule.coe_add, Pi.add_apply]
+  map_smul' c f := ContinuousMap.ext fun θ => by
+    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+    simp only [ContinuousMap.coe_mk, ContinuousMap.smul_apply, Function.Periodic.lift_coe,
+      Submodule.coe_smul, Pi.smul_apply, RingHom.id_apply]
+  invFun g := ⟨fun t => g t, coe_continuousMap_mem_twistedContinuous g⟩
+  left_inv _ := rfl
+  right_inv g := ContinuousMap.ext fun θ => by
+    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+    simp only [ContinuousMap.coe_mk, Function.Periodic.lift_coe]
+
+@[simp]
+theorem twistedContinuousOneEquiv_apply (f : twistedContinuous X d 1) (t : ℝ) :
+    twistedContinuousOneEquiv X d f t = (f : ℝ → X) t :=
+  (rfl)
+
+@[simp]
+theorem twistedContinuousOneEquiv_symm_apply (g : C(AddCircle d, X)) (t : ℝ) :
+    ((twistedContinuousOneEquiv X d).symm g : ℝ → X) t = g t :=
+  (rfl)
+
 end Spaces
 
 variable {M : ℝ → X →L[ℝ] X} {d ε : ℝ}
@@ -184,10 +242,8 @@ maps twisted by `ε` along `d`, for a continuous path `M` of bounded operators o
 def twistedLinearOperator (hM : Continuous M) (hper : Function.Periodic M d) (ε : ℝ) :
     twistedContDiff X d ε →ₗ[ℝ] twistedContinuous X d ε where
   toFun w := ⟨fun t => deriv (w : ℝ → X) t - M t ((w : ℝ → X) t),
-    (w.2.1.continuous_deriv le_rfl).sub (hM.clm_apply w.2.1.continuous), fun t => by
-      have hd : deriv (w : ℝ → X) (t + d) = ε • deriv (w : ℝ → X) t := by
-        simp only [← fderiv_apply_one_eq_deriv, fderiv_add_eq_smul w.2.2 t, smul_apply]
-      simp only [hd, hper t, w.2.2 t, map_smul, smul_sub]⟩
+    (deriv_mem_twistedContinuous w).1.sub (hM.clm_apply w.2.1.continuous), fun t => by
+      simp only [(deriv_mem_twistedContinuous w).2 t, hper t, w.2.2 t, map_smul, smul_sub]⟩
   map_add' w v := by
     ext t
     simp [deriv_add (w.2.1.differentiable one_ne_zero t) (v.2.1.differentiable one_ne_zero t)]

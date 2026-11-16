@@ -23,8 +23,8 @@ implies `x ∈ range e`, as elliptic regularity says for elliptic operators. Thi
   the map of cokernels is injective (`LinearMap.injective_mapQ_of_regular`);
 * the map of cokernels is onto exactly when `range e' ⊔ range g = ⊤`
   (`LinearMap.surjective_mapQ_iff_sup_range_eq_top`), and then it is an isomorphism
-  (`LinearMap.cokerEquivOfRegular`). Over a field this holds as soon as the cokernel of `g` is
-  finite-dimensional, of dimension at most that of the cokernel of `f`
+  (`LinearMap.cokerEquivOfRegular`). Over a division ring this holds as soon as the cokernel of
+  `g` is finite-dimensional, of dimension at most that of the cokernel of `f`
   (`LinearMap.sup_range_eq_top_of_finrank_le`), since an injective map into a finite-dimensional
   space of no larger dimension is onto. For Fredholm operators this dimension condition comes from
   an index computation.
@@ -112,11 +112,12 @@ theorem cokerEquivOfRegular_symm_mk (h : e' ∘ₗ f = g ∘ₗ e) (he' : Functi
       Submodule.Quotient.mk y := by
   rw [LinearEquiv.symm_apply_eq, cokerEquivOfRegular_mk]
 
-/-- **The dimension criterion.** Over a field, let `e' ∘ f = g ∘ e` with `e'` injective and `g`
-regular: `g x ∈ range e'` implies `x ∈ range e`. If the cokernel of `g` is finite-dimensional, of
-dimension at most that of the cokernel of `f`, then the ranges of `e'` and `g` span the target of
-`g`, so the cokernels of `f` and `g` are isomorphic (`LinearMap.cokerEquivOfRegular`). -/
-theorem sup_range_eq_top_of_finrank_le {K : Type*} [Field K] [Module K M] [Module K N]
+/-- **The dimension criterion.** Over a division ring, let `e' ∘ f = g ∘ e` with `e'` injective
+and `g` regular: `g x ∈ range e'` implies `x ∈ range e`. If the cokernel of `g` is
+finite-dimensional, of dimension at most that of the cokernel of `f`, then the ranges of `e'` and
+`g` span the target of `g`, so the cokernels of `f` and `g` are isomorphic
+(`LinearMap.cokerEquivOfRegular`). -/
+theorem sup_range_eq_top_of_finrank_le {K : Type*} [DivisionRing K] [Module K M] [Module K N]
     [Module K M'] [Module K N'] {f : M →ₗ[K] N} {g : M' →ₗ[K] N'} {e : M →ₗ[K] M'}
     {e' : N →ₗ[K] N'} (h : e' ∘ₗ f = g ∘ₗ e) (he' : Function.Injective e')
     (hreg : ∀ x, g x ∈ range e' → x ∈ range e) [FiniteDimensional K (N' ⧸ range g)]
