@@ -59,10 +59,8 @@ AINTLIB `LeanModularForms` project
 
 ## Main results
 
-* `ModularForm.slash_apply_of_apply_one_zero_eq_zero`,
-  `Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_of_apply_one_zero_eq_zero`: explicit slash
-  formulas for positive-determinant upper-triangular matrices in `GL(2, ℝ)` and inverses of
-  upper-triangular matrices in `SL(2, ℝ)`.
+* `ModularForm.slash_apply_of_apply_one_zero_eq_zero`: explicit slash formula for
+  positive-determinant upper-triangular matrices in `GL(2, ℝ)`.
 * `Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul`: the slash by `s⁻¹ ∈ SL(2, ℝ)`, read
   at `s • τ`, is `denom s τ ^ k * f τ`.
 * `MDifferentiableAt.slash`: the slash preserves holomorphy at a point.
@@ -84,11 +82,8 @@ AINTLIB `LeanModularForms` project
 * `TauCeti.ModularForm.SL_slash_S_slash_S`: `(f ∣[k] S) ∣[k] S = (-1)^k • f`, the action of
   `S² = -I`.
 * `Subgroup.IsArithmetic.conj_mapGL_inv`, `Subgroup.mem_conj_mapGL_inv_iff`,
-  `Subgroup.conj_mapGL_neg`: conjugating an arithmetic group by `(mapGL ℝ γ)⁻¹` (`γ ∈ SL(2, ℤ)`)
-  preserves arithmeticity, has explicit membership `mapGL ℝ γ * x * (mapGL ℝ γ)⁻¹ ∈ 𝒢`, and is
-  unchanged when `γ` is negated.
-* `Subgroup.card_stabilizer_mapGL`: the matrix image `(Γ : Subgroup (GL (Fin 2) ℝ))` has the same
-  point stabiliser orders on `ℍ` as `Γ ≤ SL(2, ℤ)`.
+  `Subgroup.conj_mapGL_neg`, `Subgroup.card_stabilizer_mapGL`: conjugation by `(mapGL ℝ γ)⁻¹`
+  and point stabiliser orders of `(Γ : Subgroup (GL (Fin 2) ℝ))` on `ℍ`.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
 * `TauCeti.ModularForm.eq_zero_of_eq_const`: a constant slash-invariant form of nonzero weight
   vanishes when its group has finite-index intersection with the modular group.
@@ -292,16 +287,6 @@ theorem _root_.ModularForm.slash_apply_of_apply_one_zero_eq_zero {M : GL (Fin 2)
   simp only [UpperHalfPlane.denom, hM, Complex.ofReal_zero, zero_mul, zero_add]
   ring
 
-/-- For an upper-triangular `t ∈ SL(2, ℝ)`, the slash of `f` by `t⁻¹` at `τ` is
-`t₁₁ ^ k * f (t⁻¹ • τ)`. -/
-theorem _root_.Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_of_apply_one_zero_eq_zero
-    {t : SL(2, ℝ)} (ht : t 1 0 = 0) (k : ℤ) (f : ℍ → ℂ) (τ : ℍ) :
-    (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ t⁻¹) τ = (t 1 1 : ℂ) ^ k * f (t⁻¹ • τ) := by
-  have h := Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul t k f (t⁻¹ • τ)
-  rw [smul_inv_smul] at h
-  rw [h]
-  simp [UpperHalfPlane.denom, mapGL_coe_matrix, ht]
-
 /-- The slash of a positive-determinant matrix preserves holomorphy at a point. -/
 private theorem mdifferentiableAt_slash_of_det_pos (k : ℤ) {g : GL (Fin 2) ℝ}
     (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det) {f : ℍ → ℂ} {τ : ℍ}
@@ -452,36 +437,25 @@ variable {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} {k : ℤ}
 -- lemmas themselves replace.
 
 /-- Conjugating an arithmetic subgroup of `GL(2, ℝ)` by `(mapGL ℝ γ)⁻¹` (`γ ∈ SL(2, ℤ)`) preserves
-arithmeticity; this is the invariance group of `SlashInvariantForm.translate` and
-`ModularForm.translate` at `mapGL ℝ γ`. -/
+arithmeticity. -/
 instance _root_.Subgroup.IsArithmetic.conj_mapGL_inv [Γ.IsArithmetic] (γ : SL(2, ℤ)) :
     (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ).IsArithmetic :=
   Subgroup.isArithmetic_conj_of_mem (H := 𝒮ℒ) (inv_mem (MonoidHom.mem_range.mpr ⟨γ, rfl⟩))
 
-/-- Membership in the conjugate `γ⁻¹ Γ γ` (`γ ∈ SL(2, ℤ)`) of a subgroup `Γ ≤ GL(2, ℝ)`:
-`x` belongs to `ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ` iff `mapGL ℝ γ * x * (mapGL ℝ γ)⁻¹ ∈ Γ`. -/
+/-- Membership in `γ⁻¹ Γ γ`: `x ∈ (mapGL ℝ γ)⁻¹ • Γ ↔ mapGL ℝ γ * x * (mapGL ℝ γ)⁻¹ ∈ Γ`. -/
 theorem _root_.Subgroup.mem_conj_mapGL_inv_iff (γ : SL(2, ℤ)) {x : GL (Fin 2) ℝ} :
     x ∈ ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ ↔ mapGL ℝ γ * x * (mapGL ℝ γ)⁻¹ ∈ Γ :=
   Subgroup.mem_conjAct_inv_smul_iff
 
-/-- Negating `γ ∈ SL(2, ℤ)` does not change `(ConjAct.toConjAct (mapGL ℝ γ))⁻¹ • Γ`, since `-1` is
-central in `GL(2, ℝ)`. -/
-@[simp]
-theorem _root_.Subgroup.inv_toConjAct_mapGL_neg (Γ : Subgroup (GL (Fin 2) ℝ)) (γ : SL(2, ℤ)) :
-    (ConjAct.toConjAct (mapGL ℝ (-γ)))⁻¹ • Γ = (ConjAct.toConjAct (mapGL ℝ γ))⁻¹ • Γ := by
-  simp only [← ConjAct.toConjAct_inv]
-  ext x
-  rw [Subgroup.mem_conj_mapGL_inv_iff, Subgroup.mem_conj_mapGL_inv_iff, mapGL_neg]
-  simp
-
-/-- Negating `γ ∈ SL(2, ℤ)` does not change the conjugated subgroup `(mapGL ℝ γ)⁻¹ Γ (mapGL ℝ γ)`,
-since `-1` is central in `GL(2, ℝ)`. -/
+/-- Negating `γ ∈ SL(2, ℤ)` leaves `(mapGL ℝ γ)⁻¹ Γ (mapGL ℝ γ)` unchanged. -/
 theorem _root_.Subgroup.conj_mapGL_neg (Γ : Subgroup (GL (Fin 2) ℝ)) (γ : SL(2, ℤ)) :
     ConjAct.toConjAct (mapGL ℝ (-γ))⁻¹ • Γ = ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ := by
-  simp only [ConjAct.toConjAct_inv, Subgroup.inv_toConjAct_mapGL_neg]
+  ext x
+  rw [Subgroup.mem_conj_mapGL_inv_iff, Subgroup.mem_conj_mapGL_inv_iff]
+  simp [mapGL_neg]
 
 /-- The matrix image `(Γ : Subgroup (GL (Fin 2) ℝ))` has the same point stabiliser orders on `ℍ`
-as `Γ ≤ SL(2, ℤ)` itself, since `mapGL ℝ` is injective. -/
+as `Γ ≤ SL(2, ℤ)`. -/
 theorem _root_.Subgroup.card_stabilizer_mapGL (Γ : Subgroup SL(2, ℤ)) (z : ℍ) :
     Nat.card (MulAction.stabilizer (Γ : Subgroup (GL (Fin 2) ℝ)) z) =
       Nat.card (MulAction.stabilizer Γ z) := by

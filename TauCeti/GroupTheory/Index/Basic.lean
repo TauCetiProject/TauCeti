@@ -444,10 +444,8 @@ theorem index_eq_two_mul_index_withCenter (ha : a ∈ Subgroup.center G) (haΓ :
   Subgroup.withCenter_def Γ ▸
     index_eq_two_mul_index_sup _ Subgroup.le_normalizer_of_normal ha haΓ hcenter
 
-/-- **Product of the central relative index and the central intersection order.** For any subgroup
-`Γ ≤ G`, `[Γ·Z(G) : Γ] · |Z(G) ⊓ Γ| = |Z(G)|`: since `Z(G)` is normal, `[Γ ⊔ Z(G) : Γ] =
-[Z(G) : Γ ⊓ Z(G)]` by `Subgroup.relIndex_sup_of_le_normalizer`, and Lagrange's theorem on `Z(G)`
-finishes the identity. -/
+/-- **Product of the central relative index and central intersection order**:
+`[Γ·Z(G) : Γ] · |Z(G) ⊓ Γ| = |Z(G)|`. -/
 theorem relIndex_withCenter_mul_card_center_subgroupOf (Γ : Subgroup G) :
     Γ.relIndex Γ.withCenter * Nat.card ((Subgroup.center G).subgroupOf Γ) =
       Nat.card (Subgroup.center G) := by
@@ -455,11 +453,8 @@ theorem relIndex_withCenter_mul_card_center_subgroupOf (Γ : Subgroup G) :
     rw [withCenter_def, relIndex_sup_of_le_normalizer Subgroup.le_normalizer_of_normal, relIndex]
   have hcard : Nat.card ((Subgroup.center G).subgroupOf Γ) =
       Nat.card (Γ.subgroupOf (Subgroup.center G)) :=
-    Nat.card_congr
-      { toFun := fun x ↦ ⟨⟨x.1.1, mem_subgroupOf.mp x.2⟩, mem_subgroupOf.mpr x.1.2⟩
-        invFun := fun y ↦ ⟨⟨y.1.1, mem_subgroupOf.mp y.2⟩, mem_subgroupOf.mpr y.1.2⟩
-        left_inv := fun _ ↦ rfl
-        right_inv := fun _ ↦ rfl }
+    Nat.card_congr ⟨fun x ↦ ⟨⟨x.1.1, mem_subgroupOf.mp x.2⟩, mem_subgroupOf.mpr x.1.2⟩,
+      fun y ↦ ⟨⟨y.1.1, mem_subgroupOf.mp y.2⟩, mem_subgroupOf.mpr y.1.2⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
   rw [hrel, hcard, mul_comm]
   exact (Γ.subgroupOf (Subgroup.center G)).card_mul_index
 

@@ -260,13 +260,6 @@ lemma mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero {R : Type*} [CommRing R
     (hg : g 1 0 = 0) : g 0 0 * g 1 1 = 1 := by
   simpa only [hg, mul_zero, sub_zero] using fin_two_mul_sub_mul_eq_one g
 
-/-- For an upper-triangular matrix `g ∈ SL₂(R)` and any ring homomorphism `f : R →+* S`, the images
-of the diagonal entries multiply to `1`. -/
-lemma map_mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero {R S : Type*} [CommRing R]
-    [Semiring S] (f : R →+* S) {g : SL(2, R)} (hg : g 1 0 = 0) :
-    f (g 0 0) * f (g 1 1) = 1 := by
-  rw [← map_mul, mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero hg, map_one]
-
 /-- The coercion of `SL(n, ℤ)` into `GL(n, S)` is `mapGL S`. -/
 lemma coe_GL_eq_mapGL {n : Type*} [Fintype n] [DecidableEq n] {S : Type*} [CommRing S]
     (g : SpecialLinearGroup n ℤ) : (g : GL n S) = mapGL S g :=
@@ -283,8 +276,7 @@ lemma coe_mapGL_int {n : Type*} [Fintype n] [DecidableEq n] {S : Type*} [CommRin
 lemma mapGL_map_intCast {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
     [Algebra R S] (g : SpecialLinearGroup n ℤ) :
     mapGL S (map (Int.castRingHom R) g) = mapGL S g := by
-  ext i j
-  simp [mapGL_coe_matrix]
+  ext i j; simp [mapGL_coe_matrix]
 
 /-- The matrix of `mapGL S σ`, written entrywise for `σ ∈ SL₂(R)`. -/
 lemma coe_mapGL_fin_two {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
@@ -296,15 +288,12 @@ lemma coe_mapGL_fin_two {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
-/-- Under `mapGL S`, an upper-right transvection in `SL₂(R)` becomes `upperRightHom` at the
-mapped entry. -/
+/-- Under `mapGL S`, an upper-right transvection in `SL₂(R)` becomes `upperRightHom`. -/
 lemma mapGL_transvection_eq_upperRightHom {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
     (w : R) :
     mapGL S (transvection (zero_ne_one' (Fin 2)) w) =
       GeneralLinearGroup.upperRightHom (algebraMap R S w) := by
-  apply GeneralLinearGroup.ext
-  intro i j
-  rw [coe_mapGL_fin_two]
+  apply Units.ext; rw [coe_mapGL_fin_two]; ext i j
   fin_cases i <;> fin_cases j <;>
     simp [transvection, Matrix.transvection, GeneralLinearGroup.upperRightHom]
 
