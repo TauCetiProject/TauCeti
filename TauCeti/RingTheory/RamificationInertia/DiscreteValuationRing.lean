@@ -24,10 +24,12 @@ exponent `e` with `π_S = u π_T ^ e` for uniformizers `π_S`, `π_T` and a unit
   `e` the ramification index of `𝔪_T` over `S`.
 * `TauCeti.IsDiscreteValuationRing.ramificationIdx_eq_of_map_maximalIdeal_eq_pow`: the index equals
   any exponent satisfying this maximal-ideal identity.
-* `TauCeti.IsDiscreteValuationRing.exists_unit_mul_pow_ramificationIdx_localization`: at a prime
-  `P` of a faithfully embedded domain over a discrete valuation ring `A` lying over `𝔪_A` whose
-  localization is a discrete valuation ring, a uniformizer of `A` maps to a unit times the
-  `P.ramificationIdx A`-th power of a uniformizer of `Localization.AtPrime P`.
+* `TauCeti.IsDiscreteValuationRing.exists_unit_mul_pow_ramificationIdx`: for a local homomorphism
+  of discrete valuation rings sending a uniformizer `π` to a nonzero element, `π` maps to a unit
+  times `ϖ ^ e` for any uniformizer `ϖ` of the target.
+* `TauCeti.IsDiscreteValuationRing.exists_unit_mul_pow_ramificationIdx_localization`: localization
+  version at a prime `P` of an `A`-algebra `C` lying over `𝔪_A` whose localization is a discrete
+  valuation ring in which `π` does not vanish.
 
 ## References
 
@@ -47,7 +49,7 @@ open IsLocalRing IsDiscreteValuationRing
 namespace TauCeti.IsDiscreteValuationRing
 
 variable {S T : Type*} [CommRing S] [CommRing T] [IsLocalRing S] [IsDomain T]
-  [IsDiscreteValuationRing T] [Algebra S T] [IsLocalHom (algebraMap S T)]
+  [_root_.IsDiscreteValuationRing T] [Algebra S T] [IsLocalHom (algebraMap S T)]
 
 /-- For a local homomorphism from a local ring `S` to a discrete valuation ring `T` under which
 the maximal ideal of `S` does not vanish, `𝔪_S T = 𝔪_T ^ e` with `e` the ramification index of the
@@ -85,15 +87,35 @@ theorem ramificationIdx_eq_of_map_maximalIdeal_eq_pow {exponent : ℕ}
     exact ne_of_gt (lt_of_le_of_lt bot_le (hpowers (Nat.lt_succ_self exponent)))
   exact hpowers.injective ((map_maximalIdeal_eq_pow_ramificationIdx hmap).symm.trans hexponent)
 
-/-- For a faithfully embedded discrete valuation ring `A` with uniformizer `π` inside a domain `C`
-and a prime `P` of `C` lying over `maximalIdeal A` whose localization is a discrete valuation ring
-with uniformizer `ϖ`, the image of `π` in `Localization.AtPrime P` is a unit times
+/-- For a local homomorphism `A → B` of discrete valuation rings with uniformizers `π` and `ϖ`
+such that `algebraMap A B π ≠ 0`, the image of `π` in `B` is a unit times
+`ϖ ^ (maximalIdeal B).ramificationIdx A`. -/
+theorem exists_unit_mul_pow_ramificationIdx {A B : Type*} [CommRing A] [IsDomain A]
+    [_root_.IsDiscreteValuationRing A] [CommRing B] [IsDomain B]
+    [_root_.IsDiscreteValuationRing B] [Algebra A B] [IsLocalHom (algebraMap A B)]
+    {π : A} (hπ : Irreducible π) (hπB : algebraMap A B π ≠ 0)
+    {ϖ : B} (hϖ : Irreducible ϖ) :
+    ∃ u : Bˣ, algebraMap A B π = ↑u * ϖ ^ (maximalIdeal B).ramificationIdx A := by
+  have hmap_ne : (maximalIdeal A).map (algebraMap A B) ≠ ⊥ := fun hbot ↦
+    hπB (Ideal.mem_bot.mp
+      (hbot ▸ Ideal.mem_map_of_mem _ ((mem_maximalIdeal π).mpr hπ.not_isUnit)))
+  have hmap := map_maximalIdeal_eq_pow_ramificationIdx hmap_ne
+  rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton] at hmap
+  nth_rw 1 [hϖ.maximalIdeal_eq] at hmap
+  rw [Ideal.span_singleton_pow, Ideal.span_singleton_eq_span_singleton] at hmap
+  obtain ⟨u, hu⟩ := hmap.symm
+  exact ⟨u, by rw [← hu, mul_comm]⟩
+
+/-- For a discrete valuation ring `A` with uniformizer `π` and a prime `P` of an `A`-algebra `C`
+lying over `maximalIdeal A` whose localization is a discrete valuation ring with uniformizer `ϖ`
+in which `π` does not vanish, the image of `π` in `Localization.AtPrime P` is a unit times
 `ϖ ^ P.ramificationIdx A`. -/
 theorem exists_unit_mul_pow_ramificationIdx_localization
-    {A C : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
-    [CommRing C] [IsDomain C] [Algebra A C] [FaithfulSMul A C]
+    {A C : Type*} [CommRing A] [IsDomain A] [_root_.IsDiscreteValuationRing A]
+    [CommRing C] [Algebra A C]
     {π : A} (hπ : Irreducible π) (P : Ideal C) [P.IsPrime] [P.LiesOver (maximalIdeal A)]
-    [IsDiscreteValuationRing (Localization.AtPrime P)]
+    [IsDomain (Localization.AtPrime P)] [_root_.IsDiscreteValuationRing (Localization.AtPrime P)]
+    (hπP : algebraMap A (Localization.AtPrime P) π ≠ 0)
     {ϖ : Localization.AtPrime P} (hϖ : Irreducible ϖ) :
     ∃ u : (Localization.AtPrime P)ˣ,
       algebraMap A (Localization.AtPrime P) π = ↑u * ϖ ^ P.ramificationIdx A := by
@@ -103,20 +125,13 @@ theorem exists_unit_mul_pow_ramificationIdx_localization
     rw [IsScalarTower.algebraMap_eq A C B, ← Ideal.comap_comap, ← Ideal.under_def C,
       IsLocalization.AtPrime.under_maximalIdeal B P, ← Ideal.under_def,
       ← Ideal.over_def P (maximalIdeal A)]
-  have : FaithfulSMul C B :=
-    (faithfulSMul_iff_algebraMap_injective C B).mpr
-      (IsLocalization.injective B P.primeCompl_le_nonZeroDivisors)
-  have : FaithfulSMul A B := .trans A C B
-  have hπB_ne : algebraMap A B π ≠ 0 := (FaithfulSMul.algebraMap_eq_zero_iff A B).not.mpr hπ.ne_zero
+  obtain ⟨u, hu⟩ := exists_unit_mul_pow_ramificationIdx hπ hπP hϖ
   have hmap_ne : (maximalIdeal A).map (algebraMap A B) ≠ ⊥ := fun hbot ↦
-    hπB_ne (Ideal.mem_bot.mp
+    hπP (Ideal.mem_bot.mp
       (hbot ▸ Ideal.mem_map_of_mem _ ((mem_maximalIdeal π).mpr hπ.not_isUnit)))
-  have hmap := map_maximalIdeal_eq_pow_ramificationIdx hmap_ne
   have he : P.ramificationIdx A = (maximalIdeal B).ramificationIdx A :=
-    Ideal.IsDedekindDomain.ramificationIdx_eq_of_map_eq_pow (maximalIdeal A) P _ hmap
-  rw [← he, hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton, hϖ.maximalIdeal_eq,
-    Ideal.span_singleton_pow, Ideal.span_singleton_eq_span_singleton] at hmap
-  obtain ⟨u, hu⟩ := hmap.symm
-  exact ⟨u, by rw [← hu, mul_comm]⟩
+    Ideal.IsDedekindDomain.ramificationIdx_eq_of_map_eq_pow (maximalIdeal A) P _
+      (map_maximalIdeal_eq_pow_ramificationIdx hmap_ne)
+  exact ⟨u, he ▸ hu⟩
 
 end TauCeti.IsDiscreteValuationRing

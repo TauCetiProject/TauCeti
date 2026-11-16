@@ -354,7 +354,7 @@ theorem isTotallyRamifiedWRT_iff_exists_ramificationIdx_eq_finrank :
       nlinarith
     exact ⟨⟨P, hP, fun Q _ ↦ huniq Q⟩, fun Q _ ↦ huniq Q ▸ hPf⟩
 
-variable {A K L} in
+variable {A L} in
 /-- **Common tame exponent.** For a finite separable extension `L` of the fraction field `K` of a
 discrete valuation ring `A` that is tamely ramified with respect to `A`, there exists a positive
 integer `e₀`, invertible in the residue field of `A`, that is a multiple of the ramification index

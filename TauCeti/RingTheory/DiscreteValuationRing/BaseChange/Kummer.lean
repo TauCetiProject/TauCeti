@@ -80,7 +80,8 @@ theorem IsUnramifiedWRT.adjoin_root (h : IsUnramifiedWRT A L) {π : A}
     (IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap (R := A))).tower_top
   refine ⟨inferInstance, ?_⟩
   exact h.baseChange (TauCeti.IntermediateField.adjoinBaseChangeTensorLift K L α)
-    (TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct K L hint.tower_top)
+    (TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct K L
+      hint.tower_top.isAlgebraic)
 
 /-- In an algebraically closed ambient extension, every positive root degree admits an
 unramified extension after adjoining a root of the uniformizer to both fields. In particular,

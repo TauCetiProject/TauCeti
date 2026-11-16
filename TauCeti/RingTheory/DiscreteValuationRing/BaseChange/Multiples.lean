@@ -108,7 +108,8 @@ theorem IsUnramifiedWRT.kummer_multiple
       ((TauCeti.IntermediateField.adjoinBaseChange K₁ L₁ β).restrictScalars (integralClosure A K₁))
   have hβint : IsIntegral L₁ β :=
     (IsIntegral.of_pow (Nat.pos_of_ne_zero hd) (hβ ▸ isIntegral_algebraMap)).tower_top
-  have hsurj := TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct K₁ L₁ hβint
+  have hsurj := TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct K₁ L₁
+    hβint.isAlgebraic
   refine ⟨hβπ, hgenβ, hdegree, inferInstance, ?_, ?_⟩
   · exact h.baseChange (TauCeti.IntermediateField.adjoinBaseChangeTensorLift K₁ L₁ β) hsurj
   · exact Module.Finite.of_surjective

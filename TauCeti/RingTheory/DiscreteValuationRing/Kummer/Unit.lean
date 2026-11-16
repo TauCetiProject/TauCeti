@@ -56,10 +56,13 @@ theorem isUnramifiedWRT_of_pow_eq_of_isUnit {u : A} (hu : IsUnit u) {n : ℕ} (h
     Algebra.IsUnramifiedWRT A L ∧ FiniteDimensional K L ∧ Algebra.IsSeparable K L := by
   have := hn.neZero_natCast
   have := standardTameCover_etale hu hn
-  obtain ⟨χ, hχ⟩ := exists_surjective_tensor_standardTameCover (NeZero.ne n) hγ hgen
-  obtain ⟨hfin, hsep⟩ := χ.finiteDimensional_and_isSeparable_of_surjective hχ
-  exact ⟨χ.isUnramifiedWRT_of_surjective hχ, hfin, hsep⟩
+  let χ := Algebra.TensorProduct.productLeftAlgHom (Algebra.ofId K L) (standardTameCoverLift hγ)
+  have hχ : Function.Surjective χ :=
+    surjective_productLeftAlgHom_standardTameCoverLift_of_adjoin_eq_top (NeZero.ne n) hγ hgen
+  exact ⟨χ.isUnramifiedWRT_of_surjective hχ, Module.Finite.of_surjective χ.toLinearMap hχ,
+    χ.isSeparable_of_surjective hχ⟩
 
+variable (K) in
 /-- **Adjoining a tame root of a unit gives an unramified subfield.** Let `A` be a discrete
 valuation ring with fraction field `K`. For an `n`-th root `γ` of a unit `u` of `A` in an
 extension `L` of `K`, with `n` invertible in `A`, the subfield `K(γ)` is finite and separable over

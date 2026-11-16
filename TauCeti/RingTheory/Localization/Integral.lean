@@ -35,8 +35,7 @@ Mathlib's `IsLocalization.integralClosure` states this for the literal subalgebr
 * `TauCeti.integralClosureMapAlgebra`: the integral closure of `Rf` in `Sf` as an algebra over the
   integral closure of `R` in `S`, with its scalar-tower lemmas
   `isScalarTower_integralClosureMapAlgebra_left` and
-  `isScalarTower_integralClosureMapAlgebra_right`, and `exists_integralClosureMapAlgebra` for
-  compatible ring homomorphisms; this is the structure Mathlib's
+  `isScalarTower_integralClosureMapAlgebra_right`; this is the structure Mathlib's
   `IsLocalization.integralClosure` asks its caller to supply.
 * `TauCeti.exists_isIntegral_pow_smul_of_isLocalization`: if `R_x` is integral over `A_x` for an
   `A`-algebra `R`, every element of `R` becomes integral over `A` after multiplication by a power
@@ -172,25 +171,6 @@ theorem coe_algebraMap_integralClosureMapAlgebra (R S Rf Sf : Type*) [CommRing R
     letI := integralClosureMapAlgebra R S Rf Sf
     ((algebraMap (integralClosure R S) (integralClosure Rf Sf) y : integralClosure Rf Sf) : Sf) =
       algebraMap S Sf y := rfl
-
-/-- Ring homomorphisms `fR : R →+* Rf` and `fS : S →+* Sf` commuting with `algebraMap R S` and
-`algebraMap Rf Sf` induce an algebra structure `integralClosure R S → integralClosure Rf Sf`
-acting as `fS` on underlying elements. -/
-theorem exists_integralClosureMapAlgebra {R S Rf Sf : Type*} [CommRing R] [CommRing S]
-    [CommRing Rf] [CommRing Sf] [Algebra R S] [Algebra Rf Sf]
-    (fR : R →+* Rf) (fS : S →+* Sf)
-    (hcomm : ∀ r : R, algebraMap Rf Sf (fR r) = fS (algebraMap R S r)) :
-    ∃ (_ : Algebra (integralClosure R S) (integralClosure Rf Sf)),
-      ∀ y : integralClosure R S,
-        ((algebraMap (integralClosure R S) (integralClosure Rf Sf) y :
-          integralClosure Rf Sf) : Sf) = fS y := by
-  let : Algebra R Rf := fR.toAlgebra
-  let : Algebra S Sf := fS.toAlgebra
-  let : Algebra R Sf := ((algebraMap Rf Sf).comp fR).toAlgebra
-  have : IsScalarTower R Rf Sf := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower R S Sf := .of_algebraMap_eq hcomm
-  let := integralClosureMapAlgebra R S Rf Sf
-  exact ⟨inferInstance, fun _ ↦ rfl⟩
 
 /-- If `S` is a localization of `R` at `M`, then the integral closure of `S` in `L` is the
 localization at `M` of the integral closure of `R` in `L`, as an algebra over it through the

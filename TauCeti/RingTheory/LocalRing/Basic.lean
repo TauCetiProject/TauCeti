@@ -30,6 +30,10 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
   yields a unit.
 * `TauCeti.IsLocalRing.sq_add_self_eq_zero_iff`: in characteristic two, `t² + t = 0` exactly
   when `t = 0` or `t = 1`.
+* `TauCeti.IsLocalRing.isUnit_mk_maximalIdeal_iff` and
+  `TauCeti.IsLocalRing.isUnit_natCast_quotient_maximalIdeal_iff`: an element (in particular, a
+  natural number) of a commutative local ring is a unit iff its class modulo the maximal ideal is
+  a unit.
 * `Nat.Coprime.isUnit_natCast`: if a natural number is not a unit, every coprime natural
   number is a unit.
 * `IsCoprime.isUnit_or_isUnit`: of two coprime elements of a commutative local semiring, one is a
@@ -86,6 +90,22 @@ theorem IsLocalRing.sq_add_self_eq_zero_iff {R : Type*} [Ring R] [IsLocalRing R]
   constructor
   · exact IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing
   · rintro (rfl | rfl) <;> simp
+
+/-- An element of a commutative local ring is a unit if and only if its class modulo the maximal
+ideal is a unit. -/
+theorem IsLocalRing.isUnit_mk_maximalIdeal_iff {R : Type*} [CommRing R] [IsLocalRing R] {x : R} :
+    IsUnit (Ideal.Quotient.mk (IsLocalRing.maximalIdeal R) x) ↔ IsUnit x := by
+  refine ⟨fun hu ↦ not_not.mp fun hx ↦ ?_, fun hx ↦ hx.map _⟩
+  rw [Ideal.Quotient.eq_zero_iff_mem.mpr ((IsLocalRing.mem_maximalIdeal x).mpr hx)] at hu
+  exact not_isUnit_zero hu
+
+/-- A natural number is a unit in a commutative local ring if and only if it is a unit in the
+quotient by the maximal ideal. -/
+theorem IsLocalRing.isUnit_natCast_quotient_maximalIdeal_iff {R : Type*} [CommRing R]
+    [IsLocalRing R] {n : ℕ} :
+    IsUnit (n : R ⧸ IsLocalRing.maximalIdeal R) ↔ IsUnit (n : R) := by
+  rw [← map_natCast (Ideal.Quotient.mk (IsLocalRing.maximalIdeal R)),
+    IsLocalRing.isUnit_mk_maximalIdeal_iff]
 
 end TauCeti
 

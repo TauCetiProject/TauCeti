@@ -208,6 +208,7 @@ theorem isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible (hπ : 
     isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top_integralClosure hπ hα hgen h
   hf.isDiscreteValuationRing_of_adjoin_eq_top hx hadj
 
+variable (K) in
 /-- **The integral closure in an adjoined Kummer subfield is a discrete valuation ring.** If `α` is
 an `n`-th root of a uniformizer `π` of `A` in an extension `L` of the fraction field `K` of `A`,
 then the integral closure of `A` in `K(α)` is a discrete valuation ring. -/
@@ -412,7 +413,7 @@ theorem isTamelyRamifiedWRT_of_isUnramifiedWRT_of_pow_eq_of_irreducible [FiniteD
   have : IsScalarTower A L E := .of_algebraMap_eq fun a ↦ by
     rw [IsScalarTower.algebraMap_apply A K L, ← IsScalarTower.algebraMap_apply K L E,
       ← IsScalarTower.algebraMap_apply A K E]
-  have := isDiscreteValuationRing_integralClosure_adjoin_of_pow_eq_of_irreducible (K := K) hπ hβ
+  have := isDiscreteValuationRing_integralClosure_adjoin_of_pow_eq_of_irreducible K hπ hβ
   have hK₁ : Algebra.IsTamelyRamifiedWRT A K⟮β⟯ :=
     (isTamelyRamifiedWRT_adjoin_iff_of_pow_eq_of_irreducible hπ hβ).mpr hn
   exact (hK₁.trans h.isTamelyRamifiedWRT).tower_bot K

@@ -6,24 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
-public import Mathlib.FieldTheory.Separable
-import TauCeti.RingTheory.Unramified.Field
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 
 /-!
-# Scalar extension of a simple algebraic field extension
+# Scalar extension of a generated field extension
 
-For fields `K ⊆ L ⊆ Ω`, the inclusion `K(α) → L(α)` makes `L(α)` a field quotient of
-`K(α) ⊗[K] L` when `α` is algebraic over `L`. This is the compositum description used to
-base-change an extension while adjoining the same root to both fields; more generally, if `E` is
-generated over `L` by the image of an element of `K₁` algebraic over `L` and `L / K` is finite and
-separable, then `E / K₁` is finite and separable.
+For a tower `K → K₁ → E` and `K → L → E`, if `E` is generated over `L` by the image of a set
+`s ⊆ K₁` of elements algebraic over `L`, then the canonical multiplication homomorphism
+`K₁ ⊗[K] L →ₐ[K₁] E` is surjective
+(`TauCeti.IntermediateField.surjective_productLeftAlgHom_of_adjoin_image_eq_top`). Conversely,
+if a surjective `K₁`-algebra homomorphism `K₁ ⊗[K] L →ₐ[K₁] E` restricts to `algebraMap L E` on
+`1 ⊗ l` and `s` generates `K₁` over `K`, then the image of `s` generates `E` over `L`
+(`TauCeti.IntermediateField.adjoin_image_eq_top_of_surjective_tensorProduct`).
 
-More generally, if an intermediate field `E` of `Ω / L` carries a compatible `F`-algebra structure
-and contains `x`, then `F(x)` embeds in `E` as an `F`-algebra
-(`TauCeti.IntermediateField.exists_adjoinSimple_algHom`), and in a tower `A → K → Ω` the generator
-of `K(α)` is integral over `A` if and only if `α` is
-(`TauCeti.IntermediateField.isIntegral_adjoinSimple_gen_iff`, specialized to `n`-th roots in
-`TauCeti.IntermediateField.isIntegral_adjoinSimple_gen_of_pow_eq`).
+In particular, for fields `K ⊆ L ⊆ Ω`, the canonical inclusion `K(α) → L(α)` makes `L(α)` a field
+quotient of `K(α) ⊗[K] L` whenever `α` is algebraic over `L`
+(`TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct`).
 -/
 
 public section
@@ -33,6 +32,56 @@ open scoped TensorProduct
 namespace TauCeti.IntermediateField
 
 open _root_.IntermediateField
+
+/-- If `E` is generated over `L` by the image of a set `s ⊆ K₁` whose elements are algebraic over
+`L`, then the canonical multiplication homomorphism `K₁ ⊗[K] L →ₐ[K₁] E` is surjective. -/
+theorem surjective_productLeftAlgHom_of_adjoin_image_eq_top (K : Type*) {K₁ L E : Type*}
+    [CommSemiring K] [CommSemiring K₁] [Field L] [Field E]
+    [Algebra K K₁] [Algebra K L] [Algebra K E] [Algebra K₁ E] [Algebra L E]
+    [IsScalarTower K K₁ E] [IsScalarTower K L E]
+    {s : Set K₁} (hs : ∀ x ∈ s, IsAlgebraic L (algebraMap K₁ E x))
+    (hgen : IntermediateField.adjoin L (algebraMap K₁ E '' s) = ⊤) :
+    Function.Surjective
+      (Algebra.TensorProduct.productLeftAlgHom (Algebra.ofId K₁ E)
+        (IsScalarTower.toAlgHom K L E)) := by
+  let ψ := Algebra.TensorProduct.productLeftAlgHom (Algebra.ofId K₁ E)
+    (IsScalarTower.toAlgHom K L E)
+  -- Regard the range of `ψ` as an `L`-subalgebra containing `algebraMap K₁ E '' s`.
+  let S : Subalgebra L E :=
+    { ψ.range.toSubsemiring with
+      algebraMap_mem' := fun l ↦ ⟨1 ⊗ₜ[K] l, by simp [ψ]⟩ }
+  have hsub : algebraMap K₁ E '' s ⊆ S := by
+    rintro _ ⟨x, -, rfl⟩
+    exact ⟨x ⊗ₜ[K] 1, by simp [ψ]⟩
+  have hadj : Algebra.adjoin L (algebraMap K₁ E '' s) = ⊤ := by
+    have h := congrArg IntermediateField.toSubalgebra hgen
+    rwa [adjoin_toSubalgebra_of_isAlgebraic
+      (by rintro _ ⟨x, hx, rfl⟩; exact hs x hx), IntermediateField.top_toSubalgebra] at h
+  have htop : S = ⊤ := top_unique (hadj ▸ Algebra.adjoin_le hsub)
+  intro x
+  have hx : x ∈ S := htop ▸ Algebra.mem_top
+  exact (AlgHom.mem_range ψ).mp hx
+
+/-- If `φ : K₁ ⊗[K] L →ₐ[K₁] E` is a surjective `K₁`-algebra homomorphism sending `1 ⊗ l` to
+`algebraMap L E l`, and `s` generates `K₁` over `K`, then the image of `s` generates `E` over
+`L`. -/
+theorem adjoin_image_eq_top_of_surjective_tensorProduct {K K₁ L E : Type*}
+    [Field K] [Field K₁] [Field L] [Field E]
+    [Algebra K K₁] [Algebra K L] [Algebra K E] [Algebra K₁ E] [Algebra L E]
+    [IsScalarTower K K₁ E] [IsScalarTower K L E]
+    (φ : K₁ ⊗[K] L →ₐ[K₁] E) (hφ : Function.Surjective φ)
+    (hφL : ∀ l : L, φ (1 ⊗ₜ[K] l) = algebraMap L E l)
+    {s : Set K₁} (hs : IntermediateField.adjoin K s = ⊤) :
+    IntermediateField.adjoin L (algebraMap K₁ E '' s) = ⊤ := by
+  have htop : IntermediateField.adjoin L (Set.range (IsScalarTower.toAlgHom K K₁ E)) = ⊤ := by
+    refine eq_top_iff.mpr fun y _ ↦ ?_
+    obtain ⟨t, rfl⟩ := hφ y
+    refine TensorProduct.inductionOn t (fun k₁ l ↦ ?_)
+      (fun x y hx hy ↦ by rw [map_add]; exact add_mem hx hy)
+    rw [TensorProduct.tmul_eq_smul_one_tmul, map_smul, Algebra.smul_def, hφL]
+    exact mul_mem (subset_adjoin L _ ⟨k₁, rfl⟩) (_root_.algebraMap_mem _ l)
+  simpa [IsScalarTower.coe_toAlgHom'] using
+    ((IsScalarTower.toAlgHom K K₁ E).adjoin_range_eq_adjoin_image (F := L) hs).symm.trans htop
 
 section AdjoinBaseChange
 
@@ -62,118 +111,28 @@ def adjoinBaseChangeTensorLift (α : Ω) :
     letI := (adjoinBaseChange K L α).toAlgebra
     K⟮α⟯ ⊗[K] L →ₐ[K⟮α⟯] L⟮α⟯ :=
   letI := (adjoinBaseChange K L α).toAlgebra
-  Algebra.TensorProduct.lift (Algebra.ofId K⟮α⟯ L⟮α⟯)
-    (IsScalarTower.toAlgHom K L L⟮α⟯) (fun _ _ ↦ Commute.all _ _)
+  Algebra.TensorProduct.productLeftAlgHom (Algebra.ofId K⟮α⟯ L⟮α⟯)
+    (IsScalarTower.toAlgHom K L L⟮α⟯)
 
 /-- The compositum multiplication map sends a pure tensor to the product of its factors. -/
 @[simp]
 theorem adjoinBaseChangeTensorLift_tmul (α : Ω) (x : K⟮α⟯) (l : L) :
     adjoinBaseChangeTensorLift K L α (x ⊗ₜ[K] l) =
       adjoinBaseChange K L α x * algebraMap L L⟮α⟯ l := by
-  let := (adjoinBaseChange K L α).toAlgebra
-  exact Algebra.TensorProduct.lift_tmul _ _ _ x l
+  rfl
 
 /-- If `α` is algebraic over `L`, multiplication maps `K(α) ⊗[K] L` onto `L(α)`. -/
-theorem surjective_adjoinBaseChange_tensorProduct {α : Ω} (hα : IsIntegral L α) :
+theorem surjective_adjoinBaseChange_tensorProduct {α : Ω} (hα : IsAlgebraic L α) :
     Function.Surjective (adjoinBaseChangeTensorLift K L α) := by
   let := (adjoinBaseChange K L α).toAlgebra
-  let φ := adjoinBaseChangeTensorLift K L α
-  -- Regard the tensor-product image as an `L`-subalgebra, so the power basis applies.
-  let S : Subalgebra L L⟮α⟯ :=
-    { φ.range.toSubring with
-      algebraMap_mem' := fun l ↦ ⟨1 ⊗ₜ[K] l, by simp [φ]⟩ }
-  have hgen : AdjoinSimple.gen L α ∈ S :=
-    ⟨AdjoinSimple.gen K α ⊗ₜ[K] 1, by simp [φ]⟩
-  have htop : S = ⊤ := by
-    apply top_unique
-    rw [← (adjoin.powerBasis hα).adjoin_gen_eq_top,
-      adjoin.powerBasis_gen]
-    exact Algebra.adjoin_le (Set.singleton_subset_iff.mpr hgen)
-  intro x
-  have hx : x ∈ S := htop ▸ Algebra.mem_top
-  -- `S` retains the carrier of `φ.range`; only its coefficient algebra was changed.
-  exact (AlgHom.mem_range φ).mp hx
+  have : IsScalarTower K K⟮α⟯ L⟮α⟯ := IsScalarTower.of_algHom (adjoinBaseChange K L α)
+  have hα' : IsAlgebraic L (AdjoinSimple.gen L α) :=
+    ((AdjoinSimple.isIntegral_gen L α).mpr hα.isIntegral).isAlgebraic
+  exact surjective_productLeftAlgHom_of_adjoin_image_eq_top K
+    (K₁ := K⟮α⟯) (L := L) (E := L⟮α⟯) (s := {AdjoinSimple.gen K α})
+    (by simpa [RingHom.algebraMap_toAlgebra] using hα')
+    (by simp [RingHom.algebraMap_toAlgebra])
 
 end AdjoinBaseChange
-
-/-- If an intermediate field `E` of `Ω / L` carries an `F`-algebra structure compatible with `Ω` and
-contains `x`, there is an `F`-algebra homomorphism `F⟮x⟯ →ₐ[F] E` preserving underlying elements of
-`Ω`. -/
-theorem exists_adjoinSimple_algHom
-    {F L Ω : Type*} [Field F] [Field L] [Field Ω] [Algebra F Ω] [Algebra L Ω]
-    {E : IntermediateField L Ω} [Algebra F E] [IsScalarTower F E Ω]
-    {x : Ω} (hx : x ∈ E) :
-    ∃ ι : F⟮x⟯ →ₐ[F] E, ∀ z : F⟮x⟯, (ι z : Ω) = z := by
-  let EF : IntermediateField F Ω :=
-    { E.toSubfield with
-      algebraMap_mem' := fun c ↦ by
-        rw [IsScalarTower.algebraMap_apply F E Ω]
-        exact (algebraMap F E c).2 }
-  have hle : F⟮x⟯ ≤ EF := adjoin_simple_le_iff.mpr hx
-  refine ⟨{ toFun := fun z ↦ ⟨z.1, hle z.2⟩
-            map_one' := rfl
-            map_mul' := fun _ _ ↦ rfl
-            map_zero' := rfl
-            map_add' := fun _ _ ↦ rfl
-            commutes' := fun c ↦ Subtype.ext <| by
-              simpa using IsScalarTower.algebraMap_apply F E Ω c },
-    fun _ ↦ rfl⟩
-
-/-- In a scalar tower `A → K → Ω` with `K` and `Ω` fields, the distinguished generator of `K⟮α⟯` is
-integral over `A` if and only if `α` is integral over `A`. -/
-@[simp]
-theorem isIntegral_adjoinSimple_gen_iff
-    {A K Ω : Type*} [CommRing A] [Field K] [Field Ω] [Algebra A K]
-    [Algebra A Ω] [Algebra K Ω] [IsScalarTower A K Ω] (α : Ω) :
-    IsIntegral A (AdjoinSimple.gen K α) ↔ IsIntegral A α := by
-  have : IsScalarTower A K⟮α⟯ Ω := IsScalarTower.to₁₃₄ A K K⟮α⟯ Ω
-  rw [← isIntegral_algebraMap_iff (A := K⟮α⟯) (B := Ω), AdjoinSimple.algebraMap_gen]
-
-/-- If `α ^ n = algebraMap A Ω x` with `0 < n` in a tower `A → K → Ω`, then the generator of `K⟮α⟯`
-is integral over `A`. -/
-theorem isIntegral_adjoinSimple_gen_of_pow_eq
-    {A K Ω : Type*} [CommRing A] [Field K] [Field Ω] [Algebra A K]
-    [Algebra A Ω] [Algebra K Ω] [IsScalarTower A K Ω]
-    {α : Ω} {n : ℕ} (hn : 0 < n) {x : A} (hα : α ^ n = algebraMap A Ω x) :
-    IsIntegral A (AdjoinSimple.gen K α) :=
-  (isIntegral_adjoinSimple_gen_iff (K := K) α).mpr
-    (IsIntegral.of_pow hn (hα ▸ isIntegral_algebraMap (R := A)))
-
-/-- If `E` is generated over `L` by the image of an element `α₀ : K₁` algebraic over `L`, then `E`
-receives a surjective `K₁`-algebra homomorphism from `K₁ ⊗[K] L`. -/
-theorem exists_surjective_tensorProduct_of_adjoin_eq_top
-    {K K₁ L E : Type*} [Field K] [Field K₁] [Field L] [Field E]
-    [Algebra K K₁] [Algebra K L] [Algebra K E] [Algebra K₁ E] [Algebra L E]
-    [IsScalarTower K K₁ E] [IsScalarTower K L E]
-    {α₀ : K₁} (hα : IsAlgebraic L (algebraMap K₁ E α₀))
-    (hgen : L⟮algebraMap K₁ E α₀⟯ = ⊤) :
-    ∃ ψ : K₁ ⊗[K] L →ₐ[K₁] E, Function.Surjective ψ := by
-  let ψ : K₁ ⊗[K] L →ₐ[K₁] E :=
-    Algebra.TensorProduct.lift (Algebra.ofId K₁ E) (IsScalarTower.toAlgHom K L E)
-      fun _ _ ↦ .all _ _
-  refine ⟨ψ, ?_⟩
-  let S : Subalgebra L E :=
-    { ψ.range.toSubring with
-      algebraMap_mem' := fun l ↦ ⟨1 ⊗ₜ[K] l, by simp [ψ]⟩ }
-  have hmem : algebraMap K₁ E α₀ ∈ S := ⟨α₀ ⊗ₜ[K] 1, by simp [ψ]⟩
-  have hadj : Algebra.adjoin L ({algebraMap K₁ E α₀} : Set E) = ⊤ :=
-    (adjoin_simple_eq_top_iff_of_isAlgebraic hα).mp hgen
-  have htop : S = ⊤ := top_unique (hadj ▸ Algebra.adjoin_le (Set.singleton_subset_iff.mpr hmem))
-  intro x
-  have hx : x ∈ S := htop ▸ Algebra.mem_top
-  exact (AlgHom.mem_range ψ).mp hx
-
-/-- If `E` is generated over `L` by the image of an element `α₀ : K₁` algebraic over `L` and
-`L / K` is finite and separable, then `E` is a finite separable extension of `K₁`. -/
-theorem finiteDimensional_and_isSeparable_of_adjoin_eq_top
-    {K K₁ L E : Type*} [Field K] [Field K₁] [Field L] [Field E]
-    [Algebra K K₁] [Algebra K L] [Algebra K E] [Algebra K₁ E] [Algebra L E]
-    [IsScalarTower K K₁ E] [IsScalarTower K L E]
-    [FiniteDimensional K L] [Algebra.IsSeparable K L]
-    {α₀ : K₁} (hα : IsAlgebraic L (algebraMap K₁ E α₀))
-    (hgen : L⟮algebraMap K₁ E α₀⟯ = ⊤) :
-    FiniteDimensional K₁ E ∧ Algebra.IsSeparable K₁ E := by
-  obtain ⟨ψ, hψ⟩ := exists_surjective_tensorProduct_of_adjoin_eq_top (K := K) hα hgen
-  exact ψ.finiteDimensional_and_isSeparable_of_surjective_of_isSeparable hψ
 
 end TauCeti.IntermediateField
