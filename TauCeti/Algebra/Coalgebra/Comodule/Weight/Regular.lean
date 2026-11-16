@@ -106,7 +106,7 @@ theorem groupLikeSetSpan_eq_top_of_injective (f : A →ₗc[k] B) (hf : Function
     rintro _ ⟨g, hg, rfl⟩
     obtain ⟨x, -, hx⟩ := TauCeti.Subcoalgebra.mem_map.mp hg
     have hxg : IsGroupLikeElem k x :=
-      (isGroupLikeElem_map_iff_of_injective f hf).mp (hx ▸ g.isGroupLikeElem_val)
+      (TauCeti.isGroupLikeElem_map_iff_of_injective f hf).mp (hx ▸ g.isGroupLikeElem_val)
     exact ⟨x, Submodule.subset_span ⟨⟨x, hxg⟩, rfl⟩, hx⟩
   have hfa : f a ∈ (⊤ : TauCeti.Subcoalgebra k A).map f :=
     TauCeti.Subcoalgebra.mem_map_of_mem f (TauCeti.Subcoalgebra.mem_top a)

@@ -188,7 +188,11 @@ theorem sub_algebraMap_counit_mem_of_mem_coinvariants (hh : h ∈ I.coinvariants
 
 /-- A group-like element is coinvariant exactly when it is congruent to `1` modulo the Hopf
 ideal: a character of the affine group is invariant under right translation by the closed
-subgroup cut out by `I` exactly when it is trivial on that subgroup. -/
+subgroup cut out by `I` exactly when it is trivial on that subgroup.
+
+As a simp lemma this has higher priority than `TauCeti.HopfIdeal.mem_coinvariants_iff`, which
+has the same left-hand side and would otherwise unfold the membership first. -/
+@[simp high]
 theorem _root_.IsGroupLikeElem.mem_coinvariants_iff (hh : IsGroupLikeElem R h) :
     h ∈ I.coinvariants ↔ h - 1 ∈ I := by
   refine ⟨fun hmem ↦ ?_, fun hmem ↦ ?_⟩

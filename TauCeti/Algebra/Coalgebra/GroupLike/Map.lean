@@ -19,11 +19,13 @@ reflects them, because its tensor square is injective.
 
 * `CoalgEquiv.mapGroupLike`: the equivalence of group-like elements induced by a coalgebra
   equivalence, compatible with `CoalgEquiv.refl`, `CoalgEquiv.trans` and `CoalgEquiv.symm`.
-* `isGroupLikeElem_map_iff_of_injective`: an injective morphism of flat coalgebras reflects
+* `TauCeti.isGroupLikeElem_map_iff_of_injective`: an injective morphism of flat coalgebras reflects
   group-like elements.
 -/
 
 public section
+
+namespace TauCeti
 
 section Injective
 
@@ -42,6 +44,8 @@ theorem isGroupLikeElem_map_iff_of_injective (f : F) (hf : Function.Injective f)
     exact h.comul_eq_tmul_self
 
 end Injective
+
+end TauCeti
 
 namespace CoalgEquiv
 

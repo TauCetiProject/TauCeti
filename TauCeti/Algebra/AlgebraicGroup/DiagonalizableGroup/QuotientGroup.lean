@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.EssentialImage
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Quotient
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.Basic
-import TauCeti.Algebra.Bialgebra.GroupLike.Evaluation
-import TauCeti.Algebra.Coalgebra.Cocommutative
 import TauCeti.Algebra.Coalgebra.Comodule.Weight.Regular
 
 /-!
@@ -24,8 +22,10 @@ Contravariantly, an injective coordinate morphism `O(Q) → O(G)` presents `Q` a
 of `G`, so the main result is the coordinate-algebra form of the fact that every quotient group
 of a diagonalizable affine group is diagonalizable. It applies in particular to the quotient
 `G ⧸ N` by a closed subgroup, whose coordinate algebra is the Hopf subalgebra of coinvariants.
-Every closed subgroup `N` is normal, since `G` is commutative, and the functions on `G` invariant
-under `N` are spanned by the characters of `G` that are trivial on `N`.
+Every closed subgroup `N` is normal, since `G` is commutative
+(`TauCeti.HopfIdeal.isNormal_of_groupLikeSetSpan_eq_top`), and the functions on `G` invariant
+under `N` are spanned by the characters of `G` that are trivial on `N`
+(`TauCeti.HopfIdeal.toSubmodule_coinvariants_eq_span_groupLike`).
 
 The group `G` need not be reduced, so the finite generation of the coinvariants is part of the
 statement: it comes from the group-like elements, not from the general quotient theory of
@@ -33,10 +33,6 @@ geometrically reduced groups.
 
 ## Main declarations
 
-* `TauCeti.HopfIdeal.isNormal_of_groupLikeSetSpan_eq_top`: every Hopf ideal of a commutative Hopf
-  algebra spanned by its group-like elements is normal.
-* `TauCeti.HopfIdeal.toSubmodule_coinvariants_eq_span_groupLike`: the coinvariants of a Hopf
-  ideal `I` are spanned by the group-like elements congruent to `1` modulo `I`.
 * `TauCeti.DiagonalizableGroup.groupLikeSpannedProperty.of_injective`: an injective morphism of
   finite-type commutative Hopf algebras reflects the diagonalizable coordinate property.
 * `TauCeti.DiagonalizableGroup.groupLikeSpannedProperty.finiteType_coinvariants`: the
@@ -55,42 +51,7 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe u v
-
-namespace HopfIdeal
-
-/-- Every Hopf ideal of a commutative Hopf algebra spanned by its group-like elements is normal.
-Contravariantly, every closed subgroup of a diagonalizable group is normal. -/
-theorem isNormal_of_groupLikeSetSpan_eq_top {R : Type u} [CommRing R]
-    {H : _root_.CommHopfAlgCat.{v} R}
-    (hH : Subcoalgebra.groupLikeSetSpan (R := R) (C := H) Set.univ = ⊤) (I : HopfIdeal R H) :
-    I.IsNormal :=
-  -- `H` is a quotient of the group algebra on its group-like elements, which is cocommutative.
-  have : _root_.Coalgebra.IsCocomm R H :=
-    Coalgebra.IsCocomm.of_surjective (MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H))
-      ((GroupLike.liftGroupLikeBialgHom_surjective_iff_groupLikeSetSpan_eq_top R H).mpr hH)
-  isNormal_of_isCocomm I
-
-variable {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{v} k}
-
-/-- **The functions on a diagonalizable group invariant under a closed subgroup are spanned by
-the characters trivial on that subgroup.** In coordinates, the coinvariants of a Hopf ideal `I`
-in a commutative Hopf algebra spanned by its group-like elements are spanned by the group-like
-elements congruent to `1` modulo `I`. -/
-theorem toSubmodule_coinvariants_eq_span_groupLike
-    (hH : Subcoalgebra.groupLikeSetSpan (R := k) (C := H) Set.univ = ⊤) (I : HopfIdeal k H) :
-    Subalgebra.toSubmodule I.coinvariants =
-      Submodule.span k ((↑) '' {g : GroupLike k H | (g : H) - 1 ∈ I}) := by
-  have hI := isNormal_of_groupLikeSetSpan_eq_top hH I
-  have hset : {g : GroupLike k H | (g : H) ∈ hI.coinvariantsSubcoalgebra} =
-      {g : GroupLike k H | (g : H) - 1 ∈ I} :=
-    Set.ext fun g ↦ hI.mem_coinvariantsSubcoalgebra.trans
-      g.isGroupLikeElem_val.mem_coinvariants_iff
-  rw [← hI.coinvariantsSubcoalgebra_carrier, ← Subcoalgebra.toSubmodule_carrier,
-    ← Subcoalgebra.groupLikeSetSpan_setOf_mem hH hI.coinvariantsSubcoalgebra,
-    Subcoalgebra.groupLikeSetSpan_toSubmodule, hset]
-
-end HopfIdeal
+universe u
 
 namespace DiagonalizableGroup.groupLikeSpannedProperty
 
