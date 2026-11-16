@@ -39,7 +39,8 @@ amenability is transported along surjective continuous homomorphisms.
 * `TauCeti.UCB.norm_compRightAlgHom_apply_le`, `TauCeti.UCB.norm_compRightAlgHom_apply` (and
   additive counterparts): the pullback does not increase the supremum norm, and preserves it when
   `φ` is surjective.
-* `TauCeti.UCB.compRightAlgHom_leftTranslation`: `(L_(φ g) f) ∘ φ = L_g (f ∘ φ)`; likewise for
+* `TauCeti.UCB.compRightAlgHom_leftTranslation`,
+  `TauCeti.AddUCB.compRightAlgHom_leftTranslation`: `(L_(φ g) f) ∘ φ = L_g (f ∘ φ)`; likewise for
   right translations.
 * `TauCeti.UCB.compRightAlgHom_id`, `TauCeti.UCB.compRightAlgHom_comp` (and additive counterparts):
   compatibility with the identity and with composition of homomorphisms.
@@ -158,5 +159,18 @@ theorem compRightAlgHom_rightTranslation (φ : G →ₜ* H) (g : G) (f : UCB H) 
   simp
 
 end UCB
+
+namespace AddUCB
+
+variable {A B : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+  [AddGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
+
+/-- The pullback intertwines left translation by `φ a` with left translation by `a`. -/
+theorem compRightAlgHom_leftTranslation (φ : A →ₜ+ B) (a : A) (f : AddUCB B) :
+    compRightAlgHom φ (leftTranslation (φ a) f) = leftTranslation a (compRightAlgHom φ f) := by
+  ext
+  simp
+
+end AddUCB
 
 end TauCeti

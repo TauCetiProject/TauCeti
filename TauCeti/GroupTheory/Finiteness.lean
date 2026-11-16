@@ -11,6 +11,7 @@ public import TauCeti.GroupTheory.NoncommPiCoprod
 import Mathlib.GroupTheory.FiniteAbelian.Basic
 
 import Mathlib.Algebra.EuclideanDomain.Int
+import Mathlib.RingTheory.Finiteness.Cardinality
 import Mathlib.RingTheory.Noetherian.Basic
 import Mathlib.RingTheory.PrincipalIdealDomain
 
@@ -267,23 +268,26 @@ theorem AddCommGroup.fg_iff_exists_fin_zmultiplesPiHom_surjective {A : Type*} [A
   rw [AddGroup.fg_iff_exists_fin_generating_family]
   exact exists_congr fun n => exists_congr fun τ => zmultiplesPiHom_surjective_iff.symm
 
-/-- A commutative group is finitely generated if and only if it admits a surjective homomorphism
-from `Fin n → Multiplicative ℤ` for some `n : ℕ`. -/
-theorem CommGroup.fg_iff_exists_fin_monoidHom_surjective {G : Type*} [CommGroup G] :
-    Group.FG G ↔ ∃ (n : ℕ) (f : (Fin n → Multiplicative ℤ) →* G), Function.Surjective f :=
-  ⟨fun h =>
-    have ⟨n, τ, hτ⟩ := CommGroup.fg_iff_exists_fin_zpowersPiHom_surjective.mp h
-    ⟨n, zpowersPiHom τ fun _ _ => .all _ _, hτ⟩,
-   fun ⟨_, f, hf⟩ => .of_surjective f hf⟩
-
 /-- An additive commutative group is finitely generated if and only if it admits a surjective
 homomorphism from `Fin n → ℤ` for some `n : ℕ`. -/
 theorem AddCommGroup.fg_iff_exists_fin_addMonoidHom_surjective {A : Type*} [AddCommGroup A] :
-    AddGroup.FG A ↔ ∃ (n : ℕ) (f : (Fin n → ℤ) →+ A), Function.Surjective f :=
-  ⟨fun h =>
-    have ⟨n, τ, hτ⟩ := AddCommGroup.fg_iff_exists_fin_zmultiplesPiHom_surjective.mp h
-    ⟨n, zmultiplesPiHom τ fun _ _ => .all _ _, hτ⟩,
-   fun ⟨_, f, hf⟩ => .of_surjective f hf⟩
+    AddGroup.FG A ↔ ∃ (n : ℕ) (f : (Fin n → ℤ) →+ A), Function.Surjective f := by
+  rw [AddGroup.fg_def, AddSubgroup.fg_iff_exists_fin_addMonoidHom]
+  exact exists_congr fun _ => exists_congr fun _ => AddMonoidHom.range_eq_top
+
+/-- A commutative group is finitely generated if and only if it admits a surjective homomorphism
+from `Fin n → Multiplicative ℤ` for some `n : ℕ`. -/
+theorem CommGroup.fg_iff_exists_fin_monoidHom_surjective {G : Type*} [CommGroup G] :
+    Group.FG G ↔ ∃ (n : ℕ) (f : (Fin n → Multiplicative ℤ) →* G), Function.Surjective f := by
+  rw [GroupFG.iff_add_fg, AddCommGroup.fg_iff_exists_fin_addMonoidHom_surjective]
+  refine exists_congr fun n => ⟨fun ⟨f, hf⟩ => ?_, fun ⟨f, hf⟩ => ?_⟩
+  · refine ⟨f.toMultiplicativeLeft.comp (MulEquiv.funMultiplicative (Fin n) ℤ).symm.toMonoidHom, ?_⟩
+    exact (Additive.toMul.surjective.comp (hf.comp Multiplicative.toAdd.surjective)).comp
+      (MulEquiv.funMultiplicative (Fin n) ℤ).symm.surjective
+  · refine ⟨(f.comp (MulEquiv.funMultiplicative (Fin n) ℤ).toMonoidHom).toAdditiveRight, ?_⟩
+    exact Additive.ofMul.surjective.comp
+      ((hf.comp (MulEquiv.funMultiplicative (Fin n) ℤ).surjective).comp
+        Multiplicative.ofAdd.surjective)
 
 end TauCeti
 

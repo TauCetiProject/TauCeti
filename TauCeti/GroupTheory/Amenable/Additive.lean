@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Amenable.Basic
+public import TauCeti.Topology.Algebra.Group.UCB.Additive
 import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!

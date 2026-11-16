@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Amenable.Mean
-public import TauCeti.Topology.Algebra.Group.UCB.Additive
+public import TauCeti.Topology.Algebra.Group.UCB.CompRight
 
 /-!
 # Amenable topological groups
