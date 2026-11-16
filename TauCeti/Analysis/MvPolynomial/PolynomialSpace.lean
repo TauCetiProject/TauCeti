@@ -23,7 +23,8 @@ also when the coordinate type is empty.
 
 Evaluating a real multilinear map on the diagonal gives a polynomial function of degree at most
 the number of its arguments (`MultilinearMap.apply_const_mem_polynomialsDegLE`); this covers
-the homogeneous terms of a power series.
+the homogeneous terms of a power series and finite products of linear inner-product forms
+(`TauCeti.prod_inner_mem_polynomialsDegLE`).
 
 The construction uses Mathlib's `MvPolynomial.evalₗ` and `MvPolynomial.funext`, and the formal
 dimension formula `TauCeti.finrank_restrictTotalDegree`.
@@ -36,6 +37,9 @@ noncomputable section
 namespace TauCeti
 
 open MvPolynomial
+open scoped InnerProductSpace
+
+section
 
 variable (ι : Type*)
 
@@ -177,5 +181,19 @@ theorem finrank_polynomialsDegLE [Fintype ι] (m : ℕ) :
       (m + Fintype.card ι).choose (Fintype.card ι) := by
   rw [← (restrictTotalDegreeEquivPolynomialsDegLE ι m).finrank_eq,
     finrank_restrictTotalDegree]
+
+end
+
+/-- A finite product of at most `m` linear inner-product forms on `EuclideanSpace ℝ ι` belongs to
+`TauCeti.polynomialsDegLE ι m`. -/
+theorem prod_inner_mem_polynomialsDegLE {ι α : Type*} [Fintype ι] (s : Finset α)
+    (a : α → EuclideanSpace ℝ ι) {m : ℕ} (hm : s.card ≤ m) :
+    (fun x : EuclideanSpace ℝ ι => ∏ l ∈ s, ⟪a l, x⟫_ℝ) ∈ polynomialsDegLE ι m := by
+  let M := (MultilinearMap.mkPiAlgebra ℝ s ℝ).compLinearMap fun l => (innerSL ℝ (a l.1)).toLinearMap
+  have hfn : (fun x : EuclideanSpace ℝ ι => M fun _ => x) = fun x => ∏ l ∈ s, ⟪a l, x⟫_ℝ := by
+    ext x
+    simpa [M] using Finset.prod_attach s fun l => ⟪a l, x⟫_ℝ
+  exact hfn ▸ polynomialsDegLE_mono ι (by simpa [Fintype.card_coe] using hm)
+    M.apply_const_mem_polynomialsDegLE
 
 end TauCeti

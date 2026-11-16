@@ -6,31 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 public import TauCeti.Analysis.Calculus.IteratedGradient.Contraction
 import Mathlib.Analysis.Normed.Operator.NormedSpace
 
 /-!
-# Rank-one iterated gradients, basis expansion, and smooth contraction
+# Rank-one iterated gradients and orthonormal basis expansion
 
 Every element of `TauCeti.IteratedGradient E k` over a finite-dimensional real inner product space
 expands along an orthonormal basis into rank-one iterated gradients built from `k + 1` vectors.
-Full contraction turns each rank-one iterated gradient into a product of inner products, and on a
-Hilbert space full contraction of `TauCeti.iteratedGradientChain` recovers repeated directional
-derivatives.
+Full contraction turns each rank-one iterated gradient into a product of inner products, and tuple
+evaluation extracts basis coordinates with operator norm equal to the product of the vector norms.
 
 ## Main declarations
 
 * `TauCeti.IteratedGradient.rankOne`: the rank-one iterated gradient built from
   `v : Fin (k + 1) → E`, together with `TauCeti.IteratedGradient.fullContractL_rankOne` and
   `TauCeti.IteratedGradient.norm_rankOne`.
-* `TauCeti.IteratedGradient.evalTuple` and `TauCeti.IteratedGradient.eq_sum_evalTuple_rankOne`:
-  successive evaluation along `k + 1` vectors and expansion of any `G : IteratedGradient E k` along
-  a finite `OrthonormalBasis`.
-* `TauCeti.IteratedGradient.contDiff_fullContractL`: `fullContractL k` is `C^n` for every `n : ℕ∞ω`.
-* `TauCeti.IteratedGradient.fullContractL_iteratedGradientChain_eq_iteratedFDerivAlong`: on any
-  Hilbert space, contracting `iteratedGradientChain f j x` along `h` equals the `(j + 1)`-fold
-  directional derivative `iteratedFDerivAlong ℝ (List.replicate (j + 1) h) f x`.
+* `TauCeti.IteratedGradient.evalTupleL`: successive evaluation along `k + 1` vectors as a bundled
+  continuous linear functional, together with `TauCeti.IteratedGradient.evalTupleL_rankOne`,
+  `TauCeti.IteratedGradient.evalTupleL_const`, and `TauCeti.IteratedGradient.norm_evalTupleL`.
+* `TauCeti.IteratedGradient.eq_sum_evalTupleL_rankOne`: expansion of any `G : IteratedGradient E k`
+  along a finite `OrthonormalBasis`.
 -/
 
 public section
@@ -39,7 +35,7 @@ noncomputable section
 
 namespace TauCeti.IteratedGradient
 
-open scoped ContDiff InnerProductSpace
+open scoped InnerProductSpace
 
 section RankOne
 
@@ -73,18 +69,18 @@ theorem rankOne_snoc (k : ℕ) (v : Fin (k + 1) → E) (w : E) :
 theorem fullContractL_rankOne :
     ∀ (k : ℕ) (h : E) (v : Fin (k + 1) → E),
       fullContractL k h (rankOne k v) = ∏ l : Fin (k + 1), ⟪v l, h⟫_ℝ
-  | 0, h, v => by simp [real_inner_comm]
+  | 0, _, _ => by simp [real_inner_comm]
   | k + 1, h, v => by
       rw [fullContractL_succ, rankOne_succ, ContinuousLinearMap.comp_apply,
-        ContinuousLinearMap.apply_apply, ContinuousLinearMap.smulRight_apply, innerSL_apply_apply,
-        map_smul, smul_eq_mul, fullContractL_rankOne k h (Fin.init v)]
+        ContinuousLinearMap.apply_apply]
       conv_rhs => rw [Fin.prod_univ_castSucc]
-      simp only [Fin.init_def, mul_comm]
+      simp [fullContractL_rankOne k h fun i => v i.castSucc, Fin.init_def, mul_comm]
 
 /-- The operator norm of a rank-one iterated gradient is the product of the vector norms. -/
+@[simp]
 theorem norm_rankOne :
     ∀ (k : ℕ) (v : Fin (k + 1) → E), ‖rankOne k v‖ = ∏ l : Fin (k + 1), ‖v l‖
-  | 0, v => by simp
+  | 0, _ => by simp
   | k + 1, v => by
       rw [rankOne_succ, ContinuousLinearMap.norm_smulRight_apply, innerSL_apply_norm,
         norm_rankOne k (Fin.init v)]
@@ -93,28 +89,96 @@ theorem norm_rankOne :
 
 /-- Evaluate an iterated gradient successively on `v k, …, v 1` and pair the resulting vector
 with `v 0`. -/
-def evalTuple : (k : ℕ) → (Fin (k + 1) → E) → IteratedGradient E k →L[ℝ] ℝ
+def evalTupleL : (k : ℕ) → (Fin (k + 1) → E) → IteratedGradient E k →L[ℝ] ℝ
   | 0, v => innerSL ℝ (v 0)
-  | k + 1, v => (evalTuple k (Fin.init v)).comp
+  | k + 1, v => (evalTupleL k (Fin.init v)).comp
       (ContinuousLinearMap.apply ℝ (IteratedGradient E k) (v (Fin.last (k + 1))))
 
-/-- At index `0`, `evalTuple 0 v` pairs against `v 0`. -/
+/-- At index `0`, `evalTupleL 0 v` is `innerSL ℝ (v 0)`. -/
 @[simp]
-theorem evalTuple_zero (v : Fin 1 → E) : evalTuple 0 v = innerSL ℝ (v 0) :=
+theorem evalTupleL_zero (v : Fin 1 → E) : evalTupleL 0 v = innerSL ℝ (v 0) :=
   (rfl)
 
-/-- Evaluating `evalTuple (k + 1) (Fin.snoc v x)` on `G` applies `G` to `x` first. -/
-theorem evalTuple_snoc_apply (k : ℕ) (v : Fin (k + 1) → E) (x : E)
+/-- Recursive step for `evalTupleL` at index `k + 1`. -/
+@[simp]
+theorem evalTupleL_succ (k : ℕ) (v : Fin (k + 2) → E) :
+    evalTupleL (k + 1) v = (evalTupleL k (Fin.init v)).comp
+      (ContinuousLinearMap.apply ℝ (IteratedGradient E k) (v (Fin.last (k + 1)))) :=
+  (rfl)
+
+/-- Evaluating `evalTupleL (k + 1) (Fin.snoc v x)` on `G` applies `G` to `x` first. -/
+theorem evalTupleL_snoc_apply (k : ℕ) (v : Fin (k + 1) → E) (x : E)
     (G : IteratedGradient E (k + 1)) :
-    evalTuple (k + 1) (Fin.snoc v x) G = evalTuple k v (G x) := by
-  rw [evalTuple, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply]
-  simp
+    evalTupleL (k + 1) (Fin.snoc v x) G = evalTupleL k v (G x) := by
+  rw [evalTupleL_succ, Fin.init_snoc, Fin.snoc_last, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.apply_apply]
+
+/-- Evaluating `evalTupleL k u` on `rankOne k v` gives the product `∏ l, ⟪u l, v l⟫_ℝ`. -/
+@[simp]
+theorem evalTupleL_rankOne :
+    ∀ (k : ℕ) (u v : Fin (k + 1) → E),
+      evalTupleL k u (rankOne k v) = ∏ l : Fin (k + 1), ⟪u l, v l⟫_ℝ
+  | 0, _, _ => by simp
+  | k + 1, u, v => by
+      rw [evalTupleL_succ, rankOne_succ, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.apply_apply, ContinuousLinearMap.smulRight_apply, map_smul,
+        innerSL_apply_apply, real_inner_comm, smul_eq_mul,
+        evalTupleL_rankOne k (Fin.init u) (Fin.init v)]
+      conv_rhs => rw [Fin.prod_univ_castSucc]
+      simp only [Fin.init_def, mul_comm]
+
+/-- Evaluating along the constant tuple `fun _ => h` recovers `fullContractL k h`. -/
+@[simp]
+theorem evalTupleL_const :
+    ∀ (k : ℕ) (h : E), evalTupleL k (fun _ => h) = fullContractL k h
+  | 0, _ => by simp
+  | k + 1, h => by simp [Fin.init_def, evalTupleL_const k h]
+
+/-- Pointwise bound for `evalTupleL` in terms of `‖G‖` and the product of the direction norms. -/
+theorem norm_evalTupleL_apply_le :
+    ∀ (k : ℕ) (v : Fin (k + 1) → E) (G : IteratedGradient E k),
+      ‖evalTupleL k v G‖ ≤ ‖G‖ * ∏ l : Fin (k + 1), ‖v l‖
+  | 0, v, G => by
+      rw [evalTupleL_zero, innerSL_apply_apply, Fin.prod_univ_one]
+      exact (norm_inner_le_norm (v 0) G).trans_eq (mul_comm _ _)
+  | k + 1, v, G => by
+      rw [evalTupleL_succ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply]
+      calc ‖evalTupleL k (Fin.init v) (G (v (Fin.last (k + 1))))‖
+          ≤ ‖G (v (Fin.last (k + 1)))‖ * ∏ l : Fin (k + 1), ‖Fin.init v l‖ :=
+            norm_evalTupleL_apply_le k (Fin.init v) (G (v (Fin.last (k + 1))))
+        _ ≤ (‖G‖ * ‖v (Fin.last (k + 1))‖) * ∏ l : Fin (k + 1), ‖Fin.init v l‖ :=
+            mul_le_mul_of_nonneg_right (G.le_opNorm _)
+              (Finset.prod_nonneg fun _ _ => norm_nonneg _)
+        _ = ‖G‖ * ∏ l : Fin (k + 2), ‖v l‖ := by
+            conv_rhs => rw [Fin.prod_univ_castSucc]
+            simp only [Fin.init_def]
+            ring
+
+/-- The operator norm of `evalTupleL k v` is the product of the norms of its direction vectors. -/
+@[simp]
+theorem norm_evalTupleL (k : ℕ) (v : Fin (k + 1) → E) :
+    ‖evalTupleL k v‖ = ∏ l : Fin (k + 1), ‖v l‖ := by
+  refine le_antisymm
+    (ContinuousLinearMap.opNorm_le_bound _ (Finset.prod_nonneg fun _ _ => norm_nonneg _)
+      fun G => (norm_evalTupleL_apply_le k v G).trans_eq (mul_comm _ _)) ?_
+  rcases eq_or_lt_of_le (Finset.prod_nonneg fun l (_ : l ∈ Finset.univ) => norm_nonneg (v l)) with
+    h0 | hpos
+  · exact h0 ▸ norm_nonneg _
+  · have hpair : (∏ l : Fin (k + 1), ‖v l‖) * ∏ l : Fin (k + 1), ‖v l‖ ≤
+        ‖evalTupleL k v‖ * ∏ l : Fin (k + 1), ‖v l‖ := by
+      have hval : ‖evalTupleL k v (rankOne k v)‖ =
+          (∏ l : Fin (k + 1), ‖v l‖) * ∏ l : Fin (k + 1), ‖v l‖ := by
+        rw [evalTupleL_rankOne, Real.norm_of_nonneg
+          (Finset.prod_nonneg fun l _ => real_inner_self_nonneg)]
+        simp_rw [real_inner_self_eq_norm_sq, sq, Finset.prod_mul_distrib]
+      simpa only [hval, norm_rankOne] using (evalTupleL k v).le_opNorm (rankOne k v)
+    exact le_of_mul_le_mul_right hpair hpos
 
 /-- Every element of `IteratedGradient E k` expands along a finite orthonormal basis `b` into
-rank-one iterated gradients weighted by `evalTuple`. -/
-theorem eq_sum_evalTuple_rankOne {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) :
+rank-one iterated gradients weighted by `evalTupleL`. -/
+theorem eq_sum_evalTupleL_rankOne {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) :
     ∀ (k : ℕ) (G : IteratedGradient E k),
-      G = ∑ I : Fin (k + 1) → ι, evalTuple k (b ∘ I) G • rankOne k (b ∘ I)
+      G = ∑ I : Fin (k + 1) → ι, evalTupleL k (b ∘ I) G • rankOne k (b ∘ I)
   | 0, G => by
       symm
       rw [← (Equiv.funUnique (Fin 1) ι).symm.sum_comp]
@@ -125,73 +189,21 @@ theorem eq_sum_evalTuple_rankOne {ι : Type*} [Fintype ι] (b : OrthonormalBasis
       simp only [Fintype.sum_prod_type, Fin.snocEquiv_apply]
       conv_lhs => rw [← b.sum_repr' w, map_sum]
       refine Finset.sum_congr rfl fun i _ => ?_
-      rw [map_smul, eq_sum_evalTuple_rankOne b k (G (b i)), Finset.smul_sum]
+      rw [map_smul, eq_sum_evalTupleL_rankOne b k (G (b i)), Finset.smul_sum]
       refine Finset.sum_congr rfl fun J _ => ?_
-      have hcomp : b ∘ Fin.snoc J i = Fin.snoc (b ∘ J) (b i) :=
-        funext (Fin.lastCases (by simp) fun l => by simp)
-      rw [hcomp, evalTuple_snoc_apply, rankOne_snoc]
+      rw [Fin.comp_snoc b J i, evalTupleL_snoc_apply, rankOne_snoc]
       simp [smul_smul, mul_comm]
 
 end RankOne
 
-section Smoothness
-
-private theorem contDiff_apply_clm {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {n : ℕ∞ω} : ContDiff 𝕜 n (fun v : E => ContinuousLinearMap.apply 𝕜 F v) :=
-  IsBoundedLinearMap.contDiff
-    { map_add := fun x y => by ext f; simp
-      map_smul := fun c x => by ext f; simp
-      bound := ⟨1, zero_lt_one, fun v => by
-        rw [one_mul]
-        exact ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg v) fun f =>
-          (f.le_opNorm v).trans_eq (mul_comm _ _)⟩ }
-
-/-- `fullContractL k` depends smoothly (`C^n` for every `n : ℕ∞ω`) on the direction vector. -/
-theorem contDiff_fullContractL {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    {n : ℕ∞ω} : ∀ k : ℕ, ContDiff ℝ n (fullContractL (E := E) k)
-  | 0 => by
-      rw [funext fullContractL_zero]
-      exact (innerSL ℝ (E := E)).contDiff
-  | k + 1 => by
-      rw [funext (fullContractL_succ k)]
-      exact (contDiff_fullContractL k).clm_comp contDiff_apply_clm
-
-/-- On any Hilbert space, full contraction of `iteratedGradientChain f j x` along `h` agrees with
-the `(j + 1)`-fold directional derivative `iteratedFDerivAlong ℝ (List.replicate (j + 1) h) f x`
-whenever `f` is `C^{j+1}`. -/
-theorem fullContractL_iteratedGradientChain_eq_iteratedFDerivAlong
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] :
-    ∀ (j : ℕ) {f : E → ℝ}, ContDiff ℝ (j + 1) f → ∀ x h : E,
-      fullContractL j h (iteratedGradientChain f j x) =
-        iteratedFDerivAlong ℝ (List.replicate (j + 1) h) f x
-  | 0, _, _, x, h => by
-      rw [fullContractL_zero, iteratedGradientChain_zero, innerSL_apply_apply,
-        real_inner_comm, gradient, InnerProductSpace.toDual_symm_apply]
-      simp
-  | j + 1, f, hf, x, h => by
-      have hd : DifferentiableAt ℝ (iteratedGradientChain f j) x :=
-        (contDiffAt_iteratedGradientChain (m := 1) hf.contDiffAt j
-          (by push_cast; ring_nf; exact le_rfl)).differentiableAt one_ne_zero
-      have hcomp : HasFDerivAt
-          (fun y => fullContractL j h (iteratedGradientChain f j y))
-          ((fullContractL j h).comp (fderiv ℝ (iteratedGradientChain f j) x)) x :=
-        (fullContractL j h).hasFDerivAt.comp x hd.hasFDerivAt
-      have heq : (fun y => fullContractL j h (iteratedGradientChain f j y)) =
-          iteratedFDerivAlong ℝ (List.replicate (j + 1) h) f :=
-        funext fun y => fullContractL_iteratedGradientChain_eq_iteratedFDerivAlong j
-          (hf.of_le (by norm_cast; omega)) y h
-      have hrep : List.replicate (j + 1 + 1) h = h :: List.replicate (j + 1) h :=
-        List.replicate_succ
-      rw [fullContractL_succ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
-        iteratedGradientChain_succ, ← ContinuousLinearMap.comp_apply, ← hcomp.fderiv, heq, hrep,
-        iteratedFDerivAlong_cons_apply]
-
-end Smoothness
-
 -- Contracting a rank-one Hessian on `ℝ` built from `[2, 5]` in direction `3` gives `(2*3)*(5*3)`.
 example : fullContractL 1 (3 : ℝ) (rankOne 1 ![2, 5]) = 90 := by
   rw [fullContractL_rankOne, Fin.prod_univ_two]
+  norm_num [RCLike.inner_apply]
+
+-- Pairing `evalTupleL 1 ![2, 5]` against `rankOne 1 ![3, 4]` gives `(2*3)*(5*4) = 120`.
+example : evalTupleL 1 (![2, 5] : Fin 2 → ℝ) (rankOne 1 ![3, 4]) = 120 := by
+  rw [evalTupleL_rankOne, Fin.prod_univ_two]
   norm_num [RCLike.inner_apply]
 
 end TauCeti.IteratedGradient

@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-public import Mathlib.Analysis.InnerProductSpace.Orthonormal
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
-import Mathlib.Analysis.Calculus.FDeriv.Bilinear
-import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Weak integration by parts against `C¹` and operator-valued test fields
@@ -32,10 +33,10 @@ translation invariance of the measure or smooth-function density:
   `u` and `u'` are integrable.
 * **Bilinear and operator-valued pairings.** Expanding a `C¹` test field `ψ : E → G` with values
   in a finite-dimensional space `G` in a basis transfers the identity through any continuous
-  bilinear map `B : G →L[ℝ] F →L[ℝ] H` into a Banach space `H`
+  bilinear map `B : G →L[ℝ] F →L[ℝ] H` into any real normed space `H`
   (`TauCeti.HasWeakLineDerivOn.integral_bilin_fderiv_eq_neg`, generalizing
   `TauCeti.HasWeakLineDerivOn.integral_inner_lineDeriv_eq_neg` from inner product spaces to
-  general Banach targets).
+  arbitrary normed targets).
 * **Adjoint Fréchet pairings.** Pairing a weak Fréchet derivative `U : E → E →L[ℝ] F` against a
   `C¹` compactly supported operator functional `Φ : E → (E →L[ℝ] F) →L[ℝ] H` expands along any
   finite basis or orthonormal basis of `E` into directional derivatives of `Φ` evaluated on
@@ -71,7 +72,7 @@ public section
 
 namespace TauCeti
 
-open MeasureTheory Metric Set TopologicalSpace
+open _root_.MeasureTheory Metric Set TopologicalSpace
 open scoped ContDiff Distributions InnerProductSpace
 
 section ScalarC1
@@ -80,34 +81,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [OpensMeasurableSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {μ : Measure E} {Ω : Opens E} {u u' : E → F} {v : E}
-
-omit [NormedSpace ℝ E] in
-/-- Uniformly close scalar functions supported in a compact set `K` have close Bochner integrals
-against a vector field integrable on `K`. -/
-private theorem norm_integral_smul_sub_le {w : E → F} {K : Set E} (hK : IsCompact K)
-    (hw : IntegrableOn w K μ) {f g : E → ℝ} (hf : Continuous f) (hg : Continuous g)
-    (hfK : tsupport f ⊆ K) (hgK : tsupport g ⊆ K) {ε : ℝ}
-    (hfg : ∀ x, dist (f x) (g x) ≤ ε) :
-    ‖(∫ x, f x • w x ∂μ) - ∫ x, g x • w x ∂μ‖ ≤ ε * ∫ x in K, ‖w x‖ ∂μ := by
-  have hint : ∀ {a : E → ℝ}, Continuous a → tsupport a ⊆ K → Integrable (fun x => a x • w x) μ := by
-    intro a ha haK
-    have hac : HasCompactSupport a := hK.of_isClosed_subset (isClosed_tsupport a) haK
-    have hs : Function.support (fun x => a x • w x) ⊆ K :=
-      (Function.support_smul_subset_left a w).trans ((subset_tsupport a).trans haK)
-    exact (integrableOn_iff_integrable_of_support_subset hs).1 <|
-      hw.bdd_smul (hac.exists_bound_of_continuous ha).choose
-        (ha.continuousOn.aestronglyMeasurable_of_isCompact hK hK.measurableSet)
-        (ae_of_all _ (hac.exists_bound_of_continuous ha).choose_spec)
-  have hvan : ∀ x ∉ K, (f x - g x) • w x = 0 := fun x hx => by
-    rw [image_eq_zero_of_notMem_tsupport fun h => hx (hfK h),
-      image_eq_zero_of_notMem_tsupport fun h => hx (hgK h), sub_self, zero_smul]
-  rw [← integral_sub (hint hf hfK) (hint hg hgK)]
-  have hsub : (fun x => f x • w x - g x • w x) = fun x => (f x - g x) • w x :=
-    funext fun x => (sub_smul (f x) (g x) (w x)).symm
-  rw [hsub, ← setIntegral_eq_integral_of_forall_compl_eq_zero hvan, ← integral_const_mul]
-  refine norm_integral_le_of_norm_le (hw.norm.const_mul ε) (ae_of_all _ fun x => ?_)
-  rw [norm_smul, Real.norm_eq_abs, ← Real.dist_eq]
-  exact mul_le_mul_of_nonneg_right (hfg x) (norm_nonneg _)
 
 /-- **Weak integration by parts against `C¹` functions.** If `u'` is a weak derivative of `u` in
 the direction `v` on `Ω`, then `∫ (Dφ(x) v) • u x ∂μ = -∫ φ x • u' x ∂μ` for every `C¹`
@@ -141,19 +114,18 @@ theorem HasWeakLineDerivOn.integral_fderiv_smul_eq_neg_integral_smul
       h.integral_lineDeriv_smul_eq_neg_integral_smul ψ
   have hφK' : tsupport φ ⊆ K' := self_subset_cthickening _
   have hd_supp : ∀ {g : E → ℝ}, tsupport g ⊆ K' → tsupport (fun x => fderiv ℝ g x v) ⊆ K' :=
-    fun hg => ((tsupport_comp_subset (ContinuousLinearMap.apply ℝ ℝ v).map_zero _).trans
-      (tsupport_fderiv_subset ℝ)).trans hg
-  have hb1 := norm_integral_smul_sub_le hK' huK
+    fun hg => (tsupport_fderiv_apply_subset ℝ v).trans hg
+  have hb1 := MeasureTheory.norm_integral_smul_sub_le hK' huK
     (f := fun x => fderiv ℝ φ x v) (g := fun x => fderiv ℝ (ψ : E → ℝ) x v)
     ((hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const)
     ((ψ.contDiff.continuous_fderiv (by simp)).clm_apply continuous_const)
-    (hd_supp hφK') (hd_supp hψK') fun x => by
+    (hd_supp hφK') (hd_supp hψK') fun x _ => by
       rw [dist_eq_norm, ← sub_apply (fderiv ℝ φ x) (fderiv ℝ (ψ : E → ℝ) x) v]
       exact ((fderiv ℝ φ x - fderiv ℝ (ψ : E → ℝ) x).le_opNorm v).trans
         (mul_le_mul_of_nonneg_right (by simpa [dist_comm, dist_eq_norm] using (hψ x).2)
           (norm_nonneg v))
-  have hb2 := norm_integral_smul_sub_le hK' hu'K hφ.continuous ψ.contDiff.continuous hφK' hψK'
-    fun x => by simpa [dist_comm] using (hψ x).1
+  have hb2 := MeasureTheory.norm_integral_smul_sub_le hK' hu'K hφ.continuous ψ.contDiff.continuous
+    hφK' hψK' fun x _ => by simpa [dist_comm] using (hψ x).1
   rw [dist_eq_norm]
   calc ‖(∫ x, fderiv ℝ φ x v • u x ∂μ) - -∫ x, φ x • u' x ∂μ‖
       = ‖((∫ x, fderiv ℝ φ x v • u x ∂μ) - ∫ x, fderiv ℝ (ψ : E → ℝ) x v • u x ∂μ) +
@@ -169,9 +141,7 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_setIntegral_smul
     (hφc : HasCompactSupport φ) (hφs : tsupport φ ⊆ Ω) :
     ∫ x in Ω, fderiv ℝ φ x v • u x ∂μ = -∫ x in Ω, φ x • u' x ∂μ := by
   have hd : ∀ x ∉ (Ω : Set E), fderiv ℝ φ x v • u x = 0 := fun x hx => by
-    have hfd0 : fderiv ℝ φ x = 0 :=
-      image_eq_zero_of_notMem_tsupport fun h' => hx (hφs (tsupport_fderiv_subset ℝ h'))
-    rw [hfd0]; simp
+    rw [fderiv_of_notMem_tsupport ℝ fun h' => hx (hφs h')]; simp
   have h0 : ∀ x ∉ (Ω : Set E), φ x • u' x = 0 := fun x hx => by
     rw [image_eq_zero_of_notMem_tsupport fun h' => hx (hφs h'), zero_smul]
   rw [setIntegral_eq_integral_of_forall_compl_eq_zero hd,
@@ -199,18 +169,20 @@ variable {E F G H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [OpensMeasurableSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
-  [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H]
+  [NormedAddCommGroup H] [NormedSpace ℝ H]
   {μ : Measure E} {Ω : Opens E} {u u' : E → F} {v : E}
 
 /-- **Bilinear weak integration by parts against `C¹` fields.** If `u'` is a weak derivative of
 `u : E → F` in the direction `v` on `Ω` and `B : G →L[ℝ] F →L[ℝ] H` is a continuous bilinear map
-with `G` finite-dimensional and `H` complete, then
-`∫ B (Dψ(x) v) (u x) ∂μ = -∫ B (ψ x) (u' x) ∂μ` for every `C¹` compactly supported `ψ : E → G`
-with `tsupport ψ ⊆ Ω`. -/
+with `G` finite-dimensional, then `∫ B (Dψ(x) v) (u x) ∂μ = -∫ B (ψ x) (u' x) ∂μ` for every `C¹`
+compactly supported `ψ : E → G` with `tsupport ψ ⊆ Ω`. -/
 theorem HasWeakLineDerivOn.integral_bilin_fderiv_eq_neg
     (h : HasWeakLineDerivOn μ Ω u u' v) (B : G →L[ℝ] F →L[ℝ] H) {ψ : E → G}
     (hψ : ContDiff ℝ 1 ψ) (hψc : HasCompactSupport ψ) (hψs : tsupport ψ ⊆ Ω) :
     ∫ x, B (fderiv ℝ ψ x v) (u x) ∂μ = -∫ x, B (ψ x) (u' x) ∂μ := by
+  by_cases _hH : CompleteSpace H
+  swap
+  · simp [integral_of_not_completeSpace _hH]
   let b := Module.finBasis ℝ G
   let c : Fin (Module.finrank ℝ G) → G →L[ℝ] ℝ :=
     fun i => LinearMap.toContinuousLinearMap (b.coord i)
@@ -238,11 +210,9 @@ theorem HasWeakLineDerivOn.integral_bilin_fderiv_eq_neg
     _ = ∑ i, ∫ x, fderiv ℝ (φ i) x v • B (b i) (u x) ∂μ :=
         integral_finsetSum _ fun i _ =>
           (hw i).locallyIntegrableOn.integrable_smul_left_of_hasCompactSupport
-            (((ContinuousLinearMap.apply ℝ ℝ v).continuous).comp
-              ((hφ i).continuous_fderiv one_ne_zero))
-            (((hφc i).fderiv ℝ).comp_left (ContinuousLinearMap.apply ℝ ℝ v).map_zero)
-            (((tsupport_comp_subset (ContinuousLinearMap.apply ℝ ℝ v).map_zero _).trans
-              (tsupport_fderiv_subset ℝ)).trans (hφs i))
+            (((hφ i).continuous_fderiv one_ne_zero).clm_apply continuous_const)
+            ((hφc i).fderiv_apply ℝ v)
+            ((tsupport_fderiv_apply_subset ℝ v).trans (hφs i))
     _ = ∑ i, -∫ x, φ i x • B (b i) (u' x) ∂μ :=
         Finset.sum_congr rfl fun i _ =>
           (hw i).integral_fderiv_smul_eq_neg_integral_smul (hφ i) (hφc i) (hφs i)
@@ -259,9 +229,7 @@ theorem HasWeakLineDerivOn.setIntegral_bilin_fderiv_eq_neg
     (hψ : ContDiff ℝ 1 ψ) (hψc : HasCompactSupport ψ) (hψs : tsupport ψ ⊆ Ω) :
     ∫ x in Ω, B (fderiv ℝ ψ x v) (u x) ∂μ = -∫ x in Ω, B (ψ x) (u' x) ∂μ := by
   have hd : ∀ x ∉ (Ω : Set E), B (fderiv ℝ ψ x v) (u x) = 0 := fun x hx => by
-    have hfd0 : fderiv ℝ ψ x = 0 :=
-      image_eq_zero_of_notMem_tsupport fun h' => hx (hψs (tsupport_fderiv_subset ℝ h'))
-    rw [hfd0]; simp
+    rw [fderiv_of_notMem_tsupport ℝ fun h' => hx (hψs h')]; simp
   have h0 : ∀ x ∉ (Ω : Set E), B (ψ x) (u' x) = 0 := fun x hx => by
     rw [image_eq_zero_of_notMem_tsupport fun h' => hx (hψs h')]; simp
   rw [setIntegral_eq_integral_of_forall_compl_eq_zero hd,
@@ -287,6 +255,18 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [OpensMeasurableSpace E]
   {μ : Measure E} {Ω : Opens E} {v : E}
 
+private theorem integrable_clm_apply_of_hasCompactSupport [FiniteDimensional ℝ E]
+    {F H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [NormedAddCommGroup H] [NormedSpace ℝ H]
+    {w : E → F} (hw : LocallyIntegrableOn w Ω μ) {Ψ : E → F →L[ℝ] H}
+    (hΨ : Continuous Ψ) (hΨc : HasCompactSupport Ψ) (hΨs : tsupport Ψ ⊆ Ω) :
+    Integrable (fun x => Ψ x (w x)) μ := by
+  have hsupp : Function.support (fun x => Ψ x (w x)) ⊆ tsupport Ψ :=
+    fun x hx => by_contra fun hx' => hx (by simp [image_eq_zero_of_notMem_tsupport hx'])
+  rw [← integrableOn_iff_integrable_of_support_subset hsupp]
+  exact (hw.continuousOn_clm_apply Ω.isOpen.isLocallyClosed hΨ.continuousOn
+    ).integrableOn_compact_subset hΨs hΨc.isCompact
+
 /-- Scalar-multiplication form of weak integration by parts against `C¹` compactly supported
 functions. -/
 theorem HasWeakLineDerivOn.integral_fderiv_mul_eq_neg {u u' : E → ℝ}
@@ -303,26 +283,58 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_mul_eq_neg {u u' : E → ℝ}
     ∫ x in Ω, fderiv ℝ φ x v * u x ∂μ = -∫ x in Ω, φ x * u' x ∂μ := by
   simpa only [smul_eq_mul] using h.setIntegral_fderiv_smul_eq_neg_setIntegral_smul hφ hφc hφs
 
-/-- **Operator-valued weak integration by parts.** For finite-dimensional normed spaces `F` and
-`H`, if `u'` is a weak derivative of `u : E → F` in the direction `v` on `Ω`, then
-`∫ (DΦ(x) v) (u x) ∂μ = -∫ Φ x (u' x) ∂μ` for every `C¹` compactly supported operator field
-`Φ : E → F →L[ℝ] H` with `tsupport Φ ⊆ Ω`. -/
+/-- **Operator-valued weak integration by parts.** For a finite-dimensional normed space `F` and
+any real normed space `H`, if `u'` is a weak derivative of `u : E → F` in the direction `v` on
+`Ω`, then `∫ (DΦ(x) v) (u x) ∂μ = -∫ Φ x (u' x) ∂μ` for every `C¹` compactly supported operator
+field `Φ : E → F →L[ℝ] H` with `tsupport Φ ⊆ Ω`. -/
 theorem HasWeakLineDerivOn.integral_fderiv_apply_eq_neg
     {F H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-    [NormedAddCommGroup H] [NormedSpace ℝ H] [FiniteDimensional ℝ H]
+    [NormedAddCommGroup H] [NormedSpace ℝ H]
     {u u' : E → F} (h : HasWeakLineDerivOn μ Ω u u' v) {Φ : E → F →L[ℝ] H}
     (hΦ : ContDiff ℝ 1 Φ) (hΦc : HasCompactSupport Φ) (hΦs : tsupport Φ ⊆ Ω) :
-    ∫ x, fderiv ℝ Φ x v (u x) ∂μ = -∫ x, Φ x (u' x) ∂μ :=
-  h.integral_bilin_fderiv_eq_neg (ContinuousLinearMap.id ℝ (F →L[ℝ] H)) hΦ hΦc hΦs
+    ∫ x, fderiv ℝ Φ x v (u x) ∂μ = -∫ x, Φ x (u' x) ∂μ := by
+  by_cases _hH : CompleteSpace H
+  swap
+  · simp [integral_of_not_completeSpace _hH]
+  by_cases hfd : FiniteDimensional ℝ E
+  swap
+  · obtain rfl := (hΦc.eq_zero_or_finiteDimensional ℝ hΦ.continuous).resolve_right hfd; simp
+  have hint₁ : Integrable (fun x => fderiv ℝ Φ x v (u x)) μ :=
+    integrable_clm_apply_of_hasCompactSupport h.locallyIntegrableOn
+      ((hΦ.continuous_fderiv one_ne_zero).clm_apply continuous_const)
+      (hΦc.fderiv_apply ℝ v) ((tsupport_fderiv_apply_subset ℝ v).trans hΦs)
+  have hint₂ : Integrable (fun x => Φ x (u' x)) μ :=
+    integrable_clm_apply_of_hasCompactSupport h.locallyIntegrableOn_deriv
+      hΦ.continuous hΦc hΦs
+  refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun l => ?_
+  let L : (F →L[ℝ] H) →L[ℝ] F →L[ℝ] ℝ := ContinuousLinearMap.compL ℝ F H ℝ l
+  let ψ : E → F →L[ℝ] ℝ := L ∘ Φ
+  have hψ : ContDiff ℝ 1 ψ := L.contDiff.comp hΦ
+  have hψc : HasCompactSupport ψ := hΦc.comp_left L.map_zero
+  have hψs : tsupport ψ ⊆ Ω := (tsupport_comp_subset L.map_zero Φ).trans hΦs
+  have hψd : ∀ x, fderiv ℝ ψ x v (u x) = l (fderiv ℝ Φ x v (u x)) := fun x => by
+    have hd : HasFDerivAt ψ (L.comp (fderiv ℝ Φ x)) x :=
+      L.hasFDerivAt.comp x (hΦ.differentiable one_ne_zero x).hasFDerivAt
+    simp [hd.fderiv, L]
+  rw [← l.integral_comp_comm hint₁, map_neg, ← l.integral_comp_comm hint₂]
+  simpa only [ContinuousLinearMap.id_apply, hψd, ψ, L, Function.comp_apply,
+    ContinuousLinearMap.compL_apply, ContinuousLinearMap.comp_apply] using
+    h.integral_bilin_fderiv_eq_neg (.id ℝ (F →L[ℝ] ℝ)) hψ hψc hψs
 
 /-- Set-integral form of `TauCeti.HasWeakLineDerivOn.integral_fderiv_apply_eq_neg`. -/
 theorem HasWeakLineDerivOn.setIntegral_fderiv_apply_eq_neg
     {F H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-    [NormedAddCommGroup H] [NormedSpace ℝ H] [FiniteDimensional ℝ H]
+    [NormedAddCommGroup H] [NormedSpace ℝ H]
     {u u' : E → F} (h : HasWeakLineDerivOn μ Ω u u' v) {Φ : E → F →L[ℝ] H}
     (hΦ : ContDiff ℝ 1 Φ) (hΦc : HasCompactSupport Φ) (hΦs : tsupport Φ ⊆ Ω) :
-    ∫ x in Ω, fderiv ℝ Φ x v (u x) ∂μ = -∫ x in Ω, Φ x (u' x) ∂μ :=
-  h.setIntegral_bilin_fderiv_eq_neg (ContinuousLinearMap.id ℝ (F →L[ℝ] H)) hΦ hΦc hΦs
+    ∫ x in Ω, fderiv ℝ Φ x v (u x) ∂μ = -∫ x in Ω, Φ x (u' x) ∂μ := by
+  have hd : ∀ x ∉ (Ω : Set E), fderiv ℝ Φ x v (u x) = 0 := fun x hx => by
+    rw [fderiv_of_notMem_tsupport ℝ fun h' => hx (hΦs h')]; simp
+  have h0 : ∀ x ∉ (Ω : Set E), Φ x (u' x) = 0 := fun x hx => by
+    rw [image_eq_zero_of_notMem_tsupport fun h' => hx (hΦs h')]; simp
+  rw [setIntegral_eq_integral_of_forall_compl_eq_zero hd,
+    setIntegral_eq_integral_of_forall_compl_eq_zero h0,
+    h.integral_fderiv_apply_eq_neg hΦ hΦc hΦs]
 
 end Specializations
 
@@ -336,7 +348,7 @@ theorem HasWeakFDerivOn.integral_clm_apply_eq_neg_sum_fderiv
     {E F H ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [OpensMeasurableSpace E] [Fintype ι] (b : Module.Basis ι ℝ E)
     [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-    [NormedAddCommGroup H] [NormedSpace ℝ H] [FiniteDimensional ℝ H]
+    [NormedAddCommGroup H] [NormedSpace ℝ H]
     {μ : Measure E} {Ω : Opens E} {u : E → F} {U : E → E →L[ℝ] F}
     (h : HasWeakFDerivOn μ Ω u U) {Φ : E → (E →L[ℝ] F) →L[ℝ] H}
     (hΦ : ContDiff ℝ 1 Φ) (hΦc : HasCompactSupport Φ) (hΦs : tsupport Φ ⊆ Ω) :
@@ -356,7 +368,7 @@ theorem HasWeakFDerivOn.integral_clm_apply_eq_neg_sum_fderiv
     have hd : HasFDerivAt (Ψ i) ((R i).comp (fderiv ℝ Φ x)) x :=
       (R i).hasFDerivAt.comp x (hΦ.differentiable one_ne_zero x).hasFDerivAt
     rw [hd.fderiv]
-    rfl
+    simp [R]
   have hexp : ∀ x, Φ x (U x) = ∑ i : ι, Ψ i x (U x (b i)) := fun x => by
     have hU : U x = ∑ i : ι, L i (U x (b i)) := by
       ext w
@@ -366,15 +378,10 @@ theorem HasWeakFDerivOn.integral_clm_apply_eq_neg_sum_fderiv
           simp [L]
     conv_lhs => rw [hU]
     rw [map_sum]
-    rfl
-  have hint : ∀ i : ι, Integrable (fun x => Ψ i x (U x (b i))) μ := fun i => by
-    have hcont : Continuous (Ψ i) := (hΨ i).continuous
-    have hsupp : Function.support (fun x => Ψ i x (U x (b i))) ⊆ tsupport (Ψ i) :=
-      fun x hx => by_contra fun hx' => hx (by simp [image_eq_zero_of_notMem_tsupport hx'])
-    rw [← integrableOn_iff_integrable_of_support_subset hsupp]
-    exact (((h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv).continuousOn_clm_apply
-      Ω.isOpen.isLocallyClosed hcont.continuousOn).integrableOn_compact_subset
-      (hΨs i) (hΨc i).isCompact
+    simp [Ψ, R]
+  have hint : ∀ i : ι, Integrable (fun x => Ψ i x (U x (b i))) μ := fun i =>
+    integrable_clm_apply_of_hasCompactSupport (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv
+      (hΨ i).continuous (hΨc i) (hΨs i)
   calc ∫ x, Φ x (U x) ∂μ
       = ∑ i : ι, ∫ x, Ψ i x (U x (b i)) ∂μ := by
         simp_rw [hexp]
@@ -391,7 +398,7 @@ theorem HasWeakFDerivOn.setIntegral_clm_apply_eq_neg_sum_fderiv
     {E F H ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [OpensMeasurableSpace E] [Fintype ι] (b : Module.Basis ι ℝ E)
     [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-    [NormedAddCommGroup H] [NormedSpace ℝ H] [FiniteDimensional ℝ H]
+    [NormedAddCommGroup H] [NormedSpace ℝ H]
     {μ : Measure E} {Ω : Opens E} {u : E → F} {U : E → E →L[ℝ] F}
     (h : HasWeakFDerivOn μ Ω u U) {Φ : E → (E →L[ℝ] F) →L[ℝ] H}
     (hΦ : ContDiff ℝ 1 Φ) (hΦc : HasCompactSupport Φ) (hΦs : tsupport Φ ⊆ Ω) :
@@ -401,14 +408,20 @@ theorem HasWeakFDerivOn.setIntegral_clm_apply_eq_neg_sum_fderiv
     rw [image_eq_zero_of_notMem_tsupport fun h' => hx (hΦs h')]; simp
   have hd : ∀ i, ∀ x ∉ (Ω : Set E), fderiv ℝ Φ x (b i)
       ((LinearMap.toContinuousLinearMap (b.coord i)).smulRight (u x)) = 0 := fun i x hx => by
-    have hfd0 : fderiv ℝ Φ x = 0 := image_eq_zero_of_notMem_tsupport fun h' =>
-      hx (hΦs (tsupport_fderiv_subset ℝ h'))
-    rw [hfd0]; simp
+    rw [fderiv_of_notMem_tsupport ℝ fun h' => hx (hΦs h')]; simp
   rw [setIntegral_eq_integral_of_forall_compl_eq_zero h0,
     h.integral_clm_apply_eq_neg_sum_fderiv b hΦ hΦc hΦs]
   congr 1
   exact Finset.sum_congr rfl fun i _ =>
     (setIntegral_eq_integral_of_forall_compl_eq_zero (hd i)).symm
+
+private theorem toContinuousLinearMap_toBasis_coord
+    {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [Fintype ι] (b : OrthonormalBasis ι ℝ E) (i : ι) :
+    LinearMap.toContinuousLinearMap (b.toBasis.coord i) = innerSL ℝ (b i) := by
+  ext w
+  simp [Module.Basis.coord_apply, OrthonormalBasis.coe_toBasis_repr_apply,
+    OrthonormalBasis.repr_apply_apply]
 
 /-- **Adjoint integration by parts for weak Fréchet derivatives along an orthonormal basis.**
 Finite dimensionality of `E` is inferred from the finite orthonormal basis `b`. -/
@@ -416,19 +429,14 @@ theorem HasWeakFDerivOn.integral_clm_apply_eq_neg_sum_fderiv_orthonormalBasis
     {E F H ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     [MeasurableSpace E] [OpensMeasurableSpace E] [Fintype ι] (b : OrthonormalBasis ι ℝ E)
     [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-    [NormedAddCommGroup H] [NormedSpace ℝ H] [FiniteDimensional ℝ H]
+    [NormedAddCommGroup H] [NormedSpace ℝ H]
     {μ : Measure E} {Ω : Opens E} {u : E → F} {U : E → E →L[ℝ] F}
     (h : HasWeakFDerivOn μ Ω u U) {Φ : E → (E →L[ℝ] F) →L[ℝ] H}
     (hΦ : ContDiff ℝ 1 Φ) (hΦc : HasCompactSupport Φ) (hΦs : tsupport Φ ⊆ Ω) :
     ∫ x, Φ x (U x) ∂μ =
       -∑ i : ι, ∫ x, fderiv ℝ Φ x (b i) ((innerSL ℝ (b i)).smulRight (u x)) ∂μ := by
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b.toBasis
-  have hcoord : ∀ i : ι,
-      LinearMap.toContinuousLinearMap (b.toBasis.coord i) = innerSL ℝ (b i) := fun i => by
-    ext w
-    simp [Module.Basis.coord_apply, OrthonormalBasis.coe_toBasis_repr_apply,
-      OrthonormalBasis.repr_apply_apply]
-  simpa only [OrthonormalBasis.coe_toBasis, hcoord] using
+  simpa only [OrthonormalBasis.coe_toBasis, toContinuousLinearMap_toBasis_coord b] using
     h.integral_clm_apply_eq_neg_sum_fderiv b.toBasis hΦ hΦc hΦs
 
 /-- Set-integral form of
@@ -437,19 +445,14 @@ theorem HasWeakFDerivOn.setIntegral_clm_apply_eq_neg_sum_fderiv_orthonormalBasis
     {E F H ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     [MeasurableSpace E] [OpensMeasurableSpace E] [Fintype ι] (b : OrthonormalBasis ι ℝ E)
     [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-    [NormedAddCommGroup H] [NormedSpace ℝ H] [FiniteDimensional ℝ H]
+    [NormedAddCommGroup H] [NormedSpace ℝ H]
     {μ : Measure E} {Ω : Opens E} {u : E → F} {U : E → E →L[ℝ] F}
     (h : HasWeakFDerivOn μ Ω u U) {Φ : E → (E →L[ℝ] F) →L[ℝ] H}
     (hΦ : ContDiff ℝ 1 Φ) (hΦc : HasCompactSupport Φ) (hΦs : tsupport Φ ⊆ Ω) :
     ∫ x in Ω, Φ x (U x) ∂μ =
       -∑ i : ι, ∫ x in Ω, fderiv ℝ Φ x (b i) ((innerSL ℝ (b i)).smulRight (u x)) ∂μ := by
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b.toBasis
-  have hcoord : ∀ i : ι,
-      LinearMap.toContinuousLinearMap (b.toBasis.coord i) = innerSL ℝ (b i) := fun i => by
-    ext w
-    simp [Module.Basis.coord_apply, OrthonormalBasis.coe_toBasis_repr_apply,
-      OrthonormalBasis.repr_apply_apply]
-  simpa only [OrthonormalBasis.coe_toBasis, hcoord] using
+  simpa only [OrthonormalBasis.coe_toBasis, toContinuousLinearMap_toBasis_coord b] using
     h.setIntegral_clm_apply_eq_neg_sum_fderiv b.toBasis hΦ hΦc hΦs
 
 end AdjointFDeriv

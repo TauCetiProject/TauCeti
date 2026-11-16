@@ -6,13 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Fin.Tuple.Basic
 
 /-!
-# Counting letters in prefixes of `List.ofFn`
+# Lemmas on `List.ofFn`
 
-The number of occurrences of a letter `s` among the first `j` letters of the word
-`f 0, …, f (k - 1)` is the number of positions `a < j` with `f a = s`
-(`List.count_take_ofFn`). This is the occurrence-count form of `List.sum_take_ofFn`.
+* `List.count_take_ofFn`: the number of occurrences of a letter `s` among the first `j` letters of
+  the word `f 0, …, f (k - 1)` is the number of positions `a < j` with `f a = s`. This is the
+  occurrence-count form of `List.sum_take_ofFn`.
+* `List.ofFn_insertNth_perm`: inserting `a` at any position `p` of `f : Fin j → α` via
+  `Fin.insertNth` yields a permutation of `a :: List.ofFn f`.
 -/
 
 public section
@@ -42,5 +45,18 @@ theorem count_take_ofFn {α : Type*} [DecidableEq α] {k : ℕ} (f : Fin k → �
       split_ifs with hs <;> simp [hs]
     · rw [card_eq_zero.mpr (filter_eq_empty_iff.mpr fun a _ ⟨h, _⟩ => hj (h ▸ a.isLt))]
       simp [hj]
+
+/-- Inserting `a` at any position `p` of `f : Fin j → α` via `Fin.insertNth` yields a permutation
+of `a :: List.ofFn f`. -/
+theorem ofFn_insertNth_perm {α : Type*} :
+    ∀ {j : ℕ} (p : Fin (j + 1)) (a : α) (f : Fin j → α),
+      (ofFn (p.insertNth a f)).Perm (a :: ofFn f)
+  | 0, p, _, _ => p.cases (by simp) fun i => i.elim0
+  | _ + 1, p, a, f =>
+      p.cases (by simp) fun q => by
+        conv_lhs => rw [← Fin.cons_self_tail f, Fin.insertNth_succ_cons, ofFn_succ]
+        conv_rhs => rw [← Fin.cons_self_tail f, ofFn_succ]
+        simp only [Fin.cons_zero, Fin.cons_succ]
+        exact ((ofFn_insertNth_perm q a (Fin.tail f)).cons (f 0)).trans (Perm.swap a (f 0) _)
 
 end List
