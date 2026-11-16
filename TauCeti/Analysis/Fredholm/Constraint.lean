@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import TauCeti.Analysis.Fredholm.Prod
 import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.RingTheory.Finiteness.Finsupp
+import TauCeti.LinearAlgebra.Exact
 
 /-!
 # Linearizations extended by finitely many constraints
@@ -112,14 +113,16 @@ theorem kerProdEquiv_symm_apply (v : (D.prod L).ker) :
 /-! ### Exactness at the constraint space -/
 
 /-- The map `G → (F × G) ⧸ range (D.prod L)`, `g ↦ [(0, g)]`: it sends a value of the constraints
-to the obstruction to realizing it with zero error in the equation. -/
+to the obstruction to realizing it with zero error in the equation. It is the connecting map
+`LinearMap.kerToCoker` of the composition `fst ∘ D.prod L = D`, read on `ker fst = G`. -/
 noncomputable def constraintToCoker : G →ₗ[𝕜] (F × G) ⧸ (D.prod L).range :=
-  (D.prod L).range.mkQ ∘ₗ LinearMap.inr 𝕜 F G
+  (D.prod L : E →ₗ[𝕜] F × G).kerToCoker (LinearMap.fst 𝕜 F G) ∘ₗ
+    (LinearMap.inr 𝕜 F G).codRestrict _ fun _ ↦ rfl
 
 /-- The map into the cokernel sends `g` to the class of `(0, g)`. -/
 theorem constraintToCoker_apply (g : G) :
     constraintToCoker D L g = Submodule.Quotient.mk ((0 : F), g) :=
-  (rfl)
+  LinearMap.kerToCoker_apply _ _ _
 
 /-- Exactness of `ker D → G → (F × G) ⧸ range (D.prod L)` at `G`: a value `g` of the
 constraints has zero obstruction exactly when it is the value of the constraint map at a
@@ -127,11 +130,18 @@ solution of the linearized equation. -/
 @[simp]
 theorem ker_constraintToCoker :
     LinearMap.ker (constraintToCoker D L) = (L.domRestrict D.ker).range := by
+  rw [constraintToCoker, LinearMap.ker_comp,
+    (LinearMap.exact_kerCompToKer_kerToCoker _ _).linearMap_ker_eq]
   ext g
-  simp only [LinearMap.mem_ker, constraintToCoker_apply, Submodule.Quotient.mk_eq_zero,
-    LinearMap.mem_range, coe_coe, prod_apply, Prod.mk.injEq, Subtype.exists, coe_domRestrict]
-  -- The restricted map evaluates to `L x` by definition; only the existentials are regrouped.
-  exact ⟨fun ⟨x, hx, hg⟩ ↦ ⟨x, hx, hg⟩, fun ⟨x, hx, hg⟩ ↦ ⟨x, hx, hg⟩⟩
+  rw [Submodule.mem_comap, LinearMap.mem_range, LinearMap.mem_range]
+  constructor
+  · rintro ⟨⟨x, _⟩, hxg⟩
+    have h := congrArg Subtype.val hxg
+    rw [LinearMap.coe_kerCompToKer_apply] at h
+    exact ⟨⟨x, congrArg Prod.fst h⟩, congrArg Prod.snd h⟩
+  · rintro ⟨⟨x, hx⟩, rfl⟩
+    exact ⟨⟨x, hx⟩, Subtype.ext ((LinearMap.coe_kerCompToKer_apply _ _ _).trans
+      (Prod.ext (LinearMap.mem_ker.mp hx) rfl))⟩
 
 /-- Exactness of `ker D → G → (F × G) ⧸ range (D.prod L)` at the middle term. -/
 theorem exact_domRestrict_constraintToCoker :
@@ -140,26 +150,23 @@ theorem exact_domRestrict_constraintToCoker :
 
 /-! ### Exactness at the cokernel of the extended operator -/
 
-/-- The range of the extended operator projects into the range of `D`. -/
-theorem range_prod_le_comap_fst_range :
-    (D.prod L).range ≤ D.range.comap (LinearMap.fst 𝕜 F G) := by
-  rintro _ ⟨x, rfl⟩
-  exact ⟨x, rfl⟩
-
 /-- The map from the cokernel of the extended operator onto the cokernel of `D`, induced by the
-projection `F × G → F`: it forgets the obstructions coming from the constraints. -/
+projection `F × G → F`: it forgets the obstructions coming from the constraints. It is
+`LinearMap.cokerToCokerComp` for the composition `fst ∘ D.prod L = D`. -/
 noncomputable def cokerProdHom : ((F × G) ⧸ (D.prod L).range) →ₗ[𝕜] F ⧸ D.range :=
-  (D.prod L).range.mapQ D.range (LinearMap.fst 𝕜 F G) (range_prod_le_comap_fst_range D L)
+  (Submodule.quotEquivOfEq _ _ (by rw [coe_prod, LinearMap.fst_prod])).toLinearMap ∘ₗ
+    (D.prod L : E →ₗ[𝕜] F × G).cokerToCokerComp (LinearMap.fst 𝕜 F G)
 
 /-- The cokernel map sends the class of `(y, g)` to the class of `y`. -/
 theorem cokerProdHom_mk (y : F × G) :
-    cokerProdHom D L (Submodule.Quotient.mk y) = Submodule.Quotient.mk y.1 :=
-  (rfl)
+    cokerProdHom D L (Submodule.Quotient.mk y) = Submodule.Quotient.mk y.1 := by
+  rw [cokerProdHom, LinearMap.comp_apply, LinearMap.cokerToCokerComp_mk]
+  rfl
 
 /-- Every obstruction for `D` is the image of an obstruction for the extended operator. -/
 theorem cokerProdHom_surjective : Function.Surjective (cokerProdHom D L) := by
   rintro ⟨y⟩
-  exact ⟨Submodule.Quotient.mk (y, 0), rfl⟩
+  exact ⟨Submodule.Quotient.mk (y, 0), cokerProdHom_mk D L _⟩
 
 /-- Exactness of `G → (F × G) ⧸ range (D.prod L) → F ⧸ range D` at the middle term: the
 obstructions for the extended operator that vanish in the cokernel of `D` are exactly those coming
@@ -167,20 +174,14 @@ from the constraints. -/
 @[simp]
 theorem ker_cokerProdHom :
     LinearMap.ker (cokerProdHom D L) = LinearMap.range (constraintToCoker D L) := by
-  ext z
-  induction z using Submodule.Quotient.induction_on with | H z => ?_
-  obtain ⟨y, g⟩ := z
-  simp only [LinearMap.mem_ker, cokerProdHom_mk, Submodule.Quotient.mk_eq_zero,
-    LinearMap.mem_range, constraintToCoker_apply, Submodule.Quotient.eq, coe_coe]
-  constructor
-  · rintro ⟨x, hx⟩
-    refine ⟨g - L x, -x, ?_⟩
-    simp [hx]
-  · rintro ⟨g', x, hx⟩
-    refine ⟨-x, ?_⟩
-    have := congrArg Prod.fst hx
-    simp only [prod_apply, Prod.fst_sub] at this
-    simp [this]
+  rw [cokerProdHom, LinearEquiv.ker_comp,
+    (LinearMap.exact_kerToCoker_cokerToCokerComp _ _).linearMap_ker_eq, constraintToCoker,
+    LinearMap.range_comp_of_range_eq_top]
+  -- It remains to see that `inr` maps onto `ker fst`.
+  rw [LinearMap.range_eq_top]
+  rintro ⟨⟨y, g⟩, hy⟩
+  obtain rfl : y = 0 := hy
+  exact ⟨g, rfl⟩
 
 /-- Exactness of `G → (F × G) ⧸ range (D.prod L) → F ⧸ range D` at the middle term. -/
 theorem exact_constraintToCoker_cokerProdHom :
@@ -240,7 +241,7 @@ noncomputable def constraintCokerEquiv (hD : Function.Surjective D) :
 /-- The cokernel equivalence sends the class of `g` to the class of `(0, g)`. -/
 theorem constraintCokerEquiv_mk (hD : Function.Surjective D) (g : G) :
     constraintCokerEquiv D L hD (Submodule.Quotient.mk g) = Submodule.Quotient.mk ((0 : F), g) :=
-  (rfl)
+  constraintToCoker_apply D L g
 
 /-! ### Incidence constraints -/
 
