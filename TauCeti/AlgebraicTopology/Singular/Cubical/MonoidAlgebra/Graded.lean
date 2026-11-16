@@ -26,7 +26,8 @@ which the product of homogeneous elements is their Pontryagin product (`DirectSu
 
 ## Main definitions
 
-* `TauCeti.cubicalChainLof G R n`: the inclusion of the `n`-chains, with `cubicalChainLof_mul`.
+* `TauCeti.cubicalChainLof G R n`: the inclusion of the `n`-chains, with `cubicalChainLof_mul` and
+  `one_eq_cubicalChainLof`.
 * `TauCeti.normalizedCubicalChainAlgebra G R`: the graded algebra `⨁ n, C^□_n(G; R)`.
 * `TauCeti.NormalizedCubicalChain.gMonoid`, `.gRing`, `.gAlgebra`: the graded structures.
 
@@ -173,6 +174,13 @@ theorem cubicalChainLof_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
       cubicalChainLof G R (p + q) (NormalizedCubicalChain.mul G R p q a b) := by
   rw [DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.of_mul_of,
     NormalizedCubicalChain.gMul_mul]
+
+omit [ContinuousMul G] in
+/-- The unit of the graded algebra is the `0`-cube at `1`. -/
+theorem one_eq_cubicalChainLof :
+    (1 : normalizedCubicalChainAlgebra G R) =
+      cubicalChainLof G R 0 (NormalizedCubicalChain.one G R) := by
+  rw [DirectSum.one_def, DirectSum.lof_eq_of, NormalizedCubicalChain.gOne_one]
 
 end TauCeti
 
