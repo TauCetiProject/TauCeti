@@ -6,7 +6,7 @@ Authors: Robert
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
-public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Product
+public import TauCeti.Algebra.AlgebraicGroup.FiniteType.Product
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Product
 import TauCeti.Algebra.AlgebraicGroup.Torus.Characterization
 

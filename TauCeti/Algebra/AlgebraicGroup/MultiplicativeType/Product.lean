@@ -12,8 +12,8 @@ import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Product
 /-!
 # Products of groups of multiplicative type
 
-Over an algebraic closure, a product of diagonalizable groups has the product character group.
-The tensor-product comparison for scalar extension therefore proves closure of finite-type
+Over an algebraic closure, a product of diagonalizable groups is diagonalizable. The
+tensor-product comparison for scalar extension therefore proves closure of finite-type
 groups of multiplicative type under products.
 -/
 
@@ -30,12 +30,9 @@ theorem tensorProduct (k : Type u) [Field k] (H K : FiniteTypeCommHopfAlgCat.{u,
     (hH : multiplicativeTypeCommHopfAlgProperty k H)
     (hK : multiplicativeTypeCommHopfAlgProperty k K) :
     multiplicativeTypeCommHopfAlgProperty k (FiniteTypeCommHopfAlgCat.tensorProduct H K) := by
-  rw [multiplicativeTypeCommHopfAlgProperty_iff_exists_iso_coordinateRing] at hH hK ⊢
-  obtain ⟨G, ⟨e⟩⟩ := hH
-  obtain ⟨G', ⟨f⟩⟩ := hK
-  exact ⟨FGCommGrpCat.of (G × G'), ⟨
-    DiagonalizableGroup.productCoordinateRingIso (AlgebraicClosure k) G G' ≪≫
-    FiniteTypeCommHopfAlgCat.tensorProductCongr e f ≪≫
-    (FiniteTypeCommHopfAlgCat.baseChangeTensorProductIso (AlgebraicClosure k) H K).symm⟩⟩
+  rw [multiplicativeTypeCommHopfAlgProperty_iff] at hH hK ⊢
+  exact (DiagonalizableGroup.groupLikeSpannedProperty (AlgebraicClosure k)).prop_of_iso
+    (FiniteTypeCommHopfAlgCat.baseChangeTensorProductIso (AlgebraicClosure k) H K).symm
+    (DiagonalizableGroup.groupLikeSpannedProperty.tensorProduct (AlgebraicClosure k) _ _ hH hK)
 
 end TauCeti.multiplicativeTypeCommHopfAlgProperty
