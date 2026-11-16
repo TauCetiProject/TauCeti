@@ -50,12 +50,12 @@ and `‖W(τ) Pⱼ²‖_{L² → L²} ≤ 1`. The Riesz–Thorin theorem interpo
 
 All in the `ContDiffBump` namespace:
 
-* `exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_fourierMultiplierCLM_le`: the
-  bilinear estimate for the Duhamel pairings `⟪W(t - s) Pⱼ² F(s), G(t)⟫`.
-* `exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le`: the dual estimate
-  `‖∫ Pⱼ W(-s) F(s) ds‖₂ ≤ C 2^{j σ} ‖F‖_{L^{q'}_t L^{r'}_x}`.
-* `exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_le`: the homogeneous
-  estimate `‖W(t) Pⱼ f‖_{L^q_t L^r_x} ≤ C 2^{j σ} ‖f‖₂`, in weak form.
+* `exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_littlewoodPaley_le`: the bilinear
+  estimate for the Duhamel pairings `⟪W(t - s) Pⱼ² F(s), G(t)⟫`.
+* `exists_enorm_integral_fourierMultiplierCLM_littlewoodPaley_halfWavePropagator_neg_le`: the dual
+  estimate `‖∫ Pⱼ W(-s) F(s) ds‖₂ ≤ C 2^{j σ} ‖F‖_{L^{q'}_t L^{r'}_x}`.
+* `exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_le`: the
+  homogeneous estimate `‖W(t) Pⱼ f‖_{L^q_t L^r_x} ≤ C 2^{j σ} ‖f‖₂`, in weak form.
 
 ## References
 
@@ -306,7 +306,7 @@ measurable `F, G : ℝ → L²(E)`,
 where `σ = n / 2 - n / r - 1 / q`. Since the integrand is the absolute value of the Duhamel
 pairing, the bound also controls the integral over any part of the `(s, t)` plane, such as the
 retarded region `s < t`. -/
-theorem exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_fourierMultiplierCLM_le
+theorem exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_littlewoodPaley_le
     (hr : 2 ≤ r) (hq : 2 < q) (hpq : p.HolderConjugate q)
     (hqr : 1 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal / 2 ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 4) :
@@ -350,8 +350,8 @@ There is `C` such that for every `j ∈ ℤ` and every almost everywhere strongl
 `F : ℝ → L²(E)` for which `s ↦ Pⱼ W(-s) F(s)` is integrable,
 
 `‖∫ Pⱼ W(-s) F(s) ds‖₂ ≤ C 2^{j σ} ‖F‖_{L^p_t L^{r'}_x}`,  `σ = n / 2 - n / r - 1 / q`. -/
-theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le (hr : 2 ≤ r)
-    (hq : 2 < q) (hpq : p.HolderConjugate q)
+theorem exists_enorm_integral_fourierMultiplierCLM_littlewoodPaley_halfWavePropagator_neg_le
+    (hr : 2 ≤ r) (hq : 2 < q) (hpq : p.HolderConjugate q)
     (hqr : 1 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal / 2 ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 4) :
     ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
@@ -386,8 +386,8 @@ strongly measurable `G : ℝ → L²(E)` for which `t ↦ Pⱼ W(-t) G(t)` is in
 `|∫ ⟪W(t) Pⱼ f, G(t)⟫ dt| ≤ C 2^{j σ} ‖f‖₂ ‖G‖_{L^p_t L^{r'}_x}`,  `σ = n / 2 - n / r - 1 / q`.
 
 This is `‖W(t) Pⱼ f‖_{L^q_t L^r_x} ≤ C 2^{j σ} ‖f‖₂` tested against `G`. -/
-theorem exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_le (hr : 2 ≤ r)
-    (hq : 2 < q) (hpq : p.HolderConjugate q)
+theorem exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_le
+    (hr : 2 ≤ r) (hq : 2 < q) (hpq : p.HolderConjugate q)
     (hqr : 1 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal / 2 ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 4) :
     ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
