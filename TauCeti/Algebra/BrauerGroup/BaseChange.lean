@@ -53,7 +53,7 @@ fields, and no homomorphism induced by an arbitrary map of fields, is constructe
 
 A class dies under `baseChange K L` exactly when its algebras become Brauer trivial over `L`
 (`TauCeti.BrauerGroup.mk_mem_ker_baseChange_iff`). The Wedderburn-uniqueness consequence
-`TauCeti.isBrauerTrivial_iff_isSplittingField` upgrades this to the promised description: a class
+`TauCeti.isBrauerTrivial_iff_isSplittingField` upgrades this to the standard description: a class
 lies in the kernel exactly when `L` **splits** any algebra representing it, meaning that
 `L ⊗[K] A` is a full matrix algebra over `L`. This is
 `TauCeti.BrauerGroup.mk_mem_ker_baseChange_iff_isSplittingField`.
@@ -65,10 +65,6 @@ killed by some extension.
 
 ## References
 
-This is the **Base change preserves central simplicity, then is a homomorphism** bullet of Layer 6
-of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md),
-whose first half is `TauCeti/Algebra/CentralSimple/BaseChange.lean`.
 See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, CUP (2006), §2.2 and
 §2.4, and R. S. Pierce, *Associative Algebras*, Springer GTM 88 (1982), Chapter 12.
 -/

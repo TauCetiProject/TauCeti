@@ -117,7 +117,7 @@ theorem singularValue_eq_decreasingRearrangement
   have hbdd : BddAbove (Set.range fun i ↦ ‖T (b i)‖) := ⟨‖T‖, by
     rintro _ ⟨i, rfl⟩
     simpa [b.orthonormal.1 i] using T.le_opNorm (b i)⟩
-  have hr0 : 0 ≤ r n := TauCeti.decreasingRearrangement_nonneg hbdd n
+  have hr0 : 0 ≤ r n := TauCeti.decreasingRearrangement_nonneg n
   refine le_antisymm ?_ (le_of_forall_lt_imp_le_of_dense fun a ha ↦ ?_)
   · -- At most `n` indices have `‖T bᵢ‖ > rₙ`, and `T` is bounded by `rₙ` on the others.
     have hfin := TauCeti.finite_setOf_decreasingRearrangement_lt hbdd n
@@ -175,7 +175,7 @@ theorem IsCompactOperator.exists_orthonormal_hasSum_rankOne {T : E →L[𝕜] F}
     simp_rw [hterm]
     exact (hasSum_subtype_iff_of_support_subset hsupp).mpr (b.hasSum_rankOne hTc hT)
   · rw [b.singularValue_eq_decreasingRearrangement hT n]
-    exact (TauCeti.decreasingRearrangement_comp_subtypeVal hnull.bddAbove_range_of_cofinite
+    exact (TauCeti.decreasingRearrangement_comp_subtypeVal
       (fun i hi ↦ norm_pos_iff.mp hi) n).symm
 
 end SingularValueDecomposition

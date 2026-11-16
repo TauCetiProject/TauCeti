@@ -38,8 +38,8 @@ theorem exists_toLaurent_eq_iff [Semiring A] {p : LaurentPolynomial A} :
     (∃ q : Polynomial A, q.toLaurent = p) ↔ ∀ n : ℤ, n < 0 → p.coeff n = 0 := by
   have hrange : p ∈ Set.range Polynomial.toLaurent ↔
       p.coeff ∈ Set.range (Finsupp.mapDomain (Nat.cast : ℕ → ℤ)) :=
-    ⟨fun ⟨q, hq⟩ ↦ ⟨q.toFinsupp.coeff, congrArg AddMonoidAlgebra.coeff hq⟩,
-      fun ⟨q, hq⟩ ↦ ⟨.ofFinsupp (.ofCoeff q), AddMonoidAlgebra.coeff_injective hq⟩⟩
+    ⟨fun ⟨q, hq⟩ ↦ ⟨q.coeff, congrArg AddMonoidAlgebra.coeff hq⟩,
+      fun ⟨q, hq⟩ ↦ ⟨.ofCoeff q, AddMonoidAlgebra.coeff_injective hq⟩⟩
   rw [← Set.mem_range, hrange, Finsupp.mem_range_mapDomain_iff _ Nat.cast_injective]
   refine forall_congr' fun n ↦ imp_congr_left ?_
   rw [not_iff_comm, not_lt]

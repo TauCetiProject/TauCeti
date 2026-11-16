@@ -71,20 +71,21 @@ private theorem oddPoleTerm_nonneg {a : ℝ} (ha : 0 ≤ a) (n : ℕ) {y : ℝ} 
   gcongr
   linarith
 
-private theorem integrableOn_oddPoleTerm {a : ℝ} (ha : 0 ≤ a) (n : ℕ) :
+private theorem integrableOn_oddPoleTerm (a : ℝ) (n : ℕ) :
     IntegrableOn (oddPoleTerm a n) (Ioi 0) := by
-  have hc : (0 : ℝ) ≤ 2 * n + 1 := by positivity
-  exact ((integrableOn_sq_div_sq_add_sq_mul_sq_add_sq ha hc (by positivity)).sub
-    (integrableOn_sq_div_sq_add_sq_mul_sq_add_sq (by positivity) hc (by positivity))).const_mul _
+  have hc : (2 * n + 1 : ℝ) ≠ 0 := by positivity
+  exact ((integrableOn_sq_div_sq_add_sq_mul_sq_add_sq_iff.mpr (.inr hc)).sub
+    (integrableOn_sq_div_sq_add_sq_mul_sq_add_sq_iff.mpr (.inr hc))).const_mul _
 
 private theorem integral_oddPoleTerm {a : ℝ} (ha : 0 ≤ a) (n : ℕ) :
     ∫ y in Ioi 0, oddPoleTerm a n y = 2 * (1 / (a + 2 * n + 1) - 1 / (a + 2 * (n + 1) + 1)) := by
-  have hc : (0 : ℝ) ≤ 2 * n + 1 := by positivity
+  have hc : (2 * n + 1 : ℝ) ≠ 0 := by positivity
   simp only [oddPoleTerm]
-  rw [integral_const_mul, integral_sub (integrableOn_sq_div_sq_add_sq_mul_sq_add_sq ha hc
-    (by positivity)) (integrableOn_sq_div_sq_add_sq_mul_sq_add_sq (by positivity) hc
-    (by positivity)), integral_Ioi_sq_div_sq_add_sq_mul_sq_add_sq ha hc (by positivity),
-    integral_Ioi_sq_div_sq_add_sq_mul_sq_add_sq (by positivity) hc (by positivity)]
+  rw [integral_const_mul, integral_sub (integrableOn_sq_div_sq_add_sq_mul_sq_add_sq_iff.mpr
+    (.inr hc)) (integrableOn_sq_div_sq_add_sq_mul_sq_add_sq_iff.mpr (.inr hc)),
+    integral_Ioi_sq_div_sq_add_sq_mul_sq_add_sq, integral_Ioi_sq_div_sq_add_sq_mul_sq_add_sq,
+    abs_of_nonneg ha, abs_of_nonneg (by positivity : 0 ≤ a + 2),
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ 2 * n + 1)]
   field_simp
   ring
 
@@ -120,7 +121,7 @@ theorem integral_weight_mul_mul_inv_sub_inv {a : ℝ} (ha : 0 ≤ a) :
     ext n
     refine setIntegral_congr_fun measurableSet_Ioi fun y hy ↦ ?_
     exact Real.norm_of_nonneg (oddPoleTerm_nonneg ha n hy)
-  have h := hasSum_integral_of_summable_integral_norm (integrableOn_oddPoleTerm ha)
+  have h := hasSum_integral_of_summable_integral_norm (integrableOn_oddPoleTerm a)
     (hnorm ▸ (hasSum_integral_oddPoleTerm ha).summable)
   rw [(hasSum_integral_oddPoleTerm ha).unique h]
   exact integral_congr_ae (ae_of_all _ fun y ↦ (hasSum_oddPoleTerm a y).tsum_eq.symm)

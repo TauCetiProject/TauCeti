@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Heisenberg
+public import TauCeti.Algebra.Lie.Heisenberg.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Cofinite
 public import TauCeti.Algebra.Lie.OfAssociative
 import Mathlib.RingTheory.Ideal.Quotient.Operations

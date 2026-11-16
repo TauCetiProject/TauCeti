@@ -32,9 +32,9 @@ For a scheme `X` and `M : X.Modules`, the main declarations are:
 
 The construction is stated for every sheaf of modules, which is the natural generality of sheaf
 cohomology. In particular it applies to finitely presented sheaves through their underlying
-objects, and hence supplies the `Hⁱ(X, ℱ)` used for coherent sheaves in
-`TauCetiRoadmap/JacobianChallenge/README.md`, Layer B. Finite-dimensionality for proper schemes,
-vanishing on curves, and the comparison with Čech cohomology remain later Layer B work.
+objects, and hence supplies the cohomology `Hⁱ(X, ℱ)` of a coherent sheaf. Finite-dimensionality
+for proper schemes, vanishing on curves, and the comparison with Čech cohomology are not treated
+in this file.
 
 No formalization is vendored. The definitions reuse Mathlib's `Sheaf.H`, `Sheaf.functorH`,
 `Sheaf.H.equiv₀` and `Sheaf.H'`, and the comparison at the terminal open subset is
@@ -143,6 +143,14 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv (U : Opens X) 
     cohomologyOn M 0 U ≃+ Γ(M, U) :=
   TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) U
+
+/-- The identification of `H⁰(U, M)` with sections is the degree-zero sections equivalence
+of the underlying abelian sheaf. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv_apply (U : Opens X)
+    (x : cohomologyOn M 0 U) :
+    M.cohomologyOnZeroEquiv U x = TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv
+      ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) U x :=
+  (rfl)
 
 /-- The identification of degree-zero cohomology with sections commutes with restriction. -/
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv_cohomologyOnRes

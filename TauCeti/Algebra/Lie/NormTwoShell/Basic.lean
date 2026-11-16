@@ -25,7 +25,8 @@ the construction below is the Frenkel--Kac construction of the corresponding sim
 algebra over `ℤ`; no comparison with other constructions of that Lie algebra is made here. Its
 carrier `ShellLieAlgebra B` is `Q × (Φ →₀ ℤ)`: a Cartan vector `H_h` for each
 `h : Q` (`ShellLieAlgebra.cartan`) and a root vector `x_a` for each `a ∈ Φ`
-(`ShellLieAlgebra.root`), which together give an integral basis (`ShellLieAlgebra.basis`). The
+(`ShellLieAlgebra.root`). The Cartan vectors `H_(αᵢ)` of the coordinate vectors `αᵢ = Pi.single i 1`
+together with the root vectors `x_a` give an integral basis (`ShellLieAlgebra.basis`). The
 bracket (`ShellLieAlgebra.bracketBilin`) is the bilinear map with
 `⁅H_h, H_k⁆ = 0`, `⁅H_h, x_a⁆ = ⟪h, a⟫ x_a`, and on root vectors
 (`ShellLieAlgebra.rootBracket`)
@@ -115,9 +116,8 @@ theorem equivProd_cartan (h : I → ℤ) : equivProd B (cartan B h) = (h, 0) := 
   simp [cartan]
 
 /-- The Cartan embedding is injective. -/
-theorem cartan_injective : Function.Injective (cartan B) := by
-  intro v w h
-  simpa only [equivProd_cartan] using congrArg (fun x ↦ (equivProd B x).1) h
+theorem cartan_injective : Function.Injective (cartan B) :=
+  (equivProd B).symm.injective.comp LinearMap.inl_injective
 
 @[simp]
 theorem equivProd_root (a : B.normTwoShell) :
@@ -415,11 +415,8 @@ theorem rootBracket_swap (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (a b : B.
     rw [rootBracket_of_mem hm, rootBracket_of_mem hm', hsign, Units.neg_smul, hroot]
   by_cases hz : (a : I → ℤ) + b = 0
   · have hb : (b : I → ℤ) = -a := eq_neg_of_add_eq_zero_right hz
-    have hp : (a : I → ℤ) ⬝ᵥ B *ᵥ b = -2 := by
-      rw [hb, mulVec_neg, dotProduct_neg, mem_normTwoShell.mp a.2]
     have hsign : (B.orderedSignForm b a).negOnePow = (B.orderedSignForm a b).negOnePow := by
-      rw [Int.negOnePow_eq_iff, Int.even_iff]
-      omega
+      simp only [hb, map_neg, LinearMap.neg_apply]
     have hcartan : cartan B b = -cartan B a := by rw [hb, map_neg]
     rw [rootBracket_of_add_eq_zero hz, rootBracket_of_add_eq_zero (by rwa [add_comm]), hsign,
       hcartan, smul_neg]
@@ -443,12 +440,9 @@ protected theorem lie_skew (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (x y : 
 /-- **The bracket is alternating**, for a symmetric `B` with even diagonal. -/
 protected theorem lie_self (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (x : ShellLieAlgebra B) :
     ⁅x, x⁆ = 0 := by
-  have h := ShellLieAlgebra.lie_skew hB hdiag x x
-  refine (basis B).repr.injective (Finsupp.ext fun i ↦ ?_)
-  have hi := congr((basis B).repr $h i)
-  simp only [map_neg, Finsupp.neg_apply] at hi
-  simp only [map_zero, Finsupp.coe_zero, Pi.zero_apply]
-  omega
+  have hz : (2 : ℤ) • ⁅x, x⁆ = 0 := by
+    simpa only [two_smul] using eq_neg_iff_add_eq_zero.mp (ShellLieAlgebra.lie_skew hB hdiag x x)
+  exact ((basis B).smul_eq_zero.mp hz).resolve_left (by decide)
 
 /-! ### The Jacobi identity -/
 
@@ -589,7 +583,7 @@ private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even
         (c : I → ℤ) ⬝ᵥ B *ᵥ a = -1 ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ b = -1 ∧ (b : I → ℤ) ⬝ᵥ B *ᵥ c = 0 ∧
         (c : I → ℤ) ⬝ᵥ B *ᵥ a = -1 ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ b = -1 ∧
         (b : I → ℤ) ⬝ᵥ B *ᵥ c = -1 ∧ (c : I → ℤ) ⬝ᵥ B *ᵥ a = 0) with
-      ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩
+      ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩ | ⟨h1, h2, _⟩
     · rw [ite_eq_left (hmbc.2 h2), ite_eq_left (hmca.2 h3), ite_eq_right (by rw [hmab]; omega),
         (TauCeti.negOnePow_mul_negOnePow_of_even (a := sca) (b := sbc + sba)
           (c := sbc + (sab + sac) + 1)

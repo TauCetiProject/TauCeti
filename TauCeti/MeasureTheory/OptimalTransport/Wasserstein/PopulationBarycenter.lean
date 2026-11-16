@@ -126,8 +126,7 @@ private theorem indicator_edist_rpow_le_of_isFrechetBarycenter {J : Type*} [Fint
     _ ≤ 2 ^ p.toReal * (2 * ∑ j, (w j : ℝ≥0∞) *
         if (R : ℝ≥0∞) ^ p.toReal ≤ f (x j) then f (x j) else 0) := by
       gcongr
-      exact sum_mul_le_two_mul_sum_mul_ite hw (fun j ↦ f (x j))
-        (ENNReal.rpow_ne_top_of_nonneg hpos.le ENNReal.coe_ne_top) h₂
+      exact sum_mul_le_two_mul_sum_mul_ite hw (fun j ↦ f (x j)) h₂
     _ = 2 * 2 ^ p.toReal * ∑ j, (w j : ℝ≥0∞) * {u | R ≤ nndist z u}.indicator f (x j) := by
       simp only [indicator_apply, hRf]
       ring
@@ -221,7 +220,7 @@ private theorem exists_lintegral_setLIntegral_edist_rpow_le [Fact (1 ≤ p)] (hp
     simpa using wassersteinEDist_comp_le_mul hp hp_top (hmom _ (hPmom n)) (hmom _ hQmom) hκL
   -- They form a compact set, so their moment tails are uniformly small.
   have hK := hm.isCompact_insert_range
-  obtain ⟨R, hR⟩ := exists_setLIntegral_edist_rpow_le_of_isCompact_closure hp_top
+  obtain ⟨R, hR⟩ := exists_setLIntegral_edist_rpow_le_of_isCompact_closure
     (hK.isClosed.closure_eq.symm ▸ hK) x hε
   refine ⟨R, fun n ↦ ?_⟩
   have hA : MeasurableSet {y : X | R ≤ nndist x y} :=

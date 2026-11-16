@@ -12,22 +12,25 @@ import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 /-!
 # Fibres over regular values of equidimensional maps
 
-Let `f : M → N` be a `C^n` map, `n ≠ 0`, between manifolds over `ℝ` or `ℂ` (more generally, over
-a field `𝕜` with `IsRCLikeNormedField 𝕜`) modelled on finite-dimensional spaces of the same
-dimension. At a regular point the manifold derivative of `f` is bijective, so `f` is injective
-near that point. Hence the fibre of `f` over a regular value is a discrete subset of `M`, and it is
-finite when `M` is compact. These finite fibres are what the mapping degree of a
-map between compact oriented manifolds counts with signs.
+Let `f : M → N` be a map between manifolds over `ℝ` or `ℂ` (more generally, over a field `𝕜` with
+`IsRCLikeNormedField 𝕜`) modelled on finite-dimensional spaces of the same dimension. At a regular
+point the manifold derivative of `f` is bijective, so the point is isolated in its fibre. Hence the
+fibre of `f` over a regular value is a discrete subset of `M`, and it is finite when it is compact:
+when `M` is compact and `f` continuous, or when `f` is proper. These finite fibres are what the
+mapping degree of a map between oriented manifolds counts with signs.
 
-The manifolds may have boundary or corners: local injectivity at a regular point is proved in
-charts, within the range of the model with corners, rather than through the inverse function
-theorem.
+No smoothness of `f` is needed beyond the differentiability at each point of the fibre that
+regularity provides. The manifolds may have boundary or corners: isolation at a regular point is
+proved in charts, within the range of the model with corners, rather than through the inverse
+function theorem.
 
 ## Main results
 
 * `TauCeti.IsRegularValue.isDiscrete_preimage`: the fibre over a regular value is discrete.
-* `TauCeti.IsRegularValue.finite_preimage`: on a compact manifold, the fibre over a regular value
-  is finite.
+* `TauCeti.IsRegularValue.finite_preimage`: for a continuous map on a compact manifold, the fibre
+  over a regular value is finite.
+* `TauCeti.IsRegularValue.finite_preimage_of_isProperMap`: for a proper map, the fibre over a
+  regular value is finite.
 
 ## References
 
@@ -50,26 +53,33 @@ variable {𝕜 E H M E' H' N : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNo
   {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
   [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [FiniteDimensional 𝕜 E'] [TopologicalSpace H']
   {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
-  {f : M → N} {x : M} {y : N} {n : WithTop ℕ∞}
+  {f : M → N} {y : N}
 
-/-- The fibre of a `C^n` map, `n ≠ 0`, between manifolds modelled on finite-dimensional spaces of
-the same dimension over a regular value is a discrete subset. -/
+/-- The fibre over a regular value of a map between manifolds modelled on finite-dimensional
+spaces of the same dimension is a discrete subset. -/
 theorem IsRegularValue.isDiscrete_preimage (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E')
-    (hf : ContMDiff I J n f) (hn : n ≠ 0) (hy : IsRegularValue I J f y) :
-    IsDiscrete (f ⁻¹' {y}) := by
+    (hy : IsRegularValue I J f y) : IsDiscrete (f ⁻¹' {y}) := by
   refine IsDiscrete.of_nhdsWithin fun x hx ↦ ?_
-  obtain ⟨t, ht, hinj⟩ := (hf x).exists_mem_nhds_injOn hn
+  -- Near `x`, the map `f` takes the value `y = f x` only at `x`.
+  have h := eventually_ne_of_mfderiv_injective
     ((isRegularPoint_iff_injective_mfderiv hdim).1 (hy.isRegularPoint hx))
-  -- On `t` the map `f` is injective, so `x` is the only point of `t` in the fibre.
+  obtain ⟨t, ht, hxt⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 h
   refine le_pure_iff.2 (mem_nhdsWithin_iff_exists_mem_nhds_inter.2 ⟨t, ht, fun z hz ↦ ?_⟩)
-  exact hinj hz.1 (mem_of_mem_nhds ht) (hz.2.trans hx.symm)
+  by_contra hzx
+  exact hxt ⟨hz.1, hzx⟩ (hz.2.trans hx.symm)
 
-/-- The fibre of a `C^n` map, `n ≠ 0`, from a compact manifold, between manifolds modelled on
-finite-dimensional spaces of the same dimension, over a regular value is finite. -/
+/-- The fibre over a regular value of a continuous map from a compact manifold, between manifolds
+modelled on finite-dimensional spaces of the same dimension, is finite. -/
 theorem IsRegularValue.finite_preimage [CompactSpace M] [T1Space N]
-    (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E') (hf : ContMDiff I J n f) (hn : n ≠ 0)
+    (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E') (hf : Continuous f)
     (hy : IsRegularValue I J f y) : (f ⁻¹' {y}).Finite :=
-  (isClosed_singleton.preimage hf.continuous).isCompact.finite
-    (hy.isDiscrete_preimage hdim hf hn)
+  (isClosed_singleton.preimage hf).isCompact.finite (hy.isDiscrete_preimage hdim)
+
+/-- The fibre over a regular value of a proper map between manifolds modelled on
+finite-dimensional spaces of the same dimension is finite. -/
+theorem IsRegularValue.finite_preimage_of_isProperMap
+    (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E') (hf : IsProperMap f)
+    (hy : IsRegularValue I J f y) : (f ⁻¹' {y}).Finite :=
+  (hf.isCompact_preimage isCompact_singleton).finite (hy.isDiscrete_preimage hdim)
 
 end TauCeti

@@ -44,7 +44,7 @@ theorem quantile_generalizedExtremeValueMeasure_of_shape_ne_zero (hs : 0 < s) (m
   have hlog : 0 < -log u := neg_pos.mpr (log_neg hu.1 hu.2)
   have hmap : generalizedExtremeValueMap m s ξ (-log u) =
       m + s * ((-log u) ^ (-ξ) - 1) / ξ := by
-    rw [generalizedExtremeValueMap_eq_rpow hlog, ite_eq_right hξ]
+    rw [generalizedExtremeValueMap_eq_rpow hlog hξ]
   rw [← hmap]
   refine eq_of_forall_ge_iff fun x ↦ ?_
   rw [Measure.quantile_le_iff _ hu.1 hu.2,
@@ -62,13 +62,13 @@ theorem quantile_generalizedExtremeValueMeasure_of_shape_ne_zero (hs : 0 < s) (m
     · rw [ite_eq_right (not_lt.mpr hξ.le)]
       constructor
       · intro _
-        exact generalizedExtremeValueMap_le_of_shape_neg_of_nonpos hs hξ hlog hx
+        exact generalizedExtremeValueMap_le_of_shape_neg_of_nonpos hs hξ hx
       · exact fun _ ↦ hu.2.le
     · rw [ite_eq_left hξ]
       constructor
       · exact fun h ↦ (not_le.mpr hu.1 h).elim
       · intro hle
-        exact (not_generalizedExtremeValueMap_le_of_shape_pos_of_nonpos hs hξ hlog hx hle).elim
+        exact (not_generalizedExtremeValueMap_le_of_shape_pos_of_nonpos hs hξ hx hle).elim
 
 /-- The generalized extreme-value quantile, including its Gumbel branch at shape zero. -/
 theorem quantile_generalizedExtremeValueMeasure (m ξ : ℝ) (hs : 0 < s) (hu : u ∈ Ioo 0 1) :

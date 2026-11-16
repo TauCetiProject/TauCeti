@@ -30,7 +30,7 @@ variable {R B C M N P : Type*} [CommRing R] [Semiring B] [Semiring C]
   [SMulCommClass B R N] [SMulCommClass Cᵐᵒᵖ R N] [SMulCommClass B Cᵐᵒᵖ N]
   {ℬ : ℤ → Submodule R B} {𝒞 : ℤ → Submodule R C}
   [DirectSum.Decomposition ℬ] [DirectSum.Decomposition 𝒞]
-  (G : InternalGrading R M) (H : InternalGrading R N) (I : InternalGrading R P)
+  (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) (I : InternalGrading R P ℤ)
   [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece G.piece]
   [SetLike.GradedSMul ℬ H.piece]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒞).opposite.piece H.piece]

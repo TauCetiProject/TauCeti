@@ -73,14 +73,6 @@ because the pair `(aH, bK)` determines `H a⁻¹ b K`.
 
 ## References
 
-This supplies the "`⟨Ind_H^G 1, Ind_H^G 1⟩_G = #(H \ G / H)`" item of Layer 2 in
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md` with its group-theoretic
-input.
-
-`orbitOfCosetTranslate` and its fibre count instead serve Layer 1 of
-`TauCetiRoadmap/ModularForms/README.md`, "General level — by the coset norm", whose
-orbit/stabiliser bookkeeping regroups a sum over a coset space into a sum over orbits.
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, Chapter 7.3.
 -/
 
@@ -387,9 +379,10 @@ theorem card_fiber_orbitOfCosetTranslate_eq_relIndex {𝒢 ℋ : Subgroup G}
 /-- **The orbit-indexed form**, which is the one a consumer wants: the weight is
 `TauCeti.cardStabilizerOnOrbit`, a function of the orbit rather than of a representative.
 
-A sum over `MulAction.orbitRel.Quotient 𝒢 α` weights each orbit once, and the roadmap sum
-`Σ_P (1/e_P)` reads `e_P` off the orbit, so a use site holding a class `q` can apply this directly
-instead of doing `QuotientGroup.induction_on` and rewriting the order into orbit form by hand. -/
+A sum over `MulAction.orbitRel.Quotient 𝒢 α` weights each orbit once, and in a sum such as
+`Σ_P (1/e_P)` the weight `e_P` is read off the orbit, so a use site holding a class `q` can apply
+this directly instead of doing `QuotientGroup.induction_on` and rewriting the order into orbit form
+by hand. -/
 theorem card_fiber_orbitOfCosetTranslate_mul_cardStabilizerOnOrbit {𝒢 ℋ : Subgroup G}
     (hle : 𝒢 ≤ ℋ) (p : α) (q : ℋ ⧸ 𝒢.subgroupOf ℋ) :
     Nat.card {r : ℋ ⧸ 𝒢.subgroupOf ℋ // orbitOfCosetTranslate p r =

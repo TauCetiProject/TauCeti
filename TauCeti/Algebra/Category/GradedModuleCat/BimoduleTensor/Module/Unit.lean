@@ -35,7 +35,7 @@ open scoped TensorProduct
 universe v uk uA
 
 variable {k : Type uk} {A : Type uA} [CommRing k] [Ring A] [Algebra k A]
-  (Γ : InternalGrading k A) [GradedAlgebra Γ.piece]
+  (Γ : InternalGrading k A ℤ) [GradedAlgebra Γ.piece]
   (N : GradedModuleCat.{max v uA} Γ.piece)
 
 private def unitAction : bimoduleUnit.{v} Γ →ₗ[k] N →ₗ[k] N :=

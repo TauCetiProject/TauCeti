@@ -20,9 +20,8 @@ commutativity of the group (`aut_commute`) this says `Gal(M/K)` is an **elementa
 of `Gal(M/K)` divides `2` unconditionally, and equals `2` exactly when the extension is
 nontrivial — the case square-class independence over a nonempty index type guarantees.
 
-This is the explicit "exponent-`2`" half of the multiquadratic roadmap's Layer-0 Galois milestone
-(`TauCetiRoadmap/Multiquadratic/README.md`, "the `IsGalois` and exponent-2 / abelian facts are the
-easy half"). The full `Gal(M/K) ≃ (ℤ/2)ⁿ` isomorphism is
+This is the easy "exponent-`2`" half of the Galois structure. The full `Gal(M/K) ≃ (ℤ/2)ⁿ`
+isomorphism is
 `TauCeti.NumberTheory.Multiquadratic.Galois.Group`; the exponent reading here is the coarse
 invariant it refines — an exponent-`2` abelian group is exactly an `𝔽₂`-vector space.
 
@@ -37,8 +36,7 @@ invariant it refines — an exponent-`2` abelian group is exactly an `𝔽₂`-v
 
 ## Provenance
 
-The involution and commutativity facts this packages are migrated, with the rest of the
-multiquadratic Layer 0, from
+The involution and commutativity facts this packages are migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization of
 L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture, where the sign-change
 automorphisms of one concrete multiquadratic field were analysed; here the exponent is read off for

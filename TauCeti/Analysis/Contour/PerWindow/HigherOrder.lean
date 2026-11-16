@@ -197,7 +197,7 @@ theorem perWindow_higherOrder_truncated_integral_tendsto {γ : ℝ → ℂ} {s :
           rw [uIcc_of_le hab, uIcc_of_le (by linarith : t_i - r ≤ t_i + r)]
           exact Icc_subset_Icc ha hb)) hε)
   have h_cancel := antiderivative_diff_across_crossing_tendsto_zero h_flat hL_L hL_R
-    h_deriv_R h_deriv_L h_at hk hkn h_B h_toR h_radR h_toL h_radL
+    h_deriv_R h_deriv_L h_at hkn h_B h_toR h_radR h_toL h_radL
   have h_cancel_cx : Tendsto (fun ε =>
       (-(↑(k - 1) : ℂ)⁻¹ * ((γ (τL ε) - s) ^ (k - 1))⁻¹) -
         (-(↑(k - 1) : ℂ)⁻¹ * ((γ (τR ε) - s) ^ (k - 1))⁻¹))

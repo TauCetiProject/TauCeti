@@ -17,7 +17,7 @@ public import TauCeti.Analysis.SpecificLimits.MovingAverage
 /-!
 # Pointwise decay at states with infinite mean return time
 
-For an irreducible aperiodic countable-state chain, an infinite extended mean positive
+For an irreducible aperiodic chain, an infinite extended mean positive
 return time at `y` implies that the time-`n` mass of `y` tends to zero from every initial
 probability law. This includes null recurrent states and states with a positive chance
 of never returning: the hypothesis uses an `ℝ≥0∞`-valued mean, with infinity on nonreturn.
@@ -27,7 +27,7 @@ implies decay by summability of squared transition masses. In the recurrent case
 meeting-time coupling makes every fixed time shift asymptotically indistinguishable.
 The uniform occupation bound and the occupation strong law then force pointwise decay.
 The recurrent-square criterion is also exposed with a zero Cesàro return-mass hypothesis,
-without countability or an aperiodicity assumption on the original kernel.
+without an aperiodicity assumption on the original kernel.
 
 Only singleton convergence is asserted, not convergence in total variation to zero.
 The infinite-mean decay theorem transfers to arbitrary realizations of the chain through
@@ -72,16 +72,17 @@ theorem tendsto_pow_comp_real_singleton_of_parallelComp_isRecurrent
     (fun _ => measureReal_nonneg) hshift hb
     (fun n k _ => κ.sum_range_pow_comp_real_singleton_div_le ν y n k)
 
-/-- **Pointwise decay at an infinite-mean state.** For a countable-state irreducible
+/-- **Pointwise decay at an infinite-mean state.** For an irreducible
 aperiodic Markov kernel, if the expected first positive return time to `y` is infinite,
 then the time-`n` mass of `{y}` tends to zero from every initial probability law `ν`.
 The mean assigns infinity to nonreturn, so no recurrence assumption is needed. -/
 theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top
-    [Countable α] [IsIrreducible Measure.count κ] (hκ : κ.IsAperiodic) {y : α}
+    [IsIrreducible Measure.count κ] (hκ : κ.IsAperiodic) {y : α}
     (hy : (∫⁻ x, (hittingAfter (fun n x => x n) {y} 1 x).recTopCoe ⊤
       (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (Measure.dirac y) κ) = ⊤)
     (ν : Measure α) [IsProbabilityMeasure ν] :
     Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
+  have := countable_of_isIrreducible_count (κ := κ)
   by_cases hr : (κ ∥ₖ κ).IsRecurrent (y, y)
   · let := hκ.isIrreducible_parallelComp hκ
     have hm : κ.meanReturnTime y = ⊤ := by
@@ -100,10 +101,10 @@ end ProbabilityTheory.Kernel
 
 namespace ProbabilityTheory.HasLaw
 
-/-- On any realization of an irreducible aperiodic countable-state chain, the probability
+/-- On any realization of an irreducible aperiodic chain, the probability
 of occupying an infinite-mean state tends to zero. -/
 theorem tendsto_measureReal_apply_eq_of_isAperiodic_of_lintegral_return_eq_top
-    {α Ω : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [Countable α]
+    {α Ω : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
     [MeasurableSpace Ω] {κ : Kernel α α} [IsMarkovKernel κ]
     [Kernel.IsIrreducible Measure.count κ] {ν : Measure α} [IsProbabilityMeasure ν]
     {P : Measure Ω} {X : ℕ → Ω → α}

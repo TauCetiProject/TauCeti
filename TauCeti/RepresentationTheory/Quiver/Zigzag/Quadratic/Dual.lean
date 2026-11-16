@@ -250,11 +250,9 @@ theorem quadraticZigzagPresentationEquivZigzagQuotient_mk (hconn : G.Connected)
 
 section Orthogonal
 
-variable [∀ v : V, Fintype (G.neighborSet v)]
-
 omit [Finite V] in
 /-- Indexing the signless relators by the graph vertices names the same family. -/
-private theorem range_signlessPreprojectiveRelator_eq :
+private theorem range_signlessPreprojectiveRelator_eq [∀ v : V, Fintype (G.neighborSet v)] :
     (Set.range fun v : DoubledQuiver G => signlessPreprojectiveRelator k v) =
       Set.range fun v : V => signlessPreprojectiveRelator k (vertex G v) := by
   refine Set.eq_of_subset_of_subset ?_ ?_
@@ -264,7 +262,7 @@ private theorem range_signlessPreprojectiveRelator_eq :
   · rintro _ ⟨w, rfl⟩
     exact ⟨vertex G w, signlessPreprojectiveRelator_congr k (vertex G w) _ _⟩
 
-omit [Finite V] [∀ v : V, Fintype (G.neighborSet v)] in
+omit [Finite V] in
 /-- A coordinate of an element orthogonal to the quadratic relators on a length-two path which
 is not a loop vanishes. -/
 private theorem repr_eq_zero_of_mem_quadraticOrthogonal {f : pathAlgebra k (DoubledQuiver G)}
@@ -275,7 +273,7 @@ private theorem repr_eq_zero_of_mem_quadraticOrthogonal {f : pathAlgebra k (Doub
   simpa only [pathPairing_apply_ofPath] using
     hf.2 _ (IsQuadraticZigzagRelator.nonreturn p hp hab)
 
-omit [Finite V] [∀ v : V, Fintype (G.neighborSet v)] in
+omit [Finite V] in
 /-- The coordinates of an element orthogonal to the quadratic relators on the backtracks based
 at one vertex agree. -/
 private theorem repr_backtrackPath_eq_of_mem_quadraticOrthogonal
@@ -290,6 +288,8 @@ private theorem repr_backtrackPath_eq_of_mem_quadraticOrthogonal
   simpa only [map_sub, pathPairing_apply_ofPath, sub_eq_zero] using
     hf.2 _ (IsQuadraticZigzagRelator.equal_backtracks (backtrackPath G h)
       (backtrackPath G h') (length_backtrackPath G h) (length_backtrackPath G h'))
+
+variable [∀ v : V, Fintype (G.neighborSet v)]
 
 /-- An element orthogonal to the quadratic zigzag relations is a combination of the signless
 relators. -/
@@ -374,6 +374,8 @@ end Orthogonal
 
 section Algebra
 
+section
+
 variable [∀ v : V, Fintype (G.neighborSet v)]
 
 /-- Every signless relator is a quadratic dual relation of the zigzag algebra. -/
@@ -408,6 +410,8 @@ private theorem signlessOfOp_op_eq_zero {x : pathAlgebra k (DoubledQuiver G)}
   | add y z _ _ hy hz => rw [op_add, map_add, hy, hz, add_zero]
   | smul r y _ hy => rw [op_smul, map_smul, hy, smul_zero]
 
+end
+
 /-- Path reversal followed by the quotient map onto the quadratic dual. -/
 private noncomputable def quadraticDualOfPath :
     pathAlgebra k (DoubledQuiver G) →ₐ[k]
@@ -415,11 +419,12 @@ private noncomputable def quadraticDualOfPath :
   (quadraticDualMk k (DoubledQuiver G) (quadraticZigzagRelations k G)).comp
     (reverseOpAlgEquiv k (DoubledQuiver G)).toAlgHom
 
-omit [∀ v : V, Fintype (G.neighborSet v)] in
 private theorem quadraticDualOfPath_apply (x : pathAlgebra k (DoubledQuiver G)) :
     quadraticDualOfPath k G x =
       quadraticDualMk k (DoubledQuiver G) (quadraticZigzagRelations k G)
         (reverseOpAlgEquiv k (DoubledQuiver G) x) := (rfl)
+
+variable [∀ v : V, Fintype (G.neighborSet v)]
 
 private theorem quadraticDualOfPath_signlessPreprojectiveRelator (v : DoubledQuiver G) :
     quadraticDualOfPath k G (signlessPreprojectiveRelator k v) = 0 := by

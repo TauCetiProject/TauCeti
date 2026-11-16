@@ -77,6 +77,38 @@ lemma weightedEisensteinSeries_def (z : ℍ) :
     weightedEisensteinSeries W k z = ∑' v : Fin 2 → ℤ, W ((↑) ∘ v) * eisSummand k v z :=
   (rfl)
 
+/-- A single-residue Eisenstein series is the sum over the affine lattice `b + N ℤ²`.
+No convergence hypothesis is needed for this reindexing of the total sum. -/
+lemma weightedEisensteinSeries_single_eq_tsum [NeZero N] (b : Fin 2 → ℤ) (z : ℍ) :
+    weightedEisensteinSeries (Pi.single (((↑) : ℤ → ZMod N) ∘ b) 1) k z =
+      ∑' y : Fin 2 → ℤ, eisSummand k (b + N • y) z := by
+  classical
+  have hN : (N : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  have hinj : Function.Injective (fun y : Fin 2 → ℤ ↦ b + N • y) := by
+    intro y y' h
+    ext i
+    have hi := congrFun h i
+    simpa only [Pi.add_apply, Pi.smul_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply,
+      add_right_inj, mul_right_inj' hN] using hi
+  have hres (y : Fin 2 → ℤ) :
+      ((↑) : ℤ → ZMod N) ∘ (b + N • y) = ((↑) : ℤ → ZMod N) ∘ b := by
+    ext i
+    simp
+  rw [weightedEisensteinSeries, ← hinj.tsum_eq]
+  · simp only [hres, Pi.single_eq_same, one_mul]
+  · intro v hv
+    have hvb : ((↑) : ℤ → ZMod N) ∘ v = ((↑) : ℤ → ZMod N) ∘ b := by
+      by_contra h
+      exact hv (by simp [h])
+    have hd (i : Fin 2) : (N : ℤ) ∣ v i - b i := by
+      rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
+      simpa using sub_eq_zero.mpr (congrFun hvb i)
+    refine ⟨fun i ↦ (v i - b i) / N, ?_⟩
+    ext i
+    simp only [Pi.add_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply]
+    rw [mul_comm, Int.ediv_mul_cancel (hd i)]
+    ring
+
 /-- The series is linear in the weight: scalar multiples. -/
 lemma weightedEisensteinSeries_smul (c : ℂ) :
     weightedEisensteinSeries (c • W) k = c • weightedEisensteinSeries W k := by

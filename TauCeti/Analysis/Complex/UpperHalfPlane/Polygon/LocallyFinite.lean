@@ -61,7 +61,7 @@ finite polygon tessellations. -/
 theorem discreteTopology_of_locallyFinite_smul_carrier
     (hlocal : LocallyFinite fun γ : Γ ↦ (γ : PSL(2, ℝ)) • P.carrier) :
     DiscreteTopology Γ :=
-  TauCeti.discreteTopology_of_locallyFinite_smul
+  TauCeti.discreteTopology_of_locallyFinite_smul (fun _ ↦ by fun_prop)
     ⟨P.vertex 0, P.vertex_mem_carrier 0⟩ hlocal
 
 variable [ProperlyDiscontinuousSMul Γ ℍ]

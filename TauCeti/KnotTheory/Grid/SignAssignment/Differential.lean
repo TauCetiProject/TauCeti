@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Differential.Square.Zero
 public import TauCeti.KnotTheory.Grid.SignAssignment.Basic
+public import TauCeti.LinearAlgebra.Finsupp.SignReversal
 
 /-!
 # The signed unblocked grid complex
@@ -24,8 +25,9 @@ counted at all, so the annulus rules are not needed here.
 
 In characteristic two every sign is `1`, and the signed differential is the unblocked differential
 `TauCeti.GridDiagram.unblockedDifferential`. Changing the sign assignment by a gauge `f`
-conjugates the signed differential by the diagonal automorphism `x ↦ f(x) x` of `GC⁻`, so the
-signed complexes of gauge-equivalent sign assignments are isomorphic.
+conjugates the signed differential by the diagonal automorphism `x ↦ f(x) x` of `GC⁻`, the sign
+change `Finsupp.signEquiv` by `f`, so the signed complexes of gauge-equivalent sign assignments are
+isomorphic.
 
 ## Main definitions
 
@@ -39,7 +41,7 @@ signed complexes of gauge-equivalent sign assignments are isomorphic.
 * `TauCeti.GridDiagram.signedUnblockedDifferential_eq_unblockedDifferential`: in characteristic
   two the signed differential is the unblocked differential.
 * `TauCeti.GridDiagram.signedUnblockedDifferential_gauge`: a gauge transform of the sign
-  assignment conjugates the signed differential by `TauCeti.GridChain.gaugeEquiv`.
+  assignment conjugates the signed differential by the sign change `Finsupp.signEquiv`.
 
 ## References
 
@@ -158,7 +160,7 @@ theorem sum_signedUnblockedCoefficient_mul_signedUnblockedCoefficient_eq_zero
     · rw [he] at h₂
       exact absurd h₂ (Finset.notMem_empty _)
   refine G.sum_unblockedDecompositions_eq_zero hzx _ (fun D hD h => ?_)
-    (fun D hD hone hfirst hsecond => ?_)
+    (fun D _ hone hfirst hsecond => ?_)
   · obtain ⟨h₁, h₂⟩ := hmem D hD
     refine hcancel D _ (S.signOf_mul_signOf_eq_neg h₁ h₂ (D.isEmpty_commute_first h h₁ h₂)
       (D.isEmpty_commute_second h h₁ h₂) (D.commute_ne h) ?_)
@@ -210,18 +212,19 @@ theorem signedUnblockedCoefficient_gauge (f : GridState n → ℤˣ) (x y : Grid
   refine Finset.sum_congr rfl fun r hr => ?_
   rw [S.signOf_gauge f (G.isEmpty_of_mem_unblockedRectangles hr), Units.val_mul, mul_smul]
 
-/-- A gauge transform of the sign assignment conjugates the signed differential by the gauge
-automorphism of `GC⁻`. In particular the signed complexes of gauge-equivalent sign assignments are
-isomorphic. -/
+/-- A gauge transform of the sign assignment by `f` conjugates the signed differential by the
+diagonal automorphism of `GC⁻` multiplying the generator of each grid state `x` by `f x`. In
+particular the signed complexes of gauge-equivalent sign assignments are isomorphic. -/
 theorem signedUnblockedDifferential_gauge (f : GridState n → ℤˣ) :
     G.signedUnblockedDifferential (S.gauge f) R =
-      (GridChain.gaugeEquiv R f).toLinearMap ∘ₗ G.signedUnblockedDifferential S R ∘ₗ
-        (GridChain.gaugeEquiv R f).toLinearMap := by
+      (Finsupp.signEquiv (MvPolynomial (Fin n) R) f).toLinearMap ∘ₗ
+        G.signedUnblockedDifferential S R ∘ₗ
+          (Finsupp.signEquiv (MvPolynomial (Fin n) R) f).toLinearMap := by
   refine Finsupp.lhom_ext' fun x => LinearMap.ext_ring (Finsupp.ext fun y => ?_)
   simp only [LinearMap.comp_apply, Finsupp.lsingle_apply, LinearEquiv.coe_coe,
-    GridChain.gaugeEquiv_single]
+    Finsupp.signEquiv_single]
   rw [signedUnblockedDifferential_single_apply, signedUnblockedCoefficient_gauge,
-    GridChain.gaugeEquiv_apply_apply]
+    Finsupp.signEquiv_apply]
   simp only [signedUnblockedDifferential_apply_apply, Finsupp.sum_single_index, zero_mul,
     zsmul_eq_mul, Units.val_mul, Int.cast_mul]
   ring

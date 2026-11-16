@@ -104,7 +104,7 @@ private theorem exists_partialDiffeomorph_fix_image_zeroSection {N : Type*}
     rw [extDeriv_pullback ((hη.contDiffAt (hW.mem_nhds (hΘW hz))).differentiableAt
       (lt_of_lt_of_le zero_lt_one hr1).ne') (hΘ.contDiffAt (Θ.open_source.mem_nhds hz))
       (by simpa using hr2), hdη _ (hΘW hz)]
-    ext v
+    ext _
     simp
   have htanpb (q : E') (hq : (q, (0 : N)) ∈ Θ.source) :
       (pb ω₁ (q, 0)).compContinuousLinearMap (.inl ℝ E' N) =

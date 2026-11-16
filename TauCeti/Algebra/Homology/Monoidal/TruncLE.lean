@@ -207,7 +207,7 @@ noncomputable def truncLE'Unit :
     (mkHomFromSingle ((singleObjXIsoOfEq (up ℤ) 0 (𝟙_ (ModuleCat.{v} R)) (-((0 : ℕ) : ℤ))
       (by simp)).inv ≫ ((𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)).restrictionXIso embeddingDownNat
         (embeddingDownNat_f 0)).inv) (fun k hk => by simp at hk))
-    (fun i hi i' hi' j' => by
+    (fun i _ i' hi' j' => by
       -- The unit complex is a single complex, whose differentials vanish.
       have hd : (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)).d i' j' = 0 := single_obj_d _ _ _ _ _
       rw [hd, comp_zero, comp_zero])
@@ -232,7 +232,6 @@ private lemma truncLE'TensorHom_naturality {K' L' : CochainComplex (ModuleCat.{v
   refine HomologicalComplex.hom_ext _ _ (fun n => ?_)
   rw [← cancel_mono ((K' ⊗ L').truncLE'ToX n)]
   refine mapBifunctor.hom_ext (fun p q h => ?_)
-  have h' : p + q = n := h
   simp only [comp_f, Category.assoc, truncLE'Map_f_truncLE'ToX, tensorHom_eq_mapBifunctorMap]
   rw [ι_tensorHom_assoc, ι_truncLE'TensorHom_f_truncLE'ToX, ι_truncLE'TensorHom_f_truncLE'ToX_assoc,
     ι_tensorHom, tensorHom_comp_tensorHom_assoc, truncLE'Map_f_truncLE'ToX,

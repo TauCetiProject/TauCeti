@@ -24,9 +24,8 @@ computations.
 
 ## References
 
-This advances the computation acceptance criteria in
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md` and Lane G.4. The conventions follow
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 3.3 and 4.
+The conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 3.3
+and 4.
 -/
 
 public section

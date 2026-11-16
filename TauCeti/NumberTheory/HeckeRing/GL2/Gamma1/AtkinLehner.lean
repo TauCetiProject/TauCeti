@@ -151,7 +151,6 @@ private lemma atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset_of_primitive
     exact hxdet
   obtain ⟨m, hm⟩ : ∃ m : ℕ, A.det = (m : ℤ) :=
     ⟨A.det.natAbs, (Int.natAbs_of_nonneg hA_det_pos.le).symm⟩
-  have hm_pos : 0 < m := by exact_mod_cast hm ▸ hA_det_pos
   have hdet_m : (x : Matrix (Fin 2) (Fin 2) ℚ).det = (m : ℚ) := by
     rw [hA, ← Int.cast_det A, hm]
     norm_cast
@@ -171,9 +170,9 @@ private lemma atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset_of_primitive
   have hσ₀ : mapGL ℚ (σ : SL(2, ℤ)) ∈ (Gamma0 N).map (mapGL ℚ) :=
     Subgroup.mem_map_of_mem _ σ.2
   -- left multiplication by `σ` lands both in the `Γ₁(N)` double coset of `diag(1, m)`
-  have hσx := mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hm_pos hσ₀ hσ00 hA rfl
+  have hσx := mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hσ₀ hσ00 hA rfl
     ⟨c, hc⟩ hx₀
-  have hσbar := mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hm_pos hσ₀ hσ00
+  have hσbar := mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hσ₀ hσ00
     (atkinLehnerAntiInvolution_bar_val N hx A hA c hc) (by simp) ⟨A 0 1, by simp⟩ hbar₀
   rw [← doubleCoset_eq_of_mem hσx] at hσbar
   -- cancel `σ`, which normalizes `Γ₁(N)`

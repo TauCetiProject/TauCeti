@@ -39,7 +39,7 @@ open Filter Finset Topology
 namespace TauCeti
 
 variable {ι R : Type*} [DecidableEq ι]
-  [SeminormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+  [SeminormedCommRing R] [IsUltrametricDist R]
 
 /-- Fredholm coefficients are Lipschitz on entrywise bounded sets whenever the defining
 principal-minor sums converge. In particular, over a complete coefficient ring this applies to
@@ -55,7 +55,7 @@ theorem norm_charCoeff_sub_le {A B : Matrix ι ι R} {n : ℕ} {M ε : ℝ}
       ∑' s : {s : Finset ι // s.card = n}, B.principalMinor s‖ ≤ ε * M ^ (n - 1) := by
     refine le_of_tendsto' (hAs.hasSum.sub hBs.hasSum).norm fun t ↦ ?_
     exact IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun s _ ↦ by
-      simpa only [s.2] using norm_principalMinor_sub_le (s := s.1) hM hε hA hB hAB
+      simpa only [s.2] using norm_principalMinor_sub_le (s := s.1) hε hA hB hAB
   rw [Matrix.charCoeff_def, Matrix.charCoeff_def, ← mul_sub]
   rcases neg_one_pow_eq_or R n with hn | hn <;> simpa only [hn, one_mul, neg_one_mul,
     norm_neg] using hsum

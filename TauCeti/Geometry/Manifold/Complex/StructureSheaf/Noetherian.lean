@@ -133,11 +133,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 without boundary is a Noetherian ring. -/
 instance stalkIsNoetherianRing (x : X) :
     IsNoetherianRing ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
-  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  refine @isNoetherianRing_of_ringEquiv _ _ _ _
-    (stalkEquivModelSpace (I := I) (V := Fin (finrank ℂ E) → ℂ) x
-      (ContinuousLinearEquiv.ofFinrankEq (by simp))).symm ?_
-  exact isNoetherianRing_stalk_of_finrank_eq _ (Fin (finrank ℂ E) → ℂ) rfl _
+  obtain ⟨V, _, _, _, v, -, ⟨φ⟩⟩ := exists_ringEquiv_stalk_modelSpace (I := I) x
+  have := isNoetherianRing_stalk_of_finrank_eq _ V rfl v
+  exact isNoetherianRing_of_ringEquiv _ φ
 
 /-- A stalk of Mathlib's complex-smooth structure sheaf on a finite-dimensional complex manifold
 without boundary is a Noetherian ring, via its comparison with holomorphic germs. -/

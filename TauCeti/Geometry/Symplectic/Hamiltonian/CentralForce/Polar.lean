@@ -13,6 +13,7 @@ public import Mathlib.Analysis.SpecialFunctions.PolarCoord
 public import Mathlib.Geometry.Euclidean.Angle.Oriented.Basic
 
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+import TauCeti.Analysis.InnerProductSpace.TwoDim
 
 /-!
 # Polar canonical coordinates for planar central forces
@@ -451,14 +452,9 @@ Mathlib's oriented angle from `b₀` to `q` for the orientation of `b`. -/
 theorem polarAngle_eq_oangle [Fact (Module.finrank ℝ V = 2)] (b : OrthonormalBasis (Fin 2) ℝ V)
     (q : V) : polarAngle (b 0) (b 1) q = b.toBasis.orientation.oangle (b 0) q := by
   set e := Complex.isometryOfOrthonormal b
-  have he : Orientation.map (Fin 2) e.symm.toLinearEquiv b.toBasis.orientation =
-      Complex.orientation := by
-    rw [← Module.Basis.orientation_map, Complex.orientation]
-    congr 1
-    ext i
-    fin_cases i <;>
-      simp [e, Complex.isometryOfOrthonormal_symm_apply_eq_mk, Complex.ext_iff, b.inner_eq_ite]
-  rw [Orientation.oangle_map_complex _ e.symm he, polarAngle_eq_arg_isometryOfOrthonormal_symm]
+  rw [Orientation.oangle_map_complex _ e.symm
+      (Complex.map_isometryOfOrthonormal_symm_orientation b),
+    polarAngle_eq_arg_isometryOfOrthonormal_symm]
   congr 2
   simp [e, Complex.isometryOfOrthonormal_symm_apply_eq_mk, Complex.ext_iff, b.inner_eq_ite]
 

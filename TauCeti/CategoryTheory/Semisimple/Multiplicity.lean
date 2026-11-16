@@ -90,7 +90,7 @@ def simpleMultiplicities (X : C) : SimpleClasses C →₀ ℕ :=
 
 /-- Any finite decomposition into simple objects computes the simple multiplicities. -/
 theorem simpleMultiplicities_eq_of_iso_biproduct {ι : Type} [Fintype ι]
-    (f : ι → C) [hf : ∀ i, Simple (f i)] {X : C} (e : X ≅ ⨁ f) :
+    (f : ι → C) [∀ i, Simple (f i)] {X : C} (e : X ≅ ⨁ f) :
     simpleMultiplicities X = ∑ i, Finsupp.single (SimpleClasses.classOf (f i)) 1 :=
   (exists_simpleMultiplicities X).choose_spec ι f e
 

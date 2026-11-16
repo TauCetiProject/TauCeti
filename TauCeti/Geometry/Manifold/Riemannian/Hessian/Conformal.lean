@@ -109,7 +109,7 @@ correction has coefficient `p / (2 a)`. In particular `p = 4 / (dim M - 2)` give
 Yamabe rescaling coefficient `2 / ((dim M - 2) a)`. -/
 theorem hessian_rescale_rpow
     (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (hn : 1 ≤ n)
-    {a : M → ℝ} (ha : ContMDiff I 𝓘(ℝ) n a) (ha_pos : ∀ x, 0 < a x) (p : ℝ)
+    {a : M → ℝ} (ha_pos : ∀ x, 0 < a x) (p : ℝ)
     {hf : ContMDiff I 𝓘(ℝ) n fun x ↦ a x ^ p} {hf_pos : ∀ x, 0 < a x ^ p}
     {u : M → ℝ} {x : M} (hu : ContMDiffAt I 𝓘(ℝ) 2 u x) (v w : TangentSpace I x) :
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
@@ -128,7 +128,20 @@ theorem hessian_rescale_rpow
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.of_le hn
-  rw [conformalConnectionTensor_rpow (ha.mdifferentiableAt (one_pos.trans_le hn).ne') (ha_pos x)]
+  have hT : conformalConnectionTensor I (fun y ↦ a y ^ p) x =
+      p • conformalConnectionTensor I a x := by
+    by_cases hp : p = 0
+    · ext v w
+      simp [hp, conformalConnectionTensor_apply, mvfderiv_const, mgradient_const]
+    · have hfx : MDiffAt (fun y ↦ a y ^ p) x := hf.mdifferentiableAt (one_pos.trans_le hn).ne'
+      have hinv : DifferentiableAt ℝ (fun t : ℝ ↦ t ^ p⁻¹) (a x ^ p) :=
+        (Real.hasDerivAt_rpow_const
+          (Or.inl (Real.rpow_pos_of_pos (ha_pos x) p).ne')).differentiableAt
+      refine conformalConnectionTensor_rpow ?_ (ha_pos x) p
+      convert hinv.comp_mdifferentiableAt (f := fun y ↦ a y ^ p) hfx using 1
+      funext y
+      simp [← Real.rpow_mul (ha_pos y).le, hp]
+  rw [hT]
   simp only [smul_apply, conformalConnectionTensor_apply, map_smul, map_sub, map_add, smul_eq_mul]
   rw [← inner_mgradient (f := u) (mgradient I a x),
     real_inner_comm (mgradient I u x), real_inner_comm w v]

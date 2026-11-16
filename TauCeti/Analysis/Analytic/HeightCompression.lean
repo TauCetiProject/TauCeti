@@ -492,9 +492,9 @@ theorem exists_analyticOnNhd_sqrt_sq_sub_one_lt_mul {ι : Type*} {Δ : ι → Se
   have hpos (t : ℝ) : 0 < h t := (le_max_left _ _).trans_lt (hh t)
   refine ⟨h, hha, hpos, fun t ↦ ?_, fun i ↦ ⟨fun t ht ↦ (hΔh i t ht).1, ?_⟩⟩
   · exact (div_lt_iff₀ (hγ0 t)).1 ((le_max_right _ _).trans_lt (hh t))
-  · refine (hΔc i).lipschitzOnWith_of_nnnorm_deriv_le
+  · refine (hΔc i).lipschitzOnWith_of_nnNorm_deriv_le
       (fun t _ ↦ (hha t (mem_univ t)).differentiableAt) fun t ht ↦ ?_
-    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs]
     exact (hΔh i t ht).2.le
 
 end scalingFunction

@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Basic
 public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
-import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
 /-!
 # Linear cohomology comparison for closed immersions

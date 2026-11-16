@@ -52,8 +52,7 @@ attribute [local instance] ImmersedLieSubgroupData.group
   ImmersedLieSubgroupData.topologicalSpace ImmersedLieSubgroupData.normedAddCommGroup
   ImmersedLieSubgroupData.normedSpace ImmersedLieSubgroupData.finiteDimensional
   ImmersedLieSubgroupData.modelTopology ImmersedLieSubgroupData.chartedSpace
-  ImmersedLieSubgroupData.isManifold ImmersedLieSubgroupData.lieGroup
-  ImmersedLieSubgroupData.connectedSpace
+  ImmersedLieSubgroupData.lieGroup ImmersedLieSubgroupData.connectedSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}

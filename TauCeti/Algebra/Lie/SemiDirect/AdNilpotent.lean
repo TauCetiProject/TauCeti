@@ -38,14 +38,14 @@ dimension, or characteristic zero is required.
 
 public section
 
-namespace TauCeti
-
 variable {R I H : Type*} [CommRing R] [LieRing I] [LieAlgebra R I]
   [LieRing H] [LieAlgebra R H] {ψ : H →ₗ⁅R⁆ LieDerivation R I I}
 
+namespace LieAlgebra.SemiDirectSum
+
 /-- The right component of an adjoint-nilpotent element of a semidirect sum is
 adjoint-nilpotent in the right factor. -/
-theorem _root_.LieAlgebra.SemiDirectSum.isNilpotent_ad_right (x : I ⋊⁅ψ⁆ H)
+theorem isNilpotent_ad_right (x : I ⋊⁅ψ⁆ H)
     (hx : IsNilpotent (LieAlgebra.ad R (I ⋊⁅ψ⁆ H) x)) :
     IsNilpotent (LieAlgebra.ad R H x.right) := by
   simpa only [LieAlgebra.SemiDirectSum.projr_mk] using
@@ -54,7 +54,7 @@ theorem _root_.LieAlgebra.SemiDirectSum.isNilpotent_ad_right (x : I ⋊⁅ψ⁆ 
 
 /-- If a complementary element has nilpotent adjoint action on a semidirect sum, its defining
 derivation on the ideal is nilpotent. No finiteness assumption is required. -/
-theorem _root_.LieAlgebra.SemiDirectSum.isNilpotent_derivation_of_isNilpotent_ad_inr
+theorem isNilpotent_derivation_of_isNilpotent_ad_inr
     (ψ : H →ₗ⁅R⁆ LieDerivation R I I) (h : H)
     (hh : IsNilpotent (LieAlgebra.ad R (I ⋊⁅ψ⁆ H) (LieAlgebra.SemiDirectSum.inr ψ h))) :
     IsNilpotent (ψ h).toLinearMap := by
@@ -70,6 +70,10 @@ theorem _root_.LieAlgebra.SemiDirectSum.isNilpotent_derivation_of_isNilpotent_ad
   simpa only [← pow_apply_eq_iterate, hn, LinearMap.zero_apply, map_zero] using
     hcomm.iterate_right n s
 
+end LieAlgebra.SemiDirectSum
+
+namespace LieIdeal
+
 variable {L : Type*} [LieRing L] [LieAlgebra R L]
 
 /-- For an ideal and a complementary Lie subalgebra, adjoint nilpotence of the sum of two
@@ -77,7 +81,7 @@ components implies adjoint nilpotence of the subalgebra component on that subalg
 
 Taking the ideal to be the solvable radical and the subalgebra to be a Levi complement gives
 the projection step in the nilpotence argument for the semisimple component. -/
-theorem _root_.LieIdeal.isNilpotent_ad_right_of_isCompl (J : LieIdeal R L)
+theorem isNilpotent_ad_right_of_isCompl (J : LieIdeal R L)
     (S : LieSubalgebra R L) (h : IsCompl J.toSubmodule S.toSubmodule) (i : J) (s : S)
     (hx : IsNilpotent (LieAlgebra.ad R L ((i : L) + (s : L)))) :
     IsNilpotent (LieAlgebra.ad R S s) := by
@@ -90,4 +94,4 @@ theorem _root_.LieIdeal.isNilpotent_ad_right_of_isCompl (J : LieIdeal R L)
   simpa only [hs] using
     LieAlgebra.SemiDirectSum.isNilpotent_ad_right _ he
 
-end TauCeti
+end LieIdeal

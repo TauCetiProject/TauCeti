@@ -88,7 +88,7 @@ theorem exists_norm_lt_and_forall_apply_eq (φ : StrongDual 𝕜 (StrongDual �
   -- The vector of values lies in the range of `T`, which is closed in finite dimension.
   let R := LinearMap.range (T : E →ₗ[𝕜] ι → 𝕜)
   have hc : c ∈ R := by
-    refine (Submodule.closed_of_finiteDimensional R).closure_subset
+    refine (Submodule.isClosed_of_finiteDimensional R).closure_subset
       (Metric.mem_closure_iff.2 fun δ hδ ↦ ?_)
     obtain ⟨x, -, hx⟩ := happrox δ hδ
     exact ⟨T x, LinearMap.mem_range_self _ x, by rwa [dist_comm, dist_eq_norm]⟩

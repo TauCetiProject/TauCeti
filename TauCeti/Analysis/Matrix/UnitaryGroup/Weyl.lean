@@ -180,7 +180,7 @@ noncomputable def unitaryTorusNormalizerQuotientMulEquivPerm :
       (unitaryTorusNormalizerPerm_eq_one_iff g).mpr)
     ⟨(Subgroup.normalizerQuotientLift_injective_iff _ _ _).mpr
         unitaryTorusNormalizerPerm_eq_one_iff,
-      Subgroup.normalizerQuotientLift_surjective_of_surjective _ _ _
+      (Subgroup.normalizerQuotientLift_surjective_iff _ _ _).mpr
         unitaryTorusNormalizerPerm_surjective⟩
 
 /-- The Weyl-group equivalence sends the class of a normalizer element to its coordinate

@@ -34,14 +34,17 @@ namespace LinearEquiv
 
 universe u v w z
 
-variable {k : Type u} [CommSemiring k] {A : Type v} [Semiring A] [SMul k A]
+variable {k : Type u} [CommSemiring k] {A : Type v} [Semiring A]
   {N : Type w} [AddCommMonoid N] [Module Aᵐᵒᵖ N] [Module k N]
-  [IsScalarTower k Aᵐᵒᵖ N]
   {Q : Type z} [AddCommMonoid Q] [Module A Q] [Module k Q]
   (e : Q ≃ₗ[k] Module.Dual k N)
   (he : ∀ (a : A) (q : Q) (x : N), e (a • q) x = e q (MulOpposite.op a • x))
 
 include he
+
+section RingHom
+
+variable [LinearMap.CompatibleSMul N N k Aᵐᵒᵖ]
 
 /-- Transposition along an equivariant identification with the scalar dual reverses
 multiplication of endomorphisms. No reflexivity assumption is needed for this map. -/
@@ -63,7 +66,9 @@ theorem dualEndRingHom_apply_apply (f : (Module.End Aᵐᵒᵖ N)ᵐᵒᵖ) (q :
     e (e.dualEndRingHom he f q) x = e q (f.unop x) := by
   simp [dualEndRingHom]
 
-variable [Module.IsReflexive k N]
+end RingHom
+
+variable [SMul k A] [IsScalarTower k Aᵐᵒᵖ N] [Module.IsReflexive k N]
 
 /-- Over a reflexive scalar module, every endomorphism of the left dual is the transpose
 of a unique right-module endomorphism. -/
@@ -131,62 +136,33 @@ variable (R : Type u) [CommSemiring R] (M : Type v) [AddCommMonoid M] [Module R 
 /-- Scalar duality identifies the opposite endomorphism algebra of a reflexive module with the
 endomorphism algebra of its dual. -/
 noncomputable def dualEndAlgEquiv :
-    (Module.End R M)ᵐᵒᵖ ≃ₐ[R] Module.End R (Module.Dual R M) := by
-  letI : Module Rᵐᵒᵖ M :=
-    Module.compHom M ((RingHom.id R).fromOpposite fun _ _ ↦ Commute.all _ _)
-  -- The action just installed is `s • x = s.unop • x`. This is the definition of
-  -- `Module.compHom` along `RingHom.fromOpposite`, for which Mathlib has no `Module` rewrite lemma;
-  -- the steps below rewrite with this named equation instead of unfolding the action.
-  have hop (s : Rᵐᵒᵖ) (x : M) : s • x = s.unop • x := rfl
-  letI : IsScalarTower R Rᵐᵒᵖ M :=
-    ⟨fun r s x ↦ by simp only [hop, MulOpposite.unop_smul, smul_assoc]⟩
-  let c : Module.End R M ≃+* Module.End Rᵐᵒᵖ M :=
-    { toFun := fun g =>
-        { toFun := g
-          map_add' := g.map_add
-          map_smul' := fun r x => by simp only [hop, map_smul, RingHom.id_apply] }
-      invFun := fun g =>
-        { toFun := g
-          map_add' := g.map_add
-          map_smul' := fun r x => by
-            simpa only [hop, MulOpposite.unop_op, RingHom.id_apply] using
-              g.map_smul (MulOpposite.op r) x }
-      left_inv := fun _ => rfl
-      right_inv := fun _ => rfl
-      map_mul' := fun _ _ => rfl
-      map_add' := fun _ _ => rfl }
-  -- By construction, `c` keeps the underlying function of an endomorphism.
-  have hc (g : Module.End R M) (x : M) : c g x = g x := rfl
-  have heval (r : R) (φ : Module.Dual R M) (x : M) :
-      (LinearEquiv.refl R (Module.Dual R M)) (r • φ) x =
-        (LinearEquiv.refl R (Module.Dual R M)) φ (MulOpposite.op r • x) := by
-    simp only [LinearEquiv.refl_apply, LinearMap.smul_apply, hop, MulOpposite.unop_op, map_smul]
-  let d : (Module.End Rᵐᵒᵖ M)ᵐᵒᵖ ≃+* Module.End R (Module.Dual R M) :=
-    (LinearEquiv.refl R (Module.Dual R M)).dualEndRingEquiv heval
-  let e := (RingEquiv.op c).trans d
-  refine AlgEquiv.ofRingEquiv (f := e) fun r ↦ ?_
-  ext φ x
-  have hd := (LinearEquiv.refl R (Module.Dual R M)).dualEndRingEquiv_apply_apply heval
-    (MulOpposite.op (c (algebraMap R (Module.End R M) r))) φ x
-  simp only [LinearEquiv.refl_apply, MulOpposite.unop_op, hc] at hd
-  simp only [e, d, RingEquiv.trans_apply, MulOpposite.algebraMap_apply, RingEquiv.op_apply_apply,
-    MulOpposite.unop_op, hd, Module.algebraMap_end_apply, map_smul, LinearMap.smul_apply]
+    (Module.End R M)ᵐᵒᵖ ≃ₐ[R] Module.End R (Module.Dual R M) where
+  toFun g := g.unop.dualMap
+  invFun g := .op ((evalEquiv R M).symm.conj g.dualMap)
+  left_inv g := by
+    apply MulOpposite.unop_injective
+    ext x
+    apply (evalEquiv R M).injective
+    ext φ
+    simp
+  right_inv g := by
+    ext φ x
+    simp
+  map_mul' f g := by ext; simp
+  map_add' f g := by ext; simp
+  commutes' r := by ext; simp
 
 /-- Under scalar duality, an endomorphism acts on the dual by precomposition. -/
 @[simp] theorem dualEndAlgEquiv_apply (g : (Module.End R M)ᵐᵒᵖ) :
-    dualEndAlgEquiv R M g = g.unop.dualMap := by
-  rw [dualEndAlgEquiv]
-  rfl
+    dualEndAlgEquiv R M g = g.unop.dualMap :=
+  (rfl)
 
 /-- The inverse scalar-duality equivalence is characterized by moving an endomorphism across the
 evaluation pairing. -/
 @[simp] theorem dualEndAlgEquiv_symm_apply_apply (g : Module.End R (Module.Dual R M))
     (φ : Module.Dual R M) (x : M) :
     φ (((dualEndAlgEquiv R M).symm g).unop x) = g φ x := by
-  have h := congrArg (fun f : Module.End R (Module.Dual R M) ↦ f φ x)
-    ((dualEndAlgEquiv R M).apply_symm_apply g)
-  rw [dualEndAlgEquiv_apply] at h
-  exact h
+  simp [dualEndAlgEquiv]
 
 /-- The inverse scalar-duality equivalence sends a dual map back to its original endomorphism. -/
 @[simp] theorem dualEndAlgEquiv_symm_dualMap (g : Module.End R M) :

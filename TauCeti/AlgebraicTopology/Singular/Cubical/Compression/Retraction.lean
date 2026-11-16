@@ -29,10 +29,11 @@ inclusion `A → X` induces a chain homotopy equivalence of normalized cubical c
   `∂ P + P ∂ = ε - id` for the end `ε` of the deformation, so the swept-cube operator
   `-D.prismChain R` is a chain homotopy `D.endHomotopy R` from the identity to `D.endChainMap R`.
   It kills the chains of `A`, whose deformations are constant.
-* For `n = ⊤`, the end of the homotopy of `c` is a cube `D.retract c` of `A`, which induces a chain
-  map `D.retractChainMap R` from the normalized cubical chains of `X` to those of `A`. As the
-  homotopy of a cube of `A` is constant, this chain map is a left inverse of the chain map induced
-  by the inclusion, on the nose, and its composite with the inclusion is `D.endChainMap R`.
+* Below dimension `n`, the end of the homotopy of `c` is a cube `D.retract hm c` of `A`. For
+  `n = ⊤` this induces a chain map `D.retractChainMap R` from the normalized cubical chains of `X`
+  to those of `A`. As the homotopy of a cube of `A` is constant, this chain map is a left inverse
+  of the chain map induced by the inclusion, on the nose, and its composite with the inclusion is
+  `D.endChainMap R`.
 
 Through the comparison of cubical and simplicial singular chains, for `n = ⊤` the inclusion of `A`
 then induces isomorphisms on singular homology with coefficients in any ring
@@ -54,8 +55,9 @@ normalized cubical chains under weak homotopy equivalences (Hatcher, Proposition
 * `TauCeti.SubspaceCubeDeformation.endChainMap`, `TauCeti.SubspaceCubeDeformation.endHomotopy`:
   the end of the deformation as an endomorphism of the normalized cubical chain complex, and the
   chain homotopy from the identity to it.
-* `TauCeti.SubspaceCubeDeformation.retract`, `TauCeti.SubspaceCubeDeformation.retractChain`: for
-  `n = ⊤`, the end of the deformation as a cube of `A`, and the induced operator on chains.
+* `TauCeti.SubspaceCubeDeformation.retract`, `TauCeti.SubspaceCubeDeformation.retractChain`: below
+  dimension `n`, the end of the deformation as a cube of `A`, and for `n = ⊤` the induced operator
+  on chains.
 * `TauCeti.SubspaceCubeDeformation.retractChainMap`,
   `TauCeti.SubspaceCubeDeformation.retractHomotopy`: the retraction as a chain map onto the
   normalized cubical chains of `A`, and the chain homotopy from the identity to its composite with
@@ -344,30 +346,33 @@ end SubspaceCubeDeformation
 
 namespace SubspaceCubeDeformation
 
-variable (D : SubspaceCubeDeformation A ⊤)
-
 /-! ### The retraction onto the cubes of `A` -/
 
-/-- The cube of `A` at the end of the deformation of the singular cube `c` of `X`. -/
-def retract {m : ℕ} (c : SingularCube X m) : SingularCube A m where
-  toFun y := ⟨D.homotopy c (1, y), D.homotopy_one_mem (ENat.natCast_lt_top m) c y⟩
+section Retract
+
+variable (D : SubspaceCubeDeformation A n)
+
+/-- Below dimension `n`, the cube of `A` at the end of the deformation of the singular cube `c` of
+`X`. -/
+def retract {m : ℕ} (hm : (m : ℕ∞) < n) (c : SingularCube X m) : SingularCube A m where
+  toFun y := ⟨D.homotopy c (1, y), D.homotopy_one_mem hm c y⟩
   continuous_toFun := by fun_prop
 
 @[simp]
-theorem coe_retract_apply {m : ℕ} (c : SingularCube X m) (y : Fin m → I) :
-    (D.retract c y : X) = D.homotopy c (1, y) :=
+theorem coe_retract_apply {m : ℕ} (hm : (m : ℕ∞) < n) (c : SingularCube X m) (y : Fin m → I) :
+    (D.retract hm c y : X) = D.homotopy c (1, y) :=
   (rfl)
 
-/-- Read in `X`, the cube `D.retract c` is the end of the deformation of `c`. -/
+/-- Read in `X`, the cube `D.retract hm c` is the end of the deformation of `c`. -/
 @[simp]
-theorem subtypeVal_comp_retract {m : ℕ} (c : SingularCube X m) :
-    (ContinuousMap.subtypeVal A).comp (D.retract c) = D.endCube c :=
+theorem subtypeVal_comp_retract {m : ℕ} (hm : (m : ℕ∞) < n) (c : SingularCube X m) :
+    (ContinuousMap.subtypeVal A).comp (D.retract hm c) = D.endCube c :=
   (rfl)
 
 /-- The deformation fixes the cubes of `A`. -/
 @[simp]
-theorem retract_subtypeVal_comp {m : ℕ} (c : SingularCube A m) :
-    D.retract ((ContinuousMap.subtypeVal A).comp c) = c := by
+theorem retract_subtypeVal_comp {m : ℕ} (hm : (m : ℕ∞) < n) (c : SingularCube A m) :
+    D.retract hm ((ContinuousMap.subtypeVal A).comp c) = c := by
   have hc : range ((ContinuousMap.subtypeVal A).comp c) ⊆ A := by
     rintro _ ⟨y, rfl⟩
     exact (c y).2
@@ -375,36 +380,41 @@ theorem retract_subtypeVal_comp {m : ℕ} (c : SingularCube A m) :
   simp [D.homotopy_of_range_subset hc]
 
 /-- The end of the deformation commutes with the faces at the endpoints of the interval. -/
-theorem face_retract {m : ℕ} (c : SingularCube X (m + 1)) (i : Fin (m + 1)) {t : I}
-    (ht : t = 0 ∨ t = 1) :
-    SingularCube.face i t (D.retract c) = D.retract (SingularCube.face i t c) := by
+theorem face_retract {m : ℕ} (hm : ((m + 1 : ℕ) : ℕ∞) < n) (c : SingularCube X (m + 1))
+    (i : Fin (m + 1)) {t : I} (ht : t = 0 ∨ t = 1) :
+    SingularCube.face i t (D.retract hm c) =
+      D.retract ((Nat.cast_le.2 m.le_succ).trans_lt hm) (SingularCube.face i t c) := by
   ext y
   simp [D.homotopy_insertNth c i ht]
 
 /-- If `c` does not depend on its coordinate `i`, then neither does the end of its
 deformation. -/
-theorem isDegenerateAt_retract {m : ℕ} {c : SingularCube X m} {i : Fin m}
-    (hc : c.IsDegenerateAt i) : (D.retract c).IsDegenerateAt i := by
+theorem isDegenerateAt_retract {m : ℕ} (hm : (m : ℕ∞) < n) {c : SingularCube X m} {i : Fin m}
+    (hc : c.IsDegenerateAt i) : (D.retract hm c).IsDegenerateAt i := by
   rw [← SingularCube.isDegenerateAt_comp_iff_of_injective (ContinuousMap.subtypeVal A)
     Subtype.val_injective, subtypeVal_comp_retract]
   exact D.isDegenerateAt_curry hc 1
 
 /-- The end of the deformation of a degenerate cube is degenerate. -/
-theorem isDegenerate_retract {m : ℕ} {c : SingularCube X m} (hc : c.IsDegenerate) :
-    (D.retract c).IsDegenerate :=
-  (SingularCube.isDegenerate_iff.1 hc).elim fun _ hi ↦ (D.isDegenerateAt_retract hi).isDegenerate
+theorem isDegenerate_retract {m : ℕ} (hm : (m : ℕ∞) < n) {c : SingularCube X m}
+    (hc : c.IsDegenerate) : (D.retract hm c).IsDegenerate :=
+  (SingularCube.isDegenerate_iff.1 hc).elim fun _ hi ↦
+    (D.isDegenerateAt_retract hm hi).isDegenerate
 
-variable (R : Type*) [Ring R]
+end Retract
+
+variable (D : SubspaceCubeDeformation A ⊤) (R : Type*) [Ring R]
 
 /-- The retraction onto the cubes of `A`, on normalized cubical chains. -/
 def retractChain (m : ℕ) : NormalizedCubicalChain X R m →ₗ[R] NormalizedCubicalChain A R m :=
-  Submodule.mapQ _ _ (lmapDomain R R D.retract) fun _ hg ↦
-    CubicalChain.lmapDomain_mem_degenerate R (fun _ ↦ D.isDegenerate_retract) hg
+  Submodule.mapQ _ _ (lmapDomain R R (D.retract (ENat.natCast_lt_top m))) fun _ hg ↦
+    CubicalChain.lmapDomain_mem_degenerate R
+      (fun _ ↦ D.isDegenerate_retract (ENat.natCast_lt_top m)) hg
 
 @[simp]
 theorem retractChain_ofCube {m : ℕ} (c : SingularCube X m) :
     D.retractChain R m (NormalizedCubicalChain.ofCube X R c) =
-      NormalizedCubicalChain.ofCube A R (D.retract c) := by
+      NormalizedCubicalChain.ofCube A R (D.retract (ENat.natCast_lt_top m) c) := by
   simp [retractChain, NormalizedCubicalChain.ofCube_def, lmapDomain_apply]
 
 /-- **The retraction is a left inverse of the inclusion** on normalized cubical chains, since the
@@ -437,7 +447,9 @@ theorem boundary_retractChain (m : ℕ) (g : NormalizedCubicalChain X R (m + 1))
   | zero => simp
   | add a b ha hb => simp [ha, hb]
   | smul r a ha => simp [ha]
-  | ofCube c => simp [D.face_retract c _ (Or.inl rfl), D.face_retract c _ (Or.inr rfl)]
+  | ofCube c =>
+    simp [D.face_retract (ENat.natCast_lt_top (m + 1)) c _ (Or.inl rfl),
+      D.face_retract (ENat.natCast_lt_top (m + 1)) c _ (Or.inr rfl)]
 
 end SubspaceCubeDeformation
 

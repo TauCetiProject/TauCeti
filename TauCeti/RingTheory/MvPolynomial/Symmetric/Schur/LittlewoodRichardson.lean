@@ -141,7 +141,6 @@ private theorem betaNumber_add_weight_stembridge (T : BoundedSSYT N μ)
   funext j
   simp only [Function.comp_apply, weight_apply, coe_stembridge, YoungDiagram.betaNumber_def]
   have hj := hcont j
-  have hjN := j.isLt
   set j' := Equiv.swap (⟨k, by omega⟩ : Fin N) ⟨k + 1, hkN⟩ j
   have hjle : (j : ℕ) ≤ N - 1 := by omega
   have hj'le : (j' : ℕ) ≤ N - 1 := by

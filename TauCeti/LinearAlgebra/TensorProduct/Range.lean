@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
+public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # Ranges after extension of scalars
@@ -14,15 +15,15 @@ If the coefficient algebra is faithfully flat, membership of a vector in the ran
 can be checked after extension of scalars.  This is the linear-algebraic descent step used when an
 equation acquires a solution after passing to a larger field.
 
-This builds on `Submodule.baseChange` from
-`Mathlib/LinearAlgebra/TensorProduct/Tower.lean` and
-`lTensor_mkQ` and `LinearMap.lTensor_range` from
-`Mathlib/LinearAlgebra/TensorProduct/RightExactness.lean`, as well as
-`Module.FaithfullyFlat.one_tmul_eq_zero_iff` from
-`Mathlib/RingTheory/Flat/FaithfullyFlat/Basic.lean`.
+Membership in a submodule is the case of a cyclic submodule in `Submodule.baseChange_le_iff` from
+`Mathlib/RingTheory/Flat/FaithfullyFlat/Basic.lean`: faithfully flat extension of scalars reflects
+inclusions of submodules.  The statement for ranges follows because extension of scalars commutes
+with ranges, `LinearMap.baseChange_range`.
 
 ## Main results
 
+* `Submodule.one_tmul_mem_baseChange_iff`: a vector belongs to a submodule exactly when its
+  canonical image belongs to the extended submodule, for a faithfully flat coefficient algebra.
 * `LinearMap.one_tmul_mem_range_baseChange_iff`: a vector belongs to a range exactly when its
   canonical image belongs to the extended range, for a faithfully flat coefficient algebra.
 -/
@@ -30,7 +31,6 @@ This builds on `Submodule.baseChange` from
 public section
 
 open TensorProduct
-open scoped TensorProduct
 
 namespace Submodule
 
@@ -46,19 +46,7 @@ canonical image belongs to the extension of that submodule. -/
 theorem one_tmul_mem_baseChange_iff [Module.FaithfullyFlat R A]
     (p : Submodule R M) (m : M) :
     (1 : A) ⊗ₜ[R] m ∈ p.baseChange A ↔ m ∈ p := by
-  constructor
-  · intro hm
-    have hzero : LinearMap.lTensor A p.mkQ ((1 : A) ⊗ₜ[R] m) = 0 := by
-      rw [← LinearMap.mem_ker, lTensor_mkQ]
-      exact hm
-    have hzero' : (1 : A) ⊗ₜ[R] p.mkQ m = 0 := by
-      simpa only [LinearMap.lTensor_tmul] using hzero
-    have : p.mkQ m = 0 :=
-      (Module.FaithfullyFlat.one_tmul_eq_zero_iff R _ (p.mkQ m)).mp hzero'
-    rw [← p.ker_mkQ]
-    exact LinearMap.mem_ker.mpr this
-  · intro hm
-    exact Submodule.tmul_mem_baseChange_of_mem 1 hm
+  simpa using baseChange_le_iff (A := A) (p := span R {m}) (q := p)
 
 end Submodule
 
@@ -78,12 +66,7 @@ and only if its canonical image belongs to the range after extension of scalars.
 theorem one_tmul_mem_range_baseChange_iff [Module.FaithfullyFlat R A]
     (f : M →ₗ[R] N) (y : N) :
     (1 : A) ⊗ₜ[R] y ∈ range (f.baseChange A) ↔ y ∈ range f := by
-  calc
-    _ ↔ (1 : A) ⊗ₜ[R] y ∈ range ((range f).subtype.baseChange A) := by
-      simpa only [mem_range, baseChange_eq_lTensor] using
-        SetLike.ext_iff.mp (lTensor_range (Q := A) (g := f)) ((1 : A) ⊗ₜ[R] y)
-    _ ↔ y ∈ range f := by
-      rw [← Submodule.baseChange, Submodule.one_tmul_mem_baseChange_iff]
+  rw [← baseChange_range, Submodule.one_tmul_mem_baseChange_iff]
 
 end Descent
 

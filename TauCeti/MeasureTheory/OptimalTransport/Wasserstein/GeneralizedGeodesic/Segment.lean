@@ -221,9 +221,9 @@ theorem IsGeneralizedGeodesicPlan.isOptimalCoupling_map [IsFiniteMeasure μ]
       rfl
   have : IsFiniteMeasure γ := ⟨by rw [← Measure.fst_univ, hγ.fst_eq]; exact measure_lt_top _ _⟩
   have hm {ν : Measure E} (h : MemLp id 2 ν) : HasFiniteMoment 2 ν :=
-    hasFiniteMoment_def.2 ⟨0, (memLp_congr_enorm aestronglyMeasurable_id
+    hasFiniteMoment_def.2 ⟨0, (memLp_congr_eNorm aestronglyMeasurable_id
       measurable_edist_right.aestronglyMeasurable
-      (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).1 h⟩
+      (.of_forall fun x ↦ by simp [eDist_eq_eNorm_sub])).1 h⟩
   have hνs : HasFiniteMoment 2 (generalizedGeodesic γ s) := hasFiniteMoment_generalizedGeodesic
     (hγ.isCoupling_snd.fst_eq ▸ hm hν₀) (hγ.isCoupling_snd.snd_eq ▸ hm hν₁) s
   have : IsFiniteMeasure (generalizedGeodesic γ s) := by

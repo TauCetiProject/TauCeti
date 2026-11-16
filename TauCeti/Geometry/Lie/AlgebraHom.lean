@@ -33,8 +33,8 @@ namespace AlgHom
 variable {A B : Type*} [NormedRing A] [NormedAlgebra ℝ A] [FiniteDimensional ℝ A]
   [NormedRing B] [NormedAlgebra ℝ B] [FiniteDimensional ℝ B]
 
-local instance : CompleteSpace A := FiniteDimensional.complete ℝ A
-local instance : CompleteSpace B := FiniteDimensional.complete ℝ B
+local instance : CompleteSpace A := FiniteDimensional.completeSpace ℝ A
+local instance : CompleteSpace B := FiniteDimensional.completeSpace ℝ B
 
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 attribute [local instance 100] LieRing.ofAssociativeRing

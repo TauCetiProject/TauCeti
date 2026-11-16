@@ -77,6 +77,21 @@ theorem plumbedPerturbation_def (Ha Hb : Puncture → ℝ → M → ℝ) (q : Pu
       else pairOfPantsPerturbation Hb w x := by
   rw [plumbedPerturbation]
 
+/-- The plumbed perturbation is additive in the Hamiltonians of the two pairs of pants. -/
+theorem plumbedPerturbation_add (Ha₁ Ha₂ Hb₁ Hb₂ : Puncture → ℝ → M → ℝ) (q : Puncture) (L : ℝ) :
+    plumbedPerturbation (Ha₁ + Ha₂) (Hb₁ + Hb₂) q L =
+      plumbedPerturbation Ha₁ Hb₁ q L + plumbedPerturbation Ha₂ Hb₂ q L := by
+  funext w x
+  simp only [plumbedPerturbation_def, pairOfPantsPerturbation_add, Pi.add_apply]
+  split_ifs <;> simp [ContinuousLinearMap.add_comp]
+
+/-- The plumbed perturbation is homogeneous in the Hamiltonians of the two pairs of pants. -/
+theorem plumbedPerturbation_smul (c : ℝ) (Ha Hb : Puncture → ℝ → M → ℝ) (q : Puncture) (L : ℝ) :
+    plumbedPerturbation (c • Ha) (c • Hb) q L = c • plumbedPerturbation Ha Hb q L := by
+  funext w x
+  simp only [plumbedPerturbation_def, pairOfPantsPerturbation_smul, Pi.smul_apply]
+  split_ifs <;> simp [ContinuousLinearMap.smul_comp]
+
 /-- **The plumbed perturbation on the receiving pair of pants.** Away from the collar
 `Re z > L - 2` of the end `q`, the plumbed perturbation is the perturbation of the receiving pair
 of pants. -/
@@ -112,6 +127,16 @@ theorem plumbedPerturbation_plumbingMap (hq : q ≠ inf) (hab : Hb q = Ha inf) {
   · -- On the part `2 - L ≤ Re z ≤ -L/2` of the neck the two perturbations match.
     exact pairOfPantsPerturbation_plumbingMap hab (by linarith)
       (by rw [endSign_eq_one hq]; linarith) x v
+
+/-- **The plumbed datum on the receiving truncation.** For neck length `L ≥ R + 2`, the plumbed
+perturbation on the truncation `S_R` of the receiving pair of pants is its pair-of-pants
+perturbation. -/
+theorem plumbedPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation (hq : q ≠ inf)
+    (hab : Hb q = Ha inf) {R : ℝ} (hRL : R + 2 ≤ L) {w : ℂ} (hw : w ∈ truncation R) (x : M) :
+    plumbedPerturbation Ha Hb q L w x = pairOfPantsPerturbation Hb w x := by
+  have h := (mem_truncation.1 hw).2.2 q
+  rw [endSign_eq_one hq, one_mul] at h
+  exact plumbedPerturbation_of_re_endCoord_le hq hab (by linarith) x
 
 /-- On the open region of the end `q` with longitudinal coordinate `> 2`, the plumbed
 perturbation is the pushforward of the inserted datum. This region is independent of length. -/

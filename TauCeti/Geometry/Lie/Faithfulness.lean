@@ -17,11 +17,6 @@ induced Lie-algebra homomorphism. Naturality of the Lie-group exponential first 
 the exponential image. The local inverse to the exponential promotes this to equality near the
 identity, and the equality locus is then an open and closed subgroup of the preconnected source.
 
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 3, "Injectivity on connected groups".
-
 ## Main results
 
 * `lieMap_injective`: a smooth homomorphism out of a preconnected Lie group is determined by its Lie

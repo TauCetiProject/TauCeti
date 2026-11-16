@@ -29,7 +29,7 @@ open MeasureTheory Set
 
 namespace TauCeti.Green.Examples
 
-private theorem green_area_form {γ : ℝ → ℂ} {a b : ℝ} (hab : a < b)
+private theorem green_area_form {γ : ℝ → ℂ} {a b : ℝ}
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) :
     IntervalIntegrable (circulationFun areaP areaQ γ) volume a b ∧
       Integrable (windingWeight γ a b) ∧
@@ -39,7 +39,7 @@ private theorem green_area_form {γ : ℝ → ℂ} {a b : ℝ} (hab : a < b)
       ((contDiff_areaQ (n := 1)).continuous.continuousOn),
     hγ.integrable_windingWeight hclosed,
     (signedArea_eq_integral_circulationFun γ a b).symm.trans
-      (signedArea_eq_integral_windingWeight hab hγ hclosed)⟩
+      (signedArea_eq_integral_windingWeight hγ hclosed)⟩
 
 /-- Full Green's theorem gives both integrability conclusions and disc area for a circle. -/
 theorem green_circle_area (R : ℝ) :
@@ -48,7 +48,7 @@ theorem green_circle_area (R : ℝ) :
       (∫ t in (0 : ℝ)..(2 * Real.pi), circulationFun areaP areaQ (circleMap 0 R) t) =
         Real.pi * R ^ 2 ∧
       (∫ z : ℂ, windingWeight (circleMap 0 R) 0 (2 * Real.pi) z) = Real.pi * R ^ 2 := by
-  have h := green_area_form Real.two_pi_pos
+  have h := green_area_form
     ((lipschitzWith_circleMap 0 R).lipschitzOnWith.absolutelyContinuousOnInterval
       (a := 0) (b := 2 * Real.pi))
     (by simpa only [zero_add] using (periodic_circleMap 0 R 0).symm)
@@ -62,7 +62,7 @@ theorem green_ellipse_area (a b : ℝ) :
       (∫ t in (0 : ℝ)..(2 * Real.pi), circulationFun areaP areaQ (ellipse a b) t) =
         Real.pi * a * b ∧
       (∫ z : ℂ, windingWeight (ellipse a b) 0 (2 * Real.pi) z) = Real.pi * a * b := by
-  have h := green_area_form Real.two_pi_pos (absolutelyContinuous_ellipse a b) (ellipse_closed a b)
+  have h := green_area_form (absolutelyContinuous_ellipse a b) (ellipse_closed a b)
   exact ⟨h.1, h.2.1, integral_circulationFun_area_ellipse a b,
     h.2.2.symm.trans (integral_circulationFun_area_ellipse a b)⟩
 
@@ -107,7 +107,7 @@ theorem green_double_circle_area (R : ℝ) :
       (∫ t in (0 : ℝ)..(4 * Real.pi), circulationFun areaP areaQ (circleMap 0 R) t) =
         2 * Real.pi * R ^ 2 ∧
       (∫ z : ℂ, windingWeight (circleMap 0 R) 0 (4 * Real.pi) z) = 2 * Real.pi * R ^ 2 := by
-  have h := green_area_form (by positivity : (0 : ℝ) < 4 * Real.pi)
+  have h := green_area_form
     ((lipschitzWith_circleMap 0 R).lipschitzOnWith.absolutelyContinuousOnInterval
       (a := 0) (b := 4 * Real.pi))
     (circleMap_twice_closed 0 R)
@@ -121,7 +121,7 @@ theorem green_sqrt_circle_area :
       Integrable (windingWeight sqrtCircle 0 1) ∧
       (∫ t in (0 : ℝ)..1, circulationFun areaP areaQ sqrtCircle t) = Real.pi ∧
       (∫ z : ℂ, windingWeight sqrtCircle 0 1 z) = Real.pi := by
-  have h := green_area_form zero_lt_one absolutelyContinuous_sqrtCircle sqrtCircle_closed
+  have h := green_area_form absolutelyContinuous_sqrtCircle sqrtCircle_closed
   exact ⟨h.1, h.2.1, integral_circulationFun_area_sqrtCircle,
     h.2.2.symm.trans integral_circulationFun_area_sqrtCircle⟩
 

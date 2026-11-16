@@ -29,7 +29,9 @@ scalars, such as `ℂ`, that act on the coefficients but not on the domain, and
 function. `DifferentiableAt.extDerivWithin` is the exterior-derivative version of
 `DifferentiableAt.fderivWithin`, and `TauCeti.tsupport_extDeriv_subset` and
 `HasCompactSupport.extDeriv` are the versions of `tsupport_fderiv_subset` and
-`HasCompactSupport.fderiv`.
+`HasCompactSupport.fderiv`. `TauCeti.extDerivWithin_of_isOpen` is the version of
+`fderivWithin_of_isOpen`. `TauCeti.extDeriv_apply_pair_eq_sum` writes the exterior derivative of a
+one-form `∑ᵢ ωᵢ dxᵢ` on `ι → 𝕜` as `∑ᵢ dωᵢ ∧ dxᵢ`.
 -/
 
 public section
@@ -53,6 +55,12 @@ theorem ContinuousAlternatingMap.alternatizeUncurryFin_apply_pair
   simp [alternatizeUncurryFin_apply, h₀, h₁, sub_eq_add_neg]
 
 namespace TauCeti
+
+/-- The exterior derivative of a form vanishes at a point where the form is not differentiable,
+because `fderiv` takes the junk value `0` there. -/
+lemma extDeriv_zero_of_not_differentiableAt (h : ¬ DifferentiableAt 𝕜 ω x) : extDeriv ω x = 0 := by
+  simp only [extDeriv, fderiv_zero_of_not_differentiableAt h]
+  exact map_zero _
 
 /-- The exterior derivative of a one-form on an ordered pair is the alternating part of its
 Fréchet derivative. This formula also respects the derivative's junk-value convention. -/
@@ -78,6 +86,26 @@ theorem extDeriv_apply_pair_of_differentiableAt {ω : E → E [⋀^Fin 1]→L[�
       fderiv 𝕜 (fun y ↦ ω y (fun _ ↦ v)) x w := by
   simp [extDeriv_apply_pair, fderiv_continuousAlternatingMap_apply_const_apply hω]
 
+/-- The exterior derivative of a one-form `ω = ∑ᵢ ωᵢ dxᵢ` on `ι → 𝕜`, differentiable at `x`, in
+terms of its coefficient functions `ωᵢ = ω(eᵢ)` on the standard basis: `dω = ∑ᵢ dωᵢ ∧ dxᵢ`. -/
+theorem extDeriv_apply_pair_eq_sum {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {ω : (ι → 𝕜) → (ι → 𝕜) [⋀^Fin 1]→L[𝕜] F} {x : ι → 𝕜} (hω : DifferentiableAt 𝕜 ω x)
+    (v w : ι → 𝕜) :
+    extDeriv ω x ![v, w] = ∑ i, (w i • fderiv 𝕜 (fun y ↦ ω y fun _ ↦ Pi.single i 1) x v -
+      v i • fderiv 𝕜 (fun y ↦ ω y fun _ ↦ Pi.single i 1) x w) := by
+  -- Expand a one-form in the standard basis: `f(u) = ∑ᵢ uᵢ f(eᵢ)`.
+  have h (f : (ι → 𝕜) [⋀^Fin 1]→L[𝕜] F) (u : ι → 𝕜) :
+      f (fun _ ↦ u) = ∑ i, u i • f (fun _ ↦ Pi.single i 1) := by
+    have h := ((ContinuousAlternatingMap.ofSubsingleton 𝕜 (ι → 𝕜) F (0 : Fin 1)).symm
+      f).toLinearMap.pi_apply_eq_sum_univ u
+    simp only [ContinuousLinearMap.coe_coe,
+      ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply] at h
+    rw [h]
+    congr! with i _ _ j
+    simp [Pi.single_apply, eq_comm]
+  simp only [extDeriv_apply_pair, fderiv_continuousAlternatingMap_apply_const_apply hω,
+    h (fderiv 𝕜 ω x v) w, h (fderiv 𝕜 ω x w) v, Finset.sum_sub_distrib]
+
 /-- The exterior derivative of a difference of two forms differentiable at `x` is the difference of
 their exterior derivatives. -/
 theorem extDeriv_sub {ω₁ ω₂ : E → E [⋀^Fin n]→L[𝕜] F} (hω₁ : DifferentiableAt 𝕜 ω₁ x)
@@ -85,6 +113,13 @@ theorem extDeriv_sub {ω₁ ω₂ : E → E [⋀^Fin n]→L[𝕜] F} (hω₁ : D
   have h : ω₁ - ω₂ = ω₁ + (-1 : 𝕜) • ω₂ := by
     rw [neg_one_smul, sub_eq_add_neg]
   rw [h, extDeriv_add hω₁ (hω₂.const_smul _), extDeriv_smul, neg_one_smul, sub_eq_add_neg]
+
+/-- Where a differential form is not differentiable, its exterior derivative is `0`, by the junk
+value convention of the Fréchet derivative. -/
+theorem extDeriv_of_not_differentiableAt (h : ¬ DifferentiableAt 𝕜 ω x) : extDeriv ω x = 0 := by
+  rw [extDeriv, fderiv_zero_of_not_differentiableAt h]
+  ext v
+  simp [ContinuousAlternatingMap.alternatizeUncurryFin_apply]
 
 /-- The exterior derivative within a set does not change when the set is modified away from a
 point `y`, as long as it is unchanged near the base point (punctured at `y`). -/
@@ -98,12 +133,23 @@ theorem extDerivWithin_congr_set (h : s =ᶠ[𝓝 x] t) :
     extDerivWithin ω s x = extDerivWithin ω t x :=
   extDerivWithin_congr_set' x <| h.filter_mono inf_le_left
 
+/-- The exterior derivative within a neighbourhood of the base point is the exterior
+derivative. -/
+theorem extDerivWithin_of_mem_nhds (h : s ∈ 𝓝 x) : extDerivWithin ω s x = extDeriv ω x := by
+  rw [extDerivWithin, extDeriv, fderivWithin_of_mem_nhds h]
+
+/-- The exterior derivative within an open set containing the base point is the exterior
+derivative. -/
+theorem extDerivWithin_of_isOpen (hs : IsOpen s) (hx : x ∈ s) :
+    extDerivWithin ω s x = extDeriv ω x :=
+  extDerivWithin_of_mem_nhds (hs.mem_nhds hx)
+
 /-- Iterating the exterior derivative within a set still depends only on the germ of that set. -/
 theorem extDerivWithin_extDerivWithin_congr_set (h : s =ᶠ[𝓝 x] t) :
     extDerivWithin (extDerivWithin ω s) s x = extDerivWithin (extDerivWithin ω t) t x := by
   rw [extDerivWithin_congr_set h]
   apply Filter.EventuallyEq.extDerivWithin_eq
-  · filter_upwards [h.eventuallyEq_nhds.filter_mono nhdsWithin_le_nhds] with y hy
+  · filter_upwards [(Filter.Eventually.eventually_nhds h).filter_mono nhdsWithin_le_nhds] with y hy
     exact extDerivWithin_congr_set hy
   · exact extDerivWithin_congr_set h
 
@@ -216,7 +262,7 @@ theorem extDeriv_pullback_eq_zero {E' : Type*} [NormedAddCommGroup E'] [NormedSp
     (hω : DifferentiableAt 𝕜 ω (A x)) (hdω : extDeriv ω (A x) = 0) :
     extDeriv (fun x ↦ (ω (A x)).compContinuousLinearMap A) x = 0 := by
   rw [A.extDeriv_pullback hω, hdω]
-  ext v
+  ext _
   simp
 
 /-- Pulling a `C^r` form on `t` back along a continuous linear map `A` gives a `C^r` form on

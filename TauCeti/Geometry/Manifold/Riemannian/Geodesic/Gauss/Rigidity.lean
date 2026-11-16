@@ -101,14 +101,14 @@ theorem IsNormalDomain.enorm_riemannianLog_eq_pathELength_of_piecewise (h : IsNo
     pathELength_add ht.1 ht.2
   have hL : pathELength I γ a b ≠ ⊤ := by
     rw [hlen]
-    exact enorm_ne_top
+    exact eNorm_ne_top
   have hA_top : pathELength I γ a t ≠ ⊤ :=
     ne_top_of_le_ne_top hL (hsum ▸ le_self_add)
   have hB_top : pathELength I γ t b ≠ ⊤ :=
     ne_top_of_le_ne_top hL (hsum ▸ le_add_self)
   have hreal : (pathELength I γ a t).toReal + (pathELength I γ t b).toReal =
       ‖riemannianLog I M p U (γ b)‖ := by
-    rw [← ENNReal.toReal_add hA_top hB_top, hsum, hlen, toReal_enorm]
+    rw [← ENNReal.toReal_add hA_top hB_top, hsum, hlen, toReal_eNorm]
   have hB' := (ENNReal.ofReal_le_iff_le_toReal hB_top).1 hB
   rw [← ofReal_norm]
   refine le_antisymm hA ?_
@@ -330,7 +330,6 @@ private theorem IsNormalDomain.sameRay_riemannianLog_of_enorm_eq_add_pathELength
     rw [← pathELength_congr (hEq.mono (Icc_subset_Icc_right hu.2)),
       ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin
         (contMDiffOn_riemannianExp_comp h hc hdom)
-        (uniqueMDiffOn_iff_uniqueDiffOn.2 (uniqueDiffOn_Icc hcd)) hu.1
         (Icc_subset_Icc_right hu.2), ← ofReal_norm, ← ofReal_norm,
       ← ENNReal.ofReal_add (norm_nonneg _) hnn] at h1
     exact (ENNReal.ofReal_eq_ofReal_iff (norm_nonneg _) (add_nonneg (norm_nonneg _) hnn)).1 h1
@@ -365,7 +364,7 @@ theorem IsNormalDomain.monotoneOn_norm_riemannianLog_of_pathELength_eq_of_piecew
   have hlen' : pathELength I γ a b = ‖riemannianLog I M p U (γ b)‖ₑ := by
     rw [hlen, pathELength_riemannianExp_smul_zero_one h hv, hγb, h.riemannianLog_riemannianExp hv]
   intro s hs u hu hsu
-  refine enorm_le_iff_norm_le.1 ?_
+  refine eNorm_le_iff_norm_le.1 ?_
   rw [h.enorm_riemannianLog_eq_pathELength_of_piecewise hγ hγU hγa hlen' hs,
     h.enorm_riemannianLog_eq_pathELength_of_piecewise hγ hγU hγa hlen' hu]
   exact pathELength_mono le_rfl hsu

@@ -153,8 +153,6 @@ theorem AffineAtWorstNodalOfRelativeDimensionOne.of_smooth
 theorem _root_.TauCeti.NodeAlgebra.affineAtWorstNodalOfRelativeDimensionOne (a : R) :
     AffineAtWorstNodalOfRelativeDimensionOne
       (Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a)))) := by
-  let f : Spec (.of (NodeAlgebra R a)) ⟶ Spec (.of R) :=
-    Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a)))
   refine ⟨inferInstance, ?_⟩
   have : IsClosedImmersion _ := NodeAlgebra.isClosedImmersion_singularLocus a
   infer_instance

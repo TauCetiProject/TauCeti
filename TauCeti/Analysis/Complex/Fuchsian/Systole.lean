@@ -155,7 +155,6 @@ private theorem exists_dist_dilation_smul_eq {s₀ : ℝ} (hs₀ : 0 < s₀)
     exact Real.cosh_strictMonoOn.injOn dist_nonneg (by norm_num) h
   · -- a dilation with `|t| ≥ s₀` moves `y` at least as far as the one with `t = s₀`
     have hst : Real.cosh s₀ ≤ Real.cosh t := Real.cosh_le_cosh.2 (by rwa [abs_of_pos hs₀])
-    have hq : 0 ≤ c₀ / (Real.cosh s₀ - 1) := by positivity
     rw [hcosh]
     nlinarith
   · -- an antidiagonal matrix moves `y` far, since `y` is far from the imaginary axis

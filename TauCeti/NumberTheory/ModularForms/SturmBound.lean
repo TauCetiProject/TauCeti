@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.LevelOne.DimensionFormula
-public import Mathlib.RingTheory.Polynomial.DegreeLT
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 public import TauCeti.NumberTheory.ModularForms.Norm.Trace
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
@@ -30,6 +30,9 @@ vanishing of `f` at `∞` to the norm.
 * `ModularForm.sturm_bound_finiteIndex_SL2Z`: the classical form for finite-index
   subgroups of `SL(2, ℤ)`.
 * `ModularForm.eq_of_sturm_bound`: forms agreeing up to the bound are equal.
+* `ModularForm.sturmLength`, `ModularForm.sturmCoeffsₗ`: the number of coefficients at `∞` up
+  to the bound, and the `ℂ`-linear map recording them, which is injective
+  (`ModularForm.sturmCoeffsₗ_injective`).
 * `TauCeti.finiteDimensional_modularForm_finiteIndex`: `ModularForm 𝒢 k` is
   finite-dimensional over `ℂ`.
 
@@ -65,13 +68,7 @@ theorem sturm_bound_finiteIndex_SL2Z {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex]
     (h : (↑((k * Γ.index).toNat / 12) : ℕ∞) <
       (qExpansion (Γ.map (Matrix.SpecialLinearGroup.mapGL ℝ)).strictWidthInfty f).order) :
     f = 0 := by
-  have h_index :
-      Nat.card (𝒮ℒ ⧸ (Γ.map (Matrix.SpecialLinearGroup.mapGL ℝ)).subgroupOf 𝒮ℒ) = Γ.index := by
-    rw [← Subgroup.index_eq_card, ← Subgroup.relIndex,
-      MonoidHom.range_eq_map (Matrix.SpecialLinearGroup.mapGL ℝ), ← Subgroup.relIndex_comap,
-      Subgroup.comap_map_eq_self_of_injective Matrix.SpecialLinearGroup.mapGL_injective,
-      Subgroup.relIndex_top_right]
-  exact sturm_bound_finiteIndex f (h_index ▸ h)
+  exact sturm_bound_finiteIndex f ((Γ.card_quotient_mapGL_eq_index).symm ▸ h)
 
 /-- **Modular forms agreeing up to the Sturm bound are equal**: two weight-`k` forms whose
 `q`-expansions at `∞` agree in every coefficient up to `k · [𝒮ℒ : 𝒢 ⊓ 𝒮ℒ] / 12` coincide. -/
@@ -88,6 +85,55 @@ theorem eq_of_sturm_bound [DiscreteTopology 𝒢.strictPeriods]
     map_sub, sub_eq_zero]
   exact h i (Nat.lt_succ_iff.mp hi)
 
+variable (𝒢 k) in
+/-- The number of `q`-expansion coefficients at `∞` that determine a modular form of weight `k`
+on `𝒢`: one more than the Sturm bound `k · [𝒮ℒ : 𝒢 ⊓ 𝒮ℒ] / 12`. -/
+def sturmLength : ℕ :=
+  (k * Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)).toNat / 12 + 1
+
+omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
+variable (𝒢 k) in
+/-- The Sturm truncation length is one more than the Sturm bound. -/
+theorem sturmLength_def :
+    sturmLength 𝒢 k = (k * Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)).toNat / 12 + 1 := by
+  rfl
+
+omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
+/-- The indices below the Sturm truncation length are exactly those up to the Sturm bound. -/
+theorem lt_sturmLength_iff {i : ℕ} :
+    i < sturmLength 𝒢 k ↔ i ≤ (k * Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)).toNat / 12 := by
+  rw [sturmLength_def, Nat.lt_succ_iff]
+
+/-- **Modular forms agreeing below `sturmLength` are equal**: `ModularForm.eq_of_sturm_bound`
+with the bound phrased through `ModularForm.sturmLength`. -/
+theorem eq_of_coeff_eq_of_lt_sturmLength [DiscreteTopology 𝒢.strictPeriods]
+    (g : ModularForm 𝒢 k)
+    (h : ∀ i < sturmLength 𝒢 k,
+      PowerSeries.coeff i (qExpansion 𝒢.strictWidthInfty f) =
+        PowerSeries.coeff i (qExpansion 𝒢.strictWidthInfty g)) : f = g :=
+  eq_of_sturm_bound f g fun i hi ↦ h i (Nat.lt_succ_of_le hi)
+
+variable [𝒢.HasDetOne] [DiscreteTopology 𝒢.strictPeriods]
+
+variable (k) in
+/-- The first `sturmLength 𝒢 k` coefficients at `∞` of a modular form, as a `ℂ`-linear map. By
+the Sturm bound it is injective (`ModularForm.sturmCoeffsₗ_injective`). -/
+def sturmCoeffsₗ : ModularForm 𝒢 k →ₗ[ℂ] Fin (sturmLength 𝒢 k) → ℂ :=
+  LinearMap.pi fun i ↦ (PowerSeries.coeff (i : ℕ)).comp
+    (TauCeti.ModularForm.qExpansionLinearMap TauCeti.Subgroup.strictWidthInfty_pos_of_finiteRelIndex
+      𝒢.strictWidthInfty_mem_strictPeriods k)
+
+@[simp]
+theorem sturmCoeffsₗ_apply (i : Fin (sturmLength 𝒢 k)) :
+    sturmCoeffsₗ k f i = (qExpansion 𝒢.strictWidthInfty f).coeff i := by
+  simp [sturmCoeffsₗ]
+
+/-- **A modular form is determined by its coefficients up to the Sturm bound.** -/
+theorem sturmCoeffsₗ_injective :
+    Function.Injective (sturmCoeffsₗ (𝒢 := 𝒢) k) := fun f g h ↦
+  eq_of_coeff_eq_of_lt_sturmLength f g fun i hi ↦ by
+    simpa using congrFun h ⟨i, hi⟩
+
 end ModularForm
 
 namespace TauCeti
@@ -98,21 +144,8 @@ relative index in `𝒮ℒ` with determinant-one elements and discrete strict pe
 instance finiteDimensional_modularForm_finiteIndex
     {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.HasDetOne] [𝒢.IsFiniteRelIndex 𝒮ℒ]
     [DiscreteTopology 𝒢.strictPeriods] {k : ℤ} :
-    Module.Finite ℂ (ModularForm 𝒢 k) := by
-  set N : ℕ := (k * Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)).toNat / 12 + 1
-  refine Module.Finite.of_injective
-    (((PowerSeries.trunc N).comp (ModularForm.qExpansionLinearMap
-        Subgroup.strictWidthInfty_pos_of_finiteRelIndex
-        𝒢.strictWidthInfty_mem_strictPeriods k)).codRestrict
-      (Polynomial.degreeLT ℂ N) fun f ↦
-        Polynomial.mem_degreeLT.mpr (PowerSeries.degree_trunc_lt _ _))
-    ((injective_iff_map_eq_zero _).mpr fun f hf ↦ ?_)
-  refine ModularForm.sturm_bound_finiteIndex f (lt_of_lt_of_le
-    (by exact_mod_cast Nat.lt_succ_self _) (PowerSeries.nat_le_order _ _ fun i hi ↦ ?_))
-  have hval : PowerSeries.trunc N (qExpansion 𝒢.strictWidthInfty f) = 0 := by
-    simpa using congrArg Subtype.val hf
-  have hcoeff := congrArg (fun p ↦ Polynomial.coeff p i) hval
-  rwa [PowerSeries.coeff_trunc, ite_eq_left hi, Polynomial.coeff_zero] at hcoeff
+    Module.Finite ℂ (ModularForm 𝒢 k) :=
+  Module.Finite.of_injective (ModularForm.sturmCoeffsₗ k) ModularForm.sturmCoeffsₗ_injective
 
 /-- **Finite-dimensionality of cusp forms.** A cusp form is a modular form, injectively, so this
 is `TauCeti.finiteDimensional_modularForm_finiteIndex` transported along

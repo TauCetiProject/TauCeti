@@ -374,7 +374,7 @@ theorem leadingCoeff_primitiveMinpoly_le_natDenominator_pow (x : K) :
   have hQdeg : Q.natDegree = (minpoly ℤ (D • x)).natDegree := by
     rw [hQ, natDegree_comp, natDegree_C_mul_X _ (by simpa using hD0), mul_one]
   -- the quotient is a constant, and comparing leading coefficients gives `D ^ d = a₀ * c`
-  obtain ⟨c, hc, hlc⟩ := exists_eq_mul_C_of_dvd_of_natDegree_le ⟨q, hq⟩
+  obtain ⟨c, _, hlc⟩ := exists_eq_mul_C_of_dvd_of_natDegree_le ⟨q, hq⟩
     (by rw [hQdeg, hydeg, natDegree_primitiveMinpoly])
   have hQlc : Q.leadingCoeff = (D : ℤ) ^ (minpoly ℚ x).natDegree := by
     rw [hQ, leadingCoeff_comp (p := minpoly ℤ (D • x)) (q := C (D : ℤ) * X) (by

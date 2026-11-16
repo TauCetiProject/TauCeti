@@ -8,10 +8,11 @@ module
 public import Mathlib.Analysis.RCLike.Basic
 
 /-!
-# Basic norm bounds for `RCLike` fields
+# Basic identities and norm bounds for `RCLike` fields
 
 ## Main results
 
+* `RCLike.re_eq_self_of_im_eq_zero`: a scalar with zero imaginary part equals its real part.
 * `RCLike.norm_le_abs_re_add_abs_im`: `‖z‖ ≤ |re z| + |im z|`, the `RCLike` counterpart of
   `Complex.norm_le_abs_re_add_abs_im`.
 -/
@@ -29,5 +30,9 @@ theorem norm_le_abs_re_add_abs_im (z : K) : ‖z‖ ≤ |re z| + |im z| := by
   rw [norm_sq_eq_def]
   nlinarith [abs_mul_abs_self (re z), abs_mul_abs_self (im z), abs_nonneg (re z),
     abs_nonneg (im z)]
+
+/-- A scalar with zero imaginary part is the image of its real part. -/
+theorem re_eq_self_of_im_eq_zero {z : K} (h : im z = 0) : (re z : K) = z :=
+  conj_eq_iff_re.mp (conj_eq_iff_im.mpr h)
 
 end RCLike

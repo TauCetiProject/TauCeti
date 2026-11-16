@@ -10,6 +10,7 @@ public import Mathlib.Probability.Independence.InfinitePi
 public import Mathlib.Probability.Independence.Integration
 public import TauCeti.Probability.Distributions.CompoundPoisson.RandomSum
 public import TauCeti.Probability.Distributions.Poisson.SizeBias
+public import TauCeti.Probability.RandomMeasure.LaplaceFunctional
 
 /-!
 # Finite Poisson sampling laws
@@ -252,4 +253,88 @@ theorem map_finitePoissonLaw {Y : Type*} [MeasurableSpace Y] (r : ℝ≥0)
     Measure.map_map (Measure.measurable_map f hf) Measure.measurable_dirac,
     Measure.map_map Measure.measurable_dirac hf, Function.comp_def, Measure.map_dirac' hf]
 
+/-- The finite sampling exponential formula, expressed as an integral against its intensity. -/
+theorem laplaceFunctional_finitePoissonLaw (r : ℝ≥0) (Q : Measure X)
+    [IsProbabilityMeasure Q] {f : X → ℝ≥0∞} (hf : Measurable f) :
+    (finitePoissonLaw r Q).laplaceFunctional id f =
+      (ENNReal.expNeg (∫⁻ x, 1 - (ENNReal.expNeg (f x) : ℝ≥0∞)
+        ∂((r : ℝ≥0∞) • Q)) : ℝ≥0∞) := by
+  let b := ∫⁻ x, (ENNReal.expNeg (f x) : ℝ≥0∞) ∂Q
+  have hb : b ≤ 1 := by
+    simpa [b] using lintegral_mono (μ := Q)
+      (fun x => ENNReal.coe_le_one_iff.mpr (ENNReal.expNeg_le_one (f x)))
+  have hsub : (∫⁻ x, 1 - (ENNReal.expNeg (f x) : ℝ≥0∞) ∂Q) = 1 - b := by
+    rw [lintegral_sub (by fun_prop) (ne_top_of_le_ne_top ENNReal.one_ne_top hb)
+      (Filter.Eventually.of_forall fun x =>
+        ENNReal.coe_le_one_iff.mpr (ENNReal.expNeg_le_one (f x)))]
+    simp [b]
+  rw [lintegral_smul_measure, hsub, Measure.laplaceFunctional_def]
+  simp only [id_eq]
+  have hfinite := lintegral_exp_neg_finitePoissonLaw r Q hf
+  simp_rw [← ENNReal.coe_expNeg] at hfinite
+  rw [hfinite, smul_eq_mul, ← ENNReal.coe_toNNReal (a := 1 - b) (by finiteness),
+    ← ENNReal.coe_mul, ENNReal.expNeg_coe]
+  congr 2
+  push_cast
+  rw [ENNReal.toReal_sub_of_le hb (by finiteness)]
+  simp only [ENNReal.toReal_one]
+  dsimp [b]
+  ring
+
 end TauCeti.Probability
+
+namespace MeasureTheory.Measure
+
+open TauCeti.Probability
+
+variable {X : Type*} [MeasurableSpace X]
+
+/-- Use the total mass of `μ` as Poisson rate and its normalization as location law.
+For finite `μ`, this samples with intensity `μ`. Zero or infinite total mass gives the empty
+configuration; the intensity identities below require finite mass. -/
+noncomputable def finitePoissonLawOf (μ : Measure X) : Measure (Measure X) :=
+  finitePoissonLaw (μ univ).toNNReal ((μ univ)⁻¹ • μ)
+
+/-- The normalized finite sampling representation. -/
+theorem finitePoissonLawOf_def (μ : Measure X) :
+    μ.finitePoissonLawOf = finitePoissonLaw (μ univ).toNNReal ((μ univ)⁻¹ • μ) := (rfl)
+
+/-- Zero intensity produces the empty configuration. -/
+@[simp] theorem finitePoissonLawOf_zero : (0 : Measure X).finitePoissonLawOf = dirac 0 := by
+  simp [finitePoissonLawOf_def]
+
+/-- Normalized finite sampling is a probability law, including for zero intensity. -/
+instance (μ : Measure X) [IsFiniteMeasure μ] : IsProbabilityMeasure μ.finitePoissonLawOf := by
+  by_cases hμ : μ = 0
+  · subst μ
+    rw [finitePoissonLawOf_zero]
+    infer_instance
+  · let : NeZero μ := ⟨hμ⟩
+    rw [finitePoissonLawOf_def]
+    infer_instance
+
+/-- Finite sampling with normalized intensity has that intensity as its mean measure. -/
+@[simp] theorem join_finitePoissonLawOf (μ : Measure X) [IsFiniteMeasure μ] :
+    μ.finitePoissonLawOf.join = μ := by
+  by_cases hμ : μ = 0
+  · simp [hμ]
+  · let : NeZero μ := ⟨hμ⟩
+    simp [finitePoissonLawOf_def, ENNReal.coe_toNNReal, smul_smul,
+      ENNReal.mul_inv_cancel (NeZero.ne (μ univ)) (measure_ne_top μ univ)]
+
+/-- The exponential formula for finite sampling from a normalized finite intensity. -/
+theorem laplaceFunctional_finitePoissonLawOf (μ : Measure X) [IsFiniteMeasure μ]
+    {f : X → ℝ≥0∞} (hf : Measurable f) :
+    μ.finitePoissonLawOf.laplaceFunctional id f =
+      (ENNReal.expNeg (∫⁻ x, 1 - (ENNReal.expNeg (f x) : ℝ≥0∞) ∂μ) : ℝ≥0∞) := by
+  by_cases hμ : μ = 0
+  · subst μ
+    rw [finitePoissonLawOf_zero, laplaceFunctional_def,
+      lintegral_dirac' _ (measurable_expNeg_lintegral measurable_id hf)]
+    simp
+  · let : NeZero μ := ⟨hμ⟩
+    rw [finitePoissonLawOf_def, laplaceFunctional_finitePoissonLaw _ _ hf]
+    -- Reuse the mean-measure identity to identify the normalized intensity.
+    rw [← join_finitePoissonLaw, ← finitePoissonLawOf_def, join_finitePoissonLawOf]
+
+end MeasureTheory.Measure

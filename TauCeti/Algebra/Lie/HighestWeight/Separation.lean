@@ -69,8 +69,10 @@ of a finite-dimensional module are Weyl stable and integral, so `mu` has a Weyl 
 `TauCeti/Algebra/Lie/HighestWeight/Weight/Support.lean`. The form is Weyl
 invariant (`RootPairing.InvariantForm.apply_weylGroup_smul`), so
 `⟨mu, mu⟩ = ⟨nu, nu⟩` and the first summand is
-`⟨lam + nu, lam - nu⟩`, which is nonnegative: `lam + nu` is dominant integral and `lam - nu` lies
-in the cone. A nonnegative rational plus a positive one is nonzero.
+`⟨lam + nu, lam - nu⟩ = 2⟨nu, lam - nu⟩ + ⟨lam - nu, lam - nu⟩`, which is nonnegative: `nu` is
+dominant integral and `lam - nu` lies in the cone, hence is integral as a natural combination of
+roots. Dominance of `lam` is not needed for this step. A nonnegative rational plus a positive one is
+nonzero.
 
 ## Main results
 
@@ -85,7 +87,8 @@ in the cone. A nonnegative rational plus a positive one is nonzero.
   weight pairs to a nonnegative rational with every member of the positive root cone.
 * `casimirScalar_ne_casimirScalar_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne` (in the
   `TauCeti.IsDominantIntegral` namespace): **the Casimir scalar separates a dominant integral
-  weight from the dominant integral weights strictly below it.**
+  weight `nu` from every weight `lam ≠ nu` above it in the root cone order, that is with
+  `lam - nu` in the positive root cone; `lam` need not be dominant.**
 * `TauCeti.casimirScalar_ne_casimirScalar_of_genWeightSpace_ne_bot_of_isHighestWeightVector`:
   **over an algebraically closed field, the Casimir scalar of a weight of a finite-dimensional
   highest weight module differs from that of the highest weight, except at the highest weight
@@ -255,24 +258,40 @@ private theorem exists_pos_rat_invForm_twoWeylVector {u : Module.Dual K H}
 
 namespace IsDominantIntegral
 
-/-- **The Casimir scalar separates a dominant integral weight from the dominant integral weights
-below it**: if `lam` and `nu` are dominant integral, `lam - nu` lies in the positive root cone and
+/-- **The Casimir scalar separates a dominant integral weight from the weights above it in the
+root cone order**: if `nu` is dominant integral, `lam - nu` lies in the positive root cone and
 `nu ≠ lam`, then `c(lam) ≠ c(nu)`.
 
-In the expansion `c(lam) - c(nu) = ⟨lam + nu, lam - nu⟩ + ⟨2ρ, lam - nu⟩` the first summand is a
-nonnegative rational, `lam + nu` being dominant integral, and the second a positive one, `lam - nu`
-being a nonzero member of the cone. -/
+In the expansion `c(lam) - c(nu) = ⟨lam + nu, lam - nu⟩ + ⟨2ρ, lam - nu⟩` the first summand is
+`2⟨nu, u⟩ + ⟨u, u⟩` for `u = lam - nu`, a nonnegative rational, `nu` being dominant integral and
+`u` an integral weight, being a natural combination of roots, and the second summand is a positive
+one, `u` being a nonzero member of the cone. -/
 theorem casimirScalar_ne_casimirScalar_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne
-    (hlam : IsDominantIntegral base lam) {nu : Module.Dual K H}
-    (hnu : IsDominantIntegral base nu)
+    {nu : Module.Dual K H} (hnu : IsDominantIntegral base nu)
     (hle : lam - nu ∈ posRootCone (IsKilling.rootSystem H) base) (hne : nu ≠ lam) :
     casimirScalar base lam ≠ casimirScalar base nu := by
-  obtain ⟨q₁, hq₁0, hq₁⟩ := (hlam.add hnu).exists_nonneg_rat_invForm_of_mem_posRootCone hle
+  -- a member of the positive root cone is a natural combination of roots, hence integral
+  have hu : IsIntegralWeight (lam - nu) := by
+    obtain ⟨f, hf⟩ := (mem_posRootCone (IsKilling.rootSystem H) base).mp hle
+    rw [hf]
+    refine Finset.sum_induction _ IsIntegralWeight (fun _ _ ↦ IsIntegralWeight.add)
+      isIntegralWeight_zero fun i _ ↦ ?_
+    rw [← natCast_zsmul, IsKilling.rootSystem_root_apply]
+    exact (isIntegralWeight_of_weight (i : Weight K H L)).zsmul _
+  obtain ⟨qa, hqa0, hqa⟩ := hnu.exists_nonneg_rat_invForm_of_mem_posRootCone hle
+  obtain ⟨qb, hqb0, hqb, -⟩ := hu.exists_nonneg_rat_invForm_self
   obtain ⟨q₂, hq₂0, hq₂⟩ := exists_pos_rat_invForm_twoWeylVector hle (sub_ne_zero_of_ne hne.symm)
-  have hdiff : casimirScalar base lam - casimirScalar base nu = ((q₁ + q₂ : ℚ) : K) := by
-    rw [casimirScalar_sub_casimirScalar, invForm_self_sub_invForm_self, hq₁, hq₂, Rat.cast_add]
-  have hne0 : ((q₁ + q₂ : ℚ) : K) ≠ 0 := by
-    have hpos : (0 : ℚ) < q₁ + q₂ := by linarith
+  have hq₁ : invForm (lam + nu) (lam - nu) = ((2 * qa + qb : ℚ) : K) := by
+    rw [show lam + nu = (lam - nu) + nu + nu by abel]
+    simp only [map_add, LinearMap.add_apply, hqa, hqb]
+    push_cast
+    ring
+  have hdiff : casimirScalar base lam - casimirScalar base nu = ((2 * qa + qb + q₂ : ℚ) : K) := by
+    rw [casimirScalar_sub_casimirScalar, invForm_self_sub_invForm_self, hq₁, hq₂]
+    push_cast
+    ring
+  have hne0 : ((2 * qa + qb + q₂ : ℚ) : K) ≠ 0 := by
+    have hpos : (0 : ℚ) < 2 * qa + qb + q₂ := by linarith
     exact_mod_cast hpos.ne'
   exact fun hcon ↦ hne0 (by rw [← hdiff, hcon, sub_self])
 

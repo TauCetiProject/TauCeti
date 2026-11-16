@@ -170,9 +170,13 @@ theorem IsStronglyPseudoconvexAt.morseIndex_le [FiniteDimensional ℂ V]
 
 /-- **The Morse index bound `λ ≤ n`.** The real Hessian of a strictly plurisubharmonic function
 has negative index of inertia at most the complex dimension. -/
-theorem IsStrictlyPlurisubharmonicAt.morseIndex_le [FiniteDimensional ℂ V]
+theorem IsStrictlyPlurisubharmonicAt.morseIndex_le
     (h : IsStrictlyPlurisubharmonicAt f x) : morseIndex f x ≤ finrank ℂ V := by
-  simpa using (h.isStronglyPseudoconvexAt 0).morseIndex_le
+  by_cases hV : FiniteDimensional ℂ V
+  · simpa using (h.isStronglyPseudoconvexAt 0).morseIndex_le
+  · rw [morseIndex_eq_zero_of_not_finiteDimensional fun _ ↦
+      hV (Module.Finite.of_restrictScalars_finite ℝ ℂ V)]
+    exact Nat.zero_le _
 
 /-- **Restriction along a holomorphic immersion.** If `f` is strictly plurisubharmonic at `g b`
 and the complex derivative of the holomorphic map `g` at `b` is injective, then `f ∘ g` is
@@ -233,14 +237,24 @@ theorem IsStrictlyPlurisubharmonicAt.add (hf : IsStrictlyPlurisubharmonicAt f x)
 
 /-- **Strong `q`-pseudoconvexity is open on bilinear forms.** On a finite-dimensional complex
 space, the continuous real bilinear forms whose Levi form is positive definite on some complex
-subspace of codimension at most `q` form an open set.
+subspace of codimension at most `q` form an open set. (If `V` is not finite-dimensional, then
+`finrank ℂ V = 0` and the set is everything.)
 
 The statement uses the additive dimension inequality from `IsStronglyPseudoconvexAt`, which also
 covers `q ≥ dim_ℂ V` without truncated subtraction. -/
-theorem isOpen_setOf_re_leviForm_posOnSubspace [FiniteDimensional ℂ V] (q : ℕ) :
+theorem isOpen_setOf_re_leviForm_posOnSubspace (q : ℕ) :
     IsOpen {B : V →L[ℝ] V →L[ℝ] ℝ |
       ∃ P : Submodule ℂ V, finrank ℂ V ≤ finrank ℂ P + q ∧
         ∀ v ∈ P, v ≠ 0 → 0 < (B.toBilinForm.leviForm v v).re} := by
+  by_cases hV : FiniteDimensional ℂ V
+  swap
+  · have : {B : V →L[ℝ] V →L[ℝ] ℝ |
+        ∃ P : Submodule ℂ V, finrank ℂ V ≤ finrank ℂ P + q ∧
+          ∀ v ∈ P, v ≠ 0 → 0 < (B.toBilinForm.leviForm v v).re} = Set.univ :=
+      Set.eq_univ_of_forall fun B ↦ ⟨⊥, by simp [finrank_of_not_finite hV],
+        fun v hv hv0 ↦ (hv0 ((Submodule.mem_bot ℂ).1 hv)).elim⟩
+    rw [this]
+    exact isOpen_univ
   rw [isOpen_iff_mem_nhds]
   intro B hB
   obtain ⟨P, hP, hpos⟩ := hB

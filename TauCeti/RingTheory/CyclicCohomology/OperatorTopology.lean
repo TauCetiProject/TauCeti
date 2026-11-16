@@ -204,7 +204,7 @@ theorem continuous_continuousBarContraction (n : ℕ) :
     cases i using Fin.cases with
     | zero =>
       apply (isVonNBounded_singleton (𝕜 := 𝕜) (1 : A)).subset
-      rintro _ ⟨_, ⟨a, ha, rfl⟩, rfl⟩
+      rintro _ ⟨_, ⟨a, _, rfl⟩, rfl⟩
       simp
     | succ i => simpa [image_image, Function.comp_def] using isVonNBounded_pi_iff.1 hs i
   let := IsTopologicalAddGroup.rightUniformSpace M

@@ -623,6 +623,29 @@ lemma twistedChainComplexMap_f_comp_twistedPrismX (k : ℕ) :
       rw [ιTwistedChainComplex_twistedPrismX_assoc,
         twistedSingularChain_comp_twistedChainComplexMap_f]
 
+/-- Barycentric subdivision, iterated any number of times, is natural in the space. -/
+@[reassoc]
+lemma twistedChainComplexMap_comp_pow_twistedSubdivisionChainMap (N : ℕ) :
+    twistedChainComplexMap f M ≫ (End.of (twistedSubdivisionChainMap M) ^ N).asHom =
+      (End.of (twistedSubdivisionChainMap ((pullback f.hom).obj M)) ^ N).asHom ≫
+        twistedChainComplexMap f M := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    rw [pow_succ', End.mul_asHom, pow_succ', End.mul_asHom, reassoc_of% ih,
+      twistedChainComplexMap_comp_twistedSubdivisionChainMap, Category.assoc]
+
+/-- Barycentric subdivision, iterated any number of times, is natural in the space, on
+elements. -/
+lemma twistedChainComplexMap_f_iterate_twistedSubdivision (N : ℕ) {n : ℕ}
+    (c : ((pullback f.hom).obj M).twistedChainComplex.X n) :
+    ((twistedChainComplexMap f M).f n).hom
+        (((End.of (twistedSubdivisionChainMap ((pullback f.hom).obj M)) ^ N).asHom.f n).hom c) =
+      ((End.of (twistedSubdivisionChainMap M) ^ N).asHom.f n).hom
+        (((twistedChainComplexMap f M).f n).hom c) :=
+  (congrArg (fun φ ↦ (φ.f n).hom c)
+    (twistedChainComplexMap_comp_pow_twistedSubdivisionChainMap f M N)).symm
+
 end Naturality
 
 end LocalCoefficientSystem

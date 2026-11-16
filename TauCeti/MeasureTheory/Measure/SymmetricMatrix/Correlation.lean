@@ -1163,20 +1163,16 @@ theorem map_symmetricCongruenceLinearMap_diagonal_correlationLebesgue {s : Fin p
     (hs : ∀ i, |s i| = 1) :
     (correlationLebesgue p).map (Matrix.symmetricCongruenceLinearMap (Matrix.diagonal s)) =
       correlationLebesgue p := by
-  have hcoe : ∀ (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (i j : Fin p),
-      (Matrix.symmetricCongruenceLinearMap (Matrix.diagonal s) A : Matrix (Fin p) (Fin p) ℝ) i j =
-        s i * (A : Matrix (Fin p) (Fin p) ℝ) i j * s j := fun A i j => by
-    simp [Matrix.diagonal_mul, Matrix.mul_diagonal]
   refine map_correlationLebesgue_of_signedPerm
     (LinearMap.continuous_of_finiteDimensional _).measurable
     (Equiv.refl _) (fun ij => s ij.1.1 * s ij.1.2) (fun ij => by simp [abs_mul, hs])
     fun x => ?_
   have hsq : ∀ i, s i * s i = 1 := fun i => by rw [← abs_mul_abs_self, hs, one_mul]
   rw [← correlationMatrix_correlationCoordinates (A := Matrix.symmetricCongruenceLinearMap _ _)
-    fun i => by simp [hcoe, hsq]]
+    fun i => by simp [Matrix.coe_symmetricCongruenceLinearMap_diagonal_apply, hsq]]
   congr 1
   funext ij
-  simp [hcoe, ij.2]
+  simp [Matrix.coe_symmetricCongruenceLinearMap_diagonal_apply, ij.2]
   ring
 
 end TauCeti

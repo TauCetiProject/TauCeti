@@ -33,6 +33,8 @@ calculation supplies reusable chain rules for functions along translated exponen
   around a fixed group element give a smooth two-parameter map.
 * `hasMFDerivAt_mulInvariantExp_smul_zero`: an exponential line has its generator as initial
   velocity.
+* `forall_mulInvariantExp_smul_eq_one_iff`: an exponential line is constant exactly when its
+  generator vanishes.
 * `hasMFDerivAt_mulInvariantExp_smul`: at every time, an exponential line's velocity is its
   generating left-invariant vector field at the current point.
 * `HasMFDerivAt.hasDerivAt_comp_mulInvariantExp_smul_zero`: the chain rule along an exponential
@@ -134,6 +136,21 @@ theorem hasMFDerivAt_mulInvariantExp_smul_zero (X : GroupLieAlgebra I G) :
   have h := hasMFDerivAt_mulInvariantExp_smul (I := I) (G := G) X 0
   rw [zero_smul, mulInvariantExp_zero, mulInvariantVectorField_one] at h
   exact h
+
+/-- An exponential line is constant exactly when its generator vanishes: `exp (t X) = 1` for
+every `t` exactly when `X = 0`, since the line has initial velocity `X`. -/
+theorem forall_mulInvariantExp_smul_eq_one_iff {X : GroupLieAlgebra I G} :
+    (∀ t : ℝ, mulInvariantExp (I := I) (G := G) (t • X) = 1) ↔ X = 0 := by
+  refine ⟨fun h ↦ ?_, fun h t ↦ by rw [h, smul_zero, mulInvariantExp_zero]⟩
+  have hderiv := hasMFDerivAt_mulInvariantExp_smul_zero (I := I) (G := G) X
+  rw [show (fun t : ℝ => mulInvariantExp (I := I) (G := G) (t • X)) = fun _ ↦ 1 from
+    funext h] at hderiv
+  have h0 := DFunLike.congr_fun hderiv.mfderiv (1 : ℝ)
+  rw [mfderiv_const] at h0
+  -- Both sides are evaluated at `1`: `smulRight 1 X` sends `1` to `1 • X` by definition, and the
+  -- zero map sends it to `0`. The rewriting lemmas do not fire through the tangent-space types.
+  have h1 : (1 : ℝ) • X = 0 := h0.symm
+  rwa [one_smul] at h1
 
 /-- Differentiating a function that is manifold-differentiable at the identity along an exponential
 line gives its directional derivative there. -/
@@ -240,7 +257,7 @@ theorem hasFDerivAt_extChartAt_mulInvariantExp_zero
       (fun v : E => extChartAt I (1 : G)
         (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G)))
       (ContinuousLinearMap.id ℝ E) 0 := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have hFdiff := differentiableAt_extChartAt_mulInvariantExp_zero (I := I) (G := G)
   apply hFdiff.hasFDerivAt.congr_fderiv
   apply ContinuousLinearMap.ext

@@ -123,7 +123,7 @@ theorem isOutwardPointing_scalarRegularBand_iff_of_eq_right {x : f ⁻¹' Icc a 
   have hchart (w) (hw : w ∈ (chartAt (EuclideanHalfSpace (n + 1)) x).source) :
       (chartAt (EuclideanHalfSpace (n + 1)) x w).1 0 = -1 * (f w - b) := by
     rw [scalarRegularBandChartedSpace_chartAt] at hw ⊢
-    rw [scalarRegularBandChartAt_apply_zero_of_eq_right hf hn ha hb hab hx hw]
+    rw [scalarRegularBandChartAt_apply_zero_of_eq_right hf hn ha hb hx hw]
     ring
   rw [isOutwardPointing_iff_mul_mvfderiv_neg hxb (by norm_num)
     (Filter.eventually_of_mem (chart_source_mem_nhds _ x) hchart), neg_one_mul, neg_lt_zero]

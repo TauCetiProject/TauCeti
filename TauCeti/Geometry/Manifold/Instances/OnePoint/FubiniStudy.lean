@@ -11,7 +11,7 @@ public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 public import TauCeti.Analysis.InnerProductSpace.TwoDim
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
-public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Surface
 
 /-!

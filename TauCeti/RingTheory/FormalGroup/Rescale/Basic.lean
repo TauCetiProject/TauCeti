@@ -12,8 +12,9 @@ public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Polynomial
 public import TauCeti.RingTheory.MvPowerSeries.Rescale
--- Proof-only: the coefficients after swapping the variables, and weighted homogeneity from
--- scaling the variables.
+-- Proof-only: multiplication series under base change, the coefficients after swapping the
+-- variables, and weighted homogeneity from scaling the variables.
+import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
@@ -51,6 +52,7 @@ case of the polynomial variable `s` over `R[s]`.
 * `FormalGroup.coeff_rescale`: the coefficient of a monomial of degree `n` in `F^s` is `s ^ (n - 1)`
   times its coefficient in `F`.
 * `FormalGroup.smul_rescale`: `s • F^s(X, Y) = F(s X, s Y)`.
+* `FormalGroup.smul_nsmulSeries_rescale`: `s • [k]_(F^s)(X) = [k]_F(s X)`.
 * `FormalGroup.map_rescale`: rescaling commutes with base change.
 * `FormalGroup.rescale_one` and `FormalGroup.rescale_rescale`: rescaling is an action of the
   multiplicative monoid of `R`.
@@ -71,6 +73,8 @@ case of the polynomial variable `s` over `R[s]`.
 * `FormalGroup.map_toPolynomial_eq_rescale_iff`: over a ring graded by `ℕ`, `F` has its
   coefficient of `Xⁱ Yʲ` in degree `w * (i + j - 1)` exactly when its base change along
   `a ↦ ∑ₙ aₙ Tⁿ` is its rescaling by `T ^ w`.
+* `FormalGroup.coeff_nsmulSeries_mem`: for such a graded `F`, the coefficient of `X^m` in `[k]_F`
+  has degree `w * (m - 1)`.
 
 ## References
 
@@ -169,6 +173,26 @@ when `s` is a nonzerodivisor, but not in general: for `s = 0` every series satis
 theorem smul_rescale :
     s • (F.rescale s).toPowerSeries = MvPowerSeries.rescale (fun _ ↦ s) F.toPowerSeries :=
   smul_rescaleSeries F.zero_constantCoeff s
+
+/-- **Multiplication by `k` on the rescaling**: `s • [k]_(F^s)(X) = [k]_F(s X)`. -/
+theorem smul_nsmulSeries_rescale (k : ℕ) :
+    s • (F.rescale s).nsmulSeries k = PowerSeries.rescale s (F.nsmulSeries k) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have hsX : PowerSeries.HasSubst (s • PowerSeries.X : PowerSeries R) :=
+      .of_constantCoeff_zero' (by simp)
+    -- Both sides are `F(s [k]_(F^s)(X), s X) = F([k]_F(s X), s X)`.
+    rw [nsmulSeries_succ, nsmulSeries_succ,
+      smul_subst_of_smul_eq_rescale (smul_rescale F s) ((F.rescale s).hasSubst_nsmulSeries_X k),
+      PowerSeries.rescale_eq_subst, PowerSeries.subst_def,
+      subst_comp_subst_apply (F.hasSubst_nsmulSeries_X k) hsX.const]
+    congr 1
+    funext i
+    fin_cases i
+    · simp [ih, PowerSeries.rescale_eq_subst, PowerSeries.subst_def]
+    · rw [← PowerSeries.subst_def]
+      simp [PowerSeries.subst_X hsX]
 
 /-- The rescaling of a commutative formal group law is commutative. -/
 instance [F.IsComm] : (F.rescale s).IsComm where
@@ -315,6 +339,29 @@ theorem map_toPolynomial_eq_rescale_iff (F : FormalGroup A) (w : ℕ) :
   refine (FormalGroup.ext_iff.trans MvPowerSeries.ext_iff).trans (forall_congr' fun d ↦ ?_)
   rw [coeff_rescale, map_toPowerSeries, map_toPowerSeries, coeff_map, coeff_map, ← pow_mul,
     mul_comm, Polynomial.C_mul_X_pow_eq_monomial, toPolynomial_eq_monomial_iff]
+
+/-- **Multiplication by `k` on a graded formal group law is graded.** If the coefficient of
+`X^(d 0) Y^(d 1)` in `F` has degree `w * (d 0 + d 1 - 1)` for every `d`, then the coefficient of
+`X^m` in `[k]_F` has degree `w * (m - 1)`. -/
+theorem coeff_nsmulSeries_mem (F : FormalGroup A) {w : ℕ}
+    (hF : ∀ d : Fin 2 →₀ ℕ, coeff d F.toPowerSeries ∈ 𝒜 (w * (d.degree - 1))) (k m : ℕ) :
+    PowerSeries.coeff m (F.nsmulSeries k) ∈ 𝒜 (w * (m - 1)) := by
+  cases m with
+  | zero => simp [zero_mem]
+  | succ m =>
+    -- Over `A[T]`, the base change of `F` along `a ↦ ∑ₙ aₙ Tⁿ` is the rescaling of `F` by `T ^ w`,
+    -- so `T ^ w` times the image of the coefficient is `(T ^ w) ^ (m + 1)` times the coefficient.
+    have h := congrArg (PowerSeries.coeff (m + 1))
+      (smul_nsmulSeries_rescale (F.map Polynomial.C) (Polynomial.X ^ w) k)
+    rw [← (map_toPolynomial_eq_rescale_iff F w).2 hF, PowerSeries.coeff_smul,
+      PowerSeries.coeff_rescale, coeff_nsmulSeries_map, coeff_nsmulSeries_map, smul_eq_mul] at h
+    have h' : Polynomial.X ^ w * toPolynomial 𝒜 (PowerSeries.coeff (m + 1) (F.nsmulSeries k)) =
+        Polynomial.X ^ w * ((Polynomial.X ^ w) ^ m *
+          Polynomial.C (PowerSeries.coeff (m + 1) (F.nsmulSeries k))) := by
+      rw [h]
+      ring
+    rw [Nat.add_sub_cancel, ← toPolynomial_eq_monomial_iff, ← Polynomial.C_mul_X_pow_eq_monomial,
+      (Polynomial.isRegular_X_pow w).left h', ← pow_mul, mul_comm]
 
 end Graded
 

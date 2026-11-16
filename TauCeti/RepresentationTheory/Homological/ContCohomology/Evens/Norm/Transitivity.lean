@@ -431,9 +431,6 @@ theorem evensNorm_trans {n : ℕ} (x : continuousCohomology n (trivialF2 V.toSub
     (smoothGradedResolutionResMap_differential _
       (Subgroup.continuous_subgroupOfEquivOfLe hVU') A zg).symm.trans
       ((congrArg ρ.hom.hom hdzg).trans (map_zero _))
-  let y := (smoothTensorInducedGradedResolutionComparison (V.toSubgroup.subgroupOf U.toSubgroup)
-    (U.toSubgroup.subgroupOf_isOpen V.toSubgroup V.isOpen') t A' hA').hom.hom
-      (PiTensorProduct.tprod ℤ fun _ ↦ ρ.hom.hom zg)
   have hy := smoothTensorInducedGradedResolutionComparison_tprod_const_mem_gradedResolutionPiece
     (V.toSubgroup.subgroupOf U.toSubgroup) (U.toSubgroup.subgroupOf_isOpen V.toSubgroup V.isOpen')
     t A' hA' hzr

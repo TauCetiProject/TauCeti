@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Trace
+import TauCeti.AlgebraicGeometry.EllipticCurve.SingularPointCount
 
 /-!
 # The Hasse bound
@@ -38,10 +39,23 @@ namespace WeierstrassCurve
 
 variable {F : Type*} [Field F] [Finite F] (W : WeierstrassCurve F) [W.IsElliptic]
 
+omit [W.IsElliptic] in
 /-- **The Hasse bound**, in trace form: over a finite field with `q` elements, the Frobenius trace
-`a_q` of an elliptic curve satisfies `a_q² ≤ 4q`. `hasse_bound` states the same inequality in terms
-of the number of points. -/
+`a_q` of a Weierstrass curve satisfies `a_q² ≤ 4q`. For an elliptic curve this is the Hasse bound;
+for a singular curve the trace is `0` or `±1`. `hasse_bound` states the same inequality in terms
+of the number of points of an elliptic curve. -/
 theorem frobeniusTrace_sq_le_four_mul_card : W.frobeniusTrace ^ 2 ≤ 4 * Nat.card F := by
+  by_cases hΔ : W.Δ = 0
+  · have hq : 1 < Nat.card F := Finite.one_lt_card
+    by_cases hc₄ : W.c₄ = 0
+    · rw [W.frobeniusTrace_eq_zero_of_c₄_eq_zero hΔ hc₄]
+      positivity
+    · by_cases hs : W.nodePolynomial.Splits
+      · rw [W.frobeniusTrace_eq_one_of_splits hΔ hc₄ hs]
+        omega
+      · rw [W.frobeniusTrace_eq_neg_one_of_not_splits hΔ hs]
+        omega
+  have : W.IsElliptic := ⟨isUnit_iff_ne_zero.mpr hΔ⟩
   -- Over an algebraic closure, `deg (r π - s) = q r² - a_q r s + s²`. Degrees are non-negative,
   -- and at `(r, s) = (a_q, 2q)` this form is `q (4q - a_q²)`.
   have h := (Int.natCast_nonneg _).trans_eq <|

@@ -52,11 +52,9 @@ integers, so `M_O(x)` is an integer. The same computation handles `M_X`.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G item 2, "Gradings.
-The `J`-function, `M_O`, `M_X`, `A`; integer-valuedness of `A`; grading-change formulas across a
-rectangle." The integrality of the Maslov gradings is the prerequisite that the (parity-sensitive)
-integrality of the Alexander grading itself builds on; see Ozsváth--Stipsicz--Szabó, *Grid Homology
-for Knots and Links*, Chapter 4.
+The integrality of the Maslov gradings is the prerequisite that the (parity-sensitive) integrality
+of the Alexander grading itself builds on; see Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots
+and Links*, Chapter 4.
 -/
 
 @[expose] public section

@@ -27,12 +27,9 @@ sits in this file rather than that one.
 
 ## Provenance
 
-Roadmap: EllipticCurves, the Layers 0-1 target *Function-field foundations and isogenies*
-(`TauCetiRoadmap/EllipticCurves/README.md:1096`), through the support module
-`RingTheory/IntegralClosure/NormalizationFinite`. The argument is Stacks 10.161.13 (tag 032O),
-which is univariate and whose proof records it as "Since `R` is N-2 we see that `R′` is finite
-over `R` and hence `R′[x^{1/q}]` is finite over `R[x]`"; the multivariate form is not claimed as
-source material.
+The argument is Stacks 10.161.13 (tag 032O), which is univariate and whose proof records it as
+"Since `R` is N-2 we see that `R′` is finite over `R` and hence `R′[x^{1/q}]` is finite over
+`R[x]`"; the multivariate form is not claimed as source material.
 -/
 
 public section

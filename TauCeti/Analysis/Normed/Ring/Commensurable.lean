@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Ring.LogGauge.Rational
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+import TauCeti.Analysis.Normed.Group.Ultra
 import TauCeti.Analysis.Normed.Ring.UnitBall
 
 /-!
@@ -15,6 +16,8 @@ import TauCeti.Analysis.Normed.Ring.UnitBall
 The canonical rational valuation of a commensurable pseudo-uniformiser is defined in
 `LogGauge.Rational`. This file characterizes its real refinement, proves its strict-order and
 unit-power formulas, and compares it with the normalized valuation of a discrete valuation ring.
+It also shows that commensurability passes along a norm-preserving map with dense range into an
+ultrametric ring, such as the inclusion of a ring into its completion.
 -/
 
 public section
@@ -95,5 +98,18 @@ theorem ratAddValuation_map_eq_addVal {O : Type*} [CommRing O] [IsDomain O]
       norm_map_eq_one_of_isUnit hφ u.isUnit, hπϖ, one_mul, zpow_natCast]
   rw [ratAddValuation_eq_intCast hϖ h, IsDiscreteValuationRing.addVal_def' u hπ n,
     ENat.map_natCast, Int.cast_natCast]
+
+omit [IsUltrametricDist R] [NormMulClass R] in
+include hϖ in
+/-- **Commensurability passes to dense ultrametric extensions.** If `f : R → S` preserves norms
+and has dense range in an ultrametric ring `S`, for instance the inclusion of `R` into its
+completion, and the norm of `R` is commensurable with `ϖ`, then the norm of `S` is commensurable
+with every multiplicative pseudo-uniformiser of `S`. -/
+theorem isCommensurable_of_denseRange {S : Type*} [SeminormedRing S] [IsUltrametricDist S]
+    {f : R → S} (hf : ∀ x, ‖f x‖ = ‖x‖) (hd : DenseRange f) (ϖ' : PseudoUniformizer S) :
+    ϖ'.IsCommensurable :=
+  isCommensurable_of_forall_exists_norm_eq_pow hϖ ϖ' fun _ hy ↦
+    let ⟨a, ha⟩ := IsUltrametricDist.exists_norm_eq_of_denseRange hd hy
+    ⟨1, one_pos, a, by rw [pow_one, ← hf, ha]⟩
 
 end TauCeti.NormedRing.PseudoUniformizer

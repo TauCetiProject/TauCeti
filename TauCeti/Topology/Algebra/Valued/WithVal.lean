@@ -85,7 +85,7 @@ theorem uniformContinuous_congr (σ : K ≃+* K')
     Valuation.restrict_lt_iff_lt_embedding] at hx'
   have haeq : w a = v (σ.symm a) := by rw [← hσ, RingEquiv.apply_symm_apply]
   have hbeq : w b = v (σ.symm b) := by rw [← hσ, RingEquiv.apply_symm_apply]
-  simpa [δ, embedding_valueGroup_mk, WithVal.congr_apply, hσ, haeq, hbeq] using hx'
+  simpa [δ, WithVal.congr_apply, hσ, haeq, hbeq] using hx'
 
 end WithVal
 

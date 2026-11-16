@@ -32,6 +32,23 @@ namespace TauCeti.Place
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
+/-- **The degree of every place is divisible by the degree of the field of constants**: the
+residue field is an algebra over `algebraicClosure k F`, which is regular at every place. -/
+theorem finrank_algebraicClosure_dvd_degree (P : Place k F) :
+    Module.finrank k (algebraicClosure k F) ∣ P.degree := by
+  let : Algebra (algebraicClosure k F) P.integers :=
+    ((algebraicClosure k F).val.toRingHom.codRestrict P.integers
+      fun x ↦ P.mem_integers_of_mem_algebraicClosure x.2).toAlgebra
+  have : IsScalarTower k (algebraicClosure k F) P.integers :=
+    .of_algebraMap_eq fun c ↦ Subtype.ext rfl
+  have : IsScalarTower k (algebraicClosure k F) P.ResidueField :=
+    .of_algebraMap_eq fun c ↦ by
+      rw [IsScalarTower.algebraMap_apply k P.integers P.ResidueField,
+        IsScalarTower.algebraMap_apply k (algebraicClosure k F) P.integers,
+        ← IsScalarTower.algebraMap_apply (algebraicClosure k F) P.integers P.ResidueField]
+  rw [P.degree_eq_finrank, ← Module.finrank_mul_finrank k (algebraicClosure k F) P.ResidueField]
+  exact dvd_mul_right _ _
+
 /-- If `F / k` has a rational place, every element of `F` algebraic over `k` belongs to `k`.
 No function-field or separability hypothesis is needed. -/
 theorem isIntegrallyClosedIn_of_degree_eq_one (P : Place k F) (hP : P.degree = 1) :

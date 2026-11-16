@@ -36,7 +36,7 @@ variable [DiscreteTopology Δ] [DiscreteTopology Γ]
 whose exponent is the ratio of the cusp widths. -/
 theorem cuspChart_compactifiedQuotientMap_eq_pow (h : Δ ≤ Γ)
     (D : Δ.CuspDatum) (E : Γ.CuspDatum)
-    (hc : D.cusp = E.cusp) (hσ : D.scaling = E.scaling)
+    (hσ : D.scaling = E.scaling)
     {n : ℕ} (hw : D.width = n * E.width)
     {A : ℝ} (hD : D.width ≤ A)
     {x : Δ.CompactifiedQuotient} (hx : x ∈ cuspNhd D A) :
@@ -52,7 +52,7 @@ theorem cuspChart_compactifiedQuotientMap_eq_pow (h : Δ ≤ Γ)
       have hC : C = D.cuspOrbit := (ofCusp_mem_cuspNhd_iff D A).mp hx
       subst C
       rw [compactifiedQuotientMap_ofCusp,
-        cuspOrbitMap_cuspOrbit_eq_of_cusp_eq h hc.symm,
+        cuspOrbitMap_cuspOrbit_eq_of_cusp_eq h (D.cusp_eq_of_scaling_eq E hσ).symm,
         cuspChart_ofCusp, cuspChart_ofCusp, zero_pow hn.ne']
   | ofQuotient p =>
       obtain ⟨z, hz, rfl⟩ := (ofQuotient_mem_cuspNhd_iff D A).mp hx

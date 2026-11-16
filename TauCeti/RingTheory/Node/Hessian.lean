@@ -154,20 +154,20 @@ variable {K P ι : Type*} [CommRing P] [IsLocalRing P] [Fintype ι] [DecidableEq
   {x : ι → P} {f : P}
 
 /-- **The Fitting ideal of a hypersurface with nondegenerate Hessian.** If the differentials
-`dxᵢ` of coordinates generating `𝔪` form a basis of `Ω[P⁄K]`, and `f ∈ 𝔪`, then the closed
+`dxᵢ` of coordinates generating `𝔪` form a basis of `Ω[P⁄K]`, then the closed
 subscheme of `P ⧸ (f)` cut out by the `(|ι| - 1)`-st Fitting ideal of its differentials (the
 singular locus, in the smooth setting of the module docstring) is the reduced closed point exactly
 when `f ∈ 𝔪²` and the Hessian determinant of `f` is a unit. -/
 theorem comap_fittingIdeal_kaehlerDifferential_eq_maximalIdeal_iff [CommRing K] [Algebra K P]
     [Module.Finite (P ⧸ Ideal.span {f}) Ω[(P ⧸ Ideal.span {f})⁄K]]
     (b : Module.Basis ι P Ω[P⁄K]) (hx : maximalIdeal P = Ideal.span (Set.range x))
-    (hb : ∀ i, b i = D K P (x i)) (hf : f ∈ maximalIdeal P) :
+    (hb : ∀ i, b i = D K P (x i)) :
     (fittingIdeal (P ⧸ Ideal.span {f}) Ω[(P ⧸ Ideal.span {f})⁄K] (Fintype.card ι - 1)).comap
         (Ideal.Quotient.mk _) = maximalIdeal P ↔
       f ∈ maximalIdeal P ^ 2 ∧ IsUnit (hessian (fun i ↦ (b.coord i).compDer (D K P)) f).det := by
   have hD (i j : ι) : (b.coord i).compDer (D K P) (x j) = if i = j then 1 else 0 := by
     simp [← hb, Finsupp.single_apply, eq_comm]
-  rw [← span_range_apply_sup_span_singleton_eq_maximalIdeal_iff hx hD hf,
+  rw [← span_range_apply_sup_span_singleton_eq_maximalIdeal_iff hx hD,
     comap_fittingIdeal_kaehlerDifferential_quotient_span_singleton f b, Ideal.span_insert,
     sup_comm]
   simp

@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.DiophantineApproximation.Thue.AnalyticBound
-public import TauCeti.NumberTheory.DiophantineApproximation.Thue.ArithmeticBound
-public import TauCeti.NumberTheory.DiophantineApproximation.Thue.Auxiliary
+public import Mathlib.NumberTheory.Height.NumberField
+import TauCeti.NumberTheory.DiophantineApproximation.Thue.AnalyticBound
+import TauCeti.NumberTheory.DiophantineApproximation.Thue.ArithmeticBound
+import TauCeti.NumberTheory.DiophantineApproximation.Thue.Auxiliary
 
 /-!
 # Thue's gap principle and Thue's approximation theorem
@@ -114,7 +115,6 @@ theorem thue_gap_principle {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).natDegree) {�
     rw [hε_def]
     field_simp
   have hu₀ : 0 < ε * d := by positivity
-  have h4u : 4 * (ε * d) < κ - 1 - d / 2 := by nlinarith
   set b := Algebra.natDenominator α
   have hb : 0 < b := Nat.pos_of_ne_zero <|
     IsAlgebraic.natDenominator_ne_zero ((IsFractionRing.isAlgebraic_iff ℤ ℚ ℂ).2 hα.isAlgebraic)
@@ -122,7 +122,7 @@ theorem thue_gap_principle {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).natDegree) {�
     simpa [nsmul_eq_mul] using Algebra.isIntegral_natDenominator_smul α
   set C₂ := 2 ^ ((1 / 2 + ε) * d) * (1 + ‖α‖) ^ (1 + (1 / 2 + ε) * d) *
     (48 * b * max 1 (house α)) ^ (d * (1 + 1 / ε))
-  have hC₂ : 0 < C₂ := by positivity
+  have _ : 0 < C₂ := by positivity
   -- The exponents `a = (1 / 2 + 2 ε) d` and `B = κ - 2 ε d (κ - 1) - a = (κ - d / 2 + 1) / 2`.
   set a := (1 / 2 + ε) * d + ε * d with ha_def
   have ha : 0 < a := by positivity

@@ -13,7 +13,7 @@ public import Mathlib.Algebra.Ring.NegOnePow
 # Bigraded Poincaré series
 
 This file defines the Poincaré series of a finite-dimensional bigraded vector space, together
-with its total dimension and Alexander-graded Euler characteristic.
+with its total dimension and its Alexander- and Maslov-graded Euler characteristics.
 
 ## Main definitions
 
@@ -22,8 +22,8 @@ with its total dimension and Alexander-graded Euler characteristic.
 * `TauCeti.Bigraded.totalDim`: the total dimension, as a ring homomorphism.
 * `TauCeti.Bigraded.euler`: the Alexander-graded Euler characteristic.
 * `TauCeti.Bigraded.maslovEuler`: the Maslov-graded Euler characteristic, which agrees with
-  `TauCeti.Bigraded.euler` on a series without coefficients below the diagonal exactly when the
-  series is diagonal (`TauCeti.Bigraded.euler_eq_maslovEuler_iff_isDiagonal`).
+  `TauCeti.Bigraded.euler` on a series without coefficients on one side of the diagonal exactly
+  when the series is diagonal (`TauCeti.Bigraded.euler_eq_maslovEuler_iff_isDiagonal`).
 -/
 
 public section
@@ -175,11 +175,12 @@ theorem coeff_maslovEuler (P : Series) (m : ℤ) :
     split_ifs <;> simp_all [mul_comm]
 
 /-- **The two Euler characteristics agree exactly on diagonal series**, for a series with no
-coefficients strictly below the diagonal. The lower-triangularity hypothesis is needed: the
-series with coefficient one in bidegrees `(0, 2)` and `(2, 0)` has equal Euler characteristics
-`1 + T^2` but is not diagonal. -/
+coefficients strictly on one side of the diagonal: none strictly below it (bidegrees `(m, a)` with
+`a < m`), or none strictly above it (bidegrees with `m < a`). Some such triangularity hypothesis is
+needed: the series with coefficient one in bidegrees `(0, 2)` and `(2, 0)` has equal Euler
+characteristics `1 + T^2` but is not diagonal. -/
 theorem euler_eq_maslovEuler_iff_isDiagonal (P : Series)
-    (hP : ∀ m a : ℤ, a < m → P.coeff (m, a) = 0) :
+    (hP : (∀ m a : ℤ, a < m → P.coeff (m, a) = 0) ∨ ∀ m a : ℤ, m < a → P.coeff (m, a) = 0) :
     euler P = maslovEuler P ↔ IsDiagonal P := by
   classical
   constructor
@@ -187,22 +188,33 @@ theorem euler_eq_maslovEuler_iff_isDiagonal (P : Series)
     by_contra hdiag
     obtain ⟨m, a, hma, hc⟩ : ∃ m a : ℤ, m ≠ a ∧ P.coeff (m, a) ≠ 0 := by
       simpa [IsDiagonal] using hdiag
-    -- Let `m₀` be the least Maslov degree of an off-diagonal summand, all of which lie strictly
-    -- above the diagonal. The coefficient of `T^m₀` in the Maslov-graded Euler characteristic
-    -- counts every summand of Maslov degree `m₀` with the same sign, while in the
-    -- Alexander-graded one only the summand in bidegree `(m₀, m₀)` survives.
-    set S := P.coeff.support.filter fun g ↦ g.1 < g.2
-    have hle : ∀ g ∈ P.coeff.support, g.1 ≤ g.2 := fun g hg ↦
-      not_lt.mp fun hlt ↦ Finsupp.mem_support_iff.mp hg (hP g.1 g.2 hlt)
+    -- Let `S` be the set of off-diagonal summands, all of which lie on one side of the diagonal.
+    set S := P.coeff.support.filter fun g ↦ g.1 ≠ g.2
     have hS : (S.image Prod.fst).Nonempty :=
-      ⟨m, Finset.mem_image.mpr ⟨(m, a), Finset.mem_filter.mpr
-        ⟨Finsupp.mem_support_iff.mpr hc,
-          lt_of_le_of_ne (hle _ (Finsupp.mem_support_iff.mpr hc)) hma⟩, rfl⟩⟩
-    set m₀ := (S.image Prod.fst).min' hS
-    obtain ⟨g₀, hg₀S, hg₀⟩ := Finset.mem_image.mp ((S.image Prod.fst).min'_mem hS)
-    have hmin : ∀ g ∈ S, m₀ ≤ g.1 := fun g hg ↦
-      (S.image Prod.fst).min'_le _ (Finset.mem_image_of_mem _ hg)
-    -- In degree `m₀`, the two coefficients differ by the off-diagonal Maslov-degree-`m₀` part.
+      ⟨m, Finset.mem_image.mpr
+        ⟨(m, a), Finset.mem_filter.mpr ⟨Finsupp.mem_support_iff.mpr hc, hma⟩, rfl⟩⟩
+    -- Pick a Maslov degree `m₀` of an off-diagonal summand that is not the Alexander degree of any
+    -- off-diagonal summand: the least such Maslov degree if `S` lies above the diagonal, and the
+    -- greatest one if `S` lies below it.
+    obtain ⟨m₀, hm₀S, hm₀⟩ : ∃ m₀ ∈ S.image Prod.fst, ∀ g ∈ S, g.2 ≠ m₀ := by
+      rcases hP with hP | hP
+      · refine ⟨(S.image Prod.fst).min' hS, Finset.min'_mem _ _, fun g hg h2 ↦ ?_⟩
+        obtain ⟨hg, hne⟩ := Finset.mem_filter.mp hg
+        have hle : g.1 ≤ g.2 := not_lt.mp fun hlt ↦ Finsupp.mem_support_iff.mp hg (hP _ _ hlt)
+        have hmin := (S.image Prod.fst).min'_le _
+          (Finset.mem_image_of_mem _ (Finset.mem_filter.mpr ⟨hg, hne⟩))
+        exact hne (le_antisymm hle (h2 ▸ hmin))
+      · refine ⟨(S.image Prod.fst).max' hS, Finset.max'_mem _ _, fun g hg h2 ↦ ?_⟩
+        obtain ⟨hg, hne⟩ := Finset.mem_filter.mp hg
+        have hle : g.2 ≤ g.1 := not_lt.mp fun hlt ↦ Finsupp.mem_support_iff.mp hg (hP _ _ hlt)
+        have hmax := (S.image Prod.fst).le_max' _
+          (Finset.mem_image_of_mem _ (Finset.mem_filter.mpr ⟨hg, hne⟩))
+        exact hne (le_antisymm (h2 ▸ hmax) hle)
+    obtain ⟨g₀, hg₀S, hg₀⟩ := Finset.mem_image.mp hm₀S
+    -- The coefficient of `T^m₀` in the Maslov-graded Euler characteristic counts every summand of
+    -- Maslov degree `m₀` with the same sign, while in the Alexander-graded one only the summand
+    -- in bidegree `(m₀, m₀)` survives. So the two differ by the off-diagonal part in Maslov
+    -- degree `m₀`, which contains the summand `g₀`.
     have hterm : ∀ g ∈ P.coeff.support,
         (if g.2 = m₀ then (g.1.negOnePow : ℤ) * P.coeff g else 0) =
           (if g.1 = m₀ then (g.1.negOnePow : ℤ) * P.coeff g else 0) -
@@ -210,8 +222,8 @@ theorem euler_eq_maslovEuler_iff_isDiagonal (P : Series)
       intro g hg
       by_cases h1 : g.1 = m₀
       · by_cases h2 : g.2 = m₀ <;> simp [h1, h2]
-      · have h2 : g.2 ≠ m₀ := fun h2 ↦ h1 (le_antisymm (h2 ▸ hle g hg)
-          (hmin g (Finset.mem_filter.mpr ⟨hg, lt_of_le_of_ne (hle g hg) (h2 ▸ h1)⟩)))
+      · have h2 : g.2 ≠ m₀ := fun h2 ↦
+          hm₀ g (Finset.mem_filter.mpr ⟨hg, fun h12 ↦ h1 (h12.trans h2)⟩) h2
         simp [h1, h2]
     have hcoeff := congrArg (fun f : ℤ[T;T⁻¹] ↦ f.coeff m₀) h
     simp only [coeff_euler, coeff_maslovEuler, Finsupp.sum] at hcoeff
@@ -219,11 +231,9 @@ theorem euler_eq_maslovEuler_iff_isDiagonal (P : Series)
       mul_eq_zero, Finset.sum_eq_zero_iff_of_nonneg (fun _ _ ↦ by positivity)] at hcoeff
     rcases hcoeff with hunit | hzero
     · exact Units.ne_zero _ hunit
-    · have hg₀ne : g₀.2 ≠ m₀ := fun h2 ↦
-        (Finset.mem_filter.mp hg₀S).2.ne (hg₀.trans h2.symm)
+    · have hg₀ne : g₀.2 ≠ m₀ := hm₀ g₀ hg₀S
       have := hzero g₀ (Finset.mem_filter.mp hg₀S).1
-      have hg₀' : g₀.1 = m₀ := hg₀
-      simp only [hg₀', hg₀ne, ne_eq, not_false_eq_true, and_self, ite_true] at this
+      simp only [hg₀, hg₀ne, ne_eq, not_false_eq_true, and_self, ite_true] at this
       exact Finsupp.mem_support_iff.mp (Finset.mem_filter.mp hg₀S).1 (by exact_mod_cast this)
   · intro hdiag
     ext a

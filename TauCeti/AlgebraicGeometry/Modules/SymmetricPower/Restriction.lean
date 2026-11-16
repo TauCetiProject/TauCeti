@@ -45,11 +45,11 @@ module sheaf. The forward map is the canonical symmetric-power pushforward compa
 def restrictSymmetricPowerIso (n : ℕ) :
     restrictFunctor f ⋙ SheafOfModules.symmetricPower X.sheaf n ≅
       SheafOfModules.symmetricPower Y.sheaf n ⋙ restrictFunctor f :=
-  @asIso _ _ _ _ (TauCeti.SheafOfModules.pushforwardSymmetricPowerComparison
+  @asIso _ _ _ _ (SheafOfModules.pushforwardSymmetricPowerComparison
     (restrictRingCatSheafHom f) n)
     -- The scheme sheaf category and the generic site sheaf category have different
     -- instance heads; pass the same coefficient-map isomorphism explicitly.
-    (@TauCeti.SheafOfModules.isIso_pushforwardSymmetricPowerComparison
+    (@SheafOfModules.isIso_pushforwardSymmetricPowerComparison
       _ _ _ _ _ _ _ _ _ _ _ _ f.opensFunctor _ X.sheaf Y.sheaf
       (restrictRingCatSheafHom f) inferInstance (isIso_restrictRingCatSheafHom f) n)
 
@@ -58,7 +58,7 @@ def restrictSymmetricPowerIso (n : ℕ) :
 -- inverse laws from matching in ordinary importing simplification.
 theorem restrictSymmetricPowerIso_hom_app (n : ℕ) (M : Y.Modules) :
     (restrictSymmetricPowerIso f n).hom.app M =
-      (TauCeti.SheafOfModules.pushforwardSymmetricPowerComparison
+      (SheafOfModules.pushforwardSymmetricPowerComparison
         (restrictRingCatSheafHom f) n).app M :=
   (rfl)
 
@@ -67,7 +67,7 @@ immersion is compatible with the symmetric-power comparisons of pushforward and 
 theorem restrictAdjunction_unit_app_symmetricPower (n : ℕ) (M : Y.Modules) :
     (restrictAdjunction f).unit.app ((SheafOfModules.symmetricPower Y.sheaf n).obj M) =
       (SheafOfModules.symmetricPower Y.sheaf n).map ((restrictAdjunction f).unit.app M) ≫
-        (TauCeti.SheafOfModules.pushforwardSymmetricPowerComparison f.toRingCatSheafHom n).app
+        (SheafOfModules.pushforwardSymmetricPowerComparison f.toRingCatSheafHom n).app
           (M.restrict f) ≫
         (pushforward f).map ((restrictSymmetricPowerIso f n).hom.app M) := by
   rw [restrictSymmetricPowerIso_hom_app]

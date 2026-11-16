@@ -41,11 +41,8 @@ reflected at `tgt` has the same Tits form, and hence the same thresholds.
 
 ## References
 
-This file supplies the positive semidefinite Tits form `(a - b) ^ 2` with radical `(1, 1)` asked
-for by the “Kronecker quiver” worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See Derksen--Weyman, *An
-Introduction to Quiver Representations*, and Assem--Simson--Skowroński, *Elements of the
-Representation Theory of Associative Algebras I*, Ch. II.
+See Derksen--Weyman, *An Introduction to Quiver Representations*, and Assem--Simson--Skowroński,
+*Elements of the Representation Theory of Associative Algebras I*, Ch. II.
 -/
 
 public section

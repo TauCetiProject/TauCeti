@@ -145,9 +145,9 @@ theorem finrank_ker_one_add_U_add_U_sq [CharZero K] (hw : Even w) :
   -- `3 d = 2 (w + 1) - P_{w+2}(1, 1) - P_{w+2}(-1, 1)`, according to `w mod 6`
   obtain ⟨j, r, hr, rfl⟩ : ∃ j r, (r = 0 ∨ r = 2 ∨ r = 4) ∧ w = 6 * j + r :=
     ⟨w / 6, w % 6, by obtain ⟨m, rfl⟩ := hw; omega, (Nat.div_add_mod w 6).symm⟩
-  have hU₂ := dickson_two_one_eval_neg_one_three_mul_add (R := K) (2 * j) r
+  have hU₂ := dickson_eval_neg_one_three_mul_add (R := K) 2 (2 * j) r
   simp only [← mul_assoc, Nat.reduceMul] at hU₂
-  rw [dickson_two_one_eval_one_six_mul_add, hU₂] at h
+  rw [dickson_eval_one_six_mul_add, hU₂] at h
   rcases hr with rfl | rfl | rfl
   · have hd : (d : K) = (4 * j : ℕ) := by
       norm_num at h

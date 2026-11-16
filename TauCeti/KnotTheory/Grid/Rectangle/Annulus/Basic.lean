@@ -54,11 +54,9 @@ for any grid differential whose marking-free test is that disjointness — in pa
 
 ## References
 
-This supplies the annular case split for
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3, "The complexes and `∂² = 0`",
-whose juxtaposition argument distinguishes disjoint, overlapping and annular pairs of empty
-rectangles. The annular case follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
-Links*, Chapter 4.6.
+This supplies the annular case split for the proof that the grid differential squares to zero, whose
+juxtaposition argument distinguishes disjoint, overlapping and annular pairs of empty rectangles.
+The annular case follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.6.
 -/
 
 public section

@@ -32,6 +32,10 @@ algebras, a morphism is a quasi-isomorphism exactly when its linear part is bije
   minimal.
 * `TauCeti.AInfinityAlgebra.IsMinimal.taylor_coalgHom_of_tprod`: after a coalgebra morphism, the
   Taylor map of a graded algebra only sees the cuts of a word into two blocks.
+* `TauCeti.AInfinityAlgebra.IsMinimal.of_linearPart_injective` and
+  `TauCeti.AInfinityAlgebra.IsMinimal.of_linearPart_surjective`: minimality is reflected along an
+  `A∞` morphism with injective linear part, and carried along one with surjective linear part.
+* `TauCeti.AInfinityHom.IsIso.isMinimal_iff`: minimality is invariant under `A∞` isomorphism.
 * `TauCeti.AInfinityHom.isQuasiIso_iff_linearPart_bijective`: between minimal algebras, a
   quasi-isomorphism has bijective linear part.
 * `TauCeti.AInfinityHom.isQuasiIso_iff_isIso`: between minimal algebras, the quasi-isomorphisms
@@ -179,11 +183,34 @@ theorem isMinimal_cohomologyAInfinityAlgebra (𝒜 : AInfinityAlgebra R A) :
     𝒜.cohomologyAInfinityAlgebra.IsMinimal :=
   (isMinimal_iff_m_one_eq_zero _).2 fun _ ↦ 𝒜.cohomologyAInfinityAlgebra_m_one_apply _
 
+/-- An `A∞` algebra with an `A∞` morphism to a minimal algebra whose linear part is injective is
+minimal: the linear part is an injective chain map. -/
+theorem IsMinimal.of_linearPart_injective {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B}
+    (hB : BB.IsMinimal) {f : AInfinityHom AA BB} (hf : Function.Injective f.linearPart) :
+    AA.IsMinimal :=
+  (isMinimal_iff_m_one_eq_zero AA).2 fun x ↦
+    hf <| by rw [f.linearPart_m_one, (isMinimal_iff_m_one_eq_zero BB).1 hB, map_zero]
+
+/-- A minimal `A∞` algebra with an `A∞` morphism to another algebra whose linear part is
+surjective has minimal target: the linear part is a surjective chain map. -/
+theorem IsMinimal.of_linearPart_surjective {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B}
+    (hA : AA.IsMinimal) {f : AInfinityHom AA BB} (hf : Function.Surjective f.linearPart) :
+    BB.IsMinimal :=
+  (isMinimal_iff_m_one_eq_zero BB).2 fun y ↦ by
+    obtain ⟨x, rfl⟩ := hf y
+    rw [← f.linearPart_m_one, (isMinimal_iff_m_one_eq_zero AA).1 hA, map_zero]
+
 end AInfinityAlgebra
 
 namespace AInfinityHom
 
 variable {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B}
+
+/-- Minimality of an `A∞` algebra is invariant under `A∞` isomorphism. -/
+theorem IsIso.isMinimal_iff {f : AInfinityHom AA BB} (hf : f.IsIso) :
+    AA.IsMinimal ↔ BB.IsMinimal :=
+  ⟨fun hA ↦ hA.of_linearPart_surjective hf.linearPart_bijective.2,
+    fun hB ↦ hB.of_linearPart_injective hf.linearPart_bijective.1⟩
 
 /-- Between minimal algebras, the map induced on cohomology is the linear part, transported along
 the identifications of the algebras with their cohomology. -/

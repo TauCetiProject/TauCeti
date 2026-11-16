@@ -58,8 +58,6 @@ fails already factors as `p q`) is a separate combinatorial theorem and is not p
 
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 7.2.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 4.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 2.
 -/
 
 public section

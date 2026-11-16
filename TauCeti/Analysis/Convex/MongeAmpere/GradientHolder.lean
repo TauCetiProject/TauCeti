@@ -39,7 +39,6 @@ private lemma reverse_gap_le_of_convexSection
       convexSection Ω u x ℓ h ⊆ convexSection Ω u y m (θ * h)) :
     u x - u y - m (x - y) ≤ θ * (u y - u x - ℓ (y - x)) := by
   let D := u y - u x - ℓ (y - x)
-  have hθ0 : 0 ≤ θ := le_trans zero_le_one hθ
   have hθ1 : 0 < θ + 1 := by linarith
   apply le_of_forall_pos_le_add
   intro ε hε

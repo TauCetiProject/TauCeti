@@ -124,9 +124,14 @@ theorem demushkinRank_def (hG : IsDemushkin p G) :
 
 /-- **The rank of a presented Demushkin group is the number of generators** when the relators lie
 in the Frattini subgroup: such a presentation is minimal. -/
-theorem demushkinRank_presentedProP {X : Type v} [Finite X] {rels : Set (freeProP p X)}
+theorem demushkinRank_presentedProP {X : Type v} {rels : Set (freeProP p X)}
     (hrels : rels ⊆ proPFrattini p (freeProP p X)) (hG : IsDemushkin p (presentedProP p X rels)) :
     demushkinRank hG = Nat.card X := by
+  -- the generators are linearly independent in the finite Frattini quotient, so `X` is finite
+  have : Finite X := by
+    have := hG.isTopologicallyFinitelyGenerated.finite_quotient_proPFrattini p
+    exact Finite.of_injective _
+      (presentedProP.linearIndependent_frattiniQuotient_of rels hrels).injective
   rw [demushkinRank_def]
   exact (presentedProP.topologicalGeneratorRankNat_eq_card_iff rels).mpr hrels
 

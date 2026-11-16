@@ -8,7 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Dart
 
 /-!
-# Darts with a fixed tail
+# Darts of a simple graph
 
 The darts of a simple graph with tail `u` correspond to the neighbours of `u`: a dart is sent to
 its head, and a neighbour `w` to the dart `u → w` (`SimpleGraph.dartOfNeighborSet`).
@@ -17,6 +17,11 @@ its head, and a neighbour `w` to the dart `u → w` (`SimpleGraph.dartOfNeighbor
 
 * `SimpleGraph.dartFstEquivNeighborSet`: the equivalence between the darts with tail `u` and the
   neighbour set of `u`.
+
+## Main results
+
+* `SimpleGraph.DartAdj.edge_ne_iff`: two consecutive darts have different edges exactly when the
+  second is not the reverse of the first.
 -/
 
 @[expose] public section
@@ -47,5 +52,14 @@ theorem coe_dartFstEquivNeighborSet_apply (u : V)
 theorem coe_dartFstEquivNeighborSet_symm_apply (u : V) (w : G.neighborSet u) :
     ((G.dartFstEquivNeighborSet u).symm w : G.Dart) = G.dartOfNeighborSet u w :=
   rfl
+
+/-- Two consecutive darts have different edges exactly when the second is not the reverse of the
+first. -/
+theorem DartAdj.edge_ne_iff {d d' : G.Dart} (h : G.DartAdj d d') :
+    d.edge ≠ d'.edge ↔ d' ≠ d.symm := by
+  have := d.adj.ne
+  rw [Ne, dart_edge_eq_iff]
+  unfold DartAdj at h
+  grind [Dart.symm_symm]
 
 end SimpleGraph

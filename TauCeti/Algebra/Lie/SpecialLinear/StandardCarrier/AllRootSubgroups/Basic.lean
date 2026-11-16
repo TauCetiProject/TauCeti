@@ -50,11 +50,6 @@ type-A Chevalley commutator equations on arbitrary commutative-ring-valued point
 * J. S. Milne, *Algebraic Groups* (2017), Section 21.
 * R. W. Carter, *Simple Groups of Lie Type* (1972), Sections 4.4, 7.1, and 11.3.
 * R. Steinberg, *Lectures on Chevalley Groups*, Sections 3--4.
-
-This advances the "Root subgroup maps" target in Layer 9, "The Chevalley--Demazure
-construction", of `TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone L0,
-"pinned ambient groups", of `TauCetiRoadmap/CFSGStatement/README.md`; milestone L1 subsequently
-needs the Frobenius equation on `x_alpha` for every root `alpha`.
 -/
 
 public section

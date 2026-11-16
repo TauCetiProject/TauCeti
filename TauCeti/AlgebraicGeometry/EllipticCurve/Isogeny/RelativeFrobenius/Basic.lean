@@ -103,9 +103,9 @@ that does want it.
 
 ## Provenance
 
-Not a port. The pinned sources of this roadmap build only the **absolute** `q`-power Frobenius of
-a curve over a finite field (AINTLIB's `HasseWeil/FrobeniusIsogeny.lean`, already migrated as
-`TauCeti.Isogeny.frobeniusIsogeny` and
+Not a port. The external sources this library draws on build only the **absolute** `q`-power
+Frobenius of a curve over a finite field (AINTLIB's `HasseWeil/FrobeniusIsogeny.lean`, already
+migrated as `TauCeti.Isogeny.frobeniusIsogeny` and
 `WeierstrassCurve.Affine.finrank_fieldRange_frobeniusAlgHom`); the relative Frobenius over
 an arbitrary base, and the twist it maps to, appear in none of them.
 The degree computation reuses the migrated tower argument of
@@ -383,18 +383,9 @@ theorem fieldPullback_relativeFrobeniusIsogeny_comp_map
     (relativeFrobeniusIsogeny p W).fieldPullback.toRingHom.comp
         (FunctionField.map W (frobenius F p)) = frobenius W.FunctionField p := by
   let := expChar_of_injective_algebraMap (algebraMap F W.FunctionField).injective p
-  have h := fieldPullback_iterateRelativeFrobeniusIsogeny_comp_map p W 1
-  dsimp only at h
-  rw [iterateFrobenius_one (R := W.FunctionField) p] at h
-  simp only [iterateRelativeFrobeniusIsogeny_one] at h
-  have e := iterateFrobenius_one (R := F) p
-  -- Name the equality used in the target cast so that generalizing the ring homomorphism
-  -- also generalizes its proof; dependent casts prevent a direct rewrite in `h`.
-  change (congrArg W.map e.symm ▸ relativeFrobeniusIsogeny p W).fieldPullback.toRingHom.comp
-    (FunctionField.map W (iterateFrobenius F p 1)) = frobenius W.FunctionField p at h
-  generalize hf : iterateFrobenius F p 1 = f at e h
-  cases e
-  exact h
+  apply IsFractionRing.ringHom_ext (A := W.CoordinateRing)
+  intro z
+  simp [frobenius_def]
 
 /-- The coefficient Frobenius followed by relative Frobenius is the `p`-power map on
 the function field. -/

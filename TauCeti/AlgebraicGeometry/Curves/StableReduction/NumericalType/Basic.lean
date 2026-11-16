@@ -93,9 +93,6 @@ for a bare matrix:
 this file re-exports.
 -/
 
--- The `NumericalType` structure, the signed genus and the two worked examples follow the
--- signatures written down in `StableReduction/Suggested.lean` of the Tau Ceti roadmap.
-
 public section
 
 namespace TauCeti
@@ -147,6 +144,12 @@ variable (T : NumericalType.{u})
 /-- Intersection numbers of a numerical type commute. -/
 lemma intersection_comm (i j : T.Component) : T.intersection i j = T.intersection j i :=
   (T.intersection_isSymm.apply i j).symm
+
+/-- A component `i` that does not meet `k` differs from every component `l` that does. -/
+lemma ne_of_intersection_eq_zero_of_pos {i k l : T.Component}
+    (hik : T.intersection i k = 0) (hkl : 0 < T.intersection k l) : i ≠ l := by
+  rintro rfl
+  linarith [T.intersection_comm k i]
 
 /-! ### Weight and multiplicity bounds -/
 
@@ -433,7 +436,6 @@ theorem intersection_ratio_mul_le_four {i j : T.Component}
   have hwi : (0 : ℤ) < T.weight i := Int.natCast_pos.mpr (T.weight i).pos
   have hwj : (0 : ℤ) < T.weight j := Int.natCast_pos.mpr (T.weight j).pos
   have hmi : (0 : ℤ) < T.multiplicity i := Int.natCast_pos.mpr (T.multiplicity i).pos
-  have hmj : (0 : ℤ) < T.multiplicity j := Int.natCast_pos.mpr (T.multiplicity j).pos
   have ha0 : 0 < a := by nlinarith [ha]
   have hb0 : 0 < b := by nlinarith [ha]
   have h₁ := T.multiplicity_mul_intersection_le j i
@@ -443,7 +445,6 @@ theorem intersection_ratio_mul_le_four {i j : T.Component}
   have h₁' : a * (T.multiplicity j : ℤ) ≤ 2 * T.multiplicity i := by nlinarith [h₁]
   have h₂' : b * (T.multiplicity i : ℤ) ≤ 2 * T.multiplicity j := by nlinarith [h₂]
   have hprod := mul_le_mul h₁' h₂' (mul_pos hb0 hmi).le (by positivity)
-  have hmpos := mul_pos hmi hmj
   nlinarith [hprod]
 
 /-! ### Reindexing -/

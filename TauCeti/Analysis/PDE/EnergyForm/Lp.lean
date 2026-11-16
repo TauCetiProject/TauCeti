@@ -11,9 +11,8 @@ public import TauCeti.Analysis.PDE.SymmetricEnergy
 /-!
 # Constant-coefficient energy forms on `L²` jets
 
-Lane D of the PDE roadmap asks for the bounded bilinear energy form used by the weak
-formulation of a divergence-form equation. This file performs the functional-analytic bundling
-for constant coefficients. A pointwise jet form
+The weak formulation of a divergence-form equation uses a bounded bilinear energy form. This
+file performs the functional-analytic bundling for constant coefficients. A pointwise jet form
 
 `(u, ∇u), (v, ∇v) ↦ (∇v)ᵀ A ∇u + v bᵀ ∇u + c u v`
 
@@ -21,10 +20,11 @@ induces a continuous bilinear form on square-integrable value-gradient jets. The
 uses Mathlib's `ContinuousLinearMap.lpPairing`, which is the continuous Hölder pairing induced
 by a continuous bilinear map.
 
-Variable coefficients will require the corresponding multiplication-operator construction.
-The constant-coefficient form here already includes the Dirichlet and shifted-Laplacian models
-and has the bounded-bilinear-map shape needed for a later Lax--Milgram application, after
-restriction to the intended Hilbert/Sobolev space and a proof of coercivity.
+Variable coefficients need the corresponding multiplication-operator construction,
+`TauCeti.PDE.energyFormLpVariable` in `TauCeti.Analysis.PDE.EnergyForm.VariableLp`. The
+constant-coefficient form here already includes the Dirichlet and shifted-Laplacian models and
+has the bounded-bilinear-map shape needed by Lax--Milgram, after restriction to a Sobolev space
+and a proof of coercivity.
 
 ## Main declarations
 

@@ -65,13 +65,11 @@ the span.
 
 ## References
 
-This is the completeness half of the "the `{χ_n}` are an orthonormal basis of the class functions
-of `SU(2)`" item of the `SU(2)` engine case of
-`TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md`; orthonormality is
-`TauCeti.SU2.character_symPower_orthonormal_torusExp`. It is the analytic input to the remaining
-item of that engine case, that the `Symᵈ(ℂ²)` exhaust the finite-dimensional irreducibles, which
-is *not* proved here: that deduction additionally needs the symmetric powers as continuous unitary
-representations, so that the character orthogonality of
+Orthonormality of the characters is `TauCeti.SU2.character_symPower_orthonormal_torusExp`. The
+density proved here is the analytic input to the exhaustion theorem, that the `Symᵈ(ℂ²)` exhaust the
+finite-dimensional irreducibles, which is *not* proved here but in
+`TauCeti/RepresentationTheory/SU2/Exhaustion.lean`: that deduction additionally needs the symmetric
+powers as continuous representations, so that the character orthogonality of
 `TauCeti/RepresentationTheory/Compact/Character/Basic.lean` applies to them.
 
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 3.

@@ -75,7 +75,6 @@ private lemma start_rpow_le_of_pos {M α β P : ℝ} (hM : 0 < M) (hα : 0 < α)
     (hP : 0 < P) :
     (2 * M / (M * P ^ ((β - 1) / α) * 2 ^ (β / (β - 1)))) ^ α * P ^ (β - 1) ≤
       2 ^ (-(α / (β - 1))) := by
-  have hβ1 : 0 < β - 1 := sub_pos.2 hβ
   have hd : 0 < M * P ^ ((β - 1) / α) * 2 ^ (β / (β - 1)) := by positivity
   have hdα : (M * P ^ ((β - 1) / α) * 2 ^ (β / (β - 1))) ^ α =
       M ^ α * P ^ (β - 1) * 2 ^ (α * β / (β - 1)) := by
@@ -130,7 +129,6 @@ theorem apply_add_eq_zero_of_le_div_sub_rpow_mul_rpow {φ : ℝ → ℝ} {k₀ M
     fun j => apply_level_succ_le hM hd hrec j (hk₀ j)
   -- The choice of `d` makes the starting value small enough for geometric decay.
   set q : ℝ := 2 ^ (-(α / (β - 1)))
-  have hq0 : 0 ≤ q := by positivity
   have hq1 : q < 1 :=
     Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 (div_pos hα hβ1))
   have hbq : 2 ^ α * q ^ (β - 1) ≤ 1 := by
@@ -140,8 +138,8 @@ theorem apply_add_eq_zero_of_le_div_sub_rpow_mul_rpow {φ : ℝ → ℝ} {k₀ M
     rw [hY0]
     exact start_rpow_le_of_pos hM hα hβ hPpos
   have hlim : Tendsto Y atTop (𝓝 0) :=
-    tendsto_atTop_zero_of_le_mul_pow_mul_rpow_of_ratio_lt_one hY (by positivity) hq0 hq1
-      (by linarith) hbq hstart hrecY
+    tendsto_atTop_zero_of_le_mul_pow_mul_rpow_of_ratio_lt_one hY hq1 (by linarith) hbq hstart
+      hrecY
   -- `φ (k₀ + d)` lies below every `φ kⱼ`, and these tend to zero.
   refine le_antisymm (ge_of_tendsto' hlim fun j => ?_) (hφ _ (by linarith))
   have hk₀d : k₀ ≤ k₀ + d := by linarith

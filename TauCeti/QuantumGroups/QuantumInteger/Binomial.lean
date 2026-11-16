@@ -209,7 +209,7 @@ theorem quantumBinomial_succ_right_eq (q : K) (n k : ℕ) :
     cases k with
     | zero => simp [quantumBinomial_one_right hq, quantumInteger_one hq]
     | succ k =>
-      rcases lt_or_ge k n with hk | hk
+      rcases lt_or_ge k n with _ | hk
       swap
       · rw [quantumBinomial_eq_zero_of_lt q (by omega : n + 1 < k + 1 + 1)]
         rcases eq_or_lt_of_le hk with rfl | hk

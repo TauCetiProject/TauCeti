@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Incidence
+public import TauCeti.Combinatorics.Graph.Incidence.Basic
 public import TauCeti.Combinatorics.Graph.Orientation.Basic
 
 /-!

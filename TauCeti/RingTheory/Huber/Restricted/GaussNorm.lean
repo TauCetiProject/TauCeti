@@ -96,7 +96,6 @@ theorem isRestricted_iff_isRestricted_one {f : MvPowerSeries (Fin n) R} :
 end Predicate
 
 variable {n : ℕ} {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
-  [NonarchimedeanRing R]
 
 /-- The trivial-weight Huber subring is Mathlib's subring of unit-radius restricted series.
 This is an equality of subrings; their topological structures are compared separately below. -/
@@ -184,7 +183,7 @@ theorem continuous_restrictedMvPowerSeriesGaussEquiv :
   let U := IsUltrametricDist.ball_openAddSubgroup R (half_pos hε)
   filter_upwards [(hasBasis_nhds_zero_weightedTopology
     (k := n) (A := R) isWeightFamily_one_weight).mem_of_mem (i := U) trivial] with f hf
-  refine lt_of_le_of_lt ((MvPowerSeries.norm_le_iff (half_pos hε).le).mpr ?_)
+  refine lt_of_le_of_lt (MvPowerSeries.norm_le_iff.mpr ?_)
     (half_lt_self hε)
   intro ν
   have h := mem_weightedNhd.mp hf ν
@@ -317,7 +316,6 @@ have the same underlying power series and the same topology. -/
 variable (u : Fin n → Rˣ) (hu : ∀ i, IsNormMulUnit (u i : R)) {c : Fin n → ℝ}
   (hc : ∀ i, ‖(u i : R)‖ * c i = 1)
 
-omit [NonarchimedeanRing R] in
 include hu hc in
 /-- **Unit weights encode radii.** A series is restricted for the weights `Tᵢ = {u i}` exactly
 when it is restricted at the radii `c`. -/
@@ -388,7 +386,7 @@ theorem continuous_weightedRestrictedGaussAlgEquiv :
   let U := IsUltrametricDist.ball_openAddSubgroup R (half_pos hε)
   filter_upwards [(hasBasis_nhds_zero_weightedTopology (isWeightFamily_units u)).mem_of_mem
     (i := U) trivial] with f hf
-  refine lt_of_le_of_lt ((MvPowerSeries.norm_le_iff (half_pos hε).le).mpr fun ν ↦ ?_)
+  refine lt_of_le_of_lt (MvPowerSeries.norm_le_iff.mpr fun ν ↦ ?_)
     (half_lt_self hε)
   have h := (mem_weightedNhd_units_iff u).mp hf ν
   rw [coe_weightedRestrictedGaussAlgEquiv,

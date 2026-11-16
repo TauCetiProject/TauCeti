@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 public import Mathlib.RingTheory.FiniteType
 public import TauCeti.RingTheory.Polynomial.Distinguished
@@ -31,6 +32,10 @@ ring: `R[X] → R[C]`, `X ↦ σ - 1`, is surjective with kernel the principal i
 `(1 + X) ^ |C| - 1` (`ker_aeval_of_sub_one`), the polynomial vanishing at `σ - 1` because
 `σ ^ |C| = 1`.
 
+The kernel description and the vanishing and divisibility lemmas also hold for an infinite cyclic
+group `C`, where `|C| = 0`: the family of powers is then empty, the polynomial
+`(1 + X) ^ |C| - 1` is `0` and evaluation at `σ - 1` is injective.
+
 These coefficient and divisibility formulas supply the finite-level linear algebra used for the
 power-series coordinate `ℤ_p⟦X⟧ ≅ ℤ_p[[Γ]]` of an infinite procyclic profinite pro-`p` group `Γ`,
 and the kernel computation identifies the finite levels `ℤ_p[Γ ⧸ U]` of that coordinate.
@@ -44,6 +49,8 @@ and the kernel computation identifies the finite levels `ℤ_p[Γ ⧸ U]` of tha
   `deg f < |C|`, then `r` divides every coefficient of `f`.
 * `TauCeti.MonoidAlgebra.eq_zero_of_aeval_of_sub_one_eq_zero`: if `f(σ - 1) = 0` with
   `deg f < |C|`, then `f = 0`.
+* `TauCeti.MonoidAlgebra.injective_aeval_of_not_isOfFinOrder`: evaluation at an element of
+  infinite order is injective on `R[X]`.
 * `TauCeti.MonoidAlgebra.aeval_of_sub_one_surjective`,
   `TauCeti.MonoidAlgebra.ker_aeval_of_sub_one`: evaluation at `σ - 1` is a surjection
   `R[X] → R[C]` with kernel `((1 + X) ^ |C| - 1)`.
@@ -87,10 +94,17 @@ theorem span_range_of_sub_one_pow_eq_top (hσ : ∀ x, x ∈ Subgroup.zpowers σ
   | add x y hx hy => exact add_mem hx hy
   | smul r x hx => exact Submodule.smul_mem _ r hx
 
-/-- The powers `(σ - 1) ^ i` for `i < |C|` of a generator `σ` of a finite cyclic group `C` are
-linearly independent in the group algebra `R[C]`. -/
+omit [Finite C] in
+/-- The powers `(σ - 1) ^ i` for `i < |C|` of a generator `σ` of a cyclic group `C` are linearly
+independent in the group algebra `R[C]`. For an infinite group `|C| = 0` and the family is
+empty. -/
 theorem linearIndependent_of_sub_one_pow (hσ : ∀ x, x ∈ Subgroup.zpowers σ) :
     LinearIndependent R fun i : Fin (Nat.card C) ↦ (MonoidAlgebra.of R C σ - 1) ^ (i : ℕ) := by
+  rcases finite_or_infinite C with _ | _
+  swap
+  · have h0 : Nat.card C = 0 := Nat.card_eq_zero_of_infinite
+    have : IsEmpty (Fin (Nat.card C)) := ⟨fun i ↦ by simpa [h0] using i.isLt⟩
+    exact linearIndependent_empty_type
   have hord := orderOf_eq_card_of_forall_mem_zpowers hσ
   have he (g : C) : ∃ j < Nat.card C, σ ^ j = g := by
     obtain ⟨j, rfl⟩ := (Submonoid.mem_powers_iff g σ).mp (mem_powers_iff_mem_zpowers.mpr (hσ g))
@@ -150,19 +164,22 @@ theorem basisSubOnePow_repr_aeval (hσ : ∀ x, x ∈ Subgroup.zpowers σ) {f : 
     simp
   rw [this, Basis.repr_sum_self]
 
+omit [Finite C] in
 /-- If the value `f(σ - 1) ∈ R[C]` of a polynomial `f` of degree `< |C|` at `σ - 1` is a scalar
 multiple `r • y`, then `r` divides every coefficient of `f`. -/
 theorem dvd_coeff_of_aeval_of_sub_one_eq_smul (hσ : ∀ x, x ∈ Subgroup.zpowers σ) {f : R[X]}
     (hf : f.degree < Nat.card C) {r : R} {y : MonoidAlgebra R C}
     (h : aeval (MonoidAlgebra.of R C σ - 1) f = r • y) (i : ℕ) : r ∣ f.coeff i := by
   by_cases hi : i < Nat.card C
-  · rw [← basisSubOnePow_repr_aeval hσ hf ⟨i, hi⟩, h, map_smul, Finsupp.smul_apply, smul_eq_mul]
+  · have := Nat.finite_of_card_ne_zero (Nat.zero_lt_of_lt hi).ne'
+    rw [← basisSubOnePow_repr_aeval hσ hf ⟨i, hi⟩, h, map_smul, Finsupp.smul_apply, smul_eq_mul]
     exact dvd_mul_right _ _
   · rw [coeff_eq_zero_of_degree_lt (hf.trans_le (by exact_mod_cast not_lt.mp hi))]
     exact dvd_zero _
 
+omit [Finite C] in
 /-- A polynomial of degree `< |C|` vanishing at `σ - 1` in `R[C]` is zero, for a generator `σ` of
-the finite cyclic group `C`. -/
+the cyclic group `C`. -/
 theorem eq_zero_of_aeval_of_sub_one_eq_zero (hσ : ∀ x, x ∈ Subgroup.zpowers σ) {f : R[X]}
     (hf : f.degree < Nat.card C) (h : aeval (MonoidAlgebra.of R C σ - 1) f = 0) : f = 0 := by
   ext i
@@ -170,8 +187,8 @@ theorem eq_zero_of_aeval_of_sub_one_eq_zero (hσ : ∀ x, x ∈ Subgroup.zpowers
     (r := 0) (y := 0) (by simpa using h) i
 
 omit [Finite C] in
-/-- The polynomial `(1 + X) ^ |C| - 1` vanishes at `σ - 1` in the group algebra `R[C]` of a finite
-group `C`, because `σ ^ |C| = 1`. -/
+/-- The polynomial `(1 + X) ^ |C| - 1` vanishes at `σ - 1` in the group algebra `R[C]`, because
+`σ ^ |C| = 1` for a finite group `C`; for an infinite group `|C| = 0` and the polynomial is `0`. -/
 theorem aeval_of_sub_one_one_add_X_pow_card_sub_one_eq_zero (σ : C) :
     aeval (MonoidAlgebra.of R C σ - 1) ((1 + X) ^ Nat.card C - 1 : R[X]) = 0 := by
   rw [map_sub, map_pow, map_add, map_one, aeval_X, add_sub_cancel, ← map_pow, pow_card_eq_one',
@@ -186,12 +203,48 @@ theorem aeval_of_sub_one_surjective (hσ : ∀ x, x ∈ Subgroup.zpowers σ) :
   rintro _ ⟨i, rfl⟩
   exact ⟨X ^ (i : ℕ), by simp⟩
 
-/-- **The group algebra of a finite cyclic group as a quotient of the polynomial ring.** For a
-generator `σ` of the finite cyclic group `C`, the kernel of evaluation at `σ - 1`, `R[X] → R[C]`,
-is the principal ideal generated by `(1 + X) ^ |C| - 1`. -/
+/-- Evaluation at an element `τ` of infinite order is injective on `R[X]`: the powers of `τ` are
+linearly independent in the monoid algebra `R[M]` of a left-cancellative monoid. -/
+theorem injective_aeval_of_not_isOfFinOrder {M : Type*} [LeftCancelMonoid M] {τ : M}
+    (hτ : ¬ IsOfFinOrder τ) :
+    Function.Injective (aeval (MonoidAlgebra.of R M τ) : R[X] →ₐ[R] MonoidAlgebra R M) := by
+  have hinj : Function.Injective fun n : ℕ ↦ τ ^ n := injective_pow_iff_not_isOfFinOrder.2 hτ
+  have hli : LinearIndependent R fun n : ℕ ↦ MonoidAlgebra.of R M τ ^ n := by
+    convert (MonoidAlgebra.basis M R).linearIndependent.comp _ hinj using 1
+    funext n
+    rw [Function.comp_apply, MonoidAlgebra.basis_apply, ← map_pow, MonoidAlgebra.of_apply]
+  refine (injective_iff_map_eq_zero _).2 fun q hq ↦ ?_
+  rw [aeval_eq_sum_range] at hq
+  ext i
+  by_cases hi : i ≤ q.natDegree
+  · exact linearIndependent_iff'.1 hli _ _ hq i (Finset.mem_range_succ_iff.2 hi)
+  · simp [coeff_eq_zero_of_natDegree_lt (not_le.1 hi)]
+
+omit [Finite C] in
+/-- **The kernel of evaluation at `σ - 1`.** For a generator `σ` of the cyclic group `C`, the
+kernel of `R[X] → R[C]`, `X ↦ σ - 1`, is the principal ideal generated by `(1 + X) ^ |C| - 1`. For
+finite `C`, where evaluation is surjective by `TauCeti.MonoidAlgebra.aeval_of_sub_one_surjective`,
+this presents `R[C]` as a quotient of the polynomial ring; for infinite `C` the ideal is `⊥`, so
+evaluation is injective. -/
 theorem ker_aeval_of_sub_one (hσ : ∀ x, x ∈ Subgroup.zpowers σ) :
     RingHom.ker (aeval (MonoidAlgebra.of R C σ - 1) : R[X] →ₐ[R] MonoidAlgebra R C) =
       Ideal.span {(1 + X) ^ Nat.card C - 1} := by
+  rcases finite_or_infinite C with _ | _
+  swap
+  · -- For an infinite group the generator has infinite order, so the ideal is `⊥` and the
+    -- evaluation is injective.
+    have h0 : Nat.card C = 0 := Nat.card_eq_zero_of_infinite
+    rw [h0, pow_zero, sub_self, Ideal.span_singleton_eq_bot.2 rfl,
+      ← RingHom.injective_iff_ker_eq_bot]
+    have hσ' : ¬ IsOfFinOrder σ := by
+      rw [← orderOf_eq_zero_iff, orderOf_eq_card_of_forall_mem_zpowers hσ, h0]
+    refine (injective_iff_map_eq_zero _).2 fun f hf ↦ ?_
+    -- `aeval (σ - 1) f = aeval σ (f.comp (X - 1))`, and `aeval σ` is injective.
+    have hinj := injective_aeval_of_not_isOfFinOrder (R := R) hσ'
+    have h1 : f.comp (X - 1) = 0 :=
+      (injective_iff_map_eq_zero _).1 hinj (f.comp (X - 1)) (by rw [aeval_comp]; simpa using hf)
+    calc f = (f.comp (X - 1)).comp (X + 1) := by simp [comp_assoc]
+      _ = 0 := by rw [h1, zero_comp]
   ext f
   rw [RingHom.mem_ker, Ideal.mem_span_singleton]
   refine ⟨fun hf ↦ ?_, fun ⟨q, hq⟩ ↦ by

@@ -508,7 +508,7 @@ theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ] (X : Ω 
           rw [hω]
   have h_sq_eq : ∫ ω, μ₁ ω * μ₁ ω ∂μ = ∫ ω, μ₂ ω * μ₂ ω ∂μ := h_sq_eq_raw
   -- `μ₁ =ᵐ μ₂` from the polarisation `∫ (μ₂ - μ₁)² = ∫ μ₂² - 2 ∫ μ₂ μ₁ + ∫ μ₁² = 0`.
-  exact (ae_eq_of_integral_mul_eq_of_integral_sq_eq hμ₁sq_int hμ₂sq_int hμ₂μ₁_int
+  exact (ae_eq_of_integral_mul_eq_of_integral_sq_eq hμ₁sq_int hμ₂sq_int
     h_cross h_sq_eq).symm
 
 variable {Ω ι : Type*} [mΩ : MeasurableSpace Ω] [StandardBorelSpace Ω]
@@ -584,7 +584,6 @@ theorem condIndepFun_domRestrict_of_reindexing {C R D : Set ι} (hRD : R ⊆ D) 
   have hK : Measurable K := Measurable.of_eval fun _ ↦ measurable_pi_apply _
   let W : (ι → α) → D → α := K ∘ R.domRestrict
   have hW_eq : W = fun x ↦ D.domRestrict (H x) := (rfl)
-  have hW : Measurable W := hK.comp (Set.measurable_restrict R)
   have hWR : MeasurableSpace.comap W inferInstance ≤
       MeasurableSpace.comap (R.domRestrict (π := fun _ ↦ α)) inferInstance := by
     rw [← MeasurableSpace.comap_comp]

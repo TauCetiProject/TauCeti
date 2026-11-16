@@ -252,7 +252,7 @@ example : TauCeti.IsAutomatic 2 ((Set.range (2 ^ ·)).indicator (1 : ℕ → ZMo
         | succ k => simp only [pow_succ] at hk; omega
   have halg : IsAlgebraic (ZMod 2)[X] f := by
     refine ⟨Polynomial.X ^ 2 - Polynomial.X - Polynomial.C Polynomial.X, fun h ↦ ?_, ?_⟩
-    · simpa [Polynomial.coeff_X, Polynomial.coeff_C] using congrArg (Polynomial.coeff · 2) h
+    · simpa [Polynomial.coeff_X, Polynomial.coeff_C] using congrArg (AddMonoidAlgebra.coeff · 2) h
     · simp [hsq, PowerSeries.algebraMap_apply']
   convert isAutomatic_coeff_of_isAlgebraic halg using 1
   · simp

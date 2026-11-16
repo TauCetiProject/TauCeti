@@ -15,8 +15,21 @@ The quarter turn `J = o.rightAngleRotation` of an oriented Euclidean plane carri
 of every positively oriented orthonormal basis `(e₀, e₁)` to the second, `J e₀ = e₁`, and hence
 `J e₁ = -e₀`. So in any such basis `J` is the standard quarter turn.
 
+For unit vectors `a`, `b` the inner product and the area form `ω` are the cosine and the sine of
+the angle from `a` to `b`: `√(1 - ⟪a, b⟫²) = |ω(a, b)|`, so `⟪a, b⟫ ∈ (-1, 1)` whenever
+`ω(a, b) ≠ 0`.
+
 On the complex plane, the continuous oriented volume form is normalized on the standard complex
 basis `(1, I)`. On a pair of vectors it is the area form `dx ∧ dy`, `(v, w) ↦ Im (conj v * w)`.
+
+An orthonormal basis `b` of a Euclidean plane identifies the plane with `ℂ` by
+`Complex.isometryOfOrthonormal b`, and the complex coordinate so defined carries the orientation of
+`b` to the standard orientation of `ℂ` (`Complex.map_isometryOfOrthonormal_symm_orientation`). This
+is the hypothesis under which Mathlib computes the area form, the quarter turn, the Kähler form,
+the oriented angle and the rotations of an oriented plane in a complex coordinate
+(`Orientation.areaForm_map_complex`, `Orientation.rightAngleRotation_map_complex`,
+`Orientation.kahler_map_complex`, `Orientation.oangle_map_complex`,
+`Orientation.rotation_map_complex`).
 -/
 
 public section
@@ -48,9 +61,46 @@ theorem rightAngleRotation_basis_one (hb : b.toBasis.orientation = o) :
     o.rightAngleRotation (b 1) = -b 0 := by
   rw [← o.rightAngleRotation_basis_zero hb, rightAngleRotation_rightAngleRotation]
 
+/-- In an oriented plane, `o.areaForm a x = 0` implies the scaled identity
+`‖a‖ ^ 2 • x = ⟪a, x⟫ • a`, including when `a = 0`. -/
+theorem sq_norm_smul_eq_of_areaForm_eq_zero {a x : E} (h : o.areaForm a x = 0) :
+    ‖a‖ ^ 2 • x = inner ℝ a x • a := by
+  refine ext_inner_right ℝ fun y ↦ ?_
+  rw [real_inner_smul_left, real_inner_smul_left, ← o.inner_mul_inner_add_areaForm_mul_areaForm,
+    h, zero_mul, add_zero]
+
+/-- For unit vectors `a`, `b` of an oriented plane, `√(1 - ⟪a, b⟫²) = |ω(a, b)|`: the inner
+product and the area form are the cosine and the sine of the angle from `a` to `b`. -/
+theorem sqrt_one_sub_inner_sq_eq_abs_areaForm {a b : E} (ha : ‖a‖ = 1) (hb : ‖b‖ = 1) :
+    √(1 - inner ℝ a b ^ 2) = |o.areaForm a b| := by
+  have h := o.inner_sq_add_areaForm_sq a b
+  rw [ha, hb, one_pow, one_mul] at h
+  rw [← Real.sqrt_sq_eq_abs, ← h, add_sub_cancel_left]
+
+/-- Two unit vectors of an oriented plane with nonzero area form are not parallel, so their inner
+product lies in `(-1, 1)`. -/
+theorem inner_mem_Ioo_of_areaForm_ne_zero {a b : E} (ha : ‖a‖ = 1) (hb : ‖b‖ = 1)
+    (h : o.areaForm a b ≠ 0) : inner ℝ a b ∈ Set.Ioo (-1) 1 := by
+  have hsq := o.inner_sq_add_areaForm_sq a b
+  rw [ha, hb, one_pow, one_mul] at hsq
+  have hlt : inner ℝ a b ^ 2 < 1 := by nlinarith [sq_pos_of_ne_zero h]
+  exact abs_lt.1 ((sq_lt_one_iff_abs_lt_one _).1 hlt)
+
 end Orientation
 
 namespace Complex
+
+/-- The complex coordinate of a Euclidean plane given by an orthonormal basis `b`, the inverse of
+`Complex.isometryOfOrthonormal b`, carries the orientation of `b` to the standard orientation of
+`ℂ`. -/
+theorem map_isometryOfOrthonormal_symm_orientation {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] (b : OrthonormalBasis (Fin 2) ℝ E) :
+    Orientation.map (Fin 2) (Complex.isometryOfOrthonormal b).symm.toLinearEquiv
+      b.toBasis.orientation = Complex.orientation := by
+  rw [← Module.Basis.orientation_map, Complex.orientation]
+  congr 1
+  ext i
+  fin_cases i <;> simp [Complex.isometryOfOrthonormal_symm_apply]
 
 attribute [local instance] Complex.finrank_real_complex_fact
 

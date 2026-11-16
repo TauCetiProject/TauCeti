@@ -17,9 +17,10 @@ recovers `A`. No second graph-core predicate is needed.
 A closed graph contains the limit of a domain-valued net whenever the vectors
 and their images both converge along a nontrivial filter. Dually, a closed set
 containing the graph of the restriction of a partial map to a core contains its
-whole graph, `LinearPMap.HasCore.graph_subset_of_isClosed`. Conversely, a submodule of the
-domain of a closed partial map is a core once the closure of the graph of the restriction
-contains the whole graph, `LinearPMap.HasCore.of_graph_subset_closure`.
+whole graph, `LinearPMap.HasCore.graph_subset_of_isClosed`. For a closed partial map
+this characterises cores: a submodule of its domain is a core exactly when the closure of
+the graph of the restriction contains the whole graph,
+`LinearPMap.IsClosed.hasCore_iff_graph_subset_closure`.
 
 ## Provenance
 
@@ -47,18 +48,9 @@ theorem IsClosed.mem_domain_of_tendsto
     (hlim : Tendsto u l (𝓝 x))
     (hAlim : Tendsto (fun i => A ⟨u i, hu i⟩) l (𝓝 y)) :
     ∃ h : x ∈ A.domain, A ⟨x, h⟩ = y := by
-  have hmem : ∀ i, (u i, A ⟨u i, hu i⟩) ∈ (A.graph : Set (E × F)) :=
-    fun i => A.mem_graph ⟨u i, hu i⟩
-  have hpair : Tendsto (fun i => (u i, A ⟨u i, hu i⟩)) l (𝓝 (x, y)) :=
-    hlim.prodMk_nhds hAlim
-  have hlimmem : (x, y) ∈ (A.graph : Set (E × F)) :=
-    hA.mem_of_tendsto hpair (Eventually.of_forall hmem)
-  obtain ⟨v, hv1, hv2⟩ := (LinearPMap.mem_graph_iff A).1 hlimmem
-  dsimp only at hv1 hv2
-  have hxmem : x ∈ A.domain := hv1 ▸ v.property
-  refine ⟨hxmem, ?_⟩
-  have hveq : (⟨x, hxmem⟩ : A.domain) = v := Subtype.ext hv1.symm
-  rw [hveq, hv2]
+  have h := hA.mem_of_tendsto (hlim.prodMk_nhds hAlim)
+    (.of_forall fun i => A.mem_graph ⟨u i, hu i⟩)
+  exact ⟨mem_domain_of_mem_graph h, ((image_iff _).2 h).symm⟩
 
 variable [ContinuousAdd E] [ContinuousAdd F]
 variable [TopologicalSpace R] [ContinuousSMul R E] [ContinuousSMul R F]
@@ -74,12 +66,13 @@ theorem HasCore.graph_subset_of_isClosed {A : E →ₗ.[R] F} {S : Submodule R E
     exact closure_minimal h hs
   · rwa [closure_def' hT]
 
-/-- A submodule `S` of the domain of a closed partial map `A` is a core for `A` as soon as the graph
-of `A` lies in the closure of the graph of the restriction of `A` to `S`. -/
-theorem HasCore.of_graph_subset_closure {A : E →ₗ.[R] F} (hA : A.IsClosed) {S : Submodule R E}
-    (hS : S ≤ A.domain)
-    (h : (A.graph : Set (E × F)) ⊆ _root_.closure ((A.domRestrict S).graph : Set (E × F))) :
-    A.HasCore S := by
+/-- A submodule `S` of the domain of a closed partial map `A` is a core for `A` if and only if the
+graph of `A` lies in the closure of the graph of the restriction of `A` to `S`. -/
+theorem IsClosed.hasCore_iff_graph_subset_closure {A : E →ₗ.[R] F} (hA : A.IsClosed)
+    {S : Submodule R E} (hS : S ≤ A.domain) :
+    A.HasCore S ↔
+      (A.graph : Set (E × F)) ⊆ _root_.closure ((A.domRestrict S).graph : Set (E × F)) := by
+  refine ⟨fun hS' => hS'.graph_subset_of_isClosed isClosed_closure subset_closure, fun h => ?_⟩
   have hT : (A.domRestrict S).IsClosable := hA.isClosable.leIsClosable domRestrict_le
   refine ⟨hS, eq_of_eq_graph ?_⟩
   rw [← hT.graph_closure_eq_closure_graph]

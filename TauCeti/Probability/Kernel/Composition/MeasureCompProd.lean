@@ -54,9 +54,12 @@ theorem map_prodMap_compProd_comap (μ : Measure W) [SFinite μ] (κ : Kernel Y 
 
 /-- Restricting the base of a composition-product to `s` restricts the product to `s ×ˢ univ`.
 This is the measure counterpart of Mathlib's `ProbabilityTheory.Kernel.compProd_restrict_left`. -/
-theorem compProd_restrict_left (μ : Measure W) [SFinite μ] (κ : Kernel W Z) [IsSFiniteKernel κ]
+theorem compProd_restrict_left (μ : Measure W) [SFinite μ] (κ : Kernel W Z)
     {s : Set W} (hs : MeasurableSet s) :
     μ.restrict s ⊗ₘ κ = (μ ⊗ₘ κ).restrict (s ×ˢ Set.univ) := by
+  by_cases hκ : IsSFiniteKernel κ
+  swap
+  · simp [compProd_of_not_isSFiniteKernel _ _ hκ]
   rw [compProd, compProd, ← Kernel.restrict_const hs, ← Kernel.restrict_apply _ (hs.prod .univ),
     Kernel.compProd_restrict_left]
 

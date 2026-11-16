@@ -103,7 +103,7 @@ theorem exists_mapGL_mul_atkinLehnerGL_eq (hQ : 0 < Q) (hQN : Q ∣ N)
         atkinLehnerGL hQ h * mapGL ℝ (g' : SL(2, ℤ)) ∧
       (Gamma0Map N).toHomUnits g' =
         (h.isExactDivisor hQ.ne' hQN).unitsInvPart ((Gamma0Map N).toHomUnits g) := by
-  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_right hQ.ne' hQN g.2
+  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_right hQN g.2
   refine ⟨⟨δ, hδ⟩, Units.ext ?_, h.toHomUnits_gamma0Map_of_mul_eq_mul hQ.ne' hQN g.2 hδ hmul⟩
   simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
     Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
@@ -119,7 +119,7 @@ theorem exists_atkinLehnerGL_mul_mapGL_eq (hQ : 0 < Q) (hQN : Q ∣ N)
         (h.isExactDivisor hQ.ne' hQN).unitsInvPart ((Gamma0Map N).toHomUnits g) := by
   -- `W g = g' W` is the relation `g' W = W g` of `toHomUnits_gamma0Map_of_mul_eq_mul` read
   -- backwards, which gives the label of `g` from that of `g'`; the shift is an involution.
-  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQ.ne' hQN g.2
+  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQN g.2
   refine ⟨⟨δ, hδ⟩, Units.ext ?_, ?_⟩
   · simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
       Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
@@ -426,7 +426,7 @@ theorem atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1 (hQ : 0 < Q) (hQN : 
     (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
     atkinLehnerOperatorGamma1 hQ hQN h k (atkinLehnerOperatorGamma1 hQ hQN h k f) =
       (Q : ℂ) ^ (k - 2) • diamondOp k u f := by
-  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self hQ.ne' hQN
+  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self
   refine DFunLike.coe_injective ?_
   rw [coe_atkinLehnerOperatorGamma1, coe_atkinLehnerOperatorGamma1,
     slash_atkinLehnerGL_slash_atkinLehnerGL_of_mul_self_eq hQ h hsq, FunLike.coe_smul,
@@ -440,7 +440,7 @@ theorem atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp (hQ : 0 < Q)
     (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
     atkinLehnerOperatorGamma1Cusp hQ hQN h k (atkinLehnerOperatorGamma1Cusp hQ hQN h k f) =
       (Q : ℂ) ^ (k - 2) • diamondOpCusp k u f := by
-  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self hQ.ne' hQN
+  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self
   refine DFunLike.coe_injective ?_
   rw [coe_atkinLehnerOperatorGamma1Cusp, coe_atkinLehnerOperatorGamma1Cusp,
     slash_atkinLehnerGL_slash_atkinLehnerGL_of_mul_self_eq hQ h hsq, FunLike.coe_smul,
@@ -458,7 +458,7 @@ theorem atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1_of_mem_modFormCharSp
     atkinLehnerOperatorGamma1 hQ hQN h k (atkinLehnerOperatorGamma1 hQ hQN h k f) =
       ((Q : ℂ) ^ (k - 2) *
         ↑(ψ (-1) * (φ (ZMod.unitOfCoprime Q (h.isExactDivisor hQ.ne' hQN).coprime))⁻¹)) • f := by
-  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self hQ.ne' hQN
+  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self
   rw [atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1 hQ hQN h
       (h.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hγ hsq)
       (h.natCast_mul_toHomUnits_gamma0Map_of_mul_self_eq hγ hsq) f,
@@ -476,7 +476,7 @@ theorem atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp_of_mem_cuspF
     atkinLehnerOperatorGamma1Cusp hQ hQN h k (atkinLehnerOperatorGamma1Cusp hQ hQN h k f) =
       ((Q : ℂ) ^ (k - 2) *
         ↑(ψ (-1) * (φ (ZMod.unitOfCoprime Q (h.isExactDivisor hQ.ne' hQN).coprime))⁻¹)) • f := by
-  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self hQ.ne' hQN
+  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self
   rw [atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp hQ hQN h
       (h.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hγ hsq)
       (h.natCast_mul_toHomUnits_gamma0Map_of_mul_self_eq hγ hsq) f,

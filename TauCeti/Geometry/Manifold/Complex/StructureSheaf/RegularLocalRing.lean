@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Cotangent
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Dimension
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Noetherian
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Regular
+import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 public import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
-import Mathlib.Algebra.Module.SpanRankOperations
-import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
@@ -49,15 +47,8 @@ complex dimension of the manifold model. -/
 theorem spanFinrank_maximalIdeal_stalk (x : X) :
     (maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x)).spanFinrank =
       Module.finrank ℂ E := by
-  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  rw [← Ideal.spanFinrank_map_eq_of_ringEquiv
-    (stalkEquivModelSpace (I := I) (V := Fin (Module.finrank ℂ E) → ℂ) x
-      (ContinuousLinearEquiv.ofFinrankEq (by simp))),
-    map_ringEquiv_maximalIdeal, spanFinrank_maximalIdeal_eq_finrank_cotangentSpace]
-  let V := Fin (Module.finrank ℂ E) → ℂ
-  exact ((OpenPartialHomeomorph.refl V).finrank_cotangentSpace_holomorphicStalk
-    _ (Set.mem_univ _)
-    (StructureGroupoid.id_mem_maximalAtlas (contDiffGroupoid ω 𝓘(ℂ, V)))).trans (by simp [V])
+  exact_mod_cast (IsRegularLocalRing.spanFinrank_maximalIdeal
+    (R := (holomorphicStructureSheaf I X).presheaf.stalk x)).trans (ringKrullDim_stalk x)
 
 /-- The kernel of evaluation on a holomorphic stalk needs as many generators as the complex
 model dimension. This is the generator count in the simp normal form of the maximal ideal. -/
@@ -74,38 +65,6 @@ theorem spanFinrank_maximalIdeal_smoothStalk (x : X) :
       Module.finrank ℂ E := by
   rw [← map_ringEquiv_maximalIdeal (smoothStalkIso I X x).commRingCatIsoToRingEquiv,
     Ideal.spanFinrank_map_eq_of_ringEquiv, spanFinrank_maximalIdeal_stalk]
-
-/-- The holomorphic local ring at a point of a complex manifold has Krull dimension equal to
-its complex dimension, including dimension zero. -/
-@[simp]
-theorem ringKrullDim_stalk (x : X) :
-    ringKrullDim ((holomorphicStructureSheaf I X).presheaf.stalk x) =
-      (Module.finrank ℂ E : WithBot ℕ∞) := by
-  refine le_antisymm ?_ ?_
-  · simpa only [spanFinrank_maximalIdeal_stalk] using
-      ringKrullDim_le_spanFinrank_maximalIdeal
-        ((holomorphicStructureSheaf I X).presheaf.stalk x)
-  · exact finrank_le_ringKrullDim_stalk x
-
-/-- Holomorphic stalks on finite-dimensional complex manifolds without boundary are regular
-local rings. No global separation or countability hypothesis is required. -/
-instance stalkIsRegularLocalRing (x : X) :
-    IsRegularLocalRing ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
-  apply (isRegularLocalRing_iff _).2
-  rw [spanFinrank_maximalIdeal_stalk, ringKrullDim_stalk]
-
-/-- The Krull dimension of the native complex-smooth stalk is the complex dimension of the
-model, under its canonical identification with holomorphic germs. -/
-@[simp]
-theorem ringKrullDim_smoothStalk (x : X) :
-    ringKrullDim ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x) =
-      (Module.finrank ℂ E : WithBot ℕ∞) := by
-  rw [← (smoothStalkIso I X x).commRingCatIsoToRingEquiv.ringKrullDim, ringKrullDim_stalk]
-
-/-- Native complex-smooth stalks are regular local rings via the holomorphic comparison. -/
-instance smoothStalkIsRegularLocalRing (x : X) :
-    IsRegularLocalRing ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x) :=
-  IsRegularLocalRing.of_ringEquiv (smoothStalkIso I X x).commRingCatIsoToRingEquiv
 
 end TauCeti.holomorphicStructureSheaf
 

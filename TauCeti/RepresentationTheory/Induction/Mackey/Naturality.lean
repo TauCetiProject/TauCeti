@@ -38,72 +38,72 @@ variable {k G : Type u} [CommRing k] [Group G] [Finite G] {H K : Subgroup G}
 /-- Precomposing by an induced morphism precomposes each Mackey component by its
 restriction to the intersection subgroup. -/
 theorem indHomMackeyLinearEquiv_naturality_left {A A' : Rep.{u} k H} (B : Rep.{u} k K)
-    (f : A' ⟶ A) (φ : Rep.ind H.subtype A ⟶ Rep.ind K.subtype B)
+    (f : A' ⟶ A) (φ : ind H.subtype A ⟶ ind K.subtype B)
     (D : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
-    indHomMackeyLinearEquiv A' B (Rep.indMap H.subtype f ≫ φ) D =
-      (Rep.resFunctor ((mackeySubgroup D.out K H).subgroupOf H).subtype).map f ≫
+    indHomMackeyLinearEquiv A' B (indMap H.subtype f ≫ φ) D =
+      (resFunctor ((mackeySubgroup D.out K H).subgroupOf H).subtype).map f ≫
         indHomMackeyLinearEquiv A B φ D := by
   classical
   let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (K : Set G))
-  have hi : Rep.indResHomEquiv H.subtype A' (Rep.ind K.subtype B)
-      (Rep.indMap H.subtype f ≫ φ) =
-      f ≫ Rep.indResHomEquiv H.subtype A (Rep.ind K.subtype B) φ :=
-    (Rep.indResAdjunction k H.subtype).homEquiv_naturality_left f φ
+  have hi : indResHomEquiv H.subtype A' (ind K.subtype B)
+      (indMap H.subtype f ≫ φ) =
+      f ≫ indResHomEquiv H.subtype A (ind K.subtype B) φ :=
+    (indResAdjunction k H.subtype).homEquiv_naturality_left f φ
   rw [indHomMackeyLinearEquiv_apply, indHomMackeyLinearEquiv_apply, hi,
     Category.assoc, homDirectSumLinearEquiv_comp, Category.assoc]
-  exact (Rep.resCoindAdjunction.{u, u, u, u} k
+  exact (resCoindAdjunction.{u, u, u, u} k
     ((mackeySubgroup D.out K H).subgroupOf H).subtype).homEquiv_naturality_left_symm
-      f ((Rep.homDirectSumLinearEquiv A
+      f ((homDirectSumLinearEquiv A
         (fun E : DoubleCoset.Quotient (H : Set G) (K : Set G) ↦
-          Rep.mackeySummand K H E.out B)
-        ((Rep.indResHomEquiv H.subtype A (Rep.ind K.subtype B) φ) ≫
-          (Rep.mackeyDecomposition (K := H) B).hom) D) ≫
-        (Rep.indCoindIso (Rep.res (mackeyToH D.out K H) B)).hom)
+          mackeySummand K H E.out B)
+        ((indResHomEquiv H.subtype A (ind K.subtype B) φ) ≫
+          (mackeyDecomposition (K := H) B).hom) D) ≫
+        (indCoindIso (res (mackeyToH D.out K H) B)).hom)
 
 /-- Postcomposing by an induced morphism postcomposes each Mackey component by its
 conjugated restriction to the intersection subgroup. -/
 theorem indHomMackeyLinearEquiv_naturality_right (A : Rep.{u} k H) {B B' : Rep.{u} k K}
-    (φ : Rep.ind H.subtype A ⟶ Rep.ind K.subtype B) (g : B ⟶ B')
+    (φ : ind H.subtype A ⟶ ind K.subtype B) (g : B ⟶ B')
     (D : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
-    indHomMackeyLinearEquiv A B' (φ ≫ Rep.indMap K.subtype g) D =
-      indHomMackeyLinearEquiv A B φ D ≫ (Rep.resFunctor (mackeyToH D.out K H)).map g := by
+    indHomMackeyLinearEquiv A B' (φ ≫ indMap K.subtype g) D =
+      indHomMackeyLinearEquiv A B φ D ≫ (resFunctor (mackeyToH D.out K H)).map g := by
   classical
   let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (K : Set G))
-  have hi : Rep.indResHomEquiv H.subtype A (Rep.ind K.subtype B')
-      (φ ≫ Rep.indMap K.subtype g) =
-      Rep.indResHomEquiv H.subtype A (Rep.ind K.subtype B) φ ≫
-        (Rep.resFunctor H.subtype).map (Rep.indMap K.subtype g) :=
-    (Rep.indResAdjunction k H.subtype).homEquiv_naturality_right φ (Rep.indMap K.subtype g)
-  have hm := (Rep.mackeyDecompositionNatIso K H).hom.naturality g
+  have hi : indResHomEquiv H.subtype A (ind K.subtype B')
+      (φ ≫ indMap K.subtype g) =
+      indResHomEquiv H.subtype A (ind K.subtype B) φ ≫
+        (resFunctor H.subtype).map (indMap K.subtype g) :=
+    (indResAdjunction k H.subtype).homEquiv_naturality_right φ (indMap K.subtype g)
+  have hm := (mackeyDecompositionNatIso K H).hom.naturality g
   simp only [← Iso.app_hom, mackeyDecompositionNatIso_app, Functor.comp_map,
-    Rep.indFunctor_map] at hm
+    indFunctor_map] at hm
   have hc :
-      Rep.homDirectSumLinearEquiv A
+      homDirectSumLinearEquiv A
         (fun E : DoubleCoset.Quotient (H : Set G) (K : Set G) ↦
-          Rep.mackeySummand K H E.out B')
-        ((Rep.indResHomEquiv H.subtype A (Rep.ind K.subtype B) φ) ≫
-          (Rep.mackeyDecomposition (K := H) B).hom ≫
-          (Rep.mackeyDirectSumFunctor K H).map g) D =
-      Rep.homDirectSumLinearEquiv A
+          mackeySummand K H E.out B')
+        ((indResHomEquiv H.subtype A (ind K.subtype B) φ) ≫
+          (mackeyDecomposition (K := H) B).hom ≫
+          (mackeyDirectSumFunctor K H).map g) D =
+      homDirectSumLinearEquiv A
         (fun E : DoubleCoset.Quotient (H : Set G) (K : Set G) ↦
-          Rep.mackeySummand K H E.out B)
-        ((Rep.indResHomEquiv H.subtype A (Rep.ind K.subtype B) φ) ≫
-          (Rep.mackeyDecomposition (K := H) B).hom) D ≫
-        (Rep.mackeySummandFunctor K H D.out).map g := by
+          mackeySummand K H E.out B)
+        ((indResHomEquiv H.subtype A (ind K.subtype B) φ) ≫
+          (mackeyDecomposition (K := H) B).hom) D ≫
+        (mackeySummandFunctor K H D.out).map g := by
     ext x
-    simp only [Representation.IntertwiningMap.coe_toLinearMap, Rep.hom_comp,
+    simp only [Representation.IntertwiningMap.coe_toLinearMap, hom_comp,
       Representation.IntertwiningMap.comp_apply]
     erw [homDirectSumLinearEquiv_apply, homDirectSumLinearEquiv_apply]
     -- The exposed direct-sum functor is defined by `DirectSum.lmap`, whose action
     -- on a coordinate is definitionally the corresponding summand map.
     rfl
-  have hn := (Rep.indCoindNatIso k
+  have hn := (indCoindNatIso k
     ((mackeySubgroup D.out K H).subgroupOf H)).hom.naturality
-      ((Rep.resFunctor (mackeyToH D.out K H)).map g)
-  simp only [Rep.indCoindNatIso_hom_app, Rep.indFunctor_map] at hn
+      ((resFunctor (mackeyToH D.out K H)).map g)
+  simp only [indCoindNatIso_hom_app, indFunctor_map] at hn
   erw [indHomMackeyLinearEquiv_apply, indHomMackeyLinearEquiv_apply, hi,
     Category.assoc, hm, hc, Category.assoc, hn, ← Category.assoc]
-  exact (Rep.resCoindAdjunction.{u, u, u, u} k
+  exact (resCoindAdjunction.{u, u, u, u} k
     ((mackeySubgroup D.out K H).subgroupOf H).subtype).homEquiv_naturality_right_symm _ _
 
 end Rep

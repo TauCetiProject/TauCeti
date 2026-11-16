@@ -13,7 +13,8 @@ public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 
 Functoriality of `MonoidAlgebra.mapDomain`, the map `R[M] → R[N]` induced by a map `M → N` of the
 index types, in the form of the corresponding `Finsupp.mapDomain` lemmas: the identity induces the
-identity, a composite induces the composite, and a surjection induces a surjection. Mathlib states
+identity, a composite induces the composite, a surjection induces a surjection, and an injection
+induces a map whose image consists of the elements supported on its range. Mathlib states
 the first two only for the bundled ring and algebra homomorphisms `mapDomainRingHom` and
 `mapDomainAlgHom`; the unbundled forms are what a computation with the coefficients of an
 inverse system of group algebras uses. Also: the image of `mapDomain f` commutes with a monomial
@@ -27,9 +28,14 @@ induced by a monoid homomorphism `F` restricts along `mapDomain φ` to `lift` of
 
 * `MonoidAlgebra.mapDomain_id`, `MonoidAlgebra.mapDomain_mapDomain`: the functor laws, with
   additive forms `AddMonoidAlgebra.mapDomain_id` and `AddMonoidAlgebra.mapDomain_mapDomain`.
-* `MonoidAlgebra.mapDomain_surjective`: the map induced by a surjection is surjective.
+* `MonoidAlgebra.mapDomain_surjective`: the map induced by a surjection is surjective, with
+  additive form `AddMonoidAlgebra.mapDomain_surjective`.
+* `MonoidAlgebra.mem_range_mapDomain_iff`: the image of the map induced by an injection consists of
+  the elements supported on its range, with additive form
+  `AddMonoidAlgebra.mem_range_mapDomain_iff`.
 * `MonoidAlgebra.mapDomain_commute_single`: the image of `mapDomain f` commutes with `single n r`
-  when the values of `f` commute with `n` and `r` is central.
+  when the values of `f` commute with `n` and `r` is central, with additive form
+  `AddMonoidAlgebra.mapDomain_commute_single`.
 * `MonoidHom.singleSMulLinearMap`: for `ι : M →* N` and `n` commuting with the image of `ι`, the
   action of `single n 1` on an `R[N]`-module on which `R[M]` acts through `mapDomain ι`, as an
   `R[M]`-linear endomorphism.
@@ -64,17 +70,35 @@ theorem mapDomain_mapDomain (f : M → N) (g : N → O) (x : MonoidAlgebra R M) 
   ext <| by rw [coeff_mapDomain, coeff_mapDomain, coeff_mapDomain, Finsupp.mapDomain_comp]
 
 /-- Pushing the coefficients forward along a surjection is surjective. -/
+@[to_additive
+/-- Pushing the coefficients forward along a surjection is surjective. -/]
 theorem mapDomain_surjective {f : M → N} (hf : Function.Surjective f) :
     Function.Surjective (mapDomain (R := R) f) := fun y ↦ by
   obtain ⟨x, hx⟩ := Finsupp.mapDomain_surjective hf y.coeff
   exact ⟨ofCoeff x, ext <| by rw [coeff_mapDomain, coeff_ofCoeff, hx]⟩
 
+/-- For an injective map `f`, an element lies in the image of `mapDomain f` exactly when its
+support lies in the range of `f`. -/
+@[to_additive
+/-- For an injective map `f`, an element lies in the image of `mapDomain f` exactly when its
+support lies in the range of `f`. -/]
+theorem mem_range_mapDomain_iff {f : M → N} (hf : Function.Injective f) (x : MonoidAlgebra R N) :
+    x ∈ Set.range (mapDomain (R := R) f) ↔ ∀ n ∈ x.coeff.support, n ∈ Set.range f := by
+  have hsupp : (∀ n ∈ x.coeff.support, n ∈ Set.range f) ↔ ∀ n ∉ Set.range f, x.coeff n = 0 :=
+    forall_congr' fun n ↦ by rw [Finsupp.mem_support_iff, not_imp_comm]
+  rw [hsupp, ← Finsupp.mem_range_mapDomain_iff _ hf x.coeff]
+  refine ⟨fun ⟨y, hy⟩ ↦ ⟨y.coeff, by rw [← hy, coeff_mapDomain]⟩, fun ⟨y, hy⟩ ↦ ?_⟩
+  exact ⟨ofCoeff y, ext <| by rw [coeff_mapDomain, coeff_ofCoeff, hy]⟩
+
 /-- The image of `mapDomain f` commutes with the monomial `single n r` when every value of `f`
 commutes with `n` and `r` is central. -/
+@[to_additive (dont_translate := R) mapDomain_commute_single
+/-- The image of `mapDomain f` commutes with the monomial `single n r` when every value of `f`
+additively commutes with `n` and `r` is central. -/]
 theorem mapDomain_commute_single [Mul N] {f : M → N} {n : N} {r : R} (hm : ∀ m, Commute (f m) n)
     (hr : ∀ s, Commute s r) (x : MonoidAlgebra R M) : Commute (mapDomain f x) (single n r) := by
   induction x using induction_linear with
-  | zero => simp only [mapDomain_zero]; exact Commute.zero_left _
+  | zero => rw [mapDomain_zero]; exact Commute.zero_left _
   | add x y hx hy => rw [mapDomain_add]; exact hx.add_left hy
   | single m s => rw [mapDomain_single]; exact single_commute_single (hm m) (hr s)
 

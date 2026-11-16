@@ -52,7 +52,7 @@ private theorem mgf_id_levyMeasure_zero_one (ht : t ≤ 0) :
       ring
     have hpoint (x : ℝ) : levyPDFReal 0 1 x * exp (t * x) =
         exp (-√(-2 * t)) * inverseGaussianPDFReal (1 / √(-2 * t)) 1 x := by
-      have h := inverseGaussianPDFReal_mul_exp_eq_levyPDFReal_mul_exp hμ one_pos 0 x
+      have h := inverseGaussianPDFReal_mul_exp_eq_levyPDFReal_mul_exp (lam := 1) hμ 0 x
       rw [hcrit, zero_mul, exp_zero, mul_one, one_div_one_div] at h
       rw [h, ← mul_assoc, ← exp_add, neg_add_cancel, exp_zero, one_mul]
     rw [mgf, levyMeasure_eq_withDensity, funext (levyPDF_eq_ofReal 0 1),

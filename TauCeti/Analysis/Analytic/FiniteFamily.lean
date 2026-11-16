@@ -47,7 +47,7 @@ theorem exists_analyticOnNhd_strictMono_range_eq {E ι : Type*} [NormedAddCommGr
       ∀ x ∈ U, StrictMono (fun i ↦ f (e i) x) ∧
         range (fun i ↦ f (e i) x) = range (fun i ↦ f i x) := by
   obtain ⟨k, e, horder⟩ := exists_eventually_strictMono_range_eq
-    (fun i ↦ (hf i).continuousAt) heq
+    (fun i ↦ (hf i).continuousAt.tendsto) heq
   have hanalytic : ∀ᶠ x in 𝓝 x₀, ∀ i, AnalyticAt ℝ (f (e i)) x :=
     eventually_all.2 fun i ↦ (hf (e i)).eventually_analyticAt
   obtain ⟨U, hU, hopen, hx₀⟩ := eventually_nhds_iff.1 (horder.and hanalytic)

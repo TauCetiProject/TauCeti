@@ -91,7 +91,7 @@ private theorem exists_rightLeftInverse_of_left_eq_left
   let D := F.recut hone hf hs
   have hdata := F.isRecutOfLeftEqLeft_recut hc hone hf hs
   obtain ⟨hfr, hsr⟩ := hdata.recut_sides
-  obtain ⟨hm, hfl, hsl⟩ : D.middle = x.swapColumns F.first.left F.second.right ∧
+  obtain ⟨hm, _, hsl⟩ : D.middle = x.swapColumns F.first.left F.second.right ∧
       D.first.left = F.first.left ∧ D.second.left = F.second.right := by
     rcases hdata.recut_branch with ⟨h, -⟩ | ⟨-, hm, hfl, hsl⟩
     · exact (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap F.first.left F.second.right)
@@ -184,7 +184,7 @@ private theorem mem_rightLeftOverlapPartners_of_inverse
       second := GridPentagonBetween.ofRightEq D.second hside hturn }
   have hFrect : F.toRectangleDecomposition = D := by
     apply GridRectangleDecomposition.ext <;>
-      simp [F, GridRectanglePentagonDecomposition.pentagon, hside]
+      simp [F, GridRectanglePentagonDecomposition.pentagon]
   rw [← hFrect] at hrecut
   have hFc : F.rectangle.right = F.pentagon.left := by
     simpa [F, GridRectanglePentagonDecomposition.rectangle,
@@ -286,7 +286,7 @@ private theorem rightLeftOverlapPartner_sides
   rcases hback.orientation with h | h | h | h
   · right
     refine ⟨by simpa using h.side_eq, ?_⟩
-    rcases h.recut_branch with ⟨-, -, hfl, hsl⟩ | ⟨hcol, -⟩
+    rcases h.recut_branch with ⟨-, -, _, hsl⟩ | ⟨hcol, -⟩
     · obtain ⟨hfr, -⟩ := h.recut_sides
       exact (E.toRectangleDecomposition.second.left_ne_right
         (h.side_eq.symm.trans (hsl.symm.trans (hc.symm.trans hfr)))).elim

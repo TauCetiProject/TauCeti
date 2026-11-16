@@ -43,6 +43,9 @@ corresponding cumulative sum. Quantile formulas and endpoint limits are in
 * `TauCeti.Probability.categoricalMeasure` is the weighted sum of Dirac measures;
 * `TauCeti.Probability.categoricalMeasure_singleton` gives its masses;
 * `TauCeti.Probability.integral_categoricalMeasure` evaluates integrals as finite weighted sums;
+* `Convexity.StdSimplex.integrable_map_categoricalMeasure` and
+  `Convexity.StdSimplex.integral_map_categoricalMeasure` give integrability and integration for
+  labelled categorical laws;
 * `TauCeti.Probability.measurable_categoricalMeasure` proves parameter measurability;
 * `TauCeti.Probability.continuous_categoricalMeasure` proves weak continuity on the full simplex,
   including zero weights;
@@ -180,7 +183,7 @@ end Continuity
 section Aggregation
 
 variable [Fintype I] [Fintype J] [MeasurableSpace I] [MeasurableSpace J]
-  [MeasurableSingletonClass I] [MeasurableSingletonClass J]
+  [MeasurableSingletonClass I]
 
 /-- Mapping a categorical law along a map of category types adds weights over its fibres. -/
 @[simp]
@@ -188,17 +191,15 @@ theorem map_categoricalMeasure (f : I → J) (p : StdSimplex NNReal I) :
     (categoricalMeasure p).map f = categoricalMeasure (p.map f) := by
   classical
   have hf : Measurable f := measurable_of_finite f
-  apply Measure.ext_of_singleton
-  intro j
-  rw [Measure.map_apply hf (MeasurableSet.singleton j),
-    categoricalMeasure_def, _root_.sum_apply, categoricalMeasure_singleton,
-    StdSimplex.weights_map_apply]
-  simp only [_root_.smul_apply, Measure.dirac_apply' _ (hf (MeasurableSet.singleton j)),
-    Set.indicator, Set.mem_preimage, Set.mem_singleton_iff, Pi.one_apply, smul_eq_mul, mul_ite,
-    mul_one, mul_zero]
-  rw [← Finset.sum_filter]
-  push_cast
-  rfl
+  rw [categoricalMeasure_def, categoricalMeasure_def,
+    Measure.map_finset_sum' (by simpa using hf.aemeasurable)]
+  simp only [StdSimplex.weights_map_apply]
+  simp_rw [Measure.map_smul _ hf.aemeasurable, Measure.map_dirac' hf,
+    ENNReal.ofNNReal_finsetSum, Finset.sum_smul]
+  rw [← Finset.sum_fiberwise Finset.univ f
+    (fun i => (p.weights i : ENNReal) • Measure.dirac (f i))]
+  refine Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun i hi => ?_
+  rw [(Finset.mem_filter.1 hi).2]
 
 end Aggregation
 
@@ -252,6 +253,31 @@ open Set TauCeti.Probability
 variable {I : Type*} [Fintype I] [MeasurableSpace I] [MeasurableSingletonClass I]
   {β : Type*} [MeasurableSpace β]
 
+/-- Every function is integrable against a labelled categorical law. Neither injectivity of
+the labels nor measurability of the function on the whole target space is needed. -/
+@[simp]
+theorem integrable_map_categoricalMeasure [MeasurableSingletonClass β]
+    {E : Type*} [NormedAddGroup E]
+    (p : StdSimplex ℝ≥0 I) (label : I → β) (f : β → E) :
+    Integrable f ((categoricalMeasure p).map label) := by
+  rw [categoricalMeasure_def, Measure.map_finset_sum' (measurable_of_finite label).aemeasurable]
+  apply integrable_finsetSum_measure.2
+  intro i _
+  rw [Measure.map_smul _ (measurable_of_finite label).aemeasurable,
+    Measure.map_dirac]
+  exact (integrable_dirac (by finiteness)).smul_measure (by finiteness)
+
+/-- Integration against a labelled categorical law is the weighted sum over the categories,
+including repeated labels and zero weights. -/
+theorem integral_map_categoricalMeasure [MeasurableSingletonClass β]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    (p : StdSimplex ℝ≥0 I) (label : I → β) (f : β → E) :
+    ∫ x, f x ∂(categoricalMeasure p).map label =
+      ∑ i, (p.weights i : ℝ) • f (label i) := by
+  rw [integral_map (measurable_of_finite label).aemeasurable
+    (p.integrable_map_categoricalMeasure label f).aestronglyMeasurable,
+    integral_categoricalMeasure]
+
 open Classical in
 /-- The mass of a measurable set of labels is the sum of all category weights with a label
 in that set. In particular, repeated labels have their weights added. -/
@@ -279,18 +305,19 @@ theorem ae_mem_image_support_map_categoricalMeasure [MeasurableSingletonClass β
 
 open Classical in
 /-- Every positive-weight label has nonzero mass, even when several categories share it. -/
-theorem map_categoricalMeasure_singleton_ne_zero [MeasurableSingletonClass β]
+theorem map_categoricalMeasure_singleton_ne_zero
     (p : StdSimplex ℝ≥0 I) (f : I → β) {x : β} (hx : x ∈ p.weights.support.image f) :
     (categoricalMeasure p).map f {x} ≠ 0 := by
   classical
   obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hx
-  rw [Measure.map_apply (measurable_of_finite f) (measurableSet_singleton _)]
   apply ne_of_gt
   calc
     0 < categoricalMeasure p {i} := by
       simpa only [categoricalMeasure_singleton, ENNReal.coe_pos] using
         (pos_iff_ne_zero.mpr (Finsupp.mem_support_iff.mp hi))
     _ ≤ categoricalMeasure p (f ⁻¹' {f i}) := measure_mono (by simp)
+    _ ≤ (categoricalMeasure p).map f {f i} :=
+      Measure.le_map_apply (measurable_of_finite f).aemeasurable _
 
 /-- The real mass below a cutoff after assigning real labels to categorical outcomes is the sum
 of the weights of all categories whose labels lie below that cutoff. Equal labels are therefore

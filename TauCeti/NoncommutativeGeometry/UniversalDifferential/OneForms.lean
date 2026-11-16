@@ -257,8 +257,6 @@ section UniversalProperty
 variable {M : Type w} [AddCommGroup M] [Module k M]
   [Module (Unitization k A) M] [Module (Unitization k A)ᵐᵒᵖ M]
   [IsScalarTower k (Unitization k A) M]
-  [IsScalarTower k (Unitization k A)ᵐᵒᵖ M]
-  [SMulCommClass (Unitization k A) (Unitization k A)ᵐᵒᵖ M]
 
 attribute [local instance] TensorProduct.Algebra.module
 
@@ -279,7 +277,8 @@ private theorem tensorLift_leftAction (D : BimoduleDerivation k (Unitization k A
   | tmul x y => simp [mul_smul]
   | add x y hx hy => simp only [map_add, hx, hy, smul_add]
 
-private theorem tensorLift_rightAction (D : BimoduleDerivation k (Unitization k A) M)
+private theorem tensorLift_rightAction [SMulCommClass (Unitization k A) (Unitization k A)ᵐᵒᵖ M]
+    (D : BimoduleDerivation k (Unitization k A) M)
     (b : Unitization k A) (t : Unitization k A ⊗[k] Unitization k A) :
     tensorLift k A D (rightAction k A b t) =
       op b • tensorLift k A D t + LinearMap.mul' k (Unitization k A) t • D b := by
@@ -297,6 +296,9 @@ private theorem tensorLift_rightAction (D : BimoduleDerivation k (Unitization k 
 private def liftLinear (D : BimoduleDerivation k (Unitization k A) M) :
     UniversalOneForms k A →ₗ[k] M :=
   (tensorLift k A D).comp (UniversalOneForms k A).subtype
+
+variable [IsScalarTower k (Unitization k A)ᵐᵒᵖ M]
+  [SMulCommClass (Unitization k A) (Unitization k A)ᵐᵒᵖ M]
 
 /-- The bimodule map induced by a derivation from the forced unitization. -/
 def lift (D : BimoduleDerivation k (Unitization k A) M) :

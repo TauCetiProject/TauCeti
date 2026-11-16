@@ -161,6 +161,7 @@ theorem mem_center_iff [Group.IsPerfect G]
   · exact (Set.eq_univ_iff_forall.mp h x) ⟨g, hg⟩
   · -- A perfect group equal to its centre is commutative, hence trivial.
     have : IsMulCommutative G := center_eq_top_iff.mp h
+    have := Group.IsPerfect.subsingleton_of_isMulCommutative (G := G)
     rw [Subsingleton.elim g 1, one_smul]
 
 /-- **Iwasawa's criterion for the derived central quotient.** Let a nontrivial perfect group `G`

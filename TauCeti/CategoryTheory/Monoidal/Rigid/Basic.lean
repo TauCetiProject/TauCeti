@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
+import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Zero
 
 /-!
 # Exact pairings in rigid monoidal categories
@@ -36,8 +38,15 @@ tensor product pairings: in string diagrams, the loop of `f` sits inside the loo
   object having a right (resp. left) dual is a right (resp. left) adjoint on the left and a left
   (resp. right) adjoint on the right, so in a rigid category tensoring on either side preserves all
   limits and colimits;
+* `TauCeti.whiskerLeft_zero_of_hasLeftDual` and `TauCeti.zero_whiskerRight_of_hasRightDual`:
+  whiskering by an object with a left (resp. right) dual preserves zero morphisms;
+* `TauCeti.coevaluation_ne_zero`: the coevaluation `η_ X Y` of an exact pairing is nonzero when `X`
+  is not a zero object, by the zigzag identity;
 * `TauCeti.ExactPairing.homUnitEquiv`: for an exact pairing of `X` and `Y`, morphisms `X ⟶ 𝟙_ C`
-  correspond to morphisms `𝟙_ C ⟶ Y`.
+  correspond to morphisms `𝟙_ C ⟶ Y`;
+* `TauCeti.tensorRightHomEquiv_whiskerRight_comp`, `TauCeti.tensorRightHomEquiv_symm_comp`, and
+  `TauCeti.tensorRightHomEquiv_whiskerLeft_comp`: naturality and dinaturality of
+  `CategoryTheory.tensorRightHomEquiv`.
 -/
 
 public section
@@ -199,6 +208,26 @@ instance isRightAdjoint_tensorRight [HasLeftDual X] : (tensorRight X).IsRightAdj
 
 end Adjoint
 
+section Zero
+
+variable [Limits.HasZeroMorphisms C]
+
+/-- Whiskering on the left by an object with a left dual preserves zero morphisms, since
+`tensorLeft` is then a left adjoint. -/
+@[simp]
+theorem whiskerLeft_zero_of_hasLeftDual (W : C) [HasLeftDual W] {X Y : C} :
+    W ◁ (0 : X ⟶ Y) = 0 := by
+  simpa using (tensorLeft W).map_zero X Y
+
+/-- Whiskering on the right by an object with a right dual preserves zero morphisms, since
+`tensorRight` is then a left adjoint. -/
+@[simp]
+theorem zero_whiskerRight_of_hasRightDual (W : C) [HasRightDual W] {X Y : C} :
+    (0 : X ⟶ Y) ▷ W = 0 := by
+  simpa using (tensorRight W).map_zero X Y
+
+end Zero
+
 namespace ExactPairing
 
 variable (X Y : C) [ExactPairing X Y]
@@ -225,5 +254,50 @@ theorem homUnitEquiv_symm_apply (s : 𝟙_ C ⟶ Y) :
   simp [homUnitEquiv, tensorRightHomEquiv, unitors_equal, unitors_inv_equal]
 
 end ExactPairing
+
+open Limits in
+/-- The coevaluation of an exact pairing of `X` with `Y` is nonzero when `X` is nonzero: otherwise
+the zigzag identity would make the identity of `X` zero. Only zero morphisms are needed. -/
+theorem coevaluation_ne_zero [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
+    (hX : ¬IsZero X) : η_ X Y ≠ 0 := by
+  intro h
+  have hz := ExactPairing.evaluation_coevaluation X Y
+  have := (tensorRightAdjunction X Y).isLeftAdjoint
+  have h0 : (0 : 𝟙_ C ⟶ X ⊗ Y) ▷ X = 0 := (tensorRight X).map_zero _ _
+  rw [h, h0, zero_comp] at hz
+  exact hX ((IsZero.iff_id_eq_zero X).2 (by simpa using (λ_ X).inv ≫= hz.symm =≫ (ρ_ X).hom))
+
+/-- Naturality of `CategoryTheory.tensorRightHomEquiv` in its first argument. -/
+@[reassoc]
+theorem tensorRightHomEquiv_whiskerRight_comp {X X' Y Y' Z : C} [ExactPairing Y Y']
+    (f : X ⟶ X') (g : X' ⊗ Y ⟶ Z) :
+    tensorRightHomEquiv X Y Y' Z (f ▷ Y ≫ g) = f ≫ tensorRightHomEquiv X' Y Y' Z g := by
+  apply (tensorRightHomEquiv X Y Y' Z).symm.injective
+  rw [Equiv.symm_apply_apply, tensorRightHomEquiv_symm_naturality, Equiv.symm_apply_apply]
+
+/-- Naturality of `(CategoryTheory.tensorRightHomEquiv _ _ _ _).symm` in its target argument. -/
+@[reassoc]
+theorem tensorRightHomEquiv_symm_comp {X Y Y' Z Z' : C} [ExactPairing Y Y']
+    (f : X ⟶ Z ⊗ Y') (g : Z ⟶ Z') :
+    (tensorRightHomEquiv X Y Y' Z).symm f ≫ g =
+      (tensorRightHomEquiv X Y Y' Z').symm (f ≫ g ▷ Y') := by
+  apply (tensorRightHomEquiv X Y Y' Z').injective
+  rw [tensorRightHomEquiv_naturality, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+
+/-- Dinaturality of `CategoryTheory.tensorRightHomEquiv` in the dualized object: precomposing
+`g : X ⊗ Y' ⟶ Z` with `X ◁ f` corresponds under `tensorRightHomEquiv` to postcomposing with
+`Z ◁ fᘁ`. -/
+@[reassoc]
+theorem tensorRightHomEquiv_whiskerLeft_comp {X Y Y' Z : C} [HasRightDual Y] [HasRightDual Y']
+    (f : Y ⟶ Y') (g : X ⊗ Y' ⟶ Z) :
+    tensorRightHomEquiv X Y Yᘁ Z (X ◁ f ≫ g) =
+      tensorRightHomEquiv X Y' Y'ᘁ Z g ≫ Z ◁ fᘁ := by
+  dsimp only [tensorRightHomEquiv, Equiv.coe_fn_mk]
+  calc _ = 𝟙 _ ⊗≫ X ◁ (η_ Y Yᘁ ≫ f ▷ Yᘁ) ⊗≫ g ▷ Yᘁ := by
+          simp only [comp_whiskerRight]; monoidal
+    _ = 𝟙 _ ⊗≫ X ◁ (η_ Y' Y'ᘁ ≫ Y' ◁ fᘁ) ⊗≫ g ▷ Yᘁ := by
+          rw [coevaluation_comp_rightAdjointMate]
+    _ = 𝟙 _ ⊗≫ X ◁ η_ Y' Y'ᘁ ⊗≫ ((X ⊗ Y') ◁ fᘁ ≫ g ▷ Yᘁ) := by monoidal
+    _ = _ := by rw [whisker_exchange]; monoidal
 
 end TauCeti

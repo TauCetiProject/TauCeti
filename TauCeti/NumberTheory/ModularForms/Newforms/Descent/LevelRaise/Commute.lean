@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Degeneracy
 public import TauCeti.NumberTheory.ModularForms.Newforms.Descent.Sum
-import TauCeti.NumberTheory.ModularForms.HeckeSlash.Diagonal.QExpansion
 import TauCeti.Data.ZMod.OnePoint
 import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.Periodic
 import TauCeti.NumberTheory.ModularForms.Newforms.Descent.LevelCommute

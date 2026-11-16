@@ -161,7 +161,7 @@ sizes. -/
 theorem charpolyRev_eq_iff_trace_pow_eq [IsAddTorsionFree R] {A : Matrix n n R}
     {B : Matrix m m R} :
     A.charpolyRev = B.charpolyRev ↔ ∀ j, 0 < j → (A ^ j).trace = (B ^ j).trace :=
-  ⟨fun h _ ↦ trace_pow_eq_of_charpolyRev_eq h, fun h ↦ Polynomial.ext fun _ ↦
+  ⟨fun h _ ↦ trace_pow_eq_of_charpolyRev_eq h, fun h ↦ AddMonoidAlgebra.ext <| Finsupp.ext fun _ ↦
     coeff_charpolyRev_eq_of_trace_pow_eq fun j hj _ ↦ h j hj⟩
 
 /-- Without additive torsion in the scalars, two square matrices of the same size have the same
@@ -177,7 +177,7 @@ theorem charpoly_eq_of_trace_pow_eq [IsAddTorsionFree R] {A : Matrix n n R} {B :
     (hnm : Fintype.card n = Fintype.card m)
     (h : ∀ j, 0 < j → j ≤ Fintype.card n → (A ^ j).trace = (B ^ j).trace) :
     A.charpoly = B.charpoly := by
-  have hrev : A.charpolyRev = B.charpolyRev := Polynomial.ext fun r ↦ by
+  have hrev : A.charpolyRev = B.charpolyRev := AddMonoidAlgebra.ext <| Finsupp.ext fun r ↦ by
     rcases le_or_gt r (Fintype.card n) with hr | hr
     · exact coeff_charpolyRev_eq_of_trace_pow_eq fun j hj hjr ↦ h j hj (hjr.trans hr)
     · rw [coeff_charpolyRev_eq_zero A hr, coeff_charpolyRev_eq_zero B (hnm ▸ hr)]

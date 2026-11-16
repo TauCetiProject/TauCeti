@@ -8,6 +8,9 @@ module
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
 public import Mathlib.Topology.Homotopy.Basic
+import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
+import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Pullbacks
+import Mathlib.CategoryTheory.Limits.Types.Pushouts
 import Mathlib.Topology.LocallyFinite
 
 /-!
@@ -23,7 +26,10 @@ homotopies between maps out of `P` are glued from homotopies on `Y` and on `Z`.
 Conversely, a space covered by a closed subspace `A` and finitely many closed pieces `B k`, any two
 of which meet only inside `A`, is the pushout of `A` and the coproduct of the `B k` along the parts
 `S k` where they meet `A`. This recognizes a space built by attaching finitely many closed pieces,
-such as cells or handles, without passing through a quotient.
+such as cells or handles, without passing through a quotient. Without the covering hypothesis, a
+map out of such a pushout which restricts to closed embeddings on `A` and on finitely many pieces
+`B k`, any two of which meet only inside `A`, and meeting `A` only along the `S k`, is still a
+closed embedding.
 
 ## Main declarations
 
@@ -33,10 +39,20 @@ such as cells or handles, without passing through a quotient.
   compatible maps out of `I × Y` and `I × Z`.
 * `CategoryTheory.IsPushout.homotopyDesc`: the homotopy between maps out of `P` glued from
   compatible homotopies of their restrictions to `Y` and to `Z`.
+* `TopCat.sigmaCylinderDesc`: the map out of the cylinder `I × ∐ⱼ F j` glued from maps out of the
+  cylinders `I × F j`.
 * `TopCat.exists_glue_of_isClosedEmbedding`: maps out of the pieces of a finite closed cover which
   agree on the overlaps glue to a map out of the whole space.
 * `CategoryTheory.IsPushout.of_isClosedEmbedding`: a cover by a closed subspace and finitely many
   closed pieces meeting it along prescribed subspaces is a pushout square.
+* `TauCeti.TopCat.range_union_iUnion_range_of_isPushout_sigma`,
+  `TauCeti.TopCat.exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma`: every point of a pushout of
+  `L` and `⨆ᵢ D i` comes from `L` or from one of the `D i`.
+* `TauCeti.TopCat.injective_of_isPushout_sigma_of_comp`,
+  `TauCeti.TopCat.isClosedEmbedding_of_isPushout_sigma_of_comp`: a map out of the pushout of `L` and
+  `⨆ᵢ D i` along `⨆ᵢ A i` restricting to injective maps (resp. closed embeddings) on `L` and on
+  the `D i`, with the images of any two `D i` meeting only inside the image of `L` and each
+  meeting it only along `A i`, is injective (resp. a closed embedding).
 -/
 
 public section
@@ -135,6 +151,34 @@ namespace TopCat
 open CategoryTheory Set Topology
 
 universe u
+
+section Sigma
+
+open Limits
+
+variable {J : Type u} (F : J → TopCat.{u})
+
+/-- Every point of a coproduct in `TopCat` lies in the image of one of the coprojections. -/
+theorem exists_sigma_ι_eq (z : (∐ F : TopCat.{u})) : ∃ j x, Sigma.ι F j x = z :=
+  let ⟨⟨j⟩, x, hx⟩ := Concrete.colimit_exists_rep _ z; ⟨j, x, hx⟩
+
+variable {W : Type u} [TopologicalSpace W] {F}
+
+/-- The map `I × ∐ⱼ F j → W` which is `C j` on the cylinder `I × F j`: the uncurried form of the
+map `∐ⱼ F j → C(I, W)` glued from the curried maps. -/
+def sigmaCylinderDesc (C : ∀ j, C(I × F j, W)) : C(I × (∐ F : TopCat.{u}), W) :=
+  (Sigma.desc fun j ↦ TopCat.ofHom ((C j).comp ContinuousMap.prodSwap).curry :
+    (∐ F) ⟶ TopCat.of C(I, W)).hom.uncurry.comp ContinuousMap.prodSwap
+
+@[simp]
+theorem sigmaCylinderDesc_ι (C : ∀ j, C(I × F j, W)) (t : I) (j : J) (x : F j) :
+    sigmaCylinderDesc C (t, Sigma.ι F j x) = C j (t, x) := by
+  have hx := ConcreteCategory.congr_hom
+    (Sigma.ι_comp_desc (fun j ↦ TopCat.ofHom ((C j).comp ContinuousMap.prodSwap).curry :
+      ∀ j, F j ⟶ TopCat.of C(I, W)) j) x
+  exact congrArg (fun g : C(I, W) ↦ g t) hx
+
+end Sigma
 
 /-- **Gluing along a finite closed cover.** Let `X` be covered by the ranges of a closed embedding
 `i : A ⟶ X` and of finitely many closed embeddings `j k : B k ⟶ X`, any two of which meet only
@@ -239,3 +283,113 @@ theorem of_isClosedEmbedding (w : ∀ k, g k ≫ i = m k ≫ j k) (hi : IsClosed
 end ClosedCover
 
 end CategoryTheory.IsPushout
+
+namespace TauCeti.TopCat
+
+section PushoutSigma
+
+open CategoryTheory Limits Topology
+
+universe u
+
+variable {ι : Type u} {A D : ι → TopCat.{u}} {L X P : TopCat.{u}} {α : ∀ i, A i ⟶ L}
+  {j : ∀ i, A i ⟶ D i} {g : L ⟶ X} {χ : ∀ i, D i ⟶ X} {inl : L ⟶ P} {inr : (∐ D) ⟶ P}
+  {φ : P ⟶ X}
+
+/-- Every point of a pushout of `L` and `⨆ᵢ D i` comes from `L` or from one of the `D i`. -/
+theorem range_union_iUnion_range_of_isPushout_sigma {W : TopCat.{u}} {f : W ⟶ L} {h : W ⟶ ∐ D}
+    (sq : IsPushout f h inl inr) :
+    Set.range inl ∪ ⋃ i, Set.range (Sigma.ι D i ≫ inr) = Set.univ := by
+  refine Set.eq_univ_of_forall fun y ↦ ?_
+  obtain ⟨x, hx⟩ | ⟨z, rfl⟩ := Types.eq_or_eq_of_isPushout ((forget TopCat).map_isPushout sq) y
+  · exact Or.inl ⟨x, hx⟩
+  · obtain ⟨⟨i⟩, d, rfl⟩ := Concrete.colimit_exists_rep (Discrete.functor D) z
+    exact Or.inr (Set.mem_iUnion.2 ⟨i, d, rfl⟩)
+
+/-- Every point of a pushout of `L` and `⨆ᵢ D i` is the image of a point of `L` or of one of the
+`D i`. This is the pointwise form of
+`TauCeti.TopCat.range_union_iUnion_range_of_isPushout_sigma`. -/
+theorem exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma {W : TopCat.{u}} {f : W ⟶ L}
+    {h : W ⟶ ∐ D} (sq : IsPushout f h inl inr) (y : P) :
+    (∃ x, inl x = y) ∨ ∃ i d, inr (Sigma.ι D i d) = y := by
+  rcases (range_union_iUnion_range_of_isPushout_sigma sq).symm ▸ Set.mem_univ y with hy | hy
+  · exact Or.inl hy
+  · obtain ⟨i, d, rfl⟩ := Set.mem_iUnion.1 hy
+    exact Or.inr ⟨i, d, rfl⟩
+
+/-- Let `P` be the pushout of `L` and `⨆ᵢ D i` along `⨆ᵢ A i`, and let `φ : P ⟶ X` restrict to
+injective maps `g` on `L` and `χ i` on the `D i`, with the ranges of any two `χ i` meeting only
+inside the range of `g`. If every point of `D i` carried by `χ i` into the range of `g` lies in the
+range of `j i`, then `φ` is injective. -/
+theorem injective_of_isPushout_sigma_of_comp (hg : Function.Injective g)
+    (hχ : ∀ i, Function.Injective (χ i))
+    (hχχ : Pairwise fun i i' ↦ Set.range (χ i) ∩ Set.range (χ i') ⊆ Set.range g)
+    (hmeet : ∀ i d, χ i d ∈ Set.range g → d ∈ Set.range (j i))
+    (sq : IsPushout (Sigma.desc α) (Limits.Sigma.map j) inl inr) (hinl : inl ≫ φ = g)
+    (hinr : ∀ i, Sigma.ι D i ≫ inr ≫ φ = χ i) : Function.Injective φ := by
+  have hinl' (x : L) : φ (inl x) = g x := by rw [← hinl, ConcreteCategory.comp_apply]
+  have hinr' (i : ι) (d : D i) : φ (inr (Sigma.ι D i d)) = χ i d := by
+    rw [← hinr, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
+  -- A point of `L` and a point of `D i` with the same image in `X` are identified in the pushout.
+  have hglue (x : L) (i : ι) (d : D i) (h : g x = χ i d) : inl x = inr (Sigma.ι D i d) := by
+    obtain ⟨a, rfl⟩ := hmeet i d ⟨x, h⟩
+    have hsq : inl (α i a) = inr (Sigma.ι D i (j i a)) := by
+      simpa [Sigma.ι_map_apply] using ConcreteCategory.congr_hom sq.w (Sigma.ι A i a)
+    have ha : g (α i a) = g x := by rw [← hinl', hsq, hinr', h]
+    rwa [← hg ha]
+  intro a b hab
+  rcases exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma sq a with ⟨x, rfl⟩ | ⟨i, d, rfl⟩ <;>
+    rcases exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma sq b with
+      ⟨x', rfl⟩ | ⟨i', d', rfl⟩
+  · rw [hinl', hinl'] at hab
+    rw [hg hab]
+  · rw [hinl', hinr'] at hab
+    exact hglue x i' d' hab
+  · rw [hinl', hinr'] at hab
+    exact (hglue x' i d hab.symm).symm
+  · rw [hinr', hinr'] at hab
+    rcases eq_or_ne i i' with rfl | hii'
+    · rw [hχ i hab]
+    -- Points of two different cells with the same image lie over a common point of `L`.
+    obtain ⟨x, hx⟩ := hχχ hii' ⟨⟨d, rfl⟩, d', hab.symm⟩
+    exact (hglue x i d hx).symm.trans (hglue x i' d' (hx.trans hab))
+
+/-- Let `P` be the pushout of `L` and `⨆ᵢ D i` along `⨆ᵢ A i`, for finitely many `i`, and let
+`φ : P ⟶ X` restrict to closed embeddings `g` on `L` and `χ i` on the `D i`, with the ranges of
+any two `χ i` meeting only inside the range of `g`. If every point of `D i` carried by `χ i` into
+the range of `g` lies in the range of `j i`, then `φ` is a closed embedding. -/
+theorem isClosedEmbedding_of_isPushout_sigma_of_comp [Finite ι] (hg : IsClosedEmbedding g)
+    (hχ : ∀ i, IsClosedEmbedding (χ i))
+    (hχχ : Pairwise fun i i' ↦ Set.range (χ i) ∩ Set.range (χ i') ⊆ Set.range g)
+    (hmeet : ∀ i d, χ i d ∈ Set.range g → d ∈ Set.range (j i))
+    (sq : IsPushout (Sigma.desc α) (Limits.Sigma.map j) inl inr) (hinl : inl ≫ φ = g)
+    (hinr : ∀ i, Sigma.ι D i ≫ inr ≫ φ = χ i) : IsClosedEmbedding φ := by
+  have hinl' (x : L) : φ (inl x) = g x := by rw [← hinl, ConcreteCategory.comp_apply]
+  have hinr' (i : ι) (d : D i) : φ (inr (Sigma.ι D i d)) = χ i d := by
+    rw [← hinr, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
+  refine .of_continuous_injective_isClosedMap φ.hom.continuous
+    (injective_of_isPushout_sigma_of_comp hg.injective (fun i ↦ (hχ i).injective) hχχ hmeet sq
+      hinl hinr)
+    fun C hC ↦ ?_
+  -- A closed set of the pushout is carried onto the union of the images of its finitely many
+  -- pieces in `L` and in the `D i`, each closed in `X`.
+  have hC' : φ '' C = g '' (inl ⁻¹' C) ∪ ⋃ i, χ i '' ((inr ∘ Sigma.ι D i) ⁻¹' C) := by
+    ext y
+    constructor
+    · rintro ⟨z, hz, rfl⟩
+      rcases exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma sq z with
+        ⟨x, rfl⟩ | ⟨i, d, rfl⟩
+      · exact Or.inl ⟨x, hz, (hinl' x).symm⟩
+      · exact Or.inr (Set.mem_iUnion.2 ⟨i, d, hz, (hinr' i d).symm⟩)
+    · rintro (⟨x, hx, rfl⟩ | hy)
+      · exact ⟨inl x, hx, hinl' x⟩
+      · obtain ⟨i, d, hd, rfl⟩ := Set.mem_iUnion.1 hy
+        exact ⟨inr (Sigma.ι D i d), hd, hinr' i d⟩
+  rw [hC']
+  exact (hg.isClosedMap _ (hC.preimage inl.hom.continuous)).union
+    (isClosed_iUnion_of_finite fun i ↦ (hχ i).isClosedMap _
+      (hC.preimage (inr.hom.continuous.comp (Sigma.ι D i).hom.continuous)))
+
+end PushoutSigma
+
+end TauCeti.TopCat

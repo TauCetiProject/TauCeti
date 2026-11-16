@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Kolchin
+public import TauCeti.LinearAlgebra.End.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Nilpotent
 import Mathlib.RingTheory.Nilpotent.Lemmas
 import TauCeti.LinearAlgebra.ExtensionBasis
+import TauCeti.RepresentationTheory.Unipotent.Quotient
 
 /-!
 # Solvability of faithful unipotent representations
@@ -25,8 +27,6 @@ submodule is `TauCeti.toMatrixAlgEquiv_extensionBasis_isUpperUnitriangular`, in
 
 ## Main declarations
 
-* `Representation.isNilpotent_quotient_sub_one`: unipotent operators stay unipotent on the
-  quotient by an invariant submodule.
 * `Representation.exists_basis_isUpperUnitriangular_of_isUnipotent`: simultaneous
   upper-unitriangularization of a unipotent monoid representation.
 * `Representation.isSolvable_of_injective_of_isUnipotent`: a group with a faithful
@@ -36,37 +36,11 @@ submodule is `TauCeti.toMatrixAlgEquiv_extensionBasis_isUpperUnitriangular`, in
 
 * A. Borel, *Linear Algebraic Groups*, Proposition 4.8.
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
-
-This supplies the Lie--Kolchin solvability step in Layer 5 of the ReductiveGroups roadmap.
 -/
 
 public section
 
 open Module
-
-namespace TauCeti
-
-section Quotient
-
-variable {R G V : Type*} [Ring R] [Monoid G] [AddCommGroup V] [Module R V]
-
-/-- If `rho g - 1` is nilpotent, then so is the operator `rho.quotient p hp g - 1` induced on the
-quotient of the representation `rho` by an invariant submodule `p`. -/
-theorem _root_.Representation.isNilpotent_quotient_sub_one (rho : Representation R G V)
-    (p : Submodule R V) (hp : ∀ g, p ≤ p.comap (rho g)) {g : G}
-    (hg : IsNilpotent (rho g - 1)) : IsNilpotent (rho.quotient p hp g - 1) := by
-  have hsub : p ≤ p.comap (rho g - 1) := fun x hx ↦ by
-    rw [Submodule.mem_comap, LinearMap.sub_apply, one_apply_eq_self]
-    exact p.sub_mem (Submodule.mem_comap.mp (hp g hx)) hx
-  have heq : rho.quotient p hp g - 1 = p.mapQ p (rho g - 1) hsub := by
-    ext x
-    simp [Representation.quotient_apply, Submodule.mapQ_apply]
-  rw [heq]
-  exact Module.End.IsNilpotent.mapQ hsub hg
-
-end Quotient
-
-end TauCeti
 
 namespace TauCeti.Representation
 

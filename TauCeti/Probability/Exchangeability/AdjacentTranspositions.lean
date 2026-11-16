@@ -11,10 +11,10 @@ import Mathlib.GroupTheory.Perm.Sign
 /-!
 # Exchangeability from adjacent transpositions
 
-This file adds the finite adjacent-transposition characterization promised in
-`TauCetiRoadmap/Exchangeability/README.md`, Layer 0. For a fixed block length, invariance under
-the adjacent swaps of `Fin n` implies invariance under every permutation of `Fin n`; applying this
-at every length gives the corresponding characterization of `Exchangeable`.
+This file adds the finite adjacent-transposition characterization of exchangeability. For a fixed
+block length, invariance under the adjacent swaps of `Fin n` implies invariance under every
+permutation of `Fin n`; applying this at every length gives the corresponding characterization of
+`Exchangeable`.
 
 The proof uses Mathlib's `Equiv.Perm.mclosure_swap_castSucc_succ`, the theorem that adjacent
 swaps generate the finite symmetric group.

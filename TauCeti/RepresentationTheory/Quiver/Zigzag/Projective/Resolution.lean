@@ -67,9 +67,7 @@ open PathAlgebra DoubledQuiver
 
 universe u w
 
-variable (k : Type w) [Field k] {V : Type u} {G : SimpleGraph V}
-
-local notation "Z" => nonisolatedZigzagQuotient k G
+variable {V : Type u} {G : SimpleGraph V}
 
 /-! ### The periodic complex -/
 
@@ -98,6 +96,12 @@ theorem zigzagPeriodicVertex_three (d : G.Dart) : zigzagPeriodicVertex d 3 = d.f
 @[simp]
 theorem zigzagPeriodicVertex_add_four (d : G.Dart) (n : ℕ) :
     zigzagPeriodicVertex d (n + 4) = zigzagPeriodicVertex d n := (rfl)
+
+variable (k : Type w) [Field k]
+
+local notation "Z" => nonisolatedZigzagQuotient k G
+
+section Finite
 
 variable [Finite V]
 
@@ -161,18 +165,21 @@ private theorem zigzagPeriodicComplex_d (d : G.Dart) (n : ℕ) :
 /-! ### The augmentation and the resolution -/
 
 /-- The augmentation of the periodic complex onto the simple head `P_{d.fst} / J P_{d.fst}`. -/
-private noncomputable def zigzagPeriodicComplexπ (hns : ∀ i : V, ∃ j, G.Adj i j)
-    (d : G.Dart) :
+private noncomputable def zigzagPeriodicComplexπ (d : G.Dart) :
     zigzagPeriodicComplex k d ⟶ (ChainComplex.single₀ (ModuleCat Z)).obj
       (ModuleCat.of Z (zigzagProjectiveRadicalLayer k G d.fst 0)) :=
   ((zigzagPeriodicComplex k d).toSingle₀Equiv _).symm
     ⟨ModuleCat.ofHom (zigzagProjectiveToHead k G d.fst), by
       rw [zigzagPeriodicComplex_d]
-      exact ModuleCat.hom_ext (zigzagProjectiveToHead_comp_zigzagProjectiveArrowMul hns d)⟩
+      exact ModuleCat.hom_ext (zigzagProjectiveToHead_comp_zigzagProjectiveArrowMul d)⟩
 
-private theorem zigzagPeriodicComplexπ_f_zero (hns : ∀ i : V, ∃ j, G.Adj i j) (d : G.Dart) :
-    (zigzagPeriodicComplexπ k hns d).f 0 = ModuleCat.ofHom (zigzagProjectiveToHead k G d.fst) :=
+private theorem zigzagPeriodicComplexπ_f_zero (d : G.Dart) :
+    (zigzagPeriodicComplexπ k d).f 0 = ModuleCat.ofHom (zigzagProjectiveToHead k G d.fst) :=
   ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
+
+end Finite
+
+section Fintype
 
 variable [Fintype V] [DecidableRel G.Adj]
 
@@ -207,7 +214,7 @@ noncomputable def zigzagPeriodicProjectiveResolution (hns : ∀ i : V, ∃ j, G.
   projective n :=
     have := zigzagProjective_projective k G (zigzagPeriodicVertex d n)
     inferInstanceAs (Projective (ModuleCat.of Z (zigzagProjective k G (zigzagPeriodicVertex d n))))
-  π := zigzagPeriodicComplexπ k hns d
+  π := zigzagPeriodicComplexπ k d
   quasiIso := by
     constructor
     intro m
@@ -259,6 +266,8 @@ theorem zigzagPeriodicProjectiveResolution_π_f_zero (hns : ∀ i : V, ∃ j, G.
         (zigzagPeriodicProjectiveResolution k hns d hfst hsnd).π.f 0 =
       ModuleCat.ofHom (zigzagProjectiveToHead k G d.fst) :=
   -- the isomorphism is an identity, so the left-hand side is the augmentation itself
-  zigzagPeriodicComplexπ_f_zero k hns d
+  zigzagPeriodicComplexπ_f_zero k d
+
+end Fintype
 
 end TauCeti

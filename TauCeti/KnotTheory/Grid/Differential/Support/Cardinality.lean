@@ -36,11 +36,8 @@ evaluating the fully blocked complex on small explicit grids.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`,
-Lane G.3, "The complexes and `∂² = 0`", and for the roadmap's standing requirement that
-the grid differential compute on explicit small grids. The column-transposition support
-condition follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters
-3 and 4.
+The column-transposition support condition follows Ozsváth--Stipsicz--Szabó, *Grid Homology for
+Knots and Links*, Chapters 3 and 4.
 -/
 
 public section

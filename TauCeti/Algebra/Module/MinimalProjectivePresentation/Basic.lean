@@ -16,7 +16,8 @@ A **projective presentation** of a module `M` is an exact sequence `P₁ → P�
 `P₁` projective. It is **minimal** when both of its maps are as small as they can be: `P₀ → M` is a
 projective cover (`TauCeti.IsProjectiveCover`) and `P₁` covers the syzygy `ker (P₀ → M)`, again as
 a projective cover. This file supplies the predicate `TauCeti.IsMinimalProjectivePresentation` and
-the comparison theorem that makes it useful.
+the comparison theorem that makes it useful. The dual notion of a minimal injective copresentation
+is in `TauCeti/Algebra/Module/Injective/Copresentation/Basic.lean`.
 
 The minimality is packaged as two superfluous kernels rather than as a nested
 `TauCeti.IsProjectiveCover`, because the second cover is a map into the submodule `ker p₀` and
@@ -96,14 +97,6 @@ submodule need not be closed under negation, as `ℕ ⊆ ℤ` shows — so over 
   term is noetherian has a finitely generated left-hand source.
 
 ## References
-
-This implements the projective half of sublayer 6B, "minimal projective/injective presentations",
-of Layer 6 of
-[the quiver-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md),
-the prerequisite it names for the transpose `Tr` and the Auslander-Reiten translate `τ = D Tr`
-("it is well-defined only up to projectives, through minimal presentations and duality on
-finite-dimensional modules"). The injective co-presentation is the remaining half, as the injective
-envelope is the remaining half of `TauCeti/Algebra/Module/ProjectiveCover/Basic.lean`.
 
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*, Cambridge
   University Press (1995), Section I.2 and Section IV.1.

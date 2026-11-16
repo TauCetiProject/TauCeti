@@ -23,9 +23,8 @@ the exact number of unit square classes of genus theory:
 
 equivalently the exact subgroup index `[𝓞 F^× : (𝓞 F^×)²] = 2 ^ (rank F + 1)`, which sharpens the
 degree bound `NumberField.units_sq_index_le` of
-`TauCeti.NumberTheory.EffectiveBounds.UnitSquares.Basic`. This is the unit-square-class input of
-Layer 2 of the multiquadratic roadmap, feeding the ambiguous-class-number formula and the
-genus-field 2-rank computation.
+`TauCeti.NumberTheory.EffectiveBounds.UnitSquares.Basic`. This is the unit-square-class input to
+the ambiguous-class-number formula and the genus-field 2-rank computation.
 
 The counting combines the cyclic and free square-class computations of
 `TauCeti.Algebra.Group.ElementaryTwoQuotient.Cyclic` and

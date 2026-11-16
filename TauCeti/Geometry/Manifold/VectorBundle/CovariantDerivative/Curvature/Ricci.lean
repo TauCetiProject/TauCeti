@@ -307,8 +307,8 @@ theorem ricciTensor_eq_sum_factor_basis
           (covProd.curvatureTensor p
             ((tangentSpaceProdEquiv p).symm (0, stdOrthonormalBasis ℝ (TangentSpace J p.2) j))
             u v)).2 := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I p.1) with hb
-  set c := stdOrthonormalBasis ℝ (TangentSpace J p.2) with hc
+  set b := stdOrthonormalBasis ℝ (TangentSpace I p.1)
+  set c := stdOrthonormalBasis ℝ (TangentSpace J p.2)
   rw [ricciTensor_eq_sum _ p
     ((b.toBasis.prod c.toBasis).map (tangentSpaceProdEquiv p).symm.toLinearEquiv),
     Fintype.sum_sum_type]

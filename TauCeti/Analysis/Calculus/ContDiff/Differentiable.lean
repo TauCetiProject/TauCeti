@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
 
 /-!
 # Eventual differentiability of `C^n` maps
@@ -21,6 +23,8 @@ within `s` at) `x` with `1 ≤ n` is differentiable near `x`. Lowering to order 
   `DifferentiableWithinAt` eventually in `𝓝[insert x s] x`.
 * `ContDiffAt.eventually_differentiableAt`: `C^n` at `x` (`1 ≤ n`) implies `DifferentiableAt`
   eventually in `𝓝 x`.
+* `ContDiffAt.differentiableAt_deriv_two`: the derivative of a function of one variable that is
+  `C²` at `x` is differentiable at `x`.
 -/
 
 public section
@@ -43,5 +47,10 @@ theorem ContDiffWithinAt.eventually_differentiableWithinAt
 theorem ContDiffAt.eventually_differentiableAt (hf : ContDiffAt 𝕜 n f x) (hn : 1 ≤ n) :
     ∀ᶠ y in 𝓝 x, DifferentiableAt 𝕜 f y :=
   ((hf.of_le hn).eventually (by simp)).mono fun _ hy ↦ hy.differentiableAt_one
+
+/-- The derivative of a function of one variable that is `C²` at `x` is differentiable at `x`. -/
+theorem ContDiffAt.differentiableAt_deriv_two {f : 𝕜 → F} {x : 𝕜} (hf : ContDiffAt 𝕜 2 f x) :
+    DifferentiableAt 𝕜 (deriv f) x :=
+  (hf.derivWithin (m := 1) (by norm_num)).differentiableAt (by norm_num)
 
 end

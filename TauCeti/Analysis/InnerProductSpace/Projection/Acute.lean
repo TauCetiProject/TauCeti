@@ -282,4 +282,21 @@ theorem singularValues_starProjection_orthogonal_comp_lt_one_of_disjoint
   rw [heq'] at hsin
   exact hsin
 
+/-- A principal tangent of the trial subspace against `U` is the sine over the cosine, with the
+sines read off the singular values of the projection onto `Uᗮ`. -/
+theorem principalTangents_range_apply_eq_div_singularValues
+    (U : Submodule 𝕜 E) (X : F →ₗᵢ[𝕜] E) (i : ℕ) :
+    (LinearMap.range X.toLinearMap).principalTangents U i =
+      (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i /
+        Real.sqrt
+          (1 - ((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i) ^ 2) := by
+  rw [Submodule.principalTangents_apply_eq_div]
+  have heq := U.principalSines_range_eq_singularValues
+    (X := X.toContinuousLinearMap) X.isometry
+  have heq' : (LinearMap.range X.toLinearMap).principalSines U =
+      (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues := by
+    simpa only [ContinuousLinearMap.toLinearMap_comp,
+      LinearIsometry.toLinearMap_toContinuousLinearMap] using heq
+  rw [heq']
+
 end Submodule

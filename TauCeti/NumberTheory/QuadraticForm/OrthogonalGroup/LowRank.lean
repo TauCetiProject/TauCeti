@@ -124,7 +124,6 @@ theorem localSpinorNormImage_ne_unitSquareClasses_of_finrank_le_one
     (fun H : Subgroup ((ℚ_[p]ˣ ⧸ Subgroup.square ℚ_[p]ˣ)) ↦ Nat.card H) h
   have hbot : Nat.card
       (⊥ : Subgroup ((ℚ_[p]ˣ ⧸ Subgroup.square ℚ_[p]ˣ))) = 1 := Subgroup.card_bot
-  have hone := hbot.symm.trans (hcard.trans hc)
   omega
 
 end OrthogonalCompactOpens

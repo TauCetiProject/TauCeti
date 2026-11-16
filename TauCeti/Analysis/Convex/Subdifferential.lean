@@ -310,6 +310,25 @@ theorem mem_subdifferential_iff_add_fenchelConjugate_eq :
     exact (mem_subdifferential_iff_forall_sub_le B hr).2 fun x' =>
       hF ▸ sub_le_fenchelConjugate B f x' y
 
+/-- On the subdifferential graph, `f⋆ y` is finite. -/
+theorem fenchelConjugate_ne_top_of_mem_subdifferential (h : y ∈ subdifferential B f x) :
+    fenchelConjugate B f y ≠ ⊤ := by
+  rw [fenchelConjugate_eq_of_mem_subdifferential B h,
+    ← EReal.coe_toReal (ne_top_of_mem_subdifferential B h) (ne_bot_of_mem_subdifferential B h),
+    ← EReal.coe_sub]
+  exact EReal.coe_ne_top _
+
+/-- On the subdifferential graph, the Fenchel–Young equality holds between the real
+representatives of `f x` and `f⋆ y`: `(f x).toReal + (f⋆ y).toReal = B x y`. -/
+theorem toReal_add_toReal_fenchelConjugate_eq_of_mem_subdifferential
+    (h : y ∈ subdifferential B f x) :
+    (f x).toReal + (fenchelConjugate B f y).toReal = B x y := by
+  have hF := fenchelConjugate_eq_of_mem_subdifferential B h
+  rw [← EReal.coe_toReal (ne_top_of_mem_subdifferential B h) (ne_bot_of_mem_subdifferential B h),
+    ← EReal.coe_sub] at hF
+  rw [hF, EReal.toReal_coe]
+  ring
+
 /-! ### Convexity and closedness -/
 
 /-- Where `f x = r` is real, the subdifferential is the intersection over `x'` of the affine
@@ -464,15 +483,9 @@ subgradient of the conjugate `f⋆` at `y`, for the transposed pairing. -/
 theorem mem_subdifferential_fenchelConjugate_of_mem_subdifferential
     (h : y ∈ subdifferential B f x) :
     x ∈ subdifferential B.flip (fenchelConjugate B f) y := by
-  have hbot := ne_bot_of_mem_subdifferential B h
   have htop := ne_top_of_mem_subdifferential B h
-  have hF : fenchelConjugate B f y = (B x y : EReal) - f x :=
-    fenchelConjugate_eq_of_mem_subdifferential B h
   have hy : fenchelConjugate B f y ≠ ⊥ := fenchelConjugate_ne_bot B htop y
-  have hy' : fenchelConjugate B f y ≠ ⊤ := by
-    obtain ⟨r, hr⟩ : ∃ r : ℝ, f x = r := ⟨(f x).toReal, (EReal.coe_toReal htop hbot).symm⟩
-    rw [hF, hr, ← EReal.coe_sub]
-    exact EReal.coe_ne_top _
+  have hy' := fenchelConjugate_ne_top_of_mem_subdifferential B h
   rw [mem_subdifferential_iff_add_fenchelConjugate_eq, LinearMap.flip_apply]
   -- Fenchel–Young for `f⋆` gives `≥`; the biconjugate inequality `f⋆⋆ ≤ f` gives `≤`.
   refine le_antisymm ?_ (le_add_fenchelConjugate B.flip hy

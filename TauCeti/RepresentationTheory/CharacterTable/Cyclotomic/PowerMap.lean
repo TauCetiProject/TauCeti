@@ -30,8 +30,7 @@ namespace Representation
 
 open TauCeti Module
 
-variable {G V : Type*} [Monoid G] [AddCommGroup V] [Module ℂ V]
-  [FiniteDimensional ℂ V] {e : ℕ} [NeZero e]
+variable {G V : Type*} [Monoid G] [AddCommGroup V] [Module ℂ V] {e : ℕ} [NeZero e]
 
 /-- Evaluating an exact cyclotomic character value at the `n`-th power of the distinguished
 root gives the character value at `g ^ n`, provided `g ^ e = 1` (the order of `g` divides `e`). -/
@@ -42,6 +41,16 @@ theorem map_cyclotomic_character_eq_character_pow (ρ : Representation ℂ G V)
     (hφ : φ (Cyclotomic.zeta e) = Cyclotomic.complexRoot e ^ n) :
     φ x = ρ.character (g ^ n) := by
   classical
+  by_cases hV : FiniteDimensional ℂ V
+  swap
+  · have h0 (m : G) : ρ.character m = 0 := by
+      have hb : ¬ ∃ s : Finset V, Nonempty (Module.Basis s ℂ V) := fun ⟨_, ⟨b⟩⟩ ↦
+        hV (Module.Finite.of_basis b)
+      simp only [Representation.character, LinearMap.trace, dite_eq_right hb]
+      rfl
+    rw [h0] at hx
+    rw [h0, Cyclotomic.complexEmbedding_injective (hx.trans (map_zero _).symm)]
+    exact map_zero φ
   let f : Module.End ℂ V := ρ g
   let S := (Module.End.finite_hasEigenvalue f).toFinset
   have hf : f ^ e = 1 := by simp [f, ← map_pow, hg]

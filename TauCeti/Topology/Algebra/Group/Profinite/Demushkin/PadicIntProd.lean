@@ -238,6 +238,6 @@ theorem demushkinQ_multiplicative_pi_padicInt_fin_two
     (hG : IsDemushkin p (Multiplicative (Fin 2 → ℤ_[p]))) : demushkinQ hG = 0 := by
   rw [demushkinQ_congr hG (IsDemushkin.of_equiv p hG (presentedProPEquivPiPadicInt p).symm)
     (presentedProPEquivPiPadicInt p).symm]
-  exact (demushkinQ_presentedProP_demushkinWordNeTwo_eq_zero_iff (dvd_zero p) _).2 rfl
+  exact (demushkinQ_presentedProP_demushkinWordNeTwo_eq_zero_iff _).2 rfl
 
 end TauCeti

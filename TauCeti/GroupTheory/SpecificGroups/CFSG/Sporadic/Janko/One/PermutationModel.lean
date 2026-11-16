@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Presentation
+import TauCeti.GroupTheory.Perm.Fin
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.Algebra.Group.Subgroup.Pointwise
+import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.IntervalCases
 
 /-!
@@ -154,7 +156,9 @@ theorem presentationImage_zero : presentationImage ⟨0, by simp⟩ = a⁻¹ := 
 @[simp]
 theorem presentationImage_one : presentationImage ⟨1, by simp⟩ = b⁻¹ := (rfl)
 
--- Separate kernel checks keep each declaration within the default heartbeat budget.
+-- Check the long relators one row at a time with `Equiv.Perm.eq_one_of_rows`. Each kernel
+-- decision covers only fourteen points, avoiding the large intermediate terms from checking all
+-- 266 points together.
 private theorem relator_zero :
     Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[0]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_zero,
@@ -172,21 +176,27 @@ private theorem relator_two :
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
-  decide +kernel
+  apply Equiv.Perm.eq_one_of_rows (m := 19) (n := 14)
+  intro i
+  fin_cases i <;> decide +kernel
 
 private theorem relator_three :
     Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[3]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_inv, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
-  decide +kernel
+  apply Equiv.Perm.eq_one_of_rows (m := 19) (n := 14)
+  intro i
+  fin_cases i <;> decide +kernel
 
 private theorem relator_four :
     Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[4]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_inv, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
-  decide +kernel
+  apply Equiv.Perm.eq_one_of_rows (m := 19) (n := 14)
+  intro i
+  fin_cases i <;> decide +kernel
 
 /-- All five transcribed relators hold on the inverse ATLAS pair. -/
 theorem lift_presentationImage_toFreeGroup_eq_one

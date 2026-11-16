@@ -243,31 +243,31 @@ theorem simplyBlockedHomologyCommutationMap_bijective :
     obtain ⟨z, rfl⟩ := G.oneVariableSpecializationHomologyClass_surjective R i y
     rw [simplyBlockedHomologyCommutationMap_oneVariableSpecializationHomologyClass,
       oneVariableSpecializationHomologyClass_eq_zero_iff,
-      (hG').mem_simplyBlockedBoundaries_iff R (σ i),
+      (G').mem_range_moduleCatToCycles_simplyBlockedComplex_iff R (σ i),
       simplyBlockedChainEquiv_simplyBlockedCommutationCyclesMap] at hy
-    have hz := (hG.mem_simplyBlockedCycles R i z).mp z.2
+    have hz := (G.mem_ker_simplyBlockedComplex_d_iff R i z).mp z.2
     obtain ⟨Z, hZ⟩ := simplyBlockedSpecialization_surjective R i (G.simplyBlockedChainEquiv R i z)
     rw [← hZ, simplyBlockedCommutationMap_simplyBlockedSpecialization] at hy
     rw [← hZ, ← simplyBlockedSpecialization_unblockedDifferential] at hz
     rw [oneVariableSpecializationHomologyClass_eq_zero_iff,
-      hG.mem_simplyBlockedBoundaries_iff R i, ← hZ]
+      G.mem_range_moduleCatToCycles_simplyBlockedComplex_iff R i, ← hZ]
     exact G.simplyBlockedSpecialization_mem_range_of_commutationMap R C i hz hy
   · -- The class of a cycle `y` of the commuted diagram is the image of the class of `Ψ y`.
     obtain ⟨y, rfl⟩ := (G').oneVariableSpecializationHomologyClass_surjective R (σ i) y
-    have hy := ((hG').mem_simplyBlockedCycles R (σ i) y).mp y.2
+    have hy := ((G').mem_ker_simplyBlockedComplex_d_iff R (σ i) y).mp y.2
     obtain ⟨Y, hY⟩ :=
       simplyBlockedSpecialization_surjective R (σ i) ((G').simplyBlockedChainEquiv R (σ i) y)
     rw [← hY, ← simplyBlockedSpecialization_unblockedDifferential] at hy
     let z : hG.simplyBlockedCycles R i :=
       ⟨(G.simplyBlockedChainEquiv R i).symm
         (simplyBlockedSpecialization R i ((G').commutationMap R C.reverse Y)), by
-        rw [hG.mem_simplyBlockedCycles R i, LinearEquiv.apply_symm_apply,
+        rw [G.mem_ker_simplyBlockedComplex_d_iff R i, LinearEquiv.apply_symm_apply,
           ← simplyBlockedSpecialization_unblockedDifferential]
         exact G.simplyBlockedSpecialization_unblockedDifferential_commutationMap_reverse R C i hy⟩
     refine ⟨G.oneVariableSpecializationHomologyClass R i z, ?_⟩
     rw [simplyBlockedHomologyCommutationMap_oneVariableSpecializationHomologyClass,
       oneVariableSpecializationHomologyClass_eq_iff,
-      (hG').mem_simplyBlockedBoundaries_iff R (σ i), Submodule.coe_sub,
+      (G').mem_range_moduleCatToCycles_simplyBlockedComplex_iff R (σ i), Submodule.coe_sub,
       map_sub, simplyBlockedChainEquiv_simplyBlockedCommutationCyclesMap, ← hY,
       LinearEquiv.apply_symm_apply, simplyBlockedCommutationMap_simplyBlockedSpecialization]
     exact G.simplyBlockedSpecialization_commutationMap_commutationMap_reverse_sub_mem_range R C i hy

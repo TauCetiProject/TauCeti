@@ -198,8 +198,8 @@ theorem isUnimodular_gluedLattice_iff_natCard_sq_eq :
       Nat.card H ^ 2 = Nat.card (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)) := by
   rw [isUnimodular_gluedLattice_iff]
   exact ⟨fun h ↦ FiniteBilinearModule.IsLagrangian.card_sq _ h.toFiniteBilinearModule
-      (isNondegenerate_pi_glueAlphabet t ht hv),
-    hH.isLagrangian_of_card_sq_eq _ (isNondegenerate_pi_glueAlphabet t ht hv)⟩
+      (isNondegenerate_pi_glueAlphabet t ht),
+    hH.isLagrangian_of_card_sq_eq _ (isNondegenerate_pi_glueAlphabet t ht)⟩
 
 /-- Gluing along the zero subgroup of glue words returns the orthogonal sum of root lattices. -/
 @[simp]

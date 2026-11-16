@@ -67,7 +67,7 @@ theorem isFinite_fromNormalization_iff :
       Module.Finite Γ(Y, U) (integralClosure Γ(Y, U) Γ(X, f ⁻¹ᵁ U)) := by
   -- Over an affine open `U`, the map on sections is the algebra map to the integral closure,
   -- followed by the isomorphism `normalizationObjIso`.
-  have key : ∀ U (hU : IsAffineOpen U), (f.fromNormalization.app U).hom.Finite ↔
+  have key : ∀ U (_ : IsAffineOpen U), (f.fromNormalization.app U).hom.Finite ↔
       letI := (f.app U).hom.toAlgebra
       Module.Finite Γ(Y, U) (integralClosure Γ(Y, U) Γ(X, f ⁻¹ᵁ U)) := fun U hU ↦ by
     let := (f.app U).hom.toAlgebra

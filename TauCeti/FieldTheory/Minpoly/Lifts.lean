@@ -50,10 +50,17 @@ end Ring
 variable [Field k] [Field F] [Algebra k F] [Field E] [Algebra k E] [Algebra F E]
   [IsScalarTower k F E]
 
-/-- If `x` is integral over `F` and its minimal polynomial over `F` has all its coefficients in the
-subfield `k`, then adjoining `x` to `k` and to `F` gives extensions of the same degree. -/
+/-- If the minimal polynomial of `x` over `F` has all its coefficients in the subfield `k`, then
+adjoining `x` to `k` and to `F` gives extensions of the same degree. When `x` is not integral over
+`F` both degrees are `0`. -/
 theorem IntermediateField.finrank_adjoin_simple_eq_of_minpoly_mem_lifts {x : E}
-    (hx : IsIntegral F x) (h : minpoly F x ∈ lifts (algebraMap k F)) :
+    (h : minpoly F x ∈ lifts (algebraMap k F)) :
     Module.finrank k k⟮x⟯ = Module.finrank F F⟮x⟯ := by
-  have hxk := hx.of_minpoly_mem_lifts h
-  rw [adjoin.finrank hxk, adjoin.finrank hx, ← minpoly.map_algebraMap hxk h, natDegree_map]
+  by_cases hx : IsIntegral F x
+  · have hxk := hx.of_minpoly_mem_lifts h
+    rw [adjoin.finrank hxk, adjoin.finrank hx, ← minpoly.map_algebraMap hxk h, natDegree_map]
+  · have hxk : ¬ IsIntegral k x := fun h ↦ hx h.tower_top
+    rw [Module.finrank_of_not_finite fun hf ↦
+        hxk (by simpa using (IsIntegral.of_finite k (AdjoinSimple.gen k x)).map k⟮x⟯.val),
+      Module.finrank_of_not_finite fun hf ↦
+        hx (by simpa using (IsIntegral.of_finite F (AdjoinSimple.gen F x)).map F⟮x⟯.val)]

@@ -15,9 +15,6 @@ Mutually inverse comodule morphisms identify the corresponding subcomodule latti
 images. In particular, transporting a comodule structure along a linear equivalence preserves
 its subcomodules and their underlying submodules.
 
-This is Layer 1 infrastructure for the reductive-groups roadmap: changing the carrier of a
-comodule must preserve its invariant subspaces.
-
 ## Main declarations
 
 * `TauCeti.Subcomodule.mapOrderIso`: the order isomorphism induced by mutually inverse comodule

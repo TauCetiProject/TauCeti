@@ -15,8 +15,9 @@ import Mathlib.Topology.UrysohnsLemma
 
 The integrated form of a covariant pair generates the same closed subspace as its coefficient
 representation. In particular, its ranges span a dense subspace exactly when the coefficient
-representation is nondegenerate. This identifies the nondegenerate representations on the two
-sides of the integrated-form correspondence, without assuming unital coefficients.
+representation is nondegenerate, and every integrated operator vanishes precisely when the
+coefficient representation is zero. Thus the integrated form preserves and reflects nondegeneracy
+and detects the zero coefficient representation, without assuming unital coefficients.
 
 The proof tests matrix coefficients against compactly supported continuous scalar functions.
 Only local compactness, the R₁ separation axiom, finiteness of the measure on compact sets and
@@ -76,6 +77,18 @@ theorem forall_inner_integratedOperator_eq_zero_iff (w : H) :
   · intro h f v
     rw [P.inner_integratedOperator_apply]
     exact integral_eq_zero_of_ae (.of_forall fun g => h (f g) (P.group g v))
+
+/-- Every integrated operator of a covariant pair vanishes precisely when the coefficient
+representation is zero. -/
+theorem forall_integratedOperator_eq_zero_iff :
+    (∀ f : C_c(G, A), P.integratedOperator μ f = 0) ↔ P.coefficient = 0 := by
+  refine ⟨fun h => NonUnitalStarAlgHom.ext fun a => ContinuousLinearMap.ext fun v =>
+    ext_inner_left ℂ fun w => ?_, fun h f => ?_⟩
+  · simp only [NonUnitalStarAlgHom.zero_apply, zero_apply, inner_zero_right]
+    exact (P.forall_inner_integratedOperator_eq_zero_iff μ w).1
+      (fun f u => by simp [h f]) a v
+  · ext v
+    simp [integratedOperator_apply, h]
 
 /-- The orthogonal complements of the spans of the integrated and coefficient ranges coincide.
 This includes degenerate coefficient representations. -/

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.BaseChange
-public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.FredholmDet
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Spectrum
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Strassmann
 
@@ -79,7 +78,7 @@ zeros of `H_u` in `L`.
 public section
 
 open Topology
-open scoped ZeroAtInfty NNReal
+open scoped ZeroAtInfty
 
 variable {I : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
 
@@ -155,14 +154,12 @@ theorem IsRowCompact.encard_setOf_mem_spectrum_mapCoeffs_le (hu : u.IsRowCompact
     (hs : TauCeti.PowerSeries.IsDistinguished ε⁻¹ s u.matrixCoeff.charPowerSeries) :
     {μ ∈ spectrum L (u.mapCoeffs (algebraMap K L) ⟨1, by simp⟩) | ε ≤ ‖μ‖}.encard ≤ s := by
   refine (Set.encard_le_encard_of_injOn (f := (·⁻¹)) ?_ inv_injective.injOn).trans
-    (hs.encard_setOf_evalAt_eq_zero_le (L := L) (inv_pos.2 hε)
-      (hu.isEntire_charPowerSeries.isRestricted _))
+    (hs.encard_setOf_evalAt_eq_zero_le (L := L) (hu.isEntire_charPowerSeries.isRestricted _))
   rintro μ ⟨hμ, hεμ⟩
   have hμ0 : μ ≠ 0 := norm_pos_iff.1 (hε.trans_le hεμ)
   refine ⟨by simpa only [norm_inv] using inv_anti₀ hε hεμ, ?_⟩
-  rw [(hu.mapCoeffs _ _).mem_spectrum_iff_evalAt_inv_eq_zero hμ0,
+  rwa [(hu.mapCoeffs _ _).mem_spectrum_iff_evalAt_inv_eq_zero hμ0,
     hu.charPowerSeries_map, PowerSeries.evalAt_map_algebraMap] at hμ
-  exact hμ
 
 /-- After extension to a complete normed field `L`, a row-compact endomorphism of `C₀(I, K)` has
 only finitely many spectral values of norm at least `ε`, for every `ε > 0`. -/

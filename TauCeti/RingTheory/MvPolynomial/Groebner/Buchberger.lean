@@ -206,7 +206,7 @@ private theorem mem_degreeSpan_Iio_of_coeff_eq_zero
       (LinearMap.id - (lcoeff R D).smulRight q₀) := by
     refine Submodule.span_le.2 ?_
     rintro _ ⟨b, hb, a, had, rfl⟩
-    rcases eq_or_ne b 0 with rfl | hb0
+    rcases eq_or_ne b 0 with rfl | _
     · simp
     simp only [SetLike.mem_coe, Submodule.mem_comap, LinearMap.sub_apply, LinearMap.id_apply,
       LinearMap.smulRight_apply, lcoeff_apply]

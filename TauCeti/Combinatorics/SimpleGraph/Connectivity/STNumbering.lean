@@ -588,7 +588,7 @@ theorem connected_of_three_le_card (n : G.STNumbering s t) (h3 : 3 ≤ Fintype.c
 /-- The vertex `s` is a quiver source of `OrientedQuiver G n.toOrientation`. -/
 theorem isSource_source (n : G.STNumbering s t) :
     TauCeti.Quiver.IsSource (OrientedQuiver.vertex G n.toOrientation s) := by
-  rw [TauCeti.Quiver.IsSource_def]
+  rw [TauCeti.Quiver.isSource_iff]
   intro x
   obtain ⟨u, rfl⟩ := (OrientedQuiver.vertexEquiv G n.toOrientation).surjective x
   rw [OrientedQuiver.vertexEquiv_apply, n.isEmpty_hom_iff]
@@ -597,7 +597,7 @@ theorem isSource_source (n : G.STNumbering s t) :
 /-- The vertex `t` is a quiver sink of `OrientedQuiver G n.toOrientation`. -/
 theorem isSink_sink (n : G.STNumbering s t) :
     TauCeti.Quiver.IsSink (OrientedQuiver.vertex G n.toOrientation t) := by
-  rw [TauCeti.Quiver.IsSink_def]
+  rw [TauCeti.Quiver.isSink_iff]
   intro x
   obtain ⟨w, rfl⟩ := (OrientedQuiver.vertexEquiv G n.toOrientation).surjective x
   rw [OrientedQuiver.vertexEquiv_apply, n.isEmpty_hom_iff]

@@ -18,8 +18,7 @@ elements `1` and `-1` act respectively as the identity and negation.  This file 
 quotient, characterizes equality of its representatives, and proves that the quotient map from
 the sphere is a two-sheeted quotient covering map.
 
-This is the quotient-cover prerequisite for the computation of `π₁(RPⁿ)` in
-`TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 13.  The covering argument uses
+This quotient cover is an input to the computation of `π₁(RPⁿ)`.  The covering argument uses
 `isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul` from Mathlib's quotient-covering
 API, due to Junyan Xu.  Finiteness of `ℤˣ` supplies proper discontinuity; the only additional
 input is that the antipodal action on the unit sphere is free.  The integer-unit sphere action is

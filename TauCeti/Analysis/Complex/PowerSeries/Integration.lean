@@ -77,13 +77,5 @@ theorem HasFPowerSeriesOnBall.hasSum_torusIntegral_cauchyCoeff
     HasSum (fun k ↦ ∯ z in T(c, R), (∏ i, (z i - c i) ^ (m i + 1))⁻¹ •
       p k (fun _ ↦ z - c))
       (∯ z in T(c, R), (∏ i, (z i - c i) ^ (m i + 1))⁻¹ • f z) := by
-  apply hf.hasSum_torusIntegral_smul hs (fun i ↦ (abs_of_pos (hR i)).symm ▸ hRs i)
-  apply Continuous.inv₀ (by fun_prop)
-  intro z
-  apply Finset.prod_ne_zero_iff.2
-  intro i _
-  apply pow_ne_zero
-  intro h
-  have hz := mem_sphere_iff_norm.1 (z i).2
-  rw [h, norm_zero, abs_of_pos (hR i)] at hz
-  exact (hR i).ne' hz.symm
+  exact hf.hasSum_torusIntegral_smul hs (fun i ↦ (abs_of_pos (hR i)).symm ▸ hRs i) _
+    (TauCeti.continuous_inv_prod_sub_pow (fun i ↦ (hR i).ne') m)

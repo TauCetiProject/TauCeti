@@ -202,7 +202,7 @@ theorem natCast_mul_hazewinkelLogCoeff_succ' (hp : p ≠ 0) (n : ℕ) :
       obtain ⟨m, hm⟩ : ∃ m, n - j = m + 1 := ⟨n - j - 1, by grind⟩
       rw [hm, hazewinkelLogCoeff_succ]
       simp only [mul_smul_comm, mul_sum, smul_sum]
-      refine sum_congr rfl fun l hl ↦ ?_
+      refine sum_congr rfl fun l _ ↦ ?_
       simp only [f, ← pow_mul, ← pow_add, mul_assoc,
         show m - l = n - 1 - (j + l) by omega]
     rw [sum_congr rfl hl, sum_congr rfl hr, sum_range_diag_flip]

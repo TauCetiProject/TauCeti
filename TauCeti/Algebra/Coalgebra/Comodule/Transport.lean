@@ -107,6 +107,40 @@ theorem transportCoact_trans (e : M ≃ₗ[R] N) (f : N ≃ₗ[R] P) :
   simp only [transportCoact_apply, transport_coact_apply, TensorProduct.map_map,
     LinearMap.comp_id, LinearEquiv.coe_trans, LinearEquiv.symm_trans_apply]
 
+/-- Transporting along the identity linear equivalence gives the original comodule
+structure. -/
+@[simp]
+theorem transport_refl :
+    Transport (R := R) (C := C) (M := M) (N := M) (LinearEquiv.refl R M) = ‹Comodule R C M› := by
+  ext : 1
+  rw [transport_coact, transportCoact_refl]
+
+/-- Transporting along a composite linear equivalence is iterated transport. -/
+theorem transport_trans (e : M ≃ₗ[R] N) (f : N ≃ₗ[R] P) :
+    Transport (R := R) (C := C) (M := M) (N := P) (e.trans f) =
+      letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e
+      Transport (R := R) (C := C) (M := N) (N := P) f := by
+  let : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e
+  ext : 1
+  rw [transport_coact, transportCoact_trans, transport_coact]
+
+/-- Transporting back along the inverse linear equivalence recovers the original comodule
+structure. -/
+@[simp]
+theorem transport_symm (e : M ≃ₗ[R] N) :
+    (letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e;
+      Transport (R := R) (C := C) (M := N) (N := M) e.symm) = ‹Comodule R C M› := by
+  rw [← transport_trans, LinearEquiv.self_trans_symm, transport_refl]
+
+/-- The transported structure is a given comodule structure on the target exactly when the
+linear equivalence intertwines the coaction of the source with that structure. -/
+theorem transport_eq_iff (e : M ≃ₗ[R] N) (σ : Comodule R C N) :
+    Transport (R := R) (C := C) (M := M) (N := N) e = σ ↔
+      TensorProduct.map e.toLinearMap LinearMap.id ∘ₗ coact (R := R) (C := C) (M := M) =
+        σ.coact ∘ₗ e.toLinearMap := by
+  rw [Comodule.ext_iff, transport_coact, transportCoact, ← LinearMap.comp_assoc,
+    LinearEquiv.comp_toLinearMap_symm_eq]
+
 variable {M' : Type y} {N' : Type z}
 variable [AddCommMonoid M'] [Module R M'] [Comodule R C M']
 variable [AddCommMonoid N'] [Module R N']

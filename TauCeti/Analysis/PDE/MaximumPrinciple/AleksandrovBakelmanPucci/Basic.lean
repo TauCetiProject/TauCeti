@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.PDE.MaximumPrinciple.ContactSet
 import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.InnerProductSpace.Spectrum
 import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
-import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # The Aleksandrov–Bakelman–Pucci maximum principle
@@ -41,12 +44,17 @@ The proof combines the Aleksandrov measure estimate
 `TauCeti.PDE.addHaar_ball_le_lintegral_abs_det_hessianOperator` with a pointwise bound on the
 contact set. There the negated Hessian matrix `M` is positive semidefinite, so the
 determinant–trace inequality `det a det M ≤ (tr (a M) / n)ⁿ` and `tr (a M) ≤ f⁻` give
-`|det D²u| ≤ (f⁻ / n)ⁿ / det a`.
+`|det D²u| ≤ (f⁻ / n)ⁿ / det a`. The pointwise bound
+(`TauCeti.PDE.abs_det_le_negPart_div_card_pow_div_det`) is stated for any operator `T` with
+`-T` positive in place of `D²u`, so that it applies equally to the weak Hessian of a `W^{2,n}`
+function (`TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Sobolev`).
 
 ## Main declarations
 
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_nonpos_of_mem_upperContactSet`: on the contact set, the
   principal part `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` is nonpositive for every `A` with nonnegative quadratic form.
+* `TauCeti.PDE.abs_det_le_negPart_div_card_pow_div_det`: for `-T` positive, `A` positive
+  definite and `c ≤ ∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ`, the bound `|det T| ≤ (c⁻ / n)ⁿ / det A`.
 * `TauCeti.PDE.abs_det_hessianOperator_mul_det_le_of_mem_upperContactSet`: the pointwise bound
   `|det D²u| det A ≤ (-∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu / n)ⁿ` on the contact set, for positive semidefinite `A`.
 * `TauCeti.PDE.volume_ball_le_setLIntegral_upperContactSet`: the
@@ -59,8 +67,7 @@ determinant–trace inequality `det a det M ≤ (tr (a M) / n)ⁿ` and `tr (a M)
   principal part `∑ᵢⱼ aⁱʲ (T eⱼ)ᵢ` of a measurable operator field and the quotient
   `F⁻ / (det a)^{1/n}` are measurable.
 * `TauCeti.PDE.negPart_div_det_rpow_le`: under `∑ᵢⱼ |aⁱʲ| ≤ K (det a)^{1/n}`, perturbing the
-  Hessian by `T - S` changes `(∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu)⁻ / (det a)^{1/n}` by at most `K ‖T - S‖`; this is
-  how the right-hand side passes to a limit of approximate Hessians.
+  Hessian by `T - S` changes `(∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu)⁻ / (det a)^{1/n}` by at most `K ‖T - S‖`.
 * `TauCeti.PDE.le_add_mul_eLpNorm_negPart_div_det_rpow_of_volume_ball_le`: the `Lⁿ` form follows
   from the measure form; it is shared with the estimate for strong solutions in
   `TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Sobolev`.
@@ -102,6 +109,25 @@ theorem sum_mul_fderiv_fderiv_nonpos_of_mem_upperContactSet (hΩ : IsOpen Ω)
   sum_mul_fderiv_fderiv_nonpos hA (hu.contDiffAt (hΩ.mem_nhds (upperContactSet_subset hy)))
     (fderiv_fderiv_self_nonpos_of_mem_upperContactSet hΩ hu hy)
 
+/-- **The pointwise bound by the elliptic operator.** If `-T` is a positive operator on `ℝⁿ`, `A`
+is positive definite and `c ≤ ∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ`, then `|det T| ≤ (c⁻ / n)ⁿ / det A`. Applied to the
+Hessian `T = D²u` on the upper contact set, with `c = f`, it bounds the integrand of the
+Aleksandrov measure estimate by that of the Aleksandrov–Bakelman–Pucci estimate. -/
+theorem abs_det_le_negPart_div_card_pow_div_det
+    {T : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι} (hT : (-T).IsPositive) {A : Matrix ι ι ℝ}
+    (hA : A.PosDef) {c : ℝ} (hc : c ≤ ∑ i, ∑ j, A i j * T (EuclideanSpace.single j 1) i) :
+    |LinearMap.det T| ≤ (c⁻ / Fintype.card ι) ^ Fintype.card ι / A.det := by
+  have hentry : ∑ i, ∑ j, A i j * (-T) (EuclideanSpace.single j 1) i =
+      -∑ i, ∑ j, A i j * T (EuclideanSpace.single j 1) i := by
+    simp [Finset.sum_neg_distrib]
+  have hS := hT.sum_mul_apply_nonneg hA.posSemidef
+  have hD := hT.det_mul_det_le_sum_mul_apply_div_card_pow hA.posSemidef
+  rw [hentry] at hS hD
+  rw [← hT.abs_det_neg, neg_neg] at hD
+  refine (le_div_iff₀ hA.det_pos).2 (hD.trans (pow_le_pow_left₀
+    (div_nonneg hS (Nat.cast_nonneg _)) (div_le_div_of_nonneg_right ?_ (Nat.cast_nonneg _)) _))
+  exact (neg_le_neg hc).trans (neg_le_negPart _)
+
 /-- **The determinant bound on the upper contact set.** If `u` is `C²` on an open set `Ω` and
 `A` is positive semidefinite, then at every point `y` of the upper contact set,
 `|det D²u(y)| det A ≤ (-∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu(y) / n)ⁿ`, where `n` is the dimension. -/
@@ -111,31 +137,12 @@ theorem abs_det_hessianOperator_mul_det_le_of_mem_upperContactSet (hΩ : IsOpen 
     |(hessianOperator u y).det| * A.det ≤
       ((-∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ u) y (EuclideanSpace.single i 1)
         (EuclideanSpace.single j 1)) / Fintype.card ι) ^ Fintype.card ι := by
-  set H := fderiv ℝ (fderiv ℝ u) y
-  set M : Matrix ι ι ℝ :=
-    Matrix.of fun i j => -H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
-  have hM : M.PosSemidef :=
-    posSemidef_neg_fderiv_fderiv (hu.contDiffAt (hΩ.mem_nhds (upperContactSet_subset hy)))
-      (fderiv_fderiv_self_nonpos_of_mem_upperContactSet hΩ hu hy)
-  have hsymm (i j : ι) : M j i = M i j := by simpa using hM.isHermitian.apply i j
-  -- In the standard basis the Hessian operator has matrix `-M`.
-  have hmat : (Matrix.of fun i j => fderiv ℝ (fderiv ℝ u) y (EuclideanSpace.single j 1)
-      (EuclideanSpace.single i 1)) = -M := by
-    ext i j
-    rw [Matrix.neg_apply, ← hsymm]
-    simp [M, H]
-  have hdet : |(hessianOperator u y).det| = M.det := by
-    simp [(EuclideanSpace.basisFun ι ℝ).det_hessianOperator, hmat, det_neg, abs_mul,
-      abs_of_nonneg hM.det_nonneg]
-  have htr : (A * M).trace = -∑ i, ∑ j, A i j * H (EuclideanSpace.single i 1)
-      (EuclideanSpace.single j 1) := by
-    simp only [trace, diag_apply, ← Finset.sum_neg_distrib, ← mul_neg]
-    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-    dsimp only
-    rw [hsymm]
-    simp [M]
-  rw [hdet, mul_comm, ← htr]
-  exact hA.det_mul_det_le_trace_mul_div_card_pow hM
+  have hT := (isPositive_neg_hessianOperator_of_mem_upperContactSet hΩ hu hy).toLinearMap
+  have h := hT.det_mul_det_le_sum_mul_apply_div_card_pow hA
+  rw [hT.abs_det_neg.symm, ContinuousLinearMap.toLinearMap_neg, neg_neg] at h
+  simpa only [ContinuousLinearMap.coe_coe, LinearMap.neg_apply, PiLp.neg_apply,
+    hessianOperator_single_apply (hu.contDiffAt (hΩ.mem_nhds (upperContactSet_subset hy))),
+    mul_neg, Finset.sum_neg_distrib] using h
 
 /-- **The Aleksandrov–Bakelman–Pucci estimate, measure form** (Gilbarg–Trudinger, Lemma 9.3
 without drift). Let `Ω` be bounded and open, let `u` be continuous on `closure Ω` and `C²` in
@@ -154,14 +161,10 @@ theorem volume_ball_le_setLIntegral_upperContactSet
   refine (addHaar_ball_le_lintegral_abs_det_hessianOperator volume hΩb hΩ hcont hu hm hx).trans
     (setLIntegral_mono' (measurableSet_upperContactSet hΩ (hu.of_le (by norm_num)))
       fun y hy => ENNReal.ofReal_le_ofReal ?_)
-  rw [le_div_iff₀ (ha y hy).det_pos]
-  refine (abs_det_hessianOperator_mul_det_le_of_mem_upperContactSet hΩ hu hy
-    (ha y hy).posSemidef).trans ?_
-  have hS := sum_mul_fderiv_fderiv_nonpos_of_mem_upperContactSet hΩ hu hy (A := a y) fun ξ => by
-    simpa [toQuadraticForm'_apply] using (ha y hy).posSemidef.dotProduct_mulVec_nonneg ξ.ofLp
-  refine pow_le_pow_left₀ (div_nonneg (neg_nonneg.2 hS) (Nat.cast_nonneg _))
-    (div_le_div_of_nonneg_right ?_ (Nat.cast_nonneg _)) _
-  exact (neg_le_neg (hf y hy)).trans (neg_le_negPart _)
+  refine abs_det_le_negPart_div_card_pow_div_det
+    (isPositive_neg_hessianOperator_of_mem_upperContactSet hΩ hu hy).toLinearMap (ha y hy) ?_
+  simpa only [ContinuousLinearMap.coe_coe, hessianOperator_single_apply
+    (hu.contDiffAt (hΩ.mem_nhds (upperContactSet_subset hy)))] using hf y hy
 
 /-- The right-hand side of the measure form is `n⁻ⁿ ‖f⁻ / (det a)^{1/n}‖_{Lⁿ(Γ)}ⁿ`, for any set
 `Γ` on which `a` is almost everywhere positive definite. -/
@@ -177,14 +180,13 @@ theorem setLIntegral_ofReal_negPart_div_card_pow_div_det_eq [Nonempty ι]
   set n := Fintype.card ι
   set g := fun y => (f y)⁻ / (a y).det ^ (n : ℝ)⁻¹
   have hn : n ≠ 0 := Fintype.card_ne_zero
-  have h := eLpNorm_nnreal_pow_eq_lintegral (p := (n : NNReal)) (Nat.cast_ne_zero.2 hn) hg
-  simp only [ENNReal.coe_natCast, NNReal.coe_natCast, ENNReal.rpow_natCast] at h
-  rw [h, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  rw [← lintegral_enorm_pow_eq_eLpNorm_pow hn hg,
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   refine lintegral_congr_ae ?_
   filter_upwards [ha] with y hy
   have hdet := hy.det_pos
   have hgy : 0 ≤ g y := div_nonneg (negPart_nonneg _) (Real.rpow_nonneg hdet.le _)
-  rw [Real.enorm_eq_ofReal hgy, ← ENNReal.ofReal_pow hgy,
+  rw [Real.eNorm_eq_ofReal hgy, ← ENNReal.ofReal_pow hgy,
     ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   simp only [g, div_pow, Real.rpow_inv_natCast_pow hdet.le hn]
@@ -261,7 +263,6 @@ theorem le_add_mul_eLpNorm_negPart_div_det_rpow_of_volume_ball_le [Nonempty ι]
   set N := (eLpNorm g n (volume.restrict Γ)).toReal
   set ω := (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal
   have hn : n ≠ 0 := Fintype.card_ne_zero
-  have hn' : (0 : ℝ) < n := Nat.cast_pos.2 (Nat.pos_of_ne_zero hn)
   have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos volume _ one_pos).ne'
     measure_ball_lt_top.ne
   have hN : 0 ≤ N := ENNReal.toReal_nonneg
@@ -289,7 +290,6 @@ theorem le_add_mul_eLpNorm_negPart_div_det_rpow_of_volume_ball_le [Nonempty ι]
     rw [mul_pow, Real.rpow_inv_natCast_pow hω.le hn]
     calc r ^ n * ω ≤ ((n : ℝ) ^ n)⁻¹ * N ^ n := hreal
       _ = (N / n) ^ n := by rw [div_pow]; ring
-  have hωn : 0 < ω ^ (n : ℝ)⁻¹ := Real.rpow_pos_of_pos hω _
   rw [← sub_le_iff_le_add', hux', div_mul_eq_mul_div, le_div_iff₀ (by positivity)]
   calc r * diam Ω * (n * ω ^ (n : ℝ)⁻¹) = diam Ω * n * (r * ω ^ (n : ℝ)⁻¹) := by ring
     _ ≤ diam Ω * n * (N / n) := by gcongr

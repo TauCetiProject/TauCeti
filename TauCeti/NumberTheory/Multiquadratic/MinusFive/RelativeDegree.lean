@@ -12,7 +12,7 @@ import TauCeti.NumberTheory.Multiquadratic.RelativeDegree
 /-!
 # The candidate genus field over `ℚ(√-5)`
 
-The multiquadratic roadmap's first genus-field example uses the prime discriminants `-4` and `5`,
+The genus-field example for `ℚ(√-5)` uses the prime discriminants `-4` and `5`,
 with radicands `-1` and `5` and roots `i` and `√5`. Since `ℚ(√-5)` has genus field
 `ℚ(√-1, √5) = ℚ(i, √5)`, its candidate genus field is exactly the multiquadratic CM field for the
 single prime `5`, so we present it through the existing CM family
@@ -24,8 +24,8 @@ product of its two roots and computes that the compositum has degree two over it
 The product root squares to `-5`, so its simple extension is the copy of `ℚ(√-5)` inside the
 candidate genus field. The relative-degree calculation then specializes
 `TauCeti.Multiquadratic.finrank_top_over_intermediateField_of_finrank_eq_two`. This supplies the
-field-degree part of the roadmap's `ℚ(√-5)` acceptance example (`[K_gen : ℚ(√-5)] = 2 = 2 ^ (t - 1)`
-with `t = 2` ramified primes). Maximality is available in general for the canonical
+field-degree part of the `ℚ(√-5)` example (`[K_gen : ℚ(√-5)] = 2 = 2 ^ (t - 1)` with `t = 2`
+ramified primes). Maximality is available in general for the canonical
 `candidateGenusField hd` through `isGenusField_candidateGenusField`; the identification of the
 explicit compositum with that canonical field is proved in `MinusFive/GenusField`. This is the
 CM-presented companion of

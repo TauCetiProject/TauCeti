@@ -129,27 +129,17 @@ theorem integralTopForm_mpullback_mpullback_snd_fiberForm_eq_zero_iff [CompactSp
   · by_contra hne
     push Not at hne
     obtain ⟨c, e, he⟩ := hne
-    have he0 : e ≠ 0 := by
-      rintro rfl
-      exact he (by simp)
-    -- The density is positive on the frame `b₀ = (e, j e)`, which is positively oriented.
-    set b₀ := basisOfLinearIndependentOfCardEqFinrank
-      ((j.almostComplexStructureAt c).linearIndependent_pair he0)
-      (by simpa using (o.finrank_tangentSpace_eq c).symm)
-    have hb₀ : ⇑b₀ = ![e, j c e] := by
-      rw [coe_basisOfLinearIndependentOfCardEqFinrank,
-        SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
-    have hpos : 0 < (SmoothForm.mpullback u hu
-        (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 c b₀ := by
-      rw [hb₀, ← SmoothBundleForm.eval₂_apply]
+    -- The density is positive on the frame `(e, j e)`.
+    refine (j.integralTopForm_pos_of_forall_nonneg ho
+      ((SmoothForm.isSmoothForm _).of_le (by simp)) (isClosed_tsupport _).isCompact
+      (fun c' e' ↦ ?_) (e₀ := e) ?_).ne' h0
+    · rw [← SmoothBundleForm.eval₂_apply]
+      exact eval₂_mpullback_mpullback_snd_fiberForm_apply_nonneg (hhol c') hu (hS c') (hV c')
+        (htame c') e'
+    · rw [← SmoothBundleForm.eval₂_apply]
       exact (eval₂_mpullback_mpullback_snd_fiberForm_apply_nonneg (hhol c) hu (hS c) (hV c)
         (htame c) e).lt_of_ne' (mt (eval₂_mpullback_mpullback_snd_fiberForm_apply_eq_zero_iff
           (hhol c) hu (hS c) (hV c) (htame c) e).1 he)
-    refine (integralTopForm_pos o ((SmoothForm.isSmoothForm _).of_le (by simp))
-      (isClosed_tsupport _).isCompact (fun c b hb ↦
-        mpullback_mpullback_snd_fiberForm_apply_basis_nonneg hu ho (hhol c) (hS c) (hV c)
-          (htame c) b hb)
-      ⟨c, b₀, ho c b₀ (by rw [hb₀]; simp), hpos⟩).ne' h0
   · rw [mpullback_mpullback_snd_fiberForm_eq_zero hu hH]
     exact integralTopForm_zero o
 

@@ -307,7 +307,7 @@ theorem exists_localStableSet_eq_lipschitzGraph_of_contDiffAt
   have hN0 := h.negativeGradientRemainder_centered_zero
   have hN' := h.hasFDerivAt_negativeGradientRemainder_centered
   have hfield_time := neg_gradient_centered_time_eq (f := f) (x := x)
-  set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z) with hNdef
+  set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z)
   -- Choose `rho` so that the Lyapunov--Perron solutions with parameters in `closedBall 0 rho`
   -- stay strictly inside the ball of confinement, where the cutoff is invisible.
   obtain ⟨rho, hrho, hrho_lt⟩ :=
@@ -330,7 +330,7 @@ theorem exists_localStableSet_eq_lipschitzGraph_of_contDiffAt
     intro v w
     exact (hg v w).trans (by gcongr)
   · exact ContinuousLinearMap.localStableGraphMap_zero hs hu hr.le hN hsmall hN0
-  · exact ContinuousLinearMap.hasFDerivAt_localStableGraphMap_zero hs hu hr.le hN hsmall hr hN0 hN'
+  · exact ContinuousLinearMap.hasFDerivAt_localStableGraphMap_zero hs hu hr.le hN hsmall hN0 hN'
   · exact fun v hv ↦ ContinuousLinearMap.contDiffAt_localStableGraphMap_of_uniformContDiffOn hs hu
       hr.le hN hsmall hN0 hNn (hball v hv)
   · intro v
@@ -348,7 +348,7 @@ theorem exists_localStableSet_eq_lipschitzGraph_of_contDiffAt
     simpa only [localStableSet, localInvariantSet, hrange] using hset
   · intro y hy hmaps
     apply ContinuousLinearMap.tendsto_of_isIntegralCurveOn_mapsTo_closedBall
-      hs hu hr.le hN hsmall hN0 h.isIdempotentElem_stableProjection
+      hs hu hN hsmall hN0 h.isIdempotentElem_stableProjection
       h.commute_neg_hessianOperator_stableProjection
     · rwa [hfield_time]
     · exact hmaps
@@ -415,7 +415,7 @@ theorem exists_localUnstableSet_eq_lipschitzGraph_of_contDiffAt
   have hN0 := h.negativeGradientRemainder_centered_zero
   have hN' := h.hasFDerivAt_negativeGradientRemainder_centered
   have hfield_time := neg_gradient_centered_time_eq (f := f) (x := x)
-  set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z) with hNdef
+  set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z)
   obtain ⟨rho, hrho, hrho_lt⟩ :=
     exists_pos_mul_lt hr ((K : ℝ) / (1 - 2 * K * ((epsilon : ℝ) * 2) / alpha))
   have hset :=
@@ -437,7 +437,7 @@ theorem exists_localUnstableSet_eq_lipschitzGraph_of_contDiffAt
     exact (hg v w).trans (by gcongr)
   · exact ContinuousLinearMap.localUnstableGraphMap_zero hs hu hr.le hN hsmall hN0
   · exact ContinuousLinearMap.hasFDerivAt_localUnstableGraphMap_zero
-      hs hu hr.le hN hsmall hr hN0 hN'
+      hs hu hr.le hN hsmall hN0 hN'
   · exact fun v hv ↦ ContinuousLinearMap.contDiffAt_localUnstableGraphMap_of_uniformContDiffOn hs hu
       hr.le hN hsmall hN0 hNn (hball v hv)
   · intro v
@@ -456,7 +456,7 @@ theorem exists_localUnstableSet_eq_lipschitzGraph_of_contDiffAt
     simpa only [g, localUnstableSet, localInvariantSet, hrange] using hset
   · intro y hy hmaps
     apply ContinuousLinearMap.tendsto_atBot_of_isIntegralCurveOn_mapsTo_closedBall
-      hs hu hr.le hN hsmall hN0 h.isIdempotentElem_stableProjection
+      hs hu hN hsmall hN0 h.isIdempotentElem_stableProjection
       h.commute_neg_hessianOperator_stableProjection
     · rwa [hfield_time]
     · exact hmaps

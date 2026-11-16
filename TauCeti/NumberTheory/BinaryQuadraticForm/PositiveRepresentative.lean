@@ -42,13 +42,9 @@ theorem exists_isCoprime_eval_pos (f : BinaryQuadraticForm ℤ) (hD : 0 < f.disc
     rcases lt_or_gt_of_ne hb with hb | hb
     · refine ⟨f.c - 1, 1, isCoprime_one_right, ?_⟩
       rw [eval_def, ha₀]
-      have hb' : f.b ≤ -1 := by omega
-      have hc' : f.c ≤ 0 := by omega
       nlinarith
     · refine ⟨1 - f.c, 1, isCoprime_one_right, ?_⟩
       rw [eval_def, ha₀]
-      have hb' : 1 ≤ f.b := by omega
-      have hc' : f.c ≤ 0 := by omega
       nlinarith
   have ha' : f.a < 0 := by omega
   have hval : 0 < f.eval (-f.b) (2 * f.a) := by

@@ -47,12 +47,9 @@ if the source and the target coincide the term is annular.
 
 ## References
 
-This supplies a prerequisite for
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3, "The complexes and `∂² = 0`",
-and for the standing convention that the grid complexes compute on explicit small grids. The
-rectangle-count convention follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
-Links*, Chapter 3; the marking-avoidance condition defining the fully blocked complex is in
-Chapter 4, Section 4.4.
+The rectangle-count convention follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
+Links*, Chapter 3; the marking-avoidance condition defining the fully blocked complex is in Chapter
+4, Section 4.4.
 -/
 
 public section

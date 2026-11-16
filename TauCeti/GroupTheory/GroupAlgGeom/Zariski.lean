@@ -32,11 +32,38 @@ coefficient maps when the coefficient group is trivial.
 Without any domain hypothesis, the closure of an irreducible set `Y` is still the algebraic set
 `V_H(I_H(Y))`, so every irreducible closed set is algebraic.
 
+The hypotheses of these statements are sharp. The empty set is always closed, but it is algebraic,
+and it is the solution set of its own ideal, only when some coefficient survives in `H`; a trivial
+group is a domain over itself for which both statements fail. When no coefficient survives, every
+nonempty closed set contains the trivial tuple, so the topology is not T1 as soon as some tuple is
+nontrivial, and over a torsion-free group every nontrivial value of a single variable is dense in
+the space of values of that variable. With surjective coefficients and finitely many tuples the
+topology is discrete. Finite sets of coefficient tuples are always closed, while in a commutative
+group two tuples with different squares never form an algebraic set, so closed sets need not be
+algebraic without the domain hypothesis.
+
+## Main results
+
+* `TauCeti.GroupAlgGeom.isClosed_V`, `TauCeti.GroupAlgGeom.t1Space_zariskiTopology`,
+  `TauCeti.GroupAlgGeom.continuous_wordMap`: algebraic sets are closed, the topology is T1 for
+  surjective coefficients, and word maps are continuous.
+* `TauCeti.GroupAlgGeom.isClosed_iff_V`, `TauCeti.GroupAlgGeom.closure_eq_V_I`: over a domain
+  with a nontrivial coefficient image, the closed sets are the algebraic sets and the closure of
+  `Y` is `V_H(I_H(Y))`.
+* `TauCeti.GroupAlgGeom.closure_empty_eq_V_I_iff`: the closure of the empty set is `V_H(I_H(∅))`
+  exactly when some coefficient survives in `H`.
+* `TauCeti.GroupAlgGeom.not_t1Space_zariskiTopology`,
+  `TauCeti.GroupAlgGeom.closure_singleton_eq_univ_of_ne_one`: without surviving coefficients the
+  topology is not T1 as soon as some tuple is nontrivial, and in at most one variable over a
+  torsion-free group every nontrivial tuple is dense.
+* `TauCeti.GroupAlgGeom.discreteTopology_zariskiTopology`: the topology is discrete for
+  surjective coefficients and finitely many tuples.
+
 ## References
 
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
-  and ideal theory*, J. Algebra 219 (1999), §3.2, Theorem 3 and Lemma 11; §3.6,
-  Proposition 10.
+  and ideal theory*, J. Algebra 219 (1999), §3.2, Theorem 3, Example 4 and
+  Lemmas 10 and 11; §3.6, Proposition 10.
 -/
 
 public section
@@ -247,5 +274,54 @@ theorem V_I_eq_of_isIrreducible_of_isClosed {Y : Set (X → H)}
     (hc : @IsClosed (X → H) (zariskiTopology ι X) Y) : V ι (I ι Y) = Y := by
   rw [← closure_eq_V_I_of_isIrreducible hY, @closure_eq_iff_isClosed _ (zariskiTopology ι X)]
   exact hc
+
+/-! ### Sharpness of the hypotheses -/
+
+/-- With surjective coefficients and finitely many tuples, for instance over a finite group in
+finitely many variables, every set of tuples is Zariski closed. -/
+theorem discreteTopology_zariskiTopology (hι : Function.Surjective ι) (X : Type*) [Finite (X → H)] :
+    @DiscreteTopology (X → H) (zariskiTopology ι X) :=
+  let := zariskiTopology ι X
+  have := t1Space_zariskiTopology hι X
+  inferInstance
+
+/-- The Zariski closure of the empty set, which is empty, is the algebraic set of its ideal
+exactly when some coefficient remains nontrivial in `H`. Otherwise that algebraic set contains
+the trivial tuple, even when `H` is a domain over the coefficients. -/
+theorem closure_empty_eq_V_I_iff :
+    @closure (X → H) (zariskiTopology ι X) ∅ = V ι (I ι (∅ : Set (X → H))) ↔ ∃ g, ι g ≠ 1 := by
+  rw [@closure_empty _ (zariskiTopology ι X), I_empty, ← exists_empty_eq_V_iff (X := X)]
+  refine ⟨fun h => ⟨_, h⟩, fun ⟨S, hS⟩ => ?_⟩
+  have h : V ι ((⊤ : Subgroup (GX G X)) : Set (GX G X)) ⊆ V ι S :=
+    V_antitone ι fun s _ => Subgroup.mem_top s
+  exact (Set.subset_empty_iff.1 (h.trans hS.ge)).symm
+
+/-- If no coefficient survives in `H`, every nonempty Zariski closed set contains the trivial
+tuple. -/
+theorem one_mem_of_isClosed_of_nonempty (hι : ∀ g, ι g = 1) {C : Set (X → H)}
+    (hC : @IsClosed (X → H) (zariskiTopology ι X) C) (hne : C.Nonempty) : (1 : X → H) ∈ C := by
+  let := zariskiTopology ι X
+  obtain ⟨v, hv⟩ := hne
+  refine closure_minimal (Set.singleton_subset_iff.2 hv) hC ?_
+  rw [closure_eq_V_I_of_isIrreducible isIrreducible_singleton]
+  exact one_mem_V hι _
+
+/-- If no coefficient survives in `H`, no nontrivial tuple is a closed point, so the Zariski
+topology is not T1 as soon as there is such a tuple. -/
+theorem not_t1Space_zariskiTopology (hι : ∀ g, ι g = 1) (X : Type*) [Nontrivial (X → H)] :
+    ¬@T1Space (X → H) (zariskiTopology ι X) := by
+  intro h
+  obtain ⟨v, hv⟩ := exists_ne (1 : X → H)
+  exact hv.symm (one_mem_of_isClosed_of_nonempty hι
+    (@isClosed_singleton _ (zariskiTopology ι X) h v) (Set.singleton_nonempty v))
+
+/-- Over a torsion-free group in which no coefficient survives, every nontrivial tuple in at most
+one variable is Zariski dense. -/
+theorem closure_singleton_eq_univ_of_ne_one [IsMulTorsionFree H] [Subsingleton X]
+    (hι : ∀ g, ι g = 1) {v : X → H} (hv : v ≠ 1) :
+    @closure (X → H) (zariskiTopology ι X) {v} = Set.univ := by
+  let := zariskiTopology ι X
+  rw [closure_eq_V_I_of_isIrreducible isIrreducible_singleton]
+  exact V_eq_univ_of_mem_of_ne_one hι (subset_V_I {v} rfl) hv
 
 end TauCeti.GroupAlgGeom

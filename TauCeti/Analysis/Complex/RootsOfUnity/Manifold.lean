@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Power
+public import TauCeti.Geometry.Manifold.Instances.OpenBall.Basic
 
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
@@ -102,6 +103,13 @@ theorem isLocalDiffeomorph_coe_rootsOfUnityBall {n : ℕ∞ω} :
 theorem contMDiff_coe_pow_rootsOfUnityBall {n : ℕ∞ω} :
     ContMDiff 𝓘(ℂ) 𝓘(ℂ) n fun u : rootsOfUnityBall m r ↦ (u : ℂ) ^ m :=
   (contDiff_id.pow m).contMDiff.comp isLocalDiffeomorph_coe_rootsOfUnityBall.contMDiff
+
+/-- The power map between the two discs is holomorphic for their open-subset atlases. -/
+theorem rootsOfUnityBall.contMDiff_powMap {n : ℕ∞ω} :
+    ContMDiff 𝓘(ℂ) 𝓘(ℂ) n (rootsOfUnityBall.powMap m r) := by
+  apply (contMDiff_subtypeVal_ball_comp_iff _).1
+  simpa only [Function.comp_def, rootsOfUnityBall.coe_powMap] using
+    (contMDiff_coe_pow_rootsOfUnityBall (m := m) (r := r) (n := n))
 
 /-- **The quotient coordinate is a local biholomorphism off the centre.** For `1 ≤ n`, the map
 `u ↦ u ^ m` from the rotated disc to `ℂ` is a `C^n` local diffeomorphism at every point other

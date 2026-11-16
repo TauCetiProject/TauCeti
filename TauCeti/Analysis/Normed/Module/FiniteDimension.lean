@@ -32,7 +32,9 @@ Rescaled coordinates send any compact subset of a finite-dimensional real normed
 arbitrarily small ball of `Fin n → ℝ`.
 
 A family of bases whose vectors depend continuously on a parameter has frame and coordinate maps
-that depend continuously on the parameter in the operator norm.
+that depend continuously on the parameter in the operator norm. Conversely, near a point where a
+continuous family of vectors in subspaces of constant dimension is linearly independent, the
+vectors span those subspaces.
 
 ## Main results
 
@@ -40,8 +42,12 @@ that depend continuously on the parameter in the operator norm.
   dimension as the space.
 * `ContinuousLinearMap.surjective_compL_flip_of_injective`: precomposition with an injective map
   into a finite-dimensional space is surjective on continuous duals.
+* `TauCeti.finiteDimensional_of_finite_sphere`: a real normed space with a finite unit sphere is
+  finite-dimensional.
 * `TauCeti.nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv`: complements of
   the same space in a finite-dimensional space are isomorphic.
+* `TauCeti.exists_isOpen_linearIndependent_span_range_eq`: a continuous family of vectors in
+  subspaces of constant dimension, linearly independent at a point, spans the subspaces nearby.
 * `TauCeti.continuous_det_div_conj`: the determinant phase `det A / conj (det A)` of a continuous
   family of continuous linear automorphisms varies continuously.
 * `Module.Basis.continuous_equivFunL_symm_of_continuous`,
@@ -118,6 +124,39 @@ theorem eq_or_eq_neg_of_norm_eq_of_finrank_eq_one
   rcases (abs_eq (by positivity : (0 : ℝ) ≤ 1)).mp hc with hc | hc <;>
     simp [hc]
 
+/-- **Continuous families of vectors spanning subspaces of constant dimension.** Let `Y y` be `r`
+vectors of a subspace `W y` of `E`, depending continuously on `y` in an open set `U₀`, where every
+`W y` with `y ∈ U₀` has dimension `r`. If the vectors `Y x₀` are linearly independent, then on an
+open neighbourhood of `x₀` in `U₀` the vectors `Y y` are linearly independent and span `W y`. -/
+theorem exists_isOpen_linearIndependent_span_range_eq {X : Type*} [TopologicalSpace X] {r : ℕ}
+    {U₀ : Set X} (hU₀ : IsOpen U₀) {Y : X → Fin r → E} (hY : ContinuousOn Y U₀)
+    {W : X → Submodule 𝕜 E} (hYW : ∀ y ∈ U₀, ∀ k, Y y k ∈ W y)
+    (hW : ∀ y ∈ U₀, Module.finrank 𝕜 (W y) = r) {x₀ : X} (hx₀ : x₀ ∈ U₀)
+    (hY₀ : LinearIndependent 𝕜 (Y x₀)) :
+    ∃ U ⊆ U₀, IsOpen U ∧ x₀ ∈ U ∧
+      ∀ y ∈ U, LinearIndependent 𝕜 (Y y) ∧ Submodule.span 𝕜 (Set.range (Y y)) = W y := by
+  refine ⟨U₀ ∩ Y ⁻¹' {f | LinearIndependent 𝕜 f}, Set.inter_subset_left,
+    hY.isOpen_inter_preimage hU₀ isOpen_setOfPred_linearIndependent, ⟨hx₀, hY₀⟩,
+    fun y hy ↦ ⟨hy.2, ?_⟩⟩
+  -- `r` independent vectors of the `r`-dimensional space `W y` span it.
+  refine Submodule.eq_of_le_of_finrank_eq (Submodule.span_le.mpr
+    (Set.range_subset_iff.mpr (hYW y hy.1))) ?_
+  rw [finrank_span_eq_card hy.2, Fintype.card_fin, hW y hy.1]
+
+/-- A real normed space whose unit sphere is finite is finite-dimensional: the sphere spans the
+space, since every nonzero vector is a multiple of a unit vector. -/
+theorem finiteDimensional_of_finite_sphere {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (h : Finite (Metric.sphere (0 : V) 1)) : FiniteDimensional ℝ V := by
+  have hspan : Submodule.span ℝ (Metric.sphere (0 : V) 1) = ⊤ := by
+    refine eq_top_iff.2 fun x _ ↦ ?_
+    by_cases hx : x = 0
+    · simp [hx]
+    have hx' : x = ‖x‖ • (‖x‖⁻¹ • x) := by
+      rw [smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.2 hx), one_smul]
+    rw [hx']
+    exact Submodule.smul_mem _ _ (Submodule.subset_span (by simp [norm_smul, hx]))
+  exact Module.finite_def.2 (hspan ▸ Submodule.fg_span (Set.toFinite _))
+
 section Star
 
 open scoped ComplexConjugate
@@ -192,7 +231,7 @@ theorem continuous_equivFunL_of_continuous (h : ∀ i, Continuous fun y ↦ B y 
   rw [h', continuous_iff_continuousAt]
   intro y
   have := (B y).finiteDimensional_of_finite
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 F
   exact ContinuousAt.comp (g := ContinuousLinearMap.inverse)
     (contDiffAt_map_inverse (n := 0) (B y).equivFunL.symm).continuousAt
     (continuous_equivFunL_symm_of_continuous h).continuousAt

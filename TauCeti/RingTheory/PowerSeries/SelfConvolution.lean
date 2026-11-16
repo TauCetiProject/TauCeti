@@ -50,8 +50,8 @@ defined through these convolutions well founded.
 
 ## Provenance
 
-Adapted from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, pinned
-by `TauCetiRoadmap/EllipticCurves/README.md` at `dev/hasse-weil @ 513e83879e2f`),
+Adapted from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, at
+`dev/hasse-weil @ 513e83879e2f`),
 `HasseWeil/FormalGroup.lean`, declarations `conv₂` and `conv₃` together with the coefficient
 lemmas `coeff_formalW_sq` and `coeff_formalW_cube`.
 

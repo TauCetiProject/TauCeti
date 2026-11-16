@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.Entire.Basic
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
+import Mathlib.Analysis.Normed.Ring.Finite
+import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.Analysis.Normed.Field.NatCast
 
 /-!
@@ -378,15 +380,35 @@ theorem norm_coeff_log_le (n : ℕ) : ‖coeff n (log K)‖ ≤ ‖(n : K)⁻¹�
   · simp
   · simp [coeff_log, hn, div_eq_mul_inv]
 
+omit [CharZero K] in
 /-- A series whose coefficient norms are bounded by the norms of inverse natural numbers
 lies on the open unit disc. -/
 theorem onOpenDisc_one_of_norm_coeff_le {f : K⟦X⟧}
     (h : ∀ n, ‖coeff n f‖ ≤ ‖(n : K)⁻¹‖) : f.OnOpenDisc 1 := by
-  refine onOpenDisc_iff.mpr fun r hr hr1 ↦ ?_
-  rw [isRestricted_iff']
-  exact squeeze_zero (fun n ↦ by positivity)
-    (fun n ↦ mul_le_mul_of_nonneg_right (h n) (pow_nonneg hr.le n))
-    (NormedField.tendsto_norm_inv_natCast_mul_pow K hr.le hr1)
+  obtain ⟨p, hp⟩ := CharP.exists K
+  rcases CharP.char_is_prime_or_zero K p with hprime | rfl
+  · -- In positive characteristic every nonzero natural number has norm `1`.
+    have : Fact p.Prime := ⟨hprime⟩
+    refine onOpenDisc_of_bddAbove_norm_coeff ⟨1, ?_⟩
+    rintro _ ⟨n, rfl⟩
+    refine (h n).trans ?_
+    rw [norm_inv]
+    by_cases hn : (n : K) = 0
+    · simp [hn]
+    · have hn' : (n : ZMod p) ≠ 0 := fun h0 ↦ hn (by
+        rw [← map_natCast (ZMod.castHom (dvd_refl p) K) n, h0, map_zero])
+      have hpow : (n : K) ^ (p - 1) = 1 := by
+        simpa using congrArg (ZMod.castHom (dvd_refl p) K) (ZMod.pow_card_sub_one_eq_one hn')
+      have hnorm : ‖(n : K)‖ = 1 :=
+        (isOfFinOrder_iff_pow_eq_one.mpr
+          ⟨p - 1, Nat.sub_pos_of_lt hprime.one_lt, hpow⟩).norm_eq_one
+      simp [hnorm]
+  · have : CharZero K := (CharP.charP_zero_iff_charZero K).mp hp
+    refine onOpenDisc_iff.mpr fun r hr hr1 ↦ ?_
+    rw [isRestricted_iff']
+    exact squeeze_zero (fun n ↦ by positivity)
+      (fun n ↦ mul_le_mul_of_nonneg_right (h n) (pow_nonneg hr.le n))
+      (NormedField.tendsto_norm_inv_natCast_mul_pow K hr.le hr1)
 
 /-- Over a normed field of characteristic zero, the logarithm series `log (1 + X)` lies on the
 open unit disc. -/

@@ -169,7 +169,7 @@ theorem integrableOn_norm_deriv_sq (hf : ∀ z ∈ s, DifferentiableAt ℂ f z)
     (hs : NullMeasurableSet s volume) (hinj : InjOn f s) (hfin : volume (f '' s) ≠ ⊤) :
     IntegrableOn (fun z => ‖deriv f z‖ ^ 2) s := by
   simpa [IntegrableOn] using integrable_toReal_of_lintegral_ne_top
-    ((measurable_deriv f).enorm.pow_const 2).aemeasurable
+    ((measurable_deriv f).eNorm.pow_const 2).aemeasurable
     (lintegral_enorm_deriv_sq_ne_top hf hs hinj hfin)
 
 /-- The bounded-image form of `TauCeti.integrableOn_norm_deriv_sq`: the area distortion of a
@@ -188,7 +188,7 @@ theorem integral_norm_deriv_sq_eq_toReal_volume_image (hf : ∀ z ∈ s, Differe
     (hs : NullMeasurableSet s volume) (hinj : InjOn f s) :
     ∫ z in s, ‖deriv f z‖ ^ 2 = (volume (f '' s)).toReal := by
   rw [volume_image_eq_lintegral_enorm_deriv_sq hf hs hinj,
-    ← integral_toReal ((measurable_deriv f).enorm.pow_const 2).aemeasurable
+    ← integral_toReal ((measurable_deriv f).eNorm.pow_const 2).aemeasurable
       (.of_forall fun _ => by finiteness)]
   simp
 
@@ -209,7 +209,7 @@ theorem volume_image_eq_zero_iff (hf : ∀ z ∈ s, DifferentiableAt ℂ f z)
     (hd : ∀ᵐ z ∂volume.restrict s, deriv f z ≠ 0) :
     volume (f '' s) = 0 ↔ volume s = 0 := by
   rw [volume_image_eq_lintegral_enorm_deriv_sq hf hs hinj,
-    lintegral_eq_zero_iff ((measurable_deriv f).enorm.pow_const 2)]
+    lintegral_eq_zero_iff ((measurable_deriv f).eNorm.pow_const 2)]
   refine ⟨fun h => ?_, fun h => by simp [Measure.restrict_eq_zero.mpr h, Filter.EventuallyEq]⟩
   have hfalse : ∀ᵐ _ ∂volume.restrict s, False := by
     filter_upwards [h, hd] with z hz hz0

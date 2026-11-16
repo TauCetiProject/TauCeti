@@ -193,18 +193,8 @@ theorem ker_weightReesAeval_eq_span
   refine le_antisymm (fun f hf ↦ ?_) (Ideal.span_le.2 ?_)
   · -- Decompose `f` by the weight `weight d x + k` of its monomials `Y^x tᵏ`: its part of weight
     -- `n` is the homogenization in degree `n` of the coefficient of `tⁿ` in `weightReesHom R d f`.
+    rw [← f.sum_weightHomogenization_coeff_weightReesHom (w := d)]
     set G := weightReesHom R d f
-    have hG (n : ℕ) : G.coeff n ∈ weightFiltration R d n := by
-      have : G ∈ weightReesAlgebra R d := by
-        rw [← range_weightReesHom]
-        exact AlgHom.mem_range_self _ f
-      exact TauCeti.mem_coeffSubalgebra_iff.1 this n
-    have hf' : f = ∑ n ∈ G.support, weightHomogenization R d n (G.coeff n) := by
-      refine weightReesHom_injective R d ?_
-      rw [map_sum]
-      simp_rw [weightReesHom_weightHomogenization (hG _)]
-      exact G.as_sum_support
-    rw [hf']
     refine Ideal.sum_mem _ fun n _ ↦ ?_
     -- The coefficient of `tⁿ` lies in the kernel of `aeval c`, so it has a standard
     -- representation, which homogenizes to a combination of the `G j`.
@@ -212,9 +202,10 @@ theorem ker_weightReesAeval_eq_span
       have h0 : Polynomial.mapAlgHom (aeval c) G = 0 := by
         rw [← AlgHom.comp_apply, ← weightReesAeval_eq_comp]
         exact hf
-      simpa using congr(Polynomial.coeff $h0 n)
+      simpa using congr(($h0).coeff n)
     obtain ⟨h, hsum, hdeg⟩ :=
-      exists_finsupp_sum_eq_of_aeval_eq_zero_of_mem_weightFiltration hc hg hJ hr hQ hQc (hG n) hG0
+      exists_finsupp_sum_eq_of_aeval_eq_zero_of_mem_weightFiltration hc hg hJ hr hQ hQc
+        (f.coeff_weightReesHom_mem_weightFiltration n) hG0
     rw [← hsum, Finsupp.sum, map_sum]
     refine Ideal.sum_mem _ fun j hj ↦ ?_
     obtain ⟨x, hx⟩ := support_nonempty.2 (Finsupp.mem_support_iff.1 hj)

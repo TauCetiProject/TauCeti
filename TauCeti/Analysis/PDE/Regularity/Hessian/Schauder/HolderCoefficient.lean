@@ -111,7 +111,7 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half {α : ℝ
           (fun _ _ => zero_le) (Finset.mem_univ j)).trans
           (Finset.single_le_sum (f := fun i => ∑ j, (Ma i j).toNNReal) (fun _ _ => zero_le)
             (Finset.mem_univ i))
-  obtain ⟨C, hC⟩ := hball (M := M) hlam hR₀ (by simpa only [c, mul_assoc] using hscale.le)
+  obtain ⟨C, hC⟩ := hball (M := M) hlam (by simpa only [c, mul_assoc] using hscale.le)
     (half_lt_self hR₀)
   refine ⟨R, hR₀, (closedBall_subset_ball (hR.trans_le (min_le_right _ _))).trans hεΩ, C,
     fun hu hN₀ hN₁ hN₂ hV hK => hC hlow (toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq (a x))
@@ -154,7 +154,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_hold
   -- Points of `K` at distance less than `δ` lie in one half ball.
   have hloc : ∀ x ∈ K, ∀ y ∈ K, dist x y < δ' → dist (iteratedFDeriv ℝ 2 u x)
       (iteratedFDeriv ℝ 2 u y) ≤ ((∑ z ∈ t, C z) * (M + N) : ℝ≥0) * dist x y ^ (α : ℝ) := by
-    intro x hx y hy hxy
+    intro x hx y _ hxy
     obtain ⟨⟨z, hzt⟩, hz⟩ := hδK x hx
     have hzK := htK z hzt
     have hsub : ball z (R z) ⊆ Ω := ball_subset_closedBall.trans (hRΩ z hzK)

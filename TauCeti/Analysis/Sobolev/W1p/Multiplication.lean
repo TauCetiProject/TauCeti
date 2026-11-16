@@ -28,17 +28,16 @@ and gradient component `ψ ∇u + u ∇ψ`.
 Boundedness of `ψ` *and* of `∇ψ` on `Ω` is what the statement needs, and neither is automatic: for
 `ψ x = exp ‖x‖²` on `Ω = ℝⁿ`, multiplication by `ψ` need not preserve `Lᵖ`.  Both bounds are
 therefore carried explicitly, through a single constant `M`, so that the operator norm is visible
-rather than hidden behind an unquantified `∃ C`; that is the convention the PDE roadmap asks for.
-A cutoff built from `ContDiffBump` satisfies them, which is the intended use.
+rather than hidden behind an unquantified `∃ C`.  A cutoff built from `ContDiffBump` satisfies
+them, which is the intended use.
 
-## The operator and the milestone
+## Multiplication as localization
 
-Multiplication by a cutoff is the localization device of Lane A of
-`TauCetiRoadmap/PDE/README.md`: it is the first step of the Meyers--Serrin `H = W` density theorem
-and of the extension operator (Lane A.2 and A.6), and it is what converts an interior estimate
-into an estimate on a compactly contained subdomain.  Having it as a *bounded operator*, rather
-than as a pointwise membership statement, is what lets those arguments range over a family of
-cutoffs while keeping uniform control of the resulting Sobolev norms.
+Multiplication by a cutoff is the standard localization device for Sobolev spaces: it is the first
+step of the Meyers--Serrin `H = W` density theorem and of the extension operator, and it is what
+converts an interior estimate into an estimate on a compactly contained subdomain.  Having it as a
+*bounded operator*, rather than as a pointwise membership statement, is what lets those arguments
+range over a family of cutoffs while keeping uniform control of the resulting Sobolev norms.
 
 The factor `2` in `‖ψ u‖ ≤ 2 M ‖u‖` is explicit, and it is the only shape the downstream
 localization arguments need.
@@ -273,7 +272,8 @@ theorem W1p.norm_gradient_contDiffSMul_sq_le (hpsi : ContDiff ℝ ∞ psi) (hM :
         2 * ∫ x in Omega, ‖∇ psi x‖ ^ 2 * W1p.value u x ^ 2 ∂mu := by
   have hmem := ae_restrict_mem (μ := mu) Omega.isOpen.measurableSet
   have hI1 : Integrable (fun x => psi x ^ 2 * ‖W1p.gradient u x‖ ^ 2) (mu.restrict Omega) :=
-    (W1p.integrable_norm_gradient_sq u).bdd_mul (hpsi.continuous.pow 2).aestronglyMeasurable
+    (Lp.memLp (W1p.gradient u)).norm.integrable_sq.bdd_mul
+      (hpsi.continuous.pow 2).aestronglyMeasurable
       (c := M ^ 2) (hmem.mono fun x hx => by
         rw [Real.norm_eq_abs, abs_pow]
         exact pow_le_pow_left₀ (abs_nonneg _) (hpsiM x hx) 2)
@@ -285,7 +285,7 @@ theorem W1p.norm_gradient_contDiffSMul_sq_le (hpsi : ContDiff ℝ ∞ psi) (hM :
         exact pow_le_pow_left₀ (norm_nonneg _) (hgradM x hx) 2)
   rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq, ← integral_const_mul,
     ← integral_const_mul, ← integral_add (hI1.const_mul 2) (hI2.const_mul 2)]
-  refine integral_mono_ae (W1p.integrable_norm_gradient_sq _)
+  refine integral_mono_ae (Lp.memLp (W1p.gradient _)).norm.integrable_sq
     ((hI1.const_mul 2).add (hI2.const_mul 2)) ?_
   filter_upwards [W1p.gradient_contDiffSMul_ae hpsi hM hpsiM hgradM u] with x hx
   have htri := norm_add_le (psi x • W1p.gradient u x) (W1p.value u x • ∇ psi x)
@@ -318,8 +318,8 @@ theorem W1p.contDiffSMul_ofTestFunctionₗ (hpsi : ContDiff ℝ ∞ psi) (hM : 0
 
 /-- **`W^{1,p}_0(Ω)` is stable under multiplication by a smooth cutoff.**  Since `ψ φ` is again a
 test function supported in `Ω`, the operator maps the generating test-function jets back into
-`W^{1,p}_0(Ω)`, and continuity extends that to their closure.  This is the form the localization
-arguments of Lane A use, because a cutoff must not create a boundary trace. -/
+`W^{1,p}_0(Ω)`, and continuity extends that to their closure.  This is the form localization
+arguments for zero-boundary functions use, because a cutoff must not create a boundary trace. -/
 theorem W1p.contDiffSMul_mem_w1p0Submodule (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
     (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M) (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M)
     {u : W1p mu Omega p} (hu : u ∈ w1p0Submodule mu Omega p) :

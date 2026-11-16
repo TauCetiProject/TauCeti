@@ -179,7 +179,8 @@ theorem quasiIso_cechAugmentation_prod_iff [HasProducts.{w} AddCommGrpCat.{v}] (
   -- intersection with `Y` sends `W` to `Y`
   have hGT : IsTerminal ((interFunctor Y).obj ⊤) :=
     isTerminalTop.ofIso (eqToIso (Subtype.ext (inf_eq_left.2 Y.2)).symm)
-  rw [quasiIso_cechAugmentation_op_comp_iff (interFunctor Y) _ _ hG isTerminalTop hGT]
+  rw [quasiIso_cechAugmentation_op_comp_iff (interFunctor Y) _ _ (fun n a ↦
+    (iso_of_both_ways _ (hG n a).some).isIso_hom) isTerminalTop hGT]
   suffices h : ∀ {T : Set.Iic Y.1} (hT : IsTerminal T), T = ⊤ →
       (QuasiIso (cechAugmentation (fun i ↦ (interFunctor Y).obj (U i)) hT
         (presentationLimitAddCommGrpPresheaf P Aplus Y.1)) ↔
@@ -350,7 +351,8 @@ theorem quasiIso_cechAugmentation_iff_locOpensComap [HasProducts.{w} AddCommGrpC
   -- the image functor sends `j⁻¹(W)` to `W`
   have hGT : IsTerminal (G.obj ⊤) := isTerminalTop.ofIso (eqToIso (Subtype.ext (himage ⊤)).symm)
   rw [quasiIso_cechAugmentation_op_comp_iff G _ _
-    (fun _ _ ↦ nonempty_pi_locImageFunctor_obj_hom P T s S hden hP _) isTerminalTop hGT]
+    (fun _ _ ↦ (iso_of_both_ways _
+      (nonempty_pi_locImageFunctor_obj_hom P T s S hden hP _).some).isIso_hom) isTerminalTop hGT]
   -- the images of the pullbacks of the members are the members
   have hU : (fun i ↦ G.obj ⟨locOpensComap P Aplus T s S hden (U i).1,
       Set.mem_Iic.2 (locOpensComap_mono P Aplus T s S hden (U i).2)⟩) = U :=

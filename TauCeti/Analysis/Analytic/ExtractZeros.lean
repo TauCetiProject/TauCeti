@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import TauCeti.Analysis.Analytic.Order
 
 /-!
@@ -29,6 +30,9 @@ order hypotheses may be given as vanishing of derivatives through Mathlib's
   then the first `n` iterated divided differences of `f` at `a` vanish at `a`.
 * `AnalyticOnNhd.exists_eq_prod_pow_smul`: an analytic function with zeros of orders at least
   `k x` at the points `x ∈ s` is `∏ x ∈ s, (z - x) ^ k x` times an analytic function.
+* `TauCeti.differentiableAt_of_eventuallyEq_div`: the removable singularity of a quotient `A / B`
+  of two functions analytic and vanishing at `a`, with `deriv B a = b ≠ 0` and
+  `deriv A a = c * b`, is differentiable once filled by the value `c`.
 
 ## References
 
@@ -37,7 +41,7 @@ order hypotheses may be given as vanishing of derivatives through Mathlib's
 
 public section
 
-open Function
+open Function Topology
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {f : 𝕜 → E} {a : 𝕜}
@@ -58,6 +62,27 @@ theorem HasFPowerSeriesAt.iterate_dslope_apply_eq_coeff {p : FormalMultilinearSe
     ← FormalMultilinearSeries.coeff, FormalMultilinearSeries.coeff_iterate_fslope, zero_add]
 
 namespace TauCeti
+
+/-- **Removable singularity of a quotient of analytic functions with a simple zero.** If `A` and
+`B` are analytic and vanish at `a`, with `deriv A a = c * b` and `deriv B a = b ≠ 0`, then every
+function `H` with `H a = c` that equals `A / B` on a punctured neighbourhood of `a` is
+differentiable at `a`. -/
+theorem differentiableAt_of_eventuallyEq_div {A B H : 𝕜 → 𝕜} {c b : 𝕜}
+    (hA : AnalyticAt 𝕜 A a) (hB : AnalyticAt 𝕜 B a) (hA₀ : A a = 0) (hB₀ : B a = 0)
+    (hdA : HasDerivAt A (c * b) a) (hdB : HasDerivAt B b a) (hb : b ≠ 0) (hHa : H a = c)
+    (hH : ∀ᶠ x in 𝓝[≠] a, H x = A x / B x) : DifferentiableAt 𝕜 H a := by
+  have hBd : dslope B a a ≠ 0 := by
+    rwa [dslope_same, hdB.deriv]
+  refine ((hA.dslope a).differentiableAt.div (hB.dslope a).differentiableAt
+    hBd).congr_of_eventuallyEq ?_
+  filter_upwards [eventually_nhdsWithin_iff.mp hH] with x hx
+  by_cases hx₀ : x = a
+  · subst hx₀
+    simp only [hHa, Pi.div_apply, dslope_same, hdA.deriv, hdB.deriv]
+    exact (mul_div_cancel_right₀ c hb).symm
+  · rw [hx hx₀, Pi.div_apply, dslope_of_ne _ hx₀, dslope_of_ne _ hx₀, slope_def_field,
+      slope_def_field, hA₀, hB₀, sub_zero, sub_zero,
+      div_div_div_cancel_right₀ (sub_ne_zero.mpr hx₀)]
 
 /-- If `f` vanishes to order at least `n` at `a`, then each of the first `n` iterated divided
 differences `(swap dslope a)^[k] f`, `k < n`, vanishes at `a`. -/

@@ -25,8 +25,8 @@ is the local input to the stability of smooth morphisms of schemes under retract
 
 ## References
 
-* The Stacks Project, [Tag 00TL](https://stacks.math.columbia.edu/tag/00TL), for the
-  infinitesimal lifting characterisation of formal smoothness.
+* The Stacks Project, [Tag 00TI](https://stacks.math.columbia.edu/tag/00TI), for the
+  infinitesimal lifting definition of formal smoothness.
 -/
 
 public section

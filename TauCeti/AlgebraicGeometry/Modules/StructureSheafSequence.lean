@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
 

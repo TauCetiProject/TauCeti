@@ -51,10 +51,6 @@ algebraic form of "negation fixes the point at infinity".
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.2.
 -/
 
--- Design provenance: the negation formula is Silverman III.2; the isogeny packaging follows
--- `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, whose hom-group target names the
--- `AddCommGroup` as its content. Negation is that instance's `Neg`.
-
 public section
 
 open WeierstrassCurve.Affine.CoordinateRing

@@ -13,9 +13,8 @@ public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 
 The weight and the nebentypus of a nonzero modular form determine each other's parity:
 `M_k(Γ₁(N), χ) ≠ 0` forces `χ(-1) = (-1)^k`. This is the emptiness criterion that odd
-weights and Eisenstein constructions consume, and the ModularForms roadmap pins it at
-Layer 0, alongside the diamond operators and character spaces of
-`TauCeti.NumberTheory.ModularForms.DiamondOperators` on which it is stated.
+weights and Eisenstein constructions consume. It is stated on the diamond operators and
+character spaces of `TauCeti.NumberTheory.ModularForms.DiamondOperators`.
 
 The mechanism is `-I`. It lies in `Γ₀(N)` at every level, and its lower-right entry is the
 unit `-1`, so it represents the diamond operator `⟨-1⟩`. On the other hand `-I` acts
@@ -131,13 +130,12 @@ theorem cuspFormCharSpace_eq_bot_of_char_neg_one_ne (h : (χ (-1) : ℂ) ≠ (-1
   Submodule.eq_bot_iff _ |>.mpr fun _f hf ↦
     not_not.mp fun hf0 ↦ h (char_neg_one_of_mem_cuspFormCharSpace hf hf0)
 
-/-- **The parity lemma**, in the form the roadmap states it: if `M_k(Γ₁(N), χ)` is nonzero
-then `χ(-1) = (-1)^k`. -/
+/-- **The parity lemma**: if `M_k(Γ₁(N), χ)` is nonzero then `χ(-1) = (-1)^k`. -/
 theorem char_neg_one_of_modFormCharSpace_ne_bot (h : modFormCharSpace (N := N) k χ ≠ ⊥) :
     (χ (-1) : ℂ) = (-1 : ℂ) ^ k :=
   not_not.mp fun hne ↦ h (modFormCharSpace_eq_bot_of_char_neg_one_ne hne)
 
-/-- **The parity lemma for cusp forms**, in the form the roadmap states it. -/
+/-- **The parity lemma for cusp forms**: if `S_k(Γ₁(N), χ)` is nonzero then `χ(-1) = (-1)^k`. -/
 theorem char_neg_one_of_cuspFormCharSpace_ne_bot (h : cuspFormCharSpace (N := N) k χ ≠ ⊥) :
     (χ (-1) : ℂ) = (-1 : ℂ) ^ k :=
   not_not.mp fun hne ↦ h (cuspFormCharSpace_eq_bot_of_char_neg_one_ne hne)

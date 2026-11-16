@@ -40,6 +40,8 @@ plane.
   `s ≥ 0` with `‖P_{Vᗮ} u‖ ≤ s ‖u‖` for every `u ∈ U`.
 * `Submodule.disjoint_orthogonal_of_directedProjectionGap_lt_one`: if the directed gap from `U`
   to `V` is less than `1`, then `U ⊓ Vᗮ = ⊥`.
+* `Submodule.rank_eq_of_projectionGap_lt_one`, `Submodule.finrank_eq_of_projectionGap_lt_one`:
+  subspaces at gap less than `1` have the same rank, with no dimension hypothesis.
 * `Submodule.directedProjectionGap_le_directedProjectionGap_of_finrank_le`: for a
   finite-dimensional subspace and a subspace of at least its dimension, the directed gap from the
   former is at most the directed gap from the latter.
@@ -220,6 +222,22 @@ theorem disjoint_orthogonal_of_directedProjectionGap_lt_one (h : directedProject
   have hx := (directedProjectionGap_le_iff U V (directedProjectionGap_nonneg U V)).1 le_rfl x hxU
   rw [starProjection_eq_self_iff.2 hxV] at hx
   exact norm_eq_zero.1 <| le_antisymm (by nlinarith [norm_nonneg x]) (norm_nonneg x)
+
+/-- Two subspaces at gap less than `1` have the same rank. In particular, the rank of the range of
+an orthogonal projection is locally constant in the operator norm. -/
+theorem rank_eq_of_projectionGap_lt_one (h : projectionGap U V < 1) :
+    Module.rank 𝕜 U = Module.rank 𝕜 V :=
+  le_antisymm
+    (rank_le_of_disjoint_orthogonal U V <| disjoint_orthogonal_of_directedProjectionGap_lt_one U V
+      ((directedProjectionGap_le_projectionGap U V).trans_lt h))
+    (rank_le_of_disjoint_orthogonal V U <| disjoint_orthogonal_of_directedProjectionGap_lt_one V U
+      ((directedProjectionGap_le_projectionGap V U).trans_lt (projectionGap_comm U V ▸ h)))
+
+/-- Two subspaces at gap less than `1` have the same `finrank`. Both sides are `0` when the
+subspaces are infinite-dimensional. -/
+theorem finrank_eq_of_projectionGap_lt_one (h : projectionGap U V < 1) :
+    Module.finrank 𝕜 U = Module.finrank 𝕜 V :=
+  congr_arg Cardinal.toNat (rank_eq_of_projectionGap_lt_one U V h)
 
 /-- For a finite-dimensional subspace `V` and a subspace `U` with `dim V ≤ dim U`, the directed gap
 from `V` to `U` is at most the directed gap from `U` to `V`: `‖P_{Uᗮ} P_V‖ ≤ ‖P_{Vᗮ} P_U‖`. -/

@@ -45,6 +45,7 @@ the theorem, and assumes `w v` lies over `v` only where a result needs it.
 * `NumberField.apply_div_iSup_smul` and `NumberField.prod_div_iSup_nonneg`: one factor of a local
   factor is invariant under nonzero scaling when `w` lies over `v`, and a local factor is
   nonnegative.
+* `NumberField.approxProd_congr`: it depends on the forms only at the places of `Sinf` and `Sfin`.
 * `NumberField.approxProd_union`: it is multiplicative in disjoint sets of places, and
   `NumberField.approxProd_empty`: it is `1` over no places.
 * `NumberField.prod_proj_div_iSup_le_one`: the local factor of the coordinate forms is at most
@@ -140,6 +141,15 @@ theorem approxProd_smul (hwInf : ∀ v ∈ Sinf, (w v.1).LiesOver v.1)
   · refine Finset.prod_congr rfl fun v hv ↦ ?_
     have := hwFin v hv
     simp only [apply_div_iSup_smul _ hc]
+
+/-- The approximation product depends on the forms only at the places of `Sinf` and `Sfin`. -/
+theorem approxProd_congr {L' : AbsoluteValue K ℝ → ι → Dual F (ι → F)}
+    (hInf : ∀ v ∈ Sinf, L v.1 = L' v.1) (hFin : ∀ v ∈ Sfin, L v.1 = L' v.1) (x : ι → K) :
+    approxProd Sinf Sfin w L x = approxProd Sinf Sfin w L' x := by
+  simp only [approxProd_def, InfinitePlace.coe_apply, FinitePlace.coe_apply]
+  congr 1
+  · exact Finset.prod_congr rfl fun v hv ↦ by rw [hInf v hv]
+  · exact Finset.prod_congr rfl fun v hv ↦ by rw [hFin v hv]
 
 /-- The approximation product is nonnegative. -/
 theorem approxProd_nonneg (x : ι → K) : 0 ≤ approxProd Sinf Sfin w L x := by

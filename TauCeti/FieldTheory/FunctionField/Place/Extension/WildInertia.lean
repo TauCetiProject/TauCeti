@@ -34,6 +34,7 @@ variable [Field k] [Field F] [Field F']
 variable [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
 variable (F)
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- Every positive ramification group of a finite inertia group is a `p`-group in residue
 characteristic `p`. This includes the wild inertia group `G₁`. -/
 theorem isPGroup_ramificationGroup_succ (P : Place k F') (p i : ℕ)
@@ -60,6 +61,7 @@ theorem isPGroup_ramificationGroup_succ (P : Place k F') (p i : ℕ)
     exact this
   exact Subtype.ext h
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- If the residue characteristic does not divide the order of inertia, every positive
 ramification group is trivial. In a finite Galois extension with separable residue extension,
 the order of inertia is the ramification index, so this is the tame case. -/

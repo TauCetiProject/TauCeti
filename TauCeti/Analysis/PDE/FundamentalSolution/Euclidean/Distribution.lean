@@ -62,12 +62,6 @@ private lemma newtonianKernel_norm_le_rpow (n : ℕ) (hn : 3 ≤ n) (x : Euclide
     -- Put both powers in the exponent form used by the radial integrability criterion.
     rw [show (2 : ℝ) - n = -((n : ℝ) - 2) by ring]
 
-private lemma newtonianKernel_zero_function : newtonianKernel 0 = 0 := by
-  funext x
-  have hx : x = 0 := Subsingleton.elim _ _
-  rw [hx]
-  exact newtonianKernel_zero 0
-
 /-- The Newtonian kernel is locally integrable in every dimension.
 
 In dimensions zero and two it is identically zero; in dimension one the totalized kernel is
@@ -77,13 +71,9 @@ theorem locallyIntegrable_newtonianKernel (n : ℕ) :
     LocallyIntegrable (newtonianKernel n) := by
   by_cases h : n = 0 ∨ n = 2
   · rcases h with rfl | rfl
-    · rw [newtonianKernel_zero_function]
+    · rw [newtonianKernel_dim_zero]
       exact locallyIntegrable_zero
-    · have hzero : newtonianKernel 2 = 0 := by
-        funext x
-        rw [newtonianKernel_def]
-        norm_num
-      rw [hzero]
+    · rw [newtonianKernel_two]
       exact locallyIntegrable_zero
   · have hn : n = 1 ∨ 3 ≤ n := by omega
     rcases hn with rfl | hn
@@ -128,16 +118,12 @@ private lemma locallyIntegrable_fderiv_newtonianKernel_of_eq_zero_or_two (n : �
     (h : n = 0 ∨ n = 2) :
     LocallyIntegrable (fun x => fderiv ℝ (newtonianKernel n) x) := by
   rcases h with rfl | rfl
-  · rw [newtonianKernel_zero_function]
+  · rw [newtonianKernel_dim_zero]
     simp only [fderiv_zero]
     simpa only [Pi.zero_apply] using
       (locallyIntegrable_const (μ := volume)
         (0 : EuclideanSpace ℝ (Fin 0) →L[ℝ] ℝ))
-  · have hzero : newtonianKernel 2 = 0 := by
-      funext x
-      rw [newtonianKernel_def]
-      norm_num
-    rw [hzero]
+  · rw [newtonianKernel_two]
     simp only [fderiv_zero]
     simpa only [Pi.zero_apply] using
       (locallyIntegrable_const (μ := volume)

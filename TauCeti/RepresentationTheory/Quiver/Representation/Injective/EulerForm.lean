@@ -47,19 +47,18 @@ vector on the right; the results below just rewrite `dim Iᵢ` into that path co
 The hypothesis carried throughout is `∀ a, Finite (Quiver.Path a i)`, for the vertex `i` at hand:
 the finiteness that makes `TauCeti.dimVector (indecInjRep k Q i)` an honest path count rather than
 the `0` that `Module.finrank` returns on an infinite-dimensional space. For a finite quiver it
-follows from acyclicity, by `TauCeti.finite_paths_of_isAcyclic`; the loop quiver, where it fails, is
-exactly the boundary case the roadmap records. It is the transpose of the hypothesis
-`∀ a, Finite (Quiver.Path i a)` carried by the projective file, and neither implies the other.
+follows from acyclicity, by `TauCeti.finite_paths_of_isAcyclic`, and it fails for the loop quiver.
+It is the transpose of the hypothesis `∀ a, Finite (Quiver.Path i a)` carried by the projective
+file, and neither implies the other.
 
 Dimension vectors take values in `ℕ` while the Euler form is defined on `Q → ℤ`, so every statement
 below feeds the Euler form the pointwise cast `fun v ↦ (dimVector M v : ℤ)`.
 
 ## References
 
-This implements the injective case of the homological interpretation of the Euler form, Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See Derksen--Weyman, *An
-Introduction to Quiver Representations*, Ch. 1, and Assem--Simson--Skowroński, *Elements of the
-Representation Theory of Associative Algebras I*, Ch. III.
+This is the injective case of the homological interpretation of the Euler form. See Derksen--Weyman,
+*An Introduction to Quiver Representations*, Ch. 1, and Assem--Simson--Skowroński, *Elements of
+the Representation Theory of Associative Algebras I*, Ch. III.
 -/
 
 public section

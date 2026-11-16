@@ -45,8 +45,7 @@ algebra homomorphism, just not an injective one.
 
 ## References
 
-This is the "functoriality under graph/quiver isomorphism" clause of Layer 0 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`, at the level of the ambient path algebra; the
+This is functoriality under quiver isomorphism at the level of the ambient path algebra; the
 relation quotients are carried along it in
 `TauCeti/RepresentationTheory/Quiver/Zigzag/Isomorphism.lean`.
 -/

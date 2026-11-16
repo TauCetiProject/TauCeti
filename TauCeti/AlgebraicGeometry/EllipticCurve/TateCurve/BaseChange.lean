@@ -44,8 +44,8 @@ target is the quotient by `f q`, it lands in the quotient by the image of `q ∈
   compatible with base change.
 * `TauCeti.tateQuotientCoordinates_tateParameterMap`: the descended coordinate pair commutes with
   continuous `K`-algebra maps.
-* `TauCeti.baseChange_tateCurveAt`: the base change of `E_q` to a normed `K`-algebra `L` is the
-  Tate curve of the image of `q`.
+* `TauCeti.baseChange_tateCurveAt`: the base change of `E_q` to a complete ultrametric normed
+  `K`-algebra `L` is the Tate curve of the image of `q`.
 
 ## References
 
@@ -105,8 +105,7 @@ end Coefficients
 
 section Coordinates
 
-variable [NormedField K] [CompleteSpace K] [IsUltrametricDist K] [NormedField L]
-  (f : K →+* L) (hf : Continuous f)
+variable [NormedField K] [CompleteSpace K] [NormedField L] (f : K →+* L) (hf : Continuous f)
 include hf
 
 /-- The first analytic Tate coordinate commutes with a continuous field homomorphism. -/
@@ -233,8 +232,8 @@ section ParameterCoordinates
 variable [NormedField K] [NormedField L] (f : K →+* L)
 
 /-- The coordinate pair on the multiplicative quotient commutes with continuous base change. -/
-theorem tateQuotientCoordinates_tateParameterBaseChange [CompleteSpace K] [IsUltrametricDist K]
-    (hf : Continuous f) (q : Kˣ) (hq : ‖(q : K)‖ < 1) (x : Kˣ ⧸ Subgroup.zpowers q) :
+theorem tateQuotientCoordinates_tateParameterBaseChange [CompleteSpace K] (hf : Continuous f)
+    (q : Kˣ) (hq : ‖(q : K)‖ < 1) (x : Kˣ ⧸ Subgroup.zpowers q) :
     tateQuotientCoordinates (Units.map (f : K →* L) q) (tateParameterBaseChange f q x) =
       (f (tateQuotientCoordinates q x).1, f (tateQuotientCoordinates q x).2) := by
   induction x using QuotientGroup.induction_on with
@@ -252,9 +251,8 @@ open WeierstrassCurve
 variable [NormedField K] [NormedField L] [NormedAlgebra K L]
 
 /-- The Tate coordinates on parameters commute with a continuous `K`-algebra map. -/
-theorem tateQuotientCoordinates_tateParameterMap [CompleteSpace L] [IsUltrametricDist L]
-    {M : Type*} [NormedField M] [NormedAlgebra K M] (q : Kˣ) (hq : ‖(q : K)‖ < 1)
-    (ι : L →ₐ[K] M) (hι : Continuous ι)
+theorem tateQuotientCoordinates_tateParameterMap [CompleteSpace L] {M : Type*} [NormedField M]
+    [NormedAlgebra K M] (q : Kˣ) (hq : ‖(q : K)‖ < 1) (ι : L →ₐ[K] M) (hι : Continuous ι)
     (x : Lˣ ⧸ Subgroup.zpowers (Units.map (algebraMap K L : K →* L) q)) :
     tateQuotientCoordinates _ (tateParameterMap q ι x) =
       (ι (tateQuotientCoordinates _ x).1, ι (tateQuotientCoordinates _ x).2) := by

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Chow.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 import TauCeti.Topology.LocallyFinite.Basic
+import TauCeti.Topology.LocallyFinsupp.Comap
 
 /-!
 # Pushforward of Chow groups along closed immersions
@@ -94,24 +95,18 @@ lemma mem_range_cyclesPushforward_iff {k : ℤ} {α : cyclesOfDimension X k} :
   · rintro ⟨β, rfl⟩
     rw [coe_cyclesPushforward]
     exact AlgebraicCycle.support_map_subset_range _ _ _ _
-  -- Pull `α` back along `i`: its support is the preimage of the support of `α`, which is
-  -- locally finite because `i` is continuous.
-  let β : AlgebraicCycle Z ℤ :=
-    { toFun y := (α : AlgebraicCycle X ℤ) (i y)
-      supportWithinDomain' := Set.subset_univ _
-      supportLocallyFiniteWithinDomain' y _ := by
-        obtain ⟨U, hU, hfin⟩ := (α : AlgebraicCycle X ℤ).supportLocallyFiniteWithinDomain'
-          (i y) (Set.mem_univ _)
-        exact ⟨i ⁻¹' U, i.continuous.continuousAt.preimage_mem_nhds hU,
-          (hfin.preimage i.isClosedEmbedding.injective.injOn).subset fun z hz ↦ hz⟩ }
+  -- Pull `α` back along `i`.
+  let β : AlgebraicCycle Z ℤ := Function.locallyFinsupp.comap i i.continuous
+    i.isClosedEmbedding.injective (α : AlgebraicCycle X ℤ)
   have hβ : β ∈ cyclesOfDimension Z k := mem_cyclesOfDimension_iff.mpr fun y hy ↦ by
+    rw [Function.locallyFinsupp.support_comap] at hy
     simpa only [mem_pointsOfDimension, Scheme.Hom.height_apply_eq_height] using
       mem_cyclesOfDimension_iff.mp α.2 hy
   refine ⟨⟨β, hβ⟩, Subtype.ext ?_⟩
   ext x
   by_cases hx : x ∈ Set.range i
   · obtain ⟨y, rfl⟩ := hx
-    exact cyclesPushforward_apply _ y
+    exact (cyclesPushforward_apply _ y).trans (Function.locallyFinsupp.comap_apply _ _ _ _ _)
   · rw [cyclesPushforward_apply_of_notMem_range _ hx, eq_comm, ← Function.notMem_support]
     exact fun hx' ↦ hx (h hx')
 

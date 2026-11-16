@@ -353,7 +353,7 @@ theorem IsLink.reachable_deleteEdges_or_reachable_deleteEdges_or (h : G.IsLink e
   clear huv
   induction p with
   | nil => exact .inl (Reachable.refl (by simpa using hu))
-  | @cons u w _ f hf q ih =>
+  | @cons u w _ f hf _ ih =>
     by_cases hfe : f = e
     · subst hfe
       obtain rfl | rfl := hf.left_eq_or_eq h

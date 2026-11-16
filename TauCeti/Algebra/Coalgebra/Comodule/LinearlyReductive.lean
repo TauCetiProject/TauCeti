@@ -54,8 +54,6 @@ arbitrary field.
 * `TauCeti.Comodule.IsCompletelyReducible.of_exists_isCompl` and
   `TauCeti.Comodule.IsCompletelyReducible.exists_isCompl`: construct and use complete
   reducibility through complementary subcomodules.
-* `TauCeti.Subcomodule.projection`: the projection onto a subcomodule along a complementary
-  subcomodule, as a comodule endomorphism.
 * `TauCeti.Comodule.isCompletelyReducible_iff_forall_exists_hom`: complete reducibility means
   that every subcomodule is the image of a comodule endomorphism fixing it pointwise.
 * `TauCeti.Comodule.isCompletelyReducible_of_forall_eq_bot_or_eq_top`: a comodule with no
@@ -90,8 +88,8 @@ arbitrary field.
   reducible.
 * `TauCeti.Subcomodule.isCompletelyReducible_of_isAtom`: a simple subcomodule is completely
   reducible.
-* `TauCeti.Comodule.isCompletelyReducible_of_forall_finite`: for a free coefficient coalgebra,
-  a comodule is completely reducible as soon as its finite subcomodules are.
+* `TauCeti.Comodule.isCompletelyReducible_of_forall_finite`: for a projective coefficient
+  coalgebra, a comodule is completely reducible as soon as its finite subcomodules are.
 * `TauCeti.Comodule.isCompletelyReducible_iff_sSup_atoms_eq_top`: over a field, a comodule is
   completely reducible exactly when it is the sum of its simple subcomodules.
 * `TauCeti.Coalgebra.isLinearlyReductive_monoidAlgebra`: monoid-algebra coalgebras are linearly
@@ -164,14 +162,8 @@ theorem isCompletelyReducible_of_forall_eq_bot_or_eq_top
 /-- A comodule on a subsingleton module is completely reducible. -/
 theorem isCompletelyReducible_of_subsingleton [Subsingleton V] :
     IsCompletelyReducible k C V :=
-  isCompletelyReducible_of_forall_eq_bot_or_eq_top fun W ↦ Or.inl <| by
-    ext m
-    constructor
-    · intro _
-      rw [Subcomodule.mem_bot]
-      exact Subsingleton.elim _ _
-    · intro hm
-      exact (Subcomodule.mem_bot.mp hm) ▸ zero_mem W
+  isCompletelyReducible_of_forall_eq_bot_or_eq_top fun _ ↦
+    Or.inl (Subcomodule.toSubmodule_eq_bot.mp (Subsingleton.elim _ _))
 
 /-- A comodule whose subcomodule lattice is simple is completely reducible. -/
 theorem isCompletelyReducible_of_isSimpleOrder
@@ -220,20 +212,23 @@ variable [AddCommGroup V] [Module R V] [Comodule R C V]
 
 /-- **Complete reducibility via equivariant retractions.** A comodule is completely reducible
 exactly when every subcomodule is the image of a comodule endomorphism that fixes it pointwise. -/
-theorem isCompletelyReducible_iff_forall_exists_hom [Module.Flat R C] :
+theorem isCompletelyReducible_iff_forall_exists_hom :
     IsCompletelyReducible R C V ↔ ∀ W : Subcomodule R C V,
       ∃ P : Hom R C V V, (∀ v, P v ∈ W) ∧ ∀ w ∈ W, P w = w := by
-  -- A projection along a complement gives a retraction; conversely, flatness makes the kernel
-  -- of a retraction into a subcomodule complement.
+  -- A projection along a complement gives a retraction; conversely, the image of `id - P` is a
+  -- subcomodule complement.
   refine ⟨fun hV W ↦ ?_, fun hV ↦ IsCompletelyReducible.of_exists_isCompl fun W ↦ ?_⟩
   · obtain ⟨Q, hQ⟩ := hV.exists_isCompl W
     exact ⟨Subcomodule.projection W Q hQ, Subcomodule.projection_apply_mem hQ,
       fun _ ↦ Subcomodule.projection_apply_of_mem_left hQ⟩
   · obtain ⟨P, hP_mem, hP_self⟩ := hV W
-    refine ⟨Hom.ker P, ?_⟩
-    rw [Hom.ker_toSubmodule,
-      ← LinearMap.ker_codRestrict W.toSubmodule P.toLinearMap hP_mem]
-    exact LinearMap.isCompl_of_proj fun w ↦ Subtype.ext (hP_self w w.2)
+    -- The complement is the image of the endomorphism `id - P`, which is the kernel of `P`.
+    refine ⟨Hom.range (Hom.id R C V + (-1 : R) • P), ?_⟩
+    have hP : LinearMap.IsProj W.toSubmodule P.toLinearMap := ⟨hP_mem, hP_self⟩
+    have h : (Hom.id R C V + (-1 : R) • P).toLinearMap = LinearMap.id - P.toLinearMap := by
+      simp [sub_eq_add_neg]
+    rw [Hom.range_toSubmodule, h, ← LinearMap.IsIdempotentElem.ker_eq_range hP.isIdempotentElem]
+    exact hP.isCompl
 
 end Comodule
 
@@ -348,16 +343,6 @@ theorem of_forall_isCompletelyReducible
     IsLinearlyReductive.{u, v, w} k C :=
   h
 
-/-- Apply linear reductivity to a finite-dimensional comodule in the same carrier universe.
-
-Every finite-dimensional comodule whose carrier lies in the universe quantified by the
-hypothesis is completely reducible. -/
-theorem isCompletelyReducible_sameUniverse
-    (h : IsLinearlyReductive.{u, v, w} k C)
-    (V : Type w) [AddCommMonoid V] [Module k V] [Comodule k C V] [Module.Finite k V] :
-    Comodule.IsCompletelyReducible k C V :=
-  h V
-
 /-- If every finite-dimensional comodule whose carrier is in the base-field universe is
 completely reducible, then every finite-dimensional comodule is completely reducible, regardless
 of its carrier universe. The finiteness assumption is removed by
@@ -367,7 +352,6 @@ private theorem isCompletelyReducible_of_finite
     {V : Type w} [AddCommMonoid V] [Module k V] [Comodule k C V] [Module.Finite k V] :
     Comodule.IsCompletelyReducible k C V := by
   let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-  let : Module.Free k V := Module.Free.of_divisionRing k V
   let e : V ≃ₗ[k] (Fin (Module.finrank k V) → k) := (Module.finBasis k V).equivFun
   let _ : Comodule k C (Fin (Module.finrank k V) → k) := Comodule.Transport e
   exact (Comodule.isCompletelyReducible_transport_iff k e).mp (h _)
@@ -452,13 +436,13 @@ theorem isCompletelyReducible_of_sSup_eq_top {S : Set (Subcomodule R C V)} (hS :
 
 end Ring
 
-section Free
+section Projective
 
 variable {R : Type u} [CommRing R]
-variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C] [Module.Free R C]
+variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C] [Module.Projective R C]
 variable {V : Type w} [AddCommGroup V] [Module R V] [Comodule R C V]
 
-/-- For a free coefficient coalgebra, a comodule whose finite subcomodules are completely
+/-- For a projective coefficient coalgebra, a comodule whose finite subcomodules are completely
 reducible is completely reducible. -/
 theorem isCompletelyReducible_of_forall_finite
     (h : ∀ F : Subcomodule R C V, Module.Finite R F → IsCompletelyReducible R C F) :
@@ -466,7 +450,7 @@ theorem isCompletelyReducible_of_forall_finite
   isCompletelyReducible_of_sSup_eq_top Subcomodule.sSup_finiteSubcomodules_eq_top
     fun F hF ↦ h F (Subcomodule.mem_finiteSubcomodules.mp hF)
 
-end Free
+end Projective
 
 end Comodule
 
@@ -531,6 +515,19 @@ namespace Coalgebra.IsLinearlyReductive
 
 variable {k : Type u} [Field k]
 
+/-- Apply linear reductivity to a comodule in the same carrier universe.
+
+Every comodule whose carrier lies in the universe quantified by the hypothesis is completely
+reducible: its finite subcomodules lie in that universe too. -/
+theorem isCompletelyReducible_sameUniverse (k : Type u) [Field k]
+    {C : Type v} [AddCommMonoid C] [Module k C] [Coalgebra k C]
+    (h : IsLinearlyReductive.{u, v, w} k C)
+    (V : Type w) [AddCommMonoid V] [Module k V] [Comodule k C V] :
+    Comodule.IsCompletelyReducible k C V := by
+  let : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
+  let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
+  exact Comodule.isCompletelyReducible_of_forall_finite fun F _ ↦ h F
+
 /-- **Every comodule over a linearly reductive coalgebra is completely reducible.** Linear
 reductivity only asks for complete reducibility of finite-dimensional comodules whose carrier
 lies in the base-field universe; this conclusion holds for every comodule, in every carrier
@@ -568,20 +565,20 @@ weight. -/
 private noncomputable def projectedWeightSum (p : V →ₗ[k] V) : (G →₀ V) →ₗ[k] V :=
   Finsupp.lsum k fun g ↦ weightProj k G V g ∘ₗ p
 
-/-- The endomorphism obtained by applying `p` separately to each weight component. -/
+/-- The weight-diagonal part of `p`: the endomorphism `v ↦ Σ_g π_g (p v_g)`, where `v_g` is the
+weight-`g` component of `v` and `π_g` projects onto the weight space of `g`. If `p` maps into a
+subcomodule `N` and fixes it pointwise, so does this endomorphism. -/
 private noncomputable def equivariantProjection (p : V →ₗ[k] V) : V →ₗ[k] V :=
   (projectedWeightSum k G V p).comp (weightDecomposition k G V)
 
 private theorem equivariantProjection_apply (p : V →ₗ[k] V) (v : V) :
     equivariantProjection k G V p v =
       (weightDecomposition k G V v).sum fun g w ↦ weightProj k G V g (p w) := by
-  classical
   rfl
 
 private theorem equivariantProjection_of_mem_weightSpace (p : V →ₗ[k] V)
     {g : G} {v : V} (hv : v ∈ weightSpace k G V g) :
     equivariantProjection k G V p v = weightProj k G V g (p v) := by
-  classical
   rw [equivariantProjection_apply]
   have hdecomp : weightDecomposition k G V v = Finsupp.single g v := by
     apply Finsupp.ext
@@ -609,7 +606,6 @@ private noncomputable def equivariantProjectionHom (p : V →ₗ[k] V) :
 private theorem equivariantProjection_mem_subcomodule
     (N : Subcomodule k (MonoidAlgebra k G) V) (p : V →ₗ[k] V)
     (hp : ∀ v, p v ∈ N) (v : V) : equivariantProjection k G V p v ∈ N := by
-  classical
   rw [equivariantProjection_apply]
   exact Submodule.sum_mem N.toSubmodule fun g _ ↦
     weightProj_mem_subcomodule (R := k) (G := G) (V := V) N g (hp _)
@@ -618,7 +614,6 @@ private theorem equivariantProjection_apply_of_mem
     (N : Subcomodule k (MonoidAlgebra k G) V) (p : V →ₗ[k] V)
     (hp : ∀ {v}, v ∈ N → p v = v) {v : V} (hv : v ∈ N) :
     equivariantProjection k G V p v = v := by
-  classical
   rw [equivariantProjection_apply]
   have hterm : ∀ g ∈ (weightDecomposition k G V v).support,
       weightProj k G V g (p (weightProj k G V g v)) = weightProj k G V g v := by

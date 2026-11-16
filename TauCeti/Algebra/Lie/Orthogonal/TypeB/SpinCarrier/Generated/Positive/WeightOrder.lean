@@ -55,7 +55,7 @@ theorem single_mem_of_sub_mem_posRootCone
     intro t h
     induction h with
     | refl => simpa only [e, signSet, Equiv.apply_symm_apply] using ha
-    | @tail t u h htu ih =>
+    | @tail t u _ htu ih =>
       obtain ⟨i, hi, rfl⟩ := (typeBSpinRaisingStep_iff _ _).mp htu
       have hweight : basisWeight n (e t) i = -1 := by
         simpa only [basisWeight, signSet, e, Equiv.symm_apply_apply] using hi

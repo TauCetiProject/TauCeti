@@ -76,9 +76,6 @@ predicate as a hypothesis, and the representation API for `TauCeti.bernsteinMeas
 
 * D. V. Widder, *The Laplace Transform* (Princeton, 1941), Chapter IV.
 * C. Berg, J. P. R. Christensen, P. Ressel, *Harmonic Analysis on Semigroups* (GTM 100, 1984).
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem
-  milestone) and Part C, Milestone 2 (BCR semigroup--Bochner).
 -/
 
 public section

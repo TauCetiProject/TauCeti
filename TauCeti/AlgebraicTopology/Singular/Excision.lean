@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Excision
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Relative
 public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Topology.Category.TopPair
+import TauCeti.Topology.Closure
 
 /-!
 # Excision for relative singular homology
@@ -179,11 +180,11 @@ variable {X : TopCat.{w}} (A B : Set X)
 
 /-- The topological pair `(A, A ∩ B)`, with `A ∩ B` realised as the preimage of `B` in the
 subspace `A`. -/
-abbrev interPair : TopPair.{w} := TopPair.ofSubset (X := TopCat.of A) (Subtype.val ⁻¹' B)
+abbrev interPair : TopPair.{w} := ofSubset (X := TopCat.of A) (Subtype.val ⁻¹' B)
 
 /-- The inclusion of pairs `(A, A ∩ B) ⟶ (X, B)`. -/
 def excisionMap : interPair A B ⟶ ofSubset B :=
-  TopPair.ofHom (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
+  ofHom (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
     (TopCat.ofHom ⟨B.restrictPreimage Subtype.val, continuous_subtype_val.restrictPreimage⟩)
 
 @[simp]
@@ -224,35 +225,37 @@ lemma interior_subset_range_or_subset_range_fst_excisionMap (b : Bool) :
 `(A, A ∩ B) ⟶ (X, B)` induces isomorphisms on relative singular homology. -/
 theorem isIso_singularHomologyMap_excisionMap (h : interior A ∪ interior B = Set.univ)
     (n : ℕ) : IsIso (TopPair.singularHomologyMap (excisionMap A B) R n) := by
-  refine isIso_singularHomologyMap_of_open_cover R (excisionMap A B)
+  exact isIso_singularHomologyMap_of_open_cover R (excisionMap A B)
     (isEmbedding_fst_excisionMap A B) (mem_range_map_of_fst_excisionMap_mem A B)
     (fun b : Bool ↦ bif b then interior A else interior B)
-    (fun b ↦ by cases b <;> exact isOpen_interior) ?_
+    (fun b ↦ by cases b <;> exact isOpen_interior) (Set.union_eq_iUnion.symm.trans h)
     (interior_subset_range_or_subset_range_fst_excisionMap A B) n
-  rw [← Set.union_eq_iUnion]
-  exact h
 
 /-- **Excision of a set with closure in the interior of the subspace.** If `closure Z ⊆ interior B`,
 the inclusion of pairs `(X ∖ Z, B ∖ Z) ⟶ (X, B)` induces isomorphisms on relative singular
 homology. -/
 theorem isIso_singularHomologyMap_excisionMap_compl (Z : Set X) (h : closure Z ⊆ interior B)
     (n : ℕ) : IsIso (TopPair.singularHomologyMap (excisionMap Zᶜ B) R n) := by
-  refine isIso_singularHomologyMap_excisionMap R Zᶜ B ?_ n
-  rw [interior_compl, Set.eq_univ_iff_forall]
-  intro x
-  by_cases hx : x ∈ closure Z
-  · exact Or.inr (h hx)
-  · exact Or.inl hx
+  exact isIso_singularHomologyMap_excisionMap R Zᶜ B
+    (TauCeti.interior_compl_union_interior_eq_univ_iff.2 h) n
+
+/-- **Excision onto a neighbourhood of the closure.** If `U` is open and contains the closure of
+`K`, the inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms on relative singular
+homology. -/
+theorem isIso_singularHomologyMap_excisionMap_of_closure_subset {U K : Set X} (hU : IsOpen U)
+    (hKU : closure K ⊆ U) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap (excisionMap U Kᶜ) R n) := by
+  refine isIso_singularHomologyMap_excisionMap R U Kᶜ ?_ n
+  rw [hU.interior_eq, interior_compl]
+  exact Set.eq_univ_of_subset (Set.union_subset_union_left _ hKU) (Set.union_compl_self _)
 
 /-- **Excision onto a neighbourhood.** If `U` is open and contains the closed set `K`, the
 inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms on relative singular
 homology. -/
 theorem isIso_singularHomologyMap_excisionMap_of_isClosed_subset {U K : Set X} (hU : IsOpen U)
     (hK : IsClosed K) (hKU : K ⊆ U) (n : ℕ) :
-    IsIso (TopPair.singularHomologyMap (excisionMap U Kᶜ) R n) := by
-  refine isIso_singularHomologyMap_excisionMap R U Kᶜ ?_ n
-  rw [hU.interior_eq, hK.isOpen_compl.interior_eq]
-  exact Set.eq_univ_of_subset (Set.union_subset_union_left _ hKU) (Set.union_compl_self K)
+    IsIso (TopPair.singularHomologyMap (excisionMap U Kᶜ) R n) :=
+  isIso_singularHomologyMap_excisionMap_of_closure_subset R hU (hK.closure_eq.symm ▸ hKU) n
 
 variable {A B} {Y : TopCat.{w}} (g : X ⟶ Y) {A' B' : Set Y}
   (hA : Set.MapsTo g A A') (hB : Set.MapsTo g B B')
@@ -309,20 +312,21 @@ lemma interPairMap_comp_excisionMap :
 
 omit hA hB in
 /-- **Excision is compatible with shrinking the excised set.** Let `U` be open and let
-`L₂ ⊆ L₁ ⊆ U` be closed. The inclusion `(U, U ∖ L₁) ⟶ (U, U ∖ L₂)` induces isomorphisms on
+`L₂ ⊆ L₁` with `closure L₁ ⊆ U`. The inclusion `(U, U ∖ L₁) ⟶ (U, U ∖ L₂)` induces isomorphisms on
 relative singular homology exactly when `(X, X ∖ L₁) ⟶ (X, X ∖ L₂)` does, since both pairs in `U`
 are carried isomorphically to the corresponding pairs in `X` by excision. -/
 theorem isIso_singularHomologyMap_ofSubsetMap_compl_iff {U L₁ L₂ : Set X} (hU : IsOpen U)
-    (hL₁ : IsClosed L₁) (hL₂ : IsClosed L₂) (hL₁U : L₁ ⊆ U) (h : L₂ ⊆ L₁) (n : ℕ) :
+    (hL₁U : closure L₁ ⊆ U) (h : L₂ ⊆ L₁) (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (ofSubsetMap (𝟙 (TopCat.of U))
         (B := Subtype.val ⁻¹' L₁ᶜ) (B' := Subtype.val ⁻¹' L₂ᶜ)
         fun _ hz ↦ Set.compl_subset_compl.2 h hz) R n) ↔
       IsIso (TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) (Set.compl_subset_compl.2 h)) R n) := by
-  have := isIso_singularHomologyMap_excisionMap_of_isClosed_subset R hU hL₁ hL₁U n
-  have := isIso_singularHomologyMap_excisionMap_of_isClosed_subset R hU hL₂ (h.trans hL₁U) n
+  have := isIso_singularHomologyMap_excisionMap_of_closure_subset R hU hL₁U n
+  have := isIso_singularHomologyMap_excisionMap_of_closure_subset R hU
+    ((closure_mono h).trans hL₁U) n
   have hw := congrArg (TopPair.singularHomologyMap · R n)
     (interPairMap_comp_excisionMap (𝟙 X) (Set.mapsTo_id U) (Set.compl_subset_compl.2 h))
-  simp only [TopPair.singularHomologyMap_comp] at hw
+  simp only [singularHomologyMap_comp] at hw
   rw [ofSubsetMap_id_eq_interPairMap]
   exact ⟨fun _ ↦ IsIso.of_isIso_fac_left hw.symm, fun _ ↦ IsIso.of_isIso_fac_right hw⟩
 
@@ -344,15 +348,15 @@ private abbrev interTriple : TopTriple.{w} :=
 
 /-- The inner pair of `TopPair.interTriple U V` is `TopPair.interPair U V`. -/
 private def interPairToInner : interPair U V ⟶ TopTriple.innerPair.obj (interTriple U V) :=
-  TopPair.ofHom (𝟙 _) (𝟙 _) rfl
+  ofHom (𝟙 _) (𝟙 _) rfl
 
 /-- The outer pair of `TopPair.interTriple U V` is `(X, U)`. -/
 private def subsetToOuter : ofSubset U ⟶ TopTriple.outerPair.obj (interTriple U V) :=
-  TopPair.ofHom (𝟙 _) (𝟙 _) rfl
+  ofHom (𝟙 _) (𝟙 _) rfl
 
 /-- The identification of `(X, U ∩ V)` with the total pair of `TopPair.interTriple U V`. -/
 private def interToTotal : ofSubset (U ∩ V) ⟶ TopTriple.totalPair.obj (interTriple U V) :=
-  TopPair.ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨⟨y.1, y.2.1⟩, y.2.2⟩, by fun_prop⟩) (by ext; rfl)
+  ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨⟨y.1, y.2.1⟩, y.2.2⟩, by fun_prop⟩) (by ext; rfl)
 
 private instance : IsIso (interToTotal U V) :=
   have : IsIso (Hom.fst (interToTotal U V)) := inferInstanceAs (IsIso (𝟙 X))
@@ -364,7 +368,7 @@ private instance : IsIso (interPairToInner U V) :=
 
 /-- The map from the total pair `(X, U ∩ V)` of `TopPair.interTriple U V` to the pair `(X, V)`. -/
 private def totalToSubset : TopTriple.totalPair.obj (interTriple U V) ⟶ ofSubset V :=
-  TopPair.ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨y.1.1, y.2⟩, by fun_prop⟩) (by ext; rfl)
+  ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨y.1.1, y.2⟩, by fun_prop⟩) (by ext; rfl)
 
 private lemma interPairToInner_comp_innerToTotal_comp_totalToSubset :
     interPairToInner U V ≫ TopTriple.innerToTotal.app (interTriple U V) ≫ totalToSubset U V =
@@ -411,18 +415,18 @@ theorem singularHomology_inter_hom_ext (h : interior U ∪ interior V = Set.univ
   rw [← sub_eq_zero, ← cancel_mono (TopPair.singularHomologyMap (interToTotal U V) R n), zero_comp]
   set w := (u - v) ≫ TopPair.singularHomologyMap (interToTotal U V) R n with hw
   have hw₁ : w ≫ TopPair.singularHomologyMap (TopTriple.totalToOuter.app T) R n = 0 := by
-    rw [hw, Category.assoc, ← TopPair.singularHomologyMap_comp,
-      interToTotal_comp_totalToOuter hU, TopPair.singularHomologyMap_comp, ← Category.assoc,
+    rw [hw, Category.assoc, ← singularHomologyMap_comp,
+      interToTotal_comp_totalToOuter hU, singularHomologyMap_comp, ← Category.assoc,
       Preadditive.sub_comp, hu, sub_self, zero_comp]
   have hw₂ : w ≫ TopPair.singularHomologyMap (totalToSubset U V) R n = 0 := by
-    rw [hw, Category.assoc, ← TopPair.singularHomologyMap_comp,
+    rw [hw, Category.assoc, ← singularHomologyMap_comp,
       interToTotal_comp_totalToSubset hV, Preadditive.sub_comp, hv, sub_self]
   -- The map `Hₙ(U, U ∩ V) ⟶ Hₙ(X, U ∩ V)` followed by `Hₙ(X, U ∩ V) ⟶ Hₙ(X, V)` is excision.
   have hiso : IsIso (TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R n ≫
       TopPair.singularHomologyMap (totalToSubset U V) R n) := by
     have := isIso_singularHomologyMap_excisionMap R U V h n
-    rw [← interPairToInner_comp_innerToTotal_comp_totalToSubset, TopPair.singularHomologyMap_comp,
-      TopPair.singularHomologyMap_comp] at this
+    rw [← interPairToInner_comp_innerToTotal_comp_totalToSubset, singularHomologyMap_comp,
+      singularHomologyMap_comp] at this
     exact IsIso.of_isIso_comp_left (TopPair.singularHomologyMap (interPairToInner U V) R n) _
   have := mono_of_mono (TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R n)
     (TopPair.singularHomologyMap (totalToSubset U V) R n)

@@ -36,8 +36,10 @@ coatom statement runs the same way along the projection `LieSubmodule.Quotient.m
 * `TauCeti.eq_top_of_mem_of_lieSpan_singleton_eq_top` and
   `TauCeti.notMem_iff_ne_top_of_lieSpan_eq_top`: a Lie submodule of a
   cyclic Lie module is proper if and only if it misses the generator.
-* `TauCeti.lieSpan_mk_eq_top_of_lieSpan_eq_top`: the image of a generator of a cyclic Lie module
-  generates the quotient.
+* `TauCeti.lieSpan_apply_eq_top_of_lieSpan_eq_top`: the image of a generator of a cyclic Lie module
+  under a surjective morphism of Lie modules, such as a quotient map, generates the target.
+* `TauCeti.eq_zero_of_apply_notMem_of_apply_mem`: a morphism of Lie modules out of an irreducible
+  module that does not land inside a Lie submodule `D` sends only zero into `D`.
 * `TauCeti.isIrreducible_quotient_iff_isCoatom`: the quotient of a Lie module by a Lie submodule is
   irreducible exactly when that submodule is a coatom of the lattice of Lie submodules.
 -/
@@ -91,6 +93,35 @@ theorem notMem_iff_ne_top_of_lieSpan_eq_top
   · intro hN hvN
     exact hN (eq_top_of_mem_of_lieSpan_singleton_eq_top hvN hgen)
 
+/-- **The image of a generator of a cyclic Lie module generates the target of a surjection.** If
+`v` generates `M` and `f : M →ₗ⁅R,L⁆ M₂` is surjective, then `f v` generates `M₂`; for instance the
+image of `v` in a quotient `M ⧸ N` generates it. -/
+theorem lieSpan_apply_eq_top_of_lieSpan_eq_top {M₂ : Type*} [AddCommGroup M₂] [Module R M₂]
+    [LieRingModule L M₂] {v : M} (hgen : LieSubmodule.lieSpan R L {v} = ⊤)
+    {f : M →ₗ⁅R,L⁆ M₂} (hf : Function.Surjective f) :
+    LieSubmodule.lieSpan R L {f v} = ⊤ := by
+  have hcomap : LieSubmodule.lieSpan R L {v} ≤ (LieSubmodule.lieSpan R L {f v}).comap f :=
+    LieSubmodule.lieSpan_le.mpr (Set.singleton_subset_iff.mpr
+      (LieSubmodule.mem_comap.mpr (LieSubmodule.subset_lieSpan rfl)))
+  refine eq_top_iff.mpr fun q _ ↦ ?_
+  obtain ⟨m, rfl⟩ := hf q
+  exact LieSubmodule.mem_comap.mp (hcomap (hgen ▸ LieSubmodule.mem_top m))
+
+/-- **A Lie module map out of an irreducible module sends only zero into a submodule it does not
+land in.** If `M` is irreducible, `f : M →ₗ⁅R,L⁆ M₂`, and `D` is a Lie submodule of `M₂` with
+`f x₀ ∉ D` for some `x₀`, then every `x` with `f x ∈ D` is zero. -/
+theorem eq_zero_of_apply_notMem_of_apply_mem [LieModule.IsIrreducible R L M] {M₂ : Type*}
+    [AddCommGroup M₂] [Module R M₂] [LieRingModule L M₂] {f : M →ₗ⁅R,L⁆ M₂}
+    {D : LieSubmodule R L M₂} {x₀ : M} (h₀ : f x₀ ∉ D) {x : M} (hx : f x ∈ D) : x = 0 := by
+  rcases IsSimpleOrder.eq_bot_or_eq_top (D.comap f) with hb | ht
+  · have hxS : x ∈ D.comap f := LieSubmodule.mem_comap.mpr hx
+    rw [hb, LieSubmodule.mem_bot] at hxS
+    exact hxS
+  · have hx₀ : x₀ ∈ D.comap f := by
+      rw [ht]
+      exact LieSubmodule.mem_top x₀
+    exact absurd (LieSubmodule.mem_comap.mp hx₀) h₀
+
 /-- **The irreducible Lie submodules are the atoms.** A Lie submodule `N` of `M` is irreducible as
 a Lie module exactly when it is an atom of `LieSubmodule R L M`, that is, when `N ≠ ⊥` and the only
 Lie submodule of `M` strictly below `N` is `⊥`. -/
@@ -116,20 +147,6 @@ theorem isIrreducible_iff_isAtom (N : LieSubmodule R L M) :
     exact Subtype.ext (by simpa using hmem)
 
 variable [LieAlgebra R L] [LieModule R L M]
-
-/-- The image of a generator of a cyclic Lie module generates the quotient. -/
-theorem lieSpan_mk_eq_top_of_lieSpan_eq_top {v : M} (hgen : LieSubmodule.lieSpan R L {v} = ⊤)
-    (N : LieSubmodule R L M) :
-    LieSubmodule.lieSpan R L {LieSubmodule.Quotient.mk' N v} = ⊤ := by
-  have hcomap : LieSubmodule.lieSpan R L {v}
-      ≤ (LieSubmodule.lieSpan R L {LieSubmodule.Quotient.mk' N v}).comap
-        (LieSubmodule.Quotient.mk' N) :=
-    LieSubmodule.lieSpan_le.mpr (Set.singleton_subset_iff.mpr
-      (LieSubmodule.mem_comap.mpr (LieSubmodule.subset_lieSpan rfl)))
-  refine eq_top_iff.mpr fun q _ => ?_
-  obtain ⟨m, rfl⟩ := LieSubmodule.Quotient.surjective_mk' N q
-  have hm : m ∈ LieSubmodule.lieSpan R L {v} := by rw [hgen]; trivial
-  exact hcomap hm
 
 /-- **The quotient by a Lie submodule is irreducible exactly when that submodule is a coatom.**
 A Lie submodule of `M ⧸ N` pulls back along the projection to a Lie submodule of `M` containing

@@ -41,6 +41,8 @@ Euclidean model.
   `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι` in which `stdSymplecticForm` has matrix `Matrix.J`.
 * `TauCeti.stdDarbouxBasis`: the standard `Fin n × Fin 2`-indexed Darboux basis of
   `EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)`.
+* `TauCeti.fact_finrank_euclideanSpace_prod`: the instance recording that
+  `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι` has dimension `2 * Fintype.card ι`.
 * `Module.Basis.euclideanBasisEquiv` /
   `Module.Basis.euclideanBasisContinuousLinearEquiv`: coordinate isomorphism from an
   `ι ⊕ ι`-indexed basis to `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`.
@@ -80,6 +82,15 @@ noncomputable def stdSymplecticBasis (ι : Type*) [Fintype ι] :
     Basis (ι ⊕ ι) ℝ (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :=
   ((EuclideanSpace.basisFun ι ℝ).toBasis.prod (EuclideanSpace.basisFun ι ℝ).toBasis).reindex
     (Equiv.sumComm ι ι)
+
+variable (ι) in
+/-- `stdSymplecticBasis ι` is the product of two copies of the standard basis of
+`EuclideanSpace ℝ ι`, with the two summands of the index swapped. -/
+theorem stdSymplecticBasis_def :
+    stdSymplecticBasis ι =
+      ((EuclideanSpace.basisFun ι ℝ).toBasis.prod (EuclideanSpace.basisFun ι ℝ).toBasis).reindex
+        (Equiv.sumComm ι ι) :=
+  (rfl)
 
 @[simp]
 theorem stdSymplecticBasis_inr [DecidableEq ι] (a : ι) :
@@ -144,6 +155,12 @@ theorem stdDarbouxBasis_repr_one {n : ℕ}
 theorem isDarbouxBasis_stdDarbouxBasis (n : ℕ) :
     (stdSymplecticForm (V := EuclideanSpace ℝ (Fin n))).IsDarbouxBasis (stdDarbouxBasis n) :=
   SymplecticForm.isDarbouxBasis_reindex_symm_iff.2 toMatrix_stdSymplecticBasis
+
+/-- `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι` has dimension `2 * |ι|`, so it is a model space for
+symplectic manifolds of dimension `2 * |ι|`. -/
+instance fact_finrank_euclideanSpace_prod :
+    Fact (finrank ℝ (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) = 2 * Fintype.card ι) :=
+  ⟨by rw [finrank_prod, finrank_euclideanSpace, two_mul]⟩
 
 end StandardBasis
 

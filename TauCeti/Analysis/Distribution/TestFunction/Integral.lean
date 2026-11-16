@@ -181,7 +181,7 @@ theorem enorm_integral_inner_le_withDensity {U : Set E} (hU : MeasurableSet U)
       m.withDensity (fun x => ‖v x‖ₑ) ((↑) ⁻¹' U) := by
   rw [withDensity_apply _ (hU.preimage measurable_subtype_coe),
     ← lintegral_indicator (hU.preimage measurable_subtype_coe)]
-  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
   by_cases hx : x ∈ ((↑) ⁻¹' U : Set Ω)
   · rw [Set.indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans

@@ -80,6 +80,15 @@ noncomputable def ofFinite {ι : Type*} [Finite ι] (g : ι → (V →ᴬ[ℝ] �
   letI := Fintype.ofFinite ι
   exact ⟨Fintype.card ι, fun j => g ((Fintype.equivFin ι).symm j), fun j => hg _⟩
 
+/-- Every inequality of a finite reindexing is one of the original inequalities. -/
+theorem exists_inequality_ofFinite {ι : Type*} [Finite ι] {g : ι → (V →ᴬ[ℝ] ℝ)}
+    (hg : ∀ j, Toric.IsRationalFunctional h (g j).toAffineMap.linear)
+    (j : Fin (ofFinite g hg).numConstraints) : ∃ k, (ofFinite g hg).inequality j = g k := by
+  let := Fintype.ofFinite ι
+  dsimp only [ofFinite]
+  -- `j : Fin (ofFinite g hg).numConstraints` is definitionally `Fin (Fintype.card ι)`.
+  exact ⟨(Fintype.equivFin ι).symm j, rfl⟩
+
 /-- Reindexing preserves the exact simultaneous-inequality carrier. -/
 @[simp high] -- Apply before `mem_carrier` exposes the reindexed inequalities.
 theorem mem_carrier_ofFinite {ι : Type*} [Finite ι] {g : ι → (V →ᴬ[ℝ] ℝ)}
@@ -279,6 +288,18 @@ theorem inter {P Q : Set V} (hP : IsRationalNormalPolyhedron h P)
   obtain ⟨Q, rfl⟩ := isRationalNormalPolyhedron_iff.mp hQ
   exact isRationalNormalPolyhedron_iff.mpr ⟨P.inter Q, P.carrier_inter Q⟩
 
+/-- Rational-normal polyhedra are closed under finite intersections. -/
+theorem iInter {ι : Type*} [Finite ι] {P : ι → Set V}
+    (hP : ∀ j, IsRationalNormalPolyhedron h (P j)) :
+    IsRationalNormalPolyhedron h (⋂ j, P j) := by
+  choose Q hQ using fun j => isRationalNormalPolyhedron_iff.mp (hP j)
+  refine isRationalNormalPolyhedron_iff.mpr
+    ⟨RationalAffinePolyhedron.ofFinite (fun a : Σ j, Fin (Q j).numConstraints =>
+      (Q a.1).inequality a.2) fun a => (Q a.1).rational_linear a.2, ?_⟩
+  ext x
+  rw [RationalAffinePolyhedron.mem_carrier_ofFinite, Set.mem_iInter]
+  simp only [Sigma.forall, ← hQ, RationalAffinePolyhedron.mem_carrier]
+
 variable {N' W : Type*} [AddCommGroup N'] [AddCommGroup W] [Module ℝ W]
   [TopologicalSpace W]
   {i' : N' →+ W} {h' : TauCeti.Toric.IsIntegralLattice i'}
@@ -327,5 +348,39 @@ theorem isRationalNormalPolyhedron_setOf_le {h : TauCeti.Toric.IsIntegralLattice
     (fun _ => hg ▸ hℓ) using 1
   ext x
   simp [g]
+
+section Point
+
+variable [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V]
+
+/-- A point is a rational-normal polyhedron: it is cut out by the two half-spaces of each
+coordinate character of an integral basis. -/
+theorem isRationalNormalPolyhedron_singleton (h : TauCeti.Toric.IsIntegralLattice i) (x : V) :
+    IsRationalNormalPolyhedron h {x} := by
+  have := h.free
+  have := h.finite
+  have := h.finiteDimensional
+  let b := Module.Free.chooseBasis ℤ N
+  let m : Module.Free.ChooseBasisIndex ℤ N → (N →+ ℤ) := fun j => (b.coord j).toAddMonoidHom
+  have hsingleton : ({x} : Set V) = ⋂ j, ({y | (h.realCharacter (m j)).toContinuousLinearMap y ≤
+      (h.realCharacter (m j)).toContinuousLinearMap x} ∩
+      {y | (-(h.realCharacter (m j))).toContinuousLinearMap y ≤
+        (-(h.realCharacter (m j))).toContinuousLinearMap x}) := by
+    ext y
+    simp only [Set.mem_singleton_iff, Set.mem_iInter, Set.mem_inter_iff, Set.mem_ofPred_eq,
+      LinearMap.coe_toContinuousLinearMap', LinearMap.neg_apply, neg_le_neg_iff]
+    refine ⟨fun hy j => by simp [hy], fun hy => ?_⟩
+    rw [← sub_eq_zero]
+    refine (h.isBaseChange.basis b).ext_elem fun j => ?_
+    have := le_antisymm (hy j).1 (hy j).2
+    rw [← Module.Basis.coord_apply, ← h.realCharacter_coord, map_sub, this, sub_self]
+    simp
+  rw [hsingleton]
+  exact IsRationalNormalPolyhedron.iInter fun j =>
+    (isRationalNormalPolyhedron_setOf_le _ (Toric.IsRationalFunctional.realCharacter h _) _).inter
+      (isRationalNormalPolyhedron_setOf_le _
+        (Toric.IsRationalFunctional.realCharacter h _).neg _)
+
+end Point
 
 end TauCeti

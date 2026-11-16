@@ -79,7 +79,7 @@ theorem charFun_noncentralChiSquaredMeasure (hk : 0 ≤ k) (l : ℝ≥0) (t : �
         Complex.exp ((l : ℂ) * Complex.I * t / (1 - 2 * Complex.I * t)) := by
   have hsub : Iio (1 / 2) ⊆ integrableExpSet id (noncentralChiSquaredMeasure k l) := by
     intro u hu
-    exact integrable_exp_mul_noncentralChiSquaredMeasure hk l
+    exact integrable_exp_mul_noncentralChiSquaredMeasure l
       (by simpa only [mem_Iio, one_div] using hu)
   have hEq := eqOn_complexMGF_of_eqOn_mgf isOpen_Iio (convex_Iio (1 / 2)) hsub
     (analyticOnNhd_noncentralChiSquaredComplexMGF k l)

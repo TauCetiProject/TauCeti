@@ -209,7 +209,7 @@ private theorem integral_divergence_eq_zero_of_tsupport_subset
   -- Each partial derivative of a compactly supported `C¹` function integrates to zero.
   exact Finset.sum_eq_zero fun k _ ↦ integral_apply_eq_zero_of_hasFDerivAt_off_countable
     countable_empty (hflux k).continuous (hfluxc k)
-    (fun z _ ↦ ((hflux k).differentiable one_ne_zero z).hasFDerivAt) _ (hint k)
+    (fun z _ ↦ ((hflux k).differentiable one_ne_zero z).hasFDerivAt) _
 
 end Chart
 

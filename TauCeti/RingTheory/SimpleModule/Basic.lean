@@ -9,15 +9,15 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
-# Simple and semisimple modules: multiplication by `n`, products, linear maps, idempotents
+# Simple and semisimple modules: commuting scalars, products, linear maps, idempotents
 
 Mathlib closes `IsSemisimpleModule` under submodules, quotients, `Finsupp`, and finite dependent
 products `Π i, M i`. The dependent product covers a binary product only when both factors lie in
 the same universe, since the family `M : ι → Type u` is universe-monomorphic; this file supplies
 the binary case with the two factors in unrelated universes.
 
-For a **simple** module it records that a natural number either kills no nonzero element or kills
-every element.
+For a **simple** module it records that a scalar commuting with `R`, such as a natural number,
+either kills no nonzero element or kills every element.
 
 It also records which elements a linear map from a semisimple module can connect: some
 `R`-linear map sends `w : M` to `x : N` exactly when every scalar killing `w` kills `x`. The target
@@ -28,11 +28,13 @@ Over a semisimple ring, the torsion ideal of an element is a direct summand of t
 element generates a copy of the projective left ideal `R f` for an idempotent `f`. Minimal graded
 projective covers over an algebra with semisimple degree-zero part are assembled from such
 idempotents.
+The regular module over a semisimple ring also detects every nonzero module, with no
+finite-generation hypothesis.
 
 ## Main results
 
-* `TauCeti.forall_nsmul_eq_zero_of_ne_zero_of_nsmul_eq_zero`: in a simple module, a natural number
-  killing one nonzero element kills every element.
+* `TauCeti.forall_smul_eq_zero_of_ne_zero_of_smul_eq_zero`: in a simple module, a scalar commuting
+  with `R` that kills one nonzero element kills every element.
 * `IsSemisimpleModule.prod`: a product of two semisimple modules is semisimple.
 * `LinearMap.exists_isIdempotentElem_comp_eq_disjoint_ker`: a linear map out of a semisimple
   module is unchanged by an idempotent endomorphism whose range meets the kernel trivially.
@@ -40,6 +42,8 @@ idempotents.
   sends `w` to `x` if and only if the torsion ideal of `w` is contained in that of `x`.
 * `IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff`: over a semisimple ring,
   every cyclic submodule `R ∙ v` is isomorphic to `R f` for an idempotent `f` fixing `v`.
+* `IsSemisimpleRing.subsingleton_of_subsingleton_linearMap`: vanishing of all linear maps
+  to the regular module detects the zero module over a semisimple ring.
 -/
 
 public section
@@ -50,11 +54,14 @@ variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N]
 
 section SimpleModule
 
-/-- **In a simple module a natural number that kills one nonzero element kills every element.** -/
-theorem forall_nsmul_eq_zero_of_ne_zero_of_nsmul_eq_zero [IsSimpleModule R M] {n : ℕ} {m₀ : M}
-    (hm₀ : m₀ ≠ 0) (h : n • m₀ = 0) (m : M) : n • m = 0 := by
+/-- **In a simple module a commuting scalar that kills one nonzero element kills every element.**
+The scalar `c` may act through any action commuting with the `R`-action: a natural number or an
+integer, an element of the center of `R`, or an `R`-linear endomorphism of `M`. -/
+theorem forall_smul_eq_zero_of_ne_zero_of_smul_eq_zero {S : Type*} [SMul S M]
+    [SMulCommClass R S M] [IsSimpleModule R M] {c : S} {m₀ : M} (hm₀ : m₀ ≠ 0) (h : c • m₀ = 0)
+    (m : M) : c • m = 0 := by
   obtain ⟨r, rfl⟩ := _root_.IsSimpleModule.toSpanSingleton_surjective R hm₀ m
-  simp only [LinearMap.toSpanSingleton_apply, ← smul_comm r n, h, smul_zero]
+  simp only [LinearMap.toSpanSingleton_apply, ← smul_comm r c, h, smul_zero]
 
 end SimpleModule
 
@@ -127,5 +134,17 @@ theorem _root_.IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff [IsSemi
   · rintro ⟨r, rfl⟩
     rw [mul_assoc, hu.eq]
   · exact fun hc => ⟨c, hc.symm⟩
+
+/-- The regular module over a semisimple ring detects nonzero modules: if every linear map
+from `M` to `R` is zero, then `M` is zero. No finite-generation hypothesis is needed. -/
+theorem _root_.IsSemisimpleRing.subsingleton_of_subsingleton_linearMap [IsSemisimpleRing R]
+    (h : Subsingleton (M →ₗ[R] R)) : Subsingleton M := by
+  refine subsingleton_of_forall_eq 0 fun x => ?_
+  obtain ⟨e, -, hex, he⟩ :=
+    IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff (R := R) x
+  obtain ⟨f, hf⟩ := (IsSemisimpleModule.exists_apply_eq_iff (R := R) (w := x) (x := e)).2
+    (fun a ha => (he a).1 ha)
+  have he0 : e = 0 := by simpa only [h.elim f 0, LinearMap.zero_apply] using hf.symm
+  simpa only [he0, zero_smul] using hex.symm
 
 end TauCeti

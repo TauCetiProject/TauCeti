@@ -94,7 +94,7 @@ private def euclideanMetric :
     nlinarith [norm_nonneg (e v)]
   contMDiff := by
     intro α
-    rw [contMDiffAt_section]
+    rw [contMDiffAt_section_iff]
     let euclidean : ℂ →L[ℝ] ℂ →L[ℝ] ℝ := innerSL ℝ
     have hconst : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℂ →L[ℝ] ℝ) ∞
         (fun _ : ℍ ↦ euclidean) α :=
@@ -201,6 +201,6 @@ theorem _root_.UpperHalfPlane.riemannianVolume_eq_volume :
   congr 1
   rw [← ENNReal.ofReal_coe_nnreal]
   congr 1
-  simp [Real.nnnorm_of_nonneg z.im_pos.le]
+  simp [Real.nnNorm_of_nonneg z.im_pos.le]
 
 end TauCeti.UpperHalfPlane

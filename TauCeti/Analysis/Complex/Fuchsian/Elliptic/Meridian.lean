@@ -79,7 +79,7 @@ theorem dist_ellipticMeridianLift (n : ℤ) (τ : ℍ) (t : unitInterval) :
       ‖discCoordinate z τ‖ := by
     rw [discCoordinate_ellipticMeridianLift, norm_mul, Complex.norm_exp_ofReal_mul_I, mul_one]
   rw [norm_discCoordinate, norm_discCoordinate] at hnorm
-  exact (div_left_inj' (by norm_num : (2 : ℝ) ≠ 0)).mp (Real.tanh_injective hnorm)
+  exact (div_left_inj₀ (by norm_num : (2 : ℝ) ≠ 0)).mp (Real.tanh_injective hnorm)
 
 /-- The local power-map projection of an elliptic lift is the circular loop with `n` signed
 turns. Positive turns are counterclockwise in the quotient coordinate. -/

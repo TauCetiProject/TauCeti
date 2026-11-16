@@ -9,9 +9,11 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgeb
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.Lattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Injective
 import TauCeti.Algebra.Lie.DirectSum
+public import TauCeti.Algebra.Module.Primitive.TensorProduct
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Primitive
 
 /-!
-# Injective simple-root parameters on the full-weight lattice
+# Primitive root operators on the full-weight lattice
 
 Every positive and negative numbered simple-root map on the full-weight lattice is
 injective over every commutative ring, including nonreduced rings. The fundamental
@@ -20,7 +22,10 @@ lowering form a primitive two-dimensional root string. Consequently the polynomi
 Kostant action cannot lose the parameter after scalar extension.
 
 The maps here are the existing `kostantRootSubgroupParam` on `scLattice`; no new
-ambient group is introduced. The argument uses the integral normalization of the
+ambient group is introduced. Weyl transport also gives a primitive image for every
+root operator, which remains faithful under scalar multiplication after arbitrary base change.
+This is the integral detection needed for uniqueness of positive-root coordinates. The argument
+uses the integral normalization of the
 fundamental highest vector, rather than nonvanishing of a rational root operator.
 
 ## References
@@ -121,6 +126,42 @@ theorem kostantRootSubgroupParam_scLattice_injective (A : Type*) [CommRing A]
       ((coe_kostantRootOperator_apply e h ρ M
         (t.kostantForm_apply_mem_scLattice ht) i (rootOp i v)).symm.trans
           (congrArg Subtype.val hv.1)) hv.2 A
+
+/-- Every root vector on the full-weight lattice has a primitive vector in its image.
+Thus its reduction cannot vanish in any characteristic. -/
+theorem exists_isPrimitive_chevalleySystem_apply (γ : Fin t.numRoots) :
+    ∃ v w : M,
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ)) (v : t.scModule ht) =
+        (w : t.scModule ht) ∧ IsPrimitive w := by
+  exact exists_isPrimitive_chevalleySystem_apply_of_simple ρ M
+    (t.kostantForm_apply_mem_scLattice ht)
+    (t.isNilpotent_representation_scModule_rootGenerator ht)
+    (fun i => (t.exists_isPrimitive_kostantRootOperator_scLattice ht (.inl i)).elim fun v hv =>
+      ⟨v, rootOp (.inl i) v,
+        by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
+          (coe_kostantRootOperator_apply e h ρ M
+            (t.kostantForm_apply_mem_scLattice ht) (.inl i) v).symm,
+        hv.2⟩) γ
+
+/-- Every all-root operator on the full-weight lattice remains faithful after arbitrary
+commutative scalar extension. This includes nonreduced rings and characteristics two and three. -/
+-- Keep this as an explicit rewrite: simplifying this large operator type triggers
+-- a search for torsion-freeness over the arbitrary value ring.
+theorem smul_baseChange_kostantRootOperator_chevalleySystem_scLattice_eq_zero_iff
+    (γ : Fin t.numRoots) (A : Type*) [CommRing A] (c : A) :
+    c • (kostantRootOperator (t.chevalleySystem ht) h ρ M
+      (kostantForm_chevalleySystem_smul_mem ρ M (t.kostantForm_apply_mem_scLattice ht)
+        (t.isNilpotent_representation_scModule_rootGenerator ht)) γ).baseChange A = 0 ↔ c = 0 := by
+  exact (t.exists_isPrimitive_chevalleySystem_apply ht γ).elim fun v hv =>
+    hv.elim fun w hw => by
+    have hvw := hw.1
+    have hp := hw.2
+    have heq : kostantRootOperator (t.chevalleySystem ht) h ρ M
+      (kostantForm_chevalleySystem_smul_mem ρ M (t.kostantForm_apply_mem_scLattice ht)
+        (t.isNilpotent_representation_scModule_rootGenerator ht)) γ v = w := by
+      apply Subtype.ext
+      simpa only [coe_kostantRootOperator_apply] using hvw
+    exact LinearMap.smul_baseChange_eq_zero_iff_of_isPrimitive _ v (heq.symm ▸ hp) A c
 
 end
 

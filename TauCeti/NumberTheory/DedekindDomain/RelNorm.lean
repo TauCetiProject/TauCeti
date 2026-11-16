@@ -88,9 +88,10 @@ theorem dvd_relNorm_iff_exists_liesOver_dvd {p : Ideal A} [p.IsPrime] {I : Ideal
 /-- **Over a prime ideal all of whose primes above it have inertia degree one, the relative norm
 of each prime above it is that prime ideal.** This is `N(P) = p ^ f(P ∣ p)` when every `f` is `1`,
 with no separability or Galois hypothesis on the extension. -/
-theorem relNorm_eq_of_forall_inertiaDeg_eq_one {p : Ideal A} [p.IsPrime]
+theorem relNorm_eq_of_forall_inertiaDeg_eq_one {p : Ideal A}
     (hf : ∀ Q ∈ p.primesOver B, Q.inertiaDeg A = 1) (P : Ideal B) [P.IsPrime] [P.LiesOver p] :
     relNorm A P = p := by
+  have : p.IsPrime := isPrime_of_liesOver P p
   -- The only prime over `⊥` is `⊥`, whose norm is `⊥`.
   rcases eq_or_ne p ⊥ with rfl | hp
   · rw [eq_bot_of_liesOver_bot A P, relNorm_bot]

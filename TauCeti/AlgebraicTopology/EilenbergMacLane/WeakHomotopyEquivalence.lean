@@ -28,12 +28,20 @@ homotopy equivalence exactly when it induces a bijection on `πₙ` at one base 
 (`TauCeti.IsEilenbergMacLaneSpace.isWeakHomotopyEquivalence_iff`), so by Whitehead's theorem such
 a map between two `K(G, n)` spaces of CW type is a homotopy equivalence.
 
+Conversely, asphericity is invariant under weak homotopy equivalences: the source of a weak
+homotopy equivalence is aspherical exactly when its target is
+(`ContinuousMap.IsWeakHomotopyEquivalence.isAspherical_iff`). In particular a CW approximation of
+an aspherical space is an aspherical space of CW type, which reduces statements about arbitrary
+`K(G, 1)` spaces to the CW case.
+
 ## Main results
 
 * `TauCeti.IsAspherical.isWeakHomotopyEquivalence_iff`: a map between aspherical spaces is a weak
   homotopy equivalence exactly when it induces a bijection of fundamental groups.
 * `TauCeti.IsEilenbergMacLaneSpace.isWeakHomotopyEquivalence_iff`: a map between `K(G, n)` and
   `K(H, n)` spaces is a weak homotopy equivalence exactly when it is bijective on `πₙ`.
+* `ContinuousMap.IsWeakHomotopyEquivalence.isAspherical_iff`: asphericity is invariant under weak
+  homotopy equivalences.
 
 ## References
 
@@ -100,3 +108,19 @@ theorem isWeakHomotopyEquivalence_iff (hX : IsEilenbergMacLaneSpace G n X x)
 end IsEilenbergMacLaneSpace
 
 end TauCeti
+
+namespace ContinuousMap.IsWeakHomotopyEquivalence
+
+open TauCeti
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f : C(X, Y)}
+
+/-- **Asphericity is invariant under weak homotopy equivalences**: the source of a weak homotopy
+equivalence `f` is aspherical at `x` exactly when its target is aspherical at `f x`. -/
+theorem isAspherical_iff (hf : f.IsWeakHomotopyEquivalence) (x : X) :
+    IsAspherical X x ↔ IsAspherical Y (f x) := by
+  rw [TauCeti.isAspherical_iff, TauCeti.isAspherical_iff, hf.pathConnectedSpace_iff]
+  refine and_congr_right fun _ ↦ forall_congr' fun n ↦ ?_
+  exact (Equiv.ofBijective _ (hf.bijective (n + 2) x)).subsingleton_congr
+
+end ContinuousMap.IsWeakHomotopyEquivalence

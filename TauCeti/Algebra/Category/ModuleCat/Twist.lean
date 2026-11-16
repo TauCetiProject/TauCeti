@@ -34,6 +34,10 @@ sense of Mathlib's `MonoidalLeftAction`, that is, a coherent categorical action 
   and `MonoidHom.actionLeftTensorIso_restrictScalarsMonoidalLeftAction`).
 * The action functors are additive equivalences, and they are `R`-linear for an `R`-algebra `A`
   when `H` acts by `R`-algebra automorphisms.
+* `MonoidHom.twistElem`: an element of `M` viewed in its twist, with the twisting action of `A`
+  (`MonoidHom.smul_twistElem`) and the unitor and associator computed on such elements. When `H`
+  acts by `R`-algebra automorphisms, `MonoidHom.twistLinearEquiv` identifies `M` with its twists
+  as `R`-modules.
 * A property of modules is stable under the action when it is preserved by each twist. This is
   the case for the discrete modules of a topological ring (`TauCeti.discreteModules`) when `H`
   acts by homeomorphisms, and for the smooth modules for a family of left ideals
@@ -213,6 +217,114 @@ lemma linear_actionLeft_restrictScalarsMonoidalLeftAction (R : Type*) [CommSemir
   let e : A ≃ₐ[R] A := AlgEquiv.ofRingEquiv (f := (a c.as).symm) fun r => by
     rw [RingEquiv.symm_apply_eq, ha]
   inferInstanceAs ((ModuleCat.restrictScalars e.toAlgHom.toRingHom).Linear R)
+
+section TwistElem
+
+/-- An element of an `A`-module `X`, viewed in its twist `c ⊙ₗ X`. The twist has the same
+underlying abelian group, so this is the identity; it records the twisted type, so that rewriting
+lemmas about elements of twists stay type-correct. -/
+-- The body is exposed: a twisted element must be definitionally the element itself, so that maps
+-- between twists that are identities of the underlying abelian groups can be computed by `rfl`.
+@[expose]
+def twistElem (c : Discrete H) {X : ModuleCat.{v} A} (x : X) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    ↑(c ⊙ₗ X : ModuleCat.{v} A) :=
+  x
+
+/-- Viewing elements in a twist is additive. -/
+@[simp]
+lemma twistElem_add (c : Discrete H) {X : ModuleCat.{v} A} (x y : X) :
+    a.twistElem c (x + y) = a.twistElem c x + a.twistElem c y :=
+  (rfl)
+
+/-- Every element of a twist is a twisted element. -/
+lemma exists_twistElem_eq (c : Discrete H) {X : ModuleCat.{v} A}
+    (x : letI := a.restrictScalarsMonoidalLeftAction.{v}; ↑(c ⊙ₗ X : ModuleCat.{v} A)) :
+    ∃ y : X, a.twistElem c y = x :=
+  ⟨x, rfl⟩
+
+/-- An element `t` acts on the twist by `c` as `(a c)⁻¹ t` acts on the module. -/
+lemma smul_twistElem (c : Discrete H) {X : ModuleCat.{v} A} (t : A) (x : X) :
+    t • a.twistElem c x = a.twistElem c ((a c.as).symm t • x) :=
+  ModuleCat.restrictScalars.smul_def ((a c.as).symm : A →+* A) t x
+
+/-- The twist of a morphism acts on twisted elements as the morphism. -/
+@[simp]
+lemma actionHomRight_hom_twistElem (c : Discrete H) {X Y : ModuleCat.{v} A} (g : X ⟶ Y)
+    (x : X) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    (c ⊴ₗ g).hom (a.twistElem c x) = a.twistElem c (g.hom x) :=
+  (rfl)
+
+/-- The associator of the twisting action is the identity on twisted elements. -/
+@[simp]
+lemma actionAssocIso_hom_twistElem (c c' : Discrete H) {X : ModuleCat.{v} A} (x : X) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    (αₗ c c' X).hom.hom (a.twistElem (c ⊗ c') x) = a.twistElem c (a.twistElem c' x) :=
+  (rfl)
+
+/-- The inverse of the associator of the twisting action is the identity on twisted elements. -/
+@[simp]
+lemma actionAssocIso_inv_twistElem (c c' : Discrete H) {X : ModuleCat.{v} A} (x : X) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    (αₗ c c' X).inv.hom (a.twistElem c (a.twistElem c' x)) = a.twistElem (c ⊗ c') x :=
+  (rfl)
+
+/-- The unitor of the twisting action is the identity on twisted elements. -/
+@[simp]
+lemma actionUnitIso_hom_twistElem {X : ModuleCat.{v} A} (x : X) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    (λₗ[Discrete H] X).hom.hom (a.twistElem (𝟙_ (Discrete H)) x) = x :=
+  (rfl)
+
+/-- The inverse of the unitor of the twisting action is the identity on twisted elements. -/
+lemma actionUnitIso_inv_twistElem {X : ModuleCat.{v} A} (x : X) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    (λₗ[Discrete H] X).inv.hom x = a.twistElem (𝟙_ (Discrete H)) x :=
+  (rfl)
+
+open ModuleCat.Algebra in
+/-- If `A` is an `R`-algebra and `H` acts by `R`-algebra automorphisms, an `A`-module and its
+twist are the same `R`-module. -/
+def twistLinearEquiv (R : Type*) [CommSemiring R] [Algebra R A]
+    (ha : ∀ h r, a h (algebraMap R A r) = algebraMap R A r) (c : Discrete H)
+    (M : ModuleCat.{v} A) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    M ≃ₗ[R] ↑(c ⊙ₗ M : ModuleCat.{v} A) where
+  toFun := a.twistElem c
+  invFun x := x
+  map_add' := a.twistElem_add c
+  map_smul' r x := by
+    rw [RingHom.id_apply, ← algebraMap_smul A r x, ← algebraMap_smul A r (a.twistElem c x),
+      smul_twistElem, (RingEquiv.symm_apply_eq _).2 (ha c.as r).symm]
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+open ModuleCat.Algebra in
+@[simp]
+lemma twistLinearEquiv_apply (R : Type*) [CommSemiring R] [Algebra R A]
+    (ha : ∀ h r, a h (algebraMap R A r) = algebraMap R A r) (c : Discrete H)
+    {M : ModuleCat.{v} A} (x : M) :
+    a.twistLinearEquiv R ha c M x = a.twistElem c x :=
+  (rfl)
+
+open ModuleCat.Algebra in
+@[simp]
+lemma twistLinearEquiv_symm_apply (R : Type*) [CommSemiring R] [Algebra R A]
+    (ha : ∀ h r, a h (algebraMap R A r) = algebraMap R A r) (c : Discrete H)
+    {M : ModuleCat.{v} A} (x : M) :
+    (a.twistLinearEquiv R ha c M).symm (a.twistElem c x) = x :=
+  (rfl)
+
+open ModuleCat.Algebra in
+/-- If `H` acts by `R`-algebra automorphisms, twisting commutes with the action of `R`. -/
+lemma twistElem_smul {R : Type*} [CommSemiring R] [Algebra R A]
+    (ha : ∀ h r, a h (algebraMap R A r) = algebraMap R A r) (c : Discrete H)
+    {M : ModuleCat.{v} A} (r : R) (x : M) :
+    a.twistElem c (r • x) = r • a.twistElem c x :=
+  (a.twistLinearEquiv R ha c M).map_smul r x
+
+end TwistElem
 
 /-- A property of `A`-modules is stable under the twisting action if and only if it is preserved
 by restriction of scalars along each `(a h)⁻¹`. -/

@@ -141,6 +141,27 @@ theorem rectangleIntegral_comp_prodMap_affine {φ : RoughForm I M F 2} (hφ : Is
     continuousOn_const]
   simp
 
+/-- **The area swept by a variation.** For a continuous form and a `C¹` map `u`, the integral over
+the restriction of `u` to `[s, s₀] × [a₂, b₂]`, rescaled to `[0, 1]` in the first coordinate, has
+derivative `-∫_{a₂}^{b₂} φ(∂_s u, ∂_t u) dt` in `s` at `s₀`, the integrand taken at `(s₀, t)`. -/
+theorem hasDerivAt_rectangleIntegral_comp_prodMap_affine [CompleteSpace F]
+    {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (s₀ a₂ b₂ : ℝ) :
+    HasDerivAt
+      (fun s ↦ rectangleIntegral φ (u ∘ Prod.map (fun r ↦ s + (s₀ - s) * r) id) (0, a₂) (1, b₂))
+      (-∫ t in a₂..b₂, φ (u (s₀, t)) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s₀, t) (1, 0),
+        mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s₀, t) (0, 1)]) s₀ := by
+  have hf := continuous_integral_mpullback hφ hu a₂ b₂
+  have heq : (fun s ↦ rectangleIntegral φ (u ∘ Prod.map (fun r ↦ s + (s₀ - s) * r) id)
+      (0, a₂) (1, b₂)) = fun s ↦ -∫ x in s₀..s,
+        ∫ t in a₂..b₂, mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (x, t) ![(1, 0), (0, 1)] := by
+    funext s
+    rw [rectangleIntegral_comp_prodMap_affine hφ hu, rectangleIntegral_def,
+      intervalIntegral.integral_symm]
+  rw [heq]
+  convert (hf.integral_hasStrictDerivAt s₀ s₀).hasDerivAt.neg using 2
+  exact intervalIntegral.integral_congr fun t _ ↦ (mpullback_apply_pair u φ (s₀, t) _ _).symm
+
 end Continuous
 
 /-! ### Concatenation along the first coordinate -/

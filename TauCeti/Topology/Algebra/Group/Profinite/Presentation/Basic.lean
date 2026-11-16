@@ -173,13 +173,8 @@ canonical quotient projection. -/
 @[simp]
 theorem lift_comp_mk {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) :
-    (lift ψ hψ).comp (mk rels) = ψ := by
-  -- Unfold the presentation's lift and map only far enough to apply Mathlib's quotient
-  -- factorization equation.
-  change (ContinuousMonoidHom.quotientLift ψ (Subgroup.normalClosure rels).topologicalClosure
-    (topologicalClosure_normalClosure_le_ker hψ)).comp
-      (Subgroup.quotientMkContinuousMonoidHom (Subgroup.normalClosure rels).topologicalClosure) = ψ
-  exact ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
+    (lift ψ hψ).comp (mk rels) = ψ :=
+  ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
 
 /-- The factorisation through a presented profinite group computes on classes as the original
 map. -/
@@ -194,11 +189,8 @@ map does on the free generators. -/
 @[simp]
 theorem lift_of {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) (x : X) :
-    lift ψ hψ (of rels x) = ψ (freeProfiniteGroup.of x) := by
-  -- Reduce the named generator and lift to the quotient-map composite characterized by
-  -- `lift_comp_mk`; these definitions compute by unfolding to the corresponding quotient maps.
-  change (lift ψ hψ).comp (mk rels) (freeProfiniteGroup.of x) = _
-  exact DFunLike.congr_fun (lift_comp_mk ψ hψ) (freeProfiniteGroup.of x)
+    lift ψ hψ (of rels x) = ψ (freeProfiniteGroup.of x) :=
+  lift_mk ψ hψ (freeProfiniteGroup.of x)
 
 /-- Two continuous homomorphisms out of a presented profinite group are equal if they agree after
 precomposition with its quotient map. -/
@@ -586,13 +578,8 @@ canonical quotient projection. -/
 @[simp]
 theorem lift_comp_mk {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) :
-    (lift ψ hψ).comp (mk p rels) = ψ := by
-  -- Unfold the presentation's lift and map only far enough to apply Mathlib's quotient
-  -- factorization equation.
-  change (ContinuousMonoidHom.quotientLift ψ (Subgroup.normalClosure rels).topologicalClosure
-    (topologicalClosure_normalClosure_le_ker hψ)).comp
-      (Subgroup.quotientMkContinuousMonoidHom (Subgroup.normalClosure rels).topologicalClosure) = ψ
-  exact ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
+    (lift ψ hψ).comp (mk p rels) = ψ :=
+  ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
 
 /-- The factorisation through a presented pro-`p` group computes on classes as the original
 map. -/
@@ -607,11 +594,8 @@ map does on the free generators. -/
 @[simp]
 theorem lift_of {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) (x : X) :
-    lift ψ hψ (of p rels x) = ψ (freeProP.of x) := by
-  -- Reduce the named generator and lift to the quotient-map composite characterized by
-  -- `lift_comp_mk`; these definitions compute by unfolding to the corresponding quotient maps.
-  change (lift ψ hψ).comp (mk p rels) (freeProP.of x) = _
-  exact DFunLike.congr_fun (lift_comp_mk ψ hψ) (freeProP.of x)
+    lift ψ hψ (of p rels x) = ψ (freeProP.of x) :=
+  lift_mk ψ hψ (freeProP.of x)
 
 /-- Two continuous homomorphisms out of a presented pro-`p` group are equal if they agree after
 precomposition with its quotient map. -/

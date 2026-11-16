@@ -24,7 +24,7 @@ module structure.  It is `TauCeti.LaurentAEval E.shiftEquiv`, the exact Grothend
 across by the additive equivalence `TauCeti.LaurentK0.ofExactK0`: no new group is constructed, and
 no relation is added.  The separate type exists only because the module structure depends on the
 grading shift, which the underlying exact structure does not remember.  The defining property is
-`TauCeti.LaurentK0.T_smul`, the normalization `[M{n}] = qⁿ [M]` of the roadmap.
+`TauCeti.LaurentK0.T_smul`, the normalization `[M{n}] = qⁿ [M]`.
 
 The universal property `TauCeti.LaurentK0.liftEquiv` is the `ℤ[q,q⁻¹]`-linear form of the graded
 one: for a `ℤ[q,q⁻¹]`-module `N`, the `ℤ[q,q⁻¹]`-linear maps out of `LaurentK0 E` are exactly the
@@ -79,10 +79,6 @@ graded objects with isomorphic images.
 * Zsuzsanna Dancso and Anthony Licata, "Koszul algebras and flow lattices", *Journal of
   Combinatorial Theory, Series A* 185 (2022), Section 2.2, Definition 2.3, where the graded
   Grothendieck group is presented as a `ℤ[q,q⁻¹]`-module with `[M{1}] = q[M]`.
-* `TauCetiRoadmap/GrothendieckEulerForms/README.md`, Layer 6, first bullet: "For a graded exact
-  category from Layer 2, construct the `R`-module structure on its graded `K₀` and prove
-  `[M{n}] = qⁿ[M]` for every `n : ℤ`, in particular `[M{1}] = q[M]`.  State the universal property
-  for additive invariants equipped with a compatible invertible shift action."
 -/
 
 public section
@@ -125,8 +121,8 @@ noncomputable def ofExactK0 : ExactK0 E.toExactStructure ≃+ LaurentK0 E :=
   LaurentAEval.of E.shiftEquiv
 
 /-- **`qⁿ · [M] = [M{n}]`**: the Laurent variable acts on the graded Grothendieck group by the
-grading shift, and its `n`-th power by the `n`-fold shift.  This is the normalization fixed by the
-roadmap, and it determines the module structure. -/
+grading shift, and its `n`-th power by the `n`-fold shift.  This normalization determines the
+module structure. -/
 @[simp]
 theorem T_smul (n : ℤ) (x : ExactK0 E.toExactStructure) :
     (T n : LaurentPolynomial ℤ) • ofExactK0 E x = ofExactK0 E (E.shiftZPow n x) := by
@@ -221,8 +217,9 @@ variable (E) in
 `ℤ[q,q⁻¹]`-module `N`, the `ℤ[q,q⁻¹]`-linear maps out of `LaurentK0 E` correspond bijectively to
 the conflation-additive invariants whose value on `M{1}` is `q` times the value on `M`.
 
-This is the Layer 2 universal property of a shift-compatible invariant, with the abstract
-automorphism of the target replaced by the one the coefficient ring supplies. -/
+This is the universal property `TauCeti.GradedExactStructure.ShiftInvariant.liftEquiv` of a
+shift-compatible invariant, with the abstract automorphism of the target replaced by the one the
+coefficient ring supplies. -/
 noncomputable def liftEquiv :
     GradedExactStructure.ShiftInvariant E (laurentTAut ℤ N) ≃
       (LaurentK0 E →ₗ[LaurentPolynomial ℤ] N) where
@@ -250,7 +247,8 @@ variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
 variable {E} {E' : GradedExactStructure D} {F : C ⥤ D} [F.Additive]
 
 /-- **A graded conflation-exact functor induces a `ℤ[q,q⁻¹]`-linear map** of graded Grothendieck
-groups: the shift-equivariance proved in the `ℤ`-graded layer is exactly `q`-linearity. -/
+groups: the shift-equivariance `TauCeti.GradedExactStructure.map_shiftEquiv` of the induced map
+on exact `K₀` is exactly `q`-linearity. -/
 noncomputable def map (h : GradedConflationExact E E' F) :
     LaurentK0 E →ₗ[LaurentPolynomial ℤ] LaurentK0 E' :=
   LaurentAEval.lift ((ofExactK0 E').toAddMonoidHom.comp (ExactK0.map F h.isConflationExact))

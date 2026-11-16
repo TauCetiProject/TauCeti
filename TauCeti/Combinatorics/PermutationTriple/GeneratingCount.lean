@@ -22,18 +22,18 @@ generating counts, and identifies it with generating triples of the prescribed c
 * M. Musty, S. Schiavone, J. Sijsling and J. Voight, *A database of Belyi maps*, §2.
 -/
 
-open Equiv
+open TauCeti Equiv
 
 public section
 
-namespace TauCeti
+namespace Subgroup
 
 variable {α : Type*} [Fintype α] [DecidableEq α]
 
 open scoped Classical in
 /-- The number of product-one triples generating `G` with three specified full cycle types.
 Each type is refined into the conjugacy classes of `G` that it meets. -/
-noncomputable def _root_.Subgroup.genCountType (G : Subgroup (Perm α))
+noncomputable def genCountType (G : Subgroup (Perm α))
     (lam0 lam1 laminf : Multiset ℕ) : ℕ :=
   ∑ C0 ∈ G.classesOfFullCycleType lam0,
     ∑ C1 ∈ G.classesOfFullCycleType lam1,
@@ -42,7 +42,7 @@ noncomputable def _root_.Subgroup.genCountType (G : Subgroup (Perm α))
 
 open scoped Classical in
 /-- The class-sum formula for the generating count with prescribed full cycle types. -/
-theorem _root_.Subgroup.genCountType_def (G : Subgroup (Perm α))
+theorem genCountType_def (G : Subgroup (Perm α))
     (lam0 lam1 laminf : Multiset ℕ) :
     G.genCountType lam0 lam1 laminf =
       ∑ C0 ∈ G.classesOfFullCycleType lam0,
@@ -52,7 +52,7 @@ theorem _root_.Subgroup.genCountType_def (G : Subgroup (Perm α))
 
 open scoped Classical in
 /-- The product-one triples of `G` that generate `G` and have the prescribed cycle types. -/
-noncomputable def _root_.Subgroup.generatingTriplesOfFullCycleType
+noncomputable def generatingTriplesOfFullCycleType
     (G : Subgroup (Perm α)) (lam0 lam1 laminf : Multiset ℕ) :
     Finset (G × G × G) :=
   Finset.univ.filter fun p => p.2.2 * p.2.1 * p.1 = 1 ∧
@@ -62,7 +62,7 @@ noncomputable def _root_.Subgroup.generatingTriplesOfFullCycleType
     (p.2.2 : Perm α).fullCycleType = laminf
 
 open Classical in
-@[simp] theorem _root_.Subgroup.mem_generatingTriplesOfFullCycleType
+@[simp] theorem mem_generatingTriplesOfFullCycleType
     (G : Subgroup (Perm α)) {lam0 lam1 laminf : Multiset ℕ} {p : G × G × G} :
     p ∈ G.generatingTriplesOfFullCycleType lam0 lam1 laminf ↔
       p.2.2 * p.2.1 * p.1 = 1 ∧ productOneGeneratedSubgroup p = ⊤ ∧
@@ -73,7 +73,7 @@ open Classical in
 
 /-- Summing the generating counts over the three class refinements counts exactly the triples
 of the prescribed cycle types. -/
-theorem _root_.Subgroup.card_generatingTriplesOfFullCycleType
+theorem card_generatingTriplesOfFullCycleType
     (G : Subgroup (Perm α)) (lam0 lam1 laminf : Multiset ℕ) :
     (G.generatingTriplesOfFullCycleType lam0 lam1 laminf).card =
       G.genCountType lam0 lam1 laminf := by
@@ -119,4 +119,4 @@ theorem _root_.Subgroup.card_generatingTriplesOfFullCycleType
     have hpi := (G.mem_classesOfFullCycleType_mk laminf p.2.2).mp (hci ▸ hi)
     exact ⟨⟨hprod, hgen, hp0, hp1, hpi⟩, by simp [classOf, hc0, hc1, hci]⟩
 
-end TauCeti
+end Subgroup

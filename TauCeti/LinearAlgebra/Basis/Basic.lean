@@ -33,6 +33,8 @@ vectors indexed by `ι`.
   linear equivalence are the coordinates of the vector transported back.
 * `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
   the ambient module, are linearly independent.
+* `Module.Basis.eq_sum_repr_smul_of_mem`: an ambient vector in a submodule `U` expands as the
+  coordinate sum of any finite basis of `U`.
 * `Module.Basis.repr_eq_zero_of_mem_of_notMem`: a vector of a submodule spanned by basis vectors has
   zero coordinate at every basis vector outside the submodule.
 * `Module.Basis.linearIndependent_of_repr_eq_single`: a family indexed by a finite set `S` of
@@ -130,6 +132,12 @@ independent. -/
 theorem linearIndependent_coe_basis (b : Module.Basis n R U) :
     LinearIndependent R fun i ↦ (b i : M) :=
   b.linearIndependent.map_injOn U.subtype U.injective_subtype.injOn
+
+/-- An ambient vector belonging to a submodule `U` expands in any finite basis of `U`. -/
+theorem eq_sum_repr_smul_of_mem [Fintype n] (b : Module.Basis n R U) {x : M} (hx : x ∈ U) :
+    x = ∑ i, b.repr ⟨x, hx⟩ i • (b i : M) := by
+  simpa only [map_sum, Submodule.coe_subtype, SetLike.val_smul] using
+    congrArg U.subtype (b.sum_repr ⟨x, hx⟩).symm
 
 /-- A vector of a submodule spanned by basis vectors has zero coordinate at every basis vector
 outside the submodule. -/

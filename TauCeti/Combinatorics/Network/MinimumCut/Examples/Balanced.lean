@@ -73,9 +73,7 @@ theorem isSubmodular_balancedCut : IsSubmodular balancedCut := by
   have hU : #(S ∪ T) ≤ 4 := by simpa using card_le_univ (S ∪ T)
   have hI : #(S ∩ T) ≤ 4 := by simpa using card_le_univ (S ∩ T)
   have hIS : #(S ∩ T) ≤ #S := card_le_card inter_subset_left
-  have hIT : #(S ∩ T) ≤ #T := card_le_card inter_subset_right
   have hSU : #S ≤ #(S ∪ T) := card_le_card subset_union_left
-  have hTU : #T ≤ #(S ∪ T) := card_le_card subset_union_right
   have hcard := card_union_add_card_inter S T
   simp only [balancedCut]
   omega

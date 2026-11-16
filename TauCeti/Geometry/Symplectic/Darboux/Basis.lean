@@ -38,6 +38,11 @@ Every linear symplectomorphism of `(V, ω)` has determinant `1`
 (`TauCeti.SymplecticForm.IsSymplectomorphism.det_eq_one`), the specialization of
 `TauCeti.BilinForm.IsIsometry.det_eq_one_of_isAlt`.
 
+In a Darboux basis, pairing with the basis vectors reads off the coordinates of a vector:
+`ω(qᵢ, v)` is its `pᵢ`-coordinate and `ω(pᵢ, v)` is minus its `qᵢ`-coordinate
+(`TauCeti.SymplecticForm.IsDarbouxBasis.apply_fst`,
+`TauCeti.SymplecticForm.IsDarbouxBasis.apply_snd`).
+
 Darboux bases are carried to Darboux bases by linear symplectomorphisms
 (`TauCeti.SymplecticForm.IsDarbouxBasis.map`), and the concatenation of Darboux bases of `ω₁` and
 `ω₂` is a Darboux basis of the direct sum `ω₁ ⊕ ω₂`
@@ -90,6 +95,26 @@ theorem IsDarbouxBasis.apply_snd_fst (hb : ω.IsDarbouxBasis b) (i j : Fin n) :
   · exact absurd h₁.symm h₂
   · exact absurd h₂.symm h₁
   · exact neg_zero
+
+/-- In a Darboux basis, pairing with `qᵢ` reads off the `pᵢ`-coordinate:
+`ω(qᵢ, v) = b.repr v (i, 1)`. -/
+theorem IsDarbouxBasis.apply_fst (hb : ω.IsDarbouxBasis b) (i : Fin n) (v : V) :
+    ω (b (i, 0)) v = b.repr v (i, 1) := by
+  have h : ω.toBilinForm (b (i, 0)) = b.coord (i, 1) := b.ext fun ⟨j, a⟩ ↦ by
+    fin_cases a
+    · simp [hb.apply_fst_fst]
+    · simp [hb.apply_fst_snd, Finsupp.single_apply, eq_comm]
+  exact LinearMap.congr_fun h v
+
+/-- In a Darboux basis, pairing with `pᵢ` reads off minus the `qᵢ`-coordinate:
+`ω(pᵢ, v) = -b.repr v (i, 0)`. -/
+theorem IsDarbouxBasis.apply_snd (hb : ω.IsDarbouxBasis b) (i : Fin n) (v : V) :
+    ω (b (i, 1)) v = -b.repr v (i, 0) := by
+  have h : ω.toBilinForm (b (i, 1)) = -b.coord (i, 0) := b.ext fun ⟨j, a⟩ ↦ by
+    fin_cases a
+    · simp [hb.apply_snd_fst, Finsupp.single_apply, eq_comm, apply_ite]
+    · simp [hb.apply_snd_snd]
+  exact LinearMap.congr_fun h v
 
 /-- The relabelling `(i, 0) ↦ inr i`, `(i, 1) ↦ inl i`, under which a Darboux basis becomes a
 basis in which `ω` has Mathlib's standard symplectic matrix `Matrix.J`

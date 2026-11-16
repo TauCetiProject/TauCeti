@@ -23,6 +23,8 @@ linear equivalence (`ContinuousLinearEquiv.holomorphicStalkPullback_bijective`).
 model, `OpenPartialHomeomorph.holomorphicStalkEquivModelSpace` identifies a manifold stalk with a
 stalk on a continuously linearly equivalent model space using any analytic chart;
 `stalkEquivModelSpace` specializes this ring equivalence to the preferred chart.
+In finite dimensions, `exists_ringEquiv_stalk_modelSpace` packages this comparison with a
+model space in `Type` of the same dimension.
 On the complex line, `eventually_contMDiffAt_of_analyticAt` supplies the local hypothesis
 from `AnalyticAt`.
 -/
@@ -438,6 +440,23 @@ theorem toFilterGerm_stalkEquivModelSpace
             (continuousAt_extChartAt_symm x).tendsto.comp he) := by
   exact (chartAt H x).toFilterGerm_holomorphicStalkEquivModelSpace
     (IsManifold.chart_mem_maximalAtlas x) x (mem_chart_source H x) e s
+
+omit [IsManifold I ω X] in
+/-- A chart at `x`, followed by a linear isomorphism onto a model in `Type`, identifies the
+holomorphic stalk at `x` with a holomorphic stalk of a finite-dimensional complex vector space of
+the same dimension. -/
+theorem exists_ringEquiv_stalk_modelSpace [FiniteDimensional ℂ E] [IsManifold I 1 X] (x : X) :
+    ∃ (V : Type) (_ : NormedAddCommGroup V) (_ : NormedSpace ℂ V) (_ : FiniteDimensional ℂ V)
+      (v : V), Module.finrank ℂ V = Module.finrank ℂ E ∧
+        Nonempty ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk v ≃+*
+          (holomorphicStructureSheaf I X).presheaf.stalk x) := by
+  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  -- The model `E` may live in any universe, while the stalks of model spaces are compared in
+  -- `Type`: compose the chart at `x` with a linear isomorphism onto a space in `Type`.
+  let e : E ≃L[ℂ] (Fin (Module.finrank ℂ E) → ℂ) := ContinuousLinearEquiv.ofFinrankEq (by simp)
+  exact ⟨Fin (Module.finrank ℂ E) → ℂ, inferInstance, inferInstance, inferInstance,
+    (e ∘ extChartAt I x) x, by simp,
+    ⟨(stalkEquivModelSpace x e).symm⟩⟩
 
 end TauCeti.holomorphicStructureSheaf
 

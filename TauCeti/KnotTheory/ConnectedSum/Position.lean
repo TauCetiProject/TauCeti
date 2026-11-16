@@ -319,7 +319,7 @@ theorem exists_concordant_isConnectedSumPosition_of_two_le (hn : 2 ≤ n) (ι : 
   obtain ⟨z₀, hz₀⟩ : ∃ z₀ : Circle, (z₀ : ℂ) = -Complex.I :=
     ⟨Circle.exp (-π / 2), by push_cast [Circle.coe_exp]; exact Complex.exp_neg_pi_div_two_mul_I⟩
   obtain ⟨K₁, hK₁, h₀, h₁⟩ := SmoothEmbedding.exists_smoothAmbientIsotopic_mfderiv_eq hn
-    (by simp) K ((greatCircle (n := n) ι).contMDiff.mdifferentiableAt (by simp))
+    (by simp) K
     ((greatCircle (n := n) ι).isImmersion.mfderiv_injective (by simp) z₀)
   obtain ⟨K', hK', hpos⟩ := exists_concordant_isConnectedSumPosition_of_mfderiv_eq hz₀ h₀ h₁
   exact ⟨K', (hK₁.concordant le_rfl).trans hK', hpos⟩

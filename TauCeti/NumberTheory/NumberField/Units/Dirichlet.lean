@@ -22,17 +22,23 @@ abelian group of Dirichlet rank. This structural form is what downstream countin
 consume — for instance the exact number of unit square classes in
 `TauCeti.NumberTheory.NumberField.Units.ElementaryTwoQuotient`.
 
+The file also records how the unit rank `NumberField.Units.rank` is determined by the degree
+and the infinite places, and some direct consequences of Dirichlet's theorem: the fundamental
+units are nontorsion, in unit rank one a single unit generates the units modulo torsion, and in
+positive unit rank the sum of `N((a))^(-s)` over the nonzero elements `a` of a nonzero ideal
+diverges.
+
 ## Main results
 
 * `NumberField.unitsMulEquivTorsionProdMultiplicative`: the unit group as the product of
   its torsion subgroup and the free abelian group on the fundamental system.
-* `NumberField.rank_eq_one_of_finrank_eq_two_of_isReal`: a quadratic field with a real place
-  has unit rank one.
-* `NumberField.rank_add_nrComplexPlaces_add_one`: the unit rank plus the number of complex
-  places plus one is the degree.
+* `NumberField.Units.rank_add_nrComplexPlaces_add_one`: the unit rank plus the number of
+  complex places plus one is the degree.
+* `NumberField.Units.rank_eq_one_of_finrank_eq_two_of_isReal`: a quadratic field with a real
+  place has unit rank one.
 * `NumberField.Units.rank_eq_zero_iff_card_infinitePlace_eq_one`: the unit rank is zero exactly
   when there is a single infinite place, as for `ℚ` and the imaginary quadratic fields.
-* `NumberField.Units.fundSystem_not_mem_torsion`: fundamental units are nontorsion.
+* `NumberField.Units.fundSystem_notMem_torsion`: fundamental units are nontorsion.
 * `NumberField.Units.prod_fundSystem_zpow_mem_torsion_iff`: a product of integral powers of the
   fundamental units is torsion only when all the exponents vanish.
 * `NumberField.Units.not_summable_absNorm_of_rank_pos`: in positive unit rank, the sum of
@@ -111,38 +117,24 @@ fundamental system is sent to the pair `(ζ, e)`. -/
     torsionProdMultiplicativeToUnits_apply]
   simp
 
-open scoped Classical in
-/-- **The unit rank, the complex places and one exhaust the degree.** Dirichlet's rank is
-`#(InfinitePlace F) - 1` while the degree is `r₁ + 2 * r₂`, so restoring the complex places and
-the one place the rank drops recovers `finrank ℚ F`.
-
-Stated as an addition rather than as `rank F + nrComplexPlaces F = finrank ℚ F - 1`: the
-subtraction on `ℕ` is truncated, and the additive form needs no positivity side condition. -/
-theorem rank_add_nrComplexPlaces_add_one :
-    rank F + InfinitePlace.nrComplexPlaces F + 1 = finrank ℚ F := by
-  have h₁ := InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces F
-  have h₂ := InfinitePlace.card_add_two_mul_card_eq_rank F
-  -- `rank` is a truncated subtraction, so the count of places must be known to be positive.
-  have h₃ : 0 < Fintype.card (InfinitePlace F) := Fintype.card_pos
-  simp only [Units.rank]
-  omega
-
-/-- **A real quadratic field has unit rank one.** In degree two, a real infinite place forces
-both infinite places to be real, so the unit rank is `2 - 1 = 1`. -/
-theorem rank_eq_one_of_finrank_eq_two_of_isReal {F : Type*} [Field F] [NumberField F]
-    (hdeg : finrank ℚ F = 2) {w : InfinitePlace F} (hw : w.IsReal) : rank F = 1 := by
-  classical
-  have hcard := InfinitePlace.card_add_two_mul_card_eq_rank F
-  rw [hdeg] at hcard
-  have hpos : InfinitePlace.nrRealPlaces F ≠ 0 := by
-    have : Nonempty {w : InfinitePlace F // w.IsReal} := ⟨⟨w, hw⟩⟩
-    exact Fintype.card_ne_zero
-  rw [rank, InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
-  omega
-
 namespace Units
 
 variable (K : Type*) [Field K] [NumberField K]
+
+/-- **The unit rank, the complex places and one exhaust the degree.** Dirichlet's rank is
+`#(InfinitePlace K) - 1` while the degree is `r₁ + 2 * r₂`, so restoring the complex places and
+the one place the rank drops recovers `finrank ℚ K`.
+
+Stated as an addition rather than as `rank K + nrComplexPlaces K = finrank ℚ K - 1`: the
+subtraction on `ℕ` is truncated, and the additive form needs no positivity side condition. -/
+theorem rank_add_nrComplexPlaces_add_one :
+    rank K + InfinitePlace.nrComplexPlaces K + 1 = finrank ℚ K := by
+  have h₁ := InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces K
+  have h₂ := InfinitePlace.card_add_two_mul_card_eq_rank K
+  -- `rank` is a truncated subtraction, so the count of places must be known to be positive.
+  have h₃ : 0 < Fintype.card (InfinitePlace K) := Fintype.card_pos
+  simp only [rank]
+  omega
 
 /-- A number field has unit rank zero exactly when it has a single infinite place. This covers
 `ℚ` (one real place) and the imaginary quadratic fields (one complex place). -/
@@ -170,8 +162,21 @@ theorem rank_eq_zero_of_isTotallyComplex_of_finrank_eq_two
 
 variable {K}
 
+/-- **A real quadratic field has unit rank one.** In degree two, a real infinite place forces
+both infinite places to be real, so the unit rank is `2 - 1 = 1`. -/
+theorem rank_eq_one_of_finrank_eq_two_of_isReal (hdeg : finrank ℚ K = 2) {w : InfinitePlace K}
+    (hw : w.IsReal) : rank K = 1 := by
+  classical
+  have hcard := InfinitePlace.card_add_two_mul_card_eq_rank K
+  rw [hdeg] at hcard
+  have hpos : InfinitePlace.nrRealPlaces K ≠ 0 := by
+    have : Nonempty {w : InfinitePlace K // w.IsReal} := ⟨⟨w, hw⟩⟩
+    exact Fintype.card_ne_zero
+  rw [rank, InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
+  omega
+
 /-- No member of a fundamental system is a torsion unit. -/
-theorem fundSystem_not_mem_torsion (i : Fin (rank K)) : fundSystem K i ∉ torsion K := by
+theorem fundSystem_notMem_torsion (i : Fin (rank K)) : fundSystem K i ∉ torsion K := by
   intro hi
   have hzero := dirichletUnitTheorem.logEmbedding_eq_zero_iff.mpr hi
   rw [logEmbedding_fundSystem] at hzero
@@ -200,7 +205,7 @@ theorem not_summable_absNorm_of_rank_pos (h : 0 < rank K) {𝔞 : Ideal (𝓞 K)
   -- a fundamental unit has infinite order
   set u := fundSystem K ⟨0, h⟩
   have hu : ¬ IsOfFinOrder u := by
-    simpa [u, torsion, CommGroup.mem_torsion] using fundSystem_not_mem_torsion (K := K) ⟨0, h⟩
+    simpa [u, torsion, CommGroup.mem_torsion] using fundSystem_notMem_torsion (K := K) ⟨0, h⟩
   obtain ⟨a, ha𝔞, ha⟩ := Submodule.exists_mem_ne_zero_of_ne_bot h𝔞
   -- the elements `u ^ n * a` are pairwise distinct nonzero elements of `𝔞` generating `(a)`
   let g : ℕ → {a : 𝔞 // a ≠ 0} := fun n ↦

@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.MeasureTheory.Measure.Real
 public import TauCeti.MeasureTheory.Measure.Interval
 public import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.MeasureTheory.Integral.Bochner.Cumulative
 
 /-!
 # Stieltjes measures, cumulative functions and measurable families
@@ -20,7 +21,13 @@ In particular this applies to locally finite measures supported on the nonnegati
 without normalizing them to probability measures.
 
 On the nonnegative half-line, the cumulative mass of a Stieltjes measure is the increment
-of its Stieltjes function from zero.
+of its Stieltjes function from zero. For continuous Stieltjes functions, pathwise locally
+integrable functions have continuous accumulated integrals.
+
+Since the outer measure of a Stieltjes function is the largest outer measure with its interval
+values, an outer measure on `ℝ` bounded on every interval `Ioc a b` by a measure with finite left
+tails is bounded by it on every measurable set
+(`MeasureTheory.OuterMeasure.le_measure_of_Ioc_le`).
 
 For a family of Stieltjes functions, measurability of evaluations implies measurability of the
 associated measures, without normalization or a uniform bound on their masses. On a bounded
@@ -81,11 +88,73 @@ theorem measure_cumulativeStieltjes : (μ.cumulativeStieltjes hμ).measure = μ 
 
 end MeasureTheory.Measure
 
+namespace MeasureTheory.OuterMeasure
+
+/-- An outer measure on `ℝ` that is bounded on every interval `Ioc a b` by a measure with finite
+left tails is bounded by it on every measurable set. The proof compares the outer measure with
+that of the cumulative Stieltjes function of the measure, which is the largest outer measure with
+these interval values. -/
+theorem le_measure_of_Ioc_le (m : OuterMeasure ℝ) (ν : Measure ℝ)
+    (hν : ∀ t, ν (Iic t) ≠ ∞) (h : ∀ a b, m (Ioc a b) ≤ ν (Ioc a b)) {s : Set ℝ}
+    (hs : MeasurableSet s) : m s ≤ ν s := by
+  set F := ν.cumulativeStieltjes hν
+  have hF (a b : ℝ) : ν (Ioc a b) = ENNReal.ofReal (F b - F a) := by
+    rw [← F.measure_Ioc, Measure.measure_cumulativeStieltjes]
+  have hmF : m ≤ F.outer := by
+    refine OuterMeasure.le_ofFunction.2 fun t ↦ ?_
+    rw [F.length_eq]
+    refine le_iInf₂ fun a b ↦ le_iInf fun hab ↦ ?_
+    rw [← hF]
+    exact (measure_mono fun x hx ↦ hab ⟨hx, notMem_botSet_of_lt (sub_one_lt x)⟩).trans (h a b)
+  have hcar : (inferInstance : MeasurableSpace ℝ) ≤ F.outer.caratheodory := by
+    rw [BorelSpace.measurable_eq (α := ℝ)]
+    exact F.borel_le_measurable
+  have hFν : F.outer.toMeasure hcar = ν := by
+    refine Measure.ext_of_Ioc' _ _ (fun a b _ ↦ ?_) fun a b _ ↦ ?_ <;>
+      rw [toMeasure_apply _ _ measurableSet_Ioc, F.outer_Ioc]
+    · exact ENNReal.ofReal_ne_top
+    · exact (hF a b).symm
+  calc m s ≤ F.outer s := hmF s
+    _ = ν s := by rw [← toMeasure_apply _ hcar hs, hFν]
+
+end MeasureTheory.OuterMeasure
+
 namespace StieltjesFunction
 
 variable {Ω R : Type*} {mΩ : MeasurableSpace Ω}
   [LinearOrder R] [TopologicalSpace R] [OrderTopology R] [CompactIccSpace R]
   [MeasurableSpace R] [BorelSpace R] [SecondCountableTopology R] [DenselyOrdered R]
+
+/-- A Stieltjes measure restricted to a set of continuity points vanishes on singletons. -/
+theorem nullSingletonClass_restrict_measure (f : StieltjesFunction R) {s : Set R}
+    (hf : ∀ t ∈ s, ContinuousAt f t) : NullSingletonClass (f.measure.restrict s) :=
+  ⟨fun t ↦ by
+    rw [Measure.restrict_apply (measurableSet_singleton t)]
+    by_cases ht : t ∈ s
+    · rw [singleton_inter_of_mem ht, f.measure_singleton,
+        (hf t ht).continuousWithinAt.leftLim_eq, sub_self, ENNReal.ofReal_zero]
+    · rw [singleton_inter_of_notMem ht, measure_empty]⟩
+
+/-- The Stieltjes measure of a continuous Stieltjes function vanishes on singletons. -/
+theorem nullSingletonClass_measure_of_continuous (f : StieltjesFunction R)
+    (hf : Continuous f) : NullSingletonClass f.measure := by
+  simpa only [Measure.restrict_univ] using
+    f.nullSingletonClass_restrict_measure (s := univ) (fun _ _ ↦ hf.continuousAt)
+
+/-- Integration of a locally integrable Banach-valued function against a Stieltjes function
+continuous on `(a,∞)` has a continuous accumulated integral. Jumps at or before `a` are allowed;
+no bound on the total mass or integrability beyond each finite horizon is required. -/
+theorem continuous_setIntegral_Ioc {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (f : StieltjesFunction R) (a : R) (hf : ContinuousOn f (Ioi a)) {H : R → E}
+    (hH : ∀ T, IntegrableOn H (Ioc a T) f.measure) :
+    Continuous (fun t ↦ ∫ u in Ioc a t, H u ∂f.measure) := by
+  have : NullSingletonClass (f.measure.restrict (Ioi a)) :=
+    f.nullSingletonClass_restrict_measure (fun _ ht ↦ isOpen_Ioi.continuousOn_iff.mp hf ht)
+  have hi : ∀ T, IntegrableOn H (Ioc a T) (f.measure.restrict (Ioi a)) := by
+    intro T
+    simpa only [IntegrableOn, Measure.restrict_restrict_of_subset Ioc_subset_Ioi_self] using hH T
+  simpa only [Measure.restrict_restrict_of_subset Ioc_subset_Ioi_self] using
+    MeasureTheory.continuous_integral_Ioc hi
 
 /-- The Stieltjes measure restricted to `(a,b]` is a measurable family if evaluations inside
 `[a,b]` are measurable. No uniform bound on the random interval mass is required. -/
@@ -121,12 +190,9 @@ theorem measurable_measure_of_measurable_eval {f : Ω → StieltjesFunction ℝ}
   refine Measurable.measure_of_isPiSystem_of_iUnion
     (B := fun n : ℕ ↦ Ioc (-(n + 1 : ℝ)) (n + 1))
     (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Ioc ℝ))
-    (isPiSystem_Ioc id id) ?_ ?_ ?_ ?_ ?_
+    (isPiSystem_Ioc id id) ?_ ?_ ?_ ?_
   · intro n
     exact ⟨_, _, by have := Nat.cast_nonneg (α := ℝ) n; linarith, rfl⟩
-  · intro i j hij
-    exact Ioc_subset_Ioc (neg_le_neg (by exact_mod_cast Nat.add_le_add_right hij 1))
-      (by exact_mod_cast Nat.add_le_add_right hij 1)
   · ext x
     simp only [mem_iUnion, mem_Ioc, mem_univ, iff_true]
     obtain ⟨n, hn⟩ := exists_nat_gt |x|

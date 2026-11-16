@@ -81,8 +81,6 @@ without the Bender--Knuth involution that `TauCeti.schurPoly_isSymmetric` needs 
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,
   Section 3, where `s_{(n)} = h_n` sits beside `s_{(1ⁿ)} = e_n` as the first examples of a Schur
   function.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7.
 -/
 
 public section

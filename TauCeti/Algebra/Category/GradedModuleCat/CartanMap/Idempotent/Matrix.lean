@@ -151,8 +151,7 @@ theorem finrank_end_mul_coeff_gradedCartanMatrix_gradedIdempotentProjectiveBasis
       hnoniso (LaurentK0.of _ ⟨_, gradedFiniteProjectiveModules_le_finiteModules _
         (gradedFiniteProjectiveModules_ofIdeal_span_singleton (he.idem j) (hI j))⟩) i)
   rw [gradedIdempotentCoordinate_of, ← LaurentPolynomial.smul_eq_C_mul,
-    GradedModuleCat.coeff_smulGradedDimension_ofIdeal_span_singleton (he.idem i) (he₀ i)
-      (he.idem j) (hI j)] at h
+    GradedModuleCat.coeff_smulGradedDimension_ofIdeal_span_singleton (he₀ i) (hI j)] at h
   simpa only [AddMonoidAlgebra.coeff_smul, Finsupp.smul_apply, smul_eq_mul] using h.symm
 
 /-- Negative coefficients of the Cartan matrix in primitive-idempotent bases vanish over any
@@ -195,8 +194,8 @@ theorem coeff_zero_gradedCartanMatrix_gradedIdempotentProjectiveBasisOfPrimitive
         hneg he₀ hprim hnoniso hij
   apply mul_left_cancel₀ hd
   rw [finrank_end_mul_coeff_gradedCartanMatrix_gradedIdempotentProjectiveBasisOfPrimitive,
-    ← GradedModuleCat.coeff_smulGradedDimension_ofIdeal_span_singleton (he.idem i) (he₀ i)
-      (he.idem j) (hI j), GradedModuleCat.coeff_smulGradedDimension, hdim,
+    ← GradedModuleCat.coeff_smulGradedDimension_ofIdeal_span_singleton (he₀ i) (hI j),
+    GradedModuleCat.coeff_smulGradedDimension, hdim,
     ← GradedModuleCat.coeff_smulGradedDimension, hhead]
   split_ifs <;> simp
 

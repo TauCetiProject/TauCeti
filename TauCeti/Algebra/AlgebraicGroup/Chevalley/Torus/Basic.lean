@@ -24,6 +24,10 @@ that annihilate `Λ(D)`. If the units are divisible, restriction is surjective a
 agree. This applies in particular over an algebraically closed field, but not in general over
 `ℚ`.
 
+Over every commutative ring the actual torus is injective on points
+(`ChevalleyDatum.torusPoints_injective`), because the coordinate weights span the character
+lattice.
+
 The character evaluation and extension arguments use the general lattice-duality API
 `TauCeti.torusCharacter_torusPointMap` and `TauCeti.torusPointMap_surjective_of_injective`.
 
@@ -96,12 +100,12 @@ theorem fullWeightTorusRestriction_apply (s : Fin t.rank → Aˣ) (i : Fin t.ran
   simp [fullWeightTorusRestriction, torusPointMap_apply]
 
 /-- Restriction is characterized by evaluation on every character of the actual weight lattice. -/
+@[simp]
 theorem torusCharacter_fullWeightTorusRestriction (s : Fin t.rank → Aˣ)
     (μ : D.weightLattice) :
-    torusCharacter (D.fullWeightTorusRestriction A s) (D.weightLatticeBasis.equivFun μ) =
+    torusCharacter (D.fullWeightTorusRestriction A s) (D.weightLatticeBasis.repr μ) =
       torusCharacter s (μ : Fin t.rank → ℤ) := by
-  rw [fullWeightTorusRestriction, torusCharacter_torusPointMap]
-  simp only [Module.Basis.equivFun_apply, weightLatticeEmbedding_repr]
+  simp [fullWeightTorusRestriction, torusCharacter_torusPointMap]
 
 /-- The kernel of full-weight restriction is the group of characters that are trivial on `Λ(D)`;
 these are exactly the characters that factor through `P / Λ(D)`. -/
@@ -138,6 +142,16 @@ theorem fullWeightTorusRestriction_surjective [RootableBy Aˣ ℕ] :
     Function.Surjective (D.fullWeightTorusRestriction A) :=
   torusPointMap_surjective_of_injective D.weightLatticeEmbedding_injective
 
+/-- If the weights span the full weight lattice, every actual torus parameter comes from a
+full-weight parameter over every commutative ring. No divisibility assumption is needed. -/
+theorem fullWeightTorusRestriction_surjective_of_weightLattice_eq_top
+    (hD : D.weightLattice = ⊤) :
+    Function.Surjective (D.fullWeightTorusRestriction A) := by
+  let e := LinearEquiv.ofBijective D.weightLatticeEmbedding
+    ⟨D.weightLatticeEmbedding_injective,
+      LinearMap.range_eq_top.mp (D.range_weightLatticeEmbedding.trans hD)⟩
+  exact torusPointMap_surjective_of_leftInverse e.symm.toLinearMap e.symm_comp
+
 /-- Over a ring with divisible units, the full-weight parametrization reaches every point of the
 actual torus of a Chevalley datum. No equality over general rings is asserted. -/
 theorem range_kostantTorusMatrix_weight_eq [RootableBy Aˣ ℕ] :
@@ -146,6 +160,18 @@ theorem range_kostantTorusMatrix_weight_eq [RootableBy Aˣ ℕ] :
   simpa only [weightLatticeEmbedding_coordinateWeight] using
     range_kostantTorusMatrix_eq_of_injective D.lattice D.basis D.coordinateWeight
       (A := A) D.weightLatticeEmbedding_injective
+
+/-- **The actual torus is injective on points.** Its coordinate weights span the character
+lattice, so distinct parameters act differently on the weight basis, over every commutative
+ring. -/
+theorem torusPoints_injective : Function.Injective (D.torusPoints A) := by
+  intro s s' h
+  have hmatrix := congrArg Subtype.val h
+  rw [coe_torusPoints, coe_torusPoints, ← basisMatrix_kostantTorusPoints,
+    ← basisMatrix_kostantTorusPoints] at hmatrix
+  exact kostantTorusPoints_injective D.lattice D.basis D.coordinateWeight
+    D.span_range_coordinateWeight_eq_top
+    (Units.map_injective (MulEquiv.injective _) hmatrix)
 
 end
 

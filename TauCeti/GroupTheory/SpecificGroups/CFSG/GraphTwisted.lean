@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Index
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Index
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeE7.Index
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 
 /-!
 # Diagram permutations of the graph-twisted families
@@ -20,9 +20,10 @@ file attaches that permutation to every index it can occur for, namely to every
 `TauCeti.GraphTwistedIndex`.
 
 The permutations themselves are pinned as `Fin` data by
-`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations.lean`. What is new here is the assignment of
-one of them to each family: the identity on the nine untwisted families, the chain reversal on
-`²Aₙ`, the fork exchange on `²Dₙ`, the order-two symmetry on `²E₆`, and triality on `³D₄`. The
+`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations/Basic.lean`.
+What is new here is the assignment of one of them to each family: the identity on the nine
+untwisted families, the chain reversal on `²Aₙ`, the fork exchange on `²Dₙ`, the order-two symmetry
+on `²E₆`, and triality on `³D₄`. The
 assignment is total on `TauCeti.GraphTwistedIndex` and defined nowhere else: the Suzuki--Ree and
 Tits indices are excluded by that subtype, whose defining hypothesis discharges their branches, so
 no diagram permutation is invented for a family whose Steinberg map is an odd power of a
@@ -76,15 +77,12 @@ pinned group; and its order is the superscript in the printed family name, recor
   diagram are told apart by an untwisted permutation, by the fork exchange, and by triality, of
   twist orders two and three.
 
-## Roadmap
+## References
 
-This is the diagram-permutation half of item L1 of `TauCetiRoadmap/CFSGStatement/README.md`, whose
-table of families and permutations it transcribes; the remaining half, the equations
-`γ (x_α(t)) = x_{γ α}(t)` on the simple root subgroups, waits on the pinned ambient groups of L0.
-`TauCetiRoadmap/CFSGStatement/Suggested.lean` supplies the `diagramPerm` signature and its design on
-the subtype that excludes the Suzuki--Ree and Tits families.
+This file transcribes the table of families and diagram permutations; the equations
+`γ (x_α(t)) = x_{γ α}(t)` on the simple root subgroups are not proved here.
 The conventions follow Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex
-Characters*, and the Bourbaki numbering fixed by the root-systems roadmap.
+Characters*, and the Bourbaki numbering of the Dynkin diagrams.
 -/
 
 public section
@@ -145,7 +143,7 @@ def twistOrder : GraphTwistedIndex → ℕ
 
 /-! ### The pinned table
 
-The following two families of equations are the roadmap's table of families and permutations. They
+The following two families of equations are the table of families and permutations. They
 are exhaustive for `TauCeti.GraphTwistedIndex`, since the Suzuki--Ree and Tits constructors are not
 indices of that subtype. -/
 
@@ -429,8 +427,8 @@ abbrev toGraphTwistedIndex (d : TypeE6LieIndex) : GraphTwistedIndex :=
   ⟨d.1, not_usesHalfFrobenius_of_isTypeE6 d.2⟩
 
 /-- **The diagram permutation of the untwisted family `E₆(q)` is the identity**, which is what
-places it in the untwisted row of milestone L1's table, where the Steinberg map is `Frob_q`
-outright. The nontrivial symmetry of the `E₆` diagram belongs to `²E₆(q)`. -/
+places it among the untwisted families, whose Steinberg map is `Frob_q` outright. The nontrivial
+symmetry of the `E₆` diagram belongs to `²E₆(q)`. -/
 @[simp]
 theorem diagramPerm_toGraphTwistedIndex (d : TypeE6LieIndex) :
     d.toGraphTwistedIndex.diagramPerm = 1 := by
@@ -454,7 +452,7 @@ abbrev toGraphTwistedIndex : GraphTwistedIndex :=
 
 /-- **The diagram permutation of the graph-twisted family `²E₆(q)` is `TauCeti.graphPermE6`**, the
 order-two symmetry of the `E₆` diagram, read in the index's own copy `Fin d.1.rank` of the Bourbaki
-index type. This is what places the family in the `γ₂ ∘ Frob_q` row of milestone L1's table; the
+index type. This is what makes the Steinberg map of the family `γ₂ ∘ Frob_q`; the
 untwisted family `E₆(q)` takes the identity instead. -/
 @[simp]
 theorem diagramPerm_toGraphTwistedIndex (i : Fin d.1.rank) :
@@ -520,8 +518,8 @@ end TypeDDiagramLieIndex
 
 namespace TypeDLieIndex
 
-/-- **The diagram permutation of the untwisted family `Dₙ(q)` is the identity**, which places it in
-the untwisted row of milestone L1's table, where the Steinberg map is `Frob_q` outright. The two
+/-- **The diagram permutation of the untwisted family `Dₙ(q)` is the identity**, which places it
+among the untwisted families, whose Steinberg map is `Frob_q` outright. The two
 symmetries of the `Dₙ` diagram belong to `²Dₙ(q)` and, at rank four, to `³D₄(q)`. -/
 @[simp]
 theorem diagramPerm_toGraphTwistedIndex (d : TypeDLieIndex) :

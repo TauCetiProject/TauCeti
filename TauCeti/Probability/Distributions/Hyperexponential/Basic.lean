@@ -194,7 +194,7 @@ theorem measurable_hyperexponentialMeasure :
   unfold hyperexponentialMeasure
   apply Measurable.ite (by measurability) _ measurable_const
   apply Finset.measurable_sum
-  intro i hi
+  intro i _
   apply Measure.measurable_measure.mpr
   intro s hs
   simp only [_root_.smul_apply, smul_eq_mul]
@@ -216,7 +216,7 @@ theorem hyperexponentialMeasure_eq_withDensity (p : StdSimplex ℝ≥0 ι) (r : 
       · rw [hyperexponentialPDF, hyperexponentialPDFReal_of_pos hr hx,
           ENNReal.ofReal_sum_of_nonneg (fun i _ ↦ component_nonneg hr i x)]
         apply Finset.sum_congr rfl
-        intro i hi
+        intro i _
         rw [exponentialPDF_of_nonneg hx.le, mul_assoc,
           ENNReal.ofReal_mul (NNReal.coe_nonneg _), ENNReal.ofReal_coe_nnreal]
     rw [withDensity_congr_ae hpdf, hyperexponentialMeasure_of_pos hr]
@@ -226,7 +226,7 @@ theorem hyperexponentialMeasure_eq_withDensity (p : StdSimplex ℝ≥0 ι) (r : 
     simp only [tsum_fintype, Measure.sum_fintype, Finset.sum_fn] at hsum
     rw [hsum]
     apply Finset.sum_congr rfl
-    intro i hi
+    intro i _
     rw [expMeasure_eq_withDensity]
     simpa only [Pi.smul_def, smul_eq_mul] using
       (withDensity_smul' (μ := (volume : Measure ℝ)) (p.weights i : ℝ≥0∞)
@@ -345,7 +345,7 @@ theorem hyperexponentialMeasure_congr {s : ι → ℝ}
   by_cases hr : ∀ i, 0 < p.weights i → 0 < r i
   · rw [hyperexponentialMeasure_of_pos hr, hyperexponentialMeasure_of_pos (hvalid.mp hr)]
     apply Finset.sum_congr rfl
-    intro i hi
+    intro i _
     by_cases hwi : p.weights i = 0
     · simp [hwi]
     · rw [h i (pos_iff_ne_zero.mpr hwi)]

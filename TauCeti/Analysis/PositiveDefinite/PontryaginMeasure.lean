@@ -57,11 +57,13 @@ theorem isPositiveDefiniteSub_pontryaginMeasureTransform
   exact integral_nonneg fun χ => (isPositiveDefiniteSub_iff_forall_sum_nonneg.mp
     (PontryaginDual.isPositiveDefiniteSub χ).2) n c v
 
+omit [OpensMeasurableSpace (PontryaginDual (Multiplicative G))] in
 /-- The absolute value of a measure transform is bounded by the measure's total mass. -/
 theorem norm_pontryaginMeasureTransform_le
     (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) (g : G) :
     ‖μ.pontryaginMeasureTransform g‖ ≤ μ.toMeasure.real Set.univ := by
-  simpa using
-    μ.isPositiveDefiniteSub_pontryaginMeasureTransform.norm_apply_le_map_zero_re g
+  rw [FiniteMeasure.pontryaginMeasureTransform_apply]
+  simpa using norm_integral_le_of_norm_le_const (μ := μ.toMeasure) (C := 1)
+    (ae_of_all _ fun χ => (Circle.norm_coe _).le)
 
 end MeasureTheory.FiniteMeasure

@@ -69,7 +69,7 @@ theorem singularTransfer_comp (hp : IsCoveringMap p) (hq : IsCoveringMap q)
     · intro hρ
       exact ⟨(TopCat.toSSet.map p).app _ ρ, by rwa [hmap] at hρ, rfl⟩
   have hdisj : Set.PairwiseDisjoint (sq : Set _) sp := by
-    intro τ hτ υ hυ hne
+    intro τ _ υ _ hne
     apply Finset.disjoint_left.mpr
     intro ρ hρτ hρυ
     have hpt : (TopCat.toSSet.map p).app _ ρ = τ := by

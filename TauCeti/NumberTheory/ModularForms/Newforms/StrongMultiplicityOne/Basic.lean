@@ -349,7 +349,7 @@ private theorem false_of_not_dvd {M : ℕ} [NeZero M] (f : Newform N k) (g : New
   have hq := Nat.prime_of_mem_primeFactors hqM'
   have hqM := Nat.dvd_of_mem_primeFactors hqM'
   -- the working level
-  set P := ∏ p ∈ S.filter (fun p ↦ p.Prime ∧ p.Coprime (N * M)), p with hP
+  set P := ∏ p ∈ S.filter (fun p ↦ p.Prime ∧ p.Coprime (N * M)), p
   have hP0 : P ≠ 0 := Finset.prod_ne_zero_iff.mpr fun p hp ↦
     (Finset.mem_filter.mp hp).2.1.ne_zero
   have hqP : ¬q ∣ P := fun hqP ↦ by

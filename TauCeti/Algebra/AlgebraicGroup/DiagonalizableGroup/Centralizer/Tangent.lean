@@ -249,9 +249,9 @@ private theorem forall_map_centralizerCoefficient_eq_zero_iff
     simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe,
       EmbeddingLike.map_eq_zero_iff]
   rw [hcoeff, ← (TensorProduct.lid R (MonoidAlgebra R X)).map_eq_zero_iff,
-    centralizerDefect_def, map_sub, map_sub, TensorProduct.map_algebraTensorProduct_map,
-    AlgHom.toLinearMap_id, LinearMap.comp_id, LinearMap.id_comp, lid_map_conjugationAlgHom,
-    TensorProduct.map_tmul]
+    centralizerDefect_def, map_sub, map_sub, Algebra.TensorProduct.map_apply_eq_map,
+    TensorProduct.map_map, AlgHom.toLinearMap_id, LinearMap.comp_id, LinearMap.id_comp,
+    lid_map_conjugationAlgHom, TensorProduct.map_tmul]
   simp only [LinearMap.comp_apply, Derivation.coeFn_coe, Derivation.map_one_eq_zero, map_zero,
     TensorProduct.zero_tmul, sub_zero, EmbeddingLike.map_eq_zero_iff]
 

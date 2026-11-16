@@ -33,8 +33,7 @@ the boundary of a triangle need not be the composite of the other two.
 ## Main results
 
 * `SSet.map_eq_of_isStrictSegal`: an `(n + 1)`-simplex whose face opposite to the last vertex is
-  constant at a vertex is fixed by any operator that fixes its last edge and collapses the other
-  edges of its spine to the vertex `n`.
+  constant at a vertex is fixed by any operator that fixes its last edge.
 * `SSet.IsStrictSegal.of_iso`: the strict Segal condition is invariant under isomorphism; in
   particular the standard simplices, being isomorphic to nerves of finite linear orders, are
   strict Segal (`SSet.stdSimplex.isStrictSegal`).
@@ -84,30 +83,40 @@ instance innerFibration_of_isStrictSegal {W : SSet.{u}} [Quasicategory W] (p : W
     rw [← Category.assoc, ← hσ, sq.w]⟩
 
 /-- In a strict Segal simplicial set, an `(n + 1)`-simplex whose face opposite to the last vertex
-is constant at `x` is fixed by any operator `r` that fixes the last edge and sends every other
-edge of the spine to the vertex `n`. -/
+is constant at `x` is fixed by any operator `r` that fixes the last edge. -/
 theorem map_eq_of_isStrictSegal {n : ℕ} (r : ⦋n + 1⦌ ⟶ ⦋n + 1⦌)
     (hlast : mkOfSucc (Fin.last n) ≫ r = mkOfSucc (Fin.last n))
-    (hcast : ∀ j : Fin n, mkOfSucc j.castSucc ≫ r =
-      SimplexCategory.const ⦋1⦌ ⦋n⦌ (Fin.last n) ≫ δ (Fin.last (n + 1)))
     {x : X _⦋0⦌} (σ : X _⦋n + 1⦌)
     (hσ : X.δ (Fin.last (n + 1)) σ = X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op x) :
     X.map r.op σ = σ := by
+  -- Every edge missing the last vertex lies in the face opposite to it, which is constant at `x`.
+  have hedge (f : ⦋1⦌ ⟶ ⦋n + 1⦌) (hf : ∀ a, f a ≠ Fin.last (n + 1)) :
+      X.map f.op σ = X.map (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0).op x := by
+    rw [← SimplexCategory.factor_δ_spec f (Fin.last (n + 1)) hf, op_comp, Functor.map_comp_apply]
+    -- `X.δ i σ` is by definition `X.map (δ i).op σ`, so the face of `σ` appears syntactically
+    change X.map _ (X.δ _ σ) = _
+    rw [hσ, ← Functor.map_comp_apply, ← op_comp,
+      Subsingleton.elim (SimplexCategory.factor_δ f (Fin.last (n + 1)) ≫ _)]
   refine (IsStrictSegal.segal (X := X) (n + 1)).injective (Path.ext' fun i ↦ ?_)
   rw [spine_arrow, spine_arrow, ← Functor.map_comp_apply, ← op_comp]
   cases i using Fin.lastCases with
   | last => rw [hlast]
   | cast j =>
-    -- Both edges lie in the face opposite to the last vertex, which is constant at `x`.
-    rw [hcast, ← mkOfSucc_δ_lt (Fin.castSucc_lt_last _), op_comp, op_comp, Functor.map_comp_apply,
-      Functor.map_comp_apply]
-    -- `X.δ i` is by definition `X.map (δ i).op`; `change` exposes the face to rewrite with `hσ`.
-    change X.map _ (X.δ _ σ) = X.map _ (X.δ _ σ)
-    -- Both sides are now pullbacks of the totally degenerate simplex at `x`.
-    have key (f : ⦋1⦌ ⟶ ⦋n⦌) : X.map f.op (X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op x) =
-        X.map (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0).op x := by
-      rw [← Functor.map_comp_apply, ← op_comp, Subsingleton.elim (f ≫ _)]
-    rw [hσ, key, key]
+    have hr : r.toOrderHom (Fin.last n).castSucc = (Fin.last n).castSucc :=
+      congrArg (fun φ : ⦋1⦌ ⟶ ⦋n + 1⦌ => φ.toOrderHom 0) hlast
+    have hlt (a : Fin (n + 2)) (ha : a ≤ (Fin.last n).castSucc) :
+        r.toOrderHom a ≠ Fin.last (n + 1) :=
+      ((r.toOrderHom.monotone ha).trans_eq hr).trans_lt (Fin.castSucc_lt_last _) |>.ne
+    have hle (a : Fin 2) : mkOfSucc j.castSucc a ≤ (Fin.last n).castSucc := by
+      fin_cases a
+      -- the two vertices of `mkOfSucc i` are `i.castSucc` and `i.succ`
+      -- (`SimplexCategory.mkOfSucc_homToOrderHom_zero`, `_one`, both `rfl`)
+      · change j.castSucc.castSucc ≤ _
+        rw [Fin.le_def]; simp
+      · change j.castSucc.succ ≤ _
+        rw [Fin.le_def]; simp
+    rw [hedge _ fun a => hlt _ (hle a),
+      hedge _ fun a => ((hle a).trans_lt (Fin.castSucc_lt_last _)).ne]
 
 /-- The strict Segal condition is invariant under isomorphism: an isomorphism `X ≅ Y` matches the
 spines of the simplices of `X` and of `Y`. -/

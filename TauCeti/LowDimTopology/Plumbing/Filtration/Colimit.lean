@@ -24,8 +24,8 @@ complex is canonically the filtered colimit of its weight truncations.
 
 This is the chain-level direct-limit presentation used to pass finite sublevel computations to
 the full lattice complex. The colimit is passed through homology in
-`TauCeti.LowDimTopology.Plumbing.Filtration.Homology`; identifying the result with `ℍ⁻` remains
-a subsequent step.
+`TauCeti.LowDimTopology.Plumbing.Filtration.Homology`; identifying the result with `ℍ⁻` is not
+done here.
 
 ## Main definitions
 
@@ -37,9 +37,7 @@ a subsequent step.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L, which asks for
-Némethi's lattice homology from lattice points and weight functions. The filtration by
-sublevel cubical complexes follows A. Némethi,
+The filtration by sublevel cubical complexes follows A. Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
 -/
 

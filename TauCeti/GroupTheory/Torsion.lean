@@ -57,6 +57,8 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
   `p`-primary component is all of `M`.
 * `TauCeti.primaryComponent_eq_bot_of_injective_nsmul`: injective multiplication by `p`
   makes the `p`-primary component trivial.
+* `TauCeti.AddCommGroup.pow_nsmul_eq_zero_of_mem_primaryComponent`: a `p`-primary element killed
+  by `p ^ N * m`, with `m` prime to `p`, is killed by `p ^ N`.
 * `IsAddPGroup.isAddTorsion`: a `p`-primary torsion group is torsion when `p ≠ 0`.
 * `TauCeti.exists_mem_primaryComponent_apply_eq`: for prime `p`, a `p`-primary image of an element
   of finite order is already the image of a `p`-primary element.
@@ -228,6 +230,17 @@ theorem primaryComponent_eq_bot_of_injective_nsmul
     rw [← smul_iterate]
     exact hp.iterate m
   exact hpPow (by simpa using hm)
+
+/-- A `p`-primary element killed by `p ^ N * m`, with `m` prime to `p`, is killed by `p ^ N`.
+Here `p` need not be prime. -/
+theorem AddCommGroup.pow_nsmul_eq_zero_of_mem_primaryComponent {N m : ℕ} (hm : p.Coprime m)
+    {x : M} (hA : (p ^ N * m) • x = 0) (hx : x ∈ AddCommGroup.primaryComponent M p) :
+    p ^ N • x = 0 := by
+  obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp hx
+  have hcop : (addOrderOf x).Coprime m :=
+    Nat.Coprime.coprime_dvd_left (addOrderOf_dvd_of_nsmul_eq_zero hk) (hm.pow_left k)
+  exact addOrderOf_dvd_iff_nsmul_eq_zero.mp
+    (hcop.dvd_of_dvd_mul_right (addOrderOf_dvd_of_nsmul_eq_zero hA))
 
 /-- A `p`-primary torsion group is torsion, for `p ≠ 0`: the power of `p` killing an element is a
 positive natural number. The hypothesis is used, since `0 ^ k • m = 0` holds for `k = 1` and

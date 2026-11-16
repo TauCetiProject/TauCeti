@@ -224,7 +224,6 @@ theorem measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add [IsFiniteMeasure mu]
   rw [← measureReal_eq_zero_iff (measure_ne_top _ _)]
   by_contra hne
   have hpos : 0 < mu.real (Icc a b) := lt_of_le_of_ne measureReal_nonneg (Ne.symm hne)
-  have hba : (0 : ℝ) < b - a := sub_pos.mpr hab
   have hle := hsmall (mu.real (Icc a b) / (2 * (b - a))) (div_pos hpos (by linarith))
   have heq : (b - a) * (mu.real (Icc a b) / (2 * (b - a))) = mu.real (Icc a b) / 2 := by
     field_simp

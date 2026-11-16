@@ -56,9 +56,9 @@ universe u
 
 variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N →+ V}
 
-/-- The torus of a finitely generated lattice `N` surjects onto the torus of the quotient lattice
-`N ⧸ N_σ` of any cone `σ`: that quotient is torsion free, hence free. -/
-theorem complexTorusMap_mk'_coneSublattice_surjective [Module.Finite ℤ N]
+/-- The torus of a lattice `N` surjects onto the torus of the quotient lattice `N ⧸ N_σ` of any
+cone `σ`. -/
+theorem complexTorusMap_mk'_coneSublattice_surjective
     (i : N →+ V) (σ : PointedCone ℝ V) :
     Function.Surjective (complexTorusMap (QuotientAddGroup.mk' (coneSublattice i σ))) :=
   complexTorusMap_surjective (QuotientAddGroup.mk'_surjective _)

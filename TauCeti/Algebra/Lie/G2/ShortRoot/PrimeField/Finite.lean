@@ -48,6 +48,6 @@ It is therefore bijective there, even though the coordinate endomorphism need no
 theorem comap_specialIsogenyCoordinateMap_involutive :
     Function.Involutive (PrimeSpectrum.comap specialIsogenyCoordinateMap.hom.toAlgHom.toRingHom) :=
   specialIsogenyCoordinateMap.hom.toAlgHom.toRingHom.leftInverse_comap_of_comp_eq_pow
-    (by decide) specialIsogenyCoordinateMap_apply_apply
+    specialIsogenyCoordinateMap_apply_apply
 
 end TauCeti.G2ShortRoot.PrimeField

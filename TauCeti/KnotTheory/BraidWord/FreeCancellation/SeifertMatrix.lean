@@ -455,7 +455,7 @@ private theorem isSeifertLoop_insertLoop {c : ℕ × ℕ} (hc : (u ++ v).IsSeife
     (u ++ (i, ε) :: (i, -ε) :: v).IsSeifertLoop (insertLoop u v i c) := by
   unfold insertLoop
   split_ifs with h
-  · obtain ⟨-, -, hl, hb⟩ := (isSeifertLoop_iff _).1 hc
+  · obtain ⟨-, -, _, hb⟩ := (isSeifertLoop_iff _).1 hc
     refine (isSeifertLoop_insert_left_iff u v i ε h.2.1).2 ⟨h.1, fun k hk hk' ↦ ?_⟩
     rw [← h.1]
     exact hb k (by omega) hk

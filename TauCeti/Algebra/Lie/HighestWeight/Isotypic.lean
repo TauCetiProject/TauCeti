@@ -33,7 +33,7 @@ reducibility theorem into a usable decomposition tool.
 Each statement is proved twice over. The general form takes the copy of `L(lam)` as a parameter: an
 irreducible module carrying a highest weight vector of weight `lam` is unique up to equivalence
 (`TauCeti.nonempty_lieModuleEquiv_iff_eq_of_isHighestWeightVector`), so an equivalence with an
-arbitrary such module says exactly "a copy of `L(lam)`". The form the roadmap pins fixes the
+arbitrary such module says exactly "a copy of `L(lam)`". The second form fixes the
 carrier to be `TauCeti.irreducibleQuotient b lam`, with nothing quantified over: that quotient is
 irreducible and carries a highest weight vector of weight `lam`
 (`TauCeti.isHighestWeightVector_irreducibleQuotientGenerator`).
@@ -57,7 +57,7 @@ weight vector of an arbitrary finite-dimensional module is that statement applie
 which is again a highest weight module by
 `TauCeti.lieSpan_singleton_eq_top_of_lieSpan_eq`. The rank-one precedent is
 `TauCeti.isIrreducible_lieSpan_singleton`, which says the same for a primitive vector of an `sl₂`
-triple spanning `L`; that one is proved by the elementary weight-string argument of Layer 0, since
+triple spanning `L`; that one is proved by the elementary `sl₂` weight-string argument, since
 Weyl's theorem is not yet available where it is used.
 
 For the single-weight criterion, every irreducible Lie submodule of a finite-dimensional module
@@ -65,7 +65,7 @@ carries a highest weight vector (`TauCeti.exists_isHighestWeightVector`), whose 
 hypothesis; two irreducible modules with highest weight vectors of the same weight are equivalent,
 so the module is isotypic of that type. Passing from isotypy to the isotypic component being
 everything is Mathlib's `isotypicComponent_eq_top_iff` read through the enveloping-algebra
-dictionary, `LieModule.isotypicComponent_eq_top_iff_of_ι_smul`.
+dictionary, `LieModule.isotypicComponent_eq_top_iff`.
 
 ## Main results
 
@@ -85,10 +85,6 @@ dictionary, `LieModule.isotypicComponent_eq_top_iff_of_ι_smul`.
   which reads the conclusion off the weight hypothesis alone.
 
 ## References
-
-This supplies the milestone "a highest weight vector generates a copy of `L(λ)`, and the
-single-weight criterion" of the decomposition toolkit in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §§6.3, 20.3.
 -/
@@ -287,9 +283,7 @@ theorem isotypicComponent_eq_top_of_isHighestWeightVector_of_forall_isHighestWei
     LieModule.isotypicComponent K L M N = ⊤ :=
   have _ : ComplementedLattice (LieSubmodule K L M) :=
     complementedLattice_lieSubmodule_of_isKilling K L M
-  (LieModule.isotypicComponent_eq_top_iff_of_ι_smul
-      (UniversalEnvelopingAlgebra.asModule_ι_smul K L M) N
-      (UniversalEnvelopingAlgebra.asModule_ι_smul K L N)).mpr
+  (LieModule.isotypicComponent_eq_top_iff N).mpr
     (isIsotypicOfType_of_forall_isHighestWeightVector hw h)
 
 /-- **The single-weight isotypic criterion at the fixed carrier `L(lam)`**, which is the criterion

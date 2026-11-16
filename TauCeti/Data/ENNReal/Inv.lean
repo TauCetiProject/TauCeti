@@ -25,7 +25,13 @@ is at most `2 b`.
 ## Main declarations
 
 * `ENNReal.toReal_one_sub_div`: `(1 - a / b).toReal = 1 - a.toReal / b.toReal` for `a ≤ b`.
+* `ENNReal.one_sub_one_div_toReal_nonneg`: for `1 ≤ p`, the Hölder exponent `1 - 1 / p.toReal`
+  is nonnegative.
+* `ENNReal.one_div_toReal_sub_one_div_toReal_nonneg`: for `0 < p ≤ q`, the exponent
+  `1 / p.toReal - 1 / q.toReal` is nonnegative.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
+* `ENNReal.inv_le_inv_mul_add_and_inv_mul_le_inv`: for `n ≤ (j + 1) p`, the exponent
+  `q = (j + 1) p` satisfies `1/p ≤ 1/q + j/n` and `1/q ≤ 1/p`.
 * `ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one`: for `r > 1` and `n > 0` with
   `n (2 - r) < 2 r`, a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`.
 * `ENNReal.exists_inv_lt_inv_add_inv_two_and_inv_add_inv_le_iff`: for `0 < q < 2`, an exponent
@@ -76,11 +82,49 @@ theorem toNNReal_one_sub_div_pos {a b : ℝ≥0∞} (hab : a < b) : 0 < (1 - a /
   toNNReal_pos (tsub_pos_of_lt (div_lt_of_lt_mul (by simpa using hab))).ne'
     (sub_ne_top one_ne_top)
 
+/-- For `1 ≤ p`, the Hölder exponent `1 - 1 / p` is nonnegative (with `p = ∞` giving `1`). -/
+theorem one_sub_one_div_toReal_nonneg {p : ℝ≥0∞} (hp : 1 ≤ p) : 0 ≤ 1 - 1 / p.toReal := by
+  rcases eq_or_ne p ∞ with rfl | hp_top
+  · simp
+  · have h1p : (1 : ℝ) ≤ p.toReal := by
+      simpa using ENNReal.toReal_mono hp_top hp
+    exact sub_nonneg.2 (div_le_one_of_le₀ h1p (by positivity))
+
+/-- For `0 < p ≤ q`, the difference `1 / p - 1 / q` of reciprocal exponents is nonnegative (with
+`1 / ∞` read as `0`). It is the exponent of the measure factor in the inclusion `L^q ⊆ Lᵖ` on a
+finite measure space. -/
+theorem one_div_toReal_sub_one_div_toReal_nonneg {p q : ℝ≥0∞} (hp : p ≠ 0) (hpq : p ≤ q) :
+    0 ≤ 1 / p.toReal - 1 / q.toReal := by
+  simpa only [one_div, toReal_inv, sub_nonneg] using
+    toReal_mono (inv_ne_top.2 hp) (ENNReal.inv_le_inv.2 hpq)
+
 /-- **Absorption**: a finite quantity bounded by `b` plus half of itself is at most `2 b`. -/
 theorem le_mul_two_of_le_add_div_two {a b : ℝ≥0∞} (ha : a ≠ ∞) (h : a ≤ b + a / 2) :
     a ≤ b * 2 := by
   rw [← ENNReal.div_le_iff two_ne_zero ofNat_ne_top, ← ENNReal.sub_half ha]
   exact tsub_le_iff_right.2 h
+
+/-- **The equal-step exponent ladder.** For `n ≤ (j + 1) p`, the exponent `q = (j + 1) p`
+satisfies `1/p ≤ 1/q + j/n` and `1/q ≤ 1/p`: the ladder from `1/p` down to `1/q` in `j` equal
+steps `1/q` has every step at most `1/n`. These are the exponent hypotheses of the Sobolev
+embedding `W^{j+1,p} → W^{1,q}`. -/
+theorem inv_le_inv_mul_add_and_inv_mul_le_inv {n j : ℕ} {p : ℝ≥0}
+    (hkp : (n : ℝ≥0) ≤ (j + 1 : ℕ) * p) :
+    (p : ℝ≥0∞)⁻¹ ≤ (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ + j * (n : ℝ≥0∞)⁻¹ ∧
+      (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ ≤ (p : ℝ≥0∞)⁻¹ := by
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simp
+  have hkp0 : ((j + 1 : ℕ) * p : ℝ≥0) ≠ 0 := mul_ne_zero (by positivity) hp0
+  have heq : (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ + j * (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ =
+      (p : ℝ≥0∞)⁻¹ := by
+    rw [← ENNReal.coe_inv hkp0, ← ENNReal.coe_inv hp0]
+    norm_cast
+    field_simp
+    push_cast
+    ring
+  refine ⟨heq.symm.le.trans ?_, le_self_add.trans_eq heq⟩
+  gcongr
+  exact_mod_cast hkp
 
 /-- **A finite exponent `t ≥ 2` complementing `r`.** For `n > 0` and `r > 1` with
 `n (2 - r) < 2 r`, there is a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`:
@@ -141,7 +185,6 @@ theorem ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul {n : ℕ} {d a : ℝ} 
     ENNReal.ofReal (d ^ n / n) / m * ENNReal.ofReal (n * a) =
       ENNReal.ofReal (a * d ^ n / m.toReal) := by
   have hmpos : 0 < m.toReal := toReal_pos hm₀ hm_top
-  have hn' : (0 : ℝ) < n := Nat.cast_pos.2 hn
   conv_lhs => rw [← ofReal_toReal hm_top]
   rw [← ENNReal.ofReal_div_of_pos hmpos, ← ENNReal.ofReal_mul (by positivity)]
   congr 1

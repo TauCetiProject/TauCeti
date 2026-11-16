@@ -124,13 +124,8 @@ theorem not_anisotropic_atFinitePlace_of_five_le_finrank {V : Type*} [AddCommGro
     ¬ (Q.atFinitePlace v).Anisotropic := by
   have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  -- A globally isotropic form is isotropic at every place.
-  by_cases hQ : Q.Anisotropic
-  swap
-  · exact ((isLocallyIsotropic_iff Q).mp (Q.isLocallyIsotropic_of_not_anisotropic hQ)).1 v
-  -- An anisotropic form is regular, so the local bound in rank five applies.
   let : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-  refine not_anisotropic_of_five_le_finrank _ (Nondegenerate.atFinitePlace hQ.nondegenerate v) ?_
+  refine not_anisotropic_of_five_le_finrank _ ?_
   rwa [Module.finrank_baseChange]
 
 end QuadraticForm

@@ -42,8 +42,6 @@ distinct tabloids, and that is how
 
 * [B. E. Sagan, *The Symmetric Group*][sagan2001], Section 2.5, where the standard tableaux are
   ordered by their tabloids.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 5, whose standard basis of the Specht module this serves.
 -/
 
 public section

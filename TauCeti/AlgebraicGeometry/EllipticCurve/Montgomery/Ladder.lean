@@ -18,7 +18,7 @@ for arbitrary representatives, with no characteristic restriction. Over a field 
 `diffAdd_nsmul_ne_zero_iff_of_cross_eq_zero` gives the exact exceptional set for nonzero
 representatives: the output is nonzero if and only if `P` is neither infinity nor the
 distinguished point of order two. In particular the exceptional set does not depend on `k`.
-Both results assume `B ≠ 0`; no ellipticity assumption is needed.
+The exceptional-set result assumes `B ≠ 0`; no ellipticity assumption is needed.
 
 For the distinguished point of order two, `coordinates_nsmul_twoTorsionPoint` records the
 alternation between infinity and `(0, 0)` on the curve. The differential-addition step is
@@ -37,9 +37,9 @@ namespace TauCeti.Montgomery
 
 variable {K : Type*} [Field K] [DecidableEq K] {A B : K}
 
-/-- For `B ≠ 0`, the odd Montgomery-ladder step on arbitrary representatives has vanishing
+/-- The odd Montgomery-ladder step on arbitrary representatives has vanishing
 cross difference with `[2k + 1]P`, including in characteristic two and at exceptional points. -/
-theorem diffAdd_cross_two_mul_add_one_nsmul_eq_zero_of_cross_eq_zero (hB : B ≠ 0)
+theorem diffAdd_cross_two_mul_add_one_nsmul_eq_zero_of_cross_eq_zero
     (P : (model A B).toAffine.Point) (k : ℕ) {SNext SCurrent SBase : Pair K}
     (hNextCross : SNext.cross (coordinates A B ((k + 1) • P)) = 0)
     (hCurrentCross : SCurrent.cross (coordinates A B (k • P)) = 0)
@@ -53,7 +53,7 @@ theorem diffAdd_cross_two_mul_add_one_nsmul_eq_zero_of_cross_eq_zero (hB : B ≠
   have hDiff : SBase.cross (coordinates A B ((k + 1) • P - k • P)) = 0 := by
     simpa only [hsub] using hBaseCross
   simpa only [hsum] using
-    diffAdd_cross_eq_zero_of_cross_eq_zero hB hNextCross hCurrentCross hDiff
+    diffAdd_cross_eq_zero_of_cross_eq_zero hNextCross hCurrentCross hDiff
 
 /-- Over a field with `2 ≠ 0` and for `B ≠ 0`, the odd Montgomery-ladder step on arbitrary
 nonzero representatives is nonzero precisely when the fixed difference `P` is neither infinity

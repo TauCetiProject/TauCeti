@@ -39,7 +39,8 @@ continues across `Re s = 1` away from `s = 1` by
 * `NumberField.Chebotarev.ne_zero_of_eqOn_LSeries_galoisCharacterWeight_of_sq_eq_one`: for
   `χ² = 1`, a continuation of the series of `χ` is nonzero on `Re s = 1` away from `s = 1`.
 * `NumberField.Chebotarev.ne_zero_of_eqOn_LSeries_galoisCharacterWeight_one`: a continuation of
-  the trivial-character series is nonzero on `Re s = 1` away from `s = 1`.
+  the trivial-character series is nonzero at every point of `Re s = 1` where it is differentiable
+  (there is none at the pole `s = 1`).
 * `NumberField.Chebotarev.exists_continuousOn_eq_neg_logDeriv_galoisCharacterWeight_one_sub`:
   the regularized logarithmic derivative of the trivial character extends continuously to
   `Re s ≥ 1`.
@@ -137,18 +138,36 @@ theorem ne_zero_of_eqOn_LSeries_galoisCharacterWeight_of_sq_eq_one (χ : (F ≃�
   exact ne_zero_of_eqOn_LSeries_galoisCharacterWeight χ hs hf hfL (hT _ hs₂ hs₂1).continuousAt
     (by rwa [hχ])
 
-/-- **The trivial-character series has no zeros on `Re s = 1` except at the pole.** Let `F / K`
-be a finite Galois extension. If `f` agrees on `Re s > 1` with the `L`-series of the trivial
-character of `Gal(F/K)`, which is the Dedekind zeta function of `K` with the Euler factors at the
-ramified primes deleted, and `f` is complex differentiable at a point `s ≠ 1` with `Re s = 1`, then
-`f s ≠ 0`. -/
+/-- **The trivial-character series has no zeros on `Re s = 1`.** Let `F / K` be a finite Galois
+extension. If `f` agrees on `Re s > 1` with the `L`-series of the trivial character of `Gal(F/K)`,
+which is the Dedekind zeta function of `K` with the Euler factors at the ramified primes deleted,
+and `f` is complex differentiable at a point `s` with `Re s = 1`, then `f s ≠ 0`. At the pole
+`s = 1` there is no such `f`, so the statement is only of interest for `s ≠ 1`. -/
 theorem ne_zero_of_eqOn_LSeries_galoisCharacterWeight_one {f : ℂ → ℂ} {s : ℂ} (hs : s.re = 1)
-    (hs1 : s ≠ 1) (hf : DifferentiableAt ℂ f s)
+    (hf : DifferentiableAt ℂ f s)
     (hfL : Set.EqOn f (LSeries (normCoeff K
       (1 : (F ≃ₐ[K] F) →* ℂˣ).galoisCharacterWeight.toIdealArithmeticFunction)) {z | 1 < z.re}) :
-    f s ≠ 0 :=
-  ne_zero_of_eqOn_LSeries_galoisCharacterWeight_of_sq_eq_one 1
-    (one_pow (M := (F ≃ₐ[K] F) →* ℂˣ) 2) hs hs1 hf hfL
+    f s ≠ 0 := by
+  by_cases hs1 : s ≠ 1
+  · exact ne_zero_of_eqOn_LSeries_galoisCharacterWeight_of_sq_eq_one 1
+      (one_pow (M := (F ≃ₐ[K] F) →* ℂˣ) 2) hs hs1 hf hfL
+  -- At the pole `s = 1` no such `f` exists: `(t - 1) * f t → 0` as `t → 1⁺`, but this product is
+  -- the normalized trivial-character series, which has a nonzero limit.
+  obtain rfl := not_not.mp hs1
+  refine absurd ?_ (dedekindZeta_residue_mul_prod_one_sub_absNorm_cpow_neg_one_ne_zero
+    (ramifiedPrimes K F))
+  have h0 : Tendsto (fun t : ℝ ↦ ((t : ℂ) - 1) * f t) (𝓝[>] 1) (𝓝 0) := by
+    have hc : ContinuousAt (fun z : ℂ ↦ (z - 1) * f z) 1 :=
+      (continuousAt_id.sub continuousAt_const).mul hf.continuousAt
+    have := hc.tendsto
+    rw [sub_self, zero_mul] at this
+    exact (this.comp ((Complex.continuous_ofReal.tendsto 1).mono_left nhdsWithin_le_nhds)).congr
+      fun _ ↦ rfl
+  have h1 := tendsto_sub_one_mul_LSeries_ofBadPrimes (ramifiedPrimes K F)
+  rw [← MonoidHom.galoisCharacterWeight_one] at h1
+  refine tendsto_nhds_unique h1 (h0.congr' ?_)
+  filter_upwards [self_mem_nhdsWithin] with t (ht : 1 < t)
+  rw [hfL (by simpa using ht)]
 
 variable (K F) in
 /-- **The regularized boundary function of the trivial character.** Let `F / K` be a finite

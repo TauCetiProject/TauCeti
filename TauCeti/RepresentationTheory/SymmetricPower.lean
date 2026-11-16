@@ -22,8 +22,6 @@ Intertwining maps and equivalences pass functorially to symmetric powers.
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 1, “Symmetric and exterior power representations”.
 * The representation and equivariance constructions are adapted from the formal template in
   `TauCeti.RepresentationTheory.ExteriorPower`.
 -/

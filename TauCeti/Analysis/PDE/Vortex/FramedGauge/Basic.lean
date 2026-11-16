@@ -36,6 +36,12 @@ field directions. The gauge's real and imaginary derivatives and the section-coo
 rules are expressed through `gaugeForm`, for use by the deformation operators in
 `FramedGauge.Linearization`.
 
+A gauge carries `x` to `y` exactly when its logarithmic derivative is the difference of their
+connection forms and it carries the section of `x` to that of `y`
+(`TauCeti.Vortex.gaugeTransform_eq_iff`). Since `du = i u Im (u⁻¹ du)`, a differentiable gauge is
+one order smoother than its logarithmic derivative
+(`TauCeti.Vortex.contDiff_coe_of_contDiff_gaugeForm`).
+
 ## References
 
 * A. Jaffe and C. H. Taubes, *Vortices and Monopoles*, Birkhäuser, 1980, Chapter III.
@@ -203,6 +209,12 @@ theorem gaugeForm_one (z : ℂ) : gaugeForm 1 z = 0 := by
   ext v
   simp
 
+/-- A constant gauge has vanishing logarithmic derivative. -/
+@[simp]
+theorem gaugeForm_const (c : Circle) (z : ℂ) : gaugeForm (fun _ ↦ c) z = 0 := by
+  ext v
+  simp
+
 /-- The logarithmic derivative of the inverse gauge is the negative of the logarithmic
 derivative. -/
 theorem gaugeForm_inv {u : ℂ → Circle} {z : ℂ}
@@ -276,6 +288,19 @@ theorem fderiv_coe_eq_mul_gaugeForm {u : ℂ → Circle} {z : ℂ} (v : ℂ) :
       -((fderiv ℝ (fun w ↦ (u w : ℂ)) z) v).re * hn - (u z : ℂ).re / 2 * h
   · linear_combination
       -((fderiv ℝ (fun w ↦ (u w : ℂ)) z) v).im * hn - (u z : ℂ).im / 2 * h
+
+/-- The differential of a circle-valued map, as a continuous linear map: `du = i u Im (u⁻¹ du)`. -/
+theorem fderiv_coe_eq_smulRight_gaugeForm (u : ℂ → Circle) (z : ℂ) :
+    fderiv ℝ (fun w ↦ (u w : ℂ)) z = (gaugeForm u z).smulRight ((u z : ℂ) * I) := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  rw [fderiv_coe_eq_mul_gaugeForm v, ContinuousLinearMap.smulRight_apply, Complex.real_smul]
+  ring
+
+/-- A circle-valued map has the same pointwise derivative norm as its logarithmic derivative. -/
+theorem norm_fderiv_coe_eq_norm_gaugeForm (u : ℂ → Circle) (z : ℂ) :
+    ‖fderiv ℝ (fun w ↦ (u w : ℂ)) z‖ = ‖gaugeForm u z‖ := by
+  rw [fderiv_coe_eq_smulRight_gaugeForm, ContinuousLinearMap.norm_smulRight_apply]
+  simp
 
 /-- The derivative of the real part of a circle-valued gauge is its imaginary coordinate
 multiplied by the negative logarithmic derivative, without choosing a phase. -/
@@ -351,49 +376,81 @@ theorem fderiv_gaugeLinearAction_apply_three {u : ℂ → Circle} {z : ℂ}
     fderiv_re_coe_eq_neg_im_mul_gaugeForm hu, fderiv_im_coe_eq_re_mul_gaugeForm hu]
   ring
 
+/-- **A gauge fixing a field is trivial.** A differentiable gauge `u` tending to one at infinity
+with `gaugeTransform u x = x` is the constant gauge `1`. The connection coordinates suffice: they
+force `Im (u⁻¹ du) = 0`, so `u` is constant, and the end condition makes it one. No nonvanishing,
+regularity or equation hypothesis on the field is required. -/
+theorem eq_one_of_gaugeTransform_eq_self {u : ℂ → Circle} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hud : Differentiable ℝ (fun z ↦ (u z : ℂ))) (hend : Tendsto u (cocompact ℂ) (𝓝 1))
+    (hu : gaugeTransform u x = x) : u = 1 := by
+  have hzero (z : ℂ) : fderiv ℝ (fun w ↦ (u w : ℂ)) z = 0 := by
+    have hg (i : Fin 4) := congrArg (fun v ↦ v z i) hu
+    have hg₁ : gaugeForm u z 1 = 0 := by
+      simpa only [gaugeTransform_apply, PiLp.toLp_apply, Matrix.cons_val_zero,
+        sub_eq_self] using hg 0
+    have hgI : gaugeForm u z I = 0 := by
+      simpa only [gaugeTransform_apply, PiLp.toLp_apply, Matrix.cons_val_one,
+        Matrix.cons_val_zero, sub_eq_self] using hg 1
+    have hlin : (gaugeForm u z).toLinearMap = 0 := by
+      apply Complex.basisOneI.ext
+      intro i
+      fin_cases i
+      · simpa using hg₁
+      · simpa using hgI
+    have hform : gaugeForm u z = 0 := by
+      ext v
+      exact LinearMap.congr_fun hlin v
+    ext v
+    simp [fderiv_coe_eq_mul_gaugeForm v, hform]
+  have hconst (z : ℂ) : u z = u 0 := by
+    apply Subtype.ext
+    exact is_const_of_fderiv_eq_zero hud hzero z 0
+  have hend' : Tendsto (fun _ : ℂ ↦ u 0) (cocompact ℂ) (𝓝 1) :=
+    hend.congr fun z ↦ hconst z
+  have hone : u 0 = 1 := tendsto_nhds_unique tendsto_const_nhds hend'
+  funext z
+  exact (hconst z).trans hone
+
 /-- The smooth framed gauge action is free. The connection coordinates suffice; no
 nonvanishing, regularity or equation hypothesis on the field is required. -/
 instance : IsCancelSMul framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) := by
   apply isCancelSMul_iff_eq_one_of_smul_eq.mpr
   intro u x hu
   have hup := (mem_framedGaugeGroup _).mp u.property
-  have hud : Differentiable ℝ (fun z ↦ (u.val z : ℂ)) :=
-    hup.1.differentiable (by simp)
-  have hzero (z : ℂ) : fderiv ℝ (fun w ↦ (u.val w : ℂ)) z = 0 := by
-    have hg (i : Fin 4) := congrArg (fun v ↦ v z i) hu
-    have hg₁ : gaugeForm u.val z 1 = 0 := by
-      simpa only [framedGaugeGroup_smul, gaugeTransform_apply, PiLp.toLp_apply,
-        Matrix.cons_val_zero, sub_eq_self] using hg 0
-    have hgI : gaugeForm u.val z I = 0 := by
-      simpa only [framedGaugeGroup_smul, gaugeTransform_apply, PiLp.toLp_apply,
-        Matrix.cons_val_one, Matrix.cons_val_zero, sub_eq_self] using hg 1
-    have hlin : (gaugeForm u.val z).toLinearMap = 0 := by
-      apply Complex.basisOneI.ext
-      intro i
-      fin_cases i
-      · simpa using hg₁
-      · simpa using hgI
-    have hform : gaugeForm u.val z = 0 := by
-      ext v
-      exact LinearMap.congr_fun hlin v
-    ext v
-    simp [fderiv_coe_eq_mul_gaugeForm v, hform]
-  have hconst (z : ℂ) : u.val z = u.val 0 := by
-    apply Subtype.ext
-    exact is_const_of_fderiv_eq_zero hud hzero z 0
-  have hend : Tendsto (fun _ : ℂ ↦ u.val 0) (cocompact ℂ) (𝓝 1) :=
-    hup.2.congr fun z ↦ hconst z
-  have hone : u.val 0 = 1 := tendsto_nhds_unique tendsto_const_nhds hend
-  apply Subtype.ext
-  funext z
-  exact (hconst z).trans hone
+  exact Subtype.ext (eq_one_of_gaugeTransform_eq_self (hup.1.differentiable (by simp)) hup.2 hu)
 
-/-- The logarithmic derivative of a smooth gauge is smooth as a one-form. -/
-theorem contDiff_gaugeForm {u : ℂ → Circle}
-    (hu : ContDiff ℝ ∞ (fun w ↦ (u w : ℂ))) : ContDiff ℝ ∞ (gaugeForm u) := by
-  exact contDiff_const.clm_comp
-    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.comp (conjCLE.contDiff.comp hu) |>.clm_comp
-      (hu.fderiv_right (by simp)))
+/-- The logarithmic derivative of a `C^(n+1)` gauge is a `C^n` one-form. -/
+theorem contDiff_gaugeForm {n : WithTop ℕ∞} {u : ℂ → Circle}
+    (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ))) : ContDiff ℝ n (gaugeForm u) :=
+  contDiff_const.clm_comp
+    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.comp (conjCLE.contDiff.comp (hu.of_le le_self_add))
+      |>.clm_comp (hu.fderiv_right le_rfl))
+
+/-- **A gauge is one order smoother than its logarithmic derivative.** If `u` is differentiable
+and `Im (u⁻¹ du)` is `C^n`, `n ≤ ∞`, then `u` is `C^(n+1)`, because `du = i u Im (u⁻¹ du)`. -/
+theorem contDiff_coe_of_contDiff_gaugeForm {u : ℂ → Circle}
+    (hu : Differentiable ℝ (fun z ↦ (u z : ℂ))) {n : ℕ∞} (hω : ContDiff ℝ n (gaugeForm u)) :
+    ContDiff ℝ (n + 1) (fun z ↦ (u z : ℂ)) := by
+  have hfd : fderiv ℝ (fun w ↦ (u w : ℂ)) = fun z ↦ (gaugeForm u z).smulRight ((u z : ℂ) * I) :=
+    funext (fderiv_coe_eq_smulRight_gaugeForm u)
+  have hfin (n : ℕ) (hω : ContDiff ℝ n (gaugeForm u)) :
+      ContDiff ℝ (n + 1) (fun z ↦ (u z : ℂ)) := by
+    induction n with
+    | zero =>
+      refine contDiff_succ_iff_fderiv.2 ⟨hu, fun h ↦ by simp at h, ?_⟩
+      rw [hfd]
+      exact hω.smulRight (contDiff_zero.2 (hu.continuous.mul continuous_const))
+    | succ n ih =>
+      have hu' : ContDiff ℝ (n + 1 : ℕ) (fun z ↦ (u z : ℂ)) := by
+        exact_mod_cast ih (hω.of_le (by norm_cast; omega))
+      refine contDiff_succ_iff_fderiv.2 ⟨hu, fun h ↦ by simp at h, ?_⟩
+      rw [hfd]
+      exact hω.smulRight (hu'.mul contDiff_const)
+  induction n using ENat.recTopCoe with
+  | top =>
+    refine contDiff_infty.2 fun m ↦ (hfin m (hω.of_le (by exact_mod_cast le_top))).of_le ?_
+    exact_mod_cast le_self_add
+  | coe n => exact_mod_cast hfin n hω
 
 /-- A `C²` gauge has a differentiable logarithmic derivative. -/
 theorem differentiableAt_gaugeForm {u : ℂ → Circle} {z : ℂ}
@@ -406,15 +463,16 @@ theorem differentiableAt_gaugeForm {u : ℂ → Circle} {z : ℂ}
         (hu.fderiv_right (by norm_num)))
   exact h.differentiableAt one_ne_zero
 
-/-- Smooth gauges preserve smooth fields. -/
-theorem contDiff_gaugeTransform {u : ℂ → Circle}
-    (hu : ContDiff ℝ ∞ (fun w ↦ (u w : ℂ)))
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) :
-    ContDiff ℝ ∞ (gaugeTransform u x) := by
+/-- A `C^(n+1)` gauge preserves `C^n` fields: the connection loses one derivative of the gauge
+through `u⁻¹ du`, the section none. -/
+theorem contDiff_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle}
+    (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ)))
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x) :
+    ContDiff ℝ n (gaugeTransform u x) := by
   have hg := contDiff_gaugeForm hu
-  have hr := reCLM.contDiff.comp hu
-  have hi := imCLM.contDiff.comp hu
-  have hc (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ x z i) :=
+  have hr := reCLM.contDiff.comp (hu.of_le le_self_add)
+  have hi := imCLM.contDiff.comp (hu.of_le le_self_add)
+  have hc (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) :=
     (contDiff_piLp _).mp hx i
   apply (contDiff_piLp _).mpr
   intro i
@@ -516,6 +574,47 @@ theorem sectionValue_gaugeTransform (u : ℂ → Circle)
     sectionValue (gaugeTransform u x) z = (u z : ℂ) * sectionValue x z := by
   apply Complex.ext <;> simp [sectionValue_apply, gaugeTransform] <;> ring
 
+/-- If the section of `x` at `z` is `c` times the gauge `u`, then the gauge transformation by
+`u⁻¹` has the section `c` there. -/
+theorem sectionValue_gaugeTransform_inv_eq {u : ℂ → Circle} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {z c : ℂ} (h : sectionValue x z = c * u z) :
+    sectionValue (gaugeTransform u⁻¹ x) z = c := by
+  rw [sectionValue_gaugeTransform, Pi.inv_apply, h, mul_left_comm, ← Circle.coe_mul,
+    inv_mul_cancel, Circle.coe_one, mul_one]
+
+/-- A gauge `u` with `α = |α| u` near `z`, where the section `α` of `x` is differentiable and
+nonzero, is differentiable at `z`: near `z` it is `α / |α|`. -/
+theorem differentiableAt_coe_of_sectionValue_eq_norm_mul {u : ℂ → Circle}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) (hα : sectionValue x z ≠ 0)
+    (hphase : ∀ᶠ w in 𝓝 z, sectionValue x w = ‖sectionValue x w‖ * u w) :
+    DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z := by
+  have hs := differentiableAt_sectionValue hp hq
+  have hn : DifferentiableAt ℝ (fun w ↦ ((‖sectionValue x w‖ : ℝ) : ℂ)) z :=
+    ofRealCLM.differentiableAt.comp z (hs.norm ℝ hα)
+  refine (hs.fun_mul (hn.inv (by simpa using hα))).congr_of_eventuallyEq ?_
+  filter_upwards [hphase, hs.continuousAt.eventually_ne hα] with w hw hw0
+  rw [Pi.inv_apply, ← div_eq_mul_inv, eq_div_iff (by simpa using hw0), mul_comm, ← hw]
+
+/-- **A gauge relates two fields exactly when it matches their connections and sections.** The
+logarithmic derivative `Im (u⁻¹ du)` is the connection difference
+`(b₁ - b₁') ds + (b₂ - b₂') dt`, and `u` carries the section `α` of `x` to that of `y`. -/
+theorem gaugeTransform_eq_iff {u : ℂ → Circle} {x y : ℂ → EuclideanSpace ℝ (Fin 4)} :
+    gaugeTransform u x = y ↔ ∀ z,
+      gaugeForm u z = (x z 0 - y z 0) • reCLM + (x z 1 - y z 1) • imCLM ∧
+        (u z : ℂ) * sectionValue x z = sectionValue y z := by
+  constructor
+  · rintro rfl z
+    refine ⟨ContinuousLinearMap.coe_injective (Complex.basisOneI.ext fun i ↦ ?_),
+      (sectionValue_gaugeTransform u x z).symm⟩
+    fin_cases i <;> simp [gaugeTransform_apply]
+  · intro h
+    funext z
+    obtain ⟨hω, hα⟩ := h z
+    refine apply_eq_of_sectionValue_eq ?_ ?_ (by rw [sectionValue_gaugeTransform, hα])
+    · simp [gaugeTransform_apply, hω]
+    · simp [gaugeTransform_apply, hω]
+
 /-- Covariant derivatives transform by multiplication by the circle-valued gauge. -/
 theorem covariantDerivative_gaugeTransform {u : ℂ → Circle} {z : ℂ}
     (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z)
@@ -537,6 +636,26 @@ theorem covariantDerivative_gaugeTransform {u : ℂ → Circle} {z : ℂ}
     Matrix.cons_val_zero, Matrix.cons_val_one, ofReal_add, ofReal_sub, ofReal_mul,
     fderiv_coe_eq_mul_gaugeForm, hg]
   ring
+
+/-- **Gauge covariance of the holomorphicity rows.** The complex defect `E₁ + i E₂` of the rows
+`∂bar_a α = 0` is multiplied by the gauge, like the section. Unlike
+`TauCeti.Vortex.equation_gaugeTransform`, this needs only a gauge differentiable at `z`. -/
+theorem equation_gaugeTransform_one_add_two_mul_I {u : ℂ → Circle} {z : ℂ}
+    (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    (equation (gaugeTransform u x) z 1 : ℂ) + (equation (gaugeTransform u x) z 2 : ℂ) * I =
+      (u z : ℂ) * ((equation x z 1 : ℂ) + (equation x z 2 : ℂ) * I) := by
+  have hr : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).re) z := reCLM.differentiableAt.comp z hu
+  have hi : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).im) z := imCLM.differentiableAt.comp z hu
+  have hp' : DifferentiableAt ℝ (fun w ↦ gaugeTransform u x w 2) z := by
+    simpa [gaugeTransform_apply] using (hr.fun_mul hp).fun_sub (hi.fun_mul hq)
+  have hq' : DifferentiableAt ℝ (fun w ↦ gaugeTransform u x w 3) z := by
+    simpa [gaugeTransform_apply] using (hi.fun_mul hp).fun_add (hr.fun_mul hq)
+  have h := covariantDerivative_one_add_I_mul_covariantDerivative_I hp' hq'
+  rw [covariantDerivative_gaugeTransform hu hp hq, covariantDerivative_gaugeTransform hu hp hq]
+    at h
+  linear_combination (-h + (u z : ℂ) * covariantDerivative_one_add_I_mul_covariantDerivative_I
+    hp hq) / 2
 
 /-- Curvature is unchanged by `C²` gauge transformations. -/
 @[simp]

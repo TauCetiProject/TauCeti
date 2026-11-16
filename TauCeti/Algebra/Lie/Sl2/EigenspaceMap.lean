@@ -213,7 +213,7 @@ theorem eigenspace_add_two_le_map_toEnd_e_sup_ker_toEnd_f (t : IsSl2Triple h e f
   -- The images `e • M_ν ≤ M_(ν + 2)` are independent, so only `ν = μ` contributes to `⁅e, x⁆`.
   rw [← hxz]
   refine Submodule.add_mem_sup ?_ hz
-  rw [← TauCeti.biSup_inf_eigenspace_eq_self (toEnd K L M h)
+  rw [← Module.End.biSup_inf_genEigenspace_eq_of_mem (toEnd K L M h)
     (fun ν ↦ ((toEnd K L M h).eigenspace ν).map (toEnd K L M e)) (· + 2)
     (fun ν _ ↦ map_toEnd_e_eigenspace_le t ν) (Set.mem_univ μ) fun ν _ hν ↦ by simpa using hν]
   refine ⟨?_, hex⟩

@@ -65,7 +65,7 @@ theorem contMDiffAt_flip_section
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) y (b y)) x) :
     ContMDiffAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) y (b y).flip) x := by
-  rw [contMDiffAt_section] at hb ⊢
+  rw [contMDiffAt_section_iff] at hb ⊢
   -- The unbundled bound avoids identifying the normed and seminormed structures on hom spaces.
   have hflip : IsBoundedLinearMap 𝕜 (fun c : F →L[𝕜] F →L[𝕜] G ↦ c.flip) :=
     { map_add := fun c d ↦ by ext v w; simp
@@ -225,28 +225,28 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {n : ℕ∞ω}
 
-/-- Precomposing both arguments of a `C^n` bilinear field on `W` with a `C^n` field of
-continuous linear maps `V x → W x` gives a `C^n` bilinear field on `V`. -/
-theorem ContMDiff.bilinearComp_bundle
+/-- Precomposing both arguments of a bilinear field on `W` that is `C^n` at `x` with a field of
+continuous linear maps `V x → W x` that is `C^n` at `x` gives a bilinear field on `V` that is
+`C^n` at `x`. -/
+theorem ContMDiffAt.bilinearComp_bundle {x : B}
     {β : ∀ x, W x →L[𝕜] W x →L[𝕜] G}
-    (hβ : ContMDiff IB (IB.prod 𝓘(𝕜, F' →L[𝕜] F' →L[𝕜] G)) n (fun x ↦
-      TotalSpace.mk' (F' →L[𝕜] F' →L[𝕜] G) (E := fun y ↦ W y →L[𝕜] W y →L[𝕜] G) x (β x)))
+    (hβ : ContMDiffAt IB (IB.prod 𝓘(𝕜, F' →L[𝕜] F' →L[𝕜] G)) n (fun x ↦
+      TotalSpace.mk' (F' →L[𝕜] F' →L[𝕜] G) (E := fun y ↦ W y →L[𝕜] W y →L[𝕜] G) x (β x)) x)
     {A : ∀ x, V x →L[𝕜] W x}
-    (hA : ContMDiff IB (IB.prod 𝓘(𝕜, F →L[𝕜] F')) n (fun x ↦
-      TotalSpace.mk' (F →L[𝕜] F') (E := fun y ↦ V y →L[𝕜] W y) x (A x))) :
-    ContMDiff IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n (fun x ↦
+    (hA : ContMDiffAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F')) n (fun x ↦
+      TotalSpace.mk' (F →L[𝕜] F') (E := fun y ↦ V y →L[𝕜] W y) x (A x)) x) :
+    ContMDiffAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n (fun x ↦
       TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G) x
-        ((β x).bilinearComp (A x) (A x))) := by
-  intro x
+        ((β x).bilinearComp (A x) (A x))) x := by
   rw [contMDiffAt_hom_bundle]
   refine ⟨contMDiffAt_id, ?_⟩
   let a (y : B) := ContinuousLinearMap.inCoordinates F V F' W x y x y (A y)
   let q (y : B) := ContinuousLinearMap.inCoordinates F' W (F' →L[𝕜] G)
     (fun z ↦ W z →L[𝕜] G) x y x y (β y)
   have ha : ContMDiffAt IB 𝓘(𝕜, F →L[𝕜] F') n a x :=
-    ((contMDiffAt_hom_bundle _).mp (hA x)).2
+    ((contMDiffAt_hom_bundle _).mp hA).2
   have hq : ContMDiffAt IB 𝓘(𝕜, F' →L[𝕜] F' →L[𝕜] G) n q x :=
-    ((contMDiffAt_hom_bundle _).mp (hβ x)).2
+    ((contMDiffAt_hom_bundle _).mp hβ).2
   have hc := (ha.clm_precomp (F₃ := G)).clm_comp (hq.clm_comp ha)
   apply hc.congr_of_eventuallyEq
   filter_upwards [(trivializationAt F V x).open_baseSet.mem_nhds
@@ -258,5 +258,19 @@ theorem ContMDiff.bilinearComp_bundle
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.precomp_apply]
   rw [inCoordinates_apply_eq₂ hyV hyV (by simp), inCoordinates_apply_eq₂ hyW hyW (by simp)]
   simp [ContinuousLinearMap.inCoordinates, hyV, hyW]
+
+/-- Precomposing both arguments of a `C^n` bilinear field on `W` with a `C^n` field of
+continuous linear maps `V x → W x` gives a `C^n` bilinear field on `V`. -/
+theorem ContMDiff.bilinearComp_bundle
+    {β : ∀ x, W x →L[𝕜] W x →L[𝕜] G}
+    (hβ : ContMDiff IB (IB.prod 𝓘(𝕜, F' →L[𝕜] F' →L[𝕜] G)) n (fun x ↦
+      TotalSpace.mk' (F' →L[𝕜] F' →L[𝕜] G) (E := fun y ↦ W y →L[𝕜] W y →L[𝕜] G) x (β x)))
+    {A : ∀ x, V x →L[𝕜] W x}
+    (hA : ContMDiff IB (IB.prod 𝓘(𝕜, F →L[𝕜] F')) n (fun x ↦
+      TotalSpace.mk' (F →L[𝕜] F') (E := fun y ↦ V y →L[𝕜] W y) x (A x))) :
+    ContMDiff IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n (fun x ↦
+      TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G) x
+        ((β x).bilinearComp (A x) (A x))) :=
+  fun x ↦ (hβ x).bilinearComp_bundle (hA x)
 
 end BilinearComp

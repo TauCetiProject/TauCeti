@@ -112,7 +112,7 @@ isometry group orders sum to the mass of the genus, so they represent every clas
 theorem classNumber_eq_classNumber_lattice : c.classNumber = c.lattice.classNumber := by
   have hsum := (Fin.sum_univ_fun_getElem c.reps _).trans
     (c.sum_inv_natCard_isometry_reps_eq_mass.trans c.mass_eq)
-  have h := (sum_inv_natCard_isometry_eq_mass_iff c.isPosDef.finite_genusClasses
+  have h := (sum_inv_natCard_isometry_eq_mass_iff
     (fun M hM ↦ (hM.isPosDef_iff.mp c.isPosDef).finite_isometry) c.sameGenus_repLattice
     c.pairwise_isEmpty_isometry_repLattice).mp hsum
   rwa [Nat.card_eq_fintype_card, Fintype.card_fin, ← c.classNumber_eq_length_reps] at h

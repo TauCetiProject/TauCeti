@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.VectorBundle.Constructions
-public import TauCeti.Topology.VectorBundle.ComplexSmulI
+public import TauCeti.Topology.VectorBundle.Complex.SmulI
 public import TauCeti.Topology.Algebra.Module.Complexification
 
 /-!
@@ -25,7 +25,7 @@ Hom-bundle continuity for `realPartCLM`, `imaginaryPartCLM`, `oneTmulCLM`, `ITmu
 General scalar restriction (`VectorBundle.restrictScalars`, `VectorBundle.ofLinear`) and
 multiplication by `Complex.I` on complex vector bundles (`VectorBundle.ofMapISmul`,
 `TauCeti.smulIHomeomorph`, `TauCeti.continuous_smulIEquiv_bundle`) live in
-`TauCeti.Topology.VectorBundle.RestrictScalars` and `TauCeti.Topology.VectorBundle.ComplexSmulI`.
+`TauCeti.Topology.VectorBundle.RestrictScalars` and `TauCeti.Topology.VectorBundle.Complex.SmulI`.
 
 ## References
 
@@ -225,7 +225,7 @@ theorem complexification_symm_apply {b : B} (hb : b ∈ e.baseSet) (z : Complexi
     (e.complexification.coordChangeL ℝ e'.complexification b :
       Complexification F →L[ℝ] Complexification F) =
       ((e.coordChangeL ℝ e' b : F →L[ℝ] F).complexify).restrictScalars ℝ := by
-  rw [← Trivialization.restrictScalars_coordChangeL ℝ ℂ e.complexification e'.complexification hb,
+  rw [← Trivialization.restrictScalars_coordChangeL ℝ ℂ e.complexification e'.complexification,
     coordChangeL_complexification e e' hb]
 
 end Bundle.Trivialization

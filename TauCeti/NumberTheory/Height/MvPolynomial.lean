@@ -26,7 +26,7 @@ These comparisons allow auxiliary polynomials to be handled in their natural var
 
 The normalization is relative to the admissible family of absolute values of the field.
 In particular, constant polynomials and the zero polynomial have multiplicative height one.
-For nonzero polynomials over number fields, `logHeight_eq_of_numberField` expresses the height
+For polynomials over number fields, `logHeight_eq_of_numberField` expresses the height
 as a sum of local logarithmic sup norms, with complex-place multiplicity two.
 
 There is no bound for the height of a sum of polynomials in terms of the heights of its terms,
@@ -270,13 +270,14 @@ theorem mulHeight_mul_of_disjoint_vars {P Q : MvPolynomial σ K} (h : Disjoint P
   classical
   rw [mulHeight_eq_finsupp, mulHeight_eq_finsupp, mulHeight_eq_finsupp]
   refine Finsupp.mulHeight_eq_mul_of_injOn (e := fun p ↦ p.1 + p.2)
-    ((injOn_add_of_disjoint_vars h).mono fun p hp ↦ ?_)
+    ((Finsupp.injOn_add_of_disjoint (Finset.disjoint_coe.2 h)).mono fun p hp ↦ ?_)
     (fun a ha b hb ↦ coeff_add_mul_of_disjoint_vars h
       (support_subset_vars_of_mem_support ha) (support_subset_vars_of_mem_support hb))
     (fun c hc ↦ Finset.mem_add.1 (support_mul P Q hc))
     (AddMonoidAlgebra.coeff_eq_zero.not.2 hP) (AddMonoidAlgebra.coeff_eq_zero.not.2 hQ)
   obtain ⟨ha, hb⟩ := Finset.mem_product.1 hp
-  exact ⟨support_subset_vars_of_mem_support ha, support_subset_vars_of_mem_support hb⟩
+  exact ⟨Finset.coe_subset.2 (support_subset_vars_of_mem_support ha),
+    Finset.coe_subset.2 (support_subset_vars_of_mem_support hb)⟩
 
 /-- **The logarithmic height of a product in disjoint variables.** If the nonzero polynomials
 `P` and `Q` involve disjoint sets of variables, then `h(P * Q) = h(P) + h(Q)`. -/
@@ -327,12 +328,14 @@ variable {K σ : Type*} [Field K] [NumberField K]
 /-- Over a number field, the relative logarithmic coefficient height is the sum of local
 logarithmic sup norms. Infinite places occur with their real or complex multiplicity; divide
 by `[K : ℚ]` for the absolute normalization. The variables may form an infinite type. -/
-theorem logHeight_eq_of_numberField {p : MvPolynomial σ K} (hp : p ≠ 0) :
+theorem logHeight_eq_of_numberField (p : MvPolynomial σ K) :
     p.logHeight =
       (∑ v : NumberField.InfinitePlace K,
         v.mult * Real.log (⨆ d, v (p.coeff d))) +
       ∑ᶠ v : NumberField.FinitePlace K, Real.log (⨆ d, v (p.coeff d)) := by
   classical
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp
   have hx : (fun d ↦ p.coeff d) ≠ 0 := by
     intro h
     apply hp
@@ -367,17 +370,40 @@ variable {K σ : Type*} [Field K] [AdmissibleAbsValues K] [Fintype σ]
   {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- **The height of a determinant of polynomials.** Let `A` be an `n × n` matrix of polynomials
-whose entries have partial degrees at most `d j`, and let `P ≠ 0`. Suppose that, at every
-archimedean absolute value `v`, each coefficient of each entry is bounded by `C` times `v` of
-some coefficient of `P`, and at every nonarchimedean `v` by `v` of some coefficient of `P`. Then
+whose entries have partial degrees at most `d j`, and let `P` be a polynomial. Suppose that,
+at every archimedean absolute value `v`, each coefficient of each entry is bounded by `C` times
+`v` of some coefficient of `P`, and at every nonarchimedean `v` by `v` of some coefficient of `P`.
+Then
 `H(det A) ≤ (n! (2 ^ (∑ j, d j) * C) ^ n) ^ totalWeight K * H(P) ^ n`. -/
-theorem mulHeight_det_le (A : Matrix n n (MvPolynomial σ K)) {P : MvPolynomial σ K} (hP : P ≠ 0)
+theorem mulHeight_det_le (A : Matrix n n (MvPolynomial σ K)) {P : MvPolynomial σ K}
     {d : σ → ℕ} (hd : ∀ i j k, (A i j).degreeOf k ≤ d k) {C : ℝ} (hC : 1 ≤ C)
     (harch : ∀ v ∈ archAbsVal (K := K), ∀ i j a, ∃ b, v ((A i j).coeff a) ≤ C * v (P.coeff b))
     (hnon : ∀ v ∈ nonarchAbsVal (K := K), ∀ i j a, ∃ b, v ((A i j).coeff a) ≤ v (P.coeff b)) :
     A.det.mulHeight ≤ ((Fintype.card n)! * (2 ^ (∑ k, d k) * C) ^ Fintype.card n) ^ totalWeight K *
       P.mulHeight ^ Fintype.card n := by
   classical
+  have hB (i j : n) : #(A i j).support ≤ 2 ^ ∑ k, d k :=
+    (card_support_le_two_pow _).trans
+      (Nat.pow_le_pow_right two_pos (Finset.sum_le_sum fun k _ ↦ hd i j k))
+  have hK : (1 : ℝ) ≤ (Fintype.card n)! * (2 ^ (∑ k, d k) * C) ^ Fintype.card n :=
+    one_le_mul_of_one_le_of_one_le (by exact_mod_cast (Fintype.card n).factorial_pos)
+      (one_le_pow₀ (one_le_mul_of_one_le_of_one_le (one_le_pow₀ one_le_two) hC))
+  rcases eq_or_ne P 0 with rfl | hP
+  · -- For `P = 0` every coefficient of `A` vanishes at every place, so the bound is trivial.
+    have hz (v : AbsoluteValue K ℝ) (i j : n) (a : σ →₀ ℕ)
+        (h : ∃ b, v ((A i j).coeff a) ≤ C * v ((0 : MvPolynomial σ K).coeff b)) :
+        v ((A i j).coeff a) ≤ 0 := by simpa using h
+    have hR0 : 0 ≤ 2 ^ (∑ k, d k) * C := by positivity
+    rw [MvPolynomial.mulHeight_zero, one_pow, mul_one, mulHeight_eq_support]
+    refine mulHeight_le_pow_totalWeight hK (fun v hv ↦ Real.iSup_le (fun t ↦ ?_)
+      (zero_le_one.trans hK)) fun v hv ↦ Real.iSup_le (fun t ↦ ?_) zero_le_one
+    · refine (abv_coeff_det_le A (B := 2 ^ ∑ k, d k) (C := 0) hB
+        (fun i j a ↦ hz v i j a (harch v hv i j a)) t).trans ?_
+      rw [nsmul_eq_mul, mul_zero]
+      exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ le_rfl hR0 _) (Nat.cast_nonneg _)
+    · refine (abv_coeff_det_le_of_isNonarchimedean A (isNonarchimedean v hv) (C := 0)
+        (fun i j a ↦ by simpa using hnon v hv i j a) t).trans
+        (pow_le_one₀ le_rfl zero_le_one)
   have hx : (fun b : P.support ↦ P.coeff b) ≠ 0 := by
     obtain ⟨b, hb⟩ := support_nonempty.mpr hP
     exact Function.ne_iff.mpr ⟨⟨b, hb⟩, mem_support_iff.mp hb⟩
@@ -388,12 +414,6 @@ theorem mulHeight_det_le (A : Matrix n n (MvPolynomial σ K)) {P : MvPolynomial 
     · exact Finite.le_ciSup_of_le ⟨b, hb⟩ le_rfl
     · rw [notMem_support_iff.mp hb, map_zero]
       exact Real.iSup_nonneg fun _ ↦ v.nonneg _
-  have hB (i j : n) : #(A i j).support ≤ 2 ^ ∑ k, d k :=
-    (card_support_le_two_pow _).trans
-      (Nat.pow_le_pow_right two_pos (Finset.sum_le_sum fun k _ ↦ hd i j k))
-  have hK : (1 : ℝ) ≤ (Fintype.card n)! * (2 ^ (∑ k, d k) * C) ^ Fintype.card n :=
-    one_le_mul_of_one_le_of_one_le (by exact_mod_cast (Fintype.card n).factorial_pos)
-      (one_le_pow₀ (one_le_mul_of_one_le_of_one_le (one_le_pow₀ one_le_two) hC))
   have hM0 (v : AbsoluteValue K ℝ) : 0 ≤ (⨆ c : P.support, v (P.coeff c)) ^ Fintype.card n :=
     pow_nonneg (Real.iSup_nonneg fun _ ↦ v.nonneg _) _
   rw [mulHeight_eq_support, mulHeight_eq_support]
@@ -412,7 +432,7 @@ theorem mulHeight_det_le (A : Matrix n n (MvPolynomial σ K)) {P : MvPolynomial 
 /-- **The logarithmic height of a determinant of polynomials.** Under the hypotheses of
 `Matrix.mulHeight_det_le`,
 `h(det A) ≤ n h(P) + totalWeight K * (log n! + n (∑ j, d j * log 2 + log C))`. -/
-theorem logHeight_det_le (A : Matrix n n (MvPolynomial σ K)) {P : MvPolynomial σ K} (hP : P ≠ 0)
+theorem logHeight_det_le (A : Matrix n n (MvPolynomial σ K)) {P : MvPolynomial σ K}
     {d : σ → ℕ} (hd : ∀ i j k, (A i j).degreeOf k ≤ d k) {C : ℝ} (hC : 1 ≤ C)
     (harch : ∀ v ∈ archAbsVal (K := K), ∀ i j a, ∃ b, v ((A i j).coeff a) ≤ C * v (P.coeff b))
     (hnon : ∀ v ∈ nonarchAbsVal (K := K), ∀ i j a, ∃ b, v ((A i j).coeff a) ≤ v (P.coeff b)) :
@@ -420,7 +440,7 @@ theorem logHeight_det_le (A : Matrix n n (MvPolynomial σ K)) {P : MvPolynomial 
       (Real.log (Fintype.card n)! + Fintype.card n * (∑ k, d k * Real.log 2 + Real.log C)) := by
   have hfact : (0 : ℝ) < (Fintype.card n)! := by exact_mod_cast (Fintype.card n).factorial_pos
   have hC0 : 0 < C := zero_lt_one.trans_le hC
-  have h := Real.log_le_log (MvPolynomial.mulHeight_pos _) (mulHeight_det_le A hP hd hC harch hnon)
+  have h := Real.log_le_log (MvPolynomial.mulHeight_pos _) (mulHeight_det_le A hd hC harch hnon)
   -- Expand the logarithm of the bound of `Matrix.mulHeight_det_le` into its terms.
   rw [Real.log_mul (by positivity) (pow_pos (MvPolynomial.mulHeight_pos P) _).ne', Real.log_pow,
     Real.log_pow, Real.log_mul hfact.ne' (by positivity), Real.log_pow,
@@ -438,15 +458,15 @@ open scoped Nat
 variable {K σ : Type*} [Field K] [AdmissibleAbsValues K] [Fintype σ]
   {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- **The height of a determinant of Hasse derivatives** (Pottmeyer, §3.4.6). If `P ≠ 0` has
+/-- **The height of a determinant of Hasse derivatives** (Pottmeyer, §3.4.6). If `P` has
 partial degrees at most `d j`, then any `n × n` determinant of Hasse derivatives `∂^(E k l) P`
 has height `h(det) ≤ n h(P) + totalWeight K * (log n! + 2 n ∑ j, d j * log 2)`. -/
-theorem logHeight_det_hasseDeriv_le {P : MvPolynomial σ K} (hP : P ≠ 0) {d : σ → ℕ}
+theorem logHeight_det_hasseDeriv_le {P : MvPolynomial σ K} {d : σ → ℕ}
     (hd : ∀ j, P.degreeOf j ≤ d j) (E : n → n → σ →₀ ℕ) :
     (Matrix.of fun k l ↦ hasseDeriv (E k l) P).det.logHeight ≤
       Fintype.card n * P.logHeight + totalWeight K *
         (Real.log (Fintype.card n)! + 2 * Fintype.card n * ∑ j, d j * Real.log 2) := by
-  have h := Matrix.logHeight_det_le (Matrix.of fun k l ↦ hasseDeriv (E k l) P) hP (d := d)
+  have h := Matrix.logHeight_det_le (Matrix.of fun k l ↦ hasseDeriv (E k l) P) (d := d)
     (fun k l ↦ degreeOf_hasseDeriv_le_of_le hd (E k l))
     (C := 2 ^ (∑ j, d j)) (one_le_pow₀ one_le_two)
     (fun v _ k l a ↦ ⟨a + E k l, abv_coeff_hasseDeriv_le_of_degreeOf_le v hd _ _⟩)

@@ -10,17 +10,16 @@ public import TauCeti.Probability.Exchangeability.MixedIID.Basic
 /-!
 # Basic implications from mixed i.i.d.-ness
 
-This file records the first implication out of the Layer 0 mixed-i.i.d. API:
+This file records the first implication out of the mixed-i.i.d. API:
 mixed i.i.d. processes are exchangeable.  The definition
 `MixedIIDWith μ X ν` already states that every injective finite coordinate selection
 has the same product-mixture law, so the exchangeability proof is just the specialization to
 the permuted and identity selections of `Fin n`.
 
-The resulting exchangeability theorem is one of the Layer 0 bridges listed in
-`TauCetiRoadmap/Exchangeability/Suggested.lean`; the contractability corollaries use the same
-injective-block identity, since strictly increasing finite selections are injective.
+The contractability corollaries use the same injective-block identity, since strictly increasing
+finite selections are injective.
 
-These declarations follow the `cameronfreer/exchangeability` Layer 0 implication lattice
+These declarations follow the `cameronfreer/exchangeability` implication lattice
 pinned at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, but use Tau Ceti's current
 `MixedIIDWith` API, where the finite-block mixture identity is already stated for
 arbitrary injective selections.
@@ -88,8 +87,8 @@ theorem MixedIIDWith.exchangeable {μ : Measure Ω} {X : ℕ → Ω → α}
   intro n
   exact h.exchangeableAt n
 
-/-- A mixed i.i.d. process is exchangeable. This is the Layer 0 bridge from the mixed-i.i.d.
-API to finite exchangeability (the roadmap's `exchangeable_of_mixedIID`). -/
+/-- A mixed i.i.d. process is exchangeable. This is the bridge from the mixed-i.i.d. API to finite
+exchangeability. -/
 theorem MixedIID.exchangeable {μ : Measure Ω} {X : ℕ → Ω → α}
     (h : MixedIID μ X) : Exchangeable μ X := by
   obtain ⟨ν, hν⟩ := h.exists_mixingRepresentative

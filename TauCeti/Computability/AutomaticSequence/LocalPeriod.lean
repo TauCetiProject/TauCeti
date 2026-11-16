@@ -56,7 +56,6 @@ private theorem apply_add_eq_of_radix_blocks (hv : v < ξ)
     (ht : 3 * (x * B) + B ≤ 3 * t) (htp : 3 * (t + p) ≤ 3 * (x * B) + 5 * B) :
     f (t + p) = f t := by
   obtain ⟨z, rfl⟩ : ∃ z, t = x * B + z := ⟨t - x * B, by omega⟩
-  have hz : (B : ℤ) ≤ 3 * z := by exact_mod_cast (by omega : B ≤ 3 * z)
   have hzp : 3 * (z : ℤ) ≤ 5 * B := by exact_mod_cast (by omega : 3 * z ≤ 5 * B)
   -- The bound `6 (v + 1) |A - B| ≤ B` controls the shift `v (A - B)` and `|A - B|` itself.
   have hD := abs_nonneg ((A : ℤ) - B)

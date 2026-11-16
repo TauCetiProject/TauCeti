@@ -62,7 +62,6 @@ theorem quantile_laplaceMeasure (hb : 0 < b) {u : ℝ} (hu : u ∈ Ioo 0 1) :
         div_nonpos_of_nonpos_of_nonneg (neg_nonpos.mpr (sub_nonneg.mpr (not_lt.mp hx))) hb.le
       exact iff_of_true (by linarith [exp_le_one_iff.mpr harg]) (hq.trans (not_lt.mp hx))
   · rw [ite_eq_right hhalf]
-    have hhalf' : 1 / 2 < u := lt_of_not_ge hhalf
     have h2u : 0 < 2 * (1 - u) := mul_pos (by norm_num) (sub_pos.mpr hu.2)
     have hlog : log (2 * (1 - u)) < 0 :=
       (log_neg_iff h2u).2 (by linarith)

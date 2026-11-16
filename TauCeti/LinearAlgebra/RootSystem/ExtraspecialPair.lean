@@ -53,22 +53,21 @@ stated that way.
   not.
 * `TauCeti.ncard_extraspecialPairs`: there are `|Φ⁺| - ℓ` extraspecial pairs.
 
+## Implementation notes
+
+Chevalley's construction builds the split reductive group scheme over `ℤ` from a Chevalley basis and
+the Kostant `ℤ`-form of the enveloping algebra; the group scheme itself is not formalised here.
+`TauCeti.IsChevalleySystem` of `TauCeti/Algebra/Lie/Weights/Chevalley/System.lean` is that Chevalley
+basis, carried as a hypothesis, and
+`TauCeti.IsSl2System.isChevalleyNormalized_iff_exists_isChevalleySystem` of
+`TauCeti/Algebra/Lie/Weights/Chevalley/Involution.lean` reduces producing one to normalising the
+structure constants to `±(p + 1)`. Carter's §4.2 performs that normalisation by recursion over the
+extraspecial pairs enumerated here.
+
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §4.2.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §25.2.
-
-## Roadmap
-
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md` asks for the split reductive group scheme
-over `ℤ` to be built "via a Chevalley basis and the Kostant `ℤ`-form of the enveloping algebra".
-`TauCeti.IsChevalleySystem` of `TauCeti/Algebra/Lie/Weights/Chevalley/System.lean` is that
-Chevalley basis, carried as a hypothesis, and
-`TauCeti.IsSl2System.isChevalleyNormalized_iff_exists_isChevalleySystem` of
-`TauCeti/Algebra/Lie/Weights/Chevalley/Involution.lean` reduces producing one to normalising the
-structure constants to `±(p + 1)`. Carter's §4.2 performs that normalisation by recursion over the
-extraspecial pairs enumerated here. Milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md` is the
-downstream consumer of the assembled pinned group scheme.
 -/
 
 public section

@@ -86,7 +86,7 @@ theorem gaussSum_dyadicU : (dyadicU k).gaussSum = (2 : ℂ) ^ k := by
 /-- **Nikulin's Gauss-sum invariant of `u^{(2)}(2^k)` is zero.** -/
 @[simp]
 theorem gaussSign_dyadicU : (dyadicU k).gaussSign = 0 :=
-  gaussSign_eq_zero_of_isMetabolic (isNondegenerate_dyadicU k) (isMetabolic_dyadicU k)
+  gaussSign_eq_zero_of_isMetabolic (isMetabolic_dyadicU k)
 
 /-! ## Reduction of the exponent by two -/
 

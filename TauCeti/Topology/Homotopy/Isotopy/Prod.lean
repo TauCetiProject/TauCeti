@@ -16,15 +16,10 @@ records that both notions are closed under taking products: an isotopy `f₀ ≈
 `g₀ ≈ g₁` combine, *along the shared time parameter*, into an isotopy `f₀ × g₀ ≈ f₁ × g₁` of the
 product maps, and likewise for ambient isotopies of a product space.
 
-This supplies product infrastructure for the geometric-topology roadmap's general isotopy
-substrate (`TauCetiRoadmap/GeometricTopology/README.md`, encoding conventions), where isotopy and
-ambient isotopy are defined once before being specialised to locally flat isotopy, diffeotopies,
-and knot equivalence. It is also the isotopy analogue of the product closure lemmas that the
-roadmap's later local-flatness product API is expected to mirror. For `TauCeti.Isotopy`, the
-construction follows Mathlib's product lemmas for embeddings (`Topology.IsEmbedding.prodMap`) and
-homotopy (`ContinuousMap.Homotopy.prodMap`). For ambient isotopies, the two factors share one time
-coordinate, so the homeomorphism statement uses the time-duplicating embedding
-`(t, x, x') ↦ ((t, x), (t, x'))`.
+For `TauCeti.Isotopy`, the construction follows Mathlib's product lemmas for embeddings
+(`Topology.IsEmbedding.prodMap`) and homotopy (`ContinuousMap.Homotopy.prodMap`). For ambient
+isotopies, the two factors share one time coordinate, so the homeomorphism statement uses the
+time-duplicating embedding `(t, x, x') ↦ ((t, x), (t, x'))`.
 
 ## Main definitions
 

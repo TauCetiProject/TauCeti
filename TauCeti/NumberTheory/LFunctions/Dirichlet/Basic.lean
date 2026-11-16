@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 public import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
-public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 
 /-!
 # Analytic cards of primitive Dirichlet characters

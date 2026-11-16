@@ -242,8 +242,10 @@ theorem _root_.StarConvex.fundamentalGroup_map_directionFrom_comp_snd_bijective
   have : Unique (FundamentalGroup U u) := uniqueOfSubsingleton 1
   -- the first factor of `π₁(U × (V \ {p})) ≃* π₁(U) × π₁(V \ {p})` is trivial
   have hsnd : Function.Bijective
-      (FundamentalGroup.map (ContinuousMap.snd : C(U × ↥(V \ {p}), _)) (u, z)) :=
-    (Equiv.uniqueProd _ _).bijective.comp (FundamentalGroup.prodMulEquiv u z).bijective
+      (FundamentalGroup.map (ContinuousMap.snd : C(U × ↥(V \ {p}), _)) (u, z)) := by
+    have h := (Equiv.uniqueProd _ _).bijective.comp (FundamentalGroup.prodMulEquiv u z).bijective
+    simp only [Function.comp_def, FundamentalGroup.prodMulEquiv_apply] at h
+    exact h
   have hcomp : ⇑(FundamentalGroup.map ((p.directionFrom V).comp ContinuousMap.snd) (u, z)) =
       FundamentalGroup.map (p.directionFrom V) z ∘ FundamentalGroup.map ContinuousMap.snd (u, z) :=
     funext fun γ => CategoryTheory.End.ext (FundamentalGroupoid.map_comp_map _ _ γ.asHom)

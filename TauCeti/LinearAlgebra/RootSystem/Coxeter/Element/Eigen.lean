@@ -80,11 +80,10 @@ theorem eigenvalues_of_hasCartanType_E6 {b : P.Base} (h : HasCartanType P b .E6)
       ∃ e ∈ e6Exponents, Complex.exp (2 * Real.pi * Complex.I * (e / 12)) = ζ) ∧
       (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
   have hc := charpoly_of_hasCartanType_E6_of_actsBy h hnd hall hW
-  refine ⟨fun ζ => ?_, nodup_roots_charpoly_of_charpoly_eq_cyclotomic_mul (by norm_num)
-    (by norm_num) (by norm_num) hc⟩
+  refine ⟨fun ζ => ?_, nodup_roots_charpoly_of_charpoly_eq_cyclotomic_mul (by norm_num) hc⟩
   have h4 : (4 : ℂ) / 12 = 1 / 3 := by norm_num
   have h8 : (8 : ℂ) / 12 = 2 / 3 := by norm_num
-  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic_mul (by norm_num) (by norm_num) hc,
+  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic_mul hc,
     show (List.range 12).filter (Nat.Coprime · 12) = [1, 5, 7, 11] by decide,
     show (List.range 3).filter (Nat.Coprime · 3) = [1, 2] by decide]
   simp only [e6Exponents, List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp,
@@ -100,10 +99,9 @@ theorem eigenvalues_of_hasCartanType_E7 {b : P.Base} (h : HasCartanType P b .E7)
       ∃ e ∈ e7Exponents, Complex.exp (2 * Real.pi * Complex.I * (e / 18)) = ζ) ∧
       (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
   have hc := charpoly_of_hasCartanType_E7_of_actsBy h hnd hall hW
-  refine ⟨fun ζ => ?_, nodup_roots_charpoly_of_charpoly_eq_cyclotomic_mul (by norm_num)
-    (by norm_num) (by norm_num) hc⟩
+  refine ⟨fun ζ => ?_, nodup_roots_charpoly_of_charpoly_eq_cyclotomic_mul (by norm_num) hc⟩
   have h9 : (9 : ℂ) / 18 = 1 / 2 := by norm_num
-  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic_mul (by norm_num) (by norm_num) hc,
+  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic_mul hc,
     show (List.range 18).filter (Nat.Coprime · 18) = [1, 5, 7, 11, 13, 17] by decide,
     show (List.range 2).filter (Nat.Coprime · 2) = [1] by decide]
   simp only [e7Exponents, List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp,
@@ -119,8 +117,8 @@ theorem eigenvalues_of_hasCartanType_E8 {b : P.Base} (h : HasCartanType P b .E8)
       ∃ e ∈ e8Exponents, Complex.exp (2 * Real.pi * Complex.I * (e / 30)) = ζ) ∧
       (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
   have hc := charpoly_of_hasCartanType_E8_of_actsBy h hnd hall hW
-  refine ⟨fun ζ => ?_, nodup_roots_charpoly_of_charpoly_eq_cyclotomic (by norm_num) hc⟩
-  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic (by norm_num) hc, ← e8Exponents_eq_filter]
+  refine ⟨fun ζ => ?_, nodup_roots_charpoly_of_charpoly_eq_cyclotomic hc⟩
+  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic hc, ← e8Exponents_eq_filter]
   norm_num
 
 /-- **Eigenvalues of the matrix of every Coxeter element of type `F₄` on the simple roots**:
@@ -132,8 +130,8 @@ theorem eigenvalues_of_hasCartanType_F4 {b : P.Base} (h : HasCartanType P b .F4)
       ∃ e ∈ f4Exponents, Complex.exp (2 * Real.pi * Complex.I * (e / 12)) = ζ) ∧
       (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
   have hc := charpoly_of_hasCartanType_F4_of_actsBy h hnd hall hW
-  refine ⟨fun ζ => ?_, nodup_roots_charpoly_of_charpoly_eq_cyclotomic (by norm_num) hc⟩
-  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic (by norm_num) hc, ← f4Exponents_eq_filter]
+  refine ⟨fun ζ => ?_, nodup_roots_charpoly_of_charpoly_eq_cyclotomic hc⟩
+  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic hc, ← f4Exponents_eq_filter]
   norm_num
 
 /-- **Eigenvalues of the matrix of every Coxeter element of type `G₂` on the simple roots**:
@@ -145,8 +143,8 @@ theorem eigenvalues_of_hasCartanType_G2 {b : P.Base} (h : HasCartanType P b .G2)
       ∃ e ∈ g2Exponents, Complex.exp (2 * Real.pi * Complex.I * (e / 6)) = ζ) ∧
       (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
   have hc := charpoly_of_hasCartanType_G2_of_actsBy h hnd hall hW
-  refine ⟨fun ζ => ?_, nodup_roots_charpoly_of_charpoly_eq_cyclotomic (by norm_num) hc⟩
-  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic (by norm_num) hc, ← g2Exponents_eq_filter]
+  refine ⟨fun ζ => ?_, nodup_roots_charpoly_of_charpoly_eq_cyclotomic hc⟩
+  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic hc, ← g2Exponents_eq_filter]
   norm_num
 
 end TauCeti.Coxeter

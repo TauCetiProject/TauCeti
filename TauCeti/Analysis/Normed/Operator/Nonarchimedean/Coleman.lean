@@ -75,7 +75,7 @@ namespace ContinuousLinearMap
 
 open scoped TauCeti.RingOpNorm
 
-variable [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
+variable [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
   [TauCeti.NormedRing.IsTate R] {u : C₀(I, R) →L[R] C₀(I, R)}
 
 open scoped PowerSeries.WithPiTopology in
@@ -136,7 +136,7 @@ theorem IsRowCompact.charPowerSeries_matrixCoeff_evalAt (hu : u.IsRowCompact) {B
     hu.isEntire_charPowerSeries hB0' (by simp) k)
   rw [Matrix.coeff_charPowerSeries]
   refine (tendsto_charCoeff_matrixCoeff_of_tendsto (.of_forall fun m ↦ hu.aeval (hw0 m))
-    (hu.evalAt hB hB0) hw k).congr fun m ↦ ?_
+    (hu.evalAt hB0) hw k).congr fun m ↦ ?_
   rw [← Matrix.coeff_charPowerSeries, hu.charPowerSeries_matrixCoeff_aeval (hw0 m)]
 
 end ContinuousLinearMap

@@ -53,9 +53,6 @@ The finite-measure representation is the Hausdorff--Bernstein--Widder theorem, a
 S. Bernstein (1928) and D. V. Widder, *The Laplace Transform*, Chapter IV; see also
 R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions* (de Gruyter, 2nd ed. 2012),
 Theorem 1.4. This file provides the Laplace-transform API used by the representation theorem.
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem
-  milestone).
 -/
 
 public section
@@ -397,7 +394,7 @@ private lemma hasDerivWithinAt_laplaceMomentTransform_Ici (μ : Measure ℝ≥0)
     (n : ℕ) {t : ℝ} (ht : 0 ≤ t) :
     HasDerivWithinAt (laplaceMomentTransform μ n) (laplaceMomentTransform μ (n + 1) t)
       (Ici 0) t := by
-  have : IsFiniteMeasure μ := isFiniteMeasure_of_integrable_of_one_le (hmom 0) (by simp)
+  have : IsFiniteMeasure μ := (hmom 0).isFiniteMeasure_of_one_le_norm (by simp)
   by_cases ht_pos : 0 < t
   · exact (hasDerivAt_laplaceMomentTransform μ
       (fun u hu => integrable_exp_neg_mul μ hu.le) n ht_pos).hasDerivWithinAt
@@ -440,7 +437,7 @@ lemma contDiffOn_Ici_laplaceTransform_of_moments
     (μ : Measure ℝ≥0)
     (hmom : ∀ n : ℕ, Integrable (fun x : ℝ≥0 => (x : ℝ) ^ n) μ) :
     ContDiffOn ℝ (⊤ : ℕ∞) (laplaceTransform μ) (Ici 0) := by
-  have : IsFiniteMeasure μ := isFiniteMeasure_of_integrable_of_one_le (hmom 0) (by simp)
+  have : IsFiniteMeasure μ := (hmom 0).isFiniteMeasure_of_one_le_norm (by simp)
   refine contDiffOn_of_differentiableOn_deriv (𝕜 := ℝ) (n := (⊤ : ℕ∞))
     (s := Ici (0 : ℝ)) (f := laplaceTransform μ) ?_
   intro m _hm
@@ -482,8 +479,8 @@ theorem isCompletelyMonotoneOnIoi_laplaceTransform
   rw [iteratedDeriv_laplaceTransform_eq_laplaceMomentTransform μ hint n ht]
   exact neg_one_pow_mul_laplaceMomentTransform_nonneg μ n t
 
-/-- The Laplace transform of a finite measure is completely monotone in the closed-half-line
-roadmap sense. -/
+/-- The Laplace transform of a finite measure is completely monotone on the closed half-line, in the
+sense of `IsContinuousCompletelyMonotoneOnIoi`. -/
 theorem isContinuousCompletelyMonotoneOnIoi_laplaceTransform
     (μ : Measure ℝ≥0) [IsFiniteMeasure μ] :
     IsContinuousCompletelyMonotoneOnIoi (laplaceTransform μ) :=
@@ -497,7 +494,7 @@ theorem isCompletelyMonotone_laplaceTransform_of_moments
     (μ : Measure ℝ≥0)
     (hmom : ∀ n : ℕ, Integrable (fun x : ℝ≥0 => (x : ℝ) ^ n) μ) :
     IsCompletelyMonotone (laplaceTransform μ) := by
-  have : IsFiniteMeasure μ := isFiniteMeasure_of_integrable_of_one_le (hmom 0) (by simp)
+  have : IsFiniteMeasure μ := (hmom 0).isFiniteMeasure_of_one_le_norm (by simp)
   refine ⟨contDiffOn_Ici_laplaceTransform_of_moments μ hmom, fun n t ht => ?_⟩
   rw [iteratedDerivWithin_laplaceTransform_eq_laplaceMomentTransform_Ici μ hmom n ht]
   exact neg_one_pow_mul_laplaceMomentTransform_nonneg μ n t

@@ -19,6 +19,7 @@ import TauCeti.Analysis.Contour.Curve.Integrability
 import TauCeti.Analysis.Contour.HomologyCauchy
 import TauCeti.Analysis.Contour.Winding.StarConvex
 import TauCeti.Analysis.Contour.Winding.UnboundedComponent
+import TauCeti.Order.Interval.Set.UnorderedInterval
 
 /-!
 # Primitives from vanishing contour integrals, and logarithms on sets without holes
@@ -84,9 +85,26 @@ theorem intervalIntegral_deriv_smul_eq_of_forall_closed_integral_eq_zero (hf : C
     (h : ∀ (γ : ℝ → ℂ) (a b : ℝ), IsPiecewiseC1On γ a b → MapsTo γ (uIcc a b) U → γ a = γ b →
       ∫ t in a..b, deriv γ t • f (γ t) = 0)
     {γ δ : ℝ → ℂ} {a b c d : ℝ} (hγ : IsPiecewiseC1On γ a b) (hδ : IsPiecewiseC1On δ c d)
-    (hab : a ≤ b) (hcd : c ≤ d) (hγU : MapsTo γ (uIcc a b) U) (hδU : MapsTo δ (uIcc c d) U)
+    (hγU : MapsTo γ (uIcc a b) U) (hδU : MapsTo δ (uIcc c d) U)
     (hstart : γ a = δ c) (hend : γ b = δ d) :
     ∫ t in a..b, deriv γ t • f (γ t) = ∫ t in c..d, deriv δ t • f (δ t) := by
+  -- A reversed parameter interval is reduced to the oriented case by reflecting the curve.
+  wlog hab : a ≤ b generalizing γ a b with H
+  · have hba : b ≤ a := (not_le.mp hab).le
+    have := H (γ := fun t => γ (a + b - t)) (a := b) (b := a)
+      (by simpa using hγ.comp_const_sub (a + b))
+      hγU.comp_const_sub_uIcc
+      (by simpa using hstart) (by simpa using hend) hba
+    rwa [intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_right,
+      add_sub_cancel_left] at this
+  wlog hcd : c ≤ d generalizing δ c d with H
+  · have hdc : d ≤ c := (not_le.mp hcd).le
+    have := H (δ := fun t => δ (c + d - t)) (c := d) (d := c)
+      (by simpa using hδ.comp_const_sub (c + d))
+      hδU.comp_const_sub_uIcc
+      (by simpa using hstart) (by simpa using hend) hdc
+    rwa [intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_right,
+      add_sub_cancel_left] at this
   -- The closed curve: `γ` on `[a, b]`, then `δ` backwards on `[b, b + d - c]`.
   have hbe : b ≤ b + d - c := by linarith
   have hρ : IsPiecewiseC1On (fun t => δ (b + d - t)) b (b + d - c) := by
@@ -220,7 +238,7 @@ theorem isExactOn_of_forall_closed_integral_eq_zero [CompleteSpace E] (hU : IsOp
         (((convex_ball z r).segment_subset (Metric.mem_ball_self hr) hw).trans hball)
     rw [← hηint]
     exact intervalIntegral_deriv_smul_eq_of_forall_closed_integral_eq_zero hf h hwpc hηpc
-      zero_le_one zero_le_two hwU hηU (by rw [hw0, hη0, hz0, hbase_eq hzw]) (by rw [hw1, hη2])
+      hwU hηU (by rw [hw0, hη0, hz0, hbase_eq hzw]) (by rw [hw1, hη2])
   -- The integral along the segment from `z` has derivative `f z` at `z`.
   have hbz : Metric.ball z r ∈ 𝓝 z := Metric.ball_mem_nhds z hr
   have hω : ∀ᶠ x in 𝓝 z, ContinuousAt (fun x => ContinuousLinearMap.toSpanSingleton ℂ (f x)) x :=

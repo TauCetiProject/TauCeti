@@ -8,6 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 
+import Mathlib.Analysis.Calculus.Deriv.Pow
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
+
 /-!
 # The chain rule for the Riemannian Hessian
 

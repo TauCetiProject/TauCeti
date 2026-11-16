@@ -9,8 +9,11 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Smooth
 public import TauCeti.Analysis.InnerProductSpace.Spectral.Projection
+public import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
 import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 import TauCeti.LinearAlgebra.QuadraticForm.Signature
+import TauCeti.Analysis.Normed.Operator.Bilinear
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Negative spectral projections of a form relative to a metric
@@ -54,11 +57,20 @@ vector bundle with a fibre metric, such as the normal Hessian of a Morse–Bott 
 * `ContinuousLinearMap.apply_sub_negativeSpectralProjection_apply_self_nonneg`: even for
   degenerate `q`, it is positive semidefinite on the kernel.
 * `ContinuousLinearMap.eq_negativeSpectralProjection_iff`: these properties characterize it.
+* `ContinuousLinearMap.range_negativeSpectralProjection` and
+  `ContinuousLinearMap.ker_negativeSpectralProjection`: its range and kernel are the negative and
+  positive relative spectral subspaces of `q` with respect to `h`
+  (`LinearMap.BilinForm.relativeSpectralSubspace`); the range needs no nondegeneracy.
+* `ContinuousLinearMap.negativeSpectralProjection_eq_projection`: for nondegenerate `q`, it is the
+  projection onto the negative relative spectral subspace along the positive one.
 * `ContinuousLinearMap.finrank_range_negativeSpectralProjection` and
   `ContinuousLinearMap.finrank_ker_negativeSpectralProjection`: the rank is the negative index of
   inertia of `q` and the nullity is the positive one.
 * `ContinuousLinearMap.contDiffOn_negativeSpectralProjection` and
   `ContDiffOn.negativeSpectralProjection`: the projection depends smoothly on `(q, h)`.
+* `TauCeti.exists_contDiffOn_range_eq_relativeSpectralSubspace`: on a finite-dimensional normed
+  space without a chosen inner product, there is still a real-analytic family of projections onto
+  the negative relative spectral subspaces along the positive ones.
 
 ## References
 
@@ -348,6 +360,81 @@ theorem finrank_ker_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
     · simp [hx0]
     · simpa using (hneg x hx hx0).le
 
+/-- **The range of the negative spectral projection is the negative relative spectral subspace**:
+the span of the vectors `v` with `q v = μ h v` for some `μ < 0`. -/
+theorem range_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
+    (hq : ∀ u v, q u v = q v u) :
+    (q.negativeSpectralProjection h).range =
+      h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0) := by
+  obtain ⟨hhs, hhpos⟩ := isStrictlyPositive_continuousLinearMapOfBilin_iff.mp hh
+  set W := Module.End.pointSpectralSubspace
+    (q.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯.toLinearMap (Iio 0)
+  refine (Submodule.eq_of_le_of_finrank_eq
+    (LinearMap.BilinForm.relativeSpectralSubspace_le_iff.mpr fun μ hμ v hv ↦
+      LinearMap.mem_range.mpr ⟨v, ?_⟩) ?_).symm
+  · -- For a relative eigenvector `v`, the vector `CFC.sqrt h♯ v` is an eigenvector of the
+    -- operator representing the pulled-back form, with the same eigenvalue.
+    have hx : CFC.sqrt h♯ v ∈ W := by
+      refine Module.End.eigenspace_le_pointSpectralSubspace hμ
+        (Module.End.mem_eigenspace_iff.mpr (ext_inner_right ℝ fun y ↦ ?_))
+      rw [coe_coe, inner_continuousLinearMapOfBilin_bilinearComp_apply,
+        metricChangeTransport_apply_sqrt_apply hh, RCLike.ofReal_real_eq_id, id_eq,
+        real_inner_smul_left, ← apply_metricChangeTransport_metricChangeTransport hh,
+        metricChangeTransport_apply_sqrt_apply hh]
+      simpa using (LinearMap.BilinForm.mem_relativeEigenspace_iff.mp hv) _
+    simp only [negativeSpectralProjection, coe_coe, mul_apply_eq_comp]
+    rw [Submodule.starProjection_eq_self_iff.mpr hx, metricChangeTransport_apply_sqrt_apply hh]
+  · rw [finrank_range_negativeSpectralProjection hh hq,
+      LinearMap.BilinForm.finrank_relativeSpectralSubspace_Iio (isSymm_toBilinForm_iff.mpr hhs)
+        (fun v hv ↦ hhpos v hv) (isSymm_toBilinForm_iff.mpr hq)]
+
+/-- **The negative spectral projection of a nondegenerate form is the projection onto its negative
+relative spectral subspace along the positive one.** These subspaces are complementary by
+`LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi`. -/
+theorem negativeSpectralProjection_eq_projection (hh : IsStrictlyPositive h♯)
+    (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q)
+    (hc : IsCompl (h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0))
+      (h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0))) :
+    q.negativeSpectralProjection h =
+      LinearMap.toContinuousLinearMap
+        ((h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0)).projection
+          (h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0)) hc) := by
+  obtain ⟨hhs, hhpos⟩ := isStrictlyPositive_continuousLinearMapOfBilin_iff.mp hh
+  have hhs' : h.toBilinForm.IsSymm := isSymm_toBilinForm_iff.mpr hhs
+  have hhpos' (v : E) (hv : v ≠ 0) : 0 < h.toBilinForm v v := hhpos v hv
+  have hqs : q.toBilinForm.IsSymm := isSymm_toBilinForm_iff.mpr hq
+  set N := h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0)
+  set P := h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0)
+  -- The vector `v - π v` is the component of `v` in `P`.
+  have hsub (v : E) : v - N.projection P hc v ∈ P := by
+    rw [← Submodule.projection_eq_self_sub_projection hc]
+    exact Submodule.projection_apply_mem hc.symm v
+  refine ((eq_negativeSpectralProjection_iff hh hq hq').mpr ⟨?_, fun u v ↦ ?_, fun u v ↦ ?_,
+    fun u hu ↦ ?_, fun u hu ↦ ?_⟩).symm
+  · ext u
+    exact congr($(Submodule.isIdempotentElem_projection hc) u)
+  · exact (LinearMap.BilinForm.apply_eq_zero_of_mem_relativeSpectralSubspace hhs' hqs
+      Iio_disjoint_Ioi_same (Submodule.projection_apply_mem hc u) (hsub v)).1
+  · exact (LinearMap.BilinForm.apply_eq_zero_of_mem_relativeSpectralSubspace hhs' hqs
+      Iio_disjoint_Ioi_same (Submodule.projection_apply_mem hc u) (hsub v)).2
+  · exact LinearMap.BilinForm.apply_self_neg_of_mem_relativeSpectralSubspace_Iio hhs' hhpos' hqs
+      (Submodule.projection_apply_mem hc u) hu
+  · exact LinearMap.BilinForm.apply_self_pos_of_mem_relativeSpectralSubspace_Ioi hhs' hhpos' hqs
+      (hsub u) hu
+
+/-- **The kernel of the negative spectral projection is the positive relative spectral subspace**
+of a nondegenerate `q`: the span of the vectors `v` with `q v = μ h v` for some `μ > 0`. -/
+theorem ker_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
+    (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q) :
+    (q.negativeSpectralProjection h).ker =
+      h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0) := by
+  obtain ⟨hhs, hhpos⟩ := isStrictlyPositive_continuousLinearMapOfBilin_iff.mp hh
+  rw [negativeSpectralProjection_eq_projection hh hq hq'
+    (LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi (isSymm_toBilinForm_iff.mpr hhs)
+      (fun v hv ↦ hhpos v hv) (isSymm_toBilinForm_iff.mpr hq)
+      (by rw [ker_toBilinForm, LinearMap.ker_eq_bot.mpr hq'])),
+    LinearMap.coe_toContinuousLinearMap, Submodule.ker_projection]
+
 /-! ### Smooth dependence -/
 
 /-- **The negative spectral projection depends smoothly on the form and the metric**, including
@@ -388,3 +475,80 @@ theorem _root_.ContDiffOn.negativeSpectralProjection {F : Type*} [NormedAddCommG
     ⟨hq x hx, hq' x hx, hh x hx⟩
 
 end ContinuousLinearMap
+
+/-! ### Finite-dimensional normed spaces -/
+
+namespace TauCeti
+
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
+
+/-- **Smooth negative relative spectral projections on a finite-dimensional normed space.** There
+is a family `Φ` of projections of `P`, indexed by the pairs `(q, h)` of a symmetric nondegenerate
+bilinear form `q` and a positive definite symmetric bilinear form `h`, which depends real
+analytically on the pair, and whose range is the negative relative spectral subspace of `q` with
+respect to `h` (spanned by the vectors `v` with `q v = μ h v` for some `μ < 0`) and whose kernel is
+the positive one. No inner product on `P` is needed. -/
+theorem exists_contDiffOn_range_eq_relativeSpectralSubspace :
+    ∃ Φ : (P →L[ℝ] P →L[ℝ] ℝ) × (P →L[ℝ] P →L[ℝ] ℝ) → P →L[ℝ] P,
+      ContDiffOn ℝ ω Φ {x | (∀ u v, x.1 u v = x.1 v u) ∧ Function.Injective x.1 ∧
+        (∀ u v, x.2 u v = x.2 v u) ∧ ∀ u, u ≠ 0 → 0 < x.2 u u} ∧
+      ∀ q h : P →L[ℝ] P →L[ℝ] ℝ, (∀ u v, q u v = q v u) → Function.Injective q →
+        (∀ u v, h u v = h v u) → (∀ u, u ≠ 0 → 0 < h u u) →
+        IsIdempotentElem (Φ (q, h)) ∧
+        (Φ (q, h)).range = h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0) ∧
+        (Φ (q, h)).ker = h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0) := by
+  set W := EuclideanSpace ℝ (Fin (Module.finrank ℝ P))
+  let T : P ≃L[ℝ] W := ContinuousLinearEquiv.ofFinrankEq (by simp [W])
+  set Ts : W →L[ℝ] P := (T.symm : W →L[ℝ] P)
+  -- Pulled back to `W`, a nondegenerate form and a metric on `P` stay so.
+  have hpull {q h : P →L[ℝ] P →L[ℝ] ℝ} (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q)
+      (hh : ∀ u v, h u v = h v u) (hh' : ∀ u, u ≠ 0 → 0 < h u u) :
+      (∀ u v, q.bilinearComp Ts Ts u v = q.bilinearComp Ts Ts v u) ∧
+        Function.Injective (q.bilinearComp Ts Ts) ∧
+        IsStrictlyPositive (continuousLinearMapOfBilin (𝕜 := ℝ) (h.bilinearComp Ts Ts)) :=
+    ⟨fun u v ↦ hq _ _, ContinuousLinearMap.injective_bilinearComp hq' T.symm.bijective,
+      isStrictlyPositive_continuousLinearMapOfBilin_iff.mpr ⟨fun u v ↦ hh _ _,
+        fun u hu ↦ hh' _ ((map_ne_zero_iff _ T.symm.injective).mpr hu)⟩⟩
+  refine ⟨fun x ↦ Ts ∘L (x.1.bilinearComp Ts Ts).negativeSpectralProjection
+    (x.2.bilinearComp Ts Ts) ∘L (T : P →L[ℝ] W), ?_, fun q h hq hq' hh hh' ↦ ?_⟩
+  · have hc : ContDiff ℝ ω fun x : (P →L[ℝ] P →L[ℝ] ℝ) × (P →L[ℝ] P →L[ℝ] ℝ) ↦
+        (x.1.bilinearComp Ts Ts, x.2.bilinearComp Ts Ts) :=
+      contDiffOn_univ.mp ((contDiff_fst.contDiffOn.clm_bilinearComp contDiffOn_const
+        contDiffOn_const).prodMk (contDiff_snd.contDiffOn.clm_bilinearComp contDiffOn_const
+        contDiffOn_const))
+    exact contDiffOn_const.clm_comp
+      ((ContinuousLinearMap.contDiffOn_negativeSpectralProjection.comp hc.contDiffOn
+        fun x (hx : x ∈ {x : (P →L[ℝ] P →L[ℝ] ℝ) × (P →L[ℝ] P →L[ℝ] ℝ) |
+          (∀ u v, x.1 u v = x.1 v u) ∧ Function.Injective x.1 ∧ (∀ u v, x.2 u v = x.2 v u) ∧
+            ∀ u, u ≠ 0 → 0 < x.2 u u}) ↦
+          hpull hx.1 hx.2.1 hx.2.2.1 hx.2.2.2).clm_comp contDiffOn_const)
+  obtain ⟨hqs, hqi, hhp⟩ := hpull hq hq' hh hh'
+  set N := (q.bilinearComp Ts Ts).negativeSpectralProjection (h.bilinearComp Ts Ts)
+  -- The relative spectral subspaces of the pulled-back forms are carried to those of `q` and `h`.
+  have hmap (Ω : Set ℝ) : ((h.bilinearComp Ts Ts).toBilinForm.relativeSpectralSubspace
+      (q.bilinearComp Ts Ts).toBilinForm Ω).map (Ts : W →ₗ[ℝ] P) =
+      h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω := by
+    have hc (B : P →L[ℝ] P →L[ℝ] ℝ) : (B.bilinearComp Ts Ts).toBilinForm =
+        B.toBilinForm.compl₁₂ (Ts : W →ₗ[ℝ] P) (Ts : W →ₗ[ℝ] P) := by
+      ext u v
+      simp
+    rw [hc, hc]
+    exact LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ T.symm.toLinearEquiv
+  have hT : LinearMap.range ((T : P →L[ℝ] W) : P →ₗ[ℝ] W) = ⊤ :=
+    LinearMap.range_eq_top.mpr T.surjective
+  have hTs : LinearMap.ker (Ts : W →ₗ[ℝ] P) = ⊥ := LinearMap.ker_eq_bot.mpr T.symm.injective
+  refine ⟨?_, ?_, ?_⟩
+  · -- Conjugating the projection `N` by `T` gives a projection.
+    have hN := ContinuousLinearMap.isIdempotentElem_negativeSpectralProjection
+      (q := q.bilinearComp Ts Ts) hhp
+    ext u
+    simpa [Ts] using congr(Ts ($hN.eq (T u)))
+  · rw [← hmap, ← ContinuousLinearMap.range_negativeSpectralProjection hhp hqs,
+      ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.toLinearMap_comp,
+      LinearMap.range_comp, LinearMap.range_comp_of_range_eq_top _ hT]
+  · rw [← hmap, ← ContinuousLinearMap.ker_negativeSpectralProjection hhp hqs hqi,
+      ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.toLinearMap_comp,
+      LinearMap.ker_comp_of_ker_eq_bot _ hTs, LinearMap.ker_comp]
+    exact Submodule.comap_equiv_eq_map_symm T.toLinearEquiv N.ker
+
+end TauCeti

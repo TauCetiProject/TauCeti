@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
-public import TauCeti.Geometry.Manifold.Riemannian.SelfDual
+public import TauCeti.Geometry.Manifold.Riemannian.SelfDual.Basic
 
 /-!
 # The abelian deformation operator of the Seiberg–Witten equations

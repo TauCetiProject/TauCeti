@@ -25,7 +25,7 @@ augmentation. -/
 @[simp]
 theorem counitAlgHom_toRingHom (R M : Type*) [CommSemiring R] [Monoid M] :
     (Bialgebra.counitAlgHom R (MonoidAlgebra R M) : MonoidAlgebra R M →+* R) =
-      augmentation R M := by
+      MonoidAlgebra.augmentation R M := by
   apply MonoidAlgebra.ringHom_ext <;> intro <;> simp
 
 /-- The bialgebra map of monoid algebras induced by a monoid homomorphism is, as a ring

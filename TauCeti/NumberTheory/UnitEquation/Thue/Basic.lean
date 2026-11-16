@@ -205,7 +205,7 @@ theorem logHeight₁_div_le_of_eval_homogenize_eq {g : ℤ[X]} {n : ℕ} (hn : g
   have hθ₀ := Real.posLog_nonneg (x := NumberField.house (θ 0 : K))
   have hθ₂ := Real.posLog_nonneg (x := NumberField.house (θ 2 : K))
   have hlog2 := Real.log_pos one_lt_two
-  rcases eq_or_ne y 0 with rfl | hy
+  rcases eq_or_ne y 0 with rfl | _
   · rw [Int.cast_zero, div_zero, logHeight₁_zero]
     nlinarith
   -- With `t = (μ 0 / μ 2) (ε 0 / ε 2) = (x - θ 0 y) / (x - θ 2 y)`, `t` determines `x / y`.

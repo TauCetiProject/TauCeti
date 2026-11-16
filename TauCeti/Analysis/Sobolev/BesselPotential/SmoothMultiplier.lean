@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 
 /-!
@@ -63,9 +64,8 @@ theorem MemSobolev.smulLeftCLM_of_norm_le [NormedSpace ℂ F] [CompleteSpace F] 
     (hg : g.HasTemperateGrowth) {C : ℝ} (hC : ∀ x, ‖g x‖ ≤ C) {f : 𝓢'(E, F)}
     (hf : MemSobolev 0 p f) : MemSobolev 0 p (smulLeftCLM F g f) := by
   obtain ⟨f', rfl⟩ := memSobolev_zero_iff.1 hf
-  have hg' : MemLp g ⊤ volume :=
-    memLp_top_of_bound hg.1.continuous.aestronglyMeasurable C (ae_of_all _ hC)
-  rw [← Lp.toTemperedDistribution_smul_eq (r := p) hg hg']
+  obtain ⟨v, hv, -⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le hg hC f'
+  rw [hv]
   exact memSobolev_zero_iff.2 ⟨_, rfl⟩
 
 variable [InnerProductSpace ℂ F] [CompleteSpace F]

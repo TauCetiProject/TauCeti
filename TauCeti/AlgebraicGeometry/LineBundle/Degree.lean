@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Cohomology.ConstantField
 public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.Cohomology.FieldTower
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
@@ -42,7 +43,11 @@ that it is additive.
   and normalization formulas;
 * `InvertibleSheaf.eulerDegree_eq_finrank_mul` and `LineBundleClass.eulerDegree_eq_finrank_mul`
   state that, for a scheme over a field `κ` regarded as a scheme over a subfield `k`, the degree
-  over `k` is `[κ : k]` times the degree over `κ`.
+  over `k` is `[κ : k]` times the degree over `κ`;
+* `InvertibleSheaf.finrank_cohomology_zero_trivial_dvd_eulerDegree` and
+  `LineBundleClass.finrank_cohomology_zero_trivial_dvd_eulerDegree` state that, when the global
+  functions of `X` form a field `κ`, its degree `[κ : k] = dim_k H⁰(X, 𝒪_X)` over `k` divides the
+  degree of every line bundle.
 
 The formula is the rearrangement of Riemann--Roch for curves; see Hartshorne, *Algebraic
 Geometry*, Chapter IV, Section 1.
@@ -178,6 +183,32 @@ theorem eulerDegree_eq_finrank_mul
 end LineBundleClass
 
 end FieldTower
+
+section ConstantField
+
+variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
+
+/-- If the global functions of a scheme `X` over a field `k` form a field `κ`, then
+`[κ : k] = dim_k H⁰(X, 𝒪_X)` divides the degree over `k` of every invertible sheaf on `X`. -/
+theorem InvertibleSheaf.finrank_cohomology_zero_trivial_dvd_eulerDegree (hX : IsField Γ(X, ⊤))
+    (L : InvertibleSheaf X) :
+    (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) : ℤ) ∣
+      L.eulerDegree k := by
+  rw [InvertibleSheaf.eulerDegree_def]
+  exact (Scheme.Modules.finrank_cohomology_zero_trivial_dvd_eulerCharBelow k hX L.obj 2).sub
+    (Scheme.Modules.finrank_cohomology_zero_trivial_dvd_eulerCharBelow k hX _ 2)
+
+/-- If the global functions of a scheme `X` over a field `k` form a field `κ`, then
+`[κ : k] = dim_k H⁰(X, 𝒪_X)` divides the degree over `k` of every line-bundle class on `X`. -/
+theorem LineBundleClass.finrank_cohomology_zero_trivial_dvd_eulerDegree (hX : IsField Γ(X, ⊤))
+    (a : LineBundleClass X) :
+    (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) : ℤ) ∣
+      eulerDegree k a := by
+  obtain ⟨L, rfl⟩ := mk_surjective a
+  rw [eulerDegree_mk]
+  exact L.finrank_cohomology_zero_trivial_dvd_eulerDegree k hX
+
+end ConstantField
 
 end
 

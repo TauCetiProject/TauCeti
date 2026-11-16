@@ -59,8 +59,8 @@ private lemma succ_mul_sub_le_sum_max_sub_div {k N : ℕ} (hN : N ≤ k) (δ : �
     rw [eq_div_iff two_ne_zero, mul_comm (N : ℝ), ← Nat.cast_sum]
     exact_mod_cast (Nat.add_sub_cancel N 1 ▸ sum_range_id_mul_two (N + 1))
   calc (N + 1) * δ - N * (N + 1) / (2 * k) = ∑ i ∈ range (N + 1), (δ - i / k) := by
-        rw [sum_sub_distrib, ← sum_div, hgauss, sum_const, card_range, nsmul_eq_mul, div_div]
-        push_cast
+        rw [sum_sub_distrib, ← sum_div, hgauss]
+        simp
         ring
     _ ≤ ∑ i ∈ range (N + 1), max (δ - i / k) 0 := sum_le_sum fun _ _ ↦ le_max_left _ _
     _ ≤ ∑ i ∈ range (k + 1), max (δ - i / k) 0 :=
@@ -79,7 +79,7 @@ private lemma succ_mul_min_le_sum_max_sub_div (k : ℕ) (δ : ℝ) :
       _ ≤ _ := sum_nonneg fun _ _ ↦ le_max_right _ _
   rcases Nat.eq_zero_or_pos k with rfl | hk
   · simpa using (min_le_left _ _).trans ((half_le_self hδ.le).trans (le_max_left δ 0))
-  have hk' : (0 : ℝ) < k := by exact_mod_cast hk
+  have _ : (0 : ℝ) < k := by exact_mod_cast hk
   rcases le_or_gt 1 δ with hδ₁ | hδ₁
   · -- For `δ ≥ 1` all `k + 1` terms are at least `δ - i / k`.
     refine le_trans ?_ (succ_mul_sub_le_sum_max_sub_div le_rfl δ)
@@ -91,9 +91,7 @@ private lemma succ_mul_min_le_sum_max_sub_div (k : ℕ) (δ : ℝ) :
     have hδk : 0 ≤ δ * k := by positivity
     have hN₁ : (N : ℝ) ≤ δ * k := Nat.floor_le hδk
     have hN₂ : δ * k < N + 1 := Nat.lt_floor_add_one _
-    have hNk : N ≤ k := by
-      have : (N : ℝ) < k := hN₁.trans_lt (by nlinarith)
-      exact_mod_cast this.le
+    have hNk : N ≤ k := Nat.floor_le_of_le (by nlinarith)
     refine le_trans ?_ (succ_mul_sub_le_sum_max_sub_div hNk δ)
     have hdiv : (N : ℝ) * (N + 1) / (2 * k) ≤ (N + 1) * δ - (k + 1) * (δ ^ 2 / 2) := by
       rw [div_le_iff₀ (by positivity)]

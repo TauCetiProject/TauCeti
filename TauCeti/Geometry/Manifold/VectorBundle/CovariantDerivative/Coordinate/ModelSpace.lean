@@ -93,7 +93,7 @@ theorem christoffelMap_model_space [CompleteSpace 𝕜] [FiniteDimensional 𝕜 
     mdifferentiableAt_vectorSpace_iff_differentiableAt.2 (differentiableAt_const v)
   have hc := covariantDerivative_eq_add_christoffelForm b hcov hx hv
   rw [frameCovariantDerivative_const_model_space b x x v, zero_add] at hc
-  rw [christoffelMap_apply b hcov hx, symmL_trivializationAt_model_space,
+  rw [christoffelMap_apply b hcov, symmL_trivializationAt_model_space,
     symmL_trivializationAt_model_space,
     Bundle.Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 e hx]
   -- Name the constant field as in `hc`.

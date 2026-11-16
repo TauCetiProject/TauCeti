@@ -72,7 +72,7 @@ private theorem smul_sub_dvd_eval_smul_charpoly [IsGalois L M] {y : 𝒪[L]}
   refine Finset.dvd_sum fun n _ ↦ Dvd.dvd.mul_right ?_ _
   obtain ⟨w, hw⟩ := Algebra.IsInvariant.isInvariant (A := 𝒪[L]) (G := M ≃ₐ[L] M) (P.coeff n)
     (MulSemiringAction.smul_coeff_charpoly x n)
-  rw [coeff_sub, coeff_smul, ← hw, AlgEquiv.smul_algebraMap_integerRing,
+  rw [coeff_sub, AddMonoidAlgebra.coeff_smul_apply, ← hw, AlgEquiv.smul_algebraMap_integerRing,
     AlgEquiv.smul_algebraMap_integerRing, ← map_sub, ← map_sub]
   exact map_dvd _ (smul_sub_dvd_smul_sub_of_adjoin_singleton_eq_top hy _ w)
 

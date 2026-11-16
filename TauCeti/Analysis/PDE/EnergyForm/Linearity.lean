@@ -15,10 +15,9 @@ The divergence-form energy integrand
 that bookkeeping as bundled continuous-bilinear-map equalities and as pointwise evaluation
 lemmas.
 
-These lemmas are pointwise finite-dimensional prerequisites for Lane D of the PDE roadmap.
-When the later weak energy form is an integral of `energyIntegrand (a x) (b x) (c x)`, this
-API lets bounded perturbations and decompositions into principal, drift, and mass pieces be
-rewritten before applying the boundedness and Gårding estimates.
+The weak energy form is an integral of `energyIntegrand (a x) (b x) (c x)`, so this API lets
+bounded perturbations and decompositions into principal, drift, and mass pieces be rewritten
+before applying the boundedness and Gårding estimates.
 
 ## Main declarations
 

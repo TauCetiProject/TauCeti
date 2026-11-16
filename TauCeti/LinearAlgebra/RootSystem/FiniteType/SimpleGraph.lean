@@ -136,43 +136,6 @@ theorem graphCartanMatrix_diagramGraph_cartanMatrix {t : DynkinType}
   have hzero := DynkinType.cartanMatrix_apply_eq_zero_iff_symm t i j
   rcases ht hij with h | h <;> simp [h] at hzero <;> simp [hij, h, hzero]
 
-omit [Finite V] in
-/-- **A graph isomorphic to the diagram of a simply-laced standard Cartan matrix has a positive
-definite `2I - A`.** The matrix `2I - A` of the diagram is the standard Cartan matrix
-(`SimpleGraph.graphCartanMatrix_diagramGraph_cartanMatrix`), which is positive definite, and an
-isomorphism of graphs relabels `2I - A`. -/
-theorem posDef_graphCartanMatrix_of_iso {t : DynkinType} (ht : t.cartanMatrix.IsSimplyLaced)
-    (φ : G ≃g diagramGraph t.cartanMatrix) : (G.graphCartanMatrix ℚ).PosDef := by
-  have hrel : G.graphCartanMatrix ℚ =
-      (t.cartanMatrix.map (Int.cast : ℤ → ℚ)).submatrix φ φ := by
-    ext i j
-    have hentry := congrFun₂ (graphCartanMatrix_diagramGraph_cartanMatrix ht) (φ i) (φ j)
-    simp only [graphCartanMatrix_apply, φ.injective.eq_iff, φ.map_adj_iff] at hentry
-    rw [Matrix.submatrix_apply, Matrix.map_apply, ← hentry, graphCartanMatrix_apply]
-    split_ifs <;> simp
-  rw [hrel]
-  exact (t.posDef_map_intCast_cartanMatrix_of_isSimplyLaced ht).submatrix φ.injective
-
-/-- **A connected graph has a positive definite `2I - A` exactly when it is a simply-laced Dynkin
-diagram**, that is, isomorphic to the diagram of a valid Dynkin type of type `A`, `D` or `E`. -/
-theorem posDef_graphCartanMatrix_iff (hG : G.Connected) :
-    (G.graphCartanMatrix ℚ).PosDef ↔ ∃ t : DynkinType, t.Valid ∧ t.IsSimplyLaced ∧
-      Nonempty (G ≃g diagramGraph t.cartanMatrix) := by
-  have := Fintype.ofFinite V
-  exact ⟨fun h ↦ exists_dynkinType_iso_of_isFiniteType_graphCartanMatrix hG
-      (isFiniteType_graphCartanMatrix_of_posDef h),
-    fun ⟨t, _, ht, ⟨φ⟩⟩ ↦ posDef_graphCartanMatrix_of_iso
-      ((DynkinType.isSimplyLaced_cartanMatrix_iff t).mpr (.inl ht)) φ⟩
-
-/-- Every simply-laced standard Dynkin diagram is acyclic. -/
-theorem _root_.TauCeti.DynkinType.IsSimplyLaced.isAcyclic_diagramGraph_cartanMatrix {t : DynkinType}
-    (hs : t.IsSimplyLaced) : (diagramGraph t.cartanMatrix).IsAcyclic := by
-  have h := (isFiniteType_graphCartanMatrix_of_posDef
-    (posDef_graphCartanMatrix_of_iso
-      ((DynkinType.isSimplyLaced_cartanMatrix_iff t).mpr (.inl hs))
-      Iso.refl)).isAcyclic_diagramGraph
-  rwa [diagramGraph_graphCartanMatrix] at h
-
 /-- Every standard Dynkin diagram is isomorphic to the diagram of a simply-laced Dynkin type of the
 same rank (preserving validity), since the underlying simple graphs of `Bₙ`, `Cₙ`, `F₄`, and `G₂`
 are path graphs. -/
@@ -214,11 +177,44 @@ theorem _root_.TauCeti.DynkinType.exists_isSimplyLaced_diagramGraph_iso (t : Dyn
       ext i j
       fin_cases i <;> fin_cases j <;> decide
 
+omit [Finite V] in
+/-- **A graph isomorphic to the diagram of a standard Cartan matrix has a positive definite
+`2I - A`.** The underlying graph of every standard Dynkin diagram is isomorphic to that of a
+simply-laced one (`TauCeti.DynkinType.exists_isSimplyLaced_diagramGraph_iso`), whose matrix `2I - A`
+is the standard Cartan matrix (`SimpleGraph.graphCartanMatrix_diagramGraph_cartanMatrix`), which is
+positive definite; an isomorphism of graphs relabels `2I - A`. -/
+theorem posDef_graphCartanMatrix_of_iso {t : DynkinType} (φ : G ≃g diagramGraph t.cartanMatrix) :
+    (G.graphCartanMatrix ℚ).PosDef := by
+  obtain ⟨s, hs, -, ⟨e⟩⟩ := t.exists_isSimplyLaced_diagramGraph_iso
+  obtain ⟨ψ⟩ : Nonempty (G ≃g diagramGraph s.cartanMatrix) := ⟨φ.trans e⟩
+  have hs' := (DynkinType.isSimplyLaced_cartanMatrix_iff s).mpr (.inl hs)
+  have hrel : G.graphCartanMatrix ℚ =
+      (s.cartanMatrix.map (Int.cast : ℤ → ℚ)).submatrix ψ ψ := by
+    ext i j
+    have hentry := congrFun₂ (graphCartanMatrix_diagramGraph_cartanMatrix hs') (ψ i) (ψ j)
+    simp only [graphCartanMatrix_apply, ψ.injective.eq_iff, ψ.map_adj_iff] at hentry
+    rw [Matrix.submatrix_apply, Matrix.map_apply, ← hentry, graphCartanMatrix_apply]
+    split_ifs <;> simp
+  rw [hrel]
+  exact (s.posDef_map_intCast_cartanMatrix_of_isSimplyLaced hs').submatrix ψ.injective
+
+/-- **A connected graph has a positive definite `2I - A` exactly when it is a simply-laced Dynkin
+diagram**, that is, isomorphic to the diagram of a valid Dynkin type of type `A`, `D` or `E`. -/
+theorem posDef_graphCartanMatrix_iff (hG : G.Connected) :
+    (G.graphCartanMatrix ℚ).PosDef ↔ ∃ t : DynkinType, t.Valid ∧ t.IsSimplyLaced ∧
+      Nonempty (G ≃g diagramGraph t.cartanMatrix) := by
+  have := Fintype.ofFinite V
+  exact ⟨fun h ↦ exists_dynkinType_iso_of_isFiniteType_graphCartanMatrix hG
+      (isFiniteType_graphCartanMatrix_of_posDef h),
+    fun ⟨_, _, _, ⟨φ⟩⟩ ↦ posDef_graphCartanMatrix_of_iso φ⟩
+
 /-- Every standard Dynkin diagram is acyclic. -/
 theorem _root_.TauCeti.DynkinType.isAcyclic_diagramGraph_cartanMatrix (t : DynkinType) :
     (diagramGraph t.cartanMatrix).IsAcyclic := by
-  obtain ⟨s, hs, -, ⟨e⟩⟩ := t.exists_isSimplyLaced_diagramGraph_iso
-  exact e.isAcyclic_iff.mpr hs.isAcyclic_diagramGraph_cartanMatrix
+  have h := (isFiniteType_graphCartanMatrix_of_posDef
+    (posDef_graphCartanMatrix_of_iso
+      (Iso.refl : diagramGraph t.cartanMatrix ≃g _))).isAcyclic_diagramGraph
+  rwa [diagramGraph_graphCartanMatrix] at h
 
 /-- Every standard Dynkin diagram is bipartite. -/
 theorem _root_.TauCeti.DynkinType.isBipartite_diagramGraph_cartanMatrix (t : DynkinType) :

@@ -6,17 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Icc
+public import Mathlib.Geometry.Manifold.Algebra.Monoid
 public import Mathlib.Topology.UnitInterval
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
+import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
 # Smooth time maps into the unit interval
 
-The reflection `t ↦ 1 - t` is smooth for the manifold-with-boundary structure of the
-unit interval. The smooth transition function also gives smooth interval-valued
-maps. These support reversal and stationary-time concatenation of smooth isotopies.
+The reflection `t ↦ 1 - t` and the multiplication `(s, t) ↦ s t` are smooth for the
+manifold-with-boundary structure of the unit interval. The smooth transition function also gives
+smooth interval-valued maps. These support reversal, rescaling and stationary-time concatenation
+of smooth isotopies.
 
 The constructions reuse Mathlib’s interval immersion and `Real.smoothTransition`.
 The preferred interval charts also expose their actual affine coordinate formulas and the
@@ -38,6 +41,16 @@ theorem contMDiff_symm {n : ℕ∞ω} : ContMDiff (𝓡∂ 1) (𝓡∂ 1) n symm
   refine ⟨continuous_symm, ?_⟩
   simpa only [Function.comp_def, coe_symm_eq] using
     (contMDiff_const.sub (contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := n)))
+
+/-- Multiplication `(s, t) ↦ s t` of the unit interval is analytic, including at the boundary, so
+it is `C^n` for every `n` (`contMDiff_mul`). -/
+instance : ContMDiffMul (𝓡∂ 1) ω I where
+  contMDiff_mul := by
+    apply contMDiff_iff_comp_subtypeVal_Icc.mpr
+    refine ⟨continuous_mul, ?_⟩
+    simpa only [Function.comp_def, Set.Icc.coe_mul, Pi.mul_def] using
+      ((contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := ω)).comp contMDiff_fst).mul
+        ((contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := ω)).comp contMDiff_snd)
 
 end unitInterval
 
