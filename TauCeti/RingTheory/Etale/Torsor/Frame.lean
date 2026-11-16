@@ -36,10 +36,9 @@ split of constant rank over its frame algebra
 ring-theoretic Galois closure of `S`: for a finite separable field extension `L / K` of degree `n`
 with Galois closure `M`, it is a product of copies of `M`.
 
-The splitting cover in Mathlib is stated for `S` in the universe of `R`. A finite algebra is
-isomorphic to one in that universe (`Shrink`), and the frame algebra and universal frame are
-invariant under isomorphisms (`TauCeti.Algebra.FrameAlgebra.congr`), so all results hold for `S`
-and `ι` in arbitrary universes.
+Using the universe-general splitting cover
+`TauCeti.Algebra.exists_faithfullyFlat_etale_algEquiv_pi`, all results hold for `S` and `ι` in
+arbitrary universes.
 
 ## Main definitions
 
@@ -105,41 +104,15 @@ end LocallySplit
 section Etale
 
 variable {R : Type u} {S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-  [Algebra.Etale R S] [Module.Finite R S] {ι : Type*} [Fintype ι]
-
-/-- Over a nontrivial base ring `R : Type u`, every finite étale `R`-algebra `S` (in any universe)
-of constant rank `Fintype.card ι` becomes `T`-isomorphic to `ι → T` after a faithfully flat
-extension `T : Type u`. -/
-private theorem exists_faithfullyFlat_algEquiv_pi [Nontrivial R]
-    (h : Module.rankAtStalk (R := R) S = Fintype.card ι) :
-    ∃ (T : Type u) (_ : CommRing T) (_ : Algebra R T) (_ : Module.FaithfullyFlat R T),
-      Nonempty (T ⊗[R] S ≃ₐ[T] (ι → T)) := by
-  have : Small.{u} S := Module.Finite.small R S
-  let eS : Shrink.{u} S ≃ₐ[R] S := Shrink.algEquiv R S
-  have : Algebra.Etale R (Shrink.{u} S) := .of_equiv eS.symm
-  have : Module.Finite R (Shrink.{u} S) := .equiv eS.symm.toLinearEquiv
-  have hS' : Module.rankAtStalk (R := R) (Shrink.{u} S) = Fintype.card ι :=
-    (Module.rankAtStalk_eq_of_equiv eS.toLinearEquiv).trans h
-  obtain ⟨T, _, _, _, _, _, _⟩ := Algebra.IsFiniteSplit.exists_tensorProduct_of_etale hS'
-  obtain ⟨m, ⟨f⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun T (T ⊗[R] Shrink.{u} S)
-  have : Nontrivial T := (FaithfulSMul.algebraMap_injective R T).nontrivial
-  obtain rfl : m = Fintype.card ι := by
-    simpa using f.toLinearEquiv.finrank_eq.symm.trans
-      (TauCeti.Module.finrank_tensorProduct_eq_of_rankAtStalk_eq hS')
-  exact ⟨T, _, _, inferInstance,
-    ⟨((Algebra.TensorProduct.congr (AlgEquiv.refl : T ≃ₐ[T] T) eS.symm).trans f).trans
-      (AlgEquiv.piCongrLeft' T (fun _ ↦ T) (Fintype.equivFin ι).symm)⟩⟩
-
-variable [DecidableEq ι]
+  [Algebra.Etale R S] [Module.Finite R S] {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- **The frame algebra is a torsor.** For a finite étale `R`-algebra `S` of constant rank
 `Fintype.card ι`, the frame algebra of `ι`-tuples of pairwise distinct points of `S` is a finite
 étale `Perm ι`-torsor over `R`. -/
 theorem isFiniteEtaleTorsor (h : Module.rankAtStalk (R := R) S = Fintype.card ι) :
     IsFiniteEtaleTorsor (Equiv.Perm ι) R (FrameAlgebra R S ι) := by
-  cases subsingleton_or_nontrivial R
-  · infer_instance
-  obtain ⟨T, _, _, _, ⟨e⟩⟩ := exists_faithfullyFlat_algEquiv_pi h
+  obtain ⟨T, _, _, _, _, _, ⟨e⟩⟩ :=
+    exists_faithfullyFlat_etale_algEquiv_pi (ι := ι) (by simpa using h)
   exact isFiniteEtaleTorsor_of_algEquiv_pi T e
 
 /-- **The universal frame of a constant-rank finite étale algebra is bijective.** If `S` is finite
@@ -147,11 +120,8 @@ theorem isFiniteEtaleTorsor (h : Module.rankAtStalk (R := R) S = Fintype.card ι
 `universalFrame R S ι : FrameAlgebra R S ι ⊗[R] S → (ι → FrameAlgebra R S ι)` is bijective. -/
 theorem bijective_universalFrame (h : Module.rankAtStalk (R := R) S = Fintype.card ι) :
     Function.Bijective (universalFrame R S ι) := by
-  cases subsingleton_or_nontrivial R
-  · have : Subsingleton (FrameAlgebra R S ι ⊗[R] S) := Module.subsingleton R _
-    have : Subsingleton (ι → FrameAlgebra R S ι) := Module.subsingleton R _
-    exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
-  obtain ⟨T, _, _, _, ⟨e⟩⟩ := exists_faithfullyFlat_algEquiv_pi h
+  obtain ⟨T, _, _, _, _, _, ⟨e⟩⟩ :=
+    exists_faithfullyFlat_etale_algEquiv_pi (ι := ι) (by simpa using h)
   exact bijective_universalFrame_of_algEquiv_pi T e
 
 /-- **The universal frame isomorphism.** For a finite étale `R`-algebra `S` of constant rank

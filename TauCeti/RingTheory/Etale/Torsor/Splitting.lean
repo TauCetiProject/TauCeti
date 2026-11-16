@@ -64,23 +64,6 @@ universe u v
 
 namespace TauCeti.Algebra
 
-/-- If `S'` is isomorphic to `S × B` over `A` and `P ⊗[A] S'` is totally split over `P`, then
-`P ⊗[A] S` is totally split over `P`. -/
-private theorem isTotallySplit_of_prod {A P S' S B : Type*} [CommRing A] [CommRing P]
-    [Algebra A P] [CommRing S'] [Algebra A S'] [CommRing S] [Algebra A S]
-    [CommRing B] [Algebra A B] (e : S' ≃ₐ[A] S × B) (h : IsTotallySplit P (P ⊗[A] S')) :
-    IsTotallySplit P (P ⊗[A] S) :=
-  ((h.of_algEquiv (Algebra.TensorProduct.congr (AlgEquiv.refl : P ≃ₐ[P] P) e)).of_algEquiv
-    (Algebra.TensorProduct.prodRight A P P S B)).of_prod_fst
-
-/-- An `A`-algebra isomorphism `S₀ ≃ₐ[A] S` transfers `Algebra.IsFiniteSplit P (P ⊗[A] S₀)` to
-`Algebra.IsFiniteSplit P (P ⊗[A] S)`. -/
-private theorem isFiniteSplit_of_algEquiv_right {A P S₀ S : Type*} [CommRing A] [CommRing P]
-    [Algebra A P] [CommRing S₀] [Algebra A S₀] [CommRing S] [Algebra A S] (e : S₀ ≃ₐ[A] S)
-    [Algebra.IsFiniteSplit P (P ⊗[A] S₀)] :
-    Algebra.IsFiniteSplit P (P ⊗[A] S) :=
-  .of_algEquiv (Algebra.TensorProduct.congr (AlgEquiv.refl : P ≃ₐ[P] P) e)
-
 /-- Core padding-and-frame construction splitting a finite étale `A`-algebra by a symmetric-group
 frame torsor, parameterized by an index family `ι` with `|ι n| = n`. -/
 private theorem exists_perm_family_isFiniteEtaleTorsor_isTotallySplit (A : Type u) (S : Type*)
@@ -92,18 +75,26 @@ private theorem exists_perm_family_isFiniteEtaleTorsor_isTotallySplit (A : Type 
       IsFiniteEtaleTorsor (Equiv.Perm (ι n)) A P ∧ IsTotallySplit P (P ⊗[A] S) := by
   classical
   have : Small.{u} S := Module.Finite.small A S
-  let eS : Shrink.{u} S ≃ₐ[A] S := Shrink.algEquiv A S
-  have : Algebra.Etale A (Shrink.{u} S) := .of_equiv eS.symm
-  have : Module.Finite A (Shrink.{u} S) := .equiv eS.symm.toLinearEquiv
-  obtain ⟨n, e, -, _, hrank⟩ := exists_etale_rankAtStalk_prod_pi_quotient_eq A (Shrink.{u} S)
+  -- Abstract `Shrink.{u} S` to an opaque type variable so the kernel avoids unfolding `Shrink`
+  -- through the tensor product and product instances.
+  obtain ⟨S₀, _, _, ⟨eS⟩⟩ :
+      ∃ (S₀ : Type u) (_ : CommRing S₀) (_ : Algebra A S₀), Nonempty (S₀ ≃ₐ[A] S) :=
+    ⟨Shrink.{u} S, inferInstance, inferInstance, ⟨Shrink.algEquiv A S⟩⟩
+  have : Algebra.Etale A S₀ := .of_equiv eS.symm
+  have : Module.Finite A S₀ := .equiv eS.symm.toLinearEquiv
+  obtain ⟨n, e, -, _, hrank⟩ := exists_etale_rankAtStalk_prod_pi_quotient_eq A S₀
   let B : Type u := Π j : Fin n, A ⧸ Ideal.span {1 - e j}
-  let S' : Type u := Shrink.{u} S × B
+  let S' : Type u := S₀ × B
   have hrank' : Module.rankAtStalk (R := A) S' = Fintype.card (ι n) := by
     simpa [S', B, hι n] using hrank
-  refine ⟨n, FrameAlgebra A S' (ι n), inferInstance, inferInstance, inferInstance,
-    inferInstance, FrameAlgebra.isFiniteEtaleTorsor hrank',
-    isTotallySplit_of_prod (eS.prodCongr AlgEquiv.refl)
-      (FrameAlgebra.isTotallySplit_tensorProduct hrank')⟩
+  let P : Type (max u v) := FrameAlgebra A S' (ι n)
+  have hsplit : IsTotallySplit P (P ⊗[A] S') := FrameAlgebra.isTotallySplit_tensorProduct hrank'
+  refine ⟨n, P, inferInstance, inferInstance, inferInstance, inferInstance,
+    FrameAlgebra.isFiniteEtaleTorsor hrank', ?_⟩
+  have hprod : IsTotallySplit P ((P ⊗[A] S₀) × (P ⊗[A] B)) :=
+    hsplit.of_algEquiv (Algebra.TensorProduct.prodRight A P P S₀ B)
+  exact hprod.of_prod_fst.of_algEquiv
+    (Algebra.TensorProduct.congr (AlgEquiv.refl : P ≃ₐ[P] P) eS)
 
 /-- **Splitting a finite étale algebra by a symmetric-group torsor.** Every finite étale
 `A`-algebra `S` becomes totally split after base change to a finite étale
@@ -132,19 +123,6 @@ theorem exists_isFiniteEtaleTorsor_isTotallySplit (A : Type u) (S : Type*) [Comm
 
 section Preconnected
 
-/-- Over a ring with preconnected prime spectrum, every finitely presented flat module has constant
-stalk rank. -/
-private theorem exists_rankAtStalk_eq_of_preconnectedSpace (A : Type*) [CommRing A]
-    [PreconnectedSpace (PrimeSpectrum A)] (M : Type*) [AddCommGroup M] [Module A M]
-    [Module.FinitePresentation A M] [Module.Flat A M] :
-    ∃ n : ℕ, Module.rankAtStalk (R := A) M = n := by
-  by_cases hne : Nonempty (PrimeSpectrum A)
-  · obtain ⟨p₀⟩ := hne
-    exact ⟨Module.rankAtStalk M p₀, funext fun p ↦
-      IsLocallyConstant.apply_eq_of_preconnectedSpace
-        (Module.isLocallyConstant_rankAtStalk (R := A) (M := M)) p p₀⟩
-  · exact ⟨0, funext fun p ↦ (hne ⟨p⟩).elim⟩
-
 /-- Core frame construction giving constant-rank splitting (`Algebra.IsFiniteSplit`) over a base
 with preconnected prime spectrum, parameterized by an index family `ι` with `|ι n| = n`. -/
 private theorem exists_perm_family_isFiniteEtaleTorsor_isFiniteSplit (A : Type u) [CommRing A]
@@ -161,14 +139,17 @@ private theorem exists_perm_family_isFiniteEtaleTorsor_isFiniteSplit (A : Type u
   have : Algebra.Etale A (Shrink.{u} S) := .of_equiv eS.symm
   have : Module.Finite A (Shrink.{u} S) := .equiv eS.symm.toLinearEquiv
   have : Module.FinitePresentation A (Shrink.{u} S) := .of_finite_of_finitePresentation A _
-  obtain ⟨n, hrank⟩ := exists_rankAtStalk_eq_of_preconnectedSpace A (Shrink.{u} S)
+  obtain ⟨n, hrank⟩ :=
+    (Module.isLocallyConstant_rankAtStalk (R := A) (M := Shrink.{u} S)).exists_eq_const
   have hrank' : Module.rankAtStalk (R := A) (Shrink.{u} S) = Fintype.card (ι n) := by
-    simpa [hι n] using hrank
+    simpa [hι n, Pi.natCast_def, Function.const_def] using hrank
   let P : Type (max u v) := FrameAlgebra A (Shrink.{u} S) (ι n)
   have : Algebra.IsFiniteSplit P (P ⊗[A] Shrink.{u} S) :=
     FrameAlgebra.isFiniteSplit_tensorProduct hrank'
   exact ⟨n, P, inferInstance, inferInstance, inferInstance, inferInstance,
-    FrameAlgebra.isFiniteEtaleTorsor hrank', isFiniteSplit_of_algEquiv_right eS⟩
+    FrameAlgebra.isFiniteEtaleTorsor hrank',
+    .of_algEquiv (S := P ⊗[A] Shrink.{u} S)
+      (Algebra.TensorProduct.congr (AlgEquiv.refl : P ≃ₐ[P] P) eS)⟩
 
 /-- Over a ring `A : Type u` with preconnected prime spectrum, every finite étale `A`-algebra `S`
 becomes split of constant rank (`Algebra.IsFiniteSplit`) after base change to a finite étale
