@@ -267,9 +267,9 @@ theorem _root_.TauCeti.SymplecticForm.isNondegenerateRankZeroPoint_comp_right_if
   refine Iff.trans ?_ (isNondegenerateRankZeroPoint_iff_comp_right_aux ω₀ hφ hinv hσω hF)
   -- On the model space, manifold smoothness, derivatives and Hessians are the usual ones.
   have h0 : mvfderiv 𝓘(ℝ, E') (F ∘ φ) y = 0 ↔ fderiv ℝ (F ∘ φ) y = 0 := by
-    rw [mvfderiv_eq_fderiv]
-    exact ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ congr($h v),
-      fun h ↦ by rw [h, ContinuousLinearMap.zero_comp]⟩
+    exact ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦
+        (mvfderiv_eq_fderiv_apply _ y v).symm.trans congr($h v),
+      fun h ↦ ContinuousLinearMap.ext fun v ↦ (mvfderiv_eq_fderiv_apply _ y v).trans congr($h v)⟩
   simp only [contMDiffAt_iff_contDiffAt, h0, toQuadraticMap_toBilinForm_criticalHessian,
     extChartAt_model_space_eq_id, PartialEquiv.refl_symm, PartialEquiv.refl_coe, Function.comp_id,
     id_eq]
