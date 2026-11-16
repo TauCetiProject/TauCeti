@@ -118,6 +118,7 @@ theorem pointConfigurations_map_equiv (e : P ≃ Q) :
 
 /-- With infinitely many points there is no point configuration: the finitely many components
 of a configuration carry only finitely many points. -/
+@[simp]
 theorem pointConfigurations_eq_empty_of_infinite [Infinite P] :
     pointConfigurations r cls pts s A = ∅ := by
   classical
@@ -221,6 +222,7 @@ theorem pointConfigurationCount_of_isEmpty [IsEmpty P] :
   rw [pointConfigurationCount_def, configurationCount_def, pointConfigurations_of_isEmpty]
 
 /-- With infinitely many points, the count through the points vanishes. -/
+@[simp]
 theorem pointConfigurationCount_eq_zero_of_infinite [Infinite P] :
     pointConfigurationCount r cls pts w s A = 0 := by
   rw [pointConfigurationCount_def, pointConfigurations_eq_empty_of_infinite, finsum_mem_empty]

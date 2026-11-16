@@ -200,6 +200,25 @@ theorem pointConfigurationCount_union_eq_union_of_forall_eq [AddCommMonoid H] {c
     exact h _ (Set.sep_subset _ _)
   · simp [hQ]
 
+/-- Adding two candidates `c` and `d` through the same points transfers from the count without
+points to the count through the points, provided it holds over every subfamily. -/
+private theorem pointConfigurationCount_insert_insert_eq [AddCommMonoid H] {cls : ι → H} {A : H}
+    {c d : ι} (hpts : pts d = pts c)
+    (hfin : (compatibleConfigurations r cls (insert c (insert d s)) A).Finite)
+    (h : ∀ t ⊆ s, configurationCount r cls w (insert c (insert d t)) A =
+      configurationCount r cls w t A) :
+    pointConfigurationCount r cls pts w (insert c (insert d s)) A =
+      pointConfigurationCount r cls pts w s A := by
+  have hunion (t : Set ι) : insert c (insert d t) = ({c, d} : Set ι) ∪ t := by
+    rw [Set.insert_union, Set.singleton_union]
+  rw [hunion] at hfin ⊢
+  conv_rhs => rw [← Set.empty_union s]
+  refine pointConfigurationCount_union_eq_union_of_forall_eq (Q := pts c)
+    (by rintro e (rfl | rfl) <;> simp [hpts]) (fun _ h ↦ h.elim) hfin
+    (hfin.subset (compatibleConfigurations_mono (by simp))) fun t ht ↦ ?_
+  rw [← hunion, Set.empty_union]
+  exact h t ht
+
 end Cluster
 
 /-! ### Ordinary birth and death -/
@@ -219,19 +238,11 @@ theorem pointConfigurationCount_insert_insert_of_weight_eq_neg (hcd : c ≠ d) (
     (hcomp : ∀ e ∈ s, r d e ∧ r e d ↔ r c e ∧ r e c) (hw : ∀ k ≠ 0, w d k = -w c k)
     (hfin : (compatibleConfigurations r cls (insert c (insert d s)) A).Finite) :
     pointConfigurationCount r cls pts w (insert c (insert d s)) A =
-      pointConfigurationCount r cls pts w s A := by
-  have hunion (t : Set ι) : insert c (insert d t) = ({c, d} : Set ι) ∪ t := by
-    rw [Set.insert_union, Set.singleton_union]
-  rw [hunion] at hfin ⊢
-  conv_rhs => rw [← Set.empty_union s]
-  refine pointConfigurationCount_union_eq_union_of_forall_eq (Q := pts c)
-    (by rintro e (rfl | rfl) <;> simp [hpts]) (fun _ h ↦ h.elim) hfin
-    (hfin.subset (compatibleConfigurations_mono (by simp))) fun t ht ↦ ?_
-  rw [← hunion, Set.empty_union]
-  exact configurationCount_insert_insert_of_weight_eq_neg hcd (fun h ↦ hc (ht h))
-    (fun h ↦ hd (ht h)) hr hcls (fun e he ↦ hcomp e (ht he)) hw
-    (hfin.subset (compatibleConfigurations_mono
-      (hunion s ▸ Set.insert_subset_insert (Set.insert_subset_insert ht))))
+      pointConfigurationCount r cls pts w s A :=
+  pointConfigurationCount_insert_insert_eq hpts hfin fun t ht ↦
+    configurationCount_insert_insert_of_weight_eq_neg hcd (fun h ↦ hc (ht h))
+      (fun h ↦ hd (ht h)) hr hcls (fun e he ↦ hcomp e (ht he)) hw
+      (hfin.subset (compatibleConfigurations_mono (by gcongr)))
 
 end BirthDeath
 
@@ -296,20 +307,13 @@ theorem pointConfigurationCount_insert_insert_of_eq_torusWeight_not {c d : ι} (
     (hpos : ∀ e ∈ insert c (insert d s), 0 < ω (cls e))
     (hfin : {e ∈ insert c (insert d s) | ω (cls e) ≤ ω A}.Finite) :
     pointConfigurationCount r cls pts w (insert c (insert d s)) A =
-      pointConfigurationCount r cls pts w s A := by
-  have hunion (t : Set ι) : insert c (insert d t) = ({c, d} : Set ι) ∪ t := by
-    rw [Set.insert_union, Set.singleton_union]
-  have hconf := finite_compatibleConfigurations (r := r) hpos hfin
-  rw [hunion] at hconf ⊢
-  conv_rhs => rw [← Set.empty_union s]
-  refine pointConfigurationCount_union_eq_union_of_forall_eq (Q := pts c)
-    (by rintro e (rfl | rfl) <;> simp [hpts]) (fun _ h ↦ h.elim) hconf
-    (hconf.subset (compatibleConfigurations_mono (by simp))) fun t ht ↦ ?_
-  have hmono : insert c (insert d t) ⊆ insert c (insert d s) := by gcongr
-  rw [← hunion, Set.empty_union]
-  exact configurationCount_insert_insert_of_eq_torusWeight_not (fun h ↦ hc (ht h))
-    (fun h ↦ hd (ht h)) hr hcls (fun e he ↦ hcomp e (ht he)) hwc hwd
-    (fun e he ↦ hpos e (hmono he)) (hfin.subset fun e he ↦ ⟨hmono he.1, he.2⟩)
+      pointConfigurationCount r cls pts w s A :=
+  pointConfigurationCount_insert_insert_eq hpts (finite_compatibleConfigurations hpos hfin)
+    fun t ht ↦
+    have hmono : insert c (insert d t) ⊆ insert c (insert d s) := by gcongr
+    configurationCount_insert_insert_of_eq_torusWeight_not (fun h ↦ hc (ht h))
+      (fun h ↦ hd (ht h)) hr hcls (fun e he ↦ hcomp e (ht he)) hwc hwd
+      (fun e he ↦ hpos e (hmono he)) (hfin.subset fun e he ↦ ⟨hmono he.1, he.2⟩)
 
 /-- Replacing a torus `c` by two tori `c'` and `d` through the same points transfers from the
 count without points to the count through the points, provided it holds over every subfamily. -/
