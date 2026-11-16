@@ -91,6 +91,18 @@ theorem topRegularRefinementBound_le_strongTopRegularityStep {t m M n : ℕ} (η
     (le_sup (f := fun n ↦ topRegularRefinementBound t (r n) (η n) (μ n) M)
       (mem_range.2 (Nat.lt_succ_of_le hn)))
 
+/-- `strongTopRegularityStep` is monotone in both the number of vertex cells and the number of
+pair colors. -/
+theorem strongTopRegularityStep_mono {t₁ t₂ m₁ m₂ : ℕ} (η μ : ℕ → ℝ) (r : ℕ → ℕ)
+    (ht : t₁ ≤ t₂) (hm : m₁ ≤ m₂) :
+    strongTopRegularityStep t₁ η μ r m₁ ≤ strongTopRegularityStep t₂ η μ r m₂ := by
+  rw [strongTopRegularityStep_def]
+  refine Finset.sup_le fun n hn ↦ ?_
+  have hn' : n ≤ t₂ + m₂ + t₂ ^ 3 * m₂ ^ 3 :=
+    (Nat.lt_succ_iff.1 (mem_range.1 hn)).trans (by gcongr)
+  exact (topRegularRefinementBound_mono_parts _ _ _ _ ht).trans
+    (topRegularRefinementBound_le_strongTopRegularityStep η μ r hm hn')
+
 /-- `strongTopRegularityStep` never lowers the number of pair colors. -/
 theorem le_strongTopRegularityStep (t : ℕ) (η μ : ℕ → ℝ) (r : ℕ → ℕ) (m : ℕ) :
     m ≤ strongTopRegularityStep t η μ r m :=
