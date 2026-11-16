@@ -29,7 +29,8 @@ then multiplication by `m` is a bijection on `π_{n + 2}(Y, y)`
 (`TauCeti.bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod`). No Hausdorff,
 path-connectedness, CW, or finite-generation assumption is needed on `Y`, and `m` need not be
 prime or nonzero. For `m = 2` this is the **mod-two vanishing theorem**: if `π₁(Y, y)` is trivial
-and `H̃_*(Y; 𝔽₂) = 0`, then every higher homotopy group `π_{n + 2}(Y, y)` is uniquely two-divisible
+and the reduced mod-two singular homology of `Y` vanishes in every degree, then every higher
+homotopy group `π_{n + 2}(Y, y)` is uniquely two-divisible
 (`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_reducedSingularHomology_modTwo`), hence
 becomes a `ℤ[1/2]`-module and satisfies `π_{n + 2}(Y, y) ⊗ 𝔽₂ = 0`.
 
@@ -281,8 +282,8 @@ theorem bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod {Y : Type}
     (HomotopyGroup.congrMulEquiv (finCongr (by omega : 0 + n + 2 = n + 2))) (m : ℤ) hstep
 
 /-- **Reduced-homology mod-`m` vanishing theorem.** If `π₁(Y, y)` is trivial and the reduced
-singular homology `H̃_q(Y; ℤ/m)` vanishes in every degree, then multiplication by `m` is a
-bijection on every higher homotopy group `π_{n + 2}(Y, y)`. -/
+singular homology of `Y` with coefficients in `ZMod m` vanishes in every degree, then
+multiplication by `m` is a bijection on every higher homotopy group `π_{n + 2}(Y, y)`. -/
 theorem bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_zmod {Y : Type}
     [TopologicalSpace Y] {y : Y} [Subsingleton (π_ 1 Y y)] {m : ℕ}
     (hY : ∀ q, IsZero ((reducedSingularHomologyFunctor
@@ -303,9 +304,9 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo {
   (isUniquelyTwoDivisible_iff _).2
     (bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod hY)
 
-/-- **The mod-two vanishing theorem.** If `π₁(Y, y)` is trivial and `H̃_*(Y; 𝔽₂) = 0`, then every
-higher homotopy group `π_{n + 2}(Y, y)` is uniquely two-divisible (hence is a `ℤ[1/2]`-module and
-satisfies `π_{n + 2}(Y, y) ⊗ 𝔽₂ = 0`). -/
+/-- **The mod-two vanishing theorem.** If `π₁(Y, y)` is trivial and the reduced mod-two singular
+homology of `Y` vanishes in every degree, then every higher homotopy group `π_{n + 2}(Y, y)` is
+uniquely two-divisible (hence is a `ℤ[1/2]`-module and satisfies `π_{n + 2}(Y, y) ⊗ 𝔽₂ = 0`). -/
 theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_reducedSingularHomology_modTwo {Y : Type}
     [TopologicalSpace Y] {y : Y} [Subsingleton (π_ 1 Y y)]
     (hY : ∀ q, IsZero ((reducedSingularHomologyFunctor

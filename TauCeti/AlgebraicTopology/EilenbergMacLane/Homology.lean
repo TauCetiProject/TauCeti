@@ -48,7 +48,7 @@ assumption on the coefficients: if multiplication by `m : ℤ` is bijective on `
 * for any ring `R` and any `R`-module `M` annihilated by `m`, the positive-degree singular homology
   `Hᵢ(X; M)` vanishes
   (`TauCeti.IsEilenbergMacLaneSpace.isZero_singularHomology_of_bijective_zsmul`) and the reduced
-  singular homology `H̃ᵢ(X; M)` vanishes in every degree
+  singular homology with coefficients in `M` vanishes in every degree
   (`TauCeti.IsEilenbergMacLaneSpace.isZero_reducedSingularHomology_of_bijective_zsmul`);
 * in particular, for any ring `k` in which `m = 0` (including `ZMod m` for any `m : ℕ`), `Hᵢ(X; k)`
   vanishes for all `i > 0`
@@ -383,8 +383,8 @@ theorem isZero_singularHomology_of_bijective_zsmul {R : Type} [Ring R] (M : Modu
 
 /-- **Reduced acyclicity of `K(A, d)` spaces modulo `m`.** If multiplication by `m : ℤ` is a
 bijection of `A`, then for every `d ≥ 1`, every ring `R`, and every `R`-module `M` annihilated by
-`m`, the reduced singular homology `H̃ₙ(X; M)` of every `K(A, d)` space vanishes in every degree,
-including degree zero. -/
+`m`, the reduced singular homology of every `K(A, d)` space `X` with coefficients in `M` vanishes
+in every degree, including degree zero. -/
 theorem isZero_reducedSingularHomology_of_bijective_zsmul {R : Type} [Ring R]
     (M : ModuleCat.{0} R) {m : ℤ} (hmM : ∀ a : M, m • a = 0) {A : Type} [AddCommGroup A]
     (hA : Function.Bijective fun a : A ↦ m • a) {d : ℕ} [NeZero d] {X : Type} [TopologicalSpace X]
@@ -434,8 +434,8 @@ theorem subsingleton_singularHomology_of_isUniquelyTwoDivisible {A : Type} [AddC
     ((isUniquelyTwoDivisible_iff A).1 hA) hX n
 
 /-- **Reduced mod-two acyclicity of `K(A, d)` spaces.** For a uniquely two-divisible abelian group
-`A` and every `d ≥ 1`, the reduced mod-two homology of every `K(A, d)` space vanishes in every
-degree: `H̃ᵢ(X; 𝔽₂) = 0` for all `i`. -/
+`A` and every `d ≥ 1`, the reduced mod-two singular homology of every `K(A, d)` space vanishes in
+every degree. -/
 theorem isZero_reducedSingularHomology_of_isUniquelyTwoDivisible {A : Type} [AddCommGroup A]
     (hA : IsUniquelyTwoDivisible A) {d : ℕ} [NeZero d] {X : Type} [TopologicalSpace X] {x : X}
     (hX : IsEilenbergMacLaneSpace (Multiplicative A) d X x) (n : ℕ) :
