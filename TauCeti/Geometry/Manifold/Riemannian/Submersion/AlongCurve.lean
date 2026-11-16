@@ -229,15 +229,15 @@ variable [IsManifold I 2 M] [IsManifold J 2 N]
   [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
   {γ : ℝ → M} {U : ∀ r, TangentSpace J ((f ∘ γ) r)} {s : Set ℝ} {t : ℝ}
 
-local instance : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+private local instance : IsManifold I ((1 : ℕ∞ω) + 1) M := by
   rw [one_add_one_eq_two]
   infer_instance
 
-local instance : IsManifold J ((1 : ℕ∞ω) + 1) N := by
+private local instance : IsManifold J ((1 : ℕ∞ω) + 1) N := by
   rw [one_add_one_eq_two]
   infer_instance
 
-local instance : IsManifold J 1 N := .of_le (n := 2) one_le_two
+private local instance : IsManifold J 1 N := .of_le (n := 2) one_le_two
 
 omit [IsManifold I 2 M]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
