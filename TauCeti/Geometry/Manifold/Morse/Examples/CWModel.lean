@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.CWModel.Proper
 public import TauCeti.Geometry.Manifold.Morse.Examples.QuadraticWell
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.Analysis.Calculus.Morse.NormSq
 
 /-!
 # Examples of the CW model of a Morse function
@@ -113,10 +114,7 @@ theorem exists_cwComplex_homotopyEquiv_real :
     have := (Polynomial.X ^ 2 : Polynomial ℝ).isProperMap_eval (by simp)
     simpa using this
   have hbdd : BddBelow (range fun x : ℝ ↦ x ^ 2) := ⟨0, by rintro _ ⟨x, rfl⟩; positivity⟩
-  have h0 : morseIndex (fun x : ℝ ↦ x ^ 2) 0 = 0 := by
-    rw [← manifoldMorseIndex_modelSpace]
-    exact manifoldMorseIndex_eq_zero_of_isLocalMin (contMDiffAt_iff_contDiffAt.2 (by fun_prop))
-      (Filter.Eventually.of_forall fun y ↦ by simpa using sq_nonneg y)
+  have h0 : morseIndex (fun x : ℝ ↦ x ^ 2) 0 = 0 := by simpa using morseIndex_norm_sq (0 : ℝ)
   obtain ⟨X, _, _, _, ⟨e⟩, hcell⟩ := isMorse_sq_real.exists_cwComplex_homotopyEquiv hp hbdd
   refine ⟨X, _, ‹_›, ‹_›, e.symm.contractibleSpace, ⟨e⟩, ?_, fun m ↦ ?_⟩
   · obtain ⟨c⟩ := hcell 0
