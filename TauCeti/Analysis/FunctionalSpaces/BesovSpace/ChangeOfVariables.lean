@@ -186,6 +186,87 @@ private theorem lineDerivOp_smulLeftCLM_compCLM {ι : Type*} [Fintype ι]
     hΦ.basis_repr_fderiv_apply b.toBasis w i
   rw [smulLeftCLM_smulLeftCLM_apply hc hg, OrthonormalBasis.coe_toBasis]
 
+/-- The inductive step of `exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le`: by the
+Leibniz and chain rules, `∂_w (g Φ^* f) = (∂_w g) Φ^* f + ∑ᵢ cᵢ g Φ^* (∂_{bᵢ} f)`, and Bernstein's
+inequality bounds `∂_{bᵢ} f` by `R ‖f‖_p`, so a bound for the derivatives of order `M` gives one
+for those of order `M + 1`. -/
+private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le_succ {J : ℝ}
+    (L : ℝ) {M : ℕ}
+    (ih :
+      ∃ K : ℝ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {Φ : E ≃ E} (hΦ : (Φ : E → E).HasTemperateGrowth)
+        (hΨ : (Φ.symm : E → E).HasTemperateGrowth), (∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) →
+        (∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
+        ∀ {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth →
+        (∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ {R : ℝ}, 0 < R →
+        ∀ f : Lp F p (volume : Measure E),
+        IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ → ∀ m : Fin M → E,
+        ∃ w : Lp F p (volume : Measure E),
+          ∂^{m} (smulLeftCLM F g (compCLM F Φ hΦ hΨ (f : 𝓢'(E, F)))) = w ∧
+          ‖w‖ ≤ K * G * max 1 R ^ M * (∏ i, ‖m i‖) * ‖f‖) :
+    ∃ K : ℝ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {Φ : E ≃ E} (hΦ : (Φ : E → E).HasTemperateGrowth)
+      (hΨ : (Φ.symm : E → E).HasTemperateGrowth), (∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) →
+      (∀ n, 1 ≤ n → n ≤ M + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
+      ∀ {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth →
+      (∀ n ≤ M + 1, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ {R : ℝ}, 0 < R →
+      ∀ f : Lp F p (volume : Measure E),
+      IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ → ∀ m : Fin (M + 1) → E,
+      ∃ w : Lp F p (volume : Measure E),
+        ∂^{m} (smulLeftCLM F g (compCLM F Φ hΦ hΨ (f : 𝓢'(E, F)))) = w ∧
+        ‖w‖ ≤ K * G * max 1 R ^ (M + 1) * (∏ i, ‖m i‖) * ‖f‖ := by
+  set b := stdOrthonormalBasis ℝ E
+  obtain ⟨CB, hCB, hB⟩ :=
+    exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier (E := E) (F := F)
+  obtain ⟨K, hK, hKb⟩ := ih
+  set d := Module.finrank ℝ E
+  refine ⟨K * (1 + d * 2 ^ M * max L 0 * CB), by positivity,
+    fun {p} _ {Φ} hΦ hΨ hdet hΦL {g G} hg hgG R hR f hf m ↦ ?_⟩
+  set w := m (Fin.last M)
+  have hG : 0 ≤ G := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).1
+  -- The derivatives `∂_{bᵢ} f` are band-limited to the same ball.
+  choose f' hf' hf'n using fun i ↦ hB hR f hf (b i)
+  have hf'v (i) : IsVanishingOn (𝓕 (f' i : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ := by
+    rw [← hf' i]
+    exact isVanishingOn_fourier_lineDerivOp hf _
+  -- The products `cᵢ g` with the coefficients of the chain rule, `DΦ(x) w = ∑ᵢ cᵢ(x) bᵢ`.
+  have hcg (i) := hasTemperateGrowth_and_norm_iteratedFDeriv_repr_fderiv_mul_le b hΦ (M := M)
+    hΦL hg (fun n hn ↦ hgG n (by omega)) w i
+  have hΦL' : ∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L :=
+    fun n h₁ h₂ ↦ hΦL n h₁ (by omega)
+  obtain ⟨v₁, hv₁, hv₁n⟩ := hKb hΦ hΨ hdet hΦL' (hg.fderiv_apply w)
+    (hg.1.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le (by
+      rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast le_top) hgG w) hR f hf
+    (Fin.init m)
+  choose v₂ hv₂ hv₂n using fun i ↦ hKb hΦ hΨ hdet hΦL' (hcg i).1 (hcg i).2 hR (f' i)
+    (hf'v i) (Fin.init m)
+  refine ⟨v₁ + ∑ i, v₂ i, ?_, ?_⟩
+  · rw [LineDeriv.iteratedLineDerivOp_succ_right, lineDerivOp_smulLeftCLM_compCLM b hΦ hΨ hg,
+      LineDeriv.iteratedLineDerivOp_add, LineDeriv.iteratedLineDerivOp_sum, hv₁,
+      Lp.toTemperedDistribution_add, Lp.toTemperedDistribution_sum]
+    simp only [w] at hv₂
+    simp_rw [hf', hv₂]
+  · -- Each `v₂ i` gains `‖∂_{bᵢ} f‖ ≤ CB R ‖f‖` over `v₁`, and `1 + a R ≤ (1 + a) max 1 R`.
+    have hL : 0 ≤ L := (norm_nonneg _).trans (hΦL 1 le_rfl (by omega) 0)
+    set P := ∏ i, ‖Fin.init m i‖
+    have hR₁ : R ≤ max 1 R := le_max_right 1 R
+    calc ‖v₁ + ∑ i, v₂ i‖ ≤ ‖v₁‖ + ∑ i, ‖v₂ i‖ :=
+          (norm_add_le _ _).trans (add_le_add_right (norm_sum_le _ _) _)
+      _ ≤ K * (G * ‖w‖) * max 1 R ^ M * P * ‖f‖ + ∑ _i : Fin d,
+          K * (2 ^ M * (L * ‖w‖ * G)) * max 1 R ^ M * P * (CB * R * ‖f‖) := by
+        refine add_le_add hv₁n (Finset.sum_le_sum fun i _ ↦ (hv₂n i).trans ?_)
+        gcongr
+        simpa [b.orthonormal.1 i] using hf'n i
+      _ ≤ K * G * ‖w‖ * max 1 R ^ M * P * ‖f‖ * ((1 + d * 2 ^ M * max L 0 * CB) * max 1 R) := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, max_eq_left hL]
+        have ha : 0 ≤ d * 2 ^ M * L * CB := by positivity
+        have : 1 + d * 2 ^ M * L * CB * R ≤ (1 + d * 2 ^ M * L * CB) * max 1 R := by
+          nlinarith [le_max_left 1 R]
+        calc _ = K * G * ‖w‖ * max 1 R ^ M * P * ‖f‖ * (1 + d * 2 ^ M * L * CB * R) := by ring
+          _ ≤ _ := by gcongr
+      _ = K * (1 + d * 2 ^ M * max L 0 * CB) * G * max 1 R ^ (M + 1) * (∏ i, ‖m i‖) * ‖f‖ := by
+        rw [Fin.prod_univ_castSucc]
+        simp only [P, Fin.init, w]
+        ring
+
 /-- **Derivatives of a pulled-back band-limited function.** Let `M` be a natural number. There is
 `K`, depending only on `J`, `L` and `M`, with the following property. Let `J⁻¹ ≤ |det DΦ|`, let
 the derivatives of `Φ` of orders `1` to `M` be bounded by `L`, let `g` be a function of temperate
@@ -204,9 +285,6 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le {J
       ∃ w : Lp F p (volume : Measure E),
         ∂^{m} (smulLeftCLM F g (compCLM F Φ hΦ hΨ (f : 𝓢'(E, F)))) = w ∧
         ‖w‖ ≤ K * G * max 1 R ^ M * (∏ i, ‖m i‖) * ‖f‖ := by
-  set b := stdOrthonormalBasis ℝ E
-  obtain ⟨CB, hCB, hB⟩ :=
-    exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier (E := E) (F := F)
   induction M with
   | zero =>
     refine ⟨J, zero_le_one.trans hJ, fun {p} _ {Φ} hΦ hΨ hdet _ {g G} hg hgG R _ f _ m ↦ ?_⟩
@@ -217,57 +295,7 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le {J
     have hG := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).1
     calc ‖w‖ ≤ G * (J * ‖f‖) := hwn.trans (by gcongr)
       _ = _ := by simp; ring
-  | succ M ih =>
-    obtain ⟨K, hK, hKb⟩ := ih
-    set d := Module.finrank ℝ E
-    refine ⟨K * (1 + d * 2 ^ M * max L 0 * CB), by positivity,
-      fun {p} _ {Φ} hΦ hΨ hdet hΦL {g G} hg hgG R hR f hf m ↦ ?_⟩
-    set w := m (Fin.last M)
-    have hG : 0 ≤ G := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).1
-    -- The derivatives `∂_{bᵢ} f` are band-limited to the same ball.
-    choose f' hf' hf'n using fun i ↦ hB hR f hf (b i)
-    have hf'v (i) : IsVanishingOn (𝓕 (f' i : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ := by
-      rw [← hf' i]
-      exact isVanishingOn_fourier_lineDerivOp hf _
-    -- The products `cᵢ g` with the coefficients of the chain rule, `DΦ(x) w = ∑ᵢ cᵢ(x) bᵢ`.
-    have hcg (i) := hasTemperateGrowth_and_norm_iteratedFDeriv_repr_fderiv_mul_le b hΦ (M := M)
-      hΦL hg (fun n hn ↦ hgG n (by omega)) w i
-    have hΦL' : ∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L :=
-      fun n h₁ h₂ ↦ hΦL n h₁ (by omega)
-    obtain ⟨v₁, hv₁, hv₁n⟩ := hKb hΦ hΨ hdet hΦL' (hg.fderiv_apply w)
-      (hg.1.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le (by
-        rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast le_top) hgG w) hR f hf
-      (Fin.init m)
-    choose v₂ hv₂ hv₂n using fun i ↦ hKb hΦ hΨ hdet hΦL' (hcg i).1 (hcg i).2 hR (f' i)
-      (hf'v i) (Fin.init m)
-    refine ⟨v₁ + ∑ i, v₂ i, ?_, ?_⟩
-    · rw [LineDeriv.iteratedLineDerivOp_succ_right, lineDerivOp_smulLeftCLM_compCLM b hΦ hΨ hg,
-        LineDeriv.iteratedLineDerivOp_add, LineDeriv.iteratedLineDerivOp_sum, hv₁,
-        Lp.toTemperedDistribution_add, Lp.toTemperedDistribution_sum]
-      simp only [w] at hv₂
-      simp_rw [hf', hv₂]
-    · -- Each `v₂ i` gains `‖∂_{bᵢ} f‖ ≤ CB R ‖f‖` over `v₁`, and `1 + a R ≤ (1 + a) max 1 R`.
-      have hL : 0 ≤ L := (norm_nonneg _).trans (hΦL 1 le_rfl (by omega) 0)
-      set P := ∏ i, ‖Fin.init m i‖
-      have hR₁ : R ≤ max 1 R := le_max_right 1 R
-      calc ‖v₁ + ∑ i, v₂ i‖ ≤ ‖v₁‖ + ∑ i, ‖v₂ i‖ :=
-            (norm_add_le _ _).trans (add_le_add_right (norm_sum_le _ _) _)
-        _ ≤ K * (G * ‖w‖) * max 1 R ^ M * P * ‖f‖ + ∑ _i : Fin d,
-            K * (2 ^ M * (L * ‖w‖ * G)) * max 1 R ^ M * P * (CB * R * ‖f‖) := by
-          refine add_le_add hv₁n (Finset.sum_le_sum fun i _ ↦ (hv₂n i).trans ?_)
-          gcongr
-          simpa [b.orthonormal.1 i] using hf'n i
-        _ ≤ K * G * ‖w‖ * max 1 R ^ M * P * ‖f‖ * ((1 + d * 2 ^ M * max L 0 * CB) * max 1 R) := by
-          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, max_eq_left hL]
-          have ha : 0 ≤ d * 2 ^ M * L * CB := by positivity
-          have : 1 + d * 2 ^ M * L * CB * R ≤ (1 + d * 2 ^ M * L * CB) * max 1 R := by
-            nlinarith [le_max_left 1 R]
-          calc _ = K * G * ‖w‖ * max 1 R ^ M * P * ‖f‖ * (1 + d * 2 ^ M * L * CB * R) := by ring
-            _ ≤ _ := by gcongr
-        _ = K * (1 + d * 2 ^ M * max L 0 * CB) * G * max 1 R ^ (M + 1) * (∏ i, ‖m i‖) * ‖f‖ := by
-          rw [Fin.prod_univ_castSucc]
-          simp only [P, Fin.init, w]
-          ring
+  | succ M ih => exact exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le_succ L ih
 
 /-- There is `K`, depending only on the bump `φ` and on `J`, such that for `J⁻¹ ≤ |det DΦ|`, a
 function `g` of temperate growth bounded by `G` and `f ∈ Lᵖ`, every block `Δⱼ (g Φ^* f)` is an `Lᵖ`
@@ -392,6 +420,103 @@ private theorem smulLeftCLM_compCLM_lineDerivOp {ι : Type*} [Fintype ι]
     OrthonormalBasis.coe_toBasis]
   abel
 
+/-- The inductive step of
+`exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_of_annulus`. On the annulus,
+`f = ∑ᵢ ∂_{bᵢ} hᵢ` with `‖hᵢ‖_p` of order `R⁻¹ ‖f‖_p`. By the chain rule
+`Φ^* (∂_{bᵢ} hᵢ) = ∑ₗ dᵢₗ ∂_{bₗ} (Φ^* hᵢ)`, and
+`g dᵢₗ ∂_{bₗ} Y = ∂_{bₗ} (g dᵢₗ Y) - ∂_{bₗ} (g dᵢₗ) Y`; Bernstein's inequality bounds `∂_{bₗ}` on
+the spectrum of `Δⱼ` by `2^j`. So a bound of order `M` gives one of order `M + 1`. -/
+private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_of_annulus_succ
+    (φ : ContDiffBump (0 : E)) {J : ℝ} (L B : ℝ) {M : ℕ}
+    (ih :
+      ∃ K : ℝ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {Φ : E ≃ E} (hΦ : (Φ : E → E).HasTemperateGrowth)
+        (hΨ : (Φ.symm : E → E).HasTemperateGrowth), (∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) →
+        (∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
+        (∀ n, 1 ≤ n → n ≤ M + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ L) →
+        ∀ {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth →
+        (∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ (j : ℕ) {R : ℝ}, 0 < R →
+        ∀ f : Lp F p (volume : Measure E),
+        IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (ball 0 R ∪ (closedBall 0 (B * R))ᶜ) →
+        ∃ v : Lp F p (volume : Measure E),
+          littlewoodPaleyBlock F φ j (smulLeftCLM F g (compCLM F Φ hΦ hΨ (f : 𝓢'(E, F)))) = v ∧
+          ‖v‖ ≤ K * G * ((2 : ℝ) ^ j / R) ^ M * ‖f‖) :
+    ∃ K : ℝ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {Φ : E ≃ E} (hΦ : (Φ : E → E).HasTemperateGrowth)
+      (hΨ : (Φ.symm : E → E).HasTemperateGrowth), (∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) →
+      (∀ n, 1 ≤ n → n ≤ M + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
+      (∀ n, 1 ≤ n → n ≤ M + 1 + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ L) →
+      ∀ {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth →
+      (∀ n ≤ M + 1, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ (j : ℕ) {R : ℝ}, 0 < R →
+      ∀ f : Lp F p (volume : Measure E),
+      IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (ball 0 R ∪ (closedBall 0 (B * R))ᶜ) →
+      ∃ v : Lp F p (volume : Measure E),
+        littlewoodPaleyBlock F φ j (smulLeftCLM F g (compCLM F Φ hΦ hΨ (f : 𝓢'(E, F)))) = v ∧
+        ‖v‖ ≤ K * G * ((2 : ℝ) ^ j / R) ^ (M + 1) * ‖f‖ := by
+  set b := stdOrthonormalBasis ℝ E
+  set d := Module.finrank ℝ E
+  obtain ⟨Crep, hCrep, hrep⟩ := b.exists_eq_sum_lineDerivOp_and_norm_le (F := F) B
+  obtain ⟨CB, hCB, hB⟩ :=
+    exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier (E := E) (F := F)
+  obtain ⟨K, hK, hKb⟩ := ih
+  refine ⟨d * d * Crep * (CB * φ.rOut + 1) * K *
+    (2 ^ (M + 1) * ((M + 1).factorial * max L 0 * max 1 L ^ (M + 1))), by
+    have := φ.rOut_pos; positivity,
+    fun {p} _ {Φ} hΦ hΨ hdet hΦL hΨL {g G} hg hgG j R hR f hf ↦ ?_⟩
+  rw [max_eq_left ((norm_nonneg _).trans (hΦL 1 le_rfl (by omega) 0))]
+  have hG : 0 ≤ G := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).1
+  obtain ⟨h, hfh, hh⟩ := hrep hR f hf
+  -- The coefficients `dᵢₗ` of `DΦ⁻¹(Φ x) bᵢ = ∑ₗ dᵢₗ(x) bₗ`, and the products `g dᵢₗ`.
+  set c : Fin d → Fin d → E → ℂ := fun i l ↦
+    (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) (b i)) l : ℝ) : ℂ)) * g
+  have hc (i l) := hasTemperateGrowth_and_norm_iteratedFDeriv_repr_fderiv_comp_mul_le b hΦ hΨ
+    hΦL hΨL hg hgG (b i) l
+  simp only [b.orthonormal.1 _, mul_one] at hc
+  have hΦL' : ∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L :=
+    fun n h₁ h₂ ↦ hΦL n h₁ (by omega)
+  have hΨL' : ∀ n, 1 ≤ n → n ≤ M + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ L :=
+    fun n h₁ h₂ ↦ hΨL n h₁ (by omega)
+  -- `Δⱼ (g dᵢₗ Φ^* hᵢ)` is band-limited to the ball of radius `2^j φ.rOut`.
+  choose y hy hyn using fun i l ↦ hKb hΦ hΨ hdet hΦL' hΨL' (hc i l).1
+    (fun n hn ↦ (hc i l).2 n (by omega)) j hR (h i) (hh i).1
+  have hR' : (0 : ℝ) < 2 ^ j * φ.rOut := by have := φ.rOut_pos; positivity
+  choose y' hy' hy'n using fun i l ↦ hB hR' (y i l) (by
+    rw [← hy i l]; exact isVanishingOn_fourier_littlewoodPaleyBlock φ j _) (b l)
+  choose z hz hzn using fun i l ↦ hKb hΦ hΨ hdet hΦL' hΨL' ((hc i l).1.fderiv_apply (b l))
+    ((hc i l).1.1.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le (by
+      rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast le_top) (hc i l).2 (b l))
+    j hR (h i) (hh i).1
+  refine ⟨∑ i, ∑ l, (y' i l - z i l), ?_, ?_⟩
+  · rw [hfh, map_sum, map_sum, map_sum]
+    simp_rw [smulLeftCLM_compCLM_lineDerivOp b hΦ hΨ hg, map_sum, map_sub,
+      littlewoodPaleyBlock_lineDerivOp, hy, hy', hz, Lp.toTemperedDistribution_sum,
+      Lp.toTemperedDistribution_sub]
+  · -- Each term is at most `(CB φ.rOut + 1) 2^j Q ‖hᵢ‖`, and `‖hᵢ‖ ≤ Crep R⁻¹ ‖f‖`.
+    set Q := K * (2 ^ (M + 1) * ((M + 1).factorial * L * max 1 L ^ (M + 1) * G)) *
+      ((2 : ℝ) ^ j / R) ^ M
+    have hQ : 0 ≤ Q := by
+      have := (norm_nonneg _).trans (hΦL 1 le_rfl (by omega) 0); positivity
+    have hterm (i l) : ‖y' i l - z i l‖ ≤ (CB * φ.rOut + 1) * 2 ^ j * (Q * (Crep / R * ‖f‖)) := by
+      have hy'i := hy'n i l
+      rw [b.orthonormal.1 l, mul_one] at hy'i
+      have hzi : ‖z i l‖ ≤ Q * ‖h i‖ := by simpa [b.orthonormal.1 l] using hzn i l
+      refine (norm_sub_le_add_one_mul (a := CB * φ.rOut) (t := 2 ^ j) (Q := Q) (h := ‖h i‖)
+        (one_le_pow₀ one_le_two) (by positivity) (hy'i.trans ?_) hzi).trans ?_
+      · rw [show CB * φ.rOut * 2 ^ j * (Q * ‖h i‖) = CB * (2 ^ j * φ.rOut) * (Q * ‖h i‖) by
+          ring]
+        have := φ.rOut_pos
+        gcongr
+        exact hyn i l
+      · have := φ.rOut_pos
+        gcongr
+        exact (hh i).2
+    calc ‖∑ i, ∑ l, (y' i l - z i l)‖ ≤ ∑ i, ∑ l, ‖y' i l - z i l‖ :=
+          (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ norm_sum_le _ _)
+      _ ≤ ∑ _i : Fin d, ∑ _l : Fin d, (CB * φ.rOut + 1) * 2 ^ j * (Q * (Crep / R * ‖f‖)) :=
+        Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun l _ ↦ hterm i l
+      _ = _ := by
+        simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, Q]
+        rw [pow_succ ((2 : ℝ) ^ j / R)]
+        field_simp
+
 /-- **Low output frequency, high input frequency.** Let `B` be a real number and `M` a natural
 number. There is `K`, depending only on `φ`, `J`, `L`, `B` and `M`, with the following property.
 Let `J⁻¹ ≤ |det DΦ|`, let the derivatives of `Φ` of orders `1` to `M` and those of `Φ⁻¹` of orders
@@ -412,15 +537,7 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
       ∃ v : Lp F p (volume : Measure E),
         littlewoodPaleyBlock F φ j (smulLeftCLM F g (compCLM F Φ hΦ hΨ (f : 𝓢'(E, F)))) = v ∧
         ‖v‖ ≤ K * G * ((2 : ℝ) ^ j / R) ^ M * ‖f‖ := by
-  -- Induction on `M`. On the annulus, `f = ∑ᵢ ∂_{bᵢ} hᵢ` with `‖hᵢ‖_p` of order `R⁻¹ ‖f‖_p`. By
-  -- the chain rule `Φ^* (∂_{bᵢ} hᵢ) = ∑ₗ dᵢₗ ∂_{bₗ} (Φ^* hᵢ)`, and
-  -- `g dᵢₗ ∂_{bₗ} Y = ∂_{bₗ} (g dᵢₗ Y) - ∂_{bₗ} (g dᵢₗ) Y`; Bernstein's inequality bounds `∂_{bₗ}`
-  -- on the spectrum of `Δⱼ` by `2^j`. Each step gains `2^j / R`.
-  set b := stdOrthonormalBasis ℝ E
-  set d := Module.finrank ℝ E
-  obtain ⟨Crep, hCrep, hrep⟩ := b.exists_eq_sum_lineDerivOp_and_norm_le (F := F) B
-  obtain ⟨CB, hCB, hB⟩ :=
-    exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier (E := E) (F := F)
+  -- Induction on `M`: each step gains `2^j / R`.
   obtain ⟨K₀, hK₀, h₀⟩ :=
     exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_of_norm_le (F := F) φ hJ
   induction M with
@@ -429,66 +546,7 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
     obtain ⟨w, hw, hwn⟩ := h₀ hΦ hΨ hdet hg (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).2 j f
     exact ⟨w, hw, by simpa using hwn⟩
   | succ M ih =>
-    obtain ⟨K, hK, hKb⟩ := ih
-    refine ⟨d * d * Crep * (CB * φ.rOut + 1) * K *
-      (2 ^ (M + 1) * ((M + 1).factorial * max L 0 * max 1 L ^ (M + 1))), by
-      have := φ.rOut_pos; positivity,
-      fun {p} _ {Φ} hΦ hΨ hdet hΦL hΨL {g G} hg hgG j R hR f hf ↦ ?_⟩
-    rw [max_eq_left ((norm_nonneg _).trans (hΦL 1 le_rfl (by omega) 0))]
-    have hG : 0 ≤ G := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).1
-    obtain ⟨h, hfh, hh⟩ := hrep hR f hf
-    -- The coefficients `dᵢₗ` of `DΦ⁻¹(Φ x) bᵢ = ∑ₗ dᵢₗ(x) bₗ`, and the products `g dᵢₗ`.
-    set c : Fin d → Fin d → E → ℂ := fun i l ↦
-      (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) (b i)) l : ℝ) : ℂ)) * g
-    have hc (i l) := hasTemperateGrowth_and_norm_iteratedFDeriv_repr_fderiv_comp_mul_le b hΦ hΨ
-      hΦL hΨL hg hgG (b i) l
-    simp only [b.orthonormal.1 _, mul_one] at hc
-    have hΦL' : ∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L :=
-      fun n h₁ h₂ ↦ hΦL n h₁ (by omega)
-    have hΨL' : ∀ n, 1 ≤ n → n ≤ M + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ L :=
-      fun n h₁ h₂ ↦ hΨL n h₁ (by omega)
-    -- `Δⱼ (g dᵢₗ Φ^* hᵢ)` is band-limited to the ball of radius `2^j φ.rOut`.
-    choose y hy hyn using fun i l ↦ hKb hΦ hΨ hdet hΦL' hΨL' (hc i l).1
-      (fun n hn ↦ (hc i l).2 n (by omega)) j hR (h i) (hh i).1
-    have hR' : (0 : ℝ) < 2 ^ j * φ.rOut := by have := φ.rOut_pos; positivity
-    choose y' hy' hy'n using fun i l ↦ hB hR' (y i l) (by
-      rw [← hy i l]; exact isVanishingOn_fourier_littlewoodPaleyBlock φ j _) (b l)
-    choose z hz hzn using fun i l ↦ hKb hΦ hΨ hdet hΦL' hΨL' ((hc i l).1.fderiv_apply (b l))
-      ((hc i l).1.1.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le (by
-        rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast le_top) (hc i l).2 (b l))
-      j hR (h i) (hh i).1
-    refine ⟨∑ i, ∑ l, (y' i l - z i l), ?_, ?_⟩
-    · rw [hfh, map_sum, map_sum, map_sum]
-      simp_rw [smulLeftCLM_compCLM_lineDerivOp b hΦ hΨ hg, map_sum, map_sub,
-        littlewoodPaleyBlock_lineDerivOp, hy, hy', hz, Lp.toTemperedDistribution_sum,
-        Lp.toTemperedDistribution_sub]
-    · -- Each term is at most `(CB φ.rOut + 1) 2^j Q ‖hᵢ‖`, and `‖hᵢ‖ ≤ Crep R⁻¹ ‖f‖`.
-      set Q := K * (2 ^ (M + 1) * ((M + 1).factorial * L * max 1 L ^ (M + 1) * G)) *
-        ((2 : ℝ) ^ j / R) ^ M
-      have hQ : 0 ≤ Q := by
-        have := (norm_nonneg _).trans (hΦL 1 le_rfl (by omega) 0); positivity
-      have hterm (i l) : ‖y' i l - z i l‖ ≤ (CB * φ.rOut + 1) * 2 ^ j * (Q * (Crep / R * ‖f‖)) := by
-        have hy'i := hy'n i l
-        rw [b.orthonormal.1 l, mul_one] at hy'i
-        have hzi : ‖z i l‖ ≤ Q * ‖h i‖ := by simpa [b.orthonormal.1 l] using hzn i l
-        refine (norm_sub_le_add_one_mul (a := CB * φ.rOut) (t := 2 ^ j) (Q := Q) (h := ‖h i‖)
-          (one_le_pow₀ one_le_two) (by positivity) (hy'i.trans ?_) hzi).trans ?_
-        · rw [show CB * φ.rOut * 2 ^ j * (Q * ‖h i‖) = CB * (2 ^ j * φ.rOut) * (Q * ‖h i‖) by
-            ring]
-          have := φ.rOut_pos
-          gcongr
-          exact hyn i l
-        · have := φ.rOut_pos
-          gcongr
-          exact (hh i).2
-      calc ‖∑ i, ∑ l, (y' i l - z i l)‖ ≤ ∑ i, ∑ l, ‖y' i l - z i l‖ :=
-            (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ norm_sum_le _ _)
-        _ ≤ ∑ _i : Fin d, ∑ _l : Fin d, (CB * φ.rOut + 1) * 2 ^ j * (Q * (Crep / R * ‖f‖)) :=
-          Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun l _ ↦ hterm i l
-        _ = _ := by
-          simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, Q]
-          rw [pow_succ ((2 : ℝ) ^ j / R)]
-          field_simp
+    exact exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_of_annulus_succ φ L B ih
 
 /-- **Off-diagonal decay of a multiplied pullback between Littlewood–Paley blocks.** Let `M` be a
 natural number. There is `K`, depending only on `φ`, `L` and `M`, with the following property. Let
@@ -591,18 +649,8 @@ private theorem BesovSpace.exists_toDistr_eq_compCLM_and_norm_le_of_forall_exist
     (hΨb : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C) :
     ∃ C : ℝ, ∀ u : BesovSpace F φ s p q, ∃ v : BesovSpace F φ s p q,
       v.toDistr = compCLM F Φ hΦ hΨ u.toDistr ∧ ‖v‖ ≤ C * ‖u‖ := by
-  -- The derivatives of orders `1` to `N + 1` of `f` are those of order at most `N` of `Df`.
-  have key {f : E → E} {N : ℕ}
-      (h : ∀ n, 1 ≤ n → n ≤ N + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ C) :
-      ∃ L, ∀ n, 1 ≤ n → n ≤ N + 1 → ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ L := by
-    obtain ⟨L, hL⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists (𝕜 := ℝ)
-      (f := fderiv ℝ f) (N := N) fun n hn ↦ by
-        simpa only [norm_iteratedFDeriv_fderiv] using h (n + 1) (by omega) (by omega)
-    refine ⟨L, fun n h₁ h₂ x ↦ ?_⟩
-    obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' h₁
-    simpa only [norm_iteratedFDeriv_fderiv] using hL n (by omega) x
-  obtain ⟨L₁, hL₁⟩ := key hΦb
-  obtain ⟨L₂, hL₂⟩ := key hΨb
+  obtain ⟨L₁, hL₁⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_one_le hΦb
+  obtain ⟨L₂, hL₂⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_one_le hΨb
   obtain ⟨C, -, hC⟩ := exists_toDistr_eq_compCLM_and_norm_le (F := F) φ
     (N := ⌊|s|⌋₊ + 1) (by push_cast; exact Nat.lt_floor_add_one _) (max L₁ L₂)
   exact ⟨C, fun u ↦ hC hΦ hΨ (fun n h₁ h₂ x ↦ (hL₁ n h₁ h₂ x).trans (le_max_left _ _))
