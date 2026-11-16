@@ -93,21 +93,15 @@ private theorem exists_smoothForm_apply_eq_neg_inner {V : Type*} [NormedAddCommG
     contMDiff_iff_contDiff.2 (L.contDiff.comp hψ)
   refine ⟨SmoothForm.mpullback (L ∘ ψ) hG₀ (innerProductContactForm V), fun x a ↦ ?_,
     fun x a b ↦ ?_⟩
-  · simp only [SmoothForm.mpullback_apply, Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const]
-    rw [innerProductContactForm_apply, mfderiv_eq_fderiv, fderiv_comp x L.differentiableAt (hψD x)]
+  · rw [SmoothForm.mpullback_apply_one, innerProductContactForm_apply, mfderiv_eq_fderiv,
+      fderiv_comp x L.differentiableAt (hψD x)]
     simp only [Function.comp_apply, ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply,
       ContinuousLinearEquiv.coe_coe]
     -- The last coordinate of `L z` is `0`, by definition of `L`.
     exact zero_sub _
-  · rw [← mextDerivₗ_apply, SmoothForm.mextDerivₗ_mpullback, SmoothForm.mpullback_apply,
-      mextDerivₗ_apply]
-    have hv : (fun i ↦ mfderiv 𝓘(ℝ, K) 𝓘(ℝ, V × V × ℝ) (L ∘ ψ) x (![a, b] i)) =
-        ![mfderiv 𝓘(ℝ, K) 𝓘(ℝ, V × V × ℝ) (L ∘ ψ) x a,
-          mfderiv 𝓘(ℝ, K) 𝓘(ℝ, V × V × ℝ) (L ∘ ψ) x b] := by
-      ext i
-      fin_cases i <;> rfl
-    rw [hv, mextDeriv_innerProductContactForm_apply, mfderiv_eq_fderiv,
-      fderiv_comp x L.differentiableAt (hψD x)]
+  · rw [← mextDerivₗ_apply, SmoothForm.mextDerivₗ_mpullback, SmoothForm.coe_mpullback,
+      TauCeti.mpullback_apply_pair, mextDerivₗ_apply, mextDeriv_innerProductContactForm_apply,
+      mfderiv_eq_fderiv, fderiv_comp x L.differentiableAt (hψD x)]
     simp only [Function.comp_apply, ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply,
       ContinuousLinearEquiv.coe_coe, NormedSpace.fromTangentSpace_apply,
       ContinuousLinearMap.coe_comp, NormedSpace.fromTangentSpace_symm_apply,
@@ -202,9 +196,8 @@ theorem exists_diffeomorph_mpullback_innerProductContactForm_eq_contactization {
   refine ⟨G, U, hU, hs₀U, by simp [hG, hψ₀, hf₀], fun p hp ↦ ?_⟩
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
   obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
-  simp only [mpullback_apply, Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const]
-  rw [innerProductContactForm_apply, hdG, SmoothForm.contactization_apply, hUf p.1 hp.1,
-    Submodule.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.neg_apply, hG]
+  rw [mpullback_apply_one, innerProductContactForm_apply, hdG, SmoothForm.contactization_apply,
+    hUf p.1 hp.1, Submodule.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.neg_apply, hG]
   ring
 
 end Contactization
@@ -262,7 +255,7 @@ private theorem exists_partialDiffeomorph_reebFlow (hα : α.IsContactForm)
   have h := congrArg (fun A ↦ A ![w]) (mpullback_flowOf_comp_apply_eq_contactization
     hα.contMDiff_reebVectorField hι hα.apply_reebVectorField
     hα.interior_mextDeriv_reebVectorField hq.2.1)
-  simp only [TauCeti.mpullback_apply, Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const] at h
+  rw [TauCeti.mpullback_apply_one] at h
   rw [← h]
   -- The flow map and `Φ` agree near `q`; `tangentSpaceCast` is the identity on vectors.
   exact apply_eq_of_eq α hΦ.eq_of_nhds.symm (by rw [hΦ.mfderiv_eq]; rfl)
@@ -318,7 +311,7 @@ theorem SmoothForm.IsContactForm.exists_strictDarbouxChart (hα : α.IsContactFo
       mfderiv_comp_apply x (G.mdifferentiable (by simp) _) (Φ.symm.mdifferentiableAt (by simp) hxt)]
   have hcx : (Φ.symm.trans G') x = G q := rfl
   have hG := congrArg (fun A ↦ A ![w]) (hGβ q (hΦU hq))
-  simp only [TauCeti.mpullback_apply, Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const] at hG
+  rw [TauCeti.mpullback_apply_one] at hG
   rw [hd, hcx, hG, ← hΦα q hq w]
   -- `Φ` undoes `Φ⁻¹`, on points and on tangent vectors.
   exact apply_eq_of_eq α (Φ.right_inv hxt) (Φ.mfderiv_apply_mfderiv_symm_apply (by simp) hxt v)
