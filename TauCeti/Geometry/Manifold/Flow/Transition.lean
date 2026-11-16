@@ -39,13 +39,16 @@ which makes their fixed-point and derivative data independent of these choices.
 None of these statements assumes that `T₀` is the least period or that the return branch is the
 first return to the section.
 
-A variation `w` of `v` supported in a flow box, a small neighbourhood of the first part of the
-trajectory from `p` to `q = flowOf w T₁ p`, changes a transition only across that box: if `w = v`
-near the rest of the trajectory, the transition of `w` at time `T₁ + T₂` is the transition of `w`
-across the box followed by the unchanged transition of `v` from the section through `q`
-(`TauCeti.flowTransition_eventuallyEq_comp_of_eqOn`), and its derivative factors accordingly
-(`TauCeti.mfderiv_flowTransition_eq_comp_of_eqOn`). This is how the return map of a closed orbit
-is modified by flow-box variations in the proof of the Kupka–Smale theorem.
+A variation `w` of `v` supported in a flow box around an arc of the trajectory from `p` to
+`q = flowOf w T₁ p` changes a transition only across that box: if `w = v` on an open set
+containing the trajectory of `v` from `q` onwards, so in particular near `q`, the transition of
+`w` at time `T₁ + T₂` is the transition of `w` across the box followed by the unchanged transition
+of `v` from the section through `q` (`TauCeti.flowTransition_eventuallyEq_comp_of_eqOn`), and its
+derivative factors accordingly (`TauCeti.mfderiv_flowTransition_eq_comp_of_eqOn`). For a closed
+orbit through `p` that trajectory returns to `p`, so the box lies around an interior arc of the
+orbit from `p` to `q`, and `w = v` near `p`, near `q` and near the arc from `q` back to `p`. This
+is how the return map of a closed orbit is modified by flow-box variations in the proof of the
+Kupka–Smale theorem.
 
 ## Main results
 
@@ -302,8 +305,9 @@ section through `flowOf v T₂ q` is the transition of `w` to a section through 
 transition of `v` from there.
 
 For a closed orbit of `v` through `p` with return time `T₁ + T₂`, and a variation `w` of `v`
-supported in a flow box around the trajectory of `p` up to time `T₁` and agreeing with `v` on that
-trajectory, this expresses the return germ of `w` as the transition of `w` across the box
+agreeing with `v` on the orbit and supported in a flow box around an interior arc of the orbit
+from `p` to `q`, disjoint from a neighbourhood of the arc from `q` back to `p` (so `w = v` near
+`p` and near `q`), this expresses the return germ of `w` as the transition of `w` across the box
 followed by the unchanged transition of `v` back to the section through `p`. -/
 theorem flowTransition_eventuallyEq_comp_of_eqOn :
     flowTransition w g (T₁ + T₂) p =ᶠ[𝓝 p] flowTransition v g T₂ q ∘ flowTransition w g' T₁ p := by
