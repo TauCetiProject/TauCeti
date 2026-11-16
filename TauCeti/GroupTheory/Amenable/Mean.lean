@@ -23,18 +23,22 @@ continuous dual of `UCB G`, and evaluation at a point of `G` is a mean, so this 
 
 ## Main definitions
 
-* `TauCeti.Mean G`: a positive normalized linear functional on `UCB G`.
+* `TauCeti.Mean G`, `TauCeti.AddMean A`: a positive normalized linear functional on `UCB G`
+  (respectively `AddUCB A`).
 * `TauCeti.Mean.toContinuousLinearMap`: the continuous linear functional underlying a mean.
-* `TauCeti.Mean.eval`: evaluation at a point, as a mean.
+* `TauCeti.Mean.eval`, `TauCeti.AddMean.eval`: evaluation at a point, as a mean.
+* `TauCeti.AddMean.toMultiplicativeEquiv`, `TauCeti.Mean.toAdditiveEquiv`: bijections between
+  additive and multiplicative means across `Multiplicative` and `Additive`.
 
 ## Main results
 
-* `TauCeti.Mean.map_algebraMap`: a mean takes the value `c` at the constant function `c`.
+* `TauCeti.Mean.map_algebraMap`, `TauCeti.AddMean.map_algebraMap`: a mean takes the value `c` at
+  the constant function `c`.
 * `TauCeti.Mean.ciInf_le_apply`, `TauCeti.Mean.apply_le_ciSup`: `⨅ x, f x ≤ m f ≤ ⨆ x, f x`.
 * `TauCeti.Mean.abs_apply_le_norm`, `TauCeti.Mean.abs_apply_sub_apply_le`: `|m f| ≤ ‖f‖` and
   `|m f - m g| ≤ ‖f - g‖`.
-* `TauCeti.Mean.lipschitzWith`: a mean is `1`-Lipschitz; it is therefore a
-  `ContinuousLinearMapClass`.
+* `TauCeti.Mean.lipschitzWith`, `TauCeti.AddMean.lipschitzWith`: a mean is `1`-Lipschitz; it is
+  therefore a `ContinuousLinearMapClass`.
 * `TauCeti.Mean.norm_toContinuousLinearMap`: a mean has operator norm one.
 * `TauCeti.Mean.mem_range_toContinuousLinearMap_iff`: the continuous linear functionals coming
   from means are exactly the positive ones taking the value `1` at `1`.
@@ -203,6 +207,144 @@ theorem eval_apply (x : G) (f : UCB G) : eval G x f = (f : G →ᵇ ℝ) x :=
 
 instance : Nonempty (Mean G) :=
   ⟨eval G 1⟩
+
+end Mean
+
+section AddMean
+
+variable {A : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+
+variable (A) in
+/-- A mean on `AddUCB A`: a positive real linear functional taking the value `1` at the constant
+function `1`. -/
+structure AddMean extends AddUCB A →ₚ[ℝ] ℝ where
+  /-- An additive mean takes the value `1` at the constant function `1`. -/
+  map_one' : toFun 1 = 1
+
+namespace AddMean
+
+instance : FunLike (AddMean A) (AddUCB A) ℝ where
+  coe m := m.toFun
+  coe_injective := by
+    rintro ⟨_, _⟩ ⟨_, _⟩ h
+    congr
+    exact DFunLike.coe_injective h
+
+instance : LinearMapClass (AddMean A) ℝ (AddUCB A) ℝ where
+  map_add m := map_add m.toPositiveLinearMap
+  map_smulₛₗ m := map_smul m.toPositiveLinearMap
+
+instance : OrderHomClass (AddMean A) (AddUCB A) ℝ where
+  map_rel m _ _ h := OrderHomClass.mono m.toPositiveLinearMap h
+
+/-- Two additive means are equal when they agree on every function. -/
+@[ext]
+theorem ext {m n : AddMean A} (h : ∀ f, m f = n f) : m = n :=
+  DFunLike.ext m n h
+
+@[simp]
+theorem coe_toPositiveLinearMap (m : AddMean A) : ⇑m.toPositiveLinearMap = ⇑m :=
+  (rfl)
+
+/-- An additive mean takes the value `1` at the constant function `1`. -/
+@[simp]
+theorem map_one (m : AddMean A) : m 1 = 1 :=
+  m.map_one'
+
+/-- Build an `AddMean` from a linear functional nonnegative on nonnegative functions and sending
+`1` to `1`. -/
+def mk₀ (φ : AddUCB A →ₗ[ℝ] ℝ) (hφ : ∀ f, 0 ≤ f → 0 ≤ φ f) (h₁ : φ 1 = 1) : AddMean A :=
+  { PositiveLinearMap.mk₀ φ hφ with map_one' := h₁ }
+
+@[simp]
+theorem mk₀_apply (φ : AddUCB A →ₗ[ℝ] ℝ) (hφ : ∀ f, 0 ≤ f → 0 ≤ φ f) (h₁ : φ 1 = 1)
+    (f : AddUCB A) : mk₀ φ hφ h₁ f = φ f :=
+  (rfl)
+
+/-- An additive mean takes the value `c` at the constant function `c`. -/
+@[simp]
+theorem map_algebraMap (m : AddMean A) (c : ℝ) : m (algebraMap ℝ (AddUCB A) c) = c := by
+  simp [Algebra.algebraMap_eq_smul_one]
+
+/-- An additive mean is `1`-Lipschitz for the supremum norm. -/
+theorem lipschitzWith (m : AddMean A) : LipschitzWith 1 m := by
+  simpa using
+    PositiveLinearMap.lipschitzWith_of_forall_le_norm_smul m (AddUCB.le_norm_smul_one (A := A))
+
+/-- An additive mean is continuous for the supremum norm. -/
+instance : ContinuousLinearMapClass (AddMean A) ℝ (AddUCB A) ℝ where
+  map_continuous m := m.lipschitzWith.continuous
+
+variable (A) in
+/-- Evaluation at a point of `A` is a mean on `AddUCB A`. -/
+def eval (x : A) : AddMean A :=
+  mk₀ ((BoundedContinuousFunction.evalCLM ℝ x).toLinearMap ∘ₗ (addUCB A).val.toLinearMap)
+    (fun _ hf => AddUCB.le_def.1 hf x) rfl
+
+@[simp]
+theorem eval_apply (x : A) (f : AddUCB A) : eval A x f = (f : A →ᵇ ℝ) x :=
+  (rfl)
+
+instance : Nonempty (AddMean A) :=
+  ⟨eval A 0⟩
+
+variable (A) in
+/-- Bijection between means on `AddUCB A` and means on `UCB (Multiplicative A)`. -/
+def toMultiplicativeEquiv : AddMean A ≃ Mean (Multiplicative A) where
+  toFun m := Mean.mk₀
+    (m.toPositiveLinearMap.toLinearMap ∘ₗ (AddUCB.toMultiplicativeAlgEquiv A).symm.toLinearMap)
+    (fun f hf => map_nonneg m <|
+      AddUCB.le_def.2 fun x => by simpa using UCB.le_def.1 hf (Multiplicative.ofAdd x))
+    (by simp)
+  invFun m := mk₀
+    (m.toPositiveLinearMap.toLinearMap ∘ₗ (AddUCB.toMultiplicativeAlgEquiv A).toLinearMap)
+    (fun f hf => map_nonneg m <|
+      UCB.le_def.2 fun x => by simpa using AddUCB.le_def.1 hf x.toAdd)
+    (by simp)
+  left_inv m := ext fun f => by simp [Mean.mk₀_apply, mk₀_apply]
+  right_inv m := Mean.ext fun f => by simp [Mean.mk₀_apply, mk₀_apply]
+
+@[simp]
+theorem toMultiplicativeEquiv_apply (m : AddMean A) (f : UCB (Multiplicative A)) :
+    toMultiplicativeEquiv A m f = m ((AddUCB.toMultiplicativeAlgEquiv A).symm f) :=
+  Mean.mk₀_apply _ _ _ f
+
+@[simp]
+theorem toMultiplicativeEquiv_symm_apply (m : Mean (Multiplicative A)) (f : AddUCB A) :
+    (toMultiplicativeEquiv A).symm m f = m (AddUCB.toMultiplicativeAlgEquiv A f) :=
+  mk₀_apply _ _ _ f
+
+end AddMean
+
+end AddMean
+
+namespace Mean
+
+variable (G) in
+/-- Bijection between means on `UCB G` and means on `AddUCB (Additive G)`. -/
+def toAdditiveEquiv : Mean G ≃ AddMean (Additive G) where
+  toFun m := AddMean.mk₀
+    (m.toPositiveLinearMap.toLinearMap ∘ₗ (UCB.toAdditiveAlgEquiv G).symm.toLinearMap)
+    (fun f hf => map_nonneg m <|
+      UCB.le_def.2 fun x => by simpa using AddUCB.le_def.1 hf (Additive.ofMul x))
+    (by simp)
+  invFun m := mk₀
+    (m.toPositiveLinearMap.toLinearMap ∘ₗ (UCB.toAdditiveAlgEquiv G).toLinearMap)
+    (fun f hf => map_nonneg m <|
+      AddUCB.le_def.2 fun x => by simpa using UCB.le_def.1 hf x.toMul)
+    (by simp)
+  left_inv m := ext fun f => by simp [Mean.mk₀_apply, AddMean.mk₀_apply]
+  right_inv m := AddMean.ext fun f => by simp [Mean.mk₀_apply, AddMean.mk₀_apply]
+
+@[simp]
+theorem toAdditiveEquiv_apply (m : Mean G) (f : AddUCB (Additive G)) :
+    toAdditiveEquiv G m f = m ((UCB.toAdditiveAlgEquiv G).symm f) :=
+  AddMean.mk₀_apply _ _ _ f
+
+@[simp]
+theorem toAdditiveEquiv_symm_apply (m : AddMean (Additive G)) (f : UCB G) :
+    (toAdditiveEquiv G).symm m f = m (UCB.toAdditiveAlgEquiv G f) :=
+  mk₀_apply _ _ _ f
 
 end Mean
 

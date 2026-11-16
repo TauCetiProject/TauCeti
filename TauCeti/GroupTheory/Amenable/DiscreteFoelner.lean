@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.Amenable.Reiter
 import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Analysis.Normed.Lp.lpSpace
+import TauCeti.GroupTheory.Amenable.Sequence
 import TauCeti.Topology.Algebra.Group.UCB.Discrete
 
 /-!
@@ -43,10 +44,14 @@ assigns it the value `0`. Reiter's condition then yields Følner sets among the 
   condition.
 * `TauCeti.amenable_iff_exists_sum_tsum_abs_sub_lt`: a discrete group is amenable exactly when it
   satisfies Reiter's condition.
-* `TauCeti.Amenable.hasFoelnerSets`: an amenable discrete group has Følner sets.
-* `TauCeti.amenable_iff_hasFoelnerSets`: a discrete group is amenable exactly when it has Følner
-  sets.
-* `TauCeti.amenable_iff_exists_finset`: the same characterization in terms of finite sets.
+* `TauCeti.Amenable.hasFoelnerSets`, `TauCeti.AddAmenable.hasAddFoelnerSets`: an amenable
+  discrete group has Følner sets.
+* `TauCeti.amenable_iff_hasFoelnerSets`, `TauCeti.addAmenable_iff_hasAddFoelnerSets`: a discrete
+  group is amenable exactly when it has Følner sets.
+* `TauCeti.amenable_iff_exists_finset`, `TauCeti.addAmenable_iff_exists_finset`: the same
+  characterization in terms of finite sets.
+* `TauCeti.addAmenable_iff_exists_seq`: a countable discrete additive group is amenable exactly
+  when it admits an additive Følner sequence.
 
 ## References
 
@@ -170,5 +175,36 @@ theorem amenable_iff_exists_finset [DiscreteTopology G] [DecidableEq G] :
     Amenable G ↔ ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
       ∃ F : Finset G, F.Nonempty ∧ ∀ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F := by
   rw [amenable_iff_hasFoelnerSets, hasFoelnerSets_iff]
+
+section Additive
+
+open Filter Topology
+
+variable {A : Type*} [AddGroup A] [TopologicalSpace A] [DiscreteTopology A]
+
+/-- An amenable discrete additive group has Følner sets. -/
+theorem AddAmenable.hasAddFoelnerSets [AddAmenable A] : HasAddFoelnerSets A := by
+  have : DiscreteTopology (Multiplicative A) := Homeomorph.ofAdd.symm.discreteTopology
+  exact hasFoelnerSets_multiplicative_iff.1 Amenable.hasFoelnerSets
+
+/-- A discrete additive group is amenable exactly when it has Følner sets. -/
+theorem addAmenable_iff_hasAddFoelnerSets : AddAmenable A ↔ HasAddFoelnerSets A :=
+  ⟨fun _ => AddAmenable.hasAddFoelnerSets, .of_hasAddFoelnerSets⟩
+
+/-- A discrete additive group is amenable exactly when for every finite `K ⊆ A` and `ε > 0` there is
+a finite nonempty `F ⊆ A` with `|(a +ᵥ F) △ F| < ε · |F|` for all `a ∈ K`. -/
+theorem addAmenable_iff_exists_finset [DecidableEq A] :
+    AddAmenable A ↔ ∀ K : Finset A, ∀ ε : ℝ, 0 < ε →
+      ∃ F : Finset A, F.Nonempty ∧ ∀ a ∈ K, (#((a +ᵥ F) ∆ F) : ℝ) < ε * #F := by
+  rw [addAmenable_iff_hasAddFoelnerSets, hasAddFoelnerSets_iff]
+
+/-- A countable discrete additive group is amenable exactly when it admits an additive Følner
+sequence of finite nonempty sets. -/
+theorem addAmenable_iff_exists_seq [DecidableEq A] [Countable A] :
+    AddAmenable A ↔ ∃ F : ℕ → Finset A, (∀ n, (F n).Nonempty) ∧
+      ∀ a : A, Tendsto (fun n => (#((a +ᵥ F n) ∆ F n) : ℝ) / #(F n)) atTop (𝓝 0) := by
+  rw [addAmenable_iff_hasAddFoelnerSets, hasAddFoelnerSets_iff_exists_seq]
+
+end Additive
 
 end TauCeti

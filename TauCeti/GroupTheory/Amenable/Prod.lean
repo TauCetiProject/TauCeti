@@ -8,6 +8,8 @@ module
 public import Mathlib.Data.Fintype.Option
 public import TauCeti.GroupTheory.Amenable.Finite
 public import TauCeti.Topology.Algebra.Group.UCB.Prod
+import TauCeti.GroupTheory.Amenable.DirectedUnion
+import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!
 # Products of amenable groups
@@ -26,7 +28,9 @@ see, and then translates the function `x ↦ n (f (x, ·))` by `g`, which `m` do
 Hence the product of two amenable topological groups is amenable, and conversely each factor of an
 amenable product is amenable, as an image under a projection. By induction on the index type, the
 product of a finite family of amenable topological groups is amenable, the empty product being the
-trivial group.
+trivial group. For additive topological groups, finite products follow via `Multiplicative` and
+arbitrary products follow by taking the dense subgroup of finitely supported elements via
+`TauCeti.AddAmenable.of_forall_finset_subset_range`.
 
 No discreteness is needed: the factors are arbitrary topological groups, and the product carries the
 product topology. A finite product of discrete groups is again discrete, so this covers finite
@@ -41,12 +45,15 @@ products of discrete groups.
 * `TauCeti.Mean.map_fst_prod`, `TauCeti.Mean.map_snd_prod`: the marginals of `m.prod n` are `m` and
   `n`.
 * `TauCeti.Mean.IsLeftInvariant.prod`: the iterated mean of left-invariant means is left invariant.
-* `TauCeti.Amenable.prod`: the product of two amenable topological groups is amenable.
-* `TauCeti.amenable_prod_iff`: a product of two topological groups is amenable exactly when both
-  factors are.
+* `TauCeti.Amenable.prod`, `TauCeti.AddAmenable.prod`: the product of two amenable topological
+  groups is amenable.
+* `TauCeti.amenable_prod_iff`, `TauCeti.addAmenable_prod_iff`: a product of two topological groups
+  is amenable exactly when both factors are.
 * `TauCeti.Amenable.pi`: the product of a finite family of amenable topological groups is amenable.
 * `TauCeti.amenable_pi_iff`: a finite product of topological groups is amenable exactly when every
   factor is.
+* `TauCeti.AddAmenable.pi`, `TauCeti.addAmenable_pi_iff`: a product of an arbitrary family of
+  additive topological groups is amenable exactly when every factor is.
 
 ## References
 
@@ -63,6 +70,8 @@ open scoped BoundedContinuousFunction
 universe u v
 
 namespace TauCeti
+
+section Multiplicative
 
 variable {G H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
@@ -166,5 +175,92 @@ theorem amenable_pi_iff {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, Grou
   ⟨fun _ i => .of_denseRange ⟨Pi.evalMonoidHom G i, continuous_apply i⟩
       (Function.surjective_eval i).denseRange,
     fun _ => inferInstance⟩
+
+end Multiplicative
+
+section Additive
+
+open Filter Topology
+
+section Pair
+
+variable {A B : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+  [AddGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
+
+/-- The product of two amenable additive topological groups is amenable. -/
+instance AddAmenable.prod [AddAmenable A] [AddAmenable B] : AddAmenable (A × B) :=
+  amenable_multiplicative_iff.1 <|
+    (ContinuousMulEquiv.prodMultiplicative A B).amenable_iff.2 inferInstance
+
+variable (A B) in
+/-- A product of two additive topological groups is amenable exactly when both factors are. -/
+theorem addAmenable_prod_iff : AddAmenable (A × B) ↔ AddAmenable A ∧ AddAmenable B := by
+  rw [← amenable_multiplicative_iff, (ContinuousMulEquiv.prodMultiplicative A B).amenable_iff,
+    amenable_prod_iff, amenable_multiplicative_iff, amenable_multiplicative_iff]
+
+end Pair
+
+/-- The product of a family of amenable additive topological groups is amenable. -/
+instance AddAmenable.pi {ι : Type*} {K : ι → Type*} [∀ i, AddGroup (K i)]
+    [∀ i, TopologicalSpace (K i)] [∀ i, IsTopologicalAddGroup (K i)] [∀ i, AddAmenable (K i)] :
+    AddAmenable (∀ i, K i) := by
+  classical
+  let H : AddSubgroup (∀ i, K i) :=
+    { carrier := {x : ∀ i, K i | {i | x i ≠ 0}.Finite}
+      zero_mem' := by simp
+      add_mem' {x y} hx hy := (hx.union hy).subset fun i hi => by
+        simp only [Set.mem_union, Set.mem_ofPred_eq, Pi.add_apply] at hi ⊢
+        contrapose! hi
+        simp [hi]
+      neg_mem' {x} hx := by simpa using hx }
+  have hfin (s : Finset ι) : AddAmenable (∀ i : s, K i) :=
+    amenable_multiplicative_iff.1 <|
+      (ContinuousMulEquiv.piMultiplicative fun i : s => K i).amenable_iff.2 inferInstance
+  let φ (s : Finset ι) : (∀ i : s, K i) →+ (∀ i, K i) :=
+    { toFun x i := if hi : i ∈ s then x ⟨i, hi⟩ else 0
+      map_zero' := by ext i; split_ifs <;> rfl
+      map_add' x y := by ext i; by_cases hi : i ∈ s <;> simp [hi] }
+  have hφc (s : Finset ι) : Continuous (φ s) :=
+    continuous_pi fun i => by
+      by_cases hi : i ∈ s
+      · simpa [φ, hi] using continuous_apply (⟨i, hi⟩ : s)
+      · simpa [φ, hi] using continuous_const
+  let ψ (s : Finset ι) : (∀ i : s, K i) →ₜ+ H :=
+    ⟨(φ s).codRestrict H fun x => s.finite_toSet.subset fun i hi =>
+        Finset.mem_coe.2 (by by_contra hni; exact hi (by simp [φ, hni])),
+      (hφc s).subtype_mk _⟩
+  have hψ (s : Finset ι) (z : ∀ i : s, K i) (i : ι) :
+      (ψ s z : ∀ i, K i) i = if hi : i ∈ s then z ⟨i, hi⟩ else 0 := rfl
+  have : AddAmenable H := .of_forall_finset_subset_range ψ fun F => by
+    let s : Finset ι := F.biUnion fun x => x.2.toFinset
+    refine ⟨s, fun x hx => ⟨fun i => x.1 i.1, Subtype.ext <| funext fun i => ?_⟩⟩
+    rw [hψ]
+    split_ifs with hi
+    · rfl
+    · symm
+      by_contra hne
+      exact hi (Finset.mem_biUnion.2 ⟨x, hx, x.2.mem_toFinset.2 hne⟩)
+  let ιH : H →ₜ+ ∀ i, K i := ⟨H.subtype, continuous_subtype_val⟩
+  refine .of_denseRange ιH fun y => ?_
+  have ht : Tendsto (fun s : Finset ι => (fun i => if i ∈ s then y i else 0 : ∀ i, K i))
+      atTop (𝓝 y) := tendsto_pi_nhds.2 fun i => tendsto_const_nhds.congr' <| by
+    filter_upwards [eventually_ge_atTop {i}] with s hs
+    simp [hs (Finset.mem_singleton_self i)]
+  have hmem : ∀ᶠ s : Finset ι in atTop,
+      (fun i => if i ∈ s then y i else 0 : ∀ i, K i) ∈ Set.range ιH :=
+    .of_forall fun s => ⟨⟨fun i => if i ∈ s then y i else 0,
+      s.finite_toSet.subset fun i hi =>
+        Finset.mem_coe.2 (by by_contra hni; exact hi (by simp [hni]))⟩, rfl⟩
+  exact mem_closure_of_tendsto ht hmem
+
+/-- A product of additive topological groups is amenable exactly when every factor is. -/
+theorem addAmenable_pi_iff {ι : Type*} {K : ι → Type*} [∀ i, AddGroup (K i)]
+    [∀ i, TopologicalSpace (K i)] [∀ i, IsTopologicalAddGroup (K i)] :
+    AddAmenable (∀ i, K i) ↔ ∀ i, AddAmenable (K i) :=
+  ⟨fun _ i => .of_denseRange ⟨Pi.evalAddMonoidHom K i, continuous_apply i⟩
+      (Function.surjective_eval i).denseRange,
+    fun _ => inferInstance⟩
+
+end Additive
 
 end TauCeti

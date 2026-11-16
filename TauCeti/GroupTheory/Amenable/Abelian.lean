@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Amenable.Additive
-public import TauCeti.GroupTheory.Amenable.Int
-public import TauCeti.GroupTheory.NoncommPiCoprod
+public import TauCeti.GroupTheory.Amenable.Basic
+public import TauCeti.GroupTheory.Amenable.Foelner
+import TauCeti.GroupTheory.Amenable.DirectedUnion
+import TauCeti.GroupTheory.Amenable.DiscreteFoelner
+import TauCeti.GroupTheory.Amenable.Int
+import TauCeti.GroupTheory.Amenable.Prod
+import TauCeti.GroupTheory.NoncommPiCoprod
 
 /-!
 # Amenability of commutative groups

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Equiv.TypeTags
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Lemmas
 public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.GroupTheory.NoncommPiCoprod
+public import TauCeti.Algebra.Group.TypeTags.Commute
 import TauCeti.GroupTheory.Finiteness
 
 /-!
@@ -230,9 +231,7 @@ theorem toMultiplicative_zmultiplesPiHom {A : Type*} [AddGroup A] (τ : ι → A
     (hτ : ∀ i j, AddCommute (τ i) (τ j)) :
     (AddMonoidHom.toMultiplicative (zmultiplesPiHom τ hτ)).comp
         (MulEquiv.piMultiplicative fun _ : ι => ℤ).symm.toMonoidHom =
-      zpowersPiHom (fun i => Multiplicative.ofAdd (τ i))
-        (fun i j => show Multiplicative.ofAdd (τ i + τ j) = Multiplicative.ofAdd (τ j + τ i) from
-          congrArg Multiplicative.ofAdd (hτ i j).eq) := by
+      zpowersPiHom (fun i => Multiplicative.ofAdd (τ i)) (fun i j => (hτ i j).ofAdd) := by
   classical
   refine eq_zpowersPiHom_iff.2 fun i => ?_
   have hsingle : (MulEquiv.piMultiplicative fun _ : ι => ℤ).symm (Pi.mulSingle i (.ofAdd 1)) =
@@ -246,9 +245,7 @@ theorem toMultiplicative_zmultiplesPiHom {A : Type*} [AddGroup A] (τ : ι → A
 @[simp] theorem ofAdd_zmultiplesPiHom_apply {A : Type*} [AddGroup A] (τ : ι → A)
     (hτ : ∀ i j, AddCommute (τ i) (τ j)) (v : ι → ℤ) :
     Multiplicative.ofAdd (zmultiplesPiHom τ hτ v) =
-      zpowersPiHom (fun i => Multiplicative.ofAdd (τ i))
-        (fun i j => show Multiplicative.ofAdd (τ i + τ j) = Multiplicative.ofAdd (τ j + τ i) from
-          congrArg Multiplicative.ofAdd (hτ i j).eq)
+      zpowersPiHom (fun i => Multiplicative.ofAdd (τ i)) (fun i j => (hτ i j).ofAdd)
         (fun i => Multiplicative.ofAdd (v i)) :=
   DFunLike.congr_fun (toMultiplicative_zmultiplesPiHom τ hτ) (fun i => Multiplicative.ofAdd (v i))
 
@@ -258,9 +255,7 @@ theorem toAdditiveRight_zpowersPiHom {K : Type*} [Group K] (τ : ι → K)
     (hτ : ∀ i j, Commute (τ i) (τ j)) :
     MonoidHom.toAdditiveRight
         ((zpowersPiHom τ hτ).comp (MulEquiv.piMultiplicative fun _ : ι => ℤ).toMonoidHom) =
-      zmultiplesPiHom (fun i => Additive.ofMul (τ i))
-        (fun i j => show Additive.ofMul (τ i * τ j) = Additive.ofMul (τ j * τ i) from
-          congrArg Additive.ofMul (hτ i j).eq) := by
+      zmultiplesPiHom (fun i => Additive.ofMul (τ i)) (fun i j => (hτ i j).ofMul) := by
   classical
   refine eq_zmultiplesPiHom_iff.2 fun i => ?_
   have hsingle : (MulEquiv.piMultiplicative fun _ : ι => ℤ) (Multiplicative.ofAdd (Pi.single i 1)) =
@@ -273,9 +268,7 @@ theorem toAdditiveRight_zpowersPiHom {K : Type*} [Group K] (τ : ι → K)
 @[simp] theorem ofMul_zpowersPiHom_apply {K : Type*} [Group K] (τ : ι → K)
     (hτ : ∀ i j, Commute (τ i) (τ j)) (v : ι → Multiplicative ℤ) :
     Additive.ofMul (zpowersPiHom τ hτ v) =
-      zmultiplesPiHom (fun i => Additive.ofMul (τ i))
-        (fun i j => show Additive.ofMul (τ i * τ j) = Additive.ofMul (τ j * τ i) from
-          congrArg Additive.ofMul (hτ i j).eq)
+      zmultiplesPiHom (fun i => Additive.ofMul (τ i)) (fun i j => (hτ i j).ofMul)
         (fun i => (v i).toAdd) :=
   DFunLike.congr_fun (toAdditiveRight_zpowersPiHom τ hτ) (fun i => (v i).toAdd)
 

@@ -27,18 +27,23 @@ amenability is transported along surjective continuous homomorphisms.
 
 ## Main definitions
 
-* `TauCeti.UCB.compRightAlgHom φ`: the pullback `f ↦ f ∘ φ` along `φ : G →ₜ* H`.
+* `TauCeti.UCB.compRightAlgHom φ`, `TauCeti.AddUCB.compRightAlgHom φ`: the pullback `f ↦ f ∘ φ`
+  along a continuous multiplicative or additive homomorphism `φ`.
 
 ## Main results
 
-* `TauCeti.compContinuous_mem_ucb`: `ucb H` pulls back into `ucb G`.
-* `TauCeti.UCB.monotone_compRightAlgHom`: the pullback preserves the pointwise order.
-* `TauCeti.UCB.norm_compRightAlgHom_apply_le`, `TauCeti.UCB.norm_compRightAlgHom_apply`: the
-  pullback does not increase the supremum norm, and preserves it when `φ` is surjective.
-* `TauCeti.UCB.compRightAlgHom_leftTranslation`: `(L_(φ g) f) ∘ φ = L_g (f ∘ φ)`; likewise for
-  right translations.
-* `TauCeti.UCB.compRightAlgHom_id`, `TauCeti.UCB.compRightAlgHom_comp`: compatibility with the
-  identity and with composition of homomorphisms.
+* `TauCeti.compContinuous_mem_ucb`, `TauCeti.compContinuous_mem_addUCB`: `ucb` and `addUCB` pull
+  back along continuous homomorphisms.
+* `TauCeti.UCB.monotone_compRightAlgHom`, `TauCeti.AddUCB.monotone_compRightAlgHom`: the pullback
+  preserves the pointwise order.
+* `TauCeti.UCB.norm_compRightAlgHom_apply_le`, `TauCeti.UCB.norm_compRightAlgHom_apply`,
+  `TauCeti.AddUCB.norm_compRightAlgHom_apply_le`: the pullback does not increase the supremum
+  norm, and preserves it when `φ` is surjective.
+* `TauCeti.UCB.compRightAlgHom_leftTranslation`, `TauCeti.AddUCB.compRightAlgHom_leftTranslation`:
+  pullbacks intertwine left translations; likewise for right translations.
+* `TauCeti.UCB.compRightAlgHom_id`, `TauCeti.UCB.compRightAlgHom_comp`,
+  `TauCeti.AddUCB.compRightAlgHom_id`, `TauCeti.AddUCB.compRightAlgHom_comp`: compatibility with
+  the identity and with composition of homomorphisms.
 
 ## References
 
@@ -140,5 +145,85 @@ theorem compRightAlgHom_rightTranslation (φ : G →ₜ* H) (g : G) (f : UCB H) 
   simp
 
 end UCB
+
+section Additive
+
+variable {A B : Type*}
+  [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+  [AddGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
+
+/-- The pullback `x ↦ f (φ x)` of a function in `addUCB B` along a continuous additive homomorphism
+`φ : A →ₜ+ B` lies in `addUCB A`. -/
+theorem compContinuous_mem_addUCB {f : B →ᵇ ℝ} (hf : f ∈ addUCB B) (φ : A →ₜ+ B) :
+    f.compContinuous (φ : C(A, B)) ∈ addUCB A := by
+  have hφ : Tendsto φ (𝓝 0) (𝓝 0) := by
+    simpa using φ.continuous.tendsto (0 : A)
+  rw [mem_addUCB_iff] at hf ⊢
+  intro ε hε
+  filter_upwards [hφ.eventually (hf ε hε)] with u hu x
+  simpa using hu (φ x)
+
+attribute [to_additive existing compContinuous_mem_addUCB] compContinuous_mem_ucb
+
+namespace AddUCB
+
+/-- The pullback `f ↦ f ∘ φ` along a continuous additive homomorphism `φ : A →ₜ+ B`, as a unital
+algebra homomorphism from `AddUCB B` to `AddUCB A`. -/
+def compRightAlgHom (φ : A →ₜ+ B) : AddUCB B →ₐ[ℝ] AddUCB A where
+  toFun f := ⟨(f : B →ᵇ ℝ).compContinuous (φ : C(A, B)), compContinuous_mem_addUCB f.2 φ⟩
+  map_one' := rfl
+  map_mul' _ _ := rfl
+  map_zero' := rfl
+  map_add' _ _ := rfl
+  commutes' _ := rfl
+
+attribute [to_additive existing] UCB.compRightAlgHom
+
+/-- The pullback `f ∘ φ` is the precomposition of `f` with `φ`. -/
+theorem coe_compRightAlgHom (φ : A →ₜ+ B) (f : AddUCB B) :
+    (compRightAlgHom φ f : A →ᵇ ℝ) = (f : B →ᵇ ℝ).compContinuous (φ : C(A, B)) :=
+  (rfl)
+
+@[simp]
+theorem compRightAlgHom_apply (φ : A →ₜ+ B) (f : AddUCB B) (x : A) :
+    (compRightAlgHom φ f : A →ᵇ ℝ) x = (f : B →ᵇ ℝ) (φ x) :=
+  (rfl)
+
+/-- The pullback along the identity is the identity. -/
+@[simp]
+theorem compRightAlgHom_id :
+    compRightAlgHom (ContinuousAddMonoidHom.id A) = AlgHom.id ℝ (AddUCB A) :=
+  (rfl)
+
+/-- Pulling back along `ψ ∘ φ` is pulling back along `ψ` and then along `φ`. -/
+theorem compRightAlgHom_comp {C : Type*} [AddGroup C] [TopologicalSpace C]
+    [IsTopologicalAddGroup C] (ψ : B →ₜ+ C) (φ : A →ₜ+ B) :
+    compRightAlgHom (ψ.comp φ) = (compRightAlgHom φ).comp (compRightAlgHom ψ) :=
+  (rfl)
+
+/-- The pullback preserves the pointwise order. -/
+theorem monotone_compRightAlgHom (φ : A →ₜ+ B) : Monotone (compRightAlgHom φ) :=
+  fun _ _ h => le_def.2 fun x => le_def.1 h (φ x)
+
+/-- The pullback does not increase the supremum norm. -/
+theorem norm_compRightAlgHom_apply_le (φ : A →ₜ+ B) (f : AddUCB B) :
+    ‖compRightAlgHom φ f‖ ≤ ‖f‖ :=
+  (f : B →ᵇ ℝ).norm_compContinuous_le _
+
+/-- The pullback intertwines left translation by `φ a` with left translation by `a`. -/
+theorem compRightAlgHom_leftTranslation (φ : A →ₜ+ B) (a : A) (f : AddUCB B) :
+    compRightAlgHom φ (leftTranslation (φ a) f) = leftTranslation a (compRightAlgHom φ f) := by
+  ext
+  simp
+
+/-- The pullback intertwines right translation by `φ a` with right translation by `a`. -/
+theorem compRightAlgHom_rightTranslation (φ : A →ₜ+ B) (a : A) (f : AddUCB B) :
+    compRightAlgHom φ (rightTranslation (φ a) f) = rightTranslation a (compRightAlgHom φ f) := by
+  ext
+  simp
+
+end AddUCB
+
+end Additive
 
 end TauCeti

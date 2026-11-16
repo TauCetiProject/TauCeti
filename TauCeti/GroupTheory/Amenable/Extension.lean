@@ -32,8 +32,8 @@ the iterated mean is left invariant when `n` and `m` are.
 
 * `TauCeti.Mean.IsLeftInvariant.extension`: the iterated mean of left-invariant means along a
   section of `φ` is left invariant when `φ.ker ≤ ψ.range`.
-* `TauCeti.Amenable.of_ker_le_range`: if `φ.ker ≤ ψ.range` and `K`, `Q` are amenable, then `G` is
-  amenable.
+* `TauCeti.Amenable.of_ker_le_range`, `TauCeti.AddAmenable.of_ker_le_range`: if `φ.ker ≤ ψ.range`
+  and `K`, `Q` are amenable, then `G` is amenable.
 * `TauCeti.amenable_iff_subgroup_quotient`: a discrete group with a normal subgroup `N` is
   amenable exactly when `N` and `G ⧸ N` are.
 
@@ -186,5 +186,26 @@ quotient. -/
 theorem Amenable.of_subgroup_quotient (N : Subgroup G) [N.Normal] [Amenable N]
     [Amenable (G ⧸ N)] : Amenable G :=
   (amenable_iff_subgroup_quotient N).2 ⟨‹_›, ‹_›⟩
+
+/-- If `ψ : B →+ A` and `φ : A →+ C` are additive homomorphisms with `φ.ker ≤ ψ.range`, where `B`
+and `C` are amenable discrete additive groups, then `A` is amenable for every additive group
+topology on `A`. -/
+theorem AddAmenable.of_ker_le_range {A B C : Type*}
+    [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+    [AddGroup B] [TopologicalSpace B] [DiscreteTopology B]
+    [AddGroup C] [TopologicalSpace C] [DiscreteTopology C] [AddAmenable B] [AddAmenable C]
+    (ψ : B →+ A) (φ : A →+ C) (h : φ.ker ≤ ψ.range) : AddAmenable A := by
+  refine AddAmenable.of_discrete ?_
+  let _ : TopologicalSpace A := ⊥
+  let _ : DiscreteTopology A := discreteTopology_bot A
+  have : DiscreteTopology (Multiplicative A) := Homeomorph.ofAdd.symm.discreteTopology
+  have : DiscreteTopology (Multiplicative B) := Homeomorph.ofAdd.symm.discreteTopology
+  have : DiscreteTopology (Multiplicative C) := Homeomorph.ofAdd.symm.discreteTopology
+  refine amenable_multiplicative_iff.1 <|
+    Amenable.of_ker_le_range ψ.toMultiplicative φ.toMultiplicative fun x hx => ?_
+  have hx' : x.toAdd ∈ φ.ker := by
+    simpa [MonoidHom.mem_ker, AddMonoidHom.mem_ker] using hx
+  obtain ⟨b, hb⟩ := h hx'
+  exact ⟨Multiplicative.ofAdd b, by simp [hb]⟩
 
 end TauCeti

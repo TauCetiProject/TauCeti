@@ -168,4 +168,14 @@ theorem Amenable.of_discrete [IsTopologicalGroup G]
   let : @DiscreteTopology G ⊥ := discreteTopology_bot G
   exact Amenable.of_le (t₁ := ⊥) bot_le h
 
+/-- An abstract additive group which is amenable with the discrete topology is amenable with any
+additive group topology. -/
+theorem AddAmenable.of_discrete {A : Type*} [AddGroup A] [TopologicalSpace A]
+    [IsTopologicalAddGroup A]
+    (h : letI : TopologicalSpace A := ⊥;
+      letI := discreteTopology_bot A; AddAmenable A) :
+    AddAmenable A := by
+  let : @DiscreteTopology A ⊥ := discreteTopology_bot A
+  exact AddAmenable.of_le (t₁ := ⊥) bot_le h
+
 end TauCeti
