@@ -7,14 +7,19 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.GNS.Basic
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Positive
 
 /-!
 # Nondegeneracy and faithfulness of GNS representations
 
 The GNS representation of every positive functional on a possibly nonunital C⋆-algebra is
 nondegenerate, and its multiplier extension acts on classes `[b]` as `[m.fst b]`
-(`PositiveLinearMap.multiplierExtension_gnsNonUnitalStarAlgHom_toGNS`). If the functional is
-faithful, in the sense that `f (a⋆a) = 0` forces `a = 0`, its GNS representation is injective.
+(`PositiveLinearMap.multiplierExtension_gnsNonUnitalStarAlgHom_toGNS`). Conversely, every element
+in the kernel of the GNS representation lies in the null space `{a | f (a⋆a) = 0}`
+(`PositiveLinearMap.map_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero`). If the
+functional is faithful, in the sense that `f (a⋆a) = 0` forces `a = 0`, its GNS representation is
+injective (`PositiveLinearMap.gnsNonUnitalStarAlgHom_injective`,
+`PositiveContinuousLinearMap.IsFaithful.gnsNonUnitalStarAlgHom_injective`).
 These results allow faithful positive functionals to produce faithful nondegenerate representations
 without assuming a unit or a canonical cyclic vector.
 
@@ -72,6 +77,22 @@ theorem multiplierExtension_gnsNonUnitalStarAlgHom_apply_coe (f : A →ₚ[ℂ] 
       (f.toPreGNS b : f.GNS) = (f.toPreGNS (m.fst b) : f.GNS) := by
   simpa only [toGNS_apply] using f.multiplierExtension_gnsNonUnitalStarAlgHom_toGNS m b
 
+/-- If the GNS operator of `a` vanishes, then `f (star a * a) = 0`. No unit or traciality is
+required. -/
+theorem map_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero (f : A →ₚ[ℂ] ℂ) {a : A}
+    (ha : f.gnsNonUnitalStarAlgHom a = 0) : f (star a * a) = 0 := by
+  -- Along an increasing approximate unit `e`, `f.toGNS (a * e) = π_f a (f.toGNS e) = 0` tends to
+  -- `f.toGNS a`.
+  rw [← f.toGNS_eq_zero_iff]
+  have hl := _root_.CStarAlgebra.increasingApproximateUnit A
+  have := hl.neBot
+  have hlim : Tendsto (fun e : A => f.toGNS (a * e)) (CStarAlgebra.approximateUnit A)
+      (𝓝 (f.toGNS a)) :=
+    (f.toGNS.continuous.tendsto a).comp (hl.tendsto_mul_left a)
+  refine tendsto_nhds_unique hlim (tendsto_const_nhds.congr fun e => ?_)
+  have he : f.gnsNonUnitalStarAlgHom a (f.toGNS e) = 0 := by rw [ha]; rfl
+  simpa [toGNS_apply] using he.symm
+
 /-- A faithful positive functional has an injective GNS representation. No unit or
 normalization is needed. -/
 theorem gnsNonUnitalStarAlgHom_injective (f : A →ₚ[ℂ] ℂ)
@@ -86,5 +107,18 @@ theorem gnsNonUnitalStarAlgHom_injective (f : A →ₚ[ℂ] ℂ)
   exact mul_star_self_eq_zero.mp hmul
 
 end PositiveLinearMap
+
+namespace PositiveContinuousLinearMap
+
+/-- A faithful positive continuous linear functional on a C⋆-algebra has an injective GNS
+representation. -/
+theorem IsFaithful.gnsNonUnitalStarAlgHom_injective {A : Type*}
+    [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    {f : A →P[ℂ] ℂ} (hf : f.IsFaithful) :
+    Function.Injective f.toPositiveLinearMap.gnsNonUnitalStarAlgHom :=
+  f.toPositiveLinearMap.gnsNonUnitalStarAlgHom_injective fun _ =>
+    hf.eq_zero_of_map_star_mul_self_eq_zero
+
+end PositiveContinuousLinearMap
 
 end
