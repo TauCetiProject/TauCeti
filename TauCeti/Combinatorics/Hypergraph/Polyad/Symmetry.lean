@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.Partition.Equipartition
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Coarsening
 public import TauCeti.Combinatorics.Hypergraph.Polyad.TopRegular
 import Mathlib.Data.Fin.Tuple.Sort
+import Mathlib.Order.Preorder.Finite
 import Mathlib.Tactic.FinCases
+import TauCeti.Order.Partition.Pi
 
 /-!
 # Transversal polyads, canonical cell ordering, and role symmetries
@@ -23,7 +26,10 @@ of a pair of roles.
 When `P` is *transversal* (`Polyad3.IsTransversal`), meaning its three vertex cells are pairwise
 distinct, each unordered triple in `P.support.image tripleSet` has a unique ordering in
 `P.support`. Consequently, color counts and relative densities over `A ⊆ P.support` agree with
-those on the unordered-triple image `A.image tripleSet`. Fixing any injective indexing
+those on the unordered-triple image `A.image tripleSet`. Meanwhile, when all vertex cells have
+bounded size (in particular, for an equipartition), the nontransversal polyads cover only a small
+fraction of all injective triples (`Polyad3.sum_card_support_not_isTransversal_le_of_card_le`,
+`Polyad3.sum_card_support_not_isTransversal_le_of_isEquipartition`). Fixing any injective indexing
 `idx : S.vertexPart.parts → α` into a linear order, every transversal polyad can be permuted to a
 *canonical* polyad (`Polyad3.IsCanonical`) whose cell indices are strictly increasing
 (`Polyad3.exists_permute_isCanonical`). Distinct canonical polyads have disjoint unordered-triple
@@ -33,7 +39,6 @@ support size, coarsening, relative density, and top regularity at every rank.
 
 ## Main definitions
 
-* `TauCeti.tripleSet`: the unordered 3-element subset of `V` underlying an injective triple.
 * `TauCeti.Polyad3.roleCell`: the vertex cell of a polyad at role `i : Fin 3`.
 * `TauCeti.Polyad3.roleColor`: the directed pair color of a polyad on distinct roles `(i, j)`.
 * `TauCeti.Polyad3.permute`: the right action of `Equiv.Perm (Fin 3)` on polyads by permuting roles.
@@ -46,7 +51,7 @@ support size, coarsening, relative density, and top regularity at every rank.
   of a transversal polyad.
 * `TauCeti.Polyad3.IsTransversal.card_filter_image_tripleSet`: filtering the `tripleSet` image of
   `A ⊆ P.support` has the same cardinality as filtering `A`.
-* `TauCeti.Colored3Graph.card_filter_image_tripleSet_eq_mul_relDensityOn`: color counts on
+* `TauCeti.Colored3Graph.card_filter_image_tripleSet_eq_relDensityOn_mul_card`: color counts on
   `A.image tripleSet` equal `H.relDensityOn c A * #A`.
 * `TauCeti.Polyad3.disjoint_image_tripleSet_of_isCanonical`: distinct canonical polyads have
   disjoint unordered-triple supports.
@@ -57,6 +62,9 @@ support size, coarsening, relative density, and top regularity at every rank.
   `(δ, r)`-top-regularity at every rank `r`.
 * `TauCeti.Polyad3.exists_permute_isCanonical`: every transversal polyad can be permuted to a
   canonical polyad.
+* `TauCeti.Polyad3.sum_card_support_not_isTransversal_le_of_card_le`,
+  `TauCeti.Polyad3.sum_card_support_not_isTransversal_le_of_isEquipartition`: upper bounds on the
+  total support size of all nontransversal polyads over a skeleton with bounded or equitable cells.
 
 ## References
 
@@ -70,21 +78,6 @@ open Finset Function
 
 namespace TauCeti
 
-/-- The unordered 3-element subset of `V` determined by an injective triple `Fin 3 → V`. -/
-def tripleSet {V : Type*} (x : {x : Fin 3 → V // Injective x}) : Set.powersetCard V 3 :=
-  Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩
-
-/-- `tripleSet` is `Set.powersetCard.ofFinEmb 3 V` applied to the underlying embedding. -/
-theorem tripleSet_def {V : Type*} (x : {x : Fin 3 → V // Injective x}) :
-    tripleSet x = Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ :=
-  (rfl)
-
-/-- A vertex belongs to `tripleSet x` iff it is one of the three coordinates of `x`. -/
-@[simp]
-theorem mem_tripleSet_iff {V : Type*} {x : {x : Fin 3 → V // Injective x}} {v : V} :
-    v ∈ (tripleSet x).1 ↔ ∃ i : Fin 3, x.1 i = v := by
-  simp [tripleSet]
-
 /-- Precomposition of an injective triple by a permutation of `Fin 3`. -/
 private def triplePerm {V : Type*} (σ : Equiv.Perm (Fin 3)) :
     {x : Fin 3 → V // Injective x} ≃ {x : Fin 3 → V // Injective x} :=
@@ -93,10 +86,8 @@ private def triplePerm {V : Type*} (σ : Equiv.Perm (Fin 3)) :
 
 private theorem tripleSet_triplePerm {V : Type*} (σ : Equiv.Perm (Fin 3))
     (x : {x : Fin 3 → V // Injective x}) : tripleSet (triplePerm σ x) = tripleSet x := by
-  apply Subtype.ext
-  ext v
-  simp only [tripleSet, triplePerm, Equiv.coe_fn_mk, Function.comp_apply,
-    Set.powersetCard.val_ofFinEmb, mem_map, mem_univ, true_and, Function.Embedding.coeFn_mk]
+  refine SetLike.ext fun v ↦ ?_
+  simp only [mem_tripleSet_iff, triplePerm, Equiv.coe_fn_mk, Function.comp_apply]
   exact ⟨fun ⟨i, hi⟩ ↦ ⟨σ i, hi⟩, fun ⟨j, hj⟩ ↦ ⟨σ.symm j, by simpa using hj⟩⟩
 
 private theorem relDensityOn_map_triplePerm {κ V : Type*} [DecidableEq κ] (H : Colored3Graph κ V)
@@ -463,6 +454,10 @@ theorem isTransversal_iff {S : PairSkeleton3 κ₂ V} {P : Polyad3 S} :
     P.IsTransversal ↔ P.c₀ ≠ P.c₁ ∧ P.c₀ ≠ P.c₂ ∧ P.c₁ ≠ P.c₂ :=
   Iff.rfl
 
+/-- Transversality of a polyad is decidable when vertex equality is decidable. -/
+@[no_expose] instance {S : PairSkeleton3 κ₂ V} (P : Polyad3 S) : Decidable P.IsTransversal :=
+  decidable_of_iff (P.c₀ ≠ P.c₁ ∧ P.c₀ ≠ P.c₂ ∧ P.c₁ ≠ P.c₂) Iff.rfl
+
 /-- A polyad is transversal iff its role-cell assignment `Fin 3 → S.vertexPart.parts` is
 injective. -/
 theorem isTransversal_iff_injective_roleCell {S : PairSkeleton3 κ₂ V} {P : Polyad3 S} :
@@ -511,7 +506,7 @@ theorem IsTransversal.injOn_tripleSet_support {S : PairSkeleton3 κ₂ V} {P : P
   rw [Finset.mem_coe, P.mem_support] at hx hy
   have hr (v : V) : (∃ i, x.1 i = v) ↔ (∃ j, y.1 j = v) := by
     simpa only [mem_tripleSet_iff] using
-      (congrArg (fun s : Set.powersetCard V 3 ↦ v ∈ s.1) hxy).to_iff
+      (congrArg (fun s : Set.powersetCard V 3 ↦ v ∈ s) hxy).to_iff
   have hd01 := disjoint_left.1 (S.vertexPart.disjoint P.hc₀ P.hc₁ hP.1)
   have hd02 := disjoint_left.1 (S.vertexPart.disjoint P.hc₀ P.hc₂ hP.2.1)
   have hd12 := disjoint_left.1 (S.vertexPart.disjoint P.hc₁ P.hc₂ hP.2.2)
@@ -589,15 +584,11 @@ theorem disjoint_image_tripleSet_of_isCanonical {α : Type*} [Preorder α]
   have hy_m := hmono hQ hyQ
   have hr (v : V) : (∃ i, y.1 i = v) ↔ (∃ j, x.1 j = v) := by
     simpa only [mem_tripleSet_iff] using
-      (congrArg (fun u : Set.powersetCard V 3 ↦ v ∈ u.1) hxy).to_iff
+      (congrArg (fun u : Set.powersetCard V 3 ↦ v ∈ u) hxy).to_iff
   choose σ hσ using fun i : Fin 3 ↦ (hr (x.1 i)).2 ⟨i, rfl⟩
   have hσ_m : StrictMono σ := fun a b hab ↦
     hy_m.lt_iff_lt.1 (by rw [hσ a, hσ b]; exact hx_m hab)
-  have hσ_eq (i : Fin 3) : σ i = i := by
-    have := hσ_m (by decide : (0 : Fin 3) < 1)
-    have := hσ_m (by decide : (1 : Fin 3) < 2)
-    fin_cases i <;> dsimp <;> exact Fin.ext (by omega)
-  have hxy_eq : x = y := Subtype.ext <| funext fun i ↦ (hσ_eq i ▸ hσ i).symm
+  have hxy_eq : x = y := Subtype.ext <| funext fun i ↦ (hσ_m.apply_eq ▸ hσ i).symm
   exact (mem_support_iff_eq_ofTriple.1 (hxy_eq ▸ hxP)).trans
     (mem_support_iff_eq_ofTriple.1 hyQ).symm
 
@@ -615,6 +606,42 @@ theorem exists_permute_isCanonical {α : Type*} [LinearOrder α] {S : PairSkelet
   · simpa [v, ← roleCell_zero, ← roleCell_one] using hv (by decide : (0 : Fin 3) < 1)
   · simpa [v, ← roleCell_one, ← roleCell_two] using hv (by decide : (1 : Fin 3) < 2)
 
+/-- The total support size of all nontransversal polyads over `S` is at most
+`3 * m * Fintype.card V ^ 2` whenever every vertex cell of `S` has at most `m` vertices. -/
+theorem sum_card_support_not_isTransversal_le_of_card_le [Fintype κ₂] (S : PairSkeleton3 κ₂ V)
+    {m : ℕ} (hm : ∀ A ∈ S.vertexPart.parts, #A ≤ m) :
+    ∑ P : Polyad3 S with ¬P.IsTransversal, #P.support ≤ 3 * m * Fintype.card V ^ 2 := by
+  classical
+  calc ∑ P : Polyad3 S with ¬P.IsTransversal, #P.support
+      = #((univ.filter fun P : Polyad3 S ↦ ¬P.IsTransversal).biUnion Polyad3.support) :=
+          (card_biUnion fun _ _ _ _ hne ↦ Polyad3.pairwise_disjoint_support hne).symm
+    _ ≤ #{g ∈ Fintype.piFinset (fun _ : Fin 3 ↦ (univ : Finset V)) |
+          ¬Injective fun i ↦ S.vertexPart.part (g i)} := by
+        refine card_le_card_of_injOn Subtype.val (fun x hx ↦ ?_)
+          fun _ _ _ _ h ↦ Subtype.ext h
+        obtain ⟨P, hP, hxP⟩ := mem_biUnion.1 hx
+        have hx' := (P.mem_support_iff_role x).1 hxP
+        simp only [coe_filter, Set.mem_ofPred_eq, Fintype.mem_piFinset, mem_univ, implies_true,
+          true_and]
+        refine fun hinj ↦ (mem_filter.1 hP).2
+          (P.isTransversal_iff_injective_roleCell.2 fun i j hij ↦ hinj ?_)
+        have hpart (k : Fin 3) : S.vertexPart.part (x.1 k) = (P.roleCell k : Finset V) :=
+          S.vertexPart.part_eq_of_mem (P.roleCell k).2 (hx'.1 k)
+        exact (hpart i).trans ((congrArg Subtype.val hij).trans (hpart j).symm)
+    _ ≤ 3 * m * Fintype.card V ^ 2 := by
+        simpa [Fintype.card_fin] using
+          S.vertexPart.card_filter_not_injective_part_le_of_card_le (ι := Fin 3) hm
+
+/-- For a skeleton whose vertex partition is an equipartition, the total support size of all
+nontransversal polyads is at most
+`3 * (Fintype.card V / #S.vertexPart.parts + 1) * Fintype.card V ^ 2`. -/
+theorem sum_card_support_not_isTransversal_le_of_isEquipartition [Fintype κ₂]
+    (S : PairSkeleton3 κ₂ V) (hequi : S.vertexPart.IsEquipartition) :
+    ∑ P : Polyad3 S with ¬P.IsTransversal, #P.support ≤
+      3 * (Fintype.card V / #S.vertexPart.parts + 1) * Fintype.card V ^ 2 :=
+  sum_card_support_not_isTransversal_le_of_card_le S fun _ hA ↦ by
+    simpa [card_univ] using hequi.card_part_le_average_add_one hA
+
 end Polyad3
 
 namespace Colored3Graph
@@ -623,7 +650,7 @@ variable {κ κ₂ V : Type*} [Fintype V] [DecidableEq V] [DecidableEq κ]
 
 /-- On a subset `A` of a transversal polyad support, the number of `c`-colored unordered triples in
 `A.image tripleSet` equals `H.relDensityOn c A * #A`. -/
-theorem card_filter_image_tripleSet_eq_mul_relDensityOn [DecidableEq (Set.powersetCard V 3)]
+theorem card_filter_image_tripleSet_eq_relDensityOn_mul_card [DecidableEq (Set.powersetCard V 3)]
     (H : Colored3Graph κ V) (c : κ) {S : PairSkeleton3 κ₂ V} {P : Polyad3 S}
     (hP : P.IsTransversal) {A : Finset {x : Fin 3 → V // Injective x}} (hA : A ⊆ P.support) :
     (#{s ∈ A.image tripleSet | H.color s = c} : ℚ) = H.relDensityOn c A * #A := by

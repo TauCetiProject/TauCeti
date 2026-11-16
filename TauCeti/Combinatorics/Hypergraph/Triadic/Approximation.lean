@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Hypergraph.Colored.EditDiscrepancy
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import TauCeti.Combinatorics.Hypergraph.Triadic.Basic
 import Mathlib.Combinatorics.SimpleGraph.Regularity.Equitabilise
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Combinatorics.Enumerative.CoupledRecoloring
 import TauCeti.Combinatorics.Enumerative.RandomColoring
 import TauCeti.Combinatorics.Hypergraph.PairColor.Approximation
@@ -17,15 +18,16 @@ import TauCeti.Combinatorics.Hypergraph.Polyad.Energy.Stability
 import TauCeti.Combinatorics.Hypergraph.Polyad.Rank
 import TauCeti.Combinatorics.Hypergraph.Polyad.Symmetry
 import TauCeti.Combinatorics.Hypergraph.Triadic.StrongTopRegularization
-import TauCeti.Order.Partition.Pi
+import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
 # Strong regular approximation of colored three-uniform hypergraphs
 
-Every coloring `H : Colored3Graph κ V` of the unordered triples of a sufficiently large finite
-vertex set `V` admits a *strong regular approximation*: a nearby coloring `H'` together with a
-triadic complex `C` of bounded complexity whose vertex cells form an equipartition into at least
-`t₀` cells and whose selected polyads decompose the injective triples, such that
+For any positive tolerance `ε` and positive regularity schedule `F`, every coloring
+`H : Colored3Graph κ V` of the unordered triples of a sufficiently large finite vertex set `V`
+admits a *strong regular approximation*: a nearby coloring `H'` together with a triadic complex `C`
+of bounded complexity whose vertex cells form an equipartition into at least `t₀` cells and whose
+selected polyads decompose the injective triples, such that
 
 * `H` approximates `H'` within `ε` in edit discrepancy (`H.Approximates3 H' ε`),
 * the lower skeleton of `C` is regular at the arbitrary positive schedule `F` evaluated at the
@@ -51,10 +53,12 @@ The proof combines three steps following Rödl–Schacht, Tao, and Alon–Fische
    (`Polyad3.permute`) extends the bounds to all large top-regular transversal polyads.
 3. **Coarse transfer and rank upgrade (`topRegularOverMostPolyads_of_stopped_pair`).** Fine
    regularity and coarse-density agreement imply rank-1 top regularity over most transversal
-   polyads (`Colored3Graph.isTopRegularOverPolyad_of_sum_coarsen_le`); charging nontransversal
-   polyads via equitability (`Finpartition.card_filter_not_injective_part_le_of_card_le`) and
-   upgrading to rank `R C.complexity` (`Colored3Graph.IsTopRegularOverPolyad.of_rank_one_div_pow`)
-   completes the proof.
+   polyads (`Colored3Graph.isTopRegularOverPolyad_of_sum_coarsen_le`,
+   `Colored3Graph.sum_card_support_mul_abs_relativeDensity_sub_le_two_mul`); charging
+   nontransversal polyads via equitability
+   (`Polyad3.sum_card_support_not_isTransversal_le_of_isEquipartition`) and upgrading to rank
+   `R C.complexity` (`Colored3Graph.IsTopRegularOverPolyad.of_rank_one_div_pow`) completes the
+   proof.
 
 ## Main definitions
 
@@ -65,6 +69,8 @@ The proof combines three steps following Rödl–Schacht, Tao, and Alon–Fische
 
 ## Main results
 
+* `TauCeti.le_regularityBound3`, `TauCeti.four_le_regularityBound3`,
+  `TauCeti.regularityBound3_pos`: unconditional floor and positivity bounds for `regularityBound3`.
 * `TauCeti.Colored3Graph.exists_strong_regular_approximation3`: every colored three-uniform
   hypergraph on at least `regularityBound3 (Fintype.card κ) ε F R t₀` vertices admits a strong
   regular approximation with vertex cells controlled at `t₀`.
@@ -84,13 +90,6 @@ public section
 open Finset Finpartition Function Real
 
 namespace TauCeti
-
-private theorem pow_three_le_four_mul_descFactorial {n : ℕ} (hn : 4 ≤ n) :
-    n ^ 3 ≤ 4 * n.descFactorial 3 := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  simp only [Nat.descFactorial_succ, Nat.descFactorial_zero, mul_one, Nat.sub_zero,
-    show k + 4 - 1 = k + 3 by omega, show k + 4 - 2 = k + 2 by omega]
-  exact (Nat.le_add_right ((k + 4) ^ 3) (3 * k ^ 3 + 24 * k ^ 2 + 56 * k + 32)).trans_eq (by ring)
 
 private noncomputable def triadicEps1 (ε : ℝ) : ℝ := min ε 1
 
@@ -143,9 +142,10 @@ private noncomputable def triadicFineAlpha (ε : ℝ) (F : ℕ → ℝ) (R : ℕ
 
 /-- Host-size and complexity bound for strong regular approximation of colored three-uniform
 hypergraphs with `q₃` top colors, edit and exceptional-mass tolerance `ε`, regularity schedule `F`,
-rank schedule `R`, and minimum vertex-cell count `t₀`. Any host `V` with
-`regularityBound3 q₃ ε F R t₀ ≤ |V|` supports a strong regular approximation whose complex has
-complexity at most `regularityBound3 q₃ ε F R t₀`. -/
+rank schedule `R`, and minimum vertex-cell count `t₀`. Whenever `0 < ε` and `∀ n, 0 < F n`, any
+host `V` with `regularityBound3 q₃ ε F R t₀ ≤ |V|` supports a strong regular approximation whose
+complex has complexity at most `regularityBound3 q₃ ε F R t₀`
+(see `Colored3Graph.exists_strong_regular_approximation3`). -/
 noncomputable def regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) : ℕ :=
   let l₀ := triadicInitParts q₃ ε t₀
   let δp := triadicPairEdit q₃ ε
@@ -232,6 +232,23 @@ private theorem le_triadicOuterStep_snd (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ
 private theorem basicFloor_le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
     max 4 (triadicInitParts q₃ ε t₀ + ⌈96 / triadicEps1 ε⌉₊) ≤ regularityBound3 q₃ ε F R t₀ :=
   (le_max_right _ _).trans ((le_max_left _ _).trans (le_max_left _ _))
+
+/-- `regularityBound3` is always at least the requested vertex-cell floor `t₀`. -/
+theorem le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
+    t₀ ≤ regularityBound3 q₃ ε F R t₀ :=
+  ((le_max_left t₀ 1).trans (le_max_left _ _)).trans <|
+    (Nat.le_add_right _ _).trans <|
+      (le_max_right 4 _).trans (basicFloor_le_regularityBound3 q₃ ε F R t₀)
+
+/-- `regularityBound3` is always at least `4`. -/
+theorem four_le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
+    4 ≤ regularityBound3 q₃ ε F R t₀ :=
+  (le_max_left 4 _).trans (basicFloor_le_regularityBound3 q₃ ε F R t₀)
+
+/-- `regularityBound3` is always positive. -/
+theorem regularityBound3_pos (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
+    0 < regularityBound3 q₃ ε F R t₀ :=
+  lt_of_lt_of_le (by decide) (four_le_regularityBound3 q₃ ε F R t₀)
 
 namespace Colored3Graph
 
@@ -331,10 +348,9 @@ private theorem exists_stopped_triadic_pair {κ V : Type*} [DecidableEq κ] [Fin
   let g_top := triadicEnergyGap q₃ ε
   let δp := triadicPairEdit q₃ ε
   have hg_pos := triadicEnergyGap_pos q₃ hε
-  have hn4 : 4 ≤ n :=
-    (le_max_left 4 _).trans ((basicFloor_le_regularityBound3 q₃ ε F R t₀).trans hV)
+  have hn4 : 4 ≤ n := (four_le_regularityBound3 q₃ ε F R t₀).trans hV
   have hpow_le : (n : ℝ) ^ 3 ≤ 4 * (n.descFactorial 3 : ℝ) :=
-    mod_cast pow_three_le_four_mul_descFactorial hn4
+    mod_cast Nat.pow_three_le_four_mul_descFactorial hn4
   have hdesc_pos : (0 : ℝ) < n.descFactorial 3 := by
     linarith [pow_pos (Nat.cast_pos.2 (by omega : 0 < n) : (0 : ℝ) < n) 3]
   let step := triadicOuterStep q₃ ε F R
@@ -342,6 +358,8 @@ private theorem exists_stopped_triadic_pair {κ V : Type*} [DecidableEq κ] [Fin
   let Good (C : TriadicComplex3 V) : Prop :=
     ∃ (D : TriadicComplex3 V) (f : Fin D.pairColorCount → Fin C.pairColorCount),
       StoppedFine q₃ ε F R H C D f
+  -- One outer round: either the fine top-regularization stops with gap ≤ `g_top`, or
+  -- re-regularizing the pair coloring increases the coarse polyad energy by more than `g_top / 2`.
   have advance (TM : ℕ × ℕ) (hTM1 : TM.1 ≤ TM_max.1) (hTM2 : TM.2 ≤ TM_max.2)
       (C : TriadicComplex3 V) (hC1 : #C.skeleton.vertexPart.parts ≤ TM.1)
       (hC2 : C.pairColorCount ≤ TM.2) (hC : AdmissibleCoarse ε F t₀ q₃ C) :
@@ -386,6 +404,7 @@ private theorem exists_stopped_triadic_pair {κ V : Type*} [DecidableEq κ] [Fin
       exact hdrop.trans (((div_le_iff₀ hdesc_pos).2 hnum).trans
         (by linarith [show δp ≤ g_top / 48 from min_le_right _ _]))
     exact Or.inr ⟨C', hC'1, hC'2, hC'adm, by linarith⟩
+  -- Build the initial admissible coarse complex from a monochromatic pair coloring.
   let l₀ := triadicInitParts q₃ ε t₀
   have hl₀_pos : 0 < l₀ := (le_max_right t₀ 1).trans (le_max_left _ _)
   have hl₀_le : l₀ ≤ #(univ : Finset V) := by
@@ -402,6 +421,7 @@ private theorem exists_stopped_triadic_pair {κ V : Type*} [DecidableEq κ] [Fin
         exact ((le_max_right _ _).trans (le_max_left _ _)).trans hV)
   rw [Fintype.card_unique, hcard_init] at hC₀1
   rw [Fintype.card_unique] at hC₀2
+  -- Iterate for at most `⌊2 / g_top⌋₊` rounds; polyad energy cannot exceed `1`.
   let TM₀ : ℕ × ℕ := (pairApproximationPartsBound 1 δp (triadicSched1 F) l₀, 2)
   let K_rounds := ⌊2 / g_top⌋₊
   have hstep_mono {j k : ℕ} (hj : j ≤ k) :
@@ -437,18 +457,6 @@ private theorem exists_stopped_triadic_pair {κ V : Type*} [DecidableEq κ] [Fin
   obtain ⟨D, f, hD⟩ | ⟨C', -, -, -, hE'⟩ := advance TM_max le_rfl le_rfl C hC1 hC2 hC
   · exact ⟨C, D, f, hC1, hC2, hC, hD⟩
   linarith [H.polyadEnergy_le_one C'.skeleton]
-
-private theorem fine_subpolyad_discrepancy_bound {η η_H' q₃_real w q_supp dev : ℝ}
-    (hη_H'_pos : 0 < η_H') (hη_H'_le : η_H' ≤ 1 / 4) (hq_tol : 2 * q₃_real * η ≤ η_H' ^ 2 / 4)
-    (hw_ge : η_H' * q_supp ≤ w) (hq_pos : 0 < q_supp) (hdev_nn : 0 ≤ dev)
-    (hdev : dev * w ≤ 2 * q₃_real * η * q_supp) : dev + 2 * q₃_real * η ≤ η_H' := by
-  have h1 : (dev * η_H') * q_supp ≤ (η_H' ^ 2 / 4) * q_supp :=
-    (by nlinarith [mul_le_mul_of_nonneg_left hw_ge hdev_nn] :
-      (dev * η_H') * q_supp ≤ 2 * q₃_real * η * q_supp).trans
-      (mul_le_mul_of_nonneg_right hq_tol hq_pos.le)
-  have h2 : dev * η_H' ≤ (η_H' / 4) * η_H' := by
-    linarith [le_of_mul_le_mul_right h1 hq_pos]
-  nlinarith [le_of_mul_le_mul_right h2 hη_H'_pos, sq_nonneg η_H']
 
 namespace Colored3Graph
 
@@ -498,8 +506,7 @@ private theorem exists_coupled_recoloring_of_stopped_pair (H : Colored3Graph κ 
   have hη_H'_le := triadicFineH'Tol_le_quarter hF R K
   have hη_pos := triadicFineTol_pos q₃ hε hF R K
   have hα_pos : 0 < α_fine := triadicFineAlpha_pos hε hF R K t d
-  have hn4 : 4 ≤ n :=
-    (le_max_left 4 _).trans ((basicFloor_le_regularityBound3 q₃ ε F R t₀).trans hV)
+  have hn4 : 4 ≤ n := (four_le_regularityBound3 q₃ ε F R t₀).trans hV
   have hn_pos : (0 : ℝ) < n := by positivity
   have hf_symm (p) : C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p) :=
     (hstop.proj_color p).symm
@@ -509,6 +516,7 @@ private theorem exists_coupled_recoloring_of_stopped_pair (H : Colored3Graph κ 
     hC2 (C.complexity_le.trans (by gcongr)))
   have hD_dec : D.IsPolyadDecomposition :=
     D.isPolyadDecomposition_iff_ofTriple_mem.2 fun _ ↦ hstop.polyads_univ ▸ mem_univ _
+  -- Apply coupled recoloring independently on each large top-regular canonical fine polyad.
   let idx := Fintype.equivFin D.skeleton.vertexPart.parts
   let U_of (Q : Polyad3 D.skeleton) := Q.support.image tripleSet
   let GoodCanon : Finset (Polyad3 D.skeleton) := univ.filter fun Q ↦
@@ -520,7 +528,7 @@ private theorem exists_coupled_recoloring_of_stopped_pair (H : Colored3Graph κ 
   have hcnt_eq (G : Colored3Graph κ V) {Q : Polyad3 D.skeleton} (hQt : Q.IsTransversal)
       {S} (hS : S ⊆ Q.support) (c : κ) :
       (#{s ∈ S.image tripleSet | G.color s = c} : ℝ) = (G.relDensityOn c S : ℝ) * #S :=
-    mod_cast G.card_filter_image_tripleSet_eq_mul_relDensityOn c hQt hS
+    mod_cast G.card_filter_image_tripleSet_eq_relDensityOn_mul_card c hQt hS
   let α_min :=
     triadicFineAlpha ε F R K TM_max.1 (triadicFineColorBound q₃ ε F R TM_max.1 TM_max.2)
   have hα_min_pos : 0 < α_min := triadicFineAlpha_pos hε hF R K _ _
@@ -561,9 +569,7 @@ private theorem exists_coupled_recoloring_of_stopped_pair (H : Colored3Graph κ 
           hcnt_eq H hQ2.1.isTransversal Subset.rfl c₀,
           mul_div_cancel_right₀ _ (Nat.cast_pos.2 hQ_pos).ne', ← relativeDensity_def, ← sub_mul,
           abs_mul, abs_of_nonneg (a := (#W.support : ℝ)) (Nat.cast_nonneg _)]
-        simpa only [Subpolyad3.unionSupport_unique] using
-          hQ2.2.2.abs_relDensityOn_unionSupport_sub_mul_card_le_of_card_le c₀
-            (Fintype.card_fin 1).le (fun _ ↦ W))
+        exact hQ2.2.2.abs_relDensityOn_sub_mul_card_le c₀ W)
       (by
         rw [hcard_U]
         refine two_mul_add_one_mul_exp_lt_one (card_subpolyad3_le Q.1) ?_
@@ -574,6 +580,7 @@ private theorem exists_coupled_recoloring_of_stopped_pair (H : Colored3Graph κ 
           mul_le_mul_of_nonneg_left (one_le_pow₀ (n := 2) (Nat.one_le_cast.2 (by omega : 1 ≤ n)))
             (add_nonneg (Nat.cast_nonneg q₃) (by norm_num : (0 : ℝ) ≤ 3)),
           mul_le_mul_of_nonneg_left hQ2.2.1 (mul_nonneg zero_le_two (sq_nonneg η))])
+  -- Glue the local recolorings on disjoint canonical supports into `H'`.
   choose xloc _ hxloc_edits hxloc_sub using hrec
   let H' : Colored3Graph κ V := ⟨fun s ↦
     if hs : ∃ Q ∈ GoodCanon, s ∈ U_of Q then xloc ⟨hs.choose, hs.choose_spec.1⟩ s else H.color s⟩
@@ -682,8 +689,8 @@ private theorem exists_coupled_recoloring_of_stopped_pair (H : Colored3Graph κ 
       (H.relativeDensity c (Q.coarsen hstop.vertex_eq.le f)) (H'.relativeDensity c Q)
     rw [abs_sub_comm (H.relativeDensity c (Q.coarsen hstop.vertex_eq.le f) : ℝ)] at htri
     linarith [hrel_dev c,
-      fine_subpolyad_discrepancy_bound hη_H'_pos hη_H'_le hq_tol hW hQ_pos (abs_nonneg _)
-        (hW_count W c)]
+      add_le_of_mul_le_mul_of_le_sq_div_two hη_H'_pos (hη_H'_le.trans (by norm_num))
+        (hq_tol.trans (by nlinarith [sq_nonneg η_H'])) hW hQ_pos (hW_count W c)]
   · rw [← H'.relativeDensity_permute c Q' σ,
       ← H.relativeDensity_permute c (Q'.coarsen hstop.vertex_eq.le f) σ,
       ← Polyad3.coarsen_permute hstop.vertex_eq.le hstop.proj_rev Q' σ]
@@ -714,16 +721,16 @@ private theorem topRegularOverMostPolyads_of_stopped_pair (H H' : Colored3Graph 
   have hδ₁_pos := triadicRank1Tol_pos hF R K
   have hη_H'_pos := triadicFineH'Tol_pos hF R K
   have hη_pos := triadicFineTol_pos q₃ hε hF R K
-  have hn4 : 4 ≤ n :=
-    (le_max_left 4 _).trans ((basicFloor_le_regularityBound3 q₃ ε F R t₀).trans hV)
+  have hn4 : 4 ≤ n := (four_le_regularityBound3 q₃ ε F R t₀).trans hV
   have hn_pos : (0 : ℝ) < n := by positivity
   have hpow : (n : ℝ) ^ 3 ≤ 4 * (n.descFactorial 3 : ℝ) :=
-    mod_cast pow_three_le_four_mul_descFactorial hn4
+    mod_cast Nat.pow_three_le_four_mul_descFactorial hn4
   have hdesc_pos : (0 : ℝ) < n.descFactorial 3 := by linarith [pow_pos hn_pos 3]
   have hf_symm (p) : C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p) :=
     (hstop.proj_color p).symm
   have hC_dec : C.IsPolyadDecomposition :=
     C.isPolyadDecomposition_iff_ofTriple_mem.2 fun _ ↦ hC_adm.polyads_univ ▸ mem_univ _
+  -- Charge each rank-1 irregular transversal coarse polyad to its bad fine children.
   let BadFine : Finset (Polyad3 D.skeleton) := univ.filter fun Q ↦
     (#Q.support : ℝ) < α_fine * (n : ℝ) ^ 3 ∨ ¬H.IsTopRegularOverPolyad Q η 1
   have hcharge_trans {P : Polyad3 C.skeleton} (hP_trans : P.IsTransversal)
@@ -754,40 +761,6 @@ private theorem topRegularOverMostPolyads_of_stopped_pair (H H' : Colored3Graph 
       rw [← Nat.cast_sum]
       exact congrArg Nat.cast ((sum_congr (by ext Q; simp) fun _ _ ↦ rfl).trans
         (Polyad3.sum_card_support_coarsen hstop.vertex_eq.le f hf_symm P))
-    have hP_avg :
-        (#P.support : ℝ) * |(H'.relativeDensity c P : ℝ) - a| ≤
-          ∑ Q : Polyad3 D.skeleton with Q.coarsen hstop.vertex_eq.le f = P,
-            (#Q.support : ℝ) * |(H'.relativeDensity c Q : ℝ) - a| := by
-      have hsplit := H'.relDensityOn_sub_mul_card_eq_sum_inter_support D.skeleton c P.support a
-      rw [← relativeDensity_def] at hsplit
-      have hsum_eq : ∑ Q : Polyad3 D.skeleton,
-            ((H'.relDensityOn c (P.support ∩ Q.support) : ℝ) - a) * #(P.support ∩ Q.support) =
-          ∑ Q : Polyad3 D.skeleton with Q.coarsen hstop.vertex_eq.le f = P,
-            ((H'.relativeDensity c Q : ℝ) - a) * #Q.support := by
-        rw [sum_filter]
-        refine sum_congr rfl fun Q _ ↦ ?_
-        by_cases hQP : Q.coarsen hstop.vertex_eq.le f = P
-        · simp [hQP, inter_eq_right.2
-            (hQP ▸ Polyad3.support_subset_coarsen hstop.vertex_eq.le f hf_symm Q),
-            relativeDensity_def]
-        · simp [hQP, disjoint_iff_inter_eq_empty.1
-            ((Polyad3.pairwise_disjoint_support (Ne.symm hQP)).mono_right
-              (Polyad3.support_subset_coarsen hstop.vertex_eq.le f hf_symm Q))]
-      rw [← abs_of_nonneg (a := (#P.support : ℝ)) (Nat.cast_nonneg _), ← abs_mul, mul_comm, hsplit,
-        hsum_eq]
-      refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun Q _ ↦ ?_)
-      rw [abs_mul, abs_of_nonneg (a := (#Q.support : ℝ)) (Nat.cast_nonneg _), mul_comm]
-    have hdev_two :
-        (∑ Q : Polyad3 D.skeleton with Q.coarsen hstop.vertex_eq.le f = P,
-            (#Q.support : ℝ) * |(H'.relativeDensity c Q : ℝ) - H'.relativeDensity c P|) ≤
-          2 * ∑ Q : Polyad3 D.skeleton with Q.coarsen hstop.vertex_eq.le f = P,
-            (#Q.support : ℝ) * |(H'.relativeDensity c Q : ℝ) - a| := by
-      refine (sum_le_sum fun Q _ ↦ mul_le_mul_of_nonneg_left
-        ((abs_sub_le (H'.relativeDensity c Q : ℝ) a (H'.relativeDensity c P : ℝ)).trans_eq
-          (by rw [abs_sub_comm a])) (Nat.cast_nonneg _)).trans ?_
-      simp_rw [mul_add]
-      rw [sum_add_distrib, ← sum_mul, hsum_P]
-      linarith
     have hdev_a :
         (∑ Q : Polyad3 D.skeleton with Q.coarsen hstop.vertex_eq.le f = P,
             (#Q.support : ℝ) * |(H'.relativeDensity c Q : ℝ) - a|) ≤
@@ -818,10 +791,15 @@ private theorem topRegularOverMostPolyads_of_stopped_pair (H H' : Colored3Graph 
         (mul_le_mul (by linarith : 4 * (q₃ : ℝ) ≤ 4 * (q₃ + 1)) (min_le_right _ _)
           hη_pos.le (by positivity)).trans_eq (by field_simp; ring)
       nlinarith [hη_H'_pos, triadicFineH'Tol_le_quarter hF R K, show η_H' = δ₁ ^ 2 / 4 from rfl]
-    refine (le_of_eq (congrArg₂ (· + ·) (sum_congr (by ext Q; simp [η_H']) fun _ _ ↦ rfl)
-      (sum_congr (by ext Q; simp) fun _ _ ↦ rfl))).trans ((add_le_add hirr_le hdev_two).trans ?_)
-    linarith [hdev_a, hlt,
-      mul_le_mul_of_nonneg_right h4qη (Nat.cast_nonneg (α := ℝ) #P.support)]
+    have hdev_two := (H'.sum_card_support_mul_abs_relativeDensity_sub_le_two_mul
+        hstop.vertex_eq.le f hf_symm P c a).trans <|
+      mul_le_mul_of_nonneg_left
+        ((le_of_eq (sum_congr (by ext Q; simp) fun _ _ ↦ rfl)).trans hdev_a) zero_le_two
+    refine (add_le_add
+      ((le_of_eq (sum_congr (by ext Q; simp [η_H']) fun _ _ ↦ rfl)).trans hirr_le)
+      hdev_two).trans ?_
+    linarith [hlt, mul_le_mul_of_nonneg_right h4qη (Nat.cast_nonneg (α := ℝ) #P.support)]
+  -- Bound the total support of small and irregular fine polyads, hence irregular transversal ones.
   have hBadFine_sum :
       (∑ Q ∈ BadFine, (#Q.support : ℝ)) ≤ (δ₁ ^ 2 * ε₁ / 12) * n.descFactorial 3 := by
     let SmallFine :=
@@ -865,34 +843,14 @@ private theorem topRegularOverMostPolyads_of_stopped_pair (H H' : Colored3Graph 
     exact le_of_mul_le_mul_left
       (hsum_charge.trans ((mul_le_mul_of_nonneg_left hBadFine_sum (by norm_num)).trans_eq
         (by ring))) (by positivity)
+  -- Bound the support of nontransversal coarse polyads via equitability.
   have hNonTrans_sum :
       (∑ P : Polyad3 C.skeleton with ¬P.IsTransversal, (#P.support : ℝ)) ≤
         (ε₁ / 4) * n.descFactorial 3 := by
-    let NonTransSet :=
-      (univ.filter fun P : Polyad3 C.skeleton ↦ ¬P.IsTransversal).biUnion Polyad3.support
-    have hcard_u : ∑ P : Polyad3 C.skeleton with ¬P.IsTransversal, #P.support = #NonTransSet :=
-      (card_biUnion fun _ _ _ _ hne ↦ Polyad3.pairwise_disjoint_support hne).symm
-    have hinj_map :
-        NonTransSet.image Subtype.val ⊆
-          (Fintype.piFinset fun _ : Fin 3 ↦ (univ : Finset V)).filter
-            (fun g ↦ ¬Injective fun i ↦ C.skeleton.vertexPart.part (g i)) := fun g hg ↦ by
-      obtain ⟨x, hx, rfl⟩ := mem_image.1 hg
-      obtain ⟨P, hP, hxP⟩ := mem_biUnion.1 hx
-      have hx' := (P.mem_support x).1 hxP
-      refine mem_filter.2 ⟨Fintype.mem_piFinset.2 fun _ ↦ mem_univ _, fun hinj ↦
-        (mem_filter.1 hP).2 (P.isTransversal_iff_injective_roleCell.2 fun i j hij ↦ hinj ?_)⟩
-      have hpart (k : Fin 3) : C.skeleton.vertexPart.part (x.1 k) = (P.roleCell k : Finset V) := by
-        fin_cases k <;> dsimp
-        · simpa using C.skeleton.vertexPart.part_eq_of_mem P.hc₀ hx'.1
-        · simpa using C.skeleton.vertexPart.part_eq_of_mem P.hc₁ hx'.2.1
-        · simpa using C.skeleton.vertexPart.part_eq_of_mem P.hc₂ hx'.2.2.1
-      exact (hpart i).trans ((congrArg Subtype.val hij).trans (hpart j).symm)
-    have hcard_nt : #NonTransSet ≤ 3 * (n / t + 1) * n ^ 2 :=
-      (card_image_of_injective _ Subtype.val_injective).symm.trans_le <|
-      (card_le_card hinj_map).trans <|
-      (C.skeleton.vertexPart.card_filter_not_injective_part_le_of_card_le (m := n / t + 1)
-        fun A hA ↦ by simpa [card_univ] using hC_adm.equi.card_part_le_average_add_one hA).trans_eq
-        (by rw [Fintype.card_fin, card_univ]; rfl)
+    have hcard_nt :
+        (∑ P : Polyad3 C.skeleton with ¬P.IsTransversal, #P.support) ≤
+          3 * (n / t + 1) * n ^ 2 :=
+      Polyad3.sum_card_support_not_isTransversal_le_of_isEquipartition C.skeleton hC_adm.equi
     have h96 {m : ℕ} (hm : ⌈96 / ε₁⌉₊ ≤ m) : 96 ≤ ε₁ * m := by
       linarith [(div_le_iff₀ hε₁_pos).1 ((Nat.le_ceil _).trans (Nat.cast_le.2 hm))]
     have h96t := h96 (((Nat.le_add_left _ _).trans (le_max_right _ _)).trans hC_adm.parts_ge)
@@ -904,13 +862,16 @@ private theorem topRegularOverMostPolyads_of_stopped_pair (H H' : Colored3Graph 
       have h1 : ((n / t : ℕ) : ℝ) * t ≤ n := mod_cast Nat.div_mul_le_self n t
       linarith [le_of_mul_le_mul_right
         (by nlinarith : (96 * ((n / t : ℕ) : ℝ)) * t ≤ (ε₁ * n) * t) ht_pos]
-    rw [← Nat.cast_sum, hcard_u]
-    exact (mod_cast hcard_nt : (#NonTransSet : ℝ) ≤ ((3 * (n / t + 1) * n ^ 2 : ℕ) : ℝ)).trans <|
+    rw [← Nat.cast_sum]
+    exact (mod_cast hcard_nt :
+        ((∑ P : Polyad3 C.skeleton with ¬P.IsTransversal, #P.support : ℕ) : ℝ) ≤
+          ((3 * (n / t + 1) * n ^ 2 : ℕ) : ℝ)).trans <|
       (by push_cast; ring : _ = (3 * ((n / t : ℕ) : ℝ) + 3) * (n : ℝ) ^ 2).trans_le <|
       (mul_le_mul_of_nonneg_right (add_le_add hdiv_t (by linarith : (3 : ℝ) ≤ (ε₁ / 32) * n))
         (by positivity)).trans <|
       ((by ring : _ = (ε₁ / 16) * (n : ℝ) ^ 3).trans_le
         (mul_le_mul_of_nonneg_left hpow (by positivity))).trans_eq (by ring)
+  -- Upgrade rank-1 top regularity to rank `R C.complexity` and sum the two exceptional charges.
   rw [topRegularOverMostPolyads_iff, exceptionalPolyadMass_eq_sum_div hC_dec,
     div_le_iff₀ hdesc_pos]
   let S_tr := univ.filter fun P : Polyad3 C.skeleton ↦

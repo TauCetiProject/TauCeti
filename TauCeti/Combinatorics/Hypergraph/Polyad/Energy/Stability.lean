@@ -138,9 +138,8 @@ theorem polyadEnergy_sub_le_of_pairRecoloring {S : PairSkeleton3 κ₂ V} {T : P
         (Fintype.card V).descFactorial 3 := by
   let S' : PairSkeleton3 κ₂ V := ⟨T.vertexPart, S.pairColors⟩
   have href : H.polyadEnergy S ≤ H.polyadEnergy S' :=
-    H.polyadEnergy_mono_of_refines (S := S) (T := S') fun x y hxy ↦ by
-      have hc := Polyad3.coarsen_ofTriple (S := S) (T := S') hV id (fun _ ↦ rfl)
-      rw [← hc x, ← hc y, hxy]
+    H.polyadEnergy_mono_of_refines (S := S) (T := S') fun _ _ ↦
+      Polyad3.ofTriple_eq_ofTriple_of_le (S := S) (T := S') hV id fun _ ↦ rfl
   refine (sub_le_sub_right href _).trans ?_
   refine (H.polyadEnergy_sub_le_of_injective (S := S') (T := T)
     (Polyad3.coarsen_injective (S := T) (T := S') rfl hg)).trans ?_

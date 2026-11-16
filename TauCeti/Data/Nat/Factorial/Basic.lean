@@ -17,7 +17,8 @@ scalars, so constructions requiring an invertible factorial apply automatically 
 
 The file also records `Nat.sq_eq_descFactorial_two_add`, the expansion `n ^ 2 = (n)₂ + n` of a
 square into falling factorials, which converts second factorial moments into second moments,
-and `Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`, `6 ^ n * n ! ≤ (2 * n + 1)!`, the
+`Nat.pow_three_le_four_mul_descFactorial`, `n ^ 3 ≤ 4 * (n)₃` for `4 ≤ n`,
+`Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`, `6 ^ n * n ! ≤ (2 * n + 1)!`, the
 termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`, and
 `Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`, `((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, the
 termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`.
@@ -41,6 +42,18 @@ theorem sq_eq_descFactorial_two_add (n : ℕ) : n ^ 2 = n.descFactorial 2 + n :=
   rcases n with _ | n
   · simp
   · rw [succ_descFactorial_succ, descFactorial_one, Nat.pow_two, succ_mul, Nat.mul_comm]
+
+/-- For `4 ≤ n`, `n ^ 3 ≤ 4 * n.descFactorial 3`. -/
+theorem pow_three_le_four_mul_descFactorial {n : ℕ} (hn : 4 ≤ n) :
+    n ^ 3 ≤ 4 * n.descFactorial 3 := by
+  rw [descFactorial_succ, descFactorial_succ, descFactorial_one]
+  have h1 : n ≤ 2 * (n - 1) := by omega
+  have h2 : n ≤ 2 * (n - 2) := by omega
+  calc n ^ 3 = n * n * n := by rw [Nat.pow_succ, Nat.pow_two]
+    _ ≤ n * (2 * (n - 1)) * (2 * (n - 2)) :=
+      Nat.mul_le_mul (Nat.mul_le_mul_left n h1) h2
+    _ = 4 * ((n - 2) * ((n - 1) * n)) := by
+      rw [show (4 : ℕ) = 2 * 2 from rfl]; ac_rfl
 
 /-- `6 ^ n * n ! ≤ (2 * n + 1)!`, with equality at `n = 0` and `n = 1`. -/
 theorem six_pow_mul_factorial_le_factorial_two_mul_add_one (n : ℕ) :

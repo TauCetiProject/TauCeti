@@ -38,6 +38,15 @@ the other direction, from a coarse polyad to its large fine children.
 * `TauCeti.Colored3Graph.sum_card_support_mul_abs_relativeDensity_coarsen_le`: the
   support-weighted deviation of the fine densities from the coarse ones is controlled by the
   polyad energy gap (via `TauCeti.Colored3Graph.polyadDensityDeviation_abs_le`).
+* `TauCeti.Colored3Graph.relativeDensity_sub_mul_card_eq_sum_coarsen`: the count-scaled deviation
+  of the coarse density over `P` from a constant `a` equals the sum of the fine deviations over the
+  children of `P`.
+* `TauCeti.Colored3Graph.card_support_mul_abs_relativeDensity_sub_le_sum_coarsen`: the
+  count-scaled absolute deviation of the coarse density over `P` from a constant `a` is bounded by
+  the support-weighted sum of the fine deviations from `a`.
+* `TauCeti.Colored3Graph.sum_card_support_mul_abs_relativeDensity_sub_le_two_mul`: the
+  support-weighted deviation of the fine child densities of `P` from the coarse density over `P` is
+  at most twice their support-weighted deviation from any constant `a`.
 
 ## References
 
@@ -166,5 +175,60 @@ theorem sum_card_support_mul_abs_relativeDensity_coarsen_le [Fintype κ] [Fintyp
   rw [Polyad3.sum_comp_ofTriple
     (fun Q ↦ |(H.relativeDensity c Q : ℝ) - H.relativeDensity c (Q.coarsen hV f)|)] at h
   simpa only [nsmul_eq_mul] using h
+
+open Classical in
+/-- The count-scaled deviation of the coarse density of `c` over `P` from a constant `a` equals
+the sum of the count-scaled deviations over the fine children of `P`. -/
+theorem relativeDensity_sub_mul_card_eq_sum_coarsen [Fintype κ₂']
+    (hV : T.vertexPart ≤ S.vertexPart) (f : κ₂' → κ₂)
+    (hf : ∀ p, S.pairColors.color p = f (T.pairColors.color p))
+    (P : Polyad3 S) (c : κ) (a : ℝ) :
+    ((H.relativeDensity c P : ℝ) - a) * #P.support =
+      ∑ Q : Polyad3 T with Q.coarsen hV f = P, ((H.relativeDensity c Q : ℝ) - a) * #Q.support := by
+  rw [relativeDensity_def, H.relDensityOn_sub_mul_card_eq_sum_inter_support T c P.support a,
+    sum_filter]
+  refine sum_congr rfl fun Q _ ↦ ?_
+  by_cases hQP : Q.coarsen hV f = P
+  · simp [hQP, inter_eq_right.2 (hQP ▸ Polyad3.support_subset_coarsen hV f hf Q),
+      relativeDensity_def]
+  · simp [hQP, disjoint_iff_inter_eq_empty.1
+      ((Polyad3.pairwise_disjoint_support (Ne.symm hQP)).mono_right
+        (Polyad3.support_subset_coarsen hV f hf Q))]
+
+open Classical in
+/-- The count-scaled deviation of the coarse density over `P` from a constant `a` is at most the
+support-weighted sum of the fine deviations from `a` over the children of `P`. -/
+theorem card_support_mul_abs_relativeDensity_sub_le_sum_coarsen [Fintype κ₂']
+    (hV : T.vertexPart ≤ S.vertexPart) (f : κ₂' → κ₂)
+    (hf : ∀ p, S.pairColors.color p = f (T.pairColors.color p))
+    (P : Polyad3 S) (c : κ) (a : ℝ) :
+    (#P.support : ℝ) * |(H.relativeDensity c P : ℝ) - a| ≤
+      ∑ Q : Polyad3 T with Q.coarsen hV f = P,
+        (#Q.support : ℝ) * |(H.relativeDensity c Q : ℝ) - a| := by
+  rw [← abs_of_nonneg (a := (#P.support : ℝ)) (Nat.cast_nonneg _), ← abs_mul, mul_comm,
+    H.relativeDensity_sub_mul_card_eq_sum_coarsen hV f hf P c a]
+  refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun Q _ ↦ ?_)
+  rw [abs_mul, abs_of_nonneg (a := (#Q.support : ℝ)) (Nat.cast_nonneg _), mul_comm]
+
+open Classical in
+/-- The support-weighted deviation of the fine child densities of `P` from the coarse density
+over `P` is at most twice their support-weighted deviation from any constant `a`. -/
+theorem sum_card_support_mul_abs_relativeDensity_sub_le_two_mul [Fintype κ₂']
+    (hV : T.vertexPart ≤ S.vertexPart) (f : κ₂' → κ₂)
+    (hf : ∀ p, S.pairColors.color p = f (T.pairColors.color p))
+    (P : Polyad3 S) (c : κ) (a : ℝ) :
+    ∑ Q : Polyad3 T with Q.coarsen hV f = P,
+        (#Q.support : ℝ) * |(H.relativeDensity c Q : ℝ) - H.relativeDensity c P| ≤
+      2 * ∑ Q : Polyad3 T with Q.coarsen hV f = P,
+        (#Q.support : ℝ) * |(H.relativeDensity c Q : ℝ) - a| := by
+  have hsum_P : (∑ Q : Polyad3 T with Q.coarsen hV f = P, (#Q.support : ℝ)) = #P.support := by
+    exact_mod_cast Polyad3.sum_card_support_coarsen hV f hf P
+  have havg := H.card_support_mul_abs_relativeDensity_sub_le_sum_coarsen hV f hf P c a
+  refine (sum_le_sum fun Q _ ↦ mul_le_mul_of_nonneg_left
+    ((abs_sub_le (H.relativeDensity c Q : ℝ) a (H.relativeDensity c P : ℝ)).trans_eq
+      (by rw [abs_sub_comm a])) (Nat.cast_nonneg _)).trans ?_
+  simp_rw [mul_add]
+  rw [sum_add_distrib, ← sum_mul, hsum_P]
+  linarith
 
 end TauCeti.Colored3Graph

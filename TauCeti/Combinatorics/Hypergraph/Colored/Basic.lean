@@ -18,11 +18,40 @@ nonedges as well as edges. No finiteness assumption on the vertex type or palett
 Restriction along a vertex embedding is provided by `Colored3Graph.comap`.
 `Colored3Graph.extend` adds vertices on top of a background coloring, which colors every new
 triple; padding by one default color is the case of a constant background.
+`TauCeti.tripleSet` maps an injective ordered triple `Fin 3 → V` to its underlying unordered
+three-element subset in `Set.powersetCard V 3`.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- The unordered 3-element subset of `V` determined by an injective triple `Fin 3 → V`. -/
+def tripleSet {V : Type*} (x : {x : Fin 3 → V // Function.Injective x}) : Set.powersetCard V 3 :=
+  Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩
+
+/-- `tripleSet` is `Set.powersetCard.ofFinEmb 3 V` applied to the underlying embedding. -/
+theorem tripleSet_def {V : Type*} (x : {x : Fin 3 → V // Function.Injective x}) :
+    tripleSet x = Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ :=
+  (rfl)
+
+/-- A vertex belongs to `tripleSet x` iff it is one of the three coordinates of `x`. -/
+@[simp]
+theorem mem_tripleSet_iff {V : Type*} {x : {x : Fin 3 → V // Function.Injective x}} {v : V} :
+    v ∈ tripleSet x ↔ ∃ i : Fin 3, x.1 i = v := by
+  simp [tripleSet, Set.powersetCard.mem_ofFinEmb_iff_mem_range]
+
+/-- The underlying `Finset` of `tripleSet x` is the mapped image of `Finset.univ` under `x`. -/
+@[simp]
+theorem val_tripleSet {V : Type*} (x : {x : Fin 3 → V // Function.Injective x}) :
+    (tripleSet x).1 = Finset.univ.map ⟨x.1, x.2⟩ :=
+  Set.powersetCard.val_ofFinEmb 3 V ⟨x.1, x.2⟩
+
+/-- The underlying `Set` of `tripleSet x` is the range of `x.1`. -/
+@[simp]
+theorem coe_tripleSet {V : Type*} (x : {x : Fin 3 → V // Function.Injective x}) :
+    (tripleSet x : Set V) = Set.range x.1 :=
+  Set.powersetCard.coe_ofFinEmb 3 V ⟨x.1, x.2⟩
 
 /-- A total coloring of unordered triples. Nonedges, when present, are palette values. -/
 @[ext]

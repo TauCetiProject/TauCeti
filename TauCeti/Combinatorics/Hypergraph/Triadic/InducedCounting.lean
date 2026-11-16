@@ -49,8 +49,8 @@ edit from `H` to `H'`.
   of its prediction.
 * `TauCeti.Colored3Graph.abs_inducedCopyCount_sub_expectedInducedCount_le_of_topRegular`: the
   induced counting lemma over a regular triadic complex, with error `ε |V| ^ k`.
-* `TauCeti.Colored3Graph.induced_counting_from_strong_regular_complex3`: bundled induced counting
-  from `Colored3Graph.IsStrongRegularApproximation3`.
+* `Colored3Graph.abs_inducedCopyCount_sub_expectedInducedCount_le_of_isStrongRegularApproximation3`:
+  bundled induced counting from `Colored3Graph.IsStrongRegularApproximation3`.
 * `TauCeti.Colored3Graph.exists_strong_regular_approximation3_counting`: strong regular
   approximation predicting `H.inducedCopyCount F` within `ε |V| ^ F.k`.
 
@@ -149,8 +149,8 @@ regular approximation of `H` at the counting parameters `inducedCountingParamete
 `inducedCountingSchedule3 F.k ε` with positive rank `1 ≤ R C.complexity` and vertex cells
 controlled at `diagonalControl3 F.k ε`, then the induced copy count of `F` in `H` differs from the
 prediction `H'.expectedInducedCount C F` by at most `ε * |V| ^ F.k`. -/
-theorem induced_counting_from_strong_regular_complex3 [Fintype κ] {ε : ℝ} (hε : 0 < ε)
-    {R : ℕ → ℕ} (hR : 1 ≤ R C.complexity) {t₀ : ℕ}
+theorem abs_inducedCopyCount_sub_expectedInducedCount_le_of_isStrongRegularApproximation3
+    [Fintype κ] {ε : ℝ} (hε : 0 < ε) {R : ℕ → ℕ} (hR : 1 ≤ R C.complexity) {t₀ : ℕ}
     (hcells : C.VertexCellsControlled (diagonalControl3 F.k ε))
     (happrox : H.IsStrongRegularApproximation3 H' C (inducedCountingParameter3 F.k ε)
       (inducedCountingSchedule3 F.k ε) R t₀) :
@@ -160,10 +160,11 @@ theorem induced_counting_from_strong_regular_complex3 [Fintype κ] {ε : ℝ} (h
 
 /-- **Strong regular approximation with induced counting.** Combining
 `Colored3Graph.exists_strong_regular_approximation3` with
-`Colored3Graph.induced_counting_from_strong_regular_complex3`, every colored three-uniform
-hypergraph `H` on a sufficiently large host `V` admits a strong regular approximation `(H', C)`
-with vertex cells controlled at `diagonalControl3 F.k ε` whose expected count
-`H'.expectedInducedCount C F` approximates `H.inducedCopyCount F` within `ε * |V| ^ F.k`. -/
+`Colored3Graph.abs_inducedCopyCount_sub_expectedInducedCount_le_of_isStrongRegularApproximation3`,
+every colored three-uniform hypergraph `H` on a sufficiently large host `V` admits a strong regular
+approximation `(H', C)` with vertex cells controlled at `diagonalControl3 F.k ε` whose expected
+count `H'.expectedInducedCount C F` approximates `H.inducedCopyCount F` within
+`ε * |V| ^ F.k`. -/
 theorem exists_strong_regular_approximation3_counting [Fintype κ] (H : Colored3Graph κ V)
     (F : FiniteColored3Pattern κ) {ε : ℝ} (hε : 0 < ε) {R : ℕ → ℕ} (hR : ∀ n, 1 ≤ R n)
     (hV : regularityBound3 (Fintype.card κ) (inducedCountingParameter3 F.k ε)
@@ -177,7 +178,8 @@ theorem exists_strong_regular_approximation3_counting [Fintype κ] (H : Colored3
   obtain ⟨H', C, hcells, happrox⟩ := H.exists_strong_regular_approximation3
     (inducedCountingParameter3_pos F.k hε) (inducedCountingSchedule3_pos F.k hε) R _ hV
   exact ⟨H', C, hcells, happrox,
-    induced_counting_from_strong_regular_complex3 hε (hR _) hcells happrox⟩
+    abs_inducedCopyCount_sub_expectedInducedCount_le_of_isStrongRegularApproximation3 hε (hR _)
+      hcells happrox⟩
 
 end Colored3Graph
 

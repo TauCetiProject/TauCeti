@@ -64,7 +64,9 @@ solve the second estimate for `Y` and substitute it into the first.
 It also records that the normalized position `(c - a) / (b - a)` of a point `c ∈ [a, b]` lies in
 `[0, 1]`, also when the interval is degenerate, and that for a finite family of nonnegative
 elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each reciprocal `(x j)⁻¹`.
-Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`.
+Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`, and a linear
+bound `a * w ≤ t * M` on a large weight `w ≥ ε * M` with `0 < ε ≤ 1` and `t ≤ ε ^ 2 / 2` yields
+`a + t ≤ ε`.
 
 ## Main results
 
@@ -106,6 +108,8 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.add_le_of_mul_le_mul_of_le_sq_div_two`: `a + t ≤ ε` from `0 < ε ≤ 1`, `t ≤ ε ^ 2 / 2`,
+  `ε * M ≤ w`, `0 < M`, and `a * w ≤ t * M`.
 -/
 
 public section
@@ -412,6 +416,24 @@ theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictO
 theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
     {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
   one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
+
+/-- If `0 < ε ≤ 1`, `t ≤ ε ^ 2 / 2`, `ε * M ≤ w`, `0 < M`, and `a * w ≤ t * M`, then
+`a + t ≤ ε`. -/
+theorem add_le_of_mul_le_mul_of_le_sq_div_two {α : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] {a t ε w M : α} (hε : 0 < ε) (hε1 : ε ≤ 1)
+    (ht : t ≤ ε ^ 2 / 2) (hw : ε * M ≤ w) (hM : 0 < M) (haw : a * w ≤ t * M) :
+    a + t ≤ ε := by
+  have ht_half : t ≤ ε / 2 :=
+    ht.trans (div_le_div_of_nonneg_right
+      ((sq ε ▸ mul_le_mul_of_nonneg_left hε1 hε.le).trans_eq (mul_one ε)) zero_le_two)
+  rcases le_or_gt 0 a with ha | ha
+  · have h1 : a * ε ≤ t :=
+      le_of_mul_le_mul_right (((mul_assoc a ε M).symm ▸
+        mul_le_mul_of_nonneg_left hw ha).trans haw) hM
+    have h2 : a ≤ ε / 2 :=
+      le_of_mul_le_mul_right ((h1.trans ht).trans_eq (by rw [sq, div_mul_eq_mul_div])) hε
+    exact (add_le_add h2 ht_half).trans_eq (add_halves ε)
+  · exact (add_le_of_nonpos_left ha.le).trans (ht_half.trans (half_le_self hε.le))
 
 end TauCeti
 
