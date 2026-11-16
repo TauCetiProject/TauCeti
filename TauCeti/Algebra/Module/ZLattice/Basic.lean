@@ -233,15 +233,10 @@ theorem discreteTopology_of_norm_sq_mem_int_mul {E : Type*} [NormedAddCommGroup 
 
 /-- The `ℤ`-span of a single vector in a real normed space is discrete. -/
 instance instDiscreteTopologySpanSingleton {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (e : E) : DiscreteTopology (Submodule.span ℤ ({e} : Set E)) := by
-  rcases eq_or_ne e 0 with rfl | he
-  · rw [Submodule.span_zero_singleton]
-    infer_instance
-  · refine discreteTopology_of_norm_sq_mem_int_mul (pow_pos (norm_pos_iff.mpr he) 2) fun x hx ↦ ?_
-    obtain ⟨n, rfl⟩ := Submodule.mem_span_singleton.mp hx
-    refine ⟨n ^ 2, ?_⟩
-    rw [← Int.cast_smul_eq_zsmul ℝ, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, Int.cast_pow,
-      mul_comm]
+    (e : E) : DiscreteTopology (Submodule.span ℤ ({e} : Set E)) :=
+  have : NormedSpace ℚ E := .restrictScalars ℚ ℝ E
+  .of_subset (NormedSpace.discreteTopology_zmultiples e) fun _ hx ↦
+    AddSubgroup.mem_zmultiples_iff.mpr (Submodule.mem_span_singleton.mp hx)
 
 /-- A discrete subgroup containing a full lattice is a full lattice. -/
 theorem _root_.IsZLattice.of_le {K : Type*} [NormedField K] {E : Type*} [NormedAddCommGroup E]

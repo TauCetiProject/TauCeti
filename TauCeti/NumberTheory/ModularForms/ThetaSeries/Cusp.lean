@@ -271,13 +271,6 @@ theorem thetaSeries_ne_zero_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) : thetaSe
 
 variable {L}
 
-/-- For `M ≤ L`, the real part of `θ_{γ+L}(τ)` is the sum of the real parts of `θ_{γ+y+M}(τ)` over
-the classes `y` of `L` modulo `M`. -/
-theorem hasSum_re_thetaCoset_add_out {M : Submodule ℤ E} (hML : M ≤ L) (γ : E) (τ : ℍ) :
-    HasSum (fun y : L ⧸ M.submoduleOf L => (thetaCoset M (γ + ((Quotient.out y : L) : E)) τ).re)
-      (thetaCoset L γ τ).re :=
-  Complex.reCLM.hasSum (hasSum_thetaCoset_add_out L hML γ τ)
-
 /-- On the imaginary axis, strictly enlarging a discrete subgroup strictly increases the real part
 of every translate's theta series. -/
 theorem re_thetaCoset_lt_re_thetaCoset {M : Submodule ℤ E} (hML : M < L) (γ : E) {τ : ℍ}
@@ -295,7 +288,7 @@ theorem re_thetaCoset_lt_re_thetaCoset {M : Submodule ℤ E} (hML : M < L) (γ :
       = (thetaCoset M (γ + ((Quotient.out (0 : L ⧸ M.submoduleOf L) : L) : E)) τ).re := by
         rw [thetaCoset_add_mem M γ h0]
     _ < (thetaCoset L γ τ).re :=
-        lt_hasSum (hasSum_re_thetaCoset_add_out hML.le γ τ) 0
+        lt_hasSum (Complex.reCLM.hasSum (hasSum_thetaCoset_add_out L hML.le γ τ)) 0
           (fun _ _ => (re_thetaCoset_pos M _ hτ).le) (Submodule.Quotient.mk ⟨x, hxL⟩) hy
           (re_thetaCoset_pos M _ hτ)
 

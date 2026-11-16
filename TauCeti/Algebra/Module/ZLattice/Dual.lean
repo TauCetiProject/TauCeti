@@ -61,8 +61,10 @@ defined from it.
 * `ZLattice.dual_span_orthonormalBasis`: the `ℤ`-span of an orthonormal basis is self-dual.
 * `ZLattice.dual_span_singleton`, `ZLattice.dual_span_inv`: the dual of `c ℤ ⊆ ℝ` (`c ≠ 0`) is
   `c⁻¹ ℤ`, and the dual of `c⁻¹ ℤ` is `c ℤ`.
-* `ZLattice.span_natCast_lt_span_inv_natCast`, `ZLattice.dual_span_inv_natCast_lt`: for a natural
-  number `n > 1`, `n ℤ < n⁻¹ ℤ` in `ℝ`, so `(n⁻¹ ℤ)^∨ = n ℤ` is strictly contained in `n⁻¹ ℤ`.
+* `ZLattice.span_singleton_le_span_inv_iff`, `ZLattice.span_singleton_lt_span_inv_iff`,
+  `ZLattice.dual_span_inv_le_iff`, `ZLattice.dual_span_inv_lt_iff`: `c ℤ ≤ c⁻¹ ℤ` in `ℝ` iff
+  `c² ∈ ℤ` (and for `c ≠ 0` this characterizes `(c⁻¹ ℤ)^∨ ≤ c⁻¹ ℤ`), with strict inclusion iff
+  `c² ∈ ℤ` and `1 < c²`.
 * `ZLattice.inf_dual_span_singleton_eq_bot_of_irrational_sq`: when `c²` is irrational, `c ℤ ⊆ ℝ`
   meets its dual `c⁻¹ ℤ` only at `0`.
 * `ZLattice.dual_dual`: the dual of the dual of a full lattice is the lattice itself.
@@ -185,47 +187,61 @@ theorem dual_span_inv {c : ℝ} (hc : c ≠ 0) :
     dual (span ℤ {c⁻¹} : Submodule ℤ ℝ) = span ℤ {c} := by
   rw [dual_span_singleton (inv_ne_zero hc), inv_inv]
 
-/-- For every natural number `n`, `n ℤ` is contained in `n⁻¹ ℤ` inside `ℝ`. -/
-theorem span_natCast_le_span_inv_natCast (n : ℕ) :
-    (span ℤ {(n : ℝ)} : Submodule ℤ ℝ) ≤ span ℤ {(n : ℝ)⁻¹} := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
+/-- In `ℝ`, `c ℤ` is contained in `c⁻¹ ℤ` if and only if `c²` is an integer. -/
+theorem span_singleton_le_span_inv_iff (c : ℝ) :
+    (span ℤ {c} : Submodule ℤ ℝ) ≤ span ℤ {c⁻¹} ↔ ∃ k : ℤ, c ^ 2 = k := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · exact ⟨fun _ ↦ ⟨0, by norm_num⟩, fun _ ↦ by simp⟩
   · rw [Submodule.span_singleton_le_iff_mem, Submodule.mem_span_singleton]
-    refine ⟨n ^ 2, ?_⟩
-    have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-    rw [zsmul_eq_mul]
-    push_cast
-    rw [sq, mul_inv_cancel_right₀ hn']
+    refine ⟨fun ⟨k, hk⟩ ↦ ⟨k, ?_⟩, fun ⟨k, hk⟩ ↦ ⟨k, ?_⟩⟩
+    · rw [zsmul_eq_mul] at hk
+      calc c ^ 2 = c * c := sq c
+        _ = (k : ℝ) * c⁻¹ * c := by rw [hk]
+        _ = k := inv_mul_cancel_right₀ hc k
+    · rw [zsmul_eq_mul, ← hk, sq, mul_inv_cancel_right₀ hc]
 
-/-- For a natural number `n > 1`, `n ℤ` is strictly contained in `n⁻¹ ℤ` inside `ℝ`. -/
-theorem span_natCast_lt_span_inv_natCast {n : ℕ} (hn : 1 < n) :
-    (span ℤ {(n : ℝ)} : Submodule ℤ ℝ) < span ℤ {(n : ℝ)⁻¹} := by
-  refine lt_of_le_not_ge (span_natCast_le_span_inv_natCast n) fun h ↦ ?_
-  obtain ⟨m, hm⟩ := Submodule.mem_span_singleton.mp (h (Submodule.mem_span_singleton_self _))
-  have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
-  have h1 : (m : ℝ) * (n : ℝ) ^ 2 = 1 := by
-    rw [zsmul_eq_mul] at hm
-    calc (m : ℝ) * (n : ℝ) ^ 2 = (m : ℝ) * (n : ℝ) * (n : ℝ) := by ring
-      _ = (n : ℝ)⁻¹ * (n : ℝ) := by rw [hm]
-      _ = 1 := inv_mul_cancel₀ hn0
-  have h2 : m * (n : ℤ) ^ 2 = 1 := by exact_mod_cast h1
-  have hn2 : (4 : ℤ) ≤ (n : ℤ) ^ 2 := by
-    have : (2 : ℤ) ≤ n := by exact_mod_cast hn
-    nlinarith
-  rcases le_or_gt m 0 with hm0 | hm0 <;> nlinarith
+/-- In `ℝ`, `c ℤ` is strictly contained in `c⁻¹ ℤ` if and only if `c²` is an integer strictly
+greater than `1`. -/
+theorem span_singleton_lt_span_inv_iff (c : ℝ) :
+    (span ℤ {c} : Submodule ℤ ℝ) < span ℤ {c⁻¹} ↔ ∃ k : ℤ, 1 < k ∧ c ^ 2 = k := by
+  refine ⟨fun h ↦ ?_, fun ⟨k, hk1, hk⟩ ↦ ?_⟩
+  · obtain ⟨k, hk⟩ := (span_singleton_le_span_inv_iff c).mp h.le
+    have hc : c ≠ 0 := by rintro rfl; simp at h
+    have hk0 : 0 < k := by exact_mod_cast hk ▸ sq_pos_of_ne_zero hc
+    refine ⟨k, lt_of_le_of_ne hk0 fun hk1 ↦ h.ne ?_, hk⟩
+    have hcinv : c⁻¹ = c :=
+      inv_eq_of_mul_eq_one_right (by rw [← sq, hk, ← hk1, Int.cast_one])
+    rw [hcinv]
+  · refine lt_of_le_not_ge ((span_singleton_le_span_inv_iff c).mpr ⟨k, hk⟩) fun hge ↦ ?_
+    have hc : c ≠ 0 := by
+      rintro rfl
+      have : (0 : ℤ) = k := by exact_mod_cast (by simpa using hk : (0 : ℝ) = k)
+      omega
+    obtain ⟨m, hm⟩ := Submodule.mem_span_singleton.mp (hge (Submodule.mem_span_singleton_self _))
+    have hmk : (m : ℝ) * k = 1 := by
+      rw [zsmul_eq_mul] at hm
+      calc (m : ℝ) * k = (m : ℝ) * c * c := by rw [← hk]; ring
+        _ = c⁻¹ * c := by rw [hm]
+        _ = 1 := inv_mul_cancel₀ hc
+    have hmk' : m * k = 1 := by exact_mod_cast hmk
+    rcases le_or_gt m 0 with hm0 | hm0 <;> nlinarith
 
-/-- For a nonzero natural number `n`, the dual `n ℤ` of `n⁻¹ ℤ ⊆ ℝ` is contained in `n⁻¹ ℤ`. -/
-theorem dual_span_inv_natCast_le {n : ℕ} (hn : n ≠ 0) :
-    dual (span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ) ≤ span ℤ {(n : ℝ)⁻¹} := by
-  rw [dual_span_inv (Nat.cast_ne_zero.mpr hn)]
-  exact span_natCast_le_span_inv_natCast n
+/-- For `c ≠ 0`, the dual `c ℤ` of `c⁻¹ ℤ ⊆ ℝ` is contained in `c⁻¹ ℤ` if and only if `c²` is an
+integer. -/
+theorem dual_span_inv_le_iff {c : ℝ} (hc : c ≠ 0) :
+    dual (span ℤ {c⁻¹} : Submodule ℤ ℝ) ≤ span ℤ {c⁻¹} ↔ ∃ k : ℤ, c ^ 2 = k := by
+  rw [dual_span_inv hc, span_singleton_le_span_inv_iff]
 
-/-- For a natural number `n > 1`, the dual `n ℤ` of `n⁻¹ ℤ ⊆ ℝ` is strictly contained in
-`n⁻¹ ℤ`. -/
-theorem dual_span_inv_natCast_lt {n : ℕ} (hn : 1 < n) :
-    dual (span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ) < span ℤ {(n : ℝ)⁻¹} := by
-  rw [dual_span_inv (Nat.cast_ne_zero.mpr (by omega))]
-  exact span_natCast_lt_span_inv_natCast hn
+/-- The dual of `c⁻¹ ℤ ⊆ ℝ` is strictly contained in `c⁻¹ ℤ` if and only if `c²` is an integer
+strictly greater than `1`. -/
+theorem dual_span_inv_lt_iff (c : ℝ) :
+    dual (span ℤ {c⁻¹} : Submodule ℤ ℝ) < span ℤ {c⁻¹} ↔ ∃ k : ℤ, 1 < k ∧ c ^ 2 = k := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp only [inv_zero, Submodule.span_zero_singleton, not_lt_bot, false_iff]
+    rintro ⟨k, hk1, hk0⟩
+    have : (0 : ℤ) = k := by exact_mod_cast (by simpa using hk0 : (0 : ℝ) = k)
+    omega
+  · rw [dual_span_inv hc, span_singleton_lt_span_inv_iff]
 
 /-- When `c²` is irrational, the rank-one lattice `c ℤ ⊆ ℝ` meets its dual `c⁻¹ ℤ` only at `0`. -/
 theorem inf_dual_span_singleton_eq_bot_of_irrational_sq {c : ℝ} (hc : Irrational (c ^ 2)) :
