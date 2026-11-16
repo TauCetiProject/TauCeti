@@ -28,6 +28,8 @@ for the comparison between finite frames and projections.
 * `CStarMatrix.gram`: the Gram matrix of a finite family in a right Hilbert C⋆-module.
 * `CStarMatrix.isSelfAdjoint_gram`: Gram matrices are self-adjoint (purely algebraically).
 * `CStarMatrix.sum_star_mul_gram_mul`: the quadratic forms of a Gram matrix are inner products.
+* `CStarMatrix.sum_inner_smul_of_gram_eq_one`: a family with identity Gram matrix reconstructs
+  every vector in its right `A`-linear span.
 * `CStarMatrix.gram_nonneg`: Gram matrices are positive.
 
 ## References
@@ -78,6 +80,32 @@ lemma sum_star_mul_gram_mul [Fintype n] (x : n → E) (a b : n → A) :
     unop_star, unop_op, Finset.sum_mul, mul_assoc]
 
 end Algebraic
+
+section UnitalAlgebraic
+
+variable [Fintype n] [DecidableEq n] [SeminormedRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
+  [PartialOrder A] [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E]
+  [CStarModule Aᵐᵒᵖ E]
+
+/-- If a finite family `x : n → E` has identity Gram matrix `gram A x = 1`, pairing `x i` against
+a right linear combination `∑ j, op (c j) • x j` recovers the `i`-th coefficient `op (c i)`. -/
+theorem inner_sum_op_smul_of_gram_eq_one {x : n → E} (hx : gram A x = 1) (c : n → A) (i : n) :
+    inner Aᵐᵒᵖ (x i) (∑ j, op (c j) • x j) = op (c i) := by
+  apply unop_injective
+  rw [CStarModule.inner_sum_right, Finset.unop_sum]
+  have hgram (j : n) : unop (inner Aᵐᵒᵖ (x i) (x j)) = (1 : CStarMatrix n n A) i j := by
+    rw [← gram_apply, hx]
+  simp [CStarModule.inner_op_smul_right, hgram, one_apply]
+
+/-- A finite family `x : n → E` with identity Gram matrix `gram A x = 1` reconstructs every vector
+in its right `A`-linear span by `u = ∑ i, ⟪x i, u⟫ • x i`. -/
+theorem sum_inner_smul_of_gram_eq_one {x : n → E} (hx : gram A x = 1) {u : E}
+    (hu : ∃ c : n → A, ∑ j, op (c j) • x j = u) :
+    ∑ i, inner Aᵐᵒᵖ (x i) u • x i = u := by
+  obtain ⟨c, rfl⟩ := hu
+  simp_rw [inner_sum_op_smul_of_gram_eq_one hx c]
+
+end UnitalAlgebraic
 
 variable [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]

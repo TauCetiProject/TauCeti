@@ -34,6 +34,8 @@ left self-module of `Aᵐᵒᵖ` transported along `MulOpposite.op : A → Aᵐ�
   Hilbert module over itself.
 * `WithCStarModule.piOpLinearEquiv`: the right `A`-linear equivalence
   `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) ≃ₗ[Aᵐᵒᵖ] (ι → Aᵐᵒᵖ)`.
+* `WithCStarModule.sum_op_smul_single_one`: finite standard-basis expansion in
+  `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)`.
 
 ## References
 
@@ -65,6 +67,14 @@ theorem piOpLinearEquiv_apply {A ι : Type*} [Ring A] (w : C⋆ᵐᵒᵈ(Aᵐᵒ
 theorem piOpLinearEquiv_symm_apply {A ι : Type*} [Ring A] (v : ι → Aᵐᵒᵖ) (i : ι) :
     (piOpLinearEquiv A ι).symm v i = unop (v i) := by
   simp [piOpLinearEquiv]
+
+/-- Every vector in `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` expands in the standard basis `i ↦ Pi.single i 1`. -/
+theorem sum_op_smul_single_one {A ι : Type*} [Fintype ι] [DecidableEq ι] [Ring A]
+    (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :
+    ∑ i : ι, op (v i) • (WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A)) = v := by
+  apply (WithCStarModule.linearEquiv Aᵐᵒᵖ Aᵐᵒᵖ (ι → A)).injective
+  rw [map_sum]; ext j
+  simpa [MulOpposite.smul_eq_mul_unop, Pi.single_apply] using Fintype.sum_ite_eq j fun i ↦ v i
 
 end WithCStarModule
 

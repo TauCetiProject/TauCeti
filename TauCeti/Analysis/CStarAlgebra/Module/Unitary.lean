@@ -21,7 +21,7 @@ continuous.
 
 Over any C⋆-algebra `A` (possibly non-unital), **Lance's theorem** (Lance, Theorem 3.5) shows that a
 surjective complex-linear isometry commuting with the `A`-action preserves `⟪·, ·⟫_A` and has its
-inverse as its adjoint, via Paschke's inequality (`CStarModule.inner_map_map_self_le_of_norm_le`)
+inverse as its adjoint, via Paschke's inequality (`LinearMap.inner_map_map_self_le_of_norm_le`)
 and polarization. Over unital `A`, `E ≃ₗᵢ[A] F` (and `E ≃ₗᵢ[Aᵐᵒᵖ] F`) is therefore the exact type
 of unitary isomorphisms between Hilbert C⋆-modules.
 
@@ -100,13 +100,6 @@ theorem surjective_and_inner_map_map_iff_exists_inverse_isAdjointPair {U : E →
   exact ⟨e.symm, e.left_inv, e.right_inv,
     (e.isAdjointPair_symm_cstarModule_iff (A := A)).mpr fun x y ↦ by simpa [he] using hinner x y⟩
 
-omit [StarModule ℂ A] in
-/-- Preserving the self-inner product at `x` preserves the Hilbert C⋆-module norm at `x`. -/
-theorem norm_map_of_inner_map_map_self {U : E → F} {x : E}
-    (hx : inner A (U x) (U x) = inner A x x) : ‖U x‖ = ‖x‖ := by
-  rw [norm_eq_sqrt_norm_inner_self (A := A) (x := U x),
-    norm_eq_sqrt_norm_inner_self (A := A) (x := x), hx]
-
 end Algebraic
 
 end CStarModule
@@ -173,10 +166,10 @@ theorem norm_map_iff_inner_map_map_of_map_smul_cstarModule (f : E ≃ₗ[ℂ] F)
     f.injective (by rw [f.apply_symm_apply, hf, f.apply_symm_apply])
   have hdiag (x : E) : inner A (f x) (f x) = inner A x x := le_antisymm
     (by
-      simpa using inner_map_map_self_le_of_norm_le f.toLinearMap hf (C := 1)
+      simpa using f.toLinearMap.inner_map_map_self_le_of_norm_le hf (C := 1)
         (fun y ↦ by rw [LinearEquiv.coe_coe, hnorm y, one_mul]) x)
     (by
-      simpa using inner_map_map_self_le_of_norm_le f.symm.toLinearMap hfsymm (C := 1)
+      simpa using f.symm.toLinearMap.inner_map_map_self_le_of_norm_le hfsymm (C := 1)
         (fun y ↦ by rw [LinearEquiv.coe_coe, ← hnorm (f.symm y), f.apply_symm_apply, one_mul])
         (f x))
   intro x y

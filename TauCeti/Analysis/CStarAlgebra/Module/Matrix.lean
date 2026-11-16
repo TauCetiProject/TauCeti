@@ -52,16 +52,19 @@ variable {l m n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A]
 
 private noncomputable def mulVecCLMAux (M : CStarMatrix m n A) :
     C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A) →L[ℂ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, m → A) where
-  toFun v := (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm (ofMatrix.symm M *ᵥ v)
-  map_add' v w := by ext i; simp [Matrix.mulVec, dotProduct, mul_add, Finset.sum_add_distrib]
-  map_smul' c v := by ext i; simp [Matrix.mulVec, dotProduct, mul_smul_comm, Finset.smul_sum]
+  toLinearMap :=
+    (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ (m → A)).symm.toLinearMap ∘ₗ
+      Matrix.mulVecBilin ℂ ℂ (ofMatrix.symm M) ∘ₗ
+      (WithCStarModule.linearEquiv ℂ Aᵐᵒᵖ (n → A)).toLinearMap
   cont :=
     (WithCStarModule.equivL ℂ (A := Aᵐᵒᵖ) (E := m → A)).symm.continuous.comp <|
       (continuous_const.matrix_mulVec continuous_id).comp
         (WithCStarModule.equivL ℂ (A := Aᵐᵒᵖ) (E := n → A)).continuous
 
 private theorem mulVecCLMAux_apply (M : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) :
-    mulVecCLMAux M v = (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm (ofMatrix.symm M *ᵥ v) := rfl
+    mulVecCLMAux M v =
+      (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm
+        (ofMatrix.symm M *ᵥ WithCStarModule.equiv Aᵐᵒᵖ (n → A) v) := rfl
 
 /-- Left multiplication by a `CStarMatrix m n A` on column vectors in `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)`, bundled
 complex-linearly in the matrix as a continuous complex-linear map. Unlike `CStarMatrix.toCLM`,
@@ -70,13 +73,21 @@ and commutes with the right `A`-action (`CStarMatrix.mulVecCLM_op_smul`). -/
 noncomputable def mulVecCLM :
     CStarMatrix m n A →ₗ[ℂ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A) →L[ℂ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, m → A) where
   toFun := mulVecCLMAux
-  map_add' _ _ := by
-    ext v i; simp [mulVecCLMAux_apply, Matrix.mulVec, dotProduct, add_mul, Finset.sum_add_distrib]
-  map_smul' _ _ := by
-    ext v i; simp [mulVecCLMAux_apply, Matrix.mulVec, dotProduct, smul_mul_assoc, Finset.smul_sum]
+  map_add' M N := by
+    ext1 v
+    have hadd : ofMatrix.symm (M + N) = ofMatrix.symm M + ofMatrix.symm N := rfl
+    simp only [_root_.add_apply, mulVecCLMAux_apply, hadd, Matrix.add_mulVec,
+      WithCStarModule.equiv_symm_add]
+  map_smul' c M := by
+    ext1 v
+    have hsmul : ofMatrix.symm (c • M) = c • ofMatrix.symm M := rfl
+    simp only [RingHom.id_apply, _root_.smul_apply, mulVecCLMAux_apply, hsmul,
+      Matrix.smul_mulVec, WithCStarModule.equiv_symm_smul]
 
 theorem mulVecCLM_apply (M : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) :
-    mulVecCLM M v = (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm (ofMatrix.symm M *ᵥ v) := by
+    mulVecCLM M v =
+      (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm
+        (ofMatrix.symm M *ᵥ WithCStarModule.equiv Aᵐᵒᵖ (n → A) v) := by
   simp [mulVecCLM, mulVecCLMAux_apply]
 
 @[simp] theorem mulVecCLM_apply_apply (M : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) (i : m) :
@@ -86,14 +97,19 @@ theorem mulVecCLM_apply (M : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n
 /-- `mulVecCLM M` commutes with the right `A`-action on column vectors. -/
 theorem mulVecCLM_op_smul (M : CStarMatrix m n A) (a : A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) :
     mulVecCLM M (op a • v) = op a • mulVecCLM M v := by
-  ext i; simp [MulOpposite.smul_eq_mul_unop, Finset.sum_mul, mul_assoc]
+  let : DistribSMul Aᵐᵒᵖ A :=
+    { smul_zero := fun _ ↦ zero_mul _
+      smul_add := fun _ _ _ ↦ add_mul _ _ _ }
+  rw [mulVecCLM_apply, mulVecCLM_apply, WithCStarModule.equiv_smul, Matrix.mulVec_smul,
+    WithCStarModule.equiv_symm_smul]
 
 @[simp] theorem mulVecCLM_comp_mulVecCLM [Fintype m] (M : CStarMatrix l m A)
     (N : CStarMatrix m n A) : (mulVecCLM M).comp (mulVecCLM N) = mulVecCLM (M * N) := by
-  ext v i
-  simp only [ContinuousLinearMap.comp_apply, mulVecCLM_apply_apply, CStarMatrix.mul_apply,
-    Finset.mul_sum, Finset.sum_mul, mul_assoc]
-  exact Finset.sum_comm
+  ext1 v
+  have hmul : ofMatrix.symm (M * N) = ofMatrix.symm M * ofMatrix.symm N :=
+    ofMatrix.symm_apply_apply _
+  simp only [ContinuousLinearMap.comp_apply, mulVecCLM_apply, Equiv.apply_symm_apply,
+    Matrix.mulVec_mulVec, hmul]
 
 @[simp] theorem mulVecCLM_mulVecCLM [Fintype m] (M : CStarMatrix l m A) (N : CStarMatrix m n A)
     (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) : mulVecCLM M (mulVecCLM N v) = mulVecCLM (M * N) v :=
@@ -138,29 +154,38 @@ def mulVecLinearMap [Ring A] :
     (WithCStarModule.linearEquiv Aᵐᵒᵖ Aᵐᵒᵖ (m → A)).symm.toLinearMap ∘ₗ
       Matrix.mulVecBilin ℤ Aᵐᵒᵖ (ofMatrix.symm M) ∘ₗ
       (WithCStarModule.linearEquiv Aᵐᵒᵖ Aᵐᵒᵖ (n → A)).toLinearMap
-  map_add' _ _ := by ext v i; simp [Matrix.mulVec, dotProduct, add_mul, Finset.sum_add_distrib]
-  map_smul' _ _ := by
-    ext v i; simp [Matrix.mulVec, dotProduct, zsmul_eq_mul, mul_assoc, Finset.mul_sum]
+  map_add' M N := by
+    ext1 v
+    have hadd : ofMatrix.symm (M + N) = ofMatrix.symm M + ofMatrix.symm N := rfl
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.add_apply, hadd, map_add]
+  map_smul' c M := by
+    ext1 v
+    have hsmul : ofMatrix.symm (c • M) = c • ofMatrix.symm M := rfl
+    simp only [RingHom.id_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.smul_apply,
+      hsmul, map_zsmul]
 
 theorem mulVecLinearMap_apply [Ring A] (M : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) :
-    mulVecLinearMap M v = (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm (ofMatrix.symm M *ᵥ v) := by
-  ext i; simp [mulVecLinearMap, Matrix.mulVec, dotProduct]
+    mulVecLinearMap M v =
+      (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm
+        (ofMatrix.symm M *ᵥ WithCStarModule.equiv Aᵐᵒᵖ (n → A) v) := by
+  simp [mulVecLinearMap]
 
 @[simp] theorem mulVecLinearMap_apply_apply [Ring A] (M : CStarMatrix m n A)
     (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) (i : m) : mulVecLinearMap M v i = ∑ j, M i j * v j := by
-  simp [mulVecLinearMap, Matrix.mulVec, dotProduct]
+  simp [mulVecLinearMap_apply, Matrix.mulVec, dotProduct]
 
 @[simp] theorem coe_mulVecLinearMap [CStarAlgebra A] (M : CStarMatrix m n A) :
     ⇑(mulVecLinearMap M) = ⇑(mulVecCLM M) := by
-  funext v; ext i; simp
+  funext v; rw [mulVecLinearMap_apply, mulVecCLM_apply]
 
 @[simp] theorem mulVecLinearMap_comp_mulVecLinearMap [Fintype m] [Ring A] (M : CStarMatrix l m A)
     (N : CStarMatrix m n A) :
     (mulVecLinearMap M).comp (mulVecLinearMap N) = mulVecLinearMap (M * N) := by
-  ext v i
-  simp only [LinearMap.comp_apply, mulVecLinearMap_apply_apply, CStarMatrix.mul_apply,
-    Finset.mul_sum, Finset.sum_mul, mul_assoc]
-  exact Finset.sum_comm
+  ext1 v
+  have hmul : ofMatrix.symm (M * N) = ofMatrix.symm M * ofMatrix.symm N :=
+    ofMatrix.symm_apply_apply _
+  simp only [LinearMap.comp_apply, mulVecLinearMap_apply, Equiv.apply_symm_apply,
+    Matrix.mulVec_mulVec, hmul]
 
 @[simp] theorem mulVecLinearMap_mulVecLinearMap [Fintype m] [Ring A] (M : CStarMatrix l m A)
     (N : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) :
@@ -169,7 +194,10 @@ theorem mulVecLinearMap_apply [Ring A] (M : CStarMatrix m n A) (v : C⋆ᵐᵒ�
 
 @[simp] theorem mulVecLinearMap_one [DecidableEq n] [Ring A] :
     mulVecLinearMap (1 : CStarMatrix n n A) = LinearMap.id := by
-  ext v i; simpa [CStarMatrix.one_apply] using Fintype.sum_ite_eq i (fun j ↦ v j)
+  ext1 v
+  have hone : ofMatrix.symm (1 : CStarMatrix n n A) = 1 := rfl
+  simp only [mulVecLinearMap_apply, LinearMap.id_apply, hone, Matrix.one_mulVec,
+    Equiv.symm_apply_apply]
 
 @[simp] theorem mulVecCLM_one [DecidableEq n] [CStarAlgebra A] :
     mulVecCLM (1 : CStarMatrix n n A) = .id ℂ _ := by
