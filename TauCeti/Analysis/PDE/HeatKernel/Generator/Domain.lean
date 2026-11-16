@@ -12,12 +12,12 @@ import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.PDE.HeatKernel.Smoothing
 import TauCeti.Analysis.Semigroups.Generator.Closed
 import TauCeti.Analysis.Semigroups.Generator.Invariance
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Integral.BoundedSmul
 
 /-!
@@ -49,21 +49,24 @@ the one that holds for every `p`.
 * **Distributional Laplacian to the graph.** If `Δf = g` in the sense of distributions, the
   mollification `ρ ⋆ f` by a normalized bump `ρ` is smooth, and its Laplacian falls on the
   kernel, `Δ(ρ ⋆ f)(x) = ∫ Δρ(x - y) f(y) dy`. Testing `Δf = g` against `y ↦ ρ(x - y)` gives
-  `Δ(ρ ⋆ f) = ρ ⋆ g`, and the derivatives of `ρ ⋆ f` are convolutions of `f` with derivatives of
-  `ρ`, hence in `Lᵖ` by Young's inequality. The cutoff step puts `(ρ ⋆ f, ρ ⋆ g)` in the closure
-  of the graph on test functions, and as `ρ` concentrates, `(ρ ⋆ f, ρ ⋆ g) → (f, g)` in `Lᵖ`.
-  Since the generator is closed
+  `Δ(ρ ⋆ f) = ρ ⋆ g` (`TauCeti.laplacian_convolution_eq_convolution_of_integral_laplacian_smul`),
+  and the derivatives of `ρ ⋆ f` are convolutions of `f` with derivatives of `ρ`, hence in `Lᵖ` by
+  Young's inequality (`TauCeti.memLp_fderiv_convolution`). The cutoff step puts `(ρ ⋆ f, ρ ⋆ g)`
+  in the closure of the graph on test functions, and as `ρ` concentrates,
+  `(ρ ⋆ f, ρ ⋆ g) → (f, g)` in `Lᵖ`. Since the generator is closed
   (`TauCeti.Semigroups.StronglyContinuousSemigroup.isClosed_generator`), `(f, g)` lies on its
-  graph.
+  graph. By Green's identity this applies to `(u, Δu)` for every `C²` function `u` with `u` and
+  `Δu` in `Lᵖ`, so `A u = Δu`.
 * **The graph to the distributional Laplacian.** If `A f = g`, then for `t > 0` the class
-  `e^{tΔ} f` has a smooth representative `w` all of whose derivatives are in `Lᵖ`
-  (`TauCeti.exists_contDiff_ae_eq_heatSemigroup`), so by the cutoff step `A e^{tΔ} f = Δw`, while
-  `A e^{tΔ} f = e^{tΔ} g` since the generator commutes with the semigroup. Green's identity
-  `∫ Δφ • w = ∫ φ • Δw` and the limit `t → 0` give `∫ Δφ • f = ∫ φ • g`.
+  `e^{tΔ} f` has a smooth representative `w` (`TauCeti.exists_contDiff_ae_eq_heatSemigroup`)
+  whose Laplacian lies in `Lᵖ` (`TauCeti.exists_eLpNorm_laplacian_le_of_ae_eq_heatSemigroup`), so
+  `A e^{tΔ} f = Δw` by the previous step, while `A e^{tΔ} f = e^{tΔ} g` since the generator
+  commutes with the semigroup. Green's identity `∫ Δφ • w = ∫ φ • Δw` and the limit `t → 0` give
+  `∫ Δφ • f = ∫ φ • g`.
 
 ## Main declarations
 
-* `TauCeti.mem_graph_generator_heatSemigroup_of_contDiff`: a smooth `u` with `u`, `Du` and `Δu`
+* `TauCeti.mem_graph_generator_heatSemigroup_of_contDiff`: a `C²` function `u` with `u` and `Δu`
   in `Lᵖ` lies in the domain of the generator, which sends it to `Δu`.
 * `TauCeti.mem_graph_generator_heatSemigroup_iff`: `A f = g` exactly when `Δf = g` in the sense of
   distributions.
@@ -118,13 +121,12 @@ functions. -/
 private theorem mem_testGraph (hp : p ≠ ∞) {φ : E → F} (hφ : ContDiff ℝ (⊤ : ℕ∞) φ)
     (hc : HasCompactSupport φ) (h₀ : MemLp φ p volume) (h₂ : MemLp (Δ φ) p volume) :
     (h₀.toLp φ, h₂.toLp (Δ φ)) ∈ testGraph hp := by
-  have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by simp)
+  obtain ⟨y, hy, hgy⟩ := (LinearPMap.mem_graph_iff _).1 <|
+    mem_graph_generator_heatSemigroup hp (hφ.of_le (by simp)) hc h₀.coeFn_toLp h₂.coeFn_toLp
   refine (LinearPMap.mem_graph_iff _).2
-    ⟨⟨h₀.toLp φ, Submodule.mem_inf.2
-      ⟨⟨⟨φ, hφ, hc, subset_univ _⟩, TestFunction.ambientToLp_apply _⟩, ?_⟩⟩, rfl, ?_⟩
-  · rw [StronglyContinuousSemigroup.generator_domain]
-    exact mem_domain_heatSemigroup hp hφ2 hc h₀.coeFn_toLp
-  · exact generator_heatSemigroup hp hφ2 hc h₀.coeFn_toLp h₂.coeFn_toLp
+    ⟨⟨y, Submodule.mem_inf.2 ⟨?_, y.2⟩⟩, hy, (LinearPMap.domRestrict_apply rfl).trans hgy⟩
+  rw [hy]
+  exact ⟨⟨φ, hφ, hc, subset_univ _⟩, TestFunction.ambientToLp_apply _⟩
 
 omit [CompleteSpace F] in
 /-- **The cutoff step.** Let `G` be a set of pairs of `Lᵖ` classes containing `(φ, Δφ)` for every
@@ -153,85 +155,10 @@ private theorem mem_closure_of_contDiff (hp : p ≠ ∞) {n : ℕ∞} (hn : 2 �
       ((hφ2 m).continuous_laplacian.memLp_of_hasCompactSupport (hχc m).smul_right.laplacian))
   · rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ _ _ hu₀]
     exact tendsto_eLpNorm_smul_sub hp hR (fun m => (hχs m).continuous.aestronglyMeasurable) hχ1 hχI
-      hu.continuous.aestronglyMeasurable hu₀
+      hu₀
   · rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ _ _ hu₂]
     exact tendsto_eLpNorm_laplacian_smul_sub hp hR (fun m => (hχs m).of_le (by simp)) hχ1 hχd
       hχΔ hχI hu2 hu₀ hu₁ hu₂
-
-/-- **A `C²` function with `u`, `Du` and `Δu` in `Lᵖ` lies in the domain of the heat
-generator**, which sends it to its classical Laplacian `Δu`. -/
-theorem mem_graph_generator_heatSemigroup_of_contDiff (hp : p ≠ ∞) {u : E → F}
-    (hu : ContDiff ℝ 2 u) (hu₀ : MemLp u p volume) (hu₁ : MemLp (fderiv ℝ u) p volume)
-    (hu₂ : MemLp (Δ u) p volume) :
-    (hu₀.toLp u, hu₂.toLp (Δ u)) ∈ (heatSemigroup hp).generator.graph := by
-  refine (heatSemigroup hp).isClosed_generator.closure_subset
-    (mem_closure_of_contDiff hp (n := 2) le_rfl (fun φ hφ hc h₀ h₂ => ?_) hu hu₀ hu₁ hu₂)
-  exact (LinearPMap.mem_graph_iff _).2 ⟨⟨h₀.toLp φ, by
-    rw [StronglyContinuousSemigroup.generator_domain]
-    exact mem_domain_heatSemigroup hp hφ hc h₀.coeFn_toLp⟩, rfl,
-    generator_heatSemigroup hp hφ hc h₀.coeFn_toLp h₂.coeFn_toLp⟩
-
-omit [CompleteSpace F] in
-/-- **Mollification commutes with the distributional Laplacian.** If `Δf = g` in the sense of
-distributions, then the mollification of `f` by a normalized bump `ρ` has classical Laplacian
-`ρ ⋆ g`. -/
-private theorem laplacian_normed_convolution_eq (ψ : ContDiffBump (0 : E)) {f g : E → F}
-    (hf : LocallyIntegrable f volume)
-    (hfg : ∀ φ : E → ℝ, ContDiff ℝ (⊤ : ℕ∞) φ → HasCompactSupport φ →
-      ∫ x, Δ φ x • f x = ∫ x, φ x • g x) :
-    Δ (ψ.normed volume ⋆[lsmul ℝ ℝ, volume] f) = ψ.normed volume ⋆[lsmul ℝ ℝ, volume] g := by
-  set ρ := ψ.normed volume
-  have hρ : ContDiff ℝ (⊤ : ℕ∞) ρ := ψ.contDiff_normed
-  have hρc : HasCompactSupport ρ := ψ.hasCompactSupport_normed
-  -- The Laplacian falls on the compactly supported kernel.
-  rw [← convolution_flip, hρc.laplacian_convolution_right _ hf (hρ.of_le (by simp)),
-    convolution_flip]
-  funext x
-  rw [convolution_eq_swap, convolution_eq_swap]
-  simp only [lsmul_apply]
-  -- Test `Δf = g` against `y ↦ ρ (x - y)`, whose Laplacian is `y ↦ Δρ (x - y)`.
-  have hcomp : (fun y => ρ (x - y)) = (fun z => ρ (z + x)) ∘ LinearIsometryEquiv.neg ℝ := by
-    funext y
-    simp [sub_eq_neg_add]
-  have hΔ : Δ (fun y => ρ (x - y)) = fun y => Δ ρ (x - y) := by
-    rw [hcomp, laplacian_comp_linearIsometryEquiv_right, laplacian_comp_add_right]
-    funext y
-    simp [sub_eq_neg_add]
-  have h := hfg (fun y => ρ (x - y)) (hρ.comp (contDiff_const.sub contDiff_id))
-    (hρc.comp_homeomorph (Homeomorph.subLeft x))
-  rwa [hΔ] at h
-
-/-- The derivative of the mollification of an `Lᵖ` function by a normalized bump lies in `Lᵖ`. -/
-private theorem memLp_fderiv_normed_convolution (hp : p ≠ ∞) (ψ : ContDiffBump (0 : E))
-    (f : Lp F p (volume : Measure E)) :
-    MemLp (fderiv ℝ (ψ.normed volume ⋆[lsmul ℝ ℝ, volume] (f : E → F))) p volume := by
-  set ρ := ψ.normed volume
-  have hρ : ContDiff ℝ (⊤ : ℕ∞) ρ := ψ.contDiff_normed
-  have hρc : HasCompactSupport ρ := ψ.hasCompactSupport_normed
-  have hf : LocallyIntegrable (f : E → F) volume := (Lp.memLp f).locallyIntegrable Fact.out
-  have hu : ContDiff ℝ (⊤ : ℕ∞) (ρ ⋆[lsmul ℝ ℝ, volume] (f : E → F)) :=
-    hρc.contDiff_convolution_left _ hρ hf
-  set b := stdOrthonormalBasis ℝ E
-  -- Each directional derivative is the convolution of `f` with a derivative of `ρ`.
-  have hdir (v : E) : MemLp (fun x => fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, volume] (f : E → F)) x v) p
-      volume := by
-    set k : E → ℝ := fun y => fderiv ℝ ρ y v
-    have hk : Integrable k volume :=
-      ((hρ.continuous_fderiv (by simp)).clm_apply continuous_const).integrable_of_hasCompactSupport
-        ((hρc.fderiv (𝕜 := ℝ)).comp_left (g := fun A : E →L[ℝ] ℝ => A v) (zero_apply v))
-    have heq : (fun x => fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, volume] (f : E → F)) x v) =
-        k ⋆[lsmul ℝ ℝ, volume] (f : E → F) := by
-      funext x
-      rw [← convolution_flip (f := ρ), ← convolution_flip (f := k),
-        hρc.fderiv_convolution_right_apply _ hf (hρ.of_le (by simp))]
-    rw [heq]
-    exact (Lp.memLp _).ae_eq (by
-      simpa only [Lp.toLp_coeFn] using convolutionLp_ae_eq_convolution hp hk (Lp.memLp f))
-  refine (memLp_finsetSum' (f := fun i x => ‖fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, volume] (f : E → F)) x (b i)‖)
-    Finset.univ fun i _ => (hdir (b i)).norm).of_le
-    (hu.continuous_fderiv (by simp)).aestronglyMeasurable (ae_of_all _ fun x => ?_)
-  rw [Finset.sum_apply, Real.norm_of_nonneg (Finset.sum_nonneg fun _ _ => norm_nonneg _)]
-  exact opNorm_le_sum_norm_apply_orthonormalBasis _ b
 
 /-- **The distributional Laplacian to the graph.** If `Δf = g` in the sense of distributions,
 then `(f, g)` is a limit of pairs `(φ, Δφ)` with `φ` a test function. -/
@@ -251,7 +178,8 @@ private theorem mem_closure_testGraph_of_forall (hp : p ≠ ∞) {f g : Lp F p (
   have hfu : normedBumpLp hp (ψ n) volume f =ᵐ[volume] u := by
     simpa only [Lp.toLp_coeFn] using normedBumpLp_ae_eq_convolution hp (ψ n) (Lp.memLp f)
   have hgu : normedBumpLp hp (ψ n) volume g =ᵐ[volume] Δ u := by
-    rw [laplacian_normed_convolution_eq (ψ n) hf hfg]
+    rw [laplacian_convolution_eq_convolution_of_integral_laplacian_smul (ψ n).contDiff_normed
+      (ψ n).hasCompactSupport_normed hf hfg]
     simpa only [Lp.toLp_coeFn] using normedBumpLp_ae_eq_convolution hp (ψ n) (Lp.memLp g)
   have hu₀ : MemLp u p volume := (Lp.memLp _).ae_eq hfu
   have hu₂ : MemLp (Δ u) p volume := (Lp.memLp _).ae_eq hgu
@@ -260,7 +188,32 @@ private theorem mem_closure_testGraph_of_forall (hp : p ≠ ∞) {f g : Lp F p (
     Lp.ext (hgu.trans hu₂.coeFn_toLp.symm)
   rw [e₀, e₂]
   exact mem_closure_of_contDiff hp (by simp) (fun φ hφ hc h₀ h₂ => mem_testGraph hp hφ hc h₀ h₂) hu
-    hu₀ (memLp_fderiv_normed_convolution hp (ψ n) f) hu₂
+    hu₀ (memLp_fderiv_convolution hp (ψ n).contDiff_normed (ψ n).hasCompactSupport_normed
+      (Lp.memLp f)) hu₂
+
+omit [CompleteSpace F] [Fact (1 ≤ p)] in
+/-- **Green's identity in `Lᵖ`.** For a `C²` function `u` with `u` and `Δu` in `Lᵖ`, the
+distributional Laplacian of the class of `u` is the class of `Δu`: `∫ Δφ • u = ∫ φ • Δu` for every
+smooth compactly supported `φ`. -/
+private theorem integral_laplacian_smul_toLp_eq {u : E → F} (hu : ContDiff ℝ 2 u)
+    (hu₀ : MemLp u p volume) (hu₂ : MemLp (Δ u) p volume) {φ : E → ℝ}
+    (hφ : ContDiff ℝ (⊤ : ℕ∞) φ) (hc : HasCompactSupport φ) :
+    ∫ x, Δ φ x • hu₀.toLp u x = ∫ x, φ x • hu₂.toLp (Δ u) x :=
+  calc ∫ x, Δ φ x • hu₀.toLp u x = ∫ x, Δ φ x • u x :=
+        integral_congr_ae (hu₀.coeFn_toLp.mono fun x hx => congrArg (Δ φ x • ·) hx)
+    _ = ∫ x, φ x • Δ u x :=
+        hu.contDiffOn (s := ((⊤ : Opens E) : Set E))
+          |>.integral_laplacian_smul_eq_integral_smul_laplacian
+            (⟨φ, hφ, hc, subset_univ _⟩ : 𝓓((⊤ : Opens E), ℝ))
+    _ = _ := integral_congr_ae (hu₂.coeFn_toLp.mono fun x hx => congrArg (φ x • ·) hx.symm)
+
+/-- **A `C²` function with `u` and `Δu` in `Lᵖ` lies in the domain of the heat generator**, which
+sends it to its classical Laplacian `Δu`. -/
+theorem mem_graph_generator_heatSemigroup_of_contDiff (hp : p ≠ ∞) {u : E → F}
+    (hu : ContDiff ℝ 2 u) (hu₀ : MemLp u p volume) (hu₂ : MemLp (Δ u) p volume) :
+    (hu₀.toLp u, hu₂.toLp (Δ u)) ∈ (heatSemigroup hp).generator.graph :=
+  closure_testGraph_subset hp <| mem_closure_testGraph_of_forall hp fun _ hφ hc =>
+    integral_laplacian_smul_toLp_eq hu hu₀ hu₂ hφ hc
 
 /-- If the heat generator sends `f` to `g`, then `Δ(e^{tΔ} f) = e^{tΔ} g` in the sense of
 distributions at every time `t > 0`. -/
@@ -269,39 +222,27 @@ private theorem integral_laplacian_smul_heatSemigroup_eq (hp : p ≠ ∞)
     {t : ℝ≥0} (ht : t ≠ 0) {φ : E → ℝ} (hφ : ContDiff ℝ (⊤ : ℕ∞) φ) (hc : HasCompactSupport φ) :
     ∫ x, Δ φ x • heatSemigroup hp t f x = ∫ x, φ x • heatSemigroup hp t g x := by
   set S := (heatSemigroup (E := E) (F := F) hp).toStronglyContinuousSemigroup
-  -- The smooth representative `w` of `e^{tΔ} f` and its derivatives lie in `Lᵖ`.
+  -- The smooth representative `w` of `e^{tΔ} f` and its Laplacian lie in `Lᵖ`.
   obtain ⟨w, hw, hfw⟩ := exists_contDiff_ae_eq_heatSemigroup hp ht f
-  obtain ⟨C₁, -, hC₁⟩ := exists_eLpNorm_iteratedFDeriv_le_of_ae_eq_heatSemigroup (E := E) (F := F) 1
   obtain ⟨C₂, -, hC₂⟩ := exists_eLpNorm_laplacian_le_of_ae_eq_heatSemigroup (E := E) (F := F)
-  have hfin (C : ℝ) : ENNReal.ofReal C * eLpNorm f p volume < ∞ :=
-    ENNReal.mul_lt_top ENNReal.ofReal_lt_top (Lp.memLp f).eLpNorm_lt_top
   have hw₀ : MemLp w p volume := (Lp.memLp _).ae_eq hfw
-  have hw₁ : MemLp (fderiv ℝ w) p volume := by
-    rw [memLp_iff, eLpNorm_congr_norm_ae (hw.continuous_fderiv (by simp)).aestronglyMeasurable
-      (hw.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable
-      (ae_of_all _ fun x => (norm_iteratedFDeriv_one (f := w) (x := x)).symm)]
-    exact (hC₁ hp ht f hw.continuous hfw).trans_lt (hfin _)
-  have hw₂ : MemLp (Δ w) p volume := (hC₂ hp ht f hw.continuous hfw).trans_lt (hfin _)
+  have hw₂ : MemLp (Δ w) p volume := (hC₂ hp ht f hw.continuous hfw).trans_lt
+    (ENNReal.mul_lt_top ENNReal.ofReal_lt_top (Lp.memLp f).eLpNorm_lt_top)
   -- The generator sends `e^{tΔ} f` both to `Δw` and to `e^{tΔ} g`.
   obtain ⟨⟨f', hf'⟩, rfl, rfl⟩ := (LinearPMap.mem_graph_iff _).1 h
   have hf'S : f' ∈ S.domain := by rwa [← StronglyContinuousSemigroup.generator_domain]
-  have h₁ := mem_graph_generator_heatSemigroup_of_contDiff hp (hw.of_le (by simp)) hw₀ hw₁ hw₂
+  have hw2 : ContDiff ℝ 2 w := hw.of_le (by simp)
+  have h₁ := mem_graph_generator_heatSemigroup_of_contDiff hp hw2 hw₀ hw₂
   have h₂ : (S t f', S t (S.generator ⟨f', hf'⟩)) ∈ S.generator.graph :=
     (LinearPMap.mem_graph_iff _).2 ⟨⟨S t f', by
       rw [StronglyContinuousSemigroup.generator_domain]
       exact S.map_mem_domain _ hf'S⟩, rfl, S.generator_map _ ⟨f', hf'S⟩⟩
-  have e₂ := S.generator.mem_graph_snd_inj h₁ h₂ (Lp.ext (hw₀.coeFn_toLp.trans hfw.symm))
-  have hgw : (S t (S.generator ⟨f', hf'⟩) : E → F) =ᵐ[volume] Δ w := by
-    rw [← e₂]
-    exact hw₂.coeFn_toLp
+  have e₁ : hw₀.toLp w = S t f' := Lp.ext (hw₀.coeFn_toLp.trans hfw.symm)
+  have e₂ := S.generator.mem_graph_snd_inj h₁ h₂ e₁
   -- Green's identity for the smooth representative.
-  calc ∫ x, Δ φ x • S t f' x = ∫ x, Δ φ x • w x :=
-        integral_congr_ae (hfw.mono fun x hx => congrArg (Δ φ x • ·) hx)
-    _ = ∫ x, φ x • Δ w x :=
-        (hw.of_le (by simp) : ContDiff ℝ 2 w).contDiffOn (s := ((⊤ : Opens E) : Set E))
-          |>.integral_laplacian_smul_eq_integral_smul_laplacian
-            (⟨φ, hφ, hc, subset_univ _⟩ : 𝓓((⊤ : Opens E), ℝ))
-    _ = _ := integral_congr_ae (hgw.mono fun x hx => congrArg (φ x • ·) hx.symm)
+  have h := integral_laplacian_smul_toLp_eq hw2 hw₀ hw₂ hφ hc
+  rw [e₁, e₂] at h
+  exact h
 
 /-- **The graph to the distributional Laplacian.** If the heat generator sends `f` to `g`, then
 `Δf = g` in the sense of distributions: let `t → 0` in the same identity for `e^{tΔ} f` and

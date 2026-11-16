@@ -47,6 +47,7 @@ is the Sobolev space `W^{2,p}`, by the Calderón–Zygmund estimates, while for 
 * `TauCeti.tendsto_heatSemigroup_sub`: `(e^{tΔ} φ - φ) / t → Δ φ` in `Lᵖ`.
 * `TauCeti.mem_domain_heatSemigroup` and `TauCeti.generator_heatSemigroup`: `φ` lies in the
   domain of the generator, which sends it to `Δ φ`.
+* `TauCeti.mem_graph_generator_heatSemigroup`: the same statement in graph form.
 
 ## References
 
@@ -154,5 +155,14 @@ theorem generator_heatSemigroup (hp : p ≠ ∞) (hφ : ContDiff ℝ 2 φ) (hc :
       exact mem_domain_heatSemigroup hp hφ hc hf⟩ = g :=
   (heatSemigroup hp).generator_eq_of_tendsto (mem_domain_heatSemigroup hp hφ hc hf)
     (tendsto_heatSemigroup_sub hp hφ hc hf hg)
+
+/-- **The graph of the heat generator contains the classical Laplacian** of `C²` functions with
+compact support: if `f, g ∈ Lᵖ` are the classes of `φ` and `Δ φ`, then `(f, g)` lies on the graph
+of the generator. -/
+theorem mem_graph_generator_heatSemigroup (hp : p ≠ ∞) (hφ : ContDiff ℝ 2 φ)
+    (hc : HasCompactSupport φ) {f g : Lp F p (volume : Measure E)} (hf : f =ᵐ[volume] φ)
+    (hg : g =ᵐ[volume] Δ φ) :
+    (f, g) ∈ (heatSemigroup hp).generator.graph :=
+  (LinearPMap.mem_graph_iff _).2 ⟨_, rfl, generator_heatSemigroup hp hφ hc hf hg⟩
 
 end TauCeti

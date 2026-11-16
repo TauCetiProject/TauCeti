@@ -28,9 +28,10 @@ In dimension two the bound `|Δχ_R| = O(1/R²)` makes `∫ |Δχ_R|` bounded un
 (`TauCeti.tendsto_integral_laplacian_smul_of_tendsto_cocompact`). This lets identities tested
 against `χ_R` pass to `R → ∞`.
 
-In every dimension the truncations converge in `Lᵖ`, `p < ∞`: `χ_R u → u` for `u ∈ Lᵖ`
-(`TauCeti.tendsto_eLpNorm_smul_sub`), and `Δ(χ_R u) → Δu` for a `C²` function `u` with `u`, `Du`
-and `Δu` in `Lᵖ` (`TauCeti.tendsto_eLpNorm_laplacian_smul_sub`). By the Leibniz rule
+In every dimension the truncations converge in `Lᵖ`, `p < ∞`, together with their Laplacians:
+`χ_R u → u` for `u ∈ Lᵖ` (`TauCeti.tendsto_eLpNorm_smul_sub`), and `Δ(χ_R u) → Δu` for a `C²`
+function `u` with `u`, `Du` and `Δu` in `Lᵖ`
+(`TauCeti.tendsto_eLpNorm_laplacian_smul_sub`). By the Leibniz rule
 `Δ(χ_R u) = χ_R Δu + 2 Du(∇χ_R) + Δχ_R u`, the error is dominated by `|Δu| + |Du| + |u|` and
 vanishes near each point once `R` is large, so dominated convergence applies. No second
 derivatives of `u` other than its Laplacian enter.
@@ -152,33 +153,6 @@ theorem tendsto_integral_laplacian_smul_of_tendsto_cocompact (μ : Measure E)
       rw [hε', mul_div_assoc', div_lt_iff₀ (by positivity)]
       nlinarith [mul_nonneg (mul_nonneg (by norm_num : (0 : ℝ) ≤ 4) hV) (le_max_right C 0)]
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- **Cutoffs converge in `Lᵖ`.** Let the a.e. strongly measurable cutoffs `χ i` take values in
-`[0, 1]` and equal `1` near every point of `ball 0 (R i)`, with `R i → ∞`. For an a.e. strongly
-measurable `u ∈ Lᵖ`, `p < ∞`, the truncations `χ i • u` converge to `u` in `Lᵖ`. -/
-theorem tendsto_eLpNorm_smul_sub [l.IsCountablyGenerated] {μ : Measure E} {p : ℝ≥0∞}
-    (hp : p ≠ ⊤) (hR : Tendsto R l atTop) (hχ : ∀ i, AEStronglyMeasurable (χ i) μ)
-    (hχ1 : ∀ i x, ‖x‖ < R i → χ i =ᶠ[𝓝 x] fun _ => 1) (hχI : ∀ i x, χ i x ∈ Set.Icc (0 : ℝ) 1)
-    {u : E → F} (hu : AEStronglyMeasurable u μ) (hup : MemLp u p μ) :
-    Tendsto (fun i ↦ eLpNorm ((fun x ↦ χ i x • u x) - u) p μ) l (𝓝 0) := by
-  refine tendsto_eLpNorm_sub_of_ae_tendsto hp
-    (Eventually.of_forall fun i => (hχ i).smul hu) hup (C := 1)
-    (Eventually.of_forall fun i => ae_of_all _ fun x => ?_)
-    (ae_of_all _ fun x => tendsto_const_nhds.congr' ?_)
-  · -- `‖χ u - u‖ = |χ - 1| ‖u‖ ≤ ‖u‖`.
-    have h1 : ‖χ i x - 1‖ ≤ 1 := by
-      rw [Real.norm_eq_abs, abs_le]
-      constructor <;> linarith [(hχI i x).1, (hχI i x).2]
-    calc ‖χ i x • u x - u x‖ₑ = ‖χ i x - 1‖ₑ * ‖u x‖ₑ := by
-          rw [← eNorm_smul, sub_smul, one_smul]
-      _ ≤ 1 * ‖u x‖ₑ := by
-          gcongr
-          rw [← ofReal_norm]
-          exact ENNReal.ofReal_le_one.2 h1
-      _ = _ := by rw [ENNReal.coe_one]
-  · filter_upwards [hR.eventually_gt_atTop ‖x‖] with i hi
-    simp [(hχ1 i x hi).eq_of_nhds]
-
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The Leibniz rule `Δ(χ u) = χ Δu + 2 Du(∇χ) + Δχ u` bounds the error `Δ(χ u) - Δu` at a point
 where `0 ≤ χ ≤ 1`, `‖Dχ‖ ≤ C` and `|Δχ| ≤ C` by `(1 + 2C)(|Δu| + |Du| + |u|)`. -/
@@ -247,7 +221,7 @@ theorem tendsto_eLpNorm_laplacian_smul_sub [l.IsCountablyGenerated] {μ : Measur
       _ = ENNReal.ofReal (1 + 2 * C') * ‖‖Δ u x‖ + ‖fderiv ℝ u x‖ + ‖u x‖‖ₑ := by
           rw [ENNReal.ofReal_mul (by positivity), ← ofReal_norm,
             Real.norm_of_nonneg (by positivity)]
-      _ = _ := by rw [ENNReal.ofReal]
+      _ = _ := by rw [ENNReal.ofNNReal_toNNReal]
   · -- Near `x` the cutoffs are eventually one, so the truncations agree with `u` there.
     filter_upwards [hR.eventually_gt_atTop ‖x‖] with i hi
     refine (laplacian_congr_nhds ?_).eq_of_nhds.symm
