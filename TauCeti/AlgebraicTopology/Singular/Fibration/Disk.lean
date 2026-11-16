@@ -257,6 +257,18 @@ private lemma isIso_totalToOuter (hp : serreFibrations p) (m : ℕ) :
     (isZero_singularHomology_puncturedBall_unitSphere R hp m)
     fun m' _ ↦ isZero_singularHomology_puncturedBall_unitSphere R hp m'
 
+omit [FiniteDimensional ℝ V] in
+/-- **Over a disk, the part over the boundary sphere and the part off the centre have the same
+relative homology.** For a Serre fibration `p : E ⟶ Dʳ` over the closed unit ball, the inclusion
+`(E, p⁻¹(Sʳ⁻¹)) ⟶ (E, p⁻¹(Dʳ ∖ {0}))` induces isomorphisms on relative singular homology. -/
+theorem isIso_singularHomologyMap_ofSubsetMap_preimage_sphere (hp : serreFibrations p) (m : ℕ) :
+    IsIso (TopPair.singularHomologyMap
+      (TopPair.ofSubsetMap (B := p ⁻¹' {x | (x : V) ∈ sphere (0 : V) 1})
+        (B' := p ⁻¹' {x | (x : V) ≠ 0}) (𝟙 E) fun _ hx ↦ ne_of_mem_sphere hx one_ne_zero)
+      (ModuleCat.of R R) m) := by
+  have := isIso_totalToOuter R hp m
+  rwa [TopTriple.totalToOuter_app_ofSubset] at this
+
 /-- **A Serre fibration over a disk has vanishing homology modulo the part over the boundary
 sphere, below the dimension.** Let `p : E ⟶ Dʳ` be a Serre fibration over the closed unit ball of
 a real normed space of finite dimension `r`. Then `Hₘ(E, p⁻¹(Sʳ⁻¹); R) = 0` for every `m < r`. -/
