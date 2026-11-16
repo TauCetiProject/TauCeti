@@ -80,49 +80,18 @@ theorem mem_normTwoShell_toMatrix_titsPolarForm (d : Q → ℤ) :
 variable (Q) (hpd : (titsForm Q).PosDef)
 
 /-- The rational root pairing whose roots are the integral vectors of Tits value one.
-Its coroot at `d` is the Tits Gram matrix applied to `d`. -/
-def titsRootPairing :
+Its coroot at `d` is the Tits Gram matrix applied to `d`. It is reducible to the root pairing of the
+norm-two shell, so the API of `Matrix.PosDef.normTwoShellRootPairing` applies to it directly. -/
+abbrev titsRootPairing :
     RootPairing ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).normTwoShell ℚ (Q → ℚ) (Q → ℚ) :=
   ((titsForm_posDef_iff_posDef_toMatrix Q).mp hpd).normTwoShellRootPairing ℚ
 
-/-- The Tits root pairing is the root pairing of the norm-two shell of the Tits Gram matrix. -/
-theorem titsRootPairing_def :
-    titsRootPairing Q hpd =
-      ((titsForm_posDef_iff_posDef_toMatrix Q).mp hpd).normTwoShellRootPairing ℚ :=
-  (rfl)
-
-@[simp]
-theorem root_titsRootPairing
-    (a : ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).normTwoShell) :
-    (titsRootPairing Q hpd).root a = fun i ↦ (a.1 i : ℚ) :=
-  Matrix.PosDef.root_normTwoShellRootPairing _ ℚ a
-
-@[simp]
-theorem coroot_titsRootPairing
-    (a : ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).normTwoShell) :
-    (titsRootPairing Q hpd).coroot a =
-      fun i ↦ (((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q) *ᵥ a.1) i : ℚ) :=
-  Matrix.PosDef.coroot_normTwoShellRootPairing _ ℚ a
-
-@[simp]
-theorem toLinearMap_titsRootPairing (x y : Q → ℚ) :
-    (titsRootPairing Q hpd).toLinearMap x y = x ⬝ᵥ y :=
-  Matrix.PosDef.toLinearMap_normTwoShellRootPairing _ ℚ x y
-
-instance : (titsRootPairing Q hpd).IsCrystallographic :=
-  inferInstanceAs
-    (((titsForm_posDef_iff_posDef_toMatrix Q).mp hpd).normTwoShellRootPairing ℚ).IsCrystallographic
-
-instance : (titsRootPairing Q hpd).IsReduced :=
-  inferInstanceAs
-    (((titsForm_posDef_iff_posDef_toMatrix Q).mp hpd).normTwoShellRootPairing ℚ).IsReduced
-
 instance : (titsRootPairing Q hpd).IsRootSystem :=
   ((titsForm_posDef_iff_posDef_toMatrix Q).mp hpd).isRootSystem_normTwoShellRootPairing ℚ
-    (toMatrix_titsPolarForm_apply_self_of_posDef Q hpd)
+    (span_normTwoShell_eq_top_of_diagonal_eq_two _
+      (toMatrix_titsPolarForm_apply_self_of_posDef Q hpd))
 
 /-- The integral Cartan pairing of two Tits roots is the polarized Tits form. -/
-@[simp]
 theorem pairingIn_titsRootPairing
     (a b : ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).normTwoShell) :
     (titsRootPairing Q hpd).pairingIn ℤ a b = titsPolarForm Q a.1 b.1 := by
@@ -130,15 +99,12 @@ theorem pairingIn_titsRootPairing
     ℚ a b).trans (dotProduct_toMatrix_titsPolarForm_mulVec Q a.1 b.1)
 
 /-- The pairing of two Tits roots is the polarized Tits form. -/
-@[simp]
 theorem pairing_titsRootPairing
     (a b : ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).normTwoShell) :
     (titsRootPairing Q hpd).pairing a b = (titsPolarForm Q a.1 b.1 : ℚ) := by
-  rw [titsRootPairing_def, Matrix.PosDef.pairing_normTwoShellRootPairing,
-    dotProduct_toMatrix_titsPolarForm_mulVec]
+  rw [Matrix.PosDef.pairing_normTwoShellRootPairing, dotProduct_toMatrix_titsPolarForm_mulVec]
 
 /-- Reflection in a Tits root is its integral lattice reflection. -/
-@[simp]
 theorem coe_reflectionPerm_titsRootPairing
     (a b : ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).normTwoShell) :
     ((titsRootPairing Q hpd).reflectionPerm a b : Q → ℤ) =
@@ -153,67 +119,30 @@ theorem exists_root_titsRootPairing_eq_iff (d : Q → ℤ) :
     mem_normTwoShell_toMatrix_titsPolarForm]
 
 /-- The coordinate base of the Tits root pairing, marked by the vertices of the quiver. -/
-def titsRootBase : (titsRootPairing Q hpd).Base :=
+abbrev titsRootBase : (titsRootPairing Q hpd).Base :=
   ((titsForm_posDef_iff_posDef_toMatrix Q).mp hpd).normTwoShellBase ℚ
     (toMatrix_titsPolarForm_apply_self_of_posDef Q hpd)
     (toMatrix_titsPolarForm_apply_nonpos_of_ne Q)
 
-/-- The support of the Tits base consists of the coordinate roots. -/
-@[simp]
-theorem support_titsRootBase :
-    (titsRootBase Q hpd).support =
-      Finset.univ.image
-        (normTwoShellSimple (toMatrix_titsPolarForm_apply_self_of_posDef Q hpd)) := by
-  rw [titsRootBase, Matrix.PosDef.support_normTwoShellBase]
-
 /-- The vertices index the simple roots of the Tits base by their coordinate vectors. -/
-def titsRootBaseEquiv : Q ≃ (titsRootBase Q hpd).support :=
+abbrev titsRootBaseEquiv : Q ≃ (titsRootBase Q hpd).support :=
   ((titsForm_posDef_iff_posDef_toMatrix Q).mp hpd).normTwoShellBaseEquiv ℚ
     (toMatrix_titsPolarForm_apply_self_of_posDef Q hpd)
     (toMatrix_titsPolarForm_apply_nonpos_of_ne Q)
 
-@[simp]
-theorem coe_titsRootBaseEquiv_apply (i : Q) :
-    (titsRootBaseEquiv Q hpd i :
-      ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).normTwoShell) =
-        normTwoShellSimple (toMatrix_titsPolarForm_apply_self_of_posDef Q hpd) i :=
-  Matrix.PosDef.coe_normTwoShellBaseEquiv_apply _ ℚ _ _ i
-
-@[simp]
-theorem titsRootBaseEquiv_symm_mk (i : Q)
-    (hi : normTwoShellSimple (toMatrix_titsPolarForm_apply_self_of_posDef Q hpd) i ∈
-      (titsRootBase Q hpd).support) :
-    (titsRootBaseEquiv Q hpd).symm
-      ⟨normTwoShellSimple (toMatrix_titsPolarForm_apply_self_of_posDef Q hpd) i, hi⟩ = i :=
-  Matrix.PosDef.normTwoShellBaseEquiv_symm_mk _ ℚ _ _ i hi
-
 /-- The root at a marked vertex is its coordinate vector. -/
 theorem root_titsRootBaseEquiv (i : Q) :
     (titsRootPairing Q hpd).root (titsRootBaseEquiv Q hpd i) = Pi.single i 1 := by
-  rw [coe_titsRootBaseEquiv_apply, titsRootPairing,
+  rw [Matrix.PosDef.coe_normTwoShellBaseEquiv_apply,
     Matrix.PosDef.root_normTwoShellRootPairing_normTwoShellSimple]
 
-/-- The Cartan matrix of the marked Tits base is the symmetrized arrow-count matrix. -/
-@[simp]
+/-- The Cartan matrix of the marked Tits base is the symmetrized Cartan matrix `2I - (A + Aᵀ)`,
+`A` the matrix of arrow counts. -/
 theorem cartanMatrix_titsRootBase (i j : Q) :
     (titsRootBase Q hpd).cartanMatrix (titsRootBaseEquiv Q hpd i) (titsRootBaseEquiv Q hpd j) =
       (if i = j then (2 : ℤ) else 0) - (Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i)) := by
   rw [← toMatrix_titsPolarForm_apply]
   exact Matrix.PosDef.cartanMatrix_normTwoShellBase _ ℚ _ _ i j
-
-/-- The height relative to the Tits base is the sum of the integer coordinates. -/
-@[simp]
-theorem height_titsRootBase
-    (a : ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).normTwoShell) :
-    (titsRootBase Q hpd).height a = ∑ i, a.1 i :=
-  Matrix.PosDef.height_normTwoShellBase _ ℚ _ _ a
-
-/-- Positivity for the Tits base is coordinatewise nonnegativity. -/
-@[simp]
-theorem isPos_titsRootBase_iff
-    (a : ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).normTwoShell) :
-    (titsRootBase Q hpd).IsPos a ↔ 0 ≤ a.1 :=
-  Matrix.PosDef.isPos_normTwoShellBase_iff _ ℚ _ _ a
 
 /-- A connected quiver with positive definite Tits form has an irreducible Tits root pairing. -/
 theorem isIrreducible_titsRootPairing (hconn : (Quiver.underlyingGraph Q).Connected) :

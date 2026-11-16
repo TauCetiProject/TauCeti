@@ -34,9 +34,6 @@ simple roots of a base, so that it also applies to a family known to span before
   and coroots span, with connected diagram of Cartan integers, makes a root pairing irreducible.
 * `RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix`: a connected base
   diagram makes a root system irreducible.
-* `RootPairing.eq_bot_of_forall_root_not_mem_of_span_coroot_eq_top`: a submodule invariant under
-  the reflections in a family of roots whose coroots span, and containing none of these roots, is
-  trivial.
 * `RootPairing.eq_bot_of_forall_root_not_mem`: a submodule invariant under the simple
   reflections and containing no simple root is trivial.
 * `TauCeti.DynkinType.connected_diagramGraph_cartanMatrix`: every valid standard Dynkin diagram is
@@ -151,24 +148,6 @@ variable {K M N ι : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
   [AddCommGroup N] [Module K N] {P : RootPairing ι K M N} [P.IsCrystallographic]
 
 omit [P.IsCrystallographic] [CharZero K] in
-/-- **A submodule invariant under the reflections in a family of roots whose coroots span, and
-containing none of these roots, is trivial.** Invariance is asked only under the reflections in the
-roots of the family, not under every reflection of `P`. -/
-theorem _root_.RootPairing.eq_bot_of_forall_root_not_mem_of_span_coroot_eq_top
-    [NeZero (2 : K)] {J : Type*} {e : J → ι} {q : Submodule K M}
-    (hinv : ∀ j, q ∈ Module.End.invtSubmodule (P.reflection (e j)))
-    (h : ∀ j, P.root (e j) ∉ q)
-    (hcoroot : Submodule.span K (range (P.coroot ∘ e)) = ⊤) : q = ⊥ := by
-  refine eq_bot_iff.mpr fun x hx ↦ ?_
-  have hker (j : J) : x ∈ LinearMap.ker (P.coroot' (e j)) :=
-    (Submodule.mem_invtSubmodule_reflection_iff (P.flip.root_coroot_two (e j))
-      (Submodule.disjoint_span_singleton_of_notMem (h j))).mp (hinv j) hx
-  apply P.toPerfPair.injective
-  rw [map_zero]
-  refine LinearMap.ext_on_range hcoroot fun j ↦ ?_
-  simpa using LinearMap.mem_ker.mp (hker j)
-
-omit [P.IsCrystallographic] [CharZero K] in
 /-- **A submodule invariant under the simple reflections and containing no simple root is
 trivial.** If `q` is invariant under the reflection at each element of the base's support and
 misses the root there, then `q = ⊥`.
@@ -228,9 +207,12 @@ membership propagates across an edge. It also supplies the standard `2 ≠ 0` hy
 Mathlib's invariant-submodule criterion for a reflection. -/
 theorem _root_.RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix
     [P.IsRootSystem] (b : P.Base)
-    (hconn : (diagramGraph b.cartanMatrix).Connected) : P.IsIrreducible :=
-  RootPairing.isIrreducible_of_connected_diagramGraph_pairingIn ((↑) : b.support → ι)
-    (by simp [range_comp]) (by simp [range_comp]) hconn
+    (hconn : (diagramGraph b.cartanMatrix).Connected) : P.IsIrreducible := by
+  have hM : (Matrix.of fun u v : b.support ↦ P.pairingIn ℤ u v) = b.cartanMatrix := by
+    ext u v
+    simp [RootPairing.Base.cartanMatrix, RootPairing.Base.cartanMatrixIn_def]
+  exact RootPairing.isIrreducible_of_connected_diagramGraph_pairingIn ((↑) : b.support → ι)
+    (by simp [range_comp]) (by simp [range_comp]) (by rwa [hM])
 
 end
 

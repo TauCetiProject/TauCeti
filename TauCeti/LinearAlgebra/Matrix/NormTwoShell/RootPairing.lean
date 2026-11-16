@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.Basic
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.Reduced
+import TauCeti.Data.Matrix.DotProduct
 
 /-!
 # The root system of the norm-two shell
@@ -18,14 +19,15 @@ public import TauCeti.LinearAlgebra.RootSystem.Reduced
 Let `B` be a positive definite integer matrix indexed by a finite type `I`, read as the Gram
 matrix of the lattice `I → ℤ` with the pairing `⟪a, b⟫ = a ⬝ᵥ B *ᵥ b`. Its norm-two shell
 `Φ = {a | ⟪a, a⟫ = 2}` (`Matrix.normTwoShell`) is a finite set, stable under the reflections
-`x ↦ x - ⟪x, a⟫ a` in its own vectors. This file makes it a root pairing: over a domain `k` of
-characteristic zero, the vectors of `Φ` are the roots in `I → k`, the vector `B *ᵥ a` is the coroot
-of the root `a`, and the pairing of `M = N = I → k` is the dot product, so that the Cartan integer
-of two roots is their lattice pairing `⟪a, b⟫`.
+`x ↦ x - ⟪x, a⟫ a` in its own vectors. This file makes it a root pairing: over a commutative ring
+`k` of characteristic zero, the vectors of `Φ` are the roots in `I → k`, the vector `B *ᵥ a` is the
+coroot of the root `a`, and the pairing of `M = N = I → k` is the dot product, so that the Cartan
+integer of two roots is their lattice pairing `⟪a, b⟫`.
 
 The root pairing is indexed by `Φ` itself, so by construction its roots are exactly the integral
-vectors of norm two. It is crystallographic and reduced. When the diagonal entries of `B` are `2`
-the coordinate vectors are roots, and over a field it is a root system spanning `I → k`. When
+vectors of norm two. It is crystallographic, and reduced over a domain. When `Φ` spans the lattice,
+for instance when the diagonal entries of `B` are `2` so that the coordinate vectors are roots, the
+roots span `I → k`, and over a field it is a root system. When
 moreover the off-diagonal entries of `B` are nonpositive, as for the Cartan matrix of a simply
 laced Dynkin diagram or the symmetrized Cartan matrix `2I - (A + Aᵀ)` of a quiver with positive
 definite Tits form, the coordinate vectors form a base whose Cartan matrix is `B` itself, and the
@@ -45,8 +47,8 @@ diagonal `2`, independently of the sign condition on the off-diagonal entries.
   exactly when it belongs to the norm-two shell.
 * `Matrix.PosDef.pairingIn_normTwoShellRootPairing`: the Cartan integer of two roots is their
   lattice pairing.
-* `Matrix.PosDef.isRootSystem_normTwoShellRootPairing`: over a field and for diagonal `2`, the
-  roots and coroots span.
+* `Matrix.PosDef.isRootSystem_normTwoShellRootPairing`: over a field, the roots and coroots span
+  when the norm-two shell spans the lattice, for instance for diagonal `2`.
 * `Matrix.PosDef.height_normTwoShellBase`: the height is the sum of the integer coordinates.
 * `Matrix.PosDef.isPos_normTwoShellBase_iff`: positive roots are the nonnegative shell vectors.
 * `Matrix.PosDef.cartanMatrix_normTwoShellBase`: the Cartan matrix of the base is `B`.
@@ -71,24 +73,13 @@ namespace PosDef
 
 variable {I : Type*} [Fintype I] {B : Matrix I I ℤ}
 
-section Domain
+section CommRing
 
 variable (hB : B.PosDef) (k : Type*) [CommRing k] [CharZero k]
 
-omit [CharZero k] in
-/-- Casting to `k` entrywise carries the dot product of `I → ℤ` to the dot product of `I → k`. -/
-private theorem intCast_dotProduct (x y : I → ℤ) :
-    ((x ⬝ᵥ y : ℤ) : k) = (fun i ↦ (x i : k)) ⬝ᵥ fun i ↦ (y i : k) := by
-  simpa [Function.comp_def] using RingHom.map_dotProduct (Int.castRingHom k) x y
-
-omit [Fintype I] in
-/-- Casting to `k` entrywise is injective on `I → ℤ`. -/
-private theorem intCast_vec_injective : Injective fun (x : I → ℤ) (i : I) ↦ (x i : k) :=
-  fun _ _ h ↦ funext fun i ↦ Int.cast_injective (congrFun h i)
-
 /-- The roots of the norm-two shell, as vectors of `I → k`. -/
 private def shellRoot : B.normTwoShell ↪ (I → k) :=
-  ⟨fun a i ↦ (a.1 i : k), fun _ _ h ↦ Subtype.ext (intCast_vec_injective k h)⟩
+  ⟨fun a i ↦ (a.1 i : k), fun _ _ h ↦ Subtype.ext (Int.cast_injective.comp_left h)⟩
 
 private theorem shellRoot_apply (a : B.normTwoShell) :
     shellRoot k a = fun i ↦ (a.1 i : k) := (rfl)
@@ -98,38 +89,49 @@ include hB in
 `B` is nondegenerate. -/
 private def shellCoroot : B.normTwoShell ↪ (I → k) :=
   ⟨fun a i ↦ ((B *ᵥ a.1) i : k),
-    fun _ _ h ↦ Subtype.ext (hB.mulVec_injective (intCast_vec_injective k h))⟩
+    fun _ _ h ↦ Subtype.ext (hB.mulVec_injective (Int.cast_injective.comp_left h))⟩
 
 private theorem shellCoroot_apply (a : B.normTwoShell) :
     shellCoroot hB k a = fun i ↦ ((B *ᵥ a.1) i : k) := (rfl)
 
-variable [IsDomain k] (hdiag : ∀ i, B i i = 2)
+include hB in
+/-- Reflection of the norm-two shell in its vector `a`, the involution `b ↦ b - ⟪b, a⟫ a`. -/
+private def shellReflection (a : B.normTwoShell) : Equiv.Perm B.normTwoShell :=
+  Involutive.toPerm
+    (fun b ↦ ⟨b.1 - (b.1 ⬝ᵥ B *ᵥ a.1) • a.1,
+      hB.isHermitian.isSymm.sub_smul_mem_normTwoShell a.2 b.2⟩)
+    fun b ↦ Subtype.ext <| by
+      have ha : a.1 ⬝ᵥ B *ᵥ a.1 = 2 := mem_normTwoShell.mp a.2
+      ext i
+      simp only [sub_dotProduct, smul_dotProduct, ha, smul_eq_mul, Pi.sub_apply, Pi.smul_apply]
+      ring
+
+private theorem coe_shellReflection_apply (a b : B.normTwoShell) :
+    (shellReflection hB a b : I → ℤ) = b.1 - (b.1 ⬝ᵥ B *ᵥ a.1) • a.1 := (rfl)
 
 /-- **The root pairing of the norm-two shell.** For a positive definite integer matrix `B`, the
 vectors `a` with `a ⬝ᵥ B *ᵥ a = 2`, read in `I → k`, are the roots, and the vector `B *ᵥ a` is the
 coroot of the root `a`, for the dot product pairing of `I → k` with itself. Reflection in a root
 `a` is `x ↦ x - ⟪x, a⟫ a`, which preserves the lattice form and hence the shell. -/
-def normTwoShellRootPairing : RootPairing B.normTwoShell k (I → k) (I → k) :=
-  haveI := hB.finite_normTwoShell.to_subtype
-  RootPairing.mk' (dotProductBilin k k) (shellRoot k) (shellCoroot hB k)
-    (fun a ↦ by
-      rw [dotProductBilin_apply_apply, shellRoot_apply, shellCoroot_apply,
-        ← intCast_dotProduct, mem_normTwoShell.mp a.2, Int.cast_ofNat])
-    (by
-      rintro a - ⟨b, rfl⟩
-      refine ⟨⟨_, hB.isHermitian.isSymm.sub_smul_mem_normTwoShell a.2 b.2⟩, ?_⟩
-      simp only [preReflection_apply, LinearMap.flip_apply, dotProductBilin_apply_apply,
-        shellRoot_apply, shellCoroot_apply, ← intCast_dotProduct]
-      ext i
-      simp)
-    (by
-      rintro a - ⟨b, rfl⟩
-      refine ⟨⟨_, hB.isHermitian.isSymm.sub_smul_mem_normTwoShell a.2 b.2⟩, ?_⟩
-      simp only [preReflection_apply, dotProductBilin_apply_apply,
-        shellRoot_apply, shellCoroot_apply, ← intCast_dotProduct, mulVec_sub, mulVec_smul,
-        hB.isHermitian.isSymm.dotProduct_mulVec_comm (x := b.1) (y := a.1)]
-      ext i
-      simp)
+def normTwoShellRootPairing : RootPairing B.normTwoShell k (I → k) (I → k) where
+  toLinearMap := dotProductBilin k k
+  root := shellRoot k
+  coroot := shellCoroot hB k
+  root_coroot_two a := by
+    rw [dotProductBilin_apply_apply, shellRoot_apply, shellCoroot_apply, intCast_dotProduct,
+      mem_normTwoShell.mp a.2, Int.cast_ofNat]
+  reflectionPerm := shellReflection hB
+  reflectionPerm_root a b := by
+    simp only [dotProductBilin_apply_apply, shellRoot_apply, shellCoroot_apply, intCast_dotProduct,
+      coe_shellReflection_apply]
+    ext i
+    simp
+  reflectionPerm_coroot a b := by
+    simp only [dotProductBilin_apply_apply, shellRoot_apply, shellCoroot_apply, intCast_dotProduct,
+      coe_shellReflection_apply, mulVec_sub, mulVec_smul,
+      hB.isHermitian.isSymm.dotProduct_mulVec_comm (x := a.1) (y := b.1)]
+    ext i
+    simp
 
 @[simp]
 theorem root_normTwoShellRootPairing (a : B.normTwoShell) :
@@ -142,7 +144,7 @@ theorem exists_root_normTwoShellRootPairing_eq_iff (d : I → ℤ) :
   constructor
   · rintro ⟨a, ha⟩
     rw [root_normTwoShellRootPairing] at ha
-    have had : a.1 = d := intCast_vec_injective k ha
+    have had : a.1 = d := Int.cast_injective.comp_left ha
     exact had ▸ a.2
   · intro hd
     exact ⟨⟨d, hd⟩, root_normTwoShellRootPairing hB k _⟩
@@ -168,13 +170,8 @@ theorem pairing_normTwoShellRootPairing (a b : B.normTwoShell) :
 @[simp]
 theorem coe_reflectionPerm_normTwoShellRootPairing (a b : B.normTwoShell) :
     ((hB.normTwoShellRootPairing k).reflectionPerm a b : I → ℤ) =
-      b.1 - (b.1 ⬝ᵥ B *ᵥ a.1) • a.1 := by
-  apply intCast_vec_injective k
-  have h := (hB.normTwoShellRootPairing k).reflectionPerm_root a b
-  rw [RootPairing.root_coroot_eq_pairing, pairing_normTwoShellRootPairing] at h
-  simp only [root_normTwoShellRootPairing] at h
-  ext i
-  simpa using congrFun h.symm i
+      b.1 - (b.1 ⬝ᵥ B *ᵥ a.1) • a.1 :=
+  coe_shellReflection_apply hB a b
 
 instance : (hB.normTwoShellRootPairing k).IsCrystallographic where
   exists_value a b := ⟨a.1 ⬝ᵥ B *ᵥ b.1, by
@@ -188,26 +185,18 @@ theorem pairingIn_normTwoShellRootPairing (a b : B.normTwoShell) :
   rw [RootPairing.algebraMap_pairingIn, pairing_normTwoShellRootPairing, algebraMap_int_eq,
     eq_intCast]
 
-include hdiag in
-/-- The coordinate vectors are roots for diagonal `2`, so the roots span over any domain. -/
+/-- The roots span once the norm-two shell spans the lattice `I → ℤ`. -/
 @[simp]
-theorem rootSpan_normTwoShellRootPairing_eq_top :
+theorem rootSpan_normTwoShellRootPairing_eq_top (hspan : span ℤ B.normTwoShell = ⊤) :
     (hB.normTwoShellRootPairing k).rootSpan k = ⊤ := by
-  have h := TauCeti.span_range_piAlgebraMap_eq_top k
-    (v := (Subtype.val : B.normTwoShell → I → ℤ))
-    (by rw [Subtype.range_val]; exact B.span_normTwoShell_eq_top_of_diagonal_eq_two hdiag)
-  rw [RootPairing.rootSpan]
-  convert h using 4
-  ext i
-  simp [TauCeti.piAlgebraMap_apply]
+  have hroot : ⇑(hB.normTwoShellRootPairing k).root =
+      fun a : B.normTwoShell ↦ Pi.algebraMap I ℤ k a.1 := by
+    ext a i
+    simp [TauCeti.piAlgebraMap_apply]
+  rw [RootPairing.rootSpan, hroot]
+  exact TauCeti.span_range_piAlgebraMap_eq_top k (by rwa [Subtype.range_val])
 
-/-- The root pairing of the norm-two shell is reduced. -/
-instance : (hB.normTwoShellRootPairing k).IsReduced :=
-  RootPairing.isReduced_of_pairing_comm _ fun a b ↦ by
-    rw [pairing_normTwoShellRootPairing, pairing_normTwoShellRootPairing,
-      hB.isHermitian.isSymm.dotProduct_mulVec_comm]
-
-variable [DecidableEq I]
+variable [DecidableEq I] (hdiag : ∀ i, B i i = 2)
 
 /-- The root of the coordinate vector `Pi.single i 1` is the coordinate vector of `I → k`. -/
 theorem root_normTwoShellRootPairing_normTwoShellSimple (i : I) :
@@ -215,22 +204,41 @@ theorem root_normTwoShellRootPairing_normTwoShellSimple (i : I) :
   ext j
   simp [Pi.single_apply]
 
-/-- A root is the combination of the simple roots with the coefficients of its integer vector. -/
+/-- The roots of the coordinate vectors are the standard basis of `I → k`. -/
+theorem root_comp_normTwoShellSimple :
+    (hB.normTwoShellRootPairing k).root ∘ normTwoShellSimple hdiag = Pi.basisFun k I := by
+  ext i : 1
+  rw [Function.comp_apply, root_normTwoShellRootPairing_normTwoShellSimple, Pi.basisFun_apply]
+
+/-- A root is the combination of the coordinate roots with the coefficients of its integer
+vector. -/
 theorem root_normTwoShellRootPairing_eq_sum (a : B.normTwoShell) :
     (hB.normTwoShellRootPairing k).root a =
       ∑ i, a.1 i • (hB.normTwoShellRootPairing k).root (normTwoShellSimple hdiag i) := by
   ext j
   simp [Finset.sum_apply, Pi.single_apply]
 
-/-- A coroot is the combination of the simple coroots with the coefficients of the integer vector
-of its root. -/
+/-- A coroot is the combination of the coroots of the coordinate roots with the coefficients of
+the integer vector of its root. -/
 theorem coroot_normTwoShellRootPairing_eq_sum (a : B.normTwoShell) :
     (hB.normTwoShellRootPairing k).coroot a =
       ∑ i, a.1 i • (hB.normTwoShellRootPairing k).coroot (normTwoShellSimple hdiag i) := by
   ext j
   simp [Finset.sum_apply, mulVec, dotProduct, Pi.single_apply, mul_comm]
 
-variable (hoff : ∀ i j, i ≠ j → B i j ≤ 0)
+end CommRing
+
+section Domain
+
+variable (hB : B.PosDef) (k : Type*) [CommRing k] [CharZero k] [IsDomain k]
+
+/-- The root pairing of the norm-two shell is reduced. -/
+instance : (hB.normTwoShellRootPairing k).IsReduced :=
+  RootPairing.isReduced_of_pairing_comm _ fun a b ↦ by
+    rw [pairing_normTwoShellRootPairing, pairing_normTwoShellRootPairing,
+      hB.isHermitian.isSymm.dotProduct_mulVec_comm]
+
+variable [DecidableEq I] (hdiag : ∀ i, B i i = 2) (hoff : ∀ i j, i ≠ j → B i j ≤ 0)
 
 /-- **The base of coordinate vectors.** When the diagonal entries of `B` are `2` and its
 off-diagonal entries are nonpositive, the coordinate vectors form a base of the root pairing of the
@@ -241,11 +249,9 @@ def normTwoShellBase : (hB.normTwoShellRootPairing k).Base :=
     (s := Finset.univ.image (normTwoShellSimple hdiag))
     (by
       rw [Finset.coe_image, Finset.coe_univ, image_univ,
-        linearIndepOn_range_iff (normTwoShellSimple_injective hdiag)]
-      convert (Pi.basisFun k I).linearIndependent using 1
-      ext i : 1
-      rw [Function.comp_apply, root_normTwoShellRootPairing_normTwoShellSimple,
-        Pi.basisFun_apply])
+        linearIndepOn_range_iff (normTwoShellSimple_injective hdiag),
+        root_comp_normTwoShellSimple]
+      exact (Pi.basisFun k I).linearIndependent)
     (by
       rintro _ ha _ hb hab
       rw [Finset.coe_image, Finset.coe_univ, image_univ] at ha hb
@@ -268,16 +274,6 @@ theorem support_normTwoShellBase :
   have := hB.finite_normTwoShell.to_subtype
   exact RootPairing.Base.mkOfPairwiseLEZero_support _ _ _ _ _
 
-/-- The simple roots of `Matrix.PosDef.normTwoShellBase` are the coordinate vectors. -/
-theorem mem_support_normTwoShellBase {a : B.normTwoShell} :
-    a ∈ (hB.normTwoShellBase k hdiag hoff).support ↔ ∃ i, normTwoShellSimple hdiag i = a := by
-  simp [support_normTwoShellBase]
-
-/-- Every coordinate vector belongs to the support of the coordinate base. -/
-theorem normTwoShellSimple_mem_support_normTwoShellBase (i : I) :
-    normTwoShellSimple hdiag i ∈ (hB.normTwoShellBase k hdiag hoff).support := by
-  simp
-
 /-- **The vertices index the simple roots**: `i` is sent to the coordinate vector `Pi.single i 1`.
 -/
 def normTwoShellBaseEquiv : I ≃ (hB.normTwoShellBase k hdiag hoff).support :=
@@ -286,15 +282,16 @@ def normTwoShellBaseEquiv : I ≃ (hB.normTwoShellBase k hdiag hoff).support :=
 
 @[simp]
 theorem coe_normTwoShellBaseEquiv_apply (i : I) :
-    (hB.normTwoShellBaseEquiv k hdiag hoff i : B.normTwoShell) = normTwoShellSimple hdiag i :=
-  (rfl)
+    (hB.normTwoShellBaseEquiv k hdiag hoff i : B.normTwoShell) = normTwoShellSimple hdiag i := by
+  simp [normTwoShellBaseEquiv]
 
 /-- The inverse vertex equivalence recovers the index of a coordinate vector. -/
 @[simp]
 theorem normTwoShellBaseEquiv_symm_mk (i : I)
     (hi : normTwoShellSimple hdiag i ∈ (hB.normTwoShellBase k hdiag hoff).support) :
-    (hB.normTwoShellBaseEquiv k hdiag hoff).symm ⟨normTwoShellSimple hdiag i, hi⟩ = i :=
-  (hB.normTwoShellBaseEquiv k hdiag hoff).symm_apply_apply i
+    (hB.normTwoShellBaseEquiv k hdiag hoff).symm ⟨normTwoShellSimple hdiag i, hi⟩ = i := by
+  rw [Equiv.symm_apply_eq]
+  exact Subtype.ext (coe_normTwoShellBaseEquiv_apply hB k hdiag hoff i).symm
 
 /-- The height relative to the coordinate base is the sum of the integer coordinates. -/
 @[simp]
@@ -333,25 +330,23 @@ theorem cartanMatrix_normTwoShellBase (i j : I) :
 end Domain
 
 variable (hB : B.PosDef) (k : Type*) [Field k] [CharZero k]
-  (hdiag : ∀ i, B i i = 2)
 
-include hdiag in
-/-- Over a field the roots and coroots span once the diagonal entries are `2`. -/
-theorem isRootSystem_normTwoShellRootPairing : (hB.normTwoShellRootPairing k).IsRootSystem := by
+/-- Over a field the roots and coroots span once the norm-two shell spans the lattice `I → ℤ`. -/
+theorem isRootSystem_normTwoShellRootPairing (hspan : span ℤ B.normTwoShell = ⊤) :
+    (hB.normTwoShellRootPairing k).IsRootSystem := by
   have := hB.finite_normTwoShell.fintype
-  have hsp := hB.rootSpan_normTwoShellRootPairing_eq_top k hdiag
+  have hsp := hB.rootSpan_normTwoShellRootPairing_eq_top k hspan
   exact ⟨hsp, ((hB.normTwoShellRootPairing k).rootSpan_eq_top_iff).mp hsp⟩
 
-include hdiag in
 /-- **Over a field, for diagonal `2`, the root system of the norm-two shell is irreducible when the
 diagram of `B` is connected.** No sign condition on the off-diagonal entries is needed. -/
-theorem isIrreducible_normTwoShellRootPairing (hconn : (TauCeti.diagramGraph B).Connected) :
+theorem isIrreducible_normTwoShellRootPairing (hdiag : ∀ i, B i i = 2)
+    (hconn : (TauCeti.diagramGraph B).Connected) :
     (hB.normTwoShellRootPairing k).IsIrreducible := by
   classical
-  have := isRootSystem_normTwoShellRootPairing hB k hdiag
+  have := isRootSystem_normTwoShellRootPairing hB k (B.span_normTwoShell_eq_top_of_diagonal_eq_two
+    hdiag)
   let P := hB.normTwoShellRootPairing k
-  have hroot : (P.root ∘ normTwoShellSimple hdiag) = Pi.basisFun k I := funext fun i ↦ by
-    rw [Function.comp_apply, Pi.basisFun_apply, root_normTwoShellRootPairing_normTwoShellSimple]
   have hcoroot : span k (range (P.coroot ∘ normTwoShellSimple hdiag)) = ⊤ := by
     rw [eq_top_iff, ← RootPairing.IsRootSystem.span_coroot_eq_top (P := P), span_le]
     rintro _ ⟨a, rfl⟩
@@ -361,8 +356,10 @@ theorem isIrreducible_normTwoShellRootPairing (hconn : (TauCeti.diagramGraph B).
       P.pairingIn ℤ (normTwoShellSimple hdiag u) (normTwoShellSimple hdiag v)) = B := by
     ext u v
     simp [P]
-  exact RootPairing.isIrreducible_of_connected_diagramGraph_pairingIn _
-    (hroot ▸ (Pi.basisFun k I).span_eq) hcoroot (by rwa [hB'])
+  refine RootPairing.isIrreducible_of_connected_diagramGraph_pairingIn _ ?_ hcoroot
+    (by rwa [hB'])
+  rw [root_comp_normTwoShellSimple]
+  exact (Pi.basisFun k I).span_eq
 
 end PosDef
 
