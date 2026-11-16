@@ -17,20 +17,25 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 /-!
 # The Newtonian kernel is a fundamental solution of `-Δ`
 
-For `n ≥ 3`, the Newtonian kernel `Gₙ(x) = (n (n - 2) ωₙ)⁻¹ ‖x‖²⁻ⁿ` on `ℝⁿ` satisfies the
+For `n ≥ 1`, `n ≠ 2`, the Newtonian kernel `Gₙ(x) = (n (n - 2) ωₙ)⁻¹ ‖x‖²⁻ⁿ` on `ℝⁿ` satisfies the
 distributional identity `-Δ Gₙ = δ₀`: for every `C²` function `f` with compact support,
 
 `∫ x, Δ f x * Gₙ x = -f 0`,
 
-and, with the pole moved to `a`, `∫ x, Δ f x * Gₙ (x - a) = -f a`.
+and, with the pole moved to `a`, `∫ x, Δ f x * Gₙ (x - a) = -f a`. In dimension one the kernel
+is `G₁(x) = -|x| / 2` (`TauCeti.newtonianKernel_one`), the classical fundamental solution of
+`-d² / dx²`; in dimension two the totalized kernel is zero and the planar logarithmic kernel
+`TauCeti.planarNewtonianKernel` takes its place.
 
 The proof has two steps.
 
 * **The weak gradient.** Integration by parts against `Gₙ` holds across the pole: for a `C¹`
-  function `g` with compact support, `∫ Gₙ ∂ᵥg = -∫ (∂ᵥGₙ) g`.  This is the exponent `2 - n` case
-  of the integration by parts identity `TauCeti.integral_norm_rpow_mul_fderiv_eq_neg` for singular
-  norm powers, proved by regularization and dominated convergence.  In particular `Gₙ` is weakly
-  differentiable on every open set with weak derivative its classical one.
+  function `g` with compact support, `∫ Gₙ ∂ᵥg = -∫ (∂ᵥGₙ) g`, in every dimension.  This is the
+  exponent `2 - n` case of the integration by parts identity
+  `TauCeti.integral_norm_rpow_mul_fderiv_eq_neg` for norm powers, proved for `n ≥ 2` by
+  regularization and dominated convergence, and for `n = 1`, where `G₁` is continuous, by
+  removing the pole as a countable exceptional set.  In particular `Gₙ` is weakly differentiable
+  on every open set with weak derivative its classical one.
 * **The flux.** Summing over an orthonormal basis turns `∫ Δ f Gₙ` into
   `-∫ ∇Gₙ · ∇f = (n ωₙ)⁻¹ ∫ ‖x‖⁻ⁿ f' x x`, and the radial fundamental theorem of calculus
   `TauCeti.integral_norm_rpow_neg_finrank_mul_fderiv_apply_self` evaluates the latter integral as
@@ -63,17 +68,20 @@ open scoped RealInnerProductSpace
 
 variable {n : ℕ}
 
-/-- **Integration by parts against the Newtonian kernel.** For `n ≥ 3` and a `C¹` function `g`
-with compact support, `∫ Gₙ ∂ᵥg = -∫ (∂ᵥGₙ) g`, although `Gₙ` is singular at the origin. This is
-the exponent `2 - n` case of `TauCeti.integral_norm_rpow_mul_fderiv_eq_neg`. -/
-theorem integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul (hn : 3 ≤ n)
+/-- **Integration by parts against the Newtonian kernel.** For a `C¹` function `g` with compact
+support, `∫ Gₙ ∂ᵥg = -∫ (∂ᵥGₙ) g`, although for `n ≥ 3` the kernel `Gₙ` is singular at the origin,
+and for `n = 1` it is not differentiable there. This is the exponent `2 - n` case of
+`TauCeti.integral_norm_rpow_mul_fderiv_eq_neg`. -/
+theorem integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul
     {g : EuclideanSpace ℝ (Fin n) → ℝ} (hg : ContDiff ℝ 1 g) (hc : HasCompactSupport g)
     (v : EuclideanSpace ℝ (Fin n)) :
     ∫ x, newtonianKernel n x * fderiv ℝ g x v =
       -∫ x, fderiv ℝ (newtonianKernel n) x v * g x := by
+  -- In dimension zero the only direction is `v = 0`.
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp [Subsingleton.elim v 0]
   have : Nontrivial (EuclideanSpace ℝ (Fin n)) :=
-    Module.nontrivial_of_finrank_pos (R := ℝ) (by rw [finrank_euclideanSpace_fin]; omega)
-  have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
+    Module.nontrivial_of_finrank_pos (R := ℝ) (by rwa [finrank_euclideanSpace_fin])
   set C := ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
   have hG : newtonianKernel n = fun x ↦ C * ‖x‖ ^ (2 - (n : ℝ)) := funext (newtonianKernel_def n)
   -- Away from the pole, `∂ᵥGₙ` is `C` times the derivative of the norm power.
@@ -85,16 +93,16 @@ theorem integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul (hn : 3 ≤ n)
   rw [integral_congr_ae hderiv, hG]
   simp only [mul_assoc]
   rw [integral_const_mul, integral_const_mul, integral_norm_rpow_mul_fderiv_eq_neg (μ := volume)
-    (by linarith) (by rw [finrank_euclideanSpace_fin]; linarith) hg hc v, mul_neg]
+    (by rw [finrank_euclideanSpace_fin]; linarith) hg hc v, mul_neg]
 
-/-- **Integration by parts against the Newtonian kernel with pole `a`.** For `n ≥ 3` and a `C¹`
-function `g` with compact support, `∫ ∂ᵥg (x) Gₙ(x - a) dx = -∫ g(x) ∂ᵥGₙ(x - a) dx`. -/
-theorem integral_fderiv_mul_newtonianKernel_sub (hn : 3 ≤ n)
+/-- **Integration by parts against the Newtonian kernel with pole `a`.** For a `C¹` function `g`
+with compact support, `∫ ∂ᵥg (x) Gₙ(x - a) dx = -∫ g(x) ∂ᵥGₙ(x - a) dx`. -/
+theorem integral_fderiv_mul_newtonianKernel_sub
     {g : EuclideanSpace ℝ (Fin n) → ℝ} (hg : ContDiff ℝ 1 g) (hc : HasCompactSupport g)
     (v a : EuclideanSpace ℝ (Fin n)) :
     ∫ x, fderiv ℝ g x v * newtonianKernel n (x - a) =
       -∫ x, g x * fderiv ℝ (newtonianKernel n) (x - a) v := by
-  have h := integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul hn (g := fun y ↦ g (y + a))
+  have h := integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul (g := fun y ↦ g (y + a))
     (hg.comp (contDiff_id.add contDiff_const)) (hc.comp_homeomorph (Homeomorph.addRight a)) v
   simp only [fderiv_comp_add_right] at h
   rw [← integral_add_right_eq_self (fun x ↦ fderiv ℝ g x v * newtonianKernel n (x - a)) a,
@@ -102,17 +110,17 @@ theorem integral_fderiv_mul_newtonianKernel_sub (hn : 3 ≤ n)
   simp only [add_sub_cancel_right]
   simpa only [mul_comm] using h
 
-/-- **The Newtonian kernel is weakly differentiable.** For `n ≥ 3`, on every open set the
-classical derivative of `Gₙ`, which exists away from the origin, is a weak derivative of `Gₙ`. -/
-theorem hasWeakFDerivOn_newtonianKernel (hn : 3 ≤ n) (Ω : Opens (EuclideanSpace ℝ (Fin n))) :
+/-- **The Newtonian kernel is weakly differentiable.** On every open set the classical derivative
+of `Gₙ`, which exists away from the origin, is a weak derivative of `Gₙ`. -/
+theorem hasWeakFDerivOn_newtonianKernel (Ω : Opens (EuclideanSpace ℝ (Fin n))) :
     HasWeakFDerivOn volume Ω (newtonianKernel n) (fderiv ℝ (newtonianKernel n)) :=
   hasWeakFDerivOn_of_forall_integral_fderiv_smul (locallyIntegrable_newtonianKernel n)
     (locallyIntegrable_fderiv_newtonianKernel n) (fun _ hg hc v ↦ by
       simpa only [smul_eq_mul, mul_comm] using
-        integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul hn hg hc v) Ω
+        integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul hg hc v) Ω
 
 /-- Away from the pole, the gradient pairing `∇Gₙ · ∇f` is `-(n ωₙ)⁻¹ ‖x‖⁻ⁿ f' x x`. -/
-private lemma sum_fderiv_newtonianKernel_mul_fderiv (hn : 3 ≤ n)
+private lemma sum_fderiv_newtonianKernel_mul_fderiv (hn : n ≠ 2)
     (b : OrthonormalBasis (Fin n) ℝ (EuclideanSpace ℝ (Fin n)))
     (f : EuclideanSpace ℝ (Fin n) → ℝ) (x : EuclideanSpace ℝ (Fin n)) :
     ∑ i, fderiv ℝ (newtonianKernel n) x (b i) * fderiv ℝ f x (b i) =
@@ -120,19 +128,18 @@ private lemma sum_fderiv_newtonianKernel_mul_fderiv (hn : 3 ≤ n)
         (‖x‖ ^ (-(n : ℝ)) * fderiv ℝ f x x) := by
   have hx' : fderiv ℝ f x x = ∑ i, ⟪b i, x⟫ * fderiv ℝ f x (b i) := by
     simpa using congrArg (fderiv ℝ f x) (b.sum_repr' x).symm
-  simp_rw [fderiv_newtonianKernel_apply n (by omega), hx', Finset.mul_sum, real_inner_comm x]
+  simp_rw [fderiv_newtonianKernel_apply n hn, hx', Finset.mul_sum, real_inner_comm x]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   ring
 
-/-- **The Newtonian kernel is a fundamental solution of `-Δ`.** For `n ≥ 3` and every `C²`
+/-- **The Newtonian kernel is a fundamental solution of `-Δ`.** For `n ≠ 0, 2` and every `C²`
 function `f` with compact support on `ℝⁿ`, `∫ Δ f · Gₙ = -f 0`; that is, `-Δ Gₙ = δ₀` in the
 sense of distributions. -/
-theorem integral_laplacian_mul_newtonianKernel (hn : 3 ≤ n)
+theorem integral_laplacian_mul_newtonianKernel (hn : n ≠ 2) (hn0 : n ≠ 0)
     {f : EuclideanSpace ℝ (Fin n) → ℝ} (hf : ContDiff ℝ 2 f) (hc : HasCompactSupport f) :
     ∫ x, Δ f x * newtonianKernel n x = -f 0 := by
-  have : Nontrivial (EuclideanSpace ℝ (Fin n)) :=
-    Module.nontrivial_of_finrank_pos (R := ℝ) (by rw [finrank_euclideanSpace_fin]; omega)
-  have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
+  have : Nontrivial (EuclideanSpace ℝ (Fin n)) := Module.nontrivial_of_finrank_pos (R := ℝ)
+    (by rw [finrank_euclideanSpace_fin]; exact Nat.pos_of_ne_zero hn0)
   have hvol := (volume_real_unitBall_pos n).ne'
   have hrad := integral_norm_rpow_neg_finrank_mul_fderiv_apply_self
     (μ := (volume : Measure (EuclideanSpace ℝ (Fin n)))) (hf.of_le (by norm_num)) hc
@@ -144,18 +151,18 @@ theorem integral_laplacian_mul_newtonianKernel (hn : 3 ≤ n)
     ae_of_all _ (sum_fderiv_newtonianKernel_mul_fderiv hn b f)
   rw [(locallyIntegrable_newtonianKernel n).integral_laplacian_mul_eq_neg_integral_sum
       (locallyIntegrable_fderiv_newtonianKernel n)
-      (fun _ ↦ integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul hn) hf hc b,
+      (fun _ ↦ integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul) hf hc b,
     integral_congr_ae hsum, integral_const_mul, hrad]
-  have h0 : (n : ℝ) ≠ 0 := by linarith
+  have h0 : (n : ℝ) ≠ 0 := by exact_mod_cast hn0
   field_simp
 
-/-- **The Newtonian kernel with pole `a` is a fundamental solution of `-Δ`.** For `n ≥ 3` and
+/-- **The Newtonian kernel with pole `a` is a fundamental solution of `-Δ`.** For `n ≠ 0, 2` and
 every `C²` function `f` with compact support on `ℝⁿ`, `∫ Δ f · Gₙ(· - a) = -f a`. -/
-theorem integral_laplacian_mul_newtonianKernel_sub (hn : 3 ≤ n)
+theorem integral_laplacian_mul_newtonianKernel_sub (hn : n ≠ 2) (hn0 : n ≠ 0)
     {f : EuclideanSpace ℝ (Fin n) → ℝ} (hf : ContDiff ℝ 2 f) (hc : HasCompactSupport f)
     (a : EuclideanSpace ℝ (Fin n)) :
     ∫ x, Δ f x * newtonianKernel n (x - a) = -f a := by
-  have h := integral_laplacian_mul_newtonianKernel hn (f := fun y ↦ f (y + a))
+  have h := integral_laplacian_mul_newtonianKernel hn hn0 (f := fun y ↦ f (y + a))
     (hf.comp (contDiff_id.add contDiff_const)) (hc.comp_homeomorph (Homeomorph.addRight a))
   rw [laplacian_comp_add_right, zero_add] at h
   rw [← h, ← integral_add_right_eq_self _ a]
