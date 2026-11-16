@@ -83,6 +83,20 @@ theorem conjPostcompCLM_conjPostcompCLM {H : Type*} [NormedAddCommGroup H] [Norm
 
 variable [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] [CompleteSpace G]
 
+/-- On a Schwartz function `f`, the action of a conjugate-linear map `L` is `f ↦ L ∘ f`. -/
+theorem conjPostcompCLM_toTemperedDistributionCLM_eq [SecondCountableTopology E] {μ : Measure E}
+    [μ.HasTemperateGrowth] (L : F →L⋆[ℂ] G) (f : 𝓢(E, F)) :
+    conjPostcompCLM L (SchwartzMap.toTemperedDistributionCLM E F μ f) =
+      SchwartzMap.toTemperedDistributionCLM E G μ (SchwartzMap.conjPostcompCLM L f) := by
+  ext φ
+  have hφf : Integrable (fun x ↦ SchwartzMap.conjCLM E φ x • f x) μ :=
+    (SchwartzMap.conjCLM E φ).integrable.smul_of_top_left (f.memLp_top μ)
+  rw [conjPostcompCLM_apply_apply, SchwartzMap.toTemperedDistributionCLM_apply_apply μ,
+    SchwartzMap.toTemperedDistributionCLM_apply_apply μ,
+    ← L.integral_comp_commSL (fun r z ↦ by simp) hφf]
+  congr 1 with x
+  simp
+
 /-- On an `Lᵖ` function `f`, the action of a conjugate-linear map `L` is `f ↦ L ∘ f`. -/
 theorem conjPostcompCLM_toTemperedDistribution_eq {μ : Measure E} [μ.HasTemperateGrowth]
     {p : ENNReal} [hp : Fact (1 ≤ p)] (L : F →L⋆[ℂ] G) (f : Lp F p μ) :
@@ -101,23 +115,6 @@ theorem conjPostcompCLM_toTemperedDistribution_eq {μ : Measure E} [μ.HasTemper
 end NormedSpace
 
 variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-
-section Embedding
-
-variable [CompleteSpace F] [CompleteSpace G]
-
-/-- On a Schwartz function `f`, the action of a conjugate-linear map `L` is `f ↦ L ∘ f`. -/
-theorem conjPostcompCLM_toTemperedDistributionCLM_eq (L : F →L⋆[ℂ] G) (f : 𝓢(E, F)) :
-    conjPostcompCLM L (f : 𝓢'(E, F)) = (SchwartzMap.conjPostcompCLM L f : 𝓢'(E, G)) := by
-  ext φ
-  have hφf : Integrable (fun x ↦ SchwartzMap.conjCLM E φ x • f x) :=
-    (SchwartzMap.conjCLM E φ).integrable.smul_of_top_left f.memLp_top
-  rw [conjPostcompCLM_apply_apply, SchwartzMap.coe_apply, SchwartzMap.coe_apply,
-    ← L.integral_comp_commSL (fun r z ↦ by simp) hφf]
-  congr 1 with x
-  simp
-
-end Embedding
 
 section Fourier
 
