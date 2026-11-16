@@ -12,6 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
 import TauCeti.Analysis.Calculus.Morse.Pi
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # Exponential convergence of gradient trajectories: two test cases
@@ -61,26 +62,6 @@ open Bundle Filter Set Topology TauCeti.Manifold
 open scoped ContDiff Manifold
 
 namespace TauCeti
-
-/-- **Sharpness of an exponential rate.** For `K > 0` and `k < μ`, the function `K exp (-k t)` is
-not bounded by `C exp (-μ t)` for large `t`, for any `C > 0`. The sharpness of the rates of the
-explicit trajectories below reduces to this. -/
-theorem not_exists_ofReal_mul_exp_le_mul_exp {K k μ : ℝ} (hK : 0 < K) (hμ : k < μ) :
-    ¬ ∃ C > 0, ∀ᶠ t in atTop,
-      ENNReal.ofReal (K * Real.exp (-(k * t))) ≤ ENNReal.ofReal (C * Real.exp (-(μ * t))) := by
-  rintro ⟨C, hC, h⟩
-  have hgrow : Tendsto (fun t : ℝ ↦ Real.exp ((μ - k) * t)) atTop atTop :=
-    Real.tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop (sub_pos.2 hμ))
-  obtain ⟨t, ht, hbig⟩ := (h.and (hgrow.eventually_gt_atTop (C / K))).exists
-  rw [ENNReal.ofReal_le_ofReal_iff (by positivity)] at ht
-  -- Multiplying the bound by `exp (μ t)` gives `K exp ((μ - k) t) ≤ C`.
-  have hle : K * Real.exp ((μ - k) * t) ≤ C :=
-    calc K * Real.exp ((μ - k) * t) = K * Real.exp (-(k * t)) * Real.exp (μ * t) := by
-          rw [mul_assoc, ← Real.exp_add]
-          ring_nf
-      _ ≤ C * Real.exp (-(μ * t)) * Real.exp (μ * t) := by gcongr
-      _ = C := by simp [Real.exp_neg]
-  linarith [(div_lt_iff₀ hK).1 hbig]
 
 /-! ### A degenerate minimum: `x⁴` on `ℝ` -/
 

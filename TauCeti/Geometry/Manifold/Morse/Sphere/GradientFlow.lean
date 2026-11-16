@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.ExponentialConvergence
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
-import TauCeti.Geometry.Manifold.Morse.Examples.ExponentialConvergence
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Gradient
 
 /-!

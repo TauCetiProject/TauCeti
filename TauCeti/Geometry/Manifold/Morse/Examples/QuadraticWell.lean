@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Distance
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Morse.Examples.ExponentialConvergence
