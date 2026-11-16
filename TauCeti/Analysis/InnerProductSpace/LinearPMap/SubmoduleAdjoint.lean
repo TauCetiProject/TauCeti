@@ -78,7 +78,8 @@ theorem adjoint_adjoint_eq_topologicalClosure [CompleteSpace E] [CompleteSpace F
     (g : Submodule 𝕜 (E × F)) : g.adjoint.adjoint = g.topologicalClosure := by
   refine le_antisymm (fun x hx => ?_) (g.topologicalClosure_minimal g.le_adjoint_adjoint ?_)
   · have hmem := toLp_mem_orthogonal_orthogonal_of_mem_adjoint_adjoint hx
-    rw [orthogonal_orthogonal_eq_closure, ← SetLike.mem_coe, topologicalClosure_coe] at hmem
+    rw [orthogonal_orthogonal_eq_closure, ← SetLike.mem_coe, topologicalClosure_coe, comap_coe,
+      LinearEquiv.coe_toLinearMap, WithLp.coe_linearEquiv] at hmem
     rw [← SetLike.mem_coe, topologicalClosure_coe]
     simpa using (WithLp.prod_continuous_ofLp 2 E F).closure_preimage_subset _ hmem
   · -- A submodule adjoint is closed: it is the preimage of an orthogonal complement.
@@ -89,9 +90,12 @@ theorem adjoint_adjoint_eq_topologicalClosure [CompleteSpace E] [CompleteSpace F
 
 This is the graph-level statement that makes the unbounded-operator adjoint
 theory close on itself: with `LinearPMap.adjoint_graph_eq_graph_adjoint` it says
-`Γ(T††) = Γ(T)` for closed densely defined `T`. As in `Submodule.orthogonal_orthogonal`, only
-the submodule needs to be complete, not the ambient spaces; in complete ambient spaces, apply it
-to a closed submodule through `IsClosed.isComplete`. -/
+`Γ(T††) = Γ(T)` for closed densely defined `T`. Only the submodule needs to be complete, not
+the ambient spaces: the proof applies `Submodule.orthogonal_orthogonal`, whose
+`HasOrthogonalProjection` hypothesis a complete submodule satisfies through
+`Submodule.HasOrthogonalProjection.ofCompleteSpace`. In complete ambient spaces, apply it to a
+closed submodule through `IsClosed.isComplete`. -/
+@[simp]
 theorem adjoint_adjoint (g : Submodule 𝕜 (E × F)) (hg : IsComplete (g : Set (E × F))) :
     g.adjoint.adjoint = g := by
   refine le_antisymm (fun x hx => ?_) g.le_adjoint_adjoint
