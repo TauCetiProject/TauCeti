@@ -1012,6 +1012,7 @@ theorem W1p.coe_ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) :
   (rfl)
 
 /-- Lowering the exponent does not change the value of a Sobolev function, as a function. -/
+@[simp]
 theorem W1p.coeFn_value_ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) :
     ⇑(W1p.value (W1p.ofExponentLE hpq u)) = ⇑(W1p.value u) :=
   (rfl)
@@ -1023,6 +1024,7 @@ theorem W1p.value_ofExponentLE_ae (hpq : p ≤ q) (u : W1p mu Omega q) :
 
 /-- Lowering the exponent does not change the weak gradient of a Sobolev function, as a
 function. -/
+@[simp]
 theorem W1p.coeFn_gradient_ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) :
     ⇑(W1p.gradient (W1p.ofExponentLE hpq u)) = ⇑(W1p.gradient u) :=
   (rfl)
