@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Matteo Cipollina. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Matteo Cipollina
 -/
 module
 
@@ -27,6 +27,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   `r > -1`;
 * `TauCeti.intervalIntegrable_sub_rpow`, `TauCeti.integral_sub_rpow`:
   `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
+* `TauCeti.integral_abs_sub_rpow_of_le`: for `r > -1` and `a ≤ c ≤ b`,
+  `∫ x in a..b, |x - c|^r = ((c - a)^(r + 1) + (b - c)^(r + 1)) / (r + 1)`.
 * `TauCeti.integral_sub_rpow_le_of_lt_neg_one`: `∫ x in a..b - c, (b - x)^r ≤ c^(r + 1) / -(r + 1)`
   for `r < -1`.
 * `TauCeti.integral_const_mul_rpow_le`: `∫ t in δ..1, c * t ^ T ≤ c / (T + 1)` for `T > -1`,
@@ -91,6 +93,32 @@ theorem integral_sub_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
     ∫ x in a..b, (b - x) ^ r = (b - a) ^ (r + 1) / (r + 1) := by
   rw [intervalIntegral.integral_comp_sub_left (fun x => x ^ r), sub_self,
     integral_rpow (Or.inl hr), Real.zero_rpow (by linarith : r + 1 ≠ 0), sub_zero]
+
+/-- The exact two-sided power integral, allowing the singularity at either endpoint. -/
+theorem integral_abs_sub_rpow_of_le {r c a b : ℝ}
+    (hr : -1 < r) (ha : a ≤ c) (hb : c ≤ b) :
+    (∫ x in a..b, |x - c| ^ r) =
+      ((c - a) ^ (r + 1) + (b - c) ^ (r + 1)) / (r + 1) := by
+  have hl : Set.EqOn (fun x : ℝ ↦ |x - c| ^ r) (fun x ↦ (c - x) ^ r)
+      (Set.uIcc a c) := by
+    intro x hx
+    dsimp only
+    rw [Set.uIcc_of_le ha] at hx
+    rw [abs_of_nonpos (sub_nonpos.mpr hx.2), neg_sub]
+  have hh : Set.EqOn (fun x : ℝ ↦ |x - c| ^ r) (fun x ↦ (x - c) ^ r)
+      (Set.uIcc c b) := by
+    intro x hx
+    dsimp only
+    rw [Set.uIcc_of_le hb] at hx
+    rw [abs_of_nonneg (sub_nonneg.mpr hx.1)]
+  have hli := (TauCeti.intervalIntegrable_sub_rpow hr a c).congr
+    (hl.symm.mono Set.uIoc_subset_uIcc)
+  have hri := (TauCeti.intervalIntegrable_sub_const_rpow hr c c b).congr
+    (hh.symm.mono Set.uIoc_subset_uIcc)
+  rw [← intervalIntegral.integral_add_adjacent_intervals hli hri,
+    intervalIntegral.integral_congr hl,
+    intervalIntegral.integral_congr hh,
+    TauCeti.integral_sub_rpow hr a c, TauCeti.integral_sub_const_rpow hr c b, add_div]
 
 open MeasureTheory Set in
 /-- Away from the singularity, the weight `(b - x)^r` with `r < -1` has integral at most
