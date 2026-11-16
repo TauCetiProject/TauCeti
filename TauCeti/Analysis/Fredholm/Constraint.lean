@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import TauCeti.Analysis.Fredholm.Prod
 import Mathlib.LinearAlgebra.Isomorphisms
-import Mathlib.RingTheory.Finiteness.Finsupp
 import TauCeti.LinearAlgebra.Exact
 
 /-!
@@ -283,12 +282,8 @@ theorem finrank_ker_prod_add_finrank_range_domRestrict [FiniteDimensional 𝕜 D
 /-- The cokernel of the extended operator is finite dimensional when the cokernel of `D` and the
 constraint space are. -/
 theorem finiteDimensional_quotient_range_prod [FiniteDimensional 𝕜 (F ⧸ D.range)]
-    [FiniteDimensional 𝕜 G] : FiniteDimensional 𝕜 ((F × G) ⧸ (D.prod L).range) := by
-  refine Module.finite_def.mpr (Submodule.fg_of_fg_map_of_fg_inf_ker (cokerProdHom D L) ?_ ?_)
-  · rw [Submodule.map_top, LinearMap.range_eq_top.mpr (cokerProdHom_surjective D L)]
-    exact Module.finite_def.mp inferInstance
-  · rw [top_inf_eq, ker_cokerProdHom, LinearMap.range_eq_map (constraintToCoker D L)]
-    exact (Module.finite_def.mp inferInstance).map _
+    [FiniteDimensional 𝕜 G] : FiniteDimensional 𝕜 ((F × G) ⧸ (D.prod L).range) :=
+  TauCeti.finiteDimensional_of_exact (exact_constraintToCoker_cokerProdHom D L)
 
 /-- The constraints enlarge the cokernel of `D` by the corank of the constraint map on `ker D`. -/
 theorem finrank_quotient_range_prod_add_finrank_range_domRestrict
@@ -297,9 +292,9 @@ theorem finrank_quotient_range_prod_add_finrank_range_domRestrict
         finrank 𝕜 ((L.domRestrict D.ker).range) =
       finrank 𝕜 (F ⧸ D.range) + finrank 𝕜 G := by
   have := finiteDimensional_quotient_range_prod D L
-  have hcoker := (cokerProdHom D L).finrank_range_add_finrank_ker
-  rw [LinearMap.range_eq_top.mpr (cokerProdHom_surjective D L), finrank_top,
-    ker_cokerProdHom] at hcoker
+  have hcoker := LinearMap.finrank_eq_finrank_range_add_finrank_range_of_exact _ _
+    (exact_constraintToCoker_cokerProdHom D L)
+  rw [LinearMap.range_eq_top.mpr (cokerProdHom_surjective D L), finrank_top] at hcoker
   have hconstr := (constraintToCoker D L).finrank_range_add_finrank_ker
   rw [ker_constraintToCoker] at hconstr
   omega
