@@ -83,16 +83,21 @@ by tauceti-ai-for-science in
 * `ZLattice.level_dvd_iff`: `level L ∣ N` if and only if `N ‖x‖² ∈ 2ℤ` for every `x ∈ L^∨`.
 * `ZLattice.level_eq_zero_of_span_ne_top`: a lattice in a finite-dimensional space that does not
   span it has level `0`.
-* `ZLattice.level_dvd_two_mul_card_discriminantGroup`, `ZLattice.IsIntegral.level_pos`: the level
-  divides `2 |A_L|`, which is `2 det L` for a full integral lattice, and is then positive.
+* `ZLattice.level_dvd_two_mul_card_discriminantGroup`,
+  `ZLattice.IsEven.level_dvd_card_discriminantGroup_of_odd`,
+  `ZLattice.IsEven.level_dvd_card_discriminantGroup_sq`, `ZLattice.IsIntegral.level_pos`: the level
+  divides `2 |A_L|` (and `|A_L|` when `L` is even of odd `|A_L|`, hence `|A_L|²` for any even `L`),
+  and is positive for a full integral lattice.
 * `ZLattice.level_nsmul_mem`: `level L • x ∈ L` for `x ∈ L^∨`, for a discrete lattice in a
   finite-dimensional space.
 * `ZLattice.exponent_discriminantGroup_dvd_level`: the exponent of `A_L` divides the level, for a
   discrete lattice in a finite-dimensional space.
 * `ZLattice.card_discriminantGroup_dvd_level_pow`: for a full lattice `|A_L|` divides
-  `level L ^ n`, `ZLattice.prime_dvd_level`: every prime dividing `|A_L|` divides the level, and
+  `level L ^ n`, `ZLattice.prime_dvd_level`: every prime dividing `|A_L|` divides the level,
   `ZLattice.coprime_card_discriminantGroup_of_coprime_level`: every natural number coprime to
-  `level L` is coprime to `|A_L|`.
+  `level L` is coprime to `|A_L|`, and
+  `ZLattice.IsEven.coprime_card_discriminantGroup_iff_coprime_level`: for an even lattice in a
+  finite-dimensional space, coprimality to `|A_L|` and to `level L` coincide.
 * `ZLattice.IsEven.level_eq_one_of_isUnimodular`: an even unimodular lattice has level one.
 * `ZLattice.IsEven.level_eq_one_iff`: in a finite-dimensional space, an even lattice has level one
   exactly when it is unimodular.
@@ -236,6 +241,36 @@ theorem level_dvd_two_mul_card_discriminantGroup :
   push_cast
   linear_combination 2 * hm
 
+/-- For an even lattice whose discriminant group has odd order, the level divides the order of the
+discriminant group (without the factor of `2` needed in general). -/
+theorem IsEven.level_dvd_card_discriminantGroup_of_odd (hL : IsEven L)
+    (hodd : Odd (Nat.card (DiscriminantGroup L))) :
+    level L ∣ Nat.card (DiscriminantGroup L) := by
+  refine level_dvd_iff.mpr fun x hx ↦ ?_
+  have hd : Nat.card (DiscriminantGroup L) • x ∈ L := by
+    have := card_nsmul_eq_zero' (G := DiscriminantGroup L)
+      (x := Submodule.Quotient.mk (⟨x, hx⟩ : dual L))
+    rwa [← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff] at this
+  obtain ⟨m, hm⟩ := mem_dual.mp hx _ hd
+  obtain ⟨k, hk⟩ := isEven_iff.mp hL _ hd
+  rw [← Nat.cast_smul_eq_nsmul ℝ, real_inner_smul_right, real_inner_self_eq_norm_sq] at hm
+  rw [← Nat.cast_smul_eq_nsmul ℝ, norm_smul, Real.norm_natCast, mul_pow, sq, mul_assoc, hm] at hk
+  have heven : (2 : ℤ) ∣ (Nat.card (DiscriminantGroup L) : ℤ) * m :=
+    ⟨k, Int.cast_injective (α := ℝ) (by push_cast; linarith)⟩
+  have h2m : (2 : ℤ) ∣ m :=
+    (Int.prime_two.dvd_mul.mp heven).resolve_left
+      (by exact_mod_cast mt even_iff_two_dvd.mpr (Nat.not_even_iff_odd.mpr hodd))
+  obtain ⟨t, rfl⟩ := h2m
+  exact ⟨t, by simpa using hm⟩
+
+/-- For an even lattice, the level divides the square of the order of the discriminant group. In
+particular, every prime dividing the level divides `|A_L|`. -/
+theorem IsEven.level_dvd_card_discriminantGroup_sq (hL : IsEven L) :
+    level L ∣ Nat.card (DiscriminantGroup L) ^ 2 := by
+  rcases Nat.even_or_odd (Nat.card (DiscriminantGroup L)) with ⟨r, hr⟩ | hodd
+  · exact level_dvd_two_mul_card_discriminantGroup.trans ⟨r, by rw [sq, hr]; ring⟩
+  · exact (hL.level_dvd_card_discriminantGroup_of_odd hodd).trans (dvd_pow_self _ two_ne_zero)
+
 /-! ### Coset shells at multiples of the level -/
 
 /-- For an even lattice `L`, `γ ∈ L^∨`, `v ∈ L` and a multiple `N` of `level L`, `N ‖γ + v‖²` is an
@@ -338,6 +373,21 @@ theorem prime_dvd_level {p : ℕ} (hp : p.Prime) (hpd : p ∣ Nat.card (Discrimi
 theorem coprime_card_discriminantGroup_of_coprime_level {a : ℕ} (ha : a.Coprime (level L)) :
     a.Coprime (Nat.card (DiscriminantGroup L)) :=
   (ha.pow_right (finrank ℝ E)).coprime_dvd_right card_discriminantGroup_dvd_level_pow
+
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- For an even lattice in a finite-dimensional space, the level and the order of the discriminant
+group have the same prime factors: a natural number is coprime to `|A_L|` if and only if it is
+coprime to `level L`. -/
+theorem IsEven.coprime_card_discriminantGroup_iff_coprime_level (hL : IsEven L) {a : ℕ} :
+    a.Coprime (Nat.card (DiscriminantGroup L)) ↔ a.Coprime (level L) := by
+  refine ⟨fun ha ↦ (ha.pow_right 2).coprime_dvd_right hL.level_dvd_card_discriminantGroup_sq,
+    fun ha ↦ ?_⟩
+  by_cases hs : span ℝ (L : Set E) = ⊤
+  · have := hL.discreteTopology
+    have : IsZLattice ℝ L := ⟨hs⟩
+    exact coprime_card_discriminantGroup_of_coprime_level ha
+  · have := infinite_discriminantGroup_of_span_ne_top hs
+    simpa [Nat.card_eq_zero_of_infinite, level_eq_zero_of_span_ne_top hs] using ha
 
 omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- In a finite-dimensional space, an even lattice has level one exactly when it is unimodular. -/

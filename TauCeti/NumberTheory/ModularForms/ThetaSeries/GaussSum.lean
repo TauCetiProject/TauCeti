@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Reciprocity
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.CosetSplitting
 public import TauCeti.Algebra.Module.ZLattice.SignedDiscriminant
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.Modular.ConjugateTranslation
 
 /-!
@@ -30,8 +31,8 @@ of arbitrary matrices to this case, is asserted here.
 
 The sum depends only on `a` modulo `c`. At `c = level L`, comparing an odd `a ≡ 1` with `1`
 therefore shows `(D_L / a) = 1` for the signed discriminant `D_L = signedDiscr L =
-(-1)^k |L^∨/L|`. The unit-kernel criterion `TauCeti.conductor_kroneckerChar_dvd_iff` then proves
-that the conductor of the Kronecker character of `D_L` divides `level L`
+(-1)^k |L^∨/L|`. The odd-representative criterion `DirichletCharacter.conductor_dvd_iff_forall_odd`
+then proves that the conductor of the Kronecker character of `D_L` divides `level L`
 (`ZLattice.IsEven.conductor_kroneckerChar_signedDiscr_dvd_level`). No divisibility between the
 level and `|D_L|` is assumed. This is the arithmetic descent needed to put the theta
 transformation character at the lattice's level.
@@ -147,16 +148,18 @@ theorem jacobiSym_signedDiscr_eq_one (hk : finrank ℝ E = 2 * k) {a : ℕ}
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- **The discriminant-character conductor divides the lattice level.** The character
 is initially defined modulo `|D_L|`; its primitive character can consequently be
-induced to `level L`. The coefficient ring need only distinguish `1` and `-1`. -/
+induced to `level L`. -/
 theorem conductor_kroneckerChar_signedDiscr_dvd_level (R : Type*) [CommRing R]
-    [NeZero (2 : R)] (hE : Even (finrank ℝ E)) :
+    (hE : Even (finrank ℝ E)) :
     (TauCeti.kroneckerChar R (signedDiscr L) (hL.signedDiscr_modEq_zero_or_one hE)
       hL.isIntegral.signedDiscr_ne_zero).conductor ∣ level L := by
   obtain ⟨k, hk⟩ := hE
   have hk' : finrank ℝ E = 2 * k := hk.trans (two_mul k).symm
-  apply (TauCeti.conductor_kroneckerChar_dvd_iff _ _).mpr
+  have : NeZero (signedDiscr L).natAbs :=
+    ⟨Int.natAbs_ne_zero.mpr hL.isIntegral.signedDiscr_ne_zero⟩
+  apply (DirichletCharacter.conductor_dvd_iff_forall_odd _).mpr
   intro a ha _ hmod
-  rw [TauCeti.kroneckerSym_eq_jacobiSym _ ha]
-  exact hL.jacobiSym_signedDiscr_eq_one hk' ha hmod
+  rw [TauCeti.kroneckerChar_natCast, TauCeti.kroneckerSym_eq_jacobiSym _ ha,
+    hL.jacobiSym_signedDiscr_eq_one hk' ha hmod, Int.cast_one]
 
 end ZLattice.IsEven

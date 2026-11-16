@@ -64,6 +64,7 @@ so its discriminant group and every quotient `L^∨ ⧸ (L^∨ ∩ a L^∨ ∩ L
 * `ZLattice.IsIntegral.signedDiscr_rationalFormClass_ratModel`,
   `TauCeti.IntegralLattice.signedDiscr_realModel`: comparisons with the rational and real models.
 * `ZLattice.isCoprime_signedDiscr_of_isCoprime_level`,
+  `ZLattice.IsEven.isCoprime_signedDiscr_iff_isCoprime_level`,
   `ZLattice.IsEven.signedDiscr_modEq_zero_or_one`,
   `ZLattice.IsEven.kroneckerChar_signedDiscr_neg_one`,
   `ZLattice.IsEven.conductor_kroneckerChar_signedDiscr_sqrt_level_smul_dual`: arithmetic properties
@@ -325,6 +326,17 @@ theorem isCoprime_signedDiscr_of_isCoprime_level {d : ℤ} (hd : IsCoprime d (le
   refine coprime_card_discriminantGroup_of_coprime_level ?_
   rw [Nat.coprime_iff_gcd_eq_one, ← Int.natAbs_natCast (level L), ← Int.gcd_eq_natAbs_gcd_natAbs]
   exact Int.isCoprime_iff_gcd_eq_one.mp hd
+
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- **For an even lattice in a finite-dimensional space, coprimality to `signedDiscr L` is
+equivalent to coprimality to `level L`.** -/
+theorem IsEven.isCoprime_signedDiscr_iff_isCoprime_level (hL : IsEven L) {d : ℤ} :
+    IsCoprime d (signedDiscr L) ↔ IsCoprime d (level L) := by
+  rw [Int.isCoprime_iff_gcd_eq_one, Int.isCoprime_iff_gcd_eq_one,
+    Int.gcd_eq_natAbs_gcd_natAbs, Int.gcd_eq_natAbs_gcd_natAbs,
+    natAbs_signedDiscr, Int.natAbs_natCast,
+    ← Nat.coprime_iff_gcd_eq_one, ← Nat.coprime_iff_gcd_eq_one]
+  exact hL.coprime_card_discriminantGroup_iff_coprime_level
 
 omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- **The signed discriminant of an even lattice in a space of even dimension is a discriminant**,

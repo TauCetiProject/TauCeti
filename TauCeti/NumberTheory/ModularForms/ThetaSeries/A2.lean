@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.RealModel
+public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Nebentypus
 public import TauCeti.Algebra.Module.ZLattice.RootLattice
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.Normalized
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.ConstantTerm
@@ -39,6 +40,9 @@ The norm-two count and kissing number for all ranks are provided by
 
 ## Main statements
 
+* `TauCeti.IntegralLattice.nebentypus_realModel_typeARootLattice_two_intCast`,
+  `TauCeti.IntegralLattice.isPrimitive_nebentypus_realModel_typeARootLattice_two`: the nebentypus
+  of `A₂` is the primitive Kronecker character `(-3 / ·)` modulo `3`.
 * `TauCeti.IntegralLattice.thetaFormRealModelTypeARootLatticeTwo_mem_modFormCharSpace`:
   `Θ_{A₂}` lies in `M₁(Γ₀(3), χ₋₃)` (`TauCeti.modFormCharSpace` for `χ₋₃` at modulus `3`).
 * `TauCeti.IntegralLattice.thetaSeries_realModel_typeARootLattice_two_slash_of_mem_Gamma0`:
@@ -76,6 +80,23 @@ private theorem a2_character_parity :
 
 private theorem a2_character_primitive : χ₋₃.IsPrimitive :=
   conductor_kroneckerChar_eq_natAbs_of_prime _ _ (by decide)
+
+/-- The nebentypus of the real model of `A₂` is the Kronecker character `(-3 / ·)` modulo `3`: its
+value at every integer `a` is `(-3 / a)`. -/
+theorem nebentypus_realModel_typeARootLattice_two_intCast (R : Type*) [CommRing R] (a : ℤ) :
+    ((isEven_realModel_iff _ (isPosDef_typeARootLattice 2)).mpr
+      (isEven_typeARootLattice 2)).nebentypus R (by simp [finrank_carrier]) a =
+      kroneckerSym (-3) a := by
+  rw [ZLattice.IsEven.nebentypus_intCast, signedDiscr_realModel_typeARootLattice_two]
+
+/-- The nebentypus of the real model of `A₂` is primitive: its conductor `3` is the level. -/
+theorem isPrimitive_nebentypus_realModel_typeARootLattice_two (R : Type*) [CommRing R]
+    [NeZero (2 : R)] :
+    (((isEven_realModel_iff _ (isPosDef_typeARootLattice 2)).mpr
+      (isEven_typeARootLattice 2)).nebentypus R (by simp [finrank_carrier])).IsPrimitive := by
+  rw [DirichletCharacter.isPrimitive_def, ZLattice.IsEven.conductor_nebentypus,
+    conductor_kroneckerChar_signedDiscr_realModel_typeARootLattice_two,
+    level_realModel_typeARootLattice_two]
 
 /-- The theta series of the real model of the root lattice `A₂`, bundled as a weight-one modular
 form on `Γ₁(3)` via `ZLattice.thetaFormOfLevel` and `level_realModel_typeARootLattice_two`. -/
