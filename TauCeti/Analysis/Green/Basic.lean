@@ -8,6 +8,8 @@ module
 public import TauCeti.MeasureTheory.Integral.CurveIntegral.Basic
 public import TauCeti.Analysis.Calculus.Deriv.Complex
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+import Mathlib.Analysis.Calculus.Deriv.CompMul
+import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.FDeriv.Const
 
 /-!
@@ -16,7 +18,9 @@ import Mathlib.Analysis.Calculus.FDeriv.Const
 The oriented real plane is `ℂ`, with positive basis `(1, Complex.I)`. The circulation of a
 field with components `P, Q` uses the real 1-form `P dx + Q dy`; its curl is `∂x Q - ∂y P`.
 The raw-curve integrand agrees with Mathlib's `curveIntegral` on a `Path`, including for paths
-whose derivative is defined only almost everywhere.
+whose derivative is defined only almost everywhere. Its integral is unchanged by the affine
+normalization of the parameter interval to `[0, 1]`
+(`TauCeti.Green.integral_circulationFun_comp_lineMap`).
 
 These conventions fix the signs for planar Green identities.
 -/
@@ -134,5 +138,30 @@ theorem intervalIntegrable_circulationFun_segment {p q : ℂ} {P Q : ℂ → ℝ
         ((hQ.comp (by fun_prop) hm).mul continuousOn_const)
   simpa only [← circulationFun_eq_oneForm] using
     (curveIntegrable_iff_intervalIntegrable_deriv _ _).mp hc
+
+/-- Affine normalization to the unit interval preserves circulation, with reversed and constant
+intervals allowed. -/
+@[simp]
+theorem integral_circulationFun_comp_lineMap {γ : ℝ → ℂ} {a b : ℝ} {P Q : ℂ → ℝ} :
+    (∫ t in (0 : ℝ)..1, circulationFun P Q (γ ∘ AffineMap.lineMap a b) t) =
+      ∫ t in a..b, circulationFun P Q γ t := by
+  have hl (x : ℝ) : AffineMap.lineMap a b x = (b - a) * x + a := by
+    simp [AffineMap.lineMap_apply, mul_comm]
+  have hderiv (t : ℝ) : deriv (γ ∘ AffineMap.lineMap a b) t =
+      (b - a) • deriv γ (AffineMap.lineMap a b t) := by
+    have : γ ∘ AffineMap.lineMap a b = fun x ↦ (fun y ↦ γ (y + a)) ((b - a) * x) := by
+      ext x
+      simp [hl]
+    rw [this, (deriv_comp_mul_left (b - a) (fun y ↦ γ (y + a)) t), deriv_comp_add_const, hl]
+  have hpt (t : ℝ) : circulationFun P Q (γ ∘ AffineMap.lineMap a b) t =
+      (b - a) * circulationFun P Q γ ((b - a) * t + a) := by
+    simp only [circulationFun, hderiv, Function.comp_apply, hl]
+    simp only [Complex.real_smul, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
+      Complex.ofReal_im, zero_mul, sub_zero, add_zero]
+    ring
+  simp only [hpt, intervalIntegral.integral_const_mul]
+  have := intervalIntegral.smul_integral_comp_mul_add
+    (a := (0 : ℝ)) (b := 1) (circulationFun P Q γ) (b - a) a
+  simpa using this
 
 end TauCeti.Green
