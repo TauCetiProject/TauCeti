@@ -102,14 +102,14 @@ private def restrict (hab' : a' < b') (f : ParabolicCkHolderSpace k α E F hab) 
     ParabolicCkHolderSpace k α E F hab' :=
   mk (restrictField ha hb f)
     (fun r m h t x ↦ by
-      simpa [restrictField, ContinuousMap.inclusion] using
+      simpa [restrictField_apply, inclusion_slabMk] using
         f.hasFDerivAt_mixedDerivL h (inclusion (Icc_subset_Icc ha hb) t) x)
     (fun r m h x t ↦ by
       have h' := (f.hasDerivWithinAt_mixedDerivL h x (inclusion (Icc_subset_Icc ha hb) t)).mono
         (Icc_subset_Icc ha hb)
       rw [restrictField_apply, inclusion_slabMk]
       refine h'.congr_of_mem (fun s hs ↦ ?_) t.2
-      simp [restrictField, ContinuousMap.inclusion, ParabolicC2HolderSpace.timeExtension_def,
+      simp [restrictField_apply, inclusion_slabMk, ParabolicC2HolderSpace.timeExtension_def,
         projIcc_of_mem hab'.le hs, projIcc_of_mem hab.le (Icc_subset_Icc ha hb hs)])
     (fun _ _ h ↦ ⟨_, holderWith_restrictField_slabMk ha hb f h⟩)
     (fun _ _ h ↦ memHolder_restrictField ha hb f h)
@@ -121,7 +121,7 @@ private theorem mixedDerivL_restrict (hab' : a' < b') (f : ParabolicCkHolderSpac
   by_cases h : 2 * r + m ≤ k
   · rw [restrict, mixedDerivL_mk _ _ _ _ h, restrictField_apply]
   · rw [mixedDerivL_of_lt (by omega), mixedDerivL_of_lt (by omega)]
-    rfl
+    simp
 
 private theorem restrict_apply (hab' : a' < b') (f : ParabolicCkHolderSpace k α E F hab)
     (p : slab (E := E) a' b') :
