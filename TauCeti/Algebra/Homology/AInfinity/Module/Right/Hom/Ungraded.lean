@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Ungraded
 import Mathlib.Algebra.BigOperators.Intervals
-import Mathlib.LinearAlgebra.Multilinear.TensorProduct
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.LinearAlgebra.Multilinear.CompSplit
 
 /-!
 # Morphisms of ungraded `A∞` right modules
@@ -392,28 +392,6 @@ private theorem sum_comp_seg
       seg b i k := funext fun l => by simp [seg]
   rw [h, h', segOp, segOp]
 
-/-- The term of a composite of arity `n` for the split of the inputs after the `i`-th:
-`(a₁, …, aₙ) ↦ G (aᵢ₊₁, …, aₙ) ∘ F (a₁, …, aᵢ)`, for `i + j = n`. -/
-private noncomputable def compTerm {i j n : ℕ} (h : i + j = n)
-    (G : MultilinearMap (RingHom.id R) (fun _ : Fin j => A) (N →ₗ[R] P))
-    (F : MultilinearMap (RingHom.id R) (fun _ : Fin i => A) (M →ₗ[R] N)) :
-    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] P) :=
-  ((TensorProduct.lift (LinearMap.llcomp R M N P)).compMultilinearMap
-    (G.domCoprod F)).domDomCongr ((Equiv.sumComm _ _).trans (finSumFinEquiv.trans (finCongr h)))
-
-private theorem compTerm_apply {i j n : ℕ} (h : i + j = n)
-    (G : MultilinearMap (RingHom.id R) (fun _ : Fin j => A) (N →ₗ[R] P))
-    (F : MultilinearMap (RingHom.id R) (fun _ : Fin i => A) (M →ₗ[R] N)) (a : Fin n → A)
-    (m : M) :
-    compTerm h G F a m = G (fun l => a ⟨i + l, by omega⟩) (F (fun l => a ⟨l, by omega⟩) m) := by
-  simp only [compTerm, MultilinearMap.domDomCongr_apply, LinearMap.compMultilinearMap_apply,
-    MultilinearMap.domCoprod_apply, TensorProduct.lift.tmul, LinearMap.llcomp_apply,
-    Equiv.trans_apply, Equiv.sumComm_apply, Sum.swap_inl, Sum.swap_inr, finSumFinEquiv_apply_left,
-    finSumFinEquiv_apply_right, finCongr_apply]
-  -- `Fin.cast h (Fin.natAdd i l)` and `Fin.cast h (Fin.castAdd j l)` are `⟨i + l, _⟩` and
-  -- `⟨l, _⟩` by definition.
-  rfl
-
 variable {M'' : Type*} [AddCommGroup M''] [Module R M''] {Mm : UngradedAInfinityRightModule d M}
   {Mm' : UngradedAInfinityRightModule d M'} {Mm'' : UngradedAInfinityRightModule d M''}
 
@@ -422,14 +400,14 @@ variable {M'' : Type*} [AddCommGroup M''] [Module R M''] {Mm : UngradedAInfinity
 private noncomputable def compMap (g : UngradedAInfinityRightModuleHom Mm' Mm'')
     (f : UngradedAInfinityRightModuleHom Mm Mm') (n : ℕ) :
     MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M'') :=
-  ∑ k : Fin (n + 1), compTerm (by omega : (k : ℕ) + (n - k) = n) (g.map (n - k)) (f.map k)
+  ∑ k : Fin (n + 1), (g.map (n - k)).compSplit (f.map k) (by omega : (k : ℕ) + (n - k) = n)
 
 private theorem compMap_apply (g : UngradedAInfinityRightModuleHom Mm' Mm'')
     (f : UngradedAInfinityRightModuleHom Mm Mm') (n : ℕ) (a : Fin n → A) (m : M) :
     compMap g f n a m = ∑ k : Fin (n + 1), g.map (n - k)
       (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
       (f.map k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) := by
-  simp only [compMap, _root_.sum_apply, LinearMap.sum_apply, compTerm_apply]
+  simp only [compMap, _root_.sum_apply, LinearMap.sum_apply, MultilinearMap.compSplit_apply]
 
 private theorem segOp_compMap (g : UngradedAInfinityRightModuleHom Mm' Mm'')
     (f : UngradedAInfinityRightModuleHom Mm Mm') (b : ℕ → A) (i n : ℕ) (m : M) :

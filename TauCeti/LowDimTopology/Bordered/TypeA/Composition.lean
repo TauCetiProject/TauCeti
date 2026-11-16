@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LowDimTopology.Bordered.TypeA.Basic
-import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Algebra.BigOperators.NatAntidiagonal
+import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.LinearAlgebra.Multilinear.CompSplit
 
 /-!
 # Composites of morphisms of type `A` modules on box tensor products
@@ -108,8 +110,8 @@ private theorem pathMap_comp [CharP R 2] (N : TypeDStructure d ι X)
             (w ⟨l + 1, (Nat.succ_lt_succ l.isLt).trans_le k.isLt⟩)) (φ (w 0)))
       else 0 := by
     simp only [pathMap_apply]
-    exact UngradedAInfinityRightModule.sum_ite_apply_sum_ite_eq_sum X (by omega)
-      (g.map (n - k)) (f.map k) (fun _ => N.coeff) (fun _ => N.coeff) φ z
+    exact MultilinearMap.sum_ite_apply_sum_ite_eq_sum (by omega) (g.map (n - k)) (f.map k)
+      (fun _ => N.coeff) (fun _ => N.coeff) φ z
   rw [sum_congr rfl fun k _ => hk k, sum_comm, pathMap_apply]
   refine sum_congr rfl fun w _ => ?_
   rw [UngradedAInfinityRightModuleHom.comp_map_apply]
@@ -138,18 +140,15 @@ private theorem typeABoxMapOfHom_comp_of_bound [CharP R 2] (N : TypeDStructure d
     typeABoxMapOfHom_eq_sum_pathMap N f hf, typeABoxMapOfHom_eq_sum_pathMap N g hg]
   simp only [LinearMap.sum_apply, map_sum, Finset.sum_apply]
   calc ∑ n ∈ range K, pathMap N (g.comp f) n φ z
-      = ∑ n ∈ range (2 * K), ∑ k ∈ range (n + 1), G k (n - k) := by
+      = ∑ n ∈ range (K + K), ∑ ij ∈ antidiagonal n, G ij.1 ij.2 := by
         rw [sum_subset (f := fun n => pathMap N (g.comp f) n φ z)
-          (range_subset_range.mpr (by omega : K ≤ 2 * K)) fun n _ hn => by
+          (range_subset_range.mpr (Nat.le_add_right K K)) fun n _ hn => by
             rw [hPgf n (by simpa using hn), LinearMap.zero_apply, Pi.zero_apply]]
-        exact sum_congr rfl fun n _ => pathMap_comp N g f n φ z
-    _ = ∑ i ∈ range (2 * K), ∑ j ∈ range (2 * K - i), G i j := sum_range_diag_flip _ _
-    _ = ∑ i ∈ range K, ∑ j ∈ range K, G i j := by
-        rw [← sum_subset (range_subset_range.mpr (by omega : K ≤ 2 * K)) fun i _ hi =>
-          sum_eq_zero fun j _ => hGi i j (by simpa using hi)]
-        refine sum_congr rfl fun i hi => ?_
-        exact (sum_subset (range_subset_range.mpr (by simp at hi; omega)) fun j _ hj =>
-          hGj i j (by simpa using hj)).symm
+        exact sum_congr rfl fun n _ => (pathMap_comp N g f n φ z).trans
+          (Nat.sum_antidiagonal_eq_sum_range_succ_mk (fun ij => G ij.1 ij.2) n).symm
+    _ = ∑ i ∈ range K, ∑ j ∈ range K, G i j :=
+        sum_range_add_antidiagonal_of_support K K (fun ij => G ij.1 ij.2) fun i j h =>
+          h.elim (hGi i j) (hGj i j)
 
 /-- **The map of a composite is the composite of the maps**, for a bounded type `D` structure.
 Over a ring of characteristic two, if the iterates `δⁿ` of `N` vanish for all large `n`, then
