@@ -233,22 +233,19 @@ omit [SeminormedAddGroup E] in
 theorem exists_one_add_norm_smul_sq_rpow_le [SeminormedAddCommGroup E] [NormedSpace ℝ E] {c : ℝ}
     (hc : c ≠ 0) (r : ℝ) :
     ∃ C, ∀ x : E, (1 + ‖c • x‖ ^ 2) ^ r ≤ C * (1 + ‖x‖ ^ 2) ^ r := by
-  have hc2 : 0 < c ^ 2 := by positivity
-  refine ⟨max (max 1 (c ^ 2) ^ r) (min 1 (c ^ 2) ^ r), fun x ↦ ?_⟩
-  have hx : 0 < 1 + ‖x‖ ^ 2 := by positivity
-  rw [norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
-  rcases le_total 0 r with hr | hr
-  · calc (1 + c ^ 2 * ‖x‖ ^ 2) ^ r ≤ (max 1 (c ^ 2) * (1 + ‖x‖ ^ 2)) ^ r :=
-          Real.rpow_le_rpow (by positivity)
-            (by nlinarith [le_max_left 1 (c ^ 2), le_max_right 1 (c ^ 2), sq_nonneg ‖x‖]) hr
-      _ = max 1 (c ^ 2) ^ r * (1 + ‖x‖ ^ 2) ^ r := Real.mul_rpow (by positivity) hx.le
-      _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
-  · calc (1 + c ^ 2 * ‖x‖ ^ 2) ^ r ≤ (min 1 (c ^ 2) * (1 + ‖x‖ ^ 2)) ^ r :=
-          Real.rpow_le_rpow_of_nonpos (mul_pos (lt_min one_pos hc2) hx)
-            (by nlinarith [min_le_left 1 (c ^ 2), min_le_right 1 (c ^ 2), sq_nonneg ‖x‖]) hr
-      _ = min 1 (c ^ 2) ^ r * (1 + ‖x‖ ^ 2) ^ r :=
-          Real.mul_rpow (lt_min one_pos hc2).le hx.le
-      _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
+  have hc0 : 0 < |c| := abs_pos.2 hc
+  refine ⟨max 1 (max |c| |c|⁻¹) ^ |2 * r|, fun x ↦ ?_⟩
+  have h := one_add_norm_sq_rpow_le_of_norm_le_mul (le_max_left 1 (max |c| |c|⁻¹)) (2 * r)
+    (x := c • x) (y := x) ?_ ?_
+  · rwa [mul_div_cancel_left₀ r two_ne_zero] at h
+  · rw [norm_smul, Real.norm_eq_abs]
+    gcongr
+    exact (le_max_left _ _).trans (le_max_right _ _)
+  · calc ‖x‖ = |c|⁻¹ * ‖c • x‖ := by
+          rw [norm_smul, Real.norm_eq_abs, inv_mul_cancel_left₀ hc0.ne']
+      _ ≤ max 1 (max |c| |c|⁻¹) * ‖c • x‖ := by
+          gcongr
+          exact (le_max_right _ _).trans (le_max_right _ _)
 
 /-- **Peetre's inequality, subadditive form.** The Japanese bracket weight
 `(1 + ‖x‖ ^ 2) ^ (s / 2)` is subadditive up to a constant: for `s ≥ 0`,
