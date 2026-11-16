@@ -46,6 +46,8 @@ differentiability criterion for maps whose tangent maps preserve inner products.
   to a Riemannian manifold, `z ↦ ‖df_z ξ‖` is continuous.
 * `ContMDiffOn.contDiffOn_inner_mfderiv`: for a `C^(m+1)` map `f` from an open subset of a normed
   space to a `C^m` Riemannian manifold, `z ↦ ⟪df_z ξ, df_z η⟫` is `C^m`.
+* `TauCeti.inner_eq_of_totalSpaceMk_eq`: equal points in a bundle total space with fibrewise inner
+  products have equal fibre inner products.
 * `TauCeti.inner_tangentSpace_congr` and `TauCeti.norm_tangentSpace_congr`: inner products and
   norms of vectors in the tangent spaces at two equal points agree.
 * `TauCeti.mfderiv_mem_ball_of_apply_eq_self`: if `f` fixes `p` and its differential at `p`
@@ -270,6 +272,17 @@ theorem ContMDiffOn.contDiffOn_inner_mfderiv {f : F → M} {U : Set F} {m n : �
 end NormMFDeriv
 
 namespace TauCeti
+
+/-- Equal points of the total space of a bundle with fibrewise inner products have equal inner
+products of their fibre components. -/
+theorem inner_eq_of_totalSpaceMk_eq {𝕜 B F : Type*} {V : B → Type*} [∀ x, Inner 𝕜 (V x)]
+    {x y : B} {u v : V x} {u' v' : V y}
+    (hu : TotalSpace.mk' F x u = TotalSpace.mk' F y u')
+    (hv : TotalSpace.mk' F x v = TotalSpace.mk' F y v') :
+    inner 𝕜 u v = inner 𝕜 u' v' := by
+  cases hu
+  cases hv
+  rfl
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
