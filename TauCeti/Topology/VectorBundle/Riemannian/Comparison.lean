@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.VectorBundle.Riemannian
 import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.VectorBundle.Bilinear
 import TauCeti.Topology.VectorBundle.Hom
 
 /-!
@@ -64,17 +65,6 @@ variable [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)] 
   [VectorBundle ℝ F E] [IsContinuousRiemannianBundle F E]
   {X : Type*} [TopologicalSpace X] {b : X → B} {φ : ∀ y, E (b y) →L[ℝ] E (b y) →L[ℝ] ℝ}
 
-omit [IsContinuousRiemannianBundle F E] in
-/-- Over the base set of the trivialization at `x₀`, an `ℝ`-valued bilinear form on a fibre is its
-coordinate form evaluated on the coordinates of its arguments. -/
-private theorem apply_eq_inCoordinates_apply {x₀ x : B}
-    (hx : x ∈ (trivializationAt F E x₀).baseSet) (ψ : E x →L[ℝ] E x →L[ℝ] ℝ) (v w : E x) :
-    ψ v w = inCoordinates F E (F →L[ℝ] ℝ) (fun x ↦ E x →L[ℝ] ℝ) x₀ x x₀ x ψ
-      ((trivializationAt F E x₀).continuousLinearMapAt ℝ x v)
-      ((trivializationAt F E x₀).continuousLinearMapAt ℝ x w) := by
-  rw [inCoordinates_apply_continuousLinearMapAt₂ (E₃ := Bundle.Trivial B ℝ) hx hx]
-  simp
-
 /-- **Local boundedness of a continuous family of bilinear forms.** In a continuous Riemannian
 bundle, a family of bilinear forms on the fibres over a map `b`, continuous within `s` at `y₀`, has
 operator norm bounded on a neighbourhood of `y₀` within `s`. -/
@@ -97,7 +87,7 @@ theorem ContinuousWithinAt.exists_eventually_norm_le_bundle {s : Set X} {y₀ : 
   refine opNorm_le_bound₂ _ (by positivity) fun v w ↦ ?_
   have hev (u : E (b y)) : ‖e.continuousLinearMapAt ℝ (b y) u‖ ≤ C * ‖u‖ :=
     le_of_opNorm_le _ hyC.le u
-  rw [apply_eq_inCoordinates_apply hyb]
+  rw [← inCoordinates_apply_continuousLinearMapAt₂_eq_apply hyb hyb]
   calc ‖G y (e.continuousLinearMapAt ℝ (b y) v) (e.continuousLinearMapAt ℝ (b y) w)‖
       ≤ ‖G y‖ * ‖e.continuousLinearMapAt ℝ (b y) v‖ * ‖e.continuousLinearMapAt ℝ (b y) w‖ :=
         le_opNorm₂ _ _ _
@@ -142,13 +132,7 @@ theorem ContinuousWithinAt.exists_pos_eventually_mul_norm_sq_le_bundle {s : Set 
   obtain ⟨c, hc, hcG⟩ := (isCompact_singleton (x := y₀)).exists_pos_forall_mul_norm_sq_le
     (continuousOn_singleton G y₀) fun y hy w hw ↦ by
       rw [mem_singleton_iff.1 hy]
-      have hw' : e.symmL ℝ (b y₀) w ≠ 0 := by
-        intro h
-        have hsymm := e.continuousLinearMapAt_symmL (R := ℝ) hy₀ w
-        rw [h, map_zero] at hsymm
-        exact hw hsymm.symm
-      have := hpos _ hw'
-      rwa [apply_eq_inCoordinates_apply hy₀, e.continuousLinearMapAt_symmL (R := ℝ) hy₀] at this
+      exact (TauCeti.forall_inCoordinates_bilinear_apply_self_pos_iff hy₀ (φ y₀)).mpr hpos w hw
   have hcG₀ (w : F) : c * ‖w‖ ^ 2 ≤ G y₀ w w := hcG y₀ rfl w
   obtain ⟨C, hC, hCe⟩ := eventually_norm_symmL_trivializationAt_lt F E (b y₀)
   have hbase : ∀ᶠ y in 𝓝[s] y₀, b y ∈ e.baseSet :=
@@ -166,7 +150,7 @@ theorem ContinuousWithinAt.exists_pos_eventually_mul_norm_sq_le_bundle {s : Set 
       exact (le_opNorm₂ _ _ _).trans (by gcongr)
     have hsplit : G y w w = G y₀ w w + (G y - G y₀) w w := by simp
     linarith [hcG₀ w, neg_abs_le ((G y - G y₀) w w)]
-  rw [apply_eq_inCoordinates_apply hyb]
+  rw [← inCoordinates_apply_continuousLinearMapAt₂_eq_apply hyb hyb]
   calc c / 2 / C ^ 2 * ‖v‖ ^ 2
       ≤ c / 2 / C ^ 2 * (C * ‖e.continuousLinearMapAt ℝ (b y) v‖) ^ 2 := by gcongr
     _ = c / 2 * ‖e.continuousLinearMapAt ℝ (b y) v‖ ^ 2 := by field_simp

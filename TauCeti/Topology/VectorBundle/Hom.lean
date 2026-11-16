@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Hom
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Topology.VectorBundle.Coordinates
@@ -42,7 +43,9 @@ section through the local trivializations of the two charts
 
 In the trivializations at a point, the coordinate expression of a bilinear fibre map evaluated on
 the coordinates of two fibre vectors is the coordinate of its value on them
-(`ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂`).
+(`ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂`); for a scalar-valued bilinear
+fibre map this is its value on the two fibre vectors
+(`ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂_eq_apply`).
 
 The coordinate argument uses `ContinuousLinearMap.inCoordinates_inverse` and parallels
 the smooth inverse argument in `TauCeti.Geometry.Manifold.VectorBundle.Hom`.
@@ -609,5 +612,17 @@ theorem ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂ {x₀ x
     simp [inCoordinates, Trivialization.continuousLinearMapAt_apply,
       Trivialization.linearMapAt_def_of_notMem _ hhom,
       Trivialization.linearMapAt_def_of_notMem _ h₃]
+
+/-- Over the base sets of the source trivializations at `x₀`, the coordinate expression of a
+scalar-valued bilinear fibre map, evaluated on the coordinates of two fibre vectors, is the value
+of the fibre map on them. -/
+theorem ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂_eq_apply {x₀ x : B}
+    (h₁ : x ∈ (trivializationAt F₁ E₁ x₀).baseSet) (h₂ : x ∈ (trivializationAt F₂ E₂ x₀).baseSet)
+    (ϕ : E₁ x →L[𝕜] E₂ x →L[𝕜] 𝕜) (v : E₁ x) (w : E₂ x) :
+    inCoordinates F₁ E₁ (F₂ →L[𝕜] 𝕜) (fun x ↦ E₂ x →L[𝕜] 𝕜) x₀ x x₀ x ϕ
+        ((trivializationAt F₁ E₁ x₀).continuousLinearMapAt 𝕜 x v)
+        ((trivializationAt F₂ E₂ x₀).continuousLinearMapAt 𝕜 x w) = ϕ v w := by
+  rw [inCoordinates_apply_continuousLinearMapAt₂ (E₃ := Bundle.Trivial B 𝕜) h₁ h₂]
+  simp
 
 end TwoVariables
