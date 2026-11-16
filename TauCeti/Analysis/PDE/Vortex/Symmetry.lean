@@ -101,6 +101,18 @@ theorem fderiv_translateField_apply (a : ℂ) (x : ℂ → EuclideanSpace ℝ (F
     fderiv ℝ (fun w ↦ translateField a x w i) z = fderiv ℝ (fun w ↦ x w i) (z + a) :=
   fderiv_comp_add_right (f := fun w ↦ x w i) a
 
+/-- Translations preserve the regularity of a field. -/
+theorem contDiff_translateField {x : ℂ → EuclideanSpace ℝ (Fin 4)} {n : WithTop ℕ∞}
+    (hx : ContDiff ℝ n x) (a : ℂ) : ContDiff ℝ n (translateField a x) :=
+  hx.comp (contDiff_id.add contDiff_const)
+
+/-- Translations preserve the limit at infinity of any pointwise expression in the field. -/
+theorem tendsto_comp_translateField {α : Type*} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {f : EuclideanSpace ℝ (Fin 4) → α} {l : Filter α}
+    (hx : Tendsto (fun z ↦ f (x z)) (cocompact ℂ) l) (a : ℂ) :
+    Tendsto (fun z ↦ f (translateField a x z)) (cocompact ℂ) l :=
+  hx.comp (Homeomorph.addRight a).map_cocompact.le
+
 @[simp]
 theorem sectionValue_translateField (a : ℂ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue (translateField a x) z = sectionValue x (z + a) := by
