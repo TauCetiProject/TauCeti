@@ -901,6 +901,33 @@ theorem setIntegral_norm_sub_setAverage_sq_le_add_of_subset {t : Set X} {f H : X
   have := mul_le_mul_of_nonneg_left step3 hK
   linarith
 
+/-- **The best constant on a line.** Among the multiples `t ν` of a vector `ν`, the orthogonal
+projection `(⟪f_s, ν⟫ / ‖ν‖²) ν` of the average `f_s` of `f` over a set `s` of finite measure
+minimizes the square mean distance to `f` on `s`. -/
+theorem setIntegral_norm_sub_inner_setAverage_div_smul_sq_le (hs : μ s ≠ ⊤)
+    (hf : MemLp f 2 (μ.restrict s)) (ν : F) (t : ℝ) :
+    ∫ x in s, ‖f x - (⟪⨍ y in s, f y ∂μ, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ^ 2 ∂μ ≤
+      ∫ x in s, ‖f x - t • ν‖ ^ 2 ∂μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have hint : IntegrableOn f s μ := hf.integrable one_le_two
+  have hsq := hf.integrableOn_norm_sub_sq_of_subset subset_rfl hs
+  set m := ⨍ y in s, f y ∂μ
+  rw [setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hint
+      (hsq ((⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν)),
+    setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hint (hsq (t • ν))]
+  refine add_le_add_right (mul_le_mul_of_nonneg_left ?_ measureReal_nonneg) _
+  -- `m - p ⊥ ν` for the projection `p` of `m`, so `‖m - t ν‖² = ‖m - p‖² + ‖p - t ν‖²`.
+  rcases eq_or_ne ν 0 with rfl | hν
+  · simp
+  have hν2 : ‖ν‖ ^ 2 ≠ 0 := by positivity
+  have horth : ⟪m - (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν, ν⟫_ℝ = 0 := by
+    rw [inner_sub_left, inner_smul_left, real_inner_self_eq_norm_sq, RCLike.conj_to_real,
+      div_mul_cancel₀ _ hν2, sub_self]
+  have hsplit : m - t • ν = (m - (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν) + (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2 - t) • ν := by
+    rw [sub_smul]; abel
+  rw [hsplit, norm_add_sq_real, inner_smul_right, horth, mul_zero, mul_zero, add_zero]
+  exact le_add_of_nonneg_right (sq_nonneg _)
+
 end InnerProduct
 
 section NormalConstant
