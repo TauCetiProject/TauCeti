@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Count
 import Mathlib.Basic.Finite.Sigma
-import Mathlib.Tactic.FinCases
 
 /-!
 # Symplectic Gelfand-Tsetlin patterns
