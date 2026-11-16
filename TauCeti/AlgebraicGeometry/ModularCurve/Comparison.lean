@@ -361,7 +361,7 @@ whose representing schemes are étale over their bases. Together with
 theorem hasProperty_etale_gammaRelRepData (hN : ∀ b : B, (N : B.residueField b) ≠ 0) :
     (gammaRelRepData B N).HasProperty @Etale := by
   exact ((gammaRelRepData B N).hasProperty_iff_of_iso gammaNaiveRelRepData
-    (gammaIsoGammaNaive B N hN) @Etale).mpr (hasProperty_etale_gammaNaiveRelRepData hN)
+    (gammaIsoGammaNaive B N hN) @Etale).mpr hasProperty_etale_gammaNaiveRelRepData
 
 end ModuliProblem
 

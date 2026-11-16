@@ -25,7 +25,7 @@ property is a union `Γ ∪ Δ` of two finite sets of sentences whose constant s
 whose relation symbols lie in two budgets `R₁` and `R₂`, and with every sentence of `Δ`
 existential, such that no **universal** sentence in the shared relation symbols `R₁ ∩ R₂`, with
 constants among those of `Δ`, is entailed by `Γ` and refuted on `Δ`. Two features of this
-property differ from the paired-inseparability property behind Craig interpolation:
+property differ from the paired-inseparability property behind Lyndon and Craig interpolation:
 
 * **Only the constants of `Δ` may occur in a separator.** A witness constant introduced on the
   left therefore never occurs in a separator, and existential instantiation
@@ -57,7 +57,7 @@ countable symbol sublanguage of `φ` and `ψ` removes the countability assumptio
   finitary logic*, Journal of Symbolic Logic **89** (2024), Theorem 4.5.
 * H. J. Keisler, *Model Theory for Infinitary Logic*, North-Holland, 1971, §4.
 * The consistency-property framework and the shape of the separator argument follow the
-  paired-inseparability property of `TauCeti.ModelTheory.Interpolation.Craig`, which follows the
+  paired-inseparability consistency property of `TauCeti.ModelTheory.Interpolation.Lyndon` and the
   interpolation construction of `cameronfreer/infinitary-logic` at commit
   `518a366cba97b1ae8c4dc64a297a396939bc3e0b`. The universal separator class, the right-hand
   constant budget and the existential right side are specific to this file.
