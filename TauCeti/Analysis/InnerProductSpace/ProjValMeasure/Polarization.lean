@@ -15,8 +15,10 @@ public import Mathlib.MeasureTheory.VectorMeasure.WithDensityVec
 A normalized projection-valued measure `P` carries a finite diagonal positive measure
 `P.diag ξ` for every vector `ξ`. Complex polarization produces a genuine complex vector measure
 `P.polarizedComplexMeasure ψ ξ` whose value on a measurable set `B` is
-`⟪ψ, P.proj B hB ξ⟫_ℂ`. Its dependence on `ψ` is conjugate-linear and on `ξ` linear. On the
-diagonal, `P.polarizedComplexMeasure ξ ξ` is `P.diag ξ` with the constant complex density `1`.
+`⟪ψ, P.proj B hB ξ⟫_ℂ`. Its dependence on `ψ` is conjugate-linear and on `ξ` linear, swapping
+`ψ` and `ξ` conjugates the measure, applying a spectral projection `P.proj B hB` to either vector
+restricts the measure to `B`, and on the diagonal `P.polarizedComplexMeasure ξ ξ` is `P.diag ξ`
+with the constant complex density `1`.
 
 The construction uses Mathlib's signed-measure and complex-measure conversions: countable
 additivity comes from the existing diagonal measures, not a second PVM construction.
@@ -187,6 +189,45 @@ theorem norm_polarizedComplexMeasure_apply_le (P : ProjValMeasure X H) {ψ ξ : 
     nlinarith only [hYoung, hscale]
   rw [P.norm_sq_proj_apply B hB ψ, P.norm_sq_proj_apply B hB ξ] at hy
   exact hcs.trans hy
+
+/-- **Conjugate symmetry.** Exchanging the two vectors conjugates the polarized complex measure. -/
+theorem polarizedComplexMeasure_swap_apply (P : ProjValMeasure X H) (ψ ξ : H) (B : Set X) :
+    P.polarizedComplexMeasure ξ ψ B = star (P.polarizedComplexMeasure ψ ξ B) := by
+  by_cases hB : MeasurableSet B
+  · rw [P.polarizedComplexMeasure_apply ξ ψ B hB, P.polarizedComplexMeasure_apply ψ ξ B hB,
+      ← inner_conj_symm]
+    exact congrArg (starRingEnd ℂ) ((P.isSelfAdjoint_proj B hB).isSymmetric ψ ξ)
+  · simp [VectorMeasure.not_measurable _ hB]
+
+/-- Applying a spectral projection to the right vector restricts the polarized measure. -/
+@[simp]
+theorem polarizedComplexMeasure_proj_right (P : ProjValMeasure X H) (B : Set X)
+    (hB : MeasurableSet B) (ψ ξ : H) :
+    P.polarizedComplexMeasure ψ (P.proj B hB ξ) = (P.polarizedComplexMeasure ψ ξ).restrict B := by
+  ext C hC
+  rw [P.polarizedComplexMeasure_apply _ _ C hC, VectorMeasure.restrict_apply _ hB hC,
+    P.polarizedComplexMeasure_apply _ _ (C ∩ B) (hC.inter hB),
+    ← mul_apply_eq_comp, P.proj_inter C B hC hB]
+
+/-- Applying a spectral projection to the left vector restricts the polarized measure. -/
+@[simp]
+theorem polarizedComplexMeasure_proj_left (P : ProjValMeasure X H) (B : Set X)
+    (hB : MeasurableSet B) (ψ ξ : H) :
+    P.polarizedComplexMeasure (P.proj B hB ψ) ξ = (P.polarizedComplexMeasure ψ ξ).restrict B := by
+  ext C hC
+  rw [P.polarizedComplexMeasure_apply _ _ C hC, VectorMeasure.restrict_apply _ hB hC,
+    P.polarizedComplexMeasure_apply _ _ (C ∩ B) (hC.inter hB)]
+  trans ⟪ψ, P.proj B hB (P.proj C hC ξ)⟫_ℂ
+  · exact (P.isSelfAdjoint_proj B hB).isSymmetric ψ (P.proj C hC ξ)
+  · rw [← mul_apply_eq_comp, P.proj_mul_comm B C hB hC, P.proj_inter C B hC hB]
+
+/-- Applying the same spectral projection to both vectors restricts the polarized measure. -/
+theorem polarizedComplexMeasure_proj_proj (P : ProjValMeasure X H) (B : Set X)
+    (hB : MeasurableSet B) (ψ ξ : H) :
+    P.polarizedComplexMeasure (P.proj B hB ψ) (P.proj B hB ξ) =
+      (P.polarizedComplexMeasure ψ ξ).restrict B := by
+  rw [P.polarizedComplexMeasure_proj_right, P.polarizedComplexMeasure_proj_left,
+    VectorMeasure.restrict_restrict _ hB hB, Set.inter_self]
 
 end ProjValMeasure
 end TauCeti
