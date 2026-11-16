@@ -9,10 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.Reduced.Functional
 public import TauCeti.Analysis.PDE.Vortex.Variational
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
-import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
+import TauCeti.Analysis.PDE.Schrodinger.Stationary
 import TauCeti.Analysis.Sobolev.W1p.Exponential
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
@@ -39,12 +36,12 @@ The right-hand side `TauCeti.Vortex.reducedSource P w` is square integrable for 
 `exp (2w) - 1 ∈ L²(ℂ)` for `w ∈ H¹(ℂ)` (`TauCeti.W1p.memLp_exp_value_sub_one`) and `0 ≤ h ≤ 1`,
 and the second by `TauCeti.Vortex.memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight`.
 
-A weak solution `w ∈ H¹(ℂ)` therefore satisfies `-Δw + w = w - reducedSource P w ∈ L²(ℂ)` as
-tempered distributions, and the resolvent of the Laplacian
-(`TemperedDistribution.memSobolev_add_two_iff_neg_laplacian_add_smul`) puts `w` in `H²(ℂ)`
-(`TauCeti.Vortex.exists_wkp_value_ae_eq_of_forall_integral_reducedSource`). Since `H²(ℂ)`
-embeds in the continuous functions vanishing at infinity (`TauCeti.Wkp.toZeroAtInfty`), the weak
-solution agrees almost everywhere with a continuous function `w` with `w → 0` at infinity
+A weak solution `w ∈ H¹(ℂ)` therefore satisfies `-Δw = -reducedSource P w ∈ L²(ℂ)` weakly, and
+elliptic regularity for weak solutions of `-Δh + P h = g`, here with `P = 0`
+(`TauCeti.mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_eq`), puts `w` in
+`H²(ℂ)` (`TauCeti.Vortex.exists_wkp_value_ae_eq_of_forall_integral_reducedSource`). Since
+`H²(ℂ)` embeds in the continuous functions vanishing at infinity (`TauCeti.Wkp.toZeroAtInfty`),
+the weak solution agrees almost everywhere with a continuous function `w` with `w → 0` at infinity
 (`TauCeti.Vortex.exists_zeroAtInftyContinuousMap_ae_eq_of_forall_integral_reducedSource`).
 This is the decay at infinity that gives the reconstructed vortex its degree-`m` end framing; the
 `C²` regularity needed to reconstruct the vortex itself is not treated here.
@@ -138,51 +135,35 @@ theorem exists_wkp_value_ae_eq_of_forall_integral_reducedSource (hm : 0 < P.natD
   set f : ℂ → ℝ := ⇑(W1p.value u)
   have hf : MemLp f 2 volume := W1p.memLp_value u
   have hS : MemLp (reducedSource P f) 2 volume := memLp_reducedSource hm u
-  have hR : MemLp (f - reducedSource P f) 2 volume := hf.sub hS
-  set T : 𝓢'(ℂ, ℂ) := Lp.toTemperedDistribution (ofRealCLM.compLp (hf.toLp f))
-  -- Pairing a real Schwartz function with the distribution of a real `L²` function.
-  have hpair {g : ℂ → ℝ} (hg : MemLp g 2 volume) (φ : 𝓢(ℂ, ℝ)) :
-      Lp.toTemperedDistribution (ofRealCLM.compLp (hg.toLp g)) (φ.postcompCLM ofRealCLM) =
-        ((∫ z, φ z * g z : ℝ) : ℂ) := by
-    rw [Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
-      integral_congr_ae (hg.coeFn_toLp.mono fun z hz ↦ by rw [hz])]
-  -- The weak equation, after integrating the gradient term by parts once more.
-  have hweak (φ : 𝓢(ℂ, ℝ)) (hφ : HasCompactSupport φ) :
-      ∫ z, Δ (φ : ℂ → ℝ) z * f z = ∫ z, φ z * reducedSource P f z := by
+  -- The weak equation `-Δw = -reducedSource P w`, after integrating the gradient term by parts
+  -- once more.
+  have hweak (φ : ℂ → ℝ) (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ) :
+      ∫ z, f z * (-Δ φ z + (0 : ℂ → ℝ) z * φ z) = ∫ z, (-reducedSource P f) z * φ z := by
     let φ' : 𝓓((⊤ : TopologicalSpace.Opens ℂ), ℝ) :=
-      ⟨φ, φ.smooth ⊤, hφ, by simp only [TopologicalSpace.Opens.coe_top, Set.subset_univ]⟩
+      ⟨φ, hφ, hφc, by simp only [TopologicalSpace.Opens.coe_top, Set.subset_univ]⟩
     have hcoe : (φ' : ℂ → ℝ) = φ := TestFunction.coe_mk
     have hibp := (W1p.hasWeakFDerivOn u).integral_laplacian_smul_eq_neg_integral_inner φ'
     simp only [TopologicalSpace.Opens.coe_top, smul_eq_mul, hcoe] at hibp
-    have h := hu φ (φ.smooth ⊤) hφ
-    have h1 : ∫ z, ⟪W1p.gradient u z, ∇ (φ : ℂ → ℝ) z⟫ =
-        ∫ z, ⟪∇ (φ : ℂ → ℝ) z, W1p.gradient u z⟫ :=
+    have h := hu φ hφ hφc
+    have h1 : ∫ z, ⟪W1p.gradient u z, ∇ φ z⟫ = ∫ z, ⟪∇ φ z, W1p.gradient u z⟫ :=
       integral_congr_ae (Eventually.of_forall fun z ↦ real_inner_comm _ _)
-    have h2 : ∫ z, reducedSource P f z * φ z = ∫ z, φ z * reducedSource P f z :=
+    have h2 : ∫ z, f z * Δ φ z = ∫ z, Δ φ z * f z :=
       integral_congr_ae (Eventually.of_forall fun z ↦ mul_comm _ _)
-    rw [h1, h2] at h
-    rw [hibp]
+    rw [h1] at h
+    simp only [Pi.zero_apply, zero_mul, add_zero, mul_neg, Pi.neg_apply, neg_mul, integral_neg]
+    rw [h2, hibp]
     linarith
-  -- Hence `-Δw + w = w - reducedSource P w` as tempered distributions.
-  have hT : -Δ T + (1 : ℝ) • T = Lp.toTemperedDistribution (ofRealCLM.compLp (hR.toLp _)) := by
-    refine ext_real fun φ hφ ↦ ?_
-    have hφ2 := φ.memLp 2 (μ := volume)
-    rw [add_apply, neg_apply, smul_apply, laplacian_apply_apply, TauCeti.laplacian_postcompCLM,
-      hpair hf, hpair hf, hpair hR, one_smul]
-    simp only [SchwartzMap.laplacian_apply]
-    rw [hweak φ hφ]
-    simp_rw [Pi.sub_apply, mul_sub]
-    rw [integral_sub (f := fun z ↦ φ z * f z) (g := fun z ↦ φ z * reducedSource P f z)
-      (hφ2.integrable_mul hf) (hφ2.integrable_mul hS)]
-    push_cast
-    ring
-  have hT2 : MemSobolev ((2 : ℕ) : ℝ) 2 T := by
-    have h := (memSobolev_add_two_iff_neg_laplacian_add_smul (s := 0) (c := 1) one_pos).2
-      (by rw [hT]; exact memSobolev_zero_iff.2 ⟨_, rfl⟩)
+  -- Hence `w ∈ H²` by elliptic regularity.
+  have hH2 : f ∈ realSobolevFunctions ℂ ((2 : ℕ) : ℝ) 2 := by
+    have h := TauCeti.mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_eq
+      (P := 0) (mem_realSobolevFunctions_zero_iff.2 hf)
+      (by simp only [Pi.zero_apply, zero_mul]; exact zero_mem _)
+      (neg_mem (mem_realSobolevFunctions_zero_iff.2 hS)) hweak
     rwa [zero_add, show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num] at h
-  obtain ⟨W, hW⟩ := (Lp.memSobolev_natCast_iff_exists_wkp_value_eq (by norm_num) (by norm_num) 2
-    (hf.toLp f)).1 hT2
-  exact ⟨W, hW.trans hf.coeFn_toLp⟩
+  obtain ⟨v, hvf, hv⟩ := mem_realSobolevFunctions.1 hH2
+  obtain ⟨W, hW⟩ :=
+    (Lp.memSobolev_natCast_iff_exists_wkp_value_eq (by norm_num) (by norm_num) 2 v).1 hv
+  exact ⟨W, hW.trans hvf⟩
 
 /-- **Weak solutions of the reduced vortex equation are continuous and vanish at infinity.** A
 weak solution `w ∈ H¹(ℂ)` of `Δw = (exp (2w) h - 1) / 8 + g`, for a polynomial `P` of positive
