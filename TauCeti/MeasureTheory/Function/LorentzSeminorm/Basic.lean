@@ -91,8 +91,8 @@ theorem memLorentz_iff [TopologicalSpace ε] [ENorm ε] {f : α → ε} :
 
 /-- For every `r : ℝ` and `h : α → ℝ≥0∞`, `t ↦ ENNReal.ofReal (t ^ r) * h*(t)` is Borel
 measurable. -/
-theorem measurable_ofReal_rpow_mul_decreasingRearrangement (μ : Measure α) (r : ℝ)
-    (h : α → ℝ≥0∞) :
+theorem _root_.MeasureTheory.Measure.measurable_ofReal_rpow_mul_decreasingRearrangement
+    (μ : Measure α) (r : ℝ) (h : α → ℝ≥0∞) :
     Measurable fun t : ℝ ↦ ENNReal.ofReal (t ^ r) * μ.decreasingRearrangement h t :=
   ((measurable_id.pow_const r).ennreal_ofReal).mul (μ.measurable_decreasingRearrangement h)
 
@@ -140,7 +140,7 @@ theorem eLorentzNorm_exponent_zero_right (hf : AEStronglyMeasurable f μ) :
   · simp [hp, hf]
   · rw [eLorentzNorm_eq_eLpNorm_multHaar hp hf,
       eLpNorm_exponent_zero
-        (measurable_ofReal_rpow_mul_decreasingRearrangement μ _ _).aestronglyMeasurable]
+        (μ.measurable_ofReal_rpow_mul_decreasingRearrangement _ _).aestronglyMeasurable]
 
 @[simp]
 theorem memLorentz_zero_left_iff : MemLorentz f 0 q μ ↔ AEStronglyMeasurable f μ :=
@@ -150,15 +150,39 @@ theorem memLorentz_zero_left_iff : MemLorentz f 0 q μ ↔ AEStronglyMeasurable 
 theorem memLorentz_zero_right_iff : MemLorentz f p 0 μ ↔ AEStronglyMeasurable f μ :=
   ⟨MemLorentz.aestronglyMeasurable, fun hf ↦ by simp [memLorentz_iff, hf]⟩
 
+/-- For `p ≠ 0` and `q ≠ 0`, `eLorentzNorm f p q μ = 0` exactly when `f` is a.e. strongly
+measurable and `‖f x‖ₑ = 0` almost everywhere. -/
+theorem eLorentzNorm_eq_zero_iff (hp : p ≠ 0) (hq : q ≠ 0) :
+    eLorentzNorm f p q μ = 0 ↔ AEStronglyMeasurable f μ ∧ (‖f ·‖ₑ) =ᵐ[μ] 0 := by
+  constructor
+  · intro h
+    have hf : AEStronglyMeasurable f μ :=
+      aestronglyMeasurable_of_eLorentzNorm_ne_top (h ▸ ENNReal.zero_ne_top)
+    refine ⟨hf, ?_⟩
+    rw [eLorentzNorm_eq_eLpNorm_multHaar hp hf, eLpNorm_eq_zero_iff hq,
+      Filter.EventuallyEq, ae_multHaar] at h
+    have h_ae : μ.decreasingRearrangement (‖f ·‖ₑ) =ᵐ[volume.restrict (Ioi 0)] 0 := by
+      filter_upwards [ae_restrict_mem measurableSet_Ioi, h] with t (ht : 0 < t) ht0
+      exact (mul_eq_zero.1 ht0).resolve_left
+        (ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos ht _)).ne'
+    have hess : essSup (‖f ·‖ₑ) μ = 0 := by
+      rw [← μ.essSup_decreasingRearrangement, essSup_congr_ae h_ae]
+      simp
+    exact ENNReal.essSup_eq_zero_iff.1 hess
+  · rintro ⟨hf, h0⟩
+    have hrear : ∀ t, μ.decreasingRearrangement (‖f ·‖ₑ) t = 0 := fun t ↦ by
+      rw [μ.decreasingRearrangement_congr_ae h0, Pi.zero_def]
+      simpa using μ.decreasingRearrangement_const_mul 0 0 t
+    simp [eLorentzNorm_eq_eLpNorm_multHaar hp hf, hrear]
+
 @[simp]
 theorem eLorentzNorm_measure_zero : eLorentzNorm f p q (0 : Measure α) = 0 := by
   have hf : AEStronglyMeasurable f (0 : Measure α) := aestronglyMeasurable_zero_measure f
-  by_cases hp : p = 0
-  · simp [hp, hf]
-  · rw [eLorentzNorm_eq_eLpNorm_multHaar hp hf]
-    have h0 : ∀ t, (0 : Measure α).decreasingRearrangement (‖f ·‖ₑ) t = 0 := fun t ↦
-      le_antisymm (((0 : Measure α).decreasingRearrangement_le_iff).2 (by simp)) bot_le
-    simp [h0]
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp [hf]
+  rcases eq_or_ne q 0 with rfl | hq
+  · simp [hf]
+  exact (eLorentzNorm_eq_zero_iff hp hq).2 ⟨hf, by simp [Filter.EventuallyEq]⟩
 
 @[simp]
 theorem memLorentz_measure_zero : MemLorentz f p q (0 : Measure α) := by
@@ -196,7 +220,7 @@ theorem eLorentzNorm_mono_eNorm_ae {ε' : Type*} [TopologicalSpace ε'] [ENorm �
     · simp [hp, hf, hg]
     · rw [eLorentzNorm_eq_eLpNorm_multHaar hp hf, eLorentzNorm_eq_eLpNorm_multHaar hp hg]
       refine eLpNorm_mono_eNorm_ae
-        (measurable_ofReal_rpow_mul_decreasingRearrangement μ _ _).aestronglyMeasurable ?_
+        (μ.measurable_ofReal_rpow_mul_decreasingRearrangement _ _).aestronglyMeasurable ?_
       filter_upwards [ae_pos_multHaar] with t _
       simp only [eNorm_eq_self]
       gcongr
@@ -229,7 +253,7 @@ theorem eLorentzNorm_self (f : α → ε) (p : ℝ≥0∞) (μ : Measure α) :
   by_cases hf : AEStronglyMeasurable f μ
   · rcases eq_or_ne p 0 with rfl | hp
     · simp [hf]
-    · rw [eLorentzNorm_eq_eLpNorm_multHaar hp hf, eLpNorm_rpow_toReal_inv_mul_multHaar hp,
+    · rw [eLorentzNorm_eq_eLpNorm_multHaar hp hf, eLpNorm_rpow_toReal_inv_mul_multHaar p,
         μ.eLpNorm_decreasingRearrangement hf.eNorm p, eLpNorm_eNorm f hf]
   · rw [eLorentzNorm_of_not_aestronglyMeasurable hf, eLpNorm_of_not_aestronglyMeasurable hf]
 
@@ -245,13 +269,12 @@ variable [TopologicalSpace ε] [ESeminormedAddMonoid ε] {f g : α → ε}
 
 @[to_fun (attr := simp) eLorentzNorm_fun_zero]
 theorem eLorentzNorm_zero : eLorentzNorm (0 : α → ε) p q μ = 0 := by
-  by_cases hp : p = 0
-  · simp [hp, aestronglyMeasurable_zero]
-  · rw [eLorentzNorm_eq_eLpNorm_multHaar hp aestronglyMeasurable_zero]
-    simp only [Pi.zero_apply, eNorm_zero]
-    have h0 : ∀ t, μ.decreasingRearrangement (fun _ : α ↦ (0 : ℝ≥0∞)) t = 0 := fun t ↦
-      le_antisymm (μ.decreasingRearrangement_le_iff.2 (by simp)) bot_le
-    simp [h0]
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp [aestronglyMeasurable_zero]
+  rcases eq_or_ne q 0 with rfl | hq
+  · simp [aestronglyMeasurable_zero]
+  exact (eLorentzNorm_eq_zero_iff hp hq).2
+    ⟨aestronglyMeasurable_zero, .of_forall fun _ ↦ eNorm_zero⟩
 
 @[simp]
 theorem MemLorentz.zero : MemLorentz (0 : α → ε) p q μ := by
@@ -261,30 +284,6 @@ theorem MemLorentz.zero : MemLorentz (0 : α → ε) p q μ := by
 theorem MemLorentz.zero' : MemLorentz (fun _ : α ↦ (0 : ε)) p q μ :=
   MemLorentz.zero
 
-/-- For `p ≠ 0` and `q ≠ 0`, `eLorentzNorm f p q μ = 0` exactly when `f` is a.e. strongly
-measurable and `‖f x‖ₑ = 0` almost everywhere. -/
-theorem eLorentzNorm_eq_zero_iff (hp : p ≠ 0) (hq : q ≠ 0) :
-    eLorentzNorm f p q μ = 0 ↔ AEStronglyMeasurable f μ ∧ (‖f ·‖ₑ) =ᵐ[μ] 0 := by
-  constructor
-  · intro h
-    have hf : AEStronglyMeasurable f μ :=
-      aestronglyMeasurable_of_eLorentzNorm_ne_top (h ▸ ENNReal.zero_ne_top)
-    refine ⟨hf, ?_⟩
-    rw [eLorentzNorm_eq_eLpNorm_multHaar hp hf, eLpNorm_eq_zero_iff hq,
-      Filter.EventuallyEq, ae_multHaar] at h
-    have h_ae : μ.decreasingRearrangement (‖f ·‖ₑ) =ᵐ[volume.restrict (Ioi 0)] 0 := by
-      filter_upwards [ae_restrict_mem measurableSet_Ioi, h] with t (ht : 0 < t) ht0
-      have hpos : ENNReal.ofReal (t ^ p.toReal⁻¹) ≠ 0 :=
-        (ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos ht _)).ne'
-      exact (mul_eq_zero.1 ht0).resolve_left hpos
-    have hess : essSup (‖f ·‖ₑ) μ = 0 := by
-      rw [← μ.essSup_decreasingRearrangement, essSup_congr_ae h_ae]
-      simp
-    exact ENNReal.essSup_eq_zero_iff.1 hess
-  · rintro ⟨hf, h0⟩
-    rw [eLorentzNorm_congr_eNorm_ae (g := (0 : α → ε)) hf aestronglyMeasurable_zero
-      (h0.trans (.of_forall fun _ ↦ by simp)), eLorentzNorm_zero]
-
 theorem eLorentzNorm_indicator_le {s : Set α} (hs : NullMeasurableSet s μ) :
     eLorentzNorm (s.indicator f) p q μ ≤ eLorentzNorm f p q μ := by
   by_cases hf : AEStronglyMeasurable f μ
@@ -293,13 +292,9 @@ theorem eLorentzNorm_indicator_le {s : Set α} (hs : NullMeasurableSet s μ) :
   · rw [eLorentzNorm_of_not_aestronglyMeasurable hf]
     exact le_top
 
-theorem MemLorentz.indicator₀ {s : Set α} (hs : NullMeasurableSet s μ)
+theorem MemLorentz.indicator {s : Set α} (hs : NullMeasurableSet s μ)
     (hf : MemLorentz f p q μ) : MemLorentz (s.indicator f) p q μ :=
   (eLorentzNorm_indicator_le hs).trans_lt hf
-
-theorem MemLorentz.indicator {s : Set α} (hs : MeasurableSet s)
-    (hf : MemLorentz f p q μ) : MemLorentz (s.indicator f) p q μ :=
-  hf.indicator₀ hs.nullMeasurableSet
 
 /-- Pointwise rearrangement subadditivity with the power weight `t ^ r`: for `t ≥ 0`,
 `t ^ r * (‖f + g‖ₑ)* t ≤ 2 ^ r * ((t/2) ^ r * (‖f‖ₑ)* (t/2) + (t/2) ^ r * (‖g‖ₑ)* (t/2))`. -/
@@ -356,8 +351,8 @@ theorem eLorentzNorm_add_le' (f g : α → ε) (p q : ℝ≥0∞) (μ : Measure 
   set r := p.toReal⁻¹
   set Φf : ℝ → ℝ≥0∞ := fun t ↦ ENNReal.ofReal (t ^ r) * μ.decreasingRearrangement (‖f ·‖ₑ) t
   set Φg : ℝ → ℝ≥0∞ := fun t ↦ ENNReal.ofReal (t ^ r) * μ.decreasingRearrangement (‖g ·‖ₑ) t
-  have hΦf : Measurable Φf := measurable_ofReal_rpow_mul_decreasingRearrangement μ r _
-  have hΦg : Measurable Φg := measurable_ofReal_rpow_mul_decreasingRearrangement μ r _
+  have hΦf : Measurable Φf := μ.measurable_ofReal_rpow_mul_decreasingRearrangement r _
+  have hΦg : Measurable Φg := μ.measurable_ofReal_rpow_mul_decreasingRearrangement r _
   have hmp : MeasurePreserving ((2 : ℝ)⁻¹ * ·) multHaar multHaar :=
     ⟨measurable_const_mul _, map_multHaar_mul_left (by norm_num)⟩
   have hdil_f : eLpNorm (fun t ↦ Φf (2⁻¹ * t)) q multHaar = eLpNorm Φf q multHaar :=
@@ -368,7 +363,7 @@ theorem eLorentzNorm_add_le' (f g : α → ε) (p q : ℝ≥0∞) (μ : Measure 
           μ.decreasingRearrangement (‖(f + g) ·‖ₑ) t) q multHaar
       ≤ eLpNorm (fun t ↦ ENNReal.ofReal (2 ^ r) * (Φf (2⁻¹ * t) + Φg (2⁻¹ * t))) q multHaar := by
         refine eLpNorm_mono_eNorm_ae
-          (measurable_ofReal_rpow_mul_decreasingRearrangement μ r _).aestronglyMeasurable ?_
+          (μ.measurable_ofReal_rpow_mul_decreasingRearrangement r _).aestronglyMeasurable ?_
         filter_upwards [ae_pos_multHaar] with t ht
         simpa only [eNorm_eq_self] using
           rpow_mul_decreasingRearrangement_add_le f g r ht.le μ
@@ -445,7 +440,7 @@ theorem eLorentzNorm_const_mul_ennreal {h : α → ℝ≥0∞} {c : ℝ≥0∞}
     ext t
     ring
   rw [hcomm, eLpNorm_const_mul_ennreal
-    (measurable_ofReal_rpow_mul_decreasingRearrangement μ _ _).aestronglyMeasurable]
+    (μ.measurable_ofReal_rpow_mul_decreasingRearrangement _ _).aestronglyMeasurable]
 
 section SMul
 

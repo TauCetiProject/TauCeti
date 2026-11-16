@@ -27,6 +27,7 @@ is at most `2 b`.
 * `ENNReal.toReal_one_sub_div`: `(1 - a / b).toReal = 1 - a.toReal / b.toReal` for `a ≤ b`.
 * `ENNReal.one_sub_one_div_toReal_nonneg`: for `1 ≤ p`, the Hölder exponent `1 - 1 / p.toReal`
   is nonnegative.
+* `ENNReal.one_sub_toReal_inv_pos`: for `1 < p`, the exponent `1 - p.toReal⁻¹` is positive.
 * `ENNReal.one_div_toReal_sub_one_div_toReal_nonneg`: for `0 < p ≤ q`, the exponent
   `1 / p.toReal - 1 / q.toReal` is nonnegative.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
@@ -39,6 +40,9 @@ is at most `2 b`.
 * `ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul`: the cancellation
   `ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m.toReal)` for `m` finite and
   nonzero.
+* `ENNReal.one_lt_ofReal_inv_one_sub`, `ENNReal.toReal_inv_ofReal_inv_one_sub`: the reciprocal
+  exponent `ofReal (1 - θ)⁻¹` satisfies `1 < ofReal (1 - θ)⁻¹` for `0 < θ < 1` and
+  `(ofReal (1 - θ)⁻¹).toReal⁻¹ = 1 - θ` for `θ ≤ 1`.
 -/
 
 public section
@@ -87,6 +91,11 @@ theorem one_sub_one_div_toReal_nonneg {p : ℝ≥0∞} (hp : 1 ≤ p) : 0 ≤ 1 
   · have h1p : (1 : ℝ) ≤ p.toReal := by
       simpa using ENNReal.toReal_mono hp_top hp
     exact sub_nonneg.2 (div_le_one_of_le₀ h1p (by positivity))
+
+/-- For `1 < p`, the exponent `1 - p.toReal⁻¹` is positive (with `p = ∞` giving `1`). -/
+theorem one_sub_toReal_inv_pos {p : ℝ≥0∞} (hp : 1 < p) : 0 < 1 - p.toReal⁻¹ := by
+  have h := NNReal.coe_pos.2 (toNNReal_one_sub_div_pos hp)
+  rwa [coe_toNNReal_eq_toReal, toReal_one_sub_div hp.le, toReal_one, one_div] at h
 
 /-- For `0 < p ≤ q`, the difference `1 / p - 1 / q` of reciprocal exponents is nonnegative (with
 `1 / ∞` read as `0`). It is the exponent of the measure factor in the inclusion `L^q ⊆ Lᵖ` on a
@@ -165,5 +174,16 @@ theorem ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul {n : ℕ} {d a : ℝ} 
   rw [← ENNReal.ofReal_div_of_pos hmpos, ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   field_simp
+
+/-- For `0 < θ < 1`, the reciprocal exponent `ENNReal.ofReal (1 - θ)⁻¹` strictly exceeds `1`. -/
+theorem one_lt_ofReal_inv_one_sub {θ : ℝ} (hθ₀ : 0 < θ) (hθ₁ : θ < 1) :
+    1 < ENNReal.ofReal (1 - θ)⁻¹ :=
+  ENNReal.one_lt_ofReal.2 ((one_lt_inv₀ (sub_pos.2 hθ₁)).2 (sub_lt_self 1 hθ₀))
+
+/-- For `θ ≤ 1`, the reciprocal of `(ENNReal.ofReal (1 - θ)⁻¹).toReal` recovers `1 - θ` (including
+at `θ = 1`, where both sides vanish). -/
+theorem toReal_inv_ofReal_inv_one_sub {θ : ℝ} (hθ : θ ≤ 1) :
+    (ENNReal.ofReal (1 - θ)⁻¹).toReal⁻¹ = 1 - θ := by
+  rw [ENNReal.toReal_ofReal (inv_nonneg.2 (sub_nonneg.2 hθ)), inv_inv]
 
 end ENNReal

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Data.ENNReal.Inv
 
 /-!
 # Real powers in `ℝ≥0∞`
@@ -91,6 +92,8 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 * `ENNReal.rpow_le_of_le_rpow_mul_rpow`: `X ≤ (Z X ^ a) ^ s` gives `X ^ b ≤ Z` for a finite `X`
   when `s⁻¹ = b + a` and `b, s > 0`.
 * `ENNReal.rpow_mul_rpow_one_sub`: `x ^ p * x ^ (1 - p) = x` for `p ∈ [0, 1]`.
+* `ENNReal.rpow_one_sub_toReal_inv_mul_rpow_toReal_inv`: `x ^ (1 - p.toReal⁻¹) * x ^ p.toReal⁻¹ = x`
+  for `1 ≤ p`.
 * `ENNReal.le_rpow_add`: `x ^ y * x ^ z ≤ x ^ (y + z)` for all real `y` and `z`.
 * `ENNReal.inv_mul_rpow_mul_inv_mul_rpow`:
   `(F⁻¹ * a) ^ p * (G⁻¹ * b) ^ q = (F ^ p * G ^ q)⁻¹ * (a ^ p * b ^ q)` for finite `F`, `G`.
@@ -188,6 +191,14 @@ theorem rpow_le_of_le_rpow_mul_rpow {X Z : ℝ≥0∞} {a b s : ℝ} (hb : 0 < b
 theorem rpow_mul_rpow_one_sub (x : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :
     x ^ p * x ^ (1 - p) = x := by
   rw [← rpow_add_of_nonneg _ _ hp₀ (sub_nonneg.2 hp₁), add_sub_cancel, rpow_one]
+
+/-- For `1 ≤ p`, the powers `x ^ (1 - p.toReal⁻¹)` and `x ^ p.toReal⁻¹` multiply back to `x`
+(including at `p = ∞`, where `p.toReal⁻¹ = 0`). -/
+theorem rpow_one_sub_toReal_inv_mul_rpow_toReal_inv {p : ℝ≥0∞} (hp : 1 ≤ p) (x : ℝ≥0∞) :
+    x ^ (1 - p.toReal⁻¹) * x ^ p.toReal⁻¹ = x := by
+  have hp1 : p.toReal⁻¹ ≤ 1 :=
+    sub_nonneg.1 (by simpa only [one_div] using one_sub_one_div_toReal_nonneg hp)
+  rw [mul_comm, rpow_mul_rpow_one_sub x (inv_nonneg.2 toReal_nonneg) hp1]
 
 /-- The product `x ^ y * x ^ z` is at most `x ^ (y + z)`, for every `x` and all real `y` and `z`;
 this is the `ℝ≥0∞` form of `Real.le_rpow_add`. Away from `0` and `∞` it is an equality. At `0` and

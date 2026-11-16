@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import TauCeti.MeasureTheory.Measure.Haar.MultHaar
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
@@ -19,10 +21,12 @@ Cesàro averaging operator and the reverse inequality for antitone functions.
 For `θ > 0`, `1 ≤ q ≤ ∞`, and `g : ℝ → ℝ≥0∞`:
 * **Near `0`** (`TauCeti.eLpNorm_rpow_neg_mul_setLIntegral_Ioc_le`):
   `‖t ↦ t ^ (-θ) ∫₀ᵗ g‖_{L^q(dt / t)} ≤ θ⁻¹ ‖t ↦ t ^ (1 - θ) g(t)‖_{L^q(dt / t)}`,
-  with equality at `q = 1` (`TauCeti.lintegral_rpow_neg_mul_setLIntegral_Ioc`).
+  with equality in `lintegral` form at `q = 1` for `g` a.e. measurable on `(0, ∞)`
+  (`TauCeti.lintegral_rpow_neg_mul_setLIntegral_Ioc`).
 * **At `∞`** (`TauCeti.eLpNorm_rpow_mul_setLIntegral_Ioi_le`):
   `‖t ↦ t ^ θ ∫_t^∞ g‖_{L^q(dt / t)} ≤ θ⁻¹ ‖t ↦ t ^ (1 + θ) g(t)‖_{L^q(dt / t)}`,
-  with equality at `q = 1` (`TauCeti.lintegral_rpow_mul_setLIntegral_Ioi`).
+  with equality in `lintegral` form at `q = 1` for `g` a.e. measurable on `(0, ∞)`
+  (`TauCeti.lintegral_rpow_mul_setLIntegral_Ioi`).
 * **Classical Hardy inequality** (`TauCeti.eLpNorm_inv_mul_setLIntegral_Ioc_le`): for `1 < p ≤ ∞`,
   `‖t ↦ t⁻¹ ∫₀ᵗ g‖_{Lᵖ(0, ∞)} ≤ (1 - 1 / p)⁻¹ ‖g‖_{Lᵖ(0, ∞)}` (so `p / (p - 1)` for finite `p`
   and `1` at `p = ∞`).
@@ -31,11 +35,12 @@ For `θ > 0`, `1 ≤ q ≤ ∞`, and `g : ℝ → ℝ≥0∞`:
   `t ^ (1 - θ) g(t) ≤ t ^ (-θ) ∫₀ᵗ g` for every `t > 0`, so the reverse `L^q(dt / t)` bound holds
   with constant `1` for all `θ ∈ ℝ` and `q ∈ [0, ∞]`.
 
-Both `dt / t` bounds are deduced uniformly across `1 ≤ q ≤ ∞` (including `q = ∞`) by applying
-Schur's test (`TauCeti.eLpNorm_lintegral_mul_le`) to the dilation-invariant kernel
-`k_θ(t, s) = 1_{0 < s ≤ t} (s / t) ^ θ`, whose row and column integrals against `dt / t` are both
-equal to `θ⁻¹`. Because `eLpNorm` is `∞` on functions that are not a.e. strongly measurable, no
-measurability hypothesis on `g` is needed in the `L^q` inequalities.
+Applied to a decreasing rearrangement `f*`, the near-`0` inequality and the reverse antitone bound
+compare Peetre's `K`-functional `K(t, u) = ∫₀ᵗ f*` of `(L¹, L^∞)` with `t f*(t)` in `L^q(dt / t)`,
+identifying the real interpolation spaces `(L¹, L^∞)_{θ,q}` with the Lorentz classes `L^{p,q}`
+(`1 / p = 1 - θ`) and bounding maximal rearrangement averages on `Lᵖ(0, ∞)`. Because `eLpNorm` is
+`∞` on functions that are not a.e. strongly measurable, no measurability hypothesis on `g` is
+needed in the `L^q` inequalities.
 
 ## Main declarations
 
@@ -52,8 +57,6 @@ measurability hypothesis on `g` is needed in the `L^q` inequalities.
 
 ## References
 
-* J. Bergh and J. Löfström, *Interpolation Spaces. An Introduction*, Grundlehren 223,
-  Springer, 1976, §5.3 (Lemma 5.3.1).
 * G. H. Hardy, J. E. Littlewood, and G. Pólya, *Inequalities*, 2nd ed., Cambridge University
   Press, 1952, Theorem 327 and Theorem 330.
 -/
@@ -95,18 +98,16 @@ private theorem lintegral_hardyKernel_right {θ t : ℝ} (hθ : 0 < θ) (ht : 0 
     · simp [hardyKernel, hs]
   rw [h_eq, lintegral_indicator measurableSet_Ioc,
     lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
-    setLIntegral_Ioc_rpow_multHaar hθ ht, ← ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _),
-    mul_left_comm, ← Real.rpow_add ht, neg_add_cancel, Real.rpow_zero, mul_one]
+    setLIntegral_Ioc_rpow_multHaar hθ ht.le, ← ENNReal.ofReal_mul (by positivity),
+    mul_left_comm, ← Real.rpow_add ht]
+  simp
 
 /-- For `θ > 0` and `s > 0`, the column integral of `hardyKernel θ` against `dt / t` is `θ⁻¹`. -/
 private theorem lintegral_hardyKernel_left {θ s : ℝ} (hθ : 0 < θ) (hs : 0 < s) :
     ∫⁻ t, hardyKernel θ t s ∂multHaar = ENNReal.ofReal θ⁻¹ := by
-  have hs_null : multHaar {s} = 0 := by
-    rw [← Icc_self, multHaar_Icc hs le_rfl, sub_self, ENNReal.ofReal_zero]
-  have hae_ne : ∀ᵐ t ∂multHaar, t ≠ s := ae_iff.2 (by simpa using hs_null)
   have hae : (fun t ↦ hardyKernel θ t s) =ᵐ[multHaar]
       (Ioi s).indicator fun t ↦ ENNReal.ofReal (s ^ θ) * ENNReal.ofReal (t ^ (-θ)) := by
-    filter_upwards [hae_ne] with t ht_ne
+    filter_upwards [multHaar.ae_ne s] with t ht_ne
     by_cases hst : s < t
     · rw [hardyKernel, indicator_of_mem (mem_Ioc.2 ⟨hs, hst.le⟩), indicator_of_mem (mem_Ioi.2 hst),
         ← ENNReal.ofReal_mul (Real.rpow_nonneg hs.le _), Real.div_rpow hs.le (hs.trans hst).le,
@@ -115,8 +116,9 @@ private theorem lintegral_hardyKernel_left {θ s : ℝ} (hθ : 0 < θ) (hs : 0 <
       rw [hardyKernel, indicator_of_notMem hnot, indicator_of_notMem (by simpa using hst)]
   rw [lintegral_congr_ae hae, lintegral_indicator measurableSet_Ioi,
     lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
-    setLIntegral_Ioi_rpow_neg_multHaar hθ hs, ← ENNReal.ofReal_mul (Real.rpow_nonneg hs.le _),
-    mul_left_comm, ← Real.rpow_add hs, add_neg_cancel, Real.rpow_zero, mul_one]
+    setLIntegral_Ioi_rpow_neg_multHaar hθ hs, ← ENNReal.ofReal_mul (by positivity),
+    mul_left_comm, ← Real.rpow_add hs]
+  simp
 
 /-- Integrating `hardyKernel θ t s` against `s ^ (1 - θ) g(s) ds / s` recovers
 `t ^ (-θ) ∫₀ᵗ g(s) ds`, with no measurability hypothesis on `g`. -/
@@ -140,9 +142,9 @@ private theorem lintegral_hardyKernel_mul_Ioc (θ : ℝ) {t : ℝ} (ht : 0 < t) 
                 (Real.rpow_nonneg (div_nonneg hs.le ht.le) _)), mul_assoc]
         _ = ENNReal.ofReal (t ^ (-θ)) * g s := by
             congr 2
-            rw [Real.div_rpow hs.le ht.le, div_eq_mul_inv, mul_right_comm (s ^ θ),
-              ← Real.rpow_add hs, add_sub_cancel, Real.rpow_one, ← mul_assoc,
-              inv_mul_cancel₀ hs.ne', one_mul, ← Real.rpow_neg ht.le]
+            have hs_ne : s ≠ 0 := hs.ne'
+            rw [Real.div_rpow hs.le ht.le, Real.rpow_sub hs, Real.rpow_one, Real.rpow_neg ht.le]
+            field_simp
     · have hnot : s ∉ Ioc 0 t := fun h ↦ hst h.2
       simp [indicator_of_notMem hnot]
   rw [lintegral_multHaar_eq_setLIntegral, setLIntegral_congr_fun measurableSet_Ioi hcongr,
@@ -181,15 +183,6 @@ private theorem lintegral_hardyKernel_swap_mul_Ioi (θ : ℝ) {t : ℝ} (ht : 0 
   rw [lintegral_multHaar_eq_setLIntegral, setLIntegral_congr_fun measurableSet_Ioi hcongr,
     setLIntegral_indicator measurableSet_Ici, inter_eq_left.2 (Ici_subset_Ioi.2 ht),
     ← restrict_congr_set Ioi_ae_eq_Ici, lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-
-/-- `A ^ (1 - 1 / q) * A ^ (1 / q) = A` for `1 ≤ q`. -/
-private theorem rpow_one_sub_inv_mul_rpow_inv {q : ℝ≥0∞} (hq : 1 ≤ q) (A : ℝ≥0∞) :
-    A ^ (1 - q.toReal⁻¹) * A ^ q.toReal⁻¹ = A := by
-  have h0 : 0 ≤ 1 - q.toReal⁻¹ := by
-    rcases eq_or_ne q ∞ with rfl | hq_top
-    · simp
-    · exact sub_nonneg.2 (inv_le_one_of_one_le₀ (by simpa using ENNReal.toReal_mono hq_top hq))
-  rw [← ENNReal.rpow_add_of_nonneg _ _ h0 (by positivity), sub_add_cancel, ENNReal.rpow_one]
 
 /-- **Exact `L¹(dt / t)` Hardy identity near `0`.** For `θ > 0` and `g` a.e. measurable on
 `(0, ∞)`, `∫ t ^ (-θ) (∫₀ᵗ g) dt / t = θ⁻¹ ∫ t ^ (1 - θ) g(t) dt / t`. -/
@@ -237,7 +230,7 @@ theorem eLpNorm_rpow_neg_mul_setLIntegral_Ioc_le {θ : ℝ} (hθ : 0 < θ) {q : 
       filter_upwards [ae_pos_multHaar] with s hs using (lintegral_hardyKernel_left hθ hs).le
     have hschur := eLpNorm_lintegral_mul_le
       (measurable_uncurry_hardyKernel θ).aemeasurable hG.aemeasurable hq hrow hcol
-    rwa [rpow_one_sub_inv_mul_rpow_inv hq A] at hschur
+    rwa [ENNReal.rpow_one_sub_toReal_inv_mul_rpow_toReal_inv hq A] at hschur
   · have hθ_ne : ENNReal.ofReal θ⁻¹ ≠ 0 := (ENNReal.ofReal_pos.2 (inv_pos.2 hθ)).ne'
     rw [eLpNorm_of_not_aestronglyMeasurable hG, ENNReal.mul_top hθ_ne]
     exact le_top
@@ -292,7 +285,7 @@ theorem eLpNorm_rpow_mul_setLIntegral_Ioi_le {θ : ℝ} (hθ : 0 < θ) {q : ℝ�
       filter_upwards [ae_pos_multHaar] with s hs using (lintegral_hardyKernel_right hθ hs).le
     have hschur := eLpNorm_lintegral_mul_le
       hk_swap.aemeasurable hG.aemeasurable hq hrow hcol
-    rwa [rpow_one_sub_inv_mul_rpow_inv hq A] at hschur
+    rwa [ENNReal.rpow_one_sub_toReal_inv_mul_rpow_toReal_inv hq A] at hschur
   · have hθ_ne : ENNReal.ofReal θ⁻¹ ≠ 0 := (ENNReal.ofReal_pos.2 (inv_pos.2 hθ)).ne'
     rw [eLpNorm_of_not_aestronglyMeasurable hG, ENNReal.mul_top hθ_ne]
     exact le_top
@@ -304,16 +297,10 @@ For finite `p`, `(1 - 1 / p)⁻¹ = p / (p - 1)`; for `p = ∞` the constant is 
 theorem eLpNorm_inv_mul_setLIntegral_Ioc_le {p : ℝ≥0∞} (hp : 1 < p) (g : ℝ → ℝ≥0∞) :
     eLpNorm (fun t ↦ ENNReal.ofReal t⁻¹ * ∫⁻ s in Ioc 0 t, g s) p (volume.restrict (Ioi 0)) ≤
       ENNReal.ofReal (1 - p.toReal⁻¹)⁻¹ * eLpNorm g p (volume.restrict (Ioi 0)) := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans hp).ne'
   set θ := 1 - p.toReal⁻¹
-  have hθ : 0 < θ := by
-    rcases eq_or_ne p ∞ with rfl | hptop
-    · simp [θ]
-    · have hp_gt : 1 < p.toReal := by
-        simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hptop).2 hp
-      exact sub_pos.2 (inv_lt_one_of_one_lt₀ hp_gt)
-  rw [← eLpNorm_rpow_toReal_inv_mul_multHaar hp0,
-    ← eLpNorm_rpow_toReal_inv_mul_multHaar hp0 g]
+  have hθ : 0 < θ := ENNReal.one_sub_toReal_inv_pos hp
+  rw [← eLpNorm_rpow_toReal_inv_mul_multHaar p,
+    ← eLpNorm_rpow_toReal_inv_mul_multHaar p g]
   have hlhs : (fun t ↦ ENNReal.ofReal (t ^ p.toReal⁻¹) *
         (ENNReal.ofReal t⁻¹ * ∫⁻ s in Ioc 0 t, g s)) =ᵐ[multHaar]
       fun t ↦ ENNReal.ofReal (t ^ (-θ)) * ∫⁻ s in Ioc 0 t, g s := by
