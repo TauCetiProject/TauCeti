@@ -13,19 +13,31 @@ import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
-import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
 # Action (transformation) Lie algebroids
 
-Given a finite-dimensional real Hausdorff topological Lie algebra `𝔤` and
-`α : 𝔤 →ₗ⁅ℝ⁆ (tangent I M).Sections`, `Bundle.Trivial M 𝔤` carries the **transformation Lie
-algebroid** `TauCeti.LieAlgebroid.transformation α` (Mackenzie 2005, §3.3; Crainic–Fernandes 2011,
-Ex. 1.6). Over a Hausdorff base, `transformationBracket_jacobi_iff` shows Jacobi holds iff the
-linear map intertwines brackets; negating an `InfinitesimalAction` (`act.negLieHom`) yields
-`act.lieAlgebroid` and `ofMulAction`, omitting the minus sign violates Jacobi
-(`not_transformationBracket_jacobi_toSectionLinearMap_affineLine`), and translation actions recover
+Given a finite-dimensional real Hausdorff topological Lie algebra `𝔤` and a Lie algebra
+homomorphism `α : 𝔤 →ₗ⁅ℝ⁆ (tangent I M).Sections`, `Bundle.Trivial M 𝔤` carries the
+**transformation Lie algebroid** `TauCeti.LieAlgebroid.transformation α` (Mackenzie 2005, §3.3;
+Crainic–Fernandes 2011, Ex. 1.6). Over a Hausdorff base, `transformationBracket_jacobi_iff` shows
+that the Jacobi identity holds if and only if the underlying linear map intertwines brackets.
+
+Because a `TauCeti.InfinitesimalAction` is a Lie algebra antihomomorphism (`act ⁅ξ, η⁆ = -[act ξ,
+act η]`), negating it (`InfinitesimalAction.negLieHom`) yields a Lie algebra homomorphism into
+`(tangent I M).Sections` and hence the transformation Lie algebroids
+`InfinitesimalAction.lieAlgebroid` and `ofMulAction`, whereas omitting the minus sign violates the
+Jacobi identity (`not_transformationBracket_jacobi_toSectionLinearMap_affineLine`). When an abelian
+Lie algebra `𝔤` acts on a finite-dimensional real normed space `V` by translations along a linear
+equivalence `τ : 𝔤 ≃ₗ[ℝ] V`, the anchor identifies the section Lie algebra with
 `(tangent 𝓘(ℝ, V) V).Sections` (`translationSectionsLieEquiv`).
+
+## References
+
+* K. C. H. Mackenzie, *General theory of Lie groupoids and Lie algebroids*, London Math. Soc.
+  Lecture Note Ser. 213, Cambridge University Press (2005), §3.3.
+* M. Crainic and R. L. Fernandes, *Lectures on integrability of Lie brackets*, Geom. Topol.
+  Monogr. 17 (2011), 1–107, Example 1.6.
 -/
 public section
 noncomputable section
@@ -177,6 +189,9 @@ variable [TopologicalSpace 𝔤] [IsTopologicalAddGroup 𝔤] [ContinuousSMul �
   ext x; rw [ContMDiffSection.coe_add, Pi.add_apply, ContMDiffSection.smul_apply,
     ContMDiffSection.smul_apply, transformationBracket_smul_apply]; simp
 
+/-- Whenever `α₀` intertwines Lie brackets (without requiring `T2Space M`),
+`transformationAnchorField α₀` intertwines `transformationBracket α₀` with the tangent Lie
+bracket. -/
 theorem transformationAnchorField_transformationBracket
     {α₀ : 𝔤 →ₗ[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯}
     (hα : ∀ ξ η : 𝔤, α₀ ⁅ξ, η⁆ = (tangent I M).bracket (α₀ ξ) (α₀ η))
@@ -199,6 +214,8 @@ theorem transformationAnchorField_transformationBracket
   exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
     hl (hr (by dsimp only [P]; simp [hα]) _) _
 
+/-- Whenever `α₀` intertwines Lie brackets (without requiring `T2Space M`),
+`transformationBracket α₀` satisfies the Jacobi identity. -/
 theorem transformationBracket_jacobi {α₀ : 𝔤 →ₗ[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯}
     (hα : ∀ ξ η : 𝔤, α₀ ⁅ξ, η⁆ = (tangent I M).bracket (α₀ ξ) (α₀ η))
     (a b c : Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯) :
@@ -223,22 +240,26 @@ theorem transformationBracket_jacobi {α₀ : 𝔤 →ₗ[ℝ] Cₛ^∞⟮I; E, 
     rw [hJ_swap₁₂ v (f • u) w, hJ_smul₂ v u w f, hJ_swap₁₂ u v w]; ext x; simp
   let B := Module.finBasis ℝ 𝔤
   have vanish {P : Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯ →
-      Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯} (h0 : P 0 = 0)
+      Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯}
       (ha : ∀ x y, P (x + y) = P x + P y) (hs : ∀ (f : C^∞⟮I, M; ℝ⟯) x, P (f • x) = f • P x)
       (hB : ∀ i, P (ContMDiffSection.modelConst I M ∞ (B i)) = 0) (s) : P s = 0 := by
-    let P' : _ →+ _ := ⟨⟨P, h0⟩, ha⟩
-    rw [ContMDiffSection.eq_sum_modelCoord_smul_modelConst B s]
-    exact (map_sum P' _ _).trans <| Finset.sum_eq_zero fun i _ ↦ by
-      change P _ = 0; rw [hs, hB i]; ext x; simp
+    let P' : Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯ →ₗ[C^∞⟮I, M; ℝ⟯]
+        Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯ := ⟨⟨P, ha⟩, hs⟩
+    have hP' : P' s = 0 := by
+      rw [ContMDiffSection.eq_sum_modelCoord_smul_modelConst B s, map_sum]
+      exact Finset.sum_eq_zero fun i _ ↦ by
+        simp only [map_smul, P', LinearMap.coe_mk, AddHom.coe_mk, hB i]
+        ext x; simp
+    simpa only [P', LinearMap.coe_mk, AddHom.coe_mk] using hP'
   have hJ₁ (ξ η : 𝔤) (w) :
       J (ContMDiffSection.modelConst I M ∞ ξ) (ContMDiffSection.modelConst I M ∞ η) w = 0 :=
-    vanish (by simp [J]) (fun _ _ ↦ by simp only [J, map_add]; abel) (fun f x ↦ hJ_smul₃ _ _ x f)
+    vanish (fun _ _ ↦ by simp only [J, map_add]; abel) (fun f x ↦ hJ_smul₃ _ _ x f)
       (fun _ ↦ by ext x; simp [J, br]) w
   have hJ₂ (ξ : 𝔤) (v w) : J (ContMDiffSection.modelConst I M ∞ ξ) v w = 0 :=
-    vanish (P := fun v ↦ J (ContMDiffSection.modelConst I M ∞ ξ) v w) (by simp [J])
+    vanish (P := fun v ↦ J (ContMDiffSection.modelConst I M ∞ ξ) v w)
       (fun _ _ ↦ by simp only [J, map_add, LinearMap.add_apply]; abel)
       (fun f x ↦ hJ_smul₂ _ x w f) (fun j ↦ hJ₁ ξ (B j) w) v
-  have hJ_zero : J a b c = 0 := vanish (P := fun u ↦ J u b c) (by simp [J])
+  have hJ_zero : J a b c = 0 := vanish (P := fun u ↦ J u b c)
     (fun _ _ ↦ by simp only [J, map_add, LinearMap.add_apply]; abel)
     (fun f x ↦ hJ_smul₁ x b c f) (fun i ↦ hJ₂ (B i) b c) a
   dsimp only [J, br] at hJ_zero; rwa [sub_eq_zero, sub_eq_iff_eq_add, add_comm] at hJ_zero
@@ -374,9 +395,12 @@ def transformationMapLieHom :
   (transformation α).sectionsEquiv.injective (by ext x; simp)
 
 @[simp] theorem transformationMapLieHom_id :
-    transformationMapLieHom α (LieHom.id : 𝔤 →ₗ⁅ℝ⁆ 𝔤) = LieHom.id := by
-  ext s; exact (transformation α).sectionsEquiv.injective
-    (by ext x; rw [sectionsEquiv_transformationMapLieHom_apply]; rfl)
+    transformationMapLieHom α (LieHom.id : 𝔤 →ₗ⁅ℝ⁆ 𝔤) = LieHom.id :=
+  LieHom.ext fun s ↦ (transformation α).sectionsEquiv.injective <|
+    ContMDiffSection.ext fun x ↦
+      (sectionsEquiv_transformationMapLieHom_apply α LieHom.id s x).trans <|
+        (LieHom.id_apply _).trans <|
+          congrArg (fun t ↦ (transformation α).sectionsEquiv t x) (LieHom.id_apply s).symm
 
 theorem transformationMapLieHom_comp {𝔨 : Type*} [LieRing 𝔨] [LieAlgebra ℝ 𝔨]
     [TopologicalSpace 𝔨] [IsTopologicalAddGroup 𝔨] [ContinuousSMul ℝ 𝔨] [T2Space 𝔨]
@@ -454,25 +478,6 @@ end LieAlgebroid
 
 namespace InfinitesimalAction
 
-section ToSectionLinearMap
-
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I 1 M] {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤] (act : InfinitesimalAction 𝔤 I M)
-
-/-- An infinitesimal action viewed as an `ℝ`-linear map into smooth tangent sections. -/
-def toSectionLinearMap : 𝔤 →ₗ[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
-  ⟨⟨fun ξ ↦ ⟨act ξ, act.contMDiff ξ⟩, fun _ _ ↦ by ext; simp⟩, fun _ _ ↦ by ext; simp⟩
-
-@[simp] theorem toSectionLinearMap_apply (ξ : 𝔤) (x : M) :
-    act.toSectionLinearMap ξ x = act ξ x := (rfl)
-
-@[simp] theorem comp_toSectionLinearMap {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥]
-    (ψ : 𝔥 →ₗ⁅ℝ⁆ 𝔤) :
-    (act.comp ψ).toSectionLinearMap = act.toSectionLinearMap.comp ψ.toLinearMap := by ext; simp
-
-end ToSectionLinearMap
-
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M]
@@ -484,7 +489,8 @@ def negLieHom : 𝔤 →ₗ⁅ℝ⁆ (LieAlgebroid.tangent I M).Sections :=
   { (((LieAlgebroid.tangent I M).sectionsEquiv.symm.restrictScalars ℝ).toLinearMap.comp
       (-act.toSectionLinearMap)) with
     map_lie' {_ _} := (LieAlgebroid.tangent I M).sectionsEquiv.injective <| by
-      have hcoe (ζ : 𝔤) : ⇑(act.toSectionLinearMap ζ) = act ζ := rfl
+      have hcoe (ζ : 𝔤) : ⇑(act.toSectionLinearMap ζ) = act ζ :=
+        funext (act.toSectionLinearMap_apply ζ)
       ext x; simp [hcoe, act.map_lie] }
 
 @[simp] theorem sectionsEquiv_negLieHom_apply (ξ : 𝔤) (x : M) :
@@ -726,7 +732,8 @@ theorem sectionsEquiv_translationSectionsLieEquiv_apply
       -τ ((InfinitesimalAction.translation τ.toLinearMap).lieAlgebroid.sectionsEquiv s x) :=
   (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).injective <| by
     rw [sectionsEquiv_translationSectionsLieEquiv, anchorField_apply,
-      fromTangentSpace_translation_anchor, LinearEquiv.coe_toLinearMap]; rfl
+      fromTangentSpace_translation_anchor, LinearEquiv.coe_toLinearMap]
+    exact (NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) x _).symm
 
 @[simp] theorem translationSectionsLieEquiv_lie
     (s : (InfinitesimalAction.translation τ.toLinearMap).lieAlgebroid.Sections)
@@ -748,7 +755,8 @@ theorem not_transformationBracket_jacobi_toSectionLinearMap_affineLine :
             (transformationBracket InfinitesimalAction.affineLine.toSectionLinearMap a c) :=
   fun hjac ↦ by
     let act := InfinitesimalAction.affineLine
-    have hcoe (u) : ⇑(act.toSectionLinearMap u) = act u := rfl
+    have hcoe (u) : ⇑(act.toSectionLinearMap u) = act u :=
+      funext (act.toSectionLinearMap_apply u)
     have h0 := congrArg (fun s ↦ NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : ℝ) (s 0)) <|
       (transformationBracket_jacobi_iff act.toSectionLinearMap).1 hjac
         (LieAlgebra.AffineLine.dilation ℝ) (LieAlgebra.AffineLine.translation ℝ)

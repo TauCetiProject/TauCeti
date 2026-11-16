@@ -14,10 +14,21 @@ import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 /-!
 # Zero-anchor Lie algebroids from bundles of Lie algebras
 
-A smooth real vector bundle `V → M` with a fibrewise alternating Jacobi section `B` of
-`V →L[ℝ] V →L[ℝ] V` is a zero-anchor Lie algebroid (`TauCeti.LieAlgebroid.ofFiberwiseBracket`).
-Specializing to `Bundle.Trivial M 𝔤` gives `trivialLieAlgebra`, `trivialLieAlgebraEval`,
-`trivialLieAlgebraConst`, and `trivialLieAlgebraPullback` (Mackenzie 2005, §3.3).
+A Lie algebroid with zero anchor is totally intransitive: its Leibniz rule reduces to
+`C^∞(M)`-bilinearity of the bracket (`TauCeti.LieAlgebroid.bracket_smul_right_of_anchor_eq_zero`,
+`TauCeti.LieAlgebroid.bracket_smul_left_of_anchor_eq_zero`), so the bracket is purely fibrewise.
+Concretely, a smooth real vector bundle `V → M` equipped with a smooth fibrewise alternating Jacobi
+section `B` of `V →L[ℝ] V →L[ℝ] V` is a zero-anchor Lie algebroid
+(`TauCeti.LieAlgebroid.ofFiberwiseBracket`). Specializing to `Bundle.Trivial M 𝔤` gives the
+trivial Lie algebra bundle algebroid (`trivialLieAlgebra`, the zero-action base case of
+transformation Lie algebroids), together with evaluation (`trivialLieAlgebraEval`), constant
+sections (`trivialLieAlgebraConst`), and pullback (`trivialLieAlgebraPullback`) (Mackenzie 2005,
+§3.3).
+
+## References
+
+* K. C. H. Mackenzie, *General theory of Lie groupoids and Lie algebroids*, London Math. Soc.
+  Lecture Note Ser. 213, Cambridge University Press (2005), §3.3.
 -/
 
 public section
@@ -29,25 +40,14 @@ open scoped ContDiff
 
 namespace TauCeti.LieAlgebroid
 
-section ZeroAnchor
+section FiberwiseBracket
 
 variable {E H F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
   [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
-
-theorem bracket_smul_right_of_anchor_eq_zero {A : LieAlgebroid I F V} (hA : A.anchor = 0)
-    (a b : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) : A.bracket a (f • b) = f • A.bracket a b := by
-  ext x; simp [hA]
-
-theorem bracket_smul_left_of_anchor_eq_zero {A : LieAlgebroid I F V} (hA : A.anchor = 0)
-    (f : C^∞⟮I, M; ℝ⟯) (a b : Cₛ^∞⟮I; F, V⟯) : A.bracket (f • a) b = f • A.bracket a b := by
-  ext x; simp [A.bracket_smul_left, hA]
-
-section FiberwiseBracket
-
-variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
 
 /-- A smooth bundle of Lie algebras — a smooth fibrewise alternating Jacobi section `B` of
 `V →L[ℝ] V →L[ℝ] V` — forms a zero-anchor Lie algebroid with `(bracket a b) x = B x (a x) (b x)`. -/
@@ -99,7 +99,6 @@ theorem ofFiberwiseBracket_inj [FiniteDimensional ℝ E] [T2Space M] [ContMDiffV
   simpa [hax, hbx] using congr($(congrArg LieAlgebroid.bracket h) ⟨a, ha⟩ ⟨b, hb⟩ x)
 
 end FiberwiseBracket
-end ZeroAnchor
 
 section TrivialLieAlgebra
 
@@ -152,7 +151,10 @@ variable (I M 𝔤) in
 /-- Evaluation at `x : M` as a Lie algebra homomorphism from sections of `M × 𝔤` to `𝔤`. -/
 def trivialLieAlgebraEval (x : M) : (trivialLieAlgebra I M 𝔤).Sections →ₗ⁅ℝ⁆ 𝔤 :=
   ⟨⟨⟨fun s ↦ (trivialLieAlgebra I M 𝔤).sectionsEquiv s x, fun _ _ ↦ by simp⟩,
-    fun _ _ ↦ by dsimp only; rw [LinearMapClass.map_smul_of_tower]; rfl⟩,
+    fun _ _ ↦ by
+      dsimp only
+      rw [LinearMapClass.map_smul_of_tower, ContMDiffSection.coe_smul, Pi.smul_apply,
+        RingHom.id_apply]⟩,
     fun {_ _} ↦ by dsimp only; simp⟩
 
 @[simp] theorem trivialLieAlgebraEval_apply (x : M) (s : (trivialLieAlgebra I M 𝔤).Sections) :

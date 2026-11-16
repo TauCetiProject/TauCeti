@@ -19,9 +19,29 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 # Sections of trivial vector bundles
 
 A `C^n` section of `Bundle.Trivial M F` with normed fibre `F` is a `C^n` map `M → F`
-(`ContMDiffSection.trivialEquiv`). For a finite-dimensional Hausdorff topological module `W`,
-`TauCeti.TrivialModel 𝕜 W` equips `Bundle.Trivial M W` with `modelEquiv`, `modelConst`,
-`modelCoord`, `modelMap`, `modelPullback`, `modelDeriv`, and `modelLieDeriv`.
+(`ContMDiffSection.trivialEquiv`), with constant sections (`ContMDiffSection.trivialConst`) and
+basis coordinate expansions (`ContMDiffSection.trivialCoord`,
+`ContMDiffSection.eq_sum_trivialCoord_smul_trivialConst`).
+
+In differential geometry—for instance for trivial Lie algebra bundles and transformation Lie
+algebroids—the fibre `W` is often a finite-dimensional Hausdorff topological module over a
+complete nontrivially normed field `𝕜` with no canonical norm (such as a topological Lie
+algebra `𝔤`). Using the coordinate model fibre `TauCeti.TrivialModel 𝕜 W`, this file provides a
+norm-free `C^n` section calculus on `Bundle.Trivial M W`:
+
+* `ContMDiffSection.modelEquiv`: `C^n⟮I, M; 𝕜⟯`-linear equivalence between `C^n` sections of
+  `Bundle.Trivial M W` and `C^n` maps `M → TauCeti.TrivialModel 𝕜 W`.
+* `ContMDiffSection.modelConst`: constant `C^n` sections of `Bundle.Trivial M W`.
+* `ContMDiffSection.modelCoord`: coordinates of a `C^n` section in a basis of `W`, yielding finite
+  basis expansions (`ContMDiffSection.eq_sum_modelCoord_smul_modelConst`).
+* `ContMDiffSection.modelMap`: pushforward of `C^n` sections along a `𝕜`-linear map `W →ₗ[𝕜] W'`.
+* `ContMDiffSection.modelPullback`: pullback of `C^n` sections along a `C^n` map `φ : N → M`.
+* `ContMDiffSection.modelDeriv`: norm-independent directional derivative of a `C^n` section,
+  agreeing with `mvfderiv` on any finite-dimensional normed fibre
+  (`ContMDiffSection.modelDeriv_eq_mvfderiv`).
+* `ContMDiffSection.modelLieDeriv`: directional derivative of a `C^n` section along a `C^m` vector
+  field (`m + 1 ≤ n`), intertwining `VectorField.mlieBracket` with the commutator of derivatives
+  (`ContMDiffSection.modelDeriv_mlieBracket`).
 -/
 public section
 noncomputable section
@@ -279,8 +299,7 @@ theorem modelEquiv_modelDeriv_apply (s : Cₛ^n⟮I; TrivialModel 𝕜 W, Bundle
     (s : Cₛ^n⟮I; TrivialModel 𝕜 W, Bundle.Trivial M W⟯) (x : M) :
     modelDeriv (c • s) x = c • modelDeriv s x := by
   ext v; apply (TrivialModel.equiv 𝕜 W).injective
-  have hcs : ⇑(modelEquiv (c • s)) = c • ⇑(modelEquiv s) :=
-    funext fun y ↦ (TrivialModel.equiv 𝕜 W).map_smul c (s y)
+  have hcs : ⇑(modelEquiv (c • s)) = c • ⇑(modelEquiv s) := funext fun y ↦ by simp
   rw [_root_.smul_apply, map_smul, modelEquiv_modelDeriv_apply, modelEquiv_modelDeriv_apply, hcs,
     TauCeti.mvfderiv_const_smul_field, _root_.smul_apply]
 
@@ -290,11 +309,12 @@ theorem modelEquiv_modelDeriv_apply (s : Cₛ^n⟮I; TrivialModel 𝕜 W, Bundle
     modelDeriv (f • s) x v = f x • modelDeriv s x v + mvfderiv I f x v • s x := by
   apply (TrivialModel.equiv 𝕜 W).injective
   have hfs : ⇑(modelEquiv (f • s)) = (⇑f : M → 𝕜) • (⇑(modelEquiv s) : M → _) :=
-    funext fun y ↦ (modelEquiv_apply (f • s) y).trans <| by
-      rw [ContMDiffSection.smul_apply, map_smul]; rfl
+    funext fun y ↦ by
+      rw [modelEquiv_apply, ContMDiffSection.smul_apply, map_smul, Pi.smul_apply', modelEquiv_apply]
   rw [map_add, map_smul, map_smul, modelEquiv_modelDeriv_apply, modelEquiv_modelDeriv_apply,
     ← modelEquiv_apply, hfs, mvfderiv_smul (f.contMDiff.mdifferentiableAt hn)
-      ((modelEquiv s).contMDiff.mdifferentiableAt hn)]; rfl
+      ((modelEquiv s).contMDiff.mdifferentiableAt hn)]
+  simp only [_root_.add_apply, _root_.smul_apply, ContinuousLinearMap.smulRight_apply]
 
 /-- Directional derivative of a `C^n` section `s` along a `C^m` vector field `X` (`m + 1 ≤ n`). -/
 def modelLieDeriv [IsManifold I 1 M] {m : ℕ∞ω} (X : Cₛ^m⟮I; E, (TangentSpace I : M → Type _)⟯)
@@ -316,7 +336,8 @@ theorem modelEquiv_modelLieDeriv_apply [IsManifold I 1 M] {m : ℕ∞ω}
   DFunLike.congr_fun (modelEquiv.apply_symm_apply _) x
 
 /-- `modelDeriv` sends the manifold Lie bracket of two `C^m` vector fields to the commutator of
-their directional derivatives on `C^n` sections. -/
+their directional derivatives on `C^n` sections, provided `m ≠ 0`, `m + 1 ≤ n`, and
+`minSmoothness 𝕜 2 ≤ n`. -/
 theorem modelDeriv_mlieBracket [CompleteSpace E] [IsManifold I 1 M]
     [IsManifold I (minSmoothness 𝕜 2) M] {m : ℕ∞ω}
     (X Y : Cₛ^m⟮I; E, (TangentSpace I : M → Type _)⟯)
@@ -357,6 +378,8 @@ theorem modelDeriv_mlieBracket [CompleteSpace E] [IsManifold I 1 M]
     L_mod.mvfderiv_comp_apply ((modelEquiv s).contMDiff.mdifferentiableAt hn) v]
   exact (congrArg L_mod (modelEquiv_modelDeriv_apply s x v)).symm.trans (by simp [L_mod])
 
+/-- On a finite-dimensional normed fibre `F` with `n ≠ 0`, `modelDeriv s x` coincides with
+`mvfderiv I s x`. -/
 theorem modelDeriv_eq_mvfderiv {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     [FiniteDimensional 𝕜 F] (s : Cₛ^n⟮I; TrivialModel 𝕜 F, Bundle.Trivial M F⟯) (x : M)
     (hn : n ≠ 0 := by simp) : modelDeriv s x = mvfderiv I s x := by

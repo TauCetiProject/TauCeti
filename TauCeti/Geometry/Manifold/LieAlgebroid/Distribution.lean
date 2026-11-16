@@ -9,17 +9,22 @@ public import TauCeti.Geometry.Manifold.Distribution.VectorBundle
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
 import TauCeti.Geometry.Manifold.Distribution.Levi
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
-import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
 # Lie algebroids of involutive distributions
 
 An involutive smooth rank-`k` distribution `D ⊆ TM` carries a Lie algebroid structure
-`TauCeti.LieAlgebroid.ofDistribution` with inclusion anchor `hD.inclusionHom` and injective section
-Lie algebra homomorphism `ofDistributionSectionsInclusion`. Over a Hausdorff base, a Lie algebroid
-on `D` with inclusion anchor is unique (`eq_of_anchor_eq_subtypeL`) and exists iff `D` is involutive
+`TauCeti.LieAlgebroid.ofDistribution` with inclusion anchor
+`TauCeti.IsContMDiffDistribution.inclusionHom` and injective section Lie algebra homomorphism
+`ofDistributionSectionsInclusion`. Over a Hausdorff base, a Lie algebroid on `D` with inclusion
+anchor is unique (`eq_of_anchor_eq_subtypeL`) and exists iff `D` is involutive
 (`exists_lieAlgebroid_anchor_eq_subtypeL_iff`; Mackenzie 2005, §3.3), ruling out
 `standardContactDistribution` (`not_exists_lieAlgebroid_standardContactDistribution`).
+
+## References
+
+* K. C. H. Mackenzie, *General theory of Lie groupoids and Lie algebroids*, London Math. Soc.
+  Lecture Note Ser. 213, Cambridge University Press (2005), §3.3.
 -/
 
 public section
@@ -173,6 +178,8 @@ end Involutive
 
 variable [T2Space M]
 
+/-- Over a Hausdorff base, any Lie algebroid on `D` with inclusion anchor has bracket agreeing
+with `mlieBracket` on the underlying tangent vector fields. -/
 theorem coe_bracket_eq_mlieBracket_of_anchor_eq_subtypeL :
     letI := hD.fiberBundle; letI := hD.vectorBundle
     ∀ {A : LieAlgebroid I (Fin k → ℝ) (fun x ↦ D x)} (_hA : ∀ x, A.anchor x = (D x).subtypeL)
@@ -195,6 +202,8 @@ theorem eq_of_anchor_eq_subtypeL : letI := hD.fiberBundle; letI := hD.vectorBund
   exact (coe_bracket_eq_mlieBracket_of_anchor_eq_subtypeL hD hA₁ a b x).trans
     (coe_bracket_eq_mlieBracket_of_anchor_eq_subtypeL hD hA₂ a b x).symm
 
+/-- Over a Hausdorff base, the existence of a Lie algebroid structure on `D` with inclusion anchor
+forces `D` to be involutive. -/
 theorem isInvolutiveDistribution_of_anchor_eq_subtypeL :
     letI := hD.fiberBundle; letI := hD.vectorBundle
     ∀ {A : LieAlgebroid I (Fin k → ℝ) (fun x ↦ D x)},

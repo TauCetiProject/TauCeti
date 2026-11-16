@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.OfAssociative
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Algebra.Lie.AffineLine
@@ -50,6 +51,8 @@ and `𝔤_x` are the image and the kernel of the differential at the identity of
 * `TauCeti.InfinitesimalAction 𝔤 I M`: infinitesimal actions of `𝔤` on `M`.
 * `TauCeti.InfinitesimalAction.comp`: the restriction of an infinitesimal action along a Lie
   algebra homomorphism.
+* `TauCeti.InfinitesimalAction.toSectionLinearMap`: the action viewed as an `ℝ`-linear map into
+  smooth tangent sections.
 * `TauCeti.InfinitesimalAction.prod`: the diagonal action on a product of two manifolds.
 * `TauCeti.InfinitesimalAction.eval a x`: the linear map `Z ↦ Z_M(x)`.
 * `TauCeti.InfinitesimalAction.orbitTangent a x`: the orbit tangent space `𝔤 · x`.
@@ -153,6 +156,25 @@ theorem comp_apply (a : InfinitesimalAction 𝔤 I M) (f : 𝔥 →ₗ⁅ℝ⁆ 
   (rfl)
 
 end comp
+
+section toSectionLinearMap
+
+variable (a : InfinitesimalAction 𝔤 I M)
+
+/-- An infinitesimal action viewed as an `ℝ`-linear map into smooth tangent sections. -/
+def toSectionLinearMap : 𝔤 →ₗ[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
+  ⟨⟨fun ξ ↦ ⟨a ξ, a.contMDiff ξ⟩, fun _ _ ↦ by ext; simp⟩, fun _ _ ↦ by ext; simp⟩
+
+@[simp]
+theorem toSectionLinearMap_apply (ξ : 𝔤) (x : M) : a.toSectionLinearMap ξ x = a ξ x :=
+  (rfl)
+
+@[simp]
+theorem comp_toSectionLinearMap {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥] (ψ : 𝔥 →ₗ⁅ℝ⁆ 𝔤) :
+    (a.comp ψ).toSectionLinearMap = a.toSectionLinearMap.comp ψ.toLinearMap := by
+  ext; simp
+
+end toSectionLinearMap
 
 section orbit
 

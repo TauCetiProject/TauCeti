@@ -14,9 +14,17 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 The trivial bundle `Bundle.Trivial B F` has the single global trivialization
 `Bundle.Trivial.trivialization B F`, so a map into its total space is smooth exactly when its base
 map and its fibre map into `F` are smooth. When the fibre `W` is instead a finite-dimensional
-Hausdorff topological module without a fixed norm, `TauCeti.TrivialModel 𝕜 W` supplies
-`Fin (Module.finrank 𝕜 W) → 𝕜` as a nominal coordinate model fibre equipping `Bundle.Trivial B W`
-with a `C^n` vector bundle structure without `AddCommGroup` diamonds on `W`.
+Hausdorff topological module over a complete nontrivially normed field `𝕜` without a fixed norm,
+`TauCeti.TrivialModel 𝕜 W` supplies `Fin (Module.finrank 𝕜 W) → 𝕜` as a nominal coordinate model
+fibre equipping `Bundle.Trivial B W` with a `C^n` vector bundle structure without `AddCommGroup`
+diamonds on `W`.
+
+The topology, fibre bundle, vector bundle, and `C^n` vector bundle instances for
+`TauCeti.TrivialModel` directly adapt Mathlib's `Bundle.Trivial.fiberBundle`
+(`Mathlib.Topology.FiberBundle.Constructions`), `Bundle.Trivial.vectorBundle`
+(`Mathlib.Topology.VectorBundle.Constructions`), and `Bundle.Trivial.contMDiffVectorBundle`
+(`Mathlib.Geometry.Manifold.VectorBundle.Basic`) by Nicolò Cavalleri, Sébastien Gouëzel,
+Heather Macbeth, and Floris van Doorn.
 -/
 
 public section
@@ -177,8 +185,8 @@ instance instVectorBundle : VectorBundle 𝕜 (TrivialModel 𝕜 W) (Bundle.Triv
 
 @[simp] theorem trivialization_continuousLinearMapAt_apply (b : B) (w : W) :
     (trivialization 𝕜 B W).continuousLinearMapAt 𝕜 b w = equiv 𝕜 W w := by
-  rw [Trivialization.continuousLinearMapAt_apply,
-    (trivialization 𝕜 B W).coe_linearMapAt_of_mem (mem_univ b)]; rfl
+  simp [Trivialization.continuousLinearMapAt_apply,
+    (trivialization 𝕜 B W).coe_linearMapAt_of_mem (mem_univ b)]
 
 instance instContMDiffVectorBundle {EB HB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
     [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB} [ChartedSpace HB B] {n : ℕ∞ω} :
@@ -192,6 +200,8 @@ variable {EB HB EM HM M : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [
   [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM} [TopologicalSpace M] [ChartedSpace HM M]
   {n : ℕ∞ω} {b : M → B} {f : M → W}
 
+/-- A map into `TotalSpace (TrivialModel 𝕜 W) (Bundle.Trivial B W)` is `C^n` at a point if and only
+if its base map and its `TrivialModel.equiv 𝕜 W`-valued fibre map are `C^n` there. -/
 theorem contMDiffAt_mk_iff {x : M} :
     ContMDiffAt J (I.prod 𝓘(𝕜, TrivialModel 𝕜 W)) n
         (fun y ↦ TotalSpace.mk' (TrivialModel 𝕜 W) (E := Bundle.Trivial B W) (b y) (f y)) x ↔
@@ -199,6 +209,8 @@ theorem contMDiffAt_mk_iff {x : M} :
         ContMDiffAt J 𝓘(𝕜, TrivialModel 𝕜 W) n (fun y ↦ equiv 𝕜 W (f y)) x := by
   rw [Bundle.contMDiffAt_totalSpace_iff]; simp
 
+/-- A map into `TotalSpace (TrivialModel 𝕜 W) (Bundle.Trivial B W)` is `C^n` if and only if its
+base map and its `TrivialModel.equiv 𝕜 W`-valued fibre map are `C^n`. -/
 theorem contMDiff_mk_iff :
     ContMDiff J (I.prod 𝓘(𝕜, TrivialModel 𝕜 W)) n
         (fun y ↦ TotalSpace.mk' (TrivialModel 𝕜 W) (E := Bundle.Trivial B W) (b y) (f y)) ↔
