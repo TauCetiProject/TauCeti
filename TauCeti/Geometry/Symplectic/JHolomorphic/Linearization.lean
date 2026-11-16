@@ -129,7 +129,8 @@ theorem isComplexAntilinear_cauchyRiemannLinearization
   intro v
   simp only [ContinuousLinearMap.coe_coe, cauchyRiemannLinearization_apply,
     hj, map_neg, fderiv_apply_eq_of_cauchyRiemannOperator_eq_zero hu,
-    fderiv_apply_apply_eq_neg_of_eventually_sq_neg hJ, map_sub, hJ.self_of_nhds]
+    fderiv_apply_apply_eq_neg_of_eventually_const
+      (hJ.mono fun _ hy ↦ hy (fderiv ℝ u x v)), map_sub, hJ.self_of_nhds]
   abel
 
 /-- The local-coordinate linearization is additive on differentiable directions. -/
