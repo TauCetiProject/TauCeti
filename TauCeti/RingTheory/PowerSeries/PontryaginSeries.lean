@@ -44,6 +44,8 @@ The even and odd parts are the Cartier components `PowerSeries.cartier R 2 0` an
 
 * `PowerSeries.pontryaginSeries_mul`, `PowerSeries.coeff_succ_pontryaginSeries_mul`: the exact
   Whitney formula with its odd-times-odd correction, as series and coefficientwise.
+* `PowerSeries.two_mul_pontryaginSeries_mul_sub_mul_eq_zero`: if the odd coefficients of `P`
+  are annihilated by `2`, then the Pontryagin series is multiplicative modulo `2`-torsion.
 * `PowerSeries.twice_even_product_correction_eq_zero`: if the odd coefficients of `P` are
   annihilated by `2`, then twice the difference between an even coefficient of `P * Q` and the
   convolution of the even coefficients of `P` and `Q` vanishes.
@@ -183,6 +185,19 @@ theorem coeff_succ_pontryaginSeries_mul (P Q : R⟦X⟧) (k : ℕ) :
     ← Finset.sum_neg_distrib]
   refine congrArg _ (Finset.sum_congr rfl fun p _ ↦ ?_)
   ring
+
+/-- **The Whitney formula for Pontryagin series modulo `2`-torsion.** If the odd coefficients of
+`P` are annihilated by `2`, as for the total Chern class of a complexification, then
+`p(P Q) - p(P) p(Q)` is annihilated by `2`. -/
+theorem two_mul_pontryaginSeries_mul_sub_mul_eq_zero (P Q : R⟦X⟧)
+    (hodd : ∀ j : ℕ, 2 * coeff (2 * j + 1) P = 0) :
+    2 * (pontryaginSeries R (P * Q) - pontryaginSeries R P * pontryaginSeries R Q) = 0 := by
+  have hP : 2 * cartier R 2 1 P = 0 := by
+    ext j
+    simpa using hodd j
+  rw [pontryaginSeries_mul, sub_sub_cancel_left, mul_neg, neg_eq_zero, mul_left_comm,
+    ← map_ofNat (rescale (-1 : R)) 2, ← map_mul, ← mul_assoc, hP]
+  simp
 
 /-- **The `2`-torsion of the Pontryagin Whitney correction.** If the odd coefficients of `P` are
 annihilated by `2`, then twice the difference between an even coefficient of `P * Q` and the

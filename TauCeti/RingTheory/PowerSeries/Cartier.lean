@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Expand
+import TauCeti.Data.Nat.Carry
 import TauCeti.RingTheory.PowerSeries.Derivative
 import TauCeti.RingTheory.PowerSeries.Expand
 
@@ -115,22 +116,6 @@ theorem exists_cartier_coe_polynomial_eq (q r : ℕ) (hq : q ≠ 0) (P : Polynom
     have := (Nat.div_lt_iff_lt_mul (Nat.pos_of_ne_zero hq)).mp hlt
     nlinarith
 
-/-- If `i + j = q * n + r` with `r < q`, then the residues of `i` and `j` modulo `q` add up to
-`r` modulo `q`, and the quotients of `i` and `j` by `q` add up to `n` with the carry. -/
-private theorem add_mod_mod_eq_and_div_add_div_add_div_eq {q r n i j : ℕ} (hr : r < q)
-    (h : i + j = q * n + r) :
-    (i % q + j % q) % q = r ∧ i / q + j / q + (i % q + j % q) / q = n := by
-  have hr' : (i % q + j % q) % q = r := by
-    rw [← Nat.add_mod, h]
-    simp [Nat.mod_eq_of_lt hr]
-  refine ⟨hr', Nat.eq_of_mul_eq_mul_left (Nat.zero_lt_of_lt hr) ?_⟩
-  have := Nat.div_add_mod (i % q + j % q) q
-  have := Nat.div_add_mod i q
-  have := Nat.div_add_mod j q
-  rw [hr'] at *
-  rw [mul_add, mul_add]
-  omega
-
 /-- **Cartier components of a product.** At an actual residue `r`, the Cartier component of
 `F * G` collects the products of the components of `F` and `G` whose residues add up to `r`
 modulo `q`, shifted by `X` when the residues carry past `q`. -/
@@ -153,8 +138,8 @@ theorem cartier_mul (q r : ℕ) (hr : r < q) (F G : PowerSeries R) :
       (a + b) % q = r ∧ p.1 / q + p.2 / q + (a + b) / q = n := by
     intro p hp
     simp only [Finset.mem_filter, Finset.mem_antidiagonal, Prod.mk.injEq] at hp
-    rw [← hp.2.1, ← hp.2.2]
-    exact add_mod_mod_eq_and_div_add_div_add_div_eq hr hp.1
+    rw [← hp.2.1, ← hp.2.2, ← Nat.add_mod, ← Nat.add_div_eq_div_add_div_add_mod_add_mod_div, hp.1]
+    simp [Nat.mod_eq_of_lt hr, Nat.mul_add_div hq, Nat.div_eq_of_lt hr]
   split_ifs with hab
   · rw [coeff_X_pow_mul']
     split_ifs with hc
@@ -166,6 +151,8 @@ theorem cartier_mul (q r : ℕ) (hr : r < q) (F G : PowerSeries R) :
         omega
       · rw [Finset.mem_antidiagonal] at hp
         have h3 := Nat.div_add_mod (a + b) q
+        -- `omega` cannot multiply by the variable modulus `q`, so the quotient identity is
+        -- multiplied by `q` here and distributed before the linear arithmetic below.
         have h : q * (p.1 + p.2 + (a + b) / q) = q * n := by
           rw [show p.1 + p.2 + (a + b) / q = n by omega]
         rw [hab] at h3
