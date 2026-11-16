@@ -17,16 +17,10 @@ import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 /-!
 # Auslander–Buchsbaum depth criterion over a local hypersurface
 
-Let `(S, 𝔪)` be a regular local ring and `w` a nonzerodivisor of `S` such that `R = S ⧸ (w)` is
-local (equivalently `w ∈ 𝔪`). Combining Serre's finite-global-dimension bound over `S` with the
-Auslander–Buchsbaum formula `pd_S M + depth_R M = depth S = dim S = dim R + 1` characterizes when a
-finitely generated `R`-module has projective dimension at most one over `S` in terms of maximal
-depth over `R`.
-
-## Main results
-
-* `TauCeti.hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_le_depth`: for a
-  finitely generated `S ⧸ (w)`-module `M`, `pd_S M ≤ 1 ↔ ringKrullDim (S ⧸ (w)) ≤ depth M`.
+Over a regular local ring `S` and a nonzerodivisor `w` with local quotient `R = S ⧸ (w)`, Serre's
+bound and the Auslander–Buchsbaum formula `pd_S M + depth_R M = dim S = dim R + 1` show that a
+finitely generated `R`-module `M` satisfies `pd_S M ≤ 1 ↔ ringKrullDim R ≤ depth M`
+(`TauCeti.hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_le_depth`).
 
 ## References
 
@@ -45,10 +39,9 @@ open CategoryTheory Ideal
 
 namespace TauCeti
 
-/-- **Auslander–Buchsbaum criterion for projective dimension one over a local hypersurface.** Let
-`S` be a regular local ring and `w` a nonzerodivisor such that `R = S ⧸ (w)` is local (equivalently
-`w ∈ 𝔪_S`). A finitely generated `R`-module `M` has projective dimension at most one over `S` if
-and only if `dim R ≤ depth M` (maximal Cohen–Macaulayness). -/
+/-- **Auslander–Buchsbaum criterion for projective dimension one over a local hypersurface:** for a
+nonzerodivisor `w` of a regular local ring `S` with local quotient `R = S ⧸ (w)`, a finitely
+generated `R`-module `M` has `pd_S M ≤ 1` iff `dim R ≤ depth M`. -/
 theorem hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_le_depth
     {S : Type u} [CommRing S] [IsRegularLocalRing S] [Small.{v} S] {w : S}
     [_root_.IsLocalRing (S ⧸ span {w})] [Small.{v} (S ⧸ span {w})]
@@ -68,7 +61,6 @@ theorem hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_le_de
     by_contra h
     exact not_subsingleton (S ⧸ span {w}) (Ideal.Quotient.subsingleton_iff.mpr
       (span_singleton_eq_top.mpr (_root_.IsLocalRing.notMem_maximalIdeal.mp h)))
-  -- View `M` as an `S`-module through the standard quotient algebra so `IsScalarTower` applies.
   let : Module S M := Module.compHom M (algebraMap S (S ⧸ span {w}))
   have : IsScalarTower S (S ⧸ span {w}) M := .of_compHom S (S ⧸ span {w}) M
   have : Module.Finite S M := Module.Finite.trans (S ⧸ span {w}) M
@@ -104,7 +96,6 @@ theorem hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_le_de
     ← hq] at hab
   have hpqk : p + q = k + 1 := by exact_mod_cast hab
   rw [← projectiveDimension_le_iff M' 1, hpd_iso]
-  norm_cast
-  omega
+  norm_cast; omega
 
 end TauCeti

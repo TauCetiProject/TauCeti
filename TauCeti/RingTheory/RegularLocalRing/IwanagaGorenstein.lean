@@ -12,17 +12,9 @@ public import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 # Regular rings of finite Krull dimension are Iwanaga–Gorenstein
 
 Every commutative Noetherian regular ring `R` of finite Krull dimension has global dimension bounded
-by `ringKrullDim R` (`ModuleCat.projectiveDimension_le_ringKrullDim`), so it is Iwanaga–Gorenstein
-by `TauCeti.IsIwanagaGorenstein.of_globalDimension_lt_top`. In particular, every regular local ring
-is Iwanaga–Gorenstein.
-
-## Main results
-
-* `TauCeti.IsIwanagaGorenstein.of_isRegularRing_of_ringKrullDim_lt_top`: a commutative regular ring
-  with `ringKrullDim R < ⊤` is Iwanaga–Gorenstein.
-* `TauCeti.IsIwanagaGorenstein.of_isRegularRing_of_krullDimLE`: a commutative regular ring of
-  Krull dimension at most `d` (`Ring.KrullDimLE d R`) is Iwanaga–Gorenstein.
-* `IsRegularLocalRing` instance of `TauCeti.IsIwanagaGorenstein`.
+by `ringKrullDim R` (`ModuleCat.projectiveDimension_le_ringKrullDim`), hence is Iwanaga–Gorenstein
+(`of_isRegularRing_of_ringKrullDim_lt_top`, `of_isRegularRing_of_krullDimLE`). In particular, every
+regular local ring is Iwanaga–Gorenstein.
 
 ## References
 
@@ -37,15 +29,13 @@ namespace TauCeti.IsIwanagaGorenstein
 
 universe u
 
-/-- **Regular rings of finite Krull dimension are Iwanaga–Gorenstein**: their global dimension is
-at most their Krull dimension (`ModuleCat.projectiveDimension_le_ringKrullDim`). -/
+/-- **Regular rings of finite Krull dimension are Iwanaga–Gorenstein.** -/
 theorem of_isRegularRing_of_ringKrullDim_lt_top (R : Type u) [CommRing R] [IsRegularRing R]
     (h : ringKrullDim R < ⊤) : IsIwanagaGorenstein R :=
   of_globalDimension_lt_top R <|
     ((globalDimension_le_iff R _).mpr ModuleCat.projectiveDimension_le_ringKrullDim).trans_lt h
 
-/-- A commutative regular ring of Krull dimension at most `d` (`Ring.KrullDimLE d R`) is
-Iwanaga–Gorenstein. -/
+/-- A commutative regular ring with `[Ring.KrullDimLE d R]` is Iwanaga–Gorenstein. -/
 theorem of_isRegularRing_of_krullDimLE (R : Type u) [CommRing R] [IsRegularRing R] (d : ℕ)
     [Ring.KrullDimLE d R] : IsIwanagaGorenstein R :=
   of_isRegularRing_of_ringKrullDim_lt_top R <|

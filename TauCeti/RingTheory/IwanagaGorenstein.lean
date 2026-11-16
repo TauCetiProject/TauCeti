@@ -118,21 +118,14 @@ theorem of_exists_hasInjectiveDimensionLE (R : Type u) [CommRing R] [IsNoetheria
 self-injective dimensions. -/
 theorem of_globalDimension_lt_top (A : Type u) [Ring A] [IsNoetherianRing A]
     [IsNoetherianRing Aᵐᵒᵖ] (h : globalDimension.{u} A < ⊤) : IsIwanagaGorenstein A := by
-  have ⟨n, hn⟩ : ∃ n : ℕ, globalDimension.{u} A ≤ n := by
-    induction hd : globalDimension.{u} A using WithBot.recBotCoe with
+  obtain ⟨n, hn⟩ : ∃ n : ℕ, globalDimension.{u} A ≤ n := by
+    cases hd : globalDimension.{u} A with
     | bot => exact ⟨0, bot_le⟩
-    | coe d =>
-      induction d with
-      | top => exact absurd hd h.ne
-      | coe n => exact ⟨n, le_rfl⟩
-  exact
-    { isNoetherianRing := inferInstance
-      isNoetherianRing_op := inferInstance
-      exists_hasInjectiveDimensionLE :=
-        ⟨n, (globalDimension_le_iff_hasInjectiveDimensionLE A n).mp hn _⟩
-      exists_hasInjectiveDimensionLE_op :=
-        ⟨n, (globalDimension_le_iff_hasInjectiveDimensionLE Aᵐᵒᵖ n).mp
-          ((globalDimension_mulOpposite A).trans_le hn) _⟩ }
+    | coe d => lift d to ℕ using fun he ↦ h.ne (by simp [hd, he]); exact ⟨d, le_rfl⟩
+  exact ⟨inferInstance, inferInstance,
+    ⟨n, (globalDimension_le_iff_hasInjectiveDimensionLE A n).mp hn _⟩,
+    ⟨n, (globalDimension_le_iff_hasInjectiveDimensionLE Aᵐᵒᵖ n).mp
+      ((globalDimension_mulOpposite A).trans_le hn) _⟩⟩
 
 /-- A left and right noetherian ring over which every left module in the ring's universe has
 projective dimension at most `d` is Iwanaga–Gorenstein. -/

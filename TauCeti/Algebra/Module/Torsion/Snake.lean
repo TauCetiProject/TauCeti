@@ -301,9 +301,8 @@ noncomputable def torsionByLinearMap (f : M₁ →ₗ[R] M₂) :
   LinearMap.extendScalarsOfSurjective Ideal.Quotient.mk_surjective (torsionByMap r f)
 
 @[simp]
-theorem torsionByLinearMap_apply (f : M₁ →ₗ[R] M₂) (x : torsionBy R M₁ r) :
-    torsionByLinearMap r f x = torsionByMap r f x :=
-  (rfl)
+theorem coe_torsionByLinearMap (f : M₁ →ₗ[R] M₂) :
+    ⇑(torsionByLinearMap r f) = ⇑(torsionByMap r f) := (rfl)
 
 @[simp]
 theorem torsionByLinearMap_id :
@@ -314,32 +313,8 @@ theorem torsionByLinearMap_comp (g : M₂ →ₗ[R] M₃) (f : M₁ →ₗ[R] M�
     torsionByLinearMap r (g ∘ₗ f) = torsionByLinearMap r g ∘ₗ torsionByLinearMap r f :=
   LinearMap.ext fun _ ↦ rfl
 
-variable {r} {f : M₁ →ₗ[R] M₂} {g : M₂ →ₗ[R] M₃}
+variable {f : M₁ →ₗ[R] M₂} {g : M₂ →ₗ[R] M₃}
 
-/-- The `R ⧸ (r)`-linear restriction of an injective linear map to `r`-torsion is injective. -/
-theorem injective_torsionByLinearMap (hf : Injective f) :
-    Injective (torsionByLinearMap r f) :=
-  injective_torsionByMap hf
-
-/-- Left exactness of `TauCeti.torsionByLinearMap` over `R ⧸ (r)`. -/
-theorem exact_torsionByLinearMap (hfg : Exact f g) (hf : Injective f) :
-    Exact (torsionByLinearMap r f) (torsionByLinearMap r g) :=
-  exact_torsionByMap hfg hf
-
-/-- Along an exact sequence `0 → M₁ → M₂ → M₃` with `r` regular on `M₁`,
-`TauCeti.torsionByLinearMap r g` is injective. -/
-theorem injective_torsionByLinearMap_of_injective_smul (hfg : Exact f g) (hf : Injective f)
-    (hr : Injective fun x : M₁ ↦ r • x) : Injective (torsionByLinearMap r g) :=
-  injective_torsionByMap_of_injective_smul hfg hf hr
-
-/-- Along a short exact sequence `0 → M₁ → M₂ → M₃ → 0` with `r • ·` surjective on `M₁`,
-`TauCeti.torsionByLinearMap r g` is surjective. -/
-theorem surjective_torsionByLinearMap_of_surjective_smul (hfg : Exact f g) (hf : Injective f)
-    (hg : Surjective g) (hr : Surjective fun x : M₁ ↦ r • x) :
-    Surjective (torsionByLinearMap r g) :=
-  surjective_torsionByMap_of_surjective_smul hfg hf hg hr
-
-variable (r) in
 /-- `TauCeti.torsionByδ` promoted to an `R ⧸ (r)`-linear connecting map
 `M₃[r] →ₗ[R ⧸ (r)] M₁ ⧸ rM₁`. -/
 noncomputable def torsionByδLinearMap (hfg : Exact f g) (hf : Injective f) (hg : Surjective g) :
@@ -347,26 +322,8 @@ noncomputable def torsionByδLinearMap (hfg : Exact f g) (hf : Injective f) (hg 
   LinearMap.extendScalarsOfSurjective Ideal.Quotient.mk_surjective (torsionByδ r hfg hf hg)
 
 @[simp]
-theorem torsionByδLinearMap_apply (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
-    (x : torsionBy R M₃ r) :
-    torsionByδLinearMap r hfg hf hg x = torsionByδ r hfg hf hg x :=
-  (rfl)
-
-/-- Exactness of `M₂[r] → M₃[r] → M₁ ⧸ rM₁` as `R ⧸ (r)`-linear maps. -/
-theorem exact_torsionByLinearMap_torsionByδLinearMap (hfg : Exact f g) (hf : Injective f)
-    (hg : Surjective g) :
-    Exact (torsionByLinearMap r g) (torsionByδLinearMap r hfg hf hg) :=
-  exact_torsionByMap_torsionByδ hfg hf hg
-
-/-- `TauCeti.torsionByδLinearMap` is injective when multiplication by `r` is injective on `M₂`. -/
-theorem injective_torsionByδLinearMap (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
-    (hr : Injective fun x : M₂ ↦ r • x) : Injective (torsionByδLinearMap r hfg hf hg) :=
-  injective_torsionByδ hfg hf hg hr
-
-/-- `TauCeti.torsionByδLinearMap` is surjective when multiplication by `r` is surjective on `M₂`. -/
-theorem surjective_torsionByδLinearMap (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
-    (hr : Surjective fun x : M₂ ↦ r • x) : Surjective (torsionByδLinearMap r hfg hf hg) :=
-  surjective_torsionByδ hfg hf hg hr
+theorem coe_torsionByδLinearMap (hfg : Exact f g) (hf : Injective f) (hg : Surjective g) :
+    ⇑(torsionByδLinearMap r hfg hf hg) = ⇑(torsionByδ r hfg hf hg) := (rfl)
 
 end QuotientLinear
 
