@@ -53,11 +53,18 @@ differentiable fields; this determines the curvature tensor.
   `Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_rescale_const`: the curvature
   and Ricci tensors of `c g` and `g` coincide.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_const`: `Scal(c g) = c⁻¹ Scal(g)`.
+* `Bundle.ContMDiffRiemannianMetric.subsingleton_tangentSpace_of_inner_eq_smul_of_nonpos` and
+  `Bundle.ContMDiffRiemannianMetric.finrank_eq_zero_of_inner_eq_smul_of_nonpos`: metrics with
+  `g' = a g` for a constant `a ≤ 0` exist only over zero tangent spaces.
 * `Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_eq_of_inner_eq_smul` and
   `Bundle.ContMDiffRiemannianMetric.scalarCurvature_eq_inv_mul_of_inner_eq_smul`: the same for a
   metric `g'` known only to satisfy `g' = a g` for a constant `a`, with no sign condition.
-* `scalarCurvature_eq_of_inner_eq_smul_of_ricciTensor_eq_smul_inner`, in the namespace
-  `Bundle.ContMDiffRiemannianMetric`: `Scal(a g) = n c / a` when `Ric(g) = c g`.
+* `scalarCurvature_eq_of_inner_eq_smul_of_ricciTensor_eq_smul_inner` and
+  `ricciTensor_leviCivitaConnection_eq_smul_inner_of_inner_eq_smul`, in the namespace
+  `Bundle.ContMDiffRiemannianMetric`: `Scal(a g) = n c / a` and `Ric(a g) = (c / a) (a g)` when
+  `Ric(g) = c g`.
+* `ricciTensor_leviCivitaConnection_rescale_const_eq_smul_inner_iff`, in the same namespace: `c g`
+  is Einstein with constant `k` exactly when `g` is Einstein with constant `c k`.
 * `Bundle.ContMDiffRiemannianMetric.sectionalCurvature_leviCivitaConnection_rescale_const`:
   `K(c g) = c⁻¹ K(g)`.
 * `Bundle.ContMDiffRiemannianMetric.isConstantCurvatureTensor_rescale_const_iff` and its
@@ -300,18 +307,24 @@ theorem scalarCurvature_rescale_const (x : M) :
     scalarCurvature_def, CovariantDerivative.scalarCurvature_eq_sum _ x b]
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- Two metrics with `g' = a g` for a constant `a ≤ 0` exist only when the tangent spaces are zero,
-so in particular the dimension is at most one. -/
-private theorem finrank_le_one_of_inner_eq_smul
+/-- Two metrics with `g' = a g` for a constant `a ≤ 0` exist only over zero tangent spaces. -/
+theorem subsingleton_tangentSpace_of_inner_eq_smul_of_nonpos
     {g' g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {a : ℝ}
-    (h : ∀ y, g'.inner y = a • g.inner y) (ha : ¬0 < a) (x : M) : Module.finrank ℝ E ≤ 1 := by
+    (h : ∀ y, g'.inner y = a • g.inner y) (ha : a ≤ 0) (x : M) :
+    Subsingleton (TangentSpace I x) := by
   have hzero (u : TangentSpace I x) : u = 0 := by
     by_contra hu
     have h' := g'.pos x u hu
     rw [h, smul_apply, smul_apply, smul_eq_mul] at h'
     nlinarith [g.pos x u hu]
-  have : Subsingleton (TangentSpace I x) :=
-    subsingleton_iff.2 fun v w ↦ (hzero v).trans (hzero w).symm
+  exact subsingleton_iff.2 fun v w ↦ (hzero v).trans (hzero w).symm
+
+omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- Two metrics with `g' = a g` for a constant `a ≤ 0` exist only in dimension zero. -/
+theorem finrank_eq_zero_of_inner_eq_smul_of_nonpos
+    {g' g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {a : ℝ}
+    (h : ∀ y, g'.inner y = a • g.inner y) (ha : a ≤ 0) (x : M) : Module.finrank ℝ E = 0 := by
+  have := subsingleton_tangentSpace_of_inner_eq_smul_of_nonpos h ha x
   simp [← TauCeti.finrank_tangentSpace (I := I) x, Module.finrank_zero_of_subsingleton]
 
 /-- Metrics which are constant multiples of each other, `g' = a g`, have the same Ricci tensor.
@@ -330,7 +343,7 @@ theorem ricciTensor_leviCivitaConnection_eq_of_inner_eq_smul
       ext y v w
       simp [h]
     exact ricciTensor_leviCivitaConnection_rescale_const g ha x
-  · have hE := finrank_le_one_of_inner_eq_smul h ha x
+  · have hE := (finrank_eq_zero_of_inner_eq_smul_of_nonpos h (not_lt.1 ha) x).trans_le zero_le_one
     simp [CovariantDerivative.ricciTensor_eq_zero_of_finrank_le_one _ x hE]
 
 /-- Metrics which are constant multiples of each other, `g' = a g`, have scalar curvatures related
@@ -345,7 +358,7 @@ theorem scalarCurvature_eq_inv_mul_of_inner_eq_smul
       ext y v w
       simp [h]
     exact scalarCurvature_rescale_const g ha x
-  · have hE := finrank_le_one_of_inner_eq_smul h ha x
+  · have hE := (finrank_eq_zero_of_inner_eq_smul_of_nonpos h (not_lt.1 ha) x).trans_le zero_le_one
     simp only [scalarCurvature_def]
     simp [CovariantDerivative.scalarCurvature_eq_zero_of_ricciTensor_eq_zero,
       CovariantDerivative.ricciTensor_eq_zero_of_finrank_le_one _ x hE]
@@ -364,6 +377,47 @@ theorem scalarCurvature_eq_of_inner_eq_smul_of_ricciTensor_eq_smul_inner
     (CovariantDerivative.leviCivitaConnection I M).scalarCurvature_eq_of_ricciTensor_eq_smul_inner
       x c hRic,
     TauCeti.finrank_tangentSpace, inv_mul_eq_div]
+
+/-- A constant multiple `g' = a g` of a metric with `Ric(g) = c g` at `x` has `Ric(g') = (c / a) g'`
+at `x`. No sign condition on `a` is needed: for `a ≤ 0` the tangent spaces are zero. -/
+theorem ricciTensor_leviCivitaConnection_eq_smul_inner_of_inner_eq_smul
+    {g' g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {a : ℝ} {x : M}
+    (h : ∀ y, g'.inner y = a • g.inner y)
+    (hRic : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).ricciTensor x =
+        c • innerₗ (TangentSpace I x)) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩
+    (CovariantDerivative.leviCivitaConnection I M).ricciTensor x =
+      (c / a) • innerₗ (TangentSpace I x) := by
+  rw [ricciTensor_leviCivitaConnection_eq_of_inner_eq_smul h x, hRic]
+  ext u v
+  simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul, inner_riemannianBundle, h,
+    smul_apply]
+  rcases eq_or_ne a 0 with rfl | ha
+  · have := subsingleton_tangentSpace_of_inner_eq_smul_of_nonpos h le_rfl x
+    simp [Subsingleton.elim u 0]
+  · field_simp
+
+/-- **Einstein metrics under constant scaling.** For a constant `c > 0`, the metric `c g` has
+`Ric(c g) = k (c g)` at `x` exactly when `Ric(g) = (c k) g` at `x`. -/
+theorem ricciTensor_leviCivitaConnection_rescale_const_eq_smul_inner_iff (x : M) (k : ℝ) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).ricciTensor x =
+        k • innerₗ (TangentSpace I x)) ↔
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).ricciTensor x =
+        (c * k) • innerₗ (TangentSpace I x)) := by
+  constructor
+  · intro hRic
+    have := ricciTensor_leviCivitaConnection_eq_smul_inner_of_inner_eq_smul (g' := g) (a := c⁻¹)
+      (fun y ↦ by ext v w; simp [hc.ne']) hRic
+    rwa [div_inv_eq_mul, mul_comm] at this
+  · intro hRic
+    have := ricciTensor_leviCivitaConnection_eq_smul_inner_of_inner_eq_smul
+      (g' := g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc) (a := c)
+      (fun y ↦ by ext v w; simp) hRic
+    rwa [mul_div_cancel_left₀ _ hc.ne'] at this
 
 /-- **Scaling of sectional curvature.** Multiplying a smooth metric by a positive constant `c`
 multiplies the sectional curvature of every pair of tangent vectors by `c⁻¹`. -/

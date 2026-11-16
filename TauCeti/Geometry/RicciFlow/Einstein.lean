@@ -36,15 +36,19 @@ positive off `s`, and the flow equation is a derivative within `s`.
 * `TauCeti.hasDerivWithinAt_inner_neg_two_mul_ricciTensor_of_inner_eq_smul` and its converse
   `TauCeti.hasDerivWithinAt_inner_neg_two_mul_ricciTensor_iff_of_inner_eq_smul`: `τ ↦ φ(τ) g₀`
   satisfies the Ricci flow equation at `x` exactly when `Ric(g₀) = -(φ'/2) g₀` at `x`.
-* `TauCeti.hasDerivWithinAt_inner_neg_two_mul_ricciTensor_of_inner_eq_one_sub_two_mul_smul`: a
-  family with `g τ = (1 - 2 c τ) g₀` on `s` is a Ricci flow on `s` when `Ric(g₀) = c g₀`.
+* `TauCeti.hasDerivWithinAt_inner_neg_two_mul_ricciTensor_of_inner_eq_one_sub_two_mul_smul` and
+  its converse
+  `TauCeti.hasDerivWithinAt_inner_neg_two_mul_ricciTensor_iff_of_inner_eq_one_sub_two_mul_smul`: a
+  family with `g τ = (1 - 2 c τ) g₀` on `s` is a Ricci flow on `s` exactly when `Ric(g₀) = c g₀`.
 * `TauCeti.tendsto_scalarCurvature_nhdsLT_atTop_of_inner_eq_one_sub_two_mul_smul`: along
   `(1 - 2 c τ) g₀` with `Ric(g₀) = c g₀` and `c > 0`, the scalar curvature `n c / (1 - 2 c τ)` blows
   up at the extinction time `1 / (2 c)`.
-* `Bundle.ContMDiffRiemannianMetric.einsteinFlow`, with `TauCeti.hasDerivAt_inner_einsteinFlow`,
-  `TauCeti.scalarCurvature_einsteinFlow` and
-  `TauCeti.tendsto_scalarCurvature_einsteinFlow_nhdsLT_atTop`: the Einstein solution itself, its
-  flow equation, scalar curvature and extinction.
+* `Bundle.ContMDiffRiemannianMetric.einsteinFlow`, the Einstein solution itself, with, in the same
+  namespace, `ricciTensor_leviCivitaConnection_einsteinFlow` and
+  `ricciTensor_leviCivitaConnection_einsteinFlow_eq_smul_inner` (its Ricci tensor),
+  `hasDerivAt_inner_einsteinFlow` and `hasDerivAt_inner_einsteinFlow_iff` (its flow equation),
+  `scalarCurvature_einsteinFlow` and `tendsto_scalarCurvature_einsteinFlow_nhdsLT_atTop` (its
+  scalar curvature and extinction).
 * `TauCeti.hasDerivWithinAt_const_inner_neg_two_mul_ricciTensor_of_ricciTensor_eq_zero` and
   `TauCeti.hasDerivWithinAt_const_inner_neg_two_mul_ricciTensor_iff_ricciTensor_eq_zero`: a
   constant family is a Ricci flow exactly when the metric is Ricci-flat, and
@@ -78,7 +82,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- The **Einstein solution** `τ ↦ (1 - 2 c τ) g₀` starting at a metric `g₀`. It is defined as
 `(1 - 2 c τ) g₀` on the positive-scale interval `2 c τ < 1`, and as `g₀` off it, where
 `(1 - 2 c τ) g₀` is not a metric. When `Ric(g₀) = c g₀` it is a Ricci flow on its positive-scale
-interval, see `TauCeti.hasDerivAt_inner_einsteinFlow`. -/
+interval, see `Bundle.ContMDiffRiemannianMetric.hasDerivAt_inner_einsteinFlow`. -/
 def einsteinFlow (g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (c τ : ℝ) :
     ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) :=
   if h : 2 * c * τ < 1 then
@@ -93,11 +97,13 @@ theorem einsteinFlow_of_lt (h : 2 * c * τ < 1) :
   simp [einsteinFlow, h]
 
 /-- Off its positive-scale interval, where `1 ≤ 2 c τ`, the Einstein solution is `g₀`. -/
+@[simp]
 theorem einsteinFlow_of_le (h : 1 ≤ 2 * c * τ) : g₀.einsteinFlow c τ = g₀ := by
   simp [einsteinFlow, h.not_gt]
 
 /-- On its positive-scale interval `2 c τ < 1` the Einstein solution has inner products
 `(1 - 2 c τ) g₀`. -/
+@[simp]
 theorem einsteinFlow_inner (h : 2 * c * τ < 1) (y : M) :
     (g₀.einsteinFlow c τ).inner y = (1 - 2 * c * τ) • g₀.inner y := by
   ext v w
@@ -107,13 +113,13 @@ theorem einsteinFlow_inner (h : 2 * c * τ < 1) (y : M) :
 @[simp]
 theorem einsteinFlow_zero : g₀.einsteinFlow c 0 = g₀ := by
   ext y v w
-  simp [einsteinFlow_inner (show 2 * c * 0 < 1 by simp)]
+  simp
 
 /-- The Einstein solution with constant `0` is the constant family `g₀`. -/
 @[simp]
 theorem einsteinFlow_zero_left : g₀.einsteinFlow 0 τ = g₀ := by
   ext y v w
-  simp [einsteinFlow_inner (show 2 * 0 * τ < 1 by simp)]
+  simp
 
 end Bundle.ContMDiffRiemannianMetric
 
@@ -202,6 +208,24 @@ theorem hasDerivWithinAt_inner_neg_two_mul_ricciTensor_of_inner_eq_one_sub_two_m
   exact hasDerivWithinAt_inner_neg_two_mul_ricciTensor_of_inner_eq_smul hg hφ ht
     (by rw [hRic]; congr 1; ring) u v
 
+/-- **Einstein solutions are the homothetic Ricci flows `(1 - 2 c τ) g₀`.** Let
+`g τ = (1 - 2 c τ) g₀` for `τ ∈ s`, and let `s` have unique derivatives at `t ∈ s`. Then the family
+satisfies the Ricci flow equation `∂_τ g = -2 Ric(g)` at `x` at time `t` within `s` exactly when
+`Ric(g₀) = c g₀` at `x`. -/
+theorem hasDerivWithinAt_inner_neg_two_mul_ricciTensor_iff_of_inner_eq_one_sub_two_mul_smul
+    (hg : ∀ τ ∈ s, ∀ y, (g τ).inner y = (1 - 2 * c * τ) • g₀.inner y) (ht : t ∈ s)
+    (hs : UniqueDiffWithinAt ℝ s t) :
+    (∀ u v : TangentSpace I x, HasDerivWithinAt (fun τ ↦ (g τ).inner x u v)
+      (-2 * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨(g t).toRiemannianMetric⟩;
+        (leviCivitaConnection I M).ricciTensor x u v)) s t) ↔
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₀.toRiemannianMetric⟩;
+      (leviCivitaConnection I M).ricciTensor x = c • innerₗ (TangentSpace I x)) := by
+  have hφ : HasDerivWithinAt (fun τ ↦ 1 - 2 * c * τ) (-(2 * c)) s t := by
+    simpa using ((hasDerivWithinAt_id t s).const_mul (2 * c)).const_sub 1
+  rw [hasDerivWithinAt_inner_neg_two_mul_ricciTensor_iff_of_inner_eq_smul hg hφ ht hs]
+  congr! 2
+  ring
+
 omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
 /-- Times `τ < (2 c)⁻¹` lie in the positive-scale interval `2 c τ < 1` when `c > 0`. -/
 private theorem two_mul_mul_lt_one_of_lt_inv {τ : ℝ} (hc : 0 < c) (hτ : τ < (2 * c)⁻¹) :
@@ -231,43 +255,6 @@ theorem tendsto_scalarCurvature_nhdsLT_atTop_of_inner_eq_one_sub_two_mul_smul (h
   filter_upwards [hs] with τ hτ
   rw [ContMDiffRiemannianMetric.scalarCurvature_eq_of_inner_eq_smul_of_ricciTensor_eq_smul_inner
     (hg τ hτ) hRic, Function.comp_apply, div_eq_inv_mul]
-
-/-- **The Einstein solution is a Ricci flow.** If `Ric(g₀) = c g₀` at `x`, then the Einstein
-solution `g τ = (1 - 2 c τ) g₀` satisfies the Ricci flow equation `∂_τ g = -2 Ric(g)` at `x` at
-every time `t` of its positive-scale interval `2 c t < 1`. -/
-theorem hasDerivAt_inner_einsteinFlow (ht : 2 * c * t < 1)
-    (hRic : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₀.toRiemannianMetric⟩;
-      (leviCivitaConnection I M).ricciTensor x = c • innerₗ (TangentSpace I x))
-    (u v : TangentSpace I x) :
-    HasDerivAt (fun τ ↦ (g₀.einsteinFlow c τ).inner x u v)
-      (-2 * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-          ⟨(g₀.einsteinFlow c t).toRiemannianMetric⟩;
-        (leviCivitaConnection I M).ricciTensor x u v)) t :=
-  (hasDerivWithinAt_inner_neg_two_mul_ricciTensor_of_inner_eq_one_sub_two_mul_smul
-    (s := {τ | 2 * c * τ < 1}) (fun _ hτ ↦ ContMDiffRiemannianMetric.einsteinFlow_inner hτ) ht
-    hRic u v).hasDerivAt ((isOpen_lt (by fun_prop) continuous_const).mem_nhds ht)
-
-/-- Along the Einstein solution of a metric with `Ric(g₀) = c g₀` at `x`, the scalar curvature at
-`x` is `Scal(g τ) = n c / (1 - 2 c τ)` on the positive-scale interval, where `n` is the
-dimension. -/
-theorem scalarCurvature_einsteinFlow (ht : 2 * c * t < 1)
-    (hRic : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₀.toRiemannianMetric⟩;
-      (leviCivitaConnection I M).ricciTensor x = c • innerₗ (TangentSpace I x)) :
-    (g₀.einsteinFlow c t).scalarCurvature x = finrank ℝ E * c / (1 - 2 * c * t) :=
-  ContMDiffRiemannianMetric.scalarCurvature_eq_of_inner_eq_smul_of_ricciTensor_eq_smul_inner
-    (ContMDiffRiemannianMetric.einsteinFlow_inner ht) hRic
-
-/-- **Extinction of the Einstein solution.** Let `Ric(g₀) = c g₀` at `x` with `c > 0`, in positive
-dimension. Then the scalar curvature at `x` of the Einstein solution tends to `+∞` at the end
-`T = (2 c)⁻¹` of its positive-scale interval. -/
-theorem tendsto_scalarCurvature_einsteinFlow_nhdsLT_atTop (hc : 0 < c) (hE : 0 < finrank ℝ E)
-    (hRic : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₀.toRiemannianMetric⟩;
-      (leviCivitaConnection I M).ricciTensor x = c • innerₗ (TangentSpace I x)) :
-    Tendsto (fun τ ↦ (g₀.einsteinFlow c τ).scalarCurvature x) (𝓝[<] (2 * c)⁻¹) atTop :=
-  tendsto_scalarCurvature_nhdsLT_atTop_of_inner_eq_one_sub_two_mul_smul hc hE
-    (s := {τ | 2 * c * τ < 1})
-    (mem_of_superset self_mem_nhdsWithin fun _ hτ ↦ two_mul_mul_lt_one_of_lt_inv hc hτ)
-    (fun _ hτ ↦ ContMDiffRiemannianMetric.einsteinFlow_inner hτ) hRic
 
 end Einstein
 
@@ -314,9 +301,102 @@ theorem hasDerivWithinAt_const_inner_neg_two_mul_ricciTensor_of_finrank_le_one
 
 end Stationary
 
+end TauCeti
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {c t : ℝ} {x : M}
+
+section EinsteinFlow
+
+/-- The Ricci tensor of the Einstein solution is the Ricci tensor of `g₀` at every time. -/
+theorem ricciTensor_leviCivitaConnection_einsteinFlow (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g₀.einsteinFlow c t).toRiemannianMetric⟩;
+      (leviCivitaConnection I M).ricciTensor x) =
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₀.toRiemannianMetric⟩;
+      (leviCivitaConnection I M).ricciTensor x) := by
+  by_cases ht : 2 * c * t < 1
+  · exact ricciTensor_leviCivitaConnection_eq_of_inner_eq_smul (einsteinFlow_inner ht) x
+  · rw [einsteinFlow_of_le (not_lt.1 ht)]
+
+/-- If `Ric(g₀) = c g₀` at `x`, then the Einstein solution has `Ric(g t) = (c / (1 - 2 c t)) g t`
+at `x` at every time `t` of its positive-scale interval `2 c t < 1`. -/
+theorem ricciTensor_leviCivitaConnection_einsteinFlow_eq_smul_inner (ht : 2 * c * t < 1)
+    (hRic : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₀.toRiemannianMetric⟩;
+      (leviCivitaConnection I M).ricciTensor x = c • innerₗ (TangentSpace I x)) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨(g₀.einsteinFlow c t).toRiemannianMetric⟩
+    (leviCivitaConnection I M).ricciTensor x =
+      (c / (1 - 2 * c * t)) • innerₗ (TangentSpace I x) :=
+  ricciTensor_leviCivitaConnection_eq_smul_inner_of_inner_eq_smul (einsteinFlow_inner ht) hRic
+
+/-- **The Einstein solution is a Ricci flow.** If `Ric(g₀) = c g₀` at `x`, then the Einstein
+solution `g τ = (1 - 2 c τ) g₀` satisfies the Ricci flow equation `∂_τ g = -2 Ric(g)` at `x` at
+every time `t` of its positive-scale interval `2 c t < 1`. -/
+theorem hasDerivAt_inner_einsteinFlow (ht : 2 * c * t < 1)
+    (hRic : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₀.toRiemannianMetric⟩;
+      (leviCivitaConnection I M).ricciTensor x = c • innerₗ (TangentSpace I x))
+    (u v : TangentSpace I x) :
+    HasDerivAt (fun τ ↦ (g₀.einsteinFlow c τ).inner x u v)
+      (-2 * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+          ⟨(g₀.einsteinFlow c t).toRiemannianMetric⟩;
+        (leviCivitaConnection I M).ricciTensor x u v)) t :=
+  (TauCeti.hasDerivWithinAt_inner_neg_two_mul_ricciTensor_of_inner_eq_one_sub_two_mul_smul
+    (s := {τ | 2 * c * τ < 1}) (fun _ hτ ↦ einsteinFlow_inner hτ) ht
+    hRic u v).hasDerivAt ((isOpen_lt (by fun_prop) continuous_const).mem_nhds ht)
+
+/-- **The Einstein solution is a Ricci flow exactly for Einstein metrics.** At a time `t` of its
+positive-scale interval `2 c t < 1`, the Einstein solution satisfies the Ricci flow equation
+`∂_τ g = -2 Ric(g)` at `x` exactly when `Ric(g₀) = c g₀` at `x`. -/
+theorem hasDerivAt_inner_einsteinFlow_iff (ht : 2 * c * t < 1) :
+    (∀ u v : TangentSpace I x, HasDerivAt (fun τ ↦ (g₀.einsteinFlow c τ).inner x u v)
+      (-2 * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+          ⟨(g₀.einsteinFlow c t).toRiemannianMetric⟩;
+        (leviCivitaConnection I M).ricciTensor x u v)) t) ↔
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₀.toRiemannianMetric⟩;
+      (leviCivitaConnection I M).ricciTensor x = c • innerₗ (TangentSpace I x)) :=
+  ⟨fun hflow ↦
+    (TauCeti.hasDerivWithinAt_inner_neg_two_mul_ricciTensor_iff_of_inner_eq_one_sub_two_mul_smul
+      (s := {τ | 2 * c * τ < 1}) (fun _ hτ ↦ einsteinFlow_inner hτ) ht
+      ((isOpen_lt (by fun_prop) continuous_const).uniqueDiffWithinAt ht)).1
+      fun u v ↦ (hflow u v).hasDerivWithinAt,
+    fun hRic ↦ hasDerivAt_inner_einsteinFlow ht hRic⟩
+
+/-- Along the Einstein solution of a metric with `Ric(g₀) = c g₀` at `x`, the scalar curvature at
+`x` is `Scal(g τ) = n c / (1 - 2 c τ)` on the positive-scale interval, where `n` is the
+dimension. -/
+theorem scalarCurvature_einsteinFlow (ht : 2 * c * t < 1)
+    (hRic : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₀.toRiemannianMetric⟩;
+      (leviCivitaConnection I M).ricciTensor x = c • innerₗ (TangentSpace I x)) :
+    (g₀.einsteinFlow c t).scalarCurvature x = finrank ℝ E * c / (1 - 2 * c * t) :=
+  scalarCurvature_eq_of_inner_eq_smul_of_ricciTensor_eq_smul_inner
+    (einsteinFlow_inner ht) hRic
+
+/-- **Extinction of the Einstein solution.** Let `Ric(g₀) = c g₀` at `x` with `c > 0`, in positive
+dimension. Then the scalar curvature at `x` of the Einstein solution tends to `+∞` at the end
+`T = (2 c)⁻¹` of its positive-scale interval. -/
+theorem tendsto_scalarCurvature_einsteinFlow_nhdsLT_atTop (hc : 0 < c) (hE : 0 < finrank ℝ E)
+    (hRic : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₀.toRiemannianMetric⟩;
+      (leviCivitaConnection I M).ricciTensor x = c • innerₗ (TangentSpace I x)) :
+    Tendsto (fun τ ↦ (g₀.einsteinFlow c τ).scalarCurvature x) (𝓝[<] (2 * c)⁻¹) atTop :=
+  TauCeti.tendsto_scalarCurvature_nhdsLT_atTop_of_inner_eq_one_sub_two_mul_smul hc hE
+    (s := {τ | 2 * c * τ < 1})
+    (mem_of_superset self_mem_nhdsWithin fun _ hτ ↦ TauCeti.two_mul_mul_lt_one_of_lt_inv hc hτ)
+    (fun _ hτ ↦ einsteinFlow_inner hτ) hRic
+
+end EinsteinFlow
+
+end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti
+
 section Sphere
 
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {n : ℕ}
+variable {t : ℝ} {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {n : ℕ}
   [Fact (finrank ℝ F = n + 1)]
 
 /-- **The shrinking round sphere.** The Einstein solution `g τ = (1 - 2 (n - 1) τ) g_round` of the
@@ -330,7 +410,8 @@ theorem hasDerivAt_inner_einsteinFlow_sphereRoundMetric (ht : 2 * ((n : ℝ) - 1
           ⟨((sphereRoundMetric (E := F) (n := n)).ofLE (m := ∞) le_top
             |>.einsteinFlow ((n : ℝ) - 1) t).toRiemannianMetric⟩;
         (leviCivitaConnection (𝓡 n) (sphere (0 : F) 1)).ricciTensor p u v)) t :=
-  hasDerivAt_inner_einsteinFlow ht (ricciTensor_sphereRoundMetric_ofLE p) u v
+  ContMDiffRiemannianMetric.hasDerivAt_inner_einsteinFlow ht (ricciTensor_sphereRoundMetric_ofLE p)
+    u v
 
 /-- Along the shrinking round sphere `g τ = (1 - 2 (n - 1) τ) g_round`, the scalar curvature is
 `n (n - 1) / (1 - 2 (n - 1) τ)` at every point and at every time with `2 (n - 1) τ < 1`. -/
@@ -339,8 +420,8 @@ theorem scalarCurvature_einsteinFlow_sphereRoundMetric (ht : 2 * ((n : ℝ) - 1)
     ((sphereRoundMetric (E := F) (n := n)).ofLE (m := ∞) le_top
         |>.einsteinFlow ((n : ℝ) - 1) t).scalarCurvature p =
       n * ((n : ℝ) - 1) / (1 - 2 * ((n : ℝ) - 1) * t) := by
-  rw [scalarCurvature_einsteinFlow ht (ricciTensor_sphereRoundMetric_ofLE p),
-    finrank_euclideanSpace_fin]
+  rw [ContMDiffRiemannianMetric.scalarCurvature_einsteinFlow ht
+    (ricciTensor_sphereRoundMetric_ofLE p), finrank_euclideanSpace_fin]
 
 /-- **Extinction of the shrinking round sphere.** For `n ≥ 2`, along the Einstein solution
 `g τ = (1 - 2 (n - 1) τ) g_round` of the unit `n`-sphere, the scalar curvature at every point tends
@@ -352,8 +433,8 @@ theorem tendsto_scalarCurvature_einsteinFlow_sphereRoundMetric_nhdsLT_atTop (hn 
         |>.einsteinFlow ((n : ℝ) - 1) τ).scalarCurvature p)
       (𝓝[<] (2 * ((n : ℝ) - 1))⁻¹) atTop := by
   have hn' : (1 : ℝ) < n := by exact_mod_cast hn
-  refine tendsto_scalarCurvature_einsteinFlow_nhdsLT_atTop (by linarith) ?_
-    (ricciTensor_sphereRoundMetric_ofLE p)
+  refine ContMDiffRiemannianMetric.tendsto_scalarCurvature_einsteinFlow_nhdsLT_atTop
+    (by linarith) ?_ (ricciTensor_sphereRoundMetric_ofLE p)
   rw [finrank_euclideanSpace_fin]
   omega
 
