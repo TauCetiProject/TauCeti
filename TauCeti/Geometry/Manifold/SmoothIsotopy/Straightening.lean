@@ -345,7 +345,7 @@ private theorem injective_spliceMap
 `(-ρ, ρ)`, and its stretch over `(-a, a)` avoids the image of the rest of the circle under `K`. -/
 private theorem isSmoothEmbedding_spliceMap [T2Space M]
     (hsmooth : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ (spliceMap K φ ρ g))
-    (hgC : ContDiffOn ℝ ∞ g (Ioo (-r) r)) (hgφ : ∀ t, |t| < ρ → g t ∈ φ.target)
+    (hgφ : ∀ t, |t| < ρ → g t ∈ φ.target)
     (hgK : ∀ t, a ≤ |t| → |t| < r → g t = φ (K (Circle.exp t)))
     (hKφ : ∀ t, |t| < r → K (Circle.exp t) ∈ φ.source) (hinj : InjOn g (Ioo (-ρ) ρ))
     (hderiv : ∀ t, |t| < ρ → deriv g t ≠ 0)
@@ -365,18 +365,12 @@ private theorem isSmoothEmbedding_spliceMap [T2Space M]
         with w hw
       exact spliceMap_of_abs_lt ((Circle.mem_centeredArc hρπ).1 hw)
     have hlt := hz.trans_le hρr
-    have hgz : ContDiffAt ℝ ∞ g (arg z) :=
-      hgC.contDiffAt (isOpen_Ioo.mem_nhds ⟨neg_lt_of_abs_lt hlt, lt_of_abs_lt hlt⟩)
-    have hh : MDifferentiableAt (𝓡 1) 𝓘(ℝ, E) h (Circle.exp (arg z)) := by
-      rw [Circle.exp_arg]
-      exact (hgz.contMDiffAt.comp z (contMDiffAt_circle_arg (hlt.trans_le hrπ))).mdifferentiableAt
-        (by simp)
     have hlift : h ∘ Circle.exp =ᶠ[𝓝 (arg z)] g := by
       have hπ : |arg z| < Real.pi := hlt.trans_le hrπ
       filter_upwards [isOpen_Ioo.mem_nhds ⟨neg_lt_of_abs_lt hπ, lt_of_abs_lt hπ⟩] with t ht
       simp only [h, Function.comp_apply, Circle.arg_exp ht.1 ht.2.le]
     have hdh : Injective (mfderiv (𝓡 1) 𝓘(ℝ, E) h z) := by
-      have := injective_mfderiv_of_deriv_comp_circleExp_ne_zero hh
+      have := injective_mfderiv_of_deriv_comp_circleExp_ne_zero
         (by rw [hlift.deriv_eq]; exact hderiv _ hz)
       rwa [Circle.exp_arg] at this
     have hsymm : IsDiffImmersionAt 𝓘(ℝ, E) 𝓘(ℝ, E) φ.symm (h z) :=
@@ -398,7 +392,7 @@ has positive pairing with a functional `ℓ` on `[-ρ, ρ]` (so `g` is injective
 stretch over `(-a, a)` avoids the image of the rest of the circle under `K`. -/
 private theorem isSmoothEmbedding_spliceMap_of_pos_deriv [T2Space M] (ℓ : StrongDual ℝ E)
     (hsmooth : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ (spliceMap K φ ρ g))
-    (hgC : ContDiffOn ℝ ∞ g (Ioo (-r) r)) (hgφ : ∀ t, |t| < ρ → g t ∈ φ.target)
+    (hgφ : ∀ t, |t| < ρ → g t ∈ φ.target)
     (hgK : ∀ t, a ≤ |t| → |t| < r → g t = φ (K (Circle.exp t)))
     (hKφ : ∀ t, |t| < r → K (Circle.exp t) ∈ φ.source)
     (hpos : ∀ t ∈ Icc (-ρ) ρ, DifferentiableAt ℝ g t ∧ 0 < ℓ (deriv g t))
@@ -412,7 +406,7 @@ private theorem isSmoothEmbedding_spliceMap_of_pos_deriv [T2Space M] (ℓ : Stro
     · have ht' := interior_subset ht
       rw [(ℓ.hasFDerivAt.comp_hasDerivAt t (hpos t ht').1.hasDerivAt).deriv]
       exact (hpos t ht').2
-  refine isSmoothEmbedding_spliceMap hsmooth hgC hgφ hgK hKφ (fun t ht t' ht' htt' => ?_)
+  refine isSmoothEmbedding_spliceMap hsmooth hgφ hgK hKφ (fun t ht t' ht' htt' => ?_)
     (fun t ht h0 => ?_) hfar haρ hρr hrπ hφ
   · exact hmono.injOn (Ioo_subset_Icc_self ht) (Ioo_subset_Icc_self ht') (congrArg ℓ htt')
   · have := (hpos t (abs_le.1 ht.le)).2
@@ -534,10 +528,9 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
   have hemb (s : unitInterval) : IsSmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞
       (spliceMap K φ ρ (splice k l δ s)) :=
     isSmoothEmbedding_spliceMap_of_pos_deriv (r := r) (a := 2 * δ) ℓ
-      (hjoint.comp (contMDiff_const.prodMk contMDiff_id))
-      ((contDiffOn_splice hkC hlC δ).comp (contDiffOn_const.prodMk contDiffOn_id)
-        fun t ht => ⟨mem_univ _, ht⟩) (hGφ s s.property) (fun t ht _ => hGK s t ht) hKφ
-      (hpos δ s s.property) (fun t ht => (hδb s s.property t ht).2) hδρ hρr.le hrπ hφ
+      (hjoint.comp (contMDiff_const.prodMk contMDiff_id)) (hGφ s s.property)
+      (fun t ht _ => hGK s t ht) hKφ (hpos δ s s.property)
+      (fun t ht => (hδb s s.property t ht).2) hδρ hρr.le hrπ hφ
   let K' := SmoothEmbedding.ofIsSmoothEmbedding _ (hemb 1)
   refine ⟨K', ⟨⟨_, hjoint⟩, fun z => ?_, fun z => ?_, hemb⟩, ?_, fun t z hz => ?_⟩
   · -- At time `0` the motion is `K`.
