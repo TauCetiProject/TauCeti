@@ -19,6 +19,7 @@ the interval, without requiring continuity beyond the right endpoint.
 
 * `ContinuousOn.exists_continuous_eqOn_Icc`: a function continuous on `[a, b]`
   agrees on `[a, b]` with a continuous function.
+* `ContinuousOn.comp_projIcc`: that extension, written as `f ∘ projIcc a b`, is continuous.
 * `TauCeti.continuousWithinAt_IccExtend_Ici`: constant extension preserves right continuity
   within the interval and is right-continuous outside `[a, b)` without further assumptions.
 -/
@@ -40,6 +41,12 @@ theorem ContinuousOn.exists_continuous_eqOn_Icc (hf : ContinuousOn f (Icc a b)) 
   · exact ⟨IccExtend hab ((Icc a b).domRestrict f), hf.domRestrict.Icc_extend',
       fun _ hx ↦ IccExtend_of_mem _ _ hx⟩
   · exact ⟨fun _ ↦ f a, continuous_const, by simp [Icc_eq_empty hab]⟩
+
+/-- A function continuous on a closed interval `[a, b]` with `a ≤ b`, composed with the
+projection `projIcc a b` onto it, is continuous on the whole space. -/
+theorem ContinuousOn.comp_projIcc (hf : ContinuousOn f (Icc a b)) (hab : a ≤ b) :
+    Continuous fun x => f (projIcc a b hab x) :=
+  hf.comp_continuous continuous_projIcc.subtype_val fun x => (projIcc a b hab x).2
 
 /-- Constant extension is right-continuous wherever the original function is right-continuous
 within the interval. Outside `[a,b)` no continuity assumption is needed. -/

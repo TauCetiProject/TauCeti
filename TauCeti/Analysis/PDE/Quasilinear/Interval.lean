@@ -13,7 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Analysis.Calculus.Deriv.IccExtend
+import TauCeti.Analysis.Calculus.ContDiff.ClosedInterval
 import TauCeti.Analysis.Convex.SchauderFixedPoint
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.Normed.Operator.Holder
@@ -21,6 +21,7 @@ import TauCeti.Analysis.PDE.Regularity.Interval
 import TauCeti.Analysis.PDE.DirichletProblem.Interval
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
+import TauCeti.Topology.Order.ProjIcc
 
 /-!
 # Quasilinear divergence-form equations on an interval
@@ -185,9 +186,10 @@ open scoped NNReal
 variable {α : ℝ≥0}
 
 /-- **The second derivative is Hölder.** If `w` is `C¹` with `w' = G / A(·, w)` on `[x₀, x₁]`,
-where `A` and `G` are `C¹` and `A(·, w)` does not vanish there, then the derivative
-`(-(f + F') A(·, w) - G (∂ₜA + ∂ᵤA w')(·, w)) / A(·, w)²` of `G / A(·, w)` is `α`-Hölder on
-`[x₀, x₁]`, provided `f`, `F'` and the derivative of `A` near the graph of `w` are. -/
+where `A` and `G` are `C¹` and `A(·, w)` does not vanish there, then the expression
+`(-(f + F') A(·, w) - G (∂ₜA + ∂ᵤA w')(·, w)) / A(·, w)²`, which is the derivative of
+`G / A(·, w)` when `G' = -(f + F')`, is `α`-Hölder on `[x₀, x₁]`, provided `f`, `F'` and the
+derivative of `A` near the graph of `w` are. -/
 private theorem exists_holderOnWith_div_sq (hx : x₀ ≤ x₁) (hα₀ : 0 < α) (hα₁ : α ≤ 1)
     (hA : ContDiff ℝ 1 (Function.uncurry A))
     (hDA : ∀ R, ∃ C, HolderOnWith C α (fderiv ℝ (Function.uncurry A)) (Icc x₀ x₁ ×ˢ Icc (-R) R))
@@ -200,10 +202,6 @@ private theorem exists_holderOnWith_div_sq (hx : x₀ ≤ x₁) (hα₀ : 0 < α
         (Icc x₀ x₁) := by
   set s := Icc x₀ x₁
   have hs : IsCompact s := isCompact_Icc
-  have hcongr {C : ℝ≥0} {g₁ g₂ : ℝ → ℝ} (he : EqOn g₁ g₂ s) (H : HolderOnWith C α g₁ s) :
-      HolderOnWith C α g₂ s := fun x hx y hy => by
-    rw [← he hx, ← he hy]
-    exact H x hx y hy
   have hγ : ContDiff ℝ 1 fun t => (t, w t) := contDiff_id.prodMk hw
   have hb : ContDiff ℝ 1 fun t => A t (w t) := hA.comp hγ
   obtain ⟨Cb, hHb⟩ := hb.contDiffOn.exists_holderOnWith (convex_Icc x₀ x₁) hs hα₁
@@ -215,7 +213,7 @@ private theorem exists_holderOnWith_div_sq (hx : x₀ ≤ x₁) (hα₀ : 0 < α
   obtain ⟨Cw, hHw⟩ := (ContinuousLinearMap.mul ℝ ℝ).exists_holderOnWith_comp₂_of_isCompact hs hα₀
     hHG hHinv
   have hHw' : HolderOnWith Cw α (deriv w) s :=
-    hcongr (fun t ht => by simp [hwG t ht, div_eq_mul_inv]) hHw
+    hHw.congr fun t ht => by simp [hwG t ht, div_eq_mul_inv]
   -- The derivative `(∂ₜA + ∂ᵤA w')(·, w)` of `A(·, w)` is Hölder.
   obtain ⟨R, hR⟩ := hs.exists_bound_of_continuousOn hw.continuous.continuousOn
   obtain ⟨CA, hHA⟩ := hDA R
@@ -238,7 +236,7 @@ private theorem exists_holderOnWith_div_sq (hx : x₀ ≤ x₁) (hα₀ : 0 < α
     hHinv hHinv
   obtain ⟨C, hH⟩ := (ContinuousLinearMap.mul ℝ ℝ).exists_holderOnWith_comp₂_of_isCompact hs hα₀
     (hH₁.sub hH₂) hH₃
-  refine ⟨C, hcongr (fun t _ => ?_) hH⟩
+  refine ⟨C, hH.congr fun t _ => ?_⟩
   simp only [neg_apply, ContinuousLinearMap.mul_apply', Pi.add_apply,
     Pi.sub_apply, ContinuousLinearMap.id_apply, Function.comp_apply]
   rw [div_eq_mul_inv, sq, mul_inv]
@@ -269,8 +267,7 @@ private theorem exists_contDiff_deriv_eq_div (hx : x₀ < x₁)
     (hf.integrableOn_Icc.mono_set Ioo_subset_Icc_self) hF.continuous.continuousOn hu
   -- Extend `f` by projection, so that the flux is defined and `C¹` on `ℝ`.
   set fₑ : ℝ → ℝ := fun t => f (projIcc x₀ x₁ hx.le t)
-  have hfₑ : Continuous fₑ :=
-    hf.comp_continuous continuous_projIcc.subtype_val fun t => (projIcc _ _ _ t).2
+  have hfₑ : Continuous fₑ := hf.comp_projIcc hx.le
   set G : ℝ → ℝ := fun t => k - (∫ s in x₀..t, fₑ s) - F t
   have hG : ∀ t, HasDerivAt G (-(fₑ t + deriv F t)) t := fun t => by
     convert ((hfₑ.integral_hasStrictDerivAt x₀ t).hasDerivAt.const_sub k).sub
@@ -287,7 +284,7 @@ private theorem exists_contDiff_deriv_eq_div (hx : x₀ < x₁)
     have hwt : w t = W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t) := by
       rw [projIcc_of_mem hx.le ht, hū]
     rw [hdw t ht, hΦ, hwt]
-    rfl
+    simp only [G, Function.comp_apply, Function.uncurry_apply_pair, id_eq]
 
 /-- **Solutions of the quasilinear problem on an interval are `C^{2,α}` up to the boundary.** Let
 `x₀ < x₁` and `0 < α ≤ 1`. Let the coefficient `A(x, y)` be `C¹` jointly, with derivative

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.IntervalIntegral.ParametricPrimitive
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
@@ -18,6 +19,7 @@ import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 import TauCeti.Order.Filter.Basic
 import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Topology.Order.ProjIcc
 
 /-!
 # Global Hölder estimate for divergence-form equations on an interval
@@ -192,16 +194,12 @@ theorem exists_contDiff_eq_intervalRepresentativeL_and_deriv_eq (hx : x₀ < x�
       (TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hf
         (left_mem_Icc.2 hx.le))).sub hF).div ha ha0
   set ĝ : ℝ → ℝ := fun t => g (projIcc x₀ x₁ hx.le t)
-  have hĝ : Continuous ĝ :=
-    hg.comp_continuous continuous_projIcc.subtype_val fun t => (projIcc _ _ _ t).2
+  have hĝ : Continuous ĝ := hg.comp_projIcc hx.le
   set x₀' : Icc x₀ x₁ := ⟨x₀, left_mem_Icc.2 hx.le⟩
   refine ⟨k, fun t => W1p.intervalRepresentativeL hx u x₀' + ∫ s in x₀..t, ĝ s, ?_, fun t => ?_,
     fun t ht => ?_⟩
-  · have hd : deriv (fun t => W1p.intervalRepresentativeL hx u x₀' + ∫ s in x₀..t, ĝ s) = ĝ :=
-      funext fun t => ((hĝ.integral_hasStrictDerivAt x₀ t).hasDerivAt.const_add _).deriv
-    exact contDiff_one_iff_deriv.2 ⟨fun t =>
-      ((hĝ.integral_hasStrictDerivAt x₀ t).hasDerivAt.const_add _).differentiableAt,
-      by rw [hd]; exact hĝ⟩
+  · exact contDiff_const.add (by
+      simpa using intervalIntegral.contDiff_primitive_of_contDiff (n := 0) (contDiff_zero.2 hĝ) x₀)
   · -- On `(x₀, x₁)` the weak gradient is `g` almost everywhere, by the first integral.
     have hgrad : ∀ᵐ s ∂volume.restrict (Ioo x₀ t), W1p.gradient u s = ĝ s := by
       have hk' := (ae_restrict_iff' measurableSet_Ioo).1 hk

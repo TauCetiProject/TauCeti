@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Extend
+public import Mathlib.Order.Interval.Set.ProjIcc
 public import TauCeti.Analysis.Calculus.IteratedDeriv.Within
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.IntervalIntegral.ParametricPrimitive
+import TauCeti.Topology.Order.ProjIcc
 
 /-!
 # Continuous derivative jets on a closed interval
@@ -31,6 +35,20 @@ derivatives. No completeness assumption on the codomain is needed.
 
 `ContDiffOn.isBounded_image_deriv` bounds the derivative of a `C¹` function on a closed interval:
 it agrees with the continuous within-interval derivative away from the two endpoints.
+
+## `C²` extension from a closed interval
+
+Let `v : ℝ → F` be `C¹`, with values in a real Banach space, and suppose that on `(a, b)` its
+derivative has a derivative `h` that extends continuously to `[a, b]`. Then `v` is `C²` on the
+closed interval in the strongest sense (`TauCeti.exists_contDiff_two_eqOn_and_deriv_deriv_eq`): it
+agrees on `[a, b]`, together with its derivative, with a `C²` function `w` on `ℝ` whose second
+derivative is the constant extension `h ∘ projIcc a b` of `h`. So any modulus of continuity of `h`
+on `[a, b]`, such as a Hölder bound, is a global modulus of continuity of `w''`, since
+`projIcc a b` is `1`-Lipschitz.
+
+The function `w` is obtained by integrating `h ∘ projIcc a b` twice, starting from `v a` and
+`v' a`; the fundamental theorem of calculus on `[a, b]` identifies the integrals with `v` and `v'`
+there.
 -/
 
 public section
@@ -133,6 +151,52 @@ theorem contDiffOn_Icc_iff_exists_continuous_jet {n : ℕ} :
       exact hf.hasDerivAt_iteratedDerivWithin (mod_cast hj) (Icc_mem_nhds hx.1 hx.2)
   · rintro ⟨J, hzero, hc, hd⟩
     exact contDiffOn_Icc_of_continuous_jet hzero hc hd
+
+/-- **`C²` extension from a closed interval.** Let `v : ℝ → F` be `C¹`, and let `h` be continuous
+on `[a, b]` with `h t` the derivative of `v'` at every `t ∈ (a, b)`. Then there is a `C²` function
+`w` on `ℝ` with `w = v` and `w' = v'` on `[a, b]`, whose second derivative is
+`w'' t = h (projIcc a b t)` everywhere. -/
+theorem exists_contDiff_two_eqOn_and_deriv_deriv_eq [CompleteSpace F] (hab : a ≤ b) {v h : ℝ → F}
+    (hv : ContDiff ℝ 1 v) (hd : ∀ t ∈ Ioo a b, HasDerivAt (deriv v) (h t) t)
+    (hh : ContinuousOn h (Icc a b)) :
+    ∃ w : ℝ → F, ContDiff ℝ 2 w ∧ EqOn v w (Icc a b) ∧ EqOn (deriv v) (deriv w) (Icc a b) ∧
+      deriv (deriv w) = fun t => h (projIcc a b hab t) := by
+  set hₑ : ℝ → F := fun t => h (projIcc a b hab t)
+  have hhₑ : Continuous hₑ := hh.comp_projIcc hab
+  -- `w₂ = v' a + ∫ hₑ` is `C¹`, and is `v'` on `[a, b]`.
+  set w₂ : ℝ → F := fun t => deriv v a + ∫ s in a..t, hₑ s with hw₂_def
+  have hw₂ : ContDiff ℝ 1 w₂ := contDiff_const.add (by
+    simpa using intervalIntegral.contDiff_primitive_of_contDiff (n := 0) (contDiff_zero.2 hhₑ) a)
+  have hdw₂ : deriv w₂ = hₑ := funext fun t =>
+    ((hhₑ.integral_hasStrictDerivAt a t).hasDerivAt.const_add _).deriv
+  have hw₂v : ∀ t ∈ Icc a b, w₂ t = deriv v t := fun t ht => by
+    have hint := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le (f' := hₑ) ht.1
+      (hv.continuous_deriv le_rfl).continuousOn (fun s hs =>
+        (hd s ⟨hs.1, hs.2.trans_le ht.2⟩).congr_deriv
+          (by simp [hₑ, projIcc_of_mem hab ⟨hs.1.le, hs.2.le.trans ht.2⟩]))
+      (hhₑ.intervalIntegrable _ _)
+    rw [hw₂_def]
+    beta_reduce
+    rw [hint, add_sub_cancel]
+  -- `w = v a + ∫ w₂` is `C²`, and is `v` on `[a, b]`.
+  set w : ℝ → F := fun t => v a + ∫ s in a..t, w₂ s with hw_def
+  have hw : ContDiff ℝ 2 w := contDiff_const.add (by
+    simpa [one_add_one_eq_two] using
+      intervalIntegral.contDiff_primitive_of_contDiff (n := 1) hw₂ a)
+  have hdw : deriv w = w₂ := funext fun t =>
+    ((hw₂.continuous.integral_hasStrictDerivAt a t).hasDerivAt.const_add _).deriv
+  refine ⟨w, hw, fun t ht => ?_, fun t ht => by rw [hdw, hw₂v t ht], by rw [hdw, hdw₂]⟩
+  have h₁ : ∫ s in a..t, w₂ s = ∫ s in a..t, deriv v s :=
+    intervalIntegral.integral_congr fun s hs => by
+      rw [uIcc_of_le ht.1] at hs
+      exact hw₂v s ⟨hs.1, hs.2.trans ht.2⟩
+  have h₂ : ∫ s in a..t, deriv v s = v t - v a :=
+    intervalIntegral.integral_eq_sub_of_hasDerivAt
+      (fun s _ => (hv.differentiable one_ne_zero s).hasDerivAt)
+      ((hv.continuous_deriv le_rfl).intervalIntegrable _ _)
+  rw [hw_def]
+  beta_reduce
+  rw [h₁, h₂, add_sub_cancel]
 
 end TauCeti
 
