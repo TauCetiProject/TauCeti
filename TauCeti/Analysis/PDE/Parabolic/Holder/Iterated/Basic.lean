@@ -478,6 +478,12 @@ theorem timeSliceL_apply (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
   rw [timeSliceL, ContinuousLinearMap.comp_apply, (isJetGraph_toJetL f).2.2.1 r m x t,
     ite_eq_left h, mixedDerivL_apply']
 
+/-- The time slice at `x` of order `k - 1` is the map `t ↦ D_t^r D_x^m u (x, t)`. -/
+theorem coe_timeSliceL (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
+    (h : 2 * r + m + 1 = k) (x : E) :
+    ⇑(timeSliceL r m f x) = fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) :=
+  funext (timeSliceL_apply f h x)
+
 /-- The fields of top order `2 r + m = k` are parabolically `α`-Hölder. -/
 theorem memHolder_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
     (h : 2 * r + m = k) : MemHolder α (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] F) := by
@@ -489,9 +495,7 @@ theorem memHolder_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E F hab) {
     (h : 2 * r + m + 1 = k) (x : E) :
     MemHolder ((1 + α) / 2) fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) := by
   have hm := (timeSliceL r m f x).memHolder
-  rwa [HolderSpace.coe_toBoundedContinuousFunction,
-    show (timeSliceL r m f x : Icc a b → E [×m]→L[ℝ] F) = fun t ↦ mixedDerivL r m f (slabMk x t)
-      from funext (timeSliceL_apply f h x)] at hm
+  rwa [HolderSpace.coe_toBoundedContinuousFunction, coe_timeSliceL f h x] at hm
 
 /-! ### The underlying map -/
 
