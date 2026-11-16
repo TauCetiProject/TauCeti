@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Toric.Delzant.TangentCone
 public import TauCeti.Analysis.Convex.Polyhedron.Boundary
 public import TauCeti.Analysis.Convex.Polyhedron.Direction
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Faces of Delzant polytopes
@@ -37,8 +38,8 @@ with `F_s` nonempty:
   (`TauCeti.Toric.IsDelzant.exists_activeSet_eq`): starting from any point of `F_s`, move
   off the other facets through it along the edge basis of a vertex;
 * `F_s` determines `s`: `F_s ⊆ F_t` exactly when `t ⊆ s`
-  (`TauCeti.Toric.IsDelzant.facetFace_subset_facetFace_iff`), so every face of `Δ` is `F_s` for a
-  unique set `s` (`TauCeti.Toric.IsDelzant.existsUnique_facetFace_eq`);
+  (`TauCeti.Toric.IsDelzant.facetFace_subset_facetFace_iff`), so every nonempty face of `Δ` is
+  `F_s` for a unique set `s` (`TauCeti.Toric.IsDelzant.existsUnique_facetFace_eq`);
 * `F_s` has codimension `#s`: its direction is the common kernel of the pairings with the normals
   in `s` (`TauCeti.Toric.IsDelzant.vectorSpan_facetFace`), of dimension `dim V - #s`
   (`TauCeti.Toric.IsDelzant.finrank_vectorSpan_facetFace_add_ncard`);
@@ -169,13 +170,18 @@ private theorem facetPolyhedron_eq_setOf_facetRow :
   ext
   simp [facetRow_apply]
 
-private theorem facetFace_eq_setOf_facetRow (I : Finset ι) :
-    facetFace i u c I =
-      {x | (∀ j, facetRow i u c j x ≤ 0) ∧ ∀ j ∈ I, facetRow i u c j x = 0} := by
+private theorem facetFace_eq_setOf_facetRow (s : Set ι) :
+    facetFace i u c s =
+      {x | (∀ j, facetRow i u c j x ≤ 0) ∧ ∀ j ∈ s, facetRow i u c j x = 0} := by
   ext
-  simp only [mem_facetFace, mem_facetPolyhedron, Finset.mem_coe, mem_ofPred_eq, facetRow_apply,
-    sub_nonpos, sub_eq_zero]
+  simp only [mem_facetFace, mem_facetPolyhedron, mem_ofPred_eq, facetRow_apply, sub_nonpos,
+    sub_eq_zero]
   exact and_congr_right fun _ ↦ forall₂_congr fun _ _ ↦ eq_comm
+
+/-- A facet not through a point of the polyhedron is strictly satisfied there. -/
+private theorem lt_of_notMem_activeSet (hx : x ∈ facetPolyhedron i u c) {j : ι}
+    (hj : j ∉ activeSet (facetPairing i u) c x) : c j < x (i (u j)) :=
+  (mem_facetPolyhedron.1 hx j).lt_of_ne fun h ↦ hj (mem_activeSet.2 (by simpa using h.symm))
 
 /-- The face cut out by any set of facets is an exposed subset of the polyhedron. -/
 theorem isExposed_facetFace [Finite ι] (s : Set ι) :
@@ -191,7 +197,7 @@ theorem exists_facetFace_eq_of_isExtreme [Finite ι] {F : Set (StrongDual ℝ V)
     ∃ s, F = facetFace i u c s := by
   rw [facetPolyhedron_eq_setOf_facetRow] at hF
   obtain ⟨I, rfl⟩ := hF.eq_setOf_active (fun j ↦ (facetRow i u c j).toAffineMap) hconv hne
-  exact ⟨I, (facetFace_eq_setOf_facetRow I).symm⟩
+  exact ⟨I, (facetFace_eq_setOf_facetRow (I : Set ι)).symm⟩
 
 /-! ### Simplicity of Delzant polytopes -/
 
@@ -200,12 +206,20 @@ namespace IsDelzant
 variable (hΔ : IsDelzant i u c)
 include hΔ
 
+/-- The facets through a point of a Delzant polytope pass through a smooth vertex. -/
+private theorem exists_isSmoothVertex_activeSet_subset [FiniteDimensional ℝ V]
+    (hx : x ∈ facetPolyhedron i u c) :
+    ∃ v, IsSmoothVertex i u c v ∧
+      activeSet (facetPairing i u) c x ⊆ activeSet (facetPairing i u) c v := by
+  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset hΔ.isCompact hx
+  exact ⟨v, hΔ.isSmoothVertex v hv, hsub⟩
+
 /-- **Delzant polytopes are simple.** The normals of the facets through a point of a Delzant
 polytope are linearly independent: they are among the normals at a vertex. -/
 theorem linearIndepOn_activeSet [FiniteDimensional ℝ V] (hx : x ∈ facetPolyhedron i u c) :
     LinearIndepOn ℤ u (activeSet (facetPairing i u) c x) := by
-  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset hΔ.isCompact hx
-  exact (isSmoothVertex_iff_linearIndepOn.1 (hΔ.isSmoothVertex v hv)).1.mono hsub
+  obtain ⟨v, hvs, hsub⟩ := hΔ.exists_isSmoothVertex_activeSet_subset hx
+  exact (isSmoothVertex_iff_linearIndepOn.1 hvs).1.mono hsub
 
 /-- The normals of the facets cutting out a nonempty face are linearly independent. -/
 theorem linearIndepOn_of_nonempty [FiniteDimensional ℝ V] (hs : (facetFace i u c s).Nonempty) :
@@ -217,8 +231,8 @@ theorem linearIndepOn_of_nonempty [FiniteDimensional ℝ V] (hs : (facetFace i u
 theorem ncard_activeSet_le [Finite ι] [FiniteDimensional ℝ V]
     (hx : x ∈ facetPolyhedron i u c) :
     (activeSet (facetPairing i u) c x).ncard ≤ Module.finrank ℤ N := by
-  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset hΔ.isCompact hx
-  exact ((ncard_le_ncard hsub (toFinite _)).trans (hΔ.isSmoothVertex v hv).ncard_activeSet.le)
+  obtain ⟨v, hvs, hsub⟩ := hΔ.exists_isSmoothVertex_activeSet_subset hx
+  exact (ncard_le_ncard hsub (toFinite _)).trans hvs.ncard_activeSet.le
 
 /-- The real span of the normals of the facets cutting out a nonempty face has dimension the
 number of these facets. Its image in `V / 2π i(N)` is the face subtorus
@@ -230,8 +244,8 @@ theorem finrank_span_image_of_nonempty [Finite ι] (hi : IsIntegralLattice i)
   have := hi.finiteDimensional
   have := Fintype.ofFinite s
   obtain ⟨y, hy, hys⟩ := hs
-  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset hΔ.isCompact hy
-  obtain ⟨b, hb⟩ := isSmoothVertex_def.1 (hΔ.isSmoothVertex v hv)
+  obtain ⟨v, hvs, hsub⟩ := hΔ.exists_isSmoothVertex_activeSet_subset hy
+  obtain ⟨b, hb⟩ := isSmoothVertex_def.1 hvs
   -- The normals at `v` are the images of an integral basis, hence linearly independent over `ℝ`.
   have hli : LinearIndependent ℝ fun j : s ↦ i (u j) := by
     have := (hi.linearIndependent_basis b).comp (inclusion (hys.trans hsub))
@@ -247,8 +261,7 @@ theorem exists_activeSet_eq [Finite ι] (hi : IsIntegralLattice i)
   classical
   have := hi.finiteDimensional
   obtain ⟨y, hy, hys⟩ := hs
-  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset hΔ.isCompact hy
-  have hvs := hΔ.isSmoothVertex v hv
+  obtain ⟨v, hvs, hsub⟩ := hΔ.exists_isSmoothVertex_activeSet_subset hy
   -- In the edge coordinates of the vertex `v`, the direction `w` pairs to `0` with the normals in
   -- `s` and to `1` with the other normals at `v`.
   set w : StrongDual ℝ V := (hvs.edgeBasis hi).equivFun.symm fun k ↦ if (k : ι) ∈ s then 0 else 1
@@ -273,8 +286,7 @@ theorem exists_activeSet_eq [Finite ι] (hi : IsIntegralLattice i)
     split_ifs with hjs <;> simp [hjs, hr.ne']
   · -- Off the facets through `y`, the midpoint of `y` and `y + r • w` keeps some slack.
     have hjs : j ∉ s := fun h ↦ hj (hys h)
-    have hlt : c j < y (i (u j)) := (mem_facetPolyhedron.1 hy j).lt_of_ne fun h ↦
-      hj (mem_activeSet.2 (by simpa using h.symm))
+    have hlt := lt_of_notMem_activeSet hy hj
     have hle := mem_facetPolyhedron.1 (hmem r hr.le le_rfl) j
     rw [hval] at hle
     simp only [hjs, iff_false]
@@ -296,13 +308,13 @@ theorem injOn_facetFace [Finite ι] (hi : IsIntegralLattice i) :
   ((hΔ.facetFace_subset_facetFace_iff hi ht).1 hst.ge).antisymm
     ((hΔ.facetFace_subset_facetFace_iff hi hs).1 hst.le)
 
-/-- **The face dictionary.** Every nonempty face of a Delzant polytope is cut out by a unique set
-of facets. -/
+/-- **The face dictionary.** Every nonempty convex extreme subset of a Delzant polytope, in
+particular every nonempty face, is cut out by a unique set of facets. -/
 theorem existsUnique_facetFace_eq [Finite ι] (hi : IsIntegralLattice i)
-    {F : Set (StrongDual ℝ V)} (hF : IsExposed ℝ (facetPolyhedron i u c) F) (hne : F.Nonempty) :
+    {F : Set (StrongDual ℝ V)} (hF : IsExtreme ℝ (facetPolyhedron i u c) F)
+    (hconv : Convex ℝ F) (hne : F.Nonempty) :
     ∃! s, F = facetFace i u c s := by
-  obtain ⟨s, rfl⟩ := exists_facetFace_eq_of_isExtreme hF.isExtreme
-    (hF.convex convex_facetPolyhedron) hne
+  obtain ⟨s, rfl⟩ := exists_facetFace_eq_of_isExtreme hF hconv hne
   exact ⟨s, rfl, fun t ht ↦
     hΔ.injOn_facetFace hi (ht ▸ hne : (facetFace i u c t).Nonempty) hne ht.symm⟩
 
@@ -323,10 +335,7 @@ theorem vectorSpan_facetFace [Finite ι] (hi : IsIntegralLattice i)
     simp
   have hface : {y | y ∈ (⊤ : AffineSubspace ℝ (StrongDual ℝ V)) ∧ (∀ l, g l y ≤ 0) ∧
       ∀ l ∈ s, g l y = 0} = facetFace i u c s := by
-    ext y
-    simp only [AffineSubspace.mem_top, true_and, mem_ofPred_eq, hg, sub_nonpos, sub_eq_zero,
-      mem_facetFace, mem_facetPolyhedron]
-    exact and_congr_right fun _ ↦ forall₂_congr fun _ _ ↦ eq_comm
+    simpa [g] using (facetFace_eq_setOf_facetRow s).symm
   have h := vectorSpan_setOf_active_eq g ⊤ s (AffineSubspace.mem_top ℝ _ x)
     (fun j hj ↦ by
       rw [hg, sub_eq_zero]
@@ -334,8 +343,7 @@ theorem vectorSpan_facetFace [Finite ι] (hi : IsIntegralLattice i)
       exact (by simpa using hj : x (i (u j)) = c j).symm)
     (fun j hj ↦ by
       rw [hg, sub_neg]
-      refine (mem_facetPolyhedron.1 hx j).lt_of_ne fun h ↦ hj ?_
-      exact hxs ▸ mem_activeSet.2 (by simpa using h.symm))
+      exact lt_of_notMem_activeSet hx (hxs ▸ hj))
   rw [hface] at h
   simp only [h, AffineSubspace.direction_top, top_inf_eq, hlin]
 
@@ -348,8 +356,7 @@ theorem finrank_vectorSpan_facetFace_add_ncard [Finite ι] (hi : IsIntegralLatti
   have := hi.finiteDimensional
   have := Fintype.ofFinite s
   obtain ⟨y, hy, hys⟩ := hs
-  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset hΔ.isCompact hy
-  have hvs := hΔ.isSmoothVertex v hv
+  obtain ⟨v, hvs, hsub⟩ := hΔ.exists_isSmoothVertex_activeSet_subset hy
   -- The pairings with the normals in `s` form a surjective map `V* → ℝ^s`, through the edge
   -- coordinates at the vertex `v`; its kernel is the direction of the face.
   set Φ : StrongDual ℝ V →ₗ[ℝ] s → ℝ := LinearMap.pi fun j : s ↦ facetPairing i u j
@@ -364,12 +371,9 @@ theorem finrank_vectorSpan_facetFace_add_ncard [Finite ι] (hi : IsIntegralLatti
     rw [hΔ.vectorSpan_facetFace hi ⟨y, hy, hys⟩, LinearMap.ker_pi]
     ext w
     simp [Submodule.mem_iInf]
-  have hdual : Module.finrank ℝ (StrongDual ℝ V) = Module.finrank ℝ V :=
-    (LinearMap.toContinuousLinearMap (𝕜 := ℝ) (E := V) (F' := ℝ)).finrank_eq.symm.trans
-      Subspace.dual_finrank_eq
-  rw [← hker, ← hdual, ← LinearMap.finrank_range_add_finrank_ker Φ, LinearMap.range_eq_top.2 hΦ,
-    finrank_top, Module.finrank_fintype_fun_eq_card, Fintype.card_eq_nat_card,
-    Nat.card_coe_set_eq, add_comm]
+  rw [← hker, ← ContinuousLinearMap.dual_finrank_eq, ← LinearMap.finrank_range_add_finrank_ker Φ,
+    LinearMap.range_eq_top.2 hΦ, finrank_top, Module.finrank_fintype_fun_eq_card,
+    Fintype.card_eq_nat_card, Nat.card_coe_set_eq, add_comm]
 
 /-- **Vertices of a Delzant polytope.** A point of a Delzant polytope is a vertex exactly when it
 lies on `dim V` facets. -/
@@ -393,23 +397,18 @@ theorem mem_intrinsicInterior_facetFace_iff [Finite ι] (hi : IsIntegralLattice 
   set g : ι ⊕ s → (StrongDual ℝ V →ᴬ[ℝ] ℝ) :=
     Sum.elim (facetRow i u c) fun j ↦ -facetRow i u c j
   have hP : facetFace i u c s = {y | ∀ r, g r y ≤ 0} := by
+    rw [facetFace_eq_setOf_facetRow]
     ext y
-    simp only [mem_facetFace, mem_facetPolyhedron, mem_ofPred_eq, Sum.forall, g, Sum.elim_inl,
-      Sum.elim_inr, ContinuousAffineMap.coe_neg, Pi.neg_apply, facetRow_apply, Subtype.forall]
-    constructor
-    · rintro ⟨h₁, h₂⟩
-      exact ⟨fun j ↦ by linarith [h₁ j], fun j hj ↦ by linarith [h₂ j hj]⟩
-    · rintro ⟨h₁, h₂⟩
-      exact ⟨fun j ↦ by linarith [h₁ j], fun j hj ↦ by linarith [h₁ j, h₂ j hj]⟩
+    simp only [mem_ofPred_eq, Sum.forall, g, Sum.elim_inl, Sum.elim_inr,
+      ContinuousAffineMap.coe_neg, Pi.neg_apply, neg_nonpos, Subtype.forall]
+    exact and_congr_right fun h ↦ forall₂_congr fun j _ ↦ ⟨ge_of_eq, (h j).antisymm⟩
   rw [mem_intrinsicInterior_iff_forall_lt g hP]
   constructor
   · rintro ⟨hx, hlt⟩
     refine ⟨hx.1, subset_antisymm (fun j hj ↦ ?_) hx.2⟩
     -- A facet through `x` outside `s` would be strict at `p` but not at `x`.
     by_contra hjs
-    have hpj : c j < p (i (u j)) :=
-      (mem_facetPolyhedron.1 hp j).lt_of_ne fun h ↦
-        hjs (hps ▸ mem_activeSet.2 (by simpa using h.symm))
+    have hpj := lt_of_notMem_activeSet hp (hps ▸ hjs)
     have := hlt (.inl j) ⟨p, hps ▸ mem_facetFace_activeSet hp, by
       simpa [g, facetRow_apply] using hpj⟩
     simp only [g, Sum.elim_inl, facetRow_apply, sub_neg] at this
@@ -418,8 +417,7 @@ theorem mem_intrinsicInterior_facetFace_iff [Finite ι] (hi : IsIntegralLattice 
     refine ⟨mem_facetFace_activeSet hx, ?_⟩
     rintro (j | ⟨j, hj⟩) ⟨q, hq, hlt⟩
     · simp only [g, Sum.elim_inl, facetRow_apply, sub_neg] at hlt ⊢
-      refine (mem_facetPolyhedron.1 hx j).lt_of_ne fun h ↦ ?_
-      exact hlt.ne' ((mem_facetFace.1 hq).2 j (mem_activeSet.2 (by simpa using h.symm)))
+      exact lt_of_notMem_activeSet hx fun hj ↦ hlt.ne' ((mem_facetFace.1 hq).2 j hj)
     · simp only [g, Sum.elim_inr, ContinuousAffineMap.coe_neg, Pi.neg_apply, facetRow_apply,
         neg_neg_iff_pos, sub_pos] at hlt
       exact absurd ((mem_facetFace.1 hq).2 j hj) hlt.ne
