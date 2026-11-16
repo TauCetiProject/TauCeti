@@ -321,26 +321,22 @@ theorem map_formalCoordinate (C : VariableChange R) (W : WeierstrassCurve R) (f 
 @[simp]
 theorem coeff_two_formalCoordinate (C : VariableChange R) (W : WeierstrassCurve R) :
     coeff 2 (C.formalCoordinate W).toPowerSeries = C.s * ↑C.u⁻¹ ^ 2 := by
-  have h : -(↑C.u⁻¹ * (C.s * (C.u : R) ^ 2)) +
-      coeff 2 (C.formalCoordinate W).toPowerSeries * (C.u : R) ^ 3 = 0 := by
-    simpa [formalDenom_def, coeff_mul, coeff_X, Finset.Nat.antidiagonal_succ, ← map_pow] using
-      congrArg (coeff 2) (C.formalCoordinate_mul_formalDenom W)
   have hu : (C.u : R) * ↑C.u⁻¹ = 1 := C.u.mul_inv
   apply (C.u ^ 3).isUnit.mul_right_cancel
   rw [Units.val_pow_eq_pow_val]
+  have h := congrArg (coeff 2) (C.formalCoordinate_mul_formalDenom W)
+  simp [formalDenom_def, coeff_mul, coeff_X, Finset.Nat.antidiagonal_succ, ← map_pow] at h
   linear_combination h - C.s * (C.u : R) * pow_mul_pow_eq_one 2 hu + C.s * (C.u : R) * hu
 
 /-- The cubic coefficient of the formal coordinate transition is `(r + s²) u⁻³`. -/
 @[simp]
 theorem coeff_three_formalCoordinate (C : VariableChange R) (W : WeierstrassCurve R) :
     coeff 3 (C.formalCoordinate W).toPowerSeries = (C.r + C.s ^ 2) * ↑C.u⁻¹ ^ 3 := by
-  have h : -(C.s * (↑C.u⁻¹ : R) ^ 2 * (C.s * (C.u : R) ^ 2)) +
-      coeff 3 (C.formalCoordinate W).toPowerSeries * (C.u : R) ^ 3 = C.r := by
-    simpa [formalDenom_def, coeff_mul, coeff_X, Finset.Nat.antidiagonal_succ, ← map_pow] using
-      congrArg (coeff 3) (C.formalCoordinate_mul_formalDenom W)
   have hu : (C.u : R) * ↑C.u⁻¹ = 1 := C.u.mul_inv
   apply (C.u ^ 3).isUnit.mul_right_cancel
   rw [Units.val_pow_eq_pow_val]
+  have h := congrArg (coeff 3) (C.formalCoordinate_mul_formalDenom W)
+  simp [formalDenom_def, coeff_mul, coeff_X, Finset.Nat.antidiagonal_succ, ← map_pow] at h
   linear_combination h - (C.r + C.s ^ 2) * pow_mul_pow_eq_one 3 hu +
     C.s ^ 2 * pow_mul_pow_eq_one 2 hu
 
@@ -349,19 +345,12 @@ theorem coeff_three_formalCoordinate (C : VariableChange R) (W : WeierstrassCurv
 theorem coeff_four_formalCoordinate (C : VariableChange R) (W : WeierstrassCurve R) :
     coeff 4 (C.formalCoordinate W).toPowerSeries =
       (C.t + C.s ^ 3 + 3 * C.r * C.s + W.a₁ * C.r) * ↑C.u⁻¹ ^ 4 := by
-  have hw0 : ∀ k < 3, formalWCoeff (C • W) k = 0 := fun _ hk ↦ formalWCoeff_eq_zero_of_lt _ hk
-  have hw4 : formalWCoeff (C • W) 4 = (C • W).a₁ := by
-    rw [formalWCoeff_recurrence _ (by decide), selfConvTwo_eq_zero hw0 (by decide),
-      selfConvTwo_eq_zero hw0 (by decide), selfConvThree_eq_zero hw0 (by decide)]
-    simp
-  have h : -(↑C.u⁻¹ * C.t) + (-((C.r + C.s ^ 2) * (↑C.u⁻¹ : R) ^ 3 * (C.s * (C.u : R) ^ 2)) +
-      coeff 4 (C.formalCoordinate W).toPowerSeries * (C.u : R) ^ 3) =
-      C.r * (↑C.u⁻¹ * (W.a₁ + 2 * C.s)) := by
-    simpa [formalDenom_def, coeff_mul, coeff_X, Finset.Nat.antidiagonal_succ, hw4,
-      variableChange_a₁, ← map_pow] using congrArg (coeff 4) (C.formalCoordinate_mul_formalDenom W)
   have hu : (C.u : R) * ↑C.u⁻¹ = 1 := C.u.mul_inv
   apply (C.u ^ 3).isUnit.mul_right_cancel
   rw [Units.val_pow_eq_pow_val]
+  have h := congrArg (coeff 4) (C.formalCoordinate_mul_formalDenom W)
+  simp [formalDenom_def, coeff_mul, coeff_X, Finset.Nat.antidiagonal_succ, variableChange_a₁,
+    ← map_pow] at h
   linear_combination h -
     (C.t + C.s ^ 3 + 3 * C.r * C.s + W.a₁ * C.r) * (↑C.u⁻¹ : R) * pow_mul_pow_eq_one 3 hu +
     (C.r * C.s + C.s ^ 3) * (↑C.u⁻¹ : R) * pow_mul_pow_eq_one 2 hu

@@ -222,6 +222,15 @@ theorem formalWCoeff_recurrence {n : ℕ} (hn : 3 < n) :
     PowerSeries.selfConvTwo_truncate_of_lt _ h5,
     PowerSeries.selfConvThree_truncate _ (formalWCoeff_zero W) n]
 
+/-- The quartic coefficient of `w(z)` is `a₁`. -/
+@[simp]
+theorem formalWCoeff_four : formalWCoeff W 4 = W.a₁ := by
+  have hw0 : ∀ k < 3, formalWCoeff W k = 0 := fun _ ↦ formalWCoeff_eq_zero_of_lt W
+  rw [formalWCoeff_recurrence W (by decide), PowerSeries.selfConvTwo_eq_zero hw0 (by decide),
+    PowerSeries.selfConvTwo_eq_zero hw0 (by decide),
+    PowerSeries.selfConvThree_eq_zero hw0 (by decide)]
+  simp
+
 /-- The unit-part coefficients are the coefficients of `w(z)` shifted down by three. -/
 @[simp]
 theorem formalUCoeff_apply (n : ℕ) : formalUCoeff W n = formalWCoeff W (n + 3) := (rfl)

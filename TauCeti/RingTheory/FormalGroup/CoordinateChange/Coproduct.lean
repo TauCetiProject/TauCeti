@@ -36,20 +36,6 @@ open MvPolynomial
 open FormalCoordinate (universalStrictCoordinate coeff_succ_universalStrictCoordinate
   map_universalStrictCoordinate)
 
-/-- The pushout map of two composable graded classifying maps preserves degrees. -/
-theorem tensorLift_mem {A σ ι : Type*} [CommRing A] [SetLike σ A]
-    [AddSubgroupClass σ A] [AddCommMonoid ι] (𝒜 : ι → σ) [SetLike.GradedMonoid 𝒜]
-    (e : ℕ →+ ι)
-    (p : {p : (MvPolynomial ℕ+ LazardRing →+* A) ×
-      (MvPolynomial ℕ+ LazardRing →+* A) // p.1.comp rightUnit = p.2.comp C})
-    (h₁ : ∀ ⦃n⦄ ⦃x⦄, x ∈ coordinateGrading n → p.1.1 x ∈ 𝒜 (e n))
-    (h₂ : ∀ ⦃n⦄ ⦃x⦄, x ∈ coordinateGrading n → p.1.2 x ∈ 𝒜 (e n))
-    {n : ℕ} {x : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing)}
-    (hx : x ∈ coordinateTensorGrading n) : tensorLift p x ∈ 𝒜 (e n) :=
-  (coordinateTensorGrading_map_mem_iff 𝒜 e (tensorLift p)).mpr
-    ⟨fun _ _ hx ↦ by simpa using h₁ hx,
-      fun i ↦ by simpa using h₂ (X_mem_coordinateGrading i)⟩ hx
-
 /-- Composition of strict coordinate changes preserves the combined homological grading. -/
 theorem coproduct_mem_coordinateTensorGrading {n : ℕ} {x : MvPolynomial ℕ+ LazardRing}
     (hx : x ∈ coordinateGrading n) : coproduct x ∈ coordinateTensorGrading n := by
@@ -76,12 +62,14 @@ theorem coproduct_mem_coordinateTensorGrading {n : ℕ} {x : MvPolynomial ℕ+ L
 theorem coproduct_mem_coordinateTensorGrading_iff {n : ℕ} {x : MvPolynomial ℕ+ LazardRing} :
     coproduct x ∈ coordinateTensorGrading n ↔ x ∈ coordinateGrading n := by
   refine ⟨fun hx ↦ ?_, coproduct_mem_coordinateTensorGrading⟩
-  have h := tensorLift_mem coordinateGrading (.id ℕ)
-    ⟨(C.comp counit, RingHom.id _), by
-      rw [RingHom.comp_assoc, counit_comp_rightUnit, RingHom.comp_id, RingHom.id_comp]⟩
+  have h := pushoutLift_mem
+    (p := ⟨(C.comp counit, RingHom.id _), by
+      rw [RingHom.comp_assoc, counit_comp_rightUnit, RingHom.comp_id, RingHom.id_comp]⟩)
+    (coordinateTensorGrading_map_mem_iff coordinateGrading (.id ℕ) _)
+    X_mem_coordinateGrading
     (fun _ _ hy ↦ C_mem_coordinateGrading (counit_mem_grading hy))
     (fun _ _ hy ↦ hy) hx
-  simpa only [← RingHom.comp_apply, tensorLift_counit_id_comp_coproduct,
-    RingHom.id_apply, AddMonoidHom.id_apply] using h
+  rwa [← RingHom.comp_apply, pushoutLift_counit_id_comp_coproduct, RingHom.id_apply,
+    AddMonoidHom.id_apply] at h
 
 end TauCeti.LazardRing
