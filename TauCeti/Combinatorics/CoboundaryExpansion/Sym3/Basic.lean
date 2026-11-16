@@ -33,10 +33,8 @@ the cochain `Cochain.ofLt (complete (Fin k)) α` under `movedNorm (Fin 3)`, so t
 finite computation or by counting transfer to the gauge distance and the Cheeger constant of
 `TauCeti.Cochain`.
 
-`Sym3.cost_ge_of_forall_cons_one` reduces a lower bound for every gauge to the gauges pinned to `1`
-at vertex `0` (`Cochain.le_gaugeDist_iff_apply_eq_one`), which is what `decide +kernel` checks for
-the `k = 4` seed. `Sym3.cost_rep_ge` and `Sym3.defect_rep` are the two counts of balanced
-replication that the upper bound `h1 (complete V) (movedNorm (Fin 3)) ≤ card V / 3` needs.
+`Sym3.cost_rep_ge` and `Sym3.defect_rep` are the two counts of balanced replication that the upper
+bound `h1 (complete V) (movedNorm (Fin 3)) ≤ card V / 3` needs.
 
 ## References
 
@@ -44,8 +42,8 @@ replication that the upper bound `h1 (complete V) (movedNorm (Fin 3)) ≤ card V
   k≥4*, Zenodo, doi:10.5281/zenodo.22090958, Lemma 6 and Corollary 7.
 -/
 
--- `moved`, `edges`, `triangles`, `val`, `defect` and `cost` are evaluated by `decide +kernel`
--- for the `k = 4` seed, so their bodies are exposed.
+-- `moved`, `triangles`, `val` and `defect` are evaluated by `decide +kernel` for the `k = 4` seed;
+-- `edges` and `cost` are their list-form companions, kept evaluable in the same way.
 @[expose] public section
 
 open Finset Equiv
@@ -73,18 +71,6 @@ def t12 : S3 := swap 1 2
 
 /-- The transposition of `0` and `2`. -/
 def t02 : S3 := swap 0 2
-
-/-- The 3-cycle `0 ↦ 1 ↦ 2 ↦ 0`. -/
-def c1 : S3 := swap 0 1 * swap 1 2
-
-/-- The 3-cycle `0 ↦ 2 ↦ 1 ↦ 0`. -/
-def c2 : S3 := swap 1 2 * swap 0 1
-
-/-- The six elements of `Sym(3)`. -/
-def S3list : List S3 := [1, t01, t12, t02, c1, c2]
-
-/-- `S3list` lists every permutation of `Fin 3`. -/
-theorem mem_S3list : ∀ σ : S3, σ ∈ S3list := by decide
 
 variable {k : ℕ}
 
@@ -171,36 +157,6 @@ theorem defect_ofLt (α : Fin k → Fin k → S3) :
     simp [val, h.1, h.2, not_lt.mpr huw.le]
   · rfl
 
-/-! ### Pinned gauges -/
-
-/-- Every function `Fin n → Sym(3)`, as a list. -/
-def funs : (n : ℕ) → List (Fin n → S3)
-  | 0 => [Fin.elim0]
-  | n + 1 => S3list.flatMap fun a => (funs n).map (Fin.cons a)
-
-private theorem mem_funs : ∀ (n : ℕ) (f : Fin n → S3), f ∈ funs n
-  | 0, f => by rw [funs, List.mem_singleton]; funext i; exact i.elim0
-  | n + 1, f => by
-    simp only [funs, List.mem_flatMap, List.mem_map]
-    exact ⟨f 0, mem_S3list _, Fin.tail f, mem_funs n _, Fin.cons_self_tail f⟩
-
-/-- If every gauge pinned to `1` at vertex `0` costs at least `D`, every gauge does: the pinned
-bound is a lower bound for the gauge distance of `Cochain.ofLt` by
-`Cochain.le_gaugeDist_iff_apply_eq_one`, and the gauge distance is at most every cost
-(`Cochain.gaugeDist_le_cost`). -/
-theorem cost_ge_of_forall_cons_one {m : ℕ} (α : Fin (m + 1) → Fin (m + 1) → S3) (D : ℕ)
-    (h : (funs m).all (fun t => decide (D ≤ cost α (Fin.cons 1 t))) = true) (β : Fin (m + 1) → S3) :
-    D ≤ cost α β := by
-  set c := Cochain.ofLt (TwoComplex.complete (Fin (m + 1))) α
-  have hD : (D : ℝ) ≤ c.gaugeDist (Perm.movedNorm (Fin 3)) :=
-    (c.le_gaugeDist_iff_apply_eq_one Perm.isConjInvariant_movedNorm 0).mpr fun β' h0 => by
-      have hcons : β' = Fin.cons 1 (Fin.tail β') := by
-        rw [← h0]; exact (Fin.cons_self_tail β').symm
-      rw [cost_ofLt, hcons]
-      exact_mod_cast of_decide_eq_true (List.all_eq_true.mp h (Fin.tail β') (mem_funs m _))
-  have hβ := hD.trans (c.gaugeDist_le_cost _ β)
-  rw [cost_ofLt] at hβ
-  exact_mod_cast hβ
 
 end TauCeti.Sym3
 

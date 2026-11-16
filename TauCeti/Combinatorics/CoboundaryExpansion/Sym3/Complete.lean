@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
 public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Staircase
+import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree
+import TauCeti.GroupTheory.Perm.FinThree.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -22,12 +24,12 @@ For every finite linearly ordered `V` with `3 ≤ Fintype.card V`:
 * `h1_complete_fin_four`: the seed value `h1 (complete (Fin 4)) (movedNorm (Fin 3)) = 4 / 3`.
 
 The lower bound is the star bound `card_div_three_le_h1_of_nontrivial`.
-For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with
-`t, q ≥ 1`. The seeds are a private `k = 4` witness (defect `8`, every gauge costs at least `6`,
-checked by `decide +kernel`) and Kozlov's staircase `Sym3.stair (2 t + 1)` (defect
-`t (t + 1) (2 t + 1) / 3`, every gauge costs at least `t (t + 1)`). Balanced replication multiplies
-the defect by `q ^ 3` and the gauge lower bound by `q ^ 2`, so `K_k` carries a cochain with
-`3 N ≤ k D` and `0 < D`, and `h1_le_div` applies.
+For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t, q ≥ 1`. The seeds are a
+private `k = 4` witness (defect `8` by `decide +kernel`; every gauge costs at least `6` by
+`two_le_sum_distErr_fin_four_of_eq_setOf_isSwap`) and Kozlov's staircase `Sym3.stair (2 t + 1)`
+(defect `t (t + 1) (2 t + 1) / 3`, every gauge costs at least `t (t + 1)`). Balanced replication
+multiplies the defect by `q ^ 3` and the gauge lower bound by `q ^ 2`, so `K_k` carries a cochain
+with `3 N ≤ k D` and `0 < D`, and `h1_le_div` applies.
 
 ## References
 
@@ -52,8 +54,28 @@ private def w4 (u v : Fin 4) : S3 :=
 
 private theorem defect_w4 : defect w4 = 8 := by decide +kernel
 
-private theorem cost_w4_ge (β : Fin 4 → S3) : 6 ≤ cost w4 β :=
-  cost_ge_of_forall_cons_one w4 6 (by decide +kernel) β
+/-- `w4` is the three-transposition configuration of
+`two_le_sum_distErr_fin_four_of_eq_setOf_isSwap` in degree `3`, whose pair cost is
+`cost w4 β / 3` (`Equiv.Perm.mul_distErr_mul_inv_eq_movedNorm`). -/
+private theorem cost_w4_ge (β : Fin 4 → S3) : 6 ≤ cost w4 β := by
+  have h0 : ∀ v : Fin 4, 0 < v → w4 0 v = 1 := by decide
+  have hsw : ({w4 1 2, w4 1 3, w4 2 3} : Set S3) = {σ | σ.IsSwap} := by
+    rw [setOf_isSwap_perm_fin_three]
+    ext σ
+    simp only [w4, t01, t12, t02, Set.mem_insert_iff, Set.mem_singleton_iff]
+    decide +revert
+  have h := two_le_sum_distErr_fin_four_of_eq_setOf_isSwap w4 h0 hsw β
+  have hc : (cost w4 β : ℝ) = 3 * ∑ e ∈ ({p : Fin 4 × Fin 4 | p.1 < p.2} : Finset (Fin 4 × Fin 4)),
+      distErr (w4 e.1 e.2) (β e.1 * (β e.2)⁻¹) := by
+    rw [Finset.mul_sum, cost_eq_sum, Finset.sum_filter, Fintype.sum_prod_type]
+    push_cast
+    refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ => ?_
+    split_ifs
+    · rw [moved_eq_movedNorm, ← mul_distErr_mul_inv_eq_movedNorm]
+      norm_num
+    · simp
+  have h6 : (6 : ℝ) ≤ cost w4 β := by rw [hc]; linarith
+  exact_mod_cast h6
 
 /-- Every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t ≥ 1` and `q ≥ 1`. -/
 private theorem exists_mul_eq (n : ℕ) : ∀ k, k ≤ n → 3 ≤ k →
