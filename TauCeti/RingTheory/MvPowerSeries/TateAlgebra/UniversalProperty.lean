@@ -127,8 +127,7 @@ theorem restrictedLift_apply (f : IsRestricted.subring (R := R) (fun _ : Fin k �
     restrictedLift hφ hb f =
       weightedEvalHom isWeightFamily_one_weight hφ.continuousAt
         ((isWeightBounded_one_weight_iff_forall_isPowerBounded φ b).mpr hb)
-        (restrictedMvPowerSeriesGaussEquiv.symm f) :=
-  (rfl)
+        (restrictedMvPowerSeriesGaussEquiv.symm f) := (rfl)
 
 /-- `restrictedLift` is continuous. -/
 theorem continuous_restrictedLift : Continuous (restrictedLift hφ hb) :=
@@ -184,42 +183,40 @@ noncomputable def restrictedLiftLinear {φ : R →+* S} (hφ : Continuous φ) (b
 /-- `restrictedLiftLinear` agrees with `restrictedLift` for any power-boundedness witness on `b`. -/
 theorem restrictedLiftLinear_eq_restrictedLift [NonarchimedeanRing S] {φ : R →+* S}
     (hφ : Continuous φ) {b : Fin k → S} (hb : ∀ i, IsPowerBounded (b i)) :
-    restrictedLiftLinear hφ b = restrictedLift hφ hb :=
-  (rfl)
+    restrictedLiftLinear hφ b = restrictedLift hφ hb := (rfl)
 
 /-- `restrictedLiftLinear` is continuous. -/
 theorem continuous_restrictedLiftLinear {φ : R →+* S} (hφ : Continuous φ) (b : Fin k → S) :
-    Continuous (restrictedLiftLinear hφ b) := by
-  have := IsLinearTopology.isTopologicalRing (R := S)
-  have := IsLinearTopology.nonarchimedeanRing S
-  exact continuous_restrictedLift (b := b) hφ _
+    Continuous (restrictedLiftLinear hφ b) :=
+  letI := IsLinearTopology.isTopologicalRing (R := S)
+  letI := IsLinearTopology.nonarchimedeanRing S
+  continuous_restrictedLift (b := b) hφ _
 
 /-- `restrictedLiftLinear` extends `φ` on constants. -/
 @[simp]
-theorem restrictedLiftLinear_algebraMap {φ : R →+* S} (hφ : Continuous φ) (b : Fin k → S)
-    (r : R) :
-    restrictedLiftLinear hφ b (algebraMap R _ r) = φ r := by
-  have := IsLinearTopology.isTopologicalRing (R := S)
-  have := IsLinearTopology.nonarchimedeanRing S
-  exact restrictedLift_algebraMap (b := b) hφ _ r
+theorem restrictedLiftLinear_algebraMap {φ : R →+* S} (hφ : Continuous φ) (b : Fin k → S) (r : R) :
+    restrictedLiftLinear hφ b (algebraMap R _ r) = φ r :=
+  letI := IsLinearTopology.isTopologicalRing (R := S)
+  letI := IsLinearTopology.nonarchimedeanRing S
+  restrictedLift_algebraMap (b := b) hφ _ r
 
 /-- `restrictedLiftLinear` sends each coordinate variable `Xᵢ` to `bᵢ`. -/
 @[simp]
 theorem restrictedLiftLinear_X {φ : R →+* S} (hφ : Continuous φ) (b : Fin k → S) (i : Fin k) :
-    restrictedLiftLinear hφ b ⟨X i, isRestricted_X _ i⟩ = b i := by
-  have := IsLinearTopology.isTopologicalRing (R := S)
-  have := IsLinearTopology.nonarchimedeanRing S
-  exact restrictedLift_X (b := b) hφ _ i
+    restrictedLiftLinear hφ b ⟨X i, isRestricted_X _ i⟩ = b i :=
+  letI := IsLinearTopology.isTopologicalRing (R := S)
+  letI := IsLinearTopology.nonarchimedeanRing S
+  restrictedLift_X (b := b) hφ _ i
 
 /-- `restrictedLiftLinear` is the unique continuous ring homomorphism extending `φ` and sending
 each `Xᵢ` to `bᵢ`. -/
 theorem restrictedLiftLinear_unique {φ : R →+* S} (hφ : Continuous φ) (b : Fin k → S)
     {ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* S} (hψ : Continuous ψ)
     (hC : ∀ r, ψ (algebraMap R _ r) = φ r) (hX : ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i) :
-    ψ = restrictedLiftLinear hφ b := by
-  have := IsLinearTopology.isTopologicalRing (R := S)
-  have := IsLinearTopology.nonarchimedeanRing S
-  exact restrictedLift_unique (b := b) hφ _ hψ hC hX
+    ψ = restrictedLiftLinear hφ b :=
+  letI := IsLinearTopology.isTopologicalRing (R := S)
+  letI := IsLinearTopology.nonarchimedeanRing S
+  restrictedLift_unique (b := b) hφ _ hψ hC hX
 
 /-- **The universal property of `R⟨X₁, …, Xₖ⟩` into linearly topologized rings.** A continuous ring
 homomorphism `φ : R →+* S` into a complete Hausdorff linearly topologized ring extends uniquely to
@@ -235,26 +232,20 @@ theorem existsUnique_continuous_ringHom_isRestricted_subring_of_isLinearTopology
 
 /-- `R`-algebra form of `restrictedLiftLinear` when `algebraMap R S` is continuous. -/
 noncomputable def restrictedLiftLinearAlgHom [Algebra R S] (hφ : Continuous (algebraMap R S))
-    (b : Fin k → S) :
-    IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →ₐ[R] S :=
-  { restrictedLiftLinear hφ b with
-    commutes' := restrictedLiftLinear_algebraMap hφ b }
+    (b : Fin k → S) : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →ₐ[R] S :=
+  { restrictedLiftLinear hφ b with commutes' := restrictedLiftLinear_algebraMap hφ b }
 
 /-- `restrictedLiftLinearAlgHom` has the same underlying function as `restrictedLiftLinear`. -/
 @[simp]
 theorem coe_restrictedLiftLinearAlgHom [Algebra R S] (hφ : Continuous (algebraMap R S))
-    (b : Fin k → S) :
-    ⇑(restrictedLiftLinearAlgHom hφ b) = ⇑(restrictedLiftLinear hφ b) :=
-  (rfl)
+    (b : Fin k → S) : ⇑(restrictedLiftLinearAlgHom hφ b) = ⇑(restrictedLiftLinear hφ b) := (rfl)
 
 /-- As a ring homomorphism, `restrictedLiftLinearAlgHom` is `restrictedLiftLinear`. -/
 @[simp]
 theorem toRingHom_restrictedLiftLinearAlgHom [Algebra R S] (hφ : Continuous (algebraMap R S))
     (b : Fin k → S) :
-    (restrictedLiftLinearAlgHom hφ b :
-        IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* S) =
-      restrictedLiftLinear hφ b :=
-  (rfl)
+    (restrictedLiftLinearAlgHom hφ b : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* S) =
+      restrictedLiftLinear hφ b := (rfl)
 
 /-- `restrictedLiftLinearAlgHom` sends each `Xᵢ` to `bᵢ`. -/
 theorem restrictedLiftLinearAlgHom_X [Algebra R S] (hφ : Continuous (algebraMap R S))
@@ -264,16 +255,14 @@ theorem restrictedLiftLinearAlgHom_X [Algebra R S] (hφ : Continuous (algebraMap
 
 /-- `restrictedLiftLinearAlgHom` is continuous. -/
 theorem continuous_restrictedLiftLinearAlgHom [Algebra R S] (hφ : Continuous (algebraMap R S))
-    (b : Fin k → S) :
-    Continuous (restrictedLiftLinearAlgHom hφ b) :=
+    (b : Fin k → S) : Continuous (restrictedLiftLinearAlgHom hφ b) :=
   continuous_restrictedLiftLinear hφ b
 
 /-- `restrictedLiftLinearAlgHom` is the unique continuous `R`-algebra homomorphism sending each
 `Xᵢ` to `bᵢ`. -/
 theorem restrictedLiftLinearAlgHom_unique [Algebra R S] (hφ : Continuous (algebraMap R S))
-    (b : Fin k → S)
-    {ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →ₐ[R] S} (hψ : Continuous ψ)
-    (hX : ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i) :
+    (b : Fin k → S) {ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →ₐ[R] S}
+    (hψ : Continuous ψ) (hX : ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i) :
     ψ = restrictedLiftLinearAlgHom hφ b :=
   AlgHom.toRingHom_injective (restrictedLiftLinear_unique hφ b hψ ψ.commutes hX)
 
@@ -284,8 +273,7 @@ section Characterization
 /-- A pseudouniformiser of `R` remains a pseudouniformiser in `R⟨X₁, …, Xₖ⟩`, since the constant
 series embedding is isometric. -/
 theorem isPseudoUniformizer_algebraMap_isRestricted_subring {ϖ : R} (hϖ : IsPseudoUniformizer ϖ) :
-    IsPseudoUniformizer
-      (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) ϖ) :=
+    IsPseudoUniformizer (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) ϖ) :=
   hϖ.map isometry_algebraMap_isRestrictedSubring.continuous
 
 /-- When `R` admits a pseudouniformiser `ϖ`, every ring homomorphism out of `R⟨X₁, …, Xₖ⟩` that is
@@ -295,8 +283,7 @@ and every ring homomorphism out of it is continuous. -/
 theorem isPowerBounded_apply_X_of_isPseudoUniformizer {T : Type*} [Ring T] [TopologicalSpace T]
     [IsTopologicalRing T] {ϖ : R} (hϖ : IsPseudoUniformizer ϖ)
     {ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* T} (hψ : ContinuousAt ψ 0)
-    (i : Fin k) :
-    IsPowerBounded (ψ ⟨X i, isRestricted_X _ i⟩) :=
+    (i : Fin k) : IsPowerBounded (ψ ⟨X i, isRestricted_X _ i⟩) :=
   (isPowerBounded_X i).map_of_isPseudoUniformizer
     (isPseudoUniformizer_algebraMap_isRestricted_subring hϖ) hψ
 
@@ -310,10 +297,8 @@ theorem exists_continuous_ringHom_isRestricted_subring_iff_forall_isPowerBounded
     {φ : R →+* S} (hφ : Continuous φ) (b : Fin k → S) :
     (∃ ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* S,
       Continuous ψ ∧ (∀ r, ψ (algebraMap R _ r) = φ r) ∧
-        ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i) ↔
-      ∀ i, IsPowerBounded (b i) := by
-  refine ⟨fun ⟨ψ, hψ, _, hX⟩ i ↦ hX i ▸
-    isPowerBounded_apply_X_of_isPseudoUniformizer hϖ hψ.continuousAt i,
+        ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i) ↔ ∀ i, IsPowerBounded (b i) :=
+  ⟨fun ⟨_, hψ, _, hX⟩ i ↦ hX i ▸ isPowerBounded_apply_X_of_isPseudoUniformizer hϖ hψ.continuousAt i,
     fun hb ↦ ⟨restrictedLift hφ hb, continuous_restrictedLift hφ hb,
       restrictedLift_algebraMap hφ hb, restrictedLift_X hφ hb⟩⟩
 
@@ -337,8 +322,7 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
 `K⟨X₁, …, Xₖ⟩` sends each coordinate variable `Xᵢ` to a power-bounded element. -/
 theorem isPowerBounded_apply_X_of_continuous {T : Type*} [Ring T] [TopologicalSpace T]
     [IsTopologicalRing T] {ψ : IsRestricted.subring (R := K) (fun _ : Fin k ↦ 1) →+* T}
-    (hψ : Continuous ψ) (i : Fin k) :
-    IsPowerBounded (ψ ⟨X i, isRestricted_X _ i⟩) := by
+    (hψ : Continuous ψ) (i : Fin k) : IsPowerBounded (ψ ⟨X i, isRestricted_X _ i⟩) := by
   obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := K)
   exact isPowerBounded_apply_X_of_isPseudoUniformizer hϖ hψ.continuousAt i
 
@@ -351,8 +335,7 @@ theorem exists_continuous_ringHom_isRestricted_subring_iff_forall_norm_le_one
     {φ : K →+* L} (hφ : Continuous φ) (b : Fin k → L) :
     (∃ ψ : IsRestricted.subring (R := K) (fun _ : Fin k ↦ 1) →+* L,
       Continuous ψ ∧ (∀ c, ψ (algebraMap K _ c) = φ c) ∧
-        ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i) ↔
-      ∀ i, ‖b i‖ ≤ 1 := by
+        ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i) ↔ ∀ i, ‖b i‖ ≤ 1 := by
   obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := K)
   rw [exists_continuous_ringHom_isRestricted_subring_iff_forall_isPowerBounded hϖ hφ b]
   exact forall_congr' fun _ ↦ isPowerBounded_iff_norm_le_one

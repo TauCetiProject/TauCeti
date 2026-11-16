@@ -222,28 +222,19 @@ theorem IsPowerBounded.map_of_isPseudoUniformizer {A B F : Type*} [Ring A] [Topo
     {ϖ : A} (hϖ : IsPseudoUniformizer ϖ) {φ : F} (hφ : ContinuousAt φ 0) {a : A}
     (ha : IsPowerBounded a) : IsPowerBounded (φ a) := by
   refine isPowerBounded_iff.mpr (isBounded_iff.mpr fun U hU ↦ ?_)
-  have hmul : Filter.Tendsto (fun p : B × B ↦ p.1 * p.2) (𝓝 0 ×ˢ 𝓝 0) (𝓝 0) := by
-    simpa [nhds_prod_eq] using (continuous_mul (M := B)).tendsto ((0 : B), (0 : B))
-  obtain ⟨W₁, hW₁, W₂, hW₂, hW⟩ := Filter.mem_prod_iff.mp (hmul hU)
-  have hφW₂ : φ ⁻¹' W₂ ∈ 𝓝 (0 : A) := hφ (map_zero φ ▸ hW₂)
+  obtain ⟨W₁, hW₁, W₂, hW₂, hW⟩ := Filter.mem_prod_iff.mp
+    ((by simpa [nhds_prod_eq] using (continuous_mul (M := B)).tendsto ((0 : B), (0 : B)) :
+      Filter.Tendsto (fun p : B × B ↦ p.1 * p.2) (𝓝 0 ×ˢ 𝓝 0) (𝓝 0)) hU)
   obtain ⟨m, hm⟩ := (isPowerBounded_iff.mp ha).exists_pow_mul_subset hϖ.isTopologicallyNilpotent
-    hφW₂
+    (hφ (map_zero φ ▸ hW₂))
   obtain ⟨u, hu⟩ := hϖ.isUnit.pow m
   let v : Bˣ := Units.map (φ : A →* B) u
-  have hv : (v : B) = φ (ϖ ^ m) := by simp [v, hu]
-  have hV : (fun s : B ↦ s * (↑v⁻¹ : B)) ⁻¹' W₁ ∈ 𝓝 (0 : B) := by
-    refine ContinuousAt.preimage_mem_nhds ?_ (by simpa using hW₁)
-    exact (continuous_id.mul continuous_const).continuousAt
-  refine ⟨(fun s : B ↦ s * (↑v⁻¹ : B)) ⁻¹' W₁, hV, ?_⟩
+  refine ⟨(· * (↑v⁻¹ : B)) ⁻¹' W₁,
+    (continuous_id.mul continuous_const).continuousAt.preimage_mem_nhds (by simpa using hW₁), ?_⟩
   rintro _ ⟨s, hs, _, ⟨n, rfl⟩, rfl⟩
   have hmem₂ : (v : B) * φ a ^ n ∈ W₂ := by
-    rw [hv, ← map_pow, ← map_mul]
-    exact hm (Set.mul_mem_mul (Set.mem_singleton _) ⟨n, rfl⟩)
-  have hident : (s * (↑v⁻¹ : B)) * ((v : B) * φ a ^ n) = s * φ a ^ n := by
-    rw [mul_assoc, ← mul_assoc (↑v⁻¹ : B), Units.inv_mul, one_mul]
-  dsimp only
-  rw [← hident]
-  exact hW (Set.mk_mem_prod hs hmem₂)
+    simpa [v, hu, ← map_pow, ← map_mul] using hm (Set.mul_mem_mul (Set.mem_singleton _) ⟨n, rfl⟩)
+  simpa [mul_assoc] using hW (Set.mk_mem_prod hs hmem₂)
 
 /-- A *Tate ring* is a Huber ring containing a pseudouniformiser, that is, a topologically
 nilpotent unit. -/

@@ -88,29 +88,25 @@ yields `(ℤ/pᵐℤ)[X₁, …, Xₖ]`. -/
 noncomputable example (k : ℕ) {m : ℕ} (hm : m ≠ 0) :
     (MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin k ↦ 1) ⧸
       (maximalIdeal ℤ_[p]).map
-        (algebraMap ℤ_[p]
-          (MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin k ↦ 1))) ^ m) ≃+*
-      MvPolynomial (Fin k) (ZMod (p ^ m)) :=
-  (quotientPowIsRestrictedEquivMvPolynomialQuotient
-    PadicInt.isAdic_maximalIdeal (IsNoetherian.noetherian _) hm).toRingEquiv.trans
-    (MvPolynomial.mapEquiv (Fin k)
-      ((Ideal.quotEquivOfEq (by
-        rw [_root_.PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow])).trans
-        (_root_.PadicInt.quotientSpanPowEquivZMod m)))
+        (algebraMap ℤ_[p] (MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin k ↦ 1))) ^
+          m) ≃+* MvPolynomial (Fin k) (ZMod (p ^ m)) :=
+  (quotientPowIsRestrictedEquivMvPolynomialQuotient PadicInt.isAdic_maximalIdeal
+    (IsNoetherian.noetherian _) hm).toRingEquiv.trans
+    (MvPolynomial.mapEquiv (Fin k) ((Ideal.quotEquivOfEq (by
+      rw [_root_.PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow])).trans
+      (_root_.PadicInt.quotientSpanPowEquivZMod m)))
 
 /-- For `m ≠ 0`, reducing completed Huber restricted power series over `ℤ_[p]` modulo `(p)ᵐ`
 likewise yields `(ℤ/pᵐℤ)[X₁, …, Xₖ]`. -/
 noncomputable example (k : ℕ) {m : ℕ} (hm : m ≠ 0) :
     (restrictedMvPowerSeriesCompletion k ℤ_[p] ⧸
-      (maximalIdeal ℤ_[p]).map
-        (algebraMap ℤ_[p] (restrictedMvPowerSeriesCompletion k ℤ_[p])) ^ m) ≃+*
-      MvPolynomial (Fin k) (ZMod (p ^ m)) :=
-  (quotientPowRestrictedCompletionEquivMvPolynomialQuotient
-    PadicInt.isAdic_maximalIdeal (IsNoetherian.noetherian _) hm).toRingEquiv.trans
-    (MvPolynomial.mapEquiv (Fin k)
-      ((Ideal.quotEquivOfEq (by
-        rw [_root_.PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow])).trans
-        (_root_.PadicInt.quotientSpanPowEquivZMod m)))
+      (maximalIdeal ℤ_[p]).map (algebraMap ℤ_[p] (restrictedMvPowerSeriesCompletion k ℤ_[p])) ^ m)
+      ≃+* MvPolynomial (Fin k) (ZMod (p ^ m)) :=
+  (quotientPowRestrictedCompletionEquivMvPolynomialQuotient PadicInt.isAdic_maximalIdeal
+    (IsNoetherian.noetherian _) hm).toRingEquiv.trans
+    (MvPolynomial.mapEquiv (Fin k) ((Ideal.quotEquivOfEq (by
+      rw [_root_.PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow])).trans
+      (_root_.PadicInt.quotientSpanPowEquivZMod m)))
 
 /-- Gauss-normed restricted power series `ℤ_[p]⟨X₁, …, Xₖ⟩` form a noetherian ring whose Gauss-norm
 topology is `(p · ℤ_[p]⟨X⟩)`-adic. -/
@@ -147,39 +143,31 @@ example :
     letI : WithIdeal (PowerSeries ℤ_[p]) := ⟨maximalIdeal (PowerSeries ℤ_[p])⟩
     ∃! ψ : MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin 1 ↦ 1) →+*
         PowerSeries ℤ_[p],
-      Continuous ψ ∧
-        (∀ r : ℤ_[p], ψ (algebraMap ℤ_[p] _ r) = PowerSeries.C r) ∧
+      Continuous ψ ∧ (∀ r : ℤ_[p], ψ (algebraMap ℤ_[p] _ r) = PowerSeries.C r) ∧
         ∀ i : Fin 1,
           ψ ⟨MvPowerSeries.X i, MvPowerSeries.isRestricted_X _ i⟩ = 1 + PowerSeries.X := by
   let : WithIdeal (PowerSeries ℤ_[p]) := ⟨maximalIdeal (PowerSeries ℤ_[p])⟩
   have hAdic : IsAdic (maximalIdeal (PowerSeries ℤ_[p])) := rfl
-  have hcomp : IsAdicComplete (maximalIdeal (PowerSeries ℤ_[p])) (PowerSeries ℤ_[p]) :=
-    PowerSeries.isAdicComplete_maximalIdeal
-  obtain ⟨_, _⟩ := hAdic.isAdicComplete_iff.mp hcomp
+  obtain ⟨_, _⟩ := hAdic.isAdicComplete_iff.mp PowerSeries.isAdicComplete_maximalIdeal
   have : IsLinearTopology (PowerSeries ℤ_[p]) (PowerSeries ℤ_[p]) := hAdic.isLinearTopology
   have hmap : (maximalIdeal ℤ_[p]).map PowerSeries.C ≤ maximalIdeal (PowerSeries ℤ_[p]) :=
     Ideal.map_le_iff_le_comap.mpr fun a ha ↦ by
       rw [Ideal.mem_comap, mem_maximalIdeal, mem_nonunits_iff]
       rw [mem_maximalIdeal, mem_nonunits_iff] at ha
       exact fun hu ↦ ha (by simpa using hu.map PowerSeries.constantCoeff)
-  have hC : Continuous (PowerSeries.C : ℤ_[p] →+* PowerSeries ℤ_[p]) :=
-    PadicInt.isAdic_maximalIdeal.continuous_of_map_le_radical hAdic (IsNoetherian.noetherian _)
-      (hmap.trans Ideal.le_radical)
   exact existsUnique_continuous_ringHom_isRestricted_subring_of_isLinearTopology
-    hC (fun _ ↦ 1 + PowerSeries.X)
+    (PadicInt.isAdic_maximalIdeal.continuous_of_map_le_radical hAdic (IsNoetherian.noetherian _)
+      (hmap.trans Ideal.le_radical)) fun _ ↦ 1 + PowerSeries.X
 
 /-- Over the Tate field `ℚ_[p]`, by contrast, there is no continuous ring homomorphism
 `ℚ_[p]⟨T⟩ →+* ℚ_[p]` extending the identity on `ℚ_[p]` and sending `T` to `p⁻¹`. -/
 example :
     ¬ ∃ ψ : MvPowerSeries.IsRestricted.subring (R := ℚ_[p]) (fun _ : Fin 1 ↦ 1) →+* ℚ_[p],
-      Continuous ψ ∧
-        (∀ r : ℚ_[p], ψ (algebraMap ℚ_[p] _ r) = r) ∧
-        ∀ i : Fin 1,
-          ψ ⟨MvPowerSeries.X i, MvPowerSeries.isRestricted_X _ i⟩ = (p : ℚ_[p])⁻¹ := by
+      Continuous ψ ∧ (∀ r : ℚ_[p], ψ (algebraMap ℚ_[p] _ r) = r) ∧
+        ∀ i : Fin 1, ψ ⟨MvPowerSeries.X i, MvPowerSeries.isRestricted_X _ i⟩ = (p : ℚ_[p])⁻¹ := by
   rintro ⟨ψ, hψc, hC, hX⟩
   have hle := (exists_continuous_ringHom_isRestricted_subring_iff_forall_norm_le_one
-    (φ := RingHom.id ℚ_[p]) continuous_id (fun _ : Fin 1 ↦ (p : ℚ_[p])⁻¹)).mp
-    ⟨ψ, hψc, hC, hX⟩ 0
+    (φ := RingHom.id ℚ_[p]) continuous_id (fun _ : Fin 1 ↦ (p : ℚ_[p])⁻¹)).mp ⟨ψ, hψc, hC, hX⟩ 0
   rw [norm_inv, Padic.norm_p, inv_inv] at hle
   exact not_le_of_gt (mod_cast hp.out.one_lt) hle
 
@@ -199,8 +187,7 @@ example (A : Type*) [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [Nonarch
       (weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set A)))
   have hcomp : ∀ a : A, e (algebraMap A (restrictedMvPowerSeriesCompletion 0 A) a) = a :=
     fun a ↦ by simp [e]
-  exact ⟨Function.LeftInverse.injective hcomp,
-    fun x ↦ ⟨e x, e.injective (hcomp (e x))⟩⟩
+  exact ⟨Function.LeftInverse.injective hcomp, fun x ↦ ⟨e x, e.injective (hcomp (e x))⟩⟩
 
 /-- When `ℤ[X]` carries the indiscrete (`⊤`-adic) topology — which is complete and nonarchimedean
 but not separated — `algebraMap : ℤ[X] →+* restrictedMvPowerSeriesCompletion 0 ℤ[X]` is not
@@ -211,20 +198,15 @@ example :
       ¬ Function.Injective (algebraMap ℤ[X] (restrictedMvPowerSeriesCompletion 0 ℤ[X])) := by
   let : WithIdeal ℤ[X] := ⟨⊤⟩
   have hAdic : IsAdic (⊤ : Ideal ℤ[X]) := rfl
-  have hfg : (⊤ : Ideal ℤ[X]).FG := ⟨{1}, by simp⟩
   have hpre : IsPrecomplete (⊤ : Ideal ℤ[X]) ℤ[X] :=
     ⟨fun _ _ ↦ ⟨0, fun n ↦ by simp [SModEq.zero, Submodule.eq_top_iff'.mp (Ideal.top_pow _ n)]⟩⟩
   refine ⟨hAdic.isPrecomplete_iff.mp hpre, fun hinj ↦ ?_⟩
   let P := MvPolynomial (Fin 0) ℤ[X]
-  let e := restrictedMvPowerSeriesCompletionEquivAdicCompletion (k := 0) hAdic hfg
-  have hsub : Subsingleton
-      (AdicCompletion ((⊤ : Ideal ℤ[X]).map (MvPolynomial.C : ℤ[X] →+* P)) P) := by
-    refine ⟨fun x y ↦ AdicCompletion.ext fun n ↦ ?_⟩
-    have htop :
-        (((⊤ : Ideal ℤ[X]).map (MvPolynomial.C : ℤ[X] →+* P)) ^ n • (⊤ : Submodule P P)) = ⊤ := by
-      rw [Ideal.map_top, Ideal.top_pow, smul_eq_mul, Ideal.top_mul]
-    have : Subsingleton _ := Submodule.Quotient.subsingleton_iff.mpr htop
-    exact Subsingleton.elim _ _
+  let e := restrictedMvPowerSeriesCompletionEquivAdicCompletion (k := 0) hAdic ⟨{1}, by simp⟩
+  have : Subsingleton (AdicCompletion ((⊤ : Ideal ℤ[X]).map (MvPolynomial.C : ℤ[X] →+* P)) P) :=
+    ⟨fun _ _ ↦ AdicCompletion.ext fun n ↦ @Subsingleton.elim _
+      (Submodule.Quotient.subsingleton_iff.mpr
+        (by rw [Ideal.map_top, Ideal.top_pow, smul_eq_mul, Ideal.top_mul])) _ _⟩
   exact one_ne_zero (hinj (e.injective (Subsingleton.elim _ _)))
 
 /-- When `ℤ[X]` carries the `(X)`-adic topology — which is Hausdorff (`T2Space`) and
@@ -237,42 +219,34 @@ example :
   let I : Ideal ℤ[X] := Ideal.span {Polynomial.X}
   let : WithIdeal ℤ[X] := ⟨I⟩
   have hAdic : IsAdic I := rfl
-  have hfg : I.FG := Submodule.fg_span_singleton Polynomial.X
   -- `ℤ[X]` is `(X)`-adically separated because `⨅ n, (X)^n = ⊥` in the domain `ℤ[X]`.
-  have hI_ne_top : I ≠ ⊤ := Ideal.span_singleton_ne_top Polynomial.not_isUnit_X
-  have hiInf : ⨅ n : ℕ, I ^ n = ⊥ := Ideal.iInf_pow_eq_bot_of_isDomain I hI_ne_top
-  have hHaus : IsHausdorff I ℤ[X] := by
-    rw [isHausdorff_iff]
-    intro f hf
+  have hHaus : IsHausdorff I ℤ[X] := isHausdorff_iff.mpr fun f hf ↦ by
     have hf' : f ∈ ⨅ n : ℕ, I ^ n := by
       rw [Submodule.mem_iInf]
       exact fun n ↦ by simpa [SModEq.zero, smul_eq_mul, Ideal.mul_top] using hf n
-    rwa [hiInf, Submodule.mem_bot] at hf'
+    rwa [Ideal.iInf_pow_eq_bot_of_isDomain I
+      (Ideal.span_singleton_ne_top Polynomial.not_isUnit_X), Submodule.mem_bot] at hf'
   refine ⟨hAdic.isHausdorff_iff.mp hHaus, fun hsurj ↦ ?_⟩
   -- Transport surjectivity of `algebraMap` to surjectivity of `AdicCompletion.of I ℤ[X]`.
+  have hfg : I.FG := Submodule.fg_span_singleton Polynomial.X
   let e : restrictedMvPowerSeriesCompletion 0 ℤ[X] ≃+* AdicCompletion I ℤ[X] :=
-    restrictedMvPowerSeriesCompletionFinZeroEquiv.trans
-      (hAdic.completionEquivAdicCompletion hfg)
+    restrictedMvPowerSeriesCompletionFinZeroEquiv.trans (hAdic.completionEquivAdicCompletion hfg)
   have he : ∀ f : ℤ[X], e (algebraMap ℤ[X] (restrictedMvPowerSeriesCompletion 0 ℤ[X]) f) =
-      AdicCompletion.of I ℤ[X] f := fun f ↦ by
-    simp [e, AdicCompletion.algebraMap_apply]
+      AdicCompletion.of I ℤ[X] f := fun f ↦ by simp [e, AdicCompletion.algebraMap_apply]
   have hsurj_of : Function.Surjective (AdicCompletion.of I ℤ[X]) := fun y ↦ by
     obtain ⟨f, hf⟩ := hsurj (e.symm y)
     exact ⟨f, by rw [← he f, hf, e.apply_symm_apply]⟩
   -- Bijectivity of `AdicCompletion.of` would make `ℤ[X]` `(X)`-adically complete, forcing `1 + X`
   -- to be a polynomial unit.
-  have : IsAdicComplete I ℤ[X] :=
-    AdicCompletion.of_bijective_iff.mp ⟨by have := hHaus; exact AdicCompletion.of_injective I ℤ[X],
-      hsurj_of⟩
-  have hX_jac : Polynomial.X ∈ Ring.jacobson ℤ[X] :=
-    IsAdicComplete.le_jacobson I (Ideal.mem_span_singleton_self Polynomial.X)
-  have hunitPoly : IsUnit (1 + (Polynomial.X : ℤ[X])) := by
+  have : IsAdicComplete I ℤ[X] := AdicCompletion.of_bijective_iff.mp
+    ⟨by have := hHaus; exact AdicCompletion.of_injective I ℤ[X], hsurj_of⟩
+  have hunit : IsUnit (1 + (Polynomial.X : ℤ[X])) := by
     rw [add_comm]
-    simpa using Ring.mem_jacobson_iff.mp hX_jac 1
-  have hC :=
-    Polynomial.eq_C_of_natDegree_eq_zero (Polynomial.natDegree_eq_zero_of_isUnit hunitPoly)
-  have hcoeff := congrArg (fun p : ℤ[X] ↦ p.coeff 1) hC
-  simp at hcoeff
+    simpa using Ring.mem_jacobson_iff.mp
+      (IsAdicComplete.le_jacobson I (Ideal.mem_span_singleton_self Polynomial.X)) 1
+  have hC := congrArg (fun p : ℤ[X] ↦ p.coeff 1)
+    (Polynomial.eq_C_of_natDegree_eq_zero (Polynomial.natDegree_eq_zero_of_isUnit hunit))
+  simp at hC
 
 end ZeroVariables
 
