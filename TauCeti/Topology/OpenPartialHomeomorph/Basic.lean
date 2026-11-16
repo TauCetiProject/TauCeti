@@ -31,8 +31,6 @@ in terms of the coercion and inverse of an open partial homeomorphism.
   homeomorphism from a Hausdorff space maps compact subsets of its target to closed sets.
 * `OpenPartialHomeomorph.isClosed_image_of_closure_subset_target`: the image of a closed subset
   of the source is closed if its closure stays inside the target, without a compactness assumption.
-* `OpenPartialHomeomorph.symm_map_of_intertwines`: if `e` intertwines a self-map `f` of its source
-  with a map `A`, then `A` preserves the target and `e.symm` intertwines `A` with `f`.
 -/
 
 public section
@@ -53,16 +51,5 @@ theorem isClosed_image_of_closure_subset_target {s : Set X} (hs : IsClosed s)
     (hse : s ⊆ e.source) (hclosure : closure (e '' s) ⊆ e.target) :
     IsClosed (e '' s) :=
   e.toPartialHomeomorph.isClosed_image_of_closure_subset_target hs hse hclosure
-
-/-- If an open partial homeomorphism `e` intertwines a map `f` of its source into itself with a
-map `A`, then `A` maps the target of `e` into itself and `e.symm` intertwines `A` with `f`
-there. -/
-theorem symm_map_of_intertwines {f : X → X} {A : Y → Y}
-    (hA : ∀ x ∈ e.source, f x ∈ e.source ∧ e (f x) = A (e x)) {z : Y} (hz : z ∈ e.target) :
-    A z ∈ e.target ∧ e.symm (A z) = f (e.symm z) := by
-  obtain ⟨hfs, hfe⟩ := hA (e.symm z) (e.map_target hz)
-  rw [e.right_inv hz] at hfe
-  rw [← hfe]
-  exact ⟨e.map_source hfs, e.left_inv hfs⟩
 
 end OpenPartialHomeomorph

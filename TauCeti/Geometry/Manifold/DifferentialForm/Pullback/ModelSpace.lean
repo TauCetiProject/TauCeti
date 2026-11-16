@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
-import TauCeti.Topology.OpenPartialHomeomorph.Basic
+import TauCeti.Logic.Equiv.PartialEquiv
 
 /-!
 # Pulling forms back to open subsets of normed spaces
@@ -73,10 +73,11 @@ theorem _root_.OpenPartialHomeomorph.mpullback_mpullback_symm_apply_of_intertwin
       mpullback 𝓘(ℝ, E) I e.symm η y := by
   have hds {z : E} (hz : z ∈ e.target) : MDifferentiableAt 𝓘(ℝ, E) I e.symm z :=
     (hes z hz).mdifferentiableAt (e.open_target.mem_nhds hz)
+  have hsymm {z : E} (hz : z ∈ e.target) := e.toPartialEquiv.symm_map_of_intertwines hA hz
   have heq : e.symm ∘ A =ᶠ[𝓝 y] f ∘ e.symm := by
     filter_upwards [e.open_target.mem_nhds hy] with z hz
-    exact (e.symm_map_of_intertwines hA hz).2
-  rw [← mpullback_comp_at hAd (hds (e.symm_map_of_intertwines hA hy).1), heq.mpullback_eq,
+    exact (hsymm hz).2
+  rw [← mpullback_comp_at hAd (hds (hsymm hy).1), heq.mpullback_eq,
     mpullback_comp_at (hds hy) hf, hηf]
 
 namespace SmoothForm
