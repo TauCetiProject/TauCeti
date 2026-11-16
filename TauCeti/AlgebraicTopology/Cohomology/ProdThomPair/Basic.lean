@@ -242,8 +242,8 @@ theorem bijective_singularCohomologyδ_prodThomPair_comp_inr [ContractibleSpace 
         P.singularCohomologyMap_comp_singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M r m h]
       simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
     have hbc : ((b', c) : _ × _) = (b', 0) + (0, c) := by simp
+    simp only [LinearMap.comp_apply, LinearMap.inr_apply, LinearEquiv.coe_coe]
     rw [hbc, map_add, map_add, hδ, zero_add]
-    rfl
 
 end Projection
 

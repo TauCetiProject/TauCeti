@@ -146,6 +146,7 @@ def prodThomPairPuncturedLineSection (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)
     by fun_prop⟩
 
 /-- The section `TauCeti.prodThomPairPuncturedLineSection` sends `b` to `(b, e⁻¹ t)`. -/
+@[simp]
 theorem coe_prodThomPairPuncturedLineSection_apply (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1))
     (t : ℝ) (ht : t ≠ 0) (b : B) :
     (prodThomPairPuncturedLineSection e t ht b).1 = (b, e.symm (EuclideanSpace.single 0 t)) :=
@@ -298,25 +299,29 @@ private theorem singularCohomologyMap_prodThomPairPuncturedLineSection_neg_one_l
     singularCohomologyMap_prodThomPairPuncturedLineSection_neg_one, map_zero, LinearMap.zero_apply,
     add_zero]
 
+/-- The candidate `(b, c)` reading `b` off the negative side and `b + c` off the positive side
+is sent back to the class. -/
+private theorem lineMap_restrict (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (m : ℕ)
+    (y : (prodThomPair B F).snd.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m) :
+    lineMap M e m
+        (TopCat.singularCohomologyMap (prodThomPairPuncturedLineSection e (-1) (by norm_num)) m y,
+          TopCat.singularCohomologyMap (prodThomPairPuncturedLineSection e 1 one_ne_zero) m y -
+            TopCat.singularCohomologyMap
+              (prodThomPairPuncturedLineSection e (-1) (by norm_num)) m y) = y := by
+  refine sub_eq_zero.1
+    (eq_zero_of_singularCohomologyMap_prodThomPairPuncturedLineSection_eq_zero M e m _ ?_ ?_)
+  · rw [map_sub, singularCohomologyMap_prodThomPairPuncturedLineSection_one_lineMap,
+      add_sub_cancel, sub_self]
+  · rw [map_sub, singularCohomologyMap_prodThomPairPuncturedLineSection_neg_one_lineMap, sub_self]
+
 private theorem bijective_lineMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (m : ℕ) :
     Function.Bijective (lineMap (B := B) M e m) := by
-  refine ⟨(injective_iff_map_eq_zero _).2 fun bc hbc ↦ ?_, fun y ↦ ?_⟩
-  · have h₁ := singularCohomologyMap_prodThomPairPuncturedLineSection_neg_one_lineMap M e m bc
-    have h₂ := singularCohomologyMap_prodThomPairPuncturedLineSection_one_lineMap M e m bc
-    rw [hbc, map_zero] at h₁ h₂
-    have hc : bc.2 = 0 := by rw [← h₁, zero_add] at h₂; exact h₂.symm
-    exact Prod.ext h₁.symm hc
-  · -- The candidate `(b, c)` reads `b` off the negative side and `b + c` off the positive side.
-    let b :=
-      TopCat.singularCohomologyMap (prodThomPairPuncturedLineSection e (-1) (by norm_num)) m y
-    let c :=
-      TopCat.singularCohomologyMap (prodThomPairPuncturedLineSection e 1 one_ne_zero) m y - b
-    refine ⟨(b, c), (sub_eq_zero.1 ?_).symm⟩
-    refine eq_zero_of_singularCohomologyMap_prodThomPairPuncturedLineSection_eq_zero M e m _ ?_ ?_
-    · rw [map_sub, singularCohomologyMap_prodThomPairPuncturedLineSection_one_lineMap]
-      simp [c]
-    · rw [map_sub, singularCohomologyMap_prodThomPairPuncturedLineSection_neg_one_lineMap,
-        sub_self]
+  refine ⟨(injective_iff_map_eq_zero _).2 fun bc hbc ↦ ?_, fun y ↦ ⟨_, lineMap_restrict M e m y⟩⟩
+  have h₁ := singularCohomologyMap_prodThomPairPuncturedLineSection_neg_one_lineMap M e m bc
+  have h₂ := singularCohomologyMap_prodThomPairPuncturedLineSection_one_lineMap M e m bc
+  rw [hbc, map_zero] at h₁ h₂
+  have hc : bc.2 = 0 := by rw [← h₁, zero_add] at h₂; exact h₂.symm
+  exact Prod.ext h₁.symm hc
 
 variable (B) in
 /-- **The cohomology of the punctured product line bundle.** For a continuous linear equivalence
@@ -376,11 +381,7 @@ theorem prodThomPairPuncturedLineSingularCohomologyEquiv_symm_apply
           TopCat.singularCohomologyMap
             (prodThomPairPuncturedLineSection e (-1) (by norm_num)) m y) := by
   rw [LinearEquiv.symm_apply_eq]
-  refine sub_eq_zero.1
-    (eq_zero_of_singularCohomologyMap_prodThomPairPuncturedLineSection_eq_zero M e m _ ?_ ?_)
-  · rw [map_sub, prodThomPairPuncturedLineSingularCohomologyEquiv_restrict_one, add_sub_cancel,
-      sub_self]
-  · rw [map_sub, prodThomPairPuncturedLineSingularCohomologyEquiv_restrict_neg_one, sub_self]
+  exact (lineMap_restrict M e m y).symm
 
 /-- The classes `π^* b` of the decomposition
 `TauCeti.prodThomPairPuncturedLineSingularCohomologyEquiv` are the restrictions of the classes of
