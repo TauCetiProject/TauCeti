@@ -73,16 +73,10 @@ theorem jimboHeckeNormalization {c : R}
     (hc : c * ∑ a : Fin N, jimboWeight q a = 1) :
     (∑ a : Fin N, jimboWeight q a) * ↑((q ^ N)⁻¹ : Rˣ) * (c * ↑(q ^ N)) = 1 ∧
       (∑ a : Fin N, jimboWeight q a) * ↑(((q ^ N)⁻¹ : Rˣ)⁻¹) *
-        (c * ↑(q ^ N) - ((q : R) - ↑q⁻¹)) = 1 := by
-  refine ⟨?_, ?_⟩
-  · have hq : (↑((q ^ N)⁻¹ : Rˣ) : R) * ↑(q ^ N) = 1 := Units.inv_mul (q ^ N)
-    linear_combination hc + c * (∑ a : Fin N, jimboWeight q a) * hq
-  · rw [inv_inv]
-    have hs := jimboWeight_sum (N := N) q
-    have hq : (↑(q ^ N) : R) * ↑((q⁻¹) ^ N) = 1 := by
-      rw [inv_pow]
-      exact Units.mul_inv (q ^ N)
-    linear_combination (↑(q ^ N) : R) ^ 2 * hc - (↑(q ^ N) : R) * hs + hq
+        (c * ↑(q ^ N) - ((q : R) - ↑q⁻¹)) = 1 :=
+  heckeNormalization_of_mul_eq_val_inv_sub hc
+    (by simpa only [inv_inv, inv_pow, mul_comm] using jimboWeight_sum (N := N) q)
+    (by rw [inv_inv])
 
 namespace MarkovBraid
 
@@ -140,7 +134,7 @@ theorem heckeTrace_ocneanuTrace_sigma_two {c : R}
     (hc : c * ∑ a : Fin N, jimboWeight q a = 1) :
     heckeTrace ⟨1, BraidGroup.sigma (0 : Fin 1)⟩ (ocneanuTrace R q (c * ↑(q ^ N)))
         (∑ a : Fin N, jimboWeight q a) (q ^ N)⁻¹ = 1 := by
-  rw [heckeTrace_sigma_two (isMarkovTrace_ocneanuTrace _), (jimboHeckeNormalization hc).1]
+  rw [heckeTrace_sigma (isMarkovTrace_ocneanuTrace _), pow_one, (jimboHeckeNormalization hc).1]
 
 /-- On the negative single-crossing two-strand braid `⟨1, σ₀⁻¹⟩`, the normalized Ocneanu trace at
 `z = c * q ^ N` evaluates to `1` when `c * [N]_q = 1`. -/
@@ -148,7 +142,7 @@ theorem heckeTrace_ocneanuTrace_sigma_two_inv {c : R}
     (hc : c * ∑ a : Fin N, jimboWeight q a = 1) :
     heckeTrace ⟨1, (BraidGroup.sigma (0 : Fin 1))⁻¹⟩ (ocneanuTrace R q (c * ↑(q ^ N)))
         (∑ a : Fin N, jimboWeight q a) (q ^ N)⁻¹ = 1 := by
-  rw [heckeTrace_sigma_two_inv (isMarkovTrace_ocneanuTrace _), (jimboHeckeNormalization hc).2]
+  rw [heckeTrace_sigma_inv (isMarkovTrace_ocneanuTrace _), pow_one, (jimboHeckeNormalization hc).2]
 
 /-- **Evaluation at the zero-factor specialization `q = 1` (`q - q⁻¹ = 0`).** When `c * N = 1` in
 `R`, the normalized Ocneanu trace at `(q, z, C, l) = (1, c, N, 1)` counts `N`-colourings fixed by

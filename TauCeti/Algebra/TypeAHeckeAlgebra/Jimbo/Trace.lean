@@ -154,9 +154,7 @@ theorem jimboWeightedTrace_strandIncl (N : ℕ) (q : Rˣ) (n : ℕ) (x : TypeAHe
   cases n with
   | zero =>
     obtain ⟨r, rfl⟩ := algebraMap_surjective_of_le_one (Nat.zero_le 1) x
-    rw [AlgHom.commutes, Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, map_smul,
-      map_smul, jimboWeightedTrace_one, jimboWeightedTrace_one, pow_zero, pow_one, smul_eq_mul,
-      smul_eq_mul, mul_one]
+    simp [Algebra.algebraMap_eq_smul_one]
   | succ m =>
     have hfg : jimboWeightedTrace N q (m + 2) ∘ₗ (strandIncl R q (m + 1)).toLinearMap =
         LinearMap.mulRight R (∑ a : Fin N, KnotTheory.jimboWeight q a) ∘ₗ

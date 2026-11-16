@@ -68,8 +68,8 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
 * `IsLocalization.Away.lift_injective_of_injective`,
   `IsLocalization.Away.awayToAwayLeft_injective`, and
   `IsLocalization.Away.awayToAwayRight_injective`: injectivity of `IsLocalization.Away.lift` from an
-  injective ring homomorphism and of the refinement maps `awayToAwayLeft` and `awayToAwayRight` over
-  a ring with no zero divisors.
+  injective ring homomorphism and of the refinement maps `awayToAwayLeft` and `awayToAwayRight` when
+  the newly inverted factor is regular.
 * `IsLocalization.Away.isSMulRegular_algebraMap`: an element whose annihilator is killed by `r`
   becomes a nonzerodivisor after inverting `r`.
 * `RingHom.map_comp_algebraMap_eq_algebraMap_comp_awayMap`: localization maps commute with away maps
@@ -513,25 +513,42 @@ theorem lift_injective_of_injective {R S P : Type*} [CommSemiring R] (x : R) [Co
     Function.Injective (IsLocalization.Away.lift (S := S) x hg) :=
   IsLocalization.lift_injective_of_injective _ hinj
 
-/-- Over a commutative ring with no zero divisors, the canonical homomorphism `awayToAwayLeft x y`
-from a localization `S` away from `x` to a localization `P` away from `y * x` is injective whenever
-`y * x ≠ 0`. -/
-theorem awayToAwayLeft_injective {R S P : Type*} [CommRing R] [NoZeroDivisors R] (x y : R)
-    [CommRing S] [Algebra R S] [IsLocalization.Away x S] [CommRing P] [Algebra R P]
-    [IsLocalization.Away (y * x) P] (hyx : y * x ≠ 0) :
-    Function.Injective (IsLocalization.Away.awayToAwayLeft (S := S) (P := P) x y) :=
-  lift_injective_of_injective x _
-    (IsLocalization.injective P (powers_le_nonZeroDivisors_of_noZeroDivisors hyx))
+/-- Over a commutative semiring, the canonical homomorphism `awayToAwayLeft x y` from a
+localization `S` away from `x` to a localization `P` away from `y * x` is injective whenever `y` is
+regular in `R`. -/
+theorem awayToAwayLeft_injective {R S P : Type*} [CommSemiring R] (x y : R) [CommSemiring S]
+    [Algebra R S] [IsLocalization.Away x S] [CommSemiring P] [Algebra R P]
+    [IsLocalization.Away (y * x) P] (hy : IsRegular y) :
+    Function.Injective (IsLocalization.Away.awayToAwayLeft (S := S) (P := P) x y) := by
+  rw [IsLocalization.Away.awayToAwayLeft, IsLocalization.Away.lift,
+    IsLocalization.lift_injective_iff]
+  intro a b
+  refine ⟨fun hab ↦ ?_, fun hab ↦ ?_⟩
+  · rw [← IsLocalization.Away.awayToAwayLeft_eq (S := S) (P := P) x y a,
+      ← IsLocalization.Away.awayToAwayLeft_eq (S := S) (P := P) x y b, hab]
+  · obtain ⟨⟨_, n, rfl⟩, hn⟩ :=
+      (IsLocalization.eq_iff_exists (Submonoid.powers (y * x)) P).mp hab
+    exact (IsLocalization.eq_iff_exists (Submonoid.powers x) S).mpr
+      ⟨⟨x ^ n, n, rfl⟩, (hy.pow n).left (by simpa only [mul_pow, mul_assoc] using hn)⟩
 
-/-- Over a commutative ring with no zero divisors, the canonical homomorphism `awayToAwayRight x y`
-from a localization `S` away from `x` to a localization `P` away from `x * y` is injective whenever
-`x * y ≠ 0`. -/
-theorem awayToAwayRight_injective {R S P : Type*} [CommRing R] [NoZeroDivisors R] (x y : R)
-    [CommRing S] [Algebra R S] [IsLocalization.Away x S] [CommRing P] [Algebra R P]
-    [IsLocalization.Away (x * y) P] (hxy : x * y ≠ 0) :
-    Function.Injective (IsLocalization.Away.awayToAwayRight (S := S) (P := P) x y) :=
-  lift_injective_of_injective x _
-    (IsLocalization.injective P (powers_le_nonZeroDivisors_of_noZeroDivisors hxy))
+/-- Over a commutative semiring, the canonical homomorphism `awayToAwayRight x y` from a
+localization `S` away from `x` to a localization `P` away from `x * y` is injective whenever `y` is
+regular in `R`. -/
+theorem awayToAwayRight_injective {R S P : Type*} [CommSemiring R] (x y : R) [CommSemiring S]
+    [Algebra R S] [IsLocalization.Away x S] [CommSemiring P] [Algebra R P]
+    [IsLocalization.Away (x * y) P] (hy : IsRegular y) :
+    Function.Injective (IsLocalization.Away.awayToAwayRight (S := S) (P := P) x y) := by
+  rw [IsLocalization.Away.awayToAwayRight, IsLocalization.Away.lift,
+    IsLocalization.lift_injective_iff]
+  intro a b
+  refine ⟨fun hab ↦ ?_, fun hab ↦ ?_⟩
+  · rw [← IsLocalization.Away.awayToAwayRight_eq (S := S) (P := P) x y a,
+      ← IsLocalization.Away.awayToAwayRight_eq (S := S) (P := P) x y b, hab]
+  · obtain ⟨⟨_, n, rfl⟩, hn⟩ :=
+      (IsLocalization.eq_iff_exists (Submonoid.powers (x * y)) P).mp hab
+    exact (IsLocalization.eq_iff_exists (Submonoid.powers x) S).mpr
+      ⟨⟨x ^ n, n, rfl⟩,
+        (hy.pow n).left (by simpa only [mul_pow, mul_comm (x ^ n), mul_assoc] using hn)⟩
 
 end IsLocalization.Away
 

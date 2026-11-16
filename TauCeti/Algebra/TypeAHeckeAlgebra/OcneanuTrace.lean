@@ -620,7 +620,7 @@ theorem algebraMap_ocneanuTrace {R S : Type*} [CommRing R] [CommRing S] [Algebra
         LinearMap.restrictScalars_apply, AlgHom.toLinearMap_apply, map_mul, map_T] at hba ⊢
       rw [hτR.map_mul_T_mul ha hb, _root_.map_mul, hba,
         hτS.map_mul_T_mul (map_mem_stage hq ha) (map_mem_stage hq hb)]
-  exact LinearMap.mem_eqLocus.mp (htop.symm ▸ Submodule.mem_top : x ∈ LinearMap.eqLocus M₁ M₂)
+  simpa [M₁, M₂] using LinearMap.congr_fun (LinearMap.eqLocus_eq_top.mp htop) x
 
 /-- Every ring homomorphism commutes with the Ocneanu trace on the universal Hecke image of a
 braid. -/
@@ -628,9 +628,10 @@ theorem map_ocneanuTrace_braidHom {R S : Type*} [CommRing R] [CommRing S] (f : R
     (q : Rˣ) (z : R) (n : ℕ) (b : BraidGroup n) :
     f (ocneanuTrace R q z (braidHom R q n b)) =
       ocneanuTrace S (Units.map f q) (f z) (braidHom S (Units.map f q) n b) := by
-  have h := @algebraMap_ocneanuTrace R S _ _ f.toAlgebra q (Units.map (f : R →* S) q) rfl z
-    (braidHom R q n b)
-  rwa [@map_braidHom R _ q S _ f.toAlgebra (Units.map (f : R →* S) q) rfl n b] at h
+  let : Algebra R S := f.toAlgebra
+  have hq : algebraMap R S q = ((Units.map f q : Sˣ) : S) := by simp [RingHom.algebraMap_toAlgebra]
+  simpa only [RingHom.algebraMap_toAlgebra, map_braidHom hq] using
+    algebraMap_ocneanuTrace hq z (braidHom R q n b)
 
 end InfiniteTypeAHeckeAlgebra
 

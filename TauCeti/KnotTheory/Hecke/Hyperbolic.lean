@@ -58,41 +58,6 @@ namespace TauCeti
 open InfiniteTypeAHeckeAlgebra (IsMarkovTrace)
 open LaurentPolynomial (eval₂)
 
-/-- Multiplying the Markov parameter `z = exp (-θ) * η - exp θ * (1 - η)` by
-`hyperbolicWritheUnit α` gives `hyperbolicStabilization α θ η`. -/
-theorem hyperbolicWritheUnit_mul_eq_hyperbolicStabilization {α θ z η : ℂ}
-    (hz : z = exp (-θ) * η - exp θ * (1 - η)) :
-    (hyperbolicWritheUnit α : ℂ) * z = hyperbolicStabilization α θ η := by
-  rw [val_hyperbolicWritheUnit, hz, hyperbolicStabilization_def, exp_sub, exp_add, exp_neg, exp_neg]
-  ring
-
-/-- Multiplying the negative Hecke stabilization factor `z - (q - q⁻¹)` at
-`q = hyperbolicHeckeParam θ` by `(hyperbolicWritheUnit α)⁻¹` gives
-`hyperbolicStabilizationInv α θ η`. -/
-theorem inv_hyperbolicWritheUnit_mul_sub_eq_hyperbolicStabilizationInv {α θ z η : ℂ}
-    (hz : z = exp (-θ) * η - exp θ * (1 - η)) :
-    (↑(hyperbolicWritheUnit α)⁻¹ : ℂ) *
-        (z - ((hyperbolicHeckeParam θ : ℂ) - ↑(hyperbolicHeckeParam θ)⁻¹)) =
-      hyperbolicStabilizationInv α θ η := by
-  rw [val_inv_hyperbolicWritheUnit, val_hyperbolicHeckeParam, val_inv_hyperbolicHeckeParam, hz,
-    hyperbolicStabilizationInv_def, exp_sub, exp_add, exp_neg]
-  ring
-
-/-- **Hyperbolic Markov normalization equations for `MarkovBraid.heckeTrace`.** At projection
-parameter `η = (1 - tanh α * tanh θ) / 2` (with `cosh α ≠ 0`, `cosh θ ≠ 0`, and `sinh θ ≠ 0`),
-`C = I * cosh α / sinh θ` and `l = hyperbolicWritheUnit α` solve both positive and negative Markov
-normalization equations for `z = exp (-θ) * η - exp θ * (1 - η)`. -/
-theorem hyperbolicHeckeNormalization {α θ z η : ℂ}
-    (hz : z = exp (-θ) * η - exp θ * (1 - η))
-    (hα : cosh α ≠ 0) (hθ : cosh θ ≠ 0) (hθ' : sinh θ ≠ 0)
-    (hη : η = (1 - tanh α * tanh θ) / 2) :
-    (I * cosh α / sinh θ) * (hyperbolicWritheUnit α : ℂ) * z = 1 ∧
-      (I * cosh α / sinh θ) * (↑(hyperbolicWritheUnit α)⁻¹ : ℂ) *
-        (z - ((hyperbolicHeckeParam θ : ℂ) - ↑(hyperbolicHeckeParam θ)⁻¹)) = 1 := by
-  rw [mul_assoc, hyperbolicWritheUnit_mul_eq_hyperbolicStabilization hz,
-    mul_assoc, inv_hyperbolicWritheUnit_mul_sub_eq_hyperbolicStabilizationInv hz]
-  exact hyperbolicStabilization_normalization hα hθ hθ' hη
-
 namespace MarkovBraid
 
 /-- **Three-parameter hyperbolic skein relation for `MarkovBraid.heckeTrace`.** At Hecke parameter

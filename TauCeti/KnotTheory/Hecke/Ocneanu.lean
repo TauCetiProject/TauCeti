@@ -60,15 +60,11 @@ is identically `1`. -/
 theorem heckeTrace_ocneanuTrace_indexCharacter {R : Type*} [CommRing R] (q : Rˣ)
     (β : MarkovBraid) :
     β.heckeTrace (ocneanuTrace R q (q : R)) 1 q⁻¹ = 1 := by
-  have hpos : (1 : R) * ↑(q⁻¹ : Rˣ) * (q : R) = 1 := by
-    simpa only [one_mul] using Units.inv_mul q
-  have hneg : (1 : R) * ↑((q⁻¹ : Rˣ)⁻¹) * ((q : R) - ((q : R) - ↑q⁻¹)) = 1 := by
-    rw [inv_inv, sub_sub_cancel, one_mul]
-    exact Units.mul_inv q
-  have heq := eq_heckeTrace_of_skein (isMarkovTrace_ocneanuTrace (q : R)) hpos hneg
-    (F := fun _ ↦ (1 : R)) (fun _ _ _ ↦ rfl)
-    (fun _ _ _ ↦ by simp) (fun _ _ ↦ by simp) rfl
-  exact (congrFun heq β).symm
+  obtain ⟨hpos, hneg⟩ :=
+    heckeNormalization_of_mul_eq_val_inv_sub (d := (q : R) - ↑q⁻¹) (z := (q : R)) (l := q⁻¹)
+      (one_mul (1 : R)) (by simp) (by simp)
+  rw [one_mul] at hpos hneg
+  exact β.heckeTrace_eq_one (isMarkovTrace_ocneanuTrace (q : R)) hpos hneg
 
 /-- **Sign-character specialization (`z = -q⁻¹`, `C = 1`, `l = -q`).** Over any commutative ring `R`
 and for any `q : Rˣ` (including `q = ±1`), the normalized Ocneanu trace at
@@ -77,20 +73,11 @@ and for any `q : Rˣ` (including `q = ±1`), the normalized Ocneanu trace at
 theorem heckeTrace_ocneanuTrace_signCharacter {R : Type*} [CommRing R] (q : Rˣ)
     (β : MarkovBraid) :
     β.heckeTrace (ocneanuTrace R q (-(↑q⁻¹ : R))) 1 (-q) = 1 := by
-  have hinv : (↑((-q : Rˣ)⁻¹) : R) = -(↑q⁻¹ : R) := by
-    apply (Units.mul_right_inj (-q)).mp
-    rw [Units.mul_inv, Units.val_neg, neg_mul_neg, Units.mul_inv]
-  have hpos : (1 : R) * ↑(-q : Rˣ) * (-(↑q⁻¹ : R)) = 1 := by
-    rw [Units.val_neg, one_mul, neg_mul_neg]
-    exact Units.mul_inv q
-  have hneg : (1 : R) * ↑((-q : Rˣ)⁻¹) * (-(↑q⁻¹ : R) - ((q : R) - ↑q⁻¹)) = 1 := by
-    rw [hinv, one_mul, show -(↑q⁻¹ : R) - ((q : R) - ↑q⁻¹) = -(q : R) by ring, neg_mul_neg]
-    exact Units.inv_mul q
-  have heq := eq_heckeTrace_of_skein (isMarkovTrace_ocneanuTrace (-(↑q⁻¹ : R))) hpos hneg
-    (F := fun _ ↦ (1 : R)) (fun _ _ _ ↦ rfl)
-    (fun _ _ _ ↦ by rw [hinv, Units.val_neg]; ring)
-    (fun _ _ ↦ by simp) rfl
-  exact (congrFun heq β).symm
+  obtain ⟨hpos, hneg⟩ :=
+    heckeNormalization_of_mul_eq_val_inv_sub (d := (q : R) - ↑q⁻¹) (z := -(↑q⁻¹ : R)) (l := -q)
+      (one_mul (1 : R)) (by simp; ring) (by simp)
+  rw [one_mul] at hpos hneg
+  exact β.heckeTrace_eq_one (isMarkovTrace_ocneanuTrace (-(↑q⁻¹ : R))) hpos hneg
 
 end MarkovBraid
 

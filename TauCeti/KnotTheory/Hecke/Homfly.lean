@@ -8,7 +8,6 @@ module
 public import TauCeti.KnotTheory.Hecke.Ocneanu
 public import TauCeti.KnotTheory.Homfly.Alexander
 public import TauCeti.RingTheory.Localization.Away.Basic
-import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -23,15 +22,15 @@ apparent zero-factor loci before evaluating specializations there:
    Markov trace `τ`, evaluating `β.reducedHomfly K` at `(l⁻¹, u)` equals `β.heckeTrace τ C l`.
 2. **Regularity across `l⁻¹ - l = 0` (`C = 0`, Alexander specialization)**: in
    `heckeUniversalRing K` (inverting `(q - q⁻¹)(a - a⁻¹)`), the normalized Ocneanu trace equals the
-   image under `heckeAlexanderInclusion K` (injective over any domain `K`) of the regular element
-   `MarkovBraid.heckeAlexanderRegular K` in `heckeAlexanderRegularRing K` (inverting `q - q⁻¹`
-   alone); lifting at `a = ±1` specializes cleanly, and `a = 1`, `q = s⁻¹` recovers
+   image under `heckeAlexanderInclusion K` (injective over any commutative ring `K`) of the regular
+   element `MarkovBraid.heckeAlexanderRegular K` in `heckeAlexanderRegularRing K` (inverting
+   `q - q⁻¹` alone); lifting at `a = ±1` specializes cleanly, and `a = 1`, `q = s⁻¹` recovers
    `MarkovBraid.normalizedBurauAlexander s`.
 3. **Regularity across `q - q⁻¹ = 0` (`q = ±1`, classical specialization)**: when
    `l₀⁻¹ - l₀ = C₀ * (T 1 - T (-1))` in `LaurentPolynomial K`, the generic HOMFLY specialization in
    `Localization.Away (C₀ * (T 1 - T (-1)))` equals the image under `heckeZeroFactorLift C₀`
-   (injective when `C₀ ≠ 0` and `K` has no zero divisors) of `heckeTrace` over
-   `Localization.Away C₀`, lifting to any `q` with `eval₂ φ q C₀` invertible (including `q = ±1`).
+   (injective over any commutative ring `K`) of `heckeTrace` over `Localization.Away C₀`, lifting
+   to any `q` with `eval₂ φ q C₀` invertible (including `q = ±1`).
 
 ## Main definitions
 
@@ -145,6 +144,24 @@ end HomflyComparison
 
 section ZeroFactorRegularity
 
+private theorem isRegular_T_one_sub_T_neg_one (A : Type*) [CommRing A] :
+    IsRegular (T 1 - T (-1) : LaurentPolynomial A) := by
+  have hmonic : (Polynomial.X ^ 2 - 1 : Polynomial A).Monic :=
+    Polynomial.monic_X_pow_sub_C 1 two_ne_zero
+  have hsmul : IsSMulRegular (LaurentPolynomial A)
+      (algebraMap (Polynomial A) (LaurentPolynomial A) (Polynomial.X ^ 2 - 1)) :=
+    IsLocalization.Away.isSMulRegular_algebraMap (r := (Polynomial.X : Polynomial A))
+      (fun b hb ↦ by rw [hmonic.isRegular.left (hb.trans (mul_zero _).symm), mul_zero])
+  have hregP : IsRegular (algebraMap (Polynomial A) (LaurentPolynomial A) (Polynomial.X ^ 2 - 1)) :=
+    isRegular_iff.mpr ⟨hsmul, fun a b hab ↦ hsmul (by simpa only [smul_eq_mul, mul_comm] using hab)⟩
+  have heq : (T 1 - T (-1) : LaurentPolynomial A) =
+      T (-1) * algebraMap (Polynomial A) (LaurentPolynomial A) (Polynomial.X ^ 2 - 1) := by
+    have hX : algebraMap (Polynomial A) (LaurentPolynomial A) Polynomial.X = T 1 := by simp
+    rw [map_sub, map_pow, map_one, hX, mul_sub, mul_one, sq, ← mul_assoc, ← T_add, ← T_add]
+    norm_num
+  rw [heq]
+  exact (isUnit_T (-1)).isRegular.mul hregP
+
 /-! #### 1. Regularity across `l⁻¹ - l = 0` (`C = 0`, Alexander specialization) -/
 
 section AlexanderRegularity
@@ -159,17 +176,29 @@ def heckeDeltaQ : LaurentPolynomial (LaurentPolynomial K) := C (T 1 - T (-1))
 /-- Defining formula for `heckeDeltaQ K`. -/
 theorem heckeDeltaQ_def : heckeDeltaQ K = C (T 1 - T (-1)) := (rfl)
 
+/-- Evaluating `heckeDeltaQ K` along `f` at `a` gives `f (T 1 - T (-1))`. -/
+@[simp]
+theorem eval₂_heckeDeltaQ {R : Type*} [CommRing R] (f : LaurentPolynomial K →+* R) (a : Rˣ) :
+    eval₂ f a (heckeDeltaQ K) = f (T 1 - T (-1)) := by
+  simp [heckeDeltaQ_def]
+
 /-- The outer writhe factor `a - a⁻¹ = l⁻¹ - l` inside `K[q, q⁻¹][a, a⁻¹]`. -/
 def heckeDeltaA : LaurentPolynomial (LaurentPolynomial K) := T 1 - T (-1)
 
 /-- Defining formula for `heckeDeltaA K`. -/
 theorem heckeDeltaA_def : heckeDeltaA K = T 1 - T (-1) := (rfl)
 
+/-- Evaluating `heckeDeltaA K` along `f` at `a` gives `a - a⁻¹`. -/
+@[simp]
+theorem eval₂_heckeDeltaA {R : Type*} [CommRing R] (f : LaurentPolynomial K →+* R) (a : Rˣ) :
+    eval₂ f a (heckeDeltaA K) = (a : R) - ↑a⁻¹ := by
+  simp [heckeDeltaA_def, map_sub]
+
 /-- Over a nontrivial commutative ring `K`, `heckeDeltaQ K` is nonzero. -/
 @[simp]
 theorem heckeDeltaQ_ne_zero [Nontrivial K] : heckeDeltaQ K ≠ 0 := fun h ↦
   have hc : (T 1 - T (-1) : LaurentPolynomial K) = 0 := by
-    simpa [heckeDeltaQ_def] using congrArg (eval₂ (RingHom.id (LaurentPolynomial K)) 1) h
+    simpa using congrArg (eval₂ (RingHom.id (LaurentPolynomial K)) 1) h
   T_sub_T_ne_zero (by decide) hc
 
 /-- Over a nontrivial commutative ring `K`, `heckeDeltaA K` is nonzero. -/
@@ -200,12 +229,12 @@ theorem heckeAlexanderInclusion_algebraMap (x : LaurentPolynomial (LaurentPolyno
       algebraMap (LaurentPolynomial (LaurentPolynomial K)) (heckeUniversalRing K) x :=
   IsLocalization.Away.awayToAwayRight_eq (heckeDeltaQ K) (heckeDeltaA K) x
 
-/-- Over an integral domain `K`, `heckeAlexanderInclusion K` is injective, ensuring uniqueness of
-regular extensions across `a - a⁻¹ = 0`. -/
-theorem heckeAlexanderInclusion_injective [IsDomain K] :
+/-- Over every commutative ring `K`, `heckeAlexanderInclusion K` is injective, ensuring uniqueness
+of regular extensions across `a - a⁻¹ = 0`. -/
+theorem heckeAlexanderInclusion_injective :
     Function.Injective (heckeAlexanderInclusion K) :=
   IsLocalization.Away.awayToAwayRight_injective (heckeDeltaQ K) (heckeDeltaA K)
-    (mul_ne_zero (heckeDeltaQ_ne_zero K) (heckeDeltaA_ne_zero K))
+    (isRegular_T_one_sub_T_neg_one (LaurentPolynomial K))
 
 /-- The unit `q - q⁻¹` inside `heckeAlexanderRegularRing K`. -/
 def heckeDeltaQUnit : (heckeAlexanderRegularRing K)ˣ :=
@@ -219,6 +248,7 @@ theorem val_heckeDeltaQUnit :
         (heckeDeltaQ K) := IsUnit.unit_spec _
 
 /-- The inverse of `heckeDeltaQUnit K` is `IsLocalization.Away.invSelf (heckeDeltaQ K)`. -/
+@[simp]
 theorem val_inv_heckeDeltaQUnit :
     (↑(heckeDeltaQUnit K)⁻¹ : heckeAlexanderRegularRing K) =
       IsLocalization.Away.invSelf (heckeDeltaQ K) := by
@@ -239,11 +269,11 @@ theorem val_heckeUniversalQ :
   simp [heckeUniversalQ]
 
 /-- The inverse of `heckeUniversalQ K` coerces to the image of `C (T (-1))`. -/
+@[simp]
 theorem val_inv_heckeUniversalQ :
     (↑(heckeUniversalQ K)⁻¹ : heckeUniversalRing K) =
       algebraMap (LaurentPolynomial (LaurentPolynomial K)) (heckeUniversalRing K) (C (T (-1))) := by
-  rw [heckeUniversalQ, ← map_inv, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-    RingHom.comp_apply, genericUnit_inv]
+  simp [heckeUniversalQ]
 
 /-- Mapping `heckeDeltaQUnit K` into `heckeUniversalRing K` gives
 `heckeUniversalQ K - (heckeUniversalQ K)⁻¹`. -/
@@ -251,9 +281,7 @@ theorem val_map_heckeAlexanderInclusion_heckeDeltaQUnit :
     (↑(Units.map (heckeAlexanderInclusion K).toMonoidHom (heckeDeltaQUnit K)) :
         heckeUniversalRing K) =
       (heckeUniversalQ K : heckeUniversalRing K) - ↑(heckeUniversalQ K)⁻¹ := by
-  rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, val_heckeDeltaQUnit,
-    heckeAlexanderInclusion_algebraMap, val_heckeUniversalQ, val_inv_heckeUniversalQ,
-    ← map_sub, ← map_sub, ← heckeDeltaQ_def]
+  simp [heckeDeltaQ_def]
 
 /-- The generic outer HOMFLY variable `a = l⁻¹` as a unit in `heckeUniversalRing K`. -/
 def heckeUniversalA : (heckeUniversalRing K)ˣ :=
@@ -268,11 +296,11 @@ theorem val_heckeUniversalA :
   simp [heckeUniversalA]
 
 /-- The inverse of `heckeUniversalA K` coerces to the image of `T (-1)`. -/
+@[simp]
 theorem val_inv_heckeUniversalA :
     (↑(heckeUniversalA K)⁻¹ : heckeUniversalRing K) =
       algebraMap (LaurentPolynomial (LaurentPolynomial K)) (heckeUniversalRing K) (T (-1)) := by
-  rw [heckeUniversalA, ← map_inv, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-    genericUnit_inv]
+  simp [heckeUniversalA]
 
 /-- The generic unlink factor `C = (a - a⁻¹) * (q - q⁻¹)⁻¹` in `heckeUniversalRing K`. -/
 def heckeUniversalC : heckeUniversalRing K :=
@@ -311,37 +339,26 @@ theorem heckeUniversalNormalization :
   set ι := algebraMap (LaurentPolynomial (LaurentPolynomial K)) (heckeUniversalRing K)
   set u_u := Units.map (heckeAlexanderInclusion K).toMonoidHom (heckeDeltaQUnit K)
   set invΔa := ι (heckeDeltaQ K) * IsLocalization.Away.invSelf (heckeDeltaQ K * heckeDeltaA K)
-  have hΔa_inv : ι (heckeDeltaA K) * invΔa = 1 := by
-    rw [show ι (heckeDeltaA K) * invΔa = ι (heckeDeltaQ K * heckeDeltaA K) *
+  have hΔa_inv : invΔa * ι (heckeDeltaA K) = 1 := by
+    rw [show invΔa * ι (heckeDeltaA K) = ι (heckeDeltaQ K * heckeDeltaA K) *
       IsLocalization.Away.invSelf (heckeDeltaQ K * heckeDeltaA K) by simp [invΔa, map_mul]; ring]
     exact IsLocalization.Away.mul_invSelf _
-  have ha_sub : (heckeUniversalA K : heckeUniversalRing K) - ↑(heckeUniversalA K)⁻¹ =
-      ι (heckeDeltaA K) := by
-    rw [val_heckeUniversalA, val_inv_heckeUniversalA, ← map_sub, ← heckeDeltaA_def]
-  refine ⟨?_, ?_⟩
-  · rw [heckeUniversalC_def, heckeUniversalZ_def]
-    linear_combination (↑u_u⁻¹ : heckeUniversalRing K) * (u_u : heckeUniversalRing K) *
-        ↑(heckeUniversalA K)⁻¹ * (heckeUniversalA K : heckeUniversalRing K) * hΔa_inv +
-      u_u.inv_mul * ↑(heckeUniversalA K)⁻¹ * (heckeUniversalA K : heckeUniversalRing K) +
-      (heckeUniversalA K).inv_mul
-  · rw [inv_inv, ← val_map_heckeAlexanderInclusion_heckeDeltaQUnit K,
-      heckeUniversalC_def, heckeUniversalZ_def]
-    have hz_sub : invΔa * (u_u : heckeUniversalRing K) *
-          (heckeUniversalA K : heckeUniversalRing K) - (u_u : heckeUniversalRing K) =
-        invΔa * (u_u : heckeUniversalRing K) * ↑(heckeUniversalA K)⁻¹ := by
-      linear_combination (u_u : heckeUniversalRing K) * hΔa_inv +
-        invΔa * (u_u : heckeUniversalRing K) * ha_sub
-    rw [hz_sub]
-    linear_combination (↑u_u⁻¹ : heckeUniversalRing K) * (u_u : heckeUniversalRing K) *
-        (heckeUniversalA K : heckeUniversalRing K) * ↑(heckeUniversalA K)⁻¹ * hΔa_inv +
-      u_u.inv_mul * (heckeUniversalA K : heckeUniversalRing K) * ↑(heckeUniversalA K)⁻¹ +
-      (heckeUniversalA K).mul_inv
+  exact heckeNormalization_of_mul_eq_val_inv_sub (c := invΔa * ↑u_u)
+    (by
+      rw [heckeUniversalC_def]
+      linear_combination (u_u : heckeUniversalRing K) * ↑u_u⁻¹ * hΔa_inv + u_u.mul_inv)
+    (by
+      rw [inv_inv, ← val_map_heckeAlexanderInclusion_heckeDeltaQUnit K, heckeUniversalC_def]
+      have ha_sub : (heckeUniversalA K : heckeUniversalRing K) - ↑(heckeUniversalA K)⁻¹ =
+          ι (heckeDeltaA K) := by simp [ι, heckeDeltaA_def]
+      linear_combination ι (heckeDeltaA K) * u_u.inv_mul - ha_sub)
+    (by rw [inv_inv]; rfl)
 
 /-- When `u = q - q⁻¹` is a unit in `R`, any evaluation map `q ↦ q`, `a ↦ a` sends `heckeDeltaQ K`
 to a unit in `R`. -/
 theorem isUnit_eval₂_heckeDeltaQ {R : Type*} [CommRing R] (φ : K →+* R) {q u : Rˣ} (a : Rˣ)
     (hu : (u : R) = (q : R) - ↑q⁻¹) : IsUnit (eval₂ (eval₂ φ q) a (heckeDeltaQ K)) := by
-  simp [heckeDeltaQ_def, ← hu]
+  simp [← hu]
 
 end CommRing
 
@@ -364,6 +381,52 @@ theorem MarkovBraid.heckeAlexanderRegular_def (β : MarkovBraid) :
         (Units.map (algebraMap (LaurentPolynomial (LaurentPolynomial K))
           (heckeAlexanderRegularRing K)).toMonoidHom (genericUnit (LaurentPolynomial K)))
         (β.reducedHomfly K) := (rfl)
+
+/-- Markov-equivalent braids have the same regular element `heckeAlexanderRegular K`. -/
+theorem MarkovEquiv.heckeAlexanderRegular_eq {β γ : MarkovBraid} (h : MarkovEquiv β γ) :
+    β.heckeAlexanderRegular K = γ.heckeAlexanderRegular K := by
+  rw [MarkovBraid.heckeAlexanderRegular_def, MarkovBraid.heckeAlexanderRegular_def,
+    h.reducedHomfly_eq K]
+
+/-- On the unlink `⟨n, 1⟩`, `heckeAlexanderRegular K` evaluates to
+`((a - a⁻¹) * (q - q⁻¹)⁻¹) ^ n`. -/
+@[simp]
+theorem MarkovBraid.heckeAlexanderRegular_one (n : ℕ) :
+    heckeAlexanderRegular K ⟨n, 1⟩ =
+      (algebraMap (LaurentPolynomial (LaurentPolynomial K)) (heckeAlexanderRegularRing K)
+          (heckeDeltaA K) *
+        IsLocalization.Away.invSelf (heckeDeltaQ K)) ^ n := by
+  simp [MarkovBraid.heckeAlexanderRegular_def, homflyUnknot_def, heckeDeltaA_def, map_sub]
+
+/-- Adding an uncrossed strand multiplies `heckeAlexanderRegular K` by
+`(a - a⁻¹) * (q - q⁻¹)⁻¹`. -/
+@[simp]
+theorem MarkovBraid.heckeAlexanderRegular_strandIncl {n : ℕ} (b : BraidGroup (n + 1)) :
+    heckeAlexanderRegular K ⟨n + 1, BraidGroup.strandIncl b⟩ =
+      (algebraMap (LaurentPolynomial (LaurentPolynomial K)) (heckeAlexanderRegularRing K)
+          (heckeDeltaA K) *
+        IsLocalization.Away.invSelf (heckeDeltaQ K)) *
+        heckeAlexanderRegular K ⟨n, b⟩ := by
+  simp [MarkovBraid.heckeAlexanderRegular_def, homflyUnknot_def, heckeDeltaA_def, map_sub]
+
+/-- `heckeAlexanderRegular K` satisfies the oriented HOMFLY skein relation in every braid
+context. -/
+theorem MarkovBraid.heckeAlexanderRegular_skein {n : ℕ} (b c : BraidGroup (n + 1)) (i : Fin n) :
+    algebraMap (LaurentPolynomial (LaurentPolynomial K)) (heckeAlexanderRegularRing K) (T 1) *
+        heckeAlexanderRegular K ⟨n, b * BraidGroup.sigma (n := n + 1) i * c⟩ -
+      algebraMap (LaurentPolynomial (LaurentPolynomial K)) (heckeAlexanderRegularRing K) (T (-1)) *
+        heckeAlexanderRegular K ⟨n, b * (BraidGroup.sigma (n := n + 1) i)⁻¹ * c⟩ =
+      algebraMap (LaurentPolynomial (LaurentPolynomial K)) (heckeAlexanderRegularRing K)
+          (heckeDeltaQ K) *
+        heckeAlexanderRegular K ⟨n, b * c⟩ := by
+  have hs := congrArg
+    (eval₂ (eval₂ (algebraMap K (heckeAlexanderRegularRing K)) (heckeDeltaQUnit K))
+      (Units.map (algebraMap (LaurentPolynomial (LaurentPolynomial K))
+        (heckeAlexanderRegularRing K)).toMonoidHom (genericUnit (LaurentPolynomial K))))
+    (reducedHomfly_skein K b c i)
+  simp only [map_sub, map_mul, eval₂_T, zpow_one, zpow_neg_one, eval₂_C] at hs
+  simp only [MarkovBraid.heckeAlexanderRegular_def]
+  simpa using hs
 
 /-- Transporting `β.heckeAlexanderRegular K` along any ring homomorphism out of
 `heckeAlexanderRegularRing K` pushes both Laurent evaluation variables through `f`. -/
@@ -406,12 +469,13 @@ theorem MarkovBraid.heckeAlexanderInclusion_heckeAlexanderRegular (β : MarkovBr
 `a : Rˣ` (including `a = ±1`), and `u = q - q⁻¹`, lifting `β.heckeAlexanderRegular K` along
 `IsLocalization.Away.lift (heckeDeltaQ K)` evaluates `β.reducedHomfly K` at `(a, u)`. -/
 theorem MarkovBraid.lift_heckeAlexanderRegular_eq_eval₂_reducedHomfly {R : Type*} [CommRing R]
-    (φ : K →+* R) (q a u : Rˣ) (hu : (u : R) = (q : R) - ↑q⁻¹)
-    (hg : IsUnit (eval₂ (eval₂ φ q) a (heckeDeltaQ K))) (β : MarkovBraid) :
-    IsLocalization.Away.lift (heckeDeltaQ K) hg (β.heckeAlexanderRegular K) =
+    (φ : K →+* R) (q a u : Rˣ) (hu : (u : R) = (q : R) - ↑q⁻¹) (β : MarkovBraid) :
+    IsLocalization.Away.lift (heckeDeltaQ K) (isUnit_eval₂_heckeDeltaQ K φ a hu)
+        (β.heckeAlexanderRegular K) =
       eval₂ (eval₂ φ u) a (β.reducedHomfly K) := by
   set g : LaurentPolynomial (LaurentPolynomial K) →+* R := eval₂ (eval₂ φ q) a
-  set L : heckeAlexanderRegularRing K →+* R := IsLocalization.Away.lift (heckeDeltaQ K) hg
+  set L : heckeAlexanderRegularRing K →+* R :=
+    IsLocalization.Away.lift (heckeDeltaQ K) (isUnit_eval₂_heckeDeltaQ K φ a hu)
   have hcomp : L.comp
       (algebraMap (LaurentPolynomial (LaurentPolynomial K)) (heckeAlexanderRegularRing K)) = g :=
     IsLocalization.Away.lift_comp _ _
@@ -423,7 +487,7 @@ theorem MarkovBraid.lift_heckeAlexanderRegular_eq_eval₂_reducedHomfly {R : Typ
       (LaurentPolynomial (LaurentPolynomial K)) x, ← C_eq_algebraMap, ← C_eq_algebraMap]
     simp [g]
   have hu_eq : Units.map L.toMonoidHom (heckeDeltaQUnit K) = u := by
-    ext; simp [L, g, heckeDeltaQ_def, hu]
+    ext; simp [L, hu]
   have ha_eq : Units.map g.toMonoidHom (genericUnit (LaurentPolynomial K)) = a := by ext; simp [g]
   rw [β.map_heckeAlexanderRegular K L, hcomp, hK, hu_eq, ha_eq]
 
@@ -436,8 +500,8 @@ theorem MarkovBraid.lift_heckeAlexanderRegular_eq_normalizedBurauAlexander {R : 
     IsLocalization.Away.lift (heckeDeltaQ K) hg (β.heckeAlexanderRegular K) =
       β.normalizedBurauAlexander s := by
   have hu : (hg.unit : R) = ((s⁻¹ : Rˣ) : R) - (s : R) := by
-    simp [IsUnit.unit_spec, heckeDeltaQ_def]
-  exact (β.lift_heckeAlexanderRegular_eq_eval₂_reducedHomfly K φ s⁻¹ 1 hg.unit hu hg).trans
+    simp [IsUnit.unit_spec]
+  exact (β.lift_heckeAlexanderRegular_eq_eval₂_reducedHomfly K φ s⁻¹ 1 hg.unit hu).trans
     (β.eval₂_reducedHomfly_eq_normalizedBurauAlexander φ s hg.unit hu)
 
 end Field
@@ -469,14 +533,13 @@ theorem heckeZeroFactorLift_algebraMap (C₀ a : LaurentPolynomial K) :
       algebraMap (LaurentPolynomial K) (Localization.Away (C₀ * (T 1 - T (-1)))) a :=
   IsLocalization.Away.awayToAwayRight_eq C₀ (T 1 - T (-1)) a
 
-/-- Over a commutative ring `K` with no zero divisors, when `C₀ ≠ 0`, `heckeZeroFactorLift C₀` is
-injective, ensuring uniqueness of regular extensions across `q - q⁻¹ = 0`. -/
-theorem heckeZeroFactorLift_injective [NoZeroDivisors K] {C₀ : LaurentPolynomial K}
-    (hC₀ : C₀ ≠ 0) : Function.Injective (heckeZeroFactorLift C₀) := by
-  rcases subsingleton_or_nontrivial K with _ | _
-  · exact absurd (Subsingleton.elim _ _) hC₀
-  · exact IsLocalization.Away.awayToAwayRight_injective C₀ (T 1 - T (-1))
-      (mul_ne_zero hC₀ (T_sub_T_ne_zero (by decide)))
+/-- Over every commutative ring `K` and for every `C₀ : LaurentPolynomial K`,
+`heckeZeroFactorLift C₀` is injective, ensuring uniqueness of regular extensions across
+`q - q⁻¹ = 0`. -/
+theorem heckeZeroFactorLift_injective (C₀ : LaurentPolynomial K) :
+    Function.Injective (heckeZeroFactorLift C₀) :=
+  IsLocalization.Away.awayToAwayRight_injective C₀ (T 1 - T (-1))
+    (isRegular_T_one_sub_T_neg_one K)
 
 /-- The regular Ocneanu trace parameter `C₀⁻¹ * l₀⁻¹` inside `Localization.Away C₀`. -/
 def heckeZeroFactorZ (C₀ : LaurentPolynomial K) (l₀ : (LaurentPolynomial K)ˣ) :
@@ -506,6 +569,7 @@ theorem val_heckeZeroFactorDeltaUnit (C₀ : LaurentPolynomial K) :
 
 /-- The inverse of `heckeZeroFactorDeltaUnit C₀` is
 `algebraMap _ _ C₀ * invSelf (C₀ * (T 1 - T (-1)))`. -/
+@[simp]
 theorem val_inv_heckeZeroFactorDeltaUnit (C₀ : LaurentPolynomial K) :
     (↑(heckeZeroFactorDeltaUnit C₀)⁻¹ : Localization.Away (C₀ * (T 1 - T (-1)))) =
       algebraMap (LaurentPolynomial K) (Localization.Away (C₀ * (T 1 - T (-1)))) C₀ *
@@ -528,37 +592,22 @@ theorem heckeZeroFactorNormalization {C₀ : LaurentPolynomial K} {l₀ : (Laure
           (↑(Units.map (algebraMap (LaurentPolynomial K) (Localization.Away C₀)).toMonoidHom
               (genericUnit K)) -
             ↑(Units.map (algebraMap (LaurentPolynomial K) (Localization.Away C₀)).toMonoidHom
-              (genericUnit K))⁻¹)) = 1 := by
-  set ι := algebraMap (LaurentPolynomial K) (Localization.Away C₀)
-  set q₀ := Units.map ι.toMonoidHom (genericUnit K)
-  set l := Units.map ι.toMonoidHom l₀
-  set c := IsLocalization.Away.invSelf (S := Localization.Away C₀) C₀
-  have hc : ι C₀ * c = 1 := IsLocalization.Away.mul_invSelf C₀
-  have hl_inv : (↑l⁻¹ : Localization.Away C₀) = ι (↑l₀⁻¹ : LaurentPolynomial K) := by
-    simp [l, ← map_inv]
-  rw [heckeZeroFactorZ_def, ← hl_inv]
-  refine ⟨by linear_combination (l : Localization.Away C₀) * ↑l⁻¹ * hc + l.mul_inv, ?_⟩
-  have hq : (q₀ : Localization.Away C₀) - ↑q₀⁻¹ = ι (T 1 - T (-1)) := by
-    simp only [q₀, ← map_inv, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      genericUnit_val, genericUnit_inv, map_sub]
-  have hsub : (↑l⁻¹ : Localization.Away C₀) - (l : Localization.Away C₀) =
-      ι C₀ * ((q₀ : Localization.Away C₀) - ↑q₀⁻¹) := by
-    rw [hq, ← map_mul, ← hl₀, map_sub, hl_inv]; simp [l]
-  have hz : c * ↑l⁻¹ - ((q₀ : Localization.Away C₀) - ↑q₀⁻¹) =
-      c * (l : Localization.Away C₀) := by
-    linear_combination c * hsub + ((q₀ : Localization.Away C₀) - ↑q₀⁻¹) * hc
-  rw [hz]
-  linear_combination (↑l⁻¹ : Localization.Away C₀) * (l : Localization.Away C₀) * hc + l.inv_mul
+              (genericUnit K))⁻¹)) = 1 :=
+  heckeNormalization_of_mul_eq_val_inv_sub
+    (by rw [mul_comm]; exact IsLocalization.Away.mul_invSelf C₀)
+    (by simpa [map_sub, map_mul] using
+      congrArg (algebraMap (LaurentPolynomial K) (Localization.Away C₀)) hl₀.symm)
+    (by simp [heckeZeroFactorZ_def])
 
 /-- **Transport of the `(C₀, l₀)` Ocneanu `heckeTrace` out of `Localization.Away C₀`.** For any
 `φ : K →+* R`, `q : Rˣ`, and inverse `c` of `eval₂ φ q C₀`, lifting the `(C₀, l₀)` Ocneanu
 `heckeTrace` from `Localization.Away C₀` via `IsLocalization.Away.lift C₀` produces the normalized
-Ocneanu braid trace at `q` (including at `q = ±1`). When `l₀⁻¹ - l₀ = C₀ * (T 1 - T (-1))` and
-`C₀ ≠ 0`, this evaluates the unique regular extension of `reducedHomfly` across `q - q⁻¹ = 0`. -/
+Ocneanu braid trace at `q` (including at `q = ±1`). When `l₀⁻¹ - l₀ = C₀ * (T 1 - T (-1))`, this
+evaluates the unique regular extension of `reducedHomfly` across `q - q⁻¹ = 0`. -/
 theorem MarkovBraid.lift_heckeTrace_heckeZeroFactorZ_eq_heckeTrace {R : Type*} [CommRing R]
     {C₀ : LaurentPolynomial K} (l₀ : (LaurentPolynomial K)ˣ) (φ : K →+* R) (q : Rˣ) {c : R}
-    (hc : c * eval₂ φ q C₀ = 1) (hunit : IsUnit (eval₂ φ q C₀)) (β : MarkovBraid) :
-    IsLocalization.Away.lift C₀ hunit
+    (hc : c * eval₂ φ q C₀ = 1) (β : MarkovBraid) :
+    IsLocalization.Away.lift C₀ (IsUnit.of_mul_eq_one_right c hc)
         (β.heckeTrace (ocneanuTrace (Localization.Away C₀)
             (Units.map (algebraMap (LaurentPolynomial K) (Localization.Away C₀)).toMonoidHom
               (genericUnit K)) (heckeZeroFactorZ C₀ l₀))
@@ -566,17 +615,14 @@ theorem MarkovBraid.lift_heckeTrace_heckeZeroFactorZ_eq_heckeTrace {R : Type*} [
           (Units.map (algebraMap (LaurentPolynomial K) (Localization.Away C₀)).toMonoidHom l₀)) =
       β.heckeTrace (ocneanuTrace R q (c * eval₂ φ q (↑l₀⁻¹ : LaurentPolynomial K)))
         (eval₂ φ q C₀) (Units.map (eval₂ φ q).toMonoidHom l₀) := by
+  let hunit : IsUnit (eval₂ φ q C₀) := IsUnit.of_mul_eq_one_right c hc
   have hLC : IsLocalization.Away.lift C₀ hunit
       (algebraMap (LaurentPolynomial K) (Localization.Away C₀) C₀) = eval₂ φ q C₀ :=
     IsLocalization.Away.lift_eq C₀ hunit C₀
   have hLc : IsLocalization.Away.lift C₀ hunit
       (IsLocalization.Away.invSelf (S := Localization.Away C₀) C₀) = c := by
-    have hmul : eval₂ φ q C₀ * IsLocalization.Away.lift C₀ hunit
-        (IsLocalization.Away.invSelf (S := Localization.Away C₀) C₀) = 1 := by
-      rw [← hLC, ← map_mul, IsLocalization.Away.mul_invSelf, map_one]
-    linear_combination c * hmul -
-      IsLocalization.Away.lift C₀ hunit
-        (IsLocalization.Away.invSelf (S := Localization.Away C₀) C₀) * hc
+    rw [IsLocalization.Away.lift, IsLocalization.Away.invSelf, IsLocalization.lift_mk'_spec,
+      map_one, mul_comm, hc]
   have hq_eq : Units.map (IsLocalization.Away.lift C₀ hunit).toMonoidHom
       (Units.map (algebraMap (LaurentPolynomial K) (Localization.Away C₀)).toMonoidHom
         (genericUnit K)) = q := by ext; simp
@@ -595,9 +641,10 @@ section Field
 variable {K : Type*} [Field K]
 
 /-- **Regularity across `q - q⁻¹ = 0` (`q = ±1`).** Whenever `l₀⁻¹ - l₀ = C₀ * (T 1 - T (-1))` in
-`LaurentPolynomial K` (uniquely determined in `Localization.Away C₀` when `C₀ ≠ 0`), the generic
-HOMFLY specialization in `Localization.Away (C₀ * (T 1 - T (-1)))` equals the image under
-`heckeZeroFactorLift C₀` of the regular normalized Ocneanu trace in `Localization.Away C₀`. -/
+`LaurentPolynomial K` (uniquely determined in `Localization.Away C₀` by
+`heckeZeroFactorLift_injective C₀`), the generic HOMFLY specialization in
+`Localization.Away (C₀ * (T 1 - T (-1)))` equals the image under `heckeZeroFactorLift C₀` of the
+regular normalized Ocneanu trace in `Localization.Away C₀`. -/
 theorem MarkovBraid.heckeZeroFactorLift_heckeTrace_eq_eval₂_reducedHomfly
     {C₀ : LaurentPolynomial K} {l₀ : (LaurentPolynomial K)ˣ}
     (hl₀ : (↑l₀⁻¹ : LaurentPolynomial K) - (l₀ : LaurentPolynomial K) = C₀ * (T 1 - T (-1)))
@@ -621,19 +668,17 @@ theorem MarkovBraid.heckeZeroFactorLift_heckeTrace_eq_eval₂_reducedHomfly
         (algebraMap (LaurentPolynomial K) (Localization.Away C₀) C₀) *
       ↑(Units.map (heckeZeroFactorLift C₀).toMonoidHom l_S₀) *
       heckeZeroFactorLift C₀ (heckeZeroFactorZ C₀ l₀) = 1 := by
-    simpa only [map_mul, map_one, Units.coe_map, RingHom.toMonoidHom_eq_coe,
-      MonoidHom.coe_ofClass] using congrArg (heckeZeroFactorLift C₀) hpos₀
+    simpa using congrArg (heckeZeroFactorLift C₀) hpos₀
   have hneg : heckeZeroFactorLift C₀
         (algebraMap (LaurentPolynomial K) (Localization.Away C₀) C₀) *
       ↑((Units.map (heckeZeroFactorLift C₀).toMonoidHom l_S₀)⁻¹) *
       (heckeZeroFactorLift C₀ (heckeZeroFactorZ C₀ l₀) -
         (↑(Units.map (heckeZeroFactorLift C₀).toMonoidHom q₀) -
           ↑(Units.map (heckeZeroFactorLift C₀).toMonoidHom q₀)⁻¹)) = 1 := by
-    simpa only [map_mul, map_sub, map_one, ← map_inv, Units.coe_map, RingHom.toMonoidHom_eq_coe,
-      MonoidHom.coe_ofClass] using congrArg (heckeZeroFactorLift C₀) hneg₀
+    simpa using congrArg (heckeZeroFactorLift C₀) hneg₀
   have hu : (heckeZeroFactorDeltaUnit C₀ : Localization.Away (C₀ * (T 1 - T (-1)))) =
       ↑(Units.map (heckeZeroFactorLift C₀).toMonoidHom q₀) -
-        ↑(Units.map (heckeZeroFactorLift C₀).toMonoidHom q₀)⁻¹ := by simp [q₀, ← map_inv, map_sub]
+        ↑(Units.map (heckeZeroFactorLift C₀).toMonoidHom q₀)⁻¹ := by simp [q₀, map_sub]
   have hl_eq : Units.map (heckeZeroFactorLift C₀).toMonoidHom l_S₀ =
       Units.map (algebraMap (LaurentPolynomial K)
         (Localization.Away (C₀ * (T 1 - T (-1))))).toMonoidHom l₀ := by ext; simp [l_S₀]
