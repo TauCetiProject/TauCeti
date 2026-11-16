@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
 import Mathlib.Topology.Order.MonotoneConvergence
-import TauCeti.Dynamics.Flow.Periodic.Basic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
@@ -65,7 +64,9 @@ asymptotic condition `u(s, ·) → x` at the ends of the Floer trajectories and 
 are counted in the Floer complex and its product. Nondegenerate fixed points of the time-one map
 are isolated (`TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`), and periodic solutions
 through isolated fixed points are isolated among the periodic solutions
-(`TauCeti.exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt`). So the statement is an
+(`TauCeti.exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt`), so nondegenerate orbits are
+isolated (`TauCeti.SymplecticForm.exists_pos_forall_eq_of_isNondegenerateFixedPt`). So the
+statement is an
 instance of the convergence theorem `TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`
 for loops with square-integrable defect.
 
@@ -379,10 +380,8 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_floer
     (fun v t ↦ by simp only [hHper t])
     (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Ioi.prod measurableSet_Icc) hc hJc hJM
       hfloer hE) hC fun x hxper hx hxK ↦ ?_
-  -- A nondegenerate orbit starts at an isolated fixed point of the time-one map.
-  have hiso := (hnd x hxper hx hxK).eventually_not_isFixedPt
-  rw [timeDependentHamiltonianFlow_eq, ← zero_add (1 : ℝ)] at hiso
-  obtain ⟨ε, hε, h⟩ := exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt _ hx hiso
-  exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hy hyper (hyx 0)⟩
+  -- A nondegenerate orbit is isolated.
+  obtain ⟨ε, hε, h⟩ := ω.exists_pos_forall_eq_of_isNondegenerateFixedPt hL hx (hnd x hxper hx hxK)
+  exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hyper hy (hyx 0)⟩
 
 end TauCeti.SymplecticForm

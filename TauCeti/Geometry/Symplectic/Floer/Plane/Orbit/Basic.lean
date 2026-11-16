@@ -52,8 +52,8 @@ positive plane for the reversed Hamiltonian `-H(-t)`
 traversed backwards (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative_endSign_mul`). Reversing
 time turns an orbit `y` of `-H(-t)` into the orbit `t ↦ y(-t)` of `H`, since both the time and the
 derivative change sign
-(`TauCeti.SymplecticForm.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg`). It also
-negates the action of a loop
+(`TauCeti.SymplecticForm.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_reverse`). It
+also negates the action of a loop
 relative to `-H(-t)` (`TauCeti.SymplecticForm.hamiltonianAction_comp_neg`), which transfers the
 convergence of the end actions.
 
@@ -181,7 +181,7 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_le (ω : Symplec
 map `u ∘ φ` and the structures `J ∘ φ` satisfy the hypotheses of the finite-energy half-cylinder
 theorems of `TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` for the cylindrical datum
 `H(t) dt`. -/
-private theorem exists_halfCylinder_comp_realChart_positive (ω : SymplecticForm V)
+theorem exists_halfCylinder_comp_realChart_positive (ω : SymplecticForm V)
     {n : WithTop ℕ∞} (hn : n ≠ 0) (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {r : ℝ}
     (hu : ContDiffOn ℝ n u {z | r < ‖Complex.equivRealProdCLM.symm z‖})
     (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K)
@@ -317,9 +317,7 @@ private theorem periodic_hasDerivAt_tendstoUniformly_negative (ω : SymplecticFo
       TendstoUniformly (fun n (t : ℝ) ↦ u (Complex.equivRealProdCLM
         (negative.cylindricalEndLift (↑(negative.endSign * R n) + ↑t * Complex.I))))
         (fun t ↦ y (-t)) atTop := by
-  refine ⟨hyper.comp_neg, fun t ↦ ?_, ?_⟩
-  · exact ω.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg
-      (by simpa only [neg_neg, Pi.neg_def] using hy (-t))
+  refine ⟨hyper.comp_neg, ω.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_reverse hy, ?_⟩
   simp only [cylindricalEndLift_negative_endSign_mul]
   exact huy.comp fun t ↦ -t
 
