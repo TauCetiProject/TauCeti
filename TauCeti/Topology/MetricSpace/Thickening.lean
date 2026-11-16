@@ -44,6 +44,9 @@ exhaust `s` from the inside, eventually containing a ball around each point of `
 (`IsOpen.exists_eventually_closedBall_subset_setOf_lt_infDist`). If `s` is moreover bounded in a
 proper space, a function continuous on `closure s` and at most `m` on `frontier s` is below
 `m + η` near the complement of `s` (`IsOpen.exists_pos_forall_lt_add_of_infDist_lt`).
+A compact subset `K` of an open set `U` has a radius `δ > 0` such that the closed `δ`-balls
+around the points of `cthickening δ K` stay in `U`
+(`IsCompact.exists_forall_closedBall_subset_of_isOpen`).
 Under a `K`-Lipschitz map, the `R / K`-thickening of a preimage lies in the preimage of the
 `R`-thickening (`LipschitzWith.thickening_preimage_subset_preimage_thickening`), and likewise for
 closed thickenings (`LipschitzWith.cthickening_preimage_subset_preimage_cthickening`).
@@ -286,5 +289,15 @@ theorem IsOpen.exists_pos_forall_lt_add_of_infDist_lt {X : Type*} [PseudoMetricS
   refine ⟨δ, hδ, fun z hz hzδ => lt_of_not_ge fun hzη => hzδ.not_ge ?_⟩
   refine (le_infDist hc).2 fun w hw => le_of_not_gt fun hwz => hw (hδK ?_)
   exact mem_cthickening_of_dist_le w z δ K ⟨subset_closure hz, hzη⟩ (dist_comm w z ▸ hwz.le)
+
+/-- **Uniform balls around a closed thickening.** A compact set `K` inside an open set `U` has a
+radius `δ > 0` such that the closed `δ`-balls around the points of `cthickening δ K` lie in `U`. -/
+theorem IsCompact.exists_forall_closedBall_subset_of_isOpen {X : Type*} [PseudoMetricSpace X]
+    {K U : Set X} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
+    ∃ δ > 0, ∀ z ∈ cthickening δ K, closedBall z δ ⊆ U := by
+  obtain ⟨δ₀, hδ₀, hδ₀U⟩ := hK.exists_cthickening_subset_open hU hKU
+  have hδ : 0 < δ₀ / 2 := half_pos hδ₀
+  exact ⟨δ₀ / 2, hδ, fun z hz => (closedBall_subset_cthickening hz _).trans <|
+    (cthickening_cthickening_subset hδ.le hδ.le _).trans <| by rw [add_halves]; exact hδ₀U⟩
 
 end
