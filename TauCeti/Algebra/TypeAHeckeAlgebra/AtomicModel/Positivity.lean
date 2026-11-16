@@ -15,6 +15,8 @@ import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Analysis.Complex.Order
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Order.Star.Basic
+import TauCeti.LinearAlgebra.Finsupp.LSum
 
 /-!
 # Positivity, trace radicals, and first-site Markov rules for atomic models
@@ -82,15 +84,6 @@ section AdjointAndPositivity
 variable {R : Type*} [CommRing R] {ι : Type*} [LinearOrder ι] (pos : ι → Prop) [DecidablePred pos]
   (q : Rˣ) {n : ℕ}
 
-omit [LinearOrder ι] in
-private theorem end_apply_eq_finsupp_sum (f : Module.End R ((Fin n → ι) →₀ R))
-    (g : (Fin n → ι) →₀ R) (v : Fin n → ι) :
-    f g v = g.sum fun u r ↦ r * f (single u 1) v := by
-  induction g using Finsupp.induction_linear with
-  | zero => simp
-  | add g₁ g₂ h₁ h₂ => simp [h₁, h₂, Finsupp.sum_add_index', add_mul]
-  | single u r => rw [Finsupp.sum_single_index (zero_mul _), ← smul_single_one, map_smul]; rfl
-
 /-- **Hermitian matrix symmetry of `signedChecked`** for a star-fixed unit `q`. -/
 theorem signedChecked_star_single_apply [StarRing R] [hq : Fact (IsSelfAdjoint (q : R))]
     (x : TypeAHeckeAlgebra R q n) (v w : Fin n → ι) :
@@ -113,7 +106,8 @@ theorem signedChecked_star_single_apply [StarRing R] [hq : Fact (IsSelfAdjoint (
   | mul x y _ _ hx hy =>
     classical
     rw [star_mul, map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp,
-      end_apply_eq_finsupp_sum, end_apply_eq_finsupp_sum]
+      LinearMap.apply_apply_eq_finsuppSum_mul, LinearMap.apply_apply_eq_finsuppSum_mul]
+    simp_rw [RingHom.id_apply]
     set s := (signedChecked pos q (star x) (single w 1)).support ∪
       (signedChecked pos q y (single v 1)).support
     rw [Finsupp.sum_of_support_subset _ Finset.subset_union_left _ (fun _ _ ↦ zero_mul _),
@@ -127,8 +121,9 @@ theorem signedChecked_star_mul_self_single_apply [StarRing R] [Fact (IsSelfAdjoi
       ∑ u ∈ (signedChecked pos q x (single w 1)).support,
         star (signedChecked pos q x (single w 1) u) *
           signedChecked pos q x (single w 1) u := by
-  rw [map_mul, mul_apply_eq_comp, end_apply_eq_finsupp_sum, Finsupp.sum]
-  exact Finset.sum_congr rfl fun u _ ↦ by rw [signedChecked_star_single_apply, mul_comm]
+  rw [map_mul, mul_apply_eq_comp, LinearMap.apply_apply_eq_finsuppSum_mul, Finsupp.sum]
+  exact Finset.sum_congr rfl fun u _ ↦ by
+    rw [RingHom.id_apply, signedChecked_star_single_apply, mul_comm]
 
 /-- Every diagonal entry of `signedChecked pos q (star x * x)` is nonnegative. -/
 theorem signedChecked_star_mul_self_single_apply_nonneg [PartialOrder R] [StarRing R]
@@ -154,26 +149,16 @@ theorem atomicTrace_star [StarRing R] [Fact (IsSelfAdjoint (q : R))] [Finite ι]
     atomicTrace pos q p n (star x) = star (atomicTrace pos q p n x) := by
   rw [star_atomicTrace]; congr 2; ext a; exact (hp a).star_eq.symm
 
-private theorem prod_nonneg_of_starOrderedRing [PartialOrder R] [StarRing R] [StarOrderedRing R]
-    {α : Type*} (s : Finset α) {f : α → R} (hf : ∀ i ∈ s, 0 ≤ f i) : 0 ≤ ∏ i ∈ s, f i := by
-  classical
-  let : StarModule R R := ⟨fun _ _ ↦ by simp [star_mul, mul_comm]⟩
-  exact Finset.induction (fun _ ↦ by simp) (fun a _ has ih h ↦ by
-    rw [Finset.prod_insert has]
-    exact smul_nonneg (h a (Finset.mem_insert_self ..))
-      (ih fun _ hb ↦ h _ (Finset.mem_insert_of_mem hb))) s hf
-
 /-- **Positivity of finite atomic traces** for nonnegative weights over a `StarOrderedRing`. -/
 theorem atomicTrace_star_mul_self_nonneg [PartialOrder R] [StarRing R] [StarOrderedRing R]
     [Fact (IsSelfAdjoint (q : R))] [Finite ι] {p : ι → R} (hp : ∀ a, 0 ≤ p a)
     (x : TypeAHeckeAlgebra R q n) :
     0 ≤ atomicTrace pos q p n (star x * x) := by
   cases nonempty_fintype ι
-  let : StarModule R R := ⟨fun _ _ ↦ by simp [star_mul, mul_comm]⟩
   rw [atomicTrace_eq_sum]
-  exact Finset.sum_nonneg fun w _ ↦ smul_nonneg
+  exact Finset.sum_nonneg fun w _ ↦ StarOrderedRing.mul_nonneg
     (signedChecked_star_mul_self_single_apply_nonneg pos q x w)
-    (prod_nonneg_of_starOrderedRing Finset.univ fun i _ ↦ hp (w i))
+    (Finset.prod_nonneg_of_starOrderedRing fun i _ ↦ hp (w i))
 
 /-- **Null space of a strictly positive atomic trace** over a `StarOrderedRing` without zero
 divisors: `atomicTrace (star x * x) = 0 ↔ signedChecked pos q x = 0`. -/
@@ -182,15 +167,14 @@ theorem atomicTrace_star_mul_self_eq_zero_iff [PartialOrder R] [StarRing R] [Sta
     (hp : ∀ a, 0 < p a) (x : TypeAHeckeAlgebra R q n) :
     atomicTrace pos q p n (star x * x) = 0 ↔ signedChecked pos q x = 0 := by
   cases nonempty_fintype ι
-  let : StarModule R R := ⟨fun _ _ ↦ by simp [star_mul, mul_comm]⟩
   refine ⟨fun hx ↦ ?_, fun hx ↦ by
     rw [atomicTrace_apply, map_mul (signedChecked pos q), hx, mul_zero, zero_mul, map_zero]⟩
   rcases subsingleton_or_nontrivial R with _ | _
   · exact Subsingleton.elim _ _
   rw [atomicTrace_eq_sum] at hx
   have hterm := (Finset.sum_eq_zero_iff_of_nonneg fun w _ ↦
-    smul_nonneg (signedChecked_star_mul_self_single_apply_nonneg pos q x w)
-      (prod_nonneg_of_starOrderedRing Finset.univ fun i _ ↦ (hp (w i)).le)).mp hx
+    StarOrderedRing.mul_nonneg (signedChecked_star_mul_self_single_apply_nonneg pos q x w)
+      (Finset.prod_nonneg_of_starOrderedRing fun i _ ↦ (hp (w i)).le)).mp hx
   ext w u
   simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, LinearMap.zero_apply,
     Finsupp.coe_zero, Pi.zero_apply]
@@ -224,8 +208,7 @@ noncomputable def atomicPositiveFunctional (q : ℂˣ) [Fact (IsSelfAdjoint (q :
 @[simp]
 theorem atomicPositiveFunctional_apply (q : ℂˣ) [Fact (IsSelfAdjoint (q : ℂ))] [Finite ι]
     {p : ι → ℂ} (hp : ∀ a, 0 ≤ p a) (n : ℕ) (x : TypeAHeckeAlgebra ℂ q n) :
-    atomicPositiveFunctional pos q hp n x = atomicTrace pos q p n x :=
-  (rfl)
+    atomicPositiveFunctional pos q hp n x = atomicTrace pos q p n x := (rfl)
 
 end AdjointAndPositivity
 
@@ -244,12 +227,12 @@ theorem signedChecked_tailIncl_mapDomain_cons (x : TypeAHeckeAlgebra R q n) (a :
   suffices h : (signedChecked pos q (tailIncl q n x)).comp L = L.comp (signedChecked pos q x) by
     simpa [L] using LinearMap.congr_fun h v
   refine signedChecked_comp_eq_of_forall_T pos q _ L (fun i ↦ ?_) x
-  have hj : BraidGroup.strand (⟨i + 1, by omega⟩ : Fin (n + 1 - 1)) =
-      (BraidGroup.strand i).succ := Fin.ext (by simp)
-  have hk : BraidGroup.strandSucc (⟨i + 1, by omega⟩ : Fin (n + 1 - 1)) =
-      (BraidGroup.strandSucc i).succ := Fin.ext (by simp)
   rw [tailIncl_T, signedChecked_T, signedChecked_T, LinearMap.smul_comp, LinearMap.comp_smul,
-    hj, hk, signedCheckedR_comp_lmapDomain_cons]
+    show BraidGroup.strand (⟨i + 1, by omega⟩ : Fin (n + 1 - 1)) = (BraidGroup.strand i).succ from
+      Fin.ext (by simp),
+    show BraidGroup.strandSucc (⟨i + 1, by omega⟩ : Fin (n + 1 - 1)) =
+      (BraidGroup.strandSucc i).succ from Fin.ext (by simp),
+    signedCheckedR_comp_lmapDomain_cons]
 
 /-- `tailIncl` acts block-diagonally on words grouped by their first letter. -/
 theorem signedChecked_tailIncl_single_cons_apply_cons (x : TypeAHeckeAlgebra R q n)
@@ -271,14 +254,14 @@ theorem signedChecked_tailIncl_mul_T_zero_single_cons_apply
       ((q⁻¹ : Rˣ) : R) * signedChecked pos q x (single w 1) w *
         (if a = w 0 then (if pos (w 0) then (q : R) ^ 2 else -1)
           else if a < w 0 then (q : R) ^ 2 - 1 else 0) := by
-  have hj : BraidGroup.strand (n := n + 2) (0 : Fin (n + 1)) = 0 := Fin.ext (by simp)
-  have hk : BraidGroup.strandSucc (n := n + 2) (0 : Fin (n + 1)) = (0 : Fin (n + 1)).succ :=
-    Fin.ext (by simp)
   have hswap : Fin.cons a w ∘ Equiv.swap (0 : Fin (n + 2)) (0 : Fin (n + 1)).succ =
       Fin.cons (w 0) (update w 0 a) := by
     rw [Equiv.comp_swap_eq_update, update_comm (Fin.succ_ne_zero _)]; simp
-  simp only [map_mul, mul_apply_eq_comp, signedChecked_T, hj, hk, LinearMap.smul_apply,
-    signedCheckedR_single_one, Fin.cons_zero, Fin.cons_succ, hswap]
+  simp only [map_mul, mul_apply_eq_comp, signedChecked_T,
+    show BraidGroup.strand (n := n + 2) (0 : Fin (n + 1)) = 0 from Fin.ext (by simp),
+    show BraidGroup.strandSucc (n := n + 2) (0 : Fin (n + 1)) = (0 : Fin (n + 1)).succ from
+      Fin.ext (by simp),
+    LinearMap.smul_apply, signedCheckedR_single_one, Fin.cons_zero, Fin.cons_succ, hswap]
   rcases lt_trichotomy a (w 0) with h | rfl | h
   · simp only [h.ne, h.ne', h, ↓reduceIte, map_sub, map_smul, Finsupp.smul_apply,
       Finsupp.sub_apply, smul_eq_mul, signedChecked_tailIncl_single_cons_apply_cons]; ring
@@ -303,9 +286,7 @@ private theorem sum_leftSlice [Fintype ι] (p : ι → R) (b : ι) :
       else if a < b then (q : R) ^ 2 - 1 else 0) * p a =
       (if a = b then (if pos b then (q : R) ^ 2 else -1) * p b else 0) +
         (if a < b then ((q : R) ^ 2 - 1) * p a else 0) := by
-    by_cases h1 : a = b
-    · subst h1; simp
-    · by_cases h2 : a < b <;> simp [h1, h2]
+    split_ifs <;> simp_all
   simp only [h, Finset.sum_add_distrib, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte,
     Finset.mul_sum, Finset.sum_filter, mul_ite, mul_zero]
 
@@ -330,49 +311,6 @@ theorem atomicTrace_T_zero_mul_tailIncl [Fintype ι] (p : ι → R) {z : R}
     sum_leftSlice, hz]
   linear_combination (z * signedChecked pos q x (single w 1) w * ∏ i, p (w i)) * Units.inv_mul q
 
-/-- `tailIncl (cycleWord (m + 1)) * (q • T 0) = cycleWord (m + 2)`. -/
-theorem tailIncl_cycleWord_mul_smul_T_zero {q : Rˣ} (m : ℕ) :
-    tailIncl q (m + 1) (cycleWord q (m + 1)) * ((q : R) • T q (0 : Fin (m + 1))) =
-      cycleWord q (m + 2) := by
-  refine toInfinite_injective R q (m + 2) ?_
-  rw [map_mul, toInfinite_tailIncl, toInfinite_cycleWord, toInfinite_cycleWord, map_smul,
-    toInfinite_T, Fin.val_zero, InfiniteTypeAHeckeAlgebra.cycleWord_def,
-    InfiniteTypeAHeckeAlgebra.cycleWord_def]
-  simp [InfiniteTypeAHeckeAlgebra.shift_cosetRep,
-    InfiniteTypeAHeckeAlgebra.cosetRep_succ_mul_T (Nat.zero_lt_succ m), pow_succ, mul_smul,
-    mul_comm]
-
-/-- **First-site Markov towers are restrictions of the Ocneanu trace.** -/
-theorem eq_ocneanuTrace_toInfinite_of_T_zero_mul_tailIncl {q : Rˣ} {z : R}
-    (φ : ∀ n, TypeAHeckeAlgebra R q n →ₗ[R] R)
-    (h_zero : φ 0 1 = 1) (h_one : φ 1 1 = 1)
-    (h_comm : ∀ n x y, φ n (x * y) = φ n (y * x))
-    (h_block : ∀ a b x y, φ (a + b) (castAdd R q a b x * natAdd R q a b y) = φ a x * φ b y)
-    (h_left : ∀ n x, φ (n + 2) (T q (0 : Fin (n + 1)) * tailIncl q (n + 1) x) = z * φ (n + 1) x)
-    (n : ℕ) (x : TypeAHeckeAlgebra R q n) :
-    φ n x = InfiniteTypeAHeckeAlgebra.ocneanuTrace R q z (toInfinite R q n x) := by
-  have hτ := InfiniteTypeAHeckeAlgebra.isMarkovTrace_ocneanuTrace (R := R) (q := q) z
-  let ψ : ∀ m, TypeAHeckeAlgebra R q m →ₗ[R] R := fun m ↦
-    (InfiniteTypeAHeckeAlgebra.ocneanuTrace R q z).comp (toInfinite R q m).toLinearMap
-  have hψm (a b : ℕ) (u : TypeAHeckeAlgebra R q a) (v : TypeAHeckeAlgebra R q b) :
-      ψ (a + b) (castAdd R q a b u * natAdd R q a b v) = ψ a u * ψ b v := by
-    simp only [ψ, LinearMap.comp_apply, AlgHom.toLinearMap_apply, map_mul, toInfinite_castAdd,
-      toInfinite_natAdd]
-    exact hτ.map_mul_shift (by rw [← range_toInfinite]; exact ⟨u, rfl⟩) _
-  have hcyc : ∀ m, φ m (cycleWord q m) = ψ m (cycleWord q m) := by
-    intro m
-    induction m with
-    | zero => simpa [ψ] using h_zero
-    | succ m ih =>
-      rcases m with _ | m
-      · simpa [ψ] using h_one
-      · simp only [ψ, LinearMap.comp_apply, AlgHom.toLinearMap_apply, toInfinite_cycleWord,
-          hτ.map_cycleWord, Nat.add_sub_cancel] at ih ⊢
-        rw [← tailIncl_cycleWord_mul_smul_T_zero m, mul_smul_comm, map_smul, h_comm, h_left, ih,
-          smul_eq_mul]; ring
-  exact DFunLike.congr_fun (trace_eq_of_cycleWord_values h_comm
-    (fun m u v ↦ by simp [ψ, hτ.map_mul_comm]) h_block hψm hcyc n) x
-
 /-- **The atomic trace with scalar left slice is the Ocneanu trace.** -/
 theorem atomicTrace_eq_ocneanuTrace_of_leftSlice [Fintype ι] (p : ι → R) {z : R}
     (hp : ∑ a, p a = 1)
@@ -381,8 +319,8 @@ theorem atomicTrace_eq_ocneanuTrace_of_leftSlice [Fintype ι] (p : ι → R) {z 
     (x : TypeAHeckeAlgebra R q n) :
     atomicTrace pos q p n x =
       InfiniteTypeAHeckeAlgebra.ocneanuTrace R q z (toInfinite R q n x) :=
-  eq_ocneanuTrace_toInfinite_of_T_zero_mul_tailIncl (atomicTrace pos q p)
-    (by simp) (by simp [hp]) (fun _ ↦ atomicTrace_mul_comm pos q p)
+  (InfiniteTypeAHeckeAlgebra.isMarkovTrace_ocneanuTrace z).eq_toInfinite_of_T_zero_mul_tailIncl
+    (atomicTrace pos q p) (by simp) (by simp [hp]) (fun _ ↦ atomicTrace_mul_comm pos q p)
     (fun _ _ ↦ atomicTrace_castAdd_mul_natAdd pos q p)
     (fun _ ↦ atomicTrace_T_zero_mul_tailIncl pos q p hz) n x
 
@@ -394,26 +332,24 @@ theorem atomicTrace_geometric_leftSlice_eq {r : ℕ} {c : R}
       InfiniteTypeAHeckeAlgebra.ocneanuTrace R q (c * (q : R) ^ (2 * r + 1))
         (toInfinite R q n x) := by
   refine atomicTrace_eq_ocneanuTrace_of_leftSlice _ q _ ?_ (fun b ↦ ?_) x
-  · rw [← Finset.mul_sum, ← hc]
-    congr 1
+  · rw [← Finset.mul_sum, ← hc]; congr 1
     exact (Fintype.sum_equiv Fin.revPerm _ (fun a : Fin (r + 1) ↦ ((q : R) ^ 2) ^ (a : ℕ))
       fun a ↦ by simp only [Fin.revPerm_apply, Fin.val_rev]; congr 1; omega).trans
       (Fin.sum_univ_eq_sum_range (fun a ↦ ((q : R) ^ 2) ^ a) (r + 1))
   · have hI : ∑ a : Fin (r + 1) with a < b, c * ((q : R) ^ 2) ^ (r - (a : ℕ)) =
         c * ∑ k ∈ Finset.Ico ((r - (b : ℕ)) + 1) (r + 1), ((q : R) ^ 2) ^ k := by
-      rw [← Finset.mul_sum, Finset.sum_filter]; congr 1
-      refine (Fintype.sum_equiv Fin.revPerm _
-        (fun k : Fin (r + 1) ↦ if r - (k : ℕ) < (b : ℕ) then ((q : R) ^ 2) ^ (k : ℕ) else 0)
-        fun a ↦ by
-          simp only [Fin.revPerm_apply, Fin.lt_def, Fin.val_rev]
-          rw [show r + 1 - ((a : ℕ) + 1) = r - (a : ℕ) by omega,
-            show r - (r - (a : ℕ)) = (a : ℕ) by omega]).trans ?_
-      rw [Fin.sum_univ_eq_sum_range
-        (fun k ↦ if r - k < (b : ℕ) then ((q : R) ^ 2) ^ k else 0) (r + 1), ← Finset.sum_filter]
-      congr 1; ext k; simp only [Finset.mem_filter, Finset.mem_range, Finset.mem_Ico]; omega
+      rw [← Finset.mul_sum]; congr 1
+      refine Finset.sum_bij' (fun a _ ↦ r - (a : ℕ))
+        (fun k hk ↦ ⟨r - k, by rw [Finset.mem_Ico] at hk; omega⟩)
+        (fun a ha ↦ by simp only [Finset.mem_filter, Fin.lt_def, Finset.mem_Ico] at ha ⊢; omega)
+        (fun k hk ↦ by simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.lt_def,
+          Finset.mem_Ico] at hk ⊢; omega)
+        (fun a _ ↦ Fin.ext (by dsimp; omega))
+        (fun k hk ↦ by rw [Finset.mem_Ico] at hk; dsimp; omega)
+        (fun _ _ ↦ rfl)
     have hg := geom_sum_Ico_mul ((q : R) ^ 2) (show (r - (b : ℕ)) + 1 ≤ r + 1 by omega)
     rw [pow_succ' ((q : R) ^ 2) (r - (b : ℕ))] at hg
-    have hpow : (q : R) * ((q : R) ^ (2 * r + 1)) = ((q : R) ^ 2) ^ (r + 1) := by ring
+    have hpow : (q : R) * (q : R) ^ (2 * r + 1) = ((q : R) ^ 2) ^ (r + 1) := by ring
     simp only [↓reduceIte, hI]; linear_combination c * hg - c * hpow
 
 /-- **Negative discrete geometric model in first-site R-order** (`z = -(c * q⁻¹)`). -/

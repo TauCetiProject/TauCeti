@@ -40,9 +40,12 @@ whenever `Q ≠ 0, 1`, and its value at `Q = 1` is the removable limit.
 ## Main definitions
 
 * `TauCeti.wenzlParam d Q`: the parameter `a_d(Q)`.
+* `TauCeti.wenzlPositiveSet Q`: Wenzl's positive-real projection parameter set, the closed interval
+  between `1 / (1 + Q)` and `Q / (1 + Q)` union `{wenzlParam d Q | d ≠ 0}`.
 
 ## Main results
 
+* `TauCeti.map_wenzlParam`: `wenzlParam` commutes with ring homomorphisms between fields.
 * `TauCeti.wenzlParam_eq_div`: the closed form `(1 - Q ^ (d + 1)) / ((1 + Q) * (1 - Q ^ d))`.
 * `TauCeti.wenzlParam_one` and `TauCeti.tendsto_one_sub_zpow_div_nhdsNE_one`: the value
   `(d + 1) / (2 * d)` at `Q = 1`, and the closed form tends to it as `Q → 1`.
@@ -57,6 +60,10 @@ whenever `Q ≠ 0, 1`, and its value at `Q = 1` is the removable limit.
   particular `a_(l - 2) = a_(-2)` when `Q ^ l = 1`.
 * `TauCeti.wenzlParam_neg_natCast_eq_sum`: for the normalized geometric weights
   `p_i = Q ^ i / [r]_Q`, `i < r`, the sum `∑ i < j, p_i * p_j` is `a_(-r)(Q)`.
+* `TauCeti.mem_wenzlPositiveSet_iff`, `TauCeti.wenzlParam_mem_wenzlPositiveSet`,
+  `TauCeti.mem_wenzlPositiveSet_of_mem_Icc_of_one_le`,
+  `TauCeti.mem_wenzlPositiveSet_of_mem_Icc_of_le_one`, `TauCeti.wenzlPositiveSet_inv`, and
+  `TauCeti.one_sub_mem_wenzlPositiveSet_iff`: membership and symmetries of `wenzlPositiveSet Q`.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_mul_eigenprojection_geometric`: the Ocneanu
   trace realized by the atomic model on `r + 1` positive letters with geometric weights
   (`TauCeti.TypeAHeckeAlgebra.atomicTrace_geometric_eq`) has projection parameter
@@ -105,6 +112,12 @@ theorem wenzlParam_neg_natCast (r : ℕ) (Q : K) :
   rcases r with _ | r
   · simp
   · rw [Nat.cast_succ, ← Int.negSucc_eq, wenzlParam, Nat.add_sub_cancel]
+
+/-- `wenzlParam` commutes with ring homomorphisms between fields. -/
+theorem map_wenzlParam {L : Type*} [Field L] (f : K →+* L) (d : ℤ) (Q : K) :
+    f (wenzlParam d Q) = wenzlParam d (f Q) := by
+  obtain ⟨r, rfl | rfl⟩ := Int.eq_nat_or_neg d <;>
+    simp [wenzlParam_natCast, wenzlParam_neg_natCast]
 
 /-! ### The closed form and the value at `Q = 1` -/
 
@@ -354,6 +367,66 @@ theorem wenzlParam_exp_two_pi_mul_I_div_two_mul {m : ℕ} (hm : 2 ≤ m) :
   norm_num
 
 end RootOfUnity
+
+/-! ### Wenzl's positive-real parameter set -/
+
+section PositiveSet
+
+/-- **Wenzl's positive-real projection parameter set** for `Q > 0`: the closed interval between
+`1 / (1 + Q)` and `Q / (1 + Q)` union `{wenzlParam d Q | d ≠ 0}`. -/
+noncomputable def wenzlPositiveSet (Q : ℝ) : Set ℝ :=
+  Set.Icc (min (1 / (1 + Q)) (Q / (1 + Q))) (max (1 / (1 + Q)) (Q / (1 + Q))) ∪
+    {η | ∃ d : ℤ, d ≠ 0 ∧ η = wenzlParam d Q}
+
+/-- Characterization of membership in `wenzlPositiveSet Q`. -/
+theorem mem_wenzlPositiveSet_iff {Q η : ℝ} :
+    η ∈ wenzlPositiveSet Q ↔
+      η ∈ Set.Icc (min (1 / (1 + Q)) (Q / (1 + Q))) (max (1 / (1 + Q)) (Q / (1 + Q))) ∨
+        ∃ d : ℤ, d ≠ 0 ∧ η = wenzlParam d Q := Iff.rfl
+
+/-- Every nonzero integer parameter `wenzlParam d Q` lies in `wenzlPositiveSet Q`. -/
+theorem wenzlParam_mem_wenzlPositiveSet {d : ℤ} (hd : d ≠ 0) (Q : ℝ) :
+    wenzlParam d Q ∈ wenzlPositiveSet Q := Or.inr ⟨d, hd, rfl⟩
+
+/-- When `1 ≤ Q`, `[1 / (1 + Q), Q / (1 + Q)] ⊆ wenzlPositiveSet Q`. -/
+theorem mem_wenzlPositiveSet_of_mem_Icc_of_one_le {Q : ℝ} (hQ : 1 ≤ Q) {η : ℝ}
+    (hη : η ∈ Set.Icc (1 / (1 + Q)) (Q / (1 + Q))) : η ∈ wenzlPositiveSet Q := by
+  have hle : 1 / (1 + Q) ≤ Q / (1 + Q) := div_le_div_of_nonneg_right hQ (by linarith)
+  exact Or.inl ⟨(min_eq_left hle).symm ▸ hη.1, (max_eq_right hle).symm ▸ hη.2⟩
+
+/-- When `0 ≤ Q ≤ 1`, `[Q / (1 + Q), 1 / (1 + Q)] ⊆ wenzlPositiveSet Q`. -/
+theorem mem_wenzlPositiveSet_of_mem_Icc_of_le_one {Q : ℝ} (hQ0 : 0 ≤ Q) (hQ1 : Q ≤ 1) {η : ℝ}
+    (hη : η ∈ Set.Icc (Q / (1 + Q)) (1 / (1 + Q))) : η ∈ wenzlPositiveSet Q := by
+  have hle : Q / (1 + Q) ≤ 1 / (1 + Q) := div_le_div_of_nonneg_right hQ1 (by linarith)
+  exact Or.inl ⟨(min_eq_right hle).symm ▸ hη.1, (max_eq_left hle).symm ▸ hη.2⟩
+
+/-- Inversion symmetry `wenzlPositiveSet Q⁻¹ = wenzlPositiveSet Q` for `0 < Q`. -/
+theorem wenzlPositiveSet_inv {Q : ℝ} (hQ : 0 < Q) : wenzlPositiveSet Q⁻¹ = wenzlPositiveSet Q := by
+  have h1 : 1 / (1 + Q⁻¹) = Q / (1 + Q) := by field_simp; ring
+  have h2 : Q⁻¹ / (1 + Q⁻¹) = 1 / (1 + Q) := by field_simp; ring
+  ext η
+  simp only [mem_wenzlPositiveSet_iff, Set.mem_Icc, h1, h2,
+    min_comm (Q / (1 + Q)), max_comm (Q / (1 + Q)), wenzlParam_inv]
+
+/-- Complement symmetry `1 - η ∈ wenzlPositiveSet Q ↔ η ∈ wenzlPositiveSet Q` for `0 < Q`. -/
+theorem one_sub_mem_wenzlPositiveSet_iff {Q : ℝ} (hQ : 0 < Q) {η : ℝ} :
+    1 - η ∈ wenzlPositiveSet Q ↔ η ∈ wenzlPositiveSet Q := by
+  suffices h : ∀ x, x ∈ wenzlPositiveSet Q → 1 - x ∈ wenzlPositiveSet Q from
+    ⟨fun hx ↦ by simpa using h (1 - η) hx, h η⟩
+  rintro x (hx | ⟨d, hd, rfl⟩)
+  · left
+    have h1Q : 1 + Q ≠ 0 := by linarith
+    have hc1 : 1 - 1 / (1 + Q) = Q / (1 + Q) := by field_simp; ring
+    have hc2 : 1 - Q / (1 + Q) = 1 / (1 + Q) := by field_simp; ring
+    rcases le_total (1 / (1 + Q)) (Q / (1 + Q)) with hle | hle
+    · rw [min_eq_left hle, max_eq_right hle] at hx ⊢; exact ⟨by linarith [hx.2], by linarith [hx.1]⟩
+    · rw [min_eq_right hle, max_eq_left hle] at hx ⊢; exact ⟨by linarith [hx.2], by linarith [hx.1]⟩
+  · refine Or.inr ⟨-d, neg_ne_zero.mpr hd, ?_⟩
+    have hZ : 0 < ∑ i ∈ range d.natAbs, Q ^ i :=
+      sum_pos (fun i _ ↦ pow_pos hQ i) (nonempty_range_iff.mpr (Int.natAbs_ne_zero.mpr hd))
+    linarith [wenzlParam_add_wenzlParam_neg (mul_ne_zero (by linarith : 1 + Q ≠ 0) hZ.ne')]
+
+end PositiveSet
 
 /-! ### The discrete Markov traces of the geometric atomic models -/
 

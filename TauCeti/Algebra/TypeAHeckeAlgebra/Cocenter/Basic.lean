@@ -101,6 +101,10 @@ strands past the next `b` strands.
   families of trace functionals which are multiplicative along the block maps
   `TauCeti.TypeAHeckeAlgebra.castAdd` and `TauCeti.TypeAHeckeAlgebra.natAdd` and agree on all
   cycle words are equal, without any compatibility with the tower maps.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.eq_toInfinite_of_T_zero_mul_tailIncl`: a
+  family of tracial, block-multiplicative functionals on the finite Hecke algebras satisfying the
+  left-slice relation `φ (n + 1) (T 0 * tailIncl x) = z * φ n x` agrees with a Markov trace of
+  parameter `z` on every finite stage.
 
 ## References
 
@@ -796,5 +800,49 @@ theorem trace_eq_of_cycleWord_values {φ φ' : ∀ n, TypeAHeckeAlgebra R q n �
   simpa [ψ] using LinearMap.congr_fun key (stageEquiv R q n x)
 
 end TypeAHeckeAlgebra
+
+namespace InfiniteTypeAHeckeAlgebra.IsMarkovTrace
+
+open TypeAHeckeAlgebra
+
+variable {R : Type*} [CommRing R] {q : Rˣ} {z : R} {τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
+
+/-- **First-site Markov towers are restrictions of a Markov trace.** A family of tracial,
+block-multiplicative functionals on the finite Hecke algebras, normalized on at most one strand and
+satisfying the first-site Markov rule `φ (n + 2) (T 0 * tailIncl x) = z * φ (n + 1) x`, agrees with
+any Markov trace `τ` of parameter `z` restricted along `toInfinite`. -/
+theorem eq_toInfinite_of_T_zero_mul_tailIncl (hτ : IsMarkovTrace z τ)
+    (φ : ∀ n, TypeAHeckeAlgebra R q n →ₗ[R] R)
+    (h_zero : φ 0 1 = 1) (h_one : φ 1 1 = 1)
+    (h_comm : ∀ n x y, φ n (x * y) = φ n (y * x))
+    (h_block : ∀ a b x y, φ (a + b) (castAdd R q a b x * natAdd R q a b y) = φ a x * φ b y)
+    (h_left : ∀ n x,
+      φ (n + 2) (TypeAHeckeAlgebra.T q (0 : Fin (n + 1)) * tailIncl q (n + 1) x) = z * φ (n + 1) x)
+    (n : ℕ) (x : TypeAHeckeAlgebra R q n) :
+    φ n x = τ (toInfinite R q n x) := by
+  let ψ : ∀ m, TypeAHeckeAlgebra R q m →ₗ[R] R := fun m ↦
+    τ.comp (toInfinite R q m).toLinearMap
+  have hψm (a b : ℕ) (u : TypeAHeckeAlgebra R q a) (v : TypeAHeckeAlgebra R q b) :
+      ψ (a + b) (castAdd R q a b u * natAdd R q a b v) = ψ a u * ψ b v := by
+    simp only [ψ, LinearMap.comp_apply, AlgHom.toLinearMap_apply, map_mul, toInfinite_castAdd,
+      toInfinite_natAdd]
+    exact hτ.map_mul_shift (by rw [← range_toInfinite]; exact ⟨u, rfl⟩) _
+  have hcyc :
+      ∀ m, φ m (TypeAHeckeAlgebra.cycleWord q m) = ψ m (TypeAHeckeAlgebra.cycleWord q m) := by
+    intro m
+    induction m with
+    | zero => simpa [ψ, hτ.map_one] using h_zero
+    | succ m ih =>
+      rcases m with _ | m
+      · simpa [ψ, hτ.map_one] using h_one
+      · simp only [ψ, LinearMap.comp_apply, AlgHom.toLinearMap_apply, toInfinite_cycleWord,
+          hτ.map_cycleWord, Nat.add_sub_cancel] at ih ⊢
+        rw [← tailIncl_cycleWord_mul_smul_T_zero m, mul_smul_comm, map_smul, h_comm, h_left, ih,
+          smul_eq_mul]
+        ring
+  exact DFunLike.congr_fun (trace_eq_of_cycleWord_values h_comm
+    (fun m u v ↦ by simp [ψ, hτ.map_mul_comm]) h_block hψm hcyc n) x
+
+end InfiniteTypeAHeckeAlgebra.IsMarkovTrace
 
 end TauCeti
