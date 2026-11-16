@@ -32,6 +32,8 @@ multilinear maps.
 
 ## Main results
 
+* `ContinuousMultilinearMap.fderiv_apply_comp_perm_of_eventually`: the derivative of a family of
+  multilinear maps which are invariant under a permutation near a point is invariant at the point.
 * `ContDiffAt.iteratedFDeriv_comp_perm_of_minSmoothness_le`: permuting the arguments of the
   `k`-th iterated derivative of a map which is `C^k` at a point (analytic over other fields) does
   not change its value.
@@ -46,9 +48,16 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {f : E → F} {x : E}
 
+/-- Evaluation of the isometric reindexing of continuous multilinear maps. -/
+@[simp]
+theorem ContinuousMultilinearMap.domDomCongrₗᵢ_apply {ι ι' : Type*} [Fintype ι] [Fintype ι']
+    (σ : ι ≃ ι') (g : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F) :
+    ContinuousMultilinearMap.domDomCongrₗᵢ 𝕜 E F σ g = g.domDomCongr σ :=
+  rfl
+
 /-- The derivative of a family of multilinear maps which are invariant under one permutation of
 their arguments near a point is invariant under the same permutation at that point. -/
-private theorem fderiv_apply_comp_perm_of_eventually {k : ℕ}
+theorem ContinuousMultilinearMap.fderiv_apply_comp_perm_of_eventually {k : ℕ}
     {G : E → ContinuousMultilinearMap 𝕜 (fun _ : Fin k ↦ E) F} (σ : Perm (Fin k))
     (hG : ∀ᶠ y in 𝓝 x, ∀ v : Fin k → E, G y (v ∘ σ) = G y v) (w : E) (v : Fin k → E) :
     fderiv 𝕜 G x w (v ∘ σ) = fderiv 𝕜 G x w v := by
@@ -56,8 +65,8 @@ private theorem fderiv_apply_comp_perm_of_eventually {k : ℕ}
     hG.mono fun y hy ↦ by ext v; exact hy v
   have hd := congrArg (fun L ↦ L w v) (hcongr.fderiv_eq (𝕜 := 𝕜))
   simp only [LinearIsometryEquiv.comp_fderiv, ContinuousLinearMap.comp_apply,
-    LinearIsometryEquiv.coe_coe''] at hd
-  -- Mathlib has no evaluation lemma for `domDomCongrₗᵢ`; it evaluates by definition.
+    LinearIsometryEquiv.coe_coe'', ContinuousMultilinearMap.domDomCongrₗᵢ_apply,
+    ContinuousMultilinearMap.domDomCongr_apply] at hd
   exact hd
 
 /-- A permutation fixing the first argument preserves the `k + 1`-st iterated derivative when the
@@ -75,7 +84,8 @@ private theorem iteratedFDeriv_succ_comp_perm_of_apply_zero {k : ℕ}
     simp [Fin.tail, Perm.decomposeFin_symm_apply_succ]
   rw [iteratedFDeriv_succ_apply_left, iteratedFDeriv_succ_apply_left, htail]
   simp only [Function.comp_apply, Perm.decomposeFin_symm_apply_zero]
-  exact fderiv_apply_comp_perm_of_eventually e (hk.mono fun y hy v ↦ hy v e) _ _
+  exact ContinuousMultilinearMap.fderiv_apply_comp_perm_of_eventually e
+    (hk.mono fun y hy v ↦ hy v e) _ _
 
 /-- The transposition of the first two arguments preserves the `k + 2`-nd iterated derivative
 of a map whose `k`-th iterated derivative has a symmetric second derivative. -/

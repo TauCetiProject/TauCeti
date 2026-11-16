@@ -45,7 +45,8 @@ quotient is `TauCeti.FirstJetAt`, with its explicit first-order transformation l
 * `TauCeti.JetAt.coordinatesEquiv`: over `ℝ` or `ℂ`, jets correspond to symmetric derivative
   tuples.
 * `TauCeti.JetAt.zeroEquiv` and `TauCeti.JetAt.firstJetAtEquiv`: jets of order zero are values,
-  and jets of order one are first jets.
+  and jets of order one are first jets, with the same transformation law
+  (`JetAt.firstJetAtEquiv_map`).
 
 ## References
 
@@ -207,6 +208,11 @@ def zeroEquiv (x : E) : JetAt 𝕜 F 0 x ≃ F where
 theorem zeroEquiv_apply {x : E} (j : JetAt 𝕜 F 0 x) : zeroEquiv x j = value j :=
   (rfl)
 
+@[simp]
+theorem zeroEquiv_symm_apply {x : E} (v : F) :
+    (zeroEquiv x).symm v = (mk (fun _ ↦ v) contDiffAt_const : JetAt 𝕜 F 0 x) :=
+  (rfl)
+
 /-- Jets of order one are the first jets of `TauCeti.FirstJetAt`, which have an explicit
 first-order transformation law. -/
 def firstJetAtEquiv (x : E) : JetAt 𝕜 F 1 x ≃ FirstJetAt 𝕜 F x where
@@ -224,6 +230,25 @@ def firstJetAtEquiv (x : E) : JetAt 𝕜 F 1 x ≃ FirstJetAt 𝕜 F x where
 theorem firstJetAtEquiv_mk {x : E} (s : E → F) (hs : ContDiffAt 𝕜 ∞ s x) :
     firstJetAtEquiv x (mk s hs) = FirstJetAt.mk s hs :=
   (rfl)
+
+@[simp]
+theorem firstJetAtEquiv_symm_mk {x : E} (s : E → F) (hs : ContDiffAt 𝕜 ∞ s x) :
+    (firstJetAtEquiv x).symm (FirstJetAt.mk s hs) = mk s hs :=
+  (Equiv.symm_apply_eq _).2 rfl
+
+@[simp]
+theorem value_firstJetAtEquiv {x : E} (j : JetAt 𝕜 F 1 x) :
+    FirstJetAt.value (firstJetAtEquiv x j) = value j := by
+  induction j using ind with | h s hs => simp
+
+/-- The first-jet coordinates of an order-one jet are its value and its first coordinate, read
+as a continuous linear map. -/
+@[simp]
+theorem coordinates_firstJetAtEquiv {x : E} (j : JetAt 𝕜 F 1 x) :
+    FirstJetAt.coordinates (firstJetAtEquiv x j) =
+      (value j, continuousMultilinearCurryFin1 𝕜 E F (coordinates j 1)) := by
+  induction j using ind with | h s hs =>
+  ext v <;> simp [iteratedFDeriv_one_apply]
 
 /-! ### Changes of bundle coordinates -/
 
@@ -284,6 +309,14 @@ theorem map_id {x : E} (j : JetAt 𝕜 F r x) : map id Prod.snd j = j := by
   induction j using ind with | h s hs =>
   exact map_mk id Prod.snd s hs contDiffAt_id contDiffAt_snd
 
+/-- The composite of two changes of bundle coordinates is smooth. -/
+private theorem contDiffAt_fibreComp {y : E''} {v : F} {k : E'' → E'} {g : E' × F → G}
+    {l : E'' × G → H} (hk : ContDiffAt 𝕜 ∞ k y) (hg : ContDiffAt 𝕜 ∞ g (k y, v))
+    (hl : ContDiffAt 𝕜 ∞ l (y, g (k y, v))) :
+    ContDiffAt 𝕜 ∞ (fun p : E'' × F ↦ l (p.1, g (k p.1, p.2))) (y, v) :=
+  hl.comp (y, v) (contDiffAt_fst.prodMk
+    (hg.comp (y, v) ((hk.comp _ contDiffAt_fst).prodMk contDiffAt_snd)))
+
 /-- Nonlinear changes of bundle coordinates compose on jets of every order. -/
 theorem map_comp {y : E''} (h : E' → E) (k : E'' → E') (g : E' × F → G) (l : E'' × G → H)
     (j : JetAt 𝕜 F r (h (k y))) (hh : ContDiffAt 𝕜 ∞ h (k y)) (hk : ContDiffAt 𝕜 ∞ k y)
@@ -291,10 +324,8 @@ theorem map_comp {y : E''} (h : E' → E) (k : E'' → E') (g : E' × F → G) (
     map k l (map h g j) = map (h ∘ k) (fun p : E'' × F ↦ l (p.1, g (k p.1, p.2))) j := by
   induction j using ind with | h s hs =>
   simp only [value_mk] at hg hl
-  have hgl : ContDiffAt 𝕜 ∞ (fun p : E'' × F ↦ l (p.1, g (k p.1, p.2))) (y, s (h (k y))) :=
-    hl.comp (y, s (h (k y))) (contDiffAt_fst.prodMk
-      (hg.comp (y, s (h (k y))) ((hk.comp _ contDiffAt_fst).prodMk contDiffAt_snd)))
-  rw [map_mk h g s hs hh hg, map_mk k l _ _ hk hl, map_mk (h ∘ k) _ s hs (hh.comp y hk) hgl]
+  rw [map_mk h g s hs hh hg, map_mk k l _ _ hk hl,
+    map_mk (h ∘ k) _ s hs (hh.comp y hk) (contDiffAt_fibreComp hk hg hl)]
   rfl
 
 /-- Changes of bundle coordinates which are inverse as germs restore the jet coordinates. The
@@ -310,10 +341,7 @@ theorem coordinates_map_inverse {x : E} (h : E' → E) (k : E → E') (g : E' ×
   induction j using ind with | h s hs =>
   simp only [value_mk] at hg hl hfibre
   have hx : h (k x) = x := hbase.eq_of_nhds
-  have hgl : ContDiffAt 𝕜 ∞ (fun p : E × F ↦ l (p.1, g (k p.1, p.2))) (x, s (h (k x))) :=
-    hl.comp (x, s (h (k x))) (contDiffAt_fst.prodMk
-      (hg.comp (x, s (h (k x))) ((hk.comp _ contDiffAt_fst).prodMk contDiffAt_snd)))
-  rw [map_mk (h ∘ k) _ s hs (hh.comp x hk) hgl]
+  rw [map_mk (h ∘ k) _ s hs (hh.comp x hk) (contDiffAt_fibreComp hk hg hl)]
   -- Near `x` the transformed section is `s` itself.
   have hs' : ContinuousAt (fun y ↦ (y, s y)) x :=
     continuousAt_id.prodMk (by simpa only [hx] using hs.continuousAt)
@@ -339,6 +367,16 @@ theorem truncate_map {x : E'} (hmr : m ≤ r) (h : E' → E) (g : E' × F → G)
       simpa using hc
     rw [map, dite_eq_right (hc' r), map, dite_eq_right (by simpa using hc' m)]
     simp
+
+/-- For smooth changes of bundle coordinates, the order-one jet map is the first-jet map
+`TauCeti.FirstJetAt.map`, with its explicit transformation law `FirstJetAt.coordinates_map`. -/
+theorem firstJetAtEquiv_map {x : E'} (h : E' → E) (g : E' × F → G) (j : JetAt 𝕜 F 1 (h x))
+    (hh : ContDiffAt 𝕜 ∞ h x) (hg : ContDiffAt 𝕜 ∞ g (x, value j)) :
+    firstJetAtEquiv x (map h g j) = FirstJetAt.map h g (firstJetAtEquiv (h x) j) := by
+  induction j using ind with | h s hs =>
+  rw [value_mk] at hg
+  rw [map_mk h g s hs hh hg, firstJetAtEquiv_mk, firstJetAtEquiv_mk,
+    FirstJetAt.map_mk h g s hs hh hg]
 
 /-! ### Symmetric coordinates -/
 
@@ -373,6 +411,14 @@ def coordinatesEquiv [IsRCLikeNormedField 𝕜] (r : ℕ) (x : E) :
     left_inv j := coordinates_injective
       (coordinates_mk_finiteJetPolynomial _ (coordinates_comp_perm j))
     right_inv A := Subtype.ext (coordinates_mk_finiteJetPolynomial A.1 A.2) }
+
+@[simp]
+theorem coordinatesEquiv_symm_apply [IsRCLikeNormedField 𝕜] {x : E}
+    (A : {A : (i : Fin (r + 1)) → E [×i]→L[𝕜] F //
+      ∀ (i : Fin (r + 1)) (v : Fin i → E) (σ : Equiv.Perm (Fin i)), A i (v ∘ σ) = A i v}) :
+    (coordinatesEquiv r x).symm A =
+      mk (finiteJetPolynomial r A.1 x) (contDiff_finiteJetPolynomial r A.1 x).contDiffAt :=
+  (rfl)
 
 @[simp]
 theorem coe_coordinatesEquiv [IsRCLikeNormedField 𝕜] {x : E} (j : JetAt 𝕜 F r x) :
