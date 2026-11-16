@@ -65,26 +65,19 @@ variable {I J}
 
 /-! ### Restriction to a smaller closed subscheme -/
 
-/-- For `I ≤ J`, a section of `I` restricts to zero on `V(J)`. -/
-@[reassoc (attr := simp)]
-private lemma sheafι_comp_toPushforwardSubscheme_of_le (h : I ≤ J) :
-    I.sheafι' ≫ J.toPushforwardSubscheme = 0 :=
-  Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun t ↦
-    (J.subschemeι_app_eq_zero_iff).mpr (sections_mono h U (I.sheafι_app_mem U t))
-
 /-- For `I ≤ J`, the restriction `ι_* 𝒪_{V(I)} ⟶ ι_* 𝒪_{V(J)}` of functions on `V(I)` to the
 smaller closed subscheme `V(J)`. It is the morphism through which the restriction
 `𝒪_X ⟶ ι_* 𝒪_{V(J)}` factors (`toPushforwardSubscheme_pushforwardSubschemeMap`). -/
 def pushforwardSubschemeMap (h : I ≤ J) : I.pushforwardSubscheme ⟶ J.pushforwardSubscheme :=
   (CokernelCofork.IsColimit.desc' I.shortExact_toPushforwardSubscheme.gIsCokernel
-    J.toPushforwardSubscheme (sheafι_comp_toPushforwardSubscheme_of_le h)).1
+    J.toPushforwardSubscheme (sheafι_toPushforwardSubscheme_of_le h)).1
 
 /-- Restricting functions from `X` to `V(I)` and then to `V(J)` is restricting them to `V(J)`. -/
 @[reassoc (attr := simp)]
 lemma toPushforwardSubscheme_pushforwardSubschemeMap (h : I ≤ J) :
     I.toPushforwardSubscheme ≫ pushforwardSubschemeMap h = J.toPushforwardSubscheme :=
   (CokernelCofork.IsColimit.desc' I.shortExact_toPushforwardSubscheme.gIsCokernel
-    J.toPushforwardSubscheme (sheafι_comp_toPushforwardSubscheme_of_le h)).2
+    J.toPushforwardSubscheme (sheafι_toPushforwardSubscheme_of_le h)).2
 
 /-- The restriction `ι_* 𝒪_{V(I)} ⟶ ι_* 𝒪_{V(J)}` is an epimorphism. -/
 instance epi_pushforwardSubschemeMap (h : I ≤ J) : Epi (pushforwardSubschemeMap h) :=
@@ -274,11 +267,11 @@ private lemma exact_mayerVietoris : (mayerVietoris I J).Exact := by
   apply biprod.hom_ext
   · simp only [Category.assoc, biprod.lift_fst, toPushforwardSubscheme_pushforwardSubschemeMap,
       Preadditive.sub_comp]
-    rw [ha, sheafι_comp_toPushforwardSubscheme_of_le le_rfl, comp_zero, sub_zero]
+    rw [ha, sheafι_toPushforwardSubscheme_of_le le_rfl, comp_zero, sub_zero]
   · rw [hb']
     simp only [Category.assoc, biprod.lift_snd, Preadditive.comp_neg,
       toPushforwardSubscheme_pushforwardSubschemeMap, Preadditive.sub_comp]
-    rw [hb, sheafι_comp_toPushforwardSubscheme_of_le le_rfl, comp_zero, neg_zero, zero_sub, neg_neg]
+    rw [hb, sheafι_toPushforwardSubscheme_of_le le_rfl, comp_zero, neg_zero, zero_sub, neg_neg]
 
 /-- **The Mayer–Vietoris sequence of two closed subschemes is short exact**:
 `0 ⟶ ι_* 𝒪_{V(I ⊓ J)} ⟶ ι_* 𝒪_{V(I)} ⊞ ι_* 𝒪_{V(J)} ⟶ ι_* 𝒪_{V(I ⊔ J)} ⟶ 0`. -/
