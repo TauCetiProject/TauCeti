@@ -9,6 +9,7 @@ public import Mathlib.Algebra.GroupWithZero.Action.Regular
 public import Mathlib.LinearAlgebra.Finsupp.Pi
 public import Mathlib.LinearAlgebra.Finsupp.Supported
 public import Mathlib.RepresentationTheory.Invariants
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import Mathlib.Tactic.Group
 
 /-!
@@ -91,7 +92,7 @@ public section
 
 namespace TauCeti
 
-open Finsupp MulAction
+open Finsupp _root_.MulAction
 
 variable {G X : Type*}
 
@@ -250,12 +251,6 @@ private theorem orbitValue_zero (x y : X) : orbitValue ε x (0 : M) y = 0 := by
   simp [orbitValue]
 
 omit hε in
-private theorem exists_smul_out_eq (y : X) :
-    ∃ a : G, a • (⟦y⟧ : orbitRel.Quotient G X).out = y := by
-  obtain ⟨g, hg⟩ := Quotient.mk_out (s := orbitRel G X) y
-  exact ⟨g⁻¹, by rw [← hg, inv_smul_smul]⟩
-
-omit hε in
 private theorem orbitValue_mk_out_ne_zero {c : orbitRel.Quotient G X →₀ M} {y : X}
     (hy : orbitValue ε (⟦y⟧ : orbitRel.Quotient G X).out (c ⟦y⟧) y ≠ 0) :
     ⟦y⟧ ∈ c.support := by
@@ -270,7 +265,7 @@ private theorem finite_support_orbitValue [Finite G] (c : orbitRel.Quotient G X 
       orbitValue ε (⟦y⟧ : orbitRel.Quotient G X).out (c ⟦y⟧) y).Finite := by
   refine (c.support.finite_toSet.biUnion fun ω _ ↦ Set.finite_range fun g : G ↦ g • ω.out).subset
     fun y hy ↦ Set.mem_biUnion (orbitValue_mk_out_ne_zero hy) ?_
-  obtain ⟨a, ha⟩ := exists_smul_out_eq (G := G) y
+  obtain ⟨a, ha⟩ := MulAction.exists_smul_out_eq (ω := (⟦y⟧ : orbitRel.Quotient G X)) rfl
   exact ⟨a, ha⟩
 
 variable (R M) in
@@ -285,7 +280,7 @@ private noncomputable def ofOrbitSignFixed [Finite G] (c : orbitSignFixed R M ε
     (signedPermRep R M ε hε).invariants :=
   ⟨ofSupportFinite _ (finite_support_orbitValue (c : orbitRel.Quotient G X →₀ M)), by
     refine (mem_invariants_signedPermRep_iff hε).2 fun g x ↦ ?_
-    obtain ⟨a, ha⟩ := exists_smul_out_eq (G := G) x
+    obtain ⟨a, ha⟩ := MulAction.exists_smul_out_eq (ω := (⟦x⟧ : orbitRel.Quotient G X)) rfl
     have hc := c.2 ⟦x⟧
     simp only [ofSupportFinite_coe, orbitRel.Quotient.quotient_smul_eq]
     rw [orbitValue_eq hε hc ha, orbitValue_eq hε hc (by rw [mul_smul, ha]), hε, ha, mul_smul]⟩
@@ -310,7 +305,7 @@ noncomputable def invariantsSignedPermRepEquiv [Finite G] :
   map_smul' _ _ := Subtype.ext <| Finsupp.ext fun _ ↦ rfl
   invFun := ofOrbitSignFixed hε
   left_inv f := Subtype.ext <| Finsupp.ext fun y ↦ by
-    obtain ⟨a, ha⟩ := exists_smul_out_eq (G := G) y
+    obtain ⟨a, ha⟩ := MulAction.exists_smul_out_eq (ω := (⟦y⟧ : orbitRel.Quotient G X)) rfl
     rw [← ha, ofOrbitSignFixed_apply_smul_out, (mem_invariants_signedPermRep_iff hε).1 f.2]
     exact congrArg _ (comapDomain_apply _ _ _ _)
   right_inv c := Subtype.ext <| Finsupp.ext fun ω ↦ by
@@ -351,7 +346,7 @@ theorem mem_trivialSignOrbits_iff {ω : orbitRel.Quotient G X} :
 trivial. -/
 theorem mk_mem_trivialSignOrbits_iff (x : X) :
     ⟦x⟧ ∈ trivialSignOrbits ε ↔ ∀ g : G, g • x = x → ε g x = 1 := by
-  obtain ⟨a, ha⟩ := exists_smul_out_eq (G := G) x
+  obtain ⟨a, ha⟩ := MulAction.exists_smul_out_eq (ω := (⟦x⟧ : orbitRel.Quotient G X)) rfl
   have h := forall_smul_eq_imp_eq_one_iff_of_smul hε a (⟦x⟧ : orbitRel.Quotient G X).out
   rw [ha] at h
   exact h.symm
