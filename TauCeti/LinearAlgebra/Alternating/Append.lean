@@ -20,6 +20,10 @@ blocks `y` and `z` permutes the arguments by a block swap, which has `b * c` inv
 (`AlternatingMap.map_append_append_comm`). This is the Koszul sign rule for reordering two blocks
 of vectors in a determinant, as in the multiplicativity of the torsion of chain complexes.
 
+Exchanging the two blocks of a concatenation `(x, y)` of families of lengths `a` and `b` is a
+block swap with `a * b` inversions, so `f (y, x) = (-1) ^ (a * b) • f (x, y)`
+(`AlternatingMap.map_append_comm`).
+
 Similarly, negating the last block `y` of a concatenation `(x, y)` of families of lengths `a` and
 `b` multiplies the value of an alternating map by `(-1) ^ b` (`AlternatingMap.map_append_neg`), as
 for the negated differential of a shifted chain complex.
@@ -88,6 +92,21 @@ theorem map_append_append_comm (f : M [⋀^Fin (a + b + (c + d))]→ₗ[R] N) (x
     induction q using Fin.addCases with
     | left q => induction q using Fin.addCases <;> simp only [Function.comp_apply, h₁, h₂] <;> simp
     | right q => induction q using Fin.addCases <;> simp only [Function.comp_apply, h₃, h₄] <;> simp
+  rw [← hv, f.map_perm, hsign]
+
+/-- Exchanging the two blocks of arguments, of lengths `a` and `b`, of an alternating map
+evaluated on a concatenation of two families multiplies its value by `(-1) ^ (a * b)`. -/
+theorem map_append_comm (f : M [⋀^Fin (a + b)]→ₗ[R] N) (x : Fin a → M) (y : Fin b → M) :
+    f (Fin.append y x ∘ Fin.cast (add_comm a b)) = (-1 : ℤˣ) ^ (a * b) • f (Fin.append x y) := by
+  -- The block swap `σ` of `Fin (a + b)` carries the arguments `(y, x)` to `(x, y)`.
+  set σ : Equiv.Perm (Fin (a + b)) := (finCongr (add_comm b a)).permCongr
+    (finAddFlip.trans (finCongr (add_comm a b)))
+  have hsign : Equiv.Perm.sign σ = (-1) ^ (a * b) := by
+    rw [Equiv.Perm.sign_permCongr, TauCeti.sign_finAddFlip_trans_finCongr, mul_comm]
+  have hv : Fin.append x y ∘ σ = Fin.append y x ∘ Fin.cast (add_comm a b) := by
+    ext k
+    obtain ⟨j, rfl⟩ := (finCongr (add_comm b a)).surjective k
+    induction j using Fin.addCases <;> simp [σ, finAddFlip_apply_castAdd, finAddFlip_apply_natAdd]
   rw [← hv, f.map_perm, hsign]
 
 /-- Negating the last block of arguments, of length `b`, of an alternating map evaluated on a
