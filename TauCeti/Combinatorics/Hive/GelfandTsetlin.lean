@@ -116,32 +116,27 @@ def toGTPattern (h : IntegerHive n) : GTPattern n where
     have h2 := h.le_of_isRhombus (isRhombus_productChart_gt_right hij hjn)
     exact ⟨by linarith, by linarith⟩
 
-@[grind =]
-theorem toGTPattern_apply (h : IntegerHive n) (i j : ℕ) :
+@[grind =] theorem toGTPattern_apply (h : IntegerHive n) (i j : ℕ) :
     h.toGTPattern i j =
       if hij : i < j then
         if hjn : j ≤ n then
-          h (Vertex.productChart n (i + 1) j hij hjn) -
-            h (Vertex.productChart n i j hij.le hjn)
+          h (Vertex.productChart n (i + 1) j hij hjn) - h (Vertex.productChart n i j hij.le hjn)
         else 0
       else 0 := (rfl)
 
-@[simp, grind =]
-theorem toGTPattern_apply_of_lt_of_le (h : IntegerHive n) {i j : ℕ} (hij : i < j) (hjn : j ≤ n) :
+@[simp, grind =] theorem toGTPattern_apply_of_lt_of_le (h : IntegerHive n) {i j : ℕ}
+    (hij : i < j) (hjn : j ≤ n) :
     h.toGTPattern i j =
-      h (Vertex.productChart n (i + 1) j hij hjn) -
-        h (Vertex.productChart n i j hij.le hjn) := by
+      h (Vertex.productChart n (i + 1) j hij hjn) - h (Vertex.productChart n i j hij.le hjn) := by
   rw [toGTPattern_apply, dite_eq_left hij, dite_eq_left hjn]
 
-@[simp, grind =]
-theorem toGTPattern_zero : (0 : IntegerHive n).toGTPattern = 0 := by
+@[simp, grind =] theorem toGTPattern_zero : (0 : IntegerHive n).toGTPattern = 0 := by
   ext i j
   by_cases h : i < j ∧ j ≤ n
   · rw [toGTPattern_apply_of_lt_of_le _ h.1 h.2]; simp
   · rw [GTPattern.entry_eq_zero _ (by omega), GTPattern.zero_apply]
 
-@[simp, grind =]
-theorem toGTPattern_add (h₁ h₂ : IntegerHive n) :
+@[simp, grind =] theorem toGTPattern_add (h₁ h₂ : IntegerHive n) :
     (h₁ + h₂).toGTPattern = h₁.toGTPattern + h₂.toGTPattern := by
   ext i j
   by_cases h : i < j ∧ j ≤ n
@@ -158,17 +153,14 @@ def toGTPatternAddMonoidHom (n : ℕ) : IntegerHive n →+ GTPattern n where
   map_zero' := toGTPattern_zero
   map_add' := toGTPattern_add
 
-@[simp, grind =]
-theorem toGTPatternAddMonoidHom_apply (h : IntegerHive n) :
+@[simp, grind =] theorem toGTPatternAddMonoidHom_apply (h : IntegerHive n) :
     toGTPatternAddMonoidHom n h = h.toGTPattern := (rfl)
 
-@[simp, grind =]
-theorem toGTPattern_nsmul (k : ℕ) (h : IntegerHive n) :
+@[simp, grind =] theorem toGTPattern_nsmul (k : ℕ) (h : IntegerHive n) :
     (k • h).toGTPattern = k • h.toGTPattern :=
   map_nsmul (toGTPatternAddMonoidHom n) k h
 
-@[simp, grind =]
-theorem toGTPattern_affine (β γ : ℤ) :
+@[simp, grind =] theorem toGTPattern_affine (β γ : ℤ) :
     (affine n β γ).toGTPattern = GTPattern.const n (γ - β) := by
   ext i j
   by_cases h : i < j ∧ j ≤ n
@@ -189,22 +181,18 @@ theorem sum_range_toGTPattern (h : IntegerHive n) {i j : ℕ} (hij : i ≤ j) (h
   | zero => simp
   | succ m ih =>
     rw [Finset.sum_range_succ, ih (by omega),
-      toGTPattern_apply_of_lt_of_le h (Nat.lt_of_succ_le hij) hjn]
-    abel
+      toGTPattern_apply_of_lt_of_le h (Nat.lt_of_succ_le hij) hjn]; abel
 
 /-- The top row of `h.toGTPattern` is side `1` (`B → C`) of `h.boundary`. -/
-@[simp, grind =]
-theorem topRow_toGTPattern (h : IntegerHive n) : h.toGTPattern.topRow = h.boundary 1 := by
+@[simp, grind =] theorem topRow_toGTPattern (h : IntegerHive n) :
+    h.toGTPattern.topRow = h.boundary 1 := by
   ext r
   rw [GTPattern.topRow_apply, toGTPattern_apply_of_lt_of_le h r.isLt le_rfl,
-    Vertex.productChart_top_right, Vertex.productChart_top_right, boundary_apply]
-  rfl
+    Vertex.productChart_top_right, Vertex.productChart_top_right, boundary_apply]; rfl
 
-@[simp, grind =]
-theorem topWeight_toGTPattern (h : IntegerHive n) :
+@[simp, grind =] theorem topWeight_toGTPattern (h : IntegerHive n) :
     h.toGTPattern.topWeight = h.boundaryWeight 1 := by
-  apply Subtype.ext
-  rw [GTPattern.topWeight_coe, topRow_toGTPattern, coe_boundaryWeight]
+  apply Subtype.ext; rw [GTPattern.topWeight_coe, topRow_toGTPattern, coe_boundaryWeight]
 
 theorem rowSum_toGTPattern (h : IntegerHive n) {j : ℕ} (hjn : j ≤ n) :
     h.toGTPattern.rowSum j =
@@ -213,8 +201,7 @@ theorem rowSum_toGTPattern (h : IntegerHive n) {j : ℕ} (hjn : j ≤ n) :
     apply_productChart_diag_eq_prefixSum_dual h hjn, apply_productChart_zero_left h hjn]
 
 /-- The torus weight of `h.toGTPattern` is `(h.boundaryWeight 2).dual - h.boundary 0`. -/
-@[simp, grind =]
-theorem rowWeight_toGTPattern (h : IntegerHive n) :
+@[simp, grind =] theorem rowWeight_toGTPattern (h : IntegerHive n) :
     h.toGTPattern.rowWeight = (h.boundaryWeight 2).dual.1 - h.boundary 0 := by
   ext r
   rw [GTPattern.rowWeight_apply, rowSum_toGTPattern h (by omega),
@@ -222,13 +209,11 @@ theorem rowWeight_toGTPattern (h : IntegerHive n) :
   abel
 
 theorem topRow_toGTPattern_of_productBoundary {lam μ γ : DominantWeight n} {h : IntegerHive n}
-    (hb : h.boundary = productBoundary lam μ γ) :
-    h.toGTPattern.topRow = μ.1 := by
+    (hb : h.boundary = productBoundary lam μ γ) : h.toGTPattern.topRow = μ.1 := by
   rw [topRow_toGTPattern, hb, productBoundary_one]
 
 theorem rowWeight_toGTPattern_of_productBoundary {lam μ γ : DominantWeight n} {h : IntegerHive n}
-    (hb : h.boundary = productBoundary lam μ γ) :
-    h.toGTPattern.rowWeight = γ.1 - lam.1 := by
+    (hb : h.boundary = productBoundary lam μ γ) : h.toGTPattern.rowWeight = γ.1 - lam.1 := by
   have hd : (h.boundaryWeight 2).dual = γ := by ext r; simp [coe_boundaryWeight, hb]
   rw [rowWeight_toGTPattern, hd, hb, productBoundary_zero]
 
@@ -237,35 +222,27 @@ product-chart hive entries from lower-left boundary `l` and pattern `P`. -/
 def gtCompletion (l : Fin n → ℤ) (P : GTPattern n) (i j : ℕ) : ℤ :=
   prefixSum j l + ∑ k ∈ Finset.range i, P k j
 
-@[grind =]
-theorem gtCompletion_def (l : Fin n → ℤ) (P : GTPattern n) (i j : ℕ) :
+@[grind =] theorem gtCompletion_def (l : Fin n → ℤ) (P : GTPattern n) (i j : ℕ) :
     gtCompletion l P i j = prefixSum j l + ∑ k ∈ Finset.range i, P k j := (rfl)
 
-@[simp, grind =]
-theorem gtCompletion_zero_left (l : Fin n → ℤ) (P : GTPattern n) (j : ℕ) :
-    gtCompletion l P 0 j = prefixSum j l := by
-  simp [gtCompletion_def]
+@[simp, grind =] theorem gtCompletion_zero_left (l : Fin n → ℤ) (P : GTPattern n) (j : ℕ) :
+    gtCompletion l P 0 j = prefixSum j l := by simp [gtCompletion_def]
 
-@[simp, grind =]
-theorem gtCompletion_zero_right (l : Fin n → ℤ) (P : GTPattern n) (i : ℕ) :
+@[simp, grind =] theorem gtCompletion_zero_right (l : Fin n → ℤ) (P : GTPattern n) (i : ℕ) :
     gtCompletion l P i 0 = 0 := by
   rw [gtCompletion_def, prefixSum_zero, zero_add]
   exact Finset.sum_eq_zero fun k _ => P.entry_eq_zero_of_le (Nat.zero_le k)
 
-@[simp, grind =]
-theorem gtCompletion_zero (i j : ℕ) :
+@[simp, grind =] theorem gtCompletion_zero (i j : ℕ) :
     gtCompletion (0 : Fin n → ℤ) (0 : GTPattern n) i j = 0 := by
   simp [gtCompletion_def, prefixSum_def]
 
-@[simp, grind =]
-theorem gtCompletion_add (l₁ l₂ : Fin n → ℤ) (P₁ P₂ : GTPattern n) (i j : ℕ) :
+@[simp, grind =] theorem gtCompletion_add (l₁ l₂ : Fin n → ℤ) (P₁ P₂ : GTPattern n) (i j : ℕ) :
     gtCompletion (l₁ + l₂) (P₁ + P₂) i j =
       gtCompletion l₁ P₁ i j + gtCompletion l₂ P₂ i j := by
-  simp only [gtCompletion_def, prefixSum_add, GTPattern.add_apply, Finset.sum_add_distrib]
-  abel
+  simp only [gtCompletion_def, prefixSum_add, GTPattern.add_apply, Finset.sum_add_distrib]; abel
 
-@[grind =]
-theorem gtCompletion_nsmul (k : ℕ) (l : Fin n → ℤ) (P : GTPattern n) (i j : ℕ) :
+@[grind =] theorem gtCompletion_nsmul (k : ℕ) (l : Fin n → ℤ) (P : GTPattern n) (i j : ℕ) :
     gtCompletion (k • l) (k • P) i j = k • gtCompletion l P i j := by
   simp only [gtCompletion_def, prefixSum_smul, GTPattern.nsmul_apply, ← Finset.smul_sum, smul_add]
 
@@ -282,8 +259,7 @@ theorem gtCompletion_shift_of_le (l : Fin n → ℤ) (a b : ℤ) (P : GTPattern 
   rw [GTPattern.shift_eq_add_const,
     show (fun r : Fin n => l r + a) = l + fun _ => a from rfl, gtCompletion_add,
     gtCompletion_const_of_le (fun _ => a) b hij hjn, prefixSum_eq_sum_castLE hjn]
-  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin]
-  abel
+  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin]; abel
 
 theorem gtCompletion_of_le (l : Fin n → ℤ) (P : GTPattern n) {i j : ℕ} (hij : j ≤ i) :
     gtCompletion l P i j = prefixSum j l + P.rowSum j := by
@@ -298,8 +274,7 @@ theorem gtCompletion_diag_of_rowWeight_eq {l g : Fin n → ℤ} {P : GTPattern n
     gtCompletion l P j j = prefixSum j g := by
   rw [gtCompletion_diag, ← P.prefixSum_rowWeight hjn, hw, ← prefixSum_add, add_sub_cancel]
 
-@[grind =]
-theorem gtCompletion_top_right (l : Fin n → ℤ) (P : GTPattern n) (i : ℕ) :
+@[grind =] theorem gtCompletion_top_right (l : Fin n → ℤ) (P : GTPattern n) (i : ℕ) :
     gtCompletion l P i n = (∑ r : Fin n, l r) + prefixSum i P.topRow := by
   rw [gtCompletion_def, prefixSum_of_le le_rfl,
     show P.topRow = fun r : Fin n => P r n from funext P.topRow_apply,
@@ -308,13 +283,11 @@ theorem gtCompletion_top_right (l : Fin n → ℤ) (P : GTPattern n) (i : ℕ) :
   · rw [min_eq_left hin]
   · rw [min_eq_right hni, P.sum_range_entry_eq_rowSum hni, GTPattern.rowSum_def]
 
-@[grind =]
-theorem gtCompletion_succ_left (l : Fin n → ℤ) (P : GTPattern n) (i j : ℕ) :
+@[grind =] theorem gtCompletion_succ_left (l : Fin n → ℤ) (P : GTPattern n) (i j : ℕ) :
     gtCompletion l P (i + 1) j = gtCompletion l P i j + P i j := by
   rw [gtCompletion_def, gtCompletion_def, Finset.sum_range_succ, add_assoc]
 
-@[simp, grind =]
-theorem gtCompletion_succ_left_sub (l : Fin n → ℤ) (P : GTPattern n) (i j : ℕ) :
+@[simp, grind =] theorem gtCompletion_succ_left_sub (l : Fin n → ℤ) (P : GTPattern n) (i j : ℕ) :
     gtCompletion l P (i + 1) j - gtCompletion l P i j = P i j := by
   rw [gtCompletion_succ_left, add_sub_cancel_left]
 
@@ -322,13 +295,11 @@ theorem gtCompletion_succ_left_sub (l : Fin n → ℤ) (P : GTPattern n) (i j : 
 `h.boundary 0` and `h.toGTPattern`. -/
 theorem gtCompletion_toGTPattern (h : IntegerHive n) {i j : ℕ} (hij : i ≤ j) (hjn : j ≤ n) :
     gtCompletion (h.boundary 0) h.toGTPattern i j = h (Vertex.productChart n i j hij hjn) := by
-  rw [gtCompletion_def, sum_range_toGTPattern h hij hjn, apply_productChart_zero_left h hjn]
-  abel
+  rw [gtCompletion_def, sum_range_toGTPattern h hij hjn, apply_productChart_zero_left h hjn]; abel
 
 /-- **Vertex-level inverse formula**: every integer hive `h` is reconstructed at `p : Vertex n` as
 `gtCompletion (h.boundary 0) h.toGTPattern p.z (n - p.x)`. -/
-@[grind =]
-theorem apply_eq_gtCompletion_toGTPattern (h : IntegerHive n) (p : Vertex n) :
+@[grind =] theorem apply_eq_gtCompletion_toGTPattern (h : IntegerHive n) (p : Vertex n) :
     h p = gtCompletion (h.boundary 0) h.toGTPattern p.z (n - p.x) := by
   rw [gtCompletion_toGTPattern h (by have := p.sum_eq; omega) (Nat.sub_le n p.x),
     Vertex.productChart_z_sub_x]
@@ -357,20 +328,16 @@ variable {n : ℕ}
 def gtCompletionVertex (l : Fin n → ℤ) (P : GTPattern n) (p : Vertex n) : ℤ :=
   gtCompletion l P p.z (n - p.x)
 
-@[grind =]
-theorem gtCompletionVertex_def (l : Fin n → ℤ) (P : GTPattern n) (p : Vertex n) :
+@[grind =] theorem gtCompletionVertex_def (l : Fin n → ℤ) (P : GTPattern n) (p : Vertex n) :
     gtCompletionVertex l P p = gtCompletion l P p.z (n - p.x) := (rfl)
 
-@[simp, grind =]
-theorem gtCompletionVertex_productChart (l : Fin n → ℤ) (P : GTPattern n) {i j : ℕ}
+@[simp, grind =] theorem gtCompletionVertex_productChart (l : Fin n → ℤ) (P : GTPattern n) {i j : ℕ}
     (hij : i ≤ j) (hjn : j ≤ n) :
     gtCompletionVertex l P (Vertex.productChart n i j hij hjn) = gtCompletion l P i j := by
   simp [gtCompletionVertex, show n - (n - j) = j by omega]
 
-@[simp, grind =]
-theorem gtCompletionVertex_cornerA (l : Fin n → ℤ) (P : GTPattern n) :
-    gtCompletionVertex l P (Vertex.cornerA n) = 0 := by
-  simp [gtCompletionVertex]
+@[simp, grind =] theorem gtCompletionVertex_cornerA (l : Fin n → ℤ) (P : GTPattern n) :
+    gtCompletionVertex l P (Vertex.cornerA n) = 0 := by simp [gtCompletionVertex]
 
 /-- The clockwise linear boundary of `gtCompletionVertex l P` has sides `l`, `P.topRow`, and
 `r ↦ -(l + P.rowWeight) r.rev`. -/
@@ -505,18 +472,15 @@ theorem isProductHiveFeasible_shift_iff (l : Fin n → ℤ) (a b : ℤ) (P : GTP
   simp only [nsmul_eq_mul, Nat.cast_add, Nat.cast_one, Nat.cast_ofNat, add_mul, one_mul]
   constructor <;> intro h <;> linarith
 
-@[simp, grind =]
-theorem isProductHiveFeasible_shift_right_iff (l : Fin n → ℤ) (b : ℤ) (P : GTPattern n) :
-    IsProductHiveFeasible l (P.shift b) ↔ IsProductHiveFeasible l P := by
+@[simp, grind =] theorem isProductHiveFeasible_shift_right_iff (l : Fin n → ℤ) (b : ℤ)
+    (P : GTPattern n) : IsProductHiveFeasible l (P.shift b) ↔ IsProductHiveFeasible l P := by
   simpa using isProductHiveFeasible_shift_iff l 0 b P
 
-@[simp]
-theorem isProductHiveFeasible_add_const_left_iff (l : Fin n → ℤ) (a : ℤ) (P : GTPattern n) :
-    IsProductHiveFeasible (fun r => l r + a) P ↔ IsProductHiveFeasible l P := by
+@[simp] theorem isProductHiveFeasible_add_const_left_iff (l : Fin n → ℤ) (a : ℤ)
+    (P : GTPattern n) : IsProductHiveFeasible (fun r => l r + a) P ↔ IsProductHiveFeasible l P := by
   simpa using isProductHiveFeasible_shift_iff l a 0 P
 
-@[simp, grind =]
-theorem isProductHiveFeasible_zero_right_iff (l : Fin n → ℤ) :
+@[simp, grind =] theorem isProductHiveFeasible_zero_right_iff (l : Fin n → ℤ) :
     IsProductHiveFeasible l 0 ↔ Antitone l := by
   match n with
   | 0 | 1 =>
@@ -532,8 +496,7 @@ theorem isProductHiveFeasible_zero_right_iff (l : Fin n → ℤ) :
       simp only [GTPattern.zero_apply, sub_zero, Finset.sum_const_zero, add_zero]
       exact sub_nonneg.mpr hr
 
-@[simp, grind =]
-theorem isProductHiveFeasible_const_iff (l : Fin n → ℤ) (b : ℤ) :
+@[simp, grind =] theorem isProductHiveFeasible_const_iff (l : Fin n → ℤ) (b : ℤ) :
     IsProductHiveFeasible l (GTPattern.const n b) ↔ Antitone l := by
   have hconst : GTPattern.const n b = (0 : GTPattern n).shift b := by
     rw [GTPattern.shift_eq_add_const, zero_add]
@@ -559,8 +522,7 @@ theorem isRhombusConcave_gtCompletionVertex_iff (l : Fin n → ℤ) (P : GTPatte
 
 theorem isProductHiveFeasible_toGTPattern (h : IntegerHive n) :
     IsProductHiveFeasible (h.boundary 0) h.toGTPattern := by
-  rw [isProductHiveFeasible_iff_gtCompletion]
-  intro i j hij hjn
+  rw [isProductHiveFeasible_iff_gtCompletion]; intro i j hij hjn
   simp only [gtCompletion_toGTPattern h hij (by omega),
     gtCompletion_toGTPattern h (by omega : i + 1 ≤ j + 2) hjn,
     gtCompletion_toGTPattern h (by omega : i ≤ j + 1) (by omega),
@@ -578,29 +540,24 @@ def fixedIntegerHiveEquivGTPattern (lam μ γ : DominantWeight n) :
   toFun h :=
     ⟨h.1.toGTPattern, topRow_toGTPattern_of_productBoundary h.2,
       rowWeight_toGTPattern_of_productBoundary h.2, by
-        have hf := isProductHiveFeasible_toGTPattern h.1
-        rwa [h.2, productBoundary_zero] at hf⟩
+        have hf := isProductHiveFeasible_toGTPattern h.1; rwa [h.2, productBoundary_zero] at hf⟩
   invFun P :=
     have hconc : IsRhombusConcave (gtCompletionVertex lam.1 P.1) :=
       (isRhombusConcave_gtCompletionVertex_iff lam.1 P.1).mpr
         ((isProductHiveFeasible_iff_gtCompletion lam.1 P.1).mp P.2.2.2)
     ⟨⟨gtCompletionVertex lam.1 P.1, gtCompletionVertex_cornerA lam.1 P.1,
         fun hr => (isRhombusConcave_def _).mp hconc hr⟩, by
-      rw [boundary_def]
-      exact boundaryLinear_gtCompletionVertex_eq_productBoundary P.2.1 P.2.2.1⟩
+      rw [boundary_def]; exact boundaryLinear_gtCompletionVertex_eq_productBoundary P.2.1 P.2.2.1⟩
   left_inv h := Subtype.ext (ext fun p => (apply_eq_gtCompletion_of_productBoundary h.2 p).symm)
   right_inv P := Subtype.ext (toGTPattern_of_eq_gtCompletion fun _ => rfl)
 
-@[simp, grind =]
-theorem fixedIntegerHiveEquivGTPattern_apply_coe (lam μ γ : DominantWeight n)
+@[simp, grind =] theorem fixedIntegerHiveEquivGTPattern_apply_coe (lam μ γ : DominantWeight n)
     (h : FixedIntegerHive (productBoundary lam μ γ)) :
     (fixedIntegerHiveEquivGTPattern lam μ γ h).1 = h.1.toGTPattern := (rfl)
 
-@[simp, grind =]
-theorem fixedIntegerHiveEquivGTPattern_symm_apply_coe (lam μ γ : DominantWeight n)
+@[simp, grind =] theorem fixedIntegerHiveEquivGTPattern_symm_apply_coe (lam μ γ : DominantWeight n)
     (P : {P : GTPattern n // P.topRow = μ.1 ∧ P.rowWeight = γ.1 - lam.1 ∧
-      IsProductHiveFeasible lam.1 P})
-    (p : Vertex n) :
+      IsProductHiveFeasible lam.1 P}) (p : Vertex n) :
     ((fixedIntegerHiveEquivGTPattern lam μ γ).symm P).1 p =
       gtCompletion lam.1 P.1 p.z (n - p.x) := (rfl)
 
@@ -627,8 +584,7 @@ theorem hiveCount_productBoundary_eq_card_gtPattern (lam μ γ : DominantWeight 
     hiveCount (productBoundary lam μ γ) =
       Nat.card {P : GTPattern n // P.topRow = μ.1 ∧ P.rowWeight = γ.1 - lam.1 ∧
         IsProductHiveFeasible lam.1 P} := by
-  rw [← natCard_fixedIntegerHive]
-  exact Nat.card_congr (fixedIntegerHiveEquivGTPattern lam μ γ)
+  rw [← natCard_fixedIntegerHive]; exact Nat.card_congr (fixedIntegerHiveEquivGTPattern lam μ γ)
 
 end Reconstruction
 
@@ -647,18 +603,16 @@ def cyclicFixedIntegerHiveEquivGTPattern (lam μ ν : DominantWeight n) :
         IsProductHiveFeasible ν.1 P} :=
   (fixedIntegerHiveRotateTwiceEquiv lam μ ν).trans (fixedIntegerHiveEquivGTPattern ν lam μ.dual)
 
-@[simp, grind =]
-theorem cyclicFixedIntegerHiveEquivGTPattern_apply_coe (lam μ ν : DominantWeight n)
+@[simp, grind =] theorem cyclicFixedIntegerHiveEquivGTPattern_apply_coe (lam μ ν : DominantWeight n)
     (h : FixedIntegerHive (cyclicBoundary lam μ ν)) :
     (cyclicFixedIntegerHiveEquivGTPattern lam μ ν h).1 = h.1.rotate.rotate.toGTPattern := by
   rw [cyclicFixedIntegerHiveEquivGTPattern, Equiv.trans_apply,
     fixedIntegerHiveEquivGTPattern_apply_coe, fixedIntegerHiveRotateTwiceEquiv_coe]
 
-@[simp, grind =]
-theorem cyclicFixedIntegerHiveEquivGTPattern_symm_apply_coe (lam μ ν : DominantWeight n)
+@[simp, grind =] theorem cyclicFixedIntegerHiveEquivGTPattern_symm_apply_coe
+    (lam μ ν : DominantWeight n)
     (P : {P : GTPattern n // P.topRow = lam.1 ∧ P.rowWeight = μ.dual.1 - ν.1 ∧
-      IsProductHiveFeasible ν.1 P})
-    (p : Vertex n) :
+      IsProductHiveFeasible ν.1 P}) (p : Vertex n) :
     ((cyclicFixedIntegerHiveEquivGTPattern lam μ ν).symm P).1 p =
       gtCompletion ν.1 P.1 p.y (n - p.z) - ∑ r : Fin n, ν.1 r := by
   rw [cyclicFixedIntegerHiveEquivGTPattern, Equiv.symm_trans_apply,
@@ -678,8 +632,7 @@ theorem cyclicFixedIntegerHiveEquivGTPattern_apply_of_lt_of_le (lam μ ν : Domi
       ⟨j - (i + 1), i + 1, n - j, by omega⟩ := by ext <;> simp
   have hp0 : (Vertex.productChart n i j hij.le hjn).rotate.rotate =
       ⟨j - i, i, n - j, by omega⟩ := by ext <;> simp
-  rw [hp1, hp0]
-  abel
+  rw [hp1, hp0]; abel
 
 /-- Inverse completion formula in the cyclic orientation `(λ, μ, ν)`:
 `h p = gtCompletion ν.1 P p.y (n - p.z) - ∑ r, ν.1 r`. -/
@@ -701,36 +654,32 @@ section UniformGap
 and `l : Fin (n + 1) → ℤ` satisfy `P.topRow 0 - P.topRow (Fin.last n) ≤ l r.castSucc - l r.succ`
 for every `r : Fin n`, then every remaining product-chart rhombus inequality holds on
 `gtCompletion l P`. -/
-theorem gt_completion_of_uniform_input_gap {n : ℕ}
-    (l : Fin (n + 1) → ℤ) (P : GTPattern (n + 1))
+theorem gt_completion_of_uniform_input_gap {n : ℕ} (l : Fin (n + 1) → ℤ) (P : GTPattern (n + 1))
     (hGap : ∀ r : Fin n, P.topRow 0 - P.topRow (Fin.last n) ≤ l r.castSucc - l r.succ) :
     ∀ i j : ℕ, i ≤ j → j + 2 ≤ n + 1 →
       gtCompletion l P i j + gtCompletion l P (i + 1) (j + 2) ≤
         gtCompletion l P i (j + 1) + gtCompletion l P (i + 1) (j + 1) := by
-  intro i j hij hjn
-  rw [gtCompletion_rem_le_iff l P hjn]
+  intro i j hij hjn; rw [gtCompletion_rem_le_iff l P hjn]
   have hleft_nonneg : 0 ≤ ∑ k ∈ Finset.range i, (P k (j + 1) - P k j) :=
     Finset.sum_nonneg fun k hk => sub_nonneg.mpr
       (P.entry_le_entry_succ_row (lt_of_lt_of_le (Finset.mem_range.mp hk) hij) (by omega))
   have hright_tele : (∑ k ∈ Finset.range (i + 1), (P k (j + 2) - P k (j + 1))) ≤
-      P 0 (j + 2) - P (i + 1) (j + 2) := by
-    refine (Finset.sum_le_sum fun k _ => sub_le_sub_left
-      (P.entry_succ_succ_le_entry (i := k) (j := j + 1) (by omega)) _).trans_eq ?_
-    exact Finset.sum_range_sub' (fun k => P k (j + 2)) (i + 1)
+      P 0 (j + 2) - P (i + 1) (j + 2) :=
+    (Finset.sum_le_sum fun k _ => sub_le_sub_left
+      (P.entry_succ_succ_le_entry (i := k) (j := j + 1) (by omega)) _).trans_eq
+      (Finset.sum_range_sub' (fun k => P k (j + 2)) (i + 1))
   have hhi : P 0 (j + 2) ≤ P.topRow 0 :=
     (P.entry_mem_Icc (i := 0) (j := j + 2) (by omega) hjn).2
   have hlo : P.topRow (Fin.last n) ≤ P (i + 1) (j + 2) := by
     simpa [Fin.last] using (P.entry_mem_Icc (i := i + 1) (j := j + 2) (by omega) hjn).1
   have hgap := hGap ⟨j, by omega⟩
-  simp only [Fin.castSucc_mk, Fin.succ_mk] at hgap
-  linarith
+  simp only [Fin.castSucc_mk, Fin.succ_mk] at hgap; linarith
 
-theorem isProductHiveFeasible_of_uniform_input_gap {n : ℕ}
-    (l : Fin (n + 1) → ℤ) (P : GTPattern (n + 1))
+theorem isProductHiveFeasible_of_uniform_input_gap {n : ℕ} (l : Fin (n + 1) → ℤ)
+    (P : GTPattern (n + 1))
     (hGap : ∀ r : Fin n, P.topRow 0 - P.topRow (Fin.last n) ≤ l r.castSucc - l r.succ) :
     IsProductHiveFeasible l P :=
-  (isProductHiveFeasible_iff_gtCompletion l P).mpr
-    (gt_completion_of_uniform_input_gap l P hGap)
+  (isProductHiveFeasible_iff_gtCompletion l P).mpr (gt_completion_of_uniform_input_gap l P hGap)
 
 /-- **Stable Gelfand–Tsetlin equivalence**: under the uniform input gap
 `μ_0 - μ_n ≤ λ_r - λ_{r + 1}`, `toGTPattern` and `gtCompletion` establish a canonical bijection
@@ -741,20 +690,16 @@ def stableGTPatternEquiv {n : ℕ} (lam μ γ : DominantWeight (n + 1))
     FixedIntegerHive (productBoundary lam μ γ) ≃
       {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.rowWeight = γ.1 - lam.1} :=
   (fixedIntegerHiveEquivGTPattern lam μ γ).trans
-    (Equiv.subtypeEquivRight fun P =>
-      and_congr_right fun hTop =>
-        and_iff_left_of_imp fun _ =>
-          isProductHiveFeasible_of_uniform_input_gap lam.1 P fun r => by
-            rw [hTop]; exact hGap r)
+    (Equiv.subtypeEquivRight fun P => and_congr_right fun hTop => and_iff_left_of_imp fun _ =>
+      isProductHiveFeasible_of_uniform_input_gap lam.1 P fun r => by rw [hTop]; exact hGap r)
 
-@[simp, grind =]
-theorem stableGTPatternEquiv_apply_coe {n : ℕ} (lam μ γ : DominantWeight (n + 1))
+@[simp, grind =] theorem stableGTPatternEquiv_apply_coe {n : ℕ} (lam μ γ : DominantWeight (n + 1))
     (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ)
     (h : FixedIntegerHive (productBoundary lam μ γ)) :
     (stableGTPatternEquiv lam μ γ hGap h).1 = h.1.toGTPattern := (rfl)
 
-@[simp, grind =]
-theorem stableGTPatternEquiv_symm_apply_coe {n : ℕ} (lam μ γ : DominantWeight (n + 1))
+@[simp, grind =] theorem stableGTPatternEquiv_symm_apply_coe {n : ℕ}
+    (lam μ γ : DominantWeight (n + 1))
     (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ)
     (P : {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.rowWeight = γ.1 - lam.1})
     (p : Vertex (n + 1)) :
@@ -770,19 +715,16 @@ theorem exists_stable_gt_equiv {n : ℕ} (lam μ γ : DominantWeight (n + 1))
       ∀ h p, h.1 p = gtCompletion lam.1 (e h).1 p.z (n + 1 - p.x) :=
   ⟨stableGTPatternEquiv lam μ γ hGap, fun h p => apply_eq_gtCompletion_of_productBoundary h.2 p⟩
 
-theorem hiveCount_eq_card_gtPattern_of_uniform_input_gap {n : ℕ}
-    (lam μ γ : DominantWeight (n + 1))
+theorem hiveCount_eq_card_gtPattern_of_uniform_input_gap {n : ℕ} (lam μ γ : DominantWeight (n + 1))
     (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ) :
     hiveCount (productBoundary lam μ γ) =
       Nat.card {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.rowWeight = γ.1 - lam.1} := by
-  rw [← natCard_fixedIntegerHive]
-  exact Nat.card_congr (stableGTPatternEquiv lam μ γ hGap)
+  rw [← natCard_fixedIntegerHive]; exact Nat.card_congr (stableGTPatternEquiv lam μ γ hGap)
 
 /-- For `n ≤ 1`, the remaining rhombus family `j + 2 ≤ n` is empty, so `IsProductHiveFeasible` holds
 unconditionally. -/
 theorem isProductHiveFeasible_of_le_one {n : ℕ} (hn : n ≤ 1) (l : Fin n → ℤ) (P : GTPattern n) :
-    IsProductHiveFeasible l P :=
-  fun _ _ _ hjn => absurd hjn (by omega)
+    IsProductHiveFeasible l P := fun _ _ _ hjn => absurd hjn (by omega)
 
 /-- Unconditional equivalence onto the entire Gelfand–Tsetlin weight fibre when `n ≤ 1` (covering
 both `n = 0` without first/last entries and `n = 1` with empty gap condition). -/
@@ -793,13 +735,11 @@ def fixedIntegerHiveEquivGTPatternOfLeOne {n : ℕ} (hn : n ≤ 1) (lam μ γ : 
     (Equiv.subtypeEquivRight fun P =>
       and_congr_right fun _ => and_iff_left (isProductHiveFeasible_of_le_one hn lam.1 P))
 
-@[simp, grind =]
-theorem fixedIntegerHiveEquivGTPatternOfLeOne_apply_coe {n : ℕ} (hn : n ≤ 1)
+@[simp, grind =] theorem fixedIntegerHiveEquivGTPatternOfLeOne_apply_coe {n : ℕ} (hn : n ≤ 1)
     (lam μ γ : DominantWeight n) (h : FixedIntegerHive (productBoundary lam μ γ)) :
     (fixedIntegerHiveEquivGTPatternOfLeOne hn lam μ γ h).1 = h.1.toGTPattern := (rfl)
 
-@[simp, grind =]
-theorem fixedIntegerHiveEquivGTPatternOfLeOne_symm_apply_coe {n : ℕ} (hn : n ≤ 1)
+@[simp, grind =] theorem fixedIntegerHiveEquivGTPatternOfLeOne_symm_apply_coe {n : ℕ} (hn : n ≤ 1)
     (lam μ γ : DominantWeight n)
     (P : {P : GTPattern n // P.topRow = μ.1 ∧ P.rowWeight = γ.1 - lam.1}) (p : Vertex n) :
     ((fixedIntegerHiveEquivGTPatternOfLeOne hn lam μ γ).symm P).1 p =
@@ -845,8 +785,7 @@ theorem isProductHiveFeasible_two_iff (l : Fin 2 → ℤ) (P : GTPattern 2) :
     omega
   refine ⟨fun h => h00.mp ?_, fun h j i => ?_⟩
   · simpa only [Fin.val_zero, zero_add, Fin.zero_eta, Fin.mk_one] using h 0 0
-  · fin_cases j
-    fin_cases i
+  · fin_cases j; fin_cases i
     simpa only [Fin.val_zero, zero_add, Fin.zero_eta, Fin.mk_one] using h00.mpr h
 
 /-- **Complete `GL 2` Clebsch–Gordan formula for integer hives**: `hiveCount` on
@@ -855,13 +794,11 @@ theorem isProductHiveFeasible_two_iff (l : Fin 2 → ℤ) (P : GTPattern 2) :
 theorem hiveCount_productBoundary_two (lam μ γ : DominantWeight 2) :
     hiveCount (productBoundary lam μ γ) =
       if (lam.1 0 + lam.1 1) + (μ.1 0 + μ.1 1) = γ.1 0 + γ.1 1 ∧
-          max (lam.1 0 + μ.1 1) (lam.1 1 + μ.1 0) ≤ γ.1 0 ∧
-          γ.1 0 ≤ lam.1 0 + μ.1 0
+          max (lam.1 0 + μ.1 1) (lam.1 1 + μ.1 0) ≤ γ.1 0 ∧ γ.1 0 ≤ lam.1 0 + μ.1 0
         then 1 else 0 := by
   have hiff : Nonempty (FixedIntegerHive (productBoundary lam μ γ)) ↔
       (lam.1 0 + lam.1 1) + (μ.1 0 + μ.1 1) = γ.1 0 + γ.1 1 ∧
-        max (lam.1 0 + μ.1 1) (lam.1 1 + μ.1 0) ≤ γ.1 0 ∧
-        γ.1 0 ≤ lam.1 0 + μ.1 0 := by
+        max (lam.1 0 + μ.1 1) (lam.1 1 + μ.1 0) ≤ γ.1 0 ∧ γ.1 0 ≤ lam.1 0 + μ.1 0 := by
     rw [(fixedIntegerHiveEquivGTPattern lam μ γ).nonempty_congr]
     refine ⟨fun ⟨⟨P, hTop, hWeight, hFeas⟩⟩ => ?_, fun h => ?_⟩
     · obtain ⟨hwlo, hwhi, hwsum⟩ :=
@@ -882,10 +819,8 @@ theorem hiveCount_productBoundary_two (lam μ γ : DominantWeight 2) :
       max (lam.1 0 + μ.1 1) (lam.1 1 + μ.1 0) ≤ γ.1 0 ∧ γ.1 0 ≤ lam.1 0 + μ.1 0
   · rw [ite_eq_left hc]
     have hpos : 0 < hiveCount (productBoundary lam μ γ) := hiveCount_pos_iff.mpr (hiff.mpr hc)
-    have hle := hiveCount_le_one_two (productBoundary lam μ γ)
-    omega
-  · rw [ite_eq_right hc]
-    exact hiveCount_eq_zero_iff.mpr ⟨fun h => hc (hiff.mp ⟨h⟩)⟩
+    have hle := hiveCount_le_one_two (productBoundary lam μ γ); omega
+  · rw [ite_eq_right hc]; exact hiveCount_eq_zero_iff.mpr ⟨fun h => hc (hiff.mp ⟨h⟩)⟩
 
 /-- At `n = 2` with `λ = (0, 0)` and `μ = (2, 0)`, the weight-`(1, 1)` Gelfand–Tsetlin fibre over
 `μ` has cardinality `1` (`GTPattern.card_topRow_two_zero_and_rowWeight_one_one`), whereas the
@@ -893,40 +828,35 @@ remaining rhombus inequality `λ₁ + μ₀ ≤ γ₀` (`2 ≤ 1`) rejects `γ =
 theorem hiveCount_two_zero_twoZero_oneOne :
     hiveCount
       (productBoundary ⟨![0, 0], by decide⟩ ⟨![2, 0], by decide⟩ ⟨![1, 1], by decide⟩) = 0 := by
-  rw [hiveCount_productBoundary_two]
-  decide
+  rw [hiveCount_productBoundary_two]; decide
 
 /-- At `n = 2` with `λ = (0, 0)` and `μ = γ = (2, 0)`, the unique highest-weight pattern survives
 the remaining rhombus inequality. -/
 theorem hiveCount_two_zero_twoZero_twoZero :
     hiveCount
       (productBoundary ⟨![0, 0], by decide⟩ ⟨![2, 0], by decide⟩ ⟨![2, 0], by decide⟩) = 1 := by
-  rw [hiveCount_productBoundary_two]
-  decide
+  rw [hiveCount_productBoundary_two]; decide
 
 /-- Clebsch–Gordan multiplicity `c^{(4, 0)}_{(2, 0), (2, 0)} = 1` in the uniform-input-gap regime
 `λ = μ = (2, 0)`. -/
 theorem hiveCount_two_twoZero_twoZero_fourZero :
     hiveCount
       (productBoundary ⟨![2, 0], by decide⟩ ⟨![2, 0], by decide⟩ ⟨![4, 0], by decide⟩) = 1 := by
-  rw [hiveCount_productBoundary_two]
-  decide
+  rw [hiveCount_productBoundary_two]; decide
 
 /-- Clebsch–Gordan multiplicity `c^{(3, 1)}_{(2, 0), (2, 0)} = 1` in the uniform-input-gap regime
 `λ = μ = (2, 0)`. -/
 theorem hiveCount_two_twoZero_twoZero_threeOne :
     hiveCount
       (productBoundary ⟨![2, 0], by decide⟩ ⟨![2, 0], by decide⟩ ⟨![3, 1], by decide⟩) = 1 := by
-  rw [hiveCount_productBoundary_two]
-  decide
+  rw [hiveCount_productBoundary_two]; decide
 
 /-- Clebsch–Gordan multiplicity `c^{(2, 2)}_{(2, 0), (2, 0)} = 1` in the uniform-input-gap regime
 `λ = μ = (2, 0)`. -/
 theorem hiveCount_two_twoZero_twoZero_twoTwo :
     hiveCount
       (productBoundary ⟨![2, 0], by decide⟩ ⟨![2, 0], by decide⟩ ⟨![2, 2], by decide⟩) = 1 := by
-  rw [hiveCount_productBoundary_two]
-  decide
+  rw [hiveCount_productBoundary_two]; decide
 
 /-- At `n = 3` with `λ = 0`, `μ = (1, 0, -1)`, and `γ = 0`, the zero-weight Gelfand–Tsetlin fibre
 over the adjoint highest weight `(1, 0, -1)` has multiplicity `2`
@@ -940,8 +870,7 @@ theorem hiveCount_three_zero_adjoint_zero :
       productBoundary 0 μ (0 : DominantWeight 3).dual by rw [← h0],
     ← cyclicBoundary_eq_productBoundary_dual, hiveCount_cyclicBoundary]
   refine hiveCount_eq_zero_iff.mpr ⟨fun ⟨_, hb⟩ => ?_⟩
-  have hle := first_le_of_productBoundary hb
-  simp [μ] at hle
+  have hle := first_le_of_productBoundary hb; simp [μ] at hle
 
 end LowRank
 
