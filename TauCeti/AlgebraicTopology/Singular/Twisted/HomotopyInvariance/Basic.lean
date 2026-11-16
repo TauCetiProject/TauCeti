@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.QuasiIso
-public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Topology.Homotopy.TopCat.ToSSet
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
 public import TauCeti.CategoryTheory.EqToHom
+import TauCeti.Topology.UnitInterval.Contractible
 
 /-!
 # Homotopy invariance of singular homology with local coefficients
@@ -124,7 +124,6 @@ lemma pathTransport_toSimplicialObjectHomotopy_h_zero_heq (y : (TopCat.toSSet.ob
       (⟦H.evalAt (TauCeti.TopCat.simplexMap y (toTopInitialVertex ⦋0⦌))⟧ :
         FundamentalGroupoid.mk (f (TauCeti.TopCat.simplexMap y (toTopInitialVertex ⦋0⦌))) ⟶
           FundamentalGroupoid.mk (g (TauCeti.TopCat.simplexMap y (toTopInitialVertex ⦋0⦌)))) := by
-  have : ContractibleSpace unitInterval := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
   set x := TauCeti.TopCat.simplexMap y (toTopInitialVertex ⦋0⦌)
   -- The simplex factors through the unit interval, through the parametrization `ψ` of `Δ[1]`.
   let ψ : C(toTop.{v}.obj ⦋1⦌, unitInterval) :=

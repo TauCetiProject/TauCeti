@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Product.Ho
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Sequence
 import TauCeti.Topology.Homotopy.HomotopyEquiv
-import Mathlib.Analysis.Convex.Contractible
+import TauCeti.Topology.UnitInterval.Contractible
 
 /-!
 # Realizing finite simplicial cylinders
@@ -186,7 +186,6 @@ theorem contractibleSpace_realization_of_collapsible_orderedCylinder
       K.orderedCylinder.toPreAbstractSimplicialComplex) :
     ContractibleSpace (Realization K) := by
   have := h.contractibleSpace_realization
-  have : ContractibleSpace unitInterval := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
   exact ((ContinuousMap.HomotopyEquiv.prodContractible _ unitInterval).symm.trans
     (K.orderedCylinderRealizationHomeomorph hK).symm.toHomotopyEquiv).contractibleSpace
 

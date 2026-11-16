@@ -7,8 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.CoverGeneration
 public import TauCeti.Topology.MetricSpace.Lebesgue
-public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.CategoryTheory.Functor.OfSequence
+import TauCeti.Topology.UnitInterval.Contractible
 
 /-!
 # Gluing functors out of the fundamental groupoid
@@ -573,7 +573,6 @@ private lemma pathVal_cell {x y : X} {p q : Path x y} (H : p.Homotopy q) (N l k 
     (h₂ : ∃ i, ∀ t, colSeg H N l (k + 1) t ∈ U i) (h₃ : ∃ i, ∀ t, colSeg H N l k t ∈ U i)
     (h₄ : ∃ i, ∀ t, (H.eval (pt N (l + 1))).subpath (pt N k) (pt N (k + 1)) t ∈ U i) :
     pathVal hU F hF _ h₁ ≫ pathVal hU F hF _ h₂ = pathVal hU F hF _ h₃ ≫ pathVal hU F hF _ h₄ := by
-  have : ContractibleSpace I := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
   have m₁ : ∀ t, (H.eval (pt N l)).subpath (pt N k) (pt N (k + 1)) t ∈ U i := fun t ↦ by
     simpa [Path.subpath] using hi _ mem_Icc_pt _ (convexComb_mem_Icc_pt N k t)
   have m₂ : ∀ t, colSeg H N l (k + 1) t ∈ U i := fun t ↦

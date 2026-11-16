@@ -13,6 +13,8 @@ public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.LocallyPathConnectedSpaceStdSimplex
 public import TauCeti.Topology.Category.TopCat.Action
 
+import TauCeti.Topology.Homotopy.Contractible
+
 /-!
 # The topological simplices and the singular simplices of a space
 
@@ -47,7 +49,7 @@ namespace SimplexCategory
 /-- Every topological simplex is contractible, being a universe lift of a standard simplex on a
 finite nonempty type. -/
 instance contractibleSpace (n : SimplexCategory) : ContractibleSpace (toTop.{u}.obj n) :=
-  (Homeomorph.ulift (X := StdSimplex ℝ (Fin (n.len + 1)))).contractibleSpace
+  inferInstanceAs (ContractibleSpace (ULift (StdSimplex ℝ (Fin (n.len + 1)))))
 
 /-- The geometric realization `|Δ[n]|` of every standard simplex is contractible, being
 homeomorphic to a standard simplex on a finite nonempty type. -/
