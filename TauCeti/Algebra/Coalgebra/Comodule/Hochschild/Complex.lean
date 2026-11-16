@@ -98,37 +98,21 @@ private lemma hochschildPaths_respects : ∀ ⦃a b : Paths FreeSimplexQuiver⦄
   cases h
   all_goals simp only [Functor.map_comp, hochschildPaths_map,
     hochschildQuiver_map_δ, hochschildQuiver_map_σ]
-  -- Each relation is the corresponding identity of linear maps, transported along
-  -- `ModuleCat.ofHom` by `ModuleCat.ofHom_comp` and `ModuleCat.ofHom_id`.
+  -- Each relation is the image under `ModuleCat.ofHom` of the corresponding identity of
+  -- linear maps, since `ModuleCat.ofHom` sends composites and identities to composites and
+  -- identities by definition.
   case δ_comp_δ h =>
-    exact (ModuleCat.ofHom_comp _ _).symm.trans <|
-      (congrArg ModuleCat.ofHom (hochschildCoface_comp_hochschildCoface R H M h)).trans
-        (ModuleCat.ofHom_comp _ _)
+    exact congrArg ModuleCat.ofHom (hochschildCoface_comp_hochschildCoface R H M h)
   case δ_comp_σ_of_le h =>
-    exact (ModuleCat.ofHom_comp _ _).symm.trans <|
-      (congrArg ModuleCat.ofHom
-        (hochschildCodegeneracy_comp_hochschildCoface_of_le R H M h)).trans
-        (ModuleCat.ofHom_comp _ _)
+    exact congrArg ModuleCat.ofHom (hochschildCodegeneracy_comp_hochschildCoface_of_le R H M h)
   case δ_comp_σ_self i =>
-    exact (ModuleCat.ofHom_comp _ _).symm.trans <|
-      (congrArg ModuleCat.ofHom
-        (hochschildCodegeneracy_comp_hochschildCoface_castSucc R H M i)).trans
-        (ModuleCat.ofHom_id (R := R))
+    exact congrArg ModuleCat.ofHom (hochschildCodegeneracy_comp_hochschildCoface_castSucc R H M i)
   case δ_comp_σ_succ i =>
-    exact (ModuleCat.ofHom_comp _ _).symm.trans <|
-      (congrArg ModuleCat.ofHom
-        (hochschildCodegeneracy_comp_hochschildCoface_succ R H M i)).trans
-        (ModuleCat.ofHom_id (R := R))
+    exact congrArg ModuleCat.ofHom (hochschildCodegeneracy_comp_hochschildCoface_succ R H M i)
   case δ_comp_σ_of_gt h =>
-    exact (ModuleCat.ofHom_comp _ _).symm.trans <|
-      (congrArg ModuleCat.ofHom
-        (hochschildCodegeneracy_comp_hochschildCoface_of_gt R H M h)).trans
-        (ModuleCat.ofHom_comp _ _)
+    exact congrArg ModuleCat.ofHom (hochschildCodegeneracy_comp_hochschildCoface_of_gt R H M h)
   case σ_comp_σ h =>
-    exact (ModuleCat.ofHom_comp _ _).symm.trans <|
-      (congrArg ModuleCat.ofHom
-        (hochschildCodegeneracy_comp_hochschildCodegeneracy R H M h)).trans
-        (ModuleCat.ofHom_comp _ _)
+    exact congrArg ModuleCat.ofHom (hochschildCodegeneracy_comp_hochschildCodegeneracy R H M h)
 
 /-- The cosimplicial module of Hochschild cochains of a comodule `M` over a bialgebra `H`:
 its term of degree `n` is `M ⊗ H ⊗ ⋯ ⊗ H` with `n` factors `H`. -/

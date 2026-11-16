@@ -117,15 +117,23 @@ theorem hochschildCodegeneracy_succ_castSucc (n : ℕ) (j : Fin (n + 1)) :
       (hochschildCodegeneracy R H M n j).rTensor H :=
   Fin.lastCases_castSucc ..
 
+/-- The last codegeneracy is natural: it commutes with a linear map of cochains tensored
+with `H`. -/
+theorem hochschildCodegeneracy_last_comp_rTensor {m n : ℕ}
+    (f : hochschildCochains R H M m →ₗ[R] hochschildCochains R H M n) :
+    hochschildCodegeneracy R H M n (Fin.last n) ∘ₗ f.rTensor H =
+      f ∘ₗ hochschildCodegeneracy R H M m (Fin.last m) := by
+  rw [hochschildCodegeneracy_last, hochschildCodegeneracy_last, LinearMap.comp_assoc]
+  exact rid_comp_lTensor_counit_comp_rTensor f
+
 /-- The last codegeneracy commutes with the earlier codegeneracies. -/
 private theorem hochschildCodegeneracy_last_comp (n : ℕ) (i : Fin (n + 1)) :
     hochschildCodegeneracy R H M n (Fin.last n) ∘ₗ
         hochschildCodegeneracy R H M (n + 1) i.castSucc =
       hochschildCodegeneracy R H M n i ∘ₗ
         hochschildCodegeneracy R H M (n + 1) (Fin.last (n + 1)) := by
-  rw [hochschildCodegeneracy_succ_castSucc, hochschildCodegeneracy_last,
-    hochschildCodegeneracy_last, LinearMap.comp_assoc]
-  exact rid_comp_lTensor_counit_comp_rTensor _
+  rw [hochschildCodegeneracy_succ_castSucc]
+  exact hochschildCodegeneracy_last_comp_rTensor R H M _
 
 /-- The cosimplicial identity for two codegeneracies: they commute after shifting the later
 index. -/
@@ -347,17 +355,11 @@ theorem hochschildCodegeneracy_comp_hochschildCoface_of_le {n : ℕ} {i : Fin (n
   induction n with
   | zero =>
     induction j using Fin.lastCases with
-    | last =>
-      rw [Fin.succ_last, hochschildCodegeneracy_last, hochschildCodegeneracy_last,
-        LinearMap.comp_assoc]
-      exact rid_comp_lTensor_counit_comp_rTensor _
+    | last => exact hochschildCodegeneracy_last_comp_rTensor R H M _
     | cast j => exact j.elim0
   | succ n ih =>
     induction j using Fin.lastCases with
-    | last =>
-      rw [Fin.succ_last, hochschildCodegeneracy_last, hochschildCodegeneracy_last,
-        LinearMap.comp_assoc]
-      exact rid_comp_lTensor_counit_comp_rTensor _
+    | last => exact hochschildCodegeneracy_last_comp_rTensor R H M _
     | cast j =>
       obtain ⟨i, rfl⟩ := Fin.exists_castSucc_eq.mpr (h.trans_lt (Fin.castSucc_lt_last j)).ne
       rw [Fin.succ_castSucc, hochschildCodegeneracy_succ_castSucc R H M (n + 1) j.succ,
