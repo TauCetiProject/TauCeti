@@ -351,16 +351,21 @@ theorem not_continuous_ofPointwiseConvergenceCLM [SeparatingDual 𝕜 E] [Nontri
   classical
   intro h
   obtain ⟨ξ, hξ⟩ := lp.exists_linearIndependent (𝕜 := 𝕜) (p := 2) (by norm_num) hE
+  -- Elements of `E →Lₚₜ[𝕜] F` are read as ultrastrong operators along these two equivalences.
+  have hof (B : E →L[𝕜] F) : (linearEquiv 𝕜).symm B = ofCLM B := by
+    rw [LinearEquiv.symm_apply_eq, linearEquiv_apply]
+  have hsymm (B : E →Lₚₜ[𝕜] F) :
+      (ContinuousLinearMap.toUniformConvergenceCLM _ F _).symm B = (B : E →L[𝕜] F) :=
+    ContinuousLinearMap.ext fun _ ↦ ContinuousLinearMap.toUniformConvergenceCLM_symm_apply
   -- The ultrastrong seminorm `A ↦ ‖(⊕ A) ξ‖` would be bounded by finitely many of the strong
   -- seminorms `A ↦ ‖A x‖`, `x ∈ s`.
   obtain ⟨s, C, -, hC⟩ := Seminorm.bound_of_continuous PointwiseConvergenceCLM.withSeminorms
     ((seminorm (𝕜 := 𝕜) (F := F) ξ).comp ((linearEquiv 𝕜).symm.toLinearMap ∘ₗ
       (ContinuousLinearMap.toUniformConvergenceCLM _ F _).symm.toLinearMap))
     (((withSeminorms.continuous_seminorm ξ).comp h).congr fun A ↦ by
-      -- `toUniformConvergenceCLM.symm A` is `A` itself, by definition.
       simp only [Function.comp_apply, seminormFamily_apply, seminorm_apply, Seminorm.comp_apply,
-        LinearMap.coe_comp, LinearEquiv.coe_coe]
-      rfl)
+        LinearMap.coe_comp, LinearEquiv.coe_coe, hof]
+      rw [hsymm])
   -- Some `ξ N` lies outside the span `K` of `s`.
   set K := Submodule.span 𝕜 (s : Set E)
   obtain ⟨N, hN⟩ : ∃ N, ξ N ∉ K := by
@@ -372,7 +377,7 @@ theorem not_continuous_ofPointwiseConvergenceCLM [SeparatingDual 𝕜 E] [Nontri
   obtain ⟨f₀, hf₀N, hf₀K⟩ := K.exists_dual_map_eq_bot_of_notMem hN inferInstance
   set W := Submodule.span 𝕜 ((insert (ξ N) s : Finset E) : Set E)
   obtain ⟨f, hf⟩ := SeparatingDual.dualMap_surjective_iff.2 W.injective_subtype (f₀ ∘ₗ W.subtype)
-  have hfW (x : E) (hx : x ∈ W) : f x = f₀ x := congr($hf ⟨x, hx⟩)
+  have hfW (x : E) (hx : x ∈ W) : f x = f₀ x := by simpa using congr($hf ⟨x, hx⟩)
   have hfK (x : E) (hx : x ∈ K) : f x = 0 := by
     rw [hfW x (Submodule.span_mono (by simp) hx)]
     simpa [hf₀K] using Submodule.mem_map_of_mem (f := f₀) hx
@@ -385,7 +390,7 @@ theorem not_continuous_ofPointwiseConvergenceCLM [SeparatingDual 𝕜 E] [Nontri
       -- The seminorm at `x` is `‖A x‖`, and `A x = f x • y = 0`.
       (norm_le_zero_iff (a := A x)).2 (by simp [A, hfK x (Submodule.subset_span hx)])
   have h0 : ‖lp.ampliation ℕ 2 (f.smulRight y) ξ‖ ≤ 0 := by
-    refine le_trans (le_of_eq (by simp [A])) ((hC A).trans ?_)
+    refine le_trans (le_of_eq (by simp [A, seminorm_apply, hof])) ((hC A).trans ?_)
     rw [smul_apply, NNReal.smul_def, smul_eq_mul]
     exact mul_nonpos_of_nonneg_of_nonpos C.2 hsup
   refine smul_ne_zero hfN hy (norm_le_zero_iff.1 (le_trans ?_ h0))

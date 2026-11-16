@@ -54,8 +54,9 @@ the ultraweak and ultrastrong topologies have the same continuous linear functio
 (`continuous_strongDual_ultrastrong_apply`) and a convex set of operators has the same closure in
 both (`Convex.ultrastrongOfCLM_mem_closure_image_iff_ultraweak`).
 
-On infinite-dimensional spaces these topologies are strictly finer than the weak and strong
-operator topologies. A diagonal functional `A ↦ ∑ₙ ⟪ξₙ, A ξₙ⟫` whose vectors span an
+On infinite-dimensional spaces the ultraweak and ultrastrong topologies are not coarser than the
+weak and strong operator topologies, respectively, and the ultraweak topology is not even coarser
+than the strong operator topology. A diagonal functional `A ↦ ∑ₙ ⟪ξₙ, A ξₙ⟫` whose vectors span an
 infinite-dimensional subspace, such as `ξₙ = (n + 1)⁻¹ eₙ` for an orthonormal sequence `eₙ`, is
 not continuous for the strong or the weak operator topology
 (`TauCeti.not_continuous_pointwiseConvergenceCLM_tsum_inner_apply`,
@@ -437,19 +438,17 @@ theorem exists_tsum_inner_apply_eq (φ : StrongDual 𝕜 (ContinuousLinearMapUlt
   -- The ampliation `A ↦ ⊕ A` identifies the ultrastrong copy with a subspace `e` of the operators
   -- on `ℓ²(ℕ, ·)` with the strong operator topology.
   let ι : ContinuousLinearMapUltrastrong 𝕜 E F →ₗ[𝕜] ℓ²(ℕ, E) →Lₚₜ[𝕜] ℓ²(ℕ, F) :=
-    (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) _ _).toLinearMap ∘ₗ
+    (ContinuousLinearMap.toUniformConvergenceCLM (RingHom.id 𝕜) _ _).toLinearMap ∘ₗ
       (lp.ampliation ℕ 2).toLinearMap ∘ₗ (linearEquiv 𝕜).toLinearMap
   have hι (A : ContinuousLinearMapUltrastrong 𝕜 E F) (ξ : ℓ²(ℕ, E)) :
-      ι A ξ = lp.ampliation ℕ 2 A.toCLM ξ := rfl
-  let e := LinearEquiv.ofInjective ι fun A B h ↦ toCLM_injective <| lp.ampliation_injective <|
+      ι A ξ = lp.ampliation ℕ 2 A.toCLM ξ := by
+    simp [ι]
+  have hιinj : Function.Injective ι := fun A B h ↦ toCLM_injective <| lp.ampliation_injective <|
     ContinuousLinearMap.ext fun ξ ↦ by simpa only [hι] using congr($h ξ)
+  let e := LinearEquiv.ofInjective ι hιinj
   have he : Continuous e.symm := continuous_of_continuous_ampliation_apply fun ξ ↦
-    ((PointwiseConvergenceCLM.evalCLM _ _ ξ).continuous.comp continuous_subtype_val).congr
-      fun x ↦ by
-        obtain ⟨A, rfl⟩ := e.surjective x
-        rw [Function.comp_apply, LinearEquiv.symm_apply_apply, ← hι]
-        -- `e A` is `ι A`, regarded as an element of the range.
-        rfl
+    ((continuous_eval_const ξ).comp continuous_subtype_val).congr fun x ↦ by
+      simp [e, ← hι, LinearEquiv.ofInjective_symm_apply]
   -- By Hahn–Banach `φ` extends to a strongly continuous functional `G`, a finite sum of continuous
   -- functionals of values, which the Riesz theorem in `ℓ²(ℕ, F)` turns into vectors.
   have := (PointwiseConvergenceCLM.withSeminorms (σ := RingHom.id 𝕜) (E := ℓ²(ℕ, E))
@@ -459,7 +458,7 @@ theorem exists_tsum_inner_apply_eq (φ : StrongDual 𝕜 (ContinuousLinearMapUlt
   obtain ⟨ξ, η, h⟩ := lp.exists_inner_ampliation_apply_eq_sum (𝕜 := 𝕜) s id
     fun x ↦ (InnerProductSpace.toDual 𝕜 ℓ²(ℕ, F)).symm (g x)
   refine ⟨ξ, η, fun A ↦ ?_⟩
-  have hGA : G (ι A) = φ A := (hG (e A)).trans (by simp [e])
+  have hGA : G (ι A) = φ A := by simpa [e] using hG (e A)
   rw [← hGA, hg, ← lp.inner_ampliation_apply, h]
   simp [hι]
 
@@ -541,13 +540,22 @@ theorem _root_.Convex.ultrastrongOfCLM_mem_closure_image_iff_ultraweak {s : Set 
   -- `e` is the identity on underlying operators, from the ultrastrong to the ultraweak copy.
   let e : ContinuousLinearMapUltrastrong 𝕜 E F ≃ₗ[𝕜] ContinuousLinearMapUltraweak 𝕜 E F :=
     (linearEquiv 𝕜).trans (ContinuousLinearMapUltraweak.linearEquiv 𝕜).symm
-  have hconv : Convex ℝ (ofCLM '' s : Set (ContinuousLinearMapUltrastrong 𝕜 E F)) :=
-    hs.linear_image (linearEquiv ℝ).symm.toLinearMap
+  have he (A : ContinuousLinearMapUltrastrong 𝕜 E F) :
+      e A = ContinuousLinearMapUltraweak.ofCLM A.toCLM := by
+    simp [e, LinearEquiv.symm_apply_eq]
+  have he_symm (A : ContinuousLinearMapUltraweak 𝕜 E F) : e.symm A = ofCLM A.toCLM := by
+    simp [e, LinearEquiv.symm_apply_eq]
+  have hof :
+      ⇑(linearEquiv ℝ).symm = (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltrastrong 𝕜 E F) :=
+    funext fun _ ↦ by simp [LinearEquiv.symm_apply_eq]
+  have hconv : Convex ℝ (ofCLM '' s : Set (ContinuousLinearMapUltrastrong 𝕜 E F)) := by
+    simpa only [LinearEquiv.coe_toLinearMap, hof] using
+      hs.linear_image (linearEquiv ℝ).symm.toLinearMap
   have hclosure := e.image_closure_of_convex hconv
-    (fun f ↦ f.continuous.comp ContinuousLinearMapUltraweak.continuous_ofUltrastrong)
-    (fun f ↦ ContinuousLinearMapUltraweak.continuous_strongDual_ultrastrong_apply f)
-  -- `e` maps `ofCLM T` to `ContinuousLinearMapUltraweak.ofCLM T` by definition.
-  have he (T : E →L[𝕜] F) : e (ofCLM T) = ContinuousLinearMapUltraweak.ofCLM T := rfl
+    (fun f ↦ (f.continuous.comp ContinuousLinearMapUltraweak.continuous_ofUltrastrong).congr
+      fun A ↦ by simp [he])
+    (fun f ↦ (ContinuousLinearMapUltraweak.continuous_strongDual_ultrastrong_apply f).congr
+      fun A ↦ by simp [he_symm])
   have himage : e '' (ofCLM '' s) = ContinuousLinearMapUltraweak.ofCLM '' s := by
     simp only [Set.image_image, he]
   rw [← himage, ← hclosure, ← he, e.injective.mem_set_image]
@@ -582,19 +590,18 @@ theorem not_continuous_pointwiseConvergenceCLM_tsum_inner_apply {ξ : ℓ²(ℕ,
   obtain ⟨s, g, hg⟩ := PointwiseConvergenceCLM.exists_finset_sum_eq φ
   set K := Submodule.span 𝕜 (s : Set E)
   set P := Kᗮ.starProjection
-  have hφP : φ (ContinuousLinearMap.toUniformConvergenceCLM _ E _ P) = 0 := by
-    rw [hg]
-    refine Finset.sum_eq_zero fun x hx ↦ ?_
-    rw [ContinuousLinearMap.toUniformConvergenceCLM_apply, Kᗮ.starProjection_apply_eq_zero_iff.2
-      (K.le_orthogonal_orthogonal (Submodule.subset_span hx)), map_zero]
-  -- But `φ P = ‖(⊕ P) ξ‖²`, so `P` kills every `ξ n`, which therefore lies in `K`.
+  have hφP : ⟪ξ, lp.ampliation ℕ 2 P ξ⟫_𝕜 = 0 := by
+    have h0 : φ (ContinuousLinearMap.toUniformConvergenceCLM _ E _ P) = 0 := by
+      rw [hg]
+      refine Finset.sum_eq_zero fun x hx ↦ ?_
+      rw [ContinuousLinearMap.toUniformConvergenceCLM_apply, Kᗮ.starProjection_apply_eq_zero_iff.2
+        (K.le_orthogonal_orthogonal (Submodule.subset_span hx)), map_zero]
+    simpa [φ, ψ] using h0
+  -- But `⟪ξ, (⊕ P) ξ⟫ = ‖(⊕ P) ξ‖²`, so `P` kills every `ξ n`, which therefore lies in `K`.
   have hPξ : lp.ampliation ℕ 2 P ξ = 0 := by
-    rw [← inner_self_eq_zero (𝕜 := 𝕜), ← hφP]
-    simp only [φ, ψ, ContinuousLinearMap.coe_mk', LinearMap.coe_comp, Function.comp_apply,
-      LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply, LinearMap.coe_mk, AddHom.coe_mk,
-      lp.inner_eq_tsum, lp.ampliation_apply_apply]
+    rw [← inner_self_eq_zero (𝕜 := 𝕜), ← hφP, lp.inner_eq_tsum, lp.inner_eq_tsum]
     refine tsum_congr fun n ↦ ?_
-    rw [Kᗮ.inner_starProjection_left_eq_right,
+    rw [lp.ampliation_apply_apply, Kᗮ.inner_starProjection_left_eq_right,
       Kᗮ.starProjection_eq_self_iff.2 (Kᗮ.starProjection_apply_mem _)]
   have hξK : Submodule.span 𝕜 (Set.range ξ) ≤ K := by
     refine Submodule.span_le.2 (Set.range_subset_iff.2 fun n ↦ ?_)
@@ -650,14 +657,17 @@ theorem not_continuous_ofPointwiseConvergenceCLM (hE : ¬ FiniteDimensional 𝕜
   let η : ℓ²(ℕ, F) := ⟨_, hη⟩
   -- The matrix coefficient at `(ξ, η)` would be strongly continuous, so it would only see the
   -- values at finitely many vectors `x ∈ s`. Elements of `E →Lₚₜ[𝕜] F` are read as operators
-  -- through `toUniformConvergenceCLM.symm`, which is the identity by definition.
+  -- through `toUniformConvergenceCLM.symm`.
+  have hsymm (B : E →Lₚₜ[𝕜] F) :
+      (ContinuousLinearMap.toUniformConvergenceCLM _ F _).symm B = (B : E →L[𝕜] F) :=
+    ContinuousLinearMap.ext fun _ ↦ ContinuousLinearMap.toUniformConvergenceCLM_symm_apply
   let ψ : (E →L[𝕜] F) →ₗ[𝕜] 𝕜 :=
     { toFun T := ⟪η, lp.ampliation ℕ 2 T ξ⟫_𝕜
       map_add' T S := by simp [inner_add_right]
       map_smul' c T := by simp [inner_smul_right] }
   let φ : StrongDual 𝕜 (E →Lₚₜ[𝕜] F) :=
     ⟨ψ ∘ₗ (ContinuousLinearMap.toUniformConvergenceCLM _ F _).symm.toLinearMap,
-      ((continuous_inner_ampliation_apply ξ η).comp h).congr fun _ ↦ rfl⟩
+      ((continuous_inner_ampliation_apply ξ η).comp h).congr fun A ↦ by simp [ψ, hsymm]⟩
   obtain ⟨s, g, hg⟩ := PointwiseConvergenceCLM.exists_finset_sum_eq φ
   -- Some `ξ N` lies outside the span `K` of `s`. The rank-one operator `x ↦ f x • w N`, with `f`
   -- vanishing on `K` and `f (ξ N) = 1`, vanishes at every `x ∈ s`, yet its coefficient is `2⁻ᴺ`.
