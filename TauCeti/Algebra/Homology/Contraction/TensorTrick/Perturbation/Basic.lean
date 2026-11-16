@@ -131,7 +131,7 @@ end ReducedTensorWords
 namespace LinearSpecialContraction
 
 variable {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN)
-  {G : InternalGrading R M} {H : InternalGrading R N}
+  {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ}
   (hdM : LinearMap.IsHomogeneous dM G.piece G.piece 1)
   (hh : LinearMap.IsHomogeneous c.homotopy G.piece G.piece (-1))
   (hincl : LinearMap.IsHomogeneous c.incl H.piece G.piece 0)

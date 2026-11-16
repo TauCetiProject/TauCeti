@@ -201,7 +201,7 @@ theorem localMultiplicity_onePointMap_eval_infty :
     rw [hg, chartAt_infty, invChart_infty, analyticOrderNatAt]
     by_cases hc : c = 0
     · have : analyticOrderAt (fun w : ℂ ↦ if w = 0 then (0 : ℂ) else c⁻¹) 0 = ⊤ := by
-        simp [hc, analyticOrderAt_eq_top]
+        simp [hc]
       simp [this]
     · have : analyticOrderAt (fun w : ℂ ↦ if w = 0 then (0 : ℂ) else c⁻¹) 0 = 0 := by
         rw [analyticOrderAt_eq_zero]

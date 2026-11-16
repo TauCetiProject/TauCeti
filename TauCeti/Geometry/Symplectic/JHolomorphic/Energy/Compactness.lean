@@ -100,7 +100,7 @@ theorem exists_pos_forall_lipschitzOnWith_of_small_energy
     rw [hCcoe]
     exact (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z (hinner hz))
       ((ha _ (huK (hinner hz))).trans (le_max_left _ _)) (hbound z hz)
-  exact (convex_closedBall z₀ (r / 2)).lipschitzOnWith_of_nnnorm_fderiv_le
+  exact (convex_closedBall z₀ (r / 2)).lipschitzOnWith_of_nnNorm_fderiv_le
     (fun z hz ↦ (hu.contDiffAt (isOpen_ball.mem_nhds (hinner hz))).differentiableAt
       (by norm_num))
     (fun z hz ↦ by exact_mod_cast hop z hz)

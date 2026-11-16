@@ -335,7 +335,7 @@ theorem irreducible_X_pow_four_sub_two : Irreducible (X ^ 4 - 2 : ℚ[X]) := by
       rw [degree_eq_natDegree monic_X_pow_four_sub_two_int.ne_zero, hdeg] at hn
       have hn4 : n < 4 := by exact_mod_cast hn
       rw [Ideal.mem_span_singleton]
-      interval_cases n <;> simp [coeff_X_pow, coeff_ofNat_zero, coeff_ofNat_succ]
+      interval_cases n <;> simp [coeff_X_pow]
     · rw [degree_eq_natDegree monic_X_pow_four_sub_two_int.ne_zero, hdeg]
       norm_num
     · rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton]

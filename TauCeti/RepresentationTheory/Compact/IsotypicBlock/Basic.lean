@@ -693,7 +693,7 @@ theorem peterWeylBlockAveraging_matrixCoeffLp_self [IsAlgClosed 𝕜] (model : I
       = ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin model.dim)) := by
     rw [ContRepresentation.integratedOperator_smul]
     simpa using ContRepresentation.finrank_smul_integratedOperator_star_character_self
-      model.rep model.continuous_rep model.isUnitary model.isIrreducible
+      model.rep model.continuous_rep model.isIrreducible
   rw [peterWeylBlockAveraging, convolutionOperator_matrixCoeffLp, hop]
   simp
 
@@ -717,7 +717,7 @@ theorem peterWeylBlockAveraging_matrixCoeffLp_eq_zero
       = 0 := by
     rw [ContRepresentation.integratedOperator_smul,
       ContRepresentation.integratedOperator_star_character_eq_zero model.rep model.continuous_rep
-        model'.rep model'.continuous_rep model.isUnitary
+        model'.rep model'.continuous_rep
         (fun φ => by
           simp [ContRepresentation.eq_zero_of_isEmpty_equiv model'.isIrreducible
             model.isIrreducible hne' φ]),
@@ -798,7 +798,7 @@ theorem peterWeylBlockAveraging_apply_mem_peterWeylBlock
   set K := (peterWeylBlock (models i)).comap
     (peterWeylBlockAveraging (models i)).toLinearMap with hK
   have hclosed : IsClosed (K : Set (Lp 𝕜 2 (haarProb G))) :=
-    ((peterWeylBlock (models i)).closed_of_finiteDimensional).preimage
+    ((peterWeylBlock (models i)).isClosed_of_finiteDimensional).preimage
       (peterWeylBlockAveraging (models i)).continuous
   have hle : ⨆ j, peterWeylBlock (models j) ≤ K := by
     refine iSup_le fun j x hx => Submodule.mem_comap.2 ?_

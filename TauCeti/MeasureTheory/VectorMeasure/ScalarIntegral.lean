@@ -138,22 +138,22 @@ theorem scalarMeasureImagPart_eq_im :
 measure. -/
 theorem variation_scalarMeasureRealPart_le (μ : VectorMeasure X 𝕜) :
     (scalarMeasureRealPart μ).variation ≤ μ.variation :=
-  variation_le_of_forall_enorm_le fun s _ => (enorm_le_iff_norm_le.2
-    (RCLike.norm_re_le_norm (μ s))).trans (enorm_measure_le_variation μ s)
+  variation_le_of_forall_eNorm_le fun s _ => (eNorm_le_iff_norm_le.2
+    (RCLike.norm_re_le_norm (μ s))).trans (eNorm_measure_le_variation μ s)
 
 /-- The variation of the imaginary part of a scalar measure is at most the variation of the
 measure. -/
 theorem variation_scalarMeasureImagPart_le (μ : VectorMeasure X 𝕜) :
     (scalarMeasureImagPart μ).variation ≤ μ.variation :=
-  variation_le_of_forall_enorm_le fun s _ => (enorm_le_iff_norm_le.2
-    (RCLike.norm_im_le_norm (μ s))).trans (enorm_measure_le_variation μ s)
+  variation_le_of_forall_eNorm_le fun s _ => (eNorm_le_iff_norm_le.2
+    (RCLike.norm_im_le_norm (μ s))).trans (eNorm_measure_le_variation μ s)
 
 /-- A signed measure and the scalar measure it defines have the same variation. -/
 @[simp]
 theorem variation_scalarMeasureOfReal (σ : SignedMeasure X) :
     (scalarMeasureOfReal σ : VectorMeasure X 𝕜).variation = σ.variation := by
-  refine le_antisymm (variation_le_of_forall_enorm_le fun s _ => ?_) ?_
-  · simpa [enorm_le_iff_norm_le] using enorm_measure_le_variation σ s
+  refine le_antisymm (variation_le_of_forall_eNorm_le fun s _ => ?_) ?_
+  · simpa [eNorm_le_iff_norm_le] using eNorm_measure_le_variation σ s
   · simpa using variation_scalarMeasureRealPart_le (scalarMeasureOfReal σ : VectorMeasure X 𝕜)
 
 /-- A scalar measure has finite variation. -/

@@ -92,8 +92,8 @@ theorem wassersteinEDist_top_sum_smul_le {ι : Type*} [Countable ι]
   choose π hπ hb using h
   refine (wassersteinEDist_le (IsCoupling.sum hπ) ∞).trans ?_
   rw [eLpNorm_exponent_top measurable_edist.aestronglyMeasurable]
-  apply eLpNormEssSup_le_of_ae_enorm_bound
-  simpa only [enorm_eq_self] using Measure.ae_sum_iff.mpr hb
+  apply eLpNormEssSup_le_of_ae_eNorm_bound
+  simpa only [eNorm_eq_self] using Measure.ae_sum_iff.mpr hb
 
 /-- The maximum-form bound for finite mixtures, requiring finite, equal-mass pairs only at
 positive weights in `s`. The supremum over an empty set of positive weights is zero, so this

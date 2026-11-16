@@ -286,7 +286,7 @@ variable (R : Type u) [CommRing R] (ι : Type*) [Fintype ι]
 /-- The **quantum grading** of the circle tensor: the basis vector of a labelling `l` spans its
 degree `TauCeti.Khovanov.labelingQuantumDegree ι l`. It is the grading of the free module on the
 labellings, transported along `TauCeti.Khovanov.circleBasis`. -/
-noncomputable def circleQuantumGrading : InternalGrading R (CircleTensor R ι) :=
+noncomputable def circleQuantumGrading : InternalGrading R (CircleTensor R ι) ℤ :=
   (InternalGrading.finsupp R (labelingQuantumDegree ι)).map (circleBasis R ι).repr.symm
 
 variable {R ι}

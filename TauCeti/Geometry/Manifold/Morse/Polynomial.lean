@@ -64,9 +64,9 @@ theorem IsMorse.exists_criticalCount_mul_eq_finrank_add_coeff (hf : IsMorse I f)
       (∑ i ∈ Finset.range (finrank ℝ E + 1),
         monomial i ((criticalCount I f i).toNat * finrank k V)).coeff j := by
     by_cases hj : j < finrank ℝ E + 1
-    · simp [coeff_monomial, Finset.mem_range, hj]
+    · simp [Finsupp.single_apply, Finset.mem_range, hj]
     · rw [criticalCount_eq_zero_of_finrank_lt (by omega)]
-      simp [coeff_monomial, Finset.mem_range, hj]
+      simp [Finsupp.single_apply, Finset.mem_range, hj]
   have hbetti (j : ℕ) :
       (∑ i ∈ Finset.range (finrank ℝ E + 1), monomial i
         (finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) i).obj V).obj
@@ -74,8 +74,8 @@ theorem IsMorse.exists_criticalCount_mul_eq_finrank_add_coeff (hf : IsMorse I f)
       finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj V).obj
         (TopCat.of M)) := by
     by_cases hj : j < finrank ℝ E + 1
-    · simp [coeff_monomial, Finset.mem_range, hj]
-    · simp [coeff_monomial, Finset.mem_range, hj,
+    · simp [Finsupp.single_apply, Finset.mem_range, hj]
+    · simp [Finsupp.single_apply, Finset.mem_range, hj,
         hf.finrank_singularHomology_eq_zero_of_finrank_lt V (by omega : finrank ℝ E < j)]
   refine ⟨Q, fun j ↦ ?_⟩
   have hj := hcount j

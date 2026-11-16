@@ -166,7 +166,7 @@ theorem eq_of_length_eq_of_ofCoeffList_reverse_eq {l l' : List R} (hlen : l.leng
     (h : ofCoeffList l.reverse = ofCoeffList l'.reverse) : l = l' := by
   have hrev : l.reverse = l'.reverse := by
     refine List.ext_getElem (by simpa using hlen) fun i hi hi' => ?_
-    have hc := congrArg (fun p => Polynomial.coeff p i) h
+    have hc := congrArg (fun p : R[X] => p.coeff i) h
     rw [coeff_ofCoeffList, coeff_ofCoeffList, List.getD_eq_getElem _ _ hi,
       List.getD_eq_getElem _ _ hi'] at hc
     exact hc

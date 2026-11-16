@@ -95,7 +95,8 @@ theorem volume_le_mul_volume_of_forall_dyadicCube [Nonempty ι] (hA : NullMeasur
     refine measure_eq_zero_iff_ae_notMem.2 ?_
     have hg' : ∫⁻ x, g x ≠ ∞ := by rwa [lintegral_indicator_one₀ hA]
     filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes
-      (aemeasurable_const.indicator₀ hA) hg' hδ0] with x hx
+      (aemeasurable_const.indicator₀ hA) le_rfl (by simp_rw [ENNReal.rpow_one]; exact hg') hδ0]
+      with x hx
     rintro ⟨hxA, hxU⟩
     refine (hx fun q hq hxq => hxU ?_).not_gt (by simpa [g, hxA] using hδ1)
     -- The parent of the Calderón–Zygmund cube containing `x` lies in a maximal parent.

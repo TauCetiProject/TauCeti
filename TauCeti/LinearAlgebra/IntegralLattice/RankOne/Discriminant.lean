@@ -91,7 +91,7 @@ private theorem bijective_toSpanSingleton_rankOneDualGen :
   · have hcast : (k : ℚ) / a = (l : ℚ) / a := by
       simpa only [LinearMap.toSpanSingleton_apply, coe_zsmul_rankOneDualGen] using
         congrArg (fun x : (rankOne a).dualCarrier ↦ (x : ℚ)) hkl
-    exact_mod_cast (div_left_inj' (Int.cast_ne_zero.mpr (NeZero.ne a))).mp hcast
+    exact_mod_cast (div_left_inj₀ (Int.cast_ne_zero.mpr (NeZero.ne a))).mp hcast
   · obtain ⟨k, hk⟩ := exists_zsmul_rankOneDualGen a x
     exact ⟨k, hk.symm⟩
 

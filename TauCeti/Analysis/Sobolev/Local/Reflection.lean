@@ -57,7 +57,8 @@ statement.
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball` and
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_univ`. Near each point of
   `Ω ∩ {0 ≤ im}` such a map agrees on the closed upper half-plane with a map in the class of a disc
-  (`TauCeti.MemWkpLoc.exists_ball_extension`).
+  (`TauCeti.MemWkpLoc.exists_ball_extension`). Local `Lᵖ` membership extends in the same way,
+  `TauCeti.MemLpLoc.planarReflection` and `TauCeti.MemLpLoc.planarReflection_ball`.
 * `TauCeti.MemWkpLoc.exists_opens_memWkpLoc_planarReflection`: without any symmetry of `Ω`, the
   reflection is in `W^{k,p}_loc(V)` for an open `V` with `Ω ∩ {0 ≤ im} ⊆ V ⊆ Ω`.
 * `TauCeti.eLpNorm_planarReflection_le`: the `Lᵖ(Ω)` bound by the `Lᵖ(Ω ∩ {0 ≤ im})` norm, with the
@@ -736,6 +737,13 @@ theorem MemWkpLoc.planarReflection_higherReflectionCoeff_ball {p : ℝ≥0∞} (
   MemWkpLoc.planarReflection_higherReflectionCoeff (Ω := ⟨_, Metric.isOpen_ball⟩) hp
     (fun _ hz _ j => imDilation_higherReflectionNode_mem_ball x r j hz) hu
 
+/-- The reflection of a locally `Lᵖ` map on a half-disc centred on the real axis is locally `Lᵖ`
+on the disc, for any weights. -/
+theorem MemLpLoc.planarReflection_ball {p : ℝ≥0∞} (x r : ℝ) {u : ℂ → F}
+    (hu : MemLpLoc p (Metric.ball (x : ℂ) r ∩ {z | 0 ≤ z.im}) u) (d : Fin k → ℝ) :
+    MemLpLoc p (Metric.ball (x : ℂ) r) (TauCeti.planarReflection d u) :=
+  hu.planarReflection (fun _ hz _ j => imDilation_higherReflectionNode_mem_ball x r j hz) d
+
 /-- **Extension from the closed half-plane to the plane.** -/
 theorem MemWkpLoc.planarReflection_higherReflectionCoeff_univ {p : ℝ≥0∞} (hp : 1 ≤ p)
     {u : ℂ → F} (hu : MemWkpLoc p {z : ℂ | 0 ≤ z.im} k u) :
@@ -793,7 +801,7 @@ theorem MemWkpLoc.memLpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg {p : ℝ≥0
   have hset : ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im} : Set ℂ) =ᵐ[volume]
       (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) : Set ℂ) := by
     rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen]
-    exact ae_eq_set_inter (ae_eq_refl _) (Complex.setOf_le_im_ae_eq 0)
+    exact ae_eq_set_inter (by rfl) (Complex.setOf_le_im_ae_eq 0)
   exact (memWkpLoc_zero_iff.1 hD'p).congr_ae
     (by rw [Measure.restrict_congr_set hset]; exact hD'.ae_eq hD)
 

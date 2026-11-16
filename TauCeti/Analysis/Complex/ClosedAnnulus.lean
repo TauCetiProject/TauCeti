@@ -19,6 +19,8 @@ its compactness, and polar coordinates on it.
 ## Main declarations
 
 * `Complex.closedAnnulus`: the closed annulus `r₁ ≤ ‖z‖ ≤ r₂`.
+* `Complex.closedAnnulus.le_norm_coe` and `Complex.closedAnnulus.norm_coe_le`: the norm bounds of
+  a point of the closed annulus.
 * `Complex.isCompact_closedAnnulus`: the closed annulus is compact.
 * `Complex.closedAnnulusHomeomorph`: for `0 < r₁`, polar coordinates identify the closed annulus
   with `Circle × [r₁, r₂]`.
@@ -38,6 +40,14 @@ noncomputable def closedAnnulus (r₁ r₂ : ℝ) : Set ℂ :=
 theorem mem_closedAnnulus {r₁ r₂ : ℝ} {z : ℂ} :
     z ∈ closedAnnulus r₁ r₂ ↔ r₁ ≤ ‖z‖ ∧ ‖z‖ ≤ r₂ := by
   simp [closedAnnulus, and_comm]
+
+/-- A point of the closed annulus has norm at least `r₁`. -/
+theorem closedAnnulus.le_norm_coe {r₁ r₂ : ℝ} (z : closedAnnulus r₁ r₂) : r₁ ≤ ‖(z : ℂ)‖ :=
+  (mem_closedAnnulus.1 z.2).1
+
+/-- A point of the closed annulus has norm at most `r₂`. -/
+theorem closedAnnulus.norm_coe_le {r₁ r₂ : ℝ} (z : closedAnnulus r₁ r₂) : ‖(z : ℂ)‖ ≤ r₂ :=
+  (mem_closedAnnulus.1 z.2).2
 
 theorem isCompact_closedAnnulus (r₁ r₂ : ℝ) : IsCompact (closedAnnulus r₁ r₂) :=
   (isCompact_closedBall 0 r₂).diff isOpen_ball

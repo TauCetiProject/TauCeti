@@ -183,7 +183,6 @@ private theorem exists_hasCauchyPVAt_exp_mul_eq_of_crossing_window {γ : ℝ →
     (h_tend_R : Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R))
     (h_tend_L : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L))
     (hspec : ∀ l u : ℝ, t₀ - R ≤ l → l < t₀ → t₀ < u → u ≤ t₀ + R → a < l → u ≤ b →
-      (∀ t ∈ Icc l u, γ t = s → t = t₀) →
       Tendsto (fun ε : ℝ => ∫ v in l..u,
         if ‖γ v - s‖ > ε then (γ v - s)⁻¹ * deriv γ v else 0) (𝓝[>] (0 : ℝ))
         (𝓝 (((Real.log ‖γ u - s‖ - Real.log ‖γ l - s‖ : ℝ) : ℂ) +
@@ -203,7 +202,7 @@ private theorem exists_hasCauchyPVAt_exp_mul_eq_of_crossing_window {γ : ℝ →
   refine ⟨_, hasCauchyPVAt_iff.mpr ⟨Filter.eventually_iff_exists_mem.mpr ⟨Ioi 0,
     self_mem_nhdsWithin, fun ε hε => intervalIntegrable_inv_sub_truncated
       hpc.intervalIntegrable_deriv hε⟩, hspec _ _ (by linarith) (by linarith) (by linarith)
-      (by linarith) hlo hhi h_unique⟩, ?_⟩
+      (by linarith) hlo hhi⟩, ?_⟩
   have hnotmem : t₀ ∉ T.filter (fun t => t < t₀ - ρ) := by simp [hρ.le]
   have hfil : T.filter (fun t => t < t₀ + ρ) = insert t₀ (T.filter (fun t => t < t₀ - ρ)) := by
     ext t

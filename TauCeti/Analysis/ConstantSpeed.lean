@@ -51,20 +51,6 @@ theorem HasConstantSpeedOnWith.lipschitzOnWith {E : Type*} [PseudoEMetricSpace E
   simpa only [edist_dist, Real.dist_eq, abs_of_nonpos (sub_nonpos.mpr hxy), neg_sub]
     using hdist.trans_eq hmul
 
-/-- The extended diameter of the set of cumulative variations from a base point of `s` is at most
-the total variation on `s`. -/
-theorem variationOnFromTo.ediam_image_le {α E : Type*} [LinearOrder α] [TopologicalSpace E]
-    [WeakPseudoEMetricSpace E] (f : α → E) {s : Set α} {a : α} (ha : a ∈ s) :
-    Metric.ediam (variationOnFromTo f s a '' s) ≤ eVariationOn f s := by
-  by_cases hf : BoundedVariationOn f s
-  swap
-  · rw [BoundedVariationOn, not_ne_iff] at hf
-    exact hf ▸ le_top
-  refine Metric.ediam_image_le_iff.2 fun x hx y hy ↦ ?_
-  rw [edist_dist, Real.dist_eq, variationOnFromTo.sub_right hf.locallyBoundedVariationOn ha hx hy,
-    ← ENNReal.ofReal_toReal hf]
-  exact ENNReal.ofReal_le_ofReal (variationOnFromTo.abs_le_eVariationOn hf)
-
 /-- The image of a curve of locally bounded variation has Hausdorff dimension at most one,
 because its natural parameterization is Lipschitz on a subset of the real line. -/
 theorem LocallyBoundedVariationOn.dimH_image_le_one {α E : Type*} [LinearOrder α]
@@ -109,7 +95,7 @@ theorem hausdorffMeasure_image_le (f : α → E) (s : Set α) :
       simpa using hφ.hausdorffMeasure_image_le zero_le_one
     _ = volume (v '' s) := by rw [hausdorffMeasure_real]
     _ ≤ Metric.ediam (v '' s) := Real.volume_le_diam _
-    _ ≤ eVariationOn f s := variationOnFromTo.ediam_image_le f ha
+    _ ≤ eVariationOn f s := variationOnFromTo.ediam_image_le f a
 
 /-- The Euclidean one-dimensional Hausdorff measure of the image of `s` under `f` is at most the
 total variation of `f` on `s`. In particular, the trace of a rectifiable curve has

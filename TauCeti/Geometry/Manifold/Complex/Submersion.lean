@@ -54,7 +54,7 @@ theorem _root_.MDifferentiableOn.isSubmersionAtOfComplement_of_surjective_mfderi
       I J n f x := by
   let : IsManifold I n M := IsManifold.of_ne_zero n one_ne_zero inferInstance
   let : IsManifold J n N := IsManifold.of_ne_zero n one_ne_zero inferInstance
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   exact (hf.contMDiffOn hU).isSubmersionAtOfComplement_of_surjective_mfderiv hU hx hn hs
 
 /-- At a point of an open holomorphy domain, the existence of holomorphic projection charts

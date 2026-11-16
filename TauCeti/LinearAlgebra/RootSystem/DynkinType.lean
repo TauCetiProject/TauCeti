@@ -324,6 +324,44 @@ lemma cartanMatrix_apply_eq_zero_iff_symm (t : DynkinType) (i j : Fin t.rank) :
   case F4 => fin_cases i <;> fin_cases j <;> decide
   case G2 => fin_cases i <;> fin_cases j <;> decide
 
+/-- The entry opposite a double- or triple-bond Cartan entry is `-1`. -/
+theorem cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two (t : DynkinType)
+    (i j : Fin t.rank) (hji : t.cartanMatrix j i ≤ -2) : t.cartanMatrix i j = -1 := by
+  have hne : j ≠ i := by
+    rintro rfl
+    simp at hji
+  cases t with
+  | A n =>
+      rcases CartanMatrix.isSimplyLaced_A n hne with h | h <;> simp_all
+  | D n =>
+      rcases CartanMatrix.isSimplyLaced_D n hne with h | h <;> simp_all
+  | E6 =>
+      rcases CartanMatrix.isSimplyLaced_E 6 hne with h | h <;> simp_all
+  | E7 =>
+      rcases CartanMatrix.isSimplyLaced_E 7 hne with h | h <;> simp_all
+  | E8 =>
+      rcases CartanMatrix.isSimplyLaced_E 8 hne with h | h <;> simp_all
+  | B n =>
+      -- Expose the constructor's rank so the matrix-entry simplification can fire.
+      change Fin n at i j
+      simp only [cartanMatrix_B, CartanMatrix.B, Matrix.of_apply] at hji ⊢
+      split_ifs at * <;> omega
+  | C n =>
+      -- As in type B, reduce the dependent index before simplifying matrix entries.
+      change Fin n at i j
+      simp only [cartanMatrix_C, CartanMatrix.C, Matrix.of_apply] at hji ⊢
+      split_ifs at * <;> omega
+  | F4 =>
+      -- Reduce the dependent index so the explicit finite matrix can be evaluated.
+      change Fin 4 at i j
+      simp only [cartanMatrix_F4] at hji ⊢
+      fin_cases i <;> fin_cases j <;> norm_num [CartanMatrix.F₄] at *
+  | G2 =>
+      -- The transposed finite matrix likewise needs the concrete index type.
+      change Fin 2 at i j
+      simp only [cartanMatrix_G2, Matrix.transpose_apply] at hji ⊢
+      fin_cases i <;> fin_cases j <;> norm_num [CartanMatrix.G₂] at *
+
 /-- The double edge of type `Bₙ`: with at least two simple roots, the last two are joined by an
 entry `-2`. -/
 private lemma cartanMatrix_B_apply_eq_neg_two {n : ℕ} (hn : 2 ≤ n) (i j : Fin n)

@@ -244,7 +244,7 @@ theorem pathELength_lineMap (x y : F) :
     Manifold.pathELength 𝓘(ℝ, F)
       (⇑(ContinuousAffineMap.lineMap (R := ℝ) x y)) 0 1 = ‖x - y‖ₑ := by
   rw [Manifold.pathELength_eq_lintegral_mfderivWithin_Icc]
-  simp only [mfderivWithin_eq_fderivWithin, enorm_tangentSpace_vectorSpace]
-  exact lintegral_fderiv_lineMap_eq_edist .. |>.trans (edist_eq_enorm_sub ..)
+  simp only [mfderivWithin_eq_fderivWithin, eNorm_tangentSpace_vectorSpace]
+  exact lintegral_fderiv_lineMap_eq_edist .. |>.trans (eDist_eq_eNorm_sub ..)
 
 end TauCeti.Manifold

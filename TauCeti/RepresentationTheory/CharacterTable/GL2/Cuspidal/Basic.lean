@@ -98,6 +98,8 @@ linearly independent over `ℂ`.
   distinct virtual characters**.
 * `TauCeti.GL2CuspidalVirtualCharacter_eq_iff`: **the orbit `{θ, θ^q}` is the exact fibre of the
   construction**, the two symmetries and the previous item together.
+* `TauCeti.coe_GL2CuspidalVirtualCharacter_eq_coe_iff_of_addChar`: two parameters give the same
+  virtual character for one additive character exactly when they do for any other.
 
 ## Implementation notes
 
@@ -343,5 +345,21 @@ theorem GL2CuspidalVirtualCharacter_eq_iff (θ θ' : Eˣ →* ℂˣ) {ψ ψ' : A
   · exact GL2CuspidalVirtualCharacter_eq_of_addChar_ne_one _ hψ hψ'
   · rw [GL2CuspidalVirtualCharacter_comp_powMonoidHom]
     exact GL2CuspidalVirtualCharacter_eq_of_addChar_ne_one _ hψ hψ'
+
+/-- Two parameters give the same virtual character for one additive character exactly when they
+do for any other: the fibres of `θ ↦ χ_θ` are the orbits `{θ, θ^q}` whatever `ψ` is. -/
+theorem coe_GL2CuspidalVirtualCharacter_eq_coe_iff_of_addChar (θ θ' : Eˣ →* ℂˣ)
+    (ψ ψ' : AddChar F ℂ) :
+    (GL2CuspidalVirtualCharacter F E θ ψ).1 = (GL2CuspidalVirtualCharacter F E θ' ψ).1 ↔
+      (GL2CuspidalVirtualCharacter F E θ ψ').1 = (GL2CuspidalVirtualCharacter F E θ' ψ').1 := by
+  have key : ∀ ψ ψ' : AddChar F ℂ,
+      (GL2CuspidalVirtualCharacter F E θ ψ).1 = (GL2CuspidalVirtualCharacter F E θ' ψ).1 →
+        (GL2CuspidalVirtualCharacter F E θ ψ').1 = (GL2CuspidalVirtualCharacter F E θ' ψ').1 := by
+    intro ψ ψ' h
+    rcases eq_or_eq_comp_powMonoidHom_of_GL2CuspidalVirtualCharacter_eq (Subtype.ext h) with
+      rfl | rfl
+    · rfl
+    · rw [GL2CuspidalVirtualCharacter_comp_powMonoidHom]
+  exact ⟨key ψ ψ', key ψ' ψ⟩
 
 end TauCeti

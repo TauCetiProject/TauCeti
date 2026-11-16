@@ -80,7 +80,7 @@ private theorem iInf_mul_nnnorm_le (T : E →L[𝕜] F) (M : Submodule 𝕜 E) {
     (⨅ y : {y : E // y ∈ M ∧ y ≠ 0}, ‖T y‖₊ / ‖(y : E)‖₊) * ‖x‖₊ ≤ ‖T x‖₊ := by
   rcases eq_or_ne x 0 with rfl | hx0
   · simp
-  refine (le_div_iff₀ (nnnorm_pos.mpr hx0)).mp ?_
+  refine (le_div_iff₀ (nnNorm_pos.mpr hx0)).mp ?_
   exact ciInf_le (f := fun y : {y : E // y ∈ M ∧ y ≠ 0} ↦ ‖T y‖₊ / ‖(y : E)‖₊)
     (OrderBot.bddBelow _) ⟨x, hx, hx0⟩
 
@@ -90,14 +90,14 @@ private theorem le_iInf_of_rank_eq (T : E →L[𝕜] F) {M : Submodule 𝕜 E} {
     c ≤ ⨅ y : {y : E // y ∈ M ∧ y ≠ 0}, ‖T y‖₊ / ‖(y : E)‖₊ := by
   obtain ⟨x, hx, hx0⟩ := exists_mem_ne_zero_of_rank_pos (hM ▸ n.cast_add_one_pos)
   have : Nonempty {y : E // y ∈ M ∧ y ≠ 0} := ⟨⟨x, hx, hx0⟩⟩
-  exact le_ciInf fun y ↦ (le_div_iff₀ (nnnorm_pos.mpr y.2.2)).mpr (h y y.2.1)
+  exact le_ciInf fun y ↦ (le_div_iff₀ (nnNorm_pos.mpr y.2.2)).mpr (h y y.2.1)
 
 /-- The gain of `T` on a subspace of rank `n + 1` is at most `‖T‖`. -/
 private theorem iInf_le_nnnorm (T : E →L[𝕜] F) {M : Submodule 𝕜 E} {n : ℕ}
     (hM : Module.rank 𝕜 M = n + 1) :
     ⨅ y : {y : E // y ∈ M ∧ y ≠ 0}, ‖T y‖₊ / ‖(y : E)‖₊ ≤ ‖T‖₊ := by
   obtain ⟨x, hx, hx0⟩ := exists_mem_ne_zero_of_rank_pos (hM ▸ n.cast_add_one_pos)
-  refine le_of_mul_le_mul_right ?_ (nnnorm_pos.mpr hx0)
+  refine le_of_mul_le_mul_right ?_ (nnNorm_pos.mpr hx0)
   exact (iInf_mul_nnnorm_le T M hx).trans (T.le_opNNNorm x)
 
 /-- **Characterization of upper bounds.** `bₙ(T) ≤ c` exactly when every coercivity constant of
@@ -146,7 +146,7 @@ theorem bernsteinNumber_le_of_forall_rank_eq {T : E →L[𝕜] F} {n : ℕ} {c :
     T.bernsteinNumber n ≤ c := by
   refine bernsteinNumber_le_iff.mpr fun M hM d hd ↦ ?_
   obtain ⟨x, hx, hx0, hTx⟩ := h M hM
-  exact le_of_mul_le_mul_right ((hd x hx).trans hTx) (nnnorm_pos.mpr hx0)
+  exact le_of_mul_le_mul_right ((hd x hx).trans hTx) (nnNorm_pos.mpr hx0)
 
 /-- A coercivity estimate with a factor `k` on `‖T x‖` bounds `d` by `k bₙ(T)`. -/
 private theorem le_mul_bernsteinNumber_of_rank_eq (T : E →L[𝕜] F) {n : ℕ} {M : Submodule 𝕜 E}
@@ -155,7 +155,7 @@ private theorem le_mul_bernsteinNumber_of_rank_eq (T : E →L[𝕜] F) {n : ℕ}
   rcases eq_or_ne k 0 with rfl | hk
   · obtain ⟨x, hx, hx0⟩ := exists_mem_ne_zero_of_rank_pos (hM ▸ n.cast_add_one_pos)
     have hdx := h x hx
-    rw [zero_mul, nonpos_iff_eq_zero, mul_eq_zero, nnnorm_eq_zero] at hdx
+    rw [zero_mul, nonpos_iff_eq_zero, mul_eq_zero, nnNorm_eq_zero] at hdx
     simp [hdx.resolve_right hx0]
   rw [← div_le_iff₀' (pos_iff_ne_zero.mpr hk)]
   exact T.le_bernsteinNumber_of_rank_eq hM fun x hx ↦ by
@@ -181,7 +181,7 @@ theorem bernsteinNumber_zero (T : E →L[𝕜] F) : T.bernsteinNumber 0 = ‖T�
   rw [mul_comm]
   refine T.le_mul_bernsteinNumber_of_rank_eq hM fun y hy ↦ ?_
   obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hy
-  rw [map_smul, nnnorm_smul, nnnorm_smul]
+  rw [map_smul, nnNorm_smul, nnNorm_smul]
   exact le_of_eq (by ring)
 
 /-- The Bernstein numbers form an antitone sequence. -/
@@ -219,7 +219,7 @@ theorem bernsteinNumber_add_le (S T : E →L[𝕜] F) (n : ℕ) :
   refine S.le_bernsteinNumber_of_rank_eq hM fun x hx ↦ ?_
   calc (d - ‖T‖₊) * ‖x‖₊ = d * ‖x‖₊ - ‖T‖₊ * ‖x‖₊ := tsub_mul _ _ _
     _ ≤ ‖(S + T) x‖₊ - ‖T x‖₊ := tsub_le_tsub (hd x hx) (T.le_opNNNorm x)
-    _ ≤ ‖S x‖₊ := tsub_le_iff_right.mpr (by simpa using nnnorm_add_le (S x) (T x))
+    _ ≤ ‖S x‖₊ := tsub_le_iff_right.mpr (by simpa using nnNorm_add_le (S x) (T x))
 
 /-- **Two-sided ideal inequality.** `bₙ(B T A) ≤ ‖B‖ bₙ(T) ‖A‖`: a positive gain of `B T A` on a
 subspace `M` makes `A` injective on `M`, and `A(M)` then has rank `n + 1`. -/

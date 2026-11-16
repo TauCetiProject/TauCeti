@@ -89,7 +89,7 @@ namespace TauCeti
 namespace ReducedTensorWords
 
 variable {R : Type uR} {M : Type uM} {N : Type uN} [CommRing R] [AddCommMonoid M] [Module R M]
-  [AddCommMonoid N] [Module R N] {G : InternalGrading R M} {H : InternalGrading R N}
+  [AddCommMonoid N] [Module R N] {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ}
 
 /-- The Taylor expansion of components of degree zero has degree zero: every word
 `f(B₁) ⋯ f(B_k)` it produces from a homogeneous word has the total degree of that word. -/
@@ -154,7 +154,7 @@ summing over the cuts `w₁ ⊗ w₂` of `z`,
 
 For `F = F' = id` this is `IsGradedCoderivation G q`.  Homogeneity of `D` is not part of the
 condition. -/
-def IsGradedCoderivationAlong (G : InternalGrading R M) (q : ℤ)
+def IsGradedCoderivationAlong (G : InternalGrading R M ℤ) (q : ℤ)
     (F F' D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N) : Prop :=
   deconcatenation R N ∘ₗ D =
     TensorProduct.map D F' ∘ₗ deconcatenation R M +
@@ -227,7 +227,7 @@ theorem IsGradedCoderivationAlong.eq_of_letter_comp_eq {q : ℤ}
   exact key n z hn
 
 /-- The zero map is a coderivation along every pair of maps. -/
-theorem isGradedCoderivationAlong_zero (G : InternalGrading R M) (q : ℤ)
+theorem isGradedCoderivationAlong_zero (G : InternalGrading R M ℤ) (q : ℤ)
     (F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N) :
     IsGradedCoderivationAlong G q F F' 0 := by
   rw [isGradedCoderivationAlong_iff, TensorProduct.map_zero_left, TensorProduct.map_zero_right,
@@ -279,7 +279,7 @@ theorem IsCoalgHom.comp_isGradedCoderivationAlong {P : Type uP} [AddCommMonoid P
 gives a coderivation along `F ∘ K` and `F' ∘ K`: the morphism commutes with the letterwise Koszul
 twists. -/
 theorem IsGradedCoderivationAlong.comp_isCoalgHom {L : Type uL} [AddCommMonoid L] [Module R L]
-    {E : InternalGrading R L} {q : ℤ}
+    {E : InternalGrading R L ℤ} {q : ℤ}
     {F F' D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     (hD : IsGradedCoderivationAlong G q F F' D)
     {K : ReducedTensorWords R L →ₗ[R] ReducedTensorWords R M} (hK : IsCoalgHom R K)
@@ -350,7 +350,7 @@ theorem IsCoalgHom.comp_eq_comp_iff_letter_comp_eq
 section Difference
 
 variable {R : Type uR} {M : Type uM} {N : Type uN} [CommRing R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] {G : InternalGrading R M} {H : InternalGrading R N}
+  [AddCommGroup N] [Module R N] {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ}
 
 /-- The difference of two coalgebra morphisms `F` and `F'` is an untwisted coderivation along `F`
 and `F'`: `Δ (F - F') = ((F - F') ⊗ F' + F ⊗ (F - F')) Δ`. -/
@@ -504,8 +504,8 @@ variable {R : Type uR} {M : Type uM} {N : Type uN} [CommRing R] [AddCommGroup M]
 
 /-- The inverse of a degree-zero linear equivalence of reduced tensor coalgebras which is a
 coalgebra morphism is again homogeneous of degree zero. -/
-theorem IsCoalgHom.isHomogeneous_linearEquiv_symm {G : InternalGrading R M}
-    {H : InternalGrading R N} {e : ReducedTensorWords R M ≃ₗ[R] ReducedTensorWords R N}
+theorem IsCoalgHom.isHomogeneous_linearEquiv_symm {G : InternalGrading R M ℤ}
+    {H : InternalGrading R N ℤ} {e : ReducedTensorWords R M ≃ₗ[R] ReducedTensorWords R N}
     (he : IsCoalgHom R e.toLinearMap)
     (he₀ : LinearMap.IsHomogeneous e.toLinearMap (gradedPiece G) (gradedPiece H) 0) :
     LinearMap.IsHomogeneous e.symm.toLinearMap (gradedPiece H) (gradedPiece G) 0 := by

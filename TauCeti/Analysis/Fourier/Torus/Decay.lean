@@ -341,7 +341,7 @@ theorem pow_mul_norm_mFourierCoeff_le {f : UnitAddTorus d → E} {k : ℕ}
   -- Differentiate `k` times along a coordinate direction `i` with `|n i| = ‖n‖`.
   obtain ⟨i, -, hi⟩ := Finset.exists_mem_eq_sup Finset.univ Finset.univ_nonempty fun i ↦ ‖n i‖₊
   have hni : ‖n‖ = |(n i : ℝ)| := by
-    rw [← coe_nnnorm, Pi.nnnorm_def, hi, coe_nnnorm, Int.norm_eq_abs]
+    rw [← coe_nnNorm, Pi.nnNorm_def, hi, coe_nnNorm, Int.norm_eq_abs]
   obtain ⟨g, -, hg⟩ := exists_continuous_comp_coe_eq_iteratedFDeriv f
     (hf.continuous_iteratedFDeriv le_rfl) fun _ ↦ Pi.single i 1
   change ∀ x, g (toTorus x) = iteratedFDeriv ℝ k (fun x ↦ f (toTorus x)) x

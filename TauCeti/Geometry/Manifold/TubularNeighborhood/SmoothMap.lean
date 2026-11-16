@@ -56,7 +56,7 @@ theorem contMDiff_normalBundle_snd
   let := normalFiberBundle (hf.of_le le_add_self) himm hdim
   intro p
   let e := normalBundleTrivialization (hf.of_le le_add_self) himm hdim p.proj
-  have hid := (Bundle.contMDiffAt_totalSpace.mp
+  have hid := (Bundle.contMDiffAt_totalSpace_iff.mp
     (contMDiffAt_id (I := I.prod 𝓘(ℝ, F)) (n := n)
       (x := p)))
   have hc : ContMDiffAt (I.prod 𝓘(ℝ, F)) 𝓘(ℝ, F) n (fun q => (e q).2) p := by
@@ -97,10 +97,10 @@ theorem contMDiffWithinAt_normalBundle_iff
   let := normalFiberBundle (hf.of_le le_add_self) himm hdim
   constructor
   · intro hg
-    exact ⟨(Bundle.contMDiffWithinAt_totalSpace.mp hg).1,
+    exact ⟨(Bundle.contMDiffWithinAt_totalSpace_iff.mp hg).1,
       (contMDiff_normalBundle_snd hf himm hdim).contMDiffAt.comp_contMDiffWithinAt x hg⟩
   · rintro ⟨hbase, hvec⟩
-    rw [Bundle.contMDiffWithinAt_totalSpace]
+    rw [Bundle.contMDiffWithinAt_totalSpace_iff]
     refine ⟨hbase, ?_⟩
     have hcoord := (contMDiffAt_normalCoordinateMap (hf (g x).proj) (himm (g x).proj) (g x).proj
       (by simp)).comp_contMDiffWithinAt x hbase

@@ -95,8 +95,10 @@ private theorem exists_thue_auxiliary_polynomials_of_numberField [NumberField K]
     by_contra! h
     refine hx0 (funext fun j ↦ ?_)
     rcases j with i | i
-    · simpa [P, ofFn_coeff_eq_val_of_lt _ i.is_lt] using congrArg (coeff · i) h.1
-    · simpa [Q, ofFn_coeff_eq_val_of_lt _ i.is_lt] using congrArg (coeff · i) h.2
+    · simpa [P, ofFn_coeff_eq_val_of_lt _ i.is_lt] using
+        congrArg (fun p : ℤ[X] ↦ p.coeff i) h.1
+    · simpa [Q, ofFn_coeff_eq_val_of_lt _ i.is_lt] using
+        congrArg (fun p : ℤ[X] ↦ p.coeff i) h.2
   · have hmap : P.map (Int.castRingHom K) - C α * Q.map (Int.castRingHom K) =
         ofFn (m + 1) fun i ↦ (x (.inl i) : K) + α * x (.inr i) := by
       ext n

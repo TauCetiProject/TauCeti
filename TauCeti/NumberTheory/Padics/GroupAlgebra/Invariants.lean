@@ -43,6 +43,8 @@ projective integral representations.
   `TauCeti.natCard_quotient_padicInt_smul_top`.
 * `Representation.natCard_invariants_eq_pow_finrank_of_bijective`: the same count when
   the projective modular representation is identified with the reduction of a `ℤ_p[G]`-module.
+* `Representation.natCard_invariants_eq_of_trace_eq`: two such reductions of finitely generated
+  projective `ℤ_p`-modules with the same character have equally many invariants.
 
 ## References
 
@@ -176,5 +178,49 @@ theorem natCard_invariants_eq_pow_finrank_of_bijective
   exact _root_.Representation.natCard_invariants_eq_pow_finrank_of_reduction p _ _
     (compPadicReductionMk p G f) (compPadicReductionMk_surjective p G f hf.2)
     (compPadicReductionMk_ofModule' p G f) (compPadicReductionMk_eq_zero_iff p G f hf.1)
+
+
+/-- **Invariant counts from characters.** Projective `𝔽_p[G]`-representations that are the
+reductions of `ℤ_p[G]`-lattices with the same characters have equally many invariants: both
+counts are `p` to the rank of the invariants of the lattice, which is the average of the
+character. -/
+theorem natCard_invariants_eq_of_trace_eq (p : ℕ) [Fact p.Prime] {G : Type u} [Group G]
+    [Finite G] {W₁ W₂ : Type*} [AddCommGroup W₁] [Module (ZMod p) W₁] [AddCommGroup W₂]
+    [Module (ZMod p) W₂] (η₁ : Representation (ZMod p) G W₁) (η₂ : Representation (ZMod p) G W₂)
+    [Module.Projective (MonoidAlgebra (ZMod p) G) η₁.asModule]
+    [Module.Projective (MonoidAlgebra (ZMod p) G) η₂.asModule]
+    (X₁ X₂ : Type*) [AddCommGroup X₁] [Module ℤ_[p] X₁] [Module (MonoidAlgebra ℤ_[p] G) X₁]
+    [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) X₁] [Module.Finite ℤ_[p] X₁]
+    [Module.Projective ℤ_[p] X₁] [AddCommGroup X₂] [Module ℤ_[p] X₂]
+    [Module (MonoidAlgebra ℤ_[p] G) X₂] [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) X₂]
+    [Module.Finite ℤ_[p] X₂] [Module.Projective ℤ_[p] X₂]
+    (f₁ : (X₁ ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) X₁)) →ₛₗ[MonoidAlgebra.mapRingHom G
+        (PadicInt.toZMod (p := p))] η₁.asModule) (hf₁ : Function.Bijective f₁)
+    (f₂ : (X₂ ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) X₂)) →ₛₗ[MonoidAlgebra.mapRingHom G
+        (PadicInt.toZMod (p := p))] η₂.asModule) (hf₂ : Function.Bijective f₂)
+    (htr : ∀ g : G, LinearMap.trace ℤ_[p] X₁ (ofModule' (k := ℤ_[p]) (G := G) X₁ g) =
+      LinearMap.trace ℤ_[p] X₂ (ofModule' (k := ℤ_[p]) (G := G) X₂ g)) :
+    Nat.card η₁.invariants = Nat.card η₂.invariants := by
+  classical
+  rw [natCard_invariants_eq_pow_finrank_of_bijective p η₁ X₁ f₁ hf₁,
+    natCard_invariants_eq_pow_finrank_of_bijective p η₂ X₂ f₂ hf₂]
+  congr 1
+  rw [← finrank_invariants_baseChange_ratPadic p (ofModule' (k := ℤ_[p]) (G := G) X₁),
+    ← finrank_invariants_baseChange_ratPadic p (ofModule' (k := ℤ_[p]) (G := G) X₂)]
+  let _ := Fintype.ofFinite G
+  let _ : Invertible (Nat.card G : ℚ_[p]) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  apply Nat.cast_injective (R := ℚ_[p])
+  rw [← (Representation.baseChange ℚ_[p]
+      (ofModule' (k := ℤ_[p]) (G := G) X₁)).card_inv_mul_sum_char_eq_finrank,
+    ← (Representation.baseChange ℚ_[p]
+      (ofModule' (k := ℤ_[p]) (G := G) X₂)).card_inv_mul_sum_char_eq_finrank]
+  congr 1
+  refine Finset.sum_congr rfl fun g _ ↦ ?_
+  simp only [Representation.character, Representation.baseChange_apply,
+    LinearMap.trace_baseChange]
+  exact congrArg _ (htr g)
 
 end Representation

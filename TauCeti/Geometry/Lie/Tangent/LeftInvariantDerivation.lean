@@ -31,11 +31,6 @@ The latter is the manifold model vector space, so this also determines the Lie a
 * `finiteDimensional_leftInvariantDerivation`: the Lie algebra is finite-dimensional.
 * `finrank_leftInvariantDerivation_eq_modelVectorSpace`: its dimension equals that of the manifold
   model vector space.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The Lie algebra and the tangent space at `1`".
 -/
 
 public section

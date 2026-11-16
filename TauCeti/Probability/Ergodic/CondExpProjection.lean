@@ -148,7 +148,7 @@ theorem tendsto_eLpNorm_birkhoffAverage_sub_condExp (T : Ω → Ω) (hT : Measur
   have haverage : ⇑(birkhoffAverage ℝ
       (Lp.compMeasurePreservingₗᵢ ℝ T hT).toContinuousLinearMap id n (hf.toLp f)) =ᵐ[μ]
       birkhoffAverage ℝ T f n := by
-    rw [LinearIsometry.coe_toContinuousLinearMap, coe_compMeasurePreservingₗᵢ]
+    rw [LinearIsometry.coe_toContinuousLinearMap, Lp.coe_compMeasurePreservingₗᵢ]
     exact (Lp.coeFn_birkhoffAverage_compMeasurePreserving ℝ (hf.toLp f) hT n).trans
       (hT.quasiMeasurePreserving.birkhoffAverage_ae_eq_of_ae_eq ℝ hf.coeFn_toLp n)
   have hprojection : ⇑(metProjection (𝕜 := ℝ) T hT (hf.toLp f)) =ᵐ[μ]

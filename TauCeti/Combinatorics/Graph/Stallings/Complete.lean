@@ -6,21 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Stallings.Isomorphism
+public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # Complete labelled graphs
 
 A labelled graph is complete when every vertex has an outgoing dart with each signed letter
 as its label. A folded complete graph is what Kapovich and Myasnikov call a regular graph:
-every vertex has exactly one outgoing dart with each label. In a complete graph every word
-labels a path from every vertex, so every element of the free group is read along a path
-from the base vertex. Completeness passes to the target of a labelled morphism which is
-surjective on vertices, and is invariant under isomorphism.
+every vertex has exactly one outgoing dart with each label, so its darts labelled by a basis
+letter correspond to pairs of a vertex and a letter. In a complete graph every word labels a
+path from every vertex, so every element of the free group is read along a path from the base
+vertex. Completeness passes to the target of a labelled morphism which is surjective on
+vertices, and is invariant under isomorphism.
 
 ## References
 
 * I. Kapovich and A. Myasnikov, *Stallings foldings and subgroups of free groups*,
-  Section 8, Definition 8.1.
+  Section 8, Definition 8.1, and the edge count in the proof of Corollary 8.4.
 -/
 
 public section
@@ -50,6 +52,19 @@ label. -/
 theorem IsComplete.exists_dart (hS : S.IsComplete) (v : S.graph.V) (l : α × Bool) :
     ∃ e : S.graph.E, S.graph.src e = v ∧ S.label e = l :=
   hS v l
+
+/-- A folded complete graph has one dart labelled by each basis letter leaving each vertex, so
+the number of such darts is the number of vertices times the number of letters. -/
+theorem IsComplete.natCard_setOf_label_snd (hS : S.IsComplete) (hF : S.IsFolded) :
+    Nat.card {e : S.graph.E | (S.label e).2 = true} = Nat.card S.graph.V * Nat.card α := by
+  rw [← Nat.card_prod]
+  refine Nat.card_congr (.ofBijective (fun e => (S.graph.src e.1, (S.label e.1).1)) ⟨?_, ?_⟩)
+  · rintro ⟨e, he⟩ ⟨f, hf⟩ h
+    exact Subtype.ext (S.isFolded_def.mp hF e f (congrArg Prod.fst h)
+      (Prod.ext (congrArg Prod.snd h) (he.trans hf.symm)))
+  · rintro ⟨v, a⟩
+    obtain ⟨e, rfl, he⟩ := hS.exists_dart v (a, true)
+    exact ⟨⟨e, by simp [he]⟩, by simp [he]⟩
 
 /-- In a complete graph every word labels a path starting at any given vertex. -/
 theorem IsComplete.exists_path_word (hS : S.IsComplete) (a : S.graph.V)

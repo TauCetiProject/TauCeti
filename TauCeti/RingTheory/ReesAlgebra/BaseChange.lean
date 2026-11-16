@@ -81,7 +81,7 @@ private theorem toPolynomial_mem (x : S ⊗[R] reesAlgebra I) :
   | tmul s f =>
     rw [toPolynomial_tmul, mem_reesAlgebra_iff]
     intro n
-    rw [coeff_smul, coeff_map, smul_eq_mul, ← Ideal.map_pow]
+    rw [AddMonoidAlgebra.coeff_smul_apply, coeff_map, smul_eq_mul, ← Ideal.map_pow]
     exact Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem _ ((mem_reesAlgebra_iff I _).mp f.2 n))
 
 /-- The comparison `S ⊗[R] R[It] →ₐ[S] S[(IS)t]` between the base change of the Rees algebra of

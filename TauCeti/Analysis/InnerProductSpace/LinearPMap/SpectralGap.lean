@@ -93,7 +93,7 @@ theorem _root_.IsSelfAdjoint.norm_resolvent_le_of_spectrum_gap (hA : IsSelfAdjoi
     rcases hμ with hμ | rfl
     · exact norm_le_of_mem_spectrum_resolvent hA hs hgap hc hμ
     · simpa using hs.le
-  rw [← ENNReal.ofReal_coe_nnreal, coe_nnnorm]
+  rw [← ENNReal.ofReal_coe_nnreal, coe_nnNorm]
   exact ENNReal.ofReal_le_ofReal hμ'
 
 /-- **Lower bound across a spectral gap.** If the spectrum of a self-adjoint partial linear map on

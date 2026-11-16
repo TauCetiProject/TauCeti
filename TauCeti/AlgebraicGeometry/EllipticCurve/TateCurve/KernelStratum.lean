@@ -171,9 +171,9 @@ private theorem exists_one_sub_mul_tateUniformizationY_eq (q : Kˣ) (hq : ‖(q 
     rw [norm_sub_rev]
     exact norm_kernelStep_sub_lt q _ hq hc (hU v)
   have hF : ContractingWith ‖(q : K)‖₊ (fun v : S ↦ (⟨kernelStep q (U v) c, hstep v⟩ : S)) := by
-    refine ⟨by rwa [← NNReal.coe_lt_coe, coe_nnnorm, NNReal.coe_one],
+    refine ⟨by rwa [← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one],
       LipschitzWith.of_dist_le_mul fun v w ↦ ?_⟩
-    rw [Subtype.dist_eq, Subtype.dist_eq, dist_eq_norm, dist_eq_norm, coe_nnnorm]
+    rw [Subtype.dist_eq, Subtype.dist_eq, dist_eq_norm, dist_eq_norm, coe_nnNorm]
     exact norm_kernelStep_sub_kernelStep_le q _ _ hq hc (hU v) (hU w)
   set v := ContractingWith.fixedPoint _ hF
   have hv : kernelStep q (U v) c = v :=

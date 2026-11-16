@@ -320,9 +320,9 @@ theorem rightTranslationHomeomorph_apply (g : WithConv (H →ₐ[k] k))
 
 end CommRing
 
-section Field
+section IsDomain
 
-variable {k : Type u} [Field k]
+variable {k : Type u} [CommRing k] [IsDomain k]
 variable {H : Type v} [CommRing H] [_root_.HopfAlgebra k H]
 
 /-- Contraction of the augmentation point along right translation gives the translating point. -/
@@ -340,7 +340,7 @@ theorem comap_rightTranslationAlgEquiv_augmentationPoint
   rw [rightTranslationAlgEquiv_toAlgHom, AlgHom.comap_kernelPoint,
     counitAlgHom_comp_rightTranslationAlgHom]
 
-end Field
+end IsDomain
 
 end TauCeti.HopfAlgebra
 

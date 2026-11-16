@@ -7,16 +7,18 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.SerreClass.Localization
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
+public import TauCeti.CategoryTheory.ObjectProperty.Homology
 
 /-!
 # Homology of short complexes modulo a Serre class
 
 Let `P` be a Serre class in an abelian category `C`, and let `S : X₁ ⟶ X₂ ⟶ X₃` be a short
 complex. The homology of `S` is a quotient of the cycles, which are a subobject of `X₂`, so it
-lies in `P` whenever `X₂` does (`CategoryTheory.ObjectProperty.prop_homology_of_prop_X₂`).
-Conversely, `X₂` is an extension of `X₂ ⧸ ker g ⊆ X₃` by the cycles, and the cycles are an
-extension of the homology by a quotient of `X₁`. Hence `X₂` lies in `P` as soon as the homology
-does and each of `X₁` and `X₃` either lies in `P` or is joined to `X₂` by a zero map
+lies in `P` whenever `X₂` does (`CategoryTheory.ObjectProperty.prop_homology_of_prop_X₂`, proved
+in `TauCeti.CategoryTheory.ObjectProperty.Homology` for any class closed under subobjects and
+quotients). Conversely, `X₂` is an extension of `X₂ ⧸ ker g ⊆ X₃` by the cycles, and the cycles
+are an extension of the homology by a quotient of `X₁`. Hence `X₂` lies in `P` as soon as the
+homology does and each of `X₁` and `X₃` either lies in `P` or is joined to `X₂` by a zero map
 (`CategoryTheory.ObjectProperty.prop_X₂_of_prop_homology`).
 
 A morphism of short complexes which is an isomorphism modulo `P` on each of the three objects
@@ -32,8 +34,6 @@ groups, for instance in spectral sequences
 
 ## Main results
 
-* `CategoryTheory.ObjectProperty.prop_homology_of_prop_X₂`: the homology of `S` lies in `P` if
-  `X₂` does.
 * `CategoryTheory.ObjectProperty.prop_X₂_of_prop_homology`: `X₂` lies in `P` if the homology
   does and the outer objects lie in `P` or are joined to `X₂` by zero maps.
 * `CategoryTheory.ObjectProperty.isoModSerre_homologyMap`: the five lemma modulo a Serre class.
@@ -51,15 +51,7 @@ namespace CategoryTheory.ObjectProperty
 open Limits
 
 variable {C : Type*} [Category* C] [Abelian C] (P : ObjectProperty C) {S : ShortComplex C}
-
-/-- The homology of a short complex lies in a class of objects closed under subobjects and
-quotients, for instance a Serre class, if its middle object does: it is a quotient of the cycles,
-which are a subobject of the middle object. -/
-lemma prop_homology_of_prop_X₂ [P.IsClosedUnderSubobjects] [P.IsClosedUnderQuotients]
-    (h : P S.X₂) : P S.homology :=
-  P.prop_of_epi S.homologyπ (P.prop_of_mono S.iCycles h)
-
-variable [P.IsSerreClass]
+  [P.IsSerreClass]
 
 /-- The cycles of a short complex lie in a Serre class if its homology does and its first object
 either lies in the class or is mapped to the middle object by zero. -/

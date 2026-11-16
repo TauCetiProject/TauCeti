@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialLinear
-public import TauCeti.RepresentationTheory.CharacterTwist
+public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.RepresentationTheory.Irreducible
 
 /-!

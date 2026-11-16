@@ -100,7 +100,7 @@ theorem hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub [OpensMeasurableSpace E] 
   have hbound : ∀ i, ∫⁻ x in (Ω : Set E), ‖U i x v - W x v‖ₑ ∂μ ≤
       ‖v‖ₑ * ∫⁻ x in (Ω : Set E), ‖U i x - W x‖ₑ ∂μ := by
     intro i
-    rw [← lintegral_const_mul' _ _ enorm_ne_top]
+    rw [← lintegral_const_mul' _ _ eNorm_ne_top]
     refine lintegral_mono fun x => ?_
     have hle : ‖U i x v - W x v‖ ≤ ‖U i x - W x‖ * ‖v‖ := by
       simpa using (U i x - W x).le_opNorm v
@@ -111,6 +111,6 @@ theorem hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub [OpensMeasurableSpace E] 
             mul_comm]
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_
     (fun _ => zero_le) hbound
-  simpa using ENNReal.Tendsto.const_mul (a := ‖v‖ₑ) hU (Or.inr enorm_ne_top)
+  simpa using ENNReal.Tendsto.const_mul (a := ‖v‖ₑ) hU (Or.inr eNorm_ne_top)
 
 end TauCeti

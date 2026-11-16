@@ -100,9 +100,8 @@ simplicity of any presented group.
 
 Nothing in this file asserts that the presented groups are nontrivial, finite, or simple, that they
 have any particular order, or that they are isomorphic to any other construction of a Mathieu
-group. Those are downstream statements which the CFSG roadmap deliberately does not ask for. What is
-proved here is exactly the transcription arithmetic: the counts, the total length, the compiled
-letters, and cyclic reducedness.
+group. Those are downstream statements. What is proved here is exactly the transcription
+arithmetic: the counts, the total length, the compiled letters, and cyclic reducedness.
 
 ## Cross-checks
 
@@ -128,7 +127,7 @@ each group is simple, and an isomorphism to `MathieuGroup(11)`, `MathieuGroup(12
 `MathieuGroup(22)` is found. That reproduces the published claim about the words as transcribed
 here, and a mistyped letter would be very unlikely to survive it.
 
-The second is the comparison the CFSG roadmap asks a sporadic row to record. It used the Lean 4
+The second is a comparison with an explicit construction. It used the Lean 4
 permutation-group development
 [FiniteSimpleGroups](https://github.com/KitaKen1/finite-simple-groups-lean) at commit
 `7f09e33a9ceef6b59ce03e34cd4f0558c763e325`, which builds `M₁₁`, `M₁₂`, and `M₂₂` as subgroups
@@ -169,11 +168,7 @@ re-enumeration above remains a separate check.
 
 ## References
 
-This is part of milestone S1 of `TauCetiRoadmap/CFSGStatement/README.md`, which asks for a complete
-relator word list, with an admissible source, for each of the twenty-six sporadic names. It
-populates the presentation data for three of those rows and records both their independent source
-read-throughs and the required comparisons against the `FiniteSimpleGroups` development. The two
-presentation sources are:
+The two presentation sources are:
 
 * C. M. Campbell, G. Havas, C. Ramsay and E. F. Robertson, *Nice efficient presentations for all
   small simple groups and their covers*, LMS J. Comput. Math. **7** (2004), 266--283,

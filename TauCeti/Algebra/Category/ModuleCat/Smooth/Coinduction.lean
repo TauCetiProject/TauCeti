@@ -229,14 +229,16 @@ end Coinduction
 
 section EnoughInjectives
 
-variable [Nonempty ι]
-
 /-- For a directed family `J` of left ideals of `A : Type u`, the smooth `A`-modules in universe
 `max u w` have enough injectives: every smooth module embeds, through the unit of the coinduction
 adjunction along `ℤ →+* A`, into the coinduction of an injective abelian group. -/
 theorem enoughInjectives_smoothModules (hJ : Directed (· ≥ ·) J) :
-    EnoughInjectives (smoothModules.{max u w} J).FullSubcategory :=
-  EnoughInjectives.of_adjunction (coinductionAdjunction (Int.castRingHom A) hJ)
+    EnoughInjectives (smoothModules.{max u w} J).FullSubcategory where
+  presentation X :=
+    have := nonempty_of_smoothModules X.property
+    have : EnoughInjectives (smoothModules.{max u w} J).FullSubcategory :=
+      EnoughInjectives.of_adjunction (coinductionAdjunction (Int.castRingHom A) hJ)
+    EnoughInjectives.presentation X
 
 /-- For a directed family `J` of left ideals of `A : Type u`, the abelian category of smooth
 `A`-modules in universe `max u w` has `Ext` groups in the universe `max u w` of its morphisms.
@@ -255,8 +257,6 @@ end EnoughInjectives
 ideals, a nonempty family directed by intersection. -/
 noncomputable instance hasExt_discreteModules [TopologicalSpace A] [SeparatelyContinuousAdd A] :
     HasExt.{max u w} (discreteModules.{max u w} A).FullSubcategory := by
-  let : Nonempty {I : Submodule A A // IsOpen (I : Set A)} :=
-    ⟨⟨⊤, isOpen_univ⟩⟩
   -- Quantify over the abelian structure before substituting the object property, so the
   -- result retains the inherited abelian structure of discrete modules.
   suffices ∀ (P : ObjectProperty (ModuleCat.{max u w} A)) [Abelian P.FullSubcategory],

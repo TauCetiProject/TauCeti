@@ -15,7 +15,9 @@ import TauCeti.Algebra.Lie.GeneralLinear.Killing
 import TauCeti.Algebra.Lie.OfAssociative
 import TauCeti.LinearAlgebra.Matrix.Trace.LinearMap
 import TauCeti.Algebra.Lie.BaseChange.Radical
+import TauCeti.Algebra.Lie.SkewAdjoint
 import TauCeti.Algebra.Lie.SkewAdjoint.BaseChange
+import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
 # The Killing form of the symplectic Lie algebra
@@ -58,6 +60,8 @@ Lie algebra.
 * `TauCeti.isIrreducible_sp_standard`: the standard module of `sp l K` is irreducible.
 * `TauCeti.hasTrivialRadical_sp`: `sp l K` has trivial radical over every field of characteristic
   zero; in particular its Killing form is nondegenerate.
+* `LinearMap.BilinForm.IsAlt.hasTrivialRadical_skewAdjointLieSubalgebra`: the same for the Lie
+  algebra of skew-adjoint endomorphisms of any nondegenerate alternating form.
 * `LieAlgebra.Symplectic.killingForm_apply`: `κ(X, Y) = (2 n + 2) trace (X * Y)` on `sp l K`.
 * `LieAlgebra.Symplectic.killingForm_cartanInvolution_apply`:
   `κ(X, θ Y) = -((2 n + 2) trace (X * Yᵀ))`.
@@ -172,6 +176,19 @@ instance hasTrivialRadical_sp : HasTrivialRadical K (Symplectic.sp l K) := by
     exact skewAdjointMatricesLieSubalgebraBaseChangeEquiv A (J l K)
   have : HasTrivialRadical A (A ⊗[K] Symplectic.sp l K) := hasTrivialRadical_of_equiv e.symm
   exact (hasTrivialRadical_baseChange_iff K (Symplectic.sp l K) A).mp this
+
+variable {K} in
+/-- **The skew-adjoint endomorphisms of a nondegenerate alternating form have trivial radical**
+over every field of characteristic zero: a basis in which the form has matrix `J` identifies their
+Lie algebra with `sp (Fin m) K`. By Cartan's criterion its Killing form is then nondegenerate. -/
+theorem _root_.LinearMap.BilinForm.IsAlt.hasTrivialRadical_skewAdjointLieSubalgebra {V : Type*}
+    [AddCommGroup V] [Module K V] [FiniteDimensional K V] {B : LinearMap.BilinForm K V}
+    (hB : B.IsAlt) (hnd : B.Nondegenerate) : HasTrivialRadical K (skewAdjointLieSubalgebra B) := by
+  obtain ⟨m, b, hb⟩ := hB.exists_basis_toMatrix_eq_J hnd
+  -- `Symplectic.sp (Fin m) K` is by definition the skew-adjoint matrix Lie algebra of `J`.
+  have : HasTrivialRadical K (skewAdjointMatricesLieSubalgebra (J (Fin m) K)) :=
+    hasTrivialRadical_sp K
+  exact hasTrivialRadical_of_equiv (skewAdjointLieEquivOfBasis b B hb)
 
 end CharZero
 

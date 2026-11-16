@@ -104,6 +104,16 @@ theorem torusCharacter_torusRestriction (h : E.weightLattice ≤ D.weightLattice
       torusCharacter s (D.weightLatticeBasis.repr (Submodule.inclusion h χ)) := by
   rw [torusRestriction_def, torusCharacter_torusPointMap, weightLatticeInclusion_repr]
 
+/-- Restricting a torus point preserves the value of every root character. -/
+@[simp]
+theorem torusCharacter_torusRestriction_coordinateRoot (h : E.weightLattice ≤ D.weightLattice)
+    (s : Fin t.rank → Aˣ) (γ : Fin t.numRoots) :
+    torusCharacter (D.torusRestriction E h s) (E.coordinateRoot γ) =
+      torusCharacter s (D.coordinateRoot γ) := by
+  simpa only [coordinateRoot_def, Submodule.inclusion_apply] using
+    D.torusCharacter_torusRestriction E h s
+      ⟨(t.simplyConnectedRootDatum ht).root γ, E.root_mem_weightLattice γ⟩
+
 /-- Restriction to the same weight lattice with the same basis is the identity. -/
 @[simp]
 theorem torusRestriction_refl :

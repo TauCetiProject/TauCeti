@@ -54,8 +54,7 @@ theorem isZero_succ_of_projective (A : Rep k G) [Projective A] (n : ℕ) :
     ((_root_.groupCohomology.functor k G (n + 1)).mapIso (indBotIsoCoindBot A.V))
   rw [IsZero.iff_id_eq_zero]
   exact h.retract.symm.trans (by
-    rw [hzero.eq_zero_of_tgt h.i, zero_comp]
-    rfl)
+    rw [hzero.eq_zero_of_tgt h.i, zero_comp])
 
 /-- A surjective `k[G]`-linear map with projective kernel induces an isomorphism in every
 positive degree of group cohomology. The coefficient representations are the canonical ones

@@ -74,8 +74,8 @@ theorem exists_eventually_analyticOrderAt_eval_add_smul_eq [NontriviallyNormedFi
   obtain ⟨v, hn, hv⟩ := p.exists_natTrailingDegree_aeval_C_add_C_mul_X_eq
     (φ x₀) hm.self_of_nhds
   have hc :
-      Polynomial.coeff
-        (aeval (fun i ↦ Polynomial.C (φ x₀ i) + Polynomial.C (v i) * Polynomial.X) p) m ≠ 0 := by
+      (aeval (fun i ↦ Polynomial.C (φ x₀ i) + Polynomial.C (v i) * Polynomial.X) p).coeff m
+        ≠ 0 := by
     rw [← hv]
     exact Polynomial.coeff_natTrailingDegree_ne_zero.2 hn
   have hto : Tendsto φ (𝓝 x₀) (𝓝[{a | p.orderAt a = m}] (φ x₀)) :=

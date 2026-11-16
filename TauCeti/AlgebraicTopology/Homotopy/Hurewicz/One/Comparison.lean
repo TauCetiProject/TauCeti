@@ -177,7 +177,7 @@ evaluated at `1 : ℤ`, is **minus** the Hurewicz isomorphism
 theorem hurewiczHom_hom_one_eq_neg_hurewiczHomologyAddEquiv [PathConnectedSpace X]
     (a : Additive (HomotopyGroup (Fin 1) X x)) :
     (hurewiczHom (ModuleCat.of ℤ ℤ) 0 a).hom 1 =
-      -hurewiczHomologyAddEquiv (X := TopCat.of X) x (Additive.ofMul (Abelianization.of
+      -hurewiczHomologyAddEquiv (X := TopCat.of X) x (Additive.ofMul (Group.Abelianization.of
         (homotopyGroupOfUniqueMulEquivFundamentalGroup (Fin 1) a.toMul))) := by
   refine (hurewiczHom_hom_one_eq_neg_hurewicz₁ a).trans (congrArg Neg.neg ?_)
   exact (congrArg (H₁AddEquivHomology (TopCat.of X)) (hurewiczAb_ofMul_of x _).symm).trans

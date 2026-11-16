@@ -153,12 +153,11 @@ variable {R : Type uR} {M N : Type uM} [Ring R] [AddCommGroup M] [Module R M]
 /-- The forward direction of `TauCeti.quasiIso_gradedCochainComplexHom_iff`: a quasi-isomorphism
 makes every relative cycle a relative boundary. -/
 private theorem exists_relative_boundary_of_quasiIso_gradedCochainComplexHom (f : M →ₗ[R] N)
-    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hcomm : dN ∘ₗ f = f ∘ₗ dM)
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hcomm : ∀ p (x : ℳ p), dN (f x) = f (dM x))
     (hq : QuasiIso (gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) (hdegN := hdegN)
       (hsqN := hsqN) f hf hcomm)) :
     ∀ n (x : M) (y : N), x ∈ ℳ (n + 1) → y ∈ 𝒩 n → dM x = 0 → f x = dN y →
       ∃ u ∈ ℳ n, ∃ v ∈ 𝒩 (n - 1), dM u = x ∧ f u + dN v = y := by
-  have hfd (x : M) : dN (f x) = f (dM x) := LinearMap.congr_fun hcomm x
   rw [_root_.quasiIso_iff] at hq
   intro n x y hx hy hdx hfx
   -- `x` is a cycle whose image is a boundary, hence a boundary `dM u₀`.
@@ -178,6 +177,7 @@ private theorem exists_relative_boundary_of_quasiIso_gradedCochainComplexHom (f 
       (gradedCochainComplex_d_eq_iff (sub_add_cancel (n + 1) 1) _ _).1 ha
   -- `y - f u₀` is a cycle, hence `f c + dN v` for a cycle `c`.
   have hyu : y - f u₀ ∈ 𝒩 n := (𝒩 n).sub_mem hy (by simpa using hf.map_mem hu₀)
+  have hfd : dN (f u₀) = f (dM u₀) := hcomm n ⟨u₀, hu₀⟩
   have hcyc : dN (y - f u₀) = 0 := by rw [map_sub, hfd, hdu₀, hfx, sub_self]
   obtain ⟨c, hc, b, hb⟩ := ((CochainComplex.moduleCat_quasiIsoAt_iff _ n).1 (hq n)).1
     ((gradedCochainComplexXEquiv n).symm ⟨y - f u₀, hyu⟩)
@@ -200,7 +200,7 @@ private theorem exists_relative_boundary_of_quasiIso_gradedCochainComplexHom (f 
 /-- The reverse direction of `TauCeti.quasiIso_gradedCochainComplexHom_iff`: if every relative
 cycle is a relative boundary, the induced cochain map is a quasi-isomorphism. -/
 private theorem quasiIso_gradedCochainComplexHom_of_exists_relative_boundary (f : M →ₗ[R] N)
-    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hcomm : dN ∘ₗ f = f ∘ₗ dM)
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hcomm : ∀ p (x : ℳ p), dN (f x) = f (dM x))
     (H : ∀ n (x : M) (y : N), x ∈ ℳ (n + 1) → y ∈ 𝒩 n → dM x = 0 → f x = dN y →
       ∃ u ∈ ℳ n, ∃ v ∈ 𝒩 (n - 1), dM u = x ∧ f u + dN v = y) :
     QuasiIso (gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) (hdegN := hdegN)
@@ -241,7 +241,7 @@ exactly when every relative cycle is a relative boundary: whenever `x ∈ ℳ (n
 `y ∈ 𝒩 n` satisfy `dM x = 0` and `f x = dN y`, there are `u ∈ ℳ n` and `v ∈ 𝒩 (n - 1)` with
 `dM u = x` and `f u + dN v = y`. This is the acyclicity of the mapping cone of `f`. -/
 theorem quasiIso_gradedCochainComplexHom_iff (f : M →ₗ[R] N)
-    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hcomm : dN ∘ₗ f = f ∘ₗ dM) :
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hcomm : ∀ p (x : ℳ p), dN (f x) = f (dM x)) :
     QuasiIso (gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) (hdegN := hdegN)
         (hsqN := hsqN) f hf hcomm) ↔
       ∀ n (x : M) (y : N), x ∈ ℳ (n + 1) → y ∈ 𝒩 n → dM x = 0 → f x = dN y →

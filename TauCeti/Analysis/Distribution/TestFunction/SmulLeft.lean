@@ -155,7 +155,7 @@ theorem norm_oneFormWedgeCLM_apply_le (hα : ContDiff ℝ n α) (ω : 𝓓^{n}(�
 theorem enorm_oneFormWedgeCLM_apply_le (hα : ContDiff ℝ n α)
     (ω : 𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F)) (x : E) :
     ‖oneFormWedgeCLM hα ω x‖ₑ ≤ (k + 1) * ‖α x‖ₑ * ‖ω x‖ₑ := by
-  simp only [enorm_eq_nnnorm]
+  simp only [eNorm_eq_nnNorm]
   exact_mod_cast norm_oneFormWedgeCLM_apply_le hα ω x
 
 /-- The wedge with a smooth one-form does not enlarge the support of a test form. -/

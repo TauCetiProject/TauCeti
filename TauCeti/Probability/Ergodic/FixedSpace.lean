@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.LinearAlgebra.FixedSubmodule
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 
 /-!
 # Fixed points of a measure-preserving transformation on `Lᵖ`
@@ -14,13 +14,6 @@ public import Mathlib.LinearAlgebra.FixedSubmodule
 This file relates membership in Mathlib's fixed submodule for the `Lᵖ` composition isometry to
 almost-everywhere invariance of representatives. This is the closed subspace onto which the mean
 ergodic projection in the Koopman route to de Finetti's theorem will project.
-
-It also records the simp lemma `coe_compMeasurePreservingₗᵢ`, which identifies the map underlying
-the composition isometry with Mathlib's composition operator
-`MeasureTheory.Lp.compMeasurePreserving`, so that statements phrased with the isometry can be
-rewritten into the form the lemmas about representatives use.
-
-For real-valued `Lᵖ`, composition is monotone and hence positive.
 -/
 
 public section
@@ -43,18 +36,12 @@ transformation. -/
 def fixedSpace (T : Ω → Ω) (hT : MeasurePreserving T μ μ) : Submodule 𝕜 (Lp E p μ) :=
   (Lp.compMeasurePreservingₗ 𝕜 T hT).fixedSubmodule
 
-private theorem compMeasurePreservingₗ_apply (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
-    (g : Lp E p μ) :
-    Lp.compMeasurePreservingₗ 𝕜 T hT g = Lp.compMeasurePreserving T hT g := by
-  rw [Lp.compMeasurePreservingₗ_apply]
-  exact congrFun (AddHom.toFun_eq_coe (Lp.compMeasurePreserving T hT).toAddHom) g
-
 /-- Membership in the fixed space means being fixed by the composition operator. -/
 @[simp]
 theorem mem_fixedSpace_iff {T : Ω → Ω} (hT : MeasurePreserving T μ μ) (g : Lp E p μ) :
     g ∈ fixedSpace (𝕜 := 𝕜) T hT ↔ Lp.compMeasurePreserving T hT g = g := by
-  rw [fixedSpace, LinearMap.mem_fixedSubmodule_iff]
-  rw [compMeasurePreservingₗ_apply]
+  simp only [fixedSpace, LinearMap.mem_fixedSubmodule_iff, Lp.compMeasurePreservingₗ_apply,
+    ZeroHom.toFun_eq_coe, AddMonoidHom.toZeroHom_coe]
 
 /-- Characterization of fixed points of the `Lᵖ` composition isometry using representatives. -/
 @[simp]
@@ -85,51 +72,6 @@ theorem mem_fixedSpace_iterate {T : Ω → Ω} (hT : MeasurePreserving T μ μ)
 
 end Generic
 
-section CompositionIsometry
-
-variable {Ω 𝕜 E : Type*} [MeasurableSpace Ω] [NormedRing 𝕜]
-  [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {μ : Measure Ω}
-
-/-- The map underlying Mathlib's `Lᵖ` composition isometry is Mathlib's composition operator
-`MeasureTheory.Lp.compMeasurePreserving`. This is the bridge between the statements phrased with
-the isometry, such as the mean ergodic theorem, and the lemmas about representatives, which are
-phrased with `MeasureTheory.Lp.compMeasurePreserving`. Together with Mathlib's simp lemma
-`LinearIsometry.coe_toContinuousLinearMap` it also normalizes the continuous linear map the
-isometry induces. -/
-@[simp]
-theorem coe_compMeasurePreservingₗᵢ (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
-    ⇑(Lp.compMeasurePreservingₗᵢ 𝕜 T hT) =
-      ⇑(Lp.compMeasurePreserving (E := E) (p := p) T hT) := by
-  funext g
-  exact compMeasurePreservingₗ_apply T hT g
-
-end CompositionIsometry
-
-section RealOrder
-
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-
-/-- The `Lᵖ` composition isometry of a measure-preserving map is monotone. -/
-theorem compMeasurePreservingₗᵢ_monotone (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
-    Monotone (Lp.compMeasurePreservingₗᵢ ℝ T hT : Lp ℝ p μ → Lp ℝ p μ) := by
-  rw [coe_compMeasurePreservingₗᵢ]
-  intro f g hfg
-  rw [← Lp.coeFn_le] at hfg ⊢
-  have hfgT := hT.quasiMeasurePreserving.tendsto_ae hfg
-  filter_upwards [hfgT, Lp.coeFn_compMeasurePreserving f hT,
-    Lp.coeFn_compMeasurePreserving g hT] with ω hω hf hg
-  rw [hf, hg]
-  exact hω
-
-/-- The `Lᵖ` composition isometry of a measure-preserving map is positive. -/
-theorem compMeasurePreservingₗᵢ_nonneg (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
-    {f : Lp ℝ p μ} (hf : 0 ≤ f) : 0 ≤ Lp.compMeasurePreservingₗᵢ ℝ T hT f := by
-  have h := compMeasurePreservingₗᵢ_monotone T hT hf
-  rwa [map_zero] at h
-
-end RealOrder
-
 section Complete
 
 variable {Ω 𝕜 E : Type*} [MeasurableSpace Ω] [NormedRing 𝕜]
@@ -145,7 +87,7 @@ theorem fixedSpace_eq_eqLocus (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
   ext g
   rw [mem_fixedSpace_iff, LinearMap.mem_eqLocus]
   simp only [ContinuousLinearMap.coe_coe, LinearIsometry.coe_toContinuousLinearMap,
-    coe_compMeasurePreservingₗᵢ, one_apply_eq_self]
+    Lp.coe_compMeasurePreservingₗᵢ, one_apply_eq_self]
 
 /-- The fixed space is closed in `Lᵖ`. -/
 theorem isClosed_fixedSpace (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :

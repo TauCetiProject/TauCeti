@@ -152,7 +152,7 @@ def halfCupInsertionForm (f : C(N, X)) (h : 2 + 2 = n) (l : (TopCat.of X).integr
         (o.two_dvd_cupInsertionForm_two hn f h hl _)])
     (fun v i c x ↦ by
       rw [AlternatingMap.map_update_smul, smul_eq_mul, smul_eq_mul,
-        Int.mul_ediv_assoc c (o.two_dvd_cupInsertionForm_two hn f h hl _)])
+        Int.mul_ediv_assoc c (o.two_dvd_cupInsertionForm_two hn f h hl _), RingHom.id_apply])
   map_eq_zero_of_eq' v i j hv hij := by
     simp [(o.cupInsertionForm hn f l 2 h).map_eq_zero_of_eq v hv hij]
 

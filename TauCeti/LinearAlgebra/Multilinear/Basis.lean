@@ -29,11 +29,11 @@ variable {R ι N : Type*} {κ M : ι → Type*} [CommSemiring R] [Fintype ι] [D
 
 /-- **Multilinear maps in coordinates.** For finite bases `b i` of the modules `M i`,
 `f m = ∑ s, (∏ i, (b i).repr (m i) (s i)) • f (fun i ↦ b i (s i))`. -/
-theorem apply_eq_sum_prod_repr_smul (f : MultilinearMap R M N)
+theorem apply_eq_sum_prod_repr_smul (f : MultilinearMap (RingHom.id R) M N)
     (b : ∀ i, Module.Basis (κ i) R (M i)) (m : ∀ i, M i) :
     f m = ∑ s : ∀ i, κ i, (∏ i, (b i).repr (m i) (s i)) • f fun i ↦ b i (s i) := by
   conv_lhs => rw [← funext fun i ↦ (b i).sum_repr (m i)]
   rw [f.map_sum]
-  simp_rw [f.map_smul_univ]
+  simp_rw [f.map_smul_univ, RingHom.id_apply]
 
 end MultilinearMap

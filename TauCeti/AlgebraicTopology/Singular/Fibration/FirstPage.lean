@@ -19,8 +19,10 @@ of the homology of the fibres over their centres. In the classical homological i
 `E¹_{k,q} ≅ ⨁ⱼ Hq(p⁻¹(χⱼ(0)); R)`,
 
 the sum running over the `k`-cells `j` of `C`, with `χⱼ(0)` the centre of the cell `j`
-(`TauCeti.TopCat.serreSpectralSequenceFirstPageXIsoSigma`). For the identity fibration these are
-the cellular chain groups.
+(`TauCeti.TopCat.serreSpectralSequenceFirstPageXIsoSigma`). On the summand of `j` the inverse is
+induced by the pullback of `p` along the characteristic map of `j`
+(`TauCeti.TopCat.ι_serreSpectralSequenceFirstPageXIsoSigma_inv`). For the identity fibration these
+are the cellular chain groups.
 
 The spectral sequence of a filtered space lives in cohomological indexing: the object at
 `(a, b)` of its first page (numbered `2`) is `Hₙ(E_{b+1}, E_b; R)` with `a + b = -n`
@@ -73,6 +75,23 @@ def serreSpectralSequenceFirstPageXIsoSigma (k q : ℕ) (pq : ℤ × ℤ) (hb : 
     eqToIso (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) (q + k))
       (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair k pq.2 hb)) ≪≫
     preimageSkeletonPairSingularHomologyIsoSigma C hp R k q
+
+/-- On the summand of the `k`-cell `j`, the inverse of
+`TauCeti.TopCat.serreSpectralSequenceFirstPageXIsoSigma` is induced by the pullback of `p` along the
+characteristic map of `j`, `Hq(p⁻¹(χⱼ(0))) ≅ Hq+k(Pⱼ, ∂Pⱼ) ⟶ Hq+k(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹))`. -/
+@[reassoc (attr := simp)]
+lemma ι_serreSpectralSequenceFirstPageXIsoSigma_inv (k q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = k - 1)
+    (ha : pq.1 + pq.2 = -(q + k : ℕ)) (j : cell C k) :
+    Sigma.ι _ j ≫ (serreSpectralSequenceFirstPageXIsoSigma C hp R k q pq hb ha).inv =
+      (cellDiskPullbackPairSingularHomologyIso hp R k q j).inv ≫
+        (cellDiskPullbackPair p C k j).singularHomologyMap (cellDiskPullbackPairMap p C k j)
+          (ModuleCat.of R R) (q + k) ≫
+        eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) (q + k))
+          (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair k pq.2 hb)).symm ≫
+        (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
+          (monotone_preimageSkeleton p) pq pq.2 (pq.2 + 1) rfl rfl (pq.1 + pq.2) rfl (q + k)
+          ha).inv := by
+  simp [serreSpectralSequenceFirstPageXIsoSigma]
 
 end TopCat
 

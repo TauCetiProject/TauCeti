@@ -188,7 +188,7 @@ theorem extended_dual_one_eq_dual_one [IsDomain S] :
   change FractionalIdeal.extended L h
       (FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)) = _
   apply FractionalIdeal.coeToSubmodule_injective
-  refine (FractionalIdeal.coe_extended_eq_span L h _).trans ?_
+  refine (FractionalIdeal.coeToSubmodule_extended_eq_span L h _).trans ?_
   have hmap : IsLocalization.map L (algebraMap S Sₘ) h = RingHom.id L := by
     apply IsFractionRing.ringHom_ext (A := S)
     intro s

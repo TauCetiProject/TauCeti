@@ -66,7 +66,7 @@ classes of the cycles of Alexander degree `a`. -/
 noncomputable def alexanderHomologyGrading :
     InternalGrading R
       ((G.1.unblockedDifferential R).homology
-        (G.1.unblockedDifferential_comp_self_eq_zero R)) :=
+        (G.1.unblockedDifferential_comp_self_eq_zero R)) ℤ :=
   (G.alexanderChainMinusGrading R).homology
     (G.isHomogeneous_unblockedDifferential_alexanderChainMinusGrading R)
     (G.1.unblockedDifferential_comp_self_eq_zero R)
@@ -102,7 +102,8 @@ variable (G R)
 
 /-- The Alexander grading on the categorical unblocked grid homology, transported from the
 cycle quotient. Its degree-`a` piece consists of the classes of Alexander-homogeneous cycles. -/
-noncomputable def alexanderUnblockedHomologyGrading : InternalGrading R (G.1.unblockedHomology R) :=
+noncomputable def alexanderUnblockedHomologyGrading :
+    InternalGrading R (G.1.unblockedHomology R) ℤ :=
   (G.alexanderHomologyGrading R).map
     ((G.1.unblockedHomologyIso R).symm.toLinearEquiv.restrictScalars R)
 

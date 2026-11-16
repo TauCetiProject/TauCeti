@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Topology.Algebra.Order.Field
 
+import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 
 /-!
-# Ratios, reciprocals of vanishing powers, and one-sided bounds in ordered fields
+# Ratios, reciprocals of vanishing powers, one-sided bounds and eventual positivity
 
 Mathlib's `Mathlib/Topology/Algebra/Order/Field.lean` proves
 `tendsto_bdd_div_atTop_nhds_zero`: a numerator confined to a fixed interval, divided by a
@@ -21,8 +22,10 @@ up to a two-sided additive bounded error and `g` diverges, then `f / g` tends to
 It also records that the reciprocal of a positive power of `x - a` diverges to `atTop` as `x`
 tends to `a` from the right, and likewise for `a - x` from the left. These are the one-sided
 blow-ups of `tendsto_inv_nhdsGT_zero` along a vanishing power, and their consequence that
-`x / (1 - x)` diverges as `x` tends to `1` from the left. Finally, it records the
-one-sided bound `x ^ 2 < 1` for `x` sufficiently close to `1` from below.
+`x / (1 - x)` diverges as `x` tends to `1` from the left. It records the one-sided bound
+`x ^ 2 < 1` for `x` sufficiently close to `1` from below. Finally, it records that `t f + g` is
+eventually positive on a compact set when `f ≥ 0` there and `g > 0` at the zeros of `f`, the
+scalar form of the case of Finsler's lemma where the first form is positive semidefinite.
 
 ## Main results
 
@@ -38,6 +41,9 @@ one-sided bound `x ^ 2 < 1` for `x` sufficiently close to `1` from below.
   from the left.
 
 * `TauCeti.eventually_sq_lt_one_nhdsLT_one` — eventually `x ^ 2 < 1` along `𝓝[<] 1`.
+* `IsCompact.eventually_forall_mul_add_pos` — if `f` and `g` are continuous on a compact set `K`,
+  `f ≥ 0` on `K` and `g > 0` at the zeros of `f` in `K`, then for every sufficiently large `t`,
+  `t f + g` is positive on `K`.
 
 ## Implementation notes
 
@@ -83,6 +89,43 @@ theorem eventually_sq_lt_one_nhdsLT_one {𝕜 : Type*} [Field 𝕜] [LinearOrder
     ∀ᶠ x : 𝕜 in 𝓝[<] 1, x ^ 2 < 1 := by
   filter_upwards [Ioo_mem_nhdsLT (by simp : (-1 : 𝕜) < 1)] with x hx
   nlinarith [hx.1, hx.2]
+
+/-- **Eventual positivity of `t f + g` on a compact set.** Let `f` and `g` be continuous on a
+compact set `K`, with `f ≥ 0` on `K` and `g > 0` at the points of `K` where `f` vanishes. Then for
+every sufficiently large `t`, `t f + g` is positive on all of `K`. This is the scalar form of
+the case of Finsler's lemma where the first form is positive semidefinite. -/
+theorem _root_.IsCompact.eventually_forall_mul_add_pos {X 𝕜 : Type*} [TopologicalSpace X]
+    [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜] [OrderTopology 𝕜]
+    {K : Set X} (hK : IsCompact K) {f g : X → 𝕜} (hf : ContinuousOn f K) (hg : ContinuousOn g K)
+    (hf₀ : ∀ x ∈ K, 0 ≤ f x) (hg₀ : ∀ x ∈ K, f x = 0 → 0 < g x) :
+    ∀ᶠ t in atTop, ∀ x ∈ K, 0 < t * f x + g x := by
+  -- It suffices to find a threshold near each point of `K`; compactness then makes one work.
+  have hmem := hK.mem_prod_nhdsSet_of_forall (l := atTop)
+    (s := {z : 𝕜 × X | z.2 ∈ K → 0 < z.1 * f z.2 + g z.2}) fun p hp ↦ ?_
+  · exact (Filter.Eventually.curry hmem).mono fun t ht x hx ↦ ht.self_of_nhdsSet x hx hx
+  rcases (hf₀ p hp).eq_or_lt with h0 | h0
+  · -- Near a zero of `f`, `g` stays positive and `t f ≥ 0` for `t ≥ 0`.
+    have hG : ∀ᶠ q in 𝓝[K] p, 0 < g q :=
+      (hg p hp).eventually (lt_mem_nhds (hg₀ p hp h0.symm))
+    rw [eventually_nhdsWithin_iff] at hG
+    filter_upwards [(eventually_ge_atTop 0).prod_mk hG] with z ⟨hz₁, hz₂⟩ hzK
+    exact add_pos_of_nonneg_of_pos (mul_nonneg hz₁ (hf₀ _ hzK)) (hz₂ hzK)
+  · -- Near a point where `f` is positive, `f > f p / 2` and `g > g p - 1`, so `t f` dominates
+    -- `g` once `t ≥ T = 2 (|g p| + 1) / f p`.
+    have hFG : ∀ᶠ q in 𝓝[K] p, f p / 2 < f q ∧ g p - 1 < g q :=
+      ((hf p hp).eventually (lt_mem_nhds (half_lt_self h0))).and
+        ((hg p hp).eventually (lt_mem_nhds (sub_one_lt _)))
+    rw [eventually_nhdsWithin_iff] at hFG
+    set T := 2 * (|g p| + 1) / f p
+    have hT : 0 ≤ T := by positivity
+    have hTf : T * (f p / 2) = |g p| + 1 := by
+      simp only [T]
+      field_simp
+    filter_upwards [(eventually_ge_atTop T).prod_mk hFG] with z ⟨hz₁, hz₂⟩ hzK
+    obtain ⟨hzf, hzg⟩ := hz₂ hzK
+    have h₁ : z.1 * (f p / 2) ≤ z.1 * f z.2 := mul_le_mul_of_nonneg_left hzf.le (hT.trans hz₁)
+    have h₂ : T * (f p / 2) ≤ z.1 * (f p / 2) := mul_le_mul_of_nonneg_right hz₁ (by positivity)
+    linarith [neg_abs_le (g p)]
 
 section InvPow
 

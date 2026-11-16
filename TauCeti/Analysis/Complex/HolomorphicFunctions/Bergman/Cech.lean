@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Bergman.Restriction
-public import TauCeti.Analysis.Normed.Operator.Compact.Pi
 
 /-!
 # Square-integrable holomorphic Čech cocycles
@@ -18,6 +17,8 @@ The space of square-integrable holomorphic one-cocycles is closed and complete.
 Repetitions of indices are allowed, as in the full Čech complex; the differential has the convention
 `(δc)ᵢⱼₖ = cⱼₖ - cᵢₖ + cᵢⱼ` after restriction to the triple intersection.
 
+The restriction of one-cochains is the componentwise restriction `BergmanSpace.restrictPi₂` on
+pairwise intersections.
 For finite families and proper values `F` (equivalently, finite-dimensional values over `ℂ`),
 shrinking each open set relatively compactly gives a compact map on one-cochains and on the
 closed cocycle spaces. These provide analytic Banach stages for Čech arguments; they do not
@@ -154,30 +155,26 @@ theorem coe_d₀₁ToCocycles₁ (c : (i : ι) → bergmanSpace F (U i)) :
 def restrictCochains₁ (h : ∀ i, V i ≤ U i) :
     ((i j : ι) → bergmanSpace F (U i ⊓ U j)) →L[ℂ]
       ((i j : ι) → bergmanSpace F (V i ⊓ V j)) :=
-  ContinuousLinearMap.piMap fun i ↦ ContinuousLinearMap.piMap fun j ↦
-    restrict (inf_le_inf (h i) (h j))
+  restrictPi₂ fun i j ↦ inf_le_inf (h i) (h j)
 
 @[simp]
 theorem restrictCochains₁_apply (h : ∀ i, V i ≤ U i)
     (c : (i j : ι) → bergmanSpace F (U i ⊓ U j)) (i j : ι) :
-    restrictCochains₁ h c i j = restrict (inf_le_inf (h i) (h j)) (c i j) := (rfl)
+    restrictCochains₁ h c i j = restrict (inf_le_inf (h i) (h j)) (c i j) :=
+  restrictPi₂_apply _ c i j
 
 /-- Restriction to the same family is the identity on one-cochains. -/
 @[simp]
 theorem restrictCochains₁_refl :
-    restrictCochains₁ (F := F) (fun i ↦ le_refl (U i)) = ContinuousLinearMap.id ℂ _ := by
-  ext c i j
-  simp only [restrictCochains₁_apply, restrict_refl, ContinuousLinearMap.id_apply]
+    restrictCochains₁ (F := F) (fun i ↦ le_refl (U i)) = ContinuousLinearMap.id ℂ _ :=
+  restrictPi₂_refl
 
 /-- Successive restrictions of one-cochains agree with direct restriction. -/
-theorem restrictCochains₁_comp (hVU : ∀ i, V i ≤ U i) (hWV : ∀ i, W i ≤ V i) :
+theorem restrictCochains₁_comp_restrictCochains₁ (hVU : ∀ i, V i ≤ U i)
+    (hWV : ∀ i, W i ≤ V i) :
     (restrictCochains₁ (F := F) hWV).comp (restrictCochains₁ hVU) =
-      restrictCochains₁ (fun i ↦ (hWV i).trans (hVU i)) := by
-  apply ContinuousLinearMap.ext
-  intro c
-  funext i j
-  exact congrArg (fun T ↦ T (c i j))
-    (restrict_comp_restrict (inf_le_inf (hVU i) (hVU j)) (inf_le_inf (hWV i) (hWV j)))
+      restrictCochains₁ (fun i ↦ (hWV i).trans (hVU i)) :=
+  restrictPi₂_comp_restrictPi₂ _ _
 
 /-- Restriction does not increase the finite-product (sup of componentwise `L²`) norm. -/
 theorem norm_restrictCochains₁_apply_le [Fintype ι] (h : ∀ i, V i ≤ U i)
@@ -186,6 +183,7 @@ theorem norm_restrictCochains₁_apply_le [Fintype ι] (h : ∀ i, V i ≤ U i)
   intro i
   apply (pi_norm_le_iff_of_nonneg (norm_nonneg c)).2
   intro j
+  rw [restrictCochains₁_apply]
   exact (norm_restrict_apply_le _ (c i j)).trans
     ((norm_le_pi_norm (c i) j).trans (norm_le_pi_norm c i))
 
@@ -231,13 +229,14 @@ theorem restrictCocycles₁_refl :
     ContinuousLinearMap.id_apply]
 
 /-- Successive restrictions of cocycles equal direct restriction. -/
-theorem restrictCocycles₁_comp (hVU : ∀ i, V i ≤ U i) (hWV : ∀ i, W i ≤ V i) :
+theorem restrictCocycles₁_comp_restrictCocycles₁ (hVU : ∀ i, V i ≤ U i)
+    (hWV : ∀ i, W i ≤ V i) :
     (restrictCocycles₁ (F := F) hWV).comp (restrictCocycles₁ hVU) =
       restrictCocycles₁ (fun i ↦ (hWV i).trans (hVU i)) := by
   apply ContinuousLinearMap.ext
   intro c
   apply Subtype.ext
-  exact congrArg (fun T ↦ T c.val) (restrictCochains₁_comp hVU hWV)
+  exact congrArg (fun T ↦ T c.val) (restrictCochains₁_comp_restrictCochains₁ hVU hWV)
 
 /-- The cocycle bonding map is a contraction for finite families. -/
 theorem norm_restrictCocycles₁_apply_le [Fintype ι] (h : ∀ i, V i ≤ U i)
@@ -250,21 +249,13 @@ variable [Finite ι] [ProperSpace F]
 theorem isCompactOperator_restrictCochains₁ (hV : ∀ i, IsCompact (closure (V i : Set ℂ)))
     (hVU : ∀ i, closure (V i : Set ℂ) ⊆ U i) :
     IsCompactOperator (restrictCochains₁ (F := F) (fun i ↦ subset_closure.trans (hVU i))) := by
-  apply IsCompactOperator.pi
-  intro i
-  apply IsCompactOperator.pi
-  intro j
-  have hK : IsCompact (closure ((V i ⊓ V j : Opens ℂ) : Set ℂ)) :=
+  have hK (i j : ι) : IsCompact (closure ((V i ⊓ V j : Opens ℂ) : Set ℂ)) :=
     (hV i).of_isClosed_subset isClosed_closure
       (closure_mono (show (V i ⊓ V j : Opens ℂ) ≤ V i from inf_le_left))
-  have hKU : closure ((V i ⊓ V j : Opens ℂ) : Set ℂ) ⊆ U i ⊓ U j :=
+  have hKU (i j : ι) : closure ((V i ⊓ V j : Opens ℂ) : Set ℂ) ⊆ U i ⊓ U j :=
     fun x hx ↦ ⟨hVU i (closure_mono inf_le_left hx),
       hVU j (closure_mono inf_le_right hx)⟩
-  let P : ((i j : ι) → bergmanSpace F (U i ⊓ U j)) →L[ℂ]
-      bergmanSpace F (U i ⊓ U j) :=
-    (ContinuousLinearMap.proj (φ := fun j ↦ bergmanSpace F (U i ⊓ U j)) j).comp
-      (ContinuousLinearMap.proj (φ := fun i ↦ (j : ι) → bergmanSpace F (U i ⊓ U j)) i)
-  exact (BergmanSpace.isCompactOperator_restrict (F := F) hK hKU).comp_clm P
+  exact isCompactOperator_restrictPi₂ hK hKU
 
 /-- Relatively compact shrinking gives a compact operator on the closed Bergman cocycle
 spaces. This compactness assertion does not assume that the coboundary range is closed. -/

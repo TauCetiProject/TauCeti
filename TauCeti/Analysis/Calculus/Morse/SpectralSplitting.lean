@@ -257,8 +257,8 @@ noncomputable def stableProjection (hf : ContDiffAt ℝ 2 f x)
   hf.stableLinearSubspace.projectionL hf.unstableLinearSubspace
     (Submodule.IsCompl.isTopCompl_of_isClosed
       (hf.isCompl_unstableLinearSubspace_stableLinearSubspace hker).symm
-      hf.stableLinearSubspace.closed_of_finiteDimensional
-      hf.unstableLinearSubspace.closed_of_finiteDimensional)
+      hf.stableLinearSubspace.isClosed_of_finiteDimensional
+      hf.unstableLinearSubspace.isClosed_of_finiteDimensional)
 
 /-- The range of the stable projection is the stable linear subspace. -/
 @[simp]

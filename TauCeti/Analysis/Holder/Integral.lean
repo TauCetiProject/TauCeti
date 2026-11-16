@@ -41,7 +41,7 @@ theorem holderWith_intervalIntegral {X Y : Type*} [PseudoMetricSpace X]
     fun t ht => by simpa only [dist_eq_norm] using (hh t ht).dist_le x y
   have h := intervalIntegral.norm_integral_le_of_norm_le_const hbound
   refine h.trans_eq ?_
-  simp only [NNReal.coe_mul, coe_nnnorm, Real.norm_eq_abs]
+  simp only [NNReal.coe_mul, coe_nnNorm, Real.norm_eq_abs]
   ring
 
 end TauCeti

@@ -116,7 +116,7 @@ theorem euclideanHausdorffMeasure_restrict_sphere_eq_smul_map (d : ℕ) (c : E) 
       rw [hφ, ← image_smul, image_image]
     rw [this, (isometry_add_left c).euclideanHausdorffMeasure_image,
       euclideanHausdorffMeasure_smul₀ _ hr.ne']
-    simp [ENNReal.smul_def, ← enorm_eq_nnnorm, Real.enorm_eq_ofReal hr.le]
+    simp [ENNReal.smul_def, ← eNorm_eq_nnNorm, Real.eNorm_eq_ofReal hr.le]
   rw [← hφ]
   ext s hs
   rw [restrict_apply hs, _root_.smul_apply, φ.map_apply,

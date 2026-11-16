@@ -47,7 +47,7 @@ variable {τ : Type*} (q : SeminormFamily 𝕜 F τ) (hq : WithSeminorms q)
 
 include hp hq in
 /-- The tensor lift is continuous exactly when the original multilinear map is continuous. -/
-theorem continuous_lift_iff (f : MultilinearMap 𝕜 E F) :
+theorem continuous_lift_iff (f : MultilinearMap (RingHom.id 𝕜) E F) :
     Continuous (lift p f) ↔ Continuous f := by
   constructor
   · intro hf

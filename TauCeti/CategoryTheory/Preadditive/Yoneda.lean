@@ -45,7 +45,9 @@ Dually, for an object `M` with `Γ = End M`, the functor `Hom(M, -)` (Mathlib's
 `CategoryTheory.preadditiveCoyonedaObj M`) takes values in `Γᵐᵒᵖ`-modules. By the Yoneda
 argument, it is bijective on the morphisms `M ⟶ Y`: a `Γᵐᵒᵖ`-linear map
 `φ : Hom(M, M) → Hom(M, Y)` is composition with `φ (𝟙 M)`, since
-`φ f = φ (f • 𝟙 M) = f ≫ φ (𝟙 M)`.
+`φ f = φ (f • 𝟙 M) = f ≫ φ (𝟙 M)`. In the same way the functor `Hom(-, M)` (Mathlib's
+`CategoryTheory.preadditiveYonedaObj M`) takes values in `Γ`-modules, and it is bijective on the
+morphisms `Y ⟶ M`.
 
 For an additive functor `G : C ⥤ D`, Mathlib's natural transformation
 `CategoryTheory.preadditiveYonedaMap G X : (-, X) ⟶ (G -, G X)` is an epimorphism when `G` is
@@ -70,6 +72,8 @@ which is moreover additive.
   representable functor.
 * `CategoryTheory.preadditiveCoyonedaObj_map_bijective_self`: `Hom(M, -)` is bijective on the
   morphisms out of `M`.
+* `CategoryTheory.preadditiveYonedaObj_map_bijective_self`: `Hom(-, M)` is bijective on the
+  morphisms into `M`.
 * `CategoryTheory.preadditiveYonedaMap_app_apply`: the natural transformation
   `(-, X) ⟶ (G -, G X)` acts by applying `G`.
 * `CategoryTheory.preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff`: the natural
@@ -176,6 +180,27 @@ theorem preadditiveCoyonedaObj_map_bijective_self (M Y : C) :
         _ = ψ (MulOpposite.op (End.of f) • 𝟙 M) := (ψ.map_smul _ _).symm
         _ = ψ f := congrArg ψ ((End.smul_left (r := .op (.of f)) (f := 𝟙 M)).trans
             (Category.comp_id f))
+    ext f
+    exact key f
+
+/-- **Yoneda for `Hom(-, M)` as a `Γ`-module, `Γ = End M`.** Composition identifies the
+morphisms `Y ⟶ M`, the morphisms `op M ⟶ op Y` of `Cᵒᵖ`, with the `Γ`-linear maps
+`Hom(M, M) → Hom(Y, M)`: a linear map `φ` is composition with `φ (𝟙 M)`. -/
+theorem preadditiveYonedaObj_map_bijective_self (M Y : C) :
+    Function.Bijective ((preadditiveYonedaObj M).map : (op M ⟶ op Y) → _) := by
+  -- The elements of `(preadditiveYonedaObj M).obj (op X)` are the morphisms `X ⟶ M`, and
+  -- `(preadditiveYonedaObj M).map g` acts on them by precomposition with `g.unop`; both facts hold
+  -- by definition, so the steps below are stated as equalities of morphisms of `C`.
+  refine ⟨fun g g' h ↦ Quiver.Hom.unop_inj ?_, fun φ ↦ ⟨(φ.hom (𝟙 M)).op, ?_⟩⟩
+  · exact (Category.comp_id g.unop).symm.trans
+      (congr(($h).hom (𝟙 M)).trans (Category.comp_id g'.unop))
+  · let ψ : (M ⟶ M) →ₗ[End M] (Y ⟶ M) := φ.hom
+    have key (f : M ⟶ M) : ψ (𝟙 M) ≫ f = ψ f :=
+      calc ψ (𝟙 M) ≫ f = End.of f • ψ (𝟙 M) :=
+            (End.smul_right (r := .of f) (f := ψ (𝟙 M))).symm
+        _ = ψ (End.of f • 𝟙 M) := (ψ.map_smul _ _).symm
+        _ = ψ f := congrArg ψ ((End.smul_right (r := .of f) (f := 𝟙 M)).trans
+            (Category.id_comp f))
     ext f
     exact key f
 

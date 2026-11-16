@@ -124,7 +124,7 @@ end Projections
 
 variable [FiniteDimensional 𝕜 V]
 
-private local instance : CompleteSpace V := FiniteDimensional.complete 𝕜 V
+private local instance : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
 
 include hinj in
 /-- The complementary fibre has ambient dimension minus the rank of the source bundle. -/

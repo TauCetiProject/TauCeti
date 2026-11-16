@@ -72,7 +72,7 @@ variable [IsTopologicalAddGroup F] [ContinuousSMul 𝕜 F] [T2Space F] [FiniteDi
 complete scalar field is Fredholm, provided the target is Hausdorff. -/
 lemma isFredholm_of_finiteDimensional (T : E →L[𝕜] F) : IsFredholm T where
   isStrictMap := T.isStrictMap_of_finiteDimensional
-  isClosed_range := (LinearMap.range (T : E →ₗ[𝕜] F)).closed_of_finiteDimensional
+  isClosed_range := (LinearMap.range (T : E →ₗ[𝕜] F)).isClosed_of_finiteDimensional
   finite_ker := inferInstance
   finite_coker := inferInstance
   closedComplemented_ker :=

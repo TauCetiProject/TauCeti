@@ -138,7 +138,8 @@ theorem mem_satakeParameters_iff (f : Newform N k) (p : ℕ) (z : ℂ) :
   constructor
   · rintro ⟨-, h⟩
     linear_combination h
-  · refine fun h ↦ ⟨fun h0 ↦ by simpa using congrArg (coeff · 2) h0, by linear_combination h⟩
+  · refine fun h ↦ ⟨fun h0 ↦ by simpa using congrArg (AddMonoidAlgebra.coeff · 2) h0,
+      by linear_combination h⟩
 
 /-- The Satake parameters at `p` sum to the Fourier coefficient `a_p`. -/
 @[simp]

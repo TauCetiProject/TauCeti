@@ -17,11 +17,9 @@ This file shows that subtype restriction `MeasureTheory.Lp.restrictComapCLM` (fo
 `MeasureTheory.Lp.extendByZeroComapₗᵢ` (for `f₀ ∈ Lᵖ(H, μ.comap (↑))`) intertwine ambient and
 subgroup `Lᵖ` translations by elements `u : H`:
 
-* **Left translation (`LeftTranslation`):** Stated for any measurable `SubgroupClass` `H` carrying
-  `[(μ.comap ((↑) : H → G)).IsMulLeftInvariant]` — synthesized automatically for
-  `H : OpenSubgroup G` by `OpenSubgroup.instIsMulLeftInvariantComap`, and obtained for an arbitrary
-  measurable subgroup from `Measure.IsMulLeftInvariant.comap μ (f := SubgroupClass.subtype H)
-  (MeasurableEmbedding.subtype_coe hH)`.
+* **Left translation (`LeftTranslation`):** Stated for any measurable `SubgroupClass` `H`; the
+  left invariance of `μ.comap ((↑) : H → G)` is the instance
+  `Measure.isMulLeftInvariant_comap_subtype`.
 * **Right translation (`RightTranslation`):** Stated for `H : OpenSubgroup G` on a locally compact
   group with a regular Haar measure `μ`, using `OpenSubgroup.modularCharacter_eq` to match the
   modular-character weights on `H` and on `G`.
@@ -53,15 +51,12 @@ section LeftTranslation
 
 variable {G S E 𝕜 : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] {μ : Measure G}
   [μ.IsMulLeftInvariant] [SetLike S G] [SubgroupClass S G] {H : S}
-  [(μ.comap ((↑) : H → G)).IsMulLeftInvariant]
   [NormedAddCommGroup E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
   [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
 
 /-- Restricting any `f ∈ Lᵖ(G, μ)` to a measurable subgroup `H` commutes with left translation by
-elements `u : H`. For `H : OpenSubgroup G` the `IsMulLeftInvariant` instance on `μ.comap (↑)` is
-synthesized automatically; for a general measurable subgroup it is given by
-`Measure.IsMulLeftInvariant.comap μ (f := SubgroupClass.subtype H)
-(MeasurableEmbedding.subtype_coe hH)`. -/
+elements `u : H`. The `IsMulLeftInvariant` instance on `μ.comap (↑)` is
+`Measure.isMulLeftInvariant_comap_subtype`. -/
 theorem restrictComapCLM_leftTranslation (hH : MeasurableSet (H : Set G)) (u : H)
     (f : Lp E p μ) :
     restrictComapCLM 𝕜 μ p hH (leftTranslation μ p 𝕜 (u : G) f) =

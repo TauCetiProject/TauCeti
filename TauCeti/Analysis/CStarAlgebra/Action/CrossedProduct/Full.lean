@@ -325,6 +325,13 @@ theorem continuous_of : Continuous (of α μ) :=
 theorem denseRange_of : DenseRange (of α μ) :=
   Completion.denseRange_coe.comp toFull.surjective.denseRange (Completion.continuous_coe _)
 
+/-- Compactly supported continuous functions `C_c(G, A)` map densely into
+`FullCrossedProduct α μ`. -/
+theorem denseRange_of_comp_toConv :
+    DenseRange ((of α μ) ∘ ConvolutionAlgebra.toConv) := by
+  rw [DenseRange, (Function.RightInverse.surjective ConvolutionAlgebra.toConv_ofConv).range_comp]
+  exact denseRange_of
+
 /-- To prove a closed property of every element of the full crossed product, it suffices to
 prove it on the twisted convolution algebra. -/
 @[elab_as_elim]
@@ -426,6 +433,12 @@ def integratedFull : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H) 
 theorem integratedFull_of (f : ConvolutionAlgebra α μ) :
     P.integratedFull μ (of α μ f) = P.integratedStarAlgHom μ f :=
   lift_of _ _ f
+
+/-- The vector formula for the extended integrated form on the twisted convolution algebra:
+`(π ⋊ U)(f) ξ = ∫ π(f(s)) U_s ξ dμ(s)`. -/
+theorem integratedFull_of_apply (f : ConvolutionAlgebra α μ) (ξ : H) :
+    P.integratedFull μ (of α μ f) ξ = ∫ s, P.coefficient (f.ofConv s) (P.group s ξ) ∂μ := by
+  rw [integratedFull_of, integratedStarAlgHom_apply, integratedOperator_apply]
 
 @[simp]
 theorem integratedFull_comp_of :

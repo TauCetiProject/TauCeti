@@ -35,9 +35,9 @@ multiple of `∑ᵢ σᵢ(A) wᵢ ⊗ vᵢ`.
 
 Consequences follow. If `‖B x‖ ≤ c ‖A x‖` for every `x`, then `σᵢ(B) ≤ c σᵢ(A)`, so Fan
 dominance gives the **pointwise comparison** `N B ≤ c N A`. Taking `B = C A` gives the **ideal
-inequalities** `N (C A) ≤ ‖C‖ N A` and, through adjoints, `N (A C) ≤ ‖C‖ N A`; in particular
-orthogonal projections do not increase `N`. Applied to the inverse of a map `C` bounded below by
-`c > 0`, they give the reverse inequalities `c N A ≤ N (C A)` and `c N A ≤ N (A C)`. For a
+inequalities** `N (C A) ≤ ‖C‖ N A` and, through adjoints, `N (A C) ≤ ‖C‖ N A`. Applied to the
+inverse of a map `C` bounded below by `c > 0`, they give the reverse inequalities
+`c N A ≤ N (C A)` and `c N A ≤ N (A C)`. For a
 symmetric right factor `C` and a map `A` vanishing on `Tᗮ`, the right ideal inequalities only
 need the bounds on `C` along `T`, since `(A C)† = C A†` and `A†` takes values in `T`.
 
@@ -222,20 +222,6 @@ theorem mul_map_le_map_comp_right (N : UnitarilyInvariantSeminorm 𝕜 E F) (A :
   have h := N.map_comp_le_right (A ∘ₗ C) G hG
   rw [LinearMap.comp_assoc, hCG, LinearMap.comp_id] at h
   rwa [le_inv_mul_iff₀ hc] at h
-
-/-- Composing with an orthogonal projection on the left does not increase a unitarily invariant
-seminorm. -/
-theorem map_starProjection_comp_le (N : UnitarilyInvariantSeminorm 𝕜 E F) (U : Submodule 𝕜 F)
-    (A : E →L[𝕜] F) : N (U.starProjection ∘L A) ≤ N A := by
-  simpa using N.map_comp_le_left U.starProjection (A : E →ₗ[𝕜] F) (c := 1)
-    fun y ↦ by simpa using U.norm_starProjection_apply_le y
-
-/-- Composing with an orthogonal projection on the right does not increase a unitarily invariant
-seminorm. -/
-theorem map_comp_starProjection_le (N : UnitarilyInvariantSeminorm 𝕜 E F) (U : Submodule 𝕜 E)
-    (A : E →L[𝕜] F) : N (A ∘L U.starProjection) ≤ N A := by
-  simpa using N.map_comp_le_right (A : E →ₗ[𝕜] F) U.starProjection (c := 1)
-    fun x ↦ by simpa using U.norm_starProjection_apply_le x
 
 /-! ### Ideal inequalities for a symmetric right factor bounded on a subspace -/
 

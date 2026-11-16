@@ -79,14 +79,14 @@ private theorem θ_mul (a : k) {s : G} (hs : s ∈ S) (y : G) :
 
 /-- `s ↦ [augElt a s]` as a homomorphism out of the abelianization of `S`. -/
 private def ψ (a : k) :
-    Abelianization S →* Multiplicative (H0 (res S.subtype (augmentationIdeal k G))) :=
-  Abelianization.lift
+    Group.Abelianization S →* Multiplicative (H0 (res S.subtype (augmentationIdeal k G))) :=
+  Group.Abelianization.lift
     { toFun s := Multiplicative.ofAdd (θ S a s)
       map_one' := by simp [θ]
       map_mul' s t := by
         simp only [Subgroup.coe_mul, θ_mul a s.2, ofAdd_add] }
 
-private theorem ψ_of (a : k) (s : S) : ψ S a (Abelianization.of s) = .ofAdd (θ S a s) := by
+private theorem ψ_of (a : k) (s : S) : ψ S a (Group.Abelianization.of s) = .ofAdd (θ S a s) := by
   simp [ψ]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
@@ -96,7 +96,7 @@ private theorem H0π_relTransfer_augElt [S.FiniteIndex] (a : k) (h : G) :
     H0π (res S.subtype (augmentationIdeal k G))
         (Representation.relTransfer (augmentationIdeal k G).ρ S
           (TauCeti.AugmentationIdeal.singleSub k G a h)) =
-      (ψ S a ((Abelianization.of : S →* Abelianization S).transfer h)).toAdd := by
+      (ψ S a ((Group.Abelianization.of : S →* Group.Abelianization S).transfer h)).toAdd := by
   rw [MonoidHom.transfer_eq_prod_of_bijective _ (fun q : G ⧸ S ↦ q.out) (by simp) h (h • ·)
     (QuotientGroup.mk_out_smul h), map_prod, toAdd_prod, Representation.relTransfer_apply,
     map_sum]
@@ -112,22 +112,24 @@ private theorem H0π_relTransfer_augElt [S.FiniteIndex] (a : k) (h : G) :
 
 private theorem δ_res_mkH1OfIsTrivial_ofAbelianization
     (hAug : (ShortComplex.mk (augmentationι k G) (augmentation k G)
-      (augmentationι_comp_augmentation k G)).ShortExact) (x : Abelianization S) (a : k) :
+      (augmentationι_comp_augmentation k G)).ShortExact) (x : Group.Abelianization S) (a : k) :
     δ ((shortExact_res S.subtype).2 hAug) 1 0 rfl
         (mkH1OfIsTrivial (res S.subtype (trivial k G k)) (Additive.ofMul x) a) =
       (ψ S a x⁻¹).toAdd := by
-  obtain ⟨s, rfl⟩ : ∃ s : S, Abelianization.of s = x := QuotientGroup.mk'_surjective _ x
+  obtain ⟨s, rfl⟩ : ∃ s : S, Group.Abelianization.of s = x := QuotientGroup.mk'_surjective _ x
   rw [← map_inv, ψ_of, toAdd_ofAdd]
   exact δ_res_mkH1OfIsTrivial S hAug s a
 
 /-- `transfer_mkH1OfIsTrivial` for the coefficients `k` themselves. -/
-private theorem transfer_mkH1OfIsTrivial_trivial [S.FiniteIndex] (x : Additive (Abelianization G))
+private theorem transfer_mkH1OfIsTrivial_trivial [S.FiniteIndex] (x : Additive (Group.Abelianization
+    G))
     (a : k) :
     transfer (trivial k G k) S 1 (mkH1OfIsTrivial (trivial k G k) x a) =
       mkH1OfIsTrivial (res S.subtype (trivial k G k))
-        ((Abelianization.lift (Abelianization.of : S →* Abelianization S).transfer).toAdditive x)
+        ((Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization
+            S).transfer).toAdditive x)
         a := by
-  obtain ⟨g, rfl⟩ : ∃ g : G, Additive.ofMul (Abelianization.of g) = x :=
+  obtain ⟨g, rfl⟩ : ∃ g : G, Additive.ofMul (Group.Abelianization.of g) = x :=
     QuotientGroup.mk'_surjective _ x.toMul
   -- The connecting map of the augmentation sequence restricted to `S` is injective on `H₁(S, k)`,
   -- and it carries both sides to the same class of `H₀(S, I_G)`: the left side through the
@@ -139,7 +141,7 @@ private theorem transfer_mkH1OfIsTrivial_trivial [S.FiniteIndex] (x : Additive (
   have : Mono (δ hXS 1 0 rfl) :=
     mono_δ_of_isZero hXS 0 (isZero_res_leftRegular_succ (k := k) S 0)
   apply (ModuleCat.mono_iff_injective _).1 this
-  rw [MonoidHom.toAdditive_apply_apply, toMul_ofMul, Abelianization.lift_apply_of,
+  rw [MonoidHom.toAdditive_apply_apply, toMul_ofMul, Group.Abelianization.lift_apply_of,
     δ_res_mkH1OfIsTrivial_ofAbelianization S hAug, ← map_inv,
     ← H0π_relTransfer_augElt,
     ← transfer_zero_H0π,
@@ -150,13 +152,14 @@ private theorem transfer_mkH1OfIsTrivial_trivial [S.FiniteIndex] (x : Additive (
 group `G`, a finite-index subgroup `S`, and trivial coefficients `A`, the transfer
 `H₁(G, A) ⟶ H₁(S, A)` sends the class
 of `x ⊗ a` to the class of `V x ⊗ a`, where `V : Gᵃᵇ → Sᵃᵇ` is the group-theoretic transfer
-`MonoidHom.transfer` of `Abelianization.of : S →* Sᵃᵇ`, descended to `Gᵃᵇ`. -/
+`MonoidHom.transfer` of `Group.Abelianization.of : S →* Sᵃᵇ`, descended to `Gᵃᵇ`. -/
 @[simp]
 theorem transfer_mkH1OfIsTrivial [S.FiniteIndex] (A : Rep k G) [A.IsTrivial]
-    (x : Additive (Abelianization G)) (a : A) :
+    (x : Additive (Group.Abelianization G)) (a : A) :
     transfer A S 1 (mkH1OfIsTrivial A x a) =
       mkH1OfIsTrivial (res S.subtype A)
-        ((Abelianization.lift (Abelianization.of : S →* Abelianization S).transfer).toAdditive x)
+        ((Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization
+            S).transfer).toAdditive x)
         a := by
   -- `a` is the image of `1` under the morphism `k ⟶ A`, `1 ↦ a`, and the transfer is natural in
   -- the coefficients.
@@ -165,9 +168,9 @@ theorem transfer_mkH1OfIsTrivial [S.FiniteIndex] (A : Rep k G) [A.IsTrivial]
       simp [Representation.isTrivial_apply]
   have hφ : φ.hom 1 = a := by simp [φ]
   have h := map_mkH1OfIsTrivial (B := A) (MonoidHom.id G) φ x 1
-  rw [Abelianization.map_id, MonoidHom.toAdditive_id, AddMonoidHom.id_apply, hφ] at h
+  rw [Group.Abelianization.map_id, MonoidHom.toAdditive_id, AddMonoidHom.id_apply, hφ] at h
   rw [← h, map_comp_transfer_apply, transfer_mkH1OfIsTrivial_trivial, map_mkH1OfIsTrivial,
-    Abelianization.map_id, MonoidHom.toAdditive_id, AddMonoidHom.id_apply]
+    Group.Abelianization.map_id, MonoidHom.toAdditive_id, AddMonoidHom.id_apply]
   rw [Rep.resMap_hom_apply, hφ]
 
 /-- **The transfer on `H₁` with trivial coefficients is the Verlagerung**, read through the
@@ -177,16 +180,17 @@ identifications `H₁(G, A) ≃ Gᵃᵇ ⊗ A` and `H₁(S, A) ≃ Sᵃᵇ ⊗ A
 theorem H1AddEquivOfIsTrivial_transfer [S.FiniteIndex] (A : Rep k G) [A.IsTrivial] (x : H1 A) :
     H1AddEquivOfIsTrivial (res S.subtype A) (transfer A S 1 x) =
       LinearMap.rTensor A (AddMonoidHom.toIntLinearMap
-        (Abelianization.lift (Abelianization.of : S →* Abelianization S).transfer).toAdditive)
+        (Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization
+            S).transfer).toAdditive)
         (H1AddEquivOfIsTrivial A x) := by
   obtain ⟨t, rfl⟩ := (H1AddEquivOfIsTrivial A).symm.surjective x
   rw [AddEquiv.apply_symm_apply]
   induction t using TensorProduct.inductionOn with
   | tmul y a =>
-    obtain ⟨g, rfl⟩ : ∃ g : G, Additive.ofMul (Abelianization.of g) = y :=
+    obtain ⟨g, rfl⟩ : ∃ g : G, Additive.ofMul (Group.Abelianization.of g) = y :=
       QuotientGroup.mk'_surjective _ y.toMul
-    obtain ⟨s, hs⟩ : ∃ s : S, Abelianization.of s =
-        (Abelianization.of : S →* Abelianization S).transfer g :=
+    obtain ⟨s, hs⟩ : ∃ s : S, Group.Abelianization.of s =
+        (Group.Abelianization.of : S →* Group.Abelianization S).transfer g :=
       QuotientGroup.mk'_surjective _ _
     rw [H1AddEquivOfIsTrivial_symm_tmul, ← mkH1OfIsTrivial_apply, transfer_mkH1OfIsTrivial]
     simpa [← hs] using H1AddEquivOfIsTrivial_single (res S.subtype A) s a

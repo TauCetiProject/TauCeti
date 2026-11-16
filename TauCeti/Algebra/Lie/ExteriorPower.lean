@@ -50,7 +50,7 @@ variable {K V : Type*} [CommRing K] [AddCommGroup V] [Module K V]
 
 /-- The multilinear map `v ↦ ∑ i, ιMulti K d (update v i (f (v i)))`. -/
 private noncomputable def actionMultilinear (d : ℕ) (f : Module.End K V) :
-    MultilinearMap K (fun _ : Fin d => V) (⋀[K]^d V) :=
+    MultilinearMap (RingHom.id K) (fun _ : Fin d => V) (⋀[K]^d V) :=
   ∑ i : Fin d, (ιMulti K d).toMultilinearMap.compLinearMap
     (Function.update (fun _ => LinearMap.id) i f)
 

@@ -34,6 +34,8 @@ This is the smooth-dependence input for smoothness of the exponential map on its
   smooth on its domain.
 * `TauCeti.Manifold.contMDiffOn_maximalGeodesic`: maximal geodesics depend smoothly on their
   initial data and on time.
+* `TauCeti.Manifold.continuousAt_maximalGeodesic_comp`: maximal geodesics depend continuously on
+  a parameter on which the initial state and the time depend continuously.
 * `TauCeti.Manifold.contMDiffAt_maximalGeodesic_comp`: a curve of initial states gives a
   jointly Cⁿ geodesic variation at each point of the central maximal interval.
 * `TangentBundle.exists_contMDiffOn_maximalGeodesic_of_isCompact`: nearby initial states
@@ -126,6 +128,18 @@ theorem contMDiffOn_maximalGeodesic :
       {q | q.2 ∈ geodesicInterval I M q.1.proj q.1.2} :=
   ((Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x) (n := ∞)).comp_contMDiffOn
     contMDiffOn_maximalIntegralCurve_geodesicSpray).congr fun _ _ ↦ maximalGeodesic_def _ _ _
+
+/-- **Continuous dependence of maximal geodesics on a parameter.**  Let an initial state `Z` and a
+time `τ` depend on a parameter, continuously at `q`, with `τ q` in the maximal geodesic interval of
+`Z q`. Then the point reached at time `τ` by the maximal geodesic with initial state `Z` is
+continuous at `q`. -/
+theorem continuousAt_maximalGeodesic_comp {P : Type*} [TopologicalSpace P]
+    {Z : P → TangentBundle I M} {τ : P → ℝ} {q : P} (hZ : ContinuousAt Z q)
+    (hτ : ContinuousAt τ q) (h : τ q ∈ geodesicInterval I M (Z q).proj (Z q).2) :
+    ContinuousAt (fun q' ↦ maximalGeodesic I M (Z q').proj (Z q').2 (τ q')) q :=
+  (contMDiffOn_maximalGeodesic.continuousOn.continuousAt
+    (isOpen_setOfPred_mem_geodesicInterval.mem_nhds h)).comp
+      (f := fun q' ↦ (Z q', τ q')) (hZ.prodMk hτ)
 
 /-- A Cⁿ curve of initial states gives a jointly Cⁿ geodesic variation at each point
 of the central maximal geodesic interval, for every finite order `n`. -/

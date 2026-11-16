@@ -497,7 +497,7 @@ theorem not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite
   classical
   -- `SimpleGraph.IsBipartite` is an abbreviation for `SimpleGraph.Colorable 2`.
   have hwalk : ¬ ∀ u, ∀ w : G.Walk u u, Even w.length := fun h =>
-    hG (SimpleGraph.two_colorable_iff_forall_loop_even.mpr h)
+    hG (SimpleGraph.isBipartite_iff_forall_walk_even_length.mpr h)
   push Not at hwalk
   obtain ⟨v, p, hp⟩ := hwalk
   have hpodd : Odd p.length := Nat.not_even_iff_odd.mp hp
