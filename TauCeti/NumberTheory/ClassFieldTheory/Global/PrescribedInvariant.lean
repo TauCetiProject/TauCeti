@@ -29,8 +29,8 @@ finite Galois layer `L/F` of the idele formation of `K` has a refinement `L'/F` 
 `H²(Gal(L'/F), I_{L'})` whose local invariants sum to `1 / [L : F]`
 (`exists_refinement_ideleSumLocalInv_eq`).
 
-The class is first built over `G_K` (`exists_sumLocalInv_ideleLocalization_eq`). Fix a finite place
-`v` of `K` whose residue field has `q` elements, and `n ≥ 1`. The class of `q` in
+The class is first built over `G_K` (`AddCircle.exists_sumLocalInv_ideleLocalization_eq`). Fix a
+finite place `v` of `K` whose residue field has `q` elements, and `n ≥ 1`. The class of `q` in
 `(ℤ / (q ^ n - 1))ˣ` has order `n`, so some character `ψ` of this group sends it to `1 / n`. Let `χ`
 be `ψ` of the action of `G_K` on a primitive `(q ^ n - 1)`-th root of unity `ζ`: a character of
 the cyclotomic extension `K(ζ)/K`. Let `a` be the idele with a uniformizer `π` of `K_v` at `v` and
@@ -87,8 +87,8 @@ invariant `1 / [U : V]` (`exists_ideleSumLocalInv_eq_one_div_degree_of_prime`).
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.exists_sumLocalInv_ideleLocalization_eq`: for every `n ≥ 1` there is
-  a class of `H²(G_K, I_{Kˢ})` whose local invariants sum to `1 / n`.
+* `AddCircle.exists_sumLocalInv_ideleLocalization_eq`: every element of `ℚ/ℤ` is the
+  sum of the local invariants of a class of `H²(G_K, I_{Kˢ})`.
 * `TauCeti.ClassFieldTheory.ideleLocalization_surjective`: every family of local Brauer classes is
   the family of localizations of a class of `H²(G_K, I_{Kˢ})`.
 * `TauCeti.ClassFieldTheory.exists_refinement_ideleLayerCorInfl_eq_index_nsmul`: `[G_K : U]`
@@ -355,13 +355,27 @@ private theorem exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux {E : 
   refine ⟨x, (ideleLocalization_characterCarryCocycle_placeIdele hE w π χ hχ).trans ?_⟩
   rw [sumLocalInvSection_apply, ideleLocalization_fst_apply, ← hx, AddEquiv.symm_apply_apply]
 
-/-- **A class of `H²(G_K, I_{Kˢ})` with sum of local invariants `1 / n`.** -/
-theorem exists_sumLocalInv_ideleLocalization_eq {n : ℕ} (hn : n ≠ 0) :
+/-- **A class of `H²(G_K, I_{Kˢ})` with any prescribed localization at one finite place** and
+trivial localizations at the other places. -/
+private theorem exists_ideleLocalization_eq_sumLocalInvSection
+    [DecidableEq (HeightOneSpectrum (𝓞 K))] (v : HeightOneSpectrum (𝓞 K))
+    (r : AddCircle (1 : ℚ)) :
     ∃ x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K),
-      sumLocalInv K (ideleLocalization K x) = ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
+      ideleLocalization K x = sumLocalInvSection K v r := by
+  -- `r` is an integer multiple of `1 / n` for some `n ≥ 1`.
+  obtain ⟨n, hn, hr⟩ := AddCircle.exists_mem_torsionBy_rat r
+  obtain ⟨k, rfl⟩ := AddCircle.exists_zsmul_eq_of_mem_torsionBy (1 : ℚ)
+    (by exact_mod_cast hn.ne' : (n : ℚ) ≠ 0) hr
+  obtain ⟨x, hx⟩ := exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux (E := ⊥) rfl v
+    hn.ne'
+  exact ⟨k • x, by rw [map_zsmul, hx, map_zsmul]⟩
+
+/-- **A class of `H²(G_K, I_{Kˢ})` with any prescribed sum of local invariants.** -/
+theorem _root_.AddCircle.exists_sumLocalInv_ideleLocalization_eq (r : AddCircle (1 : ℚ)) :
+    ∃ x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K), sumLocalInv K (ideleLocalization K x) = r := by
   classical
-  obtain ⟨x, hx⟩ := exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux (E := ⊥) rfl
-    (Classical.arbitrary (HeightOneSpectrum (𝓞 K))) hn
+  obtain ⟨x, hx⟩ := exists_ideleLocalization_eq_sumLocalInvSection
+    (Classical.arbitrary (HeightOneSpectrum (𝓞 K))) r
   exact ⟨x, by rw [hx, sumLocalInv_sumLocalInvSection]⟩
 
 variable (K) in
@@ -392,8 +406,8 @@ theorem exists_refinement_ideleSumLocalInv_eq (L : NormalLayer (AbsoluteGaloisGr
       (y : L'.H (ideleFormation K) 2),
       ideleSumLocalInv K L' y = ((1 / L.degree : ℚ) : AddCircle (1 : ℚ)) := by
   have hd : L.ground.toSubgroup.index ≠ 0 := Subgroup.FiniteIndex.index_ne_zero
-  obtain ⟨x, hx⟩ := exists_sumLocalInv_ideleLocalization_eq (K := K)
-    (mul_ne_zero L.degree_pos.ne' hd)
+  obtain ⟨x, hx⟩ := AddCircle.exists_sumLocalInv_ideleLocalization_eq (K := K)
+    ((1 / (L.degree * L.ground.toSubgroup.index : ℕ) : ℚ) : AddCircle (1 : ℚ))
   obtain ⟨L', T, y, hy⟩ := exists_refinement_ideleLayerCorInfl_eq_index_nsmul K L x
   refine ⟨L', T, y, ?_⟩
   rw [ideleSumLocalInv_apply, hy, map_nsmul, map_nsmul, hx, ← AddCircle.coe_nsmul]
@@ -1039,21 +1053,6 @@ place `w`, take the carry class of the idele concentrated at `w` with component 
 character `ψ` of the action of `G_K` on a primitive fourth root of unity `ζ` with `ψ (-1) = 1 / 2`.
 The Artin symbol of `-1 ∈ K_w = ℝ` is complex conjugation, which inverts `ζ`, so this class has
 invariant `ψ (-1) = 1 / 2` at `w` and vanishes at every other place. -/
-
-/-- **A class of `H²(G_K, I_{Kˢ})` with any prescribed localization at one finite place** and
-trivial localizations at the other places. -/
-private theorem exists_ideleLocalization_eq_sumLocalInvSection
-    [DecidableEq (HeightOneSpectrum (𝓞 K))] (v : HeightOneSpectrum (𝓞 K))
-    (r : AddCircle (1 : ℚ)) :
-    ∃ x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K),
-      ideleLocalization K x = sumLocalInvSection K v r := by
-  -- `r` is an integer multiple of `1 / n` for some `n ≥ 1`.
-  obtain ⟨n, hn, hr⟩ := AddCircle.exists_mem_torsionBy_rat r
-  obtain ⟨k, rfl⟩ := AddCircle.exists_zsmul_eq_of_mem_torsionBy (1 : ℚ)
-    (by exact_mod_cast hn.ne' : (n : ℚ) ≠ 0) hr
-  obtain ⟨x, hx⟩ := exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux (E := ⊥) rfl v
-    hn.ne'
-  exact ⟨k • x, by rw [map_zsmul, hx, map_zsmul]⟩
 
 omit [NumberField K] in
 /-- **At a real place, the Artin symbol of `-1` inverts the fourth roots of unity**: if `σ`
