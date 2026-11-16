@@ -31,11 +31,10 @@ the Koszul complex of `1 + t`. Since `R` has no zero divisors and `1 + t ≠ 0`,
 multiples of `p₁`, and the boundaries are the multiples of `(1 + t) p₁`, so the homology is
 `R ⧸ (1 + t)`. This quotient is `𝔽₂`: in characteristic two `1 + t = t - 1`, and as `t`
 generates the group of periodic domains, `t - 1` generates the kernel of the augmentation
-`R → 𝔽₂`. So the twisted homology has rank one over `𝔽₂`, as `HF̂(S¹ × S²)` with twisted
-coefficients does, while the untwisted complex has rank two. The results below give the cycles,
-the boundaries and the quotient; the homology module itself is not packaged as a single
-statement. The augmentation
-of the twisted differential is the untwisted one at the level of chains
+`R → 𝔽₂`. So, informally, the twisted homology has rank one over `𝔽₂`, as `HF̂(S¹ × S²)` with
+twisted coefficients does, while the untwisted complex has rank two. The results below give the
+cycles, the boundaries and the quotient; the homology module itself is not packaged as a single
+statement. The augmentation of the twisted differential is the untwisted one at the level of chains
 (`TauCeti.HeegaardRegionSystem.mapRange_augmentation_twistedHatDifferential`); the difference of
 the two homologies is the failure of the non-flat augmentation to commute with homology.
 
@@ -49,14 +48,14 @@ the two homologies is the failure of the non-flat augmentation to commute with h
 
 * `TauCeti.HeegaardRegionSystem.closure_circleTimesSpherePeriodicDomain`: the monomial `t`
   generates the group of periodic domains.
-* `TauCeti.HeegaardRegionSystem.twistedHatCoefficient_circleTimesSphere_zero_one`: the twisted
-  coefficient from `p₀` to `p₁` is `1 + t`.
-* `TauCeti.HeegaardRegionSystem.twistedHatDifferential_circleTimesSphere`: the twisted hat
+* `TauCeti.HeegaardRegionSystem.twistedHatCoefficient_circleTimesSphere_zero_zero_one`: the
+  twisted coefficient from `p₀` to `p₁` is `1 + t`.
+* `TauCeti.HeegaardRegionSystem.twistedHatDifferential_circleTimesSphere_zero`: the twisted hat
   differential sends a chain `c` to `c(p₀) (1 + t) p₁`.
-* `TauCeti.HeegaardRegionSystem.twistedHatDifferential_circleTimesSphere_eq_zero_iff`: its cycles
-  are the chains vanishing at `p₀`.
-* `TauCeti.HeegaardRegionSystem.circleTimesSphereQuotientEquiv`: `R ⧸ (1 + t) ≃ 𝔽₂`, the twisted
-  homology at `p₁`.
+* `TauCeti.HeegaardRegionSystem.twistedHatDifferential_circleTimesSphere_zero_eq_zero_iff`: its
+  cycles are the chains vanishing at `p₀`.
+* `TauCeti.HeegaardRegionSystem.circleTimesSphereQuotientEquiv`: `R ⧸ (1 + t) ≃ 𝔽₂` (informally,
+  the twisted homology at `p₁`).
 
 ## References
 
@@ -107,20 +106,13 @@ theorem closure_circleTimesSpherePeriodicDomain :
   rw [hk, ofAdd_zsmul]
   exact Subgroup.zpow_mem _ (Subgroup.subset_closure rfl) k
 
-/-- The generators of the genus-one diagram of `S¹ × S²` are `p₀` and `p₁`. -/
-private theorem bijective_circleTimesSphereGenerator :
-    Function.Bijective (circleTimesSphereGenerator 0) :=
-  ⟨fun a b h => by
-    simpa using congrFun (congrArg (circleTimesSphere 0).point h) 0,
-    fun x => ⟨_, circleTimesSphereGenerator_snd_zero 0 x⟩⟩
-
 /-- The reference domains of the genus-one diagram of `S¹ × S²` with its basepoint in the annulus:
 the reference generator is `p₀`, with reference domain `0` at `p₀` and the bigon `B₂` at `p₁`. -/
 def circleTimesSphereReferenceDomains : (circleTimesSphere 0).ReferenceDomains where
   base _ := circleTimesSphereGenerator 0 0
   domain x := ![0, Pi.single 2 1] ((circleTimesSphere 0).point x 0)
   isDomainBetween_domain x := by
-    obtain ⟨a, rfl⟩ := bijective_circleTimesSphereGenerator.2 x
+    obtain ⟨a, rfl⟩ := (circleTimesSphereGenerator_bijective 0).2 x
     fin_cases a
     · simp
     · simpa using isDomainBetween_circleTimesSphere_single_two 0
@@ -129,6 +121,13 @@ def circleTimesSphereReferenceDomains : (circleTimesSphere 0).ReferenceDomains w
     fin_cases a <;> simp
   base_eq_base _ _ := rfl
 
+/-- The reference generator of every generator is `p₀`. -/
+@[simp]
+theorem circleTimesSphereReferenceDomains_base (x : (circleTimesSphere 0).Generator) :
+    circleTimesSphereReferenceDomains.base x = circleTimesSphereGenerator 0 0 :=
+  (rfl)
+
+/-- The reference domain is `0` at `p₀` and the bigon `B₂` at `p₁`. -/
 @[simp]
 theorem circleTimesSphereReferenceDomains_domain (a : Fin 2) :
     circleTimesSphereReferenceDomains.domain (circleTimesSphereGenerator 0 a) =
@@ -138,7 +137,7 @@ theorem circleTimesSphereReferenceDomains_domain (a : Fin 2) :
 
 /-- The twisted coefficient from `p₀` to `p₁` of the genus-one diagram of `S¹ × S²` is `1 + t`:
 the bigon `B₂` has label `0` and the bigon `B₁` has label `B₁ - B₂`. -/
-theorem twistedHatCoefficient_circleTimesSphere_zero_one :
+theorem twistedHatCoefficient_circleTimesSphere_zero_zero_one :
     (circleTimesSphere 0).twistedHatCoefficient circleTimesSphereReferenceDomains ![0, 1, 1]
       (circleTimesSphereGenerator 0 0) (circleTimesSphereGenerator 0 1) =
       1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) 1 := by
@@ -169,7 +168,7 @@ theorem twistedHatCoefficient_circleTimesSphere_zero_one :
 
 /-- The twisted coefficients of the genus-one diagram of `S¹ × S²`: `1 + t` from `p₀` to `p₁`,
 and `0` otherwise. -/
-theorem twistedHatCoefficient_circleTimesSphere (a b : Fin 2) :
+theorem twistedHatCoefficient_circleTimesSphere_zero (a b : Fin 2) :
     (circleTimesSphere 0).twistedHatCoefficient circleTimesSphereReferenceDomains ![0, 1, 1]
       (circleTimesSphereGenerator 0 a) (circleTimesSphereGenerator 0 b) =
       if a = 0 ∧ b = 1 then 1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) 1
@@ -178,7 +177,7 @@ theorem twistedHatCoefficient_circleTimesSphere (a b : Fin 2) :
     ite_true, one_ne_zero, zero_ne_one, and_false, ite_false]
   · exact twistedHatCoefficient_eq_zero_of_hatDomains_eq_empty
       (weaklyAdmissible_circleTimesSphere_zero.hatDomains_self _ _)
-  · exact twistedHatCoefficient_circleTimesSphere_zero_one
+  · exact twistedHatCoefficient_circleTimesSphere_zero_zero_one
   · exact twistedHatCoefficient_eq_zero_of_hatDomains_eq_empty
       hatDomains_circleTimesSphere_zero_one_zero
   · exact twistedHatCoefficient_eq_zero_of_hatDomains_eq_empty
@@ -186,7 +185,7 @@ theorem twistedHatCoefficient_circleTimesSphere (a b : Fin 2) :
 
 /-- The twisted hat differential of the genus-one diagram of `S¹ × S²` sends a chain `c` to
 `c(p₀) (1 + t) p₁`. -/
-theorem twistedHatDifferential_circleTimesSphere
+theorem twistedHatDifferential_circleTimesSphere_zero
     (c : (circleTimesSphere 0).Generator →₀
       MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)) :
     (circleTimesSphere 0).twistedHatDifferential circleTimesSphereReferenceDomains ![0, 1, 1] c =
@@ -196,15 +195,15 @@ theorem twistedHatDifferential_circleTimesSphere
   refine Finsupp.ext fun y => ?_
   rw [← circleTimesSphereGenerator_snd_zero 0 y, twistedHatDifferential_apply,
     Finsupp.sum_fintype _ _ (by simp),
-    ← Fintype.sum_bijective _ bijective_circleTimesSphereGenerator _ _ fun _ => rfl,
+    ← Fintype.sum_bijective _ (circleTimesSphereGenerator_bijective 0) _ _ fun _ => rfl,
     Fin.sum_univ_two]
   generalize (y.2 0 : Fin 2) = b
-  fin_cases b <;> simp [twistedHatCoefficient_circleTimesSphere,
-    (bijective_circleTimesSphereGenerator).1.eq_iff]
+  fin_cases b <;> simp [twistedHatCoefficient_circleTimesSphere_zero,
+    (circleTimesSphereGenerator_bijective 0).1.eq_iff]
 
 /-- The cycles of the twisted hat complex of the genus-one diagram of `S¹ × S²` are the chains
 vanishing at `p₀`: the coefficient `1 + t` is not a zero divisor. -/
-theorem twistedHatDifferential_circleTimesSphere_eq_zero_iff
+theorem twistedHatDifferential_circleTimesSphere_zero_eq_zero_iff
     (c : (circleTimesSphere 0).Generator →₀
       MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)) :
     (circleTimesSphere 0).twistedHatDifferential circleTimesSphereReferenceDomains ![0, 1, 1] c =
@@ -217,7 +216,7 @@ theorem twistedHatDifferential_circleTimesSphere_eq_zero_iff
     intro h
     have := congrArg (fun f => f.coeff 1) h
     simp [one_def, coeff_single, circleTimesSpherePeriodicDomain_ne_zero] at this
-  rw [twistedHatDifferential_circleTimesSphere, Finsupp.single_eq_zero, mul_eq_zero,
+  rw [twistedHatDifferential_circleTimesSphere_zero, Finsupp.single_eq_zero, mul_eq_zero,
     or_iff_left hne]
 
 /-- In the group ring of the periodic domains of the genus-one diagram of `S¹ × S²`, the ideal
@@ -227,11 +226,12 @@ theorem span_one_add_single_circleTimesSpherePeriodicDomain :
       RingHom.ker (augmentation (ZMod 2)
         (Multiplicative (circleTimesSphere 0).periodicDomains)) := by
   rw [TauCeti.MonoidAlgebra.ker_augmentation_eq_span_of_closure_eq_top (ZMod 2)
-    closure_circleTimesSpherePeriodicDomain, Set.image_singleton, sub_eq_add_neg, add_comm,
-    one_def, ← single_neg, CharTwo.neg_eq]
+    closure_circleTimesSpherePeriodicDomain]
+  simp [sub_eq_add_neg, add_comm, one_def, ← single_neg]
 
-/-- **The twisted homology of `S¹ × S²` has rank one.** The quotient of the group ring by
-`1 + t`, which is the twisted homology at `p₁`, is `𝔽₂`, through the augmentation. -/
+/-- The quotient `R ⧸ (1 + t)` of the group ring of the periodic domains of the genus-one diagram
+of `S¹ × S²` is `𝔽₂`, through the augmentation. Informally, this quotient is the twisted homology
+at `p₁` (see the module docstring), but the homology module itself is not defined here. -/
 noncomputable def circleTimesSphereQuotientEquiv :
     (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains) ⧸
       Ideal.span {1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2)})

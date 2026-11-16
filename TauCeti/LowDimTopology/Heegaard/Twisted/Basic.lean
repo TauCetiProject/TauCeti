@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Basis.SMul
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Units
 public import TauCeti.LowDimTopology.Heegaard.HatDifferential
 
 /-!
@@ -52,6 +54,8 @@ formalized here.
 
 * `TauCeti.HeegaardRegionSystem.ReferenceDomains`: reference generators and reference domains.
 * `TauCeti.HeegaardRegionSystem.ReferenceDomains.label`: the label `D_x + D - D_y` of a domain.
+* `TauCeti.HeegaardRegionSystem.ReferenceDomains.shift`: the periodic domain `a(x) = D'_x - D_x`
+  between two choices of reference domains with the same reference generators.
 * `TauCeti.HeegaardRegionSystem.twistedHatCoefficient`: the twisted coefficient `∑_D t^{A(D)}`.
 * `TauCeti.HeegaardRegionSystem.twistedHatDifferential`: the twisted hat differential.
 * `TauCeti.HeegaardRegionSystem.ReferenceDomains.changeEquiv`: the diagonal isomorphism
@@ -59,6 +63,7 @@ formalized here.
 
 ## Main results
 
+* `TauCeti.HeegaardRegionSystem.ReferenceDomains.instNonempty`: reference domains exist.
 * `TauCeti.HeegaardRegionSystem.ReferenceDomains.label_mem_periodicDomains`: labels are periodic.
 * `TauCeti.HeegaardRegionSystem.ReferenceDomains.label_add`: labels are additive.
 * `TauCeti.HeegaardRegionSystem.augmentation_twistedHatCoefficient` and
@@ -119,6 +124,25 @@ structure ReferenceDomains where
 
 namespace ReferenceDomains
 
+/-- Reference domains exist: being joined by a domain avoiding the basepoints is an equivalence
+relation on generators, so choose a reference generator in each class and a domain avoiding the
+basepoints from it to each generator of the class. -/
+instance instNonempty : Nonempty H.ReferenceDomains := by
+  classical
+  let s : Setoid H.Generator :=
+    { r x y := ∃ D, H.IsDomainBetween x y D ∧ ∀ z, D (H.basepoint z) = 0
+      iseqv :=
+        { refl x := ⟨0, isDomainBetween_zero x, fun _ => rfl⟩
+          symm := fun ⟨D, hD, hz⟩ => ⟨-D, hD.neg, fun z => by simp [hz z]⟩
+          trans := fun ⟨D, hD, hz⟩ ⟨E, hE, hz'⟩ =>
+            ⟨D + E, hD.add hE, fun z => by simp [hz z, hz' z]⟩ } }
+  choose D hD hz using fun x : H.Generator => Quotient.mk_out (s := s) x
+  exact ⟨{ base x := (Quotient.mk s x).out
+           domain := D
+           isDomainBetween_domain := hD
+           domain_basepoint := hz
+           base_eq_base := fun hxy hxyz => congrArg Quotient.out (Quotient.sound ⟨_, hxy, hxyz⟩) }⟩
+
 section Label
 
 variable (r : H.ReferenceDomains)
@@ -171,63 +195,63 @@ theorem label_eq_label_add_sub (x y : H.Generator) (D : Region → ℤ) :
   simp only [label_def]
   abel
 
-/-- The diagonal map `x ↦ t^{a(x)} x` with `a(x) = D'_x - D_x`, between the twisted complexes of
-two choices of reference domains with the same reference generators. It is an isomorphism of
-modules over the group ring, with inverse the diagonal map for the reverse change
-(`changeEquiv_symm_single`), and it intertwines the twisted hat differentials
-(`changeEquiv_twistedHatDifferential`). -/
+/-- The periodic domain `a(x) = D'_x - D_x` by which two choices of reference domains with the
+same reference generators differ at the generator `x`. -/
+def shift (h : r.base = r'.base) (x : H.Generator) : H.periodicDomains :=
+  ⟨r'.domain x - r.domain x, domain_sub_domain_mem_periodicDomains h x⟩
+
+@[simp]
+theorem coe_shift (h : r.base = r'.base) (x : H.Generator) :
+    (shift h x : Region → ℤ) = r'.domain x - r.domain x :=
+  (rfl)
+
+/-- The shift of the reverse change of reference domains is the negative of the shift. This is not
+a simp lemma: by proof irrelevance its left-hand side matches every shift, so it would loop. -/
+theorem shift_symm (h : r.base = r'.base) (x : H.Generator) : shift h.symm x = -shift h x :=
+  Subtype.ext (by simp)
+
+/-- The diagonal map `x ↦ t^{a(x)} x` with `a(x) = D'_x - D_x` (`shift`), between the twisted
+complexes of two choices of reference domains with the same reference generators: the change of
+basis from the standard basis to its rescaling by the units `t^{a(x)}`. It is an isomorphism of
+modules over the group ring, with inverse `x ↦ t^{-a(x)} x` (`changeEquiv_symm_single`), and it
+intertwines the twisted hat differentials (`changeEquiv_twistedHatDifferential`). -/
 noncomputable def changeEquiv (h : r.base = r'.base) :
     (H.Generator →₀ MonoidAlgebra (ZMod 2) (Multiplicative H.periodicDomains)) ≃ₗ[
       MonoidAlgebra (ZMod 2) (Multiplicative H.periodicDomains)]
       H.Generator →₀ MonoidAlgebra (ZMod 2) (Multiplicative H.periodicDomains) :=
-  LinearEquiv.ofLinearMap
-    (Finsupp.linearCombination _ fun x => Finsupp.single x
-      (single (Multiplicative.ofAdd ⟨_, domain_sub_domain_mem_periodicDomains h x⟩) 1))
-    (Finsupp.linearCombination _ fun x => Finsupp.single x
-      (single (Multiplicative.ofAdd ⟨_, domain_sub_domain_mem_periodicDomains h.symm x⟩) 1))
-    (by
-      ext x : 2
-      simp only [LinearMap.coe_comp, Function.comp_apply, Finsupp.lsingle_apply,
-        Finsupp.linearCombination_single, Finsupp.smul_single, smul_eq_mul, one_mul,
-        LinearMap.id_comp]
-      rw [single_mul_single, one_mul, ← ofAdd_add]
-      congr 2
-      ext1
-      simp)
-    (by
-      ext x : 2
-      simp only [LinearMap.coe_comp, Function.comp_apply, Finsupp.lsingle_apply,
-        Finsupp.linearCombination_single, Finsupp.smul_single, smul_eq_mul, one_mul,
-        LinearMap.id_comp]
-      rw [single_mul_single, one_mul, ← ofAdd_add]
-      congr 2
-      ext1
-      simp)
+  Finsupp.basisSingleOne.equiv (Finsupp.basisSingleOne.unitsSMul fun x =>
+    unitsSingle (1, toUnits (Multiplicative.ofAdd (shift h x)))) (Equiv.refl _)
 
 /-- The diagonal map multiplies the generator `x` by `t^{a(x)}`. -/
 @[simp]
-theorem changeEquiv_single (x : H.Generator)
+theorem changeEquiv_single (h : r.base = r'.base) (x : H.Generator)
     (a : MonoidAlgebra (ZMod 2) (Multiplicative H.periodicDomains)) :
-    changeEquiv h (Finsupp.single x a) = Finsupp.single x
-      (single (Multiplicative.ofAdd ⟨_, domain_sub_domain_mem_periodicDomains h x⟩) 1 * a) := by
-  simp [changeEquiv, mul_comm]
+    changeEquiv h (Finsupp.single x a) =
+      Finsupp.single x (single (Multiplicative.ofAdd (shift h x)) 1 * a) := by
+  have hx : changeEquiv h (Finsupp.single x 1) =
+      Finsupp.single x (single (Multiplicative.ofAdd (shift h x)) 1) := by
+    simpa [changeEquiv, Module.Basis.unitsSMul_apply, Units.smul_def] using Module.Basis.equiv_apply
+      (Finsupp.basisSingleOne (R := MonoidAlgebra (ZMod 2) (Multiplicative H.periodicDomains))) x
+      (Finsupp.basisSingleOne.unitsSMul fun x =>
+        unitsSingle (1, toUnits (Multiplicative.ofAdd (shift h x)))) (Equiv.refl _)
+  rw [← mul_one a, ← smul_eq_mul, ← Finsupp.smul_single, map_smul, hx]
+  simp [mul_comm]
 
 /-- The inverse of the diagonal map multiplies the generator `x` by `t^{-a(x)}`. -/
 @[simp]
-theorem changeEquiv_symm_single (x : H.Generator)
+theorem changeEquiv_symm_single (h : r.base = r'.base) (x : H.Generator)
     (a : MonoidAlgebra (ZMod 2) (Multiplicative H.periodicDomains)) :
-    (changeEquiv h).symm (Finsupp.single x a) = Finsupp.single x
-      (single (Multiplicative.ofAdd ⟨_, domain_sub_domain_mem_periodicDomains h.symm x⟩) 1 *
-        a) := by
-  simp [changeEquiv, mul_comm]
+    (changeEquiv h).symm (Finsupp.single x a) =
+      Finsupp.single x (single (Multiplicative.ofAdd (-shift h x)) 1 * a) := by
+  rw [LinearEquiv.symm_apply_eq, changeEquiv_single, ← mul_assoc, single_mul_single, ← ofAdd_add]
+  simp [← one_def]
 
 /-- The coefficient of `x` in the image of a chain under the diagonal map is multiplied by
 `t^{a(x)}`. -/
-theorem changeEquiv_apply
+theorem changeEquiv_apply (h : r.base = r'.base)
     (c : H.Generator →₀ MonoidAlgebra (ZMod 2) (Multiplicative H.periodicDomains))
     (x : H.Generator) :
-    changeEquiv h c x =
-      single (Multiplicative.ofAdd ⟨_, domain_sub_domain_mem_periodicDomains h x⟩) 1 * c x := by
+    changeEquiv h c x = single (Multiplicative.ofAdd (shift h x)) 1 * c x := by
   classical
   induction c using Finsupp.induction_linear with
   | zero => simp
@@ -378,17 +402,15 @@ generators, differing by the periodic domains `a(x) = D'_x - D_x`, the twisted c
 related by `c'(x, y) = t^{a(x) - a(y)} c(x, y)`. -/
 theorem twistedHatCoefficient_eq_single_mul (h : r.base = r'.base) (x y : H.Generator) :
     H.twistedHatCoefficient r' χ x y =
-      single (Multiplicative.ofAdd
-        (⟨_, ReferenceDomains.domain_sub_domain_mem_periodicDomains h x⟩ -
-          ⟨_, ReferenceDomains.domain_sub_domain_mem_periodicDomains h y⟩ : H.periodicDomains))
-        1 * H.twistedHatCoefficient r χ x y := by
+      single (Multiplicative.ofAdd (ReferenceDomains.shift h x - ReferenceDomains.shift h y)) 1 *
+        H.twistedHatCoefficient r χ x y := by
   rcases (H.hatDomains χ x y).finite_or_infinite with hfin | hinf
   · have := hfin.fintype
     rw [twistedHatCoefficient_eq_sum, twistedHatCoefficient_eq_sum, Finset.mul_sum]
     refine Finset.sum_congr rfl fun D _ => ?_
     rw [single_mul_single, one_mul, ← ofAdd_add]
     refine congrArg (fun P => single (Multiplicative.ofAdd P) (1 : ZMod 2)) (Subtype.ext ?_)
-    simp only [AddSubgroup.coe_add, AddSubgroup.coe_sub,
+    simp only [AddSubgroup.coe_add, AddSubgroup.coe_sub, ReferenceDomains.coe_shift,
       ReferenceDomains.label_eq_label_add_sub (r := r) (r' := r')]
     abel
   · rw [twistedHatCoefficient_of_infinite hinf, twistedHatCoefficient_of_infinite hinf, mul_zero]
@@ -408,10 +430,9 @@ theorem changeEquiv_twistedHatDifferential
   | add c d hc hd => rw [map_add, map_add, hc, hd, map_add, map_add]
   | single x a =>
     refine Finsupp.ext fun y => ?_
-    rw [changeEquiv_apply, changeEquiv_single, twistedHatDifferential_single_apply,
-      twistedHatDifferential_single_apply, twistedHatCoefficient_eq_single_mul h, ← mul_assoc,
-      ← mul_assoc, mul_right_comm _ a, single_mul_single, one_mul, ← ofAdd_add,
-      add_sub_cancel]
+    simp only [changeEquiv_apply, changeEquiv_single, twistedHatDifferential_single_apply,
+      twistedHatCoefficient_eq_single_mul h]
+    simp [mul_left_comm a, ← mul_assoc, single_mul_single]
 
 end ReferenceDomains
 
