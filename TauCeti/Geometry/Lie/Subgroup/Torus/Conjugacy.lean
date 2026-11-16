@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Subgroup.Torus
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 import TauCeti.Geometry.Lie.Adjoint.InvariantForm
+import TauCeti.Topology.Algebra.Group.Connected
 
 /-!
 # Conjugacy of maximal tori
@@ -169,13 +170,11 @@ theorem IsMaximalTorus.exists_mem_connectedComponentIn_map_conj_eq_of_le {K S T 
   -- The identity component of `K`, as a subgroup of `G`; it is closed because `K` is.
   let K₀ : Subgroup G := (Subgroup.connectedComponentOfOne K).map K.subtype
   have hK₀ : (K₀ : Set G) = connectedComponentIn (K : Set G) 1 := by
-    rw [Subgroup.coe_map, connectedComponentIn_eq_image K.one_mem]
-    -- Mathlib defines the carrier of `Subgroup.connectedComponentOfOne K` as
-    -- `connectedComponent 1` and states no coercion lemma for it.
+    rw [Subgroup.coe_map, Subgroup.coe_connectedComponentOfOne, Subgroup.coe_subtype,
+      connectedComponentIn_eq_image K.one_mem]
+    -- The identity `1 : K` is `⟨1, K.one_mem⟩` by definition.
     rfl
-  have hK₀closed : IsClosed (K₀ : Set G) := by
-    rw [hK₀, connectedComponentIn_eq_image K.one_mem]
-    exact hK.isClosedEmbedding_subtypeVal.isClosedMap _ isClosed_connectedComponent
+  have hK₀closed : IsClosed (K₀ : Set G) := hK₀ ▸ hK.connectedComponentIn
   -- A torus in `K` is connected and contains `1`, so it lies in `K₀`.
   have hle : ∀ {R : Subgroup G}, IsTorus R → R ≤ K → R ≤ K₀ := fun {R} hR hRK ↦ by
     rw [← SetLike.coe_subset_coe, hK₀]
