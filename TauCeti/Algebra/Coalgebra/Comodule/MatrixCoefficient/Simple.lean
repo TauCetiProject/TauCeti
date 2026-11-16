@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.LinearAlgebra.Dual.Basis
+import Mathlib.LinearAlgebra.TensorProduct.Basis
 import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Module
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Intertwiner
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Trace
@@ -109,42 +111,19 @@ theorem linearIndependent_coefficientMatrix {k C M ι : Type*} [Field k] [IsAlgC
     (b : Module.Basis ι k M) :
     LinearIndependent k (Function.uncurry (coefficientMatrix (C := C) b)) := by
   classical
-  have : Module.Finite k M := by
-    have hfin : Module.Finite k (⊤ : Subcomodule k C M).toSubmodule :=
-      Subcomodule.finite_of_isAtom isAtom_top
-    rw [Subcomodule.top_toSubmodule] at hfin
-    exact Module.Finite.equiv (Submodule.topEquiv (R := k) (M := M))
-  rw [linearIndependent_iff]
-  intro l hl
-  have hker : Finsupp.linearCombination k
-      (fun p : ι × ι ↦ b.coord p.1 ⊗ₜ[k] b p.2) l = 0 := by
-    apply matrixCoefficientTensor_injective (k := k) (C := C) (M := M)
-    rw [map_zero, Finsupp.linearCombination_apply, map_finsuppSum]
-    rw [Finsupp.linearCombination_apply] at hl
-    rw [← hl]
+  have : Module.Finite k M := Subcomodule.finite_of_isSimpleOrder (C := C)
+  have : Finite ι := Module.Finite.finite_basis b
+  have hcomp :
+      ⇑(Finsupp.linearCombination k (Function.uncurry (coefficientMatrix (C := C) b))) =
+        ⇑(matrixCoefficientTensor (R := k) (C := C) (M := M)) ∘
+          ⇑(Finsupp.linearCombination k ⇑(b.dualBasis.tensorProduct b)) := by
+    ext l
+    simp only [Function.comp_apply, Finsupp.linearCombination_apply, map_finsuppSum, map_smul]
     refine Finsupp.sum_congr fun ⟨i, j⟩ _ ↦ ?_
-    rw [map_smul, matrixCoefficientTensor_tmul]
-    exact congrArg (l (i, j) • ·) (coefficientMatrix_apply b i j).symm
-  ext ⟨i, j⟩
-  let ev : Module.Dual k M ⊗[k] M →ₗ[k] k :=
-    (TensorProduct.lid k k).toLinearMap.comp
-      (TensorProduct.map (Module.Dual.eval k M (b i)) (b.coord j))
-  have hev := congrArg ev hker
-  rw [map_zero, Finsupp.linearCombination_apply, map_finsuppSum] at hev
-  have hsum : l.sum (fun p r ↦ ev (r • (b.coord p.1 ⊗ₜ[k] b p.2))) = l (i, j) := by
-    rw [Finsupp.sum_eq_single (i, j)]
-    · simp [ev, Module.Basis.coord_apply]
-    · intro ⟨p₁, p₂⟩ _ hp
-      simp only [ev, map_smul, LinearMap.comp_apply, LinearEquiv.coe_coe,
-        TensorProduct.map_tmul, Module.Dual.eval_apply, TensorProduct.lid_tmul, smul_eq_mul,
-        Module.Basis.coord_apply, Module.Basis.repr_self]
-      by_cases h1 : p₁ = i
-      · have h2 : j ≠ p₂ := fun h2 ↦ hp (Prod.ext h1 h2.symm)
-        simp [Finsupp.single_eq_of_ne h2]
-      · simp [Finsupp.single_eq_of_ne h1]
-    · simp
-  rw [hsum] at hev
-  exact hev
+    simp [Function.uncurry, coefficientMatrix_apply, Module.Basis.tensorProduct_apply,
+      b.coe_dualBasis]
+  rw [LinearIndependent, hcomp]
+  exact matrixCoefficientTensor_injective.comp (b.dualBasis.tensorProduct b).linearIndependent
 
 /-- **Schur's lemma in matrix coordinates.** Over an algebraically closed field, any scalar matrix
 commuting with the coefficient matrix of a simple comodule in a finite basis is a scalar multiple
@@ -160,10 +139,7 @@ theorem exists_eq_smul_one_of_coefficientMatrix_mul_eq {k A M ι : Type*}
   let _ := convolutionModule (R := k) (C := A) (M := M)
   have : IsSimpleModule (WithConv (A →ₗ[k] k)) M :=
     isSimpleModule_convolution_iff.mpr inferInstance
-  let T : Hom k A M M :=
-    { toLinearMap := Matrix.toLin b b X
-      map_coact := (b.map_coact_iff_coefficientMatrix b _).mpr
-        (by rw [LinearMap.toMatrix_toLin]; exact hX) }
+  let T : Hom k A M M := Hom.ofMatrix b b X hX
   set c : k := endAlgEquivSelfOfIsSimpleModule (k := k) T.toConvolutionLinearMap
   refine ⟨c, ?_⟩
   have hT : T.toLinearMap = c • LinearMap.id :=
@@ -171,7 +147,8 @@ theorem exists_eq_smul_one_of_coefficientMatrix_mul_eq {k A M ι : Type*}
       rw [Hom.coe_toLinearMap, ← Hom.toConvolutionLinearMap_apply,
         ← endAlgEquivSelfOfIsSimpleModule_smul (k := k), LinearMap.smul_apply,
         LinearMap.id_apply]
-  have hTX : LinearMap.toMatrix b b T.toLinearMap = X := LinearMap.toMatrix_toLin b b X
+  have hTX : LinearMap.toMatrix b b T.toLinearMap = X := by
+    rw [Hom.toLinearMap_ofMatrix, LinearMap.toMatrix_toLin]
   rw [← hTX, hT, map_smul, LinearMap.toMatrix_id]
 
 end TauCeti.Comodule

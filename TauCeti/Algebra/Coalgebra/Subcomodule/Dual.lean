@@ -229,26 +229,9 @@ theorem dualAnnihilator_surjective
 simple if and only if the comodule itself is simple. -/
 theorem isSimpleOrder_dual_iff
     (hS : Function.Injective (HopfAlgebra.antipode k : H → H)) :
-    IsSimpleOrder (Subcomodule k H (Module.Dual k M)) ↔ IsSimpleOrder (Subcomodule k H M) := by
-  constructor
-  · intro _
-    refine
-      { exists_pair_ne := ⟨⊥, ⊤, fun hbt ↦ (bot_ne_top (α := Subcomodule k H (Module.Dual k M))) ?_⟩
-        eq_bot_or_eq_top := fun N ↦ ?_ }
-    · rw [← dualAnnihilator_top (k := k) (H := H) (M := M), ← hbt, dualAnnihilator_bot]
-    · rcases eq_bot_or_eq_top N.dualAnnihilator with hN | hN
-      · exact Or.inr (dualAnnihilator_eq_bot_iff.mp hN)
-      · exact Or.inl (dualAnnihilator_eq_top_iff.mp hN)
-  · intro _
-    refine
-      { exists_pair_ne := ⟨⊥, ⊤, fun hbt ↦ (bot_ne_top (α := Subcomodule k H M)) ?_⟩
-        eq_bot_or_eq_top := fun W ↦ ?_ }
-    · rw [← dualAnnihilator_top (k := k) (H := H) (M := M), ← dualAnnihilator_bot] at hbt
-      exact (dualAnnihilator_injective hbt).symm
-    · obtain ⟨N, rfl⟩ := dualAnnihilator_surjective hS W
-      rcases eq_bot_or_eq_top N with rfl | rfl
-      · exact Or.inr dualAnnihilator_bot
-      · exact Or.inl dualAnnihilator_top
+    IsSimpleOrder (Subcomodule k H (Module.Dual k M)) ↔ IsSimpleOrder (Subcomodule k H M) :=
+  isSimpleOrder_iff_isSimpleOrder_orderDual.trans
+    (dualAnnihilatorOrderIso k H M hS).isSimpleOrder_iff.symm
 
 /-- Over a Hopf star algebra over a field, the dual of a finite-dimensional comodule is simple if
 and only if the comodule itself is simple, since the antipode is bijective. -/

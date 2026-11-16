@@ -146,8 +146,8 @@ open Module
 open scoped Matrix
 
 variable {R : Type u} {H : Type v} {M : Type w} {ι : Type*}
-variable [CommRing R] [Semiring H] [HopfAlgebra R H]
-variable [AddCommGroup M] [Module R M] [Comodule R H M]
+variable [CommSemiring R] [Semiring H] [HopfAlgebra R H]
+variable [AddCommMonoid M] [Module R M] [Comodule R H M]
 variable [Module.Finite R M] [Module.Projective R M] [Finite ι] [DecidableEq ι]
 
 attribute [local instance] dual

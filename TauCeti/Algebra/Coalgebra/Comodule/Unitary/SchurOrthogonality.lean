@@ -12,6 +12,7 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Intertwiner
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Isotypic
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Simple
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 
 /-!
 # Weighted Schur orthogonality for finite unitary comodules
@@ -27,16 +28,17 @@ Let `A` be a star bialgebra or Hopf star algebra equipped with invariant integra
    cross-pairings `h (star (u i j) * v k l)` and `h (u i j * star (v k l))` vanish.
 
 2. **Weighted Schur orthogonality on a simple comodule (Hopf star algebras over `ℂ`).** When `M` is
-   simple, `u` is unitary, and `h` is a nonzero positive two-sided invariant integral, the
-   normalized unitarizing matrix `Ft = unitarizingMatrix h b` (`PosDef Ft`, `Tr Ft = Tr Ft⁻¹`)
-   governs both pairings of matrix coefficients:
-   * `h (star (u i j) * u k l) = δ_{jl} * h 1 * (Ft⁻¹ i k / Tr Ft⁻¹)`;
+   simple, `u` is unitary, and `h` is a positive one-sided invariant integral, the normalized
+   unitarizing matrix `Ft = unitarizingMatrix h b` (`PosDef Ft`, `Tr Ft = Tr Ft⁻¹`) governs each
+   pairing of matrix coefficients:
+   * `h (star (u i j) * u k l) = δ_{jl} * h 1 * (Ft⁻¹ i k / Tr Ft⁻¹)` (requiring only right
+     invariance);
    * `h (u i j * star (u k l)) = δ_{ik} * h 1 * (Ft j l / Tr Ft)` (requiring only left invariance).
 
-   Specializing to `h : AlgebraicHaar A` sets `h 1 = 1` and shows that `Ft` is the unique positive
-   definite matrix with `Tr Ft = Tr Ft⁻¹` satisfying the weighted Schur orthogonality relations.
-   Linear independence of the matrix coefficients `u i j` of a simple comodule already holds in
-   full generality over any coalgebra over an algebraically closed field
+   Specializing to `h : AlgebraicHaar A` sets `h 1 = 1` and shows that there is a unique positive
+   definite matrix `Ft` with `Tr Ft = Tr Ft⁻¹` satisfying both weighted Schur orthogonality
+   relations. Linear independence of the matrix coefficients `u i j` of a simple comodule already
+   holds in full generality over any coalgebra over an algebraically closed field
    (`TauCeti.Comodule.linearIndependent_coefficientMatrix`).
 
 ## Main declarations
@@ -47,13 +49,12 @@ Let `A` be a star bialgebra or Hopf star algebra equipped with invariant integra
 * `TauCeti.Comodule.apply_star_mul_coefficientMatrix_eq_zero_of_ne` and
   `TauCeti.Comodule.apply_coefficientMatrix_mul_star_eq_zero_of_ne`: orthogonality of matrix
   coefficients of inequivalent simple comodules.
-* `LinearMap.IsLeftInvariantIntegral.apply_coefficientMatrix_mul_star` and
+* `TauCeti.Comodule.apply_coefficientMatrix_mul_star` and
   `TauCeti.Comodule.apply_star_mul_coefficientMatrix`: the two weighted Schur orthogonality
-  formulas for an unnormalized positive invariant integral.
-* `TauCeti.AlgebraicHaar.existsUnique_schur_orthogonality`,
-  `TauCeti.AlgebraicHaar.schur_orthogonality`, and
-  `TauCeti.Comodule.IsUnitary.schur_orthogonality`: normalized weighted Schur orthogonality and
-  uniqueness of the weight matrix `Ft`.
+  formulas for an unnormalized positive one-sided invariant integral.
+* `TauCeti.AlgebraicHaar.existsUnique_schur_orthogonality` and
+  `TauCeti.Comodule.IsUnitary.existsUnique_schur_orthogonality`: normalized weighted Schur
+  orthogonality with uniqueness of the weight matrix `Ft`.
 
 ## References
 
@@ -72,10 +73,23 @@ namespace TauCeti.Comodule
 
 section BialgebraIntertwiners
 
-variable {R A M N ι κ : Type*} [CommSemiring R] [StarRing R] [Semiring A] [StarRing A]
-  [Bialgebra R A] [StarModule R A] [StarCoalgebra R A]
+variable {R A M N ι κ : Type*} [CommSemiring R] [Semiring A] [Bialgebra R A]
   [AddCommMonoid M] [Module R M] [Comodule R A M]
   [AddCommMonoid N] [Module R N] [Comodule R A N]
+
+/-- If every comodule morphism `N → M` is zero, then any scalar matrix intertwining their
+coefficient matrices vanishes. -/
+private theorem matrix_eq_zero_of_forall_hom_eq_zero [Fintype ι] [Fintype κ]
+    (hzero : ∀ f : Hom R A N M, f = 0) (b : Basis ι R M) (c : Basis κ R N) {X : Matrix ι κ R}
+    (hX : coefficientMatrix (C := A) b * X.map (algebraMap R A) =
+      X.map (algebraMap R A) * coefficientMatrix (C := A) c) :
+    X = 0 := by
+  classical
+  have hf : Matrix.toLin c b X = 0 := by
+    rw [← Hom.toLinearMap_ofMatrix c b X hX, hzero (Hom.ofMatrix c b X hX), Hom.zero_toLinearMap]
+  rw [← LinearMap.toMatrix_toLin c b X, hf, map_zero]
+
+variable [StarRing R] [StarRing A] [StarModule R A] [StarCoalgebra R A]
 
 /-- **Right-invariant Haar intertwiner.** If `h` is right invariant and `u * uᴴ = 1` for
 `u = coefficientMatrix b`, then for each `i` and `k` the scalar matrix
@@ -171,20 +185,9 @@ theorem apply_star_mul_coefficientMatrix_eq_zero [Fintype ι] [DecidableEq ι] [
     {b : Basis ι R M} (hu : coefficientMatrix (C := A) b * (coefficientMatrix (C := A) b)ᴴ = 1)
     (c : Basis κ R N) (i j : ι) (k l : κ) :
     h (star (coefficientMatrix (C := A) b i j) * coefficientMatrix (C := A) c k l) = 0 := by
-  classical
   cases nonempty_fintype κ
-  let X : Matrix ι κ R :=
-    Matrix.of fun j' l' ↦ h (star (coefficientMatrix (C := A) b i j') *
-      coefficientMatrix (C := A) c k l')
-  let f : Hom R A N M :=
-    { toLinearMap := Matrix.toLin c b X
-      map_coact := (c.map_coact_iff_coefficientMatrix b _).mpr (by
-        rw [LinearMap.toMatrix_toLin]
-        exact coefficientMatrix_mul_map_apply_star_mul hh hu c i k) }
-  have hf : Matrix.toLin c b X = 0 := congr_arg Hom.toLinearMap (hzero f)
-  have hX : X = 0 := by
-    rw [← LinearMap.toMatrix_toLin c b X, hf, map_zero]
-  exact congr_fun (congr_fun hX j) l
+  exact congr_fun (congr_fun (matrix_eq_zero_of_forall_hom_eq_zero hzero b c
+    (coefficientMatrix_mul_map_apply_star_mul hh hu c i k)) j) l
 
 /-- When every comodule morphism `N → M` is zero, a left invariant integral kills every product
 `u i j * star (v k l)` whenever `vᴴ * v = 1`. -/
@@ -195,18 +198,8 @@ theorem apply_coefficientMatrix_mul_star_eq_zero [Finite ι] [Fintype κ] [Decid
     (i j : ι) (k l : κ) :
     h (coefficientMatrix (C := A) b i j * star (coefficientMatrix (C := A) c k l)) = 0 := by
   cases nonempty_fintype ι
-  let Y : Matrix ι κ R :=
-    Matrix.of fun i' k' ↦ h (coefficientMatrix (C := A) b i' j *
-      star (coefficientMatrix (C := A) c k' l))
-  let f : Hom R A N M :=
-    { toLinearMap := Matrix.toLin c b Y
-      map_coact := (c.map_coact_iff_coefficientMatrix b _).mpr (by
-        rw [LinearMap.toMatrix_toLin]
-        exact coefficientMatrix_mul_map_apply_mul_star hh b hv j l) }
-  have hf : Matrix.toLin c b Y = 0 := congr_arg Hom.toLinearMap (hzero f)
-  have hY : Y = 0 := by
-    rw [← LinearMap.toMatrix_toLin c b Y, hf, map_zero]
-  exact congr_fun (congr_fun hY i) k
+  exact congr_fun (congr_fun (matrix_eq_zero_of_forall_hom_eq_zero hzero b c
+    (coefficientMatrix_mul_map_apply_mul_star hh b hv j l)) i) k
 
 end BialgebraIntertwiners
 
@@ -219,47 +212,34 @@ variable {R A M N ι κ : Type*} [CommRing R] [StarRing R] [Ring A] [StarRing A]
 
 /-- **Cross-orthogonality (first form).** Matrix coefficients of simple comodules with distinct
 coefficient spaces are orthogonal with respect to any right invariant integral `h`:
-`h (star (u i j) * v k l) = 0` when `u` is unitary. -/
+`h (star (u i j) * v k l) = 0` when `u * uᴴ = 1`. -/
 theorem apply_star_mul_coefficientMatrix_eq_zero_of_ne [Fintype ι] [DecidableEq ι] [Finite κ]
     {h : A →ₗ[R] R} (hh : h.IsRightInvariantIntegral)
     (hne : matrixCoefficientSubmodule (R := R) (C := A) (M := M) ≠
       matrixCoefficientSubmodule (R := R) (C := A) (M := N))
-    {b : Basis ι R M} (hu : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A))
+    {b : Basis ι R M} (hu : coefficientMatrix (C := A) b * (coefficientMatrix (C := A) b)ᴴ = 1)
     (c : Basis κ R N) (i j : ι) (k l : κ) :
     h (star (coefficientMatrix (C := A) b i j) * coefficientMatrix (C := A) c k l) = 0 :=
   apply_star_mul_coefficientMatrix_eq_zero hh
-    (hom_eq_zero_of_matrixCoefficientSubmodule_ne hne.symm)
-    (by simpa [star_eq_conjTranspose] using (Unitary.mem_iff.mp hu).2) c i j k l
+    (hom_eq_zero_of_matrixCoefficientSubmodule_ne hne.symm) hu c i j k l
 
 /-- **Cross-orthogonality (second form).** Matrix coefficients of simple comodules with distinct
 coefficient spaces satisfy `h (u i j * star (v k l)) = 0` for any left invariant integral `h` when
-`v` is unitary. -/
+`vᴴ * v = 1`. -/
 theorem apply_coefficientMatrix_mul_star_eq_zero_of_ne [Finite ι] [Fintype κ] [DecidableEq κ]
     {h : A →ₗ[R] R} (hh : h.IsLeftInvariantIntegral)
     (hne : matrixCoefficientSubmodule (R := R) (C := A) (M := M) ≠
       matrixCoefficientSubmodule (R := R) (C := A) (M := N))
     (b : Basis ι R M) {c : Basis κ R N}
-    (hv : coefficientMatrix (C := A) c ∈ unitary (Matrix κ κ A))
+    (hv : (coefficientMatrix (C := A) c)ᴴ * coefficientMatrix (C := A) c = 1)
     (i j : ι) (k l : κ) :
     h (coefficientMatrix (C := A) b i j * star (coefficientMatrix (C := A) c k l)) = 0 :=
   apply_coefficientMatrix_mul_star_eq_zero hh
-    (hom_eq_zero_of_matrixCoefficientSubmodule_ne hne.symm) b
-    (by simpa [star_eq_conjTranspose] using (Unitary.mem_iff.mp hv).1) i j k l
+    (hom_eq_zero_of_matrixCoefficientSubmodule_ne hne.symm) b hv i j k l
 
 end SimpleCrossOrthogonality
 
 section WeightedSchur
-
-/-- A basis of a simple complex comodule has a nonempty index type. -/
-private theorem nonempty_index (A : Type*) {M ι : Type*} [Ring A] [HopfAlgebra ℂ A]
-    [AddCommGroup M] [Module ℂ M] [Comodule ℂ A M] [IsSimpleOrder (Subcomodule ℂ A M)]
-    (b : Basis ι ℂ M) : Nonempty ι := by
-  have : Nontrivial M := by
-    rcases subsingleton_or_nontrivial M with hsub | hnt
-    · exact False.elim (bot_ne_top (α := Subcomodule ℂ A M) (Subcomodule.ext fun m ↦ by
-        simp [Subsingleton.elim m (0 : M)]))
-    · exact hnt
-  exact b.index_nonempty
 
 variable {A M ι : Type*} [Ring A] [StarRing A] [HopfAlgebra ℂ A]
   [StarModule ℂ A] [StarCoalgebra ℂ A]
@@ -284,18 +264,22 @@ private theorem exists_apply_coefficientMatrix_mul_star_eq_ite {h : A →ₗ[ℂ
   refine ⟨Matrix.of fun j l ↦ (hex j l).choose, fun i j k l ↦ ?_⟩
   exact (hex j l).choose_spec i k
 
-/-- **Weighted Schur orthogonality (second form).** For a nonzero positive left invariant integral
-`h` and a simple comodule `M` with unitary basis `b`,
+/-- **Weighted Schur orthogonality (second form).** For a positive left invariant integral `h` and
+a simple comodule `M` with unitary basis `b`,
 `h (u i j * star (u k l)) = δ_{ik} * h 1 * (Ft j l / Tr Ft)` where `Ft = unitarizingMatrix h b`. -/
-theorem _root_.LinearMap.IsLeftInvariantIntegral.apply_coefficientMatrix_mul_star {h : A →ₗ[ℂ] ℂ}
-    (hh : h.IsLeftInvariantIntegral) (h0 : h ≠ 0) (hpos : ∀ a, 0 ≤ h (star a * a))
+theorem apply_coefficientMatrix_mul_star {h : A →ₗ[ℂ] ℂ}
+    (hh : h.IsLeftInvariantIntegral) (hpos : ∀ a, 0 ≤ h (star a * a))
     (b : Basis ι ℂ M) (hu : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A))
     (i j k l : ι) :
     h (coefficientMatrix (C := A) b i j * star (coefficientMatrix (C := A) b k l)) =
       if i = k then h 1 * (unitarizingMatrix h b j l / (unitarizingMatrix h b).trace) else 0 := by
+  by_cases h0 : h = 0
+  · subst h0
+    simp
   let _ : Module.Finite ℂ M := Module.Finite.of_basis b
   let _ := dual (R := ℂ) (H := A) (M := M)
-  have : Nonempty ι := nonempty_index A b
+  have : Nontrivial M := (Subcomodule.nontrivial_iff (R := ℂ) (C := A)).mp inferInstance
+  have : Nonempty ι := b.index_nonempty
   obtain ⟨i₀⟩ := ‹Nonempty ι›
   have hstrict : ∀ a, a ≠ 0 → 0 < h (star a * a) := fun a ha ↦ hh.map_star_mul_self_pos h0 hpos ha
   obtain ⟨C, hC⟩ := exists_apply_coefficientMatrix_mul_star_eq_ite hh b hu
@@ -328,26 +312,28 @@ theorem _root_.LinearMap.IsLeftInvariantIntegral.apply_coefficientMatrix_mul_sta
   · field_simp [hα, hh1]
   · rfl
 
-/-- **Weighted Schur orthogonality (first form).** For a nonzero positive two-sided invariant
-integral `h` and a simple comodule `M` with unitary basis `b`,
-`h (star (u i j) * u k l) = δ_{jl} * h 1 * (Ft⁻¹ i k / Tr Ft⁻¹)` where `Ft = unitarizingMatrix h b`.
--/
+/-- **Weighted Schur orthogonality (first form).** For a positive right invariant integral `h` and
+a simple comodule `M` with unitary basis `b`,
+`h (star (u i j) * u k l) = δ_{jl} * h 1 * (Ft⁻¹ i k / Tr Ft⁻¹)` where
+`Ft = unitarizingMatrix h b`. -/
 theorem apply_star_mul_coefficientMatrix {h : A →ₗ[ℂ] ℂ}
-    (hh_left : h.IsLeftInvariantIntegral) (hh_right : h.IsRightInvariantIntegral)
-    (h0 : h ≠ 0) (hpos : ∀ a, 0 ≤ h (star a * a))
+    (hh : h.IsRightInvariantIntegral) (hpos : ∀ a, 0 ≤ h (star a * a))
     (b : Basis ι ℂ M) (hu : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A))
     (i j k l : ι) :
     h (star (coefficientMatrix (C := A) b i j) * coefficientMatrix (C := A) b k l) =
       if j = l then
         h 1 * ((unitarizingMatrix h b)⁻¹ i k / (unitarizingMatrix h b)⁻¹.trace)
       else 0 := by
-  have := nonempty_index A b
-  have hstrict : ∀ a, a ≠ 0 → 0 < h (star a * a) :=
-    fun a ha ↦ hh_left.map_star_mul_self_pos h0 hpos ha
+  by_cases h0 : h = 0
+  · subst h0
+    simp
+  have : Nontrivial M := (Subcomodule.nontrivial_iff (R := ℂ) (C := A)).mp inferInstance
+  have : Nonempty ι := b.index_nonempty
+  have hstrict : ∀ a, a ≠ 0 → 0 < h (star a * a) := fun a ha ↦ hh.map_star_mul_self_pos h0 hpos ha
   have hu2 : coefficientMatrix (C := A) b * (coefficientMatrix (C := A) b)ᴴ = 1 := by
     simpa [star_eq_conjTranspose] using (Unitary.mem_iff.mp hu).2
   obtain ⟨d, hd⟩ := exists_eq_smul_one_of_coefficientMatrix_mul_eq b
-    (coefficientMatrix_mul_map_apply_star_mul hh_right hu2 b i k)
+    (coefficientMatrix_mul_map_apply_star_mul hh hu2 b i k)
   have hd_apply (p q : ι) :
       h (star (coefficientMatrix (C := A) b i p) * coefficientMatrix (C := A) b k q) =
         if p = q then d else 0 := by
@@ -355,13 +341,25 @@ theorem apply_star_mul_coefficientMatrix {h : A →ₗ[ℂ] ℂ}
   rw [hd_apply]
   split_ifs
   · set Ft := unitarizingMatrix h b
+    set u := coefficientMatrix (C := A) b
     have htr_ne : Ft⁻¹.trace ≠ 0 := (posDef_unitarizingMatrix hstrict b).inv.trace_pos.ne'
     have hinv_ik := congr_arg h
       (congr_fun (congr_fun (map_star_mul_unitarizingMatrix_inv_mul_conjTranspose
-        hh_right b hu) i) k)
+        hh b hu) i) k)
     have hsum : Ft⁻¹.trace * d = Ft⁻¹ i k * h 1 := by
-      simpa [Matrix.mul_apply, Finset.sum_mul, Algebra.algebraMap_eq_smul_one,
-        mul_smul_comm, smul_mul_assoc, map_sum, map_smul, hd_apply, Matrix.trace] using hinv_ik
+      calc
+        Ft⁻¹.trace * d = ∑ q : ι, Ft⁻¹ q q * d := by
+          simp only [Matrix.trace, Matrix.diag_apply, Finset.sum_mul]
+        _ = ∑ q : ι, ∑ p : ι, Ft⁻¹ p q * h (star (u i p) * u k q) := by
+          refine Finset.sum_congr rfl fun q _ ↦ ?_
+          simp [hd_apply]
+        _ = h ((u.map star * Ft⁻¹.map (algebraMap ℂ A) * (u.map star)ᴴ) i k) := by
+          simp only [Matrix.mul_apply, Matrix.map_apply, Matrix.conjTranspose_apply, star_star,
+            Algebra.algebraMap_eq_smul_one, mul_smul_comm, smul_mul_assoc, mul_one,
+            Finset.sum_mul, map_sum, map_smul, smul_eq_mul]
+        _ = h (Ft⁻¹.map (algebraMap ℂ A) i k) := hinv_ik
+        _ = Ft⁻¹ i k * h 1 := by
+          rw [Matrix.map_apply, Algebra.algebraMap_eq_smul_one, map_smul, smul_eq_mul]
     apply mul_left_cancel₀ htr_ne
     rw [hsum]
     field_simp [htr_ne]
@@ -383,25 +381,25 @@ variable {A M N ι κ : Type*} [Ring A] [StarRing A] [Bialgebra ℂ A]
   [AddCommGroup N] [Module ℂ N] [Comodule ℂ A N] [IsSimpleOrder (Subcomodule ℂ A N)]
 
 /-- Cross-orthogonality `h (star (u i j) * v k l) = 0` for `h : AlgebraicHaar A` on inequivalent
-simple comodules. -/
+simple comodules when `u * uᴴ = 1`. -/
 theorem apply_star_mul_coefficientMatrix_eq_zero_of_ne [Fintype ι] [DecidableEq ι] [Finite κ]
     (h : AlgebraicHaar A)
     (hne : matrixCoefficientSubmodule (R := ℂ) (C := A) (M := M) ≠
       matrixCoefficientSubmodule (R := ℂ) (C := A) (M := N))
-    {b : Basis ι ℂ M} (hu : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A))
+    {b : Basis ι ℂ M} (hu : coefficientMatrix (C := A) b * (coefficientMatrix (C := A) b)ᴴ = 1)
     (c : Basis κ ℂ N) (i j : ι) (k l : κ) :
     h (star (coefficientMatrix (C := A) b i j) * coefficientMatrix (C := A) c k l) = 0 :=
   Comodule.apply_star_mul_coefficientMatrix_eq_zero_of_ne
     h.isRightInvariantIntegral hne hu c i j k l
 
 /-- Cross-orthogonality `h (u i j * star (v k l)) = 0` for `h : AlgebraicHaar A` on inequivalent
-simple comodules. -/
+simple comodules when `vᴴ * v = 1`. -/
 theorem apply_coefficientMatrix_mul_star_eq_zero_of_ne [Finite ι] [Fintype κ] [DecidableEq κ]
     (h : AlgebraicHaar A)
     (hne : matrixCoefficientSubmodule (R := ℂ) (C := A) (M := M) ≠
       matrixCoefficientSubmodule (R := ℂ) (C := A) (M := N))
     (b : Basis ι ℂ M) {c : Basis κ ℂ N}
-    (hv : coefficientMatrix (C := A) c ∈ unitary (Matrix κ κ A))
+    (hv : (coefficientMatrix (C := A) c)ᴴ * coefficientMatrix (C := A) c = 1)
     (i j : ι) (k l : κ) :
     h (coefficientMatrix (C := A) b i j * star (coefficientMatrix (C := A) c k l)) = 0 :=
   Comodule.apply_coefficientMatrix_mul_star_eq_zero_of_ne
@@ -411,28 +409,10 @@ end CrossOrthogonality
 
 section HopfCore
 
-variable {A M ι : Type*} [Ring A] [StarRing A] [HopfAlgebra ℂ A] [StarModule ℂ A]
-  [AddCommGroup M] [Module ℂ M] [Comodule ℂ A M] [Fintype ι] [DecidableEq ι]
-
-/-- For `h : AlgebraicHaar A`, the unitarizing matrix of any finite basis is positive definite. -/
-theorem posDef_unitarizingMatrix (h : AlgebraicHaar A) (b : Basis ι ℂ M) :
-    (unitarizingMatrix h.toLinearMap b).PosDef :=
-  Comodule.posDef_unitarizingMatrix (fun _ ↦ h.map_star_mul_self_pos) b
-
-/-- For `h : AlgebraicHaar A`, the unitarizing matrix satisfies `Tr Ft = Tr Ft⁻¹`. -/
-theorem trace_unitarizingMatrix_eq_trace_inv (h : AlgebraicHaar A) (b : Basis ι ℂ M) :
-    (unitarizingMatrix h.toLinearMap b).trace = (unitarizingMatrix h.toLinearMap b)⁻¹.trace :=
-  Comodule.trace_unitarizingMatrix_eq_trace_inv (fun _ ↦ h.map_star_mul_self_pos) b
-
-/-- On a basis indexed by a subsingleton type (such as a one-dimensional comodule), the
-unitarizing matrix with respect to `h : AlgebraicHaar A` is `1`. -/
-@[simp]
-theorem unitarizingMatrix_of_subsingleton [Subsingleton ι] (h : AlgebraicHaar A)
-    (b : Basis ι ℂ M) :
-    unitarizingMatrix h.toLinearMap b = 1 :=
-  Comodule.unitarizingMatrix_of_subsingleton (fun _ ↦ h.map_star_mul_self_pos) b
-
-variable [StarCoalgebra ℂ A] [IsSimpleOrder (Subcomodule ℂ A M)]
+variable {A M ι : Type*} [Ring A] [StarRing A] [HopfAlgebra ℂ A]
+  [StarModule ℂ A] [StarCoalgebra ℂ A]
+  [AddCommGroup M] [Module ℂ M] [Comodule ℂ A M] [IsSimpleOrder (Subcomodule ℂ A M)]
+  [Fintype ι] [DecidableEq ι]
 
 /-- Normalized first Schur orthogonality formula:
 `h (star (u i j) * u k l) = δ_{jl} * (Ft⁻¹ i k / Tr Ft⁻¹)`. -/
@@ -442,8 +422,8 @@ theorem apply_star_mul_coefficientMatrix (h : AlgebraicHaar A) (b : Basis ι ℂ
       if j = l then
         (unitarizingMatrix h.toLinearMap b)⁻¹ i k / (unitarizingMatrix h.toLinearMap b)⁻¹.trace
       else 0 := by
-  simpa [map_one h] using Comodule.apply_star_mul_coefficientMatrix h.isLeftInvariantIntegral
-    h.isRightInvariantIntegral h.toLinearMap_ne_zero h.apply_star_mul_self_nonneg b hu i j k l
+  simpa [map_one h] using Comodule.apply_star_mul_coefficientMatrix
+    h.isRightInvariantIntegral h.map_star_mul_self_nonneg b hu i j k l
 
 /-- Normalized second Schur orthogonality formula:
 `h (u i j * star (u k l)) = δ_{ik} * (Ft j l / Tr Ft)`. -/
@@ -453,13 +433,13 @@ theorem apply_coefficientMatrix_mul_star (h : AlgebraicHaar A) (b : Basis ι ℂ
       if i = k then
         unitarizingMatrix h.toLinearMap b j l / (unitarizingMatrix h.toLinearMap b).trace
       else 0 := by
-  simpa [map_one h] using h.isLeftInvariantIntegral.apply_coefficientMatrix_mul_star
-    h.toLinearMap_ne_zero h.apply_star_mul_self_nonneg b hu i j k l
+  simpa [map_one h] using Comodule.apply_coefficientMatrix_mul_star
+    h.isLeftInvariantIntegral h.map_star_mul_self_nonneg b hu i j k l
 
 /-- **Existence and uniqueness in weighted Schur orthogonality.** On a simple comodule `M` with a
-basis `b` whose coefficient matrix `u` is unitary, `unitarizingMatrix h.toLinearMap b` is the
-unique positive definite matrix `Ft` with `Tr Ft = Tr Ft⁻¹` satisfying both weighted Schur
-orthogonality formulas. -/
+basis `b` whose coefficient matrix `u` is unitary, there exists a unique positive definite matrix
+`Ft` with `Tr Ft = Tr Ft⁻¹` governing both matrix-coefficient pairings under `h : AlgebraicHaar A`.
+-/
 theorem existsUnique_schur_orthogonality (h : AlgebraicHaar A) (b : Basis ι ℂ M)
     (hu : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A)) :
     ∃! Ft : Matrix ι ι ℂ, Ft.PosDef ∧ Ft.trace = Ft⁻¹.trace ∧
@@ -473,7 +453,8 @@ theorem existsUnique_schur_orthogonality (h : AlgebraicHaar A) (b : Basis ι ℂ
   refine ⟨Ft₀, ⟨h.posDef_unitarizingMatrix b, h.trace_unitarizingMatrix_eq_trace_inv b,
     h.apply_star_mul_coefficientMatrix b hu, h.apply_coefficientMatrix_mul_star b hu⟩, ?_⟩
   rintro Ft ⟨hFt, htr, -, h2⟩
-  have : Nonempty ι := nonempty_index A b
+  have : Nontrivial M := (Subcomodule.nontrivial_iff (R := ℂ) (C := A)).mp inferInstance
+  have : Nonempty ι := b.index_nonempty
   obtain ⟨i₀⟩ := ‹Nonempty ι›
   have htrFt : Ft.trace ≠ 0 := hFt.trace_pos.ne'
   set q : ℂ := Ft.trace / Ft₀.trace
@@ -486,28 +467,8 @@ theorem existsUnique_schur_orthogonality (h : AlgebraicHaar A) (b : Basis ι ℂ
     calc
       Ft j l = Ft₀ j l / Ft₀.trace * Ft.trace := heq
       _ = q * Ft₀ j l := by dsimp [q]; ring
-  have hmap : Ft.map (algebraMap ℂ A) = q • Ft₀.map (algebraMap ℂ A) := by
-    ext j l
-    rw [hsmul, Matrix.map_apply, Matrix.smul_apply, smul_eq_mul, map_mul, Matrix.smul_apply,
-      Matrix.map_apply, Algebra.smul_def]
-  refine eq_unitarizingMatrix_of_map_star h.isRightInvariantIntegral
-    (fun _ ↦ h.map_star_mul_self_pos) b hu hFt htr ?_
-  rw [hmap, Matrix.mul_smul, Matrix.smul_mul,
-    conjTranspose_map_star_mul_unitarizingMatrix_mul h.isRightInvariantIntegral b hu]
-
-/-- **Weighted Schur orthogonality.** On a simple comodule `M` with a basis `b` whose coefficient
-matrix `u` is unitary, there exists a positive definite matrix `Ft` with `Tr Ft = Tr Ft⁻¹`
-governing both pairings `h (star (u i j) * u k l)` and `h (u i j * star (u k l))`. -/
-theorem schur_orthogonality (h : AlgebraicHaar A) (b : Basis ι ℂ M)
-    (hu : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A)) :
-    ∃ Ft : Matrix ι ι ℂ, Ft.PosDef ∧ Ft.trace = Ft⁻¹.trace ∧
-      (∀ i j k l,
-        h (star (coefficientMatrix (C := A) b i j) * coefficientMatrix (C := A) b k l) =
-          if j = l then Ft⁻¹ i k / Ft⁻¹.trace else 0) ∧
-      (∀ i j k l,
-        h (coefficientMatrix (C := A) b i j * star (coefficientMatrix (C := A) b k l)) =
-          if i = k then Ft j l / Ft.trace else 0) :=
-  (h.existsUnique_schur_orthogonality b hu).exists
+  exact hFt.eq_of_eq_smul_of_trace_eq_trace_inv (h.posDef_unitarizingMatrix b) hsmul htr
+    (h.trace_unitarizingMatrix_eq_trace_inv b)
 
 end HopfCore
 
@@ -560,20 +521,5 @@ theorem existsUnique_schur_orthogonality (hM : IsUnitary ℂ A M) (h : Algebraic
             star (coefficientMatrix (C := A) b.toBasis k l)) =
           if i = k then Ft j l / Ft.trace else 0) :=
   h.existsUnique_schur_orthogonality b.toBasis (hM.coefficientMatrix_mem_unitary b)
-
-/-- Existential form of weighted Schur orthogonality in an orthonormal basis of a simple unitary
-comodule. -/
-theorem schur_orthogonality (hM : IsUnitary ℂ A M) (h : AlgebraicHaar A)
-    (b : OrthonormalBasis ι ℂ M) :
-    ∃ Ft : Matrix ι ι ℂ, Ft.PosDef ∧ Ft.trace = Ft⁻¹.trace ∧
-      (∀ i j k l,
-        h (star (coefficientMatrix (C := A) b.toBasis i j) *
-            coefficientMatrix (C := A) b.toBasis k l) =
-          if j = l then Ft⁻¹ i k / Ft⁻¹.trace else 0) ∧
-      (∀ i j k l,
-        h (coefficientMatrix (C := A) b.toBasis i j *
-            star (coefficientMatrix (C := A) b.toBasis k l)) =
-          if i = k then Ft j l / Ft.trace else 0) :=
-  h.schur_orthogonality b.toBasis (hM.coefficientMatrix_mem_unitary b)
 
 end TauCeti.Comodule.IsUnitary
