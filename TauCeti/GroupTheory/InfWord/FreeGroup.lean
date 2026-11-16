@@ -101,7 +101,7 @@ theorem reducedIntSubgroup_eq_CDR (X : Type*) :
 /-- Word length on the group of reduced `ℤ`-words is a free Lyndon length function. -/
 theorem isFree_lyndonLength_reducedIntSubgroup (X : Type*) :
     (reducedIntSubgroup X).lyndonLength.IsFree :=
-  length_isLyndon (reducedIntSubgroup X) (reducedIntSubgroup_subset_CDR X)
+  (reducedIntSubgroup X).isFree_lyndonLength (reducedIntSubgroup_subset_CDR X)
 
 /-- Multiplication of reduced `ℤ`-words respects `FreeGroup.mk`. -/
 theorem mk_toList_of_isMul {u v w : InfWord ℤ X} (h : IsMul u v w) :

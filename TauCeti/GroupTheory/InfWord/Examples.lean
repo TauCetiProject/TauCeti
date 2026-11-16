@@ -63,40 +63,6 @@ section General
 
 variable {Λ X : Type*} [AddCommGroup Λ] [LinearOrder Λ] [IsOrderedAddMonoid Λ] [SuccOrder Λ]
 
-/-! ### Finite multiples of `Order.succ 0` -/
-
-private theorem exists_eq_succ_nsmul_of_pos_le_nsmul {β : Λ} {n : ℕ} (h0 : 0 < β)
-    (hle : β ≤ n • Order.succ 0) : ∃ k : ℕ, β = (k + 1) • Order.succ 0 := by
-  induction n with
-  | zero =>
-    simp only [zero_nsmul] at hle
-    exact (h0.not_ge hle).elim
-  | succ n ih =>
-    rw [succ_nsmul, ← Order.succ_eq_add_succ_zero] at hle
-    rcases eq_or_lt_of_le hle with rfl | hlt
-    · exact ⟨n, by rw [Order.succ_eq_add_succ_zero, ← succ_nsmul]⟩
-    · exact ih (Order.le_of_lt_succ hlt)
-
-private theorem nsmul_succ_zero_lt_of_forall_ne {β : Λ} (h0 : 0 < β)
-    (hne : ∀ k : ℕ, β ≠ (k + 1) • Order.succ 0) (n : ℕ) : n • Order.succ 0 < β := by
-  by_contra! hle
-  obtain ⟨k, rfl⟩ := exists_eq_succ_nsmul_of_pos_le_nsmul h0 hle
-  exact hne k rfl
-
-private theorem exists_succ_eq_succ_nsmul_iff {β : Λ} (h0 : 0 < β) :
-    (∃ n : ℕ, Order.succ β = (n + 1) • Order.succ 0) ↔
-      ∃ n : ℕ, β = (n + 1) • Order.succ 0 := by
-  constructor
-  · rintro ⟨n, hn⟩
-    rw [Order.succ_eq_add_succ_zero, succ_nsmul, add_left_inj] at hn
-    cases n with
-    | zero =>
-      simp only [zero_nsmul] at hn
-      exact (h0.ne' hn).elim
-    | succ k => exact ⟨k, hn⟩
-  · rintro ⟨n, rfl⟩
-    exact ⟨n + 1, by rw [Order.succ_eq_add_succ_zero, ← succ_nsmul]⟩
-
 /-! ### Products of `a^t` with single letters -/
 
 /-- For `0 < t`, `a^t ∗ a = a^{t+1}` as a partial product of `Λ`-words. -/
@@ -146,20 +112,17 @@ noncomputable def archimedeanPrefixWord (t : Λ) (x y : X × Bool) : InfWord Λ 
     classical
     exact if ∃ n : ℕ, β = (n + 1) • Order.succ 0 then x else y
 
-/-- `archimedeanPrefixWord t x y` is always reduced, because the finite positions
-`(n + 1) • Order.succ 0` are invariant under `Order.succ` on positive elements. -/
-theorem isReduced_archimedeanPrefixWord (t : Λ) (x y : X × Bool) :
-    (archimedeanPrefixWord t x y).IsReduced := by
-  rw [archimedeanPrefixWord, isReduced_ofFun_iff]
-  intro β h0 _
-  classical
-  simp only [exists_succ_eq_succ_nsmul_iff h0]
-  split_ifs
-  · rcases x with ⟨a, s⟩; cases s <;> simp [Prod.map]
-  · rcases y with ⟨b, s⟩; cases s <;> simp [Prod.map]
+omit [IsOrderedAddMonoid Λ] in
+/-- The length of `archimedeanPrefixWord t x y` is `max t 0`. -/
+@[simp]
+theorem length_archimedeanPrefixWord (t : Λ) (x y : X × Bool) :
+    (archimedeanPrefixWord t x y).length = max t 0 :=
+  length_ofFun t _
 
 omit [IsOrderedAddMonoid Λ] in
-private theorem letter_archimedeanPrefixWord_of_exists {t β : Λ} {x y : X × Bool}
+/-- At a positive position `β ≤ t` that is a finite positive multiple of `Order.succ 0`, the
+letter of `archimedeanPrefixWord t x y` is `some x`. -/
+theorem letter_archimedeanPrefixWord_of_exists {t β : Λ} {x y : X × Bool}
     (h0 : 0 < β) (hβ : β ≤ t) (h : ∃ n : ℕ, β = (n + 1) • Order.succ 0) :
     (archimedeanPrefixWord t x y).letter β = some x := by
   classical
@@ -167,12 +130,26 @@ private theorem letter_archimedeanPrefixWord_of_exists {t β : Λ} {x y : X × B
   simp [h]
 
 omit [IsOrderedAddMonoid Λ] in
-private theorem letter_archimedeanPrefixWord_of_not_exists {t β : Λ} {x y : X × Bool}
+/-- At a positive position `β ≤ t` that is not a finite positive multiple of `Order.succ 0`, the
+letter of `archimedeanPrefixWord t x y` is `some y`. -/
+theorem letter_archimedeanPrefixWord_of_not_exists {t β : Λ} {x y : X × Bool}
     (h0 : 0 < β) (hβ : β ≤ t) (h : ¬∃ n : ℕ, β = (n + 1) • Order.succ 0) :
     (archimedeanPrefixWord t x y).letter β = some y := by
   classical
   rw [archimedeanPrefixWord, letter_ofFun_of_pos_of_le _ h0 hβ]
   simp [h]
+
+/-- `archimedeanPrefixWord t x y` is always reduced, because the finite positions
+`(n + 1) • Order.succ 0` are invariant under `Order.succ` on positive elements. -/
+theorem isReduced_archimedeanPrefixWord (t : Λ) (x y : X × Bool) :
+    (archimedeanPrefixWord t x y).IsReduced := by
+  rw [archimedeanPrefixWord, isReduced_ofFun_iff]
+  intro β h0 _
+  classical
+  simp only [Order.exists_succ_eq_succ_nsmul_iff h0.ne']
+  split_ifs
+  · rcases x with ⟨a, s⟩; cases s <;> simp [Prod.map]
+  · rcases y with ⟨b, s⟩; cases s <;> simp [Prod.map]
 
 /-- If `t` exceeds every finite multiple of `Order.succ 0` and `x ≠ y`, then the product
 `(x^t)⁻¹ ∗ archimedeanPrefixWord t x y` is undefined. -/
@@ -186,13 +163,13 @@ theorem not_exists_isMul_inv_ofFun_const_archimedeanPrefixWord {t : Λ}
   have hle_δ : ∀ n : ℕ, n • Order.succ 0 ≤ δ := fun n => by
     refine hmax ⟨nsmul_nonneg h01.le n, ?_, ?_, take_eq_take_iff_forall_letter_eq.2 fun γ hγ => ?_⟩
     · rw [length_ofFun, max_eq_left ht0.le]; exact (ht n).le
-    · rw [archimedeanPrefixWord, length_ofFun, max_eq_left ht0.le]; exact (ht n).le
+    · rw [length_archimedeanPrefixWord, max_eq_left ht0.le]; exact (ht n).le
     · by_cases hγ0 : 0 < γ
       · have hγt : γ ≤ t := hγ.trans (ht n).le
+        obtain ⟨k, -, hk⟩ := Order.exists_eq_succ_nsmul_of_pos_le_nsmul hγ0 hγ
         rw [letter_ofFun_of_pos_of_le (fun _ => x) hγ0 hγt,
-          letter_archimedeanPrefixWord_of_exists hγ0 hγt
-            (exists_eq_succ_nsmul_of_pos_le_nsmul hγ0 hγ)]
-      · simp [archimedeanPrefixWord, letter_ofFun, hγ0]
+          letter_archimedeanPrefixWord_of_exists hγ0 hγt ⟨k, hk⟩]
+      · rw [letter_eq_none_of_not_pos hγ0, letter_eq_none_of_not_pos hγ0]
   have hδpos : 0 < δ := h01.trans_le (by simpa using hle_δ 1)
   have hδnot : ¬∃ k : ℕ, δ = (k + 1) • Order.succ 0 := by
     rintro ⟨k, rfl⟩
@@ -275,7 +252,7 @@ private theorem not_cyclic_decomp_of_fin_length {t : Λ} (ht : ∀ n : ℕ, n �
   have h01 : (0 : Λ) < Order.succ 0 := Order.lt_succ_self_of_lt ht0
   have hlen : t = c.length + (v.length + c.length) := by
     have := congrArg InfWord.length heq
-    simpa [archimedeanPrefixWord, length_ofFun, max_eq_left ht0.le] using this
+    simpa [max_eq_left ht0.le] using this
   have h2c : c.length + c.length < t := by
     rw [hc, ← add_nsmul]
     exact ht (n + n)
@@ -314,7 +291,7 @@ private theorem not_cyclic_decomp_of_inf_length {t : Λ} (ht : ∀ n : ℕ, n �
   have h01 : (0 : Λ) < Order.succ 0 := Order.lt_succ_self_of_lt ht0
   have hlen : t = c.length + (v.length + c.length) := by
     have := congrArg InfWord.length heq
-    simpa [archimedeanPrefixWord, length_ofFun, max_eq_left ht0.le] using this
+    simpa [max_eq_left ht0.le] using this
   have hcpos : 0 < c.length := lt_of_le_of_ne c.length_nonneg (Ne.symm (by simpa using hc 0))
   have hct : c.length ≤ t := by grind [c.length_nonneg, v.length_nonneg]
   have hleft : (archimedeanPrefixWord t (a, true) (a, false)).letter c.length = some (a, false) :=
@@ -331,7 +308,7 @@ private theorem not_cyclic_decomp_of_inf_length {t : Λ} (ht : ∀ n : ℕ, n �
       grind
     refine letter_archimedeanPrefixWord_of_not_exists hpos hle ?_
     rintro ⟨k, hk⟩
-    have hlt := nsmul_succ_zero_lt_of_forall_ne hcpos (fun m => hc (m + 1)) (k + 1)
+    have hlt := Order.nsmul_succ_zero_lt_of_forall_ne hcpos (k + 1) fun m _ => hc (m + 1)
     simp only [length_append, length_inv] at hk
     grind [v.length_nonneg]
   have hright : (archimedeanPrefixWord t (a, true) (a, false)).letter c.length =
@@ -370,19 +347,16 @@ section IntLex
 
 /-- In `ℤ ×ₗ ℤ`, the least positive element is `toLex (0, 1)`. -/
 theorem succ_zero_intLex : Order.succ (0 : ℤ ×ₗ ℤ) = toLex (0, 1) := by
-  change Order.succ (toLex ((0 : ℤ), (0 : ℤ))) = toLex (0, 1)
-  rw [Prod.Lex.succ_toLex, Order.succ_eq_add_one, zero_add]
+  rw [← toLex_zero, Prod.zero_eq_mk, Prod.Lex.succ_toLex, Order.succ_eq_add_one, zero_add]
 
 /-- Every finite multiple of `Order.succ (0 : ℤ ×ₗ ℤ)` is strictly less than `toLex (1, 0)`. -/
 theorem nsmul_succ_zero_lt_intLex (n : ℕ) :
     n • Order.succ (0 : ℤ ×ₗ ℤ) < toLex (1, 0) := by
   have h : n • Order.succ (0 : ℤ ×ₗ ℤ) = toLex (0, (n : ℤ)) := by
     induction n with
-    | zero => rfl
+    | zero => rw [zero_nsmul, ← toLex_zero, Prod.zero_eq_mk, Nat.cast_zero]
     | succ k ih =>
-      rw [succ_nsmul, ih, succ_zero_intLex]
-      change toLex ((0 : ℤ) + 0, (k : ℤ) + 1) = toLex (0, ((k + 1 : ℕ) : ℤ))
-      simp
+      rw [succ_nsmul, ih, succ_zero_intLex, ← toLex_add, Prod.mk_add_mk, add_zero, Nat.cast_succ]
   rw [h, Prod.Lex.lt_iff]
   exact Or.inl zero_lt_one
 

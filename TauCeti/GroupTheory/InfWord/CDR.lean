@@ -144,8 +144,7 @@ theorem inv_mem_CDR_iff : w⁻¹ ∈ CDR Λ X ↔ w ∈ CDR Λ X := by
     simp [inv_append, append_assoc]
   exact ⟨fun h => by simpa using key h, key⟩
 
-/-- In a reduced cyclic decomposition `c⁻¹ ++ v ++ c`, the core `v` is empty iff the whole word
-is empty. -/
+/-- If `c⁻¹ ++ v ++ c` is reduced and `v` is empty, then `c` is empty. -/
 theorem eq_empty_of_isReduced_inv_append_empty_append (h : (c⁻¹ ++ v ++ c).IsReduced)
     (hv : v = empty Λ X) : c = empty Λ X := by
   subst hv
@@ -278,66 +277,15 @@ theorem isCyclicallyReduced_toList {w : InfWord ℤ X} :
     FreeGroup.IsCyclicallyReduced w.toList ↔ w.IsCyclicallyReduced := by
   rw [← isCyclicallyReduced_ofList, ofList_toList]
 
-private theorem exists_peel_of_int_not_isCyclicallyReduced {w : InfWord ℤ X} (hw : w.IsReduced)
-    (hcr : ¬w.IsCyclicallyReduced) :
-    ∃ a u : InfWord ℤ X, w = a ++ u ++ a⁻¹ ∧ u.IsReduced ∧ u.length = w.length - 2 := by
-  rw [isCyclicallyReduced_iff] at hcr
-  push Not at hcr
-  obtain ⟨hpos, hletter⟩ := hcr hw
-  have htwo : 2 ≤ w.length := by
-    by_contra! hlt
-    have hone : w.length = 1 := by omega
-    obtain ⟨⟨x, s⟩, h1⟩ : ∃ p, w.letter 1 = some p :=
-      Option.isSome_iff_exists.1 ((w.isSome_letter 1).2 (by omega))
-    rw [Order.succ_eq_add_one, zero_add, hone, h1] at hletter
-    cases s <;> simp [Prod.map] at hletter
-  set a := w.take 1
-  set u := (w.drop 1).take (w.length - 2)
-  set b := w.drop (w.length - 1)
-  have hba : b = a⁻¹ := by
-    refine ext (by simp [a, b]; omega) fun β h0 hβ => ?_
-    have hβ1 : β = 1 := by simp [b] at hβ; omega
-    subst hβ1
-    rw [letter_drop_of_pos _ _ one_pos, max_eq_right (by omega : (0 : ℤ) ≤ w.length - 1),
-      letter_inv, length_take_of_le (by omega) (by omega), Order.succ_eq_add_one,
-      show (1 : ℤ) + 1 - 1 = 1 by omega, letter_take_of_le _ le_rfl,
-      show (1 : ℤ) + (w.length - 1) = w.length by omega]
-    rw [Order.succ_eq_add_one, zero_add] at hletter
-    rw [hletter, Option.map_map]
-    simp [Function.comp_def, Prod.map]
-  have hdecomp : w = a ++ u ++ a⁻¹ := by
-    rw [← hba, append_assoc]
-    have hb : b = (w.drop 1).drop (w.length - 2) := by
-      rw [drop_drop w (by omega) (by omega)]
-      dsimp only [b]
-      congr 1; omega
-    rw [hb, take_append_drop, take_append_drop]
-  exact ⟨a, u, hdecomp, (hdecomp ▸ hw).left_of_append.right_of_append,
-    length_take_of_le (by omega) (by rw [length_drop_of_le (by omega) (by omega)]; omega)⟩
-
-private theorem isReduced_mem_CDR_int_aux :
-    ∀ n : ℕ, ∀ w : InfWord ℤ X, w.length.toNat ≤ n → w.IsReduced → w ∈ CDR ℤ X
-  | 0, w, hn, _ => by
-    have hw : w = empty ℤ X := by
-      rw [← length_eq_zero_iff]
-      have := w.length_nonneg
-      omega
-    subst hw
-    exact empty_mem_CDR
-  | n + 1, w, hn, hw => by
-    by_cases hcr : w.IsCyclicallyReduced
-    · exact hcr.mem_CDR
-    · obtain ⟨a, u, hdecomp, hu_red, hulen⟩ :=
-        exists_peel_of_int_not_isCyclicallyReduced hw hcr
-      obtain ⟨-, c, v, hv, hu_eq⟩ :=
-        isReduced_mem_CDR_int_aux n u (by omega) hu_red
-      refine ⟨hw, c ++ a⁻¹, v, hv, ?_⟩
-      rw [hdecomp, hu_eq]
-      simp [inv_append, append_assoc]
-
 /-- Over `Λ = ℤ`, every reduced word admits a cyclic decomposition. -/
-theorem isReduced_mem_CDR_int {w : InfWord ℤ X} (hw : w.IsReduced) : w ∈ CDR ℤ X :=
-  isReduced_mem_CDR_int_aux w.length.toNat w le_rfl hw
+theorem isReduced_mem_CDR_int {w : InfWord ℤ X} (hw : w.IsReduced) : w ∈ CDR ℤ X := by
+  classical
+  refine ⟨hw, (ofList (FreeGroup.reduceCyclically.conjugator w.toList))⁻¹,
+    ofList (FreeGroup.reduceCyclically w.toList),
+    isCyclicallyReduced_ofList.2
+      (FreeGroup.reduceCyclically.isCyclicallyReduced (isReduced_toList.2 hw)), ?_⟩
+  have h := congrArg ofList (FreeGroup.reduceCyclically.conj_conjugator_reduceCyclically w.toList)
+  simpa [ofList_append, ofList_invRev, ofList_toList] using h.symm
 
 /-- Over `Λ = ℤ`, `CDR ℤ X` is the set of all reduced words. -/
 theorem CDR_int_eq : CDR ℤ X = {w : InfWord ℤ X | w.IsReduced} :=

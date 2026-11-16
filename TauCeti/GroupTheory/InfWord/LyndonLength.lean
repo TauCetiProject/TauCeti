@@ -25,8 +25,8 @@ Bundling subsets of `InfWord Λ X` that contain `empty Λ X`, are closed under i
 closed under totalized partial multiplication `∗` as `TauCeti.InfWord.WordSubgroup Λ X`, every
 `H : WordSubgroup Λ X` is a group under `∗` and carries the Lyndon length function
 `H.lyndonLength`. If `(H : Set (InfWord Λ X)) ⊆ CDR Λ X`, then `H.lyndonLength` is a free Lyndon
-length function (`TauCeti.InfWord.length_isLyndon`), proving Corollary 4.2 of Myasnikov,
-Remeslennikov, and Serbin.
+length function (`TauCeti.InfWord.WordSubgroup.isFree_lyndonLength`), proving Corollary 4.2 of
+Myasnikov, Remeslennikov, and Serbin.
 
 ## Main definitions
 
@@ -38,14 +38,12 @@ Remeslennikov, and Serbin.
 
 ## Main results
 
-* `TauCeti.InfWord.min_le_of_isGreatest_commonPrefix`: the ultrametric inequality for longest
-  common initial segments of infinite words.
 * `TauCeti.InfWord.gromovProduct_lyndonLength`: the Gromov product `c(g, f)` equals the length of
   the longest common initial segment of `φ g` and `φ f`.
 * `TauCeti.InfWord.isFree_lyndonLength`: an injective multiplication-preserving map into `CDR Λ X`
   induces a free Lyndon length function.
-* `TauCeti.InfWord.length_isLyndon`: on any subgroup of `CDR Λ X`, word length `w ↦ |w|` is a free
-  Lyndon length function.
+* `TauCeti.InfWord.WordSubgroup.isFree_lyndonLength`: on any subgroup of `CDR Λ X`, word length
+  `w ↦ |w|` is a free Lyndon length function.
 
 ## References
 
@@ -61,32 +59,7 @@ namespace TauCeti
 
 namespace InfWord
 
-variable {Λ X : Type*}
-
-/-! ### Ultrametric inequality for longest common initial segments -/
-
-section CommonPrefix
-
-variable [Zero Λ] [LinearOrder Λ]
-
-/-- The lengths of longest common initial segments of three `Λ`-words satisfy the ultrametric
-inequality `min δ(u, v) δ(v, w) ≤ δ(u, w)`. -/
-theorem min_le_of_isGreatest_commonPrefix {u v w : InfWord Λ X} {δ₁ δ₂ δ₃ : Λ}
-    (h₁ : IsGreatest {β | 0 ≤ β ∧ β ≤ u.length ∧ β ≤ v.length ∧ u.take β = v.take β} δ₁)
-    (h₂ : IsGreatest {β | 0 ≤ β ∧ β ≤ v.length ∧ β ≤ w.length ∧ v.take β = w.take β} δ₂)
-    (h₃ : IsGreatest {β | 0 ≤ β ∧ β ≤ u.length ∧ β ≤ w.length ∧ u.take β = w.take β} δ₃) :
-    min δ₁ δ₂ ≤ δ₃ := by
-  refine h₃.2 ⟨le_min h₁.1.1 h₂.1.1, (min_le_left _ _).trans h₁.1.2.1,
-    (min_le_right _ _).trans h₂.1.2.2.1, ?_⟩
-  have h1 : u.take (min δ₁ δ₂) = v.take (min δ₁ δ₂) := by
-    rw [min_comm, ← take_take, h₁.1.2.2.2, take_take]
-  have h2 : v.take (min δ₁ δ₂) = w.take (min δ₁ δ₂) := by
-    rw [← take_take, h₂.1.2.2.2, take_take]
-  exact h1.trans h2
-
-end CommonPrefix
-
-variable [AddCommGroup Λ] [LinearOrder Λ] [IsOrderedAddMonoid Λ] [SuccOrder Λ]
+variable {Λ X : Type*} [AddCommGroup Λ] [LinearOrder Λ] [IsOrderedAddMonoid Λ] [SuccOrder Λ]
 
 /-! ### Lyndon length function induced by a map into infinite words -/
 
@@ -313,13 +286,13 @@ theorem gromovProduct_lyndonLength {u v : H} {δ : Λ}
     H.lyndonLength.gromovProduct u v = (δ : DivisibleHull Λ) :=
   InfWord.gromovProduct_lyndonLength Subtype.val isMul_mul hδ
 
-end WordSubgroup
-
 /-- On any subgroup of `CDR Λ X`, word length `w ↦ |w|` is a free Lyndon length function
 (Myasnikov–Remeslennikov–Serbin, Corollary 4.2). -/
-theorem length_isLyndon (H : WordSubgroup Λ X) (hH : (H : Set (InfWord Λ X)) ⊆ CDR Λ X) :
+theorem isFree_lyndonLength (H : WordSubgroup Λ X) (hH : (H : Set (InfWord Λ X)) ⊆ CDR Λ X) :
     H.lyndonLength.IsFree :=
-  isFree_lyndonLength Subtype.val WordSubgroup.isMul_mul Subtype.val_injective fun u => hH u.2
+  InfWord.isFree_lyndonLength Subtype.val isMul_mul Subtype.val_injective fun u => hH u.2
+
+end WordSubgroup
 
 end InfWord
 
