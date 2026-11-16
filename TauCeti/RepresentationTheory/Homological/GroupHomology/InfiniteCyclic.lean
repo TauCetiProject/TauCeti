@@ -166,10 +166,14 @@ theorem H0π_comp_groupHomologyIso₀_hom (hg : ∀ x, x ∈ Subgroup.zpowers g)
     groupHomology.H0π A ≫ (groupHomologyIso₀ A hg).hom =
       ModuleCat.ofHom (LinearMap.range (A.ρ g - LinearMap.id)).mkQ := by
   ext x
-  -- Both sides are the quotient map, after `H₀(G, A) ≅ A_G` sends the class of `a` to `⟦a⟧`.
-  exact congrArg (Submodule.quotEquivOfEq _ _
+  -- `(H0Iso A ≪≫ e.toModuleIso).hom` is `e` after `H0Iso A`, which sends the class of `a` to
+  -- `Coinvariants.mk a`, by definition the quotient class `Submodule.Quotient.mk a`; the
+  -- composite `≪≫` is stated through this definitional equality, so `Iso.trans_hom` cannot
+  -- rewrite it. `Submodule.quotEquivOfEq_mk` then says that `e` keeps the class of `a`.
+  exact (congrArg (Submodule.quotEquivOfEq _ _
     (Representation.coinvariantsKer_eq_range_of_forall_mem_zpowers A.ρ g hg))
-      congr($(groupHomology.H0π_comp_H0Iso_hom A).hom x)
+      congr($(groupHomology.H0π_comp_H0Iso_hom A).hom x)).trans
+    (Submodule.quotEquivOfEq_mk _ _ _ x)
 
 /-- **The homology of an infinite cyclic group vanishes in degrees at least `2`.** -/
 theorem isZero_groupHomology_add_two (hg : ∀ x, x ∈ Subgroup.zpowers g) (hg' : ¬IsOfFinOrder g)
