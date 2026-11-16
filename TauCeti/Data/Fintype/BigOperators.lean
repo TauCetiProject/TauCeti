@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Order.Prod.Lex.Basic
 
 /-!
 # Sums over finite types
@@ -34,7 +35,11 @@ use this to discard every term containing a coordinate that occurs only once.
 Selecting, among all maps, those that agree with a fixed map `f` away from a coordinate `i` and
 summing over them is summing over the value at `i` (`Fintype.sum_ite_eq_update`). A sum over maps
 on `Fin (n + 1)` splits as a sum over their first `n` values and their last value
-(`Fintype.sum_fin_snoc`).
+(`Fintype.sum_fin_snoc`). A sum over pairs in `(α × β) × (γ × δ)` whose first coordinates satisfy
+`r p.1.1 p.2.1` splits over pairs in `α × γ` satisfying `r` and both second coordinates
+(`Fintype.sum_filter_fst`), and on a lexicographic product `V ×ₗ ι` over a preordered base `V`, a
+sum over strictly increasing pairs `p.1 < p.2` splits into intra-cluster and inter-cluster pairs
+(`Fintype.sum_filter_lt_lex`).
 -/
 
 public section
@@ -198,5 +203,66 @@ theorem prod_fin_snoc {n : ℕ} {α : Fin (n + 1) → Type*} [∀ i, Fintype (α
     ∏ s, f s = ∏ t : ∀ i : Fin n, α i.castSucc, ∏ y : α (Fin.last n), f (Fin.snoc t y) := by
   rw [← (Fin.snocEquiv α).prod_comp, Fintype.prod_prod_type, prod_comm]
   simp only [Fin.snocEquiv_apply]
+
+/-- A product over pairs `(x, y) : (α × β) × (γ × δ)` whose first coordinates satisfy `r x.1 y.1`
+splits over pairs `e : α × γ` satisfying `r e.1 e.2` and both second coordinates in `β` and `δ`. -/
+@[to_additive /-- A sum over pairs `(x, y) : (α × β) × (γ × δ)` whose first coordinates satisfy
+`r x.1 y.1` splits over pairs `e : α × γ` satisfying `r e.1 e.2` and both second coordinates in
+`β` and `δ`. -/]
+theorem prod_filter_fst {α β γ δ M : Type*} [Fintype α] [Fintype β] [Fintype γ] [Fintype δ]
+    [CommMonoid M] (r : α → γ → Prop) [DecidableRel r] (f : (α × β) × (γ × δ) → M) :
+    (∏ p : (α × β) × (γ × δ) with r p.1.1 p.2.1, f p) =
+      ∏ e : α × γ with r e.1 e.2, ∏ b : β, ∏ d : δ, f ((e.1, b), (e.2, d)) := by
+  have hbij : (∏ p : (α × β) × (γ × δ) with r p.1.1 p.2.1, f p) =
+      ∏ q ∈ ({e : α × γ | r e.1 e.2} : Finset (α × γ)) ×ˢ (univ : Finset (β × δ)),
+        f ((q.1.1, q.2.1), (q.1.2, q.2.2)) :=
+    Finset.prod_equiv (Equiv.prodProdProdComm α β γ δ) (by simp) (by simp)
+  rw [hbij, prod_product]
+  exact Finset.prod_congr rfl fun _ _ => Fintype.prod_prod_type _
+
+/-- On a lexicographic product `V ×ₗ ι` over a preordered base `V`, a product over strictly
+increasing pairs `p.1 < p.2` splits into intra-cluster pairs `(toLex (v, q.1), toLex (v, q.2))`
+with `q.1 < q.2` and inter-cluster pairs `(toLex (e.1, a), toLex (e.2, b))` with `e.1 < e.2`. -/
+@[to_additive /-- On a lexicographic product `V ×ₗ ι` over a preordered base `V`, a sum over
+strictly increasing pairs `p.1 < p.2` splits into intra-cluster pairs
+`(toLex (v, q.1), toLex (v, q.2))` with `q.1 < q.2` and inter-cluster pairs
+`(toLex (e.1, a), toLex (e.2, b))` with `e.1 < e.2`. -/]
+theorem prod_filter_lt_lex {V ι M : Type*} [Fintype V] [Preorder V] [DecidableLT V]
+    [Fintype ι] [LT ι] [DecidableLT ι] [DecidableLT (V ×ₗ ι)] [CommMonoid M]
+    (f : (V ×ₗ ι) × (V ×ₗ ι) → M) :
+    (∏ p : (V ×ₗ ι) × (V ×ₗ ι) with p.1 < p.2, f p) =
+      (∏ v : V, ∏ q : ι × ι with q.1 < q.2, f (toLex (v, q.1), toLex (v, q.2))) *
+        ∏ e : V × V with e.1 < e.2, ∏ a : ι, ∏ b : ι, f (toLex (e.1, a), toLex (e.2, b)) := by
+  have : DecidableEq ((V ×ₗ ι) × (V ×ₗ ι)) := Classical.decEq _
+  have hsub : ({p : (V ×ₗ ι) × (V ×ₗ ι) | (ofLex p.1).1 < (ofLex p.2).1} :
+        Finset ((V ×ₗ ι) × (V ×ₗ ι))) ⊆
+      ({p : (V ×ₗ ι) × (V ×ₗ ι) | p.1 < p.2} : Finset ((V ×ₗ ι) × (V ×ₗ ι))) := fun _ hp => by
+    simp only [mem_filter, mem_univ, true_and] at hp ⊢
+    exact Prod.Lex.lt_iff.mpr (Or.inl hp)
+  rw [← prod_sdiff hsub]
+  congr 1
+  · have hintra : (∏ p ∈ ({p : (V ×ₗ ι) × (V ×ₗ ι) | p.1 < p.2} :
+          Finset ((V ×ₗ ι) × (V ×ₗ ι))) \
+        ({p : (V ×ₗ ι) × (V ×ₗ ι) | (ofLex p.1).1 < (ofLex p.2).1} :
+          Finset ((V ×ₗ ι) × (V ×ₗ ι))), f p) =
+        ∏ r ∈ (univ : Finset V) ×ˢ ({q : ι × ι | q.1 < q.2} : Finset (ι × ι)),
+          f (toLex (r.1, r.2.1), toLex (r.1, r.2.2)) := by
+      refine (prod_bij (fun r _ => (toLex (r.1, r.2.1), toLex (r.1, r.2.2)))
+        (fun r hr => ?_) (fun r₁ _ r₂ _ h => ?_) (fun p hp => ?_) (fun _ _ => rfl)).symm
+      · simp only [mem_product, mem_filter, mem_univ, true_and, mem_sdiff, Prod.Lex.lt_iff,
+          ofLex_toLex, lt_self_iff_false, false_or] at hr ⊢
+        exact ⟨hr, not_false⟩
+      · simp only [Prod.ext_iff, EmbeddingLike.apply_eq_iff_eq] at h
+        ext <;> simp [h]
+      · simp only [mem_sdiff, mem_filter, mem_univ, true_and, Prod.Lex.lt_iff] at hp
+        rcases hp with ⟨hlt | ⟨heq, hlt₂⟩, hnot⟩
+        · exact absurd hlt hnot
+        · refine ⟨((ofLex p.1).1, ((ofLex p.1).2, (ofLex p.2).2)), by simp [hlt₂], ?_⟩
+          exact Prod.ext (by simp) (by simp [heq])
+    rw [hintra, prod_product]
+  · have hinter : (∏ p : (V ×ₗ ι) × (V ×ₗ ι) with (ofLex p.1).1 < (ofLex p.2).1, f p) =
+        ∏ p : (V × ι) × (V × ι) with p.1.1 < p.2.1, f (toLex p.1, toLex p.2) :=
+      Finset.prod_equiv (Equiv.prodCongr ofLex ofLex) (by simp) (by simp)
+    rw [hinter, prod_filter_fst]
 
 end Fintype

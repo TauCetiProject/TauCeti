@@ -294,7 +294,7 @@ private theorem eq_augmentation_of_moduleFinite_reducedQuotient
     exact ⟨n, by rw [← map_pow, CommHopfAlgCat.mkQuotient_eq_zero_iff]; exact hyn⟩
   let _ : Module.Finite k (quotient Q J) := Module.Finite.of_injective j.hom.toLinearMap hj
   let _ : ConnectedSpace (PrimeSpectrum (quotient Q J)) :=
-    geometricallyConnectedCommHopfAlgProperty.connectedSpace k _ hJ.geometricallyConnected
+    geometricallyConnectedCommHopfAlgProperty.connectedSpace hJ.geometricallyConnected
   -- A finite connected reduced group is trivial.
   have hbot := HopfIdeal.augmentation_eq_bot_of_moduleFinite (k := k) (H := quotient Q J)
   apply le_antisymm (HopfIdeal.le_augmentation k Q J)

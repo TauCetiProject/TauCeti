@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import TauCeti.MeasureTheory.Function.SchwarzRearrangement
 -- Proof-only: Lebesgue measure, uniqueness of Haar measure and the Brunn–Minkowski inequality.
