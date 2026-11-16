@@ -41,10 +41,10 @@ variable {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f)
 
 /-- The restrictions to three consecutive skeleta form a map of skeletal triples. -/
 private def skeletonTripleMap (n : ℕ) : skeletonTriple C n ⟶ skeletonTriple C' n :=
-  ⟨ComposableArrows.homMk₂ (skeletonMap C C' hf n)
-    (skeletonMap C C' hf (n + 1)) (skeletonMap C C' hf (n + 2))
+  TopTriple.homMk (skeletonMap C C' hf n) (skeletonMap C C' hf (n + 1))
+    (skeletonMap C C' hf (n + 2))
     (skeletonMap_comp_inclusion C C' hf n.le_succ).symm
-    (skeletonMap_comp_inclusion C C' hf (n + 1).le_succ).symm⟩
+    (skeletonMap_comp_inclusion C C' hf (n + 1).le_succ).symm
 
 /-- The restrictions to two consecutive skeleta form a map of skeletal pairs. -/
 def skeletonPairMap (n : ℕ) : skeletonPair C n ⟶ skeletonPair C' n :=
