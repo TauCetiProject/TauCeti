@@ -21,8 +21,7 @@ radii, where `q` is conjugate to `p`. The latter norm is finite because `q < 2`.
 These bounds are useful for Cauchy integral equations with rough zeroth-order coefficients.
 The exponent hypotheses are expressed by a Hölder conjugate pair, allowing `p = ∞`, `q = 1`.
 Such a Cauchy transform is moreover continuous on the whole plane
-(`TauCeti.continuous_cauchyTransform_of_memLp`, specialized to bounded data in
-`TauCeti.continuous_cauchyTransform_of_norm_le`), since moving the pole moves the reciprocal
+(`TauCeti.continuous_cauchyTransform_of_memLp`), since moving the pole moves the reciprocal
 kernel continuously in `L^q` on the support disc. On supercritical data supported in discs the
 transform is subtractive (`TauCeti.cauchyTransform_sub_of_memLp`).
 
@@ -168,15 +167,5 @@ theorem continuous_cauchyTransform_of_memLp [p.HolderConjugate q] (hq : q < 2)
       (enorm_cauchyTransform_sub_cauchyTransform_le hq hf hs w)
   simpa only [Function.comp_def, toReal_eNorm, ENNReal.toReal_zero] using
     (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp henorm
-
-/-- **Continuity of the Cauchy transform of bounded data.** The Cauchy transform of an essentially
-bounded measurable map supported in a closed disc is continuous on the whole plane: moving the
-pole moves the reciprocal kernel continuously in `L¹` on the disc. -/
-theorem continuous_cauchyTransform_of_norm_le (hf : AEStronglyMeasurable f volume)
-    (hs : support f ⊆ closedBall c r) {M : ℝ} (hM : ∀ᵐ z, ‖f z‖ ≤ M) :
-    Continuous (cauchyTransform f) :=
-  have := ENNReal.HolderConjugate.top_one
-  continuous_cauchyTransform_of_memLp (p := ∞) (q := 1) (by norm_num) (memLp_top_of_bound hf M hM)
-    hs
 
 end TauCeti

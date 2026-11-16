@@ -14,6 +14,7 @@ import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Function.Lp.Translation
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!
 # Planar Cauchy kernel estimates
@@ -202,10 +203,12 @@ theorem eLpNorm_truncatedCauchyKernel {q : ENNReal} (hq0 : q ≠ 0) (hq : q < 2)
   field_simp [hqpos.ne']
 
 /-- As the cutoff radius shrinks to zero, the `L^q` norm of the truncated reciprocal kernel tends
-to zero for every `0 < q < 2`. -/
-theorem tendsto_eLpNorm_truncatedCauchyKernel_nhds_zero {q : ENNReal} (hq0 : q ≠ 0)
-    (hq : q < 2) :
+to zero for every `q < 2`. -/
+theorem tendsto_eLpNorm_truncatedCauchyKernel_nhds_zero {q : ENNReal} (hq : q < 2) :
     Tendsto (fun R : ℝ ↦ eLpNorm (truncatedCauchyKernel R) q volume) (𝓝 0) (𝓝 0) := by
+  rcases eq_or_ne q 0 with rfl | hq0
+  · simp_rw [eLpNorm_exponent_zero (measurable_truncatedCauchyKernel _).aestronglyMeasurable]
+    exact tendsto_const_nhds
   have hqt : q ≠ ⊤ := ne_top_of_lt hq
   have hqpos : 0 < q.toReal := ENNReal.toReal_pos hq0 hqt
   have hqreal : q.toReal < 2 := by
@@ -266,27 +269,10 @@ theorem tendsto_eLpNorm_sub_inv_sub_sub_inv_closedBall {q : ENNReal} (hq1 : 1 �
 theorem tendsto_integral_norm_sub_inv_sub_sub_inv_closedBall {ι : Type*} {l : Filter ι}
     {wn : ι → ℂ} {w : ℂ} (hw : Tendsto wn l (𝓝 w)) (c : ℂ) (R : ℝ) :
     Tendsto (fun n ↦ ∫ z in closedBall c R, ‖(z - wn n)⁻¹ - (z - w)⁻¹‖) l (𝓝 0) := by
-  let T := ‖c‖ + R + ‖w‖ + 1
-  have hk := integrable_truncatedCauchyKernel T
-  have hlim := hk.tendsto_integral_norm_translate_sub hw
-  apply squeeze_zero' (Eventually.of_forall fun n ↦ integral_nonneg fun _ ↦ norm_nonneg _) ?_
-    hlim
-  filter_upwards [hw.eventually (ball_mem_nhds w zero_lt_one)] with n hn
-  have hnNorm : ‖wn n‖ ≤ ‖w‖ + 1 := norm_le_norm_add_const_of_dist_le (mem_ball.mp hn).le
-  have heq : (∫ z in closedBall c R, ‖(z - wn n)⁻¹ - (z - w)⁻¹‖) =
-      ∫ z in closedBall c R, ‖truncatedCauchyKernel T (z - wn n) -
-        truncatedCauchyKernel T (z - w)‖ := by
-    apply setIntegral_congr_fun isClosed_closedBall.measurableSet
-    intro z hz
-    have hzNorm : ‖z‖ ≤ ‖c‖ + R := norm_le_norm_add_const_of_dist_le (mem_closedBall.mp hz)
-    have hzn : z - wn n ∈ closedBall 0 T :=
-      mem_closedBall_zero_iff.mpr ((norm_sub_le z (wn n)).trans (by dsimp [T]; linarith))
-    have hzw : z - w ∈ closedBall 0 T :=
-      mem_closedBall_zero_iff.mpr ((norm_sub_le z w).trans (by dsimp [T]; linarith))
-    simp only [truncatedCauchyKernel_def, Set.indicator_of_mem hzn, Set.indicator_of_mem hzw]
-  rw [heq]
-  exact setIntegral_le_integral ((hk.comp_sub_right (wn n)).sub (hk.comp_sub_right w)).norm
-    (Eventually.of_forall fun _ ↦ norm_nonneg _)
+  have : IsFiniteMeasure (volume.restrict (closedBall c R)) :=
+    isFiniteMeasure_restrict.2 measure_closedBall_lt_top.ne
+  exact TauCeti.MeasureTheory.tendsto_integral_norm_of_tendsto_eLpNorm le_rfl
+    (tendsto_eLpNorm_sub_inv_sub_sub_inv_closedBall le_rfl (by norm_num) hw c R)
 
 /-- The Cauchy integral of complex data is the corresponding complex combination of the
 integrals of its real and imaginary parts. -/

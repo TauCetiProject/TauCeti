@@ -13,9 +13,11 @@ public import Mathlib.RingTheory.Jacobson.Radical
 # Units and the Jacobson radical of normed rings
 
 In a normed ring with summable geometric series, `Ring.inverse` is continuous at every unit
-(`NormedRing.inverse_continuousAt`), but it jumps to `0` at the boundary of the open set of units.
-When the nonunits also form an open set, as in a complete discretely valued ring such as `ℤ_p`,
-there is no such boundary and `Ring.inverse` is continuous everywhere.
+(`NormedRing.inverse_continuousAt`), so composing `Ring.inverse` with a continuous unit-valued map
+is continuous (`NormedRing.continuousOn_inverse`). Because `Ring.inverse` jumps to `0` at the
+boundary of the open set of units, global continuity requires more: when the nonunits also form an
+open set, as in a complete discretely valued ring such as `ℤ_p`, there is no such boundary and
+`Ring.inverse` is continuous everywhere.
 
 The Neumann series also gives explicit bounds: `‖(1 - x)⁻¹‖ ≤ ‖1‖ - 1 + (1 - ‖x‖)⁻¹` when
 `‖x‖ < 1`, and `‖(u + t)⁻¹‖ ≤ ‖u⁻¹‖ / (1 - ‖u⁻¹‖ * ‖t‖)` for a unit `u` with
@@ -36,6 +38,14 @@ public section
 namespace NormedRing
 
 variable {R : Type*} [NormedRing R] [HasSummableGeomSeries R]
+
+/-- If `f` is continuous on `s` and takes unit values on `s` in a normed ring with summable
+geometric series, then `x ↦ Ring.inverse (f x)` is continuous on `s`. -/
+theorem continuousOn_inverse {X : Type*} [TopologicalSpace X] {s : Set X} {f : X → R}
+    (hf : ContinuousOn f s) (hu : ∀ x ∈ s, IsUnit (f x)) :
+    ContinuousOn (fun x ↦ Ring.inverse (f x)) s := fun x hx ↦ by
+  obtain ⟨u, hu'⟩ := hu x hx
+  exact (hu' ▸ inverse_continuousAt u).comp_continuousWithinAt (hf x hx)
 
 /-- If the nonunits of a normed ring with summable geometric series form an open set, then
 `Ring.inverse` is continuous: it is continuous at every unit, and locally zero at every nonunit. -/

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Analysis.Complex.Wirtinger.Similarity.Transported
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Normed.Ring.Units
 import TauCeti.Analysis.Sobolev.Local.ChainRule
 import TauCeti.Analysis.Sobolev.Local.Multiplication
 
@@ -206,10 +207,8 @@ theorem isWeakLinearCauchyRiemannOn_iff_frame [FiniteDimensional ℂ V] (hp : 2 
   have hΦw : MemWkpLoc p Ω 1 Φ :=
     memWkpLoc_succ_iff_of_isOpen.2 ⟨hΦc.memLpLoc, DΦ, hΦ, memWkpLoc_zero_iff.2 hDΦ⟩
   have hΨw := hΦw.ring_inverse hΦc hu
-  have hΨc : ContinuousOn (fun z => Ring.inverse (Φ z)) Ω := fun z hz => by
-    have h := NormedRing.inverse_continuousAt (hu z hz).unit
-    rw [IsUnit.unit_spec] at h
-    exact h.comp_continuousWithinAt (hΦc z hz)
+  have hΨc : ContinuousOn (fun z => Ring.inverse (Φ z)) Ω :=
+    NormedRing.continuousOn_inverse hΦc hu
   have hinv (z : ℂ) (hz : z ∈ (Ω : Set ℂ)) (v : V) : Φ z (Ring.inverse (Φ z) v) = v := by
     simpa using congr($(Ring.mul_inverse_cancel _ (hu z hz)) v)
   have hinv' (z : ℂ) (hz : z ∈ (Ω : Set ℂ)) (v : V) : Ring.inverse (Φ z) (Φ z v) = v := by
@@ -266,10 +265,8 @@ theorem memLpLoc_frameCoeff_iff {q : ℝ≥0∞} {U : Set ℂ} (hU : MeasurableS
     (hΦc : ContinuousOn Φ U) (hDΦ : MemLpLoc q U DΦ) (hu : ∀ z ∈ U, IsUnit (Φ z))
     (hJc : ContinuousOn J U) :
     MemLpLoc q U (frameCoeff J C Φ DΦ) ↔ MemLpLoc q U C := by
-  have hΨc : ContinuousOn (fun z => Ring.inverse (Φ z)) U := fun z hz => by
-    have h := NormedRing.inverse_continuousAt (hu z hz).unit
-    rw [IsUnit.unit_spec] at h
-    exact h.comp_continuousWithinAt (hΦc z hz)
+  have hΨc : ContinuousOn (fun z => Ring.inverse (Φ z)) U :=
+    NormedRing.continuousOn_inverse hΦc hu
   have h1 : MemLpLoc q U (fun z => DΦ z 1) := by
     simpa using hDΦ.clm_comp (apply ℝ (V →L[ℝ] V) (1 : ℂ))
   have hI : MemLpLoc q U (fun z => DΦ z I) := by

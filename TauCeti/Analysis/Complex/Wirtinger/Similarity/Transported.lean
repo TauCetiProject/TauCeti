@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
+import TauCeti.Analysis.Normed.Ring.Units
 
 /-!
 # A non-constant complex structure for the similarity principle
@@ -25,6 +26,8 @@ opposite normalization is excluded: if `J' Φ = -Φ i` at `z₀`, then `ξ w = �
 ## Main declarations
 
 * `TauCeti.transportedComplexStructure`: the complex structure `J = Φ i Φ⁻¹`.
+* `TauCeti.continuousOn_transportedComplexStructure`: continuity of `J = Φ i Φ⁻¹` from continuity
+  of `Φ` when `V` is complete.
 * `TauCeti.transportedCoeff`: the coefficient `C = -(∂_s Φ + J ∂_t Φ) Φ⁻¹`.
 * `TauCeti.fderiv_apply_add_transportedComplexStructure_add_eq_zero`: `Φ σ` solves the equation
   for `J = Φ i Φ⁻¹`.
@@ -119,6 +122,23 @@ theorem fderiv_apply_smul_add_ne_zero {z₀ : ℂ}
     ne_eq]
   rw [← two_smul ℝ]
   exact smul_ne_zero two_ne_zero ((Φ z₀).map_ne_zero_iff.mpr hv)
+
+/-- On a complete space, continuity of a family of real-linear automorphisms `Φ` on `U` implies
+continuity of `J = Φ i Φ⁻¹` on `U`. -/
+theorem continuousOn_transportedComplexStructure [CompleteSpace V] {U : Set ℂ}
+    (hΦ : ContinuousOn (fun w ↦ (Φ w : V →L[ℝ] V)) U) :
+    ContinuousOn (transportedComplexStructure Φ) U := by
+  have hsymm : (fun w ↦ ((Φ w).symm : V →L[ℝ] V)) =
+      fun w ↦ Ring.inverse (Φ w : V →L[ℝ] V) := by
+    ext w v
+    simp
+  have hΨ : ContinuousOn (fun w ↦ ((Φ w).symm : V →L[ℝ] V)) U := by
+    rw [hsymm]
+    exact NormedRing.continuousOn_inverse hΦ fun w _ ↦ (Φ w).toUnit.isUnit
+  have hJ : transportedComplexStructure Φ = fun w ↦
+      (Φ w : V →L[ℝ] V) ∘L ((I • ContinuousLinearMap.id ℝ V) ∘L ((Φ w).symm : V →L[ℝ] V)) :=
+    funext fun w ↦ ContinuousLinearMap.ext (transportedComplexStructure_apply w)
+  exact hJ ▸ hΦ.clm_comp (continuousOn_const.clm_comp hΨ)
 
 /-- For a family `C¹` on an open set `U` with inverse continuous on `U`, the coefficient `C` is
 continuous on `U`. -/
