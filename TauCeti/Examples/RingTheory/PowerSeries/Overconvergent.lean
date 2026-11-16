@@ -23,6 +23,7 @@ is strict over `ℚ_p`, and verify the exact `p`-adic convergence radius of the 
 
 * Over any nontrivial ultrametric normed commutative ring `R`, the geometric series `∑ Xⁿ` lies on
   the open unit disc (`OnOpenDisc 1`), is not restricted at radius `1`, and is not overconvergent.
+* Over `ℚ_p`, `∑ p^(⌊√n⌋) Xⁿ` lies in `IsRestricted.subring 1`, yet is not overconvergent.
 * Over `ℚ_p`, `∑ pⁿ Xⁿ` is overconvergent (`washnitzerAlgebra Unit ℚ_p`) and lies on the open disc
   of radius `p`, yet fails to be restricted at radius `p` (and hence at every scalar-norm radius
   `‖a‖ > 1` with `a ∈ ℚ_p`), and is not entire.
@@ -73,6 +74,31 @@ end CommRing
 section Padic
 
 variable (p : ℕ) [hp : Fact p.Prime]
+
+-- Over `ℚ_p`, `∑ p^(⌊√n⌋) Xⁿ` lies in `IsRestricted.subring 1`, yet is not overconvergent: along
+-- `n = k²`, its weighted coefficient norms at any radius `ρ > 1` equal `(‖p‖ ρᵏ)ᵏ`.
+example :
+    (mk fun n ↦ (p : ℚ_[p]) ^ n.sqrt) ∈ IsRestricted.subring 1 ∧
+      (mk fun n ↦ (p : ℚ_[p]) ^ n.sqrt) ∉ washnitzerAlgebra Unit ℚ_[p] := by
+  have hp0 : 0 < ‖(p : ℚ_[p])‖ := norm_pos_iff.mpr (Nat.cast_ne_zero.mpr hp.out.ne_zero)
+  have hp1 : ‖(p : ℚ_[p])‖ < 1 := by
+    rw [Padic.norm_p]
+    exact inv_lt_one_of_one_lt₀ (mod_cast hp.out.one_lt)
+  refine ⟨IsRestricted.mem_subring.mpr ((isRestricted_iff' 1 _).mpr ?_), fun hf ↦ ?_⟩
+  · have hsqrt : Tendsto Nat.sqrt atTop atTop :=
+      tendsto_atTop.mpr fun b ↦ eventually_atTop.mpr
+        ⟨b * b, fun n hn ↦ by simpa only [Nat.sqrt_eq] using Nat.sqrt_le_sqrt hn⟩
+    simpa only [Function.comp_def, coeff_mk, norm_pow, one_pow, mul_one] using
+      (tendsto_pow_atTop_nhds_zero_of_lt_one hp0.le hp1).comp hsqrt
+  · obtain ⟨ρ, hρ, hfρ⟩ := mem_washnitzerAlgebra_unit_iff.mp hf
+    have hlim := ((isRestricted_iff' ρ _).mp hfρ).comp
+      (tendsto_atTop_mono Nat.le_mul_self tendsto_id)
+    obtain ⟨k, hk1, hkρ⟩ :=
+      (((hlim.eventually (gt_mem_nhds one_pos)).and
+        ((tendsto_pow_atTop_atTop_of_one_lt hρ).eventually_ge_atTop ‖(p : ℚ_[p])‖⁻¹))).exists
+    simp only [Function.comp_def, coeff_mk, Nat.sqrt_eq, norm_pow, pow_mul, ← mul_pow] at hk1
+    have hge : 1 ≤ ‖(p : ℚ_[p])‖ * ρ ^ k := (inv_le_iff_one_le_mul₀' hp0).mp hkρ
+    exact (one_le_pow₀ hge).not_gt hk1
 
 -- Over `ℚ_p`, `∑ pⁿ Xⁿ` is overconvergent and analytic on the open disc of radius `p`, yet fails
 -- to be restricted at radius `p` and is not entire.

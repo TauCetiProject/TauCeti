@@ -24,23 +24,24 @@ polynomials are dense in `R⟨X⟩†` (`TauCeti.Dagger.washnitzerAlgebra.denseR
 
 ## Main definitions
 
-* `TauCeti.Dagger.washnitzerAlgebra.eval₂`: contractive evaluation `R⟨X⟩† →+* S` at arguments
-  `‖a i‖ ≤ 1` along `φ : R →+* S` satisfying `∀ r, ‖φ r‖ ≤ ‖r‖`.
 * `TauCeti.Dagger.washnitzerAlgebra.eval₂OfBound`: evaluation `R⟨X⟩† →+* S` at arguments
   `‖a i‖ ≤ 1` along `φ : R →+* S` satisfying `∀ r, ‖φ r‖ ≤ C * ‖r‖`.
+* `TauCeti.Dagger.washnitzerAlgebra.eval₂`: contractive evaluation `R⟨X⟩† →+* S` at arguments
+  `‖a i‖ ≤ 1` along `φ : R →+* S` satisfying `∀ r, ‖φ r‖ ≤ ‖r‖`, defined as the `C = 1`
+  specialization of `eval₂OfBound`.
 * `TauCeti.Dagger.washnitzerAlgebra.aeval`: contractive `R`-algebra evaluation `R⟨X⟩† →ₐ[R] S`.
 
 ## Main results
 
-* `TauCeti.Dagger.washnitzerAlgebra.eval₂_ofRestricted` and
-  `TauCeti.Dagger.washnitzerAlgebra.eval₂OfBound_ofRestricted`: agreement with evaluation on
+* `TauCeti.Dagger.washnitzerAlgebra.eval₂OfBound_ofRestricted` and
+  `TauCeti.Dagger.washnitzerAlgebra.eval₂_ofRestricted`: agreement with evaluation on
   polyradius subrings `R{X/c}` (`c > 1`).
-* `TauCeti.Dagger.washnitzerAlgebra.norm_eval₂_le` and
-  `TauCeti.Dagger.washnitzerAlgebra.norm_eval₂OfBound_le`: Gauss norm bounds and continuity.
-* `TauCeti.Dagger.washnitzerAlgebra.eq_eval₂`,
-  `TauCeti.Dagger.washnitzerAlgebra.eq_eval₂OfBound`, and
-  `TauCeti.Dagger.washnitzerAlgebra.existsUnique_continuous_ringHom_of_bound`: universal property
-  among continuous ring homomorphisms out of `R⟨X⟩†`.
+* `TauCeti.Dagger.washnitzerAlgebra.norm_eval₂OfBound_le` and
+  `TauCeti.Dagger.washnitzerAlgebra.norm_eval₂_le`: Gauss norm bounds and continuity.
+* `TauCeti.Dagger.washnitzerAlgebra.eq_eval₂OfBound`,
+  `TauCeti.Dagger.washnitzerAlgebra.existsUnique_continuous_ringHom_of_bound`, and
+  `TauCeti.Dagger.washnitzerAlgebra.eq_eval₂`: universal property among continuous ring
+  homomorphisms out of `R⟨X⟩†`.
 
 ## References
 
@@ -61,112 +62,6 @@ open RingHom (restrictedEval₂OfBound restrictedEval₂OfBound_apply hasSum_res
 
 variable {k : ℕ} {R S : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S]
-
-section Contractive
-
-variable (φ : R →+* S) (a : Fin k → S) (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖) (ha : ∀ i, ‖a i‖ ≤ 1)
-
-/-- **Contractive evaluation of overconvergent power series.** For `φ : R →+* S` nonincreasing for
-the norms and arguments `a i` in the closed unit ball of a complete ultrametric normed commutative
-ring `S`, the ring homomorphism `R⟨X⟩† →+* S` sending `f` to `∑ₜ φ(fₜ) aᵗ`. -/
-noncomputable def eval₂ : washnitzerAlgebra (Fin k) R →+* S :=
-  (restrictedEval₂ φ a hφ ha).comp (toTate (Fin k) R).toRingHom
-
-/-- `eval₂` factors through `toTate` and unit-radius `restrictedEval₂`. -/
-theorem eval₂_eq_restrictedEval₂_toTate (f : washnitzerAlgebra (Fin k) R) :
-    eval₂ φ a hφ ha f = restrictedEval₂ φ a hφ ha (toTate (Fin k) R f) :=
-  (rfl)
-
-/-- `eval₂` is the weighted monomial sum `TauCeti.Huber.weightedEval φ a f`. -/
-theorem eval₂_apply (f : washnitzerAlgebra (Fin k) R) :
-    eval₂ φ a hφ ha f = weightedEval φ a f := by
-  rw [eval₂_eq_restrictedEval₂_toTate, restrictedEval₂_apply, coe_toTate]
-
-/-- The monomial values `φ(fₜ) aᵗ` sum to `eval₂ φ a hφ ha f`. -/
-theorem hasSum_eval₂ (f : washnitzerAlgebra (Fin k) R) :
-    HasSum (weightedEvalTerm φ a f) (eval₂ φ a hφ ha f) := by
-  simpa only [eval₂_eq_restrictedEval₂_toTate, coe_toTate] using
-    hasSum_restrictedEval₂ φ a hφ ha (toTate (Fin k) R f)
-
-/-- `eval₂` extends `φ` on constants. -/
-@[simp]
-theorem eval₂_algebraMap (r : R) :
-    eval₂ φ a hφ ha (algebraMap R _ r) = φ r := by
-  rw [eval₂_eq_restrictedEval₂_toTate, AlgHom.commutes, restrictedEval₂_algebraMap]
-
-/-- `eval₂` sends the variable `X i` to `a i`. -/
-@[simp]
-theorem eval₂_X (i : Fin k) :
-    eval₂ φ a hφ ha (X (Fin k) R i) = a i := by
-  rw [eval₂_eq_restrictedEval₂_toTate, toTate_X, restrictedEval₂_X]
-
-/-- `eval₂` extends polynomial evaluation `MvPolynomial.eval₂`. -/
-@[simp]
-theorem eval₂_ofMvPolynomial (p : MvPolynomial (Fin k) R) :
-    eval₂ φ a hφ ha (ofMvPolynomial (Fin k) R p) = MvPolynomial.eval₂ φ a p := by
-  have h : toTate (Fin k) R (ofMvPolynomial (Fin k) R p) =
-      ⟨p, p.isRestricted (fun _ ↦ 1)⟩ := Subtype.ext (by simp)
-  rw [eval₂_eq_restrictedEval₂_toTate, h, restrictedEval₂_polynomial]
-
-/-- Evaluating a series included via `ofRestricted` agrees with `restrictedEval₂` at that
-polyradius. -/
-@[simp]
-theorem eval₂_ofRestricted {c : Fin k → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i)
-    (f : IsRestricted.subring (R := R) c) :
-    eval₂ φ a hφ ha (ofRestricted hρ hc f) =
-      restrictedEval₂ φ a hφ (fun i ↦ (ha i).trans (hρ.le.trans (hc i))) f := by
-  rw [eval₂_apply, restrictedEval₂_apply, coe_ofRestricted]
-
-/-- Evaluating a series included via `ofOneLt` agrees with `restrictedEval₂` at that polyradius. -/
-@[simp]
-theorem eval₂_ofOneLt {c : Fin k → ℝ} (hc : ∀ i, 1 < c i)
-    (f : IsRestricted.subring (R := R) c) :
-    eval₂ φ a hφ ha (ofOneLt hc f) =
-      restrictedEval₂ φ a hφ (fun i ↦ (ha i).trans (hc i).le) f := by
-  rw [eval₂_apply, restrictedEval₂_apply, coe_ofOneLt]
-
-/-- **Contractive evaluation does not increase the unit Gauss norm**: `‖f(a)‖ ≤ ‖f‖`. -/
-theorem norm_eval₂_le (f : washnitzerAlgebra (Fin k) R) :
-    ‖eval₂ φ a hφ ha f‖ ≤ ‖f‖ := by
-  have : Fact (0 < (1 : ℝ)) := ⟨zero_lt_one⟩
-  rw [eval₂_eq_restrictedEval₂_toTate, ← norm_toTate]
-  exact norm_restrictedEval₂_le φ a hφ ha (toTate (Fin k) R f)
-
-/-- `eval₂` is `1`-Lipschitz for the unit Gauss norm. -/
-theorem lipschitzWith_eval₂ : LipschitzWith 1 (eval₂ φ a hφ ha) := by
-  simpa only [Real.toNNReal_one] using
-    AddMonoidHomClass.lipschitz_of_bound (eval₂ φ a hφ ha) 1
-      fun f ↦ by simpa only [one_mul] using norm_eval₂_le φ a hφ ha f
-
-/-- `eval₂` is continuous for the unit Gauss norm topology. -/
-@[continuity]
-theorem continuous_eval₂ : Continuous (eval₂ φ a hφ ha) :=
-  (lipschitzWith_eval₂ φ a hφ ha).continuous
-
-/-- **Uniqueness of continuous evaluation on `R⟨X⟩†`.** A continuous ring homomorphism out of
-`R⟨X⟩†` extending `φ` on constants and sending each `X i` to `a i` is `eval₂ φ a hφ ha`. -/
-theorem eq_eval₂ (ψ : washnitzerAlgebra (Fin k) R →+* S) (hψ : Continuous ψ)
-    (hC : ∀ r, ψ (algebraMap R _ r) = φ r) (hX : ∀ i, ψ (X (Fin k) R i) = a i) :
-    ψ = eval₂ φ a hφ ha := by
-  have hp : ψ.comp (ofMvPolynomial (Fin k) R).toRingHom =
-      (eval₂ φ a hφ ha).comp (ofMvPolynomial (Fin k) R).toRingHom := by
-    apply MvPolynomial.ringHom_ext
-    · intro r
-      simp [← MvPolynomial.algebraMap_eq, hC]
-    · intro i
-      simpa using (hX i).trans (eval₂_X φ a hφ ha i).symm
-  exact DFunLike.coe_injective (denseRange_ofMvPolynomial.equalizer hψ
-    (continuous_eval₂ φ a hφ ha) (funext (DFunLike.congr_fun hp)))
-
-include hφ ha in
-/-- **Universal property of `R⟨X⟩†` for contractive coefficient maps.** -/
-theorem existsUnique_continuous_ringHom :
-    ∃! ψ : washnitzerAlgebra (Fin k) R →+* S,
-      Continuous ψ ∧ (∀ r, ψ (algebraMap R _ r) = φ r) ∧ ∀ i, ψ (X (Fin k) R i) = a i :=
-  ⟨eval₂ φ a hφ ha, ⟨continuous_eval₂ φ a hφ ha, eval₂_algebraMap φ a hφ ha, eval₂_X φ a hφ ha⟩,
-    fun ψ ⟨hψ, hC, hX⟩ ↦ eq_eval₂ φ a hφ ha ψ hψ hC hX⟩
-
-end Contractive
 
 section Bounded
 
@@ -235,12 +130,6 @@ theorem eval₂OfBound_ofOneLt {c : Fin k → ℝ} (hc : ∀ i, 1 < c i)
       restrictedEval₂OfBound φ a hφ (fun i ↦ (ha i).trans (hc i).le) f := by
   rw [eval₂OfBound_apply, restrictedEval₂OfBound_apply, coe_ofOneLt]
 
-/-- `eval₂OfBound` agrees with contractive `eval₂` whenever `φ` is norm-nonincreasing. -/
-theorem eval₂OfBound_eq_eval₂ (hφ' : ∀ r, ‖φ r‖ ≤ ‖r‖) :
-    eval₂OfBound φ a hφ ha = eval₂ φ a hφ' ha := by
-  ext f
-  rw [eval₂OfBound_apply, eval₂_apply]
-
 /-- `eval₂OfBound` increases the unit Gauss norm by at most `C`. -/
 theorem norm_eval₂OfBound_le (f : washnitzerAlgebra (Fin k) R) :
     ‖eval₂OfBound φ a hφ ha f‖ ≤ C * ‖f‖ := by
@@ -302,6 +191,107 @@ theorem map_eval₂OfBound {T : Type*} [NormedCommRing T] [IsUltrametricDist T] 
   map_restrictedEval₂OfBound φ a hφ ha θ hθ hθφ hθa (toTate (Fin k) R f)
 
 end Bounded
+
+section Contractive
+
+variable (φ : R →+* S) (a : Fin k → S) (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖) (ha : ∀ i, ‖a i‖ ≤ 1)
+
+/-- **Contractive evaluation of overconvergent power series.** For `φ : R →+* S` nonincreasing for
+the norms and arguments `a i` in the closed unit ball of a complete ultrametric normed commutative
+ring `S`, the ring homomorphism `R⟨X⟩† →+* S` sending `f` to `∑ₜ φ(fₜ) aᵗ`, defined as the `C = 1`
+specialization of `eval₂OfBound`. -/
+noncomputable def eval₂ : washnitzerAlgebra (Fin k) R →+* S :=
+  eval₂OfBound (C := 1) φ a (fun r ↦ (hφ r).trans_eq (one_mul _).symm) ha
+
+/-- `eval₂` factors through `toTate` and unit-radius `restrictedEval₂`. -/
+theorem eval₂_eq_restrictedEval₂_toTate (f : washnitzerAlgebra (Fin k) R) :
+    eval₂ φ a hφ ha f = restrictedEval₂ φ a hφ ha (toTate (Fin k) R f) := by
+  rw [eval₂, eval₂OfBound_eq_restrictedEval₂OfBound_toTate,
+    restrictedEval₂OfBound_eq_restrictedEval₂ _ _ _ _ hφ]
+
+/-- `eval₂` is the weighted monomial sum `TauCeti.Huber.weightedEval φ a f`. -/
+theorem eval₂_apply (f : washnitzerAlgebra (Fin k) R) :
+    eval₂ φ a hφ ha f = weightedEval φ a f :=
+  eval₂OfBound_apply φ a _ ha f
+
+/-- The monomial values `φ(fₜ) aᵗ` sum to `eval₂ φ a hφ ha f`. -/
+theorem hasSum_eval₂ (f : washnitzerAlgebra (Fin k) R) :
+    HasSum (weightedEvalTerm φ a f) (eval₂ φ a hφ ha f) :=
+  hasSum_eval₂OfBound φ a _ ha f
+
+/-- `eval₂` extends `φ` on constants. -/
+@[simp]
+theorem eval₂_algebraMap (r : R) :
+    eval₂ φ a hφ ha (algebraMap R _ r) = φ r :=
+  eval₂OfBound_algebraMap φ a _ ha r
+
+/-- `eval₂` sends the variable `X i` to `a i`. -/
+@[simp]
+theorem eval₂_X (i : Fin k) :
+    eval₂ φ a hφ ha (X (Fin k) R i) = a i :=
+  eval₂OfBound_X φ a _ ha i
+
+/-- `eval₂` extends polynomial evaluation `MvPolynomial.eval₂`. -/
+@[simp]
+theorem eval₂_ofMvPolynomial (p : MvPolynomial (Fin k) R) :
+    eval₂ φ a hφ ha (ofMvPolynomial (Fin k) R p) = MvPolynomial.eval₂ φ a p :=
+  eval₂OfBound_ofMvPolynomial φ a _ ha p
+
+/-- Evaluating a series included via `ofRestricted` agrees with `restrictedEval₂` at that
+polyradius. -/
+@[simp]
+theorem eval₂_ofRestricted {c : Fin k → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i)
+    (f : IsRestricted.subring (R := R) c) :
+    eval₂ φ a hφ ha (ofRestricted hρ hc f) =
+      restrictedEval₂ φ a hφ (fun i ↦ (ha i).trans (hρ.le.trans (hc i))) f := by
+  rw [eval₂, eval₂OfBound_ofRestricted, restrictedEval₂OfBound_eq_restrictedEval₂ _ _ _ _ hφ]
+
+/-- Evaluating a series included via `ofOneLt` agrees with `restrictedEval₂` at that polyradius. -/
+@[simp]
+theorem eval₂_ofOneLt {c : Fin k → ℝ} (hc : ∀ i, 1 < c i)
+    (f : IsRestricted.subring (R := R) c) :
+    eval₂ φ a hφ ha (ofOneLt hc f) =
+      restrictedEval₂ φ a hφ (fun i ↦ (ha i).trans (hc i).le) f := by
+  rw [eval₂, eval₂OfBound_ofOneLt, restrictedEval₂OfBound_eq_restrictedEval₂ _ _ _ _ hφ]
+
+/-- **Contractive evaluation does not increase the unit Gauss norm**: `‖f(a)‖ ≤ ‖f‖`. -/
+theorem norm_eval₂_le (f : washnitzerAlgebra (Fin k) R) :
+    ‖eval₂ φ a hφ ha f‖ ≤ ‖f‖ := by
+  simpa only [eval₂, one_mul] using
+    norm_eval₂OfBound_le (C := 1) φ a (fun r ↦ (hφ r).trans_eq (one_mul _).symm) ha f
+
+/-- `eval₂` is `1`-Lipschitz for the unit Gauss norm. -/
+theorem lipschitzWith_eval₂ : LipschitzWith 1 (eval₂ φ a hφ ha) := by
+  simpa only [eval₂, Real.toNNReal_one] using
+    lipschitzWith_eval₂OfBound (C := 1) φ a (fun r ↦ (hφ r).trans_eq (one_mul _).symm) ha
+
+/-- `eval₂` is continuous for the unit Gauss norm topology. -/
+@[continuity]
+theorem continuous_eval₂ : Continuous (eval₂ φ a hφ ha) :=
+  continuous_eval₂OfBound φ a _ ha
+
+/-- **Uniqueness of continuous evaluation on `R⟨X⟩†`.** A continuous ring homomorphism out of
+`R⟨X⟩†` extending `φ` on constants and sending each `X i` to `a i` is `eval₂ φ a hφ ha`. -/
+theorem eq_eval₂ (ψ : washnitzerAlgebra (Fin k) R →+* S) (hψ : Continuous ψ)
+    (hC : ∀ r, ψ (algebraMap R _ r) = φ r) (hX : ∀ i, ψ (X (Fin k) R i) = a i) :
+    ψ = eval₂ φ a hφ ha :=
+  eq_eval₂OfBound φ a _ ha ψ hψ hC hX
+
+include hφ ha in
+/-- **Universal property of `R⟨X⟩†` for contractive coefficient maps.** -/
+theorem existsUnique_continuous_ringHom :
+    ∃! ψ : washnitzerAlgebra (Fin k) R →+* S,
+      Continuous ψ ∧ (∀ r, ψ (algebraMap R _ r) = φ r) ∧ ∀ i, ψ (X (Fin k) R i) = a i :=
+  existsUnique_continuous_ringHom_of_bound φ a (fun r ↦ (hφ r).trans_eq (one_mul _).symm) ha
+
+end Contractive
+
+/-- `eval₂OfBound` agrees with contractive `eval₂` whenever `φ` is norm-nonincreasing. -/
+theorem eval₂OfBound_eq_eval₂ (φ : R →+* S) (a : Fin k → S) {C : ℝ}
+    (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖) (ha : ∀ i, ‖a i‖ ≤ 1) (hφ' : ∀ r, ‖φ r‖ ≤ ‖r‖) :
+    eval₂OfBound φ a hφ ha = eval₂ φ a hφ' ha :=
+  eq_eval₂ φ a hφ' ha _ (continuous_eval₂OfBound φ a hφ ha)
+    (eval₂OfBound_algebraMap φ a hφ ha) (eval₂OfBound_X φ a hφ ha)
 
 section Aeval
 
