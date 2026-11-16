@@ -118,10 +118,7 @@ theorem analyticAt_analytic_continuedL_iff (s : ℂ) :
     AnalyticAt ℂ T.analytic.continuedL s ↔
       AnalyticAt ℂ T.arithmetic.continuedL (s + (T.weight : ℂ) / 2) := by
   rw [T.analytic_continuedL]
-  refine ⟨fun h ↦ ?_, fun h ↦ h.comp_of_eq (by fun_prop) rfl⟩
-  have h' := h.comp_of_eq (f := fun z ↦ z - (T.weight : ℂ) / 2) (by fun_prop)
-    (add_sub_cancel_right s ((T.weight : ℂ) / 2))
-  exact h'.congr (Filter.Eventually.of_forall fun z ↦ by simp)
+  exact analyticAt_comp_iff_of_deriv_ne_zero (by fun_prop) (by simp)
 
 /-- On the arithmetic half-plane `1 + w / 2 < s.re`, `T.arithmetic.continuedL` agrees with the
 arithmetic Dirichlet series `LSeries T.arithmetic.coeff`. -/

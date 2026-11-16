@@ -41,9 +41,8 @@ theorem dirichletData_continuedL {N : ℕ} [NeZero N] (χ : DirichletCharacter �
       have hz : -s / 2 + s / 2 = 0 := by ring
       rw [hz, cpow_zero]
     rw [(dirichletData χ hχ).continuedL_eq_of_polarOrder_eq_zero (by simp [hN]),
-      dirichletData_conductor, PNat.mk_coe, dirichletData_completed,
-      AnalyticLFunctionData.invGammaFactor_def, dirichletData_gammaFactor, ← mul_assoc, hpow,
-      one_mul, ← div_eq_mul_inv, ← χ.LFunction_eq_completed_div_gammaFactor s (.inr hN)]
+      χ.LFunction_eq_completed_div_gammaFactor s (.inr hN)]
+    simp [AnalyticLFunctionData.invGammaFactor_def, ← mul_assoc, hpow, ← div_eq_mul_inv]
 
 /-! ### Checks -/
 

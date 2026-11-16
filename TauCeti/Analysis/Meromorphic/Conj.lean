@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Meromorphic.NormalForm
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
+import TauCeti.Analysis.Meromorphic.NormalForm
 
 /-!
 # Reflecting a function across the real axis
@@ -120,28 +121,13 @@ theorem MeromorphicNFAt.conj_conj (hf : MeromorphicNFAt f x) :
 theorem TauCeti.toMeromorphicNFAt_conj_conj (f : ℂ → ℂ) (x : ℂ) :
     toMeromorphicNFAt (conj ∘ f ∘ conj) x = conj ∘ toMeromorphicNFAt f (conj x) ∘ conj := by
   by_cases hf : MeromorphicAt f (conj x)
-  swap
-  · rw [toMeromorphicNFAt_of_not_meromorphicAt hf,
-      toMeromorphicNFAt_of_not_meromorphicAt (meromorphicAt_conj_conj_iff.not.2 hf)]
-    ext z
-    simp
-  have hf' : MeromorphicAt (conj ∘ f ∘ conj) x := meromorphicAt_conj_conj_iff.2 hf
-  have hne : ∀ z ≠ x, toMeromorphicNFAt (conj ∘ f ∘ conj) x z =
-      (conj ∘ toMeromorphicNFAt f (conj x) ∘ conj) z := by
-    intro z hz
-    have hcz : conj z ≠ conj x := (starRingEnd ℂ).injective.ne hz
-    simp only [Function.comp_apply, ← hf'.eqOn_compl_singleton_toMeromorphicNFAt hz,
-      ← hf.eqOn_compl_singleton_toMeromorphicNFAt hcz]
-  have hnhds : toMeromorphicNFAt (conj ∘ f ∘ conj) x =ᶠ[𝓝 x]
-      conj ∘ toMeromorphicNFAt f (conj x) ∘ conj :=
-    (meromorphicNFAt_toMeromorphicNFAt.eventuallyEq_nhdsNE_iff_eventuallyEq_nhds
-      (meromorphicNFAt_conj_conj_iff.2 meromorphicNFAt_toMeromorphicNFAt)).1
-      (eventually_nhdsWithin_of_forall hne)
-  ext z
-  by_cases hz : z = x
-  · subst z
-    exact hnhds.eq_of_nhds
-  · exact hne z hz
+  · refine (meromorphicNFAt_conj_conj_iff.2
+      meromorphicNFAt_toMeromorphicNFAt).toMeromorphicNFAt_eq_of_eqOn_compl_singleton
+      fun z hz ↦ ?_
+    exact congrArg conj
+      (hf.eqOn_compl_singleton_toMeromorphicNFAt ((starRingEnd ℂ).injective.ne hz))
+  · ext z
+    simp [hf]
 
 /-- Pointwise form of `TauCeti.toMeromorphicNFAt_conj_conj`. -/
 @[simp]

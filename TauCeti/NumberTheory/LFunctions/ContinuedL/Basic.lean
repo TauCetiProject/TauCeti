@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Basic
 import Mathlib.NumberTheory.LSeries.Deriv
 import Mathlib.NumberTheory.LSeries.Injectivity
 import TauCeti.Analysis.Meromorphic.Conj
+import TauCeti.Analysis.Meromorphic.NormalForm
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -113,17 +114,11 @@ private theorem analyticAt_conductor_cpow_neg_div_two (d : AnalyticLFunctionData
   ((differentiable_id.neg.div_const (2 : ℂ)).const_cpow
     (Or.inl d.conductor_cast_ne_zero)).analyticAt s
 
-private theorem meromorphicOrderAt_conductor_cpow_neg_div_two (d : AnalyticLFunctionData) (s : ℂ) :
-    meromorphicOrderAt (fun z : ℂ ↦ ((d.conductor : ℕ) : ℂ) ^ (-z / 2)) s = 0 :=
-  (d.analyticAt_conductor_cpow_neg_div_two s).meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.2
-    (d.conductor_cpow_ne_zero _)
-
 private theorem polarOrder_eventually_eq_zero (d : AnalyticLFunctionData) (s : ℂ) :
     ∀ᶠ z in 𝓝[≠] s, d.polarOrder z = 0 := by
   filter_upwards [nhdsNE_of_nhdsNE_sdiff_finite univ_mem
     d.polarOrder.support.finite_toSet.to_subtype] with z hz
-  simpa only [Set.mem_sdiff, mem_univ, Finset.mem_coe, Finsupp.mem_support_iff, true_and,
-    not_not] using hz
+  simpa using hz
 
 private theorem gammaFactor_eventually_ne_zero (d : AnalyticLFunctionData) (s : ℂ) :
     ∀ᶠ z in 𝓝[≠] s, d.gammaFactor z ≠ 0 :=
@@ -233,12 +228,6 @@ theorem completed_eventuallyEq_mul_continuedL (s : ℂ) :
       fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (z / 2) * d.gammaFactor z * d.continuedL z :=
   (d.gammaFactor_eventually_ne_zero s).mono fun _ ↦ d.completed_eq_mul_continuedL
 
-/-- If `d.polarOrder = 0`, `continuedL` is everywhere equal to the pointwise product
-`N^(-s / 2) * d.completed s * d.invGammaFactor s`. -/
-theorem continuedL_eq_of_polarOrder_eq_zero' (hp : d.polarOrder = 0) (s : ℂ) :
-    d.continuedL s = ((d.conductor : ℕ) : ℂ) ^ (-s / 2) * d.completed s * d.invGammaFactor s :=
-  d.continuedL_eq_of_polarOrder_eq_zero (by simp [hp])
-
 private theorem rawContinuedL_def :
     rawContinuedL d =
       fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (-z / 2) * d.completed z * d.invGammaFactor z := (rfl)
@@ -331,24 +320,22 @@ meromorphicOrderAt d.gammaFactor s`. -/
 theorem meromorphicOrderAt_continuedL {s : ℂ} (hc : MeromorphicAt d.completed s) :
     meromorphicOrderAt d.continuedL s =
       meromorphicOrderAt d.completed s - meromorphicOrderAt d.gammaFactor s := by
-  have hφ : MeromorphicAt (fun z : ℂ ↦ ((d.conductor : ℕ) : ℂ) ^ (-z / 2)) s :=
-    (d.analyticAt_conductor_cpow_neg_div_two s).meromorphicAt
-  have hinv : MeromorphicAt d.invGammaFactor s := (d.analyticAt_invGammaFactor s).meromorphicAt
+  have hφ := d.analyticAt_conductor_cpow_neg_div_two s
   rw [meromorphicOrderAt_congr (d.continuedL_eventuallyEq s),
     fun_meromorphicOrderAt_mul (f := fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (-z / 2) * d.completed z)
-      (g := d.invGammaFactor) (hφ.mul hc) hinv,
-    fun_meromorphicOrderAt_mul hφ hc, d.meromorphicOrderAt_conductor_cpow_neg_div_two s, zero_add,
+      (g := d.invGammaFactor) (hφ.meromorphicAt.mul hc)
+      (d.analyticAt_invGammaFactor s).meromorphicAt,
+    ← Pi.mul_def, meromorphicOrderAt_mul_of_ne_zero hφ (d.conductor_cpow_ne_zero _),
     d.meromorphicOrderAt_invGammaFactor, sub_eq_add_neg]
 
-/-- **Characterization of trivial zeros.** At any point `s` where `d.completed` is analytic and
-nonzero, `d.continuedL` has positive meromorphic order at `s` if and only if `d.gammaFactor s = 0`
-(that is, `s` lies on the shifted pole lattice of the archimedean gamma factor). -/
-theorem meromorphicOrderAt_continuedL_pos_iff {s : ℂ} (hc : AnalyticAt ℂ d.completed s)
-    (hne : d.completed s ≠ 0) :
+/-- **Characterization of trivial zeros.** At any point `s` where `d.completed` is meromorphic of
+order `0`, `d.continuedL` has positive meromorphic order at `s` if and only if
+`d.gammaFactor s = 0` (that is, `s` lies on the shifted pole lattice of the archimedean gamma
+factor). -/
+theorem meromorphicOrderAt_continuedL_pos_iff {s : ℂ} (hc : MeromorphicAt d.completed s)
+    (hord : meromorphicOrderAt d.completed s = 0) :
     0 < meromorphicOrderAt d.continuedL s ↔ d.gammaFactor s = 0 := by
-  have hord_c : meromorphicOrderAt d.completed s = 0 :=
-    hc.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.2 hne
-  rw [meromorphicOrderAt_continuedL hc.meromorphicAt, hord_c, zero_sub,
+  rw [meromorphicOrderAt_continuedL hc, hord, zero_sub,
     ← d.meromorphicOrderAt_invGammaFactor, ← d.invGammaFactor_eq_zero_iff_meromorphicOrderAt_pos,
     invGammaFactor_eq_zero_iff]
 
@@ -520,7 +507,7 @@ theorem HasDirichletAgreement.continuedL_eventuallyEq_LSeries
   exact hda.continuedL_eq_LSeries_of_gammaFactor_ne_zero hz hγz
 
 private theorem abscissaOfAbsConv_le_one_or_eq_top
-    (hda : d.HasDirichletAgreement) (hmc : d.HasMeromorphicContinuation) :
+    (hda : d.HasDirichletAgreement) (hm : Meromorphic d.completed) :
     LSeries.abscissaOfAbsConv d.coeff ≤ 1 ∨ LSeries.abscissaOfAbsConv d.coeff = ⊤ := by
   rcases le_or_gt (LSeries.abscissaOfAbsConv d.coeff) 1 with habs | habs
   · exact Or.inl habs
@@ -544,7 +531,7 @@ private theorem abscissaOfAbsConv_le_one_or_eq_top
         rw [ha, EReal.coe_le_coe_iff] at hle
         linarith
       have htop_all : ∀ w : ℂ, meromorphicOrderAt d.continuedL w = ⊤ := fun w ↦
-        hmc.meromorphic_continuedL.meromorphicOn.meromorphicOrderAt_eq_top_of_isPreconnected
+        (meromorphic_continuedL_iff.2 hm).meromorphicOn.meromorphicOrderAt_eq_top_of_isPreconnected
           isPreconnected_univ (mem_univ s₀) (mem_univ w)
           (meromorphicOrderAt_eq_top_iff.mpr hzero_s₀)
       have hev_real : (fun x : ℝ ↦ LSeries d.coeff x) =ᶠ[atTop] 0 := by
@@ -564,9 +551,9 @@ private theorem abscissaOfAbsConv_le_one_or_eq_top
         exact (EReal.coe_ne_top r) htop
 
 private theorem continuousAt_LSeries_of_hasDirichletAgreement
-    (hda : d.HasDirichletAgreement) (hmc : d.HasMeromorphicContinuation) {s : ℂ}
+    (hda : d.HasDirichletAgreement) (hm : Meromorphic d.completed) {s : ℂ}
     (hs : 1 < s.re) : ContinuousAt (LSeries d.coeff) s := by
-  rcases abscissaOfAbsConv_le_one_or_eq_top hda hmc with habs | ha
+  rcases abscissaOfAbsConv_le_one_or_eq_top hda hm with habs | ha
   · exact (LSeries_analyticOnNhd d.coeff s
       (habs.trans_lt (by exact_mod_cast hs))).continuousAt
   · rw [LSeries_eq_zero_of_abscissaOfAbsConv_eq_top ha]
@@ -577,7 +564,7 @@ private theorem continuousAt_LSeries_of_hasDirichletAgreement
 theorem HasDirichletAgreement.analyticAt_continuedL (hda : d.HasDirichletAgreement)
     (hmc : d.HasMeromorphicContinuation) {s : ℂ} (hs : 1 < s.re) :
     AnalyticAt ℂ d.continuedL s := by
-  have hcont := continuousAt_LSeries_of_hasDirichletAgreement hda hmc hs
+  have hcont := continuousAt_LSeries_of_hasDirichletAgreement hda hmc.meromorphic hs
   have hlim : Tendsto d.continuedL (𝓝[≠] s) (𝓝 (LSeries d.coeff s)) :=
     hcont.continuousWithinAt.tendsto.congr' (hda.continuedL_eventuallyEq_LSeries hs).symm
   exact (hmc.meromorphicOrderAt_continuedL_nonneg_iff_analyticAt s).1 <|
@@ -591,16 +578,21 @@ theorem HasDirichletAgreement.continuedL_eq_LSeries (hda : d.HasDirichletAgreeme
     (hmc : d.HasMeromorphicContinuation) {s : ℂ} (hs : 1 < s.re) :
     d.continuedL s = LSeries d.coeff s :=
   hmc.continuedL_eq_of_tendsto <|
-    (continuousAt_LSeries_of_hasDirichletAgreement hda hmc hs).continuousWithinAt.tendsto.congr'
-      (hda.continuedL_eventuallyEq_LSeries hs).symm
+    ((continuousAt_LSeries_of_hasDirichletAgreement hda hmc.meromorphic hs).continuousWithinAt
+      |>.tendsto).congr' (hda.continuedL_eventuallyEq_LSeries hs).symm
 
 /-- Canonical normal-form continuation of `LSeries d.coeff` from `1 < s.re` equals
 `toMeromorphicNFOn d.continuedL univ`. -/
 theorem HasDirichletAgreement.meromorphicContinuation_LSeries_eq_toMeromorphicNFOn_continuedL
-    (hda : d.HasDirichletAgreement) (hmc : d.HasMeromorphicContinuation) :
-    meromorphicContinuation 1 (LSeries d.coeff) = toMeromorphicNFOn d.continuedL univ :=
-  meromorphicContinuation_eq_toMeromorphicNFOn hmc.meromorphic_continuedL
-    (fun _ hs ↦ hda.analyticAt_continuedL hmc hs) (fun _ hs ↦ hda.continuedL_eq_LSeries hmc hs)
+    (hda : d.HasDirichletAgreement) (hm : Meromorphic d.completed) :
+    meromorphicContinuation 1 (LSeries d.coeff) = toMeromorphicNFOn d.continuedL univ := by
+  have hmL : Meromorphic d.continuedL := meromorphic_continuedL_iff.2 hm
+  refine meromorphicContinuation_eq (meromorphicNFOn_toMeromorphicNFOn d.continuedL univ)
+    fun s hs ↦ ?_
+  rw [toMeromorphicNFOn_eq_toMeromorphicNFAt hmL.meromorphicOn (mem_univ s)]
+  exact (hmL s).toMeromorphicNFAt_apply_eq_of_tendsto <|
+    (continuousAt_LSeries_of_hasDirichletAgreement hda hm hs).continuousWithinAt.tendsto.congr'
+      (hda.continuedL_eventuallyEq_LSeries hs).symm
 
 end DirichletAgreement
 

@@ -32,9 +32,7 @@ namespace TauCeti.LFunctions
 private theorem riemannZetaData_raw_eq_of_ne_zero {z : ℂ} (hz : z ≠ 0) :
     ((riemannZetaData.conductor : ℕ) : ℂ) ^ (-z / 2) * riemannZetaData.completed z *
         riemannZetaData.invGammaFactor z = riemannZeta z := by
-  rw [riemannZetaData_conductor, PNat.val_ofNat, Nat.cast_one, one_cpow, one_mul,
-    riemannZetaData_completed, AnalyticLFunctionData.invGammaFactor_def,
-    riemannZetaData_gammaFactor, riemannZeta_def_of_ne_zero hz, div_eq_mul_inv]
+  simp [AnalyticLFunctionData.invGammaFactor_def, riemannZeta_def_of_ne_zero hz, div_eq_mul_inv]
 
 private theorem riemannZetaData_continuedL_eq_of_ne_zero {s : ℂ} (hs0 : s ≠ 0) :
     riemannZetaData.continuedL s = riemannZeta s := by
