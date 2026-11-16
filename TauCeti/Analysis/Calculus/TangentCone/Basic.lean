@@ -30,6 +30,7 @@ which lets chart transitions of a manifold with corners compare the corners of t
 * `TauCeti.uniqueDiffOn_pi_Ici`: a closed coordinate orthant is a set of unique differentiability.
 * `TauCeti.uniqueDiffOn_setOfPred_le_im`: a closed half-plane `{z : ℂ | a ≤ z.im}` is a set of
   unique differentiability.
+* `TauCeti.mem_tangentConeAt_setOf_im_eq`: a real direction is tangent to a horizontal line in `ℂ`.
 * `IsPreconnected.uniqueDiffOn`: a preconnected set of reals containing two distinct points is a
   set of unique differentiability.
 * `HasDerivAt.mem_tangentConeAt`: the velocity of a curve lying in a set is tangent to the set.
@@ -107,6 +108,16 @@ theorem TauCeti.uniqueDiffOn_pi_Ici {ι : Type*} (a : ι → ℝ) : UniqueDiffOn
 theorem TauCeti.uniqueDiffOn_setOfPred_le_im (a : ℝ) : UniqueDiffOn ℝ {z : ℂ | a ≤ z.im} :=
   uniqueDiffOn_convex (convex_halfSpace_im_ge a)
     ⟨Complex.I * (a + 1), by rw [Complex.interior_setOfPred_le_im]; simp⟩
+
+/-- A real direction `v` is tangent to the horizontal line `{y : ℂ | y.im = c}` at each of its
+points. -/
+theorem TauCeti.mem_tangentConeAt_setOf_im_eq {c : ℝ} {v w : ℂ} (hw : w.im = c) (hv : v.im = 0) :
+    v ∈ tangentConeAt ℝ {y : ℂ | y.im = c} w := by
+  have hseg : segment ℝ w (w + v) ⊆ {y : ℂ | y.im = c} := by
+    rw [segment_eq_image']
+    rintro _ ⟨θ, -, rfl⟩
+    simp [hw, hv]
+  simpa using mem_tangentConeAt_of_segment_subset hseg
 
 /-- A preconnected set of reals containing two distinct points has unique derivatives. -/
 theorem IsPreconnected.uniqueDiffOn {s : Set ℝ} (hs : IsPreconnected s) {a b : ℝ} (ha : a ∈ s)
