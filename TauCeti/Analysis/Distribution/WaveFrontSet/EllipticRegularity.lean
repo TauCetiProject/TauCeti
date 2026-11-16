@@ -11,7 +11,6 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.ProdInner
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
@@ -26,9 +25,10 @@ without factors of `i`, is the homogeneous polynomial
 
 `σ_M(P)(x, ξ) = ∑ i ∈ s with k i = M, c i a i(x) ∏ₗ ⟪m i l, ξ⟫`,
 
-that is, `TauCeti.constCoeffPrincipalSymbol` of the coefficients `c i a i(x)` frozen at `x`. Its
-*characteristic set* consists of the points `(x, ξ)` with `ξ ≠ 0` and `σ_M(P)(x, ξ) = 0`; for
-constant coefficients this is `TauCeti.constCoeffCharacteristicSet`. This file proves
+that is, `TauCeti.principalSymbol`: `TauCeti.constCoeffPrincipalSymbol` of the coefficients
+`c i a i(x)` frozen at `x`. Its *characteristic set* `Char(P)` (`TauCeti.characteristicSet`)
+consists of the points `(x, ξ)` with `ξ ≠ 0` and `σ_M(P)(x, ξ) = 0`; for constant coefficients
+this is `TauCeti.constCoeffCharacteristicSet`. This file proves
 **microlocal elliptic regularity**: at a noncharacteristic covector, `T` is as regular as `P T`,
 
 `WF(T) ⊆ WF(P T) ∪ Char(P)`
@@ -69,10 +69,13 @@ gives rapid decay on `Γ`.
 * `TauCeti.constCoeffPrincipalSymbol s c m M`: the principal symbol `σ_M(P)` of order `M` of a
   constant-coefficient operator.
 * `TauCeti.constCoeffCharacteristicSet s c m M`: its characteristic set `Char(P)`.
+* `TauCeti.principalSymbol s b m M x`: the principal symbol of `P = ∑ i ∈ s, b i ∂^(m i)` with the
+  coefficient functions `b i` frozen at `x`.
+* `TauCeti.characteristicSet s b m M`: its characteristic set `Char(P)`.
 
 ## Main results
 
-* `TauCeti.exists_nhds_cone_le_norm_constCoeffPrincipalSymbol`: a principal symbol with
+* `TauCeti.exists_nhds_cone_le_norm_principalSymbol`: a principal symbol with
   continuous coefficients that does not vanish at `(x, ξ)` is bounded below by `c₀ ‖η‖ ^ M` for
   `y` near `x` and `η` in an open cone around `ξ`.
 * `Distribution.IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp`: if `P T` is
@@ -177,17 +180,69 @@ theorem smul_mem_constCoeffCharacteristicSet_iff {ι : Type*} {s : Finset ι} {c
       (x, ξ) ∈ constCoeffCharacteristicSet s c m M := by
   simp [constCoeffPrincipalSymbol_smul, ht]
 
+/-- The **principal symbol** of order `M` at `x` of the operator `P = ∑ i ∈ s, b i ∂^(m i)` with
+coefficient functions `b i`: the principal symbol of the constant-coefficient operator with the
+coefficients frozen at `x`, `σ_M(P)(x, ξ) = ∑ i ∈ s with k i = M, b i x ∏ₗ ⟪m i l, ξ⟫`. -/
+def principalSymbol {ι : Type*} (s : Finset ι) (b : ι → E → ℂ) {k : ι → ℕ}
+    (m : ∀ i, Fin (k i) → E) (M : ℕ) (x ξ : E) : ℂ :=
+  constCoeffPrincipalSymbol s (fun i ↦ b i x) m M ξ
+
+/-- The **characteristic set** `Char(P)` of the operator `P = ∑ i ∈ s, b i ∂^(m i)` of order `M`:
+the points `(x, ξ)` with `ξ ≠ 0` at which the principal symbol `principalSymbol s b m M x` vanishes.
+-/
+def characteristicSet {ι : Type*} (s : Finset ι) (b : ι → E → ℂ) {k : ι → ℕ}
+    (m : ∀ i, Fin (k i) → E) (M : ℕ) : Set (E × E) :=
+  {p | p.2 ≠ 0 ∧ principalSymbol s b m M p.1 p.2 = 0}
+
+theorem principalSymbol_def {ι : Type*} (s : Finset ι) (b : ι → E → ℂ) {k : ι → ℕ}
+    (m : ∀ i, Fin (k i) → E) (M : ℕ) (x ξ : E) :
+    principalSymbol s b m M x ξ = constCoeffPrincipalSymbol s (fun i ↦ b i x) m M ξ :=
+  (rfl)
+
+/-- With constant coefficients, the principal symbol is `constCoeffPrincipalSymbol`. -/
+@[simp]
+theorem principalSymbol_const {ι : Type*} (s : Finset ι) (c : ι → ℂ) {k : ι → ℕ}
+    (m : ∀ i, Fin (k i) → E) (M : ℕ) (x ξ : E) :
+    principalSymbol s (fun i _ ↦ c i) m M x ξ = constCoeffPrincipalSymbol s c m M ξ :=
+  (rfl)
+
+@[simp]
+theorem mem_characteristicSet_iff {ι : Type*} {s : Finset ι} {b : ι → E → ℂ} {k : ι → ℕ}
+    {m : ∀ i, Fin (k i) → E} {M : ℕ} {p : E × E} :
+    p ∈ characteristicSet s b m M ↔ p.2 ≠ 0 ∧ principalSymbol s b m M p.1 p.2 = 0 :=
+  Iff.rfl
+
+/-- The characteristic set is empty exactly when the operator is elliptic: its principal symbol
+with the coefficients frozen at any point vanishes at no `ξ ≠ 0`. -/
+theorem characteristicSet_eq_empty_iff {ι : Type*} {s : Finset ι} {b : ι → E → ℂ}
+    {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ} :
+    characteristicSet s b m M = ∅ ↔ ∀ x ξ : E, ξ ≠ 0 → principalSymbol s b m M x ξ ≠ 0 := by
+  simp only [eq_empty_iff_forall_notMem, mem_characteristicSet_iff, Prod.forall, not_and, ne_eq]
+
+/-- With constant coefficients, the characteristic set is `constCoeffCharacteristicSet`. -/
+@[simp]
+theorem characteristicSet_const {ι : Type*} (s : Finset ι) (c : ι → ℂ) {k : ι → ℕ}
+    (m : ∀ i, Fin (k i) → E) (M : ℕ) :
+    characteristicSet s (fun i _ ↦ c i) m M = constCoeffCharacteristicSet s c m M :=
+  (rfl)
+
+/-- The characteristic set is conic in the frequency variable. -/
+theorem smul_mem_characteristicSet_iff {ι : Type*} {s : Finset ι} {b : ι → E → ℂ}
+    {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ} {x ξ : E} {t : ℝ} (ht : t ≠ 0) :
+    (x, t • ξ) ∈ characteristicSet s b m M ↔ (x, ξ) ∈ characteristicSet s b m M := by
+  simp [principalSymbol_def, constCoeffPrincipalSymbol_smul, ht]
+
 /-- **An elliptic cone, uniformly near a point.** Let the coefficients `b i` of a differential
 operator depend continuously on the position. If the principal symbol with the coefficients frozen
 at `x` does not vanish at `ξ`, then there are a neighbourhood `U` of `x`, an open cone `Γ` around
 `ξ` and `c₀ > 0` such that, for every `y ∈ U`, the principal symbol with the coefficients frozen at
 `y` is bounded below by `c₀ ‖η‖ ^ M` on `Γ`. -/
-theorem exists_nhds_cone_le_norm_constCoeffPrincipalSymbol {ι : Type*} {s : Finset ι}
+theorem exists_nhds_cone_le_norm_principalSymbol {ι : Type*} {s : Finset ι}
     {b : ι → E → ℂ} (hb : ∀ i, Continuous (b i)) {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ}
-    {x ξ : E} (hξ : constCoeffPrincipalSymbol s (fun i ↦ b i x) m M ξ ≠ 0) :
+    {x ξ : E} (hξ : principalSymbol s b m M x ξ ≠ 0) :
     ∃ U ∈ 𝓝 x, ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
-      ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ y ∈ U, ∀ η ∈ Γ,
-        c₀ * ‖η‖ ^ M ≤ ‖constCoeffPrincipalSymbol s (fun i ↦ b i y) m M η‖ := by
+      ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ y ∈ U, ∀ η ∈ Γ, c₀ * ‖η‖ ^ M ≤ ‖principalSymbol s b m M y η‖ := by
+  simp only [principalSymbol_def] at hξ ⊢
   -- `‖ξ‖ ^ M ≠ 0`: otherwise `ξ = 0` and `M ≠ 0`, and every term of the principal symbol at `ξ`
   -- has a factor `⟪_, 0⟫ = 0`.
   have hξM : 0 < ‖ξ‖ ^ M := by
@@ -238,7 +293,7 @@ theorem exists_cone_le_norm_constCoeffPrincipalSymbol {ι : Type*} {s : Finset �
     ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
       ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ η ∈ Γ, c₀ * ‖η‖ ^ M ≤ ‖constCoeffPrincipalSymbol s c m M η‖ := by
   obtain ⟨U, hU, Γ, hΓ, hξΓ, hcone, c₀, hc₀, h⟩ :=
-    exists_nhds_cone_le_norm_constCoeffPrincipalSymbol (b := fun i _ ↦ c i)
+    exists_nhds_cone_le_norm_principalSymbol (b := fun i _ ↦ c i)
       (fun _ ↦ continuous_const) (x := 0) hξ
   exact ⟨Γ, hΓ, hξΓ, hcone, c₀, hc₀, fun η hη ↦ h 0 (mem_of_mem_nhds hU) η hη⟩
 
@@ -633,13 +688,13 @@ variable [FiniteDimensional ℝ E]
 /-- **Microlocal elliptic regularity for differential operators** (Hörmander I, Theorem 8.3.1).
 Let `P = ∑ i ∈ s, c i a i ∂^(m i)` have smooth real coefficients `a i`, complex constants `c i` and
 orders `k i ≤ M`, and let `ξ` be noncharacteristic for `P` at `x`: the principal symbol with the
-coefficients frozen at `x`, `constCoeffPrincipalSymbol s (fun i ↦ c i * a i x) m M`, does not vanish
-at `ξ`. If `P T` is microlocally smooth at `(x, ξ)`, then so is `T`. -/
+coefficients frozen at `x`, `principalSymbol s (fun i y ↦ c i * a i y) m M x`, does not vanish at
+`ξ`. If `P T` is microlocally smooth at `(x, ξ)`, then so is `T`. -/
 theorem IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp {ι : Type*}
     {s : Finset ι} {c : ι → ℂ} {a : ι → E → ℝ} (ha : ∀ i, ContDiff ℝ ∞ (a i)) {k : ι → ℕ}
     {m : ∀ i, Fin (k i) → E} {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M) {T : 𝓓'(Ω, ℂ)} {x ξ : E}
     (hP : (∑ i ∈ s, c i • Distribution.smulLeftCLM (ha i) (∂^{m i} T)).IsMicrolocallySmoothAt x ξ)
-    (hξ : constCoeffPrincipalSymbol s (fun i ↦ c i * a i x) m M ξ ≠ 0) :
+    (hξ : principalSymbol s (fun i y ↦ c i * a i y) m M x ξ ≠ 0) :
     T.IsMicrolocallySmoothAt x ξ := by
   have hx : x ∈ Ω := by
     obtain ⟨φ, hφ, -⟩ := isMicrolocallySmoothAt_iff.1 hP
@@ -647,7 +702,7 @@ theorem IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp {ι :
   have hb : ∀ i, ContDiff ℝ ∞ fun y ↦ c i * (a i y : ℂ) :=
     fun i ↦ contDiff_const.mul (ofRealCLM.contDiff.comp (ha i))
   obtain ⟨U₁, hU₁, Γ₁, hΓ₁, hξ₁, hcone₁, c₀, hc₀, hell⟩ :=
-    exists_nhds_cone_le_norm_constCoeffPrincipalSymbol (fun i ↦ (hb i).continuous) hξ
+    exists_nhds_cone_le_norm_principalSymbol (fun i ↦ (hb i).continuous) hξ
   obtain ⟨U₂, hU₂, Γ₂, hΓ₂, hξ₂, hcone₂, hdecay⟩ :=
     hP.exists_nhds_cone_forall_one_add_norm_pow_mul_norm_localFourier_le
   -- Compact neighbourhoods `K ⊆ W = interior K'` of `x`, with `K' ⊆ U₁ ∩ U₂ ∩ Ω`.
@@ -693,17 +748,17 @@ theorem IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp {ι :
 
 /-- **Microlocal elliptic regularity for differential operators**: `WF(T) ⊆ WF(P T) ∪ Char(P)` for
 `P = ∑ i ∈ s, c i a i ∂^(m i)` with smooth real coefficients `a i` and orders `k i ≤ M`, where
-`Char(P)` is the set of `(x, ξ)` with `ξ ≠ 0` at which the principal symbol with the coefficients
-frozen at `x` vanishes. -/
+`Char(P) = characteristicSet s (fun i y ↦ c i * a i y) m M` is the set of `(x, ξ)` with `ξ ≠ 0` at
+which the principal symbol with the coefficients frozen at `x` vanishes. -/
 theorem waveFrontSet_subset_waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_union
     {ι : Type*} (s : Finset ι) (c : ι → ℂ) {a : ι → E → ℝ} (ha : ∀ i, ContDiff ℝ ∞ (a i))
     {k : ι → ℕ} (m : ∀ i, Fin (k i) → E) {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M) (T : 𝓓'(Ω, ℂ)) :
     T.waveFrontSet ⊆ (∑ i ∈ s, c i • smulLeftCLM (ha i) (∂^{m i} T)).waveFrontSet ∪
-      {p | p.2 ≠ 0 ∧ constCoeffPrincipalSymbol s (fun i ↦ c i * a i p.1) m M p.2 = 0} := by
+      characteristicSet s (fun i y ↦ c i * a i y) m M := by
   rintro ⟨x, ξ⟩ hp
   obtain ⟨hx, hξ, hT⟩ := mem_waveFrontSet_iff.1 hp
   by_contra h
-  rw [mem_union, not_or, mem_waveFrontSet_iff] at h
+  rw [mem_union, not_or, mem_waveFrontSet_iff, mem_characteristicSet_iff] at h
   exact hT (IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp ha hk
     (by simpa [hx, hξ] using h.1) fun h0 ↦ h.2 ⟨hξ, h0⟩)
 
@@ -713,7 +768,7 @@ vanishes at no `ξ ≠ 0`, then `WF(P T) = WF(T)`. -/
 theorem waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero {ι : Type*}
     (s : Finset ι) (c : ι → ℂ) {a : ι → E → ℝ} (ha : ∀ i, ContDiff ℝ ∞ (a i)) {k : ι → ℕ}
     (m : ∀ i, Fin (k i) → E) {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M)
-    (hσ : ∀ x ∈ Ω, ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol s (fun i ↦ c i * a i x) m M ξ ≠ 0)
+    (hσ : ∀ x ∈ Ω, ∀ ξ : E, ξ ≠ 0 → principalSymbol s (fun i y ↦ c i * a i y) m M x ξ ≠ 0)
     (T : 𝓓'(Ω, ℂ)) :
     (∑ i ∈ s, c i • smulLeftCLM (ha i) (∂^{m i} T)).waveFrontSet = T.waveFrontSet := by
   refine subset_antisymm (waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_subset s c ha m T)
@@ -730,7 +785,7 @@ theorem singularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_ze
     [MeasurableSpace E] [BorelSpace E] {ι : Type*} (s : Finset ι) (c : ι → ℂ) {a : ι → E → ℝ}
     (ha : ∀ i, ContDiff ℝ ∞ (a i)) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E) {M : ℕ}
     (hk : ∀ i ∈ s, k i ≤ M)
-    (hσ : ∀ x ∈ Ω, ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol s (fun i ↦ c i * a i x) m M ξ ≠ 0)
+    (hσ : ∀ x ∈ Ω, ∀ ξ : E, ξ ≠ 0 → principalSymbol s (fun i y ↦ c i * a i y) m M x ξ ≠ 0)
     (T : 𝓓'(Ω, ℂ)) :
     (∑ i ∈ s, c i • smulLeftCLM (ha i) (∂^{m i} T)).singularSupport = T.singularSupport := by
   rw [← fst_image_waveFrontSet, ← fst_image_waveFrontSet,
