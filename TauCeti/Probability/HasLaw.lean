@@ -40,8 +40,17 @@ Adjoining a coordinate with an s-finite measure to a random variable gives the p
 measure. Completing the source measure preserves every random variable's law.
 Nonnegative random variables whose real coercions have a common law are identically distributed.
 
+Finite product laws are characterized by coordinate independence and marginal laws;
+measurable equivalences let these characterizations pass to other representations.
+
 ## Main results
 
+* `TauCeti.Probability.hasLaw_pi_iff` — a finite product law is equivalent to independence
+  and the prescribed marginal laws;
+* `MeasurableEquiv.hasLaw_map_iff` — laws transport in both directions along a measurable
+  equivalence;
+* `ProbabilityTheory.HasLaw.ae` — almost-everywhere properties of a law transfer to any random
+  variable with that law, without requiring the property to be measurable;
 * `ProbabilityTheory.HasLaw.cond` — conditioning transports a prescribed law;
 * `ProbabilityTheory.HasLaw.aemeasurable_of_ae_eq_comp` — a map almost everywhere equal to an
   a.e. measurable map composed with a random variable of the right law is a.e. measurable;
@@ -84,6 +93,41 @@ namespace Probability
 
 variable {X : Type*} {Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {T : X → Y}
 variable {μ : Measure X} {ν : Measure Y}
+
+/-- A random finite family has product law exactly when its coordinates are independent
+and have the prescribed probability laws. No prior source probability assumption is needed. -/
+theorem hasLaw_pi_iff {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι]
+    {α : ι → Type*} [∀ i, MeasurableSpace (α i)] {μ : ∀ i, Measure (α i)}
+    [∀ i, IsProbabilityMeasure (μ i)] {P : Measure Ω} {X : Ω → ∀ i, α i} :
+    HasLaw X (Measure.pi μ) P ↔
+      iIndepFun (fun i ω ↦ X ω i) P ∧ ∀ i, HasLaw (fun ω ↦ X ω i) (μ i) P := by
+  constructor
+  · intro hX
+    have hentry := fun i ↦ (measurePreserving_eval μ i).hasLaw.comp hX
+    have : IsProbabilityMeasure P := hX.isProbabilityMeasure
+    exact ⟨(iIndepFun_iff_hasLaw_pi_pi hentry).2 hX, hentry⟩
+  · rintro ⟨hind, hentry⟩
+    exact hind.hasLaw_pi hentry
+
+/-- Transport by a measurable equivalence can be undone when identifying a law. -/
+theorem _root_.MeasurableEquiv.hasLaw_map_iff {Ω α β : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
+    (e : α ≃ᵐ β) {μ : Measure α} {P : Measure Ω} {X : Ω → β} :
+    HasLaw X (μ.map e) P ↔ HasLaw (fun ω ↦ e.symm (X ω)) μ P := by
+  constructor
+  · intro hX
+    have h := (hasLaw_map e.symm.measurable.aemeasurable).comp hX
+    simpa only [Measure.map_map e.symm.measurable e.measurable,
+      e.symm_comp_self, Measure.map_id, Function.comp_def] using h
+  · intro hX
+    have h := (hasLaw_map e.measurable.aemeasurable).comp hX
+    simpa only [Function.comp_def, e.apply_symm_apply] using h
+
+/-- A property holding almost everywhere under a law holds almost surely for any random
+variable with that law, without a measurability assumption on the property. -/
+protected theorem _root_.ProbabilityTheory.HasLaw.ae (hT : HasLaw T ν μ) {p : Y → Prop}
+    (hp : ∀ᵐ y ∂ν, p y) : ∀ᵐ x ∂μ, p (T x) :=
+  ae_of_ae_map hT.aemeasurable (hT.map_eq ▸ hp)
 
 /-- Conditioning a random variable on the preimage of a measurable event gives its law
 conditioned on that event. The statement includes events of zero or infinite mass, when both
