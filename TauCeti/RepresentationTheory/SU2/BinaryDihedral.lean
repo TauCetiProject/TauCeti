@@ -196,6 +196,18 @@ theorem coe_binaryDihedralRotation_eq_toComplexMatrix :
   ext i j
   fin_cases i <;> fin_cases j <;> simp [hexp, hexp']
 
+/-- At `n = 4`, the eighth-turn rotation generator is the matrix of the unit quaternion
+`(1 + i) / √2`. -/
+theorem coe_binaryDihedralRotation_four :
+    (binaryDihedralRotation 4 : Matrix (Fin 2) (Fin 2) ℂ) =
+      Quaternion.toComplexMatrix ⟨1 / √2, 1 / √2, 0, 0⟩ := by
+  have hhalf : √2 / 2 = (1 : ℝ) / √2 := by
+    rw [div_eq_div_iff two_ne_zero (Real.sqrt_ne_zero'.mpr zero_lt_two), one_mul,
+      Real.mul_self_sqrt zero_le_two]
+  rw [coe_binaryDihedralRotation_eq_toComplexMatrix 4]
+  congr 1
+  ext <;> simp [Nat.cast_ofNat, Real.cos_pi_div_four, Real.sin_pi_div_four, hhalf]
+
 /-- The rotations of the binary dihedral group are the powers of the rotation generator. -/
 theorem binaryDihedralHom_a_eq_pow (i : ZMod (2 * n)) :
     binaryDihedralHom n (a i) = binaryDihedralRotation n ^ i.val := by
@@ -219,6 +231,10 @@ theorem binaryDihedralRotation_pow_two_mul : binaryDihedralRotation n ^ (2 * n) 
 theorem weylElement_inv_sq_eq_binaryDihedralRotation_pow :
     weylElement⁻¹ ^ 2 = binaryDihedralRotation n ^ n := by
   rw [weylElement_inv_sq_eq_torusHom n, binaryDihedralRotation_pow, binaryDihedralHom_a]
+
+/-- In `SU(2)`, the rotation generator satisfies `r ^ n = torusHom (-1) = -1`. -/
+theorem binaryDihedralRotation_pow_self : binaryDihedralRotation n ^ n = torusHom (-1) := by
+  rw [← weylElement_inv_sq_eq_binaryDihedralRotation_pow, weylElement_inv_sq_eq_torusHom_neg_one]
 
 /-- The rotation generator satisfies `r ^ n = -1`. -/
 theorem coe_binaryDihedralRotation_pow_self :

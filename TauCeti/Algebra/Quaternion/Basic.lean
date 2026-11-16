@@ -21,8 +21,11 @@ Mathlib's `Mathlib.Algebra.Quaternion`.
   quaternion conjugation, so for example `ℍ` is a real star module.
 * `Quaternion.isLeftRegular_two`: if `ℍ[R]` has no zero divisors then `2` is left regular in `R`,
   because the quaternion `r + r i` squares to `2 r² i`.
-* `Quaternion.normSq_mk_div_two`: the norm of `(a + b i + c j + d k) / 2` is
-  `(a² + b² + c² + d²) / 4`, as used for quaternions with half-integer coordinates.
+* `Quaternion.sq_eq_two_re_smul_sub_normSq` and `Quaternion.pow_three_eq_smul_sub`:
+  Cayley–Hamilton identities `q² = (2 q.re) • q - normSq q` and
+  `q³ = ((2 q.re)² - normSq q) • q - 2 q.re * normSq q`.
+* `Quaternion.normSq_mk_div` and `Quaternion.normSq_mk_div_two`: the norm of
+  `(a + b i + c j + d k) / s` is `(a² + b² + c² + d²) / s²`.
 -/
 
 public section
@@ -54,10 +57,26 @@ theorem isLeftRegular_two [NoZeroDivisors ℍ[R]] : IsLeftRegular (2 : R) := by
     all_goals ring
   exact sub_eq_zero.mp (congrArg QuaternionAlgebra.re (mul_self_eq_zero.mp hsq))
 
+/-- **Cayley–Hamilton for Hamilton quaternions**: `q² = (2 q.re) • q - normSq q`. -/
+theorem sq_eq_two_re_smul_sub_normSq (q : ℍ[R]) :
+    q ^ 2 = (2 * q.re) • q - normSq q := by
+  ext <;> simp [sq, normSq_def'] <;> ring
+
+/-- Cube of a Hamilton quaternion in terms of its real part and norm:
+`q³ = ((2 q.re)² - normSq q) • q - 2 q.re * normSq q`. -/
+theorem pow_three_eq_smul_sub (q : ℍ[R]) :
+    q ^ 3 = ((2 * q.re) ^ 2 - normSq q) • q - ↑(2 * q.re * normSq q) := by
+  ext <;> simp [pow_succ, normSq_def'] <;> ring
+
+/-- The norm of the quaternion `(a + b i + c j + d k) / s` is `(a² + b² + c² + d²) / s²`. -/
+theorem normSq_mk_div {K : Type*} [Field K] (a b c d s : K) :
+    normSq (⟨a / s, b / s, c / s, d / s⟩ : ℍ[K]) = (a ^ 2 + b ^ 2 + c ^ 2 + d ^ 2) / s ^ 2 := by
+  simp only [normSq_def', div_pow, add_div]
+
 /-- The norm of the quaternion `(a + b i + c j + d k) / 2` is `(a² + b² + c² + d²) / 4`. -/
 theorem normSq_mk_div_two {K : Type*} [Field K] (a b c d : K) :
     normSq (⟨a / 2, b / 2, c / 2, d / 2⟩ : ℍ[K]) = (a ^ 2 + b ^ 2 + c ^ 2 + d ^ 2) / 4 := by
-  simp only [normSq_def', div_pow, add_div]
+  rw [normSq_mk_div]
   norm_num
 
 end Quaternion
