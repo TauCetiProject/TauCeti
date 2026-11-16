@@ -51,8 +51,10 @@ endomorphisms of the tensor unit of a monoidal category commute.
 ## Conventions
 
 The matrix `F^{abc}_d` has rows indexed by `Left a b c d` and columns by `Right a b c d`, and is
-defined by `L_x = ∑_y F^{abc}_d[x,y] • (α.hom ≫ R_y)`, where `L` and `R` are the bases above. The
-matrix `R^{ab}_c` points in the same direction:
+defined by
+`(φ^{ab→e}_i ▷ S_c) ≫ φ^{ec→d}_j =`
+`∑_{(f,k,l)} F^{abc}_d[(e,i,j),(f,k,l)] • ((α_ S_a S_b S_c).hom ≫ (S_a ◁ φ^{bc→f}_k) ≫ φ^{af→d}_l)`.
+The matrix `R^{ab}_c` points in the same direction:
 `φ^{ab→c}_i = ∑_j R^{ab}_c[i,j] • (β.hom ≫ φ^{ba→c}_j)`.
 Only the triangle equation is imposed among the unit conditions; it normalizes the fusion bases
 through the left and right unitors.
@@ -77,6 +79,7 @@ multiplicity `N a b c = N_{ab}^c` of the simple object `c` in the tensor product
 satisfying the unit laws `N_{ua}^b = N_{au}^b = [a = b]`. The unit laws are stated as four fields so
 that no decidable equality on `ι` is built in; `TauCeti.FusionRules.N_unit_left` and
 `TauCeti.FusionRules.N_unit_right` restate them with `if`. -/
+@[ext]
 structure FusionRules (ι : Type u) where
   /-- The index of the tensor unit. -/
   unit : ι
@@ -124,6 +127,22 @@ def unitLeft (a : ι) : Fin (N.N N.unit a a) := ⟨0, by simp⟩
 
 /-- The unique index of `Hom(a ⊗ u, a)`, whose basis vector is normalized to the right unitor. -/
 def unitRight (a : ι) : Fin (N.N a N.unit a) := ⟨0, by simp⟩
+
+@[simp]
+theorem unitLeft_val (a : ι) : (N.unitLeft a : ℕ) = 0 := (rfl)
+
+@[simp]
+theorem unitRight_val (a : ι) : (N.unitRight a : ℕ) = 0 := (rfl)
+
+/-- `TauCeti.FusionRules.unitLeft a` is the only index of `Hom(u ⊗ a, a)`. -/
+instance (a : ι) : Unique (Fin (N.N N.unit a a)) where
+  default := N.unitLeft a
+  uniq i := Fin.ext <| by simpa using i.2
+
+/-- `TauCeti.FusionRules.unitRight a` is the only index of `Hom(a ⊗ u, a)`. -/
+instance (a : ι) : Unique (Fin (N.N a N.unit a)) where
+  default := N.unitRight a
+  uniq i := Fin.ext <| by simpa using i.2
 
 end FusionRules
 

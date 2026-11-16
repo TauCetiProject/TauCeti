@@ -92,6 +92,13 @@ theorem mul_eq_of_ofMul {g h l : M} (i : Fin ((ofMul M).N g h l)) : g * h = l :=
 theorem isEmpty_fin_ofMul_N {g h l : M} (hl : g * h ≠ l) : IsEmpty (Fin ((ofMul M).N g h l)) :=
   ⟨fun i ↦ hl (mul_eq_of_ofMul i)⟩
 
+/-- A sum over the fusion channels `g ⊗ h → f` of the group fusion rules is the sum over the
+channels `g ⊗ h → g * h`. -/
+theorem sum_sum_ofMul [Fintype M] {β : Type*} [AddCommMonoid β] (g h : M)
+    (φ : ∀ f, Fin ((ofMul M).N g h f) → β) : ∑ f, ∑ k, φ f k = ∑ k, φ (g * h) k :=
+  Fintype.sum_eq_single (g * h) fun _ hf ↦
+    have := isEmpty_fin_ofMul_N (Ne.symm hf); Fintype.sum_empty _
+
 instance (g h l : M) : Subsingleton (Fin ((ofMul M).N g h l)) :=
   Fin.subsingleton_iff_le_one.mpr <| by rw [ofMul_N]; split_ifs <;> simp
 
@@ -149,6 +156,7 @@ variable [Subsingleton ι]
 
 /-- With a single simple object, every entry of every F-matrix is `1`: the triangle equation
 computes the single entry. -/
+@[simp]
 theorem F_apply_of_subsingleton (P : FSymbols R N) {a b c d : ι} (x : N.Left a b c d)
     (y : N.Right a b c d) : P.F a b c d x y = 1 := by
   obtain rfl := Subsingleton.elim a N.unit
@@ -182,9 +190,10 @@ instance : Unique (FSymbols R N) where
     exact P.F_apply_of_subsingleton x y
 
 /-- With a single simple object, every entry of every inverse F-matrix is `1`. -/
+@[simp]
 theorem Finv_apply_of_subsingleton (P : FSymbols R N) {a b c d : ι} (y : N.Right a b c d)
     (x : N.Left a b c d) : P.Finv a b c d y x = 1 := by
-  simpa [Matrix.mul_apply, Fintype.sum_subsingleton _ x, P.F_apply_of_subsingleton] using
+  simpa [Matrix.mul_apply, Fintype.sum_subsingleton _ x] using
     congr_fun₂ (P.Finv_mul_F a b c d) y y
 
 end Subsingleton
@@ -215,26 +224,23 @@ def ofMul : FSymbols R (FusionRules.ofMul M) where
     ext ⟨e, i, j⟩ y
     obtain rfl := FusionRules.mul_eq_of_ofMul i
     obtain rfl := FusionRules.mul_eq_of_ofMul j
-    rw [Subsingleton.elim ⟨a * b, i, j⟩ y, Matrix.one_apply_eq, Matrix.mul_apply,
-      Fintype.sum_sigma, Fintype.sum_eq_single (b * c) fun _ hf ↦
-        have := FusionRules.isEmpty_fin_ofMul_N (Ne.symm hf); Fintype.sum_empty _]
-    simp [FusionRules.ofMul_N, mul_assoc]
+    simp only [Matrix.mul_apply, Fintype.sum_sigma, Fintype.sum_prod_type,
+      FusionRules.sum_sum_ofMul]
+    simp [Matrix.one_apply, Subsingleton.elim _ y, mul_assoc]
   Finv_mul_F a b c d := by
     ext ⟨f, k, l⟩ y
     obtain rfl := FusionRules.mul_eq_of_ofMul k
     obtain rfl := FusionRules.mul_eq_of_ofMul l
-    rw [Subsingleton.elim ⟨b * c, k, l⟩ y, Matrix.one_apply_eq, Matrix.mul_apply,
-      Fintype.sum_sigma, Fintype.sum_eq_single (a * b) fun _ he ↦
-        have := FusionRules.isEmpty_fin_ofMul_N (Ne.symm he); Fintype.sum_empty _]
-    simp [FusionRules.ofMul_N, mul_assoc]
+    simp only [Matrix.mul_apply, Fintype.sum_sigma, Fintype.sum_prod_type,
+      FusionRules.sum_sum_ofMul]
+    simp [Matrix.one_apply, Subsingleton.elim _ y, mul_assoc]
   pentagon A B C D E p q r s i₁ i₂ i₃ k m n := by
     obtain rfl := FusionRules.mul_eq_of_ofMul i₁
     obtain rfl := FusionRules.mul_eq_of_ofMul i₂
     obtain rfl := FusionRules.mul_eq_of_ofMul i₃
     obtain rfl := FusionRules.mul_eq_of_ofMul k
     obtain rfl := FusionRules.mul_eq_of_ofMul m
-    rw [Fintype.sum_eq_single (B * C) fun _ ht ↦
-      have := FusionRules.isEmpty_fin_ofMul_N (Ne.symm ht); Fintype.sum_empty _]
+    rw [FusionRules.sum_sum_ofMul]
     simp [FusionRules.ofMul_N, mul_assoc]
   triangle _ _ _ j l := by simp [Subsingleton.elim j l]
 
@@ -268,6 +274,7 @@ variable [Subsingleton ι]
 /-- With a single simple object, every entry of every R-matrix is `1`: the forward hexagon
 equation at the unit says that the single entry `r` satisfies `r = r * r`, and `r` is
 invertible. -/
+@[simp]
 theorem R_apply_of_subsingleton (Q : RSymbols P) {a b c : ι} (i : Fin (N.N a b c))
     (j : Fin (N.N b a c)) : Q.R a b c i j = 1 := by
   obtain rfl := Subsingleton.elim a N.unit
@@ -299,12 +306,10 @@ instance : Unique (RSymbols P) where
           N.N_eq_one_of_subsingleton]
       hexagon_forward := by
         intros
-        simp [Fintype.sum_subsingleton _ N.unit, N.N_eq_one_of_subsingleton,
-          FSymbols.F_apply_of_subsingleton]
+        simp [Fintype.sum_subsingleton _ N.unit, N.N_eq_one_of_subsingleton]
       hexagon_reverse := by
         intros
-        simp [Fintype.sum_subsingleton _ N.unit, N.N_eq_one_of_subsingleton,
-          FSymbols.Finv_apply_of_subsingleton] }
+        simp [Fintype.sum_subsingleton _ N.unit, N.N_eq_one_of_subsingleton] }
   uniq Q := by
     ext a b c i j
     exact Q.R_apply_of_subsingleton i j
@@ -338,26 +343,24 @@ def ofMul : RSymbols (FSymbols.ofMul K M) where
     ext i j
     obtain rfl := FusionRules.mul_eq_of_ofMul i
     simp [Matrix.mul_apply, Matrix.one_apply, Subsingleton.elim i j, FusionRules.ofMul_N,
-      _root_.mul_comm b a]
+      mul_comm b a]
   Rinv_mul_R a b c := by
     ext i j
     obtain rfl := FusionRules.mul_eq_of_ofMul i
     simp [Matrix.mul_apply, Matrix.one_apply, Subsingleton.elim i j, FusionRules.ofMul_N,
-      _root_.mul_comm b a]
+      mul_comm b a]
   hexagon_forward a b c d e g i j n o := by
     obtain rfl := FusionRules.mul_eq_of_ofMul i
     obtain rfl := FusionRules.mul_eq_of_ofMul j
     obtain rfl := FusionRules.mul_eq_of_ofMul n
-    rw [Fintype.sum_eq_single (b * c) fun _ hf ↦
-      have := FusionRules.isEmpty_fin_ofMul_N (Ne.symm hf); Fintype.sum_empty _]
-    simp [FusionRules.ofMul_N, _root_.mul_comm, mul_left_comm]
+    rw [FusionRules.sum_sum_ofMul]
+    simp [FusionRules.ofMul_N, mul_comm, mul_left_comm]
   hexagon_reverse a b c d f g k l n o := by
     obtain rfl := FusionRules.mul_eq_of_ofMul k
     obtain rfl := FusionRules.mul_eq_of_ofMul l
     obtain rfl := FusionRules.mul_eq_of_ofMul n
-    rw [Fintype.sum_eq_single (a * b) fun _ he ↦
-      have := FusionRules.isEmpty_fin_ofMul_N (Ne.symm he); Fintype.sum_empty _]
-    simp [FusionRules.ofMul_N, _root_.mul_comm, mul_left_comm]
+    rw [FusionRules.sum_sum_ofMul]
+    simp [FusionRules.ofMul_N, mul_comm, mul_left_comm]
 
 @[simp]
 theorem ofMul_R {a b c : M} (i : Fin ((FusionRules.ofMul M).N a b c))
@@ -372,7 +375,7 @@ end ofMul
 /-- Over a nontrivial commutative semiring, the group fusion rules of a noncommutative
 multiplication carry no R-symbols: for `a * b ≠ b * a`, the matrix `R^{ab}_{ab}` would be an
 invertible matrix with one row and no columns. -/
-theorem mul_comm [Nontrivial K] {M : Type u} [MulOneClass M] [Fintype M] [DecidableEq M]
+protected theorem mul_comm [Nontrivial K] {M : Type u} [MulOneClass M] [Fintype M] [DecidableEq M]
     {P : FSymbols K (FusionRules.ofMul M)} (Q : RSymbols P) (a b : M) : a * b = b * a := by
   have h := Q.N_comm a b (a * b)
   simp only [FusionRules.ofMul_N, ite_true] at h
