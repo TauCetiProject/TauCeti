@@ -120,16 +120,20 @@ theorem pantsGlue_assoc (P₁₂ : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) 
     pantsGlue P₁₂ (pantsGlue Q₁₂ D₁ D₂) D₃ = pantsGlue P₂₃ D₁ (pantsGlue Q₂₃ D₂ D₃) := by
   have h₁₂ : pantsGlue P₁₂ (pantsGlue Q₁₂ D₁ D₂) D₃ =
       (P₁₂ ≫ HSpace.pathHmul Q₁₂ (𝟙 _)) ≫ pantsGlue (𝟙 _) (pantsGlue (𝟙 _) D₁ D₂) D₃ := by
-    have hQ := HSpace.pathHmul_comp Q₁₂ (pantsGlue (𝟙 _) D₁ D₂) (𝟙 _) D₃
-    rw [Category.id_comp] at hQ
-    simp only [pantsGlue_def, Category.id_comp, Category.assoc] at hQ ⊢
-    rw [hQ, Category.assoc]
+    calc pantsGlue P₁₂ (pantsGlue Q₁₂ D₁ D₂) D₃
+        = pantsGlue P₁₂ (Q₁₂ ≫ pantsGlue (𝟙 _) D₁ D₂) (𝟙 _ ≫ D₃) := by
+          rw [comp_pantsGlue, Category.comp_id, Category.id_comp]
+      _ = pantsGlue (P₁₂ ≫ HSpace.pathHmul Q₁₂ (𝟙 _)) (pantsGlue (𝟙 _) D₁ D₂) D₃ :=
+          pantsGlue_comp_comp P₁₂ Q₁₂ (𝟙 _) _ D₃
+      _ = _ := by rw [comp_pantsGlue, Category.comp_id]
   have h₂₃ : pantsGlue P₂₃ D₁ (pantsGlue Q₂₃ D₂ D₃) =
       (P₂₃ ≫ HSpace.pathHmul (𝟙 _) Q₂₃) ≫ pantsGlue (𝟙 _) D₁ (pantsGlue (𝟙 _) D₂ D₃) := by
-    have hQ := HSpace.pathHmul_comp (𝟙 _) D₁ Q₂₃ (pantsGlue (𝟙 _) D₂ D₃)
-    rw [Category.id_comp] at hQ
-    simp only [pantsGlue_def, Category.id_comp, Category.assoc] at hQ ⊢
-    rw [hQ, Category.assoc]
+    calc pantsGlue P₂₃ D₁ (pantsGlue Q₂₃ D₂ D₃)
+        = pantsGlue P₂₃ (𝟙 _ ≫ D₁) (Q₂₃ ≫ pantsGlue (𝟙 _) D₂ D₃) := by
+          rw [comp_pantsGlue, Category.comp_id, Category.id_comp]
+      _ = pantsGlue (P₂₃ ≫ HSpace.pathHmul (𝟙 _) Q₂₃) D₁ (pantsGlue (𝟙 _) D₂ D₃) :=
+          pantsGlue_comp_comp P₂₃ (𝟙 _) Q₂₃ D₁ _
+      _ = _ := by rw [comp_pantsGlue, Category.comp_id]
   rw [h₁₂, h₂₃, ← h]
   simp only [Category.assoc]
   -- The groupoid objects here are written both as `γ ⬝ γ'` and as the H-space product `γ ⋀ γ'`,

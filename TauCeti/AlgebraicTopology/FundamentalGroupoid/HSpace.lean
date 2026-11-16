@@ -45,7 +45,7 @@ it glues the sphere to the cylinder `p`.
 
 The H-space structure of `Mathlib` records no associativity, but concatenation in the loop space is
 associative up to a reparametrization that is the same for all loops. The straight-line homotopy
-to this reparametrization (`Path.loopTransAssocHomotopy`) is therefore continuous in all three
+to this reparametrization (`Path.transAssocHomotopy`) is therefore continuous in all three
 loops, and its trace at `(γ₁, γ₂, γ₃)` is a path class
 `Path.loopTransAssoc γ₁ γ₂ γ₃ : γ₁ ⬝ (γ₂ ⬝ γ₃) ⟶ (γ₁ ⬝ γ₂) ⬝ γ₃`. As for the unit laws, the
 naturality of the isomorphism of induced functors given by a homotopy makes it natural for
@@ -307,33 +307,17 @@ namespace Path
 
 variable {X : Type*} [TopologicalSpace X] {x : X}
 
-/-- **The associativity homotopy of the loop space.** The straight-line homotopy, continuous in
-the three loops, from `γ₁ ⬝ (γ₂ ⬝ γ₃)` to `(γ₁ ⬝ γ₂) ⬝ γ₃`: the second is the first reparametrized
-by a map of `[0, 1]` that does not depend on the loops (`Path.Homotopy.trans_assoc_reparam`), and
-the homotopy moves along the segments to this reparametrization (`Path.reparamHomotopy`). -/
-def loopTransAssocHomotopy (x : X) :
-    ContinuousMap.Homotopy
-      (⟨fun γ : Path x x × Path x x × Path x x => γ.1.trans (γ.2.1.trans γ.2.2),
-        continuous_fst.path_trans (continuous_fst.comp continuous_snd |>.path_trans
-          (continuous_snd.comp continuous_snd))⟩ : C(_, Path x x))
-      ⟨fun γ : Path x x × Path x x × Path x x => (γ.1.trans γ.2.1).trans γ.2.2,
-        (continuous_fst.path_trans (continuous_fst.comp continuous_snd)).path_trans
-          (continuous_snd.comp continuous_snd)⟩ :=
-  ((reparamHomotopy (fun t => ⟨Homotopy.transAssocReparamAux t,
-        Homotopy.transAssocReparamAux_mem_I t⟩) (by fun_prop)
-      (Subtype.ext Homotopy.transAssocReparamAux_zero)
-      (Subtype.ext Homotopy.transAssocReparamAux_one)).compContinuousMap _).cast
-    (ContinuousMap.id_comp _) (by
-      ext γ : 1
-      exact (Homotopy.trans_assoc_reparam γ.1 γ.2.1 γ.2.2).symm)
-
 /-- **The associator of the loop space**: the path class from `γ₁ ⬝ (γ₂ ⬝ γ₃)` to
 `(γ₁ ⬝ γ₂) ⬝ γ₃` in `Ω X x` traced by the associativity homotopy
-`Path.loopTransAssocHomotopy`. -/
+`Path.transAssocHomotopy`. -/
 def loopTransAssoc (γ₁ γ₂ γ₃ : Path x x) :
     (⟨γ₁.trans (γ₂.trans γ₃)⟩ : FundamentalGroupoid (Path x x)) ⟶
       ⟨(γ₁.trans γ₂).trans γ₃⟩ :=
-  ⟦(loopTransAssocHomotopy x).evalAt (γ₁, γ₂, γ₃)⟧
+  ⟦(transAssocHomotopy x x x x).evalAt (γ₁, γ₂, γ₃)⟧
+
+theorem loopTransAssoc_def (γ₁ γ₂ γ₃ : Path x x) :
+    loopTransAssoc γ₁ γ₂ γ₃ = ⟦(transAssocHomotopy x x x x).evalAt (γ₁, γ₂, γ₃)⟧ :=
+  (rfl)
 
 /-- **The associator is natural**: for path classes `p₁`, `p₂`, `p₃` in the loop space, the
 products `p₁ ⋀ (p₂ ⋀ p₃)` and `(p₁ ⋀ p₂) ⋀ p₃` correspond under the associators at their
@@ -345,7 +329,8 @@ theorem pathHmul_pathHmul_comp_loopTransAssoc {γ₁ γ₂ γ₃ δ₁ δ₂ δ�
     (p₃ : (⟨γ₃⟩ : FundamentalGroupoid (Path x x)) ⟶ ⟨δ₃⟩) :
     HSpace.pathHmul p₁ (HSpace.pathHmul p₂ p₃) ≫ loopTransAssoc δ₁ δ₂ δ₃ =
       loopTransAssoc γ₁ γ₂ γ₃ ≫ HSpace.pathHmul (HSpace.pathHmul p₁ p₂) p₃ := by
-  have h := (FundamentalGroupoidFunctor.homotopicMapsNatIso (loopTransAssocHomotopy x)).naturality
+  have h := (FundamentalGroupoidFunctor.homotopicMapsNatIso
+    (transAssocHomotopy x x x x)).naturality
     (X := ⟨(γ₁, γ₂, γ₃)⟩) (Y := ⟨(δ₁, δ₂, δ₃)⟩)
     (Path.Homotopic.prod p₁ (Path.Homotopic.prod p₂ p₃))
   -- As in `HSpace.pathHmul_id_left_comp_evalAt_eHmul`, the images of the product path class under
@@ -356,27 +341,19 @@ theorem pathHmul_pathHmul_comp_loopTransAssoc {γ₁ γ₂ γ₃ δ₁ δ₂ δ�
   induction p₃ using Path.Homotopic.Quotient.ind with | mk p₃ =>
   exact h
 
-/-- The two concatenations of three constant loops agree: both are the constant loop. -/
-theorem refl_trans_refl_trans_refl :
-    (refl x).trans ((refl x).trans (refl x)) = ((refl x).trans (refl x)).trans (refl x) := by
-  simp only [refl_trans_refl]
-
 /-- **The associator is trivial at the constant loops**: every reparametrization fixes the
 constant loop, so the associativity homotopy is constant there. -/
 @[simp]
 theorem loopTransAssoc_refl :
     loopTransAssoc (refl x) (refl x) (refl x) =
       eqToHom (congrArg FundamentalGroupoid.mk refl_trans_refl_trans_refl) := by
-  rw [FundamentalGroupoid.eqToHom_eq refl_trans_refl_trans_refl]
-  refine congrArg Path.Homotopic.Quotient.mk (Path.ext (funext fun t => Path.ext
-    (funext fun s => ?_)))
-  simp only [loopTransAssocHomotopy, ContinuousMap.Homotopy.evalAt, ContinuousMap.coe_mk,
-    ContinuousMap.Homotopy.cast_apply, ContinuousMap.Homotopy.compContinuousMap_apply,
-    refl_trans_refl, reparamHomotopy_apply, coe_mk', Homotopy.eval_apply, coe_toContinuousMap,
-    ContinuousMap.Homotopy.curry_apply, ContinuousMap.HomotopyWith.coe_toHomotopy, cast_coe,
-    refl_apply]
-  -- What remains is a value of the reparametrization homotopy of the constant loop, which is a
-  -- value of the constant loop, `x`, by definition of `Path.Homotopy.reparam`.
-  rfl
+  rw [loopTransAssoc_def, FundamentalGroupoid.eqToHom_eq refl_trans_refl_trans_refl]
+  refine congrArg Path.Homotopic.Quotient.mk (Path.ext (funext fun t => ?_))
+  simp only [ContinuousMap.Homotopy.evalAt, coe_mk', ContinuousMap.coe_mk,
+    transAssocHomotopy_apply]
+  rw [← reparamHomotopy_apply]
+  simp only [refl_trans_refl]
+  rw [reparamHomotopy_apply_refl]
+  simp
 
 end Path
