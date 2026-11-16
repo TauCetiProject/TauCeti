@@ -54,7 +54,9 @@ its topological part plus that constant.
 * `TauCeti.Floer.contMDiffAt_pairOfPantsContinuationPerturbation`: the perturbation is smooth on
   `S × M` for smooth Hamiltonians on a manifold `M`;
   `TauCeti.Floer.contDiffAt_pairOfPantsContinuationPerturbation_prod` is the `Cⁿ` statement for a
-  vector space target.
+  vector space target, and `TauCeti.Floer.contDiffAt_pairOfPantsContinuationPerturbation_apply`
+  states that its components are `Cⁿ` jointly in the neck positions, the domain point of `S` in
+  real coordinates and the target point.
 * `TauCeti.Floer.pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_forall_le`:
   where every `σ ≤ L_q`, on the pants side of the necks, it is the pair-of-pants perturbation
   of `G`;
@@ -278,6 +280,53 @@ section RealCoordinates
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {G H : Puncture → ℝ → V → ℝ}
 
+/-- **The perturbation is smooth in the neck positions.** In the real coordinates of `S`, the
+components of the perturbation are `Cⁿ` jointly in the neck positions, the domain point and the
+target point, for `Cⁿ` inner and outer Hamiltonians. -/
+theorem contDiffAt_pairOfPantsContinuationPerturbation_apply {n : ℕ∞}
+    (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
+    (hGs : ∀ q, ContDiff ℝ n (uncurry (G q))) (hHs : ∀ q, ContDiff ℝ n (uncurry (H q)))
+    (L : Puncture → ℝ) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) (x : V) (v : ℂ) :
+    ContDiffAt ℝ n (fun p : (Puncture → ℝ) × ((ℝ × ℝ) × V) ↦
+      pairOfPantsContinuationPerturbation G H p.1 (Complex.equivRealProdCLM.symm p.2.1) p.2.2 v)
+      (L, (z, x)) := by
+  refine ContDiffAt.clm_apply ?_ contDiffAt_const
+  simp only [pairOfPantsContinuationPerturbation, continuationHomotopy_def]
+  refine ContDiffAt.sum fun q _ ↦ ?_
+  have hw : Complex.equivRealProdCLM.symm z ≠ q.endCenter := ne_endCenter hz q
+  -- The domain point read in `ℂ`, and the pair of the domain point and the target point.
+  have hc : ContDiffAt ℝ n (fun p : (Puncture → ℝ) × ((ℝ × ℝ) × V) ↦
+      Complex.equivRealProdCLM.symm p.2.1) (L, (z, x)) :=
+    (Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contDiffAt
+  have hcx : ContDiffAt ℝ n (fun p : (Puncture → ℝ) × ((ℝ × ℝ) × V) ↦
+      (Complex.equivRealProdCLM.symm p.2.1, p.2.2)) (L, (z, x)) :=
+    hc.prodMk (contDiff_snd.comp contDiff_snd).contDiffAt
+  -- The signed longitudinal coordinate, its transitions, and the Hamiltonians in the angular
+  -- coordinate, which are smooth by periodicity.
+  have hσ : ContDiffAt ℝ n (fun p : (Puncture → ℝ) × ((ℝ × ℝ) × V) ↦
+      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm p.2.1)).re) (L, (z, x)) :=
+    contDiffAt_const.mul (ContDiffAt.comp (g := fun w ↦ (q.endCoord w).re) (L, (z, x))
+      (q.contDiffAt_re_endCoord hw) hc)
+  have hβ (f : (Puncture → ℝ) × ((ℝ × ℝ) × V) → ℝ) (hf : ContDiffAt ℝ n f (L, (z, x))) :
+      ContDiffAt ℝ n (fun p ↦ smoothTransition
+        (q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm p.2.1)).re - f p)) (L, (z, x)) :=
+    smoothTransition.contDiff.contDiffAt.comp (L, (z, x)) (hσ.sub hf)
+  have hper (F : Puncture → ℝ → V → ℝ) (hF : ∀ q, Periodic (F q) 1)
+      (hFs : ∀ q, ContDiff ℝ n (uncurry (F q))) :
+      ContDiffAt ℝ n (fun p : (Puncture → ℝ) × ((ℝ × ℝ) × V) ↦
+        F q (q.endCoord (Complex.equivRealProdCLM.symm p.2.1)).im p.2.2) (L, (z, x)) :=
+    ContDiffAt.comp (g := fun y : ℂ × V ↦ F q (q.endCoord y.1).im y.2) (L, (z, x))
+      (contMDiffAt_prod_modelWithCornersSelf_iff.1 (q.contMDiffAt_comp_im_endCoord (hF q)
+        (contMDiff_prod_modelWithCornersSelf_iff.2 (hFs q).contMDiff) hw x)).contDiffAt hcx
+  have hL : ContDiffAt ℝ n (fun p : (Puncture → ℝ) × ((ℝ × ℝ) × V) ↦ p.1 q) (L, (z, x)) :=
+    ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Puncture ↦ ℝ) q).contDiff.comp
+      contDiff_fst).contDiffAt
+  have hA : ContDiffAt ℝ n (fun p : (Puncture → ℝ) × ((ℝ × ℝ) × V) ↦
+      q.endAngularForm (Complex.equivRealProdCLM.symm p.2.1)) (L, (z, x)) :=
+    (q.contDiffAt_endAngularForm hw).comp (L, (z, x)) hc
+  exact ((hβ _ contDiffAt_const).mul ((hper G hG hGs).add
+    ((hβ _ hL).mul ((hper H hH hHs).sub (hper G hG hGs))))).smul hA
+
 /-- In the real coordinates of `S`, the components of the perturbation are `Cⁿ` jointly in the
 domain and target points, for `Cⁿ` inner and outer Hamiltonians. -/
 theorem contDiffAt_uncurry_pairOfPantsContinuationPerturbation {n : ℕ∞}
@@ -288,10 +337,8 @@ theorem contDiffAt_uncurry_pairOfPantsContinuationPerturbation {n : ℕ∞}
       (uncurry fun z x ↦
         pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x v)
       (z, x) :=
-  ((contDiffAt_pairOfPantsContinuationPerturbation_prod hG hH hGs hHs L hz x).comp
-    (f := fun p : (ℝ × ℝ) × V ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x)
-    ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
-      contDiff_snd).contDiffAt).clm_apply contDiffAt_const
+  (contDiffAt_pairOfPantsContinuationPerturbation_apply hG hH hGs hHs L hz x v).comp (z, x)
+    (f := fun p : (ℝ × ℝ) × V ↦ (L, p)) (contDiff_const.prodMk contDiff_id).contDiffAt
 
 end RealCoordinates
 
