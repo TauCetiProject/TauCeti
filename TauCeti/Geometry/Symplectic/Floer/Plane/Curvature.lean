@@ -123,6 +123,17 @@ open scoped Topology
 
 namespace TauCeti
 
+/-- In the real coordinates of `ℂ`, every part `‖w‖ > r` of the plane contains a part
+`‖w‖ > exp (2πa)` with `a ≥ 2`. -/
+theorem exists_two_le_exp_lt_norm_subset (r : ℝ) :
+    ∃ a : ℝ, 2 ≤ a ∧ {z : ℝ × ℝ | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖} ⊆
+      {z | r < ‖Complex.equivRealProdCLM.symm z‖} := by
+  refine ⟨max 2 r, le_max_left _ _, fun z (hz : Real.exp _ < _) ↦ lt_of_le_of_lt ?_ hz⟩
+  have h₁ := Real.add_one_le_exp (2 * π * max 2 r)
+  have h₂ : 0 ≤ (2 * π - 1) * max 2 r :=
+    mul_nonneg (by linarith [Real.two_le_pi]) (by linarith [le_max_left 2 r])
+  linarith [le_max_right 2 r]
+
 namespace Floer.PSSPlane
 
 /-! ### The end lift in real coordinates -/
@@ -188,16 +199,6 @@ theorem exp_lt_norm_realChart_positive {a : ℝ} {z : ℝ × ℝ} (hz : a < z.1)
   rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, norm_cylindricalEndLift,
     endSign_positive, one_mul, Complex.equivRealProdCLM_symm_apply_re, Real.exp_lt_exp]
   nlinarith [Real.pi_pos]
-
-/-- Every part `‖w‖ > r` of the plane contains a part `‖w‖ > exp (2πa)` with `a ≥ 2`. -/
-theorem exists_two_le_exp_lt_norm_subset (r : ℝ) :
-    ∃ a : ℝ, 2 ≤ a ∧ {z : ℝ × ℝ | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖} ⊆
-      {z | r < ‖Complex.equivRealProdCLM.symm z‖} := by
-  refine ⟨max 2 r, le_max_left _ _, fun z (hz : Real.exp _ < _) ↦ lt_of_le_of_lt ?_ hz⟩
-  have h₁ := Real.add_one_le_exp (2 * π * max 2 r)
-  have h₂ : 0 ≤ (2 * π - 1) * max 2 r :=
-    mul_nonneg (by linarith [Real.two_le_pi]) (by linarith [le_max_left 2 r])
-  linarith [le_max_right 2 r]
 
 /-- The end lift of the positive plane is injective on the half-strip `s > a`, `0 ≤ t < 1`. -/
 theorem injOn_realChart_positive (a : ℝ) :
