@@ -24,13 +24,13 @@ orders (`Submodule.leftOrder`), singular moduli, Picard groups, and ring class f
 with algebraic elliptic-curve endomorphisms is asserted here):
 
 1. **Homothety classes, Picard group, and ring class Galois group**: sending `[f]` to
-   `TauCeti.PeriodPair.HomothetyClass.mk (root f).periodPair` identifies `PosDefProperClass n`,
+   `TauCeti.PeriodPairHomothetyClass.mk (root f).periodPair` identifies `PosDefProperClass n`,
    `Pic (QuadraticOrder.numberFieldOrder (-n))`, and `Gal(H_O / K)` with homothety classes of
    lattices having left order `O_{-n}` (`cmHomothetyClassEquivPosDefProperClass`,
-   `cmHomothetyClassEquivPic`, `cmHomothetyClassEquivGal`). Under `HomothetyClass.j`, these map
-   onto the roots of `hilbertClassPolynomial n`, and an elliptic curve `E / ℂ` has period-lattice
-   scalar multiplier order `E.periodLattice.leftOrder = O_{-n}` iff `E.j` is a root of
-   `hilbertClassPolynomial n`
+   `cmHomothetyClassEquivPic`, `cmHomothetyClassEquivGal`). Under `PeriodPairHomothetyClass.j`,
+   these map onto the roots of `hilbertClassPolynomial n`, and an elliptic curve `E / ℂ` has
+   period-lattice scalar multiplier order `E.periodLattice.leftOrder = O_{-n}` iff `E.j` is a root
+   of `hilbertClassPolynomial n`
    (`WeierstrassCurve.leftOrder_periodLattice_eq_complexOrder_iff_isRoot_hilbertClassPolynomial`).
 2. **Discriminant uniqueness**: a singular modulus uniquely determines the discriminant of its CM
    order (`eq_of_singularModulus_eq`), so Hilbert class polynomials of distinct discriminants are
@@ -57,7 +57,7 @@ with algebraic elliptic-curve endomorphisms is asserted here):
 
 ## Main results
 
-* `TauCeti.PeriodPair.HomothetyClass.leftOrder_eq_complexOrder_iff_isRoot_hilbertClassPolynomial`,
+* `TauCeti.PeriodPairHomothetyClass.leftOrder_eq_complexOrder_iff_isRoot_hilbertClassPolynomial`,
   `WeierstrassCurve.leftOrder_periodLattice_eq_complexOrder_iff_isRoot_hilbertClassPolynomial`:
   period-lattice scalar multiplier order `O_{-n}` iff `j` is a root of `hilbertClassPolynomial n`.
 * `TauCeti.BinaryQuadraticForm.eq_of_singularModulus_eq`,
@@ -97,34 +97,34 @@ variable (n : ℕ) [NeZero n]
 /-- Proper equivalence of forms preserves the homothety class of `(root f).periodPair`. -/
 private theorem homothetyClass_periodPair_root_eq_of_orbitRel
     {f g : ↥(posDef n ⊓ primitiveForms (-n))} (h : orbitRel SL(2, ℤ) _ f g) :
-    PeriodPair.HomothetyClass.mk (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩).periodPair =
-      PeriodPair.HomothetyClass.mk
+    PeriodPairHomothetyClass.mk (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩).periodPair =
+      PeriodPairHomothetyClass.mk
         (root ⟨g, inf_le_left (b := primitiveForms (-n)) g.2⟩).periodPair := by
   obtain ⟨γ, rfl⟩ := mem_orbit_iff.mp h
-  rw [← PeriodPair.HomothetyClass.mk_periodPair_smul γ
+  rw [← PeriodPairHomothetyClass.mk_periodPair_smul γ
     (root ⟨g, inf_le_left (b := primitiveForms (-n)) g.2⟩), ← root_smul]
-  exact congrArg (fun z : ℍ ↦ PeriodPair.HomothetyClass.mk z.periodPair)
+  exact congrArg (fun z : ℍ ↦ PeriodPairHomothetyClass.mk z.periodPair)
     (congrArg root (Subtype.ext ((SubMulAction.val_smul γ g).trans
       (SubMulAction.val_smul γ _).symm)))
 
 /-- **Complex-lattice homothety class of a proper form class**: sends `[f] ∈ PosDefProperClass n`
 to the homothety class of `(root f).periodPair` (equivalently, of `f.complexOrderIdeal (-n)`). -/
-def posDefProperClassToHomothetyClass : PosDefProperClass n → PeriodPair.HomothetyClass :=
-  Quotient.lift (fun f ↦ PeriodPair.HomothetyClass.mk
+def posDefProperClassToHomothetyClass : PosDefProperClass n → PeriodPairHomothetyClass :=
+  Quotient.lift (fun f ↦ PeriodPairHomothetyClass.mk
     (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩).periodPair)
     fun _ _ ↦ homothetyClass_periodPair_root_eq_of_orbitRel n
 
 /-- Evaluation of `posDefProperClassToHomothetyClass` on a representative form. -/
 @[simp] theorem posDefProperClassToHomothetyClass_mk (f : ↥(posDef n ⊓ primitiveForms (-n))) :
     posDefProperClassToHomothetyClass n (Quotient.mk _ f) =
-      PeriodPair.HomothetyClass.mk
+      PeriodPairHomothetyClass.mk
         (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩).periodPair := (rfl)
 
 /-- The `j`-invariant of `posDefProperClassToHomothetyClass n q` is `singularModulus n q`. -/
 @[simp] theorem j_posDefProperClassToHomothetyClass (q : PosDefProperClass n) :
     (posDefProperClassToHomothetyClass n q).j = singularModulus n q := by
   induction q using Quotient.inductionOn with | h f
-  rw [posDefProperClassToHomothetyClass_mk, PeriodPair.HomothetyClass.j_mk_periodPair,
+  rw [posDefProperClassToHomothetyClass_mk, PeriodPairHomothetyClass.j_mk_periodPair,
     singularModulus_mk]
 
 variable {n} in
@@ -134,7 +134,7 @@ theorem posDefProperClassToHomothetyClass_injective :
     Function.Injective (posDefProperClassToHomothetyClass n) := fun _ _ h ↦
   singularModulus_injective
     (by simpa only [j_posDefProperClassToHomothetyClass] using
-      congrArg PeriodPair.HomothetyClass.j h)
+      congrArg PeriodPairHomothetyClass.j h)
 
 /-- Every homothety class in the image of `posDefProperClassToHomothetyClass n` has left order
 `QuadraticOrder.complexOrder (-n)`. -/
@@ -143,7 +143,7 @@ theorem leftOrder_posDefProperClassToHomothetyClass
     (posDefProperClassToHomothetyClass n q).leftOrder =
       QuadraticOrder.complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn := by
   induction q using Quotient.inductionOn with | h f
-  rw [posDefProperClassToHomothetyClass_mk, PeriodPair.HomothetyClass.leftOrder_mk]
+  rw [posDefProperClassToHomothetyClass_mk, PeriodPairHomothetyClass.leftOrder_mk]
   exact leftOrder_lattice_periodPair_root_eq_complexOrder_of_isPrimitive
     ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩
     ((mem_posDef_inf_primitiveForms n).mp f.2).2.2
@@ -151,13 +151,13 @@ theorem leftOrder_posDefProperClassToHomothetyClass
 /-- **Image of `posDefProperClassToHomothetyClass`**: a homothety class of complex period lattices
 lies in the image of `PosDefProperClass n` if and only if its left order is `complexOrder (-n)`. -/
 theorem mem_range_posDefProperClassToHomothetyClass_iff
-    (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) {x : PeriodPair.HomothetyClass} :
+    (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) {x : PeriodPairHomothetyClass} :
     x ∈ Set.range (posDefProperClassToHomothetyClass n) ↔
       x.leftOrder = QuadraticOrder.complexOrder (-n)
         (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn := by
   refine ⟨fun ⟨q, hq⟩ ↦ hq ▸ leftOrder_posDefProperClassToHomothetyClass n hn q, fun hx ↦ ?_⟩
-  obtain ⟨τ, rfl⟩ := PeriodPair.HomothetyClass.mk_periodPair_surjective x
-  rw [PeriodPair.HomothetyClass.leftOrder_mk,
+  obtain ⟨τ, rfl⟩ := PeriodPairHomothetyClass.mk_periodPair_surjective x
+  rw [PeriodPairHomothetyClass.leftOrder_mk,
     leftOrder_lattice_periodPair_eq_complexOrder_iff hn] at hx
   obtain ⟨f, rfl⟩ := hx
   exact ⟨Quotient.mk _ f, rfl⟩
@@ -166,7 +166,7 @@ theorem mem_range_posDefProperClassToHomothetyClass_iff
 classes of period pairs with left order `complexOrder (-n)` correspond bijectively to
 `PosDefProperClass n`. -/
 def cmHomothetyClassEquivPosDefProperClass (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
-    {x : PeriodPair.HomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
+    {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
       (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn} ≃ PosDefProperClass n :=
   ((Equiv.ofInjective (posDefProperClassToHomothetyClass n)
     posDefProperClassToHomothetyClass_injective).trans
@@ -176,7 +176,7 @@ def cmHomothetyClassEquivPosDefProperClass (hn : (-n : ℤ) % 4 = 0 ∨ (-n : �
 `posDefProperClassToHomothetyClass`. -/
 @[simp] theorem coe_cmHomothetyClassEquivPosDefProperClass_symm
     (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) (q : PosDefProperClass n) :
-    (((cmHomothetyClassEquivPosDefProperClass n hn).symm q) : PeriodPair.HomothetyClass) =
+    (((cmHomothetyClassEquivPosDefProperClass n hn).symm q) : PeriodPairHomothetyClass) =
       posDefProperClassToHomothetyClass n q := by simp [cmHomothetyClassEquivPosDefProperClass]
 
 /-- Forward evaluation of `cmHomothetyClassEquivPosDefProperClass` on the homothety class of `q`
@@ -194,7 +194,7 @@ recovers `q`. -/
 recovers the underlying homothety class. -/
 @[simp] theorem posDefProperClassToHomothetyClass_cmHomothetyClassEquivPosDefProperClass
     (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1)
-    (x : {x : PeriodPair.HomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
+    (x : {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
       (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn}) :
     posDefProperClassToHomothetyClass n (cmHomothetyClassEquivPosDefProperClass n hn x) = x.1 := by
   simpa only [coe_cmHomothetyClassEquivPosDefProperClass_symm] using
@@ -203,7 +203,7 @@ recovers the underlying homothety class. -/
 /-- **Bijection between CM lattice homothety classes and the Picard group** of the quadratic order
 of discriminant `-n`. -/
 def cmHomothetyClassEquivPic (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
-    {x : PeriodPair.HomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
+    {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
       (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn} ≃
       @GlobalNumberFields.Pic (QuadraticAlgebra ℚ (-((n : ℤ) : ℚ)) 0)
         (inferInstanceAs (Field (QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0)))
@@ -214,7 +214,7 @@ def cmHomothetyClassEquivPic (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
 /-- `cmHomothetyClassEquivPic` sends a CM homothety class to the Picard class of its corresponding
 proper form class. -/
 @[simp] theorem cmHomothetyClassEquivPic_apply (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1)
-    (x : {x : PeriodPair.HomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
+    (x : {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
       (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn}) :
     cmHomothetyClassEquivPic n hn x =
       posDefProperClassToPic n hn (cmHomothetyClassEquivPosDefProperClass n hn x) :=
@@ -227,14 +227,14 @@ its corresponding proper form class. -/
       (inferInstanceAs (Field (QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0)))
       (inferInstanceAs (NumberField (QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0)))
       (QuadraticOrder.numberFieldOrder (-n : ℤ) hn)) :
-    (((cmHomothetyClassEquivPic n hn).symm c) : PeriodPair.HomothetyClass) =
+    (((cmHomothetyClassEquivPic n hn).symm c) : PeriodPairHomothetyClass) =
       posDefProperClassToHomothetyClass n ((posDefProperClassEquivPic n hn).symm c) :=
   coe_cmHomothetyClassEquivPosDefProperClass_symm n hn ((posDefProperClassEquivPic n hn).symm c)
 
 /-- **Bijection between CM lattice homothety classes and the ring class Galois group**
 `Gal(H_O / ℚ(√(-n)))`. -/
 def cmHomothetyClassEquivGal (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
-    {x : PeriodPair.HomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
+    {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
       (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn} ≃
       Gal(ClassFieldTheory.ringClassField (QuadraticOrder.numberFieldOrder (-n) hn) /
         QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0) :=
@@ -244,7 +244,7 @@ def cmHomothetyClassEquivGal (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
 /-- `cmHomothetyClassEquivGal` sends a CM homothety class to the ring class Artin symbol of its
 corresponding proper form class. -/
 theorem cmHomothetyClassEquivGal_apply (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1)
-    (x : {x : PeriodPair.HomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
+    (x : {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
       (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn}) :
     cmHomothetyClassEquivGal n hn x =
       posDefProperClassEquivGal n hn (cmHomothetyClassEquivPosDefProperClass n hn x) := (rfl)
@@ -255,14 +255,14 @@ its corresponding proper form class. -/
 theorem coe_cmHomothetyClassEquivGal_symm (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1)
     (σ : Gal(ClassFieldTheory.ringClassField
       (QuadraticOrder.numberFieldOrder (-n) hn)/QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0)) :
-    (((cmHomothetyClassEquivGal n hn).symm σ) : PeriodPair.HomothetyClass) =
+    (((cmHomothetyClassEquivGal n hn).symm σ) : PeriodPairHomothetyClass) =
       posDefProperClassToHomothetyClass n ((posDefProperClassEquivGal n hn).symm σ) :=
   coe_cmHomothetyClassEquivPosDefProperClass_symm n hn ((posDefProperClassEquivGal n hn).symm σ)
 
 /-- The number of homothety classes of complex period lattices with left order
 `complexOrder (-n)` equals `#Pic(O_{-n})`. -/
 theorem nat_card_cmHomothetyClass (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
-    Nat.card {x : PeriodPair.HomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
+    Nat.card {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
       (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn} =
       Nat.card (GlobalNumberFields.Pic (QuadraticOrder.numberFieldOrder (-n) hn)) :=
   Nat.card_congr (cmHomothetyClassEquivPic n hn)
@@ -271,14 +271,14 @@ end CMDictionary
 
 end TauCeti.BinaryQuadraticForm
 
-namespace TauCeti.PeriodPair.HomothetyClass
+namespace TauCeti.PeriodPairHomothetyClass
 
 open TauCeti.BinaryQuadraticForm
 
 /-- **Hilbert class polynomial characterization on homothety classes**: a homothety class `x` of
 complex period lattices has left order `complexOrder (-n)` if and only if `x.j` is a root of
 `hilbertClassPolynomial n`. -/
-theorem leftOrder_eq_complexOrder_iff_isRoot_hilbertClassPolynomial (x : HomothetyClass)
+theorem leftOrder_eq_complexOrder_iff_isRoot_hilbertClassPolynomial (x : PeriodPairHomothetyClass)
     (n : ℕ) [NeZero n] (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
     x.leftOrder = QuadraticOrder.complexOrder (-n)
         (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn ↔
@@ -287,7 +287,7 @@ theorem leftOrder_eq_complexOrder_iff_isRoot_hilbertClassPolynomial (x : Homothe
   exact ⟨fun ⟨q, h⟩ ↦ ⟨q, h ▸ (j_posDefProperClassToHomothetyClass n q).symm⟩,
     fun ⟨q, hq⟩ ↦ ⟨q, j_injective ((j_posDefProperClassToHomothetyClass n q).trans hq)⟩⟩
 
-end TauCeti.PeriodPair.HomothetyClass
+end TauCeti.PeriodPairHomothetyClass
 
 namespace TauCeti.BinaryQuadraticForm
 
@@ -298,10 +298,10 @@ theorem leftOrder_lattice_periodPair_eq_complexOrder_iff_isRoot_hilbertClassPoly
     τ.periodPair.lattice.leftOrder =
         QuadraticOrder.complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn ↔
       (hilbertClassPolynomial n).IsRoot (ModularForm.j τ) := by
-  simpa only [PeriodPair.HomothetyClass.leftOrder_mk,
-    PeriodPair.HomothetyClass.j_mk_periodPair] using
-    PeriodPair.HomothetyClass.leftOrder_eq_complexOrder_iff_isRoot_hilbertClassPolynomial
-      (PeriodPair.HomothetyClass.mk τ.periodPair) n hn
+  simpa only [PeriodPairHomothetyClass.leftOrder_mk,
+    PeriodPairHomothetyClass.j_mk_periodPair] using
+    PeriodPairHomothetyClass.leftOrder_eq_complexOrder_iff_isRoot_hilbertClassPolynomial
+      (PeriodPairHomothetyClass.mk τ.periodPair) n hn
 
 end TauCeti.BinaryQuadraticForm
 
@@ -321,7 +321,7 @@ theorem leftOrder_periodLattice_eq_complexOrder_iff_isRoot_hilbertClassPolynomia
       (hilbertClassPolynomial n).IsRoot E.j := by
   obtain ⟨L, C, -, rfl⟩ := E.exists_periodPair_variableChange_smul_eq
   simpa using
-    (PeriodPair.HomothetyClass.mk L).leftOrder_eq_complexOrder_iff_isRoot_hilbertClassPolynomial n
+    (PeriodPairHomothetyClass.mk L).leftOrder_eq_complexOrder_iff_isRoot_hilbertClassPolynomial n
       hn
 
 end WeierstrassCurve
@@ -344,9 +344,9 @@ theorem eq_of_singularModulus_eq {m n : ℕ} [NeZero m] [NeZero n]
     ((mem_posDef_inf_primitiveForms n).mp f₂.2).1 ▸ f₂.1.discrim_emod_four_eq_zero_or_one
   have hx : posDefProperClassToHomothetyClass m (Quotient.mk _ f₁) =
       posDefProperClassToHomothetyClass n (Quotient.mk _ f₂) :=
-    PeriodPair.HomothetyClass.j_injective
+    PeriodPairHomothetyClass.j_injective
       (by simpa only [j_posDefProperClassToHomothetyClass] using h)
-  have hord := congrArg PeriodPair.HomothetyClass.leftOrder hx
+  have hord := congrArg PeriodPairHomothetyClass.leftOrder hx
   rw [leftOrder_posDefProperClassToHomothetyClass m hm,
     leftOrder_posDefProperClassToHomothetyClass n hn] at hord
   have := QuadraticOrder.complexOrder_eq_iff.mp hord; omega

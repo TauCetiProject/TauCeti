@@ -17,7 +17,7 @@ If `τ ∈ ℍ` satisfies `τ² + Bτ + C = 0` with integral coefficients, the l
 lattice, and evaluation at `τ` identifies it with `QuadraticAlgebra ℤ (-C) (-B)`.
 More generally, rescaling a period pair preserves `Submodule.leftOrder`
 (`PeriodPair.leftOrder_lattice_smul`), so `leftOrder` descends to homothety classes
-(`TauCeti.PeriodPair.HomothetyClass.leftOrder`), and for any `τ ∈ ℍ` the left order of `ℤ τ + ℤ` is
+(`TauCeti.PeriodPairHomothetyClass.leftOrder`), and for any `τ ∈ ℍ` the left order of `ℤ τ + ℤ` is
 strictly larger than `ℤ` (`⊥`) if and only if `τ` satisfies an integral quadratic equation
 `a τ² + b τ + c = 0` with `a > 0` (`UpperHalfPlane.leftOrder_lattice_periodPair_ne_bot_iff`); when
 `(a, b, c)` generate the unit ideal of `ℤ`, the left order is `ℤ + ℤ(a τ) = ℤ[a τ]`.
@@ -61,17 +61,17 @@ theorem Homothetic.leftOrder_lattice_eq {L L' : PeriodPair} (h : L.Homothetic L'
 
 end PeriodPair
 
-namespace TauCeti.PeriodPair.HomothetyClass
+namespace TauCeti.PeriodPairHomothetyClass
 
 /-- The complex multiplier order (`Submodule.leftOrder`) of a homothety class of period lattices. -/
-def leftOrder : HomothetyClass → Subalgebra ℤ ℂ :=
+def leftOrder : PeriodPairHomothetyClass → Subalgebra ℤ ℂ :=
   lift (fun L ↦ L.lattice.leftOrder) fun _ _ h ↦ h.leftOrder_lattice_eq
 
 /-- On the homothety class of `L`, `leftOrder` is the left order of `L.lattice`. -/
-@[simp] theorem leftOrder_mk (L : _root_.PeriodPair) : (mk L).leftOrder = L.lattice.leftOrder :=
+@[simp] theorem leftOrder_mk (L : PeriodPair) : (mk L).leftOrder = L.lattice.leftOrder :=
   lift_mk _ _ L
 
-end TauCeti.PeriodPair.HomothetyClass
+end TauCeti.PeriodPairHomothetyClass
 
 namespace UpperHalfPlane
 

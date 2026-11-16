@@ -37,9 +37,9 @@ the lattice of `γ τ` is `(c τ + d)⁻¹ (ℤ τ + ℤ)`.
 
 ## Main definitions
 
-* `TauCeti.PeriodPair.HomothetyClass.j`, `TauCeti.PeriodPair.HomothetyClass.jEquiv`: the
-  `j`-invariant on `TauCeti.PeriodPair.HomothetyClass` and the classification bijection
-  `TauCeti.PeriodPair.HomothetyClass ≃ ℂ`.
+* `TauCeti.PeriodPairHomothetyClass.j`, `TauCeti.PeriodPairHomothetyClass.jEquiv`: the
+  `j`-invariant on `TauCeti.PeriodPairHomothetyClass` and the classification bijection
+  `TauCeti.PeriodPairHomothetyClass ≃ ℂ`.
 
 ## Main results
 
@@ -202,14 +202,14 @@ theorem weierstrassCurve_eq_iff_lattice_eq :
 
 end PeriodPair
 
-namespace TauCeti.PeriodPair.HomothetyClass
+namespace TauCeti.PeriodPairHomothetyClass
 
 /-- The `j`-invariant of a homothety class of complex lattices. -/
-def j : HomothetyClass → ℂ :=
-  lift (fun L ↦ L.weierstrassCurve.j) fun _ _ ↦ _root_.PeriodPair.weierstrassCurve_j_eq_iff.mpr
+def j : PeriodPairHomothetyClass → ℂ :=
+  lift (fun L ↦ L.weierstrassCurve.j) fun _ _ ↦ PeriodPair.weierstrassCurve_j_eq_iff.mpr
 
 /-- On the homothety class of `L`, `j` is the `j`-invariant of `L.weierstrassCurve`. -/
-@[simp] theorem j_mk (L : _root_.PeriodPair) : (mk L).j = L.weierstrassCurve.j := lift_mk _ _ L
+@[simp] theorem j_mk (L : PeriodPair) : (mk L).j = L.weierstrassCurve.j := lift_mk _ _ L
 
 /-- On the homothety class of `ℤ τ + ℤ`, `j` is the modular invariant `TauCeti.ModularForm.j τ`. -/
 theorem j_mk_periodPair (τ : ℍ) : (mk τ.periodPair).j = TauCeti.ModularForm.j τ :=
@@ -217,8 +217,8 @@ theorem j_mk_periodPair (τ : ℍ) : (mk τ.periodPair).j = TauCeti.ModularForm.
 
 /-- **The `j`-invariant separates homothety classes of complex lattices.** -/
 theorem j_injective : Function.Injective j :=
-  HomothetyClass.ind fun L ↦ HomothetyClass.ind fun L' h ↦
-    mk_eq_mk_iff.mpr <| _root_.PeriodPair.weierstrassCurve_j_eq_iff.mp <|
+  PeriodPairHomothetyClass.ind fun L ↦ PeriodPairHomothetyClass.ind fun L' h ↦
+    mk_eq_mk_iff.mpr <| PeriodPair.weierstrassCurve_j_eq_iff.mp <|
       (j_mk L).symm.trans (h.trans (j_mk L'))
 
 /-- Every complex number is the `j`-invariant of a homothety class of complex lattices. -/
@@ -227,19 +227,19 @@ theorem j_surjective : Function.Surjective j := fun z ↦
   ⟨mk τ.periodPair, (j_mk_periodPair τ).trans hτ⟩
 
 /-- **Classification of complex lattices up to homothety by the `j`-invariant.** -/
-def jEquiv : HomothetyClass ≃ ℂ := Equiv.ofBijective j ⟨j_injective, j_surjective⟩
+def jEquiv : PeriodPairHomothetyClass ≃ ℂ := Equiv.ofBijective j ⟨j_injective, j_surjective⟩
 
-/-- Applying `HomothetyClass.jEquiv` evaluates `HomothetyClass.j`. -/
-@[simp] theorem jEquiv_apply (x : HomothetyClass) : jEquiv x = x.j := (rfl)
+/-- Applying `PeriodPairHomothetyClass.jEquiv` evaluates `PeriodPairHomothetyClass.j`. -/
+@[simp] theorem jEquiv_apply (x : PeriodPairHomothetyClass) : jEquiv x = x.j := (rfl)
 
 /-- The `j`-invariant of `jEquiv.symm z` is `z`. -/
 @[simp] theorem j_jEquiv_symm (z : ℂ) : (jEquiv.symm z).j = z := jEquiv.apply_symm_apply z
 
 /-- `jEquiv.symm` recovers a homothety class from its `j`-invariant. -/
-@[simp] theorem jEquiv_symm_j (x : HomothetyClass) : jEquiv.symm x.j = x :=
+@[simp] theorem jEquiv_symm_j (x : PeriodPairHomothetyClass) : jEquiv.symm x.j = x :=
   jEquiv.symm_apply_apply x
 
-end TauCeti.PeriodPair.HomothetyClass
+end TauCeti.PeriodPairHomothetyClass
 
 /-! ### Every complex elliptic curve comes from a lattice -/
 
