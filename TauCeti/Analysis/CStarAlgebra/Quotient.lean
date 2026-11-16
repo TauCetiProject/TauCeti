@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Star.Subalgebra
 public import TauCeti.Analysis.CStarAlgebra.Hom
 public import TauCeti.Analysis.CStarAlgebra.Ideal
 public import TauCeti.Analysis.Normed.Ring.TwoSidedIdeal
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+import TauCeti.Algebra.Star.Subalgebra
 
 /-!
 # Quotient C⋆-algebras and closed range of `⋆`-homomorphisms
@@ -36,7 +36,9 @@ Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
   and C⋆-algebra instances on `A ⧸ I` for a closed two-sided ideal `I : TwoSidedIdeal A`.
 * `TwoSidedIdeal.Quotient.mkStarAlgHom`, `TwoSidedIdeal.Quotient.liftStarAlgHom`,
   `TwoSidedIdeal.Quotient.factorStarAlgHom`, and `TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq`:
-  universal `⋆`-homomorphisms and `⋆`-equivalences on C⋆-quotients, plus unital counterparts.
+  universal `⋆`-homomorphisms and `⋆`-equivalences on C⋆-quotients. `mkStarAlgHom` and
+  `liftStarAlgHom` have unital counterparts `TwoSidedIdeal.Quotient.mkUnitalStarAlgHom` and
+  `TwoSidedIdeal.Quotient.liftUnitalStarAlgHom`.
 * `NonUnitalStarAlgHom.isClosed_range` and `StarAlgHom.isClosed_range`: the range of any
   `⋆`-algebra homomorphism between C⋆-algebras is closed.
 * `NonUnitalStarAlgHom.quotientKerEquivRange`, `NonUnitalStarAlgHom.quotientKerEquivOfSurjective`,
@@ -54,7 +56,7 @@ namespace TwoSidedIdeal.Quotient
 section NonUnital
 
 variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
-  (I : TwoSidedIdeal A) [hI : IsClosed (I : Set A)]
+  (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
 
 instance instStar : Star (A ⧸ I) where
   star := Quotient.map' star fun _ _ hab => by
@@ -93,8 +95,15 @@ theorem mk_smul_complex (c : ℂ) (a : A) : mk I (c • a) = c • mk I a := by
   rw [← submoduleQuotientMk_toSubmodule_eq_mk, ← submoduleQuotientMk_toSubmodule_eq_mk]
   exact Submodule.Quotient.mk_smul I.toSubmodule c a
 
-noncomputable instance instNormedSpaceComplex : NormedSpace ℂ (A ⧸ I) :=
-  Submodule.Quotient.normedSpace I.toSubmodule ℂ
+noncomputable instance instNormedSpaceComplex : NormedSpace ℂ (A ⧸ I) where
+  norm_smul_le := (Submodule.Quotient.normedSpace I.toSubmodule ℂ).norm_smul_le
+
+-- Verify that the normed-space module agrees with `instModuleComplex` at instance transparency,
+-- so that instance search finds the normed scalar classes on `A ⧸ I`.
+example : (instNormedSpaceComplex I).toModule = instModuleComplex I := by
+  with_reducible_and_instances rfl
+
+example : NormSMulClass ℂ (A ⧸ I) := inferInstance
 
 instance instIsScalarTowerComplex : IsScalarTower ℂ (A ⧸ I) (A ⧸ I) where
   smul_assoc c x y := by
