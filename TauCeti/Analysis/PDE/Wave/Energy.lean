@@ -8,9 +8,10 @@ module
 public import TauCeti.Analysis.PDE.Wave.Propagator
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Analysis.Calculus.Deriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.Deriv.OperatorFamily
+import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Strong solutions of the wave equation on `L²`: energy and Duhamel's formula
@@ -26,17 +27,20 @@ acceleration `u''`, whose distributional Laplacian at every time of `s` is the `
 (`TauCeti.isWaveSolutionOn_waveCosPropagator_add_waveSinPropagator`). Conversely:
 
 * **Energy conservation** (`TauCeti.IsWaveSolutionOn.norm_sq_sub_re_inner_eq`). A strong solution
-  of the free equation on `[a, b]` keeps its energy
+  of the free equation on an interval of times keeps its energy
   `‖∂ₜu(t)‖² + ‖D u(t)‖² = ‖u'(t)‖² - re ⟪u(t), u''(t)⟫`; here `D = √(-Δ)`, and
   `‖D u‖² = -re ⟪u, Δ u⟫ = ∫ 4π² ‖ξ‖² ‖𝓕 u(ξ)‖² dξ` is nonnegative
   (`MeasureTheory.Lp.re_inner_nonpos_of_laplacian_toTemperedDistribution_eq`).
 * **Energy uniqueness** (`TauCeti.IsWaveSolutionOn.eq_zero`). A strong solution of the free
-  equation on `[a, b]` with zero data at `a` vanishes on `[a, b]`.
+  equation on an interval of times with zero data at one time `t₀` of it vanishes on the interval.
 * **Duhamel's formula**
   (`TauCeti.IsWaveSolutionOn.eq_waveCosPropagator_add_waveSinPropagator_add_integral`). A strong
-  solution on `[a, b]` with forcing `G` integrable on `[a, b]` is
+  solution on an interval of times containing `t₀` and `t`, with forcing `G` integrable between
+  them, is
 
-  `u(t) = cos((t - a)D) u(a) + D⁻¹ sin((t - a)D) u'(a) + ∫_a^t D⁻¹ sin((t - s)D) G(s) ds`.
+  `u(t) = cos((t - t₀)D) u(t₀) + D⁻¹ sin((t - t₀)D) u'(t₀) + ∫_{t₀}^t D⁻¹ sin((t - s)D) G(s) ds`.
+
+  Both directions of time are covered: `t` may lie before `t₀`.
 
 ## The arguments
 
@@ -50,7 +54,7 @@ For Duhamel's formula, fix `t` and differentiate
 `w(s) = cos((t - s)D) u(s) + D⁻¹ sin((t - s)D) u'(s)`. The propagators are only strongly
 differentiable, so the product rule is `HasDerivWithinAt.clm_apply_of_tendsto`; the terms carrying
 `u'` cancel, and those carrying `u''` cancel against `Δ u = u'' - G` up to
-`D⁻¹ sin((t - s)D) G(s)`. Integrating from `a` to `t` gives the formula, since `w(t) = u(t)`.
+`D⁻¹ sin((t - s)D) G(s)`. Integrating from `t₀` to `t` gives the formula, since `w(t) = u(t)`.
 
 ## References
 
@@ -192,10 +196,10 @@ private theorem tendsto_truncate (x : Lp F 2 (volume : Measure E)) :
       ContinuousLinearMap.id_apply]
   conv_rhs => rw [← hid]
   refine Lp.tendsto_fourierMultiplierCLM_apply (C := 1) (Eventually.of_forall fun R ↦ ?_) ?_ x
-  · rw [Lp.norm_toLp, eLpNorm_exponent_top]
-    · exact ENNReal.toReal_le_of_le_ofReal zero_le_one (eLpNormEssSup_le_of_ae_bound
-        (Eventually.of_forall (norm_cutoff_le _)))
-    · exact (memLp_cutoff _).aestronglyMeasurable
+  · refine Lp.norm_top_le_of_ae_bound zero_le_one ?_
+    filter_upwards [(memLp_cutoff (E := E) R).coeFn_toLp] with ξ h
+    rw [h]
+    exact norm_cutoff_le _ ξ
   · filter_upwards [ae_all_iff.2 fun R : ℕ ↦ (memLp_cutoff (E := E) R).coeFn_toLp,
       h1.coeFn_toLp] with ξ hR h
     simp only [hR, h]
@@ -205,22 +209,22 @@ private theorem tendsto_truncate (x : Lp F 2 (volume : Measure E)) :
       (Nat.cast_le.2 hR)))]
 
 /-- The truncated energy `‖χ_R(D) D u‖² + ‖χ_R(D) u'‖²` of a strong solution of the free equation
-is constant on `[a, b]`. -/
-private theorem truncatedEnergy_eq {a b : ℝ} (hu : IsWaveSolutionOn u u' u'' 0 (Icc a b))
-    (R : ℝ) {t : ℝ} (ht : t ∈ Icc a b) :
+is constant on an order-connected set of times. -/
+private theorem truncatedEnergy_eq [s.OrdConnected] (hu : IsWaveSolutionOn u u' u'' 0 s)
+    (R : ℝ) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     (⟪truncateSqrt F R (u t), truncateSqrt F R (u t)⟫).re +
         (⟪truncate F R (u' t), truncate F R (u' t)⟫).re =
-      (⟪truncateSqrt F R (u a), truncateSqrt F R (u a)⟫).re +
-        (⟪truncate F R (u' a), truncate F R (u' a)⟫).re := by
-  have hderiv : ∀ τ ∈ Icc a b, HasDerivWithinAt
+      (⟪truncateSqrt F R (u t₀), truncateSqrt F R (u t₀)⟫).re +
+        (⟪truncate F R (u' t₀), truncate F R (u' t₀)⟫).re := by
+  have hderiv : ∀ τ ∈ s, HasDerivWithinAt
       (fun τ ↦ (⟪truncateSqrt F R (u τ), truncateSqrt F R (u τ)⟫).re +
         (⟪truncate F R (u' τ), truncate F R (u' τ)⟫).re)
       (2 * (⟪truncateSqrt F R (u τ), truncateSqrt F R (u' τ)⟫).re +
-        2 * (⟪truncate F R (u' τ), truncate F R (u'' τ)⟫).re) (Icc a b) τ := fun τ hτ ↦ by
+        2 * (⟪truncate F R (u' τ), truncate F R (u'' τ)⟫).re) s τ := fun τ hτ ↦ by
     -- The derivative of `σ ↦ re ⟪v σ, v σ⟫ = ‖v σ‖²` along a curve `v`.
     have hre : ∀ {v : ℝ → Lp F 2 (volume : Measure E)} {v' : Lp F 2 (volume : Measure E)},
-        HasDerivWithinAt v v' (Icc a b) τ →
-          HasDerivWithinAt (fun σ ↦ (⟪v σ, v σ⟫).re) (2 * (⟪v τ, v'⟫).re) (Icc a b) τ :=
+        HasDerivWithinAt v v' s τ →
+          HasDerivWithinAt (fun σ ↦ (⟪v σ, v σ⟫).re) (2 * (⟪v τ, v'⟫).re) s τ :=
       fun {v v'} hv ↦ by
         have := Complex.reCLM.hasFDerivAt.comp_hasDerivWithinAt τ (hv.inner ℂ hv)
         rwa [Complex.reCLM_apply, Complex.add_re, ← inner_conj_symm v', Complex.conj_re,
@@ -229,11 +233,11 @@ private theorem truncatedEnergy_eq {a b : ℝ} (hu : IsWaveSolutionOn u u' u'' 0
       |>.comp_hasDerivWithinAt τ (hu.hasDerivWithinAt τ hτ))).add
       (hre (((truncate F R).restrictScalars ℝ).hasFDerivAt
       |>.comp_hasDerivWithinAt τ (hu.hasDerivWithinAt_deriv τ hτ)))
-  refine (ContinuousLinearMap.id ℝ ℝ).apply_eq_apply_left_of_hasDerivWithinAt hderiv
-    (fun τ hτ ↦ ?_) ht
+  refine (Set.OrdConnected.isPreconnected ‹_›).eq_of_hasDerivWithinAt_zero
+    (fun τ hτ ↦ (hderiv τ hτ).congr_deriv ?_) ht ht₀
   have hΔ := hu.laplacian_eq τ hτ
   simp only [Pi.zero_apply, sub_zero] at hΔ
-  rw [ContinuousLinearMap.id_apply, inner_truncate_eq hΔ, Complex.neg_re,
+  rw [inner_truncate_eq hΔ, Complex.neg_re,
     ← inner_conj_symm (truncateSqrt F R (u' τ)), Complex.conj_re]
   ring
 
@@ -243,17 +247,17 @@ private theorem re_inner_truncateSqrt_self {x y : Lp F 2 (volume : Measure E)}
     (⟪truncateSqrt F R x, truncateSqrt F R x⟫).re = -(⟪truncate F R x, truncate F R y⟫).re := by
   rw [inner_truncate_eq hxy, Complex.neg_re, neg_neg]
 
-/-- **Conservation of energy.** For a strong solution of the free wave equation `∂ₜ²u = Δu` on
-`[a, b]`, the energy `‖∂ₜu(t)‖² + ‖D u(t)‖² = ‖u'(t)‖² - re ⟪u(t), u''(t)⟫`, `D = √(-Δ)`, is
-constant on `[a, b]`. Here `-re ⟪u, u''⟫ = -re ⟪u, Δ u⟫` is the nonnegative quantity
-`∫ 4π² ‖ξ‖² ‖𝓕 u(ξ)‖² dξ`. -/
-theorem IsWaveSolutionOn.norm_sq_sub_re_inner_eq {a b : ℝ}
-    (hu : IsWaveSolutionOn u u' u'' 0 (Icc a b)) {t : ℝ} (ht : t ∈ Icc a b) :
-    ‖u' t‖ ^ 2 - (⟪u t, u'' t⟫).re = ‖u' a‖ ^ 2 - (⟪u a, u'' a⟫).re := by
-  have hΔ : ∀ τ ∈ Icc a b, Δ (u τ : 𝓢'(E, F)) = (u'' τ : 𝓢'(E, F)) := fun τ hτ ↦ by
+/-- **Conservation of energy.** For a strong solution of the free wave equation `∂ₜ²u = Δu` on an
+order-connected set of times `s`, the energy
+`‖∂ₜu(t)‖² + ‖D u(t)‖² = ‖u'(t)‖² - re ⟪u(t), u''(t)⟫`, `D = √(-Δ)`, is constant on `s`. Here
+`-re ⟪u, u''⟫ = -re ⟪u, Δ u⟫` is the nonnegative quantity `∫ 4π² ‖ξ‖² ‖𝓕 u(ξ)‖² dξ`. -/
+theorem IsWaveSolutionOn.norm_sq_sub_re_inner_eq [s.OrdConnected]
+    (hu : IsWaveSolutionOn u u' u'' 0 s) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    ‖u' t‖ ^ 2 - (⟪u t, u'' t⟫).re = ‖u' t₀‖ ^ 2 - (⟪u t₀, u'' t₀⟫).re := by
+  have hΔ : ∀ τ ∈ s, Δ (u τ : 𝓢'(E, F)) = (u'' τ : 𝓢'(E, F)) := fun τ hτ ↦ by
     simpa using hu.laplacian_eq τ hτ
   -- The truncated energies converge to the energy as the cutoff is removed.
-  have hlim : ∀ τ ∈ Icc a b, Tendsto (fun R : ℕ ↦
+  have hlim : ∀ τ ∈ s, Tendsto (fun R : ℕ ↦
       (⟪truncateSqrt F (R : ℝ) (u τ), truncateSqrt F (R : ℝ) (u τ)⟫).re +
         (⟪truncate F (R : ℝ) (u' τ), truncate F (R : ℝ) (u' τ)⟫).re) atTop
         (𝓝 (‖u' τ‖ ^ 2 - (⟪u τ, u'' τ⟫).re)) := fun τ hτ ↦ by
@@ -263,23 +267,23 @@ theorem IsWaveSolutionOn.norm_sq_sub_re_inner_eq {a b : ℝ}
       (tendsto_truncate (u'' τ)))).neg).add ((Complex.continuous_re.tendsto _).comp
         ((tendsto_truncate (u' τ)).inner (tendsto_truncate (u' τ))))
   refine tendsto_nhds_unique (hlim t ht) ?_
-  simpa only [truncatedEnergy_eq hu _ ht] using hlim a (left_mem_Icc.2 (ht.1.trans ht.2))
+  simpa only [truncatedEnergy_eq hu _ ht₀ ht] using hlim t₀ ht₀
 
-/-- **Energy uniqueness.** A strong solution of the free wave equation `∂ₜ²u = Δu` on `[a, b]` with
-`u(a) = 0` and `∂ₜu(a) = 0` vanishes on `[a, b]`. -/
-theorem IsWaveSolutionOn.eq_zero {a b : ℝ} (hu : IsWaveSolutionOn u u' u'' 0 (Icc a b))
-    (h₀ : u a = 0) (h₁ : u' a = 0) {t : ℝ} (ht : t ∈ Icc a b) : u t = 0 := by
-  have hu' : ∀ τ ∈ Icc a b, u' τ = 0 := fun τ hτ ↦ by
-    have hE := hu.norm_sq_sub_re_inner_eq hτ
+/-- **Energy uniqueness.** A strong solution of the free wave equation `∂ₜ²u = Δu` on an
+order-connected set of times `s`, with `u(t₀) = 0` and `∂ₜu(t₀) = 0` at some `t₀ ∈ s`, vanishes on
+`s`. -/
+theorem IsWaveSolutionOn.eq_zero [s.OrdConnected] (hu : IsWaveSolutionOn u u' u'' 0 s) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ s) (h₀ : u t₀ = 0) (h₁ : u' t₀ = 0) {t : ℝ} (ht : t ∈ s) : u t = 0 := by
+  have hu' : ∀ τ ∈ s, u' τ = 0 := fun τ hτ ↦ by
+    have hE := hu.norm_sq_sub_re_inner_eq ht₀ hτ
     have hneg := Lp.re_inner_nonpos_of_laplacian_toTemperedDistribution_eq
       (by simpa using hu.laplacian_eq τ hτ)
     rw [h₀, h₁, norm_zero, inner_zero_left, Complex.zero_re] at hE
     have : ‖u' τ‖ ^ 2 ≤ 0 := by linarith
     exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm this (sq_nonneg _)))
   rw [← h₀]
-  exact (ContinuousLinearMap.id ℝ (Lp F 2 (volume : Measure E))
-    ).apply_eq_apply_left_of_hasDerivWithinAt hu.hasDerivWithinAt
-      (fun τ hτ ↦ by rw [hu' τ hτ, map_zero]) ht
+  exact (Set.OrdConnected.isPreconnected ‹_›).eq_of_hasDerivWithinAt_zero
+    (fun τ hτ ↦ hu' τ hτ ▸ hu.hasDerivWithinAt τ hτ) ht ht₀
 
 end Energy
 
@@ -324,35 +328,32 @@ private theorem hasDerivWithinAt_duhamel (hu : IsWaveSolutionOn u u' u'' G s) (t
   rw [neg_one_smul, neg_one_smul, map_sub]
   abel
 
-/-- **Duhamel's formula.** A strong solution of the wave equation `∂ₜ²u - Δu = G` on `[a, b]`, with
-`G` integrable on `[a, b]`, is
+/-- **Duhamel's formula.** A strong solution of the wave equation `∂ₜ²u - Δu = G` on an
+order-connected set of times `s` containing `t₀` and `t`, with `G` integrable between `t₀` and
+`t`, is
 
-`u(t) = cos((t - a)D) u(a) + D⁻¹ sin((t - a)D) u'(a) + ∫_a^t D⁻¹ sin((t - s)D) G(s) ds`
+`u(t) = cos((t - t₀)D) u(t₀) + D⁻¹ sin((t - t₀)D) u'(t₀) + ∫_{t₀}^t D⁻¹ sin((t - s)D) G(s) ds`.
 
-for every `t ∈ [a, b]`. In particular it is determined by its data `u(a)`, `u'(a)` and `G`. -/
-theorem IsWaveSolutionOn.eq_waveCosPropagator_add_waveSinPropagator_add_integral {a b : ℝ}
-    (hu : IsWaveSolutionOn u u' u'' G (Icc a b)) (hG : IntervalIntegrable G volume a b) {t : ℝ}
-    (ht : t ∈ Icc a b) :
-    u t = waveCosPropagator F (t - a) (u a) + waveSinPropagator F (t - a) (u' a) +
-      ∫ s in a..t, waveSinPropagator F (t - s) (G s) := by
-  have hsub : Icc a t ⊆ Icc a b := Icc_subset_Icc_right ht.2
-  have hw := fun τ (hτ : τ ∈ Icc a t) ↦ hasDerivWithinAt_duhamel (hu.mono hsub) t hτ
-  -- `‖D⁻¹ sin((t - s)D) G(s)‖ ≤ (t - a) ‖G(s)‖` for `a ≤ s ≤ t`.
-  have hGt : IntervalIntegrable G volume a t := hG.mono_set (by
-    rw [uIcc_of_le ht.1, uIcc_of_le (ht.1.trans ht.2)]
-    exact hsub)
-  have hint : IntervalIntegrable (fun s ↦ waveSinPropagator F (t - s) (G s)) volume a t := by
-    refine (hGt.smul (t - a)).mono_fun ?_ ?_
+This holds forwards and backwards in time. In particular a solution is determined by its data
+`u(t₀)`, `u'(t₀)` and `G`. -/
+theorem IsWaveSolutionOn.eq_waveCosPropagator_add_waveSinPropagator_add_integral [s.OrdConnected]
+    (hu : IsWaveSolutionOn u u' u'' G s) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s)
+    (hG : IntervalIntegrable G volume t₀ t) :
+    u t = waveCosPropagator F (t - t₀) (u t₀) + waveSinPropagator F (t - t₀) (u' t₀) +
+      ∫ τ in t₀..t, waveSinPropagator F (t - τ) (G τ) := by
+  have hw := fun τ (hτ : τ ∈ uIcc t₀ t) ↦
+    hasDerivWithinAt_duhamel (hu.mono (Set.OrdConnected.uIcc_subset ‹_› ht₀ ht)) t hτ
+  -- `‖D⁻¹ sin((t - τ)D) G(τ)‖ ≤ |t - t₀| ‖G(τ)‖` for `τ` between `t₀` and `t`.
+  have hint : IntervalIntegrable (fun τ ↦ waveSinPropagator F (t - τ) (G τ)) volume t₀ t := by
+    refine (hG.smul |t - t₀|).mono_fun ?_ ?_
     · exact continuous_waveSinPropagator_uncurry.comp_aestronglyMeasurable
-        ((continuous_const.sub continuous_id).aestronglyMeasurable.prodMk hGt.def'.1)
-    · rw [uIoc_of_le ht.1]
-      filter_upwards [ae_restrict_mem measurableSet_Ioc] with s hs
-      rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, abs_of_nonneg (sub_nonneg.2 ht.1)]
-      refine ((waveSinPropagator F (t - s)).le_opNorm _).trans
-        (mul_le_mul_of_nonneg_right ((norm_waveSinPropagator_le _).trans ?_) (norm_nonneg _))
-      rw [abs_of_nonneg (sub_nonneg.2 hs.2)]
-      linarith [hs.1]
-  rw [intervalIntegral.integral_eq_sub_of_hasDeriv_right_of_le ht.1
+        ((continuous_const.sub continuous_id).aestronglyMeasurable.prodMk hG.def'.1)
+    · filter_upwards [ae_restrict_mem measurableSet_uIoc] with τ hτ
+      rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, abs_abs]
+      exact ((waveSinPropagator F (t - τ)).le_opNorm _).trans
+        (mul_le_mul_of_nonneg_right ((norm_waveSinPropagator_le _).trans
+          (abs_sub_right_of_mem_uIcc (uIoc_subset_uIcc hτ))) (norm_nonneg _))
+  rw [intervalIntegral.integral_eq_sub_of_hasDeriv_right
     (fun τ hτ ↦ (hw τ hτ).continuousWithinAt)
     (fun τ hτ ↦ ((hw τ (Ioo_subset_Icc_self hτ)).hasDerivAt
       (Icc_mem_nhds hτ.1 hτ.2)).hasDerivWithinAt) hint]

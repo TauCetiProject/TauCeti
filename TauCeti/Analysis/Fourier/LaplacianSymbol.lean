@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.LpSpace
+public import TauCeti.Analysis.Fourier.L2Multiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
@@ -35,6 +36,8 @@ symbol identity `(2π ‖ξ‖)² = -(-4π² ‖ξ‖²)` (`TauCeti.sq_sqrtNegLa
 * `MeasureTheory.Lp.laplacian_toTemperedDistribution_eq_iff`: for `f, h ∈ L²`, the distributional
   Laplacian of `f` is `h` exactly when `𝓕 h = -4π² ‖ξ‖² • 𝓕 f` almost everywhere, for the
   Fourier transform on `L²`.
+* `MeasureTheory.Lp.laplacian_fourierMultiplierCLM_apply`: every `L²` Fourier multiplier commutes
+  with `Δ`: if `Δ f = h ∈ L²`, then `Δ (T_m f) = T_m h`.
 * `MeasureTheory.Lp.re_inner_nonpos_of_laplacian_toTemperedDistribution_eq`: `-Δ` is nonnegative,
   `re ⟪f, Δ f⟫ ≤ 0` whenever `Δ f ∈ L²`.
 -/
@@ -43,7 +46,7 @@ public section
 
 noncomputable section
 
-open scoped Laplacian SchwartzMap FourierTransform ComplexInnerProductSpace
+open scoped Laplacian SchwartzMap FourierTransform ComplexInnerProductSpace ENNReal
 open Real MeasureTheory
 
 namespace TauCeti
@@ -139,9 +142,11 @@ theorem _root_.MeasureTheory.Lp.laplacian_toTemperedDistribution_eq_iff
       ← Complex.coe_smul, FourierTransform.fourier_smul,
       TemperedDistribution.fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq,
       Lp.fourier_toTemperedDistribution_eq]
+    -- The two sides use two elaborations of the scalar action of `ℂ` on `𝓢'(E, F)`, which agree
+    -- on unfolding instances; `congr 1` matches them and leaves the cast of the scalar.
+    congr 1
     push_cast
-    -- The two sides agree up to the elaboration of the scalar action of `ℂ` on `𝓢'(E, F)`.
-    rfl
+    ring
   have hpair : ∀ φ : 𝓢(E, ℂ), 𝓕 (Δ (f : 𝓢'(E, F))) φ =
       ∫ ξ, φ ξ • (laplacianSymbol ξ : ℂ) • (𝓕 f : Lp F 2 (volume : Measure E)) ξ := fun φ ↦ by
     rw [hF, Lp.smulLeftCLM_toTemperedDistribution_apply hg]
@@ -159,6 +164,19 @@ theorem _root_.MeasureTheory.Lp.laplacian_toTemperedDistribution_eq_iff
     refine integral_congr_ae ?_
     filter_upwards [hae] with ξ hξ
     rw [hξ]
+
+/-- **`L²` Fourier multipliers commute with `Δ`.** If the distributional Laplacian of `f ∈ L²` is
+the `L²` function `h`, then the Laplacian of `T_m f` is `T_m h`, for every symbol `m ∈ L^∞`. -/
+theorem _root_.MeasureTheory.Lp.laplacian_fourierMultiplierCLM_apply
+    (m : Lp ℂ ∞ (volume : Measure E)) {f h : Lp F 2 (volume : Measure E)}
+    (hfh : Δ (f : 𝓢'(E, F)) = (h : 𝓢'(E, F))) :
+    Δ ((Lp.fourierMultiplierCLM F m f : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) =
+      (Lp.fourierMultiplierCLM F m h : 𝓢'(E, F)) := by
+  rw [Lp.laplacian_toTemperedDistribution_eq_iff] at hfh ⊢
+  rw [Lp.fourier_fourierMultiplierCLM, Lp.fourier_fourierMultiplierCLM]
+  filter_upwards [hfh, Lp.coeFn_lpSMul (r := 2) m (𝓕 f), Lp.coeFn_lpSMul (r := 2) m (𝓕 h)]
+    with ξ h₁ h₂ h₃
+  rw [h₂, h₃, Pi.smul_apply', Pi.smul_apply', h₁, smul_comm]
 
 /-- **`-Δ` is nonnegative on `L²`.** If the distributional Laplacian of `f ∈ L²` is the `L²`
 function `h`, then `re ⟪f, h⟫ ≤ 0`; indeed `-re ⟪f, Δ f⟫ = ∫ 4π² ‖ξ‖² ‖𝓕 f ξ‖² dξ`. -/
