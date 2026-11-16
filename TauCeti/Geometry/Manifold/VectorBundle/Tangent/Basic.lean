@@ -31,6 +31,8 @@ centred at the zero vector over `x₀`, has base component the tangent coordinat
 fibre component the product-rule sum of the derivative of that coordinate change in the base point
 and the coordinate change applied to `w`.  This is the transformation law obeyed by a second-order
 vector field on `TM`, such as a geodesic spray, when it is carried between tangent-bundle charts.
+On a boundaryless manifold the change of charts of `TM` itself is `(q, u) ↦ (φ q, Dφ_q u)`, for
+the change of base charts `φ`.
 
 It then identifies the tangent spaces of an open submanifold with those of its ambient manifold
 and shows that, near each point, the inverse tangent-bundle trivializations agree under that
@@ -82,6 +84,9 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.contMDiffAt_tangentCoordChange`: that coordinate change is `C^n` at the base
   point of its first chart, as a map of manifolds into the linear endomorphisms of the model
   space.
+* `TauCeti.Manifold.extChartAt_tangent_eq_fderiv` and
+  `TauCeti.Manifold.extChartAt_tangent_symm_eventuallyEq`: on a boundaryless manifold, the change
+  of tangent-bundle charts is `(q, u) ↦ (φ q, Dφ_q u)` for the change of base charts `φ`.
 * `TauCeti.Manifold.tangentCoordChange_tangent_apply`: the coordinate-change formula on the
   tangent bundle of the tangent bundle.
 * `TauCeti.Manifold.continuousLinearMapAt_symmL_coordChange`: reading a tangent vector through the

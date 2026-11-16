@@ -82,10 +82,6 @@ Hamilton's first equation `dq/dt = ∂H/∂p`, in intrinsic form.
   Lagrangian vector field of a smooth regular Lagrangian is second order.
 * `TauCeti.IsRegularLagrangian.eq_curveVelocityLift_of_isMIntegralCurve`: its integral curves are
   velocity lifts of their base curves.
-* `TauCeti.mfderiv_legendreMap_eq_fderiv_linearLegendreMap`,
-  `TauCeti.mvfderiv_lagrangianEnergy_eq_fderiv`,
-  `TauCeti.eval₂_cartanTwoForm_eq_fderiv_linearLegendreMap`: the differentials of `FL` and `E_L`,
-  and `ω_L`, in a tangent-bundle chart.
 * `TauCeti.IsRegularLagrangian.eulerLagrange_extChartAt_of_isMIntegralCurve`: integral curves of
   the Lagrangian vector field solve the Euler–Lagrange equations in every chart.
 * `TauCeti.IsHyperregularLagrangian.eq_legendreMap_curveVelocityLift_of_isMIntegralCurve`: along
@@ -238,53 +234,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 variable [I.Boundaryless]
 
-/-- **The differential of the Legendre map in a tangent-bundle chart.** On a boundaryless
-manifold, the differential of `FL` at `v`, read in the preferred charts, is the derivative of the
-Legendre map of the local Lagrangian `ℓ = L ∘ (chart at v)⁻¹` at the coordinates of `v`. -/
-theorem mfderiv_legendreMap_eq_fderiv_linearLegendreMap (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
-    (v : TangentBundle I M) :
-    mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L) v =
-      fderiv ℝ (linearLegendreMap (L ∘ (extChartAt I.tangent v).symm))
-        (extChartAt I.tangent v v) := by
-  have hFL := (contMDiff_legendreMap (m := 1) hL (by norm_num) v).mdifferentiableAt one_ne_zero
-  rw [hFL.mfderiv, ModelWithCorners.range_eq_univ, fderivWithin_univ]
-  refine Filter.EventuallyEq.fderiv_eq ?_
-  filter_upwards [extChartAt_target_mem_nhds (I := I.tangent) v] with y hy
-  exact extChartAt_legendreMap_extChartAt_symm L v hy
-
-/-- **The differential of the energy in a tangent-bundle chart.** On a boundaryless manifold, the
-differential of `E_L` at `v` is the derivative of the energy `∂_u ℓ(y)(y.2) - ℓ(y)` of the local
-Lagrangian `ℓ = L ∘ (chart at v)⁻¹` at the coordinates of `v`. -/
-theorem mvfderiv_lagrangianEnergy_eq_fderiv (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
-    (v : TangentBundle I M) :
-    mvfderiv I.tangent (lagrangianEnergy L) v =
-      fderiv ℝ (fun y ↦ (linearLegendreMap (L ∘ (extChartAt I.tangent v).symm) y).2 y.2 -
-        (L ∘ (extChartAt I.tangent v).symm) y) (extChartAt I.tangent v v) := by
-  have hE := (contMDiff_lagrangianEnergy (m := 1) hL (by norm_num) v).mdifferentiableAt
-    one_ne_zero
-  rw [mvfderiv_eq_fderivWithin_extChartAt_target hE,
-    fderivWithin_of_isOpen (isOpen_extChartAt_target v) (mem_extChartAt_target v)]
-  refine Filter.EventuallyEq.fderiv_eq ?_
-  filter_upwards [extChartAt_target_mem_nhds (I := I.tangent) v] with y hy
-  simp only [Function.comp_apply, lagrangianEnergy_apply, legendreMap_snd_extChartAt_symm L v hy]
-
-/-- **The Cartan two-form in a tangent-bundle chart.** On a boundaryless manifold, `ω_L` at `v` is
-the pullback of the canonical symplectic form of `E × E'` by the derivative of the Legendre map of
-the local Lagrangian `ℓ = L ∘ (chart at v)⁻¹`. -/
-theorem eval₂_cartanTwoForm_eq_fderiv_linearLegendreMap (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
-    (v : TangentBundle I M) (X W : TangentSpace I.tangent v) :
-    SmoothBundleForm.eval₂ (cartanTwoForm L hL) v X W =
-      strongDualCotangentSymplecticForm
-        (fderiv ℝ (linearLegendreMap (L ∘ (extChartAt I.tangent v).symm))
-          (extChartAt I.tangent v v) X)
-        (fderiv ℝ (linearLegendreMap (L ∘ (extChartAt I.tangent v).symm))
-          (extChartAt I.tangent v v) W) := by
-  rw [← mpullback_legendreMap_symplecticForm hL,
-    SmoothForm.eval₂_mpullback (legendreMap L) (contMDiff_legendreMap hL le_rfl),
-    CotangentBundle.eval₂_symplecticForm, mfderiv_legendreMap_eq_fderiv_linearLegendreMap hL]
-  -- Both sides evaluate the canonical form on the same two vectors of the model `E × E'`.
-  rfl
-
 /-- The Euler–Lagrange equations in the tangent-bundle chart at the current point of an integral
 curve of the Lagrangian vector field. -/
 private theorem IsRegularLagrangian.eulerLagrange_extChartAt_self_of_isMIntegralCurve
@@ -306,10 +255,12 @@ private theorem IsRegularLagrangian.eulerLagrange_extChartAt_self_of_isMIntegral
     have h := hreg.mfderiv_proj_eq_snd_of_isHamiltonianVectorField hL hX (γ t)
     rw [Bundle.mfderiv_proj] at h
     have hΦ : (Φ (γ t)).2 = (γ t).2 := by
-      -- The extended tangent chart acts on fibre coordinates as the tangent-bundle chart does.
-      have h' : (Φ (γ t)).2 = (chartAt (ModelProd H E) (γ t) (γ t)).2 := rfl
-      rw [h', TangentBundle.coe_chartAt_snd]
-      exact tangentCoordChange_self (mem_extChartAt_source _)
+      -- The fibre coordinate is read in the trivialization at `(γ t).proj`, which is the identity
+      -- on the fibre over that point.
+      have hb := FiberBundle.mem_baseSet_trivializationAt' (F := E) (E := TangentSpace I) (γ t).proj
+      rw [Bundle.extChartAt_apply_of_mem_baseSet (γ t) hb,
+        ← Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hb]
+      exact Manifold.continuousLinearMapAt_trivializationAt_self _ _
     rw [hΦ, ← h]
     -- `dπ` is the first projection of `E × E`, read on the tangent space of `TM`.
     rfl
@@ -358,10 +309,12 @@ theorem IsRegularLagrangian.eulerLagrange_extChartAt_of_isMIntegralCurve
   have hbase : (γ t).proj ∈ (extChartAt I (γ t).proj).source := mem_extChartAt_source _
   -- Both changes of base charts are smooth at the relevant points.
   have htrans : ∀ a b : M, ∀ z ∈ (extChartAt I a).source ∩ (extChartAt I b).source,
-      ContDiffAt ℝ ∞ (extChartAt I a ∘ (extChartAt I b).symm) (extChartAt I b z) :=
-    fun a b z hz ↦ contMDiffAt_id.contDiffAt_extChartAt_comp_extChartAt_symm
-      (by rw [(isOpen_extChartAt_target b).interior_eq]; exact (extChartAt I b).map_source hz.2)
-      (by rw [(extChartAt I b).left_inv hz.2]; exact hz.1)
+      ContDiffAt ℝ ∞ (extChartAt I a ∘ (extChartAt I b).symm) (extChartAt I b z) := by
+    rintro a b z ⟨ha, hb⟩
+    have h := contDiffWithinAt_ext_coord_change (I := I) (n := ∞) a b (y := extChartAt I b z)
+      ⟨(extChartAt I b).map_source hb, by rwa [mem_preimage, PartialEquiv.symm_symm,
+        (extChartAt I b).left_inv hb]⟩
+    rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
   have hψ : ContDiffAt ℝ ∞ ψ (Φ (γ t)).1 := htrans _ _ _ ⟨hbase₀, hbase⟩
   have hφ : ContDiffAt ℝ ∞ φ (Ψ (γ t)).1 := htrans _ _ _ ⟨hbase, hbase₀⟩
   -- The base coordinate in the chart at `w₀` has velocity the fibre coordinate there.
