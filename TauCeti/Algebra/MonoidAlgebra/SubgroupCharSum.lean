@@ -32,8 +32,10 @@ characterized without dividing by `#H`: `x` is of the form `y * ∑_{h ∈ H} h`
 multiplication by every `h ∈ H` fixes `x`, because its coefficients are then constant on each left
 coset `gH`.
 
-The coefficients `k` form an arbitrary semiring, except in the general right translation law: there
-the scalar `χ(p⁻¹)` has to move past the values of `χ`, so `k` is taken to be commutative.
+The coefficients `k` form an arbitrary semiring, except in the general right translation law —
+where the scalar `χ(p⁻¹)` has to move past the values of `χ`, so `k` is taken to be commutative —
+and in `TauCeti.mem_span_subgroupCharSum_one_iff`, where both `k` and `G` are taken to be
+commutative so that two-sided principal ideals `Ideal.span` apply.
 
 ## Main definitions and results
 
