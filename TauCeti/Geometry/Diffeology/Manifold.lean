@@ -28,7 +28,7 @@ space construction agrees with the manifold construction, open submanifolds
 (`TopologicalSpace.Opens`) inherit compatible subspace diffeologies
 (`instIsContMDiffCompatibleOpens`, `manifoldDiffeology_opens`), and finite products carry
 compatible product diffeologies (`isContMDiffCompatible_chartedSpaceProd`,
-`manifoldDiffeology_prod`, `dSmooth_prod_iff_contMDiff`).
+`manifoldDiffeology_prod`, `dSmooth_iff_contMDiff_prod_dom`).
 
 The plot conversion lemmas support dot notation: `hp.isPlot` turns
 a smooth Cartesian parametrization into a plot, and `hp.contMDiff` turns a plot into a smooth
@@ -185,7 +185,7 @@ protected theorem _root_.ContMDiffOn.dSmooth_domRestrict
 
 /-- A Cartesian parametrization into a product of compatible charted spaces is a plot of the
 product diffeology if and only if it is smooth for the product model `𝓘(ℝ, E).prod 𝓘(ℝ, F)`. -/
-theorem isPlot_prod_iff_contMDiff
+theorem isPlot_iff_contMDiff_prod_rng
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {N : Type*} [TopologicalSpace N] [ChartedSpace F N]
     [DiffeologicalSpace N] [IsContMDiffCompatible F N]
@@ -202,12 +202,12 @@ theorem isContMDiffCompatible_chartedSpaceProd
     @IsContMDiffCompatible (E × F) _ _ (M × N) _ (chartedSpaceProd E F M N) inferInstance := by
   let : ChartedSpace (E × F) (M × N) := chartedSpaceProd E F M N
   refine ⟨fun {n p} ↦ ?_⟩
-  rw [isPlot_prod_iff_contMDiff, modelWithCornersSelf_prod]
+  rw [isPlot_iff_contMDiff_prod_rng, modelWithCornersSelf_prod]
 
 /-- A manifold map from a product `M × N` of compatible charted spaces to a compatible charted
 space `P` that is smooth for `𝓘(ℝ, E).prod 𝓘(ℝ, F)` is diffeologically smooth. -/
 @[fun_prop]
-protected theorem _root_.ContMDiff.dSmooth_prod
+protected theorem _root_.ContMDiff.dSmooth_prod_dom
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {N : Type*} [TopologicalSpace N] [ChartedSpace F N]
     [DiffeologicalSpace N] [IsContMDiffCompatible F N]
@@ -215,7 +215,7 @@ protected theorem _root_.ContMDiff.dSmooth_prod
     {P : Type*} [TopologicalSpace P] [ChartedSpace G P]
     [DiffeologicalSpace P] [IsContMDiffCompatible G P]
     {f : M × N → P} (hf : ContMDiff (𝓘(ℝ, E).prod 𝓘(ℝ, F)) 𝓘(ℝ, G) ∞ f) : DSmooth f :=
-  fun _ _ hp ↦ isPlot_iff_contMDiff.mpr (hf.comp (isPlot_prod_iff_contMDiff.mp hp))
+  fun _ _ hp ↦ isPlot_iff_contMDiff.mpr (hf.comp (isPlot_iff_contMDiff_prod_rng.mp hp))
 
 end
 
@@ -293,7 +293,7 @@ protected theorem _root_.Diffeology.DSmooth.contMDiff {f : M → N} (hf : DSmoot
 
 /-- A map from a finite-dimensional smooth manifold into a product of compatible charted spaces is
 diffeologically smooth if and only if it is smooth for the product model `𝓘(ℝ, F).prod 𝓘(ℝ, G)`. -/
-theorem dSmooth_iff_contMDiff_prod
+theorem dSmooth_iff_contMDiff_prod_rng
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     {P : Type*} [TopologicalSpace P] [ChartedSpace G P]
     [DiffeologicalSpace P] [IsContMDiffCompatible G P]
@@ -321,7 +321,7 @@ theorem manifoldDiffeology_prod :
 /-- A map from a product `M × N` of finite-dimensional smooth manifolds into a compatible charted
 space `P` is diffeologically smooth if and only if it is smooth as a manifold map for
 `𝓘(ℝ, E).prod 𝓘(ℝ, F)`. -/
-theorem dSmooth_prod_iff_contMDiff
+theorem dSmooth_iff_contMDiff_prod_dom
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     {P : Type*} [TopologicalSpace P] [ChartedSpace G P]
     [DiffeologicalSpace P] [IsContMDiffCompatible G P]
@@ -334,13 +334,13 @@ theorem dSmooth_prod_iff_contMDiff
 
 /-- A diffeologically smooth map out of a product `M × N` of finite-dimensional smooth manifolds
 into a compatible charted space is smooth for `𝓘(ℝ, E).prod 𝓘(ℝ, F)`. -/
-protected theorem _root_.Diffeology.DSmooth.contMDiff_prod
+protected theorem _root_.Diffeology.DSmooth.contMDiff_prod_dom
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     {P : Type*} [TopologicalSpace P] [ChartedSpace G P]
     [DiffeologicalSpace P] [IsContMDiffCompatible G P]
     {f : M × N → P} (hf : DSmooth f) :
     ContMDiff (𝓘(ℝ, E).prod 𝓘(ℝ, F)) 𝓘(ℝ, G) ∞ f :=
-  dSmooth_prod_iff_contMDiff.mp hf
+  dSmooth_iff_contMDiff_prod_dom.mp hf
 
 end ProdDom
 

@@ -30,10 +30,9 @@ diffeologically smooth maps `M → N` coincide with ordinary smooth manifold map
   whose uncurried evaluation `𝔼ⁿ × M → N` is `C^∞` (`TauCeti.Diffeology.isPlot_contMDiffMap_iff`),
   and `TauCeti.Diffeology.contMDiffMapFunctionalDiffeology` constructs the same diffeology directly
   on manifolds without pre-installed diffeology instances.
-* For any finite-dimensional smooth manifold `M` with a compatible diffeology, the product
-  D-topology identity holds on `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ × M` without any Hausdorff assumption on
-  `M`, making evaluation jointly continuous for the functional D-topology
-  (`TauCeti.Diffeology.continuous_eval_contMDiffMap`).
+* For any finite-dimensional smooth manifold `M` with a compatible diffeology, evaluation
+  `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ × M → N` is jointly continuous for the functional D-topology
+  without any Hausdorff assumption on `M` (`TauCeti.Diffeology.continuous_eval_contMDiffMap`).
 * Moreover, every weak-Whitney open set of `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` is open in the functional
   D-topology (`TauCeti.Diffeology.dTopology_le_manifoldWeakWhitneyTopology`), via
   `ContMDiff.continuous_manifoldWeakWhitney`.
@@ -116,6 +115,26 @@ theorem toDSmoothMap_comp (g : C^∞⟮𝓘(ℝ, F), N; 𝓘(ℝ, G), P⟯)
   ext x
   simp
 
+/-- Embedding `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` into `DSmoothMap M N` is injective. -/
+theorem toDSmoothMap_injective :
+    Injective (toDSmoothMap : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ → DSmoothMap M N) :=
+  fun _ _ h ↦ ContMDiffMap.ext fun x ↦ congrArg (fun g : DSmoothMap M N ↦ g x) h
+
+/-- `ContMDiffMap.toDSmoothMap` sends `ContMDiffMap.id` to `DSmoothMap.id`. -/
+@[simp]
+theorem toDSmoothMap_id :
+    (ContMDiffMap.id : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, E), M⟯).toDSmoothMap = DSmoothMap.id := by
+  ext x
+  rw [toDSmoothMap_apply, DSmoothMap.id_apply]
+  simp only [ContMDiffMap.id, ContMDiffMap.coeFn_mk, id_eq]
+
+/-- `ContMDiffMap.toDSmoothMap` sends `ContMDiffMap.const y` to `DSmoothMap.const y`. -/
+@[simp]
+theorem toDSmoothMap_const (y : N) :
+    (ContMDiffMap.const y : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯).toDSmoothMap = DSmoothMap.const y := by
+  ext x
+  simp
+
 end ContMDiffMap
 
 /-! ### Functional diffeology and mapping-space bridge on `ContMDiffMap` -/
@@ -133,26 +152,6 @@ variable {E F G : Type*}
   [TopologicalSpace N] [ChartedSpace F N] [DiffeologicalSpace N] [IsContMDiffCompatible F N]
   [TopologicalSpace P] [ChartedSpace G P] [DiffeologicalSpace P] [IsContMDiffCompatible G P]
 
-/-- Embedding `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯` into `DSmoothMap M N` is injective. -/
-theorem toDSmoothMap_injective :
-    Injective (ContMDiffMap.toDSmoothMap : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ → DSmoothMap M N) :=
-  fun _ _ h ↦ ContMDiffMap.ext fun x ↦ congrArg (fun g : DSmoothMap M N ↦ g x) h
-
-/-- `ContMDiffMap.toDSmoothMap` sends `ContMDiffMap.id` to `DSmoothMap.id`. -/
-@[simp]
-theorem toDSmoothMap_id :
-    (ContMDiffMap.id : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, E), M⟯).toDSmoothMap = DSmoothMap.id := by
-  ext x
-  simp
-  rfl
-
-/-- `ContMDiffMap.toDSmoothMap` sends `ContMDiffMap.const y` to `DSmoothMap.const y`. -/
-@[simp]
-theorem toDSmoothMap_const (y : N) :
-    (ContMDiffMap.const y : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯).toDSmoothMap = DSmoothMap.const y := by
-  ext x
-  simp
-
 /-- The functional diffeology on `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯`, induced from `DSmoothMap M N` along
 `ContMDiffMap.toDSmoothMap`. -/
 instance instDiffeologicalSpaceContMDiffMap :
@@ -162,7 +161,7 @@ instance instDiffeologicalSpaceContMDiffMap :
 /-- `ContMDiffMap.toDSmoothMap` is an induction for the functional diffeologies. -/
 theorem isInduction_toDSmoothMap :
     IsInduction (ContMDiffMap.toDSmoothMap : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ → DSmoothMap M N) :=
-  ⟨toDSmoothMap_injective, isPlot_inducedDiffeology_iff ContMDiffMap.toDSmoothMap⟩
+  ⟨ContMDiffMap.toDSmoothMap_injective, isPlot_inducedDiffeology_iff ContMDiffMap.toDSmoothMap⟩
 
 /-- `ContMDiffMap.toDSmoothMap` is diffeologically smooth. -/
 @[fun_prop]
@@ -200,7 +199,7 @@ theorem dSmooth_comp_contMDiffMap :
     _root_.Diffeology.DSmooth
       (fun gf : C^∞⟮𝓘(ℝ, F), N; 𝓘(ℝ, G), P⟯ × C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ ↦ gf.1.comp gf.2) := by
   refine isInduction_toDSmoothMap.dSmooth_iff.mpr ?_
-  have h := dSmooth_comp.comp
+  have h := DSmoothMap.dSmooth_comp.comp
     ((dSmooth_toDSmoothMap (M := N) (N := P)).prodMap (dSmooth_toDSmoothMap (M := M) (N := N)))
   simpa only [Function.comp_def, Prod.map_fst, Prod.map_snd, ContMDiffMap.toDSmoothMap_comp] using h
 
@@ -218,7 +217,7 @@ protected theorem _root_.Diffeology.DSmooth.comp_contMDiffMap {Z : Type*} [Diffe
 theorem dSmooth_const_contMDiffMap :
     _root_.Diffeology.DSmooth (ContMDiffMap.const : N → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯) := by
   refine isInduction_toDSmoothMap.dSmooth_iff.mpr ?_
-  simpa only [Function.comp_def, toDSmoothMap_const] using
+  simpa only [Function.comp_def, ContMDiffMap.toDSmoothMap_const] using
     (DSmoothMap.dSmooth_const (X := M) (Y := N))
 
 /-- **Exponential law on `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯`.** A map from any diffeological space `Z`
@@ -246,7 +245,7 @@ protected theorem _root_.ContMDiff.dSmooth_contMDiffMap
     {f : P → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯}
     (hf : ContMDiff (𝓘(ℝ, G).prod 𝓘(ℝ, E)) 𝓘(ℝ, F) ∞ (fun pm : P × M ↦ f pm.1 pm.2)) :
     _root_.Diffeology.DSmooth f :=
-  dSmooth_contMDiffMap_iff.mpr hf.dSmooth_prod
+  dSmooth_contMDiffMap_iff.mpr hf.dSmooth_prod_dom
 
 end Compatible
 
@@ -322,8 +321,8 @@ theorem toContMDiffMap_injective :
 theorem toContMDiffMap_id :
     (DSmoothMap.id : DSmoothMap M M).toContMDiffMap = ContMDiffMap.id := by
   ext x
-  simp
-  rfl
+  simp only [toContMDiffMap_apply, DSmoothMap.id_apply, ContMDiffMap.id, ContMDiffMap.coeFn_mk,
+    id_eq]
 
 /-- `DSmoothMap.toContMDiffMap` sends `DSmoothMap.const y` to `ContMDiffMap.const y`. -/
 @[simp]
@@ -396,7 +395,7 @@ diffeology if and only if its uncurried evaluation `(u, x) ↦ p u x` is `C^∞`
 theorem isPlot_contMDiffMap_iff {n : ℕ} {p : 𝔼ⁿ → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯} :
     _root_.Diffeology.IsPlot p ↔
       ContMDiff (𝓘(ℝ, 𝔼ⁿ).prod 𝓘(ℝ, E)) 𝓘(ℝ, F) ∞ (fun ux : 𝔼ⁿ × M ↦ p ux.1 ux.2) :=
-  isPlot_contMDiffMap_iff_dSmooth.trans dSmooth_prod_iff_contMDiff
+  isPlot_contMDiffMap_iff_dSmooth.trans dSmooth_iff_contMDiff_prod_dom
 
 /-- When `M` and `N` carry compatible diffeologies, `contMDiffMapFunctionalDiffeology E M F N`
 equals the canonical instance `instDiffeologicalSpaceContMDiffMap`. -/
@@ -415,18 +414,7 @@ theorem dSmooth_contMDiffMap_iff_contMDiff [DiffeologicalSpace P] [IsContMDiffCo
     {f : P → C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯} :
     _root_.Diffeology.DSmooth f ↔
       ContMDiff (𝓘(ℝ, G).prod 𝓘(ℝ, E)) 𝓘(ℝ, F) ∞ (fun pm : P × M ↦ f pm.1 pm.2) :=
-  dSmooth_contMDiffMap_iff.trans dSmooth_prod_iff_contMDiff
-
-/-- For a finite-dimensional smooth manifold `M` with a compatible diffeology (without requiring
-`M` to be Hausdorff), the D-topology of `C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ × M` equals the product of the
-functional D-topology with the manifold topology of `M`. -/
-theorem dTopology_contMDiffMap_prod_eq :
-    (_root_.Diffeology.dTopology :
-        TopologicalSpace (C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ × M)) =
-      @instTopologicalSpaceProd C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ M
-        _root_.Diffeology.dTopology ‹TopologicalSpace M› := by
-  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace E M
-  exact dTopology_prod_eq_of_isDTopologyCompatible_right
+  dSmooth_contMDiffMap_iff.trans dSmooth_iff_contMDiff_prod_dom
 
 /-- Evaluation `(C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯, dTopology) × M → N` is jointly continuous whenever
 `N` carries a topology compatible with its D-topology (for instance any compatible manifold `N`),
@@ -436,8 +424,13 @@ theorem continuous_eval_contMDiffMap [_root_.Diffeology.IsDTopologyCompatible N]
       (@instTopologicalSpaceProd C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ M
         _root_.Diffeology.dTopology ‹TopologicalSpace M›)
       ‹TopologicalSpace N› (fun fx ↦ fx.1 fx.2) := by
-  have hc := (dSmooth_eval_contMDiffMap (E := E) (F := F) (M := M) (N := N)).continuous
-  rwa [dTopology_contMDiffMap_prod_eq, _root_.Diffeology.IsDTopologyCompatible.dTop_eq N] at hc
+  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace E M
+  let : TopologicalSpace C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, F), N⟯ := _root_.Diffeology.dTopology
+  let : TopologicalSpace (DSmoothMap M N) := _root_.Diffeology.dTopology
+  simpa only [Function.comp_def, Prod.map_fst, Prod.map_snd, ContMDiffMap.toDSmoothMap_apply,
+    id_eq] using
+    (DSmoothMap.continuous_eval (X := M) (Y := N)).comp
+      (dSmooth_toDSmoothMap.continuous.prodMap continuous_id)
 
 section WeakWhitney
 
