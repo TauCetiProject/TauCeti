@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.SpecificLimits.Normed
 public import Mathlib.Order.Filter.Cofinite
 public import TauCeti.Analysis.Normed.Ring.TwoSidedIdeal
+import TauCeti.Analysis.Normed.Ring.Units
 
 /-!
 # The `c₀` ideal of a bounded product
@@ -22,10 +23,10 @@ C⋆-algebras, by `lp.inftyCStarAlgebra` and `TwoSidedIdeal.Quotient.cstarAlgebr
 
 The quotient norm of the class of `a` is `limsup_i ‖a i‖` along the cofinite filter,
 `lp.norm_mk_c0Ideal`. For unital factors with `‖1‖ = 1` and summable geometric series (in
-particular, nonzero complete normed rings or operator algebras on nontrivial spaces), the quotient
-class of `a` is a unit if and only if `a i` is eventually a unit along `cofinite` with uniformly
-bounded inverse norms (`lp.isUnit_mk_c0Ideal_iff`), and the norm of the quotient inverse is
-`limsup_i ‖(a i)⁻¹‖` (`lp.norm_ringInverse_mk_c0Ideal`).
+particular, complete normed rings with `‖1‖ = 1`, such as operator algebras on nontrivial spaces),
+the quotient class of `a` is a unit if and only if `a i` is eventually a unit along `cofinite` with
+uniformly bounded inverse norms (`lp.isUnit_mk_c0Ideal_iff`), and the norm of the quotient inverse
+is `limsup_i ‖(a i)⁻¹‖` (`lp.norm_ringInverse_mk_c0Ideal`).
 
 ## Main declarations
 
@@ -221,10 +222,10 @@ theorem isUnit_mk_c0Ideal_of_eventually {a : lp A ∞}
   · rw [← map_mul, ← TwoSidedIdeal.Quotient.mk_one (c0Ideal A), TwoSidedIdeal.Quotient.eq]
     exact hba
 
-/-- **Invertibility in `lp A ∞ ⧸ lp.c0Ideal A`.** When each factor has summable geometric series
-(in particular, when each factor is a complete normed ring), the quotient class of `a : lp A ∞` is
-invertible if and only if `a i` is eventually invertible along `cofinite` with uniformly bounded
-inverse norms. -/
+/-- **Invertibility in `lp A ∞ ⧸ lp.c0Ideal A`.** When each factor has `‖1‖ = 1` and summable
+geometric series (in particular, when each factor is a complete normed ring with `‖1‖ = 1`), the
+quotient class of `a : lp A ∞` is invertible if and only if `a i` is eventually invertible along
+`cofinite` with uniformly bounded inverse norms. -/
 theorem isUnit_mk_c0Ideal_iff [∀ i, HasSummableGeomSeries (A i)] {a : lp A ∞} :
     IsUnit (TwoSidedIdeal.Quotient.mk (c0Ideal A) a) ↔
       ∃ M : ℝ, ∀ᶠ i in cofinite, IsUnit (a i) ∧ ‖Ring.inverse (a i)‖ ≤ M := by
@@ -252,46 +253,12 @@ theorem isUnit_mk_c0Ideal_iff [∀ i, HasSummableGeomSeries (A i)] {a : lp A ∞
   have hl' : ‖(1 : A i) - b i * a i‖ < 1 / 2 := by
     simpa only [lp.coeFn_sub, lp.infty_coeFn_one, lp.infty_coeFn_mul, Pi.sub_apply, Pi.one_apply,
       Pi.mul_apply] using hl
-  -- Invert `a i * b i = 1 - r` on the right and `b i * a i = 1 - l` on the left by Neumann series.
-  let r : A i := 1 - a i * b i
-  let l : A i := 1 - b i * a i
-  let ur : (A i)ˣ := Units.oneSub r (hr'.trans (by norm_num))
-  let ul : (A i)ˣ := Units.oneSub l (hl'.trans (by norm_num))
-  have hur : (ur : A i) = a i * b i := sub_sub_cancel 1 (a i * b i)
-  have hul : (ul : A i) = b i * a i := sub_sub_cancel 1 (b i * a i)
-  let bR : A i := b i * ↑ur⁻¹
-  let bL : A i := ↑ul⁻¹ * b i
-  have haR : a i * bR = 1 := by
-    rw [← mul_assoc, ← hur, Units.mul_inv]
-  have haL : bL * a i = 1 := by
-    rw [mul_assoc, ← hul, Units.inv_mul]
-  have hbLR : bL = bR := by
-    calc
-      bL = bL * (a i * bR) := by rw [haR, mul_one]
-      _ = (bL * a i) * bR := (mul_assoc _ _ _).symm
-      _ = bR := by rw [haL, one_mul]
-  let u : (A i)ˣ := ⟨a i, bR, haR, hbLR ▸ haL⟩
-  -- From `bR * (1 - r) = b i`, we get `bR = b i + bR * r` and hence `‖bR‖ ≤ 2 ‖b‖`.
-  have hbR_eq : bR = b i + bR * r := by
-    have hmul : bR * (1 - r) = b i := by
-      simp only [bR, ur, ← Units.val_oneSub r (hr'.trans (by norm_num)), mul_assoc, Units.inv_mul,
-        mul_one]
-    rw [mul_sub, mul_one, sub_eq_iff_eq_add] at hmul
-    exact hmul
-  have hbR_norm : ‖bR‖ ≤ 2 * ‖b‖ := by
-    have hbi : ‖b i‖ ≤ ‖b‖ := norm_apply_le_norm ENNReal.top_ne_zero b i
-    have hstep : ‖bR‖ ≤ ‖b‖ + ‖bR‖ * (1 / 2) := by
-      calc
-        ‖bR‖ = ‖b i + bR * r‖ := congrArg norm hbR_eq
-        _ ≤ ‖b i‖ + ‖bR * r‖ := norm_add_le _ _
-        _ ≤ ‖b i‖ + ‖bR‖ * ‖r‖ := by gcongr; exact norm_mul_le _ _
-        _ ≤ ‖b‖ + ‖bR‖ * (1 / 2) :=
-          add_le_add hbi (mul_le_mul_of_nonneg_left hr'.le (norm_nonneg _))
-    linarith
-  have hinv : Ring.inverse (a i) = bR := Ring.inverse_unit u
-  refine ⟨⟨u, rfl⟩, ?_⟩
-  rw [hinv]
-  exact hbR_norm
+  obtain ⟨hu_i, hnorm_i⟩ :=
+    NormedRing.isUnit_and_norm_inverse_le_of_norm_one_sub_mul_lt
+      (hr'.trans (by norm_num)) (hl'.trans (by norm_num))
+  refine ⟨hu_i, hnorm_i.trans ?_⟩
+  rw [div_le_iff₀ (by linarith)]
+  nlinarith [norm_apply_le_norm ENNReal.top_ne_zero b i, norm_nonneg b]
 
 /-- The norm of the inverse of a unit in `lp A ∞ ⧸ lp.c0Ideal A` is the limit superior of the
 coordinate inverse norms along `cofinite`. -/

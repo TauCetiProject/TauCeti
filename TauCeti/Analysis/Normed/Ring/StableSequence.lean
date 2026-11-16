@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.SpecificLimits.Normed
 public import Mathlib.Order.Filter.AtTopBot.Basic
+import TauCeti.Analysis.Normed.Ring.Units
 
 /-!
 # Stable sequences and condition numbers in normed rings
@@ -201,43 +202,26 @@ theorem IsStableSequence.of_tendsto_sub_zero [∀ n, HasSummableGeomSeries (R n)
   have hd : ∀ᶠ n in atTop, ‖b n - a n‖ < (2 * M')⁻¹ :=
     (tendsto_order.mp hab).2 _ (by positivity)
   refine ⟨2 * M', (hM.and hd).mono fun n ⟨⟨hu, hn⟩, hdn⟩ ↦ ?_⟩
-  obtain ⟨u, hu_eq⟩ := hu
-  rw [← hu_eq] at hn hdn
-  have hinv : ‖(↑u⁻¹ : R n)‖ ≤ M' := by
-    simpa only [Ring.inverse_unit] using hn.trans (le_max_left M 1)
-  -- Factor `b n = u * (1 - t)` with `‖t‖ < 1 / 2` and invert `1 - t` by Neumann series.
-  let t : R n := -(↑u⁻¹ * (b n - ↑u))
-  have ht_half : ‖t‖ < 1 / 2 := by
+  have hinv : ‖Ring.inverse (a n)‖ ≤ M' := hn.trans (le_max_left M 1)
+  have hmul : ‖a n - b n‖ * ‖Ring.inverse (a n)‖ < 1 / 2 := by
+    rw [norm_sub_rev]
     calc
-      ‖t‖ = ‖(↑u⁻¹ : R n) * (b n - ↑u)‖ := norm_neg _
-      _ ≤ ‖(↑u⁻¹ : R n)‖ * ‖b n - ↑u‖ := norm_mul_le _ _
-      _ ≤ M' * ‖b n - ↑u‖ := mul_le_mul_of_nonneg_right hinv (norm_nonneg _)
-      _ < M' * (2 * M')⁻¹ := mul_lt_mul_of_pos_left hdn hM'
+      ‖b n - a n‖ * ‖Ring.inverse (a n)‖ ≤ ‖b n - a n‖ * M' :=
+        mul_le_mul_of_nonneg_left hinv (norm_nonneg _)
+      _ < (2 * M')⁻¹ * M' := mul_lt_mul_of_pos_right hdn hM'
       _ = 1 / 2 := by field_simp
-  have ht1 : ‖t‖ < 1 := ht_half.trans (by norm_num)
-  let v : (R n)ˣ := u * Units.oneSub t ht1
-  have hv_val : (v : R n) = b n := by
-    simp only [v, t, Units.val_mul, Units.val_oneSub, sub_neg_eq_add, mul_add, mul_one,
-      ← mul_assoc, Units.mul_inv, one_mul, add_sub_cancel]
-  -- From `(1 - t) * v⁻¹ = u⁻¹`, we get `v⁻¹ = u⁻¹ + t * v⁻¹` and hence `‖v⁻¹‖ ≤ 2 M'`.
-  have hv_eq : (↑v⁻¹ : R n) = ↑u⁻¹ + t * ↑v⁻¹ := by
-    have hmul : (1 - t) * (↑v⁻¹ : R n) = ↑u⁻¹ := by
-      simp only [v, mul_inv_rev, Units.val_mul, ← mul_assoc, ← Units.val_oneSub t ht1,
-        Units.mul_inv, one_mul]
-    rw [sub_mul, one_mul, sub_eq_iff_eq_add] at hmul
-    exact hmul
-  have hv_norm : ‖(↑v⁻¹ : R n)‖ ≤ 2 * M' := by
-    have hstep : ‖(↑v⁻¹ : R n)‖ ≤ M' + (1 / 2) * ‖(↑v⁻¹ : R n)‖ := by
-      calc
-        ‖(↑v⁻¹ : R n)‖ = ‖(↑u⁻¹ : R n) + t * ↑v⁻¹‖ := congrArg norm hv_eq
-        _ ≤ ‖(↑u⁻¹ : R n)‖ + ‖t * (↑v⁻¹ : R n)‖ := norm_add_le _ _
-        _ ≤ ‖(↑u⁻¹ : R n)‖ + ‖t‖ * ‖(↑v⁻¹ : R n)‖ := by gcongr; exact norm_mul_le _ _
-        _ ≤ M' + (1 / 2) * ‖(↑v⁻¹ : R n)‖ :=
-          add_le_add hinv (mul_le_mul_of_nonneg_right ht_half.le (norm_nonneg _))
-    linarith
-  refine ⟨⟨v, hv_val⟩, ?_⟩
-  rw [← hv_val, Ring.inverse_unit]
-  exact hv_norm
+  have hr : ‖1 - b n * Ring.inverse (a n)‖ < 1 / 2 := by
+    rw [← Ring.mul_inverse_cancel (a n) hu, ← sub_mul]
+    exact (norm_mul_le _ _).trans_lt hmul
+  have hl : ‖1 - Ring.inverse (a n) * b n‖ < 1 / 2 := by
+    rw [← Ring.inverse_mul_cancel (a n) hu, ← mul_sub]
+    exact (norm_mul_le _ _).trans_lt (by rwa [mul_comm])
+  obtain ⟨hub, hnb⟩ :=
+    NormedRing.isUnit_and_norm_inverse_le_of_norm_one_sub_mul_lt
+      (hr.trans (by norm_num)) (hl.trans (by norm_num))
+  refine ⟨hub, hnb.trans ?_⟩
+  rw [div_le_iff₀ (by linarith)]
+  nlinarith
 
 /-- Two sequences in normed rings with summable geometric series whose difference tends to zero in
 norm are simultaneously stable or unstable. -/

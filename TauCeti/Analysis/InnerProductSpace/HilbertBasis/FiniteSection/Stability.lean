@@ -294,6 +294,7 @@ theorem finiteInverseExtension_def (T : H →L[𝕜] H) (b : HilbertBasis ℕ �
 
 /-- Evaluating `T.finiteInverseExtension b n` restricts to the first `n + 1` coordinates, applies
 `Ring.inverse (T.finiteSection b n)`, and includes the result back into `H`. -/
+@[simp]
 theorem finiteInverseExtension_apply (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (x : H) :
     T.finiteInverseExtension b n x =
       b.finiteInclusion n (Ring.inverse (T.finiteSection b n) (b.coordinateCutoff n x)) := by
@@ -307,7 +308,7 @@ theorem finiteInverseExtension_eq_comp (T : H →L[𝕜] H) (b : HilbertBasis �
       (b.finiteInclusion n).toContinuousLinearMap ∘L
         Ring.inverse (T.finiteSection b n) ∘L b.coordinateCutoff n := by
   ext x
-  simp [finiteInverseExtension_apply]
+  simp
 
 /-- The operator norm of `T.finiteInverseExtension b n` equals the operator norm of
 `Ring.inverse (T.finiteSection b n)`. -/
@@ -336,15 +337,6 @@ theorem finiteSection_finiteInverseExtension (T : H →L[𝕜] H) (b : HilbertBa
     (T.finiteInverseExtension b n).finiteSection b n = Ring.inverse (T.finiteSection b n) :=
   b.finiteSection_cornerEmbedding n _
 
-/-- Restricting `T.finiteInverseExtension b n` on an included finite vector recovers the finite
-inverse applied to that vector. -/
-@[simp]
-theorem coordinateCutoff_finiteInverseExtension_finiteInclusion (T : H →L[𝕜] H)
-    (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (x : EuclideanSpace 𝕜 (Fin (n + 1))) :
-    b.coordinateCutoff n (T.finiteInverseExtension b n (b.finiteInclusion n x)) =
-      Ring.inverse (T.finiteSection b n) x := by
-  simp [finiteInverseExtension_apply]
-
 /-- `T.finiteInverseExtension b n` takes values in the range of `b.finiteProjection n`. -/
 @[simp]
 theorem finiteProjection_comp_finiteInverseExtension (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H)
@@ -370,19 +362,21 @@ theorem finiteInverseExtension_comp_finiteProjection (T : H →L[𝕜] H) (b : H
 
 /-- When `T.finiteSection b n` is invertible, `T.finiteInverseExtension b n` is a right inverse of
 `T.zeroExtendedFiniteSection b n` on the finite-coordinate corner. -/
+@[simp]
 theorem zeroExtendedFiniteSection_comp_finiteInverseExtension {n : ℕ}
     (hu : IsUnit (T.finiteSection b n)) :
     T.zeroExtendedFiniteSection b n ∘L T.finiteInverseExtension b n = b.finiteProjection n := by
   ext x
-  simp [zeroExtendedFiniteSection_apply, finiteInverseExtension_apply, apply_ringInverse_apply hu]
+  simp [zeroExtendedFiniteSection_apply, apply_ringInverse_apply hu]
 
 /-- When `T.finiteSection b n` is invertible, `T.finiteInverseExtension b n` is a left inverse of
 `T.zeroExtendedFiniteSection b n` on the finite-coordinate corner. -/
+@[simp]
 theorem finiteInverseExtension_comp_zeroExtendedFiniteSection {n : ℕ}
     (hu : IsUnit (T.finiteSection b n)) :
     T.finiteInverseExtension b n ∘L T.zeroExtendedFiniteSection b n = b.finiteProjection n := by
   ext x
-  simp [zeroExtendedFiniteSection_apply, finiteInverseExtension_apply, ringInverse_apply_apply hu]
+  simp [zeroExtendedFiniteSection_apply, ringInverse_apply_apply hu]
 
 /-- The zero operator has zero extended finite-section inverse. -/
 @[simp]
@@ -394,13 +388,9 @@ theorem finiteInverseExtension_zero (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
 @[simp]
 theorem finiteInverseExtension_one (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (1 : H →L[𝕜] H).finiteInverseExtension b n = b.finiteProjection n := by
-  simp [finiteInverseExtension, LinearIsometry.cornerEmbedding_one]
-
-/-- The identity map has `b.finiteProjection n` as its extended finite-section inverse. -/
-@[simp]
-theorem finiteInverseExtension_id (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
-    (ContinuousLinearMap.id 𝕜 H).finiteInverseExtension b n = b.finiteProjection n := by
-  rw [← ContinuousLinearMap.one_def, finiteInverseExtension_one]
+  rw [finiteInverseExtension, ContinuousLinearMap.one_def, finiteSection_id,
+    ← ContinuousLinearMap.one_def, Ring.inverse_one, LinearIsometry.cornerEmbedding_one,
+    HilbertBasis.adjoint_finiteInclusion, HilbertBasis.finiteInclusion_comp_coordinateCutoff]
 
 /-- Scaling an operator by `c` scales its extended finite-section inverse by `c⁻¹`. -/
 @[simp]
@@ -431,7 +421,7 @@ theorem finiteInverseExtension_mapₗᵢ {H' : Type*} [NormedAddCommGroup H']
         ((e.symm : H' →L[𝕜] H) ∘L S ∘L (e : H →L[𝕜] H')).finiteInverseExtension b n ∘L
         (e.symm : H' →L[𝕜] H) := by
   ext y
-  simp [finiteInverseExtension_apply]
+  simp
 
 /-- Every zero-extended finite-section inverse has finite rank. -/
 theorem hasFiniteRange_finiteInverseExtension (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
