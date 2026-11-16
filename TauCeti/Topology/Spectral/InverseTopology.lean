@@ -20,9 +20,11 @@ inverse topology twice returns the original topology, both topologies have the s
 constructible topology, and a map of spectral spaces is spectral exactly when it is spectral for
 the inverse topologies.
 
-The inverse topology exchanges specialization and generalization, so a statement about closed
-subsets of a spectral space stable under generalization becomes one about open subsets stable
-under specialization, and conversely.
+The inverse topology exchanges specialization and generalization: `x` specializes to `y` in the
+inverse topology exactly when `y` specializes to `x` in `X`. Accordingly, the closed subsets of the
+inverse topology are exactly the pro-constructible subsets of `X` that are stable under
+generalization, and its open subsets are the subsets stable under specialization whose complement
+is pro-constructible.
 
 Except for spectrality itself, which also needs T₀, the duality results hold on every compact,
 quasi-sober, quasi-separated prespectral space, the hypotheses under which the constructible
@@ -51,6 +53,9 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
   `TauCeti.quasiSeparatedSpace_inverseTopology`, `TauCeti.prespectralSpace_inverseTopology` and
   `TauCeti.spectralSpace_inverseTopology` — **Hochster**: the inverse topology of a spectral space
   is spectral.
+* `TauCeti.isClosed_inverseTopology_iff` and `TauCeti.isOpen_inverseTopology_iff` — the closed
+  subsets of the inverse topology are the pro-constructible subsets stable under generalization,
+  and the open subsets are those stable under specialization with pro-constructible complement.
 * `TauCeti.inverseTopology_inverseTopology` — the inverse of the inverse topology is the original
   topology.
 * `TauCeti.constructibleTopology_inverseTopology` — a spectral space and its inverse have the same
@@ -103,7 +108,7 @@ variable (X) in
 /-- The constructible topology refines the inverse topology. -/
 theorem constructibleTopology_le_inverseTopology :
     constructibleTopology X ≤ inverseTopology X :=
-  le_generateFrom fun _ hs ↦ isOpen_generateFrom_of_mem (Or.inr hs)
+  le_generateFrom fun _ hs ↦ hs.2.isOpen_constructibleTopology_of_isClosed hs.1
 
 /-- Every open subset of the inverse topology is stable under specialization in `X`. -/
 theorem stableUnderSpecialization_of_isOpen_inverseTopology {s : Set X}
@@ -133,7 +138,8 @@ theorem specializes_inverseTopology_iff [PrespectralSpace X] {x y : X} :
   obtain ⟨U, hUo, hUc, hxU, hyU⟩ :=
     PrespectralSpace.not_specializes_iff_exists_isOpen_isCompact.1 hyx
   exact @Specializes.mem_open X (inverseTopology X) x y _ h
-    (isOpen_inverseTopology_of_isClosed hUo.isClosed_compl (by rwa [compl_compl])) hyU hxU
+    (@IsClosed.isOpen_compl X (inverseTopology X) U (isClosed_inverseTopology_of_isOpen hUo hUc))
+    hyU hxU
 
 /-- The inverse topology of a T₀ prespectral space is T₀. -/
 theorem t0Space_inverseTopology [PrespectralSpace X] [T0Space X] :
@@ -147,6 +153,11 @@ theorem t0Space_inverseTopology [PrespectralSpace X] [T0Space X] :
 private theorem isClopen_constructibleTopology_of_mem {s : Set X}
     (hs : s ∈ {s : Set X | IsClosed s ∧ IsCompact sᶜ}) : IsClopen[constructibleTopology X] s :=
   hs.2.isClopen_constructibleTopology_of_isClosed hs.1
+
+/-- The generators of the inverse topology are open for the constructible topology. -/
+private theorem isOpen_constructibleTopology_of_mem {s : Set X}
+    (hs : s ∈ {s : Set X | IsClosed s ∧ IsCompact sᶜ}) : IsOpen[constructibleTopology X] s :=
+  hs.2.isOpen_constructibleTopology_of_isClosed hs.1
 
 section Spectral
 
@@ -179,8 +190,7 @@ theorem isOpen_inverseTopology_and_isCompact_iff {s : Set X} :
       (stableUnderSpecialization_of_isOpen_inverseTopology ho), hpc'.isCompact⟩
   · exact @isCompact_of_isClosed_generateFrom X _ (constructibleTopology X) (inverseTopology X)
       (inverseTopology_def X) (compactSpace_constructibleTopology X)
-      (fun t ht ↦ @IsClopen.isOpen X (constructibleTopology X) t
-        (isClopen_constructibleTopology_of_mem ht)) s
+      (fun _ ↦ isOpen_constructibleTopology_of_mem) s
       (hc.isClosed_constructibleTopology_of_isClosed hs)
 
 /-- On a compact, quasi-sober, quasi-separated prespectral space, the closed subsets of the inverse
@@ -198,8 +208,7 @@ compact. -/
 theorem compactSpace_inverseTopology : @CompactSpace X (inverseTopology X) :=
   @compactSpace_of_isOpen_generateFrom X _ (constructibleTopology X) (inverseTopology X)
     (inverseTopology_def X) (compactSpace_constructibleTopology X)
-    (fun t ht ↦ @IsClopen.isOpen X (constructibleTopology X) t
-      (isClopen_constructibleTopology_of_mem ht))
+    (fun _ ↦ isOpen_constructibleTopology_of_mem)
 
 /-- The inverse topology of a compact, quasi-sober, quasi-separated prespectral space is
 quasi-sober. -/
@@ -242,12 +251,42 @@ its inverse have the same constructible topology. -/
 @[simp]
 theorem constructibleTopology_inverseTopology :
     @constructibleTopology X (inverseTopology X) = constructibleTopology X := by
+  -- Both sides are generated by their constructible subbases.
+  unfold constructibleTopology
   refine congrArg generateFrom (Set.ext fun s ↦ ?_)
   simp only [constructibleTopologySubbasis, mem_union, mem_ofPred_eq]
   rw [isOpen_inverseTopology_and_isCompact_iff, isClosed_inverseTopology_and_isCompact_compl_iff,
     or_comm]
 
 variable {X}
+
+/-- On a compact, quasi-sober, quasi-separated prespectral space (for instance a spectral space),
+the closed subsets of the inverse topology are exactly the pro-constructible subsets stable under
+generalization. -/
+theorem isClosed_inverseTopology_iff {s : Set X} :
+    IsClosed[inverseTopology X] s ↔ IsProConstructible s ∧ StableUnderGeneralization s := by
+  -- Both topologies have the same pro-constructible subsets, and specialization is reversed.
+  have hpc : @IsProConstructible X (inverseTopology X) s ↔ IsProConstructible s := by
+    rw [@isProConstructible_iff_isClosed X (inverseTopology X),
+      constructibleTopology_inverseTopology, isProConstructible_iff_isClosed]
+  have hsp : @StableUnderSpecialization X (inverseTopology X) s ↔ StableUnderGeneralization s := by
+    simp only [StableUnderSpecialization, StableUnderGeneralization,
+      specializes_inverseTopology_iff]
+  have := prespectralSpace_inverseTopology X
+  refine ⟨fun h ↦ ⟨hpc.1 (@IsClosed.isProConstructible X (inverseTopology X) _ s h),
+    hsp.1 (@IsClosed.stableUnderSpecialization X (inverseTopology X) s h)⟩, fun ⟨h₁, h₂⟩ ↦ ?_⟩
+  exact (@IsProConstructible.isClosed_iff_stableUnderSpecialization X (inverseTopology X)
+    (compactSpace_inverseTopology X) (quasiSober_inverseTopology X) _
+    (quasiSeparatedSpace_inverseTopology X) s (hpc.2 h₁)).2 (hsp.2 h₂)
+
+/-- On a compact, quasi-sober, quasi-separated prespectral space (for instance a spectral space),
+the open subsets of the inverse topology are exactly the subsets stable under specialization whose
+complement is pro-constructible. -/
+theorem isOpen_inverseTopology_iff {s : Set X} :
+    IsOpen[inverseTopology X] s ↔ IsProConstructible sᶜ ∧ StableUnderSpecialization s := by
+  rw [← @isClosed_compl_iff X (inverseTopology X), isClosed_inverseTopology_iff,
+    stableUnderGeneralization_compl_iff]
+
 variable [CompactSpace Y] [QuasiSober Y] [PrespectralSpace Y] [QuasiSeparatedSpace Y]
 
 /-- A spectral map of spectral spaces is spectral for the inverse topologies. More generally the
