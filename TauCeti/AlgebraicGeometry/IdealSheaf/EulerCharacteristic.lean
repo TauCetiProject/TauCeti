@@ -445,8 +445,9 @@ private lemma finiteDimensional_cohomology_tensorMayerVietoris_X₁ {i : ℕ} (h
   have hS := shortExact_tensorMayerVietoris E I J
   have h₂ (i : ℕ) (hi : i < 2) :=
     finiteDimensional_cohomology_tensorMayerVietoris_X₂ k E I J hI hJ hi
-  have : FiniteDimensional k (Cohomology (tensorMayerVietoris E I J).X₃ 0) :=
-    finiteDimensional_cohomology_zero_tensor_pushforwardSubscheme k (I ⊔ J) E
+  have : FiniteDimensional k (Cohomology (tensorMayerVietoris E I J).X₃ 0) := by
+    rw [ShortComplex.map_X₃, mayerVietoris_X₃]
+    exact finiteDimensional_cohomology_zero_tensor_pushforwardSubscheme k (I ⊔ J) E
   obtain rfl | rfl : i = 0 ∨ i = 1 := by omega
   · have := hS.mono_f
     have := h₂ 0 (by omega)
@@ -461,8 +462,9 @@ finite-dimensional cohomology, then so do `H⁰` and `H¹` of its restriction to
 theorem FiniteLocallyFreeSheaf.FixedRank.finiteDimensional_cohomology_pullback_subschemeι_inf
     {i : ℕ} (hi : i < 2) : FiniteDimensional k
       (Cohomology ((FiniteLocallyFreeSheaf.pullback (I ⊓ J).subschemeι).obj E.obj).obj i) :=
-  (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k (I ⊓ J) E.obj i).mp
-    (finiteDimensional_cohomology_tensorMayerVietoris_X₁ k E I J hI hJ hi)
+  (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k (I ⊓ J) E.obj i).mp <| by
+    have := finiteDimensional_cohomology_tensorMayerVietoris_X₁ k E I J hI hJ hi
+    rwa [ShortComplex.map_X₁, mayerVietoris_X₁] at this
 
 include hI hJ in
 /-- **Euler characteristics on a union of closed subschemes.** If the closed subschemes `V(I)`
@@ -480,8 +482,9 @@ theorem FiniteLocallyFreeSheaf.FixedRank.eulerCharBelow_pullback_subschemeι_inf
         eulerCharBelow k J.subscheme
           ((FiniteLocallyFreeSheaf.pullback J.subschemeι).obj E.obj).obj 2 := by
   have hS := shortExact_tensorMayerVietoris E I J
-  have h₃ : Subsingleton (Cohomology (tensorMayerVietoris E I J).X₃ 1) :=
-    subsingleton_cohomology_one_tensor_pushforwardSubscheme k (I ⊔ J) E
+  have h₃ : Subsingleton (Cohomology (tensorMayerVietoris E I J).X₃ 1) := by
+    rw [ShortComplex.map_X₃, mayerVietoris_X₃]
+    exact subsingleton_cohomology_one_tensor_pushforwardSubscheme k (I ⊔ J) E
   -- The connecting map out of `H¹` of the last term, which vanishes, is zero.
   have hδ : cohomologyδBaseLinear k X hS 1 2 rfl = 0 :=
     LinearMap.ext fun x ↦ by
@@ -499,11 +502,13 @@ theorem FiniteLocallyFreeSheaf.FixedRank.eulerCharBelow_pullback_subschemeι_inf
   -- The first and last terms are `E ⊗ 𝒪_{V(I ⊓ J)}` and `E ⊗ 𝒪_{V(I ⊔ J)}`.
   have h₁ : eulerCharBelow k X (tensorMayerVietoris E I J).X₁ 2 =
       eulerCharBelow k (I ⊓ J).subscheme
-        ((FiniteLocallyFreeSheaf.pullback (I ⊓ J).subschemeι).obj E.obj).obj 2 :=
-    eulerCharBelow_tensor_pushforwardSubscheme k (I ⊓ J) E.obj 2
+        ((FiniteLocallyFreeSheaf.pullback (I ⊓ J).subschemeι).obj E.obj).obj 2 := by
+    rw [ShortComplex.map_X₁, mayerVietoris_X₁]
+    exact eulerCharBelow_tensor_pushforwardSubscheme k (I ⊓ J) E.obj 2
   have h₃ : eulerCharBelow k X (tensorMayerVietoris E I J).X₃ 2 =
-      r * ((I ⊔ J).subschemeι ≫ X ↘ Spec (.of k)).finrank s :=
-    eulerCharBelow_tensor_pushforwardSubscheme_eq_mul_finrank k (I ⊔ J) E s
+      r * ((I ⊔ J).subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
+    rw [ShortComplex.map_X₃, mayerVietoris_X₃]
+    exact eulerCharBelow_tensor_pushforwardSubscheme_eq_mul_finrank k (I ⊔ J) E s
   rw [h₁, h₃] at h
   exact h.symm
 

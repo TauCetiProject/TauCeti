@@ -176,6 +176,25 @@ abbrev mayerVietoris : ShortComplex X.Modules where
     simp
 
 variable (I J) in
+/-- The first term of the Mayer–Vietoris sequence is `ι_* 𝒪_{V(I ⊓ J)}`. -/
+@[simp]
+lemma mayerVietoris_X₁ : (mayerVietoris I J).X₁ = (I ⊓ J).pushforwardSubscheme :=
+  rfl
+
+variable (I J) in
+/-- The middle term of the Mayer–Vietoris sequence is `ι_* 𝒪_{V(I)} ⊞ ι_* 𝒪_{V(J)}`. -/
+@[simp]
+lemma mayerVietoris_X₂ :
+    (mayerVietoris I J).X₂ = (I.pushforwardSubscheme ⊞ J.pushforwardSubscheme) :=
+  rfl
+
+variable (I J) in
+/-- The last term of the Mayer–Vietoris sequence is `ι_* 𝒪_{V(I ⊔ J)}`. -/
+@[simp]
+lemma mayerVietoris_X₃ : (mayerVietoris I J).X₃ = (I ⊔ J).pushforwardSubscheme :=
+  rfl
+
+variable (I J) in
 /-- The first map of the Mayer–Vietoris sequence is the lift of the two restrictions. -/
 @[simp]
 lemma mayerVietoris_f : (mayerVietoris I J).f =
