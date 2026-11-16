@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.CartierDivisor.LocalEquations
-public import TauCeti.AlgebraicGeometry.Scheme.Normal
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Cartier.Basic
 
 /-!
@@ -364,17 +363,11 @@ theorem cartierDivisor_toWeilDivisor (hX : ∀ x : X, coheight x ≤ 1)
     (D : Scheme.CartierDivisor X) :
     IsLocallyPrincipal.cartierDivisor hX
         (Scheme.CartierDivisor.isLocallyPrincipal_toWeilDivisor D) = D := by
-  apply (IsLocallyPrincipal.eq_cartierDivisor hX
-    (Scheme.CartierDivisor.isLocallyPrincipal_toWeilDivisor D) fun x ↦ ?_).symm
-  obtain ⟨U, _, hxU, f, hf⟩ := Scheme.exists_local_equation X D x (by simp)
-  let _ : Nonempty U := ⟨⟨x, hxU⟩⟩
-  let g := Scheme.rationalUnitSectionsEquiv X U f
-  have hDg : D |_ U = Scheme.rationalUnitClass X U g := by
-    rw [Scheme.rationalUnitClass_apply]
-    simpa only [g, AddEquiv.symm_apply_apply] using hf.symm
-  refine ⟨U, inferInstance, g, hxU, fun y hy ↦ ?_, hDg⟩
-  rw [Scheme.CartierDivisor.coeff_toWeilDivisor,
-    Scheme.CartierDivisor.orderAt_eq_of_restrict_eq_rationalUnitClass D y U hy g hDg]
+  have : IsNormalScheme X := .of_forall_coheight_le_one hX
+  exact Scheme.CartierDivisor.toWeilDivisor_injective
+    (toWeilDivisor_cartierDivisor hX
+      ⟨D.toWeilDivisor, mem_locallyPrincipalSubgroup.mpr
+        (Scheme.CartierDivisor.isLocallyPrincipal_toWeilDivisor D)⟩)
 
 /-- **The Weil--Cartier equivalence.** On a Noetherian integral curve whose codimension-one local
 rings are discrete valuation rings, Weil divisors are additively equivalent to Cartier divisors. -/

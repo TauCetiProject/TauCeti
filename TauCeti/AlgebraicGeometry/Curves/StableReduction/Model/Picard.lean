@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.LineBundle.OpenRestriction
-public import TauCeti.AlgebraicGeometry.SpecialFiber.Components
 
 /-!
 # Restriction of line-bundle classes on a regular model to its generic fibre

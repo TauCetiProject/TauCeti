@@ -200,8 +200,7 @@ theorem IsEffectiveCartier.existsUnique_cartierDivisor {I : X.IdealSheafData}
             ((map_ne_zero_iff _ (X.germToFunctionField_injective V.1)).mpr hb))) := by
   choose U hxU a ha hUa using (isEffectiveCartier_iff I).mp hI
   have hne : ∀ x, Nonempty (U x).1 := fun x ↦ ⟨⟨x, hxU x⟩⟩
-  have ha0 : ∀ x, a x ≠ 0 := fun x h0 ↦
-    one_ne_zero (α := Γ(X, U x)) (ha x (by simp [h0] : a x * 1 = a x * 0))
+  have ha0 : ∀ x, a x ≠ 0 := fun x ↦ (ha x).isLeftRegular.ne_zero
   let sf : ∀ x, ((Scheme.cartierDivisorSheaf X).obj.obj (op (U x).1) : Type u) :=
     fun x ↦ Scheme.rationalUnitClass X (U x).1 (Additive.ofMul
       (Units.mk0 (X.germToFunctionField (U x).1 (a x))
@@ -269,7 +268,7 @@ theorem IsEffectiveCartier.isEffective_toCartierDivisor {I : X.IdealSheafData}
   refine Scheme.CartierDivisor.isEffective_iff_exists.mpr fun x ↦ ?_
   obtain ⟨U, hxU, a, ha, hUa⟩ := (isEffectiveCartier_iff I).mp hI x
   have : Nonempty U.1 := ⟨⟨x, hxU⟩⟩
-  have ha0 : a ≠ 0 := fun h0 ↦ one_ne_zero (α := Γ(X, U)) (ha (by simp [h0] : a * 1 = a * 0))
+  have ha0 : a ≠ 0 := ha.isLeftRegular.ne_zero
   refine ⟨Units.mk0 (X.germToFunctionField U.1 a)
       ((map_ne_zero_iff _ (X.germToFunctionField_injective U.1)).mpr ha0),
     Scheme.CartierDivisor.isLocalEquationAt_iff.mpr
@@ -285,8 +284,7 @@ theorem IsEffectiveCartier.idealSheaf_toCartierDivisor {I : X.IdealSheafData}
   choose U hxU a ha hUa using (isEffectiveCartier_iff I).mp hI
   refine ext_of_iSup_eq_top U (eq_top_iff.mpr fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxU x⟩) fun x ↦ ?_
   have : Nonempty (U x).1 := ⟨⟨x, hxU x⟩⟩
-  have ha0 : a x ≠ 0 := fun h0 ↦
-    one_ne_zero (α := Γ(X, U x)) (ha x (by simp [h0] : a x * 1 = a x * 0))
+  have ha0 : a x ≠ 0 := (ha x).isLeftRegular.ne_zero
   rw [hUa x]
   exact hI.isEffective_toCartierDivisor.idealSheaf_ideal_eq_span (U x)
     (hI.toCartierDivisor_restrict (U x) ha0 (hUa x)).symm rfl
@@ -344,17 +342,15 @@ theorem IsEffectiveCartier.toCartierDivisor_mul {I J : X.IdealSheafData}
     obtain ⟨U₁, hxU₁, a₁, ha₁, hIa₁⟩ := (isEffectiveCartier_iff I).mp hI x
     obtain ⟨U₂, hxU₂, a₂, ha₂, hJa₂⟩ := (isEffectiveCartier_iff J).mp hJ x
     obtain ⟨_, ⟨W, hW, rfl⟩, hxW, hWU⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open
-      (show x ∈ U₁.1 ⊓ U₂.1 from ⟨hxU₁, hxU₂⟩) (U₁.1 ⊓ U₂.1).isOpen
+      (⟨hxU₁, hxU₂⟩ : x ∈ U₁.1 ⊓ U₂.1) (U₁.1 ⊓ U₂.1).isOpen
     replace hWU : W ≤ U₁.1 ⊓ U₂.1 := hWU
     have hWU₁ : W ≤ U₁.1 := hWU.trans inf_le_left
     have hWU₂ : W ≤ U₂.1 := hWU.trans inf_le_right
     have : Nonempty W := ⟨⟨x, hxW⟩⟩
     set b₁ := X.presheaf.map (homOfLE hWU₁).op a₁
     set b₂ := X.presheaf.map (homOfLE hWU₂).op a₂
-    have hb₁ : b₁ ≠ 0 := fun h0 ↦ one_ne_zero (α := Γ(X, W))
-      (U₁.2.isSMulRegular_map hWU₁ ha₁ (by simp [h0] : b₁ * 1 = b₁ * 0))
-    have hb₂ : b₂ ≠ 0 := fun h0 ↦ one_ne_zero (α := Γ(X, W))
-      (U₂.2.isSMulRegular_map hWU₂ ha₂ (by simp [h0] : b₂ * 1 = b₂ * 0))
+    have hb₁ : b₁ ≠ 0 := (U₁.2.isSMulRegular_map hWU₁ ha₁).isLeftRegular.ne_zero
+    have hb₂ : b₂ ≠ 0 := (U₂.2.isSMulRegular_map hWU₂ ha₂).isLeftRegular.ne_zero
     have hIW : I.ideal ⟨W, hW⟩ = Ideal.span {b₁} := by
       rw [← I.map_ideal (U := ⟨W, hW⟩) (V := U₁) hWU₁, hIa₁, Ideal.map_span, Set.image_singleton]
       rfl

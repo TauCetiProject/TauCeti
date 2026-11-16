@@ -37,6 +37,8 @@ In the namespace `TauCeti.AlgebraicGeometry`:
   `closure {η}` has Weil divisor `WeilDivisor.ofPoint η`;
 * `SchemeWeilDivisor.equivCartierDivisorOfUniqueFactorizationMonoid`: the Weil–Cartier additive
   equivalence on Noetherian locally factorial integral schemes;
+* `SchemeWeilDivisor.equivCartierDivisor_eq_equivCartierDivisorOfUniqueFactorizationMonoid`:
+  compatibility with the one-dimensional `SchemeWeilDivisor.equivCartierDivisor`;
 * `SchemeWeilDivisor.classGroupAddEquivLineBundleClassOfUniqueFactorizationMonoid`: the
   `Cl(X) ≃+ Pic(X)` additive equivalence on Noetherian locally factorial integral schemes.
 
@@ -75,7 +77,7 @@ theorem toWeilDivisor_toCartierDivisor_vanishingIdeal_closure_singleton [IsNoeth
   set hη := Scheme.IdealSheafData.isEffectiveCartier_vanishingIdeal_closure_singleton η.2
   obtain ⟨U, hξU, a, ha, hUa⟩ := (Scheme.IdealSheafData.isEffectiveCartier_iff _).mp hη (ξ : X)
   have : Nonempty U.1 := ⟨⟨ξ, hξU⟩⟩
-  have ha0 : a ≠ 0 := fun h0 ↦ one_ne_zero (α := Γ(X, U)) (ha (by simp [h0] : a * 1 = a * 0))
+  have ha0 : a ≠ 0 := ha.isLeftRegular.ne_zero
   rw [hη.toCartierDivisor.coeff_toWeilDivisor_eq_ord ξ hξU _
       (hη.toCartierDivisor_restrict U ha0 hUa).symm,
     Units.val_mk0, ← X.algebraMap_germ_eq_germToFunctionField hξU a]
@@ -257,6 +259,18 @@ theorem classGroupAddEquivLineBundleClassOfUniqueFactorizationMonoid_divisorClas
   rw [classGroupAddEquivLineBundleClassOfUniqueFactorizationMonoid_divisorClass,
     equivCartierDivisorOfUniqueFactorizationMonoid_ofPoint,
     Scheme.IdealSheafData.IsEffectiveCartier.toLineBundleClass_toCartierDivisor]
+
+/-- On a Noetherian integral scheme of dimension at most one whose codimension-one local rings are
+discrete valuation rings, the one-dimensional Weil–Cartier equivalence `equivCartierDivisor` agrees
+with `equivCartierDivisorOfUniqueFactorizationMonoid`. -/
+theorem equivCartierDivisor_eq_equivCartierDivisorOfUniqueFactorizationMonoid
+    [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
+    (hX : ∀ x : X, coheight x ≤ 1) :
+    equivCartierDivisor hX = equivCartierDivisorOfUniqueFactorizationMonoid := by
+  ext D
+  apply Scheme.CartierDivisor.toWeilDivisor_injective
+  rw [toWeilDivisor_equivCartierDivisorOfUniqueFactorizationMonoid,
+    ← equivCartierDivisor_symm_apply hX, AddEquiv.symm_apply_apply]
 
 end SchemeWeilDivisor
 

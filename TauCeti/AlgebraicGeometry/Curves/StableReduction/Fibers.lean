@@ -134,12 +134,10 @@ theorem range_genericι_eq_setOf_base_ne_closedPoint (M : Model R K C toK) :
         range_genericFiberι_eq_setOf_base_ne_closedPoint R K M.toBase
 
 /-- If the total space of a model `M` is irreducible, then its generic fibre `C` is nonempty. -/
-theorem nonempty_generic (M : Model R K C toK) [IrreducibleSpace M.total] : Nonempty C := by
-  have hmem : genericPoint M.total ∈ Set.range M.genericι := by
-    rw [M.range_genericι_eq_setOf_base_ne_closedPoint]
-    exact M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R)
-  obtain ⟨c, -⟩ := hmem
-  exact ⟨c⟩
+theorem nonempty_generic (M : Model R K C toK) [IrreducibleSpace M.total] : Nonempty C :=
+  (nonempty_genericFiber_of_base_ne_closedPoint R K M.toBase
+    (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))).map
+    M.genericFiberIso.hom.left
 
 /-- A morphism of total spaces over the base respects the chosen identifications of generic fibres
 as soon as it carries the chosen generic fibre of `M` to that of `N`. This is the converse of

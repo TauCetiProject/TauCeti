@@ -39,15 +39,13 @@ Generic-fibre specializations over a discrete valuation ring and for `TauCeti.Mo
 
 ## Main declarations
 
-In the namespace `TauCeti.AlgebraicGeometry.LineBundleClass` (alongside
-`TauCeti.AlgebraicGeometry.uniqueFactorizationMonoid_stalk_of_isOpenImmersion`):
+In the namespace `TauCeti.AlgebraicGeometry.LineBundleClass`:
 
 * `pullback_mk_toInvertibleSheaf_vanishingIdeal_closure_singleton_of_isOpenImmersion` and
   `pullback_mk_toInvertibleSheaf_vanishingIdeal_closure_singleton_eq_one_of_notMem_range`: pulling
   back the invertible ideal sheaf of `closure {x}` along an open immersion;
-*
-`toAdditive_pullbackHom_classGroupAddEquivLineBundleClassOfUniqueFactorizationMonoid_divisorClass`:
-  compatibility of `Cl ≃+ Pic` with pullback along a nonempty open immersion;
+* `toAdditive_pullbackHom_classGroupAddEquivLineBundleClassOfUniqueFactorizationMonoid_divisorClass`
+  proves compatibility of `Cl ≃+ Pic` with pullback along a nonempty open immersion;
 * `pullback_surjective_of_isOpenImmersion` and `pullback_eq_one_iff_of_isOpenImmersion`:
   surjectivity and kernel characterization of `Pic(X) → Pic(U)` on locally factorial Noetherian
   integral schemes, with regular codimension-at-most-two specializations
@@ -67,13 +65,6 @@ open CategoryTheory TopologicalSpace Order _root_.AlgebraicGeometry
 universe u
 
 namespace TauCeti.AlgebraicGeometry
-
-/-- Transferring factorial local rings along an open immersion `j : U ⟶ X`. -/
-theorem uniqueFactorizationMonoid_stalk_of_isOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X)
-    [IsOpenImmersion j] [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)] (u : U) :
-    UniqueFactorizationMonoid (U.presheaf.stalk u) :=
-  (asIso (j.stalkMap u)).commRingCatIsoToRingEquiv.toMulEquiv.uniqueFactorizationMonoid
-    inferInstance
 
 namespace LineBundleClass
 

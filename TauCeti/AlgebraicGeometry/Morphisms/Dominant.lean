@@ -247,9 +247,9 @@ theorem ext_of_functionFieldMap_eq (S : Scheme.{u}) [X.Over S] [Y.Over S] [IsRed
 
 end Scheme.Hom
 
-/-- A dominant open immersion between irreducible schemes induces an isomorphism on generic stalks
+/-- An open immersion between irreducible schemes induces an isomorphism on generic stalks
 (function fields when the schemes are integral). -/
-instance isIso_functionFieldMap_of_isOpenImmersion (j : X ⟶ Y) [IsOpenImmersion j] [IsDominant j] :
+instance isIso_functionFieldMap_of_isOpenImmersion (j : X ⟶ Y) [IsOpenImmersion j] :
     IsIso j.functionFieldMap := by
   rw [Scheme.Hom.functionFieldMap]
   have hIso : ∀ {x y : Y} (h : x = y),

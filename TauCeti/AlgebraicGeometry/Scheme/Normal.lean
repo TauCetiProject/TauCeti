@@ -51,6 +51,8 @@ use `IsNormalScheme (Spec R)` for it.
 * `TauCeti.AlgebraicGeometry.IsNormalScheme.isDiscreteValuationRing_stalk`: on a locally
   Noetherian normal scheme, the local ring at a point of coheight one is a discrete valuation
   ring, by the ring-level `IsDiscreteValuationRing.of_ringKrullDim_eq_one`.
+* `TauCeti.AlgebraicGeometry.uniqueFactorizationMonoid_stalk_of_isOpenImmersion`: open immersions
+  preserve factoriality of local rings.
 * `TauCeti.AlgebraicGeometry.IsNormalScheme.of_uniqueFactorizationMonoid_stalk`: a scheme whose
   local rings are unique factorization domains is normal (instance).
 
@@ -213,6 +215,13 @@ theorem IsNormalScheme.isDiscreteValuationRing_stalk [IsLocallyNoetherian X] [Is
     rw [ringKrullDim_stalk_eq_coheight]
     simp [hx]
   exact IsDiscreteValuationRing.of_ringKrullDim_eq_one hdim
+
+/-- Transferring factorial local rings along an open immersion `j : U ⟶ X`. -/
+theorem uniqueFactorizationMonoid_stalk_of_isOpenImmersion {U : Scheme.{u}} (j : U ⟶ X)
+    [IsOpenImmersion j] [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)] (u : U) :
+    UniqueFactorizationMonoid (U.presheaf.stalk u) :=
+  (asIso (j.stalkMap u)).commRingCatIsoToRingEquiv.toMulEquiv.uniqueFactorizationMonoid
+    inferInstance
 
 /-- A scheme whose local rings are unique factorization domains is normal. -/
 instance IsNormalScheme.of_uniqueFactorizationMonoid_stalk

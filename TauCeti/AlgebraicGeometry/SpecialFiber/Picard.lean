@@ -11,12 +11,13 @@ public import TauCeti.AlgebraicGeometry.SpecialFiber.Components
 /-!
 # Restriction of line-bundle classes to the generic fibre over a discrete valuation ring
 
-Let `R` be a discrete valuation ring with fraction ring `K`, and let `toBase : X ⟶ Spec R` be a
-regular Noetherian integral scheme all of whose points have codimension at most two and whose
-generic point does not map to the closed point of `Spec R`. Since `genericFiberι R K toBase` is a
-nonempty open immersion whose image is `{x : X | toBase x ≠ closedPoint R}`
-(`TauCeti.range_genericFiberι_eq_setOf_base_ne_closedPoint`), applying the open-restriction exact
-sequence of `TauCeti.AlgebraicGeometry.LineBundle.OpenRestriction` shows that:
+Let `R` be a discrete valuation ring with fraction ring `K`, and let `X` be a regular Noetherian
+integral scheme with a morphism `toBase : X ⟶ Spec R`, all of whose points have codimension at most
+two and whose generic point does not map to the closed point of `Spec R`. Since
+`genericFiberι R K toBase` is a nonempty open immersion whose image is
+`{x : X | toBase x ≠ closedPoint R}` (`TauCeti.range_genericFiberι_eq_setOf_base_ne_closedPoint`),
+applying the open-restriction exact sequence of
+`TauCeti.AlgebraicGeometry.LineBundle.OpenRestriction` shows that:
 
 1. Restriction `LineBundleClass.pullback (genericFiberι R K toBase)` from `Pic(X)` to `Pic(X_K)` is
    surjective (`TauCeti.pullback_genericFiberι_surjective`).

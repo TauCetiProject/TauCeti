@@ -32,6 +32,11 @@ proves the converse (*algebraic Hartogs' principle*) in two settings:
 
 ## Main declarations
 
+* `TauCeti.AlgebraicGeometry.uniqueFactorizationMonoid_stalk_of_forall_coheight_le_one` and
+  `TauCeti.AlgebraicGeometry.IsNormalScheme.of_forall_coheight_le_one`: a scheme of dimension at
+  most one whose local rings are domains and whose codimension-one local rings are discrete
+  valuation rings has factorial local rings and is normal.
+
 In the namespace `TauCeti.AlgebraicGeometry.Scheme`:
 
 * `exists_algebraMap_stalk_eq_of_ord_nonneg`: at a codimension-one point whose local ring is a
@@ -76,6 +81,34 @@ namespace TauCeti
 namespace AlgebraicGeometry
 
 universe u
+
+/-- On a scheme of dimension at most one whose local rings are domains and whose codimension-one
+local rings are discrete valuation rings, every local ring is a unique factorization domain: a
+field in codimension zero and a discrete valuation ring in codimension one. -/
+theorem uniqueFactorizationMonoid_stalk_of_forall_coheight_le_one {X : Scheme.{u}}
+    [∀ x : X, IsDomain (X.presheaf.stalk x)]
+    [hDVR : ∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
+    (hX : ∀ x : X, coheight x ≤ 1) (x : X) :
+    UniqueFactorizationMonoid (X.presheaf.stalk x) := by
+  rcases eq_or_lt_of_le (hX x) with hx | hx
+  · have := hDVR ⟨x, hx⟩
+    infer_instance
+  · have hdim : Ring.KrullDimLE 0 (X.presheaf.stalk x) :=
+      krullDimLE_of_coheight_le (Order.lt_one_iff.mp hx).le
+    let : Field (X.presheaf.stalk x) :=
+      (Ring.isField_iff_maximal_bot.mpr
+        (Ring.krullDimLE_zero_iff.mp hdim ⊥ Ideal.isPrime_bot)).toField
+    infer_instance
+
+/-- A scheme of dimension at most one whose local rings are domains and whose codimension-one local
+rings are discrete valuation rings is normal. -/
+theorem IsNormalScheme.of_forall_coheight_le_one {X : Scheme.{u}}
+    [∀ x : X, IsDomain (X.presheaf.stalk x)]
+    [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
+    (hX : ∀ x : X, coheight x ≤ 1) :
+    IsNormalScheme X := by
+  have := uniqueFactorizationMonoid_stalk_of_forall_coheight_le_one hX
+  infer_instance
 
 variable {X : Scheme.{u}} [IsIntegral X] [IsLocallyNoetherian X]
 
@@ -135,6 +168,24 @@ theorem exists_germToFunctionField_eq_of_ord_nonneg
     exact exists_algebraMap_stalk_eq_of_ord_nonneg (hf ⟨y, hy'⟩ hy)
   · exact exists_algebraMap_stalk_eq_of_coheight_eq_zero (Order.lt_one_iff.mp hy') f
 
+/-- If every rational function with nonnegative order at all codimension-one points of `U` lifts to
+a regular section over `U`, then any rational unit with zero order on `U` lifts to a unit of
+`Γ(X, U)`. -/
+private theorem exists_unit_germToFunctionField_eq_of_forall_ord_nonneg
+    {U : X.Opens} [Nonempty U]
+    (hreg : ∀ g : X.functionField,
+      (∀ y : CodimensionOnePoint X, (y : X) ∈ U → 0 ≤ X.ord g y) →
+        ∃ a : Γ(X, U), X.germToFunctionField U a = g)
+    {f : X.functionFieldˣ}
+    (hf : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → X.ord (f : X.functionField) y = 0) :
+    ∃ a : Γ(X, U)ˣ, X.germToFunctionField U (a : Γ(X, U)) = (f : X.functionField) := by
+  obtain ⟨a, ha⟩ := hreg (f : X.functionField) fun y hy ↦ (hf y hy).ge
+  obtain ⟨b, hb⟩ := hreg ((f⁻¹ : X.functionFieldˣ) : X.functionField) fun y hy ↦ by
+    rw [Units.val_inv_eq_inv_val, _root_.AlgebraicGeometry.Scheme.ord_inv, hf y hy, neg_zero]
+  have hab : a * b = 1 := X.germToFunctionField_injective U <| by
+    rw [map_mul, ha, hb, map_one, Units.mul_inv]
+  exact ⟨⟨a, b, hab, (mul_comm b a).trans hab⟩, ha⟩
+
 /-- **A rational function without zeros or poles is a regular unit.** On a locally Noetherian
 integral scheme, let `U` be a nonempty open subset of dimension at most one whose codimension-one
 local rings are discrete valuation rings. A nonzero rational function whose order vanishes at
@@ -147,16 +198,9 @@ theorem exists_unit_germToFunctionField_eq_of_ord_eq_zero
       IsDiscreteValuationRing (X.presheaf.stalk (y : X)))
     (hU : ∀ y ∈ U, coheight y ≤ 1) {f : X.functionFieldˣ}
     (hf : ∀ (y : CodimensionOnePoint X), (y : X) ∈ U → X.ord (f : X.functionField) y = 0) :
-    ∃ a : Γ(X, U)ˣ, X.germToFunctionField U (a : Γ(X, U)) = (f : X.functionField) := by
-  obtain ⟨a, ha⟩ := exists_germToFunctionField_eq_of_ord_nonneg hDVR hU
-    (f := (f : X.functionField)) fun y hy ↦ (hf y hy).ge
-  obtain ⟨b, hb⟩ := exists_germToFunctionField_eq_of_ord_nonneg hDVR hU
-    (f := ((f⁻¹ : X.functionFieldˣ) : X.functionField)) fun y hy ↦ by
-      rw [Units.val_inv_eq_inv_val, AlgebraicGeometry.Scheme.ord_inv, hf y hy, neg_zero]
-  have hab : a * b = 1 := by
-    refine X.germToFunctionField_injective U ?_
-    rw [map_mul, ha, hb, map_one, Units.mul_inv]
-  exact ⟨⟨a, b, hab, (mul_comm b a).trans hab⟩, ha⟩
+    ∃ a : Γ(X, U)ˣ, X.germToFunctionField U (a : Γ(X, U)) = (f : X.functionField) :=
+  exists_unit_germToFunctionField_eq_of_forall_ord_nonneg
+    (fun _ ↦ exists_germToFunctionField_eq_of_ord_nonneg hDVR hU) hf
 
 section Hartogs
 
@@ -224,15 +268,9 @@ on `U`. -/
 theorem exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isNormalScheme {U : X.Opens}
     [Nonempty U] {f : X.functionFieldˣ}
     (hf : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → X.ord (f : X.functionField) y = 0) :
-    ∃ a : Γ(X, U)ˣ, X.germToFunctionField U (a : Γ(X, U)) = (f : X.functionField) := by
-  obtain ⟨a, ha⟩ := exists_germToFunctionField_eq_of_ord_nonneg_of_isNormalScheme
-    (f := (f : X.functionField)) fun y hy ↦ (hf y hy).ge
-  obtain ⟨b, hb⟩ := exists_germToFunctionField_eq_of_ord_nonneg_of_isNormalScheme
-    (f := ((f⁻¹ : X.functionFieldˣ) : X.functionField)) fun y hy ↦ by
-      rw [Units.val_inv_eq_inv_val, _root_.AlgebraicGeometry.Scheme.ord_inv, hf y hy, neg_zero]
-  have hab : a * b = 1 := X.germToFunctionField_injective U <| by
-    rw [map_mul, ha, hb, map_one, Units.mul_inv]
-  exact ⟨⟨a, b, hab, (mul_comm b a).trans hab⟩, ha⟩
+    ∃ a : Γ(X, U)ˣ, X.germToFunctionField U (a : Γ(X, U)) = (f : X.functionField) :=
+  exists_unit_germToFunctionField_eq_of_forall_ord_nonneg
+    (fun _ ↦ exists_germToFunctionField_eq_of_ord_nonneg_of_isNormalScheme) hf
 
 end Hartogs
 
