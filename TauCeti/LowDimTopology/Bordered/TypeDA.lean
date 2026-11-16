@@ -190,6 +190,11 @@ private theorem boxAct_apply (dM : M →ₗ[R] M) (n : ℕ) (a : Fin n → A) (�
   rw [boxAct, add_apply, LinearMap.add_apply, diffAct_apply, LinearMap.compMultilinearMap_apply,
     continuationMapₗ_apply]
 
+/-- The operation `m_{n+1}` of `M ⊠ P`, `n ≥ 1`, is right multiplication by `δₙ`. -/
+private theorem boxAct_apply_of_ne_zero (dM : M →ₗ[R] M) {n : ℕ} (hn : n ≠ 0) (a : Fin n → A)
+    (ψ : Y → M) : P.boxAct dM n a ψ = continuationMap R M (P.coeff n a) ψ := by
+  rw [boxAct_apply, ite_eq_right hn, zero_add]
+
 /-- A coefficient matrix only depends on the length and the entries of its tuple of inputs. -/
 private theorem coeff_eq_of_eq {m n : ℕ} (h : m = n) {b : Fin m → A} {a : Fin n → A}
     (hab : ∀ l, b l = a (Fin.cast h l)) : P.coeff m b = P.coeff n a := by
@@ -268,8 +273,7 @@ noncomputable def boxModule {dM : M →ₗ[R] M} (hM : IsUngradedDGRightModule d
         continuationMap R M (ungradedStasheffDiff P.coeff dA n a : Matrix Y Y B) φ := by
       rw [ungradedStasheffDiff_apply, ungradedStasheffDiff_def, continuationMap_sum,
         LinearMap.sum_apply]
-      refine Finset.sum_congr rfl fun l _ => ?_
-      rw [boxAct_apply, ite_eq_right (Nat.pos_iff_ne_zero.mp l.pos), zero_add]
+      exact Finset.sum_congr rfl fun l _ => P.boxAct_apply_of_ne_zero dM l.pos.ne' _ _
     have hmul : ungradedStasheffMul (P.boxAct dM) n a φ =
         continuationMap R M (ungradedStasheffMul P.coeff n a : Matrix Y Y B) φ := by
       cases n with
@@ -277,8 +281,7 @@ noncomputable def boxModule {dM : M →ₗ[R] M} (hM : IsUngradedDGRightModule d
       | succ n =>
         rw [ungradedStasheffMul_succ_apply, ungradedStasheffMul_succ, continuationMap_sum,
           LinearMap.sum_apply]
-        refine Finset.sum_congr rfl fun l _ => ?_
-        rw [boxAct_apply, ite_eq_right (Nat.pos_iff_ne_zero.mp l.pos), zero_add]
+        exact Finset.sum_congr rfl fun l _ => P.boxAct_apply_of_ne_zero dM l.pos.ne' _ _
     rw [hcomp, hdiff, hmul, add_self_eq_zero_of_charTwo R, add_zero]
     calc _ = continuationMap R M (typeDAComp P.coeff n a + (P.coeff n a).map dB +
           ungradedStasheffDiff P.coeff dA n a + ungradedStasheffMul P.coeff n a) φ := by
@@ -368,7 +371,7 @@ theorem boxModule_act_apply (hM : IsUngradedDGRightModule dB dM) (n : ℕ) (a : 
 theorem boxModule_act_eq_zero (hM : IsUngradedDGRightModule dB dM) {n : ℕ} (hn : n ≠ 0)
     (hP : P.coeff n = 0) : (P.boxModule hM).act n = 0 :=
   MultilinearMap.ext fun a => LinearMap.ext fun ψ => by
-    simp only [boxModule_act_apply, hP, ite_eq_right hn, zero_add, zero_apply,
+    simp only [boxModule_act, P.boxAct_apply_of_ne_zero dM hn, hP, zero_apply,
       continuationMap_zero, LinearMap.zero_apply]
 
 /-- Evaluating the operations of `M ⊠ P` on a tensor: the differential of `M` on the empty tensor,
@@ -428,7 +431,8 @@ theorem typeABoxDifferential_boxModule_apply (hM : IsUngradedDGRightModule dB dM
   congr 1
   · -- Only the empty path from `z` to itself contributes the differential of `M`.
     rw [Finset.sum_eq_single 0 (fun n _ hn => Finset.sum_eq_zero fun x _ => by
-      rw [ite_eq_right fun h => hn h.1, Pi.zero_apply]) (by simp; omega),
+      rw [ite_eq_right fun h => hn h.1, Pi.zero_apply])
+        (fun h => (h (Finset.mem_range.mpr hK1)).elim),
       Finset.sum_eq_single z (fun x _ hx => by
         rw [ite_eq_right fun h => hx h.2, Pi.zero_apply])
         (by simp), ite_eq_left ⟨rfl, rfl⟩]
@@ -438,6 +442,9 @@ theorem typeABoxDifferential_boxModule_apply (hM : IsUngradedDGRightModule dB dM
           ∑ y, op (PiTensorProduct.lift (P.coeff k) (N.iteratedCoeff k x z) y y') • φ x y :=
       continuationMap_apply (R := R) (M := M) _ _ _
     simp only [P.boxCoeff_eq_sum N hKl, Finset.op_sum, Finset.sum_smul, hL]
+    -- Reorder the sum `∑ k, ∑ x, ∑ y` over lengths `k`, sources `x` and generators `y` of `P` into
+    -- `∑ y, ∑ x, ∑ k`: swap the outer `k` and `x`, then `k` and `y` under `x`, then the outer
+    -- `x` and `y`.
     exact (Finset.sum_comm.trans (Finset.sum_congr rfl fun x _ => Finset.sum_comm)).trans
       Finset.sum_comm
 
