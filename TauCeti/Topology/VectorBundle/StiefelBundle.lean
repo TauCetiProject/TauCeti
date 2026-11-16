@@ -445,12 +445,6 @@ theorem coe_vecProj_apply {k : ℕ} (i : Fin k) (p : StiefelBundle F E k) :
     (vecProj i p : TotalSpace F E) = ⟨p.proj, (p.frame : Fin k → E p.proj) i⟩ :=
   (rfl)
 
-omit [TopologicalSpace B] [TopologicalSpace (TotalSpace F E)]
-  [∀ b, InnerProductSpace ℝ (E b)] in
-/-- A point `q : S(E)` viewed as a unit vector in the fibre `E q.1.proj`. -/
-abbrev unitSphereOfSphereBundle (q : sphereBundle F E) : sphere (0 : E q.1.proj) 1 :=
-  ⟨q.1.2, mem_sphere_zero_iff_norm.2 (mem_sphereBundle.1 q.2)⟩
-
 section TopologicalFiber
 
 variable [TopologicalSpace F] [FiberBundle F E]
@@ -509,12 +503,6 @@ theorem proj_oneHomeomorphSphereBundle_symm (q : sphereBundle F E) :
 
 theorem vecProj_fiberIncl {k : ℕ} (i : Fin k) (b : B) (v : stiefel (E b) k) :
     vecProj i (fiberIncl F E k b v) = sphereBundleFiberIncl F E b (stiefelProj (E b) k i v) :=
-  Subtype.ext (by simp)
-
-omit [∀ b, InnerProductSpace ℝ (E b)] in
-@[simp]
-theorem sphereBundleFiberIncl_unitSphereOfSphereBundle (q : sphereBundle F E) :
-    sphereBundleFiberIncl F E q.1.proj (unitSphereOfSphereBundle q) = q :=
   Subtype.ext (by simp)
 
 /-- **Inclusion of the vertical `k`-frame fibre `V_k(q^⊥) → V_{k+1}(E)` over `q : S(E)`.** It

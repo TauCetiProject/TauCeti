@@ -72,6 +72,11 @@ theorem coe_sphereBundleFiberIncl_apply (b : B) (p : sphere (0 : E b) 1) :
     (sphereBundleFiberIncl F E b p : TotalSpace F E) = ⟨b, (p : E b)⟩ :=
   (rfl)
 
+@[simp]
+theorem sphereBundleFiberIncl_unitSphereOfSphereBundle (q : sphereBundle F E) :
+    sphereBundleFiberIncl F E q.1.proj (unitSphereOfSphereBundle q) = q :=
+  Subtype.ext (by simp)
+
 theorem sphereBundleProj_sphereBundleFiberIncl (b : B) (p : sphere (0 : E b) 1) :
     sphereBundleProj F E (sphereBundleFiberIncl F E b p) = b :=
   sphereBundleProj_apply F E _

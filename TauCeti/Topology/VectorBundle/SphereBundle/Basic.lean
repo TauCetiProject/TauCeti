@@ -16,7 +16,8 @@ Let `E → B` be a real vector bundle whose fibres carry norms, such that the fi
 continuous function on the total space; for instance a continuous Riemannian vector bundle
 (`TauCeti.continuous_norm_bundle`). Its unit disc bundle `D(E)` and unit sphere bundle `S(E)` are
 the vectors of norm at most one and exactly one (`TauCeti.discBundle`, `TauCeti.sphereBundle`).
-The sphere bundle projects continuously onto the base (`TauCeti.sphereBundleProj`).
+Each point of `S(E)` gives a unit vector in its fibre (`TauCeti.unitSphereOfSphereBundle`), and
+the sphere bundle projects continuously onto the base (`TauCeti.sphereBundleProj`).
 
 Radial rescaling compares them with the Thom pair `(E, E₀)` of the bundle, where `E₀` is the
 complement of the zero section:
@@ -52,7 +53,7 @@ public section
 
 noncomputable section
 
-open Bundle CategoryTheory Limits Set
+open Bundle CategoryTheory Limits Metric Set
 open scoped unitInterval ContinuousMap
 
 universe w v u
@@ -89,6 +90,11 @@ theorem sphereBundle_subset_discBundle : sphereBundle F E ⊆ discBundle F E :=
 theorem sphereBundle_subset_zeroSectionCompl : sphereBundle F E ⊆ zeroSectionCompl F E :=
   fun _ hv ↦
   mem_zeroSectionCompl.2 (norm_ne_zero_iff.1 ((mem_sphereBundle.1 hv).symm ▸ one_ne_zero))
+
+variable {F E} in
+/-- A point `q : S(E)` viewed as a unit vector in the fibre `E q.1.proj`. -/
+abbrev unitSphereOfSphereBundle (q : sphereBundle F E) : sphere (0 : E q.1.proj) 1 :=
+  ⟨q.1.2, mem_sphere_zero_iff_norm.2 (mem_sphereBundle.1 q.2)⟩
 
 variable [TopologicalSpace (TotalSpace F E)]
 
