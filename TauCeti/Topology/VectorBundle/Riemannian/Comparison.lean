@@ -208,7 +208,6 @@ end Norm
 namespace Bundle.ContinuousRiemannianMetric
 
 variable [∀ x, TopologicalSpace (E x)] [∀ x, AddCommGroup (E x)] [∀ x, Module ℝ (E x)]
-  [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousConstSMul ℝ (E x)]
   [FiberBundle F E] [VectorBundle ℝ F E]
 
 /-- **A metric is bounded by a multiple of another over a compact set.** For two continuous
@@ -217,6 +216,16 @@ Riemannian metrics `g` and `g₀` on a vector bundle and a compact subset `K` of
 theorem exists_inner_le_mul_inner (g g₀ : ContinuousRiemannianMetric F E) {K : Set B}
     (hK : IsCompact K) :
     ∃ C > 0, ∀ x ∈ K, ∀ v : E x, g.inner x v v ≤ C * g₀.inner x v v := by
+  -- Each fibre is isomorphic to the model fibre as a topological vector space, which provides the
+  -- instances needed to install `g₀` as the fibre inner product.
+  have (x : B) : IsTopologicalAddGroup (E x) :=
+    let e := (trivializationAt F E x).continuousLinearEquivAt ℝ x
+      (FiberBundle.mem_baseSet_trivializationAt' x)
+    e.toHomeomorph.isInducing.isTopologicalAddGroup e
+  have (x : B) : ContinuousConstSMul ℝ (E x) :=
+    let e := (trivializationAt F E x).continuousLinearEquivAt ℝ x
+      (FiberBundle.mem_baseSet_trivializationAt' x)
+    e.toHomeomorph.isInducing.continuousConstSMul id (map_smul e _ _)
   let _ : RiemannianBundle E := ⟨g₀.toRiemannianMetric⟩
   obtain ⟨C, hC⟩ :=
     hK.exists_bound_of_continuousOn_bundle (b := id) (φ := g.inner) g.continuous.continuousOn
