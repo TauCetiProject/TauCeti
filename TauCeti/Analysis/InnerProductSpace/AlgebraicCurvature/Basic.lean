@@ -49,10 +49,9 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 * `TauCeti.FourTensor.IsAlgebraicCurvature`: the pair antisymmetries, pair interchange and the
   first Bianchi identity.
 * `TauCeti.FourTensor.algebraicCurvatureSubmodule`: the submodule of algebraic curvature tensors.
-* `TauCeti.FourTensor.toLinearMap₄` and `TauCeti.FourTensor.ofLinearMap₄`: currying a four-tensor
-  into a four-linear map, and its inverse on a finite-dimensional space.
-* `TauCeti.FourTensor.algebraicCurvatureLinearIsometryEquiv`: pullback of algebraic curvature
-  tensors along a linear isometric equivalence.
+* `TauCeti.FourTensor.toLinearMap₄`, `TauCeti.FourTensor.ofLinearMap₄`, and
+  `TauCeti.FourTensor.algebraicCurvatureLinearIsometryEquiv`: currying four-tensors and pullback
+  along linear isometric equivalences.
 * `TauCeti.FourTensor.ricci` and `TauCeti.FourTensor.scalar`: the Ricci and scalar contractions.
 * `TauCeti.FourTensor.kulkarniNomizu`: the Kulkarni–Nomizu product of two bilinear forms, as a
   four-tensor.
@@ -60,18 +59,16 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 
 ## Main statements
 
-* `TauCeti.FourTensor.abs_apply_le_norm_of_norm_eq_one`: unit-vector operator-norm bound
-  `|r ![u, v, z, w]| ≤ ‖r‖`.
-* `TauCeti.FourTensor.ofLinearMap₄_toLinearMap₄` and
-  `TauCeti.FourTensor.toLinearMap₄_ofLinearMap₄`: currying and uncurrying are mutual inverses in
-  finite dimension.
+* `TauCeti.FourTensor.abs_apply_le_norm_of_norm_eq_one`,
+  `TauCeti.FourTensor.ofLinearMap₄_toLinearMap₄`, `TauCeti.FourTensor.toLinearMap₄_ofLinearMap₄`:
+  unit-vector norm bound and currying inverses in finite dimension.
 * `TauCeti.FourTensor.isClosed_algebraicCurvatureSubmodule`: the submodule is closed.
 * `TauCeti.FourTensor.IsAlgebraicCurvature.compContinuousLinearMap`: pullback preserves algebraic
   curvature tensors.
 * `TauCeti.FourTensor.isAlgebraicCurvature_compContinuousLinearMap_iff`,
   `TauCeti.FourTensor.comap_compContinuousLinearMapL_algebraicCurvatureSubmodule`, and
-  `TauCeti.FourTensor.coe_algebraicCurvatureLinearIsometryEquiv`: a continuous linear (or linear
-  isometric) equivalence identifies the algebraic curvature tensors of the two spaces.
+  `TauCeti.FourTensor.coe_algebraicCurvatureLinearIsometryEquiv`: linear/isometric equivalences
+  identify algebraic curvature tensors.
 * `TauCeti.FourTensor.ricci_apply_orthonormalBasis` and
   `TauCeti.FourTensor.scalar_apply_orthonormalBasis`: the contractions in an orthonormal basis.
 * `TauCeti.FourTensor.ricci_compContinuousLinearMap_linearIsometryEquiv` and
@@ -280,50 +277,43 @@ theorem comap_compContinuousLinearMapL_algebraicCurvatureSubmodule (e : W ≃L[�
   ext r
   exact isAlgebraicCurvature_compContinuousLinearMap_iff e
 
-/-- Pullback of algebraic curvature tensors along a linear isometric equivalence `e : W ≃ₗᵢ[ℝ] V`,
-packaged as a `LinearIsometryEquiv` between the algebraic curvature submodules. -/
+/-- Pullback of algebraic curvature tensors along `e : W ≃ₗᵢ[ℝ] V` as a `LinearIsometryEquiv`. -/
 def algebraicCurvatureLinearIsometryEquiv (e : W ≃ₗᵢ[ℝ] V) :
     algebraicCurvatureSubmodule V ≃ₗᵢ[ℝ] algebraicCurvatureSubmodule W where
   toFun r := ⟨r.1.compContinuousLinearMap fun _ ↦ (e : W →L[ℝ] V),
     compContinuousLinearMap_mem_algebraicCurvatureSubmodule r.2 (e : W →L[ℝ] V)⟩
-  map_add' _ _ := by ext m; rfl
-  map_smul' _ _ := by ext m; rfl
+  map_add' _ _ := by ext; rfl
+  map_smul' _ _ := by ext; rfl
   invFun q := ⟨q.1.compContinuousLinearMap fun _ ↦ (e.symm : V →L[ℝ] W),
     compContinuousLinearMap_mem_algebraicCurvatureSubmodule q.2 (e.symm : V →L[ℝ] W)⟩
-  left_inv r := by ext m; simp
-  right_inv q := by ext m; simp
+  left_inv _ := by ext; simp
+  right_inv _ := by ext; simp
   norm_map' r := r.1.norm_compContinuous_linearIsometryEquiv fun _ ↦ e
 
 /-- Coercion of `algebraicCurvatureLinearIsometryEquiv` to `FourTensor`. -/
 @[simp]
 theorem coe_algebraicCurvatureLinearIsometryEquiv (e : W ≃ₗᵢ[ℝ] V)
-    (r : algebraicCurvatureSubmodule V) :
-    (algebraicCurvatureLinearIsometryEquiv e r).1 =
+    (r : algebraicCurvatureSubmodule V) : (algebraicCurvatureLinearIsometryEquiv e r).1 =
       r.1.compContinuousLinearMap fun _ ↦ (e : W →L[ℝ] V) := (rfl)
 
-/-- Evaluating a four-tensor on four unit vectors gives a real number of absolute value at most
-`‖r‖`. -/
+/-- Evaluating a four-tensor on four unit vectors has absolute value at most `‖r‖`. -/
 theorem abs_apply_le_norm_of_norm_eq_one (r : FourTensor V) {u v z w : V}
-    (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (hz : ‖z‖ = 1) (hw : ‖w‖ = 1) :
-    |r ![u, v, z, w]| ≤ ‖r‖ := by
+    (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (hz : ‖z‖ = 1) (hw : ‖w‖ = 1) : |r ![u, v, z, w]| ≤ ‖r‖ := by
   have h := r.le_opNorm ![u, v, z, w]
   rw [Real.norm_eq_abs, Fin.prod_univ_four] at h
   simpa only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, hu, hv, hz, hw,
     mul_one] using h
 
-/-- The curried real four-linear form underlying a continuous four-tensor, bundled as a linear map:
-`toLinearMap₄ r u v z w = r ![u, v, z, w]`. -/
+/-- Curried real four-linear form of a four-tensor: `toLinearMap₄ r u v z w = r ![u, v, z, w]`. -/
 def toLinearMap₄ : FourTensor V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ where
   toFun r := LinearMap.mk₂ ℝ
     (fun u v ↦ LinearMap.mk₂ ℝ (fun z w ↦ r ![u, v, z, w])
-      (fun z₁ z₂ w ↦ r.apply_add_third u v w z₁ z₂)
-      (fun c z w ↦ r.apply_smul_third u v w z c)
-      (fun z w₁ w₂ ↦ r.apply_add_fourth u v z w₁ w₂)
-      (fun c z w ↦ r.apply_smul_fourth u v z w c))
-    (fun u₁ u₂ v ↦ by ext z w; exact r.apply_add_first v z w u₁ u₂)
-    (fun c u v ↦ by ext z w; exact r.apply_smul_first v z w u c)
-    (fun u v₁ v₂ ↦ by ext z w; exact r.apply_add_second u z w v₁ v₂)
-    (fun c u v ↦ by ext z w; exact r.apply_smul_second u z w v c)
+      (fun _ _ _ ↦ r.apply_add_third ..) (fun _ _ _ ↦ r.apply_smul_third ..)
+      (fun _ _ _ ↦ r.apply_add_fourth ..) (fun _ _ _ ↦ r.apply_smul_fourth ..))
+    (fun _ _ _ ↦ by ext; exact r.apply_add_first ..)
+    (fun _ _ _ ↦ by ext; exact r.apply_smul_first ..)
+    (fun _ _ _ ↦ by ext; exact r.apply_add_second ..)
+    (fun _ _ _ ↦ by ext; exact r.apply_smul_second ..)
   map_add' _ _ := by ext; rfl
   map_smul' _ _ := by ext; rfl
 
@@ -369,16 +359,13 @@ theorem ofLinearMap₄_apply (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V �
 /-- On a finite-dimensional space, `ofLinearMap₄` is a left inverse to `toLinearMap₄`. -/
 @[simp]
 theorem ofLinearMap₄_toLinearMap₄ (r : FourTensor V) : ofLinearMap₄ (toLinearMap₄ r) = r := by
-  ext m
-  have hm : ![m 0, m 1, m 2, m 3] = m := by funext i; fin_cases i <;> rfl
+  ext m; have hm : ![m 0, m 1, m 2, m 3] = m := by funext i; fin_cases i <;> rfl
   simp [hm]
 
 /-- On a finite-dimensional space, `toLinearMap₄` is a left inverse to `ofLinearMap₄`. -/
 @[simp]
 theorem toLinearMap₄_ofLinearMap₄ (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ) :
-    toLinearMap₄ (ofLinearMap₄ T) = T := by
-  ext u v z w
-  simp
+    toLinearMap₄ (ofLinearMap₄ T) = T := by ext; simp
 
 /-- The Kulkarni–Nomizu product of two bilinear forms as a four-tensor, in the curvature
 convention `r(u, v, z, w) = g(R(u, v)w, z)`:
