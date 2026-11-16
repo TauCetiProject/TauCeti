@@ -62,8 +62,11 @@ On a window `[a, b] ⊆ (0, 1)` the slope is Lipschitz in the angle, uniformly i
 through a given point are unique (`TauCeti.eqOn_of_hasDerivWithinAt_circleContinuationSlope`) and,
 for a path continuous on the window, exist
 (`TauCeti.exists_eq_forall_mem_Icc_hasDerivWithinAt_circleContinuationSlope`). For small `δ`, the
-trajectories joining zeros of `W` of the same index are classified by the basins of their ends in
-`TauCeti.Analysis.Calculus.Morse.CircleContinuation.Basin`.
+trajectories preserving the Morse index of the end functions (from a source minimum to a target
+minimum, and from a source maximum to a target maximum, where the index for `W` drops by one) are
+classified by the basins of their ends in
+`TauCeti.Analysis.Calculus.Morse.CircleContinuation.Basin`, which also excludes the same-index
+connection from a source minimum to a target maximum.
 
 ## References
 
