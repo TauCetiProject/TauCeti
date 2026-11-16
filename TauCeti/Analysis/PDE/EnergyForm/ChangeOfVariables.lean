@@ -16,6 +16,7 @@ import TauCeti.Analysis.Calculus.FDeriv.EuclideanMatrix
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
 # Change of variables in divergence-form equations
@@ -223,9 +224,7 @@ theorem matrixBilinearForm_pullbackPrincipal_eq_bilinearComp
         (matrixBilinearForm (a (Φ x))).bilinearComp T.adjoint T.adjoint := by
   have hdet : (fderiv ℝ Φ x).det ≠ 0 := by
     have h : T.det * (fderiv ℝ Φ x).det = 1 := by
-      rw [ContinuousLinearMap.det, ContinuousLinearMap.det, ← LinearMap.det_comp]
-      exact (congrArg ContinuousLinearMap.det hT).trans (by
-        rw [ContinuousLinearMap.det, ContinuousLinearMap.coe_id, LinearMap.det_id])
+      rw [← ContinuousLinearMap.det_comp, hT, ContinuousLinearMap.det_id]
     exact right_ne_zero_of_mul_eq_one h
   -- `DΦ(x)* ∘ T* = (T ∘ DΦ(x))* = id`, so every covector is `DΦ(x)*` of its image under `T*`.
   have hinv (η : EuclideanSpace ℝ ι) : (fderiv ℝ Φ x).adjoint (T.adjoint η) = η := by

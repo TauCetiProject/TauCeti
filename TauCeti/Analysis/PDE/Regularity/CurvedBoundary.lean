@@ -7,12 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.FlatBoundary
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
-import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.PDE.EnergyForm.ChangeOfVariables
 import TauCeti.Analysis.PDE.Regularity.Interior
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Flattening
-import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.Wkp.Gluing
 
 /-!
@@ -88,32 +86,6 @@ section Helpers
 variable {U U' : Opens (EuclideanSpace ℝ ι)} {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {L L' : ℝ}
 
-/-- For mutually inverse changes of variables, `DΨ(Φ x)` is a left inverse of `DΦ(x)`. -/
-private theorem fderiv_comp_fderiv_eq_id {k k' : ℕ} {c c' : ℝ}
-    (hΦ : Wkp.IsChangeOfVariables k U' U Φ L c)
-    (hΨ : Wkp.IsChangeOfVariables k' U U' Ψ L' c') (hΨΦ : LeftInvOn Ψ Φ U')
-    (hΦΨ : RightInvOn Ψ Φ U) {x : EuclideanSpace ℝ ι} (hx : x ∈ (U' : Set _)) :
-    fderiv ℝ Ψ (Φ x) ∘L fderiv ℝ Φ x = ContinuousLinearMap.id ℝ _ := by
-  have h := fderiv_comp_fderiv_eq_id_of_invOn hΨ.differentiableOn hΨ.mapsTo hΦ.differentiableOn
-    hΨΦ hΦΨ (hΦ.mapsTo hx)
-  rwa [hΨΦ hx] at h
-
-/-- Mutually inverse changes of variables with Jacobian determinants at least one in absolute
-value have Jacobian determinants of absolute value one. -/
-private theorem abs_det_fderiv_eq_one {k k' : ℕ}
-    (hΦ : Wkp.IsChangeOfVariables k U' U Φ L 1)
-    (hΨ : Wkp.IsChangeOfVariables k' U U' Ψ L' 1) (hΨΦ : LeftInvOn Ψ Φ U')
-    (hΦΨ : RightInvOn Ψ Φ U) {x : EuclideanSpace ℝ ι} (hx : x ∈ (U' : Set _)) :
-    |(fderiv ℝ Φ x).det| = 1 := by
-  have h : (fderiv ℝ Ψ (Φ x)).det * (fderiv ℝ Φ x).det = 1 := by
-    rw [ContinuousLinearMap.det, ContinuousLinearMap.det, ← LinearMap.det_comp]
-    exact (congrArg ContinuousLinearMap.det (fderiv_comp_fderiv_eq_id hΦ hΨ hΨΦ hΦΨ hx)).trans
-      (by rw [ContinuousLinearMap.det, ContinuousLinearMap.coe_id, LinearMap.det_id])
-  have h1 := hΦ.le_abs_det x hx
-  have h2 := hΨ.le_abs_det (Φ x) (hΦ.mapsTo hx)
-  have h3 : |(fderiv ℝ Ψ (Φ x)).det| * |(fderiv ℝ Φ x).det| = 1 := by rw [← abs_mul, h, abs_one]
-  nlinarith
-
 /-- **The principal coefficient on the flat side.** Let `Φ` and `Ψ` be mutually inverse changes of
 variables of order two with Jacobian determinants at least one in absolute value, and let `Φ` map
 a nonempty subset `s` of a compact convex subset of its domain into `t`. If `a` is uniformly
@@ -130,9 +102,9 @@ private theorem exists_uniformlyEllipticOn_and_lipschitzOnWith_pullbackPrincipal
     ∃ (lam' Lam' : ℝ) (K' : ℝ≥0), UniformlyEllipticOn s (pullbackPrincipal Φ a) lam' Lam' ∧
       LipschitzOnWith K' (fun x => matrixBilinearForm (pullbackPrincipal Φ a x)) s := by
   have hcomp (x : EuclideanSpace ℝ ι) (hx : x ∈ s) :=
-    fderiv_comp_fderiv_eq_id hΦ hΨ hΨΦ hΦΨ (hBU (hs hx))
+    hΦ.fderiv_comp_fderiv_eq_id hΨ hΨΦ hΦΨ (hBU (hs hx))
   have habs (x : EuclideanSpace ℝ ι) (hx : x ∈ s) : |(fderiv ℝ Φ x).det| = 1 :=
-    abs_det_fderiv_eq_one hΦ hΨ hΨΦ hΦΨ (hBU (hs hx))
+    hΦ.abs_det_fderiv_eq_one hΨ hΨΦ hΦΨ (hBU (hs hx))
   have hΨL (x : EuclideanSpace ℝ ι) (hx : x ∈ s) : ‖fderiv ℝ Ψ (Φ x)‖ ≤ L' :=
     hΨ.norm_fderiv_le (k := 1) _ (hΦ.mapsTo (hBU (hs hx)))
   -- Ellipticity: `DΦ` is bounded by `L`, and `DΨ(Φ x)` inverts it with norm at most `L'`.
@@ -188,81 +160,6 @@ private theorem exists_forall_energyFormH1_compL_restrictL_eq [DecidableEq ι]
     hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det hΨ.differentiableOn hΨ.mapsTo hΨ.norm_fderiv_le
     hΨ.pos hΨ.le_abs_det hΨΦ hΦΨ (energyFormH1_restrictL_eq_setIntegral hD hu) v]
   exact integral_congr_ae (hf'.coeFn_toLp.mono fun x hx => by simp only [hx])
-
-/-- **Zero boundary values on the flat side.** Let `Φ` be a change of variables from `Ω'` into
-`Ω ∩ O` with a continuous inverse `Ψ`. If `χ u ∈ H¹₀(Ω)` for every smooth `χ` compactly supported
-in `O`, then `ψ (u ∘ Φ) ∈ H¹₀(Ω')` for every smooth `ψ` compactly supported in an open `U''` that
-`Φ` maps into `O`. -/
-private theorem exists_w1p0_value_ae_eq_mul_value_compL
-    {Omega O Ω' U'' : Opens (EuclideanSpace ℝ ι)}
-    {c : ℝ} (hΦ : Wkp.IsChangeOfVariables 1 Ω' (Omega ⊓ O) Φ L c) (hΦc : Continuous Φ)
-    (hΨ : ContinuousOn Ψ (Omega ⊓ O : Opens _)) (hΨmaps : MapsTo Ψ (Omega ⊓ O : Opens _) Ω')
-    (hΨΦ : LeftInvOn Ψ Φ Ω') (hΦU'' : MapsTo Φ U'' O) {u : W1p mu Omega 2}
-    (hu0 : ∀ χ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ χ → HasCompactSupport χ →
-      tsupport χ ⊆ O → ∃ v : W1p0 mu Omega 2,
-        W1p.value (v : W1p mu Omega 2) =ᵐ[mu.restrict Omega] fun x => χ x * W1p.value u x)
-    (ψ : EuclideanSpace ℝ ι → ℝ) (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
-    (hψs : tsupport ψ ⊆ U'') :
-    ∃ v : W1p0 mu Ω' 2, W1p.value (v : W1p mu Ω' 2) =ᵐ[mu.restrict Ω'] fun x => ψ x *
-      W1p.value (W1p.compL Φ ENNReal.ofNat_ne_top hΦ.differentiableOn hΦ.injOn hΦ.mapsTo
-        hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det (W1p.restrictL inf_le_left u)) x := by
-  have hp : (2 : ENNReal) ≠ ⊤ := ENNReal.ofNat_ne_top
-  -- A cutoff `χ`, compactly supported in `O`, equal to one on `Φ (tsupport ψ)`.
-  have hK : IsCompact (Φ '' tsupport ψ) := hψc.isCompact.image hΦc
-  obtain ⟨χ, -, hχ, -, hχ1, hχc, hχs, -, -, -⟩ :=
-    hK.exists_contDiff_cutoff_with_bounds O.isOpen (hΦU''.mono_left hψs).image_subset
-  -- `χ u ∈ H¹₀(Ω)` restricts to `H¹₀(Ω ∩ O)` and pulls back to `H¹₀(Ω')`.
-  obtain ⟨v, hv⟩ := hu0 χ hχ hχc hχs
-  have hv0 : ∀ᵐ x ∂mu.restrict Omega, x ∉ tsupport χ → W1p.value (v : W1p mu Omega 2) x = 0 := by
-    filter_upwards [hv] with x hx hxχ
-    rw [hx, image_eq_zero_of_notMem_tsupport hxχ, zero_mul]
-  have hvO := W1p.restrictL_mem_w1p0Submodule_of_isCompact hχc hχs v.2 hv0
-  have hvΩ' := W1p.compL_mem_w1p0Submodule_of_leftInvOn Φ hp hΦ.differentiableOn hΦ.injOn
-    hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det hΨ hΨmaps hΨΦ hvO
-  obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
-  refine ⟨⟨_, W1p.contDiffSMul_mem_w1p0Submodule hψ hM (fun x _ => hψM x) (fun x _ => hgradM x)
-    hvΩ'⟩, ?_⟩
-  have hΩO : ((Omega ⊓ O : Opens _) : Set (EuclideanSpace ℝ ι)) ⊆ Omega := fun x hx => hx.1
-  filter_upwards [W1p.value_contDiffSMul_ae (mu := mu) (p := 2) hψ hM (fun x _ => hψM x)
-      (fun x _ => hgradM x) _,
-    W1p.value_compL_ae Φ hp hΦ.differentiableOn hΦ.injOn hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos
-      hΦ.le_abs_det (W1p.restrictL inf_le_left (v : W1p mu Omega 2)),
-    W1p.value_compL_ae Φ hp hΦ.differentiableOn hΦ.injOn hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos
-      hΦ.le_abs_det (W1p.restrictL inf_le_left u),
-    hΦ.ae_comp (W1p.value_restrictL_ae inf_le_left (v : W1p mu Omega 2)),
-    hΦ.ae_comp (W1p.value_restrictL_ae inf_le_left u),
-    hΦ.ae_comp (ae_restrict_of_ae_restrict_of_subset hΩO hv)] with x h1 h2 h3 h4 h5 h6
-  rw [h1, smul_eq_mul, h2, h3, h4, h5, h6]
-  by_cases hx : x ∈ tsupport ψ
-  · rw [interior_subset (hχ1 ⟨x, hx, rfl⟩), one_mul]
-  · rw [image_eq_zero_of_notMem_tsupport hx, zero_mul, zero_mul]
-
-/-- **Pushing `H²` forward along a change of variables.** Let `Φ` be a change of variables from
-`Ω'` into `D ⊆ Ω`, and `Ψ` one of order two from `Ω ∩ V ⊆ D` into `Ω' ∩ V''` with `Φ ∘ Ψ = id`.
-If `u ∘ Φ` is `H²` on `Ω' ∩ V''`, then `u` is `H²` on `Ω ∩ V`. -/
-private theorem exists_lowerOrder_eq_restrictL_of_compL
-    {Omega D V Ω' V'' : Opens (EuclideanSpace ℝ ι)} {c c' : ℝ} (hD : D ≤ Omega)
-    (hVD : Omega ⊓ V ≤ D) (hΦ : Wkp.IsChangeOfVariables 1 Ω' D Φ L c)
-    (hΨ : Wkp.IsChangeOfVariables 2 (Omega ⊓ V) (Ω' ⊓ V'') Ψ L' c')
-    (hΦΨ : ∀ y, Φ (Ψ y) = y) {u : W1p mu Omega 2} {w : Wkp mu (Ω' ⊓ V'') 2 2}
-    (hw : Wkp.lowerOrder 1 w = W1p.restrictL inf_le_left
-      (W1p.compL Φ ENNReal.ofNat_ne_top hΦ.differentiableOn hΦ.injOn hΦ.mapsTo
-        hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det (W1p.restrictL hD u))) :
-    ∃ w' : Wkp mu (Omega ⊓ V) 2 2, Wkp.lowerOrder 1 w' = W1p.restrictL inf_le_left u := by
-  have hp : (2 : ENNReal) ≠ ⊤ := ENNReal.ofNat_ne_top
-  refine ⟨Wkp.compL hΨ hp w, ?_⟩
-  rw [← Wkp.firstOrder_one, Wkp.firstOrder_compL (k := 1), Wkp.firstOrder_one, hw]
-  refine W1p.ext_value (Lp.ext ?_)
-  have hΩ'V : ((Ω' ⊓ V'' : Opens _) : Set (EuclideanSpace ℝ ι)) ⊆ Ω' := fun x hx => hx.1
-  filter_upwards [W1p.value_compL_ae (mu := mu) Ψ hp hΨ.differentiableOn hΨ.injOn hΨ.mapsTo
-      hΨ.norm_fderiv_le hΨ.pos hΨ.le_abs_det _,
-    hΨ.ae_comp (W1p.value_restrictL_ae (mu := mu) (p := 2) inf_le_left _),
-    hΨ.ae_comp (ae_restrict_of_ae_restrict_of_subset hΩ'V (W1p.value_compL_ae Φ hp
-      hΦ.differentiableOn hΦ.injOn hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det
-      (W1p.restrictL hD u))),
-    ae_restrict_of_ae_restrict_of_subset hVD (W1p.value_restrictL_ae hD u),
-    W1p.value_restrictL_ae (inf_le_left : Omega ⊓ V ≤ Omega) u] with x h1 h2 h3 h4 h5
-  rw [h1, h2, h3, hΦΨ, h4, h5]
 
 end Helpers
 
@@ -339,8 +236,8 @@ private theorem exists_lowerOrder_eq_restrictL_of_isChangeOfVariables [Nonempty 
       (by exact ⟨z, ⟨hzH, mem_ball_comm.1 hz⟩, mem_ball_comm.1 hz⟩)
       (t := (Omega : Set (EuclideanSpace ℝ ι)) ∩ W)
       (fun x hx => ⟨(hΦmaps hx.1).1, hOW (hΦmaps hx.1).2⟩) ha hK
-  have hu0' := exists_w1p0_value_ae_eq_mul_value_compL (hΦ'.mono one_le_two) hΦc
-    hΨc.continuousOn hΨmaps (fun x _ => hΨΦ x)
+  have hu0' := (hΦ'.mono one_le_two).exists_w1p0_value_ae_eq_mul_value_compL
+    ENNReal.ofNat_ne_top hΦc hΨc.continuousOn hΨmaps (fun x _ => hΨΦ x)
     (fun x hx => ⟨hΦ.mapsTo (hBU' hx), by rw [mem_preimage, hΨΦ]; exact hx⟩ : MapsTo Φ B'' O)
     (fun χ hχ hχc hχs => hu0 χ hχ hχc (hχs.trans hOW))
   -- `H²` regularity near the flat boundary, on `Ω' ∩ B(y₀, r / 2)`.
@@ -359,9 +256,10 @@ private theorem exists_lowerOrder_eq_restrictL_of_isChangeOfVariables [Nonempty 
     simp only [D, O, V, Opens.coe_inf, Opens.coe_mk, mem_inter_iff, mem_preimage] at hy ⊢
     exact ⟨hy.1, hy.2.1, ball_subset_ball (half_le_self hr.le) hy.2.2⟩
   have hVD : Omega ⊓ V ≤ D := SetLike.coe_subset_coe.mp hVD'
-  obtain ⟨w, hw⟩ := exists_lowerOrder_eq_restrictL_of_compL (Omega := Omega) (D := D) (V := V)
-    (Ω' := Ω') (V'' := V'') inf_le_left hVD (hΦ'.mono one_le_two)
-    (hΨ.mono_set (hVD.trans hDU) fun y hy => ⟨hΨmaps (hVD' hy), hy.2.2⟩) hΦΨ (u := u)
+  obtain ⟨w, hw⟩ := Wkp.exists_lowerOrder_eq_restrictL_of_compL (Omega := Omega) (D := D)
+    (V := V) (Ω' := Ω') (V'' := V'') ENNReal.ofNat_ne_top inf_le_left hVD (hΦ'.mono one_le_two)
+    (hΨ.mono_set (hVD.trans hDU) fun y hy => ⟨hΨmaps (hVD' hy), hy.2.2⟩) (fun y _ => hΦΨ y)
+    (u := u)
     (w := w'') hw''
   exact ⟨V, ⟨hΦ.mapsTo hy₀, by rw [mem_preimage, hΨΦ]; exact mem_ball_self (half_pos hr)⟩, w, hw⟩
 
@@ -426,11 +324,8 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_contDiff_graph
   have hx₀H : e.symm 0 ∈ closure {x | -(e 0).fst < ⟪x, ν⟫_ℝ} := by
     refine Metric.mem_closure_iff.2 fun ε hε => ⟨e.symm (WithLp.toLp 2 (ε / 2, 0)), ?_, ?_⟩
     · exact (hHν _).1 (by simpa using half_pos hε)
-    · rw [dist_comm, e.symm.dist_map, dist_zero_right, WithLp.prod_norm_eq_of_L2]
-      simp only [WithLp.toLp_fst, WithLp.toLp_snd, norm_zero, ne_eq, OfNat.ofNat_ne_zero,
-        not_false_eq_true, zero_pow, add_zero]
-      rw [Real.sqrt_sq (by positivity), Real.norm_eq_abs, abs_of_pos (half_pos hε)]
-      linarith
+    · rw [dist_comm, e.symm.dist_map, dist_zero_right]
+      simpa [WithLp.prod_norm_eq_of_L2, abs_of_pos hε] using half_lt_self hε
   have h := exists_lowerOrder_eq_restrictL_of_isChangeOfVariables hΦ hΨ hΨΦ hΦΨ
     (e.symm.continuous.comp (G.symm.continuous.comp e.continuous))
     (e.symm.continuous.comp (G.continuous.comp e.continuous)) (by simp [ν]) (hH ▸ himage)
