@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Proper
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Change
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.NarrowPic
-public import Mathlib.GroupTheory.GroupAction.Quotient
 import TauCeti.Algebra.QuadraticAlgebra.Discriminant
 import Mathlib.RingTheory.Norm.Basic
 import Mathlib.Tactic.Ring
@@ -24,6 +23,18 @@ invariant under the left special-linear action, and the oriented ideal descends 
 classes. The dictionary with the narrow Picard group, in `Narrow/Equivalence.lean`, is for
 positive discriminant; for negative discriminant the positive definite classes map to the
 Picard group instead (`posDefProperClassToPic`).
+
+## Main definitions and results
+
+* `TauCeti.BinaryQuadraticForm.idealSignFactor`: the sign correction, `1` for a positive
+  leading coefficient and `√D` otherwise.
+* `TauCeti.BinaryQuadraticForm.orientedInvertibleFractionalIdeal`: the form ideal corrected by
+  `idealSignFactor`.
+* `TauCeti.BinaryQuadraticForm.narrowPicClass`: the class of the oriented ideal in the narrow
+  Picard group, with `TauCeti.BinaryQuadraticForm.narrowPicClass_smul` showing that it is
+  invariant under `SL(2, ℤ)`.
+* `TauCeti.BinaryQuadraticForm.properClassToNarrowPic`: the resulting map from proper classes of
+  primitive forms of a nonsquare discriminant to the narrow Picard group.
 
 ## References
 
@@ -104,7 +115,8 @@ def orientedIdealChangeFactor (hf : f.discrim = D) (γ : SL(2, ℤ)) :
       (a_ne_zero_of_not_isSquare_discrim (hf ▸ Fact.out)) γ) *
       (f.idealSignFactor D)⁻¹
 
-/-- The corrected change factor is the old factor conjugated by the sign corrections. -/
+/-- The corrected change factor is the old factor multiplied by the sign correction of the
+transformed form and divided by that of the original form. -/
 theorem coe_orientedIdealChangeFactor (hf : f.discrim = D) (γ : SL(2, ℤ)) :
     (f.orientedIdealChangeFactor D hf γ : QuadraticAlgebra ℚ (D : ℚ) 0) =
       ((γ • f).idealSignFactor D : QuadraticAlgebra ℚ (D : ℚ) 0) *

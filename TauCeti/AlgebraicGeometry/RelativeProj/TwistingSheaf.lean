@@ -60,7 +60,7 @@ trivialize its twisting sheaves.
 
 ## References
 
-* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NS)
+* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NM)
 * [The Stacks Project, Lemma 27.15.5](https://stacks.math.columbia.edu/tag/01NR)
 * [The Stacks Project, Lemma 27.16.11](https://stacks.math.columbia.edu/tag/01O4)
 -/
@@ -112,7 +112,7 @@ noncomputable def relativeProjTwistingSheafGlueData (n : ℤ) :
     ModulesGlueData A.relativeProjGluingData.functor where
   obj U := Proj.twistingSheaf (A.gradedSectionsGrading U.toOpens) n
   map i := Proj.twistingSheafMap (A.restrictGradedSectionsGradedHom ((toOpensFunctor X).map i))
-    (A.irrelevant_le_map_restrictGradedSectionsGradedHom_toOpensFunctor i) n
+    (A.irrelevant_le_map_restrictGradedSections_toOpensFunctor i) n
   map_id _ := Proj.twistingSheafMap_app_apply_of_eq_id _ _
     ((congrArg A.restrictGradedSectionsGradedHom (Subsingleton.elim _ (𝟙 _))).trans
       (A.restrictGradedSectionsGradedHom_id _)) n

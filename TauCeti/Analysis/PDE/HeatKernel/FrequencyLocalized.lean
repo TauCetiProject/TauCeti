@@ -97,8 +97,7 @@ private theorem exists_norm_iteratedFDeriv_mul_exp_le (hχ : ContDiff ℝ ∞ χ
   -- `√τ ^ j exp(-π² r² τ)` is bounded, by `TauCeti.one_add_pow_mul_exp_neg_mul_sq_le` at `√τ`.
   set B : ℕ → ℝ := fun j ↦ j.factorial / (π ^ 2 * r ^ 2 / 2) ^ j * rexp (π ^ 2 * r ^ 2)
   have hB (j : ℕ) (τ : ℝ) (hτ : 0 ≤ τ) : √τ ^ j * rexp (-(π ^ 2 * r ^ 2 * τ)) ≤ B j := by
-    have h := one_add_pow_mul_exp_neg_mul_sq_le (by positivity : 0 < π ^ 2 * r ^ 2) j
-      (sqrt_nonneg τ)
+    have h := one_add_pow_mul_exp_neg_mul_sq_le (by positivity : 0 < π ^ 2 * r ^ 2) j (r := √τ)
     rw [sq_sqrt hτ, neg_mul] at h
     exact (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (sqrt_nonneg τ)
       (le_add_of_nonneg_left zero_le_one) j) (exp_pos _).le).trans h

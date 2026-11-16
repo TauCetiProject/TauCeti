@@ -54,6 +54,11 @@ The isomorphisms below degree `n` are the classical statement that the skeleton 
 homology of the complex (Hatcher, Lemma 2.34(c)), already available as
 `TauCeti.isIso_homologyMap_skeletonBasePairToComplex_fst`.
 
+For a map of pairs `f : (X, A) ⟶ (Y, B)` which is `n`-connected on the ambient spaces and
+`k`-connected on the subspaces, the five lemma in the long exact sequences of the two pairs gives
+the relative statement with local coefficients: `H_m(X, A; f⁎L) → H_m(Y, B; L)` is an isomorphism
+for `m < n` with `m ≤ k`, and a surjection for `m ≤ n` with `m ≤ k + 1`.
+
 ## Main results
 
 * `ContinuousMap.IsNConnected.isZero_singularHomology_mappingCylinder`: the relative homology of
@@ -70,6 +75,9 @@ homology of the complex (Hatcher, Lemma 2.34(c)), already available as
   `TopPair.epi_singularHomologyMap_of_isNConnected`: a map of pairs which is `n`-connected on the
   ambient spaces and `(n - 1)`-connected on the subspaces induces isomorphisms on relative singular
   homology below degree `n`, and surjections up to degree `n`.
+* `TopPair.isIso_twistedHomologyMap_of_isNConnected`,
+  `TopPair.epi_twistedHomologyMap_of_isNConnected`: the same for relative homology with local
+  coefficients of a map of pairs which is connected on the ambient spaces and on the subspaces.
 * `TauCeti.epi_singularHomologyMap_inclusion_skeletonLT`: the inclusion of the `n`-skeleton of a
   relative CW complex induces surjections on singular homology up to degree `n`.
 
@@ -310,5 +318,60 @@ theorem epi_singularHomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNConne
       -- As in `isIso_singularHomologyMap_of_isNConnected`, the instance is passed by hand.
       exact @IsIso.mono_of_iso _ _ _ _ _ (hfst.isIso_singularHomologyMap R (by simp at hj; lia)))
   rwa [SSetPair.chainComplexShortComplexMap_τ₃] at h
+
+end TopPair
+
+/-! ### Maps of pairs with local coefficients -/
+
+namespace TopPair
+
+open LocalCoefficientSystem
+
+variable {R : Type u} [Ring R] {P Q : TopPair.{v}} (f : P ⟶ Q)
+  (L : LocalCoefficientSystem.{u, v, v} R Q.fst) {n k m : ℕ}
+
+/-- **A map of pairs which is connected on the ambient spaces and on the subspaces induces
+isomorphisms on relative homology with local coefficients in low degrees**: if
+`f : (X, A) ⟶ (Y, B)` is `n`-connected on the ambient spaces and `k`-connected on the
+subspaces, then for every local coefficient system `L` on `Y` the map
+`f_* : H_m(X, A; f⁎L) → H_m(Y, B; L)` is an isomorphism for every `m < n` with `m ≤ k`. -/
+theorem isIso_twistedHomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNConnected n)
+    (hsnd : (Hom.snd f).hom.IsNConnected k) (hmn : m < n) (hmk : m ≤ k) :
+    IsIso (TopPair.twistedHomologyMap f L m) := by
+  have := HomologicalComplex.HomologySequence.isIso_homologyMap_τ₃
+    (twistedChainComplexShortComplexMap f L) (P.shortExact_twistedChainComplexShortComplex _)
+    (Q.shortExact_twistedChainComplexShortComplex L) m
+    (homologyMap_twistedChainComplexShortComplexMap_τ₁_mem f L (.epimorphisms _) m
+      (hsnd.epi_twistedHomologyMap (Q.subspaceSystem L) hmk))
+    (homologyMap_twistedChainComplexShortComplexMap_τ₂_mem f L (.isomorphisms _) m
+      (hfst.isIso_twistedHomologyMap L hmn))
+    (fun j (hj : j + 1 = m) ↦
+      homologyMap_twistedChainComplexShortComplexMap_τ₁_mem f L (.isomorphisms _) j
+        (hsnd.isIso_twistedHomologyMap (Q.subspaceSystem L) (by lia)))
+    (fun j (hj : j + 1 = m) ↦
+      homologyMap_twistedChainComplexShortComplexMap_τ₂_mem f L (.monomorphisms _) j
+        (have := hfst.isIso_twistedHomologyMap L (m := j) (by lia); inferInstance))
+  rwa [twistedChainComplexShortComplexMap_τ₃] at this
+
+/-- **A map of pairs which is connected on the ambient spaces and on the subspaces induces
+surjections on relative homology with local coefficients in low degrees**: if
+`f : (X, A) ⟶ (Y, B)` is `n`-connected on the ambient spaces and `k`-connected on the
+subspaces, then for every local coefficient system `L` on `Y` the map
+`f_* : H_m(X, A; f⁎L) → H_m(Y, B; L)` is an epimorphism for every `m ≤ n` with `m ≤ k + 1`. -/
+theorem epi_twistedHomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNConnected n)
+    (hsnd : (Hom.snd f).hom.IsNConnected k) (hmn : m ≤ n) (hmk : m ≤ k + 1) :
+    Epi (TopPair.twistedHomologyMap f L m) := by
+  have := HomologicalComplex.HomologySequence.epi_homologyMap_τ₃
+    (twistedChainComplexShortComplexMap f L) (P.shortExact_twistedChainComplexShortComplex _)
+    (Q.shortExact_twistedChainComplexShortComplex L) m
+    (homologyMap_twistedChainComplexShortComplexMap_τ₂_mem f L (.epimorphisms _) m
+      (hfst.epi_twistedHomologyMap L hmn))
+    (fun j (hj : j + 1 = m) ↦
+      homologyMap_twistedChainComplexShortComplexMap_τ₁_mem f L (.epimorphisms _) j
+        (hsnd.epi_twistedHomologyMap (Q.subspaceSystem L) (by lia)))
+    (fun j (hj : j + 1 = m) ↦
+      homologyMap_twistedChainComplexShortComplexMap_τ₂_mem f L (.monomorphisms _) j
+        (have := hfst.isIso_twistedHomologyMap L (m := j) (by lia); inferInstance))
+  rwa [twistedChainComplexShortComplexMap_τ₃] at this
 
 end TopPair

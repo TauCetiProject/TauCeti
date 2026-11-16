@@ -32,7 +32,7 @@ variable {B : Type*} [TopologicalSpace B]
   {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)]
   [FiberBundle F E] [VectorBundle ℝ F E]
-  {ι : Type*} [Fintype ι] [FiniteDimensional ℝ F]
+  {ι : Type*} [Fintype ι]
 
 /-- The fibre through an orientation consists of that orientation and its opposite. -/
 theorem preimage_proj_singleton (hι : Fintype.card ι = finrank ℝ F)
@@ -42,6 +42,8 @@ theorem preimage_proj_singleton (hι : Fintype.card ι = finrank ℝ F)
   simp only [mem_preimage, mem_singleton_iff, mem_insert_iff]
   exact ⟨eq_or_eq_deck hι, fun h ↦ h.elim (fun h ↦ h ▸ rfl)
     (fun h ↦ h ▸ proj_deck p)⟩
+
+variable [FiniteDimensional ℝ F]
 
 /-- Every fibre of the orientation cover has exactly two points, including in rank zero. -/
 @[simp]
