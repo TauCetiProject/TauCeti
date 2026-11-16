@@ -149,7 +149,7 @@ theorem hasDerivAt_waveCosSymbol (t : ℝ) (ξ : E) :
   have h : (laplacianSymbol ξ : ℂ) * waveSinSymbol t ξ =
       ((-(Real.sin (t * sqrtNegLaplacianSymbol ξ) * sqrtNegLaplacianSymbol ξ) : ℝ) : ℂ) := by
     have hω := sqrtNegLaplacianSymbol_mul_waveSinSymbol t ξ
-    rw [laplacianSymbol_eq_neg_sq]
+    rw [laplacianSymbol_eq_neg_sqrtNegLaplacianSymbol_sq]
     push_cast at hω ⊢
     linear_combination (-(sqrtNegLaplacianSymbol ξ : ℂ)) * hω
   simp only [waveCosSymbol_apply, h]

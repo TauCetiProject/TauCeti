@@ -102,6 +102,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [CompleteSpace F]
 
 /-- The Fourier transform on `L²` commutes with real scalars. -/
+@[simp]
 theorem fourier_real_smul (r : ℝ) (f : Lp F 2 (volume : Measure E)) : 𝓕 (r • f) = r • 𝓕 f := by
   rw [RCLike.real_smul_eq_coe_smul (K := ℂ), FourierTransform.fourier_smul,
     ← RCLike.real_smul_eq_coe_smul]
