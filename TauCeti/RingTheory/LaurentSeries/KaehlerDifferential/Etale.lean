@@ -29,21 +29,22 @@ induced by `D_L`. This file shows:
 * The pullback `Ω¹_cont(F/K) → Ω¹_cont(L/K)`, `f dg ↦ f dg`, is induced by the map
   `Ω[F⁄K] → Ω[L⁄K]` of Kähler differentials, and it extends to an `L`-linear equivalence
   `L ⊗_F Ω¹_cont(F/K) ≃ Ω¹_cont(L/K)`, `x ⊗ ω ↦ x ω`. More generally, `D_L` and `Ω¹_cont(L/K)`
-  are functorial in `F`-algebra homomorphisms (`mapAlgHom`, `mapAlgEquiv`), and in a tower
-  `F → L → E` of formally étale `F`-algebras `Ω¹_cont(E/K) ≃ E ⊗_L Ω¹_cont(L/K)`
+  are functorial in `F`-algebra homomorphisms (`mapSemilinear`, `mapSemilinearEquiv`), and in a
+  tower `F → L → E` of formally étale `F`-algebras `Ω¹_cont(E/K) ≃ E ⊗_L Ω¹_cont(L/K)`
   (`mapTower`, `tensorEquivTower`).
 * `d : L → Ω¹_cont(L/K)` is the universal derivation among `K`-derivations of `L` whose restriction
   to `F` is continuous for the valuation topology: for an `L`-module `M` with a Hausdorff topology
   for which scalar multiplication by `F` is continuous, a `K`-derivation `δ : L → M` factors as
   `ℓ ∘ d` with `ℓ` an `L`-linear map exactly when `δ` is continuous on `F`, and then `ℓ` is unique.
   This characterization does not use a topology on `L`.
-* When `L` carries a topology, `Ω¹_cont(L/K)` carries the `L`-module topology (`continuousEquivSelf`
-  when `L` is a topological semiring). When `L` is finite over `F` and carries the `F`-module
-  topology, `Ω¹_cont(L/K)` also carries the `F`-module topology (`T2Space`), both `D_L` and `d`
-  are continuous, every linear map out of `Ω¹_cont(L/K)` to a topological `L`-module is continuous,
-  and a `K`-derivation `δ : L → M` into a Hausdorff `L`-module with continuous `L`-scalar
-  multiplication is continuous on `L` if and only if it is continuous on `F`, hence if and only if
-  it factors through `d`.
+* When `L` carries a topology, `Ω¹_cont(L/K)` carries the `L`-module topology; when `L` is a
+  topological semiring, `equivSelf` is a continuous `L`-linear equivalence (`continuousEquivSelf`)
+  and every `L`-linear map out of `Ω¹_cont(L/K)` into a module with continuous `L`-scalar
+  multiplication is continuous. When `L` carries the `F`-module topology, both `D_L` and `d` are
+  continuous, and a `K`-derivation `δ : L → M` into a Hausdorff `L`-module with continuous
+  `L`-scalar multiplication is continuous on `L` if and only if it is continuous on `F`, hence if
+  and only if it factors uniquely through `d`. When `L` is in addition finite over `F`,
+  `Ω¹_cont(L/K)` also carries the Hausdorff `F`-module topology.
 
 ## Main definitions
 
@@ -55,7 +56,7 @@ induced by `D_L`. This file shows:
   `L`-linear (and continuous `L`-linear) equivalence `Ω¹_cont(L/K) ≃ L` sending `d t` to `1`.
 * `Extension.ContinuousKaehlerDifferential.map K L` and `tensorEquiv K L`: the pullback
   `Ω¹_cont(F/K) → Ω¹_cont(L/K)` and `L`-linear equivalence `L ⊗_F Ω¹_cont(F/K) ≃ Ω¹_cont(L/K)`.
-* `Extension.ContinuousKaehlerDifferential.mapAlgHom`, `mapAlgEquiv`, `mapTower`, and
+* `Extension.ContinuousKaehlerDifferential.mapSemilinear`, `mapSemilinearEquiv`, `mapTower`, and
   `tensorEquivTower`: functoriality along `F`-algebra maps and relative scalar extension in towers.
 * `Extension.ContinuousKaehlerDifferential.lift`: the factorization of a derivation that is
   continuous on `F` through `d`.
@@ -64,14 +65,15 @@ induced by `D_L`. This file shows:
 
 * `TauCeti.LaurentSeries.Extension.derivation_algebraMap`, `eq_derivation`,
   `derivation_algHom_apply`, `continuous_derivation`: `D_L` extends `D` uniquely, commutes with
-  `F`-algebra homomorphisms, and is continuous for the `F`-module topology on finite extensions.
-* `Extension.ContinuousKaehlerDifferential.map_mk` and `mapAlgHom_mk`: the pullbacks are induced by
-  the maps of Kähler differentials.
+  `F`-algebra homomorphisms, and is continuous for the `F`-module topology.
+* `Extension.ContinuousKaehlerDifferential.map_mk` and `mapSemilinear_mk`: the pullbacks are induced
+  by the maps of Kähler differentials.
 * `Extension.ContinuousKaehlerDifferential.tensorEquiv_tmul` and `tensorEquivTower_tmul`: the
   scalar-extension equivalences send pure tensors to scalar multiples of pulled-back forms.
 * `Extension.ContinuousKaehlerDifferential.existsUnique_compDer_eq`, `exists_compDer_eq_iff`,
-  `continuous_iff_continuous_compAlgebraMap`, and `exists_compDer_eq_iff_continuous`: the algebraic
-  and topological universal properties of `d`.
+  `Derivation.continuous_iff_continuous_compAlgebraMap_laurentSeries`, and
+  `Extension.ContinuousKaehlerDifferential.exists_compDer_eq_iff_continuous`: the algebraic and
+  topological universal properties of `d`.
 
 ## References
 
@@ -122,8 +124,7 @@ theorem derivation_algebraMap_tower {E : Type*} [CommRing E] [Algebra K⸨X⸩ E
     [IsScalarTower K K⸨X⸩ E] [Algebra.FormallyEtale K⸨X⸩ E] [Algebra L E]
     [IsScalarTower K⸨X⸩ L E] (x : L) :
     derivation K E (algebraMap L E x) = algebraMap L E (derivation K L x) := by
-  have : IsScalarTower K L E := .of_algebraMap_smul fun c y ↦ by
-    rw [IsScalarTower.algebraMap_apply K K⸨X⸩ L, algebraMap_smul, algebraMap_smul]
+  have : IsScalarTower K L E := IsScalarTower.to₁₃₄ K K⸨X⸩ L E
   have h : (derivation K E).compAlgebraMap L = (Algebra.linearMap L E).compDer (derivation K L) :=
     Derivation.eq_of_formallyUnramified (S := K⸨X⸩) fun f ↦ by
       simp [← IsScalarTower.algebraMap_apply K⸨X⸩ L E]
@@ -139,38 +140,49 @@ theorem derivation_algHom_apply {E : Type*} [CommRing E] [Algebra K⸨X⸩ E] [A
   have : IsScalarTower K⸨X⸩ L E := .of_algebraMap_eq' φ.comp_algebraMap.symm
   exact derivation_algebraMap_tower x
 
-/-- **Continuity of `d/dt`.** On a finite formally étale `K⸨X⸩`-algebra carrying the `K⸨X⸩`-module
+/-- **Continuity of `d/dt`.** On a formally étale `K⸨X⸩`-algebra carrying the `K⸨X⸩`-module
 topology, the extended derivation `D_L` is continuous. -/
 @[fun_prop]
-theorem continuous_derivation [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L]
-    [Module.Finite K⸨X⸩ L] : Continuous (derivation K L) := by
+theorem continuous_derivation [τ : TopologicalSpace L] [IsModuleTopology K⸨X⸩ L] :
+    Continuous (derivation K L) := by
+  -- Pull back the product topology along the graph `x ↦ (x, D_L x)`. Addition and `K⸨X⸩`-scalar
+  -- multiplication are continuous for this induced topology, so the `K⸨X⸩`-module topology is at
+  -- least as fine, making the second projection `D_L` continuous.
   have : ContinuousAdd L := IsModuleTopology.toContinuousAdd K⸨X⸩ L
-  let b := Module.finBasis K⸨X⸩ L
-  have hsum (x : L) : derivation K L x =
-      ∑ i, (b.coord i x • derivation K L (b i) +
-        LaurentSeries.derivative K (b.coord i x) • b i) := by
-    conv_lhs => rw [← b.sum_repr x]
-    rw [map_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    simp only [Module.Basis.coord_apply, Algebra.smul_def, Derivation.leibniz,
-      derivation_algebraMap, laurentSeriesDerivation_apply, Algebra.algebraMap_self,
-      RingHom.id_apply]
-    ring
-  have hterm (i : Fin (Module.finrank K⸨X⸩ L)) :
-      Continuous fun x : L ↦
-        b.coord i x • derivation K L (b i) + LaurentSeries.derivative K (b.coord i x) • b i := by
-    have hc : Continuous (b.coord i) := IsModuleTopology.continuous_of_linearMap (b.coord i)
-    have hdc : Continuous fun x : L ↦ LaurentSeries.derivative K (b.coord i x) :=
-      LaurentSeries.continuous_derivative.comp hc
-    exact (hc.fun_smul continuous_const).fun_add (hdc.fun_smul continuous_const)
-  have hfin (s : Finset (Fin (Module.finrank K⸨X⸩ L))) :
-      Continuous fun x : L ↦
-        ∑ i ∈ s, (b.coord i x • derivation K L (b i) +
-          LaurentSeries.derivative K (b.coord i x) • b i) := by
-    induction s using Finset.cons_induction with
-    | empty => simpa only [Finset.sum_empty] using continuous_const
-    | cons i s hi ih => simpa only [Finset.sum_cons] using (hterm i).fun_add ih
-  exact (hfin Finset.univ).congr fun x ↦ (hsum x).symm
+  let Γ : L →+ L × L := AddMonoidHom.prod (.id L) (derivation K L).toAddMonoidHom
+  have hadd : @ContinuousAdd L (.induced Γ inferInstance) _ := continuousAdd_induced Γ
+  have hF : Continuous fun p : K⸨X⸩ × (L × L) ↦
+      (p.1 • p.2.1, p.1 • p.2.2 + LaurentSeries.derivative K p.1 • p.2.1) := by
+    have hsmul : Continuous fun p : K⸨X⸩ × L ↦ p.1 • p.2 := continuous_smul
+    have h1 : Continuous fun p : K⸨X⸩ × (L × L) ↦ p.1 • p.2.1 :=
+      hsmul.comp (continuous_fst.prodMk (continuous_fst.comp continuous_snd))
+    have h2 : Continuous fun p : K⸨X⸩ × (L × L) ↦ p.1 • p.2.2 :=
+      hsmul.comp (continuous_fst.prodMk (continuous_snd.comp continuous_snd))
+    have h3 : Continuous fun p : K⸨X⸩ × (L × L) ↦ LaurentSeries.derivative K p.1 • p.2.1 :=
+      hsmul.comp ((LaurentSeries.continuous_derivative.comp continuous_fst).prodMk
+        (continuous_fst.comp continuous_snd))
+    exact h1.prodMk (h2.add h3)
+  have hsmul' : @ContinuousSMul K⸨X⸩ L _ _ (.induced Γ inferInstance) := by
+    refine @ContinuousSMul.mk K⸨X⸩ L _ _ (.induced Γ inferInstance) ?_
+    rw [continuous_induced_rng]
+    have hfun : (Γ ∘ fun p : K⸨X⸩ × L ↦ p.1 • p.2) =
+        (fun p : K⸨X⸩ × (L × L) ↦
+          (p.1 • p.2.1, p.1 • p.2.2 + LaurentSeries.derivative K p.1 • p.2.1)) ∘
+        Prod.map id Γ := by
+      ext ⟨f, x⟩
+      · rfl
+      · simp [Γ, Algebra.smul_def, Derivation.leibniz, mul_comm, add_comm]
+    rw [hfun]
+    have hΓ : @Continuous L (L × L) (.induced Γ inferInstance) _ Γ := continuous_induced_dom
+    have hprod : @Continuous (K⸨X⸩ × L) (K⸨X⸩ × (L × L))
+        (@instTopologicalSpaceProd _ _ _ (.induced Γ inferInstance)) _ (Prod.map id Γ) :=
+      @Continuous.prodMap _ _ _ _ _ _ _ (.induced Γ inferInstance) _ _ continuous_id hΓ
+    exact @Continuous.comp _ _ _ (@instTopologicalSpaceProd _ _ _ (.induced Γ inferInstance)) _ _
+      _ _ hF hprod
+  have hle : τ ≤ .induced Γ inferInstance :=
+    (IsModuleTopology.eq_moduleTopology' (R := K⸨X⸩) (A := L)).le.trans
+      (@moduleTopology_le K⸨X⸩ _ L _ _ (.induced Γ inferInstance) hsmul' hadd)
+  exact continuous_snd.comp (continuous_le_dom hle continuous_induced_dom)
 
 variable (K L) in
 /-- The map `x dy ↦ x * D_L y` from the Kähler differentials is surjective: `x dt ↦ x`. -/
@@ -373,153 +385,127 @@ variable {E : Type*} [CommRing E] [Algebra K⸨X⸩ E] [Algebra K E]
 /-- **Functoriality of continuous one-forms.** An `F`-algebra homomorphism `φ : L →ₐ[K⸨X⸩] E`
 between formally étale `F`-algebras induces a `φ`-semilinear map
 `Ω¹_cont(L/K) → Ω¹_cont(E/K)`, `x dt ↦ φ x dt`, commuting with `d`. -/
-noncomputable def mapAlgHom (φ : L →ₐ[K⸨X⸩] E) :
-    ContinuousKaehlerDifferential K L →ₛₗ[(φ : L →+* E)] ContinuousKaehlerDifferential K E where
-  toFun ω := (equivSelf K E).symm (φ (equivSelf K L ω))
-  map_add' ω η := (equivSelf K E).injective <| by simp only [map_add, LinearEquiv.apply_symm_apply]
-  map_smul' x ω := (equivSelf K E).injective <| by
-    simp only [map_smul, LinearEquiv.apply_symm_apply, smul_eq_mul, map_mul, RingHom.coe_coe]
+noncomputable def mapSemilinear (φ : L →ₐ[K⸨X⸩] E) :
+    ContinuousKaehlerDifferential K L →ₛₗ[(φ : L →+* E)] ContinuousKaehlerDifferential K E :=
+  (equivSelf K E).symm.toLinearMap.comp
+    ((φ : L →+* E).toSemilinearMap.comp (equivSelf K L).toLinearMap)
 
-/-- In the frame `dt`, `mapAlgHom φ` applies `φ` to the coordinate. -/
+/-- In the frame `dt`, `mapSemilinear φ` applies `φ` to the coordinate. -/
 @[simp]
-theorem equivSelf_mapAlgHom (φ : L →ₐ[K⸨X⸩] E) (ω : ContinuousKaehlerDifferential K L) :
-    equivSelf K E (mapAlgHom φ ω) = φ (equivSelf K L ω) :=
-  (equivSelf K E).apply_symm_apply _
+theorem equivSelf_mapSemilinear (φ : L →ₐ[K⸨X⸩] E) (ω : ContinuousKaehlerDifferential K L) :
+    equivSelf K E (mapSemilinear φ ω) = φ (equivSelf K L ω) := by
+  simp [mapSemilinear]
 
-/-- The semilinearity law of `mapAlgHom`, stated with `φ` applied. -/
-theorem mapAlgHom_smul (φ : L →ₐ[K⸨X⸩] E) (x : L) (ω : ContinuousKaehlerDifferential K L) :
-    mapAlgHom φ (x • ω) = φ x • mapAlgHom φ ω :=
-  (mapAlgHom φ).map_smulₛₗ x ω
+/-- The semilinearity law of `mapSemilinear`, stated with `φ` applied. -/
+theorem mapSemilinear_smul (φ : L →ₐ[K⸨X⸩] E) (x : L) (ω : ContinuousKaehlerDifferential K L) :
+    mapSemilinear φ (x • ω) = φ x • mapSemilinear φ ω :=
+  (mapSemilinear φ).map_smulₛₗ x ω
 
-/-- `mapAlgHom φ` commutes with the universal derivations `d`. -/
+/-- `mapSemilinear φ` commutes with the universal derivations `d`. -/
 @[simp]
-theorem mapAlgHom_D (φ : L →ₐ[K⸨X⸩] E) (x : L) :
-    mapAlgHom φ (D K L x) = D K E (φ x) :=
+theorem mapSemilinear_D (φ : L →ₐ[K⸨X⸩] E) (x : L) :
+    mapSemilinear φ (D K L x) = D K E (φ x) :=
   (equivSelf K E).injective <| by
-    rw [equivSelf_mapAlgHom, equivSelf_D, equivSelf_D, derivation_algHom_apply]
+    rw [equivSelf_mapSemilinear, equivSelf_D, equivSelf_D, derivation_algHom_apply]
 
-/-- On the quotient of Kähler differentials, `mapAlgHom φ` is induced by
+/-- On the quotient of Kähler differentials, `mapSemilinear φ` is induced by
 `KaehlerDifferential.mapSemilinear`. -/
-theorem mapAlgHom_mk (φ : L →ₐ[K⸨X⸩] E) (ω : Ω[L⁄K]) :
-    mapAlgHom φ (mk K L ω) =
+theorem mapSemilinear_mk (φ : L →ₐ[K⸨X⸩] E) (ω : Ω[L⁄K]) :
+    mapSemilinear φ (mk K L ω) =
       mk K E (KaehlerDifferential.mapSemilinear (φ.restrictScalars K) ω) := by
-  induction (KaehlerDifferential.span_range_derivation K L ▸ Submodule.mem_top :
-      ω ∈ Submodule.span L (Set.range (KaehlerDifferential.D K L))) using
-      Submodule.span_induction with
-  | mem _ h =>
-    obtain ⟨x, rfl⟩ := h
-    rw [← D_apply, mapAlgHom_D, KaehlerDifferential.mapSemilinear_D,
-      AlgHom.restrictScalars_apply, D_apply]
-  | zero => rw [map_zero, map_zero, map_zero, map_zero]
-  | add _ _ _ _ ih₁ ih₂ => rw [map_add, map_add, ih₁, ih₂, map_add, map_add]
-  | smul a _ _ ih =>
-    rw [LinearMap.map_smul, mapAlgHom_smul, ih, KaehlerDifferential.mapSemilinear_smul,
-      AlgHom.restrictScalars_apply, LinearMap.map_smul]
+  have h : (mapSemilinear φ).comp (mk K L) =
+      (mk K E).comp (KaehlerDifferential.mapSemilinear (φ.restrictScalars K)) :=
+    LinearMap.ext_on_range (KaehlerDifferential.span_range_derivation K L) fun x ↦ by
+      change mapSemilinear φ (mk K L (KaehlerDifferential.D K L x)) =
+        mk K E (KaehlerDifferential.mapSemilinear (φ.restrictScalars K)
+          (KaehlerDifferential.D K L x))
+      rw [← D_apply, mapSemilinear_D, KaehlerDifferential.mapSemilinear_D,
+        AlgHom.restrictScalars_apply, D_apply]
+  exact LinearMap.congr_fun h ω
 
-/-- `mapAlgHom φ` commutes with the pullbacks from `Ω¹_cont(K⸨X⸩/K)`. -/
+/-- `mapSemilinear φ` commutes with the pullbacks from `Ω¹_cont(K⸨X⸩/K)`. -/
 @[simp]
-theorem mapAlgHom_map (φ : L →ₐ[K⸨X⸩] E) (ω : TauCeti.ContinuousKaehlerDifferential K) :
-    mapAlgHom φ (map K L ω) = map K E ω :=
+theorem mapSemilinear_map (φ : L →ₐ[K⸨X⸩] E) (ω : TauCeti.ContinuousKaehlerDifferential K) :
+    mapSemilinear φ (map K L ω) = map K E ω :=
   (equivSelf K E).injective <| by
-    rw [equivSelf_mapAlgHom, equivSelf_map, equivSelf_map, AlgHom.commutes]
+    rw [equivSelf_mapSemilinear, equivSelf_map, equivSelf_map, AlgHom.commutes]
 
 /-- Mapping along the identity fixes every continuous one-form. -/
 @[simp]
-theorem mapAlgHom_id (ω : ContinuousKaehlerDifferential K L) :
-    mapAlgHom (AlgHom.id K⸨X⸩ L) ω = ω :=
-  (equivSelf K L).injective <| by rw [equivSelf_mapAlgHom, AlgHom.id_apply]
+theorem mapSemilinear_id (ω : ContinuousKaehlerDifferential K L) :
+    mapSemilinear (AlgHom.id K⸨X⸩ L) ω = ω :=
+  (equivSelf K L).injective <| by rw [equivSelf_mapSemilinear, AlgHom.id_apply]
 
 /-- Mapping along a composite `F`-algebra homomorphism is composing the induced maps. -/
-theorem mapAlgHom_comp {E' : Type*} [CommRing E'] [Algebra K⸨X⸩ E'] [Algebra K E']
+theorem mapSemilinear_comp {E' : Type*} [CommRing E'] [Algebra K⸨X⸩ E'] [Algebra K E']
     [IsScalarTower K K⸨X⸩ E'] [Algebra.FormallyEtale K⸨X⸩ E']
     (ψ : E →ₐ[K⸨X⸩] E') (φ : L →ₐ[K⸨X⸩] E) (ω : ContinuousKaehlerDifferential K L) :
-    mapAlgHom (ψ.comp φ) ω = mapAlgHom ψ (mapAlgHom φ ω) :=
+    mapSemilinear (ψ.comp φ) ω = mapSemilinear ψ (mapSemilinear φ ω) :=
   (equivSelf K E').injective <| by
-    rw [equivSelf_mapAlgHom, equivSelf_mapAlgHom, equivSelf_mapAlgHom, AlgHom.comp_apply]
+    rw [equivSelf_mapSemilinear, equivSelf_mapSemilinear, equivSelf_mapSemilinear,
+      AlgHom.comp_apply]
 
 attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm
 
 /-- An `F`-algebra equivalence `e : L ≃ₐ[K⸨X⸩] E` induces a semilinear equivalence on continuous
 one-forms. -/
-noncomputable def mapAlgEquiv (e : L ≃ₐ[K⸨X⸩] E) :
-    ContinuousKaehlerDifferential K L ≃ₛₗ[(e.toRingEquiv : L →+* E)]
-      ContinuousKaehlerDifferential K E where
-  toFun := mapAlgHom e.toAlgHom
-  invFun := mapAlgHom e.symm.toAlgHom
-  map_add' := map_add _
-  map_smul' x ω := by simpa using mapAlgHom_smul e.toAlgHom x ω
-  left_inv ω := by rw [← mapAlgHom_comp, AlgEquiv.symm_comp, mapAlgHom_id]
-  right_inv ω := by rw [← mapAlgHom_comp, AlgEquiv.comp_symm, mapAlgHom_id]
+noncomputable def mapSemilinearEquiv (e : L ≃ₐ[K⸨X⸩] E) :
+    @LinearEquiv L E _ _ (e : L →+* E) (e.symm : E →+* L)
+      ⟨by ext x; exact e.symm_apply_apply x, by ext x; exact e.apply_symm_apply x⟩
+      ⟨by ext x; exact e.apply_symm_apply x, by ext x; exact e.symm_apply_apply x⟩
+      (ContinuousKaehlerDifferential K L) (ContinuousKaehlerDifferential K E) _ _ _ _ :=
+  haveI : RingHomInvPair (e : L →+* E) (e.symm : E →+* L) :=
+    ⟨by ext x; exact e.symm_apply_apply x, by ext x; exact e.apply_symm_apply x⟩
+  haveI : RingHomInvPair (e.symm : E →+* L) (e : L →+* E) :=
+    ⟨by ext x; exact e.apply_symm_apply x, by ext x; exact e.symm_apply_apply x⟩
+  ((equivSelf K L).trans e.toRingEquiv.toSemilinearEquiv).trans (equivSelf K E).symm
 
-theorem mapAlgEquiv_apply (e : L ≃ₐ[K⸨X⸩] E) (ω : ContinuousKaehlerDifferential K L) :
-    mapAlgEquiv e ω = mapAlgHom e.toAlgHom ω :=
+theorem mapSemilinearEquiv_apply (e : L ≃ₐ[K⸨X⸩] E) (ω : ContinuousKaehlerDifferential K L) :
+    mapSemilinearEquiv e ω = mapSemilinear e.toAlgHom ω :=
   (rfl)
 
 @[simp]
-theorem mapAlgEquiv_symm_apply (e : L ≃ₐ[K⸨X⸩] E) (ω : ContinuousKaehlerDifferential K E) :
-    (mapAlgEquiv e).symm ω = mapAlgEquiv e.symm ω :=
+theorem mapSemilinearEquiv_symm_apply (e : L ≃ₐ[K⸨X⸩] E) (ω : ContinuousKaehlerDifferential K E) :
+    (mapSemilinearEquiv e).symm ω = mapSemilinearEquiv e.symm ω :=
   (rfl)
 
 @[simp]
-theorem equivSelf_mapAlgEquiv (e : L ≃ₐ[K⸨X⸩] E) (ω : ContinuousKaehlerDifferential K L) :
-    equivSelf K E (mapAlgEquiv e ω) = e (equivSelf K L ω) :=
-  equivSelf_mapAlgHom e.toAlgHom ω
+theorem equivSelf_mapSemilinearEquiv (e : L ≃ₐ[K⸨X⸩] E) (ω : ContinuousKaehlerDifferential K L) :
+    equivSelf K E (mapSemilinearEquiv e ω) = e (equivSelf K L ω) :=
+  equivSelf_mapSemilinear e.toAlgHom ω
 
 @[simp]
-theorem mapAlgEquiv_smul (e : L ≃ₐ[K⸨X⸩] E) (x : L) (ω : ContinuousKaehlerDifferential K L) :
-    mapAlgEquiv e (x • ω) = e x • mapAlgEquiv e ω :=
-  mapAlgHom_smul e.toAlgHom x ω
+theorem mapSemilinearEquiv_smul (e : L ≃ₐ[K⸨X⸩] E) (x : L)
+    (ω : ContinuousKaehlerDifferential K L) :
+    mapSemilinearEquiv e (x • ω) = e x • mapSemilinearEquiv e ω :=
+  mapSemilinear_smul e.toAlgHom x ω
 
 @[simp]
-theorem mapAlgEquiv_D (e : L ≃ₐ[K⸨X⸩] E) (x : L) :
-    mapAlgEquiv e (D K L x) = D K E (e x) :=
-  mapAlgHom_D e.toAlgHom x
+theorem mapSemilinearEquiv_D (e : L ≃ₐ[K⸨X⸩] E) (x : L) :
+    mapSemilinearEquiv e (D K L x) = D K E (e x) :=
+  mapSemilinear_D e.toAlgHom x
 
 @[simp]
-theorem mapAlgEquiv_map (e : L ≃ₐ[K⸨X⸩] E) (ω : TauCeti.ContinuousKaehlerDifferential K) :
-    mapAlgEquiv e (map K L ω) = map K E ω :=
-  mapAlgHom_map e.toAlgHom ω
+theorem mapSemilinearEquiv_map (e : L ≃ₐ[K⸨X⸩] E) (ω : TauCeti.ContinuousKaehlerDifferential K) :
+    mapSemilinearEquiv e (map K L ω) = map K E ω :=
+  mapSemilinear_map e.toAlgHom ω
 
-/-- Viewed over the base Laurent field `K⸨X⸩`, `mapAlgEquiv e` is a `K⸨X⸩`-linear equivalence. -/
+/-- Viewed over the base Laurent field `K⸨X⸩`, `mapSemilinearEquiv e` is a `K⸨X⸩`-linear
+equivalence. -/
 noncomputable def mapLinearEquiv (e : L ≃ₐ[K⸨X⸩] E) :
-    ContinuousKaehlerDifferential K L ≃ₗ[K⸨X⸩] ContinuousKaehlerDifferential K E where
-  toFun := mapAlgHom e.toAlgHom
-  invFun := mapAlgHom e.symm.toAlgHom
-  map_add' := map_add _
-  map_smul' f ω := by
-    rw [RingHom.id_apply, ← IsScalarTower.algebraMap_smul L f, mapAlgHom_smul, AlgHom.commutes,
-      IsScalarTower.algebraMap_smul]
-  left_inv ω := by rw [← mapAlgHom_comp, AlgEquiv.symm_comp, mapAlgHom_id]
-  right_inv ω := by rw [← mapAlgHom_comp, AlgEquiv.comp_symm, mapAlgHom_id]
+    ContinuousKaehlerDifferential K L ≃ₗ[K⸨X⸩] ContinuousKaehlerDifferential K E :=
+  ((equivSelf K L).restrictScalars K⸨X⸩).trans
+    (e.toLinearEquiv.trans ((equivSelf K E).symm.restrictScalars K⸨X⸩))
 
+@[simp]
 theorem mapLinearEquiv_apply (e : L ≃ₐ[K⸨X⸩] E) (ω : ContinuousKaehlerDifferential K L) :
-    mapLinearEquiv e ω = mapAlgHom e.toAlgHom ω :=
+    mapLinearEquiv e ω = mapSemilinearEquiv e ω :=
   (rfl)
 
 @[simp]
 theorem mapLinearEquiv_symm_apply (e : L ≃ₐ[K⸨X⸩] E) (ω : ContinuousKaehlerDifferential K E) :
-    (mapLinearEquiv e).symm ω = mapLinearEquiv e.symm ω :=
+    (mapLinearEquiv e).symm ω = mapSemilinearEquiv e.symm ω :=
   (rfl)
-
-@[simp]
-theorem equivSelf_mapLinearEquiv (e : L ≃ₐ[K⸨X⸩] E) (ω : ContinuousKaehlerDifferential K L) :
-    equivSelf K E (mapLinearEquiv e ω) = e (equivSelf K L ω) :=
-  equivSelf_mapAlgHom e.toAlgHom ω
-
-@[simp]
-theorem mapLinearEquiv_smul (e : L ≃ₐ[K⸨X⸩] E) (x : L) (ω : ContinuousKaehlerDifferential K L) :
-    mapLinearEquiv e (x • ω) = e x • mapLinearEquiv e ω :=
-  mapAlgHom_smul e.toAlgHom x ω
-
-@[simp]
-theorem mapLinearEquiv_D (e : L ≃ₐ[K⸨X⸩] E) (x : L) :
-    mapLinearEquiv e (D K L x) = D K E (e x) :=
-  mapAlgHom_D e.toAlgHom x
-
-@[simp]
-theorem mapLinearEquiv_map (e : L ≃ₐ[K⸨X⸩] E) (ω : TauCeti.ContinuousKaehlerDifferential K) :
-    mapLinearEquiv e (map K L ω) = map K E ω :=
-  mapAlgHom_map e.toAlgHom ω
 
 variable (K L E) [Algebra L E] [IsScalarTower K⸨X⸩ L E]
 
@@ -527,7 +513,7 @@ variable (K L E) [Algebra L E] [IsScalarTower K⸨X⸩ L E]
 canonical `algebraMap L E`-semilinear pullback `Ω¹_cont(L/K) → Ω¹_cont(E/K)`. -/
 noncomputable def mapTower :
     ContinuousKaehlerDifferential K L →ₛₗ[algebraMap L E] ContinuousKaehlerDifferential K E :=
-  mapAlgHom (IsScalarTower.toAlgHom K⸨X⸩ L E)
+  mapSemilinear (IsScalarTower.toAlgHom K⸨X⸩ L E)
 
 /-- **Relative scalar extension in a tower.** In a tower `K⸨X⸩ → L → E` of formally étale
 `K⸨X⸩`-algebras, `E ⊗_L Ω¹_cont(L/K) ≃ Ω¹_cont(E/K)` as `E`-modules. -/
@@ -539,24 +525,26 @@ noncomputable def tensorEquivTower :
 variable {K L E}
 
 theorem mapTower_apply (ω : ContinuousKaehlerDifferential K L) :
-    mapTower K L E ω = mapAlgHom (IsScalarTower.toAlgHom K⸨X⸩ L E) ω :=
+    mapTower K L E ω = mapSemilinear (IsScalarTower.toAlgHom K⸨X⸩ L E) ω :=
   (rfl)
 
 @[simp]
 theorem equivSelf_mapTower (ω : ContinuousKaehlerDifferential K L) :
     equivSelf K E (mapTower K L E ω) = algebraMap L E (equivSelf K L ω) := by
-  rw [mapTower_apply, equivSelf_mapAlgHom, IsScalarTower.toAlgHom_apply]
+  rw [mapTower_apply, equivSelf_mapSemilinear, IsScalarTower.toAlgHom_apply]
 
 @[simp]
 theorem mapTower_D (x : L) :
     mapTower K L E (D K L x) = D K E (algebraMap L E x) := by
-  rw [mapTower_apply, mapAlgHom_D, IsScalarTower.toAlgHom_apply]
+  rw [mapTower_apply, mapSemilinear_D, IsScalarTower.toAlgHom_apply]
 
 @[simp]
 theorem mapTower_map (ω : TauCeti.ContinuousKaehlerDifferential K) :
     mapTower K L E (map K L ω) = map K E ω := by
-  rw [mapTower_apply, mapAlgHom_map]
+  rw [mapTower_apply, mapSemilinear_map]
 
+/-- The equivalence `E ⊗_L Ω¹_cont(L/K) ≃ Ω¹_cont(E/K)` sends `y ⊗ ω` to `y` times the tower
+pullback of `ω`. -/
 @[simp]
 theorem tensorEquivTower_tmul (y : E) (ω : ContinuousKaehlerDifferential K L) :
     tensorEquivTower K L E (y ⊗ₜ ω) = y • mapTower K L E ω := by
@@ -570,13 +558,13 @@ end Functoriality
 section UniversalProperty
 
 variable {M : Type*} [AddCommGroup M] [Module L M] [Module K M] [IsScalarTower K L M]
-  [Module K⸨X⸩ M] [IsScalarTower K⸨X⸩ L M] [IsScalarTower K K⸨X⸩ M] [TopologicalSpace M]
-  [ContinuousSMul K⸨X⸩ M]
+  [Module K⸨X⸩ M] [IsScalarTower K⸨X⸩ L M] [TopologicalSpace M] [ContinuousSMul K⸨X⸩ M]
 
 /-- Every derivation factoring through `d` is continuous on `K⸨X⸩` when scalar multiplication by
 `K⸨X⸩` on its target is continuous. -/
 theorem continuous_compAlgebraMap_compDer (ℓ : ContinuousKaehlerDifferential K L →ₗ[L] M) :
     Continuous ((ℓ.compDer (D K L)).compAlgebraMap K⸨X⸩) := by
+  have : IsScalarTower K K⸨X⸩ M := IsScalarTower.to₁₂₄ K K⸨X⸩ L M
   have h : (ℓ.compDer (D K L)).compAlgebraMap K⸨X⸩ =
       (ℓ.restrictScalars K⸨X⸩ ∘ₗ map K L).compDer (TauCeti.ContinuousKaehlerDifferential.D K) :=
     Derivation.ext fun g ↦ by simp
@@ -591,6 +579,7 @@ variable [T2Space M]
 `δ y = D_L y • δ t`. -/
 theorem apply_eq_derivation_smul (δ : Derivation K L M) (hδ : Continuous (δ.compAlgebraMap K⸨X⸩))
     (x : L) : δ x = derivation K L x • δ (algebraMap K⸨X⸩ L (single 1 1)) := by
+  have : IsScalarTower K K⸨X⸩ M := IsScalarTower.to₁₂₄ K K⸨X⸩ L M
   have h : δ = (LinearMap.toSpanSingleton L M (δ (algebraMap K⸨X⸩ L (single 1 1)))).compDer
       (derivation K L) := Derivation.eq_of_formallyUnramified (S := K⸨X⸩) fun f ↦ by
     rw [Derivation.coe_comp, LinearMap.comp_apply, Derivation.coeFn_coe, derivation_algebraMap,
@@ -659,95 +648,33 @@ end UniversalProperty
 
 section Topology
 
+section TopologicalSemiring
+
+variable [TopologicalSpace L] [IsTopologicalSemiring L]
+
 variable (K L) in
 /-- When `L` is a topological semiring, `equivSelf K L` is a continuous `L`-linear equivalence. -/
-noncomputable def continuousEquivSelf [TopologicalSpace L] [IsTopologicalSemiring L] :
+noncomputable def continuousEquivSelf :
     ContinuousKaehlerDifferential K L ≃L[L] L :=
-  { equivSelf K L with
-    continuous_toFun := IsModuleTopology.continuous_of_linearMap (equivSelf K L).toLinearMap
-    continuous_invFun := IsModuleTopology.continuous_of_linearMap (equivSelf K L).symm.toLinearMap }
+  (equivSelf K L).toContinuousLinearEquivOfIsModuleTopology
 
 @[simp]
-theorem continuousEquivSelf_apply [TopologicalSpace L] [IsTopologicalSemiring L]
-    (ω : ContinuousKaehlerDifferential K L) :
-    continuousEquivSelf K L ω = equivSelf K L ω :=
-  (rfl)
+theorem continuousEquivSelf_apply (ω : ContinuousKaehlerDifferential K L) :
+    continuousEquivSelf K L ω = equivSelf K L ω := by
+  simp [continuousEquivSelf]
 
 @[simp]
-theorem continuousEquivSelf_symm_apply [TopologicalSpace L] [IsTopologicalSemiring L] (x : L) :
-    (continuousEquivSelf K L).symm x = (equivSelf K L).symm x :=
-  (rfl)
+theorem continuousEquivSelf_symm_apply (x : L) :
+    (continuousEquivSelf K L).symm x = (equivSelf K L).symm x := by
+  simp [continuousEquivSelf]
 
-variable [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L] [Module.Finite K⸨X⸩ L]
-
-/-- When `L` is finite over `K⸨X⸩` and carries the `K⸨X⸩`-module topology, `Ω¹_cont(L/K)` also
-carries the `K⸨X⸩`-module topology. -/
-instance : IsModuleTopology K⸨X⸩ (ContinuousKaehlerDifferential K L) :=
-  IsModuleTopology.restrictScalars K⸨X⸩ L _
-
-instance : T2Space (ContinuousKaehlerDifferential K L) :=
-  TauCeti.ModuleTopology.t2Space
-    (Module.Free.chooseBasis K⸨X⸩ (ContinuousKaehlerDifferential K L))
-
+/-- When `L` is a topological semiring, `equivSelf K L` is continuous. -/
 @[fun_prop]
-theorem continuous_equivSelf : Continuous (equivSelf K L) := by
-  have := IsModuleTopology.isTopologicalRing K⸨X⸩ L
-  exact (continuousEquivSelf K L).continuous.congr fun _ ↦ rfl
+theorem continuous_equivSelf : Continuous (equivSelf K L) :=
+  (continuousEquivSelf K L).continuous.congr continuousEquivSelf_apply
 
-/-- The universal derivation `d : L → Ω¹_cont(L/K)` is continuous for the `K⸨X⸩`-module
-topology. -/
-@[fun_prop]
-theorem continuous_D : Continuous (D K L) := by
-  have := IsModuleTopology.isTopologicalRing K⸨X⸩ L
-  exact (continuousEquivSelf K L).toHomeomorph.comp_continuous_iff.mp <| by
-    simpa only [ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_def,
-      continuousEquivSelf_apply, equivSelf_D] using continuous_derivation (K := K) (L := L)
-
-/-- The pullback `Ω¹_cont(K⸨X⸩/K) → Ω¹_cont(L/K)` is continuous. -/
-@[fun_prop]
-theorem continuous_map : Continuous (map K L) :=
-  IsModuleTopology.continuous_of_linearMap (map K L)
-
-open scoped TauCeti.ModuleTopology in
-variable (K L) in
-/-- Under the `K⸨X⸩`-module topology on the tensor product, `tensorEquiv K L` is a continuous
-`K⸨X⸩`-linear equivalence. -/
-noncomputable def continuousTensorEquiv :
-    L ⊗[K⸨X⸩] TauCeti.ContinuousKaehlerDifferential K ≃L[K⸨X⸩]
-      ContinuousKaehlerDifferential K L :=
-  ((tensorEquiv K L).restrictScalars K⸨X⸩).toContinuousLinearEquivOfIsModuleTopology
-
-open scoped TauCeti.ModuleTopology in
-@[simp]
-theorem continuousTensorEquiv_apply (η : L ⊗[K⸨X⸩] TauCeti.ContinuousKaehlerDifferential K) :
-    continuousTensorEquiv K L η = tensorEquiv K L η := by
-  simp [continuousTensorEquiv]
-
-open scoped TauCeti.ModuleTopology in
-@[simp]
-theorem continuousTensorEquiv_symm_apply (ω : ContinuousKaehlerDifferential K L) :
-    (continuousTensorEquiv K L).symm ω = (tensorEquiv K L).symm ω := by
-  simp [continuousTensorEquiv]
-
-/-- An algebraic `K⸨X⸩`-equivalence between finite formally étale extensions carrying the
-`K⸨X⸩`-module topology induces a continuous `K⸨X⸩`-linear equivalence on continuous one-forms,
-without assuming continuity of `e` in advance. -/
-noncomputable def mapContinuousLinearEquiv {E : Type*} [CommRing E] [Algebra K⸨X⸩ E] [Algebra K E]
-    [IsScalarTower K K⸨X⸩ E] [Algebra.FormallyEtale K⸨X⸩ E] [TopologicalSpace E]
-    [IsModuleTopology K⸨X⸩ E] [Module.Finite K⸨X⸩ E] (e : L ≃ₐ[K⸨X⸩] E) :
-    ContinuousKaehlerDifferential K L ≃L[K⸨X⸩] ContinuousKaehlerDifferential K E :=
-  (mapLinearEquiv e).toContinuousLinearEquivOfIsModuleTopology
-
-@[simp]
-theorem mapContinuousLinearEquiv_apply {E : Type*} [CommRing E] [Algebra K⸨X⸩ E] [Algebra K E]
-    [IsScalarTower K K⸨X⸩ E] [Algebra.FormallyEtale K⸨X⸩ E] [TopologicalSpace E]
-    [IsModuleTopology K⸨X⸩ E] [Module.Finite K⸨X⸩ E] (e : L ≃ₐ[K⸨X⸩] E)
-    (ω : ContinuousKaehlerDifferential K L) :
-    mapContinuousLinearEquiv e ω = mapLinearEquiv e ω := by
-  simp [mapContinuousLinearEquiv]
-
-/-- Every `L`-linear map from `Ω¹_cont(L/K)` to a module with continuous `L`-scalar multiplication
-is continuous. No continuity of addition on `N` is needed. -/
+/-- When `L` is a topological semiring, every `L`-linear map from `Ω¹_cont(L/K)` to a module with
+continuous `L`-scalar multiplication is continuous. No continuity of addition on `N` is needed. -/
 @[fun_prop]
 theorem continuous_of_linearMap {N : Type*} [AddCommMonoid N] [Module L N]
     [TopologicalSpace N] [ContinuousSMul L N]
@@ -755,31 +682,64 @@ theorem continuous_of_linearMap {N : Type*} [AddCommMonoid N] [Module L N]
   ((continuous_equivSelf (K := K) (L := L)).fun_smul continuous_const).congr fun ω ↦ by
     simpa only [map_smul] using congrArg ℓ (equivSelf_smul_D_algebraMap_single_one ω)
 
-/-- Every derivation factoring through `d` is continuous when `L`-scalar multiplication on its
-target is continuous. -/
-theorem continuous_compDer {M : Type*} [AddCommGroup M] [Module L M] [Module K M]
-    [IsScalarTower K L M] [TopologicalSpace M] [ContinuousSMul L M]
-    (ℓ : ContinuousKaehlerDifferential K L →ₗ[L] M) :
-    Continuous (ℓ.compDer (D K L)) :=
-  (continuous_of_linearMap ℓ).comp continuous_D
-
-section TopologicalUniversalProperty
-
-variable {M : Type*} [AddCommGroup M] [Module L M] [Module K M] [IsScalarTower K L M]
-  [Module K⸨X⸩ M] [IsScalarTower K⸨X⸩ L M] [IsScalarTower K K⸨X⸩ M] [TopologicalSpace M]
-  [T2Space M] [ContinuousSMul L M]
-
-/-- The factorization `lift` of a derivation into a Hausdorff topological `L`-module is
-continuous. -/
-theorem continuous_lift [ContinuousSMul K⸨X⸩ M] (δ : Derivation K L M)
-    (hδ : Continuous (δ.compAlgebraMap K⸨X⸩)) :
+/-- When `L` is a topological semiring, the factorization `lift` of a derivation into a Hausdorff
+topological `L`-module with continuous `K⸨X⸩`- and `L`-scalar multiplications is continuous. -/
+theorem continuous_lift {M : Type*} [AddCommGroup M] [Module L M] [Module K M]
+    [IsScalarTower K L M] [Module K⸨X⸩ M] [IsScalarTower K⸨X⸩ L M] [TopologicalSpace M]
+    [T2Space M] [ContinuousSMul K⸨X⸩ M] [ContinuousSMul L M]
+    (δ : Derivation K L M) (hδ : Continuous (δ.compAlgebraMap K⸨X⸩)) :
     Continuous (lift δ hδ) :=
   continuous_of_linearMap _
 
-/-- **Continuity on `L` is determined on `K⸨X⸩`.** For a `K`-derivation `δ : L → M` into a
-Hausdorff module with continuous `L`-scalar multiplication, `δ` is continuous on `L` if and only if
-its restriction to `K⸨X⸩` is continuous. -/
-theorem continuous_iff_continuous_compAlgebraMap (δ : Derivation K L M) :
+end TopologicalSemiring
+
+/-- When scalar multiplication by `K⸨X⸩` on `L` is continuous, the pullback
+`Ω¹_cont(K⸨X⸩/K) → Ω¹_cont(L/K)` is continuous. -/
+@[fun_prop]
+theorem continuous_map [TopologicalSpace L] [ContinuousSMul K⸨X⸩ L] :
+    Continuous (map K L) := by
+  have : ContinuousSMul K⸨X⸩ (ContinuousKaehlerDifferential K L) :=
+    IsScalarTower.continuousSMul L
+  exact IsModuleTopology.continuous_of_linearMap (map K L)
+
+section ModuleTopology
+
+variable [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L]
+
+/-- When `L` is finite over `K⸨X⸩` and carries the `K⸨X⸩`-module topology, `Ω¹_cont(L/K)` also
+carries the `K⸨X⸩`-module topology. -/
+instance [Module.Finite K⸨X⸩ L] : IsModuleTopology K⸨X⸩ (ContinuousKaehlerDifferential K L) :=
+  IsModuleTopology.restrictScalars K⸨X⸩ L _
+
+instance [Module.Finite K⸨X⸩ L] : T2Space (ContinuousKaehlerDifferential K L) :=
+  TauCeti.ModuleTopology.t2Space
+    (Module.Free.chooseBasis K⸨X⸩ (ContinuousKaehlerDifferential K L))
+
+/-- When `L` carries the `K⸨X⸩`-module topology, the universal derivation `d : L → Ω¹_cont(L/K)`
+is continuous. -/
+@[fun_prop]
+theorem continuous_D : Continuous (D K L) :=
+  ((continuous_derivation (K := K) (L := L)).fun_smul continuous_const).congr
+    derivation_smul_D_algebraMap_single_one
+
+/-- When `L` carries the `K⸨X⸩`-module topology, every derivation factoring through `d` is
+continuous when `L`-scalar multiplication on its target is continuous. -/
+theorem continuous_compDer {M : Type*} [AddCommMonoid M] [Module L M] [Module K M]
+    [IsScalarTower K L M] [TopologicalSpace M] [ContinuousSMul L M]
+    (ℓ : ContinuousKaehlerDifferential K L →ₗ[L] M) :
+    Continuous (ℓ.compDer (D K L)) :=
+  ((continuous_derivation (K := K) (L := L)).fun_smul continuous_const).congr fun x ↦ by
+    simpa [Derivation.coe_comp, LinearMap.comp_apply, LinearMap.coe_restrictScalars,
+      Derivation.coeFn_coe, map_smul] using
+      congrArg ℓ (derivation_smul_D_algebraMap_single_one x)
+
+/-- **Continuity on `L` is determined on `K⸨X⸩`.** When `L` carries the `K⸨X⸩`-module topology, a
+`K`-derivation `δ : L → M` into a Hausdorff module with continuous `L`-scalar multiplication is
+continuous on `L` if and only if its restriction to `K⸨X⸩` is continuous. -/
+theorem _root_.Derivation.continuous_iff_continuous_compAlgebraMap_laurentSeries
+    {M : Type*} [AddCommGroup M] [Module L M] [Module K M] [IsScalarTower K L M]
+    [Module K⸨X⸩ M] [IsScalarTower K⸨X⸩ L M] [TopologicalSpace M] [T2Space M]
+    [ContinuousSMul L M] (δ : Derivation K L M) :
     Continuous δ ↔ Continuous (δ.compAlgebraMap K⸨X⸩) := by
   have : ContinuousSMul K⸨X⸩ M := IsScalarTower.continuousSMul L
   have : ContinuousAdd L := IsModuleTopology.toContinuousAdd K⸨X⸩ L
@@ -788,22 +748,31 @@ theorem continuous_iff_continuous_compAlgebraMap (δ : Derivation K L M) :
   exact ((continuous_derivation (K := K) (L := L)).fun_smul continuous_const).congr fun x ↦
     (apply_eq_derivation_smul δ hδ x).symm
 
-/-- **Topological universal property of `Ω¹_cont(L/K)`.** A `K`-derivation `δ : L → M` into a
-Hausdorff module with continuous `L`-scalar multiplication factors through `d` if and only if `δ` is
-continuous on `L`. -/
-theorem exists_compDer_eq_iff_continuous (δ : Derivation K L M) :
+/-- **Topological universal property of `Ω¹_cont(L/K)`.** When `L` carries the `K⸨X⸩`-module
+topology, a `K`-derivation `δ : L → M` into a Hausdorff `L`-module with continuous `L`-scalar
+multiplication factors through `d` if and only if `δ` is continuous on `L`. -/
+theorem exists_compDer_eq_iff_continuous {M : Type*} [AddCommGroup M] [Module L M] [Module K M]
+    [IsScalarTower K L M] [TopologicalSpace M] [T2Space M] [ContinuousSMul L M]
+    (δ : Derivation K L M) :
     (∃ ℓ : ContinuousKaehlerDifferential K L →ₗ[L] M, ℓ.compDer (D K L) = δ) ↔ Continuous δ := by
+  let _ : Module K⸨X⸩ M := Module.compHom M (algebraMap K⸨X⸩ L)
+  have : IsScalarTower K⸨X⸩ L M := IsScalarTower.of_compHom K⸨X⸩ L M
   have : ContinuousSMul K⸨X⸩ M := IsScalarTower.continuousSMul L
-  rw [exists_compDer_eq_iff, ← continuous_iff_continuous_compAlgebraMap]
+  rw [exists_compDer_eq_iff, ← δ.continuous_iff_continuous_compAlgebraMap_laurentSeries]
 
-/-- Every continuous `K`-derivation `δ : L → M` into a Hausdorff module with continuous `L`-scalar
-multiplication factors uniquely through `d`. -/
-theorem existsUnique_compDer_eq_of_continuous (δ : Derivation K L M) (hδ : Continuous δ) :
+/-- When `L` carries the `K⸨X⸩`-module topology, every continuous `K`-derivation `δ : L → M` into
+a Hausdorff `L`-module with continuous `L`-scalar multiplication factors uniquely through `d`. -/
+theorem existsUnique_compDer_eq_of_continuous {M : Type*} [AddCommGroup M] [Module L M]
+    [Module K M] [IsScalarTower K L M] [TopologicalSpace M] [T2Space M] [ContinuousSMul L M]
+    (δ : Derivation K L M) (hδ : Continuous δ) :
     ∃! ℓ : ContinuousKaehlerDifferential K L →ₗ[L] M, ℓ.compDer (D K L) = δ := by
+  let _ : Module K⸨X⸩ M := Module.compHom M (algebraMap K⸨X⸩ L)
+  have : IsScalarTower K⸨X⸩ L M := IsScalarTower.of_compHom K⸨X⸩ L M
   have : ContinuousSMul K⸨X⸩ M := IsScalarTower.continuousSMul L
-  exact existsUnique_compDer_eq δ ((continuous_iff_continuous_compAlgebraMap δ).mp hδ)
+  exact existsUnique_compDer_eq δ
+    (δ.continuous_iff_continuous_compAlgebraMap_laurentSeries.mp hδ)
 
-end TopologicalUniversalProperty
+end ModuleTopology
 
 end Topology
 

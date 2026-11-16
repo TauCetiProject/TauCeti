@@ -136,12 +136,10 @@ instance : IsScalarTower K⸨X⸩ (Level K d) (Level.ContinuousKaehlerDifferenti
   ⟨fun f g ω ↦ by rw [Algebra.smul_def, mul_smul]; rfl⟩
 
 instance : IsScalarTower K (Level K d) (Level.ContinuousKaehlerDifferential K d) :=
-  ⟨fun c g ω ↦ by rw [Algebra.smul_def, mul_smul]; rfl⟩
+  IsScalarTower.of_compHom K (Level K d) (Level.ContinuousKaehlerDifferential K d)
 
 instance : IsScalarTower K K⸨X⸩ (Level.ContinuousKaehlerDifferential K d) :=
-  ⟨fun c f ω ↦ by
-    have h : ∀ g : K⸨X⸩, g • ω = (g • (1 : Level K d)) • ω := fun g ↦ by rw [smul_assoc, one_smul]
-    rw [h (c • f), smul_assoc c f (1 : Level K d), smul_assoc c, ← h f]⟩
+  IsScalarTower.to₁₂₄ K K⸨X⸩ (Level K d) (Level.ContinuousKaehlerDifferential K d)
 
 variable {K d}
 
@@ -165,7 +163,7 @@ theorem addEquivContinuousKaehlerDifferential_laurentSeries_smul (f : K⸨X⸩)
 
 /-- Constants from `K` act compatibly on level one-forms and on underlying Laurent one-forms. -/
 @[simp]
-theorem addEquivContinuousKaehlerDifferential_coeff_smul (c : K)
+theorem addEquivContinuousKaehlerDifferential_smul' (c : K)
     (ω : Level.ContinuousKaehlerDifferential K d) :
     addEquivContinuousKaehlerDifferential K d (c • ω) =
       c • addEquivContinuousKaehlerDifferential K d ω := by

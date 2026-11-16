@@ -231,13 +231,7 @@ variable (K : Type*) [Field K] [TopologicalSpace K]
 /-- The Laurent residue pairing is jointly continuous for the valuation topology, with any
 topology on the coefficient field. -/
 theorem continuous_residuePairing :
-    Continuous (fun p : K⸨X⸩ × K⸨X⸩ ↦ residuePairing K p.1 p.2) := by
-  -- Coefficient extraction is continuous into the discrete topology, hence into any topology.
-  have hcoeff : @Continuous K⸨X⸩ K _ ⊥ (fun f ↦ f.coeff (-1)) := by
-    rw [← UniformSpace.toTopologicalSpace_bot]
-    exact @UniformContinuous.continuous _ _ _ ⊥ _
-      (uniformContinuous_coeff (uK := ⊥) (-1))
-  exact (continuous_le_rng bot_le hcoeff).comp
-    (continuous_fst.mul (continuous_derivative.comp continuous_snd))
+    Continuous (fun p : K⸨X⸩ × K⸨X⸩ ↦ residuePairing K p.1 p.2) :=
+  (continuous_coeff (-1)).comp (continuous_fst.mul (continuous_derivative.comp continuous_snd))
 
 end LaurentSeries

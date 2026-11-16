@@ -106,29 +106,62 @@ noncomputable def algebraMap : K⸨X⸩ →+* Level K d :=
 /-- Level `d` is a `K⸨X⸩`-algebra through the expansion `X ↦ X ^ d`. -/
 noncomputable instance : Algebra K⸨X⸩ (Level K d) := (algebraMap K d).toAlgebra
 
-/-- Level `d` is a `K`-algebra through its `K⸨X⸩`-algebra structure. -/
-noncomputable instance : Algebra K (Level K d) :=
-  ((algebraMap K d).comp (Algebra.algebraMap K K⸨X⸩)).toAlgebra
-
-instance : IsScalarTower K K⸨X⸩ (Level K d) where
-  smul_assoc r f x := by
-    -- Switch from the coefficientwise `K`-action on `K⸨X⸩` to `algebraMap`-multiplication.
-    rw [← C_mul_eq_smul, ← _root_.LaurentSeries.algebraMap_apply, Algebra.smul_def,
-      Algebra.smul_def, Algebra.smul_def, map_mul, mul_assoc]
-    rfl
-
 /-- The algebra map into a ramified level is expansion on underlying Laurent series. -/
 @[simp]
 theorem algebraMap_apply (f : K⸨X⸩) :
     ringEquivLaurentSeries K d (Algebra.algebraMap K⸨X⸩ (Level K d) f) =
       expand K d f := (rfl)
 
+/-- Level `d` is a `K`-algebra through its underlying Laurent series. -/
+noncomputable instance : Algebra K (Level K d) where
+  toSMul := (equivLaurentSeries K d).smul K
+  algebraMap :=
+    { toFun := fun c ↦ (equivLaurentSeries K d).symm (HahnSeries.C c)
+      map_one' := by
+        change (equivLaurentSeries K d).symm (HahnSeries.C 1) = (equivLaurentSeries K d).symm 1
+        rw [map_one]
+      map_mul' := fun x y ↦ by
+        change (equivLaurentSeries K d).symm (HahnSeries.C (x * y)) =
+          (equivLaurentSeries K d).symm
+            (equivLaurentSeries K d ((equivLaurentSeries K d).symm (HahnSeries.C x)) *
+              equivLaurentSeries K d ((equivLaurentSeries K d).symm (HahnSeries.C y)))
+        rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply, map_mul]
+      map_zero' := by
+        change (equivLaurentSeries K d).symm (HahnSeries.C 0) = (equivLaurentSeries K d).symm 0
+        rw [map_zero]
+      map_add' := fun x y ↦ by
+        change (equivLaurentSeries K d).symm (HahnSeries.C (x + y)) =
+          (equivLaurentSeries K d).symm
+            (equivLaurentSeries K d ((equivLaurentSeries K d).symm (HahnSeries.C x)) +
+              equivLaurentSeries K d ((equivLaurentSeries K d).symm (HahnSeries.C y)))
+        rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply, map_add] }
+  commutes' _ _ := mul_comm _ _
+  smul_def' c x := by
+    change (equivLaurentSeries K d).symm (c • equivLaurentSeries K d x) =
+      (equivLaurentSeries K d).symm
+        (equivLaurentSeries K d ((equivLaurentSeries K d).symm (HahnSeries.C c)) *
+          equivLaurentSeries K d x)
+    rw [Equiv.apply_symm_apply, C_mul_eq_smul]
+
+private theorem ringEquivLaurentSeries_smul (c : K) (x : Level K d) :
+    ringEquivLaurentSeries K d (c • x) = c • ringEquivLaurentSeries K d x := by
+  change equivLaurentSeries K d ((equivLaurentSeries K d).symm (c • equivLaurentSeries K d x)) =
+    c • equivLaurentSeries K d x
+  exact (equivLaurentSeries K d).apply_symm_apply _
+
+instance : IsScalarTower K K⸨X⸩ (Level K d) where
+  smul_assoc r f x := (ringEquivLaurentSeries K d).injective <| by
+    rw [Algebra.smul_def, map_mul, algebraMap_apply, ringEquivLaurentSeries_smul,
+      Algebra.smul_def, map_mul, algebraMap_apply, ← C_mul_eq_smul,
+      ← _root_.LaurentSeries.algebraMap_apply, map_mul, (expand K d).commutes,
+      _root_.LaurentSeries.algebraMap_apply, mul_assoc, C_mul_eq_smul]
+
 /-- Constants from `K` embed into a ramified level as constant Laurent series. -/
 @[simp]
 theorem ringEquivLaurentSeries_algebraMap (c : K) :
     ringEquivLaurentSeries K d (Algebra.algebraMap K (Level K d) c) =
-      Algebra.algebraMap K K⸨X⸩ c :=
-  (expand K d).commutes c
+      Algebra.algebraMap K K⸨X⸩ c := by
+  rw [IsScalarTower.algebraMap_apply K K⸨X⸩ (Level K d), algebraMap_apply, AlgHom.commutes]
 
 /-- Wrapping and then taking the underlying Laurent series is the identity. -/
 @[simp]

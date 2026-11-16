@@ -147,10 +147,9 @@ theorem level_eq_adjoin :
 /-- The actual level-`d` subfield of the Puiseux field is separable over `K⸨X⸩` if and only if `d`
 is nonzero in `K`. -/
 theorem isSeparable_level_iff :
-    Algebra.IsSeparable K⸨X⸩ (level K d) ↔ ((d : ℕ) : K) ≠ 0 := by
-  rw [← LaurentSeries.Level.isSeparable_iff]
-  exact ⟨fun _ ↦ AlgEquiv.Algebra.isSeparable (levelEquiv K d).symm,
-    fun _ ↦ AlgEquiv.Algebra.isSeparable (levelEquiv K d)⟩
+    Algebra.IsSeparable K⸨X⸩ (level K d) ↔ ((d : ℕ) : K) ≠ 0 :=
+  (AlgEquiv.Algebra.isSeparable_iff (levelEquiv K d).symm).trans
+    (LaurentSeries.Level.isSeparable_iff K d)
 
 instance [NeZero ((d : ℕ) : K)] : Algebra.IsSeparable K⸨X⸩ (level K d) :=
   (isSeparable_level_iff K d).mpr (NeZero.ne _)
