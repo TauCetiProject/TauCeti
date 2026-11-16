@@ -58,8 +58,9 @@ Serre spectral sequence; see `TauCeti.AlgebraicTopology.Singular.Fibration.Cohom
   Theorem 2.6 and Section 5.1.
 * C. A. Weibel, *An Introduction to Homological Algebra*, Cambridge University Press, 1994,
   Theorem 5.5.10 (complete convergence).
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 5.1.
+* A. Hatcher,
+  [*Spectral Sequences in Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/SSAT/SSch1.pdf),
+  Chapter 1, Section 1.2.
 -/
 
 public section

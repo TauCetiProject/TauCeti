@@ -38,9 +38,9 @@ the same range (`TauCeti.TopCat.isZero_singularCohomology_preimageSkeleton`).
   (`TauCeti.TopCat.isZero_serreCohomologySpectralObject_abutmentFiltration`), and on every page
   `r ≥ 1` with `s < r` and `t + 1 < r` the object at `(s, t)` is the graded piece
   `F^s H^{s+t} / F^{s+1} H^{s+t}` (`TauCeti.TopCat.serreCohomologySpectralSequencePageXIsoGraded`).
-  Unlike the filtration of the singular chains, no stage of the filtration of the cochains
-  vanishes when `K` is infinite-dimensional, so the convergence uses the completeness of the
-  filtration.
+  Unlike the filtration of the singular chains, the stages of the filtration of the cochains
+  need not vanish in any degree when `K` is infinite-dimensional, so the convergence uses the
+  completeness of the filtration.
 
 ## References
 
@@ -48,8 +48,9 @@ the same range (`TauCeti.TopCat.isZero_singularCohomology_preimageSkeleton`).
   425–505, Chapter II.
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
   Theorem 5.2 and Section 5.1.
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 5.1 (the Serre spectral sequence in cohomology).
+* A. Hatcher,
+  [*Spectral Sequences in Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/SSAT/SSch1.pdf),
+  Chapter 1, Section 1.2 (the cohomology spectral sequence).
 -/
 
 public section
