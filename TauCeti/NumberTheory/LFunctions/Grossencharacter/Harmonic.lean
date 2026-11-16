@@ -19,43 +19,31 @@ archimedean harmonic polynomial `χ.harmonicFactor` on `mixedSpace K`, its local
 term `χ.heckeEpsilon` of Hecke's twisted theta series.
 
 At a real place `w`, `χ.harmonicFactor` carries the parity of `χ.toHeckeCharacter.infinityType`
-rather than that of the algebraic exponents `χ.infinityType`: a finite-order character ramified at
-`w ∈ 𝔪.infinitePart` has `χ.infinityType = 0` yet requires the odd factor `x_w` so that its
-twisted theta series does not vanish identically. At a complex place `w`,
-`χ.agreesOnIdentityComponent` identifies the angular frequency of `χ.toHeckeCharacter.infinityType`
-with `(AlgebraicInfinityType.toContinuous χ.infinityType).complexAngularFrequency w`
-(`n τ - n (conj τ)`), so all four archimedean quantities agree with their
-`ContinuousInfinityType` counterparts on `χ.toHeckeCharacter.infinityType`.
+rather than that of `χ.infinityType` (so a finite-order character ramified at `w ∈ 𝔪.infinitePart`
+retains the odd factor `x_w`). At a complex place `w`, `χ.agreesOnIdentityComponent` identifies the
+angular frequency of `χ.toHeckeCharacter.infinityType` with `n τ - n (conj τ)`, so all four
+archimedean quantities agree with their `ContinuousInfinityType` counterparts on
+`χ.toHeckeCharacter.infinityType` and are independent of the presentation modulus `𝔪`:
 
-Consequently:
-* `χ.harmonicExponent`, `χ.harmonicDegree`, `χ.harmonicFactor`, `χ.archWeight`, and `χ.heckeEpsilon`
-  depend only on the underlying `HeckeCharacter`, not on the modulus `𝔪` of the presentation;
 * `χ.harmonicFactor * archGaussian y` transforms under `mixedFourier K` into
   `χ.harmonicFactor * archGaussian y⁻¹` up to
-  `(-i) ^ χ.harmonicDegree * N(y)^(-1/2) * ∏_w y_w^(-P_w)`
-  (`Grossencharacter.mixedFourier_harmonicFactor_mul_archGaussian`);
-* on any `x : Kˣ`, multiplying `χ.harmonicFactor (mixedEmbedding K x)` by the product of the
-  archimedean components of `χ.toHeckeCharacter.unitaryPart` clears all signs and angular phases,
-  leaving the positive real product `∏_w |x_w| ^ P_w`
-  (`Grossencharacter.prod_unitaryPart_infiniteComponent_mul_harmonicFactor`); on global units
-  `u : (𝓞 K)ˣ`, the same holds for the unnormalized `χ.toHeckeCharacter`
-  (`Grossencharacter.prod_infiniteComponent_unit_mul_harmonicFactor`).
+  `(-i) ^ χ.harmonicDegree * N(y)^(-1/2) * ∏_w y_w^(-P_w)`;
+* multiplying `χ.harmonicFactor (mixedEmbedding K x)` by the archimedean components of
+  `χ.toHeckeCharacter.unitaryPart` clears all signs and phases on `Kˣ`, leaving `∏_w |x_w| ^ P_w`
+  (and likewise for the unnormalized `χ.toHeckeCharacter` on `(𝓞 K)ˣ`).
 
 ## Main definitions
 
-* `TauCeti.LFunctions.Grossencharacter.harmonicExponent`: local harmonic degree `P_w`.
-* `TauCeti.LFunctions.Grossencharacter.harmonicDegree`: total harmonic degree `∑_w P_w`.
-* `TauCeti.LFunctions.Grossencharacter.harmonicFactor`: archimedean harmonic polynomial on
-  `mixedSpace K`.
-* `TauCeti.LFunctions.Grossencharacter.archWeight`: parameter weight `∏_w y_w ^ (P_w / 2)`.
-* `TauCeti.LFunctions.Grossencharacter.heckeEpsilon`: constant term `ε(χ)` of Hecke's theta series.
+* `TauCeti.LFunctions.Grossencharacter.harmonicExponent`, `harmonicDegree`, `harmonicFactor`,
+  `archWeight`, `heckeEpsilon`: local/total harmonic degrees, harmonic polynomial, weight, and
+  theta constant term.
 
 ## Main results
 
 * `TauCeti.LFunctions.Grossencharacter.mixedFourier_harmonicFactor_mul_archGaussian`: Hecke's
-  Fourier eigenfunction lemma for a presented algebraic Hecke character.
-* `TauCeti.LFunctions.Grossencharacter.integral_archGaussian_mul_archWeight_mul_archNorm_cpow`: the
-  shifted archimedean gamma integral for `χ`.
+  Fourier eigenfunction lemma for `χ`.
+* `TauCeti.LFunctions.Grossencharacter.integral_archGaussian_mul_archWeight_mul_archNorm_cpow`:
+  the shifted archimedean gamma integral for `χ`.
 * `TauCeti.LFunctions.Grossencharacter.prod_unitaryPart_infiniteComponent_mul_harmonicFactor` and
   `TauCeti.LFunctions.Grossencharacter.prod_infiniteComponent_unit_mul_harmonicFactor`: archimedean
   sign and phase cancellation on `Kˣ` and `(𝓞 K)ˣ`.
@@ -65,9 +53,7 @@ Consequently:
 * J. Neukirch, *Algebraic Number Theory*, Chapter VII, §§3, 7–8.
 -/
 
-public section
-
-noncomputable section
+public noncomputable section
 
 open Complex ComplexConjugate MeasureTheory NumberField NumberField.InfinitePlace
   NumberField.InfinitePlace.Completion NumberField.mixedEmbedding TauCeti.NumberField.mixedEmbedding
