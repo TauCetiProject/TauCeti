@@ -41,20 +41,6 @@ open Equiv Equiv.Perm Finset
 
 variable {β γ : Type*}
 
-/-- A perfect matching of `β ⊕ γ` containing every arc of a perfect matching `X` of `β` is
-`Equiv.Perm.sumCongr X π` for a perfect matching `π` of `γ`. -/
-private theorem exists_val_eq_sumCongr (M : PerfectMatching (β ⊕ γ)) {X : Perm β}
-    (hM : ∀ b, M.val (.inl b) = .inl (X b)) :
-    ∃ π : PerfectMatching γ, M.val = Perm.sumCongr X π.val := by
-  have hr (b : β) : ((congr (Equiv.sumComm β γ) M).val (.inr b)).isRight := by
-    simp [hM]
-  refine ⟨(congr (Equiv.sumComm β γ) M).restrictInl hr, Equiv.ext fun x ↦ ?_⟩
-  rcases x with b | g
-  · simp [hM]
-  · have h := (congr (Equiv.sumComm β γ) M).inl_restrictInl_val hr g
-    simp only [congr_val_apply, Equiv.sumComm_symm, Equiv.sumComm_apply, Sum.swap_inl] at h
-    rw [Perm.sumCongr_apply, Sum.map_inr, ← Sum.swap_swap (M.val (.inr g)), ← h, Sum.swap_inl]
-
 /-- **The exterior pairing.** For perfect matchings `M` of `β ⊕ γ` and `X` of `β`, there are a
 perfect matching `π` of `γ` and a number `r` such that closing `M` and `X` by any permutation `μ`
 of `γ` has, up to the constant `|β| - 2 r`, as many orbits as `μ * π`: the paths formed by the
@@ -95,8 +81,7 @@ theorem exists_orbitCount_sumCongr_mul_add [Finite β] [Finite γ] (M : PerfectM
     refine ⟨π, r + 1, fun μ ↦ ?_⟩
     have hcut := M.orbitCount_mul_reconnect (T := Perm.sumCongr X μ) (a := .inl b)
       (by simp [hX.apply_apply]) (by simpa using hX.apply_ne b) (by simpa using hb)
-    have hT : Perm.sumCongr X μ (.inl b) = .inl (X b) := rfl
-    rw [hT] at hcut
+    rw [Perm.sumCongr_apply, Sum.map_inl] at hcut
     rw [← h μ, hcut]
     ring
   · -- Every arc of `X` is an arc of `M`, so `M` is `X` together with a pairing of `γ`.

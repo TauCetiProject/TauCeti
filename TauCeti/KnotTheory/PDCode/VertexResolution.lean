@@ -410,31 +410,41 @@ private theorem orbitCount_mul_reconnect_inr (P : Perm (Fin (4 * n)))
     exact M.orbitCount_mul_reconnect (a := .inr k) (by simp [localSmoothing])
       (by simpa using hk) h
 
-/-- **Circles after resolving a crossing.** A state of `D` leaves as many circles as its
-restriction to the other crossings leaves in the resolution of `c` chosen by its value at `c`. -/
-theorem stateLoopCount_insertNth (s : Fin n → Bool) :
-    D.stateLoopCount (c.insertNth t s) = (D.resolveCrossing c t).stateLoopCount s := by
-  set R := D.resolveCrossing c t
-  set T := Perm.sumCongr (R.smoothingTurn (R.smoothingChoice s)) (D.localSmoothing c t)
-  have horb : orbitCount (D.statePerm (c.insertNth t s)) =
-      orbitCount (T * (D.slotMatching c).val) := by
-    rw [statePerm_def, ← Equiv.orbitCount_permCongr (D.slotEquiv c).symm, Equiv.permCongr_mul,
-      permCongr_smoothingTurn, slotMatching_val]
-  -- Cutting off the two smoothing arcs leaves the traversal of `R` and four fixed points.
+/-- Cutting off the two smoothing arcs at `c`. Closing the arcs of `D` by a permutation `P` of
+the positions of the other crossings and by the smoothing at `c` gives the directed traversals of
+the arcs of the resolution of `c` closed by `P`, together with the two traversals of each detached
+circle. -/
+private theorem orbitCount_mul_add_detachedCircleCount (P : Perm (Fin (4 * n))) :
+    orbitCount (P * (D.resolveCrossing c t).edgePair.val) + 2 * D.detachedCircleCount c t =
+      orbitCount (Perm.sumCongr P (D.localSmoothing c t) * (D.slotMatching c).val) := by
+  set T := Perm.sumCongr P (D.localSmoothing c t)
   have h₁ : orbitCount (T * (D.pinchedOnce c t).val) = orbitCount (T * (D.slotMatching c).val) +
       if (D.slotMatching c).val (.inr 0) = .inr (D.localSmoothing c t 0) then 0 else 2 :=
     D.orbitCount_mul_reconnect_inr c t _ _ 0
   have h₂ : orbitCount (T * (D.pinchedTwice c t).val) = orbitCount (T * (D.pinchedOnce c t).val) +
       if (D.pinchedOnce c t).val (.inr 2) = .inr (D.localSmoothing c t 2) then 0 else 2 :=
     D.orbitCount_mul_reconnect_inr c t _ _ 2
-  have h₃ : orbitCount (T * (D.pinchedTwice c t).val) = orbitCount (R.statePerm s) + 4 := by
+  -- Once both arcs are cut off, the slots of `c` are four fixed points.
+  have h₃ : orbitCount (T * (D.pinchedTwice c t).val) =
+      orbitCount (P * (D.resolveCrossing c t).edgePair.val) + 4 := by
     rw [pinchedTwice_val, Perm.sumCongr_mul, localSmoothing_mul_self, Perm.orbitCount_sumCongr,
-      statePerm_def, orbitCount_one, Nat.card_eq_fintype_card, Fintype.card_fin]
-  rw [h₃] at h₂
-  rw [stateLoopCount_def, stateLoopCount_def, horb, resolveCrossing_crossinglessComponentCount,
-    detachedCircleCount]
-  obtain ⟨r, hr⟩ := R.even_orbitCount_statePerm s
+      orbitCount_one, Nat.card_eq_fintype_card, Fintype.card_fin]
+  rw [detachedCircleCount]
   split_ifs at h₁ h₂ ⊢ <;> omega
+
+/-- **Circles after resolving a crossing.** A state of `D` leaves as many circles as its
+restriction to the other crossings leaves in the resolution of `c` chosen by its value at `c`. -/
+theorem stateLoopCount_insertNth (s : Fin n → Bool) :
+    D.stateLoopCount (c.insertNth t s) = (D.resolveCrossing c t).stateLoopCount s := by
+  set R := D.resolveCrossing c t
+  have horb : orbitCount (D.statePerm (c.insertNth t s)) =
+      orbitCount (R.statePerm s) + 2 * D.detachedCircleCount c t := by
+    rw [statePerm_def, ← Equiv.orbitCount_permCongr (D.slotEquiv c).symm, Equiv.permCongr_mul,
+      permCongr_smoothingTurn, ← slotMatching_val, ← orbitCount_mul_add_detachedCircleCount,
+      statePerm_def]
+  rw [stateLoopCount_def, stateLoopCount_def, horb, resolveCrossing_crossinglessComponentCount]
+  obtain ⟨r, hr⟩ := R.even_orbitCount_statePerm s
+  omega
 
 /-- **The skein relation of the Kauffman bracket** at a crossing `c`: the bracket of `D` is `a`
 times the bracket of the `A`-resolution of `c` plus `a⁻¹` times the bracket of its
@@ -480,11 +490,14 @@ private theorem permCongr_crossingTurn :
 private theorem isPerfectMatching_localSmoothing : IsPerfectMatching (D.localSmoothing c t) :=
   isPerfectMatching_slotSmoothing _
 
-/-- The two resolutions of `c` have the same opposite-slot permutation: both label their
-half-edges by their positions. -/
-private theorem crossingTurn_resolveCrossing_eq (t' : Bool) :
-    (D.resolveCrossing c t).crossingTurn = (D.resolveCrossing c t').crossingTurn := by
-  simp only [crossingTurn_def, resolveCrossing_halfEdge]
+/-- A resolution labels its half-edges by their positions, so moving to the opposite slot of a
+crossing of a resolution does not depend on `D`, `c` or the smoothing. -/
+@[simp] theorem crossingTurn_resolveCrossing :
+    (D.resolveCrossing c t).crossingTurn =
+      (crossingSlotEquiv n).permCongr
+        (Equiv.prodCongr (Equiv.refl (Fin n)) oppositeCrossingSlot) := by
+  ext x : 1
+  simp [crossingTurn_def]
 
 /-- The directed traversals of the components of `D` are those of the arcs of `D` closed by the
 opposite-slot pairing at every crossing, `c` included. -/
@@ -502,20 +515,7 @@ private theorem orbitCount_componentPerm_resolveCrossing :
     orbitCount (D.resolveCrossing c t).componentPerm + 2 * D.detachedCircleCount c t =
       orbitCount (Perm.sumCongr (D.resolveCrossing c t).crossingTurn (D.localSmoothing c t) *
         (D.slotMatching c).val) := by
-  set R := D.resolveCrossing c t
-  set T := Perm.sumCongr R.crossingTurn (D.localSmoothing c t)
-  -- Cutting off the two smoothing arcs leaves the traversal of `R` and four fixed points.
-  have h₁ : orbitCount (T * (D.pinchedOnce c t).val) = orbitCount (T * (D.slotMatching c).val) +
-      if (D.slotMatching c).val (.inr 0) = .inr (D.localSmoothing c t 0) then 0 else 2 :=
-    D.orbitCount_mul_reconnect_inr c t _ _ 0
-  have h₂ : orbitCount (T * (D.pinchedTwice c t).val) = orbitCount (T * (D.pinchedOnce c t).val) +
-      if (D.pinchedOnce c t).val (.inr 2) = .inr (D.localSmoothing c t 2) then 0 else 2 :=
-    D.orbitCount_mul_reconnect_inr c t _ _ 2
-  have h₃ : orbitCount (T * (D.pinchedTwice c t).val) = orbitCount R.componentPerm + 4 := by
-    rw [pinchedTwice_val, Perm.sumCongr_mul, localSmoothing_mul_self, Perm.orbitCount_sumCongr,
-      componentPerm_def, orbitCount_one, Nat.card_eq_fintype_card, Fintype.card_fin]
-  rw [detachedCircleCount]
-  split_ifs at h₁ h₂ ⊢ <;> omega
+  rw [componentPerm_def, orbitCount_mul_add_detachedCircleCount]
 
 /-- **The components of the two resolutions of a crossing.** Resolving a crossing `c` of `D`
 either removes one component for both smoothings, or adds one component for one smoothing and
@@ -544,7 +544,8 @@ theorem componentCount_resolveCrossing_cases :
   have hB := hclose (D.isPerfectMatching_localSmoothing c false)
   rw [← orbitCount_componentPerm D c true] at hD
   rw [← orbitCount_componentPerm_resolveCrossing D c true] at hA
-  rw [show X = _ from D.crossingTurn_resolveCrossing_eq c true false,
+  rw [show X = _ from (D.crossingTurn_resolveCrossing c true).trans
+      (D.crossingTurn_resolveCrossing c false).symm,
     ← orbitCount_componentPerm_resolveCrossing D c false] at hB
   obtain ⟨d, hd⟩ := D.even_orbitCount_componentPerm
   obtain ⟨a, ha⟩ := (D.resolveCrossing c true).even_orbitCount_componentPerm
