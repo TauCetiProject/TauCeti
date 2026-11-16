@@ -476,7 +476,7 @@ theorem W1p.mem_w1p0Submodule_iff_frontierTrace_compAffineIsometryEquivL_eq_zero
     u ∈ w1p0Submodule volume U p ↔
       W1p.frontierTrace hp hΩ hb (W1p.compAffineIsometryEquivL g.symm hΩU u) = 0 := by
   rw [← W1p.mem_w1p0Submodule_iff_frontierTrace_eq_zero,
-    W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff hp]
+    W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff]
 
 /-- **Equal boundary values in rigid coordinates.** Let an affine isometry `g` carry the open set
 `U ⊆ F` onto a bounded Lipschitz domain `Ω`. For `1 ≤ p < ∞` and `u, v ∈ W^{1,p}(U)`, the

@@ -251,8 +251,6 @@ theorem isTame_of_charZero [CharZero k] : IsTame k F P' :=
 theorem ramificationIdx_le_differentExponent_iff :
     ramificationIdx F P' ≤ differentExponent k F P' ↔ IsWild k F P' := by
   have hS := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  have hpbot : IsLocalRing.maximalIdeal ((P'.restrict k F).integers) ≠ ⊥ :=
-    IsDiscreteValuationRing.not_a_field _
   have hmax : (centerIntegralClosure k F P').asIdeal.IsMaximal :=
     (centerIntegralClosure k F P').isPrime.isMaximal (centerIntegralClosure k F P').ne_bot
   have hidx : (centerIntegralClosure k F P').asIdeal.ramificationIdx
@@ -261,7 +259,7 @@ theorem ramificationIdx_le_differentExponent_iff :
     exact (ramificationIdx_eq_ramificationIdx_center
       (R := ((P'.restrict k F).integers)) k F P' hS).symm
   rw [isWild_iff, differentExponent_def, ← hidx]
-  exact ramificationIdx_le_multiplicity_differentIdeal_iff _ hpbot _
+  exact ramificationIdx_le_multiplicity_differentIdeal_iff _ _
 
 /-- **Dedekind's different theorem, second part** (Stichtenoth, Theorem 3.5.1(b)): the different
 exponent of `P'` is exactly one less than its ramification index if and only if `P'` is tame.  It

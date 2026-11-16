@@ -73,11 +73,8 @@ bookkeeping (`TauCeti.GroupExtension.factorSetFun`, `TauCeti.GroupExtension.norm
 
 ## References
 
-This continues the central-extension target of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md` ("projective representations,
-factor sets, and the Schur multiplier"), which asks that `H²(G, k^×)` classify central extensions
-up to equivalence. See G. Karpilovsky, *Projective Representations of Finite Groups*, Marcel Dekker
-(1985), Ch. 1, and I. M. Isaacs, *Character Theory of Finite Groups*, AMS Chelsea (1976), Ch. 11.
+See G. Karpilovsky, *Projective Representations of Finite Groups*, Marcel Dekker (1985), Ch. 1,
+and I. M. Isaacs, *Character Theory of Finite Groups*, AMS Chelsea (1976), Ch. 11.
 -/
 
 public section

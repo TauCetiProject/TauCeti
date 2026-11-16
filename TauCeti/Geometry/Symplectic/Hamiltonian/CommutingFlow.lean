@@ -333,7 +333,7 @@ theorem mfderiv_flowOf_apply_hamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 
   have hdg (v : TangentSpace I x) : mvfderiv I g (φ x) (D v) = mvfderiv I g x v := by
     rw [← mvfderiv_comp_apply x (hg (φ x)) hφ v, hgφ.mvfderiv_eq]
   exact hσ.isNondegenerate.map_hamiltonianVectorField_of_eval₂ hσ.isNondegenerate
-    (hσ.isNondegenerate.surjective_of_eval₂_map hσφ) hσφ hdg
+    (hσ.isNondegenerate.surjective_of_eval₂_map hσφ _) hσφ hdg
 
 /-- **Poisson-commuting local Hamiltonian flows commute.** Let `σ` be symplectic, let `f` be a
 `C³` function and let `g` be a `C²` first integral of `f`, `{g, f} = 0`, and write `φ` and `ψ`
@@ -380,7 +380,7 @@ theorem flowOf_flowOf_comm (hf : ContMDiff I 𝓘(ℝ) 3 f) (hg : ContMDiff I �
       fun u hu ↦ hσ.mfderiv_flowOf_apply_hamiltonianVectorField hf (hg.mdifferentiable two_ne_zero)
         hfg (hab hu).2
   have hγ0 : (flowOf X s ∘ fun u ↦ flowOf Y u x) 0 = flowOf X s x := by
-    rw [Function.comp_apply, flowOf_zero hY]
+    rw [Function.comp_apply, flowOf_zero]
   refine ⟨mem_flowDomain.2 (hγ.subset_maximalIntegralCurveInterval h0 hγ0 ht), ?_⟩
   rw [flowOf_apply]
   exact hγ.eqOn_maximalIntegralCurve hY h0 hγ0 ht

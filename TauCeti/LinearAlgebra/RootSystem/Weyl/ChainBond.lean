@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Weyl.CoverBond
 
 import TauCeti.Data.Finset.Max
 import TauCeti.Data.Rat.NumDenDvd
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Bond gcds and `a`-chains of saturated chains in `W / W_λ`
@@ -336,8 +337,6 @@ theorem bondGcd_snoc_singleton_simple_one {i : b.support} (hi : P.coroot' i lam 
   rw [bondGcd_singleton, Nat.gcd_zero_left, RelSeries.last_singleton,
     reflectionBond_simple_smul_one_smul i]
 
-variable [P.flip.IsReduced]
-
 /-- **The `a`-chain condition in Littelmann's form.** A saturated chain `x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` of
 `W / W_λ` is an `a`-chain exactly when `a ⟨x_{h-1} λ, β^∨⟩` is an integer for every cover
 `x_h ⋖ x_{h-1}` and every positive root `β` with `x_h λ = s_β (x_{h-1} λ)`. Such a root exists and
@@ -364,7 +363,6 @@ theorem isAChain_iff_forall_coroot' (hlam : lam ∈ dominantChamber P b)
     push_cast at hz ⊢
     linarith
 
-omit [P.flip.IsReduced] in
 /-- A saturated chain of `W / W_λ` of length `0` has bond gcd `0`, the gcd of no bonds. -/
 theorem bondGcd_eq_zero_of_length_eq_zero
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} (h : C.length = 0) :
@@ -468,6 +466,7 @@ theorem IsAChain.exists_mul_coroot'_eq_intCast (hlam : lam ∈ dominantChamber P
     (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.1 • lam) < 0)
     (hlast : 0 ≤ P.coroot' i (C.last.1 • lam)) :
     ∃ z : ℤ, a * P.coroot' i (C.head.1 • lam) = z := by
+  have := P.flip_isReduced
   -- The first index `h` at which the pairing is nonnegative.
   have hex : ∃ k, ∃ hk : k ≤ C.length,
       0 ≤ P.coroot' i ((C ⟨k, Nat.lt_succ_of_le hk⟩).1 • lam) := ⟨C.length, le_rfl, hlast⟩
@@ -701,7 +700,6 @@ theorem sum_coroot'_lt_sum_coroot'_succ_of_isAChain (hlam : lam ∈ dominantCham
     obtain ⟨q, hq, hqj | ⟨n, hn⟩⟩ :=
       exists_isLeast_sum_coroot'_Icc_of_isAChain hlam ht hchain hmono hs i hjs.le
     · have hqle : q ≤ H (j + 1) := hq.2 ⟨j + 1, ⟨by omega, by omega⟩, rfl⟩
-      have hqj' : q = H j := hqj
       linarith
     · obtain ⟨k, ⟨hjk, hks⟩, hkq⟩ := hq.1
       have hqle : q ≤ H (j + 1) := hq.2 ⟨j + 1, ⟨by omega, by omega⟩, rfl⟩
@@ -740,7 +738,6 @@ theorem add_one_le_sum_coroot'_of_isAChain (hlam : lam ∈ dominantChamber P b)
   obtain ⟨q, hq, hqk | ⟨n, hn⟩⟩ :=
     exists_isLeast_sum_coroot'_Icc_of_isAChain hlam ht hchain hmono hs i (hk₁j.trans hjs)
   · have hqj : q ≤ H j := hq.2 ⟨j, ⟨hk₁j, hjs⟩, rfl⟩
-    have hqk' : q = H k₁ := hqk
     linarith
   · obtain ⟨k, ⟨hk₁k, hks⟩, hkq⟩ := hq.1
     have hqj : q ≤ H j := hq.2 ⟨j, ⟨hk₁j, hjs⟩, rfl⟩

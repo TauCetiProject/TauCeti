@@ -24,7 +24,7 @@ countably many values on `K` at each level, equal values forcing equivalence at 
 Scatteredness is what makes an isolating rank count isomorphism classes exactly. On a scattered
 set, each rank stratum of the isomorphism classes injects into a countable level quotient, so it is
 countable. Hence a scattered set meets at most `ℵ₁` isomorphism classes (the stratification bound
-`TauCeti.IsIsolatingRank.mk_isoClasses_le_aleph_one_of_countable_levels`, applied to
+`TauCeti.mk_isoClasses_le_aleph_one_of_countable_levels`, applied to
 `TauCeti.BFScattered.countable_quotient`), exactly `ℵ₁` when it meets uncountably many, and
 countably many exactly when the rank is bounded below `ω₁` on it. In particular, whether a rank is
 bounded on a scattered set does not depend on which isolating rank is used.

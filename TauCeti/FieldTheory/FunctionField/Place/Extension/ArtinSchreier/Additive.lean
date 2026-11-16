@@ -76,13 +76,14 @@ variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k 
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 variable (k F) [Algebra.IsIntegral F F'] {P' : Place k' F'}
 
+omit [Algebra.IsIntegral F F'] in
 /-- At a pole of `y`, subtracting a constant does not change the order. -/
 private theorem ord_sub_algebraMap_of_ord_neg {c : F} (hc : IsAlgebraic k c) {y : F'}
     (hy : P'.ord y < 0) : P'.ord (y - algebraMap F F' c) = P'.ord y := by
   rcases eq_or_ne c 0 with rfl | h0
   · rw [map_zero, sub_zero]
   have hc' : P'.ord (algebraMap F F' c) = 0 := by
-    rw [ord_algebraMap_restrict k F P', ord_eq_zero_of_isAlgebraic _ hc, mul_zero]
+    exact ord_eq_zero_of_isAlgebraic _ (hc.algebraMap (A := F').tower_top k')
   have hy0 : y ≠ 0 := by
     rintro rfl
     simp at hy
@@ -92,6 +93,7 @@ private theorem ord_sub_algebraMap_of_ord_neg {c : F} (hc : IsAlgebraic k c) {y 
 
 variable (V : AddSubgroup F) [Fintype V]
 
+omit [Algebra.IsIntegral F F'] in
 /-- **The order of `a_V (y)` at a pole of `y`.** If `V` consists of constants, then
 `ord_{P'} (a_V (y)) = |V| · ord_{P'} y` whenever `ord_{P'} y < 0`. -/
 theorem ord_aeval_additivePolynomial_of_ord_neg (hV : ∀ c ∈ V, IsAlgebraic k c) {y : F'}
@@ -104,6 +106,7 @@ theorem ord_aeval_additivePolynomial_of_ord_neg (hV : ∀ c ∈ V, IsAlgebraic k
   rw [h, ord_zero] at this
   exact hy.ne this.symm
 
+omit [Algebra.IsIntegral F F'] in
 /-- If `V` consists of constants, then `a_V (y)` has a pole exactly where `y` has one. -/
 theorem ord_aeval_additivePolynomial_neg_iff (hV : ∀ c ∈ V, IsAlgebraic k c) (y : F') :
     P'.ord (aeval y V.additivePolynomial) < 0 ↔ P'.ord y < 0 := by
@@ -113,8 +116,8 @@ theorem ord_aeval_additivePolynomial_neg_iff (hV : ∀ c ∈ V, IsAlgebraic k c)
     have hmem : aeval y V.additivePolynomial ∈ P'.integers := by
       rw [AddSubgroup.aeval_additivePolynomial]
       refine prod_mem fun c _ ↦ sub_mem hnonneg ?_
-      rw [mem_integers_iff_ord_nonneg, ord_algebraMap_restrict k F P',
-        ord_eq_zero_of_isAlgebraic _ (hV c c.2), mul_zero]
+      rw [mem_integers_iff_ord_nonneg,
+        ord_eq_zero_of_isAlgebraic _ (((hV c c.2).algebraMap (A := F')).tower_top k')]
     rw [mem_integers_iff_ord_nonneg] at hmem
     omega
   · rw [ord_aeval_additivePolynomial_of_ord_neg k F V hV hy]
@@ -313,7 +316,7 @@ theorem exists_uniformizer_ord_aut_sub_of_aeval_additivePolynomial_eq
     simp at hzo
   refine ⟨z, hzg, hzo, fun σ hσ ↦ ?_⟩
   -- A nonidentity automorphism translates `y` by a nonzero constant `c ∈ V`.
-  set c : V := (V.artinSchreierTranslationHom hy σ).toAdd with hc
+  set c : V := (V.artinSchreierTranslationHom hy σ).toAdd
   have hc0 : c ≠ 0 := by
     intro h
     apply hσ

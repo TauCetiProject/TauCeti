@@ -19,7 +19,7 @@ against representatives of the coset and summing; `UpperTri/ModularForm.lean` bu
 computes its effect on `q`-expansions. Nothing so far connects them, and until something does,
 "the Hecke operator" names two objects.
 
-This file identifies them, which is the roadmap's flagged *normalisation lemma*: for `p ∣ N`,
+This file identifies them, which is the *normalisation lemma*: for `p ∣ N`,
 
 `heckeSlashGamma1ModularFormEnd k (diagCosetGamma1 N p) = heckeSlashUpperTriModularFormEnd k hpN`,
 
@@ -65,8 +65,7 @@ consumed.
 
 ## Provenance
 
-No code is transcribed. The identification is the normalisation lemma the ModularForms roadmap
-asks Layer 2(b) to keep; on the AINTLIB side (`LeanModularForms`, Chris Birkbeck, Apache-2.0) the
+No code is transcribed. On the AINTLIB side (`LeanModularForms`, Chris Birkbeck, Apache-2.0) the
 `p ∣ N` operator is the `heckeT_p_divN` branch of `heckeT_p_all`
 (`LeanModularForms/HeckeRIngs/GL2/HeckeT_n.lean`), and the statement below is what ties that
 branch to the abstract double-coset ring.

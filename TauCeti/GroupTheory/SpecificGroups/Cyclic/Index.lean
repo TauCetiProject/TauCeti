@@ -21,7 +21,7 @@ lands in `K` at all, and both readings agree through the convention `index = 0`.
 
 Consequently the index of an intersection of two subgroups of a cyclic group is the least common
 multiple of their indices. The same holds modulo a normal subgroup `N` with cyclic quotient, as
-long as the order of `N` is prime to its index and to the index of one of the two subgroups.
+long as the order of `N` is prime to the index of one of the two subgroups.
 
 ## Main results
 
@@ -37,9 +37,9 @@ long as the order of `N` is prime to its index and to the index of one of the tw
 * `IsCyclic.index_inf_eq_lcm`: in a cyclic group the index of `H ⊓ K` is the least common multiple
   of the indices of `H` and `K`.
 * `Subgroup.index_inf_eq_lcm_of_isCyclic_quotient`: the same holds in a group with a normal
-  subgroup `N` whose quotient is cyclic and whose order is prime to its index, provided the order
-  of `N` is prime to the index of one of the two subgroups. This is the group theory behind
-  Abhyankar's lemma, where `N` is the wild inertia group inside the inertia group.
+  subgroup `N` whose quotient is cyclic, provided the order of `N` is prime to the index of one of
+  the two subgroups. This is the group theory behind Abhyankar's lemma, where `N` is the wild
+  inertia group inside the inertia group.
 -/
 
 public section
@@ -47,11 +47,6 @@ public section
 namespace Subgroup
 
 variable {G : Type*} [Group G] {g : G}
-
--- Source. The statement is specified by the Chebotarev roadmap:
--- `TauCetiRoadmap/Chebotarev/README.md` §8.2 asks for the residue degree `f(𝔓/𝔭)` as the least
--- `n ≥ 1` with `Frob_{L/K}(Q)^n ∈ ⟨σ⟩`, and pins it at
--- `TauCetiRoadmap/Chebotarev/Suggested.lean` as `inertiaDeg_fixedField_eq_one_iff`.
 
 /-- **Membership in a subgroup of a cyclic group is divisibility of the index.** If `g` generates
 `G`, then `g ^ n` lies in `K` exactly when `K.index` divides `n`.
@@ -135,17 +130,18 @@ theorem _root_.IsCyclic.index_inf_eq_lcm [IsCyclic G] (H K : Subgroup G) :
     pow_mem_iff_index_dvd K hg, Nat.lcm_dvd_iff]
 
 /-- **Indices of intersections modulo a normal subgroup with cyclic quotient.** Let `N` be a
-normal subgroup of `G` with `G ⧸ N` cyclic and with the order of `N` prime to its index. If the
-order of `N` is also prime to the index of `A`, then for every subgroup `B` the index of `A ⊓ B` is
-the least common multiple of the indices of `A` and `B`.
+normal subgroup of `G` with `G ⧸ N` cyclic. If the order of `N` is prime to the index of `A`, then
+for every subgroup `B` the index of `A ⊓ B` is the least common multiple of the indices of `A` and
+`B`.
 
-When `N` is a `p`-group, the hypotheses say that `p` divides neither `[G : N]` nor `[G : A]`. This
-is the shape of an inertia group, with `N` its wild part, and it is what Abhyankar's lemma on the
+When `N` is a nontrivial finite `p`-group, the hypothesis says that `p` does not divide `[G : A]`;
+for a trivial `N` it holds for every `A`. This is the
+shape of an inertia group, with `N` its wild part, and it is what Abhyankar's lemma on the
 ramification index in a compositum reduces to. Without the hypothesis on `A` the conclusion fails:
 in `(ℤ / p) × (ℤ / p)` with `N` the whole group, two distinct subgroups `A` and `B` of order `p`
 have index `p` each while `A ⊓ B = ⊥` has index `p ^ 2`. -/
 theorem index_inf_eq_lcm_of_isCyclic_quotient (N : Subgroup G) [N.Normal] [IsCyclic (G ⧸ N)]
-    (hN : (Nat.card N).Coprime N.index) {A : Subgroup G} (hA : (Nat.card N).Coprime A.index)
+    {A : Subgroup G} (hA : (Nat.card N).Coprime A.index)
     (B : Subgroup G) :
     (A ⊓ B).index = Nat.lcm A.index B.index := by
   -- The index of any subgroup `H` in `H ⊔ N` divides `|N|`.
@@ -170,16 +166,15 @@ theorem index_inf_eq_lcm_of_isCyclic_quotient (N : Subgroup G) [N.Normal] [IsCyc
   have hcyc := IsCyclic.index_inf_eq_lcm (A.map π) (B.map π)
   rw [index_inf, ← hrel, ← index_comap_of_surjective (A.map π) hπ,
     ← index_comap_of_surjective (B.map π) hπ, hA', hB'] at hcyc
-  -- `[G : B] = [B ⊔ N : B] · [G : B ⊔ N]`, and the first factor is prime to the other indices.
+  -- `[G : B] = [B ⊔ N : B] · [G : B ⊔ N]`, and the first factor is prime to `[G : A]`.
   set s := B.relIndex (B ⊔ N)
   have hs : s.Coprime A.index := Nat.Coprime.coprime_dvd_left (hdvd B) hA
-  have hs' : s.Coprime (B ⊔ N).index := Nat.Coprime.coprime_dvd_right
-    (index_dvd_of_le le_sup_right) (Nat.Coprime.coprime_dvd_left (hdvd B) hN)
-  have hlcm : (Nat.lcm A.index (B ⊔ N).index).Coprime s :=
-    Nat.Coprime.coprime_dvd_left (Nat.lcm_dvd_mul _ _) (Nat.Coprime.mul_left hs.symm hs'.symm)
-  -- Hence multiplying `[G : B ⊔ N]` by `s` multiplies the least common multiple by `s`.
+  -- Since `s` is prime to `[G : A]`, multiplying `[G : B ⊔ N]` by `s` multiplies the least common
+  -- multiple by `s`.
   have hmul : Nat.lcm A.index (s * (B ⊔ N).index) = s * Nat.lcm A.index (B ⊔ N).index := by
-    rw [← hs'.lcm_eq_mul, Nat.lcm_comm s, ← Nat.lcm_assoc, hlcm.lcm_eq_mul, mul_comm]
+    rw [Nat.lcm, Nat.lcm, Nat.Coprime.gcd_mul_left_cancel_right _ hs,
+      show A.index * (s * (B ⊔ N).index) = s * (A.index * (B ⊔ N).index) by ring,
+      Nat.mul_div_assoc _ ((Nat.gcd_dvd_left _ _).mul_right _)]
   rw [index_inf, ← relIndex_mul_index (le_sup_left : B ≤ B ⊔ N), hmul, ← hcyc, mul_left_comm]
 
 end Subgroup

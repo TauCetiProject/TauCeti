@@ -17,6 +17,9 @@ public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import Mathlib.CategoryTheory.Preadditive.Yoneda.Basic
 public import Mathlib.CategoryTheory.Yoneda
 
+import Mathlib.Algebra.Category.Grp.Limits
+import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
+
 /-!
 # The preadditive Yoneda and coYoneda functors
 
@@ -42,7 +45,9 @@ Dually, for an object `M` with `Γ = End M`, the functor `Hom(M, -)` (Mathlib's
 `CategoryTheory.preadditiveCoyonedaObj M`) takes values in `Γᵐᵒᵖ`-modules. By the Yoneda
 argument, it is bijective on the morphisms `M ⟶ Y`: a `Γᵐᵒᵖ`-linear map
 `φ : Hom(M, M) → Hom(M, Y)` is composition with `φ (𝟙 M)`, since
-`φ f = φ (f • 𝟙 M) = f ≫ φ (𝟙 M)`.
+`φ f = φ (f • 𝟙 M) = f ≫ φ (𝟙 M)`. In the same way the functor `Hom(-, M)` (Mathlib's
+`CategoryTheory.preadditiveYonedaObj M`) takes values in `Γ`-modules, and it is bijective on the
+morphisms `Y ⟶ M`.
 
 For an additive functor `G : C ⥤ D`, Mathlib's natural transformation
 `CategoryTheory.preadditiveYonedaMap G X : (-, X) ⟶ (G -, G X)` is an epimorphism when `G` is
@@ -67,11 +72,14 @@ which is moreover additive.
   representable functor.
 * `CategoryTheory.preadditiveCoyonedaObj_map_bijective_self`: `Hom(M, -)` is bijective on the
   morphisms out of `M`.
+* `CategoryTheory.preadditiveYonedaObj_map_bijective_self`: `Hom(-, M)` is bijective on the
+  morphisms into `M`.
 * `CategoryTheory.preadditiveYonedaMap_app_apply`: the natural transformation
   `(-, X) ⟶ (G -, G X)` acts by applying `G`.
 * `CategoryTheory.preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff`: the natural
   transformation `(-, X) ⟶ (G -, G X)` kills `(-, f)` exactly when `G` kills `f`.
 * `CategoryTheory.exact_preadditiveYoneda_map_iff`: exactness at a representable functor.
+* `CategoryTheory.preservesLimitsOfShape_preadditiveYoneda`: the embedding preserves small limits.
 * `CategoryTheory.Functor.CorepresentableBy.homEquiv_zero` and
   `CategoryTheory.Functor.CorepresentableBy.homEquiv_symm_zero`: the corepresentation and its
   inverse preserve zero.
@@ -175,6 +183,27 @@ theorem preadditiveCoyonedaObj_map_bijective_self (M Y : C) :
     ext f
     exact key f
 
+/-- **Yoneda for `Hom(-, M)` as a `Γ`-module, `Γ = End M`.** Composition identifies the
+morphisms `Y ⟶ M`, the morphisms `op M ⟶ op Y` of `Cᵒᵖ`, with the `Γ`-linear maps
+`Hom(M, M) → Hom(Y, M)`: a linear map `φ` is composition with `φ (𝟙 M)`. -/
+theorem preadditiveYonedaObj_map_bijective_self (M Y : C) :
+    Function.Bijective ((preadditiveYonedaObj M).map : (op M ⟶ op Y) → _) := by
+  -- The elements of `(preadditiveYonedaObj M).obj (op X)` are the morphisms `X ⟶ M`, and
+  -- `(preadditiveYonedaObj M).map g` acts on them by precomposition with `g.unop`; both facts hold
+  -- by definition, so the steps below are stated as equalities of morphisms of `C`.
+  refine ⟨fun g g' h ↦ Quiver.Hom.unop_inj ?_, fun φ ↦ ⟨(φ.hom (𝟙 M)).op, ?_⟩⟩
+  · exact (Category.comp_id g.unop).symm.trans
+      (congr(($h).hom (𝟙 M)).trans (Category.comp_id g'.unop))
+  · let ψ : (M ⟶ M) →ₗ[End M] (Y ⟶ M) := φ.hom
+    have key (f : M ⟶ M) : ψ (𝟙 M) ≫ f = ψ f :=
+      calc ψ (𝟙 M) ≫ f = End.of f • ψ (𝟙 M) :=
+            (End.smul_right (r := .of f) (f := ψ (𝟙 M))).symm
+        _ = ψ (End.of f • 𝟙 M) := (ψ.map_smul _ _).symm
+        _ = ψ f := congrArg ψ ((End.smul_right (r := .of f) (f := 𝟙 M)).trans
+            (Category.id_comp f))
+    ext f
+    exact key f
+
 /-! ### The natural transformation `(-, X) ⟶ (G -, G X)` induced by an additive functor -/
 
 section preadditiveYonedaMap
@@ -233,6 +262,18 @@ theorem exact_preadditiveYoneda_map_iff {W Z : C} (w : W ⟶ Z) {F : Cᵒᵖ ⥤
     ((evaluation Cᵒᵖ AddCommGrpCat.{v}).obj V)).symm
   rw [← ShortComplex.exact_iff_isZero_homology]
   exact (key V.unop).2 (@H V.unop)
+
+/-- The Yoneda embedding `X ↦ (-, X)` into additive presheaves preserves small limits. -/
+instance preservesLimitsOfShape_preadditiveYoneda (J : Type*) [Category* J] [Small.{v} J] :
+    PreservesLimitsOfShape J (preadditiveYoneda : C ⥤ Cᵒᵖ ⥤ AddCommGrpCat.{v}) := by
+  -- Forgetting the group structure of the values gives the Yoneda embedding into presheaves of
+  -- sets, and the forgetful functor reflects small limits.
+  have : PreservesLimitsOfShape J ((preadditiveYoneda : C ⥤ Cᵒᵖ ⥤ AddCommGrpCat.{v}) ⋙
+      (Functor.whiskeringRight Cᵒᵖ AddCommGrpCat (Type v)).obj (forget AddCommGrpCat)) := by
+    rw [whiskering_preadditiveYoneda]
+    infer_instance
+  exact preservesLimitsOfShape_of_reflects_of_preserves _
+    ((Functor.whiskeringRight Cᵒᵖ AddCommGrpCat (Type v)).obj (forget AddCommGrpCat))
 
 namespace Functor.CorepresentableBy
 

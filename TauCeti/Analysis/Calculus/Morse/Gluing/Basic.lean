@@ -121,7 +121,6 @@ private theorem dist_gluing_le_dist (hg : LipschitzOnWith Kg g (closedBall 0 (r�
   have hrv := smul_mem_closedBall_mul hr hv
   have hsv := smul_mem_closedBall_mul hs hv
   have hs1 : s ≤ 1 := hs.2.trans hr₀
-  have hε : 0 ≤ ε := (norm_nonneg v).trans hv
   calc dist (k (r • g (r • v))) (k (s • g (s • v)))
       ≤ Kk * dist (r • g (r • v)) (s • g (s • v)) :=
         hk.dist_le_mul _ (smul_mem_closedBall_mul hr (hgε _ hrv).le) _

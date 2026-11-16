@@ -82,7 +82,7 @@ theorem exists_isOpen_isContact_affine
     exact hK.eventually_forall_of_forall_eventually fun t ht ↦
       (hopen.preimage continuous_swap).mem_nhds (hx t ht)
   refine ⟨U, hU, ?_, fun x hx t ht ↦ hx t ht⟩
-  intro x hx t ht
+  intro x hx t _
   dsimp [W]
   rw [ha x hx, hB x hx, ← add_smul, ← add_smul, sub_add_cancel, one_smul, one_smul]
   exact hcontact x hx

@@ -46,9 +46,9 @@ Golay Construction A lattice from which the Leech lattice is obtained by gluing 
 
 ## References
 
-* J. Leech and N. J. A. Sloane, *Sphere packing and error-correcting codes*, Canadian Journal of
-  Mathematics 23 (1971), reprinted as Chapter 5 of J. H. Conway and N. J. A. Sloane,
-  *Sphere Packings, Lattices and Groups*.
+* J. Leech and N. J. A. Sloane, *Sphere Packings and Error-Correcting Codes*, Canadian Journal of
+  Mathematics 23 (1971), no. 4, 718-745, reprinted as Chapter 5 of J. H. Conway and N. J. A.
+  Sloane, *Sphere Packings, Lattices and Groups*.
 -/
 
 public section
@@ -129,7 +129,7 @@ theorem val_add_two_mul_mem_lattice_iff (hC : BinaryCode.IsDoublyEven C) {c : ι
 /-- Four times a Construction A vector lies in Construction B. -/
 private theorem four_smul_mem_lattice {x : ι → ℚ}
     (hx : x ∈ ConstructionA.lattice 2 C.toAddSubgroup) : (4 : ℤ) • x ∈ lattice C := by
-  obtain ⟨z, hz, rfl⟩ := (ConstructionA.mem_lattice 2).mp hx
+  obtain ⟨z, _, rfl⟩ := (ConstructionA.mem_lattice 2).mp hx
   refine ⟨Submodule.smul_mem _ _ hx, ∑ i, z i, ?_⟩
   simp only [Pi.smul_apply, zsmul_eq_mul, ← Finset.mul_sum]
   push_cast

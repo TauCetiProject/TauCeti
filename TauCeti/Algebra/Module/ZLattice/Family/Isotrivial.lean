@@ -43,7 +43,7 @@ variable {Y Λ 𝕜 E F : Type*} [AddCommGroup Λ] [NontriviallyNormedField 𝕜
     ((A y).toLinearEquiv.restrictScalars ℤ).toLinearMap = L)
   [TopologicalSpace Y] {EY : Type*} [NormedAddCommGroup EY] [NormedSpace 𝕜 EY]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 EY H} [ChartedSpace H Y]
-  [T2Space Y] [LocallyCompactSpace Y] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
+  [T2Space Y] [LocallyCompactSpace Y]
   [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))] [DiscreteTopology L] [LocallyCompactSpace F]

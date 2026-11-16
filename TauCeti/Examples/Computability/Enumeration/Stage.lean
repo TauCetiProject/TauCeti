@@ -67,5 +67,5 @@ example :
     (∀ t, 1 ≤ t → ∀ z, z < 1 → z ∉ fresh (fun s => if s = 0 then {0} else ∅) t) ∧
       ¬ (0 ∈ (fun s => if s = 0 then ({0} : Finset ℕ) else ∅) 1 ↔
         0 ∈ stageLimit fun s => if s = 0 then ({0} : Finset ℕ) else ∅) := by
-  refine ⟨fun t ht z _ => by simp [mem_fresh], fun h => ?_⟩
+  refine ⟨fun t _ z _ => by simp [mem_fresh], fun h => ?_⟩
   simpa using h.2 (mem_stageLimit.2 ⟨0, by simp⟩)

@@ -180,7 +180,6 @@ theorem isSome_lowerIter_iff (hx : f x = 2) :
       have hp := lower_eq_none_iff.1 h
       simp only [Option.bind_none, Option.isSome_none, Bool.false_eq_true, false_iff,
         Nat.cast_add, Nat.cast_one, not_le]
-      have hn : (0 : 𝕜) ≤ n := Nat.cast_nonneg n
       linarith
     | some r =>
       have he := endpoint_of_lower_eq_some h

@@ -57,7 +57,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 theorem eventuallyEq_of_mfderiv_eq (Φ Ψ : RiemannianIsometry I J M N) {p : M}
     (hp : Φ p = Ψ p) (hd : mfderiv I J Φ p = mfderiv I J Ψ p) :
     (Φ : M → N) =ᶠ[𝓝 p] Ψ := by
-  have : T2Space N := Φ.toDiffeomorph.toHomeomorph.symm.isEmbedding.t2Space
   obtain ⟨r, -, hr⟩ := exists_isNormalDomain_ball (I := I) (M := M) p
   filter_upwards [hr.image_mem_nhds] with q hq
   obtain ⟨v, -, rfl⟩ := hq

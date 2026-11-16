@@ -30,10 +30,11 @@ constructions consume.
 
 ## Main results
 
-* `TauCeti.Multiquadratic.quadraticSubfieldOfFinset`: the well-defined assignment
+* `TauCeti.Multiquadratic.quadraticSubfieldOfFinset_bijective`: the assignment
   `S ↦ K(∏_{i ∈ S} root i)` from the nonempty subsets of the index type to the quadratic subfields
-  of `M`.
-* `TauCeti.Multiquadratic.quadraticSubfieldOfFinset_bijective`: that assignment is a bijection.
+  of `M`
+  (`TauCeti.Multiquadratic.quadraticSubfieldOfFinset`, in
+  `TauCeti.NumberTheory.Multiquadratic.Quadratic.Subfield`) is a bijection.
 * `TauCeti.Multiquadratic.exists_finset_of_finrank_two`: **classification** — every quadratic
   subfield of `M` is a subset-product subfield `K(∏_{i ∈ S} root i)` for some nonempty `S`.
 * `TauCeti.Multiquadratic.nonemptyFinsetEquivQuadraticSubfield`: the bijection packaged as an
@@ -42,8 +43,7 @@ constructions consume.
 ## Provenance
 
 The two ingredients this synthesises — the injective subset-product family and the hyperplane
-count of the quadratic subfields — are built, with the rest of the multiquadratic Layer 0, on the
-square-class machinery migrated from
+count of the quadratic subfields — are built on the square-class machinery migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization of
 L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture.
 -/
@@ -57,66 +57,8 @@ namespace TauCeti.Multiquadratic
 variable {K L : Type*} [Field K] [Field L] [Algebra K L] {ι : Type*}
   {d : ι → K} {root : ι → L}
 
-/-- The subset-product root of `S`, as an element of the multiquadratic field
-`M = K(rootᵢ : i)`. -/
-@[expose] def prodRootMem (root : ι → L) (S : Finset ι) :
-    ↥(adjoin K (Set.range root)) :=
-  ⟨∏ i ∈ S, root i, prod_root_mem_adjoin S⟩
-
-@[simp] theorem prodRootMem_coe (S : Finset ι) :
-    (prodRootMem (K := K) root S : L) = ∏ i ∈ S, root i := rfl
-
-/-- **The square of a subset-product root, computed inside `M`.** The `M`-level companion of
-`prod_root_sq`: `prodRootMem root S` squares to the image under `K → M` of the radicand product
-`∏_{i ∈ S} d i`. -/
-theorem prodRootMem_sq (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) (S : Finset ι) :
-    prodRootMem (K := K) root S ^ 2 = algebraMap K (adjoin K (Set.range root)) (∏ i ∈ S, d i) := by
-  apply Subtype.ext
-  have h := prod_root_sq hroot S
-  norm_num at h ⊢
-  exact h
-
-/-- **A nonempty subset-product subfield of `M` is quadratic.** Computed inside `M`, the simple
-extension `K(∏_{i ∈ S} root i)` has the same degree as its `L`-level counterpart, which is `2`
-when the radicand product `∏_{i ∈ S} d i` is not a square. -/
-theorem finrank_adjoin_prodRootMem (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
-    {S : Finset ι} (hSsq : ¬ IsSquare (∏ i ∈ S, d i)) :
-    Module.finrank K (adjoin K {prodRootMem (K := K) root S}) = 2 := by
-  -- Transport the degree across the `M`-into-`L` lift algebra equivalence.
-  rw [LinearEquiv.finrank_eq (liftAlgEquiv (adjoin K {prodRootMem (K := K) root S})).toLinearEquiv,
-    lift_adjoin_simple, prodRootMem_coe]
-  exact IntermediateField.finrank_adjoin_simple_eq_two_of_not_isSquare (prod_root_sq hroot S) hSsq
-
 variable (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
   (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i))
-
-/-- **The subset-product quadratic subfield of `M` attached to a nonempty subset.** Under
-square-class independence, each nonempty subset `S` of the index type names the quadratic subfield
-`K(∏_{i ∈ S} root i)` of `M = K(rootᵢ : i)`. -/
-def quadraticSubfieldOfFinset (S : {S : Finset ι // S.Nonempty}) :
-    {F : IntermediateField K (adjoin K (Set.range root)) // Module.finrank K F = 2} :=
-  ⟨adjoin K {prodRootMem (K := K) root S.1}, finrank_adjoin_prodRootMem hroot (hindep S.1 S.2)⟩
-
-/-- The subfield underlying `quadraticSubfieldOfFinset hroot hindep S` is
-`K(∏_{i ∈ S} root i)`. -/
-@[simp] theorem quadraticSubfieldOfFinset_val (S : {S : Finset ι // S.Nonempty}) :
-    (quadraticSubfieldOfFinset hroot hindep S : IntermediateField K (adjoin K (Set.range root)))
-      = adjoin K {prodRootMem (K := K) root S.1} := (rfl)
-
-include hroot hindep in
-/-- **Distinct nonempty subsets give distinct quadratic subfields.** The subset-product assignment
-`quadraticSubfieldOfFinset` is injective: this is the `M`-level reading of
-`adjoin_prod_root_injective`, transported across the lift. -/
-theorem quadraticSubfieldOfFinset_injective [NeZero (2 : K)] :
-    Function.Injective (quadraticSubfieldOfFinset hroot hindep) := by
-  rintro ⟨S, _⟩ ⟨T, _⟩ h
-  refine Subtype.ext (adjoin_prod_root_injective hroot hindep ?_)
-  -- The `M`-level equality of subfields lifts to an `L`-level equality of subset-product fields.
-  have h' : adjoin K {prodRootMem (K := K) root S} = adjoin K {prodRootMem (K := K) root T} := by
-    have hval := congrArg Subtype.val h
-    rwa [quadraticSubfieldOfFinset_val, quadraticSubfieldOfFinset_val] at hval
-  have := congrArg IntermediateField.lift h'
-  rwa [lift_adjoin_simple, lift_adjoin_simple, prodRootMem_coe, prodRootMem_coe] at this
 
 include hroot hindep in
 /-- **The subset-product assignment is a bijection.** Injective by

@@ -56,21 +56,16 @@ namespace Ideal
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
   [Algebra K L]
 
--- Source. The count is specified by the Chebotarev roadmap:
--- `TauCetiRoadmap/Chebotarev/README.md` §8.2, which displays the fibre size as
--- `#G / (#C * f) = #Centralizer_G(σ) / f` with `f = orderOf σ`. The theorems below count the
--- primes of `𝓞 L`; the roadmap's own statement counts primes of the fixed field `L ^ ⟨σ⟩`, and
--- reaches this one through the residue degree of a fixed-field prime.
-
 /-- **The Frobenius fiber is an orbit of the centralizer.** Let `Q` be a prime of `𝓞 L` above an
 ideal `𝔭` of `𝓞 K`, unramified over `𝓞 K`, with `σ` an arithmetic Frobenius at `Q`. Then
 the primes above `𝔭` admitting `σ` as a Frobenius are exactly the translates of `Q` by elements
 commuting with `σ`.
 
-Both inclusions come from `Ideal.isArithFrobAt_pointwise_smul_iff_eq_conj`, which says the
-Frobenius elements at `τ • Q` are the conjugates `τ σ τ⁻¹`: an element of `Gal(L/K)` carries `Q`
-into the fiber exactly when conjugation by it fixes `σ`. Transitivity of the action on the primes
-above `𝔭` is what makes every member of the fiber such a translate. -/
+The Frobenius elements at `τ • Q` are the conjugates `τ σ τ⁻¹`
+(`Ideal.isArithFrobAt_pointwise_smul_iff_eq_conj`), so an element of `Gal(L/K)` carries `Q` into
+the fiber exactly when conjugation by it fixes `σ`; the translates by such elements lie in the
+fiber by `Ideal.exists_isArithFrobAt_smul`. Transitivity of the action on the primes above `𝔭` is
+what makes every member of the fiber such a translate. -/
 theorem frobenius_fiber_eq_orbit_centralizer (𝔭 : Ideal (𝓞 K)) {σ : L ≃ₐ[K] L}
     (Q : Ideal (𝓞 L)) [IsGalois K L] [Q.IsPrime] [Q.LiesOver 𝔭]
     [Algebra.IsUnramifiedAt (𝓞 K) Q]
@@ -90,8 +85,7 @@ theorem frobenius_fiber_eq_orbit_centralizer (𝔭 : Ideal (𝓞 K)) {σ : L ≃
     subst hP
     have hconj : τ * σ * τ⁻¹ = σ := by
       rw [mul_inv_eq_iff_eq_mul, Subgroup.mem_centralizer_singleton_iff.mp hτ]
-    exact ⟨inferInstance, inferInstance, by simpa using (MulAction.injective τ).ne hσ.ne_bot,
-      (Q.isArithFrobAt_pointwise_smul_iff_eq_conj hσ τ σ).mpr hconj.symm⟩
+    exact Ideal.exists_isArithFrobAt_smul hconj ⟨inferInstance, inferInstance, hσ.ne_bot, hσ⟩
 
 /-- **The size of a Frobenius fiber.** At an unramified prime `Q` above an ideal `𝔭` with
 arithmetic Frobenius `σ`, the number of primes above `𝔭` admitting `σ` as a Frobenius, times the

@@ -180,4 +180,25 @@ theorem equivalent_toBilin'_unary_two_anisotropic (k : ℕ) {a : ℤ_[2]} (ha : 
     (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero k two_ne_zero))).mpr
       (mixed_sign_walking_anisotropic ha)
 
+/-- The anisotropic plane `V`, of determinant `3`, is unimodular over `ℤ_[2]`. -/
+theorem isUnit_det_anisotropic :
+    IsUnit (!![2, 1; 1, 2] : Matrix (Fin 2) (Fin 2) ℤ_[2]).det := by
+  rw [det_fin_two_of, PadicInt.isUnit_iff_toZModPow_three_mul_self]
+  simp only [map_sub, map_mul, map_one, map_ofNat]
+  decide
+
+/-- `5 det U det V = -15` is a square in `ℤ_[2]`, so `U` and `V` differ in sign by the factor `5`
+exchanged in sign walking. -/
+theorem isSquare_five_mul_det_hyperbolic_mul_det_anisotropic :
+    IsSquare (5 * (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℤ_[2]).det *
+      (!![2, 1; 1, 2] : Matrix (Fin 2) (Fin 2) ℤ_[2]).det) := by
+  have hu : IsUnit (-15 : ℤ_[2]) := by
+    rw [PadicInt.isUnit_iff_toZModPow_three_mul_self, map_neg, map_ofNat]
+    decide
+  have := (PadicInt.isSquare_mul_iff_toZModPow_three_eq hu isUnit_one).mpr
+    (by rw [map_neg, map_ofNat, map_one]; decide)
+  rw [det_fin_two_of, det_fin_two_of]
+  convert this using 1
+  ring
+
 end TauCeti

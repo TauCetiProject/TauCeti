@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.ODE.TrajectoryOperator
+import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
@@ -37,6 +39,14 @@ difference of dimensions of spaces of square-integrable solutions is
   `v' + A(s) v = 0`.
 * `TauCeti.squareIntegrableSolutions_neg_smul_id_eq_bot`: a scalar equation `v' = b v` has no
   nonzero square-integrable solution when its scalar solution `g` is not square integrable.
+* `TauCeti.mem_squareIntegrableSolutions_iff_of_apply_eq_toLp`: for a block-diagonal coefficient
+  on an `L²` product the equation decouples, and the square-integrable solutions are the pairs of
+  square-integrable solutions of the two blocks.
+* `TauCeti.hasDerivAt_exp_smul_sub_smul_id`: multiplication by `exp w` turns solutions of
+  `v' + A v = 0` into solutions of `u' + (A - w') u = 0`.
+* `TauCeti.squareIntegrableSolutions_sub_smul_id_le`: for a bounded-below weight `w`, the
+  square-integrable solutions of `u' + (A - w') u = 0` have initial values among those of
+  `v' + A v = 0`.
 * `TauCeti.WeakDerivStep.exists_hasDerivAt_of_trajectoryOperator_eq_zero`: an element of the
   kernel of `D_A` has a classical solution of `v' = -A v` as representative.
 * `TauCeti.WeakDerivStep.exists_trajectoryOperator_ae_eq_of_hasDerivAt`: an `Lᵖ` classical
@@ -47,6 +57,8 @@ difference of dimensions of spaces of square-integrable solutions is
   linearly equivalent to `TauCeti.squareIntegrableSolutions A`.
 * `TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator`: the kernel of `D_A` on
   `W^{1,2}(ℝ, F)` has the dimension of `TauCeti.squareIntegrableSolutions A`.
+* `TauCeti.WeakDerivStep.finiteDimensional_ker_trajectoryOperator`: that kernel is finite
+  dimensional when `F` is.
 * `TauCeti.WeakDerivStep.ker_trajectoryOperator_eq_bot_iff`: `D_A` is injective on
   `W^{1,2}(ℝ, F)` exactly when `v' + A v = 0` has no nonzero square-integrable solution.
 
@@ -111,6 +123,82 @@ theorem squareIntegrableSolutions_neg_smul_id_eq_bot {b g : ℝ → ℝ} (hb : C
     (.of_forall fun s ↦ ?_))
   rw [congrFun heq s, norm_smul, mul_comm, mul_inv_cancel_right₀ (norm_ne_zero_iff.2 h0),
     norm_norm]
+
+section Prod
+
+variable {F₁ F₂ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+
+/-- **Square-integrable solutions of a block-diagonal equation.** If the coefficient `A(s)` acts on
+the `L²` product `F₁ × F₂` as `A₁(s)` on the first factor and `A₂(s)` on the second, then a vector
+is the initial value of a square-integrable solution of `v' + A v = 0` exactly when its two
+components are initial values of square-integrable solutions of `v₁' + A₁ v₁ = 0` and
+`v₂' + A₂ v₂ = 0`. -/
+theorem mem_squareIntegrableSolutions_iff_of_apply_eq_toLp
+    {A : ℝ → WithLp 2 (F₁ × F₂) →L[ℝ] WithLp 2 (F₁ × F₂)} {A₁ : ℝ → F₁ →L[ℝ] F₁}
+    {A₂ : ℝ → F₂ →L[ℝ] F₂} (hA : ∀ s x, A s x = WithLp.toLp 2 (A₁ s x.fst, A₂ s x.snd))
+    {x : WithLp 2 (F₁ × F₂)} :
+    x ∈ squareIntegrableSolutions A ↔
+      x.fst ∈ squareIntegrableSolutions A₁ ∧ x.snd ∈ squareIntegrableSolutions A₂ := by
+  constructor
+  · rintro ⟨v, rfl, hv, hv2⟩
+    refine ⟨⟨fun s ↦ (v s).fst, rfl, fun s ↦ ?_,
+        hv2.continuousLinearMap_comp (WithLp.fstL 2 ℝ _ _)⟩,
+      ⟨fun s ↦ (v s).snd, rfl, fun s ↦ ?_, hv2.continuousLinearMap_comp (WithLp.sndL 2 ℝ _ _)⟩⟩
+    · simpa [hA, Function.comp_def] using
+        (WithLp.fstL 2 ℝ F₁ F₂).hasFDerivAt.comp_hasDerivAt s (hv s)
+    · simpa [hA, Function.comp_def] using
+        (WithLp.sndL 2 ℝ F₁ F₂).hasFDerivAt.comp_hasDerivAt s (hv s)
+  · rintro ⟨⟨v₁, hv₁0, hv₁, hv₁2⟩, ⟨v₂, hv₂0, hv₂, hv₂2⟩⟩
+    let e : F₁ × F₂ →L[ℝ] WithLp 2 (F₁ × F₂) := (WithLp.prodContinuousLinearEquiv 2 ℝ F₁ F₂).symm
+    refine ⟨fun s ↦ WithLp.toLp 2 (v₁ s, v₂ s),
+      (WithLp.ext_iff 2).2 (Prod.ext (by simp [hv₁0]) (by simp [hv₂0])), fun s ↦ ?_, ?_⟩
+    · simpa [e, hA, Function.comp_def, ← WithLp.toLp_neg] using
+        e.hasFDerivAt.comp_hasDerivAt s ((hv₁ s).prodMk (hv₂ s))
+    · -- The pair is the sum of its two components embedded in the product.
+      convert (hv₁2.continuousLinearMap_comp (e.comp (ContinuousLinearMap.inl ℝ F₁ F₂))).add
+        (hv₂2.continuousLinearMap_comp (e.comp (ContinuousLinearMap.inr ℝ F₁ F₂))) using 1
+      ext s
+      simp [e, ← WithLp.toLp_add]
+
+end Prod
+/-- **Conjugation by an exponential weight.** If `u' = -T u` at `s` and `w` has derivative `w'`
+at `s`, then `exp w • u` solves the shifted equation `(exp w • u)' = -(T - w' • id) (exp w • u)` at
+`s`. -/
+theorem hasDerivAt_exp_smul_sub_smul_id {T : F →L[ℝ] F} {u : ℝ → F} {w : ℝ → ℝ} {w' s : ℝ}
+    (hw : HasDerivAt w w' s) (hu : HasDerivAt u (-T (u s)) s) :
+    HasDerivAt (fun s ↦ Real.exp (w s) • u s)
+      (-(T - w' • ContinuousLinearMap.id ℝ F) (Real.exp (w s) • u s)) s := by
+  convert hw.exp.smul hu using 1
+  simp only [sub_apply, smul_apply,
+    ContinuousLinearMap.id_apply, map_smul]
+  module
+
+/-- **Weighted solutions are square-integrable solutions.** Let `w` have derivative `w'` and be
+bounded below. If `u` is a square-integrable solution of `u' + (A - w') u = 0`, then
+`v = exp (w 0 - w) • u` is a square-integrable solution of `v' + A v = 0` with the same initial
+value. In terms of the trajectory operator, the kernel of `D_A` on the weighted space
+`{u | exp w • u ∈ W^{1,2}}` is contained in its kernel on `W^{1,2}`. -/
+theorem squareIntegrableSolutions_sub_smul_id_le {A : ℝ → F →L[ℝ] F} {w w' : ℝ → ℝ}
+    (hw : ∀ s, HasDerivAt w (w' s) s) (hbdd : BddBelow (range w)) :
+    squareIntegrableSolutions (fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F) ≤
+      squareIntegrableSolutions A := by
+  intro x hx
+  obtain ⟨u, rfl, hu, hu2⟩ := mem_squareIntegrableSolutions.1 hx
+  obtain ⟨m, hm⟩ := hbdd
+  refine mem_squareIntegrableSolutions.2
+    ⟨fun s ↦ Real.exp (w 0 - w s) • u s, by simp, fun s ↦ ?_, ?_⟩
+  · convert hasDerivAt_exp_smul_sub_smul_id ((hw s).const_sub (w 0)) (hu s) using 3
+    module
+  · have hcont : Continuous fun s ↦ Real.exp (w 0 - w s) • u s :=
+      continuous_iff_continuousAt.2 fun s ↦
+        (hasDerivAt_exp_smul_sub_smul_id ((hw s).const_sub (w 0)) (hu s)).continuousAt
+    refine (hu2.const_smul (Real.exp (w 0 - m))).of_le hcont.aestronglyMeasurable
+      (.of_forall fun s ↦ ?_)
+    rw [Pi.smul_apply, norm_smul, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le,
+      Real.norm_of_nonneg (Real.exp_pos _).le]
+    gcongr
+    exact hm ⟨s, rfl⟩
 
 end TauCeti
 
@@ -359,6 +447,14 @@ theorem finrank_ker_trajectoryOperator (hA : Continuous A)
     Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker =
       Module.finrank ℝ (squareIntegrableSolutions A) :=
   (kerTrajectoryOperatorEquiv hA AL hAL).finrank_eq
+
+/-- The kernel of the trajectory operator `D_A u = u' + A u` on `W^{1,2}(ℝ, F)` is finite
+dimensional when `F` is: it embeds into the initial values of the solutions of `v' + A v = 0`. -/
+theorem finiteDimensional_ker_trajectoryOperator [FiniteDimensional ℝ F] (hA : Continuous A)
+    (AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    FiniteDimensional ℝ (trajectoryOperator (p := 2) AL).ker :=
+  (kerTrajectoryOperatorEquiv hA AL hAL).symm.finiteDimensional
 
 /-- **Injectivity of the trajectory operator.** For a continuous family `A` of bounded operators on
 a real Banach space `F`, the trajectory operator `D_A u = u' + A u` on `W^{1,2}(ℝ, F)` is injective

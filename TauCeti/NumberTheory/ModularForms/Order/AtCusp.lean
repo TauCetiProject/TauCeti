@@ -146,6 +146,11 @@ lemma qExpansionOrderAtCusp_nat_mul {m : ℕ} (hh : 0 < h)
     qExpansion_nat_mul_order hh hm hg_per hg_bdd hg_mdiff, ENat.toNat_mul]
   simp [mul_comm]
 
+/-- The zero function has cusp order zero, by the junk value. -/
+@[simp]
+lemma qExpansionOrderAtCusp_zero (h : ℝ) : qExpansionOrderAtCusp h (0 : ℍ → ℂ) = 0 :=
+  qExpansionOrderAtCusp_const h 0
+
 /-- The constant-one function has cusp order zero. -/
 @[simp]
 lemma qExpansionOrderAtCusp_one (h : ℝ) : qExpansionOrderAtCusp h (1 : ℍ → ℂ) = 0 :=

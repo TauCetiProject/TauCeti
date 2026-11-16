@@ -104,8 +104,8 @@ theorem contMDiffOn_succ_of_isMIntegralCurveOn (n : ℕ) [IsManifold I (n + 1 : 
         (extChartAt_source I (γ t₀) ▸ hsrc t ht)).mfderiv,
       mfderiv_chartAt_eq_tangentCoordChange (extChartAt_source I (γ t₀) ▸ hsrc t ht)]
     rfl
-  have hc : ContDiffOn ℝ (n + 1 : ℕ) c r :=
-    TauCeti.contDiffOn_succ_of_hasDerivWithinAt_comp hr hwu hmaps hd
+  have hc : ContDiffOn ℝ (n + 1 : ℕ) c r := mod_cast
+    TauCeti.contDiffOn_succ_of_hasDerivWithinAt_comp (n := n) hr (mod_cast hwu) hmaps hd
   have hct := hc t₀ ⟨ht₀, htV⟩
   rw [contDiffWithinAt_inter (hVopen.mem_nhds htV)] at hct
   exact hct.contMDiffWithinAt

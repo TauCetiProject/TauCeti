@@ -334,14 +334,9 @@ theorem contMDiffAt_plumbedAlmostComplex_update_inf (h₀ : ω.Compatible J₀) 
     filter_upwards [hdisc, hlen] with p hp hp₂
     rw [plumbedAlmostComplex_update_inf_eq h₀ hq hp₂ hp.le]
   · -- Off it, the point lies in the plumbed four-punctured sphere.
-    have hc : w ≠ q.endCenter := fun h => by
-      rw [h, sub_self, norm_zero] at hge
-      exact (by positivity : 0 < ρ L).not_ge hge
-    have h₁ : w ≠ q.plumbingMap L 1 := fun h =>
-      (h ▸ norm_plumbingMap_one_sub_endCenter_lt hq L).not_ge hge
     have h := periodic_and_contMDiff_update_inf (J₀ := J₀) (hJbp q) (hJbs q)
     exact contMDiffAt_plumbedAlmostComplex h₀ h₀ hq (fun r => (h r).1) hJbp (fun r => (h r).2) hJbs
-      (by simp) hL ⟨hw.resolve_left hc, h₁⟩ x
+      (by simp) hL (mem_plumbedSphere_of_le_norm_sub_endCenter hw hge) x
 
 end Smooth
 

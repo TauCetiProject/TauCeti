@@ -39,6 +39,8 @@ closed embedding.
   compatible maps out of `I × Y` and `I × Z`.
 * `CategoryTheory.IsPushout.homotopyDesc`: the homotopy between maps out of `P` glued from
   compatible homotopies of their restrictions to `Y` and to `Z`.
+* `TopCat.sigmaCylinderDesc`: the map out of the cylinder `I × ∐ⱼ F j` glued from maps out of the
+  cylinders `I × F j`.
 * `TopCat.exists_glue_of_isClosedEmbedding`: maps out of the pieces of a finite closed cover which
   agree on the overlaps glue to a map out of the whole space.
 * `CategoryTheory.IsPushout.of_isClosedEmbedding`: a cover by a closed subspace and finitely many
@@ -149,6 +151,34 @@ namespace TopCat
 open CategoryTheory Set Topology
 
 universe u
+
+section Sigma
+
+open Limits
+
+variable {J : Type u} (F : J → TopCat.{u})
+
+/-- Every point of a coproduct in `TopCat` lies in the image of one of the coprojections. -/
+theorem exists_sigma_ι_eq (z : (∐ F : TopCat.{u})) : ∃ j x, Sigma.ι F j x = z :=
+  let ⟨⟨j⟩, x, hx⟩ := Concrete.colimit_exists_rep _ z; ⟨j, x, hx⟩
+
+variable {W : Type u} [TopologicalSpace W] {F}
+
+/-- The map `I × ∐ⱼ F j → W` which is `C j` on the cylinder `I × F j`: the uncurried form of the
+map `∐ⱼ F j → C(I, W)` glued from the curried maps. -/
+def sigmaCylinderDesc (C : ∀ j, C(I × F j, W)) : C(I × (∐ F : TopCat.{u}), W) :=
+  (Sigma.desc fun j ↦ TopCat.ofHom ((C j).comp ContinuousMap.prodSwap).curry :
+    (∐ F) ⟶ TopCat.of C(I, W)).hom.uncurry.comp ContinuousMap.prodSwap
+
+@[simp]
+theorem sigmaCylinderDesc_ι (C : ∀ j, C(I × F j, W)) (t : I) (j : J) (x : F j) :
+    sigmaCylinderDesc C (t, Sigma.ι F j x) = C j (t, x) := by
+  have hx := ConcreteCategory.congr_hom
+    (Sigma.ι_comp_desc (fun j ↦ TopCat.ofHom ((C j).comp ContinuousMap.prodSwap).curry :
+      ∀ j, F j ⟶ TopCat.of C(I, W)) j) x
+  exact congrArg (fun g : C(I, W) ↦ g t) hx
+
+end Sigma
 
 /-- **Gluing along a finite closed cover.** Let `X` be covered by the ranges of a closed embedding
 `i : A ⟶ X` and of finitely many closed embeddings `j k : B k ⟶ X`, any two of which meet only

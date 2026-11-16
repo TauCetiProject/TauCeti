@@ -77,9 +77,9 @@ private lemma hasFiniteMoment_top_baire (μ : Measure (ℕ → ℕ)) :
     TauCeti.HasFiniteMoment ∞ μ := by
   let _ : MetricSpace (ℕ → ℕ) := PiNat.metricSpaceNatNat
   rw [TauCeti.hasFiniteMoment_def]
-  refine ⟨0, memLp_top_of_bound_enorm measurable_edist_right.aestronglyMeasurable 1
+  refine ⟨0, memLp_top_of_bound_eNorm measurable_edist_right.aestronglyMeasurable 1
     (.of_forall fun y ↦ ?_)⟩
-  rw [enorm_eq_self, edist_dist]
+  rw [eNorm_eq_self, edist_dist]
   exact_mod_cast PiNat.dist_le_one (0 : ℕ → ℕ) y
 
 /-- For every finite set of Baire sequences there is a constant sequence at distance at least `1`

@@ -69,14 +69,16 @@ theorem smul_pow_eq_of_div_norm_pow_eq (L_minus L_plus : ℂ) (k : ℕ)
 order `n` at `t₀` over the pole `s = γ t₀`, with one-sided tangents `L₋` (left) and `L₊`
 (right) satisfying the condition-(B) power identity, and exit times `t_eps_plus`, `t_eps_minus`
 reaching radius `ε` on each side: the difference of `F(z) = -1/((k-1)(z-s)^(k-1))` along the
-curve between the two exits tends to `0` as `ε → 0⁺` (`2 ≤ k ≤ n`). This is the cancellation
-half of the Hungerbühler–Wasem principal-value mechanism at a condition-(B) crossing. -/
+curve between the two exits tends to `0` as `ε → 0⁺` (`k ≤ n`). This is the cancellation
+half of the Hungerbühler–Wasem principal-value mechanism at a condition-(B) crossing. The formula
+`F` is an antiderivative of `(z - s)^(-k)` for `2 ≤ k`; for `k < 2` it is `0` by convention and
+the statement is trivial. -/
 theorem antiderivative_diff_across_crossing_tendsto_zero
     {γ : ℝ → ℂ} {t₀ : ℝ} {s L_minus L_plus : ℂ} {n k : ℕ} (h_flat : FlatOfOrder γ t₀ n)
     (hL_minus : L_minus ≠ 0) (hL_plus : L_plus ≠ 0)
     (h_deriv_right : HasDerivWithinAt γ L_plus (Ioi t₀) t₀)
     (h_deriv_left : HasDerivWithinAt γ L_minus (Iio t₀) t₀)
-    (h_s : γ t₀ = s) (hk : 2 ≤ k) (hkn : k ≤ n) (h_B : (L_plus / (‖L_plus‖ : ℂ)) ^ (k - 1) =
+    (h_s : γ t₀ = s) (hkn : k ≤ n) (h_B : (L_plus / (‖L_plus‖ : ℂ)) ^ (k - 1) =
       ((-L_minus) / (‖L_minus‖ : ℂ)) ^ (k - 1)) {t_eps_plus t_eps_minus : ℝ → ℝ}
     (h_plus_to : Tendsto t_eps_plus (𝓝[>] (0 : ℝ)) (𝓝[>] t₀))
     (h_plus_radius : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ‖γ (t_eps_plus ε) - s‖ = ε)
@@ -87,11 +89,15 @@ theorem antiderivative_diff_across_crossing_tendsto_zero
         (-(↑(k - 1) : ℂ)⁻¹ * ((γ (t_eps_plus ε) - s) ^ (k - 1))⁻¹)‖)
       (𝓝[>] (0 : ℝ)) (𝓝 0) := by
   subst h_s
+  rcases lt_or_ge k 2 with hk | hk
+  · -- For `k < 2` the formula `F` is `0` by convention.
+    have hk1 : k - 1 = 0 := by omega
+    simp [hk1]
   have hn1 : 1 ≤ n := by omega
-  have h_right := antiderivative_diff_at_tangent_target_tendsto_zero_right hL_plus
-    h_deriv_right rfl (h_flat.tangentDeviation_isLittleO_right hn1 hL_plus h_deriv_right) hk hkn
-  have h_left := antiderivative_diff_at_tangent_target_tendsto_zero_left hL_minus
-    h_deriv_left rfl (h_flat.tangentDeviation_isLittleO_left hn1 hL_minus h_deriv_left) hk hkn
+  have h_right := antiderivative_diff_at_tangent_target_tendsto_zero_right
+    h_deriv_right rfl (h_flat.tangentDeviation_isLittleO_right hn1 hL_plus h_deriv_right) hkn
+  have h_left := antiderivative_diff_at_tangent_target_tendsto_zero_left
+    h_deriv_left rfl (h_flat.tangentDeviation_isLittleO_left hn1 hL_minus h_deriv_left) hkn
   have h_sum := (h_right.comp h_plus_to).add (h_left.comp h_minus_to)
   rw [add_zero] at h_sum
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_sum

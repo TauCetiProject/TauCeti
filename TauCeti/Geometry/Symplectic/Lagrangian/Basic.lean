@@ -52,6 +52,10 @@ dimension count but no isotropic/Lagrangian vocabulary, which this file supplies
 * `TauCeti.SymplecticForm.Tames.isSymplectic_of_mem_invtSubmodule`: a subspace invariant under
   an almost complex structure tamed by `ω` is symplectic.
 * `TauCeti.SymplecticForm.finrank_add_finrank_orthogonal`: `dim L + dim L^ω = dim V`.
+* `TauCeti.SymplecticForm.ker_eq_comap_orthogonal_range`: the kernel of the form `B` pulled back
+  along a linear map `ι` is the preimage of the symplectic orthogonal of the image of `ι`, and
+  `finrank_ker_add_finrank_of_isCoisotropic` gives `dim ker B + dim W = dim V` when `ι` is
+  injective with coisotropic image.
 * `TauCeti.SymplecticForm.IsLagrangian.two_mul_finrank`: a Lagrangian subspace is half-dimensional,
   `2 · dim L = dim V`, and `IsIsotropic.isLagrangian_of_finrank` and
   `IsCoisotropic.isLagrangian_of_finrank` are the converses for an isotropic or coisotropic subspace
@@ -305,6 +309,31 @@ theorem isLagrangian_graph_iff_of_pairing
         linarith
       simpa using congrArg Prod.snd h0
 
+section Pullback
+
+variable {W : Type*} [AddCommGroup W] [Module ℝ W] {B : LinearMap.BilinForm ℝ W}
+  {ι : W →ₗ[ℝ] V}
+
+/-- If `ι` pulls `ω` back to `B`, the kernel of `B` is the preimage under `ι` of the symplectic
+orthogonal of the image of `ι`. -/
+theorem ker_eq_comap_orthogonal_range (ω : SymplecticForm V)
+    (hω : ∀ w w', ω (ι w) (ι w') = B w w') :
+    LinearMap.ker B = (ω.orthogonal (LinearMap.range ι)).comap ι := by
+  ext w
+  simp only [LinearMap.mem_ker, Submodule.mem_comap, mem_orthogonal_iff', LinearMap.mem_range,
+    forall_exists_index, forall_apply_eq_imp_iff, hω]
+  exact LinearMap.ext_iff
+
+/-- If `ι` pulls `ω` back to `B` and has coisotropic image, `ι` carries the kernel of `B` onto the
+symplectic orthogonal of its image. -/
+theorem map_ker_eq_orthogonal_range (ω : SymplecticForm V)
+    (hω : ∀ w w', ω (ι w) (ι w') = B w w') (hC : ω.IsCoisotropic (LinearMap.range ι)) :
+    (LinearMap.ker B).map ι = ω.orthogonal (LinearMap.range ι) := by
+  rw [ker_eq_comap_orthogonal_range ω hω, Submodule.map_comap_eq,
+    inf_eq_right.2 (isCoisotropic_iff_le.1 hC)]
+
+end Pullback
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ V]
@@ -351,6 +380,19 @@ lemma finrank_add_finrank_orthogonal (ω : SymplecticForm V) (L : Submodule ℝ 
   rw [finrank_orthogonal]
   have := L.finrank_le
   omega
+
+/-- **The kernel of the form induced on a coisotropic subspace has its codimension.** If an
+injective `ι : W → V` pulls `ω` back to `B` and has coisotropic image, then
+`dim ker B + dim W = dim V`. -/
+theorem finrank_ker_add_finrank_of_isCoisotropic {W : Type*} [AddCommGroup W] [Module ℝ W]
+    {B : LinearMap.BilinForm ℝ W} {ι : W →ₗ[ℝ] V} (ω : SymplecticForm V)
+    (hι : Function.Injective ι) (hω : ∀ w w', ω (ι w) (ι w') = B w w')
+    (hC : ω.IsCoisotropic (LinearMap.range ι)) :
+    finrank ℝ (LinearMap.ker B) + finrank ℝ W = finrank ℝ V := by
+  have : FiniteDimensional ℝ W := .of_injective ι hι
+  rw [(Submodule.equivMapOfInjective ι hι _).finrank_eq, map_ker_eq_orthogonal_range ω hω hC,
+    ← LinearMap.finrank_range_of_inj hι, add_comm]
+  exact ω.finrank_add_finrank_orthogonal _
 
 /-- A coisotropic subspace has at least half the dimension of the ambient space. -/
 lemma IsCoisotropic.finrank_le_two_mul_finrank (h : ω.IsCoisotropic L) :

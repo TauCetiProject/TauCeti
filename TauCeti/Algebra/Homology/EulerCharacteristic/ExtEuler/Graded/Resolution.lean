@@ -68,7 +68,7 @@ theorem isGradedExtInternallyFinite (r : (ExactStructure.abelian C).FiniteResolu
     IsGradedExtInternallyFinite.{w} k e X Y := by
   induction r with
   | base hX => exact hfinite _ hX
-  | step hQ i p zero hp r ih =>
+  | step hQ i p zero hp _ ih =>
       exact ih.of_shortExact₃' ((ExactStructure.abelian_conflation _).mp hp) (hfinite _ hQ)
 
 /-- A finite projective resolution of length `l` makes Ext vanish from degree `l + 1` in

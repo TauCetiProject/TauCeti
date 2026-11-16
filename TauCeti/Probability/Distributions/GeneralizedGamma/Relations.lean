@@ -116,7 +116,7 @@ theorem nakagamiMeasure_eq_generalizedGammaMeasure (m Ω : ℝ) :
   · have hs : √(Ω / m) = 0 :=
       sqrt_eq_zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg (not_lt.mp hΩ) hm.le)
     simp [nakagamiMeasure_of_not_pos (by tauto : ¬ (0 < m ∧ 0 < Ω)), hs]
-  rw [nakagamiMeasure_eq_chiMeasure hm hΩ,
+  rw [nakagamiMeasure_eq_chiMeasure,
     chiMeasure_eq_generalizedGammaMeasure (by positivity)]
   congr 1
   · ring
@@ -156,7 +156,7 @@ theorem generalizedGammaMeasure_one_shape_neg_eq_generalizedExtremeValueMeasure
     generalizedExtremeValueMeasure_of_pos (div_pos hs hc), expMeasure]
   apply Measure.map_congr
   filter_upwards [ae_pos_gammaMeasure 1 1] with x hx
-  rw [generalizedExtremeValueMap_eq_rpow hx, ite_eq_right (inv_ne_zero hc.ne')]
+  rw [generalizedExtremeValueMap_eq_rpow hx (inv_ne_zero hc.ne')]
   simp only [inv_neg]
   field_simp
   ring
@@ -191,8 +191,7 @@ theorem weibullMeasure_map_neg (hc : 0 < c) :
     generalizedExtremeValueMeasure_of_pos (div_pos hs hc), expMeasure]
   apply Measure.map_congr
   filter_upwards [ae_pos_gammaMeasure 1 1] with x hx
-  rw [generalizedExtremeValueMap_eq_rpow hx,
-    ite_eq_right (neg_ne_zero.mpr (inv_ne_zero hc.ne'))]
+  rw [generalizedExtremeValueMap_eq_rpow hx (neg_ne_zero.mpr (inv_ne_zero hc.ne'))]
   simp only [Function.comp_apply, neg_neg]
   field_simp
   ring

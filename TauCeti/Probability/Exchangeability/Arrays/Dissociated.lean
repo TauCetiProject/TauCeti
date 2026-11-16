@@ -55,9 +55,7 @@ forces that variable to be almost surely trivial
 unchanged by every entry is incompatible with dissociation; the ergodic Aldous--Hoover coding drops
 the global noise coordinate entirely.
 
-These results advance the exchangeable-arrays milestone of
-`TauCetiRoadmap/Exchangeability/README.md`, Layer 8. The dissociated codings themselves are in
-`Arrays/AldousHoover/Dissociated.lean`.
+The dissociated codings themselves are in `Arrays/AldousHoover/Dissociated.lean`.
 
 ## Main definitions
 
@@ -304,36 +302,32 @@ theorem JointlyDissociated.indepFun_arrayDiag (h : JointlyDissociated μ X) {i i
   exact (jointlyDissociated_iff.mp h (fun _ => i) (fun _ => i') (by simpa using hi)).comp
     (measurable_pi_apply (0, 0)) (measurable_pi_apply (0, 0))
 
-/-- A random variable independent of itself generates an almost surely trivial σ-algebra. -/
-private theorem measure_preimage_eq_zero_or_one_of_indepFun_self [IsProbabilityMeasure μ]
-    {Y : Ω → α} (hY : Measurable Y) (hindep : IndepFun Y Y μ) {s : Set α}
-    (hs : MeasurableSet s) : μ (Y ⁻¹' s) = 0 ∨ μ (Y ⁻¹' s) = 1 :=
-  ProbabilityTheory.measure_eq_zero_or_one_of_indepSet_self
-    ((indepFun_iff_indepSet_preimage hY hY).mp hindep s s hs hs)
-
 /-- **Dissociation makes a constant array trivial.** If every entry of a jointly dissociated array
 is one and the same random variable `Y`, then `Y` generates an almost surely trivial σ-algebra.
 
 In particular, the array `X (i, j) = U` built from global noise alone is separately exchangeable,
 but dissociating it would make `U` degenerate. -/
-theorem JointlyDissociated.measure_preimage_eq_zero_or_one_of_const [IsProbabilityMeasure μ]
-    {Y : Ω → α} (hY : Measurable Y) (h : JointlyDissociated μ fun _ => Y) {s : Set α}
+theorem JointlyDissociated.measure_preimage_eq_zero_or_one_of_const [IsFiniteMeasure μ]
+    {Y : Ω → α} (h : JointlyDissociated μ fun _ => Y) {s : Set α}
     (hs : MeasurableSet s) : μ (Y ⁻¹' s) = 0 ∨ μ (Y ⁻¹' s) = 1 :=
-  measure_preimage_eq_zero_or_one_of_indepFun_self hY
-    ((jointlyDissociated_iff.mp h (fun _ => 0) (fun _ => 1) (by simp)).comp
-      (measurable_pi_apply (0, 0)) (measurable_pi_apply (0, 0))) hs
+  ProbabilityTheory.measure_eq_zero_or_one_of_indep_self
+    ((IndepFun_iff_Indep Y Y μ).mp
+      ((jointlyDissociated_iff.mp h (fun _ => 0) (fun _ => 1) (by simp)).comp
+        (measurable_pi_apply (0, 0)) (measurable_pi_apply (0, 0))))
+    (comap_measurable Y hs)
 
 /-- **Equal transposed entries of a separately dissociated array are trivial off the diagonal.**
 Separate dissociation asks `X (i, j)` and `X (j, i)` to be independent, so if those two entries
 are equal, they are self-independent. This applies in particular to symmetric arrays. -/
-theorem SeparatelyDissociated.measure_preimage_eq_zero_or_one_of_symm [IsProbabilityMeasure μ]
+theorem SeparatelyDissociated.measure_preimage_eq_zero_or_one_of_symm [IsFiniteMeasure μ]
     (h : SeparatelyDissociated μ X) {i j : ℕ} (hij : i ≠ j)
-    (hsymm : X (j, i) = X (i, j)) (hX : Measurable (X (i, j)))
+    (hsymm : X (j, i) = X (i, j))
     {s : Set α} (hs : MeasurableSet s) :
     μ (X (i, j) ⁻¹' s) = 0 ∨ μ (X (i, j) ⁻¹' s) = 1 := by
   have hindep := h.indepFun_apply hij hij.symm
   rw [hsymm] at hindep
-  exact measure_preimage_eq_zero_or_one_of_indepFun_self hX hindep hs
+  exact ProbabilityTheory.measure_eq_zero_or_one_of_indep_self
+    ((IndepFun_iff_Indep _ _ μ).mp hindep) (comap_measurable (X (i, j)) hs)
 
 end Consequences
 
