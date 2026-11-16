@@ -87,21 +87,6 @@ private def cellPullbackHomeomorph (n : ℕ) :
   Homeomorph.subtype (Homeomorph.refl _) fun _ ↦ by
     simp [MoorePathFrom.endpoint_apply, eq_comm]
 
-omit [T2Space B] in
-variable (b C) in
-/-- `cellPullbackHomeomorph` is the identity on the underlying pairs. -/
-private theorem cellPullbackHomeomorph_apply_fst (n : ℕ)
-    (z : MoorePathPullback (sigmaCellMap C n) b) : (cellPullbackHomeomorph b C n z).1 = z.1 :=
-  rfl
-
-omit [T2Space B] in
-variable (b C) in
-/-- The inverse of `cellPullbackHomeomorph` is the identity on the underlying pairs. -/
-private theorem cellPullbackHomeomorph_symm_apply_fst (n : ℕ)
-    (z : TopCat.cellPullback (pathFromEndpoint B b) C n) :
-    ((cellPullbackHomeomorph b C n).symm z).1 = z.1 :=
-  rfl
-
 variable (b C) in
 /-- The preimage of `Xⁿ` is the `n`-th stage of the skeletal filtration. -/
 private theorem preimage_skeletonLT_succ_eq (n : ℕ) :
@@ -128,9 +113,10 @@ private theorem toMoorePathFrom_eq (n : ℕ) (z : MoorePathPullback (sigmaCellMa
   obtain ⟨⟨d, γ⟩, h⟩ := z
   refine MoorePathFrom.ext ?_
   rw [MoorePathPullback.toMoorePathFrom_toMoorePath, MoorePathPullback.path_mk]
-  exact (congrArg MoorePathFrom.toMoorePath
-    ((TopCat.coe_cellPullbackPairMap_fst_apply n (cellPullbackHomeomorph b C n ⟨(d, γ), h⟩)).trans
-      (congrArg Prod.snd (cellPullbackHomeomorph_apply_fst b C n ⟨(d, γ), h⟩)))).symm
+  -- `cellPullbackPairMap` projects a pair to its path, and `cellPullbackHomeomorph` is the
+  -- identity on the underlying pairs by definition, so the right-hand side is the path `γ`.
+  exact congrArg MoorePathFrom.toMoorePath
+    (TopCat.coe_cellPullbackPairMap_fst_apply n (cellPullbackHomeomorph b C n ⟨(d, γ), h⟩)).symm
 
 omit [T2Space B] in
 variable (b C) in
@@ -145,9 +131,9 @@ private theorem image_symm_range_cellPullbackPair_map (n : ℕ) :
     Set.mem_ofPred_eq]
   refine ⟨?_, fun hd ↦ ⟨_, ⟨⟨cellPullbackHomeomorph b C n ⟨(d, γ), h⟩, hd⟩, rfl⟩, rfl⟩⟩
   rintro ⟨_, ⟨v, rfl⟩, hv⟩
-  have hd : v.1.1.1 = d :=
-    (congrArg Prod.fst (cellPullbackHomeomorph_symm_apply_fst b C n _)).symm.trans
-      (congrArg (fun z ↦ z.1.1) hv)
+  -- The inverse of `cellPullbackHomeomorph` is the identity on the underlying pairs, so the cell
+  -- coordinate of `hv` is this equation by definition.
+  have hd : v.1.1.1 = d := congrArg (fun z ↦ z.1.1) hv
   rw [← hd]
   exact v.2
 

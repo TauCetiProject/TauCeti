@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Support
+import TauCeti.Algebra.Homology.ComplexShape.Basic
 
 /-!
 # Quasi-isomorphisms of relative cubical chains, on the chains of other spaces

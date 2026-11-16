@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Relative
 public import TauCeti.Algebra.Homology.ModuleCat.QuasiIso
+import TauCeti.Algebra.Homology.ComplexShape.Basic
 import TauCeti.Topology.Closure
 
 /-!

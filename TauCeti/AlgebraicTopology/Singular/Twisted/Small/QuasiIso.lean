@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Chains
 public import TauCeti.Algebra.Homology.ModuleCat.QuasiIso
+import TauCeti.Algebra.Homology.ComplexShape.Basic
 
 /-!
 # The small-chain theorem with local coefficients

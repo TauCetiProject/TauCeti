@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.Relative
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Relative
+import TauCeti.Algebra.Homology.ComplexShape.Basic
 
 /-!
 # The relative comparison of cubical and simplicial singular chains
