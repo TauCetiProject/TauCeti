@@ -27,7 +27,8 @@ equivariant for the orientation-preserving isometries of the plane.
 * Permutations of the zeros act trivially, since a divisor is an unordered multiset of points.
 
 Both operations compose as the group of orientation-preserving isometries of the plane
-(`translateFramedVortex_add`, `rotateFramedVortex_mul`, `rotateFramedVortex_translateFramedVortex`)
+(`translateFramedVortex_translateFramedVortex`, `rotateFramedVortex_rotateFramedVortex`,
+`rotateFramedVortex_translateFramedVortex`)
 and conjugate the smooth framed gauge group to itself (`translateFramedVortex_smul`,
 `rotateFramedVortex_smul`), with the gauge composed with the isometry
 (`TauCeti.Vortex.translateFramedGauge`, `TauCeti.Vortex.rotateFramedGauge`). They therefore descend
@@ -35,7 +36,7 @@ to the moduli space (`TauCeti.Vortex.framedVortexModuliTranslate`,
 `TauCeti.Vortex.framedVortexModuliRotate`), where the divisor intertwines them with the maps
 `D ↦ D - a` and `D ↦ u⁻¹ D` of `Sym ℂ m` (`framedVortexModuliEquiv_translate`,
 `framedVortexModuliEquiv_rotate`) and the composition laws persist
-(`framedVortexModuliTranslate_add`, `framedVortexModuliRotate_mul`,
+(`framedVortexModuliTranslate_translate`, `framedVortexModuliRotate_rotate`,
 `framedVortexModuliRotate_translate`).
 
 By Taubes's uniqueness theorem the gauge orbit of a vortex is fixed by an isometry exactly when its
@@ -114,7 +115,7 @@ theorem translateFramedVortex_zero (x : framedVortexSubMulAction m) :
 
 /-- Successive translations of framed vortices add. -/
 @[simp]
-theorem translateFramedVortex_add (a b : ℂ) (x : framedVortexSubMulAction m) :
+theorem translateFramedVortex_translateFramedVortex (a b : ℂ) (x : framedVortexSubMulAction m) :
     translateFramedVortex a (translateFramedVortex b x) = translateFramedVortex (a + b) x :=
   Subtype.ext (translateField_translateField a b _)
 
@@ -172,7 +173,7 @@ theorem rotateFramedVortex_one (x : framedVortexSubMulAction m) : rotateFramedVo
 
 /-- Successive rotations of framed vortices multiply. -/
 @[simp]
-theorem rotateFramedVortex_mul (u v : Circle) (x : framedVortexSubMulAction m) :
+theorem rotateFramedVortex_rotateFramedVortex (u v : Circle) (x : framedVortexSubMulAction m) :
     rotateFramedVortex u (rotateFramedVortex v x) = rotateFramedVortex (u * v) x := by
   refine Subtype.ext ?_
   simp only [coe_rotateFramedVortex, rotateField_gaugeTransform, rotateField_rotateField]
@@ -312,7 +313,7 @@ theorem framedVortexModuliTranslate_zero
   Quotient.inductionOn' q fun x ↦ by simp
 
 @[simp]
-theorem framedVortexModuliTranslate_add (a b : ℂ)
+theorem framedVortexModuliTranslate_translate (a b : ℂ)
     (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m)) :
     framedVortexModuliTranslate a (framedVortexModuliTranslate b q) =
       framedVortexModuliTranslate (a + b) q :=
@@ -325,7 +326,7 @@ theorem framedVortexModuliRotate_one
   Quotient.inductionOn' q fun x ↦ by simp
 
 @[simp]
-theorem framedVortexModuliRotate_mul (u v : Circle)
+theorem framedVortexModuliRotate_rotate (u v : Circle)
     (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m)) :
     framedVortexModuliRotate u (framedVortexModuliRotate v q) =
       framedVortexModuliRotate (u * v) q :=
