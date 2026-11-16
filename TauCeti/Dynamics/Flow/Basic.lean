@@ -23,6 +23,8 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
 * `Flow.map_neg_apply_map`, `Flow.map_apply_map_neg`: the time-`(-t)` map undoes the time-`t` map
   and conversely.
 * `Flow.orbit_apply`: flowing a point does not change its orbit.
+* `Flow.orbit_eq_iff`: two points have the same orbit exactly when one lies on the orbit of the
+  other.
 * `Flow.orbit_reverse`: reversing time does not change the orbits.
 * `Flow.prod`: the product of two flows with the same time.
 * `Flow.exists_forall_exists_mem_Ioo_apply_mem`: if the forward orbits of the points of a compact
@@ -61,6 +63,12 @@ theorem map_apply_map_neg [AddGroup τ] (ϕ : Flow τ α) (t : τ) (x : α) : ϕ
 @[simp]
 theorem orbit_apply [AddGroup τ] (ϕ : Flow τ α) (s : τ) (x : α) : orbit ϕ (ϕ s x) = orbit ϕ x :=
   @AddAction.orbit_vadd τ α _ ϕ.toAddAction s x
+
+/-- Two points have the same orbit exactly when the first lies on the orbit of the second. This is
+`AddAction.orbit_eq_iff` for the action of the flow. -/
+theorem orbit_eq_iff [AddGroup τ] (ϕ : Flow τ α) {x y : α} :
+    orbit ϕ x = orbit ϕ y ↔ x ∈ orbit ϕ y :=
+  @AddAction.orbit_eq_iff τ α _ ϕ.toAddAction x y
 
 /-- Reversing time does not change the orbits of a flow. -/
 @[simp]

@@ -183,6 +183,22 @@ theorem ncard_morseTrajectorySlice_eq_two_of_unique_index_finrank {p q : M}
   exact hX.ncard_unstableSet_inter_stableSet_inter_level_eq_two hq hind hW
     (by linarith [hy.1, hy.2]) (by linarith [hy.1, hy.2])
 
+/-- **Trajectories out of index one go to the only critical point of index zero.** Under the
+Morse–Smale condition, if `m` is the only critical point of index `0`, then every point of the
+unstable manifold of a critical point `q` of index `1`, other than `q`, flows to `m`: its
+trajectory ends at a critical point of smaller index. -/
+theorem mem_stableSet_of_unique_index_zero {q m : M}
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f q = 1)
+    (huniq : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → manifoldMorseIndex 𝓘(ℝ, E) f y = 0 → y = m)
+    {y : M} (hyu : y ∈ hX.flow.unstableSet q) (hyq : y ≠ q) : y ∈ hX.flow.stableSet m := by
+  obtain ⟨m', hm', hym'⟩ := mem_iUnion₂.1 ((hX.iUnion_stableSet hf).symm ▸ mem_univ y :
+    y ∈ ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.stableSet x)
+  have hqm' : q ≠ m' := by
+    rintro rfl
+    exact hyq (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hyu, hym'⟩)
+  have hlt := h.manifoldMorseIndex_lt hf hqm' ⟨y, hyu, hym'⟩
+  rwa [← huniq m' hm' (by omega)]
+
 /-- **Two trajectories to the only critical point of index zero.** Under the Morse–Smale
 condition, if `m` is the only critical point of index `0`, then there are exactly two
 trajectories to `m` from each critical point `q` of index `1`: the two halves of `W^u(q) - {q}`
@@ -207,13 +223,7 @@ theorem ncard_morseTrajectorySlice_eq_two_of_unique_index_zero {q m : M}
       y ∈ hXn.flow.unstableSet m := by
     rw [← hu] at hyu
     rw [← hs]
-    obtain ⟨m', hm', hym'⟩ := mem_iUnion₂.1 ((hX.iUnion_stableSet hf).symm ▸ mem_univ y :
-      y ∈ ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.stableSet x)
-    have hqm' : q ≠ m' := by
-      rintro rfl
-      exact hyq (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hyu, hym'⟩)
-    have hlt := h.manifoldMorseIndex_lt hf hqm' ⟨y, hyu, hym'⟩
-    rwa [← huniq m' hm' (by omega)]
+    exact h.mem_stableSet_of_unique_index_zero hf hind huniq hyu hyq
   -- Some trajectory runs from `q` to `m`, so the middle level lies strictly between their values.
   obtain ⟨y, hys, hyq⟩ := hXn.exists_mem_stableSet_ne hqn (by omega)
   have hym := hW y hys hyq
