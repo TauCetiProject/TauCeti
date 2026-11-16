@@ -272,11 +272,8 @@ automorphism fixes `⨆ i, E i` pointwise exactly when it fixes every `E i` poin
 indexed form of Mathlib's `IntermediateField.fixingSubgroup_sup`, and like it needs no hypothesis
 on `M / K`. -/
 theorem fixingSubgroup_iSup {ι : Sort*} (E : ι → IntermediateField K M) :
-    (⨆ i, E i).fixingSubgroup = ⨅ i, (E i).fixingSubgroup := by
-  ext σ
-  rw [Subgroup.mem_iInf]
-  exact ⟨fun h i ↦ fixingSubgroup_antitone (le_iSup E i) h,
-    by simp [← Subgroup.zpowers_le, ← le_fixedField_iff_le_fixingSubgroup]⟩
+    (⨆ i, E i).fixingSubgroup = ⨅ i, (E i).fixingSubgroup :=
+  congrArg OrderDual.ofDual (fixingSubgroup_fixedField_gc (K := K) (M := M)).l_iSup
 
 /-- **The fixing subgroup of an algebraic intermediate field is closed** for the Krull topology:
 `E` is the join of the simple extensions it contains, each of them finite over `K`, so
@@ -287,7 +284,7 @@ subgroup is even open, and `InfiniteGalois.fixingSubgroup_isClosed` is the case 
 `M / K`. Algebraicity of `E / K` alone suffices — nothing is asked of `M / K`, so `E` may be an
 algebraic subfield of a transcendental extension, and over an algebraic `M / K` the hypothesis is
 supplied by `IntermediateField.isAlgebraic_tower_bot`. The suffix names that hypothesis, as
-`MulAction.stabilizer_isOpen_of_isIntegral` does. -/
+`stabilizer_isOpen_of_isIntegral` does. -/
 theorem fixingSubgroup_isClosed_of_isAlgebraic (E : IntermediateField K M)
     [Algebra.IsAlgebraic K E] : IsClosed (E.fixingSubgroup : Set (M ≃ₐ[K] M)) := by
   have hE : E = ⨆ x : E, K⟮(x : M)⟯ := by
@@ -495,6 +492,20 @@ theorem fixedField_map_conj (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) 
     simpa [MulAut.conj_apply] using congrArg σ.symm hx
   · rintro ⟨y, hy, rfl⟩ g ⟨h, hh, rfl⟩
     simpa [MulAut.conj_apply] using congrArg σ (hy h hh)
+
+/-- **Artin's equality for fixed fields, without finiteness of `M / K`**: the degree of `M` over
+the fixed field of a subgroup `H` of `Gal(M/K)` is the order of `H`. For infinite `H` both sides
+are `0`. -/
+theorem finrank_fixedField_eq_card (H : Subgroup (M ≃ₐ[K] M)) :
+    Module.finrank (fixedField H) M = Nat.card H := by
+  by_cases hH : Finite H
+  · have := Fintype.ofFinite H
+    rw [Nat.card_eq_fintype_card]
+    exact FixedPoints.finrank_eq_card H M
+  · have := not_finite_iff_infinite.mp hH
+    rw [Nat.card_eq_zero_of_infinite]
+    exact Module.finrank_of_not_finite fun hfin ↦
+      hH (IntermediateField.finite_of_finiteDimensional_fixedField H)
 
 end Subgroup
 

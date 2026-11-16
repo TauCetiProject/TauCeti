@@ -31,6 +31,8 @@ orthogonal decomposition into reducing subspaces.
 ## Main results
 
 * `LinearPMap.IsReducing.orthogonal`: if `U` reduces `A`, so does `Uᗮ`.
+* `LinearPMap.isReducing_iff_starProjection_mem_graph`: `U` reduces `A` exactly when the
+  orthogonal projection onto `U` commutes with `A`.
 * `LinearPMap.isReducing_toPMap_top_iff`: for everywhere-defined maps, reduction agrees with
   `Submodule.IsReducing`.
 * `LinearPMap.IsReducing.dense_restrict_domain`: the reduced part of a densely defined map is
@@ -95,6 +97,36 @@ theorem isReducing_orthogonal_iff : A.IsReducing Uᗮ ↔ A.IsReducing U := by
   · rw [← sub_sub_cancel x (U.starProjection x), ← Submodule.starProjection_orthogonal_val]
     exact h.sub_starProjection_mem_domain hx
   · simpa only [Submodule.orthogonal_orthogonal] using h.isInvariant_orthogonal
+
+/-- **Reduction is commutation with the projection.** A subspace reduces a partial linear map
+exactly when the orthogonal projection `P` onto it commutes with the map: `P × P` sends the graph
+into itself, that is, `P` preserves the domain and `A (P x) = P (A x)` for every `x ∈ dom A`. -/
+theorem isReducing_iff_starProjection_mem_graph :
+    A.IsReducing U ↔
+      ∀ x y, (x, y) ∈ A.graph → (U.starProjection x, U.starProjection y) ∈ A.graph := by
+  refine ⟨fun hR x y hxy ↦ ?_, fun h ↦
+    ⟨fun {x} hx ↦ ?_, isInvariant_iff.2 fun x hx ↦ ?_, isInvariant_iff.2 fun x hx ↦ ?_⟩⟩
+  · obtain ⟨z, rfl, rfl⟩ := A.mem_graph_iff.1 hxy
+    let p : A.domain := ⟨_, hR.starProjection_mem_domain z.2⟩
+    let q : A.domain := ⟨_, hR.sub_starProjection_mem_domain z.2⟩
+    have hsplit : A z = A p + A q := by
+      rw [← map_add]
+      congr 1
+      exact Subtype.ext (add_sub_cancel _ _).symm
+    have hp : A p ∈ U := hR.isInvariant.apply_mem p (U.starProjection_apply_mem z)
+    have hq : A q ∈ Uᗮ :=
+      hR.isInvariant_orthogonal.apply_mem q (U.sub_starProjection_mem_orthogonal z)
+    rw [hsplit, ContinuousLinearMap.map_add, Submodule.starProjection_eq_self_iff.2 hp,
+      (U.starProjection_apply_eq_zero_iff).2 hq, add_zero]
+    exact A.mem_graph p
+  · exact mem_domain_of_mem_graph (h x _ (A.mem_graph ⟨x, hx⟩))
+  · have hg := h _ _ (A.mem_graph x)
+    rw [Submodule.starProjection_eq_self_iff.2 hx] at hg
+    rw [A.mem_graph_snd_inj (A.mem_graph x) hg rfl]
+    exact U.starProjection_apply_mem _
+  · have hg := h _ _ (A.mem_graph x)
+    rw [(U.starProjection_apply_eq_zero_iff).2 hx] at hg
+    exact (U.starProjection_apply_eq_zero_iff).1 (A.graph_fst_eq_zero_snd hg rfl)
 
 /-- For an everywhere-defined linear map, reduction in the sense of partial linear maps is
 reduction in the sense of `Submodule.IsReducing`. -/
