@@ -300,7 +300,7 @@ theorem two_mul_card (n : ℕ) : 2 * Fintype.card (Vertex n) = (n + 1) * (n + 2)
     linarith
 
 /-- The triangular lattice `Vertex n` has `(n + 1) * (n + 2) / 2` vertices. -/
-theorem card (n : ℕ) : Fintype.card (Vertex n) = (n + 1) * (n + 2) / 2 := by
+@[simp] theorem card (n : ℕ) : Fintype.card (Vertex n) = (n + 1) * (n + 2) / 2 := by
   rw [← two_mul_card n]; omega
 
 /-- Construct a lattice vertex `(n - y - z, y, z)` from nonnegative `(y, z)` with `y + z ≤ n`. -/
