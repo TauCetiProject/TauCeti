@@ -32,9 +32,9 @@ No orientation is involved; the oriented form is in
 `TauCeti.Topology.VectorBundle.Orientation.Whitney`. These hold in any abelian monoidal category
 of coefficients.
 
-Over a commutative ring `K`, for `Rᵢ, Mᵢ ≃ₗ[K] K` and isomorphisms `u, μ` (in particular scalar
-coefficients `ModuleCat.of K K` with standard unitors), `TauCeti.thomPairCup` produces a Thom class
-of `E₁ ⊕ E₂` iff both factors are Thom classes (`TauCeti.isThomClass_thomPairCup_iff`), giving
+Over a commutative ring `K`, for `R₁, R₂, M₁, M₂ ≃ₗ[K] K` and isomorphisms `u, μ` (in particular
+scalar coefficients `ModuleCat.of K K` with standard unitors), `TauCeti.thomPairCup` produces a Thom
+class of `E₁ ⊕ E₂` iff both factors are Thom classes (`TauCeti.isThomClass_thomPairCup_iff`), giving
 unoriented Whitney formulas when `Subsingleton Kˣ`
 (`TauCeti.IsThomClass.eq_thomPairCup_of_subsingleton_units`).
 
@@ -54,7 +54,7 @@ unoriented Whitney formulas when `Subsingleton Kˣ`
   Euler classes.
 * `TauCeti.isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso`,
   `TauCeti.isThomClass_thomPairCup_iff`, `TauCeti.IsThomClass.thomPairCup`: `thomPairCup` preserves
-  and reflects `TauCeti.IsThomClass` for `Rᵢ, Mᵢ ≃ₗ[K] K` and isomorphisms `u`, `μ`.
+  and reflects `TauCeti.IsThomClass` for `R₁, R₂, M₁, M₂ ≃ₗ[K] K` and isomorphisms `u`, `μ`.
 * `TauCeti.IsThomClass.eq_thomPairCup_of_subsingleton_units`,
   `TauCeti.IsThomClass.eulerClass_eq_singularCup_of_subsingleton_units`: unoriented Whitney cases.
 
@@ -284,12 +284,11 @@ variable {B : Type w} [TopologicalSpace B]
   [∀ b, Module ℝ (E₂ b)] [∀ b, TopologicalSpace (E₂ b)] [FiberBundle F₂ E₂] [VectorBundle ℝ F₂ E₂]
   {K : Type w} [CommRing K]
 
-/-- **The product of Thom pair classes preserves and reflects Thom classes** for `Rᵢ, Mᵢ ≃ₗ[K] K`
-and isomorphism pairings `u` and `μ`. -/
+/-- **The product of Thom pair classes preserves and reflects Thom classes** for
+`R₁, R₂, M₁, M₂ ≃ₗ[K] K` and isomorphism pairings `u` and `μ`. -/
 theorem isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso
     {R₁ R₂ R₃ M₁ M₂ M₃ : ModuleCat.{w} K}
-    (eR₁ : R₁ ≃ₗ[K] K) (eR₂ : R₂ ≃ₗ[K] K) (eR₃ : R₃ ≃ₗ[K] K)
-    (eM₁ : M₁ ≃ₗ[K] K) (eM₂ : M₂ ≃ₗ[K] K) (eM₃ : M₃ ≃ₗ[K] K)
+    (eR₁ : R₁ ≃ₗ[K] K) (eR₂ : R₂ ≃ₗ[K] K) (eM₁ : M₁ ≃ₗ[K] K) (eM₂ : M₂ ≃ₗ[K] K)
     {u : R₃ ⟶ R₁ ⊗ R₂} [IsIso u] {μ : M₁ ⊗ M₂ ⟶ M₃} [IsIso μ]
     (a₁ : (thomPair F₁ E₁).singularCohomology R₁ K M₁ (Module.finrank ℝ F₁))
     (a₂ : (thomPair F₂ E₂).singularCohomology R₂ K M₂ (Module.finrank ℝ F₂)) :
@@ -303,7 +302,7 @@ theorem isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso
   have := FiberBundle.t1Space F₁ E₁ b; have := FiberBundle.t1Space F₂ E₂ b
   rw [singularCohomologyMap_fiberThomPairMap_thomPairCup_eq_complSingletonPairCross]
   exact span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_openPartialHomeomorph_of_isIso
-    eR₁ eR₂ eR₃ eM₁ eM₂ eM₃ (FiberBundle.homeomorphAt F₁ E₁ b).toOpenPartialHomeomorph
+    eR₁ eR₂ eM₁ eM₂ (FiberBundle.homeomorphAt F₁ E₁ b).toOpenPartialHomeomorph
     (mem_univ (0 : E₁ b)) (FiberBundle.homeomorphAt F₂ E₂ b).toOpenPartialHomeomorph
     (mem_univ (0 : E₂ b)) Module.finrank_prod.symm _ _
 
@@ -318,22 +317,21 @@ theorem isThomClass_thomPairCup_iff
         (thomPairCup K F₁ E₁ F₂ E₂ (λ_ (ModuleCat.of K K)).inv (λ_ (ModuleCat.of K K)).hom
           _ _ _ Module.finrank_prod.symm a₁ a₂) ↔
       IsThomClass F₁ E₁ a₁ ∧ IsThomClass F₂ E₂ a₂ :=
-  isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso (.refl K K) (.refl K K) (.refl K K)
-    (.refl K K) (.refl K K) (.refl K K) a₁ a₂
+  isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso (.refl K K) (.refl K K)
+    (.refl K K) (.refl K K) a₁ a₂
 
-/-- **The product of two Thom classes is a Thom class** for `Rᵢ, Mᵢ ≃ₗ[K] K` and isomorphisms
-`u`, `μ`. -/
+/-- **The product of two Thom classes is a Thom class** for `R₁, R₂, M₁, M₂ ≃ₗ[K] K` and
+isomorphisms `u`, `μ`. -/
 theorem IsThomClass.thomPairCup_of_linearEquiv_of_isIso
     {R₁ R₂ R₃ M₁ M₂ M₃ : ModuleCat.{w} K}
-    (eR₁ : R₁ ≃ₗ[K] K) (eR₂ : R₂ ≃ₗ[K] K) (eR₃ : R₃ ≃ₗ[K] K)
-    (eM₁ : M₁ ≃ₗ[K] K) (eM₂ : M₂ ≃ₗ[K] K) (eM₃ : M₃ ≃ₗ[K] K)
+    (eR₁ : R₁ ≃ₗ[K] K) (eR₂ : R₂ ≃ₗ[K] K) (eM₁ : M₁ ≃ₗ[K] K) (eM₂ : M₂ ≃ₗ[K] K)
     {u : R₃ ⟶ R₁ ⊗ R₂} [IsIso u] {μ : M₁ ⊗ M₂ ⟶ M₃} [IsIso μ]
     {a₁ : (thomPair F₁ E₁).singularCohomology R₁ K M₁ (Module.finrank ℝ F₁)}
     {a₂ : (thomPair F₂ E₂).singularCohomology R₂ K M₂ (Module.finrank ℝ F₂)}
     (ha₁ : IsThomClass F₁ E₁ a₁) (ha₂ : IsThomClass F₂ E₂ a₂) :
     IsThomClass (F₁ × F₂) (E₁ ×ᵇ E₂)
       (TauCeti.thomPairCup K F₁ E₁ F₂ E₂ u μ _ _ _ Module.finrank_prod.symm a₁ a₂) :=
-  (isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso eR₁ eR₂ eR₃ eM₁ eM₂ eM₃ a₁ a₂).2 ⟨ha₁, ha₂⟩
+  (isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso eR₁ eR₂ eM₁ eM₂ a₁ a₂).2 ⟨ha₁, ha₂⟩
 
 /-- **The product of two Thom classes is a Thom class of the direct sum** over any `CommRing K`. -/
 theorem IsThomClass.thomPairCup

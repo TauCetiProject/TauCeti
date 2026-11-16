@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
-public import TauCeti.AlgebraicTopology.Singular.RelativeCrossProduct
+public import TauCeti.AlgebraicTopology.Singular.CrossProduct.Relative
 public import TauCeti.Topology.Category.TopPair.ContinuousLinearEquiv
 
 /-!
@@ -17,15 +17,25 @@ For `x₁ : V₁` and `x₂ : V₂`, pushing `TopCat.singularRelativeHomologyCro
 `TauCeti.complSingletonPairHomologyCross`:
 `Hₚ(V₁, V₁ ∖ {x₁}; R) ⊗ H_q(V₂, V₂ ∖ {x₂}; S) ⟶ Hₙ(V₁ × V₂, (V₁ × V₂) ∖ {(x₁, x₂)}; T)`
 (`p + q = n`), paired via `TopPair.singularKronecker` with `TauCeti.complSingletonPairCross` in
-`TauCeti.AlgebraicTopology.Cohomology.Local.Cross`. Each declaration assumes discrete colimit
-preservation for `tensorLeft`/`tensorRight` and `WalkingParallelPair` colimit preservation for
-`tensorLeft` of `Hₚ(V₁, {x₁}ᶜ; R)` and `tensorRight` of `Z_q` and `C_{q+1}` of `(V₂, {x₂}ᶜ)`.
+`TauCeti.AlgebraicTopology.Cohomology.Local.Cross`. Kronecker evaluation on
+`TauCeti.complSingletonPairHomologyCross` proves generator preservation and reflection for local
+cohomology cross products over arbitrary commutative rings without flatness or Künneth hypotheses.
+
+Every declaration assumes discrete colimit preservation for `tensorLeft`/`tensorRight`. For
+`WalkingParallelPair` colimit preservation, `TauCeti.complSingletonPairHomologyCross` assumes it for
+`tensorLeft` of `Hₚ(V₁, {x₁}ᶜ; R)` and `tensorRight` of `Z_q(V₂, {x₂}ᶜ; S)` and
+`C_{q+1}(V₂, {x₂}ᶜ; S)`, while the two naturality theorems also assume the corresponding instances
+for the target pairs `(W₁, {y₁}ᶜ)` and `(W₂, {y₂}ᶜ)` (or `(W₁, {0}ᶜ)` and `(W₂, {0}ᶜ)`).
 
 ## Main definitions and results
 
-* `TauCeti.complSingletonPairHomologyCross` (`TauCeti.complSingletonPairHomologyCross_def`),
-  `TauCeti.complSingletonPairHomologyCross_naturality`, and
-  `TauCeti.singularHomologyMap_complZeroPairIso_hom_tensorHom_complSingletonPairHomologyCross`.
+* `TauCeti.complSingletonPairHomologyCross` (with unfolding
+  `TauCeti.complSingletonPairHomologyCross_def`): the local homology cross product on complements
+  of singletons.
+* `TauCeti.complSingletonPairHomologyCross_naturality`: naturality in continuous maps preserving
+  singleton complements.
+* `TauCeti.singularHomologyMap_complZeroPairIso_hom_tensorHom_complSingletonPairHomologyCross`:
+  naturality at the origin under products of continuous linear equivalences.
 
 ## References
 

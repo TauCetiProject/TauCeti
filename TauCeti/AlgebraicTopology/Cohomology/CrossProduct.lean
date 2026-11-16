@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
-public import TauCeti.AlgebraicTopology.Singular.CrossProduct
+public import TauCeti.AlgebraicTopology.Singular.CrossProduct.Basic
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber

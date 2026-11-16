@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Relative
-public import TauCeti.AlgebraicTopology.Singular.RelativeCrossProduct
+public import TauCeti.AlgebraicTopology.Singular.CrossProduct.Relative
 
 /-!
 # The Kronecker pairing of relative cross products and pulled-back cup products
@@ -17,16 +17,24 @@ For open `A ⊆ X` and `B ⊆ Y`, `TauCeti.singularRelativeCross` and
 `TopCat.singularRelativeHomologyCross` are dual under `TopPair.singularKronecker` with no sign
 (`⟨a × b, x × y⟩ = μ (⟨a, x⟩ ⊗ ⟨b, y⟩)` in matching bidegrees, `0` when `p ≠ p'`), extending to
 `TopCat.singularRelativeCupPullback` along `fst` and `snd` when `Z = fst⁻¹(A) ∪ snd⁻¹(B)` and
-`v ≫ u = 𝟙 (R ⊗ S)`. Each theorem assumes discrete colimit preservation for
+`v ≫ u = 𝟙 (R ⊗ S)`. This Kronecker multiplicativity detects local-cohomology and Thom-pair
+cross-product generators in `TauCeti.AlgebraicTopology.Cohomology.Local.Cross` and
+`TauCeti.Topology.VectorBundle.Thom.Prod` over arbitrary commutative rings without flatness or
+Künneth hypotheses. Each theorem assumes discrete colimit preservation for
 `tensorLeft`/`tensorRight` and `WalkingParallelPair` colimit preservation for `tensorLeft` of
 `Hₚ(X, A; R)` and `tensorRight` of `Z_q(Y, B; S)` and `C_{q+1}(Y, B; S)`.
 
 ## Main results
 
 * `TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross` and
-  `TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross_of_ne`.
+  `TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross_of_ne`:
+  Kronecker multiplicativity `⟨a × b, x × y⟩ = μ (⟨a, x⟩ ⊗ ⟨b, y⟩)` in matching bidegrees and
+  off-diagonal vanishing (`p ≠ p'`) for relative cross products.
 * `TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCupPullback` and
-  `TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCupPullback_of_ne`.
+  `TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCupPullback_of_ne`:
+  the corresponding diagonal and off-diagonal Kronecker pairings for
+  `TopCat.singularRelativeCupPullback` along `fst` and `snd` with split chain-coefficient pairing
+  `v ≫ u = 𝟙 (R ⊗ S)`.
 
 ## References
 
@@ -78,11 +86,11 @@ private lemma homologyMap_comp_singularKronecker_singularRelativeCupPullback
   let ev := ((SSetPair.chainComplexFunctor C).map v).app (TopPair.toSSetPair.obj P)
   let eu := ((SSetPair.chainComplexFunctor C).map u).app (TopPair.toSSetPair.obj P)
   have hvu : homologyMap ev n ≫ homologyMap eu n = 𝟙 _ := by
-    rw [← homologyMap_comp, show ev ≫ eu = 𝟙 _ by simp [ev, eu, ← NatTrans.comp_app,
-      ← (SSetPair.chainComplexFunctor C).map_comp, hu], homologyMap_id]
+    rw [← homologyMap_comp]
+    simp [ev, eu, ← NatTrans.comp_app, ← (SSetPair.chainComplexFunctor C).map_comp, hu]
   rw [singularRelativeCupPullback_apply, TopPair.singularKronecker_naturality,
     ← Category.assoc (TopPair.singularHomologyMap i₁ T n), hidZ, Category.id_comp,
-    TauCeti.singularRelativeCup_eq_homologyMap_singularRelativeCup,
+    singularRelativeCup_eq_homologyMap_singularRelativeCup,
     ← TauCeti.singularRelativeCross_apply k X Y hA hB, TopPair.singularKronecker_def,
     TopPair.singularKronecker_def]
   exact (whisker_eq _ (TauCeti.ChainComplex.kronecker_naturality eu n _)).trans
@@ -110,10 +118,9 @@ private lemma homologyMap_relativeShuffle_comp_singularKronecker_singularRelativ
             ((TopPair.ofSubset B).singularChainComplex S))) μ p q n h a b) := by
   rw [← TauCeti.ChainComplex.kronecker_naturality,
     TauCeti.homologyMap_cochainComplexMap_singularRelativeCross,
-    ← TauCeti.ChainComplex.kronecker_naturality, ← TauCeti.ChainComplex.cup_precomp,
-    TauCeti.ChainComplex.cup_eq_of_homotopy _ μ
-      (relativeShuffleAlexanderWhitneyHomotopy X Y A B R S) p q n h a b]
-  rfl
+    ← TauCeti.ChainComplex.kronecker_naturality, ← TauCeti.ChainComplex.cup_precomp]
+  exact congrArg _ (TauCeti.ChainComplex.cup_eq_of_homotopy _ μ
+    (relativeShuffleAlexanderWhitneyHomotopy X Y A B R S) p q n h a b)
 
 /-- **The Kronecker pairing of relative cross products**, `⟨a × b, x × y⟩ = μ (⟨a, x⟩ ⊗ ⟨b, y⟩)`
 for open `A ⊆ X` and `B ⊆ Y`. -/

@@ -35,8 +35,8 @@ trivializations: it reads the product orientation as the product of the two read
 reversing either factor reverses both the orientation and the product of the model classes.
 
 These identities are the Whitney product formulas `U(E₁ ⊕ E₂) = p₁^* U(E₁) ⌣ p₂^* U(E₂)` and
-`e(E₁ ⊕ E₂) = e(E₁) ⌣ e(E₂)` for genuine Thom and Euler classes when the chain and value modules
-are isomorphic to `K` (`Rᵢ ≃ₗ[K] K`, `Mᵢ ≃ₗ[K] K`), the pairings `u : R₃ ⟶ R₁ ⊗ R₂` and
+`e(E₁ ⊕ E₂) = e(E₁) ⌣ e(E₂)` for genuine Thom and Euler classes when the factor chain and value
+modules are isomorphic to `K` (`R₁, R₂, M₁, M₂ ≃ₗ[K] K`), the pairings `u : R₃ ⟶ R₁ ⊗ R₂` and
 `μ : M₁ ⊗ M₂ ⟶ M₃` are isomorphisms — in particular for scalar coefficients `ModuleCat.of K K` with
 the standard unitor pairings — and `g₁`, `g₂` generate local cohomology of `F₁`, `F₂`
 (`TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso`,
@@ -181,15 +181,14 @@ theorem eulerClass_thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E�
   rw [thomClassOfModel_prod, eulerClass_thomPairCup]
 
 omit [Module.Projective K R₁] [Module.Projective K R₂] in
-/-- **The normalized product class of an oriented direct sum is a Thom class**, for coefficient
-modules isomorphic to `K`, isomorphism pairings `u` and `μ`, and generators `g₁` and `g₂` over
+/-- **The normalized product class of an oriented direct sum is a Thom class**, for
+`R₁, R₂, M₁, M₂ ≃ₗ[K] K`, isomorphism pairings `u` and `μ`, and generators `g₁` and `g₂` over
 `K`. -/
 theorem isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso
     (o₁ : VectorBundleOrientation F₁ E₁ (Fin m))
     (o₂ : VectorBundleOrientation F₂ E₂ (Fin n)) (hm : finrank ℝ F₁ = m) (hn : finrank ℝ F₂ = n)
     (ω₁ : Orientation ℝ F₁ (Fin m)) (ω₂ : Orientation ℝ F₂ (Fin n))
-    (eR₁ : R₁ ≃ₗ[K] K) (eR₂ : R₂ ≃ₗ[K] K) (eR₃ : R₃ ≃ₗ[K] K)
-    (eM₁ : M₁ ≃ₗ[K] K) (eM₂ : M₂ ≃ₗ[K] K) (eM₃ : M₃ ≃ₗ[K] K)
+    (eR₁ : R₁ ≃ₗ[K] K) (eR₂ : R₂ ≃ₗ[K] K) (eM₁ : M₁ ≃ₗ[K] K) (eM₂ : M₂ ≃ₗ[K] K)
     {u : R₃ ⟶ R₁ ⊗ R₂} [IsIso u] {μ : M₁ ⊗ M₂ ⟶ M₃} [IsIso μ]
     {g₁ : (TopPair.ofSubset (X := TopCat.of F₁) ({0}ᶜ : Set F₁)).singularCohomology
       R₁ K M₁ (finrank ℝ F₁)}
@@ -201,7 +200,7 @@ theorem isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso
         (by rw [Fintype.card_fin, Module.finrank_prod, hm, hn]) (ω₁.prod ω₂ hm hn)
         (complSingletonPairCross K (0 : F₁) (0 : F₂) u μ _ _ _ Module.finrank_prod.symm g₁ g₂)) :=
   (o₁.prod o₂ hm hn).isThomClass_thomClassOfModel _ (ω₁.prod ω₂ hm hn)
-    ((span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_isIso eR₁ eR₂ eR₃ eM₁ eM₂ eM₃
+    ((span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_isIso eR₁ eR₂ eM₁ eM₂
       Module.finrank_prod.symm g₁ g₂).2 ⟨hg₁, hg₂⟩)
 
 /-- **The normalized product class of an oriented direct sum is a Thom class** over any commutative
@@ -220,7 +219,7 @@ theorem isThomClass_thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E
         (complSingletonPairCross K (0 : F₁) (0 : F₂) (λ_ (ModuleCat.of K K)).inv
           (λ_ (ModuleCat.of K K)).hom _ _ _ Module.finrank_prod.symm g₁ g₂)) :=
   isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso o₁ o₂ hm hn ω₁ ω₂
-    (.refl K K) (.refl K K) (.refl K K) (.refl K K) (.refl K K) (.refl K K) hg₁ hg₂
+    (.refl K K) (.refl K K) (.refl K K) (.refl K K) hg₁ hg₂
 
 end Whitney
 

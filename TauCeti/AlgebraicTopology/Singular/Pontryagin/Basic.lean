@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.CrossProduct
+public import TauCeti.AlgebraicTopology.Singular.CrossProduct.Basic
 public import TauCeti.Topology.Category.TopCat.MonObj
 
 /-!

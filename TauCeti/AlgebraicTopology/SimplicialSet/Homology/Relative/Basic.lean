@@ -96,6 +96,23 @@ instance (R : C) (P : SSetPair.{w}) (n : ℕ) : IsSplitMono ((SSet.chainComplexM
   TauCeti.isSplitMono_sigmaMap' (fun _ ↦ R) (P.hom.app (op ⦋n⦌))
     ((mono_iff_injective _).1 inferInstance)
 
+/-- In each degree, the quotient map from the chains of the ambient simplicial set of a pair to
+its relative chains is a split epimorphism. -/
+instance isSplitEpi_chainComplexπ_f (R : C) (P : SSetPair.{w}) (n : ℕ) :
+    IsSplitEpi ((P.chainComplexπ R).f n) := by
+  let i : (P.left.chainComplex R).X n ⟶ (P.right.chainComplex R).X n :=
+    (SSet.chainComplexMap P.hom R).f n
+  have hdesc := CokernelCofork.IsColimit.desc' (P.isColimitCokernelCoforkChainComplexX R n)
+    (𝟙 ((P.right.chainComplex R).X n) - retraction i ≫ i)
+    (by simp [Preadditive.comp_sub, IsSplitMono.id_assoc, i])
+  let s : (P.chainComplex R).X n ⟶ (P.right.chainComplex R).X n := hdesc.1
+  have hs : (P.chainComplexπ R).f n ≫ s = 𝟙 _ - retraction i ≫ i := hdesc.2
+  have hsg : s ≫ (P.chainComplexπ R).f n = 𝟙 ((P.chainComplex R).X n) := by
+    rw [← cancel_epi ((P.chainComplexπ R).f n), ← Category.assoc, hs, Preadditive.sub_comp,
+      Category.id_comp, Category.assoc, P.chainComplex_condition_f R n, comp_zero, sub_zero,
+      Category.comp_id]
+  exact ⟨⟨s, hsg⟩⟩
+
 variable {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A]
 
 /-- The degree-`n` part `0 ⟶ Cₙ(X; R) ⟶ Cₙ(Y; R) ⟶ Cₙ(Y, X; R) ⟶ 0` of the short exact sequence
@@ -113,12 +130,6 @@ ambient chains `Cₙ(Y; R)`: the degree-`n` sequence `0 ⟶ Cₙ(X) ⟶ Cₙ(Y) 
 noncomputable def chainComplexXRetract (R : A) (P : SSetPair.{w}) (n : ℕ) :
     Retract ((P.chainComplex R).X n) ((P.right.chainComplex R).X n) :=
   ⟨(chainComplexXSplitting R P n).s, (P.chainComplexπ R).f n, (chainComplexXSplitting R P n).s_g⟩
-
-/-- In each degree, the quotient map from the chains of the ambient simplicial set of a pair to
-its relative chains is a split epimorphism. -/
-instance isSplitEpi_chainComplexπ_f (R : A) (P : SSetPair.{w}) (n : ℕ) :
-    IsSplitEpi ((P.chainComplexπ R).f n) :=
-  ⟨⟨(chainComplexXSplitting R P n).s, (chainComplexXSplitting R P n).s_g⟩⟩
 
 /-- The relative chains `Cₙ(Y, X; R)` of a pair of simplicial sets are projective whenever the
 ambient chains `Cₙ(Y; R)` are, for instance for chains with coefficients in a projective module. -/

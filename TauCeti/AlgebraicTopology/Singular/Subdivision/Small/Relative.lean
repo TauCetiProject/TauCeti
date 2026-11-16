@@ -122,7 +122,8 @@ lemma chainComplexMap_comp_smallSingularSubcomplex_chainComplexπ_eq_zero
       (TopCat.toSSet.map (TopCat.ofHom ⟨fun z ↦ ⟨f z, hf z⟩, f.hom.continuous.subtype_mk hf⟩) ≫
         TopCat.toSmallSingularSubcomplex U (subset_refl (U i))) ≫
         (W.smallSingularSubcomplex U).ι := by
-    rw [Category.assoc, TopCat.toSmallSingularSubcomplex_ι, ← TopCat.toSSet.map_comp]; rfl
+    rw [Category.assoc, TopCat.toSmallSingularSubcomplex_ι, ← TopCat.toSSet.map_comp]
+    exact congrArg TopCat.toSSet.map (TopCat.ext fun _ ↦ rfl)
   exact (eq_whisker ((congrArg (SSet.chainComplexMap · T) hf').trans
       (((SSet.chainComplexFunctor A).obj T).map_comp _ _)) _).trans <|
     (Category.assoc _ _ _).trans <|
