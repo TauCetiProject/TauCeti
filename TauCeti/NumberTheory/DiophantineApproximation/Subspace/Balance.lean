@@ -35,8 +35,9 @@ equal, so the permutation it returns there does not matter.
 * `TauCeti.NumberField.exists_ne_zero_forall_apply_smul_le`: one vector bounded at every infinite
   place by `t` times given bounds has a nonzero algebraic-integer multiple whose bounds carry
   `t` at `w₀` alone, as `t ^ (d / mult w₀)`.
-* `TauCeti.NumberField.exists_balance`: an approximation domain of positive level has a basis of
-  vectors of its lattice, whose first `finrank K V(Q)` members span the domain, with the
+* `TauCeti.NumberField.exists_balance`: for forms independent at the infinite places and at `S₀`,
+  an approximation domain of positive level has `card ι` `K`-linearly independent vectors in its
+  lattice `approxModule S₀ L c Q`, whose first `finrank K V(Q)` members span the domain, with the
   successive minima concentrated at `w₀`.
 
 ## References
@@ -63,21 +64,21 @@ place `v`, with `t > 0`, then some nonzero algebraic integer `a` has
 `w₀ (L w₀ i (a • x)) ≤ C · t ^ (d / mult w₀) · b w₀ i`, where `d = [K : ℚ]` and
 `C = unitConst K ^ (1 / d)`. -/
 theorem exists_ne_zero_forall_apply_smul_le {V κ : Type*} [AddCommGroup V] [Module K V]
-    (w₀ : InfinitePlace K) {L : AbsoluteValue K ℝ → κ → Dual K V} {b : AbsoluteValue K ℝ → κ → ℝ}
+    (w₀ : InfinitePlace K) {L : InfinitePlace K → κ → Dual K V} {b : InfinitePlace K → κ → ℝ}
     {t : ℝ} (ht : 0 < t) {x : V}
-    (hx : ∀ (v : InfinitePlace K) (i : κ), v (L v.1 i x) ≤ t * b v.1 i) :
+    (hx : ∀ (v : InfinitePlace K) (i : κ), v (L v i x) ≤ t * b v i) :
     ∃ a : 𝓞 K, a ≠ 0 ∧
       (∀ v : InfinitePlace K, v ≠ w₀ → ∀ i : κ,
-        v (L v.1 i ((a : K) • x)) ≤ unitConst K ^ ((finrank ℚ K : ℝ)⁻¹) * b v.1 i) ∧
-      ∀ i : κ, w₀ (L w₀.1 i ((a : K) • x)) ≤
-        unitConst K ^ ((finrank ℚ K : ℝ)⁻¹) * t ^ ((finrank ℚ K : ℝ) / mult w₀) * b w₀.1 i := by
+        v (L v i ((a : K) • x)) ≤ unitConst K ^ ((finrank ℚ K : ℝ)⁻¹) * b v i) ∧
+      ∀ i : κ, w₀ (L w₀ i ((a : K) • x)) ≤
+        unitConst K ^ ((finrank ℚ K : ℝ)⁻¹) * t ^ ((finrank ℚ K : ℝ) / mult w₀) * b w₀ i := by
   obtain ⟨a, ha, hne, h₀⟩ := exists_ne_zero_forall_infinitePlace_mul_le w₀ ht
   -- The bounds `b v i` are nonnegative, since they bound absolute values from above.
-  have hb (v : InfinitePlace K) (i : κ) : 0 ≤ b v.1 i :=
+  have hb (v : InfinitePlace K) (i : κ) : 0 ≤ b v i :=
     nonneg_of_mul_nonneg_right ((v.1.nonneg _).trans (hx v i)) ht
   -- At every infinite place, `v (L v i (a • x)) ≤ (v a · t) · b v i`.
   have hsmul (v : InfinitePlace K) (i : κ) :
-      v (L v.1 i ((a : K) • x)) ≤ v (a : K) * t * b v.1 i := by
+      v (L v i ((a : K) • x)) ≤ v (a : K) * t * b v i := by
     rw [map_smul, smul_eq_mul, map_mul, mul_assoc]
     exact mul_le_mul_of_nonneg_left (hx v i) (v.1.nonneg _)
   refine ⟨a, ha, fun v hv i ↦ ?_, fun i ↦ ?_⟩
@@ -111,13 +112,7 @@ theorem exists_balance {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ 
   let _ := isZLattice_mixedImage_approxModule hLFin c hQ.ne'
   set Λ := approxModule S₀ L c Q
   set μ := Λ.successiveMinimum (approxBody L c Q)
-  let B : ConvexBody (ι → mixedSpace K) :=
-    ⟨approxBody L c Q, convex_approxBody L c Q, isCompact_approxBody hLInf c Q,
-      ⟨0, mem_of_mem_nhds (approxBody_mem_nhds_zero L c hQ)⟩⟩
-  have hcoe : (B : Set (ι → mixedSpace K)) = approxBody L c Q := ConvexBody.coe_mk _ _ _ _
-  have hB : 0 ∈ interior (B : Set (ι → mixedSpace K)) := by
-    rw [hcoe]
-    exact mem_interior_iff_mem_nhds.2 (approxBody_mem_nhds_zero L c hQ)
+  obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLInf c hQ
   -- A family realizing the successive minima, each of which is positive.
   obtain ⟨x, hx, hxB⟩ := Λ.exists_linearIndependent_mem_smul_successiveMinimum hB
   have hμ (l : Fin (Fintype.card ι)) : 0 < μ l := by
@@ -134,7 +129,8 @@ theorem exists_balance {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ 
       sum_mixedEmbedding_mul_mixedEmbedding, normAtPlace_apply, abs_inv, abs_of_pos (hμ l)] at h'
     exact (inv_mul_le_iff₀ (hμ l)).1 h'
   choose a ha hne h₀ using fun l ↦
-    exists_ne_zero_forall_apply_smul_le w₀ (b := fun v i ↦ Q ^ c v i) (hμ l) (hxL l)
+    exists_ne_zero_forall_apply_smul_le w₀ (L := fun v ↦ L v.1) (b := fun v i ↦ Q ^ c v.1 i)
+      (hμ l) (hxL l)
   -- The scaling factors, as units of `K`.
   let u : Fin (Fintype.card ι) → Kˣ := fun l ↦ Units.mk0 (a l : K) (by simpa using ha l)
   have hu (l : Fin (Fintype.card ι)) : (a l : K) • x l = u l • x l := (Units.smul_mk0 _ _).symm

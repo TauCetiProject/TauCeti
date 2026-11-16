@@ -35,9 +35,11 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι]
 
-/-- Bundle the approximation body and its span identity for the two applications of the
-convex-body successive-minima API below. -/
-private theorem exists_convexBody_approxSpan {S₀ : Finset (FinitePlace K)}
+/-- For forms independent at every infinite place and a level `Q > 0`, the approximation body
+`approxBody L c Q` is a convex body with `0` in its interior, and the span of the approximation
+domain is spanned by the lattice vectors of `approxModule S₀ L c Q` in that body. This packages
+the approximation body for the convex-body successive-minima API. -/
+theorem exists_convexBody_approxSpan {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
     (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :

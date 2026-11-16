@@ -16,7 +16,9 @@ applied to the lattice `𝓞 K` and the box of the mixed space cut out by `‖x 
 nonzero algebraic integer `a` with `w a < f w` at every infinite place `w` as soon as the volume
 `∏ w, f w ^ mult w` of the box, up to the factor `convexBodyLTFactor K`, exceeds the Minkowski
 bound of `𝓞 K`. This file fixes the explicit threshold
-`TauCeti.NumberField.unitConst K = 2 ^ d · √|D_K|`, which exceeds that bound.
+`TauCeti.NumberField.unitConst K = 2 ^ d · √|D_K|`, which is at least that bound. A box with
+`unitConst K ≤ ∏ w, f w ^ mult w` therefore suffices: the strict inequality that Minkowski's
+theorem needs comes from `2 ≤ convexBodyLTFactor K`.
 
 The balanced form moves size from all infinite places to one. Given an infinite place `w₀` and a
 positive real `t`, it produces a nonzero algebraic integer `a` with `w a · t` bounded at every
@@ -27,7 +29,8 @@ successive minima of a parallelepiped at one infinite place.
 
 ## Main results
 
-* `TauCeti.NumberField.unitConst`: the threshold `2 ^ d · √|D_K|`.
+* `TauCeti.NumberField.unitConst`: the threshold `2 ^ d · √|D_K|`, with `2 ≤ unitConst K` and
+  `unitConst ℚ = 2`.
 * `TauCeti.NumberField.minkowskiBound_one_le_ofReal_unitConst`: the Minkowski bound of `𝓞 K` is at
   most `unitConst K`.
 * `TauCeti.NumberField.exists_ne_zero_forall_infinitePlace_lt`: if `f ≥ 0` and
@@ -54,8 +57,8 @@ namespace TauCeti.NumberField
 variable (K : Type*) [Field K] [NumberField K]
 
 /-- **The Minkowski threshold for one algebraic integer**: `2 ^ [K : ℚ] · √|D_K|`. A box of the
-mixed space whose radii `f w` have `∏ w, f w ^ mult w` at least this value holds a nonzero
-algebraic integer (`TauCeti.NumberField.exists_ne_zero_forall_infinitePlace_lt`). -/
+mixed space whose nonnegative radii `f w` have `∏ w, f w ^ mult w` at least this value holds a
+nonzero algebraic integer (`TauCeti.NumberField.exists_ne_zero_forall_infinitePlace_lt`). -/
 noncomputable def unitConst : ℝ :=
   2 ^ finrank ℚ K * √|(discr K : ℝ)|
 
@@ -68,17 +71,37 @@ theorem unitConst_pos : 0 < unitConst K := by
   rw [unitConst_def]
   positivity
 
+/-- `unitConst K` is at least `2`, since `[K : ℚ] ≥ 1` and `|D_K| ≥ 1`. -/
+theorem two_le_unitConst : 2 ≤ unitConst K := by
+  have hd : 2 ≤ (2 : ℝ) ^ finrank ℚ K := le_self_pow₀ one_le_two finrank_pos.ne'
+  have hD : 1 ≤ √|(discr K : ℝ)| :=
+    Real.one_le_sqrt.2 (by exact_mod_cast Int.one_le_abs (discr_ne_zero K))
+  rw [unitConst_def]
+  nlinarith
+
+/-- `unitConst K` is at least `1`. -/
+theorem one_le_unitConst : 1 ≤ unitConst K :=
+  one_le_two.trans (two_le_unitConst K)
+
+/-- The threshold of `ℚ` is `2`, since `[ℚ : ℚ] = 1` and `D_ℚ = 1`. -/
+@[simp]
+theorem unitConst_rat : unitConst ℚ = 2 := by
+  simp [unitConst_def]
+
 /-- The Minkowski bound of `𝓞 K` is at most `unitConst K`. -/
 theorem minkowskiBound_one_le_ofReal_unitConst :
     minkowskiBound K ↑1 ≤ ENNReal.ofReal (unitConst K) := by
   classical
-  rw [minkowskiBound, volume_fundamentalDomain_fractionalIdealLatticeBasis, Units.val_one,
-    FractionalIdeal.absNorm_one, Rat.cast_one, ENNReal.ofReal_one, one_mul, mixedEmbedding.finrank,
-    volume_fundamentalDomain_latticeBasis, unitConst_def, mul_comm,
-    ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat,
-    ← Int.norm_eq_abs, ← coe_nnNorm, ← Real.coe_sqrt, ENNReal.ofReal_coe_nnreal]
-  -- The Minkowski bound is `2 ^ d · 2⁻¹ ^ r₂ · √|D_K|`, and `2⁻¹ ^ r₂ ≤ 1`.
-  gcongr
+  -- The Minkowski bound is `2⁻¹ ^ r₂ · √|D_K| · 2 ^ d`, and `2⁻¹ ^ r₂ ≤ 1`.
+  have hmb : minkowskiBound K ↑1 =
+      (2 : ℝ≥0∞)⁻¹ ^ nrComplexPlaces K * NNReal.sqrt ‖discr K‖₊ * 2 ^ finrank ℚ K := by
+    rw [minkowskiBound, volume_fundamentalDomain_fractionalIdealLatticeBasis,
+      volume_fundamentalDomain_latticeBasis, mixedEmbedding.finrank]
+    simp
+  have hu : ENNReal.ofReal (unitConst K) = NNReal.sqrt ‖discr K‖₊ * 2 ^ finrank ℚ K := by
+    rw [unitConst_def, mul_comm, ENNReal.ofReal_mul (by positivity)]
+    simp [← Int.norm_eq_abs, ← coe_nnNorm, ← Real.coe_sqrt]
+  rw [hmb, hu, mul_assoc]
   exact mul_le_of_le_one_left bot_le (pow_le_one₀ bot_le (ENNReal.inv_le_one.2 one_le_two))
 
 variable {K}
@@ -132,13 +155,18 @@ theorem exists_ne_zero_forall_infinitePlace_mul_le (w₀ : InfinitePlace K) {t :
     simp only [e, mul_sub, mul_one, Finset.sum_sub_distrib, mul_ite, mul_zero,
       Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
     rw [mul_div_cancel₀ _ hm, ← Nat.cast_sum, sum_mult_eq, sub_self]
+  have hvol : ∏ w, (C * t ^ e w) ^ mult w = unitConst K :=
+    calc ∏ w, (C * t ^ e w) ^ mult w = ∏ w, C ^ mult w * t ^ ((mult w : ℝ) * e w) :=
+          Finset.prod_congr rfl fun w _ ↦ by
+            rw [mul_pow, ← Real.rpow_mul_natCast ht.le, mul_comm (e w)]
+      _ = C ^ d * t ^ ∑ w, (mult w : ℝ) * e w := by
+          rw [Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum, sum_mult_eq,
+            Real.rpow_sum_of_pos ht]
+      _ = unitConst K := by
+          rw [he, Real.rpow_zero, mul_one,
+            Real.rpow_inv_natCast_pow (unitConst_pos K).le finrank_pos.ne']
   obtain ⟨a, ha, hlt⟩ := exists_ne_zero_forall_infinitePlace_lt (f := fun w ↦ C * t ^ e w)
-    (fun w ↦ by positivity) <| by
-      rw [Finset.prod_congr rfl fun w _ ↦ by
-        rw [mul_pow, ← Real.rpow_natCast (t ^ e w), ← Real.rpow_mul ht.le, mul_comm (e w)],
-        Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum, sum_mult_eq,
-        ← Real.rpow_sum_of_pos ht, he, Real.rpow_zero, mul_one,
-        Real.rpow_inv_natCast_pow (unitConst_pos K).le finrank_pos.ne']
+    (fun w ↦ by positivity) hvol.ge
   have hbound (w : InfinitePlace K) : w (a : K) * t ≤ C * t ^ (e w + 1) := by
     rw [Real.rpow_add ht, Real.rpow_one, ← mul_assoc]
     exact mul_le_mul_of_nonneg_right (hlt w).le ht.le
