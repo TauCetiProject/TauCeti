@@ -228,12 +228,6 @@ private theorem forall_dist_tail_lt {n : ℕ} {q : Fin (n + 2) → M}
     dist (Fin.tail q i.castSucc) (Fin.tail q i.succ) < r := by
   simpa only [Fin.tail, Fin.succ_castSucc] using h i.succ
 
-/-- A Moore path equal to a constant path of length zero is a left unit for concatenation. -/
-private theorem trans_of_eq_refl {X : Type*} [TopologicalSpace X] {x : X} {γ δ : MoorePath X}
-    (hγ : γ = MoorePath.refl x) (h : γ.target = δ.source) : γ.trans δ h = δ := by
-  subst hγ
-  exact MoorePath.refl_trans δ h
-
 include hr
 
 /-- The broken geodesic through `q 0, …, q n`, together with its end points. -/
@@ -244,9 +238,9 @@ private def brokenGeodesicAux : (n : ℕ) → (q : Fin (n + 1) → M) →
   | n + 1, q, h =>
     let γ := brokenGeodesicAux n (Fin.tail q) (forall_dist_tail_lt h)
     ⟨(geodesicSegment hr ⟨(q (Fin.castSucc 0), q (Fin.succ 0)), h 0⟩).trans γ.1
-        (by rw [target_geodesicSegment, γ.2.1]; rfl),
+        (by rw [target_geodesicSegment, γ.2.1, Fin.tail]),
       by rw [MoorePath.source_trans, source_geodesicSegment]; exact congrArg q Fin.castSucc_zero,
-      by rw [MoorePath.target_trans, γ.2.2]; rfl⟩
+      by rw [MoorePath.target_trans, γ.2.2, Fin.tail, Fin.succ_last]⟩
 
 /-- **The broken geodesic** through points `q 0, …, q n` whose consecutive distances are less than
 `r`: the concatenation of the geodesic segments from `q i` to `q (i + 1)`. -/
@@ -293,6 +287,7 @@ theorem brokenGeodesic_congr {n : ℕ} {q q' : Fin (n + 1) → M}
   rfl
 
 /-- The length of a broken geodesic is the sum of the distances between consecutive vertices. -/
+@[simp]
 theorem length_brokenGeodesic (n : ℕ) (q : Fin (n + 1) → M)
     (h : ∀ i : Fin n, dist (q i.castSucc) (q i.succ) < r) :
     (brokenGeodesic hr n q h).length = ∑ i : Fin n, nndist (q i.castSucc) (q i.succ) := by
@@ -301,9 +296,10 @@ theorem length_brokenGeodesic (n : ℕ) (q : Fin (n + 1) → M)
   | succ n ih =>
     rw [brokenGeodesic_succ hr n q h (forall_dist_tail_lt h), MoorePath.length_trans,
       length_geodesicSegment, ih, Fin.sum_univ_succ]
-    rfl
+    simp only [Fin.tail, Fin.succ_castSucc]
 
 /-- The broken geodesic through a constant tuple is the constant path of length zero. -/
+@[simp]
 theorem brokenGeodesic_const (n : ℕ) (x : M)
     (h : ∀ i : Fin n, dist ((fun _ ↦ x : Fin (n + 1) → M) i.castSucc)
       ((fun _ ↦ x : Fin (n + 1) → M) i.succ) < r) :
@@ -347,8 +343,11 @@ theorem brokenGeodesic_cons_of_eq (n : ℕ) {x : M} {q : Fin (n + 1) → M} (hx 
       ((Fin.cons x q : Fin (n + 2) → M) i.succ) < r)
     (h' : ∀ i : Fin n, dist (q i.castSucc) (q i.succ) < r) :
     brokenGeodesic hr (n + 1) (Fin.cons x q) h = brokenGeodesic hr n q h' := by
-  rw [brokenGeodesic_succ hr n _ h (by simpa only [Fin.tail_cons] using h'),
-    trans_of_eq_refl (geodesicSegment_of_eq hr _ (by simp [hx]))]
+  rw [brokenGeodesic_succ hr n _ h (by simpa only [Fin.tail_cons] using h')]
+  have hseg : geodesicSegment hr ⟨((Fin.cons x q : Fin (n + 2) → M) (Fin.castSucc 0),
+      (Fin.cons x q : Fin (n + 2) → M) (Fin.succ 0)), h 0⟩ = MoorePath.refl x :=
+    geodesicSegment_of_eq hr _ (by simp [hx])
+  simp only [hseg, MoorePath.refl_trans]
   exact brokenGeodesic_congr hr _ _ (Fin.tail_cons _ _)
 
 end Broken
@@ -406,6 +405,7 @@ theorem basepoint_brokenGeodesicLoop (n : ℕ) (q : Fin (n + 1) → M)
 
 /-- The length of the closed broken geodesic through a cyclic tuple is the sum of the distances
 from each point to the preceding one. -/
+@[simp]
 theorem length_brokenGeodesicLoop (n : ℕ) (q : Fin (n + 1) → M)
     (h : ∀ i, dist (q i) (q (i - 1)) < r) :
     (brokenGeodesicLoop hr n q h).length = ∑ i, nndist (q i) (q (i - 1)) := by
@@ -419,6 +419,7 @@ theorem length_brokenGeodesicLoop (n : ℕ) (q : Fin (n + 1) → M)
       nndist_comm]
 
 /-- The closed broken geodesic through a constant tuple is the constant loop of length zero. -/
+@[simp]
 theorem brokenGeodesicLoop_const (n : ℕ) (x : M)
     (h : ∀ i : Fin (n + 1), dist ((fun _ ↦ x : Fin (n + 1) → M) i)
       ((fun _ ↦ x : Fin (n + 1) → M) (i - 1)) < r) :
