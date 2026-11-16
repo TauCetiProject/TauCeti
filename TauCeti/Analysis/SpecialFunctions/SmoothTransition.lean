@@ -78,6 +78,10 @@ one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded 
   `|c|⁻¹ a₀` as `T → ∞` when `a (c⁻¹ σ) → a₀` as `σ → ∞`.
 * `Real.smoothTransition.integrable_mul_deriv_mul_sub_smul`: its product with a function
   integrable on `closedBall a c⁻¹` is integrable.
+* `Real.smoothTransition.tendsto_indicator`: the smoothed superlevel functions
+  `ψ ((n + 1) (f - t))` converge pointwise to the indicator of `{f > t}`.
+* `Real.smoothTransition.enorm_sub_indicator_le_one`: `ψ y` differs from the indicator of any set
+  by at most `1`.
 * `Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_smul`: at a Lebesgue point `a` of `u`
   with value `v`, `∫ c ψ'(c (y - a)) u y dy → v` as `c → ∞`.
 * `HasFDerivAt.smoothTransition` and `HasDerivAt.smoothTransition`: the chain rule for `ψ ∘ f`.
@@ -421,6 +425,23 @@ theorem tendsto_add_mul_add_deriv_mul {t d e k : ℝ} :
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [hev] with n hn
     simp [one_of_one_le hn.le, deriv_of_one_lt hn, not_le.2 ht]
+
+/-- **Smoothing a superlevel indicator.** The functions `ψ ((n + 1) (f - t))` converge pointwise
+to the indicator of the superlevel set `{f > t}`. -/
+theorem tendsto_indicator {X : Type*} (f : X → ℝ) (t : ℝ) (x : X) :
+    Tendsto (fun n : ℕ => smoothTransition ((n + 1) * (f x - t))) atTop
+      (𝓝 ({x | t < f x}.indicator 1 x)) := by
+  convert tendsto_add_mul_add_deriv_mul (t := f x - t) (d := 0) (e := 1) (k := 0) using 2
+  · simp
+  · by_cases hxt : t < f x <;> simp [hxt]
+
+/-- `ψ y` differs from the value at `x` of the indicator of any set `s` by at most `1`, since both
+lie in `[0, 1]`. -/
+theorem enorm_sub_indicator_le_one {X : Type*} (y : ℝ) (s : Set X) (x : X) :
+    ‖smoothTransition y - s.indicator 1 x‖ₑ ≤ 1 := by
+  rw [Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_le_one]
+  refine abs_sub_le_of_nonneg_of_le (nonneg _) (le_one _) ?_ ?_ <;>
+    by_cases hxs : x ∈ s <;> simp [hxs]
 
 /-- `x + (1 - smoothTransition x)` is at least `x`. -/
 theorem le_add_one_sub (x : ℝ) : x ≤ x + (1 - smoothTransition x) := by
