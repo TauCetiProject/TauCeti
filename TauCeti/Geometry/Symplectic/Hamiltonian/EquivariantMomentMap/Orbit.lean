@@ -62,15 +62,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
-/-- A Lie group acting locally freely at a point of a finite-dimensional manifold is
-finite-dimensional: its Lie algebra embeds into the tangent space at that point. -/
-private theorem finiteDimensional_of_isotropy_eq_bot [CompleteSpace E] [FiniteDimensional ℝ E']
-    {x : M} (hfree : (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥) :
-    FiniteDimensional ℝ E :=
-  have := FiniteDimensional.of_injective ((InfinitesimalAction.fundamental I G I' M).eval x)
-    (((InfinitesimalAction.fundamental I G I' M).isotropy_eq_bot_iff x).1 hfree)
-  (tangentSpaceCastModel I (1 : G)).toLinearEquiv.finiteDimensional
-
 variable [IsLieAbelian (GroupLieAlgebra I G)]
   {σ : SmoothTwoForm I' M} {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
 
@@ -99,7 +90,7 @@ theorem two_mul_finrank_le (h : σ.IsEquivariantMomentMap μ) {x : M}
     (hσx : (σ.bilinFormAt x).Nondegenerate)
     (hfree : (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥) :
     2 * finrank ℝ (GroupLieAlgebra I G) ≤ finrank ℝ E' := by
-  have := finiteDimensional_of_isotropy_eq_bot hfree
+  have := finiteDimensional_of_isotropy_fundamental_eq_bot hfree
   exact h.toIsMomentMap.two_mul_finrank_le hσx (h.momentCocycle_eq_zero x) hfree
 
 variable (hσ : σ.IsNondegenerate)
@@ -118,7 +109,7 @@ theorem isCoisotropicMap_of_forall_eq (h : σ.IsEquivariantMomentMap μ) (hg : �
     hσ.IsCoisotropicMap J g := by
   rcases isEmpty_or_nonempty N with _ | ⟨⟨p₀⟩⟩
   · exact hσ.isCoisotropicMap_iff.2 fun p ↦ isEmptyElim p
-  have := finiteDimensional_of_isotropy_eq_bot (hfree p₀)
+  have := finiteDimensional_of_isotropy_fundamental_eq_bot (hfree p₀)
   exact h.toIsMomentMap.isCoisotropicMap_of_forall_eq hσ hg hfree
     (fun _ ↦ h.momentCocycle_eq_zero _) (lieAnnihilator_eq_top ℝ _ c) hinj hdim
 
@@ -134,7 +125,7 @@ theorem isLagrangianMap_of_forall_eq (h : σ.IsEquivariantMomentMap μ) (hg : �
     (hdim : 2 * finrank ℝ (GroupLieAlgebra I G) = finrank ℝ E') : hσ.IsLagrangianMap J g := by
   rcases isEmpty_or_nonempty N with _ | ⟨⟨p₀⟩⟩
   · exact hσ.isLagrangianMap_iff_forall.2 fun p ↦ isEmptyElim p
-  have := finiteDimensional_of_isotropy_eq_bot (hfree p₀)
+  have := finiteDimensional_of_isotropy_fundamental_eq_bot (hfree p₀)
   exact h.toIsMomentMap.isLagrangianMap_of_forall_eq hσ hg hfree
     (fun _ ↦ h.momentCocycle_eq_zero _) (lieAnnihilator_eq_top ℝ _ c) hinj hdimN hdim
 
