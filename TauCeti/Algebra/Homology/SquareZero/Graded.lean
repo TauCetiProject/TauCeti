@@ -32,6 +32,10 @@ bilinear map `H^i × H^j → H^k` for `k = i + j + ε` (`LinearMap.cohomologyPro
 A linear map `f : M₁ → M₀` which preserves degrees and commutes with the endomorphisms on
 homogeneous elements, `D₀ (f a) = f (D₁ a)`, sends cocycles to cocycles and coboundaries to
 coboundaries, so it induces a linear map on cohomology in each degree (`LinearMap.cohomologyMap`).
+Chain homotopic maps induce the same map on cohomology (`LinearMap.cohomologyMap_eq_of_homotopy`),
+so a chain homotopy equivalence induces an isomorphism of cohomology in each degree
+(`LinearMap.cohomologyEquiv`); for this it suffices that the two composites are the identity up to
+coboundaries on cocycles (`LinearMap.leftInverse_cohomologyMap`).
 If three such maps intertwine two products up to coboundaries on cocycles, then the induced maps
 intertwine the products on cohomology (`LinearMap.cohomologyMap_cohomologyProduct`).
 Likewise, if the two composites `μ' (μ a b) c` and `ν' a (ν b c)` of products differ by a
@@ -49,6 +53,7 @@ cocycles of degrees `i` and `j`, then they are graded commutative
   Leibniz rule.
 * `LinearMap.cohomologyMap`: the map on cohomology induced by a degree-preserving linear map
   commuting with the endomorphisms.
+* `LinearMap.cohomologyEquiv`: the isomorphism on cohomology induced by a homotopy equivalence.
 
 ## Main results
 
@@ -65,6 +70,11 @@ cocycles of degrees `i` and `j`, then they are graded commutative
 * `LinearMap.cohomologyMap_id`, `LinearMap.cohomologyMap_comp`: functoriality of the induced maps.
 * `LinearMap.cohomologyMap_comp_cohomologyMap`, `LinearMap.cohomologyMap_cohomologyMap`: composites
   of induced maps, in the orientation used by `simp`.
+* `LinearMap.sub_mem_coboundaries_of_homotopy`,
+  `LinearMap.cohomologyMap_eq_of_sub_mem_coboundaries`, `LinearMap.cohomologyMap_eq_of_homotopy`:
+  homotopy invariance of the induced maps.
+* `LinearMap.leftInverse_cohomologyMap`: a left inverse up to coboundaries on cocycles induces a
+  left inverse on cohomology.
 * `LinearMap.cohomologyMap_cohomologyProduct`: maps intertwining two products up to coboundaries
   intertwine the products on cohomology.
 * `LinearMap.cohomologyProduct_assoc`: products whose two composites differ by coboundaries on
@@ -301,6 +311,100 @@ theorem cohomologyMap_cohomologyMap (c : D₁.cohomology G₁ i) :
   congr($(cohomologyMap_comp_cohomologyMap f hdeg hD g hgdeg hgD) c)
 
 end Map
+
+section Homotopy
+
+variable {R M₁ M₀ : Type*} [Ring R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₀]
+  [Module R M₀] {D₁ : M₁ →ₗ[R] M₁} {D₀ : M₀ →ₗ[R] M₀}
+  {G₁ : ℤ → Submodule R M₁} {G₀ : ℤ → Submodule R M₀} {f g : M₁ →ₗ[R] M₀} {i : ℤ}
+
+/-- **A homotopy on cocycles.** If `f - g = D₀ h + h D₁` on degree-`i` elements, for a map `h`
+lowering their degree by one, then `f a - g a` is a coboundary for every degree-`i` cocycle `a`. -/
+theorem sub_mem_coboundaries_of_homotopy (h : M₁ →ₗ[R] M₀)
+    (hh : ∀ {a : M₁}, a ∈ G₁ i → h a ∈ G₀ (i - 1))
+    (hfg : ∀ {a : M₁}, a ∈ G₁ i → f a - g a = D₀ (h a) + h (D₁ a))
+    {a : M₁} (ha : a ∈ D₁.cocycles G₁ i) : f a - g a ∈ D₀.coboundaries G₀ i := by
+  rw [mem_cocycles_iff] at ha
+  exact mem_coboundaries_iff.2 ⟨h a, hh ha.2, by rw [hfg ha.2, ha.1, map_zero, add_zero]⟩
+
+variable {hfdeg : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → f a ∈ G₀ i}
+  {hfD : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → D₀ (f a) = f (D₁ a)}
+  {hgdeg : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → g a ∈ G₀ i}
+  {hgD : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → D₀ (g a) = g (D₁ a)}
+
+/-- Two maps which agree up to coboundaries on degree-`i` cocycles induce the same map on
+degree-`i` cohomology. -/
+theorem cohomologyMap_eq_of_sub_mem_coboundaries
+    (hfg : ∀ {a : M₁}, a ∈ D₁.cocycles G₁ i → f a - g a ∈ D₀.coboundaries G₀ i) :
+    cohomologyMap (G₁ := G₁) (G₀ := G₀) f hfdeg hfD i =
+      cohomologyMap (G₁ := G₁) (G₀ := G₀) g hgdeg hgD i := by
+  refine LinearMap.ext fun x => ?_
+  induction x using Submodule.Quotient.induction_on with | H a => ?_
+  rw [cohomologyMap_mk, cohomologyMap_mk, cohomology_mk_eq_mk_iff]
+  exact hfg a.2
+
+/-- **Homotopy invariance.** Chain homotopic maps induce the same map on cohomology: if
+`f - g = D₀ h + h D₁` on degree-`i` elements, for a map `h` lowering their degree by one, then `f`
+and `g` induce the same map on degree-`i` cohomology. -/
+theorem cohomologyMap_eq_of_homotopy (h : M₁ →ₗ[R] M₀)
+    (hh : ∀ {a : M₁}, a ∈ G₁ i → h a ∈ G₀ (i - 1))
+    (hfg : ∀ {a : M₁}, a ∈ G₁ i → f a - g a = D₀ (h a) + h (D₁ a)) :
+    cohomologyMap (G₁ := G₁) (G₀ := G₀) f hfdeg hfD i =
+      cohomologyMap (G₁ := G₁) (G₀ := G₀) g hgdeg hgD i :=
+  cohomologyMap_eq_of_sub_mem_coboundaries fun ha => sub_mem_coboundaries_of_homotopy h hh hfg ha
+
+end Homotopy
+
+section Equiv
+
+variable {R M₁ M₀ : Type*} [Ring R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₀]
+  [Module R M₀] {D₁ : M₁ →ₗ[R] M₁} {D₀ : M₀ →ₗ[R] M₀}
+  {G₁ : ℤ → Submodule R M₁} {G₀ : ℤ → Submodule R M₀} (f : M₁ →ₗ[R] M₀) (g : M₀ →ₗ[R] M₁)
+  (hfdeg : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → f a ∈ G₀ i)
+  (hfD : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → D₀ (f a) = f (D₁ a))
+  (hgdeg : ∀ {i : ℤ} {a : M₀}, a ∈ G₀ i → g a ∈ G₁ i)
+  (hgD : ∀ {i : ℤ} {a : M₀}, a ∈ G₀ i → D₁ (g a) = g (D₀ a)) {i : ℤ}
+  (hgf : ∀ {a : M₁}, a ∈ D₁.cocycles G₁ i → g (f a) - a ∈ D₁.coboundaries G₁ i)
+  (hfg : ∀ {a : M₀}, a ∈ D₀.cocycles G₀ i → f (g a) - a ∈ D₀.coboundaries G₀ i)
+
+include hgf in
+/-- **A left inverse on cohomology.** If `g (f a) - a` is a coboundary for every degree-`i`
+cocycle `a`, as when `g ∘ f` is chain homotopic to the identity
+(`LinearMap.sub_mem_coboundaries_of_homotopy`), then the map induced by `g` on degree-`i`
+cohomology is a left inverse of the map induced by `f`. -/
+theorem leftInverse_cohomologyMap :
+    Function.LeftInverse (cohomologyMap (G₁ := G₀) (G₀ := G₁) g hgdeg hgD i)
+      (cohomologyMap (G₁ := G₁) (G₀ := G₀) f hfdeg hfD i) := by
+  intro x
+  induction x using Submodule.Quotient.induction_on with | H a => ?_
+  rw [cohomologyMap_mk, cohomologyMap_mk, cohomology_mk_eq_mk_iff]
+  exact hgf a.2
+
+/-- **The isomorphism on cohomology of a homotopy equivalence.** Let `f` and `g` be
+degree-preserving maps in opposite directions commuting with the endomorphisms, each a left
+inverse of the other up to coboundaries on degree-`i` cocycles, as for a chain homotopy
+equivalence (`LinearMap.sub_mem_coboundaries_of_homotopy`). Then the maps they induce on degree-`i`
+cohomology are mutually inverse isomorphisms. -/
+def cohomologyEquiv : D₁.cohomology G₁ i ≃ₗ[R] D₀.cohomology G₀ i where
+  __ := cohomologyMap f hfdeg hfD i
+  invFun := cohomologyMap g hgdeg hgD i
+  left_inv := leftInverse_cohomologyMap f g hfdeg hfD hgdeg hgD hgf
+  right_inv := leftInverse_cohomologyMap g f hgdeg hgD hfdeg hfD hfg
+
+/-- The isomorphism of a homotopy equivalence is the map induced by its forward map. -/
+@[simp]
+theorem cohomologyEquiv_apply (x : D₁.cohomology G₁ i) :
+    cohomologyEquiv f g hfdeg hfD hgdeg hgD hgf hfg x = cohomologyMap f hfdeg hfD i x :=
+  (rfl)
+
+/-- The inverse of the isomorphism of a homotopy equivalence is the map induced by its backward
+map. -/
+@[simp]
+theorem cohomologyEquiv_symm_apply (x : D₀.cohomology G₀ i) :
+    (cohomologyEquiv f g hfdeg hfD hgdeg hgD hgf hfg).symm x = cohomologyMap g hgdeg hgD i x :=
+  (rfl)
+
+end Equiv
 
 section Naturality
 
