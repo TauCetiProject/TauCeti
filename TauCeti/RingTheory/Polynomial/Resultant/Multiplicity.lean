@@ -458,27 +458,6 @@ private theorem exists_C_mul_list_prod_irreducible {K : Type*} [Field K] (P : K[
         · rw [hAeq, hBeq, List.prod_append, map_mul]
           ring
 
-private theorem natDegree_list_prod_eq {R : Type*} [CommRing R] [IsDomain R] (l : List R[X])
-    (hl : ∀ F ∈ l, F ≠ 0) : l.prod.natDegree = (l.map natDegree).sum := by
-  induction l with
-  | nil => simp
-  | cons F m ih =>
-    have hF0 : F ≠ 0 := hl F List.mem_cons_self
-    have hm0 : m.prod ≠ 0 := List.prod_ne_zero fun h0 ↦ hl 0 (List.mem_cons_of_mem F h0) rfl
-    rw [List.prod_cons, natDegree_mul hF0 hm0, List.map_cons, List.sum_cons,
-      ih fun G hG ↦ hl G (List.mem_cons_of_mem F hG)]
-
-private theorem natDegree_swap_list_prod {R : Type*} [CommRing R] [IsDomain R]
-    (l : List R[X][X]) (hl : ∀ F ∈ l, F ≠ 0) :
-    (Bivariate.swap l.prod).natDegree = (l.map fun F ↦ (Bivariate.swap F).natDegree).sum := by
-  induction l with
-  | nil => simp
-  | cons F m ih =>
-    have hF0 : F ≠ 0 := hl F List.mem_cons_self
-    have hm0 : m.prod ≠ 0 := List.prod_ne_zero fun h0 ↦ hl 0 (List.mem_cons_of_mem F h0) rfl
-    rw [List.prod_cons, natDegree_swap_mul hF0 hm0, List.map_cons, List.sum_cons,
-      ih fun G hG ↦ hl G (List.mem_cons_of_mem F hG)]
-
 private theorem rootMultiplicity_map_list_prod {K : Type*} [Field K] (a b : K)
     (l : List K[X][X]) (hl : ∀ F ∈ l, F.map (evalRingHom b) ≠ 0) :
     (l.prod.map (evalRingHom b)).rootMultiplicity a =
@@ -504,14 +483,6 @@ private theorem finset_sum_list_map {α β : Type*} (s : Finset α) (l : List β
   induction l with
   | nil => simp
   | cons F m ih => simp only [List.map_cons, List.sum_cons, Finset.sum_add_distrib, ih]
-
-private theorem list_sum_map_le {α : Type*} (l : List α) {f g : α → ℕ}
-    (h : ∀ x ∈ l, f x ≤ g x) : (l.map f).sum ≤ (l.map g).sum := by
-  induction l with
-  | nil => simp
-  | cons x m ih =>
-    simp only [List.map_cons, List.sum_cons]
-    exact add_le_add (h x List.mem_cons_self) (ih fun y hy ↦ h y (List.mem_cons_of_mem x hy))
 
 private theorem list_sum_map_mul_le {α : Type*} (l : List α) (a b : α → ℕ) :
     (l.map fun x ↦ a x * b x).sum ≤ (l.map a).sum * (l.map b).sum := by
@@ -540,11 +511,18 @@ theorem mul_card_le_of_forall_X_sub_C_pow_dvd {K : Type*} [Field K] [CharZero K]
   have hl_ne : ∀ F ∈ l, F ≠ 0 := fun F hF ↦ (hl F hF).1.ne_zero
   have hprod_ne : l.prod ≠ 0 := List.prod_ne_zero (fun h0 ↦ hl_ne 0 h0 rfl)
   have hdegX_sum : (l.map natDegree).sum = P.natDegree := by
-    rw [hPeq, natDegree_C_mul hc0, natDegree_list_prod_eq l hl_ne]
+    rw [hPeq, natDegree_C_mul hc0]
+    simpa using (natDegree_multiset_prod (l : Multiset K[X][X])
+      (by simpa using fun h0 ↦ hl_ne 0 h0 rfl)).symm
   have hdegY_sum : c.natDegree + (l.map fun F ↦ (Bivariate.swap F).natDegree).sum =
       (Bivariate.swap P).natDegree := by
-    rw [hPeq, natDegree_swap_mul (C_ne_zero.mpr hc0) hprod_ne, natDegree_swap_C,
-      natDegree_swap_list_prod l hl_ne]
+    have hswap_prod : (Bivariate.swap l.prod).natDegree =
+        (l.map fun F ↦ (Bivariate.swap F).natDegree).sum := by
+      rw [map_list_prod]
+      simpa [List.map_map, Function.comp_def] using
+        natDegree_multiset_prod (↑(l.map Bivariate.swap) : Multiset K[X][X])
+          (by simpa using fun h0 ↦ hl_ne 0 h0 rfl)
+    rw [hPeq, natDegree_swap_mul (C_ne_zero.mpr hc0) hprod_ne, natDegree_swap_C, hswap_prod]
   let Ω₀ : Finset (K × K) := Ω.filter fun p ↦ c.eval p.2 = 0
   let Ω₁ : Finset (K × K) := Ω.filter fun p ↦ ¬ c.eval p.2 = 0
   have hcard_split : Ω.card = Ω₀.card + Ω₁.card :=
@@ -623,7 +601,7 @@ theorem mul_card_le_of_forall_X_sub_C_pow_dvd {K : Type*} [Field K] [CharZero K]
           finset_sum_list_map Ω₁ l _
       _ ≤ (l.map fun F ↦ M * (F.natDegree + (Bivariate.swap F).natDegree) +
             2 * F.natDegree * (Bivariate.swap F).natDegree).sum :=
-          list_sum_map_le l hF_bound
+          List.sum_le_sum hF_bound
       _ = M * (sX + sY) +
             2 * (l.map fun F ↦ F.natDegree * (Bivariate.swap F).natDegree).sum :=
           hlin_sum l
