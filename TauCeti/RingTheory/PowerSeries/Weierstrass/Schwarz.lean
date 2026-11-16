@@ -74,14 +74,12 @@ the first `S` formal derivatives vanish on `A`.
   zeros with multiplicities.
 * `PowerSeries.IsRestricted.norm_evalAt_hasseDeriv_le_gaussNorm_mul_prod_pow`: the Schwarz lemma
   for the Hasse derivatives `D⁽ᵏ⁾ f`, whose zeros have multiplicities reduced by `k`.
-* `PowerSeries.IsRestricted.gaussNorm_le_gaussNorm_mul_div_pow`,
-  `PowerSeries.HasGaussNorm.gaussNorm_le_gaussNorm_mul_div_pow`,
-  `PowerSeries.IsRestricted.gaussNorm_le_gaussNorm_mul_div_pow_sum`,
-  `PowerSeries.HasGaussNorm.gaussNorm_le_gaussNorm_mul_div_pow_sum`,
-  `PowerSeries.IsRestricted.gaussNorm_hasseDeriv_le_gaussNorm_mul_div_pow_sum` and
+* `PowerSeries.HasGaussNorm.gaussNorm_le_gaussNorm_mul_div_pow`,
+  `PowerSeries.HasGaussNorm.gaussNorm_le_gaussNorm_mul_div_pow_sum` and
   `PowerSeries.HasGaussNorm.gaussNorm_hasseDeriv_le_gaussNorm_mul_div_pow_sum`: two-radii
-  Gauss-norm contraction from zeros in a smaller closed disc, for restricted and bounded series and
-  their Hasse derivatives over complete ultrametric normed commutative rings without zero divisors.
+  Gauss-norm contraction from zeros in a smaller closed disc, for series with bounded weighted
+  coefficient norms and their Hasse derivatives over complete ultrametric normed commutative rings
+  without zero divisors.
 * `PowerSeries.gaussNorm_le_mul_div_pow_sum_of_ofScalarsSum_iterate_derivative_eq_zero`,
   `PowerSeries.norm_coeff_le_of_ofScalarsSum_iterate_derivative_eq_zero` and
   `PowerSeries.norm_ofScalarsSum_le_of_ofScalarsSum_iterate_derivative_eq_zero`: in characteristic
@@ -171,6 +169,16 @@ private theorem IsRestricted.evalAt_hasseDeriv_eq_zero_of_X_sub_C_mul [Decidable
 
 end CommRing
 
+private theorem mem_of_mem_sum_replicate {α : Type*} {s : Finset α} {T : α → ℕ} {b : α}
+    (hb : b ∈ ∑ a ∈ s, Multiset.replicate (T a) a) : b ∈ s := by
+  obtain ⟨a, ha, hba⟩ := Multiset.mem_sum.mp hb
+  rwa [Multiset.eq_of_mem_replicate hba]
+
+private theorem count_sum_replicate {α : Type*} [DecidableEq α] {s : Finset α} (T : α → ℕ)
+    {b : α} (hb : b ∈ s) :
+    (∑ a ∈ s, Multiset.replicate (T a) a).count b = T b := by
+  simp [Multiset.count_sum', Multiset.count_replicate, hb]
+
 section Field
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] {c : ℝ}
@@ -231,15 +239,10 @@ theorem IsRestricted.norm_evalAt_le_gaussNorm_mul_prod_pow {L : Type*} [NormedFi
     ‖f.evalAt x‖ ≤ f.gaussNorm norm c * ∏ b ∈ s, (‖x - algebraMap K L b‖ / c) ^ T b := by
   classical
   set Z : Multiset K := ∑ b ∈ s, Multiset.replicate (T b) b
-  have hmem {b : K} (hb : b ∈ Z) : b ∈ s := by
-    obtain ⟨b', hb', hbb'⟩ := Multiset.mem_sum.mp hb
-    rwa [Multiset.eq_of_mem_replicate hbb']
-  have hcount {b : K} (hb : b ∈ s) : Z.count b = T b := by
-    rw [Multiset.count_sum', Finset.sum_eq_single b
-      (fun b' _ hb' ↦ Multiset.count_eq_zero.mpr fun h ↦ hb' (Multiset.eq_of_mem_replicate h).symm)
-      (fun h ↦ (h hb).elim), Multiset.count_replicate_self]
-  have h := hf.norm_evalAt_le_gaussNorm_mul_prod hc (Z := Z) (fun b hb ↦ hs b (hmem hb))
-    (fun b hb t ht ↦ hzero b (hmem hb) t (hcount (hmem hb) ▸ ht)) hx
+  have h := hf.norm_evalAt_le_gaussNorm_mul_prod hc (Z := Z)
+    (fun b hb ↦ hs b (mem_of_mem_sum_replicate hb))
+    (fun b hb t ht ↦ hzero b (mem_of_mem_sum_replicate hb) t
+      (count_sum_replicate T (mem_of_mem_sum_replicate hb) ▸ ht)) hx
   have hprod : (Z.map fun b ↦ ‖x - algebraMap K L b‖ / c).prod =
       ∏ b ∈ s, (‖x - algebraMap K L b‖ / c) ^ T b := by
     rw [← Multiset.coe_mapAddMonoidHom, map_sum, Multiset.prod_sum]
@@ -283,12 +286,8 @@ variable {R : Type*} [NormedCommRing R] [NoZeroDivisors R] [NormOneClass R] [IsU
 complete ultrametric normed commutative ring `R` without zero divisors (with `‖1‖ = 1`), restricted
 at a radius `r > 0`, and let `0 ≤ s ≤ r`. If `Z` is a finite multiset of points of the closed disc
 of radius `s` at each of which the Hasse derivatives `(D⁽ᵗ⁾ f)(b)` vanish for `t` below the
-multiplicity of `b` in `Z`, then
-
-```text
-‖f‖_s ≤ ‖f‖_r * (s / r) ^ Z.card.
-``` -/
-theorem IsRestricted.gaussNorm_le_gaussNorm_mul_div_pow [DecidableEq R] {r s : ℝ}
+multiplicity of `b` in `Z`, then `‖f‖_s ≤ ‖f‖_r * (s / r) ^ Z.card`. -/
+private theorem IsRestricted.gaussNorm_le_gaussNorm_mul_div_pow [DecidableEq R] {r s : ℝ}
     (hf : f.IsRestricted r) (hr : 0 < r) (hs0 : 0 ≤ s) (hsr : s ≤ r) {Z : Multiset R}
     (hZ : ∀ b ∈ Z, ‖b‖ ≤ s)
     (hzero : ∀ b ∈ Z, ∀ t < Z.count b, (PowerSeries.hasseDeriv t f).evalAt b = 0) :
@@ -365,53 +364,17 @@ theorem HasGaussNorm.gaussNorm_le_gaussNorm_mul_div_pow_sum {r s : ℝ}
     f.gaussNorm norm s ≤ f.gaussNorm norm r * (s / r) ^ ∑ b ∈ A, T b := by
   classical
   set Z : Multiset R := ∑ b ∈ A, Multiset.replicate (T b) b
-  have hmem {b : R} (hb : b ∈ Z) : b ∈ A := by
-    obtain ⟨b', hb', hbb'⟩ := Multiset.mem_sum.mp hb
-    rwa [Multiset.eq_of_mem_replicate hbb']
-  have hcount {b : R} (hb : b ∈ A) : Z.count b = T b := by
-    rw [Multiset.count_sum', Finset.sum_eq_single b
-      (fun b' _ hb' ↦ Multiset.count_eq_zero.mpr fun h ↦ hb' (Multiset.eq_of_mem_replicate h).symm)
-      (fun h ↦ (h hb).elim), Multiset.count_replicate_self]
   have hcard : Z.card = ∑ b ∈ A, T b := by simp [Z]
-  simpa [hcard] using hf.gaussNorm_le_gaussNorm_mul_div_pow hr hs0 hsr
-    (fun b hb ↦ hA b (hmem hb)) (fun b hb t ht ↦ hzero b (hmem hb) t (hcount (hmem hb) ▸ ht))
-
-/-- **Two-radii Gauss-norm contraction for restricted series and distinct zeros.** Specialization
-of `PowerSeries.HasGaussNorm.gaussNorm_le_gaussNorm_mul_div_pow_sum` to restricted series. -/
-theorem IsRestricted.gaussNorm_le_gaussNorm_mul_div_pow_sum {r s : ℝ}
-    (hf : f.IsRestricted r) (hr : 0 < r) (hs0 : 0 ≤ s) (hsr : s ≤ r)
-    {A : Finset R} {T : R → ℕ} (hA : ∀ b ∈ A, ‖b‖ ≤ s)
-    (hzero : ∀ b ∈ A, ∀ t < T b, (PowerSeries.hasseDeriv t f).evalAt b = 0) :
-    f.gaussNorm norm s ≤ f.gaussNorm norm r * (s / r) ^ ∑ b ∈ A, T b :=
-  (hasGaussNorm_of_isRestricted hf).gaussNorm_le_gaussNorm_mul_div_pow_sum hr hs0 hsr hA hzero
-
-/-- **Two-radii Gauss-norm contraction for Hasse derivatives of restricted series.** Let `f` be a
-power series over a complete ultrametric normed commutative ring `R` without zero divisors (with
-`‖1‖ = 1`), restricted at a radius `r > 0`, let `0 ≤ s ≤ r`, and let `A` be a finite set of points
-of the closed disc of radius `s` at each of which `(D⁽ᵗ⁾ f)(b)` vanishes for `t < T b`. Then for
-every `k`
-
-```text
-‖D⁽ᵏ⁾ f‖_s ≤ r⁻ᵏ * ‖f‖_r * (s / r) ^ ∑_{b ∈ A} (T b - k).
-``` -/
-theorem IsRestricted.gaussNorm_hasseDeriv_le_gaussNorm_mul_div_pow_sum {r s : ℝ}
-    (hf : f.IsRestricted r) (hr : 0 < r) (hs0 : 0 ≤ s) (hsr : s ≤ r)
-    {A : Finset R} {T : R → ℕ} (hA : ∀ b ∈ A, ‖b‖ ≤ s)
-    (hzero : ∀ b ∈ A, ∀ t < T b, (PowerSeries.hasseDeriv t f).evalAt b = 0) (k : ℕ) :
-    (PowerSeries.hasseDeriv k f).gaussNorm norm s ≤
-      r⁻¹ ^ k * f.gaussNorm norm r * (s / r) ^ ∑ b ∈ A, (T b - k) := by
-  have hzero' : ∀ b ∈ A, ∀ t < T b - k,
-      (PowerSeries.hasseDeriv t (PowerSeries.hasseDeriv k f)).evalAt b = 0 := fun b hb t ht ↦ by
-    rw [hf.evalAt_hasseDeriv_hasseDeriv ((hA b hb).trans hsr), hzero b hb _ (by omega), smul_zero]
-  have h := (hf.hasseDeriv k).gaussNorm_le_gaussNorm_mul_div_pow_sum hr hs0 hsr hA hzero'
-  have hk := gaussNorm_hasseDeriv_le (R := R) hr (hasGaussNorm_of_isRestricted hf) k
-  exact h.trans (mul_le_mul_of_nonneg_right hk (by positivity))
+  simpa [hcard] using hf.gaussNorm_le_gaussNorm_mul_div_pow hr hs0 hsr (Z := Z)
+    (fun b hb ↦ hA b (mem_of_mem_sum_replicate hb))
+    (fun b hb t ht ↦ hzero b (mem_of_mem_sum_replicate hb) t
+      (count_sum_replicate T (mem_of_mem_sum_replicate hb) ▸ ht))
 
 /-- **Two-radii Gauss-norm contraction for Hasse derivatives.** Let `f` be a power series over a
 complete ultrametric normed commutative ring `R` without zero divisors (with `‖1‖ = 1`), with
 bounded weighted coefficient norms at a radius `r > 0`, let `0 ≤ s ≤ r`, and let `A` be a finite
 set of points of the closed disc of radius `s` at each of which `(D⁽ᵗ⁾ f)(b)` vanishes for
-`t < T b`. Then for every `k`
+`t < T b`. Then for every `k`, since `D⁽ᵏ⁾ f` vanishes at each `b ∈ A` to order `T b - k`,
 
 ```text
 ‖D⁽ᵏ⁾ f‖_s ≤ r⁻ᵏ * ‖f‖_r * (s / r) ^ ∑_{b ∈ A} (T b - k).
@@ -424,20 +387,14 @@ theorem HasGaussNorm.gaussNorm_hasseDeriv_le_gaussNorm_mul_div_pow_sum {r s : �
       r⁻¹ ^ k * f.gaussNorm norm r * (s / r) ^ ∑ b ∈ A, (T b - k) := by
   rcases hsr.eq_or_lt with rfl | hlt
   · simpa [div_self hr.ne'] using gaussNorm_hasseDeriv_le (R := R) hr hf k
-  · have htend : Filter.Tendsto
-        (fun r' : ℝ ↦ r'⁻¹ ^ k * f.gaussNorm norm r * (s / r') ^ ∑ b ∈ A, (T b - k)) (𝓝[<] r)
-        (𝓝 (r⁻¹ ^ k * f.gaussNorm norm r * (s / r) ^ ∑ b ∈ A, (T b - k))) :=
-      ((((Filter.tendsto_id.inv₀ hr.ne').pow k).mul_const _).mul
-        ((tendsto_const_nhds.div Filter.tendsto_id hr.ne').pow _)).mono_left nhdsWithin_le_nhds
-    refine ge_of_tendsto htend (Filter.eventually_of_mem (Ioo_mem_nhdsLT hlt) fun r' hr' ↦ ?_)
-    have hr'0 : 0 < r' := hs0.trans_lt hr'.1
-    have hfr' : f.IsRestricted r' :=
-      hf.isRestricted_of_abs_lt (by rw [abs_of_pos hr'0]; exact hr'.2)
-    have hgr' : f.gaussNorm norm r' ≤ f.gaussNorm norm r :=
-      gaussNorm_le_gaussNorm_of_le (fun _ ↦ norm_nonneg _) hr'0.le hr'.2.le hf
-    exact (hfr'.gaussNorm_hasseDeriv_le_gaussNorm_mul_div_pow_sum hr'0 hs0 hr'.1.le hA hzero
-      k).trans (mul_le_mul_of_nonneg_right
-        (mul_le_mul_of_nonneg_left hgr' (by positivity)) (by positivity))
+  · have hfs : f.IsRestricted s := hf.isRestricted_of_abs_lt (by rwa [abs_of_nonneg hs0])
+    have hzero' : ∀ b ∈ A, ∀ t < T b - k,
+        (PowerSeries.hasseDeriv t (PowerSeries.hasseDeriv k f)).evalAt b = 0 :=
+      fun b hb t ht ↦ by
+        rw [hfs.evalAt_hasseDeriv_hasseDeriv (hA b hb), hzero b hb _ (by omega), smul_zero]
+    exact ((HasGaussNorm.hasseDeriv hr hf k).gaussNorm_le_gaussNorm_mul_div_pow_sum hr hs0
+      hlt.le hA hzero').trans
+      (mul_le_mul_of_nonneg_right (gaussNorm_hasseDeriv_le (R := R) hr hf k) (by positivity))
 
 end NoZeroDivisors
 
