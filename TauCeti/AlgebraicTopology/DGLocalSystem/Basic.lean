@@ -29,8 +29,10 @@ For a space that is not path-connected, one chooses a basepoint `b_c` in each pa
 systems on the pointed spaces `(B, b_c)` (`DGLocalSystemFamily`).  A map `f : B' → B` that sends
 each chosen basepoint of `B'` to the chosen basepoint of the path component of its image pulls
 such families back component by component (`DGLocalSystemFamily.pullback`), again functorially up
-to the canonical isomorphisms.  Basepoint change, and hence the pullback along maps that do not
-preserve the chosen basepoints, needs the derived tensor product and is not treated here.
+to the canonical isomorphisms.  The pullback along maps that do not preserve the chosen basepoints
+changes basepoints by tensoring with chains on Moore paths; it is
+`TauCeti.DGLocalSystemFamily.pullbackBasepointChange` in
+`TauCeti.AlgebraicTopology.DGLocalSystem.Path.Family`.
 
 ## Main definitions
 
