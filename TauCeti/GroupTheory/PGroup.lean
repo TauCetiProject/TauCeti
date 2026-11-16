@@ -33,6 +33,7 @@ that a homomorphism into a pro-`p` group kills their intersection.
   homomorphism has `p`-power order.
 * `IsPGroup.prod`, `IsAddPGroup.prod`: a product of two `p`-groups is a `p`-group.
 * `IsPGroup.pi`, `IsAddPGroup.pi`: a finite product of `p`-groups is a `p`-group.
+* `IsAddPGroup.zmod_prime_pow`: `ZMod (p ^ k)` is an additive `p`-group.
 * `IsPGroup.of_subgroup_of_quotient`: an extension of a `p`-group by a `p`-group is a
   `p`-group.
 * `TauCeti.disjoint_of_not_dvd_natCard_of_isPGroup`: a `p`-group meets a subgroup of order prime
@@ -87,6 +88,10 @@ theorem _root_.IsPGroup.pi {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, G
   obtain ⟨k, hk⟩ := pow_dvd_pow p (Finset.single_le_sum (fun j _ ↦ Nat.zero_le (n j))
     (Finset.mem_univ i))
   rw [Pi.pow_apply, hk, pow_mul, hn, one_pow, Pi.one_apply]
+
+/-- For any `p` and `k`, `ZMod (p ^ k)` is an additive `p`-group. -/
+theorem _root_.IsAddPGroup.zmod_prime_pow (p k : ℕ) : IsAddPGroup p (ZMod (p ^ k)) :=
+  fun _ ↦ ⟨k, by simp⟩
 
 /-- An extension of a `p`-group by a `p`-group is a `p`-group: if a normal subgroup `N` of `G`
 and the quotient `G ⧸ N` are both `p`-groups, then so is `G`. This is the converse of

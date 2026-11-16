@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
 public import Mathlib.GroupTheory.PGroup
 public import Mathlib.GroupTheory.Torsion
 import Mathlib.Data.Nat.Factorization.Basic
-import TauCeti.Algebra.Group.Primary.Rank
+import TauCeti.Algebra.Group.Primary.Basic
 
 /-!
 # Primary components of finite bilinear and quadratic modules

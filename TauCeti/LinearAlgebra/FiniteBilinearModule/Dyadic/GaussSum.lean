@@ -51,6 +51,8 @@ sum `-2`, because its form takes the value `1/2` on the three nonzero elements o
 * `TauCeti.FiniteQuadraticModule.gaussSign_dyadicV` and
   `TauCeti.FiniteQuadraticModule.gaussSum_dyadicV`: `sign v^{(2)}(2^k) = 4k` and its Gauss sum
   is `(-2)^k`.
+* `TauCeti.FiniteQuadraticModule.not_nonempty_isometry_dyadicU_one_dyadicV_one`: `u^{(2)}(2)` and
+  `v^{(2)}(2)` are not quadratically isometric despite having isometric polar bilinear pairings.
 * `TauCeti.FiniteQuadraticModule.scaledGaussSum_dyadicU_pow_add` and
   `TauCeti.FiniteQuadraticModule.scaledGaussSum_dyadicV_pow_add`: scaling a generator at
   exponent `j + e` by `2^j` gives `2^(2j)` times its Gauss sum at exponent `e`.
@@ -427,6 +429,16 @@ theorem gaussSum_dyadicV : (dyadicV k).gaussSum = (-2 : ℂ) ^ k := by
   push_cast
   rw [← mul_pow]
   norm_num
+
+/-- Although `dyadicU 1` and `dyadicV 1` have isometric polar bilinear pairings
+(`TauCeti.FiniteQuadraticModule.dyadicUOneBilinearIsometryDyadicVOne`), they are **not** isometric
+as finite quadratic modules: their Gauss-sum invariants in `ℤ/8` are `0` and `4`. -/
+theorem not_nonempty_isometry_dyadicU_one_dyadicV_one :
+    ¬ Nonempty ((dyadicU 1).Isometry (dyadicV 1)) := by
+  rintro ⟨f⟩
+  have hsign := f.gaussSign_eq
+  rw [gaussSign_dyadicU, gaussSign_dyadicV] at hsign
+  exact absurd hsign (by decide)
 
 /-! ## Scaled Gauss sums of the rank-two generators -/
 

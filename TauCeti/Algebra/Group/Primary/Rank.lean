@@ -9,9 +9,10 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.Algebra.Group.Primary.Generators
 public import TauCeti.GroupTheory.PGroup
 public import TauCeti.LinearAlgebra.FreeModule.ModN
+import TauCeti.Algebra.Group.Primary.Basic
 
 /-!
-# Generator rank of finite abelian `p`-groups and primary components of products
+# Generator rank of finite abelian `p`-groups
 
 For a finite abelian `p`-group `G` (`IsAddPGroup p G` with `p` prime), the Frattini / Burnside
 reduction identifies the minimal number of generators `AddGroup.rank G` with the `ZMod p`-dimension
@@ -29,8 +30,8 @@ coprime orders (`AddGroup.rank_prod_eq_max_of_coprime_card`).
 * `AddGroup.rank_zmod_prime_pow`, `AddGroup.rank_prod_zmod_prime_pow`,
   `AddGroup.rank_pi_zmod_prime_pow`: generator ranks of prime-power cyclic groups and their
   products.
-* `AddCommGroup.primaryComponentProdAddEquiv`: `(A × B)[p^∞] ≃+ A[p^∞] × B[p^∞]`, with
-  `AddGroup.rank_primaryComponent_prod` giving additivity of `l(A_p)` on products.
+* `AddGroup.rank_primaryComponent_prod`: additivity of `l(A_p)` on binary products of finite
+  abelian groups.
 
 ## References
 
@@ -109,64 +110,7 @@ theorem rank_pi {p : ℕ} (hp : p.Prime) {ι : Type*} [Fintype ι] {G : ι → T
     Module.finrank_pi_fintype]
   exact Finset.sum_congr rfl fun i _ ↦ ((hG i).rank_eq_finrank_modN hp).symm
 
-/-- For any `p` and `k`, `ZMod (p ^ k)` is an additive `p`-group. -/
-theorem zmod_prime_pow (p k : ℕ) : IsAddPGroup p (ZMod (p ^ k)) :=
-  fun _ ↦ ⟨k, by simp⟩
-
 end IsAddPGroup
-
-namespace AddCommGroup
-
-/-- The `n`-primary component of a binary product of additive commutative groups splits as the
-product of their `n`-primary components. -/
-def primaryComponentProdAddEquiv (A B : Type*) [AddCommGroup A] [AddCommGroup B] (n : ℕ) :
-    AddCommGroup.primaryComponent (A × B) n ≃+
-      AddCommGroup.primaryComponent A n × AddCommGroup.primaryComponent B n where
-  toFun x :=
-    ⟨⟨x.1.1, by
-        obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.2
-        exact AddCommGroup.mem_primaryComponent.mpr ⟨k, congrArg Prod.fst hk⟩⟩,
-     ⟨x.1.2, by
-        obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.2
-        exact AddCommGroup.mem_primaryComponent.mpr ⟨k, congrArg Prod.snd hk⟩⟩⟩
-  invFun y :=
-    ⟨(y.1.1, y.2.1), by
-      obtain ⟨k₁, hk₁⟩ := AddCommGroup.mem_primaryComponent.mp y.1.2
-      obtain ⟨k₂, hk₂⟩ := AddCommGroup.mem_primaryComponent.mp y.2.2
-      refine AddCommGroup.mem_primaryComponent.mpr ⟨k₁ + k₂, ?_⟩
-      rw [Prod.smul_mk, Prod.mk_eq_zero]
-      exact ⟨by rw [add_comm, pow_add, ← smul_smul, hk₁, nsmul_zero],
-        by rw [pow_add, ← smul_smul, hk₂, nsmul_zero]⟩⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_add' _ _ := rfl
-
-@[simp]
-theorem primaryComponentProdAddEquiv_apply_fst (A B : Type*) [AddCommGroup A] [AddCommGroup B]
-    (n : ℕ) (x : AddCommGroup.primaryComponent (A × B) n) :
-    ((primaryComponentProdAddEquiv A B n x).1 : A) = x.1.1 := by
-  rfl
-
-@[simp]
-theorem primaryComponentProdAddEquiv_apply_snd (A B : Type*) [AddCommGroup A] [AddCommGroup B]
-    (n : ℕ) (x : AddCommGroup.primaryComponent (A × B) n) :
-    ((primaryComponentProdAddEquiv A B n x).2 : B) = x.1.2 := by
-  rfl
-
-@[simp]
-theorem coe_primaryComponentProdAddEquiv_symm_apply (A B : Type*) [AddCommGroup A] [AddCommGroup B]
-    (n : ℕ) (x : AddCommGroup.primaryComponent A n) (y : AddCommGroup.primaryComponent B n) :
-    ((primaryComponentProdAddEquiv A B n).symm (x, y) : A × B) = (x.1, y.1) := by
-  rfl
-
-/-- Every element of `AddCommGroup.primaryComponent A n` is annihilated by a power of `n`. -/
-theorem primaryComponent.isAddPGroup (A : Type*) [AddCommGroup A] (n : ℕ) :
-    IsAddPGroup n (AddCommGroup.primaryComponent A n) := by
-  intro ⟨x, hx⟩
-  obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp hx
-  exact ⟨k, Subtype.ext hk⟩
-
-end AddCommGroup
 
 namespace AddGroup
 
