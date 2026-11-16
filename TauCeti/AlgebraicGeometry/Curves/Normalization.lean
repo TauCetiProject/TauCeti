@@ -18,6 +18,7 @@ import TauCeti.AlgebraicGeometry.Cohomology.Spec
 import TauCeti.AlgebraicGeometry.Curves.Cohomology
 import TauCeti.AlgebraicGeometry.IdealSheaf.Over
 import TauCeti.AlgebraicGeometry.Morphisms.Modification.Finite
+import TauCeti.AlgebraicGeometry.Morphisms.Separated
 import TauCeti.AlgebraicGeometry.Normalization.Regular
 
 /-!
@@ -157,12 +158,12 @@ theorem subsingleton_cohomology_succ_cokernel_unitToPushforwardObjUnit
     cohomologyPushforwardIso i G (n + 1)).addCommGroupIsoToAddEquiv
   exact e.toEquiv.subsingleton
 
-/-- Over an Artinian commutative ring `R` (for instance a field), if `X` is quasi-compact and
-locally of finite type over `Spec R`, then every cohomology group of `coker(𝒪_X ⟶ f_* 𝒪_Y)` is a
-finitely generated `R`-module. -/
+/-- Over an Artinian commutative ring `R` (for instance a field), if `X` is locally of finite type
+over `Spec R`, then every cohomology group of `coker(𝒪_X ⟶ f_* 𝒪_Y)` is a finitely generated
+`R`-module. -/
 theorem moduleFinite_cohomology_cokernel_unitToPushforwardObjUnit
     (R : Type u) [CommRing R] [IsArtinianRing R] [X.Over (Spec (.of R))]
-    [LocallyOfFiniteType (X ↘ Spec (.of R))] [QuasiCompact (X ↘ Spec (.of R))]
+    [LocallyOfFiniteType (X ↘ Spec (.of R))]
     (hX : topologicalKrullDim X ≤ 1) (n : ℕ) :
     Module.Finite R (Cohomology
       (cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom) : X.Modules) n) := by
@@ -186,7 +187,7 @@ theorem moduleFinite_cohomology_cokernel_unitToPushforwardObjUnit
 `coker(𝒪_X ⟶ f_* 𝒪_Y)` form a finitely generated `R`-module. -/
 theorem moduleFinite_globalSections_cokernel_unitToPushforwardObjUnit
     (R : Type u) [CommRing R] [IsArtinianRing R] [X.Over (Spec (.of R))]
-    [LocallyOfFiniteType (X ↘ Spec (.of R))] [QuasiCompact (X ↘ Spec (.of R))]
+    [LocallyOfFiniteType (X ↘ Spec (.of R))]
     (hX : topologicalKrullDim X ≤ 1) :
     Module.Finite R
       Γ((cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom) : X.Modules),
@@ -261,25 +262,6 @@ end ConductorCohomology
 
 end Hom
 
-/-- A scheme separated over `Spec R` is separated as an absolute scheme. -/
-private theorem isSeparated_terminal_from_of_over (R : Type u) [CommRing R] (X : Scheme.{u})
-    [X.Over (Spec (.of R))] [IsSeparated (X ↘ Spec (.of R))] : IsSeparated (terminal.from X) := by
-  rw [← terminal.comp_from (X ↘ Spec (.of R))]
-  infer_instance
-
-/-- Over a commutative ring `R`, the Čech cohomology comparison `Hⁿ(X, f_* M) ≃ₗ[R] Hⁿ(Y, M)` along
-an affine `R`-morphism `f : Y ⟶ X` onto a quasi-compact scheme `X` separated over `Spec R`. -/
-private def cohomologyPushforwardBaseLinearEquivOfCompactSpace (R : Type u) [CommRing R]
-    {X Y : Scheme.{u}} [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))]
-    [CompactSpace X] [IsSeparated (X ↘ Spec (.of R))]
-    (f : Y ⟶ X) [IsAffineHom f] [f.IsOver (Spec (.of R))]
-    (M : Y.Modules) [M.IsQuasicoherent] (n : ℕ) :
-    Cohomology ((pushforward f).obj M) n ≃ₗ[R] Cohomology M n :=
-  have := isSeparated_terminal_from_of_over R X
-  let 𝒰 := X.affineCover.finiteSubcover
-  f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom
-    (fun i ↦ (𝒰.f i).opensRange) (fun i ↦ isAffineOpen_opensRange (𝒰.f i)) 𝒰.iSup_opensRange R M n
-
 /-- Every curve `X` over a field `k` admits a finite, scheme-theoretically dominant `k`-modification
 from a regular curve over `k`, namely its normalization in `k(X)`. -/
 private theorem exists_isRegular_isModification_of_isCurveOver (k : Type u) [Field k]
@@ -316,9 +298,7 @@ theorem subsingleton_cohomology_unit_iff_of_two_le_of_isModification {X Y : Sche
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
   have : (SheafOfModules.unit Y.ringCatSheaf).IsQuasicoherent :=
     AlgebraicGeometry.isQuasicoherent_structureSheaf Y
-  let 𝒰 := X.affineCover.finiteSubcover
-  let eCech := (f.cohomologyPushforwardIsoOfIsAffineHom
-    (fun i ↦ (𝒰.f i).opensRange) (fun i ↦ isAffineOpen_opensRange (𝒰.f i)) 𝒰.iSup_opensRange
+  let eCech := (f.cohomologyPushforwardIsoOfCompactSpace
     (SheafOfModules.unit Y.ringCatSheaf) (m + 2)).addCommGroupIsoToAddEquiv
   let eMap := Equiv.ofBijective _ (f.cohomologyMap_unitToPushforwardObjUnit_add_two_bijective hX m)
   exact (eMap.trans eCech.toEquiv).subsingleton_congr
@@ -333,7 +313,7 @@ theorem subsingleton_cohomology_unit_of_two_le_of_isCurveOver [X.IsCurveOver k]
     Subsingleton (Cohomology (SheafOfModules.unit X.ringCatSheaf : X.Modules) n) := by
   obtain ⟨Y, _, _, _, ν, _, _, _, _⟩ := exists_isRegular_isModification_of_isCurveOver k (X := X)
   have := IsCurveOver.isNoetherian k X
-  have := isSeparated_terminal_from_of_over k X
+  have : X.IsSeparated := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
   have : (SheafOfModules.unit Y.ringCatSheaf).IsQuasicoherent :=
     AlgebraicGeometry.isQuasicoherent_structureSheaf Y
   rw [subsingleton_cohomology_unit_iff_of_two_le_of_isModification
@@ -356,6 +336,7 @@ instance finiteDimensional_cohomology_trivial_of_isCurveOver [X.IsCurveOver k] (
     FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj n) := by
   obtain ⟨Y, _, _, _, ν, _, _, _, _⟩ := exists_isRegular_isModification_of_isCurveOver k (X := X)
   have := IsCurveOver.isNoetherian k X
+  have : X.IsSeparated := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
   have hdim := (IsCurveOver.topologicalKrullDim_eq_one (X := X) k).le
   let OX : X.Modules := SheafOfModules.unit X.ringCatSheaf
   let _ : ∀ d, Module k (Cohomology OX d) := cohomologyBaseModule k X OX
@@ -365,7 +346,7 @@ instance finiteDimensional_cohomology_trivial_of_isCurveOver [X.IsCurveOver k] (
   have hpush (m : ℕ) : FiniteDimensional k (Cohomology ((pushforward ν).obj OY) m) := by
     let _ : Module k (Cohomology OY m) := cohomologyBaseModule k Y OY m
     have := finiteDimensional_cohomology_of_isCurveOver k OY m
-    exact Module.Finite.equiv (cohomologyPushforwardBaseLinearEquivOfCompactSpace k ν OY m).symm
+    exact Module.Finite.equiv (ν.cohomologyPushforwardBaseLinearEquivOfCompactSpace k OY m).symm
   let φ : OX ⟶ (pushforward ν).obj OY :=
     SheafOfModules.unitToPushforwardObjUnit ν.toRingCatSheafHom
   have : Mono φ := ν.mono_unitToPushforwardObjUnit
@@ -433,6 +414,7 @@ theorem eulerCharBelow_trivial_of_isModification [X.IsCurveOver k] [IsReduced Y]
             ⊤) : ℤ) := by
   have : Y.IsCurveOver k := IsCurveOver.of_isModification k f
   have := IsCurveOver.isNoetherian k X
+  have : X.IsSeparated := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
   have hdim := (IsCurveOver.topologicalKrullDim_eq_one (X := X) k).le
   have : IsSchemeTheoreticallyDominant f := .of_isDominant f
   let OX : X.Modules := SheafOfModules.unit X.ringCatSheaf
@@ -444,7 +426,7 @@ theorem eulerCharBelow_trivial_of_isModification [X.IsCurveOver k] [IsReduced Y]
     SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom
   have : Mono φ := f.mono_unitToPushforwardObjUnit
   have hS := TauCeti.cokernelSequence_shortExact φ
-  let eCech (m : ℕ) := cohomologyPushforwardBaseLinearEquivOfCompactSpace k f OY m
+  let eCech (m : ℕ) := f.cohomologyPushforwardBaseLinearEquivOfCompactSpace k OY m
   have hY_eq : eulerCharBelow k Y (InvertibleSheaf.trivial Y).obj 2 =
       eulerCharBelow k X ((pushforward f).obj OY) 2 := by
     rw [eulerCharBelow_two, eulerCharBelow_two,
@@ -474,6 +456,7 @@ theorem genus_le_of_isModification [X.IsCurveOver k] [Y.IsCurveOver k]
     (f : Y ⟶ X) [IsFinite f] [IsModification f] [f.IsOver (Spec (.of k))] :
     Y.genus k ≤ X.genus k := by
   have := IsCurveOver.isNoetherian k X
+  have : X.IsSeparated := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
   have hdim := (IsCurveOver.topologicalKrullDim_eq_one (X := X) k).le
   have : IsSchemeTheoreticallyDominant f := .of_isDominant f
   let OX : X.Modules := SheafOfModules.unit X.ringCatSheaf
@@ -483,7 +466,7 @@ theorem genus_le_of_isModification [X.IsCurveOver k] [Y.IsCurveOver k]
   have : FiniteDimensional k (Cohomology OX 1) :=
     Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k X 1)
   have : OY.IsQuasicoherent := AlgebraicGeometry.isQuasicoherent_structureSheaf Y
-  let eCech := cohomologyPushforwardBaseLinearEquivOfCompactSpace k f OY 1
+  let eCech := f.cohomologyPushforwardBaseLinearEquivOfCompactSpace k OY 1
   let φ : OX ⟶ (pushforward f).obj OY :=
     SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom
   let ψ : Cohomology OX 1 →ₗ[k] Cohomology OY 1 :=

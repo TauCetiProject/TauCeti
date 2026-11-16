@@ -50,7 +50,7 @@ dominant, `f` is an isomorphism if and only if `Γ(Q, ⊤)` vanishes
 * `AlgebraicGeometry.Scheme.Hom.isArtinianScheme_conductor_subscheme` and
   `AlgebraicGeometry.Scheme.Hom.isFinite_conductor_subschemeι_comp`: for a finite modification in
   dimension at most one, `f.conductor.subscheme` is Artinian, and finite over any locally Artinian
-  base over which `Y` is quasi-compact and locally of finite type.
+  base over which `Y` is locally of finite type.
 * `Hom.subsingleton_globalSections_cokernel_unitToPushforwardObjUnit_iff_isIso`:
   for a finite scheme-theoretically dominant modification of a Noetherian irreducible nonempty
   scheme of dimension at most one, `Subsingleton Γ(coker(𝒪_Y ⟶ f_* 𝒪_X), ⊤) ↔ IsIso f`.
@@ -236,12 +236,12 @@ theorem isArtinianScheme_conductor_subscheme [IsNoetherian Y] [IrreducibleSpace 
   {}
 
 /-- If `Y` is a nonempty irreducible Noetherian scheme of dimension at most one and `g : Y ⟶ S` is
-quasi-compact and locally of finite type over a locally Artinian base `S` (such as `Spec k` for a
-field `k`), then for any finite modification `f : X ⟶ Y` the conductor closed subscheme of `f` is
-finite over `S`. -/
+locally of finite type over a locally Artinian base `S` (such as `Spec k` for a field `k`), then
+for any finite modification `f : X ⟶ Y` the conductor closed subscheme of `f` is finite over
+`S`. -/
 theorem isFinite_conductor_subschemeι_comp [IsNoetherian Y] [IrreducibleSpace Y] [Nonempty Y]
     (hY : topologicalKrullDim Y ≤ 1) {S : Scheme.{u}} [IsLocallyArtinian S] (g : Y ⟶ S)
-    [LocallyOfFiniteType g] [QuasiCompact g] :
+    [LocallyOfFiniteType g] :
     IsFinite (f.conductor.subschemeι ≫ g) := by
   have := f.isArtinianScheme_conductor_subscheme hY
   have : LocallyQuasiFinite (f.conductor.subschemeι ≫ g) :=
