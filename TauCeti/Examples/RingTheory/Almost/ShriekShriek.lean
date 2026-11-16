@@ -21,7 +21,8 @@ These examples test the unitisation `R_!! = (V ⊕ m~ ⊗[V] R) ⧸ I` of
 * in the classical setup, `R_!! → R` is bijective for every `R`, and so is `B_!! → B_*` for every
   almost algebra `B`;
 * in the zero setup, `R_! = 0` and `V → R_!!` is bijective for every `R`;
-* the classical, zero-setup and unit-algebra cases are exact.
+* the classical, zero-setup and unit-algebra cases are exact, and so is every almost algebra in
+  the classical setup.
 
 ## References
 
@@ -53,19 +54,19 @@ example :
 
 -- For every setup, `V_!! → V` is bijective.
 example (S : BasicSetup V) : Function.Bijective (S.shriekShriekCounit V) :=
-  S.bijective_shriekShriekCounit_self
+  S.shriekShriekCounit_self_bijective
 
 -- For every setup, the unitisation of the almost algebra `V^a` is `V`.
 example {V : Type} [CommRing V] (S : BasicSetup V) :
     Nonempty (((Algebra.shriekShriek S).obj ((Algebra.toAlmost S).obj (CommAlgCat.of V V))) ≃ₐ[V]
       V) :=
-  ⟨(AlgEquiv.ofBijective _ (S.bijective_shriekShriekMap_of_isAlmostIso
+  ⟨(AlgEquiv.ofBijective _ (S.shriekShriekMap_bijective_of_isAlmostIso
     (Algebra.isAlmostIso_adj_unit_app S _))).symm.trans
-      (AlgEquiv.ofBijective _ S.bijective_shriekShriekCounit_self)⟩
+      (AlgEquiv.ofBijective _ S.shriekShriekCounit_self_bijective)⟩
 
 -- `V` is exact for every setup: `t ↦ t ⊗ 1` is injective on `m~`.
 example (S : BasicSetup V) : S.IsShriekShriekExact V :=
-  S.isShriekShriekExact_of_injective_lTensor V <| by
+  S.isShriekShriekExact_of_lTensor_injective V <| by
     rw [Algebra.linearMap_self, LinearMap.lTensor_id]
     exact Function.injective_id
 
@@ -84,13 +85,17 @@ example {V : Type} [CommRing V] (B : Algebra (classical V)) :
 
 -- In the classical setup every algebra is exact, since `m~ → m = V` is injective.
 example (R : Type*) [CommRing R] [Algebra V R] : (classical V).IsShriekShriekExact R :=
-  (classical V).isShriekShriekExact_of_injective R classical_tildeMul_bijective.1
+  (classical V).isShriekShriekExact_of_tildeMul_injective R classical_tildeMul_bijective.1
+
+-- In the classical setup every almost algebra is exact.
+example {V : Type} [CommRing V] (B : Algebra (classical V)) : B.IsExact :=
+  Algebra.isExact_of_tildeMul_injective _ classical_tildeMul_bijective.1 B
 
 /-! ### The zero setup -/
 
 -- In the zero setup, `m~ = 0`, so every algebra is exact.
 example (R : Type*) [CommRing R] [Algebra V R] : (zero V).IsShriekShriekExact R :=
-  (zero V).isShriekShriekExact_of_injective R <| by
+  (zero V).isShriekShriekExact_of_tildeMul_injective R <| by
     rw [zero_tildeMul]
     exact fun s t _ ↦ (zero_tildeToIdeal_bijective).1 (Subsingleton.elim _ _)
 

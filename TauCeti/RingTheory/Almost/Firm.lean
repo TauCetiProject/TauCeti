@@ -604,7 +604,7 @@ noncomputable instance hasLocalization :
   L := S.firm
 
 /-- The action map `m~ ⊗ M → M` is an almost isomorphism. -/
-theorem isAlmostIso_tildeAct (M : ModuleCat.{u} V) :
+theorem isAlmostIso_tildeAct (M : Type*) [AddCommGroup M] [Module V M] :
     S.IsAlmostIso (M := S.tilde ⊗[V] M) (S.tildeAct M) := by
   apply S.isAlmostIso_iff_lTensor_bijective.mpr
   rw [S.lTensor_tildeAct]
