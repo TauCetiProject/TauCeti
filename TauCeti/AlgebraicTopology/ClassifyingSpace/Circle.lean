@@ -55,10 +55,10 @@ to the class of the generator `ofAdd 1`
 * `TauCeti.classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_circleToClassifyingSpace`: the map
   induces the identity of `ℤ` on fundamental groups.
 * `TauCeti.isWeakHomotopyEquivalence_circleToClassifyingSpace`: it is a weak homotopy equivalence.
-* `TauCeti.classifyingSpaceFirstHomologyAddEquiv_map_circleToClassifyingSpace`,
-  `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_circleToClassifyingSpace`: on
-  integral first homology, the class of a loop goes to the class of its degree, in `ℤᵃᵇ` and in
-  `H₁(ℤ, ℤ)`.
+* `FundamentalGroup.classifyingSpaceFirstHomologyAddEquiv_map_circleToClassifyingSpace` and
+  `FundamentalGroup.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_circleToClassifyingSpace`
+  state that on integral first homology the class of a loop goes to the class of its degree, in
+  `ℤᵃᵇ` and in `H₁(ℤ, ℤ)` respectively.
 * `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_circleToClassifyingSpace_expLoop`:
   the counterclockwise loop goes to the class of the generator in `H₁(ℤ, ℤ)`.
 
@@ -153,6 +153,12 @@ theorem circleSingularHomologyIsoGroupHomology_hom (k : Type) [CommRing k] (n : 
   exact congrArg (· ≫ (classifyingSpaceSingularHomologyIsoGroupHomology k (Multiplicative ℤ) n).hom)
     (circleHomotopyEquivClassifyingSpace.singularHomologyIso_hom (ModuleCat.of k k) n)
 
+end TauCeti
+
+namespace FundamentalGroup
+
+open CategoryTheory TauCeti TauCeti.HurewiczOne
+
 /-- On integral first homology, `TauCeti.circleToClassifyingSpace` sends the Hurewicz class of a
 loop at `1` to the class in `ℤᵃᵇ` of its degree, read through `Circle.fundamentalGroupMulEquiv`. -/
 theorem classifyingSpaceFirstHomologyAddEquiv_map_circleToClassifyingSpace
@@ -188,6 +194,12 @@ theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_map_circleToClassifyi
   rw [classifyingSpaceFirstHomologyAddEquivGroupHomology_apply,
     classifyingSpaceFirstHomologyAddEquiv_map_circleToClassifyingSpace,
     TensorProduct.rid_symm_apply, groupHomology.H1AddEquivOfIsTrivial_symm_tmul]
+
+end FundamentalGroup
+
+namespace TauCeti
+
+open CategoryTheory _root_.FundamentalGroup TauCeti.HurewiczOne
 
 /-- The counterclockwise loop `Circle.expLoop` corresponds, under
 `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology`, to the class in `H₁(ℤ, ℤ)` of the
