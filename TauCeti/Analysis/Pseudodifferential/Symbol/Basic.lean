@@ -1319,37 +1319,52 @@ theorem IsSmoothing.comp_left {a : Symbol n V W m} (ha : a.IsSmoothing) (b : Sym
   obtain ⟨a', ha'⟩ := ha (m'' - m')
   exact ⟨Symbol.inclusion (by linarith) (b.comp a'), funext fun p => by simp [ha']⟩
 
+/-- The symbol estimates of every order `m` for a smooth coefficient that vanishes, on each compact
+set `K` of positions, at all frequencies of norm at least some radius `R_K`. -/
+private theorem exists_bound_of_forall_isCompact_eq_zero
+    {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
+    (hR : ∀ K : Set (CoordinateSpace n), IsCompact K →
+      ∃ R, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0)
+    (m : ℝ) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β f x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  -- The radius is taken on the closed `1`-neighbourhood of `K`, so that the coefficient vanishes
+  -- on a neighbourhood of each `(x, ξ)` with `x ∈ K` and `‖ξ‖ > R`; on `K × closedBall 0 R` the
+  -- continuous quotient of the derivative by the weight is bounded.
+  obtain ⟨R, hR⟩ := hR _ (hK.cthickening (r := 1))
+  have hw : Continuous fun p : CoordinateSpace n × CoordinateSpace n =>
+      (1 + ‖p.2‖ ^ 2) ^ ((m - β.length) / 2) :=
+    (continuous_const.add (continuous_snd.norm.pow 2)).rpow_const fun p =>
+      Or.inl (by positivity : (0 : ℝ) < 1 + ‖p.2‖ ^ 2).ne'
+  obtain ⟨M, hM⟩ := (hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R))
+    |>.exists_bound_of_continuousOn ((hf.mixedDeriv α β).continuous.norm.div
+      hw fun p => (rpow_weight_pos p.2 _).ne').continuousOn
+  refine ⟨max M 0, le_max_right _ _, fun x hx ξ => ?_⟩
+  rcases le_or_gt ‖ξ‖ R with hξ | hξ
+  · have h := hM (x, ξ) ⟨hx, mem_closedBall_zero_iff.2 hξ⟩
+    rw [Real.norm_eq_abs, Pi.div_apply] at h
+    rw [← div_le_iff₀ (rpow_weight_pos ξ _)]
+    exact (le_abs_self _).trans (h.trans (le_max_left M 0))
+  · have hzero : (fun y => coordinateDeriv β (fun η => f (y, η)) ξ) =ᶠ[nhds x] 0 := by
+      filter_upwards [Metric.ball_mem_nhds x one_pos] with y hy
+      have hyK : y ∈ Metric.cthickening 1 K :=
+        Metric.thickening_subset_cthickening 1 K (Metric.mem_thickening_iff.2 ⟨x, hx, hy⟩)
+      have hy0 : (fun η => f (y, η)) =ᶠ[nhds ξ] 0 :=
+        Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)
+          fun η hη => hR y hyK η (le_of_lt hη)
+      rw [(hy0.coordinateDeriv β).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply, Pi.zero_apply]
+    rw [mixedDeriv_def, (hzero.coordinateDeriv α).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply,
+      norm_zero]
+    exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
+
 /-- A smooth coefficient vanishing at every frequency of norm at least `R`, such as the difference
 of two cut-off expansions, is a symbol of every order `m`. -/
 def ofBoundedFrequencySupport (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
     (hf : ContDiff ℝ ∞ f) (R : ℝ) (hR : ∀ x ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0) : Symbol n V W m where
   coefficient := f
   contDiff_coefficient := hf
-  exists_bound K hK α β := by
-    -- At frequencies of norm `> R` every mixed derivative vanishes; on the compact set
-    -- `K ×ˢ closedBall 0 R` the continuous quotient of the derivative by the weight is bounded.
-    have hw : Continuous fun p : CoordinateSpace n × CoordinateSpace n =>
-        (1 + ‖p.2‖ ^ 2) ^ ((m - β.length) / 2) :=
-      (continuous_const.add (continuous_snd.norm.pow 2)).rpow_const fun p =>
-        Or.inl (by positivity : (0 : ℝ) < 1 + ‖p.2‖ ^ 2).ne'
-    have hKR := hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R)
-    obtain ⟨M, hM⟩ := hKR.exists_bound_of_continuousOn ((hf.mixedDeriv α β).continuous.norm.div hw
-      fun p => (rpow_weight_pos p.2 _).ne').continuousOn
-    refine ⟨max M 0, le_max_right _ _, fun x hx ξ => ?_⟩
-    rcases le_or_gt ‖ξ‖ R with hξ | hξ
-    · have h := (le_abs_self _).trans ((hM (x, ξ) ⟨hx, mem_closedBall_zero_iff.2 hξ⟩).trans
-        (le_max_left M 0))
-      rw [Pi.div_apply, div_le_iff₀ (rpow_weight_pos ξ _)] at h
-      exact h
-    · have hzero : (fun y => coordinateDeriv β (fun η => f (y, η)) ξ) = 0 := by
-        funext y
-        have hy : (fun η => f (y, η)) =ᶠ[nhds ξ] 0 :=
-          Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)
-            fun η hη => hR y η (le_of_lt hη)
-        rw [(hy.coordinateDeriv β).eq_of_nhds, coordinateDeriv_zero]
-        rfl
-      rw [mixedDeriv_def, hzero, coordinateDeriv_zero, Pi.zero_apply, norm_zero]
-      exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
+  exists_bound _ hK α β := exists_bound_of_forall_isCompact_eq_zero hf
+    (fun _ _ => ⟨R, fun x _ ξ hξ => hR x ξ hξ⟩) m hK α β
 
 @[simp]
 theorem coefficient_ofBoundedFrequencySupport
@@ -1371,37 +1386,9 @@ of norm at least some radius `R_K`. The radius may grow with `K`, as it does for
 change of frequency `L(x)`. -/
 theorem isSmoothing_of_forall_isCompact_coefficient_eq_zero {a : Symbol n V W m}
     (ha : ∀ K : Set (CoordinateSpace n), IsCompact K →
-      ∃ R, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) : a.IsSmoothing := by
-  refine isSmoothing_iff_forall_exists_bound.2 fun m' K hK α β => ?_
-  -- The radius is taken on the closed `1`-neighbourhood of `K`, so that the coefficient vanishes
-  -- on a neighbourhood of each `(x, ξ)` with `x ∈ K` and `‖ξ‖ > R`; on `K × closedBall 0 R` the
-  -- continuous quotient of the derivative by the weight is bounded.
-  obtain ⟨R, hR⟩ := ha _ (hK.cthickening (r := 1))
-  have hw : Continuous fun p : CoordinateSpace n × CoordinateSpace n =>
-      (1 + ‖p.2‖ ^ 2) ^ ((m' - β.length) / 2) :=
-    (continuous_const.add (continuous_snd.norm.pow 2)).rpow_const fun p =>
-      Or.inl (by positivity : (0 : ℝ) < 1 + ‖p.2‖ ^ 2).ne'
-  obtain ⟨M, hM⟩ := (hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R))
-    |>.exists_bound_of_continuousOn ((a.contDiff_coefficient.mixedDeriv α β).continuous.norm.div
-      hw fun p => (rpow_weight_pos p.2 _).ne').continuousOn
-  refine ⟨max M 0, le_max_right _ _, fun x hx ξ => ?_⟩
-  rcases le_or_gt ‖ξ‖ R with hξ | hξ
-  · have h := (le_abs_self _).trans ((hM (x, ξ) ⟨hx, mem_closedBall_zero_iff.2 hξ⟩).trans
-      (le_max_left M 0))
-    rw [Pi.div_apply, div_le_iff₀ (rpow_weight_pos ξ _)] at h
-    exact h
-  · have hzero : (fun y => coordinateDeriv β (fun η => a.coefficient (y, η)) ξ) =ᶠ[nhds x] 0 := by
-      filter_upwards [Metric.ball_mem_nhds x one_pos] with y hy
-      have hyK : y ∈ Metric.cthickening 1 K :=
-        Metric.thickening_subset_cthickening 1 K (Metric.mem_thickening_iff.2 ⟨x, hx, hy⟩)
-      have hy0 : (fun η => a.coefficient (y, η)) =ᶠ[nhds ξ] 0 :=
-        Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)
-          fun η hη => hR y hyK η (le_of_lt hη)
-      rw [(hy0.coordinateDeriv β).eq_of_nhds, coordinateDeriv_zero]
-      rfl
-    rw [mixedDeriv_def, (hzero.coordinateDeriv α).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply,
-      norm_zero]
-    exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
+      ∃ R, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) : a.IsSmoothing :=
+  isSmoothing_iff_forall_exists_bound.2 fun m' _ hK α β =>
+    exists_bound_of_forall_isCompact_eq_zero a.contDiff_coefficient ha m' hK α β
 
 /-- A symbol vanishing at every frequency of norm at least `R` is smoothing. -/
 theorem isSmoothing_of_coefficient_eq_zero {a : Symbol n V W m} (R : ℝ)

@@ -23,8 +23,10 @@ smoothness, with inverse `y ↦ a⁻¹ • (y - b)` (`Diffeomorph.smulAdd`). On 
 the affine changes of time `t ↦ a * t + b`.
 
 A diffeomorphism between normed spaces of nonzero smoothness is differentiable
-(`Diffeomorph.differentiable`), and its Fréchet derivative composed with that of its inverse
-is the identity (`Diffeomorph.fderiv_apply_fderiv_symm_apply`).
+(`Diffeomorph.differentiable`), and its Fréchet derivative composed with that of its inverse,
+in either order, is the identity (`Diffeomorph.fderiv_apply_fderiv_symm_apply`,
+`Diffeomorph.fderiv_comp_fderiv_symm`, `Diffeomorph.fderiv_symm_comp_fderiv`). The derivative of
+a composition of diffeomorphisms is given by the chain rule (`Diffeomorph.fderiv_trans`).
 -/
 
 public section
@@ -51,6 +53,25 @@ theorem fderiv_apply_fderiv_symm_apply (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(�
   -- Reduce the canonical tangent-space identifications, which act as the identity.
   change fderiv 𝕜 h (h.symm x) (fderiv 𝕜 h.symm (h (h.symm x)) v) = v at hid
   simpa only [h.apply_symm_apply] using hid
+
+/-- The derivative of the inverse of a normed-space diffeomorphism is a right inverse of its
+derivative. -/
+theorem fderiv_comp_fderiv_symm (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F) (hn : n ≠ 0) (y : F) :
+    (fderiv 𝕜 h (h.symm y)).comp (fderiv 𝕜 h.symm y) = ContinuousLinearMap.id 𝕜 F :=
+  ContinuousLinearMap.ext (h.fderiv_apply_fderiv_symm_apply hn y)
+
+/-- The derivative of the inverse of a normed-space diffeomorphism is a left inverse of its
+derivative. -/
+theorem fderiv_symm_comp_fderiv (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F) (hn : n ≠ 0) (x : E) :
+    (fderiv 𝕜 h.symm (h x)).comp (fderiv 𝕜 h x) = ContinuousLinearMap.id 𝕜 E :=
+  h.symm.fderiv_comp_fderiv_symm hn x
+
+/-- The chain rule for the composition of two normed-space diffeomorphisms. -/
+theorem fderiv_trans {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (h₁ : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F) (h₂ : F ≃ₘ^n⟮𝓘(𝕜, F), 𝓘(𝕜, G)⟯ G) (hn : n ≠ 0) (x : E) :
+    fderiv 𝕜 (h₁.trans h₂) x = (fderiv 𝕜 h₂ (h₁ x)).comp (fderiv 𝕜 h₁ x) := by
+  rw [coe_trans]
+  exact fderiv_comp x (h₂.differentiable hn _) (h₁.differentiable hn x)
 
 variable (𝕜 n) in
 /-- The map `x ↦ a - x` of a normed space, as a diffeomorphism. It is its own inverse

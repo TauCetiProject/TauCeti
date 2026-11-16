@@ -8,8 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
-import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Calculus.ContDiff.Adjoint
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import TauCeti.Geometry.Manifold.Diffeomorph.InnerProductSpace
 
 /-!
 # Pullback of symbols along diffeomorphisms
@@ -32,7 +33,7 @@ that the pullback preserves each class of symbols in the calculus:
   commutes with the inclusions of orders and with pointwise composition, and is functorial
   (`TauCeti.Symbol.pullback_refl`, `TauCeti.Symbol.pullback_trans`).
 * `TauCeti.HomogeneousSymbol.pullback`: a homogeneous symbol of degree `m` pulls back to one of
-  the same degree, on any finite-dimensional real inner product space; it is elliptic exactly when
+  the same degree, on any complete real inner product space; it is elliptic exactly when
   the original one is (`TauCeti.HomogeneousSymbol.isElliptic_pullback_iff`).
 * `TauCeti.ClassicalSymbol.pullback`: a classical symbol pulls back to a classical symbol whose
   homogeneous terms are the pullbacks of its terms. In particular **the principal symbol transforms
@@ -74,73 +75,6 @@ noncomputable section
 open scoped ContDiff Manifold RealInnerProductSpace
 
 namespace TauCeti
-
-/-! ### The cotangent map of a diffeomorphism -/
-
-section Cotangent
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-  (κ : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E)
-
-private theorem contDiff_adjoint {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {f : F → E →L[ℝ] E} (hf : ContDiff ℝ ∞ f) :
-    ContDiff ℝ ∞ fun y ↦ ContinuousLinearMap.adjoint (f y) :=
-  (ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := E) (F := E)).toContinuousLinearEquiv.contDiff.comp hf
-
-private theorem contDiff_adjoint_fderiv_symm :
-    ContDiff ℝ ∞ fun y ↦ ContinuousLinearMap.adjoint (fderiv ℝ κ.symm y) :=
-  contDiff_adjoint (κ.symm.contDiff.fderiv_right (m := ∞) le_rfl)
-
-private theorem contDiff_adjoint_fderiv_comp_symm :
-    ContDiff ℝ ∞ fun y ↦ ContinuousLinearMap.adjoint (fderiv ℝ κ (κ.symm y)) :=
-  contDiff_adjoint ((κ.contDiff.fderiv_right (m := ∞) le_rfl).comp κ.symm.contDiff)
-
-/-- The adjoint of `Dκ(κ⁻¹ y)` is a left inverse of the adjoint of `D(κ⁻¹)(y)`. -/
-private theorem adjoint_fderiv_comp_adjoint_fderiv_symm (y : E) :
-    (ContinuousLinearMap.adjoint (fderiv ℝ κ (κ.symm y))).comp
-      (ContinuousLinearMap.adjoint (fderiv ℝ κ.symm y)) = ContinuousLinearMap.id ℝ E := by
-  have h : (fderiv ℝ κ.symm y).comp (fderiv ℝ κ (κ.symm y)) = ContinuousLinearMap.id ℝ E := by
-    simpa using κ.toHomeomorph.toOpenPartialHomeomorph.fderiv_symm_comp_fderiv_of_mem_source
-      (Set.mem_univ (κ.symm y)) (κ.contDiff.differentiable (by simp) _)
-      (κ.symm.contDiff.differentiable (by simp) _)
-  rw [← ContinuousLinearMap.adjoint_comp, h, ContinuousLinearMap.adjoint_id]
-
-private theorem adjoint_fderiv_adjoint_fderiv_symm_apply (x ξ : E) :
-    ContinuousLinearMap.adjoint (fderiv ℝ κ x)
-      (ContinuousLinearMap.adjoint (fderiv ℝ κ.symm (κ x)) ξ) = ξ := by
-  simpa using congrArg (fun A ↦ A ξ) (adjoint_fderiv_comp_adjoint_fderiv_symm κ (κ x))
-
-/-- The adjoint of `Dκ(x)` is a right inverse of the cotangent map at `x`. -/
-private theorem adjoint_fderiv_symm_adjoint_fderiv_apply (x η : E) :
-    ContinuousLinearMap.adjoint (fderiv ℝ κ.symm (κ x))
-      (ContinuousLinearMap.adjoint (fderiv ℝ κ x) η) = η := by
-  have h : (fderiv ℝ κ x).comp (fderiv ℝ κ.symm (κ x)) = ContinuousLinearMap.id ℝ E := by
-    simpa using κ.toHomeomorph.toOpenPartialHomeomorph.fderiv_comp_fderiv_symm_of_mem_source
-      (Set.mem_univ x) (κ.contDiff.differentiable (by simp) x)
-      (κ.symm.contDiff.differentiable (by simp) (κ x))
-  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp, h,
-    ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
-
-/-- The cotangent map is injective: it has a left inverse. -/
-private theorem adjoint_fderiv_symm_apply_ne_zero {x ξ : E} (hξ : ξ ≠ 0) :
-    ContinuousLinearMap.adjoint (fderiv ℝ κ.symm (κ x)) ξ ≠ 0 := fun h ↦
-  hξ (by simpa [h] using (adjoint_fderiv_adjoint_fderiv_symm_apply κ x ξ).symm)
-
-/-- The cotangent map of `κ₂ ∘ κ₁` at `x` is the cotangent map of `κ₂` at `κ₁ x` composed with
-that of `κ₁` at `x`. -/
-private theorem adjoint_fderiv_trans_symm (κ₁ κ₂ : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E) (x : E) :
-    ContinuousLinearMap.adjoint (fderiv ℝ (κ₁.trans κ₂).symm ((κ₁.trans κ₂) x)) =
-      (ContinuousLinearMap.adjoint (fderiv ℝ κ₂.symm (κ₂ (κ₁ x)))).comp
-        (ContinuousLinearMap.adjoint (fderiv ℝ κ₁.symm (κ₁ x))) := by
-  have h₁ := (κ₁.symm.contDiff.differentiable (by simp) (κ₁ x)).hasFDerivAt
-  have h₂ := (κ₂.symm.contDiff.differentiable (by simp) (κ₂ (κ₁ x))).hasFDerivAt
-  rw [← κ₂.symm_apply_apply (κ₁ x)] at h₁
-  have h := h₁.comp _ h₂
-  rw [κ₂.symm_apply_apply] at h
-  rw [Diffeomorph.symm_trans', Diffeomorph.coe_trans, Diffeomorph.coe_trans, Function.comp_apply,
-    h.fderiv, ContinuousLinearMap.adjoint_comp]
-
-end Cotangent
 
 namespace Symbol
 
@@ -194,10 +128,7 @@ private theorem exists_norm_mixedDeriv_le_of_deriv_eq
       have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
           coordinateDeriv [j] (fun η ↦ F a (q.1, η)) q.2) = F (T j a) :=
         funext fun q ↦ hT a j q.1 q.2
-      have e : (m - 1 - β'.length) / 2 = (m - (β' ++ [j]).length) / 2 := by
-        simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
-        ring
-      rw [← mixedDeriv_coordinateDeriv_snd, hfun, ← e]
+      rw [← mixedDeriv_coordinateDeriv_snd, hfun, ← order_sub_one_sub_length]
       exact hC x hx ξ
 
 /-! ### Two auxiliary operations -/
@@ -393,8 +324,9 @@ of the symbol of the transported operator `u ↦ P (u ∘ κ⁻¹) ∘ κ`; the 
 principal symbol (`TauCeti.ClassicalSymbol.principal_pullback`) is the case of homogeneous
 terms. -/
 def pullback : Symbol n V W m →ₗ[ℂ] Symbol n V W m where
-  toFun a := pullbackCore κ (contDiff_adjoint_fderiv_symm κ)
-    (contDiff_adjoint_fderiv_comp_symm κ) (adjoint_fderiv_comp_adjoint_fderiv_symm κ) a
+  toFun a := pullbackCore κ (κ.contDiff_adjoint_fderiv_symm le_rfl)
+    (κ.contDiff_adjoint_fderiv_comp_symm le_rfl)
+    (κ.adjoint_fderiv_comp_adjoint_fderiv_symm (by simp)) a
   map_add' _ _ := Symbol.ext (funext fun _ ↦ by simp [pullbackCore, coreCoeff])
   map_smul' _ _ := Symbol.ext (funext fun _ ↦ by simp [pullbackCore, coreCoeff])
 
@@ -428,7 +360,7 @@ theorem pullback_trans
       CoordinateSpace n) (a : Symbol n V W m) :
     pullback (κ₁.trans κ₂) a = pullback κ₁ (pullback κ₂ a) :=
   Symbol.ext (funext fun p ↦ by
-    rw [coefficient_pullback, adjoint_fderiv_trans_symm]
+    rw [coefficient_pullback, Diffeomorph.adjoint_fderiv_trans_symm _ _ (by simp)]
     simp [Diffeomorph.coe_trans])
 
 theorem HasCompactSpatialSupport.pullback {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport) :
@@ -463,9 +395,9 @@ def pullback : HomogeneousSymbol E E V W m →ₗ[ℂ] HomogeneousSymbol E E V W
         a.coefficient (κ p.1, ContinuousLinearMap.adjoint (fderiv ℝ κ.symm (κ p.1)) p.2)
       zero_covector x := by simp
       contDiffOn_coefficient := a.contDiffOn_coefficient.comp
-        ((κ.contDiff.comp contDiff_fst).prodMk (((contDiff_adjoint_fderiv_symm κ).comp
+        ((κ.contDiff.comp contDiff_fst).prodMk (((κ.contDiff_adjoint_fderiv_symm le_rfl).comp
           (κ.contDiff.comp contDiff_fst)).clm_apply contDiff_snd)).contDiffOn
-        fun _ hp ↦ adjoint_fderiv_symm_apply_ne_zero κ hp
+        fun _ hp ↦ κ.adjoint_fderiv_symm_apply_ne_zero (by simp) hp
       homogeneous x ξ t ht := by simp [a.homogeneous _ _ t ht] }
   map_add' _ _ := HomogeneousSymbol.ext (funext fun _ ↦ by simp)
   map_smul' _ _ := HomogeneousSymbol.ext (funext fun _ ↦ by simp)
@@ -497,7 +429,7 @@ theorem pullback_refl (a : HomogeneousSymbol E E V W m) :
 theorem pullback_trans (κ₁ κ₂ : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E) (a : HomogeneousSymbol E E V W m) :
     pullback (κ₁.trans κ₂) a = pullback κ₁ (pullback κ₂ a) :=
   HomogeneousSymbol.ext (funext fun p ↦ by
-    rw [coefficient_pullback, adjoint_fderiv_trans_symm]
+    rw [coefficient_pullback, Diffeomorph.adjoint_fderiv_trans_symm _ _ (by simp)]
     simp [Diffeomorph.coe_trans])
 
 /-- A homogeneous symbol is elliptic exactly when its pullback along a diffeomorphism is: the
@@ -506,12 +438,13 @@ cotangent map of `κ` is a bijection of the nonzero covectors over each point. -
 theorem isElliptic_pullback_iff {a : HomogeneousSymbol E E V W m} :
     (pullback κ a).IsElliptic ↔ a.IsElliptic := by
   simp only [isElliptic_iff, coefficient_pullback]
-  refine ⟨fun h y η hη ↦ ?_, fun h x ξ hξ ↦ h _ _ (adjoint_fderiv_symm_apply_ne_zero κ hξ)⟩
+  refine ⟨fun h y η hη ↦ ?_, fun h x ξ hξ ↦
+    h _ _ (κ.adjoint_fderiv_symm_apply_ne_zero (by simp) hξ)⟩
   -- Write `y = κ x` and `η` as the image of `ξ = Dκ(x)ᵀ η` under the cotangent map at `x`.
   obtain ⟨x, rfl⟩ : ∃ x, κ x = y := ⟨κ.symm y, κ.apply_symm_apply y⟩
   have hξ : ContinuousLinearMap.adjoint (fderiv ℝ κ x) η ≠ 0 := fun h0 ↦
-    hη (by simpa [h0] using (adjoint_fderiv_symm_adjoint_fderiv_apply κ x η).symm)
-  simpa [adjoint_fderiv_symm_adjoint_fderiv_apply] using h x _ hξ
+    hη (by simpa [h0] using (κ.adjoint_fderiv_symm_adjoint_fderiv_apply (by simp) x η).symm)
+  simpa using h x _ hξ
 
 end HomogeneousSymbol
 
@@ -532,7 +465,7 @@ private theorem isSmoothing_pullback_cutoffSymbol_sub (χ : FrequencyCutoff (Coo
       cutoffSymbol χ (HomogeneousSymbol.pullback κ h)).IsSmoothing := by
   refine Symbol.isSmoothing_of_forall_isCompact_coefficient_eq_zero fun K hK ↦ ?_
   obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn
-    (contDiff_adjoint (κ.contDiff.fderiv_right (m := ∞) le_rfl)).continuous.norm.continuousOn
+    (κ.contDiff.fderiv_right (m := ∞) le_rfl).adjoint.continuous.norm.continuousOn
   set c := max B 1
   have hc : 0 < c := lt_of_lt_of_le one_pos (le_max_right _ _)
   refine ⟨2 * c, fun x hx ξ hξ ↦ ?_⟩
@@ -541,7 +474,7 @@ private theorem isSmoothing_pullback_cutoffSymbol_sub (χ : FrequencyCutoff (Coo
     (by simpa using hB x hx : _ ≤ B).trans (le_max_left _ _)
   have hξη : ‖ξ‖ ≤ c * ‖η‖ :=
     calc ‖ξ‖ = ‖ContinuousLinearMap.adjoint (fderiv ℝ κ x) η‖ := by
-          rw [adjoint_fderiv_adjoint_fderiv_symm_apply]
+          rw [κ.adjoint_fderiv_adjoint_fderiv_symm_apply (by simp)]
       _ ≤ ‖ContinuousLinearMap.adjoint (fderiv ℝ κ x)‖ * ‖η‖ := ContinuousLinearMap.le_opNorm _ _
       _ ≤ c * ‖η‖ := mul_le_mul_of_nonneg_right hBx (norm_nonneg _)
   have h2ξ : 2 ≤ ‖ξ‖ := le_trans (by linarith [le_max_right B 1]) hξ
@@ -607,6 +540,16 @@ theorem pullback_comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m'
     (b : ClassicalSymbol n W U m') (a : ClassicalSymbol n V W m) :
     pullback κ (b.comp a) = (pullback κ b).comp (pullback κ a) :=
   ClassicalSymbol.ext (by simp [toSymbol_comp, Symbol.pullback_comp])
+
+@[simp]
+theorem pullback_inclusion {m' : ℝ} (k : ℕ) (hk : m' = m - k) (b : ClassicalSymbol n V W m') :
+    pullback κ (inclusion k hk b) = inclusion k hk (pullback κ b) :=
+  ClassicalSymbol.ext (by simp)
+
+@[simp]
+theorem pullback_ofIsSmoothing (a : Symbol n V W m) (ha : a.IsSmoothing) :
+    pullback κ (ofIsSmoothing a ha) = ofIsSmoothing (Symbol.pullback κ a) ha.pullback :=
+  ClassicalSymbol.ext (by simp)
 
 /-- **The principal symbol transforms by the cotangent map**: the principal symbol of the pullback
 of a classical symbol along `κ` is `σ(a)(κ x, (Dκ(x)ᵀ)⁻¹ ξ)`. -/
