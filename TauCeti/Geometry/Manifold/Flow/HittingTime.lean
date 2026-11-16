@@ -205,23 +205,6 @@ theorem eventually_eq_flowHittingTime_iff :
   rw [flowHittingTime_of_hittingData h, eq_comm (a := x.1)]
   exact hx
 
-/-- **The flow at the hitting time lands in the section.** For every `z` near `p`, the flow is
-defined at the hitting time of `z` and carries `z` into the level of `g` through
-`flowOf v T p`. -/
-theorem eventually_flowHittingTime :
-    ∀ᶠ z in 𝓝 p, (flowHittingTime v g T p z, z) ∈ flowDomain v ∧
-      g (flowOf v (flowHittingTime v g T p z) z) = g (flowOf v T p) := by
-  have h : HittingData v g T p := ⟨hv, hT, hg, hgv⟩
-  have hτ : ContinuousAt (flowHittingTime v g T p) p := by
-    rw [flowHittingTime_of_hittingData h]
-    exact ((contDiffAt_chartLevel le_rfl hv hT hg).contDiffAt_implicitFunction one_ne_zero
-      (isInvertible_fderiv_chartLevel h)).continuousAt.comp_of_eq (continuousAt_extChartAt p) rfl
-  have hcont : Tendsto (fun z ↦ (flowHittingTime v g T p z, z)) (𝓝 p) (𝓝 (T, p)) := by
-    simpa only [flowHittingTime_self, id_eq] using (hτ.prodMk continuousAt_id).tendsto
-  filter_upwards [hcont.eventually ((isOpen_flowDomain hv).mem_nhds hT),
-    hcont.eventually (eventually_eq_flowHittingTime_iff hv hT hg hgv)] with z hz hz'
-  exact ⟨hz, hz'.2 rfl⟩
-
 /-- **Uniqueness of the hitting time.** A function `τ`, continuous at `p` with `τ p = T`, whose
 flow carries every point near `p` into the level of `g` through `flowOf v T p`, agrees with the
 hitting time near `p`. -/
@@ -288,6 +271,24 @@ theorem continuousAt_flowHittingTime : ContinuousAt (flowHittingTime v g T p) p 
   by_cases h : HittingData v g T p
   · exact (contMDiffAt_flowHittingTime le_rfl h.1 h.2.1 h.2.2.1 h.2.2.2).continuousAt
   · simpa only [flowHittingTime, h, dite_false] using continuousAt_const
+
+omit hv hT hg hgv in
+/-- Pairing the hitting time with the base point tends to `(T, p)` at `p`. -/
+theorem tendsto_flowHittingTime_prodMk :
+    Tendsto (fun z ↦ (flowHittingTime v g T p z, z)) (𝓝 p) (𝓝 (T, p)) := by
+  simpa only [flowHittingTime_self, id_eq] using
+    ((continuousAt_flowHittingTime (I := I) (v := v) (g := g)).prodMk continuousAt_id).tendsto
+
+/-- **The flow at the hitting time lands in the section.** For every `z` near `p`, the flow is
+defined at the hitting time of `z` and carries `z` into the level of `g` through
+`flowOf v T p`. -/
+theorem eventually_flowHittingTime :
+    ∀ᶠ z in 𝓝 p, (flowHittingTime v g T p z, z) ∈ flowDomain v ∧
+      g (flowOf v (flowHittingTime v g T p z) z) = g (flowOf v T p) := by
+  have hτ := tendsto_flowHittingTime_prodMk (I := I) (v := v) (g := g) (T := T) (p := p)
+  filter_upwards [hτ.eventually ((isOpen_flowDomain hv).mem_nhds hT),
+    hτ.eventually (eventually_eq_flowHittingTime_iff hv hT hg hgv)] with z hz hz'
+  exact ⟨hz, hz'.2 rfl⟩
 
 /-- The transition to a transverse section is continuous at `p`. -/
 theorem continuousAt_flowTransition : ContinuousAt (flowTransition v g T p) p :=

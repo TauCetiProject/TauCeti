@@ -156,12 +156,10 @@ theorem flowHittingTime_eventuallyEq_of_eqOn :
   have hflow := eventually_flowOf_eq_of_eqOn hw hv hU hvw hT hTU
   obtain ⟨hTw, hpw⟩ := hflow.self_of_nhds
   have hwq : w (flowOf v T p) = v (flowOf v T p) := hvw (hTU right_mem_uIcc)
-  have hτ : Tendsto (fun z ↦ (flowHittingTime v g T p z, z)) (𝓝 p) (𝓝 (T, p)) := by
-    simpa only [flowHittingTime_self, id_eq] using
-      ((continuousAt_flowHittingTime (I := I) (v := v) (g := g)).prodMk continuousAt_id).tendsto
   refine (eventuallyEq_flowHittingTime hw hTw (by rwa [hpw]) (by rwa [hpw, hwq])
     continuousAt_flowHittingTime (flowHittingTime_self ..) ?_).symm
-  filter_upwards [eventually_flowHittingTime hv hT hg hgv, hτ.eventually hflow] with z hz hzw
+  filter_upwards [eventually_flowHittingTime hv hT hg hgv,
+    (tendsto_flowHittingTime_prodMk (I := I) (v := v) (g := g)).eventually hflow] with z hz hzw
   rw [hzw.2, hz.2, hpw]
 
 /-- **Transitions depend only on the field near the trajectory.** If `w` agrees with `v` on an
@@ -169,11 +167,9 @@ open set containing the trajectory of `p` under `v` from time `0` to time `T`, t
 transitions to a section through `flowOf v T p` transverse to `v` agree near `p`. -/
 theorem flowTransition_eventuallyEq_of_eqOn :
     flowTransition w g T p =ᶠ[𝓝 p] flowTransition v g T p := by
-  have hτ : Tendsto (fun z ↦ (flowHittingTime v g T p z, z)) (𝓝 p) (𝓝 (T, p)) := by
-    simpa only [flowHittingTime_self, id_eq] using
-      ((continuousAt_flowHittingTime (I := I) (v := v) (g := g)).prodMk continuousAt_id).tendsto
   filter_upwards [flowHittingTime_eventuallyEq_of_eqOn hw hv hU hvw hT hTU hg hgv,
-    hτ.eventually (eventually_flowOf_eq_of_eqOn hw hv hU hvw hT hTU)] with z hz hzw
+    (tendsto_flowHittingTime_prodMk (I := I) (v := v) (g := g)).eventually
+      (eventually_flowOf_eq_of_eqOn hw hv hU hvw hT hTU)] with z hz hzw
   rw [flowTransition_apply, flowTransition_apply, hz]
   exact hzw.2
 
