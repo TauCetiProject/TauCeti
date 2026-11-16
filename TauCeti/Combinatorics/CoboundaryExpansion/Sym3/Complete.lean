@@ -19,11 +19,10 @@ For every finite linearly ordered `V` with `4 ≤ Fintype.card V`:
 * `h1_complete_movedNorm_fin_three`: `h1 (complete V) (movedNorm (Fin 3)) = card V / 3`;
 * `h1Norm_complete_movedNorm_fin_three`: in the normalized convention the value is
   `card V / (card V - 2)`;
-* `h1Sym_complete`: the infimum `h1Sym (complete V)` over all degrees `≥ 2` is `card V / 3`;
 * `h1_complete_fin_four`: the seed value `h1 (complete (Fin 4)) (movedNorm (Fin 3)) = 4 / 3`.
 
-The lower bounds are the star bound `card_div_three_le_h1_of_nontrivial` and
-`card_div_three_le_h1Sym`. For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with
+The lower bound is the star bound `card_div_three_le_h1_of_nontrivial`.
+For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with
 `t, q ≥ 1`. The seeds are the `k = 4` witness `Sym3.w4` (defect `8`, every gauge costs at least
 `6`, checked by `decide +kernel`) and Kozlov's staircase `Sym3.stair (2 t + 1)` (defect
 `t (t + 1) (2 t + 1) / 3`, every gauge costs at least `t (t + 1)`). Balanced replication multiplies
@@ -128,14 +127,6 @@ theorem h1Norm_complete_movedNorm_fin_three (hV : 4 ≤ Fintype.card V) :
   rw [h1Norm_complete (by omega), h1_complete_movedNorm_fin_three hV]
   field_simp
 
-/-- The infimum of the same-degree constants over all degrees `≥ 2` is `k/3`: every degree is
-bounded below by the star bound and degree `3` attains it. -/
-theorem h1Sym_complete (hV : 4 ≤ Fintype.card V) :
-    h1Sym (complete V) = (Fintype.card V : ℝ) / 3 :=
-  le_antisymm ((h1Sym_le_h1_movedNorm _ (by norm_num : 2 ≤ 3)).trans_eq
-    (h1_complete_movedNorm_fin_three hV)) (card_div_three_le_h1Sym (by omega))
-
-/-- The seed value (Beasley, Theorem 4 at `k = 4`): `h₁(K_4) = 4/3`. -/
 theorem h1_complete_fin_four : h1 (complete (Fin 4)) (movedNorm (Fin 3)) = 4 / 3 := by
   simpa using h1_complete_movedNorm_fin_three (V := Fin 4) (by simp)
 
