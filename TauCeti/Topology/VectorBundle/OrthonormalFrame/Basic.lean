@@ -102,7 +102,8 @@ space of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
 * D. Husemoller, *Fibre Bundles*, third edition, Graduate Texts in Mathematics 20, Springer
   (1994), Chapter 4 (principal bundles and their associated fibre bundles) and Chapter 5, §§4–5
   (the principal bundle of orthonormal frames).
-* The dimension-free properness generalization draws on
+* Properness of the projection without a model-fibre dimension hypothesis
+  (`TauCeti.OrthonormalFrameBundle.isProperMap_proj`) draws on
   [lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions) and
   [PoincareConjecture](https://github.com/frenzymath/PoincareConjecture).
 -/
