@@ -21,6 +21,9 @@ its trace is the sum of the diagonal entries of `T` along that basis.
   compression of `T` to `W` is its diagonal sum along an orthonormal basis of `W`.
 * `LinearMap.re_trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_re_inner`: the same
   identity for real parts, written with the diagonal entries `re ⟪T bᵢ, bᵢ⟫`.
+* `LinearMap.forall_orthonormal_iff_forall_re_trace`: a condition on the diagonal sums of `T`
+  along all orthonormal families of `k` vectors is the same condition on the real parts of the
+  traces of its compressions to all `k`-dimensional subspaces.
 -/
 
 public section
@@ -55,5 +58,28 @@ theorem re_trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_re_inner (T :
       ∑ i, RCLike.re ⟪T (b i), b i⟫ := by
   rw [trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_inner T W b, map_sum]
   exact sum_congr rfl fun i _ ↦ inner_re_symm _ _
+
+/-- A condition on the diagonal sums of `T` along all orthonormal families of `k` vectors is the
+same condition on the real parts of the traces of the compressions of `T` to all `k`-dimensional
+subspaces. -/
+theorem forall_orthonormal_iff_forall_re_trace (T : E →ₗ[𝕜] E) {k : ℕ} (P : ℝ → Prop) :
+    (∀ w : Fin k → E, Orthonormal 𝕜 w → P (∑ i, RCLike.re ⟪T (w i), w i⟫)) ↔
+      ∀ (W : Submodule 𝕜 E) [FiniteDimensional 𝕜 W], finrank 𝕜 W = k →
+        P (RCLike.re (trace 𝕜 W ((W.orthogonalProjectionOnto : E →ₗ[𝕜] W) ∘ₗ T ∘ₗ W.subtype))) := by
+  refine ⟨fun h W _ hW ↦ ?_, fun h w hw ↦ ?_⟩
+  · let b := (stdOrthonormalBasis 𝕜 W).reindex (finCongr hW)
+    rw [re_trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_re_inner T W b]
+    exact h _ (b.orthonormal.comp_linearIsometry W.subtypeₗᵢ)
+  · -- Test the hypothesis on the span of `w`, with the orthonormal basis given by `w`.
+    set W := Submodule.span 𝕜 (Set.range w)
+    have : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range w)
+    have hli := hw.linearIndependent
+    let b : OrthonormalBasis (Fin k) 𝕜 W := (Basis.span hli).toOrthonormalBasis (by
+      convert orthonormal_span hw
+      simp [Basis.span_apply])
+    have hb (i : Fin k) : (b i : E) = w i := by simp [b, Basis.span_apply]
+    have := h W ((finrank_span_eq_card hli).trans (Fintype.card_fin k))
+    simpa [re_trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_re_inner T W b, hb]
+      using this
 
 end LinearMap

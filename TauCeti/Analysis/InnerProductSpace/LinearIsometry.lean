@@ -63,6 +63,9 @@ diffeomorphisms.
   extension if and only if it agrees with it on the unit vector and its orthogonal complement.
 * `LinearIsometryEquiv.inner_toLinearEquiv_conj_apply`: the matrix entries of an operator
   conjugated by a linear isometry equivalence.
+* `LinearIsometryEquiv.forall_orthonormal_conj_iff`: a condition on the diagonal sums of an
+  operator along all orthonormal families of `k` vectors is invariant under conjugation by a
+  linear isometry equivalence.
 * `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
   isometries of a finite-dimensional space form a smooth family.
 -/
@@ -226,6 +229,16 @@ matrix entries of the operator at the pulled-back vectors. -/
 theorem inner_toLinearEquiv_conj_apply (U : E ≃ₗᵢ[𝕜] F) (T : E →ₗ[𝕜] E) (a b : F) :
     ⟪U.toLinearEquiv.conj T a, b⟫_𝕜 = ⟪T (U.symm a), U.symm b⟫_𝕜 := by
   simp [LinearEquiv.conj_apply_apply, U.inner_map_eq_flip]
+
+/-- A condition on the diagonal sums along all orthonormal families of `k` vectors holds for the
+conjugate of `T` by a linear isometry equivalence `U` exactly when it holds for `T`. -/
+theorem forall_orthonormal_conj_iff (U : E ≃ₗᵢ[𝕜] F) {T : E →ₗ[𝕜] E} {k : ℕ} (P : ℝ → Prop) :
+    (∀ w : Fin k → F, Orthonormal 𝕜 w →
+        P (∑ i, RCLike.re ⟪U.toLinearEquiv.conj T (w i), w i⟫_𝕜)) ↔
+      ∀ w : Fin k → E, Orthonormal 𝕜 w → P (∑ i, RCLike.re ⟪T (w i), w i⟫_𝕜) := by
+  simp only [U.inner_toLinearEquiv_conj_apply]
+  refine ⟨fun h w hw ↦ ?_, fun h w hw ↦ h _ (hw.comp_linearIsometryEquiv U.symm)⟩
+  simpa using h _ (hw.comp_linearIsometryEquiv U)
 
 end LinearIsometryEquiv
 

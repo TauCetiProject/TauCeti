@@ -232,65 +232,33 @@ theorem IsKNonneg.smul (hT : T.IsKNonneg k) {c : ℝ} (hc : 0 ≤ c) : ((c : �
 theorem IsKPos.smul (hT : T.IsKPos k) {c : ℝ} (hc : 0 < c) : ((c : 𝕜) • T).IsKPos k :=
   fun w hw ↦ by simpa [inner_smul_left, ← mul_sum] using mul_pos hc (hT w hw)
 
-/-- A condition on the diagonal sums along all orthonormal families of `k` vectors holds for the
-conjugate of `T` by a linear isometry equivalence exactly when it holds for `T`. -/
-private theorem forall_orthonormal_conj_iff (P : ℝ → Prop) (U : E ≃ₗᵢ[𝕜] F) :
-    (∀ w : Fin k → F, Orthonormal 𝕜 w →
-        P (∑ i, RCLike.re ⟪U.toLinearEquiv.conj T (w i), w i⟫)) ↔
-      ∀ w : Fin k → E, Orthonormal 𝕜 w → P (∑ i, RCLike.re ⟪T (w i), w i⟫) := by
-  simp only [U.inner_toLinearEquiv_conj_apply]
-  refine ⟨fun h w hw ↦ ?_, fun h w hw ↦ h _ (hw.comp_linearIsometryEquiv U.symm)⟩
-  simpa using h _ (hw.comp_linearIsometryEquiv U)
-
 /-- Conjugating by a linear isometry equivalence preserves `k`-nonnegativity. -/
 @[simp]
 theorem isKNonneg_conj_iff (U : E ≃ₗᵢ[𝕜] F) :
     (U.toLinearEquiv.conj T).IsKNonneg k ↔ T.IsKNonneg k :=
-  forall_orthonormal_conj_iff (0 ≤ ·) U
+  U.forall_orthonormal_conj_iff (0 ≤ ·)
 
 /-- Conjugating by a linear isometry equivalence preserves `k`-positivity. -/
 @[simp]
 theorem isKPos_conj_iff (U : E ≃ₗᵢ[𝕜] F) :
     (U.toLinearEquiv.conj T).IsKPos k ↔ T.IsKPos k :=
-  forall_orthonormal_conj_iff (0 < ·) U
+  U.forall_orthonormal_conj_iff (0 < ·)
 
 /-! ### Traces of compressions -/
-
-/-- A condition on the diagonal sums of `T` along all orthonormal families of `k` vectors is the
-same condition on the traces of the compressions of `T` to all `k`-dimensional subspaces. -/
-private theorem forall_orthonormal_iff_forall_re_trace (P : ℝ → Prop) :
-    (∀ w : Fin k → E, Orthonormal 𝕜 w → P (∑ i, RCLike.re ⟪T (w i), w i⟫)) ↔
-      ∀ (W : Submodule 𝕜 E) [FiniteDimensional 𝕜 W], finrank 𝕜 W = k →
-        P (RCLike.re (trace 𝕜 W ((W.orthogonalProjectionOnto : E →ₗ[𝕜] W) ∘ₗ T ∘ₗ W.subtype))) := by
-  refine ⟨fun h W _ hW ↦ ?_, fun h w hw ↦ ?_⟩
-  · let b := (stdOrthonormalBasis 𝕜 W).reindex (finCongr hW)
-    rw [re_trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_re_inner T W b]
-    exact h _ (b.orthonormal.comp_linearIsometry W.subtypeₗᵢ)
-  · -- Test the hypothesis on the span of `w`, with the orthonormal basis given by `w`.
-    set W := Submodule.span 𝕜 (Set.range w)
-    have : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range w)
-    have hli := hw.linearIndependent
-    let b : OrthonormalBasis (Fin k) 𝕜 W := (Basis.span hli).toOrthonormalBasis (by
-      convert orthonormal_span hw
-      simp [Basis.span_apply])
-    have hb (i : Fin k) : (b i : E) = w i := by simp [b, Basis.span_apply]
-    have := h W ((finrank_span_eq_card hli).trans (Fintype.card_fin k))
-    simpa [re_trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_re_inner T W b, hb]
-      using this
 
 /-- `T` is `k`-nonnegative exactly when its compression to every `k`-dimensional subspace has
 trace with nonnegative real part. -/
 theorem isKNonneg_iff_forall_re_trace_nonneg :
     T.IsKNonneg k ↔ ∀ (W : Submodule 𝕜 E) [FiniteDimensional 𝕜 W], finrank 𝕜 W = k →
       0 ≤ RCLike.re (trace 𝕜 W ((W.orthogonalProjectionOnto : E →ₗ[𝕜] W) ∘ₗ T ∘ₗ W.subtype)) :=
-  forall_orthonormal_iff_forall_re_trace (0 ≤ ·)
+  T.forall_orthonormal_iff_forall_re_trace (0 ≤ ·)
 
 /-- `T` is `k`-positive exactly when its compression to every `k`-dimensional subspace has trace
 with positive real part. -/
 theorem isKPos_iff_forall_re_trace_pos :
     T.IsKPos k ↔ ∀ (W : Submodule 𝕜 E) [FiniteDimensional 𝕜 W], finrank 𝕜 W = k →
       0 < RCLike.re (trace 𝕜 W ((W.orthogonalProjectionOnto : E →ₗ[𝕜] W) ∘ₗ T ∘ₗ W.subtype)) :=
-  forall_orthonormal_iff_forall_re_trace (0 < ·)
+  T.forall_orthonormal_iff_forall_re_trace (0 < ·)
 
 /-! ### Eigenvalues -/
 
