@@ -29,9 +29,10 @@ Its underlying rough form is the existing `TauCeti.mpullback`. Restriction to an
 not change the values of a smooth form (`TauCeti.SmoothForm.coe_mpullback_subtype_val_apply`).
 A product map `Prod.map f g` pulls a form pulled back from either factor back through the
 corresponding component (`TauCeti.SmoothForm.mpullback_prodMap_mpullback_fst`,
-`TauCeti.SmoothForm.mpullback_prodMap_mpullback_snd`). Pullback along a smooth map with a
-smooth right inverse, such as a vector bundle projection, is injective. The diffeomorphisms of `M`
-preserving a smooth form form a subgroup of the diffeomorphism group, its stabilizer
+`TauCeti.SmoothForm.mpullback_prodMap_mpullback_snd`), and so the wedge of two such forms
+(`TauCeti.SmoothForm.mpullback_prodMap_wedge_mpullback_fst_snd`). Pullback along a smooth map
+with a smooth right inverse, such as a vector bundle projection, is injective. The diffeomorphisms
+of `M` preserving a smooth form form a subgroup of the diffeomorphism group, its stabilizer
 (`TauCeti.SmoothForm.diffeomorphStabilizer`).
 
 Conversely, regularity descends along a local section: if `s` is a `C^n` local section of `f`
@@ -615,6 +616,19 @@ theorem mpullback_wedge (f : M → M') (hf : ContMDiff I I' ∞ f)
       SmoothForm.wedge (mpullback (k := k) f hf φ) (mpullback (k := l) f hf ψ) := by
   simpa only [SmoothForm.wedge_def] using
     mpullback_wedgeWith (ContinuousLinearMap.mul ℝ ℝ) f hf φ ψ
+
+/-- A product map `Prod.map f g` pulls the wedge of a form pulled back from the first factor and a
+form pulled back from the second factor back to the wedge of their pullbacks along `f` and `g`. -/
+@[simp]
+theorem mpullback_prodMap_wedge_mpullback_fst_snd {f : M → M''} {g : M' → M'''}
+    (hf : ContMDiff I I'' ∞ f) (hg : ContMDiff I' I''' ∞ g) (α : SmoothForm I'' M'' ℝ k)
+    (β : SmoothForm I''' M''' ℝ l) :
+    mpullback (k := k + l) (Prod.map f g) (hf.prodMap hg)
+        (SmoothForm.wedge (mpullback Prod.fst contMDiff_fst α)
+          (mpullback Prod.snd contMDiff_snd β)) =
+      SmoothForm.wedge (mpullback Prod.fst contMDiff_fst (mpullback f hf α))
+        (mpullback Prod.snd contMDiff_snd (mpullback g hg β)) := by
+  rw [mpullback_wedge, mpullback_prodMap_mpullback_fst hf hg, mpullback_prodMap_mpullback_snd hf hg]
 
 end SmoothForm
 

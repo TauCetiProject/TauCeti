@@ -80,27 +80,13 @@ theorem mpullback_prodMap_iterateMap_suspensionForm :
         SmoothForm.mpullback Prod.snd contMDiff_snd
           (fiberForm (φ ^ k) σ (SmoothForm.mpullback_zpow_eq_self hσ k)) := by
   have hm := contMDiff_iterateMap φ k
-  have hds : SmoothForm.mpullback (Prod.map id (iterateMap φ k)) (contMDiff_id.prodMap hm)
-      (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1)) =
-        SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1) := by
-    rw [SmoothForm.mpullback_prodMap_mpullback_fst contMDiff_id hm, SmoothForm.mpullback_id,
-      LinearMap.id_apply]
-  have hdt : SmoothForm.mpullback (Prod.map id (iterateMap φ k)) (contMDiff_id.prodMap hm)
-      (SmoothForm.mpullback (I := 𝓘(ℝ).prod (𝓘(ℝ).prod I))
-        (Prod.snd : UnitAddCircle × SmoothMappingTorus φ → SmoothMappingTorus φ) contMDiff_snd
-        (timeForm φ)) =
-        (k : ℝ) • SmoothForm.mpullback (I := 𝓘(ℝ).prod (𝓘(ℝ).prod I))
-          (Prod.snd : UnitAddCircle × SmoothMappingTorus (φ ^ k) → SmoothMappingTorus (φ ^ k))
-          contMDiff_snd (timeForm (φ ^ k)) := by
-    rw [SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id hm, mpullback_iterateMap_timeForm,
-      map_smul]
   -- `rw [map_add]` is slow here: the wedge `ds ∧ dt` has degree `1 + 1`, while `Ω` has degree `2`.
   refine (congrArg _ suspensionForm_def).trans ((map_add _ _ _).trans (congrArg₂ (· + ·) ?_
     (by rw [SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id hm,
       mpullback_iterateMap_fiberForm])))
-  refine (SmoothForm.mpullback_wedge (k := 1) (l := 1) (Prod.map id (iterateMap φ k))
-    (contMDiff_id.prodMap hm) _ _).trans ?_
-  exact (congrArg₂ (fun α β ↦ SmoothForm.wedge α β) hds hdt).trans (map_smul _ _ _)
+  refine (SmoothForm.mpullback_prodMap_wedge_mpullback_fst_snd (k := 1) (l := 1) contMDiff_id hm
+    _ _).trans ?_
+  simp only [SmoothForm.mpullback_id, LinearMap.id_apply, mpullback_iterateMap_timeForm, map_smul]
 
 /-- For a nonzero integer `k`, the form `ds ∧ k dt + σ_v` on `(ℝ / ℤ) × Y_(φ^k)` is symplectic
 exactly when `σ` is. It is the pullback of the suspension form `Ω` of `φ` along the surjective

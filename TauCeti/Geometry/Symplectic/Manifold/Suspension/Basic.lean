@@ -321,11 +321,9 @@ theorem mpullback_prodMap_map_suspensionForm {E' : Type*} [NormedAddCommGroup E'
   rw [suspensionForm_def, suspensionForm_def, map_add,
     SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id hm, mpullback_map_fiberForm h hg hτ hgτ]
   -- The wedge `ds ∧ dt` has degree `1 + 1`, which `rw` does not match with the degree `2` of `Ω`.
-  refine congrArg (· + _) ((SmoothForm.mpullback_wedge (k := 1) (l := 1)
-    (Prod.map id (map φ ψ g h)) (contMDiff_id.prodMap hm) _ _).trans ?_)
-  rw [SmoothForm.mpullback_prodMap_mpullback_fst contMDiff_id hm, SmoothForm.mpullback_id,
-    LinearMap.id_apply, SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id hm,
-    mpullback_map_timeForm φ ψ h hg]
+  refine congrArg (· + _) ((SmoothForm.mpullback_prodMap_wedge_mpullback_fst_snd (k := 1) (l := 1)
+    contMDiff_id hm _ _).trans ?_)
+  rw [SmoothForm.mpullback_id, LinearMap.id_apply, mpullback_map_timeForm φ ψ h hg]
 
 /-! ### Orbit tori -/
 
@@ -343,11 +341,8 @@ theorem mpullback_orbitTorus_wedge_timeForm :
       SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1))
         (SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm (d : ℝ))) := by
   simp only [orbitTorus_eq_prodMap]
-  rw [SmoothForm.mpullback_wedge,
-    SmoothForm.mpullback_prodMap_mpullback_fst contMDiff_id (contMDiff_closedOrbit h),
-    SmoothForm.mpullback_id, LinearMap.id_apply,
-    SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id (contMDiff_closedOrbit h),
-    mpullback_closedOrbit_timeForm]
+  rw [SmoothForm.mpullback_prodMap_wedge_mpullback_fst_snd contMDiff_id (contMDiff_closedOrbit h),
+    SmoothForm.mpullback_id, LinearMap.id_apply, mpullback_closedOrbit_timeForm]
 
 /-- The orbit torus pulls the form `Ω = ds ∧ dt + σ_v` back to `ds ∧ dt_d`, the wedge of the time
 forms of the circles `ℝ / ℤ` and `ℝ / dℤ`: the fiber form `σ_v` vanishes on it. -/
