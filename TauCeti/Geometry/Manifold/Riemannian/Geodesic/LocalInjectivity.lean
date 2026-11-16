@@ -7,13 +7,16 @@ module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
 
 /-!
 # Local injectivity of geodesics
 
 A geodesic with nonzero velocity is injective near every interior parameter in the same
-connected component, since its derivative is injective there. This local property is used
-to extract simple geodesic arcs from radial geodesics.
+connected component, since its derivative is injective there. Two radial geodesics from a point
+whose initial velocities do not lie on a common ray do not meet for small positive times, since
+the exponential map is injective on a normal ball. These local properties are used to extract
+simple geodesic arcs from radial geodesics.
 
 ## Main results
 
@@ -21,6 +24,8 @@ to extract simple geodesic arcs from radial geodesics.
   is locally injective at interior parameters in the same connected component.
 * `TauCeti.Manifold.exists_mem_nhds_injOn_maximalGeodesic`: a maximal geodesic with nonzero
   initial velocity is locally injective on its maximal interval.
+* `TauCeti.Manifold.exists_pos_maximalGeodesic_ne_of_not_sameRay`: radial geodesics whose
+  initial velocities do not lie on a common ray do not meet for small positive times.
 
 ## References
 
@@ -71,5 +76,24 @@ theorem exists_mem_nhds_injOn_maximalGeodesic {t : ℝ} (hv : v ≠ 0)
     (mem_connectedComponentIn ht) (isOpen_geodesicInterval.mem_nhds ht)
     (by simpa only [curveVelocityWithin_of_mem_nhds (isOpen_geodesicInterval.mem_nhds ht)] using
       curveVelocity_maximalGeodesic_ne_zero hv ht)
+
+/-- **Radial geodesics in different directions separate.** If the tangent vectors `v` and `w` at
+`p` do not lie on a common ray, the maximal geodesics from `p` with these initial velocities do
+not meet at small positive times. -/
+theorem exists_pos_maximalGeodesic_ne_of_not_sameRay {w : TangentSpace I p}
+    (hvw : ¬SameRay ℝ v w) :
+    ∃ ε > 0, ∀ a ∈ Ioo 0 ε, ∀ b ∈ Ioo 0 ε,
+      maximalGeodesic I M p v a ≠ maximalGeodesic I M p w b := by
+  obtain ⟨r, hr, hN⟩ := exists_isNormalDomain_ball (I := I) p
+  have hmem {x : TangentSpace I p} {a : ℝ} (ha : a ∈ Ioo 0 (r / (‖x‖ + 1))) :
+      a • x ∈ Metric.ball (0 : TangentSpace I p) r := by
+    rw [mem_ball_zero_iff, norm_smul, Real.norm_eq_abs, abs_of_pos ha.1]
+    have h := ha.2
+    rw [lt_div_iff₀ (by positivity)] at h
+    nlinarith [norm_nonneg x, ha.1]
+  refine ⟨min (r / (‖v‖ + 1)) (r / (‖w‖ + 1)), by positivity, fun a ha b hb hab ↦ hvw ?_⟩
+  rw [← riemannianExp_smul, ← riemannianExp_smul] at hab
+  exact Or.inr (Or.inr ⟨a, b, ha.1, hb.1, hN.injOn (hmem ⟨ha.1, ha.2.trans_le (min_le_left _ _)⟩)
+    (hmem ⟨hb.1, hb.2.trans_le (min_le_right _ _)⟩) hab⟩)
 
 end TauCeti.Manifold
