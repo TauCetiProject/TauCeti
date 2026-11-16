@@ -13,6 +13,7 @@ import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Topology.Compactness.LocallyCompact
 import TauCeti.Topology.ContinuousMap.ApplyProdMk
+import TauCeti.Topology.ContinuousMap.Glue.DisjointOpen
 import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
@@ -55,11 +56,14 @@ since `[0, 1]` is compact the deformation is still continuous.
 * `TauCeti.exists_sublevel_union_negativeDiscBundle_deformation`: across a compact band around a
   critical level, the sublevel `M_{c+ε}` strong deformation retracts onto `M_{c-ε}` with the
   negative disc bundle of a quadratic normal form attached.
-* `TauCeti.exists_sublevel_union_image_deformation`: the same, for a normal form
-  `f ∘ Θ = c - s + t` given by a partial diffeomorphism `Θ` near a compact core and all small
-  `ε > 0`. The tube is the image under `Θ` of a sublevel `{s + 2t < m}`, which for small `m` has
-  compact closed sublevels inside the source of `Θ`
-  (`TauCeti.exists_gt_setOf_lt_subset_and_isCompact`).
+* `TauCeti.exists_sublevel_union_iUnion_image_deformation`: the same, for finitely many normal
+  forms `f ∘ Θ j = c - s j + t j` given by partial diffeomorphisms `Θ j` with pairwise disjoint
+  images, each near a compact core, and all small `ε > 0`; the disc bundles of all of them are
+  attached at once. The tube is the union of the images under `Θ j` of sublevels
+  `{s j + 2 t j < m}`, which for small `m` have compact closed sublevels inside the source of `Θ j`
+  (`TauCeti.exists_gt_setOf_lt_subset_and_isCompact`). On these disjoint open pieces the functions
+  `s j ∘ Θ j⁻¹`, `t j ∘ Θ j⁻¹` and the scalings of the positive directions glue to a single tube.
+* `TauCeti.exists_sublevel_union_image_deformation`: the case of a single normal form.
 
 ## References
 
@@ -510,6 +514,100 @@ theorem exists_sublevel_union_negativeDiscBundle_deformation (hfs : ContMDiff I 
 
 end Attachment
 
+section Tube
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  (I : ModelWithCorners ℝ E H) [TopologicalSpace M] [ChartedSpace H M]
+
+/-- An open tube `W` carrying a normal form `f = c - s + t` with the hypotheses of
+`TauCeti.exists_sublevel_union_negativeDiscBundle_deformation` at the size `ε`. -/
+private structure IsAttachingTube (f s t : M → ℝ) (c ε : ℝ) (W : Set M) : Prop where
+  isOpen : IsOpen W
+  contMDiffOn_left : ContMDiffOn I 𝓘(ℝ) ∞ s W
+  contMDiffOn_right : ContMDiffOn I 𝓘(ℝ) ∞ t W
+  left_nonneg : ∀ x ∈ W, 0 ≤ s x
+  right_nonneg : ∀ x ∈ W, 0 ≤ t x
+  eq_sub_add : ∀ x ∈ W, f x = c - s x + t x
+  exists_tangent : ∀ x ∈ W, t x ≠ 0 → ∃ v : TangentSpace I x,
+    mfderiv I 𝓘(ℝ) s x v = 0 ∧ mfderiv I 𝓘(ℝ) t x v ≠ 0
+  exists_scaling : ∃ φ : C(unitInterval × W, W), (∀ τ x, s (φ (τ, x)) = s x) ∧
+    (∀ τ x, t (φ (τ, x)) = τ ^ 2 * t x) ∧ (∀ x, φ (1, x) = x) ∧
+    ∀ τ (x : W), t x = 0 → φ (τ, x) = x
+  isCompact : IsCompact {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε}
+
+variable {I} {f s t : M → ℝ} {c ε : ℝ} {W : Set M} {ι : Type*} {T : ι → Set M}
+
+/-- `TauCeti.exists_sublevel_union_negativeDiscBundle_deformation` for an attaching tube. -/
+private theorem IsAttachingTube.exists_deformation [FiniteDimensional ℝ E] [I.Boundaryless]
+    [IsManifold I ∞ M] [T2Space M] (hW : IsAttachingTube I f s t c ε W)
+    (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hε : 0 < ε) (hcompact : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)))
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ W) :
+    ∃ r : C({x | f x ≤ c + ε}, ↥({x | f x ≤ c + ε} ∩
+        ({x | f x ≤ c - ε} ∪ {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε}))),
+      (∀ x, r (ContinuousMap.inclusion inter_subset_left x) = x) ∧
+      Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
+        (ContinuousMap.id _)
+        {x | (x : M) ∈ {x | f x ≤ c - ε} ∪ {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε}}) := by
+  obtain ⟨φ, hφs, hφt, hφ₁, hφ₀⟩ := hW.exists_scaling
+  exact exists_sublevel_union_negativeDiscBundle_deformation hfs hW.isOpen hW.contMDiffOn_left
+    hW.contMDiffOn_right hW.left_nonneg hW.right_nonneg hW.eq_sub_add hW.exists_tangent φ hφs hφt
+    hφ₁ hφ₀ hε hW.isCompact hcompact hcrit
+
+/-- Attaching tubes on finitely many pairwise disjoint open sets glue to an attaching tube on their
+union. -/
+private theorem IsAttachingTube.iUnion [Finite ι] {s t : ι → M → ℝ}
+    (h : ∀ j, IsAttachingTube I f (s j) (t j) c ε (T j)) (hT : Pairwise (Disjoint on T)) :
+    IsAttachingTube I f (fun x ↦ ∑ᶠ j, (T j).indicator (s j) x)
+      (fun x ↦ ∑ᶠ j, (T j).indicator (t j) x) c ε (⋃ j, T j) := by
+  have hTo (j : ι) : IsOpen (T j) := (h j).isOpen
+  have hcont (u : ι → M → ℝ) (hu : ∀ j, ContMDiffOn I 𝓘(ℝ) ∞ (u j) (T j)) :
+      ContMDiffOn I 𝓘(ℝ) ∞ (fun x ↦ ∑ᶠ j, (T j).indicator (u j) x) (⋃ j, T j) := fun x hx ↦ by
+    obtain ⟨j, hj⟩ := mem_iUnion.1 hx
+    exact (((hu j x hj).contMDiffAt ((hTo j).mem_nhds hj)).congr_of_eventuallyEq
+      (finsum_indicator_eventuallyEq hT u (hTo j) hj)).contMDiffWithinAt
+  choose φ hφs hφt hφ₁ hφ₀ using fun j ↦ (h j).exists_scaling
+  obtain ⟨ψ, hψ'⟩ := exists_continuousMap_prod_iUnion hTo hT fun j ↦
+    (ContinuousMap.inclusion (subset_iUnion T j)).comp (φ j)
+  have hψ (j : ι) (τ : unitInterval) (x : ↥(⋃ j, T j)) (hx : (x : M) ∈ T j) :
+      (ψ (τ, x) : M) = φ j (τ, ⟨x, hx⟩) :=
+    congrArg Subtype.val (hψ' j τ x hx)
+  refine ⟨isOpen_iUnion hTo, hcont s fun j ↦ (h j).contMDiffOn_left,
+    hcont t fun j ↦ (h j).contMDiffOn_right, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_,
+    fun x hx htx ↦ ?_, ⟨ψ, fun τ x ↦ ?_, fun τ x ↦ ?_, fun x ↦ ?_, fun τ x htx ↦ ?_⟩, ?_⟩
+  · obtain ⟨j, hj⟩ := mem_iUnion.1 hx
+    rw [finsum_indicator_of_mem hT s hj]
+    exact (h j).left_nonneg x hj
+  · obtain ⟨j, hj⟩ := mem_iUnion.1 hx
+    rw [finsum_indicator_of_mem hT t hj]
+    exact (h j).right_nonneg x hj
+  · obtain ⟨j, hj⟩ := mem_iUnion.1 hx
+    rw [finsum_indicator_of_mem hT s hj, finsum_indicator_of_mem hT t hj]
+    exact (h j).eq_sub_add x hj
+  · obtain ⟨j, hj⟩ := mem_iUnion.1 hx
+    rw [finsum_indicator_of_mem hT t hj] at htx
+    rw [(finsum_indicator_eventuallyEq hT s (hTo j) hj).mfderiv_eq,
+      (finsum_indicator_eventuallyEq hT t (hTo j) hj).mfderiv_eq]
+    exact (h j).exists_tangent x hj htx
+  · obtain ⟨j, hj⟩ := mem_iUnion.1 x.2
+    rw [hψ j τ x hj, finsum_indicator_of_mem hT s (φ j (τ, ⟨x, hj⟩)).2,
+      finsum_indicator_of_mem hT s hj]
+    exact hφs j τ ⟨x, hj⟩
+  · obtain ⟨j, hj⟩ := mem_iUnion.1 x.2
+    rw [hψ j τ x hj, finsum_indicator_of_mem hT t (φ j (τ, ⟨x, hj⟩)).2,
+      finsum_indicator_of_mem hT t hj]
+    exact hφt j τ ⟨x, hj⟩
+  · obtain ⟨j, hj⟩ := mem_iUnion.1 x.2
+    exact Subtype.ext ((hψ j 1 x hj).trans (congrArg Subtype.val (hφ₁ j ⟨x, hj⟩)))
+  · obtain ⟨j, hj⟩ := mem_iUnion.1 x.2
+    rw [finsum_indicator_of_mem hT t hj] at htx
+    exact Subtype.ext ((hψ j τ x hj).trans (congrArg Subtype.val (hφ₀ j τ ⟨x, hj⟩ htx)))
+  · convert isCompact_iUnion fun j ↦ (h j).isCompact using 1
+    refine (iUnion_inter {x | _} T).trans (iUnion_congr fun j ↦ sep_ext_iff.2 fun x hx ↦ ?_)
+    rw [mem_ofPred_eq, finsum_indicator_of_mem hT s hx, finsum_indicator_of_mem hT t hx]
+    rfl
+
+end Tube
+
 /-! ### The attachment theorem through a partial diffeomorphism -/
 
 section Transport
@@ -604,74 +702,172 @@ private theorem exists_mfderiv_comp_symm_apply_eq_zero_and_ne_zero
   · simp only [comp_apply, Θ.left_inv hb, hρs]
   · simp only [comp_apply, Θ.left_inv hb, hρt]
 
-variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ}
-  {c : ℝ}
-
-/-- The attachment theorem `TauCeti.exists_sublevel_union_negativeDiscBundle_deformation`, read
-through a partial diffeomorphism `Θ : X → M`. On `X`, the functions `s, t ≥ 0` are smooth with
-`f ∘ Θ = c - s + t`, and `ρ b` scales the positive directions: it preserves `s`, multiplies `t` by
-`b²`, is the identity for `b = 1` and fixes the points with `t = 0`. If `W ⊆ X` is an open subset
-of the source of `Θ` preserved by `ρ τ` for `τ ∈ [0, 1]`, containing the disc bundle
-`{t = 0, s ≤ ε}`, whose part `{s + 2t ≤ 2ε}` is compact and whose image contains the critical
-points of the compact band `f⁻¹[c - ε, c + ε]`, then `{f ≤ c + ε}` strong deformation retracts
-onto `{f ≤ c - ε}` with the image of the disc bundle attached. -/
-private theorem exists_sublevel_union_image_deformation_of_tube (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
-    (Θ : PartialDiffeomorph K I X M ∞) {s t : X → ℝ} (hs : ContMDiff K 𝓘(ℝ) ∞ s)
-    (ht : ContMDiff K 𝓘(ℝ) ∞ t) (hs₀ : ∀ x, 0 ≤ s x) (ht₀ : ∀ x, 0 ≤ t x)
-    (hf : ∀ x ∈ Θ.source, f (Θ x) = c - s x + t x) (ρ : ℝ → X → X)
+/-- A normal form `f ∘ Θ = c - s + t` on `X`, read through a partial diffeomorphism `Θ : X → M`,
+gives an attaching tube. On `X`, the functions `s, t ≥ 0` are smooth, and `ρ b` scales the positive
+directions: it preserves `s`, multiplies `t` by `b²`, is the identity for `b = 1` and fixes the
+points with `t = 0`. If `W ⊆ X` is an open subset of the source of `Θ` preserved by `ρ τ` for
+`τ ∈ [0, 1]`, whose part `{s + 2t ≤ 2ε}` is compact, then `Θ '' W` is an attaching tube for
+`s ∘ Θ⁻¹` and `t ∘ Θ⁻¹`. -/
+private theorem isAttachingTube_image {f : M → ℝ} {c : ℝ} (Θ : PartialDiffeomorph K I X M ∞)
+    {s t : X → ℝ} (hs : ContMDiff K 𝓘(ℝ) ∞ s) (ht : ContMDiff K 𝓘(ℝ) ∞ t) (hs₀ : ∀ x, 0 ≤ s x)
+    (ht₀ : ∀ x, 0 ≤ t x) (hf : ∀ x ∈ Θ.source, f (Θ x) = c - s x + t x) (ρ : ℝ → X → X)
     (hρ : Continuous fun p : ℝ × X ↦ ρ p.1 p.2)
     (hρd : ∀ x, MDifferentiableAt 𝓘(ℝ) K (fun b ↦ ρ b x) 1) (hρs : ∀ b x, s (ρ b x) = s x)
     (hρt : ∀ b x, t (ρ b x) = b ^ 2 * t x) (hρ₁ : ∀ x, ρ 1 x = x)
     (hρ₀ : ∀ b x, t x = 0 → ρ b x = x) {W : Set X} (hWo : IsOpen W) (hWΘ : W ⊆ Θ.source)
-    (hρW : ∀ τ : unitInterval, ∀ x ∈ W, ρ τ x ∈ W) {ε : ℝ} (hε : 0 < ε)
-    (hD : ∀ x, t x = 0 → s x ≤ ε → x ∈ W) (hK : IsCompact {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε})
-    (hcompact : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)))
-    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ Θ '' W) :
-    ∃ r : C({y | f y ≤ c + ε}, ↥({y | f y ≤ c + ε} ∩
-        ({y | f y ≤ c - ε} ∪ Θ '' {x | t x = 0 ∧ s x ≤ ε}))),
-      (∀ y, r (ContinuousMap.inclusion inter_subset_left y) = y) ∧
-      Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
-        (ContinuousMap.id _) {y | (y : M) ∈ {y | f y ≤ c - ε} ∪ Θ '' {x | t x = 0 ∧ s x ≤ ε}}) := by
+    (hρW : ∀ τ : unitInterval, ∀ x ∈ W, ρ τ x ∈ W) {ε : ℝ}
+    (hK : IsCompact {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε}) :
+    IsAttachingTube I f (s ∘ Θ.toPartialEquiv.symm) (t ∘ Θ.toPartialEquiv.symm) c ε (Θ '' W) := by
   have hΘs : ContMDiffOn I K ∞ Θ.toPartialEquiv.symm Θ.target := Θ.symm.contMDiffOn
-  obtain ⟨hWt, hWsymm⟩ := image_subset_target_and_symm_mem Θ hWΘ
-  -- A condition on the points of `W` reads on `Θ '' W` through `Θ⁻¹`.
-  have himage (p : X → Prop) :
-      {y | y ∈ Θ '' W ∧ p (Θ.toPartialEquiv.symm y)} = Θ '' {x | x ∈ W ∧ p x} := by
-    ext y
-    refine ⟨fun ⟨hy, hpy⟩ ↦ ⟨_, ⟨hWsymm y hy, hpy⟩, Θ.right_inv (hWt hy)⟩, ?_⟩
-    rintro ⟨x, ⟨hx, hpx⟩, rfl⟩
-    rw [mem_ofPred_eq, Θ.left_inv (hWΘ hx)]
-    exact ⟨mem_image_of_mem _ hx, hpx⟩
-  have hWo' : IsOpen (Θ '' W) := by
-    simpa [inter_eq_self_of_subset_right hWΘ] using
-      Θ.toOpenPartialHomeomorph.isOpen_image_source_inter hWo
-  -- The functions `s` and `t` read on `M`, and the scaling of the positive directions.
-  set sM : M → ℝ := s ∘ Θ.toPartialEquiv.symm
-  set tM : M → ℝ := t ∘ Θ.toPartialEquiv.symm
-  have hsM : ContMDiffOn I 𝓘(ℝ) ∞ sM (Θ '' W) := hs.comp_contMDiffOn (hΘs.mono hWt)
-  have htM : ContMDiffOn I 𝓘(ℝ) ∞ tM (Θ '' W) := ht.comp_contMDiffOn (hΘs.mono hWt)
-  have hsΘ (x : X) (hx : x ∈ Θ.source) : sM (Θ x) = s x := by
-    simp only [sM, comp_apply, Θ.left_inv hx]
-  have htΘ (x : X) (hx : x ∈ Θ.source) : tM (Θ x) = t x := by
-    simp only [tM, comp_apply, Θ.left_inv hx]
+  have hWt := (image_subset_target_and_symm_mem Θ hWΘ).1
+  have hΘx (u : X → ℝ) (x : X) (hx : x ∈ Θ.source) : (u ∘ Θ.toPartialEquiv.symm) (Θ x) = u x := by
+    simp only [comp_apply, Θ.left_inv hx]
   obtain ⟨φ, hφs, hφt, hφ₁, hφ₀⟩ := exists_continuousMap_image Θ ρ hρ hρs hρt hρ₁ hρ₀ hWΘ hρW
-  have hdir (y : M) (hy : y ∈ Θ '' W) (hty : tM y ≠ 0) : ∃ v : TangentSpace I y,
-      mfderiv I 𝓘(ℝ) sM y v = 0 ∧ mfderiv I 𝓘(ℝ) tM y v ≠ 0 := by
-    obtain ⟨x, hx, rfl⟩ := hy
-    exact exists_mfderiv_comp_symm_apply_eq_zero_and_ne_zero Θ hs ht ρ hρ hρd hρs hρt hρ₁
-      (hWΘ hx) (by rwa [htΘ x (hWΘ hx)] at hty)
-  have hKM : IsCompact {y | y ∈ Θ '' W ∧ sM y + 2 * tM y ≤ 2 * ε} := by
-    rw [show {y | y ∈ Θ '' W ∧ sM y + 2 * tM y ≤ 2 * ε} =
-        Θ '' {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε} from himage fun x ↦ s x + 2 * t x ≤ 2 * ε]
-    exact hK.image_of_continuousOn (Θ.contMDiffOn.continuousOn.mono fun x hx ↦ hWΘ hx.1)
-  have key := exists_sublevel_union_negativeDiscBundle_deformation hfs hWo' hsM htM
-    (fun y _ ↦ hs₀ _) (fun y _ ↦ ht₀ _) ?_ hdir φ hφs hφt hφ₁ hφ₀ hε hKM hcompact hcrit
-  · have hDW : {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε} = {x | t x = 0 ∧ s x ≤ ε} :=
-      Set.ext fun x ↦ ⟨fun hx ↦ hx.2, fun hx ↦ ⟨hD x hx.1 hx.2, hx⟩⟩
-    rwa [show {y | y ∈ Θ '' W ∧ tM y = 0 ∧ sM y ≤ ε} = Θ '' {x | t x = 0 ∧ s x ≤ ε} from
-      hDW ▸ himage fun x ↦ t x = 0 ∧ s x ≤ ε] at key
+  refine ⟨by simpa [inter_eq_self_of_subset_right hWΘ] using
+      Θ.toOpenPartialHomeomorph.isOpen_image_source_inter hWo,
+    hs.comp_contMDiffOn (hΘs.mono hWt), ht.comp_contMDiffOn (hΘs.mono hWt),
+    fun y _ ↦ hs₀ _, fun y _ ↦ ht₀ _, ?_, ?_, ⟨φ, hφs, hφt, hφ₁, hφ₀⟩, ?_⟩
   · rintro _ ⟨x, hx, rfl⟩
-    rw [hf x (hWΘ hx), hsΘ x (hWΘ hx), htΘ x (hWΘ hx)]
+    rw [hf x (hWΘ hx), hΘx s x (hWΘ hx), hΘx t x (hWΘ hx)]
+  · rintro _ ⟨x, hx, rfl⟩ hty
+    exact exists_mfderiv_comp_symm_apply_eq_zero_and_ne_zero Θ hs ht ρ hρ hρd hρs hρt hρ₁
+      (hWΘ hx) (by rwa [hΘx t x (hWΘ hx)] at hty)
+  · simp only [comp_apply]
+    have hK' : IsCompact ({x | s x + 2 * t x ≤ 2 * ε} ∩ W) := by rw [inter_comm]; exact hK
+    have h := hK'.image_of_continuousOn (Θ.contMDiffOn.continuousOn.mono fun x hx ↦ hWΘ hx.2)
+    rwa [(Θ.toPartialEquiv.leftInvOn.mono hWΘ).image_inter', inter_comm] at h
+
+/-- Rescaling the two parts of a normal form by factors of absolute value at most `1` does not
+increase `s + 2t`. -/
+private theorem add_two_mul_le_of_rescale {Y : Type*} {s t : Y → ℝ} (hs₀ : ∀ x, 0 ≤ s x)
+    (ht₀ : ∀ x, 0 ≤ t x) {σ : ℝ → ℝ → Y → Y} (hσs : ∀ a b x, s (σ a b x) = a ^ 2 * s x)
+    (hσt : ∀ a b x, t (σ a b x) = b ^ 2 * t x) {a b : ℝ} (ha : a ^ 2 ≤ 1) (hb : b ^ 2 ≤ 1)
+    (x : Y) : s (σ a b x) + 2 * t (σ a b x) ≤ s x + 2 * t x := by
+  rw [hσs, hσt]
+  nlinarith [hs₀ x, ht₀ x]
+
+/-- Small sublevels `{s + 2t < m}` of a normal form lie in a given open neighbourhood `U` of its
+compact core `Z`, and their closed sublevels are compact: the rays `a ↦ σ a a x`, `a ∈ [0, 1]`,
+join each point to `Z` without increasing `s + 2t`. -/
+private theorem exists_pos_setOf_lt_subset_and_isCompact [LocallyCompactSpace X] [T2Space X]
+    {s t : X → ℝ} (hs : Continuous s) (ht : Continuous t) (hs₀ : ∀ x, 0 ≤ s x)
+    (ht₀ : ∀ x, 0 ≤ t x) {Z U : Set X} (hZ : IsCompact Z) (hU : IsOpen U) (hZU : Z ⊆ U)
+    (hstZ : ∀ x, s x = 0 → t x = 0 → x ∈ Z) (σ : ℝ → ℝ → X → X)
+    (hσ : Continuous fun p : (ℝ × ℝ) × X ↦ σ p.1.1 p.1.2 p.2)
+    (hσs : ∀ a b x, s (σ a b x) = a ^ 2 * s x) (hσt : ∀ a b x, t (σ a b x) = b ^ 2 * t x)
+    (hσ₁ : ∀ x, σ 1 1 x = x) (hσZ : ∀ x, σ 0 0 x ∈ Z) :
+    ∃ m > 0, {x | s x + 2 * t x < m} ⊆ U ∧ ∀ δ < m, IsCompact {x | s x + 2 * t x ≤ δ} :=
+  exists_gt_setOf_lt_subset_and_isCompact hZ hU hZU (hs.add (continuous_const.mul ht))
+    (fun x (hx : s x + 2 * t x ≤ 0) ↦
+      hstZ x (by linarith [hs₀ x, ht₀ x]) (by linarith [hs₀ x, ht₀ x]))
+    fun x ↦ ⟨(fun a ↦ σ a a x) '' Icc 0 1, isPreconnected_Icc.image _
+      (hσ.comp ((continuous_id.prodMk continuous_id).prodMk continuous_const)).continuousOn,
+      ⟨1, ⟨zero_le_one, le_rfl⟩, hσ₁ x⟩, ⟨σ 0 0 x, ⟨0, ⟨le_rfl, zero_le_one⟩, rfl⟩, hσZ x⟩,
+      by
+        rintro _ ⟨a, ha, rfl⟩
+        exact add_two_mul_le_of_rescale hs₀ ht₀ hσs hσt (pow_le_one₀ ha.1 ha.2)
+          (pow_le_one₀ ha.1 ha.2) x⟩
+
+end Transport
+
+/-! ### Several normal forms with disjoint images -/
+
+section Family
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ} {c : ℝ}
+
+/-- **Attaching the negative disc bundles of several normal forms with disjoint images.** Let
+`Θ j : X j → M`, for `j` in a finite type, be smooth partial diffeomorphisms from locally compact
+Hausdorff manifolds, with pairwise disjoint targets, and let `Z j` be a compact subset of the
+source of `Θ j`, the core of the `j`-th normal form. On `X j`, let the functions `s j, t j ≥ 0` be
+smooth and vanish together exactly on `Z j`, with `f ∘ Θ j = c - s j + t j` on the source of `Θ j`.
+Let the maps `σ j a b : X j → X j`, continuous jointly in `a`, `b` and the point, rescale `s j` by
+`a²` and `t j` by `b²`; let `σ j 1 1` be the identity, `σ j 1 b` fix the points with `t j = 0` and
+be differentiable in `b` at `b = 1`, and let `σ j 0 0` map into `Z j`.
+
+Then there is an `ε₀ > 0` such that for `0 < ε < ε₀`, if the band `f⁻¹[c - ε, c + ε]` is compact
+and its critical points lie in the union of the `Θ j '' Z j`, every disc bundle
+`D_ε j = {t j = 0, s j ≤ ε}` lies in the source of `Θ j`, and `{f ≤ c - ε} ∪ ⋃ j, Θ j (D_ε j)` is a
+strong deformation retract of `{f ≤ c + ε}`: there is a retraction of `{f ≤ c + ε}` onto it, and a
+homotopy in `{f ≤ c + ε}` from this retraction to the identity which fixes it pointwise. This is
+`TauCeti.exists_sublevel_union_negativeDiscBundle_deformation` for the tube which is the union of
+the images under `Θ j` of sublevels `{s j + 2 t j < m}` with `m > 0` small. -/
+theorem exists_sublevel_union_iUnion_image_deformation {ι : Type*} [Finite ι] {F G X : ι → Type*}
+    [∀ j, NormedAddCommGroup (F j)] [∀ j, NormedSpace ℝ (F j)] [∀ j, TopologicalSpace (G j)]
+    {K : ∀ j, ModelWithCorners ℝ (F j) (G j)} [∀ j, TopologicalSpace (X j)]
+    [∀ j, ChartedSpace (G j) (X j)] [∀ j, LocallyCompactSpace (X j)] [∀ j, T2Space (X j)]
+    (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (Θ : ∀ j, PartialDiffeomorph (K j) I (X j) M ∞)
+    (hΘ : Pairwise (Disjoint on fun j ↦ (Θ j).target)) {s t : ∀ j, X j → ℝ}
+    (hs : ∀ j, ContMDiff (K j) 𝓘(ℝ) ∞ (s j)) (ht : ∀ j, ContMDiff (K j) 𝓘(ℝ) ∞ (t j))
+    (hs₀ : ∀ j x, 0 ≤ s j x) (ht₀ : ∀ j x, 0 ≤ t j x)
+    (hf : ∀ j, ∀ x ∈ (Θ j).source, f (Θ j x) = c - s j x + t j x) {Z : ∀ j, Set (X j)}
+    (hZ : ∀ j, IsCompact (Z j)) (hZΘ : ∀ j, Z j ⊆ (Θ j).source)
+    (hZst : ∀ j, ∀ x ∈ Z j, s j x = 0 ∧ t j x = 0)
+    (hstZ : ∀ j x, s j x = 0 → t j x = 0 → x ∈ Z j) (σ : ∀ j, ℝ → ℝ → X j → X j)
+    (hσ : ∀ j, Continuous fun p : (ℝ × ℝ) × X j ↦ σ j p.1.1 p.1.2 p.2)
+    (hσd : ∀ j x, MDifferentiableAt 𝓘(ℝ) (K j) (fun b ↦ σ j 1 b x) 1)
+    (hσs : ∀ j a b x, s j (σ j a b x) = a ^ 2 * s j x)
+    (hσt : ∀ j a b x, t j (σ j a b x) = b ^ 2 * t j x) (hσ₁ : ∀ j x, σ j 1 1 x = x)
+    (hσ₀ : ∀ j b x, t j x = 0 → σ j 1 b x = x) (hσZ : ∀ j x, σ j 0 0 x ∈ Z j) :
+    ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀, IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
+      criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ j, Θ j '' Z j →
+      (∀ j, {x | t j x = 0 ∧ s j x ≤ ε} ⊆ (Θ j).source) ∧
+      ∃ r : C({y | f y ≤ c + ε}, ↥({y | f y ≤ c + ε} ∩
+          ({y | f y ≤ c - ε} ∪ ⋃ j, Θ j '' {x | t j x = 0 ∧ s j x ≤ ε}))),
+        (∀ y, r (ContinuousMap.inclusion inter_subset_left y) = y) ∧
+        Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
+          (ContinuousMap.id _)
+          {y | (y : M) ∈ {y | f y ≤ c - ε} ∪ ⋃ j, Θ j '' {x | t j x = 0 ∧ s j x ≤ ε}}) := by
+  set q : ∀ j, X j → ℝ := fun j x ↦ s j x + 2 * t j x with hq_def
+  have hq (j : ι) : Continuous (q j) :=
+    (hs j).continuous.add (continuous_const.mul (ht j).continuous)
+  choose m hm hmΘ hmK using fun j ↦ exists_pos_setOf_lt_subset_and_isCompact (hs j).continuous
+    (ht j).continuous (hs₀ j) (ht₀ j) (hZ j) (Θ j).open_source (hZΘ j) (hstZ j) (σ j) (hσ j)
+    (hσs j) (hσt j) (hσ₁ j) (hσZ j)
+  -- A common size `ε₀` with `2 ε₀` below every `m j`.
+  obtain ⟨ε₀, hε₀m, hε₀⟩ : ∃ ε₀ : ℝ, (∀ j, 2 * ε₀ < m j) ∧ 0 < ε₀ :=
+    ((eventually_all.2 fun j ↦ (((continuous_const_mul (2 : ℝ)).tendsto' 0 0
+      (mul_zero 2)).eventually (gt_mem_nhds (hm j))).filter_mono nhdsWithin_le_nhds).and
+      (self_mem_nhdsWithin : Ioi (0 : ℝ) ∈ 𝓝[>] 0)).exists
+  refine ⟨ε₀, hε₀, fun ε hε hcompact hcrit ↦ ?_⟩
+  have hεm (j : ι) : 2 * ε < m j := by linarith [hε.2, hε₀m j]
+  have hD (j : ι) (x : X j) (hx : t j x = 0 ∧ s j x ≤ ε) : q j x < m j := by
+    simp only [hq_def, hx.1, mul_zero, add_zero]
+    linarith [hε.1, hεm j, hx.2]
+  -- The tube is the union of the images of the sublevels `{q j < m j}`.
+  set W : ∀ j, Set (X j) := fun j ↦ {x | q j x < m j}
+  have htube (j : ι) := isAttachingTube_image (f := f) (ε := ε) (Θ j) (hs j) (ht j) (hs₀ j)
+    (ht₀ j) (hf j) (σ j 1) ((hσ j).comp ((continuous_const.prodMk continuous_fst).prodMk
+      continuous_snd)) (hσd j) (fun b x ↦ by rw [hσs, one_pow, one_mul]) (hσt j 1) (hσ₁ j)
+    (hσ₀ j) (W := W j) (isOpen_lt (hq j) continuous_const) (hmΘ j)
+    (fun τ x hx ↦ (add_two_mul_le_of_rescale (hs₀ j) (ht₀ j) (hσs j) (hσt j) (by norm_num)
+      (pow_le_one₀ τ.2.1 τ.2.2) x).trans_lt hx)
+    (by
+      rw [show {x | x ∈ W j ∧ s j x + 2 * t j x ≤ 2 * ε} = {x | q j x ≤ 2 * ε} from
+        Set.ext fun x ↦ ⟨fun hx ↦ hx.2, fun hx ↦ ⟨lt_of_le_of_lt hx (hεm j), hx⟩⟩]
+      exact hmK j (2 * ε) (hεm j))
+  have hdisj : Pairwise (Disjoint on fun j ↦ Θ j '' W j) := hΘ.mono fun j k hjk ↦
+    hjk.mono (image_subset_target_and_symm_mem (Θ j) (hmΘ j)).1
+      (image_subset_target_and_symm_mem (Θ k) (hmΘ k)).1
+  have key := (IsAttachingTube.iUnion htube hdisj).exists_deformation hfs hε.1 hcompact
+    (hcrit.trans (iUnion_mono fun j ↦ image_mono fun x hx ↦ ?_))
+  · refine ⟨fun j x hx ↦ hmΘ j (hD j x hx), ?_⟩
+    -- The disc bundle of the glued tube is the union of the images of the disc bundles.
+    have hset : {y | y ∈ ⋃ j, Θ j '' W j ∧
+        ∑ᶠ j, (Θ j '' W j).indicator (t j ∘ (Θ j).toPartialEquiv.symm) y = 0 ∧
+          ∑ᶠ j, (Θ j '' W j).indicator (s j ∘ (Θ j).toPartialEquiv.symm) y ≤ ε} =
+        ⋃ j, Θ j '' {x | t j x = 0 ∧ s j x ≤ ε} := by
+      refine (iUnion_inter {y | _} _).trans (iUnion_congr fun j ↦
+        (sep_ext_iff.2 fun y hy ↦ ?_).trans (((inter_comm _ _).trans
+          (((Θ j).toPartialEquiv.leftInvOn.mono (hmΘ j)).image_inter'
+            (s₁ := {x | t j x = 0 ∧ s j x ≤ ε})).symm).trans ?_))
+      · rw [mem_ofPred_eq, finsum_indicator_of_mem hdisj _ hy, finsum_indicator_of_mem hdisj _ hy]
+        rfl
+      · exact congrArg _ (Set.ext fun x ↦ ⟨fun hx ↦ hx.1, fun hx ↦ ⟨hx, hD j x hx⟩⟩)
+    rwa [hset] at key
+  · simp only [W, mem_ofPred_eq, hq_def, (hZst j x hx).1, (hZst j x hx).2, mul_zero, add_zero, hm]
 
 /-- **Attaching the negative disc bundle of a normal form given by a partial diffeomorphism.**
 Let `Θ : X → M` be a smooth partial diffeomorphism from a locally compact Hausdorff manifold `X`,
@@ -685,10 +881,11 @@ Then there is an `ε₀ > 0` such that for `0 < ε < ε₀`, if the band `f⁻¹
 and its critical points lie in `Θ '' Z`, the disc bundle `D_ε = {t = 0, s ≤ ε}` lies in the source
 of `Θ` and `{f ≤ c - ε} ∪ Θ(D_ε)` is a strong deformation retract of `{f ≤ c + ε}`: there is a
 retraction of `{f ≤ c + ε}` onto it, and a homotopy in `{f ≤ c + ε}` from this retraction to the
-identity which fixes it pointwise. This is
-`TauCeti.exists_sublevel_union_negativeDiscBundle_deformation` for the tube `Θ '' {s + 2t < m}`
-with `m > 0` small. -/
-theorem exists_sublevel_union_image_deformation [LocallyCompactSpace X] [T2Space X]
+identity which fixes it pointwise. This is the case of a single normal form in
+`TauCeti.exists_sublevel_union_iUnion_image_deformation`. -/
+theorem exists_sublevel_union_image_deformation {F G X : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [TopologicalSpace G] {K : ModelWithCorners ℝ F G} [TopologicalSpace X]
+    [ChartedSpace G X] [LocallyCompactSpace X] [T2Space X]
     (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (Θ : PartialDiffeomorph K I X M ∞) {s t : X → ℝ}
     (hs : ContMDiff K 𝓘(ℝ) ∞ s) (ht : ContMDiff K 𝓘(ℝ) ∞ t) (hs₀ : ∀ x, 0 ≤ s x)
     (ht₀ : ∀ x, 0 ≤ t x) (hf : ∀ x ∈ Θ.source, f (Θ x) = c - s x + t x) {Z : Set X}
@@ -707,35 +904,16 @@ theorem exists_sublevel_union_image_deformation [LocallyCompactSpace X] [T2Space
         Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
           (ContinuousMap.id _)
           {y | (y : M) ∈ {y | f y ≤ c - ε} ∪ Θ '' {x | t x = 0 ∧ s x ≤ ε}}) := by
-  set q : X → ℝ := fun x ↦ s x + 2 * t x with hq_def
-  have hq : Continuous q := hs.continuous.add (continuous_const.mul ht.continuous)
-  have hq_le (a b : ℝ) (ha : a ^ 2 ≤ 1) (hb : b ^ 2 ≤ 1) (x : X) : q (σ a b x) ≤ q x := by
-    simp only [hq_def, hσs, hσt]
-    nlinarith [hs₀ x, ht₀ x]
-  -- The rays `a ↦ σ a a x`, `a ∈ [0, 1]`, join each point to the core, with `q` at most `q x`.
-  obtain ⟨m, hm, hmΘ, hmK⟩ := exists_gt_setOf_lt_subset_and_isCompact hZ Θ.open_source hZΘ hq
-    (fun x (hx : s x + 2 * t x ≤ 0) ↦
-      hstZ x (by linarith [hs₀ x, ht₀ x]) (by linarith [hs₀ x, ht₀ x]))
-    fun x ↦ ⟨(fun a ↦ σ a a x) '' Icc 0 1, isPreconnected_Icc.image _
-      (hσ.comp ((continuous_id.prodMk continuous_id).prodMk continuous_const)).continuousOn,
-      ⟨1, ⟨zero_le_one, le_rfl⟩, hσ₁ x⟩, ⟨σ 0 0 x, ⟨0, ⟨le_rfl, zero_le_one⟩, rfl⟩, hσZ x⟩,
-      by rintro _ ⟨a, ha, rfl⟩; exact hq_le a a (pow_le_one₀ ha.1 ha.2) (pow_le_one₀ ha.1 ha.2) x⟩
-  refine ⟨m / 2, half_pos hm, fun ε hε hcompact hcrit ↦ ?_⟩
-  have hεm : 2 * ε < m := by linarith [hε.2]
-  have hD (x : X) (ht : t x = 0) (hs : s x ≤ ε) : q x < m := by
-    simp only [hq_def, ht, mul_zero, add_zero]
-    linarith [hε.1]
-  refine ⟨fun x hx ↦ hmΘ (hD x hx.1 hx.2), exists_sublevel_union_image_deformation_of_tube hfs Θ
-    hs ht hs₀ ht₀ hf (σ 1) (hσ.comp ((continuous_const.prodMk continuous_fst).prodMk
-      continuous_snd)) hσd (fun b x ↦ by rw [hσs, one_pow, one_mul]) (hσt 1) hσ₁ hσ₀
-    (W := {x | q x < m}) (isOpen_lt hq continuous_const) hmΘ
-    (fun τ x hx ↦ (hq_le 1 τ (by norm_num) (pow_le_one₀ τ.2.1 τ.2.2) x).trans_lt hx) hε.1 hD ?_
-    hcompact (hcrit.trans (image_mono fun x hx ↦ ?_))⟩
-  · have hset : {x | x ∈ {x | q x < m} ∧ s x + 2 * t x ≤ 2 * ε} = {x | q x ≤ 2 * ε} :=
-      Set.ext fun x ↦ ⟨fun hx ↦ hx.2, fun hx ↦ ⟨lt_of_le_of_lt hx hεm, hx⟩⟩
-    exact hset ▸ hmK (2 * ε) hεm
-  · simp only [mem_ofPred_eq, hq_def, (hZst x hx).1, (hZst x hx).2, mul_zero, add_zero, hm]
+  obtain ⟨ε₀, hε₀, h⟩ := exists_sublevel_union_iUnion_image_deformation (ι := Unit)
+    (X := fun _ ↦ X) (K := fun _ ↦ K) hfs (fun _ ↦ Θ) (Subsingleton.pairwise) (fun _ ↦ hs)
+    (fun _ ↦ ht) (fun _ ↦ hs₀) (fun _ ↦ ht₀) (fun _ ↦ hf) (fun _ ↦ hZ) (fun _ ↦ hZΘ)
+    (fun _ ↦ hZst) (fun _ ↦ hstZ) (fun _ ↦ σ) (fun _ ↦ hσ) (fun _ ↦ hσd) (fun _ ↦ hσs)
+    (fun _ ↦ hσt) (fun _ ↦ hσ₁) (fun _ ↦ hσ₀) (fun _ ↦ hσZ)
+  refine ⟨ε₀, hε₀, fun ε hε hcompact hcrit ↦ ?_⟩
+  obtain ⟨hD, hr⟩ := h ε hε hcompact (by rwa [iUnion_const])
+  rw [iUnion_const] at hr
+  exact ⟨hD (), hr⟩
 
-end Transport
+end Family
 
 end TauCeti
