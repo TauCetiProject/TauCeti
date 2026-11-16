@@ -24,14 +24,15 @@ Conversely, given a complete normed space `E` and any family `v : ι → E` whos
 above, `TauCeti.lpOneSummation 𝕜 v hv : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] E` sums `α ↦ ∑' i, α i • v i`
 by composing `lp.tsumCLM` with `lp.mapCLM` of `ContinuousLinearMap.toSpanSingleton 𝕜 (v i)`. It is
 the unique bounded linear map sending each unit coordinate vector `lp.single 1 i 1` to `v i`
-(`TauCeti.eq_lpOneSummation_iff`), and its operator norm is `⨆ i, ‖v i‖`
+(`ContinuousLinearMap.eq_lpOneSummation_iff`), and its operator norm is `⨆ i, ‖v i‖`
 (`TauCeti.norm_lpOneSummation`).
 
 Specializing `v` to the inclusion of the closed unit ball `Metric.closedBall (0 : E) 1` of a
 complete normed space `E` produces the canonical summation surjection
-`TauCeti.unitBallSummation 𝕜 E : lp (fun _ : Metric.closedBall (0 : E) 1 ↦ 𝕜) 1 →L[𝕜] E`. Over a
-densely normed field `𝕜`, this map is a metric surjection
-(`TauCeti.isMetricSurjection_unitBallSummation`).
+`TauCeti.unitBallSummation 𝕜 E : lp (fun _ : Metric.closedBall (0 : E) 1 ↦ 𝕜) 1 →L[𝕜] E`,
+characterized by its values on unit coordinate vectors
+(`ContinuousLinearMap.eq_unitBallSummation_iff`). Over a densely normed field `𝕜`, this map is a
+metric surjection (`TauCeti.isMetricSurjection_unitBallSummation`).
 
 ## Main definitions and results
 
@@ -39,9 +40,10 @@ densely normed field `𝕜`, this map is a metric surjection
   coordinate-supremum formula for the norm of an operator on scalar `ℓ¹`.
 * `ContinuousLinearMap.ext_lp_of_ne_top`: coordinate extensionality on scalar `ℓ^q` for `q ≠ ∞`.
 * `TauCeti.lpOneSummation`: bounded summation operator `α ↦ ∑' i, α i • v i` on `ℓ¹(ι, 𝕜)`.
-* `TauCeti.eq_lpOneSummation_iff` and `TauCeti.norm_lpOneSummation`: universal property and exact
-  operator norm of `TauCeti.lpOneSummation`.
-* `TauCeti.unitBallSummation`: canonical summation map from `ℓ¹` on the closed unit ball of `E`.
+* `ContinuousLinearMap.eq_lpOneSummation_iff` and `TauCeti.norm_lpOneSummation`: universal property
+  and exact operator norm of `TauCeti.lpOneSummation`.
+* `TauCeti.unitBallSummation` and `ContinuousLinearMap.eq_unitBallSummation_iff`: canonical
+  summation map from `ℓ¹` on the closed unit ball of `E` and its universal property.
 * `TauCeti.isMetricSurjection_unitBallSummation`: `TauCeti.unitBallSummation 𝕜 E` is a metric
   surjection over any densely normed field `𝕜`.
 
@@ -200,10 +202,11 @@ theorem hasSum_lpOneSummation (v : ι → E) (hv : BddAbove (Set.range fun i ↦
   have h := (lpOneSummation 𝕜 v hv).hasSum_lp_single_smul ENNReal.one_ne_top α
   simpa only [lpOneSummation_single, one_smul] using h
 
-/-- **Universal property of `lpOneSummation`.** A bounded linear map out of scalar `ℓ¹` equals
-`lpOneSummation 𝕜 v hv` if and only if it maps each unit coordinate vector `lp.single 1 i 1` to
-`v i`. -/
-theorem eq_lpOneSummation_iff [DecidableEq ι] (U : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] E) (v : ι → E)
+/-- **Universal property of `TauCeti.lpOneSummation`.** A bounded linear map out of scalar `ℓ¹`
+equals `TauCeti.lpOneSummation 𝕜 v hv` if and only if it maps each unit coordinate vector
+`lp.single 1 i 1` to `v i`. -/
+theorem _root_.ContinuousLinearMap.eq_lpOneSummation_iff [DecidableEq ι]
+    (U : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] E) (v : ι → E)
     (hv : BddAbove (Set.range fun i ↦ ‖v i‖)) :
     U = lpOneSummation 𝕜 v hv ↔ ∀ i : ι, U (lp.single 1 i 1) = v i := by
   refine ⟨fun h i ↦ by simp [h], fun h ↦ U.ext_lp_of_ne_top ENNReal.one_ne_top fun i ↦ ?_⟩
@@ -214,17 +217,18 @@ theorem lpOneSummation_inj {v w : ι → E} (hv : BddAbove (Set.range fun i ↦ 
     (hw : BddAbove (Set.range fun i ↦ ‖w i‖)) :
     lpOneSummation 𝕜 v hv = lpOneSummation 𝕜 w hw ↔ v = w := by
   classical
-  rw [eq_lpOneSummation_iff, funext_iff]
+  rw [(lpOneSummation 𝕜 v hv).eq_lpOneSummation_iff, funext_iff]
   simp
 
-/-- Postcomposing `lpOneSummation 𝕜 v hv` with a bounded linear operator `T` into a complete normed
-space gives `lpOneSummation 𝕜 (fun i ↦ T (v i)) _`. -/
-theorem comp_lpOneSummation [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+/-- Postcomposing `TauCeti.lpOneSummation 𝕜 v hv` with a bounded linear operator `T` into a
+complete normed space gives `TauCeti.lpOneSummation 𝕜 (fun i ↦ T (v i)) _`. -/
+theorem _root_.ContinuousLinearMap.comp_lpOneSummation
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
     (T : E →L[𝕜] F) (v : ι → E) (hv : BddAbove (Set.range fun i ↦ ‖v i‖))
     (hTv : BddAbove (Set.range fun i ↦ ‖T (v i)‖)) :
     T ∘L lpOneSummation 𝕜 v hv = lpOneSummation 𝕜 (fun i ↦ T (v i)) hTv := by
   classical
-  rw [eq_lpOneSummation_iff]
+  rw [(T ∘L lpOneSummation 𝕜 v hv).eq_lpOneSummation_iff]
   intro i
   simp
 
@@ -268,13 +272,6 @@ section NontriviallyNormedField
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
 
-/-- `unitBallSummation 𝕜 E` is `lpOneSummation` specialized to `Subtype.val` on the closed unit
-ball. -/
-theorem unitBallSummation_eq_lpOneSummation :
-    unitBallSummation 𝕜 E = lpOneSummation 𝕜 (Subtype.val : Metric.closedBall (0 : E) 1 → E)
-      ⟨1, mem_upperBounds.mpr (Set.forall_mem_range.mpr fun x ↦ mem_closedBall_zero_iff.mp x.2)⟩ :=
-  (rfl)
-
 /-- Evaluating `unitBallSummation 𝕜 E` at `α` computes `∑' x, α x • (x : E)`. -/
 @[simp]
 theorem unitBallSummation_apply (α : lp (fun _ : Metric.closedBall (0 : E) 1 ↦ 𝕜) 1) :
@@ -287,6 +284,16 @@ theorem unitBallSummation_single [DecidableEq (Metric.closedBall (0 : E) 1)]
     (x : Metric.closedBall (0 : E) 1) (c : 𝕜) :
     unitBallSummation 𝕜 E (lp.single 1 x c) = c • (x : E) :=
   lpOneSummation_single _ _ x c
+
+/-- **Universal property of `TauCeti.unitBallSummation`.** A bounded linear map from `ℓ¹` on the
+closed unit ball of `E` into `E` equals `TauCeti.unitBallSummation 𝕜 E` if and only if it maps each
+unit coordinate vector `lp.single 1 x 1` to `(x : E)`. -/
+theorem _root_.ContinuousLinearMap.eq_unitBallSummation_iff
+    [DecidableEq (Metric.closedBall (0 : E) 1)]
+    (U : lp (fun _ : Metric.closedBall (0 : E) 1 ↦ 𝕜) 1 →L[𝕜] E) :
+    U = unitBallSummation 𝕜 E ↔
+      ∀ x : Metric.closedBall (0 : E) 1, U (lp.single 1 x 1) = (x : E) :=
+  U.eq_lpOneSummation_iff _ _
 
 variable (𝕜 E) in
 /-- `unitBallSummation 𝕜 E` has operator norm at most `1` over every nontrivially normed field. -/

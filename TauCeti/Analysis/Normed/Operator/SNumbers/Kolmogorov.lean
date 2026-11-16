@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Operator.MetricSurjection
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Basic
+public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Basic
 public import TauCeti.Analysis.Normed.Module.Quotient
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
@@ -17,9 +19,10 @@ quotient projections by subspaces of dimension at most `n`. The quotient seminor
 even when the subspace is not closed. This definition works over every nontrivially normed
 field; its closed-unit-ball interpretation requires a densely normed field.
 
-We prove the norm, monotonicity, perturbation, ideal and rank laws. Over a complete scalar
-field, finite-dimensional subspaces are closed, and the Kolmogorov numbers form a strict
-s-number sequence. No completeness of the domain or codomain is needed.
+We prove the norm, monotonicity, perturbation, ideal and rank laws, invariance under
+precomposition with metric surjections, and the bound by approximation numbers. Over a
+complete scalar field, finite-dimensional subspaces are closed, and the Kolmogorov numbers
+form a strict s-number sequence. No completeness of the domain or codomain is needed.
 
 ## References
 
@@ -163,6 +166,19 @@ theorem kolmogorovNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G)
   rw [mul_assoc]
   gcongr
   exact T.kolmogorovNumber_comp_le_right A n
+
+/-- **Metric surjectivity of Kolmogorov numbers.** Precomposing with a metric surjection leaves
+all Kolmogorov numbers unchanged, over every nontrivially normed field. -/
+theorem IsMetricSurjection.kolmogorovNumber_comp {Q : E →L[𝕜] F} (hQ : Q.IsMetricSurjection)
+    (T : F →L[𝕜] G) (n : ℕ) :
+    (T ∘L Q).kolmogorovNumber n = T.kolmogorovNumber n := by
+  simp only [kolmogorovNumber_def, ← comp_assoc, hQ.opNNNorm_comp]
+
+/-- Every Kolmogorov number is bounded above by the corresponding approximation number. -/
+theorem kolmogorovNumber_le_singularValue (T : E →L[𝕜] F) (n : ℕ) :
+    T.kolmogorovNumber n ≤ T.singularValue n := by
+  refine le_singularValue_iff.mpr fun R hR ↦ ?_
+  simpa [R.kolmogorovNumber_eq_zero_of_rank_le hR] using R.kolmogorovNumber_add_le (T - R) n
 
 end ContinuousLinearMap
 
