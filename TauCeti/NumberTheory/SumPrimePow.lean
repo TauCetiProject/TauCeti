@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Data.Nat.Log
 public import Mathlib.NumberTheory.PrimeCounting
 public import Mathlib.Topology.Instances.Real.Lemmas
-import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Analysis.PSeries
 import Mathlib.Data.Nat.Prime.Int
@@ -74,28 +73,6 @@ theorem sum_Icc_eq_sum_primesLE_sum_Icc_log {M : Type*} [AddCommMonoid M] {f : �
   _ = _ := sum_congr rfl fun p hp ↦
     sum_image fun _ _ _ _ h ↦ Nat.pow_right_injective (two_le_of_mem_primesLE hp) h
 
-private theorem sum_Ioc_inv_sq_le_inv {M N : ℕ} (hM : 1 ≤ M) :
-    ∑ k ∈ Ioc M N, ((k : ℝ) ^ 2)⁻¹ ≤ (M : ℝ)⁻¹ := by
-  rcases le_or_gt M N with hMN | hNM
-  · have himg : Ioc M N = (Ico M N).image (· + 1) := by
-      ext k
-      simp only [mem_Ioc, mem_image, mem_Ico]
-      exact ⟨fun hk ↦ ⟨k - 1, by lia, by lia⟩, fun ⟨i, hi, hk⟩ ↦ by lia⟩
-    have hle : ∑ k ∈ Ioc M N, ((k : ℝ) ^ 2)⁻¹ ≤
-        ∑ i ∈ Ico M N, (-(((i + 1 : ℕ) : ℝ)⁻¹) - -(i : ℝ)⁻¹) := by
-      rw [himg, sum_image fun _ _ _ _ h ↦ Nat.succ.inj h]
-      refine sum_le_sum fun i hi ↦ ?_
-      have hiM : 1 ≤ i := hM.trans (mem_Ico.mp hi).1
-      have hi0 : (0 : ℝ) < i := mod_cast hiM
-      have hi1 : (0 : ℝ) < (i + 1 : ℕ) := by positivity
-      rw [sub_neg_eq_add, add_comm, ← sub_eq_add_neg, inv_sub_inv hi0.ne' hi1.ne', Nat.cast_add,
-        Nat.cast_one, add_sub_cancel_left, one_div]
-      exact inv_anti₀ (mul_pos hi0 (by positivity)) (by push_cast; nlinarith)
-    rw [sum_Ico_sub (f := fun i : ℕ ↦ -(i : ℝ)⁻¹) hMN] at hle
-    linarith [inv_nonneg.mpr (Nat.cast_nonneg N : (0 : ℝ) ≤ N)]
-  · rw [Ioc_eq_empty_of_le hNM.le, sum_empty]
-    positivity
-
 /-- **Quantitative bound on the omitted prime-power reciprocals.** Splitting `p ≤ N` at `√N`,
 each prime `p ≤ √N` contributes less than `1 / N` (for `1 / √N` in total), while each prime
 `p > √N` has `Nat.log p N + 1 ≥ 2` and contributes at most `1 / p ^ 2` (for `2 / √N` in total). -/
@@ -132,7 +109,8 @@ theorem sum_primesLE_inv_pow_log_succ_le (N : ℕ) :
     _ ≤ ∑ k ∈ Ioc M N, ((k : ℝ) ^ 2)⁻¹ := sum_le_sum_of_subset_of_nonneg
       (fun p hp ↦ mem_Ioc.mpr ⟨not_le.mp (mem_filter.mp hp).2,
         le_of_mem_primesLE (mem_filter.mp hp).1⟩) fun _ _ _ ↦ by positivity
-    _ ≤ (M : ℝ)⁻¹ := sum_Ioc_inv_sq_le_inv hM1
+    _ ≤ (M : ℝ)⁻¹ := (sum_Ioc_inv_sq_le_sub (by lia) (sqrt_le_self N)).trans
+      (sub_le_self _ (inv_nonneg.mpr (Nat.cast_nonneg N)))
     _ ≤ 2 / √(N : ℝ) := by
       have hM1_real : (1 : ℝ) ≤ M := Nat.one_le_cast.mpr hM1
       have hNle : (N : ℝ) ≤ ((M + 1 : ℕ) : ℝ) ^ 2 := by

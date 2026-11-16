@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.NumberTheory.ArithmeticFunction.VonMangoldt
 public import TauCeti.NumberTheory.Mertens.Basic
+import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.NumberTheory.SumPrimePow
@@ -45,9 +46,9 @@ higher-prime-power reciprocals `∑_{n ≥ 1, ¬n.Prime} Λ(n) / (n log n) = γ 
   `TauCeti.tendsto_sum_Icc_vonMangoldt_div_mul_log_sub_log_log`, and
   `TauCeti.exists_abs_sum_Icc_vonMangoldt_div_mul_log_sub_log_log_sub_le`:
   `∑_{1 ≤ n ≤ x} Λ(n) / (n log n) = log log x + γ + O(1 / log x)` (uniformly on `1 < x`).
-* `ArithmeticFunction.vonMangoldt.hasSum_nonprime_div_mul_log`,
-  `ArithmeticFunction.vonMangoldt.summable_nonprime_div_mul_log`, and
-  `ArithmeticFunction.vonMangoldt.tsum_nonprime_div_mul_log`: the higher-prime-power series sums to
+* `TauCeti.hasSum_vonMangoldt_nonprime_div_mul_log`,
+  `TauCeti.summable_vonMangoldt_nonprime_div_mul_log`, and
+  `TauCeti.tsum_vonMangoldt_nonprime_div_mul_log`: the higher-prime-power series sums to
   `γ - meisselMertensConstant`.
 
 ## References
@@ -192,21 +193,15 @@ theorem exists_abs_sum_Icc_vonMangoldt_div_mul_log_sub_log_log_sub_le :
     (g := fun N ↦ ∑ n ∈ Finset.Icc 1 N, Λ n / ((n : ℝ) * Real.log n))
     isBigO_sum_Icc_vonMangoldt_div_mul_log_sub_log_log_sub
 
-end TauCeti
-
 /-! ### Series of higher-prime-power reciprocals -/
-
-namespace ArithmeticFunction.vonMangoldt
-
-open TauCeti
 
 /-- **Exact sum of the non-prime von Mangoldt reciprocal series.** Summing `Λ(n) / (n log n)` over
 non-prime `n : ℕ` (that is, `1 / (k p ^ k)` over prime powers `p ^ k` with `k ≥ 2`) converges to
 `γ - meisselMertensConstant`. -/
-theorem hasSum_nonprime_div_mul_log :
-    HasSum (fun n : ℕ ↦ if n.Prime then 0 else vonMangoldt n / ((n : ℝ) * Real.log n))
+theorem hasSum_vonMangoldt_nonprime_div_mul_log :
+    HasSum (fun n : ℕ ↦ if n.Prime then 0 else Λ n / ((n : ℝ) * Real.log n))
       (Real.eulerMascheroniConstant - meisselMertensConstant) := by
-  set f : ℕ → ℝ := fun n ↦ if n.Prime then 0 else vonMangoldt n / ((n : ℝ) * Real.log n)
+  set f : ℕ → ℝ := fun n ↦ if n.Prime then 0 else Λ n / ((n : ℝ) * Real.log n)
   have hf_nonneg (n : ℕ) : 0 ≤ f n := by
     simp only [f]
     split_ifs
@@ -217,7 +212,7 @@ theorem hasSum_nonprime_div_mul_log :
           (mul_nonneg (Nat.cast_nonneg n) (Real.log_nonneg (mod_cast Nat.pos_of_ne_zero hn0)))
   rw [hasSum_iff_tendsto_nat_of_nonneg hf_nonneg, ← tendsto_add_atTop_iff_nat 1]
   have hpart (N : ℕ) : ∑ n ∈ Finset.range (N + 1), f n =
-      (∑ n ∈ Finset.Icc 1 N, vonMangoldt n / ((n : ℝ) * Real.log n)) -
+      (∑ n ∈ Finset.Icc 1 N, Λ n / ((n : ℝ) * Real.log n)) -
         ∑ p ∈ Nat.primesLE N, (p : ℝ)⁻¹ := by
     have hrange : ∑ n ∈ Finset.range (N + 1), f n = ∑ n ∈ Finset.Icc 1 N, f n := by
       refine (Finset.sum_subset (fun n hn ↦ Finset.mem_range.mpr (by
@@ -225,22 +220,18 @@ theorem hasSum_nonprime_div_mul_log :
       rw [Finset.mem_range] at hnR
       have hn0 : n = 0 := by simp only [Finset.mem_Icc, not_and, not_le] at hn; lia
       simp [f, hn0]
-    have hprimes : Finset.filter Nat.Prime (Finset.Icc 1 N) = Nat.primesLE N := by
-      ext p
-      simp only [Finset.mem_filter, Finset.mem_Icc, Nat.mem_primesLE]
-      exact ⟨fun ⟨⟨_, hpN⟩, hp⟩ ↦ ⟨hpN, hp⟩, fun ⟨hpN, hp⟩ ↦ ⟨⟨hp.pos, hpN⟩, hp⟩⟩
-    have hprime_sum : ∑ n ∈ Finset.Icc 1 N with n.Prime, vonMangoldt n / ((n : ℝ) * Real.log n) =
+    have hprime_sum : ∑ n ∈ Finset.Icc 1 N with n.Prime, Λ n / ((n : ℝ) * Real.log n) =
         ∑ p ∈ Nat.primesLE N, (p : ℝ)⁻¹ := by
-      rw [hprimes]
+      rw [← Nat.primesLE_eq_filter_Icc_one]
       refine Finset.sum_congr rfl fun p hp ↦ ?_
       simpa using vonMangoldt_div_mul_log_prime_pow (Nat.prime_of_mem_primesLE hp) 1
     rw [hrange, ← Finset.sum_filter_add_sum_filter_not (Finset.Icc 1 N) Nat.Prime f,
       ← Finset.sum_filter_add_sum_filter_not (Finset.Icc 1 N) Nat.Prime
-        (fun n ↦ vonMangoldt n / ((n : ℝ) * Real.log n)), hprime_sum]
+        (fun n ↦ Λ n / ((n : ℝ) * Real.log n)), hprime_sum]
     have h1 : ∑ n ∈ Finset.Icc 1 N with n.Prime, f n = 0 :=
       Finset.sum_eq_zero fun n hn ↦ ite_eq_left (Finset.mem_filter.mp hn).2
     have h2 : ∑ n ∈ Finset.Icc 1 N with ¬n.Prime, f n =
-        ∑ n ∈ Finset.Icc 1 N with ¬n.Prime, vonMangoldt n / ((n : ℝ) * Real.log n) :=
+        ∑ n ∈ Finset.Icc 1 N with ¬n.Prime, Λ n / ((n : ℝ) * Real.log n) :=
       Finset.sum_congr rfl fun n hn ↦ ite_eq_right (Finset.mem_filter.mp hn).2
     rw [h1, h2]
     ring
@@ -252,15 +243,15 @@ theorem hasSum_nonprime_div_mul_log :
   ring
 
 /-- The non-prime von Mangoldt reciprocal series `∑_{¬n.Prime} Λ(n) / (n log n)` is summable. -/
-theorem summable_nonprime_div_mul_log :
-    Summable fun n : ℕ ↦ if n.Prime then 0 else vonMangoldt n / ((n : ℝ) * Real.log n) :=
-  hasSum_nonprime_div_mul_log.summable
+theorem summable_vonMangoldt_nonprime_div_mul_log :
+    Summable fun n : ℕ ↦ if n.Prime then 0 else Λ n / ((n : ℝ) * Real.log n) :=
+  hasSum_vonMangoldt_nonprime_div_mul_log.summable
 
 /-- Closed form of the non-prime von Mangoldt reciprocal series:
 `∑'_{¬n.Prime} Λ(n) / (n log n) = γ - meisselMertensConstant`. -/
-theorem tsum_nonprime_div_mul_log :
-    (∑' n : ℕ, if n.Prime then 0 else vonMangoldt n / ((n : ℝ) * Real.log n)) =
+theorem tsum_vonMangoldt_nonprime_div_mul_log :
+    (∑' n : ℕ, if n.Prime then 0 else Λ n / ((n : ℝ) * Real.log n)) =
       Real.eulerMascheroniConstant - meisselMertensConstant :=
-  hasSum_nonprime_div_mul_log.tsum_eq
+  hasSum_vonMangoldt_nonprime_div_mul_log.tsum_eq
 
-end ArithmeticFunction.vonMangoldt
+end TauCeti

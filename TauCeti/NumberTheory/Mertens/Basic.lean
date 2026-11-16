@@ -75,14 +75,6 @@ namespace TauCeti
 
 /-! ### Transport between `HeightOneSpectrum (𝓞 ℚ)` and rational primes -/
 
-/-- On `𝓞 ℚ`, a height-one prime ideal is uniquely determined by its absolute norm. -/
-theorem absNorm_asIdeal_rat_injective :
-    Function.Injective fun v : HeightOneSpectrum (𝓞 ℚ) ↦ Ideal.absNorm v.asIdeal := by
-  intro v w h
-  dsimp only at h
-  rw [Rat.HeightOneSpectrum.absNorm_asIdeal, Rat.HeightOneSpectrum.absNorm_asIdeal] at h
-  exact Rat.HeightOneSpectrum.primesEquiv.injective (Subtype.ext h)
-
 -- Not `@[simp]`: `Rat.HeightOneSpectrum.absNorm_asIdeal` is `@[simp]` and rewrites
 -- `Ideal.absNorm v.asIdeal` to `Rat.HeightOneSpectrum.natGenerator v` on the left-hand sides of
 -- the `Ideal.absNorm` transport lemmas below (`simpNF`).
@@ -130,57 +122,6 @@ theorem finprod_heightOneSpectrum_rat_ite_absNorm_le_eq_prod_primesLE {M : Type*
     rw [Finset.mem_coe, mem_normLE]
     by_contra hvx
     exact hv (ite_eq_right hvx)
-
-/-! ### Uniform `C / log x` passage on `(1, ∞)` -/
-
-/-- **Uniform `C / log x` bound on `(1, ∞)` from an eventual `O(1 / log x)` Mertens estimate.**
-On a bounded interval `(1, B]`, the step function `g ⌊x⌋₊` takes at most `B + 1` values while
-`|log (log x)| * log x` stays bounded near `1⁺` because `|log u| ≤ u + u⁻¹` for `u > 0`. -/
-theorem exists_abs_comp_natFloor_sub_log_log_sub_le {g : ℕ → ℝ} {A : ℝ}
-    (hO : (fun x : ℝ ↦ g ⌊x⌋₊ - Real.log (Real.log x) - A) =O[atTop] fun x ↦ (Real.log x)⁻¹) :
-    ∃ C, 0 ≤ C ∧ ∀ x, 1 < x → |g ⌊x⌋₊ - Real.log (Real.log x) - A| ≤ C / Real.log x := by
-  obtain ⟨c₀, hc₀, hbound⟩ := hO.exists_nonneg
-  obtain ⟨b, hb⟩ := eventually_atTop.mp hbound.bound
-  set B : ℕ := max 2 ⌈b⌉₊
-  have hbB : b ≤ B := (Nat.le_ceil b).trans (by exact_mod_cast le_max_right 2 ⌈b⌉₊)
-  set M : ℝ := ∑ k ∈ Finset.Icc 0 B, |g k|
-  have hM0 : 0 ≤ M := Finset.sum_nonneg fun _ _ ↦ abs_nonneg _
-  set C₁ : ℝ := (M + |A|) * Real.log B + (Real.log B ^ 2 + 1)
-  refine ⟨max c₀ C₁, hc₀.trans (le_max_left _ _), fun x hx1 ↦ ?_⟩
-  have hx0 : 0 < x := zero_lt_one.trans hx1
-  have hu : 0 < Real.log x := Real.log_pos hx1
-  rcases le_or_gt (B : ℝ) x with hBx | hxB
-  · have h := hb x (hbB.trans hBx)
-    rw [Real.norm_eq_abs, Real.norm_of_nonneg (inv_nonneg.mpr hu.le), ← div_eq_mul_inv] at h
-    exact h.trans (div_le_div_of_nonneg_right (le_max_left _ _) hu.le)
-  · have hfloor : ⌊x⌋₊ ∈ Finset.Icc 0 B :=
-      Finset.mem_Icc.mpr ⟨Nat.zero_le _, Nat.floor_le_of_le hxB.le⟩
-    have hgM : |g ⌊x⌋₊| ≤ M :=
-      Finset.single_le_sum (f := fun k ↦ |g k|) (fun _ _ ↦ abs_nonneg _) hfloor
-    have huB : Real.log x ≤ Real.log B := Real.log_le_log hx0 hxB.le
-    have hlogu : |Real.log (Real.log x)| ≤ Real.log x + (Real.log x)⁻¹ := by
-      rw [abs_le]
-      refine ⟨?_, ?_⟩
-      · have hinv := Real.log_le_sub_one_of_pos (inv_pos.mpr hu)
-        rw [Real.log_inv] at hinv
-        linarith
-      · linarith [Real.log_le_sub_one_of_pos hu, inv_pos.mpr hu]
-    have htri : |g ⌊x⌋₊ - Real.log (Real.log x) - A| ≤
-        (|g ⌊x⌋₊| + |A|) + |Real.log (Real.log x)| := by
-      linarith [abs_sub (g ⌊x⌋₊ - Real.log (Real.log x)) A,
-        abs_sub (g ⌊x⌋₊) (Real.log (Real.log x))]
-    rw [le_div_iff₀ hu]
-    calc |g ⌊x⌋₊ - Real.log (Real.log x) - A| * Real.log x
-        ≤ ((|g ⌊x⌋₊| + |A|) + (Real.log x + (Real.log x)⁻¹)) * Real.log x :=
-          mul_le_mul_of_nonneg_right (htri.trans (add_le_add le_rfl hlogu)) hu.le
-      _ = (|g ⌊x⌋₊| + |A|) * Real.log x + (Real.log x ^ 2 + (Real.log x)⁻¹ * Real.log x) := by
-          ring
-      _ = (|g ⌊x⌋₊| + |A|) * Real.log x + (Real.log x ^ 2 + 1) := by
-          rw [inv_mul_cancel₀ hu.ne']
-      _ ≤ (M + |A|) * Real.log B + (Real.log B ^ 2 + 1) := add_le_add
-          (mul_le_mul (add_le_add hgM le_rfl) huB hu.le (add_nonneg hM0 (abs_nonneg A)))
-          (add_le_add (pow_le_pow_left₀ hu.le huB 2) le_rfl)
-      _ ≤ max c₀ C₁ := le_max_right _ _
 
 /-! ### The Meissel–Mertens constant and Mertens's second theorem -/
 

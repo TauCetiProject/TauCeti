@@ -56,8 +56,9 @@ at its primes.
 * `Ideal.primesOver_under_ringOfIntegers_rat_eq`: for an ideal `Q` lying over an ideal `p` of
   `ℤ`, the primes above `Q ∩ 𝓞 ℚ` are the primes above `p`.
 * `Rat.HeightOneSpectrum.absNorm_asIdeal`: the absolute norm of a height-one prime of `𝓞 ℚ` is
-  the rational prime it corresponds to, and `Rat.HeightOneSpectrum.exists_absNorm_eq` shows
-  every rational prime arises this way.
+  the rational prime it corresponds to; `Rat.HeightOneSpectrum.exists_absNorm_eq` shows every
+  rational prime arises this way, and `TauCeti.absNorm_asIdeal_rat_injective` shows the norm
+  determines the prime ideal uniquely.
 * `Rat.HeightOneSpectrum.liesOver_span_absNorm`: a prime above a height-one prime `v` of `𝓞 ℚ`
   lies over the rational prime of `v` in `ℤ`.
 * `Rat.HeightOneSpectrum.valuation_natGenerator` and
@@ -224,6 +225,20 @@ theorem exists_absNorm_eq {p : ℕ} (hp : p.Prime) :
   ⟨v, (absNorm_asIdeal v).trans (congrArg Subtype.val hv)⟩
 
 end Rat.HeightOneSpectrum
+
+namespace TauCeti
+
+open IsDedekindDomain
+
+/-- On `𝓞 ℚ`, a height-one prime ideal is uniquely determined by its absolute norm. -/
+theorem absNorm_asIdeal_rat_injective :
+    Function.Injective fun v : HeightOneSpectrum (𝓞 ℚ) ↦ Ideal.absNorm v.asIdeal := by
+  intro v w h
+  dsimp only at h
+  rw [Rat.HeightOneSpectrum.absNorm_asIdeal, Rat.HeightOneSpectrum.absNorm_asIdeal] at h
+  exact Rat.HeightOneSpectrum.primesEquiv.injective (Subtype.ext h)
+
+end TauCeti
 
 namespace Rat.RingOfIntegers
 
