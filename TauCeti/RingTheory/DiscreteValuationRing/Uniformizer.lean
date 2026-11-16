@@ -29,6 +29,8 @@ change-of-uniformizer formula.
 
 ## Main results
 
+* `Irreducible.mul_mem_maximalIdeal_pow_succ_iff`: multiplying by a uniformizer shifts membership
+  in powers of the maximal ideal by one.
 * `TauCeti.residueFieldEquivMaximalIdealGradedOfUniformizer`: the identification of the residue
   field with a maximal-ideal graded piece determined by a uniformizer.
 * `TauCeti.residueFieldEquivMaximalIdealGradedOfUniformizer_change`: changing the uniformizer
@@ -48,6 +50,13 @@ open IsLocalRing
 namespace TauCeti
 
 variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
+
+/-- Multiplying by a uniformizer shifts membership in powers of the maximal ideal by one. -/
+theorem _root_.Irreducible.mul_mem_maximalIdeal_pow_succ_iff {ϖ : R} (hϖ : Irreducible ϖ)
+    {k : ℕ} {z : R} :
+    ϖ * z ∈ maximalIdeal R ^ (k + 1) ↔ z ∈ maximalIdeal R ^ k := by
+  rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.span_singleton_pow, pow_succ',
+    Ideal.mem_span_singleton, Ideal.mem_span_singleton, mul_dvd_mul_iff_left hϖ.ne_zero]
 
 /-- The unique unit `a` such that `π * a = π'`, for two uniformizers `π` and `π'` of a discrete
 valuation ring. -/

@@ -107,8 +107,8 @@ integer indexing that Herbrand theory uses.
   and finite inertia each `G_i` (`i > 0`) is a `p`-group.
 * `TauCeti.IsLocalRing.ramificationGroup_eq_bot_of_charZero` and
   `TauCeti.IsLocalRing.ramificationGroup_one_eq_bot_of_charZero`: in residue characteristic zero,
-  every finite-order element of `G_1` over a Noetherian local ring acts trivially, so when `G_0`
-  is finite and the action is faithful every `G_i` (`i > 0`) is trivial.
+  every finite-order element of `G_1` over a Noetherian local ring acts trivially, so when `G_i`
+  (`0 < i`, resp. `G_1`) is finite and the action is faithful, `G_i` (resp. `G_1`) is trivial.
 
 ## References
 
@@ -1092,30 +1092,29 @@ theorem eq_one_of_mem_ramificationGroup_one_of_isOfFinOrder
 
 variable (G S) in
 /-- **Positive-depth ramification groups vanish in residue characteristic zero.** Over a Noetherian
-local ring with residue field of characteristic zero, faithful action, and finite inertia group
-`G_0`, every ramification group `G_i` with `0 < i` is trivial. -/
+local ring with residue field of characteristic zero and faithful action, every finite
+positive-depth ramification group `G_i` (`0 < i`) is trivial. -/
 theorem ramificationGroup_eq_bot_of_charZero
     [IsNoetherianRing S] [FaithfulSMul G S] [CharZero (ResidueField S)]
-    [Finite (ramificationGroup G S 0)] {i : ℤ} (hi : 0 < i) :
+    {i : ℤ} [Finite (ramificationGroup G S i)] (hi : 0 < i) :
     ramificationGroup G S i = ⊥ := by
   rw [eq_bot_iff]
   intro σ hσ
   have hσ₁ : σ ∈ ramificationGroup G S 1 := ramificationGroup_antitone G S (by omega) hσ
-  have hσ₀ : σ ∈ ramificationGroup G S 0 := ramificationGroup_antitone G S (by omega) hσ
-  have hfin₀ : IsOfFinOrder (⟨σ, hσ₀⟩ : ramificationGroup G S 0) := isOfFinOrder_of_finite _
+  have hfinᵢ : IsOfFinOrder (⟨σ, hσ⟩ : ramificationGroup G S i) := isOfFinOrder_of_finite _
   have hfin : IsOfFinOrder σ := by
-    rw [isOfFinOrder_iff_pow_eq_one] at hfin₀ ⊢
-    obtain ⟨m, hm, hpow⟩ := hfin₀
+    rw [isOfFinOrder_iff_pow_eq_one] at hfinᵢ ⊢
+    obtain ⟨m, hm, hpow⟩ := hfinᵢ
     exact ⟨m, hm, congrArg Subtype.val hpow⟩
   rw [Subgroup.mem_bot]
   exact eq_one_of_mem_ramificationGroup_one_of_isOfFinOrder hσ₁ hfin
 
 variable (G S) in
 /-- Over a Noetherian local ring with residue field of characteristic zero, faithful action, and
-finite inertia group `G_0`, the wild inertia group `G_1` is trivial. -/
+finite wild inertia group `G_1`, the wild inertia group `G_1` is trivial. -/
 theorem ramificationGroup_one_eq_bot_of_charZero
     [IsNoetherianRing S] [FaithfulSMul G S] [CharZero (ResidueField S)]
-    [Finite (ramificationGroup G S 0)] :
+    [Finite (ramificationGroup G S 1)] :
     ramificationGroup G S 1 = ⊥ :=
   ramificationGroup_eq_bot_of_charZero G S zero_lt_one
 
