@@ -272,10 +272,6 @@ theorem gradedSimplyBlockedComplex_d (i : Fin n) (a m : ℤ) :
   ext c
   rfl
 
-end TauCeti.OddComponentGridDiagram
-
-namespace TauCeti.OddComponentGridDiagram
-
 /-- Moving grid states along a bidegree-preserving surjection `φ` and renaming the surviving
 polynomial variables along `κ` identifies homogeneous pieces of the specialized chain modules. -/
 theorem mem_bigradedChainHatPiece_iff_of_rename {n m : ℕ}
@@ -287,21 +283,16 @@ theorem mem_bigradedChainHatPiece_iff_of_rename {n m : ℕ}
     (hcoeff : ∀ x, c' (φ x) = simplyBlockedRenameEquiv R κ i (c x)) {g : ℤ × ℤ} :
     c' ∈ G'.bigradedChainHatPiece R (κ i) g ↔ c ∈ G.bigradedChainHatPiece R i g := by
   classical
-  have hs (x : GridState n) :
-      (c' (φ x)).support =
-        (c x).support.image (Finsupp.mapDomain (κ.subtypeEquiv
-          fun _ => not_congr κ.injective.eq_iff.symm)) := by
+  have hs (x : GridState n) : (c' (φ x)).support = (c x).support.image (Finsupp.mapDomain
+      (κ.subtypeEquiv fun _ => not_congr κ.injective.eq_iff.symm)) := by
     rw [hcoeff, simplyBlockedRenameEquiv_apply, support_rename_of_injective (Equiv.injective _)]
   rw [mem_bigradedChainHatPiece, mem_bigradedChainHatPiece]
-  constructor
-  · intro hc x e he
-    have hx := hc (φ x) (e.mapDomain _) (by rw [hs]; exact Finset.mem_image_of_mem _ he)
+  refine ⟨fun hc x e he => ?_, fun hc y e he => ?_⟩
+  · have hx := hc (φ x) (e.mapDomain _) (by rw [hs]; exact Finset.mem_image_of_mem _ he)
     rwa [hdeg, Finsupp.degree_mapDomain] at hx
-  · intro hc y e he
-    obtain ⟨x, rfl⟩ := hφ y
-    rw [hs, Finset.mem_image] at he
-    obtain ⟨e, he, rfl⟩ := he
+  · obtain ⟨x, rfl⟩ := hφ y
+    obtain ⟨e', he', rfl⟩ := Finset.mem_image.mp (hs x ▸ he)
     rw [hdeg, Finsupp.degree_mapDomain]
-    exact hc x e he
+    exact hc x e' he'
 
 end TauCeti.OddComponentGridDiagram

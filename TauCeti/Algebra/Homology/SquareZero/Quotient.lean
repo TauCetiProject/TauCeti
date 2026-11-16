@@ -373,9 +373,8 @@ has `d a = 0` and so is a cycle of `mappingCone d e f`. -/
 theorem mem_ker_mappingCone_of_add_eq_zero {a : M} {b : N} (hab : f a + e b = 0) :
     (a, b) ∈ ker (mappingCone d e f) := by
   have hda : d a = 0 := hinj <| by
-    have hf' : f (d a) = e (f a) := congr($hf a)
-    have he' : e (e b) = 0 := congr($he b)
-    simp [hf', eq_neg_of_add_eq_zero_left hab, he']
+    simp [(congr($hf a) : f (d a) = e (f a)), eq_neg_of_add_eq_zero_left hab,
+      (congr($he b) : e (e b) = 0)]
   simp [mem_ker, hda, hab]
 
 include hexact hπe in
@@ -396,15 +395,14 @@ private theorem bijective_homologyMap_comp_snd :
     obtain ⟨u, hu⟩ := (hexact (b - e c)).mp <| by
       rw [map_sub, (congr($hπe c) : π (e c) = q (π c)), hc', comp_apply, snd_apply, sub_self]
     have hfdu : -d u = a := hinj <| by
-      have hf' : f (d u) = e (f u) := congr($hf u)
-      have he' : e (e c) = 0 := congr($he c)
-      simp [hf', hu, he', neg_eq_iff_add_eq_zero, add_comm, hab.2]
+      simp [(congr($hf u) : f (d u) = e (f u)), hu, (congr($he c) : e (e c) = 0),
+        neg_eq_iff_add_eq_zero, add_comm, hab.2]
     exact ⟨(u, c), by rw [mappingCone_apply, Prod.fst, Prod.snd, hfdu, hu, sub_add_cancel]⟩
   · obtain ⟨b, rfl⟩ := hπ z
     obtain ⟨a', ha'⟩ := (hexact (e b)).mp <| by
       rw [(congr($hπe b) : π (e b) = q (π b)), mem_ker.mp hz]
-    refine ⟨(-a', b), mem_ker_mappingCone_of_add_eq_zero he hf hinj ?_, 0, by simp⟩
-    rw [map_neg, ha', neg_add_cancel]
+    exact ⟨(-a', b), mem_ker_mappingCone_of_add_eq_zero he hf hinj
+      (by rw [map_neg, ha', neg_add_cancel]), 0, by simp⟩
 
 /-- When `0 → M --f--> N --π--> P → 0` is short exact on chains, `(a, b) ↦ π b` induces an
 isomorphism from the homology of `mappingCone d e f` onto the homology of `q`. -/
@@ -418,9 +416,8 @@ theorem mappingConeProjectionHomologyEquiv_mk (z : ker (mappingCone d e f)) :
     mappingConeProjectionHomologyEquiv hd he hq hf hinj hπ hexact hπe (Submodule.Quotient.mk z) =
       Submodule.Quotient.mk ⟨π z.1.2,
         map_mem_ker_of_comp_eq _ (comp_snd_comp_mappingCone hexact hπe) z.2⟩ :=
-  (LinearEquiv.ofBijective_apply _ _).trans <|
-    (homologyMap_mk _ _ _ _ z).trans <|
-      congrArg Submodule.Quotient.mk (Subtype.ext (by simp only [comp_apply, snd_apply]))
+  (LinearEquiv.ofBijective_apply _ _).trans <| (homologyMap_mk _ _ _ _ z).trans <|
+    congrArg Submodule.Quotient.mk (Subtype.ext (by simp only [comp_apply, snd_apply]))
 
 /-- If `f a + e b = 0`, the inverse of `mappingConeProjectionHomologyEquiv` lifts the cycle class of
 `π b` to the mapping-cone cycle class of `(a, b)`. -/
@@ -442,19 +439,16 @@ variable {N P₁ P₂ : Type*} [AddCommGroup N] [Module S N]
   {q₁ : P₁ →ₗ[S] P₁} {q₂ : P₂ →ₗ[S] P₂} (hq₁ : q₁ ∘ₗ q₁ = 0) (hq₂ : q₂ ∘ₗ q₂ = 0)
   {f₁ f₂ h : M →ₗ[S] N} (hf₁ : f₁ ∘ₗ d = e ∘ₗ f₁) (hf₂ : f₂ ∘ₗ d = e ∘ₗ f₂)
   (hinj₁ : Function.Injective f₁) (hinj₂ : Function.Injective f₂)
-  (hhom : e ∘ₗ h + h ∘ₗ d = f₁ - f₂)
-  {π₁ : N →ₗ[S] P₁} {π₂ : N →ₗ[S] P₂}
+  (hhom : e ∘ₗ h + h ∘ₗ d = f₁ - f₂) {π₁ : N →ₗ[S] P₁} {π₂ : N →ₗ[S] P₂}
   (hπ₁ : Function.Surjective π₁) (hπ₂ : Function.Surjective π₂)
   (hexact₁ : Function.Exact f₁ π₁) (hexact₂ : Function.Exact f₂ π₂)
   (hπ₁e : π₁ ∘ₗ e = q₁ ∘ₗ π₁) (hπ₂e : π₂ ∘ₗ e = q₂ ∘ₗ π₂)
 
 /-- **Two quotients of a differential module by chain-homotopic injective maps have isomorphic
 homology.** Given injective chain maps `f₁, f₂ : M → N` with `e ∘ h + h ∘ d = f₁ - f₂` and
-surjections `π₁ : N → P₁`, `π₂ : N → P₂` with kernels `range f₁` and `range f₂`, composing the two
-mapping-cone projections with `mappingConeHomologyEquivOfHomotopy` gives an explicit linear
-equivalence between the homologies of `q₁` and `q₂`. -/
-noncomputable def homologyEquivOfHomotopicInjective :
-    q₁.homology hq₁ ≃ₗ[S] q₂.homology hq₂ :=
+surjections `π₁ : N → P₁`, `π₂ : N → P₂` with kernels `range f₁` and `range f₂`, gives an explicit
+linear equivalence between the homologies of `q₁` and `q₂`. -/
+noncomputable def homologyEquivOfHomotopicInjective : q₁.homology hq₁ ≃ₗ[S] q₂.homology hq₂ :=
   (mappingConeProjectionHomologyEquiv hd he hq₁ hf₁ hinj₁ hπ₁ hexact₁ hπ₁e).symm.trans <|
     (mappingConeHomologyEquivOfHomotopy hd he hf₁ hf₂ hhom).trans
       (mappingConeProjectionHomologyEquiv hd he hq₂ hf₂ hinj₂ hπ₂ hexact₂ hπ₂e)

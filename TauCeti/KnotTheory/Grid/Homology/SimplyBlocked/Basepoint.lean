@@ -12,33 +12,20 @@ import TauCeti.Algebra.Homology.SquareZero.Quotient
 /-!
 # Independence of bigraded simply blocked grid homology from the blocked marking
 
-Setting `V_i = 0` on `GC⁻` presents `GC^_i` as the quotient of `GC⁻` by the injective chain map
-`V_i • id`, identifying its `R`-module homology with the mapping-cone homology of `V_i • id` on
-`GC⁻`. In characteristic two, any polynomial-linear `H` on `GC⁻` with
-`∂⁻ ∘ H + H ∘ ∂⁻ = (V_i + V_j) • id` shears `(a, b) ↦ (a, H a + b)` between the cones of `V_i` and
-`V_j` (`LinearMap.homologyEquivOfHomotopicInjective`), inducing an `R`-linear equivalence between
-the homologies of `GC^_i` and `GC^_j`.
+Setting `V_i = 0` on `GC⁻` presents `GC^_i` as the quotient by the injective chain map `V_i • id`.
+In characteristic two, any polynomial-linear `H` on `GC⁻` with `∂⁻ ∘ H + H ∘ ∂⁻ = (V_i + V_j) • id`
+shears the mapping cones of `V_i` and `V_j` (`LinearMap.homologyEquivOfHomotopicInjective`), giving
+`GridDiagram.oneVariableSpecializationHomologyEquivOfHomotopy` and its cycle-level formula
+`oneVariableSpecializationHomologyEquivOfHomotopy_class`.
 
-On an odd-component grid diagram, if `H` lowers the `(O-Maslov, Alexander)` bidegree by `(1, 1)`
-(`OddComponentGridDiagram.componentPathXHomotopy_mem_bigradedChainMinusPiece`), a cycle of
-bidegree `g` in `GC^_i` lifts to `b ∈ GC⁻_g` with `∂⁻ b = -V_i • a`; since `∂⁻` has bidegree
-`(-1, 0)` and `V_i` has bidegree `(-2, -1)`, `a` has bidegree `g + (1, 1)` and `H a + b` has
-bidegree `g`, making the homology equivalence homogeneous of bidegree `(0, 0)`. For a knot grid all
-`O`-markings lie on one component, so bigraded `G-hat` and (over a field of characteristic two) its
-Poincaré series and Euler characteristic do not depend on the blocked column.
-
-## Main definitions and results
-
-* `TauCeti.GridDiagram.oneVariableSpecializationHomologyEquivOfHomotopy` and
-  `oneVariableSpecializationHomologyEquivOfHomotopy_class`: the `R`-linear homology comparison from
-  a homotopy between `V_i` and `V_j` on `GC⁻`, and its explicit formula on lifted cycles.
-* `TauCeti.GridDiagram.oneVariableSpecializationHomologySameCycleEquiv`: the `R`-linear equivalence
-  between the homologies of `V_i = 0` and `V_j = 0` when `i` and `j` lie on the same link
-  component, homogeneous of bidegree `(0, 0)` on odd-component grid diagrams.
-* `TauCeti.GridDiagram.IsKnot.simplyBlockedHomologyBasepointEquiv`,
-  `simplyBlockedHomologyBasepointPieceEquiv`, `bigradedSimplyBlockedHomologyPoincareSeries_eq`, and
-  `gradedSimplyBlockedHomologyEulerChar_eq`: basepoint independence of bigraded `G-hat`, its
-  homogeneous pieces, its Poincaré series, and its Euler characteristic.
+When `i` and `j` lie on one link component, `componentPathXHomotopy` yields
+`GridDiagram.oneVariableSpecializationHomologySameCycleEquiv`; on an odd-component grid diagram it
+lowers bidegrees by `(1, 1)`, making the homology equivalence homogeneous of bidegree `(0, 0)`. For
+a knot grid this yields basepoint independence of bigraded `G-hat`
+(`GridDiagram.IsKnot.simplyBlockedHomologyBasepointEquiv`,
+`simplyBlockedHomologyBasepointPieceEquiv`) and, over a field of characteristic two, of its
+Poincaré series (`bigradedSimplyBlockedHomologyPoincareSeries_eq`) and Euler characteristic
+(`gradedSimplyBlockedHomologyEulerChar_eq`).
 
 ## References
 
@@ -72,11 +59,10 @@ private def xSmulEnd (i : Fin n) : GridChainMinus R n →ₗ[R] GridChainMinus R
       ).restrictScalars R
 
 private theorem xSmulEnd_apply (i : Fin n) (c : GridChainMinus R n) :
-    xSmulEnd R i c = (MvPolynomial.X i : MvPolynomial (Fin n) R) • c :=
-  (rfl)
+    xSmulEnd R i c = (MvPolynomial.X i : MvPolynomial (Fin n) R) • c := (rfl)
 
 private theorem xSmulEnd_injective (i : Fin n) : Function.Injective (xSmulEnd R i) :=
-  X_smul_gridChainMinus_injective R i
+  fun _ _ h => X_smul_gridChainMinus_injective R i (by simpa only [xSmulEnd_apply] using h)
 
 private theorem xSmulEnd_comp_dMinus (i : Fin n) :
     xSmulEnd R i ∘ₗ dMinus G R = dMinus G R ∘ₗ xSmulEnd R i :=
@@ -90,15 +76,16 @@ private def specLinearMap (i : Fin n) : GridChainMinus R n →ₗ[R] GridChainHa
     exact (MvPolynomial.killCompl (f := Subtype.val) Subtype.val_injective).toLinearMap.map_smul r _
 
 private theorem specLinearMap_apply (i : Fin n) (c : GridChainMinus R n) :
-    specLinearMap R i c = simplyBlockedSpecialization R i c :=
-  (rfl)
+    specLinearMap R i c = simplyBlockedSpecialization R i c := (rfl)
 
 private theorem specLinearMap_surjective (i : Fin n) : Function.Surjective (specLinearMap R i) :=
-  simplyBlockedSpecialization_surjective R i
+  fun c => let ⟨x, hx⟩ := simplyBlockedSpecialization_surjective R i c
+    ⟨x, by rwa [specLinearMap_apply]⟩
 
 private theorem exact_xSmulEnd_specLinearMap (i : Fin n) :
-    Function.Exact (xSmulEnd R i) (specLinearMap R i) :=
-  exact_X_smul_simplyBlockedSpecialization R i
+    Function.Exact (xSmulEnd R i) (specLinearMap R i) := fun c => by
+  simpa only [Set.mem_range, xSmulEnd_apply, specLinearMap_apply] using
+    exact_X_smul_simplyBlockedSpecialization R i c
 
 private theorem specLinearMap_comp_dMinus (i : Fin n) :
     specLinearMap R i ∘ₗ dMinus G R = dHat G R i ∘ₗ specLinearMap R i :=
@@ -137,9 +124,7 @@ def oneVariableSpecializationHomologyEquivOfHomotopy {i j : Fin n}
       (Base(R, n, j)).obj ((G.simplyBlockedComplex R j).homology ()) :=
   (G.simplyBlockedDifferentialRestrictScalarsHomologyEquiv R i).symm.trans <|
     (LinearMap.homologyEquivOfHomotopicInjective
-      (π₁ := specLinearMap R i) (π₂ := specLinearMap R j)
-      (dMinus_comp_self G R) (dMinus_comp_self G R)
-      (dHat_comp_self G R i) (dHat_comp_self G R j)
+      (dMinus_comp_self G R) (dMinus_comp_self G R) (dHat_comp_self G R i) (dHat_comp_self G R j)
       (xSmulEnd_comp_dMinus G R i) (xSmulEnd_comp_dMinus G R j)
       (xSmulEnd_injective R i) (xSmulEnd_injective R j)
       (homotopy_restrictScalars G R H hH)
@@ -158,14 +143,12 @@ theorem simplyBlockedDifferential_simplyBlockedSpecialization_add_eq_zero {i j :
     (hab : (MvPolynomial.X i : MvPolynomial (Fin n) R) • a + G.unblockedDifferential R b = 0) :
     G.simplyBlockedDifferential R j (simplyBlockedSpecialization R j (H a + b)) = 0 := by
   have hab' : xSmulEnd R i a + dMinus G R b = 0 := by
-    rw [xSmulEnd_apply, dMinus, LinearMap.restrictScalars_apply]
-    exact hab
-  have hmem := LinearMap.map_add_mem_ker_of_homotopy (π₂ := specLinearMap R j)
-    (dMinus_comp_self G R) (xSmulEnd_comp_dMinus G R i) (xSmulEnd_injective R i)
-    (homotopy_restrictScalars G R H hH)
-    (exact_xSmulEnd_specLinearMap R j) (specLinearMap_comp_dMinus G R j) hab'
-  simpa only [LinearMap.mem_ker, dHat, specLinearMap_apply, LinearMap.restrictScalars_apply]
-    using hmem
+    simpa only [xSmulEnd_apply, dMinus, LinearMap.restrictScalars_apply] using hab
+  simpa only [LinearMap.mem_ker, dHat, specLinearMap_apply, LinearMap.restrictScalars_apply] using
+    LinearMap.map_add_mem_ker_of_homotopy (dMinus_comp_self G R)
+      (xSmulEnd_comp_dMinus G R i) (xSmulEnd_injective R i)
+      (homotopy_restrictScalars G R H hH) (exact_xSmulEnd_specLinearMap R j)
+      (specLinearMap_comp_dMinus G R j) hab'
 
 /-- Explicit cycle-level formula for `oneVariableSpecializationHomologyEquivOfHomotopy`: if a cycle
 `z` in the specialization `V_i = 0` lifts to `b` in `GC⁻` with `V_i • a + ∂⁻ b = 0`, then its class
@@ -186,8 +169,7 @@ theorem oneVariableSpecializationHomologyEquivOfHomotopy_class {i j : Fin n}
           exact G.simplyBlockedDifferential_simplyBlockedSpecialization_add_eq_zero
             R H hH hab⟩ := by
   have hab' : xSmulEnd R i a + dMinus G R b = 0 := by
-    rw [xSmulEnd_apply, dMinus, LinearMap.restrictScalars_apply]
-    exact hab
+    simpa only [xSmulEnd_apply, dMinus, LinearMap.restrictScalars_apply] using hab
   have hz₁ : specLinearMap R i b ∈ LinearMap.ker (dHat G R i) := by
     rw [specLinearMap_apply, ← hz, LinearMap.mem_ker, dHat, LinearMap.restrictScalars_apply]
     exact (G.mem_ker_simplyBlockedComplex_d_iff R i z.1).mp z.2
@@ -195,44 +177,15 @@ theorem oneVariableSpecializationHomologyEquivOfHomotopy_class {i j : Fin n}
       (G.mem_ker_simplyBlockedComplex_d_iff R i z.1).mp z.2⟩ : LinearMap.ker (dHat G R i)) =
       ⟨specLinearMap R i b, hz₁⟩ :=
     Subtype.ext (hz.trans (specLinearMap_apply R i b).symm)
-  let e := LinearMap.homologyEquivOfHomotopicInjective
-    (π₁ := specLinearMap R i) (π₂ := specLinearMap R j)
-    (dMinus_comp_self G R) (dMinus_comp_self G R)
-    (dHat_comp_self G R i) (dHat_comp_self G R j)
-    (xSmulEnd_comp_dMinus G R i) (xSmulEnd_comp_dMinus G R j)
-    (xSmulEnd_injective R i) (xSmulEnd_injective R j)
-    (homotopy_restrictScalars G R H hH)
-    (specLinearMap_surjective R i) (specLinearMap_surjective R j)
-    (exact_xSmulEnd_specLinearMap R i) (exact_xSmulEnd_specLinearMap R j)
-    (specLinearMap_comp_dMinus G R i) (specLinearMap_comp_dMinus G R j)
-  have h1 : (G.simplyBlockedDifferentialRestrictScalarsHomologyEquiv R i).symm
-      (G.oneVariableSpecializationHomologyClass R i z :
-        (Base(R, n, i)).obj ((G.simplyBlockedComplex R i).homology ())) =
-      Submodule.Quotient.mk ⟨specLinearMap R i b, hz₁⟩ :=
-    (G.simplyBlockedDifferentialRestrictScalarsHomologyEquiv_symm_class R i z).trans
-      (congrArg Submodule.Quotient.mk hsub)
-  have h2 := LinearMap.homologyEquivOfHomotopicInjective_mk
-    (π₁ := specLinearMap R i) (π₂ := specLinearMap R j)
-    (dMinus_comp_self G R) (dMinus_comp_self G R)
-    (dHat_comp_self G R i) (dHat_comp_self G R j)
-    (xSmulEnd_comp_dMinus G R i) (xSmulEnd_comp_dMinus G R j)
-    (xSmulEnd_injective R i) (xSmulEnd_injective R j)
-    (homotopy_restrictScalars G R H hH)
-    (specLinearMap_surjective R i) (specLinearMap_surjective R j)
-    (exact_xSmulEnd_specLinearMap R i) (exact_xSmulEnd_specLinearMap R j)
-    (specLinearMap_comp_dMinus G R i) (specLinearMap_comp_dMinus G R j) hab' hz₁
-  exact (LinearEquiv.trans_apply
-      (e₁₂ := (G.simplyBlockedDifferentialRestrictScalarsHomologyEquiv R i).symm)
-      (e₂₃ := e.trans (G.simplyBlockedDifferentialRestrictScalarsHomologyEquiv R j)) _).trans <|
-    (LinearEquiv.trans_apply
-      (e₁₂ := e)
-      (e₂₃ := G.simplyBlockedDifferentialRestrictScalarsHomologyEquiv R j) _).trans <|
-    (congrArg (G.simplyBlockedDifferentialRestrictScalarsHomologyEquiv R j)
-      ((congrArg e h1).trans h2)).trans <|
-    (G.simplyBlockedDifferentialRestrictScalarsHomologyEquiv_mk R j _).trans <|
-      congrArg (G.oneVariableSpecializationHomologyClass R j)
-        (Subtype.ext (congrArg (G.simplyBlockedChainEquiv R j).symm
-          (by simp only [specLinearMap_apply, LinearMap.restrictScalars_apply])))
+  exact (LinearEquiv.trans_apply _).trans <|
+    (congrArg _ (G.simplyBlockedDifferentialRestrictScalarsHomologyEquiv_symm_class R i z)).trans <|
+      (LinearEquiv.trans_apply _).trans <|
+        (congrArg _ (congrArg _ (congrArg Submodule.Quotient.mk hsub))).trans <|
+          (congrArg _ (LinearMap.homologyEquivOfHomotopicInjective_mk
+            _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hab' hz₁)).trans <|
+            (G.simplyBlockedDifferentialRestrictScalarsHomologyEquiv_mk R j _).trans <|
+              congrArg _ (Subtype.ext (congrArg (G.simplyBlockedChainEquiv R j).symm
+                (by simp only [specLinearMap_apply, LinearMap.restrictScalars_apply])))
 
 private theorem componentPathXHomotopy_homotopy_of_sameCycle {i j : Fin n}
     (hc : G.componentPerm.SameCycle i j) :
@@ -288,9 +241,9 @@ theorem oneVariableSpecializationHomologyEquivOfHomotopy_mem_bigradedHatHomology
   have hab : (MvPolynomial.X i : MvPolynomial (Fin n) R) • (-a') +
       G.1.unblockedDifferential R b = 0 := by rw [smul_neg, ha', neg_add_cancel]
   have ha_mem : -a' ∈ G.bigradedChainMinusPiece R (g + (1, 1)) := by
-    rw [← G.X_smul_mem_bigradedChainMinusPiece_iff i]
-    have hg : g + (1, 1) - (2, 1) = g - (1, 0) := Prod.ext (by simp; omega) (by simp)
-    rw [hg, smul_neg, ha']
+    rw [← G.X_smul_mem_bigradedChainMinusPiece_iff i,
+      show g + (1, 1) - (2, 1) = g - (1, 0) from Prod.ext (by simp; omega) (by simp),
+      smul_neg, ha']
     exact Submodule.neg_mem _ (G.unblockedDifferential_mem_bigradedChainMinusPiece hb)
   have hHab : H (-a') + b ∈ G.bigradedChainMinusPiece R g :=
     Submodule.add_mem _ (by simpa only [add_sub_cancel_right] using hdeg ha_mem) hb
@@ -305,13 +258,11 @@ homogeneous of bidegree `(0, 0)`. -/
 theorem isHomogeneous_oneVariableSpecializationHomologyEquivOfHomotopy :
     LinearMap.IsHomogeneous
       (G.1.oneVariableSpecializationHomologyEquivOfHomotopy R H hH).toLinearMap
-      (G.bigradedHatHomologyGrading R i).piece
-      (G.bigradedHatHomologyGrading R j).piece 0 :=
+      (G.bigradedHatHomologyGrading R i).piece (G.bigradedHatHomologyGrading R j).piece 0 :=
   LinearMap.isHomogeneous_def.mpr fun _ _ hy => by
-    rw [bigradedHatHomologyGrading_piece] at hy
-    rw [add_zero, bigradedHatHomologyGrading_piece, LinearEquiv.coe_coe]
-    exact G.oneVariableSpecializationHomologyEquivOfHomotopy_mem_bigradedHatHomologyPiece R H hH
-      hdeg hy
+    simp only [bigradedHatHomologyGrading_piece, add_zero, LinearEquiv.coe_coe] at hy ⊢
+    exact G.oneVariableSpecializationHomologyEquivOfHomotopy_mem_bigradedHatHomologyPiece
+      R H hH hdeg hy
 
 include hdeg in
 /-- When `H` lowers bidegrees by `(1, 1)`, `oneVariableSpecializationHomologyEquivOfHomotopy`
@@ -321,14 +272,14 @@ theorem oneVariableSpecializationHomologyEquivOfHomotopy_mem_bigradedHatHomology
     {g : ℤ × ℤ} {y : (Base(R, n, i)).obj ((G.1.simplyBlockedComplex R i).homology ())} :
     G.1.oneVariableSpecializationHomologyEquivOfHomotopy R H hH y ∈
         G.bigradedHatHomologyPiece R j g ↔
-      y ∈ G.bigradedHatHomologyPiece R i g := by
-  refine ⟨fun hy => ?_,
+      y ∈ G.bigradedHatHomologyPiece R i g :=
+  ⟨fun hy => by
+    rw [← bigradedHatHomologyGrading_piece] at hy
+    simpa only [add_zero, bigradedHatHomologyGrading_piece, LinearEquiv.coe_coe,
+      LinearEquiv.symm_apply_apply] using
+      (G.isHomogeneous_oneVariableSpecializationHomologyEquivOfHomotopy
+        R H hH hdeg).linearEquiv_symm.map_mem hy,
     G.oneVariableSpecializationHomologyEquivOfHomotopy_mem_bigradedHatHomologyPiece R H hH hdeg⟩
-  rw [← bigradedHatHomologyGrading_piece] at hy
-  simpa only [add_zero, bigradedHatHomologyGrading_piece, LinearEquiv.coe_coe,
-    LinearEquiv.symm_apply_apply] using
-    (G.isHomogeneous_oneVariableSpecializationHomologyEquivOfHomotopy
-      R H hH hdeg).linearEquiv_symm.map_mem hy
 
 /-- Restriction of `oneVariableSpecializationHomologyEquivOfHomotopy` to each homogeneous bidegree
 piece. -/
@@ -337,9 +288,8 @@ def oneVariableSpecializationHomologyPieceEquivOfHomotopy (g : ℤ × ℤ) :
   (G.1.oneVariableSpecializationHomologyEquivOfHomotopy R H hH).ofSubmodules _ _ (by
     ext y
     rw [Submodule.mem_map_equiv,
-      ← G.oneVariableSpecializationHomologyEquivOfHomotopy_mem_bigradedHatHomologyPiece_iff R H hH
-        hdeg,
-      LinearEquiv.apply_symm_apply])
+      ← G.oneVariableSpecializationHomologyEquivOfHomotopy_mem_bigradedHatHomologyPiece_iff
+        R H hH hdeg, LinearEquiv.apply_symm_apply])
 
 /-- Evaluating `oneVariableSpecializationHomologyPieceEquivOfHomotopy` on underlying classes. -/
 @[simp]
@@ -347,8 +297,7 @@ theorem coe_oneVariableSpecializationHomologyPieceEquivOfHomotopy (g : ℤ × �
     (y : G.bigradedHatHomologyPiece R i g) :
     (G.oneVariableSpecializationHomologyPieceEquivOfHomotopy R H hH hdeg g y :
       (Base(R, n, j)).obj ((G.1.simplyBlockedComplex R j).homology ())) =
-      G.1.oneVariableSpecializationHomologyEquivOfHomotopy R H hH y :=
-  (rfl)
+      G.1.oneVariableSpecializationHomologyEquivOfHomotopy R H hH y := (rfl)
 
 end Homotopy
 
@@ -377,8 +326,7 @@ theorem oneVariableSpecializationHomologySameCycleEquiv_mem_bigradedHatHomologyP
 /-- Restriction of `oneVariableSpecializationHomologySameCycleEquiv` to a homogeneous piece. -/
 def oneVariableSpecializationHomologySameCyclePieceEquiv (g : ℤ × ℤ) :
     G.bigradedHatHomologyPiece R i g ≃ₗ[R] G.bigradedHatHomologyPiece R j g :=
-  G.oneVariableSpecializationHomologyPieceEquivOfHomotopy R
-    (G.1.componentPathXHomotopy R i hc.exists_nat_pow_eq.choose)
+  G.oneVariableSpecializationHomologyPieceEquivOfHomotopy R _
     (GridDiagram.componentPathXHomotopy_homotopy_of_sameCycle G.1 R hc)
     (fun _ _ => G.componentPathXHomotopy_mem_bigradedChainMinusPiece i _) g
 
@@ -388,8 +336,7 @@ theorem coe_oneVariableSpecializationHomologySameCyclePieceEquiv (g : ℤ × ℤ
     (y : G.bigradedHatHomologyPiece R i g) :
     (G.oneVariableSpecializationHomologySameCyclePieceEquiv R hc g y :
       (Base(R, n, j)).obj ((G.1.simplyBlockedComplex R j).homology ())) =
-      G.1.oneVariableSpecializationHomologySameCycleEquiv R hc y :=
-  (rfl)
+      G.1.oneVariableSpecializationHomologySameCycleEquiv R hc y := (rfl)
 
 end SameCycle
 

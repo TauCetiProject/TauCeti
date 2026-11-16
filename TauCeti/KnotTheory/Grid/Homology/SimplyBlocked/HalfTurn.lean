@@ -11,31 +11,14 @@ public import TauCeti.KnotTheory.Grid.SimplyBlocked.HalfTurn
 /-!
 # The half-turn on simply blocked grid homology
 
-For a knot grid, rotating the torus by a half-turn (`GridDiagram.rotate`) induces a specified
-semilinear equivalence on simply blocked grid homology `G-hat`, moving the blocked `O`-marking
-from column `i` to column `i.rev` and renaming the surviving polynomial variables along
-`Fin.revPerm`.
-
-The equivalence preserves and reflects the `(O-Maslov, Alexander)` bigrading of `G-hat`, restricts
-to coefficient-linear equivalences on every homogeneous piece, and leaves the bigraded Poincaré
-series and Alexander-graded Euler characteristic unchanged. Conjugating the south-west corner
-`X`-stabilization by this half-turn compares `G-hat` across the north-east corner
-`X`-stabilization.
-
-## Main definitions
-
-* `TauCeti.GridDiagram.IsKnot.simplyBlockedHomologyRotateEquiv`: the half-turn equivalence on
-  `G-hat`.
-* `TauCeti.GridDiagram.IsKnot.simplyBlockedHomologyRotatePieceEquiv`: its restriction to a
-  homogeneous bidegree piece.
-
-## Main results
-
-* `TauCeti.GridDiagram.IsKnot.simplyBlockedHomologyRotateEquiv_mem_bigradedHatHomologyPiece_iff`:
-  the half-turn preserves and reflects homology bidegrees.
-* `TauCeti.GridDiagram.IsKnot.bigradedSimplyBlockedHomologyPoincareSeries_rotate` and
-  `TauCeti.GridDiagram.IsKnot.gradedSimplyBlockedHomologyEulerChar_rotate`: the bigraded Poincaré
-  series and Euler characteristic of `G-hat` are invariant under the half-turn.
+For a knot grid, rotating the torus by a half-turn (`GridDiagram.rotate`) induces a semilinear
+equivalence on `G-hat` (`GridDiagram.IsKnot.simplyBlockedHomologyRotateEquiv`), moving the blocked
+column from `i` to `i.rev` and renaming surviving variables along `Fin.revPerm`. It preserves and
+reflects the `(O-Maslov, Alexander)` bigrading
+(`simplyBlockedHomologyRotateEquiv_mem_bigradedHatHomologyPiece_iff`), restricts to linear
+equivalences on homogeneous pieces (`simplyBlockedHomologyRotatePieceEquiv`), and preserves the
+bigraded Poincaré series (`bigradedSimplyBlockedHomologyPoincareSeries_rotate`) and Euler
+characteristic (`gradedSimplyBlockedHomologyEulerChar_rotate`).
 
 ## References
 
@@ -56,16 +39,13 @@ local notation "hGᵣ" => Iff.mpr (GridDiagram.isKnot_rotate G) hG
 local notation "Base(" R ", " n ", " i ")" =>
   ModuleCat.restrictScalars (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
 
-private theorem rotate_toOddComponentGridDiagram :
-    hG.toOddComponentGridDiagram.rotate = (hGᵣ).toOddComponentGridDiagram :=
-  Subtype.ext (OddComponentGridDiagram.val_rotate _)
-
 private theorem simplyBlockedHalfTurnEquiv_mem_bigradedChainHatPiece {R : Type*}
     [CommSemiring R] {i : Fin n} (g : ℤ × ℤ) (c : GridChainHat R n i)
     (hc : c ∈ hG.toOddComponentGridDiagram.bigradedChainHatPiece R i g) :
     GridChain.simplyBlockedHalfTurnEquiv R i c ∈
       (hGᵣ).toOddComponentGridDiagram.bigradedChainHatPiece R (Fin.revPerm i) g := by
-  rw [← rotate_toOddComponentGridDiagram hG]
+  rw [← show hG.toOddComponentGridDiagram.rotate = (hGᵣ).toOddComponentGridDiagram from
+    Subtype.ext (OddComponentGridDiagram.val_rotate _)]
   exact (OddComponentGridDiagram.simplyBlockedHalfTurnEquiv_mem_bigradedChainHatPiece_iff _).mpr hc
 
 section Ring
@@ -90,8 +70,7 @@ theorem simplyBlockedHomologyRotateEquiv_oneVariableSpecializationHomologyClass
     (z : hG.simplyBlockedCycles R i) :
     hG.simplyBlockedHomologyRotateEquiv R i (G.oneVariableSpecializationHomologyClass R i z) =
       G.rotate.oneVariableSpecializationHomologyClass R (Fin.revPerm i)
-        (hG.simplyBlockedCyclesEquivOfIntertwining R hGᵣ
-          (GridChain.simplyBlockedHalfTurnEquiv R i)
+        (hG.simplyBlockedCyclesEquivOfIntertwining R hGᵣ (GridChain.simplyBlockedHalfTurnEquiv R i)
           (G.simplyBlockedDifferential_rotate_simplyBlockedHalfTurnEquiv R i) z) :=
   hG.simplyBlockedHomologyEquivOfIntertwining_oneVariableSpecializationHomologyClass R hGᵣ _ _ z
 
@@ -110,7 +89,7 @@ theorem simplyBlockedHomologyRotateEquiv_mem_bigradedHatHomologyPiece_iff
 def simplyBlockedHomologyRotatePieceEquiv (g : ℤ × ℤ) :
     hG.toOddComponentGridDiagram.bigradedHatHomologyPiece R i g ≃ₗ[R]
       (hGᵣ).toOddComponentGridDiagram.bigradedHatHomologyPiece R (Fin.revPerm i) g :=
-  hG.simplyBlockedHomologyPieceEquivOfIntertwining R hGᵣ (GridChain.simplyBlockedHalfTurnEquiv R i)
+  hG.simplyBlockedHomologyPieceEquivOfIntertwining R hGᵣ _
     (G.simplyBlockedDifferential_rotate_simplyBlockedHalfTurnEquiv R i)
     (simplyBlockedRenameEquiv R (Fin.revPerm (n := n)) i).commutes
     (simplyBlockedHalfTurnEquiv_mem_bigradedChainHatPiece hG) g
@@ -123,8 +102,7 @@ theorem coe_simplyBlockedHomologyRotatePieceEquiv (g : ℤ × ℤ)
       (Base(R, n, Fin.revPerm i)).obj ((hGᵣ).simplyBlockedHomology R (Fin.revPerm i))) =
       hG.simplyBlockedHomologyRotateEquiv R i
         (y : (Base(R, n, i)).obj (hG.simplyBlockedHomology R i)) :=
-  hG.coe_simplyBlockedHomologyPieceEquivOfIntertwining R hGᵣ
-    (GridChain.simplyBlockedHalfTurnEquiv R i)
+  hG.coe_simplyBlockedHomologyPieceEquivOfIntertwining R hGᵣ _
     (G.simplyBlockedDifferential_rotate_simplyBlockedHalfTurnEquiv R i)
     (simplyBlockedRenameEquiv R (Fin.revPerm (n := n)) i).commutes
     (simplyBlockedHalfTurnEquiv_mem_bigradedChainHatPiece hG) g y

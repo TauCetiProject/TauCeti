@@ -12,30 +12,12 @@ public import TauCeti.KnotTheory.Grid.XHomotopy.SimplyBlocked
 # The bigrading of the `X`-marking homotopy
 
 Every rectangle `r` counted by the `X`-marking homotopy `H_k` is empty and covers the single
-`X`-marking `X_k`. Once each polynomial variable is given `(O-Maslov, Alexander)` bidegree
-`(-2, -1)`, multiplying a monomial generator by the `O`-marking weight `V^{O(r)}` and passing to the
-target state of `r` lowers both the `O`-Maslov grading and the Alexander grading by `1`. Thus `H_k`
-has bidegree `(-1, -1)` on the unblocked chain module `GC⁻`, and its specialization `hat H_k` at
-`V_i = 0` has bidegree `(-1, -1)` on `GC^_i`, over every commutative semiring.
-
-In characteristic two, summing these `X`-marking homotopies along a link component produces a
-polynomial-linear homotopy `H` on `GC⁻` with `∂⁻ ∘ H + H ∘ ∂⁻ = V_i + V_j` that still lowers the
-bidegree by `(1, 1)`. Because `V_i` and `V_j` have bidegree `(-2, -1)` and `∂⁻` has bidegree
-`(-1, 0)`, this bidegree-`(-1, -1)` homotopy compares the mapping cones of `V_i` and `V_j` on
-`GC⁻` homogeneously.
-
-## Main results
-
-* `TauCeti.OddComponentGridDiagram.monomialBidegree_add_of_mem_XHomotopyRectangles`: each rectangle
-  counted by `H_k` lowers the monomial bidegree by `(1, 1)`.
-* `TauCeti.OddComponentGridDiagram.XHomotopy_mem_bigradedChainMinusPiece`,
-  `TauCeti.OddComponentGridDiagram.componentPathXHomotopy_mem_bigradedChainMinusPiece`, and
-  `TauCeti.OddComponentGridDiagram.simplyBlockedXHomotopy_mem_bigradedChainHatPiece`: `H_k`, its
-  component-path sums, and its specialization `hat H_k` lower chain bidegrees by `(1, 1)`.
-* `TauCeti.OddComponentGridDiagram.exists_unblockedDifferential_comp_add_comp_eq_of_sameCycle`: in
-  characteristic two, for two columns `i` and `j` on the same link component, there is a
-  polynomial-linear homotopy `H` of bidegree `(-1, -1)` satisfying
-  `∂⁻ ∘ H + H ∘ ∂⁻ = V_i + V_j`.
+`X`-marking `X_k`. Thus `H_k` lowers `(O-Maslov, Alexander)` bidegrees by `(1, 1)` on `GC⁻`
+(`OddComponentGridDiagram.XHomotopy_mem_bigradedChainMinusPiece`), as do its component-path sums
+(`componentPathXHomotopy_mem_bigradedChainMinusPiece`) and specialization `hat H_k` at `V_i = 0`
+(`simplyBlockedXHomotopy_mem_bigradedChainHatPiece`), over any commutative semiring. In
+characteristic two, summing along a link component gives a bidegree-`(-1, -1)` homotopy between
+`V_i` and `V_j` (`exists_unblockedDifferential_comp_add_comp_eq_of_sameCycle`).
 
 ## References
 
@@ -48,33 +30,25 @@ namespace TauCeti.OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n)
 
-section Rectangle
-
-variable {k : Fin n} {x y : GridState n}
-
 /-- A rectangle counted by `H_k` lowers the integer Alexander grading by `1` once its weight
 `V^{O(r)}` is charged `-1` per variable, because it covers the single `X`-marking `X_k`. -/
-theorem alexanderℤ_sub_card_OColumns_of_mem_XHomotopyRectangles
+theorem alexanderℤ_sub_card_OColumns_of_mem_XHomotopyRectangles {k : Fin n} {x y : GridState n}
     {r : GridRectangleBetween x y} (hr : r ∈ G.1.XHomotopyRectangles k x y) :
     G.alexanderℤ y - ((G.1.OColumns r.toGridRectangle).card : ℤ) = G.alexanderℤ x - 1 := by
-  have hX : G.1.XSet ∩ r.toGridRectangle.coveredSquares = {(k, G.1.X k)} := by
-    rw [Finset.inter_comm]
-    exact ((G.1.mem_XHomotopyRectangles k r).mp hr).2
+  have hX : G.1.XSet ∩ r.toGridRectangle.coveredSquares = {(k, G.1.X k)} :=
+    (Finset.inter_comm _ _).trans ((G.1.mem_XHomotopyRectangles k r).mp hr).2
   rw [G.alexanderℤ_sub_card_OColumns_eq_sub_card r, hX, Finset.card_singleton, Nat.cast_one]
 
 /-- Multiplying the basis element `V^e · x` by the weight of a rectangle counted by `H_k` and
 passing to the rectangle's target lowers the `(O-Maslov, Alexander)` bidegree by `(1, 1)`. -/
-theorem monomialBidegree_add_of_mem_XHomotopyRectangles
+theorem monomialBidegree_add_of_mem_XHomotopyRectangles {k : Fin n} {x y : GridState n}
     {r : GridRectangleBetween x y} (hr : r ∈ G.1.XHomotopyRectangles k x y) (e : Fin n →₀ ℕ) :
     G.monomialBidegree y (e + ∑ c ∈ G.1.OColumns r.toGridRectangle, Finsupp.single c 1) =
       G.monomialBidegree x e - (1, 1) := by
   have hM := G.1.maslovOℤ_sub_two_mul_card_OColumns ((G.1.mem_XHomotopyRectangles k r).mp hr).1
   have hA := G.alexanderℤ_sub_card_OColumns_of_mem_XHomotopyRectangles hr
-  simpa [sub_eq_add_neg] using
-    G.monomialBidegree_mapDomain_add_sum_eq_add G (Equiv.refl (Fin n)) e
-      (G.1.OColumns r.toGridRectangle) (-1, -1) (by omega) (by omega)
-
-end Rectangle
+  simpa [sub_eq_add_neg] using G.monomialBidegree_mapDomain_add_sum_eq_add G (Equiv.refl (Fin n)) e
+    (G.1.OColumns r.toGridRectangle) (-1, -1) (by omega) (by omega)
 
 section Semiring
 
@@ -85,36 +59,32 @@ grading and the Alexander grading of a homogeneous chain of `GC⁻` by `1`. -/
 theorem XHomotopy_mem_bigradedChainMinusPiece (k : Fin n) {g : ℤ × ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.bigradedChainMinusPiece R g) :
     G.1.XHomotopy R k c ∈ G.bigradedChainMinusPiece R (g - (1, 1)) := by
-  simpa only [sub_eq_add_neg] using
-    G.matrixMap_mem_bigradedChainMinusPiece_add R G (Equiv.refl (Fin n))
-      (G.1.XHomotopyCoefficient R k) (G.1.XHomotopy R k)
-      (fun d y => by simp [GridDiagram.XHomotopy_apply_apply]) (-(1, 1))
-      (fun x y w hw d => by
-        obtain ⟨r, hr, rfl⟩ :=
-          G.1.exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient R hw
-        simpa [sub_eq_add_neg] using G.monomialBidegree_add_of_mem_XHomotopyRectangles hr d) hc
+  simpa only [sub_eq_add_neg] using G.matrixMap_mem_bigradedChainMinusPiece_add R G
+    (Equiv.refl (Fin n)) (G.1.XHomotopyCoefficient R k) (G.1.XHomotopy R k)
+    (fun d y => by simp [GridDiagram.XHomotopy_apply_apply]) (-(1, 1)) (fun x y w hw d => by
+      obtain ⟨r, hr, rfl⟩ :=
+        G.1.exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient R hw
+      simpa [sub_eq_add_neg] using G.monomialBidegree_add_of_mem_XHomotopyRectangles hr d) hc
 
 /-- The `m`-step component-path `X`-homotopy lowers chain bidegrees on `GC⁻` by `(1, 1)`. -/
 theorem componentPathXHomotopy_mem_bigradedChainMinusPiece (i : Fin n) (m : ℕ) {g : ℤ × ℤ}
     {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusPiece R g) :
     G.1.componentPathXHomotopy R i m c ∈ G.bigradedChainMinusPiece R (g - (1, 1)) := by
   rw [GridDiagram.componentPathXHomotopy_apply]
-  exact Submodule.sum_mem _ fun t _ => G.XHomotopy_mem_bigradedChainMinusPiece _ hc
+  exact Submodule.sum_mem _ fun _ _ => G.XHomotopy_mem_bigradedChainMinusPiece _ hc
 
 /-- The `X`-marking homotopy `H_k` lowers the Alexander grading of an Alexander-homogeneous chain
 of `GC⁻` by `1`. -/
 theorem XHomotopy_mem_alexanderChainMinusPiece (k : Fin n) {a : ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.alexanderChainMinusPiece R a) :
     G.1.XHomotopy R k c ∈ G.alexanderChainMinusPiece R (a - 1) := by
-  simpa only [sub_eq_add_neg] using
-    G.matrixMap_mem_alexanderChainMinusPiece_add R G (Equiv.refl (Fin n))
-      (G.1.XHomotopyCoefficient R k) (G.1.XHomotopy R k)
-      (fun d y => by simp [GridDiagram.XHomotopy_apply_apply]) (-1)
-      (fun x y w hw d => by
-        obtain ⟨r, hr, rfl⟩ :=
-          G.1.exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient R hw
-        have hb := congrArg Prod.snd (G.monomialBidegree_add_of_mem_XHomotopyRectangles hr d)
-        simpa [sub_eq_add_neg] using hb) hc
+  simpa only [sub_eq_add_neg] using G.matrixMap_mem_alexanderChainMinusPiece_add R G
+    (Equiv.refl (Fin n)) (G.1.XHomotopyCoefficient R k) (G.1.XHomotopy R k)
+    (fun d y => by simp [GridDiagram.XHomotopy_apply_apply]) (-1) (fun x y w hw d => by
+      obtain ⟨r, hr, rfl⟩ :=
+        G.1.exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient R hw
+      simpa [sub_eq_add_neg] using
+        congrArg Prod.snd (G.monomialBidegree_add_of_mem_XHomotopyRectangles hr d)) hc
 
 /-- The specialized `X`-marking homotopy `hat H_k` at `V_i = 0` lowers the bidegree of a
 homogeneous chain of `GC^_i` by `(1, 1)`. -/
@@ -145,7 +115,7 @@ theorem exists_unblockedDifferential_comp_add_comp_eq_of_pow_componentPerm_apply
   subst h
   exact ⟨G.1.componentPathXHomotopy R i m,
     G.1.unblockedDifferential_comp_componentPathXHomotopy_add_componentPathXHomotopy_comp R i m,
-    fun _ _ hc => G.componentPathXHomotopy_mem_bigradedChainMinusPiece i m hc⟩
+    fun _ _ => G.componentPathXHomotopy_mem_bigradedChainMinusPiece i m⟩
 
 /-- In characteristic two, for any two columns `i` and `j` on the same link component of an
 odd-component grid diagram, there is a polynomial-linear homotopy `H` of bidegree `(-1, -1)` on
@@ -156,26 +126,19 @@ theorem exists_unblockedDifferential_comp_add_comp_eq_of_sameCycle
       G.1.unblockedDifferential R ∘ₗ H + H ∘ₗ G.1.unblockedDifferential R =
           (MvPolynomial.X i + MvPolynomial.X j : MvPolynomial (Fin n) R) • LinearMap.id ∧
         ∀ ⦃g : ℤ × ℤ⦄ ⦃c : GridChainMinus R n⦄,
-          c ∈ G.bigradedChainMinusPiece R g → H c ∈ G.bigradedChainMinusPiece R (g - (1, 1)) := by
-  obtain ⟨m, hm⟩ := h.exists_nat_pow_eq
-  exact G.exists_unblockedDifferential_comp_add_comp_eq_of_pow_componentPerm_apply R m hm
+          c ∈ G.bigradedChainMinusPiece R g → H c ∈ G.bigradedChainMinusPiece R (g - (1, 1)) :=
+  let ⟨m, hm⟩ := h.exists_nat_pow_eq
+  G.exists_unblockedDifferential_comp_add_comp_eq_of_pow_componentPerm_apply R m hm
 
 end CharTwo
 
-section Ring
-
-variable (R : Type*) [CommRing R]
-
 /-- The `X`-marking homotopy `H_k` is homogeneous of bidegree `(-1, -1)` with respect to the
 internal bigrading of `GC⁻`. -/
-theorem isHomogeneous_XHomotopy_bigradedChainMinusGrading (k : Fin n) :
+theorem isHomogeneous_XHomotopy_bigradedChainMinusGrading (R : Type*) [CommRing R] (k : Fin n) :
     LinearMap.IsHomogeneous (G.1.XHomotopy R k)
-      (G.bigradedChainMinusGrading R).piece (G.bigradedChainMinusGrading R).piece (-(1, 1)) := by
-  rw [LinearMap.isHomogeneous_def]
-  intro g c hc
-  simp only [bigradedChainMinusGrading_piece] at hc ⊢
-  simpa only [sub_eq_add_neg] using G.XHomotopy_mem_bigradedChainMinusPiece k hc
-
-end Ring
+      (G.bigradedChainMinusGrading R).piece (G.bigradedChainMinusGrading R).piece (-(1, 1)) :=
+  LinearMap.isHomogeneous_def.mpr fun _ _ hc => by
+    simp only [bigradedChainMinusGrading_piece] at hc ⊢
+    simpa only [sub_eq_add_neg] using G.XHomotopy_mem_bigradedChainMinusPiece k hc
 
 end TauCeti.OddComponentGridDiagram
