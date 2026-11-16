@@ -130,6 +130,12 @@ theorem coe_unitSphereDiffeomorph_apply (e : E ≃ₗᵢ[ℝ] F) (x : sphere (0 
     ((unitSphereDiffeomorph (n := n) (k := k) e m x : sphere (0 : F) 1) : F) = e x :=
   coe_unitSphereEquiv_apply e x
 
+/-- The underlying function of `unitSphereDiffeomorph e m` is the restriction of `e` to the unit
+spheres. Not a simp lemma: `coe_unitSphereDiffeomorph_apply` already evaluates the coordinates. -/
+theorem coe_unitSphereDiffeomorph (e : E ≃ₗᵢ[ℝ] F) :
+    ⇑(unitSphereDiffeomorph (n := n) (k := k) e m) = unitSphereEquiv e :=
+  (rfl)
+
 @[simp]
 theorem unitSphereDiffeomorph_toEquiv (e : E ≃ₗᵢ[ℝ] F) :
     (unitSphereDiffeomorph (n := n) (k := k) e m).toEquiv = unitSphereEquiv e :=
