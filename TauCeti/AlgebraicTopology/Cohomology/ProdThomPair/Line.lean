@@ -27,7 +27,9 @@ cohomology, with coefficients in any module `M` over a commutative ring `k`, of 
   projection (`TauCeti.prodThomPairPuncturedProj`). Then every class of
   `Hᵐ(B × (F ∖ {0}); M)` is uniquely `π^* b + σ ⌣ π^* c` with `b, c ∈ Hᵐ(B; M)`
   (`TauCeti.prodThomPairPuncturedLineSingularCohomologyEquiv`): `b` is its restriction to the
-  negative side and `b + c` its restriction to the positive side.
+  negative side and `b + c` its restriction to the positive side
+  (`TauCeti.prodThomPairPuncturedLineSingularCohomologyEquiv_symm_apply`), along the sections
+  `TauCeti.prodThomPairPuncturedLineSection`.
 * In the long exact sequence of the pair, the restriction from `Hᵐ(B × F; M)` to
   `Hᵐ(B × (F ∖ {0}); M)` is injective with image the classes `π^* b`, so the connecting
   morphism `δ` identifies the classes `σ ⌣ π^* c` with the whole relative cohomology in degree
@@ -46,8 +48,12 @@ vanishes (`TauCeti.isZero_singularCohomology_prodThomPair`).
 
 * `TauCeti.prodThomPairPuncturedLineClass`: the class `σ` of the positive side, characterized
   by its values (`TauCeti.singularCohomologyZeroEval_prodThomPairPuncturedLineClass`).
+* `TauCeti.prodThomPairPuncturedLineSection`: the sections `b ↦ (b, e⁻¹ (±1))` onto the two
+  sides; a class of `Hᵐ(B × (F ∖ {0}); M)` is determined by its restrictions along them
+  (`TauCeti.eq_zero_of_singularCohomologyMap_prodThomPairPuncturedLineSection_eq_zero`).
 * `TauCeti.prodThomPairPuncturedLineSingularCohomologyEquiv`:
-  `Hᵐ(B; M) × Hᵐ(B; M) ≃ Hᵐ(B × (F ∖ {0}); M)`, `(b, c) ↦ π^* b + σ ⌣ π^* c`.
+  `Hᵐ(B; M) × Hᵐ(B; M) ≃ Hᵐ(B × (F ∖ {0}); M)`, `(b, c) ↦ π^* b + σ ⌣ π^* c`, whose inverse is
+  `TauCeti.prodThomPairPuncturedLineSingularCohomologyEquiv_symm_apply`.
 * `TauCeti.prodThomPairSingularCohomologyLineEquiv`:
   `Hⁿ(B; M) ≃ Hⁿ⁺¹(B × F, B × (F ∖ {0}); M)`, `c ↦ δ (σ ⌣ π^* c)`, with its naturality
   `TauCeti.prodThomPairSingularCohomologyLineEquiv_naturality`.
@@ -132,49 +138,58 @@ theorem singularCohomologyZeroEval_prodThomPairPuncturedLineClass
 
 /-! ### The two sides of the zero section -/
 
-/-- The section `b ↦ (b, e⁻¹ t)` of `B × (F ∖ {0}) → B` for `t ≠ 0`, landing on the side of the
-sign of `t`. -/
-private def lineSection (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (t : ℝ) (ht : t ≠ 0) :
-    TopCat.of B ⟶ (prodThomPair B F).snd :=
+/-- The section `b ↦ (b, e⁻¹ t)` of the projection `B × (F ∖ {0}) → B` for `t ≠ 0`, landing on
+the side of the zero section of the sign of `t`. -/
+def prodThomPairPuncturedLineSection (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (t : ℝ)
+    (ht : t ≠ 0) : TopCat.of B ⟶ (prodThomPair B F).snd :=
   TopCat.ofHom ⟨fun b ↦ ⟨(b, e.symm (EuclideanSpace.single 0 t)), by simpa using ht⟩,
     by fun_prop⟩
 
-private theorem coe_lineSection_apply (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (t : ℝ)
-    (ht : t ≠ 0) (b : B) : (lineSection e t ht b).1 = (b, e.symm (EuclideanSpace.single 0 t)) :=
+/-- The section `TauCeti.prodThomPairPuncturedLineSection` sends `b` to `(b, e⁻¹ t)`. -/
+theorem coe_prodThomPairPuncturedLineSection_apply (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1))
+    (t : ℝ) (ht : t ≠ 0) (b : B) :
+    (prodThomPairPuncturedLineSection e t ht b).1 = (b, e.symm (EuclideanSpace.single 0 t)) :=
   (rfl)
 
-private theorem lineSection_comp_prodThomPairPuncturedProj
+/-- `TauCeti.prodThomPairPuncturedLineSection` is a section of the projection
+`B × (F ∖ {0}) → B`. -/
+@[simp]
+theorem prodThomPairPuncturedLineSection_comp_prodThomPairPuncturedProj
     (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (t : ℝ) (ht : t ≠ 0) :
-    lineSection (B := B) e t ht ≫ prodThomPairPuncturedProj B F = 𝟙 _ :=
+    prodThomPairPuncturedLineSection (B := B) e t ht ≫ prodThomPairPuncturedProj B F = 𝟙 _ :=
   TopCat.ext fun _ ↦ prodThomPairPuncturedProj_apply F _
 
 /-- Restricting a class pulled back from the base to either side gives back the class. -/
-private theorem singularCohomologyMap_lineSection_prodThomPairPuncturedProj
+private theorem singularCohomologyMap_prodThomPairPuncturedLineSection_prodThomPairPuncturedProj
     (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (t : ℝ) (ht : t ≠ 0) (m : ℕ)
     (b : (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m) :
-    TopCat.singularCohomologyMap (lineSection e t ht) m
+    TopCat.singularCohomologyMap (prodThomPairPuncturedLineSection e t ht) m
         (TopCat.singularCohomologyMap (prodThomPairPuncturedProj B F) m b) = b := by
   rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp,
-    lineSection_comp_prodThomPairPuncturedProj, TopCat.singularCohomologyMap_id,
-    ConcreteCategory.id_apply]
+    prodThomPairPuncturedLineSection_comp_prodThomPairPuncturedProj,
+    TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
 
 /-- The class `σ` of the positive side restricts to the unit on the positive side. -/
-private theorem singularCohomologyMap_lineSection_one (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) :
-    TopCat.singularCohomologyMap (lineSection (B := B) e 1 one_ne_zero) 0
+private theorem singularCohomologyMap_prodThomPairPuncturedLineSection_one
+    (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) :
+    TopCat.singularCohomologyMap (prodThomPairPuncturedLineSection (B := B) e 1 one_ne_zero) 0
         (prodThomPairPuncturedLineClass k B e) = (TopCat.of B).singularCohomologyZeroOne :=
   singularCohomologyZero_ext fun _ ↦ by
     rw [singularCohomologyZeroEval_naturality,
-      singularCohomologyZeroEval_prodThomPairPuncturedLineClass, coe_lineSection_apply]
+      singularCohomologyZeroEval_prodThomPairPuncturedLineClass,
+      coe_prodThomPairPuncturedLineSection_apply]
     simp
 
 /-- The class `σ` of the positive side restricts to zero on the negative side. -/
-private theorem singularCohomologyMap_lineSection_neg_one
+private theorem singularCohomologyMap_prodThomPairPuncturedLineSection_neg_one
     (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) :
-    TopCat.singularCohomologyMap (lineSection (B := B) e (-1) (by norm_num)) 0
+    TopCat.singularCohomologyMap
+        (prodThomPairPuncturedLineSection (B := B) e (-1) (by norm_num)) 0
         (prodThomPairPuncturedLineClass k B e) = 0 :=
   singularCohomologyZero_ext fun _ ↦ by
     rw [singularCohomologyZeroEval_naturality,
-      singularCohomologyZeroEval_prodThomPairPuncturedLineClass, coe_lineSection_apply]
+      singularCohomologyZeroEval_prodThomPairPuncturedLineClass,
+      coe_prodThomPairPuncturedLineSection_apply]
     simp
 
 /-- The homotopy equivalence `TauCeti.prodThomPairPuncturedHomotopyEquiv` from `B × (F ∖ {0})` to
@@ -185,16 +200,18 @@ private abbrev sphereZeroProdMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) :
 
 /-- The homotopy equivalence with `S⁰ × B` carries the section at `t = ±1` to the slice through
 the point `t` of `S⁰`. -/
-private theorem lineSection_comp_sphereZeroProdMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1))
-    (s : TopCat.sphere.{w} 0) {t : ℝ} (ht : t ≠ 0)
+private theorem prodThomPairPuncturedLineSection_comp_sphereZeroProdMap
+    (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (s : TopCat.sphere.{w} 0) {t : ℝ} (ht : t ≠ 0)
     (hs : (s.down : EuclideanSpace ℝ (Fin 1)) = EuclideanSpace.single 0 t) :
-    lineSection (B := B) e t ht ≫ sphereZeroProdMap e =
+    prodThomPairPuncturedLineSection (B := B) e t ht ≫ sphereZeroProdMap e =
       CartesianMonoidalCategory.lift (TopCat.ofHom (ContinuousMap.const B s)) (𝟙 _) := by
   have h1 : ‖t‖ = 1 := by simpa [hs] using s.down.2
   refine TopCat.ext fun b ↦ ?_
-  have key : prodThomPairPuncturedHomotopyEquiv B e (lineSection e t ht b) = (s, b) := by
+  have key : prodThomPairPuncturedHomotopyEquiv B e (prodThomPairPuncturedLineSection e t ht b) =
+      (s, b) := by
     refine Prod.ext (ULift.ext (Subtype.ext ?_)) (prodThomPairPuncturedHomotopyEquiv_apply_snd e _)
-    rw [coe_prodThomPairPuncturedHomotopyEquiv_apply_fst, coe_lineSection_apply]
+    rw [coe_prodThomPairPuncturedHomotopyEquiv_apply_fst,
+      coe_prodThomPairPuncturedLineSection_apply]
     simp [hs, h1]
   -- Both sides evaluate at `b` to the two sides of `key`, by the definitions of composition in
   -- `TopCat` and of `CartesianMonoidalCategory.lift`.
@@ -202,18 +219,18 @@ private theorem lineSection_comp_sphereZeroProdMap (e : F ≃L[ℝ] EuclideanSpa
 
 /-- **A class on `B × (F ∖ {0})` is determined on the two sides**: a class of
 `Hᵐ(B × (F ∖ {0}); M)` whose restrictions along the sections `b ↦ (b, e⁻¹ (±1))` vanish is zero. -/
-private theorem eq_zero_of_singularCohomologyMap_lineSection_eq_zero
+theorem eq_zero_of_singularCohomologyMap_prodThomPairPuncturedLineSection_eq_zero
     (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (m : ℕ)
     (y : (prodThomPair B F).snd.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m)
-    (hpos : TopCat.singularCohomologyMap (lineSection e 1 one_ne_zero) m y = 0)
-    (hneg : TopCat.singularCohomologyMap (lineSection e (-1) (by norm_num)) m y = 0) :
+    (hpos : TopCat.singularCohomologyMap (prodThomPairPuncturedLineSection e 1 one_ne_zero) m y = 0)
+    (hneg : TopCat.singularCohomologyMap
+      (prodThomPairPuncturedLineSection e (-1) (by norm_num)) m y = 0) :
     y = 0 := by
   have : IsIso (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k) (M := M)
       (sphereZeroProdMap (B := B) e) m) :=
     (prodThomPairPuncturedHomotopyEquiv B e).isIso_singularCohomologyMap _ k M m
-  obtain ⟨z, rfl⟩ : ∃ z, TopCat.singularCohomologyMap (sphereZeroProdMap e) m z = y :=
-    ⟨inv (TopCat.singularCohomologyMap (sphereZeroProdMap e) m) y, by
-      rw [← ConcreteCategory.comp_apply, IsIso.inv_hom_id, ConcreteCategory.id_apply]⟩
+  obtain ⟨z, rfl⟩ := (ConcreteCategory.bijective_of_isIso
+    (TopCat.singularCohomologyMap (sphereZeroProdMap e) m)).2 y
   suffices z = 0 by rw [this, map_zero]
   have : DiscreteTopology (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1) :=
     discreteTopology_sphere_of_finrank_eq_one finrank_euclideanSpace_fin 0 1
@@ -226,9 +243,9 @@ private theorem eq_zero_of_singularCohomologyMap_lineSection_eq_zero
     sphere_eq_pair_of_finrank_eq_one finrank_euclideanSpace_fin (r := 1)
       (p := EuclideanSpace.single 0 1) (by simp) ▸ s.down.2
   rcases hs with hs | hs
-  · rwa [← lineSection_comp_sphereZeroProdMap e s one_ne_zero hs,
+  · rwa [← prodThomPairPuncturedLineSection_comp_sphereZeroProdMap e s one_ne_zero hs,
       TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply]
-  · rwa [← lineSection_comp_sphereZeroProdMap e s (t := -1) (by norm_num)
+  · rwa [← prodThomPairPuncturedLineSection_comp_sphereZeroProdMap e s (t := -1) (by norm_num)
         (by rw [Set.mem_singleton_iff.1 hs]; ext i; by_cases hi : i = 0 <;> simp [hi]),
       TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply]
 
@@ -256,45 +273,50 @@ private theorem lineMap_apply (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (m : 
   (rfl)
 
 /-- On the positive side, `π^* b + σ ⌣ π^* c` restricts to `b + c`. -/
-private theorem singularCohomologyMap_lineSection_one_lineMap
+private theorem singularCohomologyMap_prodThomPairPuncturedLineSection_one_lineMap
     (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (m : ℕ)
     (bc : (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m ×
       (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m) :
-    TopCat.singularCohomologyMap (lineSection e 1 one_ne_zero) m (lineMap M e m bc) =
-      bc.1 + bc.2 := by
+    TopCat.singularCohomologyMap (prodThomPairPuncturedLineSection e 1 one_ne_zero) m
+      (lineMap M e m bc) = bc.1 + bc.2 := by
   rw [lineMap_apply, map_add, ← TopCat.singularCup_naturality,
-    singularCohomologyMap_lineSection_prodThomPairPuncturedProj,
-    singularCohomologyMap_lineSection_prodThomPairPuncturedProj,
-    singularCohomologyMap_lineSection_one, TopCat.singularCohomologyZeroOne_def,
+    singularCohomologyMap_prodThomPairPuncturedLineSection_prodThomPairPuncturedProj,
+    singularCohomologyMap_prodThomPairPuncturedLineSection_prodThomPairPuncturedProj,
+    singularCohomologyMap_prodThomPairPuncturedLineSection_one,
+    TopCat.singularCohomologyZeroOne_def,
     TopCat.singularCup_constSingularCocycle_left _ k (η := 𝟙 _) (by simp) (by simp)]
 
 /-- On the negative side, `π^* b + σ ⌣ π^* c` restricts to `b`. -/
-private theorem singularCohomologyMap_lineSection_neg_one_lineMap
+private theorem singularCohomologyMap_prodThomPairPuncturedLineSection_neg_one_lineMap
     (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (m : ℕ)
     (bc : (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m ×
       (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m) :
-    TopCat.singularCohomologyMap (lineSection e (-1) (by norm_num)) m (lineMap M e m bc) =
-      bc.1 := by
+    TopCat.singularCohomologyMap (prodThomPairPuncturedLineSection e (-1) (by norm_num)) m
+      (lineMap M e m bc) = bc.1 := by
   rw [lineMap_apply, map_add, ← TopCat.singularCup_naturality,
-    singularCohomologyMap_lineSection_prodThomPairPuncturedProj,
-    singularCohomologyMap_lineSection_neg_one, map_zero, LinearMap.zero_apply, add_zero]
+    singularCohomologyMap_prodThomPairPuncturedLineSection_prodThomPairPuncturedProj,
+    singularCohomologyMap_prodThomPairPuncturedLineSection_neg_one, map_zero, LinearMap.zero_apply,
+    add_zero]
 
 private theorem bijective_lineMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (m : ℕ) :
     Function.Bijective (lineMap (B := B) M e m) := by
   refine ⟨(injective_iff_map_eq_zero _).2 fun bc hbc ↦ ?_, fun y ↦ ?_⟩
-  · have h₁ := singularCohomologyMap_lineSection_neg_one_lineMap M e m bc
-    have h₂ := singularCohomologyMap_lineSection_one_lineMap M e m bc
+  · have h₁ := singularCohomologyMap_prodThomPairPuncturedLineSection_neg_one_lineMap M e m bc
+    have h₂ := singularCohomologyMap_prodThomPairPuncturedLineSection_one_lineMap M e m bc
     rw [hbc, map_zero] at h₁ h₂
     have hc : bc.2 = 0 := by rw [← h₁, zero_add] at h₂; exact h₂.symm
     exact Prod.ext h₁.symm hc
   · -- The candidate `(b, c)` reads `b` off the negative side and `b + c` off the positive side.
-    let b := TopCat.singularCohomologyMap (lineSection e (-1) (by norm_num)) m y
-    let c := TopCat.singularCohomologyMap (lineSection e 1 one_ne_zero) m y - b
+    let b :=
+      TopCat.singularCohomologyMap (prodThomPairPuncturedLineSection e (-1) (by norm_num)) m y
+    let c :=
+      TopCat.singularCohomologyMap (prodThomPairPuncturedLineSection e 1 one_ne_zero) m y - b
     refine ⟨(b, c), (sub_eq_zero.1 ?_).symm⟩
-    refine eq_zero_of_singularCohomologyMap_lineSection_eq_zero M e m _ ?_ ?_
-    · rw [map_sub, singularCohomologyMap_lineSection_one_lineMap]
+    refine eq_zero_of_singularCohomologyMap_prodThomPairPuncturedLineSection_eq_zero M e m _ ?_ ?_
+    · rw [map_sub, singularCohomologyMap_prodThomPairPuncturedLineSection_one_lineMap]
       simp [c]
-    · rw [map_sub, singularCohomologyMap_lineSection_neg_one_lineMap, sub_self]
+    · rw [map_sub, singularCohomologyMap_prodThomPairPuncturedLineSection_neg_one_lineMap,
+        sub_self]
 
 variable (B) in
 /-- **The cohomology of the punctured product line bundle.** For a continuous linear equivalence
@@ -323,6 +345,43 @@ theorem prodThomPairPuncturedLineSingularCohomologyEquiv_apply
           (TopCat.singularCohomologyMap (prodThomPairPuncturedProj B F) m bc.2) :=
   lineMap_apply M e m bc
 
+/-- On the positive side, the class `π^* b + σ ⌣ π^* c` of
+`TauCeti.prodThomPairPuncturedLineSingularCohomologyEquiv` restricts to `b + c`. -/
+theorem prodThomPairPuncturedLineSingularCohomologyEquiv_restrict_one
+    (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (m : ℕ)
+    (bc : (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m ×
+      (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m) :
+    TopCat.singularCohomologyMap (prodThomPairPuncturedLineSection e 1 one_ne_zero) m
+        (prodThomPairPuncturedLineSingularCohomologyEquiv M B e m bc) = bc.1 + bc.2 :=
+  singularCohomologyMap_prodThomPairPuncturedLineSection_one_lineMap M e m bc
+
+/-- On the negative side, the class `π^* b + σ ⌣ π^* c` of
+`TauCeti.prodThomPairPuncturedLineSingularCohomologyEquiv` restricts to `b`. -/
+theorem prodThomPairPuncturedLineSingularCohomologyEquiv_restrict_neg_one
+    (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (m : ℕ)
+    (bc : (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m ×
+      (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m) :
+    TopCat.singularCohomologyMap (prodThomPairPuncturedLineSection e (-1) (by norm_num)) m
+        (prodThomPairPuncturedLineSingularCohomologyEquiv M B e m bc) = bc.1 :=
+  singularCohomologyMap_prodThomPairPuncturedLineSection_neg_one_lineMap M e m bc
+
+/-- The inverse of the decomposition `TauCeti.prodThomPairPuncturedLineSingularCohomologyEquiv`
+reads `b` off the negative side and `c` as the difference of the restrictions to the two sides. -/
+theorem prodThomPairPuncturedLineSingularCohomologyEquiv_symm_apply
+    (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (m : ℕ)
+    (y : (prodThomPair B F).snd.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m) :
+    (prodThomPairPuncturedLineSingularCohomologyEquiv M B e m).symm y =
+      (TopCat.singularCohomologyMap (prodThomPairPuncturedLineSection e (-1) (by norm_num)) m y,
+        TopCat.singularCohomologyMap (prodThomPairPuncturedLineSection e 1 one_ne_zero) m y -
+          TopCat.singularCohomologyMap
+            (prodThomPairPuncturedLineSection e (-1) (by norm_num)) m y) := by
+  rw [LinearEquiv.symm_apply_eq]
+  refine sub_eq_zero.1
+    (eq_zero_of_singularCohomologyMap_prodThomPairPuncturedLineSection_eq_zero M e m _ ?_ ?_)
+  · rw [map_sub, prodThomPairPuncturedLineSingularCohomologyEquiv_restrict_one, add_sub_cancel,
+      sub_self]
+  · rw [map_sub, prodThomPairPuncturedLineSingularCohomologyEquiv_restrict_neg_one, sub_self]
+
 /-- The classes `π^* b` of the decomposition
 `TauCeti.prodThomPairPuncturedLineSingularCohomologyEquiv` are the restrictions of the classes of
 `B × F` pulled back from `B`. -/
@@ -337,74 +396,6 @@ private theorem prodThomPairPuncturedLineSingularCohomologyEquiv_apply_zero
 
 /-! ### The cohomology of the Thom pair of a product line bundle -/
 
-/-- The map `c ↦ δ (σ ⌣ π^* c)`, written as `δ ∘ D ∘ inr` for the decomposition `D` of the
-cohomology of the punctured product bundle. -/
-private def lineDeltaMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (n m : ℕ) (h : n + 1 = m) :
-    (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n →ₗ[k]
-      (prodThomPair B F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m :=
-  ((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M n m h).hom ∘ₗ
-    (prodThomPairPuncturedLineSingularCohomologyEquiv M B e n).toLinearMap ∘ₗ
-      LinearMap.inr k _ _
-
-private theorem lineDeltaMap_apply (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (n m : ℕ)
-    (h : n + 1 = m) (c : (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n) :
-    lineDeltaMap M e n m h c =
-      ((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M n m h)
-        ((prodThomPairPuncturedLineSingularCohomologyEquiv M B e n) (0, c)) :=
-  -- `lineDeltaMap` is this composite by definition.
-  (rfl)
-
-/-- `c ↦ δ (σ ⌣ π^* c)` is injective: if `δ (D (0, c)) = 0`, then `D (0, c)` is restricted from
-`B × F`, where every class is pulled back from `B`, so `D (0, c) = D (b, 0)` for some `b`. -/
-private theorem injective_lineDeltaMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (n m : ℕ)
-    (h : n + 1 = m) : Function.Injective (lineDeltaMap (B := B) M e n m h) := by
-  have := e.toHomeomorph.contractibleSpace
-  refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
-  rw [lineDeltaMap_apply] at hc
-  obtain ⟨y, hy⟩ := (ShortComplex.moduleCat_exact_iff _).1
-    ((prodThomPair B F).singularCohomology_exact_subspace (𝟙_ (ModuleCat.{w} k)) k M n m h) _ hc
-  obtain ⟨b, rfl⟩ := exists_singularCohomologyMap_prodThomPairProj_eq M _ y
-  rw [← prodThomPairPuncturedLineSingularCohomologyEquiv_apply_zero M e n] at hy
-  exact congrArg Prod.snd
-    ((prodThomPairPuncturedLineSingularCohomologyEquiv M B e n).injective hy).symm
-
-/-- `c ↦ δ (σ ⌣ π^* c)` is surjective. A class `z` of the pair maps to a class of `B × F` pulled
-back from `B` whose restriction to `B × (F ∖ {0})` vanishes; since `π^*` is injective, `z` maps to
-zero, so `z = δ (D (b, c))` by exactness, and `δ (D (b, 0)) = 0` as `D (b, 0)` is restricted from
-`B × F`. -/
-private theorem surjective_lineDeltaMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (n m : ℕ)
-    (h : n + 1 = m) : Function.Surjective (lineDeltaMap (B := B) M e n m h) := by
-  have := e.toHomeomorph.contractibleSpace
-  let P := prodThomPair B F
-  let D := prodThomPairPuncturedLineSingularCohomologyEquiv M B e n
-  intro z
-  obtain ⟨b, hb⟩ := exists_singularCohomologyMap_prodThomPairProj_eq M _
-    (P.singularCohomologyπ _ k M _ z)
-  have hπ : P.singularCohomologyπ _ k M _ z = 0 := by
-    have h0 := ConcreteCategory.congr_hom
-      (P.singularCohomologyπ_comp_singularCohomologyMap (𝟙_ (ModuleCat.{w} k)) k M m) z
-    rw [ConcreteCategory.comp_apply, ← hb, ← ConcreteCategory.comp_apply,
-      ← TopCat.singularCohomologyMap_comp, map_comp_prodThomPairProj] at h0
-    rw [← hb, injective_singularCohomologyMap_prodThomPairPuncturedProj M
-      (v := e.symm (EuclideanSpace.single 0 1)) (by simp) _ (h0.trans (map_zero _).symm),
-      map_zero]
-  obtain ⟨x, rfl⟩ : ∃ x, (P.singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M n m h) x = z :=
-    (ShortComplex.moduleCat_exact_iff _).1
-      (P.singularCohomology_exact_relative (𝟙_ (ModuleCat.{w} k)) k M n m h) z hπ
-  obtain ⟨⟨b', c⟩, rfl⟩ := D.surjective x
-  refine ⟨c, ?_⟩
-  have hδ : (P.singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M n m h) (D (b', 0)) = 0 := by
-    rw [prodThomPairPuncturedLineSingularCohomologyEquiv_apply_zero M e n b',
-      ← ConcreteCategory.comp_apply,
-      P.singularCohomologyMap_comp_singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M n m h]
-    simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
-  have hbc : ((b', c) : _ × _) = (b', 0) + (0, c) := by simp
-  rw [lineDeltaMap_apply, hbc, map_add, map_add, hδ, zero_add]
-
-private theorem bijective_lineDeltaMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (n m : ℕ)
-    (h : n + 1 = m) : Function.Bijective (lineDeltaMap (B := B) M e n m h) :=
-  ⟨injective_lineDeltaMap M e n m h, surjective_lineDeltaMap M e n m h⟩
-
 variable (B) in
 /-- **The cohomology of the Thom pair of a product line bundle.** Let `e : F ≃L[ℝ] ℝ¹` be a
 continuous linear equivalence, so that `F` has dimension `1`. Then, for every base degree `n` and
@@ -417,7 +408,26 @@ def prodThomPairSingularCohomologyLineEquiv (e : F ≃L[ℝ] EuclideanSpace ℝ 
     (h : n + 1 = m := by lia) :
     (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n ≃ₗ[k]
       (prodThomPair B F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m :=
-  LinearEquiv.ofBijective (lineDeltaMap M e n m h) (bijective_lineDeltaMap M e n m h)
+  LinearEquiv.ofBijective
+    (((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M n m h).hom ∘ₗ
+      (prodThomPairPuncturedLineSingularCohomologyEquiv M B e n).toLinearMap ∘ₗ
+        LinearMap.inr k _ _) <| by
+    have := e.toHomeomorph.contractibleSpace
+    exact bijective_singularCohomologyδ_prodThomPair_comp_inr M
+      (v := e.symm (EuclideanSpace.single 0 1)) (by simp) n m h
+      (prodThomPairPuncturedLineSingularCohomologyEquiv M B e n)
+      (prodThomPairPuncturedLineSingularCohomologyEquiv_apply_zero M e n)
+
+/-- The equivalence `TauCeti.prodThomPairSingularCohomologyLineEquiv` is `c ↦ δ (D (0, c))` for
+the decomposition `D` of the cohomology of the punctured product bundle. -/
+private theorem prodThomPairSingularCohomologyLineEquiv_eq
+    (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (n m : ℕ) (h : n + 1 = m)
+    (c : (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n) :
+    prodThomPairSingularCohomologyLineEquiv M B e n m h c =
+      ((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M n m h)
+        ((prodThomPairPuncturedLineSingularCohomologyEquiv M B e n) (0, c)) :=
+  -- The equivalence is this composite by definition.
+  (rfl)
 
 /-- The equivalence `TauCeti.prodThomPairSingularCohomologyLineEquiv` sends `c` to
 `δ (σ ⌣ π^* c)`. -/
@@ -430,7 +440,7 @@ theorem prodThomPairSingularCohomologyLineEquiv_apply (e : F ≃L[ℝ] Euclidean
         ((prodThomPair B F).snd.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ M).hom
           0 n n (zero_add n) (prodThomPairPuncturedLineClass k B e)
           (TopCat.singularCohomologyMap (prodThomPairPuncturedProj B F) n c)) := by
-  rw [prodThomPairSingularCohomologyLineEquiv, LinearEquiv.ofBijective_apply, lineDeltaMap_apply,
+  rw [prodThomPairSingularCohomologyLineEquiv_eq,
     prodThomPairPuncturedLineSingularCohomologyEquiv_apply, map_zero, zero_add]
 
 /-- The equivalence `TauCeti.prodThomPairSingularCohomologyLineEquiv` sends the unit
@@ -491,9 +501,8 @@ theorem prodThomPairSingularCohomologyLineEquiv_naturality
         (prodThomPairSingularCohomologyLineEquiv M B' e n m h c) =
       prodThomPairSingularCohomologyLineEquiv M B e n m h
         (TopCat.singularCohomologyMap (TopCat.ofHom g) n c) := by
-  rw [prodThomPairSingularCohomologyLineEquiv, prodThomPairSingularCohomologyLineEquiv,
-    LinearEquiv.ofBijective_apply, LinearEquiv.ofBijective_apply, lineDeltaMap_apply,
-    lineDeltaMap_apply, ← ConcreteCategory.comp_apply,
+  rw [prodThomPairSingularCohomologyLineEquiv_eq, prodThomPairSingularCohomologyLineEquiv_eq,
+    ← ConcreteCategory.comp_apply,
     TopPair.singularCohomologyδ_naturality (prodThomPairMap F g) n m h,
     ConcreteCategory.comp_apply,
     prodThomPairPuncturedLineSingularCohomologyEquiv_naturality M g e n, map_zero]
