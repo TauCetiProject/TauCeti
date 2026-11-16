@@ -168,7 +168,7 @@ theorem exists_refinement_energy_add_lt (P : Finpartition (univ : Finset V)) (h�
     -- Each witness rectangle carries an `ε²`-fraction of its block.
     have hsize : ∀ AB ∈ I, ε ^ 2 * #((AB.1 ×ˢ AB.2).filter fun p => p.1 ≠ p.2) ≤
         (#((X AB ×ˢ Y AB).filter fun p => p.1 ≠ p.2) : ℝ) := fun AB hAB ↦
-      Finset.sq_mul_card_filter_ne_product_le hε.le (hdisj hAB) (hXsub AB hAB) (hYsub AB hAB)
+      Finset.sq_mul_card_filter_ne_product_le hε.le ((hdisj hAB).mono (hXsub AB hAB) (hYsub AB hAB))
         (hXcard AB hAB) (hYcard AB hAB)
     have hgain := S.energy_increment_of_witnesses (inf_le_left : P ⊓ R ≤ P) I
       (fun AB hAB ↦ ⟨(hmem hAB).1, (hmem hAB).2.1⟩) c X Y hε.le hXsub hYsub
