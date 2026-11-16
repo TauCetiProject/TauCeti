@@ -122,6 +122,7 @@ def orthogonalCoadjointRepresentation :
     Representation R (orthogonalGroup n R) (Dual R (so n R)) :=
   (orthogonalAdjointRepresentation n R).dual
 
+@[simp]
 theorem orthogonalCoadjointRepresentation_apply_apply (g : orthogonalGroup n R)
     (ν : Dual R (so n R)) (A : so n R) :
     orthogonalCoadjointRepresentation n R g ν A = ν (orthogonalAdjointRepresentation n R g⁻¹ A) :=
@@ -167,6 +168,7 @@ theorem specialOrthogonalCoadjointRepresentation_apply (g : specialOrthogonalGro
       orthogonalCoadjointRepresentation n R (specialOrthogonalGroup.toOrthogonalGroup g) :=
   (rfl)
 
+@[simp]
 theorem specialOrthogonalCoadjointRepresentation_apply_apply (g : specialOrthogonalGroup n R)
     (ν : Dual R (so n R)) (A : so n R) :
     specialOrthogonalCoadjointRepresentation n R g ν A =
