@@ -10,19 +10,17 @@ public import Mathlib.Analysis.CStarAlgebra.Module.Constructions
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.Normed.Group.NullSubmodule
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
-public import TauCeti.Algebra.Star.Opposite
-public import TauCeti.Analysis.Normed.Operator.Completion
+public import TauCeti.Analysis.Normed.Operator.LinearIsometry
+public import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 
 /-!
 # Positive semidefinite C⋆-modules, dense `⋆`-subalgebra actions, and separated quotients
 
 `PosSemidefCStarModule A E` drops definiteness `⟪x, x⟫_A = 0 ↔ x = 0` from `CStarModule A E`.
-More generally, for `ι : A₀ →⋆ₙₐ[ℂ] A` into a C⋆-algebra `A`,
-`TauCeti.IsPosSemidefCStarModuleAlong ι E` records an `A`-valued positive semidefinite pairing on an
-`A₀`-module `E` with `⟪x, a₀ • y⟫_A = ι a₀ * ⟪x, y⟫_A` and `‖x‖ = √‖⟪x, x⟫_A‖`, assuming no norm or
-order on `A₀`; `CoreAlong` and `Core` build the seminormed structure when `DenseRange ι`.
-`SeparationQuotient E` kills null vectors, descending `IsPosSemidefCStarModuleAlong` and yielding
-`CStarModule A` at `ι = id`.
+For `ι : A₀ →⋆ₙₐ[ℂ] A` into a C⋆-algebra `A`, `IsPosSemidefCStarModuleAlong ι E` records a positive
+semidefinite `A`-valued pairing on an `A₀`-module `E` with `⟪x, a₀ • y⟫_A = ι a₀ * ⟪x, y⟫_A` and
+`‖x‖ = √‖⟪x, x⟫_A‖`, assuming no norm or order on `A₀`; `CoreAlong` and `Core` build the seminormed
+structure when `DenseRange ι`, and `SeparationQuotient E` kills null vectors.
 
 ## Main declarations
 
@@ -30,8 +28,9 @@ order on `A₀`; `CoreAlong` and `Core` build the seminormed structure when `Den
 * `TauCeti.IsPosSemidefCStarModuleAlong.inner_mul_inner_swap_le`, `norm_inner_le`,
   `map_smul_of_inner_eq`: C⋆-algebra and norm Cauchy–Schwarz inequalities without definiteness, and
   automatic `A₀`-equivariance of inner-product-preserving maps into definite C⋆-modules.
-* `SeparationQuotient.instCStarModule`, `SeparationQuotient.liftOfInner`: pre-Hilbert `A`-module
-  structure and inner-product universal property of `SeparationQuotient E`.
+* `TauCeti.PosSemidefCStarModule.rightModuleCoreAlong`, `isPosSemidefCStarModuleAlong_op`.
+* `SeparationQuotient.instCStarModule`, `separationQuotientInner`, `separationQuotientSMul`,
+  `separationQuotientLiftOfInner`: separated-quotient structure and universal property.
 
 ## References
 
@@ -53,8 +52,8 @@ namespace TauCeti
 /-! ### Classes for positive semidefinite modules and dense `⋆`-subalgebra actions -/
 
 /-- A positive semidefinite C⋆-module over `A`: a complex module `E` with an action of `A` and an
-`A`-valued positive semidefinite inner product inducing the seminorm `‖x‖ = √‖⟪x, x⟫_A‖`, without
-assuming definiteness `⟪x, x⟫_A = 0 ↔ x = 0`. For right `B`-modules, take `A = Bᵐᵒᵖ`. -/
+`A`-valued positive semidefinite inner product inducing `‖x‖ = √‖⟪x, x⟫_A‖`, without assuming
+`⟪x, x⟫_A = 0 ↔ x = 0`. For right `B`-modules, take `A = Bᵐᵒᵖ`. -/
 class PosSemidefCStarModule (A E : Type*) [NonUnitalSemiring A] [StarRing A]
     [Module ℂ A] [AddCommGroup E] [Module ℂ E] [PartialOrder A] [SMul A E] [Norm A] [Norm E]
     extends Inner A E where
@@ -71,37 +70,31 @@ attribute [simp] PosSemidefCStarModule.inner_add_right PosSemidefCStarModule.sta
 /-- Every pre-Hilbert C⋆-module (`CStarModule A E`) is positive semidefinite. -/
 instance PosSemidefCStarModule.ofCStarModule {A E : Type*} [NonUnitalSemiring A] [StarRing A]
     [Module ℂ A] [AddCommGroup E] [Module ℂ E] [PartialOrder A] [SMul A E] [Norm A] [Norm E]
-    [CStarModule A E] : PosSemidefCStarModule A E where
-  toInner := inferInstance
-  inner_add_right := CStarModule.inner_add_right
-  inner_self_nonneg := CStarModule.inner_self_nonneg
-  inner_op_smul_right := CStarModule.inner_op_smul_right
-  inner_smul_right_complex := CStarModule.inner_smul_right_complex
-  star_inner := CStarModule.star_inner
-  norm_eq_sqrt_norm_inner_self := CStarModule.norm_eq_sqrt_norm_inner_self
+    [CStarModule A E] : PosSemidefCStarModule A E :=
+  { toInner := inferInstance, inner_add_right := CStarModule.inner_add_right,
+    inner_self_nonneg := CStarModule.inner_self_nonneg,
+    inner_op_smul_right := CStarModule.inner_op_smul_right,
+    inner_smul_right_complex := CStarModule.inner_smul_right_complex,
+    star_inner := CStarModule.star_inner,
+    norm_eq_sqrt_norm_inner_self := CStarModule.norm_eq_sqrt_norm_inner_self }
 
-/-- A positive semidefinite `A`-module satisfying definiteness `⟪x, x⟫_A = 0 → x = 0` is a
-pre-Hilbert C⋆-module. -/
+/-- A positive semidefinite `A`-module satisfying `⟪x, x⟫_A = 0 → x = 0` is a `CStarModule A E`. -/
 abbrev PosSemidefCStarModule.toCStarModule {A E : Type*} [NonUnitalRing A] [StarRing A]
-    [Module ℂ A] [AddCommGroup E] [Module ℂ E] [PartialOrder A] [SMul A E]
-    [Norm A] [Norm E] [PosSemidefCStarModule A E]
-    (hdef : ∀ x : E, inner A x x = 0 → x = 0) : CStarModule A E where
-  toInner := inferInstance
-  inner_add_right := PosSemidefCStarModule.inner_add_right
-  inner_self_nonneg := PosSemidefCStarModule.inner_self_nonneg
-  inner_self {x} := ⟨hdef x, by
-    rintro rfl
-    have h := PosSemidefCStarModule.inner_add_right (A := A) (x := (0 : E)) (y := 0) (z := 0)
-    rw [add_zero] at h
-    exact add_eq_left.mp h.symm⟩
-  inner_op_smul_right := PosSemidefCStarModule.inner_op_smul_right
-  inner_smul_right_complex := PosSemidefCStarModule.inner_smul_right_complex
-  star_inner := PosSemidefCStarModule.star_inner
-  norm_eq_sqrt_norm_inner_self := PosSemidefCStarModule.norm_eq_sqrt_norm_inner_self
+    [Module ℂ A] [AddCommGroup E] [Module ℂ E] [PartialOrder A] [SMul A E] [Norm A] [Norm E]
+    [PosSemidefCStarModule A E] (hdef : ∀ x : E, inner A x x = 0 → x = 0) : CStarModule A E :=
+  { toInner := inferInstance, inner_add_right := PosSemidefCStarModule.inner_add_right,
+    inner_self_nonneg := PosSemidefCStarModule.inner_self_nonneg,
+    inner_self := fun {x} ↦ ⟨hdef x, by
+      rintro rfl
+      have h := PosSemidefCStarModule.inner_add_right (A := A) (x := (0 : E)) (y := 0) (z := 0)
+      rw [add_zero] at h; exact add_eq_left.mp h.symm⟩,
+    inner_op_smul_right := PosSemidefCStarModule.inner_op_smul_right,
+    inner_smul_right_complex := PosSemidefCStarModule.inner_smul_right_complex,
+    star_inner := PosSemidefCStarModule.star_inner,
+    norm_eq_sqrt_norm_inner_self := PosSemidefCStarModule.norm_eq_sqrt_norm_inner_self }
 
-/-- A positive semidefinite module over `A₀` along a nonunital `⋆`-algebra homomorphism
-`ι : A₀ →⋆ₙₐ[ℂ] A`, where positivity `0 ≤ ⟪x, x⟫_A` and seminorm `‖x‖ = √‖⟪x, x⟫_A‖` are measured
-in `A`. No norm or order is required on `A₀`. -/
+/-- A positive semidefinite module over `A₀` along `ι : A₀ →⋆ₙₐ[ℂ] A`, where positivity and
+seminorm `‖x‖ = √‖⟪x, x⟫_A‖` are measured in `A` (requiring no norm or order on `A₀`). -/
 class IsPosSemidefCStarModuleAlong {A₀ A : Type*} [NonUnitalSemiring A₀] [StarRing A₀]
     [Module ℂ A₀] [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
     (ι : A₀ →⋆ₙₐ[ℂ] A) (E : Type*) [AddCommGroup E] [Module ℂ E] [SMul A₀ E] [Norm E]
@@ -113,30 +106,30 @@ class IsPosSemidefCStarModuleAlong {A₀ A : Type*} [NonUnitalSemiring A₀] [St
   star_inner (x y : E) : star (inner A x y) = inner A y x
   norm_eq_sqrt_norm_inner_self (x : E) : ‖x‖ = √‖inner A x x‖
 
-/-- A `PosSemidefCStarModule A E` satisfies `IsPosSemidefCStarModuleAlong` for the identity map on
-`A`. -/
+/-- A `PosSemidefCStarModule A E` satisfies `IsPosSemidefCStarModuleAlong` for `id` on `A`. -/
 instance PosSemidefCStarModule.instAlongId {A E : Type*} [NonUnitalSemiring A] [StarRing A]
     [Module ℂ A] [AddCommGroup E] [Module ℂ E] [PartialOrder A] [SMul A E] [Norm A] [Norm E]
-    [PosSemidefCStarModule A E] : IsPosSemidefCStarModuleAlong (NonUnitalStarAlgHom.id ℂ A) E where
-  inner_add_right := PosSemidefCStarModule.inner_add_right
-  inner_self_nonneg := PosSemidefCStarModule.inner_self_nonneg
-  inner_op_smul_right := PosSemidefCStarModule.inner_op_smul_right
-  inner_smul_right_complex := PosSemidefCStarModule.inner_smul_right_complex
-  star_inner := PosSemidefCStarModule.star_inner
-  norm_eq_sqrt_norm_inner_self := PosSemidefCStarModule.norm_eq_sqrt_norm_inner_self
+    [PosSemidefCStarModule A E] : IsPosSemidefCStarModuleAlong (NonUnitalStarAlgHom.id ℂ A) E :=
+  { inner_add_right := PosSemidefCStarModule.inner_add_right,
+    inner_self_nonneg := PosSemidefCStarModule.inner_self_nonneg,
+    inner_op_smul_right := PosSemidefCStarModule.inner_op_smul_right,
+    inner_smul_right_complex := PosSemidefCStarModule.inner_smul_right_complex,
+    star_inner := PosSemidefCStarModule.star_inner,
+    norm_eq_sqrt_norm_inner_self := PosSemidefCStarModule.norm_eq_sqrt_norm_inner_self }
 
-/-- Restricting the scalar action of a `PosSemidefCStarModule A E` to a `NonUnitalStarSubalgebra`
-`S` of `A` yields `IsPosSemidefCStarModuleAlong` along `NonUnitalStarSubalgebraClass.subtype S`. -/
-instance PosSemidefCStarModule.instAlongSubalgebra {A E : Type*} [NonUnitalSemiring A] [StarRing A]
-    [Module ℂ A] [AddCommGroup E] [Module ℂ E] [PartialOrder A] [SMul A E] [Norm A] [Norm E]
-    [PosSemidefCStarModule A E] (S : NonUnitalStarSubalgebra ℂ A) :
-    IsPosSemidefCStarModuleAlong (NonUnitalStarSubalgebraClass.subtype S) E where
-  inner_add_right := PosSemidefCStarModule.inner_add_right
-  inner_self_nonneg := PosSemidefCStarModule.inner_self_nonneg
-  inner_op_smul_right {s _ _} := PosSemidefCStarModule.inner_op_smul_right (a := (s : A))
-  inner_smul_right_complex := PosSemidefCStarModule.inner_smul_right_complex
-  star_inner := PosSemidefCStarModule.star_inner
-  norm_eq_sqrt_norm_inner_self := PosSemidefCStarModule.norm_eq_sqrt_norm_inner_self
+/-- Restricting the scalar action of `PosSemidefCStarModule A E` to a `⋆`-subsemiring `s` of `A`
+yields `IsPosSemidefCStarModuleAlong` along `NonUnitalStarSubalgebraClass.subtype s`. -/
+instance PosSemidefCStarModule.instAlongSubalgebra {A E S : Type*} [NonUnitalSemiring A]
+    [StarRing A] [Module ℂ A] [AddCommGroup E] [Module ℂ E] [PartialOrder A] [SMul A E]
+    [Norm A] [Norm E] [PosSemidefCStarModule A E] [SetLike S A]
+    [NonUnitalSubsemiringClass S A] [SMulMemClass S ℂ A] [StarMemClass S A] (s : S) :
+    IsPosSemidefCStarModuleAlong (NonUnitalStarSubalgebraClass.subtype s) E :=
+  { inner_add_right := PosSemidefCStarModule.inner_add_right,
+    inner_self_nonneg := PosSemidefCStarModule.inner_self_nonneg,
+    inner_op_smul_right := fun {r _ _} ↦ PosSemidefCStarModule.inner_op_smul_right (a := (r : A)),
+    inner_smul_right_complex := PosSemidefCStarModule.inner_smul_right_complex,
+    star_inner := PosSemidefCStarModule.star_inner,
+    norm_eq_sqrt_norm_inner_self := PosSemidefCStarModule.norm_eq_sqrt_norm_inner_self }
 
 namespace IsPosSemidefCStarModuleAlong
 
@@ -146,23 +139,20 @@ section Algebraic
 
 variable {A₀ A E : Type*} [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ A₀]
   [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
-  {ι : A₀ →⋆ₙₐ[ℂ] A} [AddCommGroup E] [Module ℂ E] [SMul A₀ E] [Norm E] [Inner A E]
+  (ι : A₀ →⋆ₙₐ[ℂ] A) [AddCommGroup E] [Module ℂ E] [SMul A₀ E] [Norm E] [Inner A E]
   [IsPosSemidefCStarModuleAlong ι E]
-
 include ι
 
 lemma inner_add_left (x y z : E) : inner A (x + y) z = inner A x z + inner A y z := by
-  rw [← star_star (r := inner A (x + y) z), star_inner (ι := ι),
-    inner_add_right (ι := ι), star_add, star_inner (ι := ι), star_inner (ι := ι)]
+  rw [← star_star (r := inner A (x + y) z), star_inner (ι := ι), inner_add_right (ι := ι),
+    star_add, star_inner (ι := ι), star_inner (ι := ι)]
 lemma inner_op_smul_left (a₀ : A₀) (x y : E) :
     inner A (a₀ • x) y = inner A x y * star (ι a₀) := by
-  rw [← star_star (r := inner A (a₀ • x) y), star_inner (ι := ι),
-    inner_op_smul_right (ι := ι), star_mul, star_inner (ι := ι)]
+  rw [← star_star (r := inner A (a₀ • x) y), star_inner (ι := ι), inner_op_smul_right (ι := ι),
+    star_mul, star_inner (ι := ι)]
 lemma isSelfAdjoint_inner_self (x : E) : IsSelfAdjoint (inner A x x) := star_inner (ι := ι) x x
 lemma inner_smul_right_real (r : ℝ) (x y : E) : inner A x (r • y) = r • inner A x y := by
   simpa only [coe_smul] using inner_smul_right_complex (ι := ι) (z := (r : ℂ)) (x := x) (y := y)
-
-section StarModule
 
 variable [StarModule ℂ A]
 
@@ -171,16 +161,14 @@ lemma inner_smul_left_complex (z : ℂ) (x y : E) :
   rw [← star_star (r := inner A (z • x) y), star_inner (ι := ι),
     inner_smul_right_complex (ι := ι), star_smul, star_inner (ι := ι)]
 lemma inner_smul_left_real (r : ℝ) (x y : E) : inner A (r • x) y = r • inner A x y := by
-  simpa only [coe_smul, Complex.star_def, conj_ofReal] using
-    inner_smul_left_complex (ι := ι) (r : ℂ) x y
+  simpa only [coe_smul, Complex.star_def, conj_ofReal] using inner_smul_left_complex ι (r : ℂ) x y
 
-omit ι in
 /-- The pairing `⟪x, y⟫_A` bundled as a sesquilinear map. -/
-def innerₛₗ (ι : A₀ →⋆ₙₐ[ℂ] A) [IsPosSemidefCStarModuleAlong ι E] : E →ₗ⋆[ℂ] E →ₗ[ℂ] A where
+def innerₛₗ : E →ₗ⋆[ℂ] E →ₗ[ℂ] A where
   toFun x := ⟨⟨inner A x, fun _ _ ↦ inner_add_right (ι := ι)⟩,
     fun _ _ ↦ inner_smul_right_complex (ι := ι)⟩
-  map_add' x y := LinearMap.ext <| inner_add_left (ι := ι) x y
-  map_smul' c x := LinearMap.ext <| inner_smul_left_complex (ι := ι) c x
+  map_add' x y := LinearMap.ext <| inner_add_left ι x y
+  map_smul' c x := LinearMap.ext <| inner_smul_left_complex ι c x
 
 @[simp] lemma innerₛₗ_apply (x y : E) : innerₛₗ ι x y = inner A x y := (rfl)
 lemma inner_zero_right (x : E) : inner A x 0 = 0 := map_zero (innerₛₗ ι x)
@@ -192,35 +180,33 @@ lemma inner_sub_right (x y z : E) : inner A x (y - z) = inner A x y - inner A x 
   map_sub (innerₛₗ ι x) y z
 lemma inner_sub_left (x y z : E) : inner A (x - y) z = inner A x z - inner A y z :=
   LinearMap.congr_fun (map_sub (innerₛₗ ι) x y) z
+lemma inner_sum_right {κ : Type*} (s : Finset κ) (x : E) (y : κ → E) :
+    inner A x (∑ i ∈ s, y i) = ∑ i ∈ s, inner A x (y i) := map_sum (innerₛₗ ι x) y s
+lemma inner_sum_left {κ : Type*} (s : Finset κ) (x : κ → E) (y : E) :
+    inner A (∑ i ∈ s, x i) y = ∑ i ∈ s, inner A (x i) y := map_sum ((innerₛₗ ι).flip y) x s
 
 /-- Polarization identity for a positive semidefinite pairing. -/
 lemma inner_polarization (x y : E) :
     inner A x y = (4 : ℂ)⁻¹ • (inner A (x + y) (x + y) - inner A (x - y) (x - y) -
       I • inner A (x + I • y) (x + I • y) + I • inner A (x - I • y) (x - I • y)) := by
-  simp only [inner_add_left (ι := ι), inner_add_right (ι := ι), inner_sub_left (ι := ι),
-    inner_sub_right (ι := ι), inner_smul_left_complex (ι := ι), inner_smul_right_complex (ι := ι),
-    Complex.star_def, conj_I, smul_add, smul_sub, smul_neg, smul_smul, neg_smul, I_mul_I]
-  module
+  simp only [inner_add_left ι, inner_add_right (ι := ι), inner_sub_left ι, inner_sub_right ι,
+    inner_smul_left_complex ι, inner_smul_right_complex (ι := ι), Complex.star_def, conj_I,
+    smul_add, smul_sub, smul_neg, smul_smul, neg_smul, I_mul_I]; module
 
-/-- `(a₀ • y - a₀ • z) - a₀ • (y - z)` is orthogonal to every `x` in the second slot. -/
 lemma inner_smul_sub_sub_smul_sub_right (a₀ : A₀) (x y z : E) :
     inner A x ((a₀ • y - a₀ • z) - a₀ • (y - z)) = 0 := by
-  simp only [inner_sub_right (ι := ι), inner_op_smul_right (ι := ι), mul_sub]; abel
+  simp only [inner_sub_right ι, inner_op_smul_right (ι := ι), mul_sub]; abel
 
-/-- Any complex-linear map into a definite `CStarModule A F` that preserves the `A`-valued inner
-product automatically intertwines the `A₀`-action with the `A`-action along `ι`, without assuming
-continuity or dense range. -/
+/-- Any complex-linear map into a definite `CStarModule A F` preserving `inner A` automatically
+intertwines the `A₀`-action with the `A`-action along `ι`. -/
 theorem map_smul_of_inner_eq {F : Type*} [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F]
     [CStarModule A F] (f : E →ₗ[ℂ] F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
     (a₀ : A₀) (x : E) : f (a₀ • x) = ι a₀ • f x := by
-  apply sub_eq_zero.mp
-  apply (CStarModule.inner_self (A := A)).mp
+  apply sub_eq_zero.mp; apply (CStarModule.inner_self (A := A)).mp
   simp only [CStarModule.inner_sub_left, CStarModule.inner_sub_right,
     CStarModule.inner_op_smul_left, CStarModule.inner_op_smul_right, hf,
-    inner_op_smul_left (ι := ι), inner_op_smul_right (ι := ι)]
-  noncomm_ring
+    inner_op_smul_left ι, inner_op_smul_right (ι := ι)]; noncomm_ring
 
-end StarModule
 end Algebraic
 
 /-! ### Cauchy–Schwarz and action bounds -/
@@ -229,28 +215,33 @@ section Analytic
 
 variable {A₀ A E : Type*} [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ A₀]
   [NonUnitalCStarAlgebra A] [PartialOrder A]
-  {ι : A₀ →⋆ₙₐ[ℂ] A} [AddCommGroup E] [Module ℂ E] [SMul A₀ E] [Norm E] [Inner A E]
-  [IsPosSemidefCStarModuleAlong ι E]
+  [AddCommGroup E] [Module ℂ E] [SMul A₀ E] [Norm E] [Inner A E]
 
+section NormBasic
+
+variable (ι : A₀ →⋆ₙₐ[ℂ] A) [IsPosSemidefCStarModuleAlong ι E]
 include ι
 
 lemma norm_sq_eq (x : E) : ‖x‖ ^ 2 = ‖inner A x x‖ := by
   simp [norm_eq_sqrt_norm_inner_self (ι := ι)]
 protected lemma norm_nonneg (x : E) : 0 ≤ ‖x‖ := by simp [norm_eq_sqrt_norm_inner_self (ι := ι)]
 protected lemma norm_zero : ‖(0 : E)‖ = 0 := by
-  simp [norm_eq_sqrt_norm_inner_self (ι := ι), inner_zero_right (ι := ι)]
-
-/-- Vanishing of the seminorm is equivalent to vanishing of the self-inner product `⟪x, x⟫_A`. -/
+  simp [norm_eq_sqrt_norm_inner_self (ι := ι), inner_zero_right ι]
 theorem norm_eq_zero_iff_inner_self_eq_zero (x : E) : ‖x‖ = 0 ↔ inner A x x = 0 := by
   rw [norm_eq_sqrt_norm_inner_self (ι := ι), Real.sqrt_eq_zero (norm_nonneg _), norm_eq_zero]
-
 protected lemma norm_smul_complex (c : ℂ) (x : E) : ‖c • x‖ = ‖c‖ * ‖x‖ := by
   rw [norm_eq_sqrt_norm_inner_self (ι := ι) (c • x), norm_eq_sqrt_norm_inner_self (ι := ι) x,
-    inner_smul_left_complex (ι := ι), inner_smul_right_complex (ι := ι), smul_smul,
-    norm_smul, norm_mul, norm_star, Real.sqrt_mul (by positivity),
-    Real.sqrt_mul_self (norm_nonneg c)]
+    inner_smul_left_complex ι, inner_smul_right_complex (ι := ι), smul_smul, norm_smul, norm_mul,
+    norm_star, Real.sqrt_mul (by positivity), Real.sqrt_mul_self (norm_nonneg c)]
+
+end NormBasic
 
 variable [StarOrderedRing A]
+
+section CauchySchwarz
+
+variable {ι : A₀ →⋆ₙₐ[ℂ] A} [IsPosSemidefCStarModuleAlong ι E]
+include ι
 
 private lemma inner_quad_nonneg (hι : DenseRange ι) (x y : E) (t : ℝ) :
     (0 : A) ≤ ‖x‖ ^ 2 • (inner A x y * inner A y x) -
@@ -262,30 +253,25 @@ private lemma inner_quad_nonneg (hι : DenseRange ι) (x y : E) (t : ℝ) :
     calc (0 : A) ≤ inner A (a₀ • x - t • y) (a₀ • x - t • y) := inner_self_nonneg (ι := ι)
       _ = ι a₀ * inner A x x * star (ι a₀) - t • (ι a₀ * inner A y x) -
             t • (inner A x y * star (ι a₀)) + (t ^ 2) • inner A y y := by
-          simp only [inner_sub_right (ι := ι), inner_sub_left (ι := ι),
-            inner_op_smul_right (ι := ι), inner_op_smul_left (ι := ι),
-            inner_smul_right_real (ι := ι), inner_smul_left_real (ι := ι),
-            mul_smul_comm, smul_mul_assoc, smul_smul, ← sq, mul_assoc]
-          abel
+          simp only [inner_sub_right ι, inner_sub_left ι, inner_op_smul_right (ι := ι),
+            inner_op_smul_left ι, inner_smul_right_real ι, inner_smul_left_real ι,
+            mul_smul_comm, smul_mul_assoc, smul_smul, ← sq, mul_assoc]; abel
       _ ≤ ‖x‖ ^ 2 • (ι a₀ * star (ι a₀)) - t • (ι a₀ * inner A y x) -
             t • (inner A x y * star (ι a₀)) + (t ^ 2) • inner A y y := by
-          gcongr
-          rw [norm_sq_eq (ι := ι)]
-          exact CStarAlgebra.star_right_conjugate_le_norm_smul _ _
-            (isSelfAdjoint_inner_self (ι := ι) x)
+          gcongr; rw [norm_sq_eq ι]
+          exact CStarAlgebra.star_right_conjugate_le_norm_smul _ _ (isSelfAdjoint_inner_self ι x)
   let P (a : A) : Prop := (0 : A) ≤ ‖x‖ ^ 2 • (a * star a) -
     t • (a * inner A y x) - t • (inner A x y * star a) + (t ^ 2) • inner A y y
   simpa only [P, star_inner (ι := ι)] using hι.induction (P := P)
     (fun _ ⟨a₀, ha₀⟩ ↦ ha₀ ▸ hstep a₀) (isClosed_le (by fun_prop) (by fun_prop)) (inner A x y)
 
-/-- The C⋆-algebra Cauchy–Schwarz inequality for a positive semidefinite module over a dense
-`⋆`-subalgebra: `⟪x, y⟫_A * ⟪y, x⟫_A ≤ ‖x‖ ^ 2 • ⟪y, y⟫_A`. -/
+/-- The C⋆-algebra Cauchy–Schwarz inequality `⟪x, y⟫_A * ⟪y, x⟫_A ≤ ‖x‖ ^ 2 • ⟪y, y⟫_A` over a
+dense `⋆`-subalgebra. -/
 theorem inner_mul_inner_swap_le (hι : DenseRange ι) (x y : E) :
     inner A x y * inner A y x ≤ ‖x‖ ^ 2 • inner A y y := by
   set p := inner A x y * inner A y x
   rcases (sq_nonneg ‖x‖).eq_or_lt with hx0 | hx_pos
-  · -- Null-vector case `‖x‖ ^ 2 = 0`: `p ≤ (t / 2) • ⟪y, y⟫_A` for `t > 0`, then let `t → 0⁺`.
-    have hpos : Set.Ioi (0 : ℝ) ⊆ {t : ℝ | p ≤ (t / 2) • inner A y y} := fun t (ht : 0 < t) ↦ by
+  · have hpos : Set.Ioi (0 : ℝ) ⊆ {t : ℝ | p ≤ (t / 2) • inner A y y} := fun t (ht : 0 < t) ↦ by
       have hq := inner_quad_nonneg hι x y t
       have hmul : 2 * t * (t / 2) = t ^ 2 := by ring
       have hq_eq : ‖x‖ ^ 2 • p - t • p - t • p + t ^ 2 • inner A y y =
@@ -293,128 +279,100 @@ theorem inner_mul_inner_swap_le (hι : DenseRange ι) (x y : E) :
         rw [← hx0, zero_smul, smul_smul, hmul, two_mul, add_smul]; abel
       rw [hq_eq, sub_nonneg] at hq
       exact (smul_le_smul_iff_of_pos_left (by positivity)).mp hq
-    have h0 : (0 : ℝ) ∈ {t : ℝ | p ≤ (t / 2) • inner A y y} :=
-      closure_minimal hpos (isClosed_le continuous_const (by fun_prop)) (by simp [closure_Ioi])
-    simpa [← hx0] using h0
-  · -- Positive-norm case `0 < ‖x‖ ^ 2`: evaluate `inner_quad_nonneg` at `t = ‖x‖ ^ 2`.
-    have hq := inner_quad_nonneg hι x y (‖x‖ ^ 2)
+    simpa [← hx0] using closure_minimal hpos
+      (isClosed_le continuous_const (by fun_prop)) (by simp [closure_Ioi] : (0 : ℝ) ∈ _)
+  · have hq := inner_quad_nonneg hι x y (‖x‖ ^ 2)
     have hq_eq : ‖x‖ ^ 2 • p - ‖x‖ ^ 2 • p - ‖x‖ ^ 2 • p + (‖x‖ ^ 2) ^ 2 • inner A y y =
         ‖x‖ ^ 2 • (‖x‖ ^ 2 • inner A y y) - ‖x‖ ^ 2 • p := by rw [smul_smul, ← sq]; abel
-    rw [hq_eq, sub_nonneg] at hq
-    exact (smul_le_smul_iff_of_pos_left hx_pos).mp hq
+    rw [hq_eq, sub_nonneg] at hq; exact (smul_le_smul_iff_of_pos_left hx_pos).mp hq
 
-/-- The norm Cauchy–Schwarz inequality `‖⟪x, y⟫_A‖ ≤ ‖x‖ * ‖y‖` for a positive semidefinite module
-over a dense `⋆`-subalgebra. -/
+/-- The norm Cauchy–Schwarz inequality `‖⟪x, y⟫_A‖ ≤ ‖x‖ * ‖y‖` over a dense `⋆`-subalgebra. -/
 theorem norm_inner_le (hι : DenseRange ι) (x y : E) : ‖inner A x y‖ ≤ ‖x‖ * ‖y‖ := by
   refine (pow_le_pow_iff_left₀ (n := 2) (norm_nonneg _)
-    (mul_nonneg (IsPosSemidefCStarModuleAlong.norm_nonneg (ι := ι) x)
-      (IsPosSemidefCStarModuleAlong.norm_nonneg (ι := ι) y)) (by decide)).mp ?_
+    (mul_nonneg (IsPosSemidefCStarModuleAlong.norm_nonneg ι x)
+      (IsPosSemidefCStarModuleAlong.norm_nonneg ι y)) (by decide)).mp ?_
   calc ‖inner A x y‖ ^ 2 = ‖inner A x y * inner A y x‖ := by
         rw [← star_inner (ι := ι) x y, CStarRing.norm_self_mul_star, sq]
     _ ≤ ‖‖x‖ ^ 2 • inner A y y‖ := CStarAlgebra.norm_le_norm_of_le_of_nonneg
         (inner_mul_inner_swap_le hι x y)
         (by rw [← star_inner (ι := ι) x y]; exact mul_star_self_nonneg _)
     _ = (‖x‖ * ‖y‖) ^ 2 := by
-        rw [norm_smul, Real.norm_of_nonneg (sq_nonneg _), ← norm_sq_eq (ι := ι) y, mul_pow]
+        rw [norm_smul, Real.norm_of_nonneg (sq_nonneg _), ← norm_sq_eq ι y, mul_pow]
 
-/-- Triangle inequality for the seminorm `√‖⟪x, x⟫_A‖`. -/
 protected theorem norm_triangle (hι : DenseRange ι) (x y : E) : ‖x + y‖ ≤ ‖x‖ + ‖y‖ := by
-  refine (pow_le_pow_iff_left₀ (n := 2)
-    (IsPosSemidefCStarModuleAlong.norm_nonneg (ι := ι) (x + y))
-    (add_nonneg (IsPosSemidefCStarModuleAlong.norm_nonneg (ι := ι) x)
-      (IsPosSemidefCStarModuleAlong.norm_nonneg (ι := ι) y)) (by decide)).mp ?_
-  calc ‖x + y‖ ^ 2 = ‖inner A (x + y) (x + y)‖ := norm_sq_eq (ι := ι) (x + y)
+  refine (pow_le_pow_iff_left₀ (n := 2) (IsPosSemidefCStarModuleAlong.norm_nonneg ι (x + y))
+    (add_nonneg (IsPosSemidefCStarModuleAlong.norm_nonneg ι x)
+      (IsPosSemidefCStarModuleAlong.norm_nonneg ι y)) (by decide)).mp ?_
+  calc ‖x + y‖ ^ 2 = ‖inner A (x + y) (x + y)‖ := norm_sq_eq ι (x + y)
     _ ≤ ‖inner A x x + inner A y x‖ + ‖inner A x y‖ + ‖inner A y y‖ := by
-        rw [inner_add_right (ι := ι), inner_add_left (ι := ι), inner_add_left (ι := ι), ← add_assoc]
+        rw [inner_add_right (ι := ι), inner_add_left ι, inner_add_left ι, ← add_assoc]
         exact norm_add₃_le
     _ ≤ ‖inner A x x‖ + ‖inner A y x‖ + ‖inner A x y‖ + ‖inner A y y‖ := by
         gcongr; exact norm_add_le _ _
     _ ≤ ‖x‖ ^ 2 + ‖y‖ * ‖x‖ + ‖x‖ * ‖y‖ + ‖y‖ ^ 2 := by
-        rw [← norm_sq_eq (ι := ι) x, ← norm_sq_eq (ι := ι) y]
-        gcongr <;> exact norm_inner_le hι _ _
+        rw [← norm_sq_eq ι x, ← norm_sq_eq ι y]; gcongr <;> exact norm_inner_le hι _ _
     _ = (‖x‖ + ‖y‖) ^ 2 := by ring
 
-/-- `SeminormedSpace.Core` induced by a positive semidefinite pairing over a dense
-`⋆`-subalgebra. -/
-lemma seminormedSpaceCore (hι : DenseRange ι) : SeminormedSpace.Core ℂ E where
-  norm_nonneg := IsPosSemidefCStarModuleAlong.norm_nonneg (ι := ι)
-  norm_smul := IsPosSemidefCStarModuleAlong.norm_smul_complex (ι := ι)
-  norm_triangle := IsPosSemidefCStarModuleAlong.norm_triangle hι
+lemma seminormedSpaceCore (hι : DenseRange ι) : SeminormedSpace.Core ℂ E :=
+  { norm_nonneg := IsPosSemidefCStarModuleAlong.norm_nonneg ι,
+    norm_smul := IsPosSemidefCStarModuleAlong.norm_smul_complex ι,
+    norm_triangle := IsPosSemidefCStarModuleAlong.norm_triangle hι }
 
-/-- Square-root identity `|x| * |x| = ⟪x, x⟫_A` for `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
+end CauchySchwarz
+
+section ActionBounds
+
+variable (ι : A₀ →⋆ₙₐ[ℂ] A) [IsPosSemidefCStarModuleAlong ι E]
+include ι
+
 lemma sqrt_inner_self_mul_self (x : E) :
     CFC.sqrt (inner A x x) * CFC.sqrt (inner A x x) = inner A x x :=
   CFC.sqrt_mul_sqrt_self _ (inner_self_nonneg (ι := ι))
-
-/-- Factorization `b * ⟪x, x⟫_A * star b = (b * |x|) * star (b * |x|)` for
-`|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 lemma mul_inner_self_mul_star (b : A) (x : E) :
     b * inner A x x * star b =
       (b * CFC.sqrt (inner A x x)) * star (b * CFC.sqrt (inner A x x)) := by
   rw [star_mul, (CFC.sqrt_nonneg (a := inner A x x)).isSelfAdjoint.star_eq,
-    ← mul_assoc, mul_assoc b (CFC.sqrt _), sqrt_inner_self_mul_self (ι := ι)]
-
-/-- Norm bound `‖b * CFC.sqrt ⟪x, x⟫_A‖ ≤ ‖b‖ * ‖x‖` in `A`. -/
+    ← mul_assoc, mul_assoc b (CFC.sqrt _), sqrt_inner_self_mul_self ι]
 lemma norm_mul_sqrt_inner_self_le (b : A) (x : E) :
     ‖b * CFC.sqrt (inner A x x)‖ ≤ ‖b‖ * ‖x‖ :=
   (norm_mul_le _ _).trans_eq <| by
     rw [CFC.norm_sqrt _ (inner_self_nonneg (ι := ι)), ← norm_eq_sqrt_norm_inner_self (ι := ι)]
-
-/-- Diagonal inner-product identity for `a₀ • x` in terms of `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 lemma inner_smul_smul (a₀ : A₀) (x : E) :
     inner A (a₀ • x) (a₀ • x) =
       ι a₀ * CFC.sqrt (inner A x x) * star (ι a₀ * CFC.sqrt (inner A x x)) := by
-  rw [inner_op_smul_left (ι := ι), inner_op_smul_right (ι := ι),
-    mul_inner_self_mul_star (ι := ι)]
-
-/-- Diagonal inner-product identity for `a₀ • x - x` in terms of `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
+  rw [inner_op_smul_left ι, inner_op_smul_right (ι := ι), mul_inner_self_mul_star ι]
 lemma inner_smul_sub_self (a₀ : A₀) (x : E) :
     inner A (a₀ • x - x) (a₀ • x - x) =
       (ι a₀ * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)) *
         star (ι a₀ * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)) := by
-  have hs := sqrt_inner_self_mul_self (ι := ι) x
+  have hs := sqrt_inner_self_mul_self ι x
   have hs' := (CFC.sqrt_nonneg (a := inner A x x)).isSelfAdjoint.star_eq
   generalize CFC.sqrt (inner A x x) = s at hs hs' ⊢
-  simp only [inner_sub_left (ι := ι), inner_sub_right (ι := ι), inner_op_smul_left (ι := ι),
-    inner_op_smul_right (ι := ι), star_sub, star_mul, hs', ← hs]
-  noncomm_ring
-
-/-- Norm of `a₀ • x`, measured in `A` via `|x| = CFC.sqrt ⟪x, x⟫_A`; does not require
-`DenseRange ι`. -/
+  simp only [inner_sub_left ι, inner_sub_right ι, inner_op_smul_left ι,
+    inner_op_smul_right (ι := ι), star_sub, star_mul, hs', ← hs]; noncomm_ring
 protected theorem norm_smul (a₀ : A₀) (x : E) :
     ‖a₀ • x‖ = ‖ι a₀ * CFC.sqrt (inner A x x)‖ := by
-  rw [norm_eq_sqrt_norm_inner_self (ι := ι), inner_smul_smul (ι := ι),
+  rw [norm_eq_sqrt_norm_inner_self (ι := ι), inner_smul_smul ι,
     CStarRing.norm_self_mul_star, Real.sqrt_mul_self (norm_nonneg _)]
-
-/-- Norm of `a₀ • x - x`, measured in `A` via `|x| = CFC.sqrt ⟪x, x⟫_A`; does not require
-`DenseRange ι`. -/
 theorem norm_smul_sub_self (a₀ : A₀) (x : E) :
     ‖a₀ • x - x‖ = ‖ι a₀ * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)‖ := by
-  rw [norm_eq_sqrt_norm_inner_self (ι := ι), inner_smul_sub_self (ι := ι),
+  rw [norm_eq_sqrt_norm_inner_self (ι := ι), inner_smul_sub_self ι,
     CStarRing.norm_self_mul_star, Real.sqrt_mul_self (norm_nonneg _)]
-
-/-- Bound `‖a₀ • x‖ ≤ ‖ι a₀‖ * ‖x‖`, without requiring `DenseRange ι`. -/
 protected theorem norm_smul_le (a₀ : A₀) (x : E) : ‖a₀ • x‖ ≤ ‖ι a₀‖ * ‖x‖ :=
-  (IsPosSemidefCStarModuleAlong.norm_smul (ι := ι) a₀ x).trans_le
-    (norm_mul_sqrt_inner_self_le (ι := ι) (ι a₀) x)
+  (IsPosSemidefCStarModuleAlong.norm_smul ι a₀ x).trans_le (norm_mul_sqrt_inner_self_le ι (ι a₀) x)
 
-omit ι
-
-/-- Norm bound on `(a₀ • x - b₀ • x)` in terms of `‖ι a₀ - ι b₀‖ * ‖x‖`, even without assuming
-additivity of the `A₀`-action on `E`. -/
-theorem norm_smul_sub_smul_le {A₀ : Type*} [NonUnitalRing A₀] [StarRing A₀] [Module ℂ A₀]
-    {ι : A₀ →⋆ₙₐ[ℂ] A} [SMul A₀ E] [IsPosSemidefCStarModuleAlong ι E]
-    (a₀ b₀ : A₀) (x : E) : ‖a₀ • x - b₀ • x‖ ≤ ‖ι a₀ - ι b₀‖ * ‖x‖ := by
+/-- Norm bound `‖a₀ • x - b₀ • x‖ ≤ ‖ι a₀ - ι b₀‖ * ‖x‖`, without assuming subtraction on `A₀`. -/
+theorem norm_smul_sub_smul_le (a₀ b₀ : A₀) (x : E) :
+    ‖a₀ • x - b₀ • x‖ ≤ ‖ι a₀ - ι b₀‖ * ‖x‖ := by
   have hdiag : inner A (a₀ • x - b₀ • x) (a₀ • x - b₀ • x) =
       (ι a₀ - ι b₀) * inner A x x * star (ι a₀ - ι b₀) := by
-    simp only [inner_sub_left (ι := ι), inner_sub_right (ι := ι), inner_op_smul_left (ι := ι),
-      inner_op_smul_right (ι := ι), star_sub]
-    noncomm_ring
-  rw [norm_eq_sqrt_norm_inner_self (ι := ι) (a₀ • x - b₀ • x), hdiag,
-    mul_inner_self_mul_star (ι := ι), CStarRing.norm_self_mul_star,
-    Real.sqrt_mul_self (norm_nonneg _)]
-  exact norm_mul_sqrt_inner_self_le (ι := ι) (ι a₀ - ι b₀) x
+    simp only [inner_sub_left ι, inner_sub_right ι, inner_op_smul_left ι,
+      inner_op_smul_right (ι := ι), star_sub]; noncomm_ring
+  rw [norm_eq_sqrt_norm_inner_self (ι := ι) (a₀ • x - b₀ • x), hdiag, mul_inner_self_mul_star ι,
+    CStarRing.norm_self_mul_star, Real.sqrt_mul_self (norm_nonneg _)]
+  exact norm_mul_sqrt_inner_self_le ι (ι a₀ - ι b₀) x
 
+end ActionBounds
 end Analytic
 
 /-! ### Null space and continuity on seminormed modules -/
@@ -422,93 +380,84 @@ end Analytic
 section Seminormed
 
 variable {A₀ A E : Type*} [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ A₀]
-  [NonUnitalCStarAlgebra A] [PartialOrder A]
-  {ι : A₀ →⋆ₙₐ[ℂ] A} [SeminormedAddCommGroup E]
-
-include ι
+  [NonUnitalCStarAlgebra A] [PartialOrder A] [SeminormedAddCommGroup E]
 
 section Module
 
-variable [Module ℂ E] [SMul A₀ E] [Inner A E] [IsPosSemidefCStarModuleAlong ι E] [StarOrderedRing A]
+variable (ι : A₀ →⋆ₙₐ[ℂ] A) [Module ℂ E] [SMul A₀ E] [Inner A E]
+  [IsPosSemidefCStarModuleAlong ι E] [StarOrderedRing A]
+include ι
 
-/-- Norm estimate `‖a₀ • x - a₀ • y‖ ≤ ‖ι a₀‖ * ‖x - y‖` in each vector variable. -/
 theorem norm_smul_sub_smul_right_le (a₀ : A₀) (x y : E) :
     ‖a₀ • x - a₀ • y‖ ≤ ‖ι a₀‖ * ‖x - y‖ := by
   set w := (a₀ • x - a₀ • y) - a₀ • (x - y)
-  have hw : ‖w‖ = 0 := (norm_eq_zero_iff_inner_self_eq_zero (ι := ι) w).mpr
-    (inner_smul_sub_sub_smul_sub_right (ι := ι) a₀ w x y)
+  have hw : ‖w‖ = 0 := (norm_eq_zero_iff_inner_self_eq_zero ι w).mpr
+    (inner_smul_sub_sub_smul_sub_right ι a₀ w x y)
   calc ‖a₀ • x - a₀ • y‖ = ‖w + a₀ • (x - y)‖ := by simp [w]
     _ ≤ ‖w‖ + ‖a₀ • (x - y)‖ := norm_add_le _ _
     _ ≤ ‖ι a₀‖ * ‖x - y‖ := by
-        simpa [hw] using IsPosSemidefCStarModuleAlong.norm_smul_le (ι := ι) a₀ (x - y)
-
-/-- Uniform continuity of `x ↦ a₀ • x` on `E` for each `a₀ : A₀`. -/
+        simpa [hw] using IsPosSemidefCStarModuleAlong.norm_smul_le ι a₀ (x - y)
 theorem uniformContinuousConstSMul : UniformContinuousConstSMul A₀ E :=
   ⟨fun a₀ ↦ (LipschitzWith.of_dist_le_mul (K := ‖ι a₀‖₊) fun x y ↦ by
-    simpa [dist_eq_norm] using norm_smul_sub_smul_right_le (ι := ι) a₀ x y).uniformContinuous⟩
+    simpa [dist_eq_norm] using norm_smul_sub_smul_right_le ι a₀ x y).uniformContinuous⟩
 
 end Module
 
 section NormedSpace
 
-variable [NormedSpace ℂ E] [SMul A₀ E] [Inner A E] [IsPosSemidefCStarModuleAlong ι E]
+variable [NormedSpace ℂ E] [SMul A₀ E] [Inner A E]
 
-/-- Membership in `nullSubmodule ℂ E` is equivalent to `⟪x, x⟫_A = 0`. -/
+section Explicit
+
+variable (ι : A₀ →⋆ₙₐ[ℂ] A) [IsPosSemidefCStarModuleAlong ι E]
+include ι
+
 theorem mem_nullSubmodule_iff_inner_self_eq_zero (x : E) :
     x ∈ nullSubmodule ℂ E ↔ inner A x x = 0 := by
-  rw [mem_nullSubmodule_iff, norm_eq_zero_iff_inner_self_eq_zero (ι := ι)]
-
-/-- Difference `(a₀ • x - a₀ • y) - a₀ • (x - y)` is always a null vector, even before quotienting
-by `nullSubmodule ℂ E`. -/
+  rw [mem_nullSubmodule_iff, norm_eq_zero_iff_inner_self_eq_zero ι]
 theorem smul_sub_sub_smul_sub_mem_nullSubmodule (a₀ : A₀) (x y : E) :
     (a₀ • x - a₀ • y) - a₀ • (x - y) ∈ nullSubmodule ℂ E :=
-  (mem_nullSubmodule_iff_inner_self_eq_zero (ι := ι) _).mpr
-    (inner_smul_sub_sub_smul_sub_right (ι := ι) a₀ _ x y)
+  (mem_nullSubmodule_iff_inner_self_eq_zero ι _).mpr
+    (inner_smul_sub_sub_smul_sub_right ι a₀ _ x y)
+theorem smul_mem_nullSubmodule [StarOrderedRing A] (a₀ : A₀) {x : E}
+    (hx : x ∈ nullSubmodule ℂ E) : a₀ • x ∈ nullSubmodule ℂ E := by
+  rw [mem_nullSubmodule_iff] at hx ⊢
+  exact norm_le_zero_iff.mp <| by
+    simpa [hx] using IsPosSemidefCStarModuleAlong.norm_smul_le ι a₀ x
 
-variable [StarOrderedRing A]
+end Explicit
 
-/-- Under `DenseRange ι`, a vector is null iff it is orthogonal to every vector in the first
-slot. -/
+section DenseRange
+
+variable [StarOrderedRing A] {ι : A₀ →⋆ₙₐ[ℂ] A} [IsPosSemidefCStarModuleAlong ι E]
+
 theorem mem_nullSubmodule_iff_forall_inner_left (hι : DenseRange ι) (x : E) :
     x ∈ nullSubmodule ℂ E ↔ ∀ y : E, inner A y x = 0 := by
   rw [mem_nullSubmodule_iff]
   exact ⟨fun hx y ↦ norm_le_zero_iff.mp (by simpa [hx] using norm_inner_le hι y x),
-    fun h ↦ (norm_eq_zero_iff_inner_self_eq_zero (ι := ι) x).mpr (h x)⟩
-
-/-- Under `DenseRange ι`, a vector is null iff it is orthogonal to every vector in the second
-slot. -/
+    fun h ↦ (norm_eq_zero_iff_inner_self_eq_zero ι x).mpr (h x)⟩
 theorem mem_nullSubmodule_iff_forall_inner_right (hι : DenseRange ι) (x : E) :
     x ∈ nullSubmodule ℂ E ↔ ∀ y : E, inner A x y = 0 := by
   rw [mem_nullSubmodule_iff_forall_inner_left hι]
   exact ⟨fun h y ↦ by simpa [star_inner (ι := ι)] using congrArg star (h y),
     fun h y ↦ by simpa [star_inner (ι := ι)] using congrArg star (h y)⟩
 
-/-- The `A₀`-action preserves the null submodule `nullSubmodule ℂ E`. -/
-theorem smul_mem_nullSubmodule (a₀ : A₀) {x : E} (hx : x ∈ nullSubmodule ℂ E) :
-    a₀ • x ∈ nullSubmodule ℂ E := by
-  rw [mem_nullSubmodule_iff] at hx ⊢
-  exact norm_le_zero_iff.mp <| by
-    simpa [hx] using IsPosSemidefCStarModuleAlong.norm_smul_le (ι := ι) a₀ x
-
 /-- Under `DenseRange ι`, the pairing `⟪·, ·⟫_A` is a continuous sesquilinear map of norm `≤ 1`. -/
 noncomputable def innerSL (hι : DenseRange ι) : E →L⋆[ℂ] E →L[ℂ] A :=
   LinearMap.mkContinuous₂ (innerₛₗ ι) 1 fun x y ↦ by simpa using norm_inner_le hι x y
 
 @[simp] lemma innerSL_apply (hι : DenseRange ι) (x y : E) : innerSL hι x y = inner A x y := (rfl)
-
-/-- Joint continuity of `⟪·, ·⟫_A : E × E → A`. -/
 theorem continuous_inner (hι : DenseRange ι) : Continuous fun p : E × E ↦ inner A p.1 p.2 := by
   simp_rw [← innerSL_apply hι]; fun_prop
 
 /-- Inseparable vectors have equal `A`-valued inner products. -/
-theorem inseparable_inner_eq (hι : DenseRange ι) {x₁ x₂ y₁ y₂ : E}
+theorem inner_eq_inner_of_inseparable (hι : DenseRange ι) {x₁ x₂ y₁ y₂ : E}
     (hx : Inseparable x₁ x₂) (hy : Inseparable y₁ y₂) : inner A x₁ y₁ = inner A x₂ y₂ :=
   ((hx.prod hy).map (continuous_inner hι)).eq
 
+end DenseRange
 end NormedSpace
-
 end Seminormed
-
 end IsPosSemidefCStarModuleAlong
 
 /-! ### Specializations and `Core` constructors for `PosSemidefCStarModule` -/
@@ -529,8 +478,7 @@ structure CoreAlong {A₀ A : Type*} [NonUnitalSemiring A₀] [StarRing A₀] [M
   inner_smul_right_complex {z : ℂ} {x y : E} : inner x (z • y) = z • inner x y
   star_inner (x y : E) : star (inner x y) = inner y x
 
-/-- Data constructing a positive semidefinite `A`-module on a type `E` with no pre-existing
-seminorm. -/
+/-- Data constructing a positive semidefinite `A`-module on `E` with no pre-existing seminorm. -/
 abbrev Core (A E : Type*) [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [PartialOrder A]
     [AddCommGroup E] [Module ℂ E] [SMul A E] : Type _ :=
   CoreAlong (NonUnitalStarAlgHom.id ℂ A) E
@@ -545,6 +493,11 @@ def Core.ofPosSemidefCStarModule (A E : Type*) [NonUnitalSemiring A] [StarRing A
     inner_smul_right_complex := PosSemidefCStarModule.inner_smul_right_complex,
     star_inner := PosSemidefCStarModule.star_inner }
 
+@[simp] theorem Core.ofPosSemidefCStarModule_inner {A E : Type*} [NonUnitalSemiring A]
+    [StarRing A] [Module ℂ A] [AddCommGroup E] [Module ℂ E] [PartialOrder A] [SMul A E]
+    [Norm A] [Norm E] [PosSemidefCStarModule A E] (x y : E) :
+    (Core.ofPosSemidefCStarModule A E).inner x y = inner A x y := (rfl)
+
 namespace CoreAlong
 
 section General
@@ -553,20 +506,18 @@ variable {A₀ A E : Type*} [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ
   [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [PartialOrder A]
   {ι : A₀ →⋆ₙₐ[ℂ] A} [AddCommGroup E] [Module ℂ E] [SMul A₀ E]
 
-/-- Two `CoreAlong` structures are equal iff their inner products agree everywhere. -/
 @[ext] theorem ext {c₁ c₂ : CoreAlong ι E} (h : ∀ x y, c₁.inner x y = c₂.inner x y) : c₁ = c₂ := by
   rcases c₁ with ⟨⟨_⟩, _, _, _, _, _⟩; rcases c₂ with ⟨⟨_⟩, _, _, _, _, _⟩
   congr; ext x y; exact h x y
 
 /-- Pull a `CoreAlong` back along a complex-linear `A₀`-equivariant map `f : F →ₗ[ℂ] E`. -/
 def comap {F : Type*} [AddCommGroup F] [Module ℂ F] [SMul A₀ F] (c : CoreAlong ι E)
-    (f : F →ₗ[ℂ] E) (hf : ∀ (a₀ : A₀) (x : F), f (a₀ • x) = a₀ • f x) : CoreAlong ι F where
-  inner x y := c.inner (f x) (f y)
-  inner_add_right := by simp [c.inner_add_right]
-  inner_self_nonneg := c.inner_self_nonneg
-  inner_op_smul_right := by simp [hf, c.inner_op_smul_right]
-  inner_smul_right_complex := by simp [c.inner_smul_right_complex]
-  star_inner x y := c.star_inner (f x) (f y)
+    (f : F →ₗ[ℂ] E) (hf : ∀ (a₀ : A₀) (x : F), f (a₀ • x) = a₀ • f x) : CoreAlong ι F :=
+  { inner x y := c.inner (f x) (f y), inner_add_right := by simp [c.inner_add_right],
+    inner_self_nonneg := c.inner_self_nonneg,
+    inner_op_smul_right := by simp [hf, c.inner_op_smul_right],
+    inner_smul_right_complex := by simp [c.inner_smul_right_complex],
+    star_inner x y := c.star_inner (f x) (f y) }
 
 @[simp] theorem comap_inner {F : Type*} [AddCommGroup F] [Module ℂ F] [SMul A₀ F]
     (c : CoreAlong ι E) (f : F →ₗ[ℂ] E) (hf : ∀ (a₀ : A₀) (x : F), f (a₀ • x) = a₀ • f x)
@@ -580,11 +531,10 @@ variable {A₀ A E : Type*} [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ
   [NonUnitalCStarAlgebra A] [PartialOrder A]
   {ι : A₀ →⋆ₙₐ[ℂ] A} [AddCommGroup E] [Module ℂ E] [SMul A₀ E]
 
-/-- Norm `‖x‖ = √‖c.inner x x‖` induced by a `CoreAlong`. Not registered as an instance to avoid
-colliding with pre-existing norms. -/
+/-- Norm `‖x‖ = √‖c.inner x x‖` induced by a `CoreAlong` (non-instance). -/
 noncomputable abbrev toNorm (c : CoreAlong ι E) : Norm E := @CStarModule.norm A E _ c.toInner
-
-/-- `IsPosSemidefCStarModuleAlong` satisfied by `c` with respect to `c.toInner` and `c.toNorm`. -/
+@[simp] theorem norm_toNorm (c : CoreAlong ι E) (x : E) :
+    (letI := c.toNorm; ‖x‖) = √‖c.inner x x‖ := (rfl)
 theorem toIsPosSemidefCStarModuleAlong (c : CoreAlong ι E) :
     @IsPosSemidefCStarModuleAlong A₀ A _ _ _ _ _ _ _ _ ι E _ _ _ c.toNorm c.toInner :=
   let : Inner A E := c.toInner; let : Norm E := c.toNorm
@@ -595,7 +545,6 @@ theorem toIsPosSemidefCStarModuleAlong (c : CoreAlong ι E) :
 
 variable [StarOrderedRing A]
 
-/-- `SeminormedSpace.Core ℂ E` constructed from `c` when `ι` has dense range. -/
 theorem toSeminormedSpaceCore (c : CoreAlong ι E) (hι : DenseRange ι) :
     @SeminormedSpace.Core ℂ E _ _ c.toNorm _ :=
   let : Inner A E := c.toInner; let : Norm E := c.toNorm
@@ -614,7 +563,6 @@ noncomputable abbrev toNormedSpace (c : CoreAlong ι E) (hι : DenseRange ι) :
   { norm_smul_le r x := ((c.toSeminormedSpaceCore hι).norm_smul r x).le }
 
 end NormConstruction
-
 end CoreAlong
 
 /-- Build a `PosSemidefCStarModule A E` from `c : Core A E` on `c.toSeminormedAddCommGroup`. -/
@@ -641,34 +589,43 @@ variable {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A]
   [PosSemidefCStarModule A E]
 
 @[simp] lemma inner_add_left {x y z : E} : inner A (x + y) z = inner A x z + inner A y z :=
-  IsPosSemidefCStarModuleAlong.inner_add_left (ι := .id ℂ A) x y z
+  IsPosSemidefCStarModuleAlong.inner_add_left (.id ℂ A) x y z
 @[simp] lemma inner_op_smul_left {a : A} {x y : E} : inner A (a • x) y = inner A x y * star a :=
-  IsPosSemidefCStarModuleAlong.inner_op_smul_left (ι := .id ℂ A) a x y
+  IsPosSemidefCStarModuleAlong.inner_op_smul_left (.id ℂ A) a x y
+@[simp] lemma isSelfAdjoint_inner_self {x : E} : IsSelfAdjoint (inner A x x) :=
+  IsPosSemidefCStarModuleAlong.isSelfAdjoint_inner_self (.id ℂ A) x
+@[simp] lemma inner_smul_right_real {r : ℝ} {x y : E} : inner A x (r • y) = r • inner A x y :=
+  IsPosSemidefCStarModuleAlong.inner_smul_right_real (.id ℂ A) r x y
 
 variable [StarModule ℂ A]
 
 @[simp] lemma inner_smul_left_complex {z : ℂ} {x y : E} :
     inner A (z • x) y = star z • inner A x y :=
-  IsPosSemidefCStarModuleAlong.inner_smul_left_complex (ι := .id ℂ A) z x y
+  IsPosSemidefCStarModuleAlong.inner_smul_left_complex (.id ℂ A) z x y
+@[simp] lemma inner_smul_left_real {r : ℝ} {x y : E} : inner A (r • x) y = r • inner A x y :=
+  IsPosSemidefCStarModuleAlong.inner_smul_left_real (.id ℂ A) r x y
 @[simp] lemma inner_zero_right {x : E} : inner A x 0 = 0 :=
-  IsPosSemidefCStarModuleAlong.inner_zero_right (ι := .id ℂ A) x
+  IsPosSemidefCStarModuleAlong.inner_zero_right (.id ℂ A) x
 @[simp] lemma inner_zero_left {x : E} : inner A 0 x = 0 :=
-  IsPosSemidefCStarModuleAlong.inner_zero_left (ι := .id ℂ A) x
+  IsPosSemidefCStarModuleAlong.inner_zero_left (.id ℂ A) x
 @[simp] lemma inner_neg_right {x y : E} : inner A x (-y) = -inner A x y :=
-  IsPosSemidefCStarModuleAlong.inner_neg_right (ι := .id ℂ A) x y
+  IsPosSemidefCStarModuleAlong.inner_neg_right (.id ℂ A) x y
 @[simp] lemma inner_neg_left {x y : E} : inner A (-x) y = -inner A x y :=
-  IsPosSemidefCStarModuleAlong.inner_neg_left (ι := .id ℂ A) x y
+  IsPosSemidefCStarModuleAlong.inner_neg_left (.id ℂ A) x y
 @[simp] lemma inner_sub_right {x y z : E} : inner A x (y - z) = inner A x y - inner A x z :=
-  IsPosSemidefCStarModuleAlong.inner_sub_right (ι := .id ℂ A) x y z
+  IsPosSemidefCStarModuleAlong.inner_sub_right (.id ℂ A) x y z
 @[simp] lemma inner_sub_left {x y z : E} : inner A (x - y) z = inner A x z - inner A y z :=
-  IsPosSemidefCStarModuleAlong.inner_sub_left (ι := .id ℂ A) x y z
-
-/-- Any complex-linear map from `PosSemidefCStarModule A E` to `CStarModule A F` preserving
-`inner A` automatically commutes with the `A`-action. -/
+  IsPosSemidefCStarModuleAlong.inner_sub_left (.id ℂ A) x y z
+@[simp] lemma inner_sum_right {κ : Type*} {s : Finset κ} {x : E} {y : κ → E} :
+    inner A x (∑ i ∈ s, y i) = ∑ i ∈ s, inner A x (y i) :=
+  IsPosSemidefCStarModuleAlong.inner_sum_right (.id ℂ A) s x y
+@[simp] lemma inner_sum_left {κ : Type*} {s : Finset κ} {x : κ → E} {y : E} :
+    inner A (∑ i ∈ s, x i) y = ∑ i ∈ s, inner A (x i) y :=
+  IsPosSemidefCStarModuleAlong.inner_sum_left (.id ℂ A) s x y
 theorem map_smul_of_inner_eq {F : Type*} [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F]
     [CStarModule A F] (f : E →ₗ[ℂ] F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
     (a : A) (x : E) : f (a • x) = a • f x :=
-  IsPosSemidefCStarModuleAlong.map_smul_of_inner_eq (ι := .id ℂ A) f hf a x
+  IsPosSemidefCStarModuleAlong.map_smul_of_inner_eq (.id ℂ A) f hf a x
 
 end Algebraic
 
@@ -676,12 +633,20 @@ section Norm
 
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
 
+theorem norm_eq_zero_iff_inner_self_eq_zero [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E]
+    [PosSemidefCStarModule A E] (x : E) : ‖x‖ = 0 ↔ inner A x x = 0 :=
+  IsPosSemidefCStarModuleAlong.norm_eq_zero_iff_inner_self_eq_zero (.id ℂ A) x
+
 /-- On a separated normed space (`NormedAddCommGroup E`), any `PosSemidefCStarModule A E` is
 automatically definite, hence a `CStarModule A E`. -/
 abbrev toCStarModuleOfNormedAddCommGroup {E : Type*} [NormedAddCommGroup E] [Module ℂ E]
     [SMul A E] [PosSemidefCStarModule A E] : CStarModule A E :=
-  toCStarModule fun x hx ↦ norm_eq_zero.mp <|
-    (IsPosSemidefCStarModuleAlong.norm_eq_zero_iff_inner_self_eq_zero (ι := .id ℂ A) x).mpr hx
+  toCStarModule fun x hx ↦ norm_eq_zero.mp <| (norm_eq_zero_iff_inner_self_eq_zero x).mpr hx
+
+theorem mem_nullSubmodule_iff_inner_self_eq_zero [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+    [SMul A E] [PosSemidefCStarModule A E] (x : E) :
+    x ∈ nullSubmodule ℂ E ↔ inner A x x = 0 :=
+  IsPosSemidefCStarModuleAlong.mem_nullSubmodule_iff_inner_self_eq_zero (.id ℂ A) x
 
 variable [StarOrderedRing A]
 
@@ -689,22 +654,16 @@ section AddCommGroup
 
 variable [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [PosSemidefCStarModule A E]
 
-/-- C⋆-algebra Cauchy–Schwarz inequality for `PosSemidefCStarModule A E`. -/
 theorem inner_mul_inner_swap_le (x y : E) : inner A x y * inner A y x ≤ ‖x‖ ^ 2 • inner A y y :=
   IsPosSemidefCStarModuleAlong.inner_mul_inner_swap_le (ι := .id ℂ A) denseRange_id x y
-
-/-- Norm Cauchy–Schwarz inequality `‖⟪x, y⟫_A‖ ≤ ‖x‖ * ‖y‖` for `PosSemidefCStarModule A E`. -/
 theorem norm_inner_le (x y : E) : ‖inner A x y‖ ≤ ‖x‖ * ‖y‖ :=
   IsPosSemidefCStarModuleAlong.norm_inner_le (ι := .id ℂ A) denseRange_id x y
-
 include A in
-/-- `SeminormedSpace.Core ℂ E` induced by `PosSemidefCStarModule A E`. -/
+variable (A) in
 lemma seminormedSpaceCore : SeminormedSpace.Core ℂ E :=
   IsPosSemidefCStarModuleAlong.seminormedSpaceCore (ι := .id ℂ A) denseRange_id
-
-/-- Bound `‖a • x‖ ≤ ‖a‖ * ‖x‖` on a positive semidefinite `A`-module. -/
 protected theorem norm_smul_le (a : A) (x : E) : ‖a • x‖ ≤ ‖a‖ * ‖x‖ :=
-  IsPosSemidefCStarModuleAlong.norm_smul_le (ι := .id ℂ A) a x
+  IsPosSemidefCStarModuleAlong.norm_smul_le (.id ℂ A) a x
 
 end AddCommGroup
 
@@ -717,15 +676,25 @@ instance instIsBoundedSMul [Module ℂ E] [SMul A E] [PosSemidefCStarModule A E]
     IsBoundedSMul A E where
   dist_smul_pair' a x y := by
     simpa [dist_eq_norm] using
-      IsPosSemidefCStarModuleAlong.norm_smul_sub_smul_right_le (ι := .id ℂ A) a x y
+      IsPosSemidefCStarModuleAlong.norm_smul_sub_smul_right_le (.id ℂ A) a x y
   dist_pair_smul' a b x := by
-    simpa [dist_eq_norm] using
-      IsPosSemidefCStarModuleAlong.norm_smul_sub_smul_le (ι := .id ℂ A) a b x
+    simpa [dist_eq_norm] using IsPosSemidefCStarModuleAlong.norm_smul_sub_smul_le (.id ℂ A) a b x
 
-/-- Joint continuity of `⟪·, ·⟫_A : E × E → A` on a positive semidefinite `A`-module. -/
+variable [NormedSpace ℂ E] [SMul A E] [PosSemidefCStarModule A E]
+
+theorem mem_nullSubmodule_iff_forall_inner_left (x : E) :
+    x ∈ nullSubmodule ℂ E ↔ ∀ y : E, inner A y x = 0 :=
+  IsPosSemidefCStarModuleAlong.mem_nullSubmodule_iff_forall_inner_left
+    (ι := .id ℂ A) denseRange_id x
+theorem mem_nullSubmodule_iff_forall_inner_right (x : E) :
+    x ∈ nullSubmodule ℂ E ↔ ∀ y : E, inner A x y = 0 :=
+  IsPosSemidefCStarModuleAlong.mem_nullSubmodule_iff_forall_inner_right
+    (ι := .id ℂ A) denseRange_id x
+theorem smul_mem_nullSubmodule (a : A) {x : E} (hx : x ∈ nullSubmodule ℂ E) :
+    a • x ∈ nullSubmodule ℂ E :=
+  IsPosSemidefCStarModuleAlong.smul_mem_nullSubmodule (.id ℂ A) a hx
 @[continuity, fun_prop]
-theorem continuous_inner [NormedSpace ℂ E] [SMul A E] [PosSemidefCStarModule A E] :
-    Continuous fun p : E × E ↦ inner A p.1 p.2 :=
+theorem continuous_inner : Continuous fun p : E × E ↦ inner A p.1 p.2 :=
   IsPosSemidefCStarModuleAlong.continuous_inner (ι := .id ℂ A) denseRange_id
 
 end Seminormed
@@ -739,37 +708,52 @@ end TauCeti
 /-- Any complex seminormed `InnerProductSpace ℂ E` (possibly with nonzero null vectors) is a
 `PosSemidefCStarModule ℂ E`, generalizing `WithCStarModule.instCStarModuleComplex`. -/
 noncomputable instance WithCStarModule.instPosSemidefCStarModuleComplex {E : Type*}
-    [SeminormedAddCommGroup E] [InnerProductSpace ℂ E] : TauCeti.PosSemidefCStarModule ℂ E where
-  inner x y := ⟪x, y⟫_ℂ
-  inner_add_right := by simp [_root_.inner_add_right]
-  inner_self_nonneg {x} := by
-    rw [← inner_self_ofReal_re, RCLike.ofReal_nonneg]; exact inner_self_nonneg
-  inner_op_smul_right := by simp [inner_smul_right]
-  inner_smul_right_complex := by simp [inner_smul_right, smul_eq_mul]
-  star_inner _ _ := by simp
-  norm_eq_sqrt_norm_inner_self x := by
-    simpa only [← inner_self_re_eq_norm] using norm_eq_sqrt_re_inner x
+    [SeminormedAddCommGroup E] [InnerProductSpace ℂ E] : TauCeti.PosSemidefCStarModule ℂ E :=
+  { inner x y := ⟪x, y⟫_ℂ, inner_add_right := by simp [_root_.inner_add_right],
+    inner_self_nonneg := fun {_} ↦ by
+      rw [← inner_self_ofReal_re, RCLike.ofReal_nonneg]; exact inner_self_nonneg,
+    inner_op_smul_right := by simp [inner_smul_right],
+    inner_smul_right_complex := by simp [inner_smul_right, smul_eq_mul],
+    star_inner _ _ := by simp,
+    norm_eq_sqrt_norm_inner_self x := by
+      simpa only [← inner_self_re_eq_norm] using norm_eq_sqrt_re_inner x }
 
-/-- A `NonUnitalStarSubalgebra ℂ A` of a C⋆-algebra `A` is a right module over itself (`Sᵐᵒᵖ`)
-with `Aᵐᵒᵖ`-valued inner product `MulOpposite.op (star (x : A) * (y : A))`, whose positivity is
-measured in `Aᵐᵒᵖ` along `(NonUnitalStarSubalgebraClass.subtype S).op`. -/
-noncomputable def NonUnitalStarSubalgebra.rightModuleCoreAlong {A : Type*}
-    [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-    (S : NonUnitalStarSubalgebra ℂ A) :
-    TauCeti.PosSemidefCStarModule.CoreAlong (NonUnitalStarSubalgebraClass.subtype S).op S where
-  inner x y := op (star (x : A) * (y : A))
-  inner_add_right := by simp [mul_add]
-  inner_self_nonneg := op_nonneg.mpr (star_mul_self_nonneg _)
-  inner_op_smul_right {s _ _} := by
-    rcases MulOpposite.op_surjective s with ⟨s, rfl⟩; exact unop_injective (by simp [mul_assoc])
-  inner_smul_right_complex := by simp [mul_smul_comm]
-  star_inner _ _ := by simp
+namespace TauCeti.PosSemidefCStarModule
 
-/-- Inner product formula for `NonUnitalStarSubalgebra.rightModuleCoreAlong`. -/
-@[simp] theorem NonUnitalStarSubalgebra.rightModuleCoreAlong_inner {A : Type*}
-    [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-    (S : NonUnitalStarSubalgebra ℂ A) (x y : S) :
-    S.rightModuleCoreAlong.inner x y = op (star (x : A) * (y : A)) := (rfl)
+section SubalgebraRightModule
+
+variable {A S : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [SetLike S A] [NonUnitalSubringClass S A] [SMulMemClass S ℂ A] [StarMemClass S A]
+
+/-- Any `⋆`-subalgebra `s` of a C⋆-algebra `A` is a right module over itself (`sᵐᵒᵖ`) with
+`Aᵐᵒᵖ`-valued inner product `op (star (x : A) * (y : A))` along `(subtype s).op`. -/
+noncomputable def rightModuleCoreAlong (s : S) :
+    CoreAlong (NonUnitalStarSubalgebraClass.subtype s).op s :=
+  { inner x y := op (star (x : A) * (y : A)), inner_add_right := by simp [mul_add],
+    inner_self_nonneg := op_nonneg.mpr (star_mul_self_nonneg _),
+    inner_op_smul_right := fun {r _ _} ↦ by
+      rcases MulOpposite.op_surjective r with ⟨r, rfl⟩; exact unop_injective (by simp [mul_assoc]),
+    inner_smul_right_complex := by simp [mul_smul_comm], star_inner _ _ := by simp }
+
+@[simp] theorem rightModuleCoreAlong_inner (s : S) (x y : s) :
+    (rightModuleCoreAlong s).inner x y = op (star (x : A) * (y : A)) := (rfl)
+
+/-- With its subtype norm and right multiplication over `sᵐᵒᵖ`, any `⋆`-subalgebra `s` of a
+C⋆-algebra `A` satisfies `IsPosSemidefCStarModuleAlong (subtype s).op s`. -/
+theorem isPosSemidefCStarModuleAlong_op (s : S) :
+    letI : Inner Aᵐᵒᵖ s := (rightModuleCoreAlong s).toInner
+    IsPosSemidefCStarModuleAlong (NonUnitalStarSubalgebraClass.subtype s).op s := by
+  let : Inner Aᵐᵒᵖ s := (rightModuleCoreAlong s).toInner
+  refine ⟨(rightModuleCoreAlong s).inner_add_right, (rightModuleCoreAlong s).inner_self_nonneg,
+    (rightModuleCoreAlong s).inner_op_smul_right,
+    (rightModuleCoreAlong s).inner_smul_right_complex, (rightModuleCoreAlong s).star_inner,
+    fun x ↦ ?_⟩
+  have h : inner Aᵐᵒᵖ x x = op (star (x : A) * (x : A)) := rightModuleCoreAlong_inner s x x
+  rw [h, AddSubgroupClass.coe_norm, MulOpposite.norm_op, CStarRing.norm_star_mul_self,
+    Real.sqrt_mul_self (norm_nonneg _)]
+
+end SubalgebraRightModule
+end TauCeti.PosSemidefCStarModule
 
 -- Witness that `PosSemidefCStarModule` admits nonzero null vectors (pullback along `fst`).
 example {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
@@ -785,87 +769,133 @@ example {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedR
 
 /-! ### Separated quotient and its universal properties -/
 
+namespace TauCeti.IsPosSemidefCStarModuleAlong
+
+section SeparationQuotient
+
+variable {A₀ A E : Type*} [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ A₀]
+  [NonUnitalCStarAlgebra A] [PartialOrder A]
+  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A₀ E] [Inner A E]
+
+section QuotientStructure
+
+variable [StarOrderedRing A]
+
+/-- Descend the `A`-valued inner product along a dense `ι` to `SeparationQuotient E`. -/
+noncomputable abbrev separationQuotientInner {ι : A₀ →⋆ₙₐ[ℂ] A}
+    [IsPosSemidefCStarModuleAlong ι E] (hι : DenseRange ι) : Inner A (SeparationQuotient E) where
+  inner := SeparationQuotient.lift₂ (inner A) fun _ _ _ _ ↦ inner_eq_inner_of_inseparable hι
+
+@[simp] theorem separationQuotientInner_mk_mk {ι : A₀ →⋆ₙₐ[ℂ] A}
+    [IsPosSemidefCStarModuleAlong ι E] (hι : DenseRange ι) (x y : E) :
+    (letI := separationQuotientInner (E := E) hι;
+      inner A (SeparationQuotient.mk x) (SeparationQuotient.mk y)) = inner A x y := (rfl)
+
+/-- Descend the `A₀`-action to `SeparationQuotient E` (requires no `DenseRange` assumption). -/
+noncomputable abbrev separationQuotientSMul (ι : A₀ →⋆ₙₐ[ℂ] A)
+    [IsPosSemidefCStarModuleAlong ι E] : SMul A₀ (SeparationQuotient E) :=
+  haveI : UniformContinuousConstSMul A₀ E := uniformContinuousConstSMul ι; inferInstance
+
+theorem separationQuotientSMul_mk (ι : A₀ →⋆ₙₐ[ℂ] A) [IsPosSemidefCStarModuleAlong ι E]
+    (a₀ : A₀) (x : E) :
+    (letI := separationQuotientSMul (E := E) ι; a₀ • SeparationQuotient.mk x) =
+      SeparationQuotient.mk (a₀ • x) := (rfl)
+
+/-- On `SeparationQuotient E`, `separationQuotientInner` and `separationQuotientSMul` satisfy
+`IsPosSemidefCStarModuleAlong`. -/
+theorem isPosSemidefCStarModuleAlong_separationQuotient {ι : A₀ →⋆ₙₐ[ℂ] A}
+    [IsPosSemidefCStarModuleAlong ι E] (hι : DenseRange ι) :
+    @IsPosSemidefCStarModuleAlong A₀ A _ _ _ _ _ _ _ _ ι (SeparationQuotient E) _ _
+      (separationQuotientSMul ι) _ (separationQuotientInner hι) := by
+  let : Inner A (SeparationQuotient E) := separationQuotientInner hι
+  let : SMul A₀ (SeparationQuotient E) := separationQuotientSMul ι
+  have : UniformContinuousConstSMul A₀ E := uniformContinuousConstSMul ι
+  have hmk := SeparationQuotient.surjective_mk (X := E)
+  exact
+    { inner_add_right := fun {x y z} ↦ by
+        rcases hmk x with ⟨x, rfl⟩; rcases hmk y with ⟨y, rfl⟩; rcases hmk z with ⟨z, rfl⟩
+        exact inner_add_right (ι := ι) (x := x) (y := y) (z := z)
+      inner_self_nonneg := fun {x} ↦ by
+        rcases hmk x with ⟨x, rfl⟩; exact inner_self_nonneg (ι := ι) (x := x)
+      inner_op_smul_right := fun {a₀ x y} ↦ by
+        rcases hmk x with ⟨x, rfl⟩; rcases hmk y with ⟨y, rfl⟩
+        exact inner_op_smul_right (ι := ι) (a₀ := a₀) (x := x) (y := y)
+      inner_smul_right_complex := fun {z x y} ↦ by
+        rcases hmk x with ⟨x, rfl⟩; rcases hmk y with ⟨y, rfl⟩
+        exact inner_smul_right_complex (ι := ι) (z := z) (x := x) (y := y)
+      star_inner := fun x y ↦ by
+        rcases hmk x with ⟨x, rfl⟩; rcases hmk y with ⟨y, rfl⟩; exact star_inner (ι := ι) x y
+      norm_eq_sqrt_norm_inner_self := fun x ↦ by
+        rcases hmk x with ⟨x, rfl⟩
+        rw [SeparationQuotient.norm_mk]; exact norm_eq_sqrt_norm_inner_self (ι := ι) x }
+
+end QuotientStructure
+
+section LiftOfInner
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
+
+section Explicit
+
+variable (ι : A₀ →⋆ₙₐ[ℂ] A) [IsPosSemidefCStarModuleAlong ι E]
+  (f : E →ₗ[ℂ] F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
+
+/-- **Universal property of `SeparationQuotient E` for inner-product-preserving maps:** any
+`ℂ`-linear map `f : E →ₗ[ℂ] F` into a pre-Hilbert `A`-module `F` preserving `inner A` lifts to a
+linear isometry `SeparationQuotient E →ₗᵢ[ℂ] F`. -/
+noncomputable def separationQuotientLiftOfInner : SeparationQuotient E →ₗᵢ[ℂ] F :=
+  SeparationQuotient.liftₗᵢ ⟨f, fun x ↦ by
+    rw [CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (f x), hf,
+      norm_eq_sqrt_norm_inner_self (ι := ι) x]⟩
+
+@[simp] theorem separationQuotientLiftOfInner_mk (x : E) :
+    separationQuotientLiftOfInner ι f hf (SeparationQuotient.mk x) = f x :=
+  SeparationQuotient.liftₗᵢ_mk _ x
+theorem eq_separationQuotientLiftOfInner_iff (g : SeparationQuotient E →ₗᵢ[ℂ] F) :
+    g = separationQuotientLiftOfInner ι f hf ↔
+      ∀ x : E, g (SeparationQuotient.mk x) = f x :=
+  SeparationQuotient.eq_liftₗᵢ_iff _ g
+@[simp] theorem separationQuotientLiftOfInner_smul [StarOrderedRing A]
+    (a₀ : A₀) (u : SeparationQuotient E) :
+    separationQuotientLiftOfInner ι f hf (letI := separationQuotientSMul (E := E) ι; a₀ • u) =
+      ι a₀ • separationQuotientLiftOfInner ι f hf u := by
+  have : UniformContinuousConstSMul A₀ E := uniformContinuousConstSMul ι
+  exact SeparationQuotient.liftₗᵢ_smul _ (map_smul_of_inner_eq ι f hf a₀) u
+
+end Explicit
+
+@[simp] theorem inner_separationQuotientLiftOfInner [StarOrderedRing A] {ι : A₀ →⋆ₙₐ[ℂ] A}
+    [IsPosSemidefCStarModuleAlong ι E] (hι : DenseRange ι) (f : E →ₗ[ℂ] F)
+    (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y) (u v : SeparationQuotient E) :
+    inner A (separationQuotientLiftOfInner ι f hf u) (separationQuotientLiftOfInner ι f hf v) =
+      (letI := separationQuotientInner (E := E) hι; inner A u v) := by
+  rcases SeparationQuotient.surjective_mk u with ⟨x, rfl⟩
+  rcases SeparationQuotient.surjective_mk v with ⟨y, rfl⟩; simp [hf]
+
+end LiftOfInner
+end SeparationQuotient
+end TauCeti.IsPosSemidefCStarModuleAlong
+
 namespace SeparationQuotient
 
 open TauCeti
 
-section Along
-
-variable {A₀ A E : Type*} [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ A₀]
-  [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  {ι : A₀ →⋆ₙₐ[ℂ] A} [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A₀ E] [Inner A E]
-  [IsPosSemidefCStarModuleAlong ι E]
-
-/-- Descend the `A`-valued inner product of a positive semidefinite module along a dense
-`⋆`-homomorphism `ι` to `SeparationQuotient E`. -/
-noncomputable abbrev innerOfAlong (hι : DenseRange ι) : Inner A (SeparationQuotient E) where
-  inner := SeparationQuotient.lift₂ (inner A) fun _ _ _ _ ↦
-    IsPosSemidefCStarModuleAlong.inseparable_inner_eq hι
-
-/-- Descend the `A₀`-action to `SeparationQuotient E` (requires no `DenseRange` assumption). -/
-noncomputable abbrev smulOfAlong (ι : A₀ →⋆ₙₐ[ℂ] A) [IsPosSemidefCStarModuleAlong ι E] :
-    SMul A₀ (SeparationQuotient E) :=
-  haveI : UniformContinuousConstSMul A₀ E :=
-    IsPosSemidefCStarModuleAlong.uniformContinuousConstSMul (E := E) (ι := ι)
-  inferInstance
-
-/-- On `SeparationQuotient E`, `innerOfAlong` and `smulOfAlong` satisfy
-`IsPosSemidefCStarModuleAlong`. -/
-theorem isPosSemidefCStarModuleAlong (hι : DenseRange ι) :
-    @IsPosSemidefCStarModuleAlong A₀ A _ _ _ _ _ _ _ _ ι (SeparationQuotient E) _ _
-      (smulOfAlong ι) _ (innerOfAlong hι) := by
-  let : Inner A (SeparationQuotient E) := innerOfAlong hι
-  let : SMul A₀ (SeparationQuotient E) := smulOfAlong ι
-  have : UniformContinuousConstSMul A₀ E :=
-    IsPosSemidefCStarModuleAlong.uniformContinuousConstSMul (E := E) (ι := ι)
-  refine
-    { inner_add_right := fun {x y z} ↦ ?_
-      inner_self_nonneg {x} := by
-        rcases surjective_mk x with ⟨x, rfl⟩
-        exact IsPosSemidefCStarModuleAlong.inner_self_nonneg (ι := ι) (x := x)
-      inner_op_smul_right {a₀ x y} := by
-        rcases surjective_mk x with ⟨x, rfl⟩; rcases surjective_mk y with ⟨y, rfl⟩
-        rw [← mk_smul]; exact IsPosSemidefCStarModuleAlong.inner_op_smul_right (ι := ι)
-      inner_smul_right_complex {z x y} := by
-        rcases surjective_mk x with ⟨x, rfl⟩; rcases surjective_mk y with ⟨y, rfl⟩
-        rw [← mk_smul]; exact IsPosSemidefCStarModuleAlong.inner_smul_right_complex (ι := ι)
-      star_inner := surjective_mk.forall₂.2 (IsPosSemidefCStarModuleAlong.star_inner (ι := ι))
-      norm_eq_sqrt_norm_inner_self := surjective_mk.forall.2 fun x ↦ by
-        rw [norm_mk]; exact IsPosSemidefCStarModuleAlong.norm_eq_sqrt_norm_inner_self (ι := ι) x }
-  rcases surjective_mk x with ⟨x, rfl⟩; rcases surjective_mk y with ⟨y, rfl⟩
-  rcases surjective_mk z with ⟨z, rfl⟩
-  exact IsPosSemidefCStarModuleAlong.inner_add_right (ι := ι) (x := x) (y := y) (z := z)
-
-end Along
-
-section Direct
-
-variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [PosSemidefCStarModule A E]
-
-section StarOrdered
-
-variable [StarOrderedRing A]
 
 /-- `A`-valued inner product on the separated quotient of a positive semidefinite `A`-module. -/
 noncomputable instance instInnerCStarModule : Inner A (SeparationQuotient E) :=
-  innerOfAlong (ι := NonUnitalStarAlgHom.id ℂ A) denseRange_id
-
-/-- The `A`-valued inner product on `SeparationQuotient E` evaluates on quotient classes via
-`inner A` on `E`. -/
-@[simp] theorem cstarInner_mk_mk (x y : E) : inner A (mk x) (mk y) = inner A x y := (rfl)
+  IsPosSemidefCStarModuleAlong.separationQuotientInner (ι := .id ℂ A) denseRange_id
 
 /-- The separated quotient of a positive semidefinite `A`-module is a pre-Hilbert `A`-module
 (`CStarModule A (SeparationQuotient E)`). -/
 noncomputable instance instCStarModule : CStarModule A (SeparationQuotient E) :=
-  let h := isPosSemidefCStarModuleAlong (E := E) (ι := NonUnitalStarAlgHom.id ℂ A) denseRange_id
+  let h := IsPosSemidefCStarModuleAlong.isPosSemidefCStarModuleAlong_separationQuotient
+    (E := E) (ι := .id ℂ A) denseRange_id
   letI : PosSemidefCStarModule A (SeparationQuotient E) :=
-    { toInner := instInnerCStarModule
-      inner_add_right := h.inner_add_right
-      inner_self_nonneg := h.inner_self_nonneg
-      inner_op_smul_right := h.inner_op_smul_right
-      inner_smul_right_complex := h.inner_smul_right_complex
-      star_inner := h.star_inner
+    { toInner := instInnerCStarModule, inner_add_right := h.inner_add_right,
+      inner_self_nonneg := h.inner_self_nonneg, inner_op_smul_right := h.inner_op_smul_right,
+      inner_smul_right_complex := h.inner_smul_right_complex, star_inner := h.star_inner,
       norm_eq_sqrt_norm_inner_self := h.norm_eq_sqrt_norm_inner_self }
   PosSemidefCStarModule.toCStarModuleOfNormedAddCommGroup
 
@@ -874,51 +904,13 @@ example {H : Type*} [SeminormedAddCommGroup H] [InnerProductSpace ℂ H] :
     (instCStarModule : CStarModule ℂ (SeparationQuotient H)) =
       WithCStarModule.instCStarModuleComplex := by with_reducible_and_instances rfl
 
-end StarOrdered
-
-/-! #### Universal property of `SeparationQuotient E` for inner-product-preserving maps -/
-
-section LiftOfInner
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
-  (f : E →ₗ[ℂ] F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
-
-/-- **Universal property of `SeparationQuotient E` for inner-product-preserving maps:** any
-`ℂ`-linear map `f : E →ₗ[ℂ] F` into a pre-Hilbert `A`-module `F` preserving `inner A` lifts to a
-linear isometry `SeparationQuotient E →ₗᵢ[ℂ] F`, without assuming continuity or `A`-linearity of
-`f` in advance. -/
-noncomputable def liftOfInner : SeparationQuotient E →ₗᵢ[ℂ] F := by
-  have hnorm (x : E) : ‖f x‖ = ‖x‖ := by
-    rw [CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (f x), hf,
-      PosSemidefCStarModule.norm_eq_sqrt_norm_inner_self (A := A) x]
-  let fCLM : E →L[ℂ] F := f.mkContinuous 1 fun x ↦ by rw [one_mul, hnorm]
-  exact ⟨(liftCLM fCLM fun _ _ h ↦ (h.map fCLM.continuous).eq).toLinearMap,
-    surjective_mk.forall.2 fun x ↦ by simp [fCLM, hnorm]⟩
-
-/-- `liftOfInner f hf` sends `SeparationQuotient.mk x` to `f x`. -/
-@[simp] theorem liftOfInner_mk (x : E) : liftOfInner f hf (mk x) = f x := (rfl)
-
-/-- Uniqueness of `liftOfInner`: `liftOfInner f hf` is the unique map on `SeparationQuotient E`
-factoring `f` through `SeparationQuotient.mk`. -/
-theorem eq_liftOfInner_iff (g : SeparationQuotient E →ₗᵢ[ℂ] F) :
-    g = liftOfInner f hf ↔ ∀ x : E, g (mk x) = f x :=
-  ⟨fun h x ↦ by rw [h, liftOfInner_mk],
-    fun h ↦ LinearIsometry.ext <| surjective_mk.forall.2 fun x ↦ by rw [h, liftOfInner_mk]⟩
-
-/-- The lifted isometry `liftOfInner f hf` preserves the `A`-valued inner product. -/
-@[simp] theorem inner_liftOfInner [StarOrderedRing A] (u v : SeparationQuotient E) :
-    inner A (liftOfInner f hf u) (liftOfInner f hf v) = inner A u v := by
-  rcases surjective_mk u with ⟨x, rfl⟩; rcases surjective_mk v with ⟨y, rfl⟩; exact hf x y
-
-/-- The lifted isometry `liftOfInner f hf` automatically commutes with the `A`-action. -/
-@[simp] theorem liftOfInner_smul [StarOrderedRing A] (a : A) (u : SeparationQuotient E) :
-    liftOfInner f hf (a • u) = a • liftOfInner f hf u := by
-  rcases surjective_mk u with ⟨x, rfl⟩
-  rw [← mk_smul, liftOfInner_mk, liftOfInner_mk,
-    PosSemidefCStarModule.map_smul_of_inner_eq f hf a x]
-
-end LiftOfInner
-
-end Direct
-
 end SeparationQuotient
+
+namespace TauCeti.PosSemidefCStarModule
+
+@[simp] theorem inner_mk_mk {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+    [StarOrderedRing A] [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E]
+    [PosSemidefCStarModule A E] (x y : E) :
+    inner A (SeparationQuotient.mk x) (SeparationQuotient.mk y) = inner A x y := (rfl)
+
+end TauCeti.PosSemidefCStarModule

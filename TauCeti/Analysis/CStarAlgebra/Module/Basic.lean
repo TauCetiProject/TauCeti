@@ -91,7 +91,7 @@ convention, in particular for right Hilbert modules `CStarModule Aᵐᵒᵖ E`. 
 lemma inner_polarization (x y : E) :
     inner A x y = (4 : ℂ)⁻¹ • (inner A (x + y) (x + y) - inner A (x - y) (x - y) -
       I • inner A (x + I • y) (x + I • y) + I • inner A (x - I • y) (x - I • y)) :=
-  TauCeti.IsPosSemidefCStarModuleAlong.inner_polarization (ι := NonUnitalStarAlgHom.id ℂ A) x y
+  TauCeti.IsPosSemidefCStarModuleAlong.inner_polarization (NonUnitalStarAlgHom.id ℂ A) x y
 
 /-- Vectors are determined by their inner products against all vectors in the first slot. -/
 theorem ext_inner_left {x y : E} (h : ∀ z, inner A z x = inner A z y) : x = y := by
@@ -136,7 +136,7 @@ theorem isGreatest_norm_inner (x : E) :
 lemma inner_smul_smul (a : A) (x : E) :
     inner A (a • x) (a • x) =
       a * CFC.sqrt (inner A x x) * star (a * CFC.sqrt (inner A x x)) :=
-  TauCeti.IsPosSemidefCStarModuleAlong.inner_smul_smul (ι := NonUnitalStarAlgHom.id ℂ A) a x
+  TauCeti.IsPosSemidefCStarModuleAlong.inner_smul_smul (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The inner product of `a x - x` with itself is `(a |x| - |x|) (a |x| - |x|)⋆`, where
 `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
@@ -144,20 +144,20 @@ lemma inner_smul_sub_self (a : A) (x : E) :
     inner A (a • x - x) (a • x - x) =
       (a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)) *
         star (a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)) :=
-  TauCeti.IsPosSemidefCStarModuleAlong.inner_smul_sub_self (ι := NonUnitalStarAlgHom.id ℂ A) a x
+  TauCeti.IsPosSemidefCStarModuleAlong.inner_smul_sub_self (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The norm of `a x` is the norm of `a |x|` in `A`, where `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 protected theorem norm_smul (a : A) (x : E) : ‖a • x‖ = ‖a * CFC.sqrt (inner A x x)‖ :=
-  TauCeti.IsPosSemidefCStarModuleAlong.norm_smul (ι := NonUnitalStarAlgHom.id ℂ A) a x
+  TauCeti.IsPosSemidefCStarModuleAlong.norm_smul (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The norm of `a x - x` is the norm of `a |x| - |x|` in `A`, where `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 theorem norm_smul_sub_self (a : A) (x : E) :
     ‖a • x - x‖ = ‖a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)‖ :=
-  TauCeti.IsPosSemidefCStarModuleAlong.norm_smul_sub_self (ι := NonUnitalStarAlgHom.id ℂ A) a x
+  TauCeti.IsPosSemidefCStarModuleAlong.norm_smul_sub_self (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The action of a C⋆-algebra on a Hilbert C⋆-module is bounded: `‖a x‖ ≤ ‖a‖ ‖x‖`. -/
 protected theorem norm_smul_le (a : A) (x : E) : ‖a • x‖ ≤ ‖a‖ * ‖x‖ :=
-  TauCeti.IsPosSemidefCStarModuleAlong.norm_smul_le (ι := NonUnitalStarAlgHom.id ℂ A) a x
+  TauCeti.IsPosSemidefCStarModuleAlong.norm_smul_le (NonUnitalStarAlgHom.id ℂ A) a x
 
 end Norm
 

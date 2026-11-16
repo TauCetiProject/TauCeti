@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.SeparationQuotient.Basic
+public import Mathlib.Topology.Algebra.UniformMulAction
 
 /-!
-# Continuous semilinear lifts to the separation quotient
+# Uniform scalar actions and continuous semilinear lifts on the separation quotient
 
-Equivariance and uniqueness for `SeparationQuotient.liftCLM`:
-
+* `SeparationQuotient.instUniformContinuousConstSMul`: uniformly continuous scalar multiplication
+  descends to `SeparationQuotient X`.
 * `SeparationQuotient.liftCLM_smul`: lifting a continuous semilinear map to `SeparationQuotient M`
-  preserves equivariance for an auxiliary continuous scalar action.
+  preserves equivariance between auxiliary scalar actions.
 * `SeparationQuotient.eq_liftCLM_iff`: `SeparationQuotient.liftCLM f hf` is the unique continuous
   semilinear map on `SeparationQuotient M` factoring `f` through `SeparationQuotient.mk`.
 -/
@@ -22,16 +23,24 @@ public section
 
 namespace SeparationQuotient
 
-variable {R S A M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+/-- Uniformly continuous scalar multiplication descends to the separation quotient. -/
+instance instUniformContinuousConstSMul {M X : Type*} [UniformSpace X]
+    [SMul M X] [UniformContinuousConstSMul M X] :
+    UniformContinuousConstSMul M (SeparationQuotient X) :=
+  ⟨fun b ↦ uniformContinuous_dom.2 <| by
+    simpa only [Function.comp_def, ← mk_smul] using
+      uniformContinuous_mk.comp (uniformContinuous_const_smul b)⟩
+
+variable {R S A B M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
   [TopologicalSpace M] [ContinuousAdd M] [ContinuousConstSMul R M]
   [Semiring S] [AddCommMonoid N] [Module S N] [TopologicalSpace N] {σ : R →+* S}
 
-/-- Lifting a continuous semilinear map to `SeparationQuotient M` preserves equivariance for an
-auxiliary continuous scalar action. -/
-theorem liftCLM_smul [SMul A M] [ContinuousConstSMul A M] [SMul A N]
+/-- Lifting a continuous semilinear map to `SeparationQuotient M` preserves equivariance between
+auxiliary scalar actions. -/
+theorem liftCLM_smul [SMul A M] [ContinuousConstSMul A M] [SMul B N]
     (f : M →SL[σ] N) (hf_insep : ∀ x y, Inseparable x y → f x = f y)
-    (hf_smul : ∀ (a : A) (x : M), f (a • x) = a • f x) (a : A) (z : SeparationQuotient M) :
-    liftCLM f hf_insep (a • z) = a • liftCLM f hf_insep z := by
+    {a : A} {b : B} (hf_smul : ∀ x : M, f (a • x) = b • f x) (z : SeparationQuotient M) :
+    liftCLM f hf_insep (a • z) = b • liftCLM f hf_insep z := by
   rcases surjective_mk z with ⟨x, rfl⟩; rw [← mk_smul, liftCLM_mk, liftCLM_mk, hf_smul]
 
 /-- Uniqueness in the universal property of `SeparationQuotient M` for continuous semilinear
