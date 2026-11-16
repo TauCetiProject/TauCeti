@@ -12,9 +12,12 @@ public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 # Scalar realizations of fundamental-discriminant characters
 
 The integer-valued character of a fundamental discriminant has compatible realizations over
-commutative rings. In characteristic zero these realizations retain conductor `|D|`, are
-primitive and quadratic, and are nonprincipal exactly when `D ≠ 1`. In particular the real and
-complex realizations have the same coefficients under the canonical scalar embedding.
+commutative rings, with the `ℤ`-realization recovering the character itself. At every odd prime
+`p`, each realization takes the cast of `legendreSym p D`, and when `2 ≠ 0` its value is `-1`
+exactly when `D` is not a square modulo `p`. In characteristic zero these realizations retain
+conductor `|D|`, are primitive and quadratic, and are nonprincipal exactly when `D ≠ 1`. In
+particular the real and complex realizations have the same coefficients under the canonical scalar
+embedding.
 
 These comparisons let analytic Dirichlet-character APIs use precisely the character constructed
 from prime discriminants, without choosing a second quadratic character.
@@ -39,6 +42,12 @@ noncomputable def fundamentalDiscriminantCharCast (R : Type*) [CommRing R]
     fundamentalDiscriminantCharCast R D hD a = (fundamentalDiscriminantChar D hD a : R) :=
   (rfl)
 
+/-- The integer realization of a fundamental-discriminant character is the character itself. -/
+@[simp] theorem fundamentalDiscriminantCharCast_int (hD : Int.IsFundamentalDiscr D) :
+    fundamentalDiscriminantCharCast ℤ D hD = fundamentalDiscriminantChar D hD := by
+  ext a
+  simp
+
 /-- Realizations commute with scalar maps, including the embedding of real into complex values. -/
 @[simp] theorem fundamentalDiscriminantCharCast_ringHomComp {R S : Type*}
     [CommRing R] [CommRing S] (hD : Int.IsFundamentalDiscr D) (f : R →+* S) :
@@ -52,6 +61,30 @@ theorem fundamentalDiscriminantCharCast_isQuadratic {R : Type*} [CommRing R]
     (hD : Int.IsFundamentalDiscr D) :
     (fundamentalDiscriminantCharCast R D hD).IsQuadratic :=
   (fundamentalDiscriminantChar_isQuadratic hD).comp (Int.castRingHom R)
+
+/-- At an odd prime `p`, every scalar realization of a fundamental-discriminant character takes
+the cast of the Legendre symbol `legendreSym p D` (including `0` when `p ∣ D`). -/
+theorem fundamentalDiscriminantCharCast_natCast_eq_legendreSym {R : Type*} [CommRing R]
+    (hD : Int.IsFundamentalDiscr D) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
+    fundamentalDiscriminantCharCast R D hD p = (legendreSym p D : R) := by
+  simpa [fundamentalDiscriminantCharCast_apply] using
+    congrArg (Int.cast (R := R)) (fundamentalDiscriminantChar_natCast_eq_legendreSym hD hp)
+
+/-- When `2 ≠ 0` in `R`, at an odd prime `p`, the `R`-realization of a fundamental-discriminant
+character takes the value `-1` if and only if `D` is not a square modulo `p`. -/
+theorem fundamentalDiscriminantCharCast_natCast_eq_neg_one_iff {R : Type*} [CommRing R]
+    [NeZero (2 : R)] (hD : Int.IsFundamentalDiscr D) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
+    fundamentalDiscriminantCharCast R D hD p = -1 ↔ ¬ IsSquare (D : ZMod p) := by
+  rw [fundamentalDiscriminantCharCast_natCast_eq_legendreSym hD hp,
+    ← legendreSym.eq_neg_one_iff p]
+  have h0 : (0 : R) ≠ -1 := fun h ↦
+    two_ne_zero (α := R) (by rw [← one_add_one_eq_two, neg_eq_zero.mp h.symm, add_zero])
+  have h1 : (1 : R) ≠ -1 := fun h ↦
+    two_ne_zero (α := R) (by rw [← one_add_one_eq_two]; exact neg_eq_iff_add_eq_zero.mp h.symm)
+  by_cases hD0 : (D : ZMod p) = 0
+  · rw [(legendreSym.eq_zero_iff p D).mpr hD0]
+    simp [h0]
+  · rcases legendreSym.eq_one_or_neg_one p hD0 with h | h <;> simp [h, h1]
 
 variable {R : Type*} [CommRing R] [CharZero R]
 
