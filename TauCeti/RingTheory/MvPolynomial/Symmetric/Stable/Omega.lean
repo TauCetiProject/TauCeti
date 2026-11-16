@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Elementary
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.Generators
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.Map
 import Mathlib.Tactic.LinearCombination
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.PowerSum
 import TauCeti.RingTheory.PowerSeries.Derivative
@@ -56,6 +56,10 @@ this holds over every commutative ring.
   `e_r` to the free generation by the `h_r`, and back.
 * `TauCeti.SymmetricFunction.algHom_ext_of_stableHsymm`: algebra homomorphisms out of `Λ_R` agree
   once they agree on the `h_r`.
+* `TauCeti.SymmetricFunction.map_hsymmAlgHom`, `TauCeti.SymmetricFunction.hsymmAlgEquiv_symm_map`,
+  `TauCeti.SymmetricFunction.map_omega`: the change of coefficients
+  `TauCeti.SymmetricFunction.map` commutes with polynomial evaluation at the `h_r`, with the
+  inverse of the free generation by the `h_r`, and with `ω`.
 
 ## References
 
@@ -386,6 +390,41 @@ theorem omega_of_stablePsum {n : ℕ} (hn : n ≠ 0) :
   ring
 
 end CommRing
+
+/-! ### Change of coefficients -/
+
+section Map
+
+variable {R S : Type*}
+
+/-- **Changing coefficients commutes with polynomial evaluation at the complete homogeneous
+symmetric functions**: it changes the coefficients of the polynomial. -/
+@[simp]
+theorem map_hsymmAlgHom [CommSemiring R] [CommSemiring S] (f : R →+* S) (p : MvPolynomial ℕ R) :
+    map f (hsymmAlgHom R p) = hsymmAlgHom S (MvPolynomial.map f p) := by
+  rw [aeval_unique (hsymmAlgHom R), aeval_unique (hsymmAlgHom S), SymmetricFunction.map_aeval]
+  congr 2
+  funext r
+  simp
+
+variable [CommRing R] [CommRing S] (f : R →+* S)
+
+/-- **Changing coefficients commutes with the inverse of the free generation by the complete
+homogeneous symmetric functions**: the polynomial in the `h_r` representing the image of `x` is the
+image of the polynomial representing `x`. -/
+@[simp]
+theorem hsymmAlgEquiv_symm_map (x : SymmetricFunction R) :
+    (hsymmAlgEquiv S).symm (map f x) = MvPolynomial.map f ((hsymmAlgEquiv R).symm x) := by
+  rw [AlgEquiv.symm_apply_eq, hsymmAlgEquiv_apply, ← map_hsymmAlgHom, ← hsymmAlgEquiv_apply,
+    AlgEquiv.apply_symm_apply]
+
+/-- **Changing coefficients commutes with the involution `ω`.** -/
+@[simp]
+theorem map_omega (x : SymmetricFunction R) : map f (omega R x) = omega S (map f x) := by
+  obtain ⟨p, rfl⟩ := esymmAlgHom_surjective R x
+  rw [omega_esymmAlgHom, map_hsymmAlgHom, map_esymmAlgHom, omega_esymmAlgHom]
+
+end Map
 
 end SymmetricFunction
 
