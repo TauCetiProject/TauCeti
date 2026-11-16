@@ -33,7 +33,16 @@ For `0 < s < t` the same bound sums `(2^j)^s (1 + 2^j r)^(-t)` over `j ∈ ℕ` 
 `C r^(-s)`, uniformly in `r > 0`: with `u = 2^j r`, the term is `r^(-s)` times
 `u^s (1 + u)^(-t) ≤ min (u^s) ((u^s)^(-(t - s)/s))`. These are the sums of the dyadic pieces of a
 kernel with the size `(2^j)^s` at scale `2^{-j}` and rapid decay beyond it, evaluated at
-distance `r`: they give the bound `C r^(-s)` of the whole kernel.
+distance `r`: they give the bound `C r^(-s)` of the whole kernel. For `r` bounded below by `ρ > 0`
+and `t > s` a natural number, the terms are moreover at most `ρ^(-t) (2^(s - t))^j`, a geometric
+sequence.
+
+When a series `∑ⱼ fⱼ` has terms bounded both by `D (2^j)^(s + 1) d` and by
+`C (2^j)^s (1 + 2^j r)^(-N)`, each term is at most the interpolation `A^δ B^(1 - δ)` of the two
+bounds `A` and `B`, for `0 ≤ δ ≤ 1`. The interpolated bounds are of the previous shape with
+exponents `s + δ` and `N (1 - δ)`, so the series sums to at most
+`E D^δ C^(1 - δ) d^δ r^(-(s + δ))` when `0 < s + δ < N (1 - δ)`. This is how increments of a
+kernel at distance `d`, cut into dyadic pieces, are bounded by `d^δ`.
 
 ## Main declarations
 
@@ -42,6 +51,13 @@ distance `r`: they give the bound `C r^(-s)` of the whole kernel.
   `∑ⱼ (2^j)^s (1 + 2^j r)^(-t) ≤ C r^(-s)` for every `r > 0`.
 * `TauCeti.exists_tsum_le_mul_rpow_of_rpow_mul_le`: for `0 < α < 1`, a nonnegative sequence with
   `2^{jα} gⱼ ≤ a` and `2^{jα} gⱼ ≤ b 2^j d` sums to at most `C (a + b) d^α`.
+* `TauCeti.rpow_mul_one_add_rpow_neg_le`: `(2^j)^s (1 + 2^j r)^(-N) ≤ ρ^(-N) (2^(s - N))^j` for
+  `r ≥ ρ > 0`.
+* `TauCeti.le_rpow_mul_rpow_of_le_of_le`: `P ≤ A` and `P ≤ B` give `P ≤ A^δ B^(1 - δ)` for
+  `0 ≤ δ ≤ 1`.
+* `TauCeti.exists_norm_le_of_hasSum_of_le_of_le`: a series whose terms are bounded by
+  `D (2^j)^(s + 1) d` and by `C (2^j)^s (1 + 2^j r)^(-N)` sums to at most
+  `E D^δ C^(1 - δ) d^δ r^(-(s + δ))`.
 
 ## References
 
@@ -154,7 +170,7 @@ theorem exists_tsum_rpow_mul_one_add_rpow_neg_le {s t : ℝ} (hs : 0 < s) (hst :
       _ = r ^ (-s) * ∑ i ∈ (Finset.range N).map (Nat.castEmbedding : ℕ ↪ ℤ),
             min (b ^ i * r ^ s) ((b ^ i * r ^ s) ^ (-δ)) := by
           rw [Finset.mul_sum, Finset.sum_map]
-          rfl
+          simp only [Nat.castEmbedding_apply, zpow_natCast]
       _ ≤ r ^ (-s) * C :=
           mul_le_mul_of_nonneg_left (sum_min_zpow_mul_rpow_neg_le hb hδ _ _) (by positivity)
       _ = C * r ^ (-s) := mul_comm _ _
@@ -265,5 +281,64 @@ theorem exists_tsum_le_mul_rpow_of_rpow_mul_le {α : ℝ} (hα0 : 0 < α) (hα1 
   rw [← hgs.sum_add_tsum_nat_add J]
   have : 0 ≤ d ^ α := by positivity
   nlinarith [mul_nonneg ha0 hC₂, mul_nonneg hb0 hC₁]
+
+/-- For `r ≥ ρ > 0`, the term `(2^j)^s (1 + 2^j r)^(-N)` is at most `ρ^(-N) q^j` with
+`q = 2^(s - N)`: a geometric sequence, of ratio `q < 1` when `s < N`. -/
+theorem rpow_mul_one_add_rpow_neg_le {s ρ r : ℝ} {N : ℕ} (hρ : 0 < ρ) (hr : ρ ≤ r) (j : ℕ) :
+    ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-(N : ℝ)) ≤
+      ρ ^ (-(N : ℝ)) * ((2 : ℝ) ^ (s - N)) ^ j := by
+  have h2 : (0 : ℝ) < 2 ^ j := by positivity
+  have hle : (1 + 2 ^ j * r) ^ (-(N : ℝ)) ≤ (2 ^ j * ρ) ^ (-(N : ℝ)) :=
+    Real.rpow_le_rpow_of_nonpos (by positivity) (by nlinarith) (by simp)
+  calc ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-(N : ℝ))
+      ≤ ((2 : ℝ) ^ j) ^ s * (2 ^ j * ρ) ^ (-(N : ℝ)) :=
+        mul_le_mul_of_nonneg_left hle (by positivity)
+    _ = ρ ^ (-(N : ℝ)) * ((2 : ℝ) ^ j) ^ (s + -(N : ℝ)) := by
+        rw [Real.mul_rpow h2.le hρ.le, Real.rpow_add h2]
+        ring
+    _ = ρ ^ (-(N : ℝ)) * ((2 : ℝ) ^ (s - N)) ^ j := by
+        rw [← sub_eq_add_neg, Real.rpow_pow_comm zero_le_two]
+
+/-- **Interpolating two upper bounds.** If `0 ≤ P ≤ A` and `P ≤ B`, then `P ≤ A^δ B^(1 - δ)` for
+every `0 ≤ δ ≤ 1`; in particular `min A B ≤ A^δ B^(1 - δ)` for `A, B ≥ 0`. -/
+theorem le_rpow_mul_rpow_of_le_of_le {P A B δ : ℝ} (hP : 0 ≤ P) (hA : P ≤ A) (hB : P ≤ B)
+    (hδ0 : 0 ≤ δ) (hδ1 : δ ≤ 1) : P ≤ A ^ δ * B ^ (1 - δ) := by
+  calc P = P ^ δ * P ^ (1 - δ) := by
+        rw [← Real.rpow_add' hP (by norm_num), add_sub_cancel, Real.rpow_one]
+    _ ≤ A ^ δ * B ^ (1 - δ) := mul_le_mul (Real.rpow_le_rpow hP hA hδ0)
+        (Real.rpow_le_rpow hP hB (by linarith)) (by positivity)
+        (Real.rpow_nonneg (hP.trans hA) _)
+
+/-- **Summing interpolated dyadic bounds.** For `0 < δ < 1` and `0 < s + δ < N (1 - δ)` there is
+`E ≥ 0` such that, if `L = ∑ⱼ fⱼ` in a normed group with `‖fⱼ‖ ≤ D (2^j)^(s + 1) d` and
+`‖fⱼ‖ ≤ C (2^j)^s (1 + 2^j r)^(-N)` for all `j`, where `C, D, d ≥ 0` and `r > 0`, then
+`‖L‖ ≤ E D^δ C^(1 - δ) d^δ r^(-(s + δ))`. -/
+theorem exists_norm_le_of_hasSum_of_le_of_le {s δ : ℝ} {N : ℕ} (hsδ : 0 < s + δ)
+    (hδ0 : 0 < δ) (hδ1 : δ < 1) (hN : s + δ < N * (1 - δ)) :
+    ∃ E, 0 ≤ E ∧ ∀ {F : Type*} [NormedAddCommGroup F] {f : ℕ → F} {L : F} {C D d r : ℝ},
+      HasSum f L → 0 ≤ C → 0 ≤ D → 0 ≤ d → 0 < r →
+      (∀ j, ‖f j‖ ≤ D * ((2 : ℝ) ^ j) ^ (s + 1) * d) →
+      (∀ j, ‖f j‖ ≤ C * ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-(N : ℝ))) →
+      ‖L‖ ≤ E * D ^ δ * C ^ (1 - δ) * d ^ δ * r ^ (-(s + δ)) := by
+  obtain ⟨E, hE0, hE⟩ := exists_tsum_rpow_mul_one_add_rpow_neg_le hsδ hN
+  refine ⟨E, hE0, fun {F} _ {f L C D d r} hf hC hD hd hr hA hB ↦ ?_⟩
+  obtain ⟨hsum, hle⟩ := hE r hr
+  set c := D ^ δ * C ^ (1 - δ) * d ^ δ with hc
+  -- The interpolated bound of the `j`-th term.
+  have hterm (j : ℕ) : ‖f j‖ ≤ c * (((2 : ℝ) ^ j) ^ (s + δ) *
+      (1 + 2 ^ j * r) ^ (-(N * (1 - δ)))) := by
+    refine (le_rpow_mul_rpow_of_le_of_le (norm_nonneg _) (hA j) (hB j) hδ0.le hδ1.le).trans_eq ?_
+    have hexp : ((2 : ℝ) ^ j) ^ (s + δ) = ((2 : ℝ) ^ j) ^ ((s + 1) * δ) *
+        ((2 : ℝ) ^ j) ^ (s * (1 - δ)) := by
+      rw [← Real.rpow_add (by positivity)]
+      ring_nf
+    rw [hexp, show -(N * (1 - δ)) = -(N : ℝ) * (1 - δ) by ring, hc]
+    simp (disch := positivity) only [Real.mul_rpow, ← Real.rpow_mul]
+    ring
+  calc ‖L‖ ≤ c * ∑' j : ℕ, ((2 : ℝ) ^ j) ^ (s + δ) * (1 + 2 ^ j * r) ^ (-(N * (1 - δ))) :=
+        tsum_of_norm_bounded (hsum.mul_left c).hasSum hterm |>.trans_eq' (by rw [hf.tsum_eq])
+          |>.trans_eq (tsum_mul_left)
+    _ ≤ c * (E * r ^ (-(s + δ))) := mul_le_mul_of_nonneg_left hle (by positivity)
+    _ = E * D ^ δ * C ^ (1 - δ) * d ^ δ * r ^ (-(s + δ)) := by ring
 
 end TauCeti

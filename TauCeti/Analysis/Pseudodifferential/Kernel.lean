@@ -13,9 +13,9 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Analysis.Fourier.FourierCharDeriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
-import TauCeti.Topology.Circle.Metric
 
 /-!
 # The kernel of the Kohn–Nirenberg quantization
@@ -177,25 +177,6 @@ theorem continuous_quantizationKernel_right (ha : Integrable (fun ξ ↦ a (x, �
   exact (VectorFourier.fourierIntegral_continuous Real.continuous_fourierChar
     continuous_inner.neg (ha.comp_smul two_pi_pos.ne')).comp (continuous_const.sub continuous_id)
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The kernel integrands at two displacements differ by at most `2π ‖ζ‖ ‖z - z'‖ ‖a(x, 2πζ)‖`. -/
-private theorem norm_fourierChar_smul_sub_fourierChar_smul_le (ζ z z' : E) (A : V →L[ℂ] W) :
-    ‖𝐞 ⟪ζ, z⟫ • A - 𝐞 ⟪ζ, z'⟫ • A‖ ≤ ‖z - z'‖ * (‖(2 * π) • ζ‖ * ‖A‖) := by
-  rw [Circle.smul_def, Circle.smul_def, ← sub_smul, norm_smul, norm_smul,
-    Real.norm_of_nonneg two_pi_pos.le]
-  calc ‖(𝐞 ⟪ζ, z⟫ : ℂ) - 𝐞 ⟪ζ, z'⟫‖ * ‖A‖ ≤ 2 * π * (‖ζ‖ * ‖z - z'‖) * ‖A‖ := by
-        gcongr
-        -- `𝐞 t = Circle.exp (2πt)`, and `Circle.exp` is `1`-Lipschitz.
-        have hlip := lipschitzWith_one_circleExp.dist_le_mul (2 * π * ⟪ζ, z⟫) (2 * π * ⟪ζ, z'⟫)
-        have hd : dist (𝐞 ⟪ζ, z⟫) (𝐞 ⟪ζ, z'⟫) = ‖(𝐞 ⟪ζ, z⟫ : ℂ) - 𝐞 ⟪ζ, z'⟫‖ := by
-          rw [← Complex.dist_eq]
-          exact Subtype.dist_eq _ _
-        rw [← Real.fourierChar_apply', ← Real.fourierChar_apply', NNReal.coe_one, one_mul, hd,
-          Real.dist_eq, ← mul_sub, abs_mul, abs_of_pos two_pi_pos, ← inner_sub_right] at hlip
-        refine hlip.trans (mul_le_mul_of_nonneg_left ?_ two_pi_pos.le)
-        exact abs_real_inner_le_norm _ _
-    _ = ‖z - z'‖ * (2 * π * ‖ζ‖ * ‖A‖) := by ring
-
 /-- **Increments in the second variable.** If the frequency slice `ξ ↦ a(x, ξ)` and
 `ξ ↦ ‖ξ‖ ‖a(x, ξ)‖` are integrable, then
 `‖K_a(x, y) - K_a(x, y')‖ ≤ (2π)⁻ⁿ ‖y - y'‖ ∫ ‖ξ‖ ‖a(x, ξ)‖ dξ`. -/
@@ -211,8 +192,9 @@ theorem norm_quantizationKernel_sub_quantizationKernel_right_le
   refine (norm_integral_le_of_norm_le
     ((ha'.comp_smul two_pi_pos.ne').const_mul ‖y - y'‖)
     (ae_of_all _ fun ζ ↦ ?_)).trans_eq ?_
-  · refine (norm_fourierChar_smul_sub_fourierChar_smul_le ζ _ _ _).trans_eq ?_
-    rw [sub_sub_sub_cancel_left, norm_sub_rev]
+  · refine (Real.norm_fourierChar_smul_sub_fourierChar_smul_le ζ _ _ _).trans_eq ?_
+    rw [sub_sub_sub_cancel_left, norm_sub_rev, norm_smul, Real.norm_of_nonneg two_pi_pos.le]
+    ring
   · have hc := Measure.integral_comp_smul (μ := volume) (fun ξ ↦ ‖ξ‖ * ‖a (x, ξ)‖) (2 * π)
     rw [smul_eq_mul, abs_of_pos hpos] at hc
     rw [integral_const_mul, hc]
@@ -245,8 +227,10 @@ theorem norm_quantizationKernel_sub_quantizationKernel_left_le {x' : E}
       abel
     rw [hsplit]
     refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-    · refine (norm_fourierChar_smul_sub_fourierChar_smul_le ζ _ _ _).trans_eq ?_
-      rw [sub_sub_sub_cancel_right]
+    · refine (Real.norm_fourierChar_smul_sub_fourierChar_smul_le ζ _ _ _).trans_eq ?_
+      dsimp only
+      rw [sub_sub_sub_cancel_right, norm_smul, Real.norm_of_nonneg two_pi_pos.le]
+      ring
     · exact (Circle.norm_smul (E := V →L[ℂ] W) _ _).le
   · have hc₁ := Measure.integral_comp_smul (μ := volume) (fun ξ ↦ ‖ξ‖ * ‖a (x, ξ)‖) (2 * π)
     have hc₂ := Measure.integral_comp_smul (μ := volume) (fun ξ ↦ ‖a (x, ξ) - a (x', ξ)‖) (2 * π)

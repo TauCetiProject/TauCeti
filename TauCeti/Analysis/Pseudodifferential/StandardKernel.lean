@@ -50,7 +50,8 @@ and the first frequency moment bounds the increments,
 `‖Kⱼ(x, y) - Kⱼ(x, y')‖ ≤ D (2^j)^(m + n + 1) ‖y - y'‖`, and similarly in the first variable.
 Summing the first bounds over `j` (`TauCeti.exists_tsum_rpow_mul_one_add_rpow_neg_le`) gives the
 size estimate. For the smoothness estimates each increment is at most the minimum `min(A, B)` of
-the two bounds, and `min(A, B) ≤ A^δ B^(1 - δ)` sums in the same way.
+the two bounds, and `min(A, B) ≤ A^δ B^(1 - δ)` sums in the same way
+(`TauCeti.exists_norm_le_of_hasSum_of_le_of_le`).
 
 ## Main results
 
@@ -310,24 +311,6 @@ theorem IsUniform.exists_norm_quantizationKernel_littlewoodPaleyPiece_sub_left_l
         · exact (hG j x x').trans (by gcongr)
     _ = ((2 * π) ^ n)⁻¹ * (M + G) * T * ‖x - x'‖ := by ring
 
-/-- With `q = 2^(s - N)`, the bound `(2^j)^s (1 + 2^j r)^(-N)` is at most `δ^(-N) q^j` for
-`r ≥ δ > 0`. -/
-private theorem rpow_mul_one_add_rpow_neg_le {s δ r : ℝ} {N : ℕ} (hδ : 0 < δ) (hr : δ ≤ r)
-    (j : ℕ) :
-    ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-(N : ℝ)) ≤
-      δ ^ (-(N : ℝ)) * ((2 : ℝ) ^ (s - N)) ^ j := by
-  have h2 : (0 : ℝ) < 2 ^ j := by positivity
-  have hle : (1 + 2 ^ j * r) ^ (-(N : ℝ)) ≤ (2 ^ j * δ) ^ (-(N : ℝ)) :=
-    Real.rpow_le_rpow_of_nonpos (by positivity) (by nlinarith) (by simp)
-  calc ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-(N : ℝ))
-      ≤ ((2 : ℝ) ^ j) ^ s * (2 ^ j * δ) ^ (-(N : ℝ)) :=
-        mul_le_mul_of_nonneg_left hle (by positivity)
-    _ = δ ^ (-(N : ℝ)) * ((2 : ℝ) ^ j) ^ (s + -(N : ℝ)) := by
-        rw [Real.mul_rpow h2.le hδ.le, Real.rpow_add h2]
-        ring
-    _ = δ ^ (-(N : ℝ)) * ((2 : ℝ) ^ (s - N)) ^ j := by
-        rw [← sub_eq_add_neg, Real.rpow_pow_comm zero_le_two]
-
 /-- Away from the diagonal the piece kernels of a uniform symbol decay geometrically in `j`:
 `‖K_{aⱼ}(x, z)‖ ≤ C δ^(-N) qʲ` when `‖x - z‖ ≥ δ > 0`, for some `N` and some `q < 1`. -/
 private theorem IsUniform.exists_norm_quantizationKernel_littlewoodPaleyPiece_le_geometric
@@ -539,54 +522,46 @@ theorem IsUniform.exists_norm_offDiagonalKernel_le [CompleteSpace V] [CompleteSp
   rw [tsum_mul_left, mul_assoc]
   exact mul_le_mul_of_nonneg_left hle hC0
 
-/-- `min(A, B) ≤ A^δ B^(1 - δ)` for the two piece bounds: the interpolated bound. -/
-private theorem le_rpow_mul_rpow_of_le_of_le {P A B δ : ℝ} (hP : 0 ≤ P) (hA : P ≤ A)
-    (hB : P ≤ B) (hδ0 : 0 ≤ δ) (hδ1 : δ ≤ 1) : P ≤ A ^ δ * B ^ (1 - δ) := by
-  calc P = P ^ δ * P ^ (1 - δ) := by
-        rw [← Real.rpow_add' hP (by norm_num), add_sub_cancel, Real.rpow_one]
-    _ ≤ A ^ δ * B ^ (1 - δ) := mul_le_mul (Real.rpow_le_rpow hP hA hδ0)
-        (Real.rpow_le_rpow hP hB (by linarith)) (by positivity)
-        (Real.rpow_nonneg (hP.trans hA) _)
-
-/-- **Summing interpolated piece bounds.** If `L = ∑ⱼ fⱼ` with
-`‖fⱼ‖ ≤ D (2^j)^(s + 1) d` and `‖fⱼ‖ ≤ C (2^j)^s (1 + 2^j r)^(-N)`, then
-`‖L‖ ≤ E D^δ C^(1 - δ) d^δ r^(-(s + δ))`, provided `0 < s + δ < N (1 - δ)`. -/
-private theorem exists_norm_le_of_hasSum_of_le_of_le {s δ : ℝ} {N : ℕ} (hsδ : 0 < s + δ)
-    (hδ0 : 0 < δ) (hδ1 : δ < 1) (hN : s + δ < N * (1 - δ)) :
-    ∃ E, 0 ≤ E ∧ ∀ {F : Type*} [NormedAddCommGroup F] {f : ℕ → F} {L : F} {C D d r : ℝ},
-      HasSum f L → 0 ≤ C → 0 ≤ D → 0 ≤ d → 0 < r →
-      (∀ j, ‖f j‖ ≤ D * ((2 : ℝ) ^ j) ^ (s + 1) * d) →
-      (∀ j, ‖f j‖ ≤ C * ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-(N : ℝ))) →
-      ‖L‖ ≤ E * D ^ δ * C ^ (1 - δ) * d ^ δ * r ^ (-(s + δ)) := by
-  obtain ⟨E, hE0, hE⟩ := exists_tsum_rpow_mul_one_add_rpow_neg_le hsδ hN
-  refine ⟨E, hE0, fun {F} _ {f L C D d r} hf hC hD hd hr hA hB ↦ ?_⟩
-  obtain ⟨hsum, hle⟩ := hE r hr
-  set c := D ^ δ * C ^ (1 - δ) * d ^ δ
-  -- The interpolated bound of the `j`-th term.
-  have hterm (j : ℕ) : ‖f j‖ ≤ c * (((2 : ℝ) ^ j) ^ (s + δ) *
-      (1 + 2 ^ j * r) ^ (-(N * (1 - δ)))) := by
-    set T : ℝ := 2 ^ j
-    have hT : 0 < T := by positivity
-    have hP : 0 < 1 + T * r := by positivity
-    refine (le_rpow_mul_rpow_of_le_of_le (norm_nonneg _) (hA j) (hB j) hδ0.le hδ1.le).trans_eq ?_
-    rw [Real.mul_rpow (by positivity) hd, Real.mul_rpow hD (by positivity),
-      Real.mul_rpow (by positivity) (by positivity), Real.mul_rpow hC (by positivity),
-      ← Real.rpow_mul hT.le, ← Real.rpow_mul hT.le, ← Real.rpow_mul hP.le]
-    have hexp : T ^ ((s + 1) * δ) * T ^ (s * (1 - δ)) = T ^ (s + δ) := by
-      rw [← Real.rpow_add hT]
-      ring_nf
-    rw [show -(N : ℝ) * (1 - δ) = -(N * (1 - δ)) by ring, ← hexp]
-    ring
-  calc ‖L‖ ≤ c * ∑' j : ℕ, ((2 : ℝ) ^ j) ^ (s + δ) * (1 + 2 ^ j * r) ^ (-(N * (1 - δ))) :=
-        tsum_of_norm_bounded (hsum.mul_left c).hasSum hterm |>.trans_eq' (by rw [hf.tsum_eq])
-          |>.trans_eq (tsum_mul_left)
-    _ ≤ c * (E * r ^ (-(s + δ))) := mul_le_mul_of_nonneg_left hle (by positivity)
-    _ = E * D ^ δ * C ^ (1 - δ) * d ^ δ * r ^ (-(s + δ)) := by ring
-
 /-- `(r / 2)^(-p) = 2^p r^(-p)`. -/
 private theorem div_two_rpow_neg {r : ℝ} (hr : 0 ≤ r) (p : ℝ) :
     (r / 2) ^ (-p) = 2 ^ p * r ^ (-p) := by
   rw [Real.div_rpow hr zero_le_two, Real.rpow_neg zero_le_two, div_inv_eq_mul, mul_comm]
+
+/-- The common step of the two smoothness estimates. If the increments of the piece kernels
+between `(x, y)` and `(x', y')` are at most `D (2^j)^(m + n + 1) d`, and both points are at
+distance at least `r / 2` from the diagonal, then the increment of the kernel is at most
+`C d^δ r^(-(m + n + δ))`. -/
+private theorem IsUniform.exists_norm_offDiagonalKernel_sub_le_of_increment [CompleteSpace V]
+    [CompleteSpace W] {a : Symbol n V W m} (ha : a.IsUniform) {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ < 1)
+    (hm : 0 < m + n + δ) {D : ℝ} (hD0 : 0 ≤ D) :
+    ∃ C, 0 ≤ C ∧ ∀ {x y x' y' : CoordinateSpace n} {d r : ℝ}, 0 ≤ d → 0 < r →
+      r / 2 ≤ ‖x - y‖ → r / 2 ≤ ‖x' - y'‖ →
+      (∀ j : ℕ, ‖quantizationKernel (a.littlewoodPaleyPiece standardBump j).coefficient x y -
+          quantizationKernel (a.littlewoodPaleyPiece standardBump j).coefficient x' y'‖ ≤
+        D * ((2 : ℝ) ^ j) ^ (m + n + 1) * d) →
+      ‖offDiagonalKernel a x y - offDiagonalKernel a x' y'‖ ≤ C * d ^ δ * r ^ (-(m + n + δ)) := by
+  obtain ⟨N, hN⟩ := exists_nat_gt ((m + n + δ) / (1 - δ))
+  have hN' : m + n + δ < N * (1 - δ) := (div_lt_iff₀ (by linarith)).1 hN
+  obtain ⟨C, hC0, hC⟩ := ha.exists_norm_quantizationKernel_littlewoodPaleyPiece_le standardBump N
+  obtain ⟨E, hE0, hE⟩ := exists_norm_le_of_hasSum_of_le_of_le hm hδ0 hδ1 hN'
+  refine ⟨E * D ^ δ * (2 * C) ^ (1 - δ) * 2 ^ (m + n + δ), by positivity,
+    fun {x y x' y' d r} hd hr hxy hxy' hD ↦ ?_⟩
+  have hr2 : 0 < r / 2 := half_pos hr
+  have hsize (j : ℕ) {w z : CoordinateSpace n} (hwz : r / 2 ≤ ‖w - z‖) :
+      ‖quantizationKernel (a.littlewoodPaleyPiece standardBump j).coefficient w z‖ ≤
+        C * ((2 : ℝ) ^ j) ^ (m + n) * (1 + 2 ^ j * (r / 2)) ^ (-(N : ℝ)) :=
+    (hC j w z).trans (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos (by positivity)
+      (by gcongr) (by simp)) (by positivity))
+  have hne {w z : CoordinateSpace n} (hwz : r / 2 ≤ ‖w - z‖) : w ≠ z :=
+    sub_ne_zero.1 (norm_pos_iff.1 (hr2.trans_le hwz))
+  have hL := (ha.hasSum_quantizationKernel_littlewoodPaleyPiece standardBump (hne hxy)).sub
+    (ha.hasSum_quantizationKernel_littlewoodPaleyPiece standardBump (hne hxy'))
+  refine (hE hL (by positivity : (0 : ℝ) ≤ 2 * C) hD0 hd hr2 hD (fun j ↦ ?_)).trans_eq ?_
+  · refine (norm_sub_le _ _).trans ?_
+    rw [two_mul, add_mul, add_mul]
+    exact add_le_add (hsize j hxy) (hsize j hxy')
+  · rw [div_two_rpow_neg hr.le]
+    ring
 
 /-- **The smoothness estimate in the second variable.** The kernel of a uniform symbol `a` of
 order `m` on `ℝⁿ` satisfies, for `0 < δ < 1` with `m + n + δ > 0`,
@@ -598,38 +573,17 @@ theorem IsUniform.exists_norm_offDiagonalKernel_sub_right_le [CompleteSpace V] [
     ∃ C, 0 ≤ C ∧ ∀ x y y' : CoordinateSpace n, 2 * ‖y - y'‖ < ‖x - y'‖ →
       ‖offDiagonalKernel a x y - offDiagonalKernel a x y'‖ ≤
         C * ‖y - y'‖ ^ δ * ‖x - y'‖ ^ (-(m + n + δ)) := by
-  obtain ⟨N, hN⟩ := exists_nat_gt ((m + n + δ) / (1 - δ))
-  have hN' : m + n + δ < N * (1 - δ) := (div_lt_iff₀ (by linarith)).1 hN
-  obtain ⟨C, hC0, hC⟩ := ha.exists_norm_quantizationKernel_littlewoodPaleyPiece_le standardBump N
   obtain ⟨D, hD0, hD⟩ :=
     ha.exists_norm_quantizationKernel_littlewoodPaleyPiece_sub_right_le standardBump
-  obtain ⟨E, hE0, hE⟩ := exists_norm_le_of_hasSum_of_le_of_le hm hδ0 hδ1 hN'
-  refine ⟨E * D ^ δ * (2 * C) ^ (1 - δ) * 2 ^ (m + n + δ), by positivity,
-    fun x y y' h ↦ ?_⟩
-  have hd : 0 ≤ ‖y - y'‖ := norm_nonneg _
+  obtain ⟨C, hC0, hC⟩ := ha.exists_norm_offDiagonalKernel_sub_le_of_increment hδ0 hδ1 hm hD0
+  refine ⟨C, hC0, fun x y y' h ↦ ?_⟩
+  have hd := norm_nonneg (y - y')
   -- Both `‖x - y‖` and `‖x - y'‖` are at least `r / 2`, with `r = ‖x - y'‖`.
   have hxy : ‖x - y'‖ / 2 ≤ ‖x - y‖ := by
     have := norm_add_le (x - y) (y - y')
     rw [sub_add_sub_cancel] at this
     linarith
-  have hr : 0 < ‖x - y'‖ / 2 := by linarith
-  have hsize (j : ℕ) {z : CoordinateSpace n} (hz : ‖x - y'‖ / 2 ≤ ‖x - z‖) :
-      ‖quantizationKernel (a.littlewoodPaleyPiece standardBump j).coefficient x z‖ ≤
-        C * ((2 : ℝ) ^ j) ^ (m + n) * (1 + 2 ^ j * (‖x - y'‖ / 2)) ^ (-(N : ℝ)) :=
-    (hC j x z).trans (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos (by positivity)
-      (by gcongr) (by simp)) (by positivity))
-  have hL := (ha.hasSum_quantizationKernel_littlewoodPaleyPiece standardBump
-    (x := x) (y := y) (norm_pos_iff.1 (hr.trans_le hxy) |> sub_ne_zero.1)).sub
-    (ha.hasSum_quantizationKernel_littlewoodPaleyPiece standardBump (x := x) (y := y')
-      (norm_pos_iff.1 (hr.trans (by linarith)) |> sub_ne_zero.1))
-  refine (hE hL (by positivity : (0 : ℝ) ≤ 2 * C) hD0 hd hr (fun j ↦ ?_) (fun j ↦ ?_)).trans_eq ?_
-  · rw [show m + n + 1 = (m + n) + 1 by ring]
-    exact hD j x y y'
-  · refine (norm_sub_le _ _).trans ?_
-    rw [two_mul, add_mul, add_mul]
-    exact add_le_add (hsize j hxy) (hsize j (by linarith))
-  · rw [div_two_rpow_neg (norm_nonneg _)]
-    ring
+  exact hC hd (by linarith) hxy (by linarith) fun j ↦ hD j x y y'
 
 /-- **The smoothness estimate in the first variable.** The kernel of a uniform symbol `a` of order
 `m` on `ℝⁿ` satisfies, for `0 < δ < 1` with `m + n + δ > 0`,
@@ -641,38 +595,17 @@ theorem IsUniform.exists_norm_offDiagonalKernel_sub_left_le [CompleteSpace V] [C
     ∃ C, 0 ≤ C ∧ ∀ x x' y : CoordinateSpace n, 2 * ‖x - x'‖ < ‖x' - y‖ →
       ‖offDiagonalKernel a x y - offDiagonalKernel a x' y‖ ≤
         C * ‖x - x'‖ ^ δ * ‖x' - y‖ ^ (-(m + n + δ)) := by
-  obtain ⟨N, hN⟩ := exists_nat_gt ((m + n + δ) / (1 - δ))
-  have hN' : m + n + δ < N * (1 - δ) := (div_lt_iff₀ (by linarith)).1 hN
-  obtain ⟨C, hC0, hC⟩ := ha.exists_norm_quantizationKernel_littlewoodPaleyPiece_le standardBump N
   obtain ⟨D, hD0, hD⟩ :=
     ha.exists_norm_quantizationKernel_littlewoodPaleyPiece_sub_left_le standardBump
-  obtain ⟨E, hE0, hE⟩ := exists_norm_le_of_hasSum_of_le_of_le hm hδ0 hδ1 hN'
-  refine ⟨E * D ^ δ * (2 * C) ^ (1 - δ) * 2 ^ (m + n + δ), by positivity,
-    fun x x' y h ↦ ?_⟩
-  have hd : 0 ≤ ‖x - x'‖ := norm_nonneg _
+  obtain ⟨C, hC0, hC⟩ := ha.exists_norm_offDiagonalKernel_sub_le_of_increment hδ0 hδ1 hm hD0
+  refine ⟨C, hC0, fun x x' y h ↦ ?_⟩
+  have hd := norm_nonneg (x - x')
   -- Both `‖x - y‖` and `‖x' - y‖` are at least `r / 2`, with `r = ‖x' - y‖`.
   have hxy : ‖x' - y‖ / 2 ≤ ‖x - y‖ := by
     have := norm_add_le (x' - x) (x - y)
     rw [sub_add_sub_cancel, norm_sub_rev x' x] at this
     linarith
-  have hr : 0 < ‖x' - y‖ / 2 := by linarith
-  have hsize (j : ℕ) {w : CoordinateSpace n} (hw : ‖x' - y‖ / 2 ≤ ‖w - y‖) :
-      ‖quantizationKernel (a.littlewoodPaleyPiece standardBump j).coefficient w y‖ ≤
-        C * ((2 : ℝ) ^ j) ^ (m + n) * (1 + 2 ^ j * (‖x' - y‖ / 2)) ^ (-(N : ℝ)) :=
-    (hC j w y).trans (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos (by positivity)
-      (by gcongr) (by simp)) (by positivity))
-  have hL := (ha.hasSum_quantizationKernel_littlewoodPaleyPiece standardBump
-    (x := x) (y := y) (norm_pos_iff.1 (hr.trans_le hxy) |> sub_ne_zero.1)).sub
-    (ha.hasSum_quantizationKernel_littlewoodPaleyPiece standardBump (x := x') (y := y)
-      (norm_pos_iff.1 (hr.trans (by linarith)) |> sub_ne_zero.1))
-  refine (hE hL (by positivity : (0 : ℝ) ≤ 2 * C) hD0 hd hr (fun j ↦ ?_) (fun j ↦ ?_)).trans_eq ?_
-  · rw [show m + n + 1 = (m + n) + 1 by ring]
-    exact hD j x x' y
-  · refine (norm_sub_le _ _).trans ?_
-    rw [two_mul, add_mul, add_mul]
-    exact add_le_add (hsize j hxy) (hsize j (by linarith))
-  · rw [div_two_rpow_neg (norm_nonneg _)]
-    ring
+  exact hC hd (by linarith) hxy (by linarith) fun j ↦ hD j x x' y
 
 end Symbol
 
