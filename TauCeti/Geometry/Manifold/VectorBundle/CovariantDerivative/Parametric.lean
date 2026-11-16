@@ -40,8 +40,6 @@ parameter derivatives of `∇ˢ_v σ` and of the iterated covariant derivative `
   `∇_v` of the parameter derivative of `W_s`.
 * `TauCeti.Manifold.hasDerivAt_covariantDerivative_apply_of_hasDerivAt_difference`: the parameter
   derivative of `∇ˢ_v σ` is `Γ'(σ, v)`.
-* `TauCeti.Manifold.deriv_difference_apply_eq_deriv_covariantDerivative_apply`: the same identity
-  `Γ'(σ, v) = ∂ₛ ∇ˢ_v σ` between derivatives, for differentiable difference tensors.
 * `TauCeti.Manifold.hasDerivAt_covariantDerivative_covariantDerivative_of_hasDerivAt_difference`:
   the parameter derivative of `∇ˢ_v (∇ˢ_Y Z)` is `∇ᵗ_v (Γ'(Z, Y)) + Γ'(∇ᵗ_Y Z, v)`.
 
@@ -169,19 +167,6 @@ theorem hasDerivAt_covariantDerivative_apply_of_hasDerivAt_difference
   have h := (TauCeti.hasDerivAt_clm_apply₂ (F := E) (F' := E) (G := E)).mp hC' (σ y) v
   exact (HasDerivAt.const_add (F := E) (cov t σ y v) h).congr_of_eventuallyEq
     (Eventually.of_forall fun s ↦ apply_eq_apply_add_difference hσ s v)
-
-/-- **The derivative of the difference tensors is the derivative of the covariant derivatives.**
-Let `∇ˢ` be a family of covariant derivatives on `TM` whose difference tensors `(∇ˢ - ∇ᵗ)_y` are
-differentiable at `s = t`, with derivative `Γ'_y`. Then for every vector field `σ` differentiable
-at `y` and every `v ∈ T_y M`, `Γ'_y(σ y, v) = ∂ₛ ∇ˢ_v σ` at `s = t`. -/
-theorem deriv_difference_apply_eq_deriv_covariantDerivative_apply
-    {σ : Π y : M, TangentSpace I y} {y : M}
-    (hd : DifferentiableAt ℝ (F := E →L[ℝ] E →L[ℝ] E) (fun s ↦ (cov s).difference (cov t) y) t)
-    (hσ : MDiffAt (T% σ) y) (v : TangentSpace I y) :
-    deriv (fun s ↦ (cov s).difference (cov t) y) t (σ y) v = deriv (fun s ↦ cov s σ y v) t := by
-  have hC := DifferentiableAt.hasDerivAt (𝕜 := ℝ) (F := E →L[ℝ] E →L[ℝ] E) hd
-  exact (HasDerivAt.deriv (F := E) (hasDerivAt_covariantDerivative_apply_of_hasDerivAt_difference
-    (C := fun y ↦ deriv (fun s ↦ (cov s).difference (cov t) y) t) hC hσ v)).symm
 
 /-- **The parameter derivative of an iterated covariant derivative.** Let `∇ˢ` be a family of
 covariant derivatives on `TM` whose difference tensors `(∇ˢ - ∇ᵗ)_y` have derivative `Γ'_y` at
