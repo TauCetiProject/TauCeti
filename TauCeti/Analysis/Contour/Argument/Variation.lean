@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Contour.Winding.Number.Basic
 import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Contour.LogDerivFTC
 import TauCeti.Analysis.Contour.Winding.SegmentSum
-import TauCeti.Topology.Circle.Degree
 
 /-!
 # The variation of a continuous argument along a curve
@@ -20,7 +19,8 @@ A curve `c : ℝ → ℂ`, continuous and nowhere zero on `[a, b]`, has a *conti
 function `θ`, continuous on `[a, b]`, with `c t = ‖c t‖ · exp (i θ t)` there
 (`TauCeti.Contour.exists_continuousOn_eq_norm_mul_exp`). Two such arguments differ by a constant
 multiple of `2π`, so the *variation* `θ b - θ a` does not depend on the choice
-(`TauCeti.Contour.sub_eq_sub_of_eq_norm_mul_exp`).
+(`TauCeti.Contour.sub_eq_sub_of_eq_norm_mul_exp`); both facts are proved in
+`TauCeti.Analysis.Contour.Argument.Lift`.
 
 The variation is the imaginary part of the logarithmic integral: if `c` is differentiable off a
 countable set with `c' / c` integrable,
@@ -51,38 +51,7 @@ open scoped Real Interval
 
 namespace TauCeti.Contour
 
-variable {c : ℝ → ℂ} {a b : ℝ} {θ θ' : ℝ → ℝ}
-
-/-- **Continuous arguments exist.** A curve continuous and nowhere zero on `[a, b]` has an
-argument `θ` continuous on `[a, b]`: `c t = ‖c t‖ · exp (i θ t)` for every `t ∈ [a, b]`. -/
-theorem exists_continuousOn_eq_norm_mul_exp (hc : ContinuousOn c (Icc a b))
-    (hne : ∀ t ∈ Icc a b, c t ≠ 0) :
-    ∃ θ : ℝ → ℝ, ContinuousOn θ (Icc a b) ∧ ∀ t ∈ Icc a b, c t = ‖c t‖ * exp (I * θ t) := by
-  rcases le_or_gt a b with hab | hab
-  · obtain ⟨N, s, -, -, -, -, -, -, -, hθ, hlift⟩ :=
-      exists_continuousOn_arg_lift_with_partition (w := 0) hab hc (by simpa using hne)
-    exact ⟨_, hθ, fun t ht ↦ by simpa only [sub_zero] using hlift t ht⟩
-  · exact ⟨0, continuousOn_const, fun t ht ↦ absurd ht (by simp [Icc_eq_empty_of_lt hab])⟩
-
-/-- **The variation of a continuous argument is well defined.** Two continuous arguments `θ` and
-`θ'` of a curve nowhere zero on `[a, b]` change by the same amount from `a` to `b`. -/
-theorem sub_eq_sub_of_eq_norm_mul_exp (hab : a ≤ b) (hne : ∀ t ∈ Icc a b, c t ≠ 0)
-    (hθ : ContinuousOn θ (Icc a b)) (hθ' : ContinuousOn θ' (Icc a b))
-    (hcθ : ∀ t ∈ Icc a b, c t = ‖c t‖ * exp (I * θ t))
-    (hcθ' : ∀ t ∈ Icc a b, c t = ‖c t‖ * exp (I * θ' t)) :
-    θ b - θ a = θ' b - θ' a := by
-  have : PreconnectedSpace (Icc a b) := Subtype.preconnectedSpace isPreconnected_Icc
-  -- Both arguments lift the same map `[a, b] → Circle`, so they differ by a constant.
-  obtain ⟨k, hk⟩ := Circle.exists_forall_eq_add_of_exp_eq (A := Icc a b)
-    hθ.domRestrict hθ'.domRestrict fun t ↦ by
-      apply Subtype.ext
-      have hn : (‖c t‖ : ℂ) ≠ 0 := ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr (hne t t.2))
-      rw [Circle.coe_exp, Circle.coe_exp, mul_comm _ I, mul_comm _ I]
-      exact mul_left_cancel₀ hn ((hcθ t t.2).symm.trans (hcθ' t t.2))
-  have ha := hk ⟨a, left_mem_Icc.mpr hab⟩
-  have hb := hk ⟨b, right_mem_Icc.mpr hab⟩
-  simp only [domRestrict_apply] at ha hb
-  linarith
+variable {c : ℝ → ℂ} {a b : ℝ} {θ : ℝ → ℝ}
 
 /-- **The logarithmic integral is the change of the logarithm of the modulus plus `i` times the
 variation of a continuous argument.** For `c` continuous and nowhere zero on `[a, b]`, with

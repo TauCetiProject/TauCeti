@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Argument.Rectangle.Divisor
 import Mathlib.Analysis.Meromorphic.NormalForm
+import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Contour.Argument.Variation
 
 /-!

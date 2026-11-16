@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import Mathlib.NumberTheory.LSeries.Nonvanishing
+import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Contour.Argument.Variation
 import TauCeti.NumberTheory.LSeries.RiemannZeta
 
@@ -106,13 +107,6 @@ theorem riemannZeta_riemannZetaSPath_ne_zero
       push_cast at h
       exact h
 
-/-- If a real number `x` is `‖x‖ · exp (i θ)`, then `x = |x| cos θ`. -/
-private theorem eq_abs_mul_cos_of_ofReal_eq {x θ : ℝ} (h : (x : ℂ) = ‖(x : ℂ)‖ * exp (I * θ)) :
-    x = |x| * Real.cos θ := by
-  have h' := congrArg re h
-  rwa [ofReal_re, norm_real, Real.norm_eq_abs, mul_comm I, re_ofReal_mul,
-    exp_ofReal_mul_I_re] at h'
-
 /-- At height `0` the path runs along the real axis through the pole of `ζ` at `1`, across which
 `ζ` changes sign, so `ζ` has no continuous argument along it. -/
 private theorem not_exists_continuousOn_arg_riemannZetaSPath_zero :
@@ -130,7 +124,9 @@ private theorem not_exists_continuousOn_arg_riemannZetaSPath_zero :
       show (2 - 3 / 2 * (t - 1) + (0 : ℝ) * I : ℂ) = ((2 - 3 / 2 * (t - 1) : ℝ) : ℂ) by
         push_cast; ring,
       ← re_add_im (riemannZeta _), him, ofReal_zero, zero_mul, add_zero] at h
-    exact eq_abs_mul_cos_of_ofReal_eq h
+    have h' := congrArg re h
+    rwa [ofReal_re, norm_real, Real.norm_eq_abs, mul_comm I, re_ofReal_mul,
+      exp_ofReal_mul_I_re] at h'
   have hc : ContinuousOn (fun t ↦ Real.cos (θ t)) (Icc (4 / 3) 2) :=
     Real.continuous_cos.comp_continuousOn (hθ.mono (Icc_subset_Icc (by norm_num) (by norm_num)))
   -- Just before time `5/3` the path is at a real point `σ > 1`, where `ζ σ > 0`, so `cos θ = 1`.
