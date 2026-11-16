@@ -46,7 +46,7 @@ to the totally ramified top step `L/L₀` over the maximal unramified subextensi
   `TauCeti.differentExponent_eq_ramificationIndex_sub_one_add_height`: `H = d + 1 - e` and the
   faithful recovery `d = e - 1 + H`.
 * `TauCeti.discriminantExponent_eq_inertiaDegree_mul_add_height` and
-  `TauCeti.ratCast_discriminantExponent_eq_mul_mean`: `δ = f · (e - 1) + f · H` and its rational
+  `TauCeti.natCast_discriminantExponent_eq_mul_mean`: `δ = f · (e - 1) + f · H` and its rational
   form `δ = f · (e - 1 + e · m)`.
 * `TauCeti.height_eq_zero_iff`, `TauCeti.mean_eq_zero_iff`, `TauCeti.height_pos_iff`, and
   `TauCeti.mean_pos_iff`: `H` and `m` vanish if and only if `L/K` is tamely ramified, and are
@@ -65,8 +65,12 @@ to the totally ramified top step `L/L₀` over the maximal unramified subextensi
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter III, §§4 and 6.
 * J.-P. Serre, *Une « formule de masse » pour les extensions totalement ramifiées de degré donné
   d'un corps local*, C. R. Acad. Sci. Paris Sér. A **286** (1978), 1031–1036.
-* S. Pauli and C. Sinclair, *Enumerating extensions of `(π)`-adic fields with given invariants*,
+* S. Pauli and B. Sinclair, *Enumerating extensions of `(π)`-adic fields with given invariants*,
   Int. J. Number Theory **13** (2017), 2007–2038.
+* The LMFDB Collaboration, *The L-functions and modular forms database*, knowls `lf.heights`
+  (<https://www.lmfdb.org/knowledge/show/lf.heights>), `lf.means`
+  (<https://www.lmfdb.org/knowledge/show/lf.means>), and `lf.herbrand_invariant`
+  (<https://www.lmfdb.org/knowledge/show/lf.herbrand_invariant>).
 -/
 
 public section
@@ -170,7 +174,7 @@ theorem ramificationIndex_mul_mean :
 
 /-- Rational form of the discriminant formula in terms of the mean:
 `δ(L/K) = f(L/K) · (e(L/K) - 1 + e(L/K) · m(L/K))`. -/
-theorem ratCast_discriminantExponent_eq_mul_mean :
+theorem natCast_discriminantExponent_eq_mul_mean :
     (discriminantExponent K L : ℚ) =
       inertiaDegree K L * (ramificationIndex K L - 1 + ramificationIndex K L * mean K L) := by
   have he : 1 ≤ ramificationIndex K L := ramificationIndex_pos (K := K) (L := L)
@@ -180,6 +184,7 @@ theorem ratCast_discriminantExponent_eq_mul_mean :
   ring
 
 /-- The mean of a separable extension of local fields is nonnegative. -/
+@[simp]
 theorem mean_nonneg : 0 ≤ mean K L := by
   rw [mean_def]
   positivity
@@ -224,10 +229,12 @@ theorem IsTamelyRamified.mean_eq_zero (h : IsTamelyRamified K L) : mean K L = 0 
   (mean_eq_zero_iff K L).2 h
 
 /-- An unramified extension has height `0`. -/
+@[simp]
 theorem IsUnramified.height_eq_zero [IsUnramified K L] : height K L = 0 :=
   (IsUnramified.isTamelyRamified K L).height_eq_zero
 
 /-- An unramified extension has mean `0`. -/
+@[simp]
 theorem IsUnramified.mean_eq_zero [IsUnramified K L] : mean K L = 0 :=
   (IsUnramified.isTamelyRamified K L).mean_eq_zero
 

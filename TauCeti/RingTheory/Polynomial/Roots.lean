@@ -247,16 +247,11 @@ theorem Separable.comp_C_mul_X_add_C (hf : f.Separable) {a : F} (ha : IsUnit a) 
 theorem separable_comp_C_mul_X_add_C_iff {a : F} (ha : IsUnit a) {b : F} :
     (f.comp (C a * X + C b)).Separable ↔ f.Separable := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.comp_C_mul_X_add_C ha b⟩
-  obtain ⟨u, rfl⟩ := ha
-  have hinv :
-      (f.comp (C (u : F) * X + C b)).comp (C (↑u⁻¹ : F) * X + C (-(↑u⁻¹ : F) * b)) = f := by
-    rw [comp_assoc]
-    suffices (C (u : F) * X + C b).comp (C (↑u⁻¹ : F) * X + C (-(↑u⁻¹ : F) * b)) = X by
-      rw [this, comp_X]
-    simp only [add_comp, mul_comp, C_comp, X_comp]
-    rw [mul_add, ← mul_assoc, ← C_mul, Units.mul_inv, C_1, one_mul, ← C_mul, neg_mul, mul_neg,
-      ← mul_assoc, Units.mul_inv, one_mul, C_neg, add_assoc, neg_add_cancel, add_zero]
-  exact hinv ▸ h.comp_C_mul_X_add_C u⁻¹.isUnit _
+  cases ha.nonempty_invertible
+  have hinv := (algEquivCMulXAddC a b).symm_apply_apply f
+  rw [algEquivCMulXAddC_symm_eq, algEquivCMulXAddC_apply, algEquivCMulXAddC_apply,
+    ← comp_eq_aeval, ← comp_eq_aeval] at hinv
+  exact hinv ▸ h.comp_C_mul_X_add_C (isUnit_of_invertible (⅟a)) (-⅟a * b)
 
 /-- If every root of a nonzero polynomial `p` is some `θ i`, and the multiplicity of each `θ i`
 as a root of `p` is `m i`, then the roots of `p` are the `θ i` with `0 < m i`. -/

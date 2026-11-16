@@ -97,27 +97,16 @@ theorem coeff_comp_C_mul_X_add_C_eq_sum_Icc {R : Type*} [CommSemiring R] (p : R[
     {N : ℕ} (hN : p.natDegree ≤ N) (i : ℕ) :
     (p.comp (C a * X + C b)).coeff i =
       ∑ h ∈ Finset.Icc i N, (h.choose i : R) * p.coeff h * b ^ (h - i) * a ^ i := by
-  rw [comp_C_mul_X_add_C_eq_taylor_comp, comp_C_mul_X_coeff]
+  rw [coeff_comp_C_mul_X_add_C_eq_eval_hasseDeriv]
   rcases lt_or_ge N i with hi | hi
-  · rw [taylor_coeff, hasseDeriv_eq_zero_of_lt_natDegree p i (hN.trans_lt hi), eval_zero,
-      zero_mul, Finset.Icc_eq_empty (by omega), Finset.sum_empty]
-  · have hdeg : (hasseDeriv i p).natDegree < N - i + 1 :=
+  · rw [hasseDeriv_eq_zero_of_lt_natDegree p i (hN.trans_lt hi), eval_zero, zero_mul,
+      Finset.Icc_eq_empty (by omega), Finset.sum_empty]
+  · have hdeg : (hasseDeriv i p).natDegree < N + 1 - i :=
       (natDegree_hasseDeriv_le p i).trans_lt (by omega)
-    rw [taylor_coeff, eval_eq_sum_range' hdeg, Finset.sum_mul]
-    refine Finset.sum_bij (fun k _ ↦ k + i) ?_ ?_ ?_ ?_
-    · intro k hk
-      rw [Finset.mem_range] at hk
-      rw [Finset.mem_Icc]
-      omega
-    · intro k₁ _ k₂ _ h
-      omega
-    · intro h hh
-      rw [Finset.mem_Icc] at hh
-      refine ⟨h - i, ?_, by omega⟩
-      rw [Finset.mem_range]
-      omega
-    · intro k _
-      rw [hasseDeriv_coeff, Nat.add_sub_cancel]
+    rw [eval_eq_sum_range' hdeg, Finset.sum_mul, ← Finset.Ico_add_one_right_eq_Icc,
+      Finset.sum_Ico_eq_sum_range]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [hasseDeriv_coeff, add_comm i k, Nat.add_sub_cancel]
 
 /-- The subleading coefficient of the Taylor expansion `p(X + r)` is that of `p` plus
 `p.natDegree * r * p.leadingCoeff`. -/

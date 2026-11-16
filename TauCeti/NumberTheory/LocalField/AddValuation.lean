@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
-public import TauCeti.RingTheory.Valuation.AddValuation
 public import TauCeti.RingTheory.Valuation.ToAdditive
 
 /-!
@@ -37,15 +36,22 @@ This file provides those three presentations and the bridges between them,
 * `TauCeti.addValInt_of_ne_zero`, `TauCeti.addValInt_eq_dite`, `TauCeti.addValInt_mul`,
   `TauCeti.min_addValInt_le_addValInt_add`, `TauCeti.addValInt_add_eq_min_of_ne`: arithmetic and
   ultrametric laws for `addValInt`.
-* `TauCeti.mem_integer_iff_addValInt_nonneg`, `TauCeti.addVal_eq_natCast_toNat_addValInt`,
-  `TauCeti.addValInt_of_addVal_eq_natCast`: comparison of `addValInt` with `𝒪[M]` and
-  `IsDiscreteValuationRing.addVal 𝒪[M]`.
+* `TauCeti.mem_integer_iff_addValInt_nonneg`,
+  `TauCeti.mem_integer_iff_normalizedIntAddValuation_nonneg`,
+  `TauCeti.mem_integer_iff_normalizedAddValuation_nonneg`,
+  `TauCeti.mem_maximalIdeal_iff_normalizedIntAddValuation_pos`, and
+  `TauCeti.mem_maximalIdeal_iff_normalizedAddValuation_pos`: characterizations of `𝒪[M]` and `𝓂[M]`.
+* `TauCeti.addVal_eq_natCast_toNat_addValInt`, `TauCeti.addValInt_of_addVal_eq_natCast`,
+  `TauCeti.normalizedIntAddValuation_coe_integer`, and
+  `TauCeti.normalizedAddValuation_coe_integer`: comparison with
+  `IsDiscreteValuationRing.addVal 𝒪[M]` via `ENat.map`.
 * `TauCeti.addValInt_algebraMap`, `TauCeti.normalizedIntAddValuation_algebraMap`,
   `TauCeti.normalizedAddValuation_algebraMap`: scaling by `ramificationIndex K L` in a compatible
   extension `L/K`.
-* `TauCeti.normalizedAddValuation_of_ne_zero` and `TauCeti.eq_normalizedAddValuation`:
-  `normalizedAddValuation M` is the unique `AddValuation M (WithTop ℝ)` agreeing with `addValInt M`
-  away from zero.
+* `TauCeti.normalizedIntAddValuation_of_ne_zero`, `TauCeti.eq_normalizedIntAddValuation`,
+  `TauCeti.normalizedAddValuation_of_ne_zero`, and `TauCeti.eq_normalizedAddValuation`:
+  uniqueness of `normalizedIntAddValuation M` and `normalizedAddValuation M` from agreement with
+  `addValInt M` away from zero.
 
 ## References
 
@@ -55,7 +61,7 @@ This file provides those three presentations and the bridges between them,
 public section
 noncomputable section
 
-open ValuativeRel IsNonarchimedeanLocalField
+open ValuativeRel IsNonarchimedeanLocalField IsLocalRing
 open scoped WithZero
 
 namespace TauCeti
@@ -77,12 +83,11 @@ theorem addValInt_def (x : M) :
 /-- The normalized additive valuation of a nonarchimedean local field `M` with values in
 `WithTop ℤ`, sending `0` to `⊤` and a uniformizer to `1`. -/
 def normalizedIntAddValuation : AddValuation M (WithTop ℤ) :=
-  ((valuation M).map (valueGroupWithZeroIsoInt M : ValueGroupWithZero M →*₀o ℤᵐ⁰)).addVal
+  (intValuation M).addVal
 
 /-- The defining formula of `normalizedIntAddValuation`. -/
 theorem normalizedIntAddValuation_def :
-    normalizedIntAddValuation M =
-      ((valuation M).map (valueGroupWithZeroIsoInt M : ValueGroupWithZero M →*₀o ℤᵐ⁰)).addVal :=
+    normalizedIntAddValuation M = (intValuation M).addVal :=
   (rfl)
 
 /-- The normalized real-valued additive valuation of a nonarchimedean local field `M`, sending `0`
@@ -90,27 +95,23 @@ to `⊤` and a nonzero `x` to `(addValInt M x : ℝ)`. This is the valuation con
 `Polynomial.newtonPolygon`. -/
 def normalizedAddValuation : AddValuation M (WithTop ℝ) :=
   (normalizedIntAddValuation M).map
-    { (Int.castAddHom ℝ).withTopMap with
-      monotone' := WithTop.monotone_map_iff.mpr fun _ _ h ↦ Int.cast_le.mpr h }
+    (OrderAddMonoidHom.mk (Int.castAddHom ℝ).withTopMap
+      (WithTop.monotone_map_iff.mpr (by
+        rw [Int.coe_castAddHom]
+        exact fun _ _ h ↦ Int.cast_le.mpr h)))
     rfl
 
 /-- The defining formula of `normalizedAddValuation`. -/
 theorem normalizedAddValuation_def :
     normalizedAddValuation M =
       (normalizedIntAddValuation M).map
-        { (Int.castAddHom ℝ).withTopMap with
-          monotone' := WithTop.monotone_map_iff.mpr fun _ _ h ↦ Int.cast_le.mpr h }
+        (OrderAddMonoidHom.mk (Int.castAddHom ℝ).withTopMap
+          (WithTop.monotone_map_iff.mpr (by
+            rw [Int.coe_castAddHom]
+            exact fun _ _ h ↦ Int.cast_le.mpr h)))
         rfl := (rfl)
 
-private def intVal : Valuation M ℤᵐ⁰ :=
-  (valuation M).map (valueGroupWithZeroIsoInt M : ValueGroupWithZero M →*₀o ℤᵐ⁰)
-
 variable {M}
-
-private theorem intVal_surjective : Function.Surjective (intVal M) := by
-  intro z
-  obtain ⟨x, hx⟩ := ValuativeRel.valuation_surjective ((valueGroupWithZeroIsoInt M).symm z)
-  exact ⟨x, by simp [intVal, hx]⟩
 
 /-- At a nonzero element, `addValInt` decodes `normalizedValuation`. -/
 theorem addValInt_of_ne_zero {x : M} (hx : x ≠ 0) :
@@ -120,11 +121,11 @@ theorem addValInt_of_ne_zero {x : M} (hx : x ≠ 0) :
     ← WithZero.exp_eq_coe_ofAdd] at h
   rw [addValInt, h, WithZero.log_exp]
 
-private theorem addValInt_eq_ord (x : M) : addValInt M x = Valuation.ord (intVal M) x := by
+/-- `addValInt M` agrees on all of `M` with `Valuation.ord (intValuation M)`. -/
+theorem addValInt_eq_ord (x : M) : addValInt M x = Valuation.ord (intValuation M) x := by
   rcases eq_or_ne x 0 with rfl | hx
   · simp [addValInt]
-  · rw [addValInt_of_ne_zero hx, toAdd_normalizedValuation_eq_neg_log]
-    simp [Valuation.ord_def, intVal]
+  · rw [addValInt_of_ne_zero hx, toAdd_normalizedValuation_eq_ord, Units.val_mk0]
 
 /-- On `Mˣ`, `addValInt` is `Multiplicative.toAdd` of `normalizedValuation`. -/
 @[simp]
@@ -159,14 +160,14 @@ theorem addValInt_neg (x : M) : addValInt M (-x) = addValInt M x := by
 theorem addValInt_mul {x y : M} (hx : x ≠ 0) (hy : y ≠ 0) :
     addValInt M (x * y) = addValInt M x + addValInt M y := by
   rw [addValInt_eq_ord, addValInt_eq_ord, addValInt_eq_ord]
-  exact Valuation.ord_mul (intVal M) ((intVal M).ne_zero_iff.mpr hx)
-    ((intVal M).ne_zero_iff.mpr hy)
+  exact Valuation.ord_mul (intValuation M) ((intValuation M).ne_zero_iff.mpr hx)
+    ((intValuation M).ne_zero_iff.mpr hy)
 
 /-- On finite products of nonzero elements, `addValInt` equals the sum of valuations. -/
 theorem addValInt_prod {ι : Type*} (s : Finset ι) {f : ι → M} (hf : ∀ i ∈ s, f i ≠ 0) :
     addValInt M (∏ i ∈ s, f i) = ∑ i ∈ s, addValInt M (f i) := by
   simp_rw [addValInt_eq_ord]
-  exact Valuation.ord_prod (intVal M) s fun i hi ↦ (intVal M).ne_zero_iff.mpr (hf i hi)
+  exact Valuation.ord_prod (intValuation M) s fun i hi ↦ (intValuation M).ne_zero_iff.mpr (hf i hi)
 
 /-- Inversion negates `addValInt` (including at `0`, where both sides vanish). -/
 @[simp]
@@ -176,7 +177,8 @@ theorem addValInt_inv (x : M) : addValInt M x⁻¹ = -addValInt M x := by
 /-- On nonzero elements, `addValInt` converts division to subtraction. -/
 theorem addValInt_div {x y : M} (hx : x ≠ 0) (hy : y ≠ 0) :
     addValInt M (x / y) = addValInt M x - addValInt M y := by
-  rw [addValInt_eq_ord, addValInt_eq_ord, addValInt_eq_ord, Valuation.ord_div (intVal M) hx hy]
+  rw [addValInt_eq_ord, addValInt_eq_ord, addValInt_eq_ord,
+    Valuation.ord_div (intValuation M) hx hy]
 
 /-- Natural-number powers multiply `addValInt` by the exponent. -/
 @[simp]
@@ -191,30 +193,29 @@ theorem addValInt_zpow (x : M) (n : ℤ) : addValInt M (x ^ n) = n * addValInt M
 /-- Every integer is the normalized additive valuation of an element of `M`. -/
 theorem addValInt_surjective : Function.Surjective (addValInt M) := by
   intro n
-  obtain ⟨x, hx⟩ := Valuation.ord_surjective (intVal M) intVal_surjective n
+  obtain ⟨x, hx⟩ := Valuation.ord_surjective (intValuation M) intValuation_surjective n
   exact ⟨x, (addValInt_eq_ord x).trans hx⟩
 
 /-- The ultrametric inequality for `addValInt` when the sum is nonzero. -/
 theorem min_addValInt_le_addValInt_add {x y : M} (hxy : x + y ≠ 0) :
     min (addValInt M x) (addValInt M y) ≤ addValInt M (x + y) := by
   simp_rw [addValInt_eq_ord]
-  exact Valuation.min_ord_le_ord_add (intVal M) ((intVal M).ne_zero_iff.mpr hxy)
+  exact Valuation.min_ord_le_ord_add (intValuation M) ((intValuation M).ne_zero_iff.mpr hxy)
 
 /-- Strict ultrametric equality for `addValInt` on nonzero elements of distinct valuation. -/
 theorem addValInt_add_eq_min_of_ne {x y : M} (hx : x ≠ 0) (hy : y ≠ 0)
     (hne : addValInt M x ≠ addValInt M y) :
     addValInt M (x + y) = min (addValInt M x) (addValInt M y) := by
   simp_rw [addValInt_eq_ord] at hne ⊢
-  exact Valuation.ord_add_eq_min_of_ord_ne (intVal M)
-    ((intVal M).ne_zero_iff.mpr hx) ((intVal M).ne_zero_iff.mpr hy) hne
+  exact Valuation.ord_add_eq_min_of_ord_ne (intValuation M)
+    ((intValuation M).ne_zero_iff.mpr hx) ((intValuation M).ne_zero_iff.mpr hy) hne
 
 /-- An element of `M` lies in the ring of integers `𝒪[M]` if and only if its integer normalized
 valuation `addValInt M x` is nonnegative; this holds at `x = 0` as well as away from zero. -/
 theorem mem_integer_iff_addValInt_nonneg (x : M) : x ∈ 𝒪[M] ↔ 0 ≤ addValInt M x := by
   rcases eq_or_ne x 0 with rfl | hx
   · simp
-  · rw [addValInt_of_ne_zero hx, ← mem_integer_iff_toAdd_normalizedValuation_nonneg]
-    rfl
+  · rw [addValInt_of_ne_zero hx, ← mem_integer_iff_toAdd_normalizedValuation_nonneg, Units.val_mk0]
 
 /-- An irreducible element of `𝒪[M]` (a uniformizer of `M`) has `addValInt` equal to `1`. -/
 @[simp]
@@ -263,32 +264,75 @@ theorem addValInt_natCast (n : ℕ) (hn : (n : M) ≠ 0) :
     addValInt M (n : M) = natCastValuation M n hn := by
   rw [addValInt_of_ne_zero hn, toAdd_normalizedValuation_natCast]
 
-/-- `normalizedIntAddValuation M` vanishes (takes value `⊤`) only at `0`. -/
-theorem normalizedIntAddValuation_eq_top_iff {x : M} :
-    normalizedIntAddValuation M x = ⊤ ↔ x = 0 := by
-  simp [normalizedIntAddValuation]
-
 /-- Away from zero, `normalizedIntAddValuation M x` is `(addValInt M x : WithTop ℤ)`. -/
 theorem normalizedIntAddValuation_of_ne_zero {x : M} (hx : x ≠ 0) :
     normalizedIntAddValuation M x = (addValInt M x : WithTop ℤ) := by
-  have hv : intVal M x ≠ 0 := (intVal M).ne_zero_iff.mpr hx
+  have hv : intValuation M x ≠ 0 := (intValuation M).ne_zero_iff.mpr hx
   rw [normalizedIntAddValuation_def, Valuation.addVal_eq_coe, addValInt_eq_ord]
-  exact Valuation.valuation_eq_exp_neg_ord (intVal M) hv
+  exact Valuation.valuation_eq_exp_neg_ord (intValuation M) hv
 
 /-- `normalizedAddValuation M` is `normalizedIntAddValuation M` cast from `WithTop ℤ` to
 `WithTop ℝ`. -/
 theorem normalizedAddValuation_apply (x : M) :
-    normalizedAddValuation M x = (normalizedIntAddValuation M x).map ((↑) : ℤ → ℝ) := (rfl)
-
-/-- `normalizedAddValuation M` takes the value `⊤` if and only if `x = 0`. -/
-theorem normalizedAddValuation_eq_top_iff {x : M} :
-    normalizedAddValuation M x = ⊤ ↔ x = 0 := by
-  rw [normalizedAddValuation_apply, WithTop.map_eq_top_iff, normalizedIntAddValuation_eq_top_iff]
+    normalizedAddValuation M x = (normalizedIntAddValuation M x).map ((↑) : ℤ → ℝ) := by
+  refine (congrFun (congrArg DFunLike.coe (normalizedAddValuation_def M)) x).trans ?_
+  refine (AddValuation.map_apply _ _ (normalizedIntAddValuation M) x).trans ?_
+  refine (congrFun (OrderAddMonoidHom.coe_mk _ _) _).trans ?_
+  simp
 
 /-- Away from zero, `normalizedAddValuation M x` is `(addValInt M x : ℝ)`. -/
 theorem normalizedAddValuation_of_ne_zero {x : M} (hx : x ≠ 0) :
     normalizedAddValuation M x = ((addValInt M x : ℝ) : WithTop ℝ) := by
   rw [normalizedAddValuation_apply, normalizedIntAddValuation_of_ne_zero hx, WithTop.map_coe]
+
+/-- An element of `M` lies in `𝒪[M]` if and only if its `normalizedIntAddValuation` is
+nonnegative. -/
+theorem mem_integer_iff_normalizedIntAddValuation_nonneg (x : M) :
+    x ∈ 𝒪[M] ↔ 0 ≤ normalizedIntAddValuation M x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  · rw [mem_integer_iff_addValInt_nonneg, normalizedIntAddValuation_of_ne_zero hx,
+      ← WithTop.coe_zero, WithTop.coe_le_coe]
+
+/-- An element of `M` lies in `𝒪[M]` if and only if its `normalizedAddValuation` is nonnegative. -/
+theorem mem_integer_iff_normalizedAddValuation_nonneg (x : M) :
+    x ∈ 𝒪[M] ↔ 0 ≤ normalizedAddValuation M x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  · rw [mem_integer_iff_addValInt_nonneg, normalizedAddValuation_of_ne_zero hx,
+      ← WithTop.coe_zero, WithTop.coe_le_coe, Int.cast_nonneg_iff]
+
+/-- A unit of `𝒪[M]` has `normalizedIntAddValuation` equal to `0`. -/
+theorem normalizedIntAddValuation_eq_zero_of_isUnit_integer {u : 𝒪[M]} (hu : IsUnit u) :
+    normalizedIntAddValuation M (u : M) = 0 := by
+  have hu0 : (u : M) ≠ 0 := fun h ↦ hu.ne_zero (Subtype.ext h)
+  rw [normalizedIntAddValuation_of_ne_zero hu0, addValInt_eq_zero_of_isUnit_integer hu,
+    WithTop.coe_zero]
+
+/-- A unit in `𝒪[M]ˣ` coerced to `M` has `normalizedIntAddValuation` equal to `0`. -/
+@[simp]
+theorem normalizedIntAddValuation_coe_integer_units (u : 𝒪[M]ˣ) :
+    normalizedIntAddValuation M ((u : 𝒪[M]) : M) = 0 :=
+  normalizedIntAddValuation_eq_zero_of_isUnit_integer u.isUnit
+
+/-- A unit of `𝒪[M]` has `normalizedAddValuation` equal to `0`. -/
+theorem normalizedAddValuation_eq_zero_of_isUnit_integer {u : 𝒪[M]} (hu : IsUnit u) :
+    normalizedAddValuation M (u : M) = 0 := by
+  rw [normalizedAddValuation_apply, normalizedIntAddValuation_eq_zero_of_isUnit_integer hu]
+  simp
+
+/-- A unit in `𝒪[M]ˣ` coerced to `M` has `normalizedAddValuation` equal to `0`. -/
+@[simp]
+theorem normalizedAddValuation_coe_integer_units (u : 𝒪[M]ˣ) :
+    normalizedAddValuation M ((u : 𝒪[M]) : M) = 0 :=
+  normalizedAddValuation_eq_zero_of_isUnit_integer u.isUnit
+
+/-- A uniformizer of `M` has `normalizedIntAddValuation` equal to `1`. -/
+@[simp]
+theorem normalizedIntAddValuation_irreducible {π : 𝒪[M]} (hπ : Irreducible π) :
+    normalizedIntAddValuation M (π : M) = 1 := by
+  have hπ0 : (π : M) ≠ 0 := fun h ↦ hπ.ne_zero (Subtype.ext h)
+  rw [normalizedIntAddValuation_of_ne_zero hπ0, addValInt_irreducible hπ, WithTop.coe_one]
 
 /-- A uniformizer of `M` has `normalizedAddValuation` equal to `1`. -/
 @[simp]
@@ -297,6 +341,16 @@ theorem normalizedAddValuation_irreducible {π : 𝒪[M]} (hπ : Irreducible π)
   have hπ0 : (π : M) ≠ 0 := fun h ↦ hπ.ne_zero (Subtype.ext h)
   rw [normalizedAddValuation_of_ne_zero hπ0, addValInt_irreducible hπ, Int.cast_one,
     WithTop.coe_one]
+
+/-- `normalizedIntAddValuation M` is the unique `AddValuation M (WithTop ℤ)` agreeing with
+`addValInt M` on all nonzero elements of `M`. -/
+theorem eq_normalizedIntAddValuation {v : AddValuation M (WithTop ℤ)}
+    (hv : ∀ x : M, x ≠ 0 → v x = (addValInt M x : WithTop ℤ)) :
+    v = normalizedIntAddValuation M := by
+  ext x
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  · rw [hv x hx, normalizedIntAddValuation_of_ne_zero hx]
 
 /-- `normalizedAddValuation M` is the unique `AddValuation M (WithTop ℝ)` agreeing with
 `addValInt M` on all nonzero elements of `M`. -/
@@ -311,25 +365,49 @@ theorem eq_normalizedAddValuation {v : AddValuation M (WithTop ℝ)}
 /-- On `𝒪[M]`, `normalizedIntAddValuation M` agrees with `IsDiscreteValuationRing.addVal 𝒪[M]`. -/
 theorem normalizedIntAddValuation_coe_integer (a : 𝒪[M]) :
     normalizedIntAddValuation M (a : M) =
-      ENat.recTopCoe ⊤ (fun k : ℕ ↦ ((k : ℤ) : WithTop ℤ))
-        (IsDiscreteValuationRing.addVal 𝒪[M] a) := by
+      (IsDiscreteValuationRing.addVal 𝒪[M] a).map ((↑) : ℕ → ℤ) := by
   rcases eq_or_ne a 0 with rfl | ha
   · simp
   · have haM : (a : M) ≠ 0 := fun h ↦ ha (Subtype.ext h)
     have hnn : 0 ≤ addValInt M (a : M) := (mem_integer_iff_addValInt_nonneg (a : M)).mp a.2
     rw [normalizedIntAddValuation_of_ne_zero haM, addVal_eq_natCast_toNat_addValInt ha,
-      ENat.recTopCoe_natCast, Int.toNat_of_nonneg hnn]
+      ENat.map_natCast, Int.toNat_of_nonneg hnn]
 
 /-- On `𝒪[M]`, `normalizedAddValuation M` agrees with `IsDiscreteValuationRing.addVal 𝒪[M]`. -/
 theorem normalizedAddValuation_coe_integer (a : 𝒪[M]) :
     normalizedAddValuation M (a : M) =
-      ENat.recTopCoe ⊤ (fun k : ℕ ↦ ((k : ℝ) : WithTop ℝ))
-        (IsDiscreteValuationRing.addVal 𝒪[M] a) := by
+      (IsDiscreteValuationRing.addVal 𝒪[M] a).map ((↑) : ℕ → ℝ) := by
   rw [normalizedAddValuation_apply, normalizedIntAddValuation_coe_integer]
-  generalize IsDiscreteValuationRing.addVal 𝒪[M] a = n
-  induction n using ENat.recTopCoe with
-  | top => rfl
-  | coe k => simp
+  generalize IsDiscreteValuationRing.addVal 𝒪[M] a = v
+  induction v using ENat.recTopCoe with
+  | top => simp
+  | coe k => simp [ENat.map_natCast]
+
+/-- An element of `𝒪[M]` lies in `𝓂[M]` if and only if its `normalizedIntAddValuation` is strictly
+positive. -/
+theorem mem_maximalIdeal_iff_normalizedIntAddValuation_pos (x : 𝒪[M]) :
+    x ∈ 𝓂[M] ↔ 0 < normalizedIntAddValuation M (x : M) := by
+  have hunit : IsUnit x ↔ IsDiscreteValuationRing.addVal 𝒪[M] x = 0 := by
+    rw [isUnit_iff_dvd_one, ← IsDiscreteValuationRing.addVal_le_iff_dvd,
+      IsDiscreteValuationRing.addVal_one, nonpos_iff_eq_zero]
+  have hmono : StrictMono (ENat.map ((↑) : ℕ → ℤ)) :=
+    ENat.strictMono_map_iff.mpr fun _ _ h ↦ Int.ofNat_lt.mpr h
+  have h0 : (0 : WithTop ℤ) = ENat.map ((↑) : ℕ → ℤ) 0 := by simp
+  rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, hunit, ← ne_eq, ← pos_iff_ne_zero,
+    normalizedIntAddValuation_coe_integer, h0, hmono.lt_iff_lt]
+
+/-- An element of `𝒪[M]` lies in `𝓂[M]` if and only if its `normalizedAddValuation` is strictly
+positive. -/
+theorem mem_maximalIdeal_iff_normalizedAddValuation_pos (x : 𝒪[M]) :
+    x ∈ 𝓂[M] ↔ 0 < normalizedAddValuation M (x : M) := by
+  have hunit : IsUnit x ↔ IsDiscreteValuationRing.addVal 𝒪[M] x = 0 := by
+    rw [isUnit_iff_dvd_one, ← IsDiscreteValuationRing.addVal_le_iff_dvd,
+      IsDiscreteValuationRing.addVal_one, nonpos_iff_eq_zero]
+  have hmono : StrictMono (ENat.map ((↑) : ℕ → ℝ)) :=
+    ENat.strictMono_map_iff.mpr fun _ _ h ↦ Nat.cast_lt.mpr h
+  have h0 : (0 : WithTop ℝ) = ENat.map ((↑) : ℕ → ℝ) 0 := by simp
+  rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, hunit, ← ne_eq, ← pos_iff_ne_zero,
+    normalizedAddValuation_coe_integer, h0, hmono.lt_iff_lt]
 
 end SingleField
 
