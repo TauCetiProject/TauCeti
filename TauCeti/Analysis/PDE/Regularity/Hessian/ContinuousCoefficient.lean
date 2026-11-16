@@ -44,7 +44,7 @@ estimate with the coefficients frozen at `A = a(x)` bounds `‖D²u‖_{Lᵖ(B(x
 the bounds `β` and `γ` on `b` and `c` entering its constant.
 By compactness finitely many of the balls `B(x, rₓ)` cover `K`, and the `Lᵖ` norm on `K` is at
 most the sum of the `Lᵖ` norms on these balls
-(`MeasureTheory.eLpNorm_restrict_biUnion_finset_le`).
+(`MeasureTheory.lpNorm_restrict_le_sum_of_subset_biUnion`).
 
 ## References
 
@@ -213,18 +213,11 @@ theorem exists_lpNorm_iteratedGradient_le_of_sum_mul_inner_add_inner_add_mul_eq_
       γ * (2 * r x) ^ 2) / lam x) ^ 2 / r x ^ 2)
   refine ⟨∑ x ∈ t, C x, fun u f heq => ?_⟩
   -- Sum the ball estimates over the cover.
-  have hfin : ∀ x ∈ t, eLpNorm (Wkp.iteratedGradient 1 u) p
-      (volume.restrict (ball x (r x))) ≠ ⊤ := fun x hxt =>
-    ((Lp.memLp _).mono_measure (Measure.restrict_mono ((ball_subset_ball
-      (by linarith [hr x (htK x hxt)])).trans (hrΩ x (htK x hxt))) le_rfl)).eLpNorm_ne_top
   calc lpNorm (Wkp.iteratedGradient 1 u) p (volume.restrict K)
-      ≤ ∑ x ∈ t, lpNorm (Wkp.iteratedGradient 1 u) p (volume.restrict (ball x (r x))) := by
-        rw [← toReal_eLpNorm]
-        simp_rw [← toReal_eLpNorm]
-        rw [← ENNReal.toReal_sum hfin]
-        exact ENNReal.toReal_mono (ENNReal.sum_ne_top.2 hfin)
-          ((eLpNorm_mono_measure _ (Measure.restrict_mono hcover le_rfl)).trans
-            (eLpNorm_restrict_biUnion_finset_le _ hp.le t _))
+      ≤ ∑ x ∈ t, lpNorm (Wkp.iteratedGradient 1 u) p (volume.restrict (ball x (r x))) :=
+        lpNorm_restrict_le_sum_of_subset_biUnion hp.le hcover fun x hxt =>
+          (Lp.memLp _).mono_measure (Measure.restrict_mono ((ball_subset_ball
+            (by linarith [hr x (htK x hxt)])).trans (hrΩ x (htK x hxt))) le_rfl)
     _ ≤ ∑ x ∈ t, C x * (‖f‖ + ‖Wkp.value 2 u‖) := Finset.sum_le_sum fun x hxt =>
         hball (hlam x (htK x hxt)) (hA x (htK x hxt)) (hr x (htK x hxt)) (hrΩ x (htK x hxt)) ha
           (hosc x (htK x hxt)) hb hbβ hc hcγ u f heq
