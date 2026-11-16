@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Basic
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
-import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
 import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Comparison
 
 /-!
@@ -25,13 +24,12 @@ space is everything (`TauCeti.chainFiltration_eq_top`).
 
 The natural comparison map `TauCeti.singularToCubical` from simplicial to normalized cubical
 chains carries the singular chains of `X q` into the cubical chains of `X q`, so it is a morphism
-of filtered complexes (`TauCeti.singularToCubicalFiltrationMap`). On the piece of the filtration
-at `q` it is the comparison map of the space `X q`
-(`TauCeti.singularToCubicalFiltrationMap_app_comp_chainFiltrationIso_hom`), a
-quasi-isomorphism. By the comparison theorem for quasi-isomorphisms of filtrations
-(`CochainComplex.isIso_spectralSequenceMap_hom_f_of_quasiIso`), the induced morphism of spectral
-sequences (`TauCeti.singularToCubicalSpectralSequenceMap`) is an isomorphism on every object of
-every page, from the first page on
+of filtered complexes (`TauCeti.chainFiltrationMap`). On the piece of the filtration at `q` it is
+the comparison map of the space `X q`, a quasi-isomorphism
+(`TauCeti.quasiIso_chainFiltrationMap_app`). By the comparison theorem for quasi-isomorphisms of
+filtrations (`CochainComplex.isIso_spectralSequenceMap_hom_f_of_quasiIso`), the induced morphism
+of spectral sequences (`TauCeti.singularToCubicalSpectralSequenceMap`) is an isomorphism on every
+object of every page, from the first page on
 (`TauCeti.isIso_singularToCubicalSpectralSequenceMap_hom_f`). So statements about the pages of
 the spectral sequence of a filtered space on simplicial chains, such as the description of its
 first page or its vanishing regions, transfer to cubical chains through these isomorphisms. The
@@ -43,8 +41,6 @@ the Serre spectral sequence on cubical chains.
 
 * `TauCeti.cubicalFilteredSpaceSpectralSequence k hX`: the spectral sequence of the filtration of
   the normalized cubical chains of `Y` by those of the `X q`.
-* `TauCeti.singularToCubicalFiltrationMap k hX`: the morphism of filtrations given by the
-  comparison of simplicial and cubical chains.
 * `TauCeti.singularToCubicalSpectralSequenceMap k hX`: the induced morphism of spectral
   sequences.
 
@@ -99,135 +95,25 @@ abbrev cubicalFilteredSpaceSpectralSequence :=
 
 /-! ### The comparison with simplicial chains -/
 
-variable (Z : TopCat.{u}) in
-/-- The comparison map `TauCeti.singularToCubical` from the simplicial to the normalized cubical
-chains of a space `Z`, with both chain complexes reindexed as cochain complexes in nonpositive
-degrees along `n ↦ -n`, which is the form in which they carry the filtrations of a filtered
-space. -/
-def singularToCubicalExtend :
-    ((singularChains k).obj Z).extend ComplexShape.embeddingDownNat ⟶
-      ((normalizedCubicalChainComplex k).obj Z).extend ComplexShape.embeddingDownNat :=
-  extendMap ((singularToCubical k).app Z) _
-
-variable (Z : TopCat.{u}) in
-/-- The reindexed comparison map is the extension of the comparison map of `Z`. -/
-lemma singularToCubicalExtend_def :
-    singularToCubicalExtend k Z = extendMap ((singularToCubical k).app Z) _ :=
-  (rfl)
-
-variable (Z : TopCat.{u}) in
-/-- The reindexed comparison map is a quasi-isomorphism. -/
-instance quasiIso_singularToCubicalExtend : QuasiIso (singularToCubicalExtend k Z) :=
-  inferInstanceAs (QuasiIso (extendMap ((singularToCubical k).app Z) _))
-
-/-- The comparison map to cubical chains carries the singular chains of `X q` into the cubical
-chains of `X q`. -/
-@[reassoc]
-lemma chainFiltrationι_comp_singularToCubicalExtend (q : ℤ) :
-    chainFiltrationι (singularChains k) X q ≫ singularToCubicalExtend k Y =
-      singularToCubicalExtend k (TopPair.ofSubset (X q)).snd ≫
-        chainFiltrationι (normalizedCubicalChainComplex k) X q := by
-  rw [chainFiltrationι_def, chainFiltrationι_def, singularToCubicalExtend_def,
-    singularToCubicalExtend_def]
-  -- The ambient space of the pair `(Y, X q)` is `Y` only up to definitional unfolding, and the
-  -- singular chain map of the inclusion is the map of `singularChains k`, so the composites are
-  -- formed with `exact` rather than `rw`.
-  exact (extendMap_comp _ _ _).symm.trans <|
-    (congrArg (extendMap · _) ((singularToCubical k).naturality (TopPair.ofSubset (X q)).map)).trans
-      (extendMap_comp _ _ _)
-
-private lemma factors_cubicalChainFiltration (q : ℤ) :
-    (chainFiltration (normalizedCubicalChainComplex k) X q).Factors
-      ((chainFiltration (singularChains k) X q).arrow ≫ singularToCubicalExtend k Y) := by
-  have h : chainFiltrationι (normalizedCubicalChainComplex k) X q =
-      (chainFiltrationIso _ X q).inv ≫ (chainFiltration _ X q).arrow :=
-    ((Iso.inv_comp_eq _).2 (chainFiltrationIso_hom_comp_chainFiltrationι _ X q).symm).symm
-  rw [← chainFiltrationIso_hom_comp_chainFiltrationι, Category.assoc,
-    chainFiltrationι_comp_singularToCubicalExtend, h]
-  exact Subobject.factors_of_factors_right _ <|
-    Subobject.factors_of_factors_right _ (Subobject.factors_comp_arrow _)
-
-/-- **The comparison of the simplicial and cubical filtrations of a filtered space.** The natural
-comparison map `TauCeti.singularToCubical` of the chains of `Y` carries the singular chains of
-each `X q` into the cubical chains of `X q`, so it is a morphism from the filtration of the
-singular chains of `Y` by those of the `X q` to the filtration of the cubical chains of `Y` by
-those of the `X q`. -/
-def singularToCubicalFiltrationMap :
-    CochainComplex.filtrationFunctor _
-        (monotone_chainFiltration (singularChains k) hX) ⟶
-      CochainComplex.filtrationFunctor _
-        (monotone_chainFiltration (normalizedCubicalChainComplex k) hX) :=
-  CochainComplex.filtrationFunctorMap _ _ _ (factors_cubicalChainFiltration k)
-
-/-- The components of `TauCeti.singularToCubicalFiltrationMap` are the restrictions of the
-comparison map of the chains of `Y`. -/
-@[reassoc (attr := simp)]
-lemma singularToCubicalFiltrationMap_app_comp (a : EInt) :
-    (singularToCubicalFiltrationMap k hX).app a ≫
-        CochainComplex.filtrationFunctorArrow _
-          (monotone_chainFiltration (normalizedCubicalChainComplex k) hX) a =
-      CochainComplex.filtrationFunctorArrow _
-          (monotone_chainFiltration (singularChains k) hX) a ≫
-        singularToCubicalExtend k Y :=
-  (CochainComplex.filtrationFunctorMap_app_comp _ _ a).trans (Category.assoc _ _ _).symm
-
-/-- On the stage `F_q`, identified with the chains of `X q`, the comparison of the simplicial and
-cubical filtrations is the comparison map of the space `X q`. -/
-@[reassoc]
-lemma singularToCubicalFiltrationMap_app_comp_chainFiltrationIso_hom (q : ℤ) :
-    (singularToCubicalFiltrationMap k hX).app q ≫
-        (CochainComplex.filtrationFunctorObjIso _
-            (monotone_chainFiltration (normalizedCubicalChainComplex k) hX) q).hom ≫
-          Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ q).le ≫
-            (chainFiltrationIso (normalizedCubicalChainComplex k) X q).hom =
-      (CochainComplex.filtrationFunctorObjIso _
-          (monotone_chainFiltration (singularChains k) hX) q).hom ≫
-        Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ q).le ≫
-          (chainFiltrationIso (singularChains k) X q).hom ≫
-            singularToCubicalExtend k (TopPair.ofSubset (X q)).snd := by
-  refine (cancel_mono (chainFiltrationι (normalizedCubicalChainComplex k) X q)).1 ?_
-  simp only [Category.assoc, chainFiltrationIso_hom_comp_chainFiltrationι,
-    ← chainFiltrationι_comp_singularToCubicalExtend,
-    chainFiltrationIso_hom_comp_chainFiltrationι_assoc, Subobject.ofLE_arrow,
-    Subobject.ofLE_arrow_assoc]
-  exact singularToCubicalFiltrationMap_app_comp k hX (q : EInt)
-
-/-- On every stage of the filtrations, the comparison of the simplicial and cubical filtrations
-is a quasi-isomorphism. -/
-instance quasiIso_singularToCubicalFiltrationMap_app (q : ℤ) :
-    QuasiIso ((singularToCubicalFiltrationMap k hX).app q) := by
-  -- Both stages at `q` are identified with the chains of `X q`, through isomorphisms, and on
-  -- these the comparison is the quasi-isomorphism of the space `X q`.
-  have : QuasiIso ((singularToCubicalFiltrationMap k hX).app q ≫
-      (CochainComplex.filtrationFunctorObjIso _
-          (monotone_chainFiltration (normalizedCubicalChainComplex k) hX) q).hom ≫
-        (Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_coe _ q)).hom ≫
-          (chainFiltrationIso (normalizedCubicalChainComplex k) X q).hom) := by
-    rw [Subobject.isoOfEq_hom,
-      singularToCubicalFiltrationMap_app_comp_chainFiltrationIso_hom,
-      ← Subobject.isoOfEq_hom _ _ (CochainComplex.filtrationEInt_coe _ q)]
-    infer_instance
-  exact quasiIso_of_comp_right _
-    ((CochainComplex.filtrationFunctorObjIso _
-        (monotone_chainFiltration (normalizedCubicalChainComplex k) hX) q).hom ≫
-      (Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_coe _ q)).hom ≫
-        (chainFiltrationIso (normalizedCubicalChainComplex k) X q).hom)
-
 /-- **The comparison of the simplicial and cubical spectral sequences of a filtered space**:
-the morphism of spectral sequences induced by the comparison of the simplicial and cubical
-filtrations (`TauCeti.singularToCubicalFiltrationMap`). -/
+the morphism of spectral sequences induced by the morphism of filtrations
+(`TauCeti.chainFiltrationMap`) given by the natural comparison map `TauCeti.singularToCubical`
+from simplicial to normalized cubical chains, which carries the singular chains of each `X q`
+into the cubical chains of `X q`. -/
 def singularToCubicalSpectralSequenceMap :
     filteredSpaceSpectralSequence (ModuleCat.of k k) hX ⟶
       cubicalFilteredSpaceSpectralSequence k hX :=
   Abelian.SpectralObject.spectralSequenceMap Abelian.SpectralObject.coreE₂Cohomological
-    (CochainComplex.spectralObjectMap (singularToCubicalFiltrationMap k hX))
+    (CochainComplex.spectralObjectMap
+      (chainFiltrationMap (singularToCubical k) hX hX (𝟙 Y) fun _ _ hx ↦ hx))
 
 /-- `TauCeti.singularToCubicalSpectralSequenceMap` is the morphism of spectral sequences of the
-morphism of spectral objects of `TauCeti.singularToCubicalFiltrationMap`. -/
+morphism of spectral objects of `TauCeti.chainFiltrationMap` for `TauCeti.singularToCubical`. -/
 lemma singularToCubicalSpectralSequenceMap_def :
     singularToCubicalSpectralSequenceMap k hX =
       Abelian.SpectralObject.spectralSequenceMap Abelian.SpectralObject.coreE₂Cohomological
-        (CochainComplex.spectralObjectMap (singularToCubicalFiltrationMap k hX)) :=
+        (CochainComplex.spectralObjectMap
+          (chainFiltrationMap (singularToCubical k) hX hX (𝟙 Y) fun _ _ hx ↦ hx)) :=
   (rfl)
 
 /-- **Cubical and simplicial chains give the same spectral sequence of a filtered space.** The
@@ -236,7 +122,7 @@ on every object of every page `r ≥ 2`, that is, from the first page on. -/
 theorem isIso_singularToCubicalSpectralSequenceMap_hom_f (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) :
     IsIso (((singularToCubicalSpectralSequenceMap k hX).hom r hr).f pq) :=
   CochainComplex.isIso_spectralSequenceMap_hom_f_of_quasiIso _
-    (quasiIso_singularToCubicalFiltrationMap_app k hX) r hr pq
+    (quasiIso_chainFiltrationMap_app (singularToCubical k) hX) r hr pq
 
 /-- The isomorphism between the objects of the simplicial and cubical spectral sequences of a
 filtered space, on every page `r ≥ 2`, given by their comparison. -/
