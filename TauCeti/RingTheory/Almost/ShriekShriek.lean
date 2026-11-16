@@ -114,8 +114,11 @@ noncomputable def mulBilin : S.Shriek R →ₗ[V] S.Shriek R →ₗ[V] S.Shriek 
 
 theorem mulBilin_tmul (s t : S.tilde) (a b : R) :
     mulBilin S R (equiv S R (s ⊗ₜ a)) (equiv S R (t ⊗ₜ b)) =
-      equiv S R ((S.tildeMul s • t) ⊗ₜ (a * b)) :=
-  (rfl)
+      equiv S R ((S.tildeMul s • t) ⊗ₜ (a * b)) := by
+  -- `equiv` is the identity of the type synonym `R_! = m~ ⊗[V] R`.
+  change TensorProduct.map₂ (LinearMap.lsmul V S.tilde ∘ₗ S.tildeMul) (LinearMap.mul V R)
+    (s ⊗ₜ a) (t ⊗ₜ b) = (S.tildeMul s • t) ⊗ₜ[V] (a * b)
+  simp [TensorProduct.map₂_apply_tmul]
 
 noncomputable instance : Mul (S.Shriek R) where
   mul x y := mulBilin S R x y
@@ -210,8 +213,10 @@ noncomputable def map (f : R →ₐ[V] R') : S.Shriek R →ₙₐ[V] S.Shriek R'
 
 @[simp]
 theorem map_tmul (f : R →ₐ[V] R') (t : S.tilde) (r : R) :
-    map S f (equiv S R (t ⊗ₜ r)) = equiv S R' (t ⊗ₜ f r) :=
-  (rfl)
+    map S f (equiv S R (t ⊗ₜ r)) = equiv S R' (t ⊗ₜ f r) := by
+  -- `equiv` is the identity of the type synonym `R_! = m~ ⊗[V] R`.
+  change f.toLinearMap.lTensor S.tilde (t ⊗ₜ r) = t ⊗ₜ[V] f r
+  simp [LinearMap.lTensor_tmul]
 
 variable (R) in
 /-- The action map `R_! = m~ ⊗[V] R → R`, `t ⊗ r ↦ t • r`, as a non-unital algebra map. -/
@@ -418,8 +423,10 @@ noncomputable def lift (hf : ∀ t, f (equiv S R (t ⊗ₜ 1)) = algebraMap V A 
 theorem lift_mk (hf : ∀ t, f (equiv S R (t ⊗ₜ 1)) = algebraMap V A (S.tildeMul t))
     (x : Unitization V (S.Shriek R)) :
     lift f hf (mk S R x) = algebraMap V A x.fst + f x.snd := by
-  rw [← NonUnitalAlgHom.toAlgHom_apply, ← Unitization.lift_apply]
-  exact DFunLike.congr_fun (Ideal.Quotient.liftₐ_comp _ _ (unitization_lift_eq_zero f hf)) x
+  -- `Ideal.Quotient.liftₐ_comp`, stated for the type synonym `R_!!` of the quotient.
+  have h : (lift f hf).comp (mk S R) = Unitization.lift f :=
+    Ideal.Quotient.liftₐ_comp _ _ (unitization_lift_eq_zero f hf)
+  simpa using DFunLike.congr_fun h x
 
 @[simp]
 theorem lift_inr (hf : ∀ t, f (equiv S R (t ⊗ₜ 1)) = algebraMap V A (S.tildeMul t))
