@@ -11,7 +11,6 @@ public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.RepresentationTheory.FiniteIndex
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Shapiro
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
-import TauCeti.RepresentationTheory.Homological.TateCohomology.Linear
 
 /-!
 # Corestriction in group cohomology
@@ -66,12 +65,12 @@ restrictions.
   when `[G : S]` acts bijectively on `A` or is prime to an annihilator (or `Nat.card A`).
 * `groupCohomology.natCard_nsmul_eq_zero`: positive-degree cohomology of a group is killed by
   `Nat.card G`.
-* `groupCohomology.subsingleton_of_isUnit_natCard`: positive-degree cohomology of a finite group
-  vanishes when the order of the group is a unit of the coefficient ring.
-* `groupCohomology.subsingleton_of_bijective_nsmul`: positive-degree cohomology of a finite group
-  vanishes when multiplication by the order of the group is bijective on the coefficients.
+* `groupCohomology.subsingleton_of_isUnit_natCard`: positive-degree cohomology of a group
+  vanishes when `Nat.card G` is a unit of the coefficient ring.
+* `groupCohomology.subsingleton_of_bijective_nsmul`: positive-degree cohomology of a group
+  vanishes when multiplication by `Nat.card G` is bijective on the coefficients.
 * `groupCohomology.isIso_δ_of_bijective_nsmul`: the connecting homomorphisms of a short exact
-  sequence are isomorphisms in positive degree when multiplication by the order of the group is
+  sequence are isomorphisms in positive degree when multiplication by `Nat.card G` is
   bijective on the middle term.
 * `groupCohomology.zmultiples_map_subtype_eq_top`: a class of full `p`-order restricts to a
   generator on a `p`-subgroup whose cohomology has the order of the subgroup.
@@ -476,11 +475,10 @@ end TauCeti.groupCohomology
 
 namespace groupCohomology
 
-variable {k G : Type u} [CommRing k] [Group G] [Finite G]
+variable {k G : Type u} [CommRing k] [Group G]
 
 open Limits
 
-omit [Finite G] in
 /-- Positive-degree cohomology of a group is killed by `Nat.card G` (Milne II 1.31; when `G` is
 infinite, `Nat.card G = 0` and the statement is trivial). -/
 theorem natCard_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A (n + 1)) :
@@ -490,28 +488,19 @@ theorem natCard_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A (n 
     (ModuleCat.subsingleton_of_isZero
       (isZero_groupCohomology_succ_of_subsingleton (res (⊥ : Subgroup G).subtype A) n)).allEq _ _
 
-/-- Positive-degree cohomology of a finite group vanishes when multiplication by the order of the
-group is bijective on the coefficients, for instance for a representation on a `ℚ`-vector space
-over any coefficient ring. -/
+/-- Positive-degree cohomology of a group vanishes when multiplication by `Nat.card G` is
+bijective on the coefficients, for instance for a finite group acting on a `ℚ`-vector space
+over any coefficient ring (when `G` is infinite, `Nat.card G = 0`, so bijectivity forces the
+coefficients to be subsingleton). -/
 theorem subsingleton_of_bijective_nsmul (A : Rep k G)
     (h : Function.Bijective fun a : A ↦ Nat.card G • a) (n : ℕ) :
-    Subsingleton (groupCohomology A (n + 1)) := by
-  have := Fintype.ofFinite G
-  -- Multiplication by `#G` is injective on Tate cohomology, which is group cohomology in
-  -- positive degree.
-  have hinj : Function.Injective fun x : tateCohomology A (n + 1 : ℕ) ↦ Nat.card G • x := by
-    simpa only [Nat.cast_smul_eq_nsmul] using
-      (TauCeti.TateCohomology.smul_bijective (Nat.card G : k) A
-        (by simpa only [Nat.cast_smul_eq_nsmul] using h) _).1
-  let e : tateCohomology A (n + 1 : ℕ) ≅ groupCohomology A (n + 1) :=
-    (TateCohomology.isoGroupCohomology (n + 1)).app A
-  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
-  have hx : e.inv.hom x = 0 :=
-    hinj <| by beta_reduce; rw [← map_nsmul, natCard_nsmul_eq_zero, map_zero, smul_zero]
-  rw [← e.inv_hom_id_apply x, hx, map_zero]
+    Subsingleton (groupCohomology A (n + 1)) :=
+  subsingleton_of_forall_eq 0 fun x ↦
+    (TauCeti.groupCohomology.nsmul_bijective h (n + 1)).1 (by simp [natCard_nsmul_eq_zero])
 
-/-- Positive-degree cohomology of a finite group vanishes when the order of the group is a unit
-of the coefficient ring. -/
+/-- Positive-degree cohomology of a group vanishes when `Nat.card G` is a unit of the
+coefficient ring (when `G` is infinite, `Nat.card G = 0`, so `IsUnit (0 : k)` forces `k` and
+hence the cohomology to be subsingleton). -/
 theorem subsingleton_of_isUnit_natCard (A : Rep k G) (h : IsUnit (Nat.card G : k)) (n : ℕ) :
     Subsingleton (groupCohomology A (n + 1)) :=
   subsingleton_of_bijective_nsmul A (by
@@ -519,8 +508,9 @@ theorem subsingleton_of_isUnit_natCard (A : Rep k G) (h : IsUnit (Nat.card G : k
       (MulAction.bijective h.unit : Function.Bijective fun a : A ↦ h.unit • a)) n
 
 /-- The connecting homomorphism `Hⁿ⁺¹(G, X₃) ⟶ Hⁿ⁺²(G, X₁)` of a short exact sequence
-`0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations of a finite group is an isomorphism when
-multiplication by the order of the group is bijective on `X₂`. -/
+`0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations of a group is an isomorphism when multiplication by
+`Nat.card G` is bijective on `X₂` (when `G` is infinite, `Nat.card G = 0` forces `X₂` to be
+subsingleton). -/
 theorem isIso_δ_of_bijective_nsmul {X : ShortComplex (Rep k G)} (hX : X.ShortExact)
     (h : Function.Bijective fun a : X.X₂ ↦ Nat.card G • a) (n : ℕ) :
     IsIso (δ hX (n + 1) (n + 2) rfl) :=
@@ -532,7 +522,7 @@ theorem isIso_δ_of_bijective_nsmul {X : ShortComplex (Rep k G)} (hX : X.ShortEx
 have order divisible by the `p`-part of `#G`, and let `S` be a `p`-subgroup of `G` with
 `#Hⁿ(S, A) = #S`. Then the restriction of `u` generates `Hⁿ(S, A)`: corestriction carries it to
 `[G : S] • u`, whose order is divisible by `#S`. -/
-theorem zmultiples_map_subtype_eq_top {p : ℕ} [Fact p.Prime] {A : Rep k G} {n : ℕ}
+theorem zmultiples_map_subtype_eq_top [Finite G] {p : ℕ} [Fact p.Prime] {A : Rep k G} {n : ℕ}
     {u : groupCohomology A n} (hu : p ^ padicValNat p (Nat.card G) ∣ addOrderOf u)
     {S : Subgroup G} (hS : IsPGroup p S)
     (hcard : Nat.card (groupCohomology (res S.subtype A) n) = Nat.card S) :

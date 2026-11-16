@@ -65,25 +65,16 @@ theorem eq_zero_of_pow_nsmul_eq_zero_of_map_sylow_eq_zero
     (h : map (P : Subgroup G).subtype (𝟙 (res (P : Subgroup G).subtype A)) n x = 0) :
     x = 0 :=
   eq_zero_of_nsmul_eq_zero_of_map_eq_zero (P : Subgroup G)
-    (((Nat.Prime.coprime_iff_not_dvd Fact.out).2 P.not_dvd_index).symm.pow_right j) hx h
+    (Nat.Prime.coprime_pow_of_not_dvd Fact.out P.not_dvd_index) hx h
 
 omit [Finite G] in
 /-- Restriction `Hⁿ(G, A) ⟶ Hⁿ(P, Res_P A)` to a Sylow `p`-subgroup `P` of finite index is
 injective in every degree `n` when `A` is `p`-primary torsion (`IsAddPGroup p A`). -/
 theorem map_sylow_injective_of_isAddPGroup
     (p : ℕ) [Fact p.Prime] (P : Sylow p G) [P.FiniteIndex] (hA : IsAddPGroup p A) :
-    Function.Injective (map (P : Subgroup G).subtype (𝟙 (res (P : Subgroup G).subtype A)) n) := by
-  have hcop : Nat.Coprime (P : Subgroup G).index p :=
-    ((Nat.Prime.coprime_iff_not_dvd Fact.out).2 P.not_dvd_index).symm
-  refine map_subtype_injective_of_bijective_nsmul (P : Subgroup G) ⟨?_, fun a ↦ ?_⟩ n
-  · refine (injective_iff_map_eq_zero (nsmulAddMonoidHom (P : Subgroup G).index : A →+ A)).2
-      fun a ha ↦ ?_
-    obtain ⟨j, hj⟩ := hA a
-    exact (nsmul_eq_zero_iff_of_coprime (hcop.pow_right j)).1 ⟨ha, hj⟩
-  · obtain ⟨j, hj⟩ := hA a
-    obtain ⟨m, hm⟩ := exists_nsmul_eq_self_of_coprime
-      ((hcop.pow_right j).of_dvd_right (addOrderOf_dvd_of_nsmul_eq_zero hj))
-    exact ⟨m • a, (smul_comm (P : Subgroup G).index m a).trans hm⟩
+    Function.Injective (map (P : Subgroup G).subtype (𝟙 (res (P : Subgroup G).subtype A)) n) :=
+  map_subtype_injective_of_bijective_nsmul (P : Subgroup G)
+    (hA.nsmulEquiv' P.not_dvd_index).bijective n
 
 /-- **Restriction to the Sylow subgroups is jointly injective** (Milne II 1.33): an element of
 `Hⁿ⁺¹(G, A)` whose restriction vanishes, for every prime `p` dividing the order of `G`, on some

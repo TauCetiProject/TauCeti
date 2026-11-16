@@ -29,15 +29,15 @@ splitting theorem and of Sylow complement detection:
 
 * If `N` has a local complement in `H`, then `[G : H]` kills the class of the quotient extension
   of `G` (`Subgroup.IsLocalComplement.index_nsmul_cohomologyClass_eq_zero`). Since `|N|` also kills
-  that class (`TauCeti.FactorSet.card_nsmul_cohomologyClass_eq_zero`), coprimality of `[G : H]` and
-  `|N|` forces the class to vanish
+  that class (`TauCeti.FactorSet.natCard_nsmul_cohomologyClass_eq_zero`), coprimality of `[G : H]`
+  and `|N|` forces the class to vanish
   (`Subgroup.IsLocalComplement.cohomologyClass_factorSet_quotientExtension_eq_zero`). More
   generally, restriction to the image of `H` is injective in every degree when `[G : H]` is prime
-  to `|N|` (`Subgroup.map_quotientGroupMk_injective_of_coprime_index`).
+  to `|N|` (`Subgroup.map_subtype_injective_of_coprime_index`).
 * If `N` is a `p`-subgroup (`IsPGroup p N`, not necessarily finite) and `P` is a Sylow
   `p`-subgroup of `G` of finite index, then the image of `P` in `G ⧸ N` is a Sylow `p`-subgroup of
   `G ⧸ N`, so restriction to it is injective in every degree
-  (`IsPGroup.map_quotientGroupMk_sylow_injective`) and the quotient-extension class of `G`
+  (`IsPGroup.map_sylow_injective`) and the quotient-extension class of `G`
   vanishes if and only if that of `P` does
   (`IsPGroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_sylow`).
 
@@ -61,11 +61,11 @@ cohomological proofs of Gaschütz's splitting theorem and of Sylow complement de
   criteria.
 * `Subgroup.IsLocalComplement.index_nsmul_cohomologyClass_eq_zero`: a local complement in `H`
   forces `[G : H]` to kill the class of the quotient extension.
-* `Subgroup.map_quotientGroupMk_injective_of_coprime_index`,
+* `Subgroup.map_subtype_injective_of_coprime_index`,
   `Subgroup.IsLocalComplement.cohomologyClass_factorSet_quotientExtension_eq_zero`, and
   `Subgroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index`: injectivity
   of restriction and vanishing of the extension class across an index prime to `|N|`.
-* `IsPGroup.map_quotientGroupMk_sylow_injective` and
+* `IsPGroup.map_sylow_injective` and
   `IsPGroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_sylow`: injectivity of
   restriction and detection of the extension class on a finite-index Sylow `p`-subgroup.
 
@@ -273,7 +273,7 @@ theorem IsLocalComplement.index_nsmul_cohomologyClass_eq_zero {K : Subgroup G}
 
 /-- When `[G : H]` is prime to `|N|`, restriction
 `Hⁿ(G ⧸ N, N) ⟶ Hⁿ(H.map (QuotientGroup.mk' N), N)` is injective in every degree `n`. -/
-theorem map_quotientGroupMk_injective_of_coprime_index
+theorem map_subtype_injective_of_coprime_index
     (hcop : Nat.Coprime H.index (Nat.card N)) (n : ℕ) :
     Function.Injective (groupCohomology.map (H.map (QuotientGroup.mk' N)).subtype
       (𝟙 (Rep.res (H.map (QuotientGroup.mk' N)).subtype
@@ -293,7 +293,7 @@ theorem IsLocalComplement.cohomologyClass_factorSet_quotientExtension_eq_zero {K
       N.quotientExtension_inducesAction).cohomologyClass = 0 :=
   (nsmul_eq_zero_iff_of_coprime hcop).1
     ⟨hK.index_nsmul_cohomologyClass_eq_zero σ hσ,
-      TauCeti.FactorSet.card_nsmul_cohomologyClass_eq_zero _⟩
+      TauCeti.FactorSet.natCard_nsmul_cohomologyClass_eq_zero _⟩
 
 /-- When `[G : H]` is prime to `|N|`, the class of the quotient extension of `G` by `N` vanishes
 if and only if the class of the quotient extension of `H` by `N.subgroupOf H` vanishes. That
@@ -310,7 +310,7 @@ theorem cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index
     (relIndex_sup_of_le_normalizer (le_normalizer_of_normal (H := N)) ▸
       relIndex_dvd_index_of_le le_sup_left)
     (H.relIndex_dvd_card N)
-  exact (map_eq_zero_iff _ (map_quotientGroupMk_injective_of_coprime_index hcop 2)).symm.trans
+  exact (map_eq_zero_iff _ (map_subtype_injective_of_coprime_index hcop 2)).symm.trans
     (map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff hNH σ hσ τ hτ)
 
 end Subgroup
@@ -328,7 +328,7 @@ attribute [local instance] Subgroup.quotientConjugationAction
 /-- For an abelian normal `p`-subgroup `N` of `G` (not necessarily finite) and a Sylow `p`-subgroup
 `P` of finite index, restriction `Hⁿ(G ⧸ N, N) ⟶ Hⁿ(P.map (QuotientGroup.mk' N), N)` is injective
 in every degree `n`. -/
-theorem map_quotientGroupMk_sylow_injective (hN : IsPGroup p N) (P : Sylow p G) [P.FiniteIndex]
+theorem map_sylow_injective (hN : IsPGroup p N) (P : Sylow p G) [P.FiniteIndex]
     (n : ℕ) :
     Function.Injective (groupCohomology.map ((P : Subgroup G).map (QuotientGroup.mk' N)).subtype
       (𝟙 (Rep.res ((P : Subgroup G).map (QuotientGroup.mk' N)).subtype
@@ -353,7 +353,7 @@ theorem cohomologyClass_factorSet_quotientExtension_eq_zero_iff_sylow
         N.quotientExtension_inducesAction).cohomologyClass = 0 ↔
       (TauCeti.GroupExtension.factorSet τ hτ
         (N.subgroupOf P).quotientExtension_inducesAction).cohomologyClass = 0 :=
-  (map_eq_zero_iff _ (hN.map_quotientGroupMk_sylow_injective P 2)).symm.trans
+  (map_eq_zero_iff _ (hN.map_sylow_injective P 2)).symm.trans
     (Subgroup.map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff
       (hN.le_sylow_of_normal P) σ hσ τ hτ)
 
@@ -375,8 +375,7 @@ example {G : Type} [Group G] {N K H : Subgroup G} [N.Normal] [IsMulCommutative N
     (hK.cohomologyClass_factorSet_quotientExtension_eq_zero hcop σ hσ)
 
 /-- Self-contained cohomological proof of Sylow complement detection for `G : Type` (valid even for
-infinite abelian normal `p`-subgroups `N`), combining
-`IsPGroup.map_quotientGroupMk_sylow_injective`,
+infinite abelian normal `p`-subgroups `N`), combining `IsPGroup.map_sylow_injective`,
 `Subgroup.exists_isLocalComplement_iff_map_subtype_cohomologyClass_eq_zero`, and
 `Subgroup.exists_complement_iff_cohomologyClass_eq_zero`. -/
 example {G : Type} [Group G] {p : ℕ} [Fact p.Prime] {N : Subgroup G} [N.Normal]
@@ -386,7 +385,7 @@ example {G : Type} [Group G] {p : ℕ} [Fact p.Prime] {N : Subgroup G} [N.Normal
   let σ := TauCeti.GroupExtension.normalizeSection N.quotientExtension.surjInvRightHom
   have hσ : σ 1 = 1 := TauCeti.GroupExtension.normalizeSection_one _
   exact (N.exists_complement_iff_cohomologyClass_eq_zero σ hσ).trans <|
-    (map_eq_zero_iff _ (hN.map_quotientGroupMk_sylow_injective P 2)).symm.trans
+    (map_eq_zero_iff _ (hN.map_sylow_injective P 2)).symm.trans
       (Subgroup.exists_isLocalComplement_iff_map_subtype_cohomologyClass_eq_zero
         (hN.le_sylow_of_normal P) σ hσ).symm
 

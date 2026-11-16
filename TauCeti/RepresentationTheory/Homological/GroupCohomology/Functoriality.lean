@@ -29,9 +29,8 @@ induced by its inclusions give the inverse.
 * `TauCeti.groupCohomology.mapCocycles₂_apply`: the value of a pulled-back `2`-cocycle.
 * `TauCeti.groupCohomology.map_id_add` and `TauCeti.groupCohomology.map_id_nsmul`: the map induced
   on cohomology is additive in the morphism of representations.
-* `groupCohomology.nsmul_eq_zero_of_forall_nsmul_eq_zero` and
-  `groupCohomology.natCard_coe_nsmul_eq_zero`: a natural number annihilating a
-  representation annihilates its cohomology in every degree; in particular `Nat.card A` does.
+* `groupCohomology.nsmul_eq_zero_of_forall_nsmul_eq_zero`: a natural number annihilating a
+  representation annihilates its cohomology in every degree.
 * `TauCeti.groupCohomology.nsmul_bijective`: bijective multiplication by a natural number on a
   representation induces bijective multiplication on its cohomology in every degree.
 * `CategoryTheory.Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv`: the cohomology of a
@@ -95,16 +94,20 @@ degree `n`. -/
 theorem nsmul_bijective {A : Rep k G} {m : ℕ}
     (hA : Function.Bijective fun a : A ↦ m • a) (n : ℕ) :
     Function.Bijective fun x : groupCohomology A n ↦ m • x := by
-  let e : A.V ≃ₗ[k] A.V := LinearEquiv.ofBijective (m • LinearMap.id) hA
+  let e : A.V ≃ₗ[k] A.V := LinearEquiv.ofBijective ((m : k) • LinearMap.id)
+    (by simpa only [LinearMap.coe_smul, LinearMap.id_coe, Pi.smul_def, id_eq,
+      Nat.cast_smul_eq_nsmul] using hA)
   let eA : A ≅ A := Rep.mkIso (.mk e fun g ↦ LinearMap.ext fun x ↦ by simp [e])
-  have heA : eA.hom = m • 𝟙 A :=
-    Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext fun _ ↦ rfl
+  have heA : eA.hom = (m : k) • 𝟙 A := by
+    ext x
+    simp [eA, e, Rep.smul_hom]
+  have hmap : map (MonoidHom.id G) eA.hom n = (m : k) • 𝟙 (groupCohomology A n) := by
+    rw [heA, Nat.cast_smul_eq_nsmul, map_id_nsmul, map_id, Nat.cast_smul_eq_nsmul]
   have hfun : (fun x : groupCohomology A n ↦ m • x) =
       ⇑((functor k G n).mapIso eA).toLinearEquiv := by
     ext x
-    change m • x = ((((functor k G n).mapIso eA).hom).hom) x
-    rw [CategoryTheory.Functor.mapIso_hom, functor_map, heA, map_id_nsmul, map_id]
-    rfl
+    rw [Iso.toLinearEquiv_apply, CategoryTheory.Functor.mapIso_hom, functor_map, hmap]
+    simp [Nat.cast_smul_eq_nsmul]
   exact hfun ▸ ((functor k G n).mapIso eA).toLinearEquiv.bijective
 
 end TauCeti.groupCohomology
@@ -120,12 +123,6 @@ theorem nsmul_eq_zero_of_forall_nsmul_eq_zero {A : Rep k G} {m : ℕ}
   have h0 : m • (𝟙 A : A ⟶ A) = 0 :=
     Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext hA
   simpa using congr((map (MonoidHom.id G) $h0 n).hom x)
-
-/-- The cardinality of the underlying module of `A` annihilates `Hⁿ(G, A)` in every degree `n`
-(when `A` is infinite, `Nat.card A = 0` and the statement is trivial). -/
-theorem natCard_coe_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A n) :
-    Nat.card A • x = 0 :=
-  nsmul_eq_zero_of_forall_nsmul_eq_zero (fun _ ↦ card_nsmul_eq_zero') x
 
 end groupCohomology
 
