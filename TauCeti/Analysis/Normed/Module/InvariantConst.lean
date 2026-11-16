@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Topology.Separation.Hausdorff
 import Mathlib.Analysis.SpecificLimits.Normed
@@ -15,8 +16,8 @@ import Mathlib.Analysis.SpecificLimits.Normed
 Let `u : V → X` be a map from a normed space to a Hausdorff space. Two kinds of invariance force
 `u` to be constant.
 
-* **Translations** (`TauCeti.apply_eq_of_forall_apply_add_eq`). If `u (z + t) = u z` for a
-  nonzero `t` and `u` has a limit `y` at infinity, then `u` is constantly `y`: the points
+* **Translations** (`TauCeti.apply_eq_of_periodic`). If `u (z + t) = u z` for a nonzero `t`
+  and `u` has a limit `y` at infinity, then `u` is constantly `y`: the points
   `z + n t` tend to infinity, and `u` is constant along them.
 * **Contractions** (`TauCeti.apply_eq_of_forall_apply_add_smul_sub_eq`). If
   `u (c + a • (z - c)) = u z` for a scalar `a` with `‖a‖ < 1` and `u` is continuous at the fixed
@@ -34,17 +35,15 @@ namespace TauCeti
 
 variable {V X : Type*} [NormedAddCommGroup V] [TopologicalSpace X] [T2Space X] {u : V → X}
 
-/-- **A periodic map with a limit at infinity is constant.** If `u (z + t) = u z` for a nonzero
-period `t` and `u` tends to `y` along the filter of complements of bounded sets, then `u` is
-constantly `y`. -/
-theorem apply_eq_of_forall_apply_add_eq [NormedSpace ℝ V] {t : V} (ht : t ≠ 0)
-    (hu : ∀ z, u (z + t) = u z) {y : X} (hy : Tendsto u (Bornology.cobounded V) (𝓝 y))
+/-- **A periodic map with a limit at infinity is constant.** If `u` is periodic with a nonzero
+period `t`, that is `u (z + t) = u z`, and `u` tends to `y` along the filter of complements of
+bounded sets, then `u` is constantly `y`. -/
+theorem apply_eq_of_periodic [NormedSpace ℝ V] {t : V} (ht : t ≠ 0)
+    (hu : Function.Periodic u t) {y : X} (hy : Tendsto u (Bornology.cobounded V) (𝓝 y))
     (z : V) : u z = y := by
-  have hn : ∀ n : ℕ, u (z + (n : ℝ) • t) = u z := by
-    intro n
-    induction n with
-    | zero => simp
-    | succ n ih => rw [Nat.cast_succ, add_smul, one_smul, ← add_assoc, hu, ih]
+  have hn : ∀ n : ℕ, u (z + (n : ℝ) • t) = u z := fun n ↦ by
+    rw [Nat.cast_smul_eq_nsmul]
+    exact hu.nsmul n z
   have hlim : Tendsto (fun n : ℕ ↦ z + (n : ℝ) • t) atTop (Bornology.cobounded V) := by
     rw [← tendsto_norm_atTop_iff_cobounded]
     refine tendsto_atTop_mono (fun n : ℕ ↦ ?_)
