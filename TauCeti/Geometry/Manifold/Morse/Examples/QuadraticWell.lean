@@ -420,10 +420,12 @@ theorem riemannianEDist_toWithMetric_scaledLineMetric (x y : ℝ) :
       (by simpa using Real.sqrt_pos.2 ha) (fun x (v : ℝ) ↦ ?_),
     ← IsRiemannianManifold.out, edist_dist, Real.dist_eq,
     ENNReal.ofReal_mul (Real.sqrt_nonneg a)]
-  · rfl
+  · -- `ENNReal.ofReal √a` is by definition the coercion of `Real.toNNReal √a`.
+    rfl
   · -- The tangent vector `v` is a real number, whose standard tangent norm is `|v|`.
     erw [scaledLineMetric_inner, hC, Real.sq_sqrt ha.le, norm_tangentSpace_vectorSpace]
     rw [Real.norm_eq_abs, sq_abs, sq]
+    -- `NormedSpace.fromTangentSpace x v` is `v` itself, read in `ℝ`, by definition.
     rfl
 
 /-- For the metric `a dx²`, the trajectory of `-grad x²` through `x₀` is at Riemannian distance
@@ -453,21 +455,9 @@ theorem not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
             (toWithMetric _ x₀) t) (toWithMetric _ 0) ≤
         ENNReal.ofReal (C * Real.exp (-(μ * t))) := by
   rintro ⟨C, hC, h⟩
-  have hk : 0 < √a * |x₀| := mul_pos (Real.sqrt_pos.2 ha) (abs_pos.2 hx₀)
-  have hgrow : Tendsto (fun t : ℝ ↦ Real.exp ((μ - 2 / a) * t)) atTop atTop :=
-    Real.tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop (sub_pos.2 hμ))
-  obtain ⟨t, ht, hbig⟩ := (h.and (hgrow.eventually_gt_atTop (C / (√a * |x₀|)))).exists
-  rw [riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric,
-    ENNReal.ofReal_le_ofReal_iff (by positivity)] at ht
-  -- Multiplying the bound by `exp (μ t)` gives `√a |x₀| exp ((μ - 2 / a) t) ≤ C`.
-  have hle : √a * |x₀| * Real.exp ((μ - 2 / a) * t) ≤ C :=
-    calc √a * |x₀| * Real.exp ((μ - 2 / a) * t)
-        = √a * |x₀| * Real.exp (-(2 / a * t)) * Real.exp (μ * t) := by
-          rw [mul_assoc, mul_assoc, ← Real.exp_add, ← mul_assoc]
-          ring_nf
-      _ ≤ C * Real.exp (-(μ * t)) * Real.exp (μ * t) := by gcongr
-      _ = C := by simp [Real.exp_neg]
-  linarith [(div_lt_iff₀ hk).1 hbig]
+  refine not_exists_ofReal_mul_exp_le_mul_exp (mul_pos (Real.sqrt_pos.2 ha) (abs_pos.2 hx₀)) hμ
+    ⟨C, hC, h.mono fun t ht ↦ ?_⟩
+  rwa [← riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric]
 
 end ScaledMetric
 
