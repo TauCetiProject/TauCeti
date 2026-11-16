@@ -7,50 +7,50 @@ module
 
 public import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Oscillatory
 
-import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.ExpDecay
-import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Integral.Exp.Laplace
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # Abelian Laplace-moment theorems for iterated improper tail integrals
 
 This file relates the repeated improper tail integrals `TauCeti.iteratedTailIntegral f (n + 1) 0` of
-a Bochner-measurable function `f : ℝ → E` on `[0, ∞)` to the `p → 0⁺` limit of its Laplace moments
+a function `f : ℝ → E` on `[0, ∞)` to the `p → 0⁺` limit of its Laplace moments
 `∫ t in Ioi 0, (exp (-(p * t)) * t ^ n) • f t` and of the `n`-th derivatives of its Laplace
 transform `p ↦ ∫ t in Ioi 0, exp (-(p * t)) • f t`.
 
 Crucially, `f` and its intermediate tail integrals are **not** required to be absolutely integrable
-on `(0, ∞)`: only conditional convergence of the improper integrals
-`R ↦ ∫ t in 0..R, iteratedTailIntegral f m t` as `R → ∞` for `m ≤ n` is needed. Combining this
-Abelian theorem with `TauCeti.HasOscillatoryDecay` yields unconditional Laplace-derivative formulas
-for the repeated tail integrals of oscillatory functions such as Fresnel integrals and negative-axis
-oscillatory special functions.
+on `(0, ∞)`: the Abelian theorems assume Bochner integrability of `t ↦ exp (-(p * t)) • f t` on
+`(0, ∞)` for every `p > 0` together with conditional convergence of the improper integrals
+`R ↦ ∫ t in 0..R, iteratedTailIntegral f m t` as `R → ∞` for `m ≤ n`. For functions locally
+integrable on `[0, ∞)` satisfying `TauCeti.HasOscillatoryDecay c q α₀ f` with `c ≠ 0`, `1 ≤ q`, and
+`0 < α₀ + q - 1`, those Laplace-integrability and improper-convergence hypotheses are discharged
+automatically, yielding Laplace-moment and Laplace-derivative limits for oscillatory functions such
+as Fresnel integrals and negative-axis oscillatory special functions.
+
+General real Laplace moment integrability and parametric differentiation live in
+`TauCeti.MeasureTheory.Integral.Exp.Laplace`.
 
 ## Main results
 
-* `TauCeti.locallyIntegrableOn_of_integrableOn_exp_neg_mul_smul`: integrability of
-  `t ↦ exp (-(p * t)) • f t` on `(a, ∞)` implies `LocallyIntegrableOn f (Ici a)`.
-* `TauCeti.integrableOn_exp_neg_mul_pow_smul_of_lt`: integrability of `t ↦ exp (-(q * t)) • f t` on
-  `(0, ∞)` implies integrability of all polynomial moments `t ↦ (exp (-(p * t)) * t ^ j) • f t` for
-  every `p > q`.
-* `TauCeti.hasDerivAt_integral_exp_neg_mul_pow_smul` and
-  `TauCeti.iteratedDeriv_integral_exp_neg_mul_smul`: differentiation under the Laplace integral on
-  `{p | q < p}`.
 * `TauCeti.tendsto_integral_exp_neg_mul_smul_nhdsGT_zero` and
-  `TauCeti.tendsto_integral_exp_neg_mul_pow_smul_nhdsGT_zero`: if `t ↦ exp (-(p * t)) • f t` is
-  integrable on `(0, ∞)` for every `p > 0` and all improper integrals
+  `TauCeti.tendsto_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero`: if `t ↦ exp (-(p * t)) • f t` is
+  Bochner integrable on `(0, ∞)` for every `p > 0` and all improper integrals
   `R ↦ ∫ t in 0..R, iteratedTailIntegral f m t` (`m ≤ n`) converge as `R → ∞`, then
   `∫ t in Ioi 0, (exp (-(p * t)) * t ^ n) • f t → n ! • iteratedTailIntegral f (n + 1) 0` as
   `p → 0⁺`.
-* `TauCeti.tendsto_iteratedDeriv_integral_exp_neg_mul_smul_nhdsGT_zero`: normalized `n`-th
-  derivative form `((-1) ^ n / n !) • iteratedDeriv n L p → iteratedTailIntegral f (n + 1) 0` as
-  `p → 0⁺`.
-* `TauCeti.HasOscillatoryDecay.tendsto_integral_exp_neg_mul_pow_mul_nhdsGT_zero` and
+* `TauCeti.tendsto_iteratedDeriv_integral_exp_neg_mul_smul_nhdsGT_zero`: `n`-th derivative form
+  `iteratedDeriv n L p → ((-1) ^ n * n !) • iteratedTailIntegral f (n + 1) 0` as `p → 0⁺`.
+* `TauCeti.HasOscillatoryDecay.integrableOn_exp_neg_mul_mul`,
+  `TauCeti.HasOscillatoryDecay.tendsto_integral_exp_neg_mul_mul_pow_mul_nhdsGT_zero`, and
   `TauCeti.HasOscillatoryDecay.tendsto_iteratedDeriv_integral_exp_neg_mul_mul_nhdsGT_zero`:
-  unconditional Abelian Laplace limits for functions satisfying `HasOscillatoryDecay`.
+  Abelian Laplace-moment and Laplace-derivative limits for functions locally integrable on `[0, ∞)`
+  satisfying `HasOscillatoryDecay c q α₀ f` (`c ≠ 0`, `1 ≤ q`, `0 < α₀ + q - 1`).
 -/
 
 public section
@@ -64,256 +64,57 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-! ### Exponential integrability and parametric differentiation of Laplace integrals -/
-
-/-- If `t ↦ exp (-(p * t)) • f t` is integrable on `(a, ∞)`, then `f` is locally integrable on
-`[a, ∞)`. -/
-theorem locallyIntegrableOn_of_integrableOn_exp_neg_mul_smul {f : ℝ → E} {a p : ℝ}
-    (hf : IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) • f t) (Ioi a)) :
-    LocallyIntegrableOn f (Ici a) :=
-  (((integrableOn_Ici_iff_integrableOn_Ioi eNorm_ne_top).mpr hf).locallyIntegrableOn
-    |>.continuousOn_smul isClosed_Ici.isLocallyClosed
-      (by fun_prop : ContinuousOn (fun t : ℝ ↦ Real.exp (p * t)) (Ici a))).congr
-    (ae_of_all _ fun t ↦ by
-      rw [smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul])
-
-/-- Pointwise factorial bound `exp (-(p * t)) * t ^ j ≤ (j ! / (p - q) ^ j) * exp (-(q * t))` for
-`q < p` and `0 ≤ t`. -/
-private theorem exp_neg_mul_pow_le_of_lt {q p t : ℝ} (hqp : q < p) (ht : 0 ≤ t) (j : ℕ) :
-    Real.exp (-(p * t)) * t ^ j ≤ (j.factorial / (p - q) ^ j) * Real.exp (-(q * t)) := by
-  have hδ : 0 < p - q := sub_pos.mpr hqp
-  have h1 : (p - q) ^ j * (Real.exp (-(p * t)) * t ^ j) ≤ j.factorial * Real.exp (-(q * t)) :=
-    calc (p - q) ^ j * (Real.exp (-(p * t)) * t ^ j)
-        = ((p - q) * t) ^ j * Real.exp (-(p * t)) := by rw [mul_pow]; ring
-      _ ≤ (Real.exp ((p - q) * t) * j.factorial) * Real.exp (-(p * t)) :=
-          mul_le_mul_of_nonneg_right ((div_le_iff₀ (Nat.cast_pos.mpr j.factorial_pos)).mp
-            (Real.pow_div_factorial_le_exp _ (mul_nonneg hδ.le ht) j)) (Real.exp_pos _).le
-      _ = j.factorial * Real.exp (-(q * t)) := by rw [mul_right_comm, ← Real.exp_add]; ring_nf
-  exact ((le_div_iff₀' (pow_pos hδ j)).mpr h1).trans_eq (div_mul_eq_mul_div _ _ _).symm
-
-/-- If `t ↦ exp (-(q * t)) • f t` is Bochner integrable on `(0, ∞)` and `q < p`, then every
-polynomial moment `t ↦ (exp (-(p * t)) * t ^ j) • f t` is Bochner integrable on `(0, ∞)`. -/
-theorem integrableOn_exp_neg_mul_pow_smul_of_lt {f : ℝ → E} {q p : ℝ} (hqp : q < p)
-    (hf : IntegrableOn (fun t : ℝ ↦ Real.exp (-(q * t)) • f t) (Ioi 0)) (j : ℕ) :
-    IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ j) • f t) (Ioi 0) := by
-  have hmeas : AEStronglyMeasurable
-      (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ j) • f t) (volume.restrict (Ioi 0)) :=
-    (((by fun_prop : Continuous fun t : ℝ ↦ Real.exp (-((p - q) * t)) * t ^ j)
-      |>.aestronglyMeasurable).smul hf.aestronglyMeasurable).congr (ae_of_all _ fun t ↦ by
-        change (Real.exp (-((p - q) * t)) * t ^ j) • (Real.exp (-(q * t)) • f t) = _
-        rw [smul_smul, mul_right_comm, ← Real.exp_add, show -((p - q) * t) + -(q * t) = -(p * t)
-          by ring])
-  refine (hf.norm.const_mul (j.factorial / (p - q) ^ j)).mono' hmeas ?_
-  filter_upwards [self_mem_ae_restrict measurableSet_Ioi] with t (ht : 0 < t)
-  rw [norm_smul, norm_smul,
-    Real.norm_of_nonneg (mul_nonneg (Real.exp_pos _).le (pow_nonneg ht.le _)),
-    Real.norm_of_nonneg (Real.exp_pos _).le, ← mul_assoc]
-  exact mul_le_mul_of_nonneg_right (exp_neg_mul_pow_le_of_lt hqp ht.le j) (norm_nonneg _)
-
-/-- Differentiation under the integral sign for the Laplace moments
-`r ↦ ∫ t in Ioi 0, (exp (-(r * t)) * t ^ j) • f t` on `{r | q < r}`. -/
-theorem hasDerivAt_integral_exp_neg_mul_pow_smul {f : ℝ → E} {q p : ℝ} (hqp : q < p)
-    (hf : IntegrableOn (fun t : ℝ ↦ Real.exp (-(q * t)) • f t) (Ioi 0)) (j : ℕ) :
-    HasDerivAt (fun r : ℝ ↦ ∫ t in Ioi 0, (Real.exp (-(r * t)) * t ^ j) • f t)
-      (-(∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ (j + 1)) • f t)) p := by
-  let m := (q + p) / 2
-  have hqm : q < m := by dsimp [m]; linarith
-  have hmp : m < p := by dsimp [m]; linarith
-  have hdom := hasDerivAt_integral_of_dominated_loc_of_deriv_le (s := Ioi m)
-    (F := fun r t ↦ (Real.exp (-(r * t)) * t ^ j) • f t)
-    (F' := fun r t ↦ -((Real.exp (-(r * t)) * t ^ (j + 1)) • f t))
-    (bound := fun t ↦ ‖(Real.exp (-(m * t)) * t ^ (j + 1)) • f t‖) (Ioi_mem_nhds hmp)
-    (by filter_upwards [Ioi_mem_nhds hqp] with r (hr : q < r) using
-      (integrableOn_exp_neg_mul_pow_smul_of_lt hr hf j).aestronglyMeasurable)
-    (integrableOn_exp_neg_mul_pow_smul_of_lt hqp hf j)
-    (integrableOn_exp_neg_mul_pow_smul_of_lt hqp hf (j + 1)).neg.aestronglyMeasurable ?_
-    (integrableOn_exp_neg_mul_pow_smul_of_lt hqm hf (j + 1)).norm ?_
-  · simpa [integral_neg] using hdom.2
-  · filter_upwards [self_mem_ae_restrict measurableSet_Ioi] with t (ht : 0 < t) r (hr : m < r)
-    simp only [norm_neg, norm_smul,
-      Real.norm_of_nonneg (mul_nonneg (Real.exp_pos _).le (pow_nonneg ht.le _))]
-    exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
-      (Real.exp_le_exp.mpr (by nlinarith)) (pow_nonneg ht.le _)) (norm_nonneg _)
-  · filter_upwards [self_mem_ae_restrict measurableSet_Ioi] with t _ r _
-    exact (((((hasDerivAt_id r).mul_const t).neg.exp).mul_const (t ^ j)).congr_deriv
-      (by simp [pow_succ]; ring)).smul_const (f t) |>.congr_deriv (neg_smul _ _)
-
-/-- Formula for the `n`-th derivative of the Laplace integral
-`r ↦ ∫ t in Ioi 0, exp (-(r * t)) • f t` at any `p > q` where `t ↦ exp (-(q * t)) • f t` is
-integrable on `(0, ∞)`. -/
-theorem iteratedDeriv_integral_exp_neg_mul_smul {f : ℝ → E} {q p : ℝ} (hqp : q < p)
-    (hf : IntegrableOn (fun t : ℝ ↦ Real.exp (-(q * t)) • f t) (Ioi 0)) (n : ℕ) :
-    iteratedDeriv n (fun r : ℝ ↦ ∫ t in Ioi 0, Real.exp (-(r * t)) • f t) p =
-      (-1 : ℝ) ^ n • ∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ n) • f t := by
-  induction n generalizing p with
-  | zero => simp
-  | succ n ih =>
-    rw [iteratedDeriv_succ]
-    have heq : (iteratedDeriv n fun r : ℝ ↦ ∫ t in Ioi 0, Real.exp (-(r * t)) • f t) =ᶠ[𝓝 p]
-        ((-1 : ℝ) ^ n • fun r : ℝ ↦ ∫ t in Ioi 0, (Real.exp (-(r * t)) * t ^ n) • f t) := by
-      filter_upwards [Ioi_mem_nhds hqp] with r hr using ih hr
-    rw [heq.deriv_eq,
-      ((hasDerivAt_integral_exp_neg_mul_pow_smul hqp hf n).const_smul ((-1 : ℝ) ^ n)).deriv,
-      smul_neg, ← neg_smul, pow_succ, mul_neg, mul_one]
-
-/-! ### Fubini integration by parts on `[0, R]` and `(0, ∞)` -/
-
-/-- Auxiliary triangle kernel on `(0, R] × (0, R]` for finite-interval integration by parts of a
-locally integrable function `g : ℝ → E` against a `C¹` scalar weight. -/
-private def ibpTriangleKernel (φ' : ℝ → ℝ) (g : ℝ → E) (R : ℝ) (x : ℝ × ℝ) : E :=
-  {x : ℝ × ℝ | 0 < x.1 ∧ x.1 < x.2 ∧ x.2 ≤ R}.indicator (fun x ↦ φ' x.1 • g x.2) x
-
-/-- Product integrability of `ibpTriangleKernel φ' g R` on `ℝ × ℝ`. -/
-private theorem integrable_ibpTriangleKernel {φ' : ℝ → ℝ} {g : ℝ → E} {R : ℝ}
-    (hg : LocallyIntegrableOn g (Ici 0)) (hφ' : ContinuousOn φ' (Icc 0 R)) :
-    Integrable (ibpTriangleKernel φ' g R) (volume.prod volume) := by
-  have hS : MeasurableSet {x : ℝ × ℝ | 0 < x.1 ∧ x.1 < x.2 ∧ x.2 ≤ R} :=
-    (isOpen_lt continuous_const continuous_fst).measurableSet.inter
-      ((isOpen_lt continuous_fst continuous_snd).measurableSet.inter
-        (isClosed_le continuous_snd continuous_const).measurableSet)
-  have hφ_int : Integrable ((Icc 0 R).indicator φ') volume :=
-    (integrable_indicator_iff measurableSet_Icc).mpr hφ'.integrableOn_Icc
-  have hg_int : Integrable ((Ioc 0 R).indicator g) volume :=
-    (integrable_indicator_iff measurableSet_Ioc).mpr
-      ((hg.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set
-        Ioc_subset_Icc_self)
-  refine ((hφ_int.smul_prod hg_int).indicator hS).congr (ae_of_all _ fun ⟨s, t⟩ ↦ ?_)
-  by_cases hx : 0 < s ∧ s < t ∧ t ≤ R
-  · simp [ibpTriangleKernel, hx, hx.1.le, hx.2.1.le.trans hx.2.2, hx.1.trans hx.2.1]
-  · simp [ibpTriangleKernel, hx]
-
-/-- Horizontal and vertical slice integrals of `ibpTriangleKernel φ' g R`. -/
-private theorem slice_integrals_ibpTriangleKernel [CompleteSpace E] {φ φ' : ℝ → ℝ} {g : ℝ → E}
-    {R : ℝ} (hφ : ∀ s ∈ Icc 0 R, HasDerivAt φ (φ' s) s) (hφ' : ContinuousOn φ' (Icc 0 R)) :
-    (∀ s : ℝ, (∫ t, ibpTriangleKernel φ' g R (s, t)) =
-        (Ioc 0 R).indicator (fun r ↦ φ' r • ∫ t in r..R, g t) s) ∧
-      (∀ t : ℝ, (∫ s, ibpTriangleKernel φ' g R (s, t)) =
-        (Ioc 0 R).indicator (fun r ↦ (φ r - φ 0) • g r) t) := by
-  refine ⟨fun s ↦ ?_, fun t ↦ ?_⟩
-  · by_cases hs : s ∈ Ioc 0 R
-    · have hpt : (fun t ↦ ibpTriangleKernel φ' g R (s, t)) =
-          (Ioc s R).indicator fun t ↦ φ' s • g t := by
-        ext t; simp only [ibpTriangleKernel, indicator, mem_ofPred_eq, mem_Ioc, hs.1, true_and]
-      rw [hpt, indicator_of_mem hs, integral_indicator measurableSet_Ioc,
-        ← intervalIntegral.integral_of_le hs.2, intervalIntegral.integral_smul]
-    · have hpt : (fun t ↦ ibpTriangleKernel φ' g R (s, t)) = 0 := by
-        ext t; simp only [ibpTriangleKernel, Pi.zero_apply, indicator, mem_ofPred_eq,
-          ite_eq_right_iff]
-        exact fun h ↦ absurd ⟨h.1, h.2.1.le.trans h.2.2⟩ hs
-      simp [hpt, hs]
-  · by_cases ht : t ∈ Ioc 0 R
-    · have hpt : (fun s ↦ ibpTriangleKernel φ' g R (s, t)) =
-          (Ioo 0 t).indicator fun s ↦ φ' s • g t := by
-        ext s; simp only [ibpTriangleKernel, indicator, mem_ofPred_eq, mem_Ioo, ht.2, and_true]
-      have hsub : uIcc 0 t ⊆ Icc 0 R := by
-        rw [uIcc_of_le ht.1.le]; exact Icc_subset_Icc_right ht.2
-      rw [hpt, indicator_of_mem ht, integral_indicator measurableSet_Ioo,
-        ← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le ht.1.le,
-        intervalIntegral.integral_smul_const, intervalIntegral.integral_eq_sub_of_hasDerivAt
-          (fun s hs ↦ hφ s (hsub hs)) (hφ'.mono hsub).intervalIntegrable]
-    · have hpt : (fun s ↦ ibpTriangleKernel φ' g R (s, t)) = 0 := by
-        ext s; simp only [ibpTriangleKernel, Pi.zero_apply, indicator, mem_ofPred_eq,
-          ite_eq_right_iff]
-        exact fun h ↦ absurd ⟨h.1.trans h.2.1, h.2.2⟩ ht
-      simp [hpt, ht]
-
-/-- Finite-interval integration by parts on `[0, R]` (`0 ≤ R`) for a locally integrable function
-`g : ℝ → E` against a `C¹` scalar weight `φ` via Fubini's theorem. -/
-private theorem intervalIntegral_smul_eq_add_integral_deriv_smul [CompleteSpace E]
-    {φ φ' : ℝ → ℝ} {g : ℝ → E} {R : ℝ} (hR : 0 ≤ R) (hg : LocallyIntegrableOn g (Ici 0))
-    (hφ : ∀ s ∈ Icc 0 R, HasDerivAt φ (φ' s) s) (hφ' : ContinuousOn φ' (Icc 0 R)) :
-    ∫ t in 0..R, φ t • g t = φ 0 • (∫ t in 0..R, g t) + ∫ s in 0..R, φ' s • (∫ t in s..R, g t) := by
-  obtain ⟨hslice_s, hslice_t⟩ := slice_integrals_ibpTriangleKernel (g := g) hφ hφ'
-  have hswap : ∫ s in 0..R, φ' s • (∫ t in s..R, g t) = ∫ t in 0..R, (φ t - φ 0) • g t := by
-    rw [intervalIntegral.integral_of_le hR, intervalIntegral.integral_of_le hR,
-      ← integral_indicator measurableSet_Ioc, ← integral_indicator measurableSet_Ioc]
-    calc ∫ s, (Ioc 0 R).indicator (fun r ↦ φ' r • ∫ t in r..R, g t) s
-        = ∫ s, ∫ t, ibpTriangleKernel φ' g R (s, t) :=
-          integral_congr_ae (ae_of_all _ fun s ↦ (hslice_s s).symm)
-      _ = ∫ t, ∫ s, ibpTriangleKernel φ' g R (s, t) :=
-          integral_integral_swap (integrable_ibpTriangleKernel hg hφ')
-      _ = ∫ t, (Ioc 0 R).indicator (fun r ↦ (φ r - φ 0) • g r) t :=
-          integral_congr_ae (ae_of_all _ hslice_t)
-  have hg_int : IntervalIntegrable g volume 0 R := (hg.integrableOn_compact_subset
-    (by rw [uIcc_of_le hR]; exact Icc_subset_Ici_self) isCompact_uIcc).intervalIntegrable
-  rw [hswap]; simp_rw [sub_smul]
-  rw [intervalIntegral.integral_sub (hg_int.continuousOn_smul (by rw [uIcc_of_le hR]; exact
-      fun s hs ↦ (hφ s hs).continuousAt.continuousWithinAt))
-      (show IntervalIntegrable (fun t ↦ φ 0 • g t) volume 0 R from hg_int.smul (φ 0)),
-    intervalIntegral.integral_smul, add_sub_cancel]
-
-omit [NormedSpace ℝ E] in
-/-- A function that is continuous on `[0, ∞)` and tends to `0` at `+∞` is uniformly bounded in norm
-on `[0, ∞)`. -/
-private theorem exists_norm_le_of_continuousOn_of_tendsto_zero {h : ℝ → E}
-    (hh_cont : ContinuousOn h (Ici 0)) (hh_top : Tendsto h atTop (𝓝 0)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ s ∈ Ici (0 : ℝ), ‖h s‖ ≤ C := by
-  obtain ⟨R₀, hR₀⟩ :=
-    eventually_atTop.mp (hh_top.eventually (Metric.closedBall_mem_nhds 0 zero_lt_one))
-  let M := max 0 R₀
-  obtain ⟨C₀, hC₀⟩ := isCompact_Icc.exists_bound_of_continuousOn
-    (hh_cont.mono (Icc_subset_Ici_self : Icc 0 M ⊆ Ici 0))
-  refine ⟨max C₀ 1, le_max_of_le_right zero_le_one, fun s (hs : 0 ≤ s) ↦ ?_⟩
-  rcases le_total s M with hsM | hMs
-  · exact (hC₀ s ⟨hs, hsM⟩).trans (le_max_left _ _)
-  · exact (by simpa using hR₀ s ((le_max_right 0 R₀).trans hMs) : ‖h s‖ ≤ 1).trans
-      (le_max_right _ _)
-
-/-- If `w` is integrable on `(0, ∞)` and `h` is continuous on `[0, ∞)` with `h(t) → 0`, then
-`s ↦ w s • h s` is integrable on `(0, ∞)`. -/
-private theorem integrableOn_smul_of_continuousOn_of_tendsto_zero {w : ℝ → ℝ} {h : ℝ → E}
-    (hw : IntegrableOn w (Ioi 0)) (hh_cont : ContinuousOn h (Ici 0))
-    (hh_top : Tendsto h atTop (𝓝 0)) : IntegrableOn (fun s ↦ w s • h s) (Ioi 0) :=
-  let ⟨C, _, hC⟩ := exists_norm_le_of_continuousOn_of_tendsto_zero hh_cont hh_top
-  hw.smul_bdd C ((hh_cont.mono Ioi_subset_Ici_self).aestronglyMeasurable measurableSet_Ioi)
-    (ae_restrict_of_forall_mem measurableSet_Ioi fun s hs ↦ hC s hs.le)
+/-! ### Improper integration by parts on `(0, ∞)` -/
 
 /-- Improper integration by parts on `(0, ∞)` for a conditionally convergent improper tail integral
-`G := iteratedTailIntegral g 1` against a `C¹` weight `φ` whose derivative `φ'` is integrable on
+`G := iteratedTailIntegral g 1` against a `C¹` weight `φ` whose derivative is integrable on
 `(0, ∞)`. -/
-private theorem integral_Ioi_smul_eq_of_tendsto [CompleteSpace E] {φ φ' : ℝ → ℝ} {g : ℝ → E}
+private theorem integral_Ioi_smul_eq_of_tendsto [CompleteSpace E] {φ : ℝ → ℝ} {g : ℝ → E}
     (hg_loc : LocallyIntegrableOn g (Ici 0))
     (hg_conv : ∃ L, Tendsto (fun R : ℝ ↦ ∫ t in 0..R, g t) atTop (𝓝 L))
-    (hφ : ∀ s ≥ 0, HasDerivAt φ (φ' s) s) (hφ' : ContinuousOn φ' (Ici 0))
-    (hφ'_int : IntegrableOn φ' (Ioi 0)) (hφg_int : IntegrableOn (fun t ↦ φ t • g t) (Ioi 0)) :
-    IntegrableOn (fun s ↦ φ' s • iteratedTailIntegral g 1 s) (Ioi 0) ∧
+    (hφ : ContDiff ℝ 1 φ) (hφ'_int : IntegrableOn (deriv φ) (Ioi 0))
+    (hφg_int : IntegrableOn (fun t ↦ φ t • g t) (Ioi 0)) :
+    IntegrableOn (fun s ↦ deriv φ s • iteratedTailIntegral g 1 s) (Ioi 0) ∧
       ∫ t in Ioi 0, φ t • g t =
-        φ 0 • iteratedTailIntegral g 1 0 + ∫ s in Ioi 0, φ' s • iteratedTailIntegral g 1 s := by
-  have hg_loc0 : LocallyIntegrableOn (iteratedTailIntegral g 0) (Ici 0) := by simpa using hg_loc
-  obtain ⟨L, hL⟩ : ∃ L, Tendsto (fun R : ℝ ↦ ∫ t in 0..R, iteratedTailIntegral g 0 t)
-      atTop (𝓝 L) := by simpa using hg_conv
+        φ 0 • iteratedTailIntegral g 1 0 +
+          ∫ s in Ioi 0, deriv φ s • iteratedTailIntegral g 1 s := by
+  obtain ⟨L, hL⟩ := hg_conv
   set G := iteratedTailIntegral g 1
-  have hG_cont : ContinuousOn G (Ici 0) := continuousOn_iteratedTailIntegral_succ hg_loc0 hL
-  have hG_top : Tendsto G atTop (𝓝 0) := tendsto_iteratedTailIntegral_succ_atTop hg_loc0 hL
-  have hφ'G_int := integrableOn_smul_of_continuousOn_of_tendsto_zero hφ'_int hG_cont hG_top
+  have hG_cont : ContinuousOn G (Ici 0) := continuousOn_iteratedTailIntegral_one hg_loc
+  have hG_top : Tendsto G atTop (𝓝 0) := tendsto_iteratedTailIntegral_one_atTop hg_loc hL
+  have hφ'G_int : IntegrableOn (fun s ↦ deriv φ s • G s) (Ioi 0) :=
+    hφ'_int.smul_of_continuousOn_of_isBigO_one Ioi_subset_Ici_self hG_cont (hG_top.isBigO_one ℝ)
+  have hφ_eq (R : ℝ) : ∫ s in 0..R, deriv φ s = φ R - φ 0 :=
+    _root_.intervalIntegral.integral_deriv_eq_sub (fun s _ ↦ hφ.differentiable one_ne_zero s)
+      ((hφ.continuous_deriv le_rfl).intervalIntegrable 0 R)
+  have hφ_top : Tendsto φ atTop (𝓝 (φ 0 + ∫ s in Ioi 0, deriv φ s)) := by
+    simpa only [id_eq, hφ_eq, add_sub_cancel] using
+      (intervalIntegral_tendsto_integral_Ioi 0 hφ'_int tendsto_id).const_add (φ 0)
   have hRHS : Tendsto (fun R : ℝ ↦
-      φ 0 • (G 0 - G R) + (∫ s in 0..R, φ' s • G s) - (∫ s in 0..R, φ' s) • G R) atTop
-      (𝓝 (φ 0 • G 0 + ∫ s in Ioi 0, φ' s • G s)) := by
-    simpa using (((tendsto_const_nhds.sub hG_top).const_smul (φ 0)).add
-      (intervalIntegral_tendsto_integral_Ioi 0 hφ'G_int tendsto_id)).sub
-      ((intervalIntegral_tendsto_integral_Ioi 0 hφ'_int tendsto_id).smul hG_top)
+      φ 0 • G 0 - φ R • G R + ∫ s in 0..R, deriv φ s • G s) atTop
+      (𝓝 (φ 0 • G 0 + ∫ s in Ioi 0, deriv φ s • G s)) := by
+    simpa using (tendsto_const_nhds.sub (hφ_top.smul hG_top)).add
+      (intervalIntegral_tendsto_integral_Ioi 0 hφ'G_int tendsto_id)
   refine ⟨hφ'G_int, tendsto_nhds_unique (intervalIntegral_tendsto_integral_Ioi 0 hφg_int tendsto_id)
     (hRHS.congr' ?_)⟩
   filter_upwards [eventually_ge_atTop (0 : ℝ)] with R hR
-  have h0R : ∫ t in 0..R, g t = G 0 - G R := by
-    simpa using (iteratedTailIntegral_succ_sub_eq_intervalIntegral hg_loc0 hL hR).symm
-  have hsR : ∫ s in 0..R, φ' s • (∫ t in s..R, g t) =
-      (∫ s in 0..R, φ' s • G s) - (∫ s in 0..R, φ' s) • G R := by
-    rw [← intervalIntegral.integral_smul_const, ← intervalIntegral.integral_sub
-      (f := fun s ↦ φ' s • G s) (g := fun s ↦ φ' s • G R)
-      ((ContinuousOn.smul (hφ'.mono Icc_subset_Ici_self)
-        (hG_cont.mono Icc_subset_Ici_self)).intervalIntegrable_of_Icc hR)
-      ((ContinuousOn.smul (hφ'.mono Icc_subset_Ici_self)
-        continuousOn_const).intervalIntegrable_of_Icc hR)]
-    refine intervalIntegral.integral_congr fun s hs ↦ ?_
+  have hibp := TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le hR hφ
+    (hg_loc.intervalIntegrable (by rw [uIcc_of_le hR]; exact Icc_subset_Ici_self))
+  have hφ'G_sub : ∫ s in 0..R, deriv φ s • (∫ t in 0..s, g t) =
+      (φ R - φ 0) • G 0 - ∫ s in 0..R, deriv φ s • G s := by
+    rw [← hφ_eq, ← _root_.intervalIntegral.integral_smul_const,
+      ← _root_.intervalIntegral.integral_sub
+        ((hφ.continuous_deriv le_rfl).continuousOn.fun_smul continuousOn_const).intervalIntegrable
+        (((hφ.continuous_deriv le_rfl).continuousOn.fun_smul
+          (hG_cont.mono Icc_subset_Ici_self)).intervalIntegrable_of_Icc hR)]
+    refine _root_.intervalIntegral.integral_congr fun s hs ↦ ?_
     rw [uIcc_of_le hR] at hs
-    have hsub := iteratedTailIntegral_succ_sub_eq_intervalIntegral
-      (hg_loc0.mono_set (Ici_subset_Ici.mpr hs.1))
-      (tendsto_intervalIntegral_iteratedTailIntegral_of_ge hg_loc0 hL hs.1) hs.2
-    simp only [iteratedTailIntegral_zero_eq] at hsub
-    rw [← hsub, smul_sub]
-  rw [id, intervalIntegral_smul_eq_add_integral_deriv_smul hR hg_loc (fun s hs ↦ hφ s hs.1)
-    (hφ'.mono Icc_subset_Ici_self), h0R, hsR, add_sub_assoc]
+    rw [← iteratedTailIntegral_one_sub_eq_intervalIntegral hg_loc le_rfl le_rfl hs.1 hL, smul_sub]
+  rw [id, show ∫ t in 0..R, φ t • g t = φ R • (G 0 - G R) -
+      ((φ R - φ 0) • G 0 - ∫ s in 0..R, deriv φ s • G s) by
+    rw [iteratedTailIntegral_one_sub_eq_intervalIntegral hg_loc le_rfl le_rfl hR hL, ← hφ'G_sub,
+      hibp, sub_sub_cancel], smul_sub, sub_smul]
+  abel
 
 /-- Improper integration by parts for `∫ t in Ioi 0, exp (-(p * t)) • g t` (`0 < p`). -/
 private theorem integral_Ioi_exp_neg_mul_smul_eq [CompleteSpace E] {g : ℝ → E} {p : ℝ} (hp : 0 < p)
@@ -323,128 +124,92 @@ private theorem integral_Ioi_exp_neg_mul_smul_eq [CompleteSpace E] {g : ℝ → 
     ∫ t in Ioi 0, Real.exp (-(p * t)) • g t =
       iteratedTailIntegral g 1 0 -
         p • ∫ s in Ioi 0, Real.exp (-(p * s)) • iteratedTailIntegral g 1 s := by
-  have hφ : ∀ s ≥ 0, HasDerivAt (fun t : ℝ ↦ Real.exp (-(p * t)))
-      (-p * Real.exp (-(p * s))) s := fun s _ ↦
-    (((hasDerivAt_id s).const_mul p).neg.exp).congr_deriv (by simp; ring)
-  have hφ'_int : IntegrableOn (fun s : ℝ ↦ -p * Real.exp (-(p * s))) (Ioi 0) :=
+  have hderiv (s : ℝ) :
+      deriv (fun t : ℝ ↦ Real.exp (-(p * t))) s = -p * Real.exp (-(p * s)) :=
+    ((((hasDerivAt_id s).const_mul p).neg.exp).congr_deriv (by simp; ring)).deriv
+  have hφ'_int : IntegrableOn (deriv fun t : ℝ ↦ Real.exp (-(p * t))) (Ioi 0) :=
     IntegrableOn.congr_fun ((exp_neg_integrableOn_Ioi 0 hp).const_mul (-p))
-      (fun s _ ↦ by simp only [neg_mul]) measurableSet_Ioi
-  obtain ⟨_, heq⟩ := integral_Ioi_smul_eq_of_tendsto hg_loc hg_conv hφ (by fun_prop) hφ'_int hg_int
-  rw [heq, mul_zero, neg_zero, Real.exp_zero, one_smul]
-  simp_rw [mul_smul, neg_smul]
-  rw [integral_neg, integral_smul, sub_eq_add_neg]
+      (fun s _ ↦ by simp [hderiv, neg_mul]) measurableSet_Ioi
+  obtain ⟨_, heq⟩ := integral_Ioi_smul_eq_of_tendsto hg_loc hg_conv (by fun_prop) hφ'_int hg_int
+  rw [heq]
+  simp [hderiv, mul_smul, integral_neg, integral_smul, sub_eq_add_neg]
 
 /-- Improper integration by parts for `∫ t in Ioi 0, (exp (-(p * t)) * t ^ (m + 1)) • g t`
 (`0 < p`). -/
-private theorem integral_Ioi_exp_neg_mul_pow_succ_smul_eq [CompleteSpace E] {g : ℝ → E} {p : ℝ}
+private theorem integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq [CompleteSpace E] {g : ℝ → E} {p : ℝ}
     (hp : 0 < p) (m : ℕ) (hg_loc : LocallyIntegrableOn g (Ici 0))
     (hg_conv : ∃ L, Tendsto (fun R : ℝ ↦ ∫ t in 0..R, g t) atTop (𝓝 L))
     (hg_int : IntegrableOn (fun t ↦ (Real.exp (-(p * t)) * t ^ (m + 1)) • g t) (Ioi 0)) :
     ∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ (m + 1)) • g t =
       ((m + 1 : ℝ) • ∫ s in Ioi 0, (Real.exp (-(p * s)) * s ^ m) • iteratedTailIntegral g 1 s) -
         p • ∫ s in Ioi 0, (Real.exp (-(p * s)) * s ^ (m + 1)) • iteratedTailIntegral g 1 s := by
-  have hg_loc0 : LocallyIntegrableOn (iteratedTailIntegral g 0) (Ici 0) := by simpa using hg_loc
-  obtain ⟨L, hL⟩ : ∃ L, Tendsto (fun R : ℝ ↦ ∫ t in 0..R, iteratedTailIntegral g 0 t)
-      atTop (𝓝 L) := by simpa using hg_conv
+  obtain ⟨L, hL⟩ := hg_conv
+  let φ : ℝ → ℝ := fun t ↦ Real.exp (-(p * t)) * t ^ (m + 1)
   let φ' : ℝ → ℝ := fun s ↦
     (m + 1 : ℝ) * (Real.exp (-(p * s)) * s ^ m) - p * (Real.exp (-(p * s)) * s ^ (m + 1))
-  have hφ : ∀ s ≥ 0, HasDerivAt (fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ (m + 1)) (φ' s) s :=
-    fun s _ ↦ ((((hasDerivAt_id s).const_mul p).neg.exp).mul
-      (hasDerivAt_pow (m + 1) s)).congr_deriv (by simp [φ']; ring)
+  have hderiv (s : ℝ) : deriv φ s = φ' s :=
+    (((((hasDerivAt_id s).const_mul p).neg.exp).mul
+      (hasDerivAt_pow (m + 1) s)).congr_deriv (by simp [φ']; ring)).deriv
   have hpow_int (k : ℕ) : IntegrableOn (fun s : ℝ ↦ Real.exp (-(p * s)) * s ^ k) (Ioi 0) := by
     simpa only [mul_comm] using integrableOn_pow_mul_exp_neg_mul_Ioi k hp
-  obtain ⟨_, heq⟩ := integral_Ioi_smul_eq_of_tendsto hg_loc hg_conv hφ (by fun_prop)
-    (((hpow_int m).const_mul (m + 1 : ℝ)).sub ((hpow_int (m + 1)).const_mul p)) hg_int
+  have hφ'_int : IntegrableOn (deriv φ) (Ioi 0) :=
+    IntegrableOn.congr_fun
+      (((hpow_int m).const_mul (m + 1 : ℝ)).sub ((hpow_int (m + 1)).const_mul p))
+      (fun s _ ↦ (hderiv s).symm) measurableSet_Ioi
+  obtain ⟨_, heq⟩ := integral_Ioi_smul_eq_of_tendsto hg_loc ⟨L, hL⟩ (by fun_prop) hφ'_int hg_int
   have hG_int (k : ℕ) : IntegrableOn
       (fun s : ℝ ↦ (Real.exp (-(p * s)) * s ^ k) • iteratedTailIntegral g 1 s) (Ioi 0) :=
-    integrableOn_smul_of_continuousOn_of_tendsto_zero (hpow_int k)
-      (continuousOn_iteratedTailIntegral_succ hg_loc0 hL)
-      (tendsto_iteratedTailIntegral_succ_atTop hg_loc0 hL)
-  rw [heq, zero_pow (Nat.succ_ne_zero m), mul_zero, zero_smul, zero_add]
-  have hpt : (fun s : ℝ ↦ φ' s • iteratedTailIntegral g 1 s) =
+    (hpow_int k).smul_of_continuousOn_of_isBigO_one Ioi_subset_Ici_self
+      (continuousOn_iteratedTailIntegral_one hg_loc)
+      ((tendsto_iteratedTailIntegral_one_atTop hg_loc hL).isBigO_one ℝ)
+  have hpt : (fun s : ℝ ↦ deriv φ s • iteratedTailIntegral g 1 s) =
       ((m + 1 : ℝ) • fun s : ℝ ↦ (Real.exp (-(p * s)) * s ^ m) • iteratedTailIntegral g 1 s) -
         (p • fun s : ℝ ↦ (Real.exp (-(p * s)) * s ^ (m + 1)) • iteratedTailIntegral g 1 s) := by
-    ext s; simp only [φ', Pi.sub_apply, Pi.smul_apply]
+    ext s; simp only [hderiv, φ', Pi.sub_apply, Pi.smul_apply]
     rw [sub_smul, mul_smul (m + 1 : ℝ), mul_smul p]
-  rw [hpt, Pi.sub_def, integral_sub ((hG_int m).smul (m + 1 : ℝ)) ((hG_int (m + 1)).smul p),
+  rw [heq, hpt, Pi.sub_def, integral_sub ((hG_int m).smul (m + 1 : ℝ)) ((hG_int (m + 1)).smul p),
     Pi.smul_def, Pi.smul_def, integral_smul, integral_smul]
+  simp [φ]
 
 /-! ### Vanishing of rescaled Laplace moments and the Abelian theorem -/
-
-/-- Leaf case (`k = 0`): if `h` is continuous on `[0, ∞)` and `h(t) → 0` as `t → ∞`, then
-`p ^ (j + 1) • ∫ t in Ioi 0, (exp (-(p * t)) * t ^ j) • h t → 0` as `p → 0⁺`. -/
-private theorem tendsto_pow_succ_smul_integral_exp_neg_mul_pow_smul_zero {h : ℝ → E}
-    (hh_cont : ContinuousOn h (Ici 0)) (hh_top : Tendsto h atTop (𝓝 0)) (j : ℕ) :
-    Tendsto (fun p : ℝ ↦ p ^ (j + 1) • ∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ j) • h t)
-      (𝓝[>] 0) (𝓝 0) := by
-  obtain ⟨C, _, hC⟩ := exists_norm_le_of_continuousOn_of_tendsto_zero hh_cont hh_top
-  let F : ℝ → ℝ → E := fun p u ↦ (Real.exp (-u) * u ^ j) • h (u / p)
-  have hdom : Tendsto (fun p : ℝ ↦ ∫ u in Ioi 0, F p u)
-      (𝓝[>] 0) (𝓝 (∫ _ in Ioi (0 : ℝ), (0 : E))) := by
-    refine tendsto_integral_filter_of_dominated_convergence
-      (fun u : ℝ ↦ C * (u ^ j * Real.exp (-u))) ?_ ?_ ?_ ?_
-    · filter_upwards [self_mem_nhdsWithin] with p (hp : 0 < p)
-      exact (ContinuousOn.smul
-        ((by fun_prop : Continuous fun u : ℝ ↦ Real.exp (-u) * u ^ j).continuousOn)
-        (hh_cont.comp (s := Ioi 0) (continuous_id.div_const p).continuousOn fun u (hu : 0 < u) ↦
-          div_nonneg hu.le hp.le)).aestronglyMeasurable measurableSet_Ioi
-    · filter_upwards [self_mem_nhdsWithin] with p (hp : 0 < p)
-      filter_upwards [self_mem_ae_restrict measurableSet_Ioi] with u (hu : 0 < u)
-      dsimp [F]
-      rw [norm_smul, Real.norm_of_nonneg (mul_nonneg (Real.exp_pos _).le (pow_nonneg hu.le _)),
-        mul_comm (Real.exp (-u)), mul_comm C]
-      exact mul_le_mul_of_nonneg_left (hC (u / p) (div_nonneg hu.le hp.le))
-        (mul_nonneg (pow_nonneg hu.le _) (Real.exp_pos _).le)
-    · simpa only [one_mul] using (integrableOn_pow_mul_exp_neg_mul_Ioi j one_pos).const_mul C
-    · filter_upwards [self_mem_ae_restrict measurableSet_Ioi] with u (hu : 0 < u)
-      simpa [F] using (hh_top.comp ((Tendsto.const_mul_atTop hu tendsto_inv_nhdsGT_zero).congr
-        fun p ↦ (div_eq_mul_inv u p).symm)).const_smul (Real.exp (-u) * u ^ j)
-  rw [integral_zero] at hdom
-  refine hdom.congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with p (hp : 0 < p)
-  have hsub := integral_comp_mul_left_Ioi' (F p) (0 : ℝ) hp
-  rw [mul_zero] at hsub
-  rw [← hsub, pow_succ', mul_smul]
-  congr 1; rw [← integral_smul]
-  refine setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ ?_
-  dsimp [F]; rw [mul_div_cancel_left₀ t hp.ne', smul_smul]; congr 1; rw [mul_pow]; ring
 
 /-- Inductive vanishing lemma (`k ≤ j`): if `h` is continuous on `[0, ∞)`, `h(t) → 0` as `t → ∞`,
 and all repeated improper tail integrals `R ↦ ∫ t in 0..R, iteratedTailIntegral h r t` (`r < k`)
 converge as `R → ∞`, then
 `p ^ (j + 1 - k) • ∫ t in Ioi 0, (exp (-(p * t)) * t ^ j) • h t → 0` as `p → 0⁺`. -/
-private theorem tendsto_pow_sub_smul_integral_exp_neg_mul_pow_smul_zero [CompleteSpace E] :
+private theorem tendsto_pow_sub_smul_integral_exp_neg_mul_mul_pow_smul_zero [CompleteSpace E] :
     ∀ {k j : ℕ}, k ≤ j → ∀ {h : ℝ → E}, ContinuousOn h (Ici 0) → Tendsto h atTop (𝓝 0) →
       (∀ r < k, ∃ L, Tendsto (fun R : ℝ ↦ ∫ t in 0..R, iteratedTailIntegral h r t) atTop (𝓝 L)) →
       Tendsto (fun p : ℝ ↦ p ^ (j + 1 - k) • ∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ j) • h t)
         (𝓝[>] 0) (𝓝 0)
   | 0, j, _, _, hh_cont, hh_top, _ => by
-      simpa using tendsto_pow_succ_smul_integral_exp_neg_mul_pow_smul_zero hh_cont hh_top j
+      simpa using tendsto_pow_succ_smul_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero
+        (hh_cont.locallyIntegrableOn measurableSet_Ici) hh_top j
   | k + 1, j, hkj, h, hh_cont, hh_top, hh_conv => by
       obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : j ≠ 0)
       have hkm : k ≤ m := Nat.le_of_succ_le_succ hkj
       have hloc : LocallyIntegrableOn h (Ici 0) := hh_cont.locallyIntegrableOn measurableSet_Ici
-      have hloc0 : LocallyIntegrableOn (iteratedTailIntegral h 0) (Ici 0) := by simpa using hloc
       obtain ⟨L0, hL0⟩ := hh_conv 0 (Nat.zero_lt_succ k)
-      have hH_cont := continuousOn_iteratedTailIntegral_succ hloc0 hL0
-      have hH_top := tendsto_iteratedTailIntegral_succ_atTop hloc0 hL0
+      have hL0' : Tendsto (fun R : ℝ ↦ ∫ t in 0..R, h t) atTop (𝓝 L0) := by simpa using hL0
+      have hH_cont := continuousOn_iteratedTailIntegral_one hloc
+      have hH_top := tendsto_iteratedTailIntegral_one_atTop hloc hL0'
       have hH_conv : ∀ r < k, ∃ L, Tendsto
           (fun R : ℝ ↦ ∫ t in 0..R, iteratedTailIntegral (iteratedTailIntegral h 1) r t)
           atTop (𝓝 L) := fun r hr ↦ by
         simpa only [← iteratedTailIntegral_succ'] using hh_conv (r + 1) (Nat.succ_lt_succ hr)
-      have hdiff := ((tendsto_pow_sub_smul_integral_exp_neg_mul_pow_smul_zero hkm hH_cont hH_top
-        hH_conv).const_smul (m + 1 : ℝ)).sub
-        (tendsto_pow_sub_smul_integral_exp_neg_mul_pow_smul_zero (Nat.le_succ_of_le hkm) hH_cont
-          hH_top hH_conv)
+      have hdiff := ((tendsto_pow_sub_smul_integral_exp_neg_mul_mul_pow_smul_zero hkm hH_cont
+        hH_top hH_conv).const_smul (m + 1 : ℝ)).sub
+        (tendsto_pow_sub_smul_integral_exp_neg_mul_mul_pow_smul_zero (Nat.le_succ_of_le hkm)
+          hH_cont hH_top hH_conv)
       rw [smul_zero, sub_self] at hdiff
       refine hdiff.congr' ?_
       filter_upwards [self_mem_nhdsWithin] with p (hp : 0 < p)
+      have hw : IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ (m + 1)) (Ioi 0) := by
+        simpa only [mul_comm] using integrableOn_pow_mul_exp_neg_mul_Ioi (m + 1) hp
       have hh_int : IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ (m + 1)) • h t) (Ioi 0) :=
-        integrableOn_smul_of_continuousOn_of_tendsto_zero
-          (by simpa only [mul_comm] using integrableOn_pow_mul_exp_neg_mul_Ioi (m + 1) hp)
-          hh_cont hh_top
+        hw.smul_of_continuousOn_of_isBigO_one Ioi_subset_Ici_self hh_cont (hh_top.isBigO_one ℝ)
       rw [show m + 1 + 1 - (k + 1) = m + 1 - k by omega,
-        integral_Ioi_exp_neg_mul_pow_succ_smul_eq hp m hloc ⟨L0, by simpa using hL0⟩ hh_int,
+        integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq hp m hloc ⟨L0, hL0'⟩ hh_int,
         smul_sub, smul_comm, show m + 2 - k = m + 1 - k + 1 by omega, pow_succ, mul_smul]
 
 /-- Base case (`n = 0`) of the Abelian Laplace theorem assuming `[CompleteSpace E]`. -/
@@ -454,25 +219,24 @@ private theorem tendsto_integral_exp_neg_mul_smul_nhdsGT_zero_aux [CompleteSpace
     Tendsto (fun p : ℝ ↦ ∫ t in Ioi 0, Real.exp (-(p * t)) • f t) (𝓝[>] 0)
       (𝓝 (iteratedTailIntegral f 1 0)) := by
   have hloc := locallyIntegrableOn_of_integrableOn_exp_neg_mul_smul (hf 1 one_pos)
-  have hloc0 : LocallyIntegrableOn (iteratedTailIntegral f 0) (Ici 0) := by simpa using hloc
-  obtain ⟨L0, hL0⟩ : ∃ L, Tendsto (fun R : ℝ ↦ ∫ t in 0..R, iteratedTailIntegral f 0 t)
-      atTop (𝓝 L) := by simpa using hconv
+  obtain ⟨L0, hL0⟩ := hconv
   have hlim : Tendsto (fun p : ℝ ↦ iteratedTailIntegral f 1 0 -
       p • ∫ s in Ioi 0, Real.exp (-(p * s)) • iteratedTailIntegral f 1 s)
       (𝓝[>] 0) (𝓝 (iteratedTailIntegral f 1 0)) := by
-    simpa using tendsto_const_nhds.sub (tendsto_pow_succ_smul_integral_exp_neg_mul_pow_smul_zero
-      (continuousOn_iteratedTailIntegral_succ hloc0 hL0)
-      (tendsto_iteratedTailIntegral_succ_atTop hloc0 hL0) 0)
+    simpa using tendsto_const_nhds.sub
+      (tendsto_pow_succ_smul_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero
+        (locallyIntegrableOn_iteratedTailIntegral hloc 1)
+        (tendsto_iteratedTailIntegral_one_atTop hloc hL0) 0)
   refine hlim.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with p (hp : 0 < p)
-  exact (integral_Ioi_exp_neg_mul_smul_eq hp hloc hconv (hf p hp)).symm
+  exact (integral_Ioi_exp_neg_mul_smul_eq hp hloc ⟨L0, hL0⟩ (hf p hp)).symm
 
 /-- **Abelian Laplace-moment theorem for `iteratedTailIntegral`.** If `t ↦ exp (-(p * t)) • f t` is
 Bochner integrable on `(0, ∞)` for every `p > 0` and all improper tail integrals
 `R ↦ ∫ t in 0..R, iteratedTailIntegral f m t` (`m ≤ n`) converge as `R → ∞`, then
 `∫ t in Ioi 0, (exp (-(p * t)) * t ^ n) • f t → n ! • iteratedTailIntegral f (n + 1) 0` as
 `p → 0⁺`. -/
-theorem tendsto_integral_exp_neg_mul_pow_smul_nhdsGT_zero {f : ℝ → E} {n : ℕ}
+theorem tendsto_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero {f : ℝ → E} {n : ℕ}
     (hf : ∀ p > 0, IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) • f t) (Ioi 0))
     (hconv : ∀ m ≤ n, ∃ L, Tendsto (fun R : ℝ ↦ ∫ t in 0..R, iteratedTailIntegral f m t)
       atTop (𝓝 L)) :
@@ -480,37 +244,36 @@ theorem tendsto_integral_exp_neg_mul_pow_smul_nhdsGT_zero {f : ℝ → E} {n : �
       (𝓝 ((n.factorial : ℝ) • iteratedTailIntegral f (n + 1) 0)) := by
   by_cases hE : CompleteSpace E
   swap
-  · have hzero : iteratedTailIntegral f (n + 1) 0 = 0 := by
-      rw [iteratedTailIntegral_succ]
-      simp_rw [intervalIntegral, integral_of_not_completeSpace hE, sub_zero]
-      exact tendsto_const_nhds.limUnder_eq
-    simp_rw [integral_of_not_completeSpace hE, hzero, smul_zero]; exact tendsto_const_nhds
+  · simp_rw [integral_of_not_completeSpace hE, iteratedTailIntegral_succ_of_not_completeSpace hE,
+      smul_zero]
+    exact tendsto_const_nhds
   induction n generalizing f with
   | zero =>
     simpa using tendsto_integral_exp_neg_mul_smul_nhdsGT_zero_aux hf (by simpa using hconv 0 le_rfl)
   | succ n ih =>
     have hloc := locallyIntegrableOn_of_integrableOn_exp_neg_mul_smul (hf 1 one_pos)
-    have hloc0 : LocallyIntegrableOn (iteratedTailIntegral f 0) (Ici 0) := by simpa using hloc
     obtain ⟨L0, hL0⟩ := hconv 0 (Nat.zero_le _)
-    have hG_cont := continuousOn_iteratedTailIntegral_succ hloc0 hL0
-    have hG_top := tendsto_iteratedTailIntegral_succ_atTop hloc0 hL0
+    have hL0' : Tendsto (fun R : ℝ ↦ ∫ t in 0..R, f t) atTop (𝓝 L0) := by simpa using hL0
+    have hG_cont := continuousOn_iteratedTailIntegral_one hloc
+    have hG_top := tendsto_iteratedTailIntegral_one_atTop hloc hL0'
     have hG_lap : ∀ p > 0, IntegrableOn
-        (fun s : ℝ ↦ Real.exp (-(p * s)) • iteratedTailIntegral f 1 s) (Ioi 0) := fun p hp ↦
-      integrableOn_smul_of_continuousOn_of_tendsto_zero
-        (by simpa only [neg_mul] using exp_neg_integrableOn_Ioi 0 hp) hG_cont hG_top
+        (fun s : ℝ ↦ Real.exp (-(p * s)) • iteratedTailIntegral f 1 s) (Ioi 0) := fun p hp ↦ by
+      have hw : IntegrableOn (fun s : ℝ ↦ Real.exp (-(p * s))) (Ioi 0) := by
+        simpa only [neg_mul] using exp_neg_integrableOn_Ioi 0 hp
+      exact hw.smul_of_continuousOn_of_isBigO_one Ioi_subset_Ici_self hG_cont (hG_top.isBigO_one ℝ)
     have hG_conv : ∀ m ≤ n, ∃ L, Tendsto
         (fun R : ℝ ↦ ∫ t in 0..R, iteratedTailIntegral (iteratedTailIntegral f 1) m t)
         atTop (𝓝 L) := fun m hm ↦ by
       simpa only [← iteratedTailIntegral_succ'] using hconv (m + 1) (Nat.succ_le_succ hm)
     have hlim := ((ih hG_lap hG_conv).const_smul (n + 1 : ℝ)).sub
-      (tendsto_pow_sub_smul_integral_exp_neg_mul_pow_smul_zero (le_rfl : n + 1 ≤ n + 1)
+      (tendsto_pow_sub_smul_integral_exp_neg_mul_mul_pow_smul_zero (le_rfl : n + 1 ≤ n + 1)
         hG_cont hG_top fun r hr ↦ hG_conv r (Nat.le_of_lt_succ hr))
     rw [sub_zero, ← iteratedTailIntegral_succ' f (n + 1), smul_smul] at hlim
-    rw [Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
+    push_cast [Nat.factorial_succ]
     refine hlim.congr' ?_
     filter_upwards [self_mem_nhdsWithin] with p (hp : 0 < p)
-    simpa using (integral_Ioi_exp_neg_mul_pow_succ_smul_eq hp n hloc ⟨L0, by simpa using hL0⟩
-      (integrableOn_exp_neg_mul_pow_smul_of_lt (half_lt_self hp) (hf (p / 2) (half_pos hp))
+    simpa using (integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq hp n hloc ⟨L0, hL0'⟩
+      (integrableOn_exp_neg_mul_mul_pow_smul_of_lt (half_lt_self hp) (hf (p / 2) (half_pos hp))
         (n + 1))).symm
 
 /-- **Abel's theorem for conditionally convergent Laplace integrals.** If
@@ -522,28 +285,28 @@ theorem tendsto_integral_exp_neg_mul_smul_nhdsGT_zero {f : ℝ → E}
     (hconv : ∃ L, Tendsto (fun R : ℝ ↦ ∫ t in 0..R, f t) atTop (𝓝 L)) :
     Tendsto (fun p : ℝ ↦ ∫ t in Ioi 0, Real.exp (-(p * t)) • f t) (𝓝[>] 0)
       (𝓝 (iteratedTailIntegral f 1 0)) := by
-  simpa using tendsto_integral_exp_neg_mul_pow_smul_nhdsGT_zero (n := 0) hf fun m hm ↦ by
+  simpa using tendsto_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero (n := 0) hf fun m hm ↦ by
     obtain rfl : m = 0 := Nat.le_zero.mp hm
     simpa using hconv
 
 /-- **Abelian Laplace-derivative theorem for `iteratedTailIntegral`.** Under the hypotheses of
-`tendsto_integral_exp_neg_mul_pow_smul_nhdsGT_zero`, the normalized `n`-th derivative of the
-Laplace integral `q ↦ ∫ t in Ioi 0, exp (-(q * t)) • f t` converges to
-`iteratedTailIntegral f (n + 1) 0` as `p → 0⁺`. -/
+`tendsto_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero`, the `n`-th derivative of the Laplace
+integral `q ↦ ∫ t in Ioi 0, exp (-(q * t)) • f t` converges to
+`((-1) ^ n * n !) • iteratedTailIntegral f (n + 1) 0` as `p → 0⁺`. -/
 theorem tendsto_iteratedDeriv_integral_exp_neg_mul_smul_nhdsGT_zero {f : ℝ → E}
     {n : ℕ} (hf : ∀ p > 0, IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) • f t) (Ioi 0))
     (hconv : ∀ m ≤ n, ∃ L, Tendsto (fun R : ℝ ↦ ∫ t in 0..R, iteratedTailIntegral f m t)
       atTop (𝓝 L)) :
-    Tendsto (fun p : ℝ ↦ ((-1 : ℝ) ^ n / n.factorial) •
+    Tendsto (fun p : ℝ ↦
         iteratedDeriv n (fun q : ℝ ↦ ∫ t in Ioi 0, Real.exp (-(q * t)) • f t) p)
-      (𝓝[>] 0) (𝓝 (iteratedTailIntegral f (n + 1) 0)) := by
-  have hm := (tendsto_integral_exp_neg_mul_pow_smul_nhdsGT_zero hf hconv).const_smul
-    ((n.factorial : ℝ)⁻¹)
-  rw [smul_smul, inv_mul_cancel₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero), one_smul] at hm
+      (𝓝[>] 0) (𝓝 (((-1 : ℝ) ^ n * n.factorial) • iteratedTailIntegral f (n + 1) 0)) := by
+  have hm := (tendsto_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero hf hconv).const_smul
+    ((-1 : ℝ) ^ n)
+  rw [smul_smul] at hm
   refine hm.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with p (hp : 0 < p)
-  rw [iteratedDeriv_integral_exp_neg_mul_smul (half_lt_self hp) (hf (p / 2) (half_pos hp)) n,
-    smul_smul, div_eq_mul_inv, mul_right_comm, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+  exact (iteratedDeriv_integral_exp_neg_mul_smul (half_lt_self hp)
+    (hf (p / 2) (half_pos hp)) n).symm
 
 /-! ### Oscillatory Abelian Laplace corollaries -/
 
@@ -564,34 +327,28 @@ satisfies `HasOscillatoryDecay c q α₀ f` with `c ≠ 0`, `1 ≤ q`, and `0 < 
 every `n : ℕ`,
 `∫ t in Ioi 0, exp (-(p * t)) * t ^ n * f t → n ! * iteratedTailIntegral f (n + 1) 0` as `p → 0⁺`.
 -/
-theorem tendsto_integral_exp_neg_mul_pow_mul_nhdsGT_zero {c q α₀ : ℝ} {f : ℝ → ℝ}
+theorem tendsto_integral_exp_neg_mul_mul_pow_mul_nhdsGT_zero {c q α₀ : ℝ} {f : ℝ → ℝ}
     (hc : c ≠ 0) (hq : 1 ≤ q) (hα : 0 < α₀ + q - 1)
     (hf : HasOscillatoryDecay c q α₀ f) (hloc : LocallyIntegrableOn f (Ici 0)) (n : ℕ) :
     Tendsto (fun p : ℝ ↦ ∫ t in Ioi 0, Real.exp (-(p * t)) * t ^ n * f t) (𝓝[>] 0)
       (𝓝 ((n.factorial : ℝ) * TauCeti.iteratedTailIntegral f (n + 1) 0)) := by
-  have hconv : ∀ m ≤ n, ∃ L, Tendsto
-      (fun R : ℝ ↦ ∫ t in 0..R, TauCeti.iteratedTailIntegral f m t) atTop (𝓝 L) :=
-    fun m _ ↦ ⟨_, hf.tendsto_iteratedTailIntegral hc hq hα m 0⟩
-  simpa only [smul_eq_mul] using
-    tendsto_integral_exp_neg_mul_pow_smul_nhdsGT_zero
-      (fun p hp ↦ hf.integrableOn_exp_neg_mul_mul hloc hp) hconv
+  simpa only [smul_eq_mul] using tendsto_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero
+    (fun p hp ↦ hf.integrableOn_exp_neg_mul_mul hloc hp)
+    (fun m _ ↦ ⟨_, hf.tendsto_intervalIntegral_iteratedTailIntegral hc hq hα m 0⟩)
 
 /-- **Oscillatory Abelian Laplace-derivative theorem.** Under the hypotheses of
-`HasOscillatoryDecay.tendsto_integral_exp_neg_mul_pow_mul_nhdsGT_zero`, the normalized `n`-th
-derivative of the Laplace integral `r ↦ ∫ t in Ioi 0, exp (-(r * t)) * f t` tends to
-`iteratedTailIntegral f (n + 1) 0` as `p → 0⁺`. -/
+`HasOscillatoryDecay.tendsto_integral_exp_neg_mul_mul_pow_mul_nhdsGT_zero`, the `n`-th derivative of
+the Laplace integral `r ↦ ∫ t in Ioi 0, exp (-(r * t)) * f t` tends to
+`(-1) ^ n * n ! * iteratedTailIntegral f (n + 1) 0` as `p → 0⁺`. -/
 theorem tendsto_iteratedDeriv_integral_exp_neg_mul_mul_nhdsGT_zero {c q α₀ : ℝ} {f : ℝ → ℝ}
     (hc : c ≠ 0) (hq : 1 ≤ q) (hα : 0 < α₀ + q - 1)
     (hf : HasOscillatoryDecay c q α₀ f) (hloc : LocallyIntegrableOn f (Ici 0)) (n : ℕ) :
-    Tendsto (fun p : ℝ ↦ (-1 : ℝ) ^ n / n.factorial *
+    Tendsto (fun p : ℝ ↦
         iteratedDeriv n (fun r : ℝ ↦ ∫ t in Ioi 0, Real.exp (-(r * t)) * f t) p)
-      (𝓝[>] 0) (𝓝 (TauCeti.iteratedTailIntegral f (n + 1) 0)) := by
-  have hconv : ∀ m ≤ n, ∃ L, Tendsto
-      (fun R : ℝ ↦ ∫ t in 0..R, TauCeti.iteratedTailIntegral f m t) atTop (𝓝 L) :=
-    fun m _ ↦ ⟨_, hf.tendsto_iteratedTailIntegral hc hq hα m 0⟩
-  simpa only [smul_eq_mul] using
-    tendsto_iteratedDeriv_integral_exp_neg_mul_smul_nhdsGT_zero
-      (fun p hp ↦ hf.integrableOn_exp_neg_mul_mul hloc hp) hconv
+      (𝓝[>] 0) (𝓝 ((-1 : ℝ) ^ n * n.factorial * TauCeti.iteratedTailIntegral f (n + 1) 0)) := by
+  simpa only [smul_eq_mul] using tendsto_iteratedDeriv_integral_exp_neg_mul_smul_nhdsGT_zero
+    (fun p hp ↦ hf.integrableOn_exp_neg_mul_mul hloc hp)
+    (fun m _ ↦ ⟨_, hf.tendsto_intervalIntegral_iteratedTailIntegral hc hq hα m 0⟩)
 
 end HasOscillatoryDecay
 

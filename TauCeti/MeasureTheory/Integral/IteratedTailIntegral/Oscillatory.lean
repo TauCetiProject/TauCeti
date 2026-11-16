@@ -14,8 +14,11 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import Mathlib.MeasureTheory.Integral.Asymptotics
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Repeated improper tail integrals of oscillatory functions
@@ -25,26 +28,28 @@ Integration by parts for power-damped oscillations `t ^ (-α) * cos (c * t ^ p +
 the oscillatory form. This file packages that mechanism via `TauCeti.HasOscillatoryDecay c p α₀ f`
 and proves that `TauCeti.iteratedTailIntegral` preserves `HasOscillatoryDecay` to all orders:
 
-* Every `n`-th improper tail integral `∫ t in x..R, iteratedTailIntegral f n t` converges as
-  `R → ∞` for `f` satisfying `HasOscillatoryDecay c p α₀ f`.
-* Every `iteratedTailIntegral f n` satisfies `HasOscillatoryDecay c p (α₀ + n * (p - 1))`, hence
-  `iteratedTailIntegral f n =O[atTop] fun t ↦ t ^ (-(α₀ + n * (p - 1)))`.
-* Specializations cover Airy-type negative-argument oscillations (`p = 3 / 2`, `α₀ = 1 / 4`,
-  giving `O(t ^ (-1 / 4 - n / 2))`) and generalized Fresnel integrals `cos (c * t ^ m + φ)`
-  (`2 ≤ m`).
+* Every `iteratedTailIntegral f n` satisfies `HasOscillatoryDecay c p (α₀ + n * (p - 1))`
+  (`TauCeti.HasOscillatoryDecay.iteratedTailIntegral`), hence
+  `iteratedTailIntegral f n =O[atTop] fun t ↦ t ^ (-(α₀ + n * (p - 1)))` via
+  `TauCeti.HasOscillatoryDecay.isBigO_rpow_neg`.
+* For every `n : ℕ` and `x : ℝ`, `R ↦ ∫ t in x..R, iteratedTailIntegral f n t` converges to
+  `iteratedTailIntegral f (n + 1) x` as `R → ∞`
+  (`TauCeti.HasOscillatoryDecay.tendsto_intervalIntegral_iteratedTailIntegral`). When
+  `LocallyIntegrableOn f (Ici x)` holds, this represents a genuine convergent improper integral;
+  where local integrability fails, truncated integrals vanish for large `R` by Mathlib's
+  `intervalIntegral.integral_undef` convention (and positive-order iterates collapse to `0` if `f`
+  is locally integrable on no ray `[a, ∞)`).
 
 ## Main declarations
 
-* `TauCeti.HasOscillatoryDecay`: asymptotic decomposition to arbitrary polynomial order into
-  power-damped cosine and sine modes of phase `c * t ^ p`.
+* `TauCeti.HasOscillatoryDecay` and `TauCeti.hasOscillatoryDecay_def`: asymptotic decomposition to
+  arbitrary polynomial order into power-damped cosine and sine modes of phase `c * t ^ p`.
 * `TauCeti.HasOscillatoryDecay.of_asymptoticExpansion`: criterion from a Poincaré oscillatory
   asymptotic series.
-* `TauCeti.HasOscillatoryDecay.tendsto_and_iteratedTailIntegral`: convergence and preservation of
-  `HasOscillatoryDecay` under `TauCeti.iteratedTailIntegral` with exponent shift `n * (p - 1)`.
-* `TauCeti.HasOscillatoryDecay.tendsto_iteratedTailIntegral`,
-  `TauCeti.HasOscillatoryDecay.tendsto_and_isBigO_iteratedTailIntegral`,
-  `TauCeti.HasOscillatoryDecay.tendsto_and_isBigO_iteratedTailIntegral_three_halves`: convergence
-  and polynomial decay of all repeated improper tail integrals.
+* `TauCeti.HasOscillatoryDecay.iteratedTailIntegral`: preservation of `HasOscillatoryDecay` under
+  `TauCeti.iteratedTailIntegral` with exponent shift `n * (p - 1)`.
+* `TauCeti.HasOscillatoryDecay.tendsto_intervalIntegral_iteratedTailIntegral`: convergence of all
+  repeated improper tail integrals.
 
 ## References
 
@@ -82,6 +87,16 @@ def HasOscillatoryDecay (c p α₀ : ℝ) (f : ℝ → ℝ) : Prop :=
     f =ᶠ[atTop] fun t ↦
       (∑ i, (u i * (t ^ (-α i) * Real.cos (c * t ^ p)) +
         v i * (t ^ (-α i) * Real.sin (c * t ^ p)))) + r t
+
+/-- Defining equivalence of `TauCeti.HasOscillatoryDecay`. -/
+theorem hasOscillatoryDecay_def {c p α₀ : ℝ} {f : ℝ → ℝ} :
+    HasOscillatoryDecay c p α₀ f ↔
+      ∀ B : ℝ, ∃ (k : ℕ) (α u v : Fin k → ℝ) (r : ℝ → ℝ),
+        (∀ i, α₀ ≤ α i) ∧ r =O[atTop] (fun t : ℝ ↦ t ^ (-B)) ∧
+        f =ᶠ[atTop] fun t ↦
+          (∑ i, (u i * (t ^ (-α i) * Real.cos (c * t ^ p)) +
+            v i * (t ^ (-α i) * Real.sin (c * t ^ p)))) + r t :=
+  Iff.rfl
 
 private theorem hasOscillatoryDecay_iff {c p α₀ : ℝ} {f : ℝ → ℝ} :
     HasOscillatoryDecay c p α₀ f ↔ ∀ B, HasOscillatoryDecayAt c p α₀ B f := by rfl
@@ -149,6 +164,7 @@ theorem of_isBigO {c p α₀ : ℝ} {f : ℝ → ℝ}
   fun B ↦ HasOscillatoryDecayAt.of_isBigO (hf B)
 
 /-- The zero function satisfies `HasOscillatoryDecay c p α₀`. -/
+@[simp]
 theorem zero (c p α₀ : ℝ) : HasOscillatoryDecay c p α₀ 0 :=
   of_isBigO fun _ ↦ isBigO_zero _ _
 
@@ -336,31 +352,20 @@ private theorem integrableOn_and_isBigO_tail_of_isBigO_rpow {g : ℝ → ℝ} {a
     (hg : g =O[atTop] fun t : ℝ ↦ t ^ (-M)) :
     IntegrableOn g (Ioi a) ∧
       iteratedTailIntegral g 1 =O[atTop] fun x : ℝ ↦ x ^ (-B) := by
-  obtain ⟨C, hC⟩ := hg.bound
-  obtain ⟨R₀, hR₀⟩ := eventually_atTop.mp hC
+  obtain ⟨C, hC0, hC⟩ := hg.exists_nonneg
+  obtain ⟨R₀, hR₀⟩ := eventually_atTop.mp hC.bound
   let x₁ : ℝ := max (max a 1) R₀
   have hx₁_pos : 0 < x₁ := lt_of_lt_of_le zero_lt_one ((le_max_right a 1).trans (le_max_left _ _))
   have ha_x₁ : a ≤ x₁ := (le_max_left a 1).trans (le_max_left _ _)
-  have hC0 : 0 ≤ C := by
-    have h1 := hR₀ x₁ (le_max_right _ _)
-    rw [Real.norm_of_nonneg (Real.rpow_nonneg hx₁_pos.le _)] at h1
-    exact nonneg_of_mul_nonneg_left ((norm_nonneg _).trans h1) (Real.rpow_pos_of_pos hx₁_pos _)
   have hmaj {y : ℝ} (hy : 0 < y) : IntegrableOn (fun t : ℝ ↦ C * t ^ (-M)) (Ioi y) :=
     (integrableOn_Ioi_rpow_of_lt (by linarith : -M < -1) hy).const_mul C
-  have hint_x₁ : IntegrableOn g (Ioi x₁) := by
-    refine Integrable.mono' (hmaj hx₁_pos)
-      (hg_loc.aestronglyMeasurable.mono_set ((Ioi_subset_Ioi ha_x₁).trans Ioi_subset_Ici_self)) ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : x₁ < t)
-    simpa [Real.norm_of_nonneg (Real.rpow_nonneg (hx₁_pos.trans ht).le _)] using
-      hR₀ t ((le_max_right _ _).trans ht.le)
-  have hint_a : IntegrableOn g (Ioi a) := by
-    rw [← Ioc_union_Ioi_eq_Ioi ha_x₁]
-    exact ((hg_loc.integrableOn_compact_subset
-      (fun _ (ht : _ ∈ Icc a x₁) ↦ ht.1) isCompact_Icc).mono_set Ioc_subset_Icc_self).union hint_x₁
+  have hint_a : IntegrableOn g (Ioi a) :=
+    (hg_loc.integrableOn_of_isBigO_atTop hg
+      (integrableAtFilter_rpow_atTop_iff.mpr (by linarith))).mono_set Ioi_subset_Ici_self
   refine ⟨hint_a, isBigO_iff.mpr ⟨C / (M - 1), ?_⟩⟩
   filter_upwards [eventually_ge_atTop x₁] with x hx
   have hx_pos : 0 < x := hx₁_pos.trans_le hx
-  have hint_x : IntegrableOn g (Ioi x) := hint_x₁.mono_set (Ioi_subset_Ioi hx)
+  have hint_x : IntegrableOn g (Ioi x) := hint_a.mono_set (Ioi_subset_Ioi (ha_x₁.trans hx))
   rw [iteratedTailIntegral_one_eq_integral_Ioi hint_x,
     Real.norm_of_nonneg (Real.rpow_nonneg hx_pos.le _)]
   calc
@@ -391,15 +396,11 @@ private theorem tendsto_and_tail_rpow_mul_cos_add {c p α φ x : ℝ}
               (fun t ↦ t ^ (-(α + p)) * Real.cos (c * t ^ p + (φ - Real.pi / 2))) 1 x := by
   have hbnd : Tendsto (fun R : ℝ ↦ (c * p)⁻¹ * R ^ (-(α + p - 1)) * Real.sin (c * R ^ p + φ))
       atTop (𝓝 0) := by
-    refine tendsto_zero_iff_norm_tendsto_zero.mpr
-      (squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_
-        (by simpa only [mul_zero] using (tendsto_rpow_neg_atTop hα).const_mul |(c * p)⁻¹|))
-    filter_upwards [eventually_ge_atTop (1 : ℝ)] with R hR
-    have hR0 : 0 ≤ R := zero_le_one.trans hR
-    rw [norm_mul, norm_mul, Real.norm_eq_abs (c * p)⁻¹,
-      Real.norm_of_nonneg (Real.rpow_nonneg hR0 _), Real.norm_eq_abs]
-    exact mul_le_of_le_one_right
-      (mul_nonneg (abs_nonneg _) (Real.rpow_nonneg hR0 _)) (Real.abs_sin_le_one _)
+    have hbig : (fun R : ℝ ↦ (c * p)⁻¹ * R ^ (-(α + p - 1)) * Real.sin (c * R ^ p + φ)) =O[atTop]
+        fun R : ℝ ↦ R ^ (-(α + p - 1)) := by
+      simpa only [mul_assoc] using ((HasOscillatoryDecay.rpow_mul_sin_add (c := c) (p := p)
+        le_rfl φ).const_mul (c * p)⁻¹).isBigO_rpow_neg
+    exact hbig.trans_tendsto (tendsto_rpow_neg_atTop hα)
   have hrem_int : IntegrableOn
       (fun t : ℝ ↦ t ^ (-(α + p)) * Real.cos (c * t ^ p + (φ - Real.pi / 2))) (Ioi x) := by
     refine Integrable.mono' (integrableOn_Ioi_rpow_of_lt (by linarith : -(α + p) < -1) hx)
@@ -415,20 +416,12 @@ private theorem tendsto_and_tail_rpow_mul_cos_add {c p α φ x : ℝ}
     have hlim := (hbnd.sub_const ((c * p)⁻¹ * x ^ (-(α + p - 1)) * Real.sin (c * x ^ p + φ))).add
       ((intervalIntegral_tendsto_integral_Ioi x hrem_int tendsto_id).const_mul
         ((α + p - 1) / (c * p)))
-    rw [show 0 - (c * p)⁻¹ * x ^ (-(α + p - 1)) * Real.sin (c * x ^ p + φ) +
-        ((α + p - 1) / (c * p)) *
-          (∫ t in Ioi x, t ^ (-(α + p)) * Real.cos (c * t ^ p + (φ - Real.pi / 2))) =
-        -(c * p)⁻¹ * (x ^ (-(α + p - 1)) * Real.cos (c * x ^ p + (φ - Real.pi / 2))) +
-          ((α + p - 1) / (c * p)) *
-            ∫ t in Ioi x, t ^ (-(α + p)) * Real.cos (c * t ^ p + (φ - Real.pi / 2)) by
-      rw [← add_sub_assoc, Real.cos_sub_pi_div_two]; ring] at hlim
-    refine hlim.congr' ?_
-    filter_upwards [eventually_ge_atTop x] with R hR using
-      (intervalIntegral_rpow_mul_cos_add_eq hc hp hx hR).symm
+    convert hlim.congr' ?_ using 2
+    · rw [← add_sub_assoc, Real.cos_sub_pi_div_two]; ring
+    · filter_upwards [eventually_ge_atTop x] with R hR using
+        (intervalIntegral_rpow_mul_cos_add_eq hc hp hx hR).symm
   refine ⟨⟨_, ht⟩, ?_⟩
-  rw [iteratedTailIntegral_succ_eq_of_tendsto (n := 0)
-    (by simpa only [iteratedTailIntegral_zero] using ht),
-    iteratedTailIntegral_one_eq_integral_Ioi hrem_int]
+  rw [iteratedTailIntegral_one_eq_of_tendsto ht, iteratedTailIntegral_one_eq_integral_Ioi hrem_int]
 
 /-- Inductive step in `m` for `hasOscillatoryDecay_tail_rpow_mul_cos_add`. -/
 private theorem hasOscillatoryDecayAt_tail_rpow_mul_cos_add_aux {c p : ℝ}
@@ -442,13 +435,9 @@ private theorem hasOscillatoryDecayAt_tail_rpow_mul_cos_add_aux {c p : ℝ}
     cases m with
     | zero =>
       have hbig : (fun t : ℝ ↦ t ^ (-(γ + p)) * Real.cos (c * t ^ p + (φ - Real.pi / 2))) =O[atTop]
-          fun t : ℝ ↦ t ^ (-(γ + p)) := by
-        refine isBigO_iff.mpr ⟨1, ?_⟩
-        filter_upwards [eventually_ge_atTop (1 : ℝ)] with t ht
-        rw [norm_mul, Real.norm_of_nonneg (Real.rpow_nonneg (zero_le_one.trans ht) _),
-          Real.norm_eq_abs, one_mul]
-        exact mul_le_of_le_one_right (Real.rpow_nonneg (zero_le_one.trans ht) _)
-          (Real.abs_cos_le_one _)
+          fun t : ℝ ↦ t ^ (-(γ + p)) :=
+        (HasOscillatoryDecay.rpow_mul_cos_add (c := c) (p := p) le_rfl
+          (φ - Real.pi / 2)).isBigO_rpow_neg
       exact HasOscillatoryDecayAt.of_isBigO (integrableOn_and_isBigO_tail_of_isBigO_rpow (B := B)
         ((continuousOn_rpow_mul_trig_add one_pos Real.continuous_cos).locallyIntegrableOn
           measurableSet_Ici) (by linarith) (by push_cast at hB; linarith) hbig).2
@@ -491,19 +480,16 @@ private theorem tendsto_oscillatorySum {c p x : ℝ} {k : ℕ} {α u v : Fin k �
           v i * (t ^ (-α i) * Real.sin (c * t ^ p)))) atTop
       (𝓝 (∑ i, (u i * iteratedTailIntegral (fun t ↦ t ^ (-α i) * Real.cos (c * t ^ p)) 1 x +
         v i * iteratedTailIntegral (fun t ↦ t ^ (-α i) * Real.sin (c * t ^ p)) 1 x))) := by
-  have hLc (i : Fin k) : Tendsto (fun R : ℝ ↦ ∫ t in x..R, t ^ (-α i) * Real.cos (c * t ^ p))
-      atTop (𝓝 (iteratedTailIntegral (fun t ↦ t ^ (-α i) * Real.cos (c * t ^ p)) 1 x)) := by
-    obtain ⟨L, hL⟩ := (tendsto_and_tail_rpow_mul_cos_add (α := α i) (φ := 0) hc hp (hα i) hx).1
-    simp only [add_zero] at hL
-    rwa [iteratedTailIntegral_succ_eq_of_tendsto (n := 0) (by simpa using hL)]
-  have hLs (i : Fin k) : Tendsto (fun R : ℝ ↦ ∫ t in x..R, t ^ (-α i) * Real.sin (c * t ^ p))
-      atTop (𝓝 (iteratedTailIntegral (fun t ↦ t ^ (-α i) * Real.sin (c * t ^ p)) 1 x)) := by
-    obtain ⟨L, hL⟩ :=
-      (tendsto_and_tail_rpow_mul_cos_add (α := α i) (φ := -(Real.pi / 2)) hc hp (hα i) hx).1
-    simp only [← sub_eq_add_neg, Real.cos_sub_pi_div_two] at hL
-    rwa [iteratedTailIntegral_succ_eq_of_tendsto (n := 0) (by simpa using hL)]
+  have hL (i : Fin k) (φ : ℝ) :
+      Tendsto (fun R : ℝ ↦ ∫ t in x..R, t ^ (-α i) * Real.cos (c * t ^ p + φ))
+        atTop (𝓝 (iteratedTailIntegral (fun t ↦ t ^ (-α i) * Real.cos (c * t ^ p + φ)) 1 x)) := by
+    obtain ⟨_, h⟩ := (tendsto_and_tail_rpow_mul_cos_add (α := α i) (φ := φ) hc hp (hα i) hx).1
+    rwa [iteratedTailIntegral_one_eq_of_tendsto h]
   refine (tendsto_finsetSum Finset.univ fun i _ ↦
-    ((hLc i).const_mul (u i)).add ((hLs i).const_mul (v i))).congr' ?_
+    (Filter.Tendsto.const_mul (u i) (by simpa only [add_zero] using hL i 0)).add
+      (Filter.Tendsto.const_mul (v i)
+        (by simpa only [← sub_eq_add_neg, Real.cos_sub_pi_div_two] using
+          hL i (-(Real.pi / 2))))).congr' ?_
   filter_upwards [eventually_ge_atTop x] with R hR
   have hsub : [[x, R]] ⊆ Ici x := by rw [uIcc_of_le hR]; exact fun _ ht ↦ ht.1
   have hint (i : Fin k) (a : ℝ) {trig : ℝ → ℝ} (htrig : Continuous trig) :
@@ -538,19 +524,6 @@ private theorem hasOscillatoryDecayAt_sum_tail_add {c p α₀ B : ℝ} {k : ℕ}
       hasOscillatoryDecay_tail_rpow_mul_cos_add (α := α i) (-(Real.pi / 2)) hc hp (hα_pos i)
   exact (((hasOscillatoryDecay_iff.mp hdc B).mono (by linarith [hαi i])).const_mul (u i)).add
     (((hasOscillatoryDecay_iff.mp hds B).mono (by linarith [hαi i])).const_mul (v i))
-
-/-- Shifting the lower endpoint of a convergent improper integral on `[a, ∞)` left from `x₀ ≥ a`. -/
-private theorem tendsto_intervalIntegral_of_tendsto_of_le {a x₀ L : ℝ} {f : ℝ → ℝ}
-    (hloc : LocallyIntegrableOn f (Ici a)) (ha : a ≤ x₀)
-    (hx₀ : Tendsto (fun R : ℝ ↦ ∫ t in x₀..R, f t) atTop (𝓝 L)) :
-    Tendsto (fun R : ℝ ↦ ∫ t in a..R, f t) atTop (𝓝 ((∫ t in a..x₀, f t) + L)) := by
-  refine (hx₀.const_add (∫ t in a..x₀, f t)).congr' ?_
-  filter_upwards [eventually_ge_atTop x₀] with R hR using
-    intervalIntegral.integral_add_adjacent_intervals
-      ((hloc.integrableOn_compact_subset
-        (by rw [uIcc_of_le ha]; exact fun _ ht ↦ ht.1) isCompact_uIcc).intervalIntegrable)
-      ((hloc.integrableOn_compact_subset
-        (by rw [uIcc_of_le hR]; exact fun _ ht ↦ ha.trans ht.1) isCompact_uIcc).intervalIntegrable)
 
 /-- Single-step convergence and `HasOscillatoryDecay` preservation for a locally integrable
 function on `[a, ∞)`. -/
@@ -589,37 +562,21 @@ private theorem tendsto_and_hasOscillatoryDecay_step {c p α₀ a : ℝ} {f : �
       rw [id, ← intervalIntegral.integral_add
         (((continuousOn_oscillatorySum (hx₀_pos.trans_le hx) (c := c) (p := p) (α := α) (u := u)
           (v := v)).mono hsub).intervalIntegrable)
-        ((hr_loc.integrableOn_compact_subset (hsub.trans (Ici_subset_Ici.mpr hx))
-          isCompact_uIcc).intervalIntegrable)]
+        (hr_loc.intervalIntegrable (hsub.trans (Ici_subset_Ici.mpr hx)))]
       exact intervalIntegral.integral_congr fun t ht ↦
         (hR₀ t ((le_max_right _ _).trans (hx.trans (hsub ht)))).symm
-    refine ⟨⟨_, tendsto_intervalIntegral_of_tendsto_of_le hloc ha_x₀ (hfx_of_ge le_rfl)⟩,
+    refine ⟨⟨_, hloc.tendsto_intervalIntegral_sub ha_x₀ le_rfl (hfx_of_ge le_rfl)⟩,
       (hasOscillatoryDecayAt_sum_tail_add (u := u) (v := v) hc hp hαi hα_pos hr_tail).congr_atTop
         ?_⟩
     filter_upwards [eventually_ge_atTop x₀] with x hx
     simp only [iteratedTailIntegral_one_eq_integral_Ioi (hr_int.mono_set (Ioi_subset_Ioi hx)),
-      iteratedTailIntegral_succ_eq_of_tendsto (n := 0) (by simpa using hfx_of_ge hx)]
+      iteratedTailIntegral_one_eq_of_tendsto (hfx_of_ge hx)]
   exact ⟨(hB 0).1, hasOscillatoryDecay_iff.mpr fun B ↦ (hB B).2⟩
 
-/-- If `g` fails `LocallyIntegrableOn g (Ici x)`, then `∫ t in x..R, g t = 0` for all sufficiently
-large `R`, so `fun R ↦ ∫ t in x..R, g t` tends to `0`. -/
-private theorem tendsto_zero_of_not_locallyIntegrableOn_Ici {x : ℝ} {g : ℝ → ℝ}
-    (hnot : ¬ LocallyIntegrableOn g (Ici x)) :
-    Tendsto (fun R : ℝ ↦ ∫ t in x..R, g t) atTop (𝓝 0) := by
-  rw [LocallyIntegrableOn] at hnot; push Not at hnot
-  obtain ⟨y, hy, hy_not⟩ := hnot
-  have hnot_Icc : ¬ IntegrableOn g (Icc x (y + 1)) := fun hIcc ↦ hy_not ⟨Icc x (y + 1), by
-    filter_upwards [self_mem_nhdsWithin,
-      nhdsWithin_le_nhds (Iio_mem_nhds (lt_add_one y))] with _ h1 h2 using ⟨h1, h2.le⟩, hIcc⟩
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [eventually_ge_atTop (y + 1)] with R hR
-  exact (intervalIntegral.integral_undef fun hInt ↦ hnot_Icc
-    (((intervalIntegrable_iff_integrableOn_Icc_of_le (by linarith [mem_Ici.mp hy])
-      eNorm_ne_top).mp hInt).mono_set (Icc_subset_Icc_right hR))).symm
-
-/-- Unconditional single-step convergence (for every basepoint `x : ℝ`) and `HasOscillatoryDecay`
-preservation (`0 < p`, `0 < α₀ + p - 1`). -/
-private theorem tendsto_and_hasOscillatoryDecay_unconditional {c p α₀ : ℝ} {f : ℝ → ℝ}
+/-- Single-step convergence (for every basepoint `x : ℝ`, genuinely when `LocallyIntegrableOn f
+(Ici x)` holds and vacuously to `0` by `intervalIntegral.integral_undef` otherwise) and
+`HasOscillatoryDecay` preservation (`0 < p`, `0 < α₀ + p - 1`). -/
+private theorem tendsto_and_hasOscillatoryDecay_one {c p α₀ : ℝ} {f : ℝ → ℝ}
     (hc : c ≠ 0) (hp : 0 < p) (hα : 0 < α₀ + p - 1) (hf : HasOscillatoryDecay c p α₀ f) :
     (∀ x : ℝ, Tendsto (fun R : ℝ ↦ ∫ t in x..R, f t) atTop
       (𝓝 (iteratedTailIntegral f 1 x))) ∧
@@ -628,94 +585,61 @@ private theorem tendsto_and_hasOscillatoryDecay_unconditional {c p α₀ : ℝ} 
       Tendsto (fun R : ℝ ↦ ∫ t in x..R, f t) atTop (𝓝 (iteratedTailIntegral f 1 x)) := by
     by_cases hx : LocallyIntegrableOn f (Ici x)
     · obtain ⟨_, hL⟩ := (tendsto_and_hasOscillatoryDecay_step hc hp hα hf hx).1
-      rwa [iteratedTailIntegral_succ_eq_of_tendsto (n := 0) (by simpa using hL)]
-    · have h0 := tendsto_zero_of_not_locallyIntegrableOn_Ici hx
-      rwa [iteratedTailIntegral_succ_eq_of_tendsto (n := 0) (by simpa using h0)]
+      rwa [iteratedTailIntegral_one_eq_of_tendsto hL]
+    · have h0 := tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici hx
+      rwa [iteratedTailIntegral_one_eq_of_tendsto h0]
   refine ⟨hx_tend, ?_⟩
   by_cases hex : ∃ a : ℝ, LocallyIntegrableOn f (Ici a)
   · exact (tendsto_and_hasOscillatoryDecay_step hc hp hα hf hex.choose_spec).2
   · push Not at hex
     rw [show iteratedTailIntegral f 1 = 0 by
-      ext x; exact iteratedTailIntegral_succ_eq_of_tendsto (n := 0)
-        (by simpa using tendsto_zero_of_not_locallyIntegrableOn_Ici (hex x))]
+      ext x
+      exact iteratedTailIntegral_one_eq_of_tendsto
+        (tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici (hex x))]
     exact HasOscillatoryDecay.zero c p (α₀ + p - 1)
 
 namespace HasOscillatoryDecay
 
-/-- **Convergence and oscillatory preservation under `iteratedTailIntegral`.** If `f` satisfies
-`HasOscillatoryDecay c p α₀ f` with `c ≠ 0`, `1 ≤ p`, and `0 < α₀ + p - 1`, then for every `n : ℕ`,
-all improper tail integrals `∫ t in x..R, iteratedTailIntegral f n t` converge as `R → ∞` and
-`iteratedTailIntegral f n` satisfies `HasOscillatoryDecay c p (α₀ + n * (p - 1))`. -/
-theorem tendsto_and_iteratedTailIntegral {c p α₀ : ℝ} {f : ℝ → ℝ}
+/-- **Oscillatory decay preservation under `iteratedTailIntegral`.** If `f` satisfies
+`HasOscillatoryDecay c p α₀ f` with `c ≠ 0`, `1 ≤ p`, and `0 < α₀ + p - 1`, then for every
+`n : ℕ`, `iteratedTailIntegral f n` satisfies `HasOscillatoryDecay c p (α₀ + n * (p - 1))` (and
+hence `iteratedTailIntegral f n =O[atTop] fun t ↦ t ^ (-(α₀ + n * (p - 1)))` via
+`HasOscillatoryDecay.isBigO_rpow_neg`). If `f` fails `LocallyIntegrableOn` on every ray `[a, ∞)`,
+positive-order iterates collapse to `0` by `intervalIntegral.integral_undef`. -/
+theorem iteratedTailIntegral {c p α₀ : ℝ} {f : ℝ → ℝ}
     (hc : c ≠ 0) (hp : 1 ≤ p) (hα : 0 < α₀ + p - 1)
     (hf : HasOscillatoryDecay c p α₀ f) (n : ℕ) :
-    (∀ x : ℝ, Tendsto (fun R : ℝ ↦ ∫ t in x..R, TauCeti.iteratedTailIntegral f n t) atTop
-      (𝓝 (TauCeti.iteratedTailIntegral f (n + 1) x))) ∧
-      HasOscillatoryDecay c p (α₀ + n * (p - 1)) (TauCeti.iteratedTailIntegral f n) := by
+    HasOscillatoryDecay c p (α₀ + n * (p - 1)) (TauCeti.iteratedTailIntegral f n) := by
   have hp0 : 0 < p := lt_of_lt_of_le zero_lt_one hp
-  have hpos (k : ℕ) : 0 < (α₀ + k * (p - 1)) + p - 1 := by
-    have : 0 ≤ (k : ℝ) * (p - 1) := mul_nonneg (Nat.cast_nonneg k) (sub_nonneg.mpr hp)
-    linarith
   induction n with
-  | zero =>
-    simp only [Nat.cast_zero, zero_mul, add_zero, iteratedTailIntegral_zero_eq]
-    exact ⟨(tendsto_and_hasOscillatoryDecay_unconditional hc hp0 hα hf).1, hf⟩
+  | zero => simpa only [Nat.cast_zero, zero_mul, add_zero, iteratedTailIntegral_zero] using hf
   | succ n ih =>
-    have hf_n1 : HasOscillatoryDecay c p (α₀ + ↑(n + 1) * (p - 1))
-        (TauCeti.iteratedTailIntegral f (n + 1)) := by
-      have hstep := (tendsto_and_hasOscillatoryDecay_unconditional hc hp0 (hpos n) ih.2).2
-      have hshift : (α₀ + n * (p - 1)) + p - 1 = α₀ + ↑(n + 1) * (p - 1) := by push_cast; ring
-      rwa [← iteratedTailIntegral_succ_eq_one, hshift] at hstep
-    exact ⟨fun x ↦ by simpa only [← iteratedTailIntegral_succ_eq_one] using
-      (tendsto_and_hasOscillatoryDecay_unconditional hc hp0 (hpos (n + 1)) hf_n1).1 x, hf_n1⟩
+    have hpos : 0 < (α₀ + n * (p - 1)) + p - 1 := by
+      have : 0 ≤ (n : ℝ) * (p - 1) := mul_nonneg (Nat.cast_nonneg n) (sub_nonneg.mpr hp)
+      linarith
+    have hstep := (tendsto_and_hasOscillatoryDecay_one hc hp0 hpos ih).2
+    have hshift : (α₀ + n * (p - 1)) + p - 1 = α₀ + ↑(n + 1) * (p - 1) := by push_cast; ring
+    rwa [← iteratedTailIntegral_succ, hshift] at hstep
 
-/-- **Global convergence of repeated improper tail integrals** of any function satisfying
-`HasOscillatoryDecay c p α₀ f` (`c ≠ 0`, `1 ≤ p`, `0 < α₀ + p - 1`). -/
-theorem tendsto_iteratedTailIntegral {c p α₀ : ℝ} {f : ℝ → ℝ}
+/-- **Convergence of repeated improper tail integrals** of a function satisfying
+`HasOscillatoryDecay c p α₀ f` (`c ≠ 0`, `1 ≤ p`, `0 < α₀ + p - 1`). For every `n : ℕ` and
+`x : ℝ`, `R ↦ ∫ t in x..R, iteratedTailIntegral f n t` tends to `iteratedTailIntegral f (n + 1) x`
+as `R → ∞`. This represents a genuine convergent improper integral whenever
+`LocallyIntegrableOn f (Ici x)` holds; where local integrability fails, truncated integrals vanish
+for large `R` by Mathlib's `intervalIntegral.integral_undef` convention and the limit holds
+vacuously with value `0`. -/
+theorem tendsto_intervalIntegral_iteratedTailIntegral {c p α₀ : ℝ} {f : ℝ → ℝ}
     (hc : c ≠ 0) (hp : 1 ≤ p) (hα : 0 < α₀ + p - 1)
     (hf : HasOscillatoryDecay c p α₀ f) (n : ℕ) (x : ℝ) :
     Tendsto (fun R : ℝ ↦ ∫ t in x..R, TauCeti.iteratedTailIntegral f n t) atTop
-      (𝓝 (TauCeti.iteratedTailIntegral f (n + 1) x)) :=
-  (hf.tendsto_and_iteratedTailIntegral hc hp hα n).1 x
-
-/-- **Convergence and `O(t ^ (-(α₀ + n * (p - 1))))` decay** of all repeated improper tail integrals
-of a function satisfying `HasOscillatoryDecay c p α₀ f` (`c ≠ 0`, `1 ≤ p`, `0 < α₀ + p - 1`). -/
-theorem tendsto_and_isBigO_iteratedTailIntegral {c p α₀ : ℝ} {f : ℝ → ℝ}
-    (hc : c ≠ 0) (hp : 1 ≤ p) (hα : 0 < α₀ + p - 1)
-    (hf : HasOscillatoryDecay c p α₀ f) (n : ℕ) (x : ℝ) :
-    Tendsto (fun R : ℝ ↦ ∫ t in x..R, TauCeti.iteratedTailIntegral f n t) atTop
-      (𝓝 (TauCeti.iteratedTailIntegral f (n + 1) x)) ∧
-      TauCeti.iteratedTailIntegral f n =O[atTop] fun t : ℝ ↦ t ^ (-(α₀ + n * (p - 1))) := by
-  obtain ⟨ht, hd⟩ := hf.tendsto_and_iteratedTailIntegral hc hp hα n
-  exact ⟨ht x, hd.isBigO_rpow_neg⟩
-
-/-- **Airy-type oscillatory convergence and decay (`p = 3 / 2`, `α₀ = 1 / 4`).** For any function
-with `HasOscillatoryDecay c (3 / 2) (1 / 4) f` (`c ≠ 0`), such as `t ↦ Ai(-t)` (`c = 2 / 3`), every
-`n`-th repeated tail integral converges and decays as `O(t ^ (-1 / 4 - n / 2))` as `t → ∞`. -/
-theorem tendsto_and_isBigO_iteratedTailIntegral_three_halves {c : ℝ} {f : ℝ → ℝ}
-    (hc : c ≠ 0) (hf : HasOscillatoryDecay c (3 / 2) (1 / 4) f) (n : ℕ) (x : ℝ) :
-    Tendsto (fun R : ℝ ↦ ∫ t in x..R, TauCeti.iteratedTailIntegral f n t) atTop
-      (𝓝 (TauCeti.iteratedTailIntegral f (n + 1) x)) ∧
-      TauCeti.iteratedTailIntegral f n =O[atTop] fun t : ℝ ↦ t ^ (-1 / 4 - (n : ℝ) / 2) := by
-  obtain ⟨ht, hd⟩ := hf.tendsto_and_isBigO_iteratedTailIntegral hc (by norm_num) (by norm_num) n x
-  exact ⟨ht, hd.congr_right fun _ ↦ by congr 1; ring⟩
+      (𝓝 (TauCeti.iteratedTailIntegral f (n + 1) x)) := by
+  have hp0 : 0 < p := lt_of_lt_of_le zero_lt_one hp
+  have hpos : 0 < (α₀ + n * (p - 1)) + p - 1 := by
+    have : 0 ≤ (n : ℝ) * (p - 1) := mul_nonneg (Nat.cast_nonneg n) (sub_nonneg.mpr hp)
+    linarith
+  simpa only [← iteratedTailIntegral_succ] using
+    (tendsto_and_hasOscillatoryDecay_one hc hp0 hpos (hf.iteratedTailIntegral hc hp hα n)).1 x
 
 end HasOscillatoryDecay
-
-/-- Unconditional convergence and `O(t ^ (-n * (m - 1)))` decay of all repeated improper tail
-integrals of generalized Fresnel oscillations `t ↦ cos (c * t ^ m + φ)` (`c ≠ 0`, `2 ≤ m`). -/
-theorem tendsto_and_isBigO_iteratedTailIntegral_cos_pow {c φ : ℝ} {m : ℕ}
-    (hc : c ≠ 0) (hm : 2 ≤ m) (n : ℕ) (x : ℝ) :
-    Tendsto (fun R : ℝ ↦ ∫ t in x..R,
-        iteratedTailIntegral (fun s ↦ Real.cos (c * s ^ m + φ)) n t) atTop
-      (𝓝 (iteratedTailIntegral (fun s ↦ Real.cos (c * s ^ m + φ)) (n + 1) x)) ∧
-    iteratedTailIntegral (fun s ↦ Real.cos (c * s ^ m + φ)) n =O[atTop]
-      fun t : ℝ ↦ t ^ (-(n * ((m : ℝ) - 1))) := by
-  have hf : HasOscillatoryDecay c (m : ℝ) 0 (fun s ↦ Real.cos (c * s ^ m + φ)) :=
-    (HasOscillatoryDecay.rpow_mul_cos_add (c := c) (p := (m : ℝ)) (α₀ := 0) (α := 0)
-      le_rfl φ).congr_atTop (by filter_upwards [eventually_gt_atTop (0 : ℝ)] with _ _; simp)
-  have hm2 : (2 : ℝ) ≤ (m : ℝ) := by exact_mod_cast hm
-  simpa only [zero_add] using
-    hf.tendsto_and_isBigO_iteratedTailIntegral hc (by linarith) (by linarith) n x
 
 end TauCeti
