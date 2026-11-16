@@ -124,7 +124,7 @@ theorem subsingleton_of_infinite_quotient {G : Type*} [Group G] (H : Subgroup G)
   classical
   obtain ⟨r, π, i, -, -, hπi⟩ := Module.Finite.exists_comp_eq_id_of_projective R[G] P
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := R[H]) (M := P)
-  refine subsingleton_iff_forall_eq 0 |>.2 fun p ↦ ?_
+  refine (subsingleton_iff_forall_eq 0).2 fun p ↦ ?_
   have hip : i p = 0 := by
     funext k; by_contra hne
     obtain ⟨g₁, hg₁⟩ := Finsupp.support_nonempty_iff.2 (coeff_eq_zero.not.2 hne)
@@ -154,13 +154,11 @@ theorem subsingleton_of_infinite_quotient {G : Type*} [Group G] (H : Subgroup G)
             QuotientGroup.eq.2 (by simp)
           exact hq ▸ hx _ (Finsupp.mem_support_iff.2 (right_ne_zero_of_mul hg))
     obtain ⟨q, hq⟩ := Infinite.exists_notMem_finset S
-    let t : G := q.out⁻¹ * g₁⁻¹
-    have ht : t * g₁ ∈ (i (single t (1 : R) • p) k).coeff.support := by
-      rw [congrFun (map_smul i (single t (1 : R)) p) k, Pi.smul_apply, smul_eq_mul,
-        Finsupp.mem_support_iff, coeff_single_mul_apply, inv_mul_cancel_left, one_mul]
+    have ht : q.out⁻¹ * g₁⁻¹ * g₁ ∈ (i (single (q.out⁻¹ * g₁⁻¹) (1 : R) • p) k).coeff.support := by
+      rw [congrFun (map_smul i _ p) k, Pi.smul_apply, smul_eq_mul, Finsupp.mem_support_iff,
+        coeff_single_mul_apply, inv_mul_cancel_left, one_mul]
       exact Finsupp.mem_support_iff.1 hg₁
-    have hq' : (QuotientGroup.mk (t * g₁)⁻¹ : G ⧸ H) = q := by simp [t]
-    exact hq (hq' ▸ hsupp _ _ ht)
+    exact hq ((by simp : (QuotientGroup.mk (q.out⁻¹ * g₁⁻¹ * g₁)⁻¹ : G ⧸ H) = q) ▸ hsupp _ _ ht)
   simpa [hip] using (LinearMap.congr_fun hπi p).symm
 
 /-- If `G` is infinite, any finite projective `R[G]`-module that is finitely generated over `R` is
@@ -172,14 +170,11 @@ theorem subsingleton_of_infinite_group (G : Type*) [Group G] [Infinite G]
   let H : Subgroup G := ⊥
   let _ : Module R[H] P := Module.compHom P (mapDomainRingHom R H.subtype)
   have : Infinite (G ⧸ H) :=
-    Infinite.of_injective (QuotientGroup.quotientBot (G := G)).symm
-      (QuotientGroup.quotientBot (G := G)).symm.injective
-  have : IsScalarTower R R[H] P := ⟨fun c r p ↦ by
-    have hφ : mapDomainRingHom R H.subtype (c • r) = c • mapDomainRingHom R H.subtype r :=
-      mapDomain_smul H.subtype c r
-    exact (congrArg (· • p) hφ).trans (smul_assoc c (mapDomainRingHom R H.subtype r) p)⟩
+    Infinite.of_injective _ (QuotientGroup.quotientBot (G := G)).symm.injective
+  have : IsScalarTower R R[H] P := ⟨fun c r p ↦
+    (congrArg (· • p) (mapDomain_smul H.subtype c r)).trans (smul_assoc c _ p)⟩
   have : Module.Finite R[H] P := Module.Finite.of_restrictScalars_finite R R[H] P
-  exact subsingleton_of_infinite_quotient R H P (fun _ _ ↦ rfl)
+  exact subsingleton_of_infinite_quotient R H P fun _ _ ↦ rfl
 
 end TauCeti.MonoidAlgebra
 
@@ -204,14 +199,10 @@ theorem _root_.Subgroup.restrictSubgroup_finite_projective (C : Subgroup G)
   let _ : Module R[C] R[G] := φ.toModule
   have hAA : IsScalarTower R[C] R[G] R[G] := ⟨fun r s t ↦ mul_assoc (φ r) s t⟩
   let b := TauCeti.MonoidAlgebra.basisCosets R C.subtype C.subtype_injective
-  have : Finite (G ⧸ C.subtype.range) := by
-    rw [Subgroup.range_subtype]
-    infer_instance
+  have : Finite (G ⧸ C.subtype.range) := by rw [Subgroup.range_subtype]; infer_instance
   have : Module.Free R[C] R[G] := .of_basis b
   have : Module.Finite R[C] R[G] := .of_basis b
-  have hAX : IsScalarTower R[C] R[G] X := ⟨fun r s x ↦ by
-    rw [hX r (s • x)]
-    exact mul_smul (φ r) s x⟩
+  have hAX : IsScalarTower R[C] R[G] X := ⟨fun r s x ↦ by rw [hX r (s • x)]; exact mul_smul _ s x⟩
   exact ⟨hAA, hAX, .trans R[G] X, .trans R[G] X⟩
 
 /-- Restricting a finitely generated projective `R[G]`-module `X` of a group `G` to the
@@ -229,8 +220,6 @@ theorem _root_.Subgroup.restrictSubgroup_isScalarTower_finite_projective (C : Su
   obtain ⟨hAA, hAX, hfin, hproj⟩ := C.restrictSubgroup_finite_projective hA X hX
   refine ⟨hAA, hAX, ⟨fun a r x ↦ ?_⟩, hfin, hproj⟩
   rw [hX (a • r) x, hX r x]
-  have hφ : mapDomainRingHom R C.subtype (a • r) = a • mapDomainRingHom R C.subtype r :=
-    mapDomain_smul C.subtype a r
-  exact (congrArg (· • x) hφ).trans (smul_assoc a (mapDomainRingHom R C.subtype r) x)
+  exact (congrArg (· • x) (mapDomain_smul C.subtype a r)).trans (smul_assoc a _ x)
 
 end MonoidAlgebra

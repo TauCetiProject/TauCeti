@@ -187,13 +187,11 @@ def cyclicQuotientMap (f : F) : cyclicQuotient k A →ₗ[k] cyclicQuotient k B 
 
 @[simp]
 theorem cyclicQuotientMap_mk (f : F) (x : A) :
-    cyclicQuotientMap k f (Submodule.Quotient.mk x) = Submodule.Quotient.mk (f x) :=
-  (rfl)
+    cyclicQuotientMap k f (Submodule.Quotient.mk x) = Submodule.Quotient.mk (f x) := by rfl
 
 theorem cyclicQuotientMap_mkQ (f : F) (x : A) :
-    cyclicQuotientMap k f ((commutatorSubmodule k A).mkQ x) =
-      (commutatorSubmodule k B).mkQ (f x) :=
-  (rfl)
+    cyclicQuotientMap k f ((commutatorSubmodule k A).mkQ x) = (commutatorSubmodule k B).mkQ (f x) :=
+  by rfl
 
 end Map
 
@@ -206,32 +204,25 @@ variable {R S F : Type*} [NonUnitalNonAssocRing R] [NonUnitalNonAssocRing S]
 (possibly non-unital) ring homomorphism `φ : R → S`. -/
 def cyclicQuotientRingHomMap (φ : F) : cyclicQuotient ℤ R →ₗ[ℤ] cyclicQuotient ℤ S :=
   cyclicQuotientMap ℤ
-    ({ (φ : R →+ S).toIntLinearMap with
-      map_zero' := map_zero φ
-      map_mul' := map_mul φ } : R →ₙₐ[ℤ] S)
+    ({ (φ : R →+ S).toIntLinearMap with map_zero' := map_zero φ, map_mul' := map_mul φ } :
+      R →ₙₐ[ℤ] S)
 
 @[simp]
 theorem cyclicQuotientRingHomMap_mk (φ : F) (x : R) :
-    cyclicQuotientRingHomMap φ (Submodule.Quotient.mk x) = Submodule.Quotient.mk (φ x) :=
-  (rfl)
+    cyclicQuotientRingHomMap φ (Submodule.Quotient.mk x) = Submodule.Quotient.mk (φ x) := by rfl
 
 theorem cyclicQuotientRingHomMap_mkQ (φ : F) (x : R) :
     cyclicQuotientRingHomMap φ ((commutatorSubmodule ℤ R).mkQ x) =
-      (commutatorSubmodule ℤ S).mkQ (φ x) :=
-  (rfl)
+      (commutatorSubmodule ℤ S).mkQ (φ x) := by rfl
 
 @[simp]
 theorem cyclicQuotientRingHomMap_id {R : Type*} [NonAssocRing R] :
-    cyclicQuotientRingHomMap (RingHom.id R) = LinearMap.id := by
-  ext x
-  rfl
+    cyclicQuotientRingHomMap (RingHom.id R) = LinearMap.id := by ext x; rfl
 
 theorem cyclicQuotientRingHomMap_comp {R S T : Type*} [NonAssocRing R] [NonAssocRing S]
     [NonAssocRing T] (ψ : S →+* T) (φ : R →+* S) :
     cyclicQuotientRingHomMap (ψ.comp φ) =
-      (cyclicQuotientRingHomMap ψ).comp (cyclicQuotientRingHomMap φ) := by
-  ext x
-  rfl
+      (cyclicQuotientRingHomMap ψ).comp (cyclicQuotientRingHomMap φ) := by ext x; rfl
 
 end RingHom
 
@@ -243,31 +234,29 @@ vanishes, so the commutator submodule is trivial. -/
 theorem commutatorSubmodule_eq_bot (k B : Type*) [Semiring k] [NonUnitalNonAssocCommRing B]
     [Module k B] : commutatorSubmodule k B = ⊥ := by
   rw [commutatorSubmodule, Submodule.span_eq_bot]
-  rintro _ ⟨⟨x, y⟩, rfl⟩
-  exact sub_eq_zero.2 (mul_comm x y)
+  rintro _ ⟨⟨x, y⟩, rfl⟩; exact sub_eq_zero.2 (mul_comm x y)
+
+section Equiv
+
+variable (k B : Type*) [Ring k] [NonUnitalNonAssocCommRing B] [Module k B]
 
 /-- For a (possibly non-unital, non-associative) commutative ring `B`, the cyclic quotient
 `B / [B, B]` is canonically isomorphic to `B`. -/
-def cyclicQuotientEquivOfComm (k B : Type*) [Ring k] [NonUnitalNonAssocCommRing B] [Module k B] :
-    cyclicQuotient k B ≃ₗ[k] B :=
+def cyclicQuotientEquivOfComm : cyclicQuotient k B ≃ₗ[k] B :=
   Submodule.quotEquivOfEqBot (commutatorSubmodule k B) (commutatorSubmodule_eq_bot k B)
 
 @[simp]
-theorem cyclicQuotientEquivOfComm_mk (k B : Type*) [Ring k] [NonUnitalNonAssocCommRing B]
-    [Module k B] (x : B) :
-    cyclicQuotientEquivOfComm k B (Submodule.Quotient.mk x) = x :=
-  (rfl)
+theorem cyclicQuotientEquivOfComm_mk (x : B) :
+    cyclicQuotientEquivOfComm k B (Submodule.Quotient.mk x) = x := by rfl
 
-theorem cyclicQuotientEquivOfComm_mkQ (k B : Type*) [Ring k] [NonUnitalNonAssocCommRing B]
-    [Module k B] (x : B) :
-    cyclicQuotientEquivOfComm k B ((commutatorSubmodule k B).mkQ x) = x :=
-  (rfl)
+theorem cyclicQuotientEquivOfComm_mkQ (x : B) :
+    cyclicQuotientEquivOfComm k B ((commutatorSubmodule k B).mkQ x) = x := by rfl
 
 @[simp]
-theorem cyclicQuotientEquivOfComm_symm_apply (k B : Type*) [Ring k] [NonUnitalNonAssocCommRing B]
-    [Module k B] (x : B) :
-    (cyclicQuotientEquivOfComm k B).symm x = Submodule.Quotient.mk x :=
-  (rfl)
+theorem cyclicQuotientEquivOfComm_symm_apply (x : B) :
+    (cyclicQuotientEquivOfComm k B).symm x = Submodule.Quotient.mk x := by rfl
+
+end Equiv
 
 /-- Naturality of `cyclicQuotientEquivOfComm` with respect to multiplicative `k`-linear maps. -/
 @[simp]
@@ -277,8 +266,7 @@ theorem cyclicQuotientEquivOfComm_cyclicQuotientMap (k : Type*) {A B F : Type*} 
     (c : cyclicQuotient k A) :
     cyclicQuotientEquivOfComm k B (cyclicQuotientMap k f c) =
       f (cyclicQuotientEquivOfComm k A c) := by
-  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ c
-  rfl
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ c; rfl
 
 /-- Naturality of `cyclicQuotientEquivOfComm` with respect to (possibly non-unital) ring
 homomorphisms. -/
@@ -288,8 +276,7 @@ theorem cyclicQuotientEquivOfComm_cyclicQuotientRingHomMap {A B F : Type*}
     [FunLike F A B] [NonUnitalRingHomClass F A B] (φ : F) (c : cyclicQuotient ℤ A) :
     cyclicQuotientEquivOfComm ℤ B (cyclicQuotientRingHomMap φ c) =
       φ (cyclicQuotientEquivOfComm ℤ A c) := by
-  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ c
-  rfl
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ c; rfl
 
 end Comm
 
