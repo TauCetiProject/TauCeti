@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
-import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier

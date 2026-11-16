@@ -49,8 +49,6 @@ partial sums of the Fourier multipliers `𝓕⁻ (ψⱼ • 𝓕 f)` are the low
   function.
 * `ContDiffBump.inhomogeneousLittlewoodPaleySchwartz`: the piece `ψⱼ` of the inhomogeneous
   partition, as a complex Schwartz function.
-* `ContDiffBump.lowPassSchwartz`: the low-pass symbol `φ (R⁻¹ ·)`, as a complex Schwartz
-  function.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le`: the scale-invariant
   derivative bounds for the pieces of a symbol satisfying Mihlin's condition.
 * `SchwartzMap.exists_eqOn_annulus_of_contDiffOn`: a symbol smooth away from the origin agrees
@@ -258,37 +256,6 @@ theorem coe_inhomogeneousLittlewoodPaleySchwartz (j : ℕ) :
     ⇑(φ.inhomogeneousLittlewoodPaleySchwartz j) =
       fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
   (rfl)
-
-/-- The **low-pass symbol** `φ (R⁻¹ ·)` at a scale `R ≠ 0`, as a complex Schwartz function: it is
-smooth and supported in the closed ball of radius `|R| φ.rOut`. -/
-noncomputable def lowPassSchwartz {R : ℝ} (hR : R ≠ 0) : 𝓢(E, ℂ) :=
-  HasCompactSupport.toSchwartzMap (f := fun ξ ↦ (φ (R⁻¹ • ξ) : ℂ))
-    ((φ.hasCompactSupport.comp_smul (inv_ne_zero hR)).comp_left Complex.ofReal_zero)
-    (Complex.ofRealCLM.contDiff.comp (φ.contDiff.comp (contDiff_const_smul _)))
-
-/-- The values of the low-pass Schwartz symbol `φ (R⁻¹ ·)`. -/
-@[simp]
-theorem lowPassSchwartz_apply {R : ℝ} (hR : R ≠ 0) (ξ : E) :
-    φ.lowPassSchwartz hR ξ = (φ (R⁻¹ • ξ) : ℂ) :=
-  (rfl)
-
-/-- The low-pass Schwartz symbol `φ (R⁻¹ ·)`, as a function. -/
-theorem coe_lowPassSchwartz {R : ℝ} (hR : R ≠ 0) :
-    ⇑(φ.lowPassSchwartz hR) = fun ξ ↦ (φ (R⁻¹ • ξ) : ℂ) :=
-  (rfl)
-
-/-- The low-pass Schwartz symbol at scale `R` is the dilation of the one at scale `1`. -/
-theorem coe_lowPassSchwartz_eq_comp {R : ℝ} (hR : R ≠ 0) :
-    ⇑(φ.lowPassSchwartz hR) = fun ξ ↦ φ.lowPassSchwartz one_ne_zero (R⁻¹ • ξ) := by
-  ext ξ
-  simp
-
-/-- The complex low-pass symbol `φ (R⁻¹ ·)` has temperate growth, so it is a Fourier multiplier on
-Schwartz functions and on tempered distributions. -/
-theorem hasTemperateGrowth_ofReal_apply_inv_smul (R : ℝ) :
-    (fun ξ ↦ (φ (R⁻¹ • ξ) : ℂ)).HasTemperateGrowth := by
-  have := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
-  fun_prop
 
 end FiniteDimensional
 

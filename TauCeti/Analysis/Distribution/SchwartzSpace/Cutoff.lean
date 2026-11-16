@@ -45,6 +45,8 @@ Altogether the `(k, n)` seminorm of the difference is `O(R⁻¹)`.
   `ContDiffBump` converge to `f` as `R → ∞`, for complex-valued multipliers, and
   `SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`: the dyadic truncations
   `φ (2^{-N} ·) • f` by a `ContDiffBump` converge to `f`, for complex-valued multipliers.
+* `ContDiffBump.lowPassSchwartz`: the low-pass symbol `φ (R⁻¹ ·)` of a `ContDiffBump`, as a
+  complex Schwartz function.
 * Mathlib's `SchwartzMap.dense_hasCompactSupport`: compactly supported functions are dense in
   `𝓢(E, F)` for finite-dimensional `E`.
 * `IsCompact.exists_schwartzMap_cutoff`: a compact subset `K` of an open set `U` has a compactly
@@ -243,6 +245,43 @@ theorem tendsto_smulLeftCLM_contDiffBump_two_pow (φ : ContDiffBump (0 : E)) (f 
 end Truncation
 
 end SchwartzMap
+
+namespace ContDiffBump
+
+variable [FiniteDimensional ℝ E] (φ : ContDiffBump (0 : E))
+
+/-- The **low-pass symbol** `φ (R⁻¹ ·)` at a scale `R ≠ 0`, as a complex Schwartz function: it is
+smooth and supported in the closed ball of radius `|R| φ.rOut`. -/
+noncomputable def lowPassSchwartz {R : ℝ} (hR : R ≠ 0) : 𝓢(E, ℂ) :=
+  HasCompactSupport.toSchwartzMap (f := fun ξ ↦ (φ (R⁻¹ • ξ) : ℂ))
+    ((φ.hasCompactSupport.comp_smul (inv_ne_zero hR)).comp_left Complex.ofReal_zero)
+    (Complex.ofRealCLM.contDiff.comp (φ.contDiff.comp (contDiff_const_smul _)))
+
+/-- The values of the low-pass Schwartz symbol `φ (R⁻¹ ·)`. -/
+@[simp]
+theorem lowPassSchwartz_apply {R : ℝ} (hR : R ≠ 0) (ξ : E) :
+    φ.lowPassSchwartz hR ξ = (φ (R⁻¹ • ξ) : ℂ) :=
+  (rfl)
+
+/-- The low-pass Schwartz symbol `φ (R⁻¹ ·)`, as a function. -/
+theorem coe_lowPassSchwartz {R : ℝ} (hR : R ≠ 0) :
+    ⇑(φ.lowPassSchwartz hR) = fun ξ ↦ (φ (R⁻¹ • ξ) : ℂ) :=
+  (rfl)
+
+/-- The low-pass Schwartz symbol at scale `R` is the dilation of the one at scale `1`. -/
+theorem coe_lowPassSchwartz_eq_comp {R : ℝ} (hR : R ≠ 0) :
+    ⇑(φ.lowPassSchwartz hR) = fun ξ ↦ φ.lowPassSchwartz one_ne_zero (R⁻¹ • ξ) := by
+  ext ξ
+  simp
+
+/-- The complex low-pass symbol `φ (R⁻¹ ·)` has temperate growth, so it is a Fourier multiplier on
+Schwartz functions and on tempered distributions. -/
+theorem hasTemperateGrowth_ofReal_apply_inv_smul (R : ℝ) :
+    (fun ξ ↦ (φ (R⁻¹ • ξ) : ℂ)).HasTemperateGrowth := by
+  have := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
+  fun_prop
+
+end ContDiffBump
 
 /-- A compact subset `K` of an open set `U` of a finite-dimensional space has a compactly supported
 Schwartz cutoff, with topological support in `U` and equal to `1` on a neighbourhood of `K`. -/

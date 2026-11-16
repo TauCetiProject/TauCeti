@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.SmoothSeries
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables

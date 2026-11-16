@@ -5,14 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+public import Mathlib.Algebra.Order.Archimedean.Basic
+public import Mathlib.Topology.Algebra.Order.Field
 
 /-!
 # Limits of integer powers
 
-For a real base `b > 1`, the integer powers `b ^ n` tend to `∞` as `n → ∞` and to `0` as
-`n → -∞` along the integers. These are the scales `2^j`, `j ∈ ℤ`, of homogeneous dyadic
-decompositions.
+In an Archimedean ordered field, for a base `b > 1` the integer powers `b ^ n` tend to `∞` as
+`n → ∞` and to `0` as `n → -∞` along the integers. These are the scales `2^j`, `j ∈ ℤ`, of
+homogeneous dyadic decompositions.
 -/
 
 public section
@@ -21,18 +22,21 @@ open Filter Topology
 
 namespace TauCeti
 
+variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [Archimedean 𝕜] {b : 𝕜}
+
 /-- For `b > 1`, `b ^ n → ∞` as `n → ∞` along the integers. -/
-theorem tendsto_zpow_atTop_atTop_of_one_lt {b : ℝ} (hb : 1 < b) :
+theorem tendsto_zpow_atTop_atTop_of_one_lt (hb : 1 < b) :
     Tendsto (fun n : ℤ ↦ b ^ n) atTop atTop := by
-  simpa only [Function.comp_def, id_eq, Real.rpow_intCast] using
-    (tendsto_rpow_atTop_of_base_gt_one b hb).comp
-      ((tendsto_intCast_atTop_iff (R := ℝ)).2 tendsto_id)
+  refine tendsto_atTop_atTop.2 fun x ↦ ?_
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt x hb
+  refine ⟨n, fun m hm ↦ hn.le.trans ?_⟩
+  simpa only [zpow_natCast] using zpow_right_mono₀ hb.le hm
 
 /-- For `b > 1`, `b ^ n → 0` as `n → -∞` along the integers. -/
-theorem tendsto_zpow_atBot_nhds_zero_of_one_lt {b : ℝ} (hb : 1 < b) :
-    Tendsto (fun n : ℤ ↦ b ^ n) atBot (𝓝 0) := by
-  simpa only [Function.comp_def, id_eq, Real.rpow_intCast] using
-    (tendsto_rpow_atBot_of_base_gt_one b hb).comp
-      ((tendsto_intCast_atBot_iff (R := ℝ)).2 tendsto_id)
+theorem tendsto_zpow_atBot_nhds_zero_of_one_lt [TopologicalSpace 𝕜] [OrderTopology 𝕜]
+    (hb : 1 < b) : Tendsto (fun n : ℤ ↦ b ^ n) atBot (𝓝 0) := by
+  simpa only [Function.comp_def, zpow_neg, inv_inv, neg_neg] using
+    tendsto_inv_atTop_zero.comp
+      ((tendsto_zpow_atTop_atTop_of_one_lt hb).comp tendsto_neg_atBot_atTop)
 
 end TauCeti
