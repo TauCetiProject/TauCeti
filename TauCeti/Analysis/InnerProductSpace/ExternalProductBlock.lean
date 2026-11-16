@@ -73,8 +73,9 @@ restrictions of `P` and `Q` to pairs of finite-dimensional eigenspaces of `P†P
   adjoint `externalProductBlock A† (-B)` is `(ker A† ⊗ ker B) × (ker A ⊗ ker B†)`.
 * `finrank_ker_externalProductBlock_sub_finrank_ker_externalProductBlock_adjoint_neg`, in the
   `ContinuousLinearMap` namespace: the difference of the kernel dimensions of the block and of its
-  formal adjoint is `(dim ker A - dim ker A†) (dim ker B - dim ker B†)`, which is the product
-  formula for the index when the tensor products are complete and the block has closed range.
+  formal adjoint is `(dim ker A - dim ker A†) (dim ker B - dim ker B†)`. The left side is the
+  index of the block when the tensor products are complete and the block has closed range; the
+  factors on the right are the indices of `A` and `B` when these have closed range.
 * `ContinuousLinearMap.norm_externalProductBlock_le`: `‖externalProductBlock A B‖ ≤ 2 (‖A‖ + ‖B‖)`.
   Together with `ContinuousLinearMap.externalProductBlock_add` and
   `ContinuousLinearMap.externalProductBlock_ofReal_smul`, this makes the block a bounded real-linear
