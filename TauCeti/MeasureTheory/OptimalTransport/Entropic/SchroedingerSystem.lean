@@ -176,20 +176,15 @@ theorem abs_logIntegralExp_sub_le (hν : ν ≠ 0) {a₁ a₂ : A}
       (hv : Integrable (fun b ↦ Real.exp (h (v, b) + ψ b)) ν)
       (huv : ∀ b, h (u, b) - h (v, b) ≤ δ) :
       logIntegralExp h ν ψ u - logIntegralExp h ν ψ v ≤ δ := by
-    have hZu : 0 < ∫ b, Real.exp (h (u, b) + ψ b) ∂ν := integral_exp_pos hu
-    have hZv : 0 < ∫ b, Real.exp (h (v, b) + ψ b) ∂ν := integral_exp_pos hv
     have hle : ∫ b, Real.exp (h (u, b) + ψ b) ∂ν ≤
         Real.exp δ * ∫ b, Real.exp (h (v, b) + ψ b) ∂ν := by
       rw [← integral_const_mul]
-      refine integral_mono hu (hv.const_mul _) fun b ↦ ?_
-      rw [← Real.exp_add, Real.exp_le_exp]
-      linarith [huv b]
-    have hlog := (Real.log_le_log hZu hle).trans_eq <| by
-      rw [Real.log_mul (Real.exp_pos _).ne' hZv.ne', Real.log_exp]
-    unfold logIntegralExp
-    linarith
-  rw [abs_sub_le_iff]
-  exact ⟨one_side ha₁ ha₂ fun b ↦ (abs_le.1 (hosc b)).2,
+      exact integral_mono hu (hv.const_mul _) fun b ↦ by
+        rw [← Real.exp_add, Real.exp_le_exp]; linarith [huv b]
+    have hlog := (Real.log_le_log (integral_exp_pos hu) hle).trans_eq <| by
+      rw [Real.log_mul (Real.exp_pos _).ne' (integral_exp_pos hv).ne', Real.log_exp]
+    unfold logIntegralExp; linarith
+  exact abs_sub_le_iff.2 ⟨one_side ha₁ ha₂ fun b ↦ (abs_le.1 (hosc b)).2,
     one_side ha₂ ha₁ fun b ↦ by linarith [(abs_le.1 (hosc b)).1]⟩
 
 /-- **The half-step contracts oscillations**, in bracket form: if `m ≤ ψ₁ - ψ₂ ≤ m + ω`, then the

@@ -332,10 +332,8 @@ private theorem klFun_add_le_of_add_eq_one {u₁ u₂ v₁ v₂ : ℝ} (hu₁ : 
     (hv₁ : 0 ≤ v₁) (hv₂ : 0 ≤ v₂) (hvsum : v₁ + v₂ = 1) (h₁ : v₁ = 0 → u₁ = 0)
     (h₂ : v₂ = 0 → u₂ = 0) :
     klFun (u₁ + u₂) ≤ v₁ * klFun (u₁ / v₁) + v₂ * klFun (u₂ / v₂) := by
-  have hmul {u v : ℝ} (h : v = 0 → u = 0) : v * (u / v) = u := by
-    rcases eq_or_ne v 0 with rfl | hv
-    · simp [h rfl]
-    · exact mul_div_cancel₀ u hv
+  have hmul {u v : ℝ} (h : v = 0 → u = 0) : v * (u / v) = u :=
+    (eq_or_ne v 0).elim (fun hv ↦ by simp [hv, h hv]) (mul_div_cancel₀ u)
   conv_lhs => rw [← hmul h₁, ← hmul h₂]
   simpa only [smul_eq_mul] using
     convexOn_klFun.2 (div_nonneg hu₁ hv₁) (div_nonneg hu₂ hv₂) hv₁ hv₂ hvsum
@@ -348,21 +346,17 @@ private theorem ae_toReal_rnDeriv_eq_zero_imp {μ₁ ν₁ ξ : Measure α} [IsF
   filter_upwards [Measure.rnDeriv_mul_rnDeriv (κ := ξ) h, Measure.rnDeriv_lt_top ν₁ ξ]
     with x hmul hfin hv
   have hν₀ : ν₁.rnDeriv ξ x = 0 := (ENNReal.toReal_eq_zero_iff _).1 hv |>.resolve_right hfin.ne
-  have hμ₀ : μ₁.rnDeriv ξ x = 0 := by simpa [Pi.mul_apply, hν₀] using hmul.symm
-  simp [hμ₀]
+  simp [show μ₁.rnDeriv ξ x = 0 by simpa [Pi.mul_apply, hν₀] using hmul.symm]
 
 /-- **Subadditivity of relative entropy.** For finite measures `μ₁, μ₂, ν₁, ν₂`, the relative
 entropy of `μ₁ + μ₂` against `ν₁ + ν₂` is at most `klDiv μ₁ ν₁ + klDiv μ₂ ν₂`. -/
 theorem klDiv_add_le {μ₁ μ₂ ν₁ ν₂ : Measure α} [IsFiniteMeasure μ₁] [IsFiniteMeasure μ₂]
     [IsFiniteMeasure ν₁] [IsFiniteMeasure ν₂] :
     klDiv (μ₁ + μ₂) (ν₁ + ν₂) ≤ klDiv μ₁ ν₁ + klDiv μ₂ ν₂ := by
-  by_cases h₁ : klDiv μ₁ ν₁ = ∞
-  · simp [h₁]
-  by_cases h₂ : klDiv μ₂ ν₂ = ∞
-  · simp [h₂]
+  by_cases h₁ : klDiv μ₁ ν₁ = ∞; · simp [h₁]
+  by_cases h₂ : klDiv μ₂ ν₂ = ∞; · simp [h₂]
   have hμ₁ν₁ := (klDiv_ne_top_iff.1 h₁).1
   have hμ₂ν₂ := (klDiv_ne_top_iff.1 h₂).1
-  -- Express all three relative entropies as integrals against `ξ := ν₁ + ν₂`.
   set ξ := ν₁ + ν₂
   have hν₁ξ : ν₁ ≪ ξ := Measure.AbsolutelyContinuous.rfl.add_right ν₂
   have hν₂ξ : ν₂ ≪ ξ := Measure.AbsolutelyContinuous.rfl.add_right' ν₁
@@ -370,27 +364,23 @@ theorem klDiv_add_le {μ₁ μ₂ ν₁ ν₂ : Measure α} [IsFiniteMeasure μ�
     klDiv_eq_lintegral_rnDeriv_mul_klFun_div hμ₁ν₁ hν₁ξ,
     klDiv_eq_lintegral_rnDeriv_mul_klFun_div hμ₂ν₂ hν₂ξ, ← lintegral_add_left (by fun_prop)]
   refine lintegral_mono_ae ?_
-  -- Apply the scalar perspective inequality `klFun_add_le_of_add_eq_one` pointwise a.e.
   filter_upwards [Measure.rnDeriv_add' μ₁ μ₂ ξ, Measure.rnDeriv_add' ν₁ ν₂ ξ, ξ.rnDeriv_self,
     ae_toReal_rnDeriv_eq_zero_imp (ξ := ξ) hμ₁ν₁, ae_toReal_rnDeriv_eq_zero_imp (ξ := ξ) hμ₂ν₂,
     Measure.rnDeriv_lt_top μ₁ ξ, Measure.rnDeriv_lt_top μ₂ ξ,
     Measure.rnDeriv_lt_top ν₁ ξ, Measure.rnDeriv_lt_top ν₂ ξ]
     with x hμadd hνadd hξself hzero₁ hzero₂ hμ₁fin hμ₂fin hν₁fin hν₂fin
-  have hμsum : ((μ₁ + μ₂).rnDeriv ξ x).toReal =
-      (μ₁.rnDeriv ξ x).toReal + (μ₂.rnDeriv ξ x).toReal := by
-    rw [hμadd, Pi.add_apply, ENNReal.toReal_add hμ₁fin.ne hμ₂fin.ne]
   have hvsum : (ν₁.rnDeriv ξ x).toReal + (ν₂.rnDeriv ξ x).toReal = 1 := by
     have h := congrArg ENNReal.toReal (hνadd.symm.trans hξself)
     rwa [Pi.add_apply, ENNReal.toReal_add hν₁fin.ne hν₂fin.ne, ENNReal.toReal_one] at h
   have hconv := klFun_add_le_of_add_eq_one ENNReal.toReal_nonneg ENNReal.toReal_nonneg
     ENNReal.toReal_nonneg ENNReal.toReal_nonneg hvsum hzero₁ hzero₂
-  rw [hμsum]
+  rw [hμadd, Pi.add_apply, ENNReal.toReal_add hμ₁fin.ne hμ₂fin.ne]
   refine (ENNReal.ofReal_le_ofReal hconv).trans_eq ?_
-  rw [ENNReal.ofReal_add
-      (mul_nonneg ENNReal.toReal_nonneg
-        (klFun_nonneg (div_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg)))
-      (mul_nonneg ENNReal.toReal_nonneg
-        (klFun_nonneg (div_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg))),
+  have hnn : ∀ μ' ν' : Measure α,
+      0 ≤ klFun ((μ'.rnDeriv ξ x).toReal / (ν'.rnDeriv ξ x).toReal) :=
+    fun _ _ ↦ klFun_nonneg (div_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg)
+  rw [ENNReal.ofReal_add (mul_nonneg ENNReal.toReal_nonneg (hnn μ₁ ν₁))
+      (mul_nonneg ENNReal.toReal_nonneg (hnn μ₂ ν₂)),
     ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_mul ENNReal.toReal_nonneg,
     ENNReal.ofReal_toReal hν₁fin.ne, ENNReal.ofReal_toReal hν₂fin.ne]
 

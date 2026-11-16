@@ -47,25 +47,17 @@ theorem equicontinuous_of_forall_dist_le {X Y Z W ι : Type*} [TopologicalSpace 
   have hM : 0 < M := lt_of_lt_of_le zero_lt_one (le_max_right L 1)
   set δ : ℝ := r / (2 * M)
   have hδ : 0 < δ := div_pos hr (mul_pos two_pos hM)
-  set n : Set (X × Y) := {z | dist (g z) (g (x₀, z.2)) < δ}
-  have hn : IsOpen n :=
+  have hn : IsOpen {z : X × Y | dist (g z) (g (x₀, z.2)) < δ} :=
     isOpen_lt (hg.dist (hg.comp (continuous_const.prodMk continuous_snd))) continuous_const
-  have hsub : ({x₀} : Set X) ×ˢ (univ : Set Y) ⊆ n := by
-    rintro ⟨x, y⟩ ⟨hx, -⟩
-    obtain rfl := mem_singleton_iff.1 hx
-    simp [n, hδ]
   obtain ⟨u, v, hu, -, hx₀u, huv_univ, huv⟩ :=
-    generalized_tube_lemma isCompact_singleton isCompact_univ hn hsub
+    generalized_tube_lemma (isCompact_singleton (x := x₀)) isCompact_univ hn
+      fun ⟨x, y⟩ ⟨hx, _⟩ ↦ by simpa [show x = x₀ from hx] using hδ
   filter_upwards [hu.mem_nhds (hx₀u rfl)] with x hxu i
-  have hxy : ∀ y, dist (g (x, y)) (g (x₀, y)) ≤ δ := fun y ↦
-    (huv ⟨hxu, huv_univ (mem_univ y)⟩).le
   rw [dist_comm]
-  calc dist (F i x) (F i x₀) ≤ L * δ := hosc x x₀ δ hδ.le hxy i
+  calc dist (F i x) (F i x₀)
+      ≤ L * δ := hosc x x₀ δ hδ.le (fun y ↦ (huv ⟨hxu, huv_univ (mem_univ y)⟩).le) i
     _ ≤ M * δ := mul_le_mul_of_nonneg_right (le_max_left L 1) hδ.le
-    _ = r / 2 := by
-        have hM' : M ≠ 0 := hM.ne'
-        simp only [δ]
-        field_simp
+    _ = r / 2 := by simp only [δ]; field_simp [hM.ne']
     _ < r := half_lt_self hr
 
 end Metric

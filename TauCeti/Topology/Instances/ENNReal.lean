@@ -34,7 +34,7 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   rectangle varies by at most `η` between points with the same labels.
 * `Continuous.ennreal_toReal`: a continuous `ℝ≥0∞`-valued function that avoids `∞` has continuous
   real projection `fun z ↦ (c z).toReal`.
-* `TauCeti.exists_le_of_continuous_of_ne_top`: on a compact space, a continuous `ℝ≥0∞`-valued
+* `Continuous.exists_forall_le_coe_of_ne_top`: on a compact space, a continuous `ℝ≥0∞`-valued
   function that avoids `∞` is bounded above by a finite `ℝ≥0` constant.
 -/
 
@@ -174,13 +174,12 @@ theorem _root_.Continuous.ennreal_toReal {Z : Type*} [TopologicalSpace Z] {c : Z
 
 /-- On a compact space, a continuous `ℝ≥0∞`-valued function that avoids `∞` is bounded above by a
 finite `ℝ≥0` constant. -/
-theorem exists_le_of_continuous_of_ne_top {Z : Type*} [TopologicalSpace Z] [CompactSpace Z]
-    {c : Z → ℝ≥0∞} (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞) :
+theorem _root_.Continuous.exists_forall_le_coe_of_ne_top {Z : Type*} [TopologicalSpace Z]
+    [CompactSpace Z] {c : Z → ℝ≥0∞} (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞) :
     ∃ B : ℝ≥0, ∀ z, c z ≤ B := by
   obtain ⟨M, hM⟩ := (isCompact_range (hc.ennreal_toReal hfin)).bddAbove
   refine ⟨Real.toNNReal M, fun z ↦ ?_⟩
   rw [← ENNReal.ofReal_toReal (hfin z), ← ENNReal.ofReal_coe_nnreal]
-  exact ENNReal.ofReal_le_ofReal
-    ((hM (Set.mem_range_self z)).trans (Real.le_coe_toNNReal M))
+  exact ENNReal.ofReal_le_ofReal ((hM (Set.mem_range_self z)).trans (Real.le_coe_toNNReal M))
 
 end TauCeti

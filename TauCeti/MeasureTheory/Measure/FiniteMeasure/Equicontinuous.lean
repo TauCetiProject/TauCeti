@@ -57,12 +57,14 @@ variable {α 𝕜 ι γ : Type*} [TopologicalSpace α] [MeasurableSpace α] [Ope
 /-- Integration against a finite measure is Lipschitz on `α →ᵇ E`, with Lipschitz constant the
 total mass `ν.mass`. -/
 theorem FiniteMeasure.lipschitzWith_integral {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E] (ν : FiniteMeasure α) :
+    [SecondCountableTopologyEither α E] (ν : FiniteMeasure α) :
     LipschitzWith ν.mass fun f : α →ᵇ E ↦ ∫ x, f x ∂(ν : Measure α) := by
   refine LipschitzWith.of_dist_le_mul fun f₁ f₂ ↦ ?_
-  rw [dist_eq_norm, ← integral_sub (f₁.integrable _) (f₂.integrable _)]
-  refine ((f₁ - f₂).norm_integral_le_mul_norm (ν : Measure α)).trans_eq ?_
-  rw [measureReal_def, ← FiniteMeasure.ennreal_mass, ENNReal.coe_toReal, dist_eq_norm]
+  have hint (f : α →ᵇ E) : Integrable f (ν : Measure α) :=
+    .of_bound f.continuous.aestronglyMeasurable ‖f‖ (ae_of_all _ f.norm_coe_le_norm)
+  rw [dist_eq_norm, ← integral_sub (hint f₁) (hint f₂)]
+  refine (norm_integral_le_of_norm_le_const (ae_of_all _ (f₁ - f₂).norm_coe_le_norm)).trans_eq ?_
+  rw [measureReal_def, ← FiniteMeasure.ennreal_mass, ENNReal.coe_toReal, mul_comm, dist_eq_norm]
 
 /-- **Uniform narrow convergence over a totally bounded family.** If finite measures `μs n`
 converge narrowly to `μ`, then for every family `g : ι → α →ᵇ 𝕜` with totally bounded range in
@@ -76,36 +78,30 @@ theorem FiniteMeasure.tendstoUniformly_integral_of_totallyBounded {l : Filter γ
   intro ε hε
   set M : ℝ := (μ.mass : ℝ) + 1
   have hM : 0 < M := by positivity
-  have hμM : (μ.mass : ℝ) < M := lt_add_one (μ.mass : ℝ)
   obtain ⟨t, htf, hcov⟩ := Metric.totallyBounded_iff.1 hg (ε / (3 * M)) (by positivity)
   have hmass : Tendsto (fun n ↦ ((μs n).mass : ℝ)) l (𝓝 (μ.mass : ℝ)) :=
     (NNReal.continuous_coe.tendsto _).comp ((FiniteMeasure.continuous_mass.tendsto μ).comp hμ)
   have hnet : ∀ᶠ n in l, ∀ f ∈ t,
       dist (∫ x, f x ∂(μ : Measure α)) (∫ x, f x ∂(μs n : Measure α)) < ε / 3 :=
-    (htf.eventually_all).2 fun f _ ↦ by
-      have hlim := (FiniteMeasure.tendsto_iff_forall_integral_rclike_tendsto 𝕜).1 hμ f
-      exact (Metric.tendsto_nhds.1 hlim (ε / 3) (by positivity)).mono fun n hn ↦ by
-        rwa [dist_comm]
-  filter_upwards [hnet, hmass.eventually (eventually_lt_nhds hμM)] with n hn hmn i
+    htf.eventually_all.2 fun f _ ↦
+      (Metric.tendsto_nhds.1 ((FiniteMeasure.tendsto_iff_forall_integral_rclike_tendsto 𝕜).1 hμ f)
+        (ε / 3) (by positivity)).mono fun _ hn ↦ by rwa [dist_comm]
+  filter_upwards [hnet, hmass.eventually (eventually_lt_nhds (lt_add_one (μ.mass : ℝ)))]
+    with n hn hmn i
   obtain ⟨f, hft, hgf⟩ := mem_iUnion₂.1 (hcov (mem_range_self i))
   rw [Metric.mem_ball] at hgf
-  have h1 : dist (∫ x, g i x ∂(μ : Measure α)) (∫ x, f x ∂(μ : Measure α)) < ε / 3 := by
-    refine (μ.lipschitzWith_integral.dist_le_mul (g i) f).trans_lt ?_
-    calc (μ.mass : ℝ) * dist (g i) f < M * (ε / (3 * M)) :=
-          mul_lt_mul_of_lt_of_le_of_nonneg_of_pos hμM hgf.le μ.mass.coe_nonneg (by positivity)
-      _ = ε / 3 := by field_simp
-  have h3 : dist (∫ x, f x ∂(μs n : Measure α)) (∫ x, g i x ∂(μs n : Measure α)) < ε / 3 := by
-    refine ((μs n).lipschitzWith_integral.dist_le_mul f (g i)).trans_lt ?_
-    rw [dist_comm]
-    calc ((μs n).mass : ℝ) * dist (g i) f < M * (ε / (3 * M)) :=
-          mul_lt_mul_of_lt_of_le_of_nonneg_of_pos hmn hgf.le (μs n).mass.coe_nonneg (by positivity)
-      _ = ε / 3 := by field_simp
+  have hlip (ν : FiniteMeasure α) (hν : (ν.mass : ℝ) < M) :
+      dist (∫ x, g i x ∂(ν : Measure α)) (∫ x, f x ∂(ν : Measure α)) < ε / 3 :=
+    (ν.lipschitzWith_integral.dist_le_mul (g i) f).trans_lt <|
+      (mul_lt_mul_of_lt_of_le_of_nonneg_of_pos hν hgf.le ν.mass.coe_nonneg
+        (by positivity)).trans_eq (by field_simp)
   calc dist (∫ x, g i x ∂(μ : Measure α)) (∫ x, g i x ∂(μs n : Measure α))
       ≤ dist (∫ x, g i x ∂(μ : Measure α)) (∫ x, f x ∂(μ : Measure α)) +
           dist (∫ x, f x ∂(μ : Measure α)) (∫ x, f x ∂(μs n : Measure α)) +
           dist (∫ x, f x ∂(μs n : Measure α)) (∫ x, g i x ∂(μs n : Measure α)) :=
         dist_triangle4 _ _ _ _
-    _ < ε / 3 + ε / 3 + ε / 3 := add_lt_add (add_lt_add h1 (hn f hft)) h3
+    _ < ε / 3 + ε / 3 + ε / 3 := add_lt_add (add_lt_add (hlip μ (lt_add_one _)) (hn f hft))
+        (by rw [dist_comm]; exact hlip (μs n) hmn)
     _ = ε := by ring
 
 /-- **Ranga Rao's uniform narrow convergence theorem on a compact space.** If finite measures

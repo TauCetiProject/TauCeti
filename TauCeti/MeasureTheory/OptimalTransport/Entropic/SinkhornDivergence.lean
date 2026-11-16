@@ -16,59 +16,51 @@ import TauCeti.Topology.Instances.ENNReal
 # Sinkhorn divergences
 
 The entropic transport cost `OT_ε(μ, ν) = TauCeti.entropicTransportCost c ε μ ν` is biased: in
-general `OT_ε(μ, μ) ≠ 0`. Introducing the *Sinkhorn negentropy*
-`H_ε(μ) = -(OT_ε(μ, μ)).toReal / 2` (`TauCeti.sinkhornNegentropy`), the *Sinkhorn divergence*
-
+general `OT_ε(μ, μ) ≠ 0`. With the *Sinkhorn negentropy* `H_ε(μ) = -(OT_ε(μ, μ)).toReal / 2`
+(`TauCeti.sinkhornNegentropy`), the *Sinkhorn divergence*
 `S_ε(μ, ν) = OT_ε(μ, ν) - OT_ε(μ, μ) / 2 - OT_ε(ν, ν) / 2 = OT_ε(μ, ν) + H_ε(μ) + H_ε(ν)`
+removes this bias (`S_ε(μ, μ) = 0`). This file defines `sinkhornDivergence` and `sinkhornNegentropy`
+and establishes the structural properties of Feydy--Séjourné--Vialard--Amari--Trouvé--Peyré,
+Theorem 1 and Proposition 2:
 
-removes this bias, so that `S_ε(μ, μ) = 0`. This file defines `sinkhornDivergence` and
-`sinkhornNegentropy` and establishes the structural properties of Feydy--Séjourné--Vialard--Amari--
-Trouvé--Peyré, Theorem 1 and Proposition 2:
-
-1. **Nonnegativity and definiteness.** On a compact space, for a finite-valued measurable cost `c`
-   and positive temperature `ε > 0` whose Gibbs kernel `k(x, y) = exp (-c(x, y) / ε)` is
-   continuous and positive definite (which forces `c = ENNReal.ofReal (-ε * log k)` to be
-   continuous and bounded), evaluating weak duality of `OT_ε(μ, ν)` at the symmetric
-   self-potentials `p` of `μ` and `q` of `ν` bounds `S_ε(μ, ν)` below by
-   `(ε / 2) * ‖m(e^{p/ε} μ) - m(e^{q/ε} ν)‖ ^ 2`, where `m` is the kernel mean embedding
+1. **Nonnegativity and definiteness.** On a compact space with measurable opens, for a finite-valued
+   measurable cost `c` and positive temperature `ε > 0` whose Gibbs kernel
+   `k(x, y) = exp (-c(x, y) / ε)` is continuous and positive definite (forcing `c` to be continuous
+   and bounded), weak duality at the symmetric self-potentials `p, q` gives
+   `S_ε(μ, ν) ≥ (ε / 2) * ‖m(e^{p/ε} μ) - m(e^{q/ε} ν)‖ ^ 2`
    (`Matrix.PosSemidef.norm_kernelMeanEmbedding_sub_sq`). If moreover `k` is universal on a Borel
    space with `HasOuterApproxClosed`, injectivity of `m`
-   (`Matrix.PosSemidef.kernelMeanEmbedding_inj`) and the marginal recovery formula
-   `μ = (∫ k(·, y) da(y)) • a` force `S_ε(μ, ν) = 0 ↔ μ = ν`.
-2. **Convexity of Sinkhorn negentropy and separate strict convexity of Sinkhorn divergence.**
-   While `μ ↦ OT_ε(μ, μ)` is concave rather than convex in general, on a compact space, for a
-   finite-valued measurable cost `c` and positive temperature `ε > 0` with continuous
-   positive-definite Gibbs kernel `k`, the Sinkhorn negentropy `H_ε(μ) = -(OT_ε(μ, μ)).toReal / 2`
-   is convex on probability measures: tilting a convex combination `μ = a • μ₀ + b • μ₁` by the
-   logarithmic density-weighted mean potential interpolates the tilted measures `a • ρ₀ + b • ρ₁`
-   linearly, and completing the square in the Kolmogorov Hilbert space leaves a quantitative
-   quadratic gap `(ε / 2) * a * b * ‖m ρ₀ - m ρ₁‖ ^ 2`. Combining this with separate convexity of
-   `OT_ε` makes `S_ε` separately convex in each marginal, and strictly so when `k` is universal on
-   a Borel space with `HasOuterApproxClosed`.
-3. **Weak continuity and metrization of weak convergence.** Inheriting joint weak continuity from
-   `OT_ε` (`TauCeti.continuous_toReal_entropicTransportCost`), on a compact Hausdorff Borel space
-   with `HasOuterApproxClosed`, for a continuous finite-valued cost `c` and positive temperature
-   `ε > 0` whose Gibbs kernel is positive definite and universal, `S_ε(μs i, μ) → 0` is equivalent
-   to weak convergence `μs i → μ` in `ProbabilityMeasure X`
-   (`TauCeti.tendsto_sinkhornDivergence_zero_iff_tendsto`).
+   (`Matrix.PosSemidef.kernelMeanEmbedding_inj`) and `μ = (∫ k(·, y) da(y)) • a` yield
+   `S_ε(μ, ν) = 0 ↔ μ = ν`.
+2. **Convexity of Sinkhorn negentropy and separate strict convexity of Sinkhorn divergence.** Under
+   the same hypotheses (compact space with measurable opens, finite-valued measurable cost, `ε > 0`,
+   continuous positive-definite Gibbs kernel `k`), `H_ε` is convex on probability measures with
+   quadratic gap `(ε / 2) * a * b * ‖m ρ₀ - m ρ₁‖ ^ 2` via the logarithmic density-weighted mean
+   potential and completing the square in the Kolmogorov space. Combining this with separate
+   convexity of `OT_ε` makes `S_ε` separately convex, and strictly so when `k` is universal on a
+   Borel space with `HasOuterApproxClosed`.
+3. **Weak continuity and metrization of weak convergence.** On a compact space with measurable opens
+   on `X` and `X × X`, `H_ε` and `S_ε` inherit weak continuity from `OT_ε`
+   (`TauCeti.continuous_toReal_entropicTransportCost`) for a continuous finite-valued cost and
+   `ε > 0`. On a compact Hausdorff Borel space with `HasOuterApproxClosed` and measurable opens on
+   `X × X`, when `k` is positive definite and universal, `S_ε(μs i, μ) → 0` is equivalent to weak
+   convergence `μs i → μ` (`TauCeti.tendsto_sinkhornDivergence_zero_iff_tendsto`).
 
-Both `sinkhornDivergence` and `sinkhornNegentropy` are real-valued through `ENNReal.toReal` of the
-entropic transport costs; this gives the intended value whenever those costs are finite, as holds
-for any bounded cost on probability measures (and hence automatically under the compact-space
-hypotheses above).
+Both `sinkhornDivergence` and `sinkhornNegentropy` read costs through `ENNReal.toReal`, giving the
+intended values whenever those costs are finite (automatic for bounded costs on probability
+measures).
 
 ## Main definitions
 
-* `TauCeti.sinkhornDivergence c ε μ ν`: the debiased entropic transport cost
-  `OT_ε(μ, ν) - OT_ε(μ, μ) / 2 - OT_ε(ν, ν) / 2`.
-* `TauCeti.sinkhornNegentropy c ε μ`: the Sinkhorn negentropy `-(OT_ε(μ, μ)).toReal / 2`.
+* `TauCeti.sinkhornDivergence c ε μ ν`: `OT_ε(μ, ν) - OT_ε(μ, μ) / 2 - OT_ε(ν, ν) / 2`.
+* `TauCeti.sinkhornNegentropy c ε μ`: `-(OT_ε(μ, μ)).toReal / 2`.
 
 ## Main statements
 
 * `TauCeti.sinkhornDivergence_self`, `TauCeti.sinkhornDivergence_const`,
-  `TauCeti.sinkhornDivergence_comp_swap`, `TauCeti.sinkhornDivergence_comm`, and
-  `TauCeti.sinkhornDivergence_dirac_dirac`: diagonal vanishing, vanishing for constant costs,
-  marginal symmetry, and evaluation on Dirac masses.
+  `TauCeti.sinkhornDivergence_comp_swap`, `TauCeti.sinkhornDivergence_comm`,
+  `TauCeti.sinkhornDivergence_comm_of_posSemidef`, and `TauCeti.sinkhornDivergence_dirac_dirac`:
+  diagonal vanishing, constant costs, marginal symmetry, and Dirac evaluations.
 * `TauCeti.sinkhornDivergence_nonneg` and `TauCeti.sinkhornDivergence_eq_zero_iff`: nonnegativity
   and definiteness under a positive-definite (and universal) Gibbs kernel.
 * `TauCeti.sinkhornNegentropy_smul_add_smul_le` and
@@ -127,10 +119,10 @@ theorem sinkhornDivergence_def :
 /-- The *Sinkhorn negentropy* `-(OT_ε(μ, μ)).toReal / 2`, the debiasing self-interaction term in
 `TauCeti.sinkhornDivergence`. The self-transport cost is read through `ENNReal.toReal`, so this is
 the intended value when `entropicTransportCost c ε μ μ` is finite (for instance for a bounded cost
-and a probability measure). On a compact space, for a finite-valued measurable cost `c` at positive
-temperature `ε ≠ 0` whose Gibbs kernel `exp (-c / ε)` is continuous and positive definite (which
-forces `c` to be continuous and bounded), `sinkhornNegentropy c ε` is convex on probability
-measures. -/
+and a probability measure). On a compact space with measurable opens, for a finite-valued measurable
+cost `c` at positive temperature `ε ≠ 0` whose Gibbs kernel `exp (-c / ε)` is continuous and
+positive definite (forcing `c` to be continuous and bounded), `sinkhornNegentropy c ε` is convex on
+probability measures. -/
 def sinkhornNegentropy (c : X × X → ℝ≥0∞) (ε : ℝ≥0) (μ : Measure X) : ℝ :=
   -(entropicTransportCost c ε μ μ).toReal / 2
 
@@ -320,20 +312,17 @@ omit [MeasurableSpace X] in
 private theorem comp_swap_eq_of_posSemidef (hε : ε ≠ 0)
     (hk : Matrix.PosSemidef (entropicGibbsKernel c ε)) : c ∘ Prod.swap = c := by
   funext ⟨x, y⟩
-  have h := hk.isHermitian.apply x y
-  rw [star_trivial] at h
+  have h := hk.isHermitian.apply x y; rw [star_trivial] at h
   simp only [Function.comp_apply, Prod.swap_prod_mk]
-  by_cases hxy : c (x, y) = ∞
-  · by_cases hyx : c (y, x) = ∞
-    · rw [hyx, hxy]
-    · rw [entropicGibbsKernel_of_eq_top hxy, entropicGibbsKernel_of_ne_top hyx] at h
-      exact absurd h (Real.exp_pos _).ne'
-  · by_cases hyx : c (y, x) = ∞
-    · rw [entropicGibbsKernel_of_ne_top hxy, entropicGibbsKernel_of_eq_top hyx] at h
-      exact absurd h.symm (Real.exp_pos _).ne'
-    · rw [entropicGibbsKernel_of_ne_top hxy, entropicGibbsKernel_of_ne_top hyx,
-        Real.exp_eq_exp, div_left_inj₀ (NNReal.coe_ne_zero.2 hε), neg_inj] at h
-      exact (ENNReal.toReal_eq_toReal_iff' hyx hxy).1 h
+  by_cases hxy : c (x, y) = ∞ <;> by_cases hyx : c (y, x) = ∞
+  · rw [hyx, hxy]
+  · rw [entropicGibbsKernel_of_eq_top hxy, entropicGibbsKernel_of_ne_top hyx] at h
+    exact absurd h (Real.exp_pos _).ne'
+  · rw [entropicGibbsKernel_of_ne_top hxy, entropicGibbsKernel_of_eq_top hyx] at h
+    exact absurd h.symm (Real.exp_pos _).ne'
+  · rw [entropicGibbsKernel_of_ne_top hxy, entropicGibbsKernel_of_ne_top hyx,
+      Real.exp_eq_exp, div_left_inj₀ (NNReal.coe_ne_zero.2 hε), neg_inj] at h
+    exact (ENNReal.toReal_eq_toReal_iff' hyx hxy).1 h
 
 /-- When the Gibbs kernel is positive definite at positive temperature, the Sinkhorn divergence of
 two finite measures is symmetric without an explicit symmetry or boundedness assumption on `c`. -/
@@ -359,8 +348,7 @@ private theorem sinkhornDivergence_smul_add_smul_left_sub_le {μ₀ μ₁ ν : M
   have hν_eq : sinkhornNegentropy c ε ν =
       (a : ℝ) * sinkhornNegentropy c ε ν + b * sinkhornNegentropy c ε ν := by
     rw [← add_mul, habR, one_mul]
-  rw [sinkhornDivergence_eq_add_sinkhornNegentropy, sinkhornDivergence_eq_add_sinkhornNegentropy,
-    sinkhornDivergence_eq_add_sinkhornNegentropy]
+  simp only [sinkhornDivergence_eq_add_sinkhornNegentropy]
   linarith
 
 omit [MeasurableSpace X] in
@@ -372,16 +360,16 @@ private def logMeanPotential (ε : ℝ≥0) (u v p₀ p₁ : X → ℝ) (x : X) 
 
 omit [MeasurableSpace X] in
 private theorem add_mul_exp_pos {u v a b : ℝ} (hu : 0 ≤ u) (hv : 0 ≤ v) (huv : 0 < u + v) :
-    0 < u * Real.exp a + v * Real.exp b := by
-  rcases eq_or_lt_of_le hu with rfl | hu'
-  · exact add_pos_of_nonneg_of_pos (by positivity) (mul_pos (by simpa using huv) (Real.exp_pos b))
-  · exact add_pos_of_pos_of_nonneg (mul_pos hu' (Real.exp_pos a)) (by positivity)
+    0 < u * Real.exp a + v * Real.exp b :=
+  (eq_or_lt_of_le hu).elim
+    (fun h ↦ add_pos_of_nonneg_of_pos (by simp [← h])
+      (mul_pos (by linarith) (Real.exp_pos b)))
+    (fun h ↦ add_pos_of_pos_of_nonneg (mul_pos h (Real.exp_pos a)) (by positivity))
 
 private theorem measurable_logMeanPotential {u v p₀ p₁ : X → ℝ} (hu : Measurable u)
     (hv : Measurable v) (hp₀ : Measurable p₀) (hp₁ : Measurable p₁) :
     Measurable (logMeanPotential ε u v p₀ p₁) := by
-  unfold logMeanPotential
-  fun_prop
+  unfold logMeanPotential; fun_prop
 
 omit [MeasurableSpace X] in
 private theorem abs_logMeanPotential_le {u v p₀ p₁ : X → ℝ} {C : ℝ} (hε : ε ≠ 0) (hC : 0 ≤ C)
@@ -391,39 +379,28 @@ private theorem abs_logMeanPotential_le {u v p₀ p₁ : X → ℝ} {C : ℝ} (h
   have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
   simp only [logMeanPotential]
   rcases eq_or_lt_of_le (add_nonneg (hu x) (hv x)) with huv0 | huv_pos
-  · rw [← huv0, div_zero, Real.log_zero, mul_zero, abs_zero]
-    exact hC
+  · rw [← huv0, div_zero, Real.log_zero, mul_zero, abs_zero]; exact hC
   · set num := u x * Real.exp (p₀ x / ε) + v x * Real.exp (p₁ x / ε)
     have hnum_pos : 0 < num := add_mul_exp_pos (hu x) (hv x) huv_pos
-    have hle_u : num / (u x + v x) ≤ Real.exp (C / ε) := by
-      rw [div_le_iff₀ huv_pos]
-      have h0 : Real.exp (p₀ x / ε) ≤ Real.exp (C / ε) :=
-        Real.exp_le_exp.2 (div_le_div_of_nonneg_right (le_of_abs_le (hp₀ x)) hεpos.le)
-      have h1 : Real.exp (p₁ x / ε) ≤ Real.exp (C / ε) :=
-        Real.exp_le_exp.2 (div_le_div_of_nonneg_right (le_of_abs_le (hp₁ x)) hεpos.le)
-      calc num ≤ u x * Real.exp (C / ε) + v x * Real.exp (C / ε) :=
-            add_le_add (mul_le_mul_of_nonneg_left h0 (hu x)) (mul_le_mul_of_nonneg_left h1 (hv x))
-        _ = Real.exp (C / ε) * (u x + v x) := by ring
-    have hle_l : Real.exp (-C / ε) ≤ num / (u x + v x) := by
-      rw [le_div_iff₀ huv_pos]
-      have h0 : Real.exp (-C / ε) ≤ Real.exp (p₀ x / ε) :=
-        Real.exp_le_exp.2 (div_le_div_of_nonneg_right (neg_le_of_abs_le (hp₀ x)) hεpos.le)
-      have h1 : Real.exp (-C / ε) ≤ Real.exp (p₁ x / ε) :=
-        Real.exp_le_exp.2 (div_le_div_of_nonneg_right (neg_le_of_abs_le (hp₁ x)) hεpos.le)
-      calc Real.exp (-C / ε) * (u x + v x) = u x * Real.exp (-C / ε) + v x * Real.exp (-C / ε) :=
-            by ring
-        _ ≤ num := add_le_add (mul_le_mul_of_nonneg_left h0 (hu x))
-            (mul_le_mul_of_nonneg_left h1 (hv x))
-    have hlog_u := (Real.log_le_log (div_pos hnum_pos huv_pos) hle_u).trans_eq (Real.log_exp _)
-    have hlog_l := (Real.log_exp _).symm.trans_le (Real.log_le_log (Real.exp_pos _) hle_l)
-    rw [abs_le]
-    constructor
-    · have := mul_le_mul_of_nonneg_left hlog_l hεpos.le
-      rw [neg_div, mul_neg, mul_div_cancel₀ _ hεpos.ne'] at this
-      linarith
-    · have := mul_le_mul_of_nonneg_left hlog_u hεpos.le
-      rw [mul_div_cancel₀ _ hεpos.ne'] at this
-      linarith
+    have hle_u : num / (u x + v x) ≤ Real.exp (C / ε) := (div_le_iff₀ huv_pos).2 <|
+      (add_le_add
+        (mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (div_le_div_of_nonneg_right
+          (le_of_abs_le (hp₀ x)) hεpos.le)) (hu x))
+        (mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (div_le_div_of_nonneg_right
+          (le_of_abs_le (hp₁ x)) hεpos.le)) (hv x))).trans_eq (by ring)
+    have hle_l : Real.exp (-C / ε) ≤ num / (u x + v x) := (le_div_iff₀ huv_pos).2 <|
+      (by ring : Real.exp (-C / ε) * (u x + v x) = _).trans_le <| add_le_add
+        (mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (div_le_div_of_nonneg_right
+          (neg_le_of_abs_le (hp₀ x)) hεpos.le)) (hu x))
+        (mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (div_le_div_of_nonneg_right
+          (neg_le_of_abs_le (hp₁ x)) hεpos.le)) (hv x))
+    have hu' := mul_le_mul_of_nonneg_left
+      ((Real.log_le_log (div_pos hnum_pos huv_pos) hle_u).trans_eq (Real.log_exp _)) hεpos.le
+    have hl' := mul_le_mul_of_nonneg_left
+      ((Real.log_exp _).symm.trans_le (Real.log_le_log (Real.exp_pos _) hle_l)) hεpos.le
+    rw [mul_div_cancel₀ _ hεpos.ne'] at hu'
+    rw [neg_div, mul_neg, mul_div_cancel₀ _ hεpos.ne'] at hl'
+    exact abs_le.2 ⟨hl', hu'⟩
 
 omit [MeasurableSpace X] in
 private theorem add_mul_exp_logMeanPotential {u v p₀ p₁ : X → ℝ} (hε : ε ≠ 0)
@@ -432,14 +409,10 @@ private theorem add_mul_exp_logMeanPotential {u v p₀ p₁ : X → ℝ} (hε : 
       u x * Real.exp (p₀ x / ε) + v x * Real.exp (p₁ x / ε) := by
   have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
   rcases eq_or_lt_of_le (add_nonneg (hu x) (hv x)) with huv0 | huv_pos
-  · have hu0 : u x = 0 := by linarith [hu x, hv x]
-    have hv0 : v x = 0 := by linarith [hu x, hv x]
-    simp [hu0, hv0]
+  · simp [show u x = 0 by linarith [hu x, hv x], show v x = 0 by linarith [hu x, hv x]]
   · have hnum_pos := add_mul_exp_pos (a := p₀ x / ε) (b := p₁ x / ε) (hu x) (hv x) huv_pos
-    have hpdiv : logMeanPotential ε u v p₀ p₁ x / ε =
-        Real.log ((u x * Real.exp (p₀ x / ε) + v x * Real.exp (p₁ x / ε)) / (u x + v x)) :=
-      mul_div_cancel_left₀ _ hεpos.ne'
-    rw [hpdiv, Real.exp_log (div_pos hnum_pos huv_pos), mul_div_cancel₀ _ huv_pos.ne']
+    rw [logMeanPotential, mul_div_cancel_left₀ _ hεpos.ne',
+      Real.exp_log (div_pos hnum_pos huv_pos), mul_div_cancel₀ _ huv_pos.ne']
 
 omit [MeasurableSpace X] in
 private theorem mul_add_mul_le_logMeanPotential {u v p₀ p₁ : X → ℝ} (hε : ε ≠ 0)
@@ -447,28 +420,24 @@ private theorem mul_add_mul_le_logMeanPotential {u v p₀ p₁ : X → ℝ} (hε
     u x * p₀ x + v x * p₁ x ≤ (u x + v x) * logMeanPotential ε u v p₀ p₁ x := by
   have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
   set px := logMeanPotential ε u v p₀ p₁ x
+  have hrw (r : ℝ) : Real.exp (r / ε) * Real.exp (-(px / ε)) = Real.exp ((r - px) / ε) := by
+    rw [← Real.exp_add]; congr 1; ring
   have hexp_id : u x * Real.exp ((p₀ x - px) / ε) + v x * Real.exp ((p₁ x - px) / ε) =
       u x + v x := by
-    have hmul := congrArg (· * Real.exp (-(px / ε)))
-      (add_mul_exp_logMeanPotential (p₀ := p₀) (p₁ := p₁) hε hu hv x).symm
-    have hrw (r : ℝ) : Real.exp (r / ε) * Real.exp (-(px / ε)) = Real.exp ((r - px) / ε) := by
-      rw [← Real.exp_add]; congr 1; ring
-    calc u x * Real.exp ((p₀ x - px) / ε) + v x * Real.exp ((p₁ x - px) / ε)
-        = (u x * Real.exp (p₀ x / ε) + v x * Real.exp (p₁ x / ε)) * Real.exp (-(px / ε)) := by
+    calc _ = (u x * Real.exp (p₀ x / ε) + v x * Real.exp (p₁ x / ε)) * Real.exp (-(px / ε)) := by
           rw [← hrw (p₀ x), ← hrw (p₁ x)]; ring
-      _ = (u x + v x) * (Real.exp (px / ε) * Real.exp (-(px / ε))) := by rw [hmul, mul_assoc]
+      _ = (u x + v x) * (Real.exp (px / ε) * Real.exp (-(px / ε))) := by
+          rw [← add_mul_exp_logMeanPotential (p₀ := p₀) (p₁ := p₁) hε hu hv x, mul_assoc]
       _ = u x + v x := by rw [← Real.exp_add, add_neg_cancel, Real.exp_zero, mul_one]
-  have hlin₀ := mul_le_mul_of_nonneg_left (Real.add_one_le_exp ((p₀ x - px) / ε)) (hu x)
-  have hlin₁ := mul_le_mul_of_nonneg_left (Real.add_one_le_exp ((p₁ x - px) / ε)) (hv x)
-  have : u x * ((p₀ x - px) / ε + 1) + v x * ((p₁ x - px) / ε + 1) ≤ u x + v x :=
-    (add_le_add hlin₀ hlin₁).trans_eq hexp_id
-  have hdiv_nonpos : (u x * (p₀ x - px) + v x * (p₁ x - px)) / ε ≤ 0 := by
+  have hle : u x * ((p₀ x - px) / ε + 1) + v x * ((p₁ x - px) / ε + 1) ≤ u x + v x :=
+    (add_le_add (mul_le_mul_of_nonneg_left (Real.add_one_le_exp _) (hu x))
+      (mul_le_mul_of_nonneg_left (Real.add_one_le_exp _) (hv x))).trans_eq hexp_id
+  have hdiv : (u x * (p₀ x - px) + v x * (p₁ x - px)) / ε ≤ 0 := by
     have : u x * ((p₀ x - px) / ε + 1) + v x * ((p₁ x - px) / ε + 1) =
         (u x + v x) + (u x * (p₀ x - px) + v x * (p₁ x - px)) / ε := by ring
     linarith
-  have := mul_nonpos_of_nonpos_of_nonneg hdiv_nonpos hεpos.le
-  rw [div_mul_cancel₀ _ hεpos.ne'] at this
-  linarith
+  have := mul_nonpos_of_nonpos_of_nonneg hdiv hεpos.le
+  rw [div_mul_cancel₀ _ hεpos.ne'] at this; linarith
 
 private theorem tilt_eq_withDensity_rnDeriv {ν' lam : Measure X} [IsFiniteMeasure ν']
     [SigmaFinite lam] (hν' : ν' ≪ lam) {q : X → ℝ} (hq : Measurable q) :
@@ -480,8 +449,7 @@ private theorem tilt_eq_withDensity_rnDeriv {ν' lam : Measure X} [IsFiniteMeasu
   refine withDensity_congr_ae ?_
   filter_upwards [Measure.rnDeriv_lt_top ν' lam] with x hx
   conv_lhs =>
-    rw [Pi.mul_apply, ← ENNReal.ofReal_toReal hx.ne,
-      ← ENNReal.ofReal_mul ENNReal.toReal_nonneg]
+    rw [Pi.mul_apply, ← ENNReal.ofReal_toReal hx.ne, ← ENNReal.ofReal_mul ENNReal.toReal_nonneg]
 
 /-- The Radon–Nikodym-weighted logarithmic mean potential interpolating `p₀` and `p₁` for the
 mixture `a • μ₀ + b • μ₁` against `μ₀ + μ₁`. -/
@@ -500,9 +468,7 @@ private theorem abs_rnLogMeanPotential_le {μ₀ μ₁ : Measure X} {a b : ℝ�
     {C : ℝ} (hε : ε ≠ 0) (hC : 0 ≤ C) (hp₀ : ∀ x, |p₀ x| ≤ C) (hp₁ : ∀ x, |p₁ x| ≤ C)
     (x : X) :
     |rnLogMeanPotential ε a b μ₀ μ₁ p₀ p₁ x| ≤ C :=
-  abs_logMeanPotential_le hε hC
-    (fun _ ↦ mul_nonneg a.coe_nonneg ENNReal.toReal_nonneg)
-    (fun _ ↦ mul_nonneg b.coe_nonneg ENNReal.toReal_nonneg) hp₀ hp₁ x
+  abs_logMeanPotential_le hε hC (fun _ ↦ by positivity) (fun _ ↦ by positivity) hp₀ hp₁ x
 
 /-- Tilting `a • μ₀ + b • μ₁` by `rnLogMeanPotential ε a b μ₀ μ₁ p₀ p₁` interpolates the tilted
 measures `a • tilt μ₀ ε p₀ + b • tilt μ₁ ε p₁` linearly. -/
@@ -514,10 +480,6 @@ private theorem tilt_smul_add_smul_rnLogMeanPotential {μ₀ μ₁ : Measure X} 
   set lam := μ₀ + μ₁
   have h₀lam : μ₀ ≪ lam := Measure.AbsolutelyContinuous.rfl.add_right μ₁
   have h₁lam : μ₁ ≪ lam := Measure.AbsolutelyContinuous.rfl.add_right' μ₀
-  have hu : ∀ x, 0 ≤ (a : ℝ) * (μ₀.rnDeriv lam x).toReal :=
-    fun _ ↦ mul_nonneg a.coe_nonneg ENNReal.toReal_nonneg
-  have hv : ∀ x, 0 ≤ (b : ℝ) * (μ₁.rnDeriv lam x).toReal :=
-    fun _ ↦ mul_nonneg b.coe_nonneg ENNReal.toReal_nonneg
   set p := rnLogMeanPotential ε a b μ₀ μ₁ p₀ p₁
   have hpm : Measurable p := measurable_rnLogMeanPotential hp₀ hp₁
   have hlhs : tilt (a • μ₀ + b • μ₁) ε p = (a : ℝ≥0∞) • tilt μ₀ ε p + (b : ℝ≥0∞) • tilt μ₁ ε p := by
@@ -527,18 +489,17 @@ private theorem tilt_smul_add_smul_rnLogMeanPotential {μ₀ μ₁ : Measure X} 
     ← withDensity_smul _ (by fun_prop), ← withDensity_smul _ (by fun_prop),
     ← withDensity_smul _ (by fun_prop), ← withDensity_smul _ (by fun_prop),
     ← withDensity_add_left (by fun_prop), ← withDensity_add_left (by fun_prop)]
-  congr 1
-  funext x
+  congr 1; funext x
   simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, ← ENNReal.ofReal_coe_nnreal]
-  have : 0 ≤ (μ₀.rnDeriv lam x).toReal := ENNReal.toReal_nonneg
-  have : 0 ≤ (μ₁.rnDeriv lam x).toReal := ENNReal.toReal_nonneg
   rw [← ENNReal.ofReal_mul a.coe_nonneg, ← ENNReal.ofReal_mul b.coe_nonneg,
     ← ENNReal.ofReal_mul a.coe_nonneg, ← ENNReal.ofReal_mul b.coe_nonneg,
     ← ENNReal.ofReal_add (by positivity) (by positivity),
     ← ENNReal.ofReal_add (by positivity) (by positivity)]
   congr 1
-  simpa only [p, rnLogMeanPotential, add_mul, mul_assoc] using
-    add_mul_exp_logMeanPotential (p₀ := p₀) (p₁ := p₁) hε hu hv x
+  simpa only [p, rnLogMeanPotential, lam, add_mul, mul_assoc] using
+    add_mul_exp_logMeanPotential (u := fun x ↦ (a : ℝ) * (μ₀.rnDeriv lam x).toReal)
+      (v := fun x ↦ (b : ℝ) * (μ₁.rnDeriv lam x).toReal) (p₀ := p₀) (p₁ := p₁) hε
+      (fun _ ↦ by positivity) (fun _ ↦ by positivity) x
 
 /-- The integral of `rnLogMeanPotential ε a b μ₀ μ₁ p₀ p₁` against `a • μ₀ + b • μ₁` bounds the
 weighted sum `a * ∫ p₀ ∂μ₀ + b * ∫ p₁ ∂μ₁` from above. -/
@@ -551,20 +512,19 @@ private theorem mul_integral_add_mul_integral_le_rnLogMeanPotential {μ₀ μ₁
   set lam := μ₀ + μ₁
   have h₀lam : μ₀ ≪ lam := Measure.AbsolutelyContinuous.rfl.add_right μ₁
   have h₁lam : μ₁ ≪ lam := Measure.AbsolutelyContinuous.rfl.add_right' μ₀
-  have hu : ∀ x, 0 ≤ (a : ℝ) * (μ₀.rnDeriv lam x).toReal :=
-    fun _ ↦ mul_nonneg a.coe_nonneg ENNReal.toReal_nonneg
-  have hv : ∀ x, 0 ≤ (b : ℝ) * (μ₁.rnDeriv lam x).toReal :=
-    fun _ ↦ mul_nonneg b.coe_nonneg ENNReal.toReal_nonneg
-  let C : ℝ := max (max C₀ C₁) 0
   set p := rnLogMeanPotential ε a b μ₀ μ₁ p₀ p₁
   have hpm : Measurable p := measurable_rnLogMeanPotential hp₀ hp₁
-  have hpC : ∀ x, |p x| ≤ C := abs_rnLogMeanPotential_le hε (le_max_right _ _)
+  have hpC : ∀ x, |p x| ≤ max (max C₀ C₁) 0 := abs_rnLogMeanPotential_le hε (le_max_right _ _)
     (fun x ↦ (hp₀C x).trans ((le_max_left _ _).trans (le_max_left _ _)))
     (fun x ↦ (hp₁C x).trans ((le_max_right _ _).trans (le_max_left _ _)))
-  have hp_μ₀ : Integrable p μ₀ := .of_bound hpm.aestronglyMeasurable C (ae_of_all _ hpC)
-  have hp_μ₁ : Integrable p μ₁ := .of_bound hpm.aestronglyMeasurable C (ae_of_all _ hpC)
-  have hp₀_μ₀ : Integrable p₀ μ₀ := .of_bound hp₀.aestronglyMeasurable C₀ (ae_of_all _ hp₀C)
-  have hp₁_μ₁ : Integrable p₁ μ₁ := .of_bound hp₁.aestronglyMeasurable C₁ (ae_of_all _ hp₁C)
+  have hp_μ₀ : Integrable p μ₀ := .of_bound hpm.aestronglyMeasurable _ (ae_of_all _ hpC)
+  have hp_μ₁ : Integrable p μ₁ := .of_bound hpm.aestronglyMeasurable _ (ae_of_all _ hpC)
+  have hi₀ := ((integrable_toReal_rnDeriv_mul_iff h₀lam).2
+    (.of_bound hp₀.aestronglyMeasurable C₀ (ae_of_all _ hp₀C))).const_mul (a : ℝ)
+  have hi₁ := ((integrable_toReal_rnDeriv_mul_iff h₁lam).2
+    (.of_bound hp₁.aestronglyMeasurable C₁ (ae_of_all _ hp₁C))).const_mul (b : ℝ)
+  have hpi₀ := ((integrable_toReal_rnDeriv_mul_iff h₀lam).2 hp_μ₀).const_mul (a : ℝ)
+  have hpi₁ := ((integrable_toReal_rnDeriv_mul_iff h₁lam).2 hp_μ₁).const_mul (b : ℝ)
   have hrhs : ∫ x, p x ∂(a • μ₀ + b • μ₁) = (a : ℝ) * ∫ x, p x ∂μ₀ + (b : ℝ) * ∫ x, p x ∂μ₁ := by
     rw [← Measure.coe_nnreal_smul, ← Measure.coe_nnreal_smul,
       integral_add_measure (hp_μ₀.smul_measure ENNReal.coe_ne_top)
@@ -573,21 +533,14 @@ private theorem mul_integral_add_mul_integral_le_rnLogMeanPotential {μ₀ μ₁
       smul_eq_mul, smul_eq_mul]
   rw [hrhs, ← integral_toReal_rnDeriv_mul h₀lam (f := p₀),
     ← integral_toReal_rnDeriv_mul h₁lam (f := p₁),
-    ← integral_toReal_rnDeriv_mul h₀lam (f := p),
-    ← integral_toReal_rnDeriv_mul h₁lam (f := p),
+    ← integral_toReal_rnDeriv_mul h₀lam (f := p), ← integral_toReal_rnDeriv_mul h₁lam (f := p),
     ← integral_const_mul, ← integral_const_mul, ← integral_const_mul, ← integral_const_mul,
-    ← integral_add (((integrable_toReal_rnDeriv_mul_iff h₀lam).2 hp₀_μ₀).const_mul _)
-      (((integrable_toReal_rnDeriv_mul_iff h₁lam).2 hp₁_μ₁).const_mul _),
-    ← integral_add (((integrable_toReal_rnDeriv_mul_iff h₀lam).2 hp_μ₀).const_mul _)
-      (((integrable_toReal_rnDeriv_mul_iff h₁lam).2 hp_μ₁).const_mul _)]
-  refine integral_mono
-    ((((integrable_toReal_rnDeriv_mul_iff h₀lam).2 hp₀_μ₀).const_mul _).add
-      (((integrable_toReal_rnDeriv_mul_iff h₁lam).2 hp₁_μ₁).const_mul _))
-    ((((integrable_toReal_rnDeriv_mul_iff h₀lam).2 hp_μ₀).const_mul _).add
-      (((integrable_toReal_rnDeriv_mul_iff h₁lam).2 hp_μ₁).const_mul _))
-    fun x ↦ ?_
-  simpa only [p, rnLogMeanPotential, add_mul, mul_assoc] using
-    mul_add_mul_le_logMeanPotential (p₀ := p₀) (p₁ := p₁) hε hu hv x
+    ← integral_add hi₀ hi₁, ← integral_add hpi₀ hpi₁]
+  refine integral_mono (hi₀.add hi₁) (hpi₀.add hpi₁) fun x ↦ ?_
+  simpa only [p, rnLogMeanPotential, lam, add_mul, mul_assoc] using
+    mul_add_mul_le_logMeanPotential (u := fun x ↦ (a : ℝ) * (μ₀.rnDeriv lam x).toReal)
+      (v := fun x ↦ (b : ℝ) * (μ₁.rnDeriv lam x).toReal) (p₀ := p₀) (p₁ := p₁) hε
+      (fun _ ↦ by positivity) (fun _ ↦ by positivity) x
 
 end Basic
 
@@ -603,16 +556,14 @@ omit [MeasurableSpace X] [CompactSpace X] in
 itself to be continuous. -/
 private theorem continuous_of_continuous_entropicGibbsKernel (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
     (hkc : Continuous (uncurry (entropicGibbsKernel c ε))) : Continuous c := by
-  have hε' : (ε : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hε
   have hne : ∀ z : X × X, uncurry (entropicGibbsKernel c ε) z ≠ 0 := fun z ↦ by
-    rw [uncurry_apply_pair, entropicGibbsKernel_of_ne_top (hfin z)]
-    exact (Real.exp_pos _).ne'
+    rw [uncurry_apply_pair, entropicGibbsKernel_of_ne_top (hfin z)]; exact (Real.exp_pos _).ne'
   have hc_eq : c = fun z ↦
-      ENNReal.ofReal (-(ε : ℝ) * Real.log (uncurry (entropicGibbsKernel c ε) z)) := by
-    funext z
-    rw [uncurry_apply_pair, entropicGibbsKernel_of_ne_top (hfin z), Real.log_exp]
-    have hmul : -(ε : ℝ) * (-(c z).toReal / ε) = (c z).toReal := by field_simp
-    rw [hmul, ENNReal.ofReal_toReal (hfin z)]
+      ENNReal.ofReal (-(ε : ℝ) * Real.log (uncurry (entropicGibbsKernel c ε) z)) :=
+    funext fun z ↦ by
+      rw [uncurry_apply_pair, entropicGibbsKernel_of_ne_top (hfin z), Real.log_exp,
+        show -(ε : ℝ) * (-(c z).toReal / ε) = (c z).toReal by field_simp [NNReal.coe_ne_zero.2 hε],
+        ENNReal.ofReal_toReal (hfin z)]
   rw [hc_eq]
   exact ENNReal.continuous_ofReal.comp (continuous_const.mul (hkc.log hne))
 
@@ -621,8 +572,7 @@ omit [MeasurableSpace X] in
 temperature is bounded above by a finite `ℝ≥0` constant. -/
 private theorem exists_le_of_continuous_entropicGibbsKernel (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
     (hkc : Continuous (uncurry (entropicGibbsKernel c ε))) : ∃ B : ℝ≥0, ∀ z, c z ≤ B :=
-  exists_le_of_continuous_of_ne_top
-    (continuous_of_continuous_entropicGibbsKernel hfin hε hkc) hfin
+  (continuous_of_continuous_entropicGibbsKernel hfin hε hkc).exists_forall_le_coe_of_ne_top hfin
 
 /-- **The kernel lower bound for the Sinkhorn divergence.** The Sinkhorn divergence is at least
 `ε / 2` times the squared distance between the kernel mean embeddings of the tilted measures
@@ -649,18 +599,17 @@ private theorem exists_sq_norm_le_sinkhornDivergence [OpensMeasurableSpace X]
   refine ⟨p, q, Cp, Cq, hp, hq, hpC, hqC, hμp, hνq, ?_⟩
   rw [hk.norm_kernelMeanEmbedding_sub_sq (hk.integrable_kolmogorovFeature hkc _)
     (hk.integrable_kolmogorovFeature hkc _), hEp, hEq]
-  have := mul_one_sub_le_sinkhornDivergence hc hcB hε hp hq hpC hqC hμ hν
-  linarith
+  linarith [mul_one_sub_le_sinkhornDivergence hc hcB hε hp hq hpC hqC hμ hν]
 
-/-- **Nonnegativity of the Sinkhorn divergence.** On a compact space, for a finite-valued
-measurable cost whose Gibbs kernel `exp (-c / ε)` is continuous and positive definite at positive
-temperature `ε`, the Sinkhorn divergence of two probability measures is nonnegative. -/
+/-- **Nonnegativity of the Sinkhorn divergence.** On a compact space with measurable opens, for a
+finite-valued measurable cost whose Gibbs kernel `exp (-c / ε)` is continuous and positive definite
+at positive temperature `ε`, the Sinkhorn divergence of two probability measures is nonnegative. -/
 theorem sinkhornDivergence_nonneg [OpensMeasurableSpace X] [IsProbabilityMeasure μ]
     [IsProbabilityMeasure ν] (hc : Measurable c) (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
     (hk : Matrix.PosSemidef (entropicGibbsKernel c ε))
     (hkc : Continuous (uncurry (entropicGibbsKernel c ε))) :
     0 ≤ sinkhornDivergence c ε μ ν := by
-  obtain ⟨p, q, -, -, -, -, -, -, -, -, h⟩ :=
+  obtain ⟨_, _, -, -, -, -, -, -, -, -, h⟩ :=
     exists_sq_norm_le_sinkhornDivergence (μ := μ) (ν := ν) hc hfin hε hk hkc
   exact (mul_nonneg (div_nonneg ε.coe_nonneg zero_le_two) (sq_nonneg _)).trans h
 
@@ -681,26 +630,22 @@ theorem sinkhornDivergence_eq_zero_iff [BorelSpace X] [HasOuterApproxClosed X]
   have := isFiniteMeasure_tilt (μ := μ) (ε := ε) hp hpC
   have := isFiniteMeasure_tilt (μ := ν) (ε := ε) hq hqC
   have hε2 : 0 < (ε : ℝ) / 2 := half_pos (NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε))
-  have hsq : ‖hk.kernelMeanEmbedding (tilt μ ε p) - hk.kernelMeanEmbedding (tilt ν ε q)‖ ^ 2
-      = 0 :=
+  have hsq : ‖hk.kernelMeanEmbedding (tilt μ ε p) - hk.kernelMeanEmbedding (tilt ν ε q)‖ ^ 2 = 0 :=
     le_antisymm (nonpos_of_mul_nonpos_right (h ▸ hle) hε2) (sq_nonneg _)
   have htilt : tilt μ ε p = tilt ν ε q :=
-    (hk.kernelMeanEmbedding_inj hkc hku).1 (sub_eq_zero.1 (norm_eq_zero.1 (pow_eq_zero_iff
-      two_ne_zero |>.1 hsq)))
+    (hk.kernelMeanEmbedding_inj hkc hku).1
+      (sub_eq_zero.1 (norm_eq_zero.1 ((pow_eq_zero_iff two_ne_zero).1 hsq)))
   rw [hμp, hνq, htilt]
 
 private theorem norm_smul_add_smul_sq_of_norm_sq_eq_one {E : Type*} [SeminormedAddCommGroup E]
     [InnerProductSpace ℝ E] {a b : ℝ} (hab : a + b = 1) {z₀ z₁ : E} (hz₀ : ‖z₀‖ ^ 2 = 1)
     (hz₁ : ‖z₁‖ ^ 2 = 1) :
     ‖a • z₀ + b • z₁‖ ^ 2 = 1 - a * b * ‖z₀ - z₁‖ ^ 2 := by
-  have ha1 : a = 1 - b := by linarith
   have hcomb : z₀ - (b / (a + b)) • (z₀ - z₁) = a • z₀ + b • z₁ := by
-    rw [hab, div_one, ha1]
-    module
-  have hsub : z₀ - z₁ - z₀ = -z₁ := by abel
+    rw [hab, div_one, show a = 1 - b by linarith]; module
   have hsq := mul_norm_sq_add_mul_norm_sub_sq (a := a) (b := b)
     (by rw [hab]; exact one_ne_zero) (z₀ - z₁) z₀
-  rw [hsub, norm_neg, hcomb, hab, one_mul, div_one, hz₀, hz₁] at hsq
+  rw [show z₀ - z₁ - z₀ = -z₁ by abel, norm_neg, hcomb, hab, one_mul, div_one, hz₀, hz₁] at hsq
   linarith
 
 /-- **Quantitative convexity of Sinkhorn negentropy.** Tilting `a • μ₀ + b • μ₁` by the
@@ -724,8 +669,6 @@ private theorem exists_sq_norm_sinkhornNegentropy_smul_add_smul_le [OpensMeasura
             ‖hk.kernelMeanEmbedding (tilt μ₀ ε p₀) -
               hk.kernelMeanEmbedding (tilt μ₁ ε p₁)‖ ^ 2 ≤
         a * sinkhornNegentropy c ε μ₀ + b * sinkhornNegentropy c ε μ₁ := by
-  -- Step 1: Extract bounded self-potentials for `μ₀` and `μ₁` and form `rnLogMeanPotential` for
-  -- `μm := a • μ₀ + b • μ₁`.
   obtain ⟨B, hcB⟩ := exists_le_of_continuous_entropicGibbsKernel hfin hε hkc
   have hab' : (a : ℝ≥0∞) + b = 1 := by exact_mod_cast hab
   have habR : (a : ℝ) + b = 1 := by exact_mod_cast hab
@@ -742,25 +685,19 @@ private theorem exists_sq_norm_sinkhornNegentropy_smul_add_smul_le [OpensMeasura
     (fun x ↦ (hp₀C x).trans ((le_max_left _ _).trans (le_max_left _ _)))
     (fun x ↦ (hp₁C x).trans ((le_max_right _ _).trans (le_max_left _ _)))
   have := isFiniteMeasure_tilt (μ := μm) (ε := ε) hpm hpC
-  -- Step 2: Apply weak duality at `(p, p)` for `μm` and complete the square in the Kolmogorov
-  -- space using linear interpolation of the tilted measures.
-  have hint_le :=
-    mul_integral_add_mul_integral_le_rnLogMeanPotential (μ₀ := μ₀) (μ₁ := μ₁) a b hε hp₀ hp₁ hp₀C
-      hp₁C
+  have hint_le := mul_integral_add_mul_integral_le_rnLogMeanPotential (μ₀ := μ₀) (μ₁ := μ₁)
+    a b hε hp₀ hp₁ hp₀C hp₁C
   have hdual := integral_add_integral_sub_le_toReal_entropicTransportCost
     (μ := μm) (ν := μm) hc hcB hε hpm hpm hpC hpC
-  set z₀ := hk.kernelMeanEmbedding (tilt μ₀ ε p₀)
-  set z₁ := hk.kernelMeanEmbedding (tilt μ₁ ε p₁)
-  have hz₀ : ‖z₀‖ ^ 2 = 1 := by
+  have hnorm {ρ : Measure X} [IsFiniteMeasure ρ]
+      (hE : ∫ y, ∫ x, entropicGibbsKernel c ε x y ∂ρ ∂ρ = 1) :
+      ‖hk.kernelMeanEmbedding ρ‖ ^ 2 = 1 := by
     rw [← real_inner_self_eq_norm_sq,
       hk.inner_kernelMeanEmbedding (hk.integrable_kolmogorovFeature hkc _)
-        (hk.integrable_kolmogorovFeature hkc _), hEp₀]
-  have hz₁ : ‖z₁‖ ^ 2 = 1 := by
-    rw [← real_inner_self_eq_norm_sq,
-      hk.inner_kernelMeanEmbedding (hk.integrable_kolmogorovFeature hkc _)
-        (hk.integrable_kolmogorovFeature hkc _), hEp₁]
+        (hk.integrable_kolmogorovFeature hkc _), hE]
   have hEm : ∫ y, ∫ x, entropicGibbsKernel c ε x y ∂tilt μm ε p ∂tilt μm ε p =
-      1 - (a : ℝ) * b * ‖z₀ - z₁‖ ^ 2 := by
+      1 - (a : ℝ) * b *
+        ‖hk.kernelMeanEmbedding (tilt μ₀ ε p₀) - hk.kernelMeanEmbedding (tilt μ₁ ε p₁)‖ ^ 2 := by
     rw [← hk.inner_kernelMeanEmbedding (hk.integrable_kolmogorovFeature hkc _)
       (hk.integrable_kolmogorovFeature hkc _), real_inner_self_eq_norm_sq,
       tilt_smul_add_smul_rnLogMeanPotential a b hε hp₀ hp₁,
@@ -769,15 +706,13 @@ private theorem exists_sq_norm_sinkhornNegentropy_smul_add_smul_le [OpensMeasura
         ((hk.integrable_kolmogorovFeature hkc _).smul_measure ENNReal.coe_ne_top),
       hk.kernelMeanEmbedding_smul_measure, hk.kernelMeanEmbedding_smul_measure,
       ENNReal.coe_toReal, ENNReal.coe_toReal]
-    exact norm_smul_add_smul_sq_of_norm_sq_eq_one habR hz₀ hz₁
+    exact norm_smul_add_smul_sq_of_norm_sq_eq_one habR (hnorm hEp₀) (hnorm hEp₁)
   refine ⟨p₀, p₁, C₀, C₁, hp₀, hp₁, hp₀C, hp₁C, hμ₀p, hμ₁p, ?_⟩
-  rw [sinkhornNegentropy_def, sinkhornNegentropy_def, sinkhornNegentropy_def, hμ₀, hμ₁]
-  rw [hEm] at hdual
-  linarith
+  simp only [sinkhornNegentropy_def, hμ₀, hμ₁]; rw [hEm] at hdual; linarith
 
-/-- **Convexity of Sinkhorn negentropy.** On a compact space, for a finite-valued measurable cost
-whose Gibbs kernel `exp (-c / ε)` is continuous and positive definite at positive temperature `ε`,
-`μ ↦ sinkhornNegentropy c ε μ` is convex on probability measures. -/
+/-- **Convexity of Sinkhorn negentropy.** On a compact space with measurable opens, for a
+finite-valued measurable cost whose Gibbs kernel `exp (-c / ε)` is continuous and positive definite
+at positive temperature `ε`, `μ ↦ sinkhornNegentropy c ε μ` is convex on probability measures. -/
 theorem sinkhornNegentropy_smul_add_smul_le [OpensMeasurableSpace X] {μ₀ μ₁ : Measure X}
     [IsProbabilityMeasure μ₀] [IsProbabilityMeasure μ₁] {a b : ℝ≥0} (hab : a + b = 1)
     (hc : Measurable c) (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
@@ -787,7 +722,7 @@ theorem sinkhornNegentropy_smul_add_smul_le [OpensMeasurableSpace X] {μ₀ μ�
       a * sinkhornNegentropy c ε μ₀ + b * sinkhornNegentropy c ε μ₁ := by
   obtain ⟨p₀, p₁, -, -, -, -, -, -, -, -, h⟩ :=
     exists_sq_norm_sinkhornNegentropy_smul_add_smul_le (μ₀ := μ₀) (μ₁ := μ₁) hab hc hfin hε hk hkc
-  have hnn : 0 ≤ (ε : ℝ) / 2 * a * b *
+  have : 0 ≤ (ε : ℝ) / 2 * a * b *
       ‖hk.kernelMeanEmbedding (tilt μ₀ ε p₀) - hk.kernelMeanEmbedding (tilt μ₁ ε p₁)‖ ^ 2 := by
     positivity
   linarith
@@ -809,21 +744,17 @@ theorem sinkhornNegentropy_smul_add_smul_lt [BorelSpace X] [HasOuterApproxClosed
   have := isFiniteMeasure_tilt (μ := μ₀) (ε := ε) hp₀ hp₀C
   have := isFiniteMeasure_tilt (μ := μ₁) (ε := ε) hp₁ hp₁C
   have hdiff_ne : hk.kernelMeanEmbedding (tilt μ₀ ε p₀) -
-      hk.kernelMeanEmbedding (tilt μ₁ ε p₁) ≠ 0 := by
-    intro h0
-    have htilt : tilt μ₀ ε p₀ = tilt μ₁ ε p₁ :=
-      (hk.kernelMeanEmbedding_inj hkc hku).1 (sub_eq_zero.1 h0)
-    apply hne
-    rw [hμ₀p, hμ₁p, htilt]
-  have hgap : 0 < (ε : ℝ) / 2 * a * b *
+      hk.kernelMeanEmbedding (tilt μ₁ ε p₁) ≠ 0 := fun h0 ↦
+    hne <| by rw [hμ₀p, hμ₁p, (hk.kernelMeanEmbedding_inj hkc hku).1 (sub_eq_zero.1 h0)]
+  have : 0 < (ε : ℝ) / 2 * a * b *
       ‖hk.kernelMeanEmbedding (tilt μ₀ ε p₀) - hk.kernelMeanEmbedding (tilt μ₁ ε p₁)‖ ^ 2 := by
     positivity
   linarith
 
-/-- **Convexity of the Sinkhorn divergence in the first marginal** (Feydy et al., Proposition 2).
-On a compact space, for a finite-valued measurable cost whose Gibbs kernel `exp (-c / ε)` is
-continuous and positive definite at positive temperature `ε`, `μ ↦ sinkhornDivergence c ε μ ν` is
-convex on probability measures. -/
+/-- **Convexity of the Sinkhorn divergence in the first marginal** (Feydy et al., Theorem 1). On a
+compact space with measurable opens, for a finite-valued measurable cost whose Gibbs kernel
+`exp (-c / ε)` is continuous and positive definite at positive temperature `ε`,
+`μ ↦ sinkhornDivergence c ε μ ν` is convex on probability measures. -/
 theorem sinkhornDivergence_smul_add_smul_left_le [OpensMeasurableSpace X] {μ₀ μ₁ ν : Measure X}
     [IsProbabilityMeasure μ₀] [IsProbabilityMeasure μ₁] [IsProbabilityMeasure ν] {a b : ℝ≥0}
     (hab : a + b = 1) (hc : Measurable c) (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
@@ -831,15 +762,15 @@ theorem sinkhornDivergence_smul_add_smul_left_le [OpensMeasurableSpace X] {μ₀
     (hkc : Continuous (uncurry (entropicGibbsKernel c ε))) :
     sinkhornDivergence c ε (a • μ₀ + b • μ₁) ν ≤
       a * sinkhornDivergence c ε μ₀ ν + b * sinkhornDivergence c ε μ₁ ν := by
-  obtain ⟨B, hcB⟩ := exists_le_of_continuous_entropicGibbsKernel hfin hε hkc
-  have hsub :=
-    sinkhornDivergence_smul_add_smul_left_sub_le (ε := ε) (μ₀ := μ₀) (μ₁ := μ₁) (ν := ν) hab hcB
-  have hH := sinkhornNegentropy_smul_add_smul_le (μ₀ := μ₀) (μ₁ := μ₁) hab hc hfin hε hk hkc
-  linarith
+  obtain ⟨_, hcB⟩ := exists_le_of_continuous_entropicGibbsKernel hfin hε hkc
+  linarith [sinkhornDivergence_smul_add_smul_left_sub_le (ε := ε) (μ₀ := μ₀) (μ₁ := μ₁) (ν := ν)
+      hab hcB,
+    sinkhornNegentropy_smul_add_smul_le (μ₀ := μ₀) (μ₁ := μ₁) hab hc hfin hε hk hkc]
 
-/-- **Convexity of the Sinkhorn divergence in the second marginal.** On a compact space, for a
-finite-valued measurable cost whose Gibbs kernel `exp (-c / ε)` is continuous and positive definite
-at positive temperature `ε`, `ν ↦ sinkhornDivergence c ε μ ν` is convex on probability measures. -/
+/-- **Convexity of the Sinkhorn divergence in the second marginal.** On a compact space with
+measurable opens, for a finite-valued measurable cost whose Gibbs kernel `exp (-c / ε)` is
+continuous and positive definite at positive temperature `ε`, `ν ↦ sinkhornDivergence c ε μ ν` is
+convex on probability measures. -/
 theorem sinkhornDivergence_smul_add_smul_right_le [OpensMeasurableSpace X] {μ ν₀ ν₁ : Measure X}
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν₀] [IsProbabilityMeasure ν₁] {a b : ℝ≥0}
     (hab : a + b = 1) (hc : Measurable c) (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
@@ -852,11 +783,10 @@ theorem sinkhornDivergence_smul_add_smul_right_le [OpensMeasurableSpace X] {μ �
     sinkhornDivergence_comm_of_posSemidef (μ := μ) (ν := ν₁) hε hk]
   exact sinkhornDivergence_smul_add_smul_left_le hab hc hfin hε hk hkc
 
-/-- **Strict convexity of the Sinkhorn divergence in the first marginal** (Feydy et al.,
-Proposition 2). On a compact Borel space with `HasOuterApproxClosed`, for a finite-valued
-measurable cost whose Gibbs kernel `exp (-c / ε)` is continuous, positive definite, and universal
-at positive temperature `ε`, `μ ↦ sinkhornDivergence c ε μ ν` is strictly convex on probability
-measures. -/
+/-- **Strict convexity of the Sinkhorn divergence in the first marginal** (Feydy et al., Theorem 1).
+On a compact Borel space with `HasOuterApproxClosed`, for a finite-valued measurable cost whose
+Gibbs kernel `exp (-c / ε)` is continuous, positive definite, and universal at positive temperature
+`ε`, `μ ↦ sinkhornDivergence c ε μ ν` is strictly convex on probability measures. -/
 theorem sinkhornDivergence_smul_add_smul_left_lt [BorelSpace X] [HasOuterApproxClosed X]
     {μ₀ μ₁ ν : Measure X} [IsProbabilityMeasure μ₀] [IsProbabilityMeasure μ₁]
     [IsProbabilityMeasure ν] {a b : ℝ≥0} (ha : a ≠ 0) (hb : b ≠ 0) (hab : a + b = 1)
@@ -866,11 +796,10 @@ theorem sinkhornDivergence_smul_add_smul_left_lt [BorelSpace X] [HasOuterApproxC
     (hku : IsUniversalKernel (entropicGibbsKernel c ε)) :
     sinkhornDivergence c ε (a • μ₀ + b • μ₁) ν <
       a * sinkhornDivergence c ε μ₀ ν + b * sinkhornDivergence c ε μ₁ ν := by
-  obtain ⟨B, hcB⟩ := exists_le_of_continuous_entropicGibbsKernel hfin hε hkc
-  have hsub :=
-    sinkhornDivergence_smul_add_smul_left_sub_le (ε := ε) (μ₀ := μ₀) (μ₁ := μ₁) (ν := ν) hab hcB
-  have hH := sinkhornNegentropy_smul_add_smul_lt ha hb hab hne hc hfin hε hk hkc hku
-  linarith
+  obtain ⟨_, hcB⟩ := exists_le_of_continuous_entropicGibbsKernel hfin hε hkc
+  linarith [sinkhornDivergence_smul_add_smul_left_sub_le (ε := ε) (μ₀ := μ₀) (μ₁ := μ₁) (ν := ν)
+      hab hcB,
+    sinkhornNegentropy_smul_add_smul_lt ha hb hab hne hc hfin hε hk hkc hku]
 
 /-- **Strict convexity of the Sinkhorn divergence in the second marginal.** On a compact Borel
 space with `HasOuterApproxClosed`, for a finite-valued measurable cost whose Gibbs kernel
@@ -891,8 +820,8 @@ theorem sinkhornDivergence_smul_add_smul_right_lt [BorelSpace X] [HasOuterApprox
   exact sinkhornDivergence_smul_add_smul_left_lt ha hb hab hne hc hfin hε hk hkc hku
 
 /-- **Weak continuity of Sinkhorn negentropy on compact spaces.** For a continuous finite-valued
-cost on a compact space and a positive temperature `ε`, `μ ↦ sinkhornNegentropy c ε μ` is
-continuous on `ProbabilityMeasure X`. -/
+cost on a compact space with measurable opens on `X` and `X × X`, and a positive temperature `ε`,
+`μ ↦ sinkhornNegentropy c ε μ` is continuous on `ProbabilityMeasure X`. -/
 theorem continuous_sinkhornNegentropy [OpensMeasurableSpace X] [OpensMeasurableSpace (X × X)]
     (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0) :
     Continuous fun μ : ProbabilityMeasure X ↦ sinkhornNegentropy c ε (μ : Measure X) := by
@@ -901,8 +830,8 @@ theorem continuous_sinkhornNegentropy [OpensMeasurableSpace X] [OpensMeasurableS
     (continuous_id.prodMk continuous_id)).neg.div_const 2
 
 /-- **Joint weak continuity of the Sinkhorn divergence on compact spaces.** For a continuous
-finite-valued cost on a compact space and a positive temperature `ε`, the map
-`(μ, ν) ↦ sinkhornDivergence c ε μ ν` is jointly continuous on
+finite-valued cost on a compact space with measurable opens on `X` and `X × X`, and a positive
+temperature `ε`, `(μ, ν) ↦ sinkhornDivergence c ε μ ν` is jointly continuous on
 `ProbabilityMeasure X × ProbabilityMeasure X`. -/
 theorem continuous_sinkhornDivergence [OpensMeasurableSpace X] [OpensMeasurableSpace (X × X)]
     (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0) :
@@ -914,11 +843,10 @@ theorem continuous_sinkhornDivergence [OpensMeasurableSpace X] [OpensMeasurableS
     ((continuous_sinkhornNegentropy hc hfin hε).comp continuous_snd)
 
 /-- **The Sinkhorn divergence metrizes weak convergence** (Feydy--Séjourné--Vialard--Amari--
-Trouvé--Peyré, Theorem 1). On a compact Hausdorff space with `HasOuterApproxClosed` and its Borel
-σ-algebra (for instance any compact metric space), for a continuous finite-valued cost whose Gibbs
-kernel `exp (-c / ε)` is positive definite and universal at positive temperature `ε`, a family of
-probability measures `μs` converges weakly to `μ` along a filter `l` if and only if
-`sinkhornDivergence c ε (μs i) μ` tends to `0` along `l`. -/
+Trouvé--Peyré, Theorem 1). On a compact Hausdorff Borel space with `HasOuterApproxClosed` and
+measurable opens on `X × X` (for instance any compact metric space), for a continuous finite-valued
+cost whose Gibbs kernel `exp (-c / ε)` is positive definite and universal at positive temperature
+`ε`, `μs` converges weakly to `μ` along `l` iff `sinkhornDivergence c ε (μs i) μ → 0` along `l`. -/
 theorem tendsto_sinkhornDivergence_zero_iff_tendsto [T2Space X] [BorelSpace X]
     [HasOuterApproxClosed X] [OpensMeasurableSpace (X × X)] {ι : Type*} {l : Filter ι}
     {μs : ι → ProbabilityMeasure X} {μ : ProbabilityMeasure X} (hc : Continuous c)
@@ -929,19 +857,13 @@ theorem tendsto_sinkhornDivergence_zero_iff_tendsto [T2Space X] [BorelSpace X]
   have hcont : Continuous fun ν : ProbabilityMeasure X ↦
       sinkhornDivergence c ε (ν : Measure X) (μ : Measure X) :=
     (continuous_sinkhornDivergence hc hfin hε).comp (continuous_id.prodMk continuous_const)
-  refine ⟨fun h ↦ tendsto_nhds_of_unique_mapClusterPt fun ν hν ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨U, hUl, hUν⟩ := mapClusterPt_iff_ultrafilter.1 hν
-    have hlim₀ : Tendsto (fun i ↦ sinkhornDivergence c ε (μs i : Measure X) (μ : Measure X))
-        U (𝓝 0) := h.mono_left hUl
-    have hlimν : Tendsto (fun i ↦ sinkhornDivergence c ε (μs i : Measure X) (μ : Measure X))
-        U (𝓝 (sinkhornDivergence c ε (ν : Measure X) (μ : Measure X))) :=
-      (hcont.tendsto ν).comp hUν
-    have hzero : sinkhornDivergence c ε (ν : Measure X) (μ : Measure X) = 0 :=
-      tendsto_nhds_unique hlimν hlim₀
-    exact ProbabilityMeasure.toMeasure_injective
-      ((sinkhornDivergence_eq_zero_iff hc.measurable hfin hε hk
-        (continuous_entropicGibbsKernel hc hfin) hku).1 hzero)
-  · simpa only [Function.comp_def, sinkhornDivergence_self] using (hcont.tendsto μ).comp h
+  refine ⟨fun h ↦ tendsto_nhds_of_unique_mapClusterPt fun ν hν ↦ ?_, fun h ↦ by
+    simpa only [Function.comp_def, sinkhornDivergence_self] using (hcont.tendsto μ).comp h⟩
+  obtain ⟨U, hUl, hUν⟩ := mapClusterPt_iff_ultrafilter.1 hν
+  exact ProbabilityMeasure.toMeasure_injective
+    ((sinkhornDivergence_eq_zero_iff hc.measurable hfin hε hk
+      (continuous_entropicGibbsKernel hc hfin) hku).1
+      (tendsto_nhds_unique ((hcont.tendsto ν).comp hUν) (h.mono_left hUl)))
 
 end Compact
 

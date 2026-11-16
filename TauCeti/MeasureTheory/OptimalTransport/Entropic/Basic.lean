@@ -522,20 +522,21 @@ theorem entropicTransportCost_const [IsProbabilityMeasure μ] [IsProbabilityMeas
   have := hπ.isProbabilityMeasure
   simp
 
-private theorem entropicTransportCost_comp_swap_le [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    (c : X × Y → ℝ≥0∞) (ε : ℝ≥0) :
+private theorem entropicTransportCost_comp_swap_le
+    (hfin : ∀ π, IsCoupling π μ ν → IsFiniteMeasure π) (c : X × Y → ℝ≥0∞) (ε : ℝ≥0) :
     entropicTransportCost (c ∘ Prod.swap) ε ν μ ≤ entropicTransportCost c ε μ ν := by
   have hcoe : ⇑(MeasurableEquiv.prodComm : X × Y ≃ᵐ Y × X) = Prod.swap :=
     (MeasurableEquiv.coe_mk _ _ _).trans (Equiv.coe_prodComm X Y)
   refine le_entropicTransportCost fun π hπ ↦ ?_
-  have := hπ.isFiniteMeasure
+  have := hfin π hπ
+  have : IsFiniteMeasure μ := hπ.fst_eq ▸ inferInstance
+  have : IsFiniteMeasure ν := hπ.snd_eq ▸ inferInstance
   calc entropicTransportCost (c ∘ Prod.swap) ε ν μ
       ≤ ∫⁻ w, (c ∘ Prod.swap) w ∂π.map Prod.swap + ε * klDiv (π.map Prod.swap) (ν.prod μ) :=
         entropicTransportCost_le hπ.swap _ ε
     _ ≤ ∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν) := by
         rw [← hcoe, lintegral_map_equiv _ MeasurableEquiv.prodComm, hcoe, Function.comp_def]
-        simp only [Prod.swap_swap]
-        rw [← Measure.prod_swap (μ := μ) (ν := ν)]
+        simp only [Prod.swap_swap, ← Measure.prod_swap (μ := μ) (ν := ν)]
         gcongr
         exact klDiv_map_le _ _ measurable_swap
 
@@ -543,17 +544,11 @@ private theorem entropicTransportCost_comp_swap_le [IsFiniteMeasure μ] [IsFinit
 transported along `Prod.swap`. -/
 theorem entropicTransportCost_comp_swap [IsFiniteMeasure μ] (c : X × Y → ℝ≥0∞) (ε : ℝ≥0)
     (ν : Measure Y) :
-    entropicTransportCost (c ∘ Prod.swap) ε ν μ = entropicTransportCost c ε μ ν := by
-  by_cases hex : ∃ π, IsCoupling π μ ν
-  · obtain ⟨π₀, hπ₀⟩ := hex
-    have := hπ₀.isFiniteMeasure
-    have : IsFiniteMeasure ν := hπ₀.snd_eq ▸ inferInstance
+    entropicTransportCost (c ∘ Prod.swap) ε ν μ = entropicTransportCost c ε μ ν :=
+  le_antisymm (entropicTransportCost_comp_swap_le (fun _ hπ ↦ hπ.isFiniteMeasure) c ε) <| by
     have hinv : (c ∘ Prod.swap) ∘ Prod.swap = c := funext fun _ ↦ by simp
-    refine le_antisymm (entropicTransportCost_comp_swap_le c ε) ?_
-    simpa only [hinv] using entropicTransportCost_comp_swap_le (μ := ν) (ν := μ) (c ∘ Prod.swap) ε
-  · have h₁ : ∀ π, ¬ IsCoupling π μ ν := fun π hπ ↦ hex ⟨π, hπ⟩
-    have h₂ : ∀ σ, ¬ IsCoupling σ ν μ := fun σ hσ ↦ hex ⟨σ.map Prod.swap, hσ.swap⟩
-    simp [entropicTransportCost_def, h₁, h₂]
+    simpa only [hinv] using entropicTransportCost_comp_swap_le (μ := ν) (ν := μ)
+      (fun _ hπ ↦ hπ.isFiniteMeasure_of_right) (c ∘ Prod.swap) ε
 
 /-- For a symmetric cost, the regularised transport cost is symmetric in the two marginals,
 provided `μ` is finite (`ν` inherits finiteness whenever a coupling exists). -/
@@ -571,8 +566,7 @@ theorem entropicTransportCost_dirac_left_eq_transportCost [IsProbabilityMeasure 
   refine le_antisymm ?_ transportCost_le_entropicTransportCost
   rw [transportCost_def]
   refine le_iInf₂ fun π hπ ↦ (entropicTransportCost_le hπ c ε).trans_eq ?_
-  have hπeq : π = (Measure.dirac x).prod ν := by
-    rw [hπ.eq_map_prodMk, Measure.dirac_prod]
+  have hπeq : π = (Measure.dirac x).prod ν := by rw [hπ.eq_map_prodMk, Measure.dirac_prod]
   simp [hπeq, klDiv_self]
 
 /-- For a measurable cost, the regularised transport cost from a Dirac mass to a probability
@@ -626,21 +620,16 @@ theorem entropicTransportCost_smul_add_smul_left_le {μ₀ μ₁ : Measure X} {�
     (c : X × Y → ℝ≥0∞) (ε : ℝ≥0) :
     entropicTransportCost c ε (a • μ₀ + b • μ₁) ν ≤
       a * entropicTransportCost c ε μ₀ ν + b * entropicTransportCost c ε μ₁ ν := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · have hb : b = 1 := by simpa using hab
-    simp [hb]
-  rcases eq_or_ne b 0 with rfl | hb
-  · have ha : a = 1 := by simpa using hab
-    simp [ha]
+  rcases eq_or_ne a 0 with rfl | ha; · simp [show b = 1 by simpa using hab]
+  rcases eq_or_ne b 0 with rfl | hb; · simp [show a = 1 by simpa using hab]
   by_cases h₀ : entropicTransportCost c ε μ₀ ν = ∞
   · simp [h₀, ENNReal.mul_top (ENNReal.coe_ne_zero.2 ha)]
   by_cases h₁ : entropicTransportCost c ε μ₁ ν = ∞
   · simp [h₁, ENNReal.mul_top (ENNReal.coe_ne_zero.2 hb)]
-  -- Mix `δ`-suboptimal couplings `π₀` and `π₁` and bound the mixture's entropy by joint convexity.
   refine ENNReal.le_of_forall_pos_le_add fun δ hδ _ ↦ ?_
-  have hδ' : (0 : ℝ≥0∞) < δ := ENNReal.coe_pos.2 hδ
-  obtain ⟨π₀, hπ₀, hlt₀⟩ := entropicTransportCost_lt_iff.1 (ENNReal.lt_add_right h₀ hδ'.ne')
-  obtain ⟨π₁, hπ₁, hlt₁⟩ := entropicTransportCost_lt_iff.1 (ENNReal.lt_add_right h₁ hδ'.ne')
+  have hδ' : (δ : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2 hδ.ne'
+  obtain ⟨π₀, hπ₀, hlt₀⟩ := entropicTransportCost_lt_iff.1 (ENNReal.lt_add_right h₀ hδ')
+  obtain ⟨π₁, hπ₁, hlt₁⟩ := entropicTransportCost_lt_iff.1 (ENNReal.lt_add_right h₁ hδ')
   have := hπ₀.isFiniteMeasure
   have := hπ₁.isFiniteMeasure
   have hprod : (a • μ₀ + b • μ₁).prod ν = a • (μ₀.prod ν) + b • (μ₁.prod ν) := by
@@ -652,20 +641,17 @@ theorem entropicTransportCost_smul_add_smul_left_le {μ₀ μ₁ : Measure X} {�
           b * (∫⁻ z, c z ∂π₁ + ε * klDiv π₁ (μ₁.prod ν)) := by
         rw [lintegral_add_measure, lintegral_smul_measure, lintegral_smul_measure, hprod,
           ENNReal.smul_def, ENNReal.smul_def, smul_eq_mul, smul_eq_mul]
-        calc ((a : ℝ≥0∞) * ∫⁻ z, c z ∂π₀ + b * ∫⁻ z, c z ∂π₁) +
-              ε * klDiv (a • π₀ + b • π₁) (a • μ₀.prod ν + b • μ₁.prod ν)
-            ≤ (a * ∫⁻ z, c z ∂π₀ + b * ∫⁻ z, c z ∂π₁) +
+        calc
+          _ ≤ a * ∫⁻ z, c z ∂π₀ + b * ∫⁻ z, c z ∂π₁ +
                 ε * (a * klDiv π₀ (μ₀.prod ν) + b * klDiv π₁ (μ₁.prod ν)) := by
-              gcongr
-              exact klDiv_smul_add_smul_smul_add_smul_le a b
+            gcongr; exact klDiv_smul_add_smul_smul_add_smul_le a b
           _ = _ := by ring
     _ ≤ a * (entropicTransportCost c ε μ₀ ν + δ) + b * (entropicTransportCost c ε μ₁ ν + δ) := by
         gcongr
     _ = a * entropicTransportCost c ε μ₀ ν + b * entropicTransportCost c ε μ₁ ν + δ := by
         have hab' : (a : ℝ≥0∞) + b = 1 := by exact_mod_cast hab
-        calc a * (entropicTransportCost c ε μ₀ ν + δ) + b * (entropicTransportCost c ε μ₁ ν + δ)
-            = a * entropicTransportCost c ε μ₀ ν + b * entropicTransportCost c ε μ₁ ν +
-                ((a : ℝ≥0∞) + b) * δ := by ring
+        calc _ = a * entropicTransportCost c ε μ₀ ν + b * entropicTransportCost c ε μ₁ ν +
+              ((a : ℝ≥0∞) + b) * δ := by ring
           _ = _ := by rw [hab', one_mul]
 
 /-- **Convexity of entropic optimal transport in the second marginal.** -/
@@ -686,13 +672,11 @@ theorem toReal_entropicTransportCost_smul_add_smul_left_le {μ₀ μ₁ : Measur
     (entropicTransportCost c ε (a • μ₀ + b • μ₁) ν).toReal ≤
       a * (entropicTransportCost c ε μ₀ ν).toReal +
         b * (entropicTransportCost c ε μ₁ ν).toReal := by
-  have hrhs : (a : ℝ≥0∞) * entropicTransportCost c ε μ₀ ν +
-      b * entropicTransportCost c ε μ₁ ν ≠ ∞ :=
-    ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ENNReal.coe_ne_top h₀,
-      ENNReal.mul_ne_top ENNReal.coe_ne_top h₁⟩
-  have hle := ENNReal.toReal_mono hrhs (entropicTransportCost_smul_add_smul_left_le hab c ε)
-  rwa [ENNReal.toReal_add (ENNReal.mul_ne_top ENNReal.coe_ne_top h₀)
-    (ENNReal.mul_ne_top ENNReal.coe_ne_top h₁), ENNReal.toReal_mul, ENNReal.toReal_mul,
+  have ha₀ := ENNReal.mul_ne_top (a := (a : ℝ≥0∞)) ENNReal.coe_ne_top h₀
+  have hb₁ := ENNReal.mul_ne_top (a := (b : ℝ≥0∞)) ENNReal.coe_ne_top h₁
+  have hle := ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨ha₀, hb₁⟩)
+    (entropicTransportCost_smul_add_smul_left_le hab c ε)
+  rwa [ENNReal.toReal_add ha₀ hb₁, ENNReal.toReal_mul, ENNReal.toReal_mul,
     ENNReal.coe_toReal, ENNReal.coe_toReal] at hle
 
 /-- **Convexity of real-valued entropic optimal transport in the second marginal.** -/
