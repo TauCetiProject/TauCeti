@@ -50,7 +50,8 @@ of a fibration along a map `g : B' ⟶ B` is again a fibration
   (`TauCeti.TopCat.nonempty_fiber_of_mem_serreFibrations`).
 * `TauCeti.TopCat.mem_serreFibrations_iff` and `TauCeti.TopCat.mem_serreFibrations_iff_cube`:
   Serre fibrations are the maps with the homotopy lifting property for every disk, equivalently
-  for every cube.
+  for every cube. In particular they lift homotopies of paths
+  (`TauCeti.TopCat.hasHomotopyLiftingProperty_unitInterval_of_mem_serreFibrations`).
 * `IsCoveringMap.mem_serreFibrations` and `TauCeti.TopCat.mem_serreFibrations_fst`: covering
   maps and product projections are Serre fibrations.
 * `TauCeti.TopCat.mem_serreFibrations_pullbackFst`: the base change of a Serre fibration is a
@@ -169,6 +170,12 @@ at `e`. -/
 theorem exists_path_lift_of_mem_serreFibrations {p : E ⟶ B} (hp : serreFibrations p) {e : E}
     {b : B} (γ : Path (p e) b) : ∃ Γ : C(I, E), Γ 0 = e ∧ p ∘ Γ = γ :=
   (mem_serreFibrations_iff_cube.1 hp 0).exists_path_lift γ
+
+/-- A Serre fibration has the homotopy lifting property with respect to the interval: it lifts
+homotopies of paths. -/
+theorem hasHomotopyLiftingProperty_unitInterval_of_mem_serreFibrations {p : E ⟶ B}
+    (hp : serreFibrations p) : HasHomotopyLiftingProperty p I :=
+  (mem_serreFibrations_iff_cube.1 hp 1).of_homeomorph (Homeomorph.funUnique (Fin 1) I).symm
 
 /-- **Path lifting into a path-connected fibre.** If the fibre of a Serre fibration `p` over
 `p y` is path-connected, then a point `x` whose projection is joined to `p y` is joined to `y`. -/
