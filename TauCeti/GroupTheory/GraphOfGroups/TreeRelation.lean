@@ -144,7 +144,7 @@ private noncomputable def coprodToEmpty :
   Monoid.Coprod.lift
     (conjLift (fun v => (T.path v₀ v).weight fun {x y : Γ.V} (d : x ⟶ y) => edge ∅ d.1)
       (of ∅) (edge ∅)
-      (fun e he => by simp [T.weight_path_tgt (fun e _ => edge_rev e) v₀ he])
+      (fun e he => by simp [T.weight_path_tgt v₀ he (edge_rev e)])
       edge_rev edge_mul_of_ω_mul_edge_inv)
     (FreeGroup.lift fun x => edge ∅ x.1)
 
@@ -166,7 +166,7 @@ include hO in
 private theorem emptyToCoprod_edge_of_mem {e : Γ.E} (he : e ∈ T.darts) :
     emptyToCoprod 𝔸 v₀ T O (edge ∅ e) = inr (treeWord T O e) := by
   simp [emptyToCoprod, edge_eq_one he,
-    T.weight_path_tgt (fun e _ => treeWord_rev (hO.rev_notMem_of_mem _) e) v₀ he]
+    T.weight_path_tgt v₀ he (treeWord_rev (hO.rev_notMem_of_mem _) e)]
 
 include hO in
 /-- The homomorphism sends the product of dart generators along a tree path to its coordinate. -/
@@ -265,8 +265,9 @@ generators of the darts of `O ∩ T`. -/
 @[simp] theorem emptyEquivCoprod_symm_comp_inr :
     ((emptyEquivCoprod 𝔸 v₀ T hO).symm :
         π₁Tree 𝔸 T.darts ∗ FreeGroup ↥(O ∩ T.darts) →* π₁Tree 𝔸 ∅).comp inr =
-      FreeGroup.lift fun x => edge ∅ x.1 :=
-  MonoidHom.ext (emptyEquivCoprod_symm_inr 𝔸 v₀ T hO)
+      FreeGroup.lift fun x => edge ∅ x.1 := by
+  ext
+  simp
 
 /-- `emptyEquivCoprod` sends the vertex group at the base vertex to the first factor. -/
 theorem emptyEquivCoprod_of_self (a : 𝔸.vertexGroup v₀) :

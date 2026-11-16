@@ -267,8 +267,9 @@ variable (g : Γ.V → H) (φ : ∀ v, 𝔸.vertexGroup v →* H) (h : Γ.E → 
   simp [conjLift]
 
 @[simp] theorem conjLift_comp_of (v : Γ.V) :
-    (conjLift g φ h hT hrev hrel).comp (of T v) = (MulAut.conj (g v) : H →* H).comp (φ v) :=
-  MonoidHom.ext (conjLift_of g φ h hT hrev hrel v)
+    (conjLift g φ h hT hrev hrel).comp (of T v) = (MulAut.conj (g v) : H →* H).comp (φ v) := by
+  ext a
+  simp
 
 @[simp] theorem conjLift_edge (e : Γ.E) :
     conjLift g φ h hT hrev hrel (edge T e) = g (Γ.src e) * h e * (g (Γ.tgt e))⁻¹ := by
@@ -424,9 +425,10 @@ in `T`. -/
   refine ⟨fun h => ?_, fun h => h.elim edge_eq_one edge_eq_one_of_rev_mem⟩
   by_contra! he
   -- The dart `e` alone freely generates a subgroup.
-  refine FreeGroup.of_ne_one (⟨e, rfl⟩ : ↥({e} : Set Γ.E))
+  refine FreeGroup.of_ne_one (⟨e, Set.mem_singleton e⟩ : ↥({e} : Set Γ.E))
     (freeGroupLift_edge_injective (𝔸 := 𝔸) (S := {e})
-      (fun d hd hr => Γ.rev_ne d (hr.trans (Set.mem_singleton_iff.1 hd).symm))
+      (fun d hd hr => Γ.rev_ne d ((Set.mem_singleton_iff.1 hr).trans
+        (Set.mem_singleton_iff.1 hd).symm))
       (fun d hd => by rwa [Set.mem_singleton_iff.1 hd]) ?_)
   simpa using h
 

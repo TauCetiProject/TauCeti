@@ -24,11 +24,11 @@ Any two vertices are joined by a unique reduced path whose darts lie in a spanni
 tree path `T.path a b`. Dart weights that agree on `T` agree along tree paths, so a weight that is
 trivial on `T` is trivial along them. For a group-valued weight compatible with reversal on `T`,
 the weights of the tree paths from `a` to `b` and from `b` to `c` multiply to the weight of the
-tree path from `a` to `c` (`weight_path_mul_weight_path`); in particular the weights of the tree
-paths from `a` to the two ends of a dart of `T` differ by the weight of that dart
-(`weight_path_tgt`). The tree paths from a base vertex `v` give a free basis of the fundamental
-group of a graph: choose one dart `e` from each reversal pair outside `T`; the basis consists of
-the loops `T.path v (src e) · e · T.path (tgt e) v`.
+tree path from `a` to `c` (`weight_path_mul_weight_path`). The weights of the tree paths from `a`
+to the two ends of a dart of `T` differ by the weight of that dart, as soon as the weight is
+compatible with reversal at that dart (`weight_path_tgt`). The tree paths from a base vertex `v`
+give a free basis of the fundamental group of a graph: choose one dart `e` from each reversal pair
+outside `T`; the basis consists of the loops `T.path v (src e) · e · T.path (tgt e) v`.
 
 ## Main definitions
 
@@ -429,15 +429,16 @@ theorem weight_path_mul_weight_path {G : Type*} [Group G] {wt : Γ.E → G}
   exact Path.Homotopic.weight_eq Γ (fun e => if e ∈ T.darts then wt e else 1) hrev
     (T.homotopic_path_comp_path a b c)
 
-/-- For a dart weight compatible with reversal on the darts of a spanning tree, the weight of the
-tree path from `a` to the target of a tree dart `e` is the weight of the tree path from `a` to its
-source times the weight of `e`. -/
-theorem weight_path_tgt {G : Type*} [Group G] {wt : Γ.E → G}
-    (hwt : ∀ e ∈ T.darts, wt (Γ.rev e) = (wt e)⁻¹) (a : Γ.V) {e : Γ.E} (he : e ∈ T.darts) :
+/-- For a dart weight compatible with reversal at a tree dart `e`, the weight of the tree path
+from `a` to the target of `e` is the weight of the tree path from `a` to its source times the
+weight of `e`. -/
+theorem weight_path_tgt {G : Type*} [Group G] {wt : Γ.E → G} (a : Γ.V) {e : Γ.E}
+    (he : e ∈ T.darts) (hwt : wt (Γ.rev e) = (wt e)⁻¹) :
     (T.path a (Γ.tgt e)).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) =
       (T.path a (Γ.src e)).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) * wt e := by
-  rw [← T.weight_path_mul_weight_path hwt a (Γ.src e) (Γ.tgt e), T.path_src_tgt he]
-  simp [Quiver.Hom.toPath]
+  rcases T.path_eq_cons_or_path_eq_cons_reverse a (Γ.dart e) (by simpa using he) with h | h
+  · simp [h]
+  · simp [h, hwt]
 
 end SpanningTree
 
