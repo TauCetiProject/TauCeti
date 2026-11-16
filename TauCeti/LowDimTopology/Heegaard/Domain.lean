@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Field.Rat
 public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.Algebra.Order.Pi
 public import TauCeti.Algebra.Group.AddSubgroup.NonnegativeCoset
 public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.LowDimTopology.Heegaard.Generator
+import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
 
@@ -100,56 +102,6 @@ namespace TauCeti
 
 universe u v w
 
-/-- The incidence data of a pointed Heegaard diagram needed for domains. On top of the
-intersection data it records, for each intersection point `p`, the next intersection point along
-the oriented `α`- and `β`-curve through `p`, the regions to the left and to the right of the arcs
-starting at `p`, and the region containing each basepoint. The points on each curve form a single
-cycle of the corresponding successor permutation when nonempty. Region labels agree around each
-crossing. Each region is incident to an arc, apart from the one-region case with no arcs. The data
-does not assert that the labels are the connected complementary regions of a particular surface
-realization; that requires a separate identification. -/
-@[ext]
-structure HeegaardRegionSystem (n : ℕ) (Point : Type u) (Region : Type v) (Basepoint : Type w)
-    extends HeegaardIntersectionSystem n Point where
-  /-- The next intersection point along the oriented `α`-curve. -/
-  alphaNext : Equiv.Perm Point
-  /-- The intersection points on a nonempty `α`-curve fibre form one cycle of `alphaNext`;
-  empty fibres satisfy this condition vacuously. -/
-  alphaNext_isCycleOn (i : Fin n) : alphaNext.IsCycleOn {p | alpha p = i}
-  /-- The next intersection point along the oriented `β`-curve. -/
-  betaNext : Equiv.Perm Point
-  /-- The intersection points on a nonempty `β`-curve fibre form one cycle of `betaNext`;
-  empty fibres satisfy this condition vacuously. -/
-  betaNext_isCycleOn (j : Fin n) : betaNext.IsCycleOn {p | beta p = j}
-  /-- The region to the left of the `α`-arc starting at an intersection point. -/
-  alphaLeft : Point → Region
-  /-- The region to the right of the `α`-arc starting at an intersection point. -/
-  alphaRight : Point → Region
-  /-- The region to the left of the `β`-arc starting at an intersection point. -/
-  betaLeft : Point → Region
-  /-- The region to the right of the `β`-arc starting at an intersection point. -/
-  betaRight : Point → Region
-  /-- The diagram has a complementary region. -/
-  regionNonempty : Nonempty Region
-  /-- The four region labels around each transverse crossing agree on the `α`- and `β`-arc
-  sides. The two alternatives are the two possible local crossing orientations. -/
-  crossingCompatible (p : Point) :
-    (alphaLeft (alphaNext.symm p) = betaLeft p ∧
-      alphaRight (alphaNext.symm p) = betaLeft (betaNext.symm p) ∧
-      alphaLeft p = betaRight p ∧
-      alphaRight p = betaRight (betaNext.symm p)) ∨
-    (alphaLeft (alphaNext.symm p) = betaRight (betaNext.symm p) ∧
-      alphaRight (alphaNext.symm p) = betaRight p ∧
-      alphaLeft p = betaLeft (betaNext.symm p) ∧
-      alphaRight p = betaLeft p)
-  /-- Every region meets an arc, except for the unique region of a diagram with no
-  intersection arcs. -/
-  regionCovered (r : Region) :
-    (∃ p : Point, alphaLeft p = r ∨ alphaRight p = r ∨
-      betaLeft p = r ∨ betaRight p = r) ∨ (IsEmpty Point ∧ Subsingleton Region)
-  /-- The region containing a basepoint. -/
-  basepoint : Basepoint → Region
-
 namespace HeegaardRegionSystem
 
 section Crossing
@@ -229,7 +181,72 @@ theorem sum_arcBoundary_mul_cornerSum {P : Type*} [Fintype P] (next : Equiv.Perm
         Finset.sum_congr rfl fun q _ => by ring
     _ = 0 := by rw [← Finset.mul_sum, Finset.sum_sub_distrib, h, sub_self, mul_zero]
 
+/-- Summation by parts along an oriented curve, for point measures `m` given by the corner sums of
+`Y` divided by four: pairing the boundary `c` of the `1`-chain `∂X` with `m` equals pairing the
+sums of the coefficients of `∂X` on the two arcs at each point with the change there of the side
+sums of `Y`, divided by four. -/
+theorem sum_mul_cornerSum_div_four {P : Type*} [Fintype P] (next : Equiv.Perm P)
+    (left right : P → R) (X Y : R → ℤ) (c : P → ℤ) (m : P → ℚ)
+    (hc : ∀ q, c q = X (left (next.symm q)) - X (right (next.symm q)) - (X (left q) - X (right q)))
+    (hm : ∀ q, m q = ((Y (left (next.symm q)) + Y (right (next.symm q)) +
+      (Y (left q) + Y (right q)) : ℤ) : ℚ) / 4) :
+    ∑ q, (c q : ℚ) * m q =
+      ((∑ q, (X (left (next.symm q)) - X (right (next.symm q)) + (X (left q) - X (right q))) *
+        (Y (left q) + Y (right q) - (Y (left (next.symm q)) + Y (right (next.symm q)))) : ℤ) :
+          ℚ) / 4 := by
+  rw [← sum_arcBoundary_mul_cornerSum, Int.cast_sum, Finset.sum_div]
+  exact Finset.sum_congr rfl fun q _ => by rw [hc, hm]; push_cast; ring
+
 end Crossing
+
+end HeegaardRegionSystem
+
+/-- The incidence data of a pointed Heegaard diagram needed for domains. On top of the
+intersection data it records, for each intersection point `p`, the next intersection point along
+the oriented `α`- and `β`-curve through `p`, the regions to the left and to the right of the arcs
+starting at `p`, and the region containing each basepoint. The points on each curve form a single
+cycle of the corresponding successor permutation when nonempty. Region labels agree around each
+crossing. Each region is incident to an arc, apart from the one-region case with no arcs. The data
+does not assert that the labels are the connected complementary regions of a particular surface
+realization; that requires a separate identification. -/
+@[ext]
+structure HeegaardRegionSystem (n : ℕ) (Point : Type u) (Region : Type v) (Basepoint : Type w)
+    extends HeegaardIntersectionSystem n Point where
+  /-- The next intersection point along the oriented `α`-curve. -/
+  alphaNext : Equiv.Perm Point
+  /-- The intersection points on a nonempty `α`-curve fibre form one cycle of `alphaNext`;
+  empty fibres satisfy this condition vacuously. -/
+  alphaNext_isCycleOn (i : Fin n) : alphaNext.IsCycleOn {p | alpha p = i}
+  /-- The next intersection point along the oriented `β`-curve. -/
+  betaNext : Equiv.Perm Point
+  /-- The intersection points on a nonempty `β`-curve fibre form one cycle of `betaNext`;
+  empty fibres satisfy this condition vacuously. -/
+  betaNext_isCycleOn (j : Fin n) : betaNext.IsCycleOn {p | beta p = j}
+  /-- The region to the left of the `α`-arc starting at an intersection point. -/
+  alphaLeft : Point → Region
+  /-- The region to the right of the `α`-arc starting at an intersection point. -/
+  alphaRight : Point → Region
+  /-- The region to the left of the `β`-arc starting at an intersection point. -/
+  betaLeft : Point → Region
+  /-- The region to the right of the `β`-arc starting at an intersection point. -/
+  betaRight : Point → Region
+  /-- The diagram has a complementary region. -/
+  regionNonempty : Nonempty Region
+  /-- The four region labels around each transverse crossing agree on the `α`- and `β`-arc
+  sides. The two alternatives are the two possible local crossing orientations. -/
+  crossingCompatible (p : Point) :
+    HeegaardRegionSystem.IsCrossingCompatible alphaNext alphaLeft alphaRight betaNext betaLeft
+      betaRight p p
+  /-- Every region meets an arc, except for the unique region of a diagram with no
+  intersection arcs. -/
+  regionCovered (r : Region) :
+    (∃ p : Point, alphaLeft p = r ∨ alphaRight p = r ∨
+      betaLeft p = r ∨ betaRight p = r) ∨ (IsEmpty Point ∧ Subsingleton Region)
+  /-- The region containing a basepoint. -/
+  basepoint : Basepoint → Region
+
+namespace HeegaardRegionSystem
+
 
 variable {n : ℕ} {Point : Type u} {Region : Type v} {Basepoint : Type w}
   (H : HeegaardRegionSystem n Point Region Basepoint)
@@ -327,7 +344,7 @@ theorem boundary_boundary_eq_zero (D : Region → ℤ) :
   funext p
   simp only [Pi.add_apply, Pi.zero_apply, alphaArcBoundary_apply, betaArcBoundary_apply,
     alphaBoundary_apply, betaBoundary_apply]
-  exact (isCrossingCompatible_iff.mpr (H.crossingCompatible p)).sum_eq_zero D
+  exact (H.crossingCompatible p).sum_eq_zero D
 
 /-- A `1`-chain on the `α`-arcs is a cycle exactly when it is a combination of whole `α`-curves,
 that is, constant along each `α`-curve. -/

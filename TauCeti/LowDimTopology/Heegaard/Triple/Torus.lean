@@ -84,12 +84,9 @@ def torusTriple : HeegaardTripleRegionSystem 1 Unit Unit Unit (Fin 3) Unit where
   betaRight := Sum.elim (fun _ => 0) (fun _ => 2)
   gammaLeft := Sum.elim (fun _ => 2) (fun _ => 0)
   gammaRight := Sum.elim (fun _ => 1) (fun _ => 2)
-  crossing_alphaBeta _ :=
-    HeegaardRegionSystem.isCrossingCompatible_iff.mpr (Or.inl ⟨rfl, rfl, rfl, rfl⟩)
-  crossing_betaGamma _ :=
-    HeegaardRegionSystem.isCrossingCompatible_iff.mpr (Or.inl ⟨rfl, rfl, rfl, rfl⟩)
-  crossing_alphaGamma _ :=
-    HeegaardRegionSystem.isCrossingCompatible_iff.mpr (Or.inl ⟨rfl, rfl, rfl, rfl⟩)
+  crossing_alphaBeta := by simp only [HeegaardRegionSystem.isCrossingCompatible_iff]; decide
+  crossing_betaGamma := by simp only [HeegaardRegionSystem.isCrossingCompatible_iff]; decide
+  crossing_alphaGamma := by simp only [HeegaardRegionSystem.isCrossingCompatible_iff]; decide
   basepoint _ := 2
 
 /-- Every intersection point is the unique point of every generator of a curve meeting another

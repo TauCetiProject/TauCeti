@@ -149,22 +149,6 @@ private def crossingPairing [Fintype P] (next : Equiv.Perm B) (left right : B �
       congr 3
       exact funext fun p => by simp only [Pi.add_apply]; ring)
 
-/-- Summation by parts along an oriented curve, for point measures `m` given by the corner sums of
-`Y` divided by four: pairing the boundary `c` of the `1`-chain `∂X` with `m` equals pairing the
-sums of the coefficients of `∂X` on the two arcs at each point with the change there of the side
-sums of `Y`, divided by four. -/
-private theorem sum_mul_cornerSum_div_four [Fintype P] (next : Equiv.Perm P) (left right : P → R)
-    (X Y : R → ℤ) (c : P → ℤ) (m : P → ℚ)
-    (hc : ∀ q, c q = X (left (next.symm q)) - X (right (next.symm q)) - (X (left q) - X (right q)))
-    (hm : ∀ q, m q = ((Y (left (next.symm q)) + Y (right (next.symm q)) +
-      (Y (left q) + Y (right q)) : ℤ) : ℚ) / 4) :
-    ∑ q, (c q : ℚ) * m q =
-      ((∑ q, (X (left (next.symm q)) - X (right (next.symm q)) + (X (left q) - X (right q))) *
-        (Y (left q) + Y (right q) - (Y (left (next.symm q)) + Y (right (next.symm q)))) : ℤ) :
-          ℚ) / 4 := by
-  rw [← HeegaardRegionSystem.sum_arcBoundary_mul_cornerSum, Int.cast_sum, sum_div]
-  exact sum_congr rfl fun q _ => by rw [hc, hm]; push_cast; ring
-
 end Crossing
 
 variable {n : ℕ} {PointAB : Type u₁} {PointBC : Type u₂} {PointAC : Type u₃} {Region : Type v}
@@ -426,7 +410,8 @@ private theorem sum_alphaArcBoundary_mul [Fintype PointAB] [Fintype PointAC]
     ∑ q, (T.alphaArcBoundary (T.alphaBoundary X) q : ℚ) *
         Sum.elim (T.alphaBetaPointMeasure Y) (T.alphaGammaPointMeasure Y) q =
       -T.alphaBetaIntersection X Y + T.gammaAlphaIntersection Y X := by
-  rw [sum_mul_cornerSum_div_four T.alphaNext T.alphaLeft T.alphaRight X Y _ _
+  rw [HeegaardRegionSystem.sum_mul_cornerSum_div_four T.alphaNext T.alphaLeft T.alphaRight X Y
+      _ _
       (fun q => by simp only [alphaArcBoundary_apply, alphaBoundary_apply])
       (by rintro (p | p) <;>
         simp only [Sum.elim_inl, Sum.elim_inr, alphaBetaPointMeasure_apply,
@@ -443,7 +428,8 @@ private theorem sum_betaArcBoundary_mul [Fintype PointAB] [Fintype PointBC]
     ∑ q, (T.betaArcBoundary (T.betaBoundary X) q : ℚ) *
         Sum.elim (T.alphaBetaPointMeasure Y) (T.betaGammaPointMeasure Y) q =
       T.alphaBetaIntersection Y X - T.betaGammaIntersection X Y := by
-  rw [sum_mul_cornerSum_div_four T.betaNext T.betaLeft T.betaRight X Y _ _
+  rw [HeegaardRegionSystem.sum_mul_cornerSum_div_four T.betaNext T.betaLeft T.betaRight X Y
+      _ _
       (fun q => by simp only [betaArcBoundary_apply, betaBoundary_apply])
       (by rintro (p | p) <;>
         simp only [Sum.elim_inl, Sum.elim_inr, alphaBetaPointMeasure_apply_beta,
@@ -460,7 +446,8 @@ private theorem sum_gammaArcBoundary_mul [Fintype PointBC] [Fintype PointAC]
     ∑ q, (T.gammaArcBoundary (T.gammaBoundary X) q : ℚ) *
         Sum.elim (T.betaGammaPointMeasure Y) (T.alphaGammaPointMeasure Y) q =
       T.betaGammaIntersection Y X - T.gammaAlphaIntersection X Y := by
-  rw [sum_mul_cornerSum_div_four T.gammaNext T.gammaLeft T.gammaRight X Y _ _
+  rw [HeegaardRegionSystem.sum_mul_cornerSum_div_four T.gammaNext T.gammaLeft T.gammaRight X Y
+      _ _
       (fun q => by simp only [gammaArcBoundary_apply, gammaBoundary_apply])
       (by rintro (p | p) <;>
         simp only [Sum.elim_inl, Sum.elim_inr, betaGammaPointMeasure_apply_gamma,

@@ -126,6 +126,7 @@ def circleTimesSphere (r : Fin 3) : HeegaardRegionSystem 1 (Fin 2) (Fin 3) Unit 
   regionNonempty := inferInstance
   crossingCompatible := by
     intro p
+    rw [isCrossingCompatible_iff]
     fin_cases p
     · left
       simp
