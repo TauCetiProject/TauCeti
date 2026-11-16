@@ -87,11 +87,6 @@ structure IsCylindricalComplexStructure (J : AlmostComplexStructure (ℝ × V)) 
   /-- `B` is `J`-invariant on `ker a`. -/
   invariant : ∀ v w, a v = 0 → a w = 0 → B (J (0, v)).2 (J (0, w)).2 = B v w
 
-/-- The component of `v` in `ker a` along the Reeb vector lies in `ker a`. -/
-private theorem apply_sub_smul_reebVector [FiniteDimensional ℝ V] (ha : a.IsContact B) (v : V) :
-    a (v - a v • a.reebVector B) = 0 := by
-  rw [map_sub, map_smul, ha.apply_reebVector, smul_eq_mul, mul_one, sub_self]
-
 namespace IsCylindricalComplexStructure
 
 /-- A cylindrical complex structure sends the Reeb vector to `-∂_s`. -/
@@ -117,18 +112,11 @@ theorem apply_eq (hJ : a.IsCylindricalComplexStructure B J) (ha : a.IsContact B)
       (0, v - a v • a.reebVector B) := by
     ext <;> simp
   rw [hdecomp, J.apply_add, J.apply_add, J.apply_smul, J.apply_smul, hJ.apply_one_zero,
-    hJ.apply_zero_reebVector, hJ.apply_zero_eq (apply_sub_smul_reebVector ha v)]
+    hJ.apply_zero_reebVector, hJ.apply_zero_eq (ha.apply_sub_smul_reebVector v)]
   ext <;> simp
 
 variable (hB : B.IsAlt) (ha : a.IsContact B)
 include hB ha
-
-/-- An alternating form for which `a` is contact only sees the components in `ker a` along the
-Reeb vector. -/
-private theorem apply_sub_smul_reebVector_apply (v w : V) :
-    B (v - a v • a.reebVector B) (w - a w • a.reebVector B) = B v w := by
-  simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply,
-    ha.apply_reebVector_left hB, ha.apply_reebVector_right hB, smul_zero, sub_zero]
 
 /-- The symplectization form evaluated on `x = (s, v)` and `J x` is `s² + a(v)² + B(u, J u)`,
 where `u = v - a(v) R` is the component of `v` in `ker a`. -/
@@ -137,11 +125,11 @@ theorem symplectizationForm_apply_eq (hJ : a.IsCylindricalComplexStructure B J) 
     a.symplectizationForm B (s, v) (J (s, v)) =
       s ^ 2 + a v ^ 2 + B (v - a v • a.reebVector B)
         (J (0, v - a v • a.reebVector B)).2 := by
-  have hu := apply_sub_smul_reebVector ha v
+  have hu := ha.apply_sub_smul_reebVector v
   have hj := hJ.apply_snd_apply_zero _ hu
   have hBv : B v (J (0, v - a v • a.reebVector B)).2 =
       B (v - a v • a.reebVector B) (J (0, v - a v • a.reebVector B)).2 := by
-    rw [← apply_sub_smul_reebVector_apply hB ha v, hj, zero_smul, sub_zero]
+    rw [← ha.apply_sub_smul_reebVector_apply hB v, hj, zero_smul, sub_zero]
   rw [hJ.apply_eq ha s v, symplectizationForm_apply]
   simp only [map_add, map_smul, ha.apply_reebVector, hj, ha.apply_reebVector_right hB, hBv,
     smul_eq_mul]
@@ -152,7 +140,7 @@ private theorem symplectizationForm_apply_pos (hJ : a.IsCylindricalComplexStruct
     {x : ℝ × V} (hx : x ≠ 0) : 0 < a.symplectizationForm B x (J x) := by
   obtain ⟨s, v⟩ := x
   rw [hJ.symplectizationForm_apply_eq hB ha]
-  have hu := apply_sub_smul_reebVector ha v
+  have hu := ha.apply_sub_smul_reebVector v
   have hnonneg : 0 ≤ B (v - a v • a.reebVector B) (J (0, v - a v • a.reebVector B)).2 := by
     rcases eq_or_ne (v - a v • a.reebVector B) 0 with h | h
     · rw [h, map_zero, LinearMap.zero_apply]
@@ -162,11 +150,9 @@ private theorem symplectizationForm_apply_pos (hJ : a.IsCylindricalComplexStruct
     · have hv : v ≠ 0 := fun hv ↦ hx (by simp [hs, hv])
       have := hJ.pos _ hu (by simpa [hav] using hv)
       positivity
-    · have := pow_pos (abs_pos.2 hav) 2
-      rw [sq_abs] at this
+    · have := sq_pos_of_ne_zero hav
       positivity
-  · have := pow_pos (abs_pos.2 hs) 2
-    rw [sq_abs] at this
+  · have := sq_pos_of_ne_zero hs
     positivity
 
 /-- A cylindrical complex structure preserves the symplectization form. -/
@@ -174,19 +160,17 @@ private theorem symplectizationForm_apply_apply_eq (hJ : a.IsCylindricalComplexS
     (x y : ℝ × V) : a.symplectizationForm B (J x) (J y) = a.symplectizationForm B x y := by
   obtain ⟨s, v⟩ := x
   obtain ⟨t, w⟩ := y
-  have hu := apply_sub_smul_reebVector ha v
-  have hu' := apply_sub_smul_reebVector ha w
+  have hu := ha.apply_sub_smul_reebVector v
+  have hu' := ha.apply_sub_smul_reebVector w
   rw [hJ.apply_eq ha s v, hJ.apply_eq ha t w, symplectizationForm_apply,
     symplectizationForm_apply]
   simp only [map_add, map_smul, ha.apply_reebVector, hJ.apply_snd_apply_zero _ hu,
     hJ.apply_snd_apply_zero _ hu', LinearMap.add_apply, LinearMap.smul_apply,
     ha.apply_reebVector_left hB, ha.apply_reebVector_right hB, hJ.invariant _ _ hu hu',
-    apply_sub_smul_reebVector_apply hB ha, smul_eq_mul]
+    ha.apply_sub_smul_reebVector_apply hB, smul_eq_mul]
   ring
 
 end IsCylindricalComplexStructure
-
-variable [FiniteDimensional ℝ V]
 
 variable (a B) in
 /-- The symplectization form `((s, v), (t, w)) ↦ s a(w) - t a(v) + B(v, w)` of a contact covector
@@ -198,11 +182,12 @@ def symplectizationSymplecticForm (hB : B.IsAlt) (ha : a.IsContact B) :
   isAlt := isAlt_symplectizationForm hB
   nondegenerate := isContact_iff_nondegenerate_symplectizationForm.1 ha
 
-omit [FiniteDimensional ℝ V] in
 @[simp]
 theorem symplectizationSymplecticForm_toBilinForm (hB : B.IsAlt) (ha : a.IsContact B) :
     (a.symplectizationSymplecticForm B hB ha).toBilinForm = a.symplectizationForm B :=
   (rfl)
+
+variable [FiniteDimensional ℝ V]
 
 /-- **A cylindrical complex structure is compatible with the symplectization form.** -/
 theorem IsCylindricalComplexStructure.compatible (hJ : a.IsCylindricalComplexStructure B J)

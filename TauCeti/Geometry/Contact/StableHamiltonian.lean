@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Contact.Reeb
+public import TauCeti.Geometry.Contact.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
+public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 
 /-!
@@ -38,10 +39,10 @@ their energy is built from `α` and `ω`.
 
 Two cases are basic.
 
-* For a contact form `α`, the pair `(α, dα)` is a stable Hamiltonian structure, whose
-  characteristic field is the Reeb vector field
-  (`TauCeti.SmoothForm.IsContactForm.isStableHamiltonian`,
-  `TauCeti.SmoothForm.IsContactForm.characteristicVectorField_mextDerivₗ`).
+* For a contact form `α`, the pair `(α, dα)` is a stable Hamiltonian structure
+  (`TauCeti.SmoothForm.IsContactForm.isStableHamiltonian`). Its characteristic field is by
+  definition the Reeb vector field (`TauCeti.SmoothForm.reebVectorField` in
+  `TauCeti.Geometry.Contact.Reeb`), whose API is the special case `ω = dα` of the one here.
 * For a closed one-form `α`, the stability condition is empty: `(α, ω)` is a stable Hamiltonian
   structure as soon as `ω` is closed and nondegenerate on `ker α`
   (`TauCeti.SmoothForm.isStableHamiltonian_of_isClosed`). This is the Levi-flat case; the
@@ -120,11 +121,8 @@ variable {α : SmoothForm I M ℝ 1} {ω : SmoothForm I M ℝ 2}
 `ω(v, ·) = 0` also satisfies `dα(v, ·) = 0`. -/
 theorem IsStableHamiltonian.mextDeriv_eq_zero (h : α.IsStableHamiltonian ω) {x : M}
     {v : TangentSpace I x} (hv : ∀ w, ω.1 x ![v, w] = 0) (w : TangentSpace I x) :
-    mextDeriv α.1 x ![v, w] = 0 := by
-  have hmem : v ∈ LinearMap.ker (ω.bilinFormAt x) :=
-    LinearMap.mem_ker.2 <| LinearMap.ext fun w ↦ by simpa using hv w
-  have := LinearMap.congr_fun (LinearMap.mem_ker.1 (h.ker_le_ker x hmem)) w
-  rwa [LinearMap.zero_apply, ← mextDeriv_eq_bilinFormAt] at this
+    mextDeriv α.1 x ![v, w] = 0 :=
+  mem_ker_bilinFormAt_mextDerivₗ_iff.1 (h.ker_le_ker x (mem_ker_bilinFormAt_iff.2 hv)) w
 
 /-- **Stable Hamiltonian structures, elementwise.** `(α, ω)` is a stable Hamiltonian structure
 exactly when `ω` is closed, at each point `α` does not vanish and the only vector of `ker α` which
@@ -147,12 +145,8 @@ theorem isStableHamiltonian_iff :
       LinearMap.ext_iff, LinearMap.zero_apply, not_forall]
   refine ⟨fun h ↦ ⟨h.isClosed, fun x ↦ (hcontact x).1 (h.isContact x),
     fun x v hv w ↦ h.mextDeriv_eq_zero hv w⟩, fun ⟨hω, hc, hker⟩ ↦
-    ⟨hω, fun x ↦ (hcontact x).2 (hc x), fun x v hv ↦ ?_⟩⟩
-  have hv' : ∀ w, ω.1 x ![v, w] = 0 := fun w ↦ by
-    simpa using LinearMap.congr_fun (LinearMap.mem_ker.1 hv) w
-  exact LinearMap.mem_ker.2 <| LinearMap.ext fun w ↦ by
-    rw [LinearMap.zero_apply, ← mextDeriv_eq_bilinFormAt]
-    exact hker x v hv' w
+    ⟨hω, fun x ↦ (hcontact x).2 (hc x), fun x v hv ↦
+      mem_ker_bilinFormAt_mextDerivₗ_iff.2 (hker x v (mem_ker_bilinFormAt_iff.1 hv))⟩⟩
 
 /-- The one-form of a stable Hamiltonian structure vanishes nowhere. -/
 theorem IsStableHamiltonian.apply_ne_zero (h : α.IsStableHamiltonian ω) (x : M) : α.1 x ≠ 0 :=
@@ -272,29 +266,16 @@ theorem isStableHamiltonian_iff_mextDeriv_characteristicVectorField :
     fun ⟨hω, hc, hR⟩ ↦ ⟨hω, hc, fun x v hv ↦ ?_⟩⟩
   rw [(hc x).ker_eq_span_reebVector (isAlt_bilinFormAt _ x), ← characteristicVectorField_def] at hv
   obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.1 hv
-  refine LinearMap.mem_ker.2 <| LinearMap.ext fun w ↦ ?_
-  rw [map_smul, LinearMap.smul_apply, LinearMap.zero_apply, ← mextDeriv_eq_bilinFormAt, hR x w,
-    smul_zero]
+  exact Submodule.smul_mem _ t (mem_ker_bilinFormAt_mextDerivₗ_iff.2 (hR x))
 
 omit [FiniteDimensional ℝ E] in
 /-- **The contact case.** For a contact form `α`, the pair `(α, dα)` is a stable Hamiltonian
 structure. Its characteristic vector field is the Reeb vector field
-(`TauCeti.SmoothForm.IsContactForm.characteristicVectorField_mextDerivₗ`). -/
+(`TauCeti.SmoothForm.characteristicVectorField_mextDerivₗ`). -/
 theorem IsContactForm.isStableHamiltonian (hα : α.IsContactForm) :
     α.IsStableHamiltonian (mextDerivₗ I 1 α) :=
   ⟨by rw [isClosed_def, mextDerivₗ_apply]; exact mextDeriv_mextDeriv α, isContactForm_def.1 hα,
     fun _ ↦ le_rfl⟩
-
-/-- The characteristic vector field of a contact form `α` and its exterior derivative is the Reeb
-vector field of `α`. -/
-@[simp]
-theorem IsContactForm.characteristicVectorField_mextDerivₗ (hα : α.IsContactForm) :
-    α.characteristicVectorField (mextDerivₗ I 1 α) = α.reebVectorField := by
-  funext x
-  refine hα.eq_reebVectorField_iff.2 ⟨hα.isStableHamiltonian.apply_characteristicVectorField x,
-    fun w ↦ ?_⟩
-  have := hα.isStableHamiltonian.apply_characteristicVectorField_left x w
-  rwa [mextDerivₗ_apply] at this
 
 omit [FiniteDimensional ℝ E] in
 /-- **The Levi-flat case.** If `α` and `ω` are closed and, at every point, `α_x` is nonzero and
@@ -303,7 +284,7 @@ theorem isStableHamiltonian_of_isClosed (hα : α.IsClosed) (hω : ω.IsClosed)
     (h : ∀ x, Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
       (ω.bilinFormAt x)) :
     α.IsStableHamiltonian ω :=
-  ⟨hω, h, fun x v _ ↦ LinearMap.mem_ker.2 <| LinearMap.ext fun w ↦ by
+  ⟨hω, h, fun x v _ ↦ mem_ker_bilinFormAt_mextDerivₗ_iff.2 fun w ↦ by
     simp [(isClosed_def α).1 hα]⟩
 
 omit [FiniteDimensional ℝ E] in
