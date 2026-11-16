@@ -19,9 +19,10 @@ Let `φ : K ⟶ L` be a morphism of homological complexes of modules over a ring
 with `c.Rel i j`, the term of the mapping cone `homotopyCofiber φ` is `K.X j ⊞ L.X i`; composing
 Mathlib's `HomologicalComplex.homotopyCofiber.XIsoBiprod` with `ModuleCat.biprodIsoProd` gives the
 linear equivalence `HomologicalComplex.homotopyCofiber.XEquiv` with `L.X i × K.X j`, whose
-coordinates are the projections `sndX` and `fstX`. The inclusions `inrX` and `inlX` have
-coordinates `(x, 0)` and `(0, x)` (`HomologicalComplex.homotopyCofiber.XEquiv_inrX`,
-`HomologicalComplex.homotopyCofiber.XEquiv_inlX`), so `inrX` is injective, and on elements the
+coordinates are the projections `sndX` and `fstX`. On elements, these projections are left
+inverses of the inclusions `inrX` and `inlX` and vanish on the other inclusion
+(`HomologicalComplex.homotopyCofiber.inrX_sndX_apply`,
+`HomologicalComplex.homotopyCofiber.inlX_fstX_apply`), so `inrX` is injective, and the
 differential of the cone is `d (inrX x) = inrX (d x)` and `d (inlX x) = -inlX (d x) + inrX (φ x)`
 (`HomologicalComplex.homotopyCofiber.d_inrX_apply`,
 `HomologicalComplex.homotopyCofiber.d_inlX_apply`); where the differential of `K` vanishes, the
@@ -129,19 +130,9 @@ theorem zeroEquiv_d {i j k : ι} (hij : c.Rel i j) (hjk : c.Rel j k)
       -(K.d j k).hom (zeroEquiv K hij x) :=
   congr(($(d_fstX (0 : K ⟶ 0) i j k hij hjk)).hom x)
 
-/-- The coordinates of an element of `L.X i` included into the mapping cone. -/
-theorem XEquiv_inrX {i j : ι} (hij : c.Rel i j) (x : L.X i) :
-    XEquiv φ hij ((inrX φ i).hom x) = (x, 0) :=
-  ((XEquiv φ hij).symm_apply_eq.1 (by simp)).symm
-
-/-- The coordinates of an element of `K.X j` included into the mapping cone. -/
-theorem XEquiv_inlX {i j : ι} (hij : c.Rel i j) (x : K.X j) :
-    XEquiv φ hij ((inlX φ j i hij).hom x) = (0, x) :=
-  ((XEquiv φ hij).symm_apply_eq.1 (by simp)).symm
-
 /-- The inclusion `inrX` of `L.X i` into the mapping cone is injective. -/
 theorem inrX_hom_injective (i : ι) : Function.Injective (inrX φ i).hom :=
-  Function.LeftInverse.injective (g := (sndX φ i).hom) fun x ↦ congr(($(inrX_sndX φ i)).hom x)
+  Function.LeftInverse.injective (inrX_sndX_apply φ i)
 
 /-- The differential of the mapping cone on an element of `L`. -/
 @[simp]
