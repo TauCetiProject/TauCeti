@@ -17,10 +17,10 @@ public import Mathlib.Order.Interval.Set.Basic
 
 Let `f : α → α` be a map on a linear order. A *growth chain* of `m + 1` points in a set `s` is a
 sequence `a 0, …, a m` of points of `s` with `f (a i) ≤ a (i + 1)` for every `i < m`; the points
-need not be distinct. If `s` contains no growth chain of `m + 1` points, then `s` is covered by at
-most `m` blocks `Set.Ico t (f t)`. The cover is the greedy one: start at the least point `t` of
-`s`, discard the block `[t, f t)`, and repeat on the rest of `s`. The starting points form a
-growth chain, so the procedure stops after at most `m` steps.
+need not be distinct. If `s` is finite and contains no growth chain of `m + 1` points, then `s` is
+covered by at most `m` blocks `Set.Ico t (f t)` with `t ∈ s`. The cover is the greedy one: start
+at the least point `t` of `s`, discard the block `[t, f t)`, and repeat on the rest of `s`. The
+starting points form a growth chain, so the procedure stops after at most `m` steps.
 
 This is how a gap principle becomes a count in Diophantine approximation: a gap principle rules
 out long chains of solutions, or of levels in the parametric Subspace Theorem, that grow at a fixed
@@ -29,11 +29,12 @@ logarithmic height, as in the counting arguments of Bombieri–Gubler, *Heights 
 Geometry*, §6.5 and §7.5.
 
 A set of real numbers need not have a least point. Its infimum serves as the starting point
-instead, at the price of a slightly longer window: in an ordered field, a set bounded below by a
-positive number with no chain of `m + 1` points growing at rate `ρ` is covered by at most `m`
-windows `[t, ρ' t)` for any `ρ' > ρ`, with every `t` above the lower bound. The abstract form,
-`Set.exists_finset_card_le_of_not_exists_chain`, takes as hypothesis exactly what one step of the
-greedy procedure needs: an approximate least point of every nonempty subset.
+instead, at the price of a slightly longer window: in a conditionally complete ordered field, a
+set bounded below by a positive number with no chain of `m + 1` points growing at rate `ρ` is
+covered by at most `m` windows `[t, ρ' t)` for any `ρ' > ρ`, with every `t` above the lower
+bound. The abstract form, `Set.exists_finset_card_le_of_not_exists_chain`, takes as hypothesis
+exactly what one step of the greedy procedure needs: an approximate least point of every nonempty
+subset.
 
 ## Main results
 
