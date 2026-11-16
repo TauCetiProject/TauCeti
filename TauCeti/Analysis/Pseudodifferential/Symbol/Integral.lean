@@ -21,8 +21,10 @@ on each compact set of positions must have constants independent of the paramete
 Mixed coordinate derivatives commute with this coefficient integral
 (`TauCeti.Symbol.mixedDeriv_integral_of_continuous_jets`). If the seminorm `p_{K,α,β}` of every
 member of the family is at most `C ≥ 0`, the integral has that seminorm at most
-`μ.real Set.univ * C` (`TauCeti.Symbol.seminorm_integral_le`). For a probability measure, this
-is an average with seminorm at most `C` (`TauCeti.Symbol.seminorm_integral_le_of_probability`).
+`μ.real Set.univ * C` (`TauCeti.Symbol.seminorm_integral_le`), as does any symbol whose
+coefficient is that pointwise integral (`TauCeti.Symbol.seminorm_le_of_coefficient_eq_integral`).
+For a probability measure, this is an average with seminorm at most `C`
+(`TauCeti.Symbol.seminorm_integral_le_of_probability`).
 
 Integration takes place in the coefficient operator space `V →L[ℂ] W`, with no
 finite-dimensionality assumption on `V` or `W`. The parameter space needs only a topology.
@@ -150,6 +152,20 @@ private theorem norm_mixedDeriv_integral_le (α β : List (Fin n)) (x ξ : Coord
   rw [mixedDeriv_integral_of_continuous_jets μ a hjets]
   exact (norm_integral_le_of_norm_le_const (Filter.Eventually.of_forall hC)).trans_eq (by ring)
 
+/-- A symbol whose coefficient is the pointwise integral of the coefficients of a compact family
+with jointly continuous spatial jets has seminorm at most `μ.real univ * C` whenever every member
+of the family has seminorm at most `C ≥ 0`. -/
+theorem seminorm_le_of_coefficient_eq_integral (b : Symbol n V W m)
+    (hb : b.coefficient = fun p ↦ ∫ y, (a y).coefficient p ∂μ)
+    (K : TopologicalSpace.Compacts (CoordinateSpace n)) (α β : List (Fin n)) {C : ℝ}
+    (hC : 0 ≤ C) (h : ∀ y, Symbol.seminorm K α β (a y) ≤ C) :
+    Symbol.seminorm K α β b ≤ μ.real univ * C := by
+  refine seminorm_le_bound K α β _ (mul_nonneg measureReal_nonneg hC) fun x hx ξ ↦ ?_
+  rw [hb]
+  exact norm_mixedDeriv_integral_le μ a hjets α β x ξ fun y ↦
+    (le_seminorm K α β (a y) hx ξ).trans
+      (mul_le_mul_of_nonneg_right (h y) (rpow_weight_pos ξ _).le)
+
 variable (hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∀ α β : List (Fin n),
   ∃ C : ℝ, 0 ≤ C ∧ ∀ y : Y, ∀ x ∈ K, ∀ ξ,
     ‖mixedDeriv α β (a y).coefficient x ξ‖ ≤
@@ -175,11 +191,9 @@ theorem coefficient_integral (p : CoordinateSpace n × CoordinateSpace n) :
 theorem seminorm_integral_le (K : TopologicalSpace.Compacts (CoordinateSpace n))
     (α β : List (Fin n)) {C : ℝ} (hC : 0 ≤ C)
     (h : ∀ y, Symbol.seminorm K α β (a y) ≤ C) :
-    Symbol.seminorm K α β (integral μ a hjets hbound) ≤ μ.real univ * C := by
-  refine seminorm_le_bound K α β _ (mul_nonneg measureReal_nonneg hC) fun x hx ξ ↦ ?_
-  exact norm_mixedDeriv_integral_le μ a hjets α β x ξ fun y ↦
-    (le_seminorm K α β (a y) hx ξ).trans
-      (mul_le_mul_of_nonneg_right (h y) (rpow_weight_pos ξ _).le)
+    Symbol.seminorm K α β (integral μ a hjets hbound) ≤ μ.real univ * C :=
+  seminorm_le_of_coefficient_eq_integral μ a hjets _
+    (funext (coefficient_integral μ a hjets hbound)) K α β hC h
 
 /-- Averaging with a probability measure preserves every parameter-uniform seminorm bound. -/
 theorem seminorm_integral_le_of_probability [IsProbabilityMeasure μ]
@@ -602,8 +616,8 @@ theorem toSymbol_integral :
 the coefficients. -/
 theorem coefficient_toSymbol_integral (p : CoordinateSpace n × CoordinateSpace n) :
     (integral μ a hjets htjets hbound).toSymbol.coefficient p =
-      ∫ y, (a y).toSymbol.coefficient p ∂μ :=
-  (rfl)
+      ∫ y, (a y).toSymbol.coefficient p ∂μ := by
+  rw [toSymbol_integral, Symbol.coefficient_integral]
 
 /-- A parameter-uniform seminorm bound `C ≥ 0` on the full symbols becomes `μ.real univ * C` for
 the full symbol of the integral. -/
@@ -669,16 +683,10 @@ theorem seminorm_remainder_integral_le (χ : FrequencyCutoff (CoordinateSpace n)
     (K : Compacts (CoordinateSpace n)) (α β : List (Fin n)) {C : ℝ} (hC : 0 ≤ C)
     (h : ∀ y, Symbol.seminorm K α β ((a y).remainder χ N) ≤ C) :
     Symbol.seminorm K α β ((integral μ a hjets htjets hbound).remainder χ N) ≤
-      μ.real univ * C := by
-  refine Symbol.seminorm_le_bound K α β _ (mul_nonneg measureReal_nonneg hC) fun x hx ξ ↦ ?_
-  have heq : ((integral μ a hjets htjets hbound).remainder χ N).coefficient =
-      fun p ↦ ∫ y, ((a y).remainder χ N).coefficient p ∂μ :=
-    funext (coefficient_remainder_integral μ a hjets htjets hbound χ N)
-  rw [heq]
-  exact Symbol.norm_mixedDeriv_integral_le μ (fun y ↦ (a y).remainder χ N)
-    (continuous_iteratedFDeriv_remainder a hjets htjets χ N) α β x ξ fun y ↦
-      (Symbol.le_seminorm K α β _ hx ξ).trans
-        (mul_le_mul_of_nonneg_right (h y) (rpow_weight_pos ξ _).le)
+      μ.real univ * C :=
+  Symbol.seminorm_le_of_coefficient_eq_integral μ (fun y ↦ (a y).remainder χ N)
+    (continuous_iteratedFDeriv_remainder a hjets htjets χ N) _
+    (funext (coefficient_remainder_integral μ a hjets htjets hbound χ N)) K α β hC h
 
 /-- A probability average fixes a constant family of classical symbols. -/
 @[simp]
