@@ -246,6 +246,11 @@ theorem IsMorse.contMDiff {I : ModelWithCorners ℝ E H}
   rw [← contMDiffOn_univ]
   exact h.contMDiffOn
 
+/-- A Morse function is differentiable. -/
+theorem IsMorse.mdifferentiable {I : ModelWithCorners ℝ E H}
+    (h : IsMorse I f) : MDifferentiable I (modelWithCornersSelf ℝ ℝ) f :=
+  h.contMDiff.mdifferentiable (by simp)
+
 /-- Every critical point of a Morse function is a nondegenerate critical point. -/
 theorem IsMorse.isManifoldNondegenerateCriticalPoint {I : ModelWithCorners ℝ E H}
     (h : IsMorse I f)
