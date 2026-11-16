@@ -207,18 +207,13 @@ theorem eq_legendreMap_curveVelocityLiftWithin_of_isMIntegralCurveOn
       ((CotangentBundle.symplecticForm I M).hamiltonianVectorField h.hamiltonian) s)
     (ht : t ∈ s) :
     δ t = legendreMap L (Manifold.curveVelocityLiftWithin I (fun r ↦ (δ r).proj) s t) := by
-  -- Pull `δ` back to an integral curve of the Lagrangian vector field.
-  set γ : ℝ → TangentBundle I M := fun r ↦ (h.legendreDiffeomorph hL).symm (δ r)
-  have hFγ : legendreMap L ∘ γ = δ :=
-    funext fun r ↦ h.legendreMap_legendreDiffeomorph_symm_apply hL (δ r)
-  have hγ : IsMIntegralCurveOn γ
-      ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L)) s :=
-    (h.isMIntegralCurveOn_legendreMap_comp_iff hL).1 (hFγ ▸ hδ)
-  have hproj : (fun r ↦ (γ r).proj) = fun r ↦ (δ r).proj :=
+  -- Pull `δ` back to an integral curve `FL⁻¹ ∘ δ` of the Lagrangian vector field.
+  have hγ := h.isMIntegralCurveOn_legendreDiffeomorph_symm_comp hL hδ
+  have hproj : (fun r ↦ (((h.legendreDiffeomorph hL).symm ∘ δ) r).proj) = fun r ↦ (δ r).proj :=
     funext fun r ↦ h.proj_legendreDiffeomorph_symm_apply hL (δ r)
   rw [← hproj, ← Manifold.eq_curveVelocityLiftWithin_of_hasMFDerivWithinAt hs (hγ t ht)
-    (h.isRegularLagrangian.mfderiv_proj_hamiltonianVectorField_lagrangianEnergy hL (γ t))]
-  exact (congrFun hFγ t).symm
+    (h.isRegularLagrangian.mfderiv_proj_hamiltonianVectorField_lagrangianEnergy hL _)]
+  exact (h.legendreMap_legendreDiffeomorph_symm_apply hL (δ t)).symm
 
 /-- **Hamilton's first equation for a hyperregular Lagrangian.** Along an integral curve `δ` of the
 Hamiltonian vector field of `H = E_L ∘ FL⁻¹` on `T*M`, the covector `δ t` is the Legendre transform

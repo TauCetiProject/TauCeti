@@ -59,9 +59,9 @@ specialize the conjugacy of Lagrangian and Hamiltonian flows of a hyperregular L
 `TauCeti.IsHyperregularLagrangian.legendreMap_flowOf_hamiltonianVectorField`). The Legendre map
 inverts the Riesz isomorphism and is isometric on fibres, so the flow results are also stated for
 an arbitrary initial covector `p`, whose geodesic starts with the Riesz dual of `p`. On a
-boundaryless manifold every kinetic Hamiltonian trajectory projects to a geodesic, and the
-Legendre map conjugates the maximal flows and their domains; no geodesic completeness is
-assumed.
+boundaryless manifold every kinetic Hamiltonian trajectory on a parameter set with unique
+derivatives projects to a geodesic there, and the Legendre map conjugates the maximal flows and
+their domains; no geodesic completeness is assumed.
 
 ## Main results
 
@@ -81,8 +81,8 @@ In the namespace `TauCeti`:
   cogeodesic field.
 * `TauCeti.isMIntegralCurveOn_legendreMap_comp_curveVelocityLiftWithin_iff`: the equivalence on
   parameter sets, including finite-lifetime geodesics.
-* `TauCeti.isGeodesicCurveOn_proj_of_isMIntegralCurveOn_kineticEnergy`: arbitrary kinetic
-  Hamiltonian trajectories project to geodesics.
+* `TauCeti.isGeodesicCurveOn_proj_of_isMIntegralCurveOn_kineticEnergy`: kinetic Hamiltonian
+  trajectories on parameter sets with unique derivatives project to geodesics there.
 * `TauCeti.legendreMap_flowOf_geodesicSpray` and
   `TauCeti.mem_flowDomain_kineticEnergy_legendreMap_iff`: conjugacy of the maximal flows and
   identification of their time domains with the maximal geodesic interval.
@@ -496,8 +496,9 @@ section Boundaryless
 
 variable [I.Boundaryless]
 
-/-- Every integral curve of the kinetic Hamiltonian vector field projects to a geodesic;
-the integral-curve equation supplies the projection's `C²` regularity. -/
+/-- Every integral curve of the kinetic Hamiltonian vector field on a parameter set with unique
+derivatives projects to a geodesic there; the integral-curve equation supplies the projection's
+`C²` regularity. -/
 theorem isGeodesicCurveOn_proj_of_isMIntegralCurveOn_kineticEnergy
     {δ : ℝ → CotangentBundle I M} {s : Set ℝ} (hs : UniqueDiffOn ℝ s)
     (hδ : IsMIntegralCurveOn δ ((CotangentBundle.symplecticForm I M).hamiltonianVectorField
@@ -506,16 +507,13 @@ theorem isGeodesicCurveOn_proj_of_isMIntegralCurveOn_kineticEnergy
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have h := ContMDiffNondegenerateMetric.isHyperregularLagrangian_mechanicalLagrangian
     (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0
+  rw [← h.hamiltonian_eq_kineticEnergy] at hδ
   -- Pull `δ` back along the Legendre diffeomorphism to an integral curve of the geodesic spray.
-  set γ : ℝ → TangentBundle I M := fun t ↦ (h.legendreDiffeomorph
-    (ContMDiffNondegenerateMetric.ofRiemannianBundle I M).contMDiff_mechanicalLagrangian_zero).symm
-      (δ t)
-  have hFγ : legendreMap
-      (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0) ∘ γ = δ :=
-    funext fun t ↦ h.legendreMap_legendreDiffeomorph_symm_apply _ (δ t)
-  have hγ := isMIntegralCurveOn_legendreMap_comp_iff_geodesicSpray.1 (hFγ ▸ hδ)
-  simpa only [γ, IsHyperregularLagrangian.proj_legendreDiffeomorph_symm_apply] using
-    isGeodesicCurveOn_proj_of_isMIntegralCurveOn hs hγ
+  have hγ := h.isMIntegralCurveOn_legendreDiffeomorph_symm_comp
+    (ContMDiffNondegenerateMetric.ofRiemannianBundle I M).contMDiff_mechanicalLagrangian_zero hδ
+  rw [hamiltonianVectorField_lagrangianEnergy_eq_geodesicSpray] at hγ
+  simpa only [Function.comp_apply, IsHyperregularLagrangian.proj_legendreDiffeomorph_symm_apply]
+    using isGeodesicCurveOn_proj_of_isMIntegralCurveOn hs hγ
 
 /-- The kinetic Hamiltonian flow through the Legendre transform of `(p, v)` has exactly the
 maximal geodesic interval of `(p, v)` as its time domain. -/
