@@ -237,7 +237,7 @@ private theorem periodic_comp_cylindricalEndLift_positive (u : ℝ × ℝ → V)
 map `u ∘ φ` and the structures `J ∘ φ` satisfy the hypotheses of the finite-energy half-cylinder
 theorems of `TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` for the cylindrical datum
 `H(t) dt`. -/
-private theorem exists_halfCylinder_comp_realChart_positive (ω : SymplecticForm V)
+theorem exists_halfCylinder_comp_realChart_positive (ω : SymplecticForm V)
     {n : WithTop ℕ∞} (hn : n ≠ 0) (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {r : ℝ}
     (hu : ContDiffOn ℝ n u {z | r < ‖Complex.equivRealProdCLM.symm z‖})
     (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K)
