@@ -62,8 +62,9 @@ on, so the two commute (`TauCeti.InfiniteTypeAHeckeAlgebra.commute_shift_of_mem_
 placing an element of the stage `a` on the first `a` strands and an element of the stage `b` on
 the next `b` strands is an algebra map from the tensor product
 (`TauCeti.InfiniteTypeAHeckeAlgebra.blockIncl`). These are the disjoint block maps along which
-Markov traces are multiplicative; that they are injective, so embeddings, needs the basis
-theorem and is not proved here.
+Markov traces are multiplicative; that they are injective, so embeddings, is
+`TauCeti.InfiniteTypeAHeckeAlgebra.blockIncl_injective`, proved in
+`TauCeti.Algebra.TypeAHeckeAlgebra.Block`.
 
 ## Main definitions
 
@@ -141,8 +142,8 @@ them. -/
 instance : Ring (InfiniteTypeAHeckeAlgebra R q) :=
   inferInstanceAs (Ring (RingQuot (InfiniteTypeAHeckeAlgebra.Rel R q)))
 
-/-- The infinite type-A Hecke algebra over `R` is an algebra over every ring that `R` is an
-algebra over. -/
+/-- The infinite type-A Hecke algebra over `R` is an algebra over every commutative semiring that
+`R` is an algebra over. -/
 instance (priority := 900) InfiniteTypeAHeckeAlgebra.instAlgebra' {S : Type*} [CommSemiring S]
     [Algebra S R] : Algebra S (InfiniteTypeAHeckeAlgebra R q) :=
   inferInstanceAs (Algebra S (RingQuot (InfiniteTypeAHeckeAlgebra.Rel R q)))
