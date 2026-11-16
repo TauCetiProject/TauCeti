@@ -73,9 +73,9 @@ of `M` with `g (-o) = -g o`. When `𝕜` is a linearly ordered field and `ι` ha
 `R` (`Orientation.orientationLineEquiv`). -/
 def orientationLine : Submodule R (Orientation 𝕜 M ι → R) where
   carrier := {g | Function.Odd g}
-  add_mem' {g h} hg hh o := by simp [hg o, hh o, add_comm]
+  add_mem' := Function.Odd.add
   zero_mem' := Function.Odd.zero
-  smul_mem' r g hg o := by simp [hg o]
+  smul_mem' r _ hg := hg.const_smul r
 
 variable {R 𝕜 M ι}
 
