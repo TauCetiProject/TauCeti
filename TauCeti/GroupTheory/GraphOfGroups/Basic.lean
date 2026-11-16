@@ -124,6 +124,16 @@ theorem cast_α_eq_ω {e e' : Γ.E} (he : e' = Γ.rev e) (h₁ : Γ.src e' = Γ.
   -- What remains is a transport from `A_{o(e⁻¹)}` to `A_{t(e)}`, the same group by definition.
   rfl
 
+/-- `ω` of a dart `e'` equal to the reverse of `e` is `α` of `e`, read through the identifications
+of the edge groups and of the vertex groups. -/
+theorem cast_ω_eq_α {e e' : Γ.E} (he : e' = Γ.rev e) (h₁ : Γ.tgt e' = Γ.src e)
+    (h₂ : Γ.toGeomEdge e = Γ.toGeomEdge e') (d : 𝔸.edgeGroup (Γ.toGeomEdge e)) :
+    MulEquiv.cast (M := 𝔸.vertexGroup) h₁ (𝔸.ω e' (MulEquiv.cast (M := 𝔸.edgeGroup) h₂ d)) =
+      𝔸.α e d := by
+  subst he
+  rw [ω_rev_apply]
+  simp only [MulEquiv.cast_apply, cast_cast, cast_eq]
+
 section Arrow
 
 variable {a b : Γ.V}

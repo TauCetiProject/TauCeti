@@ -421,7 +421,7 @@ def Hom.id : Γ.Hom Γ where
   simp only [Hom.id]
 
 /-- Compose Serre-graph morphisms. -/
-def Hom.comp {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
+@[expose] def Hom.comp {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
     (g : Δ.Hom Θ) (f : Γ.Hom Δ) : Γ.Hom Θ where
   mapV := g.mapV ∘ f.mapV
   mapE := g.mapE ∘ f.mapE

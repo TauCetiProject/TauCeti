@@ -445,6 +445,13 @@ theorem mem_subgroup_iff {g : π₁ 𝔸 v₀} : g ∈ B.subgroup ↔
   · rintro ⟨p, rfl⟩
     exact ⟨π₁.mk p, B.π₁Hom_mk p⟩
 
+/-- The vertex group `B_{u₀}` at the base vertex, read in `π₁(𝔸, v₀)` through `[u₀] = v₀`, lies in
+`L(B, u₀)`. -/
+theorem cast_vertexHom_nil_mem_subgroup {b : 𝔸.vertexGroup (B.typ.mapV B.base)}
+    (hb : b ∈ B.grp B.base) :
+    MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.vertexHom Quiver.Path.nil b) ∈ B.subgroup :=
+  B.mem_subgroup_iff.2 ⟨Path.ofVertex ⟨b, hb⟩, by rw [pathMap_ofVertex, π₁.vertexHom_nil_apply]⟩
+
 /-- The induction behind `subgroup_eq_sup`: for a `𝔹`-path `p` from `u₀` to `x`, the element
 `γ_{u₀} p γ_x⁻¹` of `π₁(𝔹, u₀)` lies in every subgroup containing the generators. -/
 private theorem mk_conj_mem (γ : ∀ u : B.graph.V, B.toGraphOfGroups.Path ⟨B.base⟩ ⟨u⟩)
@@ -523,6 +530,13 @@ theorem mem_grpTgt {f : B.graph.E} {c : 𝔸.vertexGroup (Γ.tgt (B.typ.mapE f))
     c ∈ B.grpTgt f ↔
       MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f) c ∈ B.grp (B.graph.tgt f) :=
   Iff.rfl
+
+/-- Membership in a vertex group, read through equal vertices. -/
+theorem cast_mem_grp {z z' : B.graph.V} (h : z = z') {T : Type w} {c : T}
+    {h₁ : T = 𝔸.vertexGroup (B.typ.mapV z)} {h₂ : T = 𝔸.vertexGroup (B.typ.mapV z')}
+    (hc : cast h₁ c ∈ B.grp z) : cast h₂ c ∈ B.grp z' := by
+  subst h
+  exact hc
 
 /-- A folded `𝔸`-graph. Two darts `f₁`, `f₂` issuing from the same vertex `z`, with the same type
 `e` and with `(f₂)_α = a' (f₁)_α α_e(c)` for some `a' ∈ B_z` and `c ∈ A_e`, are equal; and for
