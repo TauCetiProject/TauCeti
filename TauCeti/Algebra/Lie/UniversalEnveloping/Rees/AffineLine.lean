@@ -37,8 +37,8 @@ not for the Rees algebra.
 
 ## References
 
-* S. Gutt, *Deformation Quantization and Symmetries*, lectures, Würzburg (2019), Lecture 1, for
-  ordered and symmetrized products.
+* S. Gutt, *Deformation Quantization and Symmetries*, lectures, Würzburg (2019), Lecture 1, as
+  background on star products on duals of Lie algebras.
 -/
 
 public section
@@ -68,6 +68,7 @@ theorem reesGenerator_dilation_mul_reesGenerator_translation :
 /-- **Ordered evaluation into the Rees algebra is multiplicative.** Ordered evaluation
 `y ^ a x ^ b ↦ Y ^ a X ^ b` into the PBW Rees algebra carries the ordered product with parameter
 `t` to the multiplication of the Rees algebra. -/
+@[simp]
 theorem orderedEval_reesGenerator_affineStar (p q : MvPolynomial (Fin 2) R[X]) :
     orderedEval (reesGenerator R L (dilation R)) (reesGenerator R L (translation R))
         (affineStar (Polynomial.X : R[X]) p q) =
@@ -77,19 +78,16 @@ theorem orderedEval_reesGenerator_affineStar (p q : MvPolynomial (Fin 2) R[X]) :
 
 /-- **Specializing the parameter at `1`.** Evaluating the Rees parameter at `1` carries ordered
 evaluation into the Rees algebra to ordered evaluation into `U(L)` of the polynomial whose
-coefficients are evaluated at `1`. Together with `TauCeti.map_affineStar`, it identifies the
-specialization of the Rees multiplication with the multiplication of `U(L)`. -/
+coefficients are evaluated at `1`. -/
+@[simp]
 theorem evalOne_orderedEval_reesGenerator (p : MvPolynomial (Fin 2) R[X]) :
     coeffSubalgebra.evalOne (pbwFiltration R L)
         (orderedEval (reesGenerator R L (dilation R)) (reesGenerator R L (translation R)) p) =
       orderedEval (_root_.UniversalEnvelopingAlgebra.ι R (dilation R))
         (_root_.UniversalEnvelopingAlgebra.ι R (translation R))
         (MvPolynomial.map (Polynomial.evalRingHom (1 : R)) p) := by
-  induction p using MvPolynomial.induction_on' with
-  | monomial s a =>
-      simp only [orderedEval_monomial, MvPolynomial.map_monomial, Algebra.smul_def, map_mul,
-        map_pow, evalOne_reesGenerator]
-      simp [coeffSubalgebra.evalOne_apply, Polynomial.eval_map]
-  | add p q hp hq => rw [map_add, map_add, hp, hq, map_add, map_add]
+  rw [map_orderedEval (Polynomial.evalRingHom 1) _ (fun s ↦ ?_), evalOne_reesGenerator,
+    evalOne_reesGenerator]
+  simp [coeffSubalgebra.evalOne_apply, Polynomial.eval_map]
 
 end TauCeti.LieAlgebra.AffineLine

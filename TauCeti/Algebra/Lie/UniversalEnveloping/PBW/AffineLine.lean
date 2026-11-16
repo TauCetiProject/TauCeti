@@ -9,29 +9,31 @@ public import TauCeti.Algebra.Lie.AffineLine
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 public import TauCeti.RingTheory.MvPolynomial.AffineStar
 import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basis
+import TauCeti.Algebra.MvPolynomial.Fin.TwoOrdered
 
 /-!
 # The ordered product and the enveloping algebra of the affine Lie algebra
 
 Let `L = TauCeti.LieAlgebra.AffineLine R` be the two-dimensional Lie algebra spanned by the
 dilation `x` and the translation `y`, with `[x, y] = y`. In `U(L)` the generators satisfy
-`ι x ι y = ι y (ι x + 1)`, so ordered evaluation `y ^ a x ^ b ↦ ι y ^ a ι x ^ b` carries the
-ordered product `TauCeti.affineStar` with parameter `1` to the multiplication of `U(L)`.
+`ι x ι y = ι y (ι x + 1)`, so ordered evaluation `y ^ a x ^ b ↦ ι y ^ a ι x ^ b` is multiplicative:
+it carries the ordered product `TauCeti.affineStar` with parameter `1` to the multiplication of
+`U(L)`.
 
 By the Poincaré–Birkhoff–Witt theorem the ordered monomials `ι y ^ a ι x ^ b` form a basis of
 `U(L)` over any commutative ring, so this comparison is bijective. This makes the ordered product
-associative at parameter `1`; rescaling `x` by a unit moves any unit parameter to `1`. Every
-parameter is a specialization of the polynomial variable `t`, and over `R[t]` associativity follows
-from the Laurent case because `R[t]` embeds in `R[t, t⁻¹]`, where `t` is a unit. This proves
-associativity for every parameter over every commutative ring. Over a commutative semiring,
-ordered monomials are images of ordered monomials over `ℕ[t]`, which embeds in `ℤ[t]`.
+associative at parameter `1`; rescaling `x` by a unit moves any unit parameter to `1`
+(`TauCeti.rescale_affineStar`). Over a commutative semiring every parameter is a specialization of
+the polynomial variable `t` over `ℕ[t]`, and ordered monomials are images of ordered monomials over
+`ℕ[t]`. Over `ℕ[t]` associativity follows from the case of the unit parameter `t` over
+`ℤ[t, t⁻¹]`, into which `ℕ[t]` embeds.
 
 ## Main results
 
 * `TauCeti.LieAlgebra.AffineLine.ι_dilation_mul_ι_translation`: the relation
   `ι x ι y = ι y (ι x + 1)`.
-* `TauCeti.LieAlgebra.AffineLine.orderedEval_ι_affineStar`: ordered evaluation into `U(L)` carries
-  the ordered product with parameter `1` to the multiplication of `U(L)`.
+* `TauCeti.LieAlgebra.AffineLine.orderedEval_ι_affineStar`: ordered evaluation into `U(L)` is
+  multiplicative, carrying the ordered product with parameter `1` to the multiplication of `U(L)`.
 * `TauCeti.LieAlgebra.AffineLine.orderedEval_ι_bijective`: the ordered comparison with `U(L)` is
   bijective.
 * `TauCeti.affineStar_assoc`: the ordered product is associative.
@@ -40,8 +42,8 @@ ordered monomials are images of ordered monomials over `ℕ[t]`, which embeds in
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §17.3, for the
   Poincaré–Birkhoff–Witt basis.
-* S. Gutt, *Deformation Quantization and Symmetries*, lectures, Würzburg (2019), Lecture 1, for
-  ordered and symmetrized products.
+* S. Gutt, *Deformation Quantization and Symmetries*, lectures, Würzburg (2019), Lecture 1, as
+  background on star products on duals of Lie algebras.
 -/
 
 public section
@@ -68,7 +70,8 @@ theorem ι_dilation_mul_ι_translation :
   rw [lie_dilation_translation, sub_eq_iff_eq_add] at h
   simpa [mul_add, add_comm] using h
 
-/-- **The multiplication of `U(L)` is the ordered product with parameter `1`.** -/
+/-- **Ordered evaluation into `U(L)` is multiplicative.** It carries the ordered product with
+parameter `1` to the multiplication of `U(L)`. -/
 theorem orderedEval_ι_affineStar (p q : MvPolynomial (Fin 2) R) :
     orderedEval (_root_.UniversalEnvelopingAlgebra.ι R (dilation R))
         (_root_.UniversalEnvelopingAlgebra.ι R (translation R)) (affineStar 1 p q) =
@@ -120,60 +123,18 @@ theorem orderedEval_ι_bijective :
   rw [h]
   exact LinearEquiv.bijective _
 
-/-- Rescaling of the variable `x` by `u`. -/
-private noncomputable def scaleX (u : R) : MvPolynomial (Fin 2) R →ₐ[R] MvPolynomial (Fin 2) R :=
-  aeval ![C u * X 0, X 1]
-
-private theorem scaleX_scaleX (u v : R) (p : MvPolynomial (Fin 2) R) :
-    scaleX u (scaleX v p) = scaleX (u * v) p := by
-  have h : (scaleX u).comp (scaleX v) = scaleX (u * v) := by
-    refine MvPolynomial.algHom_ext fun i ↦ ?_
-    fin_cases i <;> simp [scaleX, mul_comm, mul_left_comm]
-  exact AlgHom.congr_fun h p
-
-private theorem scaleX_one (p : MvPolynomial (Fin 2) R) : scaleX 1 p = p := by
-  have h : scaleX (1 : R) = AlgHom.id R _ := by
-    refine MvPolynomial.algHom_ext fun i ↦ ?_
-    fin_cases i <;> simp [scaleX]
-  exact AlgHom.congr_fun h p
-
-private theorem orderedEval_scaleX (u : R) (p : MvPolynomial (Fin 2) R) :
-    orderedEval (_root_.UniversalEnvelopingAlgebra.ι R (dilation R))
-        (_root_.UniversalEnvelopingAlgebra.ι R (translation R)) (scaleX u p) =
-      orderedEval (u • _root_.UniversalEnvelopingAlgebra.ι R (dilation R))
-        (_root_.UniversalEnvelopingAlgebra.ι R (translation R)) p := by
-  have key : orderedEval (_root_.UniversalEnvelopingAlgebra.ι R (dilation R))
-        (_root_.UniversalEnvelopingAlgebra.ι R (translation R)) ∘ₗ (scaleX u).toLinearMap =
-      orderedEval (u • _root_.UniversalEnvelopingAlgebra.ι R (dilation R))
-        (_root_.UniversalEnvelopingAlgebra.ι R (translation R)) := by
-    refine linearMap_ext_X_pow_mul_X_pow fun a b ↦ ?_
-    have h : scaleX u (X 1 ^ a * X 0 ^ b) = u ^ b • (X 1 ^ a * X 0 ^ b) := by
-      simp [scaleX, mul_pow, smul_eq_C_mul]
-      ring
-    simp [h, smul_pow]
-  exact LinearMap.congr_fun key p
-
-private theorem scaleX_affineStar (u : R) (p q : MvPolynomial (Fin 2) R) :
-    scaleX u (affineStar u p q) = affineStar 1 (scaleX u p) (scaleX u q) := by
-  have hrel : (u • _root_.UniversalEnvelopingAlgebra.ι R (dilation R)) *
-      _root_.UniversalEnvelopingAlgebra.ι R (translation R) =
-      _root_.UniversalEnvelopingAlgebra.ι R (translation R) *
-        (u • _root_.UniversalEnvelopingAlgebra.ι R (dilation R) + algebraMap R U u) := by
-    rw [smul_mul_assoc, ι_dilation_mul_ι_translation]
-    simp [mul_add, Algebra.algebraMap_eq_smul_one]
-  apply (orderedEval_ι_bijective R).injective
-  rw [orderedEval_scaleX, orderedEval_affineStar hrel, orderedEval_ι_affineStar,
-    orderedEval_scaleX, orderedEval_scaleX]
-
 private theorem affineStar_assoc_of_isUnit {u : R} (hu : IsUnit u)
     (p q r : MvPolynomial (Fin 2) R) :
     affineStar u (affineStar u p q) r = affineStar u p (affineStar u q r) := by
   obtain ⟨u, rfl⟩ := hu
-  have hinj : Function.Injective (scaleX (u : R)) := fun p q h ↦ by
-    have h' := congrArg (scaleX (↑u⁻¹ : R)) h
-    rwa [scaleX_scaleX, scaleX_scaleX, Units.inv_mul, scaleX_one, scaleX_one] at h'
+  -- Rescaling `x` by `u` moves the parameter `u` to `1`.
+  have hinj : Function.Injective (rescale ![(u : R), 1]) :=
+    Function.LeftInverse.injective (g := rescale ![(↑u⁻¹ : R), 1])
+      (rescale_rescale_of_mul_eq_one (by simp [Fin.forall_fin_two]))
+  have hu1 := rescale_affineStar (u : R) 1 1
+  simp only [mul_one] at hu1
   apply hinj
-  rw [scaleX_affineStar, scaleX_affineStar, scaleX_affineStar, scaleX_affineStar]
+  rw [hu1, hu1, hu1, hu1]
   apply (orderedEval_ι_bijective R).injective
   simp only [orderedEval_ι_affineStar, mul_assoc]
 
@@ -185,38 +146,22 @@ namespace TauCeti
 
 open MvPolynomial LieAlgebra.AffineLine
 
-/-- Associativity of the ordered product over a commutative ring. -/
-private theorem affineStar_assoc_of_commRing {S : Type*} [CommRing S] (h : S)
-    (p q r : MvPolynomial (Fin 2) S) :
-    affineStar h (affineStar h p q) r = affineStar h p (affineStar h q r) := by
-  have key (p q r : MvPolynomial (Fin 2) S[X]) :
-      affineStar Polynomial.X (affineStar Polynomial.X p q) r =
-        affineStar Polynomial.X p (affineStar Polynomial.X q r) := by
-    apply MvPolynomial.map_injective _ (Polynomial.toLaurent_injective (R := S))
-    have hX : (Polynomial.toLaurent : S[X] →+* _) Polynomial.X = LaurentPolynomial.T 1 := by
-      simp
-    simp only [map_affineStar, hX]
-    exact affineStar_assoc_of_isUnit (LaurentPolynomial.isUnit_T 1) _ _ _
-  have hψ : (Polynomial.eval₂RingHom (RingHom.id S) h).comp Polynomial.C = RingHom.id S := by
-    ext; simp
-  have := congrArg (MvPolynomial.map (Polynomial.eval₂RingHom (RingHom.id S) h))
-    (key (map Polynomial.C p) (map Polynomial.C q) (map Polynomial.C r))
-  simpa only [map_affineStar, map_map, hψ, map_id, Polynomial.coe_eval₂RingHom,
-    Polynomial.eval₂_X] using this
-
 /-- **Associativity of the ordered product.** For every parameter `h` in a commutative semiring,
 the ordered product `TauCeti.affineStar h` is associative. -/
 theorem affineStar_assoc {S : Type*} [CommSemiring S] (h : S) (p q r : MvPolynomial (Fin 2) S) :
     affineStar h (affineStar h p q) r = affineStar h p (affineStar h q r) := by
   -- Ordered monomials over `S` are images of ordered monomials over `ℕ[X]`, and the ordered
-  -- product over `ℕ[X]` is associative because `ℕ[X]` embeds in the commutative ring `ℤ[X]`.
+  -- product over `ℕ[X]` is associative because `ℕ[X]` embeds in `ℤ[X, X⁻¹]`, where `X` is a unit.
   have key (p q r : MvPolynomial (Fin 2) ℕ[X]) :
       affineStar Polynomial.X (affineStar Polynomial.X p q) r =
         affineStar Polynomial.X p (affineStar Polynomial.X q r) := by
-    apply MvPolynomial.map_injective (Polynomial.mapRingHom (Nat.castRingHom ℤ))
-      (Polynomial.map_injective _ Nat.cast_injective)
-    simpa only [map_affineStar, Polynomial.coe_mapRingHom, Polynomial.map_X] using
-      affineStar_assoc_of_commRing Polynomial.X _ _ _
+    let ι : ℕ[X] →+* LaurentPolynomial ℤ :=
+      Polynomial.toLaurent.comp (Polynomial.mapRingHom (Nat.castRingHom ℤ))
+    apply MvPolynomial.map_injective ι
+      (Polynomial.toLaurent_injective.comp (Polynomial.map_injective _ Nat.cast_injective))
+    have hX : ι Polynomial.X = LaurentPolynomial.T 1 := by simp [ι]
+    simp only [map_affineStar, hX]
+    exact affineStar_assoc_of_isUnit (LaurentPolynomial.isUnit_T 1) _ _ _
   let φ : ℕ[X] →+* S := Polynomial.eval₂RingHom (Nat.castRingHom S) h
   have hφ (a b : ℕ) : map φ (X 1 ^ a * X 0 ^ b) = (X 1 ^ a * X 0 ^ b : MvPolynomial (Fin 2) S) := by
     simp
@@ -224,10 +169,10 @@ theorem affineStar_assoc {S : Type*} [CommSemiring S] (h : S) (p q r : MvPolynom
   -- Both sides are trilinear, so it suffices to compare them on ordered monomials.
   have hp : (affineStar h).flip r ∘ₗ (affineStar h).flip q =
       (affineStar h).flip (affineStar h q r) := by
-    refine linearMap_ext_X_pow_mul_X_pow fun a b ↦ ?_
+    refine linearMap_ext_X_one_pow_mul_X_zero_pow fun a b ↦ ?_
     have hqr : (affineStar h).comp (affineStar h (X 1 ^ a * X 0 ^ b)) =
         (affineStar h).compr₂ (affineStar h (X 1 ^ a * X 0 ^ b)) := by
-      refine linearMap_ext₂_X_pow_mul_X_pow fun c d e f ↦ ?_
+      refine linearMap_ext₂_X_one_pow_mul_X_zero_pow fun c d e f ↦ ?_
       simp only [LinearMap.comp_apply, LinearMap.compr₂_apply]
       rw [← hφ a b, ← hφ c d, ← hφ e f, ← hφX, ← map_affineStar, ← map_affineStar,
         ← map_affineStar, ← map_affineStar, key]
