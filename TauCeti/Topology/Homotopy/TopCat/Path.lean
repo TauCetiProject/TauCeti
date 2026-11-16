@@ -47,46 +47,25 @@ lemma pathEquiv_symm_map_hom {Y : TopCat.{u}} (γ : _root_.Path x₀ x₁) (g : 
 /-- The concatenation of two paths passes through their common end point at the midpoint. -/
 lemma pathEquiv_symm_trans_hom_midpoint (γ : _root_.Path x₀ x₁) (δ : _root_.Path x₁ x₂) :
     (pathEquiv.symm (γ.trans δ)).hom I.midpoint = x₁ := by
-  have hc : (I.homeomorph I.midpoint.{u} : ℝ) ≤ 1 / 2 := by
-    rw [I.coe_homeomorph_midpoint]
-  rw [pathEquiv_symm_hom_apply, Path.trans_apply, dite_eq_left hc]
-  refine (congrArg γ (Subtype.ext ?_)).trans γ.target
-  dsimp only
-  rw [I.coe_homeomorph_midpoint]
-  norm_num
+  rw [pathEquiv_symm_hom_apply, ← Path.extend_extends', I.coe_homeomorph_midpoint,
+    Path.extend_trans_of_le_half _ _ le_rfl, mul_one_div_cancel two_ne_zero, Path.extend_one]
 
 /-- On the first half of the interval, the concatenation of two paths is the first path. -/
 lemma firstHalf_comp_pathEquiv_symm_trans_hom (γ : _root_.Path x₀ x₁) (δ : _root_.Path x₁ x₂) :
     I.firstHalf ≫ (pathEquiv.symm (γ.trans δ)).hom = (pathEquiv.symm γ).hom := by
   ext t
-  have hc : (I.homeomorph (I.firstHalf t) : ℝ) ≤ 1 / 2 := by
-    rw [I.coe_homeomorph_firstHalf_apply]; linarith [(I.homeomorph t).2.2]
   rw [ConcreteCategory.comp_apply, pathEquiv_symm_hom_apply, pathEquiv_symm_hom_apply,
-    Path.trans_apply, dite_eq_left hc]
-  refine congrArg γ (Subtype.ext ?_)
-  dsimp only
-  rw [I.coe_homeomorph_firstHalf_apply]
-  ring
+    ← Path.extend_extends', ← Path.extend_extends', I.coe_homeomorph_firstHalf_apply,
+    Path.extend_trans_of_le_half _ _ (by linarith [(I.homeomorph t).2.2]),
+    mul_div_cancel₀ _ two_ne_zero]
 
 /-- On the second half of the interval, the concatenation of two paths is the second path. -/
 lemma secondHalf_comp_pathEquiv_symm_trans_hom (γ : _root_.Path x₀ x₁) (δ : _root_.Path x₁ x₂) :
     I.secondHalf ≫ (pathEquiv.symm (γ.trans δ)).hom = (pathEquiv.symm δ).hom := by
   ext t
   rw [ConcreteCategory.comp_apply, pathEquiv_symm_hom_apply, pathEquiv_symm_hom_apply,
-    Path.trans_apply]
-  split_ifs with h
-  · -- Only the starting point of `δ` lies in the first half, where both paths are at `x₁`.
-    rw [I.coe_homeomorph_secondHalf_apply] at h
-    have ht : (I.homeomorph t : ℝ) = 0 :=
-      le_antisymm (by linarith) (I.homeomorph t).2.1
-    rw [show I.homeomorph t = 0 from Subtype.ext ht, Path.source]
-    refine (congrArg γ (Subtype.ext ?_)).trans γ.target
-    dsimp only
-    rw [I.coe_homeomorph_secondHalf_apply, ht]
-    norm_num
-  · refine congrArg δ (Subtype.ext ?_)
-    dsimp only
-    rw [I.coe_homeomorph_secondHalf_apply]
-    ring
+    ← Path.extend_extends', ← Path.extend_extends', I.coe_homeomorph_secondHalf_apply,
+    Path.extend_trans_of_half_le _ _ (by linarith [(I.homeomorph t).2.1]),
+    mul_div_cancel₀ _ two_ne_zero, add_sub_cancel_right]
 
 end TopCat
