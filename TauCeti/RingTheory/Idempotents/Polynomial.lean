@@ -24,9 +24,10 @@ polynomial over `R ⧸ I` produce lifts of idempotents.
 
 For an idempotent `b` of a possibly noncommutative `R`-algebra, a polynomial `Q` satisfies
 `Q(b) b = Q(1) b` and `Q(b) (1 - b) = Q(0) (1 - b)` (`IsIdempotentElem.aeval_mul_self`,
-`IsIdempotentElem.aeval_mul_one_sub`). If an ideal `I` acts by zero on `B`, evaluation at elements
-of `B` sees only reductions modulo `I` (`Ideal.aeval_eq_of_map_eq`,
-`Ideal.algebraMap_eq_one_of_mk_eq_one`).
+`IsIdempotentElem.aeval_mul_one_sub`), and for any element `u` commuting with `b`,
+`Q(u b) = Q(u) b + Q(0) (1 - b)` (`IsIdempotentElem.aeval_mul_of_commute`). If an ideal `I` acts
+by zero on `B`, evaluation at elements of `B` sees only reductions modulo `I`
+(`Ideal.aeval_eq_of_map_eq`, `Ideal.algebraMap_eq_one_of_mk_eq_one`).
 -/
 
 public section
@@ -65,6 +66,25 @@ theorem aeval_mul_sub_mem_map_of_add_eq_one {s : S}
 end Ideal
 
 namespace IsIdempotentElem
+
+/-- For an idempotent `b` commuting with `u`, evaluating a polynomial at `u * b` gives
+`Q(u) * b + Q(0) * (1 - b)`. -/
+theorem aeval_mul_of_commute {R B : Type*} [CommSemiring R] [Ring B] [Algebra R B] {b u : B}
+    (hb : IsIdempotentElem b) (hcomm : Commute u b) (Q : R[X]) :
+    aeval (u * b) Q = aeval u Q * b + algebraMap R B (Q.coeff 0) * (1 - b) := by
+  induction Q using Polynomial.induction_on' with
+  | add p q hp hq =>
+    simp only [map_add, coeff_add, hp, hq, add_mul]
+    abel
+  | monomial n r =>
+    cases n with
+    | zero =>
+      simp only [aeval_monomial, pow_zero, mul_one, coeff_monomial, Finsupp.single_eq_same]
+      rw [← mul_add, add_sub_cancel, mul_one]
+    | succ k =>
+      have hpow : (u * b) ^ (k + 1) = u ^ (k + 1) * b := by
+        rw [hcomm.mul_pow, hb.pow_succ_eq]
+      simp [aeval_monomial, hpow, mul_assoc]
 
 variable {R B : Type*} [CommRing R] [Ring B] [Algebra R B] {b : B}
 

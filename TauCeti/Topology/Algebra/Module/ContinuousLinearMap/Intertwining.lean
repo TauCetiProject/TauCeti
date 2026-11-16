@@ -15,9 +15,10 @@ import Mathlib.Algebra.Polynomial.Div
 A linear map `T : E →ₗ[R] F` between topological modules, possibly discontinuous, is
 intertwined by continuous linear maps `Q` on `F` and `P` on `E` up to a continuous error when
 `Q ∘ T - T ∘ P` is continuous. This file shows that such intertwining pairs are closed under
-taking products. Exact intertwiners also intertwine the spectral operators `1 - a • u`
-and their powers. Polynomial evaluation with zero constant coefficient commutes with extending
-an endomorphism along a continuous linear retract; no complement is needed.
+taking products. Exact intertwiners also intertwine polynomial evaluations
+(`Function.Semiconj.aeval`), in particular the spectral operators `1 - a • u` and their powers.
+Polynomial evaluation with zero constant coefficient commutes with extending an endomorphism
+along a continuous linear retract; no complement is needed.
 
 ## Main results
 
@@ -25,6 +26,8 @@ an endomorphism along a continuous linear retract; no complement is needed.
   up to continuous errors again intertwine `T` up to a continuous error.
 * `ContinuousLinearMap.aeval_comp_comp_of_retract`: polynomial evaluation with zero constant
   coefficient commutes with extension along a retract.
+* `Function.Semiconj.aeval`: a linear intertwiner intertwines every polynomial in the two
+  operators.
 -/
 
 public section
@@ -129,3 +132,23 @@ theorem aeval_comp_comp_of_retract {i : M →L[R] N} {r : N →L[R] M}
   rw [← hQ]
 
 end ContinuousLinearMap
+
+namespace Function.Semiconj
+
+variable {R M N : Type*} [CommSemiring R]
+  [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
+  [ContinuousConstSMul R M]
+  [TopologicalSpace N] [AddCommGroup N] [Module R N] [IsTopologicalAddGroup N]
+  [ContinuousConstSMul R N]
+  {f : M →ₗ[R] N} {u : M →L[R] M} {v : N →L[R] N}
+
+/-- A linear intertwiner intertwines every polynomial in the two operators. -/
+theorem aeval (hf : Function.Semiconj f u v) (p : Polynomial R) :
+    Function.Semiconj f (Polynomial.aeval u p) (Polynomial.aeval v p) := by
+  have hcomp : v.toLinearMap.comp f = f.comp u.toLinearMap := LinearMap.ext fun x ↦ (hf x).symm
+  intro x
+  have hx := LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hcomp p) x
+  simpa only [LinearMap.comp_apply, ← ContinuousLinearMap.toLinearMap_aeval,
+    ContinuousLinearMap.coe_coe] using hx.symm
+
+end Function.Semiconj

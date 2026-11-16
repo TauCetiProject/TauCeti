@@ -21,6 +21,9 @@ Since `x - c` divides `p(x) - p(c)`, a congruence `(x - c) e ≡ 0` modulo an id
 
 A monic polynomial of positive degree dividing every polynomial that vanishes at `f : B` forces
 `A` to act faithfully on `B` (`Polynomial.Monic.faithfulSMul_of_dvd`).
+
+An element of an algebra killed by a polynomial with invertible constant coefficient is a unit
+(`Polynomial.isUnit_of_aeval_eq_zero`).
 -/
 
 public section
@@ -63,5 +66,28 @@ theorem Monic.faithfulSMul_of_dvd {A B : Type*} [CommRing A] [Ring B] [Algebra A
   by_contra ha0
   exact hp.not_dvd_of_natDegree_lt (C_ne_zero.mpr ha0) (by rwa [natDegree_C])
     (hdvd _ (by rwa [aeval_C]))
+
+/-- An element of an algebra killed by a polynomial with invertible constant coefficient is a
+unit. -/
+theorem isUnit_of_aeval_eq_zero {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A] {x : A}
+    {p : R[X]} (hp : IsUnit (p.coeff 0)) (hx : aeval x p = 0) : IsUnit x := by
+  obtain ⟨c, hc⟩ := hp.exists_left_inv
+  have hdiv := congrArg (aeval x) (X_mul_divX_add p)
+  simp only [map_add, map_mul, aeval_X, aeval_C, hx] at hdiv
+  let y : A := algebraMap R A c * aeval x p.divX
+  have hcomm : Commute x y :=
+    (Algebra.commute_algebraMap_right c x).mul_right
+      (by simpa only [aeval_X] using (Commute.all (X : R[X]) p.divX).map (aeval x))
+  have he : x * y + 1 = 0 := by
+    have hmul := congrArg (algebraMap R A c * ·) hdiv
+    rw [mul_zero, mul_add, ← map_mul, hc, map_one, ← mul_assoc,
+      (Algebra.commute_algebraMap_left c x).eq, mul_assoc] at hmul
+    exact hmul
+  have hee : (x * y) * (x * y) = 1 := by
+    calc (x * y) * (x * y) = (x * y) * (x * y) + (x * y + 1) := by rw [he, add_zero]
+      _ = (x * y) * (x * y + 1) + 1 := by rw [← add_assoc, mul_add, mul_one]
+      _ = 1 := by rw [he, mul_zero, zero_add]
+  refine isUnit_iff_exists.mpr ⟨y * (x * y), by rw [← mul_assoc, hee], ?_⟩
+  rw [← mul_assoc y x y, mul_assoc (y * x), ← hcomm.eq, hee]
 
 end Polynomial

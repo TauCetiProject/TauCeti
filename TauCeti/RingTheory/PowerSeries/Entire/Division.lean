@@ -94,6 +94,8 @@ operators, whose Fredholm determinants are entire series.
 * `TauCeti.PowerSeries.eq_and_eq_of_entire_mul_add_eq` and
   `TauCeti.PowerSeries.existsUnique_entire_mul_add_eq`: uniqueness over an ultrametric ring
   with `‖1‖ = 1`.
+* `TauCeti.PowerSeries.dvd_of_coe_eq_coe_mul_entire`: divisibility of polynomials in the ring of
+  entire power series by a polynomial with invertible leading coefficient descends to `R[X]`.
 
 ## References
 
@@ -769,5 +771,21 @@ theorem existsUnique_entire_mul_add_eq (hf : f.IsEntire) (hp : IsUnit p.leadingC
   refine ⟨(q, b), ⟨hq, hb, h⟩, fun qb ⟨hq', hb', h'⟩ ↦ ?_⟩
   obtain ⟨rfl, rfl⟩ := eq_and_eq_of_entire_mul_add_eq hp hq' hq hb' hb h' h
   rfl
+
+/-- If a polynomial with invertible leading coefficient divides another polynomial in the ring of
+entire power series, then it divides it in the polynomial ring. -/
+theorem dvd_of_coe_eq_coe_mul_entire {g : Polynomial R} {q : R⟦X⟧} (hp : IsUnit p.leadingCoeff)
+    (hq : q.IsEntire) (h : (g : R⟦X⟧) = (p : R⟦X⟧) * q) : p ∣ g := by
+  let u := hp.unit
+  let P : Polynomial R := u⁻¹ • p
+  have hP : P.Monic := Polynomial.monic_of_isUnit_leadingCoeff_inv_smul hp
+  have hP_mul : (g : R⟦X⟧) = (P : R⟦X⟧) * ((u : R) • q) := by
+    have hcoe : (P : R⟦X⟧) = (↑u⁻¹ : R) • (p : R⟦X⟧) := by simp [P, Units.smul_def]
+    rw [h, hcoe, smul_mul_smul_comm, Units.inv_mul, one_smul]
+  have hmod : g %ₘ P = 0 := by
+    rw [← PowerSeries.modByMonic_coe g hP, hP_mul]
+    exact (hq.smul (u : R)).coe_mul_modByMonic hP
+  obtain ⟨k, hk⟩ := (Polynomial.modByMonic_eq_zero_iff_dvd hP).mp hmod
+  exact ⟨u⁻¹ • k, by simpa only [P, smul_mul_assoc, mul_smul_comm] using hk⟩
 
 end TauCeti.PowerSeries
