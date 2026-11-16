@@ -30,6 +30,8 @@ This representation underlies the series description `T x = ∑ n, f n x • y n
 
 ## Main results
 
+* `TauCeti.CompletedProjectiveTensor.summable_coe_tmul`: a family of pure tensors `x i ⊗ₜ y i`
+  with summable `‖x i‖ * ‖y i‖` is summable in `E ⊗̂π F`.
 * `TauCeti.CompletedProjectiveTensor.exists_hasSum_tmul_of_norm_lt`: if `‖u‖ < c`, then
   `u = ∑ n, x n ⊗ₜ y n` for some `x : ℕ → E` and `y : ℕ → F` with `∑ n, ‖x n‖ * ‖y n‖ < c`.
 * `TauCeti.CompletedProjectiveTensor.norm_le_tsum_of_hasSum_tmul`: the norm of the sum of a series
@@ -57,6 +59,15 @@ namespace TauCeti.CompletedProjectiveTensor
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E]
   [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+variable (𝕜) in
+/-- A family of pure tensors `x i ⊗ₜ y i` with summable `‖x i‖ * ‖y i‖` is summable in the
+completed projective tensor product `E ⊗̂π F`. -/
+theorem summable_coe_tmul {ι : Type*} {x : ι → E} {y : ι → F}
+    (hxy : Summable fun i ↦ ‖x i‖ * ‖y i‖) :
+    Summable fun i ↦ ((⟨x i ⊗ₜ y i⟩ : ProjectiveTensor 𝕜 E F) :
+      CompletedProjectiveTensor 𝕜 E F) :=
+  .of_norm_bounded hxy fun i ↦ norm_coe_tmul_le (x i) (y i)
 
 /-- The norm of the sum of a series of pure tensors in the completed projective tensor product is
 at most its cost `∑ i, ‖x i‖ * ‖y i‖`. -/
@@ -134,8 +145,7 @@ theorem exists_hasSum_tmul_of_norm_lt (u : CompletedProjectiveTensor 𝕜 E F) {
     (summable_prod_of_nonneg ha_nonneg).2
       ⟨fun k ↦ (hrow_a k).summable, by simpa only [(hrow_a _).tsum_eq] using hrows⟩
   have hz : HasSum z u := by
-    have hzs : Summable z :=
-      Summable.of_norm_bounded ha fun p ↦ norm_coe_tmul_le (X p.1 p.2) (Y p.1 p.2)
+    have hzs : Summable z := summable_coe_tmul 𝕜 ha
     rw [hwu.unique (hzs.hasSum.prod_fiberwise hrow_z)]
     exact hzs.hasSum
   have ha_le : ∑' p, a p < c :=

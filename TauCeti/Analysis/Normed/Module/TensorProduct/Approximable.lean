@@ -22,8 +22,8 @@ The map `TauCeti.InjectiveTensor.toOperator` gives the algebraic identification,
 `TauCeti.CompletedInjectiveTensor.toOperator` is its isometric extension. The range
 statements characterize their images without introducing another operator carrier. Over `ℝ` or `ℂ`,
 `TauCeti.CompletedProjectiveTensor.toCompletedInjectiveTensor_strongDual_eq_zero_iff` characterizes
-the kernel of `E* ⊗̂π F → E* ⊗̂ε F`, without completeness of `E` or `F`, by the vanishing of all
-weak*-rank-one forms `f ⊗ₜ y ↦ f x * g y` (`x ∈ E`, `g ∈ F*`). On the
+the kernel of `E* ⊗̂π F → E* ⊗̂ε F`, without completeness or separation of `E` or `F`, by the
+vanishing of all weak*-rank-one forms `f ⊗ₜ y ↦ f x * g y` (`x ∈ E`, `g ∈ F*`). On the
 projective tensor product, `TauCeti.ProjectiveTensor.toOperator` gives the corresponding bounded
 contraction `E* ⊗π F →L[𝕜] E →L[𝕜] F` over any nontrivially normed field.
 
@@ -211,37 +211,64 @@ theorem range_toOperator :
 
 end CompletedInjectiveTensor
 
+end TauCeti
+
+section Seminormed
+
+namespace TauCeti
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
 /-- Over `ℝ` and `ℂ`, an element `u` of `E* ⊗̂π F` has zero image in `E* ⊗̂ε F` iff all
 weak*-rank-one forms `f ⊗ₜ y ↦ f x * g y` (`x ∈ E`, `g ∈ F*`) vanish on `u`. Neither `E` nor `F`
-need be complete. -/
+need be complete or separated. -/
 theorem CompletedProjectiveTensor.toCompletedInjectiveTensor_strongDual_eq_zero_iff
     {u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F} :
     CompletedProjectiveTensor.toCompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) F u = 0 ↔
       ∀ (x : E) (g : StrongDual 𝕜 F),
         CompletedProjectiveTensor.liftIsometry 𝕜 (StrongDual 𝕜 E) F 𝕜
           ((NormedSpace.inclusionInDoubleDual 𝕜 E x).smulRight g) u = 0 := by
-  -- Embed `E* ⊗̂ε F` isometrically into `E →L[𝕜] Completion F` via `Completion.toComplₗᵢ`.
-  let J : (E →L[𝕜] F) →ₗᵢ[𝕜] (E →L[𝕜] Completion F) :=
-    (Completion.toComplₗᵢ : F →ₗᵢ[𝕜] Completion F).postcomp
-  let L : CompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) F →ₗᵢ[𝕜] (E →L[𝕜] Completion F) :=
-    (J.comp (InjectiveTensor.toOperator 𝕜 E F)).fromCompletion
+  -- Embed `E* ⊗̂ε F` isometrically into `Completion E →L[𝕜] Completion F`.
+  let J : InjectiveTensor 𝕜 (StrongDual 𝕜 E) F →ₗᵢ[𝕜] (Completion E →L[𝕜] Completion F) :=
+    { toFun w := (TensorProduct.toOperator w.toTensorProduct).completion
+      map_add' w₁ w₂ := by
+        ext z
+        induction z using Completion.induction_on with
+        | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
+        | ih x => simp [Completion.coe_add]
+      map_smul' c w := by
+        ext z
+        induction z using Completion.induction_on with
+        | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
+        | ih x => simp [Completion.coe_smul]
+      norm_map' w := by
+        simp [InjectiveTensor.norm_def, TensorProduct.injectiveSeminorm_eq_norm_toOperator] }
+  let L : CompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) F →ₗᵢ[𝕜]
+      (Completion E →L[𝕜] Completion F) := J.fromCompletion
   have hpair (x : E) (g : StrongDual 𝕜 F) :
-      g.fromCompletion ∘L ContinuousLinearMap.apply 𝕜 (Completion F) x ∘L
+      g.fromCompletion ∘L ContinuousLinearMap.apply 𝕜 (Completion F) (x : Completion E) ∘L
         L.toContinuousLinearMap ∘L
           CompletedProjectiveTensor.toCompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) F =
         CompletedProjectiveTensor.liftIsometry 𝕜 (StrongDual 𝕜 E) F 𝕜
           ((NormedSpace.inclusionInDoubleDual 𝕜 E x).smulRight g) := by
     refine CompletedProjectiveTensor.continuousLinearMap_ext fun f y ↦ ?_
-    simp [L, J, LinearIsometry.postcomp, ProjectiveTensor.toInjectiveTensor_apply]
+    simp [L, J, ProjectiveTensor.toInjectiveTensor_apply]
   refine ⟨fun hu x g ↦ ?_,
-    fun hu ↦ (map_eq_zero_iff L L.injective).1 (ContinuousLinearMap.ext fun x ↦ ?_)⟩
+    fun hu ↦ (map_eq_zero_iff L L.injective).1 (ContinuousLinearMap.ext fun z ↦ ?_)⟩
   · simpa [hu] using (congr($(hpair x g) u)).symm
-  · refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := 𝕜) fun h ↦ ?_
-    let g : StrongDual 𝕜 F := h ∘L Completion.toComplL
-    have hg : g.fromCompletion = h := g.fromCompletion_unique h fun _ ↦ rfl
-    simpa [hg] using (congr($(hpair x g) u)).trans (hu x g)
+  · induction z using Completion.induction_on with
+    | hp => exact isClosed_eq (by fun_prop) continuous_const
+    | ih x =>
+      refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := 𝕜) fun h ↦ ?_
+      let g : StrongDual 𝕜 F := h ∘L Completion.toComplL
+      have hg : g.fromCompletion = h := g.fromCompletion_unique h fun _ ↦ by simp [g]
+      simpa [hg] using (congr($(hpair x g) u)).trans (hu x g)
 
 end TauCeti
+
+end Seminormed
 
 namespace TauCeti.ProjectiveTensor
 

@@ -32,10 +32,8 @@ coordinate vectors, without conjugation.
 
 * `ZeroAtInftyContinuousMap.toLpInfty`: the inclusion of `C₀(α, E)` into `ℓ∞`, as a linear
   isometry.
-* `ZeroAtInftyContinuousMap.hasSum_comp_singleCLM` and
-  `ZeroAtInftyContinuousMap.hasSum_apply_single_one_mul`: every continuous linear map out of
-  `C₀(ι, E)` (and every continuous linear functional on `C₀(ι, 𝕜)`) is given by its coordinate
-  series.
+* `ZeroAtInftyContinuousMap.hasSum_apply_single_one_mul`: every continuous linear functional on
+  `C₀(ι, 𝕜)` is given by its coordinate series.
 * `ZeroAtInftyContinuousMap.sum_norm_apply_single_le_of_forall_norm_le_one`,
   `ZeroAtInftyContinuousMap.sum_norm_comp_singleCLM_le`, and
   `ZeroAtInftyContinuousMap.sum_norm_apply_single_one_le`: the coordinate functionals or coordinate
@@ -60,7 +58,7 @@ public section
 
 noncomputable section
 
-open scoped ENNReal ZeroAtInfty ComplexConjugate
+open scoped ENNReal ZeroAtInfty
 
 namespace ZeroAtInftyContinuousMap
 
@@ -89,15 +87,7 @@ end LpInfty
 
 section Series
 
-variable {𝕜 ι E M : Type*} [TopologicalSpace ι] [DiscreteTopology ι]
-
-/-- Every continuous linear map out of `C₀(ι, E)` is given by the series of its coordinate maps
-`Λ ∘ singleCLM 𝕜 i`. -/
-theorem hasSum_comp_singleCLM [Semiring 𝕜] [SeminormedAddCommGroup E] [Module 𝕜 E]
-    [ContinuousConstSMul 𝕜 E] [AddCommMonoid M] [TopologicalSpace M] [Module 𝕜 M] [DecidableEq ι]
-    (Λ : C₀(ι, E) →L[𝕜] M) (f : C₀(ι, E)) :
-    HasSum (fun i ↦ Λ.comp (singleCLM 𝕜 i) (f i)) (Λ f) := by
-  simpa using (hasSum_single f).mapL Λ
+variable {𝕜 ι : Type*} [TopologicalSpace ι] [DiscreteTopology ι]
 
 /-- Every continuous linear functional on `C₀(ι, 𝕜)` is given by its coordinate series. -/
 theorem hasSum_apply_single_one_mul [SeminormedCommRing 𝕜] [DecidableEq ι]
@@ -112,28 +102,20 @@ section Coordinates
 variable {𝕜 ι E : Type*} [TopologicalSpace ι] [DiscreteTopology ι] [RCLike 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [DecidableEq ι]
 
-/-- Along any family of vectors in the closed unit ball of `E`, the values of a functional on
-`C₀(ι, E)` at the corresponding coordinate vectors have finite partial sums of norms bounded by
+/-- Along any family of vectors in the closed unit ball of `E` on `s`, the values of a functional
+on `C₀(ι, E)` at the corresponding coordinate vectors have partial sum of norms over `s` bounded by
 `‖Λ‖`. -/
 theorem sum_norm_apply_single_le_of_forall_norm_le_one (Λ : StrongDual 𝕜 C₀(ι, E))
-    {v : ι → E} (hv : ∀ i, ‖v i‖ ≤ 1) (s : Finset ι) :
+    (s : Finset ι) {v : ι → E} (hv : ∀ i ∈ s, ‖v i‖ ≤ 1) :
     ∑ i ∈ s, ‖Λ (single i (v i))‖ ≤ ‖Λ‖ := by
-  -- Rotate each `v i` by the conjugate phase of `Λ (single i (v i))` to align the terms in `ℝ≥0`.
-  set u : ι → 𝕜 := fun i ↦ conj (Λ (single i (v i))) / (‖Λ (single i (v i))‖ : 𝕜)
-  have hu (i : ι) : ‖u i • v i‖ ≤ 1 := by
-    rw [norm_smul]
-    exact (mul_le_of_le_one_left (norm_nonneg _)
-      (by simpa [u] using div_self_le_one ‖Λ (single i (v i))‖)).trans (hv i)
-  have hΛu (i : ι) : Λ (single i (u i • v i)) = ‖Λ (single i (v i))‖ := by
-    rw [single_smul, map_smul, smul_eq_mul, div_mul_eq_mul_div, RCLike.conj_mul]
-    rcases eq_or_ne (‖Λ (single i (v i))‖ : 𝕜) 0 with h | h
-    · simp [h]
-    · field_simp
+  choose u hu₁ hΛu using fun i ↦ RCLike.exists_norm_eq_mul_self (Λ (single i (v i)))
+  have hu {i : ι} (hi : i ∈ s) : ‖u i • v i‖ ≤ 1 := by
+    simpa [norm_smul, hu₁ i] using hv i hi
   set g : C₀(ι, E) := ∑ i ∈ s, single i (u i • v i)
   have hg : ‖g‖ ≤ 1 := (norm_le zero_le_one).2 fun j ↦ by
     by_cases hj : j ∈ s <;> simp [g, hj, hu]
   have hΛg : Λ g = ((∑ i ∈ s, ‖Λ (single i (v i))‖ : ℝ) : 𝕜) := by
-    simp [g, map_sum, hΛu]
+    simp [g, single_smul, map_sum, ← hΛu]
   calc ∑ i ∈ s, ‖Λ (single i (v i))‖ = ‖Λ g‖ := by
         rw [hΛg, RCLike.norm_ofReal, abs_of_nonneg (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)]
     _ ≤ ‖Λ‖ * ‖g‖ := Λ.le_opNorm g
@@ -167,7 +149,8 @@ theorem sum_norm_comp_singleCLM_le (Λ : StrongDual 𝕜 C₀(ι, E)) (s : Finse
         Finset.sum_le_sum fun i _ ↦ by linarith [hΛv i]
     _ = (∑ i ∈ s, ‖Λ (single i (v i))‖) + s.card * δ := by
         simp [Finset.sum_add_distrib]
-    _ ≤ ‖Λ‖ + ε := add_le_add (sum_norm_apply_single_le_of_forall_norm_le_one Λ hv1 s) hcard
+    _ ≤ ‖Λ‖ + ε :=
+        add_le_add (sum_norm_apply_single_le_of_forall_norm_le_one Λ s fun i _ ↦ hv1 i) hcard
 
 /-- The coordinate functionals of a functional on `C₀(ι, E)` have summable norms. -/
 theorem summable_norm_comp_singleCLM (Λ : StrongDual 𝕜 C₀(ι, E)) :
@@ -191,7 +174,7 @@ theorem norm_eq_tsum_norm_comp_singleCLM (Λ : StrongDual 𝕜 C₀(ι, E)) :
 are bounded by its norm. -/
 theorem sum_norm_apply_single_one_le (Λ : StrongDual 𝕜 C₀(ι, 𝕜)) (s : Finset ι) :
     ∑ i ∈ s, ‖Λ (single i 1)‖ ≤ ‖Λ‖ :=
-  sum_norm_apply_single_le_of_forall_norm_le_one Λ (fun _ ↦ norm_one.le) s
+  sum_norm_apply_single_le_of_forall_norm_le_one Λ s fun _ _ ↦ norm_one.le
 
 /-- The coordinate values of a functional on `C₀(ι, 𝕜)` are absolutely summable. -/
 theorem summable_norm_apply_single_one (Λ : StrongDual 𝕜 C₀(ι, 𝕜)) :
@@ -213,7 +196,6 @@ def strongDualEquiv : lp (fun _ : ι ↦ StrongDual 𝕜 E) 1 ≃ₗᵢ[𝕜] St
   have hid : ‖ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 E)‖ ≤ ((1 : NNReal) : ℝ) := by
     simpa only [NNReal.coe_one] using ContinuousLinearMap.norm_id_le
   let J : C₀(ι, E) →L[𝕜] lp (fun _ : ι ↦ E) ∞ := (toLpInfty 𝕜).toContinuousLinearMap
-  have hJ : ‖J‖ ≤ 1 := LinearIsometry.norm_toContinuousLinearMap_le _
   let D := lp.dualPairing (𝕜 := 𝕜) 1 ∞
     (fun _ : ι ↦ ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 E)) (fun _ ↦ hid)
   let P : lp (fun _ : ι ↦ StrongDual 𝕜 E) 1 →L[𝕜] StrongDual 𝕜 C₀(ι, E) :=
@@ -221,20 +203,10 @@ def strongDualEquiv : lp (fun _ : ι ↦ StrongDual 𝕜 E) 1 ≃ₗᵢ[𝕜] St
   have hP (φ : lp (fun _ : ι ↦ StrongDual 𝕜 E) 1) (i : ι) :
       (P φ).comp (singleCLM 𝕜 i) = φ i := by
     ext x
-    simp only [P, D, ContinuousLinearMap.comp_apply, ContinuousLinearMap.precomp_apply,
-      lp.dualPairing_apply, ContinuousLinearMap.id_apply, J,
-      LinearIsometry.coe_toContinuousLinearMap, toLpInfty_apply, singleCLM_apply, coe_single,
-      Pi.single_apply, apply_ite (φ _), map_zero, tsum_ite_eq]
+    simp [P, D, J, lp.dualPairing_apply, Pi.single_apply, apply_ite (φ _)]
   have hnorm (φ : lp (fun _ : ι ↦ StrongDual 𝕜 E) 1) : ‖P φ‖ = ‖φ‖ := by
-    apply le_antisymm
-    · calc ‖P φ‖ ≤ ‖D φ‖ * ‖J‖ := (D φ).opNorm_comp_le J
-        _ ≤ ‖D φ‖ := mul_le_of_le_one_right (norm_nonneg _) hJ
-        _ ≤ ‖D‖ * ‖φ‖ := D.le_opNorm φ
-        _ ≤ ‖φ‖ := mul_le_of_le_one_left (norm_nonneg φ) (by
-          exact_mod_cast lp.norm_dualPairing (p := 1) (q := ∞)
-            (fun _ : ι ↦ ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 E)) (fun _ ↦ hid))
-    · refine lp.norm_le_of_forall_sum_le (by simp) (norm_nonneg (P φ)) fun s ↦ ?_
-      simpa [hP φ] using sum_norm_comp_singleCLM_le (P φ) s
+    rw [norm_eq_tsum_norm_comp_singleCLM, lp.norm_eq_tsum_rpow (by simp)]
+    simp [hP]
   refine LinearIsometryEquiv.ofSurjective { P.toLinearMap with norm_map' := hnorm } fun Λ ↦ ?_
   let φ : lp (fun _ : ι ↦ StrongDual 𝕜 E) 1 :=
     ⟨fun i ↦ Λ.comp (singleCLM 𝕜 i), memℓp_gen (by simpa using summable_norm_comp_singleCLM Λ)⟩
