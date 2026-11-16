@@ -16,10 +16,10 @@ A short exact sequence of differential groups `0 → M₁ --u--> M --p--> P → 
 groups with endomorphisms `d₁`, `d` and `dP`, where `d` squares to zero, `u` is injective, `p` is
 surjective, the kernel of `p` is the image of `u`, and `u` and `p` intertwine the differentials
 (`AddMonoidHom.IsShortExactDifferential`). Given a second such sequence
-`0 → N₁ --v--> N --q--> Q → 0`, maps `f₁ : M₁ → N₁`, `f : M → N` and `g : P → Q` with
-`f ∘ u = v ∘ f₁` and `g ∘ p = q ∘ f` form a morphism of short exact sequences. The right map `g`
-needs only to be a function: its additivity follows from the compatibility equation and
-surjectivity of `p`. The five lemma for
+`0 → N₁ --v--> N --q--> Q → 0`, functions `f₁ : M₁ → N₁` and `g : P → Q`, and an additive map
+`f : M →+ N` with `f ∘ u = v ∘ f₁` and `g ∘ p = q ∘ f` form a morphism of short exact sequences.
+Their additivity follows from the compatibility equations, injectivity of `v`, and surjectivity of
+`p`. The five lemma for
 the long exact homology sequences
 `H(M₁) --u--> H(M) --p--> H(P) --δ--> H(M₁) --u--> H(M)` and its analogue for `N` transfers
 surjectivity and injectivity on homology from `f₁` and `f` to `g`.
@@ -75,7 +75,7 @@ structure IsShortExactDifferential (u : M₁ →+ M) (p : M →+ P) (d₁ : M₁
   comm_right : ∀ m, p (d m) = dP (p m)
 
 variable {d₁ : M₁ →+ M₁} {d : M →+ M} {dP : P →+ P} {e₁ : N₁ →+ N₁} {e : N →+ N} {eQ : Q →+ Q}
-  {u : M₁ →+ M} {p : M →+ P} {v : N₁ →+ N} {q : N →+ Q} {f₁ : M₁ →+ N₁} {f : M →+ N}
+  {u : M₁ →+ M} {p : M →+ P} {v : N₁ →+ N} {q : N →+ Q} {f₁ : M₁ → N₁} {f : M →+ N}
 
 /-- **Five lemma, surjectivity on homology.** In a morphism `(f₁, f, g)` of short exact sequences
 `0 → M₁ --u--> M --p--> P → 0` and `0 → N₁ --v--> N --q--> Q → 0` of differential groups, suppose

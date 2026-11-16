@@ -36,9 +36,10 @@ elements of `M`, on which such structure is defined. The image is represented in
   `d` is `d.homology hd`.
 * `LinearMap.homologyMap`: the map on homology induced by a semilinear chain map
   `f` across coefficient rings with `f ∘ d = e ∘ f`.
-* `LinearEquiv.homologyEquiv`: the equivalence of homologies induced by a linear equivalence `f`
+* `LinearEquiv.homologyEquiv`: the equivalence of homologies induced by a semilinear equivalence `f`
   with `f ∘ d = e ∘ f`.
-* `LinearMap.mappingCone`: the mapping cone `(m, n) ↦ (-d m, f m + e n)` of such a chain map.
+* `LinearMap.mappingCone`: the mapping cone `(m, n) ↦ (-d m, f m + e n)` of a linear chain map
+  over a single coefficient ring.
 * `LinearMap.sumMappingCone`: the mapping cone of a map between free modules `ι →₀ S` and
   `κ →₀ S`, as an endomorphism of the free module `(ι ⊕ κ) →₀ S`.
 
@@ -50,8 +51,8 @@ elements of `M`, on which such structure is defined. The image is represented in
   Mathlib's explicit homology of a short complex of modules are `d.boundariesInKer`.
 * `LinearMap.homologyMap_surjective_iff` and `LinearMap.homologyMap_injective_iff`: elementwise
   descriptions of surjectivity and injectivity of the map induced on homology.
-* `LinearMap.ker_le_range_mappingCone_iff`: a chain map induces a bijection on homology exactly when
-  its mapping cone is exact.
+* `LinearMap.ker_le_range_mappingCone_iff`: a linear chain map over a single coefficient ring
+  induces a bijection on homology exactly when its mapping cone is exact.
 * `LinearMap.ker_le_range_sumMappingCone_iff`: the kernel of the mapping cone on `(ι ⊕ κ) →₀ S` lies
   in its range exactly when the same holds for the mapping cone on `(ι →₀ S) × (κ →₀ S)`.
 * `HomologicalComplex.quasiIso_iff_bijective_homologyMap`: a morphism of complexes of modules of
@@ -203,12 +204,6 @@ theorem homologyMap_injective_iff (f : M →ₛₗ[σ] N) (hd : d ∘ₗ d = 0) 
     simp only [mem_ker, homologyπ_apply, homologyMap_mk, Submodule.Quotient.mk_eq_zero] at hc ⊢
     exact h m m.2 hc
 
-end SemilinearMap
-
-section Map
-
-variable {N : Type*} [AddCommGroup N] [Module S N] {d} {e : N →ₗ[S] N}
-
 variable (d) in
 /-- The identity chain map induces the identity map on homology. -/
 @[simp]
@@ -221,22 +216,22 @@ variable (d e) in
 /-- The zero chain map induces the zero map on homology. -/
 @[simp]
 theorem homologyMap_zero (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) :
-    homologyMap (0 : M →ₗ[S] N) hd he (by simp) = 0 := by
+    homologyMap (0 : M →ₛₗ[σ] N) hd he (by simp) = 0 := by
   ext z
   simp
 
 /-- The map on homology induced by `-f` is the negative of the map induced by `f`. -/
 @[simp]
-theorem homologyMap_neg (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
-    (hf : f ∘ₗ d = e ∘ₗ f) :
+theorem homologyMap_neg (f : M →ₛₗ[σ] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f ∘ₛₗ d = e ∘ₛₗ f) :
     homologyMap (-f) hd he (by rw [neg_comp, comp_neg, hf]) = -homologyMap f hd he hf := by
   ext z
   simp [← Submodule.Quotient.mk_neg, Submodule.Quotient.eq]
 
 /-- The map on homology induced by `f + g` is the sum of the maps induced by `f` and `g`. -/
 @[simp]
-theorem homologyMap_add (f g : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
-    (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ d = e ∘ₗ g) :
+theorem homologyMap_add (f g : M →ₛₗ[σ] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f ∘ₛₗ d = e ∘ₛₗ f) (hg : g ∘ₛₗ d = e ∘ₛₗ g) :
     homologyMap (f + g) hd he (by rw [add_comp, comp_add, hf, hg]) =
       homologyMap f hd he hf + homologyMap g hd he hg := by
   ext z
@@ -245,21 +240,24 @@ theorem homologyMap_add (f g : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘�
 /-- The map on homology induced by `f - g` is the difference of the maps induced by `f` and
 `g`. -/
 @[simp]
-theorem homologyMap_sub (f g : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
-    (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ d = e ∘ₗ g) :
+theorem homologyMap_sub (f g : M →ₛₗ[σ] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f ∘ₛₗ d = e ∘ₛₗ f) (hg : g ∘ₛₗ d = e ∘ₛₗ g) :
     homologyMap (f - g) hd he (by rw [sub_comp, comp_sub, hf, hg]) =
       homologyMap f hd he hf - homologyMap g hd he hg := by
   ext z
   simp [← Submodule.Quotient.mk_sub, Submodule.Quotient.eq]
 
-variable {P : Type*} [AddCommGroup P] [Module S P] {q : P →ₗ[S] P}
+variable {U P : Type*} [Ring U] [AddCommGroup P] [Module U P] {q : P →ₗ[U] P}
+  {τ : T →+* U} {υ : S →+* U} [RingHomCompTriple σ τ υ]
 
 /-- The map on homology induced by a composite is the composite of the induced maps. -/
-theorem homologyMap_comp (g : N →ₗ[S] P) (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0)
-    (he : e ∘ₗ e = 0) (hq : q ∘ₗ q = 0) (hf : f ∘ₗ d = e ∘ₗ f)
-    (hg : g ∘ₗ e = q ∘ₗ g) :
-    homologyMap (g ∘ₗ f) hd hq (by rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]) =
-      homologyMap g he hq hg ∘ₗ homologyMap f hd he hf := by
+theorem homologyMap_comp (g : N →ₛₗ[τ] P) (f : M →ₛₗ[σ] N) (hd : d ∘ₗ d = 0)
+    (he : e ∘ₗ e = 0) (hq : q ∘ₗ q = 0) (hf : f ∘ₛₗ d = e ∘ₛₗ f)
+    (hg : g ∘ₛₗ e = q ∘ₛₗ g) :
+    homologyMap (g ∘ₛₗ f : M →ₛₗ[υ] P) hd hq
+        (by rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]) =
+      (homologyMap g he hq hg ∘ₛₗ homologyMap f hd he hf :
+        d.homology hd →ₛₗ[υ] q.homology hq) := by
   ext z
   simp
 
@@ -268,23 +266,30 @@ theorem homologyMap_comp (g : N →ₗ[S] P) (f : M →ₗ[S] N) (hd : d ∘ₗ 
 mentions the intermediate differential `e`, which the left-hand side of `homologyMap_comp` does
 not. -/
 @[simp]
-theorem homologyMap_comp_homologyMap (g : N →ₗ[S] P) (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0)
-    (he : e ∘ₗ e = 0) (hq : q ∘ₗ q = 0) (hf : f ∘ₗ d = e ∘ₗ f)
-    (hg : g ∘ₗ e = q ∘ₗ g) :
-    homologyMap g he hq hg ∘ₗ homologyMap f hd he hf =
-      homologyMap (g ∘ₗ f) hd hq (by rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]) :=
+theorem homologyMap_comp_homologyMap (g : N →ₛₗ[τ] P) (f : M →ₛₗ[σ] N) (hd : d ∘ₗ d = 0)
+    (he : e ∘ₗ e = 0) (hq : q ∘ₗ q = 0) (hf : f ∘ₛₗ d = e ∘ₛₗ f)
+    (hg : g ∘ₛₗ e = q ∘ₛₗ g) :
+    (homologyMap g he hq hg ∘ₛₗ homologyMap f hd he hf :
+        d.homology hd →ₛₗ[υ] q.homology hq) =
+      homologyMap (g ∘ₛₗ f : M →ₛₗ[υ] P) hd hq
+        (by rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]) :=
   (homologyMap_comp g f hd he hq hf hg).symm
 
-/-- Applying two induced maps on homology in turn is applying the map induced by the composite. -/
+/-- Applying two induced maps on homology in turn is applying the map induced by the composite.
+The scalar homomorphism of the composite is fixed as `τ.comp σ`, so every parameter is determined
+by the left-hand side when this lemma is used by `simp`. -/
 @[simp]
-theorem homologyMap_homologyMap (g : N →ₗ[S] P) (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0)
-    (he : e ∘ₗ e = 0) (hq : q ∘ₗ q = 0) (hf : f ∘ₗ d = e ∘ₗ f)
-    (hg : g ∘ₗ e = q ∘ₗ g) (c : d.homology hd) :
+theorem homologyMap_homologyMap (g : N →ₛₗ[τ] P) (f : M →ₛₗ[σ] N) (hd : d ∘ₗ d = 0)
+    (he : e ∘ₗ e = 0) (hq : q ∘ₗ q = 0) (hf : f ∘ₛₗ d = e ∘ₛₗ f)
+    (hg : g ∘ₛₗ e = q ∘ₛₗ g) (c : d.homology hd) :
     homologyMap g he hq hg (homologyMap f hd he hf c) =
-      homologyMap (g ∘ₗ f) hd hq (by rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]) c :=
-  congr($(homologyMap_comp_homologyMap g f hd he hq hf hg) c)
+      letI : RingHomCompTriple σ τ (τ.comp σ) := ⟨rfl⟩
+      homologyMap (g ∘ₛₗ f : M →ₛₗ[τ.comp σ] P) hd hq
+        (by rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]) c := by
+  have : RingHomCompTriple σ τ (τ.comp σ) := ⟨rfl⟩
+  exact congr($(homologyMap_comp_homologyMap (υ := τ.comp σ) g f hd he hq hf hg) c)
 
-end Map
+end SemilinearMap
 
 section Product
 
@@ -491,14 +496,16 @@ end LinearMap
 
 namespace LinearEquiv
 
-variable {S M M' : Type*} [Ring S] [AddCommGroup M] [Module S M] [AddCommGroup M'] [Module S M']
-  {d : M →ₗ[S] M} {e : M' →ₗ[S] M'}
+variable {S T M M' : Type*} [Ring S] [Ring T]
+  [AddCommGroup M] [Module S M] [AddCommGroup M'] [Module T M']
+  {σ : S →+* T} {σ' : T →+* S} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+  {d : M →ₗ[S] M} {e : M' →ₗ[T] M'}
 
-/-- A linear equivalence `f` with `f ∘ d = e ∘ f` induces an equivalence of the homologies of the
-square-zero endomorphisms `d` and `e`. -/
-noncomputable def homologyEquiv (f : M ≃ₗ[S] M') (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
-    (hf : f.toLinearMap ∘ₗ d = e ∘ₗ f.toLinearMap) : d.homology hd ≃ₗ[S] e.homology he :=
-  have hf' : f.symm.toLinearMap ∘ₗ e = d ∘ₗ f.symm.toLinearMap := by
+/-- A semilinear equivalence `f` with `f ∘ d = e ∘ f` induces an equivalence of the homologies
+of the square-zero endomorphisms `d` and `e`. -/
+noncomputable def homologyEquiv (f : M ≃ₛₗ[σ] M') (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f.toLinearMap ∘ₛₗ d = e ∘ₛₗ f.toLinearMap) : d.homology hd ≃ₛₗ[σ] e.homology he :=
+  have hf' : f.symm.toLinearMap ∘ₛₗ e = d ∘ₛₗ f.symm.toLinearMap := by
     ext m'
     apply f.injective
     simpa using (congr($hf (f.symm m'))).symm
@@ -508,8 +515,8 @@ noncomputable def homologyEquiv (f : M ≃ₗ[S] M') (hd : d ∘ₗ d = 0) (he :
 
 /-- The equivalence of homologies sends the class of a cycle `z` to the class of `f z`. -/
 @[simp]
-theorem homologyEquiv_mk (f : M ≃ₗ[S] M') (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
-    (hf : f.toLinearMap ∘ₗ d = e ∘ₗ f.toLinearMap) (z : LinearMap.ker d) :
+theorem homologyEquiv_mk (f : M ≃ₛₗ[σ] M') (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f.toLinearMap ∘ₛₗ d = e ∘ₛₗ f.toLinearMap) (z : LinearMap.ker d) :
     f.homologyEquiv hd he hf (Submodule.Quotient.mk z) =
       Submodule.Quotient.mk
         ⟨f z, LinearMap.map_mem_ker_of_comp_eq (d := d) (e := e) f.toLinearMap hf z.2⟩ :=

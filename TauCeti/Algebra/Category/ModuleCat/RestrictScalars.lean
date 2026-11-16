@@ -260,6 +260,23 @@ theorem restrictScalarsLinearEquivOfBijective_apply (hg : Function.Bijective g) 
   (LinearEquiv.ofBijective_apply (restrictScalarsLinearMap f₁ f₂ g hσ) x).trans
     (restrictScalarsLinearMap_apply f₁ f₂ g hσ x)
 
+/-- The inverse restricted equivalence cancels the original semilinear map. -/
+@[simp]
+theorem restrictScalarsLinearEquivOfBijective_symm_apply_apply (hg : Function.Bijective g)
+    (x : (restrictScalars f₁).obj M₁) :
+    (restrictScalarsLinearEquivOfBijective f₁ f₂ g hσ hg).symm (g x) = x := by
+  rw [← restrictScalarsLinearEquivOfBijective_apply f₁ f₂ g hσ hg x]
+  exact (restrictScalarsLinearEquivOfBijective f₁ f₂ g hσ hg).symm_apply_apply x
+
+/-- The original semilinear map cancels the inverse restricted equivalence. The native target
+carrier keeps this equation compatible with the semilinear map in importing modules. -/
+@[simp]
+theorem apply_restrictScalarsLinearEquivOfBijective_symm_apply (hg : Function.Bijective g)
+    (y : M₂) :
+    g ((restrictScalarsLinearEquivOfBijective f₁ f₂ g hσ hg).symm y) = y :=
+  (restrictScalarsLinearEquivOfBijective_apply f₁ f₂ g hσ hg _).symm.trans
+    ((restrictScalarsLinearEquivOfBijective f₁ f₂ g hσ hg).apply_symm_apply y)
+
 end SemilinearMap
 
 variable {R : Type u₁} {S : Type u₂} [CommRing R] [Ring S] [Algebra R S]
