@@ -107,18 +107,13 @@ theorem mulLeftCLM_apply_apply_of_eq_sum {ι : Type*} (s : Finset ι) {c : ι �
   have hcoord (k) : SchwartzMap.smulLeftCLM ℂ (LinearMap.toContinuousLinearMap (b.coord k) ∘ A) φ
       = ∑ i ∈ s, b.equivFun (L i) k • SchwartzMap.smulLeftCLM ℂ (c i) φ := by
     have hk : LinearMap.toContinuousLinearMap (b.coord k) ∘ A =
-        fun x ↦ ∑ i ∈ s, b.equivFun (L i) k * c i x := by
+        fun x ↦ ∑ i ∈ s, (b.equivFun (L i) k • c i) x := by
       ext x
       simp [hA x, map_sum, map_smul, mul_comm]
-    have ht : ∀ i ∈ s, (fun x ↦ b.equivFun (L i) k * c i x).HasTemperateGrowth :=
-      fun i hi ↦ (Function.HasTemperateGrowth.const _).mul (hc i hi)
-    have htk : (LinearMap.toContinuousLinearMap (b.coord k) ∘ A).HasTemperateGrowth := by
-      rw [hk]
-      simpa only [← Finset.sum_apply] using Function.HasTemperateGrowth.sum ht
-    ext x
-    rw [SchwartzMap.smulLeftCLM_apply_apply htk, sum_apply, hk, Finset.sum_smul]
+    rw [hk, SchwartzMap.smulLeftCLM_sum (g := fun i ↦ b.equivFun (L i) k • c i)
+      fun i hi ↦ (Function.HasTemperateGrowth.const _).mul (hc i hi), sum_apply]
     refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [smul_apply, SchwartzMap.smulLeftCLM_apply_apply (hc i hi), smul_smul]
+    rw [SchwartzMap.smulLeftCLM_smul (hc i hi), smul_apply]
   simp_rw [hcoord, map_sum, map_smul]
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
@@ -199,12 +194,9 @@ theorem mulLeftCLM_comp_mulLeftCLM [FiniteDimensional ℂ H] {A : E → F →L[�
   have hφ : SchwartzMap.smulLeftCLM ℂ (LinearMap.toContinuousLinearMap (a.coord k) ∘ A)
         (SchwartzMap.smulLeftCLM ℂ (LinearMap.toContinuousLinearMap (b.coord l) ∘ B) φ) =
       SchwartzMap.smulLeftCLM ℂ (fun x ↦ b.coord l (B x) * a.coord k (A x)) φ := by
-    ext x
-    rw [SchwartzMap.smulLeftCLM_apply_apply (hca k), SchwartzMap.smulLeftCLM_apply_apply (hcb l),
-      SchwartzMap.smulLeftCLM_apply_apply (g := fun x ↦ b.coord l (B x) * a.coord k (A x))
-        ((hcb l).mul (hca k))]
-    simp only [Function.comp_apply, LinearMap.coe_toContinuousLinearMap', smul_eq_mul]
-    ring
+    rw [SchwartzMap.smulLeftCLM_smulLeftCLM_apply (hca k) (hcb l), mul_comm]
+    -- The product of functions is pointwise by definition (`Pi.mul_apply`).
+    rfl
   rw [hφ, ContinuousLinearMap.comp_apply]
 
 section InnerProductSpace
