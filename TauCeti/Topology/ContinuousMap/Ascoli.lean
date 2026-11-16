@@ -53,6 +53,7 @@ and adds companion statements used for compactness and finite approximation of f
   exhausting bands `[-Rₙ, Rₙ] × ℝ` has a subsequence converging locally uniformly on the plane.
   In particular, so do the translates `(s, t) ↦ u(s + σₙ, t)`, `σₙ → ∞`, of a Lipschitz map on a
   half-plane `s ≥ b` with values in a compact set.
+  The same holds on exhausting squares `[-Rₙ, Rₙ]²`.
 * The `C`-Lipschitz maps `X → Y` whose value at a fixed point `x₀` lies in a closed set `K` form a
   compact subset of `C(X, Y)` when the closed `(C * dist x x₀)`-thickening of `K` is compact for
   every `x`, in particular when `Y` is proper and `K` is compact. For paths on `I`, compactness
@@ -82,6 +83,8 @@ endpoints `eₙ` stay at distance at least `1` from each other
   compact set are compact for uniform convergence on `ℝ`.
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith`: Arzelà–Ascoli for maps that
   are uniformly Lipschitz with values in a compact set on exhausting bands of the plane.
+* `TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall`: the same on
+  exhausting squares, the closed balls about `0` of the plane.
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add`: translates `u(s + σₙ, t)`, `σₙ → ∞`,
   of a Lipschitz map on a half-plane `s ≥ b` with values in a compact set have a locally
   uniformly convergent subsequence.
@@ -332,6 +335,48 @@ theorem exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith {M : Type*}
   rw [abs_le] at hmz
   simp only [G, ContinuousMap.coe_mk, w', p, Function.comp_apply,
     min_eq_left (by linarith : z.1 ≤ R (φ n)), max_eq_right (by linarith : -R (φ n) ≤ z.1)]
+
+/-- **Arzelà–Ascoli along exhausting squares.** Let `w n` be `L`-Lipschitz on the closed ball
+`[-R n, R n] × [-R n, R n]` of radius `R n` about `0` in `ℝ × ℝ`, with values there in a compact
+subset `K` of a pseudometric space, where `0 ≤ R n → ∞`. A subsequence of the `w n` converges
+locally uniformly on `ℝ × ℝ` to a continuous map. For instance, `w n` may be the rescalings of a
+sequence of solutions of an equation about points where their derivatives blow up. -/
+theorem exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall {M : Type*}
+    [PseudoMetricSpace M] {K : Set M} (hK : IsCompact K) {w : ℕ → ℝ × ℝ → M} {R : ℕ → ℝ}
+    {L : NNReal} (hR₀ : ∀ n, 0 ≤ R n) (hR : Tendsto R atTop atTop)
+    (hL : ∀ n, LipschitzOnWith L (w n) (Metric.closedBall 0 (R n)))
+    (hwK : ∀ n, MapsTo (w n) (Metric.closedBall 0 (R n)) K) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ g : C(ℝ × ℝ, M),
+      TendstoLocallyUniformly (fun n ↦ w (φ n)) g atTop := by
+  -- Clamping the second coordinate to `[-R n, R n]` maps the band `[-R n, R n] × ℝ` into the
+  -- ball, and fixes the points of the ball.
+  set p : ℕ → ℝ × ℝ → ℝ × ℝ := fun n z ↦ (z.1, max (-R n) (min z.2 (R n)))
+  have hp (n : ℕ) : LipschitzWith 1 (p n) := by
+    simpa using LipschitzWith.prod_fst.prodMk
+      ((LipschitzWith.prod_snd.min_const (R n)).const_max (-R n))
+  have hpR (n : ℕ) : MapsTo (p n) (Icc (-R n) (R n) ×ˢ univ) (Metric.closedBall 0 (R n)) := by
+    rintro z ⟨hz, -⟩
+    rw [Metric.mem_closedBall, Prod.dist_eq, Real.dist_eq, Real.dist_eq]
+    simp only [p, Prod.fst_zero, Prod.snd_zero, sub_zero]
+    exact max_le (abs_le.2 hz) (abs_le.2 ⟨le_max_left _ _,
+      max_le (by linarith [hR₀ n]) (min_le_right _ _)⟩)
+  have hp_eq {n : ℕ} {z : ℝ × ℝ} (hz : dist z 0 ≤ R n) : p n z = z := by
+    rw [Prod.dist_eq, Real.dist_eq, Real.dist_eq, Prod.snd_zero, sub_zero] at hz
+    have h2 := abs_le.1 ((le_max_right _ _).trans hz)
+    simp only [p, min_eq_left h2.2, max_eq_right h2.1]
+  obtain ⟨φ, hφ, g, hg⟩ := exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith hK
+    (w := fun n ↦ w n ∘ p n) hR₀ hR
+    (fun n ↦ by simpa using (hL n).comp (hp n).lipschitzOnWith (hpR n))
+    fun n ↦ (hwK n).comp (hpR n)
+  refine ⟨φ, hφ, g, ?_⟩
+  -- On every compact set the clamping is eventually the identity.
+  rw [tendstoLocallyUniformly_iff_forall_isCompact] at hg ⊢
+  intro C hC
+  obtain ⟨ρ, hρ⟩ := hC.isBounded.subset_closedBall 0
+  refine (hg C hC).congr ?_
+  filter_upwards [(hR.comp hφ.tendsto_atTop).eventually_ge_atTop ρ] with n hn z hz
+  simp only [Function.comp_apply]
+  rw [hp_eq ((Metric.mem_closedBall.1 (hρ hz)).trans hn)]
 
 /-- **Arzelà–Ascoli for translates along an end.** Let `u` be Lipschitz on the half-plane
 `s ≥ b` of `ℝ × ℝ`, with values there in a compact subset of a pseudometric space, and let
