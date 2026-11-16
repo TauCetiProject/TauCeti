@@ -28,7 +28,9 @@ In particular, a cellular basis vector with increasing-index vertex labels `(g�
 Any group homomorphism `φ : G →* H` acts on Milnor joins by the cellular map
 `MonoidHom.universalGSpaceCellularMap`, inducing an equivariant chain map
 `MonoidHom.universalGSpaceCellularComplexMap` into the restricted target complex that recovers the
-underlying cellular chain map after forgetting actions.
+underlying cellular chain map after forgetting actions and preserves the resolution augmentation
+(`MonoidHom.universalGSpaceCellularComplexMap_f_zero_comp_π`) without assuming restriction preserves
+projective representations.
 
 ## References
 
@@ -433,6 +435,8 @@ theorem universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap
   grind [universalGSpaceCellularMap_apply, universalGSpaceCellularTranslation_apply,
     universalGSpaceMap_smul, CategoryTheory.comp_apply]
 
+section ChainComplex
+
 variable [Ring k]
 
 /-- The equivariant morphism of geometric cellular chain representations in degree `n` induced by
@@ -603,5 +607,51 @@ theorem universalGSpaceCellularComplexMap_comp {K : Type u} [Group K]
   -- fire; `Rep.resFunctor` is an `abbrev`, so restriction along `ψ.comp φ` agrees with sequential
   -- restriction along `ψ` then `φ` on objects.
   simp -proj [eqToHom_map]
+
+end ChainComplex
+
+section Resolution
+
+variable [CommRing k]
+
+/-- **The equivariant cellular chain map on Milnor's join lies over the identity of `k`.** No
+hypothesis on restriction preserving projective objects is needed. -/
+@[reassoc]
+theorem universalGSpaceCellularComplexMap_f_zero_comp_π (φ : G →* H) :
+    (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
+        (Rep.resFunctor φ).map ((universalGSpaceCellularResolution k H).π.f 0) =
+      (universalGSpaceCellularResolution k G).π.f 0 := by
+  apply (cancel_epi (eqToHom (universalGSpaceCellularComplex_X k G 0).symm)).mp
+  have hL :
+      eqToHom (universalGSpaceCellularComplex_X k G 0).symm ≫
+          ((φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
+            (Rep.resFunctor φ).map ((universalGSpaceCellularResolution k H).π.f 0)) =
+        φ.universalGSpaceCellularRepMap 0 ≫
+          (Rep.resFunctor φ).map
+            (eqToHom (universalGSpaceCellularComplex_X k H 0).symm ≫
+              (universalGSpaceCellularResolution k H).π.f 0) := by
+    -- `-proj` keeps the `abbrev` `(Rep.resFunctor φ).map` unreduced so `Functor.map_comp` and
+    -- `eqToHom_map` merge the cellular-term transport into the restricted augmentation map.
+    simp -proj [eqToHom_map]
+  rw [hL]
+  refine Rep.hom_ext <| DFunLike.ext _ _ fun x ↦ ?_
+  have hy : (φ.universalGSpaceCellularRepMap (k := k) 0).hom x =
+      (cellularChainGroupMap univ univ φ.isCellular_universalGSpaceCellularMap
+        (ModuleCat.of k k) 0) x := by
+    rw [← Representation.IntertwiningMap.toLinearMap_apply,
+      universalGSpaceCellularRepMap_hom_toLinearMap]
+  -- `(universalGSpaceCellularResolution k _).complex` reduces to `universalGSpaceCellularComplex`
+  -- at default transparency, while `Rep.hom_comp` and `Rep.resMap_hom_apply` hold by reflexivity,
+  -- so assembling the elementwise chain in term mode avoids `rw`'s implicit-transparency check.
+  exact (universalGSpaceCellularResolution_π_f_zero_hom_apply k H
+      ((φ.universalGSpaceCellularRepMap (k := k) 0).hom x)).trans <|
+    (congrArg
+      (cellularAugmentation (univ : Set (universalGSpace H)) (ModuleCat.of k k)) hy).trans <|
+      (ConcreteCategory.congr_hom
+        (cellularChainGroupMap_comp_cellularAugmentation univ univ
+          φ.isCellular_universalGSpaceCellularMap (ModuleCat.of k k)) x).trans
+        (universalGSpaceCellularResolution_π_f_zero_hom_apply k G x).symm
+
+end Resolution
 
 end MonoidHom

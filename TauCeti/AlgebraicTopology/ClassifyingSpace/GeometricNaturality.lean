@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ClassifyingSpace.ChainComparison
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.EquivariantChains
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Naturality
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.Naturality
@@ -25,12 +24,6 @@ equivariant chain homotopy equivalences from geometric cellular chains to Mathli
 standard complex and inhomogeneous bar complex whose forward maps are natural in group
 homomorphisms (`universalGSpaceCellularRepStandardHomotopyEquiv_hom_naturality` and
 `universalGSpaceCellularBarHomotopyEquiv_hom_naturality`).
-
-Because `TauCeti.universalGSpaceCellularResolution` has `TauCeti.universalGSpaceCellularComplex` as
-its underlying chain complex, `MonoidHom.universalGSpaceCellularComplexMap` acts directly on the
-geometric cellular projective resolutions and lies over the identity of `k`
-(`universalGSpaceCellularComplexMap_f_zero_comp_π`) without assuming restriction preserves
-projective representations.
 
 ## References
 
@@ -217,44 +210,5 @@ theorem universalGSpaceCellularBarHomotopyEquiv_hom_naturality (φ : G →* H) :
     universalGSpaceCellularBarHomotopyEquiv_hom, Functor.map_comp,
     universalGSpaceCellularRepStandardHomotopyEquiv_hom_naturality_assoc,
     φ.barComplex_isoStandardComplex_inv_naturality, Category.assoc]
-
-/-- **The equivariant cellular chain map on Milnor's join lies over the identity of `k`.** No
-hypothesis on restriction preserving projective objects is needed. -/
-@[reassoc]
-theorem universalGSpaceCellularComplexMap_f_zero_comp_π (φ : G →* H) :
-    (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
-        (Rep.resFunctor φ).map ((universalGSpaceCellularResolution k H).π.f 0) =
-      (universalGSpaceCellularResolution k G).π.f 0 := by
-  have h :
-      (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
-          (Rep.resFunctor φ).map ((universalGSpaceCellularResolution k H).π.f 0) =
-        (universalGSpaceCellularComplexIso k G).hom.f 0 ≫
-          ((φ.universalGSpaceCellMulActionHom 0).toRepRes ≫
-            (Rep.resFunctor φ).map
-              (permutationAugmentation k H
-                ((indexedJoin fun _ : ℕ => H).RealizationCell 0))) := by
-    calc
-      (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
-          (Rep.resFunctor φ).map ((universalGSpaceCellularResolution k H).π.f 0)
-        = (φ.universalGSpaceCellularComplexMap (k := k) ≫
-              ((Rep.resFunctor φ).mapHomologicalComplex _).map
-                (universalGSpaceCellularComplexIso k H).hom).f 0 ≫
-            (Rep.resFunctor φ).map ((universalGSpaceAugmentation k H).f 0) := by
-          simp -proj [universalGSpaceCellularResolution_π]
-      _ = ((universalGSpaceCellularComplexIso k G).hom ≫ φ.universalGSpaceChainMap).f 0 ≫
-            (Rep.resFunctor φ).map ((universalGSpaceAugmentation k H).f 0) := by
-          rw [φ.universalGSpaceCellularComplexIso_naturality]
-      _ = _ := by
-          simp only [HomologicalComplex.comp_f, universalGSpaceChainMap_f,
-            universalGSpaceChainHom, universalGSpaceAugmentation_f_zero]
-          exact Category.assoc _ _ _
-  -- `Rep.res φ (Rep.trivial k H k)` and `Rep.trivial k G k` agree after unfolding
-  -- `Rep.trivial`, which `MulActionHom.toRepRes_comp_permutationAugmentation` bridges.
-  exact h.trans <|
-    (congrArg ((universalGSpaceCellularComplexIso k G).hom.f 0 ≫ ·)
-      (MulActionHom.toRepRes_comp_permutationAugmentation _)).trans <| by
-      simp only [universalGSpaceCellularResolution_π, HomologicalComplex.comp_f,
-        universalGSpaceAugmentation_f_zero]
-      rfl
 
 end MonoidHom
