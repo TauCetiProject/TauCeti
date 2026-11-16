@@ -162,6 +162,13 @@ namespace ContDiffBump
 
 variable (φ : ContDiffBump (0 : E))
 
+/-- The Schwartz kernel `𝓕⁻ ψⱼ`, as a function, is the inverse Fourier transform of the function
+`ψⱼ`. -/
+theorem coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz (j : ℕ) :
+    ⇑(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j) : 𝓢(E, ℂ)) =
+      𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
+  rw [SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
+
 /-- **The moments of the dyadic kernels scale with `j`.** Since `𝓕⁻ ψ_{j+1}` is the
 `L¹`-normalised dilate `2^{jn} 𝓕⁻ ψ₁ (2^j ·)` in dimension `n`, its `k`-th moment
 `∫ ‖x‖ ^ k ‖𝓕⁻ ψ_{j+1} x‖` is `2^{-jk}` times that of `𝓕⁻ ψ₁`. -/
@@ -221,8 +228,8 @@ theorem exists_integrable_and_integral_norm_rpow_mul_norm_fourierInv_inhomogeneo
     φ.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le n
   refine ⟨C₀ + Cₙ, by positivity, fun j ↦ ?_⟩
   set κ : 𝓢(E, ℂ) := 𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)
-  have hκ : (κ : E → ℂ) = 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
-    rw [SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
+  have hκ : (κ : E → ℂ) = 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
+    φ.coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz j
   rw [← hκ, mul_comm α, Real.rpow_mul zero_le_two, Real.rpow_natCast]
   set c : ℝ := 2 ^ j
   have hle (x : E) : ‖x‖ ^ α * ‖κ x‖ ≤ (c ^ α)⁻¹ * (‖κ x‖ + c ^ n * (‖x‖ ^ n * ‖κ x‖)) := by
@@ -743,8 +750,8 @@ theorem exists_eLpNorm_littlewoodPaleyBlock_smul_sub_smul_le [CompleteSpace F] :
   refine ⟨C, fun {p q r s} _ _ _ _ j f K hf g fg u w hfg hu hw ↦ ?_⟩
   -- The kernel `κ = 𝓕⁻ ψⱼ` of `Δⱼ` is a Schwartz function.
   set κ : 𝓢(E, ℂ) := 𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)
-  have hκ : (κ : E → ℂ) = 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
-    rw [SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
+  have hκ : (κ : E → ℂ) = 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
+    φ.coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz j
   -- Both convolutions with `κ` exist everywhere, by Hölder's inequality, so the commutator is
   -- the integral of `MeasureTheory.eLpNorm_integral_sub_smul_smul_le`.
   have hex {e : ℝ≥0∞} (he : 1 ≤ e) {h : E → F} (hh : MemLp h e volume) (x : E) :

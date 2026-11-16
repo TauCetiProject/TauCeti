@@ -90,7 +90,9 @@ derivatives lie in `𝒞^{k-1+α}` lies in `𝒞^{k+α}`
 * `TauCeti.BesovSpace.ofCkHolderSpace`: the inclusion `C_b^{k,α} → 𝒞^{k+α}` as a continuous
   linear map, characterised by `TauCeti.BesovSpace.toDistr_ofCkHolderSpace`.
 * `TauCeti.BesovSpace.ckHolderSpaceEquiv`: for `0 < α < 1`, the isomorphism
-  `𝒞^{k+α} ≃ C_b^{k,α}` given by `toCkHolderSpace` and `ofCkHolderSpace`.
+  `𝒞^{k+α} ≃ C_b^{k,α}` given by `toCkHolderSpace` and `ofCkHolderSpace`, which are mutually
+  inverse (`TauCeti.BesovSpace.toCkHolderSpace_ofCkHolderSpace` and
+  `TauCeti.BesovSpace.ofCkHolderSpace_toCkHolderSpace`).
 
 ## References
 
@@ -286,9 +288,8 @@ theorem exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_holderWith (α : �
   -- `H ∫ ‖t‖^α ‖κ t‖ dt`, the `α`-th moment of `κ` times `H`.
   set κ : E → ℂ := 𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ))
   have hκi : Integrable κ := by
-    have hκ : κ = ⇑(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz (j + 1)) : 𝓢(E, ℂ)) := by
-      rw [SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
-    exact hκ ▸ (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz (j + 1))).integrable
+    simpa only [φ.coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz] using
+      (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz (j + 1))).integrable
   obtain ⟨hmi, hmb⟩ := hm (j + 1)
   have hconv : (g : E → F) =ᵐ[volume] κ ⋆[lsmul ℂ ℂ] (f : E → F) := by
     refine (ae_eq_convolution_of_littlewoodPaleyBlock_eq φ (j + 1) hg).trans ?_
@@ -890,6 +891,22 @@ theorem toDistr_ofCkHolderSpace (k : ℕ) (f : CkHolderSpace k α E F) :
     (ofCkHolderSpace F φ k α f).toDistr = toLpTop volume ℂ f.toBoundedContinuousFunction :=
   MemBesov.toDistr_toBesovSpace _
 
+/-- `TauCeti.BesovSpace.toCkHolderSpace` is a left inverse of
+`TauCeti.BesovSpace.ofCkHolderSpace`. -/
+@[simp]
+theorem toCkHolderSpace_ofCkHolderSpace (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1)
+    (f : CkHolderSpace k α E F) :
+    toCkHolderSpace F φ k hα0 hα1 (ofCkHolderSpace F φ k α f) = f :=
+  (toCkHolderSpace_eq_iff φ k hα0 hα1).2 (toDistr_ofCkHolderSpace φ k f).symm
+
+/-- `TauCeti.BesovSpace.ofCkHolderSpace` is a left inverse of
+`TauCeti.BesovSpace.toCkHolderSpace`. -/
+@[simp]
+theorem ofCkHolderSpace_toCkHolderSpace (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1)
+    (u : BesovSpace F φ (k + α) ∞ ∞) :
+    ofCkHolderSpace F φ k α (toCkHolderSpace F φ k hα0 hα1 u) = u :=
+  ext <| by rw [toDistr_ofCkHolderSpace, toLpTop_toCkHolderSpace]
+
 variable (F) in
 /-- **The Hölder–Zygmund space of non-integer order is the bounded Hölder space.** For `k : ℕ`
 and `0 < α < 1`, the Hölder–Zygmund space `𝒞^{k+α} = B^{k+α}_{∞,∞}` and the space `C_b^{k,α}` of
@@ -900,8 +917,8 @@ distribution of) such a map. The isomorphism is `TauCeti.BesovSpace.toCkHolderSp
 def ckHolderSpaceEquiv (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1) :
     BesovSpace F φ (k + α) ∞ ∞ ≃L[ℝ] CkHolderSpace k α E F :=
   ContinuousLinearEquiv.equivOfInverse (toCkHolderSpace F φ k hα0 hα1) (ofCkHolderSpace F φ k α)
-    (fun u ↦ ext <| by rw [toDistr_ofCkHolderSpace, toLpTop_toCkHolderSpace])
-    (fun f ↦ (toCkHolderSpace_eq_iff φ k hα0 hα1).2 (toDistr_ofCkHolderSpace φ k f).symm)
+    (ofCkHolderSpace_toCkHolderSpace φ k hα0 hα1)
+    (toCkHolderSpace_ofCkHolderSpace φ k hα0 hα1)
 
 @[simp]
 theorem coe_ckHolderSpaceEquiv (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1) :

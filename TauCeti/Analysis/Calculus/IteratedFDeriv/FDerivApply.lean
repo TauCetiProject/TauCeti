@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Iterated derivatives of a directional derivative
@@ -151,10 +152,7 @@ theorem ContDiff.holderWith_iteratedFDeriv_fderiv_apply {f : E → F} {k : ℕ}
     refine hop.trans ?_
     gcongr
     simpa [dist_eq_norm] using hH.dist_le x y
-  intro x y
-  rw [edist_dist, edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg r.coe_nonneg,
-    ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (NNReal.coe_nonneg _)]
-  exact ENNReal.ofReal_le_ofReal (hdist x y)
+  exact holderOnWith_univ.1 (HolderOnWith.of_dist_le fun x _ y _ ↦ hdist x y)
 
 namespace TauCeti
 
