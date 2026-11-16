@@ -8,10 +8,13 @@ module
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import TauCeti.Analysis.Complex.Wirtinger.Basic
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.FDeriv.ContinuousAlternatingMap
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.Complex.Liouville
+import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 
 /-!
 # Moments of the normal slices of a closed two-form
@@ -42,6 +45,25 @@ Suppose that `T` vanishes on `E × (ℂ \ K)` for a compact set `K`. Then:
   (`TauCeti.fderiv_sliceMoment_apply`). Here `v` is a base direction, lifted horizontally to
   `(v, 0)`. For `g = wᵏ` this is `dM_k = π_*(k w^(k-1) dw ∧ T)`
   (`TauCeti.fderiv_sliceMoment_pow_apply`).
+
+Now let the base be a complex normed space `V`, so that `V × ℂ` has the complex structure of
+multiplication by `i`, and let the weight `g` be entire. Then `D (sliceMoment T g)(z) v` is the
+fibre integral `π_*(g'(w) dw ∧ T)` (`TauCeti.fderiv_sliceMoment_apply_of_differentiable`), and the
+conjugate Wirtinger derivative of the slice moment is the same fibre integral with `T` replaced by
+its part `T⁻(u, u') = (T(u, u') - T(i u, i u')) / 2` anti-invariant under the complex structure
+(`TauCeti.conjWirtingerDeriv_sliceMoment_apply`, with the norm bound
+`TauCeti.norm_conjWirtingerDeriv_sliceMoment_apply_le`). For `g = wᵏ` this computes the defects
+`E_k = \bar∂ M_k` of the moment equations of `TauCeti.conjWirtingerDeriv_add_eq_sum_of_newton` for
+the normal Cauchy–Riemann operator `\bar∂` of the product structure: they are controlled by the
+failure of `T` to have type `(1,1)`, and only by it. Hence:
+
+* if `T` is closed and of type `(1,1)`, that is `T(i u, i u') = T(u, u')`, every slice moment of an
+  entire weight is holomorphic on the base (`TauCeti.differentiable_sliceMoment`);
+* if moreover the slice density `T(z, w)(∂_x, ∂_y)` is bounded, Liouville's theorem makes every such
+  slice moment independent of the base point (`TauCeti.sliceMoment_eq_sliceMoment_of_abs_le`), and
+  with the moments `M_k` their Newton coefficients are constant. This is the analogue for closed
+  forms of the base independence of a confined holomorphic divisor
+  (`Differentiable.exists_forall_analyticOrderAt_eq_count`).
 
 The derivative formula comes from differentiating under the integral sign and the closedness
 `dT = 0`, which trades the base derivative of the slice density for fibre derivatives of the
@@ -222,6 +244,25 @@ theorem fderiv_sliceMoment_apply (hK : IsCompact K) (hTc : ContDiff ℝ 1 T) (hg
     integral_fderiv_coeff_smul hK hTc hg hT, integral_fderiv_coeff_smul hK hTc hg hT]
   abel
 
+/-- **The derivative of a holomorphic slice moment.** Under the hypotheses of
+`TauCeti.fderiv_sliceMoment_apply`, for an entire weight `g : ℂ → ℂ` the derivative of the slice
+moment `∫ g dμ_z` along a base vector `v` is
+
+`D (sliceMoment T g)(z) v = ∫ g'(w) (i T(z, w)(v, ∂_x) - T(z, w)(v, ∂_y)) dw`,
+
+the fibre integral `π_*(g'(w) dw ∧ T)` evaluated on `(v, 0)`. -/
+theorem fderiv_sliceMoment_apply_of_differentiable (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
+    {g : ℂ → ℂ} (hg : Differentiable ℂ g) (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) {z : E}
+    (hdT : ∀ w, extDeriv T (z, w) = 0) (v : E) :
+    fderiv ℝ (sliceMoment T g) z v = ∫ w, deriv g w *
+      (I * T (z, w) ![(v, 0), (0, 1)] - T (z, w) ![(v, 0), (0, I)]) := by
+  rw [fderiv_sliceMoment_apply hK hTc (hg.contDiff.restrict_scalars ℝ) hT hdT v]
+  refine integral_congr_ae (ae_of_all _ fun w ↦ ?_)
+  simp only [((hg w).hasDerivAt.hasFDerivAt.restrictScalars ℝ).fderiv,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.toSpanSingleton_apply,
+    smul_eq_mul, real_smul]
+  ring
+
 /-- **The derivative of the moments `M_k`.** Under the hypotheses of
 `TauCeti.fderiv_sliceMoment_apply`, the moment `M_k(z) = ∫ wᵏ dμ_z` has derivative
 
@@ -233,11 +274,154 @@ theorem fderiv_sliceMoment_pow_apply (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
     (v : E) :
     fderiv ℝ (sliceMoment T (· ^ k)) z v = ∫ w, (k : ℂ) * w ^ (k - 1) *
       (I * T (z, w) ![(v, 0), (0, 1)] - T (z, w) ![(v, 0), (0, I)]) := by
-  rw [fderiv_sliceMoment_apply hK hTc (by fun_prop : ContDiff ℝ 1 fun w : ℂ ↦ w ^ k) hT hdT v]
+  simp only [fderiv_sliceMoment_apply_of_differentiable hK hTc (differentiable_pow k) hT hdT v,
+    deriv_pow_field]
+
+/-- **A bound for slice moments.** A slice moment is bounded by the bounds of the slice density
+and the weight: if `T` vanishes over the complement of the compact set `K`,
+`|T(z, w)(∂_x, ∂_y)| ≤ C` and `‖g(w)‖ ≤ B` for `w ∈ K`, then `‖∫ g dμ_z‖ ≤ C B vol(K)`. -/
+theorem norm_sliceMoment_le {B C : ℝ} (hK : IsCompact K) (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0)
+    {z : E} (hC : ∀ w ∈ K, |T (z, w) ![(0, 1), (0, I)]| ≤ C) (hB : ∀ w ∈ K, ‖g w‖ ≤ B) :
+    ‖sliceMoment T g z‖ ≤ C * B * volume.real K := by
+  rw [sliceMoment_eq_setIntegral hT]
+  refine norm_setIntegral_le_of_norm_le_const hK.measure_lt_top fun w hw ↦ ?_
+  rw [norm_smul, Real.norm_eq_abs]
+  exact mul_le_mul (hC w hw) (hB w hw) (norm_nonneg _) ((abs_nonneg _).trans (hC w hw))
+
+/-! ### Holomorphic slice moments of forms of type `(1,1)` -/
+
+section Holomorphic
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+  {T : V × ℂ → (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ} {g : ℂ → ℂ}
+
+/-- **The conjugate Wirtinger derivative of a holomorphic slice moment.** Let `T` be a `C¹`
+two-form on `V × ℂ`, for a complex normed space `V`, vanishing over the complement of a compact
+set `K` and closed at every point of the fibre over `z`, and let `g` be entire. Then
+
+`\bar∂ (sliceMoment T g)(z) v = ∫ g'(w) (i T⁻(z, w)(v, ∂_x) - T⁻(z, w)(v, ∂_y)) dw`,
+
+where `T⁻(u, u') = (T(u, u') - T(i u, i u')) / 2` is the part of `T` anti-invariant under the
+complex structure of `V × ℂ`. This is the formula of
+`TauCeti.fderiv_sliceMoment_apply_of_differentiable` with `T` replaced by `T⁻`: the `J`-invariant
+part, the `(1,1)` part of `T`, does not contribute.
+Written out, `T⁻(z, w)(v, ∂_x) = (T(z, w)(v, ∂_x) - T(z, w)(i v, ∂_y)) / 2` and
+`T⁻(z, w)(v, ∂_y) = (T(z, w)(v, ∂_y) + T(z, w)(i v, ∂_x)) / 2`. -/
+theorem conjWirtingerDeriv_sliceMoment_apply (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
+    (hg : Differentiable ℂ g) (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) {z : V}
+    (hdT : ∀ w, extDeriv T (z, w) = 0) (v : V) :
+    conjWirtingerDeriv (sliceMoment T g) z v = ∫ w, deriv g w *
+      (I * ((T (z, w) ![(v, 0), (0, 1)] - T (z, w) ![(I • v, 0), (0, I)]) / 2 : ℝ) -
+        ((T (z, w) ![(v, 0), (0, I)] + T (z, w) ![(I • v, 0), (0, 1)]) / 2 : ℝ)) := by
+  have hd : Continuous (deriv g) := hg.deriv.continuous
+  have hi (A B : Fin 2 → V × ℂ) :
+      Integrable fun w ↦ deriv g w * (I * T (z, w) A - T (z, w) B) :=
+    ((integrable_coeff_smul (g := fun w ↦ I * deriv g w) hK hTc (continuous_const.mul hd) hT
+      z A).sub (integrable_coeff_smul hK hTc hd hT z B)).congr (ae_of_all _ fun w ↦ by
+        simp only [Pi.sub_apply, real_smul]; ring)
+  have h₂ : Integrable fun w ↦ I • (deriv g w *
+      (I * T (z, w) ![(I • v, 0), (0, 1)] - T (z, w) ![(I • v, 0), (0, I)])) :=
+    (hi _ _).smul I
+  rw [conjWirtingerDeriv_apply, fderiv_sliceMoment_apply_of_differentiable hK hTc hg hT hdT,
+    fderiv_sliceMoment_apply_of_differentiable hK hTc hg hT hdT, ← integral_smul,
+    ← integral_add (hi _ _) h₂, ← integral_smul]
   refine integral_congr_ae (ae_of_all _ fun w ↦ ?_)
-  simp only [((hasDerivAt_pow k w).hasFDerivAt.restrictScalars ℝ).fderiv,
-    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.toSpanSingleton_apply,
-    smul_eq_mul, real_smul]
+  simp only [smul_eq_mul]
+  push_cast
+  linear_combination (deriv g w * T (z, w) ![(I • v, 0), (0, 1)] / 2) * I_sq
+
+/-- **A bound for the conjugate Wirtinger derivative of a holomorphic slice moment.** Under the
+hypotheses of `TauCeti.conjWirtingerDeriv_sliceMoment_apply`, `‖\bar∂ (sliceMoment T g)(z) v‖` is
+at most the fibre integral of `‖g'(w)‖ (|T⁻(z, w)(v, ∂_x)| + |T⁻(z, w)(v, ∂_y)|)`, where `T⁻` is the
+part of `T` anti-invariant under the complex structure of `V × ℂ`. So the slice moments are
+nearly holomorphic where `T` is nearly of type `(1,1)`. -/
+theorem norm_conjWirtingerDeriv_sliceMoment_apply_le (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
+    (hg : Differentiable ℂ g) (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) {z : V}
+    (hdT : ∀ w, extDeriv T (z, w) = 0) (v : V) :
+    ‖conjWirtingerDeriv (sliceMoment T g) z v‖ ≤ ∫ w, ‖deriv g w‖ *
+      (|(T (z, w) ![(v, 0), (0, 1)] - T (z, w) ![(I • v, 0), (0, I)]) / 2| +
+        |(T (z, w) ![(v, 0), (0, I)] + T (z, w) ![(I • v, 0), (0, 1)]) / 2|) := by
+  have hc (A : Fin 2 → V × ℂ) : Continuous fun w ↦ T (z, w) A :=
+    (ContinuousAlternatingMap.apply ℝ (V × ℂ) ℝ A).continuous.comp
+      (hTc.continuous.comp (Continuous.prodMk_right z))
+  rw [conjWirtingerDeriv_sliceMoment_apply hK hTc hg hT hdT v]
+  refine norm_integral_le_of_norm_le (integrable_of_vanishing hK
+    (hg.deriv.continuous.norm.mul ((((hc _).sub (hc _)).div_const _).abs.add
+      (((hc _).add (hc _)).div_const _).abs)) fun w hw ↦ by simp [hT z w hw])
+    (ae_of_all _ fun w ↦ ?_)
+  rw [norm_mul]
+  gcongr
+  refine (norm_sub_le _ _).trans_eq ?_
+  simp only [norm_mul, norm_I, one_mul, Complex.norm_real, Real.norm_eq_abs]
+
+/-- **Slice moments of a form of type `(1,1)` are holomorphic at a point.** If, in addition to
+the hypotheses of `TauCeti.conjWirtingerDeriv_sliceMoment_apply`, the form `T` is invariant under
+the complex structure of `V × ℂ` along the fibre over `z`, `T(i u, i u') = T(u, u')`, then the
+slice moment `∫ g dμ_z` of every entire weight `g` has vanishing conjugate Wirtinger derivative
+at `z`. -/
+theorem conjWirtingerDeriv_sliceMoment_eq_zero (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
+    (hg : Differentiable ℂ g) (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) {z : V}
+    (hdT : ∀ w, extDeriv T (z, w) = 0)
+    (hJ : ∀ w, ∀ u u' : V × ℂ, T (z, w) ![I • u, I • u'] = T (z, w) ![u, u']) :
+    conjWirtingerDeriv (sliceMoment T g) z = 0 := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  rw [conjWirtingerDeriv_sliceMoment_apply hK hTc hg hT hdT v, zero_apply]
+  refine (integral_congr_ae (ae_of_all _ fun w ↦ ?_)).trans (integral_zero _ _)
+  have h₁ := hJ w (v, 0) (0, 1)
+  have h₂ := hJ w (v, 0) (0, -I)
+  simp only [Prod.smul_mk, smul_zero, smul_eq_mul, mul_zero, mul_one, mul_neg, I_mul_I,
+    neg_neg] at h₁ h₂
+  -- `T` is linear in its second slot, so `T(v, -∂_y) = -T(v, ∂_y)`.
+  have hneg : T (z, w) ![(v, 0), (0, -I)] = -T (z, w) ![(v, 0), (0, I)] := by
+    have h := (T (z, w)).map_update_smul ![(v, 0), (0, I)] 1 (-1 : ℝ) (0, I)
+    have e₁ : Function.update ![((v, 0) : V × ℂ), (0, I)] 1 ((-1 : ℝ) • ((0 : V), I)) =
+        ![(v, 0), (0, -I)] := by
+      ext i : 1; fin_cases i <;> simp
+    have e₂ : Function.update ![((v, 0) : V × ℂ), (0, I)] 1 ((0 : V), I) =
+        ![(v, 0), (0, I)] := by
+      ext i : 1; fin_cases i <;> simp
+    rwa [e₁, e₂, neg_one_smul] at h
+  rw [h₁, h₂, hneg]
+  push_cast
   ring
+
+/-- **Slice moments of a form of type `(1,1)` are complex differentiable at a point**, under the
+hypotheses of `TauCeti.conjWirtingerDeriv_sliceMoment_eq_zero`. -/
+theorem differentiableAt_sliceMoment (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
+    (hg : Differentiable ℂ g) (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) {z : V}
+    (hdT : ∀ w, extDeriv T (z, w) = 0)
+    (hJ : ∀ w, ∀ u u' : V × ℂ, T (z, w) ![I • u, I • u'] = T (z, w) ![u, u']) :
+    DifferentiableAt ℂ (sliceMoment T g) z :=
+  (differentiableAt_iff_conjWirtingerDeriv_eq_zero
+    ((contDiff_sliceMoment hK hTc (hg.contDiff.restrict_scalars ℝ) hT).differentiable
+      one_ne_zero z)).2 (conjWirtingerDeriv_sliceMoment_eq_zero hK hTc hg hT hdT hJ)
+
+/-- **Slice moments of a closed form of type `(1,1)` are holomorphic.** Let `T` be a closed `C¹`
+two-form on `V × ℂ`, invariant under the complex structure of `V × ℂ` and vanishing over the
+complement of a compact set `K` of the fibre. Then for every entire weight `g` the slice moment
+`z ↦ ∫ g dμ_z` is complex differentiable on `V`; in particular so are the moments
+`M_k(z) = ∫ wᵏ dμ_z`. -/
+theorem differentiable_sliceMoment (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
+    (hg : Differentiable ℂ g) (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) (hdT : ∀ x, extDeriv T x = 0)
+    (hJ : ∀ x, ∀ u u' : V × ℂ, T x ![I • u, I • u'] = T x ![u, u']) :
+    Differentiable ℂ (sliceMoment T g) := fun _ ↦
+  differentiableAt_sliceMoment hK hTc hg hT (fun _ ↦ hdT _) fun _ ↦ hJ _
+
+/-- **Liouville's theorem for slice moments.** Let `T` be a closed `C¹` two-form on `V × ℂ`,
+invariant under the complex structure of `V × ℂ`, vanishing over the complement of a compact set
+`K` of the fibre, and with bounded slice density `|T(z, w)(∂_x, ∂_y)| ≤ C`. Then every slice moment
+`∫ g dμ_z` of an entire weight `g` is independent of the base point `z`. In particular the moments
+`M_k(z) = ∫ wᵏ dμ_z`, and with them the Newton coefficients of the slices, are constant. -/
+theorem sliceMoment_eq_sliceMoment_of_abs_le (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
+    (hg : Differentiable ℂ g) (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) (hdT : ∀ x, extDeriv T x = 0)
+    (hJ : ∀ x, ∀ u u' : V × ℂ, T x ![I • u, I • u'] = T x ![u, u']) {C : ℝ}
+    (hC : ∀ x, |T x ![(0, 1), (0, I)]| ≤ C) (z z' : V) :
+    sliceMoment T g z = sliceMoment T g z' := by
+  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn hg.continuous.continuousOn
+  refine (differentiable_sliceMoment hK hTc hg hT hdT hJ).apply_eq_apply_of_bounded ?_ z z'
+  exact isBounded_iff_forall_norm_le.2
+    ⟨_, forall_mem_range.2 fun z ↦ norm_sliceMoment_le hK hT (fun w _ ↦ hC (z, w)) hB⟩
+
+end Holomorphic
 
 end TauCeti
