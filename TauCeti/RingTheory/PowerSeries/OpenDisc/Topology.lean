@@ -88,6 +88,21 @@ theorem restrict_polynomialHom_C {S : Type*} [NormedCommRing S] [IsUltrametricDi
   apply Subtype.ext
   simp
 
+/-- Restriction commutes with scalar multiplication from a base algebra. -/
+@[simp]
+theorem restrict_smul {S : Type*} [CommSemiring S] [Algebra S R] (r : Set.Ioo (0 : ℝ) R₀)
+    (s : S) (f : OnOpenDisc.subring R R₀) :
+    restrict r (s • f) = s • restrict r f :=
+  Subtype.ext (by simp)
+
+/-- Restriction commutes with the algebra map from a base algebra. -/
+@[simp]
+theorem restrict_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (r : Set.Ioo (0 : ℝ) R₀)
+    (s : S) :
+    restrict r (algebraMap S (OnOpenDisc.subring R R₀) s) =
+      algebraMap S (IsRestricted.subring (R := R) (r : ℝ)) s :=
+  Subtype.ext (by simp)
+
 /-- Restriction of an open-disc series to all smaller positive closed discs at once. -/
 noncomputable def restrictFamily :
     OnOpenDisc.subring R R₀ →+* ∀ r : Set.Ioo (0 : ℝ) R₀, IsRestricted.subring (R := R) (r : ℝ) :=
@@ -149,16 +164,9 @@ theorem uniformContinuous_of_norm_restrict_le {S F : Type*} [NormedRing S] [IsUl
     [AddMonoidHomClass F (OnOpenDisc.subring R R₀) (OnOpenDisc.subring S S₀)] (φ : F)
     (hφ : ∀ s : Set.Ioo (0 : ℝ) S₀, ∃ (r : Set.Ioo (0 : ℝ) R₀) (C : ℝ),
       ∀ f, ‖restrict s (φ f)‖ ≤ C * ‖restrict r f‖) :
-    UniformContinuous φ := by
-  refine uniformContinuous_iff.mpr fun s ↦ ?_
-  obtain ⟨r, C, hC⟩ := hφ s
-  let ψ : OnOpenDisc.subring R R₀ →+ IsRestricted.subring (R := S) (s : ℝ) :=
-    (restrict s).toAddMonoidHom.comp (AddMonoidHom.ofClass φ)
-  refine uniformContinuous_of_continuousAt_zero ψ ?_
-  rw [ContinuousAt, map_zero]
-  have h := (uniformContinuous_restrict (R := R) r).continuous.tendsto 0
-  refine squeeze_zero_norm (fun f ↦ hC f) ?_
-  simpa using h.norm.const_mul C
+    UniformContinuous φ :=
+  GaussFamily.uniformContinuous_of_norm_restrict_le isUniformInducing_restrictFamily
+    isUniformInducing_restrictFamily φ hφ
 
 instance : IsTopologicalRing (OnOpenDisc.subring R R₀) :=
   GaussFamily.isTopologicalRing isUniformInducing_restrictFamily

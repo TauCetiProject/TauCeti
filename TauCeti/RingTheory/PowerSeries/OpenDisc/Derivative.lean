@@ -111,9 +111,18 @@ theorem hasseDeriv_C {k : ℕ} (hk : 0 < k) (a : R) :
       PowerSeries.hasseDeriv_C hk, ZeroMemClass.coe_zero]
 
 /-- Positive Hasse derivatives vanish on `1`. -/
-theorem hasseDeriv_one {k : ℕ} (hk : 0 < k) :
+@[simp]
+theorem hasseDeriv_apply_one {k : ℕ} (hk : 0 < k) :
     hasseDeriv (R₀ := R₀) k (1 : OnOpenDisc.subring R R₀) = 0 := by
   simpa using hasseDeriv_C (R₀ := R₀) hk (1 : R)
+
+/-- Positive Hasse derivatives vanish on scalars from a base algebra. -/
+@[simp]
+theorem hasseDeriv_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] {k : ℕ}
+    (hk : 0 < k) (s : S) :
+    hasseDeriv (R₀ := R₀) k (algebraMap S (OnOpenDisc.subring R R₀) s) = 0 := by
+  rw [← polynomialHom_C_algebraMap]
+  exact hasseDeriv_C hk _
 
 /-- Hasse derivatives commute with bounded coefficient maps on open discs. -/
 theorem mapHom_hasseDeriv {S : Type*} [NormedRing S] (φ : R →+* S) {C : ℝ}
@@ -207,13 +216,11 @@ theorem coeff_derivative (f : OnOpenDisc.subring R R₀) (n : ℕ) :
 /-- Iterated open-disc differentiation agrees with iterated formal differentiation. -/
 @[simp]
 theorem coe_iterate_derivative (k : ℕ) (f : OnOpenDisc.subring R R₀) :
-    ((derivative (R := R) (R₀ := R₀))^[k] f : R⟦X⟧) = (d⁄dX)^[k] (f : R⟦X⟧) := by
-  induction k with
-  | zero => rfl
-  | succ k ih => rw [Function.iterate_succ_apply', coe_derivative, ih,
-      Function.iterate_succ_apply']
+    ((derivative (R := R) (R₀ := R₀))^[k] f : R⟦X⟧) = (d⁄dX)^[k] (f : R⟦X⟧) :=
+  Function.Semiconj.iterate_right coe_derivative k f
 
 /-- The first Hasse derivative on an open disc is formal differentiation. -/
+@[simp]
 theorem hasseDeriv_one_eq_derivative (f : OnOpenDisc.subring R R₀) :
     hasseDeriv 1 f = derivative f :=
   Subtype.ext (PowerSeries.hasseDeriv_one_apply (f : R⟦X⟧))
@@ -314,18 +321,15 @@ theorem derivative_analyticSubst {S₀ : ℝ} [Fact (0 < S₀)] (g : OnOpenDisc.
     derivative (analyticSubst g hg f) = analyticSubst g hg (derivative f) * derivative g := by
   let L (h : OnOpenDisc.subring R R₀) := derivative (analyticSubst g hg h)
   let M (h : OnOpenDisc.subring R R₀) := analyticSubst g hg (derivative h) * derivative g
-  have hmul {x y} (hx : L x = M x) (hy : L y = M y) : L (x * y) = M (x * y) := by
-    simp only [L, M, map_mul, Derivation.leibniz, smul_eq_mul, map_add] at hx hy ⊢
-    rw [hx, hy]
-    ring
+  have haeval (p : Polynomial R) :
+      analyticSubst g hg (OnOpenDisc.polynomialHom p) = Polynomial.aeval g p := by
+    rw [analyticSubst_polynomialHom, Polynomial.coe_eval₂RingHom, Polynomial.aeval_def]
+    congr 1
+    ext a
+    simp
   have hpoly (p : Polynomial R) : L (OnOpenDisc.polynomialHom p) =
       M (OnOpenDisc.polynomialHom p) := by
-    induction p using Polynomial.induction_on with
-    | C a => simp [L, M]
-    | add p q hp hq => simp only [L, M, map_add, add_mul] at hp hq ⊢; rw [hp, hq]
-    | monomial n a ih =>
-      rw [pow_succ, ← mul_assoc, map_mul]
-      exact hmul ih (by simp [L, M])
+    simp only [L, M, haeval, derivative_polynomialHom, Derivation.map_aeval, smul_eq_mul]
   have hL : Continuous L := continuous_derivative.comp (continuous_analyticSubst g hg)
   have hM : Continuous M :=
     ((continuous_analyticSubst g hg).comp continuous_derivative).mul continuous_const

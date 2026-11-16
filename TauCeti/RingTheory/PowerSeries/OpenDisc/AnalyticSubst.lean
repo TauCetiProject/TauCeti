@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Substitution
+public import TauCeti.Algebra.Order.GroupWithZero.Basic
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.Taylor
+import TauCeti.RingTheory.PowerSeries.Rescale
 
 /-!
 # Analytic substitution on open discs
@@ -46,8 +48,10 @@ corresponding analytic substitutions.
   `TauCeti.PowerSeries.OnOpenDisc.taylorHom_eq_analyticSubst`, and
   `TauCeti.PowerSeries.OnOpenDisc.affineHom_eq_analyticSubst`: rescaling, Taylor translation, and
   affine pullbacks are special cases of analytic substitution.
-* `TauCeti.PowerSeries.OnOpenDisc.evalAtHom_comp_affineHom`: compatibility of affine pullbacks with
-  algebra-valued point evaluation.
+* `TauCeti.PowerSeries.OnOpenDisc.uniformContinuous_affineHom`,
+  `TauCeti.PowerSeries.OnOpenDisc.affineHom_comp`, and
+  `TauCeti.PowerSeries.OnOpenDisc.evalAtHom_comp_affineHom`: uniform continuity, composition, and
+  compatibility of affine pullbacks with algebra-valued point evaluation.
 
 ## References
 
@@ -314,33 +318,35 @@ theorem analyticSubst_self [NormOneClass R] (f : OnOpenDisc.subring R S₀) :
 
 end AnalyticSubst
 
-private theorem mul_lt_of_mul_le_of_nonneg_left {x s S₀ R₀ : ℝ} (h : x * S₀ ≤ R₀) (hs : s < S₀)
-    (hx : 0 ≤ x) (hR₀ : 0 < R₀) : x * s < R₀ := by
-  obtain rfl | hx := hx.eq_or_lt
-  · simpa only [zero_mul] using hR₀
-  · exact (mul_lt_mul_of_pos_left hs hx).trans_le h
-
 section PolynomialBounds
 
 variable {R : Type*} [NormedRing R] [IsUltrametricDist R] {R₀ S₀ : ℝ}
 
 attribute [local instance] radius_pos
 
-/-- An affine linear polynomial `a + uX` has closed-disc Gauss norm at most `max ‖a‖ (‖u‖ * s)`. -/
-theorem norm_restrict_C_add_C_mul_X_le (a u : R) (s : Set.Ioo (0 : ℝ) S₀) :
-    ‖restrict s (OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X))‖ ≤
+/-- An affine linear polynomial `a + uX` has closed-disc Gauss norm `max ‖a‖ (‖u‖ * s)`. -/
+theorem norm_restrict_C_add_C_mul_X (a u : R) (s : Set.Ioo (0 : ℝ) S₀) :
+    ‖restrict s (OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X))‖ =
       max ‖a‖ (‖u‖ * (s : ℝ)) := by
-  rw [norm_eq_gaussNorm, coe_restrict, OnOpenDisc.coe_polynomialHom, gaussNorm_eq]
-  refine ciSup_le fun n ↦ ?_
-  match n with
-  | 0 => simp
-  | 1 => simp
-  | n + 2 =>
-    have h0 : coeff (n + 2)
-        ((Polynomial.C a + Polynomial.C u * Polynomial.X : Polynomial R) : R⟦X⟧) = 0 := by
-      simp
-    rw [h0, norm_zero, zero_mul]
-    positivity
+  refine le_antisymm (norm_le_iff.mpr fun n ↦ ?_) (max_le ?_ ?_)
+  · rw [coe_restrict, OnOpenDisc.coe_polynomialHom]
+    match n with
+    | 0 => simp
+    | 1 => simp
+    | n + 2 =>
+      have h0 : coeff (n + 2)
+          ((Polynomial.C a + Polynomial.C u * Polynomial.X : Polynomial R) : R⟦X⟧) = 0 := by
+        simp
+      rw [h0, norm_zero, zero_mul]
+      positivity
+  · convert norm_coeff_mul_pow_le
+      (restrict s (OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X))) 0
+      using 1
+    simp
+  · convert norm_coeff_mul_pow_le
+      (restrict s (OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X))) 1
+      using 1
+    simp
 
 /-- The linear polynomial `a + uX` maps smaller closed discs strictly inside the source open disc
 whenever `‖a‖ < R₀` and `‖u‖ * S₀ ≤ R₀`. -/
@@ -348,8 +354,8 @@ theorem norm_restrict_C_add_C_mul_X_lt {a u : R} (ha : ‖a‖ < R₀) (hu : ‖
     (s : Set.Ioo (0 : ℝ) S₀) :
     ‖restrict s (OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X))‖ <
       R₀ :=
-  (norm_restrict_C_add_C_mul_X_le a u s).trans_lt <| max_lt ha <|
-    mul_lt_of_mul_le_of_nonneg_left hu s.2.2 (norm_nonneg u) ((norm_nonneg a).trans_lt ha)
+  (norm_restrict_C_add_C_mul_X a u s).trans_lt <| max_lt ha <|
+    TauCeti.mul_lt_of_mul_le_of_nonneg_left hu s.2.2 (norm_nonneg u) ((norm_nonneg a).trans_lt ha)
 
 /-- The monomial `uX` maps smaller closed discs strictly inside the source open disc when
 `0 < R₀` and `‖u‖ * S₀ ≤ R₀`. -/
@@ -389,21 +395,32 @@ theorem coe_rescaleHom {u : R} (hu : ‖u‖ * S₀ ≤ R₀) (f : OnOpenDisc.su
 @[simp]
 theorem rescaleHom_C {u : R} (hu : ‖u‖ * S₀ ≤ R₀) (a : R) :
     rescaleHom hu (OnOpenDisc.polynomialHom (Polynomial.C a)) =
-      OnOpenDisc.polynomialHom (Polynomial.C a) := by
-  apply Subtype.ext
-  ext n
-  cases n <;> simp
+      OnOpenDisc.polynomialHom (Polynomial.C a) :=
+  Subtype.ext (by simp)
 
 /-- Rescaling sends the variable `X` to `uX`. -/
 @[simp]
 theorem rescaleHom_X {u : R} (hu : ‖u‖ * S₀ ≤ R₀) :
     rescaleHom hu (OnOpenDisc.polynomialHom Polynomial.X) =
-      OnOpenDisc.polynomialHom (Polynomial.C u * Polynomial.X) := by
+      OnOpenDisc.polynomialHom (Polynomial.C u * Polynomial.X) :=
+  Subtype.ext (by simp)
+
+/-- Rescaling fixes scalars from a base algebra. -/
+@[simp]
+theorem rescaleHom_algebraMap {A : Type*} [CommSemiring A] [Algebra A R]
+    {u : R} (hu : ‖u‖ * S₀ ≤ R₀) (s : A) :
+    rescaleHom hu (algebraMap A (OnOpenDisc.subring R R₀) s) =
+      algebraMap A (OnOpenDisc.subring R S₀) s := by
+  rw [← polynomialHom_C_algebraMap, rescaleHom_C, polynomialHom_C_algebraMap]
+
+/-- Rescaling commutes with scalar multiplication from a scalar tower. -/
+@[simp]
+theorem rescaleHom_smul {A : Type*} [Semiring A] [Module A R] [IsScalarTower A R R]
+    {u : R} (hu : ‖u‖ * S₀ ≤ R₀) (s : A) (f : OnOpenDisc.subring R R₀) :
+    rescaleHom hu (s • f) = s • rescaleHom hu f := by
   apply Subtype.ext
   ext n
-  cases n with
-  | zero => simp
-  | succ n => cases n <;> simp
+  simp [smul_mul_assoc, mul_comm (u ^ n)]
 
 /-- Rescaling by `1` is the identity. -/
 @[simp]
@@ -430,12 +447,9 @@ theorem norm_restrict_rescaleHom_le {u : R} (hu : ‖u‖ * S₀ ≤ R₀)
     (f : OnOpenDisc.subring R R₀) :
     ‖restrict s (rescaleHom hu f)‖ ≤ ‖restrict r f‖ := by
   have hs : 0 < (s : ℝ) := s.2.1
-  have hf := hasGaussNorm_of_isRestricted (restrict r f).2
-  rw [coe_restrict] at hf
-  rw [norm_eq_gaussNorm, norm_eq_gaussNorm, coe_restrict, coe_restrict, coe_rescaleHom,
-    gaussNorm_eq]
-  refine ciSup_le fun n ↦ (?_ : _ ≤ ‖coeff n (f : R⟦X⟧)‖ * (r : ℝ) ^ n).trans
-    (le_gaussNorm norm (r : ℝ) (f : R⟦X⟧) hf n)
+  refine norm_le_iff.mpr fun n ↦ (?_ : _ ≤ ‖coeff n (f : R⟦X⟧)‖ * (r : ℝ) ^ n).trans
+    (by simpa only [coe_restrict] using norm_coeff_mul_pow_le (restrict r f) n)
+  rw [coe_restrict, coe_rescaleHom]
   cases n with
   | zero => simp
   | succ n =>
@@ -456,7 +470,7 @@ theorem uniformContinuous_rescaleHom [Fact (0 < R₀)] {u : R} (hu : ‖u‖ * S
     UniformContinuous (rescaleHom hu) :=
   uniformContinuous_of_norm_restrict_le _ fun s ↦ by
     have hus_lt : ‖u‖ * (s : ℝ) < R₀ :=
-      mul_lt_of_mul_le_of_nonneg_left hu s.2.2 (norm_nonneg u) Fact.out
+      TauCeti.mul_lt_of_mul_le_of_nonneg_left hu s.2.2 (norm_nonneg u) Fact.out
     obtain ⟨r, hr1, hr2⟩ := exists_between hus_lt
     exact ⟨⟨r, (mul_nonneg (norm_nonneg u) s.2.1.le).trans_lt hr1, hr2⟩, 1, fun f ↦ by
       simpa only [one_mul] using norm_restrict_rescaleHom_le hu s _ hr1.le f⟩
@@ -528,12 +542,109 @@ theorem affineHom_X {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R�
   rw [affineHom_apply, taylorHom_polynomialHom, Polynomial.taylor_X, map_add, map_add,
     rescaleHom_X, rescaleHom_C, ← map_add, add_comm]
 
+/-- Affine coordinate change fixes scalars from a base algebra. -/
+@[simp]
+theorem affineHom_algebraMap {A : Type*} [CommSemiring A] [Algebra A R]
+    {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀) (s : A) :
+    affineHom ha hu (algebraMap A (OnOpenDisc.subring R R₀) s) =
+      algebraMap A (OnOpenDisc.subring R S₀) s := by
+  rw [← polynomialHom_C_algebraMap, affineHom_C, polynomialHom_C_algebraMap]
+
+/-- Affine coordinate change commutes with scalar multiplication from a scalar tower. -/
+@[simp]
+theorem affineHom_smul {A : Type*} [Semiring A] [Module A R] [IsScalarTower A R R]
+    {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀) (s : A) (f : OnOpenDisc.subring R R₀) :
+    affineHom ha hu (s • f) = s • affineHom ha hu f := by
+  have ht : taylorHom ha (s • f) = s • taylorHom ha f := by
+    have hs : s • f = (s • (1 : R)) • f := by rw [smul_assoc, one_smul]
+    have hst : s • taylorHom ha f = (s • (1 : R)) • taylorHom ha f := by
+      rw [smul_assoc, one_smul]
+    rw [hs, hst]
+    apply Subtype.ext
+    rw [coe_taylorHom, coe_smul_subring, coe_smul_subring, coe_taylorHom]
+    exact (OnOpenDisc.mem_subring.mp f.2).taylor_smul (s • (1 : R)) ha
+  rw [affineHom_apply, affineHom_apply, ht, rescaleHom_smul]
+
+/-- Affine coordinate change with zero centre is rescaling. -/
+@[simp]
+theorem affineHom_zero_left {u : R} (h0 : ‖(0 : R)‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀) :
+    affineHom h0 hu = rescaleHom hu := by
+  have : Fact (0 < R₀) := ⟨by simpa using h0⟩
+  ext f
+  simp [affineHom_apply]
+
+/-- Affine coordinate change with unit scaling is Taylor translation. -/
+@[simp]
+theorem affineHom_one_right {a : R} (ha : ‖a‖ < R₀) (h1 : ‖(1 : R)‖ * R₀ ≤ R₀) :
+    affineHom ha h1 = taylorHom ha := by
+  ext f
+  simp [affineHom_apply]
+
+/-- Affine pullback on a target closed disc of radius `s` is controlled by any source closed disc
+of radius `r` containing `a` with `‖u‖ * s ≤ r`. -/
+theorem norm_restrict_affineHom_le {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀)
+    (s : Set.Ioo (0 : ℝ) S₀) (r : Set.Ioo (0 : ℝ) R₀) (hus : ‖u‖ * (s : ℝ) ≤ r) (har : ‖a‖ ≤ r)
+    (f : OnOpenDisc.subring R R₀) :
+    ‖restrict s (affineHom ha hu f)‖ ≤ ‖restrict r f‖ := by
+  rw [affineHom_apply]
+  exact (norm_restrict_rescaleHom_le hu s r hus (taylorHom ha f)).trans_eq
+    (norm_restrict_taylorHom ha r har f)
+
+/-- Affine coordinate change is uniformly continuous for the open-disc Gauss uniformities. -/
+theorem uniformContinuous_affineHom {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀) :
+    UniformContinuous (affineHom ha hu) :=
+  uniformContinuous_of_norm_restrict_le _ fun s ↦ by
+    have hR₀ : 0 < R₀ := (norm_nonneg a).trans_lt ha
+    have hlt : max ‖a‖ (‖u‖ * (s : ℝ)) < R₀ :=
+      max_lt ha (TauCeti.mul_lt_of_mul_le_of_nonneg_left hu s.2.2 (norm_nonneg u) hR₀)
+    obtain ⟨r, hr1, hr2⟩ := exists_between hlt
+    have hr0 : 0 < r := (le_max_of_le_left (norm_nonneg a)).trans_lt hr1
+    exact ⟨⟨r, hr0, hr2⟩, 1, fun f ↦ by
+      simpa only [one_mul] using norm_restrict_affineHom_le ha hu s ⟨r, hr0, hr2⟩
+        ((le_max_right _ _).trans hr1.le) ((le_max_left _ _).trans hr1.le) f⟩
+
 /-- Affine coordinate change is continuous for the open-disc Gauss topologies. -/
 @[continuity]
 theorem continuous_affineHom {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀) :
-    Continuous (affineHom ha hu) := by
-  have : Fact (0 < R₀) := ⟨(norm_nonneg a).trans_lt ha⟩
-  exact (continuous_rescaleHom hu).comp (continuous_taylorHom ha)
+    Continuous (affineHom ha hu) :=
+  (uniformContinuous_affineHom ha hu).continuous
+
+/-- Affine coordinate changes compose via `(a, u) ∘ (b, v) = (a + u * b, u * v)`. -/
+theorem affineHom_comp {T₀ : ℝ} {a u b v : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀)
+    (hb : ‖b‖ < S₀) (hv : ‖v‖ * T₀ ≤ S₀) :
+    (affineHom hb hv).comp (affineHom ha hu) =
+      affineHom (a := a + u * b) (u := u * v)
+        ((IsUltrametricDist.norm_add_le_max a (u * b)).trans_lt <| max_lt ha <|
+          (norm_mul_le u b).trans_lt <|
+            TauCeti.mul_lt_of_mul_le_of_nonneg_left hu hb (norm_nonneg u)
+              ((norm_nonneg a).trans_lt ha))
+        (by
+          rcases le_total 0 T₀ with hT | hT
+          · exact (mul_le_mul_of_nonneg_right (norm_mul_le u v) hT).trans <| by
+              rw [mul_assoc]
+              exact (mul_le_mul_of_nonneg_left hv (norm_nonneg u)).trans hu
+          · exact (mul_nonpos_of_nonneg_of_nonpos (norm_nonneg _) hT).trans
+              ((norm_nonneg a).trans_lt ha).le) := by
+  have : Fact (0 < S₀) := ⟨(norm_nonneg b).trans_lt hb⟩
+  have hab : ‖a + u * b‖ < R₀ :=
+    (IsUltrametricDist.norm_add_le_max a (u * b)).trans_lt <| max_lt ha <|
+      (norm_mul_le u b).trans_lt <|
+        TauCeti.mul_lt_of_mul_le_of_nonneg_left hu hb (norm_nonneg u)
+          ((norm_nonneg a).trans_lt ha)
+  have hstep : (taylorHom hb).comp (affineHom ha hu) = affineHom hab hu := by
+    apply ringHom_ext
+    · exact (continuous_taylorHom hb).comp (continuous_affineHom ha hu)
+    · exact continuous_affineHom hab hu
+    · intro c
+      simp
+    · simp only [RingHom.comp_apply, affineHom_X, taylorHom_polynomialHom]
+      congr 1
+      simp only [map_add, Polynomial.taylor_mul, Polynomial.taylor_C, Polynomial.taylor_X, map_mul]
+      ring
+  ext f
+  have hf := RingHom.congr_fun hstep f
+  simp only [RingHom.comp_apply] at hf ⊢
+  rw [affineHom_apply, hf, affineHom_apply, affineHom_apply, rescaleHom_rescaleHom]
 
 /-- Evaluating an affine pullback `f(a + uX)` at an algebra point `b` in the target open disc
 agrees with evaluating `f` at `u • b + algebraMap R A a` whenever that point lies in the source

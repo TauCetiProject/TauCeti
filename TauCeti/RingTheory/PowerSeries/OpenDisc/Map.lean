@@ -20,9 +20,11 @@ bounds and uniform continuity for the open-disc Gauss uniformities without requi
 radius or norm-one identity. Along a strictly surjective bounded homomorphism, open-disc series
 lift with the same coefficientwise norm bound.
 
-Over complete coefficient rings, `mapHom` commutes with point evaluation on the open disc,
-rescaling, Taylor translation, affine coordinate changes, and analytic substitution
-(`TauCeti.PowerSeries.OnOpenDisc.mapHom_analyticSubst`).
+Over normed commutative rings, `mapHom` commutes with rescaling when `‖φ u‖ * S₀ ≤ R₀`, and with
+point evaluation on the open disc when `R` is complete. Over complete ultrametric normed
+commutative rings, `mapHom` commutes with Taylor translation, affine coordinate changes, and
+analytic substitution whenever the image parameters or inner series satisfy the target radius
+bounds (`TauCeti.PowerSeries.OnOpenDisc.mapHom_analyticSubst`).
 
 ## Main definitions
 
@@ -88,27 +90,24 @@ theorem coeff_mapHom (f : OnOpenDisc.subring R R₀) (n : ℕ) :
 kernel of `φ`. -/
 theorem mapHom_eq_zero_iff (f : OnOpenDisc.subring R R₀) :
     mapHom φ hφ f = 0 ↔ ∀ n, φ (coeff n (f : R⟦X⟧)) = 0 := by
-  constructor
-  · intro h n
-    have hn := congrArg (fun g : OnOpenDisc.subring S R₀ ↦ coeff n (g : S⟦X⟧)) h
-    simpa only [coe_mapHom, coeff_map, ZeroMemClass.coe_zero, map_zero] using hn
-  · intro h
-    apply Subtype.ext
-    ext n
-    simpa only [coe_mapHom, coeff_map, ZeroMemClass.coe_zero, map_zero] using h n
+  simp [Subtype.ext_iff, PowerSeries.ext_iff]
 
 /-- An injective bounded ring homomorphism induces an injective map on open-disc series. -/
 theorem mapHom_injective (hφ_inj : Function.Injective φ) :
-    Function.Injective (mapHom (R₀ := R₀) φ hφ) := fun f g h ↦
-  Subtype.ext <| PowerSeries.ext fun n ↦ hφ_inj <| by
-    simpa only [coe_mapHom, coeff_map] using
-      congrArg (fun k : OnOpenDisc.subring S R₀ ↦ coeff n (k : S⟦X⟧)) h
+    Function.Injective (mapHom (R₀ := R₀) φ hφ) := fun _ _ h ↦
+  Subtype.ext (PowerSeries.map_injective φ hφ_inj (congrArg Subtype.val h))
+
+/-- Bounded coefficient maps are semilinear with respect to coefficient scalar multiplication. -/
+@[simp]
+theorem mapHom_smul (a : R) (f : OnOpenDisc.subring R R₀) :
+    mapHom φ hφ (a • f) = φ a • mapHom φ hφ f :=
+  Subtype.ext <| PowerSeries.ext fun _ ↦ by simp
 
 /-- Bounded coefficient maps commute with the polynomial inclusion into open-disc series. -/
 @[simp]
 theorem mapHom_polynomialHom (p : Polynomial R) :
     mapHom (R₀ := R₀) φ hφ (OnOpenDisc.polynomialHom p) = OnOpenDisc.polynomialHom (p.map φ) :=
-  Subtype.ext <| PowerSeries.ext fun n ↦ by simp
+  Subtype.ext <| PowerSeries.ext fun _ ↦ by simp
 
 /-- A uniform bound for coefficient lifts gives an open-disc lift with the same norm bound at each
 coefficient. Neither ultrametricity nor completeness is required. -/
@@ -120,12 +119,15 @@ theorem exists_mapHom_eq_and_norm_coeff_le {C' : ℝ}
   choose l hl hln using hlift
   let f₀ : R⟦X⟧ := PowerSeries.mk fun n ↦ l (coeff n (g : S⟦X⟧))
   have hcoeff (n : ℕ) : coeff n f₀ = l (coeff n (g : S⟦X⟧)) := coeff_mk n _
-  have hf₀ : f₀.OnOpenDisc R₀ := onOpenDisc_iff.mpr fun r hr hrR ↦ by
-    have hg := (isRestricted_iff' r (g : S⟦X⟧)).mp
+  have hf₀_eq : f₀ = (fun t ↦ l (MvPowerSeries.coeff t (g : S⟦X⟧)) : MvPowerSeries Unit R) :=
+    MvPowerSeries.ext fun t ↦ by
+      rw [← PowerSeries.coeff_def (n := t ()) rfl, hcoeff,
+        PowerSeries.coeff_def (R := S) (s := t) rfl, PowerSeries.coeff_def (R := R) (s := t) rfl]
+      exact (MvPowerSeries.coeff_apply (R := R)
+        (fun t ↦ l (MvPowerSeries.coeff t (g : S⟦X⟧))) t).symm
+  have hf₀ : f₀.OnOpenDisc R₀ := onOpenDisc_iff.mpr fun r hr hrR ↦
+    hf₀_eq.symm ▸ MvPowerSeries.isRestricted_map _ l hln
       (onOpenDisc_iff.mp (OnOpenDisc.mem_subring.mp g.2) r hr hrR)
-    refine (isRestricted_iff' r f₀).mpr <| squeeze_zero (fun _ ↦ by positivity) (fun n ↦ ?_)
-      (by simpa only [mul_zero] using hg.const_mul C')
-    simpa only [hcoeff, mul_assoc] using mul_le_mul_of_nonneg_right (hln _) (pow_nonneg hr.le n)
   refine ⟨⟨f₀, OnOpenDisc.mem_subring.mpr hf₀⟩, Subtype.ext ?_,
     fun n ↦ by simpa only [hcoeff] using hln _⟩
   ext n
@@ -200,15 +202,8 @@ theorem norm_restrict_mapHom (hφ' : ∀ x, ‖φ x‖ = ‖x‖) (r : Set.Ioo (
   exact TauCeti.MvPowerSeries.norm_restrictedMap φ hφ hφ' (restrict r f)
 
 /-- Bounded coefficient maps are uniformly continuous for the open-disc Gauss uniformities. -/
-theorem uniformContinuous_mapHom : UniformContinuous (mapHom (R₀ := R₀) φ hφ) := by
-  refine uniformContinuous_iff.mpr fun r ↦ ?_
-  have hlip := TauCeti.MvPowerSeries.lipschitzWith_restrictedMap
-    (c := fun _ : Unit ↦ (r : ℝ)) φ hφ
-  have hfun : (fun f ↦ restrict r (mapHom φ hφ f)) =
-      TauCeti.MvPowerSeries.restrictedMap φ hφ ∘ restrict r :=
-    funext (restrict_mapHom φ hφ r)
-  rw [hfun]
-  exact hlip.uniformContinuous.comp (uniformContinuous_restrict r)
+theorem uniformContinuous_mapHom : UniformContinuous (mapHom (R₀ := R₀) φ hφ) :=
+  uniformContinuous_of_norm_restrict_le _ fun r ↦ ⟨r, C, norm_restrict_mapHom_le φ hφ r⟩
 
 /-- Bounded coefficient maps are continuous for the open-disc Gauss topologies. -/
 @[continuity]
@@ -220,6 +215,14 @@ end FixedUltrametricHom
 end Ultrametric
 
 section CommRing
+
+/-- Bounded coefficient maps send constant algebra elements along `φ`. -/
+@[simp]
+theorem mapHom_algebraMap {R S : Type*} [NormedCommRing R] [NormedCommRing S] {R₀ : ℝ}
+    (φ : R →+* S) {C : ℝ} (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖) (a : R) :
+    mapHom (R₀ := R₀) φ hφ (algebraMap R (OnOpenDisc.subring R R₀) a) =
+      algebraMap S (OnOpenDisc.subring S R₀) (φ a) :=
+  Subtype.ext (by simp)
 
 /-- Point evaluation on an open disc commutes with `mapHom`. -/
 theorem evalAt_mapHom {R S : Type*} [NormedCommRing R] [CompleteSpace R] [NormedCommRing S]
@@ -245,13 +248,11 @@ attribute [local instance] radius_pos
 /-- Bounded coefficient maps commute with Taylor translation on open discs. -/
 theorem mapHom_taylorHom (φ : R →+* S) {C : ℝ} (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖) {a : R}
     (ha : ‖a‖ < R₀) (hφa : ‖φ a‖ < R₀) (f : OnOpenDisc.subring R R₀) :
-    mapHom φ hφ (taylorHom ha f) = taylorHom hφa (mapHom φ hφ f) := by
-  apply Subtype.ext
-  ext n
-  rw [coe_mapHom, coe_taylorHom, coeff_map, coeff_taylor, coe_taylorHom, coeff_taylor,
-    coe_mapHom, hasseDeriv_map]
-  exact (((OnOpenDisc.mem_subring.mp f.2).hasseDeriv n).evalAt_map φ
-    (AddMonoidHomClass.continuous_of_bound φ C hφ) ha).symm
+    mapHom φ hφ (taylorHom ha f) = taylorHom hφa (mapHom φ hφ f) :=
+  Subtype.ext <| by
+    rw [coe_mapHom, coe_taylorHom, coe_taylorHom, coe_mapHom]
+    exact ((OnOpenDisc.mem_subring.mp f.2).taylor_map φ
+      (AddMonoidHomClass.continuous_of_bound φ C hφ) ha).symm
 
 /-- Bounded coefficient maps commute with affine changes of coordinates on open discs. -/
 theorem mapHom_affineHom (φ : R →+* S) {C : ℝ} (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖) {a u : R}
