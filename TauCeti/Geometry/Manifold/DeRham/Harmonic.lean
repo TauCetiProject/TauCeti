@@ -8,8 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 public import TauCeti.Geometry.Manifold.DeRham.Integration.Bijective
 public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
+import TauCeti.Geometry.Manifold.Topology
 
 /-!
 # Harmonic forms and de Rham cohomology
@@ -35,10 +34,11 @@ Since the Hodge star commutes with the Hodge Laplacian, it maps harmonic `k`-for
 onto harmonic `(m - k)`-forms. In the two extreme degrees this gives the Hodge theorem without any
 elliptic theory. Harmonic functions are the closed `0`-forms, that is the locally constant
 functions, so every degree-zero class has exactly one harmonic representative. Harmonic `m`-forms
-are the stars `f vol` of locally constant functions `f`. On a preconnected manifold a top form
-whose integral vanishes is exact, so the class of a top form `φ` is represented by `c vol`, where
-`c` is the integral of `φ` divided by the total volume; thus every top-degree class has exactly one
-harmonic representative, and on a connected manifold these form a line.
+are the stars `f vol` of locally constant functions `f`. Each connected component `V` is clopen
+and preconnected, so integration is injective on the compactly supported top classes on `V`, and
+the class of the harmonic form `1_V vol` spans them. These classes span the top-degree cohomology,
+so every top-degree class has exactly one harmonic representative; on a connected manifold the
+harmonic top forms form a line.
 
 The remaining analytic half of the Hodge theorem in the intermediate degrees is that
 `ℋ ⊔ B ⊔ B*` is every smooth form; by the identity for closed forms above it makes every closed
@@ -73,8 +73,7 @@ surjective.
 * `TauCeti.harmonicForms.toDeRhamCohomology_bijective_zero`: the Hodge theorem in degree zero.
 * `TauCeti.mem_harmonicForms_top_iff`, `TauCeti.mem_harmonicForms_top_iff_of_preconnectedSpace`:
   harmonic top forms are the locally constant multiples of the volume form.
-* `TauCeti.harmonicForms.toDeRhamCohomology_bijective_top`: the Hodge theorem in the top degree,
-  on a compact preconnected manifold.
+* `TauCeti.harmonicForms.toDeRhamCohomology_bijective_top`: the Hodge theorem in the top degree.
 * `TauCeti.finrank_harmonicForms_top`: on a compact connected manifold the harmonic top forms
   form a line.
 
@@ -408,15 +407,17 @@ def harmonicFormsZeroEquiv (o : Manifold.Orientation I M (Fin m)) (hl : 0 + l = 
 /-- The locally constant function of a harmonic function is its value on the empty tuple. -/
 @[simp]
 theorem harmonicFormsZeroEquiv_apply (o : Manifold.Orientation I M (Fin m)) (hl : 0 + l = m)
-    (f : harmonicForms o hl) (x : M) : harmonicFormsZeroEquiv o hl f x = f.1.1 x 0 :=
-  closedFormsZeroEquiv_apply I _ x
+    (f : harmonicForms o hl) (x : M) : harmonicFormsZeroEquiv o hl f x = f.1.1 x 0 := by
+  rw [harmonicFormsZeroEquiv, LinearEquiv.trans_apply, closedFormsZeroEquiv_apply,
+    LinearEquiv.coe_ofEq_apply]
 
 /-- The harmonic function of a locally constant function is its `0`-form. -/
 @[simp]
 theorem coe_harmonicFormsZeroEquiv_symm_apply (o : Manifold.Orientation I M (Fin m))
     (hl : 0 + l = m) (f : LocallyConstant M ℝ) :
-    ((harmonicFormsZeroEquiv o hl).symm f).1.1 = RoughForm.ofFunction I f :=
-  coe_closedFormsZeroEquiv_symm_apply I f
+    ((harmonicFormsZeroEquiv o hl).symm f).1.1 = RoughForm.ofFunction I f := by
+  rw [harmonicFormsZeroEquiv, LinearEquiv.symm_trans_apply, LinearEquiv.ofEq_symm,
+    LinearEquiv.coe_ofEq_apply, coe_closedFormsZeroEquiv_symm_apply]
 
 /-! ### The Hodge theorem in the top degree -/
 
@@ -431,8 +432,9 @@ def harmonicFormsTopEquiv (o : Manifold.Orientation I M (Fin m)) (hm : m + 0 = m
 @[simp]
 theorem harmonicFormsTopEquiv_apply (o : Manifold.Orientation I M (Fin m)) (hm : m + 0 = m)
     (α : harmonicForms o hm) (x : M) :
-    harmonicFormsTopEquiv o hm α x = (SmoothForm.hodgeStar o hm α.1).1 x 0 :=
-  harmonicFormsZeroEquiv_apply o _ _ x
+    harmonicFormsTopEquiv o hm α x = (SmoothForm.hodgeStar o hm α.1).1 x 0 := by
+  rw [harmonicFormsTopEquiv, LinearEquiv.trans_apply, harmonicFormsZeroEquiv_apply,
+    harmonicForms.coe_hodgeStar_apply]
 
 /-- The harmonic top form of a locally constant function `f` is `f vol`. -/
 @[simp]
@@ -467,43 +469,57 @@ theorem mem_harmonicForms_top_iff_of_preconnectedSpace [PreconnectedSpace M]
   obtain ⟨c, rfl⟩ := f.exists_eq_const
   exact ⟨c, hf⟩
 
-/-- **The Hodge theorem in the top degree**: on a compact preconnected oriented boundaryless
-Riemannian manifold of dimension `m`, every de Rham class of degree `m` has exactly one harmonic
-representative. The representative of the class of `φ` is `c vol`, where `c` is the integral of
-`φ` divided by the total volume. -/
-theorem harmonicForms.toDeRhamCohomology_bijective_top [PreconnectedSpace M]
-    (o : Manifold.Orientation I M (Fin m)) (hm : m + 0 = m) :
-    Function.Bijective (harmonicForms.toDeRhamCohomology o hm) := by
+open compactlySupportedDeRhamCohomology in
+/-- **The Hodge theorem in the top degree**: on a compact oriented boundaryless Riemannian
+manifold of dimension `m`, every de Rham class of degree `m` has exactly one harmonic
+representative. -/
+theorem harmonicForms.toDeRhamCohomology_bijective_top (o : Manifold.Orientation I M (Fin m))
+    (hm : m + 0 = m) : Function.Bijective (harmonicForms.toDeRhamCohomology o hm) := by
   refine ⟨harmonicForms.toDeRhamCohomology_injective o hm, fun c ↦ ?_⟩
-  obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective I m c
-  rcases isEmpty_or_nonempty M with hM | hM
-  · -- On the empty manifold every form vanishes.
-    refine ⟨0, ?_⟩
-    rw [map_zero, eq_comm, deRhamCohomology.mk_eq_zero_iff, show φ.1 = 0 from
-      Subtype.ext (funext isEmptyElim)]
-    exact zero_mem _
-  borelize M
-  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
-  -- The integral of the volume form is the total volume, which is positive.
-  have hV : 0 < integralTopForm o (riemannianVolumeForm o) := by
-    rw [integralTopForm_riemannianVolumeForm]
-    exact riemannianTotalVolume_pos
-  set a := integralTopForm o φ.1.1 / integralTopForm o (riemannianVolumeForm o)
-  let h := (harmonicFormsTopEquiv o hm).symm (LocallyConstant.const M a)
-  have hh : h.1.1 = a • riemannianVolumeForm o := coe_harmonicFormsTopEquiv_symm_apply o hm _
-  refine ⟨h, ?_⟩
-  -- The top form `φ - a vol` has integral zero, so it is exact.
-  rw [harmonicForms.toDeRhamCohomology_apply, eq_comm, ← sub_eq_zero, ← map_sub,
-    deRhamCohomology.mk_eq_zero_iff, Submodule.coe_sub]
-  refine exactCompactlySupportedForms_le_exactForms I m
-    ((mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero o
-      (by simp [compactlySupportedForms_eq_top])).2 ?_)
-  rw [Submodule.coe_sub, sub_eq_add_neg, ← neg_one_smul ℝ h.1.1,
-    integralTopForm_add_of_compactSpace o (φ.1.isSmoothForm.of_le (by simp))
-      ((h.1.isSmoothForm.of_le (by simp)).smul _),
-    integralTopForm_smul, hh, integralTopForm_smul, div_mul_cancel₀ _ hV.ne', neg_one_mul,
-    add_neg_cancel]
+  let _ : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
+  -- The compactly supported classes whose de Rham class has a harmonic representative.
+  let K := (LinearMap.range (harmonicForms.toDeRhamCohomology o hm)).comap
+    (compactlySupportedDeRhamCohomology.toDeRhamCohomology I M m)
+  -- It suffices that `K` contains the classes from each connected component, which is clopen.
+  let V (x : M) : TopologicalSpace.Opens M := ⟨connectedComponent x, isOpen_connectedComponent⟩
+  have hK : K = ⊤ := by
+    refine eq_top_of_forall_range_extendByZeroTop_le (by simpa using o.card_eq.ge) V
+      (fun x ↦ mem_connectedComponent) ?_
+    rintro x _ ⟨y, rfl⟩
+    have : PreconnectedSpace (V x) := Subtype.preconnectedSpace isPreconnected_connectedComponent
+    have : CompactSpace (V x) := isCompact_iff_compactSpace.1 isClosed_connectedComponent.isCompact
+    -- The harmonic form `1_V vol` of the component `V` lies in `K` and comes from `H^m_c(V)`.
+    let h := (harmonicFormsTopEquiv o hm).symm
+      (LocallyConstant.charFn ℝ (isClopen_connectedComponent (x := x)))
+    let φ : compactlySupportedClosedForms I M m := ⟨h.1, (mem_compactlySupportedClosedForms I).2
+      ⟨by simp [compactlySupportedForms_eq_top], harmonicForms_le_closedForms o hm h.2⟩⟩
+    have hφ : harmonicForms.toDeRhamCohomology o hm h =
+        compactlySupportedDeRhamCohomology.toDeRhamCohomology I M m (mk I m φ) := by
+      simp [φ]
+    have hsupp : tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ) φ.1.1 ⊆ V x := by
+      refine closure_minimal (fun y hy ↦ by_contra fun hyV ↦ hy ?_) isClosed_connectedComponent
+      have hy0 : LocallyConstant.charFn ℝ (isClopen_connectedComponent (x := x)) y = 0 :=
+        (LocallyConstant.charFn_eq_zero ℝ y _).2 hyV
+      -- The final `rfl` identifies the zero of the fibre with the zero of the model fibre.
+      exact (congrFun (coe_harmonicFormsTopEquiv_symm_apply o hm _) y).trans
+        (by rw [hy0, zero_smul]; rfl)
+    obtain ⟨z, hz⟩ := mk_mem_range_extendByZeroTop (V x) φ hsupp
+    -- The class `z` has nonzero integral: otherwise it vanishes, and with it `1_V vol`.
+    have hz0 : integral (o.restrict (V x)) z ≠ 0 := by
+      intro h0
+      have hh : h = 0 := harmonicForms.toDeRhamCohomology_injective o hm <| by
+        rw [hφ, ← hz, (injective_iff_map_eq_zero _).1 (injective_integral (o.restrict (V x))) z h0,
+          map_zero, map_zero, map_zero]
+      exact (LocallyConstant.charFn_eq_zero ℝ x _).1 (DFunLike.congr_fun
+        ((harmonicFormsTopEquiv o hm).symm.map_eq_zero_iff.1 hh) x) mem_connectedComponent
+    -- Integration is injective on `H^m_c(V)`, so `y` is a multiple of `z`.
+    have hy : y = (integral (o.restrict (V x)) y / integral (o.restrict (V x)) z) • z :=
+      injective_integral (o.restrict (V x)) <| by
+        rw [map_smul, smul_eq_mul, div_mul_cancel₀ _ hz0]
+    rw [hy, map_smul, hz]
+    exact K.smul_mem _ (Submodule.mem_comap.2 (LinearMap.mem_range.2 ⟨h, hφ⟩))
+  obtain ⟨c, rfl⟩ := (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective I m).2 c
+  exact LinearMap.mem_range.1 (Submodule.mem_comap.1 (hK.ge Submodule.mem_top))
 
 /-- **Harmonic top forms on a connected manifold form a line**: on a compact connected oriented
 boundaryless Riemannian manifold of dimension `m`, the harmonic `m`-forms are one-dimensional. -/
