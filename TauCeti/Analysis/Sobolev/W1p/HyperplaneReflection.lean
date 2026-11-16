@@ -46,7 +46,8 @@ vanishes near `∂B` its extension by zero lies in `W^{1,p}_0(U ∩ H)`
 * `TauCeti.W1p.compHyperplaneReflectionL`: precomposition with the hyperplane reflection.
 * `TauCeti.W1p.compHyperplaneReflectionL_compHyperplaneReflectionL`: it is an involution.
 * `TauCeti.W1p.value_sub_compHyperplaneReflectionL_ae`: the odd reflection `u - u ∘ ρ` of a
-  function vanishing off `H` agrees with it on `U ∩ H`.
+  function vanishing off `H` agrees with it on `U ∩ H`, and
+  `TauCeti.W1p.gradient_sub_compHyperplaneReflectionL_ae`: so does its weak gradient.
 * `TauCeti.W1p.restrictL_sub_compHyperplaneReflectionL_mem_w1p0Submodule`: the restriction of
   `φ - φ ∘ ρ` to `U ∩ H` has zero boundary values when `φ` does.
 * `TauCeti.W1p0.restrictSubCompHyperplaneReflectionL`: the bounded operator
@@ -141,6 +142,37 @@ theorem W1p.value_sub_compHyperplaneReflectionL_ae (hp : p ≠ ⊤) (hν : ν �
     have hρH : hyperplaneReflection ν c x ∉ H := fun h =>
       lt_asymm ((inner_hyperplaneReflection_lt_iff hν c).2 ((hH x).1 hxH)) ((hH _).1 h)
     rw [h1, Pi.sub_apply, h2, h3 hρH, sub_zero]
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset inter_subset_left h,
+    ae_restrict_mem (U ⊓ H).isOpen.measurableSet] with x hx hxUH
+  exact hx (Opens.mem_inf.1 hxUH).2
+
+/-- **The odd reflection keeps the gradient on the half-space.** If `u ∈ W^{1,p}(U)` vanishes
+on `U ∖ H`, where `H = {x | c < ⟪x, ν⟫}`, then the weak gradient of `u - u ∘ ρ` agrees with that
+of `u` on `U ∩ H`. -/
+theorem W1p.gradient_sub_compHyperplaneReflectionL_ae (hp : p ≠ ⊤) (hν : ν ≠ 0)
+    (hH : ∀ x, x ∈ H ↔ c < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c) U U)
+    {u : W1p mu U p} (hu0 : ∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.value u x = 0) :
+    W1p.gradient (u - W1p.compHyperplaneReflectionL hp ν c hU u) =ᵐ[mu.restrict (U ⊓ H)]
+      W1p.gradient u := by
+  -- The gradient of `u` vanishes off the closed half-space `K = {x | c ≤ ⟪x, ν⟫}`.
+  set K : Set E := {x | c ≤ ⟪x, ν⟫_ℝ}
+  have hK : IsClosed K := isClosed_le continuous_const (continuous_id.inner continuous_const)
+  have hg0 : ∀ᵐ x ∂mu.restrict U, x ∉ K → W1p.gradient u x = 0 :=
+    W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed hK (by
+      filter_upwards [hu0] with x hx hxK
+      exact hx fun hxH => hxK ((hH x).1 hxH).le)
+  have hρ : ∀ᵐ x ∂mu.restrict U,
+      hyperplaneReflection ν c x ∉ K → W1p.gradient u (hyperplaneReflection ν c x) = 0 :=
+    (measurePreserving_restrict_hyperplaneReflection hU
+      U.isOpen.measurableSet).quasiMeasurePreserving.ae hg0
+  have h : ∀ᵐ x ∂mu.restrict U, x ∈ H →
+      W1p.gradient (u - W1p.compHyperplaneReflectionL hp ν c hU u) x = W1p.gradient u x := by
+    filter_upwards [Lp.coeFn_sub (W1p.gradient u)
+        (W1p.gradient (W1p.compHyperplaneReflectionL hp ν c hU u)),
+      W1p.gradient_compHyperplaneReflectionL_ae hp hU u, hρ] with x h1 h2 h3 hxH
+    have hρK : hyperplaneReflection ν c x ∉ K := fun h =>
+      not_le.2 ((inner_hyperplaneReflection_lt_iff hν c).2 ((hH x).1 hxH)) h
+    rw [W1p.gradient_sub, h1, Pi.sub_apply, h2, h3 hρK, map_zero, sub_zero]
   filter_upwards [ae_restrict_of_ae_restrict_of_subset inter_subset_left h,
     ae_restrict_mem (U ⊓ H).isOpen.measurableSet] with x hx hxUH
   exact hx (Opens.mem_inf.1 hxUH).2
