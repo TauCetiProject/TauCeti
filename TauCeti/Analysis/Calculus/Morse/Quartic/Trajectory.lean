@@ -175,6 +175,25 @@ theorem mem_Icc_of_mem_quarticConnectingSet (hy : y ∈ quarticConnectingSet p q
     y ∈ Icc (-1) 1 :=
   hy.1
 
+/-- A coordinate in which the ends of a trajectory in the cube agree stays constant. -/
+theorem apply_eq_of_mem_quarticConnectingSet (hy : y ∈ quarticConnectingSet p q) {i : ι}
+    (h : p i = q i) : y i = p i := by
+  rcases (tendsto_quarticWellSumFlow_atBot_atTop_iff hy.1).1 hy.2 i with ⟨-, h0, hs⟩ | ⟨-, h1, -⟩
+  · have h' := sign_mul_self (y i)
+    rw [← hs, ← h, h0, zero_mul, eq_comm, abs_eq_zero] at h'
+    rw [h', h0]
+  · exact h1.symm
+
+/-- A moving coordinate of a point on a trajectory in the cube satisfies
+`q i * y i = |y i| ∈ (0, 1)`. -/
+theorem mul_mem_Ioo_of_mem_quarticConnectingSet (hy : y ∈ quarticConnectingSet p q) {i : ι}
+    (h : p i ≠ q i) : q i * y i ∈ Ioo 0 1 := by
+  rcases (tendsto_quarticWellSumFlow_atBot_atTop_iff hy.1).1 hy.2 i with ⟨hy', h0, hs⟩ | ⟨-, h1, h2⟩
+  · have hne : y i ≠ 0 := fun h' ↦ h (by simp [h0, hs, h'])
+    rw [hs, sign_mul_self]
+    exact ⟨abs_pos.2 hne, abs_lt.2 hy'⟩
+  · exact absurd (h1.trans h2.symm) h
+
 /-- The ends of a trajectory in the cube are critical points of the quartic, and the target is
 obtained from the source by replacing some zero coordinates by `±1`. -/
 theorem forall_eq_or_eq_of_mem_quarticConnectingSet (hy : y ∈ quarticConnectingSet p q) :
@@ -187,7 +206,8 @@ theorem forall_eq_or_eq_of_mem_quarticConnectingSet (hy : y ∈ quarticConnectin
     · exact .inl (h2.trans h1)
     · exact .inr (.inr (h2.trans h1))
   · rcases h i with ⟨-, -, h0⟩ | ⟨h1 | h1, -, h2⟩
-    · rcases lt_trichotomy (y i) 0 with h' | h' | h' <;> simp [h0, h']
+    · rw [h0]
+      cases SignType.sign (y i) <;> simp
     · exact .inl (h2.trans h1)
     · exact .inr (.inr (h2.trans h1))
   · rcases h i with ⟨-, h0, -⟩ | ⟨-, h1, h2⟩
@@ -249,29 +269,14 @@ theorem quarticTrajectoryPoint_mem_quarticConnectingSet (hp : ∀ i, p i = -1 �
 @[simp]
 theorem quarticTrajectoryPoint_quarticTimeShift (hy : y ∈ quarticConnectingSet p q) :
     quarticTrajectoryPoint p q (quarticTimeShift p q y) = y := by
-  have h := (tendsto_quarticWellSumFlow_atBot_atTop_iff hy.1).1 hy.2
+  obtain ⟨-, hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet hy
   funext i
   by_cases hi : p i = q i
-  · rw [quarticTrajectoryPoint_apply_of_eq _ hi]
-    rcases h i with ⟨hy', h0, hs⟩ | ⟨-, h1, -⟩
-    · rw [h0] at hi ⊢
-      rcases lt_trichotomy (y i) 0 with h' | h' | h'
-      · rw [sign_neg h'] at hs
-        norm_num [hs] at hi
-      · exact h'.symm
-      · rw [sign_pos h'] at hs
-        norm_num [hs] at hi
-    · exact h1
-  · rw [quarticTrajectoryPoint_apply_of_ne _ hi, quarticTimeShift_apply]
-    rcases h i with ⟨hy', h0, hs⟩ | ⟨-, h1, h2⟩
-    · rcases lt_trichotomy (y i) 0 with h' | h' | h'
-      · have hq : q i = -1 := by simp [hs, h']
-        rw [hq, intervalBaseOrbit_one_intervalBaseTimeCoordinate ⟨by linarith, by linarith [hy'.1]⟩]
-        ring
-      · exact absurd (by simp [hs, h', h0]) hi
-      · have hq : q i = 1 := by simp [hs, h']
-        rw [hq, one_mul, one_mul, intervalBaseOrbit_one_intervalBaseTimeCoordinate ⟨h', hy'.2⟩]
-    · exact absurd (h1.trans h2.symm) hi
+  · rw [quarticTrajectoryPoint_apply_of_eq _ hi, apply_eq_of_mem_quarticConnectingSet hy hi]
+  · rw [quarticTrajectoryPoint_apply_of_ne _ hi, quarticTimeShift_apply,
+      intervalBaseOrbit_one_intervalBaseTimeCoordinate
+        (mul_mem_Ioo_of_mem_quarticConnectingSet hy hi),
+      ← mul_assoc, mul_self_eq_one_of_ne hq hpq hi, one_mul]
 
 /-- The time shifts and the time-shift chart are inverse bijections between the connecting set
 and `{i // p i ≠ q i} → ℝ`. -/
