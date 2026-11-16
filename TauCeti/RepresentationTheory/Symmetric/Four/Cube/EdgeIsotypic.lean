@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Symmetric.Four.Cube
+public import TauCeti.RepresentationTheory.Symmetric.Four.Cube.Basic
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RingTheory.SimpleModule.Isotypic
 
 /-!
@@ -25,9 +26,10 @@ diagonals of the cube, labelled as in `TauCeti.cubeBodyDiagonal`.
 * The **incidence copy** `TauCeti.cubeEdgeIncidence` gives the edge `{v, w}` the coefficient
   `u_i + u_j`, where `i` and `j` are the diagonals through `v` and `w`.
 * The **oriented copy** `TauCeti.cubeEdgeOriented` gives it the coefficient `∑ₗ o(e, l) u_l` for the
-  integer `o(e, l) = det(v, w, d) · ⟨v - w, d⟩` (`TauCeti.cubeEdgeOrientation`), where `d` is an
-  endpoint of the diagonal `l`. It vanishes for the two diagonals through `v` and `w` and is `±8`
-  for the other two, with opposite signs. The determinant is what keeps it invariant: a rotation has
+  integer `o(e, l) = det(v, w, d) · ⟨v - w, d⟩` (`TauCeti.cubeEdgeOrientation`, defined beside the
+  rotation group in `TauCeti.GroupTheory.Perm.FinFour.Cube`), where `d` is an endpoint of the
+  diagonal `l`. It vanishes for the two diagonals through `v` and `w` and is `±8` for the other
+  two, with opposite signs. The determinant is what keeps it invariant: a rotation has
   determinant one, while a reflection of the cube reverses the sign of `o`.
 
 The two diagonals through an edge `{v, w}` form a pair `{i, j}`, and the two antipodal edges
@@ -42,8 +44,6 @@ images span the `V₄`-isotypic component, which is six-dimensional
 
 ## Main definitions
 
-* `TauCeti.cubeEdgeOrientation`: the orientation `det(v, w, d) · ⟨v - w, d⟩` of an edge relative to
-  a body diagonal.
 * `TauCeti.cubeEdgeIncidence`, `TauCeti.cubeEdgeOriented`: the two intertwiners `V₄ → k[Y]`.
 * `TauCeti.cubeEdgeStandardEval`: their sum, an intertwiner `V₄ ⊕ V₄ → k[Y]`.
 * `TauCeti.cubeEdgeStandardBasis`: in characteristic zero, the basis of the intertwiners
@@ -51,7 +51,8 @@ images span the `V₄`-isotypic component, which is six-dimensional
 
 ## Main results
 
-* `TauCeti.cubeEdgeOrientation_smul`: the orientation is invariant under the rotations.
+* `TauCeti.coeff_cubeEdgeIncidence_neg`: the incidence copy takes the same value on antipodal
+  edges.
 * `TauCeti.cubeEdgeStandardEval_injective`: the two copies are independent once `2` is not a
   zero divisor.
 * `TauCeti.asSubmodule_range_cubeEdgeStandardEval`: in characteristic zero, the image of
@@ -70,88 +71,6 @@ namespace TauCeti
 
 open Equiv Matrix
 
-/-! ### The orientation of an edge relative to a body diagonal -/
-
-/-- The integer `det(a, b, c) · ⟨a - b, c⟩`, whose value on an edge `{a, b}` and a diagonal
-endpoint `c` is the orientation of the edge. -/
-private def orientedWeight (a b c : Fin 3 → ℤ) : ℤ :=
-  (Matrix.of ![a, b, c]).det * ((a - b) ⬝ᵥ c)
-
-private theorem orientedWeight_comm (a b c : Fin 3 → ℤ) :
-    orientedWeight b a c = orientedWeight a b c := by
-  simp [orientedWeight, det_fin_three, dotProduct, Fin.sum_univ_three]
-  ring
-
-private theorem orientedWeight_neg_right (a b c : Fin 3 → ℤ) :
-    orientedWeight a b (-c) = orientedWeight a b c := by
-  simp [orientedWeight, det_fin_three, dotProduct, Fin.sum_univ_three]
-  ring
-
-/-- The oriented weight is invariant under the rotations: they preserve both the determinant and
-the dot product. -/
-private theorem orientedWeight_mulVec {A : SpecialLinearGroup (Fin 3) ℤ}
-    (hA : A ∈ cubeRotationGroup) (a b c : Fin 3 → ℤ) :
-    orientedWeight ((A : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ a) ((A : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ b)
-      ((A : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ c) = orientedWeight a b c := by
-  have hdet : Matrix.of ![(A : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ a,
-      (A : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ b, (A : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ c] =
-      Matrix.of ![a, b, c] * (A : Matrix (Fin 3) (Fin 3) ℤ)ᵀ := by
-    ext r i
-    fin_cases r <;> simp [Matrix.mul_apply, Matrix.mulVec, dotProduct, mul_comm]
-  rw [orientedWeight, orientedWeight, hdet, det_mul, det_transpose, SpecialLinearGroup.det_coe,
-    mul_one, ← mulVec_sub, dotProduct_mulVec, ← mulVec_transpose, mulVec_mulVec,
-    transpose_mul_self_of_mem_cubeRotationGroup hA, one_mulVec]
-
-/-- **The orientation of an edge relative to a body diagonal.** For an edge `{v, w}` of the cube
-and the body diagonal `j`, with endpoint `d = TauCeti.cubeBodyDiagonal j`, it is the integer
-`det(v, w, d) · ⟨v - w, d⟩`. Both factors change sign when `v` and `w` are exchanged, so the
-product depends only on the edge; it is `0` when `j` is the diagonal through `v` or through `w`,
-and `±8` with opposite signs for the other two diagonals. Rotations preserve it
-(`TauCeti.cubeEdgeOrientation_smul`). -/
-def cubeEdgeOrientation (e : cubeEdgeSet) (j : Fin 4) : ℤ :=
-  Sym2.lift (α := Fin 3 → ℤˣ) (β := ℤ)
-    ⟨fun v w ↦ orientedWeight (fun i ↦ (v i : ℤ)) (fun i ↦ (w i : ℤ))
-      (fun i ↦ (cubeBodyDiagonal j i : ℤ)), fun v w ↦ orientedWeight_comm (fun i ↦ (w i : ℤ))
-      (fun i ↦ (v i : ℤ)) (fun i ↦ (cubeBodyDiagonal j i : ℤ))⟩ (e : Sym2 (Fin 3 → ℤˣ))
-
-/-- The orientation of the edge `{v, w}` relative to the diagonal `j` is
-`det(v, w, d) · ⟨v - w, d⟩` for `d = TauCeti.cubeBodyDiagonal j`. -/
-theorem cubeEdgeOrientation_mk {v w : Fin 3 → ℤˣ} (h : s(v, w) ∈ cubeEdgeSet) (j : Fin 4) :
-    cubeEdgeOrientation ⟨s(v, w), h⟩ j =
-      (Matrix.of ![fun i ↦ (v i : ℤ), fun i ↦ (w i : ℤ), fun i ↦ (cubeBodyDiagonal j i : ℤ)]).det *
-        (((fun i ↦ (v i : ℤ)) - fun i ↦ (w i : ℤ)) ⬝ᵥ fun i ↦ (cubeBodyDiagonal j i : ℤ)) :=
-  (rfl)
-
-/-- **The orientation is invariant under the rotations**: a rotation `A` carries an edge and a
-diagonal `j` to an edge and the diagonal `A j` with the same orientation. -/
-theorem cubeEdgeOrientation_smul (A : cubeRotationGroup) (e : cubeEdgeSet) (j : Fin 4) :
-    cubeEdgeOrientation (A • e) (cubeBodyDiagonalHom A j) = cubeEdgeOrientation e j := by
-  obtain ⟨e, he⟩ := e
-  induction e using Sym2.ind with
-  | _ v w =>
-    have hvec (x : Fin 3 → ℤˣ) : (fun i ↦ ((A • x) i : ℤ)) =
-        (A.1 : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ fun i ↦ (x i : ℤ) :=
-      funext (coe_cubeRotationGroup_smul_apply A x)
-    -- The endpoint of the diagonal `A j` is `± A d` for the endpoint `d` of `j`.
-    have hd : orientedWeight (fun i ↦ ((A • v) i : ℤ)) (fun i ↦ ((A • w) i : ℤ))
-        (fun i ↦ (cubeBodyDiagonal (cubeBodyDiagonalHom A j) i : ℤ)) =
-        orientedWeight (fun i ↦ ((A • v) i : ℤ)) (fun i ↦ ((A • w) i : ℤ))
-          (fun i ↦ ((A • cubeBodyDiagonal j) i : ℤ)) := by
-      rcases cubeBodyDiagonalIndex_eq_iff.mp (cubeBodyDiagonalHom_apply A j).symm with h | h
-      · rw [h]
-      · rw [h, ← orientedWeight_neg_right]
-        congr 1
-    simp only [cubeEdgeOrientation, coe_cubeRotationGroup_smul_cubeEdgeSet, Sym2.map_mk,
-      Sym2.lift_mk]
-    rw [hd, hvec, hvec, hvec, orientedWeight_mulVec A.2]
-
-/-- An antipodal edge has the opposite orientation. -/
-private theorem cubeEdgeOrientation_neg {v w : Fin 3 → ℤˣ} (h : s(v, w) ∈ cubeEdgeSet)
-    (h' : s(-v, -w) ∈ cubeEdgeSet) (j : Fin 4) :
-    cubeEdgeOrientation ⟨s(-v, -w), h'⟩ j = -cubeEdgeOrientation ⟨s(v, w), h⟩ j := by
-  simp [cubeEdgeOrientation_mk, det_fin_three, dotProduct, Fin.sum_univ_three]
-  ring
-
 /-! ### The two intertwiners -/
 
 section Intertwiners
@@ -162,14 +81,14 @@ variable (k : Type*) [CommSemiring k]
 
 /-- The linear map `k[Fin 4] → k[Y]` whose coefficient at the edge `e` is `∑ⱼ K e j f_j`. -/
 private noncomputable def edgeKernelMap (K : cubeEdgeSet → Fin 4 → k) :
-    MonoidAlgebra k (Fin 4) →ₗ[k] MonoidAlgebra k cubeEdgeSet where
-  toFun f := MonoidAlgebra.ofCoeff (Finsupp.equivFunOnFinite.symm fun e ↦ ∑ j, K e j * f.coeff j)
-  map_add' f g := by ext e; simp [mul_add, Finset.sum_add_distrib]
-  map_smul' c f := by ext e; simp [Finset.mul_sum, mul_left_comm]
+    MonoidAlgebra k (Fin 4) →ₗ[k] MonoidAlgebra k cubeEdgeSet :=
+  Matrix.toLin (MonoidAlgebra.basis (Fin 4) k) (MonoidAlgebra.basis cubeEdgeSet k) (Matrix.of K)
 
 private theorem coeff_edgeKernelMap (K : cubeEdgeSet → Fin 4 → k) (f : MonoidAlgebra k (Fin 4))
     (e : cubeEdgeSet) : (edgeKernelMap k K f).coeff e = ∑ j, K e j * f.coeff j := by
-  simp [edgeKernelMap]
+  simpa [edgeKernelMap, Matrix.mulVec, dotProduct] using
+    congrFun (Matrix.repr_toLin (MonoidAlgebra.basis (Fin 4) k)
+      (MonoidAlgebra.basis cubeEdgeSet k) (Matrix.of K) f) e
 
 /-- A kernel invariant under the rotations gives an intertwiner `k[Fin 4] → k[Y]`. -/
 private theorem edgeKernelMap_ofMulAction (K : cubeEdgeSet → Fin 4 → k)
@@ -236,6 +155,15 @@ theorem coeff_cubeEdgeIncidence_mk
   simp [cubeEdgeIncidence, coeff_standardKernelMap, incidenceKernel, add_mul,
     Finset.sum_add_distrib]
 
+/-- The incidence copy takes the same value on antipodal edges. -/
+@[simp]
+theorem coeff_cubeEdgeIncidence_neg
+    (u : (augmentationSubrepresentation k (Perm (Fin 4)) (Fin 4)).toSubmodule) (e : cubeEdgeSet) :
+    (cubeEdgeIncidence k u).coeff (-e) = (cubeEdgeIncidence k u).coeff e := by
+  obtain ⟨e, he⟩ := e
+  induction e using Sym2.ind with
+  | _ v w => simp [neg_mk_cubeEdgeSet]
+
 end CommSemiring
 
 variable (k : Type*) [CommRing k]
@@ -282,15 +210,6 @@ section Injective
 
 variable {k : Type*} [CommRing k]
 
-private theorem sum_coeff_eq_zero
-    (u : (augmentationSubrepresentation k (Perm (Fin 4)) (Fin 4)).toSubmodule) :
-    ∑ j, (u : MonoidAlgebra k (Fin 4)).coeff j = 0 := by
-  have hu : (u : MonoidAlgebra k (Fin 4)) ∈
-      LinearMap.ker (MonoidAlgebra.basis (Fin 4) k).sumCoords := by
-    simpa only [toSubmodule_augmentationSubrepresentation] using u.2
-  rw [LinearMap.mem_ker, Module.Basis.coe_sumCoords_of_fintype] at hu
-  simpa using hu
-
 private theorem eq_zero_of_coeff_eq_zero
     {u : (augmentationSubrepresentation k (Perm (Fin 4)) (Fin 4)).toSubmodule}
     (h₀ : (u : MonoidAlgebra k (Fin 4)).coeff 0 = 0)
@@ -312,24 +231,22 @@ private theorem coeff_eq_zero_of_cubeEdgeStandardEval_eq_zero (h2 : IsLeftRegula
         (p.1 : MonoidAlgebra k (Fin 4)).coeff (cubeBodyDiagonalIndex w) = 0 ∧
       ∑ j, (cubeEdgeOrientation ⟨s(v, w), h⟩ j : k) * (p.2 : MonoidAlgebra k (Fin 4)).coeff j =
         0 := by
-  have h' : s(-v, -w) ∈ cubeEdgeSet := mk_mem_cubeEdgeSet.mpr <|
-    (hammingDist_comp (fun _ ↦ Neg.neg) (fun _ ↦ neg_injective)).trans (mk_mem_cubeEdgeSet.mp h)
   have he := congr(($hp).coeff ⟨s(v, w), h⟩)
-  have he' := congr(($hp).coeff ⟨s(-v, -w), h'⟩)
+  have he' := congr(($hp).coeff (-⟨s(v, w), h⟩))
   simp only [cubeEdgeStandardEval_apply, MonoidAlgebra.coeff_add, Finsupp.add_apply,
-    coeff_cubeEdgeIncidence_mk, coeff_cubeEdgeOriented, cubeBodyDiagonalIndex_neg,
-    cubeEdgeOrientation_neg h h', Int.cast_neg, neg_mul, Finset.sum_neg_distrib,
+    coeff_cubeEdgeIncidence_neg, coeff_cubeEdgeIncidence_mk, coeff_cubeEdgeOriented,
+    cubeEdgeOrientation_neg, Int.cast_neg, neg_mul, Finset.sum_neg_distrib,
     MonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply] at he he'
   exact ⟨h2.mul_left_eq_zero_iff.mp (by linear_combination he + he'),
     h2.mul_left_eq_zero_iff.mp (by linear_combination he - he')⟩
 
 /-- **The two copies of `V₄` in `k[Y]` are independent** when `2` is not a zero divisor:
-`(a, b) ↦ TauCeti.cubeEdgeIncidence a + TauCeti.cubeEdgeOriented b` is injective. Reading its
-coefficients on the edges whose diagonals are `{0, 1}`, `{0, 2}` and `{1, 2}` gives
-`a₀ + a₁ = a₀ + a₂ = a₁ + a₂ = 0` and `b₀ = b₁ = b₂ = b₃`, and the coefficients of `a` and of `b`
-sum to zero. -/
+`(a, b) ↦ TauCeti.cubeEdgeIncidence a + TauCeti.cubeEdgeOriented b` is injective. -/
 theorem cubeEdgeStandardEval_injective (h2 : IsLeftRegular (2 : k)) :
     Function.Injective (cubeEdgeStandardEval k) := by
+  -- If `(a, b)` is in the kernel, its coefficients on the edges whose diagonals are `{0, 1}`,
+  -- `{0, 2}` and `{1, 2}` and on their antipodal edges give `a₀ + a₁ = a₀ + a₂ = a₁ + a₂ = 0` and
+  -- `b₀ = b₁ = b₂ = b₃`, while the coefficients of `a` and of `b` sum to zero.
   rw [← Representation.IntertwiningMap.coe_toLinearMap, ← LinearMap.ker_eq_bot,
     LinearMap.ker_eq_bot']
   rintro ⟨a, b⟩ hab
@@ -358,8 +275,8 @@ theorem cubeEdgeStandardEval_injective (h2 : IsLeftRegular (2 : k)) :
     simp only [cubeEdgeOrientation_mk, Fin.sum_univ_four] at hb₀₃
     simpa [cubeBodyDiagonal_def, det_fin_three, dotProduct, Fin.sum_univ_three] using hb₀₃
   have h32 : IsLeftRegular (32 : k) := by simpa [show (32 : k) = 2 ^ 5 by norm_num] using h2.pow 5
-  have hsa := sum_coeff_eq_zero a
-  have hsb := sum_coeff_eq_zero b
+  have hsa : ∑ j, (a : MonoidAlgebra k (Fin 4)).coeff j = 0 := by simpa using a.2
+  have hsb : ∑ j, (b : MonoidAlgebra k (Fin 4)).coeff j = 0 := by simpa using b.2
   rw [Fin.sum_univ_four] at hsa hsb
   have ha₀ : (a : MonoidAlgebra k (Fin 4)).coeff 0 = 0 :=
     h2.mul_left_eq_zero_iff.mp (by linear_combination ha₀₁ + ha₀₂ - ha₁₂)
@@ -428,29 +345,43 @@ theorem asSubmodule_range_cubeEdgeStandardEval :
         (standardRepresentation k (Fin 4)).asModule := by
   have := isIrreducible_standardRepresentation (k := k) (α := Fin 4) (by decide)
     (Or.inr (by norm_num))
+  -- An intertwiner `f : V₄ → k[Y]` has its values in the isotypic component.
+  have hmem (f : (standardRepresentation k (Fin 4)).IntertwiningMap (cubeEdgeRepresentation k))
+      (u : (augmentationSubrepresentation k (Perm (Fin 4)) (Fin 4)).toSubmodule) :
+      (cubeEdgeRepresentation k).asModuleEquiv.symm (f u) ∈
+        isotypicComponent k[Perm (Fin 4)] (cubeEdgeRepresentation k).asModule
+          (standardRepresentation k (Fin 4)).asModule := by
+    have hf : Representation.IntertwiningMap.equivLinearMapAsModule _ _ f
+        ((standardRepresentation k (Fin 4)).asModuleEquiv.symm u) =
+          (cubeEdgeRepresentation k).asModuleEquiv.symm (f u) := by
+      refine (cubeEdgeRepresentation k).asModuleEquiv.injective ?_
+      rw [LinearEquiv.apply_symm_apply, Representation.asModuleEquiv_apply,
+        Representation.IntertwiningMap.equivLinearMapAsModule_apply,
+        Representation.asModuleEquiv_symm_apply]
+    rw [← hf]
+    exact LinearMap.apply_mem_isotypicComponent _ _
   have hle : (cubeEdgeStandardEval k).range.asSubmodule ≤
       isotypicComponent k[Perm (Fin 4)] (cubeEdgeRepresentation k).asModule
         (standardRepresentation k (Fin 4)).asModule := by
-    rintro _ ⟨⟨a, b⟩, rfl⟩
-    -- `ρ.asModule` is a type synonym for the carrier and `equivLinearMapAsModule` keeps the
-    -- underlying function, so the two summands are values of `k[S₄]`-linear maps out of `V₄`.
-    exact add_mem
-      ((Representation.IntertwiningMap.equivLinearMapAsModule _ _
-        (cubeEdgeIncidence k)).apply_mem_isotypicComponent
-          ((standardRepresentation k (Fin 4)).asModuleEquiv.symm a))
-      ((Representation.IntertwiningMap.equivLinearMapAsModule _ _
-        (cubeEdgeOriented k)).apply_mem_isotypicComponent
-          ((standardRepresentation k (Fin 4)).asModuleEquiv.symm b))
+    intro x hx
+    obtain ⟨⟨a, b⟩, hab⟩ := (Representation.IntertwiningMap.mem_range _ _ _ _).mp
+      ((Subrepresentation.mem_asSubmodule_iff (v := (cubeEdgeRepresentation k).asModuleEquiv x)).mp
+        hx)
+    rw [← (cubeEdgeRepresentation k).asModuleEquiv.symm_apply_apply x, ← hab,
+      cubeEdgeStandardEval_apply, map_add]
+    exact add_mem (hmem _ a) (hmem _ b)
   refine Submodule.restrictScalars_injective k _ _ <|
     Submodule.eq_of_le_of_finrank_le (Submodule.restrictScalars_mono k hle) ?_
-  have hrange : Module.finrank k (LinearMap.range (cubeEdgeStandardEval k).toLinearMap) = 6 := by
-    rw [LinearMap.finrank_range_of_inj
-        (cubeEdgeStandardEval_injective two_ne_zero.isUnit.isRegular.left),
-      Module.finrank_prod, finrank_augmentationSubrepresentation]
-    simp
-  -- The range of the intertwiner, restricted to `k`, is the range of its underlying linear map.
-  exact (finrank_isotypicComponent_cubeEdgeRepresentation_standardRepresentation k).trans_le
-    hrange.ge
+  rw [((Submodule.restrictScalarsEquiv k _ _ _).restrictScalars k).finrank_eq,
+    ((Submodule.restrictScalarsEquiv k _ _ _).restrictScalars k).finrank_eq,
+    finrank_isotypicComponent_cubeEdgeRepresentation_standardRepresentation,
+    ← ((cubeEdgeStandardEval k).range.asModuleEquivAsSubmodule.restrictScalars k).finrank_eq,
+    (cubeEdgeStandardEval k).range.toRepresentation.asModuleEquiv.finrank_eq,
+    Representation.IntertwiningMap.range_toSubmodule,
+    LinearMap.finrank_range_of_inj
+      (cubeEdgeStandardEval_injective two_ne_zero.isUnit.isRegular.left),
+    Module.finrank_prod, finrank_augmentationSubrepresentation]
+  simp
 
 end Isotypic
 
