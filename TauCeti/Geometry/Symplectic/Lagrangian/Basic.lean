@@ -46,6 +46,8 @@ dimension count but no isotropic/Lagrangian vocabulary, which this file supplies
 * `TauCeti.SymplecticForm.isLagrangian_iff`: Lagrangian is isotropic and coisotropic.
 * `TauCeti.SymplecticForm.isLagrangian_iff_maximal_isIsotropic`: Lagrangian subspaces are exactly
   the maximal isotropic subspaces, in any dimension.
+* `TauCeti.SymplecticForm.IsCoisotropic.nondegenerate_of_apply_eq`: an alternating form agreeing
+  with `ω` whenever its first argument lies in a coisotropic subspace is nondegenerate.
 * `TauCeti.SymplecticForm.isSymplectic_iff_nondegenerate_restrict`: a subspace is symplectic exactly
   when `ω` restricts to it nondegenerately, and in finite dimension
   `isSymplectic_iff_isCompl` identifies this with the splitting `V = L ⊕ L^ω`.
@@ -220,6 +222,17 @@ lemma isCoisotropic_of_maximal_isIsotropic (h : Maximal ω.IsIsotropic L) :
     ω.IsCoisotropic L := fun v hv =>
   h.2 (h.1.sup_span_singleton hv) le_sup_left <|
     Submodule.mem_sup_right (Submodule.mem_span_singleton_self v)
+
+/-- An alternating form which agrees with `ω` whenever its first argument lies in a coisotropic
+subspace `L` is nondegenerate. If `B v` vanishes, then `ω(·, v)` vanishes on `L`, so `v` lies in
+the symplectic complement of `L`, hence in `L`, where `B v = ω v`. -/
+theorem IsCoisotropic.nondegenerate_of_apply_eq (hL : ω.IsCoisotropic L)
+    {B : LinearMap.BilinForm ℝ V} (hB : B.IsAlt) (h : ∀ l ∈ L, ∀ v, B l v = ω l v) :
+    B.Nondegenerate := by
+  refine (LinearMap.IsRefl.nondegenerate_iff_separatingLeft hB.isRefl).2 fun v hv ↦ ?_
+  have hvL : v ∈ L := hL <| mem_orthogonal_iff.2 fun l hl ↦ by
+    rw [← h l hl, ← hB.neg_eq, hv, neg_zero]
+  exact ω.separatingLeft v fun w ↦ (h v hvL w).symm.trans (hv w)
 
 /-- A Lagrangian subspace is a maximal isotropic subspace. -/
 lemma IsLagrangian.maximal_isIsotropic (h : ω.IsLagrangian L) : Maximal ω.IsIsotropic L :=
