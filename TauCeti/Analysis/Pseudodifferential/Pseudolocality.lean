@@ -91,9 +91,8 @@ theorem memSobolev_smulLeftCLM_quantizeSobolev_of_memSobolev_smulLeftCLM {a : Sy
     (hv : (BesselPotentialSpace.smulLeftCLM t χ v).toDistr.MemSobolev s 2) :
     (BesselPotentialSpace.smulLeftCLM (t - m) ψ (a.quantizeSobolev ha t v)).toDistr.MemSobolev
       (s - m) 2 := by
-  have hψ : HasCompactSupport ψ := hχ.mono fun x hx ↦ by
-    rw [Function.mem_support, hχψ.self_of_nhdsSet x (subset_tsupport ψ hx)]
-    exact one_ne_zero
+  have hψ : HasCompactSupport ψ :=
+    hχ.of_forall_mem_support_eq_one fun x hx ↦ hχψ.self_of_nhdsSet x (subset_tsupport ψ hx)
   have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := W) hψ
   set F := ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ W) ((ψ.smooth ⊤).smul contDiff_const)
   -- `ψ Op(a) = Op(ψ # a)`, and `ψ # a = ψ a` vanishes outside the support of `ψ`.

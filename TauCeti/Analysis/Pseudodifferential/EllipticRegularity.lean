@@ -128,9 +128,8 @@ theorem IsEllipticAbove.memSobolev_smulLeftCLM_of_memSobolev_smulLeftCLM_quantiz
     (hu : (BesselPotentialSpace.smulLeftCLM (t - m) χ (a.quantizeSobolev ha t u)).toDistr.MemSobolev
       (s - m) 2) :
     (BesselPotentialSpace.smulLeftCLM t φ u).toDistr.MemSobolev s 2 := by
-  have hφ : HasCompactSupport φ := hχ.mono fun x hx ↦ by
-    rw [Function.mem_support, hχφ.self_of_nhdsSet x (subset_tsupport φ hx)]
-    exact one_ne_zero
+  have hφ : HasCompactSupport φ :=
+    hχ.of_forall_mem_support_eq_one fun x hx ↦ hχφ.self_of_nhdsSet x (subset_tsupport φ hx)
   obtain ⟨q, hq, hqφ, r, hr, hrS, h⟩ :=
     hp.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_smulLeftCLM_add ha hφ hap
   -- `φ u = Op(q) Op(a) u - Op(r) u`, where `Op(q)` only sees `Op(a) u` near `tsupport φ`.
