@@ -36,6 +36,8 @@ two colourings are mutually inverse and conjugate
   type (in particular, for a root system), the Coxeter graph is a forest and has a two-colouring.
 * `RootPairing.preconnected_graph_coxeterMatrixOfBase`: for an irreducible reduced root pairing it
   is connected.
+* `RootPairing.Base.cartanMatrix_eq_zero_of_color_eq`: distinct simple roots of the same colour
+  in a two-colouring of the Coxeter graph have vanishing Cartan entry.
 
 ## References
 
@@ -91,5 +93,13 @@ theorem preconnected_graph_coxeterMatrixOfBase [P.IsReduced] [P.IsIrreducible] :
     (coxeterMatrixOfBase P b).graph.Preconnected := by
   rw [graph_coxeterMatrixOfBase]
   exact preconnected_diagramGraph_cartanMatrix b
+
+/-- Distinct simple roots of the same colour in a two-colouring of the Coxeter graph are
+orthogonal. -/
+theorem Base.cartanMatrix_eq_zero_of_color_eq {P : RootPairing ι R M N} [P.IsCrystallographic]
+    (b : P.Base) (col : (coxeterMatrixOfBase P b).graph.Coloring Bool) {p q : b.support}
+    (hpq : p ≠ q) (hc : col p = col q) : b.cartanMatrix p q = 0 :=
+  by_contra fun hne ↦ col.valid ((graph_coxeterMatrixOfBase P b).symm ▸ (diagramGraph_adj ..).mpr
+    ⟨hpq, hne, fun hqp ↦ hne (b.cartanMatrix_apply_eq_zero_iff_symm.mpr hqp)⟩) hc
 
 end RootPairing

@@ -68,36 +68,49 @@ section PreconnectedGraph
 
 variable {m R : Type*} [Ring R] [LinearOrder R]
 
+section Walk
+
+variable (A : Matrix m m R) {G : SimpleGraph m} (hG : ∀ {i j}, G.Adj i j → 0 < A i j)
+
 /-- Convert a walk in a simple graph `G` into a path of the same length in `A.toQuiver` whenever
 every edge of `G` corresponds to a strictly positive entry of `A`. -/
-def toQuiverPathOfWalk (A : Matrix m m R) {G : SimpleGraph m}
-    (hG : ∀ {i j}, G.Adj i j → 0 < A i j) {i j : m} :
-    letI := A.toQuiver
-    G.Walk i j → Quiver.Path i j
+def toQuiverPathOfWalk {i j : m} : letI := A.toQuiver; G.Walk i j → Quiver.Path i j
   | .nil => letI := A.toQuiver; Quiver.Path.nil
   | .cons hadj w =>
-    letI := A.toQuiver
-    (Quiver.Hom.toPath (PLift.up (hG hadj))).comp (A.toQuiverPathOfWalk hG w)
+    letI := A.toQuiver; (Quiver.Hom.toPath (PLift.up (hG hadj))).comp (toQuiverPathOfWalk w)
+
+/-- `Matrix.toQuiverPathOfWalk` sends the empty walk to the empty path. -/
+@[simp] theorem toQuiverPathOfWalk_nil (i : m) :
+    letI := A.toQuiver; A.toQuiverPathOfWalk hG (.nil : G.Walk i i) = Quiver.Path.nil := (rfl)
+
+/-- `Matrix.toQuiverPathOfWalk` sends a cons walk to the edge path composed with the tail path. -/
+@[simp] theorem toQuiverPathOfWalk_cons {i j k : m} (hadj : G.Adj i j) (w : G.Walk j k) :
+    letI := A.toQuiver; A.toQuiverPathOfWalk hG (.cons hadj w) =
+      (Quiver.Hom.toPath (PLift.up (hG hadj))).comp (A.toQuiverPathOfWalk hG w) := (rfl)
+
+/-- `Matrix.toQuiverPathOfWalk` sends walk concatenation to path composition. -/
+@[simp] theorem toQuiverPathOfWalk_append {i j k : m} (w₁ : G.Walk i j) (w₂ : G.Walk j k) :
+    letI := A.toQuiver; A.toQuiverPathOfWalk hG (w₁.append w₂) =
+      (A.toQuiverPathOfWalk hG w₁).comp (A.toQuiverPathOfWalk hG w₂) := by
+  let := A.toQuiver; induction w₁ with
+  | nil => simp
+  | cons _ _ ih => simp [ih, Quiver.Path.comp_assoc]
 
 /-- `Matrix.toQuiverPathOfWalk` preserves walk length. -/
-@[simp]
-theorem length_toQuiverPathOfWalk (A : Matrix m m R) {G : SimpleGraph m}
-    (hG : ∀ {i j}, G.Adj i j → 0 < A i j) {i j : m} (w : G.Walk i j) :
-    letI := A.toQuiver
-    (A.toQuiverPathOfWalk hG w).length = w.length := by
-  let := A.toQuiver
-  induction w with
-  | nil => simp [toQuiverPathOfWalk]
-  | cons hadj w ih =>
-    simpa [toQuiverPathOfWalk, ih] using Nat.add_comm 1 w.length
+@[simp] theorem length_toQuiverPathOfWalk {i j : m} (w : G.Walk i j) :
+    letI := A.toQuiver; (A.toQuiverPathOfWalk hG w).length = w.length := by
+  let := A.toQuiver; induction w with
+  | nil => simp
+  | cons _ w ih => simpa [ih] using Nat.add_comm 1 w.length
+
+end Walk
 
 /-- A nonnegative matrix on a nontrivial index type whose strictly positive entries contain the
 adjacency relation of a preconnected simple graph is irreducible. -/
 theorem isIrreducible_of_preconnected [Nontrivial m] {A : Matrix m m R}
     (hnonneg : ∀ i j, 0 ≤ A i j) {G : SimpleGraph m} (hconn : G.Preconnected)
     (hG : ∀ {i j}, G.Adj i j → 0 < A i j) : A.IsIrreducible := by
-  let := A.toQuiver
-  refine ⟨hnonneg, fun i j ↦ ?_⟩
+  let := A.toQuiver; refine ⟨hnonneg, fun i j ↦ ?_⟩
   rcases eq_or_ne i j with rfl | hij
   · obtain ⟨k, hki⟩ := exists_ne i; obtain ⟨w⟩ := hconn i k
     have hw : 0 < w.length := Nat.pos_of_ne_zero fun h0 ↦ hki.symm (w.eq_of_length_eq_zero h0)

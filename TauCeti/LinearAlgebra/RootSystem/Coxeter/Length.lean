@@ -7,6 +7,9 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 public import TauCeti.GroupTheory.Coxeter.Length
+public import TauCeti.GroupTheory.Coxeter.Bipartite
+import TauCeti.GroupTheory.Coxeter.CoxeterElement
+import TauCeti.GroupTheory.Coxeter.Restriction
 
 /-!
 # Length and descents in the marked Weyl presentation
@@ -20,7 +23,10 @@ abstract presentation length with the number of positive roots sent negative. Re
 and right descents are preserved and reflected; in particular a right descent is detected
 by the sign of the image of the corresponding positive simple root. The length function
 also agrees with that of any other Coxeter system with the same marked simple reflections,
-even if its Coxeter matrix is presented differently.
+even if its Coxeter matrix is presented differently. As immediate consequences, a
+duplicate-free word in the simple reflections has as many inversions as letters, a colour-class
+product has as many inversions as vertices of that colour, and every Coxeter element (including
+the bipartite Coxeter element of a two-colouring) has `b.support.card` inversions.
 
 No spanning assumption on the root or coroot families is required.
 
@@ -154,5 +160,36 @@ theorem length_eq_ncard_inversions_of_simple_eq {C : CoxeterMatrix b.support}
   exact (cs.length_eq_of_simple_eq (weylCoxeterSystem P b)
     (by simpa only [weylCoxeterSystem_simple] using hcs) w).trans
     (length_weylCoxeterSystem_eq P b w)
+
+/-- A word in the simple reflections without repeated letters has as many inversions as letters. -/
+theorem ncard_inversions_wordProd_of_nodup {l : List b.support} (hl : l.Nodup) :
+    (inversions P b (wordProd P b l)).ncard = l.length :=
+  (isReduced_weylCoxeterSystem_iff P b l).mp ((weylCoxeterSystem P b).isReduced_of_nodup hl)
+
+/-- **Every Coxeter element has `b.support.card` inversions.** -/
+theorem ncard_inversions_wordProd_eq_card_support {l : List b.support} (hl : l.Nodup)
+    (hall : ∀ i, i ∈ l) :
+    (inversions P b (wordProd P b l)).ncard = b.support.card := by
+  rw [← length_weylCoxeterSystem_eq, ← weylCoxeterSystem_wordProd,
+    (weylCoxeterSystem P b).length_wordProd_eq_card hl hall, Fintype.card_coe]
+
+/-- A colour-class product in the Weyl Coxeter system has one inversion per simple root of that
+colour. -/
+@[simp]
+theorem ncard_inversions_colorClassProd (col : (coxeterMatrixOfBase P b).graph.Coloring Bool)
+    (x : Bool) :
+    (inversions P b ((weylCoxeterSystem P b).colorClassProd col x)).ncard =
+      (Finset.univ.filter fun i : b.support ↦ col i = x).card := by
+  rw [← length_weylCoxeterSystem_eq, (weylCoxeterSystem P b).length_colorClassProd col x]
+
+/-- The bipartite Coxeter element of any two-colouring of the Coxeter graph has `b.support.card`
+inversions. -/
+@[simp]
+theorem ncard_inversions_bipartiteCoxeterElement
+    (col : (coxeterMatrixOfBase P b).graph.Coloring Bool) :
+    (inversions P b ((weylCoxeterSystem P b).bipartiteCoxeterElement col)).ncard =
+      b.support.card := by
+  rw [← length_weylCoxeterSystem_eq, (weylCoxeterSystem P b).length_bipartiteCoxeterElement col,
+    Fintype.card_coe]
 
 end RootPairing

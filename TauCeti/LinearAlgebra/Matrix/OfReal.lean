@@ -16,8 +16,9 @@ public import TauCeti.LinearAlgebra.Matrix.DetDescent
 
 A real matrix `N` is viewed as a complex matrix through the entrywise coercion
 `N.map ((↑) : ℝ → ℂ)`. This file records that a real orthogonal matrix is unitary and a real
-symmetric matrix Hermitian as a complex matrix, how a real rotation pair `(e₁, e₂)` gives a complex
-eigenvector `e₁ + I • e₂` for `exp (α I)`, and how the real Gram matrix `Re (Mᴴ M)` of the
+symmetric matrix Hermitian as a complex matrix, how a real rotation pair `(e₁, e₂)` satisfies the
+eigenspace identity `(A.map (↑)) *ᵥ (e₁ + I • e₂) = exp (α I) • (e₁ + I • e₂)` (giving an
+`exp (α I)`-eigenvector whenever `(e₁, e₂) ≠ 0`), and how the real Gram matrix `Re (Mᴴ M)` of the
 columns of a complex matrix `M` behaves: it transforms by congruence under a real change of basis,
 and it is positive definite when `Mᴴ M` is, in particular when `M` has independent columns.
 
@@ -25,8 +26,9 @@ and it is positive definite when `Mᴴ M` is, in particular when `M` has indepen
 
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
-* `Matrix.map_ofReal_mulVec_of_rotation`: a real rotation pair `(e₁, e₂)` yields a complex
-  eigenvector `e₁ + I • e₂` with eigenvalue `exp (α I)`.
+* `Matrix.map_ofReal_mulVec_of_rotation`: for a real rotation pair `(e₁, e₂)`,
+  `(A.map (↑)) *ᵥ (e₁ + I • e₂) = exp (α I) • (e₁ + I • e₂)` (an `exp (α I)`-eigenvector when
+  `(e₁, e₂) ≠ 0`).
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
   matrix `N` is `Nᵀ Re (Mᴴ M) N`.
 * `Matrix.PosDef.map_re`: the real part of a positive definite complex matrix is positive
@@ -58,25 +60,25 @@ theorem IsHermitian.map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
   hA.map _ fun _ ↦ by simp
 
 /-- If a real matrix `A` rotates `(e₁, e₂)` by `-α` (`A *ᵥ e₁ = cos α • e₁ - sin α • e₂` and
-`A *ᵥ e₂ = sin α • e₁ + cos α • e₂`), then `e₁ + I • e₂` is an eigenvector of `A.map (↑)` with
-eigenvalue `exp (α I)`. -/
+`A *ᵥ e₂ = sin α • e₁ + cos α • e₂`), then `e₁ + I • e₂` satisfies the eigenspace identity
+`(A.map (↑)) *ᵥ (e₁ + I • e₂) = exp (α I) • (e₁ + I • e₂)` (and is an `exp (α I)`-eigenvector
+when `(e₁, e₂) ≠ 0`). -/
 theorem map_ofReal_mulVec_of_rotation [Fintype n] {A : Matrix n n ℝ} {e₁ e₂ : n → ℝ} {α : ℝ}
     (he₁ : A *ᵥ e₁ = Real.cos α • e₁ - Real.sin α • e₂)
     (he₂ : A *ᵥ e₂ = Real.sin α • e₁ + Real.cos α • e₂) :
     (A.map ((↑) : ℝ → ℂ)) *ᵥ (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) =
-      Complex.exp ((α : ℂ) * Complex.I) • (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) := by
-  have hexp : Complex.exp ((α : ℂ) * Complex.I) = ↑(Real.cos α) + ↑(Real.sin α) * Complex.I := by
-    rw [Complex.exp_mul_I, Complex.ofReal_cos, Complex.ofReal_sin]
-  ext i
+      Complex.exp ((α : ℂ) * Complex.I) • (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) := funext
+    fun i ↦ by
   have hcast (u : n → ℝ) : ∑ j, (A i j : ℂ) * (u j : ℂ) = ((A *ᵥ u) i : ℂ) := by
     simp [mulVec, dotProduct]
   have hsplit : ((A.map ((↑) : ℝ → ℂ)) *ᵥ (fun j ↦ (e₁ j : ℂ) + Complex.I * (e₂ j : ℂ))) i =
       (∑ j, (A i j : ℂ) * (e₁ j : ℂ)) + Complex.I * ∑ j, (A i j : ℂ) * (e₂ j : ℂ) := by
     simp only [mulVec, dotProduct, map_apply, mul_add, Finset.sum_add_distrib, Finset.mul_sum]
-    exact congrArg (_ + ·) (Finset.sum_congr rfl fun j _ ↦ by ring)
-  rw [hsplit, hcast e₁, hcast e₂, he₁, he₂]
+    exact congrArg (_ + ·) (Finset.sum_congr rfl fun _ _ ↦ by ring)
+  rw [hsplit, hcast e₁, hcast e₂, he₁, he₂, Complex.exp_mul_I, ← Complex.ofReal_cos,
+    ← Complex.ofReal_sin]
   simp only [Pi.sub_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul, Complex.ofReal_sub,
-    Complex.ofReal_add, Complex.ofReal_mul, hexp]
+    Complex.ofReal_add, Complex.ofReal_mul]
   linear_combination -↑(Real.sin α) * (e₂ i : ℂ) * Complex.I_sq
 
 /-- The real Gram matrix `Re ((M N)ᴴ (M N))` of the columns of `M N`, for a real matrix `N`, is

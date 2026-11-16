@@ -63,15 +63,13 @@ theorem prod_map_reflMatrix_apply_of_orthogonal {κ : Type*} [Fintype κ] [Decid
         one_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
       by_cases hkp : k = p <;> simp [hkp]
     rw [List.map_cons, List.prod_cons, hrow]
-    simp only [ih hl.2 fun a ha b hb ↦
-      horth a (List.mem_cons_of_mem p ha) b (List.mem_cons_of_mem p hb)]
+    simp only [ih hl.2 fun a ha b hb ↦ horth a (.tail p ha) b (.tail p hb)]
     rcases eq_or_ne k p with rfl | hkp
     · simp only [↓reduceIte, hl.1, sub_zero, List.mem_cons, true_or, mul_sub, mul_ite, mul_one,
         mul_zero, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ]
       rw [Finset.sum_eq_zero fun m _ ↦ ?_, sub_zero]
       split_ifs with hm
-      · rw [horth m (List.mem_cons_of_mem k hm) k List.mem_cons_self
-          (ne_of_mem_of_not_mem hm hl.1), zero_mul]
+      · rw [horth m (.tail k hm) k List.mem_cons_self (ne_of_mem_of_not_mem hm hl.1), zero_mul]
       · rfl
     · simp [hkp, List.mem_cons]
 
