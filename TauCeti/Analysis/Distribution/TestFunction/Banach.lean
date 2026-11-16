@@ -211,6 +211,17 @@ theorem coe_smul {R : Type*} [Semiring R] [Module R F] [SMulCommClass ℝ R F]
     ⇑(c • f) = c • ⇑f :=
   rfl
 
+@[simp]
+theorem toContDiffMapSupportedIn_add (f g : NormedContDiffMapSupportedIn E F ℓ K) :
+    toContDiffMapSupportedIn (f + g) = toContDiffMapSupportedIn f + toContDiffMapSupportedIn g :=
+  (rfl)
+
+@[simp]
+theorem toContDiffMapSupportedIn_smul {R : Type*} [Semiring R] [Module R F] [SMulCommClass ℝ R F]
+    [ContinuousConstSMul R F] (c : R) (f : NormedContDiffMapSupportedIn E F ℓ K) :
+    toContDiffMapSupportedIn (c • f) = c • toContDiffMapSupportedIn f :=
+  (rfl)
+
 /-- Every map of the normed space is `C^ℓ`. -/
 protected theorem contDiff (f : NormedContDiffMapSupportedIn E F ℓ K) : ContDiff ℝ ℓ f :=
   (toContDiffMapSupportedIn f).contDiff
@@ -246,6 +257,10 @@ instance normedAddCommGroup : NormedAddCommGroup (NormedContDiffMapSupportedIn E
       -- The uniform structure `U` of the synonym is, by definition, the one of `𝓓^{ℓ}_{K}(E, F)`.
       change 𝓤[(ContDiffMapSupportedIn.uniformSpace : UniformSpace 𝓓^{ℓ}_{K}(E, F))] = _
       rw [ContDiffMapSupportedIn.uniformSpace_eq_supSeminorm_self]
+      -- Both sides are now the uniformity of the pseudometric `dist f g = p (-f + g)`:
+      -- `AddGroupSeminorm.toSeminormedAddGroup`, behind `Seminorm.toSeminormedAddCommGroup`, and
+      -- `PseudoMetricSpace.ofSeminormedSpaceCore` both define the distance this way, and the norm
+      -- given to the core is `p` itself.
       rfl)
 
 /-- The norm of `f` is `max_{j ≤ ℓ} N_j f`, the largest sup norm of a derivative of order at
@@ -259,7 +274,8 @@ variable [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
 instance : NormedSpace 𝕜 (NormedContDiffMapSupportedIn E F ℓ K) :=
   { (inferInstance : Module 𝕜 (NormedContDiffMapSupportedIn E F ℓ K)) with
     norm_smul_le c f := by
-      simp only [norm_def, ← ContDiffMapSupportedIn.supSeminorm_apply_eq_of_scalars (𝕜 := 𝕜)]
+      simp only [norm_def, toContDiffMapSupportedIn_smul,
+        ← ContDiffMapSupportedIn.supSeminorm_apply_eq_of_scalars (𝕜 := 𝕜)]
       exact (map_smul_eq_mul (ContDiffMapSupportedIn.supSeminorm 𝕜 E F ℓ K ℓ) c
         (toContDiffMapSupportedIn f)).le }
 
