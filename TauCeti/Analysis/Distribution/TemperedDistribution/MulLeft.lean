@@ -194,9 +194,11 @@ theorem mulLeftCLM_comp_mulLeftCLM [FiniteDimensional ℂ H] {A : E → F →L[�
   have hφ : SchwartzMap.smulLeftCLM ℂ (LinearMap.toContinuousLinearMap (a.coord k) ∘ A)
         (SchwartzMap.smulLeftCLM ℂ (LinearMap.toContinuousLinearMap (b.coord l) ∘ B) φ) =
       SchwartzMap.smulLeftCLM ℂ (fun x ↦ b.coord l (B x) * a.coord k (A x)) φ := by
-    rw [SchwartzMap.smulLeftCLM_smulLeftCLM_apply (hca k) (hcb l), mul_comm]
-    -- The product of functions is pointwise by definition (`Pi.mul_apply`).
-    rfl
+    rw [SchwartzMap.smulLeftCLM_smulLeftCLM_apply (hca k) (hcb l)]
+    congr 2
+    funext x
+    simp only [Pi.mul_apply, Function.comp_apply, LinearMap.coe_toContinuousLinearMap']
+    ring
   rw [hφ, ContinuousLinearMap.comp_apply]
 
 section InnerProductSpace
