@@ -39,6 +39,8 @@ cover all of `G` as soon as `lieExp` is known to be surjective, which is a separ
 * `TauCeti.Lie.IsMaximalTorus.exists_map_conj_eq`: **any two maximal tori are conjugate**.
 * `TauCeti.Lie.IsMaximalTorus.exists_mem_map_conj_eq_of_le`: two maximal tori contained in a closed
   subgroup `K` are conjugate by an element of `K`.
+* `TauCeti.Lie.IsMaximalTorus.exists_mem_connectedComponentIn_map_conj_eq_of_le`: they are even
+  conjugate by an element of the identity component of `K`.
 * `TauCeti.Lie.IsMaximalTorus.finrank_lieSubalgebraOfSubgroup_eq`: any two maximal tori have the
   same dimension.
 
@@ -156,6 +158,31 @@ theorem IsMaximalTorus.exists_mem_map_conj_eq_of_le {K S T : Subgroup G}
   rintro _ ⟨s, hs, rfl⟩
   have hmem : MulAut.conj c ⟨s, hSK hs⟩ ∈ T.subgroupOf K := hc ▸ ⟨_, hs, rfl⟩
   exact hmem
+
+/-- Two maximal tori of a compact Lie group that lie in a closed subgroup `K` are conjugate by an
+element of the identity component of `K`. -/
+theorem IsMaximalTorus.exists_mem_connectedComponentIn_map_conj_eq_of_le {K S T : Subgroup G}
+    (hK : IsClosed (K : Set G)) (hS : IsMaximalTorus S) (hT : IsMaximalTorus T)
+    (hSK : S ≤ K) (hTK : T ≤ K) :
+    ∃ c ∈ connectedComponentIn (K : Set G) 1, S.map (MulAut.conj c).toMonoidHom = T := by
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  -- The identity component of `K`, as a subgroup of `G`; it is closed because `K` is.
+  let K₀ : Subgroup G := (Subgroup.connectedComponentOfOne K).map K.subtype
+  have hK₀ : (K₀ : Set G) = connectedComponentIn (K : Set G) 1 := by
+    rw [Subgroup.coe_map, connectedComponentIn_eq_image K.one_mem]
+    -- Mathlib defines the carrier of `Subgroup.connectedComponentOfOne K` as
+    -- `connectedComponent 1` and states no coercion lemma for it.
+    rfl
+  have hK₀closed : IsClosed (K₀ : Set G) := by
+    rw [hK₀, connectedComponentIn_eq_image K.one_mem]
+    exact hK.isClosedEmbedding_subtypeVal.isClosedMap _ isClosed_connectedComponent
+  -- A torus in `K` is connected and contains `1`, so it lies in `K₀`.
+  have hle : ∀ {R : Subgroup G}, IsTorus R → R ≤ K → R ≤ K₀ := fun {R} hR hRK ↦ by
+    rw [← SetLike.coe_subset_coe, hK₀]
+    exact hR.isConnected.isPreconnected.subset_connectedComponentIn R.one_mem hRK
+  obtain ⟨c, hc, hmap⟩ := hS.exists_mem_map_conj_eq_of_le I hK₀closed hT
+    (hle hS.isTorus hSK) (hle hT.isTorus hTK)
+  exact ⟨c, hK₀ ▸ hc, hmap⟩
 
 end Conjugacy
 
