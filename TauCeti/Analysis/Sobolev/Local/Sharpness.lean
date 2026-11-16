@@ -64,18 +64,12 @@ open scoped ENNReal
 
 variable {p : ENNReal} {U : Set ℂ} {s : ℝ}
 
-/-- For `0 < p < ∞`, the norm power `z ↦ ‖z‖ ^ s` is locally `Lᵖ` on every subset of the plane
+/-- For `p < ∞`, the norm power `z ↦ ‖z‖ ^ s` is locally `Lᵖ` on every subset of the plane
 when `s p > -2`. -/
-theorem memLpLoc_norm_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) (hs : -2 < s * p.toReal) :
-    MemLpLoc p U (fun z : ℂ => ‖z‖ ^ s) := by
-  refine memLpLoc_iff.2 fun K _ hc => ?_
-  rw [← integrable_norm_rpow_iff (measurable_norm.pow_const s).aestronglyMeasurable hp0 hp]
-  simp only [Real.norm_eq_abs, Real.abs_rpow_of_nonneg (norm_nonneg _), abs_norm,
-    ← Real.rpow_mul (norm_nonneg _)]
-  refine (?_ : LocallyIntegrable _ volume).integrableOn_isCompact hc
-  simpa only [zero_sub, norm_neg] using
-    locallyIntegrable_norm_sub_rpow (mu := (volume : Measure ℂ)) (s := s * p.toReal)
-      (by rw [Complex.finrank_real_complex]; push_cast; linarith) (0 : ℂ)
+theorem memLpLoc_norm_rpow (hp : p ≠ ∞) (hs : -2 < s * p.toReal) :
+    MemLpLoc p U (fun z : ℂ => ‖z‖ ^ s) :=
+  memLpLoc_iff.2 fun K _ hc => hc.isBounded.memLp_norm_rpow_restrict hp
+    (by rw [Complex.finrank_real_complex]; push_cast; linarith)
 
 /-- For `0 < p < ∞`, if `s p ≤ -2` then `z ↦ ‖z‖ ^ s` is not locally `Lᵖ` on any neighbourhood
 of the origin. -/
@@ -97,23 +91,22 @@ origin, `z ↦ ‖z‖ ^ s` is locally `Lᵖ` on `U` exactly when `s p > -2`. -/
 theorem memLpLoc_norm_rpow_iff (hp0 : p ≠ 0) (hp : p ≠ ∞) (hU : U ∈ 𝓝 (0 : ℂ)) :
     MemLpLoc p U (fun z : ℂ => ‖z‖ ^ s) ↔ -2 < s * p.toReal :=
   ⟨fun h => not_le.1 fun hs => not_memLpLoc_norm_rpow hp0 hp hU hs h,
-    memLpLoc_norm_rpow hp0 hp⟩
+    memLpLoc_norm_rpow hp⟩
 
 /-- For `1 ≤ p < ∞`, the norm power `z ↦ ‖z‖ ^ s` is in `W^{1,p}_loc` on every subset of the
 plane when `(s - 1) p > -2`. Its weak derivative is `s ‖z‖ ^ (s - 2) ⟪z, ·⟫`. -/
 theorem memWkpLoc_one_norm_rpow (hp1 : 1 ≤ p) (hp : p ≠ ∞) (hs : -2 < (s - 1) * p.toReal) :
     MemWkpLoc p U 1 (fun z : ℂ => ‖z‖ ^ s) := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
   have hpr : 1 ≤ p.toReal := by
     simpa using ENNReal.toReal_mono hp hp1
   have hs1 : 1 - (Module.finrank ℝ ℂ : ℝ) < s := by
     rw [Complex.finrank_real_complex]
     push_cast
     nlinarith
-  refine memWkpLoc_succ_iff.2 ⟨memLpLoc_norm_rpow hp0 hp (by nlinarith),
+  refine memWkpLoc_succ_iff.2 ⟨memLpLoc_norm_rpow hp (by nlinarith),
     fun z => (s * ‖z‖ ^ (s - 2)) • innerSL ℝ z, hasWeakFDerivOn_norm_rpow hs1 _,
     memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K hK hc => ?_)⟩
-  refine ((memLpLoc_iff.1 (memLpLoc_norm_rpow hp0 hp hs) K hK hc).const_mul |s|).of_le
+  refine ((memLpLoc_iff.1 (memLpLoc_norm_rpow hp hs) K hK hc).const_mul |s|).of_le
     (locallyIntegrable_norm_rpow_smul_innerSL hs1).aestronglyMeasurable.restrict
     (ae_of_all _ fun z => ?_)
   refine (norm_rpow_smul_innerSL_le s z).trans (le_of_eq ?_)
@@ -196,7 +189,7 @@ theorem memLpLoc_memWkpLoc_not_memLpLoc_mul_norm_rpow :
       MemWkpLoc (4 / 3) (ball (0 : ℂ) 1) 1 (fun z => ‖z‖ ^ (-2 / 5 : ℝ)) ∧
       ¬ MemLpLoc (4 / 3) (ball (0 : ℂ) 1) (fun z => ‖z‖ ^ (-6 / 5 : ℝ) * ‖z‖ ^ (-2 / 5 : ℝ)) := by
   have hp0 : (4 / 3 : ENNReal) ≠ 0 := by simp
-  refine ⟨memLpLoc_norm_rpow hp0 four_thirds_ne_top (by rw [toReal_four_thirds]; norm_num),
+  refine ⟨memLpLoc_norm_rpow four_thirds_ne_top (by rw [toReal_four_thirds]; norm_num),
     memWkpLoc_norm_rpow_neg_two_fifths, ?_⟩
   have hmul : (fun z : ℂ => ‖z‖ ^ (-6 / 5 : ℝ) * ‖z‖ ^ (-2 / 5 : ℝ)) =
       fun z => ‖z‖ ^ (-8 / 5 : ℝ) := by
