@@ -77,9 +77,12 @@ section Quotient
 
 variable (K : Type u) [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
+-- Use the `simp`-normal coercion `↑↑(absoluteGaloisGroupRestrictEquiv K)` so `@[simp]` lemmas on
+-- `unramifiedCohomologyEquiv` satisfy `simpNF`.
 /-- The image of the inertia subgroup in `AbsoluteGaloisGroup K = Gal(Kˢ/K)` is normal. -/
 instance inertiaSubgroup_map_normal :
-    ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom).Normal :=
+    ((inertiaSubgroup K).map
+      (MonoidHom.ofClass (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K)))).Normal :=
   Subgroup.Normal.map (inertiaSubgroup_normal K) _ (absoluteGaloisGroupRestrictEquiv K).surjective
 
 /-- **The unramified quotient of `AbsoluteGaloisGroup K` is `ℤ̂`.** Transporting the inertia
@@ -87,10 +90,13 @@ subgroup from `Gal(K^{alg}/K)` to `Gal(Kˢ/K)` and composing with restriction to
 continuous multiplicative equivalence with the profinite integers. -/
 def quotientInertiaSepClosureEquivZHat :
     AbsoluteGaloisGroup K ⧸
-        ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom) ≃ₜ*
+        ((inertiaSubgroup K).map
+          (MonoidHom.ofClass (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K)))) ≃ₜ*
       zHat.{u} :=
   ((absoluteGaloisGroupRestrictEquiv K).quotientCongr (inertiaSubgroup K)
-    ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom) rfl).symm.trans
+    ((inertiaSubgroup K).map
+      (MonoidHom.ofClass (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K))))
+    rfl).symm.trans
     ((quotientInertiaSubgroupEquiv K).trans
       (maximalUnramifiedGaloisGroupEquivZHat K (AlgebraicClosure K)))
 
@@ -190,7 +196,9 @@ variable (K : Type u) [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarch
 inflation from `G_K ⧸ I_K` with coefficients in `M^{I_K}`. -/
 theorem range_explicitInfl1_eq_unramifiedCohomology :
     (explicitInfl1 (AbsoluteGaloisGroup K) M
-      ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom)).range =
+      ((inertiaSubgroup K).map
+        (MonoidHom.ofClass
+          (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K))))).range =
       unramifiedCohomology K M :=
   explicitInfRes_exact (AbsoluteGaloisGroup K) M _
 
@@ -198,13 +206,17 @@ theorem range_explicitInfl1_eq_unramifiedCohomology :
 discrete `G_K`-module `M`. -/
 def unramifiedCohomologyEquiv :
     H1 (AbsoluteGaloisGroup K ⧸
-        ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom))
+        ((inertiaSubgroup K).map
+          (MonoidHom.ofClass (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K)))))
       (FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom) M) ≃+
+        ((inertiaSubgroup K).map
+          (MonoidHom.ofClass (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K)))) M) ≃+
       unramifiedCohomology K M :=
   AddEquiv.ofBijective
     ((explicitInfl1 (AbsoluteGaloisGroup K) M
-        ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom)).codRestrict
+        ((inertiaSubgroup K).map
+          (MonoidHom.ofClass
+            (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K))))).codRestrict
       (unramifiedCohomology K M) fun x ↦
         range_explicitInfl1_eq_unramifiedCohomology K M ▸ ⟨x, rfl⟩)
     ⟨fun _ _ h ↦ explicitInfl1_injective (AbsoluteGaloisGroup K) M _ (congrArg Subtype.val h),
@@ -213,14 +225,18 @@ def unramifiedCohomologyEquiv :
       exact ⟨x, Subtype.ext hx⟩⟩
 
 /-- `unramifiedCohomologyEquiv` acts by degree-one inflation into `H¹(G_K, M)`. -/
+@[simp]
 theorem coe_unramifiedCohomologyEquiv_apply
     (x : H1 (AbsoluteGaloisGroup K ⧸
-        ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom))
+        ((inertiaSubgroup K).map
+          (MonoidHom.ofClass (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K)))))
       (FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom) M)) :
+        ((inertiaSubgroup K).map
+          (MonoidHom.ofClass (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K)))) M)) :
     (unramifiedCohomologyEquiv K M x : H1 (AbsoluteGaloisGroup K) M) =
       explicitInfl1 (AbsoluteGaloisGroup K) M
-        ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom) x :=
+        ((inertiaSubgroup K).map
+          (MonoidHom.ofClass (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K)))) x :=
   (rfl)
 
 /-- **Finiteness of unramified `H¹`.** For any discrete `G_K`-module `M` whose inertia invariants
@@ -228,11 +244,13 @@ theorem coe_unramifiedCohomologyEquiv_apply
 finite. -/
 instance finite_unramifiedCohomology
     [Finite (FixedPoints.addSubgroup
-      ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom) M)] :
+      ((inertiaSubgroup K).map
+        (MonoidHom.ofClass (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K)))) M)] :
     Finite (unramifiedCohomology K M) := by
   have := zHat.finite_H1_of_continuousMulEquiv
     (FixedPoints.addSubgroup
-      ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom) M)
+      ((inertiaSubgroup K).map
+        (MonoidHom.ofClass (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K)))) M)
     (quotientInertiaSepClosureEquivZHat K)
   exact Finite.of_equiv _ (unramifiedCohomologyEquiv K M).toEquiv
 
@@ -241,12 +259,14 @@ instance finite_unramifiedCohomology
 discrete `M`), `#H¹_ur(G_K, M) = #H⁰(G_K, M)`. -/
 theorem natCard_unramifiedCohomology_eq_natCard_H0
     [Finite (FixedPoints.addSubgroup
-      ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom) M)] :
+      ((inertiaSubgroup K).map
+        (MonoidHom.ofClass (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K)))) M)] :
     Nat.card (unramifiedCohomology K M) = Nat.card (H0 (AbsoluteGaloisGroup K) M) := by
   rw [← Nat.card_congr (unramifiedCohomologyEquiv K M).toEquiv,
     zHat.natCard_H1_eq_natCard_H0_of_continuousMulEquiv
       (FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom) M)
+        ((inertiaSubgroup K).map
+          (MonoidHom.ofClass (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K)))) M)
       (quotientInertiaSepClosureEquivZHat K)]
   exact Nat.card_congr (explicitInfl0Equiv (AbsoluteGaloisGroup K) M _).toEquiv
 
@@ -262,7 +282,8 @@ theorem explicitCup11_eq_zero_of_mem_unramifiedCohomology
     {P : Type*} [AddCommGroup P] [TopologicalSpace P] [DiscreteTopology P]
     [DistribMulAction (AbsoluteGaloisGroup K) P] [ContinuousSMul (AbsoluteGaloisGroup K) P]
     [Finite (FixedPoints.addSubgroup
-      ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom) P)]
+      ((inertiaSubgroup K).map
+        (MonoidHom.ofClass (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K)))) P)]
     (μ : M →+ A →+ P) (hμ : Continuous fun p : M × A => μ p.1 p.2)
     (hequiv : ∀ (g : AbsoluteGaloisGroup K) (m : M) (a : A), μ (g • m) (g • a) = g • μ m a)
     {x : H1 (AbsoluteGaloisGroup K) M} (hx : x ∈ unramifiedCohomology K M)
@@ -273,9 +294,12 @@ theorem explicitCup11_eq_zero_of_mem_unramifiedCohomology
   rw [← explicitInfl2_explicitCup11]
   have : Subsingleton
       (H2 (AbsoluteGaloisGroup K ⧸
-          ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom))
+          ((inertiaSubgroup K).map
+            (MonoidHom.ofClass (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K)))))
         (FixedPoints.addSubgroup
-          ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom) P)) :=
+          ((inertiaSubgroup K).map
+            (MonoidHom.ofClass
+              (MulEquivClass.toMulEquiv (absoluteGaloisGroupRestrictEquiv K)))) P)) :=
     zHat.subsingleton_H2_of_continuousMulEquiv _ (quotientInertiaSepClosureEquivZHat K)
   exact (congrArg _ (Subsingleton.elim _ 0)).trans (map_zero _)
 

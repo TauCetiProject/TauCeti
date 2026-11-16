@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.U
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Local
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Unramified
 import TauCeti.Algebra.Module.ZMod.Annihilator
+import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.Basic
 
 /-!
 # Unramified local Tate duality for elliptic torsion and isogeny kernels
@@ -243,19 +244,12 @@ theorem unramifiedKerCohomology_dual_eq_ker_flip_compl₂_localTateKerWeilPairin
     rw [← hdeg_dual]
     exact φ.dual.degree_nsmul_kerCoeff_eq_zero P
   have : Finite (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :=
-    finite_H1_of_nsmul_eq_zero hn (ofIsogeny φ.dual).KerCoeff hdual_nsmul
-  have hnsmul : ∀ b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff,
-      φ.degree • b = 0 := by
-    rintro ⟨f⟩
-    change H1pi _ _ (φ.degree • f) = 0
-    have hf : φ.degree • f = 0 := by
-      apply Subtype.ext
-      funext g
-      exact hdual_nsmul (f.val g)
-    rw [hf, map_zero]
+    finite_H1_of_nsmul_eq_zero hn.ne_zero (ofIsogeny φ.dual).KerCoeff hdual_nsmul
   rw [φ.unramifiedKerCohomology_eq_ker_compl₂_localTateKerWeilPairing p hn hpn]
   exact ((φ.localTateKerWeilPairing hn).ker_flip_compl₂_subtype_ker_compl₂_subtype_zmod
-    (φ.localTateKerWeilPairing_bijective hn) hnsmul φ.dual.unramifiedKerCohomology).symm
+    (φ.localTateKerWeilPairing_bijective hn)
+    (nsmul_H1_eq_zero (G := AbsoluteGaloisGroup K) hdual_nsmul)
+    φ.dual.unramifiedKerCohomology).symm
 
 /-- **Pointwise unramified duality for `E₂[φ̂]`.** Over a finite extension `K` of `ℚ_p` with
 `p ∤ deg φ`, a class in `H¹(G_K, E₂[φ̂])` is unramified if and only if every unramified class in

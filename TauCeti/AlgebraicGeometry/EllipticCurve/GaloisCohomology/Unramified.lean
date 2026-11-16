@@ -47,29 +47,6 @@ namespace WeierstrassCurve
 
 open TauCeti TauCeti.ContCohomology ValuativeRel
 
-section Invariants
-
-variable {F : Type*} [Field F] [DecidableEq F] (W : WeierstrassCurve F) (m : ℕ)
-
-/-- **Rational `m`-torsion points are the Galois invariants of `E(Fˢ)[m]`.** -/
-def baseTorsionEquivInvariants :
-    AddSubgroup.torsionBy W.toAffine.Point m ≃+ H0 (AbsoluteGaloisGroup F) (W.TorsionCoeff m) :=
-  AddEquiv.ofBijective
-    ((W.baseTorsionCoeff m).codRestrict _ fun T ↦
-      (FixedPoints.mem_addSubgroup _ _ _).2 fun σ ↦ W.smul_baseTorsionCoeff σ T)
-    ⟨fun _ _ h ↦ W.baseTorsionCoeff_injective m (congrArg Subtype.val h), fun ⟨Q, hQ⟩ ↦ by
-      obtain ⟨T, hT⟩ := W.exists_baseTorsionCoeff_eq_of_forall_smul_eq
-        ((FixedPoints.mem_addSubgroup _ _ Q).1 hQ)
-      exact ⟨T, Subtype.ext hT⟩⟩
-
-/-- Coercion of `baseTorsionEquivInvariants` to `W.TorsionCoeff m` is `baseTorsionCoeff`. -/
-@[simp]
-theorem coe_baseTorsionEquivInvariants (T : AddSubgroup.torsionBy W.toAffine.Point m) :
-    (W.baseTorsionEquivInvariants m T : W.TorsionCoeff m) = W.baseTorsionCoeff m T :=
-  (rfl)
-
-end Invariants
-
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] (W : WeierstrassCurve K) (m : ℕ)
 

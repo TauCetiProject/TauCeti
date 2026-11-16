@@ -40,11 +40,12 @@ im(δ_φ : E₂(F_u) → H¹(G_{F_u}, E₁[φ])) = H¹_ur(G_{F_u}, E₁[φ]).
 
 Globally, over the fraction field `K` of a Dedekind domain `R` with finite residue fields, the
 local condition of the `φ`-Selmer structure agrees with `H¹_ur(G_{K_v}, E₁[φ])` at every finite
-place `v` prime to `deg φ` where `W₁` and `W₂` have good reduction, hence at all but finitely many
-finite places. Consequently, if `S` contains the bad places of `W₁` and `W₂` and the places
-dividing `deg φ`, `Sel_φ` relative to all finite completions equals the classes in
-`H¹_S(G_K, E₁[φ])` (`TauCeti.Isogeny.unramifiedOutsideKerCohomology`) satisfying the local Kummer
-condition at the finitely many places in `S`.
+place `v` prime to `deg φ` where `W₁` and `W₂` have good reduction, hence—when `(φ.degree : K) ≠ 0`—
+at all but finitely many finite places. Consequently, if `(φ.degree : K) ≠ 0` and `S` contains the
+bad places of `W₁` and `W₂` and the places dividing `deg φ`, `Sel_φ` relative to all finite
+completions equals the classes in `H¹_S(G_K, E₁[φ])`
+(`TauCeti.Isogeny.unramifiedOutsideKerCohomology`) satisfying the local Kummer condition at the
+finitely many places in `S`.
 
 ## Main definitions
 
@@ -278,7 +279,7 @@ theorem localCondition_selmerStructure_eq_unramifiedKerCohomology
   exact (φ.baseChange (v.adicCompletion K)).range_kummerMap_eq_unramifiedKerCohomology v hd
 
 /-- **For all but finitely many finite places `v`, the local condition of `Sel_φ` equals
-`H¹_ur(G_{K_v}, E₁[φ])`.** -/
+`H¹_ur(G_{K_v}, E₁[φ])`**, provided `(φ.degree : K) ≠ 0`. -/
 theorem eventually_localCondition_selmerStructure_eq_unramifiedKerCohomology
     (hφ : (φ.degree : K) ≠ 0) :
     ∀ᶠ v in Filter.cofinite, (φ.selmerStructure τ).localCondition v =

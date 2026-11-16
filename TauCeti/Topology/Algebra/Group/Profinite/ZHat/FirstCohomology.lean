@@ -233,20 +233,10 @@ variable (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGro
 to an additive isomorphism `H¹(ℤ̂, M) ≃+ M ⧸ (gen - 1)M` for every profinite `ℤ̂`-module `M`. -/
 noncomputable def h1EquivQuotient :
     H1 zHat.{u} M ≃+ M ⧸ (genSubOneHom.{u} M).range :=
-  AddEquiv.ofBijective
-    (QuotientAddGroup.lift ((B1 zHat.{u} M).addSubgroupOf (Z1 zHat.{u} M))
+  (QuotientAddGroup.quotientAddEquivOfEq (ker_mk_comp_z1Equiv (M := M)).symm).trans
+    (QuotientAddGroup.quotientKerEquivOfSurjective
       ((QuotientAddGroup.mk' (genSubOneHom.{u} M).range).comp (z1Equiv.{u} M).toAddMonoidHom)
-      (fun _ hf ↦ (ker_mk_comp_z1Equiv (M := M)).symm ▸ hf))
-    ⟨by
-      rw [injective_iff_map_eq_zero]
-      intro x hx
-      induction x using QuotientAddGroup.induction_on with
-      | _ f =>
-        rw [QuotientAddGroup.eq_zero_iff, ← ker_mk_comp_z1Equiv (M := M)]
-        exact hx,
-     fun q ↦ QuotientAddGroup.induction_on q fun m ↦
-      ⟨((z1Equiv.{u} M).symm m : H1 zHat.{u} M),
-        congrArg QuotientAddGroup.mk (z1Equiv_symm_apply_gen m)⟩⟩
+      ((QuotientAddGroup.mk'_surjective _).comp (z1Equiv.{u} M).surjective))
 
 variable {M}
 
