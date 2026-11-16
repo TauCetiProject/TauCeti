@@ -252,6 +252,21 @@ instance invertibleModuleEquiv_isMonoidal_of {R₀ : Type u} [CommRing R₀] :
 
 end Monoidal
 
+/-- Cancel adjacent inverse `eqToHom` transports on the right of a morphism. -/
+@[reassoc]
+private lemma comp_eqToHom_symm_comp {C : Type*} [Category C] {W X Y : C}
+    (g : W ⟶ X) (h : Y = X) :
+    (g ≫ eqToHom h.symm) ≫ eqToHom h = g := by
+  simp
+
+/-- Transport a commutative square `u ≫ αN = αM ≫ v` along object equalities on the left. -/
+private lemma eqToHom_comp_naturality {C : Type*} [Category C]
+    {X₁ X₂ Y₁ Y₂ Z₁ Z₂ : C} (hM : X₁ = X₂) (hN : Y₁ = Y₂)
+    {u : X₂ ⟶ Y₂} {αM : X₂ ⟶ Z₁} {αN : Y₂ ⟶ Z₂} {v : Z₁ ⟶ Z₂}
+    (hnat : u ≫ αN = αM ≫ v) :
+    (eqToHom hM ≫ u ≫ eqToHom hN.symm) ≫ (eqToHom hN ≫ αN) = (eqToHom hM ≫ αM) ≫ v := by
+  simp [Category.assoc, hnat]
+
 section Dual
 
 variable (R : CommRingCat.{u})
@@ -287,23 +302,11 @@ theorem invertibleModuleEquivDualIso_naturality
       (invertibleModuleEquivDualIso R N).hom.hom ≫
         eqToHom (dual_obj ((invertibleModuleEquiv R).functor.obj N)) ≫
         (pre ((tilde.functor R).map f.hom)).app (𝟙_ (Spec R).Modules) := by
-  let gM := (FiniteLocallyFreeSheaf.finiteProjectiveEquivDualIso R
-    ((InvertibleModules.toFiniteProjective R).obj M)).hom.hom
-  let gN := (FiniteLocallyFreeSheaf.finiteProjectiveEquivDualIso R
-    ((InvertibleModules.toFiniteProjective R).obj N)).hom.hom
-  let hM := dual_obj ((invertibleModuleEquiv R).functor.obj M)
-  let hN := dual_obj ((invertibleModuleEquiv R).functor.obj N)
-  let p := (pre ((tilde.functor R).map f.hom)).app (𝟙_ (Spec R).Modules)
-  have lhs : (gM ≫ eqToHom hM.symm) ≫ eqToHom hM = gM :=
-    (Category.assoc gM (eqToHom hM.symm) (eqToHom hM)).trans
-      ((congrArg (gM ≫ ·) (eqToHom_trans hM.symm hM)).trans (Category.comp_id gM))
-  have rhs : gN ≫ p = (gN ≫ eqToHom hN.symm) ≫ eqToHom hN ≫ p :=
-    ((Category.assoc gN (eqToHom hN.symm) (eqToHom hN ≫ p)).trans
-      ((congrArg (gN ≫ ·) ((Category.assoc (eqToHom hN.symm) (eqToHom hN) p).symm.trans
-        ((congrArg (· ≫ p) (eqToHom_trans hN.symm hN)).trans (Category.id_comp p)))))).symm
-  exact (congrArg ((tilde.functor R).map (ModuleCat.ofHom f.hom.hom.dualMap) ≫ ·) lhs).trans
+  exact (congrArg ((tilde.functor R).map (ModuleCat.ofHom f.hom.hom.dualMap) ≫ ·)
+      (comp_eqToHom_symm_comp _ _)).trans
     ((FiniteLocallyFreeSheaf.finiteProjectiveEquivDualIso_naturality R
-      ((InvertibleModules.toFiniteProjective R).map f)).trans rhs)
+      ((InvertibleModules.toFiniteProjective R).map f)).trans
+      (comp_eqToHom_symm_comp_assoc _ _ _).symm)
 
 end Dual
 
@@ -359,31 +362,12 @@ def invertibleModuleEquivCompPullbackIso :
         (tildeFunctorCompPullbackIso φ).app M.obj))
     (fun {M N} f ↦ by
       apply ObjectProperty.hom_ext
-      let hM := pullback_obj_obj (Spec.map φ) ((invertibleModuleEquiv R).functor.obj M)
-      let hN := pullback_obj_obj (Spec.map φ) ((invertibleModuleEquiv R).functor.obj N)
-      let u : (Scheme.Modules.pullback (Spec.map φ)).obj (tilde M.obj) ⟶
-          (Scheme.Modules.pullback (Spec.map φ)).obj (tilde N.obj) :=
-        (Scheme.Modules.pullback (Spec.map φ)).map ((tilde.functor R).map f.hom)
-      let αM : (Scheme.Modules.pullback (Spec.map φ)).obj (tilde M.obj) ⟶
-          tilde ((ModuleCat.extendScalars φ.hom).obj M.obj) :=
-        (tildeFunctorCompPullbackIso φ).hom.app M.obj
-      let αN : (Scheme.Modules.pullback (Spec.map φ)).obj (tilde N.obj) ⟶
-          tilde ((ModuleCat.extendScalars φ.hom).obj N.obj) :=
-        (tildeFunctorCompPullbackIso φ).hom.app N.obj
-      let v : tilde ((ModuleCat.extendScalars φ.hom).obj M.obj) ⟶
-          tilde ((ModuleCat.extendScalars φ.hom).obj N.obj) :=
-        (tilde.functor S).map ((ModuleCat.extendScalars φ.hom).map f.hom)
-      have hnat : u ≫ αN = αM ≫ v := (tildeFunctorCompPullbackIso φ).hom.naturality f.hom
-      -- After unfolding the full-subcategory wrappers, both sides live in `(Spec S).Modules` and
-      -- differ from `hnat` only by `eqToHom hM` on the left and a cancelling `eqToHom hN` pair.
-      change (eqToHom hM ≫ u ≫ eqToHom hN.symm) ≫ (eqToHom hN ≫ αN) = (eqToHom hM ≫ αM) ≫ v
-      have cancel : (u ≫ eqToHom hN.symm) ≫ (eqToHom hN ≫ αN) = u ≫ αN :=
-        (Category.assoc u (eqToHom hN.symm) (eqToHom hN ≫ αN)).trans
-          (congrArg (u ≫ ·) ((Category.assoc (eqToHom hN.symm) (eqToHom hN) αN).symm.trans
-            ((congrArg (· ≫ αN) (eqToHom_trans hN.symm hN)).trans (Category.id_comp αN))))
-      exact (Category.assoc (eqToHom hM) (u ≫ eqToHom hN.symm) (eqToHom hN ≫ αN)).trans
-        ((congrArg (eqToHom hM ≫ ·) (cancel.trans hnat)).trans
-          (Category.assoc (eqToHom hM) αM v).symm))
+      simp only [Functor.comp_obj, Functor.comp_map, ObjectProperty.FullSubcategory.comp_hom,
+        ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom, pullback_map]
+      exact eqToHom_comp_naturality
+        (pullback_obj_obj (Spec.map φ) ((invertibleModuleEquiv R).functor.obj M))
+        (pullback_obj_obj (Spec.map φ) ((invertibleModuleEquiv R).functor.obj N))
+        ((tildeFunctorCompPullbackIso φ).hom.naturality f.hom))
 
 /-- On underlying sheaves, `invertibleModuleEquivCompPullbackIso φ` is
 `tildeFunctorCompPullbackIso φ`. -/

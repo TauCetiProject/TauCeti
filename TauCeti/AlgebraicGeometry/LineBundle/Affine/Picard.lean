@@ -224,14 +224,6 @@ theorem specEquivPic_comp_pullbackHom {R S : Type u} [CommRing R] [CommRing S] (
   ext a
   simp [specEquivPic_pullback]
 
-/-- For an `R`-algebra `S`, pullback along `Spec (algebraMap R S)` corresponds under
-`specEquivPic` to `CommRing.Pic.mapAlgebra R S`. -/
-theorem specEquivPic_pullback_algebraMap (R S : Type u) [CommRing R] [CommRing S] [Algebra R S]
-    (a : LineBundleClass (Spec (.of R))) :
-    specEquivPic S (pullback (Spec.map (CommRingCat.ofHom (algebraMap R S))) a) =
-      CommRing.Pic.mapAlgebra R S (specEquivPic R a) := by
-  rw [specEquivPic_pullback, CommRing.Pic.mapRingHom_algebraMap]
-
 /-- `LineBundleClass (Spec (.of R))` is `u`-small, since `specEquivPic R` embeds it into
 `CommRing.Pic R : Type u`. -/
 instance small_spec : Small.{u} (LineBundleClass (Spec (.of R))) :=
