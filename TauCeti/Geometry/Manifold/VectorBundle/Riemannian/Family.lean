@@ -160,19 +160,18 @@ theorem contMDiffWithinAt_inner_comp (hg : IsSmoothMetricFamilyOn g s) (hn : n �
     (hcoeff.clm_bundle_apply₂ (F₃ := ℝ) (E₃ := Bundle.Trivial M ℝ) hv hw)).2
 
 /-- Evaluating a smooth metric family along `C^n` time and bundle-valued maps is `C^n`
-at `y`, for `n ≤ ∞`, if `s` is a neighborhood of `c y`. The base map's regularity follows
-from either vector field. -/
+at `y`, for `n ≤ ∞`, if the time map eventually takes values in `s` near `y`. The base
+map's regularity follows from either vector field. -/
 theorem contMDiffAt_inner_comp (hg : IsSmoothMetricFamilyOn g s) (hn : n ≤ ∞)
-    (hc : ContMDiffAt J 𝓘(ℝ) n c y) (hs : s ∈ 𝓝 (c y))
+    (hc : ContMDiffAt J 𝓘(ℝ) n c y) (hcs : ∀ᶠ z in 𝓝 y, c z ∈ s)
     (hv : ContMDiffAt J (I.prod 𝓘(ℝ, F)) n
       (fun z ↦ TotalSpace.mk' F (b z) (v z)) y)
     (hw : ContMDiffAt J (I.prod 𝓘(ℝ, F)) n
       (fun z ↦ TotalSpace.mk' F (b z) (w z)) y) :
     ContMDiffAt J 𝓘(ℝ) n (fun z ↦ (g (c z)).inner (b z) (v z) (w z)) y := by
-  have hb := (contMDiffAt_totalSpace_iff.mp hv).1
-  have hcoeff := ((hg.contMDiffAt hs (b y)).of_le hn).comp y (hc.prodMk hb)
-  exact (contMDiffAt_totalSpace_iff.mp
-    (hcoeff.clm_bundle_apply₂ (F₃ := ℝ) (E₃ := Bundle.Trivial M ℝ) hv hw)).2
+  apply contMDiffWithinAt_univ.mp
+  exact hg.contMDiffWithinAt_inner_comp hn hc.contMDiffWithinAt hcs.self_of_nhds
+    (by simpa only [nhdsWithin_univ] using hcs) hv.contMDiffWithinAt hw.contMDiffWithinAt
 
 /-- Evaluating a smooth metric family along `C^n` time and bundle-valued maps is `C^n`
 on `u`, for `n ≤ ∞`, when the time map sends all of `u` into `s`. The base map's regularity
@@ -223,7 +222,7 @@ theorem of_inner_eq_smul (hg : IsSmoothMetricFamilyOn g s) {a : ℝ × M → ℝ
 /-- A time-dependent scalar multiple of a smooth family's coefficients is smooth when the
 scalar is smooth on the time set. Coefficient equality is required only on that set; the target
 metrics are already given, so no condition on the scalar outside the time set is needed. -/
-theorem of_inner_eq_smul_const (hg : IsSmoothMetricFamilyOn g s) {a : ℝ → ℝ}
+theorem of_inner_eq_const_smul (hg : IsSmoothMetricFamilyOn g s) {a : ℝ → ℝ}
     (ha : ContDiffOn ℝ ∞ a s)
     (heq : ∀ t ∈ s, ∀ x, (h t).inner x = a t • (g t).inner x) :
     IsSmoothMetricFamilyOn h s :=
@@ -249,7 +248,7 @@ theorem rescale_const (hg : IsSmoothMetricFamilyOn g s) {a : ℝ → ℝ}
     (ha : ContDiffOn ℝ ∞ a s) (hapos : ∀ t, 0 < a t) :
     IsSmoothMetricFamilyOn
       (fun t ↦ (g t).rescale (fun _ ↦ a t) contMDiff_const (fun _ ↦ hapos t)) s :=
-  hg.of_inner_eq_smul_const ha (fun t _ x ↦ by ext v w; simp)
+  hg.of_inner_eq_const_smul ha (fun t _ x ↦ by ext v w; simp)
 
 end IsSmoothMetricFamilyOn
 
