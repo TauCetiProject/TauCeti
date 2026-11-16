@@ -20,8 +20,7 @@ of its source and target diagrams. Unlike the proposition-valued relation `IsRei
 move datum retains the relabelling permutations, rotated crossing index, cut half-edges, over-strand
 choice, adjoined circle orientations, or Reidemeister-III triangle needed to identify individual
 components unambiguously — including across moves that convert crossing-free circle labels into
-crossing-bearing traversal classes (`adjoinKink`, `insertCircleClasp`, `adjoinTwoCircleClasp`) or
-permute repeated circle labels.
+crossing-bearing traversal classes (`adjoinKink`, `insertCircleClasp`, `adjoinTwoCircleClasp`).
 
 Extending `ReidemeisterMove.componentEquiv` to forward and backward steps in the symmetrized quiver
 `Quiver.Symmetrify ReidemeisterQuiver` yields `ReidemeisterPath.componentEquiv`, which transports
@@ -121,7 +120,7 @@ theorem ReidemeisterMove.componentEquiv_adjoinTwoCircleClasp {n : ℕ} (D : Orie
   (rfl)
 
 /-- Component transport for a third Reidemeister move is `reidemeisterThreeComponentEquiv`,
-independent of the triangle height-order witness. -/
+independent of the `HasReidemeisterThreeTriangle` witness. -/
 @[simp]
 theorem ReidemeisterMove.componentEquiv_reidemeisterThree {n : ℕ} (D : OrientedPDCode n)
     (c : Fin 3 ↪ Fin n) (h : D.HasReidemeisterThreeTriangle c) :
@@ -166,8 +165,7 @@ theorem ReidemeisterPath.componentEquiv_toPath_toPos {x y : Σ n, OrientedPDCode
     (e : ReidemeisterMove x y) :
     ReidemeisterPath.componentEquiv (Quiver.Hom.toPos (V := ReidemeisterQuiver) e).toPath =
       e.componentEquiv := by
-  ext c
-  rfl
+  simp [Quiver.Hom.toPath]
 
 /-- A single backward arrow as a length-one path acts by `e.componentEquiv.symm`. -/
 @[simp]
@@ -175,8 +173,7 @@ theorem ReidemeisterPath.componentEquiv_toPath_toNeg {x y : Σ n, OrientedPDCode
     (e : ReidemeisterMove y x) :
     ReidemeisterPath.componentEquiv (Quiver.Hom.toNeg (V := ReidemeisterQuiver) e).toPath =
       e.componentEquiv.symm := by
-  ext c
-  rfl
+  simp [Quiver.Hom.toPath]
 
 /-- Transporting along the single-move word `e.toPath` recovers `e.componentEquiv`. -/
 @[simp]
@@ -197,8 +194,7 @@ theorem ReidemeisterPath.componentEquiv_comp {x y z : Σ n, OrientedPDCode n}
   | cons q a ih =>
     rcases a with e | e <;>
       · dsimp only [Quiver.Path.comp, ReidemeisterPath.componentEquiv]
-        rw [ih]
-        rfl
+        rw [ih, Equiv.trans_assoc]
 
 /-- Reversing a word of moves inverts its component bijection. -/
 @[simp]
@@ -206,11 +202,10 @@ theorem ReidemeisterPath.componentEquiv_reverse {x y : Σ n, OrientedPDCode n}
     (p : ReidemeisterPath x y) :
     ReidemeisterPath.componentEquiv p.reverse = (ReidemeisterPath.componentEquiv p).symm := by
   induction p with
-  | nil => rfl
+  | nil => simp [ReidemeisterPath.componentEquiv]
   | cons p a ih =>
+    have hrev := Quiver.symmetrify_reverse (V := ReidemeisterQuiver) a
     rcases a with e | e <;>
-      · ext c
-        simp [ReidemeisterPath.componentEquiv, Quiver.Hom.toPath, Quiver.reverse, ih]
-        rfl
+      simp [ReidemeisterPath.componentEquiv, hrev, ih, Equiv.symm_trans]
 
 end TauCeti.OrientedPDCode

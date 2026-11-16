@@ -127,41 +127,19 @@ private theorem collapseCircleClaspHalfEdge_edgePair (x : Fin (4 * (n + 2))) :
     have hedge : D.edgePair.val p = (D.adjoinCircle o).edgePair.val p := by simp
     fin_cases s <;> simp [collapseCircleClaspHalfEdge, hedge]
 
-private theorem collapseCircleClaspHalfEdge_componentPermOutgoing
-    (x : {x : Fin (4 * (n + 2)) // (D.insertCircleClasp p o b).orientation x = true}) :
-    collapseCircleClaspHalfEdge D p o ((D.insertCircleClasp p o b).componentPermOutgoing x) =
-      collapseCircleClaspHalfEdge D p o x := by
-  simp only [componentPermOutgoing_apply, PDCode.componentPerm_apply]
-  rw [collapseCircleClaspHalfEdge_crossingTurn, collapseCircleClaspHalfEdge_edgePair]
-
-private def collapseCircleClaspCrossingComponent :
-    (D.insertCircleClasp p o b).CrossingComponent → (D.adjoinCircle o).Component :=
-  Quotient.lift (fun x ↦ collapseCircleClaspHalfEdge D p o x.val) fun _ _ hxy ↦
-    hxy.apply_eq_of_apply_eq (f := fun x ↦ collapseCircleClaspHalfEdge D p o x.val)
-      (collapseCircleClaspHalfEdge_componentPermOutgoing D p o b)
-
-private theorem collapseCircleClaspCrossingComponent_halfEdge (x : Fin (4 * (n + 2))) :
-    collapseCircleClaspCrossingComponent D p o b
-        ((D.insertCircleClasp p o b).crossingComponentOfHalfEdge x) =
-      collapseCircleClaspHalfEdge D p o x := by
-  cases hx : (D.insertCircleClasp p o b).orientation x with
-  | true =>
-    rw [crossingComponentOfHalfEdge_of_outgoing _ x hx]
-    rfl
-  | false =>
-    rw [crossingComponentOfHalfEdge_of_incoming _ x hx]
-    exact collapseCircleClaspHalfEdge_edgePair D p o b x
-
 private def collapseCircleClaspComponent :
     (D.insertCircleClasp p o b).Component → (D.adjoinCircle o).Component :=
-  Sum.elim (collapseCircleClaspCrossingComponent D p o b)
+  Sum.elim
+    ((D.insertCircleClasp p o b).liftCrossingComponent (collapseCircleClaspHalfEdge D p o)
+      (collapseCircleClaspHalfEdge_crossingTurn D p o b)
+      (collapseCircleClaspHalfEdge_edgePair D p o b))
     fun i ↦ .inr (Fin.cast (by simp) i.castSucc)
 
 private theorem collapseCircleClaspComponent_inl_halfEdge (x : Fin (4 * (n + 2))) :
     collapseCircleClaspComponent D p o b
         (.inl ((D.insertCircleClasp p o b).crossingComponentOfHalfEdge x)) =
       collapseCircleClaspHalfEdge D p o x :=
-  collapseCircleClaspCrossingComponent_halfEdge D p o b x
+  (D.insertCircleClasp p o b).liftCrossingComponent_crossingComponentOfHalfEdge _ _ _ x
 
 private theorem collapseCircleClaspComponent_inr (i : Fin D.crossinglessComponentCount) :
     collapseCircleClaspComponent D p o b (.inr (Fin.cast (by simp) i)) =
@@ -238,11 +216,12 @@ theorem insertCircleClaspComponentEquiv_componentOfOutgoing
 
 /-- Removing the circle-and-arc clasp sends every old outgoing representative back to itself. -/
 @[simp]
-theorem insertCircleClaspComponentEquiv_symm_componentOfOutgoing_old
-    (x : Fin (4 * n)) (hx : D.orientation x = true) :
+theorem insertCircleClaspComponentEquiv_symm_componentOfOutgoing_old (x : Fin (4 * n))
+    (hx : (D.insertCircleClasp p o b).orientation
+      (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl x)))) = true) :
     (D.insertCircleClaspComponentEquiv p o b).symm
         ((D.insertCircleClasp p o b).componentOfOutgoing
-          ⟨halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl x))), by simp [hx]⟩) =
+          ⟨halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl x))), hx⟩) =
       (D.adjoinCircle o).componentOfOutgoing ⟨x, by simpa using hx⟩ := by
   simpa only [← inl_crossingComponentOfHalfEdge] using
     D.insertCircleClaspComponentEquiv_symm_inl_old p o b x
@@ -261,6 +240,22 @@ theorem insertCircleClaspComponentEquiv_symm_inl_first (s : Fin 4) :
   rw [insertCircleClaspComponentEquiv_symm_apply, collapseCircleClaspComponent_inl_halfEdge]
   simp [collapseCircleClaspHalfEdge]
 
+/-- At the first new crossing, an outgoing slot collapses to the cut arc's component at slots `0`
+and `2`, and to the consumed crossing-free label `Fin.last` at slots `1` and `3`. -/
+@[simp]
+theorem insertCircleClaspComponentEquiv_symm_componentOfOutgoing_first (s : Fin 4)
+    (hs : (D.insertCircleClasp p o b).orientation
+      (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr s)))) = true) :
+    (D.insertCircleClaspComponentEquiv p o b).symm
+        ((D.insertCircleClasp p o b).componentOfOutgoing
+          ⟨halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr s))), hs⟩) =
+      ![.inl ((D.adjoinCircle o).crossingComponentOfHalfEdge p),
+        .inr (Fin.cast (by simp) (Fin.last D.crossinglessComponentCount)),
+        .inl ((D.adjoinCircle o).crossingComponentOfHalfEdge p),
+        .inr (Fin.cast (by simp) (Fin.last D.crossinglessComponentCount))] s := by
+  simpa only [← inl_crossingComponentOfHalfEdge] using
+    D.insertCircleClaspComponentEquiv_symm_inl_first p o b s
+
 /-- At the second new crossing, slots `0` and `2` collapse to the consumed crossing-free label
 `Fin.last` and slots `1` and `3` collapse to the cut arc's component. -/
 @[simp]
@@ -275,10 +270,25 @@ theorem insertCircleClaspComponentEquiv_symm_inl_second (s : Fin 4) :
   rw [insertCircleClaspComponentEquiv_symm_apply, collapseCircleClaspComponent_inl_halfEdge]
   simp [collapseCircleClaspHalfEdge]
 
+/-- At the second new crossing, an outgoing slot collapses to the consumed crossing-free label
+`Fin.last` at slots `0` and `2`, and to the cut arc's component at slots `1` and `3`. -/
+@[simp]
+theorem insertCircleClaspComponentEquiv_symm_componentOfOutgoing_second (s : Fin 4)
+    (hs : (D.insertCircleClasp p o b).orientation (halfEdgeSuccEquiv (n + 1) (.inr s)) = true) :
+    (D.insertCircleClaspComponentEquiv p o b).symm
+        ((D.insertCircleClasp p o b).componentOfOutgoing
+          ⟨halfEdgeSuccEquiv (n + 1) (.inr s), hs⟩) =
+      ![.inr (Fin.cast (by simp) (Fin.last D.crossinglessComponentCount)),
+        .inl ((D.adjoinCircle o).crossingComponentOfHalfEdge p),
+        .inr (Fin.cast (by simp) (Fin.last D.crossinglessComponentCount)),
+        .inl ((D.adjoinCircle o).crossingComponentOfHalfEdge p)] s := by
+  simpa only [← inl_crossingComponentOfHalfEdge] using
+    D.insertCircleClaspComponentEquiv_symm_inl_second p o b s
+
 /-- The added-circle label `Fin.last` maps to the circle strand of the clasp, represented at the
 first new crossing by slot `3` when `o = true` and slot `1` otherwise. -/
 @[simp]
-theorem insertCircleClaspComponentEquiv_last :
+theorem insertCircleClaspComponentEquiv_inr_last :
     D.insertCircleClaspComponentEquiv p o b
         (.inr (Fin.cast (by simp) (Fin.last D.crossinglessComponentCount))) =
       (D.insertCircleClasp p o b).componentOfOutgoing
@@ -291,11 +301,13 @@ theorem insertCircleClaspComponentEquiv_last :
 
 /-- Removing the circle-and-arc clasp preserves every older crossing-free circle label. -/
 @[simp]
-theorem insertCircleClaspComponentEquiv_symm_inr (i : Fin D.crossinglessComponentCount) :
-    (D.insertCircleClaspComponentEquiv p o b).symm (.inr (Fin.cast (by simp) i)) =
-      .inr (Fin.cast (by simp) i.castSucc) := by
+theorem insertCircleClaspComponentEquiv_symm_inr
+    (i : Fin (D.insertCircleClasp p o b).crossinglessComponentCount) :
+    (D.insertCircleClaspComponentEquiv p o b).symm (.inr i) =
+      .inr (Fin.cast (by simp)
+        (Fin.cast (by simp) i : Fin D.crossinglessComponentCount).castSucc) := by
   rw [insertCircleClaspComponentEquiv_symm_apply]
-  exact collapseCircleClaspComponent_inr D p o b i
+  simpa using collapseCircleClaspComponent_inr D p o b (Fin.cast (by simp) i)
 
 /-- Every older crossing-free circle label is preserved across the circle-and-arc move. -/
 @[simp]
@@ -303,6 +315,7 @@ theorem insertCircleClaspComponentEquiv_inr_castSucc (i : Fin D.crossinglessComp
     D.insertCircleClaspComponentEquiv p o b (.inr (Fin.cast (by simp) i.castSucc)) =
       .inr (Fin.cast (by simp) i) := by
   rw [← Equiv.eq_symm_apply, insertCircleClaspComponentEquiv_symm_inr]
+  simp
 
 end CircleArc
 
@@ -332,32 +345,19 @@ private theorem collapseTwoCircleClaspHalfEdge_edgePair (o₁ o₂ b : Bool) (x 
     Equiv.symm_apply_apply, Equiv.prodCongr_apply]
   fin_cases i <;> fin_cases s <;> simp [collapseTwoCircleClaspHalfEdge]
 
-private theorem collapseTwoCircleClaspHalfEdge_componentPermOutgoing (o₁ o₂ b : Bool)
-    (x : {x : Fin 8 // (twoCircleClasp o₁ o₂ b).orientation x = true}) :
-    collapseTwoCircleClaspHalfEdge ((twoCircleClasp o₁ o₂ b).componentPermOutgoing x) =
-      collapseTwoCircleClaspHalfEdge x := by
-  simp only [componentPermOutgoing_apply, PDCode.componentPerm_apply]
-  rw [collapseTwoCircleClaspHalfEdge_crossingTurn, collapseTwoCircleClaspHalfEdge_edgePair]
-
 private def collapseTwoCircleClaspComponent (o₁ o₂ b : Bool) :
     (twoCircleClasp o₁ o₂ b).Component → Fin 2 :=
   Sum.elim
-    (Quotient.lift (fun x ↦ collapseTwoCircleClaspHalfEdge x.val) fun _ _ hxy ↦
-      hxy.apply_eq_of_apply_eq (f := fun x ↦ collapseTwoCircleClaspHalfEdge x.val)
-        (collapseTwoCircleClaspHalfEdge_componentPermOutgoing o₁ o₂ b))
+    ((twoCircleClasp o₁ o₂ b).liftCrossingComponent collapseTwoCircleClaspHalfEdge
+      (collapseTwoCircleClaspHalfEdge_crossingTurn o₁ o₂ b)
+      (collapseTwoCircleClaspHalfEdge_edgePair o₁ o₂ b))
     fun i ↦ Fin.elim0 (Fin.cast (by simp) i)
 
 private theorem collapseTwoCircleClaspComponent_inl_halfEdge (o₁ o₂ b : Bool) (x : Fin 8) :
     collapseTwoCircleClaspComponent o₁ o₂ b
         (.inl ((twoCircleClasp o₁ o₂ b).crossingComponentOfHalfEdge x)) =
-      collapseTwoCircleClaspHalfEdge x := by
-  cases hx : (twoCircleClasp o₁ o₂ b).orientation x with
-  | true =>
-    rw [crossingComponentOfHalfEdge_of_outgoing (twoCircleClasp o₁ o₂ b) x hx]
-    rfl
-  | false =>
-    rw [crossingComponentOfHalfEdge_of_incoming (twoCircleClasp o₁ o₂ b) x hx]
-    exact collapseTwoCircleClaspHalfEdge_edgePair o₁ o₂ b x
+      collapseTwoCircleClaspHalfEdge x :=
+  (twoCircleClasp o₁ o₂ b).liftCrossingComponent_crossingComponentOfHalfEdge _ _ _ x
 
 private theorem collapseTwoCircleClaspComponent_surjective (o₁ o₂ b : Bool) :
     Function.Surjective (collapseTwoCircleClaspComponent o₁ o₂ b) := by
@@ -401,6 +401,18 @@ theorem twoCircleClaspComponentEquiv_symm_inl_halfEdge (o₁ o₂ b : Bool) (i :
   rw [twoCircleClaspComponentEquiv_symm_apply, collapseTwoCircleClaspComponent_inl_halfEdge]
   simp [collapseTwoCircleClaspHalfEdge]
 
+/-- Each outgoing crossing slot of the closed two-circle clasp collapses to `0` on the `o₁` strand
+and `1` on the `o₂` strand. -/
+@[simp]
+theorem twoCircleClaspComponentEquiv_symm_componentOfOutgoing (o₁ o₂ b : Bool)
+    (i : Fin 2) (s : Fin 4)
+    (hs : (twoCircleClasp o₁ o₂ b).orientation (crossingSlotEquiv 2 (i, s)) = true) :
+    (twoCircleClaspComponentEquiv o₁ o₂ b).symm
+        ((twoCircleClasp o₁ o₂ b).componentOfOutgoing ⟨crossingSlotEquiv 2 (i, s), hs⟩) =
+      (if i = 0 then ![0, 1, 0, 1] else ![1, 0, 1, 0]) s := by
+  simpa only [← inl_crossingComponentOfHalfEdge] using
+    twoCircleClaspComponentEquiv_symm_inl_halfEdge o₁ o₂ b i s
+
 /-- Label `0` maps to the `o₁` strand of `twoCircleClasp`, represented at crossing `0` by slot `2`
 when `o₁ = true` and slot `0` otherwise. -/
 @[simp]
@@ -427,94 +439,26 @@ theorem twoCircleClaspComponentEquiv_one (o₁ o₂ b : Bool) :
     twoCircleClaspComponentEquiv_symm_inl_halfEdge]
   cases o₂ <;> simp
 
-private def adjoinCircleOutgoingEquiv {n : ℕ} (D : OrientedPDCode n) (o : Bool) :
-    {h : Fin (4 * n) // D.orientation h = true} ≃
-      {h : Fin (4 * n) // (D.adjoinCircle o).orientation h = true} :=
-  (Equiv.refl (Fin (4 * n))).subtypeEquiv fun _ ↦ by simp
+private def componentCongr {m : ℕ} {E F : OrientedPDCode m} (h : E = F) :
+    E.Component ≃ F.Component :=
+  Equiv.cast (congrArg Component h)
 
-private def adjoinCircleCrossingComponentEquiv {n : ℕ} (D : OrientedPDCode n) (o : Bool) :
-    D.CrossingComponent ≃ (D.adjoinCircle o).CrossingComponent :=
-  (adjoinCircleOutgoingEquiv D o).sameCycleQuotientCongr
-    (by ext h; simp [adjoinCircleOutgoingEquiv, Equiv.subtypeEquiv])
+private theorem componentCongr_inl_halfEdge {m : ℕ} {E F : OrientedPDCode m} (h : E = F)
+    (x : Fin (4 * m)) :
+    componentCongr h (.inl (E.crossingComponentOfHalfEdge x)) =
+      .inl (F.crossingComponentOfHalfEdge x) := by
+  subst h; rfl
 
-private theorem adjoinCircleCrossingComponentEquiv_halfEdge {n : ℕ} (D : OrientedPDCode n)
-    (o : Bool) (x : Fin (4 * n)) :
-    adjoinCircleCrossingComponentEquiv D o (D.crossingComponentOfHalfEdge x) =
-      (D.adjoinCircle o).crossingComponentOfHalfEdge x := by
-  cases hx : D.orientation x with
-  | true =>
-    have hx' : (D.adjoinCircle o).orientation x = true := by simpa using hx
-    simp [adjoinCircleCrossingComponentEquiv, adjoinCircleOutgoingEquiv,
-      crossingComponentOfHalfEdge_of_outgoing D x hx,
-      crossingComponentOfHalfEdge_of_outgoing (D.adjoinCircle o) x hx', Equiv.subtypeEquiv]
-  | false =>
-    have hx' : (D.adjoinCircle o).orientation x = false := by simpa using hx
-    have he : D.orientation (D.edgePair.val x) = true := by simp [hx]
-    have hsub : adjoinCircleOutgoingEquiv D o ⟨D.edgePair.val x, he⟩ =
-        ⟨(D.adjoinCircle o).edgePair.val x, by simp [hx]⟩ :=
-      Subtype.ext (by simp [adjoinCircleOutgoingEquiv, Equiv.subtypeEquiv])
-    rw [crossingComponentOfHalfEdge_of_incoming D x hx,
-      crossingComponentOfHalfEdge_of_incoming (D.adjoinCircle o) x hx']
-    simpa [adjoinCircleCrossingComponentEquiv] using congrArg (Quotient.mk _) hsub
+private theorem componentCongr_symm_inl_halfEdge {m : ℕ} {E F : OrientedPDCode m} (h : E = F)
+    (x : Fin (4 * m)) :
+    (componentCongr h).symm (.inl (F.crossingComponentOfHalfEdge x)) =
+      .inl (E.crossingComponentOfHalfEdge x) := by
+  subst h; rfl
 
-private theorem adjoinCircleCrossingComponentEquiv_symm_halfEdge {n : ℕ} (D : OrientedPDCode n)
-    (o : Bool) (x : Fin (4 * n)) :
-    (adjoinCircleCrossingComponentEquiv D o).symm
-        ((D.adjoinCircle o).crossingComponentOfHalfEdge x) =
-      D.crossingComponentOfHalfEdge x := by
-  apply (adjoinCircleCrossingComponentEquiv D o).injective
-  simpa using (adjoinCircleCrossingComponentEquiv_halfEdge D o x).symm
-
-private def disjointUnionToAdjoinTwoCircleClaspOutgoingEquiv {n : ℕ} (D : OrientedPDCode n)
-    (o₁ o₂ b : Bool) :
-    {h : Fin (4 * (n + 2)) // (D.disjointUnion (twoCircleClasp o₁ o₂ b)).orientation h = true} ≃
-      {h : Fin (4 * (n + 2)) // (D.adjoinTwoCircleClasp o₁ o₂ b).orientation h = true} :=
-  (Equiv.refl (Fin (4 * (n + 2)))).subtypeEquiv fun _ ↦ by rw [adjoinTwoCircleClasp_def]; rfl
-
-private def disjointUnionToAdjoinTwoCircleClaspEquiv {n : ℕ} (D : OrientedPDCode n)
-    (o₁ o₂ b : Bool) :
-    (D.disjointUnion (twoCircleClasp o₁ o₂ b)).Component ≃
-      (D.adjoinTwoCircleClasp o₁ o₂ b).Component :=
-  (D.disjointUnion (twoCircleClasp o₁ o₂ b)).componentEquiv (D.adjoinTwoCircleClasp o₁ o₂ b)
-    (disjointUnionToAdjoinTwoCircleClaspOutgoingEquiv D o₁ o₂ b)
-    (by
-      ext h
-      simp [disjointUnionToAdjoinTwoCircleClaspOutgoingEquiv, adjoinTwoCircleClasp_def,
-        Equiv.subtypeEquiv])
-    (finCongr (by rw [adjoinTwoCircleClasp_def]))
-
-private theorem disjointUnionToAdjoinTwoCircleClaspEquiv_inl_halfEdge {n : ℕ}
-    (D : OrientedPDCode n) (o₁ o₂ b : Bool) (x : Fin (4 * (n + 2))) :
-    disjointUnionToAdjoinTwoCircleClaspEquiv D o₁ o₂ b
-        (.inl ((D.disjointUnion (twoCircleClasp o₁ o₂ b)).crossingComponentOfHalfEdge x)) =
-      .inl ((D.adjoinTwoCircleClasp o₁ o₂ b).crossingComponentOfHalfEdge x) := by
-  have hFE : D.adjoinTwoCircleClasp o₁ o₂ b = D.disjointUnion (twoCircleClasp o₁ o₂ b) :=
-    adjoinTwoCircleClasp_def D o₁ o₂ b
-  cases hx : (D.disjointUnion (twoCircleClasp o₁ o₂ b)).orientation x with
-  | true =>
-    have hx' : (D.adjoinTwoCircleClasp o₁ o₂ b).orientation x = true := by rwa [hFE]
-    rw [crossingComponentOfHalfEdge_of_outgoing _ x hx,
-      crossingComponentOfHalfEdge_of_outgoing _ x hx',
-      ← componentOfOutgoing_def, ← componentOfOutgoing_def,
-      disjointUnionToAdjoinTwoCircleClaspEquiv, componentEquiv_componentOfOutgoing]
-    rfl
-  | false =>
-    have hx' : (D.adjoinTwoCircleClasp o₁ o₂ b).orientation x = false := by rwa [hFE]
-    rw [crossingComponentOfHalfEdge_of_incoming _ x hx,
-      crossingComponentOfHalfEdge_of_incoming _ x hx',
-      ← componentOfOutgoing_def, ← componentOfOutgoing_def,
-      disjointUnionToAdjoinTwoCircleClaspEquiv, componentEquiv_componentOfOutgoing]
-    congr 1
-    exact Subtype.ext (by
-      simp [disjointUnionToAdjoinTwoCircleClaspOutgoingEquiv, Equiv.subtypeEquiv, hFE])
-
-private theorem disjointUnionToAdjoinTwoCircleClaspEquiv_symm_inl_halfEdge {n : ℕ}
-    (D : OrientedPDCode n) (o₁ o₂ b : Bool) (x : Fin (4 * (n + 2))) :
-    (disjointUnionToAdjoinTwoCircleClaspEquiv D o₁ o₂ b).symm
-        (.inl ((D.adjoinTwoCircleClasp o₁ o₂ b).crossingComponentOfHalfEdge x)) =
-      .inl ((D.disjointUnion (twoCircleClasp o₁ o₂ b)).crossingComponentOfHalfEdge x) := by
-  apply (disjointUnionToAdjoinTwoCircleClaspEquiv D o₁ o₂ b).injective
-  simpa using (disjointUnionToAdjoinTwoCircleClaspEquiv_inl_halfEdge D o₁ o₂ b x).symm
+private theorem componentCongr_inr {m : ℕ} {E F : OrientedPDCode m} (h : E = F)
+    (i : Fin E.crossinglessComponentCount) :
+    componentCongr h (.inr i) = .inr (Fin.cast (by rw [h]) i) := by
+  subst h; rfl
 
 /-- Transport labelled components across the two-circle second Reidemeister move. All components of
 `D` retain their half-edge representatives or crossing-free labels, while the two adjoined circle
@@ -525,14 +469,14 @@ def adjoinTwoCircleClaspComponentEquiv {n : ℕ} (D : OrientedPDCode n) (o₁ o�
     ((D.adjoinCircle o₁).adjoinCircle o₂).Component ≃
       (D.adjoinTwoCircleClasp o₁ o₂ b).Component :=
   ((Equiv.sumCongr
-      ((adjoinCircleCrossingComponentEquiv (D.adjoinCircle o₁) o₂).symm.trans
-        (adjoinCircleCrossingComponentEquiv D o₁).symm)
+      (((D.adjoinCircle o₁).adjoinCircleCrossingComponentEquiv o₂).symm.trans
+        (D.adjoinCircleCrossingComponentEquiv o₁).symm)
       ((finCongr (by simp [Nat.add_assoc])).trans finSumFinEquiv.symm)).trans
     (Equiv.sumAssoc _ _ _).symm).trans
     ((Equiv.sumCongr (Equiv.refl D.Component)
       (twoCircleClaspComponentEquiv o₁ o₂ b)).trans
       ((D.disjointUnionComponentEquiv (twoCircleClasp o₁ o₂ b)).symm.trans
-        (disjointUnionToAdjoinTwoCircleClaspEquiv D o₁ o₂ b)))
+        (componentCongr (adjoinTwoCircleClasp_def D o₁ o₂ b).symm)))
 
 /-- Every old half-edge of `D` keeps its component across the two-circle clasp move. -/
 @[simp]
@@ -542,8 +486,7 @@ theorem adjoinTwoCircleClaspComponentEquiv_inl_halfEdge {n : ℕ} (D : OrientedP
         (.inl (((D.adjoinCircle o₁).adjoinCircle o₂).crossingComponentOfHalfEdge x)) =
       .inl ((D.adjoinTwoCircleClasp o₁ o₂ b).crossingComponentOfHalfEdge
         (disjointUnionHalfEdgeEquiv n 2 (.inl x))) := by
-  simp [adjoinTwoCircleClaspComponentEquiv, adjoinCircleCrossingComponentEquiv_symm_halfEdge,
-    disjointUnionToAdjoinTwoCircleClaspEquiv_inl_halfEdge]
+  simp [adjoinTwoCircleClaspComponentEquiv, componentCongr_inl_halfEdge]
 
 /-- Removing the adjoined two-circle clasp recovers the component of every old half-edge. -/
 @[simp]
@@ -574,13 +517,16 @@ theorem adjoinTwoCircleClaspComponentEquiv_componentOfOutgoing {n : ℕ} (D : Or
 itself. -/
 @[simp]
 theorem adjoinTwoCircleClaspComponentEquiv_symm_componentOfOutgoing_old {n : ℕ}
-    (D : OrientedPDCode n) (o₁ o₂ b : Bool) (x : Fin (4 * n)) (hx : D.orientation x = true) :
+    (D : OrientedPDCode n) (o₁ o₂ b : Bool) (x : Fin (4 * n))
+    (hx : (D.adjoinTwoCircleClasp o₁ o₂ b).orientation
+      (disjointUnionHalfEdgeEquiv n 2 (.inl x)) = true) :
     (D.adjoinTwoCircleClaspComponentEquiv o₁ o₂ b).symm
         ((D.adjoinTwoCircleClasp o₁ o₂ b).componentOfOutgoing
-          ⟨disjointUnionHalfEdgeEquiv n 2 (.inl x), by
-            rw [adjoinTwoCircleClasp_def, orientation_disjointUnion_inl]
-            exact hx⟩) =
-      ((D.adjoinCircle o₁).adjoinCircle o₂).componentOfOutgoing ⟨x, by simpa using hx⟩ := by
+          ⟨disjointUnionHalfEdgeEquiv n 2 (.inl x), hx⟩) =
+      ((D.adjoinCircle o₁).adjoinCircle o₂).componentOfOutgoing
+        ⟨x, by
+          rw [adjoinTwoCircleClasp_def, orientation_disjointUnion_inl] at hx
+          simpa using hx⟩ := by
   simpa only [← inl_crossingComponentOfHalfEdge] using
     D.adjoinTwoCircleClaspComponentEquiv_symm_inl_old o₁ o₂ b x
 
@@ -597,8 +543,8 @@ theorem adjoinTwoCircleClaspComponentEquiv_inr_castSucc_castSucc {n : ℕ} (D : 
       (Fin.cast (by simp) i.castSucc.castSucc) = Fin.castAdd 2 i := by
     ext
     simp
-  simp [adjoinTwoCircleClaspComponentEquiv, hcast, disjointUnionToAdjoinTwoCircleClaspEquiv,
-    Equiv.sumAssoc, Fin.ext_iff]
+  simp [adjoinTwoCircleClaspComponentEquiv, hcast, componentCongr_inr, Equiv.sumAssoc,
+    Fin.ext_iff]
 
 /-- Removing the adjoined two-circle clasp restores every original crossing-free circle label. -/
 @[simp]
@@ -625,7 +571,7 @@ theorem adjoinTwoCircleClaspComponentEquiv_symm_inl_new {n : ℕ} (D : OrientedP
           ((if i = 0 then ![0, 1, 0, 1] else ![1, 0, 1, 0]) s))) := by
   rw [← disjointUnionHalfEdgeEquiv_inr_crossingSlot]
   simp only [adjoinTwoCircleClaspComponentEquiv, Equiv.symm_trans_apply,
-    disjointUnionToAdjoinTwoCircleClaspEquiv_symm_inl_halfEdge, Equiv.symm_symm,
+    componentCongr_symm_inl_halfEdge, Equiv.symm_symm,
     disjointUnionComponentEquiv_inl_halfEdge_inr, Equiv.sumCongr_symm, Equiv.sumCongr_apply,
     Sum.map_inr, twoCircleClaspComponentEquiv_symm_inl_halfEdge, Equiv.sumAssoc_apply_inr,
     finCongr_symm]
@@ -633,10 +579,27 @@ theorem adjoinTwoCircleClaspComponentEquiv_symm_inl_new {n : ℕ} (D : OrientedP
   fin_cases i <;> fin_cases s <;>
     simp [Fin.ext_iff, finSumFinEquiv_apply_right]
 
+/-- Removing the adjoined two-circle clasp collapses each outgoing slot of the new crossings back
+to the crossing-free label of its strand. -/
+@[simp]
+theorem adjoinTwoCircleClaspComponentEquiv_symm_componentOfOutgoing_new {n : ℕ}
+    (D : OrientedPDCode n) (o₁ o₂ b : Bool) (i : Fin 2) (s : Fin 4)
+    (hs : (D.adjoinTwoCircleClasp o₁ o₂ b).orientation
+      (crossingSlotEquiv (n + 2) (Fin.natAdd n i, s)) = true) :
+    (D.adjoinTwoCircleClaspComponentEquiv o₁ o₂ b).symm
+        ((D.adjoinTwoCircleClasp o₁ o₂ b).componentOfOutgoing
+          ⟨crossingSlotEquiv (n + 2) (Fin.natAdd n i, s), hs⟩) =
+      .inr (Fin.cast (by simp)
+        (![(Fin.last D.crossinglessComponentCount).castSucc,
+          Fin.last (D.crossinglessComponentCount + 1)]
+          ((if i = 0 then ![0, 1, 0, 1] else ![1, 0, 1, 0]) s))) := by
+  simpa only [← inl_crossingComponentOfHalfEdge] using
+    D.adjoinTwoCircleClaspComponentEquiv_symm_inl_new o₁ o₂ b i s
+
 /-- The first adjoined circle label `(Fin.last D.crossinglessComponentCount).castSucc` maps to the
 `o₁` strand of the adjoined clasp. -/
 @[simp]
-theorem adjoinTwoCircleClaspComponentEquiv_castSucc_last {n : ℕ} (D : OrientedPDCode n)
+theorem adjoinTwoCircleClaspComponentEquiv_inr_castSucc_last {n : ℕ} (D : OrientedPDCode n)
     (o₁ o₂ b : Bool) :
     D.adjoinTwoCircleClaspComponentEquiv o₁ o₂ b
         (.inr (Fin.cast (by simp) (Fin.last D.crossinglessComponentCount).castSucc)) =
@@ -653,7 +616,7 @@ theorem adjoinTwoCircleClaspComponentEquiv_castSucc_last {n : ℕ} (D : Oriented
 /-- The second adjoined circle label `Fin.last (D.crossinglessComponentCount + 1)` maps to the `o₂`
 strand of the adjoined clasp. -/
 @[simp]
-theorem adjoinTwoCircleClaspComponentEquiv_last {n : ℕ} (D : OrientedPDCode n)
+theorem adjoinTwoCircleClaspComponentEquiv_inr_last {n : ℕ} (D : OrientedPDCode n)
     (o₁ o₂ b : Bool) :
     D.adjoinTwoCircleClaspComponentEquiv o₁ o₂ b
         (.inr (Fin.cast (by simp) (Fin.last (D.crossinglessComponentCount + 1)))) =

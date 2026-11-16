@@ -240,6 +240,46 @@ def disjointUnionCrossingComponentEquiv :
     simp [componentPermOutgoing_disjointUnion])).trans
     (sameCycleQuotientSumCongrEquiv D.componentPermOutgoing E.componentPermOutgoing)
 
+/-- Including a crossing component of `D` acts on half-edge representatives by left inclusion. -/
+@[simp]
+theorem disjointUnionCrossingComponentEquiv_symm_inl_halfEdge (x : Fin (4 * n)) :
+    (D.disjointUnionCrossingComponentEquiv E).symm (.inl (D.crossingComponentOfHalfEdge x)) =
+      (D.disjointUnion E).crossingComponentOfHalfEdge
+        (disjointUnionHalfEdgeEquiv n m (.inl x)) :=
+  D.apply_crossingComponentOfHalfEdge
+    (fun c ↦ (D.disjointUnionCrossingComponentEquiv E).symm (.inl c))
+    (fun x ↦ (D.disjointUnion E).crossingComponentOfHalfEdge
+      (disjointUnionHalfEdgeEquiv n m (.inl x)))
+    (fun x ↦ by
+      have hpair : (D.disjointUnion E).edgePair.val (disjointUnionHalfEdgeEquiv n m (.inl x)) =
+          disjointUnionHalfEdgeEquiv n m (.inl (D.edgePair.val x)) := by
+        simp [PDCode.disjointUnion_edgePair_val, Equiv.permCongr_apply]
+      rw [← hpair, crossingComponentOfHalfEdge_edgePair])
+    (fun h ↦ by
+      rw [crossingComponentOfHalfEdge_of_outgoing (D.disjointUnion E) _ (by simp [h.property])]
+      simp [disjointUnionCrossingComponentEquiv])
+    x
+
+/-- Including a crossing component of `E` acts on half-edge representatives by right inclusion. -/
+@[simp]
+theorem disjointUnionCrossingComponentEquiv_symm_inr_halfEdge (y : Fin (4 * m)) :
+    (D.disjointUnionCrossingComponentEquiv E).symm (.inr (E.crossingComponentOfHalfEdge y)) =
+      (D.disjointUnion E).crossingComponentOfHalfEdge
+        (disjointUnionHalfEdgeEquiv n m (.inr y)) :=
+  E.apply_crossingComponentOfHalfEdge
+    (fun c ↦ (D.disjointUnionCrossingComponentEquiv E).symm (.inr c))
+    (fun y ↦ (D.disjointUnion E).crossingComponentOfHalfEdge
+      (disjointUnionHalfEdgeEquiv n m (.inr y)))
+    (fun y ↦ by
+      have hpair : (D.disjointUnion E).edgePair.val (disjointUnionHalfEdgeEquiv n m (.inr y)) =
+          disjointUnionHalfEdgeEquiv n m (.inr (E.edgePair.val y)) := by
+        simp [PDCode.disjointUnion_edgePair_val, Equiv.permCongr_apply]
+      rw [← hpair, crossingComponentOfHalfEdge_edgePair])
+    (fun h ↦ by
+      rw [crossingComponentOfHalfEdge_of_outgoing (D.disjointUnion E) _ (by simp [h.property])]
+      simp [disjointUnionCrossingComponentEquiv])
+    y
+
 /-- A half-edge in the first block represents the corresponding crossing component of `D`. -/
 @[simp]
 theorem disjointUnionCrossingComponentEquiv_halfEdge_inl (x : Fin (4 * n)) :
@@ -247,29 +287,8 @@ theorem disjointUnionCrossingComponentEquiv_halfEdge_inl (x : Fin (4 * n)) :
         ((D.disjointUnion E).crossingComponentOfHalfEdge
           (disjointUnionHalfEdgeEquiv n m (.inl x))) =
       .inl (D.crossingComponentOfHalfEdge x) := by
-  cases hx : D.orientation x with
-  | true =>
-    have hx' :
-        (D.disjointUnion E).orientation (disjointUnionHalfEdgeEquiv n m (.inl x)) = true := by
-      simp [hx]
-    simp [crossingComponentOfHalfEdge_of_outgoing _ _ hx',
-      crossingComponentOfHalfEdge_of_outgoing D x hx, disjointUnionCrossingComponentEquiv]
-  | false =>
-    have hx' :
-        (D.disjointUnion E).orientation (disjointUnionHalfEdgeEquiv n m (.inl x)) = false := by
-      simp [hx]
-    have he : D.orientation (D.edgePair.val x) = true := by simp [hx]
-    have hpair : (D.disjointUnion E).edgePair.val (disjointUnionHalfEdgeEquiv n m (.inl x)) =
-        disjointUnionHalfEdgeEquiv n m (.inl (D.edgePair.val x)) := by
-      simp [PDCode.disjointUnion_edgePair_val, Equiv.permCongr_apply]
-    rw [crossingComponentOfHalfEdge_of_incoming _ _ hx',
-      crossingComponentOfHalfEdge_of_incoming D x hx]
-    have hsub : (⟨(D.disjointUnion E).edgePair.val (disjointUnionHalfEdgeEquiv n m (.inl x)),
-        by simp [hx]⟩ : {h // (D.disjointUnion E).orientation h = true}) =
-        ⟨disjointUnionHalfEdgeEquiv n m (.inl (D.edgePair.val x)), by simp [he]⟩ :=
-      Subtype.ext hpair
-    rw [hsub]
-    simp [disjointUnionCrossingComponentEquiv]
+  apply (D.disjointUnionCrossingComponentEquiv E).symm.injective
+  simp
 
 /-- A half-edge in the second block represents the corresponding crossing component of `E`. -/
 @[simp]
@@ -278,46 +297,7 @@ theorem disjointUnionCrossingComponentEquiv_halfEdge_inr (y : Fin (4 * m)) :
         ((D.disjointUnion E).crossingComponentOfHalfEdge
           (disjointUnionHalfEdgeEquiv n m (.inr y))) =
       .inr (E.crossingComponentOfHalfEdge y) := by
-  cases hy : E.orientation y with
-  | true =>
-    have hy' :
-        (D.disjointUnion E).orientation (disjointUnionHalfEdgeEquiv n m (.inr y)) = true := by
-      simp [hy]
-    simp [crossingComponentOfHalfEdge_of_outgoing _ _ hy',
-      crossingComponentOfHalfEdge_of_outgoing E y hy, disjointUnionCrossingComponentEquiv]
-  | false =>
-    have hy' :
-        (D.disjointUnion E).orientation (disjointUnionHalfEdgeEquiv n m (.inr y)) = false := by
-      simp [hy]
-    have he : E.orientation (E.edgePair.val y) = true := by simp [hy]
-    have hpair : (D.disjointUnion E).edgePair.val (disjointUnionHalfEdgeEquiv n m (.inr y)) =
-        disjointUnionHalfEdgeEquiv n m (.inr (E.edgePair.val y)) := by
-      simp [PDCode.disjointUnion_edgePair_val, Equiv.permCongr_apply]
-    rw [crossingComponentOfHalfEdge_of_incoming _ _ hy',
-      crossingComponentOfHalfEdge_of_incoming E y hy]
-    have hsub : (⟨(D.disjointUnion E).edgePair.val (disjointUnionHalfEdgeEquiv n m (.inr y)),
-        by simp [hy]⟩ : {h // (D.disjointUnion E).orientation h = true}) =
-        ⟨disjointUnionHalfEdgeEquiv n m (.inr (E.edgePair.val y)), by simp [he]⟩ :=
-      Subtype.ext hpair
-    rw [hsub]
-    simp [disjointUnionCrossingComponentEquiv]
-
-/-- Including a crossing component of `D` acts on half-edge representatives by left inclusion. -/
-@[simp]
-theorem disjointUnionCrossingComponentEquiv_symm_inl_halfEdge (x : Fin (4 * n)) :
-    (D.disjointUnionCrossingComponentEquiv E).symm (.inl (D.crossingComponentOfHalfEdge x)) =
-      (D.disjointUnion E).crossingComponentOfHalfEdge
-        (disjointUnionHalfEdgeEquiv n m (.inl x)) := by
-  apply (D.disjointUnionCrossingComponentEquiv E).injective
-  simp
-
-/-- Including a crossing component of `E` acts on half-edge representatives by right inclusion. -/
-@[simp]
-theorem disjointUnionCrossingComponentEquiv_symm_inr_halfEdge (y : Fin (4 * m)) :
-    (D.disjointUnionCrossingComponentEquiv E).symm (.inr (E.crossingComponentOfHalfEdge y)) =
-      (D.disjointUnion E).crossingComponentOfHalfEdge
-        (disjointUnionHalfEdgeEquiv n m (.inr y)) := by
-  apply (D.disjointUnionCrossingComponentEquiv E).injective
+  apply (D.disjointUnionCrossingComponentEquiv E).symm.injective
   simp
 
 /-- The labelled components of a disjoint union decompose into those of the two summands.
@@ -348,25 +328,25 @@ theorem disjointUnionComponentEquiv_inl_halfEdge_inr (y : Fin (4 * m)) :
 
 /-- Decomposition sends an outgoing representative of `D` to its component in `D`. -/
 @[simp]
-theorem disjointUnionComponentEquiv_componentOfOutgoing_inl
-    (h : {h : Fin (4 * n) // D.orientation h = true}) :
+theorem disjointUnionComponentEquiv_componentOfOutgoing_inl (x : Fin (4 * n))
+    (hx : (D.disjointUnion E).orientation (disjointUnionHalfEdgeEquiv n m (.inl x)) = true) :
     D.disjointUnionComponentEquiv E
         ((D.disjointUnion E).componentOfOutgoing
-          ⟨disjointUnionHalfEdgeEquiv n m (.inl h.val), by simp [h.property]⟩) =
-      .inl (D.componentOfOutgoing h) := by
+          ⟨disjointUnionHalfEdgeEquiv n m (.inl x), hx⟩) =
+      .inl (D.componentOfOutgoing ⟨x, by simpa using hx⟩) := by
   simpa only [← inl_crossingComponentOfHalfEdge] using
-    D.disjointUnionComponentEquiv_inl_halfEdge_inl E h.val
+    D.disjointUnionComponentEquiv_inl_halfEdge_inl E x
 
 /-- Decomposition sends an outgoing representative of `E` to its component in `E`. -/
 @[simp]
-theorem disjointUnionComponentEquiv_componentOfOutgoing_inr
-    (h : {h : Fin (4 * m) // E.orientation h = true}) :
+theorem disjointUnionComponentEquiv_componentOfOutgoing_inr (y : Fin (4 * m))
+    (hy : (D.disjointUnion E).orientation (disjointUnionHalfEdgeEquiv n m (.inr y)) = true) :
     D.disjointUnionComponentEquiv E
         ((D.disjointUnion E).componentOfOutgoing
-          ⟨disjointUnionHalfEdgeEquiv n m (.inr h.val), by simp [h.property]⟩) =
-      .inr (E.componentOfOutgoing h) := by
+          ⟨disjointUnionHalfEdgeEquiv n m (.inr y), hy⟩) =
+      .inr (E.componentOfOutgoing ⟨y, by simpa using hy⟩) := by
   simpa only [← inl_crossingComponentOfHalfEdge] using
-    D.disjointUnionComponentEquiv_inl_halfEdge_inr E h.val
+    D.disjointUnionComponentEquiv_inl_halfEdge_inr E y
 
 /-- Including a crossing component of `D` carries half-edge representatives by left inclusion. -/
 @[simp]

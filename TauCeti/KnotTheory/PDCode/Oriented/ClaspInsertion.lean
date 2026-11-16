@@ -284,30 +284,11 @@ private theorem collapseClaspHalfEdge_edgePair (x : Fin (4 * (n + 2))) :
     · fin_cases s <;> simp [collapseClaspHalfEdge]
   · fin_cases s <;> simp [collapseClaspHalfEdge]
 
-private theorem collapseClaspHalfEdge_componentPermOutgoing
-    (x : {x : Fin (4 * (n + 2)) // (D.insertClasp p q b hqp hqe).orientation x = true}) :
-    collapseClaspHalfEdge D p q ((D.insertClasp p q b hqp hqe).componentPermOutgoing x) =
-      collapseClaspHalfEdge D p q x := by
-  simp only [componentPermOutgoing_apply, PDCode.componentPerm_apply]
-  rw [collapseClaspHalfEdge_crossingTurn, collapseClaspHalfEdge_edgePair]
-
 private def collapseClaspCrossingComponent :
     (D.insertClasp p q b hqp hqe).CrossingComponent → D.CrossingComponent :=
-  Quotient.lift (fun x ↦ collapseClaspHalfEdge D p q x.val) fun _ _ hxy ↦
-    hxy.apply_eq_of_apply_eq (f := fun x ↦ collapseClaspHalfEdge D p q x.val)
-      (collapseClaspHalfEdge_componentPermOutgoing D p q b hqp hqe)
-
-private theorem collapseClaspCrossingComponent_halfEdge (x : Fin (4 * (n + 2))) :
-    collapseClaspCrossingComponent D p q b hqp hqe
-        ((D.insertClasp p q b hqp hqe).crossingComponentOfHalfEdge x) =
-      collapseClaspHalfEdge D p q x := by
-  cases hx : (D.insertClasp p q b hqp hqe).orientation x with
-  | true =>
-    rw [crossingComponentOfHalfEdge_of_outgoing _ x hx]
-    rfl
-  | false =>
-    rw [crossingComponentOfHalfEdge_of_incoming _ x hx]
-    exact collapseClaspHalfEdge_edgePair D p q b hqp hqe x
+  (D.insertClasp p q b hqp hqe).liftCrossingComponent (collapseClaspHalfEdge D p q)
+    (collapseClaspHalfEdge_crossingTurn D p q b hqp hqe)
+    (collapseClaspHalfEdge_edgePair D p q b hqp hqe)
 
 private theorem collapseClaspCrossingComponent_surjective :
     Function.Surjective (collapseClaspCrossingComponent D p q b hqp hqe) := by
@@ -315,7 +296,7 @@ private theorem collapseClaspCrossingComponent_surjective :
   obtain ⟨⟨x, hx⟩, rfl⟩ := Quotient.mk_surjective c
   refine ⟨(D.insertClasp p q b hqp hqe).crossingComponentOfHalfEdge
     (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl x)))), ?_⟩
-  rw [collapseClaspCrossingComponent_halfEdge]
+  rw [collapseClaspCrossingComponent, liftCrossingComponent_crossingComponentOfHalfEdge]
   simpa [collapseClaspHalfEdge] using D.crossingComponentOfHalfEdge_of_outgoing x hx
 
 private def collapseClaspCrossingComponentEquiv :
@@ -340,7 +321,7 @@ theorem insertClaspComponentEquiv_symm_inl_old (x : Fin (4 * n)) :
           (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl x)))))) =
       .inl (D.crossingComponentOfHalfEdge x) := by
   simp [insertClaspComponentEquiv, collapseClaspCrossingComponentEquiv,
-    collapseClaspCrossingComponent_halfEdge, collapseClaspHalfEdge]
+    collapseClaspCrossingComponent, collapseClaspHalfEdge]
 
 /-- Inserting a clasp preserves the component represented by each old half-edge, incoming or
 outgoing. -/
@@ -365,12 +346,13 @@ theorem insertClaspComponentEquiv_componentOfOutgoing
 
 /-- Removing a clasp sends every old outgoing representative back to itself. -/
 @[simp]
-theorem insertClaspComponentEquiv_symm_componentOfOutgoing_old
-    (x : Fin (4 * n)) (hx : D.orientation x = true) :
+theorem insertClaspComponentEquiv_symm_componentOfOutgoing_old (x : Fin (4 * n))
+    (hx : (D.insertClasp p q b hqp hqe).orientation
+      (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl x)))) = true) :
     (D.insertClaspComponentEquiv p q b hqp hqe).symm
         ((D.insertClasp p q b hqp hqe).componentOfOutgoing
-          ⟨halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl x))), by simp [hx]⟩) =
-      D.componentOfOutgoing ⟨x, hx⟩ := by
+          ⟨halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl x))), hx⟩) =
+      D.componentOfOutgoing ⟨x, by simpa using hx⟩ := by
   simpa only [← inl_crossingComponentOfHalfEdge] using
     D.insertClaspComponentEquiv_symm_inl_old p q b hqp hqe x
 
@@ -384,7 +366,21 @@ theorem insertClaspComponentEquiv_symm_inl_first (s : Fin 4) :
       .inl (![D.crossingComponentOfHalfEdge p, D.crossingComponentOfHalfEdge q,
         D.crossingComponentOfHalfEdge p, D.crossingComponentOfHalfEdge q] s) := by
   simp [insertClaspComponentEquiv, collapseClaspCrossingComponentEquiv,
-    collapseClaspCrossingComponent_halfEdge, collapseClaspHalfEdge]
+    collapseClaspCrossingComponent, collapseClaspHalfEdge]
+
+/-- At the first new crossing, an outgoing slot collapses to the component of `p` at slots `0` and
+`2`, and to the component of `q` at slots `1` and `3`. -/
+@[simp]
+theorem insertClaspComponentEquiv_symm_componentOfOutgoing_first (s : Fin 4)
+    (hs : (D.insertClasp p q b hqp hqe).orientation
+      (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr s)))) = true) :
+    (D.insertClaspComponentEquiv p q b hqp hqe).symm
+        ((D.insertClasp p q b hqp hqe).componentOfOutgoing
+          ⟨halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr s))), hs⟩) =
+      .inl (![D.crossingComponentOfHalfEdge p, D.crossingComponentOfHalfEdge q,
+        D.crossingComponentOfHalfEdge p, D.crossingComponentOfHalfEdge q] s) := by
+  simpa only [← inl_crossingComponentOfHalfEdge] using
+    D.insertClaspComponentEquiv_symm_inl_first p q b hqp hqe s
 
 /-- At the second new crossing, slots `0` and `2` belong to the component of `q` and slots `1` and
 `3` belong to the component of `p`. -/
@@ -396,7 +392,20 @@ theorem insertClaspComponentEquiv_symm_inl_second (s : Fin 4) :
       .inl (![D.crossingComponentOfHalfEdge q, D.crossingComponentOfHalfEdge p,
         D.crossingComponentOfHalfEdge q, D.crossingComponentOfHalfEdge p] s) := by
   simp [insertClaspComponentEquiv, collapseClaspCrossingComponentEquiv,
-    collapseClaspCrossingComponent_halfEdge, collapseClaspHalfEdge]
+    collapseClaspCrossingComponent, collapseClaspHalfEdge]
+
+/-- At the second new crossing, an outgoing slot collapses to the component of `q` at slots `0` and
+`2`, and to the component of `p` at slots `1` and `3`. -/
+@[simp]
+theorem insertClaspComponentEquiv_symm_componentOfOutgoing_second (s : Fin 4)
+    (hs : (D.insertClasp p q b hqp hqe).orientation (halfEdgeSuccEquiv (n + 1) (.inr s)) = true) :
+    (D.insertClaspComponentEquiv p q b hqp hqe).symm
+        ((D.insertClasp p q b hqp hqe).componentOfOutgoing
+          ⟨halfEdgeSuccEquiv (n + 1) (.inr s), hs⟩) =
+      .inl (![D.crossingComponentOfHalfEdge q, D.crossingComponentOfHalfEdge p,
+        D.crossingComponentOfHalfEdge q, D.crossingComponentOfHalfEdge p] s) := by
+  simpa only [← inl_crossingComponentOfHalfEdge] using
+    D.insertClaspComponentEquiv_symm_inl_second p q b hqp hqe s
 
 /-- Inserting a clasp preserves each labelled crossing-free component. -/
 @[simp]
