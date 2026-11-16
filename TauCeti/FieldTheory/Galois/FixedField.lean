@@ -38,7 +38,7 @@ The correspondence between subgroups and their fixed fields also holds with no h
 `M / K` at all, provided the subgroup is finite: Artin's theorem makes `M` finite Galois over the
 fixed field of a finite `H`, and the fixers of that field are then exactly `H`. This is how a
 subgroup of the automorphism group of an infinite extension is recovered from the field it cuts
-out; the fixing subgroup of a subfield of finite degree is finite for the same reason.
+out; the fixing subgroup of a subfield over which `M` is finite is finite for the same reason.
 
 The last results specialise the correspondence to a *cyclic* subgroup: the field fixed by a finite
 cyclic group of automorphisms has `M` cyclic over it, and for `⟨σ⟩` there is a named automorphism
@@ -272,11 +272,8 @@ automorphism fixes `⨆ i, E i` pointwise exactly when it fixes every `E i` poin
 indexed form of Mathlib's `IntermediateField.fixingSubgroup_sup`, and like it needs no hypothesis
 on `M / K`. -/
 theorem fixingSubgroup_iSup {ι : Sort*} (E : ι → IntermediateField K M) :
-    (⨆ i, E i).fixingSubgroup = ⨅ i, (E i).fixingSubgroup := by
-  ext σ
-  rw [Subgroup.mem_iInf]
-  exact ⟨fun h i ↦ fixingSubgroup_antitone (le_iSup E i) h,
-    by simp [← Subgroup.zpowers_le, ← le_fixedField_iff_le_fixingSubgroup]⟩
+    (⨆ i, E i).fixingSubgroup = ⨅ i, (E i).fixingSubgroup :=
+  congrArg OrderDual.ofDual (fixingSubgroup_fixedField_gc (K := K) (M := M)).l_iSup
 
 /-- **The fixing subgroup of an algebraic intermediate field is closed** for the Krull topology:
 `E` is the join of the simple extensions it contains, each of them finite over `K`, so
@@ -287,7 +284,7 @@ subgroup is even open, and `InfiniteGalois.fixingSubgroup_isClosed` is the case 
 `M / K`. Algebraicity of `E / K` alone suffices — nothing is asked of `M / K`, so `E` may be an
 algebraic subfield of a transcendental extension, and over an algebraic `M / K` the hypothesis is
 supplied by `IntermediateField.isAlgebraic_tower_bot`. The suffix names that hypothesis, as
-`MulAction.stabilizer_isOpen_of_isIntegral` does. -/
+`stabilizer_isOpen_of_isIntegral` does. -/
 theorem fixingSubgroup_isClosed_of_isAlgebraic (E : IntermediateField K M)
     [Algebra.IsAlgebraic K E] : IsClosed (E.fixingSubgroup : Set (M ≃ₐ[K] M)) := by
   have hE : E = ⨆ x : E, K⟮(x : M)⟯ := by
@@ -332,22 +329,22 @@ theorem fixingSubgroup_inf_separableClosure (E : IntermediateField K M)
     exact hσ _ (mem_inf.mpr ⟨_root_.pow_mem hx _, hyS⟩)
   exact iterateFrobenius_inj M (ringExpChar K) n hpow
 
-/-- **An intermediate field of finite degree has a finite fixing subgroup**, being a copy of the
-automorphism group of a finite extension. -/
+/-- **An intermediate field over which `M` is finite has a finite fixing subgroup**, being a copy
+of the automorphism group of the finite extension `M / E`. -/
 instance finite_fixingSubgroup (E : IntermediateField K M) [FiniteDimensional E M] :
     Finite (fixingSubgroup E) :=
   .of_equiv _ (fixingSubgroupEquiv E).symm.toEquiv
 
-/-- **A group of automorphisms whose fixed field has finite degree is finite.** Thus a subgroup of
-`K`-automorphisms cannot be infinite when its fixed field has finite degree in `M`. -/
+/-- **A group of automorphisms whose fixed field has finite codegree is finite.** Thus a subgroup
+of `K`-automorphisms cannot be infinite when `M` is finite over its fixed field. -/
 theorem finite_of_finiteDimensional_fixedField (H : Subgroup (M ≃ₐ[K] M))
     [FiniteDimensional (fixedField H) M] : Finite H :=
   letI := finite_fixingSubgroup (fixedField H)
   have hH : H ≤ fixingSubgroup (fixedField H) := (le_fixedField_iff_le_fixingSubgroup _ _).mp le_rfl
   .of_injective (Set.inclusion hH) (Set.inclusion_injective hH)
 
-/-- **The fixing subgroup of an intermediate field of finite degree is no larger than that
-degree**, the bound on the automorphisms of a finite extension. -/
+/-- **The fixing subgroup of an intermediate field `E` with `M / E` finite is no larger than the
+degree `[M : E]`**, the bound on the automorphisms of a finite extension. -/
 theorem card_fixingSubgroup_le (E : IntermediateField K M) [FiniteDimensional E M] :
     Nat.card (fixingSubgroup E) ≤ Module.finrank E M := by
   rw [Nat.card_congr (fixingSubgroupEquiv E).toEquiv, Nat.card_eq_fintype_card]
@@ -495,6 +492,20 @@ theorem fixedField_map_conj (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) 
     simpa [MulAut.conj_apply] using congrArg σ.symm hx
   · rintro ⟨y, hy, rfl⟩ g ⟨h, hh, rfl⟩
     simpa [MulAut.conj_apply] using congrArg σ (hy h hh)
+
+/-- **Artin's equality for fixed fields, without finiteness of `M / K`**: the degree of `M` over
+the fixed field of a subgroup `H` of `Gal(M/K)` is the order of `H`. For infinite `H` both sides
+are `0`. -/
+theorem finrank_fixedField_eq_card (H : Subgroup (M ≃ₐ[K] M)) :
+    Module.finrank (fixedField H) M = Nat.card H := by
+  by_cases hH : Finite H
+  · have := Fintype.ofFinite H
+    rw [Nat.card_eq_fintype_card]
+    exact FixedPoints.finrank_eq_card H M
+  · have := not_finite_iff_infinite.mp hH
+    rw [Nat.card_eq_zero_of_infinite]
+    exact Module.finrank_of_not_finite fun hfin ↦
+      hH (IntermediateField.finite_of_finiteDimensional_fixedField H)
 
 end Subgroup
 

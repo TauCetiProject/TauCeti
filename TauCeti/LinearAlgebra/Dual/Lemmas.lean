@@ -47,7 +47,8 @@ and so separate points.
 * `Submodule.exists_dual_apply_eq_one_of_ne_top`: if a subspace `p` is not everything, some
   functional vanishes on `p` and equals one at some vector.
 * `Module.Finite.of_finite_end`: a vector space is finite-dimensional once its endomorphism
-  algebra is.
+  algebra is, and `Module.Finite.of_surjective_end`: in particular once a finite-dimensional space
+  maps linearly onto its endomorphism algebra.
 * `LinearIndependent.exists_dual_forall_apply_eq_ite`: a linearly independent family of vectors
   has a biorthogonal family of functionals, `f i (v j) = if i = j then 1 else 0`.
 * `LinearIndependent.exists_forall_apply_eq_ite_of_dual`: on a finite-dimensional space, a linearly
@@ -269,6 +270,16 @@ theorem of_finite_end (K S : Type*) [Field K] [AddCommGroup S] [Module K S]
     exact hx ((forall_dual_apply_eq_zero_iff K x).1 h)
   exact Module.Finite.of_surjective (LinearMap.applyₗ x)
     fun y ↦ ⟨(φ x)⁻¹ • φ.smulRight y, by simp [hφ]⟩
+
+/-- A vector space is finite-dimensional if a finite-dimensional space maps linearly onto its
+endomorphism algebra; for instance, a module over a finite-dimensional algebra `A` on which
+`Algebra.lsmul : A → End_K S` is surjective. -/
+theorem of_surjective_end {K E S F : Type*} [Field K] [AddCommMonoid E] [Module K E]
+    [Module.Finite K E] [AddCommGroup S] [Module K S] [FunLike F E (Module.End K S)]
+    [LinearMapClass F K E (Module.End K S)] (f : F) (hf : Function.Surjective f) :
+    Module.Finite K S :=
+  have : Module.Finite K (Module.End K S) := .of_surjective (f : E →ₗ[K] Module.End K S) hf
+  .of_finite_end K S
 
 end Module.Finite
 

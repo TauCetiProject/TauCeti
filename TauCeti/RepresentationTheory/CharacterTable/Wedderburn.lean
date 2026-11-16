@@ -78,7 +78,7 @@ indexed by `ι` identifies `Z(k[G])` with the algebra `ι → k` of functions on
 noncomputable def centerMonoidAlgebraAlgEquivPi [Monoid G] [∀ i, NeZero (d i)]
     (e : MonoidAlgebra k G ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k) :
     Subalgebra.center k (MonoidAlgebra k G) ≃ₐ[k] (ι → k) :=
-  (centerCongr e).trans (centerPiMatrixAlgEquiv k d)
+  (Subalgebra.centerCongr e).trans (centerPiMatrixAlgEquiv k d)
 
 /-- `centerMonoidAlgebraAlgEquivPi e` records, block by block, the scalar that a central element of
 `k[G]` acts by: the `i`-th component of `e z` is the corresponding scalar matrix. -/
@@ -88,7 +88,7 @@ theorem algebraMap_centerMonoidAlgebraAlgEquivPi_apply [Monoid G] [∀ i, NeZero
     (z : Subalgebra.center k (MonoidAlgebra k G)) (i : ι) :
     algebraMap k (Matrix (Fin (d i)) (Fin (d i)) k) (centerMonoidAlgebraAlgEquivPi e z i) =
       e (z : MonoidAlgebra k G) i := by
-  simp [centerMonoidAlgebraAlgEquivPi]
+  simp [centerMonoidAlgebraAlgEquivPi, Subalgebra.centerCongr_apply_coe e z]
 
 /-- The inverse of `centerMonoidAlgebraAlgEquivPi e` builds the central element acting on each
 block by the prescribed scalar. -/

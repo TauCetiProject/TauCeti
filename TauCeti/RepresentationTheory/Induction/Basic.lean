@@ -17,6 +17,12 @@ general properties of that construction that Mathlib does not record and that th
 `TauCeti/RepresentationTheory/Induction/` needs, independently of any finiteness assumption
 on the groups or on the representations.
 
+## Main definitions
+
+* `Representation.IntertwiningMap.ind`: induction of an intertwining map along `φ`, the unbundled
+  form of `Rep.indMap`.
+* `Representation.Equiv.ind`: induction of an equivalence of representations along `φ`.
+
 ## Main statements
 
 * `Rep.indMap_hom_mk`: an induced intertwiner acts on the coefficient of each generator.
@@ -26,6 +32,16 @@ on the groups or on the representations.
 * `Representation.IndV.mk_one_injective`: the generator map `a ↦ ⟦1 ⊗ a⟧` is injective for a
   subgroup.
 * `Rep.indMap_injective` and `Rep.indFunctor_faithful`: induction from a subgroup is faithful.
+* `Representation.IntertwiningMap.ind_id`, `Representation.IntertwiningMap.ind_comp`: induction
+  of intertwining maps is functorial.
+
+## Implementation notes
+
+As in `TauCeti/RepresentationTheory/Induction/Projection.lean`, the generator lemmas
+`Representation.IntertwiningMap.ind_mk`, `Representation.Equiv.ind_mk` and
+`Representation.Equiv.ind_symm_mk` are stated with the reducible abbreviation
+`Representation.IndV.mk`, which `simp` unfolds, so they are not `simp` lemmas and are applied by
+`rw`.
 -/
 
 public section
@@ -97,6 +113,60 @@ theorem IndV.mk_one_injective {k : Type u} {G : Type v} [CommRing k] [Group G] (
       (Rep.indToCoindAux_self (A := Rep.of ρ) 1 x)
   intro a b h
   rw [← key a, ← key b, h]
+
+section Ind
+
+variable {k G H A B : Type*} [CommRing k] [Group G] [Group H] (φ : G →* H)
+  [AddCommGroup A] [Module k A] [AddCommGroup B] [Module k B]
+  {ρ : Representation k G A} {σ : Representation k G B}
+
+namespace IntertwiningMap
+
+/-- **Induction of an intertwining map** along `φ : G →* H`: the map `⟦h ⊗ₜ a⟧ ↦ ⟦h ⊗ₜ f a⟧`.
+This is the unbundled form of `Rep.indMap`. -/
+noncomputable def ind (f : IntertwiningMap ρ σ) :
+    IntertwiningMap (Representation.ind φ ρ) (Representation.ind φ σ) where
+  toLinearMap := Coinvariants.map _ _ ⟨f.toLinearMap.lTensor _, by
+    simp [LinearMap.lTensor_comp_map, f.2, LinearMap.map_comp_lTensor]⟩
+  isIntertwining' _ := by ext; simp
+
+theorem ind_mk (f : IntertwiningMap ρ σ) (h : H) (a : A) :
+    f.ind φ (IndV.mk φ ρ h a) = IndV.mk φ σ h (f a) :=
+  (rfl)
+
+@[simp]
+theorem ind_id : (IntertwiningMap.id ρ).ind φ = IntertwiningMap.id (Representation.ind φ ρ) :=
+  IntertwiningMap.ext <| IndV.hom_ext φ _ fun _ => rfl
+
+theorem ind_comp {C : Type*} [AddCommGroup C] [Module k C] {τ : Representation k G C}
+    (f : IntertwiningMap σ τ) (g : IntertwiningMap ρ σ) :
+    (f.comp g).ind φ = (f.ind φ).comp (g.ind φ) :=
+  IntertwiningMap.ext <| IndV.hom_ext φ _ fun _ => rfl
+
+end IntertwiningMap
+
+namespace Equiv
+
+/-- **Induction of an equivalence of representations** along `φ : G →* H`: the equivalence
+`⟦h ⊗ₜ a⟧ ↦ ⟦h ⊗ₜ e a⟧`, with inverse induced by `e.symm`. -/
+noncomputable def ind (e : Equiv ρ σ) : Equiv (Representation.ind φ ρ) (Representation.ind φ σ) :=
+  .mk (LinearEquiv.ofLinearMap (e.toIntertwiningMap.ind φ).toLinearMap
+      (e.symm.toIntertwiningMap.ind φ).toLinearMap
+      (by ext; simp [IntertwiningMap.ind])
+      (by ext; simp [IntertwiningMap.ind]))
+    (e.toIntertwiningMap.ind φ).isIntertwining'
+
+theorem ind_mk (e : Equiv ρ σ) (h : H) (a : A) :
+    e.ind φ (IndV.mk φ ρ h a) = IndV.mk φ σ h (e a) :=
+  (rfl)
+
+theorem ind_symm_mk (e : Equiv ρ σ) (h : H) (b : B) :
+    (e.ind φ).symm (IndV.mk φ σ h b) = IndV.mk φ ρ h (e.symm b) :=
+  (rfl)
+
+end Equiv
+
+end Ind
 
 end Representation
 

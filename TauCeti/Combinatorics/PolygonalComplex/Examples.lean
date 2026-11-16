@@ -129,7 +129,8 @@ namespace SurfaceModel
 /-! The models below are plain definitions. The proofs about their darts apply the `polygon` and
 `singleFace` lemmas directly, unfolding each model to its underlying complex: the dart type
 `S.graph.E` depends on the complex, which blocks rewriting along `disc_toPolygonalComplex` and its
-analogues. -/
+analogues. For the same reason the instances deciding equality of their darts are
+`noncomputable`: code generation cannot see through a model to its dart type. -/
 
 /-! ### The disc -/
 
@@ -143,6 +144,10 @@ def disc : SurfaceModel.{0, 0, 0} where
       · exact nonempty_vertexLink_path_polygon ⟨((), false), rfl⟩ ⟨0, by decide⟩ rfl rfl ⟨.nil⟩
       · exact ⟨.nil⟩)
     (.inr ⟨((), true), ((), false), by decide, by decide, by decide, by decide⟩)
+
+/-- The darts of the disc have decidable equality. -/
+noncomputable instance : DecidableEq disc.graph.E :=
+  inferInstanceAs (DecidableEq (SerreGraph.rose Unit).E)
 
 theorem disc_toPolygonalComplex :
     disc.toPolygonalComplex = polygon [((), true)] (List.cons_ne_nil _ _) := (rfl)
@@ -192,6 +197,10 @@ def torus : SurfaceModel.{0, 0, 0} where
       · exact nonempty_vertexLink_path_polygon ⟨(1, true), rfl⟩ ⟨0, by decide⟩ rfl rfl ⟨.nil⟩)
     (.inl fun ⟨i, b⟩ => by fin_cases i <;> cases b <;> decide)
 
+/-- The darts of the torus have decidable equality. -/
+noncomputable instance : DecidableEq torus.graph.E :=
+  inferInstanceAs (DecidableEq (SerreGraph.rose (Fin 2)).E)
+
 theorem torus_toPolygonalComplex :
     torus.toPolygonalComplex =
       polygon (α := Fin 2) [(0, true), (1, true), (0, false), (1, false)] (List.cons_ne_nil _ _) :=
@@ -231,6 +240,10 @@ def projectivePlane : SurfaceModel.{0, 0, 0} where
       · exact nonempty_vertexLink_path_polygon ⟨((), false), rfl⟩ ⟨0, by decide⟩ rfl rfl ⟨.nil⟩
       · exact ⟨.nil⟩)
     (.inl fun ⟨⟨⟩, b⟩ => by cases b <;> decide)
+
+/-- The darts of the projective plane have decidable equality. -/
+noncomputable instance : DecidableEq projectivePlane.graph.E :=
+  inferInstanceAs (DecidableEq (SerreGraph.rose Unit).E)
 
 theorem projectivePlane_toPolygonalComplex :
     projectivePlane.toPolygonalComplex = polygon [((), true), ((), true)] (List.cons_ne_nil _ _) :=
@@ -284,6 +297,10 @@ def sphere : SurfaceModel.{0, 0, 0} where
       (.inl fun e _ => by cases e <;> decide)
     obtain rfl : b = v := (SerreGraph.segment_src b).symm.trans hb
     exact ⟨.nil⟩
+
+/-- The darts of the sphere have decidable equality. -/
+noncomputable instance : DecidableEq sphere.graph.E :=
+  inferInstanceAs (DecidableEq SerreGraph.segment.E)
 
 theorem sphere_toPolygonalComplex :
     sphere.toPolygonalComplex =

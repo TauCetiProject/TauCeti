@@ -91,7 +91,7 @@ theorem infiniteAdeleEquiv_apply (e : K ≃+* L) (a : InfiniteAdeleRing K)
     (w : InfinitePlace L) :
     letI := e.toRingHom.toAlgebra
     infiniteAdeleEquiv K L e a w =
-      LiesOver.completionMap (w.comap (algebraMap K L)) w
+      AbsoluteValue.Completion.map (w.comap (algebraMap K L)).1 w.1
         (a (w.comap (algebraMap K L))) := by
   let := e.toRingHom.toAlgebra
   exact infiniteAdeleExtension_apply a w

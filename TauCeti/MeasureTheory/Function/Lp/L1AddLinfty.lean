@@ -37,6 +37,10 @@ norm `‖u‖ = inf {‖g‖₁ + ‖h‖_∞ | u = g + h}`, and a Banach space 
 * `TauCeti.L1AddLinfty.ofLp`: the continuous injective inclusion `Lᵖ → L¹ + L^∞`, of norm at most
   `2` (`TauCeti.L1AddLinfty.norm_ofLp_le`), equal to the inclusions of the couple for `p = 1` and
   `p = ∞` (`TauCeti.L1AddLinfty.ofLp_eq_fstToSum`, `TauCeti.L1AddLinfty.ofLp_eq_sndToSum`).
+* `TauCeti.L1AddLinfty.toAEEqFun`: the almost-everywhere class of an element of `L¹ + L^∞`, in
+  terms of which the decompositions `u = g + h` are characterised
+  (`TauCeti.L1AddLinfty.fstToSum_add_sndToSum_eq_iff`), as are the functions representing an
+  element of `L¹ + L^∞` (`TauCeti.L1AddLinfty.exists_toAEEqFun_ae_eq_iff`).
 
 ## References
 
@@ -216,6 +220,55 @@ theorem norm_ofLp_one_le (f : Lp E 1 μ) : ‖(ofLp f : L1AddLinfty 𝕜 E μ)�
 theorem norm_ofLp_top_le (f : Lp E ∞ μ) : ‖(ofLp f : L1AddLinfty 𝕜 E μ)‖ ≤ ‖f‖ := by
   rw [ofLp_eq_sndToSum]
   exact norm_sndToSum_le _ f
+
+variable (𝕜) in
+/-- The almost-everywhere class of a function of `L¹ + L^∞`: the embedding of the sum space into
+the ambient space `α →ₘ[μ] E` of the couple `(L¹, L^∞)`. It is injective
+(`TauCeti.L1AddLinfty.toAEEqFun_injective`) and sends `f ∈ Lᵖ` to its class
+(`TauCeti.L1AddLinfty.toAEEqFun_ofLp`). -/
+def toAEEqFun : L1AddLinfty 𝕜 E μ →ₗ[𝕜] α →ₘ[μ] E where
+  -- `Ambient E μ` is by definition `α →ₘ[μ] E`, with the same additive group and module
+  -- structures (only the topology differs), so the embedding is read in `α →ₘ[μ] E` as it is.
+  toFun u := ((l1Linfty 𝕜 E μ).sumSpaceEmbed u : Ambient E μ)
+  map_add' := map_add _
+  map_smul' := map_smul _
+
+theorem toAEEqFun_injective : Function.Injective (toAEEqFun 𝕜 : L1AddLinfty 𝕜 E μ → α →ₘ[μ] E) :=
+  (l1Linfty 𝕜 E μ).sumSpaceEmbed_injective
+
+@[simp]
+theorem toAEEqFun_ofLp (f : Lp E p μ) : toAEEqFun 𝕜 (ofLp f : L1AddLinfty 𝕜 E μ) = f :=
+  -- As in `toAEEqFun`, an element of `Ambient E μ` is read in `α →ₘ[μ] E` by definition.
+  congrArg (fun v : Ambient E μ => (v : α →ₘ[μ] E)) (sumSpaceEmbed_ofLp f)
+
+@[simp]
+theorem toAEEqFun_fstToSum (g : Lp E 1 μ) : toAEEqFun 𝕜 ((l1Linfty 𝕜 E μ).fstToSum g) = g := by
+  rw [← ofLp_eq_fstToSum, toAEEqFun_ofLp]
+
+@[simp]
+theorem toAEEqFun_sndToSum (h : Lp E ∞ μ) : toAEEqFun 𝕜 ((l1Linfty 𝕜 E μ).sndToSum h) = h := by
+  rw [← ofLp_eq_sndToSum, toAEEqFun_ofLp]
+
+/-- A pair `(g, h)` in `L¹ × L^∞` decomposes an element `u` of `L¹ + L^∞` exactly when `g + h` is
+almost everywhere equal to `u`. -/
+theorem fstToSum_add_sndToSum_eq_iff {g : Lp E 1 μ} {h : Lp E ∞ μ} {u : L1AddLinfty 𝕜 E μ} :
+    (l1Linfty 𝕜 E μ).fstToSum g + (l1Linfty 𝕜 E μ).sndToSum h = u ↔
+      ⇑g + ⇑h =ᵐ[μ] ⇑(toAEEqFun 𝕜 u) := by
+  rw [← ofLp_eq_fstToSum, ← ofLp_eq_sndToSum, ← toAEEqFun_injective.eq_iff, map_add,
+    toAEEqFun_ofLp, toAEEqFun_ofLp]
+  exact AEEqFun.ext_iff.trans (AEEqFun.coeFn_add (g : α →ₘ[μ] E) h).congr_left
+
+/-- A function represents an element of `L¹ + L^∞` exactly when it is almost everywhere the sum of
+a function of `L¹` and a function of `L^∞`. -/
+theorem exists_toAEEqFun_ae_eq_iff {f : α → E} :
+    (∃ u : L1AddLinfty 𝕜 E μ, ⇑(toAEEqFun 𝕜 u) =ᵐ[μ] f) ↔
+      ∃ (g : Lp E 1 μ) (h : Lp E ∞ μ), ⇑g + ⇑h =ᵐ[μ] f := by
+  constructor
+  · rintro ⟨u, hu⟩
+    obtain ⟨g, h, hgh⟩ := (l1Linfty 𝕜 E μ).exists_fstToSum_add_sndToSum_eq u
+    exact ⟨g, h, (fstToSum_add_sndToSum_eq_iff.1 hgh).trans hu⟩
+  · rintro ⟨g, h, hgh⟩
+    exact ⟨_, (fstToSum_add_sndToSum_eq_iff.1 rfl).symm.trans hgh⟩
 
 end L1AddLinfty
 

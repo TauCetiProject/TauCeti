@@ -79,6 +79,8 @@ operator of interest.
 
 * `TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`: coherence holds in every kernel chart.
 * `TauCeti.IsDetLineCoherentOn.sameRay`: uniqueness on preconnected sets.
+* `TauCeti.isDetLineCoherentOn_of_detLineChartEquiv_eq`: a family with constant reading in a
+  kernel chart is coherent.
 * `TauCeti.exists_isDetLineCoherentOn_Icc`: existence along a compact interval.
 * `TauCeti.detLineOrientationTransport_rayOfNeZero`: orientation transport follows coherent
   families.
@@ -273,6 +275,33 @@ theorem isDetLineCoherentOn_const {T₀ : E →L[ℝ] F} (hT₀ : IsFredholm T�
   obtain ⟨S, hS, G, hG, q, U, -, hxU, hinv⟩ := hT₀.exists_isOpen_kernelChart
   exact ⟨hv₀, S, hS, G, hG, q, hinv _ hxU, Eventually.of_forall fun _ ↦ ⟨hinv _ hxU, SameRay.rfl⟩⟩
 
+/-- A family of elements of the determinant lines which a kernel chart reads as one fixed nonzero
+element `u` at every point of `s` is coherent on `s`. -/
+theorem isDetLineCoherentOn_of_detLineChartEquiv_eq {Λ G : Type*} [NormedAddCommGroup Λ]
+    [NormedSpace ℝ Λ] [FiniteDimensional ℝ Λ] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [FiniteDimensional ℝ G] {D₂ : Λ →L[ℝ] F} {q : E × Λ →L[ℝ] G} (hT : ContinuousOn T s)
+    (hF : ∀ x ∈ s, IsFredholm (T x)) {u : TauCeti.detLine ℝ G ⊗[ℝ] Dual ℝ (TauCeti.detLine ℝ Λ)}
+    (hu : u ≠ 0)
+    (hv : ∀ x ∈ s, ∃ h : (((T x).coprod D₂).prod q).IsInvertible,
+      detLineChartEquiv (T x) D₂ q h (v x) = u) :
+    IsDetLineCoherentOn T v s := by
+  intro x hx
+  obtain ⟨hx', hxv⟩ := hv x hx
+  obtain ⟨S, hS, G₁, hG₁, q₁, U, -, hxU, hinv⟩ := (hF x hx).exists_isOpen_kernelChart
+  refine ⟨fun h0 ↦ hu (by rw [← hxv, h0, LinearEquiv.map_zero]), S, hS, G₁, hG₁, q₁, hinv _ hxU,
+    ?_⟩
+  -- Near `x`, the transition from the given chart to the kernel chart of `x` is a positive
+  -- multiple of the transition at `x`.
+  filter_upwards [(hT x hx).tendsto.eventually
+      (eventually_detLineChartEquiv_symm_eq_smul (hinv _ hxU) hx'), self_mem_nhdsWithin]
+    with y hcy hy
+  obtain ⟨h, h', c, hc, hcu⟩ := hcy
+  obtain ⟨_, hyv⟩ := hv y hy
+  refine ⟨h, ?_⟩
+  rw [(LinearEquiv.eq_symm_apply (detLineChartEquiv (T y) D₂ q h')).2 hyv,
+    (LinearEquiv.eq_symm_apply (detLineChartEquiv (T x) D₂ q hx')).2 hxv, hcu u]
+  exact SameRay.sameRay_pos_smul_left _ hc
+
 /-- A family which is nonzero at a parameter with Fredholm operator is coherent on the singleton
 of that parameter. -/
 private theorem isDetLineCoherentOn_singleton (hF : IsFredholm (T x₀)) (hv : v x₀ ≠ 0) :
@@ -382,7 +411,7 @@ theorem exists_isDetLineCoherentOn_Icc {p q : ℝ} (hT : ContinuousOn T (Icc p q
   -- A coherent family on the singleton `[p, p]`.
   have hFp := hF p (left_mem_Icc.2 hpq)
   have : Nontrivial (T p : E →ₗ[ℝ] F).detLine :=
-    Module.nontrivial_of_finrank_eq_succ hFp.finrank_detLine
+    Module.nontrivial_of_finrank_eq_succ (LinearMap.finrank_detLine _)
   obtain ⟨u₀, hu₀⟩ := exists_ne (0 : (T p : E →ₗ[ℝ] F).detLine)
   have hPp : P p := ⟨Function.update (fun _ ↦ 0) p u₀, by
     rw [Icc_self]
@@ -391,7 +420,7 @@ theorem exists_isDetLineCoherentOn_Icc {p q : ℝ} (hT : ContinuousOn T (Icc p q
     (fun _ _ _ _ _ _ h₁ h₂ ↦ h₁.trans h₂) (left_mem_Icc.2 hpq) (right_mem_Icc.2 hpq)).1 hPp
   -- Rescale to the prescribed value at `x₀`.
   obtain ⟨r, hr⟩ := (finrank_eq_one_iff_of_ne_zero' (w x₀) (hw.ne_zero hx₀)).1
-    (hF x₀ hx₀).finrank_detLine v₀
+    (LinearMap.finrank_detLine _) v₀
   have hr0 : r ≠ 0 := by
     rintro rfl
     exact hv₀ (by rw [← hr, zero_smul])

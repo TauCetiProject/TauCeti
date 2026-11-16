@@ -454,7 +454,7 @@ private theorem continuousOn_update_neg_inv_invFunOn {A : Set ℂ} {c b : ℂ} {
   · have hq : Tendsto (fun s => c + b * model (-s⁻¹))
         (𝓝[(ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}] 0) (cobounded ℂ ⊓ 𝓟 (f '' A)) := by
       refine tendsto_inf.mpr ⟨?_, tendsto_principal.mpr ?_⟩
-      · exact (tendsto_comp_neg_inv_cobounded ((tendsto_const_add_mul_model hb).mono_left
+      · exact (tendsto_comp_neg_inv_nhdsWithin_zero ((tendsto_const_add_mul_model hb).mono_left
           inf_le_left)).mono_left
             (nhdsWithin_mono _ (sdiff_subset_sdiff_left inter_subset_right))
       · exact eventually_nhdsWithin_of_forall fun s hs => hfAq s hs.1.1 hs.1.2 hs.2

@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
+import TauCeti.Analysis.Calculus.LineDeriv.Basic
+import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
+import TauCeti.Order.Filter.Basic
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -38,7 +42,10 @@ is a primitive of `-F` plus an affine function, which is in general no better th
 ## Main declarations
 
 * `TauCeti.PDE.exists_ae_mul_gradient_add_eq_sub_intervalIntegral`: the first integral
-  `a u' + F = k - ∫_{x₀}^t f`.
+  `a u' + F = k - ∫_{x₀}^t f`, and its converse
+  `TauCeti.PDE.setIntegral_mul_deriv_eq_sub_of_ae_add_eq_sub_intervalIntegral`.
+* `TauCeti.PDE.abs_add_setIntegral_inv_mul_div_le`: for `λ ≤ a ≤ M`, the bound for the constant
+  `k = (δ + ∫ a⁻¹ G) / ∫ a⁻¹` of a first integral, independent of `a` beyond `λ` and `M`.
 * `TauCeti.PDE.ae_abs_gradient_le_of_forall_integral_eq`: the explicit pointwise bound for `u'`.
 * `TauCeti.PDE.abs_intervalRepresentativeL_sub_le_of_forall_integral_eq`: the explicit bound for
   the increments of `ū`.
@@ -113,6 +120,72 @@ theorem exists_ae_mul_gradient_add_eq_sub_intervalIntegral
   filter_upwards [hk] with t ht
   rw [ht, Pi.neg_def, intervalIntegral.integral_neg, sub_eq_add_neg]
 
+/-- **The weak equation from a first integral.** Conversely to
+`exists_ae_mul_gradient_add_eq_sub_intervalIntegral`, let `f` be integrable and `F` locally
+integrable on `(x₀, x₁)`, and let the flux `q + F` be almost everywhere equal to `k - ∫_{x₀}^t f`
+there for a constant `k`. Then `-q' = f + F'` in the sense of distributions on `(x₀, x₁)`. -/
+theorem setIntegral_mul_deriv_eq_sub_of_ae_add_eq_sub_intervalIntegral
+    (hf : IntegrableOn f (Ioo x₀ x₁)) (hF : LocallyIntegrableOn F (Ioo x₀ x₁)) {q : ℝ → ℝ} {k : ℝ}
+    (hq : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), q t + F t = k - ∫ s in x₀..t, f s)
+    (φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ)) :
+    ∫ t in Ioo x₀ x₁, q t * deriv φ t =
+      (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t := by
+  -- `k - ∫_{x₀}^t f` has weak derivative `-f`.
+  have hw : HasWeakLineDerivOn volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩
+      (fun t => k - ∫ s in x₀..t, f s) (-f) 1 :=
+    ((hasWeakLineDerivOn_const k).sub (hasWeakLineDerivOn_intervalIntegral_left hf)).congr_ae_deriv
+      (EventuallyEq.of_eq (zero_sub f))
+  have hkΦ : ∫ t in Ioo x₀ x₁, (k - ∫ s in x₀..t, f s) * deriv φ t =
+      ∫ t in Ioo x₀ x₁, f t * φ t := by
+    have e := hw.integral_lineDeriv_smul_eq_neg_integral_smul φ
+    rw [← setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul,
+      ← setIntegral_smul_eq_integral_smul] at e
+    simp only [Opens.coe_mk, lineDeriv_one, smul_eq_mul, Pi.neg_apply, mul_neg,
+      MeasureTheory.integral_neg, neg_neg] at e
+    simpa only [mul_comm] using e
+  have h1 := integrable_lineDeriv_smul_of_locallyIntegrableOn
+    (Ω := ⟨Ioo x₀ x₁, isOpen_Ioo⟩) (μ := volume) hw.locallyIntegrableOn φ 1
+  have h2 := integrable_lineDeriv_smul_of_locallyIntegrableOn
+    (Ω := ⟨Ioo x₀ x₁, isOpen_Ioo⟩) (μ := volume) hF φ 1
+  simp only [lineDeriv_one, smul_eq_mul] at h1 h2
+  have hcongr : (fun t => q t * deriv φ t) =ᵐ[volume.restrict (Ioo x₀ x₁)]
+      fun t => (k - ∫ s in x₀..t, f s) * deriv φ t - F t * deriv φ t := by
+    filter_upwards [hq] with t ht
+    rw [← ht]
+    ring
+  rw [integral_congr_ae hcongr, integral_sub (h1.integrableOn.congr_fun (fun t _ => mul_comm _ _)
+    measurableSet_Ioo) (h2.integrableOn.congr_fun (fun t _ => mul_comm _ _) measurableSet_Ioo),
+    hkΦ]
+
+/-- **The constant of a first integral is bounded independently of the coefficient.** If
+`λ ≤ a ≤ M` almost everywhere on `(x₀, x₁)`, with `λ > 0`, and `G` is integrable there, then
+`|(δ + ∫ a⁻¹ G) / ∫ a⁻¹| ≤ M / (x₁ - x₀) * (|δ| + λ⁻¹ ∫ |G|)` for every `δ`, all integrals being
+over `(x₀, x₁)`. -/
+theorem abs_add_setIntegral_inv_mul_div_le (hx : x₀ < x₁) {lam M : ℝ} (hlam : 0 < lam)
+    (ha : AEStronglyMeasurable a (volume.restrict (Ioo x₀ x₁)))
+    (haM : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t ∧ a t ≤ M) {G : ℝ → ℝ}
+    (hG : IntegrableOn G (Ioo x₀ x₁)) (δ : ℝ) :
+    |(δ + ∫ t in Ioo x₀ x₁, (a t)⁻¹ * G t) / ∫ t in Ioo x₀ x₁, (a t)⁻¹| ≤
+      M / (x₁ - x₀) * (|δ| + lam⁻¹ * ∫ t in Ioo x₀ x₁, |G t|) := by
+  have hI0 : volume (Ioo x₀ x₁) ≠ 0 := by simp [hx]
+  have : (ae (volume.restrict (Ioo x₀ x₁))).NeBot := ae_restrict_neBot.2 hI0
+  have hM : 0 < M := hlam.trans_le (le_of_eventually_le_and_le haM)
+  have hD0 := setIntegral_inv_pos hI0 measure_Ioo_lt_top.ne hlam ha (haM.mono fun _ ht => ht.1)
+  have hD := div_le_setIntegral_inv measure_Ioo_lt_top.ne hlam ha haM
+  rw [Real.volume_real_Ioo_of_le hx.le] at hD
+  -- `|∫ a⁻¹ G| ≤ λ⁻¹ ∫ |G|`.
+  have hN : |∫ t in Ioo x₀ x₁, (a t)⁻¹ * G t| ≤ lam⁻¹ * ∫ t in Ioo x₀ x₁, |G t| := by
+    rw [← Real.norm_eq_abs, ← integral_const_mul]
+    refine norm_integral_le_of_norm_le (hG.abs.const_mul _) ?_
+    filter_upwards [(haM.mono fun _ ht => ht.1).norm_inv_le_inv hlam] with t ht
+    rw [norm_mul, Real.norm_eq_abs (G t)]
+    exact mul_le_mul_of_nonneg_right ht (abs_nonneg _)
+  rw [abs_div, abs_of_pos hD0, div_le_iff₀ hD0]
+  calc _ ≤ |δ| + lam⁻¹ * ∫ t in Ioo x₀ x₁, |G t| := (abs_add_le _ _).trans (by gcongr)
+    _ = M / (x₁ - x₀) * (|δ| + lam⁻¹ * ∫ t in Ioo x₀ x₁, |G t|) * ((x₁ - x₀) / M) := by
+        field_simp [(sub_pos.2 hx).ne']
+    _ ≤ _ := by gcongr
+
 /-- Integrating the first integral `a u' + F = k - Φ` over `(x₀, x₁)`, after dividing by `a`:
 `k ∫ a⁻¹ = ū x₁ - ū x₀ + ∫ a⁻¹ (Φ + F)`. -/
 private theorem mul_setIntegral_inv_eq (hx : x₀ < x₁) {lam : ℝ} (hlam : 0 < lam)
@@ -123,9 +196,7 @@ private theorem mul_setIntegral_inv_eq (hx : x₀ < x₁) {lam : ℝ} (hlam : 0 
     k * ∫ t in Ioo x₀ x₁, (a t)⁻¹ = (W1p.intervalTraceL hx u).2 - (W1p.intervalTraceL hx u).1 +
       ∫ t in Ioo x₀ x₁, (a t)⁻¹ * (Φ t + F t) := by
   have : IsFiniteMeasure (volume.restrict (Ioo x₀ x₁)) := Real.isFiniteMeasure_restrict_Ioo x₀ x₁
-  have hinv : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), ‖(a t)⁻¹‖ ≤ lam⁻¹ := hlama.mono fun t ht => by
-    rw [Real.norm_eq_abs, abs_inv, abs_of_pos (hlam.trans_le ht)]
-    exact inv_anti₀ hlam ht
+  have hinv := hlama.norm_inv_le_inv hlam
   have hgrad : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
       W1p.gradient u t = k * (a t)⁻¹ - (a t)⁻¹ * (Φ t + F t) := by
     filter_upwards [hk, hlama] with t ht hat
@@ -153,46 +224,26 @@ private theorem abs_le_of_ae_mul_gradient_add_eq (hx : x₀ < x₁) {lam M : ℝ
     |k| ≤ M / (x₁ - x₀) * (|(W1p.intervalTraceL hx u).2 - (W1p.intervalTraceL hx u).1| +
       ((x₁ - x₀) * N + ∫ t in Ioo x₀ x₁, |F t|) / lam) := by
   have : IsFiniteMeasure (volume.restrict (Ioo x₀ x₁)) := Real.isFiniteMeasure_restrict_Ioo x₀ x₁
-  have hL : 0 < x₁ - x₀ := sub_pos.2 hx
-  have hM : 0 < M := by
-    have : (ae (volume.restrict (Ioo x₀ x₁))).NeBot := ae_restrict_neBot.2 (by simp [hx])
-    obtain ⟨t, ht⟩ := haM.exists
-    linarith [ht.1, ht.2]
-  have hinv : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), ‖(a t)⁻¹‖ ≤ lam⁻¹ := haM.mono fun t ht => by
-    rw [Real.norm_eq_abs, abs_inv, abs_of_pos (hlam.trans_le ht.1)]
-    exact inv_anti₀ hlam ht.1
+  have hI0 : volume (Ioo x₀ x₁) ≠ 0 := by simp [hx]
+  have : (ae (volume.restrict (Ioo x₀ x₁))).NeBot := ae_restrict_neBot.2 hI0
+  have hM : 0 < M := hlam.trans_le (le_of_eventually_le_and_le haM)
   have hkA := mul_setIntegral_inv_eq hx hlam ha (haM.mono fun _ ht => ht.1) hF hΦi hk
-  -- `∫ a⁻¹ ≥ (x₁ - x₀) / M`.
-  have hA : (x₁ - x₀) / M ≤ ∫ t in Ioo x₀ x₁, (a t)⁻¹ := by
-    have h := integral_mono_ae (integrable_const M⁻¹)
-      (Integrable.of_bound ha.aemeasurable.inv.aestronglyMeasurable _ hinv)
-      (haM.mono fun t ht => inv_anti₀ (hlam.trans_le ht.1) ht.2)
-    rwa [setIntegral_const, Real.volume_real_Ioo_of_le hx.le, smul_eq_mul, ← div_eq_mul_inv] at h
-  -- `|∫ a⁻¹ (Φ + F)| ≤ ((x₁ - x₀) N + ‖F‖₁) / λ`.
-  have hR : |∫ t in Ioo x₀ x₁, (a t)⁻¹ * (Φ t + F t)| ≤ ((x₁ - x₀) * N + ∫ t in Ioo x₀ x₁, |F t|) /
-      lam := by
-    refine abs_integral_le_integral_abs.trans ?_
-    have h : ∫ t in Ioo x₀ x₁, |(a t)⁻¹ * (Φ t + F t)| ≤
-        ∫ t in Ioo x₀ x₁, lam⁻¹ * (N + |F t|) :=
-      integral_mono_ae ((hΦi.add hF).bdd_mul ha.aemeasurable.inv.aestronglyMeasurable hinv).abs
-        (((integrable_const N).add hF.abs).const_mul lam⁻¹)
-        (((ae_restrict_mem measurableSet_Ioo).and haM).mono fun t ⟨htI, ht⟩ => by
-          dsimp only
-          rw [abs_mul, abs_inv, abs_of_pos (hlam.trans_le ht.1)]
-          gcongr
-          · exact ht.1
-          · exact (abs_add_le _ _).trans (add_le_add_left (hΦ t htI) _))
-    refine h.trans_eq ?_
-    rw [integral_const_mul, integral_add (integrable_const _) hF.abs, setIntegral_const,
-      Real.volume_real_Ioo_of_le hx.le, smul_eq_mul, div_eq_inv_mul]
-  have h1 : |k| * ((x₁ - x₀) / M) ≤ |(W1p.intervalTraceL hx u).2 - (W1p.intervalTraceL hx u).1| +
-      ((x₁ - x₀) * N + ∫ t in Ioo x₀ x₁, |F t|) / lam := by
-    calc |k| * ((x₁ - x₀) / M) ≤ |k| * ∫ t in Ioo x₀ x₁, (a t)⁻¹ := by gcongr
-      _ = |k * ∫ t in Ioo x₀ x₁, (a t)⁻¹| := by
-          rw [abs_mul, abs_of_pos ((div_pos hL hM).trans_le hA)]
-      _ ≤ _ := by rw [hkA]; exact (abs_add_le _ _).trans (by gcongr)
-  calc |k| = |k| * ((x₁ - x₀) / M) * (M / (x₁ - x₀)) := by field_simp
-    _ ≤ _ := by rw [mul_comm _ (M / (x₁ - x₀))]; gcongr
+  rw [← eq_div_iff (setIntegral_inv_pos hI0 measure_Ioo_lt_top.ne hlam ha
+    (haM.mono fun _ ht => ht.1)).ne'] at hkA
+  -- `∫ |Φ + F| ≤ (x₁ - x₀) N + ‖F‖₁`.
+  have hR : ∫ t in Ioo x₀ x₁, |Φ t + F t| ≤ (x₁ - x₀) * N + ∫ t in Ioo x₀ x₁, |F t| := by
+    calc ∫ t in Ioo x₀ x₁, |Φ t + F t| ≤ ∫ t in Ioo x₀ x₁, (N + |F t|) :=
+          setIntegral_mono_on (hΦi.add hF).abs ((integrable_const N).add hF.abs) measurableSet_Ioo
+            fun t ht => (abs_add_le _ _).trans (add_le_add_left (hΦ t ht) _)
+      _ = _ := by
+          rw [integral_add (integrable_const _) hF.abs, setIntegral_const,
+            Real.volume_real_Ioo_of_le hx.le, smul_eq_mul]
+  rw [hkA]
+  refine (abs_add_setIntegral_inv_mul_div_le hx hlam ha haM (G := fun t => Φ t + F t)
+    (hΦi.add hF) _).trans ?_
+  rw [inv_mul_eq_div]
+  have : 0 ≤ M / (x₁ - x₀) := (div_pos hM (sub_pos.2 hx)).le
+  gcongr
 
 /-- **The derivative of a solution is bounded by the data.** Let `λ ≤ a ≤ M` almost everywhere on
 `(x₀, x₁)`, with `λ > 0`, let `f` and `F` be integrable there, and let `u ∈ W^{1,p}(x₀, x₁)` solve

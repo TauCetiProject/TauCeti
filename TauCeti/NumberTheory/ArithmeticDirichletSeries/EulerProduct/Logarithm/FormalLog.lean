@@ -13,10 +13,11 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logari
 # Evaluating the logarithm of a local Euler factor
 
 The formal series `TauCeti.EulerProductData.localLogSeries` is the logarithm of a local Euler
-factor before evaluation. This file supplies the analytic bridge. If the local power series at a
-height-one prime is zero-free on a disk inside its disk of convergence, then its formal logarithm
-converges absolutely at every smaller prime-norm parameter. Exponentiating the resulting
-prime-power sum recovers the local Euler factor.
+factor before evaluation. This file supplies the analytic bridge. If the analytic sum of the
+local power series at a height-one prime has no zero on the disk of radius `N(P) ^ (-σ)`, then its
+formal logarithm converges absolutely at every smaller prime-norm parameter. No separate convergence
+hypothesis is needed, since the analytic sum is `0` wherever the local power series diverges.
+Exponentiating the resulting prime-power sum recovers the local Euler factor.
 
 The zero-free hypothesis is essential: a zero of the local power series bounds the convergence
 radius of its logarithm even when the local power series itself converges farther.
@@ -43,11 +44,10 @@ open scoped nonZeroDivisors NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- The evaluated formal logarithm of a local Euler factor converges absolutely inside every
-zero-free disk on which the local factor converges. -/
+/-- The evaluated formal logarithm of a local Euler factor converges absolutely at `N(P) ^ (-s)`
+whenever `σ < Re(s)` and the local power series has no zero in the disk of radius `N(P) ^ (-σ)`. -/
 theorem summable_norm_coeff_localLogSeries_of_zeroFree (D : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ} {s : ℂ}
-    (hσ : LSeriesSummable (D.localArithmeticFactor P) (σ : ℂ))
     (hne : ∀ z : ℂ,
       ‖z‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ →
         FormalMultilinearSeries.ofScalarsSum (E := ℂ)
@@ -55,23 +55,20 @@ theorem summable_norm_coeff_localLogSeries_of_zeroFree (D : EulerProductData K)
     (hs : σ < s.re) :
     Summable fun e : ℕ ↦ ‖PowerSeries.coeff e (D.localLogSeries P) *
       ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e‖ := by
-  obtain ⟨hr, hz⟩ := D.localPowerSeries_radius_data P hσ hs
   rw [D.localLogSeries_def]
-  apply PowerSeries.summable_norm_coeff_logOf_mul_pow_of_zeroFree
-    (D.localPowerSeries P) (D.constantCoeff_localPowerSeries P) hr
-  · intro z hz'
-    apply hne z
-    rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe] at hz'
-    exact_mod_cast hz'
-  · exact hz
+  exact PowerSeries.summable_norm_coeff_logOf_mul_pow_of_zeroFree
+    (D.localPowerSeries P) (D.constantCoeff_localPowerSeries P)
+    (r := ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ₑ)
+    (fun z hz ↦ hne z ((lt_iff_lt_of_le_iff_le eNorm_le_iff_norm_le).1 hz))
+    ((lt_iff_lt_of_le_iff_le eNorm_le_iff_norm_le).2
+      (P.norm_absNorm_cpow_neg_lt (by simpa using hs)))
 
 /-- **The local prime-power logarithm evaluates to a logarithm of the Euler factor.** Under the
-same convergence and zero-free-disk hypotheses, exponentiating the sum of the formal logarithmic
-coefficients at `N(P) ^ (-s)` recovers the analytic local Euler factor at `s`. Apply this theorem
-with a chosen `σ`; the left-hand side does not determine it for simplification. -/
+same zero-free-disk hypothesis, exponentiating the sum of the formal logarithmic coefficients at
+`N(P) ^ (-s)` recovers the analytic local Euler factor at `s`. Apply this theorem with a chosen
+`σ`; the left-hand side does not determine it for simplification. -/
 theorem exp_tsum_coeff_localLogSeries_eq_eulerFactor_of_zeroFree
     (D : EulerProductData K) (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ} {s : ℂ}
-    (hσ : LSeriesSummable (D.localArithmeticFactor P) (σ : ℂ))
     (hne : ∀ z : ℂ,
       ‖z‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ →
         FormalMultilinearSeries.ofScalarsSum (E := ℂ)
@@ -79,7 +76,6 @@ theorem exp_tsum_coeff_localLogSeries_eq_eulerFactor_of_zeroFree
     (hs : σ < s.re) :
     Complex.exp (∑' e : ℕ, PowerSeries.coeff e (D.localLogSeries P) *
       ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e) = D.eulerFactor P s := by
-  obtain ⟨hr, hz⟩ := D.localPowerSeries_radius_data P hσ hs
   rw [D.localLogSeries_def]
   calc
     Complex.exp (∑' e : ℕ, PowerSeries.coeff e (PowerSeries.logOf
@@ -87,13 +83,12 @@ theorem exp_tsum_coeff_localLogSeries_eq_eulerFactor_of_zeroFree
         FormalMultilinearSeries.ofScalarsSum (E := ℂ)
           (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P))
             ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) := by
-      apply PowerSeries.exp_tsum_coeff_logOf_mul_pow_of_zeroFree
-        (D.localPowerSeries P) (D.constantCoeff_localPowerSeries P) hr
-      · intro z hz'
-        apply hne z
-        rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe] at hz'
-        exact_mod_cast hz'
-      · exact hz
+      exact PowerSeries.exp_tsum_coeff_logOf_mul_pow_of_zeroFree
+        (D.localPowerSeries P) (D.constantCoeff_localPowerSeries P)
+        (r := ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ₑ)
+        (fun z hz ↦ hne z ((lt_iff_lt_of_le_iff_le eNorm_le_iff_norm_le).1 hz))
+        ((lt_iff_lt_of_le_iff_le eNorm_le_iff_norm_le).2
+          (P.norm_absNorm_cpow_neg_lt (by simpa using hs)))
     _ = D.eulerFactor P s := by
       simpa only [D.coeff_localPowerSeries] using D.localPowerSeries_eval_eq_eulerFactor P s
 

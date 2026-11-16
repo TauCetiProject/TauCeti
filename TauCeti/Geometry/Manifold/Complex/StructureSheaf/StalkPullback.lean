@@ -19,10 +19,11 @@ through the injective comparison with function germs. The two pullbacks agree wh
 Pullback along a map with a local analytic inverse, such as a chart, is bijective
 (`stalkPullback_bijective`), in particular pullback along a continuous linear equivalence
 (`ContinuousLinearEquiv.holomorphicStalkPullback_bijective`) and along a chart followed by one
-(`stalkPullback_comp_extChartAt_bijective`), which identifies a stalk of a manifold with a stalk
-of its model. Together with isolated-point evaluation in dimension zero, this gives an induction
-principle on the complex dimension (`stalk_induction`) for isomorphism-invariant ring properties of
-holomorphic stalks on finite-dimensional boundaryless complex manifolds.
+(`stalkPullback_comp_extChartAt_bijective`), which identifies a stalk of a finite-dimensional
+manifold with a stalk of a model space in `Type` (`exists_ringEquiv_stalk_modelSpace`). Together
+with isolated-point evaluation in dimension zero, this gives an induction principle on the complex
+dimension (`stalk_induction`) for isomorphism-invariant ring properties of holomorphic stalks on
+finite-dimensional boundaryless complex manifolds.
 On the complex line, `eventually_contMDiffAt_of_analyticAt` supplies the local hypothesis
 from `AnalyticAt`.
 -/
@@ -195,6 +196,23 @@ theorem stalkPullback_comp_extChartAt_bijective (x : X) (e : E ≃L[ℂ] V) :
   · filter_upwards [hmem] with z hz
     simp only [Function.comp_apply, (extChartAt I x).right_inv hz,
       ContinuousLinearEquiv.apply_symm_apply]
+
+omit [IsManifold I ω X] in
+/-- A chart at `x`, followed by a linear isomorphism onto a model in `Type`, identifies the
+holomorphic stalk at `x` with a holomorphic stalk of a finite-dimensional complex vector space of
+the same dimension. -/
+theorem exists_ringEquiv_stalk_modelSpace [FiniteDimensional ℂ E] [IsManifold I 1 X] (x : X) :
+    ∃ (V : Type) (_ : NormedAddCommGroup V) (_ : NormedSpace ℂ V) (_ : FiniteDimensional ℂ V)
+      (v : V), Module.finrank ℂ V = Module.finrank ℂ E ∧
+        Nonempty ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk v ≃+*
+          (holomorphicStructureSheaf I X).presheaf.stalk x) := by
+  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  -- The model `E` may live in any universe, while the stalks of model spaces are compared in
+  -- `Type`: compose the chart at `x` with a linear isomorphism onto a space in `Type`.
+  let e : E ≃L[ℂ] (Fin (Module.finrank ℂ E) → ℂ) := ContinuousLinearEquiv.ofFinrankEq (by simp)
+  exact ⟨Fin (Module.finrank ℂ E) → ℂ, inferInstance, inferInstance, inferInstance,
+    (e ∘ extChartAt I x) x, by simp,
+    ⟨RingEquiv.ofBijective _ (stalkPullback_comp_extChartAt_bijective x e)⟩⟩
 
 end TauCeti.holomorphicStructureSheaf
 

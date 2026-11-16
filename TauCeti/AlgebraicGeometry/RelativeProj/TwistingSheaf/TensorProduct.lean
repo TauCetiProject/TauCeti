@@ -110,7 +110,7 @@ private theorem transition_mul {U V : X.AffineZariskiSite} (i : U ⟶ V) (m n : 
     (congrArg₂ (fun a b ↦ chartMul A W U m n a b) (h₂ s).symm (h₃ t).symm))
   exact Proj.res_twistingSheafMap_app_mul
     (A.restrictGradedSectionsGradedHom ((Scheme.AffineZariskiSite.toOpensFunctor X).map i))
-    (A.irrelevant_le_map_restrictGradedSectionsGradedHom_toOpensFunctor i) _ _ s t
+    (A.irrelevant_le_map_restrictGradedSections_toOpensFunctor i) _ _ s t
 
 /-- The products, in the charts, of the images of two sections of twisting sheaves of the relative
 `Proj` are compatible under the transition maps, hence the images of a single section. -/

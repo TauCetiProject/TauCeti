@@ -20,10 +20,11 @@ import TauCeti.RingTheory.PowerSeries.Trunc
 
 Let `K` be a complete ultrametric normed field, except where noted below. A series in `K⟨X, Y⟩†`,
 with `Y = X none`, which is distinguished of degree `s` in `Y` at unit radius and has a unit
-coefficient in degree `s`, divides every overconvergent series. The quotient is overconvergent in
-all variables and the remainder is a polynomial in `Y` of degree less than `s`, with coefficients
-in `K⟨X⟩†`. The decomposition is unique, and the quotient `q` and the coefficients of the
-remainder `r` are bounded by the dividend `f`: `‖q‖ ‖g‖ ≤ ‖f‖` and `‖r.coeff i‖ ≤ ‖f‖`.
+coefficient in degree `s`, can be divided into every overconvergent series with remainder. The
+quotient is overconvergent in all variables and the remainder is a polynomial in `Y` of
+degree less than `s`, with coefficients in `K⟨X⟩†`. The decomposition is unique, and the quotient
+`q` and the coefficients of the remainder `r` are bounded by the dividend `f`: `‖q‖ ‖g‖ ≤ ‖f‖`
+and `‖r.coeff i‖ ≤ ‖f‖`.
 Uniqueness, and the statements deduced from it alone (the comparison of divisibility, descent of
 irreducibility, and the implication from primality in `K⟨X, Y⟩†` to primality in `K⟨X⟩†[Y]`), need
 only that `K` is an ultrametric normed commutative ring with multiplicative norm. All other results,
@@ -51,6 +52,26 @@ finitely many variables which is integral over `K` is spanned by the images of p
 (`TauCeti.Dagger.washnitzerAlgebra.surjective_mkₐ_comp_ofMvPolynomial`). Consequently two
 algebra homomorphisms from `K⟨X⟩†` into an algebra integral over `K` that agree on the variables
 are equal (`TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isIntegral`).
+
+## Main results
+
+* `TauCeti.Dagger.existsUnique_mul_add_eq_of_isDistinguished`: unique division with remainder, with
+  the quotient and remainder bundled as a unique pair.
+* `TauCeti.Dagger.exists_mul_add_eq_of_isDistinguished`: existence of the division.
+* `TauCeti.Dagger.exists_mul_add_eq_and_norm_le_of_isDistinguished`: existence with the norm bounds
+  on the quotient and the remainder.
+* `TauCeti.Dagger.eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished`: uniqueness, which needs
+  neither completeness nor a unit distinguished coefficient.
+* `TauCeti.Dagger.washnitzerAlgebra.exists_mul_add_polynomialToOption_eq`: division by an
+  evaluated monic distinguished polynomial.
+* `TauCeti.Dagger.washnitzerAlgebra.polynomialQuotientEquiv`: the identification of
+  `K⟨X⟩†[Y] ⧸ (ω)` with `K⟨X, Y⟩† ⧸ (ω)`.
+* `TauCeti.Dagger.washnitzerAlgebra.polynomialToOption_dvd_iff`,
+  `TauCeti.Dagger.washnitzerAlgebra.irreducible_of_irreducible_polynomialToOption` and
+  `TauCeti.Dagger.washnitzerAlgebra.prime_polynomialToOption_iff`: comparison of divisibility,
+  irreducibility and primality.
+* `TauCeti.Dagger.washnitzerAlgebra.surjective_mkₐ_comp_ofMvPolynomial` and
+  `TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isIntegral`: the integral-quotient results.
 
 ## References
 
@@ -81,8 +102,9 @@ local notation "W" => washnitzerAlgebra σ K
 local notation "W'" => washnitzerAlgebra (Option σ) K
 local notation "Tate" => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
 
-/-- **Uniqueness in overconvergent Weierstrass division.** If `q * g + r = q' * g + r'`
-with polynomial remainders `r, r'` of degree less than `s` in the separated variable, then
+/-- **Uniqueness in overconvergent Weierstrass division.** If `g` is distinguished of degree `s`
+in the separated variable at unit radius and `q * g + r = q' * g + r'` with polynomial
+remainders `r, r'` of degree less than `s` in that variable, then
 `q = q'` and `r = r'`. Neither completeness nor a unit distinguished coefficient is needed. -/
 theorem eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished {g q q' : W'} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
@@ -102,10 +124,8 @@ theorem eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished {g q q' : W'} {s : �
   obtain ⟨hqq, hrr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add zero_lt_one
     (fun _ ↦ norm_mul _ _) (restrictedOptionEquiv (toTate _ K q)).2
     (restrictedOptionEquiv (toTate _ K q')).2 (hz r hr) (hz r' hr') hmap
-  refine ⟨washnitzerAlgebra.optionSeries_injective ?_, ?_⟩
-  · apply PowerSeries.map_injective (toTate σ K : washnitzerAlgebra σ K →+*
-      IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))) washnitzerAlgebra.toTate_injective
-    simpa only [washnitzerAlgebra.map_toTate_optionSeries] using hqq
+  refine ⟨washnitzerAlgebra.toTate_injective (restrictedOptionEquiv.injective (Subtype.ext hqq)),
+    ?_⟩
   · have he := PowerSeries.map_injective (toTate σ K : washnitzerAlgebra σ K →+*
       IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ)))
       washnitzerAlgebra.toTate_injective hrr
@@ -416,7 +436,7 @@ omit [CompleteSpace K] in
 private theorem polynomialsSurject_of_equiv {σ τ : Type*} (e : σ ≃ τ)
     (h : PolynomialsSurject (K := K) σ) : PolynomialsSurject (K := K) τ := by
   intro I _
-  let φ := renameEquiv (R := K) e
+  let φ := renameAlgEquiv (R := K) e
   let J := I.comap φ.toAlgHom
   have : Algebra.IsIntegral K (washnitzerAlgebra σ K ⧸ J) :=
     Algebra.IsIntegral.of_injective (Ideal.quotientMapₐ I φ.toAlgHom le_rfl)

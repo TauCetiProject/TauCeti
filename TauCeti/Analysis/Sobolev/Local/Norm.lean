@@ -25,8 +25,11 @@ supplies its unfolding, its value through a given weak derivative on an open set
 `W^{k,p}_loc` membership of a function of finite norm and, conversely, the finiteness of the
 norm of a `W^{k,p}_loc` function on relatively compact subsets, the extraction of a weak
 derivative from a finite successor-order norm, the almost-everywhere vanishing of a function of
-zero norm, monotonicity in the set, invariance under almost-everywhere change, the triangle
-inequality and the operator-norm bound under a continuous linear map of the codomain.
+zero norm, monotonicity in the set and in the derivative order, invariance under
+almost-everywhere change, the triangle inequality and the operator-norm bound under a continuous
+linear map of the codomain. An upper bound of the form `a + c ‖f‖_{W^{k+1,p}(U)}` (for finite
+`c`, with `‖f‖_{W^{k+1,p}(U)}` finite when `c = 0`) may be checked through each weak derivative
+of `f` separately.
 
 ## References
 
@@ -98,6 +101,17 @@ theorem eLpNormWkp_mono_set (hVU : V ⊆ U) : eLpNormWkp p V k f ≤ eLpNormWkp 
     · exact eLpNorm_mono_measure _ (Measure.restrict_mono hVU le_rfl)
     · exact le_iInf₂ fun D hD => iInf₂_le_of_le D (hD.mono (interior_mono hVU)) ih
 
+/-- The `W^{k,p}(U)` norm increases with the derivative order. -/
+theorem eLpNormWkp_mono_order {l : ℕ} (hlk : l ≤ k) :
+    eLpNormWkp p U l f ≤ eLpNormWkp p U k f := by
+  induction l generalizing k F with
+  | zero => exact eLpNorm_le_eLpNormWkp.trans_eq' eLpNormWkp_zero.symm
+  | succ l ih =>
+    obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+    rw [eLpNormWkp_succ, eLpNormWkp_succ]
+    gcongr
+    exact ih (by omega)
+
 /-- Almost-everywhere equality on `U` preserves the `W^{k,p}(U)` norm. -/
 theorem eLpNormWkp_congr_ae (hfg : f =ᵐ[volume.restrict U] g) :
     eLpNormWkp p U k f = eLpNormWkp p U k g := by
@@ -132,6 +146,30 @@ theorem exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top (hf : eLpNormWkp p U (k
       HasWeakFDerivOn volume (Opens.interior U) f D ∧ eLpNormWkp p U k D < ∞ := by
     simpa [iInf_lt_iff, lt_top_iff_ne_top] using hf.2
   exact ⟨D, hD, hlt.ne⟩
+
+/-- Let `c ≠ ∞`, and if `c = 0` let `f` have finite `W^{k+1,p}(U)` norm. To bound `b` by
+`a + c ‖f‖_{W^{k+1,p}(U)}` it suffices to bound it by `a + c (‖f‖_{Lᵖ(U)} + ‖D‖_{W^{k,p}(U)})`
+for every weak derivative `D` of `f` on `interior U` of finite `W^{k,p}(U)` norm. -/
+theorem le_add_mul_eLpNormWkp_succ_of_forall_hasWeakFDerivOn {a b c : ℝ≥0∞}
+    (hc : c ≠ ∞) (hf : c = 0 → eLpNormWkp p U (k + 1) f ≠ ∞)
+    (H : ∀ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) f D →
+      eLpNormWkp p U k D ≠ ∞ →
+        b ≤ a + c * (eLpNorm f p (volume.restrict U) + eLpNormWkp p U k D)) :
+    b ≤ a + c * eLpNormWkp p U (k + 1) f := by
+  rcases eq_or_ne c 0 with rfl | hc0
+  · obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top (hf rfl)
+    simpa using H D hD hDk
+  calc b
+      ≤ ⨅ (D : ℂ → ℂ →L[ℝ] F) (_ : HasWeakFDerivOn volume (Opens.interior U) f D),
+          a + c * (eLpNorm f p (volume.restrict U) + eLpNormWkp p U k D) :=
+        le_iInf₂ fun D hD => by
+          by_cases hDk : eLpNormWkp p U k D = ∞
+          · rw [hDk, add_top, ENNReal.mul_top hc0, add_top]
+            exact le_top
+          · exact H D hD hDk
+    _ = a + c * eLpNormWkp p U (k + 1) f := by
+        rw [eLpNormWkp_succ]
+        simp only [ENNReal.add_iInf, ENNReal.mul_iInf_of_ne hc0 hc]
 
 /-- A function of finite `W^{k,p}` norm lies in the local Sobolev class `W^{k,p}_loc`. -/
 theorem memWkpLoc_of_eLpNormWkp_ne_top (hf : eLpNormWkp p U k f ≠ ∞) : MemWkpLoc p U k f := by

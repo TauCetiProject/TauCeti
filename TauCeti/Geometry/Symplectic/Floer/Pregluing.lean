@@ -397,7 +397,8 @@ theorem exists_eventually_norm_floerOperator_preglue_le (ω : SymplecticForm V)
   -- `X_{H_t}` is uniformly Lipschitz at `x(t)` on balls of radius `δ₁`.
   have hXc : ContDiff ℝ 1 (uncurry X) := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH
   obtain ⟨δ₁, hδ₁, L₀, hL₀⟩ :=
-    (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_pos_forall_norm_sub_le_mul hXc hxc.continuousOn
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_pos_forall_norm_sub_le_mul
+      (fun _ _ ↦ hXc.contDiffAt) hxc.continuousOn
   set L := max L₀ 0
   have hL : 0 ≤ L := le_max_right _ _
   -- `J_t` is uniformly bounded on the `δ₁`-neighbourhood of the orbit.

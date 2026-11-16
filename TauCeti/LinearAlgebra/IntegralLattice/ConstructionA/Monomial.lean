@@ -40,7 +40,7 @@ theorem form_monomialEquiv_iff (m : ℕ) [NeZero m] (u : ι → ℚˣ) (e : ι �
     intro x y
     have hxy := h x y
     simp only [form_apply] at hxy
-    exact (div_left_inj' (by exact_mod_cast NeZero.ne m)).mp hxy
+    exact (div_left_inj₀ (by exact_mod_cast NeZero.ne m)).mp hxy
   · intro h x y
     simp only [form_apply]
     rw [(dotProduct_monomialEquiv_iff u e).mpr h x y]

@@ -66,13 +66,14 @@ theorem coe_decompose_mul_zero_of_nonneg (hneg : ∀ p < 0, 𝒜 p = ⊥) (x y :
     rwa [hneg p hp, Submodule.mem_bot] at hc
   induction x using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
-  | add x x' hx hx' => simp only [add_mul, decompose_add, add_apply, Submodule.coe_add, hx, hx']
+  | add x x' hx hx' => simp only [add_mul, decompose_add, DirectSum.add_apply, Submodule.coe_add,
+    hx, hx']
   | @homogeneous i x =>
     obtain ⟨c, hc⟩ := x
     induction y using DirectSum.Decomposition.inductionOn 𝒜 with
     | zero => simp
     | add y y' hy hy' =>
-      simp only [mul_add, decompose_add, add_apply, Submodule.coe_add, hy, hy']
+      simp only [mul_add, decompose_add, DirectSum.add_apply, Submodule.coe_add, hy, hy']
     | @homogeneous j y =>
       obtain ⟨c', hc'⟩ := y
       dsimp only

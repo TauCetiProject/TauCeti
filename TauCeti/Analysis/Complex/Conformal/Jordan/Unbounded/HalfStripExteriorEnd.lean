@@ -223,7 +223,7 @@ private theorem false_of_inverted_coordinate_eq_zero_of_rays
     (hlim _ ?_)
   · exact ((continuousOn_const.add (hgR.continuousOn.inv₀ hgap)).sub continuousOn_const).div_const b
   · intro s hs s' hs' h
-    simp only [div_left_inj' hb, sub_left_inj, add_right_inj, inv_inj] at h
+    simp only [div_left_inj₀ hb, sub_left_inj, add_right_inj, inv_inj] at h
     exact ofReal_injective (hgi ⟨by simp, hgap s hs⟩ ⟨by simp, hgap s' hs'⟩ h)
   · refine tendsto_nhdsWithin_iff.mpr ⟨hA.2 ▸ hgR.continuousAt.tendsto.mono_left
       nhdsWithin_le_nhds, ?_⟩
@@ -322,7 +322,6 @@ private theorem exists_lt_norm_mem_image_ball_of_halfStripExterior
     · exact Or.inr ⟨z, ⟨hz, not_le.mpr h⟩, hzw⟩
   -- points of the half-disc near `x` are mapped far into the end, hence into `C`
   have hmeet : (C ∩ F '' A).Nonempty := by
-    have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
     obtain ⟨z, hzr, hzC, hzH⟩ := ((eventually_mem_set.mpr
       (mem_nhdsWithin_of_mem_nhds (ball_mem_nhds (x : ℂ) hr))).and
         (((tendsto_cobounded_of_inverted_boundary_eq_zero (hgc _ (by simp)) hgf hgne

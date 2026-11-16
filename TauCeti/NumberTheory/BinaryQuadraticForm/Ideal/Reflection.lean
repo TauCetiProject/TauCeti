@@ -123,11 +123,11 @@ theorem fractionalIdeal_reflected_mul (hf : f.discrim = D) (hprim : f.IsPrimitiv
       linear_combination -(f.a : QuadraticAlgebra ℚ (D : ℚ) 0) * h1 -
         (v : QuadraticAlgebra ℚ (D : ℚ) 0) * f.a * hdiff +
         (w : QuadraticAlgebra ℚ (D : ℚ) 0) * hprod
-    rw [key, ← mem_coe]
-    exact sub_mem (add_mem (zsmul_mem (mem_coe.mpr (mul_mem_mul hα' hα)) _)
-      (zsmul_mem (sub_mem (mem_coe.mpr (mul_mem_mul hβ' hα))
-        (mem_coe.mpr (mul_mem_mul hα' hβ))) _))
-      (zsmul_mem (mem_coe.mpr (mul_mem_mul hβ' hβ)) _)
+    rw [key, ← mem_coeToSubmodule]
+    exact sub_mem (add_mem (zsmul_mem (mem_coeToSubmodule.mpr (mul_mem_mul hα' hα)) _)
+      (zsmul_mem (sub_mem (mem_coeToSubmodule.mpr (mul_mem_mul hβ' hα))
+        (mem_coeToSubmodule.mpr (mul_mem_mul hα' hβ))) _))
+      (zsmul_mem (mem_coeToSubmodule.mpr (mul_mem_mul hβ' hβ)) _)
 
 /-- The invertible ideals of a primitive form and of its opposite multiply to the principal
 ideal `(a)`. -/

@@ -38,6 +38,8 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
 
 * `Polynomial.Gal.galActionHom_eq_permCongr`: the root permutations in two splitting extensions
   correspond under `Polynomial.Gal.rootsEquivRoots`.
+* `Polynomial.Gal.map_range_galActionHom`: the Galois image in one splitting extension is the
+  transport of the Galois image in another.
 * `TauCeti.mem_orbit_iff_minpoly_eq`: two roots of `p` are in the same Galois orbit exactly when
   their minimal polynomials agree.
 * `TauCeti.image_val_orbit_eq_rootSet_minpoly`: read inside `E`, the orbit of a root is the root
@@ -128,6 +130,19 @@ theorem _root_.Polynomial.Gal.galActionHom_eq_permCongr (E' : Type w) [Field E']
   ext x
   simp only [Gal.galActionHom, MulAction.toPermHom_apply, MulAction.toPerm_apply,
     Equiv.permCongr_apply, ← Gal.smul_rootsEquivRoots, Equiv.apply_symm_apply]
+
+variable (p) in
+/-- Transporting the Galois image in one splitting extension along
+`Polynomial.Gal.rootsEquivRoots` gives the Galois image in the other. -/
+theorem _root_.Polynomial.Gal.map_range_galActionHom (E' : Type w) [Field E'] [Algebra F E']
+    [Fact ((p.map (algebraMap F E')).Splits)] :
+    (Gal.galActionHom p E).range.map (Gal.rootsEquivRoots p E E').permCongrHom.toMonoidHom =
+      (Gal.galActionHom p E').range := by
+  simp only [MonoidHom.map_range]
+  congr 1
+  ext g x
+  rw [MonoidHom.comp_apply, Gal.galActionHom_eq_permCongr p E E' g]
+  simp only [MulEquiv.coe_toMonoidHom, Equiv.permCongrHom_coe]
 
 /-- Two roots of `p` lie in the same Galois orbit exactly when their minimal polynomials over the
 base field agree. -/

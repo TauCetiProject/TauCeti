@@ -93,15 +93,15 @@ theorem induction {P : SignedSym G → Prop}
   | mul a b ha hb => simpa only [map_mul] using mul _ _ ha hb
   | add a b ha hb => simpa only [map_add] using add _ _ ha hb
 
-variable {A : Type w} [Ring A] [Algebra R A]
-
 /-- Algebra maps out of the signed symmetric algebra are determined by their generators. -/
 @[ext 1200]
-theorem hom_ext {f g : SignedSym G →ₐ[R] A}
+theorem hom_ext {A : Type w} [Semiring A] [Algebra R A] {f g : SignedSym G →ₐ[R] A}
     (h : ∀ x, f (generator G x) = g (generator G x)) : f = g := by
   apply RingQuot.ringQuot_ext'
   apply TensorAlgebra.hom_ext
   exact LinearMap.ext h
+
+variable {A : Type w} [Ring A] [Algebra R A]
 
 /-- Extend a linear map whose homogeneous images obey signed commutativity. No grading on the
 receiving algebra is required: the relation is tested on the images of generators. -/

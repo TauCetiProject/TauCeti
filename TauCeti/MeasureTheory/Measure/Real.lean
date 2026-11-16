@@ -39,6 +39,7 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
 public section
 
 open MeasureTheory Set
+open scoped Pointwise
 
 namespace MeasureTheory.Measure
 

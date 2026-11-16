@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
-import TauCeti.RingTheory.Subsemiring.SpanSingleton
 
 /-!
 # Uniformizers of a nonarchimedean local field
@@ -17,14 +16,13 @@ the irreducible elements of the ring of integers, the convention used by the loc
 infrastructure.
 
 An element of `𝒪[K]` with the valuation of an irreducible element is itself irreducible
-(`TauCeti.irreducible_of_valuation_eq`).
+(`TauCeti.irreducible_of_valuation_eq`); this does not need `K` to be a local field.
 
-The last two results only need `𝒪[K]` to be a discrete valuation ring. They recognise
-uniformizers without choosing one: an element of `𝒪[K]` has valuation at least that of every
-element of valuation below `1` exactly when it does not lie in `𝓂[K] ^ 2`
+The last result only needs `𝒪[K]` to be a discrete valuation ring. It recognises uniformizers
+without choosing one: an element of `𝒪[K]` has valuation at least that of every element of
+valuation below `1` exactly when it does not lie in `𝓂[K] ^ 2`
 (`TauCeti.forall_valuation_le_iff_notMem_maximalIdeal_sq`); for an element of `𝓂[K]` this says it
-has the valuation of a uniformizer. For an irreducible `ϖ`, the image in `K` of `𝓂[K] ^ k` is the
-scaled copy `ϖ ^ k • 𝒪[K]` (`TauCeti.image_maximalIdeal_pow_eq_smul`).
+has the valuation of a uniformizer.
 -/
 
 public section
@@ -141,15 +139,6 @@ theorem forall_valuation_le_iff_notMem_maximalIdeal_sq {c : 𝒪[K]} :
     rw [hcy, pow_two]
     exact Ideal.mul_mem_mul ((valuation K).mem_maximalIdeal_iff.2 hy)
       ((valuation K).mem_maximalIdeal_iff.2 hz)
-
-/-- For a uniformizer `ϖ`, the image in `K` of the power `𝓂[K] ^ k` of the maximal ideal is the
-scaled copy `ϖ ^ k • 𝒪[K]`. -/
-theorem image_maximalIdeal_pow_eq_smul {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) (k : ℕ) :
-    ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ k) = (ϖ : K) ^ k • (𝒪[K] : Set K) := by
-  rw [hϖ.maximalIdeal_eq, SubsemiringClass.coe_span_singleton_pow _ ϖ.2,
-    image_preimage_eq_inter_range, Subtype.range_coe, inter_eq_left]
-  rintro _ ⟨y, hy, rfl⟩
-  exact mul_mem (pow_mem ϖ.2 k) hy
 
 end DiscreteValuationRing
 

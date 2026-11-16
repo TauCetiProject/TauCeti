@@ -63,7 +63,7 @@ with the continuous map `g ↦ (a g, b g)`, and the successor step `(a ⌣ b) g 
 postcomposition with a fixed continuous map. The successor step, however, needs the base case to
 be jointly continuous in the pair `(a, b)` in order to be a well-defined continuous map, and joint
 continuity of `(a, b) ↦ (g ↦ (a g, b g))` for the compact-open topologies is
-`ContinuousMap.continuous_prodMk`, which holds because a topological group is a regular space. No
+`ContinuousMap.continuous_prodMk'`, which holds because a topological group is a regular space. No
 hypothesis beyond `IsTopologicalGroup G` is needed anywhere in the file.
 
 ## Main definitions
@@ -359,7 +359,7 @@ def resolutionCup : (m n k : ℕ) → k = n + m →
     C((TopRep.resolutionX X (m + 1)).V × (TopRep.resolutionX Y (n + 1)).V,
       (TopRep.resolutionX Z (k + 1)).V)
   | 0, n, k, hk => ⟨fun p ↦ (P.pointwise n k hk).comp (p.1.prodMk p.2),
-      (continuous_postcomp _).comp ContinuousMap.continuous_prodMk⟩
+      (continuous_postcomp _).comp ContinuousMap.continuous_prodMk'⟩
   | m + 1, n, k + 1, hk =>
     ⟨fun p ↦ (resolutionCup m n k (Nat.succ.inj hk)).comp (p.1.prodMk (const G p.2)),
       (continuous_postcomp _).comp ContinuousMap.continuous_prodMk_const_right⟩

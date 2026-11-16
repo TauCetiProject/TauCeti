@@ -368,7 +368,7 @@ theorem IsSymmetricCocycleCoeff.exists_eq_nsmul {n : ℕ} {b : ℕ → M}
       rw [mem_Icc] at hi
       exact coeff_single_add_single_lazardCocycle (by omega) (by omega)
   obtain ⟨l, hl⟩ :=
-    Finset.exists_sum_natCast_mul_eq_one_of_gcd_eq_one (gcd_choose_div_lazardGcd_eq_one hn)
+    Finset.gcd_eq_one_iff_exists_sum_natCast_mul_eq_one.1 (gcd_choose_div_lazardGcd_eq_one hn)
   have hl' : ∑ i ∈ Icc 1 (n - 1), l i * (n.choose i / lazardGcd n : ℕ) = 1 := by
     rw [← hl]
     exact Finset.sum_congr rfl fun i _ => mul_comm _ _

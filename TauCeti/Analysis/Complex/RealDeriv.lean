@@ -24,6 +24,7 @@ real-linear map `D` precomposed with it satisfies the Cauchy–Riemann combinati
 Complex conjugation is real differentiable (Mathlib's `Complex.differentiable_conj`), but its real
 derivative `conjCLE` is not complex linear: it sends `1` to `1` and `I` to `-I`. Hence conjugation,
 and the reflection `z ↦ -conj z` across the imaginary axis, are complex differentiable at no point.
+The real derivative is computed by `Complex.fderiv_conj` and `Complex.fderiv_conj_apply`.
 -/
 
 public section
@@ -55,6 +56,16 @@ theorem comp_fderiv_apply_one_add_apply_I {F : Type*} [AddCommGroup F] [Module �
 end DifferentiableAt
 
 namespace Complex
+
+/-- The real derivative of conjugation at any point is the real-linear map `conjCLE`. -/
+@[simp]
+theorem fderiv_conj (z : ℂ) : fderiv ℝ conj z = (conjCLE : ℂ →L[ℝ] ℂ) := by
+  have hconj : (conj : ℂ → ℂ) = conjCLE := funext fun x => (conjCLE_apply x).symm
+  rw [hconj, conjCLE.fderiv]
+
+/-- Applied form of `Complex.fderiv_conj`: `fderiv ℝ conj z w = conj w`. -/
+theorem fderiv_conj_apply (z w : ℂ) : fderiv ℝ conj z w = conj w := by
+  rw [fderiv_conj, ContinuousLinearEquiv.coe_coe, conjCLE_apply]
 
 /-- Complex conjugation is not complex differentiable at any point. -/
 theorem not_differentiableAt_conj (z : ℂ) : ¬ DifferentiableAt ℂ (fun w : ℂ ↦ conj w) z := by

@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Polar.Bounded
+public import TauCeti.Analysis.InnerProductSpace.Polar.Smooth
 public import TauCeti.Analysis.Pseudodifferential.Elliptic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
-import TauCeti.Analysis.InnerProductSpace.Positive.FunctionalCalculus
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -54,6 +53,9 @@ symbols of degree `m`.
   `HomogeneousSymbol.coefficient_normalize_comp_adjoint`.
 * `TauCeti.HomogeneousSymbol.isElliptic_lineMap_normalize`: the straight line from `a` to its
   normalization consists of elliptic symbols.
+* `TauCeti.HomogeneousSymbol.normalize_eq_self`: a symbol with `a† a = ‖ξ‖ ^ (2 m)` is its own
+  normalization; `TauCeti.HomogeneousSymbol.adjoint_normalize`: normalization commutes with
+  pointwise adjoints.
 
 ## References
 
@@ -86,14 +88,9 @@ variable [FiniteDimensional ℂ V]
 smooth: there `a p† a p` is strictly positive, and the square root is smooth on strictly positive
 operators in finite dimension. -/
 theorem contDiffOn_modulus_coefficient (a : HomogeneousSymbol X E V W m) (ha : a.IsElliptic) :
-    ContDiffOn ℝ ∞ (fun p ↦ (a.coefficient p).modulus) {p | p.2 ≠ 0} := by
-  have hpos : MapsTo (a.adjoint.comp a).coefficient {p | p.2 ≠ 0} {A | IsStrictlyPositive A} :=
-    fun p hp ↦ by
-      simpa using ContinuousLinearMap.isStrictlyPositive_adjoint_comp_self_of_isInvertible
-        (isElliptic_iff.mp ha p.1 p.2 hp)
-  refine (((ContinuousLinearMap.contDiffOn_sqrt (𝕜 := ℂ) (E := V)).restrict_scalars ℝ).comp
-    (a.adjoint.comp a).contDiffOn_coefficient hpos).congr fun p _ ↦ ?_
-  simp [ContinuousLinearMap.modulus_eq_sqrt]
+    ContDiffOn ℝ ∞ (fun p ↦ (a.coefficient p).modulus) {p | p.2 ≠ 0} :=
+  ContinuousLinearMap.contDiffOn_modulus.comp a.contDiffOn_coefficient fun p hp ↦
+    (isElliptic_iff.mp ha p.1 p.2 hp).injective
 
 /-- The modulus `|a| = √(a† a)` of an elliptic homogeneous symbol `a` of degree `m`: the
 homogeneous symbol of degree `m` whose value is the modulus of the value of `a`. -/
@@ -150,12 +147,8 @@ noncomputable def polarFactor (a : HomogeneousSymbol X E V W m) (ha : a.IsEllipt
   coefficient p := (a.coefficient p).polarFactor
   zero_covector x := by simp
   contDiffOn_coefficient :=
-    -- Away from the zero frequency the polar factor is `a |a|⁻¹`, with `|a|` invertible.
-    (a.comp ((a.modulus ha).inverse (a.isElliptic_modulus ha))).contDiffOn_coefficient.congr
-      fun p hp ↦ by
-        rw [coefficient_comp, coefficient_inverse, ContinuousLinearMap.polarFactor_eq_comp_inverse _
-          (a.isStrictlyPositive_coefficient_modulus ha (x := p.1) (ξ := p.2) hp).isUnit,
-          ContinuousLinearMap.ringInverse_eq_inverse, coefficient_modulus]
+    ContinuousLinearMap.contDiffOn_polarFactor.comp a.contDiffOn_coefficient fun p hp ↦
+      (isElliptic_iff.mp ha p.1 p.2 hp).injective
   homogeneous x ξ t ht := by
     have h : 0 < t ^ m := Real.rpow_pos_of_pos ht m
     rw [a.homogeneous x ξ t ht, ← Complex.coe_smul, ContinuousLinearMap.polarFactor_smul]
@@ -270,6 +263,41 @@ theorem isElliptic_lineMap_normalize {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) :
 /-- The normalization of an elliptic symbol is elliptic. -/
 theorem isElliptic_normalize : (a.normalize ha).IsElliptic := by
   simpa using a.isElliptic_lineMap_normalize ha (s := 1) (by simp)
+
+/-- An elliptic symbol that already satisfies `a† a = ‖ξ‖ ^ (2 m)` at nonzero frequencies is its
+own normalization. -/
+theorem normalize_eq_self (h : ∀ x ξ, ξ ≠ 0 →
+    (a.coefficient (x, ξ)).adjoint ∘L a.coefficient (x, ξ) = (((‖ξ‖ ^ m) ^ 2 : ℝ) : ℂ) • 1) :
+    a.normalize ha = a := by
+  refine ext_of_ne_zero fun x ξ hξ ↦ ?_
+  set A := a.coefficient (x, ξ)
+  have hc : ((‖ξ‖ ^ m : ℝ) : ℂ) ≠ 0 := by
+    exact_mod_cast (Real.rpow_pos_of_pos (norm_pos_iff.mpr hξ) m).ne'
+  -- The modulus of `A` is `‖ξ‖ ^ m`, so its polar factor is `(‖ξ‖ ^ m)⁻¹ A`.
+  have hmod : A.modulus = ((‖ξ‖ ^ m : ℝ) : ℂ) • 1 := by
+    refine (ContinuousLinearMap.eq_modulus_iff.mpr
+      ⟨ContinuousLinearMap.isPositive_one.smul_of_nonneg
+        (RCLike.ofReal_nonneg.mpr (Real.rpow_nonneg (norm_nonneg ξ) m)), ?_⟩).symm
+    rw [h x ξ hξ]
+    ext v
+    simp [sq, mul_smul]
+  have hU : A.polarFactor = ((‖ξ‖ ^ m : ℝ) : ℂ)⁻¹ • A := by
+    refine (ContinuousLinearMap.eq_polarFactor ?_ fun v hv ↦ ?_).symm
+    · rw [hmod]
+      ext v
+      simp [-Complex.coe_smul, smul_smul, hc]
+    · have hv0 : A v = 0 := LinearMap.mem_ker.mp hv
+      rw [smul_apply, hv0, smul_zero]
+  rw [coefficient_normalize_of_ne_zero a ha hξ, hU, ← Complex.coe_smul, smul_smul,
+    mul_inv_cancel₀ hc, one_smul]
+
+/-- Normalization commutes with pointwise adjoints: `(‖ξ‖ ^ m U)† = ‖ξ‖ ^ m U†` is the
+normalization of `a†`, whose polar factor is `U†`. -/
+theorem adjoint_normalize [FiniteDimensional ℂ W] :
+    (a.normalize ha).adjoint = a.adjoint.normalize (isElliptic_adjoint_iff.mpr ha) := by
+  refine ext_of_ne_zero fun x ξ hξ ↦ ?_
+  simp [coefficient_normalize_of_ne_zero _ _ hξ, ← Complex.coe_smul,
+    map_smulₛₗ ContinuousLinearMap.adjoint, ContinuousLinearMap.polarFactor_adjoint]
 
 end HomogeneousSymbol
 

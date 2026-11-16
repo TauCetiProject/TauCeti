@@ -22,7 +22,8 @@ The result is packaged as a *normalized cusp datum* `Subgroup.CuspDatum`: a cusp
 generator of the full stabilizer, and a positive width with the conjugation formula. Such a datum
 records exactly the choices from which cusp neighbourhoods and the `q`-coordinate
 `exp (2 * π * I * σ z / w)` are built. The width is not an invariant of the cusp alone; it depends
-on the scaling, and the datum is unique once the cusp and the scaling are fixed.
+on the scaling, and the datum is unique once the scaling is fixed (the scaling determines the
+cusp).
 
 ## Main declarations
 
@@ -30,8 +31,7 @@ on the scaling, and the datum is unique once the cusp and the scaling are fixed.
 * `Subgroup.CuspDatum.cusp_eq_of_scaling_eq`: cusp data with equal scalings have equal cusps.
 * `Subgroup.CuspDatum.mem_stabilizer_iff_conj`: the conjugated stabilizer of the cusp is exactly
   the group of translations by `width * ℤ`.
-* `Subgroup.CuspDatum.ext`: a cusp datum is determined by its cusp and
-  scaling.
+* `Subgroup.CuspDatum.ext`: a cusp datum is determined by its scaling.
 * `Subgroup.IsCuspPoint.exists_cuspDatum`: for a discrete `Γ`, every cusp point and every scaling
   sending it to `∞` carry a cusp datum.
 * `Subgroup.commute_of_smul_parabolicFixedPoint`: for a discrete `Γ`, an element fixing the fixed
@@ -161,7 +161,7 @@ of `cusp` in `Γ`, and a positive `width` such that `σ * generator * σ⁻¹` i
 full stabilizer with the translations by `width * ℤ`
 (`Subgroup.CuspDatum.mem_stabilizer_iff_conj`).
 
-The width depends on the scaling and not only on the cusp; given the cusp and the scaling, the
+The width depends on the scaling and not only on the cusp; given the scaling, the
 datum is unique (`Subgroup.CuspDatum.ext`). In particular a proper power
 of the generator, although also conjugate to a positive translation, never forms a cusp datum.
 For a discrete `Γ`, every cusp point and every scaling sending it to `∞` carry a cusp datum
@@ -272,12 +272,12 @@ theorem mem_stabilizer_iff_conj {g : Γ} :
   rw [MulAut.conj_apply, MulAut.conj_apply, Subgroup.coe_zpow,
     D.scaling_mul_generator_zpow_mul_inv, hn]
 
-/-- **Uniqueness of normalized cusp data.** A cusp datum is determined by its cusp and its
-scaling: the width is then the positive generator of the conjugated stabilizer, and the
-generator is the corresponding element of `Γ`. -/
+/-- **Uniqueness of normalized cusp data.** A cusp datum is determined by its scaling, which
+determines its cusp: the width is then the positive generator of the conjugated stabilizer, and
+the generator is the corresponding element of `Γ`. -/
 @[ext]
-theorem ext {D D' : Γ.CuspDatum} (hc : D.cusp = D'.cusp)
-    (hσ : D.scaling = D'.scaling) : D = D' := by
+theorem ext {D D' : Γ.CuspDatum} (hσ : D.scaling = D'.scaling) : D = D' := by
+  have hc : D.cusp = D'.cusp := cusp_eq_of_scaling_eq D D' hσ
   obtain ⟨n, hn⟩ := D.mem_stabilizer_iff_conj.mp (hc ▸ D'.generator_mem_stabilizer)
   obtain ⟨m, hm⟩ := D'.mem_stabilizer_iff_conj.mp (hc ▸ D.generator_mem_stabilizer)
   rw [hσ, D'.scaling_mul_generator_mul_inv] at hn
