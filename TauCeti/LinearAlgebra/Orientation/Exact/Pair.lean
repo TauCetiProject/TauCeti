@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Orientation.Exact
+public import TauCeti.LinearAlgebra.Orientation.Exact.Basic
 import TauCeti.LinearAlgebra.Ray
 
 /-!
@@ -22,9 +22,9 @@ and a linear form `l` on `T`. The **comparison maps**
 
 compare each subspace with the line `K` measured by `l` followed by the quotient of the other
 sequence. If `Φ` is injective, then so is `Ψ`
-(`Orientation.injective_prod_neg_comp_of_injective_prod_comp`, over any commutative ring). When
-`Φ` and `Ψ` are isomorphisms, the subspaces `Fa A` and `Fb B` meet in a line on which `l` does not
-vanish, and their sum is `T`.
+(`Function.Exact.injective_prod_neg_comp_of_injective_prod_comp`, over any commutative ring).
+When `Φ` and `Ψ` are isomorphisms, the subspaces `Fa A` and `Fb B` meet in a line on which `l`
+does not vanish, and their sum is `T`.
 
 This is the linear algebra of the signs of Morse trajectories for a function `f` and for `-f`. At a
 point of a trajectory from `p` to `q`, `T` is the tangent space, `Fa A` and `Fb B` are the tangent
@@ -47,7 +47,8 @@ the block `b` past the block `a` costs `(-1) ^ (a' * b')`.
 
 ## Main results
 
-* `Orientation.injective_prod_neg_comp_of_injective_prod_comp`: if `Φ` is injective, so is `Ψ`.
+* `Function.Exact.injective_prod_neg_comp_of_injective_prod_comp`: if `Φ` is injective, so is
+  `Ψ`.
 * `Orientation.ite_map_eq_prod_of_exact`: the sign rule.
 
 ## References
@@ -62,8 +63,6 @@ noncomputable section
 
 open Module Function
 
-namespace Orientation
-
 section CommRing
 
 variable {K T A A' B B' : Type*} [CommRing K]
@@ -76,8 +75,8 @@ variable {K T A A' B B' : Type*} [CommRing K]
 `0 → A → T → A'` and `0 → B → T → B'` is injective, so is the opposite comparison map
 `(-l ∘ Fb, Na ∘ Fb)`: a vector `Fb y` killed by `l` and by `Na` is `Fa x` for an `x` killed by
 the first comparison map. -/
-theorem injective_prod_neg_comp_of_injective_prod_comp (hFaNa : Exact Fa Na) (hFb : Injective Fb)
-    (hFbNb : Exact Fb Nb) (hΦ : Injective ((l ∘ₗ Fa).prod (Nb ∘ₗ Fa))) :
+theorem Function.Exact.injective_prod_neg_comp_of_injective_prod_comp (hFaNa : Exact Fa Na)
+    (hFb : Injective Fb) (hFbNb : Exact Fb Nb) (hΦ : Injective ((l ∘ₗ Fa).prod (Nb ∘ₗ Fa))) :
     Injective (((-l) ∘ₗ Fb).prod (Na ∘ₗ Fb)) := by
   refine (injective_iff_map_eq_zero _).2 fun y hy ↦ ?_
   have hl : l (Fb y) = 0 := by simpa using congrArg Prod.fst hy
@@ -86,6 +85,21 @@ theorem injective_prod_neg_comp_of_injective_prod_comp (hFaNa : Exact Fa Na) (hF
   have hx0 : x = 0 := hΦ.eq_iff' (map_zero _) |>.1 (by
     simp [hx, hl, hFbNb.apply_apply_eq_zero])
   exact hFb (by rw [← hx, hx0, map_zero, map_zero])
+
+end CommRing
+
+namespace Orientation
+
+section CommRing
+
+variable {K : Type*} [CommRing K]
+
+/-- If the second component of an isomorphism `e : D ≃ K × C` is `g`, then `g ∘ e⁻¹` is the
+second projection. -/
+private theorem apply_symm_eq_snd {D C : Type*} [AddCommGroup D] [Module K D] [AddCommGroup C]
+    [Module K C] {e : D ≃ₗ[K] K × C} {g : D →ₗ[K] C} (he : ∀ x, (e x).2 = g x) (z : K × C) :
+    g (e.symm z) = z.2 := by
+  rw [← he, e.apply_symm_apply]
 
 end CommRing
 
@@ -103,14 +117,34 @@ private def exchangeEquiv : ((K × A') × B') ≃ₗ[K] ((K × B') × A') :=
     (((LinearEquiv.neg K).prodCongr (LinearEquiv.prodComm K A' B')).trans
       (LinearEquiv.prodAssoc K K B' A').symm)
 
+
 omit [LinearOrder K] [IsStrictOrderedRing K] in
 private theorem exchangeEquiv_apply (t : K) (v : A') (u : B') :
-    exchangeEquiv K A' B' ((t, v), u) = ((-t, u), v) :=
-  (LinearEquiv.prodAssoc K K B' A').symm_apply_eq.2 rfl
+    exchangeEquiv K A' B' ((t, v), u) = ((-t, u), v) := by
+  simp [exchangeEquiv, LinearEquiv.symm_apply_eq]
+
+/-- Reversing the line and exchanging the two blocks behind it, before any reassociation,
+multiplies the product orientation `[K]([A'][B'])` by `-(-1) ^ (a' * b')`. -/
+private theorem map_neg_prodCongr_prodComm_prod [FiniteDimensional K A'] [FiniteDimensional K B']
+    {a' b' : ℕ} (oA' : Orientation K A' (Fin a')) (oB' : Orientation K B' (Fin b'))
+    (hA' : finrank K A' = a') (hB' : finrank K B' = b') :
+    map (Fin (1 + (a' + b'))) ((LinearEquiv.neg K).prodCongr (LinearEquiv.prodComm K A' B'))
+        (prod (Basis.singleton (Fin 1) K).orientation (prod oA' oB' hA' hB') (finrank_self K)
+          (by rw [finrank_prod, hA', hB'])) =
+      (-1 : Kˣ) ^ (1 + a' * b') • reindex K _ (finCongr (by omega))
+        (prod (Basis.singleton (Fin 1) K).orientation (prod oB' oA' hB' hA') (finrank_self K)
+          (by rw [finrank_prod, hA', hB'])) := by
+  have hneg : map (Fin 1) (LinearEquiv.neg K : K ≃ₗ[K] K) (Basis.singleton (Fin 1) K).orientation =
+      (-1 : Kˣ) ^ 1 • (Basis.singleton (Fin 1) K).orientation := by
+    rw [map_linearEquiv_neg _ (by simp), finrank_self]
+  rw [map_prod, hneg, map_prodComm_prod, prod_units_smul_left, prod_units_smul_right,
+    prod_reindex_finCongr_right (add_comm b' a'), smul_smul, ← pow_add]
 
 /-- Exchanging the two blocks behind a line and reversing the line multiplies the product
 orientation by `-(-1) ^ (a' * b')`: `exchangeEquiv` carries `[K][A'][B']` to `-(-1) ^ (a' * b')`
-times `[K][B'][A']`. -/
+times `[K][B'][A']`. It reassociates (`Orientation.map_prodAssoc_prod`), reverses the line and
+exchanges the blocks (`map_neg_prodCongr_prodComm_prod`), and reassociates back
+(`Orientation.map_prodAssoc_symm_prod`). -/
 private theorem map_exchangeEquiv_prod_prod [FiniteDimensional K A'] [FiniteDimensional K B']
     {a' b' : ℕ} (oA' : Orientation K A' (Fin a'))
     (oB' : Orientation K B' (Fin b')) (hA' : finrank K A' = a') (hB' : finrank K B' = b') :
@@ -121,25 +155,9 @@ private theorem map_exchangeEquiv_prod_prod [FiniteDimensional K A'] [FiniteDime
         reindex K _ (finCongr (by omega))
           (prod (prod (Basis.singleton (Fin 1) K).orientation oB' (finrank_self K) hB') oA'
             (by rw [finrank_prod, finrank_self, hB']) hA') := by
-  set std := (Basis.singleton (Fin 1) K).orientation
-  have hassoc := map_prodAssoc_prod std oA' oB' (finrank_self K) hA' hB'
-  have hassoc' := map_prodAssoc_prod std oB' oA' (finrank_self K) hB' hA'
-  have hneg : map (Fin 1) (LinearEquiv.neg K : K ≃ₗ[K] K) std = (-1 : Kˣ) ^ 1 • std := by
-    rw [map_linearEquiv_neg std (by simp), finrank_self]
-  -- The reassociation back is the inverse of `hassoc'`.
-  have hassoc'' : map (Fin (1 + (b' + a'))) (LinearEquiv.prodAssoc K K B' A').symm
-      (prod std (prod oB' oA' hB' hA') (finrank_self K) (by rw [finrank_prod, hB', hA'])) =
-      reindex K _ (finCongr (add_assoc 1 b' a'))
-        (prod (prod std oB' (finrank_self K) hB') oA'
-          (by rw [finrank_prod, finrank_self, hB']) hA') := by
-    rw [← (map (Fin (1 + (b' + a'))) (LinearEquiv.prodAssoc K K B' A')).injective.eq_iff,
-      ← map_symm, Equiv.apply_symm_apply, map_reindex, hassoc',
-      reindex_finCongr_reindex_finCongr, finCongr_refl, reindex_refl, Equiv.refl_apply]
-  rw [exchangeEquiv, map_trans, map_trans, hassoc, map_reindex, map_prod, hneg,
-    map_prodComm_prod oA' oB' hA' hB', prod_units_smul_left, prod_units_smul_right,
-    prod_reindex_finCongr_right (add_comm b' a'), reindex_units_smul, reindex_units_smul,
-    reindex_finCongr_reindex_finCongr, map_units_smul, map_units_smul, map_reindex, hassoc'',
-    reindex_finCongr_reindex_finCongr, smul_smul, ← pow_add]
+  simp only [exchangeEquiv, map_trans, map_prodAssoc_prod, map_reindex,
+    map_neg_prodCongr_prodComm_prod, map_units_smul, map_prodAssoc_symm_prod, reindex_units_smul,
+    reindex_finCongr_reindex_finCongr]
 
 variable (hFa : Injective Fa) (hFaNa : Exact Fa Na) (hNa : Surjective Na)
   (hFb : Injective Fb) (hFbNb : Exact Fb Nb) (hNb : Surjective Nb)
@@ -162,27 +180,28 @@ private theorem apply_symm_eq_apply_symm_neg (t : K) :
 
 include hFa hFaNa heΨ in
 omit [LinearOrder K] [IsStrictOrderedRing K] in
-/-- The isomorphism `(K × B') × A' ≃ T` sending `(x, v)` to `Fa (Φ⁻¹ x) + Fb (Ψ⁻¹ (0, v))`. It
-splits the sequence `0 → A → T → A' → 0` through `Φ`, with the section `v ↦ Fb (Ψ⁻¹ (0, v))` of
-`Na`. -/
+/-- The splitting `G : (K × B') × A' ≃ T` of the sequence `0 → A → T → A' → 0` through `Φ`
+(`Function.Exact.splitSurjectiveEquiv`) with the section `v ↦ Fb (Ψ⁻¹ (0, v))` of `Na`: it sends
+`(x, v)` to `Fa (Φ⁻¹ x) + Fb (Ψ⁻¹ (0, v))`. -/
 private theorem exists_linearEquiv_prod :
-    ∃ G : ((K × B') × A') ≃ₗ[K] T, ∀ x v, G (x, v) = Fa (eΦ.symm x) + Fb (eΨ.symm (0, v)) := by
-  have hNa' (v : A') : Na (Fb (eΨ.symm (0, v))) = v :=
-    congrArg Prod.snd ((heΨ _).symm.trans (eΨ.apply_symm_apply (0, v)))
-  set G : ((K × B') × A') →ₗ[K] T :=
-    (Fa ∘ₗ eΦ.symm.toLinearMap).coprod (Fb ∘ₗ eΨ.symm.toLinearMap ∘ₗ LinearMap.inr K K A')
-  have hG (x v) : G (x, v) = Fa (eΦ.symm x) + Fb (eΨ.symm (0, v)) := rfl
-  have hNaG (x v) : Na (G (x, v)) = v := by
-    rw [hG, map_add, hFaNa.apply_apply_eq_zero, hNa', zero_add]
-  refine ⟨LinearEquiv.ofBijective G ⟨(injective_iff_map_eq_zero G).2 fun z hz ↦ ?_, fun t ↦ ?_⟩,
-    hG⟩
-  · obtain ⟨x, v⟩ := z
-    obtain rfl : v = 0 := by rw [← hNaG x v, hz, map_zero]
-    rw [hG, Prod.mk_zero_zero, map_zero, map_zero, add_zero, map_eq_zero_iff _ hFa,
-      LinearEquiv.map_eq_zero_iff] at hz
-    rw [hz, Prod.mk_zero_zero]
-  · obtain ⟨x, hx⟩ := (hFaNa (t - Fb (eΨ.symm (0, Na t)))).1 (by rw [map_sub, hNa', sub_self])
-    exact ⟨(eΦ x, Na t), by rw [hG, eΦ.symm_apply_apply, hx, sub_add_cancel]⟩
+    ∃ G : ((K × B') × A') ≃ₗ[K] T, (∀ x, G (eΦ x, 0) = Fa x) ∧ (∀ z, Na (G z) = z.2) ∧
+      ∀ x v, G (x, v) = Fa (eΦ.symm x) + Fb (eΨ.symm (0, v)) := by
+  let s : A' →ₗ[K] T := Fb ∘ₗ eΨ.symm.toLinearMap ∘ₗ LinearMap.inr K K A'
+  have hs : Na ∘ₗ s = .id :=
+    LinearMap.ext fun v ↦ apply_symm_eq_snd (g := Na ∘ₗ Fb) (fun y ↦ by simp [heΨ]) (0, v)
+  let e := hFaNa.splitSurjectiveEquiv hFa ⟨s, hs⟩
+  have hinr : e.1.symm ∘ₗ LinearMap.inr K A A' = s :=
+    congrArg Subtype.val ((hFaNa.splitSurjectiveEquiv hFa).symm_apply_apply ⟨s, hs⟩)
+  have he (x v) : e.1.symm (x, v) = Fa x + s v := by
+    rw [LinearMap.congr_fun e.2.1 x, ← LinearMap.congr_fun hinr v, LinearMap.comp_apply,
+      LinearMap.comp_apply, ← map_add, LinearMap.inl_apply, LinearMap.inr_apply, Prod.mk_add_mk,
+      add_zero, zero_add]
+    rfl
+  refine ⟨(eΦ.symm.prodCongr (LinearEquiv.refl K A')).trans e.1.symm, fun x ↦ ?_,
+    fun z ↦ ?_, fun x v ↦ ?_⟩
+  · simp [he]
+  · simp [LinearMap.congr_fun e.2.2]
+  · simp [he, s]
 
 variable [FiniteDimensional K A] [FiniteDimensional K A'] [FiniteDimensional K B]
   [FiniteDimensional K B']
@@ -211,8 +230,33 @@ private theorem ofExact_eq_map_exchangeEquiv_prod {G : ((K × B') × A') ≃ₗ[
   · rw [← Prod.mk.eta (p := eΨ y), hRG, Prod.mk.eta, eΨ.symm_apply_apply, Prod.mk_zero_zero,
       map_zero, map_zero, add_zero]
   · rw [hRG, map_add, hFbNb.apply_apply_eq_zero, zero_add]
-    exact congrArg Prod.snd ((heΦ _).symm.trans (eΦ.apply_symm_apply (0, u)))
+    exact apply_symm_eq_snd (g := Nb ∘ₗ Fa) (fun x ↦ by simp [heΦ]) (0, u)
 
+/-- Every orientation of a finite-dimensional space is a signed copy `(-1) ^ i • y` of any other
+orientation `y`. -/
+private theorem exists_eq_neg_one_pow_smul {M ι : Type*} [AddCommGroup M] [Module K M]
+    [FiniteDimensional K M] [Fintype ι] (x y : Orientation K M ι)
+    (h : Fintype.card ι = finrank K M) : ∃ i : ℕ, x = (-1 : Kˣ) ^ i • y := by
+  rcases x.eq_or_eq_neg y h with rfl | rfl
+  · exact ⟨0, by rw [pow_zero, one_smul]⟩
+  · exact ⟨1, by rw [pow_one, Module.Ray.neg_units_smul, one_smul]⟩
+
+open scoped Classical in
+/-- The sign comparing two signed copies `(-1) ^ m • x` and `(-1) ^ n • x` of a ray is
+`(-1) ^ m * (-1) ^ n`. -/
+private theorem ite_neg_one_pow_smul_eq {M : Type*} [AddCommGroup M] [Module K M]
+    (x : Module.Ray K M) (m n : ℕ) :
+    (if (-1 : Kˣ) ^ m • x = (-1 : Kˣ) ^ n • x then (1 : ℤ) else -1) = (-1) ^ m * (-1) ^ n := by
+  rcases Nat.even_or_odd m with hm | hm <;> rcases Nat.even_or_odd n with hn | hn <;>
+    simp [hm.neg_one_pow, hn.neg_one_pow, Module.Ray.neg_units_smul, Module.Ray.ne_neg_self,
+      (Module.Ray.ne_neg_self x).symm]
+
+open scoped Classical in
+/-- The sign comparing a signed copy `(-1) ^ n • x` of a ray with `x` is `(-1) ^ n`. -/
+private theorem ite_neg_one_pow_smul_eq_self {M : Type*} [AddCommGroup M] [Module K M]
+    (x : Module.Ray K M) (n : ℕ) :
+    (if (-1 : Kˣ) ^ n • x = x then (1 : ℤ) else -1) = (-1) ^ n := by
+  simpa using ite_neg_one_pow_smul_eq x n 0
 
 include heΦ heΨ in
 open scoped Classical in
@@ -244,29 +288,17 @@ theorem ite_map_eq_prod_of_exact {a a' b b' : ℕ} (hab : 1 + b' = a) (hba : 1 +
   subst hab hba
   have hX := map_exchangeEquiv_prod_prod oA' oB' hA' hB'
   set std := (Basis.singleton (Fin 1) K).orientation
-  obtain ⟨G, hG⟩ := exists_linearEquiv_prod (eΦ := eΦ) hFa hFaNa heΨ
-  -- Both induced orientations of `T` are transported product orientations.
-  have hA_eq := ofExact_eq_map_prod hFa hFaNa hNa eΦ G
-    (fun x ↦ by rw [hG, eΦ.symm_apply_apply, Prod.mk_zero_zero, map_zero, map_zero, add_zero])
-    (fun ⟨x, v⟩ ↦ by
-      rw [hG, map_add, hFaNa.apply_apply_eq_zero, zero_add]
-      exact congrArg Prod.snd ((heΨ _).symm.trans (eΨ.apply_symm_apply (0, v)))) oA oA' hA hA'
-  have hB_eq := ofExact_eq_map_exchangeEquiv_prod hFaNa hFb hFbNb hNb heΦ heΨ hG oB oB' hB hB'
-  rw [hA_eq, hB_eq]
-  rcases (map _ eΦ oA).eq_or_eq_neg (prod std oB' (finrank_self K) hB')
-      (by simp [finrank_prod, hB']) with hs | hs <;>
-    rcases (map _ eΨ oB).eq_or_eq_neg (prod std oA' (finrank_self K) hA')
-      (by simp [finrank_prod, hA']) with hs' | hs' <;>
-    simp only [hs, hs', prod_neg_left, Orientation.map_neg, Orientation.reindex_neg, map_trans,
-      hX, map_units_smul, map_reindex, reindex_units_smul, reindex_finCongr_reindex_finCongr,
-      finCongr_refl, reindex_refl, Equiv.refl_apply] <;>
-    rcases Nat.even_or_odd (a' * b') with he | he <;>
-    simp [pow_add, he.neg_one_pow, mul_comm b' a', Module.Ray.neg_units_smul,
-      Module.Ray.ne_neg_self, Module.Ray.neg_neg,
-      (Module.Ray.ne_neg_self (std.prod oA' (finrank_self K) hA')).symm,
-      (Module.Ray.ne_neg_self (std.prod oB' (finrank_self K) hB')).symm,
-      (Module.Ray.ne_neg_self (map (Fin (1 + b' + a')) G
-        ((std.prod oB' (finrank_self K) hB').prod oA'
-          (by rw [finrank_prod, finrank_self, hB']) hA'))).symm]
+  obtain ⟨G, hGa, hGNa, hG⟩ := exists_linearEquiv_prod (eΦ := eΦ) hFa hFaNa heΨ
+  -- Write the orientations carried by `Φ` and `Ψ` as signed product orientations.
+  obtain ⟨i, hi⟩ := (map _ eΦ oA).exists_eq_neg_one_pow_smul (prod std oB' (finrank_self K) hB')
+    (by simp [finrank_prod, hB'])
+  obtain ⟨j, hj⟩ := (map _ eΨ oB).exists_eq_neg_one_pow_smul (prod std oA' (finrank_self K) hA')
+    (by simp [finrank_prod, hA'])
+  rw [ofExact_eq_map_prod hFa hFaNa hNa eΦ G hGa hGNa oA oA' hA hA',
+    ofExact_eq_map_exchangeEquiv_prod hFaNa hFb hFbNb hNb heΦ heΨ hG oB oB' hB hB', hi, hj]
+  simp only [finCongr_refl, reindex_refl, Equiv.refl_apply, prod_units_smul_left, map_trans,
+    map_units_smul, hX, map_reindex, reindex_units_smul, reindex_finCongr_reindex_finCongr,
+    smul_smul, ← pow_add, ite_neg_one_pow_smul_eq_self, ite_neg_one_pow_smul_eq]
+  simp [pow_add, mul_comm b' a', mul_assoc, mul_left_comm, ← mul_pow]
 
 end Orientation

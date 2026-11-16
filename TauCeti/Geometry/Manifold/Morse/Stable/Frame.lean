@@ -542,12 +542,10 @@ theorem exact_neg_unstableFrame_stableNormal (hf : IsMorse 𝓘(ℝ, E) f)
     (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) {y : M}
     (hy : y ∈ hX.flow.stableSet x) :
     Exact ((hX.neg hf).unstableFrame (φ.neg hx) y) (hX.stableNormal φ y) := by
-  have hs : (hX.neg hf).flow.unstableSet x = hX.flow.stableSet x := by
-    rw [hX.neg_flow hf, Flow.unstableSet_reverse]
   intro v
-  rw [hX.stableNormal_eq_zero_iff hφ hy, ← hs]
-  exact (Set.ext_iff.1
-    ((hX.neg hf).range_unstableFrame (φ.coord_mfderiv_neg hφ hx) hf.neg (hs ▸ hy)) v).symm
+  rw [hX.stableNormal_eq_zero_iff hφ hy, hX.stableSet_eq_unstableSet_neg hf]
+  exact (Set.ext_iff.1 ((hX.neg hf).range_unstableFrame (φ.coord_mfderiv_neg hφ hx) hf.neg
+    ((hX.stableSet_eq_unstableSet_neg hf x).subset hy)) v).symm
 
 end IsAdaptedPseudoGradient
 

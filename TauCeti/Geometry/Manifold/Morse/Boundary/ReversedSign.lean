@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Sign
-public import TauCeti.LinearAlgebra.Orientation.ExactPair
+public import TauCeti.LinearAlgebra.Orientation.Exact.Pair
 
 /-!
 # Signs of trajectories of the reversed pseudo-gradient
@@ -89,6 +89,7 @@ variable {hX : IsAdaptedPseudoGradient f X} {p q : M} {φp : MorseChart E f p}
   (hφq : ∀ y ∈ φq.toChart.source,
     φq.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart y (X y)) =
       fun i ↦ -(φq.weight i * φq.coord (φq.toChart y) i))
+
 include hφp hφq
 
 /-- **The comparison map of the reversed pseudo-gradient is an isomorphism.** Let `X` be a
@@ -113,19 +114,17 @@ theorem bijective_neg_trajectoryComparison (hMS : hX.IsMorseSmale) (hf : IsMorse
         ((hX.stableNormal φq y).toLinearMap ∘ₗ (hX.unstableFrame φp y).toLinearMap)) := by
     funext v
     simp [trajectoryComparison_apply]
-  have hinj := Orientation.injective_prod_neg_comp_of_injective_prod_comp
+  have hinj := Function.Exact.injective_prod_neg_comp_of_injective_prod_comp
     (exact_unstableFrame_neg_stableNormal hφp hf hp hy.1)
     (injective_unstableFrame_of_mem (hX := hX.neg hf) (φq.coord_mfderiv_neg hφq hq) hf.neg
-      (by rw [hX.neg_flow hf, Flow.unstableSet_reverse]; exact hy.2))
+      ((hX.stableSet_eq_unstableSet_neg hf q).subset hy.2))
     (exact_neg_unstableFrame_stableNormal hφq hf hq hy.2)
     (hΦ ▸ (bijective_trajectoryComparison hφp hφq hMS hf hpq hy).1)
   rw [hC]
   refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
-  have hp' := hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-  have hq' := hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   rw [Module.finrank_prod, Module.finrank_self, (φp.neg hp).finrank_negativeWeight_fun,
-    (φq.neg hq).finrank_negativeWeight_fun]
-  omega
+    (φq.neg hq).finrank_negativeWeight_fun,
+    hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq, add_comm]
 
 open scoped Classical in
 /-- **The sign rule for the reversed pseudo-gradient.** Let `X` be a Morse–Smale pseudo-gradient
@@ -147,25 +146,21 @@ theorem neg_trajectorySign (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
     (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q)))
     (oq' : Orientation ℝ ({i // (φq.neg hq).weight i < 0} → ℝ)
       (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) q))) :
-    (hX.neg hf).trajectorySign (φq.neg hq) (φp.neg hp) oq' op' (by
-        have := hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-        have := hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-        omega) y =
+    (hX.neg hf).trajectorySign (φq.neg hq) (φp.neg hp) oq' op'
+        (hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq) y =
       -(-1) ^ (manifoldMorseIndex 𝓘(ℝ, E) f q * manifoldMorseIndex 𝓘(ℝ, E) (-f) p) *
         (if Orientation.reindex ℝ (TangentSpace 𝓘(ℝ, E) y) (finCongr (by
-              have := hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-              have := hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-              omega))
+              rw [hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq, hpq]; ring))
             (Orientation.ofExact
               (injective_unstableFrame_of_mem (hX := hX.neg hf) (φq.coord_mfderiv_neg hφq hq)
-                hf.neg (by rw [hX.neg_flow hf, Flow.unstableSet_reverse]; exact hy.2))
+                hf.neg ((hX.stableSet_eq_unstableSet_neg hf q).subset hy.2))
               (exact_neg_unstableFrame_stableNormal hφq hf hq hy.2)
               (surjective_stableNormal_of_mem hφq hy.2) oq' oq
               (φq.neg hq).finrank_negativeWeight_fun φq.finrank_negativeWeight_fun) =
           Orientation.ofExact (injective_unstableFrame_of_mem hφp hf hy.1)
             (exact_unstableFrame_neg_stableNormal hφp hf hp hy.1)
             (surjective_stableNormal_of_mem (hX := hX.neg hf) (φp.coord_mfderiv_neg hφp hp)
-              (by rw [← hX.unstableSet_eq_stableSet_neg hf]; exact hy.1)) op op'
+              ((hX.unstableSet_eq_stableSet_neg hf p).subset hy.1)) op op'
             φp.finrank_negativeWeight_fun (φp.neg hp).finrank_negativeWeight_fun then 1
           else -1) *
         hX.trajectorySign φp φq op oq hpq y := by
