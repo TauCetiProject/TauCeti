@@ -552,6 +552,8 @@ noncomputable def comp [CharP R 2] (g : UngradedAInfinityRightModuleHom Mm' Mm''
   map := compMap g f
   stasheff := compMap_stasheff g f
 
+/-- The components of a composite: `(g ∘ f)_{n+1}(m, a₁, …, aₙ)` is the sum over `i + j = n` of
+`g_{j+1}(f_{i+1}(m, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)`. -/
 theorem comp_map_apply [CharP R 2] (n : ℕ) (a : Fin n → A) (m : M) :
     (g.comp f).map n a m = ∑ k : Fin (n + 1), g.map (n - k)
       (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
