@@ -248,6 +248,18 @@ theorem relabelRowsFilteredHomotopyEquiv_inv :
       (GridChain.relabelRowsEquiv (finRotate n)).symm.toLinearMap :=
   LinearMap.FilteredHomotopyEquiv.ofLinearEquiv_inv _ _ _
 
+/-- The homotopy `homotopyHomInvId` of `relabelRowsFilteredHomotopyEquiv` vanishes. -/
+@[simp]
+theorem relabelRowsFilteredHomotopyEquiv_homotopyHomInvId :
+    (G.relabelRowsFilteredHomotopyEquiv R).homotopyHomInvId = 0 :=
+  LinearMap.FilteredHomotopyEquiv.ofLinearEquiv_homotopyHomInvId _ _ _
+
+/-- The homotopy `homotopyInvHomId` of `relabelRowsFilteredHomotopyEquiv` vanishes. -/
+@[simp]
+theorem relabelRowsFilteredHomotopyEquiv_homotopyInvHomId :
+    (G.relabelRowsFilteredHomotopyEquiv R).homotopyInvHomId = 0 :=
+  LinearMap.FilteredHomotopyEquiv.ofLinearEquiv_homotopyInvHomId _ _ _
+
 end OddComponentGridDiagram
 
 end TauCeti
