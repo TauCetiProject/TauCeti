@@ -15,7 +15,9 @@ public import Mathlib.Analysis.Calculus.Deriv.Mul
 A family of metrics `g τ = φ(τ) g₀`, a time-dependent constant multiple of a fixed metric `g₀`, has
 the Ricci tensor of `g₀` at every time, because constant rescaling does not change the Ricci tensor.
 Its time derivative is `φ'(τ) g₀`. Hence it satisfies the Ricci flow equation `∂_τ g = -2 Ric(g)`
-exactly when `Ric(g₀) = -(φ'/2) g₀`, that is, when `g₀` is Einstein with constant `-φ'/2`.
+when `Ric(g₀) = -(φ'/2) g₀`, that is, when `g₀` is Einstein with constant `-φ'/2`; conversely, at a
+time where the time set has unique derivatives (for instance an interior time), the flow equation
+forces this Einstein condition.
 
 In particular, if `Ric(g₀) = c g₀` then the Einstein solution
 `Bundle.ContMDiffRiemannianMetric.einsteinFlow`, which is `g τ = (1 - 2 c τ) g₀` on its
@@ -23,8 +25,9 @@ positive-scale interval `2 c τ < 1` and starts at `g₀`, is a Ricci flow on th
 `c > 0` this interval ends at `T = 1 / (2 c)`, and there the flow dies: its scalar curvature
 `Scal(g τ) = n c / (1 - 2 c τ)` tends to `+∞` as `τ → T⁻`, where `n ≥ 1` is the dimension. The
 round unit `n`-sphere has `Ric = (n - 1) g`, so its Ricci flow lives for time `1 / (2 (n - 1))`
-when `n ≥ 2`. For `φ = 1` the family is constant, and a constant family is a Ricci flow exactly
-when `g₀` is Ricci-flat; in dimension at most one every metric is Ricci-flat.
+when `n ≥ 2`. For `φ = 1` the family is constant, and a constant family is a Ricci flow at a time
+with unique derivatives exactly when `g₀` is Ricci-flat; in dimension at most one every metric is
+Ricci-flat.
 
 The flow equation is stated pointwise, as for
 `TauCeti.hasDerivWithinAt_chartVolumeDensity_of_ricciFlow`. The general statements concern any
@@ -36,11 +39,13 @@ a punctured left neighbourhood of the extinction time), so the factor `φ` need 
 
 * `TauCeti.hasDerivWithinAt_inner_neg_two_mul_ricciTensor_of_inner_eq_smul` and its converse
   `TauCeti.hasDerivWithinAt_inner_neg_two_mul_ricciTensor_iff_of_inner_eq_smul`: `τ ↦ φ(τ) g₀`
-  satisfies the Ricci flow equation at `x` exactly when `Ric(g₀) = -(φ'/2) g₀` at `x`.
+  satisfies the Ricci flow equation at `x` at a time `t` where `s` has unique derivatives exactly
+  when `Ric(g₀) = -(φ'/2) g₀` at `x`.
 * `TauCeti.hasDerivWithinAt_inner_neg_two_mul_ricciTensor_of_inner_eq_one_sub_two_mul_smul` and
   its converse
   `TauCeti.hasDerivWithinAt_inner_neg_two_mul_ricciTensor_iff_of_inner_eq_one_sub_two_mul_smul`: a
-  family with `g τ = (1 - 2 c τ) g₀` on `s` is a Ricci flow on `s` exactly when `Ric(g₀) = c g₀`.
+  family with `g τ = (1 - 2 c τ) g₀` on `s` is a Ricci flow on `s` when `Ric(g₀) = c g₀`, and
+  conversely at each time `t ∈ s` where `s` has unique derivatives.
 * `TauCeti.tendsto_scalarCurvature_nhdsLT_atTop_of_inner_eq_one_sub_two_mul_smul`: along
   `(1 - 2 c τ) g₀` with `Ric(g₀) = c g₀` and `c > 0`, the scalar curvature `n c / (1 - 2 c τ)` blows
   up at the extinction time `1 / (2 c)`.
@@ -52,7 +57,8 @@ a punctured left neighbourhood of the extinction time), so the factor `φ` need 
   `tendsto_scalarCurvature_einsteinFlow_nhdsLT_atTop` (its scalar curvature and extinction).
 * `TauCeti.hasDerivWithinAt_const_inner_neg_two_mul_ricciTensor_of_ricciTensor_eq_zero` and
   `TauCeti.hasDerivWithinAt_const_inner_neg_two_mul_ricciTensor_iff_ricciTensor_eq_zero`: a
-  constant family is a Ricci flow exactly when the metric is Ricci-flat, and
+  constant family is a Ricci flow at a time with unique derivatives exactly when the metric is
+  Ricci-flat, and
   `TauCeti.hasDerivWithinAt_const_inner_neg_two_mul_ricciTensor_of_finrank_le_one` shows that every
   metric in dimension at most one is stationary.
 * `TauCeti.hasDerivAt_inner_einsteinFlow_sphereRoundMetric`,
