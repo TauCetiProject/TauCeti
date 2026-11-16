@@ -43,8 +43,10 @@ Jordan-Hölder multiplicity.
 
 The hom-space dimension results are stated for a `k`-algebra `A` and `A`-modules that are
 `k`-modules compatibly. For `A = k[G]`, the hom space is the space of intertwiners. The
-reconstruction result from simple-module classes needs only a semisimple ring, while
-reconstruction from hom-space dimensions returns to the finite-dimensional `k`-algebra setting.
+reconstruction result from simple-module classes needs only a semisimple ring. Reconstruction
+from hom-space dimensions works over an arbitrary `k`-algebra for semisimple modules that are
+finite-dimensional over `k`, comparing the maps out of their simple submodules; over a
+finite-dimensional semisimple algebra it suffices to compare the maps out of simple left ideals.
 
 ## Main results
 
@@ -584,55 +586,6 @@ theorem _root_.IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_
 
 end ArbitraryRing
 
-/-! ### Reconstructing finite modules from hom-space dimensions -/
-
-section ReconstructionFromHom
-
-variable {k A M P : Type*} [Field k] [Ring A] [Algebra k A]
-  [FiniteDimensional k A] [IsSemisimpleRing A]
-variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M] [Module.Finite A M]
-variable [AddCommGroup P] [Module k P] [Module A P] [IsScalarTower k A P] [Module.Finite A P]
-
-/-- **Finite modules over a semisimple algebra are determined by their simple multiplicities.**
-If every simple left ideal has hom spaces of the same dimension into `M` and `P`, then `M` and
-`P` are linearly equivalent. -/
-theorem nonempty_linearEquiv_of_finrank_linearMap_eq
-    (h : ∀ (S : Submodule A A) [IsSimpleModule A S],
-      Module.finrank k (S →ₗ[A] M) = Module.finrank k (S →ₗ[A] P)) :
-    Nonempty (M ≃ₗ[A] P) := by
-  obtain ⟨n, SM, eM, hSM⟩ := IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp A M
-  obtain ⟨m, SP, eP, hSP⟩ := IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp A P
-  let _ (i : Fin n) : IsSimpleModule A (SM i) := hSM i
-  let _ (i : Fin m) : IsSimpleModule A (SP i) := hSP i
-  let epM : M ≃ₗ[A] ∀ i, SM i := eM.trans DFinsupp.linearEquivFunOnFintype
-  let epP : P ≃ₗ[A] ∀ i, SP i := eP.trans DFinsupp.linearEquivFunOnFintype
-  have hfiber : ∀ c,
-      Nat.card {i // simpleModuleClass A (SM i) = c} =
-        Nat.card {j // simpleModuleClass A (SP j) = c} := by
-    intro c
-    induction c using SimpleSubmoduleClasses.ind with
-    | mk S hS =>
-      let _ : IsSimpleModule A S := hS
-      let _ : Module.Finite k S :=
-        Module.Finite.of_injective (S.subtype.restrictScalars k) Subtype.val_injective
-      have hendpos := finrank_end_pos (k := k) (A := A) (S := S)
-      have hpredM (i : Fin n) : simpleModuleClass A (SM i) =
-          SimpleSubmoduleClasses.mk S ↔ Nonempty (S ≃ₗ[A] SM i) := by
-        rw [simpleModuleClass_eq_mk_iff]
-        exact ⟨fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩⟩
-      have hpredP (i : Fin m) : simpleModuleClass A (SP i) =
-          SimpleSubmoduleClasses.mk S ↔ Nonempty (S ≃ₗ[A] SP i) := by
-        rw [simpleModuleClass_eq_mk_iff]
-        exact ⟨fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩⟩
-      rw [Nat.card_congr (Equiv.subtypeEquivRight hpredM),
-        Nat.card_congr (Equiv.subtypeEquivRight hpredP)]
-      apply Nat.eq_of_mul_eq_mul_right hendpos
-      rw [← epM.finrank_linearMap_eq_natCard_mul_finrank_end (k := k) (S := S),
-        ← epP.finrank_linearMap_eq_natCard_mul_finrank_end (k := k) (S := S), h S]
-  exact ⟨epM |>.trans (nonempty_linearEquiv_pi_of_natCard_eq hfiber).some |>.trans epP.symm⟩
-
-end ReconstructionFromHom
-
 /-! ### Reconstructing finite-dimensional semisimple modules from hom-space dimensions -/
 
 section ReconstructionFromSubmodules
@@ -709,6 +662,35 @@ theorem _root_.IsSemisimpleModule.nonempty_linearEquiv_of_finrank_linearMap_eq
   simp
 
 end ReconstructionFromSubmodules
+
+/-! ### Reconstructing finite modules from hom-space dimensions -/
+
+section ReconstructionFromHom
+
+variable {k A M P : Type*} [Field k] [Ring A] [Algebra k A]
+  [FiniteDimensional k A] [IsSemisimpleRing A]
+variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M] [Module.Finite A M]
+variable [AddCommGroup P] [Module k P] [Module A P] [IsScalarTower k A P] [Module.Finite A P]
+
+/-- **Finite modules over a semisimple algebra are determined by their simple multiplicities.**
+If every simple left ideal has hom spaces of the same dimension into `M` and `P`, then `M` and
+`P` are linearly equivalent. -/
+theorem nonempty_linearEquiv_of_finrank_linearMap_eq
+    (h : ∀ (S : Submodule A A) [IsSimpleModule A S],
+      Module.finrank k (S →ₗ[A] M) = Module.finrank k (S →ₗ[A] P)) :
+    Nonempty (M ≃ₗ[A] P) := by
+  have : FiniteDimensional k M := Module.Finite.trans A M
+  have : FiniteDimensional k P := Module.Finite.trans A P
+  -- Every simple module, in particular every simple submodule of `M` or `P`, is isomorphic to a
+  -- simple left ideal.
+  refine IsSemisimpleModule.nonempty_linearEquiv_of_finrank_linearMap_eq (k := k)
+    (fun S _ ↦ ?_) (fun S _ ↦ ?_) <;>
+  · obtain ⟨I, ⟨e⟩⟩ := IsSemisimpleRing.exists_linearEquiv_ideal_of_isSimpleModule A S
+    have : IsSimpleModule A I := .congr e.symm
+    rw [(LinearEquiv.congrLeft M k e).finrank_eq, (LinearEquiv.congrLeft P k e).finrank_eq]
+    exact h I
+
+end ReconstructionFromHom
 
 /-! ### The isotypic case -/
 

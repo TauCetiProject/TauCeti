@@ -369,10 +369,8 @@ private theorem finrank_intertwiningMap_prod_eq (hπu : π.IsUnitary) (hρu : ρ
   have h := hA.finrank_contIntertwiningMap_kerRepresentation_sub_cokerRepresentation_eq σ hπu
     hρu hF hs hx hy
   simp only [← Representation.IntertwiningMap.prodEquiv.finrank_eq, Module.finrank_prod]
-  rw [ContRepresentation.intertwiningMapEquiv.finrank_eq,
-    ContRepresentation.intertwiningMapEquiv.finrank_eq,
-    ContRepresentation.intertwiningMapEquiv.finrank_eq,
-    ContRepresentation.intertwiningMapEquiv.finrank_eq, hσ] at h
+  simp only [ContRepresentation.intertwiningMapEquiv.finrank_eq] at h
+  rw [hσ] at h
   omega
 
 /-- **Homotopy invariance of the equivariant index.** Along a family of intertwining maps between
@@ -412,6 +410,8 @@ theorem _root_.ContinuousOn.equivariantIndex_eq [TopologicalSpace G] [IsTopologi
   have hchar := congrFun (Representation.char_iso e) g
   rw [Representation.char_prod, Representation.char_prod] at hchar
   simp only [repRingCharacter_equivariantIndex]
+  -- The goal is `χ_ker(x) - χ_coker(x) = χ_ker(y) - χ_coker(y)` at `g`, and `hchar` is
+  -- `χ_ker(x) + χ_coker(y) = χ_ker(y) + χ_coker(x)` at `g`.
   linear_combination hchar
 
 /-- **Local constancy of the equivariant index.** An equivariant Fredholm operator `T₀` between

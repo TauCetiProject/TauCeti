@@ -93,6 +93,16 @@ instance isSemisimpleRepresentation_prod (ρ : Representation k G V) (σ : Repre
   exact (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule _).mpr
     (IsSemisimpleModule.congr (ρ.prodAsModuleEquiv σ))
 
+/-- The intertwining maps out of a subrepresentation `τ` are the module maps out of the submodule
+it carries. -/
+private theorem finrank_intertwiningMap_eq_finrank_linearMap_asSubmodule {U : Type*}
+    [AddCommGroup U] [Module k U] {υ : Representation k G U} (τ : Subrepresentation υ)
+    (ρ : Representation k G V) :
+    Module.finrank k (IntertwiningMap τ.toRepresentation ρ) =
+      Module.finrank k (τ.asSubmodule →ₗ[k[G]] ρ.asModule) :=
+  ((IntertwiningMap.equivLinearMapAsModule _ ρ).trans
+    (LinearEquiv.congrLeft _ k τ.asModuleEquivAsSubmodule)).finrank_eq
+
 /-- **Semisimple representations are determined by intertwiner dimensions.** Two
 finite-dimensional semisimple representations `ρ` and `σ` of a monoid over a field are equivalent
 when every irreducible subrepresentation `τ` of either has spaces of intertwining maps `τ → ρ` and
@@ -117,17 +127,11 @@ theorem nonempty_equiv_of_finrank_intertwiningMap_eq [FiniteDimensional k V]
   -- whose intertwiners are the module maps out of that submodule.
   · obtain ⟨τ, rfl⟩ : ∃ τ : Subrepresentation ρ, τ.asSubmodule = S :=
       ⟨.ofSubmodule' S, by ext; rfl⟩
-    rw [← ((IntertwiningMap.equivLinearMapAsModule _ ρ).trans
-        (LinearEquiv.congrLeft _ k τ.asModuleEquivAsSubmodule)).finrank_eq,
-      ← ((IntertwiningMap.equivLinearMapAsModule _ σ).trans
-        (LinearEquiv.congrLeft _ k τ.asModuleEquivAsSubmodule)).finrank_eq]
-    exact hρ τ (Subrepresentation.isSimpleModule_asSubmodule_iff.mp ‹_›)
+    simpa only [finrank_intertwiningMap_eq_finrank_linearMap_asSubmodule] using
+      hρ τ (Subrepresentation.isSimpleModule_asSubmodule_iff.mp ‹_›)
   · obtain ⟨τ, rfl⟩ : ∃ τ : Subrepresentation σ, τ.asSubmodule = S :=
       ⟨.ofSubmodule' S, by ext; rfl⟩
-    rw [← ((IntertwiningMap.equivLinearMapAsModule _ ρ).trans
-        (LinearEquiv.congrLeft _ k τ.asModuleEquivAsSubmodule)).finrank_eq,
-      ← ((IntertwiningMap.equivLinearMapAsModule _ σ).trans
-        (LinearEquiv.congrLeft _ k τ.asModuleEquivAsSubmodule)).finrank_eq]
-    exact hσ τ (Subrepresentation.isSimpleModule_asSubmodule_iff.mp ‹_›)
+    simpa only [finrank_intertwiningMap_eq_finrank_linearMap_asSubmodule] using
+      hσ τ (Subrepresentation.isSimpleModule_asSubmodule_iff.mp ‹_›)
 
 end Representation
