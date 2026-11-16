@@ -103,9 +103,8 @@ lemma ofAbelianVariety_toAbelianVariety (A : AbelianScheme (Spec (.of K))) :
   rfl
 
 lemma ofAbelianVariety_one (A : AbelianVariety K) :
-    η[(ofAbelianVariety A).toOver] ≫ eqToHom (ofAbelianVariety_toOver A) = η[A.toOver] := by
-  unfold ofAbelianVariety
-  simp
+    η[(ofAbelianVariety A).toOver] ≫ eqToHom (ofAbelianVariety_toOver A) = η[A.toOver] :=
+  Category.comp_id _
 
 @[simp]
 lemma ofAbelianVariety_zeroSection (A : AbelianVariety K) :
@@ -116,24 +115,19 @@ lemma ofAbelianVariety_zeroSection (A : AbelianVariety K) :
 lemma ofAbelianVariety_mul (A : AbelianVariety K) :
     μ[(ofAbelianVariety A).toOver] ≫ eqToHom (ofAbelianVariety_toOver A) =
       (eqToHom (ofAbelianVariety_toOver A) ⊗ₘ eqToHom (ofAbelianVariety_toOver A)) ≫
-        μ[A.toOver] := by
-  unfold ofAbelianVariety
-  -- After unfolding, the named casts are between syntactically equal objects and reduce to `𝟙`.
-  change μ[A.toOver] = (𝟙 A.toOver ⊗ₘ 𝟙 A.toOver) ≫ μ[A.toOver]
-  simp
+        μ[A.toOver] :=
+  (Category.comp_id μ[(ofAbelianVariety A).toOver]).trans
+    ((Category.id_comp _).symm.trans
+      (congrArg (· ≫ _) (MonoidalCategory.id_tensorHom_id _ _).symm))
 
 lemma ofAbelianVariety_inv (A : AbelianVariety K) :
     ι[(ofAbelianVariety A).toOver] ≫ eqToHom (ofAbelianVariety_toOver A) =
-      eqToHom (ofAbelianVariety_toOver A) ≫ ι[A.toOver] := by
-  unfold ofAbelianVariety
-  -- After unfolding, the named casts are between syntactically equal objects and reduce to `𝟙`.
-  change ι[A.toOver] = 𝟙 A.toOver ≫ ι[A.toOver]
-  simp
+      eqToHom (ofAbelianVariety_toOver A) ≫ ι[A.toOver] :=
+  (Category.comp_id _).trans (Category.id_comp _).symm
 
 lemma toAbelianVariety_one (A : AbelianScheme (Spec (.of K))) :
-    η[(toAbelianVariety A).toOver] ≫ eqToHom (toAbelianVariety_toOver A) = η[A.toOver] := by
-  unfold toAbelianVariety
-  simp
+    η[(toAbelianVariety A).toOver] ≫ eqToHom (toAbelianVariety_toOver A) = η[A.toOver] :=
+  Category.comp_id _
 
 @[simp]
 lemma toAbelianVariety_zeroSection (A : AbelianScheme (Spec (.of K))) :
@@ -144,19 +138,15 @@ lemma toAbelianVariety_zeroSection (A : AbelianScheme (Spec (.of K))) :
 lemma toAbelianVariety_mul (A : AbelianScheme (Spec (.of K))) :
     μ[(toAbelianVariety A).toOver] ≫ eqToHom (toAbelianVariety_toOver A) =
       (eqToHom (toAbelianVariety_toOver A) ⊗ₘ eqToHom (toAbelianVariety_toOver A)) ≫
-        μ[A.toOver] := by
-  unfold toAbelianVariety
-  -- After unfolding, the named casts are between syntactically equal objects and reduce to `𝟙`.
-  change μ[A.toOver] = (𝟙 A.toOver ⊗ₘ 𝟙 A.toOver) ≫ μ[A.toOver]
-  simp
+        μ[A.toOver] :=
+  (Category.comp_id μ[(toAbelianVariety A).toOver]).trans
+    ((Category.id_comp _).symm.trans
+      (congrArg (· ≫ _) (MonoidalCategory.id_tensorHom_id _ _).symm))
 
 lemma toAbelianVariety_inv (A : AbelianScheme (Spec (.of K))) :
     ι[(toAbelianVariety A).toOver] ≫ eqToHom (toAbelianVariety_toOver A) =
-      eqToHom (toAbelianVariety_toOver A) ≫ ι[A.toOver] := by
-  unfold toAbelianVariety
-  -- After unfolding, the named casts are between syntactically equal objects and reduce to `𝟙`.
-  change ι[A.toOver] = 𝟙 A.toOver ≫ ι[A.toOver]
-  simp
+      eqToHom (toAbelianVariety_toOver A) ≫ ι[A.toOver] :=
+  (Category.comp_id _).trans (Category.id_comp _).symm
 
 instance isMonHom_eqToHom_ofAbelianVariety_toOver (A : AbelianVariety K) :
     IsMonHom (eqToHom (ofAbelianVariety_toOver A)) where
@@ -252,33 +242,29 @@ lemma Hom.toOverHom_ofAbelianVariety {A B : AbelianVariety K} (f : A ⟶ B) :
 
 @[simp]
 lemma Hom.toAbelianVariety_id (A : AbelianScheme (Spec (.of K))) :
-    Hom.toAbelianVariety (𝟙 A) = 𝟙 (AbelianScheme.toAbelianVariety A) := by
-  apply AbelianVariety.Hom.toOverHom_injective
-  rw [Hom.toOverHom_toAbelianVariety, Hom.toOverHom_id, AbelianVariety.Hom.toOverHom_id]
-  simp
+    Hom.toAbelianVariety (𝟙 A) = 𝟙 (AbelianScheme.toAbelianVariety A) :=
+  AbelianVariety.Hom.toOverHom_injective (by
+    rw [Hom.toOverHom_toAbelianVariety, Hom.toOverHom_id, AbelianVariety.Hom.toOverHom_id]; simp)
 
 @[simp]
 lemma Hom.toAbelianVariety_comp {A B C : AbelianScheme (Spec (.of K))} (f : A ⟶ B) (g : B ⟶ C) :
-    Hom.toAbelianVariety (f ≫ g) = Hom.toAbelianVariety f ≫ Hom.toAbelianVariety g := by
-  apply AbelianVariety.Hom.toOverHom_injective
-  rw [Hom.toOverHom_toAbelianVariety, Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_comp,
-    Hom.toOverHom_toAbelianVariety, Hom.toOverHom_toAbelianVariety]
-  simp
+    Hom.toAbelianVariety (f ≫ g) = Hom.toAbelianVariety f ≫ Hom.toAbelianVariety g :=
+  AbelianVariety.Hom.toOverHom_injective (by
+    rw [Hom.toOverHom_toAbelianVariety, Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_comp,
+      Hom.toOverHom_toAbelianVariety, Hom.toOverHom_toAbelianVariety]; simp)
 
 @[simp]
 lemma Hom.ofAbelianVariety_id (A : AbelianVariety K) :
-    Hom.ofAbelianVariety (𝟙 A) = 𝟙 (AbelianScheme.ofAbelianVariety A) := by
-  apply Hom.toOverHom_injective
-  rw [Hom.toOverHom_ofAbelianVariety, AbelianVariety.Hom.toOverHom_id, Hom.toOverHom_id]
-  simp
+    Hom.ofAbelianVariety (𝟙 A) = 𝟙 (AbelianScheme.ofAbelianVariety A) :=
+  Hom.toOverHom_injective (by
+    rw [Hom.toOverHom_ofAbelianVariety, AbelianVariety.Hom.toOverHom_id, Hom.toOverHom_id]; simp)
 
 @[simp]
 lemma Hom.ofAbelianVariety_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C) :
-    Hom.ofAbelianVariety (f ≫ g) = Hom.ofAbelianVariety f ≫ Hom.ofAbelianVariety g := by
-  apply Hom.toOverHom_injective
-  rw [Hom.toOverHom_ofAbelianVariety, AbelianVariety.Hom.toOverHom_comp, Hom.toOverHom_comp,
-    Hom.toOverHom_ofAbelianVariety, Hom.toOverHom_ofAbelianVariety]
-  simp
+    Hom.ofAbelianVariety (f ≫ g) = Hom.ofAbelianVariety f ≫ Hom.ofAbelianVariety g :=
+  Hom.toOverHom_injective (by
+    rw [Hom.toOverHom_ofAbelianVariety, AbelianVariety.Hom.toOverHom_comp, Hom.toOverHom_comp,
+      Hom.toOverHom_ofAbelianVariety, Hom.toOverHom_ofAbelianVariety]; simp)
 
 /-- The functor sending abelian schemes over `Spec K` to abelian varieties over `K`. -/
 def toAbelianVarietyFunctor (K : Type u) [Field K] :
@@ -337,35 +323,28 @@ def fieldEquivalence (K : Type u) [Field K] :
   unitIso := NatIso.ofComponents
     (fun A ↦ eqToIso (ofAbelianVariety_toAbelianVariety A).symm) fun {A B} f ↦ by
       apply Hom.toOverHom_injective
-      -- Expose the functor-composition and `eqToIso` morphisms so `Hom.toOverHom_comp` matches.
       change Hom.toOverHom (f ≫ eqToHom (ofAbelianVariety_toAbelianVariety B).symm) =
         Hom.toOverHom (eqToHom (ofAbelianVariety_toAbelianVariety A).symm ≫
           Hom.ofAbelianVariety (Hom.toAbelianVariety f))
-      rw [Hom.toOverHom_comp, Hom.toOverHom_comp, Hom.toOverHom_ofAbelianVariety,
-        Hom.toOverHom_toAbelianVariety, toOverHom_eqToHom, toOverHom_eqToHom]
-      simp
+      rw [Hom.toOverHom_comp, Hom.toOverHom_comp]
+      simp [toOverHom_eqToHom]
   counitIso := NatIso.ofComponents
     (fun A ↦ eqToIso (toAbelianVariety_ofAbelianVariety A)) fun {A B} f ↦ by
       apply AbelianVariety.Hom.toOverHom_injective
-      -- Expose the functor-composition and `eqToIso` morphisms so `toOverHom_comp` matches.
       change AbelianVariety.Hom.toOverHom
           (Hom.toAbelianVariety (Hom.ofAbelianVariety f) ≫
             eqToHom (toAbelianVariety_ofAbelianVariety B)) =
         AbelianVariety.Hom.toOverHom (eqToHom (toAbelianVariety_ofAbelianVariety A) ≫ f)
-      rw [AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_comp,
-        Hom.toOverHom_toAbelianVariety, Hom.toOverHom_ofAbelianVariety,
-        avToOverHom_eqToHom, avToOverHom_eqToHom]
-      simp
+      rw [AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_comp]
+      simp [avToOverHom_eqToHom]
   functor_unitIso_comp A := by
     apply AbelianVariety.Hom.toOverHom_injective
-    -- Expose the underlying `Hom.toAbelianVariety` and `eqToHom` composite.
     change AbelianVariety.Hom.toOverHom
         (Hom.toAbelianVariety (eqToHom (ofAbelianVariety_toAbelianVariety A).symm) ≫
           eqToHom (toAbelianVariety_ofAbelianVariety (toAbelianVariety A))) =
       AbelianVariety.Hom.toOverHom (𝟙 (toAbelianVariety A))
-    rw [AbelianVariety.Hom.toOverHom_comp, Hom.toOverHom_toAbelianVariety,
-      AbelianVariety.Hom.toOverHom_id, avToOverHom_eqToHom, toOverHom_eqToHom]
-    simp
+    rw [AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_id]
+    simp [avToOverHom_eqToHom, toOverHom_eqToHom]
 
 /-! ### Pointwise group structure on homomorphisms over a field -/
 
@@ -380,16 +359,11 @@ def homEquiv (A B : AbelianScheme (Spec (.of K))) :
   invFun g :=
     eqToHom (ofAbelianVariety_toAbelianVariety A).symm ≫ Hom.ofAbelianVariety g ≫
       eqToHom (ofAbelianVariety_toAbelianVariety B)
-  left_inv f := by
-    apply Hom.toOverHom_injective
-    rw [Hom.toOverHom_comp, Hom.toOverHom_comp, Hom.toOverHom_ofAbelianVariety,
-      Hom.toOverHom_toAbelianVariety, toOverHom_eqToHom, toOverHom_eqToHom]
-    simp
-  right_inv g := by
-    apply AbelianVariety.Hom.toOverHom_injective
-    rw [Hom.toOverHom_toAbelianVariety, Hom.toOverHom_comp, Hom.toOverHom_comp,
-      Hom.toOverHom_ofAbelianVariety, toOverHom_eqToHom, toOverHom_eqToHom]
-    simp
+  left_inv f := Hom.toOverHom_injective (by
+    rw [Hom.toOverHom_comp, Hom.toOverHom_comp]; simp [toOverHom_eqToHom])
+  right_inv g := AbelianVariety.Hom.toOverHom_injective (by
+    rw [Hom.toOverHom_toAbelianVariety, Hom.toOverHom_comp, Hom.toOverHom_comp]
+    simp [toOverHom_eqToHom])
 
 /-- Over a field, homomorphisms of abelian schemes form a commutative group under the pointwise
 group law of the target. -/
@@ -407,55 +381,31 @@ lemma toAbelianVarietyMulEquiv_apply {A B : AbelianScheme (Spec (.of K))} (f : A
     toAbelianVarietyMulEquiv A B f = Hom.toAbelianVariety f :=
   (rfl)
 
+private lemma toOverHom_eq_conj {A B : AbelianScheme (Spec (.of K))} (f : A ⟶ B) :
+    Hom.toOverHom f = eqToHom (toAbelianVariety_toOver A).symm ≫
+      AbelianVariety.Hom.toOverHom (toAbelianVarietyMulEquiv A B f) ≫
+      eqToHom (toAbelianVariety_toOver B) := by
+  simp [toAbelianVarietyMulEquiv_apply]
+
 @[simp]
 lemma toOverHom_one (A B : AbelianScheme (Spec (.of K))) :
     Hom.toOverHom (1 : A ⟶ B) = 1 := by
-  have h := congrArg AbelianVariety.Hom.toOverHom (map_one (toAbelianVarietyMulEquiv A B))
-  rw [toAbelianVarietyMulEquiv_apply, Hom.toOverHom_toAbelianVariety,
-    AbelianVariety.Hom.toOverHom_one] at h
-  have h' : Hom.toOverHom (1 : A ⟶ B) =
-      eqToHom (toAbelianVariety_toOver A).symm ≫ (1 : (toAbelianVariety A).toOver ⟶
-        (toAbelianVariety B).toOver) ≫ eqToHom (toAbelianVariety_toOver B) := by
-    rw [← h]
-    simp
-  rw [h', MonObj.one_comp, MonObj.comp_one]
+  rw [toOverHom_eq_conj, map_one, AbelianVariety.Hom.toOverHom_one, MonObj.one_comp,
+    MonObj.comp_one]
 
 @[simp]
 lemma toOverHom_mul {A B : AbelianScheme (Spec (.of K))} (f g : A ⟶ B) :
     Hom.toOverHom (f * g) = Hom.toOverHom f * Hom.toOverHom g := by
-  have h := congrArg AbelianVariety.Hom.toOverHom (map_mul (toAbelianVarietyMulEquiv A B) f g)
-  rw [toAbelianVarietyMulEquiv_apply, toAbelianVarietyMulEquiv_apply,
-    toAbelianVarietyMulEquiv_apply, Hom.toOverHom_toAbelianVariety,
-    AbelianVariety.Hom.toOverHom_mul, Hom.toOverHom_toAbelianVariety,
-    Hom.toOverHom_toAbelianVariety] at h
-  have h' : Hom.toOverHom (f * g) =
-      eqToHom (toAbelianVariety_toOver A).symm ≫
-        ((eqToHom (toAbelianVariety_toOver A) ≫ Hom.toOverHom f ≫
-            eqToHom (toAbelianVariety_toOver B).symm) *
-          (eqToHom (toAbelianVariety_toOver A) ≫ Hom.toOverHom g ≫
-            eqToHom (toAbelianVariety_toOver B).symm)) ≫
-        eqToHom (toAbelianVariety_toOver B) := by
-    rw [← h]
-    simp
-  rw [h', MonObj.mul_comp, MonObj.comp_mul]
-  simp
+  rw [toOverHom_eq_conj, map_mul, AbelianVariety.Hom.toOverHom_mul, MonObj.mul_comp,
+    MonObj.comp_mul]
+  simp [toAbelianVarietyMulEquiv_apply]
 
 @[simp]
 lemma toOverHom_inv {A B : AbelianScheme (Spec (.of K))} (f : A ⟶ B) :
     Hom.toOverHom f⁻¹ = (Hom.toOverHom f)⁻¹ := by
-  have h := congrArg AbelianVariety.Hom.toOverHom (map_inv (toAbelianVarietyMulEquiv A B) f)
-  rw [toAbelianVarietyMulEquiv_apply, toAbelianVarietyMulEquiv_apply,
-    Hom.toOverHom_toAbelianVariety, AbelianVariety.Hom.toOverHom_inv,
-    Hom.toOverHom_toAbelianVariety] at h
-  have h' : Hom.toOverHom f⁻¹ =
-      eqToHom (toAbelianVariety_toOver A).symm ≫
-        (eqToHom (toAbelianVariety_toOver A) ≫ Hom.toOverHom f ≫
-          eqToHom (toAbelianVariety_toOver B).symm)⁻¹ ≫
-        eqToHom (toAbelianVariety_toOver B) := by
-    rw [← h]
-    simp
-  rw [h', GrpObj.inv_comp, GrpObj.comp_inv]
-  simp
+  rw [toOverHom_eq_conj, map_inv, AbelianVariety.Hom.toOverHom_inv, GrpObj.inv_comp,
+    GrpObj.comp_inv]
+  simp [toAbelianVarietyMulEquiv_apply]
 
 end Field
 
@@ -486,24 +436,21 @@ def toAbelianVarietyProdIso (A B : AbelianScheme (Spec (.of K))) :
   hom_inv_id := by
     apply AbelianVariety.Hom.toOverHom_injective
     rw [AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_id,
-      AbelianVariety.prod.toOverHom_lift, AbelianVariety.Hom.toOverHom_mk' _ _ _]
-    rw [← cancel_mono (eqToHom (toAbelianVariety_toOver (A.prod B))),
+      AbelianVariety.prod.toOverHom_lift, AbelianVariety.Hom.toOverHom_mk' _ _ _,
+      ← cancel_mono (eqToHom (toAbelianVariety_toOver (A.prod B))),
       ← cancel_mono (eqToHom (prod_toOver A B))]
-    apply CartesianMonoidalCategory.hom_ext <;>
-      simp [Category.assoc]
+    apply CartesianMonoidalCategory.hom_ext <;> simp [Category.assoc]
   inv_hom_id := by
-    apply AbelianVariety.prod.hom_ext
-    · rw [Category.assoc, AbelianVariety.prod.lift_fst, Category.id_comp]
+    apply AbelianVariety.prod.hom_ext <;>
+    · simp only [Category.assoc, AbelianVariety.prod.lift_fst, AbelianVariety.prod.lift_snd,
+        Category.id_comp]
       apply AbelianVariety.Hom.toOverHom_injective
       rw [AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_mk' _ _ _,
-        Hom.toOverHom_toAbelianVariety, prod.toOverHom_fst, AbelianVariety.prod.toOverHom_fst]
-      simp [Category.assoc]
-    · rw [Category.assoc, AbelianVariety.prod.lift_snd, Category.id_comp]
-      apply AbelianVariety.Hom.toOverHom_injective
-      rw [AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_mk' _ _ _,
-        Hom.toOverHom_toAbelianVariety, prod.toOverHom_snd, AbelianVariety.prod.toOverHom_snd]
-      simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
-        tensorHom_snd_assoc, eqToHom_trans, Category.comp_id]
+        Hom.toOverHom_toAbelianVariety]
+      simp only [prod.toOverHom_fst, prod.toOverHom_snd, AbelianVariety.prod.toOverHom_fst,
+        AbelianVariety.prod.toOverHom_snd, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+        Category.id_comp, tensorHom_fst_assoc, tensorHom_snd_assoc, eqToHom_trans,
+        Category.comp_id]
 
 @[simp]
 lemma toAbelianVarietyProdIso_hom_fst (A B : AbelianScheme (Spec (.of K))) :
@@ -532,24 +479,19 @@ def ofAbelianVarietyProdIso (A B : AbelianVariety K) :
       eqToHom (ofAbelianVariety_toOver (A.prod B)).symm)
   hom_inv_id := by
     apply Hom.toOverHom_injective
-    rw [Hom.toOverHom_comp, Hom.toOverHom_id, prod.toOverHom_lift, Hom.toOverHom_mk]
-    rw [← cancel_mono (eqToHom (ofAbelianVariety_toOver (A.prod B))),
+    rw [Hom.toOverHom_comp, Hom.toOverHom_id, prod.toOverHom_lift, Hom.toOverHom_mk,
+      ← cancel_mono (eqToHom (ofAbelianVariety_toOver (A.prod B))),
       ← cancel_mono (eqToHom (AbelianVariety.prod_toOver A B))]
-    apply CartesianMonoidalCategory.hom_ext <;>
-      simp [Category.assoc]
+    apply CartesianMonoidalCategory.hom_ext <;> simp [Category.assoc]
   inv_hom_id := by
-    apply prod.hom_ext
-    · rw [Category.assoc, prod.lift_fst, Category.id_comp]
+    apply prod.hom_ext <;>
+    · simp only [Category.assoc, prod.lift_fst, prod.lift_snd, Category.id_comp]
       apply Hom.toOverHom_injective
-      rw [Hom.toOverHom_comp, Hom.toOverHom_mk, Hom.toOverHom_ofAbelianVariety,
-        AbelianVariety.prod.toOverHom_fst, prod.toOverHom_fst]
-      simp [Category.assoc]
-    · rw [Category.assoc, prod.lift_snd, Category.id_comp]
-      apply Hom.toOverHom_injective
-      rw [Hom.toOverHom_comp, Hom.toOverHom_mk, Hom.toOverHom_ofAbelianVariety,
-        AbelianVariety.prod.toOverHom_snd, prod.toOverHom_snd]
-      simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
-        tensorHom_snd_assoc, eqToHom_trans, Category.comp_id]
+      rw [Hom.toOverHom_comp, Hom.toOverHom_mk, Hom.toOverHom_ofAbelianVariety]
+      simp only [AbelianVariety.prod.toOverHom_fst, AbelianVariety.prod.toOverHom_snd,
+        prod.toOverHom_fst, prod.toOverHom_snd, Category.assoc, eqToHom_trans_assoc,
+        eqToHom_refl, Category.id_comp, tensorHom_fst_assoc, tensorHom_snd_assoc,
+        eqToHom_trans, Category.comp_id]
 
 @[simp]
 lemma ofAbelianVarietyProdIso_hom_fst (A B : AbelianVariety K) :
@@ -567,61 +509,40 @@ lemma ofAbelianVarietyProdIso_hom_snd (A B : AbelianVariety K) :
 def toAbelianVarietyBaseChangeIso (A : AbelianScheme (Spec (.of K)))
     (L : Type u) [Field L] [Algebra K L] :
     toAbelianVariety (A.baseChange (Spec.map (CommRingCat.ofHom (algebraMap K L)))) ≅
-      (toAbelianVariety A).baseChange L where
-  hom := AbelianVariety.Hom.mk'
-    (eqToHom (toAbelianVariety_toOver
-        (A.baseChange (Spec.map (CommRingCat.ofHom (algebraMap K L))))) ≫
-      eqToHom (baseChange_toOver A (Spec.map (CommRingCat.ofHom (algebraMap K L)))) ≫
-      (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map
-        (eqToHom (toAbelianVariety_toOver A).symm) ≫
-      eqToHom (AbelianVariety.baseChange_toOver (toAbelianVariety A) L).symm)
-    (IsMonHom.one_hom _) (IsMonHom.mul_hom _)
-  inv := AbelianVariety.Hom.mk'
-    (eqToHom (AbelianVariety.baseChange_toOver (toAbelianVariety A) L) ≫
-      (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map
-        (eqToHom (toAbelianVariety_toOver A)) ≫
-      eqToHom (baseChange_toOver A (Spec.map (CommRingCat.ofHom (algebraMap K L)))).symm ≫
-      eqToHom (toAbelianVariety_toOver
-        (A.baseChange (Spec.map (CommRingCat.ofHom (algebraMap K L))))).symm)
-    (IsMonHom.one_hom _) (IsMonHom.mul_hom _)
-  hom_inv_id := by
-    apply AbelianVariety.Hom.toOverHom_injective
-    rw [AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_id,
-      AbelianVariety.Hom.toOverHom_mk' _ _ _, AbelianVariety.Hom.toOverHom_mk' _ _ _]
-    simp [Category.assoc]
-  inv_hom_id := by
-    apply AbelianVariety.Hom.toOverHom_injective
-    rw [AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_id,
-      AbelianVariety.Hom.toOverHom_mk' _ _ _, AbelianVariety.Hom.toOverHom_mk' _ _ _]
-    simp [Category.assoc]
+      (toAbelianVariety A).baseChange L :=
+  let f := Spec.map (CommRingCat.ofHom (algebraMap K L))
+  { hom := AbelianVariety.Hom.mk'
+      (eqToHom (toAbelianVariety_toOver (A.baseChange f)) ≫ eqToHom (baseChange_toOver A f) ≫
+        (Over.pullback f).map (eqToHom (toAbelianVariety_toOver A).symm) ≫
+        eqToHom (AbelianVariety.baseChange_toOver (toAbelianVariety A) L).symm)
+      (IsMonHom.one_hom _) (IsMonHom.mul_hom _)
+    inv := AbelianVariety.Hom.mk'
+      (eqToHom (AbelianVariety.baseChange_toOver (toAbelianVariety A) L) ≫
+        (Over.pullback f).map (eqToHom (toAbelianVariety_toOver A)) ≫
+        eqToHom (baseChange_toOver A f).symm ≫
+        eqToHom (toAbelianVariety_toOver (A.baseChange f)).symm)
+      (IsMonHom.one_hom _) (IsMonHom.mul_hom _)
+    hom_inv_id := AbelianVariety.Hom.toOverHom_injective (by
+      rw [AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_id]
+      simp [AbelianVariety.Hom.toOverHom_mk' _ _ _, Category.assoc])
+    inv_hom_id := AbelianVariety.Hom.toOverHom_injective (by
+      rw [AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_id]
+      simp [AbelianVariety.Hom.toOverHom_mk' _ _ _, Category.assoc]) }
 
 /-- `ofAbelianVariety` commutes with base change along a field extension `K → L`. -/
 def ofAbelianVarietyBaseChangeIso (A : AbelianVariety K)
     (L : Type u) [Field L] [Algebra K L] :
     ofAbelianVariety (A.baseChange L) ≅
-      (ofAbelianVariety A).baseChange (Spec.map (CommRingCat.ofHom (algebraMap K L))) where
-  hom := Hom.mk
-    (eqToHom (ofAbelianVariety_toOver (A.baseChange L)) ≫
-      eqToHom (AbelianVariety.baseChange_toOver A L) ≫
-      (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map
-        (eqToHom (ofAbelianVariety_toOver A).symm) ≫
-      eqToHom (baseChange_toOver (ofAbelianVariety A)
-        (Spec.map (CommRingCat.ofHom (algebraMap K L)))).symm)
-  inv := Hom.mk
-    (eqToHom (baseChange_toOver (ofAbelianVariety A)
-        (Spec.map (CommRingCat.ofHom (algebraMap K L)))) ≫
-      (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map
-        (eqToHom (ofAbelianVariety_toOver A)) ≫
-      eqToHom (AbelianVariety.baseChange_toOver A L).symm ≫
-      eqToHom (ofAbelianVariety_toOver (A.baseChange L)).symm)
-  hom_inv_id := by
-    apply Hom.toOverHom_injective
-    rw [Hom.toOverHom_comp, Hom.toOverHom_id, Hom.toOverHom_mk, Hom.toOverHom_mk]
-    simp [Category.assoc]
-  inv_hom_id := by
-    apply Hom.toOverHom_injective
-    rw [Hom.toOverHom_comp, Hom.toOverHom_id, Hom.toOverHom_mk, Hom.toOverHom_mk]
-    simp [Category.assoc]
+      (ofAbelianVariety A).baseChange (Spec.map (CommRingCat.ofHom (algebraMap K L))) :=
+  let f := Spec.map (CommRingCat.ofHom (algebraMap K L))
+  let e := (eqToIso (ofAbelianVariety_toOver (A.baseChange L))).trans
+    ((eqToIso (AbelianVariety.baseChange_toOver A L)).trans
+      (((Over.pullback f).mapIso (eqToIso (ofAbelianVariety_toOver A)).symm).trans
+        (eqToIso (baseChange_toOver (ofAbelianVariety A) f)).symm))
+  have : IsMonHom e.hom := by
+    dsimp only [e, Iso.trans_hom, eqToIso.hom, eqToIso.inv, Iso.symm_hom, Functor.mapIso_hom]
+    infer_instance
+  isoMk e
 
 /-- Naturality of `toAbelianVarietyBaseChangeIso`: the adapter functor commutes with base change
 along a field extension `K → L`. -/

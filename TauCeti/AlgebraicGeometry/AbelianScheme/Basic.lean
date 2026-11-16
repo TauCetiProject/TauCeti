@@ -155,31 +155,24 @@ lemma ofGroupScheme_toOver (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.ho
 @[simp]
 lemma ofGroupScheme_one (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
     [GeometricallyConnected G.hom] :
-    η[(ofGroupScheme G).toOver] ≫ eqToHom (ofGroupScheme_toOver G) = η[G] := by
-  unfold ofGroupScheme
-  simp
+    η[(ofGroupScheme G).toOver] ≫ eqToHom (ofGroupScheme_toOver G) = η[G] :=
+  Category.comp_id η[G]
 
 /-- The multiplication of `ofGroupScheme G` is the multiplication of `G`. -/
 @[simp]
 lemma ofGroupScheme_mul (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
     [GeometricallyConnected G.hom] :
     μ[(ofGroupScheme G).toOver] ≫ eqToHom (ofGroupScheme_toOver G) =
-      (eqToHom (ofGroupScheme_toOver G) ⊗ₘ eqToHom (ofGroupScheme_toOver G)) ≫ μ[G] := by
-  unfold ofGroupScheme
-  -- After unfolding, the named casts are between syntactically equal objects and reduce to `𝟙 G`.
-  change μ[G] = (𝟙 G ⊗ₘ 𝟙 G) ≫ μ[G]
-  simp
+      (eqToHom (ofGroupScheme_toOver G) ⊗ₘ eqToHom (ofGroupScheme_toOver G)) ≫ μ[G] :=
+  (Category.comp_id μ[G]).trans (by simp : μ[G] = (𝟙 G ⊗ₘ 𝟙 G) ≫ μ[G])
 
 /-- The inversion of `ofGroupScheme G` is the inversion of `G`. -/
 @[simp]
 lemma ofGroupScheme_inv (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
     [GeometricallyConnected G.hom] :
     ι[(ofGroupScheme G).toOver] ≫ eqToHom (ofGroupScheme_toOver G) =
-      eqToHom (ofGroupScheme_toOver G) ≫ ι[G] := by
-  unfold ofGroupScheme
-  -- After unfolding, the named casts are between syntactically equal objects and reduce to `𝟙 G`.
-  change ι[G] = 𝟙 G ≫ ι[G]
-  simp
+      eqToHom (ofGroupScheme_toOver G) ≫ ι[G] :=
+  (Category.comp_id ι[G]).trans (Category.id_comp ι[G]).symm
 
 /-! ### The identity abelian scheme -/
 
@@ -187,35 +180,20 @@ section Identity
 
 variable (S)
 
-private lemma isProperTensorUnit : IsProper (𝟙_ (Over S)).hom := by
-  rw [Over.tensorUnit_hom]
-  exact inferInstanceAs (IsProper (𝟙 S))
-
-private lemma smoothTensorUnit : Smooth (𝟙_ (Over S)).hom := by
-  rw [Over.tensorUnit_hom]
-  exact inferInstanceAs (Smooth (𝟙 S))
-
-private lemma geometricallyConnectedTensorUnit :
-    GeometricallyConnected (𝟙_ (Over S)).hom := by
-  rw [Over.tensorUnit_hom]
-  exact geometricallyConnected_of_isIso (𝟙 S)
-
 /-- The **identity abelian scheme** over `S`: the base scheme `S ⟶ S` regarded as a group scheme
 over itself, carried by the monoidal unit `𝟙_ (Over S)`. -/
-noncomputable def identity : AbelianScheme S :=
-  haveI := isProperTensorUnit S
-  haveI := smoothTensorUnit S
-  haveI := geometricallyConnectedTensorUnit S
-  ofGroupScheme (𝟙_ (Over S))
+noncomputable def identity : AbelianScheme S where
+  toOver := 𝟙_ (Over S)
+  grpObj := inferInstance
+  isProper := by rw [Over.tensorUnit_hom]; exact inferInstanceAs (IsProper (𝟙 S))
+  smooth := by rw [Over.tensorUnit_hom]; exact inferInstanceAs (Smooth (𝟙 S))
+  geometricallyConnected := by
+    rw [Over.tensorUnit_hom]; exact geometricallyConnected_of_isIso (𝟙 S)
 
 /-- The group scheme underlying the identity abelian scheme is the monoidal unit of `Over S`. -/
 @[simp]
-lemma identity_toOver : (identity S).toOver = 𝟙_ (Over S) := by
-  let := isProperTensorUnit S
-  let := smoothTensorUnit S
-  let := geometricallyConnectedTensorUnit S
-  unfold identity
-  exact ofGroupScheme_toOver _
+lemma identity_toOver : (identity S).toOver = 𝟙_ (Over S) :=
+  (rfl)
 
 /-- The scheme underlying the identity abelian scheme is the base `S`. -/
 @[simp]
@@ -229,34 +207,22 @@ noncomputable def isTerminalIdentityToOver : IsTerminal (identity S).toOver :=
 /-- The unit section of the identity abelian scheme is the identity of `𝟙_ (Over S)`. -/
 @[simp]
 lemma identity_one :
-    η[(identity S).toOver] ≫ eqToHom (identity_toOver S) = η[𝟙_ (Over S)] := by
-  let := isProperTensorUnit S
-  let := smoothTensorUnit S
-  let := geometricallyConnectedTensorUnit S
-  unfold identity
-  exact ofGroupScheme_one _
+    η[(identity S).toOver] ≫ eqToHom (identity_toOver S) = η[𝟙_ (Over S)] :=
+  Category.comp_id η[𝟙_ (Over S)]
 
 /-- The multiplication of the identity abelian scheme is that of `𝟙_ (Over S)`. -/
 @[simp]
 lemma identity_mul :
     μ[(identity S).toOver] ≫ eqToHom (identity_toOver S) =
-      (eqToHom (identity_toOver S) ⊗ₘ eqToHom (identity_toOver S)) ≫ μ[𝟙_ (Over S)] := by
-  let := isProperTensorUnit S
-  let := smoothTensorUnit S
-  let := geometricallyConnectedTensorUnit S
-  unfold identity
-  exact ofGroupScheme_mul _
+      (eqToHom (identity_toOver S) ⊗ₘ eqToHom (identity_toOver S)) ≫ μ[𝟙_ (Over S)] :=
+  (Category.comp_id μ[𝟙_ (Over S)]).trans (by simp : μ[𝟙_ (Over S)] = (𝟙 _ ⊗ₘ 𝟙 _) ≫ _)
 
 /-- The inversion of the identity abelian scheme is that of `𝟙_ (Over S)`. -/
 @[simp]
 lemma identity_inv :
     ι[(identity S).toOver] ≫ eqToHom (identity_toOver S) =
-      eqToHom (identity_toOver S) ≫ ι[𝟙_ (Over S)] := by
-  let := isProperTensorUnit S
-  let := smoothTensorUnit S
-  let := geometricallyConnectedTensorUnit S
-  unfold identity
-  exact ofGroupScheme_inv _
+      eqToHom (identity_toOver S) ≫ ι[𝟙_ (Over S)] :=
+  (Category.comp_id ι[𝟙_ (Over S)]).trans (Category.id_comp _).symm
 
 /-- Every integer multiplication map on the identity abelian scheme is the identity. -/
 @[simp]

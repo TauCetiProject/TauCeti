@@ -50,6 +50,10 @@ over `S`. -/
 instance : Category (AbelianScheme S) :=
   inferInstanceAs (Category (InducedCategory _ (fun A ↦ Grp.mk A.toOver)))
 
+/-- A homomorphism of abelian schemes over `S`, i.e., a morphism in `AbelianScheme S`. -/
+abbrev Hom (A B : AbelianScheme S) : Type u :=
+  A ⟶ B
+
 /-- Construct a homomorphism of abelian schemes from a morphism over `S` carrying an `IsMonHom`
 instance. -/
 def Hom.mk {A B : AbelianScheme S} (f : A.toOver ⟶ B.toOver) [IsMonHom f] : A ⟶ B :=
@@ -203,10 +207,8 @@ over `S` whose forward morphism is a monoid-object homomorphism. -/
 def isoMk {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) [IsMonHom e.hom] : A ≅ B where
   hom := Hom.mk e.hom
   inv := Hom.mk e.inv
-  hom_inv_id := Hom.toOverHom_injective (by
-    simp only [Hom.toOverHom_comp, Hom.toOverHom_mk, Hom.toOverHom_id, Iso.hom_inv_id])
-  inv_hom_id := Hom.toOverHom_injective (by
-    simp only [Hom.toOverHom_comp, Hom.toOverHom_mk, Hom.toOverHom_id, Iso.inv_hom_id])
+  hom_inv_id := Hom.toOverHom_injective (by rw [Hom.toOverHom_comp, Hom.toOverHom_id]; simp)
+  inv_hom_id := Hom.toOverHom_injective (by rw [Hom.toOverHom_comp, Hom.toOverHom_id]; simp)
 
 @[simp]
 lemma isoMk_hom {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) [IsMonHom e.hom] :
@@ -238,13 +240,11 @@ lemma isoToOver_inv {A B : AbelianScheme S} (e : A ≅ B) :
 
 @[simp]
 lemma isoToScheme_hom {A B : AbelianScheme S} (e : A ≅ B) :
-    (isoToScheme e).hom = Hom.toSchemeHom e.hom := by
-  simp [isoToScheme]
+    (isoToScheme e).hom = Hom.toSchemeHom e.hom := by simp [isoToScheme]
 
 @[simp]
 lemma isoToScheme_inv {A B : AbelianScheme S} (e : A ≅ B) :
-    (isoToScheme e).inv = Hom.toSchemeHom e.inv := by
-  simp [isoToScheme]
+    (isoToScheme e).inv = Hom.toSchemeHom e.inv := by simp [isoToScheme]
 
 @[simp]
 lemma isoToOver_refl (A : AbelianScheme S) : isoToOver (Iso.refl A) = Iso.refl A.toOver :=
@@ -252,9 +252,7 @@ lemma isoToOver_refl (A : AbelianScheme S) : isoToOver (Iso.refl A) = Iso.refl A
 
 @[simp]
 lemma isoToOver_symm {A B : AbelianScheme S} (e : A ≅ B) :
-    isoToOver e.symm = (isoToOver e).symm := by
-  apply Iso.ext
-  simp
+    isoToOver e.symm = (isoToOver e).symm := Iso.ext (by simp)
 
 @[simp]
 lemma isoToOver_trans {A B C : AbelianScheme S} (e : A ≅ B) (f : B ≅ C) :
@@ -263,21 +261,15 @@ lemma isoToOver_trans {A B C : AbelianScheme S} (e : A ≅ B) (f : B ≅ C) :
 
 @[simp]
 lemma isoToScheme_refl (A : AbelianScheme S) :
-    isoToScheme (Iso.refl A) = Iso.refl A.toScheme := by
-  apply Iso.ext
-  simp
+    isoToScheme (Iso.refl A) = Iso.refl A.toScheme := Iso.ext (by simp)
 
 @[simp]
 lemma isoToScheme_symm {A B : AbelianScheme S} (e : A ≅ B) :
-    isoToScheme e.symm = (isoToScheme e).symm := by
-  apply Iso.ext
-  simp only [isoToScheme_hom, Iso.symm_hom, isoToScheme_inv]
+    isoToScheme e.symm = (isoToScheme e).symm := Iso.ext (by simp)
 
 @[simp]
 lemma isoToScheme_trans {A B C : AbelianScheme S} (e : A ≅ B) (f : B ≅ C) :
-    isoToScheme (e.trans f) = (isoToScheme e).trans (isoToScheme f) := by
-  apply Iso.ext
-  simp
+    isoToScheme (e.trans f) = (isoToScheme e).trans (isoToScheme f) := Iso.ext (by simp)
 
 /-! ### The identity abelian scheme as a zero object -/
 
@@ -285,16 +277,14 @@ lemma isoToScheme_trans {A B C : AbelianScheme S} (e : A ≅ B) (f : B ≅ C) :
 instance uniqueHomToIdentity (A : AbelianScheme S) : Unique (A ⟶ identity S) :=
   let e : Grp.mk (identity S).toOver ≅ Grp.trivial (Over S) :=
     Grp.mkIso (eqToIso (identity_toOver S)) (identity_one S) (identity_mul S)
-  ((show _ ≃ (Grp.mk A.toOver ⟶ Grp.mk (identity S).toOver) from
-      InducedCategory.homEquiv).trans
+  ((show _ ≃ (Grp.mk A.toOver ⟶ Grp.mk (identity S).toOver) from InducedCategory.homEquiv).trans
     ((Iso.refl _).homCongr e)).unique
 
 /-- There is a unique homomorphism from `identity S` to any abelian scheme over `S`. -/
 instance uniqueHomFromIdentity (A : AbelianScheme S) : Unique (identity S ⟶ A) :=
   let e : Grp.mk (identity S).toOver ≅ Grp.trivial (Over S) :=
     Grp.mkIso (eqToIso (identity_toOver S)) (identity_one S) (identity_mul S)
-  ((show _ ≃ (Grp.mk (identity S).toOver ⟶ Grp.mk A.toOver) from
-      InducedCategory.homEquiv).trans
+  ((show _ ≃ (Grp.mk (identity S).toOver ⟶ Grp.mk A.toOver) from InducedCategory.homEquiv).trans
     (e.homCongr (Iso.refl _))).unique
 
 /-- The unique homomorphism from an abelian scheme to the identity abelian scheme over `S`. -/

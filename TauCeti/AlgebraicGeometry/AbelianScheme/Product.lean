@@ -43,42 +43,28 @@ variable {S T : Scheme.{u}}
 
 noncomputable section
 
-private lemma isProper_tensor (A B : AbelianScheme S) :
-    IsProper (A.toOver ⊗ B.toOver).hom := by
-  rw [Over.tensorObj_hom]
-  exact MorphismProperty.comp_mem @IsProper _ _
-    (inferInstanceAs (IsProper (pullback.fst A.toOver.hom B.toOver.hom)))
-    (inferInstanceAs (IsProper A.toOver.hom))
-
-private lemma smooth_tensor (A B : AbelianScheme S) :
-    Smooth (A.toOver ⊗ B.toOver).hom := by
-  rw [Over.tensorObj_hom]
-  exact MorphismProperty.comp_mem @Smooth _ _
-    (inferInstanceAs (Smooth (pullback.fst A.toOver.hom B.toOver.hom)))
-    (inferInstanceAs (Smooth A.toOver.hom))
-
-private lemma geometricallyConnected_tensor (A B : AbelianScheme S) :
-    GeometricallyConnected (A.toOver ⊗ B.toOver).hom := by
-  rw [Over.tensorObj_hom]
-  have : UniversallyOpen (pullback.fst A.toOver.hom B.toOver.hom) :=
-    inferInstanceAs (UniversallyOpen (pullback.fst A.toOver.hom B.toOver.hom))
-  exact GeometricallyConnected.comp (pullback.fst A.toOver.hom B.toOver.hom) A.toOver.hom
-
 /-- The product of two abelian schemes over `S`, carried by their fibre product over `S` with the
 componentwise group law. -/
-def prod (A B : AbelianScheme S) : AbelianScheme S :=
-  haveI := isProper_tensor A B
-  haveI := smooth_tensor A B
-  haveI := geometricallyConnected_tensor A B
-  ofGroupScheme (A.toOver ⊗ B.toOver)
+def prod (A B : AbelianScheme S) : AbelianScheme S where
+  toOver := A.toOver ⊗ B.toOver
+  grpObj := inferInstance
+  isProper := by
+    rw [Over.tensorObj_hom]
+    exact MorphismProperty.comp_mem @IsProper _ _
+      (inferInstanceAs (IsProper (pullback.fst A.toOver.hom B.toOver.hom))) A.isProper
+  smooth := by
+    rw [Over.tensorObj_hom]
+    exact MorphismProperty.comp_mem @Smooth _ _
+      (inferInstanceAs (Smooth (pullback.fst A.toOver.hom B.toOver.hom))) A.smooth
+  geometricallyConnected := by
+    rw [Over.tensorObj_hom]
+    have : UniversallyOpen (pullback.fst A.toOver.hom B.toOver.hom) := inferInstance
+    exact GeometricallyConnected.comp (pullback.fst A.toOver.hom B.toOver.hom) A.toOver.hom
 
 /-- The group scheme underlying a product is the fibre product group scheme. -/
 @[simp]
-lemma prod_toOver (A B : AbelianScheme S) : (prod A B).toOver = A.toOver ⊗ B.toOver := by
-  let := isProper_tensor A B
-  let := smooth_tensor A B
-  let := geometricallyConnected_tensor A B
-  exact ofGroupScheme_toOver _
+lemma prod_toOver (A B : AbelianScheme S) : (prod A B).toOver = A.toOver ⊗ B.toOver :=
+  (rfl)
 
 /-- The scheme underlying a product is the fibre product over `S`. -/
 @[simp]
@@ -88,32 +74,22 @@ lemma prod_toScheme (A B : AbelianScheme S) :
 
 /-- The unit section of a product is the componentwise unit section. -/
 lemma prod_one (A B : AbelianScheme S) :
-    η[(prod A B).toOver] ≫ eqToHom (prod_toOver A B) = η[A.toOver ⊗ B.toOver] := by
-  let := isProper_tensor A B
-  let := smooth_tensor A B
-  let := geometricallyConnected_tensor A B
-  unfold prod
-  exact ofGroupScheme_one _
+    η[(prod A B).toOver] ≫ eqToHom (prod_toOver A B) = η[A.toOver ⊗ B.toOver] :=
+  Category.comp_id _
 
 /-- The multiplication on a product is componentwise multiplication. -/
 lemma prod_mul (A B : AbelianScheme S) :
     μ[(prod A B).toOver] ≫ eqToHom (prod_toOver A B) =
-      (eqToHom (prod_toOver A B) ⊗ₘ eqToHom (prod_toOver A B)) ≫ μ[A.toOver ⊗ B.toOver] := by
-  let := isProper_tensor A B
-  let := smooth_tensor A B
-  let := geometricallyConnected_tensor A B
-  unfold prod
-  exact ofGroupScheme_mul _
+      (eqToHom (prod_toOver A B) ⊗ₘ eqToHom (prod_toOver A B)) ≫ μ[A.toOver ⊗ B.toOver] :=
+  (Category.comp_id μ[(prod A B).toOver]).trans
+    ((Category.id_comp _).symm.trans
+      (congrArg (· ≫ _) (MonoidalCategory.id_tensorHom_id _ _).symm))
 
 /-- Inversion on a product is componentwise inversion. -/
 lemma prod_inv (A B : AbelianScheme S) :
     ι[(prod A B).toOver] ≫ eqToHom (prod_toOver A B) =
-      eqToHom (prod_toOver A B) ≫ ι[A.toOver ⊗ B.toOver] := by
-  let := isProper_tensor A B
-  let := smooth_tensor A B
-  let := geometricallyConnected_tensor A B
-  unfold prod
-  exact ofGroupScheme_inv _
+      eqToHom (prod_toOver A B) ≫ ι[A.toOver ⊗ B.toOver] :=
+  (Category.comp_id _).trans (Category.id_comp _).symm
 
 /-- The transport isomorphism for `prod_toOver` is a homomorphism of monoid objects. -/
 instance isMonHom_eqToHom_prod_toOver (A B : AbelianScheme S) :
@@ -164,17 +140,13 @@ lemma toOverHom_lift {A B C : AbelianScheme S} (f : C ⟶ A) (g : C ⟶ B) :
 
 @[simp]
 lemma lift_fst {A B C : AbelianScheme S} (f : C ⟶ A) (g : C ⟶ B) :
-    lift f g ≫ fst A B = f := by
-  apply Hom.toOverHom_injective
-  rw [Hom.toOverHom_comp, toOverHom_lift, toOverHom_fst, Category.assoc, eqToHom_trans_assoc,
-    eqToHom_refl, Category.id_comp, CartesianMonoidalCategory.lift_fst]
+    lift f g ≫ fst A B = f :=
+  Hom.toOverHom_injective (by rw [Hom.toOverHom_comp]; simp)
 
 @[simp]
 lemma lift_snd {A B C : AbelianScheme S} (f : C ⟶ A) (g : C ⟶ B) :
-    lift f g ≫ snd A B = g := by
-  apply Hom.toOverHom_injective
-  rw [Hom.toOverHom_comp, toOverHom_lift, toOverHom_snd, Category.assoc, eqToHom_trans_assoc,
-    eqToHom_refl, Category.id_comp, CartesianMonoidalCategory.lift_snd]
+    lift f g ≫ snd A B = g :=
+  Hom.toOverHom_injective (by rw [Hom.toOverHom_comp]; simp)
 
 /-- Homomorphisms into a product of abelian schemes are determined by their two projections. -/
 @[ext]
@@ -190,24 +162,20 @@ lemma hom_ext {A B C : AbelianScheme S} {f g : C ⟶ prod A B} (hfst : f ≫ fst
 
 @[reassoc, simp]
 lemma comp_lift {A B C D : AbelianScheme S} (h : D ⟶ C) (f : C ⟶ A) (g : C ⟶ B) :
-    h ≫ lift f g = lift (h ≫ f) (h ≫ g) := by
-  apply hom_ext <;> simp
+    h ≫ lift f g = lift (h ≫ f) (h ≫ g) :=
+  hom_ext (by simp) (by simp)
 
 @[simp]
 lemma lift_comp_fst_snd {A B C : AbelianScheme S} (f : C ⟶ prod A B) :
-    lift (f ≫ fst A B) (f ≫ snd A B) = f := by
-  apply hom_ext <;> simp
+    lift (f ≫ fst A B) (f ≫ snd A B) = f :=
+  hom_ext (by simp) (by simp)
 
 private def binaryFan (A B : AbelianScheme S) : BinaryFan A B :=
   BinaryFan.mk (fst A B) (snd A B)
 
 private def binaryFanIsLimit (A B : AbelianScheme S) : IsLimit (binaryFan A B) :=
-  BinaryFan.IsLimit.mk _
-    (fun f g ↦ lift f g)
-    (fun f g ↦ lift_fst f g)
-    (fun f g ↦ lift_snd f g)
-    (fun f g _ hfst hsnd ↦
-      hom_ext (hfst.trans (lift_fst f g).symm) (hsnd.trans (lift_snd f g).symm))
+  BinaryFan.IsLimit.mk _ (fun f g ↦ lift f g) (fun f g ↦ lift_fst f g) (fun f g ↦ lift_snd f g)
+    fun f g _ hfst hsnd ↦ hom_ext (hfst.trans (lift_fst f g).symm) (hsnd.trans (lift_snd f g).symm)
 
 end prod
 
@@ -227,20 +195,14 @@ instance hasFiniteProducts : HasFiniteProducts (AbelianScheme S) :=
 def prodIdentityIso (A : AbelianScheme S) : A.prod (identity S) ≅ A where
   hom := prod.fst A (identity S)
   inv := prod.lift (𝟙 A) (toIdentity A)
-  hom_inv_id := by
-    apply prod.hom_ext
-    · simp
-    · exact Subsingleton.elim _ _
+  hom_inv_id := prod.hom_ext (by simp) (Subsingleton.elim _ _)
   inv_hom_id := by simp
 
 /-- The product of the identity abelian scheme `S` with `A` is canonically isomorphic to `A`. -/
 def identityProdIso (A : AbelianScheme S) : (identity S).prod A ≅ A where
   hom := prod.snd (identity S) A
   inv := prod.lift (toIdentity A) (𝟙 A)
-  hom_inv_id := by
-    apply prod.hom_ext
-    · exact Subsingleton.elim _ _
-    · simp
+  hom_inv_id := prod.hom_ext (Subsingleton.elim _ _) (by simp)
   inv_hom_id := by simp
 
 /-- Base change preserves products of abelian schemes, respecting the group laws and projections. -/
@@ -255,27 +217,21 @@ def baseChangeProdIso (A B : AbelianScheme S) (f : T ⟶ S) :
         (eqToHom (baseChange_toOver A f).symm ⊗ₘ eqToHom (baseChange_toOver B f).symm) ≫
         eqToHom (prod_toOver (A.baseChange f) (B.baseChange f)).symm := by
     rw [← cancel_mono (eqToHom (prod_toOver (A.baseChange f) (B.baseChange f)))]
-    apply CartesianMonoidalCategory.hom_ext
-    · simp only [φ, prod.toOverHom_lift, Hom.toOverHom_baseChange, prod.toOverHom_fst,
-        Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id,
-        CartesianMonoidalCategory.lift_fst, CartesianMonoidalCategory.tensorHom_fst,
+    apply CartesianMonoidalCategory.hom_ext <;>
+      simp only [φ, prod.toOverHom_lift, Hom.toOverHom_baseChange, prod.toOverHom_fst,
+        prod.toOverHom_snd, Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id,
+        CartesianMonoidalCategory.lift_fst, CartesianMonoidalCategory.lift_snd,
+        CartesianMonoidalCategory.tensorHom_fst, CartesianMonoidalCategory.tensorHom_snd,
         prodComparisonIso_hom, CartesianMonoidalCategory.prodComparison_fst_assoc,
-        CategoryTheory.Functor.map_comp]
-    · simp only [φ, prod.toOverHom_lift, Hom.toOverHom_baseChange, prod.toOverHom_snd,
-        Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id,
-        CartesianMonoidalCategory.lift_snd, CartesianMonoidalCategory.tensorHom_snd,
-        prodComparisonIso_hom, CartesianMonoidalCategory.prodComparison_snd_assoc,
-        CategoryTheory.Functor.map_comp]
+        CartesianMonoidalCategory.prodComparison_snd_assoc, Functor.map_comp]
   have : IsIso (Hom.toOverHom φ) := hφ ▸ inferInstance
   have : IsMonHom (asIso (Hom.toOverHom φ)).hom := inferInstanceAs (IsMonHom (Hom.toOverHom φ))
   have : IsMonHom (inv (Hom.toOverHom φ)) :=
     inferInstanceAs (IsMonHom (asIso (Hom.toOverHom φ)).inv)
   { hom := φ
     inv := Hom.mk (inv (Hom.toOverHom φ))
-    hom_inv_id := Hom.toOverHom_injective (by
-      rw [Hom.toOverHom_comp, Hom.toOverHom_mk, Hom.toOverHom_id, IsIso.hom_inv_id])
-    inv_hom_id := Hom.toOverHom_injective (by
-      rw [Hom.toOverHom_comp, Hom.toOverHom_mk, Hom.toOverHom_id, IsIso.inv_hom_id]) }
+    hom_inv_id := Hom.toOverHom_injective (by rw [Hom.toOverHom_comp, Hom.toOverHom_id]; simp)
+    inv_hom_id := Hom.toOverHom_injective (by rw [Hom.toOverHom_comp, Hom.toOverHom_id]; simp) }
 
 @[simp]
 lemma baseChangeProdIso_hom_fst (A B : AbelianScheme S) (f : T ⟶ S) :

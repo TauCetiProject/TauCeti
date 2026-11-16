@@ -77,9 +77,8 @@ lemma grpMk_baseChange_toOver (A : AbelianScheme S) (f : T ⟶ S) :
 @[simp]
 lemma baseChange_one (A : AbelianScheme S) (f : T ⟶ S) :
     η[(A.baseChange f).toOver] ≫ eqToHom (baseChange_toOver A f) =
-      Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map η[A.toOver] := by
-  unfold baseChange
-  simp
+      Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map η[A.toOver] :=
+  Category.comp_id _
 
 /-- The multiplication of a base-changed abelian scheme is the pullback of the original
 multiplication. -/
@@ -88,21 +87,17 @@ lemma baseChange_mul (A : AbelianScheme S) (f : T ⟶ S) :
     μ[(A.baseChange f).toOver] ≫ eqToHom (baseChange_toOver A f) =
       (eqToHom (baseChange_toOver A f) ⊗ₘ eqToHom (baseChange_toOver A f)) ≫
         Functor.LaxMonoidal.μ (Over.pullback f) A.toOver A.toOver ≫
-        (Over.pullback f).map μ[A.toOver] := by
-  unfold baseChange
-  -- After unfolding, the named casts are between syntactically equal objects and reduce to `𝟙`.
-  change _ = (𝟙 _ ⊗ₘ 𝟙 _) ≫ _
-  simp
+        (Over.pullback f).map μ[A.toOver] :=
+  (Category.comp_id μ[(A.baseChange f).toOver]).trans
+    ((Category.id_comp _).symm.trans
+      (congrArg (· ≫ _) (MonoidalCategory.id_tensorHom_id _ _).symm))
 
 /-- The inversion of a base-changed abelian scheme is the pullback of the original inversion. -/
 @[simp]
 lemma baseChange_inv (A : AbelianScheme S) (f : T ⟶ S) :
     ι[(A.baseChange f).toOver] ≫ eqToHom (baseChange_toOver A f) =
-      eqToHom (baseChange_toOver A f) ≫ (Over.pullback f).map ι[A.toOver] := by
-  unfold baseChange
-  -- After unfolding, the named casts are between syntactically equal objects and reduce to `𝟙`.
-  change _ = 𝟙 _ ≫ _
-  simp
+      eqToHom (baseChange_toOver A f) ≫ (Over.pullback f).map ι[A.toOver] :=
+  (Category.comp_id _).trans (Category.id_comp _).symm
 
 /-- The transport isomorphism identifying `(A.baseChange f).toOver` with
 `(Over.pullback f).obj A.toOver` is a homomorphism of monoid objects. -/
@@ -147,18 +142,16 @@ lemma Hom.toSchemeHom_baseChange {A B : AbelianScheme S} (φ : A ⟶ B) (f : T �
 
 @[simp]
 lemma Hom.baseChange_id (A : AbelianScheme S) (f : T ⟶ S) :
-    Hom.baseChange (𝟙 A) f = 𝟙 (A.baseChange f) := by
-  apply Hom.toOverHom_injective
-  rw [Hom.toOverHom_baseChange, Hom.toOverHom_id, Hom.toOverHom_id, CategoryTheory.Functor.map_id]
-  simp
+    Hom.baseChange (𝟙 A) f = 𝟙 (A.baseChange f) :=
+  Hom.toOverHom_injective (by
+    rw [Hom.toOverHom_baseChange, Hom.toOverHom_id, Hom.toOverHom_id]; simp)
 
 @[simp]
 lemma Hom.baseChange_comp {A B C : AbelianScheme S} (φ : A ⟶ B) (ψ : B ⟶ C) (f : T ⟶ S) :
-    Hom.baseChange (φ ≫ ψ) f = Hom.baseChange φ f ≫ Hom.baseChange ψ f := by
-  apply Hom.toOverHom_injective
-  rw [Hom.toOverHom_baseChange, Hom.toOverHom_comp, CategoryTheory.Functor.map_comp,
-    Hom.toOverHom_comp, Hom.toOverHom_baseChange, Hom.toOverHom_baseChange]
-  simp
+    Hom.baseChange (φ ≫ ψ) f = Hom.baseChange φ f ≫ Hom.baseChange ψ f :=
+  Hom.toOverHom_injective (by
+    rw [Hom.toOverHom_baseChange, Hom.toOverHom_comp, Hom.toOverHom_comp,
+      Hom.toOverHom_baseChange, Hom.toOverHom_baseChange]; simp)
 
 /-- Base change along `f : T ⟶ S`, as a functor `AbelianScheme S ⥤ AbelianScheme T`. -/
 def baseChangeFunctor (f : T ⟶ S) : AbelianScheme S ⥤ AbelianScheme T where
